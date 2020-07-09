@@ -11,8 +11,6 @@ import AirgapUploadProgress from "@src/components/AirgapUploadProgress";
 import LicenseUploadProgress from "./LicenseUploadProgress";
 import AirgapRegistrySettings from "./shared/AirgapRegistrySettings";
 import { Utilities } from "../utilities/utilities";
-import Loader from "./shared/Loader";
-import { validateRegistryInfo } from "../queries/UserQueries";
 import { getSupportBundleCommand } from "../queries/TroubleshootQueries";
 import { getKotsApp } from "../queries/AppsQueries";
 
@@ -109,33 +107,43 @@ class UploadAirgapBundle extends React.Component {
         });
         return;
       }
+
+      let res;
       try {
-        const validated = await this.props.client.query({
-          query: validateRegistryInfo,
-          variables: {
-            slug: slug,
-            endpoint: this.state.registryDetails.hostname,
+        res = await fetch(`${window.env.API_ENDPOINT}/app/${slug}/registry/validate`, {
+          method: "POST",
+          headers: {
+            "Authorization": Utilities.getToken(),
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            hostname: this.state.registryDetails.hostname,
+            namespace: this.state.registryDetails.namespace,
             username: this.state.registryDetails.username,
-            password: this.state.registryDetails.password,
-            org: this.state.registryDetails.namespace,
-          }
+            password: this.state.registryDetails.password,          
+          }),
         });
-        if (validated.data.validateRegistryInfo) {
-          this.setState({
-            fileUploading: false,
-            uploadSent: 0,
-            uploadTotal: 0,
-            errorMessage: validated.data.validateRegistryInfo,
-          });
-          return;
-        }
-      } catch (error) {
-        console.error(error);
+      } catch(err) {
         this.setState({
           fileUploading: false,
           uploadSent: 0,
           uploadTotal: 0,
-          errorMessage: "An error occurred while uploading your airgap bundle. Please try again"
+          errorMessage: err,
+        });
+        return;
+      }
+
+      const response = await res.json();
+      if (!response.success) {
+        let msg = "An error occurred while uploading your airgap bundle. Please try again";
+        if (response.error) {
+          msg = response.error;
+        }
+        this.setState({
+          fileUploading: false,
+          uploadSent: 0,
+          uploadTotal: 0,
+          errorMessage: msg,
         });
         return;
       }

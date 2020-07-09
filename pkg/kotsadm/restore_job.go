@@ -10,8 +10,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func restoreJob(backupName string, namespace string, isOpenShift bool) *batchv1.Job {
-	deployOptions := types.DeployOptions{} // TODO: make this real
+func restoreJob(backupName string, namespace string, isOpenShift bool, kotsadmOptions types.KotsadmOptions) *batchv1.Job {
 	var securityContext corev1.PodSecurityContext
 	if !isOpenShift {
 		securityContext = corev1.PodSecurityContext{
@@ -21,7 +20,7 @@ func restoreJob(backupName string, namespace string, isOpenShift bool) *batchv1.
 	}
 
 	var pullSecrets []corev1.LocalObjectReference
-	if s := kotsadmPullSecret(deployOptions.Namespace, deployOptions.KotsadmOptions); s != nil {
+	if s := kotsadmPullSecret(namespace, kotsadmOptions); s != nil {
 		pullSecrets = []corev1.LocalObjectReference{
 			{
 				Name: s.ObjectMeta.Name,
@@ -53,7 +52,7 @@ func restoreJob(backupName string, namespace string, isOpenShift bool) *batchv1.
 					ImagePullSecrets:   pullSecrets,
 					Containers: []corev1.Container{
 						{
-							Image:           fmt.Sprintf("%s/kotsadm:%s", kotsadmRegistry(deployOptions.KotsadmOptions), kotsadmTag(deployOptions.KotsadmOptions)),
+							Image:           fmt.Sprintf("%s/kotsadm:%s", kotsadmRegistry(kotsadmOptions), kotsadmTag(kotsadmOptions)),
 							ImagePullPolicy: corev1.PullAlways,
 							Name:            "kotsadm-restore",
 							Command: []string{

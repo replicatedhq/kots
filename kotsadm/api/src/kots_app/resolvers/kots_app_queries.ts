@@ -79,17 +79,6 @@ export function KotsQueries(stores: Stores, params: Params) {
       return versions;
     },
 
-    async getAppRegistryDetails(root: any, args: any, context: Context): Promise<KotsAppRegistryDetails | {}> {
-      const appId = await stores.kotsAppStore.getIdFromSlug(args.slug);
-      const app = await context.getApp(appId);
-      const details = await stores.kotsAppStore.getAppRegistryDetails(app.id, true);
-      if (!details.registryHostname) {
-        return {}
-      }
-      return details;
-    },
-
-
     async getAppConfigGroups(root: any, args: any, context: Context): Promise<KotsConfigGroup[]> {
       const appId = await stores.kotsAppStore.getIdFromSlug(args.slug);
       const app = await context.getApp(appId);

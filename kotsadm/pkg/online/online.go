@@ -58,20 +58,20 @@ func CreateAppFromOnline(pendingApp *PendingApp, upstreamURI string, isAutomated
 	defer func() {
 		if finalError == nil {
 			if err := task.ClearTaskStatus("online-install"); err != nil {
-				logger.Error(errors.Wrap(err, "faild to clear install task status"))
+				logger.Error(errors.Wrap(err, "failed to clear install task status"))
 			}
 			if err := setAppInstallState(pendingApp.ID, "installed"); err != nil {
-				logger.Error(errors.Wrap(err, "faild to set app status to installed"))
+				logger.Error(errors.Wrap(err, "failed to set app status to installed"))
 			}
 			if err := updatechecker.Configure(pendingApp.ID); err != nil {
-				logger.Error(errors.Wrap(err, "faild to configure update checker"))
+				logger.Error(errors.Wrap(err, "failed to configure update checker"))
 			}
 		} else {
 			if err := task.SetTaskStatus("online-install", finalError.Error(), "failed"); err != nil {
-				logger.Error(errors.Wrap(err, "faild to set error on install task status"))
+				logger.Error(errors.Wrap(err, "failed to set error on install task status"))
 			}
 			if err := setAppInstallState(pendingApp.ID, "install_error"); err != nil {
-				logger.Error(errors.Wrap(err, "faild to set app status to error"))
+				logger.Error(errors.Wrap(err, "failed to set app status to error"))
 			}
 		}
 	}()

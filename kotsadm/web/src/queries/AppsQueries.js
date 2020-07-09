@@ -274,19 +274,6 @@ export const getKotsDownstreamHistoryRaw = `
 `;
 export const getKotsDownstreamHistory = gql(getKotsDownstreamHistoryRaw);
 
-export const getAppRegistryDetailsRaw = `
-  query getAppRegistryDetails($slug: String!) {
-    getAppRegistryDetails(slug: $slug) {
-      registryHostname
-      registryUsername
-      registryPassword
-      namespace
-      lastSyncedAt
-    }
-  }
-`;
-export const getAppRegistryDetails = gql(getAppRegistryDetailsRaw);
-
 export const getKotsPreflightResultRaw = `
   query getKotsPreflightResult($appSlug: String!, $clusterSlug: String!, $sequence: Int!) {
     getKotsPreflightResult(appSlug: $appSlug, clusterSlug: $clusterSlug, sequence: $sequence) {

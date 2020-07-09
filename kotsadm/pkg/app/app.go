@@ -29,6 +29,14 @@ type App struct {
 	IsGitOps              bool
 }
 
+type RegistryInfo struct {
+	Hostname    string
+	Username    string
+	Password    string
+	PasswordEnc string
+	Namespace   string
+}
+
 func Get(id string) (*App, error) {
 	logger.Debug("getting app from id",
 		zap.String("id", id))

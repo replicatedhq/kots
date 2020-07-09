@@ -91,14 +91,6 @@ func getSecretsYAML(deployOptions *types.DeployOptions) (map[string][]byte, erro
 	return docs, nil
 }
 
-func ensureKotsadmPullSecrets(deployOptions *types.DeployOptions, clientset *kubernetes.Clientset) error {
-	if err := ensurePrivateKotsadmRegistrySecret(*deployOptions, clientset); err != nil {
-		return errors.Wrap(err, "failed to ensure private kotsadm registry secret")
-	}
-
-	return nil
-}
-
 func ensureSecrets(deployOptions *types.DeployOptions, clientset *kubernetes.Clientset) error {
 	if err := ensureJWTSessionSecret(deployOptions.Namespace, clientset); err != nil {
 		return errors.Wrap(err, "failed to ensure jwt session secret")
