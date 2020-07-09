@@ -10,6 +10,7 @@ import (
 	"github.com/replicatedhq/kots/kotsadm/pkg/persistence"
 	registrytypes "github.com/replicatedhq/kots/kotsadm/pkg/registry/types"
 	"github.com/replicatedhq/kots/kotsadm/pkg/render"
+	"github.com/replicatedhq/kots/kotsadm/pkg/version"
 	"go.uber.org/zap"
 )
 
@@ -73,6 +74,10 @@ func Run(appID string, sequence int64, archiveDir string) error {
 
 			logger.Debug("preflight checks completed")
 		}()
+	} else if sequence == 0 {
+		if err := version.DeployVersion(appID, int64(sequence)); err != nil {
+			return errors.Wrap(err, "failed to deploy first version")
+		}
 	} else {
 		if err := downstream.SetDownstreamVersionReady(appID, int64(sequence)); err != nil {
 			return errors.Wrap(err, "failed to set downstream version ready")
