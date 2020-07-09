@@ -26,7 +26,7 @@ export interface BackupLogLine {
 };
 
 function execKey(line: any): string {
-  return `${line.namespace}/${line.name}/${line.hookContainer}/${line.hookName}/${line.hookPhase}/${line.hookCommand}`;
+  return `${line.namespace}/${line.name}/${line.hookPhase}/${line.hookSource}/${line.hookType}`;
 }
 
 function isExecBegin(line: any): boolean {
@@ -50,7 +50,7 @@ function isWarning(line: any): boolean {
 }
 
 function isExec(line: any): boolean {
-  return !!line.hookName;
+  return line.hookName ? false : true;
 }
 
 /*
@@ -64,7 +64,7 @@ export function parseBackupLogs(buffer: Buffer): ParsedBackupLogs {
     // https://github.com/csquared/node-logfmt/blob/e279d43cde019acfcca0abe99ea6b7ce8327e1f7/lib/logfmt_parser.js#L46
     return parse(s.replace("\\n", "\n")) as BackupLogLine;
   });
-  const errors: Array<SnapshotError>  = [];
+  const errors: Array<SnapshotError> = [];
   const warnings: Array<SnapshotError> = [];
   const execs: Array<SnapshotHook> = [];
   const openExecs: any = {};
@@ -79,6 +79,7 @@ export function parseBackupLogs(buffer: Buffer): ParsedBackupLogs {
         delete openExecs[key];
       }
 
+
       const exec = {
         namespace: line.namespace,
         podName: line.name,
@@ -86,10 +87,9 @@ export function parseBackupLogs(buffer: Buffer): ParsedBackupLogs {
         command: line.hookCommand,
         hookName: line.hookName,
         phase: line.hookPhase,
-        started: line.time,
+        started: line.time
       };
       openExecs[key] = exec;
-
       return;
     }
 
@@ -121,8 +121,7 @@ export function parseBackupLogs(buffer: Buffer): ParsedBackupLogs {
         console.log("Dropping exec error from backup logs");
         return;
       }
-      open.errors.push({ title: line.msg, message: line.error });
-      return;
+      open.error = [{ title: line.msg, message: line.error! }];
     }
 
     if (isWarning(line) && isExec(line)) {
@@ -131,13 +130,11 @@ export function parseBackupLogs(buffer: Buffer): ParsedBackupLogs {
         console.log("Dropping exec warning from backup logs");
         return;
       }
-      open.warnings.push({ title: line.msg, message: line.error });
-      return;
+      open.warning = [{ title: line.msg, message: line.warning! }];
     }
 
     if (isError(line)) {
       errors.push({ title: line.msg, message: line.error! });
-      return;
     }
 
     if (isWarning(line)) {
