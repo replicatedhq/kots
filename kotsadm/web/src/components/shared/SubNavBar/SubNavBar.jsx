@@ -4,10 +4,9 @@ import PropTypes from "prop-types";
 import { Link } from "react-router-dom";
 
 import { isHelmChart } from "@src/utilities/utilities";
-import subNavConfig from "@src/config-ui/subNavConfig";
 
 export default function SubNavBar(props) {
-  const { className, activeTab, watch, isVeleroInstalled } = props;
+  const { className, activeTab, watch, items, isVeleroInstalled } = props;
   let { slug } = watch;
 
   if (isHelmChart(watch)) {
@@ -17,7 +16,7 @@ export default function SubNavBar(props) {
   return (
     <div className={classNames("details-subnav", className)}>
       <ul>
-        {subNavConfig.map((link, idx) => {
+        {items?.map((link, idx) => {
           let hasBadge = false;
           if (link.hasBadge) {
             hasBadge = link.hasBadge(watch || {});

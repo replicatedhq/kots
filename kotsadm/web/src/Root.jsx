@@ -1,5 +1,4 @@
 import { hot } from "react-hot-loader/root";
-import Favicon from "react-favicon";
 import React, { Component } from "react";
 import { createBrowserHistory } from "history";
 import { Switch, Route, Redirect, Router } from "react-router-dom";
@@ -15,6 +14,7 @@ import PreflightResultPage from "./components/PreflightResultPage";
 // import EditRedactor from "./components/redactors/EditRedactor";
 import AppConfig from "./components/apps/AppConfig";
 import AppDetailPage from "./components/apps/AppDetailPage";
+import ConsoleSettings from "./components/settings/ConsoleSettings";
 import ClusterNodes from "./components/apps/ClusterNodes";
 import UnsupportedBrowser from "./components/static/UnsupportedBrowser";
 import NotFound from "./components/static/NotFound";
@@ -306,9 +306,27 @@ class Root extends Component {
                     <ProtectedRoute path="/cluster/manage" render={(props) => <ClusterNodes {...props} appName={this.state.selectedAppName} />} />
                     <ProtectedRoute path="/gitops" render={(props) => <GitOps {...props} appName={this.state.selectedAppName} />} />
                     <ProtectedRoute path="/snapshots" render={(props) => <Snapshots {...props} appName={this.state.selectedAppName} />} />
-                    {/* <ProtectedRoute exact path="/redactors" render={(props) => <Redactors {...props} appName={this.state.selectedAppName} />} />
-                    <ProtectedRoute exact path="/redactors/new" render={(props) => <EditRedactor {...props} appName={this.state.selectedAppName} isNew={true} />} />
-                    <ProtectedRoute exact path="/redactors/:slug" render={(props) => <EditRedactor {...props} appName={this.state.selectedAppName} />} /> */}
+                    <ProtectedRoute exact path="/redactors" render={(props) => <Redactors {...props} appName={this.state.selectedAppName} />} />
+                    <ProtectedRoute exact path="/redactors/new" render={(props) => <EditRedactor {...props} appName={this.state.selectedAppName} />} />
+                    <ProtectedRoute exact path="/redactors/:slug" render={(props) => <EditRedactor {...props} appName={this.state.selectedAppName} />} />
+                    <ProtectedRoute
+                      path={["/settings", "/settings/:tab?"]}
+                      render={
+                        props => (
+                          <ConsoleSettings
+                            {...props}
+                            rootDidInitialAppFetch={rootDidInitialWatchFetch}
+                            listApps={listApps}
+                            refetchListApps={this.refetchListApps}
+                            onActiveInitSession={this.handleActiveInitSession}
+                            appNameSpace={this.state.appNameSpace}
+                            appName={this.state.selectedAppName}
+                            snapshotInProgressApps={this.state.snapshotInProgressApps}
+                            ping={this.ping}
+                          />
+                        )
+                      }
+                    />
                     <ProtectedRoute
                       path={["/apps", "/app/:slug/:tab?"]}
                       render={

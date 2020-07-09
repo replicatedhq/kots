@@ -37,25 +37,22 @@ export default function KotsSidebarItem(props) {
         className="flex alignItems--center"
         to={`/app/${slug}`}>
           <span className="sidebar-link-icon" style={{ backgroundImage: `url(${iconUri})` }}></span>
-          <div className="flex-column">
-            <p className={classNames("u-color--tuna u-fontWeight--bold", { "u-marginBottom--10": !gitopsEnabled })}>{name}</p>
-            {!gitopsEnabled &&
-              <div className="flex alignItems--center">
-                <div className={classNames("icon", {
-                  "checkmark-icon": !isBehind,
-                  "exclamationMark--icon": isBehind,
-                  "grayCircleMinus--icon": !app.downstreams?.length
-                })}
-                />
-                <span className={classNames("u-marginLeft--5 u-fontSize--normal u-fontWeight--medium", {
-                  "u-color--dustyGray": !isBehind,
-                  "u-color--orange": isBehind
-                })}>
-                  {versionsBehindText}
-                </span>
-              </div>
-            }
-          </div>
+          {props.sidebarOpen &&
+            <div className="flex-column u-marginLeft--10">
+              <p className={classNames("u-color--tuna u-fontSize--normal u-fontWeight--bold", { "u-marginBottom--5": !gitopsEnabled })}>{name}</p>
+              {!gitopsEnabled &&
+                <div className="flex alignItems--center">
+                  <span className={classNames("u-fontSize--small u-fontWeight--medium", {
+                    "u-color--chateauGreen": !isBehind,
+                    "u-color--orange": isBehind,
+                    "u-color--dustyGray": !app.downstreams?.length
+                  })}>
+                    {versionsBehindText}
+                  </span>
+                </div>
+              }
+            </div>
+          }
       </Link>
     </div>
   );

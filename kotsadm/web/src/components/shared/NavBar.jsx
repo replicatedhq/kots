@@ -1,7 +1,7 @@
 import React, { PureComponent } from "react";
 import PropTypes from "prop-types";
 import classNames from "classnames";
-import { Link, withRouter } from "react-router-dom";
+import { withRouter } from "react-router-dom";
 import { compose, withApollo, graphql } from "react-apollo";
 
 import { Utilities } from "@src/utilities/utilities";
@@ -91,7 +91,7 @@ export class NavBar extends PureComponent {
   }
 
   render() {
-    const { className, fetchingMetadata, isKurlEnabled, isGitOpsSupported, listApps, logo, location, isSnapshotsSupported } = this.props;
+    const { className, isKurlEnabled, isGitOpsSupported, listApps, logo, location, isSnapshotsSupported } = this.props;
     const { user, selectedTab } = this.state;
 
     const pathname = location.pathname.split("/");
@@ -107,27 +107,12 @@ export class NavBar extends PureComponent {
       licenseType = "";
     }
 
-    const isClusterScope = this.props.location.pathname.includes("/clusterscope");
     return (
-      <div className={classNames("NavBarWrapper flex flex-auto", className, {
-        "cluster-scope": isClusterScope
-      })}>
+      <div className={classNames("NavBarWrapper flex flex-auto", className )}>
         <div className="container flex flex1">
           <div className="flex1 justifyContent--flexStart">
             <div className="flex1 flex u-height--full">
               <div className="flex flex-auto">
-                <div className="flex alignItems--center flex1 flex-verticalCenter u-position--relative u-marginRight--20">
-                  <div className="HeaderLogo">
-                    <Link to={isClusterScope ? "/clusterscope" : "/"} tabIndex="-1">
-                      {appLogo
-                        ? <span className="nav-logo clickable" style={{ backgroundImage: `url(${appLogo})` }} />
-                        : !fetchingMetadata ? <span className="logo icon clickable" />
-                          : <span style={{ width: "30px", height: "30px" }} />
-                      }
-                      {licenseType === "community" && <span className="flag flex"> <span className="flagText">Community Edition</span> </span>}
-                    </Link>
-                  </div>
-                </div>
                 {Utilities.isLoggedIn() && listApps.length > 0 && (
                   <div className="flex flex-auto left-items">
                     <div className={classNames("NavItem u-position--relative flex", { "is-active": selectedTab === "dashboard" })}>
@@ -169,13 +154,6 @@ export class NavBar extends PureComponent {
               </div>
               {Utilities.isLoggedIn() ?
                 <div className="flex flex1 justifyContent--flexEnd right-items">
-                  {pathname[1] === "upload-license" || pathname[2] === "airgap" ?
-                    null :
-                    <div className="flex-column flex-auto u-marginRight--20 justifyContent--center">
-                      <Link className="btn secondary blue rounded" to="/upload-license">
-                        Add a new application
-                    </Link>
-                    </div>}
                   <div className="flex-column flex-auto justifyContent--center">
                     <p data-qa="Navbar--logOutButton" className="NavItem" onClick={this.handleLogOut}>Log out</p>
                   </div>
