@@ -185,12 +185,19 @@ class EditRedactor extends Component {
     if (this.props.match.params.slug) {
       this.getRedactor(this.props.match.params.slug);
     } else {
-      const defaultYaml = `name: ""
-files: []
-values: []
-regex: []
-multiLine: []
-yaml: []`
+      const defaultYaml = `kind: Redactor
+apiVersion: troubleshoot.replicated.com/v1beta1
+metadata:
+  name: kotsadm-redact
+spec:
+  redactors:
+  - name: myredactor
+    fileSelector:
+      files:
+      - "abc"
+    removals:
+      values:
+      - "removethis"`
       this.setState({ redactorEnabled: false, redactorYaml: defaultYaml, redactorName: "New redactor" });
     }
   }
