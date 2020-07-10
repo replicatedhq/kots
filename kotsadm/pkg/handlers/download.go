@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"database/sql"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -9,6 +10,7 @@ import (
 	"strconv"
 
 	"github.com/mholt/archiver"
+	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/kotsadm/pkg/app"
 	"github.com/replicatedhq/kots/kotsadm/pkg/kotsutil"
 	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
@@ -24,7 +26,11 @@ func DownloadApp(w http.ResponseWriter, r *http.Request) {
 	a, err := app.GetFromSlug(r.URL.Query().Get("slug"))
 	if err != nil {
 		logger.Error(err)
-		w.WriteHeader(500)
+		if errors.Is(err, sql.ErrNoRows) {
+			w.WriteHeader(404)
+		} else {
+			w.WriteHeader(500)
+		}
 		return
 	}
 

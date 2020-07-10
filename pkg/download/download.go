@@ -89,7 +89,11 @@ func Download(appSlug string, path string, downloadOptions DownloadOptions) erro
 
 	if resp.StatusCode != http.StatusOK {
 		log.FinishSpinnerWithError()
-		return errors.Errorf("unexpected status code from %s: %s", url, resp.Status)
+		if resp.StatusCode == http.StatusNotFound {
+			return errors.Errorf("app with slug %s not found", appSlug)
+		} else {
+			return errors.Errorf("unexpected status code from %s: %s", url, resp.Status)
+		}
 	}
 
 	tmpFile, err := ioutil.TempFile("", "kots")
