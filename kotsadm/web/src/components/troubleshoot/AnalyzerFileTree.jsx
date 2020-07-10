@@ -206,7 +206,7 @@ class AnalyzerFileTree extends React.Component {
   }
 
   render() {
-    const { files, fileContents, selectedFile, fileLoadErr, fileLoadErrMessage, fileLoading } = this.state;
+    const { files, fileContents, selectedFile, fileLoadErr, fileLoadErrMessage, fileLoading, analysisError } = this.state;
     const fileToView = find(fileContents, ["key", selectedFile]);
     const format = getFileFormat(selectedFile);
     const isOld = files && has(files[0], "size");
