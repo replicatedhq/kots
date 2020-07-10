@@ -48,7 +48,8 @@ module.exports = {
     hot: true,
     hotOnly: true,
     historyApiFallback: {
-      verbose: true
+      verbose: true,
+      disableDotRule: true
     },
   }
 }

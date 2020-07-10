@@ -150,6 +150,11 @@
   width: 16px;
   height: 16px;
 }
+.icon.grayOutlineQuestionMark--icon {
+  background-position: -55px -346px;
+  width: 16px;
+  height: 16px;
+}
 .icon.grayCircleMinus--icon {
   background-position: -108px -271px;
   width: 16px;
@@ -659,6 +664,21 @@
   background-position: -108px -289px;
   width: 13px;
   height: 11px;
+
+  &.previous {
+    top: 1px;
+    transform: rotate(180deg);
+  }
+}
+.icon.u-iconFullArrowBlue {
+  background-position: -108px -301px;
+  width: 13px;
+  height: 11px;
+
+  &.previous {
+    top: 1px;
+    transform: rotate(180deg);
+  }
 }
 .icon.external-link-icon {
   background-position: -105px -749px;

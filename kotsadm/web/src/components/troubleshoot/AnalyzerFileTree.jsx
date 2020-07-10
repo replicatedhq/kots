@@ -6,7 +6,8 @@ import { getFileFormat, rootPath, Utilities } from "../../utilities/utilities";
 import sortBy from "lodash/sortBy";
 import find from "lodash/find";
 import has from "lodash/has";
-
+import queryString from "query-string";
+import ReactTooltip from "react-tooltip"
 import Loader from "../shared/Loader";
 import FileTree from "../shared/FileTree";
 
@@ -29,6 +30,8 @@ class AnalyzerFileTree extends React.Component {
       fileLoadErr: false,
       fileLoadErrMessage: "",
       activeMarkers: [],
+      analysisError: false,
+      currentViewIndex: 0
     };
   }
 
@@ -102,6 +105,36 @@ class AnalyzerFileTree extends React.Component {
     this.setState({ files: sortedTree });
   }
 
+  setRedactorMarkersFromHash = () => {
+    const { hash, search } = this.props.location;
+    let redactorFileName = "";
+    if (search) {
+      redactorFileName = queryString.parse(search);
+    }
+    let newMarkers = [];
+    const lines = hash.substring(1).split(",");
+    lines.forEach(line => {
+      newMarkers.push({
+        startRow: parseInt(line) - 1,
+        endRow: parseInt(line),
+        className: "active-highlight",
+        type: "background"
+      })
+    });
+    this.setState({ activeMarkers: newMarkers, redactionMarkersSet: true, redactorFileName: redactorFileName.file }, () => {
+      // Clear hash from URL to prevent highlighting again on a refresh
+      const splitLocation = this.props.location.pathname.split("#");
+      this.props.history.replace(splitLocation[0]);
+    })
+  }
+
+  scrollToRedactions = (index) => {
+    this.setState({ currentViewIndex: index });
+    const editor = this.aceEditor.editor;
+    editor.scrollToLine(this.state.activeMarkers[index].endRow, true, true);
+    editor.gotoLine(this.state.activeMarkers[index].endRow, 1, true);
+  }
+
   componentDidUpdate(lastProps, lastState) {
     const { bundle } = this.props;
     if (this.state.fileTree !== lastState.fileTree && this.state.fileTree) {
@@ -117,16 +150,14 @@ class AnalyzerFileTree extends React.Component {
         this.setState({ selectedFile: "/" + this.props.location.pathname.split("/").slice(7, this.props.location.pathname.length).join("/") })
         this.fetchFiles(bundle.id, "/" + this.props.location.pathname.split("/").slice(7, this.props.location.pathname.length).join("/"))
         if (this.props.location.hash) {
-          let newMarker = [];
-          newMarker.push({
-            startRow: parseInt(this.props.location.hash.substring(2)) - 1,
-            endRow: parseInt(this.props.location.hash.substring(2)),
-            className: "active-highlight",
-            type: "background"
-          })
-          this.setState({ activeMarkers: newMarker })
+          this.setRedactorMarkersFromHash();
         }
       }
+    }
+    if (this.aceEditor && this.state.redactionMarkersSet) {
+      this.setState({ redactionMarkersSet: false });
+      this.aceEditor.editor.resize(true);
+      this.scrollToRedactions(0);
     }
   }
 
@@ -145,14 +176,7 @@ class AnalyzerFileTree extends React.Component {
         this.setState({ selectedFile: "/" + this.props.location.pathname.split("/").slice(7, this.props.location.pathname.length).join("/") })
         this.fetchFiles(bundle.id, "/" + this.props.location.pathname.split("/").slice(7, this.props.location.pathname.length).join("/"))
         if (this.props.location.hash) {
-          let newMarker = [];
-          newMarker.push({
-            startRow: parseInt(this.props.location.hash.substring(2)) - 1,
-            endRow: parseInt(this.props.location.hash.substring(2)),
-            className: "active-highlight",
-            type: "background"
-          })
-          this.setState({ activeMarkers: newMarker })
+          this.setRedactorMarkersFromHash();
         }
       }
     }
@@ -182,10 +206,12 @@ class AnalyzerFileTree extends React.Component {
   }
 
   render() {
-    const { files, fileContents, selectedFile, fileLoadErr, fileLoadErrMessage, fileLoading } = this.state;
+    const { files, fileContents, selectedFile, fileLoadErr, fileLoadErrMessage, fileLoading, analysisError } = this.state;
     const fileToView = find(fileContents, ["key", selectedFile]);
     const format = getFileFormat(selectedFile);
     const isOld = files && has(files[0], "size");
+    const isFirstRedaction = this.state.currentViewIndex === 0;
+    const isLastRedaction = this.state.currentViewIndex + 1 === this.state.activeMarkers.length;
 
     return (
       <div className="flex-column flex1 AnalyzerFileTree--wrapper">
@@ -207,6 +233,20 @@ class AnalyzerFileTree extends React.Component {
               </div>
             </div>
             <div className="AceEditor flex1 flex-column file-contents-wrapper u-position--relative">
+              {this.state.activeMarkers.length > 0 ?
+                <div className="redactor-pager flex alignItems--center">
+                  <div className={`arrow-wrapper prev ${isFirstRedaction ? "": "can-scroll"}`} onClick={isFirstRedaction ? undefined : () => this.scrollToRedactions(this.state.currentViewIndex - 1)}>
+                    <span className={`icon u-iconFullArrow${isFirstRedaction ? "Gray" : "Blue clickable"} previous`} />
+                  </div>
+                  <div className="flex alignItems--center">
+                    <span>Redaction {this.state.currentViewIndex + 1} of {this.state.activeMarkers.length}</span>
+                    <span className="icon grayOutlineQuestionMark--icon u-marginLeft--10" data-tip data-for="current-redator-filename" />
+                  </div>
+                  <div className={`arrow-wrapper next ${isLastRedaction ? "": "can-scroll"}`} onClick={isLastRedaction ? undefined : () => this.scrollToRedactions(this.state.currentViewIndex + 1)}>
+                    <span className={`icon u-iconFullArrow${isLastRedaction ? "Gray" : "Blue clickable"}`} />
+                  </div>
+                </div>
+              : null}
               {selectedFile === "" || selectedFile === "/" ?
                 <div className="flex-column flex1 alignItems--center justifyContent--center">
                   <p className="u-color--dustyGray u-fontSize--normal u-fontWeight--medium">Select a file from the directory tree to view it here.</p>
@@ -229,7 +269,7 @@ class AnalyzerFileTree extends React.Component {
                       </div>
                       :
                       <AceEditor
-                        ref={(input) => this.refAceEditor = input}
+                        ref={el => (this.aceEditor = el)}
                         mode={format}
                         theme="chrome"
                         className="flex1 flex"
@@ -251,6 +291,7 @@ class AnalyzerFileTree extends React.Component {
                         }}
                       />
               }
+              <ReactTooltip id="current-redator-filename" type="light" effect="solid" borderColor="#C4C4C4" textColor="#4A4A4A" border={true} className="u-color--tundora">Viewing redactions from <span className="u-fontWeight--bold">{this.state.redactorFileName}</span></ReactTooltip>
             </div>
           </div>
         }
