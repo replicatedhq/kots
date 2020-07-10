@@ -24,7 +24,7 @@ func DownloadApp(w http.ResponseWriter, r *http.Request) {
 	a, err := app.GetFromSlug(r.URL.Query().Get("slug"))
 	if err != nil {
 		logger.Error(err)
-		w.WriteHeader(500)
+		w.WriteHeader(404)
 		return
 	}
 
