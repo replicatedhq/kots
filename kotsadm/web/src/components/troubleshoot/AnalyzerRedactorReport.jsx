@@ -86,6 +86,7 @@ export class AnalyzerRedactorReport extends Component {
             key={`redactor-${redactor}`}
             redactor={redactor}
             match={this.props.match}
+            history={this.props.history}
             redactorFiles={redactions?.byRedactor[redactor]}
           />  
         ))}

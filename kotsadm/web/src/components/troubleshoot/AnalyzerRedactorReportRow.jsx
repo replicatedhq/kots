@@ -1,19 +1,11 @@
 
 import React from "react";
-import { Link } from "react-router-dom"
 import groupBy from "lodash/groupBy";
 
 class AnalyzerRedactorReportRow extends React.Component {
   state = {
-    redactorEnabled: true,
     toggleDetails: false
   };
-
-  handleEnableRedactor = () => {
-    this.setState({
-      redactorEnabled: !this.state.redactorEnabled,
-    });
-  }
 
   toggleDetails = () => {
     this.setState({ toggleDetails: !this.state.toggleDetails });
@@ -26,7 +18,6 @@ class AnalyzerRedactorReportRow extends React.Component {
 
   getRedactorExtension = (file) => {
     const extensionFile = this.calculateRedactorFileName(file);
-
     if (extensionFile.split(".").pop() !== "yaml" && extensionFile.split(".").pop() !== "json") {
       return "text";
     } else {
@@ -34,8 +25,21 @@ class AnalyzerRedactorReportRow extends React.Component {
     }
   }
 
+  goToFile = (filePath) => {
+    const { match, history, redactorFiles, redactor } = this.props;
+    const filteredFiles = redactorFiles.filter(f => f.file === filePath);
+    let rowString = "#";
+    filteredFiles.forEach((file, i) => {
+      if (i === 0) {
+        rowString = `${rowString}${file.line}`;
+      } else {
+        rowString = `${rowString},${file.line}`;
+      }
+    });
+    history.push(`/app/${match.params.slug}/troubleshoot/analyze/${match.params.bundleSlug}/contents/${filePath}?file=${redactor}${rowString}`);
+  }
+
   renderRedactorFiles = (file, totalFileRedactions, i) => {
-    const { match } = this.props;
     return (
       <div className="flex flex1 alignItems--center section u-marginTop--10" key={`${file.file}-${i}`}>
         <div className="flex u-marginRight--10">
@@ -43,12 +47,10 @@ class AnalyzerRedactorReportRow extends React.Component {
         </div>
         <div className="flex flex-column">
           <p className="u-fontSize--large u-lineHeight--normal u-fontWeight--bold u-color--tuna">{this.calculateRedactorFileName(file?.file)} <span className="u-fontSize--normal u-fontWeight--medium u-lineHeight--normal u-color--chateauGreen"> {totalFileRedactions} redaction{totalFileRedactions === 1 ? "" : "s"} </span> </p>
-          <Link to={`/app/${match.params.slug}/troubleshoot/analyze/${match.params.bundleSlug}/contents/${file?.file}`}>
-            <div className="flex flex1 alignItems--center">
-              <p className="u-fontSize--normal u-fontWeight--medium u-lineHeight--normal u-color--dustyGray"> {file?.file} </p>
-              <div className="icon u-iconFullArrowGray" />
-            </div>
-          </Link>
+          <div className="flex flex1 alignItems--center u-cursor--pointer" onClick={() => this.goToFile(file?.file)}>
+            <p className="u-fontSize--normal u-fontWeight--medium u-lineHeight--normal u-color--dustyGray"> {file?.file} </p>
+            <div className="icon u-iconFullArrowGray" />
+          </div>
         </div>
       </div>
     )
@@ -91,17 +93,6 @@ class AnalyzerRedactorReportRow extends React.Component {
                 })}
               </div>
             }
-          </div>
-        </div>
-        <div className="flex">
-          <div className={`Checkbox--switch ${this.state.redactorEnabled ? "is-checked" : "is-notChecked"}`}>
-            <input
-              type="checkbox"
-              className="Checkbox-toggle"
-              name="isRedactorEnabled"
-              checked={this.state.redactorEnabled}
-              onChange={(e) => { this.handleEnableRedactor(e) }}
-            />
           </div>
         </div>
       </div>

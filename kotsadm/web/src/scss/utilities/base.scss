@@ -245,6 +245,13 @@ code {
   background: #9B9B9B;
 }
 
+.__react_component_tooltip {
+  font-size: 12px;
+  line-height: 20px;
+  font-weight: 500;
+  max-width: 300px;
+  text-align: center;
+}
 
 /*
 Apply this class to any icon using main_spritesheet. From there
