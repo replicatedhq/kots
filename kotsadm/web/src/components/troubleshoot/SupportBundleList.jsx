@@ -4,7 +4,7 @@ import { withRouter, Link } from "react-router-dom";
 import { graphql, compose, withApollo } from "react-apollo";
 
 import { listSupportBundles } from "../../queries/TroubleshootQueries";
-import Toggle from "../shared/Toggle";
+// import Toggle from "../shared/Toggle";
 import Loader from "../shared/Loader";
 import SupportBundleRow from "./SupportBundleRow";
 import GenerateSupportBundle from "./GenerateSupportBundle";
