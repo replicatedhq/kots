@@ -101,7 +101,7 @@ func AutomateInstall() error {
 			Name:        a.Name,
 			LicenseData: string(license),
 		}
-		_, err = online.CreateAppFromOnline(&pendingApp, upstreamURI)
+		_, err = online.CreateAppFromOnline(&pendingApp, upstreamURI, true)
 		if err != nil {
 			logger.Error(err)
 			continue

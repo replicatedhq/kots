@@ -16,6 +16,8 @@ import (
 	"github.com/replicatedhq/kots/kotsadm/pkg/task"
 	"github.com/replicatedhq/kots/kotsadm/pkg/updatechecker"
 	"github.com/replicatedhq/kots/kotsadm/pkg/version"
+	"github.com/replicatedhq/kots/kotsadm/pkg/downstream"
+	kotsadmconfig "github.com/replicatedhq/kots/kotsadm/pkg/config"
 	"github.com/replicatedhq/kots/pkg/pull"
 	"go.uber.org/zap"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -30,7 +32,7 @@ type PendingApp struct {
 	LicenseData string
 }
 
-func CreateAppFromOnline(pendingApp *PendingApp, upstreamURI string) (_ *kotsutil.KotsKinds, finalError error) {
+func CreateAppFromOnline(pendingApp *PendingApp, upstreamURI string, isAutomated bool) (_ *kotsutil.KotsKinds, finalError error) {
 	logger.Debug("creating app from online",
 		zap.String("upstreamURI", upstreamURI))
 
@@ -193,13 +195,43 @@ func CreateAppFromOnline(pendingApp *PendingApp, upstreamURI string) (_ *kotsuti
 		return nil, errors.Wrap(err, "failed to create app version archive")
 	}
 
-	if err := preflight.Run(pendingApp.ID, newSequence, tmpRoot); err != nil {
-		return nil, errors.Wrap(err, "failed to start preflights")
-	}
-
 	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(tmpRoot)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to load kotskinds from path")
+	}
+
+	if isAutomated && kotsKinds.Config != nil {
+		// bypass the config screen if no configuration is required
+		licenseSpec, err := kotsKinds.Marshal("kots.io", "v1beta1", "License")
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to marshal license spec")
+		}
+
+		configSpec, err := kotsKinds.Marshal("kots.io", "v1beta1", "Config")
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to marshal config spec")
+		}
+
+		configValuesSpec, err := kotsKinds.Marshal("kots.io", "v1beta1", "ConfigValues")
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to marshal configvalues spec")
+		}
+
+		needsConfig, err := kotsadmconfig.NeedsConfiguration(configSpec, configValuesSpec, licenseSpec)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to check if app needs configuration")
+		}
+
+		if !needsConfig {
+			err := downstream.SetDownstreamVersionPendingPreflight(pendingApp.ID, newSequence)
+			if err != nil {
+				return nil, errors.Wrap(err, "failed to set downstream version status to 'pending preflight'")
+			}
+		}
+	}
+
+	if err := preflight.Run(pendingApp.ID, newSequence, tmpRoot); err != nil {
+		return nil, errors.Wrap(err, "failed to start preflights")
 	}
 
 	return kotsKinds, nil
