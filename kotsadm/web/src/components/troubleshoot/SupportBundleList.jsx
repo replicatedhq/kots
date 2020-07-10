@@ -69,7 +69,7 @@ class SupportBundleList extends React.Component {
           <title>{`${appTitle} Troubleshoot`}</title>
         </Helmet>
         <div className="flex1 flex-column">
-          <div className="flex justifyContent--center u-paddingBottom--30">
+          {/* <div className="flex justifyContent--center u-paddingBottom--30">
             <Toggle
               items={[
                 {
@@ -84,7 +84,7 @@ class SupportBundleList extends React.Component {
                 }
               ]}
             />
-          </div>
+          </div> */}
           <div className="flex flex1">
             <div className="flex1 flex-column">
               <div className="u-position--relative flex-auto u-paddingBottom--10 flex">
