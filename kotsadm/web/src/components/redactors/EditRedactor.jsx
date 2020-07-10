@@ -160,6 +160,7 @@ class EditRedactor extends Component {
           setTimeout(() => {
             this.setState({ createConfirm: false })
           }, 3000);
+          this.props.history.replace(`/app/${this.props.appSlug}/troubleshoot/redactors/${createResponse.redactorMetadata.slug}`)
         } else {
           this.setState({
             creatingRedactor: false,
@@ -185,12 +186,19 @@ class EditRedactor extends Component {
     if (this.props.match.params.redactorSlug) {
       this.getRedactor(this.props.match.params.redactorSlug);
     } else {
-      const defaultYaml = `name: ""
-files: []
-values: []
-regex: []
-multiLine: []
-yaml: []`
+      const defaultYaml = `kind: Redactor
+apiVersion: troubleshoot.replicated.com/v1beta1
+metadata:
+  name: kotsadm-redact
+spec:
+  redactors:
+  - name: myredactor
+    fileSelector:
+      files:
+      - "abc"
+    removals:
+      values:
+      - "removethis"`
       this.setState({ redactorEnabled: false, redactorYaml: defaultYaml, redactorName: "New redactor" });
     }
   }
@@ -209,7 +217,7 @@ yaml: []`
 
 
   render() {
-    const { isLoadingRedactor, createConfirm, editConfirm, creatingRedactor, editingRedactor } = this.state;
+    const { isLoadingRedactor, createConfirm, editConfirm, creatingRedactor, editingRedactor, createErrMsg, editingErrMsg } = this.state;
 
     if (isLoadingRedactor) {
       return (
@@ -281,13 +289,14 @@ yaml: []`
             <div className="flex">
               <Link to="/redactors" className="btn secondary"> Cancel </Link>
             </div>
-            <div className="flex">
+            <div className="flex alignItems--center">
               {createConfirm || editConfirm &&
                 <div className="u-marginRight--10 flex alignItems--center">
                   <span className="icon checkmark-icon" />
                   <span className="u-marginLeft--5 u-fontSize--small u-fontWeight--medium u-color--chateauGreen">{createConfirm ? "Redactor created" : "Redactor updated"}</span>
                 </div>
               }
+              {(createErrMsg || editingErrMsg) && <p className="u-color--chestnut u-fontSize--normal u-fontWeight--medium u-lineHeight--normal u-marginRight--10">{createErrMsg ? createErrMsg : editingErrMsg}</p>}
               <button type="button" className="btn primary blue" onClick={this.onSaveRedactor} disabled={creatingRedactor || editingRedactor}>{(creatingRedactor || editingRedactor) ? "Saving" : "Save redactor"} </button>
             </div>
           </div>
