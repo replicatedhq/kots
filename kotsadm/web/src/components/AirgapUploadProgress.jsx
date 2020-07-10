@@ -55,7 +55,7 @@ class AirgapUploadProgress extends React.Component {
 
     if (total > 0 && sent > 0) {
       uploadComplete = sent === total
-      percentage = (sent / total * 100).toFixed(1) + "%";
+      percentage = (sent / total * 100).toFixed(2) + "%";
       progressBar = (
         <div className={`progressbar ${smallSize ? "small" : ""}`}>
           <div className={`progressbar-meter ${uploadComplete ? "complete" : ""}`} style={{ width: `${(sent / total) * (smallSize ? 100 : 600)}px` }} />
