@@ -22,7 +22,6 @@ export const Query = `
     listPendingKotsVersions(slug: String!): [KotsVersion]
     listPastKotsVersions(slug: String!): [KotsVersion]
     getCurrentKotsVersion(slug: String!): KotsVersion
-    getAppRegistryDetails(slug: String!): KotsAppRegistryDetails
 
     listHelmCharts: [HelmChart]
     getHelmChart(id: String!): HelmChart
@@ -34,8 +33,6 @@ export const Query = `
     getAppConfigGroups(slug: String!, sequence: Int!): [KotsConfigGroup]
     getKotsDownstreamOutput(appSlug: String!, clusterSlug: String!, sequence: Int!): KotsDownstreamOutput
     templateConfigGroups(slug: String!, sequence: Int!, configGroups: [KotsConfigGroupInput]!): [KotsConfigGroup]
-
-    validateRegistryInfo(slug: String, endpoint: String, username: String, password: String, org: String): String!
 
     listSupportBundles(watchSlug: String!): [SupportBundle]
     getSupportBundle(watchSlug: String!): SupportBundle

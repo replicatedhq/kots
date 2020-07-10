@@ -47,11 +47,11 @@ func UpdateAppFromAirgap(a *app.App, airgapBundle multipart.File) (finalError er
 	defer func() {
 		if finalError == nil {
 			if err := task.ClearTaskStatus("update-download"); err != nil {
-				logger.Error(errors.Wrap(err, "faild to clear update-download task status"))
+				logger.Error(errors.Wrap(err, "failed to clear update-download task status"))
 			}
 		} else {
 			if err := task.SetTaskStatus("update-download", finalError.Error(), "failed"); err != nil {
-				logger.Error(errors.Wrap(err, "faild to set error on update-download task status"))
+				logger.Error(errors.Wrap(err, "failed to set error on update-download task status"))
 			}
 		}
 	}()

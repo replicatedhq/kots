@@ -80,17 +80,17 @@ func CreateAppFromAirgap(pendingApp *PendingApp, airgapBundle multipart.File, re
 	defer func() {
 		if finalError == nil {
 			if err := task.ClearTaskStatus("airgap-install"); err != nil {
-				logger.Error(errors.Wrap(err, "faild to clear install task status"))
+				logger.Error(errors.Wrap(err, "failed to clear install task status"))
 			}
 			if err := setAppInstallState(pendingApp.ID, "installed"); err != nil {
-				logger.Error(errors.Wrap(err, "faild to set app status to installed"))
+				logger.Error(errors.Wrap(err, "failed to set app status to installed"))
 			}
 		} else {
 			if err := task.SetTaskStatus("airgap-install", finalError.Error(), "failed"); err != nil {
-				logger.Error(errors.Wrap(err, "faild to set error on install task status"))
+				logger.Error(errors.Wrap(err, "failed to set error on install task status"))
 			}
 			if err := setAppInstallState(pendingApp.ID, "airgap_upload_error"); err != nil {
-				logger.Error(errors.Wrap(err, "faild to set app status to error"))
+				logger.Error(errors.Wrap(err, "failed to set app status to error"))
 			}
 		}
 	}()
@@ -239,6 +239,17 @@ func CreateAppFromAirgap(pendingApp *PendingApp, airgapBundle multipart.File, re
 	a, err := app.Get(pendingApp.ID)
 	if err != nil {
 		return errors.Wrap(err, "failed to get app from pending app")
+	}
+
+	if password == registry.PasswordMask {
+		// On initial install, registry info can be copied from kotsadm config,
+		// and password in this case will not be included in the request.
+		kotsadmSettings, err := registry.GetKotsadmRegistry()
+		if err != nil {
+			logger.Error(errors.Wrap(err, "failed to load kotsadm config"))
+		} else if kotsadmSettings.Hostname == registryHost {
+			password = kotsadmSettings.Password
+		}
 	}
 
 	if err := registry.UpdateRegistry(pendingApp.ID, registryHost, username, password, namespace); err != nil {

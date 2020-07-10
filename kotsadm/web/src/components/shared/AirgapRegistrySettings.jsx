@@ -2,8 +2,7 @@ import React, { Component } from "react";
 import { withRouter } from "react-router-dom";
 import { graphql, compose, withApollo } from "react-apollo";
 import Loader from "../shared/Loader";
-import { getAppRegistryDetails, getImageRewriteStatus } from "../../queries/AppsQueries";
-import { validateRegistryInfo } from "@src/queries/UserQueries";
+import { getImageRewriteStatus } from "../../queries/AppsQueries";
 import { Repeater } from "../../utilities/repeater";
 import get from "lodash/get";
 import "../../scss/components/watches/WatchDetailPage.scss";
@@ -22,6 +21,8 @@ class AirgapRegistrySettings extends Component {
     } = props?.registryDetails || {};
 
     this.state = {
+      loading: false,
+
       hostname,
       username,
       password,
@@ -43,6 +44,7 @@ class AirgapRegistrySettings extends Component {
   }
 
   componentDidMount = () => {
+    this.fetchRegistryInfo();
     this.triggerStatusUpdates();
   }
 
@@ -87,48 +89,55 @@ class AirgapRegistrySettings extends Component {
       });
   }
 
-  testRegistryConnection = () => {
+  testRegistryConnection = async () => {
     this.setState({
       testInProgress: true,
       testMessage: "",
     });
 
     const { slug } = this.props.app;
-    this.props.client.query({
-      query: validateRegistryInfo,
-      variables: {
-        slug: slug,
-        endpoint: this.state.hostname,
-        username: this.state.username,
-        password: this.state.password,
-        org: this.state.namespace,
-      }
-    }).then(result => {
-      if (result.data.validateRegistryInfo) {
-        this.setState({
-          testInProgress: false,
-          testMessage: result.data.validateRegistryInfo,
-          testFailed: true,
-          lastSync: new Date(),
-        });
-      } else {
-        this.setState({
-          testInProgress: false,
-          testMessage: "Success!",
-          testFailed: false,
-          lastSync: new Date(),
-        });
-      }
-    }).catch(err => {
-      err.graphQLErrors.map(({ msg }) => {
-        this.setState({
-          testInProgress: false,
-          testMessage: msg,
-          testFailed: true,
-          lastSync: new Date(),
-        });
+
+    let res;
+    try {
+      res = await fetch(`${window.env.API_ENDPOINT}/app/${slug}/registry/validate`, {
+        method: "POST",
+        headers: {
+          "Authorization": Utilities.getToken(),
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          hostname: this.state.hostname,
+          namespace: this.state.namespace,
+          username: this.state.username,
+          password: this.state.password,
+        }),
       });
-    });
+    } catch(err) {
+      this.setState({
+        testInProgress: false,
+        testMessage: err,
+        testFailed: true,
+        lastSync: new Date(),
+      });
+      return;
+    }
+
+    const response = await res.json();
+    if (response.success) {
+      this.setState({
+        testInProgress: false,
+        testMessage: "Success!",
+        testFailed: false,
+        lastSync: new Date(),
+      });
+    } else {
+      this.setState({
+        testInProgress: false,
+        testMessage: response.error,
+        testFailed: true,
+        lastSync: new Date(),
+      });
+    }
   }
 
   handleFormChange = (field, val) => {
@@ -143,15 +152,57 @@ class AirgapRegistrySettings extends Component {
   }
 
   componentDidUpdate(lastProps) {
-    const { getKotsAppRegistryQuery, app } = this.props;
-    if (getKotsAppRegistryQuery?.getAppRegistryDetails && getKotsAppRegistryQuery?.getAppRegistryDetails !== lastProps.getKotsAppRegistryQuery?.getAppRegistryDetails) {
-      this.setState({
-        hostname: getKotsAppRegistryQuery.getAppRegistryDetails.registryHostname,
-        username: getKotsAppRegistryQuery.getAppRegistryDetails.registryUsername,
-        password: getKotsAppRegistryQuery.getAppRegistryDetails.registryPassword,
-        namespace: getKotsAppRegistryQuery.getAppRegistryDetails.namespace || app.slug,
-      })
+    const { app } = this.props;
+
+    if (app?.slug !== lastProps.app?.slug) {
+      this.fetchRegistryInfo();
     }
+  }
+
+  fetchRegistryInfo = () => {
+    if (this.state.loading) {
+      return;
+    }
+
+    this.setState({loading: true});
+
+    let url = `${window.env.API_ENDPOINT}/registry`;
+    if (this.props.app) {
+      url = `${window.env.API_ENDPOINT}/app/${this.props.app.slug}/registry`;
+    }
+
+    fetch(url, {
+      headers: {
+        "Authorization": Utilities.getToken()
+      },
+      method: "GET",
+    })
+    .then(res => res.json())
+    .then(result => {
+      this.setState({loading: false});
+      if (result.success) {
+        this.setState({
+          hostname: result.hostname,
+          username: result.username,
+          password: result.password,
+          namespace: result.namespace,
+        });
+
+        if (this.props.gatherDetails) {
+          const { hostname, username, password, namespace } = result;
+          this.props.gatherDetails({ hostname, username, password, namespace });
+        }
+  
+      } else {
+        // TODO: show error on UI
+        console.log(result);
+      }
+    })
+    .catch(err => {
+      this.setState({loading: false});
+        // TODO: show error on UI
+        console.log(err);
+    })
   }
 
   triggerStatusUpdates = () => {
@@ -199,7 +250,7 @@ class AirgapRegistrySettings extends Component {
   }
 
   render() {
-    const { app, getKotsAppRegistryQuery, hideTestConnection, hideCta, namespaceDescription, showRequiredFields, showHostnameAsRequired, showNamespaceAsRequired } = this.props;
+    const { app, hideTestConnection, hideCta, namespaceDescription, showRequiredFields, showHostnameAsRequired, showNamespaceAsRequired } = this.props;
     const { hostname, password, username, namespace, lastSync, testInProgress, testFailed, testMessage } = this.state;
     const { rewriteMessage, rewriteStatus } = this.state;
 
@@ -215,7 +266,7 @@ class AirgapRegistrySettings extends Component {
       // empty
     }
 
-    if (getKotsAppRegistryQuery?.loading) {
+    if (this.state.loading) {
       return (
         <div className="flex-column flex1 alignItems--center justifyContent--center">
           <Loader size="60" />
@@ -314,22 +365,4 @@ class AirgapRegistrySettings extends Component {
 export default compose(
   withRouter,
   withApollo,
-  graphql(getAppRegistryDetails, {
-    name: "getKotsAppRegistryQuery",
-    skip: props => {
-      if (!props.app) {
-        return true;
-      }
-      return false;
-    },
-    options: props => {
-      const { slug } = props.match.params;
-      return {
-        fetchPolicy: "no-cache",
-        variables: {
-          slug: slug
-        }
-      }
-    }
-  }),
 )(AirgapRegistrySettings);

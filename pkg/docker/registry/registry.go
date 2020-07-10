@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/url"
+	"strings"
 
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
@@ -16,6 +17,14 @@ import (
 type RegistryProxyInfo struct {
 	Registry string
 	Proxy    string
+}
+
+type DockercfgAuth struct {
+	Auth string `json:"auth,omitempty"`
+}
+
+type DockerCfgJSON struct {
+	Auths map[string]DockercfgAuth `json:"auths"`
 }
 
 func ProxyEndpointFromLicense(license *kotsv1beta1.License) *RegistryProxyInfo {
@@ -57,16 +66,12 @@ func (r *RegistryProxyInfo) ToSlice() []string {
 }
 
 func PullSecretForRegistries(registries []string, username, password string, namespace string) (*corev1.Secret, error) {
-	dockercfgAuth := struct {
-		Auth string `json:"auth,omitempty"`
-	}{
+	dockercfgAuth := DockercfgAuth{
 		Auth: base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", username, password))),
 	}
 
-	dockerCfgJSON := struct {
-		Auths map[string]interface{} `json:"auths"`
-	}{
-		Auths: map[string]interface{}{},
+	dockerCfgJSON := DockerCfgJSON{
+		Auths: map[string]DockercfgAuth{},
 	}
 
 	for _, r := range registries {
@@ -95,4 +100,29 @@ func PullSecretForRegistries(registries []string, username, password string, nam
 	}
 
 	return secret, nil
+}
+
+func GetCredentialsForRegistry(configJson string, registry string) (string, string, error) {
+	dockerCfgJSON := DockerCfgJSON{}
+	err := json.Unmarshal([]byte(configJson), &dockerCfgJSON)
+	if err != nil {
+		return "", "", errors.Wrap(err, "failed to unmarshal config json")
+	}
+
+	auth, ok := dockerCfgJSON.Auths[registry]
+	if !ok {
+		return "", "", nil
+	}
+
+	decoded, err := base64.StdEncoding.DecodeString(auth.Auth)
+	if err != nil {
+		return "", "", errors.Wrap(err, "failed to decode auth string")
+	}
+
+	parts := strings.Split(string(decoded), ":")
+	if len(parts) != 2 {
+		return "", "", errors.Errorf("expected 2 parts in the string, but found %d", len(parts))
+	}
+
+	return parts[0], parts[1], nil
 }

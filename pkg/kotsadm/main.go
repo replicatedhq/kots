@@ -7,6 +7,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
 	kotsscheme "github.com/replicatedhq/kots/kotskinds/client/kotsclientset/scheme"
+	"github.com/replicatedhq/kots/pkg/docker/registry"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/kotsadm/types"
 	"github.com/replicatedhq/kots/pkg/logger"
@@ -238,7 +239,12 @@ func CreateRestoreJob(options *types.RestoreJobOptions) error {
 	namespace := os.Getenv("POD_NAMESPACE")
 	isOpenShift := isOpenshift(clientset)
 
-	job := restoreJob(options.BackupName, namespace, isOpenShift)
+	kotsadmOptions, err := GetKotsadmOptionsFromCluster(namespace, clientset)
+	if err != nil {
+		return errors.Wrap(err, "failed to get kotsadm options from cluster")
+	}
+
+	job := restoreJob(options.BackupName, namespace, isOpenShift, kotsadmOptions)
 	_, err = clientset.BatchV1().Jobs(namespace).Create(context.TODO(), job, metav1.CreateOptions{})
 	if err != nil {
 		return errors.Wrap(err, "failed to create restore job")
@@ -343,7 +349,7 @@ func ensureKotsadm(deployOptions types.DeployOptions, clientset *kubernetes.Clie
 		}
 	}
 
-	if err := ensureKotsadmPullSecrets(&deployOptions, clientset); err != nil {
+	if err := ensureKotsadmConfig(deployOptions, clientset); err != nil {
 		return errors.Wrap(err, "failed to ensure postgres")
 	}
 
@@ -480,4 +486,43 @@ func readDeployOptionsFromCluster(namespace string, kubernetesConfigFlags *gener
 	}
 
 	return &deployOptions, nil
+}
+
+func GetKotsadmOptionsFromCluster(namespace string, clientset *kubernetes.Clientset) (types.KotsadmOptions, error) {
+	kotsadmOptions := types.KotsadmOptions{}
+
+	configMap, err := clientset.CoreV1().ConfigMaps(namespace).Get(context.TODO(), types.KotsadmConfigMap, metav1.GetOptions{})
+	if err != nil {
+		if kuberneteserrors.IsNotFound(err) {
+			return kotsadmOptions, nil
+		}
+		return kotsadmOptions, errors.Wrap(err, "failed to get existing kotsadm config map")
+	}
+
+	kotsadmOptions.OverrideRegistry = configMap.Data["kotsadm-registry"]
+	if kotsadmOptions.OverrideRegistry == "" {
+		return kotsadmOptions, nil
+	}
+
+	imagePullSecret, err := clientset.CoreV1().Secrets(namespace).Get(context.TODO(), types.PrivateKotsadmRegistrySecret, metav1.GetOptions{})
+	if err != nil {
+		if kuberneteserrors.IsNotFound(err) {
+			return kotsadmOptions, nil
+		}
+		return kotsadmOptions, errors.Wrap(err, "failed to get existing private kotsadm registry secret")
+	}
+
+	dockerConfigJson := imagePullSecret.Data[".dockerconfigjson"]
+	if len(dockerConfigJson) == 0 {
+		return kotsadmOptions, nil
+	}
+
+	username, password, err := registry.GetCredentialsForRegistry(string(dockerConfigJson), kotsadmOptions.OverrideRegistry)
+	if err != nil {
+		return kotsadmOptions, errors.Wrap(err, "failed to parse dockerconfigjson")
+	}
+
+	kotsadmOptions.Username = username
+	kotsadmOptions.Password = password
+	return kotsadmOptions, nil
 }

@@ -9,6 +9,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/pkg/errors"
@@ -23,6 +24,7 @@ import (
 	"github.com/replicatedhq/kots/kotsadm/pkg/version"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	"github.com/replicatedhq/kots/pkg/crypto"
+	"github.com/replicatedhq/kots/pkg/kotsadm"
 	"github.com/replicatedhq/kots/pkg/rewrite"
 	"go.uber.org/zap"
 	corev1 "k8s.io/api/core/v1"
@@ -265,4 +267,40 @@ func HasKurlRegistry() (bool, error) {
 	}
 
 	return false, nil
+}
+
+func GetKotsadmRegistry() (*types.RegistrySettings, error) {
+	cfg, err := config.GetConfig()
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get config")
+	}
+
+	clientset, err := kubernetes.NewForConfig(cfg)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get client set")
+	}
+
+	namespace := os.Getenv("POD_NAMESPACE")
+
+	kotsadmOptions, err := kotsadm.GetKotsadmOptionsFromCluster(namespace, clientset)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get kotsadm options from cluster")
+	}
+
+	registry := kotsadmOptions.OverrideRegistry
+	registryNamespace := kotsadmOptions.OverrideNamespace
+	hostParts := strings.Split(kotsadmOptions.OverrideRegistry, "/")
+	if len(hostParts) == 2 {
+		registry = hostParts[0]
+		registryNamespace = hostParts[1]
+	}
+
+	registrySettings := types.RegistrySettings{
+		Hostname:  registry,
+		Namespace: registryNamespace,
+		Username:  kotsadmOptions.Username,
+		Password:  kotsadmOptions.Password,
+	}
+
+	return &registrySettings, nil
 }

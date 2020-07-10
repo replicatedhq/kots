@@ -1,4 +1,4 @@
-import { UserQueries, UserMutations } from "../user";
+import { UserMutations } from "../user";
 import { ClusterMutations, ClusterQueries } from "../cluster";
 import { FeatureMutations, FeatureQueries } from "../feature";
 import { HealthzQueries } from "../healthz";
@@ -21,7 +21,6 @@ export const Resolvers = (stores: Stores, params: Params) => {
     ...PrefightQueries(stores),
     ...AppsQueries(stores),
     ...ClusterQueries(stores),
-    ...UserQueries(stores),
     ...MonitoringQueries(stores),
     ...KotsQueries(stores, params),
     ...SnapshotQueries(stores, params),
