@@ -236,7 +236,7 @@ func UploadNewLicense(w http.ResponseWriter, r *http.Request) {
 			Name:        a.Name,
 			LicenseData: uploadLicenseRequest.LicenseData,
 		}
-		kotsKinds, err := online.CreateAppFromOnline(&pendingApp, upstreamURI)
+		kotsKinds, err := online.CreateAppFromOnline(&pendingApp, upstreamURI, false)
 		if err != nil {
 			logger.Error(err)
 			uploadLicenseResponse.Error = err.Error()
@@ -344,7 +344,7 @@ func ResumeInstallOnline(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	kotsKinds, err := online.CreateAppFromOnline(&pendingApp, fmt.Sprintf("replicated://%s", kotsLicense.Spec.AppSlug))
+	kotsKinds, err := online.CreateAppFromOnline(&pendingApp, fmt.Sprintf("replicated://%s", kotsLicense.Spec.AppSlug), false)
 	if err != nil {
 		logger.Error(err)
 		resumeInstallOnlineResponse.Error = err.Error()
