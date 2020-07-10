@@ -210,8 +210,6 @@ class AnalyzerFileTree extends React.Component {
     const fileToView = find(fileContents, ["key", selectedFile]);
     const format = getFileFormat(selectedFile);
     const isOld = files && has(files[0], "size");
-
-    const analysisErrorExists = analysisError && analysisError.graphQLErrors && analysisError.graphQLErrors.length;
     const isFirstRedaction = this.state.currentViewIndex === 0;
     const isLastRedaction = this.state.currentViewIndex + 1 === this.state.activeMarkers.length;
 
