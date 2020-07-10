@@ -20,9 +20,9 @@ export default [
     to: () => `/settings/registry`,
   },
   {
-    tabName: "config",
+    tabName: "configuration",
     displayName: "Config",
-    to: () => `/settings/config`,
+    to: () => `/settings/configuration`,
   },
   {
     tabName: "networking",

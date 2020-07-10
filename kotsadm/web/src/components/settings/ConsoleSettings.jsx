@@ -8,9 +8,15 @@ import settingsSubNavConfig from "@src/config-ui/settingsSubNavConfig";
 import withTheme from "@src/components/context/withTheme";
 import { getKotsApp, listDownstreamsForApp } from "@src/queries/AppsQueries";
 import { isVeleroInstalled } from "@src/queries/SnapshotQueries";
-import { createKotsDownstream, deleteKotsDownstream, deployKotsVersion } from "../../mutations/AppsMutations";
 import { KotsSidebarItem } from "@src/components/watches/WatchSidebarItem";
 import { HelmChartSidebarItem } from "@src/components/watches/WatchSidebarItem";
+import ConsoleAuthentication from "./ConsoleAuthentication";
+import ConsoleConfig from "./ConsoleConfig";
+import ConsoleLogsWrapper from "./ConsoleLogsWrapper";
+import ConsoleNetworking from "./ConsoleNetworking";
+import ConsoleRegistry from "./ConsoleRegistry";
+import ConsoleTroubleshootWrapper from "./ConsoleTroubleshootWrapper";
+import ConsoleVersionHistory from "./ConsoleVersionHistory";
 import GitOps from "../clusters/GitOps";
 import Snapshots from "../snapshots/Snapshots";
 import Redactors from "../redactors/Redactors";
@@ -122,8 +128,15 @@ class ConsoleSettings extends Component {
                   />
                   <div className="u-paddingLeft--60">
                     <Switch>
-                      <Route exact path="/settings/gitops" render={(props) => <GitOps {...props} />} />
+                      <Route exact path="/settings/authentication" render={(props) => <ConsoleAuthentication {...props} />} />
+                      <Route exact path={["/settings/logs", "/settings/logs/:logsTab"]} render={(props) => <ConsoleLogsWrapper {...props} />} />
                       <Route exact path="/settings/snapshots" render={(props) => <Snapshots {...props} />} />
+                      <Route exact path="/settings/registry" render={(props) => <ConsoleRegistry {...props} />} />
+                      <Route exact path="/settings/configuration" render={(props) => <ConsoleConfig {...props} />} />
+                      <Route exact path="/settings/networking" render={(props) => <ConsoleNetworking {...props} />} />
+                      <Route exact path="/settings/version-history" render={(props) => <ConsoleVersionHistory {...props} />} />
+                      <Route exact path="/settings/gitops" render={(props) => <GitOps {...props} />} />
+                      <Route exact path={["/settings/troubleshoot", "/settings/logs/:troubleshootTab"]} render={(props) => <ConsoleTroubleshootWrapper {...props} />} />
                       <Route exact path="/settings/troubleshoot/" render={(props) => <Redactors {...props} />} />
                       <Route exact path="/settings/troubleshoot/redactors/new" render={(props) => <EditRedactor {...props} />} />
                       <Route exact path="/settings/troubleshoot/redactors/:slug" render={(props) => <EditRedactor {...props} />} />
@@ -196,20 +209,5 @@ export default compose(
     options: {
       fetchPolicy: "no-cache"
     }
-  }),
-  graphql(createKotsDownstream, {
-    props: ({ mutate }) => ({
-      createKotsDownstream: (appId, clusterId) => mutate({ variables: { appId, clusterId } })
-    })
-  }),
-  graphql(deleteKotsDownstream, {
-    props: ({ mutate }) => ({
-      deleteKotsDownstream: (slug, clusterId) => mutate({ variables: { slug, clusterId } })
-    })
-  }),
-  graphql(deployKotsVersion, {
-    props: ({ mutate }) => ({
-      deployKotsVersion: (upstreamSlug, sequence, clusterSlug) => mutate({ variables: { upstreamSlug, sequence, clusterSlug } })
-    })
   }),
 )(ConsoleSettings);
