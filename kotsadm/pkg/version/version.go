@@ -239,7 +239,11 @@ backup_spec = EXCLUDED.backup_spec`
 		}
 	}
 
-	if err = tx.Commit(); err != nil {
+	if err := CreateAppVersionArchive(appID, int64(newSequence), filesInDir); err != nil {
+		return int64(0), errors.Wrap(err, "failed to create app version archive")
+	}
+
+	if err := tx.Commit(); err != nil {
 		return int64(0), errors.Wrap(err, "failed to commit")
 	}
 

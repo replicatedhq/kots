@@ -147,10 +147,6 @@ func DownloadUpdate(appID string, archiveDir string, toCursor string) (sequence 
 		return 0, errors.Wrap(err, "failed to create version")
 	}
 
-	if err := version.CreateAppVersionArchive(appID, newSequence, archiveDir); err != nil {
-		return 0, errors.Wrap(err, "failed to create app version archive")
-	}
-
 	if err := preflight.Run(appID, newSequence, archiveDir); err != nil {
 		return 0, errors.Wrap(err, "failed to run preflights")
 	}

@@ -180,7 +180,7 @@ func CreateAppFromOnline(pendingApp *PendingApp, upstreamURI string, isAutomated
 		}
 	}
 
-	query = `update app set install_state = 'installed', is_airgap=false where id = $1`
+	query = `update app set is_airgap=false where id = $1`
 	_, err = db.Exec(query, pendingApp.ID)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to update app to installed")
@@ -189,10 +189,6 @@ func CreateAppFromOnline(pendingApp *PendingApp, upstreamURI string, isAutomated
 	newSequence, err := version.CreateFirstVersion(pendingApp.ID, tmpRoot, "Online Install")
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create new version")
-	}
-
-	if err := version.CreateAppVersionArchive(pendingApp.ID, newSequence, tmpRoot); err != nil {
-		return nil, errors.Wrap(err, "failed to create app version archive")
 	}
 
 	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(tmpRoot)

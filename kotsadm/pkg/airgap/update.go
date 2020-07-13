@@ -203,11 +203,6 @@ func UpdateAppFromAirgap(a *app.App, airgapBundle multipart.File) (finalError er
 		return errors.Wrap(err, "failed to create new version")
 	}
 
-	// upload to s3
-	if err := version.CreateAppVersionArchive(a.ID, newSequence, currentArchivePath); err != nil {
-		return errors.Wrap(err, "failed to upload to s3")
-	}
-
 	if err := preflight.Run(a.ID, newSequence, currentArchivePath); err != nil {
 		return errors.Wrap(err, "failed to start preflights")
 	}

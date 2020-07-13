@@ -95,10 +95,6 @@ func Sync(a *app.App, licenseData string) (*kotsv1beta1.License, error) {
 			return nil, errors.Wrap(err, "failed to create new version")
 		}
 
-		if err := version.CreateAppVersionArchive(a.ID, newSequence, archiveDir); err != nil {
-			return nil, errors.Wrap(err, "failed to upload")
-		}
-
 		if err := preflight.Run(a.ID, newSequence, archiveDir); err != nil {
 			return nil, errors.Wrap(err, "failed to run preflights")
 		}

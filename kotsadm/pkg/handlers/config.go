@@ -263,11 +263,6 @@ func updateAppConfig(updateApp *app.App, sequence int64, req UpdateAppConfigRequ
 			return updateAppConfigResponse, err
 		}
 		sequence = newSequence
-
-		if err := version.CreateAppVersionArchive(updateApp.ID, newSequence, archiveDir); err != nil {
-			updateAppConfigResponse.Error = "failed to create an app version archive"
-			return updateAppConfigResponse, err
-		}
 	} else {
 		if err := config.UpdateConfigValuesInDB(archiveDir, updateApp.ID, int64(sequence)); err != nil {
 			updateAppConfigResponse.Error = "failed to update config values in db"
