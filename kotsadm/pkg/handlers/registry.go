@@ -249,7 +249,9 @@ func GetKotsadmRegistry(w http.ResponseWriter, r *http.Request) {
 	getKotsadmRegistryResponse.Hostname = settings.Hostname
 	getKotsadmRegistryResponse.Namespace = settings.Namespace
 	getKotsadmRegistryResponse.Username = settings.Username
-	getKotsadmRegistryResponse.Password = registry.PasswordMask
+	if settings.Hostname != "" && settings.Username != "" {
+		getKotsadmRegistryResponse.Password = registry.PasswordMask
+	}
 
 	JSON(w, 200, getKotsadmRegistryResponse)
 }
