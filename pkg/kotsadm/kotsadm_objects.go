@@ -214,6 +214,117 @@ func kotsadmDeployment(deployOptions types.DeployOptions) *appsv1.Deployment {
 		}
 	}
 
+	env := []corev1.EnvVar{
+		{
+			Name: "SHARED_PASSWORD_BCRYPT",
+			ValueFrom: &corev1.EnvVarSource{
+				SecretKeyRef: &corev1.SecretKeySelector{
+					LocalObjectReference: corev1.LocalObjectReference{
+						Name: "kotsadm-password",
+					},
+					Key: "passwordBcrypt",
+				},
+			},
+		},
+		{
+			Name: "SESSION_KEY",
+			ValueFrom: &corev1.EnvVarSource{
+				SecretKeyRef: &corev1.SecretKeySelector{
+					LocalObjectReference: corev1.LocalObjectReference{
+						Name: "kotsadm-session",
+					},
+					Key: "key",
+				},
+			},
+		},
+		{
+			Name: "POSTGRES_PASSWORD",
+			ValueFrom: &corev1.EnvVarSource{
+				SecretKeyRef: &corev1.SecretKeySelector{
+					LocalObjectReference: corev1.LocalObjectReference{
+						Name: "kotsadm-postgres",
+					},
+					Key: "password",
+				},
+			},
+		},
+		{
+			Name: "POSTGRES_URI",
+			ValueFrom: &corev1.EnvVarSource{
+				SecretKeyRef: &corev1.SecretKeySelector{
+					LocalObjectReference: corev1.LocalObjectReference{
+						Name: "kotsadm-postgres",
+					},
+					Key: "uri",
+				},
+			},
+		},
+		{
+			Name: "POD_NAMESPACE",
+			ValueFrom: &corev1.EnvVarSource{
+				FieldRef: &corev1.ObjectFieldSelector{
+					FieldPath: "metadata.namespace",
+				},
+			},
+		},
+		{
+			Name:  "S3_ENDPOINT",
+			Value: "http://kotsadm-minio:9000",
+		},
+		{
+			Name:  "S3_BUCKET_NAME",
+			Value: "kotsadm",
+		},
+		{
+			Name: "API_ENCRYPTION_KEY",
+			ValueFrom: &corev1.EnvVarSource{
+				SecretKeyRef: &corev1.SecretKeySelector{
+					LocalObjectReference: corev1.LocalObjectReference{
+						Name: "kotsadm-encryption",
+					},
+					Key: "encryptionKey",
+				},
+			},
+		},
+		{
+			Name: "S3_ACCESS_KEY_ID",
+			ValueFrom: &corev1.EnvVarSource{
+				SecretKeyRef: &corev1.SecretKeySelector{
+					LocalObjectReference: corev1.LocalObjectReference{
+						Name: "kotsadm-minio",
+					},
+					Key: "accesskey",
+				},
+			},
+		},
+		{
+			Name: "S3_SECRET_ACCESS_KEY",
+			ValueFrom: &corev1.EnvVarSource{
+				SecretKeyRef: &corev1.SecretKeySelector{
+					LocalObjectReference: corev1.LocalObjectReference{
+						Name: "kotsadm-minio",
+					},
+					Key: "secretkey",
+				},
+			},
+		},
+		{
+			Name:  "S3_BUCKET_ENDPOINT",
+			Value: "true",
+		},
+		{
+			Name:  "API_ADVERTISE_ENDPOINT",
+			Value: "http://localhost:8800",
+		},
+	}
+
+	if deployOptions.KotsadmOptions.OverrideRegistry != "" {
+		env = append(env, corev1.EnvVar{
+			Name:  "DISABLE_OUTBOUND_CONNECTIONS",
+			Value: "true",
+		})
+	}
+
 	deployment := &appsv1.Deployment{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "apps/v1",
@@ -366,109 +477,7 @@ func kotsadmDeployment(deployOptions types.DeployOptions) *appsv1.Deployment {
 									MountPath: "/backup",
 								},
 							},
-							Env: []corev1.EnvVar{
-								{
-									Name: "SHARED_PASSWORD_BCRYPT",
-									ValueFrom: &corev1.EnvVarSource{
-										SecretKeyRef: &corev1.SecretKeySelector{
-											LocalObjectReference: corev1.LocalObjectReference{
-												Name: "kotsadm-password",
-											},
-											Key: "passwordBcrypt",
-										},
-									},
-								},
-								{
-									Name: "SESSION_KEY",
-									ValueFrom: &corev1.EnvVarSource{
-										SecretKeyRef: &corev1.SecretKeySelector{
-											LocalObjectReference: corev1.LocalObjectReference{
-												Name: "kotsadm-session",
-											},
-											Key: "key",
-										},
-									},
-								},
-								{
-									Name: "POSTGRES_PASSWORD",
-									ValueFrom: &corev1.EnvVarSource{
-										SecretKeyRef: &corev1.SecretKeySelector{
-											LocalObjectReference: corev1.LocalObjectReference{
-												Name: "kotsadm-postgres",
-											},
-											Key: "password",
-										},
-									},
-								},
-								{
-									Name: "POSTGRES_URI",
-									ValueFrom: &corev1.EnvVarSource{
-										SecretKeyRef: &corev1.SecretKeySelector{
-											LocalObjectReference: corev1.LocalObjectReference{
-												Name: "kotsadm-postgres",
-											},
-											Key: "uri",
-										},
-									},
-								},
-								{
-									Name: "POD_NAMESPACE",
-									ValueFrom: &corev1.EnvVarSource{
-										FieldRef: &corev1.ObjectFieldSelector{
-											FieldPath: "metadata.namespace",
-										},
-									},
-								},
-								{
-									Name:  "S3_ENDPOINT",
-									Value: "http://kotsadm-minio:9000",
-								},
-								{
-									Name:  "S3_BUCKET_NAME",
-									Value: "kotsadm",
-								},
-								{
-									Name: "API_ENCRYPTION_KEY",
-									ValueFrom: &corev1.EnvVarSource{
-										SecretKeyRef: &corev1.SecretKeySelector{
-											LocalObjectReference: corev1.LocalObjectReference{
-												Name: "kotsadm-encryption",
-											},
-											Key: "encryptionKey",
-										},
-									},
-								},
-								{
-									Name: "S3_ACCESS_KEY_ID",
-									ValueFrom: &corev1.EnvVarSource{
-										SecretKeyRef: &corev1.SecretKeySelector{
-											LocalObjectReference: corev1.LocalObjectReference{
-												Name: "kotsadm-minio",
-											},
-											Key: "accesskey",
-										},
-									},
-								},
-								{
-									Name: "S3_SECRET_ACCESS_KEY",
-									ValueFrom: &corev1.EnvVarSource{
-										SecretKeyRef: &corev1.SecretKeySelector{
-											LocalObjectReference: corev1.LocalObjectReference{
-												Name: "kotsadm-minio",
-											},
-											Key: "secretkey",
-										},
-									},
-								},
-								{
-									Name:  "S3_BUCKET_ENDPOINT",
-									Value: "true",
-								},
-								{
-									Name:  "API_ADVERTISE_ENDPOINT",
-									Value: "http://localhost:8800",
-								},
-							},
+							Env: env,
 						},
 					},
 				},
