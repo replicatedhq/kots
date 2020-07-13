@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"os"
+	"strconv"
 	"strings"
 	"time"
 
@@ -191,8 +193,12 @@ func UploadNewLicense(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if !verifiedLicense.Spec.IsAirgapSupported {
+	disableOutboundConnections := false
+	// ignore the error, default to false
+	disableOutboundConnections, _ = strconv.ParseBool(os.Getenv("DISABLE_OUTBOUND_CONNECTIONS"))
+	if !disableOutboundConnections {
 		// sync license
+		logger.Info("syncing license with server to retrieve latest version")
 		latestLicense, err := kotslicense.GetLatestLicense(verifiedLicense)
 		if err != nil {
 			logger.Error(err)
