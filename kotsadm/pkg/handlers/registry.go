@@ -205,11 +205,14 @@ func GetAppRegistry(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if settings != nil {
+		getAppRegistryResponse.Hostname = settings.Hostname
+		getAppRegistryResponse.Namespace = settings.Namespace
+		getAppRegistryResponse.Username = settings.Username
+		getAppRegistryResponse.Password = registry.PasswordMask
+	}
+
 	getAppRegistryResponse.Success = true
-	getAppRegistryResponse.Hostname = settings.Hostname
-	getAppRegistryResponse.Namespace = settings.Namespace
-	getAppRegistryResponse.Username = settings.Username
-	getAppRegistryResponse.Password = registry.PasswordMask
 
 	JSON(w, 200, getAppRegistryResponse)
 }
