@@ -248,18 +248,18 @@ class UploadLicenseFile extends React.Component {
         <Helmet>
           <title>{`${applicationName ? `${applicationName} Admin Console` : "Admin Console"}`}</title>
         </Helmet>
-        <div className="UploadLicenseFileBox-wrapper u-flexTabletReflow flex-auto justifyContent--center">
-          <div className={`flex-auto flex-column ${isBackupRestore ? "backup-restore-wrapper" : "upload-form-wrapper secure-console"} justifyContent--center`}>
+        <div className="LoginBox-wrapper u-flexTabletReflow  u-flexTabletReflow flex-auto">
+          <div className="flex-auto flex-column login-form-wrapper secure-console justifyContent--center">
+            <div className="flex-column alignItems--center">
+              {logo
+                ? <span className="icon brand-login-icon" style={{ backgroundImage: `url(${logoUri})` }} />
+                : !fetchingMetadata ? <span className="icon kots-login-icon" />
+                  : <span style={{ width: "60px", height: "60px" }} />
+              }
+            </div>
             {!fileUploading ?
               <div className="flex flex-column">
-                <div className="flex flex-column alignItems--center">
-                  {logo
-                    ? <span className="icon upload-license-icon" style={{ backgroundImage: `url(${logoUri})` }} />
-                    : !fetchingMetadata ? <span className="icon kots-login-icon" />
-                      : <span style={{ width: "60px", height: "60px" }} />
-                  }
-                  <p className="u-fontSize--header u-color--tuna u-fontWeight--bold u-textAlign--center u-marginTop--10 u-paddingTop--5"> {`${isBackupRestore ? "Verify your license" : "Upload your license file"}`} </p>
-                </div>
+                <p className="u-fontSize--header u-color--tuna u-fontWeight--bold u-textAlign--center u-marginTop--10 u-paddingTop--5"> {`${isBackupRestore ? "Verify your license" : "Upload your license file"}`} </p>
                 <div className="flex u-marginTop--30">
                   <div className={`FileUpload-wrapper flex1 ${hasFile ? "has-file" : ""}`}>
                     <Dropzone
