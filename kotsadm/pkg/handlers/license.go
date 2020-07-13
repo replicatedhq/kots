@@ -4,10 +4,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"os"
 	"strconv"
 	"strings"
 	"time"
-	"os"
 
 	"github.com/gorilla/mux"
 	"github.com/replicatedhq/kots/kotsadm/pkg/app"
@@ -198,6 +198,7 @@ func UploadNewLicense(w http.ResponseWriter, r *http.Request) {
 	disableOutboundConnections, _ = strconv.ParseBool(os.Getenv("DISABLE_OUTBOUND_CONNECTIONS"))
 	if !disableOutboundConnections {
 		// sync license
+		logger.Info("syncing license with server to retrieve latest version")
 		latestLicense, err := kotslicense.GetLatestLicense(verifiedLicense)
 		if err != nil {
 			logger.Error(err)
