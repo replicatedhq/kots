@@ -111,12 +111,6 @@ func UploadExistingApp(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := version.CreateAppVersionArchive(a.ID, newSequence, archiveDir); err != nil {
-		logger.Error(err)
-		w.WriteHeader(500)
-		return
-	}
-
 	if err := preflight.Run(a.ID, newSequence, archiveDir); err != nil {
 		logger.Error(err)
 		w.WriteHeader(500)

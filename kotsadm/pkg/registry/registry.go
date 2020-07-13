@@ -227,10 +227,6 @@ func RewriteImages(appID string, sequence int64, hostname string, username strin
 		return errors.Wrap(err, "failed to create new version")
 	}
 
-	if err := version.CreateAppVersionArchive(appID, newSequence, appDir); err != nil {
-		return errors.Wrap(err, "failed to upload app version")
-	}
-
 	if err := preflight.Run(appID, newSequence, appDir); err != nil {
 		return errors.Wrap(err, "failed to run preflights")
 	}
