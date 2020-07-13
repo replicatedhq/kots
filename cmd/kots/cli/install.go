@@ -76,7 +76,7 @@ func InstallCmd() *cobra.Command {
 
 			applicationMetadata, err := pull.PullApplicationMetadata(upstream)
 			if err != nil {
-				return errors.Wrap(err, "failed to pull app metadata")
+				log.Info("Unable to pull application metadata. This can be ignored, but custom branding will not be available in the Admin Console until a license is installed.")
 			}
 
 			var license *kotsv1beta1.License
