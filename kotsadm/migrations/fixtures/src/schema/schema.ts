@@ -109,11 +109,6 @@ export class Schema {
         watch.id, watch.current_state, watch.title, watch.icon_uri, watch.created_at, watch.updated_at, watch.slug, watch.parent_watch_id, currentSequenceValue, watch.metadata)
     );
 
-    if (watch.cluster) {
-      statements.push(
-        escape(`insert into watch_cluster (watch_id, cluster_id) values (%L, %L)`, watch.id, watch.cluster),
-      );
-    }
     for (const user of watch.users) {
       statements.push(
         escape(`insert into user_watch (user_id, watch_id) values (%L, %L)`, user, watch.id)
