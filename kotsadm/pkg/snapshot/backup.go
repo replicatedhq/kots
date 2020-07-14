@@ -32,9 +32,10 @@ func CreateBackup(a *app.App) error {
 		return errors.Wrap(err, "failed to create application backup")
 	}
 
-	if err := createAdminConsoleBackup(); err != nil {
-		return errors.Wrap(err, "failed to create admin console backup")
-	}
+	// uncomment to create disaster recovery snapshots
+	// if err := createAdminConsoleBackup(); err != nil {
+	// 	return errors.Wrap(err, "failed to create admin console backup")
+	// }
 
 	return nil
 }
@@ -100,13 +101,14 @@ func createApplicationBackup(a *app.App) error {
 
 	veleroBackup.Spec.StorageLocation = "default"
 
-	if veleroBackup.Spec.LabelSelector == nil {
-		veleroBackup.Spec.LabelSelector = &metav1.LabelSelector{}
-	}
+	// uncomment for disaster recovery snapshots
+	// if veleroBackup.Spec.LabelSelector == nil {
+	// 	veleroBackup.Spec.LabelSelector = &metav1.LabelSelector{}
+	// }
 
-	veleroBackup.Spec.LabelSelector.MatchLabels = map[string]string{
-		"kots.io/app-slug": a.Slug,
-	}
+	// veleroBackup.Spec.LabelSelector.MatchLabels = map[string]string{
+	// 	"kots.io/app-slug": a.Slug,
+	// }
 
 	cfg, err := config.GetConfig()
 	if err != nil {

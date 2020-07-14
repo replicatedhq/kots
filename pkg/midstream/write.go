@@ -61,14 +61,6 @@ func (m *Midstream) WriteMidstream(options WriteOptions) error {
 		return errors.Wrap(err, "failed to write patches")
 	}
 
-	// This check is to not break deployments on existing installations
-	if existingKustomization == nil {
-		if m.Kustomization.CommonLabels == nil {
-			m.Kustomization.CommonLabels = make(map[string]string)
-		}
-		m.Kustomization.CommonLabels["kots.io/app-slug"] = options.AppSlug
-	}
-
 	m.mergeKustomization(existingKustomization)
 
 	if err := m.writeKustomization(options); err != nil {
@@ -96,8 +88,6 @@ func (m *Midstream) mergeKustomization(existing *kustomizetypes.Kustomization) {
 	delete(existing.CommonAnnotations, "kots.io/app-slug")
 	delete(existing.CommonAnnotations, "kots.io/app-sequence")
 	m.Kustomization.CommonAnnotations = mergeMaps(m.Kustomization.CommonAnnotations, existing.CommonAnnotations)
-
-	m.Kustomization.CommonLabels = mergeMaps(m.Kustomization.CommonLabels, existing.CommonLabels)
 }
 
 func mergeMaps(new map[string]string, existing map[string]string) map[string]string {
