@@ -80,9 +80,17 @@ export class KotsAPI {
     }
 
     const parsedKotsAppSpec = await kotsAppStore.getKotsAppSpec(app.id, app.currentSequence);
+    if (!parsedKotsAppSpec) {
+      return [];
+    }
+
     try {
       const parsedAppSpec = yaml.safeLoad(appSpec);
-      if (!parsedKotsAppSpec) {
+      if (!parsedAppSpec) {
+        return [];
+      }
+
+      if (!parsedAppSpec.spec || !parsedAppSpec.spec!.descriptor || !parsedAppSpec.spec!.descriptor!.links) {
         return [];
       }
 
