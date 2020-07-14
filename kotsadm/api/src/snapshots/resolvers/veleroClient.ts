@@ -260,7 +260,7 @@ export class VeleroClient {
 
     _.each(volumeList.items, (pvr) => {
       const rv: RestoreVolume = {
-        name: pvr.metadata.name,
+        name: pvr.spec.volume,
         phase: Phase.New,
         podName: pvr.spec.pod.name,
         podNamespace: pvr.spec.pod.namespace,
