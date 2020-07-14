@@ -83,7 +83,7 @@ class AppSnapshotRestore extends Component {
   renderFailedRestoreView = (detail) => {
     if (detail?.warnings.length > 0 && detail?.errors?.length === 0) {
       return this.renderWarningsRestoreView(detail?.warnings);
-    } else {
+    } else if (detail?.errors?.length > 0) {
       return (
         <div className="FailedRestore--wrapper">
           <div className="flex flex-column alignItems--center">
@@ -97,6 +97,22 @@ class AppSnapshotRestore extends Component {
           <div className="u-marginTop--30">
             {this.renderErrors(detail?.errors)}
             {this.renderWarnings(detail?.warnings)}
+          </div>
+          <div className="flex alignItems--center justifyContent--center">
+            <p className="u-fontSize--normal u-fontWeight--medium u-color--dustyGray u-lineHeight--normal u-marginTop--30"> Contact your vendor for help troubleshooting this restore. </p>
+          </div>
+        </div>
+      )
+    } else {
+      return (
+        <div className="FailedRestore--wrapper">
+          <div className="flex flex-column alignItems--center">
+            <span className="icon u-superWarning--large"></span>
+            <p className="u-fontWeight--bold u-color--tuna u-fontSize--larger u-lineHeight--normal u-marginTop--15 u-marginBottom--10">
+              Application failed to restore </p>
+            <p className="u-fontSize--normal u-fontWeight--medium u-color--dustyGray u-lineHeight--normal">
+              Your application failed to restore to  <span className="u-fontWeight--bold u-color--dustyGray"> {this.props.match.params.id} </span>
+            </p>
           </div>
           <div className="flex alignItems--center justifyContent--center">
             <p className="u-fontSize--normal u-fontWeight--medium u-color--dustyGray u-lineHeight--normal u-marginTop--30"> Contact your vendor for help troubleshooting this restore. </p>
@@ -158,7 +174,7 @@ class AppSnapshotRestore extends Component {
             <p className="u-fontWeight--bold u-color--tuna u-fontSize--larger u-lineHeight--normal u-marginBottom--10"> Application restore in progress </p>
             <p className="u-fontSize--normal u-fontWeight--medium u-color--dustyGray u-lineHeight--normal"> After all volumes have been restored you will need to log back in to the admin console. </p>
             <div className="flex flex-column  u-marginTop--40">
-              {restoreDetail?.restoreDetail?.volumes?.length === 0 && restoreDetail?.restoreDetail?.warnings?.length === 0 && restoreDetail?.restoreDetail?.errors?.length === 0 &&
+              {restoreDetail?.restoreDetail?.volumes?.length === 0 && hasNoErrorsOrWarnings &&
                 <div className="flex-column flex1 alignItems--center justifyContent--center">
                   <Loader size="60" />
                 </div>
@@ -196,8 +212,9 @@ class AppSnapshotRestore extends Component {
             </div>
           </div>
           :
-          !hasNoErrorsOrWarnings ?
-            this.renderFailedRestoreView(restoreDetail?.restoreDetail) : null
+          !hasNoErrorsOrWarnings || restoreFailing ?
+            this.renderFailedRestoreView(restoreDetail?.restoreDetail) 
+          : null
         }
       </div>
     );
