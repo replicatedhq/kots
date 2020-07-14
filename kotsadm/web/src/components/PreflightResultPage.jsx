@@ -190,20 +190,22 @@ class PreflightResultPage extends Component {
           </div>
         </div>
 
-        <div className="flex-auto flex justifyContent--flexEnd">
-          {(hasResult || stopPolling) && preflightState !== "pass" &&
-            <Link to={`/app/${preflightResultData?.appSlug}`}>
-              <button type="button" className="btn secondary u-marginRight--10">Cancel</button>
-            </Link>
-          }
-          <button
-            type="button"
-            className="btn primary blue u-marginBottom--15"
-            onClick={(hasResult || stopPolling) ? () => this.deployKotsDownstream(false) : this.showSkipModal}
-          >
-            {(hasResult || stopPolling) ? "Continue" : "Skip"}
-          </button>
-        </div>
+        {this.props.fromLicenseFlow &&
+          <div className="flex-auto flex justifyContent--flexEnd">
+            {(hasResult || stopPolling) && preflightState !== "pass" &&
+              <Link to={`/app/${preflightResultData?.appSlug}`}>
+                <button type="button" className="btn secondary u-marginRight--10">Cancel</button>
+              </Link>
+            }
+            <button
+              type="button"
+              className="btn primary blue u-marginBottom--15"
+              onClick={(hasResult || stopPolling) ? () => this.deployKotsDownstream(false) : this.showSkipModal}
+            >
+              {(hasResult || stopPolling) ? "Continue" : "Skip"}
+            </button>
+          </div>
+        }
 
         <Modal
           isOpen={showSkipModal}
