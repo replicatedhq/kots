@@ -24,6 +24,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/portforward"
 	"k8s.io/client-go/transport/spdy"
 )
@@ -177,7 +178,15 @@ func PortForward(kubernetesConfigFlags *genericclioptions.ConfigFlags, localPort
 		}()
 
 		uri := fmt.Sprintf("http://localhost:%d/api/v1/kots/ports", localPort)
-		sleepTime := time.Second * 1
+
+		// This process is long lived, avoid creating too many clientsets here
+		// https://github.com/kubernetes/client-go/issues/803
+		clientset, err := GetClientset(kubernetesConfigFlags)
+		if err != nil {
+			return 0, nil, err
+		}
+
+		sleepTime := time.Second
 		go func() {
 			for keepPolling {
 				time.Sleep(sleepTime)
@@ -230,7 +239,7 @@ func PortForward(kubernetesConfigFlags *genericclioptions.ConfigFlags, localPort
 						continue
 					}
 
-					serviceStopCh, err := ServiceForward(kubernetesConfigFlags, desiredAdditionalPort.LocalPort, desiredAdditionalPort.ServicePort, namespace, desiredAdditionalPort.ServiceName)
+					serviceStopCh, err := ServiceForward(clientset, cfg, desiredAdditionalPort.LocalPort, desiredAdditionalPort.ServicePort, namespace, desiredAdditionalPort.ServiceName)
 					if err != nil {
 						runtime.HandleError(errors.Wrap(err, "failed to forward port"))
 						continue // try again
@@ -252,14 +261,9 @@ func PortForward(kubernetesConfigFlags *genericclioptions.ConfigFlags, localPort
 	return localPort, errChan, nil
 }
 
-func ServiceForward(kubernetesConfigFlags *genericclioptions.ConfigFlags, localPort int, remotePort int, namespace string, serviceName string) (chan struct{}, error) {
+func ServiceForward(clientset *kubernetes.Clientset, cfg *rest.Config, localPort int, remotePort int, namespace string, serviceName string) (chan struct{}, error) {
 	if !IsPortAvailable(localPort) {
 		return nil, errors.Errorf("Unable to connect to cluster. There's another process using port %d.", localPort)
-	}
-
-	clientset, err := GetClientset(kubernetesConfigFlags)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to create clientset")
 	}
 
 	svc, err := clientset.CoreV1().Services(namespace).Get(context.TODO(), serviceName, metav1.GetOptions{})
@@ -276,11 +280,6 @@ func ServiceForward(kubernetesConfigFlags *genericclioptions.ConfigFlags, localP
 	if podName == "" {
 		// not ready yet
 		return nil, nil
-	}
-
-	cfg, err := kubernetesConfigFlags.ToRESTConfig()
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to convert kube flags to rest config")
 	}
 
 	roundTripper, upgrader, err := spdy.RoundTripperFor(cfg)
