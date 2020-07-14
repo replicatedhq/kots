@@ -517,17 +517,12 @@ spec:
   }
 
   async getApplicationCount(clusterId: string): Promise<number> {
-    let q = `select count(1) as count from watch_cluster where cluster_id = $1`;
+    let q = `select count(1) as count from app_downstream where cluster_id = $1`;
     let v = [clusterId];
     let result = await this.pool.query(q, v);
-    const wcCount = parseInt(result.rows[0].count);
-
-    q = `select count(1) as count from app_downstream where cluster_id = $1`;
-    v = [clusterId];
-    result = await this.pool.query(q, v);
     const adCount = parseInt(result.rows[0].count);
 
-    return wcCount + adCount;
+    return adCount;
   }
 
   async deleteCluster( userId: string, clusterId: string): Promise<boolean> {
