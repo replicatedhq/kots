@@ -147,11 +147,11 @@ class PreflightResultPage extends Component {
       if (showSkipModal) {
         this.hideSkipModal();
       }
-      
       preflightJSON = JSON.parse(preflightResultData?.result);
     }
     const hasResult = size(preflightJSON.results) > 0;
     const hasErrors = size(preflightJSON.errors) > 0;
+    const preflightState = getPreflightResultState(preflightJSON);
   
     return (
       <div className="flex-column flex1 container">
@@ -177,7 +177,7 @@ class PreflightResultPage extends Component {
                   <Loader size="60" />
                 </div>
               )}
-              {hasErrors && this.renderErrors(preflightJSON?.errors) }
+              {hasErrors && this.renderErrors(preflightJSON?.errors)}
               {stopPolling && !hasErrors &&
                 <div className="flex-column">
                   <PreflightRenderer
@@ -190,27 +190,20 @@ class PreflightResultPage extends Component {
           </div>
         </div>
 
-        { hasErrors && null }
-        { (hasResult || stopPolling) &&
+        {this.props.fromLicenseFlow &&
           <div className="flex-auto flex justifyContent--flexEnd">
+            {(hasResult || stopPolling) && preflightState !== "pass" &&
+              <Link to={`/app/${preflightResultData?.appSlug}`}>
+                <button type="button" className="btn secondary u-marginRight--10">Cancel</button>
+              </Link>
+            }
             <button
               type="button"
               className="btn primary blue u-marginBottom--15"
-              onClick={() => this.deployKotsDownstream(false)}
+              onClick={(hasResult || stopPolling) ? () => this.deployKotsDownstream(false) : this.showSkipModal}
             >
-              Continue
+              {(hasResult || stopPolling) ? "Continue" : "Skip"}
             </button>
-          </div>
-        }
-        { (!hasResult && !stopPolling) && 
-          <div className="flex-auto flex justifyContent--flexEnd">
-            <button
-              type="button"
-              className="btn primary blue u-marginBottom--15"
-              onClick={this.showSkipModal}
-            >
-              Skip
-          </button>
           </div>
         }
 
@@ -223,11 +216,11 @@ class PreflightResultPage extends Component {
           className="Modal"
         >
           <div className="Modal-body">
-
             <p className="u-fontSize--normal u-color--dustyGray u-lineHeight--normal u-marginBottom--20">Skipping preflight checks will not cancel them. They will continue to run in the background. Do you want to continue to the {preflightResultData?.appSlug} dashboard? </p>
             <div className="u-marginTop--10 flex justifyContent--flexEnd">
+              <button type="button" className="btn secondary" onClick={this.hideSkipModal}>Close</button>
               <Link to={`/app/${preflightResultData?.appSlug}`}>
-                <button type="button" className="btn blue primary">Go to Dashboard</button>
+                <button type="button" className="btn blue primary u-marginLeft--10">Go to Dashboard</button>
               </Link>
             </div>
           </div>
@@ -242,10 +235,9 @@ class PreflightResultPage extends Component {
           className="Modal"
         >
           <div className="Modal-body">
-
             <p className="u-fontSize--normal u-color--dustyGray u-lineHeight--normal u-marginBottom--20">Preflight is showing some issues, are you sure you want to continue?</p>
             <div className="u-marginTop--10 flex justifyContent--flexEnd">
-              <button type="button" className="btn secondary" onClick={this.hideWarningModal}>Cancel</button>
+              <button type="button" className="btn secondary" onClick={this.hideWarningModal}>Close</button>
               <button type="button" className="btn blue primary u-marginLeft--10" onClick={() => this.deployKotsDownstream(true)}>
                 Deploy and continue
               </button>
