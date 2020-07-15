@@ -188,13 +188,13 @@ class AppVersionHistory extends Component {
     );
   }
 
-  renderVersionAction = version => {
+  renderVersionAction = (version, nothingToCommitDiff) => {
     const { app } = this.props;
     const downstream = app.downstreams[0];
 
     if (downstream.gitops?.enabled) {
       if (version.gitDeployable === false) {
-        return (<div>Nothing to commit</div>);
+        return (<div className={nothingToCommitDiff && "u-opacity--half"}>Nothing to commit</div>);
       }
       if (!version.commitUrl) {
         return null;
@@ -980,33 +980,34 @@ class AppVersionHistory extends Component {
                   {versionHistory.length >= 1 ? versionHistory.map((version) => {
                     const isChecked = !!checkedReleasesToDiff.find(diffRelease => diffRelease.parentSequence === version.parentSequence);
                     const isNew = secondsAgo(version.createdOn) < 10;
+                    const nothingToCommit = gitopsEnabled && !version.commitUrl;
                     return (
                       <div
                         key={version.sequence}
-                        className={classNames(`VersionHistoryDeploymentRow ${version.status} flex flex-auto`, { "overlay": selectedDiffReleases, "selected": isChecked, "is-new": isNew })}
-                        onClick={() => selectedDiffReleases && this.handleSelectReleasesToDiff(version, !isChecked)}
+                        className={classNames(`VersionHistoryDeploymentRow ${version.status} flex flex-auto`, { "overlay": selectedDiffReleases, "disabled": nothingToCommit, "selected": (isChecked && !nothingToCommit), "is-new": isNew })}
+                        onClick={() => selectedDiffReleases && !nothingToCommit && this.handleSelectReleasesToDiff(version, !isChecked)}
                       >
-                        {selectedDiffReleases && <div className={classNames("checkbox u-marginRight--20", { "checked": isChecked })} />}
-                        <div className="flex-column flex1 u-paddingRight--20">
+                        {selectedDiffReleases && <div className={classNames("checkbox u-marginRight--20", { "checked": (isChecked && !nothingToCommit) }, { "disabled": nothingToCommit })} />}
+                        <div className={`${nothingToCommit && selectedDiffReleases && "u-opacity--half"} flex-column flex1 u-paddingRight--20`}>
                           <div>
                             <p className="u-fontSize--normal u-color--dustyGray">Environment: <span className="u-fontWeight--bold u-color--tuna">{changeCase.title(downstream.name)}</span></p>
                             <p className="u-fontSize--small u-marginTop--10 u-color--dustyGray">Received: <span className="u-fontWeight--bold u-color--tuna">{moment(version.createdOn).format("MM/DD/YY @ hh:mm a")}</span></p>
                           </div>
                           <div className="flex flex1 u-marginTop--15">
                             <p className="u-fontSize--normal u-color--dustyGray">Upstream: <span className="u-fontWeight--bold u-color--tuna">{version.title}</span></p>
-                            <div className="u-fontSize--normal u-color--dustyGray u-marginLeft--20 flex">Sequence: <span className="u-fontWeight--bold u-color--tuna u-marginLeft--5">{this.renderVersionSequence(version)}</span></div>
+                            <div className="u-fontSize--normal u-color--dustyGray u-marginLeft--20 flex">Sequence: <span className=" u-fontWeight--bold u-color--tuna u-marginLeft--5">{this.renderVersionSequence(version)}</span></div>
                           </div>
                         </div>
-                        <div className="flex-column flex1">
+                        <div className={`${nothingToCommit && selectedDiffReleases && "u-opacity--half"} flex-column flex1`}>
                           <div>
                             <p className="u-fontSize--normal u-color--dustyGray">Source: <span className="u-fontWeight--bold u-color--tuna">{version.source}</span></p>
                             <div className="u-fontSize--small u-marginTop--10 u-color--dustyGray">{this.renderSourceAndDiff(version)}</div>
                           </div>
                           <div className="flex flex1 u-fontSize--normal u-color--dustyGray u-marginTop--15 alignItems--center">Status: <span className="u-marginLeft--5">{gitopsEnabled ? this.renderViewPreflights(version) : this.renderVersionStatus(version)}</span></div>
                         </div>
-                        <div className="flex-column flex1 alignItems--flexEnd">
+                        <div className={`${nothingToCommit && selectedDiffReleases && "u-opacity--half"} flex-column flex1 alignItems--flexEnd`}>
                           <div>
-                            {this.renderVersionAction(version)}
+                            {this.renderVersionAction(version, nothingToCommit && selectedDiffReleases)}
                           </div>
                           <p className="u-fontSize--normal u-color--dustyGray u-marginTop--15">Deployed: <span className="u-fontWeight--bold u-color--tuna">{version.deployedAt ? moment(version.deployedAt).format("MM/DD/YY @ hh:mm a") : "N/A"}</span></p>
                         </div>
