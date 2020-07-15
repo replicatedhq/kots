@@ -244,6 +244,11 @@ $cell-width: 140px;
   background: rgba(51, 122, 183, .1);
 }
 
+.overlay.disabled {
+  background: #FAFAFA;
+  cursor: not-allowed;
+}
+
 .checkbox {
   align-self: center;
   width: 16px;
