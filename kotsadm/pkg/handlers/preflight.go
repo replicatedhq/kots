@@ -82,6 +82,13 @@ func StartPreflightChecks(w http.ResponseWriter, r *http.Request) {
 	}
 
 	appSlug := mux.Vars(r)["appSlug"]
+	sequenceStr := mux.Vars(r)["sequence"]
+	sequence, err := strconv.Atoi(sequenceStr)
+	if err != nil {
+		logger.Error(err)
+		w.WriteHeader(400)
+		return
+	}
 
 	foundApp, err := app.GetFromSlug(appSlug)
 	if err != nil {
@@ -90,7 +97,13 @@ func StartPreflightChecks(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	archiveDir, err := version.GetAppVersionArchive(foundApp.ID, foundApp.CurrentSequence)
+	if err := preflight.ResetPreflightResult(foundApp.ID, int64(sequence)); err != nil {
+		logger.Error(err)
+		w.WriteHeader(500)
+		return
+	}
+
+	archiveDir, err := version.GetAppVersionArchive(foundApp.ID, int64(sequence))
 	if err != nil {
 		logger.Error(err)
 		w.WriteHeader(500)

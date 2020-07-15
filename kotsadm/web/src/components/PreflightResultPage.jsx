@@ -10,7 +10,6 @@ import Loader from "./shared/Loader";
 import PreflightRenderer from "./PreflightRenderer";
 import { getPreflightResultState, Utilities } from "../utilities/utilities";
 import "../scss/components/PreflightCheckPage.scss";
-import { retryPreflights } from "../mutations/AppsMutations";
 import PreflightResultErrors from "./PreflightResultErrors";
 import has from "lodash/has";
 import size from "lodash/size";
@@ -98,19 +97,27 @@ class PreflightResultPage extends Component {
       });
   }
 
-  retryResults= () => {
+  rerunPreflights = () => {
     const preflightResultData = this.props.data.getKotsPreflightResult || this.props.data.getLatestKotsPreflightResult;
     const sequence = this.props.match.params.sequence ? parseInt(this.props.match.params.sequence, 10) : 0;
-    this.props.client.mutate({
-      mutation: retryPreflights,
-      variables: {
-        appSlug: preflightResultData.appSlug,
-        clusterSlug: preflightResultData.clusterSlug,
-        sequence: sequence,
+
+    const appSlug = preflightResultData.appSlug;
+    fetch(`${window.env.API_ENDPOINT}/app/${appSlug}/sequence/${sequence}/preflight/run`, {
+      headers: {
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+        "Authorization": Utilities.getToken(),
       },
-    }).then(() => {
-      this.props.data.refetch();
-    });
+      method: "POST",
+    })
+      .then((res) => {
+        if (res.status === 200) {
+          this.props.data?.refetch();
+        }
+      })
+      .catch((err) => {
+        console.log(err);
+      });
   }
 
   renderErrors = (errors) => {
@@ -124,7 +131,6 @@ class PreflightResultPage extends Component {
       <PreflightResultErrors
         valueFromAPI={valueFromAPI}
         ignorePermissionErrors={this.ignorePermissionErrors}
-        retryResults={this.retryResults}
         logo={this.props.logo}
         preflightResultData={this.props.data.getKotsPreflightResult || this.props.data.getLatestKotsPreflightResult}
       />
@@ -172,7 +178,7 @@ class PreflightResultPage extends Component {
               <p className="u-fontWeight--medium u-lineHeight--more u-marginTop--5 u-marginBottom--10">
                 Preflight checks validate that your cluster will meet the minimum requirements. If your cluster does not meet the requirements you can still proceed, but understand that things might not work properly.
               </p>
-              {(!stopPolling) && (
+              {!stopPolling && (
                 <div className="flex-column justifyContent--center alignItems--center flex1 u-minWidth--full">
                   <Loader size="60" />
                 </div>
@@ -190,21 +196,30 @@ class PreflightResultPage extends Component {
           </div>
         </div>
 
-        {this.props.fromLicenseFlow &&
-          <div className="flex-auto flex justifyContent--flexEnd">
-            {(hasResult || stopPolling) && preflightState !== "pass" &&
-              <Link to={`/app/${preflightResultData?.appSlug}`}>
-                <button type="button" className="btn secondary u-marginRight--10">Cancel</button>
-              </Link>
+        {this.props.fromLicenseFlow ?
+          <div className="flex-auto flex justifyContent--flexEnd u-marginBottom--15">
+            {stopPolling && hasResult && preflightState !== "pass" &&
+              <div className="flex">
+                <Link to={`/app/${preflightResultData?.appSlug}`}>
+                  <button type="button" className="btn secondary u-marginRight--10">Cancel</button>
+                </Link>
+                <button type="button" className="btn secondary blue u-marginRight--10" onClick={this.rerunPreflights}>Re-run</button>
+              </div>
             }
             <button
               type="button"
-              className="btn primary blue u-marginBottom--15"
-              onClick={(hasResult || stopPolling) ? () => this.deployKotsDownstream(false) : this.showSkipModal}
+              className="btn primary blue"
+              onClick={stopPolling ? () => this.deployKotsDownstream(false) : this.showSkipModal}
             >
-              {(hasResult || stopPolling) ? "Continue" : "Skip"}
+              {stopPolling ? "Continue" : "Skip"}
             </button>
           </div>
+          : stopPolling ?
+            <div className="flex-auto flex justifyContent--flexEnd u-marginBottom--15">
+              <button type="button" className="btn primary blue" onClick={this.rerunPreflights}>Re-run</button>
+            </div>
+            :
+            null
         }
 
         <Modal
