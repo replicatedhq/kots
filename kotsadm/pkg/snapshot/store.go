@@ -153,15 +153,15 @@ func UpdateGlobalStore(store *types.Store) (*velerov1.BackupStorageLocation, err
 	} else if store.Other != nil {
 		kotsadmVeleroBackendStorageLocation.Spec.Config = map[string]string{
 			"region": store.Other.Region,
-			"s3Url": store.Other.Endpoint,
+			"s3Url":  store.Other.Endpoint,
 		}
 
 		// create or update the secret
 	} else if store.Internal != nil {
 		kotsadmVeleroBackendStorageLocation.Spec.Config = map[string]string{
-			"region": store.Internal.Region,
-			"s3Url": store.Internal.Endpoint,
-			"publicUrl": fmt.Sprintf("http://%s", store.Internal.ObjectStoreClusterIP),
+			"region":           store.Internal.Region,
+			"s3Url":            store.Internal.Endpoint,
+			"publicUrl":        fmt.Sprintf("http://%s", store.Internal.ObjectStoreClusterIP),
 			"s3ForcePathStyle": "true",
 		}
 

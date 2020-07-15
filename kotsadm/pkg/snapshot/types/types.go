@@ -109,3 +109,10 @@ type SnapshotError struct {
 	Message   string `json:"message"`
 	Namespace string `json:"namespace"`
 }
+
+type VolumeSummary struct {
+	VolumeCount        int        `json:"volumeCount"`
+	VolumeSuccessCount int        `json:"volumeSuccessCount"`
+	VolumeBytes        int64      `json:"volumeBytes"`
+	VolumeSizeHuman    string     `json:"volumeSizeHuman"`
+}
