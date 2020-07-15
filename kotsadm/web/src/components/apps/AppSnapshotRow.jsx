@@ -43,7 +43,7 @@ class AppShanpshotRow extends React.Component {
           <div className="flex flex-auto alignItems--center u-marginTop--5">
             <div className="flex flex1 alignItems--center">
               <p className="u-fontSize--normal u-color--doveGray u-fontWeight--bold u-lineHeight--normal u-marginRight--20"><span className="u-fontWeight--normal u-color--dustyGray">Volumes included:</span> {snapshot?.volumeSuccessCount}/{snapshot?.volumeCount}</p>
-              <p className="u-fontSize--normal u-color--doveGray u-fontWeight--bold u-lineHeight--normal u-marginRight--20"><span className="u-fontWeight--normal u-color--dustyGray">Backup size:</span> {Utilities.bytesToSize(snapshot?.volumeBytes)} </p>
+              <p className="u-fontSize--normal u-color--doveGray u-fontWeight--bold u-lineHeight--normal u-marginRight--20"><span className="u-fontWeight--normal u-color--dustyGray">Backup size:</span> {snapshot?.volumeSizeHuman} </p>
             </div>
           </div>
         </div>

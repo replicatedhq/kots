@@ -275,14 +275,15 @@ func ListBackupsForApp(appID string) ([]*types.Backup, error) {
 		if backup.Status != "New" && backup.Status != "InProgress" {
 			if !volumeBytesOk || !volumeSuccessCountOk {
 				// save computed summary as annotations if snapshot is finished
-				vc, vsc, vb, err := getSnapshotVolumeSummary(&veleroBackup)
+				volumeSummary, err := getSnapshotVolumeSummary(&veleroBackup)
 				if err != nil {
 					return nil, errors.Wrap(err, "failed to get volume summary")
 				}
 
-				backup.VolumeCount = vc
-				backup.VolumeSuccessCount = vsc
-				backup.VolumeBytes = vb
+				backup.VolumeCount = volumeSummary.VolumeCount
+				backup.VolumeSuccessCount = volumeSummary.VolumeSuccessCount
+				backup.VolumeBytes = volumeSummary.VolumeBytes
+				backup.VolumeSizeHuman = volumeSummary.VolumeSizeHuman
 
 				// This is failing with "the server could not find the requested resource (put backups.velero.io scheduled-1586536961)"
 				// veleroBackup.Annotations["kots.io/snapshot-volume-count"] = strconv.Itoa(backup.VolumeCount)
@@ -385,14 +386,15 @@ func ListKotsadmBackups() ([]*types.Backup, error) {
 		if backup.Status != "New" && backup.Status != "InProgress" {
 			if !volumeBytesOk || !volumeSuccessCountOk {
 				// save computed summary as annotations if snapshot is finished
-				vc, vsc, vb, err := getSnapshotVolumeSummary(&veleroBackup)
+				volumeSummary, err := getSnapshotVolumeSummary(&veleroBackup)
 				if err != nil {
 					return nil, errors.Wrap(err, "failed to get volume summary")
 				}
 
-				backup.VolumeCount = vc
-				backup.VolumeSuccessCount = vsc
-				backup.VolumeBytes = vb
+				backup.VolumeCount = volumeSummary.VolumeCount
+				backup.VolumeSuccessCount = volumeSummary.VolumeSuccessCount
+				backup.VolumeBytes = volumeSummary.VolumeBytes
+				backup.VolumeSizeHuman = volumeSummary.VolumeSizeHuman
 			}
 		}
 
@@ -402,22 +404,22 @@ func ListKotsadmBackups() ([]*types.Backup, error) {
 	return backups, nil
 }
 
-func getSnapshotVolumeSummary(veleroBackup *velerov1.Backup) (int, int, int64, error) {
+func getSnapshotVolumeSummary(veleroBackup *velerov1.Backup) (*types.VolumeSummary, error) {
 	cfg, err := config.GetConfig()
 	if err != nil {
-		return 0, 0, int64(0), errors.Wrap(err, "failed to get cluster config")
+		return nil, errors.Wrap(err, "failed to get cluster config")
 	}
 
 	veleroClient, err := veleroclientv1.NewForConfig(cfg)
 	if err != nil {
-		return 0, 0, int64(0), errors.Wrap(err, "failed to create clientset")
+		return nil, errors.Wrap(err, "failed to create clientset")
 	}
 
 	veleroPodBackupVolumes, err := veleroClient.PodVolumeBackups(veleroBackup.Namespace).List(context.TODO(), metav1.ListOptions{
 		LabelSelector: fmt.Sprintf("velero.io/backup-name=%s", velerolabel.GetValidName(veleroBackup.Name)),
 	})
 	if err != nil {
-		return 0, 0, int64(0), errors.Wrap(err, "failed to list pod back up volumes")
+		return nil, errors.Wrap(err, "failed to list pod back up volumes")
 	}
 
 	count := 0
@@ -433,8 +435,14 @@ func getSnapshotVolumeSummary(veleroBackup *velerov1.Backup) (int, int, int64, e
 		totalBytes += veleroPodBackupVolume.Status.Progress.BytesDone
 	}
 
-	return count, success, totalBytes, nil
+	volumeSummary := types.VolumeSummary{
+		VolumeCount:        count,
+		VolumeSuccessCount: success,
+		VolumeBytes:        totalBytes,
+		VolumeSizeHuman:    units.HumanSize(float64(totalBytes)),
+	}
 
+	return &volumeSummary, nil
 }
 
 // this is a copy from registry.  so many import cycles to unwind here, todo
