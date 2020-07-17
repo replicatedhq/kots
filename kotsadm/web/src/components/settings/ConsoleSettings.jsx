@@ -19,15 +19,13 @@ import ConsoleTroubleshootWrapper from "./ConsoleTroubleshootWrapper";
 import ConsoleVersionHistory from "./ConsoleVersionHistory";
 import GitOps from "../clusters/GitOps";
 import Snapshots from "../snapshots/Snapshots";
-import Redactors from "../redactors/Redactors";
-import EditRedactor from "../redactors/EditRedactor";
 import NotFound from "../static/NotFound";
 import SubNavBar from "@src/components/shared/SubNavBar";
 import SidebarLayout from "../layout/SidebarLayout/SidebarLayout";
 import SideBar from "../shared/SideBar";
 import Loader from "../shared/Loader";
 
-import "../../scss/components/watches/WatchDetailPage.scss";
+import "../../scss/components/console_settings/ConsoleSettings.scss";
 class ConsoleSettings extends Component {
   constructor(props) {
     super(props);
@@ -60,11 +58,14 @@ class ConsoleSettings extends Component {
 
   render() {
     const {
+      getKotsAppQuery,
       match,
       listApps,
       appName,
       isVeleroInstalled,
     } = this.props;
+
+    const app = getKotsAppQuery?.getKotsApp;
 
     const centeredLoader = (
       <div className="flex-column flex1 alignItems--center justifyContent--center">
@@ -73,7 +74,6 @@ class ConsoleSettings extends Component {
     );
 
     const loading = false
-
     return (
       <div className="WatchDetailPage--wrapper flex-column flex1 u-overflow--auto">
         <Helmet>
@@ -126,20 +126,17 @@ class ConsoleSettings extends Component {
                     items={settingsSubNavConfig}
                     isVeleroInstalled={isVeleroInstalled?.isVeleroInstalled}
                   />
-                  <div className="u-paddingLeft--60">
+                  <div className="u-paddingLeft--60 flex-column flex1">
                     <Switch>
                       <Route exact path="/settings/authentication" render={(props) => <ConsoleAuthentication {...props} />} />
-                      <Route exact path={["/settings/logs", "/settings/logs/:logsTab"]} render={(props) => <ConsoleLogsWrapper {...props} />} />
+                      <Route exact path="/settings/logs/:logsTab" render={(props) => <ConsoleLogsWrapper {...props} />} />
                       <Route exact path="/settings/snapshots" render={(props) => <Snapshots {...props} />} />
                       <Route exact path="/settings/registry" render={(props) => <ConsoleRegistry {...props} />} />
                       <Route exact path="/settings/configuration" render={(props) => <ConsoleConfig {...props} />} />
                       <Route exact path="/settings/networking" render={(props) => <ConsoleNetworking {...props} />} />
                       <Route exact path="/settings/version-history" render={(props) => <ConsoleVersionHistory {...props} />} />
                       <Route exact path="/settings/gitops" render={(props) => <GitOps {...props} />} />
-                      <Route exact path={["/settings/troubleshoot", "/settings/logs/:troubleshootTab"]} render={(props) => <ConsoleTroubleshootWrapper {...props} />} />
-                      <Route exact path="/settings/troubleshoot/" render={(props) => <Redactors {...props} />} />
-                      <Route exact path="/settings/troubleshoot/redactors/new" render={(props) => <EditRedactor {...props} />} />
-                      <Route exact path="/settings/troubleshoot/redactors/:slug" render={(props) => <EditRedactor {...props} />} />
+                      <Route exact path="/settings/troubleshoot/:troubleshootTab" render={(props) => <ConsoleTroubleshootWrapper app={app} {...props} />} />
                       <Route component={NotFound} />
                     </Switch>
                   </div>

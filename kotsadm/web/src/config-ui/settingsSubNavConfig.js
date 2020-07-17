@@ -7,7 +7,7 @@ export default [
   {
     tabName: "logs",
     displayName: "Logs",
-    to: () => `/settings/logs`,
+    to: () => `/settings/logs/view`,
   },
   {
     tabName: "snapshots",
@@ -37,7 +37,7 @@ export default [
   {
     tabName: "troubleshoot",
     displayName: "Troubleshoot",
-    to: () => `/settings/troubleshoot`,
+    to: () => `/settings/troubleshoot/support-bundle`,
   },
   {
     tabName: "gitops",

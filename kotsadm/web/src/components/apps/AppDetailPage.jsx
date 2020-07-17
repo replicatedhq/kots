@@ -6,7 +6,7 @@ import { Helmet } from "react-helmet";
 import Modal from "react-modal";
 import has from "lodash/has";
 
-import subNavConfig from "@src/config-ui/subNavConfig";
+import settingsSubNavConfig from "@src/config-ui/subNavConfig";
 import withTheme from "@src/components/context/withTheme";
 import { getKotsApp, listDownstreamsForApp } from "@src/queries/AppsQueries";
 import { isVeleroInstalled } from "@src/queries/SnapshotQueries";
@@ -172,8 +172,7 @@ class AppDetailPage extends Component {
       refetchListApps,
       rootDidInitialAppFetch,
       appName,
-      isVeleroInstalled,
-      location
+      isVeleroInstalled
     } = this.props;
     const {
       displayDownloadCommandModal,
@@ -189,7 +188,6 @@ class AppDetailPage extends Component {
     const app = getKotsAppQuery?.getKotsApp;
 
     const refreshAppData = getKotsAppQuery.refetch;
-    const pathname = location.pathname.split("/");
 
     // if there is app, don't render a loader to avoid flickering
     const loading = (getKotsAppQuery?.loading || !rootDidInitialAppFetch || isVeleroInstalled?.loading) && !app;
@@ -237,8 +235,8 @@ class AppDetailPage extends Component {
                 } else if (item.helmName) {
                   sidebarItemNode = (
                     <HelmChartSidebarItem
-                      key={idx}
                       sidebarOpen={this.state.sidebarOpen}
+                      key={idx}
                       className={classNames({ selected: item.id === match.params.slug })}
                       helmChart={item} />
                   );
@@ -255,101 +253,90 @@ class AppDetailPage extends Component {
                   <SubNavBar
                     className="flex"
                     activeTab={match.params.tab || "app"}
-                    items={subNavConfig}
+                    items={settingsSubNavConfig}
                     watch={app}
                     isVeleroInstalled={isVeleroInstalled?.isVeleroInstalled}
                   />
-                  <div className="u-paddingLeft--60">
-                    <Switch>
-                      <Route exact path="/app/:slug" render={() =>
-                        <Dashboard
-                          app={app}
-                          cluster={app.downstreams?.length && app.downstreams[0]?.cluster}
-                          refetchListApps={refetchListApps}
-                          refetchWatch={this.props.getKotsAppQuery?.refetch}
-                          updateCallback={this.refetchGraphQLData}
-                          onActiveInitSession={this.props.onActiveInitSession}
-                          makeCurrentVersion={this.makeCurrentRelease}
-                          toggleIsBundleUploading={this.toggleIsBundleUploading}
-                          isBundleUploading={isBundleUploading}
-                          isVeleroInstalled={isVeleroInstalled?.isVeleroInstalled}
-                          refreshAppData={refreshAppData}
-                          snapshotInProgressApps={this.props.snapshotInProgressApps}
-                          ping={this.props.ping}
-                        />}
+                  <Switch>
+                    <Route exact path="/app/:slug" render={() =>
+                      <Dashboard
+                        app={app}
+                        cluster={app.downstreams?.length && app.downstreams[0]?.cluster}
+                        refetchListApps={refetchListApps}
+                        refetchWatch={this.props.getKotsAppQuery?.refetch}
+                        updateCallback={this.refetchGraphQLData}
+                        onActiveInitSession={this.props.onActiveInitSession}
+                        makeCurrentVersion={this.makeCurrentRelease}
+                        toggleIsBundleUploading={this.toggleIsBundleUploading}
+                        isBundleUploading={isBundleUploading}
+                        isVeleroInstalled={isVeleroInstalled?.isVeleroInstalled}
+                        refreshAppData={refreshAppData}
+                        snapshotInProgressApps={this.props.snapshotInProgressApps}
+                        ping={this.props.ping}
+                      />}
+                    />
+
+                    <Route exact path="/app/:slug/tree/:sequence" render={props => <DownstreamTree {...props} app={app} appNameSpace={this.props.appNameSpace} />} />
+
+                    <Route exact path={["/app/:slug/version-history", "/app/:slug/version-history/diff/:firstSequence/:secondSequence"]} render={() =>
+                      <AppVersionHistory
+                        app={app}
+                        match={this.props.match}
+                        makeCurrentVersion={this.makeCurrentRelease}
+                        updateCallback={this.refetchGraphQLData}
+                        toggleIsBundleUploading={this.toggleIsBundleUploading}
+                        isBundleUploading={isBundleUploading}
+                        refreshAppData={refreshAppData}
                       />
-
-                      <Route exact path="/app/:slug/tree/:sequence" render={props => <DownstreamTree {...props} app={app} appNameSpace={this.props.appNameSpace} />} />
-
-                      <Route exact path={["/app/:slug/version-history", "/app/:slug/version-history/diff/:firstSequence/:secondSequence"]} render={() =>
-                        <AppVersionHistory
-                          app={app}
-                          match={this.props.match}
-                          makeCurrentVersion={this.makeCurrentRelease}
-                          updateCallback={this.refetchGraphQLData}
-                          toggleIsBundleUploading={this.toggleIsBundleUploading}
-                          isBundleUploading={isBundleUploading}
-                          refreshAppData={refreshAppData}
-                        />
-                      } />
-                      <Route exact path="/app/:slug/downstreams/:downstreamSlug/version-history/preflight/:sequence" render={props => <PreflightResultPage logo={app.iconUri} {...props} />} />
-                      <Route exact path="/app/:slug/config/:sequence?" render={() =>
-                        <AppConfig
-                          app={app}
-                          refreshAppData={refreshAppData}
-                        />
-                      } />
-                      <Route exact path="/app/:slug/troubleshoot" render={() =>
-                        <SupportBundleList
-                          watch={app}
-                        />
-                      } />
-                      <Route exact path="/app/:slug/troubleshoot/generate" render={() =>
-                        <GenerateSupportBundle
-                          watch={app}
-                        />
-                      } />
-                      <Route path="/app/:slug/troubleshoot/analyze/:bundleSlug" render={() =>
-                        <SupportBundleAnalysis
-                          watch={app}
-                        />
-                      } />
-                      <Route exact path="/app/:slug/license" render={() =>
-                        <AppLicense
-                          app={app}
-                          syncCallback={this.refetchGraphQLData}
-                        />
-                      } />
-                      <Route exact path="/app/:slug/registry-settings" render={() =>
-                        <AppSettings
-                          app={app}
-                        />
-                      } />
-                      <Route exact path="/app/:slug/gitops" render={() =>
-                        <AppGitops
-                          app={app}
-                          history={this.props.history}
-                          refetch={() => this.props.getKotsAppQuery.refetch()}
-                        />
-                      } />
-                      <Route exact path="/app/:slug/snapshots" render={() =>
-                        <AppSnapshots
-                          app={app}
-                          refetch={() => this.props.getKotsAppQuery.refetch()}
-                        />
-                      } />
-                      <Route exact path="/app/:slug/snapshots/schedule" render={() =>
-                        <AppSnapshotSchedule app={app} />
-                      } />
-                      <Route exact path="/app/:slug/snapshots/:id" render={() =>
-                        <AppSnapshotDetail app={app} />
-                      } />
-                      <Route exact path="/app/:slug/snapshots/:id/restore" render={() =>
-                        <AppSnapshotRestore app={app} />
-                      } />
-                      <Route component={NotFound} />
-                    </Switch>
-                  </div>
+                    } />
+                    <Route exact path="/app/:slug/downstreams/:downstreamSlug/version-history/preflight/:sequence" render={props => <PreflightResultPage logo={app.iconUri} {...props} />} />
+                    <Route exact path="/app/:slug/config/:sequence?" render={() =>
+                      <AppConfig
+                        app={app}
+                        refreshAppData={refreshAppData}
+                      />
+                    } />
+                    <Route path="/app/:slug/troubleshoot" render={() =>
+                      <TroubleshootContainer
+                        app={app}
+                        appName={appName}
+                      />
+                    } />
+                    <Route exact path="/app/:slug/license" render={() =>
+                      <AppLicense
+                        app={app}
+                        syncCallback={this.refetchGraphQLData}
+                      />
+                    } />
+                    <Route exact path="/app/:slug/registry-settings" render={() =>
+                      <AppSettings
+                        app={app}
+                      />
+                    } />
+                    <Route exact path="/app/:slug/gitops" render={() =>
+                      <AppGitops
+                        app={app}
+                        history={this.props.history}
+                        refetch={() => this.props.getKotsAppQuery.refetch()}
+                      />
+                    } />
+                    <Route exact path="/app/:slug/snapshots" render={() =>
+                      <AppSnapshots
+                        app={app}
+                        refetch={() => this.props.getKotsAppQuery.refetch()}
+                      />
+                    } />
+                    <Route exact path="/app/:slug/snapshots/schedule" render={() =>
+                      <AppSnapshotSchedule app={app} />
+                    } />
+                    <Route exact path="/app/:slug/snapshots/:id" render={() =>
+                      <AppSnapshotDetail app={app} />
+                    } />
+                    <Route exact path="/app/:slug/snapshots/:id/restore" render={() =>
+                      <AppSnapshotRestore app={app} />
+                    } />
+                    <Route component={NotFound} />
+                  </Switch>
                 </Fragment>
               )
             }
@@ -396,7 +383,7 @@ export default compose(
     skip: props => {
       const { slug } = props.match.params;
 
-      // Skip if no variables (user at "/app" URL)
+      // Skip if no variables (user at "/watches" URL)
       if (!slug) {
         return true;
       }
@@ -419,7 +406,7 @@ export default compose(
     skip: props => {
       const { slug } = props.match.params;
 
-      // Skip if no variables (user at "/app" URL)
+      // Skip if no variables (user at "/watches" URL)
       if (!slug) {
         return true;
       }

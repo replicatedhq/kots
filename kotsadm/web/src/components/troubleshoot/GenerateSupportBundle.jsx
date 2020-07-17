@@ -19,7 +19,7 @@ class GenerateSupportBundle extends React.Component {
   constructor(props) {
     super(props);
 
-    const clustersArray = props.watch.downstreams;
+    const clustersArray = props.app.downstreams;
     this.state = {
       clusters: [],
       selectedCluster: clustersArray.length ? clustersArray[0].cluster : "",
@@ -32,9 +32,9 @@ class GenerateSupportBundle extends React.Component {
   }
 
   componentDidMount() {
-    const { watch } = this.props;
-    const clusters = watch.downstreams;
-    if (watch) {
+    const { app } = this.props;
+    const clusters = app.downstreams;
+    if (app) {
       const watchClusters = clusters.map(c => c.cluster);
       const NEW_ADDED_CLUSTER = { title: NEW_CLUSTER };
       this.setState({ clusters: [NEW_ADDED_CLUSTER, ...watchClusters] });
@@ -42,10 +42,10 @@ class GenerateSupportBundle extends React.Component {
   }
 
   componentDidUpdate(lastProps) {
-    const { watch, listSupportBundles, history } = this.props;
+    const { app, listSupportBundles, history } = this.props;
     const { totalBundles } = this.state;
-    const clusters = watch.downstream;
-    if (watch !== lastProps.watch && clusters) {
+    const clusters = app.downstream;
+    if (app !== lastProps.app && clusters) {
       const watchClusters = clusters.map(c => c.cluster);
       const NEW_ADDED_CLUSTER = { title: NEW_CLUSTER };
       this.setState({ clusters: [NEW_ADDED_CLUSTER, ...watchClusters] });
@@ -64,7 +64,7 @@ class GenerateSupportBundle extends React.Component {
       if (listSupportBundles?.listSupportBundles.length > totalBundles) {
         listSupportBundles.stopPolling();
         const bundle = listSupportBundles.listSupportBundles[listSupportBundles.listSupportBundles.length - 1];
-        history.push(`/app/${watch.slug}/troubleshoot/analyze/${bundle.id}`);
+        history.push(`/app/${app.slug}/troubleshoot/analyze/${bundle.id}`);
       }
     }
   }
@@ -111,7 +111,7 @@ class GenerateSupportBundle extends React.Component {
   }
 
   collectBundle = (clusterId) => {
-    const { watch } = this.props;
+    const { app } = this.props;
     this.setState({
       isGeneratingBundle: true,
     });
@@ -120,7 +120,7 @@ class GenerateSupportBundle extends React.Component {
       bundle.id
     });
 
-    this.props.collectSupportBundle(watch.id, clusterId);
+    this.props.collectSupportBundle(app.id, clusterId);
 
     setTimeout(() => {
       this.redirectOnNewBundle(currentBundles);
@@ -150,12 +150,12 @@ class GenerateSupportBundle extends React.Component {
 
   render() {
     const { selectedCluster, displayUploadModal, showRunCommand, isGeneratingBundle } = this.state;
-    const { watch } = this.props;
-    const watchClusters = watch.downstreams;
+    const { app } = this.props;
+    const watchClusters = app.downstreams;
     const selectedWatch = watchClusters.find(c => c.cluster.id === selectedCluster.id);
-    const appTitle = watch.watchName || watch.name;
+    const appTitle = app.watchName || app.name;
 
-    let command = selectedWatch?.bundleCommand || watch.bundleCommand;
+    let command = selectedWatch?.bundleCommand || app.bundleCommand;
     if (command) {
       command = command.replace("API_ADDRESS", window.location.origin);
     }
@@ -166,7 +166,7 @@ class GenerateSupportBundle extends React.Component {
         </Helmet>
         <div className="GenerateSupportBundle">
           {!watchClusters.length && !this.props.listSupportBundles?.listSupportBundles?.length ?
-            <Link to={`/watch/${watch.slug}/troubleshoot`} className="replicated-link u-marginRight--5"> &lt; Support Bundle List </Link> : null
+            <Link to={`/watch/${app.slug}/troubleshoot`} className="replicated-link u-marginRight--5"> &lt; Support Bundle List </Link> : null
            }
           <div className="u-marginTop--15">
             <h2 className="u-fontSize--larger u-fontWeight--bold u-color--tuna">Analyze {appTitle} for support</h2>
@@ -224,7 +224,7 @@ class GenerateSupportBundle extends React.Component {
         >
           <div className="Modal-body">
             <UploadSupportBundleModal
-              watch={this.props.watch}
+              app={this.props.app}
               onBundleUploaded={(bundleId) => {
                 const url = `/app/${this.props.match.params.slug}/troubleshoot/analyze/${bundleId}`;
                 this.props.history.push(url);
@@ -247,7 +247,7 @@ export default withRouter(compose(
     options: props => {
       return {
         variables: {
-          watchSlug: props.watch.slug
+          watchSlug: props.app.slug
         },
         fetchPolicy: "no-cache",
       }

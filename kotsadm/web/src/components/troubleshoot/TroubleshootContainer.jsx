@@ -16,13 +16,13 @@ class TroubleshootContainer extends Component {
       <div className="flex-column flex1">
         <Switch>
           <Route exact path="/app/:slug/troubleshoot" render={() =>
-            <SupportBundleList watch={app} />
+            <SupportBundleList app={app} />
           } />
           <Route exact path="/app/:slug/troubleshoot/generate" render={() =>
-            <GenerateSupportBundle watch={app} />
+            <GenerateSupportBundle app={app} />
           } />
           <Route path="/app/:slug/troubleshoot/analyze/:bundleSlug" render={() =>
-            <SupportBundleAnalysis watch={app} />
+            <SupportBundleAnalysis app={app} />
           } />
           {/* <Route exact path="/app/:slug/troubleshoot/redactors" render={(props) =>
             <Redactors {...props} appSlug={app.slug} appName={appName} />}

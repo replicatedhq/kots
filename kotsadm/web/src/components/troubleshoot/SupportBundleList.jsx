@@ -24,11 +24,11 @@ class SupportBundleList extends React.Component {
   }
 
   render() {
-    const { watch } = this.props;
+    const { app } = this.props;
     const { loading, error, listSupportBundles } = this.props.listSupportBundles;
 
-    const appTitle = watch.watchName || watch.name;
-    const downstreams = watch.downstreams || [];
+    const appTitle = app.watchName || app.name;
+    const downstreams = app.downstreams || [];
 
     if (error) {
       return <p>{error.message}</p>;
@@ -50,14 +50,14 @@ class SupportBundleList extends React.Component {
             <SupportBundleRow
               key={bundle.id}
               bundle={bundle}
-              watchSlug={watch.slug}
+              watchSlug={app.slug}
             />
           ))
         );
       } else {
         return (
           <GenerateSupportBundle
-            watch={watch}
+            app={app}
           />
         );
       }
@@ -74,12 +74,12 @@ class SupportBundleList extends React.Component {
               items={[
                 {
                   title: "Support bundles",
-                  onClick: () => this.props.history.push(`/app/${this.props.watch.slug}/troubleshoot`),
+                  onClick: () => this.props.history.push(`/app/${this.props.app.slug}/troubleshoot`),
                   isActive: true
                 },
                 {
                   title: "Redactors",
-                  onClick: () => this.props.history.push(`/app/${this.props.watch.slug}/troubleshoot/redactors`),
+                  onClick: () => this.props.history.push(`/app/${this.props.app.slug}/troubleshoot/redactors`),
                   isActive: false
                 }
               ]}
@@ -123,7 +123,7 @@ export default withRouter(compose(
     options: props => {
       return {
         variables: {
-          watchSlug: props.watch.slug
+          watchSlug: props.app.slug
         },
         fetchPolicy: "no-cache",
       }

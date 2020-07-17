@@ -35,7 +35,7 @@ export class GitOps extends React.Component {
         </Helmet>
         <div className="flex-column flex1">
           {hasClusters && 
-            <div className="flex-column flex-1-auto u-paddingBottom--20 u-paddingTop--30 u-marginTop--10 u-overflow--auto">
+            <div className="flex-column flex-1-auto u-paddingBottom--20 u-paddingTop--30 u-marginTop--10 u-overflow--auto alignItems--center">
               <GitOpsDeploymentManager appName={this.props.appName} />
             </div>
           }

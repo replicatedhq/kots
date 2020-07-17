@@ -17,9 +17,9 @@ class UploadSupportBundleModal extends React.Component {
 
   uploadAndAnalyze = async () => {
     try {
-      const { watch } = this.props;
+      const { app } = this.props;
       const bundleId = randomstring.generate({ capitalization: "lowercase" });
-      const uploadBundleUrl = `${window.env.API_ENDPOINT}/troubleshoot/${watch.id}/${bundleId}`;
+      const uploadBundleUrl = `${window.env.API_ENDPOINT}/troubleshoot/${app.id}/${bundleId}`;
 
       this.setState({ fileUploading: true });
 

@@ -1,7 +1,7 @@
 import React from "react"
 import "../../scss/components/shared/Toggle.scss"
 
-export default class Tooltip extends React.Component {
+export default class Toggle extends React.Component {
 
   render() {
     const { items } = this.props;

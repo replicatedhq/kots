@@ -4,7 +4,6 @@ import { withRouter, Link } from "react-router-dom"
 import Helmet from "react-helmet";
 import dayjs from "dayjs";
 import Select from "react-select";
-import Toggle from "../shared/Toggle";
 import RedactorRow from "./RedactorRow";
 import DeleteRedactorModal from "../modals/DeleteRedactorModal";
 import Loader from "../shared/Loader";
@@ -150,22 +149,6 @@ class Redactors extends Component {
           <title>Redactors </title>
         </Helmet>
         <div className="Redactors--wrapper flex1 flex-column u-width--full">
-          <div className="flex justifyContent--center u-paddingBottom--30">
-            <Toggle
-              items={[
-                {
-                  title: "Support bundles",
-                  onClick: () => this.props.history.push(`/app/${this.props.appSlug}/troubleshoot`),
-                  isActive: false
-                },
-                {
-                  title: "Redactors",
-                  onClick: () => this.props.history.push(`/app/${this.props.appSlug}/troubleshoot/redactors`),
-                  isActive: true
-                }
-              ]}
-            />
-          </div>
           {sortedRedactors?.length > 0 ?
             <div className="flex1 flex-column">
               <div className="flex flex-auto alignItems--center justifyContent--spaceBetween">
@@ -184,7 +167,7 @@ class Redactors extends Component {
                   </div>
                 </div>
                 <div className="flex justifyContent--flexEnd">
-                  <Link to={`/app/${this.props.appSlug}/troubleshoot/redactors/new`} className="btn primary blue">Create new redactor</Link>
+                  <Link to={`/settings/troubleshoot/redactors/new`} className="btn primary blue">Create new redactor</Link>
                 </div>
               </div>
               <p className="u-fontSize--normal u-color--dustyGray u-fontWeight--medium u-lineHeight--normal u-marginTop--20 u-marginBottom--30">Define custom rules for sensitive values you need to be redacted when gathering a support bundle. This might include things like Secrets or IP addresses. For help with creating custom redactors,
@@ -205,7 +188,7 @@ class Redactors extends Component {
                 <p className="u-fontSize--normal u-color--dustyGray u-fontWeight--medium u-lineHeight--normal u-marginTop--20">Define custom rules for sensitive values you need to be redacted when gathering a support bundle. This might include things like Secrets or IP addresses. For help with creating custom redactors,
                 <a href="https://troubleshoot.sh/reference/redactors/overview/" target="_blank" rel="noopener noreferrer" className="replicated-link"> check out our docs</a>.</p>
                 <div className="u-marginTop--30">
-                  <Link to={`/app/${this.props.appSlug}/troubleshoot/redactors/new`} className="btn primary blue">Create new redactor</Link>
+                  <Link to={`/settings/troubleshoot/redactors/new`} className="btn primary blue">Create new redactor</Link>
                 </div>
               </div>
             </div>

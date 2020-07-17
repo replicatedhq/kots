@@ -15,10 +15,6 @@ import "../../scss/components/gitops/GitOpsDeploymentManager.scss";
 
 const STEPS = [
   {
-    step: "setup",
-    title: "Set up GitOps",
-  },
-  {
     step: "provider",
     title: "GitOps provider",
   },
@@ -61,7 +57,7 @@ const SERVICES = [
 
 class GitOpsDeploymentManager extends React.Component {
   state = {
-    step: "setup",
+    step: "provider",
     hostname: "",
     services: SERVICES,
     selectedService: SERVICES[0],
@@ -266,8 +262,8 @@ class GitOpsDeploymentManager extends React.Component {
   renderGitOpsProviderSelector = (services, selectedService) => {
     return (
       <div className="flex flex1 flex-column u-marginRight--10">
-        <p className="u-fontSize--large u-color--tuna u-fontWeight--bold u-lineHeight--normal">Which GitOps provider do you use?</p>
-        <p className="u-fontSize--normal u-color--dustyGray u-fontWeight--medium u-lineHeight--normal u-marginBottom--10">If your provider is not listed, select “Other”.</p>
+        <p className="u-fontSize--large u-color--tuna u-fontWeight--bold u-lineHeight--normal">GitOps provider</p>
+        <p className="u-fontSize--normal u-color--dustyGray u-fontWeight--medium u-lineHeight--normal u-marginBottom--10">Which GitOps provider do you use?</p>
         <div className="u-position--relative">
           <Select
             className="replicated-select-container"
@@ -310,17 +306,6 @@ class GitOpsDeploymentManager extends React.Component {
     } = this.state;
 
     switch (step.step) {
-      case "setup":
-        return (
-        <div key={`${step.step}-active`} className="GitOpsDeploy--step">
-          <p className="step-title">Deploy using a GitOps workflow</p>
-          <p className="step-sub">Connect a git version control system to this Admin Console. After setting this up, it will be<br/>possible to have all application updates (upstream updates, license updates, config changes)<br/>directly commited to any git repository and automatic deployments will be disabled.</p>
-          <GitOpsFlowIllustration />
-          <div>
-            <button className="btn primary blue u-marginTop--10" type="button" onClick={() => this.stepFrom("setup", "provider")}>Get started</button>
-          </div>
-        </div>
-      );
       case "provider":
         return (
           <div key={`${step.step}-active`} className="GitOpsDeploy--step u-textAlign--left">
@@ -466,12 +451,27 @@ class GitOpsDeploymentManager extends React.Component {
     const gitopsRepo = getGitOpsRepoQuery.getGitOpsRepo;
     const activeStep = find(STEPS, { step: this.state.step });
     return (
-      <div className="GitOpsDeploymentManager--wrapper flex-column flex1">
-        {gitopsRepo.enabled && this.state.step !== "action" ?
-          this.renderConfiguredGitOps()
-          : activeStep &&
-          this.renderActiveStep(activeStep)
-        }
+      <div className="ConsoleSettingsSection--wrapper flex-column flex1">
+        <div className="u-marginTop--15">
+          <h2 className="u-fontSize--largest u-fontWeight--bold u-color--tuna">Admin Console GitOps</h2>
+          <p className="u-fontSize--normal u-color--dustyGray u-lineHeight--medium u-marginTop--10">Before the Admin Console can push changes to your Git repository, some information about your Git configuration is required.</p>
+        </div>
+        <div className="flex flex1 u-marginTop--30">
+          <div className="flex1 u-paddingRight--30">
+            {gitopsRepo.enabled && this.state.step !== "action" ?
+              this.renderConfiguredGitOps()
+              : activeStep &&
+              this.renderActiveStep(activeStep)
+            }
+          </div>
+          <div className="flex1">
+            <div className="GitOpsIllustration--wrapper">
+              <p className="u-fontSize--normal u-fontWeight--bold u-color--tuna u-lineHeight--normal">Deploy using a GitOps workflow</p>
+              <GitOpsFlowIllustration />
+              <p className="u-fontSize--small u-fontWeight--normal u-color--dustyGray u-lineHeight--more">Connect a git version control system to this Admin Console. After setting this up, it will be possible to have all application updates (upstream updates, license updates, config changes) directly commited to any git repository and automatic deployments will be disabled.</p>
+            </div>
+          </div>
+        </div>
       </div>
     );
   }
