@@ -11,6 +11,9 @@ import download from "downloadjs";
 // import { VendorUtilities } from "../../utilities/VendorUtilities";
 
 class SupportBundleRow extends React.Component {
+  state = {
+    downloadingBundle: false
+  }
 
   renderSharedContext = () => {
     const { bundle } = this.props;
@@ -35,21 +38,24 @@ class SupportBundleRow extends React.Component {
   }
 
   downloadBundle = async (bundle) => {
+    this.setState({ downloadingBundle: true });
     fetch(`${window.env.API_ENDPOINT}/troubleshoot/supportbundle/${bundle.id}/download`, {
       method: "GET",
       headers: {
         "Authorization": Utilities.getToken(),
       }
     })
-    .then(async (result) => {
-      if (result.ok) {
-        const blob = await result.blob();
-        download(blob, "supportbundle.tar.gz", "application/gzip");
-      }
-    })
-    .catch(err => {
-      console.log(err);
-    })
+      .then(async (result) => {
+        if (result.ok) {
+          const blob = await result.blob();
+          download(blob, "supportbundle.tar.gz", "application/gzip");
+          this.setState({ downloadingBundle: false });
+        }
+      })
+      .catch(err => {
+        this.setState({ downloadingBundle: false });
+        console.log(err);
+      })
   }
 
   renderInsightIcon = (bundle, i, insight) => {
@@ -129,7 +135,11 @@ class SupportBundleRow extends React.Component {
                 </div>
               </div>
               <div className="flex flex-auto alignItems--center justifyContent--flexEnd">
-                <span className="u-fontSize--small u-color--astral u-fontWeight--medium u-textDecoration--underlineOnHover u-marginRight--normal" onClick={() => this.downloadBundle(bundle)}>Download bundle</span>
+                {this.state.downloadingBundle ?
+                  <Loader size="30" />
+                  :
+                  <span className="u-fontSize--small u-color--astral u-fontWeight--medium u-textDecoration--underlineOnHover u-marginRight--normal" onClick={() => this.downloadBundle(bundle)}>Download bundle</span>
+                }
               </div>
             </div>
           </div>
