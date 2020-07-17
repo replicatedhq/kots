@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os/exec"
 	"path/filepath"
+	"strings"
 
 	"github.com/marccampbell/yaml-toolbox/pkg/splitter"
 	"github.com/pkg/errors"
@@ -19,10 +20,10 @@ type Diff struct {
 	LinesRemoved int `json:"linesRemoved"`
 }
 
-func diffContent(updatedContent string, baseContent string) (int, int, error) {
+func diffContent(baseContent string, updatedContent string) (int, int, error) {
 	dmp := diffmatchpatch.New()
 
-	charsA, charsB, lines := dmp.DiffLinesToChars(updatedContent, baseContent)
+	charsA, charsB, lines := dmp.DiffLinesToChars(baseContent, updatedContent)
 
 	diffs := dmp.DiffMain(charsA, charsB, false)
 	diffs = dmp.DiffCharsToLines(diffs, lines)
@@ -31,10 +32,13 @@ func diffContent(updatedContent string, baseContent string) (int, int, error) {
 	deletions := 0
 
 	for _, diff := range diffs {
-		if diff.Type == diffmatchpatch.DiffDelete {
-			deletions++
-		} else if diff.Type == diffmatchpatch.DiffInsert {
-			additions++
+		scanner := bufio.NewScanner(strings.NewReader(diff.Text))
+		for scanner.Scan() {
+			if diff.Type == diffmatchpatch.DiffDelete {
+				deletions++
+			} else if diff.Type == diffmatchpatch.DiffInsert {
+				additions++
+			}
 		}
 	}
 
@@ -83,7 +87,7 @@ func DiffAppVersionsForDownstream(downstreamName string, archive string, diffBas
 			continue
 		}
 
-		linesAdded, linesRemoved, err := diffContent(string(archiveContents), string(baseContents))
+		linesAdded, linesRemoved, err := diffContent(string(baseContents), string(archiveContents))
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to diff contents")
 		}
@@ -91,7 +95,7 @@ func DiffAppVersionsForDownstream(downstreamName string, archive string, diffBas
 		diff.LinesAdded += linesAdded
 		diff.LinesRemoved += linesRemoved
 
-		if diff.LinesAdded > 0 || diff.LinesRemoved > 0 {
+		if linesAdded > 0 || linesRemoved > 0 {
 			diff.FilesChanged++
 		}
 	}
@@ -99,6 +103,7 @@ func DiffAppVersionsForDownstream(downstreamName string, archive string, diffBas
 	for baseFilename, baseContents := range baseFiles {
 		_, ok := archiveFiles[baseFilename]
 		if !ok {
+			// this file was removed
 			scanner := bufio.NewScanner(bytes.NewReader(baseContents))
 			for scanner.Scan() {
 				diff.LinesRemoved++

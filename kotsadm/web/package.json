@@ -126,6 +126,7 @@
     "clipboard": "^2.0.4",
     "cronstrue": "^1.84.0",
     "dayjs": "^1.8.14",
+    "diff": "^4.0.2",
     "downloadjs": "^1.4.7",
     "enzyme-adapter-react-16": "^1.13.1",
     "file-saver": "^2.0.2",
