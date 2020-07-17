@@ -1,7 +1,7 @@
 import * as React from "react";
 import { MonacoDiffEditor } from "react-monaco-editor";
 
-import { getLineChanges } from "../../utilities/utilities";
+import { diffContent } from "../../utilities/utilities";
 
 export default class DiffEditor extends React.Component {
   state = {
@@ -10,11 +10,9 @@ export default class DiffEditor extends React.Component {
     changes: 0
   }
 
-  onEditorValuesLoaded = () => {
-    if (this.monacoDiffEditor) {
-      const lineChanges = getLineChanges(this.monacoDiffEditor.editor.getLineChanges());
-      this.setState(lineChanges)
-    }
+  componentDidMount() {
+    const lineChanges = diffContent(this.props.original || "", this.props.value || "");
+    this.setState(lineChanges);
   }
 
   render() {

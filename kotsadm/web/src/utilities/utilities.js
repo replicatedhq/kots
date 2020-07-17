@@ -3,12 +3,12 @@ import relativeTime from "dayjs/plugin/relativeTime";
 import utc from "dayjs/plugin/utc";
 import queryString from "query-string";
 import sortBy from "lodash/sortBy";
-import jwt from "jsonwebtoken";
 import cronstrue from "cronstrue";
 import size from "lodash/size";
 import each from "lodash/each";
 import find from "lodash/find";
-import { default as download } from "downloadjs";
+import * as jsdiff from "diff";
+
 dayjs.extend(utc);
 dayjs.extend(relativeTime);
 
@@ -260,34 +260,22 @@ export function getFileFormat(selectedFile) {
   return "text";
 }
 
-export function getLineChanges(lineChangesArr) {
-  let addedLines = 0;
-  let removedLines = 0;
-  lineChangesArr.forEach(lineChange => {
-    const {
-      originalStartLineNumber,
-      originalEndLineNumber,
-      modifiedStartLineNumber,
-      modifiedEndLineNumber
-    } = lineChange;
+export function diffContent(oldContent, newContent) {
+  let addedLines = 0, removedLines = 0;
 
-    if (originalEndLineNumber === originalStartLineNumber &&
-      modifiedEndLineNumber === modifiedStartLineNumber &&
-      originalEndLineNumber && modifiedEndLineNumber) {
-      addedLines++;
-      removedLines++;
-    } else {
-      if (modifiedEndLineNumber > modifiedStartLineNumber || originalEndLineNumber === 0) {
-        addedLines += (modifiedEndLineNumber - modifiedStartLineNumber) + 1;
-      }
-      if (originalEndLineNumber > originalStartLineNumber || modifiedEndLineNumber === 0) {
-        removedLines += (originalEndLineNumber - originalStartLineNumber) + 1;
-      }
+  const diffs = jsdiff.diffLines(oldContent, newContent);
+  diffs.forEach(part => {
+    if (part.added) {
+      addedLines += part.count;
+    }
+    if (part.removed) {
+      removedLines += part.count;
     }
   });
+
   return {
-    addedLines: addedLines,
-    removedLines: removedLines,
+    addedLines,
+    removedLines,
     changes: addedLines + removedLines
   }
 }
