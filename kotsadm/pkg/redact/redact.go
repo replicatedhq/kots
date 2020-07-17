@@ -44,7 +44,7 @@ type RedactorMetadata struct {
 func GetRedactSpec() (string, string, error) {
 	configMap, errstr, err := getConfigmap()
 	if err != nil || configMap == nil {
-		return "", errstr, err
+		return "", errstr, errors.Wrap(err, "get redactors configmap")
 	}
 
 	return getRedactSpec(configMap)
@@ -66,7 +66,7 @@ func getRedactSpec(configMap *v1.ConfigMap) (string, string, error) {
 func GetRedact() (*v1beta1.Redactor, error) {
 	configmap, _, err := getConfigmap()
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "get redactors configmap")
 	}
 	if configmap == nil {
 		return nil, nil
@@ -118,7 +118,7 @@ func GetRedactBySlug(slug string) (*RedactorMetadata, error) {
 		return nil, err
 	}
 	if configmap == nil {
-		return nil, fmt.Errorf("configmap not found")
+		return nil, errors.Wrap(err, "get redactors configmap")
 	}
 
 	redactString, ok := configmap.Data[slug]
@@ -149,7 +149,7 @@ func SetRedactSpec(spec string) (string, error) {
 
 	configMap, errMsg, err := getConfigmap()
 	if err != nil {
-		return errMsg, err
+		return errMsg, errors.Wrap(err, "get redactors configmap")
 	}
 
 	newMap, err := splitRedactors(spec, configMap.Data)
@@ -169,7 +169,7 @@ func SetRedactSpec(spec string) (string, error) {
 func SetRedactYaml(slug, description string, enabled, newRedact bool, yamlBytes []byte) (*RedactorMetadata, error) {
 	configMap, _, err := getConfigmap()
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "get redactors configmap")
 	}
 
 	newData, redactorEntry, err := setRedactYaml(slug, description, enabled, newRedact, time.Now(), yamlBytes, configMap.Data)
@@ -190,7 +190,7 @@ func SetRedactYaml(slug, description string, enabled, newRedact bool, yamlBytes 
 func SetRedactEnabled(slug string, enabled bool) (*RedactorMetadata, error) {
 	configMap, _, err := getConfigmap()
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "get redactors configmap")
 	}
 
 	newData, redactorEntry, err := setRedactEnabled(slug, enabled, time.Now(), configMap.Data)
@@ -312,7 +312,7 @@ func setRedactYaml(slug, description string, enabled, newRedact bool, currentTim
 func DeleteRedact(slug string) error {
 	configMap, _, err := getConfigmap()
 	if err != nil {
-		return err
+		return errors.Wrap(err, "get redactors configmap")
 	}
 
 	delete(configMap.Data, slug)
