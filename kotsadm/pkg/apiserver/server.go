@@ -80,6 +80,7 @@ func Start() {
 	r.Path("/api/v1/redact/spec/{slug}").Methods("OPTIONS", "GET").HandlerFunc(handlers.GetRedactMetadataAndYaml)
 	r.Path("/api/v1/redact/spec/{slug}").Methods("POST").HandlerFunc(handlers.SetRedactMetadataAndYaml)
 	r.Path("/api/v1/redact/spec/{slug}").Methods("DELETE").HandlerFunc(handlers.DeleteRedact)
+	r.Path("/api/v1/redact/enabled/{slug}").Methods("POST").HandlerFunc(handlers.SetRedactEnabled)
 
 	r.PathPrefix("/api/v1/kots/").Methods("OPTIONS").HandlerFunc(handlers.CORS)
 	r.PathPrefix("/api/v1/kots/").Methods("HEAD", "GET", "POST", "PUT", "DELETE").HandlerFunc(handlers.NodeProxy(upstream))
