@@ -16,12 +16,14 @@ export class SupportBundleAnalysis extends React.Component {
   constructor(props) {
     super();
     this.state = {
-      activeTab: props.location.pathname.indexOf("/contents") !== -1 ? "fileTree" : location.pathname.indexOf("/redactor") !== -1  ? "redactorReport" : "bundleAnalysis",
-      filterTiles: "0"
+      activeTab: props.location.pathname.indexOf("/contents") !== -1 ? "fileTree" : location.pathname.indexOf("/redactor") !== -1 ? "redactorReport" : "bundleAnalysis",
+      filterTiles: "0",
+      downloadingBundle: false
     };
   }
 
   downloadBundle = async (bundle) => {
+    this.setState({ downloadingBundle: true });
     fetch(`${window.env.API_ENDPOINT}/troubleshoot/supportbundle/${bundle.id}/download`, {
       method: "GET",
       headers: {
@@ -31,11 +33,13 @@ export class SupportBundleAnalysis extends React.Component {
       .then(async (result) => {
         if (result.ok) {
           const blob = await result.blob();
-          download(blob, "supportbundle.tar.gz", "application/gzip")
+          download(blob, "supportbundle.tar.gz", "application/gzip");
+          this.setState({ downloadingBundle: false });
         }
       })
       .catch(err => {
         console.log(err);
+        this.setState({ downloadingBundle: false });
       })
   }
 
@@ -49,7 +53,7 @@ export class SupportBundleAnalysis extends React.Component {
     const { location } = this.props;
     if (location !== lastProps.location) {
       this.setState({
-        activeTab: location.pathname.indexOf("/contents") !== -1 ? "fileTree" : location.pathname.indexOf("/redactor") !== -1  ? "redactorReport" : "bundleAnalysis"
+        activeTab: location.pathname.indexOf("/contents") !== -1 ? "fileTree" : location.pathname.indexOf("/redactor") !== -1 ? "redactorReport" : "bundleAnalysis"
       });
     }
   }
@@ -57,7 +61,7 @@ export class SupportBundleAnalysis extends React.Component {
   render() {
     const { watch, getSupportBundle } = this.props;
     const bundle = getSupportBundle?.getSupportBundle;
-    
+
     if (getSupportBundle.loading) {
       return (
         <div className="flex-column flex1 justifyContent--center alignItems--center">
@@ -93,7 +97,10 @@ export class SupportBundleAnalysis extends React.Component {
                     </div>
                   </div>
                   <div className="flex flex-auto alignItems--center justifyContent--flexEnd">
-                    <button className="btn primary lightBlue" onClick={() => this.downloadBundle(bundle)}> Download bundle </button>
+                    {this.state.downloadingBundle ? 
+                      <Loader size="30" /> :
+                      <button className="btn primary lightBlue" onClick={() => this.downloadBundle(bundle)}> Download bundle </button>
+                    }
                   </div>
                 </div>
               </div>
