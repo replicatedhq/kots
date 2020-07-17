@@ -186,6 +186,52 @@ func SetRedactYaml(slug, description string, enabled, newRedact bool, yamlBytes 
 	return redactorEntry, nil
 }
 
+// sets whether an individual redactor is enabled
+func SetRedactEnabled(slug string, enabled bool) (*RedactorMetadata, error) {
+	configMap, _, err := getConfigmap()
+	if err != nil {
+		return nil, err
+	}
+
+	newData, redactorEntry, err := setRedactEnabled(slug, enabled, time.Now(), configMap.Data)
+	if err != nil {
+		return nil, err
+	}
+
+	configMap.Data = newData
+
+	_, err = writeConfigmap(configMap)
+	if err != nil {
+		return nil, errors.Wrapf(err, "write configMap with updated redact")
+	}
+	return redactorEntry, nil
+}
+
+func setRedactEnabled(slug string, enabled bool, currentTime time.Time, data map[string]string) (map[string]string, *RedactorMetadata, error) {
+	redactorEntry := RedactorMetadata{}
+	redactString, ok := data[slug]
+	if !ok {
+		return nil, nil, fmt.Errorf("redactor %s not found", slug)
+	}
+
+	// unmarshal existing redactor
+	err := json.Unmarshal([]byte(redactString), &redactorEntry)
+	if err != nil {
+		return nil, nil, errors.Wrapf(err, "unable to parse redactor %s", slug)
+	}
+
+	redactorEntry.Metadata.Enabled = enabled
+	redactorEntry.Metadata.Updated = currentTime
+
+	jsonBytes, err := json.Marshal(redactorEntry)
+	if err != nil {
+		return nil, nil, errors.Wrapf(err, "unable to marshal redactor %s", slug)
+	}
+
+	data[slug] = string(jsonBytes)
+	return data, &redactorEntry, nil
+}
+
 func setRedactYaml(slug, description string, enabled, newRedact bool, currentTime time.Time, yamlBytes []byte, data map[string]string) (map[string]string, *RedactorMetadata, error) {
 	// parse yaml as redactor
 	newRedactorSpec, err := parseRedact(yamlBytes)

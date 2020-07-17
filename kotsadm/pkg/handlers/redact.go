@@ -51,6 +51,10 @@ type PostRedactorMetadata struct {
 	Redactor    string `json:"redactor"`
 }
 
+type PostRedactorEnabledMetadata struct {
+	Enabled bool `json:"enabled"`
+}
+
 func UpdateRedact(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Access-Control-Allow-Headers", "content-type, origin, accept, authorization")
@@ -351,5 +355,61 @@ func DeleteRedact(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusOK)
+	return
+}
+
+func SetRedactEnabled(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Headers", "content-type, origin, accept, authorization")
+
+	metadataResponse := GetRedactorResponse{
+		Success: false,
+	}
+
+	sess, err := session.Parse(r.Header.Get("Authorization"))
+	if err != nil {
+		logger.Error(err)
+		metadataResponse.Error = "failed to parse authorization header"
+		JSON(w, 401, metadataResponse)
+		return
+	}
+
+	// we don't currently have roles, all valid tokens are valid sessions
+	if sess == nil || sess.ID == "" {
+		metadataResponse.Error = "no session in auth header"
+		JSON(w, 401, metadataResponse)
+		return
+	}
+
+	redactorSlug := mux.Vars(r)["slug"]
+
+	updateRedactRequest := PostRedactorEnabledMetadata{}
+	if err := json.NewDecoder(r.Body).Decode(&updateRedactRequest); err != nil {
+		logger.Error(err)
+		metadataResponse.Error = "failed to decode request body"
+		JSON(w, 400, metadataResponse)
+		return
+	}
+
+	updatedRedactor, err := redact.SetRedactEnabled(redactorSlug, updateRedactRequest.Enabled)
+	if err != nil {
+		logger.Error(err)
+		metadataResponse.Error = "failed to update redactor status"
+		JSON(w, 400, metadataResponse)
+		return
+	}
+
+	marshalled, err := util.MarshalIndent(2, updatedRedactor.Redact)
+	if err != nil {
+		logger.Error(err)
+		metadataResponse.Error = "failed to marshal redactor"
+		JSON(w, http.StatusInternalServerError, metadataResponse)
+		return
+	}
+
+	metadataResponse.Success = true
+	metadataResponse.Metadata = updatedRedactor.Metadata
+	metadataResponse.Redactor = string(marshalled)
+	JSON(w, http.StatusOK, metadataResponse)
 	return
 }
