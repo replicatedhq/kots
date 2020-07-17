@@ -9,7 +9,6 @@ import (
 	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
 	"github.com/replicatedhq/kots/kotsadm/pkg/redact"
 	"github.com/replicatedhq/kots/kotsadm/pkg/session"
-	"github.com/replicatedhq/kots/pkg/util"
 )
 
 type UpdateRedactRequest struct {
@@ -315,17 +314,9 @@ func SetRedactMetadataAndYaml(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	marshalled, err := util.MarshalIndent(2, newRedactor.Redact)
-	if err != nil {
-		logger.Error(err)
-		metadataResponse.Error = "failed to marshal redactor"
-		JSON(w, http.StatusInternalServerError, metadataResponse)
-		return
-	}
-
 	metadataResponse.Success = true
 	metadataResponse.Metadata = newRedactor.Metadata
-	metadataResponse.Redactor = string(marshalled)
+	metadataResponse.Redactor = newRedactor.Redact
 	JSON(w, http.StatusOK, metadataResponse)
 	return
 }
@@ -399,17 +390,9 @@ func SetRedactEnabled(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	marshalled, err := util.MarshalIndent(2, updatedRedactor.Redact)
-	if err != nil {
-		logger.Error(err)
-		metadataResponse.Error = "failed to marshal redactor"
-		JSON(w, http.StatusInternalServerError, metadataResponse)
-		return
-	}
-
 	metadataResponse.Success = true
 	metadataResponse.Metadata = updatedRedactor.Metadata
-	metadataResponse.Redactor = string(marshalled)
+	metadataResponse.Redactor = updatedRedactor.Redact
 	JSON(w, http.StatusOK, metadataResponse)
 	return
 }
