@@ -19,12 +19,12 @@ Many of them have requested the ability to have conditional status informers so 
 
 ## High-Level Design
 
-In the kots application spec, modify the `statusInformers` option array type to include an optional `exclude` field with each entry.
+In the kots application spec, modify the `statusInformers` array type to include an optional `exclude` field with each entry.
 Then, config template functions (e.g. ConfigOptionEquals) can be used in the `exclude` field value to indicate when/if to exclude the entry (informer) from the list.
 
 ## Detailed Design
 
-First, modify the `statusInformers` option in the kots application spec to be an array of interfaces instead of strings to support both the old and the new format (explanation of new format below).
+First, modify the `statusInformers` array in the kots application spec to be an array of interfaces instead of strings to support both the old and the new format (explanation of new format below).
 
 In the new format, each entry can be either a string (same as old format), or an object that consists of two fields, a string `resource` field, and a boolstring `exclude` field.
 The `resource` field is required, but the `exclude` field is optional.
