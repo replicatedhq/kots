@@ -4,7 +4,7 @@ import { withRouter, Link } from "react-router-dom";
 import { graphql, compose, withApollo } from "react-apollo";
 
 import { listSupportBundles } from "../../queries/TroubleshootQueries";
-// import Toggle from "../shared/Toggle";
+import Toggle from "../shared/Toggle";
 import Loader from "../shared/Loader";
 import SupportBundleRow from "./SupportBundleRow";
 import GenerateSupportBundle from "./GenerateSupportBundle";
@@ -69,7 +69,7 @@ class SupportBundleList extends React.Component {
           <title>{`${appTitle} Troubleshoot`}</title>
         </Helmet>
         <div className="flex1 flex-column">
-          {/* <div className="flex justifyContent--center u-paddingBottom--30">
+          <div className="flex justifyContent--center u-paddingBottom--30">
             <Toggle
               items={[
                 {
@@ -84,7 +84,7 @@ class SupportBundleList extends React.Component {
                 }
               ]}
             />
-          </div> */}
+          </div>
           <div className="flex flex1">
             <div className="flex1 flex-column">
               <div className="u-position--relative flex-auto u-paddingBottom--10 flex">
@@ -129,9 +129,4 @@ export default withRouter(compose(
       }
     }
   })
-  // graphql(archiveSupportBundle, {
-  //   props: ({ mutate }) => ({
-  //     archiveSupportBundle: (id) => mutate({ variables: { id } })
-  //   })
-  // }),
 )(SupportBundleList));
