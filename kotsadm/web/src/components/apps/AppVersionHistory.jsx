@@ -140,7 +140,8 @@ class AppVersionHistory extends Component {
     const { app } = this.props;
     const downstream = app.downstreams[0];
     const diffSummary = this.getVersionDiffSummary(version);
-    const hasYamlErrors = this.hasYamlErrors(downstream, version);
+    let hasYamlErrors = this.hasYamlErrors(downstream, version);
+    hasYamlErrors = false;
 
     return (
       <div>
