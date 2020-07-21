@@ -144,6 +144,7 @@ export class TroubleshootStore {
   }
 
   public async listSupportBundles(appOrWatchId: string): Promise<SupportBundle[]> {
+    // DANGER ZONE: changing sort order here afftects what support bundle is shown in the analysis view.
     const q = `select id from supportbundle where watch_id = $1 order by created_at desc`;
     const v = [appOrWatchId];
     const result = await this.pool.query(q, v);
