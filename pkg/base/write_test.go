@@ -1,6 +1,8 @@
 package base
 
 import (
+	"encoding/json"
+	"reflect"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -253,4 +255,57 @@ func Test_DeduplicateOnContent(t *testing.T) {
 		})
 	}
 
+}
+
+func Test_convertToSingleDocBaseFiles(t *testing.T) {
+	tests := []struct {
+		name  string
+		files []BaseFile
+		want  []BaseFile
+	}{
+		{
+			name: "basic",
+			files: []BaseFile{
+				{
+					Path:    "/dir/multi.yaml",
+					Content: []byte("---\na: b\n---\nc: d"),
+				},
+				{
+					Path:    "/dir/single.yaml",
+					Content: []byte("e: f"),
+				},
+				{
+					Path:    "/dir/empty.yaml",
+					Content: []byte(""),
+				},
+			},
+			want: []BaseFile{
+				{
+					Path:    "/dir/multi.yaml",
+					Content: []byte("---\na: b"),
+				},
+				{
+					Path:    "/dir/multi-2.yaml",
+					Content: []byte("c: d"),
+				},
+				{
+					Path:    "/dir/single.yaml",
+					Content: []byte("e: f"),
+				},
+				{
+					Path:    "/dir/empty.yaml",
+					Content: []byte(""),
+				},
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := convertToSingleDocBaseFiles(tt.files); !reflect.DeepEqual(got, tt.want) {
+				gotB, _ := json.MarshalIndent(got, "", "  ")
+				wantB, _ := json.MarshalIndent(tt.want, "", "  ")
+				t.Errorf("convertToSingleDocBaseFiles() = %s, want %s", gotB, wantB)
+			}
+		})
+	}
 }

@@ -83,12 +83,32 @@ func renderReplicated(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (
 	}
 
 	for _, upstreamFile := range u.Files {
+		if renderOptions.ExcludeKotsKinds {
+			// kots kinds are not expected to be valid yaml after builder.RenderTemplate
+			// this will prevent errors later from ShouldBeIncludedInBaseKustomization
+			newContent := [][]byte{}
+			isKotsKind := false
+			for _, doc := range convertToSingleDocs(upstreamFile.Content) {
+				file := BaseFile{Path: upstreamFile.Path, Content: doc}
+				// ignore the error here, we will catch it later in ShouldBeIncludedInBaseKustomization
+				if ok, _ := file.IsKotsKind(); ok {
+					isKotsKind = true
+				} else {
+					newContent = append(newContent, doc)
+				}
+			}
+			if isKotsKind && len(newContent) == 0 {
+				continue
+			}
+			upstreamFile.Content = bytes.Join(newContent, []byte("\n---\n"))
+		}
+
 		baseFile, err := upstreamFileToBaseFile(upstreamFile, builder, renderOptions.Log)
 		if err != nil {
 			return nil, errors.Wrapf(err, "failed to convert upstream file %s to base", upstreamFile.Path)
 		}
 
-		baseFiles := convertToSingleDocs([]BaseFile{baseFile})
+		baseFiles := convertToSingleDocBaseFiles([]BaseFile{baseFile})
 		for _, f := range baseFiles {
 			include, err := f.ShouldBeIncludedInBaseKustomization(renderOptions.ExcludeKotsKinds)
 			if err != nil {
