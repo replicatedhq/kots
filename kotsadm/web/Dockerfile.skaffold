@@ -1,4 +1,4 @@
-FROM node:8
+FROM node:10
 EXPOSE 3000 9229
 
 ADD ./package.json /src/package.json
