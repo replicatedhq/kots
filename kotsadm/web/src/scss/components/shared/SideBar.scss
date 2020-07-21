@@ -33,7 +33,8 @@
   height: 36px;
   width: 36px;
   background-position: center;
-  background-size: cover;
+  background-size: contain;
+  background-repeat: no-repeat;
   margin-right: 10px;
   border-radius: 40px;
   box-shadow: inset 0 0 3px rgba(0,0,0,0.3);
