@@ -124,20 +124,7 @@ func (f BaseFile) ShouldBeIncludedInBaseKustomization(excludeKotsKinds bool) (bo
 
 	// Backup is never deployed. kots.io/exclude and kots.io/when are used to enable snapshots
 	if excludeKotsKinds {
-		if o.APIVersion == "velero.io/v1" && o.Kind == "Backup" {
-			return false, nil
-		}
-
-		if o.APIVersion == "kots.io/v1beta1" {
-			return false, nil
-		}
-
-		if o.APIVersion == "troubleshoot.replicated.com/v1beta1" {
-			return false, nil
-		}
-
-		// In addition to kotskinds, we exclude the application crd for now
-		if o.APIVersion == "app.k8s.io/v1beta1" {
+		if iskotsAPIVersionKind(o) {
 			return false, nil
 		}
 	}
@@ -183,6 +170,46 @@ func (f BaseFile) ShouldBeIncludedInBaseKustomization(excludeKotsKinds bool) (bo
 	}
 
 	return true, nil
+}
+
+func (f BaseFile) IsKotsKind() (bool, error) {
+	o := OverlySimpleGVK{}
+
+	if err := yaml.Unmarshal(f.Content, &o); err != nil {
+		// check if this is a yaml file
+		if ext := filepath.Ext(f.Path); ext == ".yaml" || ext == ".yml" {
+			return false, ParseError{Err: err}
+		}
+		return false, nil
+	}
+
+	// check if this is a kubernetes document
+	if o.APIVersion == "" || o.Kind == "" {
+		// check if this is a yaml file
+		if ext := filepath.Ext(f.Path); ext == ".yaml" || ext == ".yml" {
+			return false, ParseError{Err: errors.New("not a kubernetes document")}
+		}
+		return false, nil
+	}
+
+	return iskotsAPIVersionKind(o), nil
+}
+
+func iskotsAPIVersionKind(o OverlySimpleGVK) bool {
+	if o.APIVersion == "velero.io/v1" && o.Kind == "Backup" {
+		return true
+	}
+	if o.APIVersion == "kots.io/v1beta1" {
+		return true
+	}
+	if o.APIVersion == "troubleshoot.replicated.com/v1beta1" {
+		return true
+	}
+	// In addition to kotskinds, we exclude the application crd for now
+	if o.APIVersion == "app.k8s.io/v1beta1" {
+		return true
+	}
+	return false
 }
 
 func (b Base) ListErrorFiles() []BaseFile {
