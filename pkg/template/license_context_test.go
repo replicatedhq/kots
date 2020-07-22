@@ -44,7 +44,7 @@ func TestLicenseCtx_licenseFieldValue(t *testing.T) {
 			License: &kotsv1beta1.License{
 				Spec: kotsv1beta1.LicenseSpec{
 					Entitlements: map[string]kotsv1beta1.EntitlementField{
-						"abc": kotsv1beta1.EntitlementField{
+						"abc": {
 							Value: kotsv1beta1.EntitlementValue{
 								Type:   kotsv1beta1.String,
 								StrVal: "abc",
@@ -61,7 +61,7 @@ func TestLicenseCtx_licenseFieldValue(t *testing.T) {
 			License: &kotsv1beta1.License{
 				Spec: kotsv1beta1.LicenseSpec{
 					Entitlements: map[string]kotsv1beta1.EntitlementField{
-						"integerField": kotsv1beta1.EntitlementField{
+						"integerField": {
 							Value: kotsv1beta1.EntitlementValue{
 								Type:   kotsv1beta1.Int,
 								IntVal: 587,
@@ -78,7 +78,7 @@ func TestLicenseCtx_licenseFieldValue(t *testing.T) {
 			License: &kotsv1beta1.License{
 				Spec: kotsv1beta1.LicenseSpec{
 					Entitlements: map[string]kotsv1beta1.EntitlementField{
-						"strField": kotsv1beta1.EntitlementField{
+						"strField": {
 							Value: kotsv1beta1.EntitlementValue{
 								Type:   kotsv1beta1.String,
 								StrVal: "strValue",
@@ -89,6 +89,142 @@ func TestLicenseCtx_licenseFieldValue(t *testing.T) {
 			},
 			fieldName: "strField",
 			want:      "strValue",
+		},
+		{
+			name: "built-in isGitOpsSupported",
+			License: &kotsv1beta1.License{
+				Spec: kotsv1beta1.LicenseSpec{
+					IsGitOpsSupported: true,
+					Entitlements: map[string]kotsv1beta1.EntitlementField{
+						"strField": {
+							Value: kotsv1beta1.EntitlementValue{
+								Type:   kotsv1beta1.String,
+								StrVal: "strValue",
+							},
+						},
+					},
+				},
+			},
+			fieldName: "isGitOpsSupported",
+			want:      "true",
+		},
+		{
+			name: "built-in isAirgapSupported",
+			License: &kotsv1beta1.License{
+				Spec: kotsv1beta1.LicenseSpec{
+					IsAirgapSupported: true,
+				},
+			},
+			fieldName: "isAirgapSupported",
+			want:      "true",
+		},
+		{
+			name: "built-in licenseSequence",
+			License: &kotsv1beta1.License{
+				Spec: kotsv1beta1.LicenseSpec{
+					LicenseSequence: 987,
+				},
+			},
+			fieldName: "licenseSequence",
+			want:      "987",
+		},
+		{
+			name: "built-in licenseType",
+			License: &kotsv1beta1.License{
+				Spec: kotsv1beta1.LicenseSpec{
+					LicenseType: "test",
+				},
+			},
+			fieldName: "licenseType",
+			want:      "test",
+		},
+		{
+			name: "built-in appSlug",
+			License: &kotsv1beta1.License{
+				Spec: kotsv1beta1.LicenseSpec{
+					AppSlug: "appSlug",
+				},
+			},
+			fieldName: "appSlug",
+			want:      "appSlug",
+		},
+		{
+			name: "built-in channelName",
+			License: &kotsv1beta1.License{
+				Spec: kotsv1beta1.LicenseSpec{
+					ChannelName: "stable",
+				},
+			},
+			fieldName: "channelName",
+			want:      "stable",
+		},
+		{
+			name: "built-in customerName",
+			License: &kotsv1beta1.License{
+				Spec: kotsv1beta1.LicenseSpec{
+					CustomerName: "name",
+				},
+			},
+			fieldName: "customerName",
+			want:      "name",
+		},
+		{
+			name: "built-in licenseID",
+			License: &kotsv1beta1.License{
+				Spec: kotsv1beta1.LicenseSpec{
+					LicenseID: "123",
+				},
+			},
+			fieldName: "licenseID",
+			want:      "123",
+		},
+		{
+			name: "built-in licenseId",
+			License: &kotsv1beta1.License{
+				Spec: kotsv1beta1.LicenseSpec{
+					LicenseID: "123",
+				},
+			},
+			fieldName: "licenseId",
+			want:      "123",
+		},
+		{
+			name: "built-in signature",
+			License: &kotsv1beta1.License{
+				Spec: kotsv1beta1.LicenseSpec{
+					IsGitOpsSupported: true,
+					Entitlements: map[string]kotsv1beta1.EntitlementField{
+						"strField": {
+							Value: kotsv1beta1.EntitlementValue{
+								Type:   kotsv1beta1.String,
+								StrVal: "strValue",
+							},
+						},
+					},
+					Signature: []byte("abcdef0123456789"),
+				},
+			},
+			fieldName: "signature",
+			want:      "abcdef0123456789",
+		},
+		{
+			name: "built-in signature with a custom field of the same name",
+			License: &kotsv1beta1.License{
+				Spec: kotsv1beta1.LicenseSpec{
+					IsGitOpsSupported: true,
+					Entitlements: map[string]kotsv1beta1.EntitlementField{
+						"signature": {
+							Value: kotsv1beta1.EntitlementValue{
+								Type:   kotsv1beta1.String,
+								StrVal: "strValue",
+							},
+						},
+					},
+					Signature: []byte("abcdef0123456789"),
+				},
+			},
+			fieldName: "signature",
+			want:      "abcdef0123456789",
 		},
 	}
 	for _, tt := range tests {
