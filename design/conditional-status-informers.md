@@ -28,7 +28,7 @@ This way, config template functions (e.g. ConfigOptionEquals) can be used to dec
 - Getting the list of status informers happens during the app deploy loop in TypeScript.
 - The list of informers is then sent through a socket to the operator to be applied.
 
-1- To add the ability to exclude specific status informers, the `statusInformers` array will be rendered before it's sent to the operator.
+1- To add the ability to exclude specific status informers, the `statusInformers` array will be rendered using the `RenderFile` function from kots ffi before it's sent to the operator (the `RenderFile` function can take any string as input to render).
 2- This way, conditional template functions can be used as an entry in the `statusInformers` array in the kots application spec.
 3- The template function will then resolve to either a valid status informer entry, or not (an empty string `""` for example).
-4- Invalid status informers (entries) will be excluded from the array.
+4- Invalid status informers (entries) will be excluded from the array by the operator.
