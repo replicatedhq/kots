@@ -19,22 +19,16 @@ Many of them have requested the ability to have conditional status informers so 
 
 ## High-Level Design
 
-In the kots application spec, modify the `statusInformers` array type to include an optional `exclude` field with each entry.
-Then, config template functions (e.g. ConfigOptionEquals) can be used in the `exclude` field value to indicate when/if to exclude the entry (informer) from the list.
+Add the ability to render/template the `statusInformers` array in the kots application spec (`kind: Application`).
+This way, config template functions (e.g. ConfigOptionEquals) can be used to decide whether or not an informer should be included/applied.
 
 ## Detailed Design
 
-First, modify the `statusInformers` array in the kots application spec to be an array of interfaces instead of strings to support both the old and the new format (explanation of new format below).
+## Notes:
+- Getting the list of status informers happens during the app deploy loop in TypeScript.
+- The list of informers is then sent through a socket to the operator to be applied.
 
-In the new format, each entry can be either a string (same as old format), or an object that consists of two fields, a string `resource` field, and a boolstring `exclude` field.
-The `resource` field is required, but the `exclude` field is optional.
-
-Second, when creating or updating an app version:
-
-1- Parse the kots application spec and read the `statusInformers` array.
-2- Check the type for each entry in the array, if not a string, parse in the new format.
-3- Parse the `exclude` field as bool and exclude the entry from the array accordingly.
-4- Convert the array back to the old format (array of strings) containing the names of the resources.
-5- Update the `statusInformers` array in the kots application spec to be saved in the db for this version.
-
-Now, when this version is deployed, the status informers to be executed will not contain the excluded status informers.
+1- To add the ability to exclude specific status informers, the `statusInformers` array will be rendered before it's sent to the operator.
+2- This way, conditional template functions can be used as an entry in the `statusInformers` array in the kots application spec.
+3- The template function will then resolve to either a valid status informer entry, or not (an empty string `""` for example).
+4- Invalid status informers (entries) will be excluded from the array.
