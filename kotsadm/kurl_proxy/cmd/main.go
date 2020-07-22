@@ -270,7 +270,9 @@ func getHttpsServer(upstream *url.URL, tlsSecretName string, secrets corev1.Secr
 			if len(secret.StringData) == 0 {
 				secret.StringData = make(map[string]string)
 			}
-			secret.StringData["hostname"] = hostString
+			if hostString != "" {
+				secret.StringData["hostname"] = hostString
+			}
 
 			if secret.Type == "Opaque" {
 				// Old version version of secret was type 'Opaque'
@@ -343,7 +345,9 @@ func getHttpsServer(upstream *url.URL, tlsSecretName string, secrets corev1.Secr
 			if len(secret.StringData) == 0 {
 				secret.StringData = make(map[string]string)
 			}
-			secret.StringData["hostname"] = hostString
+			if hostString != "" {
+				secret.StringData["hostname"] = hostString
+			}
 
 			if secret.Type == "Opaque" {
 				// Old version version of secret was type 'Opaque'
