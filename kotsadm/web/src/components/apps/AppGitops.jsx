@@ -90,8 +90,13 @@ class AppGitops extends Component {
     }
 
     try {
-      await this.props.testGitOpsConnection(appId, clusterId);
-      await this.props.refetch();
+      await this.props.testGitOpsConnection(appId, clusterId).then((res) => {
+        if (res.data.testGitOpsConnection) {
+          this.props.history.push("/gitops");
+        } else {
+          this.props.refetch();
+        }
+      })
     } catch (err) {
       console.log(err);
     } finally {
