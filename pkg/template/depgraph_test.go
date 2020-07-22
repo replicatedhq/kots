@@ -12,6 +12,8 @@ import (
 
 type depGraphTestCase struct {
 	dependencies   map[string][]string
+	testCerts      map[string][]string
+	testKeys       map[string][]string
 	resolveOrder   []string
 	expectError    bool   //expect an error fetching head nodes
 	expectNotFound string //expect this dependency not to be part of the head nodes
@@ -113,6 +115,41 @@ func TestDepGraph(t *testing.T) {
 			expectError:  true,
 			name:         "does_not_exist",
 		},
+		{
+			dependencies: map[string][]string{
+				"alpha":   {},
+				"bravo":   {"alpha"},
+				"charlie": {"bravo"},
+				"delta":   {"alpha", "charlie"},
+				"echo":    {},
+			},
+			testCerts: map[string][]string{
+				"echo": {"certA"},
+			},
+			testKeys: map[string][]string{
+				"delta": {"certA"},
+			},
+			resolveOrder: []string{"alpha", "bravo", "charlie", "echo", "delta"},
+			name:         "basic_certs",
+		},
+		{
+			dependencies: map[string][]string{
+				"alpha":   {},
+				"bravo":   {"alpha"},
+				"charlie": {"bravo"},
+				"delta":   {"alpha", "charlie"},
+				"echo":    {},
+			},
+			testCerts: map[string][]string{
+				"echo": {"certA"},
+			},
+			testKeys: map[string][]string{
+				"delta": {"certA"},
+			},
+			resolveOrder:   []string{"alpha", "bravo", "charlie", "delta", "echo"},
+			name:           "basic_certs_original_order",
+			expectNotFound: "delta",
+		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
@@ -126,6 +163,18 @@ func TestDepGraph(t *testing.T) {
 					graph.AddDep(source, dep)
 				}
 			}
+			for source, certNames := range test.testCerts {
+				for _, certName := range certNames {
+					graph.AddCert(source, certName)
+				}
+			}
+			for source, keys := range test.testKeys {
+				for _, key := range keys {
+					graph.AddKey(source, key)
+				}
+			}
+			graph.resolveCertKeys()
+
 			runGraphTests(t, test, graph)
 		})
 
@@ -135,7 +184,7 @@ func TestDepGraph(t *testing.T) {
 
 			graph := depGraph{}
 
-			groups := buildTestConfigGroups(test.dependencies, "templateStringStart", "templateStringEnd", true)
+			groups := buildTestConfigGroups(test.dependencies, test.testCerts, test.testKeys, "templateStringStart", "templateStringEnd", true)
 
 			err := graph.ParseConfigGroup(groups)
 			require.NoError(t, err)
@@ -146,7 +195,7 @@ func TestDepGraph(t *testing.T) {
 }
 
 // this makes sure that we test with each of the configOption types, in both Value and Default
-func buildTestConfigGroups(dependencies map[string][]string, prefix string, suffix string, rotate bool) []kotsv1beta1.ConfigGroup {
+func buildTestConfigGroups(dependencies, certs, keys map[string][]string, prefix string, suffix string, rotate bool) []kotsv1beta1.ConfigGroup {
 	group := kotsv1beta1.ConfigGroup{}
 	group.Items = make([]kotsv1beta1.ConfigItem, 0)
 	counter := 0
@@ -166,12 +215,28 @@ func buildTestConfigGroups(dependencies map[string][]string, prefix string, suff
 		}
 	}
 
+	totalDepItems := 0
+
 	for source, deps := range dependencies {
 		newItem := kotsv1beta1.ConfigItem{Type: "text", Name: source}
 		depString := prefix
-		for i, dep := range deps {
-			depString += fmt.Sprintf(templateFuncs[i%len(templateFuncs)], dep)
+		for _, dep := range deps {
+			depString += fmt.Sprintf(templateFuncs[totalDepItems%len(templateFuncs)], dep)
+			totalDepItems++
 		}
+
+		if certNames, ok := certs[source]; ok {
+			for _, certName := range certNames {
+				depString += fmt.Sprintf("{{repl TLSCert \"%s\" }}", certName)
+			}
+		}
+
+		if certNames, ok := keys[source]; ok {
+			for _, certName := range certNames {
+				depString += fmt.Sprintf("{{repl TLSKey \"%s\" }}", certName)
+			}
+		}
+
 		depString += suffix
 
 		if counter%2 == 0 {
