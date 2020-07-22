@@ -32,3 +32,5 @@ This way, config template functions (e.g. ConfigOptionEquals) can be used to dec
 2- This way, conditional template functions can be used as an entry in the `statusInformers` array in the kots application spec.
 3- The template function will then resolve to either a valid status informer entry, or not (an empty string `""` for example).
 4- Invalid status informers (entries) will be excluded from the array by the operator.
+
+Note: the pattern of rendering a kotskinds file on the fly already exists and used for preflights where the preflight spec is rendered before loading and executing preflights. For reference: https://github.com/replicatedhq/kots/blob/7f621f7e/kotsadm/pkg/preflight/preflight.go#L59
