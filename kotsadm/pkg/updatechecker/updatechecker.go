@@ -218,6 +218,10 @@ func CheckForUpdates(appID string, deploy bool) (int64, error) {
 
 		// get the first version, the array must contain versions at this point
 		// this function can't run without an app
+		if len(allVersions) == 0 {
+			return 0, errors.New("no versions found")
+		}
+
 		latestVersion := allVersions[len(allVersions)-1]
 		downstreams, err := downstream.ListDownstreamsForApp(a.ID)
 		if err != nil {
