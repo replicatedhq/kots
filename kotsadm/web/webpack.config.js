@@ -1,5 +1,5 @@
 const path = require("path");
-const webpackMerge = require("webpack-merge");
+const { merge } = require("webpack-merge");
 const webpack = require("webpack");
 const HtmlWebpackPlugin = require("html-webpack-plugin");
 const HtmlWebpackTemplate = require("html-webpack-template");
@@ -109,7 +109,16 @@ module.exports = function (env) {
         },
         {
           test: /\.woff(2)?(\?v=\d+\.\d+\.\d+)?$/,
-          loader: "url-loader?limit=10000&mimetype=application/font-woff&name=./assets/[hash].[ext]",
+          use: [
+            {
+              loader: "url-loader",
+              options: {
+                limit: 10000,
+                mimetype: "application/font-woff",
+                name: "./assets/[hash].[ext]"
+              }
+            }
+          ]
         },
       ],
     },
@@ -187,9 +196,9 @@ module.exports = function (env) {
 
   if (env === "skaffold" || !env) {
     var dev = require("./webpack.config.dev");
-    return webpackMerge(common, dev);
+    return merge(common, dev);
   } else {
     var dist = require("./webpack.config.dist");
-    return webpackMerge(common, dist(env));
+    return merge(common, dist(env));
   }
 };

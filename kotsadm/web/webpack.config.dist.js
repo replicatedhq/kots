@@ -2,7 +2,6 @@ var webpack = require("webpack");
 var path = require("path");
 var srcPath = path.join(__dirname, "src");
 const TerserPlugin = require("terser-webpack-plugin");
-const CopyWebpackPlugin = require("copy-webpack-plugin");
 const { BugsnagSourceMapUploaderPlugin } = require("webpack-bugsnag-plugins");
 
 function getPlugins(appEnv, env) {
@@ -18,21 +17,6 @@ function getPlugins(appEnv, env) {
       appVersion: appEnv.SHIP_CLUSTER_BUILD_VERSION,
       overwrite: true
     }));
-  }
-
-  if (env !== "enterprise") {
-    plugins.push(
-      new CopyWebpackPlugin([
-        {
-          from: "./src/services/prodPerfect.js",
-          transform: function (content) {
-            var contentS = content.toString("utf8");
-            contentS = contentS.replace("@@PROD_PERFECT_WRITE_KEY", appEnv.PROD_PERFECT_WRITE_KEY);
-            return contentS.toString(new Buffer(contentS));
-          }
-        }
-      ]),
-    );
   }
 
   return plugins;
