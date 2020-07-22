@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/pkg/errors"
-	"github.com/replicatedhq/kots/pkg/auth"
 	"github.com/replicatedhq/kots/pkg/kotsadm/types"
 	"github.com/replicatedhq/kots/pkg/util"
 	appsv1 "k8s.io/api/apps/v1"
@@ -50,26 +49,14 @@ func apiRole(namespace string) *rbacv1.Role {
 		// creation cannot be restricted by name
 		Rules: []rbacv1.PolicyRule{
 			{
-				APIGroups:     []string{""},
-				Resources:     []string{"configmaps"},
-				ResourceNames: []string{"kotsadm-application-metadata", "kotsadm-gitops"},
-				Verbs:         metav1.Verbs{"get", "delete", "update"},
-			},
-			{
 				APIGroups: []string{""},
 				Resources: []string{"configmaps"},
-				Verbs:     metav1.Verbs{"create"},
-			},
-			{
-				APIGroups:     []string{""},
-				Resources:     []string{"secrets"},
-				ResourceNames: []string{"kotsadm-encryption", "kotsadm-gitops", auth.KotsadmAuthstringSecretName},
-				Verbs:         metav1.Verbs{"get", "update"},
+				Verbs:     metav1.Verbs{"*"},
 			},
 			{
 				APIGroups: []string{""},
 				Resources: []string{"secrets"},
-				Verbs:     metav1.Verbs{"create"},
+				Verbs:     metav1.Verbs{"*"},
 			},
 		},
 	}

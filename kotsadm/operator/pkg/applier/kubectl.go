@@ -59,6 +59,7 @@ func (c *Kubectl) connectArgs() []string {
 func (c *Kubectl) SupportBundle(collectorURI string) error {
 	log.Printf("running kubectl supportBundle %s", collectorURI)
 	args := []string{
+		"--collect-without-permissions",
 		collectorURI,
 	}
 

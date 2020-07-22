@@ -363,7 +363,7 @@ func runSupportBundle(collectorURI string) error {
 	}
 
 	preflight := ""
-	localPreflight, err := exec.LookPath("support-bundle")
+	localPreflight, err := exec.LookPath("preflight")
 	if err == nil {
 		preflight = localPreflight
 	}

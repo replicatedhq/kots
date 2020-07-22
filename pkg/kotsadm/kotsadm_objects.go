@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/pkg/errors"
-	"github.com/replicatedhq/kots/pkg/auth"
 	"github.com/replicatedhq/kots/pkg/kotsadm/types"
 	kotstypes "github.com/replicatedhq/kots/pkg/kotsadm/types"
 	"github.com/replicatedhq/kots/pkg/util"
@@ -52,31 +51,14 @@ func kotsadmRole(namespace string) *rbacv1.Role {
 		// creation cannot be restricted by name
 		Rules: []rbacv1.PolicyRule{
 			{
-				APIGroups:     []string{""},
-				Resources:     []string{"configmaps"},
-				ResourceNames: []string{"kotsadm-application-metadata", "kotsadm-gitops"},
-				Verbs:         metav1.Verbs{"get", "delete", "update"},
-			},
-			{
 				APIGroups: []string{""},
 				Resources: []string{"configmaps"},
-				Verbs:     metav1.Verbs{"create"},
+				Verbs:     metav1.Verbs{"*"},
 			},
 			{
 				APIGroups: []string{""},
 				Resources: []string{"secrets"},
-				ResourceNames: []string{
-					"kotsadm-encryption",
-					"kotsadm-gitops",
-					"kotsadm-password",
-					auth.KotsadmAuthstringSecretName,
-				},
-				Verbs: metav1.Verbs{"get", "update"},
-			},
-			{
-				APIGroups: []string{""},
-				Resources: []string{"secrets"},
-				Verbs:     metav1.Verbs{"create"},
+				Verbs:     metav1.Verbs{"*"},
 			},
 		},
 	}
