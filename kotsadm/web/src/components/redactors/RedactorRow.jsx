@@ -2,14 +2,16 @@ import React from "react";
 import dayjs from "dayjs";
 import { Link } from "react-router-dom"
 
+import { Utilities } from "../../utilities/utilities";
+
 class RedactorRow extends React.Component {
   state = {
-    redactorEnabled: false
+    redactorEnabled: false,
   };
 
   handleEnableRedactor = () => {
-    this.setState({
-      redactorEnabled: !this.state.redactorEnabled,
+    this.setState({ redactorEnabled: !this.state.redactorEnabled }, () => {
+      this.props.handleSetRedactEnabled(this.props.redactor, this.state.redactorEnabled);
     });
   }
 
@@ -37,7 +39,7 @@ class RedactorRow extends React.Component {
           <p className="u-fontSize--small u-fontWeight--medium u-lineHeight--normal u-color--nevada u-marginLeft--10"> {redactor?.description} </p>
         </div>
         <div className="flex alignItems--center">
-          <Link to={`/app/${this.props.appSlug}/troubleshoot/redactors/${redactor?.slug}`} className="u-fontSize--normal u-fontWeight--medium u-color--royalBlue u-textDecoration--underlineOnHover u-marginRight--20">Edit redactor</Link>
+          <Link to={`/app/${this.props.appSlug}/troubleshoot/redactors/${redactor?.slug}`} className="u-fontSize--normal u-fontWeight--medium u-color--royalBlue u-textDecoration--underlineOnHover u-marginRight--20">Edit</Link>
           <span className="u-fontSize--normal u-fontWeight--medium u-color--chestnut u-textDecoration--underlineOnHover u-marginRight--20" onClick={() => this.handleDeleteClick(redactor)}>Delete</span>
           <div className={`Checkbox--switch ${this.state.redactorEnabled ? "is-checked" : "is-notChecked"}`}>
             <input

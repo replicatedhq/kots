@@ -21,7 +21,7 @@ func Test_getSlug(t *testing.T) {
 		{
 			name:  "all alphanumeric",
 			input: "aBC123",
-			want:  "aBC123",
+			want:  "abc123",
 		},
 		{
 			name:  "dashes",
@@ -34,9 +34,9 @@ func Test_getSlug(t *testing.T) {
 			want:  "abc-123",
 		},
 		{
-			name:  "aymbols",
+			name:  "symbols",
 			input: "abc%^123!@#",
-			want:  "abc123",
+			want:  "abc-123-at",
 		},
 		{
 			name:  "kotsadm-redact",

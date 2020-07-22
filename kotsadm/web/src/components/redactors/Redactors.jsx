@@ -11,21 +11,21 @@ import Loader from "../shared/Loader";
 
 import { Utilities } from "../../utilities/utilities";
 
-
 class Redactors extends Component {
   state = {
     redactors: [],
     sortedRedactors: [],
     selectedOption: {
-      value: "createdAt",
-      label: "Sort by: Created At"
+      value: "enabled",
+      label: "Sort by: Status"
     },
     deleteRedactorModal: false,
     redactorToDelete: {},
     isLoadingRedactors: false,
     redactorsErrMsg: "",
     deletingRedactor: false,
-    deleteErrMsg: ""
+    deleteErrMsg: "",
+    enablingRedactorMsg: ""
   };
 
   getRedactors = () => {
@@ -81,8 +81,10 @@ class Redactors extends Component {
   sortRedactors = value => {
     if (value === "createdAt") {
       this.setState({ sortedRedactors: this.state.redactors.sort((a, b) => dayjs(b.createdAt) - dayjs(a.createdAt)) });
-    } else {
+    } else if (value === "updatedAt") {
       this.setState({ sortedRedactors: this.state.redactors.sort((a, b) => dayjs(b.updatedAt) - dayjs(a.updatedAt)) });
+    } else {
+      this.setState({ sortedRedactors: this.state.redactors.sort((a, b) => (a.enabled === b.enabled) ? 0 : a.enabled ? -1 : 1 )});
     }
   }
 
@@ -121,9 +123,42 @@ class Redactors extends Component {
       });
   }
 
+  handleSetRedactEnabled = (redactor, redactorEnabled) => {
+    const payload = {
+      enabled: redactorEnabled
+    }
+    this.setState({ enablingRedactorMsg: "" });
+    fetch(`${window.env.API_ENDPOINT}/redact/enabled/${redactor.slug}`, {
+      method: "POST",
+      headers: {
+        "Authorization": Utilities.getToken(),
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(payload)
+    })
+      .then(async (res) => {
+        const response = await res.json();
+        if (!res.ok) {
+          this.setState({ enablingRedactorMsg: response.error });
+          return;
+        }
+        if (response.success) {
+          this.setState({ enablingRedactorMsg: "" });
+        } else {
+          this.setState({ enablingRedactorMsg: response.error });
+        }
+      })
+      .catch((err) => {
+        this.setState({
+          enablingRedactorMsg: err.message ? err.message : "Something went wrong, please try again!"
+        });
+      });
+  }
+
+
 
   render() {
-    const { sortedRedactors, selectedOption, deleteRedactorModal, isLoadingRedactors } = this.state;
+    const { sortedRedactors, selectedOption, deleteRedactorModal, isLoadingRedactors, enablingRedactorMsg } = this.state;
 
     if (isLoadingRedactors) {
       return (
@@ -134,6 +169,10 @@ class Redactors extends Component {
     }
 
     const selectOptions = [
+      {
+        value: "enabled",
+        label: "Sort by: Status"
+      },
       {
         value: "createdAt",
         label: "Sort by: Created At"
@@ -189,12 +228,15 @@ class Redactors extends Component {
               </div>
               <p className="u-fontSize--normal u-color--dustyGray u-fontWeight--medium u-lineHeight--normal u-marginTop--20 u-marginBottom--30">Define custom rules for sensitive values you need to be redacted when gathering a support bundle. This might include things like Secrets or IP addresses. For help with creating custom redactors,
               <a href="https://troubleshoot.sh/reference/redactors/overview/" target="_blank" rel="noopener noreferrer" className="replicated-link"> check out our docs</a>.</p>
+              {enablingRedactorMsg && <p className="u-color--chestnut u-fontSize--normal u-fontWeight--medium u-lineHeight--normal u-marginBottom--10 flex justifyContent--center alignItems--center">{enablingRedactorMsg}</p>}
               {sortedRedactors?.map((redactor) => (
                 <RedactorRow
                   key={`redactor-${redactor.slug}`}
                   redactor={redactor}
                   appSlug={this.props.appSlug}
                   toggleConfirmDeleteModal={this.toggleConfirmDeleteModal}
+                  handleSetRedactEnabled={this.handleSetRedactEnabled}
+
                 />
               ))}
             </div>

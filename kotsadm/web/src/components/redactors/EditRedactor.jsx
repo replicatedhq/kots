@@ -10,6 +10,8 @@ import "brace/theme/chrome";
 import Loader from "../shared/Loader";
 import { Utilities } from "../../utilities/utilities";
 
+import "../../scss/components/redactors/EditRedactor.scss"
+
 class EditRedactor extends Component {
   state = {
     redactorEnabled: false,
@@ -71,7 +73,6 @@ class EditRedactor extends Component {
     this.setState({ editingRedactor: true, editingErrMsg: "" });
 
     const payload = {
-      slug: slug,
       enabled: enabled,
       redactor: yaml
     }
@@ -106,6 +107,7 @@ class EditRedactor extends Component {
           setTimeout(() => {
             this.setState({ editConfirm: false })
           }, 3000);
+          this.props.history.replace(`/app/${this.props.appSlug}/troubleshoot/redactors`)
         } else {
           this.setState({
             editingRedactor: false,
@@ -119,6 +121,22 @@ class EditRedactor extends Component {
           editingErrMsg: err.message ? err.message : "Something went wrong, please try again!"
         });
       });
+  }
+
+  getEmptyNameLine = (redactorYaml) => {
+    const splittedYaml = redactorYaml.split("\n");
+    let metadataFound = false;
+    let namePosition;
+    for(let i=0; i<splittedYaml.length; ++i) {
+      if (splittedYaml[i] === "metadata:") {
+        metadataFound = true;
+      }
+      if (metadataFound && splittedYaml[i].includes("name:")) {
+        namePosition = i + 1;
+        break;
+      }
+    }
+    return namePosition;
   }
 
   createRedactor = (enabled, newRedactor, yaml) => {
@@ -144,8 +162,10 @@ class EditRedactor extends Component {
           this.setState({
             creatingRedactor: false,
             createErrMsg: createResponse.error
-          })
-          return;
+          });
+          const editor = this.aceEditor.editor;
+          editor.scrollToLine(this.getEmptyNameLine(this.state.redactorYaml), true, true);
+          editor.gotoLine(this.getEmptyNameLine(this.state.redactorYaml), 1, true);
         }
 
         if (createResponse.success) {
@@ -160,7 +180,7 @@ class EditRedactor extends Component {
           setTimeout(() => {
             this.setState({ createConfirm: false })
           }, 3000);
-          this.props.history.replace(`/app/${this.props.appSlug}/troubleshoot/redactors/${createResponse.redactorMetadata.slug}`)
+          this.props.history.replace(`/app/${this.props.appSlug}/troubleshoot/redactors`)
         } else {
           this.setState({
             creatingRedactor: false,
@@ -189,7 +209,7 @@ class EditRedactor extends Component {
       const defaultYaml = `kind: Redactor
 apiVersion: troubleshoot.replicated.com/v1beta1
 metadata:
-  name: kotsadm-redact
+  name: 
 spec:
   redactors:
   - name: myredactor
@@ -199,7 +219,7 @@ spec:
     removals:
       values:
       - "removethis"`
-      this.setState({ redactorEnabled: false, redactorYaml: defaultYaml, redactorName: "New redactor" });
+      this.setState({ redactorEnabled: true, redactorYaml: defaultYaml, redactorName: "New redactor" });
     }
   }
 
@@ -233,6 +253,7 @@ spec:
           <title>Redactors</title>
         </Helmet>
         <div className="Redactors--wrapper flex1 flex-column u-width--full">
+          {(createErrMsg || editingErrMsg) && <p className="ErrorToast flex justifyContent--center alignItems--center">{createErrMsg ? createErrMsg : editingErrMsg}</p>}
           <div className="u-fontSize--small u-fontWeight--medium u-color--dustyGray u-marginBottom--20">
             <Link to={`/app/${this.props.appSlug}/troubleshoot/redactors`} className="replicated-link u-marginRight--5">Redactors</Link> > <span className="u-marginLeft--5">{this.state.redactorName}</span>
           </div>
@@ -240,32 +261,30 @@ spec:
             <div className="flex flex1 alignItems--center">
               <p className="u-fontWeight--bold u-color--tuna u-fontSize--jumbo u-lineHeight--normal u-marginRight--10">{this.state.redactorName}</p>
             </div>
-            {!this.props.isNew &&
-              <div className="flex justifyContent--flexEnd">
-                <div className="toggle flex flex1">
-                  <div className="flex flex1">
-                    <div className={`Checkbox--switch ${this.state.redactorEnabled ? "is-checked" : "is-notChecked"}`}>
-                      <input
-                        type="checkbox"
-                        className="Checkbox-toggle"
-                        name="isRedactorEnabled"
-                        checked={this.state.redactorEnabled}
-                        onChange={(e) => { this.handleEnableRedactor(e) }}
-                      />
-                    </div>
-                  </div>
-                  <div className="flex flex1 u-marginLeft--5">
-                    <p className="u-fontWeight--medium u-color--tundora u-fontSize--large alignSelf--center">{this.state.redactorEnabled ? "Enabled" : "Disabled"}</p>
+            <div className="flex justifyContent--flexEnd">
+              <div className="toggle flex flex1">
+                <div className="flex flex1">
+                  <div className={`Checkbox--switch ${this.state.redactorEnabled ? "is-checked" : "is-notChecked"}`}>
+                    <input
+                      type="checkbox"
+                      className="Checkbox-toggle"
+                      name="isRedactorEnabled"
+                      checked={this.state.redactorEnabled}
+                      onChange={(e) => { this.handleEnableRedactor(e) }}
+                    />
                   </div>
                 </div>
+                <div className="flex flex1 u-marginLeft--5">
+                  <p className="u-fontWeight--medium u-color--tundora u-fontSize--large alignSelf--center">{this.state.redactorEnabled ? "Enabled" : "Disabled"}</p>
+                </div>
               </div>
-            }
+            </div>
           </div>
           <p className="u-fontSize--normal u-color--dustyGray u-fontWeight--medium u-lineHeight--normal u-marginTop--small">For more information about creating redactors,
           <a href="https://troubleshoot.sh/reference/redactors/overview/" target="_blank" rel="noopener noreferrer" className="replicated-link"> check out our docs</a>.</p>
           <div className="flex1 u-marginTop--30 u-border--gray">
             <AceEditor
-              ref={(input) => this.refAceEditor = input}
+              ref={el => (this.aceEditor = el)}
               mode="yaml"
               theme="chrome"
               className="flex1 flex"
@@ -287,7 +306,7 @@ spec:
           </div>
           <div className="flex u-marginTop--20 justifyContent--spaceBetween">
             <div className="flex">
-              <Link to="/redactors" className="btn secondary"> Cancel </Link>
+              <Link to={`/app/${this.props.appSlug}/troubleshoot/redactors`} className="btn secondary"> Cancel </Link>
             </div>
             <div className="flex alignItems--center">
               {createConfirm || editConfirm &&
@@ -296,7 +315,6 @@ spec:
                   <span className="u-marginLeft--5 u-fontSize--small u-fontWeight--medium u-color--chateauGreen">{createConfirm ? "Redactor created" : "Redactor updated"}</span>
                 </div>
               }
-              {(createErrMsg || editingErrMsg) && <p className="u-color--chestnut u-fontSize--normal u-fontWeight--medium u-lineHeight--normal u-marginRight--10">{createErrMsg ? createErrMsg : editingErrMsg}</p>}
               <button type="button" className="btn primary blue" onClick={this.onSaveRedactor} disabled={creatingRedactor || editingRedactor}>{(creatingRedactor || editingRedactor) ? "Saving" : "Save redactor"} </button>
             </div>
           </div>
