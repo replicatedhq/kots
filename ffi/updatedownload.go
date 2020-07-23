@@ -119,6 +119,7 @@ func UpdateDownload(socket, fromArchivePath, namespace, registryJson, cursor str
 			filepath.Join(tmpRoot, "upstream"),
 			filepath.Join(tmpRoot, "base"),
 			filepath.Join(tmpRoot, "overlays"),
+			filepath.Join(tmpRoot, "errors"),
 		}
 
 		err = os.Remove(fromArchivePath)
@@ -293,6 +294,7 @@ func UpdateDownloadFromAirgap(socket, fromArchivePath, namespace, registryJson, 
 			filepath.Join(tmpRoot, "upstream"),
 			filepath.Join(tmpRoot, "base"),
 			filepath.Join(tmpRoot, "overlays"),
+			filepath.Join(tmpRoot, "errors"),
 		}
 
 		err = os.Remove(fromArchivePath)

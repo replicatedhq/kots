@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
-	"path"
+	"path/filepath"
 
 	"github.com/mholt/archiver"
 	"github.com/pkg/errors"
@@ -35,22 +35,22 @@ spec:
 		return errors.Wrap(err, "failed to generate expected filesystem")
 	}
 
-	testRoot := path.Join("integration", "replicated", "tests", name)
+	testRoot := filepath.Join("integration", "replicated", "tests", name)
 	if err := os.MkdirAll(testRoot, 0755); err != nil {
 		return errors.Wrap(err, "failed to create test root")
 	}
 
-	err = ioutil.WriteFile(path.Join(testRoot, "license.yaml"), []byte(integrationLicenseData), 0644)
+	err = ioutil.WriteFile(filepath.Join(testRoot, "license.yaml"), []byte(integrationLicenseData), 0644)
 	if err != nil {
 		return errors.Wrap(err, "failed to write license")
 	}
 
-	err = ioutil.WriteFile(path.Join(testRoot, "archive.tar.gz"), replicatedAppArchive, 0644)
+	err = ioutil.WriteFile(filepath.Join(testRoot, "archive.tar.gz"), replicatedAppArchive, 0644)
 	if err != nil {
 		return errors.Wrap(err, "failed to write archive")
 	}
 
-	expectedRoot := path.Join(testRoot, "expected")
+	expectedRoot := filepath.Join(testRoot, "expected")
 	if err := os.MkdirAll(expectedRoot, 0755); err != nil {
 		return errors.Wrap(err, "failed to create expected root")
 	}
@@ -65,11 +65,11 @@ spec:
 		return errors.Wrap(err, "failed to create temp file")
 	}
 	defer os.RemoveAll(tempExpectedFile)
-	err = ioutil.WriteFile(path.Join(tempExpectedFile, "archive.tar.gz"), expectedFilesystem, 0644)
+	err = ioutil.WriteFile(filepath.Join(tempExpectedFile, "archive.tar.gz"), expectedFilesystem, 0644)
 	if err != nil {
 		return errors.Wrap(err, "failed to write to temp file")
 	}
-	if err := tarGz.Unarchive(path.Join(tempExpectedFile, "archive.tar.gz"), expectedRoot); err != nil {
+	if err := tarGz.Unarchive(filepath.Join(tempExpectedFile, "archive.tar.gz"), expectedRoot); err != nil {
 		return errors.Wrap(err, "failed to unarchive expected")
 	}
 
@@ -89,7 +89,7 @@ func generateReplicatedAppArchive(rawArchivePath string) ([]byte, error) {
 	}
 	defer os.RemoveAll(archiveDir)
 
-	archiveFile := path.Join(archiveDir, "archive.tar.gz")
+	archiveFile := filepath.Join(archiveDir, "archive.tar.gz")
 	if err := tarGz.Archive([]string{rawArchivePath}, archiveFile); err != nil {
 		return nil, errors.Wrap(err, "failed to create archive")
 	}
@@ -138,12 +138,13 @@ func generateExpectedFilesystem(namespace, rawArchivePath string) ([]byte, error
 	}
 	defer os.RemoveAll(archiveDir)
 
-	archiveFile := path.Join(archiveDir, "expected.tar.gz")
+	archiveFile := filepath.Join(archiveDir, "expected.tar.gz")
 
 	paths := []string{
-		path.Join(tmpRootDir, "upstream"),
-		path.Join(tmpRootDir, "base"),
-		path.Join(tmpRootDir, "overlays"),
+		filepath.Join(tmpRootDir, "upstream"),
+		filepath.Join(tmpRootDir, "base"),
+		filepath.Join(tmpRootDir, "overlays"),
+		filepath.Join(tmpRootDir, "errors"),
 	}
 	if err := tarGz.Archive(paths, archiveFile); err != nil {
 		return nil, errors.Wrap(err, "failed to create archive")

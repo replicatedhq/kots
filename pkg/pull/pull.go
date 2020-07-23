@@ -263,6 +263,7 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 
 	writeBaseOptions := base.WriteOptions{
 		BaseDir:          u.GetBaseDir(writeUpstreamOptions),
+		ErrorsDir:        u.GetErrorsDir(writeUpstreamOptions),
 		Overwrite:        true,
 		ExcludeKotsKinds: pullOptions.ExcludeKotsKinds,
 	}

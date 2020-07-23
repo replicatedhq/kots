@@ -161,6 +161,7 @@ func RewriteVersion(socket, fromArchivePath, outputFile, downstreamsStr, k8sName
 			filepath.Join(tmpRoot, "upstream"),
 			filepath.Join(tmpRoot, "base"),
 			filepath.Join(tmpRoot, "overlays"),
+			filepath.Join(tmpRoot, "errors"),
 		}
 
 		if err := tarGz.Archive(paths, outputFile); err != nil {

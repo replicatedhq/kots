@@ -16,6 +16,7 @@ import (
 
 type WriteOptions struct {
 	BaseDir          string
+	ErrorsDir        string
 	Overwrite        bool
 	ExcludeKotsKinds bool
 }
@@ -106,6 +107,51 @@ func (b *Base) WriteBase(options WriteOptions) error {
 
 	if err := k8sutil.WriteKustomizationToFile(&kustomization, path.Join(renderDir, "kustomization.yaml")); err != nil {
 		return errors.Wrap(err, "failed to write kustomization to file")
+	}
+
+	if err := b.writeErrors(options); err != nil {
+		return errors.Wrap(err, "failed to write errors")
+	}
+
+	return nil
+}
+
+func (b *Base) writeErrors(options WriteOptions) error {
+	if options.ErrorsDir == "" {
+		return nil
+	}
+
+	renderDir := filepath.Join(options.ErrorsDir, b.Path)
+
+	_, err := os.Stat(renderDir)
+	if err == nil {
+		if options.Overwrite {
+			if err := os.RemoveAll(renderDir); err != nil {
+				return errors.Wrap(err, "failed to remove previous content in errors")
+			}
+		} else {
+			return fmt.Errorf("directory %s already exists", renderDir)
+		}
+	}
+
+	if _, err := os.Stat(renderDir); os.IsNotExist(err) {
+		if err := os.MkdirAll(renderDir, 0744); err != nil {
+			return errors.Wrap(err, "failed to mkdir for errors root")
+		}
+	}
+
+	for _, file := range b.ErrorFiles {
+		fileRenderPath := path.Join(renderDir, file.Path)
+		d, _ := path.Split(fileRenderPath)
+		if _, err := os.Stat(d); os.IsNotExist(err) {
+			if err := os.MkdirAll(d, 0744); err != nil {
+				return errors.Wrap(err, "failed to mkdir")
+			}
+		}
+
+		if err := ioutil.WriteFile(fileRenderPath, file.Content, 0644); err != nil {
+			return errors.Wrap(err, "failed to write errors file")
+		}
 	}
 
 	return nil
