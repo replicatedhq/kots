@@ -76,6 +76,7 @@ func kotsadmPullSecret(namespace string, options types.KotsadmOptions) *corev1.S
 	}
 
 	secret.ObjectMeta.Name = types.PrivateKotsadmRegistrySecret
+	secret.ObjectMeta.Labels = types.GetKotsadmLabels()
 
 	return secret
 }

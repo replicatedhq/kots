@@ -9,7 +9,6 @@ import (
 
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
-	"github.com/replicatedhq/kots/pkg/kotsadm/types"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -91,7 +90,6 @@ func PullSecretForRegistries(registries []string, username, password string, nam
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "kotsadm-replicated-registry",
 			Namespace: namespace,
-			Labels:    types.GetKotsadmLabels(),
 		},
 		Type: corev1.SecretTypeDockerConfigJson,
 		Data: map[string][]byte{
