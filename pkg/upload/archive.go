@@ -3,7 +3,7 @@ package upload
 import (
 	"io/ioutil"
 	"os"
-	"path/filepath"
+	"path"
 	"strings"
 
 	"github.com/mholt/archiver"
@@ -24,10 +24,10 @@ func createUploadableArchive(rootPath string) (string, error) {
 	}
 
 	paths := []string{
-		filepath.Join(rootPath, "upstream"),
-		filepath.Join(rootPath, "base"),
-		filepath.Join(rootPath, "overlays"),
-		filepath.Join(rootPath, "skippedFiles"),
+		path.Join(rootPath, "upstream"),
+		path.Join(rootPath, "base"),
+		path.Join(rootPath, "overlays"),
+		path.Join(rootPath, "skippedFiles"),
 	}
 
 	// the caller of this function is repsonsible for deleting this file
@@ -36,15 +36,15 @@ func createUploadableArchive(rootPath string) (string, error) {
 		return "", errors.Wrap(err, "failed to create temp dir")
 	}
 
-	if err := tarGz.Archive(paths, filepath.Join(tempDir, "kots-uploadable-archive.tar.gz")); err != nil {
+	if err := tarGz.Archive(paths, path.Join(tempDir, "kots-uploadable-archive.tar.gz")); err != nil {
 		return "", errors.Wrap(err, "failed to create tar gz")
 	}
 
-	return filepath.Join(tempDir, "kots-uploadable-archive.tar.gz"), nil
+	return path.Join(tempDir, "kots-uploadable-archive.tar.gz"), nil
 }
 
 func findUpdateCursor(rootPath string) (string, error) {
-	installationFilePath := filepath.Join(rootPath, "upstream", "userdata", "installation.yaml")
+	installationFilePath := path.Join(rootPath, "upstream", "userdata", "installation.yaml")
 	_, err := os.Stat(installationFilePath)
 	if os.IsNotExist(err) {
 		return "", nil
@@ -70,7 +70,7 @@ func findUpdateCursor(rootPath string) (string, error) {
 }
 
 func findLicense(rootPath string) (*string, error) {
-	licenseFilePath := filepath.Join(rootPath, "upstream", "userdata", "license.yaml")
+	licenseFilePath := path.Join(rootPath, "upstream", "userdata", "license.yaml")
 	_, err := os.Stat(licenseFilePath)
 	if os.IsNotExist(err) {
 		return nil, nil
