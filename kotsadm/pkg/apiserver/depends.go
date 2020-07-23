@@ -37,7 +37,7 @@ func waitForDependencies(ctx context.Context) error {
 	}
 
 	if isError {
-		return errors.New("failed to wait for depenendcies")
+		return errors.New("failed to wait for dependencies")
 	}
 
 	return nil

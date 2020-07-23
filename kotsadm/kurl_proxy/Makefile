@@ -13,11 +13,6 @@ build:
 up:
 	skaffold dev -f skaffold.yaml
 
-.PHONY: build-ttl-ci.sh
-build-ttl-ci.sh:
-	docker build -f deploy/Dockerfile -t ttl.sh/${UUID}/kurl-proxy:2h .
-	docker push ttl.sh/${UUID}/kurl-proxy:2h
-
 .PHONY: build-alpha
 build-alpha:
 	docker build -f deploy/Dockerfile -t kotsadm/kurl-proxy:alpha .

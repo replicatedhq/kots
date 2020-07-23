@@ -22,24 +22,78 @@ jobs:
       - uses: actions/checkout@v2
 
       - run: make ci-test kots
-        env:
-          SCOPE_DSN: ${{ secrets.SCOPE_DSN }}
-
       - uses: actions/upload-artifact@v1
         with:
           name: kots
           path: bin/kots
 
-      - uses: actions/setup-node@v1
-        with:
-          node-version: '10.x'
+      - run: make -C kotsadm kotsadm
+      - run: make -C kotsadm/operator build
+      - run: make -C kotsadm/kurl_proxy build
+      - env:
+          GIT_COMMIT: ${{ github.sha }}
+        run: make -C kotsadm/web deps build-kotsadm
 
-      - run: cd kotsadm && ./build-ttl-ci.sh --uuid=automated-$GITHUB_RUN_ID
+      - name: build and push migrations for e2e
+        uses: docker/build-push-action@v1
+        with:
+          repository: ttl.sh/automated-${{ github.run_id }}/kotsadm-migrations
+          tags: 2h
+          path: ./kotsadm/migrations
+          dockerfile: ./kotsadm/migrations/deploy/Dockerfile
+
+      - name: build and push kotsadm for e2e
+        uses: docker/build-push-action@v1
+        with:
+          repository: ttl.sh/automated-${{ github.run_id }}/kotsadm
+          tags: 2h
+          path: ./kotsadm
+          dockerfile: ./kotsadm/deploy/Dockerfile          
+
+      - name: build and push api for e2e
+        uses: docker/build-push-action@v1
+        with:
+          repository: ttl.sh/automated-${{ github.run_id }}/kotsadm-api
+          tags: 2h
+          path: ./kotsadm/api
+          dockerfile: ./kotsadm/api/deploy/Dockerfile
+          
+      - name: build and push operator for e2e
+        uses: docker/build-push-action@v1
+        with:
+          repository: ttl.sh/automated-${{ github.run_id }}/kotsadm-operator
+          tags: 2h
+          path: ./kotsadm/operator
+          dockerfile: ./kotsadm/operator/deploy/Dockerfile          
+
+      - name: build and push kurl_proxy for e2e
+        uses: docker/build-push-action@v1
+        with:
+          repository: ttl.sh/automated-${{ github.run_id }}/kurl-proxy
+          tags: 2h
+          path: ./kotsadm/kurl_proxy
+          dockerfile: ./kotsadm/kurl_proxy/deploy/Dockerfile
+
+      - name: build and push minio for e2e
+        uses: docker/build-push-action@v1
+        with:
+          repository: ttl.sh/automated-${{ github.run_id }}/minio
+          tags: 2h
+          path: ./kotsadm/minio
+          dockerfile: ./kotsadm/minio/Dockerfile
 
   validate:
     runs-on: ubuntu-18.04
     needs: build-kots
+    strategy:
+      matrix:
+        k8s_version: [v1.16.9-k3s1,v1.17.4-k3s1,v1.18.2-k3s1]
     steps:
+      - uses: debianmaster/actions-k3s@v1.0.0
+        id: k3s
+        with:
+          version: ${{ matrix.k8s_version }}
+
       - name: download kots binary
         uses: actions/download-artifact@v1
         with:
@@ -48,41 +102,27 @@ jobs:
 
       - run: chmod +x bin/kots
 
-      - name: get digitalocean kubeconfig
-        uses: digitalocean/action-doctl@master
-        env:
-          DIGITALOCEAN_ACCESS_TOKEN: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
-        with:
-          args: kubernetes cluster kubeconfig show github-action > $GITHUB_WORKSPACE/.kubeconfig
-
-      - name: delete namespace
-        run: kubectl --kubeconfig=$GITHUB_WORKSPACE/.kubeconfig delete ns --ignore-not-found automated-$GITHUB_RUN_ID
-
-      - name: install qa app
-        run: |
-          ./bin/kots --kubeconfig=$GITHUB_WORKSPACE/.kubeconfig \
-          install qakots/github-actions \
-          --port-forward=false \
-          -n automated-$GITHUB_RUN_ID \
-          --shared-password password \
-          --kotsadm-registry ttl.sh \
-          --kotsadm-namespace automated-$GITHUB_RUN_ID \
-          --kotsadm-tag 2h
 
       - uses: actions/setup-node@v1
         with:
           node-version: '10.x'
-
       - name: setup testIM
         run: npm i -g @testim/testim-cli
         shell: bash
 
-      - name: run testIM
+      - name: prepare kotsadm-smoke-test
         run: |
-          ./bin/kots --kubeconfig=$GITHUB_WORKSPACE/.kubeconfig admin-console -n automated-$GITHUB_RUN_ID &
+          ./bin/kots \
+          install qakots/github-actions \
+          --port-forward=false \
+          --namespace kotsadm-smoke-test \
+          --shared-password password \
+          --kotsadm-registry ttl.sh \
+          --kotsadm-namespace automated-${{ github.run_id }} \
+          --kotsadm-tag 2h 
+      - name: execute kotsadm-smoke-test
+        run: |
+          ./bin/kots admin-console -n kotsadm-smoke-test &
           ADMIN_CONSOLE_PID=$!
           testim --token ${{ secrets.TESTIM_ACCESS_TOKEN }} --project ${{ secrets.TESTIM_PROJECT_ID }} --grid "Testim-grid" --report-file testim-report.xml --label kotsadm-smoke-test --tunnel --tunnel-port 8800
           kill $ADMIN_CONSOLE_PID
-
-      - name: delete namespace
-        run: kubectl --kubeconfig=$GITHUB_WORKSPACE/.kubeconfig delete ns automated-$GITHUB_RUN_ID

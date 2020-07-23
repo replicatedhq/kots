@@ -22,11 +22,6 @@ build: prebuild deps
 run:
 	node --no-deprecation ./build/fixtures.js generate
 
-.PHONY: build-ttl-ci.sh
-build-ttl-ci.sh:
-	docker build -f deploy/Dockerfile -t ttl.sh/${UUID}/${PROJECT_NAME}:2h .
-	docker push ttl.sh/${UUID}/${PROJECT_NAME}:2h
-
 .PHONY: schema-fixtures
 schema-fixtures:
 	docker pull schemahero/schemahero:0.9.0

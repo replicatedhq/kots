@@ -72,10 +72,6 @@ test: deps
 build-ttl.sh: IMAGE = ttl.sh/${CURRENT_USER}/${PROJECT_NAME}:12h
 build-ttl.sh: build_and_push
 
-.PHONY: build-ttl-ci.sh
-build-ttl-ci.sh: IMAGE = ttl.sh/${UUID}/${PROJECT_NAME}:2h
-build-ttl-ci.sh: build_and_push
-
 .PHONY: build-alpha
 build-alpha: IMAGE = kotsadm/${PROJECT_NAME}:alpha
 build-alpha: build_and_push

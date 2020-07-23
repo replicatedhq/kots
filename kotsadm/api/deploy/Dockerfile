@@ -2,9 +2,7 @@ FROM node:10 AS build
 WORKDIR /src
 ADD . /src
 
-RUN make deps build
-RUN rm -rf node_modules
-RUN make deps-prod
+RUN make deps-prod build
 RUN curl -L https://install.goreleaser.com/github.com/tj/node-prune.sh | bash && ./bin/node-prune
 
 FROM node:10-buster-slim
