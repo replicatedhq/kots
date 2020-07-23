@@ -32,7 +32,7 @@ func writeArchiveAsConfigMap(pullOptions PullOptions, u *upstreamtypes.Upstream,
 		path.Join(pullOptions.RootDir, u.Name, "upstream"),
 		path.Join(pullOptions.RootDir, u.Name, "base"),
 		path.Join(pullOptions.RootDir, u.Name, "overlays"),
-		path.Join(pullOptions.RootDir, u.Name, "errors"),
+		path.Join(pullOptions.RootDir, u.Name, "skippedFiles"),
 	}
 
 	tempDir, err := ioutil.TempDir("", "kots")

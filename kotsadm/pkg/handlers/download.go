@@ -86,7 +86,7 @@ func DownloadApp(w http.ResponseWriter, r *http.Request) {
 		filepath.Join(archivePath, "upstream"),
 		filepath.Join(archivePath, "base"),
 		filepath.Join(archivePath, "overlays"),
-		filepath.Join(archivePath, "errors"),
+		filepath.Join(archivePath, "skippedFiles"),
 	}
 	tmpDir, err := ioutil.TempDir("", "kotsadm")
 	if err != nil {
