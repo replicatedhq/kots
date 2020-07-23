@@ -12,10 +12,11 @@ This proposal attempts to make the rendered output available to the user so that
 ## Non Goals
 
 - Attempt to automate fixing any common errors such as unescaped quotes or line breaks
+- Any additional UI work. This will just focus on surfacing information in the release
 
 ## Design
 
-Add a new directory at the root of the file tree `errors` that will include the raw content of all rendered output for yaml files that failed unmarshalling.
+Add a new directory at the root of the file tree `yamlErrors` that will include the raw content of all rendered output for yaml files that failed unmarshalling.
 
 An example installation.yaml file:
 
@@ -44,6 +45,15 @@ An example file tree:
 > upstream
 > base
 > overlays
-v errors
+v yamlErrors
+  _index.yaml
   deployment.yaml
+```
+
+yamlErrors/\_index.yaml:
+
+```yaml
+yamlErrors:
+- error: 'yaml: line 26: did not find expected key'
+  path: deployment.yaml
 ```
