@@ -127,13 +127,7 @@ type SkippedFile struct {
 }
 
 func (b *Base) writeSkippedFiles(options WriteOptions) error {
-	if options.SkippedDir == "" {
-		return nil
-	}
-	if len(b.ErrorFiles) == 0 {
-		return nil
-	}
-
+	// if we dont render this dir we will get an error when we create the archive
 	renderDir := filepath.Join(options.SkippedDir, b.Path)
 
 	_, err := os.Stat(renderDir)
@@ -151,6 +145,10 @@ func (b *Base) writeSkippedFiles(options WriteOptions) error {
 		if err := os.MkdirAll(renderDir, 0744); err != nil {
 			return errors.Wrap(err, "failed to mkdir for skipped files root")
 		}
+	}
+
+	if len(b.ErrorFiles) == 0 {
+		return nil
 	}
 
 	index := SkippedFilesIndex{SkippedFiles: []SkippedFile{}}
