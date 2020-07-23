@@ -10,13 +10,16 @@ import (
 	"time"
 
 	"github.com/gorilla/mux"
+	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/kotsadm/pkg/app"
 	"github.com/replicatedhq/kots/kotsadm/pkg/kotsutil"
 	"github.com/replicatedhq/kots/kotsadm/pkg/license"
+	kotsadmlicense "github.com/replicatedhq/kots/kotsadm/pkg/license"
 	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
 	"github.com/replicatedhq/kots/kotsadm/pkg/online"
 	"github.com/replicatedhq/kots/kotsadm/pkg/registry"
 	"github.com/replicatedhq/kots/kotsadm/pkg/session"
+	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	kotslicense "github.com/replicatedhq/kots/pkg/license"
 	kotspull "github.com/replicatedhq/kots/pkg/pull"
 )
@@ -26,6 +29,15 @@ type SyncLicenseRequest struct {
 }
 
 type SyncLicenseResponse struct {
+	ID              string                `json:"id"`
+	ExpiresAt       time.Time             `json:"expiresAt"`
+	ChannelName     string                `json:"channelName"`
+	LicenseSequence int64                 `json:"licenseSequence"`
+	LicenseType     string                `json:"licenseType"`
+	Entitlements    []EntitlementResponse `json:"entitlements"`
+}
+
+type GetLicenseResponse struct {
 	ID              string                `json:"id"`
 	ExpiresAt       time.Time             `json:"expiresAt"`
 	ChannelName     string                `json:"channelName"`
@@ -109,15 +121,86 @@ func SyncLicense(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	entitlements, expiresAt, err := GetLicenseEntitlements(latestLicense)
+	if err != nil {
+		logger.Error(err)
+		w.WriteHeader(500)
+		return
+	}
+
 	syncLicenseResponse := SyncLicenseResponse{
 		ID:              latestLicense.Spec.LicenseID,
 		ChannelName:     latestLicense.Spec.ChannelName,
 		LicenseSequence: latestLicense.Spec.LicenseSequence,
 		LicenseType:     latestLicense.Spec.LicenseType,
-		Entitlements:    []EntitlementResponse{},
+		Entitlements:    entitlements,
+		ExpiresAt:       expiresAt,
 	}
 
-	for key, entititlement := range latestLicense.Spec.Entitlements {
+	JSON(w, 200, syncLicenseResponse)
+}
+
+func GetLicense(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Headers", "content-type, origin, accept, authorization")
+
+	if r.Method == "OPTIONS" {
+		w.WriteHeader(200)
+		return
+	}
+
+	sess, err := session.Parse(r.Header.Get("Authorization"))
+	if err != nil {
+		logger.Error(err)
+		w.WriteHeader(500)
+		return
+	}
+
+	// we don't currently have roles, all valid tokens are valid sessions
+	if sess == nil || sess.ID == "" {
+		w.WriteHeader(401)
+		return
+	}
+
+	appSlug := mux.Vars(r)["appSlug"]
+	foundApp, err := app.GetFromSlug(appSlug)
+	if err != nil {
+		logger.Error(err)
+		w.WriteHeader(500)
+		return
+	}
+
+	license, err := kotsadmlicense.Get(foundApp.ID)
+	if err != nil {
+		logger.Error(err)
+		w.WriteHeader(500)
+		return
+	}
+
+	entitlements, expiresAt, err := GetLicenseEntitlements(license)
+	if err != nil {
+		logger.Error(err)
+		w.WriteHeader(500)
+		return
+	}
+
+	getLicenseResponse := GetLicenseResponse{
+		ID:              license.Spec.LicenseID,
+		ChannelName:     license.Spec.ChannelName,
+		LicenseSequence: license.Spec.LicenseSequence,
+		LicenseType:     license.Spec.LicenseType,
+		Entitlements:    entitlements,
+		ExpiresAt:       expiresAt,
+	}
+
+	JSON(w, 200, getLicenseResponse)
+}
+
+func GetLicenseEntitlements(license *kotsv1beta1.License) ([]EntitlementResponse, time.Time, error) {
+	var expiresAt time.Time
+	entitlements := []EntitlementResponse{}
+
+	for key, entititlement := range license.Spec.Entitlements {
 		if key == "expires_at" {
 			if entititlement.Value.StrVal == "" {
 				continue
@@ -125,15 +208,13 @@ func SyncLicense(w http.ResponseWriter, r *http.Request) {
 
 			expiration, err := time.Parse(time.RFC3339, entititlement.Value.StrVal)
 			if err != nil {
-				logger.Error(err)
-				w.WriteHeader(500)
-				return
+				return nil, time.Time{}, errors.Wrap(err, "failed to parse expiration date")
 			}
-			syncLicenseResponse.ExpiresAt = expiration
+			expiresAt = expiration
 		} else if key == "gitops_enabled" {
 			/* do nothing */
 		} else {
-			syncLicenseResponse.Entitlements = append(syncLicenseResponse.Entitlements,
+			entitlements = append(entitlements,
 				EntitlementResponse{
 					Title: entititlement.Title,
 					Label: key,
@@ -142,7 +223,7 @@ func SyncLicense(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	JSON(w, 200, syncLicenseResponse)
+	return entitlements, expiresAt, nil
 }
 
 func UploadNewLicense(w http.ResponseWriter, r *http.Request) {

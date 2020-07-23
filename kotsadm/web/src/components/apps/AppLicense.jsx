@@ -32,27 +32,27 @@ class AppLicense extends Component {
     }
   }
 
-  componentDidMount() {
-    this.getAppLicense();
+  getAppLicense = async () => {
+    await fetch(`${window.env.API_ENDPOINT}/app/${this.props.app.slug}/license`, {
+      method: "GET",
+      headers: {
+        "Authorization": Utilities.getToken(),
+        "Content-Type": "application/json",
+      }
+    }).then(async (res) => {
+      const body = await res.json();
+      if (body === null) {
+        this.setState({ appLicense: {} });
+      } else {
+        this.setState({ appLicense: body });
+      }
+    }).catch((err) => {
+      console.log(err)
+    });
   }
 
-  getAppLicense = () => {
-    const { app } = this.props;
-    this.props.client.query({
-      query: getAppLicense,
-      fetchPolicy: "no-cache",
-      errorPolicy: "ignore",
-      variables: {
-        appId: app.id,
-      }
-    })
-      .then(response => {
-        if (response.data.getAppLicense === null) {
-          this.setState({ appLicense: {} });
-        } else {
-          this.setState({ appLicense: response.data.getAppLicense });
-        }
-      });
+  componentDidMount() {
+    this.getAppLicense();
   }
 
   onDrop = async (files) => {
