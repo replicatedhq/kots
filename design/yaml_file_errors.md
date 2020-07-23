@@ -16,7 +16,7 @@ This proposal attempts to make the rendered output available to the user so that
 
 ## Design
 
-Add a new directory at the root of the file tree `yamlErrors` that will include the raw content of all rendered output for yaml files that failed unmarshalling.
+Add a new directory at the root of the file tree `skippedFiles` that will include the raw content of all rendered output for yaml files that failed unmarshalling.
 
 An example installation.yaml file:
 
@@ -45,15 +45,15 @@ An example file tree:
 > upstream
 > base
 > overlays
-v yamlErrors
+v skippedFiles
   _index.yaml
   deployment.yaml
 ```
 
-yamlErrors/\_index.yaml:
+skippedFiles/\_index.yaml:
 
 ```yaml
-yamlErrors:
-- error: 'yaml: line 26: did not find expected key'
+skippedFiles:
+- reason: 'yaml: line 26: did not find expected key'
   path: deployment.yaml
 ```
