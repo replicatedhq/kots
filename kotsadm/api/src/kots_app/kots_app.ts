@@ -507,7 +507,7 @@ export class KotsApp {
       return false;
     }
     const registryInfo = await stores.kotsAppStore.getAppRegistryDetails(this.id);
-    const rendered = await kotsRenderFile(this, stores, tmpl, registryInfo);
+    const rendered = await kotsRenderFile(this, this.currentSequence!, tmpl, registryInfo);
     const backup = yaml.safeLoad(rendered);
     const annotations = _.get(backup, "metadata.annotations") as any;
     if (!_.isPlainObject(annotations)) {
