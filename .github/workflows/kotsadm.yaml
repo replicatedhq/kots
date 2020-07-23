@@ -167,6 +167,11 @@ jobs:
       shell: bash
       run: echo ::set-output name=GIT_TAG::${GITHUB_REF/refs\/tags\//}
 
+    - name: Setup Node.js environment
+      uses: actions/setup-node@v2.1.1
+      with:
+        node-version: '10'
+
     - name: Build web
       env:
         GIT_COMMIT: ${{ github.sha }}
