@@ -7,13 +7,8 @@ import size from "lodash/size";
 import Modal from "react-modal";
 import { Link } from "react-router-dom";
 
-import {
-  getLicenseExpiryDate,
-} from "@src/utilities/utilities";
-
 import { compose, withApollo } from "react-apollo";
-import { getAppLicense } from "@src/queries/AppsQueries";
-import { getFileContent, Utilities } from "../../utilities/utilities";
+import { getFileContent, Utilities, getLicenseExpiryDate } from "../../utilities/utilities";
 import Loader from "../shared/Loader";
 
 import "@src/scss/components/apps/AppLicense.scss";
