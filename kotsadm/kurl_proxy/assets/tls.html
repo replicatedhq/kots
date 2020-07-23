@@ -17,7 +17,7 @@
       <div class="flex flex-column justifyContent--center alignItems--center">
         <div class="borderWrapper flex-column flex">
           <div class="flex u-marginBottom--8">
-            {{if .AppIcon }}<img class="appIcon flex flex-auto" src="{{ .AppIcon }}" />{{end}}
+            {{if .AppIcon }}<span class="appIcon flex flex-auto" style="background-image: url('{{ .AppIcon }}')"></span>{{end}}
             <div class="flex-column flex1 justifyContent--center">
               <p class="tls-header">HTTPS for {{ .AppTitle }} admin console</p>
             </div>
