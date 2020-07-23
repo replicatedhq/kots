@@ -3,7 +3,7 @@ import { IO, Nsp, SocketService, SocketSession, Socket } from "@tsed/socketio";
 import { getPostgresPool } from "../../util/persistence/db";
 import { KotsAppStore, UndeployStatus } from "../../kots_app/kots_app_store";
 import { KotsAppStatusStore } from "../../kots_app/kots_app_status_store";
-import { State, KotsApp } from "../../kots_app";
+import { State, KotsApp, kotsRenderFile } from "../../kots_app";
 import { Params } from "../../server/params";
 import { ClusterStore, Cluster } from "../../cluster";
 import { PreflightStore } from "../../preflight/preflight_store";
@@ -302,9 +302,18 @@ export class KotsDeploySocketService {
             try {
               const kotsAppSpec = await app.getKotsAppSpec(cluster.id, this.kotsAppStore)
               if (kotsAppSpec && kotsAppSpec.statusInformers) {
+                // render status informers
+                const registryInfo = await this.kotsAppStore.getAppRegistryDetails(app.id);
+                const renderedInformers: string[] = [];
+                for (let i = 0; i < kotsAppSpec.statusInformers.length; i++) {
+                  const informer = kotsAppSpec.statusInformers[i];
+                  const rendered = await kotsRenderFile(app, deployedAppSequence, informer, registryInfo);
+                  renderedInformers.push(rendered);
+                }
+                // send to kots operator
                 this.io.in(clusterSocketHistory.clusterId).emit("appInformers", {
                   app_id: app.id,
-                  informers: kotsAppSpec.statusInformers,
+                  informers: renderedInformers,
                 });
               } else {
                 // no informers, set state to ready
