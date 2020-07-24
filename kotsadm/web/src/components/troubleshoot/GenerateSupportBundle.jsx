@@ -63,7 +63,7 @@ class GenerateSupportBundle extends React.Component {
 
       if (listSupportBundles?.listSupportBundles.length > totalBundles) {
         listSupportBundles.stopPolling();
-        const bundle = listSupportBundles.listSupportBundles[listSupportBundles.listSupportBundles.length - 1];
+        const bundle = listSupportBundles.listSupportBundles[0]; // safe. there's at least 1 element in this array.
         history.push(`/app/${watch.slug}/troubleshoot/analyze/${bundle.id}`);
       }
     }
