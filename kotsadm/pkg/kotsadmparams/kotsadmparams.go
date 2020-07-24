@@ -2,7 +2,7 @@ package kotsadmparams
 
 import (
 	"database/sql"
-	
+
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/kotsadm/pkg/persistence"
 )

@@ -55,7 +55,7 @@ func Get(appID string) (*AppStatus, error) {
 	appStatus := AppStatus{
 		AppID: appID,
 	}
-	
+
 	if updatedAt.Valid {
 		appStatus.UpdatedAt = updatedAt.Time
 	}

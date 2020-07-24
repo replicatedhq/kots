@@ -7,8 +7,8 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
-	"strconv"
 	"os"
+	"strconv"
 	"time"
 
 	"github.com/pkg/errors"
@@ -38,8 +38,8 @@ type Metric struct {
 }
 
 type ValuePair struct {
-	Timestamp int `json:"timestamp"`
-	Value     int `json:"value"`
+	Timestamp float64 `json:"timestamp"`
+	Value     float64 `json:"value"`
 }
 
 type SampleStream struct {
@@ -148,8 +148,8 @@ func GetMetricCharts(appID string, sequence int64) ([]MetricChart, error) {
 			for _, sampleStream := range matrix {
 				data := []ValuePair{}
 				for _, v := range sampleStream.Values {
-					timestamp := int(v[0].(float64))
-					value, _ := strconv.Atoi(v[1].(string))
+					timestamp := v[0].(float64)
+					value, _ := strconv.ParseFloat(v[1].(string), 64)
 					valuePair := ValuePair{
 						Timestamp: timestamp,
 						Value:     value,
