@@ -97,7 +97,7 @@ func SyncLicense(w http.ResponseWriter, r *http.Request) {
 	sess, err := session.Parse(r.Header.Get("Authorization"))
 	if err != nil {
 		logger.Error(err)
-		w.WriteHeader(500)
+		w.WriteHeader(401)
 		return
 	}
 
@@ -245,7 +245,7 @@ func UploadNewLicense(w http.ResponseWriter, r *http.Request) {
 	sess, err := session.Parse(r.Header.Get("Authorization"))
 	if err != nil {
 		logger.Error(err)
-		w.WriteHeader(500)
+		w.WriteHeader(401)
 		return
 	}
 
@@ -387,7 +387,7 @@ func ResumeInstallOnline(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		logger.Error(err)
 		resumeInstallOnlineResponse.Error = err.Error()
-		JSON(w, 500, resumeInstallOnlineResponse)
+		JSON(w, 401, resumeInstallOnlineResponse)
 		return
 	}
 
