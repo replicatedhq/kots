@@ -32,7 +32,11 @@ func CreateAppVersionArchive(appID string, sequence int64, archivePath string) e
 		filepath.Join(archivePath, "upstream"),
 		filepath.Join(archivePath, "base"),
 		filepath.Join(archivePath, "overlays"),
-		filepath.Join(archivePath, "skippedFiles"),
+	}
+
+	skippedFilesPath := filepath.Join(archivePath, "skippedFiles")
+	if _, err := os.Stat(skippedFilesPath); err == nil {
+		paths = append(paths, skippedFilesPath)
 	}
 
 	tmpDir, err := ioutil.TempDir("", "kotsadm")

@@ -86,8 +86,13 @@ func DownloadApp(w http.ResponseWriter, r *http.Request) {
 		filepath.Join(archivePath, "upstream"),
 		filepath.Join(archivePath, "base"),
 		filepath.Join(archivePath, "overlays"),
-		filepath.Join(archivePath, "skippedFiles"),
 	}
+
+	skippedFilesPath := filepath.Join(archivePath, "skippedFiles")
+	if _, err := os.Stat(skippedFilesPath); err == nil {
+		paths = append(paths, skippedFilesPath)
+	}
+
 	tmpDir, err := ioutil.TempDir("", "kotsadm")
 	if err != nil {
 		logger.Error(err)
