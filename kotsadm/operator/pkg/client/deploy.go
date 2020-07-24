@@ -144,7 +144,8 @@ func (c *Client) diffAndRemovePreviousManifests(applicationManifests Application
 
 	for _, namespace := range applicationManifests.ClearNamespaces {
 		log.Printf("Ensuring all %s objects have been removed from namespace %s\n", applicationManifests.AppSlug, namespace)
-		for i := 10; i >= 0; i-- {
+		sleepTime := time.Second * 2
+		for i := 60; i >= 0; i-- { // 2 minute wait, 60 loops with 2 second sleep
 			gone, err := c.clearNamespace(applicationManifests.AppSlug, namespace)
 			if err != nil {
 				log.Printf("Failed to check if app %s objects have been removed from namespace %s: %v\n", applicationManifests.AppSlug, namespace, err)
@@ -155,7 +156,7 @@ func (c *Client) diffAndRemovePreviousManifests(applicationManifests Application
 				return fmt.Errorf("Failed to clear app %s from namespace %s\n", applicationManifests.AppSlug, namespace)
 			}
 			log.Printf("Namespace %s still has objects from app %s: sleeping...\n", namespace, applicationManifests.AppSlug)
-			time.Sleep(time.Second * 2)
+			time.Sleep(sleepTime)
 		}
 		log.Printf("Namepsace %s successfully cleared of app %s\n", namespace, applicationManifests.AppSlug)
 	}
