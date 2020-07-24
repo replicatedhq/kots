@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"net/url"
+	"strconv"
 	"os"
 	"time"
 
@@ -42,7 +44,7 @@ type ValuePair struct {
 
 type SampleStream struct {
 	Metric map[string]string `json:"metric"`
-	Values [][2]int          `json:"values"`
+	Values [][2]interface{}  `json:"values"`
 }
 
 var (
@@ -145,10 +147,12 @@ func GetMetricCharts(appID string, sequence int64) ([]MetricChart, error) {
 
 			for _, sampleStream := range matrix {
 				data := []ValuePair{}
-				for _, value := range sampleStream.Values {
+				for _, v := range sampleStream.Values {
+					timestamp := int(v[0].(float64))
+					value, _ := strconv.Atoi(v[1].(string))
 					valuePair := ValuePair{
-						Timestamp: value[0],
-						Value:     value[1],
+						Timestamp: timestamp,
+						Value:     value,
 					}
 					data = append(data, valuePair)
 				}
@@ -184,19 +188,20 @@ func GetMetricCharts(appID string, sequence int64) ([]MetricChart, error) {
 }
 
 func prometheusQueryRange(address string, query string, start uint, end uint, step uint) ([]SampleStream, error) {
-	uri := fmt.Sprintf("%s/api/v1/query_range", address)
+	host := fmt.Sprintf("%s/api/v1/query_range", address)
+
+	v := url.Values{}
+	v.Set("query", query)
+	v.Set("start", fmt.Sprintf("%d", start))
+	v.Set("end", fmt.Sprintf("%d", end))
+	v.Set("step", fmt.Sprintf("%d", step))
+
+	uri := host + "?" + v.Encode()
 	req, err := http.NewRequest("GET", uri, nil)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create request")
 	}
 	req.Header.Add("Content-Type", "application/json")
-
-	qs := req.URL.Query()
-	qs.Add("query", fmt.Sprintf("%s", query))
-	qs.Add("start", fmt.Sprintf("%s", start))
-	qs.Add("end", fmt.Sprintf("%s", end))
-	qs.Add("step", fmt.Sprintf("%s", step))
-	req.URL.RawQuery = qs.Encode()
 
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
