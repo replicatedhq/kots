@@ -10,6 +10,7 @@ import (
 	"github.com/replicatedhq/kots/kotsadm/pkg/kotsadmparams"
 	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
 	"github.com/replicatedhq/kots/kotsadm/pkg/version"
+	"github.com/replicatedhq/kots/kotsadm/pkg/downstream"
 )
 
 type GetAppDashboardResponse struct {
@@ -33,6 +34,7 @@ func GetAppDashboard(w http.ResponseWriter, r *http.Request) {
 	}
 
 	appSlug := mux.Vars(r)["appSlug"]
+	clusterID := mux.Vars(r)["clusterId"]
 
 	a, err := app.GetFromSlug(appSlug)
 	if err != nil {
@@ -48,8 +50,14 @@ func GetAppDashboard(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// TODO: get downstream current sequence not app current sequence
-	metrics, err := version.GetMetricCharts(a.ID, a.CurrentSequence)
+	currentSequence, err := downstream.GetDownstreamCurrentSequence(a.ID, clusterID)
+	if err != nil {
+		logger.Error(err)
+		w.WriteHeader(500)
+		return
+	}
+
+	metrics, err := version.GetMetricCharts(a.ID, currentSequence)
 	if err != nil {
 		logger.Error(err)
 		w.WriteHeader(500)

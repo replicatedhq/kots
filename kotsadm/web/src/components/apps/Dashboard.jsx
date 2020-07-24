@@ -140,7 +140,7 @@ class Dashboard extends Component {
   }
 
   getAppDashboard = async () => {
-    fetch(`${window.env.API_ENDPOINT}/app/${this.props.app?.slug}/dashboard`, {
+    fetch(`${window.env.API_ENDPOINT}/app/${this.props.app?.slug}/cluster/${this.props.cluster?.id}/dashboard`, {
       headers: {
         "Authorization": Utilities.getToken(),
         "Content-Type": "application/json",
