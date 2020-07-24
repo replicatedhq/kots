@@ -11,11 +11,13 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
+	"gopkg.in/yaml.v2"
 	kustomizetypes "sigs.k8s.io/kustomize/api/types"
 )
 
 type WriteOptions struct {
 	BaseDir          string
+	SkippedDir       string
 	Overwrite        bool
 	ExcludeKotsKinds bool
 }
@@ -106,6 +108,76 @@ func (b *Base) WriteBase(options WriteOptions) error {
 
 	if err := k8sutil.WriteKustomizationToFile(&kustomization, path.Join(renderDir, "kustomization.yaml")); err != nil {
 		return errors.Wrap(err, "failed to write kustomization to file")
+	}
+
+	if err := b.writeSkippedFiles(options); err != nil {
+		return errors.Wrap(err, "failed to write skipped files")
+	}
+
+	return nil
+}
+
+type SkippedFilesIndex struct {
+	SkippedFiles []SkippedFile `yaml:"skippedFiles"`
+}
+
+type SkippedFile struct {
+	Path   string `yaml:"path"`
+	Reason string `yaml:"reason"`
+}
+
+func (b *Base) writeSkippedFiles(options WriteOptions) error {
+	// if we dont render this dir we will get an error when we create the archive
+	renderDir := filepath.Join(options.SkippedDir, b.Path)
+
+	_, err := os.Stat(renderDir)
+	if err == nil {
+		if options.Overwrite {
+			if err := os.RemoveAll(renderDir); err != nil {
+				return errors.Wrap(err, "failed to remove previous content in skipped files")
+			}
+		} else {
+			return fmt.Errorf("directory %s already exists", renderDir)
+		}
+	}
+
+	if _, err := os.Stat(renderDir); os.IsNotExist(err) {
+		if err := os.MkdirAll(renderDir, 0744); err != nil {
+			return errors.Wrap(err, "failed to mkdir for skipped files root")
+		}
+	}
+
+	if len(b.ErrorFiles) == 0 {
+		return nil
+	}
+
+	index := SkippedFilesIndex{SkippedFiles: []SkippedFile{}}
+	for _, file := range b.ErrorFiles {
+		fileRenderPath := path.Join(renderDir, file.Path)
+		d := path.Dir(fileRenderPath)
+		if _, err := os.Stat(d); os.IsNotExist(err) {
+			if err := os.MkdirAll(d, 0744); err != nil {
+				return errors.Wrap(err, "failed to mkdir")
+			}
+		}
+
+		if err := ioutil.WriteFile(fileRenderPath, file.Content, 0644); err != nil {
+			return errors.Wrapf(err, "failed to write skipped file %s", fileRenderPath)
+		}
+
+		index.SkippedFiles = append(index.SkippedFiles, SkippedFile{
+			Path:   file.Path,
+			Reason: fmt.Sprintf("%v", file.Error),
+		})
+	}
+
+	indexOut, err := yaml.Marshal(index)
+	if err != nil {
+		return errors.Wrap(err, "failed to marshal skipped files index")
+	}
+	fileRenderPath := path.Join(renderDir, "_index.yaml")
+	if err := ioutil.WriteFile(fileRenderPath, indexOut, 0644); err != nil {
+		return errors.Wrap(err, "failed to write skipped files index")
 	}
 
 	return nil

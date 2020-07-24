@@ -37,6 +37,7 @@ func GenerateTest(name string, applicationPath string) error {
 		path.Join(applicationPath, "upstream"),
 		path.Join(applicationPath, "base"),
 		path.Join(applicationPath, "overlays"),
+		path.Join(applicationPath, "skippedFiles"),
 	}
 
 	if err := tarGz.Archive(paths, path.Join(testRoot, "expected-archive.tar.gz")); err != nil {

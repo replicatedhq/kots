@@ -29,6 +29,11 @@ func createUploadableArchive(rootPath string) (string, error) {
 		path.Join(rootPath, "overlays"),
 	}
 
+	skippedFilesPath := path.Join(rootPath, "skippedFiles")
+	if _, err := os.Stat(skippedFilesPath); err == nil {
+		paths = append(paths, skippedFilesPath)
+	}
+
 	// the caller of this function is repsonsible for deleting this file
 	tempDir, err := ioutil.TempDir("", "kots")
 	if err != nil {

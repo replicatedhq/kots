@@ -56,3 +56,12 @@ func (u *Upstream) GetBaseDir(options WriteOptions) string {
 
 	return path.Join(renderDir, "base")
 }
+
+func (u *Upstream) GetSkippedDir(options WriteOptions) string {
+	renderDir := options.RootDir
+	if options.CreateAppDir {
+		renderDir = path.Join(renderDir, u.Name)
+	}
+
+	return path.Join(renderDir, "skippedFiles")
+}
