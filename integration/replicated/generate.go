@@ -144,7 +144,10 @@ func generateExpectedFilesystem(namespace, rawArchivePath string) ([]byte, error
 		path.Join(tmpRootDir, "upstream"),
 		path.Join(tmpRootDir, "base"),
 		path.Join(tmpRootDir, "overlays"),
-		path.Join(tmpRootDir, "skippedFiles"),
+	}
+	skippedFilesPath := path.Join(tmpRootDir, "skippedFiles")
+	if _, err := os.Stat(skippedFilesPath); err == nil {
+		paths = append(paths, skippedFilesPath)
 	}
 	if err := tarGz.Archive(paths, archiveFile); err != nil {
 		return nil, errors.Wrap(err, "failed to create archive")
