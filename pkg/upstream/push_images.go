@@ -14,7 +14,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/containers/image/docker/tarfile"
+	"github.com/containers/image/v5/docker/tarfile"
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/docker/registry"
 	"github.com/replicatedhq/kots/pkg/image"

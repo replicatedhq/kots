@@ -12,12 +12,12 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/containers/image/copy"
-	imagedocker "github.com/containers/image/docker"
-	dockerref "github.com/containers/image/docker/reference"
-	"github.com/containers/image/signature"
-	"github.com/containers/image/transports/alltransports"
-	"github.com/containers/image/types"
+	"github.com/containers/image/v5/copy"
+	imagedocker "github.com/containers/image/v5/docker"
+	dockerref "github.com/containers/image/v5/docker/reference"
+	"github.com/containers/image/v5/signature"
+	"github.com/containers/image/v5/transports/alltransports"
+	"github.com/containers/image/v5/types"
 	"github.com/docker/distribution/reference"
 	"github.com/docker/distribution/registry/api/errcode"
 	"github.com/pkg/errors"
@@ -585,7 +585,7 @@ func isUnauthorized(err error) bool {
 		return err.Code.Descriptor().HTTPStatusCode == http.StatusUnauthorized
 	}
 
-	if err == imagedocker.ErrUnauthorizedForCredentials {
+	if _, ok := err.(imagedocker.ErrUnauthorizedForCredentials); ok {
 		return true
 	}
 

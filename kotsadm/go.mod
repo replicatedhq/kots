@@ -18,7 +18,7 @@ require (
 	github.com/lib/pq v1.3.0
 	github.com/marccampbell/yaml-toolbox v0.0.0-20200328202846-85b6f7184a20
 	github.com/mholt/archiver v3.1.1+incompatible
-	github.com/opencontainers/image-spec v1.0.1
+	github.com/opencontainers/image-spec v1.0.2-0.20190823105129-775207bd45b6
 	github.com/pkg/errors v0.9.1
 	github.com/replicatedhq/kots v0.0.0-00010101000000-000000000000
 	github.com/replicatedhq/troubleshoot v0.9.38
