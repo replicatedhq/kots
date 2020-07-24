@@ -27,7 +27,11 @@ func createUploadableArchive(rootPath string) (string, error) {
 		path.Join(rootPath, "upstream"),
 		path.Join(rootPath, "base"),
 		path.Join(rootPath, "overlays"),
-		path.Join(rootPath, "skippedFiles"),
+	}
+
+	skippedFilesPath := path.Join(rootPath, "skippedFiles")
+	if _, err := os.Stat(skippedFilesPath); err == nil {
+		paths = append(paths, skippedFilesPath)
 	}
 
 	// the caller of this function is repsonsible for deleting this file
