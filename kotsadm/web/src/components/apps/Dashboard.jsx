@@ -12,7 +12,7 @@ import UpdateCheckerModal from "@src/components/modals/UpdateCheckerModal";
 import Modal from "react-modal";
 import { Repeater } from "../../utilities/repeater";
 import { Utilities } from "../../utilities/utilities";
-import { getAppLicense, getKotsAppDashboard, getUpdateDownloadStatus } from "@src/queries/AppsQueries";
+import { getAppLicense, getUpdateDownloadStatus } from "@src/queries/AppsQueries";
 import { setPrometheusAddress } from "@src/mutations/AppsMutations";
 
 import { XYPlot, XAxis, YAxis, HorizontalGridLines, VerticalGridLines, LineSeries, DiscreteColorLegend, Crosshair } from "react-vis";
@@ -53,7 +53,9 @@ class Dashboard extends Component {
     viewAirgapUpdateError: false,
     airgapUpdateError: "",
     startSnapshotErrorMsg: "",
-    showUpdateCheckerModal: false
+    showUpdateCheckerModal: false,
+    appStatus: null,
+    metrics: [],
   }
 
   toggleConfigureGraphs = () => {
@@ -73,7 +75,7 @@ class Dashboard extends Component {
     })
       .then(() => {
         this.setState({ savingPromValue: false });
-        this.props.getKotsAppDashboard.refetch();
+        this.getAppDashboard();
       })
       .catch(() => {
         this.setState({ savingPromValue: false });
@@ -128,11 +130,34 @@ class Dashboard extends Component {
     if (getAppLicense) {
       this.setState({ appLicense: getAppLicense });
     }
-    this.props.getKotsAppDashboard.startPolling(2000);
+
+    this.getAppDashboardJob = new Repeater()
+    this.getAppDashboardJob.start(this.getAppDashboard, 2000);
   }
 
   componentWillUnmount() {
     this.state.updateChecker.stop();
+  }
+
+  getAppDashboard = async () => {
+    fetch(`${window.env.API_ENDPOINT}/app/${this.props.app?.slug}/dashboard`, {
+      headers: {
+        "Authorization": Utilities.getToken(),
+        "Content-Type": "application/json",
+      },
+      method: "GET",
+    })
+      .then(async (res) => {
+        const response = await res.json();
+        this.setState({
+          appStatus: response.appStatus,
+          promValue: response.prometheusAddress,
+          metrics: response.metrics,
+        })
+      })
+      .catch((err) => {
+        console.log(err);
+      });
   }
 
   onCheckForUpdates = async () => {
@@ -513,7 +538,7 @@ class Dashboard extends Component {
                 cardName="Application"
                 application={true}
                 cardIcon="applicationIcon"
-                appStatus={this.props.getKotsAppDashboard.getKotsAppDashboard?.appStatus?.state}
+                appStatus={this.state.appStatus?.state}
                 url={this.props.match.url}
                 links={links}
                 app={app}
@@ -578,13 +603,13 @@ class Dashboard extends Component {
               }
             </div>
             <div className="u-marginTop--30 flex flex1">
-              {this.props.getKotsAppDashboard?.getKotsAppDashboard?.prometheusAddress ?
+              {this.state.promValue ?
                 <div>
                   <div className="flex flex1 justifyContent--flexEnd">
                     <span className="card-link" onClick={this.toggleConfigureGraphs}> Configure Prometheus Address </span>
                   </div>
                   <div className="flex-auto flex flexWrap--wrap u-width--full">
-                    {this.props.getKotsAppDashboard.getKotsAppDashboard.metrics.map(this.renderGraph)}
+                    {this.state.metrics.map(this.renderGraph)}
                   </div>
                 </div>
                 :
@@ -680,18 +705,6 @@ export default compose(
         },
         fetchPolicy: "no-cache",
         errorPolicy: "ignore"
-      };
-    }
-  }),
-  graphql(getKotsAppDashboard, {
-    name: "getKotsAppDashboard",
-    options: ({ match, cluster }) => {
-      return {
-        variables: {
-          slug: match.params.slug,
-          clusterId: cluster?.id
-        },
-        fetchPolicy: "no-cache"
       };
     }
   }),
