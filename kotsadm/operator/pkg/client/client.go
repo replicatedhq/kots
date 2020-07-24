@@ -302,9 +302,7 @@ func (c *Client) registerHandlers(socketClient *socket.Client) error {
 
 	err = socketClient.On("appInformers", func(h *socket.Channel, args InformRequest) {
 		log.Printf("received an inform event: %#v", args)
-		if err := c.applyAppInformers(args.AppID, args.Informers); err != nil {
-			log.Printf("error running informer: %s", err.Error())
-		}
+		c.applyAppInformers(args.AppID, args.Informers)
 	})
 	if err != nil {
 		return errors.Wrap(err, "failed to add inform handler")
@@ -414,17 +412,22 @@ func runPreflight(preflightURI string, ignorePermissions bool) error {
 	return kubernetesApplier.Preflight(preflightURI, ignorePermissions)
 }
 
-func (c *Client) applyAppInformers(appID string, informerStrings []types.StatusInformerString) error {
+func (c *Client) applyAppInformers(appID string, informerStrings []types.StatusInformerString) {
 	var informers []types.StatusInformer
 	for _, str := range informerStrings {
+		if str == "" {
+			continue
+		}
 		informer, err := str.Parse()
 		if err != nil {
-			return errors.Wrapf(err, "failed to parse informer %s", str)
+			log.Printf(fmt.Sprintf("failed to parse informer %s: %s", str, err.Error()))
+			continue // don't stop
 		}
 		informers = append(informers, informer)
 	}
-	c.appStateMonitor.Apply(appID, informers)
-	return nil
+	if len(informers) > 0 {
+		c.appStateMonitor.Apply(appID, informers)
+	}
 }
 
 func (c *Client) sendAppStatus(appStatus types.AppStatus) error {

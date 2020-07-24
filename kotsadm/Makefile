@@ -26,11 +26,6 @@ build-ttl.sh:
 	docker build -f deploy/Dockerfile -t ttl.sh/${CURRENT_USER}/kotsadm:12h .
 	docker push ttl.sh/${CURRENT_USER}/kotsadm:12h
 
-.PHONY: build-ttl-ci.sh
-build-ttl-ci.sh:
-	docker build -f deploy/Dockerfile -t ttl.sh/${UUID}/kotsadm:2h .
-	docker push ttl.sh/${UUID}/kotsadm:2h
-
 .PHONY: build-alpha
 build-alpha:
 	docker build -f deploy/Dockerfile --build-arg version=${GIT_COMMIT} -t kotsadm/kotsadm:alpha .

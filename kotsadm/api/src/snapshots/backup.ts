@@ -36,7 +36,7 @@ export async function backup(stores: Stores, appId: string, scheduled: boolean):
   }
 
   const tmpl = await stores.snapshotsStore.getKotsBackupSpec(appId, deployedVersion.sequence);
-  const rendered = await kotsRenderFile(app, stores, tmpl, registryInfo);
+  const rendered = await kotsRenderFile(app, app.currentSequence!, tmpl, registryInfo);
   const base = yaml.safeLoad(rendered) as Backup;
   const spec = (base && base.spec) || {};
 

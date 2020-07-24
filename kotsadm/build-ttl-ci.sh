@@ -21,14 +21,5 @@ docker run \
   schemahero/schemahero:0.9.0 \
   fixtures --input-dir /in --output-dir /out/schema --dbname ship-cloud --driver postgres
 
-make -C migrations/fixtures deps build run build-ttl-ci.sh
-make -C migrations build-ttl-ci.sh
-make -C web deps build-kotsadm
-make kotsadm build-ttl-ci.sh
-make -C operator build build-ttl-ci.sh
-make -C kurl_proxy build build-ttl-ci.sh
-make -C api no-yarn deps build build-ttl-ci.sh
-make -C minio build-ttl-ci.sh
-
 printf "\n\n\n"
 printf "These images are good for 2 hours\n"

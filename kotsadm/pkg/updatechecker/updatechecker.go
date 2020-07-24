@@ -9,6 +9,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/kotsadm/pkg/app"
+	"github.com/replicatedhq/kots/kotsadm/pkg/downstream"
 	"github.com/replicatedhq/kots/kotsadm/pkg/kotsutil"
 	"github.com/replicatedhq/kots/kotsadm/pkg/license"
 	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
@@ -205,6 +206,36 @@ func CheckForUpdates(appID string, deploy bool) (int64, error) {
 
 	// if there are updates, go routine it
 	if len(updates) == 0 {
+		if !deploy {
+			return 0, nil
+		}
+
+		// ensure that the latest version is deployed
+		allVersions, err := version.GetVersions(a.ID)
+		if err != nil {
+			return 0, errors.Wrap(err, "failed to list app versions")
+		}
+
+		// get the first version, the array must contain versions at this point
+		// this function can't run without an app
+		if len(allVersions) == 0 {
+			return 0, errors.New("no versions found")
+		}
+
+		latestVersion := allVersions[len(allVersions)-1]
+		downstreams, err := downstream.ListDownstreamsForApp(a.ID)
+		if err != nil {
+			return 0, errors.Wrap(err, "failed to list downstreams for app")
+		}
+		downstream := downstreams[0]
+
+		if latestVersion.Sequence != downstream.CurrentSequence {
+			err := version.DeployVersion(a.ID, latestVersion.Sequence)
+			if err != nil {
+				return 0, errors.Wrap(err, "failed to deploy latest version")
+			}
+		}
+
 		return 0, nil
 	}
 

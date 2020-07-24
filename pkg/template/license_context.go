@@ -4,6 +4,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"strconv"
 	"text/template"
 
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
@@ -27,11 +28,34 @@ func (ctx LicenseCtx) licenseFieldValue(name string) string {
 		return ""
 	}
 
-	entitlement, ok := ctx.License.Spec.Entitlements[name]
-	if ok {
-		return fmt.Sprintf("%v", entitlement.Value.Value())
+	switch name {
+	case "isGitOpsSupported":
+		return strconv.FormatBool(ctx.License.Spec.IsGitOpsSupported)
+	case "isAirgapSupported":
+		return strconv.FormatBool(ctx.License.Spec.IsAirgapSupported)
+	case "licenseType":
+		return ctx.License.Spec.LicenseType
+	case "licenseSequence":
+		return strconv.FormatInt(ctx.License.Spec.LicenseSequence, 10)
+	case "signature":
+		return string(ctx.License.Spec.Signature)
+	case "appSlug":
+		return ctx.License.Spec.AppSlug
+	case "channelName":
+		return ctx.License.Spec.ChannelName
+	case "customerName":
+		return ctx.License.Spec.CustomerName
+	case "endpoint":
+		return ctx.License.Spec.Endpoint
+	case "licenseID", "licenseId":
+		return ctx.License.Spec.LicenseID
+	default:
+		entitlement, ok := ctx.License.Spec.Entitlements[name]
+		if ok {
+			return fmt.Sprintf("%v", entitlement.Value.Value())
+		}
+		return ""
 	}
-	return ""
 }
 
 func (ctx LicenseCtx) licenseDockercfg() string {

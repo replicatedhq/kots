@@ -153,7 +153,7 @@ func UpstreamUpgradeCmd() *cobra.Command {
 		},
 	}
 
-	cmd.Flags().Bool("deploy", false, "when set, automatically deploy the latest version downloads")
+	cmd.Flags().Bool("deploy", false, "when set, automatically deploy the latest version")
 
 	cmd.Flags().Bool("debug", false, "when set, log full error traces in some cases where we provide a pretty message")
 	cmd.Flags().MarkHidden("debug")

@@ -199,7 +199,7 @@ export async function kotsAppDownloadUpdateFromAirgap(airgapFile: string, app: K
   }
 }
 
-export async function kotsRenderFile(app: KotsApp, stores: Stores, input: string, registryInfo: KotsAppRegistryDetails): Promise<string> {
+export async function kotsRenderFile(app: KotsApp, sequence: number, input: string, registryInfo: KotsAppRegistryDetails): Promise<string> {
   const filename = tmp.tmpNameSync();
   fs.writeFileSync(filename, input);
 
@@ -208,7 +208,7 @@ export async function kotsRenderFile(app: KotsApp, stores: Stores, input: string
   const archive = path.join(tmpDir.name, "archive.tar.gz");
 
   try {
-    fs.writeFileSync(archive, await app.getArchive("" + (app.currentSequence!)));
+    fs.writeFileSync(archive, await app.getArchive("" + sequence));
 
     const statusServer = new StatusServer();
     await statusServer.start(tmpDir.name);

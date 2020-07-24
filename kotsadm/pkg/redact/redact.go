@@ -5,11 +5,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
-	"regexp"
 	"sort"
-	"strings"
 	"time"
 
+	"github.com/gosimple/slug"
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/util"
 	"github.com/replicatedhq/troubleshoot/pkg/apis/troubleshoot/v1beta1"
@@ -44,7 +43,7 @@ type RedactorMetadata struct {
 func GetRedactSpec() (string, string, error) {
 	configMap, errstr, err := getConfigmap()
 	if err != nil || configMap == nil {
-		return "", errstr, err
+		return "", errstr, errors.Wrap(err, "get redactors configmap")
 	}
 
 	return getRedactSpec(configMap)
@@ -66,7 +65,7 @@ func getRedactSpec(configMap *v1.ConfigMap) (string, string, error) {
 func GetRedact() (*v1beta1.Redactor, error) {
 	configmap, _, err := getConfigmap()
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "get redactors configmap")
 	}
 	if configmap == nil {
 		return nil, nil
@@ -118,7 +117,7 @@ func GetRedactBySlug(slug string) (*RedactorMetadata, error) {
 		return nil, err
 	}
 	if configmap == nil {
-		return nil, fmt.Errorf("configmap not found")
+		return nil, errors.Wrap(err, "get redactors configmap")
 	}
 
 	redactString, ok := configmap.Data[slug]
@@ -149,7 +148,7 @@ func SetRedactSpec(spec string) (string, error) {
 
 	configMap, errMsg, err := getConfigmap()
 	if err != nil {
-		return errMsg, err
+		return errMsg, errors.Wrap(err, "get redactors configmap")
 	}
 
 	newMap, err := splitRedactors(spec, configMap.Data)
@@ -169,7 +168,7 @@ func SetRedactSpec(spec string) (string, error) {
 func SetRedactYaml(slug, description string, enabled, newRedact bool, yamlBytes []byte) (*RedactorMetadata, error) {
 	configMap, _, err := getConfigmap()
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "get redactors configmap")
 	}
 
 	newData, redactorEntry, err := setRedactYaml(slug, description, enabled, newRedact, time.Now(), yamlBytes, configMap.Data)
@@ -186,6 +185,52 @@ func SetRedactYaml(slug, description string, enabled, newRedact bool, yamlBytes 
 	return redactorEntry, nil
 }
 
+// sets whether an individual redactor is enabled
+func SetRedactEnabled(slug string, enabled bool) (*RedactorMetadata, error) {
+	configMap, _, err := getConfigmap()
+	if err != nil {
+		return nil, errors.Wrap(err, "get redactors configmap")
+	}
+
+	newData, redactorEntry, err := setRedactEnabled(slug, enabled, time.Now(), configMap.Data)
+	if err != nil {
+		return nil, err
+	}
+
+	configMap.Data = newData
+
+	_, err = writeConfigmap(configMap)
+	if err != nil {
+		return nil, errors.Wrapf(err, "write configMap with updated redact")
+	}
+	return redactorEntry, nil
+}
+
+func setRedactEnabled(slug string, enabled bool, currentTime time.Time, data map[string]string) (map[string]string, *RedactorMetadata, error) {
+	redactorEntry := RedactorMetadata{}
+	redactString, ok := data[slug]
+	if !ok {
+		return nil, nil, fmt.Errorf("redactor %s not found", slug)
+	}
+
+	// unmarshal existing redactor
+	err := json.Unmarshal([]byte(redactString), &redactorEntry)
+	if err != nil {
+		return nil, nil, errors.Wrapf(err, "unable to parse redactor %s", slug)
+	}
+
+	redactorEntry.Metadata.Enabled = enabled
+	redactorEntry.Metadata.Updated = currentTime
+
+	jsonBytes, err := json.Marshal(redactorEntry)
+	if err != nil {
+		return nil, nil, errors.Wrapf(err, "unable to marshal redactor %s", slug)
+	}
+
+	data[slug] = string(jsonBytes)
+	return data, &redactorEntry, nil
+}
+
 func setRedactYaml(slug, description string, enabled, newRedact bool, currentTime time.Time, yamlBytes []byte, data map[string]string) (map[string]string, *RedactorMetadata, error) {
 	// parse yaml as redactor
 	newRedactorSpec, err := parseRedact(yamlBytes)
@@ -199,19 +244,19 @@ func setRedactYaml(slug, description string, enabled, newRedact bool, currentTim
 
 	redactorEntry := RedactorMetadata{}
 	redactString, ok := data[slug]
+
 	if !ok || newRedact {
-		// if name is not set in yaml, autogenerate a name
+		// if name is not set in yaml throw error
 		// if name is set, create the slug from the name
 		if newRedactorSpec.Name == "" {
-			newRedactorSpec.Name = fmt.Sprintf("redactor-%d", len(data)+1)
-			slug = getSlug(newRedactorSpec.Name)
+			return nil, nil, fmt.Errorf("failed to create new redact spec: name can't be empty")
 		} else {
 			slug = getSlug(newRedactorSpec.Name)
 		}
 
 		if _, ok := data[slug]; ok {
 			// the target slug already exists - this is an error
-			return nil, nil, fmt.Errorf("refusing to create new redact spec with name %s - slug %s already exists", newRedactorSpec.Name, slug)
+			return nil, nil, fmt.Errorf("failed to create new redact spec: name %s - slug %s already exists", newRedactorSpec.Name, slug)
 		}
 
 		// create the new redactor
@@ -232,7 +277,7 @@ func setRedactYaml(slug, description string, enabled, newRedact bool, currentTim
 
 			if _, ok := data[getSlug(newRedactorSpec.Name)]; ok {
 				// the target slug already exists - this is an error
-				return nil, nil, fmt.Errorf("refusing to change slug from %s to %s as that already exists", slug, getSlug(newRedactorSpec.Name))
+				return nil, nil, fmt.Errorf("failed to update redact spec: refusing to change slug from %s to %s as that already exists", slug, getSlug(newRedactorSpec.Name))
 			}
 
 			delete(data, slug)
@@ -242,8 +287,7 @@ func setRedactYaml(slug, description string, enabled, newRedact bool, currentTim
 		}
 
 		if newRedactorSpec.Name == "" {
-			newRedactorSpec.Name = slug
-			redactorEntry.Metadata.Name = slug
+			return nil, nil, fmt.Errorf("failed to update redact spec: name can't be empty")
 		}
 	}
 
@@ -266,7 +310,7 @@ func setRedactYaml(slug, description string, enabled, newRedact bool, currentTim
 func DeleteRedact(slug string) error {
 	configMap, _, err := getConfigmap()
 	if err != nil {
-		return err
+		return errors.Wrap(err, "get redactors configmap")
 	}
 
 	delete(configMap.Data, slug)
@@ -340,9 +384,7 @@ func writeConfigmap(configMap *v1.ConfigMap) (*v1.ConfigMap, error) {
 }
 
 func getSlug(name string) string {
-	name = strings.ReplaceAll(name, " ", "-")
-
-	name = regexp.MustCompile(`[^\w\d-_]`).ReplaceAllString(name, "")
+	name = slug.Make(name)
 
 	if name == "kotsadm-redact" {
 		name = "kotsadm-redact-metadata"
