@@ -219,8 +219,8 @@ func prometheusQueryRange(address string, query string, start uint, end uint, st
 	}
 
 	type ResponseData struct {
-		Result     []SampleStream `json:result`
-		ResultType string         `json:resultType`
+		Result     []SampleStream `json:"result"`
+		ResultType string         `json:"resultType"`
 	}
 	type Response struct {
 		Data ResponseData `json:"data"`
