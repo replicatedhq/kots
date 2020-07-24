@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"github.com/gorilla/mux"
+	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/kotsadm/pkg/app"
 	"github.com/replicatedhq/kots/kotsadm/pkg/appstatus"
 	"github.com/replicatedhq/kots/kotsadm/pkg/downstream"
@@ -59,9 +60,8 @@ func GetAppDashboard(w http.ResponseWriter, r *http.Request) {
 
 	metrics, err := version.GetMetricCharts(a.ID, parentSequence)
 	if err != nil {
-		logger.Error(err)
-		w.WriteHeader(500)
-		return
+		logger.Error(errors.Wrap(err, "failed to get metrics charts"))
+		metrics = []version.MetricChart{}
 	}
 
 	prometheusAddress, err := kotsadmparams.Get("PROMETHEUS_ADDRESS")
