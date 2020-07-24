@@ -36,6 +36,35 @@ func ListDownstreamsForApp(appID string) ([]*types.Downstream, error) {
 	return downstreams, nil
 }
 
+func GetParentSequence(appID string, clusterID string) (int64, error) {
+	db := persistence.MustGetPGSession()
+	query := `select current_sequence from app_downstream where app_id = $1 and cluster_id = $2`
+	row := db.QueryRow(query, appID, clusterID)
+
+	var currentSequence sql.NullInt64
+	if err := row.Scan(&currentSequence); err != nil {
+		return 0, errors.Wrap(err, "failed to scan")
+	}
+
+	if !currentSequence.Valid {
+		return -1, nil
+	}
+
+	query = `select parent_sequence from app_downstream_version where app_id = $1 and cluster_id = $2 and sequence = $3`
+	row = db.QueryRow(query, appID, clusterID, currentSequence.Int64)
+
+	var parentSequence sql.NullInt64
+	if err := row.Scan(&parentSequence); err != nil {
+		return 0, errors.Wrap(err, "failed to scan")
+	}
+
+	if !parentSequence.Valid {
+		return -1, nil
+	}
+
+	return parentSequence.Int64, nil
+}
+
 // SetDownstreamVersionReady sets the status for the downstream version with the given sequence and app id to "pending"
 func SetDownstreamVersionReady(appID string, sequence int64) error {
 	db := persistence.MustGetPGSession()
