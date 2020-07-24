@@ -50,7 +50,7 @@ func GetAppDashboard(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	parentSequence, err := downstream.GetDownstreamParentSequence(a.ID, clusterID)
+	parentSequence, err := downstream.GetParentSequence(a.ID, clusterID)
 	if err != nil {
 		logger.Error(err)
 		w.WriteHeader(500)

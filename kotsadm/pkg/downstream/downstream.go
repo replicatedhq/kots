@@ -36,7 +36,7 @@ func ListDownstreamsForApp(appID string) ([]*types.Downstream, error) {
 	return downstreams, nil
 }
 
-func GetDownstreamParentSequence(appID string, clusterID string) (int64, error) {
+func GetParentSequence(appID string, clusterID string) (int64, error) {
 	db := persistence.MustGetPGSession()
 	query := `select current_sequence from app_downstream where app_id = $1 and cluster_id = $2`
 	row := db.QueryRow(query, appID, clusterID)
