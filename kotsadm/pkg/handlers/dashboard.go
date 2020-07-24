@@ -60,7 +60,7 @@ func GetAppDashboard(w http.ResponseWriter, r *http.Request) {
 
 	metrics, err := version.GetMetricCharts(a.ID, parentSequence)
 	if err != nil {
-		logger.Error(errors.Wrap(err, "failed to get metrics charts"))
+		logger.Error(errors.Wrap(err, "failed to get metric charts"))
 		metrics = []version.MetricChart{}
 	}
 
