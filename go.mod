@@ -19,6 +19,7 @@ require (
 	github.com/bugsnag/panicwrap v1.2.0 // indirect
 	github.com/containerd/continuity v0.0.0-20200228182428-0f16d7a0959c // indirect
 	github.com/containers/image v3.0.2+incompatible
+	github.com/containers/image/v5 v5.2.0
 	github.com/containers/storage v1.16.2 // indirect
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/docker/distribution v2.7.1+incompatible

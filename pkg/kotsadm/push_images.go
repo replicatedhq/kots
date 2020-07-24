@@ -10,10 +10,10 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/containers/image/copy"
-	"github.com/containers/image/signature"
-	"github.com/containers/image/transports/alltransports"
-	containerstypes "github.com/containers/image/types"
+	"github.com/containers/image/v5/copy"
+	"github.com/containers/image/v5/signature"
+	"github.com/containers/image/v5/transports/alltransports"
+	containerstypes "github.com/containers/image/v5/types"
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/kotsadm/types"
 )

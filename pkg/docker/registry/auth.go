@@ -9,8 +9,8 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/containers/image/pkg/docker/config"
-	"github.com/containers/image/types"
+	"github.com/containers/image/v5/pkg/docker/config"
+	"github.com/containers/image/v5/types"
 	"github.com/docker/distribution/registry/client/auth/challenge"
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/logger"

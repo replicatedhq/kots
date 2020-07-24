@@ -3,8 +3,8 @@ package base
 import (
 	"fmt"
 
-	imagedocker "github.com/containers/image/docker"
-	dockerref "github.com/containers/image/docker/reference"
+	imagedocker "github.com/containers/image/v5/docker"
+	dockerref "github.com/containers/image/v5/docker/reference"
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	"github.com/replicatedhq/kots/pkg/docker/registry"
