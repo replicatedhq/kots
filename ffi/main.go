@@ -98,7 +98,11 @@ func UpdateCheck(socket, fromArchivePath, namespace string) {
 			filepath.Join(tmpRoot, "upstream"),
 			filepath.Join(tmpRoot, "base"),
 			filepath.Join(tmpRoot, "overlays"),
-			filepath.Join(tmpRoot, "skippedFiles"),
+		}
+
+		skippedFilesPath := filepath.Join(tmpRoot, "skippedFiles")
+		if _, err := os.Stat(skippedFilesPath); err == nil {
+			paths = append(paths, skippedFilesPath)
 		}
 
 		err = os.Remove(fromArchivePath)
