@@ -66,9 +66,7 @@ func GetAppDashboard(w http.ResponseWriter, r *http.Request) {
 
 	prometheusAddress, err := kotsadmparams.Get("PROMETHEUS_ADDRESS")
 	if err != nil {
-		logger.Error(err)
-		w.WriteHeader(500)
-		return
+		logger.Error(errors.Wrap(err, "failed to get prometheus address from kotsadm params"))
 	}
 	if prometheusAddress == "" {
 		prometheusAddress = os.Getenv("PROMETHEUS_ADDRESS")
