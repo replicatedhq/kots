@@ -206,46 +206,56 @@ class AirgapRegistrySettings extends Component {
   }
 
   triggerStatusUpdates = () => {
-    this.props.client.query({
-      query: getImageRewriteStatus,
-      variables: {},
-      fetchPolicy: "no-cache",
-    }).then((res) => {
-      this.setState({
-        rewriteStatus: res.data.getImageRewriteStatus.status,
-        rewriteMessage: res.data.getImageRewriteStatus.currentMessage,
+    fetch(`${window.env.API_ENDPOINT}/imagerewritestatus`, {
+      headers: {
+        "Authorization": Utilities.getToken(),
+        "Content-Type": "application/json",
+      },
+      method: "GET",
+    })
+      .then(async (response) => {
+        const res = await response.json();
+        this.setState({
+          rewriteStatus: res.status,
+          rewriteMessage: res.currentMessage,
+        });
+        if (res.status !== "running") {
+          return;
+        }
+        this.state.updateChecker.start(this.updateStatus, 1000);
+      })
+      .catch((err) => {
+        console.log("failed to get rewrite status", err);
       });
-      if (res.data.getImageRewriteStatus.status !== "running") {
-        return;
-      }
-      this.state.updateChecker.start(this.updateStatus, 1000);
-    }).catch((err) => {
-      console.log("failed to get rewrite status", err);
-    });
   }
 
   updateStatus = () => {
     return new Promise((resolve, reject) => {
-      this.props.client.query({
-        query: getImageRewriteStatus,
-        fetchPolicy: "no-cache",
-      }).then((res) => {
-
-        this.setState({
-          rewriteStatus: res.data.getImageRewriteStatus.status,
-          rewriteMessage: res.data.getImageRewriteStatus.currentMessage,
-        });
-
-        if (res.data.getImageRewriteStatus.status !== "running") {
-          this.state.updateChecker.stop();
-        }
-
-        resolve();
-
-      }).catch((err) => {
-        console.log("failed to get rewrite status", err);
-        reject();
+      fetch(`${window.env.API_ENDPOINT}/imagerewritestatus`, {
+        headers: {
+          "Authorization": Utilities.getToken(),
+          "Content-Type": "application/json",
+        },
+        method: "GET",
       })
+        .then(async (response) => {
+          const res = await response.json();
+
+          this.setState({
+            rewriteStatus: res.status,
+            rewriteMessage: res.currentMessage,
+          });
+
+          if (res.status !== "running") {
+            this.state.updateChecker.stop();
+          }
+
+          resolve();
+        })
+        .catch((err) => {
+          console.log("failed to get rewrite status", err);
+          reject();
+        });
     });
   }
 

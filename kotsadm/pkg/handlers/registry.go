@@ -86,7 +86,7 @@ func UpdateAppRegistry(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	currentStatus, err := task.GetTaskStatus("image-rewrite")
+	currentStatus, _, err := task.GetTaskStatus("image-rewrite")
 	if err != nil {
 		logger.Error(err)
 		updateAppRegistryResponse.Error = err.Error()

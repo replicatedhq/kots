@@ -109,6 +109,7 @@ func Start() {
 	r.Path("/api/v1/license/resume").Methods("OPTIONS", "PUT").HandlerFunc(handlers.ResumeInstallOnline)
 
 	r.Path("/api/v1/registry").Methods("OPTIONS", "GET").HandlerFunc(handlers.GetKotsadmRegistry)
+	r.Path("/api/v1/imagerewritestatus").Methods("OPTIONS", "GET").HandlerFunc(handlers.GetImageRewriteStatus)
 
 	r.Path("/api/v1/metadata").Methods("OPTIONS", "GET").HandlerFunc(handlers.Metadata)
 	r.Path("/api/v1/app/{appSlug}/registry").Methods("OPTIONS", "PUT").HandlerFunc(handlers.UpdateAppRegistry)

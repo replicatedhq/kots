@@ -45,19 +45,21 @@ func ClearTaskStatus(id string) error {
 	return nil
 }
 
-func GetTaskStatus(id string) (string, error) {
+func GetTaskStatus(id string) (string, string, error) {
 	db := persistence.MustGetPGSession()
-	query := `select status from api_task_status where id = $1 AND updated_at > ($2::timestamp - '10 seconds'::interval)`
-
+	query := `select status, current_message from api_task_status where id = $1 AND updated_at > ($2::timestamp - '10 seconds'::interval)`
 	row := db.QueryRow(query, id, time.Now())
-	status := ""
-	if err := row.Scan(&status); err != nil {
+
+	var status sql.NullString
+	var message sql.NullString
+
+	if err := row.Scan(&status, &message); err != nil {
 		if err == sql.ErrNoRows {
-			return "", nil
+			return "", "", nil
 		}
 
-		return "", errors.Wrap(err, "failed to scan task status")
+		return "", "", errors.Wrap(err, "failed to scan task status")
 	}
 
-	return status, nil
+	return status.String, message.String, nil
 }

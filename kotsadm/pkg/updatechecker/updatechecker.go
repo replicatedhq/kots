@@ -143,7 +143,7 @@ func Stop(appID string) {
 // if "deploy" is set to true, the latest version/update will be deployed
 // returns the number of available updates
 func CheckForUpdates(appID string, deploy bool) (int64, error) {
-	currentStatus, err := task.GetTaskStatus("update-download")
+	currentStatus, _, err := task.GetTaskStatus("update-download")
 	if err != nil {
 		return 0, errors.Wrap(err, "failed to get task status")
 	}
