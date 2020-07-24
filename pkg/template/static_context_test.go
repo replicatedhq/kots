@@ -1,6 +1,9 @@
 package template
 
 import (
+	"crypto/x509"
+	"encoding/pem"
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -76,4 +79,89 @@ func TestSprigRandom(t *testing.T) {
 
 	req.NoError(err)
 	req.Len(randAlphaNum, 50)
+}
+
+func validateAndClearCaCert(req *require.Assertions, builder Builder) {
+	caCert, err := builder.String(`{{repl TLSCACert "my-ca" 365}}`)
+	req.NoError(err)
+
+	cert, err := getCert(caCert)
+	req.NoError(err)
+	req.NotZero(cert.KeyUsage & x509.KeyUsageCertSign)
+
+	expected := caMap["my-ca"]
+	req.Equal(expected.Cert, caCert)
+	delete(caMap, "my-ca")
+}
+
+func TestTlsCaCert(t *testing.T) {
+	scopetest := scopeagent.StartTest(t)
+	defer scopetest.End()
+	req := require.New(t)
+
+	builder := Builder{}
+	builder.AddCtx(StaticCtx{})
+	validateAndClearCaCert(req, builder)
+}
+
+func TestTlsCertFromCa(t *testing.T) {
+	scopetest := scopeagent.StartTest(t)
+	defer scopetest.End()
+	req := require.New(t)
+
+	builder := Builder{}
+	builder.AddCtx(StaticCtx{})
+
+	cert, err := builder.String(`{{repl TLSCertFromCA "my-ca" "my-cert" "mine.example.com" nil nil 365}}`)
+	req.NoError(err)
+
+	certObj, err := getCert(cert)
+	req.NoError(err)
+	req.Equal("CN=mine.example.com", certObj.Subject.String())
+	req.Equal("CN=my-ca", certObj.Issuer.String())
+
+	expected := tlsMap["my-ca:my-cert:mine.example.com"]
+	req.Equal("mine.example.com", expected.Cn)
+	req.Equal(expected.Cert, cert)
+
+	_, err = builder.String(`{{repl TLSKeyFromCA "my-ca" "my-cert" "mine.example.com" nil nil 365}}`)
+	req.NoError(err)
+
+	validateAndClearCaCert(req, builder)
+}
+
+func TestTlsKeyFromCa(t *testing.T) {
+	scopetest := scopeagent.StartTest(t)
+	defer scopetest.End()
+	req := require.New(t)
+
+	builder := Builder{}
+	builder.AddCtx(StaticCtx{})
+
+	_, err := builder.String(`{{repl TLSKeyFromCA "my-ca" "my-cert" "mine.example.com" nil nil 365}}`)
+	req.NoError(err)
+
+	cert, err := builder.String(`{{repl TLSCertFromCA "my-ca" "my-cert" "mine.example.com" nil nil 365}}`)
+	req.NoError(err)
+
+	certObj, err := getCert(cert)
+	req.NoError(err)
+	req.Equal("CN=mine.example.com", certObj.Subject.String())
+	req.Equal("CN=my-ca", certObj.Issuer.String())
+
+	expected := tlsMap["my-ca:my-cert:mine.example.com"]
+	req.Equal("mine.example.com", expected.Cn)
+	req.Equal(expected.Cert, cert)
+	delete(tlsMap, "my-ca:my-cert:mine.example.com")
+
+	validateAndClearCaCert(req, builder)
+}
+
+func getCert(s string) (*x509.Certificate, error) {
+	block, _ := pem.Decode([]byte(s))
+	if block == nil {
+		return nil, fmt.Errorf("failed to decode PEM: %s", s)
+	}
+
+	return x509.ParseCertificate(block.Bytes)
 }

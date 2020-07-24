@@ -51,6 +51,7 @@ type TLSPair struct {
 }
 
 var tlsMap = map[string]TLSPair{}
+var caMap = map[string]TLSPair{}
 
 func (ctx StaticCtx) FuncMap() template.FuncMap {
 	funcMap := sprig.TxtFuncMap()
@@ -81,6 +82,10 @@ func (ctx StaticCtx) FuncMap() template.FuncMap {
 
 	funcMap["TLSCert"] = ctx.tlsCert
 	funcMap["TLSKey"] = ctx.tlsKey
+
+	funcMap["TLSCACert"] = ctx.tlsCaCert
+	funcMap["TLSCertFromCA"] = ctx.tlsCertFromCa
+	funcMap["TLSKeyFromCA"] = ctx.tlsKeyFromCa
 
 	funcMap["IsKurl"] = ctx.isKurl
 	funcMap["Distribution"] = ctx.distribution
@@ -390,14 +395,71 @@ func (ctx StaticCtx) tlsKey(certName string, args ...interface{}) string {
 	return p.Key
 }
 
+func (ctx StaticCtx) tlsCaCert(caName string, daysValid int) string {
+	cap, ok := caMap[caName]
+	if !ok {
+		cap = genCa(caName, daysValid)
+		caMap[caName] = cap
+	}
+
+	return cap.Cert
+}
+
+func (ctx StaticCtx) tlsCertFromCa(caName, certName, cn string, ips, alternateDNS []interface{}, daysValid int) string {
+	key := fmt.Sprintf("%s:%s:%s", caName, certName, cn)
+	if p, ok := tlsMap[key]; ok {
+		return p.Cert
+	}
+
+	p := genSignedCert(caName, cn, ips, alternateDNS, daysValid)
+	tlsMap[key] = p
+	return p.Cert
+}
+
+func (ctx StaticCtx) tlsKeyFromCa(caName, certName, cn string, ips, alternateDNS []interface{}, daysValid int) string {
+	key := fmt.Sprintf("%s:%s:%s", caName, certName, cn)
+	if p, ok := tlsMap[key]; ok {
+		return p.Key
+	}
+
+	p := genSignedCert(caName, cn, ips, alternateDNS, daysValid)
+	tlsMap[key] = p
+	return p.Key
+}
+
+func genCa(cn string, daysValid int) TLSPair {
+	tmplate := `cert: {{ $i := genCA %q %d }}{{ $i.Cert | b64enc }}
+key: {{ $i.Key | b64enc }}`
+	return genCertAndKey(cn, fmt.Sprintf(tmplate, cn, daysValid))
+}
+
+func genSignedCert(ca, cn string, ips []interface{}, alternateDNS []interface{}, daysValid int) TLSPair {
+	tmplate := `cert: {{ $ca := buildCustomCert %q %q }}{{ $i := genSignedCert %q %s %s %d $ca }}{{ $i.Cert | b64enc }}
+key: {{ $i.Key | b64enc }}`
+
+	cap, ok := caMap[ca]
+	if !ok {
+		cap = genCa(ca, daysValid)
+		caMap[ca] = cap
+	}
+
+	caCert := base64.StdEncoding.EncodeToString([]byte(cap.Cert))
+	caKey := base64.StdEncoding.EncodeToString([]byte(cap.Key))
+	ipList := arrayToTemplateList(ips)
+	nameList := arrayToTemplateList(alternateDNS)
+	return genCertAndKey(cn, fmt.Sprintf(tmplate, caCert, caKey, cn, ipList, nameList, daysValid))
+}
+
 func genSelfSignedCert(cn string, ips []interface{}, alternateDNS []interface{}, daysValid int) TLSPair {
 	tmplate := `cert: {{ $i := genSelfSignedCert %q %s %s %d }}{{ $i.Cert | b64enc }}
 key: {{ $i.Key | b64enc }}`
 
 	ipList := arrayToTemplateList(ips)
 	nameList := arrayToTemplateList(alternateDNS)
-	templated := fmt.Sprintf(tmplate, cn, ipList, nameList, daysValid)
+	return genCertAndKey(cn, fmt.Sprintf(tmplate, cn, ipList, nameList, daysValid))
+}
 
+func genCertAndKey(cn, templated string) TLSPair {
 	parsed, err := template.New("cn").Funcs(sprig.GenericFuncMap()).Parse(templated)
 	if err != nil {
 		fmt.Printf("Failed to evaluate cert template: %v\n", err)
