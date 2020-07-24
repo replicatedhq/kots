@@ -35,25 +35,20 @@ RUN curl -L "https://github.com/replicatedhq/troubleshoot/releases/download/v0.9
   mv /tmp/troubleshoot.so /lib/troubleshoot.so && \
   rm -rf /tmp/*
 
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    curl ca-certificates \
-  && rm -rf /var/lib/apt/lists/*
-
 ADD ./deploy/policy.json /etc/containers/policy.json
 RUN apt-get -y update && apt-get install -y --no-install-recommends \
     libgpgme-dev libdevmapper-dev \
   && rm -rf /var/lib/apt/lists/*
 
-COPY --from=build /src/build /src/build
-COPY --from=build /src/node_modules /src/node_modules
+RUN useradd -c 'kotsadm-api user' -m -d /home/kotsadm-api -s /bin/bash -u 1001 kotsadm-api
+USER kotsadm-api
+ENV HOME /home/kotsadm-api
+
+COPY --from=build --chown=kotsadm-api:kotsadm-api /src/build /src/build
+COPY --from=build --chown=kotsadm-api:kotsadm-api /src/node_modules /src/node_modules
 
 EXPOSE 3000
 ARG commit=unknown
 ENV COMMIT=${commit}
-
-RUN useradd -c 'kotsadm-api user' -m -d /home/kotsadm-api -s /bin/bash -u 1001 kotsadm-api
-RUN chown -R kotsadm-api.kotsadm-api /src
-USER kotsadm-api
-ENV HOME /home/kotsadm-api
 
 CMD ["node", "/src/build/server/index.js"]

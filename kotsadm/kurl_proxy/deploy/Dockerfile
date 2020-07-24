@@ -9,12 +9,9 @@ RUN useradd -c 'kotsadm user' -m -d /home/kotsadm -s /bin/bash -u 1001 kotsadm
 USER kotsadm
 ENV HOME /home/kotsadm
 
-COPY ./bin/kurl_proxy /kurl_proxy
-COPY ./assets /assets
-USER root
-RUN chmod a+x /kurl_proxy
-RUN chmod a+w /assets/*
-USER kotsadm
+COPY --chown=kotsadm:kotsadm ./bin/kurl_proxy /kurl_proxy
+COPY --chown=kotsadm:kotsadm ./assets /assets
+
 WORKDIR /
 
 EXPOSE 8800
