@@ -122,12 +122,12 @@ func GetCurrentLicenseString(a *app.App) (string, error) {
 // GetLicense gets the license for an application with the given app id
 func Get(appID string) (*kotsv1beta1.License, error) {
 	db := persistence.MustGetPGSession()
-	query := `select kots_license as license from app_version where app_id = $1 order by sequence desc limit 1`
+	query := `select kots_license from app_version where app_id = $1 order by sequence desc limit 1`
 	row := db.QueryRow(query, appID)
 
 	var licenseStr sql.NullString
 	if err := row.Scan(&licenseStr); err != nil {
-		return nil, errors.Wrap(err, "failed to get license for application")
+		return nil, errors.Wrap(err, "failed to scan")
 	}
 
 	if licenseStr.Valid {

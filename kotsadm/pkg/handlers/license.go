@@ -121,7 +121,7 @@ func SyncLicense(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	entitlements, expiresAt, err := GetLicenseEntitlements(latestLicense)
+	entitlements, expiresAt, err := getLicenseEntitlements(latestLicense)
 	if err != nil {
 		logger.Error(err)
 		w.WriteHeader(500)
@@ -177,7 +177,7 @@ func GetLicense(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	entitlements, expiresAt, err := GetLicenseEntitlements(license)
+	entitlements, expiresAt, err := getLicenseEntitlements(license)
 	if err != nil {
 		logger.Error(err)
 		w.WriteHeader(500)
@@ -196,7 +196,7 @@ func GetLicense(w http.ResponseWriter, r *http.Request) {
 	JSON(w, 200, getLicenseResponse)
 }
 
-func GetLicenseEntitlements(license *kotsv1beta1.License) ([]EntitlementResponse, time.Time, error) {
+func getLicenseEntitlements(license *kotsv1beta1.License) ([]EntitlementResponse, time.Time, error) {
 	var expiresAt time.Time
 	entitlements := []EntitlementResponse{}
 
