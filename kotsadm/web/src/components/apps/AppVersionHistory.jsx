@@ -18,13 +18,14 @@ import MarkdownRenderer from "@src/components/shared/MarkdownRenderer";
 import DownstreamWatchVersionDiff from "@src/components/watches/DownstreamWatchVersionDiff";
 import AirgapUploadProgress from "@src/components/AirgapUploadProgress";
 import UpdateCheckerModal from "@src/components/modals/UpdateCheckerModal";
+import ShowDetailsModal from "@src/components/modals/ShowDetailsModal";
 import { getKotsDownstreamHistory, getKotsDownstreamOutput, getUpdateDownloadStatus } from "../../queries/AppsQueries";
 import { Utilities, isAwaitingResults, secondsAgo, getPreflightResultState, getGitProviderDiffUrl, getCommitHashFromUrl } from "../../utilities/utilities";
 import { Repeater } from "../../utilities/repeater";
 import has from "lodash/has";
 import get from "lodash/get";
 
-import "@src/scss/components/watches/WatchVersionHistory.scss";
+import "@src/scss/components/apps/AppVersionHistory.scss";
 dayjs.extend(relativeTime);
 
 const COMMON_ERRORS = {
@@ -57,7 +58,10 @@ class AppVersionHistory extends Component {
     updateChecker: new Repeater(),
     uploadTotal: 0,
     uploadSent: 0,
-    showUpdateCheckerModal: false
+    showUpdateCheckerModal: false,
+    displayShowDetailsModal: false,
+    yamlErrorDetails: [],
+    deployView: false
   }
 
   componentDidMount() {
@@ -138,10 +142,9 @@ class AppVersionHistory extends Component {
 
   renderSourceAndDiff = version => {
     const { app } = this.props;
-    const downstream = app.downstreams[0];
+    const downstream = app.downstreams?.length && app.downstreams[0];
     const diffSummary = this.getVersionDiffSummary(version);
-    let hasYamlErrors = this.hasYamlErrors(downstream, version);
-    hasYamlErrors = false;
+    const yamlErrorsDetails = this.yamlErrorsDetails(downstream, version);
 
     return (
       <div>
@@ -163,26 +166,26 @@ class AppVersionHistory extends Component {
               <span className="lines-added">+{diffSummary.linesAdded} </span>
               <span className="lines-removed">-{diffSummary.linesRemoved}</span>
             </div>
-            : hasYamlErrors ?
+            : yamlErrorsDetails ?
               <div className="flex flex1 alignItems--center">
                 <div className="DiffSummary">
                   <span className="files">No changes</span>
                 </div>
                 <div className="flex flex1 alignItems--center u-marginLeft--10">
                   <span className="icon error-small" />
-                  <span className="u-fontSize--small u-fontWeight--medium u-lineHeight--normal u-marginLeft--5 u-color--red u-marginTop--5" data-for="invalid-yaml" data-tip="Invalid YAML was found in this release. Your application may break if you install this version.">Contains invalid yaml </span>
-                  <ReactTooltip id="invalid-yaml" effect="solid" place="top" className="replicated-tooltip white" />
+                  <span className="u-fontSize--small u-fontWeight--medium u-lineHeight--normal u-marginLeft--5 u-color--red">{yamlErrorsDetails?.length} Invalid files </span>
+                  <span className="replicated-link u-marginLeft--5 u-fontSize--small" onClick={() => this.toggleShowDetailsModal(yamlErrorsDetails)}> See details </span>
                 </div>
               </div>
               :
               <div className="DiffSummary">
                 <span className="files">No changes</span>
               </div>
-          ) : hasYamlErrors ?
+          ) : yamlErrorsDetails ?
             <div className="flex flex1 alignItems--center">
               <span className="icon error-small" />
-              <span className="u-fontSize--small u-fontWeight--medium u-lineHeight--normal u-marginLeft--5 u-color--red u-marginTop--5" data-for="invalid-yaml" data-tip="Invalid YAML was found in this release. Your application may break if you install this version.">Contains invalid yaml </span>
-              <ReactTooltip id="invalid-yaml" effect="solid" place="top" className="replicated-tooltip white" />
+              <span className="u-fontSize--small u-fontWeight--medium u-lineHeight--normal u-marginLeft--5 u-color--red">{yamlErrorsDetails?.length} Invalid files </span>
+              <span className="replicated-link u-marginLeft--5 u-fontSize--small" onClick={() => this.toggleShowDetailsModal(yamlErrorsDetails)}> See details </span>
             </div>
             : <span>&nbsp;</span>}
       </div>
@@ -387,7 +390,18 @@ class AppVersionHistory extends Component {
     if (!clusterSlug) {
       return;
     }
+    const downstream = app.downstreams?.length && app.downstreams[0];
+    const yamlErrorDetails = this.yamlErrorsDetails(downstream, version);
+
+
     if (!force) {
+      if (yamlErrorDetails) {
+        this.setState({ 
+          displayShowDetailsModal: !this.state.displayShowDetailsModal,
+          deployView: true, 
+          yamlErrorDetails 
+        });
+      }
       if (version.status === "pending_preflight") {
         this.setState({
           showSkipModal: true,
@@ -417,7 +431,7 @@ class AppVersionHistory extends Component {
   }
 
   onForceDeployClick = () => {
-    this.setState({ showSkipModal: false, showDeployWarningModal: false });
+    this.setState({ showSkipModal: false, showDeployWarningModal: false, displayShowDetailsModal: false });
     const versionToDeploy = this.state.versionToDeploy;
     this.deployVersion(versionToDeploy, true);
   }
@@ -745,19 +759,23 @@ class AppVersionHistory extends Component {
     }
   }
 
-  hasYamlErrors = (downstream, version) => {
+  yamlErrorsDetails = (downstream, version) => {
     const pendingVersion = downstream.pendingVersions?.find(v => v.title === version.title);
     const pastVersion = downstream.pastVersions?.find(v => v.title === version.title);
 
     if (downstream.currentVersion?.title === version.title) {
-      return downstream.currentVersion?.yamlErrors ? true : false;
+      return downstream.currentVersion?.yamlErrors ? downstream?.currentVersion?.yamlErrors : false;
     } else if (pendingVersion?.yamlErrors) {
-      return true;
+      return pendingVersion?.yamlErrors;
     } else if (pastVersion?.yamlErrors) {
-      return true;
+      return pastVersion?.yamlErrors;
     } else {
       return false;
     }
+  }
+
+  toggleShowDetailsModal = (yamlErrorDetails) => {
+    this.setState({ displayShowDetailsModal: !this.state.displayShowDetailsModal, deployView:false, yamlErrorDetails });
   }
 
   render() {
@@ -1202,6 +1220,16 @@ class AppVersionHistory extends Component {
             }}
           />
         }
+        {this.state.displayShowDetailsModal &&
+          <ShowDetailsModal
+            displayShowDetailsModal={this.state.displayShowDetailsModal}
+            toggleShowDetailsModal={this.toggleShowDetailsModal}
+            yamlErrorDetails={this.state.yamlErrorDetails}
+            deployView={this.state.deployView}
+            forceDeploy={this.onForceDeployClick}
+            showDeployWarningModal={this.state.showDeployWarningModal}
+            showSkipModal={this.state.showSkipModal}
+          />}
       </div>
     );
   }
