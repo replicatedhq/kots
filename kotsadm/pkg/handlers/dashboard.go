@@ -7,10 +7,10 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/replicatedhq/kots/kotsadm/pkg/app"
 	"github.com/replicatedhq/kots/kotsadm/pkg/appstatus"
+	"github.com/replicatedhq/kots/kotsadm/pkg/downstream"
 	"github.com/replicatedhq/kots/kotsadm/pkg/kotsadmparams"
 	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
 	"github.com/replicatedhq/kots/kotsadm/pkg/version"
-	"github.com/replicatedhq/kots/kotsadm/pkg/downstream"
 )
 
 type GetAppDashboardResponse struct {
@@ -50,14 +50,14 @@ func GetAppDashboard(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	currentSequence, err := downstream.GetDownstreamCurrentSequence(a.ID, clusterID)
+	parentSequence, err := downstream.GetDownstreamParentSequence(a.ID, clusterID)
 	if err != nil {
 		logger.Error(err)
 		w.WriteHeader(500)
 		return
 	}
 
-	metrics, err := version.GetMetricCharts(a.ID, currentSequence)
+	metrics, err := version.GetMetricCharts(a.ID, parentSequence)
 	if err != nil {
 		logger.Error(err)
 		w.WriteHeader(500)
