@@ -395,18 +395,9 @@ func (ctx StaticCtx) tlsKey(certName string, args ...interface{}) string {
 	return p.Key
 }
 
-func (ctx StaticCtx) tlsCaCert(caName string, args ...interface{}) string {
+func (ctx StaticCtx) tlsCaCert(caName string, daysValid int) string {
 	cap, ok := caMap[caName]
 	if !ok {
-		if len(args) != 1 {
-			return ""
-		}
-
-		daysValid, ok := args[0].(int)
-		if !ok {
-			return ""
-		}
-
 		cap = genCa(caName, daysValid)
 		caMap[caName] = cap
 	}
@@ -414,7 +405,7 @@ func (ctx StaticCtx) tlsCaCert(caName string, args ...interface{}) string {
 	return cap.Cert
 }
 
-func (ctx StaticCtx) tlsCertFromCa(caName, certName, cn string, ips []interface{}, alternateDNS []interface{}, daysValid int) string {
+func (ctx StaticCtx) tlsCertFromCa(caName, certName, cn string, ips, alternateDNS []interface{}, daysValid int) string {
 	key := fmt.Sprintf("%s:%s:%s", caName, certName, cn)
 	if p, ok := tlsMap[key]; ok {
 		return p.Cert
@@ -425,29 +416,10 @@ func (ctx StaticCtx) tlsCertFromCa(caName, certName, cn string, ips []interface{
 	return p.Cert
 }
 
-func (ctx StaticCtx) tlsKeyFromCa(caName, certName, cn string, args ...interface{}) string {
+func (ctx StaticCtx) tlsKeyFromCa(caName, certName, cn string, ips, alternateDNS []interface{}, daysValid int) string {
 	key := fmt.Sprintf("%s:%s:%s", caName, certName, cn)
 	if p, ok := tlsMap[key]; ok {
 		return p.Key
-	}
-
-	if len(args) != 3 {
-		return ""
-	}
-
-	ips, ok := args[0].([]interface{})
-	if !ok {
-		return ""
-	}
-
-	alternateDNS, ok := args[1].([]interface{})
-	if !ok {
-		return ""
-	}
-
-	daysValid, ok := args[2].(int)
-	if !ok {
-		return ""
 	}
 
 	p := genSignedCert(caName, cn, ips, alternateDNS, daysValid)

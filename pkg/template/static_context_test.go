@@ -81,14 +81,7 @@ func TestSprigRandom(t *testing.T) {
 	req.Len(randAlphaNum, 50)
 }
 
-func TestTlsCaCert(t *testing.T) {
-	scopetest := scopeagent.StartTest(t)
-	defer scopetest.End()
-	req := require.New(t)
-
-	builder := Builder{}
-	builder.AddCtx(StaticCtx{})
-
+func validateAndClearCaCert(req *require.Assertions, builder Builder) {
 	caCert, err := builder.String(`{{repl TLSCACert "my-ca" 365}}`)
 	req.NoError(err)
 
@@ -99,6 +92,16 @@ func TestTlsCaCert(t *testing.T) {
 	expected := caMap["my-ca"]
 	req.Equal(expected.Cert, caCert)
 	delete(caMap, "my-ca")
+}
+
+func TestTlsCaCert(t *testing.T) {
+	scopetest := scopeagent.StartTest(t)
+	defer scopetest.End()
+	req := require.New(t)
+
+	builder := Builder{}
+	builder.AddCtx(StaticCtx{})
+	validateAndClearCaCert(req, builder)
 }
 
 func TestTlsCertFromCa(t *testing.T) {
@@ -121,9 +124,10 @@ func TestTlsCertFromCa(t *testing.T) {
 	req.Equal("mine.example.com", expected.Cn)
 	req.Equal(expected.Cert, cert)
 
-	_, err = builder.String(`{{repl TLSKeyFromCA "my-ca" "my-cert" "mine.example.com"}}`)
+	_, err = builder.String(`{{repl TLSKeyFromCA "my-ca" "my-cert" "mine.example.com" nil nil 365}}`)
 	req.NoError(err)
-	delete(tlsMap, "my-ca:my-cert:mine.example.com")
+
+	validateAndClearCaCert(req, builder)
 }
 
 func TestTlsKeyFromCa(t *testing.T) {
@@ -149,6 +153,8 @@ func TestTlsKeyFromCa(t *testing.T) {
 	req.Equal("mine.example.com", expected.Cn)
 	req.Equal(expected.Cert, cert)
 	delete(tlsMap, "my-ca:my-cert:mine.example.com")
+
+	validateAndClearCaCert(req, builder)
 }
 
 func getCert(s string) (*x509.Certificate, error) {
