@@ -34,7 +34,6 @@ RUN /install-krew.sh
 ENV PATH="$HOME/.krew/bin:$PATH"
 
 COPY --chown=kotsadm-operator:kotsadm-operator ./bin/kotsadm-operator /kotsadm-operator
-RUN chmod a+x /kotsadm-operator
 
 # Install our plugins
 USER root

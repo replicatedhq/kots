@@ -345,6 +345,9 @@ jobs:
         name: go_api
         path: ./kotsadm/bin
 
+    - name: Add executable permissions
+      run: chmod a+x ./kotsadm/bin/kotsadm
+
     - name: Download web artifact
       uses: actions/download-artifact@v2
       with:
@@ -389,6 +392,10 @@ jobs:
       with:
         name: go_api
         path: ./kotsadm/bin
+
+    - name: Add executable permissions
+      if: ${{ steps.get_tag.outputs.GIT_TAG != '' }}
+      run: chmod a+x ./kotsadm/bin/kotsadm
 
     - name: Download web artifact
       if: ${{ steps.get_tag.outputs.GIT_TAG != '' }}
@@ -505,6 +512,9 @@ jobs:
         name: operator
         path: ./kotsadm/operator/bin
 
+    - name: Add executable permissions
+      run: chmod a+x ./kotsadm/operator/bin/kotsadm-operator
+
     - name: Build alpha release
       env:
         GIT_COMMIT: ${{ github.sha }}
@@ -543,6 +553,10 @@ jobs:
       with:
         name: operator
         path: ./kotsadm/operator/bin
+
+    - name: Add executable permissions
+      if: ${{ steps.get_tag.outputs.GIT_TAG != '' }}
+      run: chmod a+x ./kotsadm/operator/bin/kotsadm-operator
 
     - name: Copy binary
       if: ${{ steps.get_tag.outputs.GIT_TAG != '' }}
@@ -592,6 +606,9 @@ jobs:
         name: kurl_proxy
         path: ./kotsadm/kurl_proxy/bin
 
+    - name: Add executable permissions
+      run: chmod a+x ./kotsadm/kurl_proxy/bin/kurl_proxy
+
     - name: Build alpha release
       env:
         GIT_COMMIT: ${{ github.sha }}
@@ -623,10 +640,15 @@ jobs:
       run: echo ::set-output name=GIT_TAG::${GITHUB_REF/refs\/tags\//}
   
     - name: Download kurl_proxy artifact
+      if: ${{ steps.get_tag.outputs.GIT_TAG != '' }}
       uses: actions/download-artifact@v2
       with:
         name: kurl_proxy
         path: ./kotsadm/kurl_proxy/bin
+
+    - name: Add executable permissions
+      if: ${{ steps.get_tag.outputs.GIT_TAG != '' }}
+      run: chmod a+x ./kotsadm/kurl_proxy/bin/kurl_proxy
 
     - name: Build tagged release
       if: ${{ steps.get_tag.outputs.GIT_TAG != '' }}
