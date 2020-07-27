@@ -10,8 +10,10 @@ import (
 	"net/url"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/gorilla/mux"
+	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/kotsadm/pkg/app"
 	"github.com/replicatedhq/kots/kotsadm/pkg/kotsutil"
 	"github.com/replicatedhq/kots/kotsadm/pkg/license"
@@ -21,6 +23,7 @@ import (
 	"github.com/replicatedhq/kots/kotsadm/pkg/session"
 	"github.com/replicatedhq/kots/kotsadm/pkg/snapshot"
 	"github.com/replicatedhq/kots/kotsadm/pkg/supportbundle"
+	"github.com/replicatedhq/kots/kotsadm/pkg/supportbundle/types"
 	"github.com/replicatedhq/kots/kotsadm/pkg/version"
 	"github.com/replicatedhq/kots/pkg/template"
 	troubleshootanalyze "github.com/replicatedhq/troubleshoot/pkg/analyze"
@@ -41,6 +44,23 @@ type GetSupportBundleFilesResponse struct {
 
 	Success bool   `json:"success"`
 	Error   string `json:"error,omitempty"`
+}
+
+type ListSupportBundlesResponse struct {
+	SupportBundles []ResponseSupportBundle `json:"supportBundles"`
+}
+type ResponseSupportBundle struct {
+	ID          string                       `json:"id"`
+	Slug        string                       `json:"slug"`
+	AppID       string                       `json:"appId"`
+	Name        string                       `json:"name"`
+	Size        float64                      `json:"size"`
+	Status      string                       `json:"status"`
+	CreatedAt   time.Time                    `json:"createdAt"`
+	UploadedAt  *time.Time                   `json:"uploadedAt"`
+	IsArchived  bool                         `json:"isArchived"`
+	LicenseType string                       `json:"licenseType,omitempty"`
+	Analysis    *types.SupportBundleAnalysis `json:"analysis"`
 }
 
 type GetSupportBundleRedactionsResponse struct {
@@ -97,6 +117,80 @@ func GetSupportBundleFiles(w http.ResponseWriter, r *http.Request) {
 	getSupportBundleFilesResponse.Files = files
 
 	JSON(w, 200, getSupportBundleFilesResponse)
+}
+
+func ListSupportBundles(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Headers", "content-type, origin, accept, authorization")
+
+	if r.Method == "OPTIONS" {
+		w.WriteHeader(200)
+		return
+	}
+
+	sess, err := session.Parse(r.Header.Get("Authorization"))
+	if err != nil {
+		logger.Error(err)
+		w.WriteHeader(401)
+		return
+	}
+
+	// we don't currently have roles, all valid tokens are valid sessions
+	if sess == nil || sess.ID == "" {
+		w.WriteHeader(401)
+		return
+	}
+
+	appSlug := mux.Vars(r)["appSlug"]
+
+	a, err := app.GetFromSlug(appSlug)
+	if err != nil {
+		logger.Error(err)
+		w.WriteHeader(500)
+		return
+	}
+
+	supportBundles, err := supportbundle.List(a.ID)
+	if err != nil {
+		logger.Error(err)
+		w.WriteHeader(500)
+		return
+	}
+
+	responseSupportBundles := []ResponseSupportBundle{}
+	for _, bundle := range supportBundles {
+		licenseType, err := supportbundle.GetLicenseType(bundle.ID)
+		if err != nil {
+			logger.Error(errors.Wrapf(err, "failed to get license type for bundle %s", bundle.Slug))
+		}
+
+		analysis, err := supportbundle.GetBundleAnalysis(bundle.ID)
+		if err != nil {
+			logger.Error(errors.Wrapf(err, "failed to get analysis for bundle %s", bundle.Slug))
+		}
+
+		responseSupportBundle := ResponseSupportBundle{
+			ID:          bundle.ID,
+			Slug:        bundle.Slug,
+			AppID:       bundle.AppID,
+			Name:        bundle.Name,
+			Size:        bundle.Size,
+			Status:      bundle.Status,
+			CreatedAt:   bundle.CreatedAt,
+			UploadedAt:  bundle.UploadedAt,
+			IsArchived:  bundle.IsArchived,
+			LicenseType: licenseType,
+			Analysis:    analysis,
+		}
+
+		responseSupportBundles = append(responseSupportBundles, responseSupportBundle)
+	}
+
+	listSupportBundlesResponse := ListSupportBundlesResponse{
+		SupportBundles: responseSupportBundles,
+	}
+
+	JSON(w, 200, listSupportBundlesResponse)
 }
 
 func DownloadSupportBundle(w http.ResponseWriter, r *http.Request) {

@@ -1,20 +1,50 @@
 import * as React from "react";
 import Helmet from "react-helmet";
 import { withRouter, Link } from "react-router-dom";
-import { graphql, compose, withApollo } from "react-apollo";
 
-import { listSupportBundles } from "../../queries/TroubleshootQueries";
 import Toggle from "../shared/Toggle";
 import Loader from "../shared/Loader";
 import SupportBundleRow from "./SupportBundleRow";
 import GenerateSupportBundle from "./GenerateSupportBundle";
 import ConfigureRedactorsModal from "./ConfigureRedactorsModal";
+import { Utilities } from "../../utilities/utilities";
+
 import "../../scss/components/troubleshoot/SupportBundleList.scss";
 
 class SupportBundleList extends React.Component {
 
   state = {
-    displayRedactorModal: false
+    supportBundles: [],
+    loading: false,
+    errorMsg: "",
+    displayRedactorModal: false,
+  };
+
+  componentDidMount() {
+    this.listSupportBundles();
+  }
+
+  listSupportBundles = () => {
+    this.setState({ loading: true, errorMsg: "" });
+
+    fetch(`${window.env.API_ENDPOINT}/troubleshoot/app/${this.props.watch?.slug}/supportbundles`, {
+      headers: {
+        "Authorization": Utilities.getToken(),
+        "Content-Type": "application/json",
+      },
+      method: "GET",
+    })
+      .then(async (res) => {
+        const response = await res.json();
+        this.setState({
+          supportBundles: response.supportBundles,
+          loading: false,
+        });
+      })
+      .catch((err) => {
+        console.log(err);
+        this.setState({ loading: false, errorMsg: err.message });
+      });
   }
 
   toggleRedactorModal = () => {
@@ -25,13 +55,13 @@ class SupportBundleList extends React.Component {
 
   render() {
     const { watch } = this.props;
-    const { loading, error, listSupportBundles } = this.props.listSupportBundles;
+    const { loading, errorMsg, supportBundles } = this.state;
 
     const appTitle = watch.watchName || watch.name;
     const downstreams = watch.downstreams || [];
 
-    if (error) {
-      return <p>{error.message}</p>;
+    if (errorMsg) {
+      return <p>{errorMsg}</p>;
     }
 
     if (loading) {
@@ -44,9 +74,9 @@ class SupportBundleList extends React.Component {
 
     let bundlesNode;
     if (downstreams.length) {
-      if (listSupportBundles?.length) {
+      if (supportBundles?.length) {
         bundlesNode = (
-          listSupportBundles.sort((a, b) => new Date (b.createdAt) - new Date(a.createdAt)).map(bundle => (
+          supportBundles.sort((a, b) => new Date (b.createdAt) - new Date(a.createdAt)).map(bundle => (
             <SupportBundleRow
               key={bundle.id}
               bundle={bundle}
@@ -116,17 +146,4 @@ class SupportBundleList extends React.Component {
   }
 }
 
-export default withRouter(compose(
-  withApollo,
-  graphql(listSupportBundles, {
-    name: "listSupportBundles",
-    options: props => {
-      return {
-        variables: {
-          watchSlug: props.watch.slug
-        },
-        fetchPolicy: "no-cache",
-      }
-    }
-  })
-)(SupportBundleList));
+export default withRouter(SupportBundleList);

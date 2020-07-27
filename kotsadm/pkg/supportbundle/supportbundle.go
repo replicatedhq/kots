@@ -1,6 +1,7 @@
 package supportbundle
 
 import (
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -13,8 +14,46 @@ import (
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/kotsadm/pkg/persistence"
 	"github.com/replicatedhq/kots/kotsadm/pkg/supportbundle/types"
+	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	"github.com/segmentio/ksuid"
+	"k8s.io/client-go/kubernetes/scheme"
 )
+
+func List(appID string) ([]*types.SupportBundle, error) {
+	db := persistence.MustGetPGSession()
+	query := `select id, slug, watch_id, name, size, status, created_at, uploaded_at, is_archived from supportbundle where watch_id = $1 order by created_at desc`
+
+	rows, err := db.Query(query, appID)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to query")
+	}
+
+	supportBundles := []*types.SupportBundle{}
+
+	for rows.Next() {
+		var name sql.NullString
+		var size sql.NullFloat64
+		var uploadedAt sql.NullTime
+		var isArchived sql.NullBool
+
+		s := &types.SupportBundle{}
+		if err := rows.Scan(&s.ID, &s.Slug, &s.AppID, &name, &size, &s.Status, &s.CreatedAt, &uploadedAt, &isArchived); err != nil {
+			return nil, errors.Wrap(err, "failed to scan")
+		}
+
+		s.Name = name.String
+		s.Size = size.Float64
+		s.IsArchived = isArchived.Bool
+
+		if uploadedAt.Valid {
+			s.UploadedAt = &uploadedAt.Time
+		}
+
+		supportBundles = append(supportBundles, s)
+	}
+
+	return supportBundles, nil
+}
 
 func CreateBundle(requestedID string, appID string, archivePath string) (*types.SupportBundle, error) {
 	fi, err := os.Stat(archivePath)
@@ -104,4 +143,30 @@ func GetFilesContents(bundleID string, filenames []string) (map[string][]byte, e
 	}
 
 	return files, nil
+}
+
+func GetLicenseType(id string) (string, error) {
+	db := persistence.MustGetPGSession()
+	query := `SELECT app_version.kots_license FROM supportbundle LEFT JOIN app_version ON supportbundle.watch_id = app_version.app_id where supportbundle.id = $1`
+	row := db.QueryRow(query, id)
+
+	var licenseStr sql.NullString
+	if err := row.Scan(&licenseStr); err != nil {
+		if err == sql.ErrNoRows {
+			return "", nil
+		}
+		return "", errors.Wrap(err, "failed to scan")
+	}
+
+	if licenseStr.Valid {
+		decode := scheme.Codecs.UniversalDeserializer().Decode
+		obj, _, err := decode([]byte(licenseStr.String), nil, nil)
+		if err != nil {
+			return "", errors.Wrap(err, "failed to decode license yaml")
+		}
+		license := obj.(*kotsv1beta1.License)
+		return license.Spec.LicenseType, nil
+	}
+
+	return "", nil
 }
