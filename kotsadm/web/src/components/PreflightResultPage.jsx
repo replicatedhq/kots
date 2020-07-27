@@ -5,7 +5,6 @@ import { Helmet } from "react-helmet";
 import { withRouter } from "react-router-dom";
 import Modal from "react-modal";
 import { getKotsPreflightResult, getLatestKotsPreflightResult } from "@src/queries/AppsQueries";
-import { deployKotsVersion } from "@src/mutations/AppsMutations";
 import Loader from "./shared/Loader";
 import PreflightRenderer from "./PreflightRenderer";
 import { getPreflightResultState, Utilities } from "../utilities/utilities";
@@ -43,12 +42,26 @@ class PreflightResultPage extends Component {
           return;
         }
         const sequence = match.params.sequence ? parseInt(match.params.sequence, 10) : 0;
-        await this.props.deployKotsVersion(preflightResultData.appSlug, sequence, preflightResultData.clusterSlug);
+        await this.deployKotsVersion(preflightResultData.appSlug, sequence);
       }
 
       history.push(`/app/${preflightResultData.appSlug}/version-history`);
     } catch (error) {
       console.log(error);
+    }
+  }
+
+  deployKotsVersion = async (appSlug, sequence) => {
+    try {
+      await fetch(`${window.env.API_ENDPOINT}/app/${appSlug}/sequence/${sequence}/deploy`, {
+        headers: {
+          "Authorization": Utilities.getToken(),
+          "Content-Type": "application/json",
+        },
+        method: "POST",
+      });
+    } catch(err) {
+      console.log(err);
     }
   }
 
@@ -298,10 +311,5 @@ export default compose(
         fetchPolicy: "no-cache"
       }
     }
-  }),
-  graphql(deployKotsVersion, {
-    props: ({ mutate }) => ({
-      deployKotsVersion: (upstreamSlug, sequence, clusterSlug) => mutate({ variables: { upstreamSlug, sequence, clusterSlug } })
-    })
   }),
 )(PreflightResultPage);
