@@ -56,6 +56,7 @@ class Dashboard extends Component {
     showUpdateCheckerModal: false,
     appStatus: null,
     metrics: [],
+    getAppDashboardJob: new Repeater(),
   }
 
   toggleConfigureGraphs = () => {
@@ -123,6 +124,7 @@ class Dashboard extends Component {
     const { getAppLicense } = this.props.getAppLicense;
 
     this.state.updateChecker.start(this.updateStatus, 1000);
+    this.state.getAppDashboardJob.start(this.getAppDashboard, 2000);
 
     if (app) {
       this.setWatchState(app);
@@ -130,34 +132,36 @@ class Dashboard extends Component {
     if (getAppLicense) {
       this.setState({ appLicense: getAppLicense });
     }
-
-    this.getAppDashboardJob = new Repeater()
-    this.getAppDashboardJob.start(this.getAppDashboard, 2000);
   }
 
   componentWillUnmount() {
     this.state.updateChecker.stop();
+    this.state.getAppDashboardJob.stop();
   }
 
-  getAppDashboard = async () => {
-    fetch(`${window.env.API_ENDPOINT}/app/${this.props.app?.slug}/cluster/${this.props.cluster?.id}/dashboard`, {
-      headers: {
-        "Authorization": Utilities.getToken(),
-        "Content-Type": "application/json",
-      },
-      method: "GET",
-    })
-      .then(async (res) => {
-        const response = await res.json();
-        this.setState({
-          appStatus: response.appStatus,
-          promValue: response.prometheusAddress,
-          metrics: response.metrics,
-        })
+  getAppDashboard = () => {
+    return new Promise((resolve, reject) => {
+      fetch(`${window.env.API_ENDPOINT}/app/${this.props.app?.slug}/cluster/${this.props.cluster?.id}/dashboard`, {
+        headers: {
+          "Authorization": Utilities.getToken(),
+          "Content-Type": "application/json",
+        },
+        method: "GET",
       })
-      .catch((err) => {
-        console.log(err);
-      });
+        .then(async (res) => {
+          const response = await res.json();
+          this.setState({
+            appStatus: response.appStatus,
+            promValue: response.prometheusAddress,
+            metrics: response.metrics,
+          });
+          resolve();
+        })
+        .catch((err) => {
+          console.log(err);
+          reject(err);
+        });
+    });
   }
 
   onCheckForUpdates = async () => {
