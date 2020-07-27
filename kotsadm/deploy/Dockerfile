@@ -25,15 +25,12 @@ RUN useradd -c 'kotsadm user' -m -d /home/kotsadm -s /bin/bash -u 1001 kotsadm
 USER kotsadm
 ENV HOME /home/kotsadm
 
-COPY ./deploy/backup.sh /backup.sh
-COPY ./deploy/restore-db.sh /restore-db.sh
-COPY ./deploy/restore-s3.sh /restore-s3.sh
-COPY ./bin/kotsadm /kotsadm
-COPY ./web/dist /web/dist
-USER root
-RUN chmod a+x /kotsadm
-RUN chmod a+w /web/dist/*
-USER kotsadm
+COPY --chown=kotsadm:kotsadm ./deploy/backup.sh /backup.sh
+COPY --chown=kotsadm:kotsadm ./deploy/restore-db.sh /restore-db.sh
+COPY --chown=kotsadm:kotsadm ./deploy/restore-s3.sh /restore-s3.sh
+COPY --chown=kotsadm:kotsadm ./bin/kotsadm /kotsadm
+COPY --chown=kotsadm:kotsadm ./web/dist /web/dist
+
 WORKDIR /
 
 EXPOSE 3000

@@ -29,14 +29,11 @@ USER kotsadm-operator
 ENV HOME /home/kotsadm-operator
 
 # Install krew
-ADD ./deploy/install-krew.sh /install-krew.sh
+COPY --chown=kotsadm-operator:kotsadm-operator ./deploy/install-krew.sh /install-krew.sh
 RUN /install-krew.sh
 ENV PATH="$HOME/.krew/bin:$PATH"
 
-COPY ./bin/kotsadm-operator /kotsadm-operator
-USER root
-RUN chmod a+x /kotsadm-operator
-USER kotsadm-operator
+COPY --chown=kotsadm-operator:kotsadm-operator ./bin/kotsadm-operator /kotsadm-operator
 
 # Install our plugins
 USER root
