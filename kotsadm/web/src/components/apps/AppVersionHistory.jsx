@@ -421,7 +421,7 @@ class AppVersionHistory extends Component {
         }
       }
     }
-    await this.props.makeCurrentVersion(match.params.slug, version.sequence, clusterSlug);
+    await this.props.makeCurrentVersion(match.params.slug, version.sequence);
     await this.props.data.refetch();
     this.setState({ versionToDeploy: null });
 

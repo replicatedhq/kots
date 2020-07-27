@@ -9,7 +9,7 @@ import has from "lodash/has";
 import withTheme from "@src/components/context/withTheme";
 import { getKotsApp, listDownstreamsForApp } from "@src/queries/AppsQueries";
 import { isVeleroInstalled } from "@src/queries/SnapshotQueries";
-import { createKotsDownstream, deleteKotsDownstream, deployKotsVersion } from "../../mutations/AppsMutations";
+import { createKotsDownstream, deleteKotsDownstream } from "../../mutations/AppsMutations";
 import { KotsSidebarItem } from "@src/components/watches/WatchSidebarItem";
 import { HelmChartSidebarItem } from "@src/components/watches/WatchSidebarItem";
 import NotFound from "../static/NotFound";
@@ -17,7 +17,7 @@ import Dashboard from "./Dashboard";
 import CodeSnippet from "../shared/CodeSnippet";
 import DownstreamTree from "../../components/tree/KotsApplicationTree";
 import AppVersionHistory from "./AppVersionHistory";
-import { isAwaitingResults } from "../../utilities/utilities";
+import { isAwaitingResults, Utilities } from "../../utilities/utilities";
 import PreflightResultPage from "../PreflightResultPage";
 import AppConfig from "./AppConfig";
 import AppLicense from "./AppLicense";
@@ -96,10 +96,19 @@ class AppDetailPage extends Component {
     this.props.clearThemeState();
   }
 
-  makeCurrentRelease = async (upstreamSlug, sequence, clusterSlug) => {
-    await this.props.deployKotsVersion(upstreamSlug, sequence, clusterSlug).then(() => {
+  makeCurrentRelease = async (upstreamSlug, sequence) => {
+    try {
+      await fetch(`${window.env.API_ENDPOINT}/app/${upstreamSlug}/sequence/${sequence}/deploy`, {
+        headers: {
+          "Authorization": Utilities.getToken(),
+          "Content-Type": "application/json",
+        },
+        method: "POST",
+      });
       this.refetchGraphQLData();
-    })
+    } catch(err) {
+      console.log(err);
+    }
   }
 
   toggleDisplayDownloadModal = () => {
@@ -427,11 +436,6 @@ export default compose(
   graphql(deleteKotsDownstream, {
     props: ({ mutate }) => ({
       deleteKotsDownstream: (slug, clusterId) => mutate({ variables: { slug, clusterId } })
-    })
-  }),
-  graphql(deployKotsVersion, {
-    props: ({ mutate }) => ({
-      deployKotsVersion: (upstreamSlug, sequence, clusterSlug) => mutate({ variables: { upstreamSlug, sequence, clusterSlug } })
     })
   }),
 )(AppDetailPage);

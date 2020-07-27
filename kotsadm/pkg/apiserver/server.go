@@ -98,6 +98,7 @@ func Start() {
 	r.Path("/api/v1/app/{appSlug}/sequence/{sequence}/preflight/run").Methods("OPTIONS", "POST").HandlerFunc(handlers.StartPreflightChecks)
 	r.Path("/api/v1/upload").Methods("PUT").HandlerFunc(handlers.UploadExistingApp)
 	r.Path("/api/v1/download").Methods("GET").HandlerFunc(handlers.DownloadApp)
+	r.Path("/api/v1/app/{appSlug}/sequence/{sequence}/deploy").Methods("OPTIONS", "POST").HandlerFunc(handlers.DeployAppVersion)
 	r.Path("/api/v1/app/{appSlug}/sequence/{sequence}/renderedcontents").Methods("OPTIONS", "GET").HandlerFunc(handlers.GetAppRenderedContents)
 	r.Path("/api/v1/app/{appSlug}/sequence/{sequence}/contents").Methods("OPTIONS", "GET").HandlerFunc(handlers.GetAppContents)
 	r.Path("/api/v1/app/{appSlug}/cluster/{clusterId}/dashboard").Methods("OPTIONS", "GET").HandlerFunc(handlers.GetAppDashboard)
