@@ -61,7 +61,7 @@ func (m *Midstream) WriteMidstream(options WriteOptions) error {
 		return errors.Wrap(err, "failed to write patches")
 	}
 
-	m.mergeKustomization(existingKustomization)
+	m.mergeKustomization(options, existingKustomization)
 
 	if err := m.writeKustomization(options); err != nil {
 		return errors.Wrap(err, "failed to write kustomization")
@@ -70,7 +70,7 @@ func (m *Midstream) WriteMidstream(options WriteOptions) error {
 	return nil
 }
 
-func (m *Midstream) mergeKustomization(existing *kustomizetypes.Kustomization) {
+func (m *Midstream) mergeKustomization(options WriteOptions, existing *kustomizetypes.Kustomization) {
 	if existing == nil {
 		return
 	}
@@ -85,8 +85,12 @@ func (m *Midstream) mergeKustomization(existing *kustomizetypes.Kustomization) {
 	newResources := findNewStrings(m.Kustomization.Resources, existing.Resources)
 	m.Kustomization.Resources = append(existing.Resources, newResources...)
 
-	delete(existing.CommonAnnotations, "kots.io/app-slug")
+	if existing.CommonAnnotations == nil {
+		existing.CommonAnnotations = make(map[string]string)
+	}
+
 	delete(existing.CommonAnnotations, "kots.io/app-sequence")
+	existing.CommonAnnotations["kots.io/app-slug"] = options.AppSlug
 	m.Kustomization.CommonAnnotations = mergeMaps(m.Kustomization.CommonAnnotations, existing.CommonAnnotations)
 }
 
