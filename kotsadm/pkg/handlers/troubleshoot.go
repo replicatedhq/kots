@@ -137,7 +137,6 @@ func ListSupportBundles(w http.ResponseWriter, r *http.Request) {
 
 	// we don't currently have roles, all valid tokens are valid sessions
 	if sess == nil || sess.ID == "" {
-		logger.Error(err)
 		w.WriteHeader(401)
 		return
 	}
