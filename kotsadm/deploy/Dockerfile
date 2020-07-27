@@ -30,6 +30,7 @@ COPY --chown=kotsadm:kotsadm ./deploy/restore-db.sh /restore-db.sh
 COPY --chown=kotsadm:kotsadm ./deploy/restore-s3.sh /restore-s3.sh
 COPY --chown=kotsadm:kotsadm ./bin/kotsadm /kotsadm
 COPY --chown=kotsadm:kotsadm ./web/dist /web/dist
+RUN chmod a+x /kotsadm
 
 WORKDIR /
 
