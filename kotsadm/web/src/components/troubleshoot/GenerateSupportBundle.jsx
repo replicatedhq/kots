@@ -8,8 +8,9 @@ import Loader from "../shared/Loader";
 import CodeSnippet from "@src/components/shared/CodeSnippet";
 import UploadSupportBundleModal from "../troubleshoot/UploadSupportBundleModal";
 import ConfigureRedactorsModal from "./ConfigureRedactorsModal";
-import { listSupportBundles } from "../../queries/TroubleshootQueries";
 import { collectSupportBundle } from "../../mutations/TroubleshootMutations";
+import { Utilities } from "../../utilities/utilities";
+import { Repeater } from "../../utilities/repeater";
 
 import "../../scss/components/troubleshoot/GenerateSupportBundle.scss";
 
@@ -27,7 +28,10 @@ class GenerateSupportBundle extends React.Component {
       totalBundles: null,
       showRunCommand: false,
       isGeneratingBundle: false,
-      displayRedactorModal: false
+      displayRedactorModal: false,
+      loadingSupportBundles: false,
+      supportBundles: [],
+      listSupportBundlesJob: new Repeater(),
     };
   }
 
@@ -39,11 +43,12 @@ class GenerateSupportBundle extends React.Component {
       const NEW_ADDED_CLUSTER = { title: NEW_CLUSTER };
       this.setState({ clusters: [NEW_ADDED_CLUSTER, ...watchClusters] });
     }
+    this.listSupportBundles();
   }
 
   componentDidUpdate(lastProps) {
-    const { watch, listSupportBundles, history } = this.props;
-    const { totalBundles } = this.state;
+    const { watch, history } = this.props;
+    const { totalBundles, loadingSupportBundles, supportBundles } = this.state;
     const clusters = watch.downstream;
     if (watch !== lastProps.watch && clusters) {
       const watchClusters = clusters.map(c => c.cluster);
@@ -51,22 +56,44 @@ class GenerateSupportBundle extends React.Component {
       this.setState({ clusters: [NEW_ADDED_CLUSTER, ...watchClusters] });
     }
 
-    const isLoading = listSupportBundles.loading;
-    if (!isLoading) {
+    if (!loadingSupportBundles) {
       if (totalBundles === null) {
         this.setState({
-          totalBundles: listSupportBundles?.listSupportBundles.length
+          totalBundles: supportBundles?.length
         });
-        listSupportBundles.startPolling(2000);
+        this.listSupportBundlesJob.start(this.listSupportBundles, 2000);
         return;
       }
 
-      if (listSupportBundles?.listSupportBundles.length > totalBundles) {
-        listSupportBundles.stopPolling();
-        const bundle = listSupportBundles.listSupportBundles[0]; // safe. there's at least 1 element in this array.
+      if (supportBundles?.length > totalBundles) {
+        this.listSupportBundlesJob.stop();
+        const bundle = supportBundles[0]; // safe. there's at least 1 element in this array.
         history.push(`/app/${watch.slug}/troubleshoot/analyze/${bundle.id}`);
       }
     }
+  }
+
+  listSupportBundles = () => {
+    this.setState({ loadingSupportBundles: true });
+
+    fetch(`${window.env.API_ENDPOINT}/troubleshoot/app/${this.props.watch?.slug}/supportbundles`, {
+      headers: {
+        "Authorization": Utilities.getToken(),
+        "Content-Type": "application/json",
+      },
+      method: "GET",
+    })
+      .then(async (res) => {
+        const response = await res.json();
+        this.setState({
+          supportBundles: response.supportBundles,
+          loadingSupportBundles: false,
+        });
+      })
+      .catch((err) => {
+        console.log(err);
+        this.setState({ loadingSupportBundles: false });
+      });
   }
 
   showCopyToast(message, didCopy) {
@@ -116,7 +143,7 @@ class GenerateSupportBundle extends React.Component {
       isGeneratingBundle: true,
     });
 
-    const currentBundles = this.props.listSupportBundles?.listSupportBundles?.map(bundle => {
+    const currentBundles = this.state.supportBundles?.map(bundle => {
       bundle.id
     });
 
@@ -128,7 +155,7 @@ class GenerateSupportBundle extends React.Component {
   }
 
   redirectOnNewBundle(currentBundles) {
-    if (this.props.listSupportBundles?.listSupportBundles?.length === currentBundles.length) {
+    if (this.state.supportBundles?.length === currentBundles.length) {
       setTimeout(() => {
         this.redirectOnNewBundle(currentBundles);
       }, 1000);
@@ -165,7 +192,7 @@ class GenerateSupportBundle extends React.Component {
           <title>{`${appTitle} Troubleshoot`}</title>
         </Helmet>
         <div className="GenerateSupportBundle">
-          {!watchClusters.length && !this.props.listSupportBundles?.listSupportBundles?.length ?
+          {!watchClusters.length && !this.state.supportBundles?.length ?
             <Link to={`/watch/${watch.slug}/troubleshoot`} className="replicated-link u-marginRight--5"> &lt; Support Bundle List </Link> : null
            }
           <div className="u-marginTop--15">
@@ -242,17 +269,6 @@ class GenerateSupportBundle extends React.Component {
 
 export default withRouter(compose(
   withApollo,
-  graphql(listSupportBundles, {
-    name: "listSupportBundles",
-    options: props => {
-      return {
-        variables: {
-          watchSlug: props.watch.slug
-        },
-        fetchPolicy: "no-cache",
-      }
-    }
-  }),
   graphql(collectSupportBundle, {
     props: ({ mutate }) => ({
       collectSupportBundle: (appId, clusterId) => mutate({ variables: { appId, clusterId } })

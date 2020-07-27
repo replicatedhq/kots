@@ -111,8 +111,8 @@ type SnapshotError struct {
 }
 
 type VolumeSummary struct {
-	VolumeCount        int        `json:"volumeCount"`
-	VolumeSuccessCount int        `json:"volumeSuccessCount"`
-	VolumeBytes        int64      `json:"volumeBytes"`
-	VolumeSizeHuman    string     `json:"volumeSizeHuman"`
+	VolumeCount        int    `json:"volumeCount"`
+	VolumeSuccessCount int    `json:"volumeSuccessCount"`
+	VolumeBytes        int64  `json:"volumeBytes"`
+	VolumeSizeHuman    string `json:"volumeSizeHuman"`
 }
