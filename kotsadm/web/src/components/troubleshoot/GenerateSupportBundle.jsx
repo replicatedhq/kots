@@ -46,6 +46,10 @@ class GenerateSupportBundle extends React.Component {
     this.listSupportBundles();
   }
 
+  componentWillUnmount() {
+    this.state.listSupportBundlesJob.stop();
+  }
+
   componentDidUpdate(lastProps) {
     const { watch, history } = this.props;
     const { totalBundles, loadingSupportBundles, supportBundles } = this.state;
@@ -61,12 +65,12 @@ class GenerateSupportBundle extends React.Component {
         this.setState({
           totalBundles: supportBundles?.length
         });
-        this.listSupportBundlesJob.start(this.listSupportBundles, 2000);
+        this.state.listSupportBundlesJob.start(this.listSupportBundles, 2000);
         return;
       }
 
       if (supportBundles?.length > totalBundles) {
-        this.listSupportBundlesJob.stop();
+        this.state.listSupportBundlesJob.stop();
         const bundle = supportBundles[0]; // safe. there's at least 1 element in this array.
         history.push(`/app/${watch.slug}/troubleshoot/analyze/${bundle.id}`);
       }
@@ -74,26 +78,30 @@ class GenerateSupportBundle extends React.Component {
   }
 
   listSupportBundles = () => {
-    this.setState({ loadingSupportBundles: true });
+    return new Promise((resolve, reject) => {
+      this.setState({ loadingSupportBundles: true });
 
-    fetch(`${window.env.API_ENDPOINT}/troubleshoot/app/${this.props.watch?.slug}/supportbundles`, {
-      headers: {
-        "Authorization": Utilities.getToken(),
-        "Content-Type": "application/json",
-      },
-      method: "GET",
-    })
-      .then(async (res) => {
-        const response = await res.json();
-        this.setState({
-          supportBundles: response.supportBundles,
-          loadingSupportBundles: false,
-        });
+      fetch(`${window.env.API_ENDPOINT}/troubleshoot/app/${this.props.watch?.slug}/supportbundles`, {
+        headers: {
+          "Authorization": Utilities.getToken(),
+          "Content-Type": "application/json",
+        },
+        method: "GET",
       })
-      .catch((err) => {
-        console.log(err);
-        this.setState({ loadingSupportBundles: false });
-      });
+        .then(async (res) => {
+          const response = await res.json();
+          this.setState({
+            supportBundles: response.supportBundles,
+            loadingSupportBundles: false,
+          });
+          resolve();
+        })
+        .catch((err) => {
+          console.log(err);
+          this.setState({ loadingSupportBundles: false });
+          reject(err);
+        });
+    });
   }
 
   showCopyToast(message, didCopy) {
