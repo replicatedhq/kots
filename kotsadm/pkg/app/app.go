@@ -12,21 +12,34 @@ import (
 	"github.com/replicatedhq/kots/kotsadm/pkg/gitops"
 	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
 	"github.com/replicatedhq/kots/kotsadm/pkg/persistence"
+	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	"github.com/segmentio/ksuid"
 	"go.uber.org/zap"
+	"gopkg.in/yaml.v2"
 )
 
 type App struct {
-	ID              string
-	Slug            string
-	Name            string
-	IsAirgap        bool
-	CurrentSequence int64
-
-	// Additional fields will be added here as implementation is moved from node to go
-	RestoreInProgressName string
-	UpdateCheckerSpec     string
-	IsGitOps              bool
+	ID                    string `json:"id"`
+	Slug                  string `json:"slug"`
+	Name                  string `json:"name"`
+	License               string `json:"license"`
+	IsAirgap              bool   `json:"isAirgap"`
+	CurrentSequence       int64  `json:"currentSequence"`
+	UpstreamURI           string `json:"upstreamUri"`
+	IconURI               string `json:"iconUri"`
+	UpdatedAt             string `json:"createdAt"`
+	CreatedAt             string `json:"updatedAt"`
+	AllowRollback         bool   `json:"allowRollback"`
+	LastUpdateCheckAt     string `json:"lastUpdateCheckAt"`
+	BundleCommand         string `json:"bundleCommand"`
+	HasPreflight          bool   `json:"hasPreflight"`
+	IsConfigurable        bool   `json:"isConfigurable"`
+	SnapshotTTL           string `json:"snapshotTtl"`
+	SnapshotSchedule      string `json:"snapshotSchedule"`
+	RestoreInProgressName string `json:"restoreInProgressName"`
+	RestoreUndeployStatus string `json:"restoreUndeloyStatus"`
+	UpdateCheckerSpec     string `json:"updateCheckerSpec"`
+	IsGitOps              bool   `json:"isGitOps"`
 }
 
 type RegistryInfo struct {
@@ -42,16 +55,24 @@ func Get(id string) (*App, error) {
 		zap.String("id", id))
 
 	db := persistence.MustGetPGSession()
-	query := `select id, slug, name, current_sequence, is_airgap, restore_in_progress_name, update_checker_spec from app where id = $1`
+	query := `select id, name, license, upstream_uri, icon_uri, created_at, updated_at, slug, current_sequence, last_update_check_at, is_airgap, snapshot_ttl_new, snapshot_schedule, restore_in_progress_name, restore_undeploy_status, update_checker_spec from app where id = $1`
 	row := db.QueryRow(query, id)
 
 	app := App{}
 
+	var licenseStr sql.NullString
+	var upstreamURI sql.NullString
+	var iconURI sql.NullString
+	var updatedAt sql.NullString
 	var currentSequence sql.NullInt64
+	var lastUpdateCheckAt sql.NullString
+	var snapshotTTLNew sql.NullString
+	var snapshotSchedule sql.NullString
 	var restoreInProgressName sql.NullString
+	var restoreUndeployStatus sql.NullString
 	var updateCheckerSpec sql.NullString
 
-	if err := row.Scan(&app.ID, &app.Slug, &app.Name, &currentSequence, &app.IsAirgap, &restoreInProgressName, &updateCheckerSpec); err != nil {
+	if err := row.Scan(&app.ID, &app.Name, &licenseStr, &upstreamURI, &iconURI, &app.CreatedAt, &updatedAt, &app.Slug, &currentSequence, &lastUpdateCheckAt, &app.IsAirgap, &snapshotTTLNew, &snapshotSchedule, &restoreInProgressName, &restoreUndeployStatus, &updateCheckerSpec); err != nil {
 		return nil, errors.Wrap(err, "failed to scan app")
 	}
 
@@ -61,8 +82,57 @@ func Get(id string) (*App, error) {
 		app.CurrentSequence = -1
 	}
 
+	query = `select preflight_spec, config_spec from app_version where app_id = $1 AND sequence = $2`
+	row = db.QueryRow(query, id, app.CurrentSequence)
+
+	var preflightSpec sql.NullString
+	var configSpec sql.NullString
+
+	if err := row.Scan(&preflightSpec, &configSpec); err != nil {
+		return nil, errors.Wrap(err, "failed to scan app_version")
+	}
+
+	if preflightSpec.Valid {
+		app.HasPreflight = true
+	}
+	if configSpec.Valid {
+		app.IsConfigurable = true
+	}
+
+	if licenseStr.Valid {
+		app.License = licenseStr.String
+	}
+	if upstreamURI.Valid {
+		app.UpstreamURI = upstreamURI.String
+	}
+	if iconURI.Valid {
+		app.IconURI = iconURI.String
+	}
+	if updatedAt.Valid {
+		app.UpdatedAt = updatedAt.String
+	}
+	if lastUpdateCheckAt.Valid {
+		app.LastUpdateCheckAt = lastUpdateCheckAt.String
+	}
+	if snapshotTTLNew.Valid {
+		app.SnapshotTTL = snapshotTTLNew.String
+	}
+	if snapshotSchedule.Valid {
+		app.SnapshotSchedule = snapshotSchedule.String
+	}
+
 	app.RestoreInProgressName = restoreInProgressName.String
+	app.RestoreUndeployStatus = restoreUndeployStatus.String
 	app.UpdateCheckerSpec = updateCheckerSpec.String
+
+	bundleCommand := fmt.Sprintf(`
+	curl https://krew.sh/support-bundle | bash
+      kubectl support-bundle API_ADDRESS/api/v1/troubleshoot/%s
+	`, app.Slug)
+	app.BundleCommand = bundleCommand
+
+	ar, err := allowRollback(id, app.CurrentSequence)
+	app.AllowRollback = ar
 
 	isGitOps, err := IsGitOpsEnabled(id)
 	if err != nil {
@@ -71,6 +141,27 @@ func Get(id string) (*App, error) {
 	app.IsGitOps = isGitOps
 
 	return &app, nil
+}
+
+func allowRollback(id string, currentSequence int64) (bool, error) {
+	db := persistence.MustGetPGSession()
+	query := `select kots_app_spec from app_version where app_id = $1 and sequence = $2`
+	row := db.QueryRow(query, id, currentSequence)
+
+	var kotsAppSpec sql.NullString
+	if err := row.Scan(&kotsAppSpec); err != nil {
+		return false, errors.Wrap(err, "failed to scan app_version to get kots_app_spec")
+	}
+
+	s := kotsv1beta1.ApplicationSpec{}
+
+	if kotsAppSpec.Valid {
+		if err := yaml.Unmarshal([]byte(kotsAppSpec.String), &s); err != nil {
+			return false, errors.Wrap(err, "faild to unmarshal doc to look for allowRollback")
+		}
+	}
+
+	return s.AllowRollback, nil
 }
 
 func ListInstalled() ([]*App, error) {

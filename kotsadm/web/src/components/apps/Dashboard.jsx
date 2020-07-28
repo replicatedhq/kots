@@ -127,13 +127,33 @@ class Dashboard extends Component {
     }
   }
 
+  getKotsApp = () => {
+    return new Promise((resolve, reject) => {
+      fetch(`${window.env.API_ENDPOINT}/app/${this.props.app?.slug}`, {
+        headers: {
+          "Authorization": Utilities.getToken(),
+          "Content-Type": "application/json",
+        },
+        method: "GET",
+      })
+        .then(async (res) => {
+          const response = await res.json();
+          console.log(response)
+        })
+        .catch((err) => {
+          console.log(err);
+          reject(err);
+        });
+    });
+  }
+
   componentDidMount() {
     const { app } = this.props;
     const { getAppLicense } = this.props.getAppLicense;
 
     this.state.updateChecker.start(this.updateStatus, 1000);
     this.state.getAppDashboardJob.start(this.getAppDashboard, 2000);
-
+    this.getKotsApp()
     if (app) {
       this.setWatchState(app);
     }
