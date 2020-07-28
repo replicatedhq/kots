@@ -13,7 +13,6 @@ import Modal from "react-modal";
 import { Repeater } from "../../utilities/repeater";
 import { Utilities } from "../../utilities/utilities";
 import { getAppLicense, getUpdateDownloadStatus } from "@src/queries/AppsQueries";
-import { setPrometheusAddress } from "@src/mutations/AppsMutations";
 
 import { XYPlot, XAxis, YAxis, HorizontalGridLines, VerticalGridLines, LineSeries, DiscreteColorLegend, Crosshair } from "react-vis";
 
@@ -54,8 +53,11 @@ class Dashboard extends Component {
     airgapUpdateError: "",
     startSnapshotErrorMsg: "",
     showUpdateCheckerModal: false,
-    appStatus: null,
-    metrics: [],
+    dashboard: {
+      appStatus: null,
+      metrics: [],
+      prometheusAddress: "",
+    },
     getAppDashboardJob: new Repeater(),
   }
 
@@ -68,19 +70,25 @@ class Dashboard extends Component {
 
   updatePromValue = () => {
     this.setState({ savingPromValue: true });
-    this.props.client.mutate({
-      mutation: setPrometheusAddress,
-      variables: {
-        value: this.state.promValue,
+
+    fetch(`${window.env.API_ENDPOINT}/prometheus`, {
+      headers: {
+        "Authorization": Utilities.getToken(),
+        "Content-Type": "application/json",
       },
+      body: JSON.stringify({
+        value: this.state.promValue,
+      }),
+      method: "PUT",
     })
-      .then(() => {
-        this.setState({ savingPromValue: false });
-        this.getAppDashboard();
-      })
-      .catch(() => {
+      .then(async () => {
+        await this.getAppDashboard();
         this.setState({ savingPromValue: false });
       })
+      .catch((err) => {
+        console.log(err);
+        this.setState({ savingPromValue: false });
+      });
   }
 
   onPromValueChange = (e) => {
@@ -151,9 +159,11 @@ class Dashboard extends Component {
         .then(async (res) => {
           const response = await res.json();
           this.setState({
-            appStatus: response.appStatus,
-            promValue: response.prometheusAddress,
-            metrics: response.metrics,
+            dashboard: {
+              appStatus: response.appStatus,
+              prometheusAddress: response.prometheusAddress,
+              metrics: response.metrics,
+            },
           });
           resolve();
         })
@@ -542,7 +552,7 @@ class Dashboard extends Component {
                 cardName="Application"
                 application={true}
                 cardIcon="applicationIcon"
-                appStatus={this.state.appStatus?.state}
+                appStatus={this.state.dashboard?.appStatus?.state}
                 url={this.props.match.url}
                 links={links}
                 app={app}
@@ -607,13 +617,13 @@ class Dashboard extends Component {
               }
             </div>
             <div className="u-marginTop--30 flex flex1">
-              {this.state.promValue ?
+              {this.state.dashboard?.prometheusAddress ?
                 <div>
                   <div className="flex flex1 justifyContent--flexEnd">
                     <span className="card-link" onClick={this.toggleConfigureGraphs}> Configure Prometheus Address </span>
                   </div>
                   <div className="flex-auto flex flexWrap--wrap u-width--full">
-                    {this.state.metrics.map(this.renderGraph)}
+                    {this.state.dashboard?.metrics.map(this.renderGraph)}
                   </div>
                 </div>
                 :
@@ -711,10 +721,5 @@ export default compose(
         errorPolicy: "ignore"
       };
     }
-  }),
-  graphql(setPrometheusAddress, {
-    props: ({ mutate }) => ({
-      setPrometheusAddress: (value) => mutate({ variables: { value } })
-    })
   }),
 )(Dashboard);
