@@ -151,7 +151,7 @@ func Start() {
 	r.Path("/api/v1/kurl/generate-node-join-command-master").Methods("OPTIONS", "POST").HandlerFunc(handlers.GenerateNodeJoinCommandMaster)
 
 	// Prometheus
-	r.HandleFunc("/api/v1/prometheus", handlers.NotImplemented)
+	r.Path("/api/v1/prometheus").Methods("OPTIONS", "POST").HandlerFunc(handlers.SetPrometheusAddress)
 
 	// GitOps
 	r.HandleFunc("/api/v1/gitops", handlers.NotImplemented)
