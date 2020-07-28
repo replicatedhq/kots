@@ -125,6 +125,7 @@ export const getKotsAppRaw = `
       isGitOpsSupported
       allowRollback
       allowSnapshots
+      licenseType
       updateCheckerSpec
       currentVersion {
         title

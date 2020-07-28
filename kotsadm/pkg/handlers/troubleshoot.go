@@ -40,18 +40,17 @@ import (
 )
 
 type GetSupportBundleResponse struct {
-	ID          string                       `json:"id"`
-	Slug        string                       `json:"slug"`
-	AppID       string                       `json:"appId"`
-	Name        string                       `json:"name"`
-	Size        float64                      `json:"size"`
-	Status      string                       `json:"status"`
-	TreeIndex   string                       `json:"treeIndex"`
-	CreatedAt   time.Time                    `json:"createdAt"`
-	UploadedAt  *time.Time                   `json:"uploadedAt"`
-	IsArchived  bool                         `json:"isArchived"`
-	LicenseType string                       `json:"licenseType,omitempty"`
-	Analysis    *types.SupportBundleAnalysis `json:"analysis"`
+	ID         string                       `json:"id"`
+	Slug       string                       `json:"slug"`
+	AppID      string                       `json:"appId"`
+	Name       string                       `json:"name"`
+	Size       float64                      `json:"size"`
+	Status     string                       `json:"status"`
+	TreeIndex  string                       `json:"treeIndex"`
+	CreatedAt  time.Time                    `json:"createdAt"`
+	UploadedAt *time.Time                   `json:"uploadedAt"`
+	IsArchived bool                         `json:"isArchived"`
+	Analysis   *types.SupportBundleAnalysis `json:"analysis"`
 }
 
 type GetSupportBundleFilesResponse struct {
@@ -65,17 +64,16 @@ type ListSupportBundlesResponse struct {
 	SupportBundles []ResponseSupportBundle `json:"supportBundles"`
 }
 type ResponseSupportBundle struct {
-	ID          string                       `json:"id"`
-	Slug        string                       `json:"slug"`
-	AppID       string                       `json:"appId"`
-	Name        string                       `json:"name"`
-	Size        float64                      `json:"size"`
-	Status      string                       `json:"status"`
-	CreatedAt   time.Time                    `json:"createdAt"`
-	UploadedAt  *time.Time                   `json:"uploadedAt"`
-	IsArchived  bool                         `json:"isArchived"`
-	LicenseType string                       `json:"licenseType,omitempty"`
-	Analysis    *types.SupportBundleAnalysis `json:"analysis"`
+	ID         string                       `json:"id"`
+	Slug       string                       `json:"slug"`
+	AppID      string                       `json:"appId"`
+	Name       string                       `json:"name"`
+	Size       float64                      `json:"size"`
+	Status     string                       `json:"status"`
+	CreatedAt  time.Time                    `json:"createdAt"`
+	UploadedAt *time.Time                   `json:"uploadedAt"`
+	IsArchived bool                         `json:"isArchived"`
+	Analysis   *types.SupportBundleAnalysis `json:"analysis"`
 }
 
 type GetSupportBundleRedactionsResponse struct {
@@ -120,29 +118,23 @@ func GetSupportBundle(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	licenseType, err := supportbundle.GetLicenseType(bundle.ID)
-	if err != nil {
-		logger.Error(errors.Wrapf(err, "failed to get license type for bundle %s", bundle.Slug))
-	}
-
 	analysis, err := supportbundle.GetBundleAnalysis(bundle.ID)
 	if err != nil {
 		logger.Error(errors.Wrapf(err, "failed to get analysis for bundle %s", bundle.Slug))
 	}
 
 	getSupportBundleResponse := GetSupportBundleResponse{
-		ID:          bundle.ID,
-		Slug:        bundle.Slug,
-		AppID:       bundle.AppID,
-		Name:        bundle.Name,
-		Size:        bundle.Size,
-		Status:      bundle.Status,
-		TreeIndex:   bundle.TreeIndex,
-		CreatedAt:   bundle.CreatedAt,
-		UploadedAt:  bundle.UploadedAt,
-		IsArchived:  bundle.IsArchived,
-		LicenseType: licenseType,
-		Analysis:    analysis,
+		ID:         bundle.ID,
+		Slug:       bundle.Slug,
+		AppID:      bundle.AppID,
+		Name:       bundle.Name,
+		Size:       bundle.Size,
+		Status:     bundle.Status,
+		TreeIndex:  bundle.TreeIndex,
+		CreatedAt:  bundle.CreatedAt,
+		UploadedAt: bundle.UploadedAt,
+		IsArchived: bundle.IsArchived,
+		Analysis:   analysis,
 	}
 
 	JSON(w, 200, getSupportBundleResponse)
@@ -233,28 +225,22 @@ func ListSupportBundles(w http.ResponseWriter, r *http.Request) {
 
 	responseSupportBundles := []ResponseSupportBundle{}
 	for _, bundle := range supportBundles {
-		licenseType, err := supportbundle.GetLicenseType(bundle.ID)
-		if err != nil {
-			logger.Error(errors.Wrapf(err, "failed to get license type for bundle %s", bundle.Slug))
-		}
-
 		analysis, err := supportbundle.GetBundleAnalysis(bundle.ID)
 		if err != nil {
 			logger.Error(errors.Wrapf(err, "failed to get analysis for bundle %s", bundle.Slug))
 		}
 
 		responseSupportBundle := ResponseSupportBundle{
-			ID:          bundle.ID,
-			Slug:        bundle.Slug,
-			AppID:       bundle.AppID,
-			Name:        bundle.Name,
-			Size:        bundle.Size,
-			Status:      bundle.Status,
-			CreatedAt:   bundle.CreatedAt,
-			UploadedAt:  bundle.UploadedAt,
-			IsArchived:  bundle.IsArchived,
-			LicenseType: licenseType,
-			Analysis:    analysis,
+			ID:         bundle.ID,
+			Slug:       bundle.Slug,
+			AppID:      bundle.AppID,
+			Name:       bundle.Name,
+			Size:       bundle.Size,
+			Status:     bundle.Status,
+			CreatedAt:  bundle.CreatedAt,
+			UploadedAt: bundle.UploadedAt,
+			IsArchived: bundle.IsArchived,
+			Analysis:   analysis,
 		}
 
 		responseSupportBundles = append(responseSupportBundles, responseSupportBundle)

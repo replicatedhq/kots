@@ -14,9 +14,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/kotsadm/pkg/persistence"
 	"github.com/replicatedhq/kots/kotsadm/pkg/supportbundle/types"
-	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	"github.com/segmentio/ksuid"
-	"k8s.io/client-go/kubernetes/scheme"
 )
 
 func List(appID string) ([]*types.SupportBundle, error) {
@@ -188,30 +186,4 @@ func GetFilesContents(bundleID string, filenames []string) (map[string][]byte, e
 	}
 
 	return files, nil
-}
-
-func GetLicenseType(id string) (string, error) {
-	db := persistence.MustGetPGSession()
-	query := `SELECT app_version.kots_license FROM supportbundle LEFT JOIN app_version ON supportbundle.watch_id = app_version.app_id where supportbundle.id = $1`
-	row := db.QueryRow(query, id)
-
-	var licenseStr sql.NullString
-	if err := row.Scan(&licenseStr); err != nil {
-		if err == sql.ErrNoRows {
-			return "", nil
-		}
-		return "", errors.Wrap(err, "failed to scan")
-	}
-
-	if licenseStr.Valid {
-		decode := scheme.Codecs.UniversalDeserializer().Decode
-		obj, _, err := decode([]byte(licenseStr.String), nil, nil)
-		if err != nil {
-			return "", errors.Wrap(err, "failed to decode license yaml")
-		}
-		license := obj.(*kotsv1beta1.License)
-		return license.Spec.LicenseType, nil
-	}
-
-	return "", nil
 }
