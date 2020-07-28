@@ -1,13 +1,11 @@
 import * as React from "react";
 import { withRouter, Switch, Route, Link } from "react-router-dom";
-import { graphql, compose, withApollo } from "react-apollo";
 import dayjs from "dayjs";
 
 import Loader from "../shared/Loader";
 import AnalyzerInsights from "./AnalyzerInsights";
 import AnalyzerFileTree from "./AnalyzerFileTree";
 import AnalyzerRedactorReport from "./AnalyzerRedactorReport";
-import { getSupportBundle } from "../../queries/TroubleshootQueries";
 import { Utilities } from "../../utilities/utilities";
 import "../../scss/components/troubleshoot/SupportBundleAnalysis.scss";
 import download from "downloadjs";
@@ -18,7 +16,9 @@ export class SupportBundleAnalysis extends React.Component {
     this.state = {
       activeTab: props.location.pathname.indexOf("/contents") !== -1 ? "fileTree" : location.pathname.indexOf("/redactor") !== -1 ? "redactorReport" : "bundleAnalysis",
       filterTiles: "0",
-      downloadingBundle: false
+      downloadingBundle: false,
+      bundle: null,
+      loading: false,
     };
   }
 
@@ -43,10 +43,37 @@ export class SupportBundleAnalysis extends React.Component {
       })
   }
 
+  getSupportBundle = async () => {
+    this.setState({ loading: true });
+
+    fetch(`${window.env.API_ENDPOINT}/troubleshoot/supportbundle/${this.props.match.params.bundleSlug}`, {
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": Utilities.getToken(),
+      },
+      method: "GET",
+    })
+      .then(async (res) => {
+        const bundle = await res.json();
+        this.setState({
+          bundle: bundle,
+          loading: false,
+        });
+      })
+      .catch((err) => {
+        console.log(err);
+        this.setState({ loading: false });
+      });
+  }
+
   toggleAnalysisAction = (active) => {
     this.setState({
       activeTab: active,
     });
+  }
+
+  componentDidMount() {
+    this.getSupportBundle();
   }
 
   componentDidUpdate = (lastProps) => {
@@ -59,10 +86,10 @@ export class SupportBundleAnalysis extends React.Component {
   }
 
   render() {
-    const { watch, getSupportBundle } = this.props;
-    const bundle = getSupportBundle?.getSupportBundle;
+    const { watch } = this.props;
+    const { bundle, loading } = this.state;
 
-    if (getSupportBundle.loading) {
+    if (loading) {
       return (
         <div className="flex-column flex1 justifyContent--center alignItems--center">
           <Loader size="60" />
@@ -104,7 +131,7 @@ export class SupportBundleAnalysis extends React.Component {
                   </div>
                 </div>
               </div>
-              {bundle.kotsLicenseType === "community" &&
+              {bundle.licenseType === "community" &&
                 <div className="flex">
                   <div className="CommunityLicenseBundle--wrapper flex flex1 alignItems--center">
                     <div className="flex flex-auto">
@@ -131,7 +158,7 @@ export class SupportBundleAnalysis extends React.Component {
                       <Route exact path={insightsUrl} render={() =>
                         <AnalyzerInsights
                           status={bundle.status}
-                          refetchSupportBundle={this.props.getSupportBundle.refetch}
+                          refetchSupportBundle={this.getSupportBundle}
                           insights={bundle.analysis?.insights}
                         />
                       } />
@@ -160,15 +187,4 @@ export class SupportBundleAnalysis extends React.Component {
   }
 }
 
-export default withRouter(compose(
-  withApollo,
-  graphql(getSupportBundle, {
-    name: "getSupportBundle",
-    options: ({ match }) => ({
-      variables: {
-        watchSlug: match.params.bundleSlug
-      },
-      fetchPolicy: "no-cache"
-    }),
-  })
-)(SupportBundleAnalysis));
+export default withRouter(SupportBundleAnalysis);
