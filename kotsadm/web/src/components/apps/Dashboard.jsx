@@ -12,7 +12,8 @@ import UpdateCheckerModal from "@src/components/modals/UpdateCheckerModal";
 import Modal from "react-modal";
 import { Repeater } from "../../utilities/repeater";
 import { Utilities } from "../../utilities/utilities";
-import { getAppLicense, getUpdateDownloadStatus } from "@src/queries/AppsQueries";
+import { getUpdateDownloadStatus } from "@src/queries/AppsQueries";
+import { setPrometheusAddress } from "@src/mutations/AppsMutations";
 
 import { XYPlot, XAxis, YAxis, HorizontalGridLines, VerticalGridLines, LineSeries, DiscreteColorLegend, Crosshair } from "react-vis";
 
@@ -110,20 +111,8 @@ class Dashboard extends Component {
 
   componentDidUpdate(lastProps) {
     const { app } = this.props;
-
     if (app !== lastProps.app && app) {
       this.setWatchState(app)
-    }
-
-    if (this.props.getAppLicense !== lastProps.getAppLicense && this.props.getAppLicense) {
-      if (this.props.getAppLicense?.getAppLicense === null) {
-        this.setState({ appLicense: {} });
-      } else {
-        const { getAppLicense } = this.props.getAppLicense;
-        if (getAppLicense) {
-          this.setState({ appLicense: getAppLicense });
-        }
-      }
     }
   }
 
@@ -147,18 +136,34 @@ class Dashboard extends Component {
     });
   }
 
+  getAppLicense = async () => {
+    await fetch(`${window.env.API_ENDPOINT}/app/${this.props.app.slug}/license`, {
+      method: "GET",
+      headers: {
+        "Authorization": Utilities.getToken(),
+        "Content-Type": "application/json",
+      }
+    }).then(async (res) => {
+      const body = await res.json();
+      if (body === null) {
+        this.setState({ appLicense: {} });
+      } else {
+        this.setState({ appLicense: body });
+      }
+    }).catch((err) => {
+      console.log(err)
+    });
+  }
+
   componentDidMount() {
     const { app } = this.props;
-    const { getAppLicense } = this.props.getAppLicense;
 
     this.state.updateChecker.start(this.updateStatus, 1000);
     this.state.getAppDashboardJob.start(this.getAppDashboard, 2000);
     this.getKotsApp()
+    this.getAppLicense();
     if (app) {
       this.setWatchState(app);
-    }
-    if (getAppLicense) {
-      this.setState({ appLicense: getAppLicense });
     }
   }
 
@@ -730,16 +735,9 @@ class Dashboard extends Component {
 export default compose(
   withApollo,
   withRouter,
-  graphql(getAppLicense, {
-    name: "getAppLicense",
-    options: ({ app }) => {
-      return {
-        variables: {
-          appId: app.id
-        },
-        fetchPolicy: "no-cache",
-        errorPolicy: "ignore"
-      };
-    }
+  graphql(setPrometheusAddress, {
+    props: ({ mutate }) => ({
+      setPrometheusAddress: (value) => mutate({ variables: { value } })
+    })
   }),
 )(Dashboard);
