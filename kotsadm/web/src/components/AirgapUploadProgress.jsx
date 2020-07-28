@@ -20,7 +20,7 @@ class AirgapUploadProgress extends React.Component {
 
   componentDidMount() {
     processingImages = null;
-    this.getAirgapInstallStatus();
+    this.state.getAirgapInstallStatusJob.start(this.getAirgapInstallStatus, 1000);
   }
 
   componentWillUnmount() {
@@ -105,8 +105,6 @@ class AirgapUploadProgress extends React.Component {
       );
     }
 
-    this.state.getAirgapInstallStatusJob.start(this.getAirgapInstallStatus, 1000);
-    
     let statusMsg = currentMessage;
     try {
       // Some of these messages will be JSON formatted progress reports.

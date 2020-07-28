@@ -446,3 +446,27 @@ func ResumeInstallOnline(w http.ResponseWriter, r *http.Request) {
 
 	JSON(w, 200, resumeInstallOnlineResponse)
 }
+
+func GetOnlineInstallStatus(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Headers", "content-type, origin, accept, authorization")
+
+	if r.Method == "OPTIONS" {
+		w.WriteHeader(200)
+		return
+	}
+
+	if err := requireValidSession(w, r); err != nil {
+		logger.Error(err)
+		return
+	}
+
+	status, err := online.GetInstallStatus()
+	if err != nil {
+		logger.Error(err)
+		w.WriteHeader(500)
+		return
+	}
+
+	JSON(w, 200, status)
+}
