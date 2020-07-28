@@ -1,14 +1,12 @@
 import * as React from "react";
 import Helmet from "react-helmet";
 import { withRouter, Link } from "react-router-dom";
-import { compose, withApollo, graphql } from "react-apollo";
 import Modal from "react-modal";
 
 import Loader from "../shared/Loader";
 import CodeSnippet from "@src/components/shared/CodeSnippet";
 import UploadSupportBundleModal from "../troubleshoot/UploadSupportBundleModal";
 import ConfigureRedactorsModal from "./ConfigureRedactorsModal";
-import { collectSupportBundle } from "../../mutations/TroubleshootMutations";
 import { Utilities } from "../../utilities/utilities";
 import { Repeater } from "../../utilities/repeater";
 
@@ -147,6 +145,7 @@ class GenerateSupportBundle extends React.Component {
 
   collectBundle = (clusterId) => {
     const { watch } = this.props;
+
     this.setState({
       isGeneratingBundle: true,
     });
@@ -155,11 +154,20 @@ class GenerateSupportBundle extends React.Component {
       bundle.id
     });
 
-    this.props.collectSupportBundle(watch.id, clusterId);
-
-    setTimeout(() => {
-      this.redirectOnNewBundle(currentBundles);
-    }, 1000);
+    fetch(`${window.env.API_ENDPOINT}/troubleshoot/supportbundle/app/${watch?.id}/cluster/${clusterId}/collect`, {
+      headers: {
+        "Authorization": Utilities.getToken(),
+        "Content-Type": "application/json",
+      },
+      method: "POST",
+    })
+      .then(() => {
+        this.redirectOnNewBundle(currentBundles);
+      })
+      .catch((err) => {
+        console.log(err);
+        this.setState({ isGeneratingBundle: false });
+      });
   }
 
   redirectOnNewBundle(currentBundles) {
@@ -275,11 +283,4 @@ class GenerateSupportBundle extends React.Component {
   }
 }
 
-export default withRouter(compose(
-  withApollo,
-  graphql(collectSupportBundle, {
-    props: ({ mutate }) => ({
-      collectSupportBundle: (appId, clusterId) => mutate({ variables: { appId, clusterId } })
-    })
-  }),
-)(GenerateSupportBundle));
+export default withRouter(GenerateSupportBundle);

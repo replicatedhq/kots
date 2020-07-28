@@ -73,6 +73,7 @@ func Start() {
 	r.Path("/api/v1/troubleshoot/supportbundle/{bundleId}/redactions").Methods("OPTIONS", "GET").HandlerFunc(handlers.GetSupportBundleRedactions)
 	r.Path("/api/v1/troubleshoot/supportbundle/{bundleId}/redactions").Methods("PUT").HandlerFunc(handlers.SetSupportBundleRedactions)
 	r.Path("/api/v1/troubleshoot/supportbundle/{bundleId}/download").Methods("OPTIONS", "GET").HandlerFunc(handlers.DownloadSupportBundle)
+	r.Path("/api/v1/troubleshoot/supportbundle/app/{appId}/cluster/{clusterId}/collect").Methods("OPTIONS", "POST").HandlerFunc(handlers.CollectSupportBundle)
 	r.Path("/api/v1/troubleshoot/analyzebundle/{bundleId}").Methods("POST").HandlerFunc(handlers.NodeProxy(upstream))
 
 	// redactor routes

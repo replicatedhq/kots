@@ -98,6 +98,20 @@ func Get(id string) (*types.SupportBundle, error) {
 	return s, nil
 }
 
+func Collect(appID string, clusterID string) error {
+	db := persistence.MustGetPGSession()
+	query := `insert into pending_supportbundle (id, app_id, cluster_id, created_at) values ($1, $2, $3, $4)`
+
+	id := ksuid.New().String()
+
+	_, err := db.Exec(query, id, appID, clusterID, time.Now())
+	if err != nil {
+		return errors.Wrap(err, "failed to insert support bundle")
+	}
+
+	return nil
+}
+
 func CreateBundle(requestedID string, appID string, archivePath string) (*types.SupportBundle, error) {
 	fi, err := os.Stat(archivePath)
 	if err != nil {
