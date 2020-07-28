@@ -2,6 +2,7 @@ package upstream
 
 import (
 	"bytes"
+	"encoding/base64"
 	"io/ioutil"
 	"os"
 	"path"
@@ -12,6 +13,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/upstream/types"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/serializer/json"
+	serializer "k8s.io/apimachinery/pkg/runtime/serializer/json"
 	"k8s.io/client-go/kubernetes/scheme"
 )
 
@@ -61,7 +63,13 @@ func WriteUpstream(u *types.Upstream, options types.WriteOptions) error {
 		prevInstallation = prevObj.(*kotsv1beta1.Installation)
 	}
 
-	for _, file := range u.Files {
+	encryptionKey, err := getEncryptionKey(prevInstallation)
+	if err != nil {
+		return errors.Wrap(err, "failed to get encryption key")
+	}
+	u.EncryptionKey = encryptionKey
+
+	for i, file := range u.Files {
 		fileRenderPath := path.Join(renderDir, file.Path)
 		d, _ := path.Split(fileRenderPath)
 		if _, err := os.Stat(d); os.IsNotExist(err) {
@@ -70,16 +78,21 @@ func WriteUpstream(u *types.Upstream, options types.WriteOptions) error {
 			}
 		}
 
+		if options.EncryptConfig {
+			configValues := contentToConfigValues(file.Content)
+			if configValues != nil {
+				content, err := encryptConfigValues(configValues, encryptionKey)
+				if err != nil {
+					return errors.Wrap(err, "encrypt config values")
+				}
+				file.Content = content
+				u.Files[i] = file
+			}
+		}
+
 		if err := ioutil.WriteFile(fileRenderPath, file.Content, 0644); err != nil {
 			return errors.Wrap(err, "failed to write upstream file")
 		}
-	}
-
-	// Write the installation status (update cursor, etc)
-	// but preserving the encryption key, if there already is one
-	encryptionKey, err := getEncryptionKey(prevInstallation)
-	if err != nil {
-		return errors.Wrap(err, "failed to get encryption key")
 	}
 
 	var channelName string
@@ -105,6 +118,7 @@ func WriteUpstream(u *types.Upstream, options types.WriteOptions) error {
 			EncryptionKey: encryptionKey,
 		},
 	}
+
 	if _, err := os.Stat(path.Join(renderDir, "userdata")); os.IsNotExist(err) {
 		if err := os.MkdirAll(path.Join(renderDir, "userdata"), 0755); err != nil {
 			return errors.Wrap(err, "failed to create userdata dir")
@@ -140,4 +154,30 @@ func mustMarshalInstallation(installation *kotsv1beta1.Installation) []byte {
 	}
 
 	return b.Bytes()
+}
+
+func encryptConfigValues(configValues *kotsv1beta1.ConfigValues, encryptionKey string) ([]byte, error) {
+	cipher, err := crypto.AESCipherFromString(encryptionKey)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to craete cipher")
+	}
+	for k, v := range configValues.Spec.Values {
+		if v.ValuePlaintext == "" {
+			continue
+		}
+
+		v.Value = base64.StdEncoding.EncodeToString(cipher.Encrypt([]byte(v.ValuePlaintext)))
+		v.ValuePlaintext = ""
+
+		configValues.Spec.Values[k] = v
+	}
+
+	s := serializer.NewYAMLSerializer(serializer.DefaultMetaFactory, scheme.Scheme, scheme.Scheme)
+
+	var b bytes.Buffer
+	if err := s.Encode(configValues, &b); err != nil {
+		return nil, errors.Wrap(err, "failed to encode config values")
+	}
+
+	return b.Bytes(), nil
 }

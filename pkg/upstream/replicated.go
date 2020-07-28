@@ -493,8 +493,12 @@ func createConfigValues(applicationName string, config *kotsv1beta1.Config, exis
 	var newValues kotsv1beta1.ConfigValuesSpec
 	if existingConfigValues != nil {
 		for k, v := range existingConfigValues.Spec.Values {
+			value := v.Value
+			if value == "" {
+				value = v.ValuePlaintext
+			}
 			templateContextValues[k] = template.ItemValue{
-				Value:   v.Value,
+				Value:   value,
 				Default: v.Default,
 			}
 		}
@@ -532,10 +536,11 @@ func createConfigValues(applicationName string, config *kotsv1beta1.Config, exis
 
 	for _, group := range config.Spec.Groups {
 		for _, item := range group.Items {
-			var foundValue string
+			var foundValue, foundValuePlaintext string
 			prevValue, ok := newValues.Values[item.Name]
-			if ok && prevValue.Value != "" {
+			if ok {
 				foundValue = prevValue.Value
+				foundValuePlaintext = prevValue.ValuePlaintext
 			}
 
 			renderedValue, err := builder.RenderTemplate(item.Name, item.Value.String())
@@ -548,10 +553,11 @@ func createConfigValues(applicationName string, config *kotsv1beta1.Config, exis
 				return nil, errors.Wrap(err, "failed to render config item default")
 			}
 
-			if foundValue != "" {
+			if foundValue != "" || foundValuePlaintext != "" {
 				newValues.Values[item.Name] = kotsv1beta1.ConfigValue{
-					Value:   foundValue,
-					Default: renderedDefault,
+					Value:          foundValue,
+					ValuePlaintext: foundValuePlaintext,
+					Default:        renderedDefault,
 				}
 			} else {
 				newValues.Values[item.Name] = kotsv1beta1.ConfigValue{
@@ -585,17 +591,21 @@ func findConfigValuesInFile(filename string) (*kotsv1beta1.ConfigValues, error) 
 		return nil, errors.Wrap(err, "failed to open file")
 	}
 
+	return contentToConfigValues(content), nil
+}
+
+func contentToConfigValues(content []byte) *kotsv1beta1.ConfigValues {
 	decode := scheme.Codecs.UniversalDeserializer().Decode
 	obj, gvk, err := decode(content, nil, nil)
 	if err != nil {
-		return nil, nil
+		return nil
 	}
 
 	if gvk.Group == "kots.io" && gvk.Version == "v1beta1" && gvk.Kind == "ConfigValues" {
-		return obj.(*kotsv1beta1.ConfigValues), nil
+		return obj.(*kotsv1beta1.ConfigValues)
 	}
 
-	return nil, nil
+	return nil
 }
 
 func findTemplateContextDataInRelease(release *Release) (*kotsv1beta1.Config, *kotsv1beta1.ConfigValues, *kotsv1beta1.License, *kotsv1beta1.Installation, error) {
