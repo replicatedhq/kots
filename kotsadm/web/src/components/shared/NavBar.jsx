@@ -2,11 +2,9 @@ import React, { PureComponent } from "react";
 import PropTypes from "prop-types";
 import classNames from "classnames";
 import { Link, withRouter } from "react-router-dom";
-import { compose, withApollo, graphql } from "react-apollo";
 
 import { Utilities } from "@src/utilities/utilities";
 import { listClusters } from "@src/queries/ClusterQueries";
-import { logout } from "@src/mutations/GitHubMutations";
 import Avatar from "../shared/Avatar";
 
 import "@src/scss/components/shared/NavBar.scss";
@@ -27,11 +25,20 @@ export class NavBar extends PureComponent {
 
   handleLogOut = async (e) => {
     e.preventDefault();
-    await this.props.logout()
-      .catch((err) => {
-        console.log(err);
-      })
-    Utilities.logoutUser();
+    try {
+      const res = await fetch(`${window.env.API_ENDPOINT}/logout`, {
+        headers: {
+          "Authorization": Utilities.getToken(),
+          "Content-Type": "application/json",
+        },
+        method: "POST",
+      });
+      if (res.ok && res.status === 204) {
+        Utilities.logoutUser();
+      }
+    } catch(err) {
+      console.log(err);
+    }
   }
 
   componentDidUpdate(lastProps) {
@@ -194,12 +201,4 @@ export class NavBar extends PureComponent {
   }
 }
 
-export default compose(
-  withRouter,
-  withApollo,
-  graphql(logout, {
-    props: ({ mutate }) => ({
-      logout: () => mutate()
-    })
-  }),
-)(NavBar);
+export default withRouter(NavBar);

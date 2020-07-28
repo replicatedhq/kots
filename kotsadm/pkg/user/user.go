@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"github.com/pkg/errors"
+	"github.com/replicatedhq/kots/kotsadm/pkg/persistence"
 	"golang.org/x/crypto/bcrypt"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
@@ -47,4 +48,16 @@ func LogIn(password string) (*User, error) {
 	return &User{
 		ID: "000000",
 	}, nil
+}
+
+func LogOut(id string) error {
+	db := persistence.MustGetPGSession()
+	query := `delete from session where id = $1`
+
+	_, err := db.Exec(query, id)
+	if err != nil {
+		return errors.Wrap(err, "failed to exec")
+	}
+
+	return nil
 }
