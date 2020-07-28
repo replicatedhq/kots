@@ -131,7 +131,7 @@ export class SupportBundleAnalysis extends React.Component {
                   </div>
                 </div>
               </div>
-              {bundle.licenseType === "community" &&
+              {watch.licenseType === "community" &&
                 <div className="flex">
                   <div className="CommunityLicenseBundle--wrapper flex flex1 alignItems--center">
                     <div className="flex flex-auto">
