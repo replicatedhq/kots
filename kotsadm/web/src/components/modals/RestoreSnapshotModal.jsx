@@ -3,7 +3,7 @@ import Modal from "react-modal";
 import { Utilities } from "../../utilities/utilities";
 
 export default function RestoreSnapshotModal(props) {
-  const { restoreSnapshotModal, toggleRestoreModal, appTitle, snapshotToRestore, handleRestoreSnapshot, restoringSnapshot, restoreErr, restoreErrorMsg } = props;
+  const { restoreSnapshotModal, toggleRestoreModal, snapshotToRestore, handleRestoreSnapshot, restoringSnapshot, restoreErr, restoreErrorMsg, app, appSlugToRestore, appSlugMismatch, handleApplicationSlugChange } = props;
 
   return (
     <Modal
@@ -12,7 +12,7 @@ export default function RestoreSnapshotModal(props) {
       onRequestClose={() => { toggleRestoreModal({}); }}
       ariaHideApp={false}
       contentLabel="Modal"
-      className="Modal LargeSize"
+      className="Modal MediumSize"
     >
       <div className="Modal-body">
         <div className="flex flex-column">
@@ -23,19 +23,26 @@ export default function RestoreSnapshotModal(props) {
             <p className="u-color--chestnut u-fontSize--small u-fontWeight--medium u-lineHeight--normal">{restoreErrorMsg}</p>
             : null}
           <p className="u-fontSize--normal u-fontWeight--normal u-color--dustyGray u-lineHeight--normal">
-            Are you sure you want to restore {appTitle} to the following version?
+            Are you sure you want to restore {app?.name} to the following version?
       </p>
           <div className="flex flex1 justifyContent--spaceBetween u-marginTop--20">
             <div className="flex flex-column">
               <p className="u-fontSize--normal u-fontWeight--bold u-color--tuna u-lineHeight--normal">{snapshotToRestore?.name}</p>
-              <p className="u-fontSize--normal u-color--doveGray u-fontWeight--bold u-lineHeight--normal u-marginRight--20"><span className="u-fontWeight--normal u-color--dustyGray">Captured on:</span> {Utilities.dateFormat(snapshotToRestore?.startedAt, "MMM D, YYYY h:mm A")}</p>
-            </div>
-            <div className="flex alignItems--center">
-              <span className={`status-indicator ${snapshotToRestore?.status.toLowerCase()}`}>{snapshotToRestore?.status}</span>
+              <p className="u-fontSize--normal u-color--doveGray u-fontWeight--bold u-lineHeight--normal u-marginRight--20"><span className="u-fontWeight--normal u-color--dustyGray">Captured on:</span> {Utilities.dateFormat(snapshotToRestore?.startedAt, "MM/DD/YY @ hh:mm a")}</p>
             </div>
           </div>
           <div className="flex flex1 u-marginTop--20">
-            <p className="u-fontSize--normal u-fontWeight--normal u-color--dustyGray u-lineHeight--normal"> Restoring to this version will remove all of the data in the {appTitle} namespace and will replace it with the data from the restored version. During the restoration your application will not be available and you will not be able to use the admin console. This action cannot be reversed.</p>
+            <p className="u-fontSize--normal u-fontWeight--normal u-color--dustyGray u-lineHeight--normal"> Restoring to this version will remove data and replace it with data from the restored version. During the restoration, your application will not be available and you will not be able to use the admin console. This action cannot be reversed. </p>
+          </div>
+          <div className="flex flex-column u-marginTop--20">
+            <p className="u-fontSize--normal u-fontWeight--bold u-color--tuna u-lineHeight--normal"> Type your application slug to continue </p>
+            {appSlugMismatch ?
+              <p className="u-color--chestnut u-fontSize--small u-fontWeight--medium u-lineHeight--normal">The app slug you entered does not match the current app slug</p>
+              : null}
+            <div className="u-marginTop--12 flex flex1">
+              <span className="slugArrow flex justifyContent--center alignItems--center"> {app?.slug} </span>
+              <input type="text" className="Input u-position--relative" style={{ textIndent: "200px", width: "70%"}} placeholder="type your slug" value={appSlugToRestore} onChange={(e) => { handleApplicationSlugChange(e) }} />
+            </div>
           </div>
           <div className="flex justifyContent--flexStart u-marginTop--20">
             <button

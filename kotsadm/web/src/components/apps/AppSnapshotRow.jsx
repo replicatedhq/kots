@@ -32,8 +32,8 @@ class AppShanpshotRow extends React.Component {
           </div>
           <div className="flex flex-auto alignItems--center u-marginTop--5">
             <div className="flex flex1 alignItems--center">
-              <p className="u-fontSize--normal u-color--doveGray u-fontWeight--bold u-lineHeight--normal u-marginRight--20"><span className="u-fontWeight--normal u-color--dustyGray">Started:</span> {Utilities.dateFormat(snapshot?.startedAt, "MMM D, YYYY h:mm A")}</p>
-              <p className="u-fontSize--normal u-color--doveGray u-fontWeight--bold u-lineHeight--normal u-marginRight--20"><span className="u-fontWeight--normal u-color--dustyGray">Finished:</span> {snapshot?.finishedAt ? Utilities.dateFormat(snapshot?.finishedAt, "MMM D, YYYY h:mm A") : "TBD"}</p>
+              <p className="u-fontSize--normal u-color--doveGray u-fontWeight--bold u-lineHeight--normal u-marginRight--20"><span className="u-fontWeight--normal u-color--dustyGray">Started:</span> {Utilities.dateFormat(snapshot?.startedAt, "MM/DD/YY @ hh:mm a")}</p>
+              <p className="u-fontSize--normal u-color--doveGray u-fontWeight--bold u-lineHeight--normal u-marginRight--20"><span className="u-fontWeight--normal u-color--dustyGray">Finished:</span> {snapshot?.finishedAt ? Utilities.dateFormat(snapshot?.finishedAt, "MM/DD/YY @ hh:mm a") : "TBD"}</p>
               <div className="flex alignItems--center">
                 <span className={`status-indicator ${snapshot?.status.toLowerCase()}`}>{Utilities.snapshotStatusToDisplayName(snapshot?.status)}</span>
                 <Link className={`replicated-link u-marginLeft--5 u-fontSize--small ${snapshot?.supportBundleId ? "" : "u-display--none"}`} to={`/app/${appSlug}/troubleshoot/analyze/${snapshot?.supportBundleId}`}>Troubleshoot</Link>
