@@ -61,7 +61,8 @@ class AppVersionHistory extends Component {
     showUpdateCheckerModal: false,
     displayShowDetailsModal: false,
     yamlErrorDetails: [],
-    deployView: false
+    deployView: false,
+    selectedSequence: ""
   }
 
   componentDidMount() {
@@ -140,11 +141,20 @@ class AppVersionHistory extends Component {
     );
   }
 
+  renderYamlErrors = (yamlErrorsDetails, version) => {
+    return (
+      <div className="flex flex1 alignItems--center u-marginLeft--10">
+        <span className="icon error-small" />
+        <span className="u-fontSize--small u-fontWeight--medium u-lineHeight--normal u-marginLeft--5 u-color--red">{yamlErrorsDetails?.length} Invalid files </span>
+        <span className="replicated-link u-marginLeft--5 u-fontSize--small" onClick={() => this.toggleShowDetailsModal(yamlErrorsDetails, version.sequence)}> See details </span>
+      </div>
+    )
+  }
+
   renderSourceAndDiff = version => {
     const { app } = this.props;
     const downstream = app.downstreams?.length && app.downstreams[0];
     const diffSummary = this.getVersionDiffSummary(version);
-    const yamlErrorsDetails = this.yamlErrorsDetails(downstream, version);
 
     return (
       <div>
@@ -166,28 +176,12 @@ class AppVersionHistory extends Component {
               <span className="lines-added">+{diffSummary.linesAdded} </span>
               <span className="lines-removed">-{diffSummary.linesRemoved}</span>
             </div>
-            : yamlErrorsDetails ?
-              <div className="flex flex1 alignItems--center">
-                <div className="DiffSummary">
-                  <span className="files">No changes</span>
-                </div>
-                <div className="flex flex1 alignItems--center u-marginLeft--10">
-                  <span className="icon error-small" />
-                  <span className="u-fontSize--small u-fontWeight--medium u-lineHeight--normal u-marginLeft--5 u-color--red">{yamlErrorsDetails?.length} Invalid files </span>
-                  <span className="replicated-link u-marginLeft--5 u-fontSize--small" onClick={() => this.toggleShowDetailsModal(yamlErrorsDetails)}> See details </span>
-                </div>
-              </div>
-              :
-              <div className="DiffSummary">
-                <span className="files">No changes</span>
-              </div>
-          ) : yamlErrorsDetails ?
-            <div className="flex flex1 alignItems--center">
-              <span className="icon error-small" />
-              <span className="u-fontSize--small u-fontWeight--medium u-lineHeight--normal u-marginLeft--5 u-color--red">{yamlErrorsDetails?.length} Invalid files </span>
-              <span className="replicated-link u-marginLeft--5 u-fontSize--small" onClick={() => this.toggleShowDetailsModal(yamlErrorsDetails)}> See details </span>
+            :
+            <div className="DiffSummary">
+              <span className="files">No changes</span>
             </div>
-            : <span>&nbsp;</span>}
+          )
+          : <span>&nbsp;</span>}
       </div>
     );
   }
@@ -396,10 +390,10 @@ class AppVersionHistory extends Component {
 
     if (!force) {
       if (yamlErrorDetails) {
-        this.setState({ 
+        this.setState({
           displayShowDetailsModal: !this.state.displayShowDetailsModal,
-          deployView: true, 
-          yamlErrorDetails 
+          deployView: true,
+          yamlErrorDetails
         });
       }
       if (version.status === "pending_preflight") {
@@ -774,8 +768,8 @@ class AppVersionHistory extends Component {
     }
   }
 
-  toggleShowDetailsModal = (yamlErrorDetails) => {
-    this.setState({ displayShowDetailsModal: !this.state.displayShowDetailsModal, deployView:false, yamlErrorDetails });
+  toggleShowDetailsModal = (yamlErrorDetails, selectedSequence) => {
+    this.setState({ displayShowDetailsModal: !this.state.displayShowDetailsModal, deployView: false, yamlErrorDetails, selectedSequence });
   }
 
   render() {
@@ -886,6 +880,7 @@ class AppVersionHistory extends Component {
     const gitopsEnabled = downstream.gitops?.enabled;
     const currentDownstreamVersion = downstream?.currentVersion;
     const versionHistory = data?.getKotsDownstreamHistory?.length ? data.getKotsDownstreamHistory : [];
+    const yamlErrorsDetails = this.yamlErrorsDetails(downstream, currentDownstreamVersion);
 
     if (isAwaitingResults(versionHistory)) {
       data?.startPolling(2000);
@@ -974,7 +969,10 @@ class AppVersionHistory extends Component {
                     <div className="flex-column flex1">
                       <div>
                         <p className="u-fontSize--normal u-color--dustyGray">Source: <span className="u-fontWeight--bold u-color--tuna">{currentDownstreamVersion.source}</span></p>
-                        <div className="u-fontSize--small u-marginTop--10 u-color--dustyGray">{this.renderSourceAndDiff(currentDownstreamVersion)}</div>
+                        <div className="flex alignItems--center u-fontSize--small u-marginTop--10 u-color--dustyGray">
+                          {this.renderSourceAndDiff(currentDownstreamVersion)}
+                          {yamlErrorsDetails && this.renderYamlErrors(yamlErrorsDetails, currentDownstreamVersion)}
+                        </div>
                       </div>
                       <div className="flex flex1 u-fontSize--normal u-color--dustyGray u-marginTop--15 alignItems--center">Status:<span className="u-marginLeft--5">{gitopsEnabled ? this.renderViewPreflights(currentDownstreamVersion) : this.renderVersionStatus(currentDownstreamVersion)}</span></div>
                     </div>
@@ -1000,6 +998,7 @@ class AppVersionHistory extends Component {
                     const isChecked = !!checkedReleasesToDiff.find(diffRelease => diffRelease.parentSequence === version.parentSequence);
                     const isNew = secondsAgo(version.createdOn) < 10;
                     const nothingToCommit = gitopsEnabled && !version.commitUrl;
+                    const yamlErrorsDetails = this.yamlErrorsDetails(downstream, version);
                     return (
                       <div
                         key={version.sequence}
@@ -1020,7 +1019,10 @@ class AppVersionHistory extends Component {
                         <div className={`${nothingToCommit && selectedDiffReleases && "u-opacity--half"} flex-column flex1`}>
                           <div>
                             <p className="u-fontSize--normal u-color--dustyGray">Source: <span className="u-fontWeight--bold u-color--tuna">{version.source}</span></p>
-                            <div className="u-fontSize--small u-marginTop--10 u-color--dustyGray">{this.renderSourceAndDiff(version)}</div>
+                            <div className="flex alignItems--center u-fontSize--small u-marginTop--10 u-color--dustyGray">
+                              {this.renderSourceAndDiff(version)}
+                              {yamlErrorsDetails && this.renderYamlErrors(yamlErrorsDetails, version)}
+                              </div>
                           </div>
                           <div className="flex flex1 u-fontSize--normal u-color--dustyGray u-marginTop--15 alignItems--center">Status: <span className="u-marginLeft--5">{gitopsEnabled ? this.renderViewPreflights(version) : this.renderVersionStatus(version)}</span></div>
                         </div>
@@ -1229,6 +1231,8 @@ class AppVersionHistory extends Component {
             forceDeploy={this.onForceDeployClick}
             showDeployWarningModal={this.state.showDeployWarningModal}
             showSkipModal={this.state.showSkipModal}
+            slug={this.props.match.params.slug}
+            sequence={this.state.selectedSequence}
           />}
       </div>
     );

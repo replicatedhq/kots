@@ -37,6 +37,9 @@ class KotsApplicationTree extends React.Component {
       const files = res?.files || {};
       const paths = keys(files);
       const applicationTree = Utilities.arrangeIntoApplicationTree(paths);
+      if (this.props.history.location.search) {
+        this.setState({ selectedFile: `/skippedFiles/${this.props.history.location.search.slice(1)}`})
+      }
       this.setState({
         files,
         applicationTree,
@@ -65,7 +68,7 @@ class KotsApplicationTree extends React.Component {
 
   setSelectedFile = (path) => {
     this.setState({
-      selectedFile: path,
+      selectedFile: path
     });
   }
 
@@ -77,7 +80,6 @@ class KotsApplicationTree extends React.Component {
     const { displayInstructionsModal, files, applicationTree, selectedFile } = this.state;
 
     const contents = files[selectedFile] ? new Buffer(files[selectedFile], "base64").toString() : "";
-    const topLevelPaths = applicationTree.map(f => f.path);
 
     return (
       <div className="flex-column flex1 ApplicationTree--wrapper container u-paddingTop--50 u-paddingBottom--30">
@@ -92,8 +94,6 @@ class KotsApplicationTree extends React.Component {
               <FileTree
                 files={applicationTree}
                 isRoot={true}
-                keepOpenPaths={["overlays", "base"]}
-                topLevelPaths={topLevelPaths}
                 handleFileSelect={this.setSelectedFile}
                 selectedFile={this.state.selectedFile}
               />

@@ -25,45 +25,12 @@ export default class FileTree extends React.Component {
   arePathsSame = (path1, path2) => {
     const newPath1 = rootPath(path1);
     const newPath2 = rootPath(path2);
-    return newPath1.split(/\//).slice(1, 2+this.getLevel()).join("/") === newPath2.split(/\//).slice(1, 2+this.getLevel()).join("/")
-  }
-
-  componentDidUpdate(lastProps) {
-    const { isRoot, topLevelPaths, keepOpenPaths = [] } = this.props;
-    const { initialOpenComplete } = this.state;
-
-    if (isRoot && !initialOpenComplete && topLevelPaths && topLevelPaths !== lastProps.topLevelPaths) {
-      const defaultSelected = topLevelPaths.reduce((current, path) => {
-        let expand = true;
-        if (keepOpenPaths?.length) {
-          for (let i = 0; i < keepOpenPaths.length; i++) {
-            const str = keepOpenPaths[i];
-            expand = path.startsWith(str);
-            if (expand) {
-              break;
-            }
-          }
-        }
-        current[path] = expand;
-        return current;
-      }, {});
-
-      let didInitialOpen = false;
-
-      // The root folder(s) have already set themselves to be open.
-      // Do not open root level folders anymore.
-      if (Object.keys(defaultSelected).length) {
-        didInitialOpen = true;
-      }
-      this.setState({
-        selected: defaultSelected,
-        initialOpenComplete: didInitialOpen
-      });
-    }
+    return newPath1.split(/\//).slice(1, 2 + this.getLevel()).join("/") === newPath2.split(/\//).slice(1, 2 + this.getLevel()).join("/")
   }
 
   render() {
     const { files, selectedFile, handleFileSelect, isRoot } = this.props;
+
     return (
       <ul className={`${isRoot ? "FileTree-wrapper" : "u-marginLeft--10"}`}>
         {files && files.map((file, i) => (

@@ -1,8 +1,9 @@
 import React from "react";
 import Modal from "react-modal";
+import { Link } from "react-router-dom";
 
 export default function ShowDetailsModal(props) {
-  const { displayShowDetailsModal, toggleShowDetailsModal, yamlErrorDetails, deployView, showDeployWarningModal, showSkipModal, forceDeploy } = props;
+  const { displayShowDetailsModal, toggleShowDetailsModal, yamlErrorDetails, deployView, showDeployWarningModal, showSkipModal, forceDeploy, slug, sequence } = props;
 
   return (
     <Modal
@@ -27,7 +28,10 @@ export default function ShowDetailsModal(props) {
                   <span className="icon invalid-yaml-icon" />
                 </div>
                 <div className="flex flex-column u-marginLeft--10">
-                  <span className="u-fontSize--large u-fontWeight--bold u-color--tuna u-lineHeight--normal"> {err.path} </span>
+                  <div className="flex flex1 alignItems--center">
+                    <span className="u-fontSize--large u-fontWeight--bold u-color--tuna u-lineHeight--normal"> {err.path} </span>
+                    <Link to={`/app/${slug}/tree/${sequence}?${err.path}`}className="replicated-link u-marginLeft--5  u-marginTop--5 u-fontSize--small"> View </Link>
+                  </div>
                   <span className="u-fontSize--small u-fontWeight--medium u-color--red u-lineHeight--normal"> error: {err.error} </span>
                 </div>
               </div>
