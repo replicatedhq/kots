@@ -298,6 +298,36 @@ func DownloadSupportBundle(w http.ResponseWriter, r *http.Request) {
 	io.Copy(w, f)
 }
 
+func CollectSupportBundle(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Headers", "content-type, origin, accept, authorization")
+
+	if r.Method == "OPTIONS" {
+		w.WriteHeader(200)
+		return
+	}
+
+	if err := requireValidSession(w, r); err != nil {
+		logger.Error(err)
+		return
+	}
+
+	a, err := app.Get(mux.Vars(r)["appId"])
+	if err != nil {
+		logger.Error(err)
+		w.WriteHeader(500)
+		return
+	}
+
+	if err := supportbundle.Collect(a.ID, mux.Vars(r)["clusterId"]); err != nil {
+		logger.Error(err)
+		w.WriteHeader(500)
+		return
+	}
+
+	JSON(w, 204, "")
+}
+
 func UploadSupportBundle(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Access-Control-Allow-Headers", "content-type, origin, accept, authorization")
