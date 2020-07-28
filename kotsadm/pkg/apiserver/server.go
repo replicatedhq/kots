@@ -116,6 +116,7 @@ func Start() {
 	r.Path("/api/v1/imagerewritestatus").Methods("OPTIONS", "GET").HandlerFunc(handlers.GetImageRewriteStatus)
 
 	r.Path("/api/v1/metadata").Methods("OPTIONS", "GET").HandlerFunc(handlers.Metadata)
+	r.Path("/api/v1/app/online/status").Methods("OPTIONS", "GET").HandlerFunc(handlers.GetOnlineInstallStatus)
 	r.Path("/api/v1/app/{appSlug}/registry").Methods("OPTIONS", "PUT").HandlerFunc(handlers.UpdateAppRegistry)
 	r.Path("/api/v1/app/{appSlug}/registry").Methods("OPTIONS", "GET").HandlerFunc(handlers.GetAppRegistry)
 	r.Path("/api/v1/app/{appSlug}/registry/validate").Methods("OPTIONS", "POST").HandlerFunc(handlers.ValidateAppRegistry)

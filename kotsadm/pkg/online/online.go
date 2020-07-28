@@ -3,6 +3,7 @@ package online
 import (
 	"bufio"
 	"context"
+	"database/sql"
 	"io"
 	"io/ioutil"
 	"os"
@@ -30,6 +31,34 @@ type PendingApp struct {
 	Slug        string
 	Name        string
 	LicenseData string
+}
+
+type InstallStatus struct {
+	InstallStatus  string `json:"installStatus"`
+	CurrentMessage string `json:"currentMessage"`
+}
+
+func GetInstallStatus() (*InstallStatus, error) {
+	db := persistence.MustGetPGSession()
+	query := `SELECT install_state from app ORDER BY created_at DESC LIMIT 1`
+	row := db.QueryRow(query)
+
+	var installState sql.NullString
+	if err := row.Scan(&installState); err != nil {
+		return nil, errors.Wrap(err, "failed to scan")
+	}
+
+	_, message, err := task.GetTaskStatus("online-install")
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get task status")
+	}
+
+	status := &InstallStatus{
+		InstallStatus:  installState.String,
+		CurrentMessage: message,
+	}
+
+	return status, nil
 }
 
 func CreateAppFromOnline(pendingApp *PendingApp, upstreamURI string, isAutomated bool) (_ *kotsutil.KotsKinds, finalError error) {
