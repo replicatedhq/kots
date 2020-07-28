@@ -36,7 +36,9 @@ type WriteOptions struct {
 	// and should be false when it's an upstream update.
 	// When true, the channel name in Installation yaml will not be changed.
 	PreserveInstallation bool
-	SharedPassword       string
+	// Set to true on initial installation when an unencrypted config file is provided
+	EncryptConfig  bool
+	SharedPassword string
 }
 
 func (u *Upstream) GetUpstreamDir(options WriteOptions) string {

@@ -131,12 +131,14 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 		fetchOptions.License = localLicense
 	}
 
+	encryptConfig := false
 	if pullOptions.ConfigFile != "" {
 		config, err := ParseConfigValuesFromFile(pullOptions.ConfigFile)
 		if err != nil {
 			return "", errors.Wrap(err, "failed to parse config values from file")
 		}
 		fetchOptions.ConfigValues = config
+		encryptConfig = true
 	} else {
 		fetchOptions.ConfigValues = localConfigValues
 	}
@@ -206,6 +208,7 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 		CreateAppDir:        pullOptions.CreateAppDir,
 		IncludeAdminConsole: includeAdminConsole,
 		SharedPassword:      pullOptions.SharedPassword,
+		EncryptConfig:       encryptConfig,
 	}
 	if err := upstream.WriteUpstream(u, writeUpstreamOptions); err != nil {
 		log.FinishSpinnerWithError()
