@@ -1,7 +1,6 @@
 import * as React from "react";
 import Helmet from "react-helmet";
 import { withRouter, Link } from "react-router-dom";
-import { compose, withApollo, graphql } from "react-apollo";
 import Modal from "react-modal";
 
 import Loader from "../shared/Loader";
