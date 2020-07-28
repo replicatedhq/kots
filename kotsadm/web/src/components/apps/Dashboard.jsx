@@ -79,7 +79,7 @@ class Dashboard extends Component {
       body: JSON.stringify({
         value: this.state.promValue,
       }),
-      method: "PUT",
+      method: "POST",
     })
       .then(async () => {
         await this.getAppDashboard();
