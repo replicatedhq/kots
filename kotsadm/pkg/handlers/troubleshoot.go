@@ -39,6 +39,21 @@ import (
 	"k8s.io/client-go/kubernetes/scheme"
 )
 
+type GetSupportBundleResponse struct {
+	ID          string                       `json:"id"`
+	Slug        string                       `json:"slug"`
+	AppID       string                       `json:"appId"`
+	Name        string                       `json:"name"`
+	Size        float64                      `json:"size"`
+	Status      string                       `json:"status"`
+	TreeIndex   string                       `json:"treeIndex"`
+	CreatedAt   time.Time                    `json:"createdAt"`
+	UploadedAt  *time.Time                   `json:"uploadedAt"`
+	IsArchived  bool                         `json:"isArchived"`
+	LicenseType string                       `json:"licenseType,omitempty"`
+	Analysis    *types.SupportBundleAnalysis `json:"analysis"`
+}
+
 type GetSupportBundleFilesResponse struct {
 	Files map[string][]byte `json:"files"`
 
@@ -72,6 +87,65 @@ type GetSupportBundleRedactionsResponse struct {
 
 type PutSupportBundleRedactions struct {
 	Redactions redact2.RedactionList `json:"redactions"`
+}
+
+func GetSupportBundle(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Headers", "content-type, origin, accept, authorization")
+
+	if r.Method == "OPTIONS" {
+		w.WriteHeader(200)
+		return
+	}
+
+	sess, err := session.Parse(r.Header.Get("Authorization"))
+	if err != nil {
+		logger.Error(err)
+		w.WriteHeader(401)
+		return
+	}
+
+	// we don't currently have roles, all valid tokens are valid sessions
+	if sess == nil || sess.ID == "" {
+		w.WriteHeader(401)
+		return
+	}
+
+	bundleSlug := mux.Vars(r)["bundleSlug"]
+
+	bundle, err := supportbundle.GetFromSlug(bundleSlug)
+	if err != nil {
+		logger.Error(err)
+		w.WriteHeader(500)
+		return
+	}
+
+	licenseType, err := supportbundle.GetLicenseType(bundle.ID)
+	if err != nil {
+		logger.Error(errors.Wrapf(err, "failed to get license type for bundle %s", bundle.Slug))
+	}
+
+	analysis, err := supportbundle.GetBundleAnalysis(bundle.ID)
+	if err != nil {
+		logger.Error(errors.Wrapf(err, "failed to get analysis for bundle %s", bundle.Slug))
+	}
+
+	getSupportBundleResponse := GetSupportBundleResponse{
+		ID:          bundle.ID,
+		Slug:        bundle.Slug,
+		AppID:       bundle.AppID,
+		Name:        bundle.Name,
+		Size:        bundle.Size,
+		Status:      bundle.Status,
+		TreeIndex:   bundle.TreeIndex,
+		CreatedAt:   bundle.CreatedAt,
+		UploadedAt:  bundle.UploadedAt,
+		IsArchived:  bundle.IsArchived,
+		LicenseType: licenseType,
+		Analysis:    analysis,
+	}
+
+	JSON(w, 200, getSupportBundleResponse)
 }
 
 func GetSupportBundleFiles(w http.ResponseWriter, r *http.Request) {

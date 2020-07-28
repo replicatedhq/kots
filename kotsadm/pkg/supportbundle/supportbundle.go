@@ -21,6 +21,7 @@ import (
 
 func List(appID string) ([]*types.SupportBundle, error) {
 	db := persistence.MustGetPGSession()
+	// DANGER ZONE: changing sort order here affects what support bundle is shown in the analysis view.
 	query := `select id, slug, watch_id, name, size, status, created_at, uploaded_at, is_archived from supportbundle where watch_id = $1 order by created_at desc`
 
 	rows, err := db.Query(query, appID)
@@ -53,6 +54,50 @@ func List(appID string) ([]*types.SupportBundle, error) {
 	}
 
 	return supportBundles, nil
+}
+
+func GetFromSlug(slug string) (*types.SupportBundle, error) {
+	db := persistence.MustGetPGSession()
+	query := `select id from supportbundle where slug = $1`
+	row := db.QueryRow(query, slug)
+
+	id := ""
+	if err := row.Scan(&id); err != nil {
+		if err == sql.ErrNoRows {
+			return nil, nil
+		}
+		return nil, errors.Wrap(err, "failed to scan id")
+	}
+
+	return Get(id)
+}
+
+func Get(id string) (*types.SupportBundle, error) {
+	db := persistence.MustGetPGSession()
+	query := `select id, slug, watch_id, name, size, status, tree_index, created_at, uploaded_at, is_archived from supportbundle where slug = $1`
+	row := db.QueryRow(query, id)
+
+	var name sql.NullString
+	var size sql.NullFloat64
+	var treeIndex sql.NullString
+	var uploadedAt sql.NullTime
+	var isArchived sql.NullBool
+
+	s := &types.SupportBundle{}
+	if err := row.Scan(&s.ID, &s.Slug, &s.AppID, &name, &size, &s.Status, &treeIndex, &s.CreatedAt, &uploadedAt, &isArchived); err != nil {
+		return nil, errors.Wrap(err, "failed to scan")
+	}
+
+	s.Name = name.String
+	s.Size = size.Float64
+	s.TreeIndex = treeIndex.String
+	s.IsArchived = isArchived.Bool
+
+	if uploadedAt.Valid {
+		s.UploadedAt = &uploadedAt.Time
+	}
+
+	return s, nil
 }
 
 func CreateBundle(requestedID string, appID string, archivePath string) (*types.SupportBundle, error) {

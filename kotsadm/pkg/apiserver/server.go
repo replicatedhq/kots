@@ -66,6 +66,7 @@ func Start() {
 	// Support Bundles
 	r.Path("/api/v1/troubleshoot").Methods("OPTIONS", "GET").HandlerFunc(handlers.GetDefaultTroubleshoot)
 	r.Path("/api/v1/troubleshoot/{appSlug}").Methods("OPTIONS", "GET").HandlerFunc(handlers.GetTroubleshoot)
+	r.Path("/api/v1/troubleshoot/supportbundle/{bundleSlug}").Methods("OPTIONS", "GET").HandlerFunc(handlers.GetSupportBundle)
 	r.Path("/api/v1/troubleshoot/{appId}/{bundleId}").Methods("OPTIONS", "PUT").HandlerFunc(handlers.UploadSupportBundle)
 	r.Path("/api/v1/troubleshoot/app/{appSlug}/supportbundles").Methods("OPTIONS", "GET").HandlerFunc(handlers.ListSupportBundles)
 	r.Path("/api/v1/troubleshoot/supportbundle/{bundleId}/files").Methods("OPTIONS", "GET").HandlerFunc(handlers.GetSupportBundleFiles)

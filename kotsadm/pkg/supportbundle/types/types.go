@@ -11,6 +11,7 @@ type SupportBundle struct {
 	Name       string     `json:"name"`
 	Size       float64    `json:"size"`
 	Status     string     `json:"status"`
+	TreeIndex  string     `json:"treeIndex,omitempty"`
 	CreatedAt  time.Time  `json:"createdAt"`
 	UploadedAt *time.Time `json:"uploadedAt"`
 	IsArchived bool       `json:"isArchived"`
