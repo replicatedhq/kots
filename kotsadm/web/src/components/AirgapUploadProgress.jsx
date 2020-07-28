@@ -1,26 +1,61 @@
 import React from "react"
 import { withRouter } from "react-router-dom";
-import { compose, withApollo, graphql } from "react-apollo";
 import Loader from "./shared/Loader";
-import { getAirgapInstallStatus } from "../queries/AppsQueries";
-import { formatByteSize, calculateTimeDifference } from "@src/utilities/utilities";
+import { formatByteSize, calculateTimeDifference, Utilities } from "@src/utilities/utilities";
+import { Repeater } from "@src/utilities/repeater";
 import "@src/scss/components/AirgapUploadProgress.scss";
 import get from "lodash/get";
 let processingImages = null;
 
 class AirgapUploadProgress extends React.Component {
+  constructor(props) {
+    super(props);
+
+    this.state = {
+      installStatus: "",
+      currentMessage: "",
+      getAirgapInstallStatusJob: new Repeater(),
+    };
+  }
+
   componentDidMount() {
     processingImages = null;
+    this.getAirgapInstallStatus();
+  }
+
+  componentWillUnmount() {
+    this.state.getAirgapInstallStatusJob.stop();
+  }
+
+  getAirgapInstallStatus = async () => {
+    try {
+      const res = await fetch(`${window.env.API_ENDPOINT}/app/airgap/status`, {
+        headers: {
+          "Authorization": Utilities.getToken(),
+          "Content-Type": "application/json",
+        },
+        method: "GET",
+      });
+
+      const response = await res.json();
+      
+      this.setState({
+        installStatus: response.installStatus,
+        currentMessage: response.currentMessage,
+      });
+    } catch(err) {
+      console.log(err);
+    }
   }
   
   render() {
     const { total, sent, onProgressError, onProgressSuccess, smallSize } = this.props;
-    const { getAirgapInstallStatus } = this.props.data;
+    const { installStatus, currentMessage } = this.state;
 
-    if (getAirgapInstallStatus?.installStatus === "installed") {
+    if (installStatus === "installed") {
       // this conditional is really awkward but im keeping the functionality the same
       if (!smallSize) {
-        this.props.data?.stopPolling();
+        this.state.getAirgapInstallStatusJob.stop();
       }
       if (onProgressSuccess) {
         onProgressSuccess();
@@ -30,11 +65,11 @@ class AirgapUploadProgress extends React.Component {
       }
     }
 
-    const hasError = getAirgapInstallStatus?.installStatus === "airgap_upload_error";
+    const hasError = installStatus === "airgap_upload_error";
 
     if (hasError) {
-      this.props.data?.stopPolling();
-      onProgressError(getAirgapInstallStatus?.currentMessage);
+      this.state.getAirgapInstallStatusJob.stop();
+      onProgressError(currentMessage);
       return null;
     }
 
@@ -70,9 +105,9 @@ class AirgapUploadProgress extends React.Component {
       );
     }
 
-    this.props.data?.startPolling(1000);
+    this.state.getAirgapInstallStatusJob.start(this.getAirgapInstallStatus, 1000);
     
-    let statusMsg = getAirgapInstallStatus?.currentMessage;
+    let statusMsg = currentMessage;
     try {
       // Some of these messages will be JSON formatted progress reports.
       const jsonMessage = JSON.parse(statusMsg);
@@ -186,14 +221,4 @@ AirgapUploadProgress.defaultProps = {
   sent: 0
 };
 
-export default compose(
-  withRouter,
-  withApollo,
-  graphql(getAirgapInstallStatus, {
-    options: () => {
-      return {
-        fetchPolicy: "network-only"
-      };
-    }
-  })
-)(AirgapUploadProgress);
+export default withRouter(AirgapUploadProgress);

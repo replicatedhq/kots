@@ -4,6 +4,9 @@ export class Repeater {
     }
 
     start = (handlerFunc, sleepMs) => {
+        if (this.isRunning()) {
+            return;
+        }
         this.handlerFunc = handlerFunc;
         this.sleepMs = sleepMs;
         this.doNotRun = false;
@@ -12,6 +15,10 @@ export class Repeater {
 
     stop = () => {
         this.doNotRun = true;
+    }
+
+    isRunning = () => {
+        return !this.doNotRun;
     }
 
     repeat = () => {
