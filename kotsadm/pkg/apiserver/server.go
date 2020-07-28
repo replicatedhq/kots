@@ -90,8 +90,9 @@ func Start() {
 	// proxy for license/titled api
 	r.Path("/license/v1/license").Methods("GET").HandlerFunc(handlers.NodeProxy(upstream))
 
-	// Airgap upload and update
+	// Airgap
 	r.Path("/api/v1/app/airgap").Methods("OPTIONS", "POST", "PUT").HandlerFunc(handlers.UploadAirgapBundle)
+	r.Path("/api/v1/app/airgap/status").Methods("OPTIONS", "GET").HandlerFunc(handlers.GetAirgapInstallStatus)
 
 	// Implemented handlers
 	r.Path("/api/v1/license/platform").Methods("OPTIONS", "POST").HandlerFunc(handlers.ExchangePlatformLicense)

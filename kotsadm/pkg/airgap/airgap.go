@@ -4,6 +4,7 @@ import (
 	"archive/tar"
 	"bufio"
 	"compress/gzip"
+	"database/sql"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -32,6 +33,11 @@ type PendingApp struct {
 	LicenseData string
 }
 
+type InstallStatus struct {
+	InstallStatus  string `json:"installStatus"`
+	CurrentMessage string `json:"currentMessage"`
+}
+
 func GetPendingAirgapUploadApp() (*PendingApp, error) {
 	db := persistence.MustGetPGSession()
 	query := `select id from app where install_state in ('airgap_upload_pending', 'airgap_upload_in_progress', 'airgap_upload_error') order by created_at desc limit 1`
@@ -51,6 +57,29 @@ func GetPendingAirgapUploadApp() (*PendingApp, error) {
 	}
 
 	return &pendingApp, nil
+}
+
+func GetInstallStatus() (*InstallStatus, error) {
+	db := persistence.MustGetPGSession()
+	query := `SELECT install_state from app ORDER BY created_at DESC LIMIT 1`
+	row := db.QueryRow(query)
+
+	var installState sql.NullString
+	if err := row.Scan(&installState); err != nil {
+		return nil, errors.Wrap(err, "failed to scan")
+	}
+
+	_, message, err := task.GetTaskStatus("airgap-install")
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get task status")
+	}
+
+	status := &InstallStatus{
+		InstallStatus:  installState.String,
+		CurrentMessage: message,
+	}
+
+	return status, nil
 }
 
 // CreateAppFromAirgap does a lot. Maybe too much. Definitely too much.
