@@ -5,8 +5,8 @@ import Helmet from "react-helmet";
 import url from "url";
 import GitOpsRepoDetails from "../gitops/GitOpsRepoDetails";
 import CodeSnippet from "@src/components/shared/CodeSnippet";
-import { testGitOpsConnection, disableAppGitops, updateAppGitOps, createGitOpsRepo } from "../../mutations/AppsMutations";
-import { getServiceSite, getAddKeyUri, requiresHostname } from "../../utilities/utilities";
+import { testGitOpsConnection, updateAppGitOps, createGitOpsRepo } from "../../mutations/AppsMutations";
+import { getServiceSite, getAddKeyUri, requiresHostname, Utilities } from "../../utilities/utilities";
 import Modal from "react-modal";
 
 import "../../scss/components/gitops/GitOpsSettings.scss";
@@ -173,6 +173,7 @@ class AppGitops extends Component {
 
   disableGitOps = async () => {
     this.setState({ disablingGitOps: true });
+  
     const appId = this.props.app?.id;
     let clusterId;
     if (this.props.app?.downstreams?.length) {
@@ -180,9 +181,17 @@ class AppGitops extends Component {
     }
 
     try {
-      await this.props.disableAppGitops(appId, clusterId);
-      this.props.history.push(`/app/${this.props.app?.slug}`);
-      this.props.refetch();
+      const res = await fetch(`${window.env.API_ENDPOINT}/gitops/app/${appId}/cluster/${clusterId}/disable`, {
+        headers: {
+          "Authorization": Utilities.getToken(),
+          "Content-Type": "application/json",
+        },
+        method: "POST",
+      });
+      if (res.ok && res.status === 204) {
+        this.props.history.push(`/app/${this.props.app?.slug}`);
+        this.props.refetch();
+      }
     } catch (err) {
       console.log(err);
     } finally {
@@ -379,11 +388,6 @@ export default compose(
   graphql(testGitOpsConnection, {
     props: ({ mutate }) => ({
       testGitOpsConnection: (appId, clusterId) => mutate({ variables: { appId, clusterId } })
-    })
-  }),
-  graphql(disableAppGitops, {
-    props: ({ mutate }) => ({
-      disableAppGitops: (appId, clusterId) => mutate({ variables: { appId, clusterId } })
     })
   }),
   graphql(createGitOpsRepo, {

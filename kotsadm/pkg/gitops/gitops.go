@@ -166,6 +166,36 @@ func GetDownstreamGitOps(appID string, clusterID string) (*GitOpsConfig, error) 
 	return nil, nil
 }
 
+func DisableDownstreamGitOps(appID string, clusterID string) error {
+	cfg, err := config.GetConfig()
+	if err != nil {
+		return errors.Wrap(err, "failed to get cluster config")
+	}
+
+	clientset, err := kubernetes.NewForConfig(cfg)
+	if err != nil {
+		return errors.Wrap(err, "failed to create kubernetes clientset")
+	}
+
+	configMap, err := clientset.CoreV1().ConfigMaps(os.Getenv("POD_NAMESPACE")).Get(context.TODO(), "kotsadm-gitops", metav1.GetOptions{})
+	if kuberneteserrors.IsNotFound(err) {
+		return errors.Wrap(err, "gitops config map not found")
+	}
+
+	configMapDataKey := fmt.Sprintf("%s-%s", appID, clusterID)
+	_, ok := configMap.Data[configMapDataKey]
+	if ok {
+		delete(configMap.Data, configMapDataKey)
+	}
+
+	_, err = clientset.CoreV1().ConfigMaps(os.Getenv("POD_NAMESPACE")).Update(context.TODO(), configMap, metav1.UpdateOptions{})
+	if err != nil {
+		return errors.Wrap(err, "failed to update config map")
+	}
+
+	return nil
+}
+
 func gitOpsConfigFromSecretData(idx int64, secretData map[string][]byte) (string, string, string, string, error) {
 	provider := ""
 	publicKey := ""
