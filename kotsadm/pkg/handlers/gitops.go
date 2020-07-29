@@ -38,7 +38,7 @@ func UpdateAppGitOps(w http.ResponseWriter, r *http.Request) {
 	updateAppGitOpsRequest := UpdateAppGitOpsRequest{}
 	if err := json.NewDecoder(r.Body).Decode(&updateAppGitOpsRequest); err != nil {
 		logger.Error(err)
-		w.WriteHeader(500)
+		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
