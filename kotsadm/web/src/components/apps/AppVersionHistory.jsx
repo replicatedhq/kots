@@ -754,11 +754,11 @@ class AppVersionHistory extends Component {
   }
 
   yamlErrorsDetails = (downstream, version) => {
-    const pendingVersion = downstream.pendingVersions?.find(v => v.title === version.title);
-    const pastVersion = downstream.pastVersions?.find(v => v.title === version.title);
+    const pendingVersion = downstream?.pendingVersions?.find(v => v.sequence === version?.sequence);
+    const pastVersion = downstream?.pastVersions?.find(v => v.sequence === version?.sequence);
 
-    if (downstream.currentVersion?.title === version.title) {
-      return downstream.currentVersion?.yamlErrors ? downstream?.currentVersion?.yamlErrors : false;
+    if (downstream?.currentVersion?.sequence === version?.sequence) {
+      return downstream?.currentVersion?.yamlErrors ? downstream?.currentVersion?.yamlErrors : false;
     } else if (pendingVersion?.yamlErrors) {
       return pendingVersion?.yamlErrors;
     } else if (pastVersion?.yamlErrors) {
