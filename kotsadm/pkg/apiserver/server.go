@@ -155,6 +155,7 @@ func Start() {
 	r.Path("/api/v1/prometheus").Methods("OPTIONS", "POST").HandlerFunc(handlers.SetPrometheusAddress)
 
 	// GitOps
+	r.Path("/api/v1/gitops/app/{appId}/cluster/{clusterId}/update").Methods("OPTIONS", "PUT").HandlerFunc(handlers.UpdateAppGitOps)
 	r.Path("/api/v1/gitops/app/{appId}/cluster/{clusterId}/disable").Methods("OPTIONS", "POST").HandlerFunc(handlers.DisableAppGitOps)
 
 	// to avoid confusion, we don't serve this in the dev env...

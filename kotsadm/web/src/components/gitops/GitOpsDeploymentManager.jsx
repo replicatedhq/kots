@@ -8,8 +8,8 @@ import { graphql, compose, withApollo } from "react-apollo";
 import { listApps, getGitOpsRepo } from "@src/queries/AppsQueries";
 import GitOpsFlowIllustration from "./GitOpsFlowIllustration";
 import GitOpsRepoDetails from "./GitOpsRepoDetails";
-import { createGitOpsRepo, updateGitOpsRepo, updateAppGitOps, resetGitOpsData } from "@src/mutations/AppsMutations";
-import { getServiceSite, requiresHostname } from "../../utilities/utilities";
+import { createGitOpsRepo, updateGitOpsRepo, resetGitOpsData } from "@src/mutations/AppsMutations";
+import { getServiceSite, requiresHostname, Utilities } from "../../utilities/utilities";
 
 import "../../scss/components/gitops/GitOpsDeploymentManager.scss";
 
@@ -159,17 +159,46 @@ class GitOpsDeploymentManager extends React.Component {
         const downstream = app.downstreams[0];
         const clusterId = downstream?.cluster?.id;
 
-        await this.props.updateAppGitOps(app.id, clusterId, gitOpsInput);
+        const success = await this.updateAppGitOps(app.id, clusterId, gitOpsInput);
+        if (!success) {
+          return false;
+        }
+
         this.props.history.push(`/app/${app.slug}/gitops`);
       } else {
         this.setState({ step: "", finishingSetup: false });
         this.props.listAppsQuery.refetch();
         this.props.getGitOpsRepoQuery.refetch();
       }
+
+      return true;
     } catch (error) {
       console.log(error);
+      return false;
+    } finally {
       this.setState({ finishingSetup: false });
     }
+  }
+
+  updateAppGitOps = async (appId, clusterId, gitOpsInput) => {
+    try {
+      const res = await fetch(`${window.env.API_ENDPOINT}/gitops/app/${appId}/cluster/${clusterId}/update`, {
+        headers: {
+          "Authorization": Utilities.getToken(),
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          gitOpsInput: gitOpsInput,
+        }),
+        method: "PUT",
+      });
+      if (res.ok && res.status === 204) {
+        return true;
+      }
+    } catch(err) {
+      console.log(err);
+    }
+    return false;
   }
 
   updateSettings = () => {
@@ -505,11 +534,6 @@ export default compose(
   graphql(resetGitOpsData, {
     props: ({ mutate }) => ({
       resetGitOpsData: () => mutate()
-    })
-  }),
-  graphql(updateAppGitOps, {
-    props: ({ mutate }) => ({
-      updateAppGitOps: (appId, clusterId, gitOpsInput) => mutate({ variables: { appId, clusterId, gitOpsInput } })
     })
   }),
 )(GitOpsDeploymentManager);
