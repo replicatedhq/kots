@@ -9,7 +9,7 @@ import has from "lodash/has";
 import withTheme from "@src/components/context/withTheme";
 import { getKotsApp, listDownstreamsForApp } from "@src/queries/AppsQueries";
 import { isVeleroInstalled } from "@src/queries/SnapshotQueries";
-import { createKotsDownstream, deleteKotsDownstream } from "../../mutations/AppsMutations";
+import { createKotsDownstream } from "../../mutations/AppsMutations";
 import { KotsSidebarItem } from "@src/components/watches/WatchSidebarItem";
 import { HelmChartSidebarItem } from "@src/components/watches/WatchSidebarItem";
 import NotFound from "../static/NotFound";
@@ -431,11 +431,6 @@ export default compose(
   graphql(createKotsDownstream, {
     props: ({ mutate }) => ({
       createKotsDownstream: (appId, clusterId) => mutate({ variables: { appId, clusterId } })
-    })
-  }),
-  graphql(deleteKotsDownstream, {
-    props: ({ mutate }) => ({
-      deleteKotsDownstream: (slug, clusterId) => mutate({ variables: { slug, clusterId } })
     })
   }),
 )(AppDetailPage);

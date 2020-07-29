@@ -107,7 +107,7 @@ func Start() {
 	r.Path("/api/v1/app/{appSlug}/cluster/{clusterId}/dashboard").Methods("OPTIONS", "GET").HandlerFunc(handlers.GetAppDashboard)
 
 	r.HandleFunc("/api/v1/login", handlers.Login)
-	r.HandleFunc("/api/v1/logout", handlers.NotImplemented)
+	r.HandleFunc("/api/v1/logout", handlers.Logout)
 
 	// Installation
 	r.Path("/api/v1/license").Methods("OPTIONS", "POST").HandlerFunc(handlers.UploadNewLicense)
