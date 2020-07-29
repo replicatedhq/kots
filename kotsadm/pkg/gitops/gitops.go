@@ -24,6 +24,7 @@ import (
 	"gopkg.in/src-d/go-git.v4/plumbing/object"
 	"gopkg.in/src-d/go-git.v4/plumbing/transport"
 	go_git_ssh "gopkg.in/src-d/go-git.v4/plumbing/transport/ssh"
+	v1 "k8s.io/api/core/v1"
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
@@ -191,6 +192,95 @@ func DisableDownstreamGitOps(appID string, clusterID string) error {
 	_, err = clientset.CoreV1().ConfigMaps(os.Getenv("POD_NAMESPACE")).Update(context.TODO(), configMap, metav1.UpdateOptions{})
 	if err != nil {
 		return errors.Wrap(err, "failed to update config map")
+	}
+
+	return nil
+}
+
+func UpdateDownstreamGitOps(appID, clusterID, uri, branch, path, format, action string) error {
+	cfg, err := config.GetConfig()
+	if err != nil {
+		return errors.Wrap(err, "failed to get cluster config")
+	}
+
+	clientset, err := kubernetes.NewForConfig(cfg)
+	if err != nil {
+		return errors.Wrap(err, "failed to create kubernetes clientset")
+	}
+
+	configMap, err := clientset.CoreV1().ConfigMaps(os.Getenv("POD_NAMESPACE")).Get(context.TODO(), "kotsadm-gitops", metav1.GetOptions{})
+	if err != nil && !kuberneteserrors.IsNotFound(err) {
+		return errors.Wrap(err, "failed to get configmap")
+	}
+
+	configMapExists := true
+	if kuberneteserrors.IsNotFound(err) {
+		configMapExists = false
+	}
+
+	configMapData := map[string]string{}
+	if configMapExists {
+		configMapData = configMap.Data
+	}
+
+	appKey := fmt.Sprintf("%s-%s", appID, clusterID)
+	newAppData := map[string]string{
+		"repoUri":   uri,
+		"branch":    branch,
+		"path":      path,
+		"format":    format,
+		"action":    action,
+	}
+
+	// check if to reset or keep last error
+	appDataEncoded, ok := configMapData[appKey]
+	if ok {
+		appDataDecoded, err := base64.StdEncoding.DecodeString(appDataEncoded)
+		if err != nil {
+			return errors.Wrap(err, "failed to decode configmap data")
+		}
+
+		appDataUnmarshalled := map[string]string{}
+		if err := json.Unmarshal(appDataDecoded, &appDataUnmarshalled); err != nil {
+			return errors.Wrap(err, "failed to unmarshal configmap data")
+		}
+
+		oldUri, _ := appDataUnmarshalled["repoUri"]
+		oldBranch, _ := appDataUnmarshalled["branch"]
+		if oldBranch == branch && oldUri == uri {
+			lastError, ok := appDataUnmarshalled["lastError"]
+			if ok {
+				newAppData["lastError"] = lastError // keep last error
+			}
+		}
+	}
+
+	// update/set app data in config map
+	newAppDataMarshalled, err := json.Marshal(newAppData)
+	if err != nil {
+		return errors.Wrap(err, "failed to marshal new app data")
+	}
+	newAppDataEncoded := base64.StdEncoding.EncodeToString([]byte(newAppDataMarshalled))
+	configMapData[appKey] = newAppDataEncoded
+
+	if configMapExists {
+		configMap.Data = configMapData
+		_, err = clientset.CoreV1().ConfigMaps(os.Getenv("POD_NAMESPACE")).Update(context.TODO(), configMap, metav1.UpdateOptions{})
+		if err != nil {
+			return errors.Wrap(err, "failed to update config map")
+		}
+	} else {
+		configMap = &v1.ConfigMap{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "kotsadm-gitops",
+				Namespace: os.Getenv("POD_NAMESPACE"),
+			},
+			Data: configMapData,
+		}
+		_, err = clientset.CoreV1().ConfigMaps(os.Getenv("POD_NAMESPACE")).Create(context.TODO(), configMap, metav1.CreateOptions{})
+		if err != nil {
+			return errors.Wrap(err, "failed to create config map")
+		}
 	}
 
 	return nil

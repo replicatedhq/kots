@@ -98,6 +98,9 @@ func GetMetricCharts(appID string, sequence int64) ([]MetricChart, error) {
 
 	var appSpecStr sql.NullString
 	if err := row.Scan(&appSpecStr); err != nil {
+		if err == sql.ErrNoRows {
+			return []MetricChart{}, nil
+		}
 		return nil, errors.Wrap(err, "failed to scan")
 	}
 

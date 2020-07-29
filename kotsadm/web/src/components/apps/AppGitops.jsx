@@ -5,7 +5,7 @@ import Helmet from "react-helmet";
 import url from "url";
 import GitOpsRepoDetails from "../gitops/GitOpsRepoDetails";
 import CodeSnippet from "@src/components/shared/CodeSnippet";
-import { testGitOpsConnection, updateAppGitOps, createGitOpsRepo } from "../../mutations/AppsMutations";
+import { testGitOpsConnection, createGitOpsRepo } from "../../mutations/AppsMutations";
 import { getServiceSite, getAddKeyUri, requiresHostname, Utilities } from "../../utilities/utilities";
 import Modal from "react-modal";
 
@@ -154,17 +154,44 @@ class AppGitops extends Component {
       if (newUri !== oldUri) {
         await this.props.createGitOpsRepo(gitOpsInput);
       }
-      await this.props.updateAppGitOps(app.id, clusterId, gitOpsInput);
+
+      const success = await this.updateAppGitOps(app.id, clusterId, gitOpsInput);
+      if (!success) {
+        return false;
+      }
+
       await this.props.refetch();
-      
       if (newUri !== oldUri || gitops?.branch !== branch) {
         await this.handleTestConnection();
       }
-
       this.setState({ showGitOpsSettings: false, ownerRepo });
+
+      return true;
+    } catch(err) {
+      console.log(err);
+      return false;
+    }
+  }
+
+  updateAppGitOps = async (appId, clusterId, gitOpsInput) => {
+    try {
+      const res = await fetch(`${window.env.API_ENDPOINT}/gitops/app/${appId}/cluster/${clusterId}/update`, {
+        headers: {
+          "Authorization": Utilities.getToken(),
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          gitOpsInput: gitOpsInput,
+        }),
+        method: "PUT",
+      });
+      if (res.ok && res.status === 204) {
+        return true;
+      }
     } catch(err) {
       console.log(err);
     }
+    return false;
   }
 
   promptToDisableGitOps = () => {
@@ -393,11 +420,6 @@ export default compose(
   graphql(createGitOpsRepo, {
     props: ({ mutate }) => ({
       createGitOpsRepo: (gitOpsInput) => mutate({ variables: { gitOpsInput } })
-    })
-  }),
-  graphql(updateAppGitOps, {
-    props: ({ mutate }) => ({
-      updateAppGitOps: (appId, clusterId, gitOpsInput) => mutate({ variables: { appId, clusterId, gitOpsInput } })
     })
   }),
 )(AppGitops);
