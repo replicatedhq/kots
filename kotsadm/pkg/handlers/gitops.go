@@ -29,14 +29,14 @@ func DisableAppGitOps(w http.ResponseWriter, r *http.Request) {
 	a, err := app.Get(appID)
 	if err != nil {
 		logger.Error(err)
-		w.WriteHeader(500)
+		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
 	downstreamGitOps, err := gitops.GetDownstreamGitOps(a.ID, clusterID)
 	if err != nil {
 		logger.Error(err)
-		w.WriteHeader(500)
+		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
@@ -44,7 +44,7 @@ func DisableAppGitOps(w http.ResponseWriter, r *http.Request) {
 		err := gitops.DisableDownstreamGitOps(a.ID, clusterID)
 		if err != nil {
 			logger.Error(err)
-			w.WriteHeader(500)
+			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
 	}
