@@ -225,11 +225,11 @@ func UpdateDownstreamGitOps(appID, clusterID, uri, branch, path, format, action 
 
 	appKey := fmt.Sprintf("%s-%s", appID, clusterID)
 	newAppData := map[string]string{
-		"repoUri":   uri,
-		"branch":    branch,
-		"path":      path,
-		"format":    format,
-		"action":    action,
+		"repoUri": uri,
+		"branch":  branch,
+		"path":    path,
+		"format":  format,
+		"action":  action,
 	}
 
 	// check if to reset or keep last error

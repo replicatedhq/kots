@@ -4,8 +4,8 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
-	"time"
 	"os"
+	"time"
 
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/kotsadm/pkg/app"
@@ -18,8 +18,8 @@ import (
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
-	k8sconfig "sigs.k8s.io/controller-runtime/pkg/client/config"
 	"k8s.io/client-go/kubernetes/scheme"
+	k8sconfig "sigs.k8s.io/controller-runtime/pkg/client/config"
 )
 
 // GetNextAppSequence determines next available sequence for this app
