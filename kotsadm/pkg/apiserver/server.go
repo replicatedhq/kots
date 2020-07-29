@@ -91,6 +91,9 @@ func Start() {
 	// proxy for license/titled api
 	r.Path("/license/v1/license").Methods("GET").HandlerFunc(handlers.NodeProxy(upstream))
 
+	// Apps
+	r.Path("/api/v1/apps/app/{appSlug}").Methods("OPTIONS", "GET").HandlerFunc(handlers.GetApp)
+
 	// Airgap
 	r.Path("/api/v1/app/airgap").Methods("OPTIONS", "POST", "PUT").HandlerFunc(handlers.UploadAirgapBundle)
 	r.Path("/api/v1/app/airgap/status").Methods("OPTIONS", "GET").HandlerFunc(handlers.GetAirgapInstallStatus)
@@ -105,7 +108,6 @@ func Start() {
 	r.Path("/api/v1/app/{appSlug}/sequence/{sequence}/renderedcontents").Methods("OPTIONS", "GET").HandlerFunc(handlers.GetAppRenderedContents)
 	r.Path("/api/v1/app/{appSlug}/sequence/{sequence}/contents").Methods("OPTIONS", "GET").HandlerFunc(handlers.GetAppContents)
 	r.Path("/api/v1/app/{appSlug}/cluster/{clusterId}/dashboard").Methods("OPTIONS", "GET").HandlerFunc(handlers.GetAppDashboard)
-	r.Path("/api/v1/app/{appSlug}").Methods("OPTIONS", "GET").HandlerFunc(handlers.GetKotsApp)
 
 	r.HandleFunc("/api/v1/login", handlers.Login)
 	r.HandleFunc("/api/v1/logout", handlers.Logout)

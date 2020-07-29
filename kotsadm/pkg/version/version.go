@@ -1,8 +1,11 @@
 package version
 
 import (
+	"context"
+	"database/sql"
 	"encoding/json"
 	"time"
+	"os"
 
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/kotsadm/pkg/app"
@@ -12,6 +15,11 @@ import (
 	"github.com/replicatedhq/kots/kotsadm/pkg/kotsutil"
 	"github.com/replicatedhq/kots/kotsadm/pkg/persistence"
 	"github.com/replicatedhq/kots/kotsadm/pkg/version/types"
+	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes"
+	k8sconfig "sigs.k8s.io/controller-runtime/pkg/client/config"
+	"k8s.io/client-go/kubernetes/scheme"
 )
 
 // GetNextAppSequence determines next available sequence for this app
@@ -300,4 +308,66 @@ func DeployVersion(appID string, sequence int64) error {
 	}
 
 	return nil
+}
+
+func IsGitOpsSupported(appID string, sequence int64) (bool, error) {
+	cfg, err := k8sconfig.GetConfig()
+	if err != nil {
+		return false, errors.Wrap(err, "failed to get cluster config")
+	}
+
+	clientset, err := kubernetes.NewForConfig(cfg)
+	if err != nil {
+		return false, errors.Wrap(err, "failed to create kubernetes clientset")
+	}
+
+	_, err = clientset.CoreV1().Secrets(os.Getenv("POD_NAMESPACE")).Get(context.TODO(), "kotsadm-gitops", metav1.GetOptions{})
+	if err == nil {
+		// gitops secret exists -> gitops is supported
+		return true, nil
+	}
+
+	db := persistence.MustGetPGSession()
+	query := `select kots_license from app_version where app_id = $1 and sequence = $2`
+	row := db.QueryRow(query, appID, sequence)
+
+	var licenseStr sql.NullString
+	if err := row.Scan(&licenseStr); err != nil {
+		if err == sql.ErrNoRows {
+			return false, nil
+		}
+		return false, errors.Wrap(err, "failed to scan")
+	}
+
+	decode := scheme.Codecs.UniversalDeserializer().Decode
+	obj, _, err := decode([]byte(licenseStr.String), nil, nil)
+	if err != nil {
+		return false, errors.Wrap(err, "failed to decode license yaml")
+	}
+	license := obj.(*kotsv1beta1.License)
+
+	return license.Spec.IsGitOpsSupported, nil
+}
+
+func IsAllowRollback(appID string, sequence int64) (bool, error) {
+	db := persistence.MustGetPGSession()
+	query := `select kots_app_spec from app_version where app_id = $1 and sequence = $2`
+	row := db.QueryRow(query, appID, sequence)
+
+	var appSpecStr sql.NullString
+	if err := row.Scan(&appSpecStr); err != nil {
+		if err == sql.ErrNoRows {
+			return false, nil
+		}
+		return false, errors.Wrap(err, "failed to scan")
+	}
+
+	decode := scheme.Codecs.UniversalDeserializer().Decode
+	obj, _, err := decode([]byte(appSpecStr.String), nil, nil)
+	if err != nil {
+		return false, errors.Wrap(err, "failed to decode app spec yaml")
+	}
+	appSpec := obj.(*kotsv1beta1.Application)
+
+	return appSpec.Spec.AllowRollback, nil
 }

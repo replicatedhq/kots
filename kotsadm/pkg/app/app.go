@@ -12,10 +12,8 @@ import (
 	"github.com/replicatedhq/kots/kotsadm/pkg/gitops"
 	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
 	"github.com/replicatedhq/kots/kotsadm/pkg/persistence"
-	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	"github.com/segmentio/ksuid"
 	"go.uber.org/zap"
-	"gopkg.in/yaml.v2"
 )
 
 type App struct {
@@ -29,7 +27,6 @@ type App struct {
 	IconURI               string `json:"iconUri"`
 	UpdatedAt             string `json:"createdAt"`
 	CreatedAt             string `json:"updatedAt"`
-	AllowRollback         bool   `json:"allowRollback"`
 	LastUpdateCheckAt     string `json:"lastUpdateCheckAt"`
 	BundleCommand         string `json:"bundleCommand"`
 	HasPreflight          bool   `json:"hasPreflight"`
@@ -76,6 +73,17 @@ func Get(id string) (*App, error) {
 		return nil, errors.Wrap(err, "failed to scan app")
 	}
 
+	app.License = licenseStr.String
+	app.UpstreamURI = upstreamURI.String
+	app.IconURI = iconURI.String
+	app.UpdatedAt = updatedAt.String
+	app.LastUpdateCheckAt = lastUpdateCheckAt.String
+	app.SnapshotTTL = snapshotTTLNew.String
+	app.SnapshotSchedule = snapshotSchedule.String
+	app.RestoreInProgressName = restoreInProgressName.String
+	app.RestoreUndeployStatus = restoreUndeployStatus.String
+	app.UpdateCheckerSpec = updateCheckerSpec.String
+
 	if currentSequence.Valid {
 		app.CurrentSequence = currentSequence.Int64
 	} else {
@@ -92,47 +100,18 @@ func Get(id string) (*App, error) {
 		return nil, errors.Wrap(err, "failed to scan app_version")
 	}
 
-	if preflightSpec.Valid {
+	if preflightSpec.Valid && preflightSpec.String != "" {
 		app.HasPreflight = true
 	}
-	if configSpec.Valid {
+	if configSpec.Valid && configSpec.String != "" {
 		app.IsConfigurable = true
 	}
-
-	if licenseStr.Valid {
-		app.License = licenseStr.String
-	}
-	if upstreamURI.Valid {
-		app.UpstreamURI = upstreamURI.String
-	}
-	if iconURI.Valid {
-		app.IconURI = iconURI.String
-	}
-	if updatedAt.Valid {
-		app.UpdatedAt = updatedAt.String
-	}
-	if lastUpdateCheckAt.Valid {
-		app.LastUpdateCheckAt = lastUpdateCheckAt.String
-	}
-	if snapshotTTLNew.Valid {
-		app.SnapshotTTL = snapshotTTLNew.String
-	}
-	if snapshotSchedule.Valid {
-		app.SnapshotSchedule = snapshotSchedule.String
-	}
-
-	app.RestoreInProgressName = restoreInProgressName.String
-	app.RestoreUndeployStatus = restoreUndeployStatus.String
-	app.UpdateCheckerSpec = updateCheckerSpec.String
 
 	bundleCommand := fmt.Sprintf(`
 	curl https://krew.sh/support-bundle | bash
       kubectl support-bundle API_ADDRESS/api/v1/troubleshoot/%s
 	`, app.Slug)
 	app.BundleCommand = bundleCommand
-
-	ar, err := allowRollback(id, app.CurrentSequence)
-	app.AllowRollback = ar
 
 	isGitOps, err := IsGitOpsEnabled(id)
 	if err != nil {
@@ -141,27 +120,6 @@ func Get(id string) (*App, error) {
 	app.IsGitOps = isGitOps
 
 	return &app, nil
-}
-
-func allowRollback(id string, currentSequence int64) (bool, error) {
-	db := persistence.MustGetPGSession()
-	query := `select kots_app_spec from app_version where app_id = $1 and sequence = $2`
-	row := db.QueryRow(query, id, currentSequence)
-
-	var kotsAppSpec sql.NullString
-	if err := row.Scan(&kotsAppSpec); err != nil {
-		return false, errors.Wrap(err, "failed to scan app_version to get kots_app_spec")
-	}
-
-	s := kotsv1beta1.ApplicationSpec{}
-
-	if kotsAppSpec.Valid {
-		if err := yaml.Unmarshal([]byte(kotsAppSpec.String), &s); err != nil {
-			return false, errors.Wrap(err, "faild to unmarshal doc to look for allowRollback")
-		}
-	}
-
-	return s.AllowRollback, nil
 }
 
 func ListInstalled() ([]*App, error) {

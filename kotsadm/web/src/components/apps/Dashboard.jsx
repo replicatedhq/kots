@@ -2,7 +2,6 @@ import moment from "moment";
 import React, { Component } from "react";
 import Helmet from "react-helmet";
 import { withRouter } from "react-router-dom";
-import { graphql, compose, withApollo } from "react-apollo";
 import size from "lodash/size";
 import get from "lodash/get";
 import Loader from "../shared/Loader";
@@ -13,7 +12,6 @@ import Modal from "react-modal";
 import { Repeater } from "../../utilities/repeater";
 import { Utilities } from "../../utilities/utilities";
 import { getUpdateDownloadStatus } from "@src/queries/AppsQueries";
-import { setPrometheusAddress } from "@src/mutations/AppsMutations";
 
 import { XYPlot, XAxis, YAxis, HorizontalGridLines, VerticalGridLines, LineSeries, DiscreteColorLegend, Crosshair } from "react-vis";
 
@@ -732,12 +730,4 @@ class Dashboard extends Component {
   }
 }
 
-export default compose(
-  withApollo,
-  withRouter,
-  graphql(setPrometheusAddress, {
-    props: ({ mutate }) => ({
-      setPrometheusAddress: (value) => mutate({ variables: { value } })
-    })
-  }),
-)(Dashboard);
+export default withRouter(Dashboard);
