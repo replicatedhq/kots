@@ -261,24 +261,81 @@ backup_spec = EXCLUDED.backup_spec`
 // return the list of versions available for an app
 func GetVersions(appID string) ([]types.AppVersion, error) {
 	db := persistence.MustGetPGSession()
-	query := `select sequence, update_cursor, version_label from app_version where app_id = $1 order by update_cursor asc, sequence asc`
+	query := `select sequence from app_version where app_id = $1 order by update_cursor asc, sequence asc`
 	rows, err := db.Query(query, appID)
 	if err != nil {
-		return nil, errors.Wrap(err, "query app_version table")
+		return nil, errors.Wrap(err, "failed to query app_version table")
 	}
 
 	versions := []types.AppVersion{}
-
 	for rows.Next() {
-		rowVersion := types.AppVersion{}
-		err = rows.Scan(&rowVersion.Sequence, &rowVersion.UpdateCursor, &rowVersion.VersionLabel)
-		if err != nil {
-			return nil, errors.Wrap(err, "scan row from app_version table")
+		var sequence int64
+		if err := rows.Scan(&sequence); err != nil {
+			return nil, errors.Wrap(err, "failed to scan sequence from app_version table")
 		}
-		versions = append(versions, rowVersion)
+
+		v, err := Get(appID, sequence)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to get version")
+		}
+		if v != nil {
+			versions = append(versions, *v)
+		}
 	}
 
 	return versions, nil
+}
+
+func Get(appID string, sequence int64) (*types.AppVersion, error) {
+	db := persistence.MustGetPGSession()
+	query := `select sequence, update_cursor, version_label, created_at, release_notes, status, applied_at, backup_spec, kots_installation_spec from app_version where app_id = $1 and sequence = $2`
+	row := db.QueryRow(query, appID, sequence)
+
+	var updateCursor sql.NullInt32
+	var versionLabel sql.NullString
+	var createdOn sql.NullTime
+	var releaseNotes sql.NullString
+	var status sql.NullString
+	var deployedAt sql.NullString
+	var backupSpec sql.NullString
+	var installationSpecStr sql.NullString
+
+	v := types.AppVersion{}
+	if err := row.Scan(&v.Sequence, &updateCursor, &versionLabel, &createdOn, &releaseNotes, &status, &deployedAt, &backupSpec, &installationSpecStr); err != nil {
+		if err == sql.ErrNoRows {
+			return nil, nil
+		}
+		return nil, errors.Wrap(err, "failed to scan")
+	}
+
+	if updateCursor.Valid {
+		v.UpdateCursor = int(updateCursor.Int32)
+	} else {
+		v.UpdateCursor = -1
+	}
+
+	if createdOn.Valid {
+		v.CreatedOn = &createdOn.Time
+	}
+
+	v.VersionLabel = versionLabel.String
+	v.ReleaseNotes = releaseNotes.String
+	v.Status = status.String
+	v.DeployedAt = deployedAt.String
+	v.BackupSpec = backupSpec.String
+
+	if installationSpecStr.Valid && installationSpecStr.String != "" {
+		decode := scheme.Codecs.UniversalDeserializer().Decode
+		obj, _, err := decode([]byte(installationSpecStr.String), nil, nil)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to decode installation spec yaml")
+		}
+		installationSpec := obj.(*kotsv1beta1.Installation)
+
+		v.YamlErrors = installationSpec.Spec.YAMLErrors
+	}
+
+	return &v, nil
 }
 
 // DeployVersion deploys the version for the given sequence
@@ -370,4 +427,27 @@ func IsAllowRollback(appID string, sequence int64) (bool, error) {
 	appSpec := obj.(*kotsv1beta1.Application)
 
 	return appSpec.Spec.AllowRollback, nil
+}
+
+func GetLicenseType(appID string, sequence int64) (string, error) {
+	db := persistence.MustGetPGSession()
+	query := `select kots_license from app_version where app_id = $1 and sequence = $2`
+	row := db.QueryRow(query, appID, sequence)
+
+	var licenseStr sql.NullString
+	if err := row.Scan(&licenseStr); err != nil {
+		if err == sql.ErrNoRows {
+			return "", nil
+		}
+		return "", errors.Wrap(err, "failed to scan")
+	}
+
+	decode := scheme.Codecs.UniversalDeserializer().Decode
+	obj, _, err := decode([]byte(licenseStr.String), nil, nil)
+	if err != nil {
+		return "", errors.Wrap(err, "failed to decode license yaml")
+	}
+	license := obj.(*kotsv1beta1.License)
+
+	return license.Spec.LicenseType, nil
 }
