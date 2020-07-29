@@ -24,15 +24,21 @@ type UpstreamSettings struct {
 	JWT                  string
 	PostgresPassword     string
 	APIEncryptionKey     string
+	HTTPProxyEnvValue    string
+	HTTPSProxyEnvValue   string
+	NoProxyEnvValue      string
 
 	AutoCreateClusterToken string
 }
 
-func generateAdminConsoleFiles(renderDir string, sharedPassword string) ([]types.UpstreamFile, error) {
+func generateAdminConsoleFiles(renderDir string, options types.WriteOptions) ([]types.UpstreamFile, error) {
 	if _, err := os.Stat(path.Join(renderDir, "admin-console")); os.IsNotExist(err) {
 		settings := &UpstreamSettings{
-			SharedPassword:         sharedPassword,
+			SharedPassword:         options.SharedPassword,
 			AutoCreateClusterToken: uuid.New().String(),
+			HTTPProxyEnvValue:      options.HTTPProxyEnvValue,
+			HTTPSProxyEnvValue:     options.HTTPSProxyEnvValue,
+			NoProxyEnvValue:        options.NoProxyEnvValue,
 		}
 		return generateNewAdminConsoleFiles(settings)
 	}
@@ -47,6 +53,16 @@ func generateAdminConsoleFiles(renderDir string, sharedPassword string) ([]types
 	}
 	if err := loadUpstreamSettingsFromFiles(settings, renderDir, existingFiles); err != nil {
 		return nil, errors.Wrap(err, "failed to find existing settings")
+	}
+
+	if options.HTTPProxyEnvValue != "" {
+		settings.HTTPProxyEnvValue = options.HTTPProxyEnvValue
+	}
+	if options.HTTPSProxyEnvValue != "" {
+		settings.HTTPSProxyEnvValue = options.HTTPSProxyEnvValue
+	}
+	if options.NoProxyEnvValue != "" {
+		settings.NoProxyEnvValue = options.NoProxyEnvValue
 	}
 
 	return generateNewAdminConsoleFiles(settings)
@@ -115,6 +131,9 @@ func generateNewAdminConsoleFiles(settings *UpstreamSettings) ([]types.UpstreamF
 		PostgresPassword:       settings.PostgresPassword,
 		APIEncryptionKey:       settings.APIEncryptionKey,
 		AutoCreateClusterToken: settings.AutoCreateClusterToken,
+		HTTPProxyEnvValue:      settings.HTTPProxyEnvValue,
+		HTTPSProxyEnvValue:     settings.HTTPSProxyEnvValue,
+		NoProxyEnvValue:        settings.NoProxyEnvValue,
 	}
 
 	if deployOptions.SharedPasswordBcrypt == "" && deployOptions.SharedPassword == "" {

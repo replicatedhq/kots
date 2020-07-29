@@ -52,6 +52,24 @@ func PullCmd() *cobra.Command {
 					Username:  v.GetString("registry-username"),
 					Password:  v.GetString("registry-password"),
 				},
+				HTTPProxyEnvValue:  v.GetString("http-proxy"),
+				HTTPSProxyEnvValue: v.GetString("https-proxy"),
+				NoProxyEnvValue:    v.GetString("no-proxy"),
+			}
+
+			if v.GetBool("copy-proxy-env") {
+				pullOptions.HTTPProxyEnvValue = os.Getenv("HTTP_PROXY")
+				if pullOptions.HTTPProxyEnvValue == "" {
+					pullOptions.HTTPProxyEnvValue = os.Getenv("http_proxy")
+				}
+				pullOptions.HTTPSProxyEnvValue = os.Getenv("HTTPS_PROXY")
+				if pullOptions.HTTPSProxyEnvValue == "" {
+					pullOptions.HTTPSProxyEnvValue = os.Getenv("https_proxy")
+				}
+				pullOptions.NoProxyEnvValue = os.Getenv("NO_PROXY")
+				if pullOptions.NoProxyEnvValue == "" {
+					pullOptions.NoProxyEnvValue = os.Getenv("no_proxy")
+				}
 			}
 
 			upstream := pull.RewriteUpstream(args[0])
@@ -86,6 +104,10 @@ func PullCmd() *cobra.Command {
 	cmd.Flags().Bool("exclude-kots-kinds", true, "set to true to exclude rendering kots custom objects to the base directory")
 	cmd.Flags().Bool("exclude-admin-console", false, "set to true to exclude the admin console (replicated apps only)")
 	cmd.Flags().String("shared-password", "", "shared password to use when deploying the admin console")
+	cmd.Flags().String("http-proxy", "", "sets HTTP_PROXY environment variable in all KOTS Admin Console components")
+	cmd.Flags().String("https-proxy", "", "sets HTTPS_PROXY environment variable in all KOTS Admin Console components")
+	cmd.Flags().String("no-proxy", "", "sets NO_PROXY environment variable in all KOTS Admin Console components")
+	cmd.Flags().Bool("copy-proxy-env", false, "copy proxy environment variables from current environment into all KOTS Admin Console components")
 	cmd.Flags().Bool("rewrite-images", false, "set to true to force all container images to be rewritten and pushed to a local registry")
 	cmd.Flags().String("image-namespace", "", "the namespace/org in the docker registry to push images to (required when --rewrite-images is set)")
 	cmd.Flags().String("registry-endpoint", "", "the endpoint of the local docker registry to use when pushing images (required when --rewrite-images is set)")
