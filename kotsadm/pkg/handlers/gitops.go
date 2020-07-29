@@ -49,5 +49,5 @@ func DisableAppGitOps(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	JSON(w, 204, "")
+	JSON(w, http.StatusNoContent, "")
 }
