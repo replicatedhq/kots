@@ -46,7 +46,10 @@ func GetInstallStatus() (*InstallStatus, error) {
 	var installState sql.NullString
 	if err := row.Scan(&installState); err != nil {
 		if err == sql.ErrNoRows {
-			return nil, nil
+			return &InstallStatus{
+				InstallStatus:  "not_installed",
+				CurrentMessage: "",
+			}, nil
 		}
 		return nil, errors.Wrap(err, "failed to scan")
 	}
