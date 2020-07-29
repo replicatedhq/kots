@@ -5,8 +5,8 @@ import Helmet from "react-helmet";
 import url from "url";
 import GitOpsRepoDetails from "../gitops/GitOpsRepoDetails";
 import CodeSnippet from "@src/components/shared/CodeSnippet";
-import { testGitOpsConnection, disableAppGitops, updateAppGitOps, createGitOpsRepo } from "../../mutations/AppsMutations";
-import { getServiceSite, getAddKeyUri, requiresHostname } from "../../utilities/utilities";
+import { testGitOpsConnection, createGitOpsRepo } from "../../mutations/AppsMutations";
+import { getServiceSite, getAddKeyUri, requiresHostname, Utilities } from "../../utilities/utilities";
 import Modal from "react-modal";
 
 import "../../scss/components/gitops/GitOpsSettings.scss";
@@ -154,17 +154,44 @@ class AppGitops extends Component {
       if (newUri !== oldUri) {
         await this.props.createGitOpsRepo(gitOpsInput);
       }
-      await this.props.updateAppGitOps(app.id, clusterId, gitOpsInput);
+
+      const success = await this.updateAppGitOps(app.id, clusterId, gitOpsInput);
+      if (!success) {
+        return false;
+      }
+
       await this.props.refetch();
-      
       if (newUri !== oldUri || gitops?.branch !== branch) {
         await this.handleTestConnection();
       }
-
       this.setState({ showGitOpsSettings: false, ownerRepo });
+
+      return true;
+    } catch(err) {
+      console.log(err);
+      return false;
+    }
+  }
+
+  updateAppGitOps = async (appId, clusterId, gitOpsInput) => {
+    try {
+      const res = await fetch(`${window.env.API_ENDPOINT}/gitops/app/${appId}/cluster/${clusterId}/update`, {
+        headers: {
+          "Authorization": Utilities.getToken(),
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          gitOpsInput: gitOpsInput,
+        }),
+        method: "PUT",
+      });
+      if (res.ok && res.status === 204) {
+        return true;
+      }
     } catch(err) {
       console.log(err);
     }
+    return false;
   }
 
   promptToDisableGitOps = () => {
@@ -173,6 +200,7 @@ class AppGitops extends Component {
 
   disableGitOps = async () => {
     this.setState({ disablingGitOps: true });
+  
     const appId = this.props.app?.id;
     let clusterId;
     if (this.props.app?.downstreams?.length) {
@@ -180,9 +208,17 @@ class AppGitops extends Component {
     }
 
     try {
-      await this.props.disableAppGitops(appId, clusterId);
-      this.props.history.push(`/app/${this.props.app?.slug}`);
-      this.props.refetch();
+      const res = await fetch(`${window.env.API_ENDPOINT}/gitops/app/${appId}/cluster/${clusterId}/disable`, {
+        headers: {
+          "Authorization": Utilities.getToken(),
+          "Content-Type": "application/json",
+        },
+        method: "POST",
+      });
+      if (res.ok && res.status === 204) {
+        this.props.history.push(`/app/${this.props.app?.slug}`);
+        this.props.refetch();
+      }
     } catch (err) {
       console.log(err);
     } finally {
@@ -381,19 +417,9 @@ export default compose(
       testGitOpsConnection: (appId, clusterId) => mutate({ variables: { appId, clusterId } })
     })
   }),
-  graphql(disableAppGitops, {
-    props: ({ mutate }) => ({
-      disableAppGitops: (appId, clusterId) => mutate({ variables: { appId, clusterId } })
-    })
-  }),
   graphql(createGitOpsRepo, {
     props: ({ mutate }) => ({
       createGitOpsRepo: (gitOpsInput) => mutate({ variables: { gitOpsInput } })
-    })
-  }),
-  graphql(updateAppGitOps, {
-    props: ({ mutate }) => ({
-      updateAppGitOps: (appId, clusterId, gitOpsInput) => mutate({ variables: { appId, clusterId, gitOpsInput } })
     })
   }),
 )(AppGitops);
