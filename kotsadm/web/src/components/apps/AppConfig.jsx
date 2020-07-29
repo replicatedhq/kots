@@ -10,7 +10,6 @@ import map from "lodash/map";
 import Modal from "react-modal";
 import Loader from "../shared/Loader";
 import { getAppConfigGroups, getKotsApp, templateConfigGroups } from "../../queries/AppsQueries";
-import { updateDownstreamsStatus } from "../../mutations/AppsMutations";
 
 import "../../scss/components/watches/WatchConfig.scss";
 import { Utilities } from "../../utilities/utilities";
@@ -326,10 +325,5 @@ export default withRouter(compose(
         fetchPolicy: "no-cache"
       }
     }
-  }),
-  graphql(updateDownstreamsStatus, {
-    props: ({ mutate }) => ({
-      updateDownstreamsStatus: (slug, sequence, status) => mutate({ variables: { slug, sequence, status } })
-    })
   }),
 )(AppConfig));
