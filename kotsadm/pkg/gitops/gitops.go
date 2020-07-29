@@ -224,9 +224,15 @@ func UpdateDownstreamGitOps(appID, clusterID, uri, branch, path, format, action 
 	}
 
 	appKey := fmt.Sprintf("%s-%s", appID, clusterID)
+	newAppData := map[string]string{
+		"repoUri":   uri,
+		"branch":    branch,
+		"path":      path,
+		"format":    format,
+		"action":    action,
+	}
 
 	// check if to reset or keep last error
-	lastError := ""
 	appDataEncoded, ok := configMapData[appKey]
 	if ok {
 		appDataDecoded, err := base64.StdEncoding.DecodeString(appDataEncoded)
@@ -242,19 +248,14 @@ func UpdateDownstreamGitOps(appID, clusterID, uri, branch, path, format, action 
 		oldUri, _ := appDataUnmarshalled["repoUri"]
 		oldBranch, _ := appDataUnmarshalled["branch"]
 		if oldBranch == branch && oldUri == uri {
-			lastError, _ = appDataUnmarshalled["lastError"] // keep last error
+			lastError, ok := appDataUnmarshalled["lastError"]
+			if ok {
+				newAppData["lastError"] = lastError // keep last error
+			}
 		}
 	}
 
 	// update/set app data in config map
-	newAppData := map[string]string{
-		"repoUri":   uri,
-		"branch":    branch,
-		"path":      path,
-		"format":    format,
-		"action":    action,
-		"lastError": lastError,
-	}
 	newAppDataMarshalled, err := json.Marshal(newAppData)
 	if err != nil {
 		return errors.Wrap(err, "failed to marshal new app data")
