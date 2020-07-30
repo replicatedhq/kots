@@ -120,8 +120,11 @@ func calculateStatefulSetState(r *appsv1.StatefulSet) types.State {
 	if desiredReplicas == 0 {
 		// TODO: what to do here?
 	}
-	if r.Status.ReadyReplicas >= desiredReplicas {
+	if r.Status.UpdatedReplicas >= desiredReplicas {
 		return types.StateReady
+	}
+	if r.Status.ReadyReplicas >= desiredReplicas {
+		return types.StateDegraded
 	}
 	if r.Status.ReadyReplicas > 0 {
 		return types.StateDegraded
