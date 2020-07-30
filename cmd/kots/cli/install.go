@@ -124,6 +124,9 @@ func InstallCmd() *cobra.Command {
 				IncludeMinio:              v.GetBool("deploy-minio"),
 				IncludeDockerDistribution: v.GetBool("deploy-dockerdistribution"),
 				Timeout:                   time.Minute * 2,
+				HTTPProxyEnvValue:         v.GetString("http-proxy"),
+				HTTPSProxyEnvValue:        v.GetString("https-proxy"),
+				NoProxyEnvValue:           v.GetString("no-proxy"),
 
 				KotsadmOptions: kotsadmtypes.KotsadmOptions{
 					OverrideVersion:   v.GetString("kotsadm-tag"),
@@ -140,6 +143,21 @@ func InstallCmd() *cobra.Command {
 			}
 
 			deployOptions.Timeout = timeout
+
+			if v.GetBool("copy-proxy-env") {
+				deployOptions.HTTPProxyEnvValue = os.Getenv("HTTP_PROXY")
+				if deployOptions.HTTPProxyEnvValue == "" {
+					deployOptions.HTTPProxyEnvValue = os.Getenv("http_proxy")
+				}
+				deployOptions.HTTPSProxyEnvValue = os.Getenv("HTTPS_PROXY")
+				if deployOptions.HTTPSProxyEnvValue == "" {
+					deployOptions.HTTPSProxyEnvValue = os.Getenv("https_proxy")
+				}
+				deployOptions.NoProxyEnvValue = os.Getenv("NO_PROXY")
+				if deployOptions.NoProxyEnvValue == "" {
+					deployOptions.NoProxyEnvValue = os.Getenv("no_proxy")
+				}
+			}
 
 			log.ActionWithoutSpinner("Deploying Admin Console")
 			if err := kotsadm.Deploy(deployOptions); err != nil {
@@ -222,6 +240,10 @@ func InstallCmd() *cobra.Command {
 	cmd.Flags().String("config-values", "", "path to a manifest containing config values (must be apiVersion: kots.io/v1beta1, kind: ConfigValues)")
 	cmd.Flags().Bool("port-forward", true, "set to false to disable automatic port forward")
 	cmd.Flags().String("wait-duration", "2m", "timeout out to be used while waiting for individual components to be ready.  must be in Go duration format (eg: 10s, 2m)")
+	cmd.Flags().String("http-proxy", "", "sets HTTP_PROXY environment variable in all KOTS Admin Console components")
+	cmd.Flags().String("https-proxy", "", "sets HTTPS_PROXY environment variable in all KOTS Admin Console components")
+	cmd.Flags().String("no-proxy", "", "sets NO_PROXY environment variable in all KOTS Admin Console components")
+	cmd.Flags().Bool("copy-proxy-env", false, "copy proxy environment variables from current environment into all KOTS Admin Console components")
 
 	cmd.Flags().String("repo", "", "repo uri to use when installing a helm chart")
 	cmd.Flags().StringSlice("set", []string{}, "values to pass to helm when running helm template")

@@ -32,6 +32,9 @@ type DeployOptions struct {
 	IncludeMinio              bool
 	IncludeDockerDistribution bool
 	Timeout                   time.Duration
+	HTTPProxyEnvValue         string
+	HTTPSProxyEnvValue        string
+	NoProxyEnvValue           string
 
 	KotsadmOptions KotsadmOptions
 }
