@@ -505,7 +505,6 @@ func GetLicenseType(appID string, sequence int64) (string, error) {
 	return license.Spec.LicenseType, nil
 }
 
-// TODO: pass in the parent sequence of the current downstream version
 func GetRealizedLinksFromAppSpec(appID string, sequence int64) ([]types.RealizedLink, error) {
 	db := persistence.MustGetPGSession()
 	query := `select app_spec, kots_app_spec from app_version where app_id = $1 and sequence = $2`
