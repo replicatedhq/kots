@@ -219,7 +219,7 @@ func UpdateDownstreamGitOps(appID, clusterID, uri, branch, path, format, action 
 	}
 
 	configMapData := map[string]string{}
-	if configMapExists {
+	if configMapExists && configMap.Data != nil {
 		configMapData = configMap.Data
 	}
 
