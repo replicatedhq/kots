@@ -7,10 +7,8 @@ import (
 	"path/filepath"
 
 	"github.com/pkg/errors"
-	"github.com/replicatedhq/kots/pkg/k8sdoc"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	yaml "gopkg.in/yaml.v2"
-	corev1 "k8s.io/api/core/v1"
 	kustomizetypes "sigs.k8s.io/kustomize/api/types"
 	k8syaml "sigs.k8s.io/yaml"
 )
@@ -161,7 +159,7 @@ func (m *Midstream) writeObjectsWithPullSecret(options WriteOptions) error {
 	defer f.Close()
 
 	for _, o := range m.DocForPatches {
-		withPullSecret := obejctWithPullSecret(o, m.PullSecret)
+		withPullSecret := o.PatchWithPullSecret(m.PullSecret)
 
 		b, err := yaml.Marshal(withPullSecret)
 		if err != nil {
@@ -189,45 +187,4 @@ func removeFromPatches(patches []kustomizetypes.PatchStrategicMerge, filename st
 		}
 	}
 	return newPatches
-}
-
-func obejctWithPullSecret(obj *k8sdoc.Doc, secret *corev1.Secret) *k8sdoc.Doc {
-	newObj := &k8sdoc.Doc{
-		APIVersion: obj.APIVersion,
-		Kind:       obj.Kind,
-		Metadata: k8sdoc.Metadata{
-			Name:      obj.Metadata.Name,
-			Namespace: obj.Metadata.Namespace,
-			Labels:    obj.Metadata.Labels,
-		},
-	}
-	switch obj.Kind {
-	case "CronJob":
-		newObj.Spec = k8sdoc.Spec{
-			JobTemplate: k8sdoc.JobTemplate{
-				Spec: k8sdoc.JobSpec{
-					Template: k8sdoc.Template{
-						Spec: k8sdoc.PodSpec{
-							ImagePullSecrets: []k8sdoc.ImagePullSecret{
-								{"name": "kotsadm-replicated-registry"},
-							},
-						},
-					},
-				},
-			},
-		}
-
-	default:
-		newObj.Spec = k8sdoc.Spec{
-			Template: k8sdoc.Template{
-				Spec: k8sdoc.PodSpec{
-					ImagePullSecrets: []k8sdoc.ImagePullSecret{
-						{"name": "kotsadm-replicated-registry"},
-					},
-				},
-			},
-		}
-	}
-
-	return newObj
 }

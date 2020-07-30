@@ -49,6 +49,9 @@ type PullOptions struct {
 	AppSlug             string
 	AppSequence         int64
 	IsGitOps            bool
+	HTTPProxyEnvValue   string
+	HTTPSProxyEnvValue  string
+	NoProxyEnvValue     string
 }
 
 type RewriteImageOptions struct {
@@ -209,6 +212,9 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 		IncludeAdminConsole: includeAdminConsole,
 		SharedPassword:      pullOptions.SharedPassword,
 		EncryptConfig:       encryptConfig,
+		HTTPProxyEnvValue:   pullOptions.HTTPProxyEnvValue,
+		HTTPSProxyEnvValue:  pullOptions.HTTPSProxyEnvValue,
+		NoProxyEnvValue:     pullOptions.NoProxyEnvValue,
 	}
 	if err := upstream.WriteUpstream(u, writeUpstreamOptions); err != nil {
 		log.FinishSpinnerWithError()
@@ -276,7 +282,7 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 
 	var pullSecret *corev1.Secret
 	var images []kustomizetypes.Image
-	var objects []*k8sdoc.Doc
+	var objects []k8sdoc.K8sDoc
 	if pullOptions.RewriteImages {
 
 		log.ActionWithSpinner("Copying private images")

@@ -42,7 +42,9 @@ class AppSnapshots extends Component {
     isLoadingSnapshotSettings: true,
     isStartButtonClicked: false,
     restoreInProgressErr: false,
-    restoreInProgressMsg: ""
+    restoreInProgressMsg: "",
+    appSlugToRestore: "",
+    appSlugMismatch: false
   };
 
   componentDidMount = async () => {
@@ -182,9 +184,9 @@ class AppSnapshots extends Component {
       trigger: "manual",
       appID: this.props.app.id,
       sequence: snapshot.sequence,
-      startedAt: Utilities.dateFormat(snapshot.startedAt, "MMM D, YYYY h:mm A"),
-      finishedAt: Utilities.dateFormat(snapshot.finishedAt, "MMM D, YYYY h:mm A"),
-      expiresAt: Utilities.dateFormat(snapshot.expiresAt, "MMM D, YYYY h:mm A"),
+      startedAt: Utilities.dateFormat(snapshot.startedAt, "MM/DD/YY @ hh:mm a"),
+      finishedAt: Utilities.dateFormat(snapshot.finishedAt, "MM/DD/YY @ hh:mm a"),
+      expiresAt: Utilities.dateFormat(snapshot.expiresAt, "MM/DD/YY @ hh:mm a"),
       volumeCount: snapshot.volumeCount,
       volumeSuccessCount: snapshot.volumeSuccessCount,
       volumeBytes: 0,
@@ -216,6 +218,13 @@ class AppSnapshots extends Component {
   };
 
   handleRestoreSnapshot = snapshot => {
+    const { app } = this.props;
+
+    if (this.state.appSlugToRestore !== app?.slug) {
+      this.setState({ appSlugMismatch: true });
+      return;
+    }
+
     this.setState({
       restoringSnapshot: true,
       restoreErr: false,
@@ -266,7 +275,7 @@ class AppSnapshots extends Component {
       trigger: "manual",
       appID: app.id,
       sequence: "",
-      startedAt: moment().format("MMM D, YYYY h:mm A"),
+      startedAt: moment().format("MM/DD/YY @ hh:mm a"),
       finishedAt: "",
       expiresAt: "",
       volumeCount: 0,
@@ -319,6 +328,13 @@ class AppSnapshots extends Component {
         this.setState({ isStartButtonClicked: false });
       }
     }
+  }
+
+  handleApplicationSlugChange = (e) => {
+    if (this.state.appSlugMismatch) {
+      this.setState({ appSlugMismatch: false });
+    } 
+    this.setState({ appSlugToRestore: e.target.value });
   }
 
 
@@ -481,6 +497,10 @@ class AppSnapshots extends Component {
             restoringSnapshot={restoringSnapshot}
             restoreErr={restoreErr}
             restoreErrorMsg={restoreErrorMsg}
+            app={this.props.app}
+            appSlugToRestore={this.state.appSlugToRestore}
+            appSlugMismatch={this.state.appSlugMismatch}
+            handleApplicationSlugChange={this.handleApplicationSlugChange}
           />
         }
       </div>

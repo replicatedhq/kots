@@ -23,7 +23,7 @@ type FindPrivateImagesOptions struct {
 
 type FindPrivateImagesResult struct {
 	Images        []kustomizeimage.Image          // images to be rewritten
-	Docs          []*k8sdoc.Doc                   // docs that have rewritten images
+	Docs          []k8sdoc.K8sDoc                 // docs that have rewritten images
 	CheckedImages []kotsv1beta1.InstallationImage // all images found in the installation
 }
 
@@ -66,7 +66,7 @@ type FindObjectsWithImagesOptions struct {
 	BaseDir string
 }
 
-func FindObjectsWithImages(options FindObjectsWithImagesOptions) ([]*k8sdoc.Doc, error) {
+func FindObjectsWithImages(options FindObjectsWithImagesOptions) ([]k8sdoc.K8sDoc, error) {
 	objects, err := image.GetObjectsWithImages(options.BaseDir)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to list upstream images")

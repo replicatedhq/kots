@@ -317,6 +317,7 @@ func kotsadmDeployment(deployOptions types.DeployOptions) *appsv1.Deployment {
 			Value: "http://localhost:8800",
 		},
 	}
+	env = append(env, getProxyEnv(deployOptions)...)
 
 	if deployOptions.KotsadmOptions.OverrideRegistry != "" {
 		env = append(env, corev1.EnvVar{

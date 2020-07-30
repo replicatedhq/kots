@@ -234,7 +234,12 @@ class GitOpsDeploymentManager extends React.Component {
 
     try {
       const clusterId = downstream?.cluster?.id;
-      await this.props.updateAppGitOps(app.id, clusterId, gitOpsInput);
+
+      const success = await this.updateAppGitOps(app.id, clusterId, gitOpsInput);
+      if (!success) {
+        return;
+      }
+      
       this.props.history.push(`/app/${app.slug}/gitops`);
     } catch (error) {
       console.log(error);

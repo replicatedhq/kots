@@ -10,11 +10,11 @@ import (
 type Midstream struct {
 	Kustomization *kustomizetypes.Kustomization
 	Base          *base.Base
-	DocForPatches []*k8sdoc.Doc
+	DocForPatches []k8sdoc.K8sDoc
 	PullSecret    *corev1.Secret
 }
 
-func CreateMidstream(b *base.Base, images []kustomizetypes.Image, objects []*k8sdoc.Doc, pullSecret *corev1.Secret) (*Midstream, error) {
+func CreateMidstream(b *base.Base, images []kustomizetypes.Image, objects []k8sdoc.K8sDoc, pullSecret *corev1.Secret) (*Midstream, error) {
 	kustomization := kustomizetypes.Kustomization{
 		TypeMeta: kustomizetypes.TypeMeta{
 			APIVersion: "kustomize.config.k8s.io/v1beta1",

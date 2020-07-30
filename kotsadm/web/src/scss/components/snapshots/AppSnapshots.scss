@@ -56,3 +56,37 @@
     border-bottom: 1px solid #DFDFDF;
   }
 }
+
+.slugArrow {
+  position: absolute;
+  left: 26px;
+  bottom: 73px;
+  background-color:#F5F8FC;
+  color: #073551;
+  width: 150px;
+  height: 36px;
+  z-index: 999;
+  border-radius: 4px;
+  padding-left: 10px;
+  padding-right: 10px;
+  font-style: normal;
+  font-weight: 500;
+  font-size: 12px;
+  line-height: 15px;
+
+  &:after {
+    display: inline-block;
+    content: "";
+    border-right: 1px solid #D8D8D8;
+    border-top: 1px solid #D8D8D8;
+    position: absolute;
+    top: 5px;
+    left: 155px;
+    width: 25px;
+    background:#F5F8FC;
+    height: 25px;
+    z-index: 1;
+    transform: rotate(45deg);
+    -webkit-transform: rotate(45deg);
+  }
+}
