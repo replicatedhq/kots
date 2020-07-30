@@ -145,7 +145,7 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 
 	var pullSecret *corev1.Secret
 	var images []kustomizetypes.Image
-	var objects []*k8sdoc.Doc
+	var objects []k8sdoc.K8sDoc
 
 	if rewriteOptions.CopyImages || rewriteOptions.RegistryEndpoint != "" {
 		// When CopyImages is set, we copy images, rewrite all images, and use registry
