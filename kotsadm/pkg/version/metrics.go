@@ -96,8 +96,8 @@ func GetMetricCharts(appID string, sequence int64) ([]MetricChart, error) {
 	query := `select kots_app_spec from app_version where app_id = $1 and sequence = $2`
 	row := db.QueryRow(query, appID, sequence)
 
-	var appSpecStr sql.NullString
-	if err := row.Scan(&appSpecStr); err != nil {
+	var kotsAppSpecStr sql.NullString
+	if err := row.Scan(&kotsAppSpecStr); err != nil {
 		if err == sql.ErrNoRows {
 			return []MetricChart{}, nil
 		}
@@ -105,11 +105,11 @@ func GetMetricCharts(appID string, sequence int64) ([]MetricChart, error) {
 	}
 
 	graphs := DefaultMetricGraphs
-	if appSpecStr.Valid {
+	if kotsAppSpecStr.Valid {
 		decode := scheme.Codecs.UniversalDeserializer().Decode
-		obj, _, err := decode([]byte(appSpecStr.String), nil, nil)
+		obj, _, err := decode([]byte(kotsAppSpecStr.String), nil, nil)
 		if err != nil {
-			return nil, errors.Wrap(err, "failed to decode application spec")
+			return nil, errors.Wrap(err, "failed to decode kots app spec")
 		}
 		a := obj.(*kotsv1beta1.Application)
 

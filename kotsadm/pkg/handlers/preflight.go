@@ -112,7 +112,7 @@ func StartPreflightChecks(w http.ResponseWriter, r *http.Request) {
 
 	go func() {
 		defer os.RemoveAll(archiveDir)
-		if err := preflight.Run(foundApp.ID, foundApp.CurrentSequence, archiveDir); err != nil {
+		if err := preflight.Run(foundApp.ID, int64(sequence), archiveDir); err != nil {
 			logger.Error(err)
 			return
 		}

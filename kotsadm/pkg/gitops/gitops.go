@@ -32,16 +32,16 @@ import (
 )
 
 type GitOpsConfig struct {
-	Provider   string `json:"provider"`
-	RepoURI    string `json:"repoUri"`
-	Hostname   string `json:"hostname"`
-	Path       string `json:"path"`
-	Branch     string `json:"branch"`
-	Format     string `json:"format"`
-	Action     string `json:"action"`
-	PublicKey  string `json:"publicKey"`
-	PrivateKey string `json:"-"`
-	LastError  string `json:"lastError"`
+	Provider    string `json:"provider"`
+	RepoURI     string `json:"repoUri"`
+	Hostname    string `json:"hostname"`
+	Path        string `json:"path"`
+	Branch      string `json:"branch"`
+	Format      string `json:"format"`
+	Action      string `json:"action"`
+	PublicKey   string `json:"publicKey"`
+	PrivateKey  string `json:"-"`
+	IsConnected bool   `json:"isConnected"`
 }
 
 func (g *GitOpsConfig) CommitURL(hash string) string {
@@ -156,7 +156,10 @@ func GetDownstreamGitOps(appID string, clusterID string) (*GitOpsConfig, error) 
 					Path:       configMapData["path"],
 					Format:     configMapData["format"],
 					Action:     configMapData["action"],
-					LastError:  configMapData["lastError"],
+				}
+
+				if lastError, ok := configMapData["lastError"]; ok && lastError == "" {
+					gitOpsConfig.IsConnected = true
 				}
 
 				return &gitOpsConfig, nil

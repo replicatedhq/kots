@@ -2,6 +2,7 @@ import moment from "moment";
 import React, { Component } from "react";
 import Helmet from "react-helmet";
 import { withRouter } from "react-router-dom";
+import { compose, withApollo } from "react-apollo";
 import size from "lodash/size";
 import get from "lodash/get";
 import Loader from "../shared/Loader";
@@ -114,28 +115,8 @@ class Dashboard extends Component {
     }
   }
 
-  getKotsApp = () => {
-    return new Promise((resolve, reject) => {
-      fetch(`${window.env.API_ENDPOINT}/app/${this.props.app?.slug}`, {
-        headers: {
-          "Authorization": Utilities.getToken(),
-          "Content-Type": "application/json",
-        },
-        method: "GET",
-      })
-        .then(async (res) => {
-          const response = await res.json();
-          console.log(response)
-        })
-        .catch((err) => {
-          console.log(err);
-          reject(err);
-        });
-    });
-  }
-
-  getAppLicense = async () => {
-    await fetch(`${window.env.API_ENDPOINT}/app/${this.props.app.slug}/license`, {
+  getAppLicense = async (app) => {
+    await fetch(`${window.env.API_ENDPOINT}/app/${app.slug}/license`, {
       method: "GET",
       headers: {
         "Authorization": Utilities.getToken(),
@@ -158,10 +139,10 @@ class Dashboard extends Component {
 
     this.state.updateChecker.start(this.updateStatus, 1000);
     this.state.getAppDashboardJob.start(this.getAppDashboard, 2000);
-    this.getKotsApp()
-    this.getAppLicense();
+
     if (app) {
       this.setWatchState(app);
+      this.getAppLicense(app);
     }
   }
 
@@ -581,7 +562,7 @@ class Dashboard extends Component {
                 app={app}
               />
               <DashboardCard
-                cardName={`Version: ${currentVersion?.title ? currentVersion?.title : ""}`}
+                cardName={`Version: ${currentVersion?.versionLabel ? currentVersion?.versionLabel : ""}`}
                 cardIcon="versionIcon"
                 versionHistory={true}
                 currentVersion={currentVersion}
@@ -730,4 +711,4 @@ class Dashboard extends Component {
   }
 }
 
-export default withRouter(Dashboard);
+export default compose(withApollo, withRouter)(Dashboard);

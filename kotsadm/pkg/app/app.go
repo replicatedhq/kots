@@ -17,26 +17,26 @@ import (
 )
 
 type App struct {
-	ID                    string `json:"id"`
-	Slug                  string `json:"slug"`
-	Name                  string `json:"name"`
-	License               string `json:"license"`
-	IsAirgap              bool   `json:"isAirgap"`
-	CurrentSequence       int64  `json:"currentSequence"`
-	UpstreamURI           string `json:"upstreamUri"`
-	IconURI               string `json:"iconUri"`
-	UpdatedAt             string `json:"createdAt"`
-	CreatedAt             string `json:"updatedAt"`
-	LastUpdateCheckAt     string `json:"lastUpdateCheckAt"`
-	BundleCommand         string `json:"bundleCommand"`
-	HasPreflight          bool   `json:"hasPreflight"`
-	IsConfigurable        bool   `json:"isConfigurable"`
-	SnapshotTTL           string `json:"snapshotTtl"`
-	SnapshotSchedule      string `json:"snapshotSchedule"`
-	RestoreInProgressName string `json:"restoreInProgressName"`
-	RestoreUndeployStatus string `json:"restoreUndeloyStatus"`
-	UpdateCheckerSpec     string `json:"updateCheckerSpec"`
-	IsGitOps              bool   `json:"isGitOps"`
+	ID                    string     `json:"id"`
+	Slug                  string     `json:"slug"`
+	Name                  string     `json:"name"`
+	License               string     `json:"license"`
+	IsAirgap              bool       `json:"isAirgap"`
+	CurrentSequence       int64      `json:"currentSequence"`
+	UpstreamURI           string     `json:"upstreamUri"`
+	IconURI               string     `json:"iconUri"`
+	UpdatedAt             *time.Time `json:"createdAt"`
+	CreatedAt             time.Time  `json:"updatedAt"`
+	LastUpdateCheckAt     string     `json:"lastUpdateCheckAt"`
+	BundleCommand         string     `json:"bundleCommand"`
+	HasPreflight          bool       `json:"hasPreflight"`
+	IsConfigurable        bool       `json:"isConfigurable"`
+	SnapshotTTL           string     `json:"snapshotTtl"`
+	SnapshotSchedule      string     `json:"snapshotSchedule"`
+	RestoreInProgressName string     `json:"restoreInProgressName"`
+	RestoreUndeployStatus string     `json:"restoreUndeloyStatus"`
+	UpdateCheckerSpec     string     `json:"updateCheckerSpec"`
+	IsGitOps              bool       `json:"isGitOps"`
 }
 
 type RegistryInfo struct {
@@ -60,7 +60,7 @@ func Get(id string) (*App, error) {
 	var licenseStr sql.NullString
 	var upstreamURI sql.NullString
 	var iconURI sql.NullString
-	var updatedAt sql.NullString
+	var updatedAt sql.NullTime
 	var currentSequence sql.NullInt64
 	var lastUpdateCheckAt sql.NullString
 	var snapshotTTLNew sql.NullString
@@ -76,7 +76,6 @@ func Get(id string) (*App, error) {
 	app.License = licenseStr.String
 	app.UpstreamURI = upstreamURI.String
 	app.IconURI = iconURI.String
-	app.UpdatedAt = updatedAt.String
 	app.LastUpdateCheckAt = lastUpdateCheckAt.String
 	app.SnapshotTTL = snapshotTTLNew.String
 	app.SnapshotSchedule = snapshotSchedule.String
@@ -84,27 +83,33 @@ func Get(id string) (*App, error) {
 	app.RestoreUndeployStatus = restoreUndeployStatus.String
 	app.UpdateCheckerSpec = updateCheckerSpec.String
 
+	if updatedAt.Valid {
+		app.UpdatedAt = &updatedAt.Time
+	}
+
 	if currentSequence.Valid {
 		app.CurrentSequence = currentSequence.Int64
 	} else {
 		app.CurrentSequence = -1
 	}
 
-	query = `select preflight_spec, config_spec from app_version where app_id = $1 AND sequence = $2`
-	row = db.QueryRow(query, id, app.CurrentSequence)
+	if app.CurrentSequence != -1 {
+		query = `select preflight_spec, config_spec from app_version where app_id = $1 AND sequence = $2`
+		row = db.QueryRow(query, id, app.CurrentSequence)
 
-	var preflightSpec sql.NullString
-	var configSpec sql.NullString
+		var preflightSpec sql.NullString
+		var configSpec sql.NullString
 
-	if err := row.Scan(&preflightSpec, &configSpec); err != nil {
-		return nil, errors.Wrap(err, "failed to scan app_version")
-	}
+		if err := row.Scan(&preflightSpec, &configSpec); err != nil {
+			return nil, errors.Wrap(err, "failed to scan app_version")
+		}
 
-	if preflightSpec.Valid && preflightSpec.String != "" {
-		app.HasPreflight = true
-	}
-	if configSpec.Valid && configSpec.String != "" {
-		app.IsConfigurable = true
+		if preflightSpec.Valid && preflightSpec.String != "" {
+			app.HasPreflight = true
+		}
+		if configSpec.Valid && configSpec.String != "" {
+			app.IsConfigurable = true
+		}
 	}
 
 	bundleCommand := fmt.Sprintf(`

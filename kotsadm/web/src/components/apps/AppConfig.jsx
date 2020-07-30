@@ -9,7 +9,7 @@ import debounce from "lodash/debounce";
 import map from "lodash/map";
 import Modal from "react-modal";
 import Loader from "../shared/Loader";
-import { getAppConfigGroups, getKotsApp, templateConfigGroups } from "../../queries/AppsQueries";
+import { getAppConfigGroups, templateConfigGroups } from "../../queries/AppsQueries";
 
 import "../../scss/components/watches/WatchConfig.scss";
 import { Utilities } from "../../utilities/utilities";
@@ -28,7 +28,8 @@ class AppConfig extends Component {
       savingConfig: false,
       changed: false,
       showNextStepModal: false,
-      savingConfigError: ""
+      savingConfigError: "",
+      app: null,
     }
 
     this.handleConfigChange = debounce(this.handleConfigChange, 250);
@@ -36,8 +37,15 @@ class AppConfig extends Component {
 
   componentWillMount() {
     const { app, history } = this.props;
-    if (app && !app.isConfigurable) { // app not configurable - redirect
+    if (app && !app.isConfigurable) {
+      // app not configurable - redirect
       history.replace(`/app/${app.slug}`);
+    }
+  }
+
+  componentDidMount() {
+    if (!this.props.app) {
+      this.getApp();
     }
   }
 
@@ -47,11 +55,32 @@ class AppConfig extends Component {
       const initialConfigGroups = JSON.parse(JSON.stringify(getAppConfigGroups)); // quick deep copy
       this.setState({ configGroups: getAppConfigGroups, initialConfigGroups });
     }
-    if (this.props.getKotsApp) {
-      const { getKotsApp } = this.props.getKotsApp;
-      if (getKotsApp && !getKotsApp.isConfigurable) { // app not configurable - redirect
-        this.props.history.replace(`/app/${getKotsApp.slug}`);
+    if (this.state.app && !this.state.app.isConfigurable) {
+      // app not configurable - redirect
+      this.props.history.replace(`/app/${this.state.app.slug}`);
+    }
+  }
+
+  getApp = async () => {
+    if (this.props.app) {
+      return;
+    }
+
+    try {
+      const { slug } = this.props.match.params;
+      const res = await fetch(`${window.env.API_ENDPOINT}/apps/app/${slug}`, {
+        headers: {
+          "Authorization": Utilities.getToken(),
+          "Content-Type": "application/json",
+        },
+        method: "GET",
+      });
+      if (res.ok && res.status == 200) {
+        const app = await res.json();
+        this.setState({ app });
       }
+    } catch(err) {
+      console.log(err);
     }
   }
 
@@ -90,7 +119,7 @@ class AppConfig extends Component {
   handleSave = async () => {
     this.setState({ savingConfig: true, savingConfigError: "" });
 
-    const { fromLicenseFlow, history, getKotsApp, match } = this.props;
+    const { fromLicenseFlow, history, match } = this.props;
     const sequence = this.getSequence();
     const slug = this.getSlug();
     const createNewVersion = !fromLicenseFlow && match.params.sequence == undefined;
@@ -126,7 +155,7 @@ class AppConfig extends Component {
         }
 
         if (fromLicenseFlow) {
-          const hasPreflight = getKotsApp?.getKotsApp?.hasPreflight;
+          const hasPreflight = this.state.app?.hasPreflight;
           if (hasPreflight) {
             history.replace("/preflight");
           } else {
@@ -209,9 +238,11 @@ class AppConfig extends Component {
 
   render() {
     const { configGroups, savingConfig, changed, showNextStepModal, savingConfigError } = this.state;
-    const { fromLicenseFlow, getKotsApp, match } = this.props;
+    const { fromLicenseFlow, match } = this.props;
 
-    if (!configGroups.length || getKotsApp?.loading) {
+    const app = this.props.app || this.state.app;
+
+    if (!configGroups.length || !app) {
       return (
         <div className="flex-column flex1 alignItems--center justifyContent--center">
           <Loader size="60" />
@@ -219,7 +250,6 @@ class AppConfig extends Component {
       );
     }
 
-    const app = this.props.app || getKotsApp?.getKotsApp;
     const gitops = app?.downstreams?.length && app.downstreams[0]?.gitops;
     const isNewVersion = !fromLicenseFlow && match.params.sequence == undefined;
 
@@ -308,19 +338,6 @@ export default withRouter(compose(
         variables: {
           slug,
           sequence,
-        },
-        fetchPolicy: "no-cache"
-      }
-    }
-  }),
-  graphql(getKotsApp, {
-    name: "getKotsApp",
-    skip: ({ app }) => !!app,
-    options: ({ match }) => {
-      const slug = match.params.slug;
-      return {
-        variables: {
-          slug,
         },
         fetchPolicy: "no-cache"
       }

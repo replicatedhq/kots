@@ -12,7 +12,6 @@ import LicenseUploadProgress from "./LicenseUploadProgress";
 import AirgapRegistrySettings from "./shared/AirgapRegistrySettings";
 import { Utilities } from "../utilities/utilities";
 import { getSupportBundleCommand } from "../queries/TroubleshootQueries";
-import { getKotsApp } from "../queries/AppsQueries";
 
 import "../scss/components/troubleshoot/UploadSupportBundleModal.scss";
 import "../scss/components/Login.scss";
@@ -323,31 +322,34 @@ class UploadAirgapBundle extends React.Component {
 
     await onUploadSuccess();
 
-    const app = await this.getKotsApp(match.params.slug);
+    const app = await this.getApp(match.params.slug);
 
-    if (app.isConfigurable) {
+    if (app?.isConfigurable) {
       this.props.history.replace(`/${app.slug}/config`);
-    } else if (app.hasPreflight) {
+    } else if (app?.hasPreflight) {
       this.props.history.replace(`/preflight`);
     } else {
       this.props.history.replace(`/app/${app.slug}`);
     }
   }
 
-  getKotsApp = (slug) => {
-    return new Promise((resolve, reject) => {
-      this.props.client.query({
-        query: getKotsApp,
-        variables: {
-          slug: slug,
+  getApp = async (slug) => {
+    try {
+      const res = await fetch(`${window.env.API_ENDPOINT}/apps/app/${slug}`, {
+        headers: {
+          "Authorization": Utilities.getToken(),
+          "Content-Type": "application/json",
         },
-        fetchPolicy: "no-cache"
-      }).then(response => {
-        resolve(response.data.getKotsApp);
-      }).catch((error) => {
-        reject(error);
+        method: "GET",
       });
-    });
+      if (res.ok && res.status == 200) {
+        const app = await res.json();
+        return app;
+      }
+    } catch(err) {
+      console.log(err);
+    }
+    return null;
   }
 
   toggleViewOnlineInstallErrorMessage = () => {
