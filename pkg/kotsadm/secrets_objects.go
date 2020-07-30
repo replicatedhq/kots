@@ -75,7 +75,7 @@ func sharedPasswordSecret(namespace string, bcryptPassword string) *corev1.Secre
 	return secret
 }
 
-func s3Secret(namespace string, accessKey string, secretKey string) *corev1.Secret {
+func s3Secret(namespace string, options types.ObjectStoreConfig) *corev1.Secret {
 	secret := &corev1.Secret{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "v1",
@@ -86,10 +86,7 @@ func s3Secret(namespace string, accessKey string, secretKey string) *corev1.Secr
 			Namespace: namespace,
 			Labels:    types.GetKotsadmLabels(),
 		},
-		Data: map[string][]byte{
-			"accesskey": []byte(accessKey),
-			"secretkey": []byte(secretKey),
-		},
+		Data: options.ToSecretData(),
 	}
 
 	return secret

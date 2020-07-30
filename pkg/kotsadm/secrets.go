@@ -62,13 +62,10 @@ func getSecretsYAML(deployOptions *types.DeployOptions) (map[string][]byte, erro
 	docs["secret-api-encryption.yaml"] = apiEncryptionBuffer.Bytes()
 
 	var s3 bytes.Buffer
-	if deployOptions.S3SecretKey == "" {
-		deployOptions.S3SecretKey = uuid.New().String()
-	}
-	if deployOptions.S3AccessKey == "" {
-		deployOptions.S3AccessKey = uuid.New().String()
-	}
-	if err := s.Encode(s3Secret(deployOptions.Namespace, deployOptions.S3AccessKey, deployOptions.S3SecretKey), &s3); err != nil {
+
+	s3Secret := s3Secret(deployOptions.Namespace, deployOptions.ObjectStoreOptions)
+
+	if err := s.Encode(s3Secret, &s3); err != nil {
 		return nil, errors.Wrap(err, "failed to marshal s3 secret")
 	}
 	docs["secret-s3.yaml"] = s3.Bytes()
@@ -106,7 +103,7 @@ func ensureSecrets(deployOptions *types.DeployOptions, clientset *kubernetes.Cli
 		}
 	}
 
-	if err := ensureS3Secret(deployOptions.Namespace, clientset); err != nil {
+	if err := ensureS3Secret(deployOptions.Namespace, deployOptions.ObjectStoreOptions, clientset); err != nil {
 		return errors.Wrap(err, "failed to ensure s3 secret")
 	}
 
@@ -134,17 +131,20 @@ func getS3Secret(namespace string, clientset *kubernetes.Clientset) (*corev1.Sec
 	return s3Secret, nil
 }
 
-func ensureS3Secret(namespace string, clientset *kubernetes.Clientset) error {
+// Currently this will not patch an existing secret, its a simple insert-ignore
+func ensureS3Secret(namespace string, options types.ObjectStoreConfig, clientset *kubernetes.Clientset) error {
 	existingS3Secret, err := getS3Secret(namespace, clientset)
 	if err != nil {
 		return errors.Wrap(err, "failed to check for existing s3 secret")
 	}
 
-	if existingS3Secret == nil {
-		_, err := clientset.CoreV1().Secrets(namespace).Create(context.TODO(), s3Secret(namespace, uuid.New().String(), uuid.New().String()), metav1.CreateOptions{})
-		if err != nil {
-			return errors.Wrap(err, "failed to create s3 secret")
-		}
+	if existingS3Secret != nil {
+		return nil
+	}
+
+	_, err = clientset.CoreV1().Secrets(namespace).Create(context.TODO(), s3Secret(namespace, options), metav1.CreateOptions{})
+	if err != nil {
+		return errors.Wrap(err, "failed to create s3 secret")
 	}
 
 	return nil

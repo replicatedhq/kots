@@ -33,7 +33,7 @@ func getMinioYAML(deployOptions types.DeployOptions) (map[string][]byte, error) 
 }
 
 func ensureMinio(deployOptions types.DeployOptions, clientset *kubernetes.Clientset) error {
-	if err := ensureS3Secret(deployOptions.Namespace, clientset); err != nil {
+	if err := ensureS3Secret(deployOptions.Namespace, deployOptions.ObjectStoreOptions, clientset); err != nil {
 		return errors.Wrap(err, "failed to ensure minio secret")
 	}
 

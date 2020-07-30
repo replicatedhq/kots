@@ -1,11 +1,10 @@
 package types
 
 import (
-	"time"
-
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
+	"time"
 )
 
 type DeployOptions struct {
@@ -34,4 +33,5 @@ type DeployOptions struct {
 	Timeout                   time.Duration
 
 	KotsadmOptions KotsadmOptions
+	ObjectStoreOptions        ObjectStoreConfig
 }
