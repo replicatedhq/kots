@@ -24,7 +24,6 @@ import (
 	"github.com/replicatedhq/kots/pkg/docker/registry"
 	"github.com/replicatedhq/kots/pkg/k8sdoc"
 	"github.com/replicatedhq/kots/pkg/logger"
-	"gopkg.in/yaml.v2"
 	kustomizeimage "sigs.k8s.io/kustomize/api/types"
 )
 
@@ -90,10 +89,10 @@ func CopyImages(srcRegistry, destRegistry registry.RegistryOptions, appSlug stri
 	return newImages, nil
 }
 
-func GetPrivateImages(upstreamDir string, checkedImages map[string]ImageInfo, allPrivate bool) ([]string, []*k8sdoc.Doc, error) {
+func GetPrivateImages(upstreamDir string, checkedImages map[string]ImageInfo, allPrivate bool) ([]string, []k8sdoc.K8sDoc, error) {
 	uniqueImages := make(map[string]bool)
 
-	objects := make([]*k8sdoc.Doc, 0) // all objects where images are referenced from
+	objects := make([]k8sdoc.K8sDoc, 0) // all objects where images are referenced from
 
 	err := filepath.Walk(upstreamDir,
 		func(path string, info os.FileInfo, err error) error {
@@ -110,7 +109,7 @@ func GetPrivateImages(upstreamDir string, checkedImages map[string]ImageInfo, al
 				return err
 			}
 
-			return listImagesInFile(contents, func(images []string, doc *k8sdoc.Doc) error {
+			return listImagesInFile(contents, func(images []string, doc k8sdoc.K8sDoc) error {
 				numPrivateImages := 0
 				for _, image := range images {
 					if allPrivate {
@@ -164,8 +163,8 @@ func GetPrivateImages(upstreamDir string, checkedImages map[string]ImageInfo, al
 	return result, objects, nil
 }
 
-func GetObjectsWithImages(upstreamDir string) ([]*k8sdoc.Doc, error) {
-	objects := make([]*k8sdoc.Doc, 0)
+func GetObjectsWithImages(upstreamDir string) ([]k8sdoc.K8sDoc, error) {
+	objects := make([]k8sdoc.K8sDoc, 0)
 
 	err := filepath.Walk(upstreamDir,
 		func(path string, info os.FileInfo, err error) error {
@@ -182,7 +181,7 @@ func GetObjectsWithImages(upstreamDir string) ([]*k8sdoc.Doc, error) {
 				return err
 			}
 
-			return listImagesInFile(contents, func(images []string, doc *k8sdoc.Doc) error {
+			return listImagesInFile(contents, func(images []string, doc k8sdoc.K8sDoc) error {
 				if len(images) > 0 {
 					objects = append(objects, doc)
 				}
@@ -215,7 +214,7 @@ func copyImagesInFileBetweenRegistries(srcRegistry, destRegistry registry.Regist
 		savedImages[fmt.Sprintf("%s:%s", image.Name, image.NewTag)] = true
 	}
 
-	err := listImagesInFile(fileData, func(images []string, doc *k8sdoc.Doc) error {
+	err := listImagesInFile(fileData, func(images []string, doc k8sdoc.K8sDoc) error {
 		for _, image := range images {
 			if _, saved := savedImages[image]; saved {
 				continue
@@ -242,32 +241,17 @@ func copyImagesInFileBetweenRegistries(srcRegistry, destRegistry registry.Regist
 	return newImages, err
 }
 
-type processImagesFunc func([]string, *k8sdoc.Doc) error
+type processImagesFunc func([]string, k8sdoc.K8sDoc) error
 
 func listImagesInFile(contents []byte, handler processImagesFunc) error {
 	yamlDocs := bytes.Split(contents, []byte("\n---\n"))
 	for _, yamlDoc := range yamlDocs {
-		parsed := &k8sdoc.Doc{}
-		if err := yaml.Unmarshal(yamlDoc, parsed); err != nil {
+		parsed, err := k8sdoc.ParseYAML(yamlDoc)
+		if err != nil {
 			continue
 		}
 
-		images := make([]string, 0)
-		for _, container := range parsed.Spec.Template.Spec.Containers {
-			images = append(images, container.Image)
-		}
-
-		for _, container := range parsed.Spec.Template.Spec.InitContainers {
-			images = append(images, container.Image)
-		}
-
-		for _, container := range parsed.Spec.JobTemplate.Spec.Template.Spec.InitContainers {
-			images = append(images, container.Image)
-		}
-
-		for _, container := range parsed.Spec.JobTemplate.Spec.Template.Spec.Containers {
-			images = append(images, container.Image)
-		}
+		images := parsed.ListImages()
 
 		if err := handler(images, parsed); err != nil {
 			return err

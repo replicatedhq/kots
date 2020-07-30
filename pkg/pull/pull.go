@@ -282,7 +282,7 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 
 	var pullSecret *corev1.Secret
 	var images []kustomizetypes.Image
-	var objects []*k8sdoc.Doc
+	var objects []k8sdoc.K8sDoc
 	if pullOptions.RewriteImages {
 
 		log.ActionWithSpinner("Copying private images")
