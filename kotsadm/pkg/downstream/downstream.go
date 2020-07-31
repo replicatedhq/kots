@@ -167,13 +167,7 @@ WHERE
 
 	if err := row.Scan(&status, &statusInfo, &dryrunStdout, &dryrunStderr, &applyStdout, &applyStderr); err != nil {
 		if err == sql.ErrNoRows {
-			return &types.DownstreamOutput{
-				DryrunStdout: "",
-				DryrunStderr: "",
-				ApplyStdout:  "",
-				ApplyStderr:  "",
-				RenderError:  "",
-			}, nil
+			return &types.DownstreamOutput{}, nil
 		}
 		return nil, errors.Wrap(err, "failed to select downstream")
 	}
