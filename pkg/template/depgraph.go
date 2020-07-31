@@ -84,8 +84,8 @@ func (d *depGraph) AddKey(source, certName string) {
 
 func (d *depGraph) resolveCertKeys() {
 	for source, certNameMap := range d.KeyItems {
-		for certName, _ := range certNameMap {
-			for certProvider, _ := range d.CertItems[certName] {
+		for certName := range certNameMap {
+			for certProvider := range d.CertItems[certName] {
 				if certProvider != source {
 					d.AddDep(source, certProvider)
 				}
@@ -114,7 +114,7 @@ func (d *depGraph) GetHeadNodes() ([]string, error) {
 		waitList := []string{}
 		for k, v := range d.Dependencies {
 			depsList := []string{}
-			for dep, _ := range v {
+			for dep := range v {
 				depsList = append(depsList, fmt.Sprintf("%q", dep))
 			}
 			waitItem := fmt.Sprintf(`%q depends on %s`, k, strings.Join(depsList, `, `))

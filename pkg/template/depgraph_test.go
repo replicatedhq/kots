@@ -205,7 +205,7 @@ func buildTestConfigGroups(dependencies, certs, keys map[string][]string, prefix
 		"{{repl ConfigOptionIndex \"%s\" }}",
 		"{{repl ConfigOptionData \"%s\" }}",
 		"repl{{ ConfigOptionEquals \"%s\" \"abc\" }}",
-		"{{repl ConfigOptionNotEquals \"%s\" \"xyz\" }}{{repl DoesNotExistFunc }}",
+		"{{repl ConfigOptionNotEquals \"%s\" \"xyz\" }}",
 	}
 
 	if !rotate {
