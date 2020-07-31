@@ -112,7 +112,7 @@ func Get(id string) (*App, error) {
 		}
 	}
 
-	app.BundleCommand := fmt.Sprintf("curl https://krew.sh/support-bundle | bash\nkubectl support-bundle API_ADDRESS/api/v1/troubleshoot/%s\n", app.Slug)
+	app.BundleCommand = fmt.Sprintf("curl https://krew.sh/support-bundle | bash\nkubectl support-bundle API_ADDRESS/api/v1/troubleshoot/%s\n", app.Slug)
 
 	isGitOps, err := IsGitOpsEnabled(id)
 	if err != nil {

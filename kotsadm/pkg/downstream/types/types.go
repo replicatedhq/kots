@@ -1,8 +1,9 @@
 package types
 
 import (
-	v1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	"time"
+
+	v1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 )
 
 type Downstream struct {
