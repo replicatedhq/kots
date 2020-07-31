@@ -226,8 +226,8 @@ class Dashboard extends Component {
         });
 
         if (res.data.getUpdateDownloadStatus.status !== "running" && !this.props.isBundleUploading) {
-
           this.state.updateChecker.stop();
+
           this.setState({
             checkingForUpdates: false,
             checkingUpdateMessage: res.data.getUpdateDownloadStatus?.currentMessage,
@@ -237,11 +237,9 @@ class Dashboard extends Component {
           if (this.props.updateCallback) {
             this.props.updateCallback();
           }
-          // this.props.data.refetch();
         }
 
         resolve();
-
       }).catch((err) => {
         console.log("failed to get rewrite status", err);
         reject();
