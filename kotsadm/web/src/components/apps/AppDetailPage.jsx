@@ -108,7 +108,7 @@ class AppDetailPage extends Component {
         },
         method: "POST",
       });
-      this.refetchGraphQLData();
+      this.refetchData();
     } catch(err) {
       console.log(err);
     }
@@ -150,11 +150,11 @@ class AppDetailPage extends Component {
   }
 
   /**
-   * Refetch all the GraphQL data for this component and all its children
+   * Refetch all the data for this component and all its children
    *
    * @return {undefined}
    */
-  refetchGraphQLData = () => {
+  refetchData = () => {
     this.getApp();
     this.props.refetchListApps();
   }
@@ -276,7 +276,7 @@ class AppDetailPage extends Component {
                         app={app}
                         cluster={app.downstreams?.length && app.downstreams[0]?.cluster}
                         refetchListApps={refetchListApps}
-                        updateCallback={this.refetchGraphQLData}
+                        updateCallback={this.refetchData}
                         onActiveInitSession={this.props.onActiveInitSession}
                         makeCurrentVersion={this.makeCurrentRelease}
                         toggleIsBundleUploading={this.toggleIsBundleUploading}
@@ -295,7 +295,7 @@ class AppDetailPage extends Component {
                         app={app}
                         match={this.props.match}
                         makeCurrentVersion={this.makeCurrentRelease}
-                        updateCallback={this.refetchGraphQLData}
+                        updateCallback={this.refetchData}
                         toggleIsBundleUploading={this.toggleIsBundleUploading}
                         isBundleUploading={isBundleUploading}
                         refreshAppData={this.getApp}
@@ -317,7 +317,7 @@ class AppDetailPage extends Component {
                     <Route exact path="/app/:slug/license" render={() =>
                       <AppLicense
                         app={app}
-                        syncCallback={this.refetchGraphQLData}
+                        syncCallback={this.refetchData}
                       />
                     } />
                     <Route exact path="/app/:slug/registry-settings" render={() =>
