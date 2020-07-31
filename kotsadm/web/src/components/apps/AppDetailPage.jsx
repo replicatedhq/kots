@@ -141,6 +141,7 @@ class AppDetailPage extends Component {
         const app = await res.json();
         this.setState({ app, loadingApp: false });
       } else {
+        console.log("failed to get app, unexpected status code", res.status);
         this.setState({ loadingApp: false });
       }
     } catch(err) {
