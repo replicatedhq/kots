@@ -143,7 +143,7 @@ class AppVersionHistory extends Component {
 
   renderYamlErrors = (yamlErrorsDetails, version) => {
     return (
-      <div className="flex flex1 alignItems--center u-marginLeft--10">
+      <div className="flex alignItems--center u-marginLeft--10">
         <span className="icon error-small" />
         <span className="u-fontSize--small u-fontWeight--medium u-lineHeight--normal u-marginLeft--5 u-color--red">{yamlErrorsDetails?.length} Invalid files </span>
         <span className="replicated-link u-marginLeft--5 u-fontSize--small" onClick={() => this.toggleShowDetailsModal(yamlErrorsDetails, version.sequence)}> See details </span>
