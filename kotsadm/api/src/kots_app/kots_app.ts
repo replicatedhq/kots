@@ -608,6 +608,7 @@ export interface KotsVersion {
   preflightResultCreatedAt: string;
   source?: string;
   diffSummary?: string;
+  diffSummaryError?: string;
   commitUrl?: string;
   gitDeployable?: boolean;
   yamlErrors?: InstallationYAMLError[];

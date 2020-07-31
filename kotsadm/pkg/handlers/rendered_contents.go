@@ -87,7 +87,7 @@ func GetAppRenderedContents(w http.ResponseWriter, r *http.Request) {
 	archiveOutput, err := exec.Command(fmt.Sprintf("kustomize%s", kotsKinds.KustomizeVersion()), "build", kustomizeBuildTarget).Output()
 	if err != nil {
 		if ee, ok := err.(*exec.ExitError); ok {
-			logger.Errorf("kustomize stderr: %q", string(ee.Stderr))
+			err = fmt.Errorf("kustomize stderr: %q", string(ee.Stderr))
 		}
 		logger.Error(err)
 		w.WriteHeader(500)

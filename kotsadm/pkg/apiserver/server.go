@@ -160,6 +160,7 @@ func Start() {
 	// GitOps
 	r.Path("/api/v1/gitops/app/{appId}/cluster/{clusterId}/update").Methods("OPTIONS", "PUT").HandlerFunc(handlers.UpdateAppGitOps)
 	r.Path("/api/v1/gitops/app/{appId}/cluster/{clusterId}/disable").Methods("OPTIONS", "POST").HandlerFunc(handlers.DisableAppGitOps)
+	r.Path("/api/v1/gitops/reset").Methods("OPTIONS", "POST").HandlerFunc(handlers.ResetGitOps)
 
 	// to avoid confusion, we don't serve this in the dev env...
 	if os.Getenv("DISABLE_SPA_SERVING") != "1" {

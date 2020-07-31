@@ -237,7 +237,7 @@ export class KotsAPI {
       }
 
       await request.app.locals.stores.kotsAppStore.createDownstream(kotsApp.id, downstream, cluster.id);
-      await request.app.locals.stores.kotsAppStore.createDownstreamVersion(kotsApp.id, 0, cluster.id, installationSpec.versionLabel, "deployed", "Kots Install", "", "", false);
+      await request.app.locals.stores.kotsAppStore.createDownstreamVersion(kotsApp.id, 0, cluster.id, installationSpec.versionLabel, "deployed", "Kots Install", "", "", "", false);
     }
 
     return {
@@ -376,8 +376,13 @@ export async function uploadUpdate(stores, slug, buffer, source) {
     const status = preflightSpec
       ? "pending_preflight"
       : "pending";
-    const diffSummary = await getDiffSummary(kotsApp);
-    await stores.kotsAppStore.createDownstreamVersion(kotsApp.id, newSequence, clusterId, installationSpec.versionLabel, status, source, diffSummary, commitUrl, gitDeployable);
+    let diffSummary = "", diffSummaryError = "";
+    try {
+      diffSummary = await getDiffSummary(kotsApp);
+    } catch (err) {
+      diffSummaryError = String(err);
+    }
+    await stores.kotsAppStore.createDownstreamVersion(kotsApp.id, newSequence, clusterId, installationSpec.versionLabel, status, source, diffSummary, diffSummaryError, commitUrl, gitDeployable);
   }
 
   return {

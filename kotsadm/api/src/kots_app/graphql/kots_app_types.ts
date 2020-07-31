@@ -91,6 +91,7 @@ const KotsVersion = `
     deployedAt: String
     source: String
     diffSummary: String
+    diffSummaryError: String
     preflightResult: String
     preflightResultCreatedAt: String
     commitUrl: String
