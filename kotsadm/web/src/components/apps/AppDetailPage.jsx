@@ -122,18 +122,6 @@ class AppDetailPage extends Component {
     this.setState({ isBundleUploading: isUploading });
   }
 
-  createDownstreamForCluster = () => {
-    const { clusterParentSlug } = this.state;
-    localStorage.setItem("clusterRedirect", `/watch/${clusterParentSlug}/downstreams?add=1`);
-    this.props.history.push("/cluster/create");
-  }
-
-  handleViewFiles = () => {
-    const { slug } = this.props.match.params;
-    const currentSequence = this.state.app?.currentSequence;
-    this.props.history.push(`/app/${slug}/tree/${currentSequence}`);
-  }
-
   getApp = async (slug = this.props.match.params.slug) => {
     if (!slug) {
       return;
