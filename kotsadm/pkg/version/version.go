@@ -542,7 +542,7 @@ func GetRealizedLinksFromAppSpec(appID string, sequence int64) ([]types.Realized
 		rewrittenURL := link.URL
 		for _, port := range kotsAppSpec.Spec.ApplicationPorts {
 			if port.ApplicationURL == link.URL {
-				rewrittenURL = fmt.Sprintf("http://localhost:%s", port.LocalPort)
+				rewrittenURL = fmt.Sprintf("http://localhost:%d", port.LocalPort)
 			}
 		}
 		realizedLink := types.RealizedLink{
