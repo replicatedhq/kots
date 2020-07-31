@@ -25,6 +25,7 @@ type DownstreamVersion struct {
 	PreflightResult          string                          `json:"preflightResult,omitempty"`
 	PreflightResultCreatedAt *time.Time                      `json:"preflightResultCreatedAt,omitempty"`
 	DiffSummary              string                          `json:"diffSummary,omitempty"`
+	DiffSummaryError         string                          `json:"diffSummaryError,omitempty"`
 	CommitURL                string                          `json:"commitUrl,omitempty"`
 	GitDeployable            bool                            `json:"gitDeployable,omitempty"`
 	YamlErrors               []v1beta1.InstallationYAMLError `json:"yamlErrors,omitempty"`

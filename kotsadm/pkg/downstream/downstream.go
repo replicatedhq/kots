@@ -173,6 +173,7 @@ func GetCurrentVersion(appID string, clusterID string) (*types.DownstreamVersion
 	adv.applied_at,
 	adv.source,
 	adv.diff_summary,
+	adv.diff_summary_error,
 	adv.preflight_result,
 	adv.preflight_result_created_at,
 	adv.git_commit_url,
@@ -221,6 +222,7 @@ func GetPendingVersions(appID string, clusterID string) ([]types.DownstreamVersi
 	adv.applied_at,
 	adv.source,
 	adv.diff_summary,
+	adv.diff_summary_error,
 	adv.preflight_result,
 	adv.preflight_result_created_at,
 	adv.git_commit_url,
@@ -283,6 +285,7 @@ func GetPastVersions(appID string, clusterID string) ([]types.DownstreamVersion,
 	adv.applied_at,
 	adv.source,
 	adv.diff_summary,
+	adv.diff_summary_error,
 	adv.preflight_result,
 	adv.preflight_result_created_at,
 	adv.git_commit_url,
@@ -336,6 +339,7 @@ func versionFromRow(appID string, row scannable) (*types.DownstreamVersion, erro
 	var deployedAt sql.NullTime
 	var source sql.NullString
 	var diffSummary sql.NullString
+	var diffSummaryError sql.NullString
 	var preflightResult sql.NullString
 	var preflightResultCreatedAt sql.NullTime
 	var commitURL sql.NullString
@@ -352,6 +356,7 @@ func versionFromRow(appID string, row scannable) (*types.DownstreamVersion, erro
 		&deployedAt,
 		&source,
 		&diffSummary,
+		&diffSummaryError,
 		&preflightResult,
 		&preflightResultCreatedAt,
 		&commitURL,
@@ -374,6 +379,7 @@ func versionFromRow(appID string, row scannable) (*types.DownstreamVersion, erro
 	}
 	v.Source = source.String
 	v.DiffSummary = diffSummary.String
+	v.DiffSummaryError = diffSummaryError.String
 	v.PreflightResult = preflightResult.String
 
 	if preflightResultCreatedAt.Valid {
