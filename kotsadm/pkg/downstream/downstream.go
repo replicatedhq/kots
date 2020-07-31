@@ -248,6 +248,7 @@ func GetPendingVersions(appID string, clusterID string) ([]types.DownstreamVersi
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to query")
 	}
+	defer rows.Close()
 
 	versions := []types.DownstreamVersion{}
 	for rows.Next() {
@@ -309,6 +310,7 @@ func GetPastVersions(appID string, clusterID string) ([]types.DownstreamVersion,
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to query")
 	}
+	defer rows.Close()
 
 	versions := []types.DownstreamVersion{}
 	for rows.Next() {
@@ -417,7 +419,7 @@ func getReleaseNotes(appID string, parentSequence int64) (string, error) {
 }
 
 func getStatus(status string, hasError sql.NullBool) string {
-	s := "unknown";
+	s := "unknown"
 
 	// first check if operator has reported back.
 	// and if it hasn't, we should not show "deployed" to the user.
@@ -432,5 +434,5 @@ func getStatus(status string, hasError sql.NullBool) string {
 		s = status
 	}
 
-	return s;
+	return s
 }

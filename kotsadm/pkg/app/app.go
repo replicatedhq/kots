@@ -136,6 +136,7 @@ func ListInstalled() ([]*App, error) {
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to query db")
 	}
+	defer rows.Close()
 
 	apps := []*App{}
 	for rows.Next() {

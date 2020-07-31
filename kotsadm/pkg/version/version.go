@@ -271,6 +271,7 @@ func GetVersions(appID string) ([]types.AppVersion, error) {
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to query app_version table")
 	}
+	defer rows.Close()
 
 	versions := []types.AppVersion{}
 	for rows.Next() {

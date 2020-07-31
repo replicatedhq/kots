@@ -26,6 +26,7 @@ func List(appID string) ([]*types.SupportBundle, error) {
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to query")
 	}
+	defer rows.Close()
 
 	supportBundles := []*types.SupportBundle{}
 

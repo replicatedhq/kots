@@ -54,34 +54,40 @@ class AppDetailPage extends Component {
 
   componentDidUpdate(_, lastState) {
     const { getThemeState, setThemeState, match, listApps, history } = this.props;
-    const slug = `${match.params.owner}/${match.params.slug}`;
-    const currentWatch = listApps?.find(w => w.slug === slug);
-
-    // Handle updating the app theme state when a watch changes.
-    if (currentWatch?.watchIcon) {
-      const { navbarLogo, ...rest } = getThemeState();
-      if (navbarLogo === null || navbarLogo !== currentWatch.watchIcon) {
-
-        setThemeState({
-          ...rest,
-          navbarLogo: currentWatch.watchIcon
-        });
-      }
-    }
+    const { app, loadingApp } = this.state;
 
     // Used for a fresh reload
     if (history.location.pathname === "/apps") {
       this.checkForFirstApp();
+      return;
     }
 
-    // enforce initial app configuration (if exists)
-    const { app } = this.state;
+    // Refetch app info when switching between apps
+    if (app && !loadingApp && match.params.slug != app.slug) {
+      this.getApp();
+      return;
+    }
+
+    // Handle updating the theme state when switching apps.
+    const currentApp = listApps?.find(w => w.slug === match.params.slug);
+    if (currentApp?.iconUri) {
+      const { navbarLogo, ...rest } = getThemeState();
+      if (navbarLogo === null || navbarLogo !== currentApp.iconUri) {
+        setThemeState({
+          ...rest,
+          navbarLogo: currentApp.iconUri
+        });
+      }
+    }
+
+    // Enforce initial app configuration (if exists)
     if (app !== lastState.app && app) {
       const downstream = app.downstreams?.length && app.downstreams[0];
       if (downstream?.pendingVersions?.length) {
         const firstVersion = downstream.pendingVersions.find(version => version?.sequence === 0);
         if (firstVersion?.status === "pending_config") {
           this.props.history.push(`/${app.slug}/config`);
+          return;
         }
       }
     }
@@ -128,15 +134,13 @@ class AppDetailPage extends Component {
     this.props.history.push(`/app/${slug}/tree/${currentSequence}`);
   }
 
-  getApp = async (showLoader = false, slug = this.props.match.params.slug) => {
+  getApp = async (slug = this.props.match.params.slug) => {
     if (!slug) {
       return;
     }
 
     try {
-      if (showLoader) {
-        this.setState({ loadingApp: true });
-      }
+      this.setState({ loadingApp: true });
 
       const res = await fetch(`${window.env.API_ENDPOINT}/apps/app/${slug}`, {
         headers: {
@@ -180,7 +184,7 @@ class AppDetailPage extends Component {
 
     if (firstApp) {
       history.replace(`/app/${firstApp.slug}`);
-      this.getApp(true, firstApp.slug);
+      this.getApp(firstApp.slug);
     } else {
       history.replace("/upload-license");
     }
@@ -190,10 +194,11 @@ class AppDetailPage extends Component {
     const { history } = this.props;
 
     if (history.location.pathname === "/apps") {
-      return this.checkForFirstApp();
+      this.checkForFirstApp();
+      return;
     }
 
-    this.getApp(true);
+    this.getApp();
   }
 
   render() {
@@ -208,7 +213,6 @@ class AppDetailPage extends Component {
 
     const {
       app,
-      loadingApp,
       displayDownloadCommandModal,
       isBundleUploading
     } = this.state;
@@ -218,9 +222,6 @@ class AppDetailPage extends Component {
         <Loader size="60" />
       </div>
     );
-
-    // if there is app, don't render a loader to avoid flickering
-    const loading = (loadingApp || !rootDidInitialAppFetch || isVeleroInstalled?.loading) && !app;
 
     if (!rootDidInitialAppFetch) {
       return centeredLoader;
@@ -271,7 +272,7 @@ class AppDetailPage extends Component {
             />
           )}>
           <div className="flex-column flex1 u-width--full u-height--full u-overflow--auto">
-            {loading
+            {!app
               ? centeredLoader
               : (
                 <Fragment>
