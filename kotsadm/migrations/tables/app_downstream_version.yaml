@@ -37,6 +37,8 @@ spec:
         type: text
       - name: diff_summary
         type: text
+      - name: diff_summary_error
+        type: text
       - name: preflight_result
         type: text
       - name: preflight_result_created_at

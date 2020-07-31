@@ -266,6 +266,7 @@ export const getKotsDownstreamHistoryRaw = `
       deployedAt
       source
       diffSummary
+      diffSummaryError
       preflightResult
       preflightResultCreatedAt
       commitUrl

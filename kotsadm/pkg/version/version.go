@@ -199,18 +199,19 @@ backup_spec = EXCLUDED.backup_spec`
 			}
 		}
 
-		diffSummary := ""
+		diffSummary, diffSummaryError := "", ""
 		if currentSequence != nil {
 			// diff this release from the last release
 			diff, err := downstream.DiffAppVersionsForDownstream(d.Name, filesInDir, previousArchiveDir, kotsKinds.KustomizeVersion())
 			if err != nil {
-				return int64(0), errors.Wrap(err, "failed to diff")
+				diffSummaryError = errors.Wrap(err, "failed to diff").Error()
+			} else {
+				b, err := json.Marshal(diff)
+				if err != nil {
+					diffSummaryError = errors.Wrap(err, "failed to marshal diff").Error()
+				}
+				diffSummary = string(b)
 			}
-			b, err := json.Marshal(diff)
-			if err != nil {
-				return int64(0), errors.Wrap(err, "failed to marshal diff")
-			}
-			diffSummary = string(b)
 		}
 
 		commitURL := ""
@@ -230,10 +231,10 @@ backup_spec = EXCLUDED.backup_spec`
 			commitURL = createdCommitURL
 		}
 
-		query = `insert into app_downstream_version (app_id, cluster_id, sequence, parent_sequence, created_at, version_label, status, source, diff_summary, git_commit_url, git_deployable) values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`
+		query = `insert into app_downstream_version (app_id, cluster_id, sequence, parent_sequence, created_at, version_label, status, source, diff_summary, diff_summary_error, git_commit_url, git_deployable) values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)`
 		_, err = tx.Exec(query, appID, d.ClusterID, newSequence, newSequence, time.Now(),
 			kotsKinds.Installation.Spec.VersionLabel, downstreamStatus, source,
-			diffSummary, commitURL, commitURL != "")
+			diffSummary, diffSummaryError, commitURL, commitURL != "")
 		if err != nil {
 			return int64(0), errors.Wrap(err, "failed to create downstream version")
 		}
