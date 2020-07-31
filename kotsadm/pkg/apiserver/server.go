@@ -105,6 +105,7 @@ func Start() {
 	r.Path("/api/v1/app/{appSlug}/sequence/{sequence}/renderedcontents").Methods("OPTIONS", "GET").HandlerFunc(handlers.GetAppRenderedContents)
 	r.Path("/api/v1/app/{appSlug}/sequence/{sequence}/contents").Methods("OPTIONS", "GET").HandlerFunc(handlers.GetAppContents)
 	r.Path("/api/v1/app/{appSlug}/cluster/{clusterId}/dashboard").Methods("OPTIONS", "GET").HandlerFunc(handlers.GetAppDashboard)
+	r.Path("/api/v1/app/{appSlug}/cluster/{clusterId}/sequence/{sequence}/downstreamoutput").Methods("OPTIONS", "GET").HandlerFunc(handlers.GetDownstreamOutput)
 
 	r.HandleFunc("/api/v1/login", handlers.Login)
 	r.HandleFunc("/api/v1/logout", handlers.Logout)
@@ -143,8 +144,6 @@ func Start() {
 
 	// Find a home snapshot routes
 	r.Path("/api/v1/snapshot/{backup}/logs").Methods("OPTIONS", "GET").HandlerFunc(handlers.DownloadSnapshotLogs)
-
-	// TODO
 
 	// KURL
 	r.HandleFunc("/api/v1/kurl", handlers.NotImplemented)
