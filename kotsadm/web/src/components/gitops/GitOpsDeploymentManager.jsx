@@ -8,7 +8,7 @@ import { graphql, compose, withApollo } from "react-apollo";
 import { listApps, getGitOpsRepo } from "@src/queries/AppsQueries";
 import GitOpsFlowIllustration from "./GitOpsFlowIllustration";
 import GitOpsRepoDetails from "./GitOpsRepoDetails";
-import { createGitOpsRepo, updateGitOpsRepo, resetGitOpsData } from "@src/mutations/AppsMutations";
+import { createGitOpsRepo, updateGitOpsRepo } from "@src/mutations/AppsMutations";
 import { getServiceSite, requiresHostname, Utilities } from "../../utilities/utilities";
 
 import "../../scss/components/gitops/GitOpsDeploymentManager.scss";
@@ -142,7 +142,10 @@ class GitOpsDeploymentManager extends React.Component {
       const getGitOpsRepo = this.props.getGitOpsRepoQuery?.getGitOpsRepo;
       if (getGitOpsRepo?.enabled) {
         if (this.providerChanged()) {
-          await this.props.resetGitOpsData();
+          const success = await this.resetGitOps();
+          if (!success) {
+            return false;
+          }
           await this.props.createGitOpsRepo(gitOpsInput);
         } else {
           const uriToUpdate = this.isSingleApp() ? getGitOpsRepo?.uri : "";
@@ -178,6 +181,24 @@ class GitOpsDeploymentManager extends React.Component {
     } finally {
       this.setState({ finishingSetup: false });
     }
+  }
+
+  resetGitOps = async () => {
+    try {
+      const res = await fetch(`${window.env.API_ENDPOINT}/gitops/reset`, {
+        headers: {
+          "Authorization": Utilities.getToken(),
+          "Content-Type": "application/json",
+        },
+        method: "POST",
+      });
+      if (res.ok && res.status === 204) {
+        return true;
+      }
+    } catch(err) {
+      console.log(err);
+    }
+    return false;
   }
 
   updateAppGitOps = async (appId, clusterId, gitOpsInput) => {
@@ -534,11 +555,6 @@ export default compose(
   graphql(updateGitOpsRepo, {
     props: ({ mutate }) => ({
       updateGitOpsRepo: (gitOpsInput, uriToUpdate) => mutate({ variables: { gitOpsInput, uriToUpdate } })
-    })
-  }),
-  graphql(resetGitOpsData, {
-    props: ({ mutate }) => ({
-      resetGitOpsData: () => mutate()
     })
   }),
 )(GitOpsDeploymentManager);
