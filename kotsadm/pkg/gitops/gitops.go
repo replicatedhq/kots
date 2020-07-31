@@ -15,7 +15,6 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/kotsadm/pkg/kotsutil"
-	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/crypto"
 	"golang.org/x/crypto/ssh"
 	"gopkg.in/src-d/go-git.v4"
@@ -225,11 +224,11 @@ func UpdateDownstreamGitOps(appID, clusterID, uri, branch, path, format, action 
 
 	appKey := fmt.Sprintf("%s-%s", appID, clusterID)
 	newAppData := map[string]string{
-		"repoUri":   uri,
-		"branch":    branch,
-		"path":      path,
-		"format":    format,
-		"action":    action,
+		"repoUri": uri,
+		"branch":  branch,
+		"path":    path,
+		"format":  format,
+		"action":  action,
 	}
 
 	// check if to reset or keep last error
@@ -326,7 +325,7 @@ func CreateGitOpsCommit(gitOpsConfig *GitOpsConfig, appSlug string, appName stri
 	out, err := cmd.Output()
 	if err != nil {
 		if ee, ok := err.(*exec.ExitError); ok {
-			logger.Errorf("kustomize stderr: %q", string(ee.Stderr))
+			err = fmt.Errorf("kustomize stderr: %q", string(ee.Stderr))
 		}
 		return "", errors.Wrap(err, "failed to run kustomize")
 	}
