@@ -292,8 +292,8 @@ class AppVersionHistory extends Component {
         <div className="flex alignItems--center">
           <div className="flex alignItems--center">
             <div
-              data-tip={`${version.versionLabel}-${version.sequence}`}
-              data-for={`${version.versionLabel}-${version.sequence}`}
+              data-tip={`${version.versionLabel || version.title}-${version.sequence}`}
+              data-for={`${version.versionLabel || version.title}-${version.sequence}`}
               className={classNames("icon", {
                 "checkmark-icon": version.status === "deployed" || version.status === "merged" || version.status === "pending",
                 "exclamationMark--icon": version.status === "opened",
@@ -329,8 +329,8 @@ class AppVersionHistory extends Component {
         <div className="flex alignItems--center">
           <div className="flex alignItems--center">
             <div
-              data-tip={`${version.versionLabel}-${version.sequence}`}
-              data-for={`${version.versionLabel}-${version.sequence}`}
+              data-tip={`${version.versionLabel || version.title}-${version.sequence}`}
+              data-for={`${version.versionLabel || version.title}-${version.sequence}`}
               className={classNames("icon", {
                 "analysis-gray_checkmark": version.status === "deployed" || version.status === "merged",
                 "exclamationMark--icon": version.status === "opened",
@@ -1012,7 +1012,7 @@ class AppVersionHistory extends Component {
                             <p className="u-fontSize--small u-marginTop--10 u-color--dustyGray">Received: <span className="u-fontWeight--bold u-color--tuna">{moment(version.createdOn).format("MM/DD/YY @ hh:mm a")}</span></p>
                           </div>
                           <div className="flex flex1 u-marginTop--15">
-                            <p className="u-fontSize--normal u-color--dustyGray">Upstream: <span className="u-fontWeight--bold u-color--tuna">{version.versionLabel}</span></p>
+                            <p className="u-fontSize--normal u-color--dustyGray">Upstream: <span className="u-fontWeight--bold u-color--tuna">{version.versionLabel || version.title}</span></p>
                             <div className="u-fontSize--normal u-color--dustyGray u-marginLeft--20 flex">Sequence: <span className=" u-fontWeight--bold u-color--tuna u-marginLeft--5">{this.renderVersionSequence(version)}</span></div>
                           </div>
                         </div>
