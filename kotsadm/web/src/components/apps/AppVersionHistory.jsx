@@ -19,7 +19,7 @@ import DownstreamWatchVersionDiff from "@src/components/watches/DownstreamWatchV
 import AirgapUploadProgress from "@src/components/AirgapUploadProgress";
 import UpdateCheckerModal from "@src/components/modals/UpdateCheckerModal";
 import ShowDetailsModal from "@src/components/modals/ShowDetailsModal";
-import { getKotsDownstreamHistory, getKotsDownstreamOutput, getUpdateDownloadStatus } from "../../queries/AppsQueries";
+import { getKotsDownstreamHistory, getUpdateDownloadStatus } from "../../queries/AppsQueries";
 import { Utilities, isAwaitingResults, secondsAgo, getPreflightResultState, getGitProviderDiffUrl, getCommitHashFromUrl } from "../../utilities/utilities";
 import { Repeater } from "../../utilities/repeater";
 import has from "lodash/has";
@@ -471,26 +471,30 @@ class AppVersionHistory extends Component {
   }
 
   handleViewLogs = async version => {
-    const { match, app } = this.props;
-    const clusterSlug = app.downstreams?.length && app.downstreams[0].cluster?.slug;
-    if (clusterSlug) {
+    try {
+      const { app } = this.props;
+      const clusterId = app.downstreams?.length && app.downstreams[0].cluster?.id;
+
       this.setState({ logsLoading: true, showLogsModal: true });
-      this.props.client.query({
-        query: getKotsDownstreamOutput,
-        fetchPolicy: "no-cache",
-        variables: {
-          appSlug: match.params.slug,
-          clusterSlug: clusterSlug,
-          sequence: version.sequence
-        }
-      }).then(result => {
-        const logs = result.data.getKotsDownstreamOutput;
+
+      const res = await fetch(`${window.env.API_ENDPOINT}/app/${app?.slug}/cluster/${clusterId}/sequence/${version?.sequence}/downstreamoutput`, {
+        headers: {
+          "Authorization": Utilities.getToken(),
+          "Content-Type": "application/json",
+        },
+        method: "GET",
+      });
+      if (res.ok && res.status === 200) {
+        const logs = await res.json();
         const selectedTab = Object.keys(logs)[0];
         this.setState({ logs, selectedTab, logsLoading: false });
-      }).catch(err => {
-        console.log(err);
+      } else {
+        console.log("failed to view logs, unexpected status code", res.status);
         this.setState({ logsLoading: false });
-      });
+      }
+    } catch(err) {
+      console.log(err);
+      this.setState({ logsLoading: false });
     }
   }
 
@@ -1091,11 +1095,12 @@ class AppVersionHistory extends Component {
               </div>
             ) : (
                 <div className="flex-column flex1">
-                  {logs.renderError ?
+                  <div className="flex-column flex1">
+                    {!logs.renderError && this.renderLogsTabs()}
                     <div className="flex-column flex1 u-border--gray monaco-editor-wrapper">
                       <MonacoEditor
                         language="json"
-                        value={logs.renderError}
+                        value={logs.renderError || logs[selectedTab]}
                         height="100%"
                         width="100%"
                         options={{
@@ -1108,27 +1113,7 @@ class AppVersionHistory extends Component {
                         }}
                       />
                     </div>
-                    :
-                    <div className="flex-column flex1">
-                      {this.renderLogsTabs()}
-                      <div className="flex-column flex1 u-border--gray monaco-editor-wrapper">
-                        <MonacoEditor
-                          language="json"
-                          value={logs[selectedTab]}
-                          height="100%"
-                          width="100%"
-                          options={{
-                            readOnly: true,
-                            contextmenu: false,
-                            minimap: {
-                              enabled: false
-                            },
-                            scrollBeyondLastLine: false,
-                          }}
-                        />
-                      </div>
-                    </div>
-                  }
+                  </div>
                   <div className="u-marginTop--20 flex">
                     <button type="button" className="btn primary" onClick={this.hideLogsModal}>Ok, got it!</button>
                   </div>
