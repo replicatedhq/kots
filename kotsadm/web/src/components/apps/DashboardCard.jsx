@@ -196,13 +196,15 @@ export default class DashboardCard extends React.Component {
   }
 
   renderLicenseCard = () => {
-    const { appLicense, isSnapshotAllowed } = this.props;
+    const { appLicense, isSnapshotAllowed, getingAppLicenseErrMsg } = this.props;
     const expiresAt = getLicenseExpiryDate(appLicense);
 
     return (
       <div>
         {isSnapshotAllowed ?
-          null
+          getingAppLicenseErrMsg ?
+            <p className="u-color--chestnut u-fontSize--small u-fontWeight--medium u-lineHeight--normal flex">{getingAppLicenseErrMsg}</p> :
+            null
           :
           size(appLicense) > 0 ?
             <div>
@@ -212,16 +214,18 @@ export default class DashboardCard extends React.Component {
               <p className="u-fontSize--small u-color--dustyGray u-marginTop--15 u-lineHeight--medium"> Contact your account rep to update your License. </p>
             </div>
             :
-            <div>
-              <p className="u-fontSize--normal u-color--dustyGray u-marginTop--15 u-lineHeight--more"> License data is not available on this application because it was installed via Helm </p>
-            </div>
+            getingAppLicenseErrMsg ?
+              <p className="u-color--chestnut u-fontSize--small u-fontWeight--medium u-lineHeight--normal flex">{getingAppLicenseErrMsg}</p>
+              : <div>
+                <p className="u-fontSize--normal u-color--dustyGray u-marginTop--15 u-lineHeight--more"> License data is not available on this application because it was installed via Helm </p>
+              </div>
         }
       </div>
     )
   }
 
   render() {
-    const { cardName, cardIcon, application, versionHistory, url, app, appLicense, license, isSnapshotAllowed, startManualSnapshot, startSnapshotErr, startSnapshotErrorMsg, snapshotInProgressApps } = this.props;
+    const { cardName, cardIcon, application, versionHistory, url, app, appLicense, license, isSnapshotAllowed, startManualSnapshot, startSnapshotErr, startSnapshotErrorMsg, snapshotInProgressApps, getingAppLicenseErrMsg } = this.props;
     const isSnapshotInProgress = !!snapshotInProgressApps?.find(a => a === app?.slug);
 
     return (
@@ -246,7 +250,8 @@ export default class DashboardCard extends React.Component {
                     isSnapshotInProgress ?
                       <Loader size="16" />
                       :
-                      <span className="status-indicator completed"> Enabled </span>
+                      getingAppLicenseErrMsg ? null :
+                        <span className="status-indicator completed"> Enabled </span>
                     : null
             }
             <div className={`${isSnapshotAllowed ? "u-marginTop--8" : "u-marginTop--15"}`}>

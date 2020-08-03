@@ -59,6 +59,7 @@ class Dashboard extends Component {
       prometheusAddress: "",
     },
     getAppDashboardJob: new Repeater(),
+    getingAppLicenseErrMsg: ""
   }
 
   toggleConfigureGraphs = () => {
@@ -124,13 +125,18 @@ class Dashboard extends Component {
       }
     }).then(async (res) => {
       const body = await res.json();
-      if (body === null) {
-        this.setState({ appLicense: {} });
+      if(!res.ok) {
+        this.setState({ getingAppLicenseErrMsg: body.error });
+        return;
       } else {
-        this.setState({ appLicense: body });
+        if (body === null) {
+          this.setState({ appLicense: {}, getingAppLicenseErrMsg: "" });
+        } else {
+          this.setState({ appLicense: body, getingAppLicenseErrMsg: "" });
+        }
       }
     }).catch((err) => {
-      console.log(err)
+      this.setState({ getingAppLicenseErrMsg: err ? `Error while getting the license: ${err.message}` : "Something went wrong, please try again!"})
     });
   }
 
@@ -479,10 +485,9 @@ class Dashboard extends Component {
       }
     })
     .catch(err => {
-      console.log(err);
       this.setState({
-        startSnapshotErrorMsg: err,
-      })
+        startSnapshotErrorMsg: err ? err.message : "Something went wrong, please try again!"
+      });
     })
   }
 
@@ -522,7 +527,7 @@ class Dashboard extends Component {
       // empty
     }
 
-    if (!app || !appLicense) {
+    if (!app) {
       return (
         <div className="flex-column flex1 alignItems--center justifyContent--center">
           <Loader size="60" />
@@ -606,6 +611,7 @@ class Dashboard extends Component {
                     isSnapshotAllowed={app.allowSnapshots && isVeleroInstalled}
                     url={this.props.match.url}
                     appLicense={appLicense}
+                    getingAppLicenseErrMsg={this.state.getingAppLicenseErrMsg}
                   />
                 </div>
                 :
@@ -615,6 +621,7 @@ class Dashboard extends Component {
                   license={true}
                   url={this.props.match.url}
                   appLicense={appLicense}
+                  getingAppLicenseErrMsg={this.state.getingAppLicenseErrMsg}
                 />
               }
             </div>
