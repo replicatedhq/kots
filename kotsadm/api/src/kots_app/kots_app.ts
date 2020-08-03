@@ -665,6 +665,7 @@ export interface KotsConfigGroup {
   name: string;
   title: string;
   description: string;
+  when: string;
   items: KotsConfigItem[];
 }
 

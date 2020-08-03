@@ -346,6 +346,7 @@ export const getAppConfigGroups = gql`
       name
       title
       description
+      when
       items {
         name
         type
@@ -412,6 +413,7 @@ export const templateConfigGroups = gql`
       name
       title
       description
+      when
       items {
         name
         type
