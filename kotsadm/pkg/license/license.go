@@ -10,9 +10,11 @@ import (
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/kotsadm/pkg/app"
 	"github.com/replicatedhq/kots/kotsadm/pkg/kotsutil"
+	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
 	"github.com/replicatedhq/kots/kotsadm/pkg/persistence"
 	"github.com/replicatedhq/kots/kotsadm/pkg/preflight"
 	"github.com/replicatedhq/kots/kotsadm/pkg/registry"
+	"github.com/replicatedhq/kots/kotsadm/pkg/registry/types"
 	"github.com/replicatedhq/kots/kotsadm/pkg/render"
 	"github.com/replicatedhq/kots/kotsadm/pkg/version"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
@@ -88,21 +90,30 @@ func Sync(a *app.App, licenseData string) (*kotsv1beta1.License, error) {
 			return nil, errors.Wrap(err, "failed to get registry settings for app")
 		}
 
-		if err := render.RenderDir(archiveDir, a.ID, appSequence, registrySettings); err != nil {
-			return nil, errors.Wrap(err, "failed to render new version")
-		}
-
-		newSequence, err := version.CreateVersion(a.ID, archiveDir, "License Change", a.CurrentSequence)
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to create new version")
-		}
-
-		if err := preflight.Run(a.ID, newSequence, archiveDir); err != nil {
-			return nil, errors.Wrap(err, "failed to run preflights")
+		if err := createNewVersion(a, archiveDir, appSequence, registrySettings); err != nil {
+			logger.Errorf("Failed to create new version from license sync: %v", err)
+			// TODO: what to do with the error here?
 		}
 	}
 
 	return latestLicense, nil
+}
+
+func createNewVersion(a *app.App, archiveDir string, appSequence int, registrySettings *types.RegistrySettings) error {
+	if err := render.RenderDir(archiveDir, a.ID, appSequence, registrySettings); err != nil {
+		return errors.Wrap(err, "failed to render new version")
+	}
+
+	newSequence, err := version.CreateVersion(a.ID, archiveDir, "License Change", a.CurrentSequence)
+	if err != nil {
+		return errors.Wrap(err, "failed to create new version")
+	}
+
+	if err := preflight.Run(a.ID, newSequence, archiveDir); err != nil {
+		return errors.Wrap(err, "failed to run preflights")
+	}
+
+	return nil
 }
 
 func GetCurrentLicenseString(a *app.App) (string, error) {
