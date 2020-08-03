@@ -230,6 +230,7 @@ const KotsConfigGroup = `
     name: String!
     title: String
     description: String
+    when: String
     items: [KotsConfigItem]
   }
 `;
@@ -239,6 +240,7 @@ const KotsConfigGroupInput = `
     name: String!
     title: String
     description: String
+    when: String
     items: [KotsConfigItemInput]
   }
 `;
