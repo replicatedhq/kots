@@ -30,3 +30,11 @@ type DownstreamVersion struct {
 	GitDeployable            bool                            `json:"gitDeployable,omitempty"`
 	YamlErrors               []v1beta1.InstallationYAMLError `json:"yamlErrors,omitempty"`
 }
+
+type DownstreamOutput struct {
+	DryrunStdout string `json:"dryrunStdout"`
+	DryrunStderr string `json:"dryrunStderr"`
+	ApplyStdout  string `json:"applyStdout"`
+	ApplyStderr  string `json:"applyStderr"`
+	RenderError  string `json:"renderError"`
+}
