@@ -14,7 +14,7 @@ import (
 	"github.com/replicatedhq/kots/kotsadm/pkg/persistence"
 	"github.com/replicatedhq/kots/kotsadm/pkg/preflight"
 	"github.com/replicatedhq/kots/kotsadm/pkg/registry"
-	"github.com/replicatedhq/kots/kotsadm/pkg/registry/types"
+	registrytypes "github.com/replicatedhq/kots/kotsadm/pkg/registry/types"
 	"github.com/replicatedhq/kots/kotsadm/pkg/render"
 	"github.com/replicatedhq/kots/kotsadm/pkg/version"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
@@ -99,7 +99,7 @@ func Sync(a *app.App, licenseData string) (*kotsv1beta1.License, error) {
 	return latestLicense, nil
 }
 
-func createNewVersion(a *app.App, archiveDir string, appSequence int, registrySettings *types.RegistrySettings) error {
+func createNewVersion(a *app.App, archiveDir string, appSequence int64, registrySettings *registrytypes.RegistrySettings) error {
 	if err := render.RenderDir(archiveDir, a.ID, appSequence, registrySettings); err != nil {
 		return errors.Wrap(err, "failed to render new version")
 	}
