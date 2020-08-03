@@ -62,7 +62,8 @@ class AppVersionHistory extends Component {
     displayShowDetailsModal: false,
     yamlErrorDetails: [],
     deployView: false,
-    selectedSequence: ""
+    selectedSequence: "",
+    releaseWithErr: {}
   }
 
   componentDidMount() {
@@ -119,6 +120,13 @@ class AppVersionHistory extends Component {
     });
   }
 
+  toggleDiffErrModal = (release) => {
+    this.setState({ 
+      showDiffErrModal: !this.state.showDiffErrModal,
+      releaseWithErr: !this.state.showDiffErrModal ? release : {}
+    })
+  }
+
   getVersionDiffSummary = version => {
     if (!version.diffSummary || version.diffSummary === "") {
       return null;
@@ -155,35 +163,46 @@ class AppVersionHistory extends Component {
     const { app } = this.props;
     const downstream = app.downstreams?.length && app.downstreams[0];
     const diffSummary = this.getVersionDiffSummary(version);
+    const hasDiffSummaryError = version.diffSummaryError && version.diffSummaryError.length > 0;
 
-    return (
-      <div>
-        {diffSummary ?
-          (diffSummary.filesChanged > 0 ?
-            <div
-              className="DiffSummary u-cursor--pointer"
-              onClick={() => {
-                if (!downstream.gitops?.enabled) {
-                  this.setState({
-                    showDiffOverlay: true,
-                    firstSequence: version.parentSequence - 1,
-                    secondSequence: version.parentSequence
-                  });
-                }
-              }}
-            >
-              <span className="files">{diffSummary.filesChanged} files changed </span>
-              <span className="lines-added">+{diffSummary.linesAdded} </span>
-              <span className="lines-removed">-{diffSummary.linesRemoved}</span>
-            </div>
-            :
-            <div className="DiffSummary">
-              <span className="files">No changes</span>
-            </div>
-          )
-          : <span>&nbsp;</span>}
+    if (hasDiffSummaryError) {
+      return (
+        <div className="flex flex1 alignItems--center">
+          <span className="u-fontSize--small u-fontWeight--medium u-lineHeight--normal u-color--dustyGray">Unable to generate file diff</span>
+          <span className="replicated-link u-marginLeft--5 u-fontSize--small" onClick={() => this.toggleDiffErrModal(version)}>Why?</span>
       </div>
-    );
+      );
+    } else {
+      return (
+        <div>
+          {diffSummary ?
+            (diffSummary.filesChanged > 0 ?
+              <div
+                className="DiffSummary u-cursor--pointer"
+                onClick={() => {
+                  if (!downstream.gitops?.enabled) {
+                    this.setState({
+                      showDiffOverlay: true,
+                      firstSequence: version.parentSequence - 1,
+                      secondSequence: version.parentSequence
+                    });
+                  }
+                }}
+              >
+                <span className="files">{diffSummary.filesChanged} files changed </span>
+                <span className="lines-added">+{diffSummary.linesAdded} </span>
+                <span className="lines-removed">-{diffSummary.linesRemoved}</span>
+              </div>
+              :
+              <div className="DiffSummary">
+                <span className="files">No changes</span>
+              </div>
+            )
+            : <span>&nbsp;</span>}
+        </div>
+      );
+    }
+
   }
 
   renderVersionAction = (version, nothingToCommitDiff) => {
@@ -1193,6 +1212,27 @@ class AppVersionHistory extends Component {
             <button className="btn primary" onClick={this.hideDownstreamReleaseNotes}>Close</button>
           </div>
         </Modal>
+
+        {this.state.showDiffErrModal && 
+          <Modal
+            isOpen={true}
+            onRequestClose={this.toggleDiffErrModal}
+            contentLabel="Unable to Get Diff"
+            ariaHideApp={false}
+            className="Modal MediumSize"
+          >
+            <div className="Modal-body">
+              <p className="u-fontSize--largest u-fontWeight--bold u-color--tuna u-lineHeight--normal u-marginBottom--10">Unable to generate a file diff for release</p>
+              <p className="u-fontSize--normal u-color--dustyGray u-lineHeight--normal u-marginBottom--20">The release with upstream {this.state.releaseWithErr.title} Sequence {this.state.releaseWithErr.sequence} was unable to generate a diff due to the following error.</p>
+              <div className="error-block-wrapper u-marginBottom--30 flex flex1">
+                <span className="u-color--chestnut">{this.state.releaseWithErr.diffSummaryError}</span>
+              </div>
+              <div className="flex u-marginBottom--10">
+                <button className="btn primary" onClick={this.toggleDiffErrModal}>Ok, got it!</button>
+              </div>
+            </div>
+          </Modal>
+        }
 
         {showUpdateCheckerModal &&
           <UpdateCheckerModal
