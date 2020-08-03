@@ -143,7 +143,7 @@ class AppVersionHistory extends Component {
 
   renderYamlErrors = (yamlErrorsDetails, version) => {
     return (
-      <div className="flex flex1 alignItems--center u-marginLeft--10">
+      <div className="flex alignItems--center u-marginLeft--10">
         <span className="icon error-small" />
         <span className="u-fontSize--small u-fontWeight--medium u-lineHeight--normal u-marginLeft--5 u-color--red">{yamlErrorsDetails?.length} Invalid files </span>
         <span className="replicated-link u-marginLeft--5 u-fontSize--small" onClick={() => this.toggleShowDetailsModal(yamlErrorsDetails, version.sequence)}> See details </span>
@@ -292,8 +292,8 @@ class AppVersionHistory extends Component {
         <div className="flex alignItems--center">
           <div className="flex alignItems--center">
             <div
-              data-tip={`${version.title}-${version.sequence}`}
-              data-for={`${version.title}-${version.sequence}`}
+              data-tip={`${version.versionLabel || version.title}-${version.sequence}`}
+              data-for={`${version.versionLabel || version.title}-${version.sequence}`}
               className={classNames("icon", {
                 "checkmark-icon": version.status === "deployed" || version.status === "merged" || version.status === "pending",
                 "exclamationMark--icon": version.status === "opened",
@@ -329,8 +329,8 @@ class AppVersionHistory extends Component {
         <div className="flex alignItems--center">
           <div className="flex alignItems--center">
             <div
-              data-tip={`${version.title}-${version.sequence}`}
-              data-for={`${version.title}-${version.sequence}`}
+              data-tip={`${version.versionLabel || version.title}-${version.sequence}`}
+              data-for={`${version.versionLabel || version.title}-${version.sequence}`}
               className={classNames("icon", {
                 "analysis-gray_checkmark": version.status === "deployed" || version.status === "merged",
                 "exclamationMark--icon": version.status === "opened",
@@ -908,7 +908,7 @@ class AppVersionHistory extends Component {
               }
               <div className="flex1 flex-column">
                 <p className="u-fontSize--34 u-fontWeight--bold u-color--tuna">
-                  {app.currentVersion ? app.currentVersion.title : "---"}
+                  {app.currentVersion ? app.currentVersion.versionLabel : "---"}
                 </p>
                 <p className="u-fontSize--large u-fontWeight--medium u-marginTop--5 u-color--nevada">{app.currentVersion ? "Current upstream version" : "No deployments have been made"}</p>
                 <p className="u-marginTop--10 u-fontSize--small u-color--dustyGray u-fontWeight--medium">
@@ -966,7 +966,7 @@ class AppVersionHistory extends Component {
                         <p className="u-fontSize--small u-marginTop--10 u-color--dustyGray">Received: <span className="u-fontWeight--bold u-color--tuna">{moment(currentDownstreamVersion.createdOn).format("MM/DD/YY @ hh:mm a")}</span></p>
                       </div>
                       <div className="flex flex1 u-marginTop--15">
-                        <p className="u-fontSize--normal u-color--dustyGray">Upstream: <span className="u-fontWeight--bold u-color--tuna">{currentDownstreamVersion.title}</span></p>
+                        <p className="u-fontSize--normal u-color--dustyGray">Upstream: <span className="u-fontWeight--bold u-color--tuna">{currentDownstreamVersion.versionLabel}</span></p>
                         <div className="u-fontSize--normal u-color--dustyGray u-marginLeft--20 flex">Sequence: <span className="u-fontWeight--bold u-color--tuna u-marginLeft--5">{this.renderVersionSequence(currentDownstreamVersion)}</span></div>
                       </div>
                     </div>
@@ -1016,7 +1016,7 @@ class AppVersionHistory extends Component {
                             <p className="u-fontSize--small u-marginTop--10 u-color--dustyGray">Received: <span className="u-fontWeight--bold u-color--tuna">{moment(version.createdOn).format("MM/DD/YY @ hh:mm a")}</span></p>
                           </div>
                           <div className="flex flex1 u-marginTop--15">
-                            <p className="u-fontSize--normal u-color--dustyGray">Upstream: <span className="u-fontWeight--bold u-color--tuna">{version.title}</span></p>
+                            <p className="u-fontSize--normal u-color--dustyGray">Upstream: <span className="u-fontWeight--bold u-color--tuna">{version.versionLabel || version.title}</span></p>
                             <div className="u-fontSize--normal u-color--dustyGray u-marginLeft--20 flex">Sequence: <span className=" u-fontWeight--bold u-color--tuna u-marginLeft--5">{this.renderVersionSequence(version)}</span></div>
                           </div>
                         </div>

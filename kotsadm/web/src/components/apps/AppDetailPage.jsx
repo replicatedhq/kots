@@ -4,10 +4,9 @@ import { withRouter, Switch, Route } from "react-router-dom";
 import { graphql, compose, withApollo } from "react-apollo";
 import { Helmet } from "react-helmet";
 import Modal from "react-modal";
-import has from "lodash/has";
 
 import withTheme from "@src/components/context/withTheme";
-import { getKotsApp, listDownstreamsForApp } from "@src/queries/AppsQueries";
+import { listDownstreamsForApp } from "@src/queries/AppsQueries";
 import { isVeleroInstalled } from "@src/queries/SnapshotQueries";
 import { createKotsDownstream } from "../../mutations/AppsMutations";
 import { KotsSidebarItem } from "@src/components/watches/WatchSidebarItem";
@@ -18,6 +17,7 @@ import CodeSnippet from "../shared/CodeSnippet";
 import DownstreamTree from "../../components/tree/KotsApplicationTree";
 import AppVersionHistory from "./AppVersionHistory";
 import { isAwaitingResults, Utilities } from "../../utilities/utilities";
+import { Repeater } from "../../utilities/repeater";
 import PreflightResultPage from "../PreflightResultPage";
 import AppConfig from "./AppConfig";
 import AppLicense from "./AppLicense";
@@ -45,47 +45,49 @@ class AppDetailPage extends Component {
       watchToEdit: {},
       existingDeploymentClusters: [],
       displayDownloadCommandModal: false,
-      isBundleUploading: false
+      isBundleUploading: false,
+      app: null,
+      loadingApp: true,
+      getAppJob: new Repeater(),
     }
   }
 
-  static defaultProps = {
-    getKotsAppQuery: {
-      loading: true
-    }
-  }
-
-  componentDidUpdate(lastProps) {
+  componentDidUpdate(_, lastState) {
     const { getThemeState, setThemeState, match, listApps, history } = this.props;
-    const slug = `${match.params.owner}/${match.params.slug}`;
-    const currentWatch = listApps?.find(w => w.slug === slug);
-
-    // Handle updating the app theme state when a watch changes.
-    if (currentWatch?.watchIcon) {
-      const { navbarLogo, ...rest } = getThemeState();
-      if (navbarLogo === null || navbarLogo !== currentWatch.watchIcon) {
-
-        setThemeState({
-          ...rest,
-          navbarLogo: currentWatch.watchIcon
-        });
-      }
-    }
+    const { app, loadingApp } = this.state;
 
     // Used for a fresh reload
     if (history.location.pathname === "/apps") {
       this.checkForFirstApp();
+      return;
     }
 
-    // enforce initial app configuration (if exists)
-    const { getKotsAppQuery } = this.props;
-    if (getKotsAppQuery?.getKotsApp !== lastProps?.getKotsAppQuery?.getKotsApp && getKotsAppQuery?.getKotsApp) {
-      const app = getKotsAppQuery?.getKotsApp;
+    // Refetch app info when switching between apps
+    if (app && !loadingApp && match.params.slug != app.slug) {
+      this.getApp();
+      return;
+    }
+
+    // Handle updating the theme state when switching apps.
+    const currentApp = listApps?.find(w => w.slug === match.params.slug);
+    if (currentApp?.iconUri) {
+      const { navbarLogo, ...rest } = getThemeState();
+      if (navbarLogo === null || navbarLogo !== currentApp.iconUri) {
+        setThemeState({
+          ...rest,
+          navbarLogo: currentApp.iconUri
+        });
+      }
+    }
+
+    // Enforce initial app configuration (if exists)
+    if (app !== lastState.app && app) {
       const downstream = app.downstreams?.length && app.downstreams[0];
       if (downstream?.pendingVersions?.length) {
         const firstVersion = downstream.pendingVersions.find(version => version?.sequence === 0);
         if (firstVersion?.status === "pending_config") {
           this.props.history.push(`/${app.slug}/config`);
+          return;
         }
       }
     }
@@ -94,6 +96,7 @@ class AppDetailPage extends Component {
   componentWillUnmount() {
     clearInterval(this.interval);
     this.props.clearThemeState();
+    this.state.getAppJob.stop();
   }
 
   makeCurrentRelease = async (upstreamSlug, sequence) => {
@@ -105,7 +108,7 @@ class AppDetailPage extends Component {
         },
         method: "POST",
       });
-      this.refetchGraphQLData();
+      this.refetchData();
     } catch(err) {
       console.log(err);
     }
@@ -119,25 +122,41 @@ class AppDetailPage extends Component {
     this.setState({ isBundleUploading: isUploading });
   }
 
-  createDownstreamForCluster = () => {
-    const { clusterParentSlug } = this.state;
-    localStorage.setItem("clusterRedirect", `/watch/${clusterParentSlug}/downstreams?add=1`);
-    this.props.history.push("/cluster/create");
-  }
+  getApp = async (slug = this.props.match.params.slug) => {
+    if (!slug) {
+      return;
+    }
 
-  handleViewFiles = () => {
-    const { slug } = this.props.match.params;
-    const currentSequence = this.props.getKotsAppQuery?.getKotsApp?.currentSequence;
-    this.props.history.push(`/app/${slug}/tree/${currentSequence}`);
+    try {
+      this.setState({ loadingApp: true });
+
+      const res = await fetch(`${window.env.API_ENDPOINT}/apps/app/${slug}`, {
+        headers: {
+          "Authorization": Utilities.getToken(),
+          "Content-Type": "application/json",
+        },
+        method: "GET",
+      });
+      if (res.ok && res.status == 200) {
+        const app = await res.json();
+        this.setState({ app, loadingApp: false });
+      } else {
+        console.log("failed to get app, unexpected status code", res.status);
+        this.setState({ loadingApp: false });
+      }
+    } catch(err) {
+      console.log(err);
+      this.setState({ loadingApp: false });
+    }
   }
 
   /**
-   * Refetch all the GraphQL data for this component and all its children
+   * Refetch all the data for this component and all its children
    *
    * @return {undefined}
    */
-  refetchGraphQLData = () => {
-    this.props.getKotsAppQuery.refetch();
+  refetchData = () => {
+    this.getApp();
     this.props.refetchListApps();
   }
 
@@ -154,6 +173,7 @@ class AppDetailPage extends Component {
 
     if (firstApp) {
       history.replace(`/app/${firstApp.slug}`);
+      this.getApp(firstApp.slug);
     } else {
       history.replace("/upload-license");
     }
@@ -163,21 +183,25 @@ class AppDetailPage extends Component {
     const { history } = this.props;
 
     if (history.location.pathname === "/apps") {
-      return this.checkForFirstApp();
+      this.checkForFirstApp();
+      return;
     }
+
+    this.getApp();
   }
 
   render() {
     const {
       match,
-      getKotsAppQuery,
       listApps,
       refetchListApps,
       rootDidInitialAppFetch,
       appName,
       isVeleroInstalled
     } = this.props;
+
     const {
+      app,
       displayDownloadCommandModal,
       isBundleUploading
     } = this.state;
@@ -188,24 +212,16 @@ class AppDetailPage extends Component {
       </div>
     );
 
-    const app = getKotsAppQuery?.getKotsApp;
-
-    const refreshAppData = getKotsAppQuery.refetch;
-
-    // if there is app, don't render a loader to avoid flickering
-    const loading = (getKotsAppQuery?.loading || !rootDidInitialAppFetch || isVeleroInstalled?.loading) && !app;
-
     if (!rootDidInitialAppFetch) {
       return centeredLoader;
     }
 
     const downstream = app?.downstreams?.length && app.downstreams[0];
     if (downstream?.currentVersion && isAwaitingResults([downstream.currentVersion])) {
-      getKotsAppQuery?.startPolling(2000);
-    } else if (has(getKotsAppQuery, "stopPolling")) {
-      getKotsAppQuery?.stopPolling();
+      this.state.getAppJob.start(this.getApp, 2000);
+    } else {
+      this.state.getAppJob.stop();
     }
-
 
     return (
       <div className="WatchDetailPage--wrapper flex-column flex1 u-overflow--auto">
@@ -245,7 +261,7 @@ class AppDetailPage extends Component {
             />
           )}>
           <div className="flex-column flex1 u-width--full u-height--full u-overflow--auto">
-            {loading
+            {!app
               ? centeredLoader
               : (
                 <Fragment>
@@ -261,14 +277,13 @@ class AppDetailPage extends Component {
                         app={app}
                         cluster={app.downstreams?.length && app.downstreams[0]?.cluster}
                         refetchListApps={refetchListApps}
-                        refetchWatch={this.props.getKotsAppQuery?.refetch}
-                        updateCallback={this.refetchGraphQLData}
+                        updateCallback={this.refetchData}
                         onActiveInitSession={this.props.onActiveInitSession}
                         makeCurrentVersion={this.makeCurrentRelease}
                         toggleIsBundleUploading={this.toggleIsBundleUploading}
                         isBundleUploading={isBundleUploading}
                         isVeleroInstalled={isVeleroInstalled?.isVeleroInstalled}
-                        refreshAppData={refreshAppData}
+                        refreshAppData={this.getApp}
                         snapshotInProgressApps={this.props.snapshotInProgressApps}
                         ping={this.props.ping}
                       />}
@@ -281,17 +296,17 @@ class AppDetailPage extends Component {
                         app={app}
                         match={this.props.match}
                         makeCurrentVersion={this.makeCurrentRelease}
-                        updateCallback={this.refetchGraphQLData}
+                        updateCallback={this.refetchData}
                         toggleIsBundleUploading={this.toggleIsBundleUploading}
                         isBundleUploading={isBundleUploading}
-                        refreshAppData={refreshAppData}
+                        refreshAppData={this.getApp}
                       />
                     } />
                     <Route exact path="/app/:slug/downstreams/:downstreamSlug/version-history/preflight/:sequence" render={props => <PreflightResultPage logo={app.iconUri} {...props} />} />
                     <Route exact path="/app/:slug/config/:sequence?" render={() =>
                       <AppConfig
                         app={app}
-                        refreshAppData={refreshAppData}
+                        refreshAppData={this.getApp}
                       />
                     } />
                     <Route path="/app/:slug/troubleshoot" render={() =>
@@ -303,7 +318,7 @@ class AppDetailPage extends Component {
                     <Route exact path="/app/:slug/license" render={() =>
                       <AppLicense
                         app={app}
-                        syncCallback={this.refetchGraphQLData}
+                        syncCallback={this.refetchData}
                       />
                     } />
                     <Route exact path="/app/:slug/registry-settings" render={() =>
@@ -315,13 +330,13 @@ class AppDetailPage extends Component {
                       <AppGitops
                         app={app}
                         history={this.props.history}
-                        refetch={() => this.props.getKotsAppQuery.refetch()}
+                        refetch={this.getApp}
                       />
                     } />
                     <Route exact path="/app/:slug/snapshots" render={() =>
                       <AppSnapshots
                         app={app}
-                        refetch={() => this.props.getKotsAppQuery.refetch()}
+                        refetch={this.getApp}
                       />
                     } />
                     <Route exact path="/app/:slug/snapshots/schedule" render={() =>
@@ -376,29 +391,6 @@ export default compose(
   withApollo,
   withRouter,
   withTheme,
-  graphql(getKotsApp, {
-    name: "getKotsAppQuery",
-    skip: props => {
-      const { slug } = props.match.params;
-
-      // Skip if no variables (user at "/watches" URL)
-      if (!slug) {
-        return true;
-      }
-
-      return false;
-
-    },
-    options: props => {
-      const { slug } = props.match.params;
-      return {
-        fetchPolicy: "no-cache",
-        variables: {
-          slug: slug
-        }
-      }
-    }
-  }),
   graphql(listDownstreamsForApp, {
     name: "listDownstreamsForAppQuery",
     skip: props => {

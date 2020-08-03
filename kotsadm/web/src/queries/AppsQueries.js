@@ -390,23 +390,6 @@ export const getKotsDownstreamOutput = gql`
   }
 `;
 
-export const getAppLicense = gql`
-  query getAppLicense($appId: String!) {
-    getAppLicense(appId: $appId) {
-      id
-      expiresAt
-      channelName
-      licenseSequence
-      licenseType
-      entitlements {
-        title
-        value
-        label
-      }
-    }
-  }
-`;
-
 export const templateConfigGroups = gql`
   query templateConfigGroups($slug: String!, $sequence: Int!, $configGroups: [KotsConfigGroupInput]!) {
     templateConfigGroups(slug: $slug, sequence: $sequence, configGroups: $configGroups) {

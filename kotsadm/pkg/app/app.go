@@ -17,16 +17,26 @@ import (
 )
 
 type App struct {
-	ID              string
-	Slug            string
-	Name            string
-	IsAirgap        bool
-	CurrentSequence int64
-
-	// Additional fields will be added here as implementation is moved from node to go
-	RestoreInProgressName string
-	UpdateCheckerSpec     string
-	IsGitOps              bool
+	ID                    string     `json:"id"`
+	Slug                  string     `json:"slug"`
+	Name                  string     `json:"name"`
+	License               string     `json:"license"`
+	IsAirgap              bool       `json:"isAirgap"`
+	CurrentSequence       int64      `json:"currentSequence"`
+	UpstreamURI           string     `json:"upstreamUri"`
+	IconURI               string     `json:"iconUri"`
+	UpdatedAt             *time.Time `json:"createdAt"`
+	CreatedAt             time.Time  `json:"updatedAt"`
+	LastUpdateCheckAt     string     `json:"lastUpdateCheckAt"`
+	BundleCommand         string     `json:"bundleCommand"`
+	HasPreflight          bool       `json:"hasPreflight"`
+	IsConfigurable        bool       `json:"isConfigurable"`
+	SnapshotTTL           string     `json:"snapshotTtl"`
+	SnapshotSchedule      string     `json:"snapshotSchedule"`
+	RestoreInProgressName string     `json:"restoreInProgressName"`
+	RestoreUndeployStatus string     `json:"restoreUndeloyStatus"`
+	UpdateCheckerSpec     string     `json:"updateCheckerSpec"`
+	IsGitOps              bool       `json:"isGitOps"`
 }
 
 type RegistryInfo struct {
@@ -42,17 +52,39 @@ func Get(id string) (*App, error) {
 		zap.String("id", id))
 
 	db := persistence.MustGetPGSession()
-	query := `select id, slug, name, current_sequence, is_airgap, restore_in_progress_name, update_checker_spec from app where id = $1`
+	query := `select id, name, license, upstream_uri, icon_uri, created_at, updated_at, slug, current_sequence, last_update_check_at, is_airgap, snapshot_ttl_new, snapshot_schedule, restore_in_progress_name, restore_undeploy_status, update_checker_spec from app where id = $1`
 	row := db.QueryRow(query, id)
 
 	app := App{}
 
+	var licenseStr sql.NullString
+	var upstreamURI sql.NullString
+	var iconURI sql.NullString
+	var updatedAt sql.NullTime
 	var currentSequence sql.NullInt64
+	var lastUpdateCheckAt sql.NullString
+	var snapshotTTLNew sql.NullString
+	var snapshotSchedule sql.NullString
 	var restoreInProgressName sql.NullString
+	var restoreUndeployStatus sql.NullString
 	var updateCheckerSpec sql.NullString
 
-	if err := row.Scan(&app.ID, &app.Slug, &app.Name, &currentSequence, &app.IsAirgap, &restoreInProgressName, &updateCheckerSpec); err != nil {
+	if err := row.Scan(&app.ID, &app.Name, &licenseStr, &upstreamURI, &iconURI, &app.CreatedAt, &updatedAt, &app.Slug, &currentSequence, &lastUpdateCheckAt, &app.IsAirgap, &snapshotTTLNew, &snapshotSchedule, &restoreInProgressName, &restoreUndeployStatus, &updateCheckerSpec); err != nil {
 		return nil, errors.Wrap(err, "failed to scan app")
+	}
+
+	app.License = licenseStr.String
+	app.UpstreamURI = upstreamURI.String
+	app.IconURI = iconURI.String
+	app.LastUpdateCheckAt = lastUpdateCheckAt.String
+	app.SnapshotTTL = snapshotTTLNew.String
+	app.SnapshotSchedule = snapshotSchedule.String
+	app.RestoreInProgressName = restoreInProgressName.String
+	app.RestoreUndeployStatus = restoreUndeployStatus.String
+	app.UpdateCheckerSpec = updateCheckerSpec.String
+
+	if updatedAt.Valid {
+		app.UpdatedAt = &updatedAt.Time
 	}
 
 	if currentSequence.Valid {
@@ -61,8 +93,26 @@ func Get(id string) (*App, error) {
 		app.CurrentSequence = -1
 	}
 
-	app.RestoreInProgressName = restoreInProgressName.String
-	app.UpdateCheckerSpec = updateCheckerSpec.String
+	if app.CurrentSequence != -1 {
+		query = `select preflight_spec, config_spec from app_version where app_id = $1 AND sequence = $2`
+		row = db.QueryRow(query, id, app.CurrentSequence)
+
+		var preflightSpec sql.NullString
+		var configSpec sql.NullString
+
+		if err := row.Scan(&preflightSpec, &configSpec); err != nil {
+			return nil, errors.Wrap(err, "failed to scan app_version")
+		}
+
+		if preflightSpec.Valid && preflightSpec.String != "" {
+			app.HasPreflight = true
+		}
+		if configSpec.Valid && configSpec.String != "" {
+			app.IsConfigurable = true
+		}
+	}
+
+	app.BundleCommand = fmt.Sprintf("curl https://krew.sh/support-bundle | bash\nkubectl support-bundle API_ADDRESS/api/v1/troubleshoot/%s\n", app.Slug)
 
 	isGitOps, err := IsGitOpsEnabled(id)
 	if err != nil {
@@ -82,6 +132,7 @@ func ListInstalled() ([]*App, error) {
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to query db")
 	}
+	defer rows.Close()
 
 	apps := []*App{}
 	for rows.Next() {

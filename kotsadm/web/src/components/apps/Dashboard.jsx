@@ -2,7 +2,7 @@ import moment from "moment";
 import React, { Component } from "react";
 import Helmet from "react-helmet";
 import { withRouter } from "react-router-dom";
-import { graphql, compose, withApollo } from "react-apollo";
+import { compose, withApollo } from "react-apollo";
 import size from "lodash/size";
 import get from "lodash/get";
 import Loader from "../shared/Loader";
@@ -12,7 +12,7 @@ import UpdateCheckerModal from "@src/components/modals/UpdateCheckerModal";
 import Modal from "react-modal";
 import { Repeater } from "../../utilities/repeater";
 import { Utilities } from "../../utilities/utilities";
-import { getAppLicense, getUpdateDownloadStatus } from "@src/queries/AppsQueries";
+import { getUpdateDownloadStatus } from "@src/queries/AppsQueries";
 
 import { XYPlot, XAxis, YAxis, HorizontalGridLines, VerticalGridLines, LineSeries, DiscreteColorLegend, Crosshair } from "react-vis";
 
@@ -110,35 +110,39 @@ class Dashboard extends Component {
 
   componentDidUpdate(lastProps) {
     const { app } = this.props;
-
     if (app !== lastProps.app && app) {
       this.setWatchState(app)
     }
+  }
 
-    if (this.props.getAppLicense !== lastProps.getAppLicense && this.props.getAppLicense) {
-      if (this.props.getAppLicense?.getAppLicense === null) {
+  getAppLicense = async (app) => {
+    await fetch(`${window.env.API_ENDPOINT}/app/${app.slug}/license`, {
+      method: "GET",
+      headers: {
+        "Authorization": Utilities.getToken(),
+        "Content-Type": "application/json",
+      }
+    }).then(async (res) => {
+      const body = await res.json();
+      if (body === null) {
         this.setState({ appLicense: {} });
       } else {
-        const { getAppLicense } = this.props.getAppLicense;
-        if (getAppLicense) {
-          this.setState({ appLicense: getAppLicense });
-        }
+        this.setState({ appLicense: body });
       }
-    }
+    }).catch((err) => {
+      console.log(err)
+    });
   }
 
   componentDidMount() {
     const { app } = this.props;
-    const { getAppLicense } = this.props.getAppLicense;
 
     this.state.updateChecker.start(this.updateStatus, 1000);
     this.state.getAppDashboardJob.start(this.getAppDashboard, 2000);
 
     if (app) {
       this.setWatchState(app);
-    }
-    if (getAppLicense) {
-      this.setState({ appLicense: getAppLicense });
+      this.getAppLicense(app);
     }
   }
 
@@ -222,8 +226,8 @@ class Dashboard extends Component {
         });
 
         if (res.data.getUpdateDownloadStatus.status !== "running" && !this.props.isBundleUploading) {
-
           this.state.updateChecker.stop();
+
           this.setState({
             checkingForUpdates: false,
             checkingUpdateMessage: res.data.getUpdateDownloadStatus?.currentMessage,
@@ -233,11 +237,9 @@ class Dashboard extends Component {
           if (this.props.updateCallback) {
             this.props.updateCallback();
           }
-          // this.props.data.refetch();
         }
 
         resolve();
-
       }).catch((err) => {
         console.log("failed to get rewrite status", err);
         reject();
@@ -558,7 +560,7 @@ class Dashboard extends Component {
                 app={app}
               />
               <DashboardCard
-                cardName={`Version: ${currentVersion?.title ? currentVersion?.title : ""}`}
+                cardName={`Version: ${currentVersion?.versionLabel ? currentVersion?.versionLabel : ""}`}
                 cardIcon="versionIcon"
                 versionHistory={true}
                 currentVersion={currentVersion}
@@ -707,19 +709,4 @@ class Dashboard extends Component {
   }
 }
 
-export default compose(
-  withApollo,
-  withRouter,
-  graphql(getAppLicense, {
-    name: "getAppLicense",
-    options: ({ app }) => {
-      return {
-        variables: {
-          appId: app.id
-        },
-        fetchPolicy: "no-cache",
-        errorPolicy: "ignore"
-      };
-    }
-  }),
-)(Dashboard);
+export default compose(withApollo, withRouter)(Dashboard);

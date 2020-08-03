@@ -1,7 +1,11 @@
 package version
 
 import (
+	"context"
+	"database/sql"
 	"encoding/json"
+	"fmt"
+	"os"
 	"time"
 
 	"github.com/pkg/errors"
@@ -11,7 +15,16 @@ import (
 	"github.com/replicatedhq/kots/kotsadm/pkg/gitops"
 	"github.com/replicatedhq/kots/kotsadm/pkg/kotsutil"
 	"github.com/replicatedhq/kots/kotsadm/pkg/persistence"
+	registrytypes "github.com/replicatedhq/kots/kotsadm/pkg/registry/types"
+	"github.com/replicatedhq/kots/kotsadm/pkg/render"
 	"github.com/replicatedhq/kots/kotsadm/pkg/version/types"
+	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
+	velerov1 "github.com/vmware-tanzu/velero/pkg/apis/velero/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/kubernetes/scheme"
+	applicationv1beta1 "sigs.k8s.io/application/api/v1beta1"
+	k8sconfig "sigs.k8s.io/controller-runtime/pkg/client/config"
 )
 
 // GetNextAppSequence determines next available sequence for this app
@@ -254,24 +267,69 @@ backup_spec = EXCLUDED.backup_spec`
 // return the list of versions available for an app
 func GetVersions(appID string) ([]types.AppVersion, error) {
 	db := persistence.MustGetPGSession()
-	query := `select sequence, update_cursor, version_label from app_version where app_id = $1 order by update_cursor asc, sequence asc`
+	query := `select sequence from app_version where app_id = $1 order by update_cursor asc, sequence asc`
 	rows, err := db.Query(query, appID)
 	if err != nil {
-		return nil, errors.Wrap(err, "query app_version table")
+		return nil, errors.Wrap(err, "failed to query app_version table")
 	}
+	defer rows.Close()
 
 	versions := []types.AppVersion{}
-
 	for rows.Next() {
-		rowVersion := types.AppVersion{}
-		err = rows.Scan(&rowVersion.Sequence, &rowVersion.UpdateCursor, &rowVersion.VersionLabel)
-		if err != nil {
-			return nil, errors.Wrap(err, "scan row from app_version table")
+		var sequence int64
+		if err := rows.Scan(&sequence); err != nil {
+			return nil, errors.Wrap(err, "failed to scan sequence from app_version table")
 		}
-		versions = append(versions, rowVersion)
+
+		v, err := Get(appID, sequence)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to get version")
+		}
+		if v != nil {
+			versions = append(versions, *v)
+		}
 	}
 
 	return versions, nil
+}
+
+func Get(appID string, sequence int64) (*types.AppVersion, error) {
+	db := persistence.MustGetPGSession()
+	query := `select sequence, update_cursor, version_label, created_at, release_notes, status, applied_at from app_version where app_id = $1 and sequence = $2`
+	row := db.QueryRow(query, appID, sequence)
+
+	var updateCursor sql.NullInt32
+	var versionLabel sql.NullString
+	var createdOn sql.NullTime
+	var releaseNotes sql.NullString
+	var status sql.NullString
+	var deployedAt sql.NullTime
+
+	v := types.AppVersion{}
+	if err := row.Scan(&v.Sequence, &updateCursor, &versionLabel, &createdOn, &releaseNotes, &status, &deployedAt); err != nil {
+		if err == sql.ErrNoRows {
+			return nil, nil
+		}
+		return nil, errors.Wrap(err, "failed to scan")
+	}
+
+	if updateCursor.Valid {
+		v.UpdateCursor = int(updateCursor.Int32)
+	} else {
+		v.UpdateCursor = -1
+	}
+	if createdOn.Valid {
+		v.CreatedOn = &createdOn.Time
+	}
+	if deployedAt.Valid {
+		v.DeployedAt = &deployedAt.Time
+	}
+
+	v.VersionLabel = versionLabel.String
+	v.ReleaseNotes = releaseNotes.String
+	v.Status = status.String
+
+	return &v, nil
 }
 
 // DeployVersion deploys the version for the given sequence
@@ -301,4 +359,228 @@ func DeployVersion(appID string, sequence int64) error {
 	}
 
 	return nil
+}
+
+func IsGitOpsSupported(appID string, sequence int64) (bool, error) {
+	cfg, err := k8sconfig.GetConfig()
+	if err != nil {
+		return false, errors.Wrap(err, "failed to get cluster config")
+	}
+
+	clientset, err := kubernetes.NewForConfig(cfg)
+	if err != nil {
+		return false, errors.Wrap(err, "failed to create kubernetes clientset")
+	}
+
+	_, err = clientset.CoreV1().Secrets(os.Getenv("POD_NAMESPACE")).Get(context.TODO(), "kotsadm-gitops", metav1.GetOptions{})
+	if err == nil {
+		// gitops secret exists -> gitops is supported
+		return true, nil
+	}
+
+	db := persistence.MustGetPGSession()
+	query := `select kots_license from app_version where app_id = $1 and sequence = $2`
+	row := db.QueryRow(query, appID, sequence)
+
+	var licenseStr sql.NullString
+	if err := row.Scan(&licenseStr); err != nil {
+		if err == sql.ErrNoRows {
+			return false, nil
+		}
+		return false, errors.Wrap(err, "failed to scan")
+	}
+
+	decode := scheme.Codecs.UniversalDeserializer().Decode
+	obj, _, err := decode([]byte(licenseStr.String), nil, nil)
+	if err != nil {
+		return false, errors.Wrap(err, "failed to decode license yaml")
+	}
+	license := obj.(*kotsv1beta1.License)
+
+	return license.Spec.IsGitOpsSupported, nil
+}
+
+func IsAllowRollback(appID string, sequence int64) (bool, error) {
+	db := persistence.MustGetPGSession()
+	query := `select kots_app_spec from app_version where app_id = $1 and sequence = $2`
+	row := db.QueryRow(query, appID, sequence)
+
+	var kotsAppSpecStr sql.NullString
+	if err := row.Scan(&kotsAppSpecStr); err != nil {
+		if err == sql.ErrNoRows {
+			return false, nil
+		}
+		return false, errors.Wrap(err, "failed to scan")
+	}
+
+	decode := scheme.Codecs.UniversalDeserializer().Decode
+	obj, _, err := decode([]byte(kotsAppSpecStr.String), nil, nil)
+	if err != nil {
+		return false, errors.Wrap(err, "failed to decode kots app spec yaml")
+	}
+	kotsAppSpec := obj.(*kotsv1beta1.Application)
+
+	return kotsAppSpec.Spec.AllowRollback, nil
+}
+
+func IsAllowSnapshots(appID string, sequence int64) (bool, error) {
+	db := persistence.MustGetPGSession()
+	query := `select backup_spec from app_version where app_id = $1 and sequence = $2`
+	row := db.QueryRow(query, appID, sequence)
+
+	var backupSpecStr sql.NullString
+	if err := row.Scan(&backupSpecStr); err != nil {
+		if err == sql.ErrNoRows {
+			return false, nil
+		}
+		return false, errors.Wrap(err, "failed to scan")
+	}
+
+	if backupSpecStr.String == "" {
+		return false, nil
+	}
+
+	archiveDir, err := GetAppVersionArchive(appID, sequence)
+	if err != nil {
+		return false, errors.Wrap(err, "failed to get app version archive")
+	}
+
+	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(archiveDir)
+	if err != nil {
+		return false, errors.Wrap(err, "failed to load kots kinds from path")
+	}
+
+	registrySettings, err := getRegistrySettingsForApp(appID)
+	if err != nil {
+		return false, errors.Wrap(err, "failed to get registry settings for app")
+	}
+
+	rendered, err := render.RenderFile(kotsKinds, registrySettings, []byte(backupSpecStr.String))
+	if err != nil {
+		return false, errors.Wrap(err, "failed to render backup spec")
+	}
+
+	decode := scheme.Codecs.UniversalDeserializer().Decode
+	obj, _, err := decode(rendered, nil, nil)
+	if err != nil {
+		return false, errors.Wrap(err, "failed to decode rendered backup spec yaml")
+	}
+	backupSpec := obj.(*velerov1.Backup)
+
+	annotations := backupSpec.ObjectMeta.Annotations
+	if annotations == nil {
+		// Backup exists and there are no annotation overrides so snapshots are enabled
+		return true, nil
+	}
+
+	if exclude, ok := annotations["kots.io/exclude"]; ok && exclude == "true" {
+		return false, nil
+	}
+
+	if when, ok := annotations["kots.io/when"]; ok && when == "false" {
+		return false, nil
+	}
+
+	return true, nil
+}
+
+func GetLicenseType(appID string, sequence int64) (string, error) {
+	db := persistence.MustGetPGSession()
+	query := `select kots_license from app_version where app_id = $1 and sequence = $2`
+	row := db.QueryRow(query, appID, sequence)
+
+	var licenseStr sql.NullString
+	if err := row.Scan(&licenseStr); err != nil {
+		if err == sql.ErrNoRows {
+			return "", nil
+		}
+		return "", errors.Wrap(err, "failed to scan")
+	}
+
+	decode := scheme.Codecs.UniversalDeserializer().Decode
+	obj, _, err := decode([]byte(licenseStr.String), nil, nil)
+	if err != nil {
+		return "", errors.Wrap(err, "failed to decode license yaml")
+	}
+	license := obj.(*kotsv1beta1.License)
+
+	return license.Spec.LicenseType, nil
+}
+
+func GetRealizedLinksFromAppSpec(appID string, sequence int64) ([]types.RealizedLink, error) {
+	db := persistence.MustGetPGSession()
+	query := `select app_spec, kots_app_spec from app_version where app_id = $1 and sequence = $2`
+	row := db.QueryRow(query, appID, sequence)
+
+	var appSpecStr sql.NullString
+	var kotsAppSpecStr sql.NullString
+	if err := row.Scan(&appSpecStr, &kotsAppSpecStr); err != nil {
+		if err == sql.ErrNoRows {
+			return []types.RealizedLink{}, nil
+		}
+		return nil, errors.Wrap(err, "failed to scan")
+	}
+
+	if appSpecStr.String == "" {
+		return []types.RealizedLink{}, nil
+	}
+
+	decode := scheme.Codecs.UniversalDeserializer().Decode
+	obj, _, err := decode([]byte(appSpecStr.String), nil, nil)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to decode app spec yaml")
+	}
+	appSpec := obj.(*applicationv1beta1.Application)
+
+	obj, _, err = decode([]byte(kotsAppSpecStr.String), nil, nil)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to decode kots app spec yaml")
+	}
+	kotsAppSpec := obj.(*kotsv1beta1.Application)
+
+	realizedLinks := []types.RealizedLink{}
+	for _, link := range appSpec.Spec.Descriptor.Links {
+		rewrittenURL := link.URL
+		for _, port := range kotsAppSpec.Spec.ApplicationPorts {
+			if port.ApplicationURL == link.URL {
+				rewrittenURL = fmt.Sprintf("http://localhost:%d", port.LocalPort)
+			}
+		}
+		realizedLink := types.RealizedLink{
+			Title: link.Description,
+			Uri:   rewrittenURL,
+		}
+		realizedLinks = append(realizedLinks, realizedLink)
+	}
+
+	return realizedLinks, nil
+}
+
+// this is a copy from registry.  so many import cycles to unwind here, todo
+func getRegistrySettingsForApp(appID string) (*registrytypes.RegistrySettings, error) {
+	db := persistence.MustGetPGSession()
+	query := `select registry_hostname, registry_username, registry_password_enc, namespace from app where id = $1`
+	row := db.QueryRow(query, appID)
+
+	var registryHostname sql.NullString
+	var registryUsername sql.NullString
+	var registryPasswordEnc sql.NullString
+	var registryNamespace sql.NullString
+
+	if err := row.Scan(&registryHostname, &registryUsername, &registryPasswordEnc, &registryNamespace); err != nil {
+		return nil, errors.Wrap(err, "failed to scan registry")
+	}
+
+	if !registryHostname.Valid {
+		return nil, nil
+	}
+
+	registrySettings := registrytypes.RegistrySettings{
+		Hostname:    registryHostname.String,
+		Username:    registryUsername.String,
+		PasswordEnc: registryPasswordEnc.String,
+		Namespace:   registryNamespace.String,
+	}
+
+	return &registrySettings, nil
 }
