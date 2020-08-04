@@ -19,11 +19,12 @@ export class SupportBundleAnalysis extends React.Component {
       downloadingBundle: false,
       bundle: null,
       loading: false,
+      downloadBundleErrMsg: ""
     };
   }
 
   downloadBundle = async (bundle) => {
-    this.setState({ downloadingBundle: true });
+    this.setState({ downloadingBundle: true, downloadBundleErrMsg: "" });
     fetch(`${window.env.API_ENDPOINT}/troubleshoot/supportbundle/${bundle.id}/download`, {
       method: "GET",
       headers: {
@@ -31,15 +32,18 @@ export class SupportBundleAnalysis extends React.Component {
       }
     })
       .then(async (result) => {
+        if (!result.ok) {
+          this.setState({ downloadingBundle: false, downloadBundleErrMsg: "Unable to download bundle, please try again!" });
+          return;
+        }
         if (result.ok) {
           const blob = await result.blob();
           download(blob, "supportbundle.tar.gz", "application/gzip");
-          this.setState({ downloadingBundle: false });
+          this.setState({ downloadingBundle: false, downloadBundleErrMsg: "" });
         }
       })
       .catch(err => {
-        console.log(err);
-        this.setState({ downloadingBundle: false });
+        this.setState({ downloadingBundle: false, downloadBundleErrMsg: err ? `Unable to download bundle: ${err.message}` : "Something went wrong, please try again!" });
       })
   }
 
@@ -124,7 +128,9 @@ export class SupportBundleAnalysis extends React.Component {
                     </div>
                   </div>
                   <div className="flex flex-auto alignItems--center justifyContent--flexEnd">
-                    {this.state.downloadingBundle ? 
+                    {this.state.downloadBundleErrMsg &&
+                      <p className="u-color--chestnut u-fontSize--normal u-fontWeight--medium u-lineHeight--normal u-marginRight--10">{this.state.downloadBundleErrMsg}</p>}
+                    {this.state.downloadingBundle ?
                       <Loader size="30" /> :
                       <button className="btn primary lightBlue" onClick={() => this.downloadBundle(bundle)}> Download bundle </button>
                     }
