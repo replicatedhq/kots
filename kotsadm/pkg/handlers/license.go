@@ -114,7 +114,7 @@ func SyncLicense(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	latestLicense, err := license.Sync(foundApp, syncLicenseRequest.LicenseData)
+	latestLicense, err := license.Sync(foundApp, syncLicenseRequest.LicenseData, true)
 	if err != nil {
 		logger.Error(err)
 		w.WriteHeader(500)
