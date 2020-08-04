@@ -12,6 +12,7 @@ class UploadSupportBundleModal extends React.Component {
     this.state = {
       fileUploading: false,
       supportBundle: {},
+      uploadBundleErrMsg: ""
     };
   }
 
@@ -21,7 +22,7 @@ class UploadSupportBundleModal extends React.Component {
       const bundleId = randomstring.generate({ capitalization: "lowercase" });
       const uploadBundleUrl = `${window.env.API_ENDPOINT}/troubleshoot/${watch.id}/${bundleId}`;
 
-      this.setState({ fileUploading: true });
+      this.setState({ fileUploading: true, uploadBundleErrMsg: "" });
 
       const response = await fetch(uploadBundleUrl, {
         method: "PUT",
@@ -32,13 +33,18 @@ class UploadSupportBundleModal extends React.Component {
       });
       const analyzedBundle = await response.json();
 
-      this.setState({ fileUploading: false });
-      if (this.props.onBundleUploaded) {
-        this.props.onBundleUploaded(analyzedBundle.id);
+      if (!response.ok) {
+        this.setState({ fileUploading: false, uploadBundleErrMsg: `Unable to upload the bundle: ${analyzedBundle.error}` });
+        return;
+      }
+      if (response.ok) {
+        this.setState({ fileUploading: false, uploadBundleErrMsg: "" });
+        if (this.props.onBundleUploaded) {
+          this.props.onBundleUploaded(analyzedBundle.id);
+        }
       }
     } catch (err) {
-      console.log(err);
-      this.setState({ fileUploading: false });
+      this.setState({ fileUploading: false, uploadBundleErrMsg: err ? `Unable to upload the bundle: ${err.message}` : "Something went wrong, please try again!" });
     }
   }
 
@@ -95,6 +101,7 @@ class UploadSupportBundleModal extends React.Component {
             <p className="u-fontSize--normal u-fontWeight--medium u-lineHeight--normal u-color--dustyGray">
               Upload a support bundle from your environment to visually analyze the server and receive insights about the server, the network and your application.
               </p>
+            {this.state.uploadBundleErrMsg && <p className="u-color--chestnut u-fontSize--normal u-fontWeight--medium u-lineHeight--normal u-marginTop--10 u-marginBottom--10">{this.state.uploadBundleErrMsg}</p>}
             <div className="u-marginTop--20">
               <div>
                 <div className={`FileUpload-wrapper ${hasFile ? "has-file" : ""}`}>
