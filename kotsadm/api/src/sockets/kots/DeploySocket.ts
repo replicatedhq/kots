@@ -308,6 +308,9 @@ export class KotsDeploySocketService {
                 for (let i = 0; i < kotsAppSpec.statusInformers.length; i++) {
                   const informer = kotsAppSpec.statusInformers[i];
                   const rendered = await kotsRenderFile(app, deployedAppSequence, informer, registryInfo);
+                  if (rendered === "") {
+                    continue;
+                  }
                   renderedInformers.push(rendered);
                 }
                 // send to kots operator

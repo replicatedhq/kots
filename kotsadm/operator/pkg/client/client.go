@@ -415,9 +415,6 @@ func runPreflight(preflightURI string, ignorePermissions bool) error {
 func (c *Client) applyAppInformers(appID string, informerStrings []types.StatusInformerString) {
 	var informers []types.StatusInformer
 	for _, str := range informerStrings {
-		if str == "" {
-			continue
-		}
 		informer, err := str.Parse()
 		if err != nil {
 			log.Printf(fmt.Sprintf("failed to parse informer %s: %s", str, err.Error()))
