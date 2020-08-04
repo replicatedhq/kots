@@ -163,7 +163,7 @@ func CheckForUpdates(appID string, deploy bool) (int64, error) {
 	}
 
 	// sync license, this method is only called when online
-	_, err = license.Sync(a, "")
+	_, err = license.Sync(a, "", false)
 	if err != nil {
 		return 0, errors.Wrap(err, "failed to sync license")
 	}
