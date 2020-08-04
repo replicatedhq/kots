@@ -91,8 +91,9 @@ func Sync(a *app.App, licenseData string) (*kotsv1beta1.License, error) {
 		}
 
 		if err := createNewVersion(a, archiveDir, appSequence, registrySettings); err != nil {
+			// ignore error here to prevent a failure to render the current version
+			// preventing the end-user from updating the application
 			logger.Errorf("Failed to create new version from license sync: %v", err)
-			// TODO: what to do with the error here?
 		}
 	}
 
