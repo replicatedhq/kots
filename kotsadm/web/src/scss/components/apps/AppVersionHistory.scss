@@ -234,7 +234,7 @@ $cell-width: 140px;
 .overlay {
   user-select: none;
   cursor: pointer;
-  a, button {
+  a, button, span {
     pointer-events: none;
   }
 }
