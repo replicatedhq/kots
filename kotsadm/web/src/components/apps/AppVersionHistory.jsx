@@ -1214,27 +1214,25 @@ class AppVersionHistory extends Component {
             <button className="btn primary" onClick={this.hideDownstreamReleaseNotes}>Close</button>
           </div>
         </Modal>
-
-        {this.state.showDiffErrModal && 
-          <Modal
-            isOpen={true}
-            onRequestClose={this.toggleDiffErrModal}
-            contentLabel="Unable to Get Diff"
-            ariaHideApp={false}
-            className="Modal MediumSize"
-          >
-            <div className="Modal-body">
-              <p className="u-fontSize--largest u-fontWeight--bold u-color--tuna u-lineHeight--normal u-marginBottom--10">Unable to generate a file diff for release</p>
-              <p className="u-fontSize--normal u-color--dustyGray u-lineHeight--normal u-marginBottom--20">The release with the <span className="u-fontWeight--bold">Upstream {this.state.releaseWithErr.title}, Sequence {this.state.releaseWithErr.sequence}</span> was unable to generate a files diff because the following error:</p>
-              <div className="error-block-wrapper u-marginBottom--30 flex flex1">
-                <span className="u-color--chestnut">{this.state.releaseWithErr.diffSummaryError}</span>
-              </div>
-              <div className="flex u-marginBottom--10">
-                <button className="btn primary" onClick={this.toggleDiffErrModal}>Ok, got it!</button>
-              </div>
+ 
+        <Modal
+          isOpen={this.state.showDiffErrModal}
+          onRequestClose={this.toggleDiffErrModal}
+          contentLabel="Unable to Get Diff"
+          ariaHideApp={false}
+          className="Modal MediumSize"
+        >
+          <div className="Modal-body">
+            <p className="u-fontSize--largest u-fontWeight--bold u-color--tuna u-lineHeight--normal u-marginBottom--10">Unable to generate a file diff for release</p>
+            <p className="u-fontSize--normal u-color--dustyGray u-lineHeight--normal u-marginBottom--20">The release with the <span className="u-fontWeight--bold">Upstream {this.state.releaseWithErr.title}, Sequence {this.state.releaseWithErr.sequence}</span> was unable to generate a files diff because the following error:</p>
+            <div className="error-block-wrapper u-marginBottom--30 flex flex1">
+              <span className="u-color--chestnut">{this.state.releaseWithErr.diffSummaryError}</span>
             </div>
-          </Modal>
-        }
+            <div className="flex u-marginBottom--10">
+              <button className="btn primary" onClick={this.toggleDiffErrModal}>Ok, got it!</button>
+            </div>
+          </div>
+        </Modal>
 
         {showUpdateCheckerModal &&
           <UpdateCheckerModal
