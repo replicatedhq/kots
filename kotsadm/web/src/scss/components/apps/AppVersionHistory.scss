@@ -284,3 +284,19 @@ $cell-width: 140px;
   100% { background-color: #FFFFFF; }
 }
 
+.ErrorWrapper {
+  position: absolute;
+  left: 50%;
+  top: 62px;
+  z-index: 300;
+  padding: 11px 10px 10px;
+  line-height: normal;
+  font-size: 14px;
+  font-weight: 500;
+  border-radius: 4px;
+  transition: transform .3s cubic-bezier(0.285, -0.575, 0.675, 1.440);
+  transform: translate(-50%, -90px);
+  background-color: #FFDADA;
+  color: #863333;
+  max-width: 400px;
+}

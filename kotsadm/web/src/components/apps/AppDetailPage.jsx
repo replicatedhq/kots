@@ -49,7 +49,8 @@ class AppDetailPage extends Component {
       app: null,
       loadingApp: true,
       getAppJob: new Repeater(),
-      gettingAppErrMsg: ""
+      gettingAppErrMsg: "",
+      makingCurrentReleaseErrMsg: ""
     }
   }
 
@@ -100,19 +101,29 @@ class AppDetailPage extends Component {
     this.state.getAppJob.stop();
   }
 
-  makeCurrentRelease = async (upstreamSlug, sequence) => {
-    try {
-      await fetch(`${window.env.API_ENDPOINT}/app/${upstreamSlug}/sequence/${sequence}/deploy`, {
-        headers: {
-          "Authorization": Utilities.getToken(),
-          "Content-Type": "application/json",
-        },
-        method: "POST",
+  makeCurrentRelease = (upstreamSlug, version) => {
+    this.setState({ makingCurrentReleaseErrMsg: "" });
+    fetch(`${window.env.API_ENDPOINT}/app/${upstreamSlug}/sequence/${version.sequence}/deploy`, {
+      headers: {
+        "Authorization": Utilities.getToken(),
+        "Content-Type": "application/json",
+      },
+      method: "POST",
+    })
+      .then(async (res) => {
+        if (!res.ok) {
+          const makingCurrentRelease = await res.json();
+          this.setState({ makingCurrentReleaseErrMsg: `Unable to deploy release ${version.title}, sequence ${version.sequence}: ${makingCurrentRelease.error}` });
+          return;
+        } else {
+          this.refetchData();
+        }
+      })
+      .catch((err) => {
+        this.setState({
+          makingCurrentReleaseErrMsg: err ? `Unable to deploy release ${version.title}, sequence ${version.sequence}: ${err.message}` : "Something went wrong, please try again!"
+        });
       });
-      this.refetchData();
-    } catch(err) {
-      console.log(err);
-    }
   }
 
   toggleDisplayDownloadModal = () => {
@@ -129,7 +140,7 @@ class AppDetailPage extends Component {
     }
 
     try {
-      this.setState({ loadingApp: true,  gettingAppErrMsg: "" });
+      this.setState({ loadingApp: true, gettingAppErrMsg: "" });
 
       const res = await fetch(`${window.env.API_ENDPOINT}/apps/app/${slug}`, {
         headers: {
@@ -144,7 +155,7 @@ class AppDetailPage extends Component {
       } else {
         this.setState({ loadingApp: false, gettingAppErrMsg: `failed to get app, unexpected status code: ${res.status}` });
       }
-    } catch(err) {
+    } catch (err) {
       this.setState({ loadingApp: false, gettingAppErrMsg: err ? err.message : "Something went wrong, please try again!" });
     }
   }
@@ -288,7 +299,6 @@ class AppDetailPage extends Component {
                         refetchListApps={refetchListApps}
                         updateCallback={this.refetchData}
                         onActiveInitSession={this.props.onActiveInitSession}
-                        makeCurrentVersion={this.makeCurrentRelease}
                         toggleIsBundleUploading={this.toggleIsBundleUploading}
                         isBundleUploading={isBundleUploading}
                         isVeleroInstalled={isVeleroInstalled?.isVeleroInstalled}
@@ -305,6 +315,7 @@ class AppDetailPage extends Component {
                         app={app}
                         match={this.props.match}
                         makeCurrentVersion={this.makeCurrentRelease}
+                        makingCurrentReleaseErrMsg={this.state.makingCurrentReleaseErrMsg}
                         updateCallback={this.refetchData}
                         toggleIsBundleUploading={this.toggleIsBundleUploading}
                         isBundleUploading={isBundleUploading}

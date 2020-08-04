@@ -233,7 +233,7 @@ class AppVersionHistory extends Component {
     const isRollback = isPastVersion && version.deployedAt && app.allowRollback;
 
     return (
-      <div>
+      <div className="flex flex1 justifyContent--flexEnd">
         {showActions &&
           <button
             className={classNames("btn", { "secondary blue": isSecondaryBtn, "primary blue": !isSecondaryBtn })}
@@ -433,7 +433,7 @@ class AppVersionHistory extends Component {
         }
       }
     }
-    await this.props.makeCurrentVersion(match.params.slug, version.sequence);
+    await this.props.makeCurrentVersion(match.params.slug, version);
     await this.props.data.refetch();
     this.setState({ versionToDeploy: null });
 
@@ -513,7 +513,7 @@ class AppVersionHistory extends Component {
         console.log("failed to view logs, unexpected status code", res.status);
         this.setState({ logsLoading: false });
       }
-    } catch(err) {
+    } catch (err) {
       console.log(err);
       this.setState({ logsLoading: false });
     }
@@ -808,7 +808,8 @@ class AppVersionHistory extends Component {
       app,
       data,
       match,
-      isBundleUploading
+      isBundleUploading,
+      makingCurrentReleaseErrMsg
     } = this.props;
 
     const {
@@ -1022,6 +1023,10 @@ class AppVersionHistory extends Component {
                 <div className={`flex-column flex1 ${showDiffOverlay ? "u-visibility--hidden" : ""}`}>
                   <div className="flex justifyContent--spaceBetween u-borderBottom--gray darker u-paddingBottom--10">
                     <p className="u-fontSize--larger u-fontWeight--bold u-color--tuna u-lineHeight--normal">All versions</p>
+                    {makingCurrentReleaseErrMsg &&
+                      <div className="ErrorWrapper flex-auto flex alignItems--center">
+                        <p className="u-color--chestnut u-fontSize--normal u-fontWeight--medium u-lineHeight--normal">{makingCurrentReleaseErrMsg}</p>
+                      </div>}
                     {versionHistory.length > 1 && this.renderDiffBtn()}
                   </div>
                   {/* Downstream version history */}
@@ -1053,7 +1058,7 @@ class AppVersionHistory extends Component {
                             <div className="flex alignItems--center u-fontSize--small u-marginTop--10 u-color--dustyGray">
                               {this.renderSourceAndDiff(version)}
                               {yamlErrorsDetails && this.renderYamlErrors(yamlErrorsDetails, version)}
-                              </div>
+                            </div>
                           </div>
                           <div className="flex flex1 u-fontSize--normal u-color--dustyGray u-marginTop--15 alignItems--center">Status: <span className="u-marginLeft--5">{gitopsEnabled ? this.renderViewPreflights(version) : this.renderVersionStatus(version)}</span></div>
                         </div>
