@@ -30,6 +30,7 @@ class GenerateSupportBundle extends React.Component {
       loadingSupportBundles: false,
       supportBundles: [],
       listSupportBundlesJob: new Repeater(),
+      errorMsg: ""
     };
   }
 
@@ -77,7 +78,7 @@ class GenerateSupportBundle extends React.Component {
 
   listSupportBundles = () => {
     return new Promise((resolve, reject) => {
-      this.setState({ loadingSupportBundles: true });
+      this.setState({ loadingSupportBundles: true, errorMsg: "" });
 
       fetch(`${window.env.API_ENDPOINT}/troubleshoot/app/${this.props.watch?.slug}/supportbundles`, {
         headers: {
@@ -88,15 +89,20 @@ class GenerateSupportBundle extends React.Component {
       })
         .then(async (res) => {
           const response = await res.json();
-          this.setState({
-            supportBundles: response.supportBundles,
-            loadingSupportBundles: false,
-          });
+          if(!res.ok) {
+            this.setState({ loadingSupportBundles: false, errorMsg: `Unable to get list of bundles: ${response.error}` });
+          }
+          if(res.ok) {
+            this.setState({
+              supportBundles: response.supportBundles,
+              loadingSupportBundles: false,
+              errorMsg: ""
+            });
+          }
           resolve();
         })
         .catch((err) => {
-          console.log(err);
-          this.setState({ loadingSupportBundles: false });
+          this.setState({ loadingSupportBundles: false, errorMsg: err ? `Unable to get list of bundles: ${err.message}` : "Something went wrong, please try again!" });
           reject(err);
         });
     });
@@ -199,7 +205,7 @@ class GenerateSupportBundle extends React.Component {
   }
 
   render() {
-    const { selectedCluster, displayUploadModal, showRunCommand, isGeneratingBundle, generateBundleErrMsg } = this.state;
+    const { selectedCluster, displayUploadModal, showRunCommand, isGeneratingBundle, generateBundleErrMsg, errorMsg } = this.state;
     const { watch } = this.props;
     const watchClusters = watch.downstreams;
     const selectedWatch = watchClusters.find(c => c.cluster.id === selectedCluster.id);
@@ -209,6 +215,16 @@ class GenerateSupportBundle extends React.Component {
     if (command) {
       command = command.replace("API_ADDRESS", window.location.origin);
     }
+
+    if (errorMsg) {
+      return (
+        <div class="flex1 flex-column justifyContent--center alignItems--center">
+          <span className="icon redWarningIcon" />
+          <p className="u-color--chestnut u-fontSize--normal u-fontWeight--medium u-lineHeight--normal u-marginTop--10">{errorMsg}</p>
+        </div>
+      )
+    }
+
     return (
       <div className="GenerateSupportBundle--wrapper container flex-column u-overflow--auto u-paddingTop--30 u-paddingBottom--20 alignItems--center">
         <Helmet>
