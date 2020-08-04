@@ -466,11 +466,11 @@ class AppVersionHistory extends Component {
     });
   }
 
-  hideDiffOverlay = (onCloseReleases) => {
+  hideDiffOverlay = (closeReleaseSelect) => {
     this.setState({
       showDiffOverlay: false
     });
-    if (onCloseReleases) {
+    if (closeReleaseSelect) {
       this.onCloseReleasesToDiff();
     }
   }
