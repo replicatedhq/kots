@@ -24,7 +24,7 @@ import (
 	"k8s.io/client-go/kubernetes/scheme"
 )
 
-func Sync(a *app.App, licenseData string) (*kotsv1beta1.License, error) {
+func Sync(a *app.App, licenseData string, failOnVersionCreate bool) (*kotsv1beta1.License, error) {
 	archiveDir, err := version.GetAppVersionArchive(a.ID, a.CurrentSequence)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get latest app version")
@@ -93,6 +93,9 @@ func Sync(a *app.App, licenseData string) (*kotsv1beta1.License, error) {
 		if err := createNewVersion(a, archiveDir, appSequence, registrySettings); err != nil {
 			// ignore error here to prevent a failure to render the current version
 			// preventing the end-user from updating the application
+			if failOnVersionCreate {
+				return nil, err
+			}
 			logger.Errorf("Failed to create new version from license sync: %v", err)
 		}
 	}
