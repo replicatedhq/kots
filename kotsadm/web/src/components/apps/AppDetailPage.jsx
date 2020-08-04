@@ -49,6 +49,7 @@ class AppDetailPage extends Component {
       app: null,
       loadingApp: true,
       getAppJob: new Repeater(),
+      gettingAppErrMsg: ""
     }
   }
 
@@ -128,7 +129,7 @@ class AppDetailPage extends Component {
     }
 
     try {
-      this.setState({ loadingApp: true });
+      this.setState({ loadingApp: true,  gettingAppErrMsg: "" });
 
       const res = await fetch(`${window.env.API_ENDPOINT}/apps/app/${slug}`, {
         headers: {
@@ -139,14 +140,12 @@ class AppDetailPage extends Component {
       });
       if (res.ok && res.status == 200) {
         const app = await res.json();
-        this.setState({ app, loadingApp: false });
+        this.setState({ app, loadingApp: false, gettingAppErrMsg: "" });
       } else {
-        console.log("failed to get app, unexpected status code", res.status);
-        this.setState({ loadingApp: false });
+        this.setState({ loadingApp: false, gettingAppErrMsg: `failed to get app, unexpected status code: ${res.status}` });
       }
     } catch(err) {
-      console.log(err);
-      this.setState({ loadingApp: false });
+      this.setState({ loadingApp: false, gettingAppErrMsg: err ? err.message : "Something went wrong, please try again!" });
     }
   }
 
@@ -203,7 +202,8 @@ class AppDetailPage extends Component {
     const {
       app,
       displayDownloadCommandModal,
-      isBundleUploading
+      isBundleUploading,
+      gettingAppErrMsg
     } = this.state;
 
     const centeredLoader = (
@@ -221,6 +221,15 @@ class AppDetailPage extends Component {
       this.state.getAppJob.start(this.getApp, 2000);
     } else {
       this.state.getAppJob.stop();
+    }
+
+    if (gettingAppErrMsg) {
+      return (
+        <div class="flex1 flex-column justifyContent--center alignItems--center">
+          <span className="icon redWarningIcon" />
+          <p className="u-color--chestnut u-fontSize--normal u-fontWeight--medium u-lineHeight--normal u-marginTop--10">{gettingAppErrMsg}</p>
+        </div>
+      )
     }
 
     return (
