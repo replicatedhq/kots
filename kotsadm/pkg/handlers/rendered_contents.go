@@ -17,6 +17,14 @@ import (
 	"github.com/replicatedhq/kots/kotsadm/pkg/version"
 )
 
+type GetAppRenderedContentsResponse struct {
+	Files map[string]string `json:"files"`
+}
+
+type GetAppRenderedContentsErrorResponse struct {
+	Error string `json:"error"`
+}
+
 func GetAppRenderedContents(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Access-Control-Allow-Headers", "content-type, origin, accept, authorization")
@@ -88,6 +96,13 @@ func GetAppRenderedContents(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		if ee, ok := err.(*exec.ExitError); ok {
 			err = fmt.Errorf("kustomize stderr: %q", string(ee.Stderr))
+			logger.Error(err)
+
+			JSON(w, 500, GetAppRenderedContentsErrorResponse{
+				Error: fmt.Sprintf("Failed to build release: %v", err),
+			})
+			return
+
 		}
 		logger.Error(err)
 		w.WriteHeader(500)
@@ -106,5 +121,7 @@ func GetAppRenderedContents(w http.ResponseWriter, r *http.Request) {
 	for filename, b := range archiveFiles {
 		decodedArchiveFiles[filename] = string(b)
 	}
-	JSON(w, 200, map[string]interface{}{"files": decodedArchiveFiles})
+	JSON(w, 200, GetAppRenderedContentsResponse{
+		Files: decodedArchiveFiles,
+	})
 }
