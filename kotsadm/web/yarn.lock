@@ -1955,10 +1955,10 @@
     pkginfo "^0.4.1"
     popsicle "^9.2.0"
 
-"@replicatedhq/ship-init@1.6.22":
-  version "1.6.22"
-  resolved "https://registry.yarnpkg.com/@replicatedhq/ship-init/-/ship-init-1.6.22.tgz#1ac40632b546629a4e8f6b9ccda0cc726be4ead1"
-  integrity sha512-fjJ3bqGgOZm2paxpfaZb7Yh51LpNo6xRIB7ej/KYXMkSNB/pjLmFAYfizYsUGoenDGwvJELXU7KQanjLlJx5Eg==
+"@replicatedhq/ship-init@1.6.23":
+  version "1.6.23"
+  resolved "https://registry.yarnpkg.com/@replicatedhq/ship-init/-/ship-init-1.6.23.tgz#1fbd58c07cecffe80a60c803b2e4f859e6c5b947"
+  integrity sha512-HY1gmDutxcqqEKGbEc4JtBnwUKEMPRqxaxgwTJVF/SJwN7Qm7mOJBvwV76ZFKHxX2Mb/XXav7bZKfDMYq4MYWA==
   dependencies:
     brace "^0.11.1"
     classnames "^2.2.6"
