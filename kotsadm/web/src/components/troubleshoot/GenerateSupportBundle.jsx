@@ -148,6 +148,7 @@ class GenerateSupportBundle extends React.Component {
 
     this.setState({
       isGeneratingBundle: true,
+      generateBundleErrMsg: ""
     });
 
     const currentBundles = this.state.supportBundles?.map(bundle => {
@@ -161,12 +162,18 @@ class GenerateSupportBundle extends React.Component {
       },
       method: "POST",
     })
-      .then(() => {
-        this.redirectOnNewBundle(currentBundles);
+      .then(async (res) => {
+        if (!res.ok) {
+          const response = await res.json();
+          this.setState({ isGeneratingBundle: false, generateBundleErrMsg: `Unable to generate bundle: ${response.error}` });
+          return;
+        }
+        if (res.ok) {
+          this.redirectOnNewBundle(currentBundles);
+        }
       })
       .catch((err) => {
-        console.log(err);
-        this.setState({ isGeneratingBundle: false });
+        this.setState({ isGeneratingBundle: false, generateBundleErrMsg: err ? err.message : "Something went wrong, please try again!" });
       });
   }
 
@@ -192,7 +199,7 @@ class GenerateSupportBundle extends React.Component {
   }
 
   render() {
-    const { selectedCluster, displayUploadModal, showRunCommand, isGeneratingBundle } = this.state;
+    const { selectedCluster, displayUploadModal, showRunCommand, isGeneratingBundle, generateBundleErrMsg } = this.state;
     const { watch } = this.props;
     const watchClusters = watch.downstreams;
     const selectedWatch = watchClusters.find(c => c.cluster.id === selectedCluster.id);
@@ -210,7 +217,7 @@ class GenerateSupportBundle extends React.Component {
         <div className="GenerateSupportBundle">
           {!watchClusters.length && !this.state.supportBundles?.length ?
             <Link to={`/watch/${watch.slug}/troubleshoot`} className="replicated-link u-marginRight--5"> &lt; Support Bundle List </Link> : null
-           }
+          }
           <div className="u-marginTop--15">
             <h2 className="u-fontSize--larger u-fontWeight--bold u-color--tuna">Analyze {appTitle} for support</h2>
             <p className="u-fontSize--normal u-color--dustyGray u-lineHeight--medium u-marginTop--5">
@@ -221,11 +228,12 @@ class GenerateSupportBundle extends React.Component {
           </div>
           <div className="flex1 flex-column u-paddingRight--30">
             <div>
+              {generateBundleErrMsg && <p className="u-color--chestnut u-fontSize--normal u-fontWeight--medium u-lineHeight--normal u-marginTop--10">{generateBundleErrMsg}</p>}
               {isGeneratingBundle ?
                 <div className="flex1 flex-column justifyContent--center alignItems--center">
                   <Loader size="60" />
                 </div>
-              :
+                :
                 <div className="flex alignItems--center u-marginTop--20">
                   <button className="btn primary blue" type="button" onClick={this.collectBundle.bind(this, watchClusters[0].cluster.id)}>Analyze {appTitle}</button>
                   <span className="replicated-link flex alignItems--center u-fontSize--small u-marginLeft--20" onClick={this.toggleRedactorModal}><span className="icon clickable redactor-spec-icon u-marginRight--5" /> Configure redaction</span>
@@ -247,7 +255,7 @@ class GenerateSupportBundle extends React.Component {
                     <button className="btn secondary" type="button" onClick={this.toggleModal}> Upload a support bundle </button>
                   </div>
                 </div>
-              :
+                :
                 <div>
                   <div className="u-marginTop--40">
                     If you'd prefer, <a href="#" className="replicated-link" onClick={(e) => this.toggleShow(e, "showRunCommand")}>click here</a> to get a command to manually generate a support bundle.
@@ -275,7 +283,7 @@ class GenerateSupportBundle extends React.Component {
             />
           </div>
         </Modal>
-        {this.state.displayRedactorModal && 
+        {this.state.displayRedactorModal &&
           <ConfigureRedactorsModal onClose={this.toggleRedactorModal} />
         }
       </div >
