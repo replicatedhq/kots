@@ -19,7 +19,8 @@ export class SupportBundleAnalysis extends React.Component {
       downloadingBundle: false,
       bundle: null,
       loading: false,
-      downloadBundleErrMsg: ""
+      downloadBundleErrMsg: "",
+      getSupportBundleErrMsg: ""
     };
   }
 
@@ -48,7 +49,7 @@ export class SupportBundleAnalysis extends React.Component {
   }
 
   getSupportBundle = async () => {
-    this.setState({ loading: true });
+    this.setState({ loading: true, getSupportBundleErrMsg: "" });
 
     fetch(`${window.env.API_ENDPOINT}/troubleshoot/supportbundle/${this.props.match.params.bundleSlug}`, {
       headers: {
@@ -58,15 +59,21 @@ export class SupportBundleAnalysis extends React.Component {
       method: "GET",
     })
       .then(async (res) => {
-        const bundle = await res.json();
-        this.setState({
-          bundle: bundle,
-          loading: false,
-        });
+        if (!res.ok) {
+          this.setState({ loading: false, getSupportBundleErrMsg: "Unable to get bundle, please try again!" });
+          return;
+        } 
+        if (res.ok) {
+          const bundle = await res.json();
+          this.setState({
+            bundle: bundle,
+            loading: false,
+            getSupportBundleErrMsg: ""
+          });
+        }
       })
       .catch((err) => {
-        console.log(err);
-        this.setState({ loading: false });
+        this.setState({ loading: false, getSupportBundleErrMsg: err ? `Unable to get bundle: ${err.message}` : "Something went wrong, please try again!"});
       });
   }
 
@@ -91,12 +98,21 @@ export class SupportBundleAnalysis extends React.Component {
 
   render() {
     const { watch } = this.props;
-    const { bundle, loading } = this.state;
+    const { bundle, loading, getSupportBundleErrMsg } = this.state;
 
     if (loading) {
       return (
         <div className="flex-column flex1 justifyContent--center alignItems--center">
           <Loader size="60" />
+        </div>
+      )
+    }
+
+    if (getSupportBundleErrMsg) {
+      return (
+        <div class="flex1 flex-column justifyContent--center alignItems--center">
+          <span className="icon redWarningIcon" />
+          <p className="u-color--chestnut u-fontSize--normal u-fontWeight--medium u-lineHeight--normal u-marginTop--10">{getSupportBundleErrMsg}</p>
         </div>
       )
     }
