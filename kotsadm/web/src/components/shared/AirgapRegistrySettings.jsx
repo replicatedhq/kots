@@ -36,6 +36,7 @@ class AirgapRegistrySettings extends Component {
       updateChecker: new Repeater(),
       rewriteStatus: "",
       rewriteMessage: "",
+      fetchRegistryErrMsg: ""
     }
   }
 
@@ -112,7 +113,7 @@ class AirgapRegistrySettings extends Component {
           password: this.state.password,
         }),
       });
-    } catch(err) {
+    } catch (err) {
       this.setState({
         testInProgress: false,
         testMessage: err,
@@ -164,7 +165,7 @@ class AirgapRegistrySettings extends Component {
       return;
     }
 
-    this.setState({loading: true});
+    this.setState({ loading: true, fetchRegistryErrMsg: "" });
 
     let url = `${window.env.API_ENDPOINT}/registry`;
     if (this.props.app) {
@@ -177,32 +178,30 @@ class AirgapRegistrySettings extends Component {
       },
       method: "GET",
     })
-    .then(res => res.json())
-    .then(result => {
-      this.setState({loading: false});
-      if (result.success) {
-        this.setState({
-          hostname: result.hostname,
-          username: result.username,
-          password: result.password,
-          namespace: result.namespace,
-        });
+      .then(res => res.json())
+      .then(result => {
+        if (result.success) {
+          this.setState({
+            hostname: result.hostname,
+            username: result.username,
+            password: result.password,
+            namespace: result.namespace,
+            loading: false,
+            fetchRegistryErrMsg: ""
+          });
 
-        if (this.props.gatherDetails) {
-          const { hostname, username, password, namespace } = result;
-          this.props.gatherDetails({ hostname, username, password, namespace });
+          if (this.props.gatherDetails) {
+            const { hostname, username, password, namespace } = result;
+            this.props.gatherDetails({ hostname, username, password, namespace });
+          }
+
+        } else {
+          this.setState({ loading: false, fetchRegistryErrMsg: "Unable to get registry info, please try again! " });
         }
-  
-      } else {
-        // TODO: show error on UI
-        console.log(result);
-      }
-    })
-    .catch(err => {
-      this.setState({loading: false});
-        // TODO: show error on UI
-        console.log(err);
-    })
+      })
+      .catch(err => {
+        this.setState({ loading: false, fetchRegistryErrMsg: err ? `Unable to get registry info: ${err.message}` : "Something went wrong, please try again! " });
+      })
   }
 
   triggerStatusUpdates = () => {
@@ -282,6 +281,15 @@ class AirgapRegistrySettings extends Component {
           <Loader size="60" />
         </div>
       );
+    }
+
+    if (this.state.fetchRegistryErrMsg) {
+      return (
+        <div class="flex1 flex-column justifyContent--center alignItems--center">
+          <span className="icon redWarningIcon" />
+          <p className="u-color--chestnut u-fontSize--normal u-fontWeight--medium u-lineHeight--normal u-marginTop--10">{this.state.fetchRegistryErrMsg}</p>
+        </div>
+      )
     }
 
     const namespaceSubtext = namespaceDescription || "Changing the namespace will rewrite all of your airgap images and push them to your registry."
