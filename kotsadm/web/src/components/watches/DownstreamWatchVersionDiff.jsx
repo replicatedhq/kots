@@ -13,15 +13,20 @@ class DownstreamWatchVersionDiff extends React.Component {
   constructor() {
     super();
     this.state = {
+      loadingFileTrees: false,
       firstApplicationTree: {},
       secondApplicationTree: {},
       fileLoading: false,
       fileLoadErr: false,
       fileLoadErrMessage: "",
+      hasErrSettingDiff: false,
+      errSettingDiff: "",
+      failedSequence: undefined
     };
   }
 
   fetchRenderedApplicationTree = (sequence, isFirst) => {
+    this.setState({ loadingFileTrees: true });
     const url = `${window.env.API_ENDPOINT}/app/${this.props.slug}/sequence/${sequence}/renderedcontents`;
     fetch(url, {
       headers: {
@@ -31,13 +36,25 @@ class DownstreamWatchVersionDiff extends React.Component {
     })
     .then(res => res.json())
     .then(async (files) => {
+      if (files.error) {
+        return this.setState({
+          hasErrSettingDiff: true,
+          errSettingDiff: files.error,
+          loadingFileTrees: false,
+          failedSequence: sequence
+        })
+      }
       if (isFirst) {
-        this.setState({firstApplicationTree: files});
+        this.setState({ firstApplicationTree: files });
       } else {
-        this.setState({secondApplicationTree: files});
+        this.setState({ secondApplicationTree: files });
+      }
+      if (this.state.firstApplicationTree.files && this.state.secondApplicationTree.files) {
+        this.setState({ loadingFileTrees: false });  
       }
     })
     .catch((err) => {
+      this.setState({ loadingFileTrees: false });
       throw err;
     });
   }
@@ -73,20 +90,35 @@ class DownstreamWatchVersionDiff extends React.Component {
 
   goBack = () => {
     if (this.props.onBackClick) {
-      this.props.onBackClick();
+      this.props.onBackClick(true);
     }
   }
 
   render() {
-    const { firstApplicationTree, secondApplicationTree } = this.state;
+    const { firstApplicationTree, secondApplicationTree, loadingFileTrees, hasErrSettingDiff, errSettingDiff, failedSequence } = this.state;
     const { firstSequence, secondSequence } = this.props;
 
-    if (!firstApplicationTree.files || !secondApplicationTree.files) {
+    if (loadingFileTrees) {
       return (
         <div className="u-height--full u-width--full flex alignItems--center justifyContent--center u-marginTop--15">
           <Loader size="60" />
         </div>
       );
+    }
+
+    if (hasErrSettingDiff) {
+      return (
+        <div className="u-height--full u-width--full flex-column alignItems--center justifyContent--center u-marginTop--15">
+          <p className="u-fontSize--largest u-fontWeight--bold u-color--tuna u-lineHeight--normal u-marginBottom--10">Unable to generate a file diff for the selected releases</p>
+          <p className="u-fontSize--normal u-color--dustyGray u-lineHeight--normal u-marginBottom--20">The release with the sequence <span className="u-fontWeight--bold">{failedSequence}</span> contains invalid YAML or config values and is unable to generate a diff. The full error is below.</p>
+          <div className="error-block-wrapper u-marginBottom--30 flex flex1">
+            <span className="u-color--chestnut">{errSettingDiff}</span>
+          </div>
+          <div className="flex u-marginBottom--10">
+            <button className="btn primary" onClick={() => this.goBack()}>Back to all versions</button>
+          </div>
+        </div>
+      )
     }
 
     const filesToInclude = [];

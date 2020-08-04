@@ -151,9 +151,9 @@ class AppVersionHistory extends Component {
 
   renderYamlErrors = (yamlErrorsDetails, version) => {
     return (
-      <div className="flex alignItems--center u-marginLeft--10">
+      <div className="flex alignItems--center">
         <span className="icon error-small" />
-        <span className="u-fontSize--small u-fontWeight--medium u-lineHeight--normal u-marginLeft--5 u-color--red">{yamlErrorsDetails?.length} Invalid files </span>
+        <span className="u-fontSize--small u-fontWeight--medium u-lineHeight--normal u-marginLeft--5 u-color--red">{yamlErrorsDetails?.length} Invalid file{yamlErrorsDetails?.length !== 1 ? "s" : ""} </span>
         <span className="replicated-link u-marginLeft--5 u-fontSize--small" onClick={() => this.toggleShowDetailsModal(yamlErrorsDetails, version.sequence)}> See details </span>
       </div>
     )
@@ -167,9 +167,8 @@ class AppVersionHistory extends Component {
 
     if (hasDiffSummaryError) {
       return (
-        <div className="flex flex1 alignItems--center">
-          <span className="u-fontSize--small u-fontWeight--medium u-lineHeight--normal u-color--dustyGray">Unable to generate file diff</span>
-          <span className="replicated-link u-marginLeft--5 u-fontSize--small" onClick={() => this.toggleDiffErrModal(version)}>Why?</span>
+        <div className="flex flex1 alignItems--center u-marginRight--10">
+          <span className="u-fontSize--small u-fontWeight--medium u-lineHeight--normal u-color--dustyGray">Cannot generate diff <span className="replicated-link" onClick={() => this.toggleDiffErrModal(version)}>Why?</span></span>
       </div>
       );
     } else {
@@ -178,7 +177,7 @@ class AppVersionHistory extends Component {
           {diffSummary ?
             (diffSummary.filesChanged > 0 ?
               <div
-                className="DiffSummary u-cursor--pointer"
+                className="DiffSummary u-cursor--pointer u-marginRight--10"
                 onClick={() => {
                   if (!downstream.gitops?.enabled) {
                     this.setState({
@@ -467,10 +466,13 @@ class AppVersionHistory extends Component {
     });
   }
 
-  hideDiffOverlay = () => {
+  hideDiffOverlay = (onCloseReleases) => {
     this.setState({
       showDiffOverlay: false
     });
+    if (onCloseReleases) {
+      this.onCloseReleasesToDiff();
+    }
   }
 
   onSelectReleasesToDiff = () => {
@@ -1223,7 +1225,7 @@ class AppVersionHistory extends Component {
           >
             <div className="Modal-body">
               <p className="u-fontSize--largest u-fontWeight--bold u-color--tuna u-lineHeight--normal u-marginBottom--10">Unable to generate a file diff for release</p>
-              <p className="u-fontSize--normal u-color--dustyGray u-lineHeight--normal u-marginBottom--20">The release with upstream {this.state.releaseWithErr.title} Sequence {this.state.releaseWithErr.sequence} was unable to generate a diff due to the following error.</p>
+              <p className="u-fontSize--normal u-color--dustyGray u-lineHeight--normal u-marginBottom--20">The release with the <span className="u-fontWeight--bold">Upstream {this.state.releaseWithErr.title}, Sequence {this.state.releaseWithErr.sequence}</span> was unable to generate a files diff because the following error:</p>
               <div className="error-block-wrapper u-marginBottom--30 flex flex1">
                 <span className="u-color--chestnut">{this.state.releaseWithErr.diffSummaryError}</span>
               </div>
