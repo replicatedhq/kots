@@ -121,7 +121,7 @@ class AppDetailPage extends Component {
       })
       .catch((err) => {
         this.setState({
-          makingCurrentReleaseErrMsg: err ? `Unable to deploy release ${version.title}, sequence ${version.sequence}: ${err.message}` : "Something went wrong, please try again!"
+          makingCurrentReleaseErrMsg: err ? `Unable to deploy release ${version.title}, sequence ${version.sequence}: ${err.message}` : "Something went wrong, please try again."
         });
       });
   }
@@ -156,7 +156,7 @@ class AppDetailPage extends Component {
         this.setState({ loadingApp: false, gettingAppErrMsg: `failed to get app, unexpected status code: ${res.status}` });
       }
     } catch (err) {
-      this.setState({ loadingApp: false, gettingAppErrMsg: err ? err.message : "Something went wrong, please try again!" });
+      this.setState({ loadingApp: false, gettingAppErrMsg: err ? err.message : "Something went wrong, please try again." });
     }
   }
 

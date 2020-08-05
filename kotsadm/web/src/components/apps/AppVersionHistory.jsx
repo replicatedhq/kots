@@ -513,7 +513,7 @@ class AppVersionHistory extends Component {
         this.setState({ logsLoading: false, viewLogsErrMsg: `Failed to view logs, unexpected status code, ${res.status}` });
       }
     } catch (err) {
-      this.setState({ logsLoading: false, viewLogsErrMsg: err ? `Failed to view logs: ${err.message}` : "Something went wrong, please try again!" });
+      this.setState({ logsLoading: false, viewLogsErrMsg: err ? `Failed to view logs: ${err.message}` : "Something went wrong, please try again." });
     }
   }
 
@@ -1023,7 +1023,11 @@ class AppVersionHistory extends Component {
                     <p className="u-fontSize--larger u-fontWeight--bold u-color--tuna u-lineHeight--normal">All versions</p>
                     {makingCurrentReleaseErrMsg &&
                       <div className="ErrorWrapper flex-auto flex alignItems--center">
-                        <p className="u-color--chestnut u-fontSize--normal u-fontWeight--medium u-lineHeight--normal">{makingCurrentReleaseErrMsg}</p>
+                        <div className="icon redWarningIcon u-marginRight--10" />
+                        <div>
+                          <p className="title">Failed to deploy version</p>
+                          <p className="err">{makingCurrentReleaseErrMsg}</p>
+                        </div>
                       </div>}
                     {versionHistory.length > 1 && this.renderDiffBtn()}
                   </div>

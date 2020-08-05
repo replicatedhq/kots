@@ -102,7 +102,7 @@ class GenerateSupportBundle extends React.Component {
           resolve();
         })
         .catch((err) => {
-          this.setState({ loadingSupportBundles: false, errorMsg: err ? `Unable to get list of bundles: ${err.message}` : "Something went wrong, please try again!" });
+          this.setState({ loadingSupportBundles: false, errorMsg: err ? `Unable to get list of bundles: ${err.message}` : "Something went wrong, please try again." });
           reject(err);
         });
     });
@@ -179,7 +179,7 @@ class GenerateSupportBundle extends React.Component {
         }
       })
       .catch((err) => {
-        this.setState({ isGeneratingBundle: false, generateBundleErrMsg: err ? err.message : "Something went wrong, please try again!" });
+        this.setState({ isGeneratingBundle: false, generateBundleErrMsg: err ? err.message : "Something went wrong, please try again." });
       });
   }
 

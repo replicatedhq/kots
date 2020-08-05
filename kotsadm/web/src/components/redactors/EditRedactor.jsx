@@ -118,7 +118,7 @@ class EditRedactor extends Component {
       .catch((err) => {
         this.setState({
           editingRedactor: false,
-          editingErrMsg: err.message ? err.message : "Something went wrong, please try again!"
+          editingErrMsg: err.message ? err.message : "Something went wrong, please try again."
         });
       });
   }
@@ -191,7 +191,7 @@ class EditRedactor extends Component {
       .catch((err) => {
         this.setState({
           creatingRedactor: false,
-          createErrMsg: err.message ? err.message : "Something went wrong, please try again!"
+          createErrMsg: err.message ? err.message : "Something went wrong, please try again."
         });
       });
   }

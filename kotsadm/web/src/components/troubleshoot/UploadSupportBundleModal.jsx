@@ -44,7 +44,7 @@ class UploadSupportBundleModal extends React.Component {
         }
       }
     } catch (err) {
-      this.setState({ fileUploading: false, uploadBundleErrMsg: err ? `Unable to upload the bundle: ${err.message}` : "Something went wrong, please try again!" });
+      this.setState({ fileUploading: false, uploadBundleErrMsg: err ? `Unable to upload the bundle: ${err.message}` : "Something went wrong, please try again." });
     }
   }
 

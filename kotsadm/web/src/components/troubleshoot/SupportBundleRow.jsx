@@ -58,7 +58,7 @@ class SupportBundleRow extends React.Component {
         }
       })
       .catch(err => {
-        this.setState({ downloadingBundle: false, downloadBundleErrMsg: err ? `Unable to download bundle: ${err.message}` : "Something went wrong, please try again!" });
+        this.setState({ downloadingBundle: false, downloadBundleErrMsg: err ? `Unable to download bundle: ${err.message}` : "Something went wrong, please try again." });
       })
   }
 

@@ -44,7 +44,7 @@ export class SupportBundleAnalysis extends React.Component {
         }
       })
       .catch(err => {
-        this.setState({ downloadingBundle: false, downloadBundleErrMsg: err ? `Unable to download bundle: ${err.message}` : "Something went wrong, please try again!" });
+        this.setState({ downloadingBundle: false, downloadBundleErrMsg: err ? `Unable to download bundle: ${err.message}` : "Something went wrong, please try again." });
       })
   }
 
@@ -73,7 +73,7 @@ export class SupportBundleAnalysis extends React.Component {
         }
       })
       .catch((err) => {
-        this.setState({ loading: false, getSupportBundleErrMsg: err ? `Unable to get bundle: ${err.message}` : "Something went wrong, please try again!"});
+        this.setState({ loading: false, getSupportBundleErrMsg: err ? `Unable to get bundle: ${err.message}` : "Something went wrong, please try again."});
       });
   }
 

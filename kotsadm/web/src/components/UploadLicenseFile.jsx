@@ -213,7 +213,7 @@ class UploadLicenseFile extends React.Component {
       .catch((err) => {
         this.setState({
           startingRestore: false,
-          startingRestoreMsg: err.message ? err.message : "Something went wrong, please try again!"
+          startingRestoreMsg: err.message ? err.message : "Something went wrong, please try again."
         });
       });
   }

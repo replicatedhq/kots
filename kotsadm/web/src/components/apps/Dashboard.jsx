@@ -136,7 +136,7 @@ class Dashboard extends Component {
         }
       }
     }).catch((err) => {
-      this.setState({ getingAppLicenseErrMsg: err ? `Error while getting the license: ${err.message}` : "Something went wrong, please try again!"})
+      this.setState({ getingAppLicenseErrMsg: err ? `Error while getting the license: ${err.message}` : "Something went wrong, please try again."})
     });
   }
 
@@ -486,7 +486,7 @@ class Dashboard extends Component {
     })
     .catch(err => {
       this.setState({
-        startSnapshotErrorMsg: err ? err.message : "Something went wrong, please try again!"
+        startSnapshotErrorMsg: err ? err.message : "Something went wrong, please try again."
       });
     })
   }

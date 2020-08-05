@@ -48,7 +48,7 @@ class SupportBundleList extends React.Component {
         }
       })
       .catch((err) => {
-        this.setState({ loading: false, errorMsg: err ? `Unable to get list of bundles: ${err.message}` : "Something went wrong, please try again!" });
+        this.setState({ loading: false, errorMsg: err ? `Unable to get list of bundles: ${err.message}` : "Something went wrong, please try again." });
       });
   }
 

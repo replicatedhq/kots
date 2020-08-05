@@ -384,7 +384,7 @@ class AppSnapshots extends Component {
       return (
         <div class="flex1 flex-column justifyContent--center alignItems--center">
           <span className="icon redWarningIcon" />
-          <p className="u-color--chestnut u-fontSize--normal u-fontWeight--medium u-lineHeight--normal u-marginTop--10">{snapshotsListErrMsg ? snapshotsListErr : "Something went wrong, please try again!"}</p>
+          <p className="u-color--chestnut u-fontSize--normal u-fontWeight--medium u-lineHeight--normal u-marginTop--10">{snapshotsListErrMsg ? snapshotsListErr : "Something went wrong, please try again."}</p>
           <p className="u-fontSize--small u-color--dustyGray u-lineHeight--normal u-fontWeight--medium u-marginTop--10">
             To troubleshoot<Link to={`/app/${app.slug}/troubleshoot/generate`} className="replicated-link u-marginLeft--5">create a support bundle</Link>
           </p>

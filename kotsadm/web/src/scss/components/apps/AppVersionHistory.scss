@@ -287,16 +287,27 @@ $cell-width: 140px;
 .ErrorWrapper {
   position: absolute;
   left: 50%;
-  top: 62px;
   z-index: 300;
-  padding: 11px 10px 10px;
+  padding: 15px 20px;
+  box-shadow: 0 0 4px rgba(0,0,0,0.16);
   line-height: normal;
-  font-size: 14px;
-  font-weight: 500;
   border-radius: 4px;
   transition: transform .3s cubic-bezier(0.285, -0.575, 0.675, 1.440);
   transform: translate(-50%, -90px);
-  background-color: #FFDADA;
-  color: #863333;
+  background-color: #FBECEA;
+  color: #BC4752;
   max-width: 400px;
+
+  .title {
+    font-size: 16px;
+    line-height: 1.7;
+    font-weight: 700;
+    margin-bottom: 6px;
+  }
+
+  .err {
+    font-size: 14px;
+    font-weight: 500;
+    line-height: 1.7;
+  }
 }

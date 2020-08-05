@@ -169,7 +169,7 @@ class AppConfig extends Component {
         }
       })
       .catch((err) => {
-        this.setState({ savingConfig: false, savingConfigError: err ? err.message : "Something went wrong, please try again!" });
+        this.setState({ savingConfig: false, savingConfigError: err ? err.message : "Something went wrong, please try again." });
       });
   }
 

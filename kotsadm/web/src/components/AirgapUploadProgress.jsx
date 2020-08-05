@@ -38,13 +38,24 @@ class AirgapUploadProgress extends React.Component {
       });
 
       const response = await res.json();
+
+      if (!response.ok) {
+        this.setState({
+          installStatus: "airgap_upload_error",
+          currentMessage: `Encounted an error while uploading: ${response.error}`
+        });
+      } else {
+        this.setState({
+          installStatus: response.installStatus,
+          currentMessage: response.currentMessage,
+        });
+      }
       
-      this.setState({
-        installStatus: response.installStatus,
-        currentMessage: response.currentMessage,
-      });
     } catch(err) {
-      console.log(err);
+      this.setState({ 
+        installStatus: "airgap_upload_error",
+        currentMessage: err ? `Encounted an error while uploading: ${err.message}` : "Something went wrong, please try again."
+      })
     }
   }
   
