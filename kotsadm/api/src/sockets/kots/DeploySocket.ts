@@ -160,9 +160,9 @@ export class KotsDeploySocketService {
     const desiredNamespace = ".";
     const kotsAppSpec = await app.getKotsAppSpec(cluster.id, this.kotsAppStore);
 
-    const rendered = await app.render(app.currentSequence!.toString(), `overlays/downstreams/${cluster.title}`, kotsAppSpec ? kotsAppSpec.kustomizeVersion : "");
+    const activeDownstream = await this.kotsAppStore.getCurrentVersion(app.id, cluster.id);
+    const rendered = await app.render(activeDownstream!.parentSequence!.toString(), `overlays/downstreams/${cluster.title}`, kotsAppSpec ? kotsAppSpec.kustomizeVersion : "");
     const b = new Buffer(rendered);
-
 
     const veleroClient = new VeleroClient("velero"); // TODO velero namespace
     const backup = await veleroClient.readBackup(app.restoreInProgressName!);

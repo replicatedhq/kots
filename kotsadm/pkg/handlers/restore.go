@@ -79,7 +79,6 @@ func CreateRestore(w http.ResponseWriter, r *http.Request) {
 			createRestoreResponse.Error = "failed to initiate restore"
 			JSON(w, 500, createRestoreResponse)
 			return
-
 		}
 
 		createRestoreResponse.Success = true
