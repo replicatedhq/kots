@@ -584,6 +584,7 @@ class AppVersionHistory extends Component {
         this.props.refreshAppData();
         const response = await res.json();
         if (response.availableUpdates === 0) {
+          this.props.data?.refetch(); // this is to fetch data downloaded by automatic updates (if any)
           this.setState({
             checkingForUpdates: false,
             noUpdateAvailiableText: "There are no updates available",
