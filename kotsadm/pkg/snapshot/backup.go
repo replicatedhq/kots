@@ -11,6 +11,7 @@ import (
 	units "github.com/docker/go-units"
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/kotsadm/pkg/app"
+	"github.com/replicatedhq/kots/kotsadm/pkg/downstream"
 	"github.com/replicatedhq/kots/kotsadm/pkg/kotsutil"
 	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
 	"github.com/replicatedhq/kots/kotsadm/pkg/persistence"
@@ -41,11 +42,25 @@ func CreateBackup(a *app.App) error {
 }
 
 func createApplicationBackup(a *app.App) error {
+	downstreams, err := downstream.ListDownstreamsForApp(a.ID)
+	if err != nil {
+		return errors.Wrap(err, "failed to list downstreams for app")
+	}
+
+	if len(downstreams) == 0 {
+		return errors.New("no downstreams found for app")
+	}
+
+	parentSequence, err := downstream.GetCurrentParentSequence(a.ID, downstreams[0].ClusterID)
+	if err != nil {
+		return errors.Wrap(err, "failed to get current downstream parent sequence")
+	}
+
 	logger.Debug("creating backup",
 		zap.String("appID", a.ID),
-		zap.Int64("sequence", a.CurrentSequence))
+		zap.Int64("sequence", parentSequence))
 
-	archiveDir, err := version.GetAppVersionArchive(a.ID, a.CurrentSequence)
+	archiveDir, err := version.GetAppVersionArchive(a.ID, parentSequence)
 	if err != nil {
 		return errors.Wrap(err, "failed to get app version archive")
 	}
@@ -94,7 +109,7 @@ func createApplicationBackup(a *app.App) error {
 	veleroBackup.Annotations = map[string]string{
 		"kots.io/snapshot-trigger":   "manual",
 		"kots.io/app-id":             a.ID,
-		"kots.io/app-sequence":       strconv.FormatInt(a.CurrentSequence, 10),
+		"kots.io/app-sequence":       strconv.FormatInt(parentSequence, 10),
 		"kots.io/snapshot-requested": time.Now().UTC().Format(time.RFC3339),
 	}
 	veleroBackup.Spec.IncludedNamespaces = includedNamespaces
