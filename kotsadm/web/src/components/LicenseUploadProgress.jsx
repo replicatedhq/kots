@@ -3,6 +3,7 @@ import { withRouter } from "react-router-dom";
 import { Utilities } from "@src/utilities/utilities";
 import { Repeater } from "@src/utilities/repeater";
 import "@src/scss/components/AirgapUploadProgress.scss";
+import { onError } from "apollo-link-error";
 
 class LicenseUploadProgress extends React.Component {
   constructor(props) {
@@ -34,13 +35,22 @@ class LicenseUploadProgress extends React.Component {
       });
 
       const response = await res.json();
-      
-      this.setState({
-        installStatus: response.installStatus,
-        currentMessage: response.currentMessage,
-      });
+      if (!response.ok) {
+        this.setState({
+          installStatus: "upload_error",
+          currentMessage: `Encounted an error while uploading license: ${response.error}`
+        });
+      } else {
+        this.setState({
+          installStatus: response.installStatus,
+          currentMessage: response.currentMessage,
+        });
+      }
     } catch(err) {
-      console.log(err);
+      this.setState({ 
+        installStatus: "upload_error",
+        currentMessage: err ? `Encounted an error while uploading license: ${err.message}` : "Something went wrong, please try again."
+      })
     }
   }
 
@@ -51,6 +61,11 @@ class LicenseUploadProgress extends React.Component {
         <p className="u-fontSize--small u-color--dustyGray u-fontWeight--medium">This may take a while depending on your network connection.</p>
       </div>
     );
+
+    const hasError = this.state.installStatus === "upload_error";
+    if (hasError) {
+      this.props.onError(this.state.currentMessage);
+    }
 
     return (
       <div className="AirgapUploadProgress--wrapper flex1 flex-column alignItems--center justifyContent--center">
