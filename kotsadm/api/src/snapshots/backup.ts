@@ -35,8 +35,8 @@ export async function backup(stores: Stores, appId: string, scheduled: boolean):
     name = `scheduled-${Date.now()}`;
   }
 
-  const tmpl = await stores.snapshotsStore.getKotsBackupSpec(appId, deployedVersion.sequence);
-  const rendered = await kotsRenderFile(app, app.currentSequence!, tmpl, registryInfo);
+  const tmpl = await stores.snapshotsStore.getKotsBackupSpec(appId, deployedVersion.parentSequence!);
+  const rendered = await kotsRenderFile(app, deployedVersion.parentSequence!, tmpl, registryInfo);
   const base = yaml.safeLoad(rendered) as Backup;
   const spec = (base && base.spec) || {};
 

@@ -227,9 +227,13 @@ func CheckForUpdates(appID string, deploy bool) (int64, error) {
 		if err != nil {
 			return 0, errors.Wrap(err, "failed to list downstreams for app")
 		}
-		downstream := downstreams[0]
 
-		if latestVersion.Sequence != downstream.CurrentSequence {
+		downstreamParentSequence, err := downstream.GetCurrentParentSequence(a.ID, downstreams[0].ClusterID)
+		if err != nil {
+			return 0, errors.Wrap(err, "failed to get current downstream parent sequence")
+		}
+
+		if latestVersion.Sequence != downstreamParentSequence {
 			err := version.DeployVersion(a.ID, latestVersion.Sequence)
 			if err != nil {
 				return 0, errors.Wrap(err, "failed to deploy latest version")
