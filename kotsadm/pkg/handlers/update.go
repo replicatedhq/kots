@@ -17,7 +17,8 @@ type AppUpdateCheckRequest struct {
 }
 
 type AppUpdateCheckResponse struct {
-	AvailableUpdates int64 `json:"availableUpdates"`
+	AvailableUpdates   int64 `json:"availableUpdates"`
+	CurrentAppSequence int64 `json:"currentAppSequence"`
 }
 
 func AppUpdateCheck(w http.ResponseWriter, r *http.Request) {
@@ -67,7 +68,8 @@ func AppUpdateCheck(w http.ResponseWriter, r *http.Request) {
 	}
 
 	appUpdateCheckResponse := AppUpdateCheckResponse{
-		AvailableUpdates: availableUpdates,
+		AvailableUpdates:   availableUpdates,
+		CurrentAppSequence: foundApp.CurrentSequence,
 	}
 
 	JSON(w, 200, appUpdateCheckResponse)

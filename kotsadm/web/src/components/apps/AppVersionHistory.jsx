@@ -584,15 +584,21 @@ class AppVersionHistory extends Component {
         this.props.refreshAppData();
         const response = await res.json();
         if (response.availableUpdates === 0) {
-          this.setState({
-            checkingForUpdates: false,
-            noUpdateAvailiableText: "There are no updates available",
-          });
-          setTimeout(() => {
+          if (!find(this.props.data?.getKotsDownstreamHistory, { parentSequence: response.currentAppSequence })) {
+            // version history list is out of sync - most probably because of automatic updates happening in the background - refetch list
+            this.props.data?.refetch();
+            this.setState({ checkingForUpdates: false });
+          } else {
             this.setState({
-              noUpdateAvailiableText: null,
+              checkingForUpdates: false,
+              noUpdateAvailiableText: "There are no updates available",
             });
-          }, 3000);
+            setTimeout(() => {
+              this.setState({
+                noUpdateAvailiableText: null,
+              });
+            }, 3000);
+          }
         } else {
           this.state.updateChecker.start(this.updateStatus, 1000);
         }
