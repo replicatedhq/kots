@@ -88,7 +88,8 @@ class Root extends Component {
     },
     rootDidInitialWatchFetch: false,
     connectionTerminated: false,
-    snapshotInProgressApps: []
+    snapshotInProgressApps: [],
+    errLoggingOut: ""
   };
   /**
    * Sets the Theme State for the whole application
@@ -248,6 +249,12 @@ class Root extends Component {
     const apps = this.state.listApps;
     return !!find(apps, app => app.allowSnapshots);
   }
+  
+  onLogoutError = (message) => {
+    this.setState({
+      errLoggingOut: message
+    })
+  }
 
   render() {
     const {
@@ -255,6 +262,7 @@ class Root extends Component {
       listApps,
       rootDidInitialWatchFetch,
       connectionTerminated,
+      errLoggingOut
     } = this.state;
 
     return (
@@ -282,9 +290,19 @@ class Root extends Component {
                   isKurlEnabled={this.state.isKurlEnabled}
                   isGitOpsSupported={this.isGitOpsSupported()}
                   listApps={listApps}
+                  onLogoutError={this.onLogoutError}
                   isSnapshotsSupported={this.isSnapshotsSupported()}
                 />
                 <div className="flex1 flex-column u-overflow--auto">
+                  {errLoggingOut && errLoggingOut.length > 0 &&
+                    <div className="ErrorWrapper flex-auto flex alignItems--center">
+                      <div className="icon redWarningIcon u-marginRight--10" />
+                      <div>
+                        <p className="title">Failed to log out</p>
+                        <p className="err">{errLoggingOut}</p>
+                      </div>
+                    </div>
+                  }
                   <Switch>
 
                     <Route exact path="/" component={() => <Redirect to={Utilities.isLoggedIn() ? "/apps" : "/secure-console"} />} />

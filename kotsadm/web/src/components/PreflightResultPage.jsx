@@ -17,6 +17,7 @@ class PreflightResultPage extends Component {
   state = {
     showSkipModal: false,
     showWarningModal: false,
+    errorMessage: ""
   };
 
   async componentWillUnmount() {
@@ -47,7 +48,9 @@ class PreflightResultPage extends Component {
 
       history.push(`/app/${preflightResultData.appSlug}/version-history`);
     } catch (error) {
-      console.log(error);
+      this.setState({
+        errorMessage: error ? `Encounted an error while trying to deploy downstream version: ${error.message}` : "Something went wrong, please try again."
+      });
     }
   }
 
@@ -61,7 +64,9 @@ class PreflightResultPage extends Component {
         method: "POST",
       });
     } catch(err) {
-      console.log(err);
+      this.setState({
+        errorMessage: err ? `Encounted an error while trying to deploy version: ${err.message}` : "Something went wrong, please try again."
+      });
     }
   }
 
@@ -106,7 +111,9 @@ class PreflightResultPage extends Component {
         this.props.data.refetch();
       })
       .catch((err) => {
-        console.log(err);
+        this.setState({
+          errorMessage: err ? `Encounted an error while trying to ignore permissions: ${err.message}` : "Something went wrong, please try again."
+        });
       });
   }
 
@@ -126,10 +133,16 @@ class PreflightResultPage extends Component {
       .then((res) => {
         if (res.status === 200) {
           this.props.data?.refetch();
+        } else {
+          this.setState({
+            errorMessage: `Encounted an error while trying to re-run preflight checks: ${res.error}`
+          });
         }
       })
       .catch((err) => {
-        console.log(err);
+        this.setState({
+          errorMessage: err ? `Encounted an error while trying to re-run preflight checks: ${err.message}` : "Something went wrong, please try again."
+        });
       });
   }
 
@@ -184,7 +197,16 @@ class PreflightResultPage extends Component {
               <span className="icon clickable backArrow-icon u-marginRight--10" style={{ verticalAlign: "0" }} />
                 Back
             </div>}
-            <div className="u-minWidth--full u-marginTop--20 flex-column flex1">
+            <div className="u-minWidth--full u-marginTop--20 flex-column flex1 u-position--relative">
+              {this.state.errorMessage && this.state.errorMessage.length > 0 ?
+                <div className="ErrorWrapper flex-auto flex alignItems--center">
+                  <div className="icon redWarningIcon u-marginRight--10" />
+                  <div>
+                    <p className="title">Encounted an error</p>
+                    <p className="error">{this.state.errorMessage}</p>
+                  </div>
+                </div>
+              : null}
               <p className="u-fontSize--header u-color--tuna u-fontWeight--bold">
                 Preflight checks
               </p>
