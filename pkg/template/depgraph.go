@@ -11,9 +11,14 @@ import (
 )
 
 type depGraph struct {
-	Dependencies map[string]map[string]struct{}
-	CertItems    map[string]map[string]struct{} // items that use the TLSCert template function. map of certnames to configoptions that provide the certname
-	KeyItems     map[string]map[string]struct{} // items that use the TLSKey template function. map of configoptions to the certnames they use
+	Dependencies        map[string]map[string]struct{}
+	CertItems           map[string]map[string]struct{} // items that use the TLSCert template function. map of certnames to configoptions that provide the certname
+	KeyItems            map[string]map[string]struct{} // items that use the TLSKey template function. map of TLSKey configoptions to the certnames they use
+	CAItems             map[string]map[string]struct{} // items that use the TLSCACert template function. map of canames to configoptions that provide the caname
+	CAFromCertItems     map[string]map[string]struct{} // items that use the TLSCertFromCA template function. map of TLSCertFromCA configoptions to the canames they use
+	CertFromCACertItems map[string]map[string]struct{} // items that use the TLSCertFromCA template function. map of canames and certnames to configoptions that provide the certname
+	CAItemsFromKey      map[string]map[string]struct{} // items that use the TLSKeyFromCA template function. map of TLSKeyFromCA configoptions to the canames they use
+	CACertItemsFromKey  map[string]map[string]struct{} // items that use the TLSKeyFromCA template function. map of TLSKeyFromCA configoptions to the canames and certnames they use
 }
 
 // these config functions are used to add their dependencies to the depGraph
@@ -33,14 +38,32 @@ func (d *depGraph) funcMap(parent string) template.FuncMap {
 		return certName
 	}
 
+	addCAFunc := func(caName string, _ ...string) string {
+		d.AddCA(parent, caName)
+		return caName
+	}
+
+	addCertFromCAFunc := func(caName, certName string, _ ...string) string {
+		d.AddCertFromCA(parent, caName, certName)
+		return certName
+	}
+
+	addKeyFromCAFunc := func(caName, certName string, _ ...string) string {
+		d.AddKeyFromCA(parent, caName, certName)
+		return certName
+	}
+
 	return template.FuncMap{
 		"ConfigOption":          addDepFunc,
 		"ConfigOptionIndex":     addDepFunc,
 		"ConfigOptionData":      addDepFunc,
 		"ConfigOptionEquals":    addDepFunc,
 		"ConfigOptionNotEquals": addDepFunc,
+		"TLSCACert":             addCAFunc,
 		"TLSCert":               addCertFunc,
+		"TLSCertFromCA":         addCertFromCAFunc,
 		"TLSKey":                addKeyFunc,
+		"TLSKeyFromCA":          addKeyFromCAFunc,
 	}
 }
 
@@ -61,31 +84,76 @@ func (d *depGraph) AddDep(source, newDependency string) {
 }
 
 func (d *depGraph) AddCert(source, certName string) {
-	if d.CertItems == nil {
-		d.CertItems = make(map[string]map[string]struct{})
-	}
-	if _, ok := d.CertItems[certName]; !ok {
-		d.CertItems[certName] = make(map[string]struct{})
-	}
-
-	d.CertItems[certName][source] = struct{}{}
+	d.CertItems = addDepGraphItem(d.CertItems, certName, source)
 }
 
 func (d *depGraph) AddKey(source, certName string) {
-	if d.KeyItems == nil {
-		d.KeyItems = make(map[string]map[string]struct{})
+	d.KeyItems = addDepGraphItem(d.KeyItems, source, certName)
+}
+
+func (d *depGraph) AddCA(source, caName string) {
+	d.CAItems = addDepGraphItem(d.CAItems, caName, source)
+}
+
+func (d *depGraph) AddCertFromCA(source, caName, certName string) {
+	d.CAFromCertItems = addDepGraphItem(d.CAFromCertItems, source, caName)
+	d.CertFromCACertItems = addDepGraphItem(d.CertFromCACertItems, caName+certName, source)
+}
+
+func (d *depGraph) AddKeyFromCA(source, caName, certName string) {
+	d.CAItemsFromKey = addDepGraphItem(d.CAItemsFromKey, source, caName)
+	d.CACertItemsFromKey = addDepGraphItem(d.CACertItemsFromKey, source, caName+certName)
+}
+
+func addDepGraphItem(m map[string]map[string]struct{}, key, value string) map[string]map[string]struct{} {
+	if m == nil {
+		m = make(map[string]map[string]struct{})
 	}
-	if _, ok := d.KeyItems[source]; !ok {
-		d.KeyItems[source] = make(map[string]struct{})
+	if _, ok := m[key]; !ok {
+		m[key] = make(map[string]struct{})
 	}
 
-	d.KeyItems[source][certName] = struct{}{}
+	m[key][value] = struct{}{}
+	return m
 }
 
 func (d *depGraph) resolveCertKeys() {
 	for source, certNameMap := range d.KeyItems {
 		for certName := range certNameMap {
 			for certProvider := range d.CertItems[certName] {
+				if certProvider != source {
+					d.AddDep(source, certProvider)
+				}
+			}
+		}
+	}
+}
+
+func (d *depGraph) resolveCACerts() {
+	for source, caNameMap := range d.CAFromCertItems {
+		for caName := range caNameMap {
+			for caProvider := range d.CAItems[caName] {
+				if caProvider != source {
+					d.AddDep(source, caProvider)
+				}
+			}
+		}
+	}
+}
+
+func (d *depGraph) resolveCACertKeys() {
+	for source, caNameMap := range d.CAItemsFromKey {
+		for caName := range caNameMap {
+			for caProvider := range d.CAItems[caName] {
+				if caProvider != source {
+					d.AddDep(source, caProvider)
+				}
+			}
+		}
+	}
+	for source, caCertNameMap := range d.CACertItemsFromKey {
+		for caCertName := range caCertNameMap {
+			for certProvider := range d.CertFromCACertItems[caCertName] {
 				if certProvider != source {
 					d.AddDep(source, certProvider)
 				}
@@ -168,6 +236,7 @@ func (d *depGraph) ParseConfigGroup(configGroups []kotsv1beta1.ConfigGroup) erro
 	}
 
 	d.resolveCertKeys()
+	d.resolveCACertKeys()
 
 	return nil
 }
