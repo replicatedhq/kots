@@ -152,11 +152,68 @@ func UpdateGlobalStore(store *types.Store) (*velerov1.BackupStorageLocation, err
 		}
 	} else if store.Other != nil {
 		kotsadmVeleroBackendStorageLocation.Spec.Config = map[string]string{
-			"region": store.Other.Region,
-			"s3Url":  store.Other.Endpoint,
+			"region":           store.Other.Region,
+			"s3Url":            store.Other.Endpoint,
+			"s3ForcePathStyle": "true",
+		}
+
+		otherCfg := ini.Empty()
+		section, err := otherCfg.NewSection("default")
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to create default section in other creds")
+		}
+		_, err = section.NewKey("aws_access_key_id", store.Other.AccessKeyID)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to create other access key id")
+		}
+
+		_, err = section.NewKey("aws_secret_access_key", store.Other.SecretAccessKey)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to create other secret access key")
+		}
+
+		var otherCredentials bytes.Buffer
+		writer := bufio.NewWriter(&otherCredentials)
+		_, err = otherCfg.WriteTo(writer)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to write ini")
+		}
+		if err := writer.Flush(); err != nil {
+			return nil, errors.Wrap(err, "failed to flush buffer")
 		}
 
 		// create or update the secret
+		if kuberneteserrors.IsNotFound(currentSecretErr) {
+			// create
+			toCreate := corev1.Secret{
+				TypeMeta: metav1.TypeMeta{
+					APIVersion: "v1",
+					Kind:       "Secret",
+				},
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "cloud-credentials",
+					Namespace: kotsadmVeleroBackendStorageLocation.Namespace,
+				},
+				Data: map[string][]byte{
+					"cloud": otherCredentials.Bytes(),
+				},
+			}
+			_, err = clientset.CoreV1().Secrets(kotsadmVeleroBackendStorageLocation.Namespace).Create(context.TODO(), &toCreate, metav1.CreateOptions{})
+			if err != nil {
+				return nil, errors.Wrap(err, "failed to create other secret")
+			}
+		} else {
+			// update
+			if currentSecret.Data == nil {
+				currentSecret.Data = map[string][]byte{}
+			}
+
+			currentSecret.Data["cloud"] = otherCredentials.Bytes()
+			_, err = clientset.CoreV1().Secrets(kotsadmVeleroBackendStorageLocation.Namespace).Update(context.TODO(), currentSecret, metav1.UpdateOptions{})
+			if err != nil {
+				return nil, errors.Wrap(err, "failed to update other secret")
+			}
+		}
 	} else if store.Internal != nil {
 		kotsadmVeleroBackendStorageLocation.Spec.Config = map[string]string{
 			"region":           store.Internal.Region,
