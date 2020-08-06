@@ -69,7 +69,7 @@ func UpdateConfigMap(client kubernetes.Interface, generateBootstrapToken, upload
 	if uploadCerts {
 		certsDuration := time.Hour * 2
 		certsExpiration := time.Now().Add(certsDuration)
-		key, err := k8s.UploadCertsWithNewKey(client)
+		key, err := createCertAndKey(context.TODO(), client, "default")
 		if err != nil {
 			return nil, errors.Wrap(err, "upload certs with new key")
 		}

@@ -8,9 +8,11 @@ import (
 	"k8s.io/client-go/kubernetes"
 	bootstraputil "k8s.io/cluster-bootstrap/token/util"
 	"k8s.io/kubernetes/cmd/kubeadm/app/apis/kubeadm"
+	kubeadmapiv1beta2 "k8s.io/kubernetes/cmd/kubeadm/app/apis/kubeadm/v1beta2"
 	kubeadmconstants "k8s.io/kubernetes/cmd/kubeadm/app/constants"
 	tokenphase "k8s.io/kubernetes/cmd/kubeadm/app/phases/bootstraptoken/node"
 	"k8s.io/kubernetes/cmd/kubeadm/app/phases/copycerts"
+	kubeadmconfig "k8s.io/kubernetes/cmd/kubeadm/app/util/config"
 )
 
 // GenerateBootstrapToken will generate a node join token for kubeadm.
@@ -42,22 +44,26 @@ func GenerateBootstrapToken(client kubernetes.Interface, ttl time.Duration) (str
 	return token, nil
 }
 
-func UploadCertsWithNewKey(client kubernetes.Interface) (string, error) {
-	config := &kubeadm.InitConfiguration{
-		ClusterConfiguration: kubeadm.ClusterConfiguration{
-			CertificatesDir: "/etc/kubernetes/pki",
-		},
+func UploadCertsWithNewKey() (string, error) {
+	client, err := Clientset()
+	if err != nil {
+		return "", errors.Wrap(err, "failed to create clientset")
+	}
+
+	config, err := kubeadmconfig.DefaultedInitConfiguration(&kubeadmapiv1beta2.InitConfiguration{}, &kubeadmapiv1beta2.ClusterConfiguration{})
+	if err != nil {
+		return "", errors.Wrap(err, "failed to get kotsadm config")
 	}
 
 	key, err := copycerts.CreateCertificateKey()
 	if err != nil {
-		return "", err
+		return "", errors.Wrap(err, "failed to genertae key")
 	}
 	config.CertificateKey = key
 
 	err = copycerts.UploadCerts(client, config, key)
 	if err != nil {
-		return "", err
+		return "", errors.Wrap(err, "failed to upload cert")
 	}
 
 	return key, nil
