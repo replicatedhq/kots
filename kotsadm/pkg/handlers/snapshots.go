@@ -230,6 +230,7 @@ func UpdateGlobalSnapshotSettings(w http.ResponseWriter, r *http.Request) {
 		store.Azure = nil
 		store.Internal = nil
 
+		store.Provider = "aws"
 		if updateGlobalSnapshotSettingsRequest.Other.AccessKeyID != "" {
 			store.Other.AccessKeyID = updateGlobalSnapshotSettingsRequest.Other.AccessKeyID
 		}
