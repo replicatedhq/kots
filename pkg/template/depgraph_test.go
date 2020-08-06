@@ -11,12 +11,15 @@ import (
 )
 
 type depGraphTestCase struct {
-	dependencies   map[string][]string
-	testCerts      map[string][]string
-	testKeys       map[string][]string
-	resolveOrder   []string
-	expectError    bool   //expect an error fetching head nodes
-	expectNotFound string //expect this dependency not to be part of the head nodes
+	dependencies    map[string][]string
+	testCerts       map[string][]string
+	testKeys        map[string][]string
+	testCAs         map[string][]string
+	testCAFromCerts map[string][][2]string
+	testCAFromKeys  map[string][][2]string
+	resolveOrder    []string
+	expectError     bool     //expect an error fetching head nodes
+	expectNotFound  []string //expect these dependencies not to be part of the head nodes
 
 	name string
 }
@@ -64,7 +67,7 @@ func TestDepGraph(t *testing.T) {
 				"foxtrot": {},
 			},
 			resolveOrder:   []string{"alpha", "bravo", "charlie", "delta", "echo", "foxtrot"},
-			expectNotFound: "delta",
+			expectNotFound: []string{"delta"},
 			name:           "unresolved_dependency",
 		},
 		{
@@ -148,7 +151,83 @@ func TestDepGraph(t *testing.T) {
 			},
 			resolveOrder:   []string{"alpha", "bravo", "charlie", "delta", "echo"},
 			name:           "basic_certs_original_order",
-			expectNotFound: "delta",
+			expectNotFound: []string{"delta"},
+		},
+		{
+			dependencies: map[string][]string{
+				"alpha":   {},
+				"bravo":   {"alpha"},
+				"charlie": {"alpha", "bravo"},
+				"delta":   {},
+				"echo":    {},
+			},
+			testCAs: map[string][]string{
+				"echo": {"caA"},
+			},
+			testCAFromCerts: map[string][][2]string{
+				"delta": {{"caA", "certA"}},
+			},
+			testCAFromKeys: map[string][][2]string{
+				"charlie": {{"caA", "certA"}},
+			},
+			resolveOrder: []string{"alpha", "bravo", "echo", "delta", "charlie"},
+			name:         "basic_cacerts",
+		},
+		{
+			dependencies: map[string][]string{
+				"alpha":   {},
+				"bravo":   {"alpha"},
+				"charlie": {"alpha", "bravo"},
+				"delta":   {},
+				"echo":    {},
+			},
+			testCAs: map[string][]string{
+				"echo": {"caA"},
+			},
+			testCAFromCerts: map[string][][2]string{
+				"delta": {{"caA", "certA"}},
+			},
+			testCAFromKeys: map[string][][2]string{
+				"charlie": {{"caA", "certA"}},
+			},
+			resolveOrder:   []string{"alpha", "bravo", "charlie", "delta", "echo"},
+			name:           "basic_cacerts_original_order",
+			expectNotFound: []string{"delta", "charlie"},
+		},
+		{
+			dependencies: map[string][]string{
+				"alpha":   {},
+				"bravo":   {"alpha"},
+				"charlie": {"bravo"},
+				"delta":   {"alpha", "charlie"},
+				"echo":    {},
+			},
+			testCAs: map[string][]string{
+				"echo": {"caA"},
+			},
+			testCAFromKeys: map[string][][2]string{
+				"delta": {{"caA", "certA"}},
+			},
+			resolveOrder: []string{"alpha", "bravo", "charlie", "echo", "delta"},
+			name:         "basic_cacerts_key_only",
+		},
+		{
+			dependencies: map[string][]string{
+				"alpha":   {},
+				"bravo":   {"alpha"},
+				"charlie": {"bravo"},
+				"delta":   {"alpha", "charlie"},
+				"echo":    {},
+			},
+			testCAs: map[string][]string{
+				"echo": {"caA"},
+			},
+			testCAFromKeys: map[string][][2]string{
+				"delta": {{"caA", "certA"}},
+			},
+			resolveOrder:   []string{"alpha", "bravo", "charlie", "delta", "echo"},
+			name:           "basic_cacerts_key_only_original_order",
+			expectNotFound: []string{"delta"},
 		},
 	}
 	for _, test := range tests {
@@ -173,7 +252,24 @@ func TestDepGraph(t *testing.T) {
 					graph.AddKey(source, key)
 				}
 			}
+			for source, caNames := range test.testCAs {
+				for _, caName := range caNames {
+					graph.AddCA(source, caName)
+				}
+			}
+			for source, caCertNames := range test.testCAFromCerts {
+				for _, caCertName := range caCertNames {
+					graph.AddCertFromCA(source, caCertName[0], caCertName[1])
+				}
+			}
+			for source, caCertNames := range test.testCAFromKeys {
+				for _, caCertName := range caCertNames {
+					graph.AddKeyFromCA(source, caCertName[0], caCertName[1])
+				}
+			}
 			graph.resolveCertKeys()
+			graph.resolveCACerts()
+			graph.resolveCACertKeys()
 
 			runGraphTests(t, test, graph)
 		})
@@ -184,7 +280,11 @@ func TestDepGraph(t *testing.T) {
 
 			graph := depGraph{}
 
-			groups := buildTestConfigGroups(test.dependencies, test.testCerts, test.testKeys, "templateStringStart", "templateStringEnd", true)
+			groups := buildTestConfigGroups(
+				test.dependencies, test.testCerts, test.testKeys,
+				test.testCAs, test.testCAFromCerts, test.testCAFromKeys,
+				"templateStringStart", "templateStringEnd", true,
+			)
 
 			err := graph.ParseConfigGroup(groups)
 			require.NoError(t, err)
@@ -195,7 +295,7 @@ func TestDepGraph(t *testing.T) {
 }
 
 // this makes sure that we test with each of the configOption types, in both Value and Default
-func buildTestConfigGroups(dependencies, certs, keys map[string][]string, prefix string, suffix string, rotate bool) []kotsv1beta1.ConfigGroup {
+func buildTestConfigGroups(dependencies, certs, keys, cas map[string][]string, caFromCerts, caFromKeys map[string][][2]string, prefix string, suffix string, rotate bool) []kotsv1beta1.ConfigGroup {
 	group := kotsv1beta1.ConfigGroup{}
 	group.Items = make([]kotsv1beta1.ConfigItem, 0)
 	counter := 0
@@ -237,6 +337,24 @@ func buildTestConfigGroups(dependencies, certs, keys map[string][]string, prefix
 			}
 		}
 
+		if caNames, ok := cas[source]; ok {
+			for _, caName := range caNames {
+				depString += fmt.Sprintf("{{repl TLSCACert \"%s\" }}", caName)
+			}
+		}
+
+		if caCertNames, ok := caFromCerts[source]; ok {
+			for _, caCertName := range caCertNames {
+				depString += fmt.Sprintf("{{repl TLSCertFromCA \"%s\" \"%s\" }}", caCertName[0], caCertName[1])
+			}
+		}
+
+		if caCertNames, ok := caFromKeys[source]; ok {
+			for _, caCertName := range caCertNames {
+				depString += fmt.Sprintf("{{repl TLSKeyFromCA \"%s\" \"%s\" }}", caCertName[0], caCertName[1])
+			}
+		}
+
 		depString += suffix
 
 		if counter%2 == 0 {
@@ -268,7 +386,7 @@ func runGraphTests(t *testing.T, test depGraphTestCase, graph depGraph) {
 
 		require.NoError(t, err, "toResolve: %s", toResolve)
 
-		if test.expectNotFound != "" && toResolve == test.expectNotFound {
+		if stringInSlice(toResolve, test.expectNotFound) {
 			require.NotContains(t, available, toResolve)
 			return
 		}
@@ -285,4 +403,13 @@ func runGraphTests(t *testing.T, test depGraphTestCase, graph depGraph) {
 	require.False(t, test.expectError, "Did not find expected error")
 
 	require.Equal(t, depLen, len(graphCopy.Dependencies))
+}
+
+func stringInSlice(a string, list []string) bool {
+	for _, b := range list {
+		if b == a {
+			return true
+		}
+	}
+	return false
 }
