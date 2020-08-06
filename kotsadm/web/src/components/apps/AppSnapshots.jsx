@@ -368,7 +368,26 @@ class AppSnapshots extends Component {
     const appTitle = app?.name;
     const inProgressSnapshotExist = snapshots?.find(snapshot => snapshot.status === "InProgress");
 
-    if (isLoadingSnapshotSettings || (isStartButtonClicked && snapshots?.length === 0) || startingSnapshot) {
+    if (hasSnapshotsLoaded && !isStartButtonClicked && snapshots?.length === 0) {
+      return (
+        <div className="container flex-column flex1 u-overflow--auto u-paddingTop--30 u-paddingBottom--20 justifyContent--center alignItems--center">
+          <div className="flex-column u-textAlign--center AppSnapshotsEmptyState--wrapper">
+            <p className="u-fontSize--largest u-fontWeight--bold u-color--tundora u-marginBottom--10">No snapshots have been made</p>
+            <p className="u-fontSize--normal u-fontWeight--normal u-color--dustyGray u-lineHeight--normal u-marginBottom--30">There have been no snapshots made for {appTitle || "your application"} yet. You can manually trigger snapshots or you can set up automatic snapshots to be made on a custom schedule.</p>
+            <div className="flex justifyContent--center">
+              <div className="flex-auto u-marginRight--20">
+                <button className="btn secondary blue" disabled={startingSnapshot} onClick={this.startManualSnapshot}>{startingSnapshot ? "Starting a snapshot..." : "Start a snapshot"}</button>
+              </div>
+              <div className="flex-auto">
+                <Link to={`/app/${app.slug}/snapshots/schedule`} className="btn primary blue">Schedule snapshots</Link>
+              </div>
+            </div>
+          </div>
+        </div>
+      )
+    }
+
+    if (isLoadingSnapshotSettings || !hasSnapshotsLoaded || (isStartButtonClicked && snapshots?.length === 0) || startingSnapshot) {
       return (
         <div className="flex-column flex1 alignItems--center justifyContent--center">
           <Loader size="60" />
@@ -400,26 +419,6 @@ class AppSnapshots extends Component {
         </div>
       )
     }
-
-    if (hasSnapshotsLoaded && !isStartButtonClicked && snapshots?.length === 0) {
-      return (
-        <div className="container flex-column flex1 u-overflow--auto u-paddingTop--30 u-paddingBottom--20 justifyContent--center alignItems--center">
-          <div className="flex-column u-textAlign--center AppSnapshotsEmptyState--wrapper">
-            <p className="u-fontSize--largest u-fontWeight--bold u-color--tundora u-marginBottom--10">No snapshots have been made</p>
-            <p className="u-fontSize--normal u-fontWeight--normal u-color--dustyGray u-lineHeight--normal u-marginBottom--30">There have been no snapshots made for {appTitle || "your application"} yet. You can manually trigger snapshots or you can set up automatic snapshots to be made on a custom schedule.</p>
-            <div className="flex justifyContent--center">
-              <div className="flex-auto u-marginRight--20">
-                <button className="btn secondary blue" disabled={startingSnapshot} onClick={this.startManualSnapshot}>{startingSnapshot ? "Starting a snapshot..." : "Start a snapshot"}</button>
-              </div>
-              <div className="flex-auto">
-                <Link to={`/app/${app.slug}/snapshots/schedule`} className="btn primary blue">Schedule snapshots</Link>
-              </div>
-            </div>
-          </div>
-        </div>
-      )
-    }
-
 
     return (
       <div className="container flex-column flex1 u-overflow--auto u-paddingTop--30 u-paddingBottom--20 alignItems--center">
