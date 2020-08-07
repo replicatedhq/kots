@@ -11,4 +11,4 @@ spec:
     port: 3000
     targetPort: http
   selector:
-    app: kotsadm-api-node
+    app: kotsadm-api

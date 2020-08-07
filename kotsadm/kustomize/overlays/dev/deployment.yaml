@@ -14,7 +14,7 @@ spec:
         pre.hook.backup.velero.io/timeout: 3m
     spec:
       containers:
-        - name: kotsadm-api
+        - name: kotsadm
           volumeMounts:
             - mountPath: /backup
               name: backup  
