@@ -41,6 +41,7 @@ require (
 	github.com/spf13/viper v1.6.2
 	github.com/stretchr/testify v1.6.1
 	github.com/vmware-tanzu/velero v1.4.2
+	go.uber.org/multierr v1.3.0
 	go.uber.org/zap v1.13.0
 	golang.org/x/crypto v0.0.0-20200423211502-4bdfaf469ed5
 	golang.org/x/oauth2 v0.0.0-20200107190931-bf48bf16ab8d // indirect
