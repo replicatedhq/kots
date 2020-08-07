@@ -1,14 +1,14 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: kotsadm-api-node
+  name: kotsadm-api
 spec:
   template:
     spec:
       securityContext:
         runAsUser: 0
       containers:
-        - name: kotsadm-api-node
+        - name: kotsadm-api
           env:
             - name: DEV_NAMESPACE
               value: "test"

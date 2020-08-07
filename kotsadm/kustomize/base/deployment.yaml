@@ -13,8 +13,8 @@ spec:
     spec:
       restartPolicy: Always
       containers:
-        - name: kotsadm-api
-          image: kotsadm-api
+        - name: kotsadm
+          image: kotsadm
           imagePullPolicy: IfNotPresent
           resources:
             limits:

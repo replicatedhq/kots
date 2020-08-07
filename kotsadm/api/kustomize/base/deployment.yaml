@@ -1,15 +1,15 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: kotsadm-api-node
+  name: kotsadm-api
 spec:
   selector:
     matchLabels:
-      app: kotsadm-api-node
+      app: kotsadm-api
   template:
     metadata:
       labels:
-        app: kotsadm-api-node
+        app: kotsadm-api
     spec:
       securityContext:
         runAsUser: 1001
@@ -34,12 +34,12 @@ spec:
                 - key: app
                   operator: In
                   values:
-                  - kotsadm-api-node
+                  - kotsadm-api
               topologyKey: "kubernetes.io/hostname"
       restartPolicy: Always
       containers:
-        - name: kotsadm-api-node
-          image: kotsadm-api-node
+        - name: kotsadm-api
+          image: kotsadm-api
           imagePullPolicy: IfNotPresent
           ports:
             - name: http

@@ -42,12 +42,12 @@ build:
       docker:
         dockerfile: ./Dockerfile.skaffold
 
-    - image: kotsadm-api-node
+    - image: kotsadm-api
       context: "./api"
       docker:
         dockerfile: ./Dockerfile.skaffold
 
-    - image: kotsadm-api
+    - image: kotsadm
       context: "./"
       docker:
         dockerfile: ./dev/Dockerfile
