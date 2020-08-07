@@ -37,14 +37,13 @@ class AirgapUploadProgress extends React.Component {
         method: "GET",
       });
 
-      const response = await res.json();
-
-      if (!response.ok) {
+      if (!res.ok) {
         this.setState({
           installStatus: "airgap_upload_error",
-          currentMessage: `Encountered an error while uploading: ${response.error}`
+          currentMessage: `Encountered an error while uploading: Status ${res.status}`
         });
       } else {
+        const response = await res.json();
         this.setState({
           installStatus: response.installStatus,
           currentMessage: response.currentMessage,
@@ -52,6 +51,7 @@ class AirgapUploadProgress extends React.Component {
       }
       
     } catch(err) {
+      console.log(err);
       this.setState({ 
         installStatus: "airgap_upload_error",
         currentMessage: err ? `Encountered an error while uploading: ${err.message}` : "Something went wrong, please try again."

@@ -50,7 +50,7 @@ class AppDetailPage extends Component {
       loadingApp: true,
       getAppJob: new Repeater(),
       gettingAppErrMsg: "",
-      makingCurrentReleaseErrMsg: ""
+      makingCurrentVersionErrMsg: ""
     }
   }
 
@@ -101,29 +101,23 @@ class AppDetailPage extends Component {
     this.state.getAppJob.stop();
   }
 
-  makeCurrentRelease = (upstreamSlug, version) => {
-    this.setState({ makingCurrentReleaseErrMsg: "" });
-    fetch(`${window.env.API_ENDPOINT}/app/${upstreamSlug}/sequence/${version.sequence}/deploy`, {
-      headers: {
-        "Authorization": Utilities.getToken(),
-        "Content-Type": "application/json",
-      },
-      method: "POST",
-    })
-      .then(async (res) => {
-        if (!res.ok) {
-          const makingCurrentRelease = await res.json();
-          this.setState({ makingCurrentReleaseErrMsg: `Unable to deploy release ${version.title}, sequence ${version.sequence}: ${makingCurrentRelease.error}` });
-          return;
-        } else {
-          this.refetchData();
-        }
-      })
-      .catch((err) => {
-        this.setState({
-          makingCurrentReleaseErrMsg: err ? `Unable to deploy release ${version.title}, sequence ${version.sequence}: ${err.message}` : "Something went wrong, please try again."
-        });
+  makeCurrentRelease = async (upstreamSlug, version) => {
+    this.setState({ makingCurrentVersionErrMsg: "" });
+    try {
+      await fetch(`${window.env.API_ENDPOINT}/app/${upstreamSlug}/sequence/${version.sequence}/deploy`, {
+        headers: {
+          "Authorization": Utilities.getToken(),
+          "Content-Type": "application/json",
+        },
+        method: "POST",
       });
+      this.refetchData();
+    } catch(err) {
+      console.log(err)
+      this.setState({
+        makingCurrentVersionErrMsg: err ? `Unable to deploy release ${version.title}, sequence ${version.sequence}: ${err.message}` : "Something went wrong, please try again."
+      });
+    }
   }
 
   toggleDisplayDownloadModal = () => {
@@ -156,6 +150,7 @@ class AppDetailPage extends Component {
         this.setState({ loadingApp: false, gettingAppErrMsg: `failed to get app, unexpected status code: ${res.status}` });
       }
     } catch (err) {
+      console.log(err)
       this.setState({ loadingApp: false, gettingAppErrMsg: err ? err.message : "Something went wrong, please try again." });
     }
   }
@@ -315,7 +310,7 @@ class AppDetailPage extends Component {
                         app={app}
                         match={this.props.match}
                         makeCurrentVersion={this.makeCurrentRelease}
-                        makingCurrentReleaseErrMsg={this.state.makingCurrentReleaseErrMsg}
+                        makingCurrentVersionErrMsg={this.state.makingCurrentVersionErrMsg}
                         updateCallback={this.refetchData}
                         toggleIsBundleUploading={this.toggleIsBundleUploading}
                         isBundleUploading={isBundleUploading}

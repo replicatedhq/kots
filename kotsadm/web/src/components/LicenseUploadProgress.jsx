@@ -24,6 +24,16 @@ class LicenseUploadProgress extends React.Component {
     this.state.getOnlineInstallStatusJob.stop();
   }
 
+  componentDidUpdate(lastProps, lastState) {
+    const { installStatus } = this.state;
+    const { onError } = this.props;
+    if (installStatus !== lastState.installStatus && installStatus === "upload_error") {
+      if (onError && typeof onError === "function") {
+        onError(this.state.currentMessage);
+      }
+    }
+  }
+
   getOnlineInstallStatus = async () => {
     try {
       const res = await fetch(`${window.env.API_ENDPOINT}/app/online/status`, {
@@ -34,12 +44,20 @@ class LicenseUploadProgress extends React.Component {
         method: "GET",
       });
 
-      const response = await res.json();
-      this.setState({
-        installStatus: response.installStatus,
-        currentMessage: response.currentMessage,
-      });
+      if (!res.ok) {
+        this.setState({ 
+          installStatus: "upload_error",
+          currentMessage: `Encountered an error while uploading license: Status ${res.status}`
+        })
+      } else {
+        const response = await res.json();
+        this.setState({
+          installStatus: response.installStatus,
+          currentMessage: response.currentMessage,
+        });
+      }
     } catch(err) {
+      console.log(err);
       this.setState({ 
         installStatus: "upload_error",
         currentMessage: err ? `Encountered an error while uploading license: ${err.message}` : "Something went wrong, please try again."
@@ -54,11 +72,6 @@ class LicenseUploadProgress extends React.Component {
         <p className="u-fontSize--small u-color--dustyGray u-fontWeight--medium">This may take a while depending on your network connection.</p>
       </div>
     );
-
-    const hasError = this.state.installStatus === "upload_error";
-    if (hasError) {
-      this.props.onError(this.state.currentMessage);
-    }
 
     return (
       <div className="AirgapUploadProgress--wrapper flex1 flex-column alignItems--center justifyContent--center">

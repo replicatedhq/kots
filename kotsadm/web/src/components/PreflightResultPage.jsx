@@ -31,6 +31,7 @@ class PreflightResultPage extends Component {
   }
 
   deployKotsDownstream = async (force = false) => {
+    this.setState({ errorMessage: "" });
     try {
       const { data, history, match } = this.props;
       const preflightResultData = data.getKotsPreflightResult || data.getLatestKotsPreflightResult;
@@ -47,14 +48,16 @@ class PreflightResultPage extends Component {
       }
 
       history.push(`/app/${preflightResultData.appSlug}/version-history`);
-    } catch (error) {
+    } catch (err) {
+      console.log(err);
       this.setState({
-        errorMessage: error ? `Encountered an error while trying to deploy downstream version: ${error.message}` : "Something went wrong, please try again."
+        errorMessage: err ? `Encountered an error while trying to deploy downstream version: ${err.message}` : "Something went wrong, please try again."
       });
     }
   }
 
   deployKotsVersion = async (appSlug, sequence) => {
+    this.setState({ errorMessage: "" });
     try {
       await fetch(`${window.env.API_ENDPOINT}/app/${appSlug}/sequence/${sequence}/deploy`, {
         headers: {
@@ -64,6 +67,7 @@ class PreflightResultPage extends Component {
         method: "POST",
       });
     } catch(err) {
+      console.log(err);
       this.setState({
         errorMessage: err ? `Encountered an error while trying to deploy version: ${err.message}` : "Something went wrong, please try again."
       });
@@ -95,6 +99,7 @@ class PreflightResultPage extends Component {
   }
 
   ignorePermissionErrors = () => {
+    this.setState({ errorMessage: "" });
     const preflightResultData = this.props.data.getKotsPreflightResult || this.props.data.getLatestKotsPreflightResult;
     const sequence = this.props.match.params.sequence ? parseInt(this.props.match.params.sequence, 10) : 0;
 
@@ -111,6 +116,7 @@ class PreflightResultPage extends Component {
         this.props.data.refetch();
       })
       .catch((err) => {
+        console.log(err);
         this.setState({
           errorMessage: err ? `Encountered an error while trying to ignore permissions: ${err.message}` : "Something went wrong, please try again."
         });
@@ -118,6 +124,7 @@ class PreflightResultPage extends Component {
   }
 
   rerunPreflights = () => {
+    this.setState({ errorMessage: "" });
     const preflightResultData = this.props.data.getKotsPreflightResult || this.props.data.getLatestKotsPreflightResult;
     const sequence = this.props.match.params.sequence ? parseInt(this.props.match.params.sequence, 10) : 0;
 
@@ -135,11 +142,12 @@ class PreflightResultPage extends Component {
           this.props.data?.refetch();
         } else {
           this.setState({
-            errorMessage: `Encountered an error while trying to re-run preflight checks: ${res.error}`
+            errorMessage: `Encountered an error while trying to re-run preflight checks: Status ${res.status}`
           });
         }
       })
       .catch((err) => {
+        console.log(err);
         this.setState({
           errorMessage: err ? `Encountered an error while trying to re-run preflight checks: ${err.message}` : "Something went wrong, please try again."
         });

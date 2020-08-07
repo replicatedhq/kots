@@ -513,6 +513,7 @@ class AppVersionHistory extends Component {
         this.setState({ logsLoading: false, viewLogsErrMsg: `Failed to view logs, unexpected status code, ${res.status}` });
       }
     } catch (err) {
+      console.log(err)
       this.setState({ logsLoading: false, viewLogsErrMsg: err ? `Failed to view logs: ${err.message}` : "Something went wrong, please try again." });
     }
   }

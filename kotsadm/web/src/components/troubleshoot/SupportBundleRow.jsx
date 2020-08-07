@@ -48,16 +48,15 @@ class SupportBundleRow extends React.Component {
     })
       .then(async (result) => {
         if (!result.ok) {
-          this.setState({ downloadingBundle: false, downloadBundleErrMsg: "Unable to download bundle, please try again!" });
+          this.setState({ downloadingBundle: false, downloadBundleErrMsg: `Unable to download bundle: Status ${result.status}, please try again.` });
           return;
         }
-        if (result.ok) {
-          const blob = await result.blob();
-          download(blob, "supportbundle.tar.gz", "application/gzip");
-          this.setState({ downloadingBundle: false, downloadBundleErrMsg: "" });
-        }
+        const blob = await result.blob();
+        download(blob, "supportbundle.tar.gz", "application/gzip");
+        this.setState({ downloadingBundle: false, downloadBundleErrMsg: "" });
       })
       .catch(err => {
+        console.log(err);
         this.setState({ downloadingBundle: false, downloadBundleErrMsg: err ? `Unable to download bundle: ${err.message}` : "Something went wrong, please try again." });
       })
   }

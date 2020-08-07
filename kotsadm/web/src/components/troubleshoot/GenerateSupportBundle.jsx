@@ -88,20 +88,21 @@ class GenerateSupportBundle extends React.Component {
         method: "GET",
       })
         .then(async (res) => {
+          if (!res.ok) {
+            this.setState({ loadingSupportBundles: false, errorMsg: `Unable to get list of bundles: Status ${res.status}` });
+            return;
+          }
           const response = await res.json();
-          if(!res.ok) {
-            this.setState({ loadingSupportBundles: false, errorMsg: `Unable to get list of bundles: ${response.error}` });
-          }
-          if(res.ok) {
-            this.setState({
-              supportBundles: response.supportBundles,
-              loadingSupportBundles: false,
-              errorMsg: ""
-            });
-          }
+          this.setState({
+            supportBundles: response.supportBundles,
+            loadingSupportBundles: false,
+            errorMsg: ""
+          });
+
           resolve();
         })
         .catch((err) => {
+          console.log(err)
           this.setState({ loadingSupportBundles: false, errorMsg: err ? `Unable to get list of bundles: ${err.message}` : "Something went wrong, please try again." });
           reject(err);
         });
@@ -170,15 +171,13 @@ class GenerateSupportBundle extends React.Component {
     })
       .then(async (res) => {
         if (!res.ok) {
-          const response = await res.json();
-          this.setState({ isGeneratingBundle: false, generateBundleErrMsg: `Unable to generate bundle: ${response.error}` });
+          this.setState({ isGeneratingBundle: false, generateBundleErrMsg: `Unable to generate bundle: Status ${res.status}` });
           return;
         }
-        if (res.ok) {
-          this.redirectOnNewBundle(currentBundles);
-        }
+        this.redirectOnNewBundle(currentBundles);
       })
       .catch((err) => {
+        console.log(err);
         this.setState({ isGeneratingBundle: false, generateBundleErrMsg: err ? err.message : "Something went wrong, please try again." });
       });
   }

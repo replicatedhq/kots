@@ -34,16 +34,15 @@ export class SupportBundleAnalysis extends React.Component {
     })
       .then(async (result) => {
         if (!result.ok) {
-          this.setState({ downloadingBundle: false, downloadBundleErrMsg: "Unable to download bundle, please try again!" });
+          this.setState({ downloadingBundle: false, downloadBundleErrMsg: `Unable to download bundle: Status ${result.status}, please try again.` });
           return;
         }
-        if (result.ok) {
-          const blob = await result.blob();
-          download(blob, "supportbundle.tar.gz", "application/gzip");
-          this.setState({ downloadingBundle: false, downloadBundleErrMsg: "" });
-        }
+        const blob = await result.blob();
+        download(blob, "supportbundle.tar.gz", "application/gzip");
+        this.setState({ downloadingBundle: false, downloadBundleErrMsg: "" });
       })
       .catch(err => {
+        console.log(err);
         this.setState({ downloadingBundle: false, downloadBundleErrMsg: err ? `Unable to download bundle: ${err.message}` : "Something went wrong, please try again." });
       })
   }
@@ -60,19 +59,18 @@ export class SupportBundleAnalysis extends React.Component {
     })
       .then(async (res) => {
         if (!res.ok) {
-          this.setState({ loading: false, getSupportBundleErrMsg: "Unable to get bundle, please try again!" });
+          this.setState({ loading: false, getSupportBundleErrMsg: `Unable to get bundle: Status ${res.status}, please try again.` });
           return;
-        } 
-        if (res.ok) {
-          const bundle = await res.json();
-          this.setState({
-            bundle: bundle,
-            loading: false,
-            getSupportBundleErrMsg: ""
-          });
         }
+        const bundle = await res.json();
+        this.setState({
+          bundle: bundle,
+          loading: false,
+          getSupportBundleErrMsg: ""
+        });
       })
       .catch((err) => {
+        console.log(err);
         this.setState({ loading: false, getSupportBundleErrMsg: err ? `Unable to get bundle: ${err.message}` : "Something went wrong, please try again."});
       });
   }

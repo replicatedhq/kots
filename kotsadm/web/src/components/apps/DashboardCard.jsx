@@ -202,9 +202,7 @@ export default class DashboardCard extends React.Component {
     return (
       <div>
         {isSnapshotAllowed ?
-          getingAppLicenseErrMsg ?
-            <p className="u-color--chestnut u-fontSize--small u-fontWeight--medium u-lineHeight--normal flex">{getingAppLicenseErrMsg}</p> :
-            null
+          getingAppLicenseErrMsg && <p className="u-color--chestnut u-fontSize--small u-fontWeight--medium u-lineHeight--normal flex">{getingAppLicenseErrMsg}</p>
           :
           size(appLicense) > 0 ?
             <div>
@@ -216,9 +214,8 @@ export default class DashboardCard extends React.Component {
             :
             getingAppLicenseErrMsg ?
               <p className="u-color--chestnut u-fontSize--small u-fontWeight--medium u-lineHeight--normal flex">{getingAppLicenseErrMsg}</p>
-              : <div>
-                <p className="u-fontSize--normal u-color--dustyGray u-marginTop--15 u-lineHeight--more"> License data is not available on this application because it was installed via Helm </p>
-              </div>
+              :
+              <p className="u-fontSize--normal u-color--dustyGray u-marginTop--15 u-lineHeight--more"> License data is not available on this application because it was installed via Helm </p>
         }
       </div>
     )
@@ -237,9 +234,7 @@ export default class DashboardCard extends React.Component {
               <p className={`flex1 u-fontWeight--bold u-fontSize--largest u-paddingRight--5 u-marginBottom--5 ${appLicense && size(appLicense) === 0 ? "u-color--doveGray" : "u-color--tundora"}`}>{cardName}</p>
             </div>
             {application ?
-              app.isConfigurable ?
-                <Link to={`${url}/config`} className="card-link"> Configure </Link>
-                : null
+              app.isConfigurable && <Link to={`${url}/config`} className="card-link"> Configure </Link>
               :
               versionHistory ?
                 <Link to={`${url}/version-history`} className="card-link"> Version history </Link>
@@ -250,8 +245,7 @@ export default class DashboardCard extends React.Component {
                     isSnapshotInProgress ?
                       <Loader size="16" />
                       :
-                      getingAppLicenseErrMsg ? null :
-                        <span className="status-indicator completed"> Enabled </span>
+                      !getingAppLicenseErrMsg && <span className="status-indicator completed"> Enabled </span>
                     : null
             }
             <div className={`${isSnapshotAllowed ? "u-marginTop--8" : "u-marginTop--15"}`}>

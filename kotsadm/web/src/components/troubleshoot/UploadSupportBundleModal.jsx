@@ -31,17 +31,15 @@ class UploadSupportBundleModal extends React.Component {
           "Content-Type": "application/tar+gzip",
         },
       });
-      const analyzedBundle = await response.json();
-
+      
       if (!response.ok) {
-        this.setState({ fileUploading: false, uploadBundleErrMsg: `Unable to upload the bundle: ${analyzedBundle.error}` });
+        this.setState({ fileUploading: false, uploadBundleErrMsg: `Unable to upload the bundle: Status ${response.status}` });
         return;
       }
-      if (response.ok) {
-        this.setState({ fileUploading: false, uploadBundleErrMsg: "" });
-        if (this.props.onBundleUploaded) {
-          this.props.onBundleUploaded(analyzedBundle.id);
-        }
+      const analyzedBundle = await response.json();
+      this.setState({ fileUploading: false, uploadBundleErrMsg: "" });
+      if (this.props.onBundleUploaded) {
+        this.props.onBundleUploaded(analyzedBundle.id);
       }
     } catch (err) {
       this.setState({ fileUploading: false, uploadBundleErrMsg: err ? `Unable to upload the bundle: ${err.message}` : "Something went wrong, please try again." });

@@ -78,6 +78,10 @@ type ResumeInstallOnlineResponse struct {
 	IsConfigurable bool   `json:"isConfigurable"`
 }
 
+type GetOnlineInstallStatusErrorResponse struct {
+	Error string `json:"error"`
+}
+
 func SyncLicense(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Access-Control-Allow-Headers", "content-type, origin, accept, authorization")
@@ -464,7 +468,9 @@ func GetOnlineInstallStatus(w http.ResponseWriter, r *http.Request) {
 	status, err := online.GetInstallStatus()
 	if err != nil {
 		logger.Error(err)
-		w.WriteHeader(500)
+		JSON(w, 500, GetOnlineInstallStatusErrorResponse{
+			Error: fmt.Sprintf("Failed to get install status: %v", err),
+		})
 		return
 	}
 

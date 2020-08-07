@@ -196,11 +196,12 @@ class AirgapRegistrySettings extends Component {
           }
 
         } else {
-          this.setState({ loading: false, fetchRegistryErrMsg: "Unable to get registry info, please try again! " });
+          this.setState({ loading: false, fetchRegistryErrMsg: "Unable to get registry info, please try again." });
         }
       })
       .catch(err => {
-        this.setState({ loading: false, fetchRegistryErrMsg: err ? `Unable to get registry info: ${err.message}` : "Something went wrong, please try again. " });
+        console.log(err);
+        this.setState({ loading: false, fetchRegistryErrMsg: err ? `Unable to get registry info: ${err.message}` : "Something went wrong, please try again." });
       })
   }
 

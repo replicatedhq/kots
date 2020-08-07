@@ -35,19 +35,19 @@ class SupportBundleList extends React.Component {
       method: "GET",
     })
       .then(async (res) => {
+        if (!res.ok) {
+          this.setState({ loading: false, errorMsg: `Unable to get list of bundles: Status ${res.status}` });
+          return
+        }
         const response = await res.json();
-        if(!res.ok) {
-          this.setState({ loading: false, errorMsg: `Unable to get list of bundles: ${response.error}` });
-        }
-        if(res.ok) {
-          this.setState({
-            supportBundles: response.supportBundles,
-            loading: false,
-            errorMsg: ""
-          });
-        }
+        this.setState({
+          supportBundles: response.supportBundles,
+          loading: false,
+          errorMsg: ""
+        });
       })
       .catch((err) => {
+        console.log(err);
         this.setState({ loading: false, errorMsg: err ? `Unable to get list of bundles: ${err.message}` : "Something went wrong, please try again." });
       });
   }
