@@ -124,16 +124,15 @@ class Dashboard extends Component {
         "Content-Type": "application/json",
       }
     }).then(async (res) => {
-      const body = await res.json();
-      if(!res.ok) {
+      if (!res.ok) {
         this.setState({ gettingAppLicenseErrMsg: body.error });
         return;
+      }
+      const body = await res.json();
+      if (body === null) {
+        this.setState({ appLicense: {}, gettingAppLicenseErrMsg: "" });
       } else {
-        if (body === null) {
-          this.setState({ appLicense: {}, gettingAppLicenseErrMsg: "" });
-        } else {
-          this.setState({ appLicense: body, gettingAppLicenseErrMsg: "" });
-        }
+        this.setState({ appLicense: body, gettingAppLicenseErrMsg: "" });
       }
     }).catch((err) => {
       console.log(err)
