@@ -38,7 +38,7 @@ class LicenseUploadProgress extends React.Component {
       if (!response.ok) {
         this.setState({
           installStatus: "upload_error",
-          currentMessage: `Encounted an error while uploading license: ${response.error}`
+          currentMessage: `Encountered an error while uploading license: ${response.error}`
         });
       } else {
         this.setState({
@@ -49,7 +49,7 @@ class LicenseUploadProgress extends React.Component {
     } catch(err) {
       this.setState({ 
         installStatus: "upload_error",
-        currentMessage: err ? `Encounted an error while uploading license: ${err.message}` : "Something went wrong, please try again."
+        currentMessage: err ? `Encountered an error while uploading license: ${err.message}` : "Something went wrong, please try again."
       })
     }
   }

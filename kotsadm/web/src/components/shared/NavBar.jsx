@@ -36,13 +36,13 @@ export class NavBar extends PureComponent {
         method: "POST",
       });
       if (!res.ok) {
-        onLogoutError(`Encounted an error while trying to log out: ${res.error}`);
+        onLogoutError(`Encountered an error while trying to log out: ${res.error}`);
       }
       if (res.ok && res.status === 204) {
         Utilities.logoutUser();
       }
     } catch(err) {
-      onLogoutError(err ? `Encounted an error while trying to log out: ${err.message}` : "Something went wrong, please try again.")
+      onLogoutError(err ? `Encountered an error while trying to log out: ${err.message}` : "Something went wrong, please try again.")
     }
   }
 

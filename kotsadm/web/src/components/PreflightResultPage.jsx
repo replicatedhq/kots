@@ -49,7 +49,7 @@ class PreflightResultPage extends Component {
       history.push(`/app/${preflightResultData.appSlug}/version-history`);
     } catch (error) {
       this.setState({
-        errorMessage: error ? `Encounted an error while trying to deploy downstream version: ${error.message}` : "Something went wrong, please try again."
+        errorMessage: error ? `Encountered an error while trying to deploy downstream version: ${error.message}` : "Something went wrong, please try again."
       });
     }
   }
@@ -65,7 +65,7 @@ class PreflightResultPage extends Component {
       });
     } catch(err) {
       this.setState({
-        errorMessage: err ? `Encounted an error while trying to deploy version: ${err.message}` : "Something went wrong, please try again."
+        errorMessage: err ? `Encountered an error while trying to deploy version: ${err.message}` : "Something went wrong, please try again."
       });
     }
   }
@@ -112,7 +112,7 @@ class PreflightResultPage extends Component {
       })
       .catch((err) => {
         this.setState({
-          errorMessage: err ? `Encounted an error while trying to ignore permissions: ${err.message}` : "Something went wrong, please try again."
+          errorMessage: err ? `Encountered an error while trying to ignore permissions: ${err.message}` : "Something went wrong, please try again."
         });
       });
   }
@@ -135,13 +135,13 @@ class PreflightResultPage extends Component {
           this.props.data?.refetch();
         } else {
           this.setState({
-            errorMessage: `Encounted an error while trying to re-run preflight checks: ${res.error}`
+            errorMessage: `Encountered an error while trying to re-run preflight checks: ${res.error}`
           });
         }
       })
       .catch((err) => {
         this.setState({
-          errorMessage: err ? `Encounted an error while trying to re-run preflight checks: ${err.message}` : "Something went wrong, please try again."
+          errorMessage: err ? `Encountered an error while trying to re-run preflight checks: ${err.message}` : "Something went wrong, please try again."
         });
       });
   }
@@ -202,7 +202,7 @@ class PreflightResultPage extends Component {
                 <div className="ErrorWrapper flex-auto flex alignItems--center">
                   <div className="icon redWarningIcon u-marginRight--10" />
                   <div>
-                    <p className="title">Encounted an error</p>
+                    <p className="title">Encountered an error</p>
                     <p className="error">{this.state.errorMessage}</p>
                   </div>
                 </div>
