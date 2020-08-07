@@ -8,6 +8,7 @@ require (
 	github.com/Azure/go-autorest/autorest v0.9.6
 	github.com/Azure/go-autorest/autorest/adal v0.8.2
 	github.com/aws/aws-sdk-go v1.28.2
+	github.com/bitnami-labs/sealed-secrets v0.12.5
 	github.com/containerd/containerd v1.3.2
 	github.com/deislabs/oras v0.8.1
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
