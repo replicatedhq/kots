@@ -462,6 +462,9 @@ func GetOnlineInstallStatus(w http.ResponseWriter, r *http.Request) {
 
 	if err := requireValidSession(w, r); err != nil {
 		logger.Error(err)
+		JSON(w, 401, GetOnlineInstallStatusErrorResponse{
+			Error: fmt.Sprintf("failed to get install status: %v", err),
+		})
 		return
 	}
 
@@ -469,7 +472,7 @@ func GetOnlineInstallStatus(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		logger.Error(err)
 		JSON(w, 500, GetOnlineInstallStatusErrorResponse{
-			Error: fmt.Sprintf("Failed to get install status: %v", err),
+			Error: fmt.Sprintf("failed to get install status: %v", err),
 		})
 		return
 	}
