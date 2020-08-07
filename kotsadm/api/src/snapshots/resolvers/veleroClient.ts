@@ -438,7 +438,7 @@ export class VeleroClient {
       },
       spec: currentBSLResponse.body.spec,
     };
-    bsl.spec.objectStorage.prefix = join(bsl.spec.objectStorage.prefix, slug);
+    bsl.spec.objectStorage.prefix = join(bsl.spec.objectStorage.prefix ? bsl.spec.objectStorage.prefix : "", slug);
 
     const postResponse = await this.unhandledRequest("POST", `backupstoragelocations/${slug}`, bsl);
     if (postResponse.statusCode !== 201 && postResponse.statusCode !== 409) {
@@ -466,7 +466,7 @@ export class VeleroClient {
         provider: store.provider,
         objectStorage: {
           bucket: store.bucket,
-          prefix: store.path,
+          prefix: store.path ? store.path : "",
         },
         config: currentBSL ? currentBSL.spec.config : {},
       },
@@ -651,7 +651,7 @@ export class VeleroClient {
 }
 
 function maybeParseInt(s: string|undefined): number|undefined {
-  if (_.isString(s)) {
+  if (s && _.isString(s)) {
     const i = parseInt(s, 10)
     if (_.isNumber(i)) {
       return i;
