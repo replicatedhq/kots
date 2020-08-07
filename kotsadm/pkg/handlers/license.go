@@ -463,7 +463,7 @@ func GetOnlineInstallStatus(w http.ResponseWriter, r *http.Request) {
 	if err := requireValidSession(w, r); err != nil {
 		logger.Error(err)
 		JSON(w, 401, GetOnlineInstallStatusErrorResponse{
-			Error: fmt.Sprintf("failed to get install status: %v", err),
+			Error: fmt.Sprintf("failed to validate session: %v", err),
 		})
 		return
 	}
