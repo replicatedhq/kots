@@ -368,7 +368,7 @@ class AppSnapshots extends Component {
     const appTitle = app?.name;
     const inProgressSnapshotExist = snapshots?.find(snapshot => snapshot.status === "InProgress");
 
-    if (isLoadingSnapshotSettings || (isStartButtonClicked && snapshots?.length === 0) || startingSnapshot) {
+    if (isLoadingSnapshotSettings || !hasSnapshotsLoaded || (isStartButtonClicked && snapshots?.length === 0) || startingSnapshot) {
       return (
         <div className="flex-column flex1 alignItems--center justifyContent--center">
           <Loader size="60" />
