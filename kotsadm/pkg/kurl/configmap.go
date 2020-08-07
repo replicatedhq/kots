@@ -2,6 +2,7 @@ package kurl
 
 import (
 	"context"
+	"os"
 	"time"
 
 	"github.com/pkg/errors"
@@ -69,10 +70,15 @@ func UpdateConfigMap(client kubernetes.Interface, generateBootstrapToken, upload
 	if uploadCerts {
 		certsDuration := time.Hour * 2
 		certsExpiration := time.Now().Add(certsDuration)
-		key, err := createCertAndKey(context.TODO(), client, "default")
+
+		ctx, cancel := context.WithTimeout(context.TODO(), 60*time.Second)
+		defer cancel()
+
+		key, err := createCertAndKey(ctx, client, os.Getenv("POD_NAMESPACE"))
 		if err != nil {
 			return nil, errors.Wrap(err, "upload certs with new key")
 		}
+
 		cm.Data[certKey] = key
 		cm.Data[certsExpirationKey] = certsExpiration.Format(time.RFC3339)
 	}

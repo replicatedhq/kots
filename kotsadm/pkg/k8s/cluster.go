@@ -57,7 +57,7 @@ func UploadCertsWithNewKey() (string, error) {
 
 	key, err := copycerts.CreateCertificateKey()
 	if err != nil {
-		return "", errors.Wrap(err, "failed to genertae key")
+		return "", errors.Wrap(err, "failed to generate key")
 	}
 	config.CertificateKey = key
 

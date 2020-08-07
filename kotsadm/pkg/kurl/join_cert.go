@@ -46,7 +46,13 @@ func createCertAndKey(ctx context.Context, client kubernetes.Interface, namespac
 			status.Status.Phase == corev1.PodSucceeded {
 			break
 		}
+
 		time.Sleep(time.Second * 1)
+
+		// TODO: Do we need this?  Shouldn't Get function fail if there's a ctx error?
+		if err := ctx.Err(); err != nil {
+			return "", errors.Wrap(err, "failed to wait for pod to terminate")
+		}
 	}
 
 	podLogs, err := getCertGenLogs(ctx, client, pod)
@@ -63,12 +69,9 @@ func createCertAndKey(ctx context.Context, client kubernetes.Interface, namespac
 }
 
 func getCertGenLogs(ctx context.Context, client kubernetes.Interface, pod *corev1.Pod) ([]byte, error) {
-	// maxLines := int64(10000)
 	podLogOpts := corev1.PodLogOptions{
 		Follow:    false,
 		Container: pod.Spec.Containers[0].Name,
-		// TailLines:
-		// SinceTime:
 	}
 
 	req := client.CoreV1().Pods(pod.Namespace).GetLogs(pod.Name, &podLogOpts)
@@ -150,6 +153,13 @@ func getPodSpec(clientset kubernetes.Interface, namespace string) (*corev1.Pod, 
 			SecurityContext: &securityContext,
 			NodeSelector: map[string]string{
 				"node-role.kubernetes.io/master": "",
+			},
+			Tolerations: []corev1.Toleration{
+				{
+					Key:      "node-role.kubernetes.io/master",
+					Operator: corev1.TolerationOpExists,
+					Effect:   corev1.TaintEffectNoSchedule,
+				},
 			},
 			RestartPolicy:    corev1.RestartPolicyNever,
 			ImagePullSecrets: existingDeployment.Spec.Template.Spec.ImagePullSecrets,
