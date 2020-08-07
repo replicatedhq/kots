@@ -17,6 +17,7 @@ class PreflightResultPage extends Component {
   state = {
     showSkipModal: false,
     showWarningModal: false,
+    errorMessage: ""
   };
 
   async componentWillUnmount() {
@@ -30,6 +31,7 @@ class PreflightResultPage extends Component {
   }
 
   deployKotsDownstream = async (force = false) => {
+    this.setState({ errorMessage: "" });
     try {
       const { data, history, match } = this.props;
       const preflightResultData = data.getKotsPreflightResult || data.getLatestKotsPreflightResult;
@@ -46,12 +48,16 @@ class PreflightResultPage extends Component {
       }
 
       history.push(`/app/${preflightResultData.appSlug}/version-history`);
-    } catch (error) {
-      console.log(error);
+    } catch (err) {
+      console.log(err);
+      this.setState({
+        errorMessage: err ? `Encountered an error while trying to deploy downstream version: ${err.message}` : "Something went wrong, please try again."
+      });
     }
   }
 
   deployKotsVersion = async (appSlug, sequence) => {
+    this.setState({ errorMessage: "" });
     try {
       await fetch(`${window.env.API_ENDPOINT}/app/${appSlug}/sequence/${sequence}/deploy`, {
         headers: {
@@ -62,6 +68,9 @@ class PreflightResultPage extends Component {
       });
     } catch(err) {
       console.log(err);
+      this.setState({
+        errorMessage: err ? `Encountered an error while trying to deploy version: ${err.message}` : "Something went wrong, please try again."
+      });
     }
   }
 
@@ -90,6 +99,7 @@ class PreflightResultPage extends Component {
   }
 
   ignorePermissionErrors = () => {
+    this.setState({ errorMessage: "" });
     const preflightResultData = this.props.data.getKotsPreflightResult || this.props.data.getLatestKotsPreflightResult;
     const sequence = this.props.match.params.sequence ? parseInt(this.props.match.params.sequence, 10) : 0;
 
@@ -107,10 +117,14 @@ class PreflightResultPage extends Component {
       })
       .catch((err) => {
         console.log(err);
+        this.setState({
+          errorMessage: err ? `Encountered an error while trying to ignore permissions: ${err.message}` : "Something went wrong, please try again."
+        });
       });
   }
 
   rerunPreflights = () => {
+    this.setState({ errorMessage: "" });
     const preflightResultData = this.props.data.getKotsPreflightResult || this.props.data.getLatestKotsPreflightResult;
     const sequence = this.props.match.params.sequence ? parseInt(this.props.match.params.sequence, 10) : 0;
 
@@ -126,10 +140,17 @@ class PreflightResultPage extends Component {
       .then((res) => {
         if (res.status === 200) {
           this.props.data?.refetch();
+        } else {
+          this.setState({
+            errorMessage: `Encountered an error while trying to re-run preflight checks: Status ${res.status}`
+          });
         }
       })
       .catch((err) => {
         console.log(err);
+        this.setState({
+          errorMessage: err ? `Encountered an error while trying to re-run preflight checks: ${err.message}` : "Something went wrong, please try again."
+        });
       });
   }
 
@@ -184,7 +205,16 @@ class PreflightResultPage extends Component {
               <span className="icon clickable backArrow-icon u-marginRight--10" style={{ verticalAlign: "0" }} />
                 Back
             </div>}
-            <div className="u-minWidth--full u-marginTop--20 flex-column flex1">
+            <div className="u-minWidth--full u-marginTop--20 flex-column flex1 u-position--relative">
+              {this.state.errorMessage && this.state.errorMessage.length > 0 ?
+                <div className="ErrorWrapper flex-auto flex alignItems--center">
+                  <div className="icon redWarningIcon u-marginRight--10" />
+                  <div>
+                    <p className="title">Encountered an error</p>
+                    <p className="error">{this.state.errorMessage}</p>
+                  </div>
+                </div>
+              : null}
               <p className="u-fontSize--header u-color--tuna u-fontWeight--bold">
                 Preflight checks
               </p>

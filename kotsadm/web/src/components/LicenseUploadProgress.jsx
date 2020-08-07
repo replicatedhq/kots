@@ -3,6 +3,7 @@ import { withRouter } from "react-router-dom";
 import { Utilities } from "@src/utilities/utilities";
 import { Repeater } from "@src/utilities/repeater";
 import "@src/scss/components/AirgapUploadProgress.scss";
+import { onError } from "apollo-link-error";
 
 class LicenseUploadProgress extends React.Component {
   constructor(props) {
@@ -23,6 +24,16 @@ class LicenseUploadProgress extends React.Component {
     this.state.getOnlineInstallStatusJob.stop();
   }
 
+  componentDidUpdate(lastProps, lastState) {
+    const { installStatus } = this.state;
+    const { onError } = this.props;
+    if (installStatus !== lastState.installStatus && installStatus === "upload_error") {
+      if (onError && typeof onError === "function") {
+        onError(this.state.currentMessage);
+      }
+    }
+  }
+
   getOnlineInstallStatus = async () => {
     try {
       const res = await fetch(`${window.env.API_ENDPOINT}/app/online/status`, {
@@ -33,14 +44,24 @@ class LicenseUploadProgress extends React.Component {
         method: "GET",
       });
 
-      const response = await res.json();
-      
-      this.setState({
-        installStatus: response.installStatus,
-        currentMessage: response.currentMessage,
-      });
+      if (!res.ok) {
+        this.setState({ 
+          installStatus: "upload_error",
+          currentMessage: `Encountered an error while uploading license: Status ${res.status}`
+        })
+      } else {
+        const response = await res.json();
+        this.setState({
+          installStatus: response.installStatus,
+          currentMessage: response.currentMessage,
+        });
+      }
     } catch(err) {
       console.log(err);
+      this.setState({ 
+        installStatus: "upload_error",
+        currentMessage: err ? `Encountered an error while uploading license: ${err.message}` : "Something went wrong, please try again."
+      })
     }
   }
 

@@ -49,6 +49,8 @@ class AppDetailPage extends Component {
       app: null,
       loadingApp: true,
       getAppJob: new Repeater(),
+      gettingAppErrMsg: "",
+      makingCurrentReleaseErrMsg: ""
     }
   }
 
@@ -99,9 +101,10 @@ class AppDetailPage extends Component {
     this.state.getAppJob.stop();
   }
 
-  makeCurrentRelease = async (upstreamSlug, sequence) => {
+  makeCurrentRelease = async (upstreamSlug, version) => {
+    this.setState({ makingCurrentReleaseErrMsg: "" });
     try {
-      await fetch(`${window.env.API_ENDPOINT}/app/${upstreamSlug}/sequence/${sequence}/deploy`, {
+      await fetch(`${window.env.API_ENDPOINT}/app/${upstreamSlug}/sequence/${version.sequence}/deploy`, {
         headers: {
           "Authorization": Utilities.getToken(),
           "Content-Type": "application/json",
@@ -110,7 +113,10 @@ class AppDetailPage extends Component {
       });
       this.refetchData();
     } catch(err) {
-      console.log(err);
+      console.log(err)
+      this.setState({
+        makingCurrentReleaseErrMsg: err ? `Unable to deploy release ${version.title}, sequence ${version.sequence}: ${err.message}` : "Something went wrong, please try again."
+      });
     }
   }
 
@@ -128,7 +134,7 @@ class AppDetailPage extends Component {
     }
 
     try {
-      this.setState({ loadingApp: true });
+      this.setState({ loadingApp: true, gettingAppErrMsg: "" });
 
       const res = await fetch(`${window.env.API_ENDPOINT}/apps/app/${slug}`, {
         headers: {
@@ -139,14 +145,13 @@ class AppDetailPage extends Component {
       });
       if (res.ok && res.status == 200) {
         const app = await res.json();
-        this.setState({ app, loadingApp: false });
+        this.setState({ app, loadingApp: false, gettingAppErrMsg: "" });
       } else {
-        console.log("failed to get app, unexpected status code", res.status);
-        this.setState({ loadingApp: false });
+        this.setState({ loadingApp: false, gettingAppErrMsg: `failed to get app, unexpected status code: ${res.status}` });
       }
-    } catch(err) {
-      console.log(err);
-      this.setState({ loadingApp: false });
+    } catch (err) {
+      console.log(err)
+      this.setState({ loadingApp: false, gettingAppErrMsg: err ? err.message : "Something went wrong, please try again." });
     }
   }
 
@@ -203,7 +208,8 @@ class AppDetailPage extends Component {
     const {
       app,
       displayDownloadCommandModal,
-      isBundleUploading
+      isBundleUploading,
+      gettingAppErrMsg
     } = this.state;
 
     const centeredLoader = (
@@ -221,6 +227,15 @@ class AppDetailPage extends Component {
       this.state.getAppJob.start(this.getApp, 2000);
     } else {
       this.state.getAppJob.stop();
+    }
+
+    if (gettingAppErrMsg) {
+      return (
+        <div class="flex1 flex-column justifyContent--center alignItems--center">
+          <span className="icon redWarningIcon" />
+          <p className="u-color--chestnut u-fontSize--normal u-fontWeight--medium u-lineHeight--normal u-marginTop--10">{gettingAppErrMsg}</p>
+        </div>
+      )
     }
 
     return (
@@ -279,7 +294,6 @@ class AppDetailPage extends Component {
                         refetchListApps={refetchListApps}
                         updateCallback={this.refetchData}
                         onActiveInitSession={this.props.onActiveInitSession}
-                        makeCurrentVersion={this.makeCurrentRelease}
                         toggleIsBundleUploading={this.toggleIsBundleUploading}
                         isBundleUploading={isBundleUploading}
                         isVeleroInstalled={isVeleroInstalled?.isVeleroInstalled}
@@ -296,6 +310,7 @@ class AppDetailPage extends Component {
                         app={app}
                         match={this.props.match}
                         makeCurrentVersion={this.makeCurrentRelease}
+                        makingCurrentVersionErrMsg={this.state.makingCurrentReleaseErrMsg}
                         updateCallback={this.refetchData}
                         toggleIsBundleUploading={this.toggleIsBundleUploading}
                         isBundleUploading={isBundleUploading}

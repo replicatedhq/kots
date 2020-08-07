@@ -19,11 +19,13 @@ export class SupportBundleAnalysis extends React.Component {
       downloadingBundle: false,
       bundle: null,
       loading: false,
+      downloadBundleErrMsg: "",
+      getSupportBundleErrMsg: ""
     };
   }
 
   downloadBundle = async (bundle) => {
-    this.setState({ downloadingBundle: true });
+    this.setState({ downloadingBundle: true, downloadBundleErrMsg: "" });
     fetch(`${window.env.API_ENDPOINT}/troubleshoot/supportbundle/${bundle.id}/download`, {
       method: "GET",
       headers: {
@@ -31,20 +33,22 @@ export class SupportBundleAnalysis extends React.Component {
       }
     })
       .then(async (result) => {
-        if (result.ok) {
-          const blob = await result.blob();
-          download(blob, "supportbundle.tar.gz", "application/gzip");
-          this.setState({ downloadingBundle: false });
+        if (!result.ok) {
+          this.setState({ downloadingBundle: false, downloadBundleErrMsg: `Unable to download bundle: Status ${result.status}, please try again.` });
+          return;
         }
+        const blob = await result.blob();
+        download(blob, "supportbundle.tar.gz", "application/gzip");
+        this.setState({ downloadingBundle: false, downloadBundleErrMsg: "" });
       })
       .catch(err => {
         console.log(err);
-        this.setState({ downloadingBundle: false });
+        this.setState({ downloadingBundle: false, downloadBundleErrMsg: err ? `Unable to download bundle: ${err.message}` : "Something went wrong, please try again." });
       })
   }
 
   getSupportBundle = async () => {
-    this.setState({ loading: true });
+    this.setState({ loading: true, getSupportBundleErrMsg: "" });
 
     fetch(`${window.env.API_ENDPOINT}/troubleshoot/supportbundle/${this.props.match.params.bundleSlug}`, {
       headers: {
@@ -54,15 +58,20 @@ export class SupportBundleAnalysis extends React.Component {
       method: "GET",
     })
       .then(async (res) => {
+        if (!res.ok) {
+          this.setState({ loading: false, getSupportBundleErrMsg: `Unable to get bundle: Status ${res.status}, please try again.` });
+          return;
+        }
         const bundle = await res.json();
         this.setState({
           bundle: bundle,
           loading: false,
+          getSupportBundleErrMsg: ""
         });
       })
       .catch((err) => {
         console.log(err);
-        this.setState({ loading: false });
+        this.setState({ loading: false, getSupportBundleErrMsg: err ? `Unable to get bundle: ${err.message}` : "Something went wrong, please try again."});
       });
   }
 
@@ -87,12 +96,21 @@ export class SupportBundleAnalysis extends React.Component {
 
   render() {
     const { watch } = this.props;
-    const { bundle, loading } = this.state;
+    const { bundle, loading, getSupportBundleErrMsg } = this.state;
 
     if (loading) {
       return (
         <div className="flex-column flex1 justifyContent--center alignItems--center">
           <Loader size="60" />
+        </div>
+      )
+    }
+
+    if (getSupportBundleErrMsg) {
+      return (
+        <div class="flex1 flex-column justifyContent--center alignItems--center">
+          <span className="icon redWarningIcon" />
+          <p className="u-color--chestnut u-fontSize--normal u-fontWeight--medium u-lineHeight--normal u-marginTop--10">{getSupportBundleErrMsg}</p>
         </div>
       )
     }
@@ -124,7 +142,9 @@ export class SupportBundleAnalysis extends React.Component {
                     </div>
                   </div>
                   <div className="flex flex-auto alignItems--center justifyContent--flexEnd">
-                    {this.state.downloadingBundle ? 
+                    {this.state.downloadBundleErrMsg &&
+                      <p className="u-color--chestnut u-fontSize--normal u-fontWeight--medium u-lineHeight--normal u-marginRight--10">{this.state.downloadBundleErrMsg}</p>}
+                    {this.state.downloadingBundle ?
                       <Loader size="30" /> :
                       <button className="btn primary lightBlue" onClick={() => this.downloadBundle(bundle)}> Download bundle </button>
                     }

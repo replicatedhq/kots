@@ -35,15 +35,20 @@ class SupportBundleList extends React.Component {
       method: "GET",
     })
       .then(async (res) => {
+        if (!res.ok) {
+          this.setState({ loading: false, errorMsg: `Unable to get list of bundles: Status ${res.status}` });
+          return
+        }
         const response = await res.json();
         this.setState({
           supportBundles: response.supportBundles,
           loading: false,
+          errorMsg: ""
         });
       })
       .catch((err) => {
         console.log(err);
-        this.setState({ loading: false, errorMsg: err.message });
+        this.setState({ loading: false, errorMsg: err ? `Unable to get list of bundles: ${err.message}` : "Something went wrong, please try again." });
       });
   }
 
@@ -61,7 +66,12 @@ class SupportBundleList extends React.Component {
     const downstreams = watch.downstreams || [];
 
     if (errorMsg) {
-      return <p>{errorMsg}</p>;
+      return (
+        <div class="flex1 flex-column justifyContent--center alignItems--center">
+          <span className="icon redWarningIcon" />
+          <p className="u-color--chestnut u-fontSize--normal u-fontWeight--medium u-lineHeight--normal u-marginTop--10">{errorMsg}</p>
+        </div>
+      )
     }
 
     if (loading) {

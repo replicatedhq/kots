@@ -25,6 +25,7 @@ export class NavBar extends PureComponent {
   }
 
   handleLogOut = async (e) => {
+    const { onLogoutError } = this.props;
     e.preventDefault();
     try {
       const res = await fetch(`${window.env.API_ENDPOINT}/logout`, {
@@ -34,11 +35,15 @@ export class NavBar extends PureComponent {
         },
         method: "POST",
       });
+      if (!res.ok) {
+        onLogoutError(`Encountered an error while trying to log out: Status ${res.status}`);
+      }
       if (res.ok && res.status === 204) {
         Utilities.logoutUser();
       }
     } catch(err) {
-      console.log(err);
+      console.log(err)
+      onLogoutError(err ? `Encountered an error while trying to log out: ${err.message}` : "Something went wrong, please try again.")
     }
   }
 

@@ -196,13 +196,13 @@ export default class DashboardCard extends React.Component {
   }
 
   renderLicenseCard = () => {
-    const { appLicense, isSnapshotAllowed } = this.props;
+    const { appLicense, isSnapshotAllowed, getingAppLicenseErrMsg } = this.props;
     const expiresAt = getLicenseExpiryDate(appLicense);
 
     return (
       <div>
         {isSnapshotAllowed ?
-          null
+          getingAppLicenseErrMsg && <p className="u-color--chestnut u-fontSize--small u-fontWeight--medium u-lineHeight--normal flex">{getingAppLicenseErrMsg}</p>
           :
           size(appLicense) > 0 ?
             <div>
@@ -212,16 +212,17 @@ export default class DashboardCard extends React.Component {
               <p className="u-fontSize--small u-color--dustyGray u-marginTop--15 u-lineHeight--medium"> Contact your account rep to update your License. </p>
             </div>
             :
-            <div>
+            getingAppLicenseErrMsg ?
+              <p className="u-color--chestnut u-fontSize--small u-fontWeight--medium u-lineHeight--normal flex">{getingAppLicenseErrMsg}</p>
+              :
               <p className="u-fontSize--normal u-color--dustyGray u-marginTop--15 u-lineHeight--more"> License data is not available on this application because it was installed via Helm </p>
-            </div>
         }
       </div>
     )
   }
 
   render() {
-    const { cardName, cardIcon, application, versionHistory, url, app, appLicense, license, isSnapshotAllowed, startManualSnapshot, startSnapshotErr, startSnapshotErrorMsg, snapshotInProgressApps } = this.props;
+    const { cardName, cardIcon, application, versionHistory, url, app, appLicense, license, isSnapshotAllowed, startManualSnapshot, startSnapshotErr, startSnapshotErrorMsg, snapshotInProgressApps, getingAppLicenseErrMsg } = this.props;
     const isSnapshotInProgress = !!snapshotInProgressApps?.find(a => a === app?.slug);
 
     return (
@@ -233,9 +234,7 @@ export default class DashboardCard extends React.Component {
               <p className={`flex1 u-fontWeight--bold u-fontSize--largest u-paddingRight--5 u-marginBottom--5 ${appLicense && size(appLicense) === 0 ? "u-color--doveGray" : "u-color--tundora"}`}>{cardName}</p>
             </div>
             {application ?
-              app.isConfigurable ?
-                <Link to={`${url}/config`} className="card-link"> Configure </Link>
-                : null
+              app.isConfigurable && <Link to={`${url}/config`} className="card-link"> Configure </Link>
               :
               versionHistory ?
                 <Link to={`${url}/version-history`} className="card-link"> Version history </Link>
@@ -246,7 +245,7 @@ export default class DashboardCard extends React.Component {
                     isSnapshotInProgress ?
                       <Loader size="16" />
                       :
-                      <span className="status-indicator completed"> Enabled </span>
+                      !getingAppLicenseErrMsg && <span className="status-indicator completed"> Enabled </span>
                     : null
             }
             <div className={`${isSnapshotAllowed ? "u-marginTop--8" : "u-marginTop--15"}`}>

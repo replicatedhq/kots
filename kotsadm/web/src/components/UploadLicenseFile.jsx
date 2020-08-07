@@ -213,9 +213,16 @@ class UploadLicenseFile extends React.Component {
       .catch((err) => {
         this.setState({
           startingRestore: false,
-          startingRestoreMsg: err.message ? err.message : "Something went wrong, please try again!"
+          startingRestoreMsg: err.message ? err.message : "Something went wrong, please try again."
         });
       });
+  }
+
+  handleUploadStatusErr = (errMessage) => {
+    this.setState({
+      fileUploading: false,
+      errorMessage: errMessage
+    })
   }
 
   render() {
@@ -310,7 +317,7 @@ class UploadLicenseFile extends React.Component {
                 }
               </div>
               :
-              <div><LicenseUploadProgress /></div>
+              <div><LicenseUploadProgress onError={this.handleUploadStatusErr} /></div>
             }
           </div>
         </div>

@@ -233,7 +233,7 @@ class AppVersionHistory extends Component {
     const isRollback = isPastVersion && version.deployedAt && app.allowRollback;
 
     return (
-      <div>
+      <div className="flex flex1 justifyContent--flexEnd">
         {showActions &&
           <button
             className={classNames("btn", { "secondary blue": isSecondaryBtn, "primary blue": !isSecondaryBtn })}
@@ -433,7 +433,7 @@ class AppVersionHistory extends Component {
         }
       }
     }
-    await this.props.makeCurrentVersion(match.params.slug, version.sequence);
+    await this.props.makeCurrentVersion(match.params.slug, version);
     await this.props.data.refetch();
     this.setState({ versionToDeploy: null });
 
@@ -496,7 +496,7 @@ class AppVersionHistory extends Component {
       const { app } = this.props;
       const clusterId = app.downstreams?.length && app.downstreams[0].cluster?.id;
 
-      this.setState({ logsLoading: true, showLogsModal: true });
+      this.setState({ logsLoading: true, showLogsModal: true, viewLogsErrMsg: "" });
 
       const res = await fetch(`${window.env.API_ENDPOINT}/app/${app?.slug}/cluster/${clusterId}/sequence/${version?.sequence}/downstreamoutput`, {
         headers: {
@@ -508,14 +508,13 @@ class AppVersionHistory extends Component {
       if (res.ok && res.status === 200) {
         const logs = await res.json();
         const selectedTab = Object.keys(logs)[0];
-        this.setState({ logs, selectedTab, logsLoading: false });
+        this.setState({ logs, selectedTab, logsLoading: false, viewLogsErrMsg: "" });
       } else {
-        console.log("failed to view logs, unexpected status code", res.status);
-        this.setState({ logsLoading: false });
+        this.setState({ logsLoading: false, viewLogsErrMsg: `Failed to view logs, unexpected status code, ${res.status}` });
       }
-    } catch(err) {
-      console.log(err);
-      this.setState({ logsLoading: false });
+    } catch (err) {
+      console.log(err)
+      this.setState({ logsLoading: false, viewLogsErrMsg: err ? `Failed to view logs: ${err.message}` : "Something went wrong, please try again." });
     }
   }
 
@@ -808,7 +807,8 @@ class AppVersionHistory extends Component {
       app,
       data,
       match,
-      isBundleUploading
+      isBundleUploading,
+      makingCurrentVersionErrMsg
     } = this.props;
 
     const {
@@ -1022,6 +1022,14 @@ class AppVersionHistory extends Component {
                 <div className={`flex-column flex1 ${showDiffOverlay ? "u-visibility--hidden" : ""}`}>
                   <div className="flex justifyContent--spaceBetween u-borderBottom--gray darker u-paddingBottom--10">
                     <p className="u-fontSize--larger u-fontWeight--bold u-color--tuna u-lineHeight--normal">All versions</p>
+                    {makingCurrentVersionErrMsg &&
+                      <div className="ErrorWrapper flex-auto flex alignItems--center">
+                        <div className="icon redWarningIcon u-marginRight--10" />
+                        <div>
+                          <p className="title">Failed to deploy version</p>
+                          <p className="err">{makingCurrentVersionErrMsg}</p>
+                        </div>
+                      </div>}
                     {versionHistory.length > 1 && this.renderDiffBtn()}
                   </div>
                   {/* Downstream version history */}
@@ -1053,7 +1061,7 @@ class AppVersionHistory extends Component {
                             <div className="flex alignItems--center u-fontSize--small u-marginTop--10 u-color--dustyGray">
                               {this.renderSourceAndDiff(version)}
                               {yamlErrorsDetails && this.renderYamlErrors(yamlErrorsDetails, version)}
-                              </div>
+                            </div>
                           </div>
                           <div className="flex flex1 u-fontSize--normal u-color--dustyGray u-marginTop--15 alignItems--center">Status: <span className="u-marginLeft--5">{gitopsEnabled ? this.renderViewPreflights(version) : this.renderVersionStatus(version)}</span></div>
                         </div>
@@ -1116,36 +1124,42 @@ class AppVersionHistory extends Component {
           className="Modal logs-modal"
         >
           <div className="Modal-body flex flex1">
-            {!logs || !selectedTab || logsLoading ? (
-              <div className="flex-column flex1 alignItems--center justifyContent--center">
-                <Loader size="60" />
+            {this.state.viewLogsErrMsg ?
+              <div class="flex1 flex-column justifyContent--center alignItems--center">
+                <span className="icon redWarningIcon" />
+                <p className="u-color--chestnut u-fontSize--normal u-fontWeight--medium u-lineHeight--normal u-marginTop--10">{this.state.viewLogsErrMsg}</p>
               </div>
-            ) : (
-                <div className="flex-column flex1">
+              :
+              !logs || !selectedTab || logsLoading ? (
+                <div className="flex-column flex1 alignItems--center justifyContent--center">
+                  <Loader size="60" />
+                </div>
+              ) : (
                   <div className="flex-column flex1">
-                    {!logs.renderError && this.renderLogsTabs()}
-                    <div className="flex-column flex1 u-border--gray monaco-editor-wrapper">
-                      <MonacoEditor
-                        language="json"
-                        value={logs.renderError || logs[selectedTab]}
-                        height="100%"
-                        width="100%"
-                        options={{
-                          readOnly: true,
-                          contextmenu: false,
-                          minimap: {
-                            enabled: false
-                          },
-                          scrollBeyondLastLine: false,
-                        }}
-                      />
+                    <div className="flex-column flex1">
+                      {!logs.renderError && this.renderLogsTabs()}
+                      <div className="flex-column flex1 u-border--gray monaco-editor-wrapper">
+                        <MonacoEditor
+                          language="json"
+                          value={logs.renderError || logs[selectedTab]}
+                          height="100%"
+                          width="100%"
+                          options={{
+                            readOnly: true,
+                            contextmenu: false,
+                            minimap: {
+                              enabled: false
+                            },
+                            scrollBeyondLastLine: false,
+                          }}
+                        />
+                      </div>
+                    </div>
+                    <div className="u-marginTop--20 flex">
+                      <button type="button" className="btn primary" onClick={this.hideLogsModal}>Ok, got it!</button>
                     </div>
                   </div>
-                  <div className="u-marginTop--20 flex">
-                    <button type="button" className="btn primary" onClick={this.hideLogsModal}>Ok, got it!</button>
-                  </div>
-                </div>
-              )}
+                )}
           </div>
         </Modal>
 

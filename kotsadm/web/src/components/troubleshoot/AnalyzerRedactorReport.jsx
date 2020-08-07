@@ -44,7 +44,6 @@ export class AnalyzerRedactorReport extends Component {
         }
       })
       .catch(err => {
-        console.log(err);
         this.setState({
           isLoadingRedations: false,
           redactionsErrMsg: err.message ? err.message : "There was an error while showing the redactor report. Please try again",

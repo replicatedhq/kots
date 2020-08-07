@@ -118,7 +118,7 @@ class Redactors extends Component {
       .catch((err) => {
         this.setState({
           deletingRedactor: false,
-          deleteErrMsg: err.message ? err.message : "Something went wrong, please try again!"
+          deleteErrMsg: err.message ? err.message : "Something went wrong, please try again."
         });
       });
   }
@@ -150,7 +150,7 @@ class Redactors extends Component {
       })
       .catch((err) => {
         this.setState({
-          enablingRedactorMsg: err.message ? err.message : "Something went wrong, please try again!"
+          enablingRedactorMsg: err.message ? err.message : "Something went wrong, please try again."
         });
       });
   }
