@@ -35,17 +35,10 @@ class LicenseUploadProgress extends React.Component {
       });
 
       const response = await res.json();
-      if (!response.ok) {
-        this.setState({
-          installStatus: "upload_error",
-          currentMessage: `Encountered an error while uploading license: ${response.error}`
-        });
-      } else {
-        this.setState({
-          installStatus: response.installStatus,
-          currentMessage: response.currentMessage,
-        });
-      }
+      this.setState({
+        installStatus: response.installStatus,
+        currentMessage: response.currentMessage,
+      });
     } catch(err) {
       this.setState({ 
         installStatus: "upload_error",
