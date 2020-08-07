@@ -40,7 +40,6 @@ type RewriteOptions struct {
 	RegistryPassword  string
 	RegistryNamespace string
 	AppSlug           string
-	AppSequence       int64
 	IsGitOps          bool
 }
 
@@ -295,7 +294,6 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 		MidstreamDir: filepath.Join(b.GetOverlaysDir(writeBaseOptions), "midstream"),
 		BaseDir:      u.GetBaseDir(writeUpstreamOptions),
 		AppSlug:      rewriteOptions.AppSlug,
-		AppSequence:  rewriteOptions.AppSequence,
 		IsGitOps:     rewriteOptions.IsGitOps,
 	}
 	if err := m.WriteMidstream(writeMidstreamOptions); err != nil {

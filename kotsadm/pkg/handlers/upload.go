@@ -113,7 +113,7 @@ func UploadExistingApp(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = render.RenderDir(archiveDir, a.ID, a.CurrentSequence, registrySettings)
+	err = render.RenderDir(archiveDir, a.ID, registrySettings)
 	if err != nil {
 		logger.Error(err)
 		w.WriteHeader(500)

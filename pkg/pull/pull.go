@@ -474,7 +474,6 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 		MidstreamDir: filepath.Join(b.GetOverlaysDir(writeBaseOptions), "midstream"),
 		BaseDir:      u.GetBaseDir(writeUpstreamOptions),
 		AppSlug:      pullOptions.AppSlug,
-		AppSequence:  pullOptions.AppSequence,
 		IsGitOps:     pullOptions.IsGitOps,
 	}
 	if err := m.WriteMidstream(writeMidstreamOptions); err != nil {
