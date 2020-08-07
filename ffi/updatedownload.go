@@ -287,7 +287,12 @@ func UpdateDownloadFromAirgap(socket, fromArchivePath, namespace, registryJson, 
 			return
 		}
 
-		if !bc.Before(ac) {
+		if bc.Equal(ac) {
+			err := errors.Errorf("Version %s (%s) cannot be installed again because it is already the current version", afterInstallation.Spec.VersionLabel, afterCursor.Cursor)
+			fmt.Printf("%s\n", err.Error())
+			ffiResult = NewFFIResult(-1).WithError(err)
+			return
+		} else if bc.After(ac) {
 			err := errors.Errorf("Version %s (%s) cannot be installed because version %s (%s) is newer", afterInstallation.Spec.VersionLabel, afterCursor.Cursor, beforeInstallation.Spec.VersionLabel, beforeCursor.Cursor)
 			fmt.Printf("%s\n", err.Error())
 			ffiResult = NewFFIResult(-1).WithError(err)
