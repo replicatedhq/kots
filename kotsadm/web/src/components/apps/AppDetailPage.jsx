@@ -50,7 +50,7 @@ class AppDetailPage extends Component {
       loadingApp: true,
       getAppJob: new Repeater(),
       gettingAppErrMsg: "",
-      makingCurrentVersionErrMsg: ""
+      makingCurrentReleaseErrMsg: ""
     }
   }
 
@@ -102,7 +102,7 @@ class AppDetailPage extends Component {
   }
 
   makeCurrentRelease = async (upstreamSlug, version) => {
-    this.setState({ makingCurrentVersionErrMsg: "" });
+    this.setState({ makingCurrentReleaseErrMsg: "" });
     try {
       await fetch(`${window.env.API_ENDPOINT}/app/${upstreamSlug}/sequence/${version.sequence}/deploy`, {
         headers: {
@@ -115,7 +115,7 @@ class AppDetailPage extends Component {
     } catch(err) {
       console.log(err)
       this.setState({
-        makingCurrentVersionErrMsg: err ? `Unable to deploy release ${version.title}, sequence ${version.sequence}: ${err.message}` : "Something went wrong, please try again."
+        makingCurrentReleaseErrMsg: err ? `Unable to deploy release ${version.title}, sequence ${version.sequence}: ${err.message}` : "Something went wrong, please try again."
       });
     }
   }
@@ -310,7 +310,7 @@ class AppDetailPage extends Component {
                         app={app}
                         match={this.props.match}
                         makeCurrentVersion={this.makeCurrentRelease}
-                        makingCurrentVersionErrMsg={this.state.makingCurrentVersionErrMsg}
+                        makingCurrentVersionErrMsg={this.state.makingCurrentReleaseErrMsg}
                         updateCallback={this.refetchData}
                         toggleIsBundleUploading={this.toggleIsBundleUploading}
                         isBundleUploading={isBundleUploading}

@@ -808,7 +808,7 @@ class AppVersionHistory extends Component {
       data,
       match,
       isBundleUploading,
-      makingCurrentReleaseErrMsg
+      makingCurrentVersionErrMsg
     } = this.props;
 
     const {
@@ -1022,12 +1022,12 @@ class AppVersionHistory extends Component {
                 <div className={`flex-column flex1 ${showDiffOverlay ? "u-visibility--hidden" : ""}`}>
                   <div className="flex justifyContent--spaceBetween u-borderBottom--gray darker u-paddingBottom--10">
                     <p className="u-fontSize--larger u-fontWeight--bold u-color--tuna u-lineHeight--normal">All versions</p>
-                    {makingCurrentReleaseErrMsg &&
+                    {makingCurrentVersionErrMsg &&
                       <div className="ErrorWrapper flex-auto flex alignItems--center">
                         <div className="icon redWarningIcon u-marginRight--10" />
                         <div>
                           <p className="title">Failed to deploy version</p>
-                          <p className="err">{makingCurrentReleaseErrMsg}</p>
+                          <p className="err">{makingCurrentVersionErrMsg}</p>
                         </div>
                       </div>}
                     {versionHistory.length > 1 && this.renderDiffBtn()}
