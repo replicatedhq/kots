@@ -48,7 +48,10 @@ func replaceSecretsWithSealedSecrets(archivePath string, config map[string][]byt
 			return nil
 		}
 
-		secret := decoded.(*v1.Secret)
+		secret, ok := decoded.(*v1.Secret)
+		if !ok {
+			return nil
+		}
 
 		// sealed secrets require a namespace
 		if secret.Namespace == "" {
