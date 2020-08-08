@@ -17,6 +17,7 @@ import (
 	"github.com/replicatedhq/kots/kotsadm/pkg/persistence"
 	registrytypes "github.com/replicatedhq/kots/kotsadm/pkg/registry/types"
 	"github.com/replicatedhq/kots/kotsadm/pkg/render"
+	"github.com/replicatedhq/kots/kotsadm/pkg/secrets"
 	"github.com/replicatedhq/kots/kotsadm/pkg/version/types"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	velerov1 "github.com/vmware-tanzu/velero/pkg/apis/velero/v1"
@@ -191,6 +192,10 @@ backup_spec = EXCLUDED.backup_spec`
 	downstreams, err := downstream.ListDownstreamsForApp(appID)
 	if err != nil {
 		return int64(0), errors.Wrap(err, "failed to list downstreams")
+	}
+
+	if err := secrets.ReplaceSecretsInPath(filesInDir); err != nil {
+		return int64(0), errors.Wrap(err, "failed to replace secrets")
 	}
 
 	for _, d := range downstreams {
