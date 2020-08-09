@@ -21,7 +21,14 @@ export class HealthzStore {
     const query = `select count(1)`;
     await this.pool.query(query);
 
-    const storageReady = await bucketExists(this.params, this.params.shipOutputBucket);
+    let storageReady = false;
+
+    if (this.params.storageBaseURI.startsWith("docker://")) {
+      storageReady = true;  // TODO
+    } else {
+      storageReady = await bucketExists(this.params, this.params.shipOutputBucket);
+    }
+
     return {
       database: {
         connected: true,
