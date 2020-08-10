@@ -226,7 +226,7 @@ jobs:
       uses: actions/upload-artifact@v2
       with:
         name: kots.so
-        path: ./bin/kots.so
+        path: ./bin
 
 
   build_operator:
@@ -481,7 +481,7 @@ jobs:
       uses: actions/download-artifact@v2
       with:
         name: kots.so
-        path: ./bin/kots.so
+        path: ./bin
 
     - name: Build alpha release
       env:
