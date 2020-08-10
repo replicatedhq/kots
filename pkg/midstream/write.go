@@ -22,7 +22,6 @@ type WriteOptions struct {
 	MidstreamDir string
 	BaseDir      string
 	AppSlug      string
-	AppSequence  int64
 	IsGitOps     bool
 }
 

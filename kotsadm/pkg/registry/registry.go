@@ -179,11 +179,6 @@ func RewriteImages(appID string, sequence int64, hostname string, username strin
 		appNamespace = os.Getenv("KOTSADM_TARGET_NAMESPACE")
 	}
 
-	appSequence, err := version.GetNextAppSequence(a.ID, &a.CurrentSequence)
-	if err != nil {
-		return errors.Wrap(err, "failed to get new app sequence")
-	}
-
 	pipeReader, pipeWriter := io.Pipe()
 	go func() {
 		scanner := bufio.NewScanner(pipeReader)
@@ -214,7 +209,6 @@ func RewriteImages(appID string, sequence int64, hostname string, username strin
 		RegistryPassword:  password,
 		RegistryNamespace: namespace,
 		AppSlug:           a.Slug,
-		AppSequence:       appSequence,
 		IsGitOps:          a.IsGitOps,
 	}
 
