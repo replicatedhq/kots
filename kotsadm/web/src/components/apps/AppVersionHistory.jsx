@@ -121,7 +121,7 @@ class AppVersionHistory extends Component {
   }
 
   toggleDiffErrModal = (release) => {
-    this.setState({ 
+    this.setState({
       showDiffErrModal: !this.state.showDiffErrModal,
       releaseWithErr: !this.state.showDiffErrModal ? release : {}
     })
@@ -169,7 +169,7 @@ class AppVersionHistory extends Component {
       return (
         <div className="flex flex1 alignItems--center u-marginRight--10">
           <span className="u-fontSize--small u-fontWeight--medium u-lineHeight--normal u-color--dustyGray">Cannot generate diff <span className="replicated-link" onClick={() => this.toggleDiffErrModal(version)}>Why?</span></span>
-      </div>
+        </div>
       );
     } else {
       return (
@@ -982,6 +982,14 @@ class AppVersionHistory extends Component {
         <div className="flex-column flex1">
           <div className="flex flex1">
             <div className="flex1 flex-column alignItems--center">
+              {makingCurrentVersionErrMsg &&
+                <div className="ErrorWrapper flex justifyContent--center">
+                  <div className="icon redWarningIcon u-marginRight--10" />
+                  <div>
+                    <p className="title">Failed to deploy version</p>
+                    <p className="err">{makingCurrentVersionErrMsg}</p>
+                  </div>
+                </div>}
               {/* Active downstream */}
               {!gitopsEnabled && currentDownstreamVersion &&
                 <div className="TableDiff--Wrapper u-marginBottom--30">
@@ -1022,14 +1030,6 @@ class AppVersionHistory extends Component {
                 <div className={`flex-column flex1 ${showDiffOverlay ? "u-visibility--hidden" : ""}`}>
                   <div className="flex justifyContent--spaceBetween u-borderBottom--gray darker u-paddingBottom--10">
                     <p className="u-fontSize--larger u-fontWeight--bold u-color--tuna u-lineHeight--normal">All versions</p>
-                    {makingCurrentVersionErrMsg &&
-                      <div className="ErrorWrapper flex-auto flex alignItems--center">
-                        <div className="icon redWarningIcon u-marginRight--10" />
-                        <div>
-                          <p className="title">Failed to deploy version</p>
-                          <p className="err">{makingCurrentVersionErrMsg}</p>
-                        </div>
-                      </div>}
                     {versionHistory.length > 1 && this.renderDiffBtn()}
                   </div>
                   {/* Downstream version history */}
@@ -1234,7 +1234,7 @@ class AppVersionHistory extends Component {
             <button className="btn primary" onClick={this.hideDownstreamReleaseNotes}>Close</button>
           </div>
         </Modal>
- 
+
         <Modal
           isOpen={this.state.showDiffErrModal}
           onRequestClose={this.toggleDiffErrModal}

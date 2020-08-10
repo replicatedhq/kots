@@ -285,17 +285,12 @@ $cell-width: 140px;
 }
 
 .ErrorWrapper {
-  position: absolute;
-  left: 50%;
-  z-index: 300;
   padding: 15px 20px;
   box-shadow: 0 0 4px rgba(0,0,0,0.16);
   line-height: normal;
   border-radius: 4px;
-  transform: translateX(-50%);
   background-color: #FBECEA;
   color: #BC4752;
-  max-width: 400px;
 
   .title {
     font-size: 16px;

@@ -32,6 +32,7 @@ import AppSnapshotSchedule from "./AppSnapshotSchedule";
 import AppSnapshotDetail from "./AppSnapshotDetail";
 import AppSnapshotRestore from "./AppSnapshotRestore";
 import TroubleshootContainer from "../troubleshoot/TroubleshootContainer";
+import ErrorModal from "../modals/ErrorModal";
 
 import "../../scss/components/watches/WatchDetailPage.scss";
 
@@ -50,7 +51,9 @@ class AppDetailPage extends Component {
       loadingApp: true,
       getAppJob: new Repeater(),
       gettingAppErrMsg: "",
-      makingCurrentReleaseErrMsg: ""
+      makingCurrentReleaseErrMsg: "",
+      makingCurrentRelease: false,
+      displayErrorModal: false
     }
   }
 
@@ -102,20 +105,28 @@ class AppDetailPage extends Component {
   }
 
   makeCurrentRelease = async (upstreamSlug, version) => {
-    this.setState({ makingCurrentReleaseErrMsg: "" });
     try {
-      await fetch(`${window.env.API_ENDPOINT}/app/${upstreamSlug}/sequence/${version.sequence}/deploy`, {
+      this.setState({ makingCurrentReleaseErrMsg: "" });
+
+      const res = await fetch(`${window.env.API_ENDPOINT}/app/${upstreamSlug}/sequence/${version.sequence}/deploy`, {
         headers: {
           "Authorization": Utilities.getToken(),
           "Content-Type": "application/json",
         },
         method: "POST",
       });
-      this.refetchData();
-    } catch(err) {
+      if (res.ok && res.status === 204) {
+        this.setState({ makingCurrentReleaseErrMsg: "" });
+        this.refetchData();
+      } else {
+        this.setState({
+          makingCurrentReleaseErrMsg: `Unable to deploy release ${version.title}, sequence ${version.sequence}: Unexpected status code: ${res.status}`,
+        });
+      }
+    } catch (err) {
       console.log(err)
       this.setState({
-        makingCurrentReleaseErrMsg: err ? `Unable to deploy release ${version.title}, sequence ${version.sequence}: ${err.message}` : "Something went wrong, please try again."
+        makingCurrentReleaseErrMsg: err ? `Unable to deploy release ${version.title}, sequence ${version.sequence}: ${err.message}` : "Something went wrong, please try again.",
       });
     }
   }
@@ -134,7 +145,7 @@ class AppDetailPage extends Component {
     }
 
     try {
-      this.setState({ loadingApp: true, gettingAppErrMsg: "" });
+      this.setState({ loadingApp: true, gettingAppErrMsg: "", displayErrorModal: false });
 
       const res = await fetch(`${window.env.API_ENDPOINT}/apps/app/${slug}`, {
         headers: {
@@ -145,14 +156,18 @@ class AppDetailPage extends Component {
       });
       if (res.ok && res.status == 200) {
         const app = await res.json();
-        this.setState({ app, loadingApp: false, gettingAppErrMsg: "" });
+        this.setState({ app, loadingApp: false, gettingAppErrMsg: "", displayErrorModal: false });
       } else {
-        this.setState({ loadingApp: false, gettingAppErrMsg: `failed to get app, unexpected status code: ${res.status}` });
+        this.setState({ loadingApp: false, gettingAppErrMsg: `Unexpected status code: ${res.status}`, displayErrorModal: true });
       }
     } catch (err) {
       console.log(err)
-      this.setState({ loadingApp: false, gettingAppErrMsg: err ? err.message : "Something went wrong, please try again." });
+      this.setState({ loadingApp: false, gettingAppErrMsg: err ? err.message : "Something went wrong, please try again.", displayErrorModal: true });
     }
+  }
+
+  toggleErrorModal = () => {
+    this.setState({ displayErrorModal: !this.state.displayErrorModal });
   }
 
   /**
@@ -191,7 +206,6 @@ class AppDetailPage extends Component {
       this.checkForFirstApp();
       return;
     }
-
     this.getApp();
   }
 
@@ -229,14 +243,6 @@ class AppDetailPage extends Component {
       this.state.getAppJob.stop();
     }
 
-    if (gettingAppErrMsg) {
-      return (
-        <div class="flex1 flex-column justifyContent--center alignItems--center">
-          <span className="icon redWarningIcon" />
-          <p className="u-color--chestnut u-fontSize--normal u-fontWeight--medium u-lineHeight--normal u-marginTop--10">{gettingAppErrMsg}</p>
-        </div>
-      )
-    }
 
     return (
       <div className="WatchDetailPage--wrapper flex-column flex1 u-overflow--auto">
@@ -315,6 +321,9 @@ class AppDetailPage extends Component {
                         toggleIsBundleUploading={this.toggleIsBundleUploading}
                         isBundleUploading={isBundleUploading}
                         refreshAppData={this.getApp}
+                        displayErrorModal={this.state.displayErrorModal}
+                        toggleErrorModal={this.toggleErrorModal}
+                        makingCurrentRelease={this.state.makingCurrentRelease}
                       />
                     } />
                     <Route exact path="/app/:slug/downstreams/:downstreamSlug/version-history/preflight/:sequence" render={props => <PreflightResultPage logo={app.iconUri} {...props} />} />
@@ -396,6 +405,15 @@ class AppDetailPage extends Component {
             </div>
           </Modal>
         }
+        {gettingAppErrMsg &&
+          <ErrorModal
+            errorModal={this.state.displayErrorModal}
+            toggleErrorModal={this.toggleErrorModal}
+            errMsg={gettingAppErrMsg}
+            tryAgain={() => this.getApp(this.props.match.params.slug)}
+            err="Failed to get application"
+            loading={this.state.loadingApp}
+          />}
       </div>
     );
   }

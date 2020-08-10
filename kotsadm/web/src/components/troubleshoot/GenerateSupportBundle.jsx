@@ -7,6 +7,7 @@ import Loader from "../shared/Loader";
 import CodeSnippet from "@src/components/shared/CodeSnippet";
 import UploadSupportBundleModal from "../troubleshoot/UploadSupportBundleModal";
 import ConfigureRedactorsModal from "./ConfigureRedactorsModal";
+import ErrorModal from "../modals/ErrorModal";
 import { Utilities } from "../../utilities/utilities";
 import { Repeater } from "../../utilities/repeater";
 
@@ -30,7 +31,8 @@ class GenerateSupportBundle extends React.Component {
       loadingSupportBundles: false,
       supportBundles: [],
       listSupportBundlesJob: new Repeater(),
-      errorMsg: ""
+      errorMsg: "",
+      displayErrorModal: false
     };
   }
 
@@ -78,7 +80,7 @@ class GenerateSupportBundle extends React.Component {
 
   listSupportBundles = () => {
     return new Promise((resolve, reject) => {
-      this.setState({ loadingSupportBundles: true, errorMsg: "" });
+      this.setState({ loadingSupportBundles: true, errorMsg: "", displayErrorModal: false });
 
       fetch(`${window.env.API_ENDPOINT}/troubleshoot/app/${this.props.watch?.slug}/supportbundles`, {
         headers: {
@@ -89,21 +91,22 @@ class GenerateSupportBundle extends React.Component {
       })
         .then(async (res) => {
           if (!res.ok) {
-            this.setState({ loadingSupportBundles: false, errorMsg: `Unable to get list of bundles: Status ${res.status}` });
+            this.setState({ loadingSupportBundles: false, errorMsg: `Unexpected status code: ${res.status}`, displayErrorModal: true });
             return;
           }
           const response = await res.json();
           this.setState({
             supportBundles: response.supportBundles,
             loadingSupportBundles: false,
-            errorMsg: ""
+            errorMsg: "",
+            displayErrorModal: false
           });
 
           resolve();
         })
         .catch((err) => {
           console.log(err)
-          this.setState({ loadingSupportBundles: false, errorMsg: err ? `Unable to get list of bundles: ${err.message}` : "Something went wrong, please try again." });
+          this.setState({ loadingSupportBundles: false, errorMsg: err ? err.message : "Something went wrong, please try again.", displayErrorModal: true });
           reject(err);
         });
     });
@@ -182,6 +185,10 @@ class GenerateSupportBundle extends React.Component {
       });
   }
 
+  toggleErrorModal = () => {
+    this.setState({ displayErrorModal: !this.state.displayErrorModal });
+  }
+
   redirectOnNewBundle(currentBundles) {
     if (this.state.supportBundles?.length === currentBundles.length) {
       setTimeout(() => {
@@ -213,15 +220,6 @@ class GenerateSupportBundle extends React.Component {
     let command = selectedWatch?.bundleCommand || watch.bundleCommand;
     if (command) {
       command = command.replace("API_ADDRESS", window.location.origin);
-    }
-
-    if (errorMsg) {
-      return (
-        <div class="flex1 flex-column justifyContent--center alignItems--center">
-          <span className="icon redWarningIcon" />
-          <p className="u-color--chestnut u-fontSize--normal u-fontWeight--medium u-lineHeight--normal u-marginTop--10">{errorMsg}</p>
-        </div>
-      )
     }
 
     return (
@@ -301,6 +299,15 @@ class GenerateSupportBundle extends React.Component {
         {this.state.displayRedactorModal &&
           <ConfigureRedactorsModal onClose={this.toggleRedactorModal} />
         }
+        {errorMsg &&
+          <ErrorModal
+            errorModal={this.state.displayErrorModal}
+            toggleErrorModal={this.toggleErrorModal}
+            errMsg={errorMsg}
+            tryAgain={this.listSupportBundles}
+            err="Failed to get bundles"
+            loading={this.state.loadingSupportBundles}
+          />}
       </div >
     );
   }

@@ -7,6 +7,7 @@ import Loader from "../shared/Loader";
 import SupportBundleRow from "./SupportBundleRow";
 import GenerateSupportBundle from "./GenerateSupportBundle";
 import ConfigureRedactorsModal from "./ConfigureRedactorsModal";
+import ErrorModal from "../modals/ErrorModal";
 import { Utilities } from "../../utilities/utilities";
 
 import "../../scss/components/troubleshoot/SupportBundleList.scss";
@@ -18,6 +19,7 @@ class SupportBundleList extends React.Component {
     loading: false,
     errorMsg: "",
     displayRedactorModal: false,
+    displayErrorModal: false
   };
 
   componentDidMount() {
@@ -25,7 +27,7 @@ class SupportBundleList extends React.Component {
   }
 
   listSupportBundles = () => {
-    this.setState({ loading: true, errorMsg: "" });
+    this.setState({ loading: true, errorMsg: "", displayErrorModal: false });
 
     fetch(`${window.env.API_ENDPOINT}/troubleshoot/app/${this.props.watch?.slug}/supportbundles`, {
       headers: {
@@ -36,20 +38,33 @@ class SupportBundleList extends React.Component {
     })
       .then(async (res) => {
         if (!res.ok) {
-          this.setState({ loading: false, errorMsg: `Unable to get list of bundles: Status ${res.status}` });
+          this.setState({
+            loading: false,
+            errorMsg: `Unexpected status code: ${res.status}`,
+            displayErrorModal: true
+          });
           return
         }
         const response = await res.json();
         this.setState({
           supportBundles: response.supportBundles,
           loading: false,
-          errorMsg: ""
+          errorMsg: "",
+          displayErrorModal: false
         });
       })
       .catch((err) => {
         console.log(err);
-        this.setState({ loading: false, errorMsg: err ? `Unable to get list of bundles: ${err.message}` : "Something went wrong, please try again." });
+        this.setState({
+          loading: false,
+          errorMsg: err ? err.message : "Something went wrong, please try again.",
+          displayErrorModal: true
+        });
       });
+  }
+
+  toggleErrorModal = () => {
+    this.setState({ displayErrorModal: !this.state.displayErrorModal });
   }
 
   toggleRedactorModal = () => {
@@ -65,15 +80,6 @@ class SupportBundleList extends React.Component {
     const appTitle = watch.watchName || watch.name;
     const downstreams = watch.downstreams || [];
 
-    if (errorMsg) {
-      return (
-        <div class="flex1 flex-column justifyContent--center alignItems--center">
-          <span className="icon redWarningIcon" />
-          <p className="u-color--chestnut u-fontSize--normal u-fontWeight--medium u-lineHeight--normal u-marginTop--10">{errorMsg}</p>
-        </div>
-      )
-    }
-
     if (loading) {
       return (
         <div className="flex1 flex-column justifyContent--center alignItems--center">
@@ -86,7 +92,7 @@ class SupportBundleList extends React.Component {
     if (downstreams.length) {
       if (supportBundles?.length) {
         bundlesNode = (
-          supportBundles.sort((a, b) => new Date (b.createdAt) - new Date(a.createdAt)).map(bundle => (
+          supportBundles.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)).map(bundle => (
             <SupportBundleRow
               key={bundle.id}
               bundle={bundle}
@@ -148,9 +154,18 @@ class SupportBundleList extends React.Component {
             </div>
           </div>
         </div>
-        {this.state.displayRedactorModal && 
+        {this.state.displayRedactorModal &&
           <ConfigureRedactorsModal onClose={this.toggleRedactorModal} />
         }
+        {errorMsg &&
+          <ErrorModal
+            errorModal={this.state.displayErrorModal}
+            toggleErrorModal={this.toggleErrorModal}
+            errMsg={errorMsg}
+            tryAgain={this.listSupportBundles}
+            err="Failed to get bundles"
+            loading={this.state.loading}
+          />}
       </div>
     );
   }

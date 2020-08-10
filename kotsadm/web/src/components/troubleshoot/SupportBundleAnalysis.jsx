@@ -6,6 +6,7 @@ import Loader from "../shared/Loader";
 import AnalyzerInsights from "./AnalyzerInsights";
 import AnalyzerFileTree from "./AnalyzerFileTree";
 import AnalyzerRedactorReport from "./AnalyzerRedactorReport";
+import ErrorModal from "../modals/ErrorModal";
 import { Utilities } from "../../utilities/utilities";
 import "../../scss/components/troubleshoot/SupportBundleAnalysis.scss";
 import download from "downloadjs";
@@ -20,7 +21,8 @@ export class SupportBundleAnalysis extends React.Component {
       bundle: null,
       loading: false,
       downloadBundleErrMsg: "",
-      getSupportBundleErrMsg: ""
+      getSupportBundleErrMsg: "",
+      displayErrorModal: false
     };
   }
 
@@ -48,7 +50,7 @@ export class SupportBundleAnalysis extends React.Component {
   }
 
   getSupportBundle = async () => {
-    this.setState({ loading: true, getSupportBundleErrMsg: "" });
+    this.setState({ loading: true, getSupportBundleErrMsg: "", displayErrorModal: false });
 
     fetch(`${window.env.API_ENDPOINT}/troubleshoot/supportbundle/${this.props.match.params.bundleSlug}`, {
       headers: {
@@ -59,20 +61,33 @@ export class SupportBundleAnalysis extends React.Component {
     })
       .then(async (res) => {
         if (!res.ok) {
-          this.setState({ loading: false, getSupportBundleErrMsg: `Unable to get bundle: Status ${res.status}, please try again.` });
+          this.setState({
+            loading: false,
+            getSupportBundleErrMsg: `Unexpected status code: ${res.status}`,
+            displayErrorModal: true
+          });
           return;
         }
         const bundle = await res.json();
         this.setState({
           bundle: bundle,
           loading: false,
-          getSupportBundleErrMsg: ""
+          getSupportBundleErrMsg: "",
+          displayErrorModal: false
         });
       })
       .catch((err) => {
         console.log(err);
-        this.setState({ loading: false, getSupportBundleErrMsg: err ? `Unable to get bundle: ${err.message}` : "Something went wrong, please try again."});
+        this.setState({
+          loading: false,
+          getSupportBundleErrMsg: err ? err.message : "Something went wrong, please try again.",
+          displayErrorModal: true
+        });
       });
+  }
+
+  toggleErrorModal = () => {
+    this.setState({ displayErrorModal: !this.state.displayErrorModal });
   }
 
   toggleAnalysisAction = (active) => {
@@ -102,15 +117,6 @@ export class SupportBundleAnalysis extends React.Component {
       return (
         <div className="flex-column flex1 justifyContent--center alignItems--center">
           <Loader size="60" />
-        </div>
-      )
-    }
-
-    if (getSupportBundleErrMsg) {
-      return (
-        <div class="flex1 flex-column justifyContent--center alignItems--center">
-          <span className="icon redWarningIcon" />
-          <p className="u-color--chestnut u-fontSize--normal u-fontWeight--medium u-lineHeight--normal u-marginTop--10">{getSupportBundleErrMsg}</p>
         </div>
       )
     }
@@ -202,6 +208,15 @@ export class SupportBundleAnalysis extends React.Component {
             </div>
           }
         </div>
+        {getSupportBundleErrMsg &&
+          <ErrorModal
+            errorModal={this.state.displayErrorModal}
+            toggleErrorModal={this.toggleErrorModal}
+            errMsg={getSupportBundleErrMsg}
+            tryAgain={this.getSupportBundle}
+            err="Failed to get bundle"
+            loading={this.state.loading}
+          />}
       </div>
     );
   }
