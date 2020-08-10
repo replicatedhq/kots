@@ -46,6 +46,9 @@ func restoreJob(backupName string, namespace string, isOpenShift bool, kotsadmOp
 					}),
 				},
 				Spec: corev1.PodSpec{
+					Affinity: &corev1.Affinity{
+						NodeAffinity: defaultKotsNodeAffinity(),
+					},
 					SecurityContext:    &securityContext,
 					RestartPolicy:      corev1.RestartPolicyNever,
 					ServiceAccountName: "kotsadm",

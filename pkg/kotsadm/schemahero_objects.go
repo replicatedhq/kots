@@ -41,6 +41,9 @@ func migrationsPod(deployOptions types.DeployOptions) *corev1.Pod {
 			Labels:    types.GetKotsadmLabels(),
 		},
 		Spec: corev1.PodSpec{
+			Affinity: &corev1.Affinity{
+				NodeAffinity: defaultKotsNodeAffinity(),
+			},
 			SecurityContext:  &securityContext,
 			RestartPolicy:    corev1.RestartPolicyOnFailure,
 			ImagePullSecrets: pullSecrets,
