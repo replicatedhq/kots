@@ -105,7 +105,7 @@ class GitOpsDeploymentManager extends React.Component {
       return apps;
     } catch(err) {
       console.log(err);
-      throw error;
+      throw err;
     }
   }
 

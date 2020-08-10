@@ -159,7 +159,7 @@ class Root extends Component {
       });
       return apps;
     } catch(err) {
-      throw error;
+      throw err;
     }
   }
 
