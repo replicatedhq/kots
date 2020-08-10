@@ -523,7 +523,6 @@ jobs:
         path: ./bin/kots.so
 
     - name: Copy kots.so
-      env:
       run: |
         cp -f ./bin/kots.so kotsadm/api
 
