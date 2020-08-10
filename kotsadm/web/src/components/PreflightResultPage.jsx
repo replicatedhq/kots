@@ -25,8 +25,8 @@ class PreflightResultPage extends Component {
       this.props.data.stopPolling();
     }
 
-    if (this.props.fromLicenseFlow && this.props.refetchListApps) {
-      await this.props.refetchListApps();
+    if (this.props.fromLicenseFlow && this.props.refetchAppsList) {
+      await this.props.refetchAppsList();
     }
   }
 

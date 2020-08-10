@@ -92,6 +92,7 @@ func Start() {
 	r.Path("/license/v1/license").Methods("GET").HandlerFunc(handlers.NodeProxy(upstream))
 
 	// Apps
+	r.Path("/api/v1/apps").Methods("OPTIONS", "GET").HandlerFunc(handlers.ListApps)
 	r.Path("/api/v1/apps/app/{appSlug}").Methods("OPTIONS", "GET").HandlerFunc(handlers.GetApp)
 
 	// Airgap

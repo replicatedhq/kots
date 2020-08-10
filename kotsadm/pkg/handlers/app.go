@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/gorilla/mux"
+	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/kotsadm/pkg/app"
 	"github.com/replicatedhq/kots/kotsadm/pkg/downstream"
 	downstreamtypes "github.com/replicatedhq/kots/kotsadm/pkg/downstream/types"
@@ -14,7 +15,11 @@ import (
 	versiontypes "github.com/replicatedhq/kots/kotsadm/pkg/version/types"
 )
 
-type GetAppResponse struct {
+type ListAppsResponse struct {
+	Apps []ResponseApp `json:"apps"`
+}
+
+type ResponseApp struct {
 	ID                string     `json:"id"`
 	Slug              string     `json:"slug"`
 	Name              string     `json:"name"`
@@ -67,6 +72,45 @@ type ResponseCluster struct {
 	Slug string `json:"slug"`
 }
 
+func ListApps(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Headers", "content-type, origin, accept, authorization")
+
+	if r.Method == "OPTIONS" {
+		w.WriteHeader(http.StatusOK)
+		return
+	}
+
+	if err := requireValidSession(w, r); err != nil {
+		logger.Error(err)
+		return
+	}
+
+	apps, err := app.ListInstalled()
+	if err != nil {
+		logger.Error(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	responseApps := []ResponseApp{}
+	for _, a := range apps {
+		responseApp, err := responseAppFromApp(a)
+		if err != nil {
+			logger.Error(err)
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		responseApps = append(responseApps, *responseApp)
+	}
+
+	listAppsResponse := ListAppsResponse{
+		Apps: responseApps,
+	}
+
+	JSON(w, http.StatusOK, listAppsResponse)
+}
+
 func GetApp(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Access-Control-Allow-Headers", "content-type, origin, accept, authorization")
@@ -89,83 +133,72 @@ func GetApp(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	isGitOpsSupported, err := version.IsGitOpsSupported(a.ID, a.CurrentSequence)
+	responseApp, err := responseAppFromApp(a)
 	if err != nil {
 		logger.Error(err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
+	}
+
+	JSON(w, http.StatusOK, responseApp)
+}
+
+func responseAppFromApp(a *app.App) (*ResponseApp, error) {
+	isGitOpsSupported, err := version.IsGitOpsSupported(a.ID, a.CurrentSequence)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to check if gitops is supported")
 	}
 
 	allowRollback, err := version.IsAllowRollback(a.ID, a.CurrentSequence)
 	if err != nil {
-		logger.Error(err)
-		w.WriteHeader(http.StatusInternalServerError)
-		return
+		return nil, errors.Wrap(err, "failed to check if rollback is supported")
 	}
 
 	licenseType, err := version.GetLicenseType(a.ID, a.CurrentSequence)
 	if err != nil {
-		logger.Error(err)
-		w.WriteHeader(http.StatusInternalServerError)
-		return
+		return nil, errors.Wrap(err, "failed to get license type")
 	}
 
 	currentVersion, err := version.Get(a.ID, a.CurrentSequence)
 	if err != nil {
-		logger.Error(err)
-		w.WriteHeader(http.StatusInternalServerError)
-		return
+		return nil, errors.Wrap(err, "failed to get app version")
 	}
 
 	downstreams, err := downstream.ListDownstreamsForApp(a.ID)
 	if err != nil {
-		logger.Error(err)
-		w.WriteHeader(http.StatusInternalServerError)
-		return
+		return nil, errors.Wrap(err, "failed to list downstreams for app")
 	}
 
 	responseDownstreams := []ResponseDownstream{}
 	for _, d := range downstreams {
 		parentSequence, err := downstream.GetCurrentParentSequence(a.ID, d.ClusterID)
 		if err != nil {
-			logger.Error(err)
-			w.WriteHeader(http.StatusInternalServerError)
-			return
+			return nil, errors.Wrap(err, "failed to get current parent sequence for downstream")
 		}
 
 		links, err := version.GetRealizedLinksFromAppSpec(a.ID, parentSequence)
 		if err != nil {
-			logger.Error(err)
-			w.WriteHeader(http.StatusInternalServerError)
-			return
+			return nil, errors.Wrap(err, "failed to get realized links from app spec")
 		}
 
 		currentVersion, err := downstream.GetCurrentVersion(a.ID, d.ClusterID)
 		if err != nil {
-			logger.Error(err)
-			w.WriteHeader(http.StatusInternalServerError)
-			return
+			return nil, errors.Wrap(err, "failed to get current downstream version")
 		}
 
 		pendingVersions, err := downstream.GetPendingVersions(a.ID, d.ClusterID)
 		if err != nil {
-			logger.Error(err)
-			w.WriteHeader(http.StatusInternalServerError)
-			return
+			return nil, errors.Wrap(err, "failed to get pending versions")
 		}
 
 		pastVersions, err := downstream.GetPastVersions(a.ID, d.ClusterID)
 		if err != nil {
-			logger.Error(err)
-			w.WriteHeader(http.StatusInternalServerError)
-			return
+			return nil, errors.Wrap(err, "failed to get past versions")
 		}
 
 		downstreamGitOps, err := gitops.GetDownstreamGitOps(a.ID, d.ClusterID)
 		if err != nil {
-			logger.Error(err)
-			w.WriteHeader(http.StatusInternalServerError)
-			return
+			return nil, errors.Wrap(err, "failed to get downstream gitops")
 		}
 		responseGitOps := ResponseGitOps{}
 		if downstreamGitOps != nil {
@@ -206,21 +239,17 @@ func GetApp(w http.ResponseWriter, r *http.Request) {
 	if len(downstreams) > 0 {
 		parentSequence, err := downstream.GetCurrentParentSequence(a.ID, downstreams[0].ClusterID)
 		if err != nil {
-			logger.Error(err)
-			w.WriteHeader(http.StatusInternalServerError)
-			return
+			return nil, errors.Wrap(err, "failed to get current parent sequence for downstream")
 		}
 
 		s, err := version.IsAllowSnapshots(a.ID, parentSequence)
 		if err != nil {
-			logger.Error(err)
-			w.WriteHeader(http.StatusInternalServerError)
-			return
+			return nil, errors.Wrap(err, "failed to check if snapshots is allowed")
 		}
 		allowSnapshots = s
 	}
 
-	getAppResponse := GetAppResponse{
+	responseApp := ResponseApp{
 		ID:                a.ID,
 		Slug:              a.Slug,
 		Name:              a.Name,
@@ -243,5 +272,5 @@ func GetApp(w http.ResponseWriter, r *http.Request) {
 		Downstreams:       responseDownstreams,
 	}
 
-	JSON(w, http.StatusOK, getAppResponse)
+	return &responseApp, nil
 }

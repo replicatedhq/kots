@@ -159,8 +159,8 @@ class AppConfig extends Component {
           if (hasPreflight) {
             history.replace("/preflight");
           } else {
-            if (this.props.refetchListApps) {
-              await this.props.refetchListApps();
+            if (this.props.refetchAppsList) {
+              await this.props.refetchAppsList();
             }
             history.replace(`/app/${slug}`);
           }
