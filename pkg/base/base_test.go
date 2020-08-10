@@ -87,23 +87,34 @@ spec:
         - name: pi
           image: perl
           command: ["perl",  "-Mbignum=bpi", "-wle", "print bpi(2000)"]
-          restartPolicy: Never
-          backoffLimit: 4`,
+      restartPolicy: Never
+  backoffLimit: 4`,
 			expected: `apiVersion: batch/v1
 kind: Job
 metadata:
-  name: pi
   annotations:
-    "helm.sh/hook-delete-policy": "hook-succeeded"
+    helm.sh/hook-delete-policy: hook-succeeded
+    kots.io/hook-delete-policy: hook-succeeded
+  creationTimestamp: null
+  name: pi
 spec:
+  backoffLimit: 4
   template:
+    metadata:
+      creationTimestamp: null
     spec:
       containers:
-        - name: pi
-          image: perl
-          command: ["perl",  "-Mbignum=bpi", "-wle", "print bpi(2000)"]
-          restartPolicy: Never
-          backoffLimit: 4`,
+      - command:
+        - perl
+        - -Mbignum=bpi
+        - -wle
+        - print bpi(2000)
+        image: perl
+        name: pi
+        resources: {}
+      restartPolicy: Never
+status: {}
+`,
 		},
 	}
 
