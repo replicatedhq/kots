@@ -345,6 +345,9 @@ func apiDeployment(deployOptions types.DeployOptions) *appsv1.Deployment {
 					}),
 				},
 				Spec: corev1.PodSpec{
+					Affinity: &corev1.Affinity{
+						NodeAffinity: defaultKotsNodeAffinity(),
+					},
 					SecurityContext:    &securityContext,
 					ServiceAccountName: "kotsadm-api",
 					RestartPolicy:      corev1.RestartPolicyAlways,
