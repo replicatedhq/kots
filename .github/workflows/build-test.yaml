@@ -110,19 +110,38 @@ jobs:
         run: npm i -g @testim/testim-cli
         shell: bash
 
-      - name: prepare kotsadm-smoke-test
+      ## testim tests
+
+      - name: prepare cluster-admin online install
         run: |
           ./bin/kots \
-          install qakots/github-actions \
+          install cluster-admin/automated \
           --port-forward=false \
-          --namespace kotsadm-smoke-test \
+          --namespace cluster-admin \
           --shared-password password \
           --kotsadm-registry ttl.sh \
           --kotsadm-namespace automated-${{ github.run_id }} \
           --kotsadm-tag 2h 
-      - name: execute kotsadm-smoke-test
+      - name: execute suite alpha
         run: |
-          ./bin/kots admin-console -n kotsadm-smoke-test &
+          ./bin/kots admin-console -n cluster-admin &
           ADMIN_CONSOLE_PID=$!
-          testim --token ${{ secrets.TESTIM_ACCESS_TOKEN }} --project ${{ secrets.TESTIM_PROJECT_ID }} --grid "Testim-grid" --report-file testim-report.xml --label kotsadm-smoke-test --tunnel --tunnel-port 8800
-          kill $ADMIN_CONSOLE_PID
+          testim --token ${{ secrets.TESTIM_ACCESS_TOKEN }} --project ${{ secrets.TESTIM_PROJECT_ID }} --grid "Testim-grid" --report-file testim-report.xml --suite alpha --tunnel --tunnel-port 8800
+          kill $ADMIN_CONSOLE_PID  
+
+      - name: prepare minimal-rbac online install
+        run: |
+          ./bin/kots \
+          install minimal-rbac/automated \
+          --port-forward=false \
+          --namespace minimal-rbac \
+          --shared-password password \
+          --kotsadm-registry ttl.sh \
+          --kotsadm-namespace automated-${{ github.run_id }} \
+          --kotsadm-tag 2h 
+      - name: execute suite bravo
+        run: |
+          ./bin/kots admin-console -n minimal-rbac &
+          ADMIN_CONSOLE_PID=$!
+          testim --token ${{ secrets.TESTIM_ACCESS_TOKEN }} --project ${{ secrets.TESTIM_PROJECT_ID }} --grid "Testim-grid" --report-file testim-report.xml --suite bravo --tunnel --tunnel-port 8800
+          kill $ADMIN_CONSOLE_PID          
