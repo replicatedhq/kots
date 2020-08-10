@@ -292,17 +292,9 @@ class Root extends Component {
                   listApps={listApps}
                   onLogoutError={this.onLogoutError}
                   isSnapshotsSupported={this.isSnapshotsSupported()}
+                  errLoggingOut={errLoggingOut}
                 />
                 <div className="flex1 flex-column u-overflow--auto">
-                  {errLoggingOut && errLoggingOut.length > 0 &&
-                    <div className="ErrorWrapper flex-auto flex alignItems--center">
-                      <div className="icon redWarningIcon u-marginRight--10" />
-                      <div>
-                        <p className="title">Failed to log out</p>
-                        <p className="err">{errLoggingOut}</p>
-                      </div>
-                    </div>
-                  }
                   <Switch>
 
                     <Route exact path="/" component={() => <Redirect to={Utilities.isLoggedIn() ? "/apps" : "/secure-console"} />} />

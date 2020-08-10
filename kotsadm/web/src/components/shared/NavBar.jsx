@@ -7,15 +7,19 @@ import { compose, withApollo } from "react-apollo";
 import { Utilities } from "@src/utilities/utilities";
 import { listClusters } from "@src/queries/ClusterQueries";
 import Avatar from "../shared/Avatar";
+import ErrorModal from "../modals/ErrorModal";
 
 import "@src/scss/components/shared/NavBar.scss";
+import toJson from "enzyme-to-json";
 
 export class NavBar extends PureComponent {
   constructor(props) {
     super(props);
 
     this.state = {
-      selectedTab: ""
+      selectedTab: "",
+      loggingOut: false,
+      displayErrorModal: false
     };
   }
 
@@ -28,6 +32,7 @@ export class NavBar extends PureComponent {
     const { onLogoutError } = this.props;
     e.preventDefault();
     try {
+      this.setState({ loggingOut: true, displayErrorModal: false })
       const res = await fetch(`${window.env.API_ENDPOINT}/logout`, {
         headers: {
           "Authorization": Utilities.getToken(),
@@ -36,15 +41,22 @@ export class NavBar extends PureComponent {
         method: "POST",
       });
       if (!res.ok) {
-        onLogoutError(`Encountered an error while trying to log out: Status ${res.status}`);
+        this.setState({ loggingOut: false, displayErrorModal: true });
+        onLogoutError(`Unexpected status code: ${res.status}`);
       }
       if (res.ok && res.status === 204) {
+        this.setState({ loggingOut: false, displayErrorModal: false  });
         Utilities.logoutUser();
       }
     } catch(err) {
       console.log(err)
-      onLogoutError(err ? `Encountered an error while trying to log out: ${err.message}` : "Something went wrong, please try again.")
+      this.setState({ loggingOut: false, displayErrorModal: true  });
+      onLogoutError(err ? err.message : "Something went wrong, please try again.")
     }
+  }
+
+  toggleErrorModal = () => {
+    this.setState({ displayErrorModal: !this.state.displayErrorModal });
   }
 
   componentDidUpdate(lastProps) {
@@ -202,6 +214,15 @@ export class NavBar extends PureComponent {
             </div>
           </div>
         </div>
+        {this.props.errLoggingOut && this.props.errLoggingOut.length > 0 &&
+          <ErrorModal
+            errorModal={this.state.displayErrorModal}
+            toggleErrorModal={this.toggleErrorModal}
+            errMsg={this.props.errLoggingOut}
+            tryAgain={this.handleLogOut}
+            err="Failed to log out"
+            loading={this.state.loggingOut}
+          />}
       </div>
     );
   }
