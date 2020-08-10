@@ -140,14 +140,14 @@ class AppDetailPage extends Component {
   }
 
   getApp = async (slug = this.props.match.params.slug) => {
-    if (!this.props.match.params.slug) {
+    if (!slug) {
       return;
     }
 
     try {
       this.setState({ loadingApp: true, gettingAppErrMsg: "", displayErrorModal: false });
 
-      const res = await fetch(`${window.env.API_ENDPOINT}/apps/app/${this.props.match.params.slug}`, {
+      const res = await fetch(`${window.env.API_ENDPOINT}/apps/app/${slug}`, {
         headers: {
           "Authorization": Utilities.getToken(),
           "Content-Type": "application/json",
@@ -410,7 +410,7 @@ class AppDetailPage extends Component {
             errorModal={this.state.displayErrorModal}
             toggleErrorModal={this.toggleErrorModal}
             errMsg={gettingAppErrMsg}
-            tryAgain={this.getApp}
+            tryAgain={() => this.getApp(this.props.match.params.slug)}
             err="Failed to get application"
             loading={this.state.loadingApp}
           />}
