@@ -70,6 +70,10 @@ class GitOpsDeploymentManager extends React.Component {
     appsList: [],
   }
 
+  componentDidMount() {
+    this.getAppsList();
+  }
+
   componentDidUpdate(lastProps) {
     const { getGitOpsRepoQuery } = this.props;
     if (getGitOpsRepoQuery?.getGitOpsRepo && getGitOpsRepoQuery.getGitOpsRepo !== lastProps.getGitOpsRepoQuery?.getGitOpsRepo) {
