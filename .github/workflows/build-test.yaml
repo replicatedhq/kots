@@ -27,6 +27,8 @@ jobs:
           name: kots
           path: bin/kots
 
+      - run: make ffi
+      - run: cp ./bin/kots.so kotsadm/api
       - run: make -C kotsadm kotsadm
       - run: make -C kotsadm/operator build
       - run: make -C kotsadm/kurl_proxy build

@@ -199,6 +199,36 @@ jobs:
         path: ./kotsadm/web/dist
 
 
+  build_ffi:
+    runs-on: ubuntu-18.04
+    needs: [build-schema-migrations]
+    container:
+      image: replicated/gitops-builder:buildkite-go14-node10
+      options: --user root
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+
+    - name: Get the version
+      if: startsWith(github.ref, 'refs/tags/')
+      id: get_tag
+      shell: bash
+      run: echo ::set-output name=GIT_TAG::${GITHUB_REF/refs\/tags\//}
+
+    - name: Build kots.so
+      env:
+        GIT_COMMIT: ${{ github.sha }}
+        GIT_TAG: ${{ steps.get_tag.outputs.GIT_TAG }}
+        SCOPE_DSN_PUBLIC: ""
+      run: SCOPE_DSN=$SCOPE_DSN_PUBLIC make ffi
+
+    - name: Upload kots.so bin artifact
+      uses: actions/upload-artifact@v2
+      with:
+        name: kots.so
+        path: ./bin/kots.so
+
+
   build_operator:
     runs-on: ubuntu-18.04
     needs: [build-schema-migrations]
@@ -432,7 +462,7 @@ jobs:
   release_typescript_api_alpha:
     runs-on: ubuntu-18.04
     if: ${{ github.ref == 'refs/heads/master' }}
-    needs: [build_typescript_api]
+    needs: [build_typescript_api, build_ffi]
     steps:
     - name: Checkout
       uses: actions/checkout@v2
@@ -447,16 +477,23 @@ jobs:
       with:
         node-version: '10'
 
+    - name: Download kots.so artifact
+      uses: actions/download-artifact@v2
+      with:
+        name: kots.so
+        path: ./bin/kots.so
+
     - name: Build alpha release
       env:
         GIT_COMMIT: ${{ github.sha }}
       run: |
+        cp ./bin/kots.so kotsadm/api
         make -C kotsadm/api build-alpha
 
 
   release_typescript_api_tagged:
     runs-on: ubuntu-18.04
-    needs: [build_typescript_api]
+    needs: [build_typescript_api, build_ffi]
     steps:
     - name: Checkout
       uses: actions/checkout@v2
@@ -478,6 +515,17 @@ jobs:
       id: get_tag
       shell: bash
       run: echo ::set-output name=GIT_TAG::${GITHUB_REF/refs\/tags\//}
+
+    - name: Download kots.so artifact
+      uses: actions/download-artifact@v2
+      with:
+        name: kots.so
+        path: ./bin/kots.so
+
+    - name: Copy kots.so
+      env:
+      run: |
+        cp -f ./bin/kots.so kotsadm/api
 
     - name: Build tagged release
       if: ${{ steps.get_tag.outputs.GIT_TAG != '' }}

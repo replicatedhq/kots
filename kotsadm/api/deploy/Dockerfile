@@ -23,11 +23,7 @@ RUN curl -L "https://github.com/kubernetes-sigs/kustomize/releases/download/kust
   chmod a+x kustomize && \
   mv kustomize "/usr/local/bin/kustomize3.5.4"
 
-# Install kots.so
-RUN curl -L "https://github.com/replicatedhq/kots/releases/download/v1.16.1/kots.so_linux_amd64.tar.gz" > /tmp/kots.tar.gz  && \
-  cd /tmp && tar xzvf kots.tar.gz && \
-  mv /tmp/kots.so /lib/kots.so && \
-  rm -rf /tmp/*
+ADD ./kots.so /lib/kots.so
 
 # Install troubleshoot.so
 RUN curl -L "https://github.com/replicatedhq/troubleshoot/releases/download/v0.9.38/troubleshoot.so_linux_amd64.tar.gz" > /tmp/troubleshoot.tar.gz && \

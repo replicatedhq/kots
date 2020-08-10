@@ -23,22 +23,6 @@ builds:
     flags: -tags netgo -tags containers_image_ostree_stub -tags exclude_graphdriver_devicemapper -tags exclude_graphdriver_btrfs -tags containers_image_openpgp -installsuffix netgo
     binary: kots
     hooks: {}
-  - id: so
-    goos:
-    - linux
-    goarch:
-    - amd64
-    env:
-      - CGO_ENABLED=1
-      - GO111MODULE=on
-    main: ./ffi
-    ldflags: -s -w
-      -X github.com/replicatedhq/kots/pkg/version.version={{.Version}}
-      -X github.com/replicatedhq/kots/pkg/version.gitSHA={{.FullCommit}}
-      -X github.com/replicatedhq/kots/pkg/version.buildTime={{.Date}}
-    flags: -buildmode=c-shared
-    binary: kots.so
-    hooks: {}
 
 archives:
   - id: kots
@@ -48,20 +32,6 @@ archives:
     format_overrides:
       - goos: windows
         format: zip
-    name_template: '{{ .Binary }}_{{ .Os }}_{{ .Arch }}'
-    files:
-      - licence*
-      - LICENCE*
-      - license*
-      - LICENSE*
-      - readme*
-      - README*
-      - changelog*
-      - CHANGELOG*
-  - id: kots.so
-    builds:
-      - so
-    format: tar.gz
     name_template: '{{ .Binary }}_{{ .Os }}_{{ .Arch }}'
     files:
       - licence*
