@@ -520,7 +520,7 @@ jobs:
       uses: actions/download-artifact@v2
       with:
         name: kots.so
-        path: ./bin/kots.so
+        path: ./bin
 
     - name: Copy kots.so
       run: |
