@@ -67,6 +67,9 @@ func replaceSecretsWithSealedSecrets(archivePath string, config map[string][]byt
 			return errors.Wrap(err, "failed to create sealedsecret")
 		}
 
+		sealedSecret.APIVersion = "bitnami.com/v1alpha1"
+		sealedSecret.Kind = "SealedSecret"
+
 		s := jsonserializer.NewYAMLSerializer(jsonserializer.DefaultMetaFactory, scheme.Scheme, scheme.Scheme)
 
 		var b bytes.Buffer
