@@ -103,7 +103,7 @@ func (e ParseError) Error() string {
 // ShouldBeIncludedInBaseKustomization attempts to determine if this is a valid Kubernetes manifest.
 // It accomplished this by trying to unmarshal the YAML and looking for a apiVersion and Kind
 func (f BaseFile) ShouldBeIncludedInBaseKustomization(excludeKotsKinds bool) (bool, error) {
-	m := map[string]interface{}{}
+	var m interface{}
 
 	if err := yaml.Unmarshal(f.Content, &m); err != nil {
 		// check if this is a yaml file
@@ -120,7 +120,7 @@ func (f BaseFile) ShouldBeIncludedInBaseKustomization(excludeKotsKinds bool) (bo
 	if o.APIVersion == "" || o.Kind == "" {
 		if ext := filepath.Ext(f.Path); ext == ".yaml" || ext == ".yml" {
 			// ignore empty files and files with only comments
-			if len(m) == 0 {
+			if m == nil {
 				return false, nil
 			}
 			return false, ParseError{Err: errors.New("not a kubernetes document")}
