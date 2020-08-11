@@ -452,6 +452,12 @@ func TestBaseFile_IsKotsKind(t *testing.T) {
 			wantErr: true,
 		},
 		{
+			name:    "invalid yaml",
+			content: "kind: {{",
+			want:    false,
+			wantErr: true,
+		},
+		{
 			name:    "invalid k8s",
 			content: "kind: blah",
 			want:    false,
