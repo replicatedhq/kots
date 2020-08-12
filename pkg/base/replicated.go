@@ -243,12 +243,14 @@ func renderReplicated(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (
 
 		if kotsHelmChart.Spec.Namespace != "" {
 			base.Bases = append(base.Bases, Base{
-				Path:      filepath.Join("charts", kotsHelmChart.Name),
-				Namespace: kotsHelmChart.Spec.Namespace,
-				Files:     helmBaseFiles,
+				Path:       filepath.Join("charts", kotsHelmChart.Name),
+				Namespace:  kotsHelmChart.Spec.Namespace,
+				Files:      helmBaseFiles,
+				ErrorFiles: helmBaseYAMLErrorFiles,
 			})
 		} else {
 			base.Files = append(base.Files, helmBaseFiles...)
+			base.ErrorFiles = append(base.ErrorFiles, helmBaseYAMLErrorFiles...)
 		}
 	}
 

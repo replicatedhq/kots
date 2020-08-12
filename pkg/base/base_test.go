@@ -431,3 +431,65 @@ spec:
 		})
 	}
 }
+
+func TestBaseFile_IsKotsKind(t *testing.T) {
+	tests := []struct {
+		name    string
+		content string
+		want    bool
+		wantErr bool
+	}{
+		{
+			name:    "empty",
+			content: "",
+			want:    false,
+			wantErr: false,
+		},
+		{
+			name:    "scalar",
+			content: `"test"`,
+			want:    false,
+			wantErr: true,
+		},
+		{
+			name:    "invalid yaml",
+			content: "kind: {{",
+			want:    false,
+			wantErr: true,
+		},
+		{
+			name:    "invalid k8s",
+			content: "kind: blah",
+			want:    false,
+			wantErr: true,
+		},
+		{
+			name:    "valid k8s",
+			content: "apiVersion: v1\nkind: blah\n",
+			want:    false,
+			wantErr: false,
+		},
+		{
+			name:    "kots kind",
+			content: "apiVersion: kots.io/v1beta1\nkind: blah\n",
+			want:    true,
+			wantErr: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			f := BaseFile{
+				Path:    "test.yaml",
+				Content: []byte(tt.content),
+			}
+			got, err := f.IsKotsKind()
+			if (err != nil) != tt.wantErr {
+				t.Errorf("BaseFile.IsKotsKind() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if got != tt.want {
+				t.Errorf("BaseFile.IsKotsKind() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
