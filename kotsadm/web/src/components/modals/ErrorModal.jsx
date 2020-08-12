@@ -21,15 +21,17 @@ export default function ErrorModal(props) {
               <p className="u-color--chestnut u-fontSize--normal u-fontWeight--bold u-lineHeight--normal">{err}</p>
               <p className="u-color--chestnut u-fontSize--normal u-fontWeight--medium u-lineHeight--normal">{errMsg}</p>
             </div>
-            <div className="flex-auto u-marginLeft--20">
-              <button
-                className="btn primary blue"
-                onClick={tryAgain}
-                disabled={loading}
-              >
-                {loading ? "Trying..." : "Try again"}
-              </button>
-            </div>
+            {tryAgain && typeof tryAgain === "function" &&
+              <div className="flex-auto u-marginLeft--20">
+                <button
+                  className="btn primary blue"
+                  onClick={tryAgain}
+                  disabled={loading}
+                >
+                  {loading ? "Trying..." : "Try again"}
+                </button>
+              </div>
+            }
           </div>
         </div>
       </div>
