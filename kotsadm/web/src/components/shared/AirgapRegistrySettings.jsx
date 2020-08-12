@@ -1,12 +1,13 @@
 import React, { Component } from "react";
 import { withRouter } from "react-router-dom";
-import { graphql, compose, withApollo } from "react-apollo";
-import Loader from "../shared/Loader";
-import { getImageRewriteStatus } from "../../queries/AppsQueries";
-import { Repeater } from "../../utilities/repeater";
+import { compose, withApollo } from "react-apollo";
 import get from "lodash/get";
+
+import Loader from "../shared/Loader";
+import ErrorModal from "../modals/ErrorModal";
 import "../../scss/components/watches/WatchDetailPage.scss";
 import { Utilities } from "../../utilities/utilities";
+import { Repeater } from "../../utilities/repeater";
 
 class AirgapRegistrySettings extends Component {
 
@@ -36,7 +37,8 @@ class AirgapRegistrySettings extends Component {
       updateChecker: new Repeater(),
       rewriteStatus: "",
       rewriteMessage: "",
-      fetchRegistryErrMsg: ""
+      fetchRegistryErrMsg: "",
+      displayErrorModal: false
     }
   }
 
@@ -165,7 +167,7 @@ class AirgapRegistrySettings extends Component {
       return;
     }
 
-    this.setState({ loading: true, fetchRegistryErrMsg: "" });
+    this.setState({ loading: true, fetchRegistryErrMsg: "", displayErrorModal: false });
 
     let url = `${window.env.API_ENDPOINT}/registry`;
     if (this.props.app) {
@@ -187,7 +189,8 @@ class AirgapRegistrySettings extends Component {
             password: result.password,
             namespace: result.namespace,
             loading: false,
-            fetchRegistryErrMsg: ""
+            fetchRegistryErrMsg: "",
+            displayErrorModal: false
           });
 
           if (this.props.gatherDetails) {
@@ -196,13 +199,17 @@ class AirgapRegistrySettings extends Component {
           }
 
         } else {
-          this.setState({ loading: false, fetchRegistryErrMsg: "Unable to get registry info, please try again." });
+          this.setState({ loading: false, fetchRegistryErrMsg: "Unable to get registry info, please try again.", displayErrorModal: true });
         }
       })
       .catch(err => {
         console.log(err);
-        this.setState({ loading: false, fetchRegistryErrMsg: err ? `Unable to get registry info: ${err.message}` : "Something went wrong, please try again." });
+        this.setState({ loading: false, fetchRegistryErrMsg: err ? `Unable to get registry info: ${err.message}` : "Something went wrong, please try again.", displayErrorModal: true });
       })
+  }
+
+  toggleErrorModal = () => {
+    this.setState({ displayErrorModal: !this.state.displayErrorModal });
   }
 
   triggerStatusUpdates = () => {
@@ -282,15 +289,6 @@ class AirgapRegistrySettings extends Component {
           <Loader size="60" />
         </div>
       );
-    }
-
-    if (this.state.fetchRegistryErrMsg) {
-      return (
-        <div class="flex1 flex-column justifyContent--center alignItems--center">
-          <span className="icon redWarningIcon" />
-          <p className="u-color--chestnut u-fontSize--normal u-fontWeight--medium u-lineHeight--normal u-marginTop--10">{this.state.fetchRegistryErrMsg}</p>
-        </div>
-      )
     }
 
     const namespaceSubtext = namespaceDescription || "Changing the namespace will rewrite all of your airgap images and push them to your registry."
@@ -376,6 +374,15 @@ class AirgapRegistrySettings extends Component {
             </div>
           </div>
         }
+        {this.state.fetchRegistryErrMsg &&
+          <ErrorModal
+            errorModal={this.state.displayErrorModal}
+            toggleErrorModal={this.toggleErrorModal}
+            errMsg={this.state.fetchRegistryErrMsg}
+            tryAgain={this.fetchRegistryInfo}
+            err="Failed to get registry info"
+            loading={this.state.loading}
+          />}
       </div>
     )
   }
