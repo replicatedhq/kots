@@ -475,7 +475,7 @@ func parseTTL(s string) (*snapshottypes.ParsedTTL, error) {
 		return nil, errors.Wrapf(err, "invalid snapshot TTl %v", s)
 	}
 
-	matches := FindStringSubmatch(s)
+	matches := ttlMatch.FindStringSubmatch(s)
 	if len(matches) < 2 {
 		return nil, errors.Wrap(err, "failed to get a valid match")
 	}
