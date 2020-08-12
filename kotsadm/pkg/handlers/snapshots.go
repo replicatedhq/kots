@@ -430,7 +430,7 @@ func GetSnapshotConfig(w http.ResponseWriter, r *http.Request) {
 	foundApp, err := app.GetFromSlug(appSlug)
 	if err != nil {
 		logger.Error(err)
-		w.WriteHeader(500)
+		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
@@ -439,7 +439,7 @@ func GetSnapshotConfig(w http.ResponseWriter, r *http.Request) {
 		parsedTTL, err := parseTTL(foundApp.SnapshotTTL)
 		if err != nil {
 			logger.Error(err)
-			w.WriteHeader(500)
+			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
 
