@@ -5,7 +5,7 @@ import classNames from "classnames";
 import Loader from "../shared/Loader";
 import { withRouter, Link } from "react-router-dom";
 import { graphql, compose, withApollo } from "react-apollo";
-import { listApps, getGitOpsRepo } from "@src/queries/AppsQueries";
+import { getGitOpsRepo } from "@src/queries/AppsQueries";
 import GitOpsFlowIllustration from "./GitOpsFlowIllustration";
 import GitOpsRepoDetails from "./GitOpsRepoDetails";
 import { createGitOpsRepo, updateGitOpsRepo } from "@src/mutations/AppsMutations";
@@ -67,6 +67,11 @@ class GitOpsDeploymentManager extends React.Component {
     selectedService: SERVICES[0],
     providerError: null,
     finishingSetup: false,
+    appsList: [],
+  }
+
+  componentDidMount() {
+    this.getAppsList();
   }
 
   componentDidUpdate(lastProps) {
@@ -83,9 +88,33 @@ class GitOpsDeploymentManager extends React.Component {
     }
   }
 
+  getAppsList = async () => {
+    try {
+      const res = await fetch(`${window.env.API_ENDPOINT}/apps`, {
+        headers: {
+          "Authorization": Utilities.getToken(),
+          "Content-Type": "application/json",
+        },
+        method: "GET",
+      });
+      if (!res.ok) {
+        console.log("failed to get apps list, unexpected status code", res.status);
+        return;
+      }
+      const response = await res.json();
+      const apps = response.apps;
+      this.setState({
+        appsList: apps,
+      });
+      return apps;
+    } catch(err) {
+      console.log(err);
+      throw err;
+    }
+  }
+
   isSingleApp = () => {
-    const kotsApps = this.props.listAppsQuery.listApps?.kotsApps;
-    return kotsApps?.length === 1;
+    return this.state.appsList?.length === 1;
   }
 
   providerChanged = () => {
@@ -156,9 +185,7 @@ class GitOpsDeploymentManager extends React.Component {
       }
 
       if (this.isSingleApp()) {
-        const { listAppsQuery } = this.props;
-        const kotsApps = listAppsQuery.listApps?.kotsApps;
-        const app = kotsApps[0];
+        const app = this.state.appsList[0];
         const downstream = app.downstreams[0];
         const clusterId = downstream?.cluster?.id;
 
@@ -170,7 +197,7 @@ class GitOpsDeploymentManager extends React.Component {
         this.props.history.push(`/app/${app.slug}/gitops`);
       } else {
         this.setState({ step: "", finishingSetup: false });
-        this.props.listAppsQuery.refetch();
+        this.getAppsList();
         this.props.getGitOpsRepoQuery.refetch();
       }
 
@@ -442,11 +469,9 @@ class GitOpsDeploymentManager extends React.Component {
   }
 
   renderApps = () => {
-    const { listAppsQuery } = this.props;
-    const kotsApps = listAppsQuery.listApps?.kotsApps;
     return (
       <div>
-        {kotsApps.map(app => {
+        {this.state.appsList.map(app => {
           const downstream = app.downstreams?.length && app.downstreams[0];
           const gitops = downstream?.gitops;
           const gitopsEnabled = gitops?.enabled;
@@ -509,8 +534,9 @@ class GitOpsDeploymentManager extends React.Component {
   }
 
   render() {
-    const { listAppsQuery, getGitOpsRepoQuery } = this.props;
-    if (listAppsQuery.loading || getGitOpsRepoQuery.loading) {
+    const { appsList } = this.state;
+    const { getGitOpsRepoQuery } = this.props;
+    if (!appsList.length || getGitOpsRepoQuery.loading) {
       return (
         <div className="flex-column flex1 alignItems--center justifyContent--center">
           <Loader size="60" />
@@ -535,12 +561,6 @@ class GitOpsDeploymentManager extends React.Component {
 export default compose(
   withApollo,
   withRouter,
-  graphql(listApps, {
-    name: "listAppsQuery",
-    options: () => ({
-      fetchPolicy: "no-cache"
-    })
-  }),
   graphql(getGitOpsRepo, {
     name: "getGitOpsRepoQuery",
     options: () => ({

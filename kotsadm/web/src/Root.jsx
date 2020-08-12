@@ -1,5 +1,4 @@
 import { hot } from "react-hot-loader/root";
-import Favicon from "react-favicon";
 import React, { Component } from "react";
 import { createBrowserHistory } from "history";
 import { Switch, Route, Redirect, Router } from "react-router-dom";
@@ -26,7 +25,6 @@ import BackupRestore from "./components/BackupRestore";
 import UploadAirgapBundle from "./components/UploadAirgapBundle";
 import RestoreCompleted from "./components/RestoreCompleted";
 
-import { listApps } from "@src/queries/AppsQueries";
 import Footer from "./components/shared/Footer";
 import NavBar from "./components/shared/NavBar";
 
@@ -75,7 +73,7 @@ const ThemeContext = React.createContext({
 
 class Root extends Component {
   state = {
-    listApps: [],
+    appsList: [],
     appLogo: null,
     selectedAppName: null,
     appNameSpace: null,
@@ -140,20 +138,29 @@ class Root extends Component {
     this.setState({ initSessionId: "" });
   }
 
-  refetchListApps = async () => {
-    const apps = await GraphQLClient.query({
-      query: listApps,
-      fetchPolicy: "no-cache"
-    }).catch(error => {
-      throw error;
-    });
-
-    this.setState({
-      listApps: apps.data.listApps.kotsApps,
-      rootDidInitialWatchFetch: true
-    });
-
-    return apps.data.listApps.kotsApps;
+  getAppsList = async () => {
+    try {
+      const res = await fetch(`${window.env.API_ENDPOINT}/apps`, {
+        headers: {
+          "Authorization": Utilities.getToken(),
+          "Content-Type": "application/json",
+        },
+        method: "GET",
+      });
+      if (!res.ok) {
+        console.log("failed to list apps, unexpected status code", res.status);
+        return;
+      }
+      const response = await res.json();
+      const apps = response.apps;
+      this.setState({
+        appsList: apps,
+        rootDidInitialWatchFetch: true
+      });
+      return apps;
+    } catch(err) {
+      throw err;
+    }
   }
 
   fetchKotsAppMetadata = async () => {
@@ -188,7 +195,7 @@ class Root extends Component {
   }
 
   ping = async (tries = 0) => {
-    let apps = this.state.listApps;
+    let apps = this.state.appsList;
     const appSlugs = apps?.map(a => a.slug);
     const url = `${window.env.API_ENDPOINT}/ping?slugs=${appSlugs}`
     await fetch(url, {
@@ -211,9 +218,9 @@ class Root extends Component {
     this.ping();
 
     if (Utilities.isLoggedIn()) {
-      this.refetchListApps().then(listApps => {
-        if (listApps.length > 0 && window.location.pathname === "/apps") {
-          const { slug } = listApps[0];
+      this.getAppsList().then(appsList => {
+        if (appsList.length > 0 && window.location.pathname === "/apps") {
+          const { slug } = appsList[0];
           history.replace(`/app/${slug}`);
         }
       });
@@ -241,12 +248,12 @@ class Root extends Component {
   }
 
   isGitOpsSupported = () => {
-    const apps = this.state.listApps;
+    const apps = this.state.appsList;
     return !!find(apps, app => app.isGitOpsSupported);
   }
 
   isSnapshotsSupported = () => {
-    const apps = this.state.listApps;
+    const apps = this.state.appsList;
     return !!find(apps, app => app.allowSnapshots);
   }
   
@@ -259,7 +266,7 @@ class Root extends Component {
   render() {
     const {
       themeState,
-      listApps,
+      appsList,
       rootDidInitialWatchFetch,
       connectionTerminated,
       errLoggingOut
@@ -285,11 +292,11 @@ class Root extends Component {
               <div className="flex-column flex1">
                 <NavBar
                   logo={themeState.navbarLogo || this.state.appLogo}
-                  refetchListApps={this.refetchListApps}
+                  refetchAppsList={this.getAppsList}
                   fetchingMetadata={this.state.fetchingMetadata}
                   isKurlEnabled={this.state.isKurlEnabled}
                   isGitOpsSupported={this.isGitOpsSupported()}
-                  listApps={listApps}
+                  appsList={appsList}
                   onLogoutError={this.onLogoutError}
                   isSnapshotsSupported={this.isSnapshotsSupported()}
                   errLoggingOut={errLoggingOut}
@@ -305,13 +312,13 @@ class Root extends Component {
                       return <Crashz />;
 
                     }} />
-                    <ProtectedRoute path="/preflight" render={props => <PreflightResultPage {...props} logo={this.state.appLogo} appName={this.state.selectedAppName} fromLicenseFlow={true} refetchListApps={this.refetchListApps} />} />
-                    <ProtectedRoute exact path="/:slug/config" render={props => <AppConfig {...props} fromLicenseFlow={true} refetchListApps={this.refetchListApps} />} />
-                    <Route exact path="/secure-console" render={props => <SecureAdminConsole {...props} logo={this.state.appLogo} appName={this.state.selectedAppName} onLoginSuccess={this.refetchListApps} fetchingMetadata={this.state.fetchingMetadata} />} />
-                    <ProtectedRoute exact path="/upload-license" render={props => <UploadLicenseFile {...props} logo={this.state.appLogo} appsListLength={listApps?.length} appName={this.state.selectedAppName} fetchingMetadata={this.state.fetchingMetadata} onUploadSuccess={this.refetchListApps} />} />
-                    <ProtectedRoute exact path="/restore" render={props => <BackupRestore {...props} logo={this.state.appLogo} appName={this.state.selectedAppName} appsListLength={listApps?.length} fetchingMetadata={this.state.fetchingMetadata} />} />
-                    <ProtectedRoute exact path="/:slug/airgap" render={props => <UploadAirgapBundle {...props} showRegistry={true} logo={this.state.appLogo} appsListLength={listApps?.length} appName={this.state.selectedAppName} onUploadSuccess={this.refetchListApps} fetchingMetadata={this.state.fetchingMetadata} />} />
-                    <ProtectedRoute exact path="/:slug/airgap-bundle" render={props => <UploadAirgapBundle {...props} showRegistry={false} logo={this.state.appLogo} appsListLength={listApps?.length} appName={this.state.selectedAppName} onUploadSuccess={this.refetchListApps} fetchingMetadata={this.state.fetchingMetadata} />} />
+                    <ProtectedRoute path="/preflight" render={props => <PreflightResultPage {...props} logo={this.state.appLogo} appName={this.state.selectedAppName} fromLicenseFlow={true} refetchAppsList={this.getAppsList} />} />
+                    <ProtectedRoute exact path="/:slug/config" render={props => <AppConfig {...props} fromLicenseFlow={true} refetchAppsList={this.getAppsList} />} />
+                    <Route exact path="/secure-console" render={props => <SecureAdminConsole {...props} logo={this.state.appLogo} appName={this.state.selectedAppName} onLoginSuccess={this.getAppsList} fetchingMetadata={this.state.fetchingMetadata} />} />
+                    <ProtectedRoute exact path="/upload-license" render={props => <UploadLicenseFile {...props} logo={this.state.appLogo} appsListLength={appsList?.length} appName={this.state.selectedAppName} fetchingMetadata={this.state.fetchingMetadata} onUploadSuccess={this.getAppsList} />} />
+                    <ProtectedRoute exact path="/restore" render={props => <BackupRestore {...props} logo={this.state.appLogo} appName={this.state.selectedAppName} appsListLength={appsList?.length} fetchingMetadata={this.state.fetchingMetadata} />} />
+                    <ProtectedRoute exact path="/:slug/airgap" render={props => <UploadAirgapBundle {...props} showRegistry={true} logo={this.state.appLogo} appsListLength={appsList?.length} appName={this.state.selectedAppName} onUploadSuccess={this.getAppsList} fetchingMetadata={this.state.fetchingMetadata} />} />
+                    <ProtectedRoute exact path="/:slug/airgap-bundle" render={props => <UploadAirgapBundle {...props} showRegistry={false} logo={this.state.appLogo} appsListLength={appsList?.length} appName={this.state.selectedAppName} onUploadSuccess={this.getAppsList} fetchingMetadata={this.state.fetchingMetadata} />} />
                     <Route path="/unsupported" component={UnsupportedBrowser} />
                     <ProtectedRoute path="/cluster/manage" render={(props) => <ClusterNodes {...props} appName={this.state.selectedAppName} />} />
                     <ProtectedRoute path="/gitops" render={(props) => <GitOps {...props} appName={this.state.selectedAppName} />} />
@@ -326,8 +333,8 @@ class Root extends Component {
                           <AppDetailPage
                             {...props}
                             rootDidInitialAppFetch={rootDidInitialWatchFetch}
-                            listApps={listApps}
-                            refetchListApps={this.refetchListApps}
+                            appsList={appsList}
+                            refetchAppsList={this.getAppsList}
                             onActiveInitSession={this.handleActiveInitSession}
                             appNameSpace={this.state.appNameSpace}
                             appName={this.state.selectedAppName}
