@@ -8,7 +8,6 @@ import Modal from "react-modal";
 import withTheme from "@src/components/context/withTheme";
 import { listDownstreamsForApp } from "@src/queries/AppsQueries";
 import { isVeleroInstalled } from "@src/queries/SnapshotQueries";
-import { createKotsDownstream } from "../../mutations/AppsMutations";
 import { KotsSidebarItem } from "@src/components/watches/WatchSidebarItem";
 import { HelmChartSidebarItem } from "@src/components/watches/WatchSidebarItem";
 import NotFound from "../static/NotFound";
@@ -450,10 +449,5 @@ export default compose(
     options: {
       fetchPolicy: "no-cache"
     }
-  }),
-  graphql(createKotsDownstream, {
-    props: ({ mutate }) => ({
-      createKotsDownstream: (appId, clusterId) => mutate({ variables: { appId, clusterId } })
-    })
   }),
 )(AppDetailPage);

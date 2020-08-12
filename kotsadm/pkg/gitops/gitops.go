@@ -239,12 +239,12 @@ func UpdateDownstreamGitOps(appID, clusterID, uri, branch, path, format, action 
 	if ok {
 		appDataDecoded, err := base64.StdEncoding.DecodeString(appDataEncoded)
 		if err != nil {
-			return errors.Wrap(err, "failed to decode configmap data")
+			return errors.Wrap(err, "failed to decode app data")
 		}
 
 		appDataUnmarshalled := map[string]string{}
 		if err := json.Unmarshal(appDataDecoded, &appDataUnmarshalled); err != nil {
-			return errors.Wrap(err, "failed to unmarshal configmap data")
+			return errors.Wrap(err, "failed to unmarshal app data")
 		}
 
 		oldUri, _ := appDataUnmarshalled["repoUri"]
@@ -283,6 +283,78 @@ func UpdateDownstreamGitOps(appID, clusterID, uri, branch, path, format, action 
 		if err != nil {
 			return errors.Wrap(err, "failed to create config map")
 		}
+	}
+
+	return nil
+}
+
+func SetGitOpsError(appID string, clusterID string, errMsg string) error {
+	cfg, err := config.GetConfig()
+	if err != nil {
+		return errors.Wrap(err, "failed to get cluster config")
+	}
+
+	clientset, err := kubernetes.NewForConfig(cfg)
+	if err != nil {
+		return errors.Wrap(err, "failed to create kubernetes clientset")
+	}
+
+	configMap, err := clientset.CoreV1().ConfigMaps(os.Getenv("POD_NAMESPACE")).Get(context.TODO(), "kotsadm-gitops", metav1.GetOptions{})
+	if err != nil {
+		return errors.Wrap(err, "failed to get configmap")
+	}
+
+	appKey := fmt.Sprintf("%s-%s", appID, clusterID)
+	appDataEncoded, ok := configMap.Data[appKey]
+	if !ok {
+		return errors.New("app gitops data not found in configmap")
+	}
+
+	appDataDecoded, err := base64.StdEncoding.DecodeString(appDataEncoded)
+	if err != nil {
+		return errors.Wrap(err, "failed to decode app data")
+	}
+
+	appDataUnmarshalled := map[string]string{}
+	if err := json.Unmarshal(appDataDecoded, &appDataUnmarshalled); err != nil {
+		return errors.Wrap(err, "failed to unmarshal app data")
+	}
+	appDataUnmarshalled["lastError"] = errMsg
+
+	appDataDecoded, err = json.Marshal(appDataUnmarshalled)
+	if err != nil {
+		return errors.Wrap(err, "failed to marshal app data")
+	}
+	appDataEncoded = base64.StdEncoding.EncodeToString([]byte(appDataDecoded))
+	configMap.Data[appKey] = appDataEncoded
+
+	_, err = clientset.CoreV1().ConfigMaps(os.Getenv("POD_NAMESPACE")).Update(context.TODO(), configMap, metav1.UpdateOptions{})
+	if err != nil {
+		return errors.Wrap(err, "failed to update config map")
+	}
+
+	return nil
+}
+
+func TestGitOpsConnection(gitOpsConfig *GitOpsConfig) error {
+	auth, err := getAuth(gitOpsConfig.PrivateKey)
+	if err != nil {
+		return errors.Wrap(err, "failed to get auth")
+	}
+
+	workDir, err := ioutil.TempDir("", "kotsadm")
+	if err != nil {
+		return errors.Wrap(err, "failed to create temp dir")
+	}
+	defer os.RemoveAll(workDir)
+
+	_, err = git.PlainClone(workDir, false, &git.CloneOptions{
+		URL:               gitOpsConfig.CloneURL(),
+		RecurseSubmodules: git.DefaultSubmoduleRecursionDepth,
+		Auth:              auth,
+	})
+	if err != nil {
+		return errors.Wrap(err, "failed to clone repo")
 	}
 
 	return nil
@@ -341,6 +413,17 @@ func gitOpsConfigFromSecretData(idx int64, secretData map[string][]byte) (string
 	return provider, publicKey, privateKey, repoURI, nil
 }
 
+func getAuth(privateKey string) (transport.AuthMethod, error) {
+	var auth transport.AuthMethod
+	signer, err := ssh.ParsePrivateKey([]byte(privateKey))
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to parse deploy key")
+	}
+	auth = &go_git_ssh.PublicKeys{User: "git", Signer: signer}
+	auth.(*go_git_ssh.PublicKeys).HostKeyCallback = ssh.InsecureIgnoreHostKey()
+	return auth, nil
+}
+
 func CreateGitOpsCommit(gitOpsConfig *GitOpsConfig, appSlug string, appName string, newSequence int, archiveDir string, downstreamName string) (string, error) {
 	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(archiveDir)
 	if err != nil {
@@ -358,13 +441,10 @@ func CreateGitOpsCommit(gitOpsConfig *GitOpsConfig, appSlug string, appName stri
 	}
 
 	// using the deploy key, create the commit in a new branch
-	var auth transport.AuthMethod
-	signer, err := ssh.ParsePrivateKey([]byte(gitOpsConfig.PrivateKey))
+	auth, err := getAuth(gitOpsConfig.PrivateKey)
 	if err != nil {
-		return "", errors.Wrap(err, "failed to parse deploy key")
+		return "", errors.Wrap(err, "failed to get auth")
 	}
-	auth = &go_git_ssh.PublicKeys{User: "git", Signer: signer}
-	auth.(*go_git_ssh.PublicKeys).HostKeyCallback = ssh.InsecureIgnoreHostKey()
 
 	workDir, err := ioutil.TempDir("", "kotsadm")
 	if err != nil {
