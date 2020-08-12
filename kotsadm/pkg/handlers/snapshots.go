@@ -2,10 +2,15 @@ package handlers
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
+	"regexp"
+	"strconv"
 	"strings"
 
+	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
+	"github.com/replicatedhq/kots/kotsadm/pkg/app"
 	"github.com/replicatedhq/kots/kotsadm/pkg/kurl"
 	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
 	"github.com/replicatedhq/kots/kotsadm/pkg/session"
@@ -36,6 +41,12 @@ type UpdateGlobalSnapshotSettingsRequest struct {
 	Azure    *snapshottypes.StoreAzure  `json:"azure"`
 	Other    *snapshottypes.StoreOther  `json:"other"`
 	Internal bool                       `json:"internal"`
+}
+
+type SnapshotConfig struct {
+	AutoEnabled  bool                            `json:"autoEnabled"`
+	AutoSchedule *snapshottypes.SnapshotSchedule `json:"autoSchedule"`
+	TTl          *snapshottypes.SnapshotTTL      `json:"ttl"`
 }
 
 func UpdateGlobalSnapshotSettings(w http.ResponseWriter, r *http.Request) {
@@ -405,4 +416,105 @@ func GetGlobalSnapshotSettings(w http.ResponseWriter, r *http.Request) {
 	globalSnapshotSettingsResponse.Success = true
 
 	JSON(w, 200, globalSnapshotSettingsResponse)
+}
+
+func GetSnapshotConfig(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Headers", "content-type, origin, accept, authorization")
+
+	if r.Method == "OPTIONS" {
+		w.WriteHeader(200)
+		return
+	}
+
+	appSlug := mux.Vars(r)["appSlug"]
+	foundApp, err := app.GetFromSlug(appSlug)
+	if err != nil {
+		logger.Error(err)
+		w.WriteHeader(500)
+		return
+	}
+
+	ttl := &snapshottypes.SnapshotTTL{}
+	if foundApp.SnapshotTTL != "" {
+		parsedTTL, err := parseTTL(foundApp.SnapshotTTL)
+		if err != nil {
+			logger.Error(err)
+			w.WriteHeader(500)
+			return
+		}
+
+		ttl.InputValue = strconv.FormatInt(parsedTTL.Quantity, 10)
+		ttl.InputTimeUnit = parsedTTL.Unit
+		ttl.Converted = foundApp.SnapshotTTL
+	} else {
+		ttl.InputValue = "1"
+		ttl.InputTimeUnit = "month"
+		ttl.Converted = "720h"
+	}
+
+	snapshotSchedule := &snapshottypes.SnapshotSchedule{}
+	if foundApp.SnapshotSchedule != "" {
+		snapshotSchedule.Schedule = foundApp.SnapshotSchedule
+	} else {
+		snapshotSchedule.Schedule = "0 0 * * MON"
+	}
+
+	getSnapshotConfigResponse := SnapshotConfig{}
+	getSnapshotConfigResponse.AutoEnabled = foundApp.SnapshotSchedule != ""
+	getSnapshotConfigResponse.AutoSchedule = snapshotSchedule
+	getSnapshotConfigResponse.TTl = ttl
+
+	JSON(w, 200, getSnapshotConfigResponse)
+}
+
+func parseTTL(s string) (*snapshottypes.ParsedTTL, error) {
+	parsedTTLResponse := &snapshottypes.ParsedTTL{}
+
+	ttlMatch, err := regexp.Compile(`^\d+(s|m|h)$`)
+	if err != nil {
+		fmt.Printf("Invalid snapshot TTl %v", s)
+	}
+
+	unit := ttlMatch.FindStringSubmatch(s)[1]
+	quantity := strings.Split(ttlMatch.FindStringSubmatch(s)[0], unit)
+	quantityInt, err := strconv.ParseInt(quantity[0], 10, 64)
+	if err != nil {
+		fmt.Printf("failed to parseInt quanitity")
+	}
+
+	switch unit {
+	case "s":
+		parsedTTLResponse.Quantity = quantityInt
+		parsedTTLResponse.Unit = "seconds"
+	case "m":
+		parsedTTLResponse.Quantity = quantityInt
+		parsedTTLResponse.Unit = "minutes"
+	case "h":
+		if quantityInt/8766 >= 1 && quantityInt%8766 == 0 {
+			parsedTTLResponse.Quantity = quantityInt / 8766
+			parsedTTLResponse.Unit = "years"
+			break
+		}
+		if quantityInt/720 >= 1 && quantityInt%720 == 0 {
+			parsedTTLResponse.Quantity = quantityInt / 720
+			parsedTTLResponse.Unit = "months"
+			break
+		}
+		if quantityInt/168 >= 1 && quantityInt%168 == 0 {
+			parsedTTLResponse.Quantity = quantityInt / 168
+			parsedTTLResponse.Unit = "weeks"
+			break
+		}
+		if quantityInt/24 >= 1 && quantityInt%24 == 0 {
+			parsedTTLResponse.Quantity = quantityInt / 24
+			parsedTTLResponse.Unit = "days"
+			break
+		}
+		parsedTTLResponse.Quantity = quantityInt
+		parsedTTLResponse.Unit = "hours"
+	default:
+
+	}
+	return parsedTTLResponse, nil
 }
