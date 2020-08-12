@@ -123,26 +123,28 @@ class AppSnapshotSchedule extends Component {
 
   getSnapshotConfig = async () => {
     this.setState({ loadingConfig: true, gettingConfigErrMsg: "", displayErrorModal: false });
-    await fetch(`${window.env.API_ENDPOINT}/app/${this.props.app.slug}/snapshot/config`, {
-      method: "GET",
-      headers: {
-        "Authorization": Utilities.getToken(),
-        "Content-Type": "application/json",
-      }
-    }).then(async (res) => {
+    try {
+      const res = await fetch(`${window.env.API_ENDPOINT}/app/${this.props.app.slug}/snapshot/config`, {
+        method: "GET",
+        headers: {
+          "Authorization": Utilities.getToken(),
+          "Content-Type": "application/json",
+        }
+      });
       if (!res.ok) {
         this.setState({ loadingConfig: false, gettingConfigErrMsg: `Unable to get snapshot config: Unexpected status code: ${res.status}`, displayErrorModal: true });
-        return
+        return;
       }
       const body = await res.json();
       this.setState({
         snapshotConfig: body,
         loadingConfig: false
-      })
-    }).catch((err) => {
+      });
+
+    } catch (err) {
       console.log(err);
       this.setState({ loadingConfig: false, gettingConfigErrMsg: err ? err.message : "Something went wrong, please try again.", displayErrorModal: true });
-    });
+    }
   }
 
   componentDidUpdate = (lastProps, lastState) => {
@@ -155,7 +157,7 @@ class AppSnapshotSchedule extends Component {
     if (this.state.snapshotConfig) {
       this.setFields();
     } else {
-      this.getSnapshotConfig()
+      this.getSnapshotConfig();
     }
     this.getReadableCronExpression();
   }
@@ -197,9 +199,11 @@ class AppSnapshotSchedule extends Component {
     });
 
     if (loadingConfig) {
-      <div className="flex-column flex1 alignItems--center justifyContent--center">
-        <Loader size="60" />
-      </div>
+      return (
+        <div className="flex-column flex1 alignItems--center justifyContent--center">
+          <Loader size="60" />
+        </div>
+      )
     }
 
     return (

@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"regexp"
 	"strconv"
@@ -473,23 +472,29 @@ func parseTTL(s string) (*snapshottypes.ParsedTTL, error) {
 
 	ttlMatch, err := regexp.Compile(`^\d+(s|m|h)$`)
 	if err != nil {
-		fmt.Printf("Invalid snapshot TTl %v", s)
+		return nil, errors.Wrapf(err, "invalid snapshot TTl %v", s)
 	}
 
 	unit := ttlMatch.FindStringSubmatch(s)[1]
+	if unit == "" {
+		return nil, errors.Wrap(err, "failed to get a valid unit")
+	}
+
 	quantity := strings.Split(ttlMatch.FindStringSubmatch(s)[0], unit)
 	quantityInt, err := strconv.ParseInt(quantity[0], 10, 64)
 	if err != nil {
-		fmt.Printf("failed to parseInt quanitity")
+		return nil, errors.Wrap(err, "failed to parseInt quanitity")
 	}
 
 	switch unit {
 	case "s":
 		parsedTTLResponse.Quantity = quantityInt
 		parsedTTLResponse.Unit = "seconds"
+		break
 	case "m":
 		parsedTTLResponse.Quantity = quantityInt
 		parsedTTLResponse.Unit = "minutes"
+		break
 	case "h":
 		if quantityInt/8766 >= 1 && quantityInt%8766 == 0 {
 			parsedTTLResponse.Quantity = quantityInt / 8766
@@ -514,7 +519,7 @@ func parseTTL(s string) (*snapshottypes.ParsedTTL, error) {
 		parsedTTLResponse.Quantity = quantityInt
 		parsedTTLResponse.Unit = "hours"
 	default:
-
+		return nil, errors.Wrap(nil, "failed to parseInt quanitity")
 	}
 	return parsedTTLResponse, nil
 }
