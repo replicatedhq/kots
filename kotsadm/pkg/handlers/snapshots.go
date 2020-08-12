@@ -422,7 +422,7 @@ func GetSnapshotConfig(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Access-Control-Allow-Headers", "content-type, origin, accept, authorization")
 
 	if r.Method == "OPTIONS" {
-		w.WriteHeader(200)
+		w.WriteHeader(http.StatusOK)
 		return
 	}
 
@@ -464,7 +464,7 @@ func GetSnapshotConfig(w http.ResponseWriter, r *http.Request) {
 	getSnapshotConfigResponse.AutoSchedule = snapshotSchedule
 	getSnapshotConfigResponse.TTl = ttl
 
-	JSON(w, 200, getSnapshotConfigResponse)
+	JSON(w, http.StatusOK, getSnapshotConfigResponse)
 }
 
 func parseTTL(s string) (*snapshottypes.ParsedTTL, error) {
