@@ -475,11 +475,12 @@ func parseTTL(s string) (*snapshottypes.ParsedTTL, error) {
 		return nil, errors.Wrapf(err, "invalid snapshot TTl %v", s)
 	}
 
-	unit := ttlMatch.FindStringSubmatch(s)[1]
-	if unit == "" {
-		return nil, errors.Wrap(err, "failed to get a valid unit")
+	matches := FindStringSubmatch(s)
+	if len(matches) < 2 {
+		return nil, errors.Wrap(err, "failed to get a valid match")
 	}
 
+	unit := matches[1]
 	quantity := strings.Split(ttlMatch.FindStringSubmatch(s)[0], unit)
 	quantityInt, err := strconv.ParseInt(quantity[0], 10, 64)
 	if err != nil {
@@ -518,8 +519,9 @@ func parseTTL(s string) (*snapshottypes.ParsedTTL, error) {
 		}
 		parsedTTLResponse.Quantity = quantityInt
 		parsedTTLResponse.Unit = "hours"
+		break
 	default:
-		return nil, errors.Wrap(nil, "failed to parseInt quanitity")
+		return nil, errors.Wrap(nil, "unsupported unit type")
 	}
 	return parsedTTLResponse, nil
 }
