@@ -61,7 +61,7 @@ func GetGVKWithNameAndNs(content []byte, baseNS string) string {
 	return fmt.Sprintf("%s-%s-%s-%s", o.APIVersion, o.Kind, o.Metadata.Name, namespace)
 }
 
-func (f BaseFile) transpileHelmHooksToKotsHooks() error {
+func (f *BaseFile) transpileHelmHooksToKotsHooks() error {
 	decode := scheme.Codecs.UniversalDeserializer().Decode
 	obj, gvk, err := decode(f.Content, nil, nil)
 	if err != nil {
