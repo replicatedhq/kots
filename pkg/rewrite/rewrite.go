@@ -103,7 +103,7 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 	}
 	log.ActionWithSpinner("Creating base")
 	io.WriteString(rewriteOptions.ReportWriter, "Creating base\n")
-	b, err := base.RenderUpstream(u, &renderOptions)
+	b, hookBases, err := base.RenderUpstream(u, &renderOptions) // TODO
 	if err != nil {
 		return errors.Wrap(err, "failed to render upstream")
 	}
@@ -143,6 +143,13 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 	}
 	if err := b.WriteBase(writeBaseOptions); err != nil {
 		return errors.Wrap(err, "failed to write base")
+	}
+	if rewriteOptions.ExtractKotsHookEvents {
+		for hookEvent, b := range hookBases {
+			if err := b.WriteBase(writeBaseOptions); err != nil {
+				return errors.Wrapf(err, "failed to write hook base %s", hookEvent)
+			}
+		}
 	}
 
 	var pullSecret *corev1.Secret

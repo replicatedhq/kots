@@ -31,10 +31,10 @@ type Document struct {
 	Kind       string `yaml:"kind"`
 }
 
-func renderReplicated(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (*Base, error) {
+func renderReplicated(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (*Base, map[HookEvent]*Base, error) {
 	config, configValues, license, err := findConfigAndLicense(u, renderOptions.Log)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	var templateContext map[string]template.ItemValue
@@ -55,7 +55,7 @@ func renderReplicated(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (
 	if u.EncryptionKey != "" {
 		c, err := crypto.AESCipherFromString(u.EncryptionKey)
 		if err != nil {
-			return nil, errors.Wrap(err, "failed to create cipher")
+			return nil, nil, errors.Wrap(err, "failed to create cipher")
 		}
 		cipher = c
 	}
@@ -80,7 +80,7 @@ func renderReplicated(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (
 
 	builder, _, err := template.NewBuilder(configGroups, templateContext, localRegistry, cipher, license)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to create config context")
+		return nil, nil, errors.Wrap(err, "failed to create config context")
 	}
 
 	for _, upstreamFile := range u.Files {
@@ -106,7 +106,7 @@ func renderReplicated(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (
 
 		baseFile, err := upstreamFileToBaseFile(upstreamFile, builder, renderOptions.Log)
 		if err != nil {
-			return nil, errors.Wrapf(err, "failed to convert upstream file %s to base", upstreamFile.Path)
+			return nil, nil, errors.Wrapf(err, "failed to convert upstream file %s to base", upstreamFile.Path)
 		}
 
 		baseFiles := convertToSingleDocBaseFiles([]BaseFile{baseFile})
@@ -114,7 +114,7 @@ func renderReplicated(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (
 			include, err := baseFile.ShouldBeIncludedInBaseKustomization(renderOptions.ExcludeKotsKinds, renderOptions.Log)
 			if err != nil {
 				if _, ok := err.(ParseError); !ok {
-					return nil, errors.Wrapf(err, "failed to determine if file %s should be included in base", baseFile.Path)
+					return nil, nil, errors.Wrapf(err, "failed to determine if file %s should be included in base", baseFile.Path)
 				}
 			}
 
@@ -138,11 +138,13 @@ func renderReplicated(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (
 		}
 	}
 
+	hookBases := map[HookEvent]*Base{}
+
 	for kotsHookEvent, baseFiles := range hookBaseFiles {
-		base.Bases = append(base.Bases, Base{
+		hookBases[kotsHookEvent] = &Base{
 			Path:  filepath.Join("hooks", kotsHookEvent.String()),
 			Files: baseFiles,
-		})
+		}
 	}
 
 	// render helm charts that were specified
@@ -151,7 +153,7 @@ func renderReplicated(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (
 	for _, kotsHelmChart := range kotsHelmCharts {
 		helmBase, err := renderReplicatedHelmChart(kotsHelmChart, u.Files, renderOptions, builder)
 		if err != nil {
-			return nil, errors.Wrapf(err, "failed to render helm chart %s", kotsHelmChart.Name)
+			return nil, nil, errors.Wrapf(err, "failed to render helm chart %s", kotsHelmChart.Name)
 		} else if helmBase == nil {
 			continue
 		}
@@ -167,14 +169,14 @@ func renderReplicated(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (
 
 			baseFile, err := upstreamFileToBaseFile(upstreamFile, builder, renderOptions.Log)
 			if err != nil {
-				return nil, errors.Wrapf(err, "failed to convert helm chart %s upstream file %s to base", kotsHelmChart.Name, upstreamFile.Path)
+				return nil, nil, errors.Wrapf(err, "failed to convert helm chart %s upstream file %s to base", kotsHelmChart.Name, upstreamFile.Path)
 			}
 
 			// this is a little bit of an abuse of the next function
 			include, err := helmBaseFile.ShouldBeIncludedInBaseKustomization(false, renderOptions.Log)
 			if err != nil {
 				if _, ok := err.(ParseError); !ok {
-					return nil, errors.Wrapf(err, "failed to determine if helm chart %s file %s should be included in base", kotsHelmChart.Name, upstreamFile.Path)
+					return nil, nil, errors.Wrapf(err, "failed to determine if helm chart %s file %s should be included in base", kotsHelmChart.Name, upstreamFile.Path)
 				}
 			}
 
@@ -197,25 +199,29 @@ func renderReplicated(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (
 			}
 		}
 
-		helmBaseRendered := Base{
+		base.Bases = append(base.Bases, Base{
 			Path:       filepath.Join("charts", kotsHelmChart.Name),
 			Namespace:  kotsHelmChart.Spec.Namespace,
 			Files:      helmBaseFiles,
 			ErrorFiles: helmBaseYAMLErrorFiles,
-		}
+		})
 
 		for kotsHookEvent, helmBaseFiles := range helmHookBaseFiles {
-			helmBaseRendered.Bases = append(helmBaseRendered.Bases, Base{
-				Path:      filepath.Join("hooks", kotsHookEvent.String()),
+			if _, ok := hookBases[kotsHookEvent]; !ok {
+				hookBases[kotsHookEvent] = &Base{
+					Path: filepath.Join("hooks", kotsHookEvent.String()),
+				}
+			}
+
+			hookBases[kotsHookEvent].Bases = append(hookBases[kotsHookEvent].Bases, Base{
+				Path:      filepath.Join("charts", kotsHelmChart.Name),
 				Namespace: kotsHelmChart.Spec.Namespace,
 				Files:     helmBaseFiles,
 			})
 		}
-
-		base.Bases = append(base.Bases, helmBaseRendered)
 	}
 
-	return &base, nil
+	return &base, hookBases, nil
 }
 
 func renderReplicatedHelmChart(kotsHelmChart *kotsv1beta1.HelmChart, upstreamFiles []upstreamtypes.UpstreamFile, renderOptions *RenderOptions, builder template.Builder) (*Base, error) {

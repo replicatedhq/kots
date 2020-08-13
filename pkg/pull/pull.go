@@ -241,7 +241,7 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 	log.ActionWithSpinner("Creating base")
 	io.WriteString(pullOptions.ReportWriter, "Creating base\n")
 
-	b, err := base.RenderUpstream(u, &renderOptions)
+	b, hookBases, err := base.RenderUpstream(u, &renderOptions)
 	if err != nil {
 		return "", errors.Wrap(err, "failed to render upstream")
 	}
@@ -281,6 +281,13 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 	}
 	if err := b.WriteBase(writeBaseOptions); err != nil {
 		return "", errors.Wrap(err, "failed to write base")
+	}
+	if pullOptions.ExtractKotsHookEvents {
+		for hookEvent, b := range hookBases {
+			if err := b.WriteBase(writeBaseOptions); err != nil {
+				return "", errors.Wrapf(err, "failed to write hook base %s", hookEvent)
+			}
+		}
 	}
 
 	var pullSecret *corev1.Secret
