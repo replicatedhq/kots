@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"os"
 	"path/filepath"
 
 	"github.com/pkg/errors"
@@ -308,6 +309,10 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 			}
 			hookMidstreams[hookEvent] = m
 		}
+	} else {
+		// I'm not sure what the desired behavior is here.
+		// We copy the old midstream. If ExtractKotsHookEvents was toggled the base will no longer exist.
+		_ = os.RemoveAll(filepath.Join(b.GetOverlaysDir(writeBaseOptions), "midstream/hooks"))
 	}
 
 	log.FinishSpinner()
@@ -352,6 +357,10 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 				}
 				hookDownstreams[hookEvent] = d
 			}
+		} else {
+			// I'm not sure what the desired behavior is here.
+			// We copy the old midstream. If ExtractKotsHookEvents was toggled the base will no longer exist.
+			_ = os.RemoveAll(filepath.Join(b.GetOverlaysDir(writeBaseOptions), "downstreams", downstreamName, "hooks"))
 		}
 
 		writeDownstreamOptions := downstream.WriteOptions{
