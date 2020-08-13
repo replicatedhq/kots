@@ -298,6 +298,18 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 	if err != nil {
 		return errors.Wrap(err, "failed to create midstream")
 	}
+
+	hookMidstreams := map[base.HookEvent]*midstream.Midstream{}
+	if rewriteOptions.ExtractKotsHookEvents {
+		for hookEvent, b := range hookBases {
+			m, err := midstream.CreateMidstream(b, images, objects, pullSecret)
+			if err != nil {
+				return errors.Wrapf(err, "failed to create hook midstream %s", hookEvent.String())
+			}
+			hookMidstreams[hookEvent] = m
+		}
+	}
+
 	log.FinishSpinner()
 
 	writeMidstreamOptions := midstream.WriteOptions{
@@ -310,6 +322,19 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 		return errors.Wrap(err, "failed to write midstream")
 	}
 
+	for hookEvent, m := range hookMidstreams {
+		b := hookBases[hookEvent]
+		writeMidstreamOptions := midstream.WriteOptions{
+			MidstreamDir: filepath.Join(b.GetOverlaysDir(writeBaseOptions), "midstream/hooks", hookEvent.String()),
+			BaseDir:      filepath.Join(u.GetBaseDir(writeUpstreamOptions), b.Path),
+			AppSlug:      rewriteOptions.AppSlug,
+			IsGitOps:     rewriteOptions.IsGitOps,
+		}
+		if err := m.WriteMidstream(writeMidstreamOptions); err != nil {
+			return errors.Wrapf(err, "failed to write hook midstream %s", hookEvent)
+		}
+	}
+
 	for _, downstreamName := range rewriteOptions.Downstreams {
 		log.ActionWithSpinner("Creating downstream %q", downstreamName)
 		io.WriteString(rewriteOptions.ReportWriter, fmt.Sprintf("Creating downstream %q\n", downstreamName))
@@ -318,12 +343,34 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 			return errors.Wrap(err, "failed to create downstream")
 		}
 
+		hookDownstreams := map[base.HookEvent]*downstream.Downstream{}
+		if rewriteOptions.ExtractKotsHookEvents {
+			for hookEvent, m := range hookMidstreams {
+				d, err := downstream.CreateDownstream(m, downstreamName)
+				if err != nil {
+					return errors.Wrapf(err, "failed to create hook downstream %s", hookEvent.String())
+				}
+				hookDownstreams[hookEvent] = d
+			}
+		}
+
 		writeDownstreamOptions := downstream.WriteOptions{
 			DownstreamDir: filepath.Join(b.GetOverlaysDir(writeBaseOptions), "downstreams", downstreamName),
-			MidstreamDir:  writeMidstreamOptions.MidstreamDir,
+			MidstreamDir:  filepath.Join(b.GetOverlaysDir(writeBaseOptions), "midstream"),
 		}
 		if err := d.WriteDownstream(writeDownstreamOptions); err != nil {
 			return errors.Wrap(err, "failed to write downstream")
+		}
+
+		for hookEvent, d := range hookDownstreams {
+			b := hookBases[hookEvent]
+			writeDownstreamOptions := downstream.WriteOptions{
+				DownstreamDir: filepath.Join(b.GetOverlaysDir(writeBaseOptions), "downstreams", downstreamName, "hooks", hookEvent.String()),
+				MidstreamDir:  filepath.Join(b.GetOverlaysDir(writeBaseOptions), "midstream/hooks", hookEvent.String()),
+			}
+			if err := d.WriteDownstream(writeDownstreamOptions); err != nil {
+				return errors.Wrapf(err, "failed to write hook downstream %s", hookEvent)
+			}
 		}
 
 		log.FinishSpinner()

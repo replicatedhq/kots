@@ -76,11 +76,9 @@ func (m *Midstream) mergeKustomization(options WriteOptions, existing *kustomize
 	m.Kustomization.Images = append(m.Kustomization.Images, filteredImages...)
 
 	existing.PatchesStrategicMerge = removeFromPatches(existing.PatchesStrategicMerge, patchesFilename)
-	newPatches := findNewPatches(m.Kustomization.PatchesStrategicMerge, existing.PatchesStrategicMerge)
-	m.Kustomization.PatchesStrategicMerge = append(existing.PatchesStrategicMerge, newPatches...)
+	m.Kustomization.PatchesStrategicMerge = uniquePatches(existing.PatchesStrategicMerge, m.Kustomization.PatchesStrategicMerge)
 
-	newResources := findNewStrings(m.Kustomization.Resources, existing.Resources)
-	m.Kustomization.Resources = append(existing.Resources, newResources...)
+	m.Kustomization.Resources = uniqueStrings(existing.Resources, m.Kustomization.Resources)
 
 	if existing.CommonAnnotations == nil {
 		existing.CommonAnnotations = make(map[string]string)
