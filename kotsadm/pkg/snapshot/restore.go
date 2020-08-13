@@ -9,9 +9,40 @@ import (
 	veleroapiv1 "github.com/vmware-tanzu/velero/pkg/apis/velero/v1"
 	veleroclientv1 "github.com/vmware-tanzu/velero/pkg/generated/clientset/versioned/typed/velero/v1"
 	"go.uber.org/zap"
+	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
 )
+
+func GetRestore(snapshotName string) (*veleroapiv1.Restore, error) {
+	bsl, err := findBackupStoreLocation()
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get velero namespace")
+	}
+
+	veleroNamespace := bsl.Namespace
+
+	cfg, err := config.GetConfig()
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get cluster config")
+	}
+
+	veleroClient, err := veleroclientv1.NewForConfig(cfg)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to create clientset")
+	}
+
+	restore, err := veleroClient.Restores(veleroNamespace).Get(context.TODO(), snapshotName, metav1.GetOptions{})
+	if err != nil {
+		if kuberneteserrors.IsNotFound(err) {
+			return nil, nil
+		} else {
+			return nil, errors.Wrap(err, "failed to get restore")
+		}
+	}
+
+	return restore, nil
+}
 
 func CreateRestore(snapshotName string) error {
 	// Reference https://github.com/vmware-tanzu/velero/blob/42b612645863c2b3e451b447f9bf798295dd7dba/pkg/cmd/cli/restore/create.go#L222
@@ -95,31 +126,4 @@ func DeleteRestore(snapshotName string) error {
 	}
 
 	return nil
-}
-
-func GetBackup(snapshotName string) (*veleroapiv1.Backup, error) {
-	bsl, err := findBackupStoreLocation()
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to get velero namespace")
-	}
-
-	veleroNamespace := bsl.Namespace
-
-	// get the backup
-	cfg, err := config.GetConfig()
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to get cluster config")
-	}
-
-	veleroClient, err := veleroclientv1.NewForConfig(cfg)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to create clientset")
-	}
-
-	backup, err := veleroClient.Backups(veleroNamespace).Get(context.TODO(), snapshotName, metav1.GetOptions{})
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to get backup")
-	}
-
-	return backup, nil
 }

@@ -458,6 +458,33 @@ func getSnapshotVolumeSummary(veleroBackup *velerov1.Backup) (*types.VolumeSumma
 	return &volumeSummary, nil
 }
 
+func GetBackup(snapshotName string) (*velerov1.Backup, error) {
+	bsl, err := findBackupStoreLocation()
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get velero namespace")
+	}
+
+	veleroNamespace := bsl.Namespace
+
+	// get the backup
+	cfg, err := config.GetConfig()
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get cluster config")
+	}
+
+	veleroClient, err := veleroclientv1.NewForConfig(cfg)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to create clientset")
+	}
+
+	backup, err := veleroClient.Backups(veleroNamespace).Get(context.TODO(), snapshotName, metav1.GetOptions{})
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get backup")
+	}
+
+	return backup, nil
+}
+
 func GetKotsadmBackupDetail(backupName string) (*types.BackupDetail, error) {
 	cfg, err := config.GetConfig()
 	if err != nil {

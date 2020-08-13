@@ -262,7 +262,10 @@ func kotsadmDeployment(deployOptions types.DeployOptions) *appsv1.Deployment {
 				},
 			},
 		},
-
+		{
+			Name:  "API_ENDPOINT",
+			Value: fmt.Sprintf("http://kotsadm.%s.svc.cluster.local:3000", deployOptions.Namespace),
+		},
 		{
 			Name:  "API_ADVERTISE_ENDPOINT",
 			Value: "http://localhost:8800",
@@ -314,12 +317,7 @@ func kotsadmDeployment(deployOptions types.DeployOptions) *appsv1.Deployment {
 					},
 				},
 			},
-			{
-				Name:  "S3_BUCKET_ENDPOINT",
-				Value: "true",
-			},
 		}
-
 		env = append(env, s3env...)
 	}
 

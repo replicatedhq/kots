@@ -599,7 +599,7 @@ func ValidateStore(store *types.Store) error {
 
 	if store.Internal != nil {
 		if err := validateInternal(store.Internal, store.Bucket); err != nil {
-			return errors.Wrap(err, "failed to validate S3-compatible configuration")
+			return errors.Wrap(err, "failed to validate Internal configuration")
 		}
 		return nil
 	}

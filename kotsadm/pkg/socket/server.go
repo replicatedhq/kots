@@ -13,8 +13,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/replicatedhq/kots/kotsadm/operator/pkg/socket/protocol"
-	"github.com/replicatedhq/kots/kotsadm/operator/pkg/socket/transport"
+	"github.com/replicatedhq/kots/kotsadm/pkg/socket/protocol"
+	"github.com/replicatedhq/kots/kotsadm/pkg/socket/transport"
 )
 
 const (

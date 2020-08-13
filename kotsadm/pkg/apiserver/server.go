@@ -15,6 +15,7 @@ import (
 	"github.com/replicatedhq/kots/kotsadm/pkg/automation"
 	"github.com/replicatedhq/kots/kotsadm/pkg/handlers"
 	"github.com/replicatedhq/kots/kotsadm/pkg/informers"
+	"github.com/replicatedhq/kots/kotsadm/pkg/socketservice"
 	"github.com/replicatedhq/kots/kotsadm/pkg/updatechecker"
 )
 
@@ -62,6 +63,7 @@ func Start() {
 	r.Path("/api/v1/deploy/result").Methods("PUT").HandlerFunc(handlers.NodeProxy(upstream))
 
 	// Functions that are not called by the browser
+	r.Path("/api/v1/undeploy/result").Methods("PUT").HandlerFunc(handlers.NodeProxy(upstream))
 	r.Path("/api/v1/preflight/app/{appSlug}/sequence/{sequence}").Methods("GET").HandlerFunc(handlers.GetPreflightStatus)
 	r.Path("/api/v1/preflight/app/{appSlug}/sequence/{sequence}").Methods("POST").HandlerFunc(handlers.PostPreflightStatus)
 
@@ -178,6 +180,8 @@ func Start() {
 		spa := handlers.SPAHandler{StaticPath: filepath.Join("web", "dist"), IndexPath: "index.html"}
 		r.PathPrefix("/").Handler(spa)
 	}
+
+	r.Handle("/socket.io/", socketservice.Start().Server)
 
 	srv := &http.Server{
 		Handler: r,
