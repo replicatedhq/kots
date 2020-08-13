@@ -122,21 +122,22 @@ func RenderDir(archiveDir string, appID string, registrySettings *registrytypes.
 	}
 
 	reOptions := rewrite.RewriteOptions{
-		RootDir:          archiveDir,
-		UpstreamURI:      fmt.Sprintf("replicated://%s", license.Spec.AppSlug),
-		UpstreamPath:     filepath.Join(archiveDir, "upstream"),
-		Installation:     installation,
-		Downstreams:      downstreamNames,
-		Silent:           true,
-		CreateAppDir:     false,
-		ExcludeKotsKinds: true,
-		License:          license,
-		ConfigValues:     configValues,
-		K8sNamespace:     appNamespace,
-		CopyImages:       false,
-		IsAirgap:         a.IsAirgap,
-		AppSlug:          a.Slug,
-		IsGitOps:         a.IsGitOps,
+		RootDir:               archiveDir,
+		UpstreamURI:           fmt.Sprintf("replicated://%s", license.Spec.AppSlug),
+		UpstreamPath:          filepath.Join(archiveDir, "upstream"),
+		Installation:          installation,
+		Downstreams:           downstreamNames,
+		Silent:                true,
+		CreateAppDir:          false,
+		ExcludeKotsKinds:      true,
+		ExtractKotsHookEvents: true,
+		License:               license,
+		ConfigValues:          configValues,
+		K8sNamespace:          appNamespace,
+		CopyImages:            false,
+		IsAirgap:              a.IsAirgap,
+		AppSlug:               a.Slug,
+		IsGitOps:              a.IsGitOps,
 	}
 
 	if registrySettings != nil {

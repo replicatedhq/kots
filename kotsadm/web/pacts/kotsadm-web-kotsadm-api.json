@@ -106,7 +106,7 @@
         },
         "body": {
           "operationName": "getKotsApp",
-          "query": "\n  query getKotsApp($slug: String!) {\n    getKotsApp(slug: $slug) {\n      id\n      name\n      iconUri\n      createdAt\n      updatedAt\n      slug\n      upstreamUri\n      currentSequence\n      hasPreflight\n      isAirgap\n      isConfigurable\n      isGitOpsSupported\n      allowRollback\n      isSnapshotSupported\n      currentVersion {\n        title\n        status\n        createdOn\n        sequence\n        releaseNotes\n        deployedAt\n      }\n      lastUpdateCheckAt\n      bundleCommand\n      downstreams {\n        name\n        links {\n          title\n          uri\n        }\n        currentVersion {\n          title\n          status\n          createdOn\n          sequence\n          deployedAt\n          source\n          releaseNotes\n          parentSequence\n        }\n        pendingVersions {\n          title\n          status\n          createdOn\n          sequence\n          deployedAt\n          parentSequence\n        }\n        pastVersions {\n          title\n          status\n          createdOn\n          sequence\n          deployedAt\n          parentSequence\n        }\n        gitops {\n          enabled\n          provider\n          uri\n          hostname\n          path\n          branch\n          format\n          action\n          deployKey\n          isConnected\n        }\n        cluster {\n          id\n          title\n          slug\n          createdOn\n          lastUpdated\n          currentVersion {\n            title\n            status\n            createdOn\n            sequence\n            deployedAt\n          }\n          shipOpsRef {\n            token\n          }\n          totalApplicationCount\n        }\n      }\n    }\n  }\n",
+          "query": "\n  query getKotsApp($slug: String!) {\n    getKotsApp(slug: $slug) {\n      id\n      name\n      iconUri\n      createdAt\n      updatedAt\n      slug\n      upstreamUri\n      currentSequence\n      hasPreflight\n      isAirgap\n      isConfigurable\n      isGitOpsSupported\n      allowRollback\n      allowSnapshots\n      licenseType\n      updateCheckerSpec\n      currentVersion {\n        title\n        status\n        createdOn\n        sequence\n        releaseNotes\n        deployedAt\n        yamlErrors {\n          path\n          error\n        }\n      }\n      lastUpdateCheckAt\n      bundleCommand\n      downstreams {\n        name\n        links {\n          title\n          uri\n        }\n        currentVersion {\n          title\n          status\n          createdOn\n          sequence\n          deployedAt\n          source\n          releaseNotes\n          parentSequence\n          yamlErrors {\n            path\n            error\n          }\n        }\n        pendingVersions {\n          title\n          status\n          createdOn\n          sequence\n          deployedAt\n          parentSequence\n          yamlErrors {\n            path\n            error\n          }\n        }\n        pastVersions {\n          title\n          status\n          createdOn\n          sequence\n          deployedAt\n          parentSequence\n          yamlErrors {\n            path\n            error\n          }\n        }\n        gitops {\n          enabled\n          provider\n          uri\n          hostname\n          path\n          branch\n          format\n          action\n          deployKey\n          isConnected\n        }\n        cluster {\n          id\n          title\n          slug\n          createdOn\n          lastUpdated\n          currentVersion {\n            title\n            status\n            createdOn\n            sequence\n            deployedAt\n            yamlErrors {\n              path\n              error\n            }\n          }\n          shipOpsRef {\n            token\n          }\n          totalApplicationCount\n        }\n      }\n    }\n  }\n",
           "variables": {
             "slug": "kots-app-slug"
           }
@@ -114,7 +114,7 @@
         "matchingRules": {
           "$.body.query": {
             "match": "regex",
-            "regex": "\\s*query\\s*getKotsApp\\(\\$slug:\\s*String!\\)\\s*\\{\\s*getKotsApp\\(slug:\\s*\\$slug\\)\\s*\\{\\s*id\\s*name\\s*iconUri\\s*createdAt\\s*updatedAt\\s*slug\\s*upstreamUri\\s*currentSequence\\s*hasPreflight\\s*isAirgap\\s*isConfigurable\\s*isGitOpsSupported\\s*allowRollback\\s*isSnapshotSupported\\s*currentVersion\\s*\\{\\s*title\\s*status\\s*createdOn\\s*sequence\\s*releaseNotes\\s*deployedAt\\s*\\}\\s*lastUpdateCheckAt\\s*bundleCommand\\s*downstreams\\s*\\{\\s*name\\s*links\\s*\\{\\s*title\\s*uri\\s*\\}\\s*currentVersion\\s*\\{\\s*title\\s*status\\s*createdOn\\s*sequence\\s*deployedAt\\s*source\\s*releaseNotes\\s*parentSequence\\s*\\}\\s*pendingVersions\\s*\\{\\s*title\\s*status\\s*createdOn\\s*sequence\\s*deployedAt\\s*parentSequence\\s*\\}\\s*pastVersions\\s*\\{\\s*title\\s*status\\s*createdOn\\s*sequence\\s*deployedAt\\s*parentSequence\\s*\\}\\s*gitops\\s*\\{\\s*enabled\\s*provider\\s*uri\\s*hostname\\s*path\\s*branch\\s*format\\s*action\\s*deployKey\\s*isConnected\\s*\\}\\s*cluster\\s*\\{\\s*id\\s*title\\s*slug\\s*createdOn\\s*lastUpdated\\s*currentVersion\\s*\\{\\s*title\\s*status\\s*createdOn\\s*sequence\\s*deployedAt\\s*\\}\\s*shipOpsRef\\s*\\{\\s*token\\s*\\}\\s*totalApplicationCount\\s*\\}\\s*\\}\\s*\\}\\s*\\}\\s*"
+            "regex": "\\s*query\\s*getKotsApp\\(\\$slug:\\s*String!\\)\\s*\\{\\s*getKotsApp\\(slug:\\s*\\$slug\\)\\s*\\{\\s*id\\s*name\\s*iconUri\\s*createdAt\\s*updatedAt\\s*slug\\s*upstreamUri\\s*currentSequence\\s*hasPreflight\\s*isAirgap\\s*isConfigurable\\s*isGitOpsSupported\\s*allowRollback\\s*allowSnapshots\\s*licenseType\\s*updateCheckerSpec\\s*currentVersion\\s*\\{\\s*title\\s*status\\s*createdOn\\s*sequence\\s*releaseNotes\\s*deployedAt\\s*yamlErrors\\s*\\{\\s*path\\s*error\\s*\\}\\s*\\}\\s*lastUpdateCheckAt\\s*bundleCommand\\s*downstreams\\s*\\{\\s*name\\s*links\\s*\\{\\s*title\\s*uri\\s*\\}\\s*currentVersion\\s*\\{\\s*title\\s*status\\s*createdOn\\s*sequence\\s*deployedAt\\s*source\\s*releaseNotes\\s*parentSequence\\s*yamlErrors\\s*\\{\\s*path\\s*error\\s*\\}\\s*\\}\\s*pendingVersions\\s*\\{\\s*title\\s*status\\s*createdOn\\s*sequence\\s*deployedAt\\s*parentSequence\\s*yamlErrors\\s*\\{\\s*path\\s*error\\s*\\}\\s*\\}\\s*pastVersions\\s*\\{\\s*title\\s*status\\s*createdOn\\s*sequence\\s*deployedAt\\s*parentSequence\\s*yamlErrors\\s*\\{\\s*path\\s*error\\s*\\}\\s*\\}\\s*gitops\\s*\\{\\s*enabled\\s*provider\\s*uri\\s*hostname\\s*path\\s*branch\\s*format\\s*action\\s*deployKey\\s*isConnected\\s*\\}\\s*cluster\\s*\\{\\s*id\\s*title\\s*slug\\s*createdOn\\s*lastUpdated\\s*currentVersion\\s*\\{\\s*title\\s*status\\s*createdOn\\s*sequence\\s*deployedAt\\s*yamlErrors\\s*\\{\\s*path\\s*error\\s*\\}\\s*\\}\\s*shipOpsRef\\s*\\{\\s*token\\s*\\}\\s*totalApplicationCount\\s*\\}\\s*\\}\\s*\\}\\s*\\}\\s*"
           }
         }
       },
@@ -301,7 +301,7 @@
         },
         "body": {
           "operationName": "getKotsDownstreamHistory",
-          "query": "\n  query getKotsDownstreamHistory($clusterSlug: String!, $upstreamSlug: String!) {\n    getKotsDownstreamHistory(clusterSlug: $clusterSlug, upstreamSlug: $upstreamSlug) {\n      title\n      status\n      createdOn\n      sequence\n      parentSequence\n      releaseNotes\n      deployedAt\n      source\n      diffSummary\n      preflightResult\n      preflightResultCreatedAt\n      commitUrl\n      gitDeployable\n    }\n  }\n",
+          "query": "\n  query getKotsDownstreamHistory($clusterSlug: String!, $upstreamSlug: String!) {\n    getKotsDownstreamHistory(clusterSlug: $clusterSlug, upstreamSlug: $upstreamSlug) {\n      title\n      status\n      createdOn\n      sequence\n      parentSequence\n      releaseNotes\n      deployedAt\n      source\n      diffSummary\n      diffSummaryError\n      preflightResult\n      preflightResultCreatedAt\n      commitUrl\n      gitDeployable\n    }\n  }\n",
           "variables": {
             "clusterSlug": "get-kots-downstream-history-cluster-slug",
             "upstreamSlug": "get-kots-downstream-history-app-slug"
@@ -310,7 +310,7 @@
         "matchingRules": {
           "$.body.query": {
             "match": "regex",
-            "regex": "\\s*query\\s*getKotsDownstreamHistory\\(\\$clusterSlug:\\s*String!,\\s*\\$upstreamSlug:\\s*String!\\)\\s*\\{\\s*getKotsDownstreamHistory\\(clusterSlug:\\s*\\$clusterSlug,\\s*upstreamSlug:\\s*\\$upstreamSlug\\)\\s*\\{\\s*title\\s*status\\s*createdOn\\s*sequence\\s*parentSequence\\s*releaseNotes\\s*deployedAt\\s*source\\s*diffSummary\\s*preflightResult\\s*preflightResultCreatedAt\\s*commitUrl\\s*gitDeployable\\s*\\}\\s*\\}\\s*"
+            "regex": "\\s*query\\s*getKotsDownstreamHistory\\(\\$clusterSlug:\\s*String!,\\s*\\$upstreamSlug:\\s*String!\\)\\s*\\{\\s*getKotsDownstreamHistory\\(clusterSlug:\\s*\\$clusterSlug,\\s*upstreamSlug:\\s*\\$upstreamSlug\\)\\s*\\{\\s*title\\s*status\\s*createdOn\\s*sequence\\s*parentSequence\\s*releaseNotes\\s*deployedAt\\s*source\\s*diffSummary\\s*diffSummaryError\\s*preflightResult\\s*preflightResultCreatedAt\\s*commitUrl\\s*gitDeployable\\s*\\}\\s*\\}\\s*"
           }
         }
       },
@@ -361,7 +361,7 @@
         },
         "body": {
           "operationName": "getKotsDownstreamHistory",
-          "query": "\n  query getKotsDownstreamHistory($clusterSlug: String!, $upstreamSlug: String!) {\n    getKotsDownstreamHistory(clusterSlug: $clusterSlug, upstreamSlug: $upstreamSlug) {\n      title\n      status\n      createdOn\n      sequence\n      parentSequence\n      releaseNotes\n      deployedAt\n      source\n      diffSummary\n      preflightResult\n      preflightResultCreatedAt\n      commitUrl\n      gitDeployable\n    }\n  }\n",
+          "query": "\n  query getKotsDownstreamHistory($clusterSlug: String!, $upstreamSlug: String!) {\n    getKotsDownstreamHistory(clusterSlug: $clusterSlug, upstreamSlug: $upstreamSlug) {\n      title\n      status\n      createdOn\n      sequence\n      parentSequence\n      releaseNotes\n      deployedAt\n      source\n      diffSummary\n      diffSummaryError\n      preflightResult\n      preflightResultCreatedAt\n      commitUrl\n      gitDeployable\n    }\n  }\n",
           "variables": {
             "clusterSlug": "kots-release-notes-cluster-slug",
             "upstreamSlug": "kots-release-notes-app-slug"
@@ -370,7 +370,7 @@
         "matchingRules": {
           "$.body.query": {
             "match": "regex",
-            "regex": "\\s*query\\s*getKotsDownstreamHistory\\(\\$clusterSlug:\\s*String!,\\s*\\$upstreamSlug:\\s*String!\\)\\s*\\{\\s*getKotsDownstreamHistory\\(clusterSlug:\\s*\\$clusterSlug,\\s*upstreamSlug:\\s*\\$upstreamSlug\\)\\s*\\{\\s*title\\s*status\\s*createdOn\\s*sequence\\s*parentSequence\\s*releaseNotes\\s*deployedAt\\s*source\\s*diffSummary\\s*preflightResult\\s*preflightResultCreatedAt\\s*commitUrl\\s*gitDeployable\\s*\\}\\s*\\}\\s*"
+            "regex": "\\s*query\\s*getKotsDownstreamHistory\\(\\$clusterSlug:\\s*String!,\\s*\\$upstreamSlug:\\s*String!\\)\\s*\\{\\s*getKotsDownstreamHistory\\(clusterSlug:\\s*\\$clusterSlug,\\s*upstreamSlug:\\s*\\$upstreamSlug\\)\\s*\\{\\s*title\\s*status\\s*createdOn\\s*sequence\\s*parentSequence\\s*releaseNotes\\s*deployedAt\\s*source\\s*diffSummary\\s*diffSummaryError\\s*preflightResult\\s*preflightResultCreatedAt\\s*commitUrl\\s*gitDeployable\\s*\\}\\s*\\}\\s*"
           }
         }
       },
@@ -422,7 +422,7 @@
         },
         "body": {
           "operationName": "getKotsDownstreamHistory",
-          "query": "\n  query getKotsDownstreamHistory($clusterSlug: String!, $upstreamSlug: String!) {\n    getKotsDownstreamHistory(clusterSlug: $clusterSlug, upstreamSlug: $upstreamSlug) {\n      title\n      status\n      createdOn\n      sequence\n      parentSequence\n      releaseNotes\n      deployedAt\n      source\n      diffSummary\n      preflightResult\n      preflightResultCreatedAt\n      commitUrl\n      gitDeployable\n    }\n  }\n",
+          "query": "\n  query getKotsDownstreamHistory($clusterSlug: String!, $upstreamSlug: String!) {\n    getKotsDownstreamHistory(clusterSlug: $clusterSlug, upstreamSlug: $upstreamSlug) {\n      title\n      status\n      createdOn\n      sequence\n      parentSequence\n      releaseNotes\n      deployedAt\n      source\n      diffSummary\n      diffSummaryError\n      preflightResult\n      preflightResultCreatedAt\n      commitUrl\n      gitDeployable\n    }\n  }\n",
           "variables": {
             "clusterSlug": "kots-no-release-notes-cluster-slug",
             "upstreamSlug": "kots-no-release-notes-app-slug"
@@ -431,7 +431,7 @@
         "matchingRules": {
           "$.body.query": {
             "match": "regex",
-            "regex": "\\s*query\\s*getKotsDownstreamHistory\\(\\$clusterSlug:\\s*String!,\\s*\\$upstreamSlug:\\s*String!\\)\\s*\\{\\s*getKotsDownstreamHistory\\(clusterSlug:\\s*\\$clusterSlug,\\s*upstreamSlug:\\s*\\$upstreamSlug\\)\\s*\\{\\s*title\\s*status\\s*createdOn\\s*sequence\\s*parentSequence\\s*releaseNotes\\s*deployedAt\\s*source\\s*diffSummary\\s*preflightResult\\s*preflightResultCreatedAt\\s*commitUrl\\s*gitDeployable\\s*\\}\\s*\\}\\s*"
+            "regex": "\\s*query\\s*getKotsDownstreamHistory\\(\\$clusterSlug:\\s*String!,\\s*\\$upstreamSlug:\\s*String!\\)\\s*\\{\\s*getKotsDownstreamHistory\\(clusterSlug:\\s*\\$clusterSlug,\\s*upstreamSlug:\\s*\\$upstreamSlug\\)\\s*\\{\\s*title\\s*status\\s*createdOn\\s*sequence\\s*parentSequence\\s*releaseNotes\\s*deployedAt\\s*source\\s*diffSummary\\s*diffSummaryError\\s*preflightResult\\s*preflightResultCreatedAt\\s*commitUrl\\s*gitDeployable\\s*\\}\\s*\\}\\s*"
           }
         }
       },
@@ -477,7 +477,7 @@
         },
         "body": {
           "operationName": "getKotsDownstreamHistory",
-          "query": "\n  query getKotsDownstreamHistory($clusterSlug: String!, $upstreamSlug: String!) {\n    getKotsDownstreamHistory(clusterSlug: $clusterSlug, upstreamSlug: $upstreamSlug) {\n      title\n      status\n      createdOn\n      sequence\n      parentSequence\n      releaseNotes\n      deployedAt\n      source\n      diffSummary\n      preflightResult\n      preflightResultCreatedAt\n      commitUrl\n      gitDeployable\n    }\n  }\n",
+          "query": "\n  query getKotsDownstreamHistory($clusterSlug: String!, $upstreamSlug: String!) {\n    getKotsDownstreamHistory(clusterSlug: $clusterSlug, upstreamSlug: $upstreamSlug) {\n      title\n      status\n      createdOn\n      sequence\n      parentSequence\n      releaseNotes\n      deployedAt\n      source\n      diffSummary\n      diffSummaryError\n      preflightResult\n      preflightResultCreatedAt\n      commitUrl\n      gitDeployable\n    }\n  }\n",
           "variables": {
             "clusterSlug": "kots-different-sequence-cluster-slug",
             "upstreamSlug": "kots-different-sequence-app-slug"
@@ -486,7 +486,7 @@
         "matchingRules": {
           "$.body.query": {
             "match": "regex",
-            "regex": "\\s*query\\s*getKotsDownstreamHistory\\(\\$clusterSlug:\\s*String!,\\s*\\$upstreamSlug:\\s*String!\\)\\s*\\{\\s*getKotsDownstreamHistory\\(clusterSlug:\\s*\\$clusterSlug,\\s*upstreamSlug:\\s*\\$upstreamSlug\\)\\s*\\{\\s*title\\s*status\\s*createdOn\\s*sequence\\s*parentSequence\\s*releaseNotes\\s*deployedAt\\s*source\\s*diffSummary\\s*preflightResult\\s*preflightResultCreatedAt\\s*commitUrl\\s*gitDeployable\\s*\\}\\s*\\}\\s*"
+            "regex": "\\s*query\\s*getKotsDownstreamHistory\\(\\$clusterSlug:\\s*String!,\\s*\\$upstreamSlug:\\s*String!\\)\\s*\\{\\s*getKotsDownstreamHistory\\(clusterSlug:\\s*\\$clusterSlug,\\s*upstreamSlug:\\s*\\$upstreamSlug\\)\\s*\\{\\s*title\\s*status\\s*createdOn\\s*sequence\\s*parentSequence\\s*releaseNotes\\s*deployedAt\\s*source\\s*diffSummary\\s*diffSummaryError\\s*preflightResult\\s*preflightResultCreatedAt\\s*commitUrl\\s*gitDeployable\\s*\\}\\s*\\}\\s*"
           }
         }
       },

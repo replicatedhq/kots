@@ -83,19 +83,20 @@ func DownloadUpdate(appID string, archiveDir string, toCursor string) (sequence 
 	}
 
 	pullOptions := kotspull.PullOptions{
-		LicenseFile:         filepath.Join(archiveDir, "upstream", "userdata", "license.yaml"),
-		Namespace:           appNamespace,
-		ConfigFile:          filepath.Join(archiveDir, "upstream", "userdata", "config.yaml"),
-		InstallationFile:    filepath.Join(archiveDir, "upstream", "userdata", "installation.yaml"),
-		UpdateCursor:        toCursor,
-		RootDir:             archiveDir,
-		ExcludeKotsKinds:    true,
-		ExcludeAdminConsole: true,
-		CreateAppDir:        false,
-		ReportWriter:        pipeWriter,
-		AppSlug:             a.Slug,
-		AppSequence:         appSequence,
-		IsGitOps:            a.IsGitOps,
+		LicenseFile:           filepath.Join(archiveDir, "upstream", "userdata", "license.yaml"),
+		Namespace:             appNamespace,
+		ConfigFile:            filepath.Join(archiveDir, "upstream", "userdata", "config.yaml"),
+		InstallationFile:      filepath.Join(archiveDir, "upstream", "userdata", "installation.yaml"),
+		UpdateCursor:          toCursor,
+		RootDir:               archiveDir,
+		ExcludeKotsKinds:      true,
+		ExtractKotsHookEvents: true,
+		ExcludeAdminConsole:   true,
+		CreateAppDir:          false,
+		ReportWriter:          pipeWriter,
+		AppSlug:               a.Slug,
+		AppSequence:           appSequence,
+		IsGitOps:              a.IsGitOps,
 	}
 
 	registrySettings, err := registry.GetRegistrySettingsForApp(appID)

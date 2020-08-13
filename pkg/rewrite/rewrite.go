@@ -21,26 +21,27 @@ import (
 )
 
 type RewriteOptions struct {
-	RootDir           string
-	UpstreamURI       string
-	UpstreamPath      string
-	Downstreams       []string
-	K8sNamespace      string
-	Silent            bool
-	CreateAppDir      bool
-	ExcludeKotsKinds  bool
-	Installation      *kotsv1beta1.Installation
-	License           *kotsv1beta1.License
-	ConfigValues      *kotsv1beta1.ConfigValues
-	ReportWriter      io.Writer
-	CopyImages        bool
-	IsAirgap          bool
-	RegistryEndpoint  string
-	RegistryUsername  string
-	RegistryPassword  string
-	RegistryNamespace string
-	AppSlug           string
-	IsGitOps          bool
+	RootDir               string
+	UpstreamURI           string
+	UpstreamPath          string
+	Downstreams           []string
+	K8sNamespace          string
+	Silent                bool
+	CreateAppDir          bool
+	ExcludeKotsKinds      bool
+	ExtractKotsHookEvents bool
+	Installation          *kotsv1beta1.Installation
+	License               *kotsv1beta1.License
+	ConfigValues          *kotsv1beta1.ConfigValues
+	ReportWriter          io.Writer
+	CopyImages            bool
+	IsAirgap              bool
+	RegistryEndpoint      string
+	RegistryUsername      string
+	RegistryPassword      string
+	RegistryNamespace     string
+	AppSlug               string
+	IsGitOps              bool
 }
 
 func Rewrite(rewriteOptions RewriteOptions) error {
@@ -97,6 +98,7 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 		LocalRegistryUsername:  rewriteOptions.RegistryUsername,
 		LocalRegistryPassword:  rewriteOptions.RegistryPassword,
 		ExcludeKotsKinds:       rewriteOptions.ExcludeKotsKinds,
+		ExtractKotsHookEvents:  rewriteOptions.ExtractKotsHookEvents,
 		Log:                    log,
 	}
 	log.ActionWithSpinner("Creating base")
@@ -137,6 +139,7 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 		SkippedDir:       u.GetSkippedDir(writeUpstreamOptions),
 		Overwrite:        true,
 		ExcludeKotsKinds: rewriteOptions.ExcludeKotsKinds,
+		Log:              log,
 	}
 	if err := b.WriteBase(writeBaseOptions); err != nil {
 		return errors.Wrap(err, "failed to write base")

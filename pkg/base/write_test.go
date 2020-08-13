@@ -247,7 +247,7 @@ func Test_DeduplicateOnContent(t *testing.T) {
 			defer scopetest.End()
 			req := require.New(t)
 
-			actualResources, actualPatches, err := deduplicateOnContent(test.files, test.excludeKotsKinds, "test")
+			actualResources, actualPatches, err := deduplicateOnContent(test.files, test.excludeKotsKinds, "test", nil)
 			req.NoError(err)
 
 			assert.ElementsMatch(t, test.expectedResources, actualResources)

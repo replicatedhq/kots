@@ -19,6 +19,14 @@ profiles:
           apply:
             - --validate=false ## Skaffold turns CRDs into invalid yaml (https://github.com/GoogleContainerTools/skaffold/issues/1737)
 
+  - name: local
+    activation:
+      - kubeContext: local
+    deploy:
+      kustomize:
+        paths:
+          - "./kustomize/overlays/local"
+
 build:
   local:
     concurrency: 0

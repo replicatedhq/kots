@@ -26,32 +26,33 @@ import (
 )
 
 type PullOptions struct {
-	HelmRepoURI         string
-	RootDir             string
-	Namespace           string
-	Downstreams         []string
-	LocalPath           string
-	LicenseFile         string
-	InstallationFile    string
-	AirgapRoot          string
-	ConfigFile          string
-	UpdateCursor        string
-	ExcludeKotsKinds    bool
-	ExcludeAdminConsole bool
-	SharedPassword      string
-	CreateAppDir        bool
-	Silent              bool
-	RewriteImages       bool
-	RewriteImageOptions RewriteImageOptions
-	HelmVersion         string
-	HelmOptions         []string
-	ReportWriter        io.Writer
-	AppSlug             string
-	AppSequence         int64
-	IsGitOps            bool
-	HTTPProxyEnvValue   string
-	HTTPSProxyEnvValue  string
-	NoProxyEnvValue     string
+	HelmRepoURI           string
+	RootDir               string
+	Namespace             string
+	Downstreams           []string
+	LocalPath             string
+	LicenseFile           string
+	InstallationFile      string
+	AirgapRoot            string
+	ConfigFile            string
+	UpdateCursor          string
+	ExcludeKotsKinds      bool
+	ExtractKotsHookEvents bool
+	ExcludeAdminConsole   bool
+	SharedPassword        string
+	CreateAppDir          bool
+	Silent                bool
+	RewriteImages         bool
+	RewriteImageOptions   RewriteImageOptions
+	HelmVersion           string
+	HelmOptions           []string
+	ReportWriter          io.Writer
+	AppSlug               string
+	AppSequence           int64
+	IsGitOps              bool
+	HTTPProxyEnvValue     string
+	HTTPSProxyEnvValue    string
+	NoProxyEnvValue       string
 }
 
 type RewriteImageOptions struct {
@@ -234,6 +235,7 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 		LocalRegistryUsername:  pullOptions.RewriteImageOptions.Username,
 		LocalRegistryPassword:  pullOptions.RewriteImageOptions.Password,
 		ExcludeKotsKinds:       pullOptions.ExcludeKotsKinds,
+		ExtractKotsHookEvents:  pullOptions.ExtractKotsHookEvents,
 		Log:                    log,
 	}
 	log.ActionWithSpinner("Creating base")
@@ -275,6 +277,7 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 		SkippedDir:       u.GetSkippedDir(writeUpstreamOptions),
 		Overwrite:        true,
 		ExcludeKotsKinds: pullOptions.ExcludeKotsKinds,
+		Log:              log,
 	}
 	if err := b.WriteBase(writeBaseOptions); err != nil {
 		return "", errors.Wrap(err, "failed to write base")

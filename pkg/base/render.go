@@ -16,6 +16,7 @@ type RenderOptions struct {
 	LocalRegistryUsername  string
 	LocalRegistryPassword  string
 	ExcludeKotsKinds       bool
+	ExtractKotsHookEvents  bool
 	Log                    *logger.Logger
 }
 

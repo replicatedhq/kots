@@ -63,14 +63,15 @@ func UpdateCheck(socket, fromArchivePath, namespace string) {
 		}
 
 		pullOptions := pull.PullOptions{
-			LicenseFile:         expectedLicenseFile,
-			Namespace:           namespace,
-			ConfigFile:          filepath.Join(tmpRoot, "upstream", "userdata", "config.yaml"),
-			InstallationFile:    filepath.Join(tmpRoot, "upstream", "userdata", "installation.yaml"),
-			RootDir:             tmpRoot,
-			ExcludeKotsKinds:    true,
-			ExcludeAdminConsole: true,
-			CreateAppDir:        false,
+			LicenseFile:           expectedLicenseFile,
+			Namespace:             namespace,
+			ConfigFile:            filepath.Join(tmpRoot, "upstream", "userdata", "config.yaml"),
+			InstallationFile:      filepath.Join(tmpRoot, "upstream", "userdata", "installation.yaml"),
+			RootDir:               tmpRoot,
+			ExcludeKotsKinds:      true,
+			ExtractKotsHookEvents: true,
+			ExcludeAdminConsole:   true,
+			CreateAppDir:          false,
 		}
 
 		if _, err := pull.Pull(fmt.Sprintf("replicated://%s", license.Spec.AppSlug), pullOptions); err != nil {

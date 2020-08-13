@@ -56,8 +56,10 @@ require (
 	github.com/yvasiyarov/go-metrics v0.0.0-20150112132944-c25f46c4b940 // indirect
 	github.com/yvasiyarov/gorelic v0.0.7 // indirect
 	github.com/yvasiyarov/newrelic_platform_go v0.0.0-20160601141957-9c099fbc30e9 // indirect
+	go.uber.org/multierr v1.1.0
 	go.undefinedlabs.com/scopeagent v0.1.12
 	golang.org/x/crypto v0.0.0-20200414173820-0848c9571904
+	google.golang.org/appengine v1.6.5
 	gopkg.in/yaml.v2 v2.3.0
 	helm.sh/helm/v3 v3.2.4
 	k8s.io/api v0.18.3

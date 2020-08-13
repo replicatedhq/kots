@@ -1,19 +1,24 @@
 package base
 
 import (
-	"bytes"
 	"fmt"
 	"path/filepath"
 	"strconv"
+	"strings"
 
 	"github.com/pkg/errors"
 	kotsscheme "github.com/replicatedhq/kots/kotskinds/client/kotsclientset/scheme"
+	"github.com/replicatedhq/kots/pkg/logger"
 	troubleshootscheme "github.com/replicatedhq/troubleshoot/pkg/client/troubleshootclientset/scheme"
-	"gopkg.in/yaml.v2"
-	batchv1 "k8s.io/api/batch/v1"
-	serializer "k8s.io/apimachinery/pkg/runtime/serializer/json"
+	"go.uber.org/multierr"
+	"k8s.io/apimachinery/pkg/api/meta"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/kubernetes/scheme"
+	"sigs.k8s.io/yaml"
 )
+
+var metadataAccessor = meta.NewAccessor()
 
 type Base struct {
 	Path       string
@@ -24,20 +29,21 @@ type Base struct {
 }
 
 type BaseFile struct {
-	Path    string
-	Content []byte
-	Error   error
+	Path       string
+	Content    []byte
+	Error      error
+	HookEvents []HookEvent
 }
 
 type OverlySimpleGVK struct {
-	APIVersion string               `yaml:"apiVersion"`
-	Kind       string               `yaml:"kind"`
-	Metadata   OverlySimpleMetadata `yaml:"metadata"`
+	APIVersion string               `json:"apiVersion"`
+	Kind       string               `json:"kind"`
+	Metadata   OverlySimpleMetadata `json:"metadata"`
 }
 
 type OverlySimpleMetadata struct {
-	Name        string                 `yaml:"name"`
-	Namespace   string                 `yaml:"namespace"`
+	Name        string                 `json:"name"`
+	Namespace   string                 `json:"namespace"`
 	Annotations map[string]interface{} `json:"annotations"`
 }
 
@@ -61,37 +67,6 @@ func GetGVKWithNameAndNs(content []byte, baseNS string) string {
 	return fmt.Sprintf("%s-%s-%s-%s", o.APIVersion, o.Kind, o.Metadata.Name, namespace)
 }
 
-func (f *BaseFile) transpileHelmHooksToKotsHooks() error {
-	decode := scheme.Codecs.UniversalDeserializer().Decode
-	obj, gvk, err := decode(f.Content, nil, nil)
-	if err != nil {
-		return nil // this isn't an error, it's just not a job witih a hook, that's certain
-	}
-
-	// we currently only support hooks on jobs
-	if gvk.Group != "batch" || gvk.Version != "v1" || gvk.Kind != "Job" {
-		return nil
-	}
-
-	job := obj.(*batchv1.Job)
-
-	helmHookDeletePolicyAnnotation, ok := job.Annotations["helm.sh/hook-delete-policy"]
-	if !ok {
-		return nil
-	}
-
-	job.Annotations["kots.io/hook-delete-policy"] = helmHookDeletePolicyAnnotation
-
-	s := serializer.NewYAMLSerializer(serializer.DefaultMetaFactory, scheme.Scheme, scheme.Scheme)
-	var b bytes.Buffer
-	if err := s.Encode(job, &b); err != nil {
-		return errors.Wrap(err, "failed to encode job")
-	}
-
-	f.Content = b.Bytes()
-	return nil
-}
-
 type ParseError struct {
 	Err error
 }
@@ -102,127 +77,140 @@ func (e ParseError) Error() string {
 
 // ShouldBeIncludedInBaseKustomization attempts to determine if this is a valid Kubernetes manifest.
 // It accomplished this by trying to unmarshal the YAML and looking for a apiVersion and Kind
-func (f BaseFile) ShouldBeIncludedInBaseKustomization(excludeKotsKinds bool) (bool, error) {
-	var m interface{}
-
-	if err := yaml.Unmarshal(f.Content, &m); err != nil {
-		// check if this is a yaml file
-		if ext := filepath.Ext(f.Path); ext == ".yaml" || ext == ".yml" {
-			return false, ParseError{Err: err}
-		}
-		return false, nil
+func (f BaseFile) ShouldBeIncludedInBaseKustomization(excludeKotsKinds bool, log *logger.Logger) (bool, error) {
+	obj, gvk, err := f.maybeDecode()
+	if err != nil || gvk == nil {
+		return false, err
 	}
 
-	o := OverlySimpleGVK{}
-	_ = yaml.Unmarshal(f.Content, &o) // error should be caught in previous unmarshal
-
-	// check if this is a kubernetes document
-	if o.APIVersion == "" || o.Kind == "" {
-		if ext := filepath.Ext(f.Path); ext == ".yaml" || ext == ".yml" {
-			// ignore empty files and files with only comments
-			if m == nil {
-				return false, nil
-			}
-			return false, ParseError{Err: errors.New("not a kubernetes document")}
-		}
-		return false, nil
-	}
+	name, _ := metadataAccessor.Name(obj)
+	annotations, _ := metadataAccessor.Annotations(obj)
 
 	// Backup is never deployed. kots.io/exclude and kots.io/when are used to enable snapshots
 	if excludeKotsKinds {
-		if iskotsAPIVersionKind(o) {
+		if isKotsAPIVersionKind(gvk) {
 			return false, nil
 		}
 	}
 
-	if o.Metadata.Annotations != nil {
-		if val, ok := o.Metadata.Annotations["kots.io/exclude"]; ok {
-			if boolVal, ok := val.(bool); ok {
-				return !boolVal, nil
-			}
-
-			if strVal, ok := val.(string); ok {
-				boolVal, err := strconv.ParseBool(strVal)
-				if err != nil {
-					// should this be a ParseError?
-					return true, errors.Errorf("unable to parse %s as bool in exclude annotation of object %s, kind %s/%s", strVal, o.Metadata.Name, o.APIVersion, o.Kind)
-				}
-
-				return !boolVal, nil
-			}
-
-			// should this be a ParseError?
-			return true, errors.Errorf("unexpected type in exclude annotation of %s/%s: %T", o.APIVersion, o.Metadata.Name, val)
+	exclude, err := isExcludedByAnnotation(annotations)
+	if err != nil {
+		// preserve backwards compatibility
+		if log != nil {
+			log.Error(fmt.Errorf("Failed to check kots.io exclude annotations of object %s kind %s: %v", name, gvk, err))
 		}
-
-		if val, ok := o.Metadata.Annotations["kots.io/when"]; ok {
-			if boolVal, ok := val.(bool); ok {
-				return boolVal, nil
-			}
-
-			if strVal, ok := val.(string); ok {
-				boolVal, err := strconv.ParseBool(strVal)
-				if err != nil {
-					// should this be a ParseError?
-					return true, errors.Errorf("unable to parse %s as bool in when annotation of object %s, kind %s/%s", strVal, o.Metadata.Name, o.APIVersion, o.Kind)
-				}
-
-				return boolVal, nil
-			}
-
-			// should this be a ParseError?
-			return true, errors.Errorf("unexpected type in when annotation of %s/%s: %T", o.APIVersion, o.Metadata.Name, val)
-		}
+	}
+	if exclude {
+		return false, nil
 	}
 
 	return true, nil
 }
 
+func (f BaseFile) GetKotsHookEvents() ([]HookEvent, error) {
+	obj, gvk, err := f.maybeDecode()
+	if err != nil || gvk == nil {
+		return nil, err
+	}
+
+	annotations, _ := metadataAccessor.Annotations(obj)
+
+	return getKotsHookEvents(annotations), nil
+}
+
 func (f BaseFile) IsKotsKind() (bool, error) {
+	_, gvk, err := f.maybeDecode()
+	if err != nil || gvk == nil {
+		return false, err
+	}
+
+	return isKotsAPIVersionKind(gvk), nil
+}
+
+func (f BaseFile) maybeDecode() (runtime.Object, *schema.GroupVersionKind, error) {
 	var m interface{}
 
 	if err := yaml.Unmarshal(f.Content, &m); err != nil {
 		// check if this is a yaml file
 		if ext := filepath.Ext(f.Path); ext == ".yaml" || ext == ".yml" {
-			return false, ParseError{Err: err}
+			return nil, nil, ParseError{Err: err}
 		}
-		return false, nil
+		return nil, nil, nil
 	}
 
-	o := OverlySimpleGVK{}
-	_ = yaml.Unmarshal(f.Content, &o) // error should be caught in previous unmarshal
-
+	decode := scheme.Codecs.UniversalDeserializer().Decode
+	obj, gvk, err := decode(f.Content, nil, nil)
 	// check if this is a kubernetes document
-	if o.APIVersion == "" || o.Kind == "" {
-		// check if this is a yaml file
+	if err != nil {
 		if ext := filepath.Ext(f.Path); ext == ".yaml" || ext == ".yml" {
 			// ignore empty files and files with only comments
 			if m == nil {
-				return false, nil
+				return nil, nil, nil
 			}
-			return false, ParseError{Err: errors.New("not a kubernetes document")}
+			return nil, nil, ParseError{Err: errors.New("not a kubernetes document")}
 		}
-		return false, nil
+		return nil, nil, nil
 	}
-
-	return iskotsAPIVersionKind(o), nil
+	return obj, gvk, err
 }
 
-func iskotsAPIVersionKind(o OverlySimpleGVK) bool {
-	if o.APIVersion == "velero.io/v1" && o.Kind == "Backup" {
+func isKotsAPIVersionKind(gvk *schema.GroupVersionKind) bool {
+	if gvk.Group == "velero.io" && gvk.Kind == "Backup" {
 		return true
 	}
-	if o.APIVersion == "kots.io/v1beta1" {
+	if gvk.Group == "kots.io" {
 		return true
 	}
-	if o.APIVersion == "troubleshoot.replicated.com/v1beta1" {
+	if gvk.Group == "troubleshoot.replicated.com" {
 		return true
 	}
 	// In addition to kotskinds, we exclude the application crd for now
-	if o.APIVersion == "app.k8s.io/v1beta1" {
+	if gvk.Group == "app.k8s.io" {
 		return true
 	}
 	return false
+}
+
+func isExcludedByAnnotation(annotations map[string]string) (bool, error) {
+	var retErr error
+
+	if strVal, ok := annotations["kots.io/exclude"]; ok {
+		boolVal, err := strconv.ParseBool(strVal)
+		if err != nil {
+			// should this be a ParseError?
+			retErr = multierr.Append(retErr, errors.Errorf("failed to parse %s as bool in kots.io/exclude annotation", strVal))
+		} else if boolVal {
+			return true, retErr
+		}
+	}
+
+	if strVal, ok := annotations["kots.io/when"]; ok {
+		boolVal, err := strconv.ParseBool(strVal)
+		if err != nil {
+			// should this be a ParseError?
+			retErr = multierr.Append(retErr, errors.Errorf("failed to parse %s as bool in kots.io/when annotation", strVal))
+		} else if !boolVal {
+			return true, retErr
+		}
+	}
+
+	return false, retErr
+}
+
+func hasKotsHookEvents(annotations map[string]string) bool {
+	return len(getKotsHookEvents(annotations)) > 0
+}
+
+func getKotsHookEvents(annotations map[string]string) []HookEvent {
+	events := []HookEvent{}
+	for _, hookType := range strings.Split(annotations[HookAnnotation], ",") {
+		hookType = strings.ToLower(strings.TrimSpace(hookType))
+		e, ok := hookEvents[hookType]
+		if ok {
+			events = append(events, e)
+		}
+	}
+	return events
 }
 
 func (b Base) ListErrorFiles() []BaseFile {

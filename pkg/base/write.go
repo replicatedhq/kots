@@ -11,6 +11,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
+	"github.com/replicatedhq/kots/pkg/logger"
 	"gopkg.in/yaml.v2"
 	kustomizetypes "sigs.k8s.io/kustomize/api/types"
 )
@@ -20,6 +21,7 @@ type WriteOptions struct {
 	SkippedDir       string
 	Overwrite        bool
 	ExcludeKotsKinds bool
+	Log              *logger.Logger
 }
 
 func (b *Base) WriteBase(options WriteOptions) error {
@@ -42,7 +44,7 @@ func (b *Base) WriteBase(options WriteOptions) error {
 		}
 	}
 
-	resources, patches, err := deduplicateOnContent(b.Files, options.ExcludeKotsKinds, b.Namespace)
+	resources, patches, err := deduplicateOnContent(b.Files, options.ExcludeKotsKinds, b.Namespace, options.Log)
 	if err != nil {
 		return errors.Wrap(err, "failed to deduplicate content")
 	}
@@ -86,6 +88,13 @@ func (b *Base) WriteBase(options WriteOptions) error {
 	for _, base := range b.Bases {
 		if base.Path == "" {
 			return errors.New("kustomize sub-base path cannot be empty")
+		}
+		options := WriteOptions{
+			BaseDir:          filepath.Join(options.BaseDir, b.Path),
+			SkippedDir:       options.SkippedDir,
+			Overwrite:        options.Overwrite,
+			ExcludeKotsKinds: options.ExcludeKotsKinds,
+			Log:              options.Log,
 		}
 		if err := base.WriteBase(options); err != nil {
 			return errors.Wrapf(err, "failed to render base %q", base.Path)
@@ -183,7 +192,7 @@ func (b *Base) writeSkippedFiles(options WriteOptions) error {
 	return nil
 }
 
-func deduplicateOnContent(files []BaseFile, excludeKotsKinds bool, baseNS string) ([]BaseFile, []BaseFile, error) {
+func deduplicateOnContent(files []BaseFile, excludeKotsKinds bool, baseNS string, log *logger.Logger) ([]BaseFile, []BaseFile, error) {
 	resources := []BaseFile{}
 	patches := []BaseFile{}
 
@@ -192,7 +201,7 @@ func deduplicateOnContent(files []BaseFile, excludeKotsKinds bool, baseNS string
 	singleDocs := convertToSingleDocBaseFiles(files)
 
 	for _, file := range singleDocs {
-		writeToKustomization, err := file.ShouldBeIncludedInBaseKustomization(excludeKotsKinds)
+		writeToKustomization, err := file.ShouldBeIncludedInBaseKustomization(excludeKotsKinds, log)
 		if err != nil {
 			// should we do anything with errors here?
 			if _, ok := err.(ParseError); !ok {
@@ -204,18 +213,15 @@ func deduplicateOnContent(files []BaseFile, excludeKotsKinds bool, baseNS string
 			continue
 		}
 
-		if writeToKustomization {
-			thisGVKName := GetGVKWithNameAndNs(file.Content, baseNS)
-			found := foundGVKNamesMap[thisGVKName]
+		thisGVKName := GetGVKWithNameAndNs(file.Content, baseNS)
+		found := foundGVKNamesMap[thisGVKName]
 
-			if !found || thisGVKName == "" {
-				resources = append(resources, file)
-				foundGVKNamesMap[thisGVKName] = true
-			} else {
-				patches = append(patches, file)
-			}
+		if !found || thisGVKName == "" {
+			resources = append(resources, file)
+			foundGVKNamesMap[thisGVKName] = true
+		} else {
+			patches = append(patches, file)
 		}
-
 	}
 
 	return resources, patches, nil
