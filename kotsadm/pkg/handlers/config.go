@@ -165,6 +165,9 @@ func updateAppConfig(updateApp *app.App, sequence int64, req UpdateAppConfigRequ
 	requiredItems := make([]string, 0, 0)
 	requiredItemsTitles := make([]string, 0, 0)
 	for _, group := range req.ConfigGroups {
+		if group.When == "false" {
+			continue
+		}
 		for _, item := range group.Items {
 			if config.IsRequiredItem(item) && config.IsUnsetItem(item) {
 				requiredItems = append(requiredItems, item.Name)
