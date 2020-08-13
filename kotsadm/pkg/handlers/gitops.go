@@ -12,7 +12,6 @@ import (
 	"github.com/replicatedhq/kots/kotsadm/pkg/downstream"
 	"github.com/replicatedhq/kots/kotsadm/pkg/gitops"
 	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
-	"github.com/replicatedhq/kots/kotsadm/pkg/task"
 	"github.com/replicatedhq/kots/kotsadm/pkg/version"
 )
 
@@ -125,19 +124,6 @@ func InitGitOpsConnection(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	currentStatus, _, err := task.GetTaskStatus("gitops-init")
-	if err != nil {
-		logger.Error(err)
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-
-	if currentStatus == "running" {
-		logger.Error(errors.New("gitops-init is already running, not starting a new one"))
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-
 	appID := mux.Vars(r)["appId"]
 	clusterID := mux.Vars(r)["clusterId"]
 
@@ -191,55 +177,29 @@ func InitGitOpsConnection(w http.ResponseWriter, r *http.Request) {
 	}
 
 	go func() {
-		if err := task.SetTaskStatus("gitops-init", "Creating commits ...", "running"); err != nil {
-			logger.Error(errors.Wrap(err, "failed to set task status running"))
-			return
-		}
-
-		var finalError error
-		defer func() {
-			if finalError == nil {
-				if err := task.ClearTaskStatus("gitops-init"); err != nil {
-					logger.Error(errors.Wrap(err, "failed to clear task status"))
-				}
-			} else {
-				if err := task.SetTaskStatus("gitops-init", finalError.Error(), "failed"); err != nil {
-					logger.Error(errors.Wrap(err, "failed to set task status error"))
-				}
-			}
-		}()
-
 		currentVersion, err := downstream.GetCurrentVersion(a.ID, d.ClusterID)
 		if err != nil {
-			err = errors.Wrap(err, "failed to get downstream current version")
-			logger.Error(err)
-			finalError = err
+			logger.Error(errors.Wrap(err, "failed to get downstream current version"))
 			return
 		}
 
 		pendingVersions, err := downstream.GetPendingVersions(a.ID, d.ClusterID)
 		if err != nil {
-			err = errors.Wrap(err, "failed to get downstream pending versions")
-			logger.Error(err)
-			finalError = err
+			logger.Error(errors.Wrap(err, "failed to get downstream pending versions"))
 			return
 		}
 
 		// Create git commit for current version
 		currentVersionArchive, err := version.GetAppVersionArchive(a.ID, currentVersion.ParentSequence)
 		if err != nil {
-			err = errors.Wrapf(err, "failed to get app version archive for current version %d", currentVersion.ParentSequence)
-			logger.Error(err)
-			finalError = err
+			logger.Error(errors.Wrapf(err, "failed to get app version archive for current version %d", currentVersion.ParentSequence))
 			return
 		}
 		defer os.RemoveAll(currentVersionArchive)
 
 		_, err = gitops.CreateGitOpsCommit(downstreamGitOps, a.Slug, a.Name, int(currentVersion.ParentSequence), currentVersionArchive, d.Name)
 		if err != nil {
-			err = errors.Wrapf(err, "failed to create gitops commit for current version %d", currentVersion.ParentSequence)
-			logger.Error(err)
-			finalError = err
+			logger.Error(errors.Wrapf(err, "failed to create gitops commit for current version %d", currentVersion.ParentSequence))
 			return
 		}
 
@@ -251,18 +211,14 @@ func InitGitOpsConnection(w http.ResponseWriter, r *http.Request) {
 		for _, pendingVersion := range pendingVersions {
 			pendingVersionArchive, err := version.GetAppVersionArchive(a.ID, pendingVersion.ParentSequence)
 			if err != nil {
-				err = errors.Wrapf(err, "failed to get app version archive for pending version %d", pendingVersion.ParentSequence)
-				logger.Error(err)
-				finalError = err
+				logger.Error(errors.Wrapf(err, "failed to get app version archive for pending version %d", pendingVersion.ParentSequence))
 				return
 			}
 			defer os.RemoveAll(pendingVersionArchive)
 
 			_, err = gitops.CreateGitOpsCommit(downstreamGitOps, a.Slug, a.Name, int(pendingVersion.ParentSequence), pendingVersionArchive, d.Name)
 			if err != nil {
-				err = errors.Wrapf(err, "failed to create gitops commit for pending version %d", pendingVersion.ParentSequence)
-				logger.Error(err)
-				finalError = err
+				logger.Error(errors.Wrapf(err, "failed to create gitops commit for pending version %d", pendingVersion.ParentSequence))
 				return
 			}
 		}
