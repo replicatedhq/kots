@@ -176,34 +176,30 @@ func InitGitOpsConnection(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	go func(appID, clusterID, appSlug, appName, downstreamName string) {
-		currentVersion, err := downstream.GetCurrentVersion(appID, clusterID)
+	go func() {
+		currentVersion, err := downstream.GetCurrentVersion(a.ID, d.ClusterID)
 		if err != nil {
-			logger.Error(err)
-			w.WriteHeader(http.StatusInternalServerError)
+			logger.Error(errors.Wrap(err, "failed to get downstream current version"))
 			return
 		}
 
-		pendingVersions, err := downstream.GetPendingVersions(appID, clusterID)
+		pendingVersions, err := downstream.GetPendingVersions(a.ID, d.ClusterID)
 		if err != nil {
-			logger.Error(err)
-			w.WriteHeader(http.StatusInternalServerError)
+			logger.Error(errors.Wrap(err, "failed to get downstream pending versions"))
 			return
 		}
 
 		// Create git commit for current version
-		currentVersionArchive, err := version.GetAppVersionArchive(appID, currentVersion.ParentSequence)
+		currentVersionArchive, err := version.GetAppVersionArchive(a.ID, currentVersion.ParentSequence)
 		if err != nil {
-			logger.Error(err)
-			w.WriteHeader(http.StatusInternalServerError)
+			logger.Error(errors.Wrapf(err, "failed to get app version archive for current version %d", currentVersion.ParentSequence))
 			return
 		}
 		defer os.RemoveAll(currentVersionArchive)
 
-		_, err = gitops.CreateGitOpsCommit(downstreamGitOps, appSlug, appName, int(currentVersion.ParentSequence), currentVersionArchive, downstreamName)
+		_, err = gitops.CreateGitOpsCommit(downstreamGitOps, a.Slug, a.Name, int(currentVersion.ParentSequence), currentVersionArchive, d.Name)
 		if err != nil {
-			logger.Error(err)
-			w.WriteHeader(http.StatusInternalServerError)
+			logger.Error(errors.Wrapf(err, "failed to create gitops commit for current version %d", currentVersion.ParentSequence))
 			return
 		}
 
@@ -213,22 +209,20 @@ func InitGitOpsConnection(w http.ResponseWriter, r *http.Request) {
 		})
 		// Create git commits for sorted pending versions
 		for _, pendingVersion := range pendingVersions {
-			pendingVersionArchive, err := version.GetAppVersionArchive(appID, pendingVersion.ParentSequence)
+			pendingVersionArchive, err := version.GetAppVersionArchive(a.ID, pendingVersion.ParentSequence)
 			if err != nil {
-				logger.Error(err)
-				w.WriteHeader(http.StatusInternalServerError)
+				logger.Error(errors.Wrapf(err, "failed to get app version archive for pending version %d", pendingVersion.ParentSequence))
 				return
 			}
 			defer os.RemoveAll(pendingVersionArchive)
 
-			_, err = gitops.CreateGitOpsCommit(downstreamGitOps, appSlug, appName, int(pendingVersion.ParentSequence), pendingVersionArchive, downstreamName)
+			_, err = gitops.CreateGitOpsCommit(downstreamGitOps, a.Slug, a.Name, int(pendingVersion.ParentSequence), pendingVersionArchive, d.Name)
 			if err != nil {
-				logger.Error(err)
-				w.WriteHeader(http.StatusInternalServerError)
+				logger.Error(errors.Wrapf(err, "failed to create gitops commit for pending version %d", pendingVersion.ParentSequence))
 				return
 			}
 		}
-	}(a.ID, d.ClusterID, a.Slug, a.Name, d.Name)
+	}()
 
 	JSON(w, http.StatusNoContent, "")
 }
