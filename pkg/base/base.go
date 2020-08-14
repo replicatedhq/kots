@@ -87,13 +87,13 @@ func (f BaseFile) ShouldBeIncludedInBaseKustomization(excludeKotsKinds bool, log
 	gv, err := schema.ParseGroupVersion(o.APIVersion)
 	if err == nil {
 		if o.APIVersion != "" && o.Kind != "" {
-			gvk := schema.GroupVersionKind{
+			gvk := &schema.GroupVersionKind{
 				Group:   gv.Group,
 				Version: gv.Version,
 				Kind:    o.Kind,
 			}
 			if excludeKotsKinds {
-				if isKotsAPIVersionKind(&gvk) {
+				if isKotsAPIVersionKind(gvk) {
 					return false, nil
 				}
 			}
@@ -147,6 +147,28 @@ func (f BaseFile) GetKotsHookEvents() ([]HookEvent, error) {
 }
 
 func (f BaseFile) IsKotsKind() (bool, error) {
+	// +++ preserve backwards compatibility
+	// the next 20 lines are all to make up for the fact that we allowed annotation values to be booleans in kots kinds
+
+	o := OverlySimpleGVK{}
+	_ = yaml.Unmarshal(f.Content, &o) // error should be caught by decode
+
+	gv, err := schema.ParseGroupVersion(o.APIVersion)
+	if err == nil {
+		if o.APIVersion != "" && o.Kind != "" {
+			gvk := &schema.GroupVersionKind{
+				Group:   gv.Group,
+				Version: gv.Version,
+				Kind:    o.Kind,
+			}
+			if isKotsAPIVersionKind(gvk) {
+				return true, nil
+			}
+		}
+	}
+
+	// --- preserve backwards compatibility
+
 	_, gvk, err := f.maybeDecode()
 	if err != nil || gvk == nil {
 		return false, err
