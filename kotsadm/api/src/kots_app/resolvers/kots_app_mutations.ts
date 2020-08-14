@@ -7,12 +7,7 @@ import NodeGit from "nodegit";
 import { Stores } from "../../schema/stores";
 import { Cluster } from "../../cluster";
 import { ReplicatedError } from "../../server/errors";
-import { uploadUpdate } from "../../controllers/kots/KotsAPI";
 import {
-  kotsPullFromLicense,
-  kotsAppFromData,
-  kotsAppDownloadUpdates,
-  Update,
   kotsDecryptString,
 } from "../kots_ffi";
 import { KotsApp } from "../kots_app"
@@ -166,69 +161,3 @@ export function KotsMutations(stores: Stores) {
   }
 }
 
-// tslint:disable-next-line cyclomatic-complexity
-async function createKotsApp(stores: Stores, kotsApp: KotsApp, downstreamName: string): Promise<{ hasPreflight: boolean; isConfigurable: boolean }> {
-  const liveness = new Repeater(() => {
-    return new Promise((resolve) => {
-      stores.kotsAppStore.updateOnlineInstallLiveness().finally(() => {
-        resolve();
-      });
-    });
-  }, 1000);
-  liveness.start();
-
-  const dstDir = tmp.dirSync();
-
-  try {
-    await stores.kotsAppStore.resetOnlineInstallInProgress(kotsApp.id);
-
-    const tmpDstDir = tmp.dirSync();
-    try {
-      await stores.kotsAppStore.setOnlineInstallStatus("Uploading license...", "running");
-
-      const out = path.join(tmpDstDir.name, "archive.tar.gz");
-
-      const statusServer = new StatusServer();
-      await statusServer.start(dstDir.name);
-      // DO NOT DELETE: args are returned so they are not garbage collected before native code is done
-      const garbage = await kotsPullFromLicense(statusServer.socketFilename, out, kotsApp, downstreamName, stores);
-
-      await statusServer.connection();
-      await statusServer.termination((resolve, reject, obj): boolean => {
-        // Return true if completed
-        if (obj.status === "running") {
-          // do we need to await?
-          stores.kotsAppStore.setOnlineInstallStatus(obj.display_message, "running");
-          return false;
-        } else if (obj.status === "terminated") {
-          if (obj.exit_code === 0) {
-            resolve();
-          } else {
-            reject(new Error(obj.display_message));
-          }
-          return true;
-        }
-        return false;
-      });
-
-      const response = await kotsAppFromData(out, kotsApp, stores);
-
-      await stores.kotsAppStore.clearOnlineInstallInProgress();
-
-      return response;
-    } finally {
-      tmpDstDir.removeCallback();
-    }
-
-  } catch (err) {
-
-    await stores.kotsAppStore.setOnlineInstallStatus(String(err), "failed");
-    await stores.kotsAppStore.setOnineInstallFailed(kotsApp.id);
-    await stores.kotsAppStore.updateFailedInstallState(kotsApp.slug);
-    throw (err);
-
-  } finally {
-    liveness.stop();
-    dstDir.removeCallback();
-  }
-}
