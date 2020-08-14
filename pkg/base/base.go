@@ -78,6 +78,34 @@ func (e ParseError) Error() string {
 // ShouldBeIncludedInBaseKustomization attempts to determine if this is a valid Kubernetes manifest.
 // It accomplished this by trying to unmarshal the YAML and looking for a apiVersion and Kind
 func (f BaseFile) ShouldBeIncludedInBaseKustomization(excludeKotsKinds bool, log *logger.Logger) (bool, error) {
+	// +++ preserve backwards compatibility
+	// the next 20 lines are all to make up for the fact that we allowed annotation values to be booleans in kots kinds
+
+	o := OverlySimpleGVK{}
+	_ = yaml.Unmarshal(f.Content, &o) // error should be caught by decode
+
+	gv, err := schema.ParseGroupVersion(o.APIVersion)
+	if err == nil {
+		if o.APIVersion != "" && o.Kind != "" {
+			gvk := schema.GroupVersionKind{
+				Group:   gv.Group,
+				Version: gv.Version,
+				Kind:    o.Kind,
+			}
+			if excludeKotsKinds {
+				if isKotsAPIVersionKind(&gvk) {
+					return false, nil
+				}
+			}
+		}
+	}
+
+	if exclude, _ := isExcludedByAnnotationCompat(o.Metadata.Annotations); exclude {
+		return false, nil
+	}
+
+	// --- preserve backwards compatibility
+
 	obj, gvk, err := f.maybeDecode()
 	if err != nil || gvk == nil {
 		return false, err
@@ -190,6 +218,24 @@ func isExcludedByAnnotation(annotations map[string]string) (bool, error) {
 			// should this be a ParseError?
 			retErr = multierr.Append(retErr, errors.Errorf("failed to parse %s as bool in kots.io/when annotation", strVal))
 		} else if !boolVal {
+			return true, retErr
+		}
+	}
+
+	return false, retErr
+}
+
+func isExcludedByAnnotationCompat(annotations map[string]interface{}) (bool, error) {
+	var retErr error
+
+	if boolVal, ok := annotations["kots.io/exclude"].(bool); ok {
+		if boolVal {
+			return true, retErr
+		}
+	}
+
+	if boolVal, ok := annotations["kots.io/when"].(bool); ok {
+		if !boolVal {
 			return true, retErr
 		}
 	}

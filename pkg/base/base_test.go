@@ -89,6 +89,55 @@ func Test_isExcludedByAnnotation(t *testing.T) {
 	}
 }
 
+func Test_isExcludedByAnnotationCompat(t *testing.T) {
+	tests := []struct {
+		name        string
+		annotations map[string]interface{}
+		want        bool
+		wantErr     bool
+	}{
+		{
+			name: "kots.io/exclude=true",
+			annotations: map[string]interface{}{
+				"kots.io/exclude": true,
+			},
+			want: true,
+		},
+		{
+			name: "kots.io/exclude=false",
+			annotations: map[string]interface{}{
+				"kots.io/exclude": false,
+			},
+			want: false,
+		},
+		{
+			name: "kots.io/when=true",
+			annotations: map[string]interface{}{
+				"kots.io/when": true,
+			},
+			want: false,
+		},
+		{
+			name: "kots.io/when=false",
+			annotations: map[string]interface{}{
+				"kots.io/when": false,
+			},
+			want: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := isExcludedByAnnotationCompat(tt.annotations)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("isExcludedByAnnotationCompat() error = %v, wantErr %v", err, tt.wantErr)
+			}
+			if got != tt.want {
+				t.Errorf("isExcludedByAnnotationCompat() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
 func Test_hasKotsHookEvents(t *testing.T) {
 	tests := []struct {
 		name        string
@@ -139,6 +188,119 @@ func Test_hasKotsHookEvents(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := hasKotsHookEvents(tt.annotations); got != tt.want {
 				t.Errorf("hasKotsHookEvents() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestBaseFile_ShouldBeIncludedInBaseKustomizationAnnotations(t *testing.T) {
+	tests := []struct {
+		name    string
+		content string
+		want    bool
+		wantErr bool
+	}{
+		{
+			name: `kots.io/exclude="true"`,
+			content: `apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kotsadm
+  annotations:
+    kots.io/exclude: "true"`,
+			want: false,
+		},
+		{
+			name: `kots.io/exclude="false"`,
+			content: `apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kotsadm
+  annotations:
+    kots.io/exclude: "false"`,
+			want: true,
+		},
+		{
+			name: `kots.io/exclude=true`,
+			content: `apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kotsadm
+  annotations:
+    kots.io/exclude: true`,
+			want: false,
+		},
+		{
+			name: `kots.io/exclude=false`,
+			content: `apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kotsadm
+  annotations:
+    kots.io/exclude: false`,
+			want:    false,
+			wantErr: true, // nothing i can do about this one. it will fail eventually
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			f := BaseFile{
+				Path:    "test.yaml",
+				Content: []byte(tt.content),
+			}
+			got, err := f.ShouldBeIncludedInBaseKustomization(true, nil)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("BaseFile.ShouldBeIncludedInBaseKustomization() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if got != tt.want {
+				t.Errorf("BaseFile.ShouldBeIncludedInBaseKustomization() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestBaseFile_ShouldBeIncludedInBaseKustomizationKotskinds(t *testing.T) {
+	tests := []struct {
+		name    string
+		content string
+		want    bool
+		wantErr bool
+	}{
+		{
+			name: `kots.io/exclude=true`,
+			content: `apiVersion: kots.io/v1beta1
+kind: Config
+metadata:
+  name: myapp
+  annotations:
+    kots.io/exclude: true`,
+			want: false,
+		},
+		{
+			name: `kots.io/exclude=false`,
+			content: `apiVersion: kots.io/v1beta1
+kind: Config
+metadata:
+  name: myapp
+  annotations:
+    kots.io/exclude: false`,
+			want: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			f := BaseFile{
+				Path:    "test.yaml",
+				Content: []byte(tt.content),
+			}
+			got, err := f.ShouldBeIncludedInBaseKustomization(true, nil)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("BaseFile.ShouldBeIncludedInBaseKustomization() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if got != tt.want {
+				t.Errorf("BaseFile.ShouldBeIncludedInBaseKustomization() = %v, want %v", got, tt.want)
 			}
 		})
 	}
