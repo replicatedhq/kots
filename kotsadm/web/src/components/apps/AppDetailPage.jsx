@@ -8,7 +8,6 @@ import Modal from "react-modal";
 import withTheme from "@src/components/context/withTheme";
 import { listDownstreamsForApp } from "@src/queries/AppsQueries";
 import { isVeleroInstalled } from "@src/queries/SnapshotQueries";
-import { createKotsDownstream } from "../../mutations/AppsMutations";
 import { KotsSidebarItem } from "@src/components/watches/WatchSidebarItem";
 import { HelmChartSidebarItem } from "@src/components/watches/WatchSidebarItem";
 import NotFound from "../static/NotFound";
@@ -58,7 +57,7 @@ class AppDetailPage extends Component {
   }
 
   componentDidUpdate(_, lastState) {
-    const { getThemeState, setThemeState, match, listApps, history } = this.props;
+    const { getThemeState, setThemeState, match, appsList, history } = this.props;
     const { app, loadingApp } = this.state;
 
     // Used for a fresh reload
@@ -74,7 +73,7 @@ class AppDetailPage extends Component {
     }
 
     // Handle updating the theme state when switching apps.
-    const currentApp = listApps?.find(w => w.slug === match.params.slug);
+    const currentApp = appsList?.find(w => w.slug === match.params.slug);
     if (currentApp?.iconUri) {
       const { navbarLogo, ...rest } = getThemeState();
       if (navbarLogo === null || navbarLogo !== currentApp.iconUri) {
@@ -177,7 +176,7 @@ class AppDetailPage extends Component {
    */
   refetchData = () => {
     this.getApp();
-    this.props.refetchListApps();
+    this.props.refetchAppsList();
   }
 
   /**
@@ -185,11 +184,11 @@ class AppDetailPage extends Component {
    *  if no apps are found, or the first app is found.
    */
   checkForFirstApp = () => {
-    const { history, rootDidInitialAppFetch, listApps } = this.props;
+    const { history, rootDidInitialAppFetch, appsList } = this.props;
     if (!rootDidInitialAppFetch) {
       return;
     }
-    const firstApp = listApps?.find(app => app.name);
+    const firstApp = appsList?.find(app => app.name);
 
     if (firstApp) {
       history.replace(`/app/${firstApp.slug}`);
@@ -212,8 +211,7 @@ class AppDetailPage extends Component {
   render() {
     const {
       match,
-      listApps,
-      refetchListApps,
+      appsList,
       rootDidInitialAppFetch,
       appName,
       isVeleroInstalled
@@ -251,10 +249,10 @@ class AppDetailPage extends Component {
         </Helmet>
         <SidebarLayout
           className="flex flex1 u-minHeight--full u-overflow--hidden"
-          condition={listApps?.length > 1}
+          condition={appsList?.length > 1}
           sidebar={(
             <SideBar
-              items={listApps?.map((item, idx) => {
+              items={appsList?.map((item, idx) => {
                 let sidebarItemNode;
                 if (item.name) {
                   const slugFromRoute = match.params.slug;
@@ -297,7 +295,6 @@ class AppDetailPage extends Component {
                       <Dashboard
                         app={app}
                         cluster={app.downstreams?.length && app.downstreams[0]?.cluster}
-                        refetchListApps={refetchListApps}
                         updateCallback={this.refetchData}
                         onActiveInitSession={this.props.onActiveInitSession}
                         toggleIsBundleUploading={this.toggleIsBundleUploading}
@@ -452,10 +449,5 @@ export default compose(
     options: {
       fetchPolicy: "no-cache"
     }
-  }),
-  graphql(createKotsDownstream, {
-    props: ({ mutate }) => ({
-      createKotsDownstream: (appId, clusterId) => mutate({ variables: { appId, clusterId } })
-    })
   }),
 )(AppDetailPage);

@@ -2,9 +2,10 @@ import React, { Component } from "react";
 import Select from "react-select";
 import { graphql, compose, withApollo } from "react-apollo";
 import { Link, withRouter } from "react-router-dom"
-import { getCronFrequency, getCronInterval, getReadableCronDescriptor } from "../../utilities/utilities";
-import { snapshotConfig } from "../../queries/SnapshotQueries";
+import { Utilities, getCronFrequency, getCronInterval, getReadableCronDescriptor } from "../../utilities/utilities";
 import { saveSnapshotConfig } from "../../mutations/SnapshotMutations";
+import ErrorModal from "../modals/ErrorModal";
+import Loader from "../shared/Loader";
 import find from "lodash/find";
 import "../../scss/components/shared/SnapshotForm.scss";
 
@@ -54,18 +55,20 @@ class AppSnapshotSchedule extends Component {
     selectedRetentionUnit: {},
     frequency: "",
     updatingSchedule: false,
-    updateConfirm: false
+    updateConfirm: false,
+    displayErrorModal: false,
+    gettingConfigErrMsg: ""
   };
 
   setFields = () => {
-    const { snapshotConfig } = this.props;
-    if (snapshotConfig.snapshotConfig) {
+    const { snapshotConfig } = this.state;
+    if (snapshotConfig) {
       this.setState({
-        autoEnabled: snapshotConfig.snapshotConfig.autoEnabled,
-        retentionInput: snapshotConfig.snapshotConfig.ttl.inputValue,
-        selectedRetentionUnit: find(RETENTION_UNITS, ["value", snapshotConfig.snapshotConfig.ttl.inputTimeUnit]),
-        selectedSchedule: find(SCHEDULES, ["value", getCronInterval(snapshotConfig.snapshotConfig.autoSchedule.schedule)]),
-        frequency: snapshotConfig.snapshotConfig.autoSchedule.schedule,
+        autoEnabled: snapshotConfig.autoEnabled,
+        retentionInput: snapshotConfig.ttl.inputValue,
+        selectedRetentionUnit: find(RETENTION_UNITS, ["value", snapshotConfig.ttl.inputTimeUnit]),
+        selectedSchedule: find(SCHEDULES, ["value", getCronInterval(snapshotConfig.autoSchedule.schedule)]),
+        frequency: snapshotConfig.autoSchedule.schedule,
       }, () => this.getReadableCronExpression());
     } else {
       this.setState({
@@ -118,17 +121,45 @@ class AppSnapshotSchedule extends Component {
     this.setState({ selectedRetentionUnit: retentionUnit });
   }
 
-  componentDidUpdate = (lastProps) => {
-    if (this.props.snapshotConfig.snapshotConfig && this.props.snapshotConfig.snapshotConfig !== lastProps.snapshotConfig.snapshotConfig) {
+  getSnapshotConfig = async () => {
+    this.setState({ loadingConfig: true, gettingConfigErrMsg: "", displayErrorModal: false });
+    try {
+      const res = await fetch(`${window.env.API_ENDPOINT}/app/${this.props.app.slug}/snapshot/config`, {
+        method: "GET",
+        headers: {
+          "Authorization": Utilities.getToken(),
+          "Content-Type": "application/json",
+        }
+      });
+      if (!res.ok) {
+        this.setState({ loadingConfig: false, gettingConfigErrMsg: `Unable to get snapshot config: Unexpected status code: ${res.status}`, displayErrorModal: true });
+        return;
+      }
+      const body = await res.json();
+      this.setState({
+        snapshotConfig: body,
+        loadingConfig: false
+      });
+
+    } catch (err) {
+      console.log(err);
+      this.setState({ loadingConfig: false, gettingConfigErrMsg: err ? err.message : "Something went wrong, please try again.", displayErrorModal: true });
+    }
+  }
+
+  componentDidUpdate = (lastProps, lastState) => {
+    if (this.state.snapshotConfig && this.state.snapshotConfig !== lastState.snapshotConfig) {
       this.setFields();
     }
   }
 
   componentDidMount = () => {
-    this.getReadableCronExpression();
-    if (this.props.snapshotConfig.snapshotConfig) {
+    if (this.state.snapshotConfig) {
       this.setFields();
+    } else {
+      this.getSnapshotConfig();
     }
+    this.getReadableCronExpression();
   }
 
   saveSnapshotConfig = () => {
@@ -159,19 +190,28 @@ class AppSnapshotSchedule extends Component {
 
   render() {
     const { app } = this.props;
-    const { hasValidCron, updatingSchedule, updateConfirm } = this.state;
+    const { hasValidCron, updatingSchedule, updateConfirm, loadingConfig } = this.state;
     const selectedRetentionUnit = RETENTION_UNITS.find((ru) => {
       return ru.value === this.state.selectedRetentionUnit?.value;
     });
     const selectedSchedule = SCHEDULES.find((schedule) => {
       return schedule.value === this.state.selectedSchedule?.value;
     });
+
+    if (loadingConfig) {
+      return (
+        <div className="flex-column flex1 alignItems--center justifyContent--center">
+          <Loader size="60" />
+        </div>
+      )
+    }
+
     return (
       <div className="container flex-column flex1 u-overflow--auto u-paddingTop--30 u-paddingBottom--20 alignItems--center">
         <div className="snapshot-form-wrapper">
           <p className="u-marginBottom--30 u-fontSize--small u-color--tundora u-fontWeight--medium">
             <Link to={`/app/${app?.slug}/snapshots`} className="replicated-link">Snapshots</Link>
-            <span className="u-color--dustyGray"> > </span>
+            <span className="u-color--dustyGray"> &gt; </span>
             Schedule
           </p>
           <form>
@@ -261,6 +301,14 @@ class AppSnapshotSchedule extends Component {
             </div>
           </form>
         </div>
+        <ErrorModal
+          errorModal={this.state.displayErrorModal}
+          toggleErrorModal={this.toggleErrorModal}
+          errMsg={this.state.gettingConfigErrMsg}
+          tryAgain={undefined}
+          err="Failed to get snapshot schedule settings"
+          loading={loadingConfig}
+        />
       </div>
     );
   }
@@ -269,16 +317,6 @@ class AppSnapshotSchedule extends Component {
 export default compose(
   withApollo,
   withRouter,
-  graphql(snapshotConfig, {
-    name: "snapshotConfig",
-    options: ({ match }) => {
-      const slug = match.params.slug;
-      return {
-        variables: { slug },
-        fetchPolicy: "no-cache"
-      }
-    }
-  }),
   graphql(saveSnapshotConfig, {
     props: ({ mutate }) => ({
       saveSnapshotConfig: (appId, inputValue, inputTimeUnit, schedule, autoEnabled) => mutate({ variables: { appId, inputValue, inputTimeUnit, schedule, autoEnabled } })

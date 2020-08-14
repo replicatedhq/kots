@@ -24,7 +24,7 @@ export class NavBar extends PureComponent {
   }
 
   static propTypes = {
-    refetchListApps: PropTypes.func.isRequired,
+    refetchAppsList: PropTypes.func.isRequired,
     history: PropTypes.object.isRequired
   }
 
@@ -109,14 +109,14 @@ export class NavBar extends PureComponent {
   }
 
   redirectToDashboard = () => {
-    const { refetchListApps, history } = this.props;
-    refetchListApps().then(() => {
+    const { refetchAppsList, history } = this.props;
+    refetchAppsList().then(() => {
       history.push("/");
     });
   }
 
   render() {
-    const { className, fetchingMetadata, isKurlEnabled, isGitOpsSupported, listApps, logo, location, isSnapshotsSupported } = this.props;
+    const { className, fetchingMetadata, isKurlEnabled, isGitOpsSupported, appsList, logo, location, isSnapshotsSupported } = this.props;
     const { user, selectedTab } = this.state;
 
     const pathname = location.pathname.split("/");
@@ -124,7 +124,7 @@ export class NavBar extends PureComponent {
     let appLogo;
     let licenseType;
     if (pathname.length > 2 && pathname[1] === "app") {
-      selectedApp = listApps.find(app => app.slug === pathname[2]);
+      selectedApp = appsList.find(app => app.slug === pathname[2]);
       appLogo = selectedApp?.iconUri;
       licenseType = selectedApp?.licenseType;
     } else {
@@ -153,7 +153,7 @@ export class NavBar extends PureComponent {
                     </Link>
                   </div>
                 </div>
-                {Utilities.isLoggedIn() && listApps.length > 0 && (
+                {Utilities.isLoggedIn() && appsList.length > 0 && (
                   <div className="flex flex-auto left-items">
                     <div className={classNames("NavItem u-position--relative flex", { "is-active": selectedTab === "dashboard" })}>
                       <span className="HeaderLink flex flex1 u-cursor--pointer" onClick={this.redirectToDashboard}>

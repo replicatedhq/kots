@@ -5,7 +5,7 @@ import Helmet from "react-helmet";
 import url from "url";
 import GitOpsRepoDetails from "../gitops/GitOpsRepoDetails";
 import CodeSnippet from "@src/components/shared/CodeSnippet";
-import { testGitOpsConnection, createGitOpsRepo } from "../../mutations/AppsMutations";
+import { createGitOpsRepo } from "../../mutations/AppsMutations";
 import { getServiceSite, getAddKeyUri, requiresHostname, Utilities } from "../../utilities/utilities";
 import Modal from "react-modal";
 
@@ -83,6 +83,7 @@ class AppGitops extends Component {
 
   handleTestConnection = async () => {
     this.setState({ testingConnection: true });
+
     const appId = this.props.app?.id;
     let clusterId;
     if (this.props.app?.downstreams?.length) {
@@ -90,13 +91,19 @@ class AppGitops extends Component {
     }
 
     try {
-      await this.props.testGitOpsConnection(appId, clusterId).then((res) => {
-        if (res.data.testGitOpsConnection) {
-          this.props.history.push("/gitops");
-        } else {
-          this.props.refetch();
+      const res = await fetch(`${window.env.API_ENDPOINT}/gitops/app/${appId}/cluster/${clusterId}/initconnection`, {
+        method: "POST",
+        headers: {
+          "Authorization": Utilities.getToken(),
+          "Content-Type": "application/json",
         }
-      })
+      });
+      if (!res.ok) {
+        console.log("failed to init gitops connection, unexpected status code", res.status);
+        this.props.refetch();
+        return;
+      }
+      this.props.history.push("/gitops");
     } catch (err) {
       console.log(err);
     } finally {
@@ -160,12 +167,12 @@ class AppGitops extends Component {
         return false;
       }
 
-      await this.props.refetch();
       if (newUri !== oldUri || gitops?.branch !== branch) {
         await this.handleTestConnection();
       }
-      this.setState({ showGitOpsSettings: false, ownerRepo });
+      await this.props.refetch();
 
+      this.setState({ showGitOpsSettings: false, ownerRepo });
       return true;
     } catch(err) {
       console.log(err);
@@ -412,11 +419,6 @@ class AppGitops extends Component {
 export default compose(
   withApollo,
   withRouter,
-  graphql(testGitOpsConnection, {
-    props: ({ mutate }) => ({
-      testGitOpsConnection: (appId, clusterId) => mutate({ variables: { appId, clusterId } })
-    })
-  }),
   graphql(createGitOpsRepo, {
     props: ({ mutate }) => ({
       createGitOpsRepo: (gitOpsInput) => mutate({ variables: { gitOpsInput } })

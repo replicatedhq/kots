@@ -116,3 +116,18 @@ type VolumeSummary struct {
 	VolumeBytes        int64  `json:"volumeBytes"`
 	VolumeSizeHuman    string `json:"volumeSizeHuman"`
 }
+
+type SnapshotSchedule struct {
+	Schedule string `json:"schedule"`
+}
+
+type SnapshotTTL struct {
+	InputValue    string `json:"inputValue"`
+	InputTimeUnit string `json:"inputTimeUnit"`
+	Converted     string `json:"converted"`
+}
+
+type ParsedTTL struct {
+	Quantity int64  `json:"quantity"`
+	Unit     string `json:"unit"`
+}

@@ -61,7 +61,7 @@ func GetGVKWithNameAndNs(content []byte, baseNS string) string {
 	return fmt.Sprintf("%s-%s-%s-%s", o.APIVersion, o.Kind, o.Metadata.Name, namespace)
 }
 
-func (f BaseFile) transpileHelmHooksToKotsHooks() error {
+func (f *BaseFile) transpileHelmHooksToKotsHooks() error {
 	decode := scheme.Codecs.UniversalDeserializer().Decode
 	obj, gvk, err := decode(f.Content, nil, nil)
 	if err != nil {
@@ -103,9 +103,9 @@ func (e ParseError) Error() string {
 // ShouldBeIncludedInBaseKustomization attempts to determine if this is a valid Kubernetes manifest.
 // It accomplished this by trying to unmarshal the YAML and looking for a apiVersion and Kind
 func (f BaseFile) ShouldBeIncludedInBaseKustomization(excludeKotsKinds bool) (bool, error) {
-	o := OverlySimpleGVK{}
+	var m interface{}
 
-	if err := yaml.Unmarshal(f.Content, &o); err != nil {
+	if err := yaml.Unmarshal(f.Content, &m); err != nil {
 		// check if this is a yaml file
 		if ext := filepath.Ext(f.Path); ext == ".yaml" || ext == ".yml" {
 			return false, ParseError{Err: err}
@@ -113,10 +113,16 @@ func (f BaseFile) ShouldBeIncludedInBaseKustomization(excludeKotsKinds bool) (bo
 		return false, nil
 	}
 
+	o := OverlySimpleGVK{}
+	_ = yaml.Unmarshal(f.Content, &o) // error should be caught in previous unmarshal
+
 	// check if this is a kubernetes document
 	if o.APIVersion == "" || o.Kind == "" {
-		// check if this is a yaml file
 		if ext := filepath.Ext(f.Path); ext == ".yaml" || ext == ".yml" {
+			// ignore empty files and files with only comments
+			if m == nil {
+				return false, nil
+			}
 			return false, ParseError{Err: errors.New("not a kubernetes document")}
 		}
 		return false, nil
@@ -173,9 +179,9 @@ func (f BaseFile) ShouldBeIncludedInBaseKustomization(excludeKotsKinds bool) (bo
 }
 
 func (f BaseFile) IsKotsKind() (bool, error) {
-	o := OverlySimpleGVK{}
+	var m interface{}
 
-	if err := yaml.Unmarshal(f.Content, &o); err != nil {
+	if err := yaml.Unmarshal(f.Content, &m); err != nil {
 		// check if this is a yaml file
 		if ext := filepath.Ext(f.Path); ext == ".yaml" || ext == ".yml" {
 			return false, ParseError{Err: err}
@@ -183,10 +189,17 @@ func (f BaseFile) IsKotsKind() (bool, error) {
 		return false, nil
 	}
 
+	o := OverlySimpleGVK{}
+	_ = yaml.Unmarshal(f.Content, &o) // error should be caught in previous unmarshal
+
 	// check if this is a kubernetes document
 	if o.APIVersion == "" || o.Kind == "" {
 		// check if this is a yaml file
 		if ext := filepath.Ext(f.Path); ext == ".yaml" || ext == ".yml" {
+			// ignore empty files and files with only comments
+			if m == nil {
+				return false, nil
+			}
 			return false, ParseError{Err: errors.New("not a kubernetes document")}
 		}
 		return false, nil

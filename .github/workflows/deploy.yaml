@@ -14,7 +14,7 @@ jobs:
     - name: Unshallow
       run: git fetch --prune --unshallow
 
-    - uses: actions/setup-go@v1
+    - uses: actions/setup-go@v2.1.2
       with:
         go-version: "1.14.3"
 
@@ -26,7 +26,7 @@ jobs:
         echo ::set-env name=GORELEASER_PREVIOUS_TAG::$(curl --silent "https://api.github.com/repos/replicatedhq/kots/releases/latest" | grep -Po '"tag_name": "\K.*?(?=")')
 
     - name: Run GoReleaser
-      uses: goreleaser/goreleaser-action@v1
+      uses: goreleaser/goreleaser-action@v2.1.1
       with:
         version: latest
         args: release --rm-dist --config deploy/.goreleaser.yaml

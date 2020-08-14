@@ -92,6 +92,7 @@ func Start() {
 	r.Path("/license/v1/license").Methods("GET").HandlerFunc(handlers.NodeProxy(upstream))
 
 	// Apps
+	r.Path("/api/v1/apps").Methods("OPTIONS", "GET").HandlerFunc(handlers.ListApps)
 	r.Path("/api/v1/apps/app/{appSlug}").Methods("OPTIONS", "GET").HandlerFunc(handlers.GetApp)
 
 	// Airgap
@@ -139,6 +140,7 @@ func Start() {
 	r.Path("/api/v1/app/{appSlug}/snapshot/backup").Methods("OPTIONS", "POST").HandlerFunc(handlers.CreateBackup)
 	r.Path("/api/v1/app/{appSlug}/snapshot/restore/status").Methods("OPTIONS", "GET").HandlerFunc(handlers.GetRestoreStatus)
 	r.Path("/api/v1/app/{appSlug}/snapshots").Methods("OPTIONS", "GET").HandlerFunc(handlers.ListBackups)
+	r.Path("/api/v1/app/{appSlug}/snapshot/config").Methods("OPTIONS", "GET").HandlerFunc(handlers.GetSnapshotConfig)
 
 	// Global snapshot routes
 	r.Path("/api/v1/snapshots/settings").Methods("OPTIONS", "GET").HandlerFunc(handlers.GetGlobalSnapshotSettings)
@@ -159,6 +161,7 @@ func Start() {
 	// GitOps
 	r.Path("/api/v1/gitops/app/{appId}/cluster/{clusterId}/update").Methods("OPTIONS", "PUT").HandlerFunc(handlers.UpdateAppGitOps)
 	r.Path("/api/v1/gitops/app/{appId}/cluster/{clusterId}/disable").Methods("OPTIONS", "POST").HandlerFunc(handlers.DisableAppGitOps)
+	r.Path("/api/v1/gitops/app/{appId}/cluster/{clusterId}/initconnection").Methods("OPTIONS", "POST").HandlerFunc(handlers.InitGitOpsConnection)
 	r.Path("/api/v1/gitops/reset").Methods("OPTIONS", "POST").HandlerFunc(handlers.ResetGitOps)
 
 	// to avoid confusion, we don't serve this in the dev env...

@@ -373,7 +373,7 @@ jobs:
         password: ${{ secrets.DOCKERHUB_PASSWORD }}
 
     - name: Setup Go
-      uses: actions/setup-go@v1
+      uses: actions/setup-go@v2.1.2
       with:
         go-version: "1.14.3"
 
@@ -414,7 +414,7 @@ jobs:
         password: ${{ secrets.DOCKERHUB_PASSWORD }}
 
     - name: Setup Go
-      uses: actions/setup-go@v1
+      uses: actions/setup-go@v2.1.2
       with:
         go-version: "1.14.3"
 
@@ -473,7 +473,7 @@ jobs:
         password: ${{ secrets.DOCKERHUB_PASSWORD }}
 
     - name: Setup Node
-      uses: actions/setup-node@v2-beta
+      uses: actions/setup-node@v2.1.1
       with:
         node-version: '10'
 
@@ -506,7 +506,7 @@ jobs:
         password: ${{ secrets.DOCKERHUB_PASSWORD }}
 
     - name: Setup Node
-      uses: actions/setup-node@v2-beta
+      uses: actions/setup-node@v2.1.1
       with:
         node-version: '10'
 
@@ -557,7 +557,7 @@ jobs:
         password: ${{ secrets.DOCKERHUB_PASSWORD }}
 
     - name: Setup Go
-      uses: actions/setup-go@v1
+      uses: actions/setup-go@v2.1.2
       with:
         go-version: "1.14.3"
 
@@ -592,7 +592,7 @@ jobs:
         password: ${{ secrets.DOCKERHUB_PASSWORD }}
 
     - name: Setup Go
-      uses: actions/setup-go@v1
+      uses: actions/setup-go@v2.1.2
       with:
         go-version: "1.14.3"
 
@@ -651,7 +651,7 @@ jobs:
         password: ${{ secrets.DOCKERHUB_PASSWORD }}
 
     - name: Setup Go
-      uses: actions/setup-go@v1
+      uses: actions/setup-go@v2.1.2
       with:
         go-version: "1.14.3"
 
@@ -684,7 +684,7 @@ jobs:
         password: ${{ secrets.DOCKERHUB_PASSWORD }}
 
     - name: Setup Go
-      uses: actions/setup-go@v1
+      uses: actions/setup-go@v2.1.2
       with:
         go-version: "1.14.3"
 
