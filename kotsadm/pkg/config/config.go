@@ -54,6 +54,9 @@ func NeedsConfiguration(configSpec string, configValuesSpec string, licenseSpec 
 	renderedConfig := decoded.(*kotsv1beta1.Config)
 
 	for _, group := range renderedConfig.Spec.Groups {
+		if group.When == "false" {
+			continue
+		}
 		for _, item := range group.Items {
 			if IsRequiredItem(item) && IsUnsetItem(item) {
 				return true, nil
