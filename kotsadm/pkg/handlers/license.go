@@ -217,7 +217,7 @@ func getLicenseEntitlements(license *kotsv1beta1.License) ([]EntitlementResponse
 			expiresAt = expiration
 		} else if key == "gitops_enabled" {
 			/* do nothing */
-		} else {
+		} else if !entititlement.IsHidden {
 			entitlements = append(entitlements,
 				EntitlementResponse{
 					Title: entititlement.Title,
