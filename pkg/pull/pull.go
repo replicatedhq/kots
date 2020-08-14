@@ -31,6 +31,7 @@ type PullOptions struct {
 	Namespace           string
 	Downstreams         []string
 	LocalPath           string
+	LicenseObj          *kotsv1beta1.License
 	LicenseFile         string
 	InstallationFile    string
 	AirgapRoot          string
@@ -117,7 +118,9 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 		return "", errors.Wrap(err, "failed to find config files in local path")
 	}
 
-	if pullOptions.LicenseFile != "" {
+	if pullOptions.LicenseObj != nil {
+		fetchOptions.License = pullOptions.LicenseObj
+	} else if pullOptions.LicenseFile != "" {
 		license, err := ParseLicenseFromFile(pullOptions.LicenseFile)
 		if err != nil {
 			if errors.Cause(err) == ErrSignatureInvalid {

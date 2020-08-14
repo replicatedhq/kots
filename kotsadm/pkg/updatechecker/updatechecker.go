@@ -3,7 +3,6 @@ package updatechecker
 import (
 	"fmt"
 	"os"
-	"path/filepath"
 	"sync"
 	"time"
 
@@ -186,8 +185,13 @@ func CheckForUpdates(appID string, deploy bool) (int64, error) {
 		return 0, errors.Wrap(err, "failed to load kotskinds from path")
 	}
 
+	latestLicense, err := license.Get(a.ID)
+	if err != nil {
+		return 0, errors.Wrap(err, "failed to get latest license")
+	}
+
 	getUpdatesOptions := kotspull.GetUpdatesOptions{
-		LicenseFile:    filepath.Join(archiveDir, "upstream", "userdata", "license.yaml"),
+		License:        latestLicense,
 		CurrentCursor:  kotsKinds.Installation.Spec.UpdateCursor,
 		CurrentChannel: kotsKinds.Installation.Spec.ChannelName,
 		Silent:         false,

@@ -2,6 +2,7 @@ package pull
 
 import (
 	"github.com/pkg/errors"
+	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/upstream"
 )
@@ -10,7 +11,7 @@ type GetUpdatesOptions struct {
 	HelmRepoURI    string
 	Namespace      string
 	LocalPath      string
-	LicenseFile    string
+	License        *kotsv1beta1.License
 	CurrentCursor  string
 	CurrentChannel string
 	Silent         bool
@@ -33,19 +34,8 @@ func GetUpdates(upstreamURI string, getUpdatesOptions GetUpdatesOptions) ([]upst
 	fetchOptions.CurrentCursor = getUpdatesOptions.CurrentCursor
 	fetchOptions.CurrentChannel = getUpdatesOptions.CurrentChannel
 
-	if getUpdatesOptions.LicenseFile != "" {
-		license, err := ParseLicenseFromFile(getUpdatesOptions.LicenseFile)
-		if err != nil {
-			if errors.Cause(err) == ErrSignatureInvalid {
-				return nil, ErrSignatureInvalid
-			}
-			if errors.Cause(err) == ErrSignatureMissing {
-				return nil, ErrSignatureMissing
-			}
-			return nil, errors.Wrap(err, "failed to parse license from file")
-		}
-
-		fetchOptions.License = license
+	if getUpdatesOptions.License != nil {
+		fetchOptions.License = getUpdatesOptions.License
 	}
 
 	log.ActionWithSpinner("Listing releases")
