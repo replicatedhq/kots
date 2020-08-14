@@ -115,6 +115,7 @@ func createNewVersion(a *app.App, archiveDir string, registrySettings *registryt
 	return nil
 }
 
+// Gets the license as it was at a given app sequence
 func GetCurrentLicenseString(a *app.App) (string, error) {
 	archiveDir, err := version.GetAppVersionArchive(a.ID, a.CurrentSequence)
 	if err != nil {
@@ -129,7 +130,7 @@ func GetCurrentLicenseString(a *app.App) (string, error) {
 	return string(kotsLicense), nil
 }
 
-// GetLicense gets the license for an application with the given app id
+// GetLicense gets the current (latest) license for an application with the given app id
 func Get(appID string) (*kotsv1beta1.License, error) {
 	db := persistence.MustGetPGSession()
 	query := `select kots_license from app_version where app_id = $1 order by sequence desc limit 1`

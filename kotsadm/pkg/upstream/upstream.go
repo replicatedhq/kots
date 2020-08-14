@@ -12,6 +12,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/kotsadm/pkg/app"
 	"github.com/replicatedhq/kots/kotsadm/pkg/kotsutil"
+	"github.com/replicatedhq/kots/kotsadm/pkg/license"
 	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
 	"github.com/replicatedhq/kots/kotsadm/pkg/preflight"
 	"github.com/replicatedhq/kots/kotsadm/pkg/registry"
@@ -82,8 +83,13 @@ func DownloadUpdate(appID string, archiveDir string, toCursor string) (sequence 
 		return 0, errors.Wrap(err, "failed to get new app sequence")
 	}
 
+	latestLicense, err := license.Get(a.ID)
+	if err != nil {
+		return 0, errors.Wrap(err, "failed to get latest license")
+	}
+
 	pullOptions := kotspull.PullOptions{
-		LicenseFile:         filepath.Join(archiveDir, "upstream", "userdata", "license.yaml"),
+		LicenseObj:          latestLicense,
 		Namespace:           appNamespace,
 		ConfigFile:          filepath.Join(archiveDir, "upstream", "userdata", "config.yaml"),
 		InstallationFile:    filepath.Join(archiveDir, "upstream", "userdata", "installation.yaml"),
