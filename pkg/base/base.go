@@ -86,7 +86,7 @@ func (f BaseFile) ShouldBeIncludedInBaseKustomization(excludeKotsKinds bool, log
 
 	gv, err := schema.ParseGroupVersion(o.APIVersion)
 	if err == nil {
-		if o.APIVersion != "" && o.Kind != "" {
+		if gv.Group != "" && gv.Version != "" {
 			gvk := &schema.GroupVersionKind{
 				Group:   gv.Group,
 				Version: gv.Version,
@@ -155,7 +155,7 @@ func (f BaseFile) IsKotsKind() (bool, error) {
 
 	gv, err := schema.ParseGroupVersion(o.APIVersion)
 	if err == nil {
-		if o.APIVersion != "" && o.Kind != "" {
+		if gv.Group != "" && gv.Version != "" {
 			gvk := &schema.GroupVersionKind{
 				Group:   gv.Group,
 				Version: gv.Version,
