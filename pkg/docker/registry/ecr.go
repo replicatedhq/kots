@@ -45,7 +45,10 @@ func GetECRBasicAuthToken(ecrEndpoint, username, password string) (string, error
 		return "", errors.Wrap(err, "failed to parse ECR endpoint")
 	}
 
-	ecrService := getECRService(username, password, zone)
+	ecrService, err := getECRService(username, password, zone)
+	if err != nil {
+		return "", errors.Wrap(err, "failed to get ECR service")
+	}
 
 	ecrToken, err := ecrService.GetAuthorizationToken(&ecr.GetAuthorizationTokenInput{
 		RegistryIds: []*string{
@@ -63,10 +66,11 @@ func GetECRBasicAuthToken(ecrEndpoint, username, password string) (string, error
 	return *ecrToken.AuthorizationData[0].AuthorizationToken, nil
 }
 
-func getECRService(accessKeyID, secretAccessKey, zone string) *ecr.ECR {
+func getECRService(accessKeyID, secretAccessKey, zone string) (*ecr.ECR, error) {
 	awsConfig := &aws.Config{Region: aws.String(zone)}
 	awsConfig.Credentials = credentials.NewStaticCredentials(accessKeyID, secretAccessKey, "")
-	return ecr.New(session.New(awsConfig))
+	sess, err := session.NewSession(awsConfig)
+	return ecr.New(sess), err
 }
 
 func parseECREndpoint(endpoint string) (registry, zone string, err error) {
