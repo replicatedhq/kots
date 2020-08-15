@@ -12,20 +12,19 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	"github.com/replicatedhq/kots/kotsadm/pkg/app"
+	apptypes "github.com/replicatedhq/kots/kotsadm/pkg/app/types"
 	"github.com/replicatedhq/kots/kotsadm/pkg/kotsutil"
 	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
 	"github.com/replicatedhq/kots/kotsadm/pkg/preflight"
-	"github.com/replicatedhq/kots/kotsadm/pkg/registry"
-	"github.com/replicatedhq/kots/kotsadm/pkg/task"
+	"github.com/replicatedhq/kots/kotsadm/pkg/store"
 	"github.com/replicatedhq/kots/kotsadm/pkg/version"
 	"github.com/replicatedhq/kots/pkg/crypto"
 	"github.com/replicatedhq/kots/pkg/cursor"
 	"github.com/replicatedhq/kots/pkg/pull"
 )
 
-func UpdateAppFromAirgap(a *app.App, airgapBundle multipart.File) (finalError error) {
-	if err := task.SetTaskStatus("update-download", "Processing package...", "running"); err != nil {
+func UpdateAppFromAirgap(a *apptypes.App, airgapBundle multipart.File) (finalError error) {
+	if err := store.GetStore().SetTaskStatus("update-download", "Processing package...", "running"); err != nil {
 		return errors.Wrap(err, "failed to set tasks status")
 	}
 
@@ -35,7 +34,7 @@ func UpdateAppFromAirgap(a *app.App, airgapBundle multipart.File) (finalError er
 		for {
 			select {
 			case <-time.After(time.Second):
-				if err := task.UpdateTaskStatusTimestamp("update-download"); err != nil {
+				if err := store.GetStore().UpdateTaskStatusTimestamp("update-download"); err != nil {
 					logger.Error(err)
 				}
 			case <-finishedCh:
@@ -46,17 +45,17 @@ func UpdateAppFromAirgap(a *app.App, airgapBundle multipart.File) (finalError er
 
 	defer func() {
 		if finalError == nil {
-			if err := task.ClearTaskStatus("update-download"); err != nil {
+			if err := store.GetStore().ClearTaskStatus("update-download"); err != nil {
 				logger.Error(errors.Wrap(err, "failed to clear update-download task status"))
 			}
 		} else {
-			if err := task.SetTaskStatus("update-download", finalError.Error(), "failed"); err != nil {
+			if err := store.GetStore().SetTaskStatus("update-download", finalError.Error(), "failed"); err != nil {
 				logger.Error(errors.Wrap(err, "failed to set error on update-download task status"))
 			}
 		}
 	}()
 
-	registrySettings, err := registry.GetRegistrySettingsForApp(a.ID)
+	registrySettings, err := store.GetStore().GetRegistryDetailsForApp(a.ID)
 	if err != nil {
 		return errors.Wrap(err, "failed to get app registry settings")
 	}
@@ -96,7 +95,7 @@ func UpdateAppFromAirgap(a *app.App, airgapBundle multipart.File) (finalError er
 		return errors.Wrap(err, "failed to create temp file")
 	}
 
-	if err := task.SetTaskStatus("update-download", "Copying package...", "running"); err != nil {
+	if err := store.GetStore().SetTaskStatus("update-download", "Copying package...", "running"); err != nil {
 		return errors.Wrap(err, "failed to set task status")
 	}
 
@@ -106,7 +105,7 @@ func UpdateAppFromAirgap(a *app.App, airgapBundle multipart.File) (finalError er
 	}
 	defer os.RemoveAll(tmpFile.Name())
 
-	if err := task.SetTaskStatus("update-download", "Extracting files...", "running"); err != nil {
+	if err := store.GetStore().SetTaskStatus("update-download", "Extracting files...", "running"); err != nil {
 		return errors.Wrap(err, "failed to set task status")
 	}
 
@@ -116,7 +115,7 @@ func UpdateAppFromAirgap(a *app.App, airgapBundle multipart.File) (finalError er
 	}
 	defer os.RemoveAll(airgapRoot)
 
-	if err := task.SetTaskStatus("update-download", "Processing app package...", "running"); err != nil {
+	if err := store.GetStore().SetTaskStatus("update-download", "Processing app package...", "running"); err != nil {
 		return errors.Wrap(err, "failed to set task status")
 	}
 
@@ -125,7 +124,7 @@ func UpdateAppFromAirgap(a *app.App, airgapBundle multipart.File) (finalError er
 		appNamespace = os.Getenv("KOTSADM_TARGET_NAMESPACE")
 	}
 
-	if err := task.SetTaskStatus("update-download", "Creating app version...", "running"); err != nil {
+	if err := store.GetStore().SetTaskStatus("update-download", "Creating app version...", "running"); err != nil {
 		return errors.Wrap(err, "failed to set task status")
 	}
 
@@ -138,7 +137,7 @@ func UpdateAppFromAirgap(a *app.App, airgapBundle multipart.File) (finalError er
 	go func() {
 		scanner := bufio.NewScanner(pipeReader)
 		for scanner.Scan() {
-			if err := task.SetTaskStatus("update-download", scanner.Text(), "running"); err != nil {
+			if err := store.GetStore().SetTaskStatus("update-download", scanner.Text(), "running"); err != nil {
 				logger.Error(err)
 			}
 		}

@@ -7,10 +7,10 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
-	"github.com/replicatedhq/kots/kotsadm/pkg/app"
 	"github.com/replicatedhq/kots/kotsadm/pkg/kotsutil"
 	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
 	"github.com/replicatedhq/kots/kotsadm/pkg/online"
+	"github.com/replicatedhq/kots/kotsadm/pkg/store"
 	kotslicense "github.com/replicatedhq/kots/pkg/license"
 	kotspull "github.com/replicatedhq/kots/pkg/pull"
 	"go.uber.org/zap"
@@ -88,7 +88,7 @@ func AutomateInstall() error {
 		desiredAppName := strings.Replace(verifiedLicense.Spec.AppSlug, "-", " ", 0)
 		upstreamURI := fmt.Sprintf("replicated://%s", verifiedLicense.Spec.AppSlug)
 
-		a, err := app.Create(desiredAppName, upstreamURI, string(license), verifiedLicense.Spec.IsAirgapSupported)
+		a, err := store.GetStore().CreateApp(desiredAppName, upstreamURI, string(license), verifiedLicense.Spec.IsAirgapSupported)
 		if err != nil {
 			logger.Error(err)
 			continue

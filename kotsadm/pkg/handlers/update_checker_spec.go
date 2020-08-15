@@ -6,9 +6,9 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
-	"github.com/replicatedhq/kots/kotsadm/pkg/app"
 	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
 	"github.com/replicatedhq/kots/kotsadm/pkg/session"
+	"github.com/replicatedhq/kots/kotsadm/pkg/store"
 	"github.com/replicatedhq/kots/kotsadm/pkg/updatechecker"
 	cron "github.com/robfig/cron/v3"
 )
@@ -55,7 +55,7 @@ func UpdateCheckerSpec(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	foundApp, err := app.GetFromSlug(mux.Vars(r)["appSlug"])
+	foundApp, err := store.GetStore().GetAppFromSlug(mux.Vars(r)["appSlug"])
 	if err != nil {
 		logger.Error(err)
 		updateCheckerSpecResponse.Error = "failed to get app from slug"
@@ -82,7 +82,7 @@ func UpdateCheckerSpec(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	if err := app.SetUpdateCheckerSpec(foundApp.ID, cronSpec); err != nil {
+	if err := store.GetStore().SetUpdateCheckerSpec(foundApp.ID, cronSpec); err != nil {
 		logger.Error(err)
 		updateCheckerSpecResponse.Error = "failed to set update checker spec"
 		JSON(w, 500, updateCheckerSpecResponse)

@@ -23,7 +23,8 @@ export class HealthzStore {
 
     let storageReady = false;
 
-    if (this.params.storageBaseURI.startsWith("docker://")) {
+    if (this.params.storageBaseURI && this.params.storageBaseURI.startsWith("docker://")) {
+      console.log("healthz is not supported for oci")
       storageReady = true;  // TODO
     } else {
       storageReady = await bucketExists(this.params, this.params.shipOutputBucket);

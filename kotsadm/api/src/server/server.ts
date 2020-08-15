@@ -212,7 +212,7 @@ export class Server extends ServerLoader {
     } else if (params.s3SkipEnsureBucket) {
       logger.info({msg: "Not creating bucket because S3_SKIP_ENSURE_BUCKET was set"});
     } else {
-      if (!params.storageBaseURI.startsWith("docker://")) {
+      if (!params.storageBaseURI || !params.storageBaseURI.startsWith("docker://")) {
         logger.info({msg: "Ensuring bucket exists..."});
         await ensureBucket(params);
       }

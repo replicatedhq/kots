@@ -4,11 +4,11 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
-	"github.com/replicatedhq/kots/kotsadm/pkg/app"
 	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
 	"github.com/replicatedhq/kots/kotsadm/pkg/session"
 	"github.com/replicatedhq/kots/kotsadm/pkg/snapshot"
 	snapshottypes "github.com/replicatedhq/kots/kotsadm/pkg/snapshot/types"
+	"github.com/replicatedhq/kots/kotsadm/pkg/store"
 )
 
 type CreateBackupRequest struct {
@@ -47,7 +47,7 @@ func CreateBackup(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	foundApp, err := app.GetFromSlug(mux.Vars(r)["appSlug"])
+	foundApp, err := store.GetStore().GetAppFromSlug(mux.Vars(r)["appSlug"])
 	if err != nil {
 		logger.Error(err)
 		createBackupResponse.Error = "failed to get app from app slug"
@@ -99,7 +99,7 @@ func ListBackups(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	foundApp, err := app.GetFromSlug(mux.Vars(r)["appSlug"])
+	foundApp, err := store.GetStore().GetAppFromSlug(mux.Vars(r)["appSlug"])
 	if err != nil {
 		logger.Error(err)
 		listBackupsResponse.Error = "failed to get app from app slug"

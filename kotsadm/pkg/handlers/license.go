@@ -19,6 +19,7 @@ import (
 	"github.com/replicatedhq/kots/kotsadm/pkg/online"
 	"github.com/replicatedhq/kots/kotsadm/pkg/registry"
 	"github.com/replicatedhq/kots/kotsadm/pkg/session"
+	"github.com/replicatedhq/kots/kotsadm/pkg/store"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	kotslicense "github.com/replicatedhq/kots/pkg/license"
 	kotspull "github.com/replicatedhq/kots/pkg/pull"
@@ -111,7 +112,7 @@ func SyncLicense(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	foundApp, err := app.GetFromSlug(mux.Vars(r)["appSlug"])
+	foundApp, err := store.GetStore().GetAppFromSlug(mux.Vars(r)["appSlug"])
 	if err != nil {
 		logger.Error(err)
 		w.WriteHeader(500)
@@ -167,7 +168,7 @@ func GetLicense(w http.ResponseWriter, r *http.Request) {
 	}
 
 	appSlug := mux.Vars(r)["appSlug"]
-	foundApp, err := app.GetFromSlug(appSlug)
+	foundApp, err := store.GetStore().GetAppFromSlug(appSlug)
 	if err != nil {
 		logger.Error(err)
 		w.WriteHeader(500)
@@ -311,7 +312,7 @@ func UploadNewLicense(w http.ResponseWriter, r *http.Request) {
 	desiredAppName := strings.Replace(verifiedLicense.Spec.AppSlug, "-", " ", 0)
 	upstreamURI := fmt.Sprintf("replicated://%s", verifiedLicense.Spec.AppSlug)
 
-	a, err := app.Create(desiredAppName, upstreamURI, uploadLicenseRequest.LicenseData, verifiedLicense.Spec.IsAirgapSupported)
+	a, err := store.GetStore().CreateApp(desiredAppName, upstreamURI, uploadLicenseRequest.LicenseData, verifiedLicense.Spec.IsAirgapSupported)
 	if err != nil {
 		logger.Error(err)
 		uploadLicenseResponse.Error = err.Error()
@@ -402,7 +403,7 @@ func ResumeInstallOnline(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	a, err := app.GetFromSlug(resumeInstallOnlineRequest.Slug)
+	a, err := store.GetStore().GetAppFromSlug(resumeInstallOnlineRequest.Slug)
 	if err != nil {
 		logger.Error(err)
 		resumeInstallOnlineResponse.Error = err.Error()

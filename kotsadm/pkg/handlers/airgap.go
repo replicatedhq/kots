@@ -7,8 +7,8 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/kotsadm/pkg/airgap"
-	"github.com/replicatedhq/kots/kotsadm/pkg/app"
 	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
+	"github.com/replicatedhq/kots/kotsadm/pkg/store"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
@@ -37,7 +37,7 @@ func GetAirgapInstallStatus(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	status, err := airgap.GetInstallStatus()
+	status, err := store.GetStore().GetAirgapInstallStatus()
 	if err != nil {
 		logger.Error(err)
 		w.WriteHeader(500)
@@ -70,7 +70,7 @@ func UploadAirgapBundle(w http.ResponseWriter, r *http.Request) {
 }
 
 func updateAppFromAirgap(w http.ResponseWriter, r *http.Request) {
-	a, err := app.Get(r.FormValue("appId"))
+	a, err := store.GetStore().GetApp(r.FormValue("appId"))
 	if err != nil {
 		logger.Error(err)
 		w.WriteHeader(500)
@@ -97,7 +97,7 @@ func updateAppFromAirgap(w http.ResponseWriter, r *http.Request) {
 }
 
 func createAppFromAirgap(w http.ResponseWriter, r *http.Request) {
-	pendingApp, err := airgap.GetPendingAirgapUploadApp()
+	pendingApp, err := store.GetStore().GetPendingAirgapUploadApp()
 	if err != nil {
 		logger.Error(err)
 		w.WriteHeader(500)

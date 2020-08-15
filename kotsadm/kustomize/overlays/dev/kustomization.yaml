@@ -1,6 +1,6 @@
 bases:
   - ../../base
-  # - ./minio
+  - ./minio
   - ../../../web/kustomize/overlays/dev
   - ../../../api/kustomize/overlays/dev
   - ../../../operator/kustomize/overlays/dev

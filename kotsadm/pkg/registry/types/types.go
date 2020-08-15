@@ -7,3 +7,7 @@ type RegistrySettings struct {
 	Password    string
 	Namespace   string
 }
+
+const (
+	PasswordMask = "***HIDDEN***"
+)

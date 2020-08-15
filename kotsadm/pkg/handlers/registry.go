@@ -6,10 +6,10 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
-	"github.com/replicatedhq/kots/kotsadm/pkg/app"
 	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
 	"github.com/replicatedhq/kots/kotsadm/pkg/registry"
-	"github.com/replicatedhq/kots/kotsadm/pkg/task"
+	registrytypes "github.com/replicatedhq/kots/kotsadm/pkg/registry/types"
+	"github.com/replicatedhq/kots/kotsadm/pkg/store"
 	dockerregistry "github.com/replicatedhq/kots/pkg/docker/registry"
 )
 
@@ -86,7 +86,7 @@ func UpdateAppRegistry(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	currentStatus, _, err := task.GetTaskStatus("image-rewrite")
+	currentStatus, _, err := store.GetStore().GetTaskStatus("image-rewrite")
 	if err != nil {
 		logger.Error(err)
 		updateAppRegistryResponse.Error = err.Error()
@@ -102,14 +102,14 @@ func UpdateAppRegistry(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := task.ClearTaskStatus("image-rewrite"); err != nil {
+	if err := store.GetStore().ClearTaskStatus("image-rewrite"); err != nil {
 		logger.Error(err)
 		updateAppRegistryResponse.Error = err.Error()
 		JSON(w, 500, updateAppRegistryResponse)
 		return
 	}
 
-	foundApp, err := app.GetFromSlug(mux.Vars(r)["appSlug"])
+	foundApp, err := store.GetStore().GetAppFromSlug(mux.Vars(r)["appSlug"])
 	if err != nil {
 		logger.Error(err)
 		updateAppRegistryResponse.Error = err.Error()
@@ -122,7 +122,7 @@ func UpdateAppRegistry(w http.ResponseWriter, r *http.Request) {
 	updateAppRegistryResponse.Namespace = updateAppRegistryRequest.Namespace
 
 	// if hostname and namespace have not changed, we don't need to re-push
-	registrySettings, err := registry.GetRegistrySettingsForApp(foundApp.ID)
+	registrySettings, err := store.GetStore().GetRegistryDetailsForApp(foundApp.ID)
 	if err != nil {
 		logger.Error(err)
 		updateAppRegistryResponse.Error = err.Error()
@@ -134,7 +134,7 @@ func UpdateAppRegistry(w http.ResponseWriter, r *http.Request) {
 		if registrySettings.Hostname == updateAppRegistryRequest.Hostname {
 			if registrySettings.Namespace == updateAppRegistryRequest.Namespace {
 
-				err := registry.UpdateRegistry(foundApp.ID, updateAppRegistryRequest.Hostname, updateAppRegistryRequest.Username, updateAppRegistryRequest.Password, updateAppRegistryRequest.Namespace)
+				err := store.GetStore().UpdateRegistry(foundApp.ID, updateAppRegistryRequest.Hostname, updateAppRegistryRequest.Username, updateAppRegistryRequest.Password, updateAppRegistryRequest.Namespace)
 				if err != nil {
 					logger.Error(err)
 					updateAppRegistryResponse.Error = err.Error()
@@ -158,7 +158,7 @@ func UpdateAppRegistry(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		err = registry.UpdateRegistry(foundApp.ID, updateAppRegistryRequest.Hostname, updateAppRegistryRequest.Username, updateAppRegistryRequest.Password, updateAppRegistryRequest.Namespace)
+		err = store.GetStore().UpdateRegistry(foundApp.ID, updateAppRegistryRequest.Hostname, updateAppRegistryRequest.Username, updateAppRegistryRequest.Password, updateAppRegistryRequest.Namespace)
 		if err != nil {
 			logger.Error(err)
 			return
@@ -189,7 +189,7 @@ func GetAppRegistry(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	foundApp, err := app.GetFromSlug(mux.Vars(r)["appSlug"])
+	foundApp, err := store.GetStore().GetAppFromSlug(mux.Vars(r)["appSlug"])
 	if err != nil {
 		logger.Error(err)
 		getAppRegistryResponse.Error = err.Error()
@@ -197,7 +197,7 @@ func GetAppRegistry(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	settings, err := registry.GetRegistrySettingsForApp(foundApp.ID)
+	settings, err := store.GetStore().GetRegistryDetailsForApp(foundApp.ID)
 	if err != nil {
 		logger.Error(err)
 		getAppRegistryResponse.Error = err.Error()
@@ -209,7 +209,7 @@ func GetAppRegistry(w http.ResponseWriter, r *http.Request) {
 		getAppRegistryResponse.Hostname = settings.Hostname
 		getAppRegistryResponse.Namespace = settings.Namespace
 		getAppRegistryResponse.Username = settings.Username
-		getAppRegistryResponse.Password = registry.PasswordMask
+		getAppRegistryResponse.Password = registrytypes.PasswordMask
 	}
 
 	getAppRegistryResponse.Success = true
@@ -250,7 +250,7 @@ func GetKotsadmRegistry(w http.ResponseWriter, r *http.Request) {
 	getKotsadmRegistryResponse.Namespace = settings.Namespace
 	getKotsadmRegistryResponse.Username = settings.Username
 	if settings.Hostname != "" && settings.Username != "" {
-		getKotsadmRegistryResponse.Password = registry.PasswordMask
+		getKotsadmRegistryResponse.Password = registrytypes.PasswordMask
 	}
 
 	JSON(w, 200, getKotsadmRegistryResponse)
@@ -284,7 +284,7 @@ func ValidateAppRegistry(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	foundApp, err := app.GetFromSlug(mux.Vars(r)["appSlug"])
+	foundApp, err := store.GetStore().GetAppFromSlug(mux.Vars(r)["appSlug"])
 	if err != nil {
 		logger.Error(err)
 		validateAppRegistryResponse.Error = err.Error()
@@ -293,8 +293,8 @@ func ValidateAppRegistry(w http.ResponseWriter, r *http.Request) {
 	}
 
 	password := validateAppRegistryRequest.Password
-	if password == registry.PasswordMask {
-		appSettings, err := registry.GetRegistrySettingsForApp(foundApp.ID)
+	if password == registrytypes.PasswordMask {
+		appSettings, err := store.GetStore().GetRegistryDetailsForApp(foundApp.ID)
 		if err != nil {
 			logger.Error(err)
 			validateAppRegistryResponse.Error = err.Error()
@@ -324,7 +324,7 @@ func ValidateAppRegistry(w http.ResponseWriter, r *http.Request) {
 			password = kotsadmSettings.Password
 		}
 	}
-	if password == "" || password == registry.PasswordMask {
+	if password == "" || password == registrytypes.PasswordMask {
 		err := errors.Errorf("no password found for %s", validateAppRegistryRequest.Hostname)
 		logger.Error(err)
 		validateAppRegistryResponse.Error = err.Error()

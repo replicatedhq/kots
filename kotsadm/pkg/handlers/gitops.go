@@ -8,11 +8,10 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
-	"github.com/replicatedhq/kots/kotsadm/pkg/app"
 	"github.com/replicatedhq/kots/kotsadm/pkg/downstream"
 	"github.com/replicatedhq/kots/kotsadm/pkg/gitops"
 	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
-	"github.com/replicatedhq/kots/kotsadm/pkg/task"
+	"github.com/replicatedhq/kots/kotsadm/pkg/store"
 	"github.com/replicatedhq/kots/kotsadm/pkg/version"
 )
 
@@ -51,7 +50,7 @@ func UpdateAppGitOps(w http.ResponseWriter, r *http.Request) {
 	appID := mux.Vars(r)["appId"]
 	clusterID := mux.Vars(r)["clusterId"]
 
-	a, err := app.Get(appID)
+	a, err := store.GetStore().GetApp(appID)
 	if err != nil {
 		logger.Error(err)
 		w.WriteHeader(http.StatusInternalServerError)
@@ -85,7 +84,7 @@ func DisableAppGitOps(w http.ResponseWriter, r *http.Request) {
 	appID := mux.Vars(r)["appId"]
 	clusterID := mux.Vars(r)["clusterId"]
 
-	a, err := app.Get(appID)
+	a, err := store.GetStore().GetApp(appID)
 	if err != nil {
 		logger.Error(err)
 		w.WriteHeader(http.StatusInternalServerError)
@@ -125,7 +124,7 @@ func InitGitOpsConnection(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	currentStatus, _, err := task.GetTaskStatus("gitops-init")
+	currentStatus, _, err := store.GetStore().GetTaskStatus("gitops-init")
 	if err != nil {
 		logger.Error(err)
 		w.WriteHeader(http.StatusInternalServerError)
@@ -141,14 +140,14 @@ func InitGitOpsConnection(w http.ResponseWriter, r *http.Request) {
 	appID := mux.Vars(r)["appId"]
 	clusterID := mux.Vars(r)["clusterId"]
 
-	a, err := app.Get(appID)
+	a, err := store.GetStore().GetApp(appID)
 	if err != nil {
 		logger.Error(err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
-	d, err := downstream.Get(clusterID)
+	d, err := store.GetStore().GetDownstream(clusterID)
 	if err != nil {
 		logger.Error(err)
 		w.WriteHeader(http.StatusInternalServerError)
@@ -191,7 +190,7 @@ func InitGitOpsConnection(w http.ResponseWriter, r *http.Request) {
 	}
 
 	go func() {
-		if err := task.SetTaskStatus("gitops-init", "Creating commits ...", "running"); err != nil {
+		if err := store.GetStore().SetTaskStatus("gitops-init", "Creating commits ...", "running"); err != nil {
 			logger.Error(errors.Wrap(err, "failed to set task status running"))
 			return
 		}
@@ -199,11 +198,11 @@ func InitGitOpsConnection(w http.ResponseWriter, r *http.Request) {
 		var finalError error
 		defer func() {
 			if finalError == nil {
-				if err := task.ClearTaskStatus("gitops-init"); err != nil {
+				if err := store.GetStore().ClearTaskStatus("gitops-init"); err != nil {
 					logger.Error(errors.Wrap(err, "failed to clear task status"))
 				}
 			} else {
-				if err := task.SetTaskStatus("gitops-init", finalError.Error(), "failed"); err != nil {
+				if err := store.GetStore().SetTaskStatus("gitops-init", finalError.Error(), "failed"); err != nil {
 					logger.Error(errors.Wrap(err, "failed to set task status error"))
 				}
 			}

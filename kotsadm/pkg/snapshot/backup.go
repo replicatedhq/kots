@@ -2,7 +2,6 @@ package snapshot
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 	"os"
 	"strconv"
@@ -10,14 +9,13 @@ import (
 
 	units "github.com/docker/go-units"
 	"github.com/pkg/errors"
-	"github.com/replicatedhq/kots/kotsadm/pkg/app"
+	apptypes "github.com/replicatedhq/kots/kotsadm/pkg/app/types"
 	"github.com/replicatedhq/kots/kotsadm/pkg/downstream"
 	"github.com/replicatedhq/kots/kotsadm/pkg/kotsutil"
 	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
-	"github.com/replicatedhq/kots/kotsadm/pkg/persistence"
-	registrytypes "github.com/replicatedhq/kots/kotsadm/pkg/registry/types"
 	"github.com/replicatedhq/kots/kotsadm/pkg/render"
 	"github.com/replicatedhq/kots/kotsadm/pkg/snapshot/types"
+	"github.com/replicatedhq/kots/kotsadm/pkg/store"
 	"github.com/replicatedhq/kots/kotsadm/pkg/version"
 	kotstypes "github.com/replicatedhq/kots/pkg/kotsadm/types"
 	velerov1 "github.com/vmware-tanzu/velero/pkg/apis/velero/v1"
@@ -28,7 +26,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
 )
 
-func CreateBackup(a *app.App) error {
+func CreateBackup(a *apptypes.App) error {
 	if err := createApplicationBackup(a); err != nil {
 		return errors.Wrap(err, "failed to create application backup")
 	}
@@ -41,8 +39,8 @@ func CreateBackup(a *app.App) error {
 	return nil
 }
 
-func createApplicationBackup(a *app.App) error {
-	downstreams, err := downstream.ListDownstreamsForApp(a.ID)
+func createApplicationBackup(a *apptypes.App) error {
+	downstreams, err := store.GetStore().ListDownstreamsForApp(a.ID)
 	if err != nil {
 		return errors.Wrap(err, "failed to list downstreams for app")
 	}
@@ -75,7 +73,7 @@ func createApplicationBackup(a *app.App) error {
 		return errors.Wrap(err, "failed to load kots kinds from path")
 	}
 
-	registrySettings, err := getRegistrySettingsForApp(a.ID)
+	registrySettings, err := store.GetStore().GetRegistryDetailsForApp(a.ID)
 	if err != nil {
 		return errors.Wrap(err, "failed to get registry settings for app")
 	}
@@ -458,36 +456,6 @@ func getSnapshotVolumeSummary(veleroBackup *velerov1.Backup) (*types.VolumeSumma
 	}
 
 	return &volumeSummary, nil
-}
-
-// this is a copy from registry.  so many import cycles to unwind here, todo
-func getRegistrySettingsForApp(appID string) (*registrytypes.RegistrySettings, error) {
-	db := persistence.MustGetPGSession()
-	query := `select registry_hostname, registry_username, registry_password_enc, namespace from app where id = $1`
-
-	row := db.QueryRow(query, appID)
-
-	var registryHostname sql.NullString
-	var registryUsername sql.NullString
-	var registryPasswordEnc sql.NullString
-	var registryNamespace sql.NullString
-
-	if err := row.Scan(&registryHostname, &registryUsername, &registryPasswordEnc, &registryNamespace); err != nil {
-		return nil, errors.Wrap(err, "failed to scan registry")
-	}
-
-	if !registryHostname.Valid {
-		return nil, nil
-	}
-
-	registrySettings := registrytypes.RegistrySettings{
-		Hostname:    registryHostname.String,
-		Username:    registryUsername.String,
-		PasswordEnc: registryPasswordEnc.String,
-		Namespace:   registryNamespace.String,
-	}
-
-	return &registrySettings, nil
 }
 
 func GetKotsadmBackupDetail(backupName string) (*types.BackupDetail, error) {

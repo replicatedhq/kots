@@ -16,55 +16,6 @@ type scannable interface {
 	Scan(dest ...interface{}) error
 }
 
-func ListDownstreamsForApp(appID string) ([]types.Downstream, error) {
-	db := persistence.MustGetPGSession()
-	query := `select c.id from app_downstream d inner join cluster c on d.cluster_id = c.id where app_id = $1`
-	rows, err := db.Query(query, appID)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to query")
-	}
-	defer rows.Close()
-
-	downstreams := []types.Downstream{}
-	for rows.Next() {
-		var clusterID string
-		if err := rows.Scan(&clusterID); err != nil {
-			return nil, errors.Wrap(err, "failed to scan")
-		}
-		downstream, err := Get(clusterID)
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to get downstream")
-		}
-		if downstream != nil {
-			downstreams = append(downstreams, *downstream)
-		}
-	}
-
-	return downstreams, nil
-}
-
-func Get(clusterID string) (*types.Downstream, error) {
-	db := persistence.MustGetPGSession()
-	query := `select c.id, c.slug, d.downstream_name, d.current_sequence from app_downstream d inner join cluster c on d.cluster_id = c.id where c.id = $1`
-	row := db.QueryRow(query, clusterID)
-
-	downstream := types.Downstream{
-		CurrentSequence: -1,
-	}
-	var sequence sql.NullInt64
-	if err := row.Scan(&downstream.ClusterID, &downstream.ClusterSlug, &downstream.Name, &sequence); err != nil {
-		if err == sql.ErrNoRows {
-			return nil, nil
-		}
-		return nil, errors.Wrap(err, "failed to scan downstream")
-	}
-	if sequence.Valid {
-		downstream.CurrentSequence = sequence.Int64
-	}
-
-	return &downstream, nil
-}
-
 func GetCurrentSequence(appID string, clusterID string) (int64, error) {
 	db := persistence.MustGetPGSession()
 	query := `select current_sequence from app_downstream where app_id = $1 and cluster_id = $2`

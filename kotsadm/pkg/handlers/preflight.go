@@ -6,11 +6,11 @@ import (
 	"strconv"
 
 	"github.com/gorilla/mux"
-	"github.com/replicatedhq/kots/kotsadm/pkg/app"
 	"github.com/replicatedhq/kots/kotsadm/pkg/downstream"
 	downstreamtypes "github.com/replicatedhq/kots/kotsadm/pkg/downstream/types"
 	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
 	"github.com/replicatedhq/kots/kotsadm/pkg/preflight"
+	"github.com/replicatedhq/kots/kotsadm/pkg/store"
 	"github.com/replicatedhq/kots/kotsadm/pkg/version"
 )
 
@@ -97,7 +97,7 @@ func IgnorePreflightRBACErrors(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	foundApp, err := app.GetFromSlug(appSlug)
+	foundApp, err := store.GetStore().GetAppFromSlug(appSlug)
 	if err != nil {
 		logger.Error(err)
 		w.WriteHeader(500)
@@ -146,14 +146,14 @@ func StartPreflightChecks(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	foundApp, err := app.GetFromSlug(appSlug)
+	foundApp, err := store.GetStore().GetAppFromSlug(appSlug)
 	if err != nil {
 		logger.Error(err)
 		w.WriteHeader(500)
 		return
 	}
 
-	if err := preflight.ResetPreflightResult(foundApp.ID, int64(sequence)); err != nil {
+	if err := store.GetStore().ResetPreflightResult(foundApp.ID, int64(sequence)); err != nil {
 		logger.Error(err)
 		w.WriteHeader(500)
 		return

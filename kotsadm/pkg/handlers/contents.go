@@ -9,8 +9,8 @@ import (
 	"strings"
 
 	"github.com/gorilla/mux"
-	"github.com/replicatedhq/kots/kotsadm/pkg/app"
 	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
+	"github.com/replicatedhq/kots/kotsadm/pkg/store"
 	"github.com/replicatedhq/kots/kotsadm/pkg/version"
 )
 
@@ -40,7 +40,7 @@ func GetAppContents(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	a, err := app.GetFromSlug(appSlug)
+	a, err := store.GetStore().GetAppFromSlug(appSlug)
 	if err != nil {
 		logger.Error(err)
 		w.WriteHeader(500)

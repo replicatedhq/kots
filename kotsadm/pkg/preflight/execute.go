@@ -3,11 +3,10 @@ package preflight
 import (
 	"encoding/json"
 	"strings"
-	"time"
 
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
-	"github.com/replicatedhq/kots/kotsadm/pkg/persistence"
+	"github.com/replicatedhq/kots/kotsadm/pkg/store"
 	"github.com/replicatedhq/kots/kotsadm/pkg/version"
 	troubleshootv1beta1 "github.com/replicatedhq/troubleshoot/pkg/apis/troubleshoot/v1beta1"
 	"github.com/replicatedhq/troubleshoot/pkg/preflight"
@@ -95,14 +94,9 @@ func execute(appID string, sequence int64, preflightSpec *troubleshootv1beta1.Pr
 	if err != nil {
 		return errors.Wrap(err, "failed to marshal results")
 	}
-	db := persistence.MustGetPGSession()
-	query := `update app_downstream_version set preflight_result = $1, preflight_result_created_at = $2,
-status = (case when status = 'deployed' then 'deployed' else 'pending' end)
-where app_id = $3 and parent_sequence = $4`
 
-	_, err = db.Exec(query, b, time.Now(), appID, sequence)
-	if err != nil {
-		return errors.Wrap(err, "failed to write preflight results")
+	if err := store.GetStore().SetPreflightResults(appID, sequence, b); err != nil {
+		return errors.Wrap(err, "failed to set preflight results")
 	}
 
 	// deploy first version if preflight checks passed
