@@ -105,9 +105,10 @@ export function secondsAgo(time) {
  * @param {String} text The string you're checking to see if it needs resizing
  * @param {Int}    maxWidth The maximum width of the texts container
  * @param {String} defaultFontSize The default font-size of the string (ex 32px)
+ * @param {Int} minFontSize The minimum font-size the string can be (ex 18)
  * @return {String} new font-size for text to fit one line (ex 28px)
  */
-export function dynamicallyResizeText(text, maxWidth, defaultFontSize) {
+export function dynamicallyResizeText(text, maxWidth, defaultFontSize, minFontSize) {
   let size;
   let resizerElm = document.createElement("p");
   resizerElm.textContent = text;
@@ -126,9 +127,12 @@ export function dynamicallyResizeText(text, maxWidth, defaultFontSize) {
   }
 
   resizerElm.remove();
-
-  // Font size needs to be 1px smaller than the last calculated size to fully fit in the container
-  return `${size - 1}px`;
+  if (minFontSize && size < minFontSize) {
+    return `${minFontSize}px`;
+  } else {
+    // Font size needs to be 1px smaller than the last calculated size to fully fit in the container
+    return `${size - 1}px`;
+  }
 }
 
 export function sortAnalyzers(bundleInsight) {
