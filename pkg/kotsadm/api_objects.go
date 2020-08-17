@@ -9,6 +9,7 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
@@ -376,6 +377,16 @@ func apiDeployment(deployOptions types.DeployOptions) *appsv1.Deployment {
 								},
 							},
 							Env: env,
+							Resources: corev1.ResourceRequirements{
+								Limits: corev1.ResourceList{
+									"cpu":    resource.MustParse("1000m"),
+									"memory": resource.MustParse("1000Mi"),
+								},
+								Requests: corev1.ResourceList{
+									"cpu":    resource.MustParse("250m"),
+									"memory": resource.MustParse("200Mi"),
+								},
+							},
 						},
 					},
 				},

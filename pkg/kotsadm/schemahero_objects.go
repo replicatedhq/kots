@@ -7,6 +7,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/kotsadm/types"
 	"github.com/replicatedhq/kots/pkg/util"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -94,6 +95,16 @@ func migrationsPod(deployOptions types.DeployOptions) *corev1.Pod {
 							},
 						},
 					},
+					Resources: corev1.ResourceRequirements{
+						Limits: corev1.ResourceList{
+							"cpu":    resource.MustParse("100m"),
+							"memory": resource.MustParse("100Mi"),
+						},
+						Requests: corev1.ResourceList{
+							"cpu":    resource.MustParse("50m"),
+							"memory": resource.MustParse("50Mi"),
+						},
+					},
 				},
 			},
 			Containers: []corev1.Container{
@@ -127,6 +138,16 @@ func migrationsPod(deployOptions types.DeployOptions) *corev1.Pod {
 									Key: "uri",
 								},
 							},
+						},
+					},
+					Resources: corev1.ResourceRequirements{
+						Limits: corev1.ResourceList{
+							"cpu":    resource.MustParse("100m"),
+							"memory": resource.MustParse("100Mi"),
+						},
+						Requests: corev1.ResourceList{
+							"cpu":    resource.MustParse("50m"),
+							"memory": resource.MustParse("50Mi"),
 						},
 					},
 				},

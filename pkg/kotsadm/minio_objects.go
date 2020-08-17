@@ -208,6 +208,16 @@ func minioStatefulset(deployOptions types.DeployOptions) *appsv1.StatefulSet {
 									},
 								},
 							},
+							Resources: corev1.ResourceRequirements{
+								Limits: corev1.ResourceList{
+									"cpu":    resource.MustParse("100m"),
+									"memory": resource.MustParse("100Mi"),
+								},
+								Requests: corev1.ResourceList{
+									"cpu":    resource.MustParse("50m"),
+									"memory": resource.MustParse("50Mi"),
+								},
+							},
 						},
 					},
 				},
