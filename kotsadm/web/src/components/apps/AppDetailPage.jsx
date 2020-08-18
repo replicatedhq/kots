@@ -7,7 +7,6 @@ import Modal from "react-modal";
 
 import withTheme from "@src/components/context/withTheme";
 import { listDownstreamsForApp } from "@src/queries/AppsQueries";
-import { isVeleroInstalled } from "@src/queries/SnapshotQueries";
 import { KotsSidebarItem } from "@src/components/watches/WatchSidebarItem";
 import { HelmChartSidebarItem } from "@src/components/watches/WatchSidebarItem";
 import NotFound from "../static/NotFound";
@@ -52,7 +51,9 @@ class AppDetailPage extends Component {
       gettingAppErrMsg: "",
       makingCurrentReleaseErrMsg: "",
       makingCurrentRelease: false,
-      displayErrorModal: false
+      displayErrorModal: false,
+      isVeleroInstalled: false,
+      gettingVeleroMsg: ""
     }
   }
 
@@ -69,6 +70,7 @@ class AppDetailPage extends Component {
     // Refetch app info when switching between apps
     if (app && !loadingApp && match.params.slug != app.slug) {
       this.getApp();
+      this.checkIsVeleroInstalled();
       return;
     }
 
@@ -138,33 +140,6 @@ class AppDetailPage extends Component {
     this.setState({ isBundleUploading: isUploading });
   }
 
-  getApp = async (slug = this.props.match.params.slug) => {
-    if (!slug) {
-      return;
-    }
-
-    try {
-      this.setState({ loadingApp: true, gettingAppErrMsg: "", displayErrorModal: false });
-
-      const res = await fetch(`${window.env.API_ENDPOINT}/apps/app/${slug}`, {
-        headers: {
-          "Authorization": Utilities.getToken(),
-          "Content-Type": "application/json",
-        },
-        method: "GET",
-      });
-      if (res.ok && res.status == 200) {
-        const app = await res.json();
-        this.setState({ app, loadingApp: false, gettingAppErrMsg: "", displayErrorModal: false });
-      } else {
-        this.setState({ loadingApp: false, gettingAppErrMsg: `Unexpected status code: ${res.status}`, displayErrorModal: true });
-      }
-    } catch (err) {
-      console.log(err)
-      this.setState({ loadingApp: false, gettingAppErrMsg: err ? err.message : "Something went wrong, please try again.", displayErrorModal: true });
-    }
-  }
-
   toggleErrorModal = () => {
     this.setState({ displayErrorModal: !this.state.displayErrorModal });
   }
@@ -177,6 +152,7 @@ class AppDetailPage extends Component {
   refetchData = () => {
     this.getApp();
     this.props.refetchAppsList();
+    this.checkIsVeleroInstalled();
   }
 
   /**
@@ -206,6 +182,56 @@ class AppDetailPage extends Component {
       return;
     }
     this.getApp();
+    this.checkIsVeleroInstalled();
+  }
+
+  getApp = async (slug = this.props.match.params.slug) => {
+    if (!slug) {
+      return;
+    }
+
+    try {
+      this.setState({ loadingApp: true, gettingAppErrMsg: "", displayErrorModal: false });
+
+      const res = await fetch(`${window.env.API_ENDPOINT}/apps/app/${slug}`, {
+        headers: {
+          "Authorization": Utilities.getToken(),
+          "Content-Type": "application/json",
+        },
+        method: "GET",
+      });
+      if (res.ok && res.status == 200) {
+        const app = await res.json();
+        this.setState({ app, loadingApp: false, gettingAppErrMsg: "", displayErrorModal: false });
+      } else {
+        this.setState({ loadingApp: false, gettingAppErrMsg: `Unexpected status code: ${res.status}`, displayErrorModal: true });
+      }
+    } catch (err) {
+      console.log(err)
+      this.setState({ loadingApp: false, gettingAppErrMsg: err ? err.message : "Something went wrong, please try again.", displayErrorModal: true });
+    }
+  }
+
+  checkIsVeleroInstalled = async () => {
+    try {
+      const res = await fetch(`${window.env.API_ENDPOINT}/velero`, {
+        headers: {
+          "Authorization": Utilities.getToken(),
+          "Content-Type": "application/json",
+        },
+        method: "GET",
+      });
+      console.log(res)
+      if (res.ok && res.status == 200) {
+        const response = await res.json();
+        this.setState({ isVeleroInstalled: response.isVeleroInstalled, gettingVeleroMsg: "", displayErrorModal: false })
+      } else {
+        this.setState({ isVeleroInstalled: false, gettingVeleroMsg: `Unexpected status code: ${res.status}`, displayErrorModal: true });
+      }
+    } catch (err) {
+      console.log(err)
+      this.setState({ isVeleroInstalled: false, gettingVeleroMsg: err ? err.message : "Something went wrong, please try again.", displayErrorModal: true });
+    }
   }
 
   render() {
@@ -214,14 +240,16 @@ class AppDetailPage extends Component {
       appsList,
       rootDidInitialAppFetch,
       appName,
-      isVeleroInstalled
+      isSnapshotsSupported
     } = this.props;
 
     const {
       app,
       displayDownloadCommandModal,
       isBundleUploading,
-      gettingAppErrMsg
+      gettingAppErrMsg,
+      isVeleroInstalled,
+      gettingVeleroMsg
     } = this.state;
 
     const centeredLoader = (
@@ -288,7 +316,7 @@ class AppDetailPage extends Component {
                     className="flex"
                     activeTab={match.params.tab || "app"}
                     watch={app}
-                    isVeleroInstalled={isVeleroInstalled?.isVeleroInstalled}
+                    isVeleroInstalled={isVeleroInstalled}
                   />
                   <Switch>
                     <Route exact path="/app/:slug" render={() =>
@@ -299,7 +327,7 @@ class AppDetailPage extends Component {
                         onActiveInitSession={this.props.onActiveInitSession}
                         toggleIsBundleUploading={this.toggleIsBundleUploading}
                         isBundleUploading={isBundleUploading}
-                        isVeleroInstalled={isVeleroInstalled?.isVeleroInstalled}
+                        isVeleroInstalled={isVeleroInstalled}
                         refreshAppData={this.getApp}
                         snapshotInProgressApps={this.props.snapshotInProgressApps}
                         ping={this.props.ping}
@@ -411,6 +439,14 @@ class AppDetailPage extends Component {
             err="Failed to get application"
             loading={this.state.loadingApp}
           />}
+        {gettingVeleroMsg && isSnapshotsSupported &&
+          <ErrorModal
+            errorModal={this.state.displayErrorModal}
+            toggleErrorModal={this.toggleErrorModal}
+            errMsg={gettingVeleroMsg}
+            tryAgain={this.checkIsVeleroInstalled}
+            err="Failed to get velero status"
+          />}
       </div>
     );
   }
@@ -443,11 +479,5 @@ export default compose(
         }
       }
     }
-  }),
-  graphql(isVeleroInstalled, {
-    name: "isVeleroInstalled",
-    options: {
-      fetchPolicy: "no-cache"
-    }
-  }),
+  })
 )(AppDetailPage);
