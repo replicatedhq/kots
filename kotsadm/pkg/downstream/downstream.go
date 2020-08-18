@@ -163,6 +163,55 @@ func GetIgnoreRBACErrors(appID string, sequence int64) (bool, error) {
 	return shouldIgnore.Bool, nil
 }
 
+func GetPreflightResult(appID string, sequence int64) (*types.PreflightResult, error) {
+	db := persistence.MustGetPGSession()
+	query := `
+	SELECT
+		app_downstream_version.preflight_result,
+		app_downstream_version.preflight_result_created_at,
+		app.slug as app_slug,
+		cluster.slug as cluster_slug
+	FROM app_downstream_version
+		INNER JOIN app ON app_downstream_version.app_id = app.id
+		INNER JOIN cluster ON app_downstream_version.cluster_id = cluster.id
+	WHERE
+		app_downstream_version.app_id = $1 AND
+		app_downstream_version.sequence = $2`
+
+	row := db.QueryRow(query, appID, sequence)
+	r, err := preflightResultFromRow(row)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get preflight result from row")
+	}
+
+	return r, nil
+}
+
+func GetLatestPreflightResult() (*types.PreflightResult, error) {
+	db := persistence.MustGetPGSession()
+	query := `
+	SELECT
+		app_downstream_version.preflight_result,
+		app_downstream_version.preflight_result_created_at,
+		app.slug as app_slug,
+		cluster.slug as cluster_slug
+	FROM app_downstream_version
+		INNER JOIN (
+			SELECT id, slug FROM app WHERE current_sequence = 0 ORDER BY created_at DESC LIMIT 1
+		) AS app ON app_downstream_version.app_id = app.id
+		INNER JOIN cluster ON app_downstream_version.cluster_id = cluster.id
+	WHERE
+		app_downstream_version.sequence = 0`
+
+	row := db.QueryRow(query)
+	r, err := preflightResultFromRow(row)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get preflight result from row")
+	}
+
+	return r, nil
+}
+
 func SetIgnorePreflightPermissionErrors(appID string, sequence int64) error {
 	db := persistence.MustGetPGSession()
 	query := `UPDATE app_downstream_version
@@ -429,6 +478,29 @@ func versionFromRow(appID string, row scannable) (*types.DownstreamVersion, erro
 	}
 
 	return v, nil
+}
+
+func preflightResultFromRow(row scannable) (*types.PreflightResult, error) {
+	r := &types.PreflightResult{}
+
+	var preflightResult sql.NullString
+	var preflightResultCreatedAt sql.NullTime
+
+	if err := row.Scan(
+		&preflightResult,
+		&preflightResultCreatedAt,
+		&r.AppSlug,
+		&r.ClusterSlug,
+	); err != nil {
+		return nil, errors.Wrap(err, "failed to scan")
+	}
+
+	r.Result = preflightResult.String
+	if preflightResultCreatedAt.Valid {
+		r.CreatedAt = &preflightResultCreatedAt.Time
+	}
+
+	return r, nil
 }
 
 func getReleaseNotes(appID string, parentSequence int64) (string, error) {

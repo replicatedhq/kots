@@ -38,8 +38,6 @@ export const Query = `
     getSupportBundle(watchSlug: String!): SupportBundle
     getSupportBundleCommand(watchSlug: String): String
 
-    getKotsPreflightResult(appSlug: String!, clusterSlug: String!, sequence: Int!): PreflightResult
-    getLatestKotsPreflightResult: PreflightResult
     getPreflightCommand(appSlug: String, clusterSlug: String, sequence: String): String
 
     getAirgapInstallStatus: InstallStatus
