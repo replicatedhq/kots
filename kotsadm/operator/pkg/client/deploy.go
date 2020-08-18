@@ -364,7 +364,7 @@ func (c *Client) clearNamespace(slug string, namespace string) (bool, error) {
 		unstructuredList, err := dyn.Resource(gvr).Namespace(namespace).List(context.TODO(), metav1.ListOptions{})
 		if unstructuredList == nil {
 			if err != nil {
-				log.Printf("failed to list namespace resource: %s", err.Error())
+				log.Printf("failed to list namespace resources: %s", err.Error())
 			}
 			continue
 		}
