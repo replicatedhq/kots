@@ -8,7 +8,7 @@ import CodeSnippet from "../shared/CodeSnippet";
 import NodeRow from "./NodeRow";
 import Loader from "../shared/Loader";
 import { kurl } from "../../queries/KurlQueries";
-import { drainNode, deleteNode } from "../../mutations/KurlMutations"
+import { deleteNode } from "../../mutations/KurlMutations"
 import { Utilities } from "../../utilities/utilities";
 
 import "@src/scss/components/apps/ClusterNodes.scss";
@@ -21,15 +21,6 @@ export class ClusterNodes extends Component {
     displayAddNode: false,
     selectedNodeType: "worker", // Change when master node script is enabled
     generateCommandErrMsg: ""
-  }
-
-  drainNode = (name) => {
-    try {
-      this.props.drainNode(name);
-      // feedback here showing the node was drained?
-    } catch (error) {
-      console.log(error)
-    }
   }
 
   deleteNode = (name) => {
@@ -61,6 +52,22 @@ export class ClusterNodes extends Component {
           this.setState({ generating: false, generateCommandErrMsg: msg });
         });
       });
+  }
+
+  drainNode = async (name) => {
+    fetch(`${window.env.API_ENDPOINT}/kurl/nodes/${name}/drain`, {
+      headers: {
+        "Authorization": Utilities.getToken(),
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+      },
+      method: "POST",
+    })
+      .then(async (res) => {})
+      .catch((err) => {
+        console.log("test");
+        console.log(err);
+      })
   }
 
   generateMasterAddNodeCommand = async () => {
@@ -253,11 +260,6 @@ export default compose(
       pollInterval: 2000,
       fetchPolicy: "no-cache",
     },
-  }),
-  graphql(drainNode, {
-    props: ({ mutate }) => ({
-      drainNode: (name) => mutate({ variables: { name } })
-    })
   }),
   graphql(deleteNode, {
     props: ({ mutate }) => ({
