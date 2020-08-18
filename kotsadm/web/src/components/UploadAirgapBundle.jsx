@@ -324,7 +324,6 @@ class UploadAirgapBundle extends React.Component {
         errorMsg: err ? err.message : "Something went wrong, please try again.",
         displayErrorModal: true,
       });
-      return;
     }
 
     setTimeout(() => {
@@ -425,7 +424,7 @@ class UploadAirgapBundle extends React.Component {
       );
     }
 
-    let supportBundleCommand = [];
+    let supportBundleCommand;
     if (this.state.supportBundleCommand) {
       supportBundleCommand = this.state.supportBundleCommand.map((part) => {
         return part.replace("API_ADDRESS", window.location.origin);
@@ -538,12 +537,14 @@ class UploadAirgapBundle extends React.Component {
                           {supportBundleCommand}
                         </CodeSnippet>
                       </div>
-                      :
-                      <div>
-                        <div className="u-marginTop--10">
-                          <a href="#" className="replicated-link" onClick={this.toggleShowRun}>Click here</a> to get a command to generate a support bundle.
-                      </div>
-                      </div>
+                      : (supportBundleCommand ?
+                          <div>
+                            <div className="u-marginTop--10">
+                              <a href="#" className="replicated-link" onClick={this.toggleShowRun}>Click here</a> to get a command to generate a support bundle.
+                            </div>
+                          </div>
+                          : null 
+                      )
                     }
                   </div>
                 )}
