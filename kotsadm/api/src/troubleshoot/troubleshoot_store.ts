@@ -154,16 +154,4 @@ export class TroubleshootStore {
     }
     return supportBundles;
   }
-
-  async getSupportBundleCommand(watchSlug?: string): Promise<string> {
-    let url = `API_ADDRESS/api/v1/troubleshoot`;
-    if (watchSlug) {
-      url = `${url}/${watchSlug}`;
-    }
-    const bundleCommand = `
-    curl https://krew.sh/support-bundle | bash
-    kubectl support-bundle ${url}
-    `;
-    return bundleCommand;
-  }
 }

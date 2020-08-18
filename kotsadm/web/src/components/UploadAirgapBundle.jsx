@@ -1,6 +1,6 @@
 import * as React from "react";
 import classNames from "classnames";
-import { graphql, compose, withApollo } from "react-apollo";
+import { compose, withApollo } from "react-apollo";
 import { withRouter } from "react-router-dom";
 import { Helmet } from "react-helmet";
 import Dropzone from "react-dropzone";
@@ -11,7 +11,6 @@ import AirgapUploadProgress from "@src/components/AirgapUploadProgress";
 import LicenseUploadProgress from "./LicenseUploadProgress";
 import AirgapRegistrySettings from "./shared/AirgapRegistrySettings";
 import { Utilities } from "../utilities/utilities";
-import { getSupportBundleCommand } from "../queries/TroubleshootQueries";
 
 import "../scss/components/troubleshoot/UploadSupportBundleModal.scss";
 import "../scss/components/Login.scss";
@@ -294,11 +293,29 @@ class UploadAirgapBundle extends React.Component {
     }, 1000);
   }
 
+  getSupportBundleCommand = async (slug) => {
+    try {
+      const res = await fetch(`${window.env.API_ENDPOINT}/troubleshoot/app/${slug}/supportbundlecommand`, {
+        method: "GET",
+        headers: {
+          "Authorization": Utilities.getToken(),
+        }
+      });
+      if (!res.ok) {
+        console.log("failed to get support bundle command, unexpected status code", res.status);
+        return;
+      }
+      const response = await res.json();
+      return response.command;
+    } catch(err) {
+      throw err;
+    }
+  }
+
   onProgressError = async (errorMessage) => {
     // Push this setState call to the end of the call stack
-    const supportBundleCommand = await this.props.client.query({
-      query: getSupportBundleCommand
-    });
+    const { slug } = this.props.match.params;
+    const supportBundleCommand = await this.getSupportBundleCommand(slug);
 
     setTimeout(() => {
       Object.entries(COMMON_ERRORS).forEach(([errorString, message]) => {
@@ -312,7 +329,7 @@ class UploadAirgapBundle extends React.Component {
         fileUploading: false,
         uploadSent: 0,
         uploadTotal: 0,
-        supportBundleCommand: supportBundleCommand.data.getSupportBundleCommand
+        supportBundleCommand: supportBundleCommand,
       });
     }, 0);
   }
@@ -392,9 +409,11 @@ class UploadAirgapBundle extends React.Component {
       );
     }
 
-    let supportBundleCommand = this.state.supportBundleCommand;
-    if (supportBundleCommand) {
-      supportBundleCommand = supportBundleCommand.replace("API_ADDRESS", window.location.origin);
+    let supportBundleCommand = [];
+    if (this.state.supportBundleCommand) {
+      supportBundleCommand = this.state.supportBundleCommand.map((part) => {
+        return part.replace("API_ADDRESS", window.location.origin);
+      });
     }
 
     let logoUri;
@@ -500,7 +519,7 @@ class UploadAirgapBundle extends React.Component {
                           canCopy={true}
                           onCopyText={<span className="u-color--chateauGreen">Command has been copied to your clipboard</span>}
                         >
-                          {supportBundleCommand.split("\n")}
+                          {supportBundleCommand}
                         </CodeSnippet>
                       </div>
                       :
