@@ -10,6 +10,7 @@ import CodeSnippet from "@src/components/shared/CodeSnippet";
 import AirgapUploadProgress from "@src/components/AirgapUploadProgress";
 import LicenseUploadProgress from "./LicenseUploadProgress";
 import AirgapRegistrySettings from "./shared/AirgapRegistrySettings";
+import ErrorModal from "./modals/ErrorModal";
 import { Utilities } from "../utilities/utilities";
 
 import "../scss/components/troubleshoot/UploadSupportBundleModal.scss";
@@ -30,7 +31,10 @@ class UploadAirgapBundle extends React.Component {
     supportBundleCommand: undefined,
     showSupportBundleCommand: false,
     onlineInstallErrorMessage: "",
-    viewOnlineInstallErrorMessage: false
+    viewOnlineInstallErrorMessage: false,
+    errorTitle: "",
+    errorMsg: "",
+    displayErrorModal: false,
   }
 
   emptyRequiredFields = "Please enter a value for \"Hostname\" and \"Namespace\" fields"
@@ -294,28 +298,34 @@ class UploadAirgapBundle extends React.Component {
   }
 
   getSupportBundleCommand = async (slug) => {
-    try {
-      const res = await fetch(`${window.env.API_ENDPOINT}/troubleshoot/app/${slug}/supportbundlecommand`, {
-        method: "GET",
-        headers: {
-          "Authorization": Utilities.getToken(),
-        }
-      });
-      if (!res.ok) {
-        console.log("failed to get support bundle command, unexpected status code", res.status);
-        return;
+    const res = await fetch(`${window.env.API_ENDPOINT}/troubleshoot/app/${slug}/supportbundlecommand`, {
+      method: "GET",
+      headers: {
+        "Authorization": Utilities.getToken(),
       }
-      const response = await res.json();
-      return response.command;
-    } catch(err) {
-      throw err;
+    });
+    if (!res.ok) {
+      throw new Error(`Unexpected status code: ${res.status}`);
     }
+    const response = await res.json();
+    return response.command;
   }
 
   onProgressError = async (errorMessage) => {
     // Push this setState call to the end of the call stack
     const { slug } = this.props.match.params;
-    const supportBundleCommand = await this.getSupportBundleCommand(slug);
+
+    let supportBundleCommand = "";
+    try {
+      supportBundleCommand = await this.getSupportBundleCommand(slug);
+    } catch (err) {
+      this.setState({
+        errorTitle: `Failed to get support bundle command`,
+        errorMsg: err ? err.message : "Something went wrong, please try again.",
+        displayErrorModal: true,
+      });
+      return;
+    }
 
     setTimeout(() => {
       Object.entries(COMMON_ERRORS).forEach(([errorString, message]) => {
@@ -375,6 +385,10 @@ class UploadAirgapBundle extends React.Component {
     });
   }
 
+  toggleErrorModal = () => {
+    this.setState({ displayErrorModal: !this.state.displayErrorModal });
+  }
+
   render() {
     const {
       appName,
@@ -393,7 +407,9 @@ class UploadAirgapBundle extends React.Component {
       registryDetails,
       preparingOnlineInstall,
       onlineInstallErrorMessage,
-      viewOnlineInstallErrorMessage
+      viewOnlineInstallErrorMessage,
+      errorTitle,
+      errorMsg,
     } = this.state;
 
     const hasFile = bundleFile && !isEmpty(bundleFile);
@@ -578,6 +594,14 @@ class UploadAirgapBundle extends React.Component {
             <button type="button" className="btn primary u-marginTop--15" onClick={this.toggleViewOnlineInstallErrorMessage}>Ok, got it!</button>
           </div>
         </Modal>
+
+        {errorMsg &&
+          <ErrorModal
+            errorModal={this.state.displayErrorModal}
+            toggleErrorModal={this.toggleErrorModal}
+            err={errorTitle}
+            errMsg={errorMsg}
+          />}
       </div>
     );
   }
