@@ -361,7 +361,13 @@ func (c *Client) clearNamespace(slug string, namespace string) (bool, error) {
 			continue
 		}
 		// there may be other resources that can't be listed besides what's in the skip set so ignore error
-		unstructuredList, _ := dyn.Resource(gvr).Namespace(namespace).List(context.TODO(), metav1.ListOptions{})
+		unstructuredList, err := dyn.Resource(gvr).Namespace(namespace).List(context.TODO(), metav1.ListOptions{})
+		if unstructuredList == nil {
+			if err != nil {
+				log.Printf("failed to list namespace resources: %s", err.Error())
+			}
+			continue
+		}
 		for _, u := range unstructuredList.Items {
 			annotations := u.GetAnnotations()
 			if annotations["kots.io/app-slug"] == slug {
