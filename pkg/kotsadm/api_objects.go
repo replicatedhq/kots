@@ -383,7 +383,7 @@ func apiDeployment(deployOptions types.DeployOptions) *appsv1.Deployment {
 									"memory": resource.MustParse("1000Mi"),
 								},
 								Requests: corev1.ResourceList{
-									"cpu":    resource.MustParse("250m"),
+									"cpu":    resource.MustParse("200m"),
 									"memory": resource.MustParse("200Mi"),
 								},
 							},
