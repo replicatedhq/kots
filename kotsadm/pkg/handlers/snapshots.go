@@ -48,6 +48,10 @@ type SnapshotConfig struct {
 	TTl          *snapshottypes.SnapshotTTL      `json:"ttl"`
 }
 
+type VeleroStatus struct {
+	IsVeleroInstalled bool `json:"isVeleroInstalled"`
+}
+
 func UpdateGlobalSnapshotSettings(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Access-Control-Allow-Headers", "content-type, origin, accept, authorization")
@@ -524,4 +528,33 @@ func parseTTL(s string) (*snapshottypes.ParsedTTL, error) {
 		return nil, errors.Wrap(nil, "unsupported unit type")
 	}
 	return parsedTTLResponse, nil
+}
+
+func GetVeleroStatus(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Headers", "content-type, origin, accept, authorization")
+
+	if r.Method == "OPTIONS" {
+		w.WriteHeader(http.StatusOK)
+		return
+	}
+
+	getVeleroStatusResponse := VeleroStatus{}
+
+	detectVelero, err := snapshot.DetectVelero()
+	if err != nil {
+		logger.Error(err)
+		getVeleroStatusResponse.IsVeleroInstalled = false
+		JSON(w, 500, getVeleroStatusResponse)
+		return
+	}
+
+	if detectVelero == nil {
+		getVeleroStatusResponse.IsVeleroInstalled = false
+		JSON(w, 404, getVeleroStatusResponse)
+		return
+	}
+
+	getVeleroStatusResponse.IsVeleroInstalled = true
+	JSON(w, 200, getVeleroStatusResponse)
 }
