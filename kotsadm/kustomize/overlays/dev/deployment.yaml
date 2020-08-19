@@ -55,10 +55,10 @@ spec:
               value: http://127.0.0.1:30065
             # - name: DISABLE_OUTBOUND_CONNECTIONS  
             #   value: "true"
-            - name: STORAGE_BASEURI
-              value: "docker://kotsadm-storage-registry:5000"
-            - name: STORAGE_BASEURI_PLAINHTTP
-              value: "true"
+            # - name: STORAGE_BASEURI
+            #   value: "docker://kotsadm-storage-registry:5000"
+            # - name: STORAGE_BASEURI_PLAINHTTP
+            #   value: "true"
       volumes:
         - emptyDir:
             medium: Memory

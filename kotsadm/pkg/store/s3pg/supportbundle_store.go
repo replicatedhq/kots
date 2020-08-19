@@ -60,7 +60,7 @@ func (s S3PGStore) ListSupportBundles(appID string) ([]*supportbundletypes.Suppo
 		supportBundles = append(supportBundles, s)
 	}
 
-	return nil, nil
+	return supportBundles, nil
 }
 
 func (s S3PGStore) GetSupportBundleFromSlug(slug string) (*supportbundletypes.SupportBundle, error) {

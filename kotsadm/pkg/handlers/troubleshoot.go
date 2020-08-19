@@ -351,7 +351,7 @@ func CollectSupportBundle(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	a, err := store.GetStore().GetAppFromSlug(mux.Vars(r)["appId"])
+	a, err := store.GetStore().GetApp(mux.Vars(r)["appId"])
 	if err != nil {
 		logger.Error(err)
 		w.WriteHeader(500)
@@ -476,8 +476,6 @@ func UploadSupportBundle(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(500)
 		return
 	}
-
-	fmt.Printf("analyzeResult %#v\n", analyzeResult)
 }
 
 func GetDefaultTroubleshoot(w http.ResponseWriter, r *http.Request) {
