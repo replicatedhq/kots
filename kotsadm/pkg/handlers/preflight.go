@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"fmt"
 	"net/http"
 	"os"
 	"strconv"
@@ -16,6 +17,10 @@ import (
 
 type GetPreflightResultResponse struct {
 	PreflightResult downstreamtypes.PreflightResult `json:"preflightResult"`
+}
+
+type GetPreflightCommandResponse struct {
+	Command []string `json:"command"`
 }
 
 func GetPreflightResult(w http.ResponseWriter, r *http.Request) {
@@ -175,4 +180,33 @@ func StartPreflightChecks(w http.ResponseWriter, r *http.Request) {
 	}()
 
 	JSON(w, 200, struct{}{})
+}
+
+func GetPreflightCommand(w http.ResponseWriter, r *http.Request) {
+	if handleOptionsRequest(w, r) {
+		return
+	}
+
+	if err := requireValidSession(w, r); err != nil {
+		logger.Error(err)
+		return
+	}
+
+	appSlug := mux.Vars(r)["appSlug"]
+	sequence, err := strconv.ParseInt(mux.Vars(r)["sequence"], 10, 64)
+	if err != nil {
+		logger.Error(err)
+		w.WriteHeader(400)
+		return
+	}
+
+	command := []string{
+		"curl https://krew.sh/preflight | bash",
+		fmt.Sprintf("kubectl preflight API_ADDRESS/api/v1/preflight/app/%s/sequence/%d", appSlug, sequence),
+	}
+
+	response := GetPreflightCommandResponse{
+		Command: command,
+	}
+	JSON(w, 200, response)
 }

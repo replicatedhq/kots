@@ -1,14 +1,6 @@
 import pg from "pg";
 
 import { Params } from "../server/params";
-import { PreflightResult } from "./";
-import { ReplicatedError } from "../server/errors";
-import { logger } from "../server/logger";
-
-interface PreflightParams {
-  url: string
-  ignorePermissions: boolean
-}
 
 interface PreflightParams {
   url: string
@@ -46,9 +38,9 @@ export class PreflightStore {
 
       let url: string;
       if (inCluster) {
-        url = `${params.shipApiEndpoint}/api/v1/preflight/${appSlug}/${clusterSlug}/${sequence}?incluster=true`;
+        url = `${params.shipApiEndpoint}/api/v1/preflight/${appSlug}/${clusterSlug}/${sequence}?incluster=true`; // TODO
       } else {
-        url = `${params.apiAdvertiseEndpoint}/api/v1/preflight/${appSlug}/${clusterSlug}/${sequence}`;
+        url = `${params.apiAdvertiseEndpoint}/api/v1/preflight/${appSlug}/${clusterSlug}/${sequence}`; // TODO
       }
   
       const param: PreflightParams = {
@@ -60,16 +52,5 @@ export class PreflightStore {
 
     return preflightParams;
   }
-
-  async getPreflightCommand(appSlug: string, clusterSlug: string, sequence: string): Promise<string> {
-    const params = await Params.getParams();
-    let url = `${params.apiAdvertiseEndpoint}/api/v1/preflight/${appSlug}/${clusterSlug}/${sequence}`;
-    const preflightCommand = `
-curl https://krew.sh/preflight | bash
-kubectl preflight ${url}
-    `;
-    return preflightCommand;
-  }
-
 
 }
