@@ -276,30 +276,6 @@ export const getKotsDownstreamHistoryRaw = `
 `;
 export const getKotsDownstreamHistory = gql(getKotsDownstreamHistoryRaw);
 
-export const getKotsPreflightResultRaw = `
-  query getKotsPreflightResult($appSlug: String!, $clusterSlug: String!, $sequence: Int!) {
-    getKotsPreflightResult(appSlug: $appSlug, clusterSlug: $clusterSlug, sequence: $sequence) {
-      appSlug
-      clusterSlug
-      result
-      createdAt
-    }
-  }
-`;
-export const getKotsPreflightResult = gql(getKotsPreflightResultRaw);
-
-export const getLatestKotsPreflightResultRaw = `
-  query getLatestKotsPreflightResult {
-    getLatestKotsPreflightResult {
-      appSlug
-      clusterSlug
-      result
-      createdAt
-    }
-  }
-`;
-export const getLatestKotsPreflightResult = gql(getLatestKotsPreflightResultRaw);
-
 export const getAirgapInstallStatusRaw = `
   query getAirgapInstallStatus {
     getAirgapInstallStatus {

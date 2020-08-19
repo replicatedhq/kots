@@ -1,29 +1,32 @@
 import React, { Component } from "react";
 import { Link } from "react-router-dom";
-import { graphql, compose, withApollo } from "react-apollo";
+import { compose, withApollo } from "react-apollo";
 import { Helmet } from "react-helmet";
 import { withRouter } from "react-router-dom";
 import Modal from "react-modal";
-import { getKotsPreflightResult, getLatestKotsPreflightResult } from "@src/queries/AppsQueries";
 import Loader from "./shared/Loader";
 import PreflightRenderer from "./PreflightRenderer";
+import { Repeater } from "../utilities/repeater";
 import { getPreflightResultState, Utilities } from "../utilities/utilities";
 import "../scss/components/PreflightCheckPage.scss";
 import PreflightResultErrors from "./PreflightResultErrors";
-import has from "lodash/has";
 import size from "lodash/size";
 
 class PreflightResultPage extends Component {
   state = {
     showSkipModal: false,
     showWarningModal: false,
-    errorMessage: ""
+    getKotsPreflightResultJob: new Repeater(),
+    preflightResultData: null,
+    errorMessage: "",
   };
 
+  componentDidMount() {
+    this.state.getKotsPreflightResultJob.start(this.getKotsPreflightResult, 2000);
+  }
+
   async componentWillUnmount() {
-    if (has(this.props.data, "stopPolling")) {
-      this.props.data.stopPolling();
-    }
+    this.state.getKotsPreflightResultJob.stop();
 
     if (this.props.fromLicenseFlow && this.props.refetchAppsList) {
       await this.props.refetchAppsList();
@@ -33,8 +36,8 @@ class PreflightResultPage extends Component {
   deployKotsDownstream = async (force = false) => {
     this.setState({ errorMessage: "" });
     try {
-      const { data, history, match } = this.props;
-      const preflightResultData = data.getKotsPreflightResult || data.getLatestKotsPreflightResult;
+      const { history, match } = this.props;
+      const { preflightResultData } = this.state;
 
       const preflightResults = JSON.parse(preflightResultData?.result);
       const preflightState = getPreflightResultState(preflightResults);
@@ -100,7 +103,7 @@ class PreflightResultPage extends Component {
 
   ignorePermissionErrors = () => {
     this.setState({ errorMessage: "" });
-    const preflightResultData = this.props.data.getKotsPreflightResult || this.props.data.getLatestKotsPreflightResult;
+    const { preflightResultData } = this.state;
     const sequence = this.props.match.params.sequence ? parseInt(this.props.match.params.sequence, 10) : 0;
 
     const appSlug = preflightResultData.appSlug;
@@ -113,7 +116,10 @@ class PreflightResultPage extends Component {
       method: "POST",
     })
       .then(async (res) => {
-        this.props.data.refetch();
+        this.setState({
+          preflightResultData: null,
+        });
+        this.state.getKotsPreflightResultJob.start(this.getKotsPreflightResult, 2000);
       })
       .catch((err) => {
         console.log(err);
@@ -125,7 +131,7 @@ class PreflightResultPage extends Component {
 
   rerunPreflights = () => {
     this.setState({ errorMessage: "" });
-    const preflightResultData = this.props.data.getKotsPreflightResult || this.props.data.getLatestKotsPreflightResult;
+    const { preflightResultData } = this.state;
     const sequence = this.props.match.params.sequence ? parseInt(this.props.match.params.sequence, 10) : 0;
 
     const appSlug = preflightResultData.appSlug;
@@ -139,7 +145,10 @@ class PreflightResultPage extends Component {
     })
       .then((res) => {
         if (res.status === 200) {
-          this.props.data?.refetch();
+          this.setState({
+            preflightResultData: null,
+          });
+          this.state.getKotsPreflightResultJob.start(this.getKotsPreflightResult, 2000);
         } else {
           this.setState({
             errorMessage: `Encountered an error while trying to re-run preflight checks: Status ${res.status}`
@@ -155,7 +164,10 @@ class PreflightResultPage extends Component {
   }
 
   renderErrors = (errors) => {
-    this.props.data?.startPolling(2000);
+    const { preflightResultData } = this.state;
+
+    // TODO: why start polling here?
+    // this.state.getKotsPreflightResultJob.start(this.getKotsPreflightResult, 2000);
 
     const valueFromAPI = errors.map(error => {
       return error.error;
@@ -166,24 +178,87 @@ class PreflightResultPage extends Component {
         valueFromAPI={valueFromAPI}
         ignorePermissionErrors={this.ignorePermissionErrors}
         logo={this.props.logo}
-        preflightResultData={this.props.data.getKotsPreflightResult || this.props.data.getLatestKotsPreflightResult}
+        preflightResultData={preflightResultData}
       />
     );
   }
-  
-  render() {
-    const { data } = this.props;
-    const { showSkipModal, showWarningModal } = this.state;
-    const isLoading = data.loading;
 
-    const preflightResultData = isLoading
-      ? null
-      : data.getKotsPreflightResult || data.getLatestKotsPreflightResult;
+  getKotsPreflightResult = async () => {
+    this.setState({ errorMessage: "" });
+    const { match } = this.props;
+    if (match.params.downstreamSlug) { // why?
+      const sequence = match.params.sequence ? parseInt(match.params.sequence, 10) : 0;
+      return this.getKotsPreflightResultForSequence(match.params.slug, sequence);
+    }
+    return this.getLatestKotsPreflightResult();
+  }
+
+  getKotsPreflightResultForSequence = async (slug, sequence) => {
+    try {
+      const res = await fetch(`${window.env.API_ENDPOINT}/app/${slug}/sequence/${sequence}/preflight/result`, {
+        method: "GET",
+        headers: {
+          "Authorization": Utilities.getToken(),
+        }
+      });
+      if (!res.ok) {
+        this.state.getKotsPreflightResultJob.stop();
+        this.setState({
+          errorMessage: `Encountered an error while fetching preflight results: Unexpected status code: ${res.status}`,
+        });
+        return;
+      }
+      const response = await res.json();
+      if (response.preflightResult?.result) {
+        this.state.getKotsPreflightResultJob.stop();
+      }
+      this.setState({
+        preflightResultData: response.preflightResult,
+      });
+    } catch(err) {
+      console.log(err);
+      this.setState({
+        errorMessage: err ? `Encountered an error while fetching preflight results: ${err.message}` : "Something went wrong, please try again."
+      });
+    }
+  }
+
+  getLatestKotsPreflightResult = async () => {
+    try {
+      const res = await fetch(`${window.env.API_ENDPOINT}/preflight/result`, {
+        method: "GET",
+        headers: {
+          "Authorization": Utilities.getToken(),
+        }
+      });
+      if (!res.ok) {
+        this.state.getKotsPreflightResultJob.stop();
+        this.setState({
+          errorMessage: `Encountered an error while fetching preflight results: Unexpected status code: ${res.status}`,
+        });
+        return;
+      }
+      const response = await res.json();
+      if (response.preflightResult?.result) {
+        this.state.getKotsPreflightResultJob.stop();
+      }
+      this.setState({
+        preflightResultData: response.preflightResult,
+      });
+    } catch(err) {
+      console.log(err);
+      this.setState({
+        errorMessage: err ? `Encountered an error while fetching preflight results: ${err.message}` : "Something went wrong, please try again."
+      });
+    }
+  }
+
+  render() {
+    const { showSkipModal, showWarningModal, preflightResultData, errorMessage } = this.state;
 
     const stopPolling = !!preflightResultData?.result;
     let preflightJSON = {};
     if (stopPolling) {
-      data.stopPolling();
       if (showSkipModal) {
         this.hideSkipModal();
       }
@@ -206,12 +281,12 @@ class PreflightResultPage extends Component {
                 Back
             </div>}
             <div className="u-minWidth--full u-marginTop--20 flex-column flex1 u-position--relative">
-              {this.state.errorMessage && this.state.errorMessage.length > 0 ?
+              {errorMessage && errorMessage.length > 0 ?
                 <div className="ErrorWrapper flex-auto flex alignItems--center">
                   <div className="icon redWarningIcon u-marginRight--10" />
                   <div>
                     <p className="title">Encountered an error</p>
-                    <p className="error">{this.state.errorMessage}</p>
+                    <p className="error">{errorMessage}</p>
                   </div>
                 </div>
               : null}
@@ -310,36 +385,4 @@ class PreflightResultPage extends Component {
 export default compose(
   withApollo,
   withRouter,
-  graphql(getKotsPreflightResult, {
-    skip: props => {
-      const { match } = props;
-      return !match.params.downstreamSlug;
-    },
-    options: props => {
-      const { match } = props;
-
-      return {
-        pollInterval: 2000,
-        variables: {
-          appSlug: match.params.slug,
-          clusterSlug: match.params.downstreamSlug,
-          sequence: match.params.sequence
-        },
-        fetchPolicy: "no-cache"
-      };
-    }
-  }),
-  graphql(getLatestKotsPreflightResult, {
-    skip: props => {
-      const { match } = props;
-
-      return !!match.params.downstreamSlug;
-    },
-    options: () => {
-      return {
-        pollInterval: 2000,
-        fetchPolicy: "no-cache"
-      }
-    }
-  }),
 )(PreflightResultPage);
