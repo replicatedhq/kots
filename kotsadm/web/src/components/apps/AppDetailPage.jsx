@@ -52,8 +52,7 @@ class AppDetailPage extends Component {
       makingCurrentReleaseErrMsg: "",
       makingCurrentRelease: false,
       displayErrorModal: false,
-      isVeleroInstalled: false,
-      gettingVeleroMsg: ""
+      isVeleroInstalled: false
     }
   }
 
@@ -221,16 +220,15 @@ class AppDetailPage extends Component {
         },
         method: "GET",
       });
-      console.log(res)
       if (res.ok && res.status == 200) {
         const response = await res.json();
-        this.setState({ isVeleroInstalled: response.isVeleroInstalled, gettingVeleroMsg: "", displayErrorModal: false })
+        this.setState({ isVeleroInstalled: response.isVeleroInstalled })
       } else {
-        this.setState({ isVeleroInstalled: false, gettingVeleroMsg: `Unexpected status code: ${res.status}`, displayErrorModal: true });
+        this.setState({ isVeleroInstalled: false });
       }
     } catch (err) {
       console.log(err)
-      this.setState({ isVeleroInstalled: false, gettingVeleroMsg: err ? err.message : "Something went wrong, please try again.", displayErrorModal: true });
+      this.setState({ isVeleroInstalled: false });
     }
   }
 
@@ -239,8 +237,7 @@ class AppDetailPage extends Component {
       match,
       appsList,
       rootDidInitialAppFetch,
-      appName,
-      isSnapshotsSupported
+      appName
     } = this.props;
 
     const {
@@ -248,8 +245,7 @@ class AppDetailPage extends Component {
       displayDownloadCommandModal,
       isBundleUploading,
       gettingAppErrMsg,
-      isVeleroInstalled,
-      gettingVeleroMsg
+      isVeleroInstalled
     } = this.state;
 
     const centeredLoader = (
@@ -438,14 +434,6 @@ class AppDetailPage extends Component {
             tryAgain={() => this.getApp(this.props.match.params.slug)}
             err="Failed to get application"
             loading={this.state.loadingApp}
-          />}
-        {gettingVeleroMsg && isSnapshotsSupported &&
-          <ErrorModal
-            errorModal={this.state.displayErrorModal}
-            toggleErrorModal={this.toggleErrorModal}
-            errMsg={gettingVeleroMsg}
-            tryAgain={this.checkIsVeleroInstalled}
-            err="Failed to get velero status"
           />}
       </div>
     );

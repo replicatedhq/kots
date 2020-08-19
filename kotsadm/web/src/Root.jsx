@@ -340,7 +340,6 @@ class Root extends Component {
                             appName={this.state.selectedAppName}
                             snapshotInProgressApps={this.state.snapshotInProgressApps}
                             ping={this.ping}
-                            isSnapshotsSupported={this.isSnapshotsSupported()}
                           />
                         )
                       }
