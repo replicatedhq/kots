@@ -18,6 +18,7 @@ import (
 	"github.com/replicatedhq/kots/kotsadm/pkg/config"
 	"github.com/replicatedhq/kots/kotsadm/pkg/downstream"
 	"github.com/replicatedhq/kots/kotsadm/pkg/kotsutil"
+	"github.com/replicatedhq/kots/kotsadm/pkg/license"
 	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
 	"github.com/replicatedhq/kots/kotsadm/pkg/preflight"
 	"github.com/replicatedhq/kots/kotsadm/pkg/registry"
@@ -27,7 +28,10 @@ import (
 	versiontypes "github.com/replicatedhq/kots/kotsadm/pkg/version/types"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	"github.com/replicatedhq/kots/kotskinds/multitype"
+	config2 "github.com/replicatedhq/kots/pkg/config"
 	"github.com/replicatedhq/kots/pkg/crypto"
+	"github.com/replicatedhq/kots/pkg/template"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 type UpdateAppConfigRequest struct {
@@ -36,10 +40,21 @@ type UpdateAppConfigRequest struct {
 	ConfigGroups     []*kotsv1beta1.ConfigGroup `json:"configGroups"`
 }
 
+type LiveAppConfigRequest struct {
+	Sequence     int64                     `json:"sequence"`
+	ConfigGroups []kotsv1beta1.ConfigGroup `json:"configGroups"`
+}
+
 type UpdateAppConfigResponse struct {
 	Success       bool     `json:"success"`
 	Error         string   `json:"error,omitempty"`
 	RequiredItems []string `json:"requiredItems,omitempty"`
+}
+
+type LiveAppConfigResponse struct {
+	Success      bool                      `json:"success"`
+	Error        string                    `json:"error,omitempty"`
+	ConfigGroups []kotsv1beta1.ConfigGroup `json:"configGroups"`
 }
 
 func UpdateAppConfig(w http.ResponseWriter, r *http.Request) {
@@ -139,6 +154,98 @@ func UpdateAppConfig(w http.ResponseWriter, r *http.Request) {
 	}
 
 	JSON(w, 200, UpdateAppConfigResponse{Success: true})
+}
+
+func LiveAppConfig(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Headers", "content-type, origin, accept, authorization")
+
+	if r.Method == "OPTIONS" {
+		w.WriteHeader(200)
+		return
+	}
+
+	liveAppConfigResponse := LiveAppConfigResponse{
+		Success: false,
+	}
+
+	liveAppConfigRequest := LiveAppConfigRequest{}
+	if err := json.NewDecoder(r.Body).Decode(&liveAppConfigRequest); err != nil {
+		logger.Error(err)
+		liveAppConfigResponse.Error = "failed to decode request body"
+		JSON(w, 400, liveAppConfigResponse)
+		return
+	}
+
+	sess, err := session.Parse(r.Header.Get("Authorization"))
+	if err != nil {
+		logger.Error(err)
+		liveAppConfigResponse.Error = "failed to parse authorization header"
+		JSON(w, 401, liveAppConfigResponse)
+		return
+	}
+
+	// we don't currently have roles, all valid tokens are valid sessions
+	if sess == nil || sess.ID == "" {
+		liveAppConfigResponse.Error = "failed to parse authorization header"
+		JSON(w, 401, liveAppConfigResponse)
+		return
+	}
+
+	foundApp, err := app.GetFromSlug(mux.Vars(r)["appSlug"])
+	if err != nil {
+		logger.Error(err)
+		liveAppConfigResponse.Error = "failed to get app from app slug"
+		JSON(w, 500, liveAppConfigResponse)
+		return
+	}
+
+	appLicense, err := license.Get(foundApp.ID)
+	if err != nil {
+		logger.Error(err)
+		liveAppConfigResponse.Error = "failed to get license for app"
+		JSON(w, 500, liveAppConfigResponse)
+		return
+	}
+
+	// get values from request
+	configValues := map[string]template.ItemValue{}
+
+	for _, group := range liveAppConfigRequest.ConfigGroups {
+		for _, item := range group.Items {
+			generatedValue := template.ItemValue{}
+			if item.Value.Type == multitype.String {
+				generatedValue.Value = item.Value.StrVal
+			} else {
+				generatedValue.Value = item.Value.BoolVal
+			}
+			if item.Default.Type == multitype.String {
+				generatedValue.Default = item.Default.StrVal
+			} else {
+				generatedValue.Default = item.Default.BoolVal
+			}
+			configValues[item.Name] = generatedValue
+		}
+	}
+
+	configSpec := kotsv1beta1.Config{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "Config",
+			APIVersion: "kots.io/v1beta1",
+		},
+		Spec: kotsv1beta1.ConfigSpec{
+			Groups: liveAppConfigRequest.ConfigGroups,
+		},
+	}
+
+	renderedConfig, err := config2.TemplateConfigObjects(&configSpec, configValues, appLicense, template.LocalRegistry{})
+	if err != nil {
+		liveAppConfigResponse.Error = "failed to render templates"
+		JSON(w, 500, liveAppConfigResponse)
+		return
+	}
+
+	JSON(w, 200, LiveAppConfigResponse{Success: true, ConfigGroups: renderedConfig.Spec.Groups})
 }
 
 // if isPrimaryVersion is false, missing a required config field will not cause a failure, and instead will create

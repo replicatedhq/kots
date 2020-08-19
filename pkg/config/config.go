@@ -19,6 +19,44 @@ func TemplateConfig(log *logger.Logger, configSpecData string, configValuesData 
 	return templateConfig(log, configSpecData, configValuesData, licenseData, localRegistry, MarshalConfig)
 }
 
+func TemplateConfigObjects(configSpec *kotsv1beta1.Config, configValues map[string]template.ItemValue, license *kotsv1beta1.License, localRegistry template.LocalRegistry) (*kotsv1beta1.Config, error) {
+	templatedString, err := templateConfigObjects(configSpec, configValues, license, localRegistry, MarshalConfig)
+	if err != nil {
+		return nil, errors.Wrap(err, "call templateConfig")
+	}
+
+	decode := scheme.Codecs.UniversalDeserializer().Decode
+	obj, gvk, err := decode([]byte(templatedString), nil, nil) // TODO fix decode of boolstrings
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to decode config data")
+	}
+	if gvk.Group != "kots.io" || gvk.Version != "v1beta1" || gvk.Kind != "Config" {
+		return nil, errors.Errorf("expected Config, but found %s/%s/%s", gvk.Group, gvk.Version, gvk.Kind)
+	}
+	config := obj.(*kotsv1beta1.Config)
+	return config, nil
+}
+
+func templateConfigObjects(configSpec *kotsv1beta1.Config, configValues map[string]template.ItemValue, license *kotsv1beta1.License, localRegistry template.LocalRegistry, marshalFunc func(config *kotsv1beta1.Config) (string, error)) (string, error) {
+	builder, configVals, err := template.NewBuilder(configSpec.Spec.Groups, configValues, localRegistry, nil, license)
+	if err != nil {
+		return "", errors.Wrap(err, "failed to create config context")
+	}
+
+	ApplyValuesToConfig(configSpec, configVals)
+	configDocWithData, err := marshalFunc(configSpec)
+	if err != nil {
+		return "", errors.Wrap(err, "failed to marshal config")
+	}
+
+	rendered, err := builder.RenderTemplate("config", string(configDocWithData))
+	if err != nil {
+		return "", errors.Wrap(err, "failed to render config template")
+	}
+
+	return rendered, nil
+}
+
 func templateConfig(log *logger.Logger, configSpecData string, configValuesData string, licenseData string, localRegistry template.LocalRegistry, marshalFunc func(config *kotsv1beta1.Config) (string, error)) (string, error) {
 	// This function will
 	// 1. unmarshal config
@@ -53,23 +91,7 @@ func templateConfig(log *logger.Logger, configSpecData string, configValuesData 
 		templateContext = map[string]template.ItemValue{}
 	}
 
-	builder, configVals, err := template.NewBuilder(config.Spec.Groups, templateContext, localRegistry, nil, license)
-	if err != nil {
-		return "", errors.Wrap(err, "failed to create config context")
-	}
-
-	ApplyValuesToConfig(config, configVals)
-	configDocWithData, err := marshalFunc(config)
-	if err != nil {
-		return "", errors.Wrap(err, "failed to marshal config")
-	}
-
-	rendered, err := builder.RenderTemplate("config", string(configDocWithData))
-	if err != nil {
-		return "", errors.Wrap(err, "failed to render config template")
-	}
-
-	return rendered, nil
+	return templateConfigObjects(config, templateContext, license, localRegistry, marshalFunc)
 }
 
 func ApplyValuesToConfig(config *kotsv1beta1.Config, values map[string]template.ItemValue) {
