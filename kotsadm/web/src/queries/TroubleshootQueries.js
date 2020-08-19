@@ -106,9 +106,3 @@ export const getSupportBundleRaw = `
 `;
 
 export const getSupportBundle = gql(getSupportBundleRaw);
-
-export const getSupportBundleCommand = gql`
-  query getSupportBundleCommand($watchSlug: String) {
-    getSupportBundleCommand(watchSlug: $watchSlug)
-  }
-`;

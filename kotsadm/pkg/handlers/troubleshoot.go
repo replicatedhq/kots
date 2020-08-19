@@ -76,6 +76,10 @@ type ResponseSupportBundle struct {
 	Analysis   *types.SupportBundleAnalysis `json:"analysis"`
 }
 
+type GetSupportBundleCommandResponse struct {
+	Command []string `json:"command"`
+}
+
 type GetSupportBundleRedactionsResponse struct {
 	Redactions redact2.RedactionList `json:"redactions"`
 
@@ -251,6 +255,42 @@ func ListSupportBundles(w http.ResponseWriter, r *http.Request) {
 	}
 
 	JSON(w, 200, listSupportBundlesResponse)
+}
+
+func GetSupportBundleCommand(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Headers", "content-type, origin, accept, authorization")
+
+	if r.Method == "OPTIONS" {
+		w.WriteHeader(200)
+		return
+	}
+
+	sess, err := session.Parse(r.Header.Get("Authorization"))
+	if err != nil {
+		logger.Error(err)
+		w.WriteHeader(401)
+		return
+	}
+
+	// we don't currently have roles, all valid tokens are valid sessions
+	if sess == nil || sess.ID == "" {
+		w.WriteHeader(401)
+		return
+	}
+
+	appSlug := mux.Vars(r)["appSlug"]
+
+	command := []string{
+		"curl https://krew.sh/support-bundle | bash",
+		fmt.Sprintf("kubectl support-bundle API_ADDRESS/api/v1/troubleshoot/%s", appSlug),
+	}
+
+	response := GetSupportBundleCommandResponse{
+		Command: command,
+	}
+
+	JSON(w, 200, response)
 }
 
 func DownloadSupportBundle(w http.ResponseWriter, r *http.Request) {

@@ -25,17 +25,5 @@ export function TroubleshootQueries(stores: Stores) {
 
       return supportBundle.toSchema();
     },
-
-
-    async getSupportBundleCommand(root, { watchSlug }, context: Context): Promise<string> {
-      if (!watchSlug) {
-        return await stores.troubleshootStore.getSupportBundleCommand();
-      }
-
-      const appId = await stores.kotsAppStore.getIdFromSlug(watchSlug);
-      const app = await context.getApp(appId);
-      const bundleCommand = await stores.troubleshootStore.getSupportBundleCommand(app.slug);
-      return bundleCommand;
-    },
   };
 }

@@ -36,7 +36,6 @@ export const Query = `
 
     listSupportBundles(watchSlug: String!): [SupportBundle]
     getSupportBundle(watchSlug: String!): SupportBundle
-    getSupportBundleCommand(watchSlug: String): String
 
     getKotsPreflightResult(appSlug: String!, clusterSlug: String!, sequence: Int!): PreflightResult
     getLatestKotsPreflightResult: PreflightResult
