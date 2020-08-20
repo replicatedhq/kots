@@ -8,6 +8,7 @@ import (
 	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
 	kotsscheme "github.com/replicatedhq/kots/kotskinds/client/kotsclientset/scheme"
 	troubleshootscheme "github.com/replicatedhq/troubleshoot/pkg/client/troubleshootclientset/scheme"
+	yaml "github.com/replicatedhq/yaml/v3"
 	"k8s.io/client-go/kubernetes/scheme"
 )
 
@@ -44,4 +45,17 @@ func StreamJSON(c *websocket.Conn, payload interface{}) {
 		logger.Error(err)
 		return
 	}
+}
+
+func YAML(w http.ResponseWriter, code int, payload interface{}) {
+	response, err := yaml.Marshal(payload)
+	if err != nil {
+		logger.Error(err)
+		w.WriteHeader(500)
+		return
+	}
+
+	w.Header().Set("Content-Type", "text/yaml")
+	w.WriteHeader(code)
+	w.Write(response)
 }

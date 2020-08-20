@@ -60,8 +60,10 @@ func Start() {
 	// Functions that the operator calls
 	r.Path("/api/v1/appstatus").Methods("PUT").HandlerFunc(handlers.NodeProxy(upstream))
 	r.Path("/api/v1/deploy/result").Methods("PUT").HandlerFunc(handlers.NodeProxy(upstream))
-	r.Path("/api/v1/preflight/{appSlug}/{clusterSlug}/{sequence}").Methods("GET").HandlerFunc(handlers.NodeProxy(upstream))
-	r.Path("/api/v1/preflight/{appSlug}/{clusterSlug}/{sequence}").Methods("POST").HandlerFunc(handlers.NodeProxy(upstream))
+
+	// Functions that are not called by the browser
+	r.Path("/api/v1/preflight/app/{appSlug}/sequence/{sequence}").Methods("GET").HandlerFunc(handlers.GetPreflightStatus)
+	r.Path("/api/v1/preflight/app/{appSlug}/sequence/{sequence}").Methods("POST").HandlerFunc(handlers.PostPreflightStatus)
 
 	// Support Bundles
 	r.Path("/api/v1/troubleshoot").Methods("OPTIONS", "GET").HandlerFunc(handlers.GetDefaultTroubleshoot)
@@ -105,6 +107,7 @@ func Start() {
 	r.Path("/api/v1/app/{appSlug}/sequence/{sequence}/preflight/ignore-rbac").Methods("OPTIONS", "POST").HandlerFunc(handlers.IgnorePreflightRBACErrors)
 	r.Path("/api/v1/app/{appSlug}/sequence/{sequence}/preflight/run").Methods("OPTIONS", "POST").HandlerFunc(handlers.StartPreflightChecks)
 	r.Path("/api/v1/app/{appSlug}/sequence/{sequence}/preflight/result").Methods("OPTIONS", "GET").HandlerFunc(handlers.GetPreflightResult)
+	r.Path("/api/v1/app/{appSlug}/sequence/{sequence}/preflightcommand").Methods("OPTIONS", "GET").HandlerFunc(handlers.GetPreflightCommand)
 	r.Path("/api/v1/preflight/result").Methods("OPTIONS", "GET").HandlerFunc(handlers.GetLatestPreflightResult)
 	r.Path("/api/v1/upload").Methods("PUT").HandlerFunc(handlers.UploadExistingApp)
 	r.Path("/api/v1/download").Methods("GET").HandlerFunc(handlers.DownloadApp)

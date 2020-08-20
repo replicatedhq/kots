@@ -4,7 +4,6 @@ import Feature from "../feature/graphql/feature_types";
 import HelmChart from "../helmchart/graphql/helmchart_types";
 import Troubleshoot from "../troubleshoot/graphql/troubleshoot_types";
 import KLicense from "../klicenses/graphql/klicense_types";
-import Preflight from "../preflight/graphql/preflight_types";
 import SnapshotTypes from "../snapshots/graphql/snapshot_types";
 import Apps from "../apps/graphql/apps_types";
 import KotsApp from "../kots_app/graphql/kots_app_types";
@@ -35,7 +34,6 @@ export const ShipClusterSchemaTypes = [
   ...HelmChart,
   ...Troubleshoot,
   ...KLicense,
-  ...Preflight,
   ...SnapshotTypes,
   ...Kurl,
 ];

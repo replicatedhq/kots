@@ -1,21 +1,29 @@
 package handlers
 
 import (
+	"fmt"
+	"io/ioutil"
 	"net/http"
 	"os"
 	"strconv"
 
 	"github.com/gorilla/mux"
-	"github.com/replicatedhq/kots/kotsadm/pkg/downstream"
-	downstreamtypes "github.com/replicatedhq/kots/kotsadm/pkg/downstream/types"
+	"github.com/pkg/errors"
+	"github.com/replicatedhq/kots/kotsadm/pkg/kotsutil"
 	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
 	"github.com/replicatedhq/kots/kotsadm/pkg/preflight"
+	preflighttypes "github.com/replicatedhq/kots/kotsadm/pkg/preflight/types"
+	"github.com/replicatedhq/kots/kotsadm/pkg/render"
 	"github.com/replicatedhq/kots/kotsadm/pkg/store"
 	"github.com/replicatedhq/kots/kotsadm/pkg/version"
 )
 
 type GetPreflightResultResponse struct {
-	PreflightResult downstreamtypes.PreflightResult `json:"preflightResult"`
+	PreflightResult preflighttypes.PreflightResult `json:"preflightResult"`
+}
+
+type GetPreflightCommandResponse struct {
+	Command []string `json:"command"`
 }
 
 func GetPreflightResult(w http.ResponseWriter, r *http.Request) {
@@ -43,7 +51,7 @@ func GetPreflightResult(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	result, err := downstream.GetPreflightResult(foundApp.ID, sequence)
+	result, err := store.GetStore().GetPreflightResults(foundApp.ID, sequence)
 	if err != nil {
 		logger.Error(err)
 		w.WriteHeader(500)
@@ -66,7 +74,7 @@ func GetLatestPreflightResult(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	result, err := downstream.GetLatestPreflightResult()
+	result, err := store.GetStore().GetLatestPreflightResults()
 	if err != nil {
 		logger.Error(err)
 		w.WriteHeader(500)
@@ -104,7 +112,7 @@ func IgnorePreflightRBACErrors(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := downstream.SetIgnorePreflightPermissionErrors(foundApp.ID, int64(sequence)); err != nil {
+	if err := store.GetStore().SetIgnorePreflightPermissionErrors(foundApp.ID, int64(sequence)); err != nil {
 		logger.Error(err)
 		w.WriteHeader(500)
 		return
@@ -153,7 +161,7 @@ func StartPreflightChecks(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := store.GetStore().ResetPreflightResult(foundApp.ID, int64(sequence)); err != nil {
+	if err := store.GetStore().ResetPreflightResults(foundApp.ID, int64(sequence)); err != nil {
 		logger.Error(err)
 		w.WriteHeader(500)
 		return
@@ -175,4 +183,158 @@ func StartPreflightChecks(w http.ResponseWriter, r *http.Request) {
 	}()
 
 	JSON(w, 200, struct{}{})
+}
+
+func GetPreflightCommand(w http.ResponseWriter, r *http.Request) {
+	if handleOptionsRequest(w, r) {
+		return
+	}
+
+	if err := requireValidSession(w, r); err != nil {
+		logger.Error(err)
+		return
+	}
+
+	appSlug := mux.Vars(r)["appSlug"]
+	sequence, err := strconv.ParseInt(mux.Vars(r)["sequence"], 10, 64)
+	if err != nil {
+		logger.Error(err)
+		w.WriteHeader(400)
+		return
+	}
+
+	command := []string{
+		"curl https://krew.sh/preflight | bash",
+		fmt.Sprintf("kubectl preflight API_ADDRESS/api/v1/preflight/app/%s/sequence/%d", appSlug, sequence),
+	}
+
+	response := GetPreflightCommandResponse{
+		Command: command,
+	}
+	JSON(w, 200, response)
+}
+
+// GetPreflightStatus request comes from the kubectl preflight command. There is no authentication.
+func GetPreflightStatus(w http.ResponseWriter, r *http.Request) {
+	appSlug := mux.Vars(r)["appSlug"]
+	sequence, err := strconv.ParseInt(mux.Vars(r)["sequence"], 10, 64)
+	if err != nil {
+		err = errors.Wrap(err, "failed to parse sequence")
+		logger.Error(err)
+		w.WriteHeader(400)
+		return
+	}
+
+	inCluster := r.URL.Query().Get("inCluster")
+
+	foundApp, err := store.GetStore().GetAppFromSlug(appSlug)
+	if err != nil {
+		err = errors.Wrap(err, "failed to get app from slug")
+		logger.Error(err)
+		w.WriteHeader(500)
+		return
+	}
+
+	archiveDir, err := version.GetAppVersionArchive(foundApp.ID, sequence)
+	if err != nil {
+		err = errors.Wrap(err, "failed to get app version archive")
+		logger.Error(err)
+		w.WriteHeader(500)
+		return
+	}
+
+	// we need a few objects from the app to check for updates
+	renderedKotsKinds, err := kotsutil.LoadKotsKindsFromPath(archiveDir)
+	if err != nil {
+		err = errors.Wrap(err, "failed to load kotskinds")
+		logger.Error(err)
+		w.WriteHeader(500)
+		return
+	}
+
+	if renderedKotsKinds.Preflight == nil {
+		w.WriteHeader(404)
+		return
+	}
+
+	// render the preflight file
+	// we need to convert to bytes first, so that we can reuse the renderfile function
+	renderedMarshalledPreflights, err := renderedKotsKinds.Marshal("troubleshoot.replicated.com", "v1beta1", "Preflight")
+	if err != nil {
+		err = errors.Wrap(err, "failed to marshal rendered preflight")
+		logger.Error(err)
+		w.WriteHeader(500)
+		return
+	}
+
+	registrySettings, err := store.GetStore().GetRegistryDetailsForApp(foundApp.ID)
+	if err != nil {
+		err = errors.Wrap(err, "failed to get registry settings for app")
+		logger.Error(err)
+		w.WriteHeader(500)
+		return
+	}
+
+	renderedPreflight, err := render.RenderFile(renderedKotsKinds, registrySettings, []byte(renderedMarshalledPreflights))
+	if err != nil {
+		err = errors.Wrap(err, "failed to render preflights")
+		logger.Error(err)
+		w.WriteHeader(500)
+		return
+	}
+
+	specJSON, err := kotsutil.LoadPreflightFromContents(renderedPreflight)
+	if err != nil {
+		err = errors.Wrap(err, "failed to load rendered preflight")
+		logger.Error(err)
+		w.WriteHeader(500)
+		return
+	}
+
+	var baseURL string
+	if inCluster == "true" {
+		baseURL = os.Getenv("API_ENDPOINT")
+	} else {
+		baseURL = os.Getenv("API_ADVERTISE_ENDPOINT")
+	}
+	specJSON.Spec.UploadResultsTo = fmt.Sprintf("%s/api/v1/preflight/app/%s/sequence/%d", baseURL, appSlug, sequence)
+
+	YAML(w, 200, specJSON)
+}
+
+// PostPreflightStatus request comes from the kubectl preflight command. There is no authentication.
+func PostPreflightStatus(w http.ResponseWriter, r *http.Request) {
+	appSlug := mux.Vars(r)["appSlug"]
+	sequence, err := strconv.ParseInt(mux.Vars(r)["sequence"], 10, 64)
+	if err != nil {
+		err = errors.Wrap(err, "failed to parse sequence")
+		logger.Error(err)
+		w.WriteHeader(400)
+		return
+	}
+
+	foundApp, err := store.GetStore().GetAppFromSlug(appSlug)
+	if err != nil {
+		err = errors.Wrap(err, "failed to get app from slug")
+		logger.Error(err)
+		w.WriteHeader(500)
+		return
+	}
+
+	b, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		err = errors.Wrap(err, "failed to read request body")
+		logger.Error(err)
+		w.WriteHeader(500)
+		return
+	}
+
+	if err := store.GetStore().SetPreflightResults(foundApp.ID, sequence, b); err != nil {
+		err = errors.Wrap(err, "failed to set preflight results")
+		logger.Error(err)
+		w.WriteHeader(500)
+		return
+	}
+
+	w.WriteHeader(204)
 }
