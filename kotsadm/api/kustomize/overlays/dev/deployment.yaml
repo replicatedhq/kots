@@ -20,7 +20,7 @@ spec:
               valueFrom:
                 secretKeyRef:
                   name: ship-postgres   # This secret is created in the ship-cluster-db project
-                  key: uri
+                  key: uri              
             - name: API_ENCRYPTION_KEY
               value: IvWItkB8+ezMisPjSMBknT1PdKjBx7Xc/txZqOP8Y2Oe7+Jy
             - name: PINO_LOG_PRETTY
@@ -34,7 +34,7 @@ spec:
             - name: S3_SECRET_ACCESS_KEY
               value: not-a-secret
             - name: S3_BUCKET_ENDPOINT
-              value: "true"
+              value: "true"              
             - name: SHIP_API_ENDPOINT
               value: http://kotsadm.default.svc.cluster.local:3000
             - name: SHIP_API_ADVERTISE_ENDPOINT
@@ -51,10 +51,6 @@ spec:
               value: "1"
             - name: SHARED_PASSWORD_BCRYPT
               value: $2a$10$xZRsZCYgRDG90N1QEjBxGOBDrDGE.rpcMENV4qNNo7pozYTEPGMwS
-            # - name: STORAGE_BASEURI
-            #   value: "docker://kotsadm-storage-registry:5000"
-            # - name: STORAGE_BASEURI_PLAINHTTP
-            #   value: "true"
           volumeMounts:
             - name: kubelet-client-cert
               mountPath: /etc/kubernetes/pki/kubelet

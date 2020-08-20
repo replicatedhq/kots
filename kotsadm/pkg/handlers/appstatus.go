@@ -7,8 +7,8 @@ import (
 
 	"github.com/replicatedhq/kots/kotsadm/pkg/appstatus"
 	"github.com/replicatedhq/kots/kotsadm/pkg/appstatus/types"
-	"github.com/replicatedhq/kots/kotsadm/pkg/downstream"
 	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
+	"github.com/replicatedhq/kots/kotsadm/pkg/store"
 )
 
 func SetAppStatus(w http.ResponseWriter, r *http.Request) {
@@ -23,7 +23,7 @@ func SetAppStatus(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, err = downstream.GetClusterIDFromDeployToken(auth.Password)
+	_, err = store.GetStore().GetClusterIDFromDeployToken(auth.Password)
 	if err != nil {
 		logger.Error(err)
 		w.WriteHeader(http.StatusForbidden)

@@ -17,8 +17,9 @@ import (
 )
 
 func waitForDependencies(ctx context.Context) error {
-	numChecks := 1
+	numChecks := 0
 	if !strings.HasPrefix(os.Getenv("STORAGE_BASEURI"), "docker://") {
+		numChecks++
 		numChecks++
 	}
 
@@ -31,7 +32,9 @@ func waitForDependencies(ctx context.Context) error {
 	}()
 
 	go func() {
-		errCh <- waitForPostgres(ctx)
+		if !strings.HasPrefix(os.Getenv("STORAGE_BASEURI"), "docker://") {
+			errCh <- waitForPostgres(ctx)
+		}
 	}()
 
 	isError := false
@@ -63,6 +66,7 @@ func waitForS3Bucket(ctx context.Context) error {
 		})
 
 		if err == nil {
+			logger.Debug("S3 bucket has been created")
 			return nil
 		}
 
@@ -88,6 +92,7 @@ func waitForPostgres(ctx context.Context) error {
 
 		var count int
 		if err := row.Scan(&count); err == nil {
+			logger.Debug("database is ready")
 			return nil
 		}
 

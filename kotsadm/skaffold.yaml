@@ -2,12 +2,6 @@ apiVersion: skaffold/v2beta2
 kind: Config
 
 profiles:
-  - name: github
-    deploy:
-      kustomize:
-        paths:
-          - "./kustomize/overlays/github"
-
   - name: microk8s
     activation:
       - kubeContext: microk8s
@@ -18,6 +12,20 @@ profiles:
         flags:
           apply:
             - --validate=false ## Skaffold turns CRDs into invalid yaml (https://github.com/GoogleContainerTools/skaffold/issues/1737)
+  - name: ocistore
+    activation:
+      - env: KOTSSTORE=oci
+    deploy:
+      kustomize:
+        paths:
+          - "./kustomize/overlays/ocistore"
+  - name: s3pgstore
+    activation: 
+      - env: KOTSSTORE=
+    deploy:
+      kustomize:
+        paths: 
+          - "./kustomize/overlays/s3pgstore"
 
 build:
   local:
@@ -46,7 +54,7 @@ build:
       context: "./api"
       docker:
         dockerfile: ./Dockerfile.skaffold
-
+        
     - image: kotsadm
       context: "./"
       docker:

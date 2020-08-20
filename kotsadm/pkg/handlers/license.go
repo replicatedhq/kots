@@ -16,6 +16,7 @@ import (
 	"github.com/replicatedhq/kots/kotsadm/pkg/license"
 	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
 	"github.com/replicatedhq/kots/kotsadm/pkg/online"
+	installationtypes "github.com/replicatedhq/kots/kotsadm/pkg/online/types"
 	"github.com/replicatedhq/kots/kotsadm/pkg/registry"
 	"github.com/replicatedhq/kots/kotsadm/pkg/session"
 	"github.com/replicatedhq/kots/kotsadm/pkg/store"
@@ -321,7 +322,7 @@ func UploadNewLicense(w http.ResponseWriter, r *http.Request) {
 
 	if !verifiedLicense.Spec.IsAirgapSupported {
 		// complete the install online
-		pendingApp := online.PendingApp{
+		pendingApp := installationtypes.PendingApp{
 			ID:          a.ID,
 			Slug:        a.Slug,
 			Name:        a.Name,
@@ -410,7 +411,7 @@ func ResumeInstallOnline(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	pendingApp := online.PendingApp{
+	pendingApp := installationtypes.PendingApp{
 		ID:   a.ID,
 		Slug: a.Slug,
 		Name: a.Name,
@@ -468,7 +469,7 @@ func GetOnlineInstallStatus(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	status, err := online.GetInstallStatus()
+	status, err := store.GetStore().GetPendingInstallationStatus()
 	if err != nil {
 		logger.Error(err)
 		JSON(w, 500, GetOnlineInstallStatusErrorResponse{

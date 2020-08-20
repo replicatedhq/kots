@@ -174,7 +174,7 @@ func CheckForUpdates(appID string, deploy bool) (int64, error) {
 	}
 
 	// download the app
-	archiveDir, err := version.GetAppVersionArchive(a.ID, a.CurrentSequence)
+	archiveDir, err := store.GetStore().GetAppVersionArchive(a.ID, a.CurrentSequence)
 	if err != nil {
 		return 0, errors.Wrap(err, "failed to get app version archive")
 	}

@@ -12,7 +12,6 @@ import (
 	"github.com/replicatedhq/kots/kotsadm/pkg/gitops"
 	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
 	"github.com/replicatedhq/kots/kotsadm/pkg/store"
-	"github.com/replicatedhq/kots/kotsadm/pkg/version"
 )
 
 type UpdateAppGitOpsRequest struct {
@@ -223,7 +222,7 @@ func InitGitOpsConnection(w http.ResponseWriter, r *http.Request) {
 
 		// Create git commit for current version (if exists)
 		if currentVersion != nil {
-			currentVersionArchive, err := version.GetAppVersionArchive(a.ID, currentVersion.ParentSequence)
+			currentVersionArchive, err := store.GetStore().GetAppVersionArchive(a.ID, currentVersion.ParentSequence)
 			if err != nil {
 				err = errors.Wrapf(err, "failed to get app version archive for current version %d", currentVersion.ParentSequence)
 				logger.Error(err)
@@ -247,7 +246,7 @@ func InitGitOpsConnection(w http.ResponseWriter, r *http.Request) {
 		})
 		// Create git commits for sorted pending versions
 		for _, pendingVersion := range pendingVersions {
-			pendingVersionArchive, err := version.GetAppVersionArchive(a.ID, pendingVersion.ParentSequence)
+			pendingVersionArchive, err := store.GetStore().GetAppVersionArchive(a.ID, pendingVersion.ParentSequence)
 			if err != nil {
 				err = errors.Wrapf(err, "failed to get app version archive for pending version %d", pendingVersion.ParentSequence)
 				logger.Error(err)

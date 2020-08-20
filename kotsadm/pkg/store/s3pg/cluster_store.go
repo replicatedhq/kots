@@ -26,3 +26,16 @@ func (s S3PGStore) ListClusters() (map[string]string, error) {
 
 	return clusterIDs, nil
 }
+
+func (s S3PGStore) GetClusterIDFromDeployToken(deployToken string) (string, error) {
+	db := persistence.MustGetPGSession()
+	query := `select id from cluster where token = $1`
+	row := db.QueryRow(query, deployToken)
+
+	var clusterID string
+	if err := row.Scan(&clusterID); err != nil {
+		return "", errors.Wrap(err, "failed to scan")
+	}
+
+	return clusterID, nil
+}

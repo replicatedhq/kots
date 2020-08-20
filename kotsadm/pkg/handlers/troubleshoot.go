@@ -23,7 +23,6 @@ import (
 	"github.com/replicatedhq/kots/kotsadm/pkg/store"
 	"github.com/replicatedhq/kots/kotsadm/pkg/supportbundle"
 	"github.com/replicatedhq/kots/kotsadm/pkg/supportbundle/types"
-	"github.com/replicatedhq/kots/kotsadm/pkg/version"
 	"github.com/replicatedhq/kots/pkg/template"
 	troubleshootanalyze "github.com/replicatedhq/troubleshoot/pkg/analyze"
 	"github.com/replicatedhq/troubleshoot/pkg/apis/troubleshoot/v1beta1"
@@ -411,7 +410,7 @@ func UploadSupportBundle(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(500)
 		return
 	}
-	archiveDir, err := version.GetAppVersionArchive(a.ID, a.CurrentSequence)
+	archiveDir, err := store.GetStore().GetAppVersionArchive(a.ID, a.CurrentSequence)
 	if err != nil {
 		logger.Error(err)
 		w.WriteHeader(500)

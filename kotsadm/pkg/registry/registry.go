@@ -62,7 +62,7 @@ func RewriteImages(appID string, sequence int64, hostname string, username strin
 	}()
 
 	// get the archive and store it in a temporary location
-	appDir, err := version.GetAppVersionArchive(appID, sequence)
+	appDir, err := store.GetStore().GetAppVersionArchive(appID, sequence)
 	if err != nil {
 		return errors.Wrap(err, "failed to get app version archive")
 	}

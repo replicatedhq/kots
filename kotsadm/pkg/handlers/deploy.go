@@ -68,7 +68,7 @@ func UpdateDeployResult(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	clusterID, err := downstream.GetClusterIDFromDeployToken(auth.Password)
+	clusterID, err := store.GetStore().GetClusterIDFromDeployToken(auth.Password)
 	if err != nil {
 		logger.Error(err)
 		w.WriteHeader(http.StatusForbidden)
@@ -126,7 +126,7 @@ func UpdateUndeployResult(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, err = downstream.GetClusterIDFromDeployToken(auth.Password)
+	_, err = store.GetStore().GetClusterIDFromDeployToken(auth.Password)
 	if err != nil {
 		logger.Error(err)
 		w.WriteHeader(http.StatusForbidden)

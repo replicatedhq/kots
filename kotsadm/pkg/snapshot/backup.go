@@ -17,7 +17,6 @@ import (
 	"github.com/replicatedhq/kots/kotsadm/pkg/render"
 	"github.com/replicatedhq/kots/kotsadm/pkg/snapshot/types"
 	"github.com/replicatedhq/kots/kotsadm/pkg/store"
-	"github.com/replicatedhq/kots/kotsadm/pkg/version"
 	kotstypes "github.com/replicatedhq/kots/pkg/kotsadm/types"
 	velerov1 "github.com/vmware-tanzu/velero/pkg/apis/velero/v1"
 	veleroclientv1 "github.com/vmware-tanzu/velero/pkg/generated/clientset/versioned/typed/velero/v1"
@@ -59,7 +58,7 @@ func createApplicationBackup(ctx context.Context, a *apptypes.App) error {
 		zap.String("appID", a.ID),
 		zap.Int64("sequence", parentSequence))
 
-	archiveDir, err := version.GetAppVersionArchive(a.ID, parentSequence)
+	archiveDir, err := store.GetStore().GetAppVersionArchive(a.ID, parentSequence)
 	if err != nil {
 		return errors.Wrap(err, "failed to get app version archive")
 	}

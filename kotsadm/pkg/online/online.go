@@ -3,7 +3,6 @@ package online
 import (
 	"bufio"
 	"context"
-	"database/sql"
 	"io"
 	"io/ioutil"
 	"os"
@@ -14,6 +13,7 @@ import (
 	"github.com/replicatedhq/kots/kotsadm/pkg/downstream"
 	"github.com/replicatedhq/kots/kotsadm/pkg/kotsutil"
 	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
+	"github.com/replicatedhq/kots/kotsadm/pkg/online/types"
 	"github.com/replicatedhq/kots/kotsadm/pkg/persistence"
 	"github.com/replicatedhq/kots/kotsadm/pkg/preflight"
 	"github.com/replicatedhq/kots/kotsadm/pkg/store"
@@ -26,48 +26,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
 )
 
-type PendingApp struct {
-	ID          string
-	Slug        string
-	Name        string
-	LicenseData string
-}
-
-type InstallStatus struct {
-	InstallStatus  string `json:"installStatus"`
-	CurrentMessage string `json:"currentMessage"`
-}
-
-func GetInstallStatus() (*InstallStatus, error) {
-	db := persistence.MustGetPGSession()
-	query := `SELECT install_state from app ORDER BY created_at DESC LIMIT 1`
-	row := db.QueryRow(query)
-
-	var installState sql.NullString
-	if err := row.Scan(&installState); err != nil {
-		if err == sql.ErrNoRows {
-			return &InstallStatus{
-				InstallStatus:  "not_installed",
-				CurrentMessage: "",
-			}, nil
-		}
-		return nil, errors.Wrap(err, "failed to scan")
-	}
-
-	_, message, err := store.GetStore().GetTaskStatus("online-install")
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to get task status")
-	}
-
-	status := &InstallStatus{
-		InstallStatus:  installState.String,
-		CurrentMessage: message,
-	}
-
-	return status, nil
-}
-
-func CreateAppFromOnline(pendingApp *PendingApp, upstreamURI string, isAutomated bool) (_ *kotsutil.KotsKinds, finalError error) {
+func CreateAppFromOnline(pendingApp *types.PendingApp, upstreamURI string, isAutomated bool) (_ *kotsutil.KotsKinds, finalError error) {
 	logger.Debug("creating app from online",
 		zap.String("upstreamURI", upstreamURI))
 

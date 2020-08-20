@@ -7,6 +7,7 @@ import (
 	apptypes "github.com/replicatedhq/kots/kotsadm/pkg/app/types"
 	appstatustypes "github.com/replicatedhq/kots/kotsadm/pkg/appstatus/types"
 	downstreamtypes "github.com/replicatedhq/kots/kotsadm/pkg/downstream/types"
+	installationtypes "github.com/replicatedhq/kots/kotsadm/pkg/online/types"
 	preflighttypes "github.com/replicatedhq/kots/kotsadm/pkg/preflight/types"
 	registrytypes "github.com/replicatedhq/kots/kotsadm/pkg/registry/types"
 	sessiontypes "github.com/replicatedhq/kots/kotsadm/pkg/session/types"
@@ -26,9 +27,11 @@ type KOTSStore interface {
 	SessionStore
 	AppStatusStore
 	AppStore
+	VersionStore
 	LicenseStore
 	ClusterStore
 	SnapshotStore
+	InstallationStore
 
 	IsNotFound(err error) bool
 }
@@ -40,6 +43,7 @@ type RegistryStore interface {
 
 type SupportBundleStore interface {
 	ListSupportBundles(string) ([]*supportbundletypes.SupportBundle, error)
+	ListPendingSupportBundlesForApp(string) ([]*supportbundletypes.PendingSupportBundle, error)
 	GetSupportBundleFromSlug(string) (*supportbundletypes.SupportBundle, error)
 	GetSupportBundle(id string) (*supportbundletypes.SupportBundle, error)
 	CreatePendingSupportBundle(string, string, string) error
@@ -111,10 +115,23 @@ type SnapshotStore interface {
 	CreateScheduledSnapshot(string, string, time.Time) error
 }
 
+type VersionStore interface {
+	IsGitOpsSupportedForVersion(string, int64) (bool, error)
+	IsRollbackSupportedForVersion(string, int64) (bool, error)
+	IsSnapshotsSupportedForVersion(string, int64) (bool, error)
+	GetAppVersionArchive(string, int64) (string, error)
+	CreateAppVersionArchive(string, int64, string) error
+}
+
 type LicenseStore interface {
 	GetLicenseForApp(string) (*kotsv1beta1.License, error)
 }
 
 type ClusterStore interface {
 	ListClusters() (map[string]string, error)
+	GetClusterIDFromDeployToken(string) (string, error)
+}
+
+type InstallationStore interface {
+	GetPendingInstallationStatus() (*installationtypes.InstallStatus, error)
 }
