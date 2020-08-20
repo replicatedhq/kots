@@ -1,6 +1,5 @@
 import * as _ from "lodash";
 import { graphiqlExpress, graphqlExpress } from "apollo-server-express";
-import bugsnagExpress from "@bugsnag/plugin-express";
 import cors from "cors";
 import { NextFunction, Request, Response } from "express";
 import path from "path";
@@ -8,7 +7,6 @@ import Sigsci from "sigsci-module-nodejs";
 import { ServerLoader, ServerSettings } from "@tsed/common";
 import "@tsed/socketio";
 import { $log } from "ts-log-debug";
-import { createBugsnagClient } from "./bugsnagClient";
 import { ShipClusterSchema } from "../schema";
 import { logger } from "./logger";
 import { Context } from "../context";
@@ -64,18 +62,6 @@ export class Server extends ServerLoader {
   async $onMountingMiddlewares(): Promise<void> {
     this.expressApp.enable("trust proxy"); // so we get the real ip from the ELB in amazon
     const params = await Params.getParams();
-
-    let bugsnagClient = createBugsnagClient({
-      apiKey: params.bugsnagKey,
-      appType: "web_server",
-      releaseStage: process.env.NODE_ENV
-    });
-
-    if (bugsnagClient) {
-      bugsnagClient.use(bugsnagExpress);
-      const bugsnagMiddleware = bugsnagClient.getPlugin("express");
-      this.use(bugsnagMiddleware.requestHandler);
-    }
 
     const corsHeaders = { exposedHeaders: ["Content-Disposition"] };
     this.use(cors(corsHeaders));
@@ -214,12 +200,6 @@ export class Server extends ServerLoader {
     if (process.env.NODE_ENV === "production") {
       $log.level = "OFF";
     }
-
-    // The bugsnag error handler has to go in last
-    if (bugsnagClient) {
-      const bugsnagMiddleware = bugsnagClient.getPlugin('express');
-      this.use(bugsnagMiddleware.errorHandler);
-    }
   }
 
   async $onReady() {
@@ -232,8 +212,10 @@ export class Server extends ServerLoader {
     } else if (params.s3SkipEnsureBucket) {
       logger.info({msg: "Not creating bucket because S3_SKIP_ENSURE_BUCKET was set"});
     } else {
-      logger.info({msg: "Ensuring bucket exists..."});
-      await ensureBucket(params);
+      if (!params.storageBaseURI || !params.storageBaseURI.startsWith("docker://")) {
+        logger.info({msg: "Ensuring bucket exists..."});
+        await ensureBucket(params);
+      }
     }
 
     logger.info({msg: "Server started..."});

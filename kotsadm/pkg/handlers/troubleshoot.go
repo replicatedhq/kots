@@ -14,14 +14,13 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
-	"github.com/replicatedhq/kots/kotsadm/pkg/app"
 	"github.com/replicatedhq/kots/kotsadm/pkg/kotsutil"
 	"github.com/replicatedhq/kots/kotsadm/pkg/license"
 	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
-	"github.com/replicatedhq/kots/kotsadm/pkg/persistence"
 	"github.com/replicatedhq/kots/kotsadm/pkg/redact"
 	"github.com/replicatedhq/kots/kotsadm/pkg/session"
 	"github.com/replicatedhq/kots/kotsadm/pkg/snapshot"
+	"github.com/replicatedhq/kots/kotsadm/pkg/store"
 	"github.com/replicatedhq/kots/kotsadm/pkg/supportbundle"
 	"github.com/replicatedhq/kots/kotsadm/pkg/supportbundle/types"
 	"github.com/replicatedhq/kots/kotsadm/pkg/version"
@@ -115,14 +114,14 @@ func GetSupportBundle(w http.ResponseWriter, r *http.Request) {
 
 	bundleSlug := mux.Vars(r)["bundleSlug"]
 
-	bundle, err := supportbundle.GetFromSlug(bundleSlug)
+	bundle, err := store.GetStore().GetSupportBundleFromSlug(bundleSlug)
 	if err != nil {
 		logger.Error(err)
 		w.WriteHeader(500)
 		return
 	}
 
-	analysis, err := supportbundle.GetBundleAnalysis(bundle.ID)
+	analysis, err := store.GetStore().GetSupportBundleAnalysis(bundle.ID)
 	if err != nil {
 		logger.Error(errors.Wrapf(err, "failed to get analysis for bundle %s", bundle.Slug))
 	}
@@ -213,14 +212,14 @@ func ListSupportBundles(w http.ResponseWriter, r *http.Request) {
 
 	appSlug := mux.Vars(r)["appSlug"]
 
-	a, err := app.GetFromSlug(appSlug)
+	a, err := store.GetStore().GetAppFromSlug(appSlug)
 	if err != nil {
 		logger.Error(err)
 		w.WriteHeader(500)
 		return
 	}
 
-	supportBundles, err := supportbundle.List(a.ID)
+	supportBundles, err := store.GetStore().ListSupportBundles(a.ID)
 	if err != nil {
 		logger.Error(err)
 		w.WriteHeader(500)
@@ -229,7 +228,7 @@ func ListSupportBundles(w http.ResponseWriter, r *http.Request) {
 
 	responseSupportBundles := []ResponseSupportBundle{}
 	for _, bundle := range supportBundles {
-		analysis, err := supportbundle.GetBundleAnalysis(bundle.ID)
+		analysis, err := store.GetStore().GetSupportBundleAnalysis(bundle.ID)
 		if err != nil {
 			logger.Error(errors.Wrapf(err, "failed to get analysis for bundle %s", bundle.Slug))
 		}
@@ -317,15 +316,15 @@ func DownloadSupportBundle(w http.ResponseWriter, r *http.Request) {
 
 	bundleID := mux.Vars(r)["bundleId"]
 
-	bundle, err := supportbundle.GetSupportBundle(bundleID)
+	bundleArchive, err := store.GetStore().GetSupportBundleArchive(bundleID)
 	if err != nil {
 		logger.Error(err)
 		JSON(w, 500, nil)
 		return
 	}
-	defer os.RemoveAll(bundle)
+	defer os.RemoveAll(bundleArchive)
 
-	f, err := os.Open(bundle)
+	f, err := os.Open(bundleArchive)
 	if err != nil {
 		logger.Error(err)
 		JSON(w, 500, nil)
@@ -352,7 +351,7 @@ func CollectSupportBundle(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	a, err := app.Get(mux.Vars(r)["appId"])
+	a, err := store.GetStore().GetApp(mux.Vars(r)["appId"])
 	if err != nil {
 		logger.Error(err)
 		w.WriteHeader(500)
@@ -406,7 +405,7 @@ func UploadSupportBundle(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// we need the app archive to get the analyzers
-	a, err := app.Get(mux.Vars(r)["appId"])
+	a, err := store.GetStore().GetApp(mux.Vars(r)["appId"])
 	if err != nil {
 		logger.Error(err)
 		w.WriteHeader(500)
@@ -472,13 +471,11 @@ func UploadSupportBundle(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := supportbundle.SetBundleAnalysis(supportBundle.ID, insights); err != nil {
+	if err := store.GetStore().SetSupportBundleAnalysis(supportBundle.ID, insights); err != nil {
 		logger.Error(err)
 		w.WriteHeader(500)
 		return
 	}
-
-	fmt.Printf("analyzeResult %#v\n", analyzeResult)
 }
 
 func GetDefaultTroubleshoot(w http.ResponseWriter, r *http.Request) {
@@ -525,7 +522,7 @@ func GetTroubleshoot(w http.ResponseWriter, r *http.Request) {
 	inCluster := r.URL.Query().Get("incluster")
 
 	// get app from slug
-	foundApp, err := app.GetFromSlug(appSlug)
+	foundApp, err := store.GetStore().GetAppFromSlug(appSlug)
 	if err != nil {
 		logger.Error(err)
 		w.WriteHeader(500)
@@ -534,7 +531,7 @@ func GetTroubleshoot(w http.ResponseWriter, r *http.Request) {
 	// TODO get from watch ID, not just app id
 
 	// get troubleshoot spec from db
-	existingSpec, err := getAppTroubleshoot(appSlug)
+	existingSpec, err := store.GetStore().GetSupportBundleSpecForApp(foundApp.ID)
 	if err != nil {
 		logger.Error(err)
 		w.WriteHeader(500)
@@ -560,8 +557,8 @@ func GetTroubleshoot(w http.ResponseWriter, r *http.Request) {
 		uploadURL = fmt.Sprintf("%s/api/v1/troubleshoot/%s/%s", r.Header.Get("Bundle-Upload-Host"), foundApp.ID, randomBundleID)
 		redactURL = fmt.Sprintf("%s/api/v1/troubleshoot/supportbundle/%s/redactions", r.Header.Get("Bundle-Upload-Host"), randomBundleID)
 	} else if inCluster == "true" {
-		uploadURL = fmt.Sprintf("%s/api/v1/troubleshoot/%s/%s", fmt.Sprintf("http://kotsadm-api.%s.svc.cluster.local:3000", os.Getenv("POD_NAMESPACE")), foundApp.ID, randomBundleID)
-		redactURL = fmt.Sprintf("%s/api/v1/troubleshoot/supportbundle/%s/redactions", fmt.Sprintf("http://kotsadm-api.%s.svc.cluster.local:3000", os.Getenv("POD_NAMESPACE")), randomBundleID)
+		uploadURL = fmt.Sprintf("%s/api/v1/troubleshoot/%s/%s", fmt.Sprintf("http://kotsadm.%s.svc.cluster.local:3000", os.Getenv("POD_NAMESPACE")), foundApp.ID, randomBundleID)
+		redactURL = fmt.Sprintf("%s/api/v1/troubleshoot/supportbundle/%s/redactions", fmt.Sprintf("http://kotsadm.%s.svc.cluster.local:3000", os.Getenv("POD_NAMESPACE")), randomBundleID)
 	} else {
 		uploadURL = fmt.Sprintf("%s/api/v1/troubleshoot/%s/%s", os.Getenv("API_ADVERTISE_ENDPOINT"), foundApp.ID, randomBundleID)
 		redactURL = fmt.Sprintf("%s/api/v1/troubleshoot/supportbundle/%s/redactions", os.Getenv("API_ADVERTISE_ENDPOINT"), randomBundleID)
@@ -635,7 +632,7 @@ func GetSupportBundleRedactions(w http.ResponseWriter, r *http.Request) {
 	}
 
 	bundleID := mux.Vars(r)["bundleId"]
-	redactions, err := supportbundle.GetRedactions(bundleID)
+	redactions, err := store.GetStore().GetRedactions(bundleID)
 	if err != nil {
 		logger.Error(err)
 		getSupportBundleRedactionsResponse.Error = fmt.Sprintf("failed to find redactions for bundle %s", bundleID)
@@ -669,7 +666,7 @@ func SetSupportBundleRedactions(w http.ResponseWriter, r *http.Request) {
 	}
 
 	bundleID := mux.Vars(r)["bundleId"]
-	err = supportbundle.SetRedactions(bundleID, redactions.Redactions)
+	err = store.GetStore().SetRedactions(bundleID, redactions.Redactions)
 	if err != nil {
 		logger.Error(err)
 		w.WriteHeader(500)
@@ -899,20 +896,4 @@ func makeVeleroCollectors() []*v1beta1.Collect {
 	}
 
 	return collectors
-}
-
-func getAppTroubleshoot(slug string) (string, error) {
-	q := `select supportbundle_spec from app_version
-      inner join app on app_version.app_id = app.id and app_version.sequence = app.current_sequence
-      where app.slug = $1`
-
-	spec := ""
-
-	db := persistence.MustGetPGSession()
-	row := db.QueryRow(q, slug)
-	err := row.Scan(&spec)
-	if err != nil {
-		return "", err
-	}
-	return spec, nil
 }

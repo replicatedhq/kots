@@ -5,7 +5,7 @@ import (
 
 	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
 	"github.com/replicatedhq/kots/kotsadm/pkg/session"
-	"github.com/replicatedhq/kots/kotsadm/pkg/task"
+	"github.com/replicatedhq/kots/kotsadm/pkg/store"
 )
 
 type GetImageRewriteStatusResponse struct {
@@ -35,7 +35,7 @@ func GetImageRewriteStatus(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	status, message, err := task.GetTaskStatus("image-rewrite")
+	status, message, err := store.GetStore().GetTaskStatus("image-rewrite")
 	if err != nil {
 		logger.Error(err)
 		w.WriteHeader(500)

@@ -12,7 +12,7 @@ import (
 	"github.com/replicatedhq/kots/kotsadm/pkg/kotsutil"
 	"github.com/replicatedhq/kots/kotsadm/pkg/license"
 	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
-	"github.com/replicatedhq/kots/kotsadm/pkg/task"
+	"github.com/replicatedhq/kots/kotsadm/pkg/store"
 	"github.com/replicatedhq/kots/kotsadm/pkg/upstream"
 	"github.com/replicatedhq/kots/kotsadm/pkg/version"
 	kotspull "github.com/replicatedhq/kots/pkg/pull"
@@ -29,7 +29,7 @@ var mtx sync.Mutex
 func Start() error {
 	logger.Debug("starting update checker")
 
-	appsList, err := app.ListInstalled()
+	appsList, err := store.GetStore().ListInstalledApps()
 	if err != nil {
 		return errors.Wrap(err, "failed to list installed apps")
 	}
@@ -52,7 +52,7 @@ func Start() error {
 // if disabled: stop the current running cron job (if exists)
 // no-op for airgap applications
 func Configure(appID string) error {
-	a, err := app.Get(appID)
+	a, err := store.GetStore().GetApp(appID)
 	if err != nil {
 		return errors.Wrap(err, "failed to get app")
 	}
@@ -142,7 +142,7 @@ func Stop(appID string) {
 // if "deploy" is set to true, the latest version/update will be deployed
 // returns the number of available updates
 func CheckForUpdates(appID string, deploy bool) (int64, error) {
-	currentStatus, _, err := task.GetTaskStatus("update-download")
+	currentStatus, _, err := store.GetStore().GetTaskStatus("update-download")
 	if err != nil {
 		return 0, errors.Wrap(err, "failed to get task status")
 	}
@@ -152,11 +152,11 @@ func CheckForUpdates(appID string, deploy bool) (int64, error) {
 		return 0, nil
 	}
 
-	if err := task.ClearTaskStatus("update-download"); err != nil {
+	if err := store.GetStore().ClearTaskStatus("update-download"); err != nil {
 		return 0, errors.Wrap(err, "failed to clear task status")
 	}
 
-	a, err := app.Get(appID)
+	a, err := store.GetStore().GetApp(appID)
 	if err != nil {
 		return 0, errors.Wrap(err, "failed to get app")
 	}
@@ -168,7 +168,7 @@ func CheckForUpdates(appID string, deploy bool) (int64, error) {
 	}
 
 	// reload app because license sync could have created a new release
-	a, err = app.Get(a.ID)
+	a, err = store.GetStore().GetApp(appID)
 	if err != nil {
 		return 0, errors.Wrap(err, "failed to get app")
 	}
@@ -227,7 +227,7 @@ func CheckForUpdates(appID string, deploy bool) (int64, error) {
 		}
 
 		latestVersion := allVersions[len(allVersions)-1]
-		downstreams, err := downstream.ListDownstreamsForApp(a.ID)
+		downstreams, err := store.GetStore().ListDownstreamsForApp(a.ID)
 		if err != nil {
 			return 0, errors.Wrap(err, "failed to list downstreams for app")
 		}

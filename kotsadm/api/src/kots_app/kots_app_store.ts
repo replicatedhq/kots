@@ -1712,38 +1712,6 @@ where app_id = $1 and sequence = $2`;
     await this.pool.query(q, v);
   }
 
-  async addKotsPreflight(appId: string, clusterId: string, sequence: number, preflightResult: string): Promise<void> {
-    const q =
-      `UPDATE app_downstream_version SET
-        preflight_result = $1,
-        preflight_result_created_at = NOW(),
-        status = (
-          CASE WHEN status = 'deployed' THEN
-            'deployed'
-          ELSE
-            'pending'
-          END
-          )
-      WHERE app_id = $2 AND sequence = $3`;
-
-    const v = [
-      preflightResult,
-      appId,
-      sequence
-    ];
-
-    await this.pool.query(q, v);
-
-    // Always deploy sequence 0 if preflight checks pass
-    if (sequence === 0) {
-      const results = JSON.parse(JSON.stringify(preflightResult));
-      const preflightState = getPreflightResultState(results);
-      if (preflightState === "pass") {
-        await this.deployVersion(appId, sequence);
-      }
-    }
-  }
-
   async ignorePreflightPermissionErrors(appId: string, clusterId: string, sequence: number): Promise<void> {
     const q = `UPDATE app_downstream_version
 SET status = 'pending_preflight', preflight_ignore_permissions = true, preflight_result = null

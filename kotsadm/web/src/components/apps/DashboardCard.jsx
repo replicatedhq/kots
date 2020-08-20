@@ -20,7 +20,6 @@ import {
 } from "@src/utilities/utilities";
 
 import "../../scss/components/watches/DashboardCard.scss";
-import { isVeleroInstalled } from "../../queries/SnapshotQueries";
 
 export default class DashboardCard extends React.Component {
   constructor(props) {

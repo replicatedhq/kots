@@ -290,6 +290,19 @@ export class KotsApp {
 
   async getArchive(sequence: string): Promise<any> {
     const replicatedParams = await Params.getParams();
+    if (replicatedParams.storageBaseURI.startsWith("docker://")) {
+      return this.getArchiveOras(sequence);
+    }
+
+    return this.getArchiveS3(sequence);
+  }
+
+  async getArchiveOras(sequence: string): Promise<any> {
+    throw new ReplicatedError("ORAS is not implemented in the Typescript API")
+  }
+
+  async getArchiveS3(sequence: string): Promise<any> {
+    const replicatedParams = await Params.getParams();
     const params = {
       Bucket: replicatedParams.shipOutputBucket,
       Key: `${replicatedParams.s3BucketEndpoint !== "" ? `${replicatedParams.shipOutputBucket}/` : ""}${this.id}/${sequence}.tar.gz`,

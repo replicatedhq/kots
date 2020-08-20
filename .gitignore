@@ -14,6 +14,7 @@
 bin/
 vendor
 .idea/
+.vscode/
 
 # scope test logs
 scope-go-*.log

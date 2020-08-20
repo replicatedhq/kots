@@ -11,9 +11,9 @@ import (
 
 	"github.com/mholt/archiver"
 	"github.com/pkg/errors"
-	"github.com/replicatedhq/kots/kotsadm/pkg/app"
 	"github.com/replicatedhq/kots/kotsadm/pkg/kotsutil"
 	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
+	"github.com/replicatedhq/kots/kotsadm/pkg/store"
 	"github.com/replicatedhq/kots/kotsadm/pkg/version"
 )
 
@@ -23,7 +23,7 @@ func DownloadApp(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	a, err := app.GetFromSlug(r.URL.Query().Get("slug"))
+	a, err := store.GetStore().GetAppFromSlug(r.URL.Query().Get("slug"))
 	if err != nil {
 		logger.Error(err)
 		if errors.Is(err, sql.ErrNoRows) {

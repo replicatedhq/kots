@@ -1,4 +1,4 @@
-package kotsadmparams
+package s3pg
 
 import (
 	"database/sql"
@@ -7,10 +7,10 @@ import (
 	"github.com/replicatedhq/kots/kotsadm/pkg/persistence"
 )
 
-func Get(name string) (string, error) {
+func (s S3PGStore) GetPrometheusAddress() (string, error) {
 	db := persistence.MustGetPGSession()
 	query := `select value from kotsadm_params where key = $1`
-	row := db.QueryRow(query, name)
+	row := db.QueryRow(query, "PROMETHEUS_ADDRESS")
 
 	var value string
 	if err := row.Scan(&value); err != nil {
@@ -23,11 +23,11 @@ func Get(name string) (string, error) {
 	return value, nil
 }
 
-func Set(name string, value string) error {
+func (s S3PGStore) SetPrometheusAddress(address string) error {
 	db := persistence.MustGetPGSession()
 	query := `insert into kotsadm_params (key, value) values ($1, $2) on conflict (key) do update set value = $2`
 
-	_, err := db.Exec(query, name, value)
+	_, err := db.Exec(query, "PROMETHEUS_ADDRESS", address)
 	if err != nil {
 		return errors.Wrap(err, "failed to exec")
 	}

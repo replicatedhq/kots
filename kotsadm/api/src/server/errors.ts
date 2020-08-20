@@ -1,7 +1,5 @@
 import _ from "lodash";
 
-import { getBugsnagClient } from "./bugsnagClient";
-
 /**
  * ClientErrorDetails is a payload that
  * can be included in a graphql `errors` payload
@@ -66,14 +64,6 @@ export class ReplicatedError extends Error {
       return {
         msg: error.message,
       };
-    }
-
-    const bugsnagClient = getBugsnagClient();
-    if (bugsnagClient) {
-      // only log it if its an unknown error
-      bugsnagClient.notify(error, {
-        severity: "error"
-      });
     }
 
     return {

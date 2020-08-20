@@ -9,12 +9,12 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
-	"github.com/replicatedhq/kots/kotsadm/pkg/app"
 	"github.com/replicatedhq/kots/kotsadm/pkg/kurl"
 	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
 	"github.com/replicatedhq/kots/kotsadm/pkg/session"
 	"github.com/replicatedhq/kots/kotsadm/pkg/snapshot"
 	snapshottypes "github.com/replicatedhq/kots/kotsadm/pkg/snapshot/types"
+	"github.com/replicatedhq/kots/kotsadm/pkg/store"
 )
 
 type GlobalSnapshotSettingsResponse struct {
@@ -46,6 +46,10 @@ type SnapshotConfig struct {
 	AutoEnabled  bool                            `json:"autoEnabled"`
 	AutoSchedule *snapshottypes.SnapshotSchedule `json:"autoSchedule"`
 	TTl          *snapshottypes.SnapshotTTL      `json:"ttl"`
+}
+
+type VeleroStatus struct {
+	IsVeleroInstalled bool `json:"isVeleroInstalled"`
 }
 
 func UpdateGlobalSnapshotSettings(w http.ResponseWriter, r *http.Request) {
@@ -427,7 +431,7 @@ func GetSnapshotConfig(w http.ResponseWriter, r *http.Request) {
 	}
 
 	appSlug := mux.Vars(r)["appSlug"]
-	foundApp, err := app.GetFromSlug(appSlug)
+	foundApp, err := store.GetStore().GetAppFromSlug(appSlug)
 	if err != nil {
 		logger.Error(err)
 		w.WriteHeader(http.StatusInternalServerError)
@@ -524,4 +528,33 @@ func parseTTL(s string) (*snapshottypes.ParsedTTL, error) {
 		return nil, errors.Wrap(nil, "unsupported unit type")
 	}
 	return parsedTTLResponse, nil
+}
+
+func GetVeleroStatus(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Headers", "content-type, origin, accept, authorization")
+
+	if r.Method == "OPTIONS" {
+		w.WriteHeader(http.StatusOK)
+		return
+	}
+
+	getVeleroStatusResponse := VeleroStatus{}
+
+	detectVelero, err := snapshot.DetectVelero()
+	if err != nil {
+		logger.Error(err)
+		getVeleroStatusResponse.IsVeleroInstalled = false
+		JSON(w, 500, getVeleroStatusResponse)
+		return
+	}
+
+	if detectVelero == nil {
+		getVeleroStatusResponse.IsVeleroInstalled = false
+		JSON(w, 404, getVeleroStatusResponse)
+		return
+	}
+
+	getVeleroStatusResponse.IsVeleroInstalled = true
+	JSON(w, 200, getVeleroStatusResponse)
 }

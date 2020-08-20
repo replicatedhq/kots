@@ -60,8 +60,10 @@ func Start() {
 	// Functions that the operator calls
 	r.Path("/api/v1/appstatus").Methods("PUT").HandlerFunc(handlers.NodeProxy(upstream))
 	r.Path("/api/v1/deploy/result").Methods("PUT").HandlerFunc(handlers.NodeProxy(upstream))
-	r.Path("/api/v1/preflight/{appSlug}/{clusterSlug}/{sequence}").Methods("GET").HandlerFunc(handlers.NodeProxy(upstream))
-	r.Path("/api/v1/preflight/{appSlug}/{clusterSlug}/{sequence}").Methods("POST").HandlerFunc(handlers.NodeProxy(upstream))
+
+	// Functions that are not called by the browser
+	r.Path("/api/v1/preflight/app/{appSlug}/sequence/{sequence}").Methods("GET").HandlerFunc(handlers.GetPreflightStatus)
+	r.Path("/api/v1/preflight/app/{appSlug}/sequence/{sequence}").Methods("POST").HandlerFunc(handlers.PostPreflightStatus)
 
 	// Support Bundles
 	r.Path("/api/v1/troubleshoot").Methods("OPTIONS", "GET").HandlerFunc(handlers.GetDefaultTroubleshoot)
@@ -105,6 +107,7 @@ func Start() {
 	r.Path("/api/v1/app/{appSlug}/sequence/{sequence}/preflight/ignore-rbac").Methods("OPTIONS", "POST").HandlerFunc(handlers.IgnorePreflightRBACErrors)
 	r.Path("/api/v1/app/{appSlug}/sequence/{sequence}/preflight/run").Methods("OPTIONS", "POST").HandlerFunc(handlers.StartPreflightChecks)
 	r.Path("/api/v1/app/{appSlug}/sequence/{sequence}/preflight/result").Methods("OPTIONS", "GET").HandlerFunc(handlers.GetPreflightResult)
+	r.Path("/api/v1/app/{appSlug}/sequence/{sequence}/preflightcommand").Methods("OPTIONS", "GET").HandlerFunc(handlers.GetPreflightCommand)
 	r.Path("/api/v1/preflight/result").Methods("OPTIONS", "GET").HandlerFunc(handlers.GetLatestPreflightResult)
 	r.Path("/api/v1/upload").Methods("PUT").HandlerFunc(handlers.UploadExistingApp)
 	r.Path("/api/v1/download").Methods("GET").HandlerFunc(handlers.DownloadApp)
@@ -139,6 +142,7 @@ func Start() {
 	// kotsadm snapshots
 	r.Path("/api/v1/snapshots").Methods("OPTIONS", "GET").HandlerFunc(handlers.ListKotsadmBackups)
 	r.Path("/api/v1/snapshot/{snapshotName}").Methods("OPTIONS", "GET").HandlerFunc(handlers.GetKotsadmBackup)
+	r.Path("/api/v1/velero").Methods("OPTIONS", "GET").HandlerFunc(handlers.GetVeleroStatus)
 
 	// App snapshot routes
 	r.Path("/api/v1/app/{appSlug}/snapshot/backup").Methods("OPTIONS", "POST").HandlerFunc(handlers.CreateBackup)
@@ -158,6 +162,7 @@ func Start() {
 	r.HandleFunc("/api/v1/kurl", handlers.NotImplemented)
 	r.Path("/api/v1/kurl/generate-node-join-command-worker").Methods("OPTIONS", "POST").HandlerFunc(handlers.GenerateNodeJoinCommandWorker)
 	r.Path("/api/v1/kurl/generate-node-join-command-master").Methods("OPTIONS", "POST").HandlerFunc(handlers.GenerateNodeJoinCommandMaster)
+	r.Path("/api/v1/kurl/nodes/{nodeName}/drain").Methods("OPTIONS", "POST").HandlerFunc(handlers.DrainNode)
 
 	// Prometheus
 	r.Path("/api/v1/prometheus").Methods("OPTIONS", "POST").HandlerFunc(handlers.SetPrometheusAddress)

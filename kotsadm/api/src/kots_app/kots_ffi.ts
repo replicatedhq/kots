@@ -7,22 +7,6 @@ import { putObject } from "../util/s3";
 import path from "path";
 import tmp from "tmp";
 import fs from "fs";
-import {
-  extractDownstreamNamesFromTarball,
-  extractInstallationSpecFromTarball,
-  extractRawInstallationSpecFromTarball,
-  extractPreflightSpecFromTarball,
-  extractSupportBundleSpecFromTarball,
-  extractAppSpecFromTarball,
-  extractKotsAppSpecFromTarball,
-  extractAppTitleFromTarball,
-  extractAppIconFromTarball,
-  extractKotsAppLicenseFromTarball,
-  extractAnalyzerSpecFromTarball,
-  extractConfigSpecFromTarball,
-  extractConfigValuesFromTarball,
-  extractBackupSpecFromTarball,
-} from "../util/tar";
 import { KotsAppRegistryDetails } from "../kots_app"
 import { Cluster } from "../cluster";
 import * as _ from "lodash";

@@ -417,11 +417,3 @@ export const getGitOpsRepo = gql`
     }
   }
 `;
-
-export const getPreflightCommandRaw = `
-  query getPreflightCommand($appSlug: String, $clusterSlug: String, $sequence: String) {
-    getPreflightCommand(appSlug: $appSlug, clusterSlug: $clusterSlug, sequence: $sequence)
-  }
-`;
-
-export const getPreflightCommand = gql(getPreflightCommandRaw);

@@ -50,6 +50,5 @@ export const Query = `
     snapshotConfig(slug: String!): SnapshotConfig
     snapshotDetail(slug: String!, id: String!): SnapshotDetail
     restoreDetail(appId: String!, restoreName: String!): RestoreDetail
-    isVeleroInstalled: Boolean
   }
 `;

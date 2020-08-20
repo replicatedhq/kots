@@ -1,11 +1,5 @@
 import gql from "graphql-tag";
 
-export const isVeleroInstalled = gql(`
-  query isVeleroInstalled {
-    isVeleroInstalled
-  }
-`);
-
 export const snapshotConfigRaw = `
   query snapshotConfig($slug: String!) {
     snapshotConfig(slug: $slug) {

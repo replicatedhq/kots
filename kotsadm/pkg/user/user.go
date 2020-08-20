@@ -5,18 +5,14 @@ import (
 	"os"
 
 	"github.com/pkg/errors"
-	"github.com/replicatedhq/kots/kotsadm/pkg/persistence"
+	usertypes "github.com/replicatedhq/kots/kotsadm/pkg/user/types"
 	"golang.org/x/crypto/bcrypt"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
 )
 
-type User struct {
-	ID string
-}
-
-func LogIn(password string) (*User, error) {
+func LogIn(password string) (*usertypes.User, error) {
 	cfg, err := config.GetConfig()
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get cluster config")
@@ -45,19 +41,7 @@ func LogIn(password string) (*User, error) {
 		return nil, errors.Wrap(err, "failed to compare password")
 	}
 
-	return &User{
+	return &usertypes.User{
 		ID: "000000",
 	}, nil
-}
-
-func LogOut(id string) error {
-	db := persistence.MustGetPGSession()
-	query := `delete from session where id = $1`
-
-	_, err := db.Exec(query, id)
-	if err != nil {
-		return errors.Wrap(err, "failed to exec")
-	}
-
-	return nil
 }

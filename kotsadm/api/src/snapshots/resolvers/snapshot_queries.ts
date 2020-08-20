@@ -16,13 +16,6 @@ import { logger } from "../../server/logger";
 export function SnapshotQueries(stores: Stores, params: Params) {
   // tslint:disable-next-line max-func-body-length
   return {
-    async isVeleroInstalled(root: any, args: any, context: Context): Promise<boolean> {
-      context.requireSingleTenantSession();
-
-      const velero = new VeleroClient("velero");
-      return velero.isVeleroInstalled();
-    },
-
     async snapshotConfig(root: any, args: any, context: Context): Promise<SnapshotConfig> {
       context.requireSingleTenantSession();
 

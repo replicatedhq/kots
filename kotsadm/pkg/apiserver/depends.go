@@ -4,6 +4,7 @@ import (
 	"context"
 	"log"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -16,11 +17,17 @@ import (
 )
 
 func waitForDependencies(ctx context.Context) error {
-	numChecks := 2
+	numChecks := 1
+	if !strings.HasPrefix(os.Getenv("STORAGE_BASEURI"), "docker://") {
+		numChecks++
+	}
+
 	errCh := make(chan error, numChecks)
 
 	go func() {
-		errCh <- waitForS3Bucket(ctx)
+		if !strings.HasPrefix(os.Getenv("STORAGE_BASEURI"), "docker://") {
+			errCh <- waitForS3Bucket(ctx)
+		}
 	}()
 
 	go func() {

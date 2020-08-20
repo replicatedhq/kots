@@ -10,6 +10,7 @@ import (
 
 	"github.com/gosimple/slug"
 	"github.com/pkg/errors"
+	"github.com/replicatedhq/kots/kotsadm/pkg/redact/types"
 	"github.com/replicatedhq/kots/pkg/util"
 	"github.com/replicatedhq/troubleshoot/pkg/apis/troubleshoot/v1beta1"
 	troubleshootscheme "github.com/replicatedhq/troubleshoot/pkg/client/troubleshootclientset/scheme"
@@ -25,17 +26,8 @@ func init() {
 	troubleshootscheme.AddToScheme(scheme.Scheme)
 }
 
-type RedactorList struct {
-	Name        string    `json:"name"`
-	Slug        string    `json:"slug"`
-	Created     time.Time `json:"createdAt"`
-	Updated     time.Time `json:"updatedAt"`
-	Enabled     bool      `json:"enabled"`
-	Description string    `json:"description"`
-}
-
 type RedactorMetadata struct {
-	Metadata RedactorList `json:"metadata"`
+	Metadata types.RedactorList `json:"metadata"`
 
 	Redact string `json:"redact"`
 }
@@ -75,7 +67,7 @@ func GetRedact() (*v1beta1.Redactor, error) {
 	return buildFullRedact(configmap)
 }
 
-func GetRedactInfo() ([]RedactorList, error) {
+func GetRedactInfo() ([]types.RedactorList, error) {
 	configmap, _, err := getConfigmap()
 	if err != nil {
 		return nil, errors.Wrap(err, "get redactors configmap")
@@ -99,7 +91,7 @@ func GetRedactInfo() ([]RedactorList, error) {
 		}
 	}
 
-	list := []RedactorList{}
+	list := []types.RedactorList{}
 
 	for k, v := range configmap.Data {
 		redactorEntry := RedactorMetadata{}
@@ -261,7 +253,7 @@ func setRedactYaml(slug, description string, enabled, newRedact bool, currentTim
 		}
 
 		// create the new redactor
-		redactorEntry.Metadata = RedactorList{
+		redactorEntry.Metadata = types.RedactorList{
 			Name:    newRedactorSpec.Name,
 			Slug:    slug,
 			Created: currentTime,
@@ -476,7 +468,7 @@ func splitRedactors(spec string, existingMap map[string]string) (map[string]stri
 		})
 
 		newRedactor := RedactorMetadata{
-			Metadata: RedactorList{
+			Metadata: types.RedactorList{
 				Name:    redactorName,
 				Slug:    getSlug(redactorName),
 				Created: time.Now(),

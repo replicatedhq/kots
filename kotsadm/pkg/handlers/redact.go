@@ -8,6 +8,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
 	"github.com/replicatedhq/kots/kotsadm/pkg/redact"
+	redacttypes "github.com/replicatedhq/kots/kotsadm/pkg/redact/types"
 	"github.com/replicatedhq/kots/kotsadm/pkg/session"
 )
 
@@ -29,15 +30,15 @@ type GetRedactResponse struct {
 }
 
 type GetRedactorResponse struct {
-	Redactor string              `json:"redactor"`
-	Metadata redact.RedactorList `json:"redactorMetadata"`
+	Redactor string                   `json:"redactor"`
+	Metadata redacttypes.RedactorList `json:"redactorMetadata"`
 
 	Success bool   `json:"success"`
 	Error   string `json:"error,omitempty"`
 }
 
 type ListRedactorsResponse struct {
-	Redactors []redact.RedactorList `json:"redactors"`
+	Redactors []redacttypes.RedactorList `json:"redactors"`
 
 	Success bool   `json:"success"`
 	Error   string `json:"error,omitempty"`

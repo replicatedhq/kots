@@ -10,13 +10,11 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	"github.com/replicatedhq/kots/kotsadm/pkg/app"
 	"github.com/replicatedhq/kots/kotsadm/pkg/kotsutil"
 	"github.com/replicatedhq/kots/kotsadm/pkg/license"
 	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
 	"github.com/replicatedhq/kots/kotsadm/pkg/preflight"
-	"github.com/replicatedhq/kots/kotsadm/pkg/registry"
-	"github.com/replicatedhq/kots/kotsadm/pkg/task"
+	"github.com/replicatedhq/kots/kotsadm/pkg/store"
 	"github.com/replicatedhq/kots/kotsadm/pkg/version"
 	"github.com/replicatedhq/kots/pkg/crypto"
 	kotspull "github.com/replicatedhq/kots/pkg/pull"
@@ -29,7 +27,7 @@ func DownloadUpdate(appID string, archiveDir string, toCursor string) (sequence 
 		for {
 			select {
 			case <-time.After(time.Second):
-				if err := task.UpdateTaskStatusTimestamp("update-download"); err != nil {
+				if err := store.GetStore().UpdateTaskStatusTimestamp("update-download"); err != nil {
 					logger.Error(err)
 				}
 			case <-finishedCh:
@@ -40,11 +38,11 @@ func DownloadUpdate(appID string, archiveDir string, toCursor string) (sequence 
 
 	defer func() {
 		if finalError == nil {
-			if err := task.ClearTaskStatus("update-download"); err != nil {
+			if err := store.GetStore().ClearTaskStatus("update-download"); err != nil {
 				logger.Error(err)
 			}
 		} else {
-			if err := task.SetTaskStatus("update-download", finalError.Error(), "failed"); err != nil {
+			if err := store.GetStore().SetTaskStatus("update-download", finalError.Error(), "failed"); err != nil {
 				logger.Error(err)
 			}
 		}
@@ -61,14 +59,14 @@ func DownloadUpdate(appID string, archiveDir string, toCursor string) (sequence 
 	go func() {
 		scanner := bufio.NewScanner(pipeReader)
 		for scanner.Scan() {
-			if err := task.SetTaskStatus("update-download", scanner.Text(), "running"); err != nil {
+			if err := store.GetStore().SetTaskStatus("update-download", scanner.Text(), "running"); err != nil {
 				logger.Error(err)
 			}
 		}
 		pipeReader.CloseWithError(scanner.Err())
 	}()
 
-	a, err := app.Get(appID)
+	a, err := store.GetStore().GetApp(appID)
 	if err != nil {
 		return 0, errors.Wrap(err, "failed to get app")
 	}
@@ -104,7 +102,7 @@ func DownloadUpdate(appID string, archiveDir string, toCursor string) (sequence 
 		IsGitOps:            a.IsGitOps,
 	}
 
-	registrySettings, err := registry.GetRegistrySettingsForApp(appID)
+	registrySettings, err := store.GetStore().GetRegistryDetailsForApp(appID)
 	if err != nil {
 		return 0, errors.Wrap(err, "failed to get registry settings")
 	}
