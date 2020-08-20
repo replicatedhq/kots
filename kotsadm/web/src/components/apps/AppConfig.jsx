@@ -9,7 +9,6 @@ import debounce from "lodash/debounce";
 import map from "lodash/map";
 import Modal from "react-modal";
 import Loader from "../shared/Loader";
-import { getAppConfigGroups } from "../../queries/AppsQueries";
 
 import "../../scss/components/watches/WatchConfig.scss";
 import { Utilities } from "../../utilities/utilities";
@@ -47,6 +46,7 @@ class AppConfig extends Component {
     if (!this.props.app) {
       this.getApp();
     }
+    this.getConfig();
   }
 
   componentDidUpdate(lastProps) {
@@ -82,6 +82,24 @@ class AppConfig extends Component {
     } catch(err) {
       console.log(err);
     }
+  }
+
+  getConfig = async () => {
+    const sequence = this.getSequence();
+    const slug = this.getSlug();
+
+    fetch(`${window.env.API_ENDPOINT}/app/${slug}/config/${sequence}`, {
+      method: "GET",
+      headers: {
+        "Authorization": Utilities.getToken(),
+        "Content-Type": "application/json",
+      }
+    }).then(async (response) => {
+      const data = await response.json()
+      this.setState({ configGroups: data.configGroups, changed: false });
+    }).catch((error) => {
+      console.log(error);
+    });
   }
 
   getSequence = () => {
@@ -323,25 +341,4 @@ class AppConfig extends Component {
 export default withRouter(compose(
   withApollo,
   withRouter,
-  graphql(getAppConfigGroups, {
-    name: "getAppConfigGroups",
-    options: ({ match, app, fromLicenseFlow }) => {
-      let sequence;
-      if (fromLicenseFlow) {
-        sequence = 0;
-      } else if (match.params.sequence != undefined) {
-        sequence = match.params.sequence;
-      } else {
-        sequence = app.currentSequence;
-      }
-      const slug = fromLicenseFlow ? match.params.slug : app.slug;
-      return {
-        variables: {
-          slug,
-          sequence,
-        },
-        fetchPolicy: "no-cache"
-      }
-    }
-  }),
 )(AppConfig));

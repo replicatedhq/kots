@@ -316,44 +316,6 @@ export const getUpdateDownloadStatusRaw = `
 `;
 export const getUpdateDownloadStatus = gql(getUpdateDownloadStatusRaw);
 
-export const getAppConfigGroups = gql`
-  query getAppConfigGroups($slug: String!, $sequence: Int!) {
-    getAppConfigGroups(slug: $slug, sequence: $sequence) {
-      name
-      title
-      description
-      when
-      items {
-        name
-        type
-        title
-        help_text
-        recommended
-        default
-        value
-        error
-        data
-        multi_value
-        readonly
-        write_once
-        when
-        multiple
-        hidden
-        position
-        affix
-        required
-        items {
-          name
-          title
-          recommended
-          default
-          value
-        }
-      }
-    }
-  }
-`;
-
 export const getKotsDownstreamOutput = gql`
   query getKotsDownstreamOutput($appSlug: String!, $clusterSlug: String!, $sequence: Int!) {
     getKotsDownstreamOutput(appSlug: $appSlug, clusterSlug: $clusterSlug, sequence: $sequence) {

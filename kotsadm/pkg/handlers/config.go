@@ -56,6 +56,12 @@ type LiveAppConfigResponse struct {
 	ConfigGroups []kotsv1beta1.ConfigGroup `json:"configGroups"`
 }
 
+type CurrentAppConfigResponse struct {
+	Success      bool                      `json:"success"`
+	Error        string                    `json:"error,omitempty"`
+	ConfigGroups []kotsv1beta1.ConfigGroup `json:"configGroups"`
+}
+
 func UpdateAppConfig(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Access-Control-Allow-Headers", "content-type, origin, accept, authorization")
@@ -246,6 +252,94 @@ func LiveAppConfig(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		liveAppConfigResponse.Error = "failed to render templates"
 		JSON(w, http.StatusInternalServerError, liveAppConfigResponse)
+		return
+	}
+
+	JSON(w, http.StatusOK, LiveAppConfigResponse{Success: true, ConfigGroups: renderedConfig.Spec.Groups})
+}
+
+func CurrentAppConfig(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Headers", "content-type, origin, accept, authorization")
+
+	if r.Method == "OPTIONS" {
+		w.WriteHeader(http.StatusOK)
+		return
+	}
+
+	currentAppConfigResponse := CurrentAppConfigResponse{
+		Success: false,
+	}
+
+	sess, err := session.Parse(r.Header.Get("Authorization"))
+	if err != nil {
+		logger.Error(err)
+		currentAppConfigResponse.Error = "failed to parse authorization header"
+		JSON(w, http.StatusUnauthorized, currentAppConfigResponse)
+		return
+	}
+
+	// we don't currently have roles, all valid tokens are valid sessions
+	if sess == nil || sess.ID == "" {
+		currentAppConfigResponse.Error = "failed to parse authorization header"
+		JSON(w, http.StatusUnauthorized, currentAppConfigResponse)
+		return
+	}
+
+	foundApp, err := store.GetStore().GetAppFromSlug(mux.Vars(r)["appSlug"])
+	if err != nil {
+		logger.Error(err)
+		currentAppConfigResponse.Error = "failed to get app from app slug"
+		JSON(w, http.StatusInternalServerError, currentAppConfigResponse)
+		return
+	}
+
+	appLicense, err := license.Get(foundApp.ID)
+	if err != nil {
+		logger.Error(err)
+		currentAppConfigResponse.Error = "failed to get license for app"
+		JSON(w, http.StatusInternalServerError, currentAppConfigResponse)
+		return
+	}
+
+	sequence, err := strconv.Atoi(mux.Vars(r)["sequence"])
+	if err != nil {
+		logger.Error(err)
+		currentAppConfigResponse.Error = "failed to parse app sequence"
+		JSON(w, http.StatusInternalServerError, currentAppConfigResponse)
+		return
+	}
+
+	archiveDir, err := version.GetAppVersionArchive(foundApp.ID, int64(sequence))
+	if err != nil {
+		currentAppConfigResponse.Error = "failed to get app version archive"
+		JSON(w, http.StatusInternalServerError, currentAppConfigResponse)
+		return
+	}
+	defer os.RemoveAll(archiveDir)
+
+	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(archiveDir)
+	if err != nil {
+		currentAppConfigResponse.Error = "failed to load kots kinds from path"
+		JSON(w, http.StatusInternalServerError, currentAppConfigResponse)
+		return
+	}
+
+	// get values from saved app version
+	configValues := map[string]template.ItemValue{}
+
+	for key, value := range kotsKinds.ConfigValues.Spec.Values {
+		generatedValue := template.ItemValue{
+			Default: value.Default,
+			Value:   value.Value,
+		}
+		configValues[key] = generatedValue
+	}
+
+	renderedConfig, err := kotsconfig.TemplateConfigObjects(kotsKinds.Config, configValues, appLicense, template.LocalRegistry{})
+	if err != nil {
+		currentAppConfigResponse.Error = "failed to render templates"
+		JSON(w, http.StatusInternalServerError, currentAppConfigResponse)
 		return
 	}
 
