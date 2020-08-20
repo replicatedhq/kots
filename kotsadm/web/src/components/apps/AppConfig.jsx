@@ -210,7 +210,7 @@ class AppConfig extends Component {
         "Content-Type": "application/json",
         "Accept": "application/json",
       },
-      method: "GET",
+      method: "POST",
       body: JSON.stringify({"configGroups":groups, "sequence": sequence}),
     }).then(async (response) => {
       const data = await response.json()
