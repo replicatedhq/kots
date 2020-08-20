@@ -2,8 +2,10 @@ package handlers
 
 import (
 	"context"
+	"encoding/base64"
 	"net/http"
 	"os"
+	"strings"
 
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
@@ -13,6 +15,34 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 )
+
+type authorization struct {
+	Username string
+	Password string
+}
+
+func parseClusterAuthorization(authHeader string) (authorization, error) {
+	if !strings.HasPrefix(authHeader, "Basic ") { // does this need "Kots " too?
+		return authorization{}, errors.New("only basic auth is supported")
+	}
+
+	authHeader = strings.TrimSpace(strings.TrimPrefix(authHeader, "Basic "))
+
+	data, err := base64.StdEncoding.DecodeString(authHeader)
+	if err != nil {
+		return authorization{}, errors.Wrap(err, "failed ot base64 decode auth header")
+	}
+
+	parts := strings.Split(string(data), ":")
+	if len(parts) != 2 {
+		return authorization{}, errors.Errorf("expected 2 parts in auth header, found %d", len(parts))
+	}
+
+	return authorization{
+		Username: parts[0],
+		Password: parts[1],
+	}, nil
+}
 
 func requireValidSession(w http.ResponseWriter, r *http.Request) error {
 	if r.Header.Get("Authorization") == "" {

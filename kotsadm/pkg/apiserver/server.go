@@ -59,7 +59,7 @@ func Start() {
 	r.HandleFunc("/api/v1/ping", handlers.Ping)
 
 	// Functions that the operator calls
-	r.Path("/api/v1/appstatus").Methods("PUT").HandlerFunc(handlers.NodeProxy(upstream))
+	r.Path("/api/v1/appstatus").Methods("PUT", "OPTIONS").HandlerFunc(handlers.SetAppStatus)
 	r.Path("/api/v1/deploy/result").Methods("PUT").HandlerFunc(handlers.NodeProxy(upstream))
 
 	// Functions that are not called by the browser
