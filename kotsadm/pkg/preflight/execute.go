@@ -7,7 +7,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
 	"github.com/replicatedhq/kots/kotsadm/pkg/store"
-	"github.com/replicatedhq/kots/kotsadm/pkg/version"
 	troubleshootv1beta1 "github.com/replicatedhq/troubleshoot/pkg/apis/troubleshoot/v1beta1"
 	"github.com/replicatedhq/troubleshoot/pkg/preflight"
 	troubleshootpreflight "github.com/replicatedhq/troubleshoot/pkg/preflight"
@@ -17,7 +16,7 @@ import (
 
 // execute will execute the preflights using spec in preflightSpec.
 // This spec should be rendered, no template functions remaining
-func execute(appID string, sequence int64, preflightSpec *troubleshootv1beta1.Preflight, ignorePermissionErrors bool) error {
+func execute(appID string, sequence int64, preflightSpec *troubleshootv1beta1.Preflight, ignorePermissionErrors bool) (*troubleshootpreflight.UploadPreflightResults, error) {
 	logger.Debug("executing preflight checks",
 		zap.String("appID", appID),
 		zap.Int64("sequence", sequence))
@@ -38,7 +37,7 @@ func execute(appID string, sequence int64, preflightSpec *troubleshootv1beta1.Pr
 
 	restConfig, err := rest.InClusterConfig()
 	if err != nil {
-		return errors.Wrap(err, "failed to read in cluster config")
+		return nil, errors.Wrap(err, "failed to read in cluster config")
 	}
 
 	collectOpts := troubleshootpreflight.CollectOpts{
@@ -51,7 +50,7 @@ func execute(appID string, sequence int64, preflightSpec *troubleshootv1beta1.Pr
 	logger.Debug("preflight collect phase")
 	collectResults, err := troubleshootpreflight.Collect(collectOpts, preflightSpec)
 	if err != nil && !isPermissionsError(err) {
-		return errors.Wrap(err, "failed to collect")
+		return nil, errors.Wrap(err, "failed to collect")
 	}
 
 	uploadPreflightResults := &troubleshootpreflight.UploadPreflightResults{}
@@ -92,54 +91,14 @@ func execute(appID string, sequence int64, preflightSpec *troubleshootv1beta1.Pr
 	logger.Debug("preflight marshalling")
 	b, err := json.Marshal(uploadPreflightResults)
 	if err != nil {
-		return errors.Wrap(err, "failed to marshal results")
+		return uploadPreflightResults, errors.Wrap(err, "failed to marshal results")
 	}
 
 	if err := store.GetStore().SetPreflightResults(appID, sequence, b); err != nil {
-		return errors.Wrap(err, "failed to set preflight results")
+		return uploadPreflightResults, errors.Wrap(err, "failed to set preflight results")
 	}
 
-	// deploy first version if preflight checks passed
-	err = maybeDeployFirstVersion(appID, sequence, uploadPreflightResults)
-	if err != nil {
-		return errors.Wrap(err, "failed to deploy first version")
-	}
-
-	return nil
-}
-
-func maybeDeployFirstVersion(appID string, sequence int64, preflightResults *troubleshootpreflight.UploadPreflightResults) error {
-	if sequence != 0 {
-		return nil
-	}
-
-	preflightState := getPreflightState(preflightResults)
-	if preflightState != "pass" {
-		return nil
-	}
-
-	return version.DeployVersion(appID, sequence)
-}
-
-func getPreflightState(preflightResults *troubleshootpreflight.UploadPreflightResults) string {
-	if len(preflightResults.Errors) > 0 {
-		return "fail"
-	}
-
-	if len(preflightResults.Results) == 0 {
-		return "pass"
-	}
-
-	state := "pass"
-	for _, result := range preflightResults.Results {
-		if result.IsFail {
-			return "fail"
-		} else if result.IsWarn {
-			state = "warn"
-		}
-	}
-
-	return state
+	return uploadPreflightResults, nil
 }
 
 func isPermissionsError(err error) bool {

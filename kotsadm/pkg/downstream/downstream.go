@@ -154,6 +154,9 @@ func GetDownstreamVersionStatus(appID string, sequence int64) (string, error) {
 	var status sql.NullString
 	err := row.Scan(&status)
 	if err != nil {
+		if err == sql.ErrNoRows {
+			return "", nil
+		}
 		return "", errors.Wrap(err, "failed to get downstream version")
 	}
 
