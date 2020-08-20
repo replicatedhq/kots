@@ -142,19 +142,6 @@ export class KotsApp {
     return "***HIDDEN***";
   }
 
-  getOriginalItem(groups: KotsConfigGroup[], itemName: string) {
-    for (let g = 0; g < groups.length; g++) {
-      const group = groups[g];
-      for (let i = 0; i < group.items.length; i++) {
-        const item = group.items[i];
-        if (item.name === itemName) {
-          return item;
-        }
-      }
-    }
-    return null;
-  }
-
   private async getConfigDataFromFiles(files: FilesAsBuffers): Promise<ConfigData> {
     let configSpec: string = "",
       configValues: string = "",
@@ -185,27 +172,6 @@ export class KotsApp {
     }
   }
 
-  shouldUpdateConfigValues(configGroups: KotsConfigGroup[], configValues: any, item: KotsConfigItem): boolean {
-    if (item.hidden || item.when === "false" || (item.type === "password" && item.value === this.getPasswordMask())) {
-      return false;
-    }
-    if (item.name in configValues) {
-      return item.value !== configValues[item.name];
-    } else {
-      const originalItem = this.getOriginalItem(configGroups, item.name);
-      if (originalItem && item.value) {
-        if (originalItem.value) {
-          return item.value !== originalItem.value;
-        } else if (originalItem.default) {
-          return item.value !== originalItem.default;
-        } else {
-          return true;
-        }
-      }
-    }
-    return false;
-  }
-
   async applyConfigValues(configSpec: string, configValues: string, license: string, registryInfo: KotsAppRegistryDetails): Promise<KotsConfigGroup[]> {
     const templatedConfig = await kotsTemplateConfig(configSpec, configValues, license, registryInfo);
 
@@ -228,37 +194,6 @@ export class KotsApp {
     } catch (err) {
       throw new ReplicatedError(`Failed to get config groups ${err}`);
     }
-  }
-
-  async templateConfigGroups(stores: Stores, appId: string, sequence: string, configGroups: KotsConfigGroup[]): Promise<KotsConfigGroup[]> {
-    const app = await stores.kotsAppStore.getApp(appId);
-    const configData = await stores.kotsAppStore.getAppConfigData(appId, sequence);
-    const { configSpec, configValues } = configData!;
-
-    const parsedConfig = yaml.safeLoad(configSpec);
-    const parsedConfigValues = yaml.safeLoad(configValues);
-
-    const specConfigValues = parsedConfigValues.spec.values;
-    const specConfigGroups = parsedConfig.spec.groups;
-
-    configGroups.forEach(group => {
-      group.items.forEach(async item => {
-        if (this.shouldUpdateConfigValues(specConfigGroups, specConfigValues, item)) {
-          let configVal = {}
-          if (item.value) {
-            configVal["value"] = item.value;
-          }
-          if (item.default) {
-            configVal["default"] = item.default;
-          }
-          specConfigValues[item.name] = configVal;
-        }
-      });
-    });
-
-    const updatedConfigValues = yaml.safeDump(parsedConfigValues);
-    const registryInfo = await stores.kotsAppStore.getAppRegistryDetails(app.id);
-    return await this.applyConfigValues(configSpec, updatedConfigValues, String(app.license), registryInfo);
   }
 
   // Source files

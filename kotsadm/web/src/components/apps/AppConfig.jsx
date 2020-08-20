@@ -9,7 +9,7 @@ import debounce from "lodash/debounce";
 import map from "lodash/map";
 import Modal from "react-modal";
 import Loader from "../shared/Loader";
-import { getAppConfigGroups, templateConfigGroups } from "../../queries/AppsQueries";
+import { getAppConfigGroups } from "../../queries/AppsQueries";
 
 import "../../scss/components/watches/WatchConfig.scss";
 import { Utilities } from "../../utilities/utilities";

@@ -32,7 +32,6 @@ export const Query = `
 
     getAppConfigGroups(slug: String!, sequence: Int!): [KotsConfigGroup]
     getKotsDownstreamOutput(appSlug: String!, clusterSlug: String!, sequence: Int!): KotsDownstreamOutput
-    templateConfigGroups(slug: String!, sequence: Int!, configGroups: [KotsConfigGroupInput]!): [KotsConfigGroup]
 
     listSupportBundles(watchSlug: String!): [SupportBundle]
     getSupportBundle(watchSlug: String!): SupportBundle
