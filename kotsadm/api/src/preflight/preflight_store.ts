@@ -38,9 +38,9 @@ export class PreflightStore {
 
       let url: string;
       if (inCluster) {
-        url = `${params.shipApiEndpoint}/api/v1/preflight/${appSlug}/${clusterSlug}/${sequence}?incluster=true`; // TODO
+        url = `${params.shipApiEndpoint}/api/v1/preflight/${appSlug}/sequence/${sequence}?incluster=true`;
       } else {
-        url = `${params.apiAdvertiseEndpoint}/api/v1/preflight/${appSlug}/${clusterSlug}/${sequence}`; // TODO
+        url = `${params.apiAdvertiseEndpoint}/api/v1/preflight/${appSlug}/sequence/${sequence}`;
       }
   
       const param: PreflightParams = {
