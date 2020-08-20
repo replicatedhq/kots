@@ -50,11 +50,6 @@ class AppConfig extends Component {
   }
 
   componentDidUpdate(lastProps) {
-    const { getAppConfigGroups } = this.props.getAppConfigGroups;
-    if (getAppConfigGroups && getAppConfigGroups !== lastProps.getAppConfigGroups.getAppConfigGroups) {
-      const initialConfigGroups = JSON.parse(JSON.stringify(getAppConfigGroups)); // quick deep copy
-      this.setState({ configGroups: getAppConfigGroups, initialConfigGroups });
-    }
     if (this.state.app && !this.state.app.isConfigurable) {
       // app not configurable - redirect
       this.props.history.replace(`/app/${this.state.app.slug}`);
