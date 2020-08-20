@@ -62,8 +62,8 @@ func Start() {
 	r.Path("/api/v1/deploy/result").Methods("PUT").HandlerFunc(handlers.NodeProxy(upstream))
 
 	// Functions that are not called by the browser
-	r.Path("/api/v1/preflight/app/{appSlug}/sequence/{sequence}").Methods("GET").HandlerFunc(handlers.NodeProxy(upstream))  // TODO
-	r.Path("/api/v1/preflight/app/{appSlug}/sequence/{sequence}").Methods("POST").HandlerFunc(handlers.NodeProxy(upstream)) // TODO
+	r.Path("/api/v1/preflight/app/{appSlug}/sequence/{sequence}").Methods("GET").HandlerFunc(handlers.GetPreflightStatus)
+	r.Path("/api/v1/preflight/app/{appSlug}/sequence/{sequence}").Methods("POST").HandlerFunc(handlers.PostPreflightStatus)
 
 	// Support Bundles
 	r.Path("/api/v1/troubleshoot").Methods("OPTIONS", "GET").HandlerFunc(handlers.GetDefaultTroubleshoot)

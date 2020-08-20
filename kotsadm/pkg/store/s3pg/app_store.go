@@ -310,17 +310,3 @@ func (c S3PGStore) SetUpdateCheckerSpec(appID string, updateCheckerSpec string) 
 
 	return nil
 }
-
-func (c S3PGStore) SetPreflightResults(appID string, sequence int64, results []byte) error {
-	db := persistence.MustGetPGSession()
-	query := `update app_downstream_version set preflight_result = $1, preflight_result_created_at = $2,
-status = (case when status = 'deployed' then 'deployed' else 'pending' end)
-where app_id = $3 and parent_sequence = $4`
-
-	_, err := db.Exec(query, results, time.Now(), appID, sequence)
-	if err != nil {
-		return errors.Wrap(err, "failed to write preflight results")
-	}
-
-	return nil
-}

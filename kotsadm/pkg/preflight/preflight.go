@@ -11,7 +11,6 @@ import (
 	"go.uber.org/zap"
 )
 
-// Run will execute preflights
 func Run(appID string, sequence int64, archiveDir string) error {
 	renderedKotsKinds, err := kotsutil.LoadKotsKindsFromPath(archiveDir)
 	if err != nil {

@@ -5,6 +5,7 @@ import (
 	apptypes "github.com/replicatedhq/kots/kotsadm/pkg/app/types"
 	appstatustypes "github.com/replicatedhq/kots/kotsadm/pkg/appstatus/types"
 	downstreamtypes "github.com/replicatedhq/kots/kotsadm/pkg/downstream/types"
+	preflighttypes "github.com/replicatedhq/kots/kotsadm/pkg/preflight/types"
 	registrytypes "github.com/replicatedhq/kots/kotsadm/pkg/registry/types"
 	sessiontypes "github.com/replicatedhq/kots/kotsadm/pkg/session/types"
 	supportbundletypes "github.com/replicatedhq/kots/kotsadm/pkg/supportbundle/types"
@@ -44,7 +45,11 @@ type SupportBundleStore interface {
 }
 
 type PreflightStore interface {
-	ResetPreflightResult(string, int64) error
+	SetPreflightResults(string, int64, []byte) error
+	GetPreflightResults(string, int64) (*preflighttypes.PreflightResult, error)
+	GetLatestPreflightResults() (*preflighttypes.PreflightResult, error)
+	ResetPreflightResults(string, int64) error
+	SetIgnorePreflightPermissionErrors(string, int64) error
 }
 
 type PrometheusStore interface {
@@ -86,5 +91,4 @@ type AppStore interface {
 	GetDownstream(string) (*downstreamtypes.Downstream, error)
 	IsGitOpsEnabledForApp(string) (bool, error)
 	SetUpdateCheckerSpec(string, string) error
-	SetPreflightResults(string, int64, []byte) error
 }
