@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/replicatedhq/kots/kotsadm/pkg/redact/types"
 	"github.com/stretchr/testify/require"
 	_ "go.undefinedlabs.com/scopeagent/autoinstrument"
 	v1 "k8s.io/api/core/v1"
@@ -189,7 +190,7 @@ spec:
 `,
 			want: map[string]RedactorMetadata{
 				"all-files": {
-					Metadata: RedactorList{
+					Metadata: types.RedactorList{
 						Name:    "all files",
 						Slug:    "all-files",
 						Enabled: true,
@@ -211,7 +212,7 @@ spec:
 `,
 				},
 				"replace-password": {
-					Metadata: RedactorList{
+					Metadata: types.RedactorList{
 						Name:    "replace password",
 						Slug:    "replace-password",
 						Enabled: true,
@@ -244,7 +245,7 @@ metadata:
 			},
 			want: map[string]RedactorMetadata{
 				"other-key": {
-					Metadata: RedactorList{
+					Metadata: types.RedactorList{
 						Name:        "other key",
 						Slug:        "other-key",
 						Enabled:     false,
@@ -326,7 +327,7 @@ metadata:
 apiVersion: troubleshoot.replicated.com/v1beta1
 metadata:
   name: new redact`,
-				Metadata: RedactorList{
+				Metadata: types.RedactorList{
 					Name:        "new redact",
 					Slug:        "new-redact",
 					Enabled:     true,
@@ -360,7 +361,7 @@ metadata:
 apiVersion: troubleshoot.replicated.com/v1beta1
 metadata:
   name: update redact`,
-				Metadata: RedactorList{
+				Metadata: types.RedactorList{
 					Name:        "update redact",
 					Slug:        "update-redact",
 					Enabled:     true,
@@ -396,7 +397,7 @@ apiVersion: troubleshoot.replicated.com/v1beta1
 metadata:
   name: update redact
 spec: {}`,
-				Metadata: RedactorList{
+				Metadata: types.RedactorList{
 					Name:        "update redact",
 					Slug:        "update-redact",
 					Enabled:     true,
@@ -462,7 +463,7 @@ func Test_setRedactEnabled(t *testing.T) {
 apiVersion: troubleshoot.replicated.com/v1beta1
 metadata:
   name: update redact`,
-				Metadata: RedactorList{
+				Metadata: types.RedactorList{
 					Name:        "update redact",
 					Slug:        "update-redact",
 					Enabled:     false,
@@ -491,7 +492,7 @@ metadata:
 apiVersion: troubleshoot.replicated.com/v1beta1
 metadata:
   name: update redact`,
-				Metadata: RedactorList{
+				Metadata: types.RedactorList{
 					Name:        "update redact",
 					Slug:        "update-redact",
 					Enabled:     true,

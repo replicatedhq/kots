@@ -1,101 +1,11 @@
 package supportbundle
 
 import (
-	"database/sql"
-	"encoding/json"
 	"os"
-	"strconv"
-	"time"
 
 	"github.com/pkg/errors"
-	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
-	"github.com/replicatedhq/kots/kotsadm/pkg/persistence"
-	"github.com/replicatedhq/kots/kotsadm/pkg/supportbundle/types"
 	troubleshootv1beta1 "github.com/replicatedhq/troubleshoot/pkg/apis/troubleshoot/v1beta1"
-	"github.com/segmentio/ksuid"
 )
-
-func SetBundleAnalysis(id string, insights []byte) error {
-	db := persistence.MustGetPGSession()
-	query := `update supportbundle set status = $1 where id = $2`
-
-	_, err := db.Exec(query, "analyzed", id)
-	if err != nil {
-		return errors.Wrap(err, "failed to insert support bundle")
-	}
-
-	query = `insert into supportbundle_analysis (id, supportbundle_id, error, max_severity, insights, created_at) values ($1, $2, null, null, $3, $4)`
-	_, err = db.Exec(query, ksuid.New().String(), id, insights, time.Now())
-	if err != nil {
-		return errors.Wrap(err, "failed to insert insights")
-	}
-
-	return nil
-}
-
-func GetBundleAnalysis(id string) (*types.SupportBundleAnalysis, error) {
-	db := persistence.MustGetPGSession()
-	query := `SELECT id, error, max_severity, insights, created_at FROM supportbundle_analysis where supportbundle_id = $1`
-	row := db.QueryRow(query, id)
-
-	var _error sql.NullString
-	var maxSeverity sql.NullString
-	var insightsStr sql.NullString
-
-	a := &types.SupportBundleAnalysis{}
-	if err := row.Scan(&a.ID, &_error, &maxSeverity, &insightsStr, &a.CreatedAt); err != nil {
-		if err == sql.ErrNoRows {
-			return nil, nil
-		}
-		return nil, errors.Wrap(err, "failed to scan")
-	}
-
-	a.Error = _error.String
-	a.MaxSeverity = maxSeverity.String
-
-	if insightsStr.Valid {
-		type Insight struct {
-			Primary string `json:"primary"`
-			Detail  string `json:"detail"`
-		}
-		type Labels struct {
-			IconUri         string `json:"iconUri"`
-			IconKey         string `json:"iconKey"`
-			DesiredPosition string `json:"desiredPosition"`
-		}
-		type DBInsight struct {
-			Name     string  `json:"name"`
-			Severity string  `json:"severity"`
-			Insight  Insight `json:"insight"`
-			Labels   Labels  `json:"labels"`
-		}
-
-		dbInsights := []DBInsight{}
-		if err := json.Unmarshal([]byte(insightsStr.String), &dbInsights); err != nil {
-			logger.Error(errors.Wrap(err, "failed to unmarshal db insights"))
-			dbInsights = []DBInsight{}
-		}
-
-		insights := []types.SupportBundleInsight{}
-		for _, dbInsight := range dbInsights {
-			desiredPosition, _ := strconv.ParseFloat(dbInsight.Labels.DesiredPosition, 64)
-			insight := types.SupportBundleInsight{
-				Key:             dbInsight.Name,
-				Severity:        dbInsight.Severity,
-				Primary:         dbInsight.Insight.Primary,
-				Detail:          dbInsight.Insight.Detail,
-				Icon:            dbInsight.Labels.IconUri,
-				IconKey:         dbInsight.Labels.IconKey,
-				DesiredPosition: desiredPosition,
-			}
-			insights = append(insights, insight)
-		}
-
-		a.Insights = insights
-	}
-
-	return a, nil
-}
 
 func InjectDefaultAnalyzers(analyzer *troubleshootv1beta1.Analyzer) error {
 	if err := injectAPIReplicaAnalyzer(analyzer); err != nil {

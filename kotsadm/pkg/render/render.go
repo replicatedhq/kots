@@ -7,10 +7,9 @@ import (
 	"path/filepath"
 
 	"github.com/pkg/errors"
-	"github.com/replicatedhq/kots/kotsadm/pkg/app"
-	"github.com/replicatedhq/kots/kotsadm/pkg/downstream"
 	"github.com/replicatedhq/kots/kotsadm/pkg/kotsutil"
 	registrytypes "github.com/replicatedhq/kots/kotsadm/pkg/registry/types"
+	"github.com/replicatedhq/kots/kotsadm/pkg/store"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	"github.com/replicatedhq/kots/pkg/crypto"
 	"github.com/replicatedhq/kots/pkg/rewrite"
@@ -101,7 +100,7 @@ func RenderDir(archiveDir string, appID string, registrySettings *registrytypes.
 	}
 
 	// get the downstream names only
-	downstreams, err := downstream.ListDownstreamsForApp(appID)
+	downstreams, err := store.GetStore().ListDownstreamsForApp(appID)
 	if err != nil {
 		return errors.Wrap(err, "failed to list downstreams")
 	}
@@ -116,7 +115,7 @@ func RenderDir(archiveDir string, appID string, registrySettings *registrytypes.
 		appNamespace = os.Getenv("KOTSADM_TARGET_NAMESPACE")
 	}
 
-	a, err := app.Get(appID)
+	a, err := store.GetStore().GetApp(appID)
 	if err != nil {
 		return errors.Wrap(err, "failed to get app")
 	}

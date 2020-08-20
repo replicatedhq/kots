@@ -5,9 +5,9 @@ import (
 	"strconv"
 
 	"github.com/gorilla/mux"
-	"github.com/replicatedhq/kots/kotsadm/pkg/app"
 	"github.com/replicatedhq/kots/kotsadm/pkg/downstream"
 	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
+	"github.com/replicatedhq/kots/kotsadm/pkg/store"
 )
 
 func GetDownstreamOutput(w http.ResponseWriter, r *http.Request) {
@@ -33,7 +33,7 @@ func GetDownstreamOutput(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	a, err := app.GetFromSlug(appSlug)
+	a, err := store.GetStore().GetAppFromSlug(appSlug)
 	if err != nil {
 		logger.Error(err)
 		w.WriteHeader(http.StatusInternalServerError)

@@ -7,6 +7,7 @@ import (
 
 	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
 	"github.com/replicatedhq/kots/kotsadm/pkg/session"
+	"github.com/replicatedhq/kots/kotsadm/pkg/store"
 	"github.com/replicatedhq/kots/kotsadm/pkg/user"
 )
 
@@ -45,14 +46,14 @@ func Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	createdSession, err := session.Create(foundUser)
+	createdSession, err := store.GetStore().CreateSession(foundUser)
 	if err != nil {
 		logger.Error(err)
 		w.WriteHeader(500)
 		return
 	}
 
-	signedJWT, err := createdSession.SignJWT()
+	signedJWT, err := session.SignJWT(createdSession)
 	if err != nil {
 		logger.Error(err)
 		w.WriteHeader(500)

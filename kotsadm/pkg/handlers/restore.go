@@ -11,6 +11,7 @@ import (
 	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
 	"github.com/replicatedhq/kots/kotsadm/pkg/session"
 	"github.com/replicatedhq/kots/kotsadm/pkg/snapshot"
+	"github.com/replicatedhq/kots/kotsadm/pkg/store"
 	"github.com/replicatedhq/kots/pkg/kotsadm"
 	"github.com/replicatedhq/kots/pkg/kotsadm/types"
 )
@@ -111,7 +112,7 @@ func CreateRestore(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	kotsApp, err := app.Get(appID)
+	kotsApp, err := store.GetStore().GetApp(appID)
 	if err != nil {
 		logger.Error(err)
 		createRestoreResponse.Error = "failed to get app"
@@ -175,7 +176,7 @@ func GetRestoreStatus(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	foundApp, err := app.GetFromSlug(mux.Vars(r)["appSlug"])
+	foundApp, err := store.GetStore().GetAppFromSlug(mux.Vars(r)["appSlug"])
 	if err != nil {
 		logger.Error(err)
 		response.Error = "failed to get app from app slug"

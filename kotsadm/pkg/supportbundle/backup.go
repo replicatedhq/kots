@@ -11,6 +11,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
 	"github.com/replicatedhq/kots/kotsadm/pkg/redact"
+	"github.com/replicatedhq/kots/kotsadm/pkg/store"
 	troubleshootanalyze "github.com/replicatedhq/troubleshoot/pkg/analyze"
 	troubleshootv1beta1 "github.com/replicatedhq/troubleshoot/pkg/apis/troubleshoot/v1beta1"
 	troubleshootcollect "github.com/replicatedhq/troubleshoot/pkg/collect"
@@ -214,7 +215,7 @@ func CreateBundleForBackup(appID string, backupName string, backupNamespace stri
 		return "", errors.Wrap(err, "failed to marshal analysis")
 	}
 
-	if err := SetBundleAnalysis(supportBundle.ID, insights); err != nil {
+	if err := store.GetStore().SetSupportBundleAnalysis(supportBundle.ID, insights); err != nil {
 		return "", errors.Wrap(err, "failed to update bundle status")
 	}
 	return supportBundle.ID, nil

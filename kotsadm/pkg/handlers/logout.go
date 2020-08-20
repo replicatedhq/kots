@@ -5,7 +5,7 @@ import (
 
 	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
 	"github.com/replicatedhq/kots/kotsadm/pkg/session"
-	"github.com/replicatedhq/kots/kotsadm/pkg/user"
+	"github.com/replicatedhq/kots/kotsadm/pkg/store"
 )
 
 func Logout(w http.ResponseWriter, r *http.Request) {
@@ -30,7 +30,7 @@ func Logout(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := user.LogOut(sess.ID); err != nil {
+	if err := store.GetStore().DeleteSession(sess.ID); err != nil {
 		logger.Error(err)
 		w.WriteHeader(500)
 		return

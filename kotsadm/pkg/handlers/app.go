@@ -6,11 +6,12 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
-	"github.com/replicatedhq/kots/kotsadm/pkg/app"
+	apptypes "github.com/replicatedhq/kots/kotsadm/pkg/app/types"
 	"github.com/replicatedhq/kots/kotsadm/pkg/downstream"
 	downstreamtypes "github.com/replicatedhq/kots/kotsadm/pkg/downstream/types"
 	"github.com/replicatedhq/kots/kotsadm/pkg/gitops"
 	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
+	"github.com/replicatedhq/kots/kotsadm/pkg/store"
 	"github.com/replicatedhq/kots/kotsadm/pkg/version"
 	versiontypes "github.com/replicatedhq/kots/kotsadm/pkg/version/types"
 )
@@ -86,7 +87,7 @@ func ListApps(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	apps, err := app.ListInstalled()
+	apps, err := store.GetStore().ListInstalledApps()
 	if err != nil {
 		logger.Error(err)
 		w.WriteHeader(http.StatusInternalServerError)
@@ -126,7 +127,7 @@ func GetApp(w http.ResponseWriter, r *http.Request) {
 	}
 
 	appSlug := mux.Vars(r)["appSlug"]
-	a, err := app.GetFromSlug(appSlug)
+	a, err := store.GetStore().GetAppFromSlug(appSlug)
 	if err != nil {
 		logger.Error(err)
 		w.WriteHeader(http.StatusInternalServerError)
@@ -143,7 +144,7 @@ func GetApp(w http.ResponseWriter, r *http.Request) {
 	JSON(w, http.StatusOK, responseApp)
 }
 
-func responseAppFromApp(a *app.App) (*ResponseApp, error) {
+func responseAppFromApp(a *apptypes.App) (*ResponseApp, error) {
 	isGitOpsSupported, err := version.IsGitOpsSupported(a.ID, a.CurrentSequence)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to check if gitops is supported")
@@ -164,7 +165,7 @@ func responseAppFromApp(a *app.App) (*ResponseApp, error) {
 		return nil, errors.Wrap(err, "failed to get app version")
 	}
 
-	downstreams, err := downstream.ListDownstreamsForApp(a.ID)
+	downstreams, err := store.GetStore().ListDownstreamsForApp(a.ID)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to list downstreams for app")
 	}

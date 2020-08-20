@@ -10,48 +10,19 @@ import (
 
 	"github.com/dgrijalva/jwt-go"
 	"github.com/pkg/errors"
-	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
-	"github.com/replicatedhq/kots/kotsadm/pkg/persistence"
-	"github.com/replicatedhq/kots/kotsadm/pkg/user"
-	"github.com/segmentio/ksuid"
-	"go.uber.org/zap"
+	"github.com/replicatedhq/kots/kotsadm/pkg/session/types"
+	"github.com/replicatedhq/kots/kotsadm/pkg/store"
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
 )
 
-type Session struct {
-	ID        string
-	CreatedAt time.Time
-	ExpiresAt time.Time
-}
-
 func init() {
 	rand.Seed(time.Now().UnixNano())
 }
 
-func Create(forUser *user.User) (*Session, error) {
-	logger.Debug("creating session")
-
-	randomID, err := ksuid.NewRandom()
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to generate random session id")
-	}
-
-	id := randomID.String()
-
-	db := persistence.MustGetPGSession()
-	query := `insert into session (id, user_id, metadata, expire_at) values ($1, $2, $3, $4)`
-	_, err = db.Exec(query, id, forUser.ID, "", time.Now().AddDate(0, 0, 14))
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to create session")
-	}
-
-	return get(id)
-}
-
-func Parse(signedToken string) (*Session, error) {
+func Parse(signedToken string) (*types.Session, error) {
 	if signedToken == "" {
 		return nil, errors.New("missing token")
 	}
@@ -93,7 +64,7 @@ func Parse(signedToken string) (*Session, error) {
 			return nil, errors.New("invalid authstring")
 		}
 
-		s := Session{
+		s := types.Session{
 			ID:        "kots-cli",
 			CreatedAt: time.Now(),
 			ExpiresAt: time.Now().Add(time.Minute),
@@ -116,32 +87,13 @@ func Parse(signedToken string) (*Session, error) {
 	}
 
 	if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
-		return get(claims["sessionId"].(string))
+		return store.GetStore().GetSession(claims["sessionId"].(string))
 	}
 
 	return nil, errors.New("not a valid jwttoken")
 }
 
-func get(id string) (*Session, error) {
-	logger.Debug("getting session from database",
-		zap.String("id", id))
-
-	db := persistence.MustGetPGSession()
-	query := `select id, expire_at from session where id = $1`
-	row := db.QueryRow(query, id)
-	session := Session{}
-
-	var expiresAt time.Time
-	if err := row.Scan(&session.ID, &expiresAt); err != nil {
-		return nil, errors.Wrap(err, "failed to get session")
-	}
-
-	session.ExpiresAt = expiresAt
-
-	return &session, nil
-}
-
-func (s Session) SignJWT() (string, error) {
+func SignJWT(s *types.Session) (string, error) {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"sessionId": s.ID,
 	})

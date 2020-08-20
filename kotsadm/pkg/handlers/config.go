@@ -14,15 +14,15 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
-	"github.com/replicatedhq/kots/kotsadm/pkg/app"
+	apptypes "github.com/replicatedhq/kots/kotsadm/pkg/app/types"
 	"github.com/replicatedhq/kots/kotsadm/pkg/config"
 	"github.com/replicatedhq/kots/kotsadm/pkg/downstream"
 	"github.com/replicatedhq/kots/kotsadm/pkg/kotsutil"
 	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
 	"github.com/replicatedhq/kots/kotsadm/pkg/preflight"
-	"github.com/replicatedhq/kots/kotsadm/pkg/registry"
 	"github.com/replicatedhq/kots/kotsadm/pkg/render"
 	"github.com/replicatedhq/kots/kotsadm/pkg/session"
+	"github.com/replicatedhq/kots/kotsadm/pkg/store"
 	"github.com/replicatedhq/kots/kotsadm/pkg/version"
 	versiontypes "github.com/replicatedhq/kots/kotsadm/pkg/version/types"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
@@ -78,7 +78,7 @@ func UpdateAppConfig(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	foundApp, err := app.GetFromSlug(mux.Vars(r)["appSlug"])
+	foundApp, err := store.GetStore().GetAppFromSlug(mux.Vars(r)["appSlug"])
 	if err != nil {
 		logger.Error(err)
 		updateAppConfigResponse.Error = "failed to get app from app slug"
@@ -143,7 +143,7 @@ func UpdateAppConfig(w http.ResponseWriter, r *http.Request) {
 
 // if isPrimaryVersion is false, missing a required config field will not cause a failure, and instead will create
 // the app version with status needs_config
-func updateAppConfig(updateApp *app.App, sequence int64, req UpdateAppConfigRequest, isPrimaryVersion bool) (UpdateAppConfigResponse, error) {
+func updateAppConfig(updateApp *apptypes.App, sequence int64, req UpdateAppConfigRequest, isPrimaryVersion bool) (UpdateAppConfigResponse, error) {
 	updateAppConfigResponse := UpdateAppConfigResponse{
 		Success: false,
 	}
@@ -239,7 +239,7 @@ func updateAppConfig(updateApp *app.App, sequence int64, req UpdateAppConfigRequ
 		return updateAppConfigResponse, err
 	}
 
-	registrySettings, err := registry.GetRegistrySettingsForApp(updateApp.ID)
+	registrySettings, err := store.GetStore().GetRegistryDetailsForApp(updateApp.ID)
 	if err != nil {
 		updateAppConfigResponse.Error = "failed to get registry settings"
 		return updateAppConfigResponse, err
@@ -301,7 +301,7 @@ func decrypt(input string, cipher *crypto.AESCipher) (string, error) {
 	return string(decrypted), nil
 }
 
-func getLaterVersions(versionedApp *app.App, startSequence int64) (int64, []versiontypes.AppVersion, error) {
+func getLaterVersions(versionedApp *apptypes.App, startSequence int64) (int64, []versiontypes.AppVersion, error) {
 	versions, err := version.GetVersions(versionedApp.ID)
 	if err != nil {
 		return -1, nil, errors.Wrap(err, "failed to get app versions")

@@ -2,11 +2,11 @@ package license
 
 import (
 	"github.com/pkg/errors"
-	"github.com/replicatedhq/kots/kotsadm/pkg/app"
+	apptypes "github.com/replicatedhq/kots/kotsadm/pkg/app/types"
 	"github.com/replicatedhq/kots/kotsadm/pkg/persistence"
 )
 
-func updateAppLicense(a *app.App, licenseData string) error {
+func updateAppLicense(a *apptypes.App, licenseData string) error {
 	db := persistence.MustGetPGSession()
 
 	query := `update app set license=$1 where id = $2`

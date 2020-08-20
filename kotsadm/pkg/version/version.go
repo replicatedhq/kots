@@ -9,15 +9,14 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	"github.com/replicatedhq/kots/kotsadm/pkg/app"
 	"github.com/replicatedhq/kots/kotsadm/pkg/config"
 	"github.com/replicatedhq/kots/kotsadm/pkg/downstream"
 	"github.com/replicatedhq/kots/kotsadm/pkg/gitops"
 	"github.com/replicatedhq/kots/kotsadm/pkg/kotsutil"
 	"github.com/replicatedhq/kots/kotsadm/pkg/persistence"
-	registrytypes "github.com/replicatedhq/kots/kotsadm/pkg/registry/types"
 	"github.com/replicatedhq/kots/kotsadm/pkg/render"
 	"github.com/replicatedhq/kots/kotsadm/pkg/secrets"
+	"github.com/replicatedhq/kots/kotsadm/pkg/store"
 	"github.com/replicatedhq/kots/kotsadm/pkg/version/types"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	velerov1 "github.com/vmware-tanzu/velero/pkg/apis/velero/v1"
@@ -162,7 +161,7 @@ backup_spec = EXCLUDED.backup_spec`
 
 	appName := kotsKinds.KotsApplication.Spec.Title
 	if appName == "" {
-		a, err := app.Get(appID)
+		a, err := store.GetStore().GetApp(appID)
 		if err != nil {
 			return int64(0), errors.Wrap(err, "failed to get app")
 		}
@@ -189,7 +188,7 @@ backup_spec = EXCLUDED.backup_spec`
 		previousArchiveDir = previousDir
 	}
 
-	downstreams, err := downstream.ListDownstreamsForApp(appID)
+	downstreams, err := store.GetStore().ListDownstreamsForApp(appID)
 	if err != nil {
 		return int64(0), errors.Wrap(err, "failed to list downstreams")
 	}
@@ -238,7 +237,7 @@ backup_spec = EXCLUDED.backup_spec`
 			return int64(0), errors.Wrap(err, "failed to get downstream gitops")
 		}
 		if downstreamGitOps != nil {
-			a, err := app.Get(appID)
+			a, err := store.GetStore().GetApp(appID)
 			if err != nil {
 				return int64(0), errors.Wrap(err, "failed to get app")
 			}
@@ -455,7 +454,7 @@ func IsAllowSnapshots(appID string, sequence int64) (bool, error) {
 		return false, errors.Wrap(err, "failed to load kots kinds from path")
 	}
 
-	registrySettings, err := getRegistrySettingsForApp(appID)
+	registrySettings, err := store.GetStore().GetRegistryDetailsForApp(appID)
 	if err != nil {
 		return false, errors.Wrap(err, "failed to get registry settings for app")
 	}
@@ -559,33 +558,4 @@ func GetRealizedLinksFromAppSpec(appID string, sequence int64) ([]types.Realized
 	}
 
 	return realizedLinks, nil
-}
-
-// this is a copy from registry.  so many import cycles to unwind here, todo
-func getRegistrySettingsForApp(appID string) (*registrytypes.RegistrySettings, error) {
-	db := persistence.MustGetPGSession()
-	query := `select registry_hostname, registry_username, registry_password_enc, namespace from app where id = $1`
-	row := db.QueryRow(query, appID)
-
-	var registryHostname sql.NullString
-	var registryUsername sql.NullString
-	var registryPasswordEnc sql.NullString
-	var registryNamespace sql.NullString
-
-	if err := row.Scan(&registryHostname, &registryUsername, &registryPasswordEnc, &registryNamespace); err != nil {
-		return nil, errors.Wrap(err, "failed to scan registry")
-	}
-
-	if !registryHostname.Valid {
-		return nil, nil
-	}
-
-	registrySettings := registrytypes.RegistrySettings{
-		Hostname:    registryHostname.String,
-		Username:    registryUsername.String,
-		PasswordEnc: registryPasswordEnc.String,
-		Namespace:   registryNamespace.String,
-	}
-
-	return &registrySettings, nil
 }

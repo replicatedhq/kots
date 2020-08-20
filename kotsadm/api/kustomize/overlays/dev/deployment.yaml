@@ -51,6 +51,10 @@ spec:
               value: "1"
             - name: SHARED_PASSWORD_BCRYPT
               value: $2a$10$xZRsZCYgRDG90N1QEjBxGOBDrDGE.rpcMENV4qNNo7pozYTEPGMwS
+            # - name: STORAGE_BASEURI
+            #   value: "docker://kotsadm-storage-registry:5000"
+            # - name: STORAGE_BASEURI_PLAINHTTP
+            #   value: "true"
           volumeMounts:
             - name: kubelet-client-cert
               mountPath: /etc/kubernetes/pki/kubelet

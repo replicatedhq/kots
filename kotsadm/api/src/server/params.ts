@@ -1,19 +1,12 @@
 // tslint:disable no-http-string
 
-import { ParamLookup, lookupParams } from "../util/params";
+import { lookupParams } from "../util/params";
 
 export class Params {
   private static instance: Params;
 
   readonly postgresUri: string;
   readonly apiEncryptionKey: string;
-  readonly githubClientId: string;
-  readonly githubPrivateKeyFile: string;
-  readonly githubPrivateKeyContents: string;
-  readonly githubClientSecret: string;
-  readonly githubIntegrationID: string;
-  readonly githubAppInstallURL: string;
-  readonly bugsnagKey: string;
   readonly sessionKey: string;
   readonly shipOutputBucket: string;
   readonly sigsciRpcAddress: string;
@@ -27,20 +20,14 @@ export class Params {
   readonly s3SkipEnsureBucket: boolean;
   readonly apiAdvertiseEndpoint: string;
   readonly graphqlPremEndpoint: string;
-  readonly segmentioAnalyticsKey: string;
   readonly enableKurl: boolean;
   readonly prometheusAddress: string;
+  readonly storageBaseURI: string;
+  readonly storageBaseURIPlainHttp: boolean;
 
   constructor({
     postgresUri,
     apiEncryptionKey,
-    githubAppInstallURL,
-    githubClientId,
-    githubPrivateKeyFile,
-    githubPrivateKeyContents,
-    githubClientSecret,
-    githubIntegrationID,
-    bugsnagKey,
     sessionKey,
     shipOutputBucket,
     sigsciRpcAddress,
@@ -54,19 +41,13 @@ export class Params {
     s3SkipEnsureBucket,
     apiAdvertiseEndpoint,
     graphqlPremEndpoint,
-    segmentioAnalyticsKey,
     enableKurl,
     prometheusAddress,
+    storageBaseURI,
+    storageBaseURIPlainHttp,
   }) {
     this.postgresUri = postgresUri;
     this.apiEncryptionKey = apiEncryptionKey;
-    this.githubAppInstallURL = githubAppInstallURL;
-    this.githubClientId = githubClientId;
-    this.githubPrivateKeyFile = githubPrivateKeyFile;
-    this.githubPrivateKeyContents = githubPrivateKeyContents;
-    this.githubClientSecret = githubClientSecret;
-    this.githubIntegrationID = githubIntegrationID;
-    this.bugsnagKey = bugsnagKey;
     this.sessionKey = sessionKey;
     this.shipOutputBucket = shipOutputBucket;
     this.sigsciRpcAddress = sigsciRpcAddress;
@@ -80,9 +61,10 @@ export class Params {
     this.s3SkipEnsureBucket = s3SkipEnsureBucket;
     this.apiAdvertiseEndpoint = apiAdvertiseEndpoint;
     this.graphqlPremEndpoint = graphqlPremEndpoint;
-    this.segmentioAnalyticsKey = segmentioAnalyticsKey;
     this.enableKurl = enableKurl;
     this.prometheusAddress = prometheusAddress;
+    this.storageBaseURI = storageBaseURI;
+    this.storageBaseURIPlainHttp = storageBaseURIPlainHttp;
   }
 
   public static async getParams(): Promise<Params> {
@@ -94,13 +76,6 @@ export class Params {
     Params.instance = new Params({
       postgresUri: params["POSTGRES_URI"],
       apiEncryptionKey: params["API_ENCRYPTION_KEY"],
-      githubAppInstallURL: params["GITHUB_APP_INSTALL_URL"],
-      githubClientId: params["GITHUB_CLIENT_ID"],
-      githubClientSecret: params["GITHUB_CLIENT_SECRET"],
-      githubIntegrationID: params["GITHUB_INTEGRATION_ID"],
-      githubPrivateKeyFile: params["GITHUB_PRIVATE_KEY_FILE"],
-      githubPrivateKeyContents: params["GITHUB_PRIVATE_KEY_CONTENTS"],
-      bugsnagKey: params["BUGSNAG_KEY"],
       sessionKey: params["SESSION_KEY"],
       shipOutputBucket: params["S3_BUCKET_NAME"],
       sigsciRpcAddress: params["SIGSCI_RPC_ADDRESS"],
@@ -114,41 +89,33 @@ export class Params {
       s3SkipEnsureBucket: process.env["S3_SKIP_ENSURE_BUCKET"] === "1",
       apiAdvertiseEndpoint: process.env["SHIP_API_ADVERTISE_ENDPOINT"],
       graphqlPremEndpoint: params["GRAPHQL_PREM_ENDPOINT"],
-      segmentioAnalyticsKey: params["SEGMENTIO_ANALYTICS_WRITE_KEY"],
       enableKurl: process.env["ENABLE_KURL"] === "1",
       prometheusAddress: process.env["PROMETHEUS_ADDRESS"],
+      storageBaseURI: process.env["STORAGE_BASEURI"],
+      storageBaseURIPlainHttp: JSON.parse(process.env["STORAGE_BASEURI_PLAINHTTP"] || "false"),
     });
     return Params.instance;
   }
 
   private static async loadParams(): Promise<{ [key:string]: string; }> {
-    const paramLookup: ParamLookup = {
-      POSTGRES_URI: "/shipcloud/postgres/uri",
-      API_ENCRYPTION_KEY: "",
-      GITHUB_APP_INSTALL_URL: "/shipcloud/github/app_install_url",
-      GITHUB_CLIENT_ID: "/shipcloud/github/app_client_id",
-      GITHUB_CLIENT_SECRET: "/shipcloud/github/app_client_secret",
-      GITHUB_INTEGRATION_ID: "/shipcloud/github/app_integration_id",
-      GITHUB_PRIVATE_KEY_FILE: "/shipcloud/github/app_private_key_file",
-      GITHUB_PRIVATE_KEY_CONTENTS: "/shipcloud/github/app_private_key",
-      INIT_SERVER_URI: "/shipcloud/initserver/baseURL",
-      UPDATE_SERVER_URI: "/shipcloud/updateserver/baseURL",
-      EDIT_BASE_URI: "/shipcloud/editserver/baseURL",
-      BUGSNAG_KEY: "/shipcloud/bugsnag/key",
-      SESSION_KEY: "/shipcloud/session/key",
-      S3_BUCKET_NAME: "/shipcloud/s3/ship_output_bucket",
-      SIGSCI_RPC_ADDRESS: "/shipcloud/sigsci_rpc_address",
-      SHIP_API_ENDPOINT: "",
-      OBJECT_STORE_IN_DATABASE: "",
-      S3_ENDPOINT: "",
-      S3_ACCESS_KEY_ID: "/shipcloud/s3/access_key_id",
-      S3_SECRET_ACCESS_KEY: "/shipcloud/s3/secret_access_key",
-      S3_BUCKET_ENDPOINT: "/shipcloud/s3/bucket_endpoint",
-      SHIP_API_ADVERTISE_ENDPOINT: "",
-      GRAPHQL_PREM_ENDPOINT: "/graphql/prem_endpoint",
-      SEGMENTIO_ANALYTICS_WRITE_KEY: "/shipcloud/segmentio/analytics_write_key",
-      ENABLE_KURL: "",
-    };
+    const paramLookup = [
+      "POSTGRES_URI",
+      "API_ENCRYPTION_KEY",
+      "SESSION_KEY",
+      "S3_BUCKET_NAME",
+      "SIGSCI_RPC_ADDRESS",
+      "SHIP_API_ENDPOINT",
+      "OBJECT_STORE_IN_DATABASE",
+      "S3_ENDPOINT",
+      "S3_ACCESS_KEY_ID",
+      "S3_SECRET_ACCESS_KEY",
+      "S3_BUCKET_ENDPOINT",
+      "SHIP_API_ADVERTISE_ENDPOINT",
+      "GRAPHQL_PREM_ENDPOINT",
+      "ENABLE_KURL",
+      "STORAGE_BASEURI",
+      "STORAGE_BASEURI_PLAINHTTP",
+    ];
     return await lookupParams(paramLookup);
   }
 }

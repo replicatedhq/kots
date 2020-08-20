@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/replicatedhq/kots/kotsadm/pkg/kotsadmparams"
 	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
+	"github.com/replicatedhq/kots/kotsadm/pkg/store"
 )
 
 type SetPrometheusAddressRequest struct {
@@ -33,7 +33,7 @@ func SetPrometheusAddress(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := kotsadmparams.Set("PROMETHEUS_ADDRESS", setPrometheusAddressRequest.Value); err != nil {
+	if err := store.GetStore().SetPrometheusAddress(setPrometheusAddressRequest.Value); err != nil {
 		logger.Error(err)
 		w.WriteHeader(500)
 		return
