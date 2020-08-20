@@ -165,6 +165,7 @@ func Start() {
 	r.Path("/api/v1/kurl/generate-node-join-command-worker").Methods("OPTIONS", "POST").HandlerFunc(handlers.GenerateNodeJoinCommandWorker)
 	r.Path("/api/v1/kurl/generate-node-join-command-master").Methods("OPTIONS", "POST").HandlerFunc(handlers.GenerateNodeJoinCommandMaster)
 	r.Path("/api/v1/kurl/nodes/{nodeName}/drain").Methods("OPTIONS", "POST").HandlerFunc(handlers.DrainNode)
+	r.Path("/api/v1/kurl/nodes/{nodeName}").Methods("OPTIONS", "DELETE").HandlerFunc(handlers.DeleteNode)
 
 	// Prometheus
 	r.Path("/api/v1/prometheus").Methods("OPTIONS", "POST").HandlerFunc(handlers.SetPrometheusAddress)

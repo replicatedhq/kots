@@ -8,7 +8,6 @@ import CodeSnippet from "../shared/CodeSnippet";
 import NodeRow from "./NodeRow";
 import Loader from "../shared/Loader";
 import { kurl } from "../../queries/KurlQueries";
-import { deleteNode } from "../../mutations/KurlMutations"
 import { Utilities } from "../../utilities/utilities";
 
 import "@src/scss/components/apps/ClusterNodes.scss";
@@ -24,12 +23,18 @@ export class ClusterNodes extends Component {
   }
 
   deleteNode = (name) => {
-    try {
-      this.props.deleteNode(name);
-      // reflect nodes so deleted node is from the list?
-    } catch (error) {
-      console.log(error);
-    }
+    fetch(`${window.env.API_ENDPOINT}/kurl/nodes/${name}`, {
+      headers: {
+        "Authorization": Utilities.getToken(),
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+      },
+      method: "DELETE",
+    })
+      .then(async (res) => {})
+      .catch((err) => {
+        console.log(err);
+      })
   }
 
   generateWorkerAddNodeCommand = async () => {
@@ -65,7 +70,6 @@ export class ClusterNodes extends Component {
     })
       .then(async (res) => {})
       .catch((err) => {
-        console.log("test");
         console.log(err);
       })
   }
@@ -260,10 +264,5 @@ export default compose(
       pollInterval: 2000,
       fetchPolicy: "no-cache",
     },
-  }),
-  graphql(deleteNode, {
-    props: ({ mutate }) => ({
-      deleteNode: (name) => mutate({ variables: { name } })
-    })
   }),
 )(ClusterNodes);
