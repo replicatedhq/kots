@@ -31,7 +31,6 @@ import (
 	config2 "github.com/replicatedhq/kots/pkg/config"
 	"github.com/replicatedhq/kots/pkg/crypto"
 	"github.com/replicatedhq/kots/pkg/template"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 type UpdateAppConfigRequest struct {
@@ -208,6 +207,21 @@ func LiveAppConfig(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	archiveDir, err := version.GetAppVersionArchive(foundApp.ID, liveAppConfigRequest.Sequence)
+	if err != nil {
+		liveAppConfigResponse.Error = "failed to get app version archive"
+		JSON(w, 500, liveAppConfigResponse)
+		return
+	}
+	defer os.RemoveAll(archiveDir)
+
+	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(archiveDir)
+	if err != nil {
+		liveAppConfigResponse.Error = "failed to load kots kinds from path"
+		JSON(w, 500, liveAppConfigResponse)
+		return
+	}
+
 	// get values from request
 	configValues := map[string]template.ItemValue{}
 
@@ -228,17 +242,7 @@ func LiveAppConfig(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	configSpec := kotsv1beta1.Config{
-		TypeMeta: metav1.TypeMeta{
-			Kind:       "Config",
-			APIVersion: "kots.io/v1beta1",
-		},
-		Spec: kotsv1beta1.ConfigSpec{
-			Groups: liveAppConfigRequest.ConfigGroups,
-		},
-	}
-
-	renderedConfig, err := config2.TemplateConfigObjects(&configSpec, configValues, appLicense, template.LocalRegistry{})
+	renderedConfig, err := config2.TemplateConfigObjects(kotsKinds.Config, configValues, appLicense, template.LocalRegistry{})
 	if err != nil {
 		liveAppConfigResponse.Error = "failed to render templates"
 		JSON(w, 500, liveAppConfigResponse)
