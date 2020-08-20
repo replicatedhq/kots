@@ -106,7 +106,7 @@ func (s S3PGStore) GetApp(id string) (*apptypes.App, error) {
 	app.SnapshotTTL = snapshotTTLNew.String
 	app.SnapshotSchedule = snapshotSchedule.String
 	app.RestoreInProgressName = restoreInProgressName.String
-	app.RestoreUndeployStatus = restoreUndeployStatus.String
+	app.RestoreUndeployStatus = apptypes.UndeployStatus(restoreUndeployStatus.String)
 	app.UpdateCheckerSpec = updateCheckerSpec.String
 
 	if updatedAt.Valid {

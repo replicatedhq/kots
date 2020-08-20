@@ -8,6 +8,7 @@ import (
 
 	"github.com/mholt/archiver"
 	"github.com/pkg/errors"
+	"github.com/replicatedhq/kots/kotsadm/pkg/persistence"
 	"github.com/replicatedhq/kots/kotsadm/pkg/store"
 	"github.com/replicatedhq/kots/kotsadm/pkg/supportbundle/types"
 	"github.com/segmentio/ksuid"
@@ -76,4 +77,40 @@ func GetFilesContents(bundleID string, filenames []string) (map[string][]byte, e
 	}
 
 	return files, nil
+}
+
+func ListPendingForCluster(clusterID string) ([]types.PendingSupportBundle, error) {
+	db := persistence.MustGetPGSession()
+	query := `select id, app_id, cluster_id from pending_supportbundle where cluster_id = $1`
+
+	rows, err := db.Query(query, clusterID)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to query")
+	}
+	defer rows.Close()
+
+	pendingSupportBundles := []types.PendingSupportBundle{}
+
+	for rows.Next() {
+		s := types.PendingSupportBundle{}
+		if err := rows.Scan(&s.ID, &s.AppID, &s.ClusterID); err != nil {
+			return nil, errors.Wrap(err, "failed to scan")
+		}
+
+		pendingSupportBundles = append(pendingSupportBundles, s)
+	}
+
+	return pendingSupportBundles, nil
+}
+
+func ClearPending(id string) error {
+	db := persistence.MustGetPGSession()
+	query := `delete from pending_supportbundle where id = $1`
+
+	_, err := db.Exec(query, id)
+	if err != nil {
+		return errors.Wrap(err, "failed to exec")
+	}
+
+	return nil
 }

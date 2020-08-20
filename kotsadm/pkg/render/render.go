@@ -19,11 +19,17 @@ import (
 // RenderFile renders a single file
 // this is useful for upstream/kotskinds files that are not rendered in the dir
 func RenderFile(kotsKinds *kotsutil.KotsKinds, registrySettings *registrytypes.RegistrySettings, inputContent []byte) ([]byte, error) {
-	inputContent, err := kotsutil.FixUpYAML(inputContent)
+	fixedUpContent, err := kotsutil.FixUpYAML(inputContent)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to fix up yaml")
 	}
 
+	return RenderContent(kotsKinds, registrySettings, fixedUpContent)
+}
+
+// RenderContent renders any string/content
+// this is useful for rendering single values, like a status informer
+func RenderContent(kotsKinds *kotsutil.KotsKinds, registrySettings *registrytypes.RegistrySettings, inputContent []byte) ([]byte, error) {
 	apiCipher, err := crypto.AESCipherFromString(os.Getenv("API_ENCRYPTION_KEY"))
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to load apiCipher")

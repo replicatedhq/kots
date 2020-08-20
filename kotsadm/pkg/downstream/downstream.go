@@ -16,6 +16,19 @@ type scannable interface {
 	Scan(dest ...interface{}) error
 }
 
+func GetClusterIDFromDeployToken(token string) (string, error) {
+	db := persistence.MustGetPGSession()
+	query := `select id from cluster where token = $1`
+	row := db.QueryRow(query, token)
+
+	var clusterID string
+	if err := row.Scan(&clusterID); err != nil {
+		return "", errors.Wrap(err, "failed to scan")
+	}
+
+	return clusterID, nil
+}
+
 func GetCurrentSequence(appID string, clusterID string) (int64, error) {
 	db := persistence.MustGetPGSession()
 	query := `select current_sequence from app_downstream where app_id = $1 and cluster_id = $2`
@@ -58,6 +71,45 @@ func GetCurrentParentSequence(appID string, clusterID string) (int64, error) {
 	return parentSequence.Int64, nil
 }
 
+func GetParentSequenceForSequence(appID string, clusterID string, sequence int64) (int64, error) {
+	db := persistence.MustGetPGSession()
+	query := `select parent_sequence from app_downstream_version where app_id = $1 and cluster_id = $2 and sequence = $3`
+	row := db.QueryRow(query, appID, clusterID, sequence)
+
+	var parentSequence sql.NullInt64
+	if err := row.Scan(&parentSequence); err != nil {
+		return -1, errors.Wrap(err, "failed to scan")
+	}
+
+	if !parentSequence.Valid {
+		return -1, nil
+	}
+
+	return parentSequence.Int64, nil
+}
+
+func GetPreviouslyDeployedSequence(appID string, clusterID string) (int64, error) {
+	db := persistence.MustGetPGSession()
+	query := `select sequence from app_downstream_version where app_id = $1 and cluster_id = $2 and applied_at is not null order by applied_at desc limit 2`
+	rows, err := db.Query(query, appID, clusterID)
+	if err != nil {
+		return -1, errors.Wrap(err, "failed to query")
+	}
+
+	for rowNumber := 1; rows.Next(); rowNumber++ {
+		if rowNumber != 2 {
+			continue
+		}
+		var sequence int64
+		if err := rows.Scan(&sequence); err != nil {
+			return -1, errors.Wrap(err, "failed to scan")
+		}
+		return sequence, nil
+	}
+
+	return -1, nil
+}
+
 // SetDownstreamVersionReady sets the status for the downstream version with the given sequence and app id to "pending"
 func SetDownstreamVersionReady(appID string, sequence int64) error {
 	db := persistence.MustGetPGSession()
@@ -77,6 +129,18 @@ func SetDownstreamVersionPendingPreflight(appID string, sequence int64) error {
 	_, err := db.Exec(query, appID, sequence)
 	if err != nil {
 		return errors.Wrap(err, "failed to set downstream version pending preflight")
+	}
+
+	return nil
+}
+
+// UpdateDownstreamStatus updates the status and status info for the downstream version with the given sequence and app id
+func UpdateDownstreamStatus(appID string, sequence int64, status string, statusInfo string) error {
+	db := persistence.MustGetPGSession()
+	query := `update app_downstream_version set status = $3, status_info = $4 where app_id = $1 and sequence = $2`
+	_, err := db.Exec(query, appID, sequence, status, statusInfo)
+	if err != nil {
+		return errors.Wrap(err, "failed to exec")
 	}
 
 	return nil

@@ -40,7 +40,6 @@ let mount = {
 };
 let componentsScan = [
   "${rootDir}/../middlewares/**/*.ts",
-  "${rootDir}/../sockets/kots/*.ts",
 ];
 
 @ServerSettings({
