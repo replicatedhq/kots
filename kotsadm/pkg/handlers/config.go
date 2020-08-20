@@ -15,9 +15,10 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
 	apptypes "github.com/replicatedhq/kots/kotsadm/pkg/app/types"
-	"github.com/replicatedhq/kots/kotsadm/pkg/config"
+	kotsadmconfig "github.com/replicatedhq/kots/kotsadm/pkg/config"
 	"github.com/replicatedhq/kots/kotsadm/pkg/downstream"
 	"github.com/replicatedhq/kots/kotsadm/pkg/kotsutil"
+	"github.com/replicatedhq/kots/kotsadm/pkg/license"
 	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
 	"github.com/replicatedhq/kots/kotsadm/pkg/preflight"
 	"github.com/replicatedhq/kots/kotsadm/pkg/render"
@@ -27,7 +28,9 @@ import (
 	versiontypes "github.com/replicatedhq/kots/kotsadm/pkg/version/types"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	"github.com/replicatedhq/kots/kotskinds/multitype"
+	kotsconfig "github.com/replicatedhq/kots/pkg/config"
 	"github.com/replicatedhq/kots/pkg/crypto"
+	"github.com/replicatedhq/kots/pkg/template"
 )
 
 type UpdateAppConfigRequest struct {
@@ -36,10 +39,21 @@ type UpdateAppConfigRequest struct {
 	ConfigGroups     []*kotsv1beta1.ConfigGroup `json:"configGroups"`
 }
 
+type LiveAppConfigRequest struct {
+	Sequence     int64                     `json:"sequence"`
+	ConfigGroups []kotsv1beta1.ConfigGroup `json:"configGroups"`
+}
+
 type UpdateAppConfigResponse struct {
 	Success       bool     `json:"success"`
 	Error         string   `json:"error,omitempty"`
 	RequiredItems []string `json:"requiredItems,omitempty"`
+}
+
+type LiveAppConfigResponse struct {
+	Success      bool                      `json:"success"`
+	Error        string                    `json:"error,omitempty"`
+	ConfigGroups []kotsv1beta1.ConfigGroup `json:"configGroups"`
 }
 
 func UpdateAppConfig(w http.ResponseWriter, r *http.Request) {
@@ -59,7 +73,7 @@ func UpdateAppConfig(w http.ResponseWriter, r *http.Request) {
 	if err := json.NewDecoder(r.Body).Decode(&updateAppConfigRequest); err != nil {
 		logger.Error(err)
 		updateAppConfigResponse.Error = "failed to decode request body"
-		JSON(w, 400, updateAppConfigResponse)
+		JSON(w, http.StatusBadRequest, updateAppConfigResponse)
 		return
 	}
 
@@ -67,14 +81,14 @@ func UpdateAppConfig(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		logger.Error(err)
 		updateAppConfigResponse.Error = "failed to parse authorization header"
-		JSON(w, 401, updateAppConfigResponse)
+		JSON(w, http.StatusUnauthorized, updateAppConfigResponse)
 		return
 	}
 
 	// we don't currently have roles, all valid tokens are valid sessions
 	if sess == nil || sess.ID == "" {
 		updateAppConfigResponse.Error = "failed to parse authorization header"
-		JSON(w, 401, updateAppConfigResponse)
+		JSON(w, http.StatusUnauthorized, updateAppConfigResponse)
 		return
 	}
 
@@ -82,7 +96,7 @@ func UpdateAppConfig(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		logger.Error(err)
 		updateAppConfigResponse.Error = "failed to get app from app slug"
-		JSON(w, 500, updateAppConfigResponse)
+		JSON(w, http.StatusInternalServerError, updateAppConfigResponse)
 		return
 	}
 
@@ -92,16 +106,16 @@ func UpdateAppConfig(w http.ResponseWriter, r *http.Request) {
 		resp, err := updateAppConfig(foundApp, updateAppConfigRequest.Sequence, updateAppConfigRequest, true)
 		if err != nil {
 			logger.Error(err)
-			JSON(w, 500, resp)
+			JSON(w, http.StatusInternalServerError, resp)
 			return
 		}
 
 		if len(resp.RequiredItems) > 0 {
-			JSON(w, 400, resp)
+			JSON(w, http.StatusBadRequest, resp)
 			return
 		}
 
-		JSON(w, 200, resp)
+		JSON(w, http.StatusOK, resp)
 		return
 	}
 
@@ -113,7 +127,7 @@ func UpdateAppConfig(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		logger.Error(err)
 		updateAppConfigResponse.Error = err.Error()
-		JSON(w, 500, updateAppConfigResponse)
+		JSON(w, http.StatusInternalServerError, updateAppConfigResponse)
 		return
 	}
 
@@ -121,12 +135,12 @@ func UpdateAppConfig(w http.ResponseWriter, r *http.Request) {
 	resp, err := updateAppConfig(foundApp, latestSequenceMatchingUpdateCursor, updateAppConfigRequest, true)
 	if err != nil {
 		logger.Error(err)
-		JSON(w, 500, resp)
+		JSON(w, http.StatusInternalServerError, resp)
 		return
 	}
 
 	if len(resp.RequiredItems) > 0 {
-		JSON(w, 400, resp)
+		JSON(w, http.StatusBadRequest, resp)
 		return
 	}
 
@@ -138,7 +152,104 @@ func UpdateAppConfig(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	JSON(w, 200, UpdateAppConfigResponse{Success: true})
+	JSON(w, http.StatusOK, UpdateAppConfigResponse{Success: true})
+}
+
+func LiveAppConfig(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Headers", "content-type, origin, accept, authorization")
+
+	if r.Method == "OPTIONS" {
+		w.WriteHeader(http.StatusOK)
+		return
+	}
+
+	liveAppConfigResponse := LiveAppConfigResponse{
+		Success: false,
+	}
+
+	liveAppConfigRequest := LiveAppConfigRequest{}
+	if err := json.NewDecoder(r.Body).Decode(&liveAppConfigRequest); err != nil {
+		logger.Error(err)
+		liveAppConfigResponse.Error = "failed to decode request body"
+		JSON(w, http.StatusBadRequest, liveAppConfigResponse)
+		return
+	}
+
+	sess, err := session.Parse(r.Header.Get("Authorization"))
+	if err != nil {
+		logger.Error(err)
+		liveAppConfigResponse.Error = "failed to parse authorization header"
+		JSON(w, http.StatusUnauthorized, liveAppConfigResponse)
+		return
+	}
+
+	// we don't currently have roles, all valid tokens are valid sessions
+	if sess == nil || sess.ID == "" {
+		liveAppConfigResponse.Error = "failed to parse authorization header"
+		JSON(w, http.StatusUnauthorized, liveAppConfigResponse)
+		return
+	}
+
+	foundApp, err := store.GetStore().GetAppFromSlug(mux.Vars(r)["appSlug"])
+	if err != nil {
+		logger.Error(err)
+		liveAppConfigResponse.Error = "failed to get app from app slug"
+		JSON(w, http.StatusInternalServerError, liveAppConfigResponse)
+		return
+	}
+
+	appLicense, err := license.Get(foundApp.ID)
+	if err != nil {
+		logger.Error(err)
+		liveAppConfigResponse.Error = "failed to get license for app"
+		JSON(w, http.StatusInternalServerError, liveAppConfigResponse)
+		return
+	}
+
+	archiveDir, err := version.GetAppVersionArchive(foundApp.ID, liveAppConfigRequest.Sequence)
+	if err != nil {
+		liveAppConfigResponse.Error = "failed to get app version archive"
+		JSON(w, http.StatusInternalServerError, liveAppConfigResponse)
+		return
+	}
+	defer os.RemoveAll(archiveDir)
+
+	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(archiveDir)
+	if err != nil {
+		liveAppConfigResponse.Error = "failed to load kots kinds from path"
+		JSON(w, http.StatusInternalServerError, liveAppConfigResponse)
+		return
+	}
+
+	// get values from request
+	configValues := map[string]template.ItemValue{}
+
+	for _, group := range liveAppConfigRequest.ConfigGroups {
+		for _, item := range group.Items {
+			generatedValue := template.ItemValue{}
+			if item.Value.Type == multitype.String {
+				generatedValue.Value = item.Value.StrVal
+			} else {
+				generatedValue.Value = item.Value.BoolVal
+			}
+			if item.Default.Type == multitype.String {
+				generatedValue.Default = item.Default.StrVal
+			} else {
+				generatedValue.Default = item.Default.BoolVal
+			}
+			configValues[item.Name] = generatedValue
+		}
+	}
+
+	renderedConfig, err := kotsconfig.TemplateConfigObjects(kotsKinds.Config, configValues, appLicense, template.LocalRegistry{})
+	if err != nil {
+		liveAppConfigResponse.Error = "failed to render templates"
+		JSON(w, http.StatusInternalServerError, liveAppConfigResponse)
+		return
+	}
+
+	JSON(w, http.StatusOK, LiveAppConfigResponse{Success: true, ConfigGroups: renderedConfig.Spec.Groups})
 }
 
 // if isPrimaryVersion is false, missing a required config field will not cause a failure, and instead will create
@@ -169,7 +280,7 @@ func updateAppConfig(updateApp *apptypes.App, sequence int64, req UpdateAppConfi
 			continue
 		}
 		for _, item := range group.Items {
-			if config.IsRequiredItem(item) && config.IsUnsetItem(item) {
+			if kotsadmconfig.IsRequiredItem(item) && kotsadmconfig.IsUnsetItem(item) {
 				requiredItems = append(requiredItems, item.Name)
 				if item.Title != "" {
 					requiredItemsTitles = append(requiredItemsTitles, item.Title)
@@ -258,7 +369,7 @@ func updateAppConfig(updateApp *apptypes.App, sequence int64, req UpdateAppConfi
 		}
 		sequence = newSequence
 	} else {
-		if err := config.UpdateConfigValuesInDB(archiveDir, updateApp.ID, int64(sequence)); err != nil {
+		if err := kotsadmconfig.UpdateConfigValuesInDB(archiveDir, updateApp.ID, int64(sequence)); err != nil {
 			updateAppConfigResponse.Error = "failed to update config values in db"
 			return updateAppConfigResponse, err
 		}

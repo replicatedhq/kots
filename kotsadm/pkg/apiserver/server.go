@@ -133,6 +133,7 @@ func Start() {
 	r.Path("/api/v1/app/{appSlug}/registry").Methods("OPTIONS", "GET").HandlerFunc(handlers.GetAppRegistry)
 	r.Path("/api/v1/app/{appSlug}/registry/validate").Methods("OPTIONS", "POST").HandlerFunc(handlers.ValidateAppRegistry)
 	r.Path("/api/v1/app/{appSlug}/config").Methods("OPTIONS", "PUT").HandlerFunc(handlers.UpdateAppConfig)
+	r.Path("/api/v1/app/{appSlug}/liveconfig").Methods("OPTIONS", "POST").HandlerFunc(handlers.LiveAppConfig)
 	r.Path("/api/v1/app/{appSlug}/license").Methods("OPTIONS", "PUT").HandlerFunc(handlers.SyncLicense)
 	r.Path("/api/v1/app/{appSlug}/license").Methods("OPTIONS", "GET").HandlerFunc(handlers.GetLicense)
 	r.Path("/api/v1/app/{appSlug}/updatecheck").Methods("OPTIONS", "POST").HandlerFunc(handlers.AppUpdateCheck)

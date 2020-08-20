@@ -107,12 +107,5 @@ export function KotsQueries(stores: Stores, params: Params) {
       const clusterId = await stores.clusterStore.getIdFromSlug(args.clusterSlug);
       return await stores.kotsAppStore.getDownstreamOutput(app.id, clusterId, args.sequence);
     },
-
-    async templateConfigGroups(root: any, args: any, context: Context): Promise<KotsConfigGroup[]> {
-      const { slug, sequence, configGroups } = args;
-      const appId = await stores.kotsAppStore.getIdFromSlug(slug)
-      const app = await context.getApp(appId);
-      return await app.templateConfigGroups(stores, app.id, sequence, configGroups);
-    },
   };
 }

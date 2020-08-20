@@ -9,7 +9,7 @@ import debounce from "lodash/debounce";
 import map from "lodash/map";
 import Modal from "react-modal";
 import Loader from "../shared/Loader";
-import { getAppConfigGroups, templateConfigGroups } from "../../queries/AppsQueries";
+import { getAppConfigGroups } from "../../queries/AppsQueries";
 
 import "../../scss/components/watches/WatchConfig.scss";
 import { Utilities } from "../../utilities/utilities";
@@ -204,17 +204,18 @@ class AppConfig extends Component {
     const sequence = this.getSequence();
     const slug = this.getSlug();
 
-    this.props.client.query({
-      query: templateConfigGroups,
-      variables: {
-        slug: slug,
-        sequence: sequence,
-        configGroups: groups
+    fetch(`${window.env.API_ENDPOINT}/app/${slug}/liveconfig`, {
+      headers: {
+        "Authorization": Utilities.getToken(),
+        "Content-Type": "application/json",
+        "Accept": "application/json",
       },
-      fetchPolicy: "no-cache"
-    }).then(response => {
+      method: "POST",
+      body: JSON.stringify({"configGroups":groups, "sequence": sequence}),
+    }).then(async (response) => {
+      const data = await response.json()
       const oldGroups = this.state.configGroups;
-      const newGroups = response.data.templateConfigGroups;
+      const newGroups = data.configGroups;
       map(newGroups, group => {
         group.items.forEach(newItem => {
           if (newItem.type === "password") {

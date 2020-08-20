@@ -366,43 +366,6 @@ export const getKotsDownstreamOutput = gql`
   }
 `;
 
-export const templateConfigGroups = gql`
-  query templateConfigGroups($slug: String!, $sequence: Int!, $configGroups: [KotsConfigGroupInput]!) {
-    templateConfigGroups(slug: $slug, sequence: $sequence, configGroups: $configGroups) {
-      name
-      title
-      description
-      when
-      items {
-        name
-        type
-        title
-        help_text
-        recommended
-        default
-        value
-        error
-        data
-        multi_value
-        readonly
-        write_once
-        when
-        multiple
-        hidden
-        position
-        affix
-        required
-        items {
-          name
-          title
-          recommended
-          default
-        }
-      }
-    }
-  }
-`;
-
 export const getKotsAppDashboard = gql`
   query getKotsAppDashboard($slug: String!, $clusterId: String) {
     getKotsAppDashboard(slug: $slug, clusterId: $clusterId) {
