@@ -1,7 +1,6 @@
 package store
 
 import (
-	"github.com/replicatedhq/kots/kotsadm/pkg/store/ocistore"
 	"github.com/replicatedhq/kots/kotsadm/pkg/store/s3pg"
 )
 
@@ -11,7 +10,6 @@ var (
 )
 
 var _ KOTSStore = (*s3pg.S3PGStore)(nil)
-var _ KOTSStore = (*ocistore.OCIStore)(nil)
 
 func GetStore() KOTSStore {
 	if !hasStore {
