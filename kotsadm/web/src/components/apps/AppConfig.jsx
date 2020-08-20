@@ -204,13 +204,13 @@ class AppConfig extends Component {
     const sequence = this.getSequence();
     const slug = this.getSlug();
 
-    fetch(`${window.env.API_ENDPOINT}/app/${slug}/liveConfig`, {
+    fetch(`${window.env.API_ENDPOINT}/app/${slug}/liveconfig`, {
       headers: {
         "Authorization": Utilities.getToken(),
         "Content-Type": "application/json",
         "Accept": "application/json",
       },
-      method: "PUT",
+      method: "GET",
       body: JSON.stringify({"configGroups":groups, "sequence": sequence}),
     }).then(async (response) => {
       const data = await response.json()

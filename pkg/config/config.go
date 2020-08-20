@@ -22,7 +22,7 @@ func TemplateConfig(log *logger.Logger, configSpecData string, configValuesData 
 func TemplateConfigObjects(configSpec *kotsv1beta1.Config, configValues map[string]template.ItemValue, license *kotsv1beta1.License, localRegistry template.LocalRegistry) (*kotsv1beta1.Config, error) {
 	templatedString, err := templateConfigObjects(configSpec, configValues, license, localRegistry, MarshalConfig)
 	if err != nil {
-		return nil, errors.Wrap(err, "call templateConfig")
+		return nil, errors.Wrap(err, "failed to template config")
 	}
 
 	decode := scheme.Codecs.UniversalDeserializer().Decode
