@@ -4,8 +4,7 @@ import Helmet from "react-helmet";
 import { graphql, compose, withApollo } from "react-apollo";
 import { withRouter } from "react-router-dom";
 import GitOpsDeploymentManager from "../gitops/GitOpsDeploymentManager";
-import Loader from "../shared/Loader";
-import { listClusters } from "../../queries/ClusterQueries";
+import { Utilities } from "../../utilities/utilities";
 
 import "../../scss/components/watches/WatchedApps.scss";
 import "../../scss/components/watches/WatchCard.scss";
@@ -15,18 +14,12 @@ export class GitOps extends React.Component {
     history: PropTypes.object.isRequired,
   };
 
+  componentDidMount() {
+    this.getClusters();
+  }
+
   render() {
-    const { listClustersQuery } = this.props;
-
-    if (this.props.listClustersQuery.loading) {
-      return (
-        <div className="flex-column flex1 alignItems--center justifyContent--center">
-          <Loader size="60" />
-        </div>
-      )
-    }
-
-    const hasClusters = listClustersQuery.listClusters?.length && listClustersQuery.listClusters[0];
+    const hasClusters = this.state && this.state.clusters && this.state.clusters?.length && this.state.clusters[0];
 
     return (
       <div className="ClusterDashboard--wrapper container flex-column flex1 u-overflow--auto">
@@ -43,15 +36,27 @@ export class GitOps extends React.Component {
       </div>
     );
   }
+
+  getClusters = async () => {
+    fetch(`${window.env.API_ENDPOINT}/clusters/list`, {
+      method: "GET",
+      headers: {
+        "Authorization": Utilities.getToken(),
+        "Content-Type": "application/json",
+      }
+    }).then(async (response) => {
+      const data = await response.json();
+      this.setState({
+          clusters: data,
+      })
+      return data;
+    }).catch((error) => {
+      console.log(error);
+    });
+  }
 }
 
 export default compose(
   withRouter,
   withApollo,
-  graphql(listClusters, {
-    name: "listClustersQuery",
-    options: {
-      fetchPolicy: "network-only"
-    }
-  }),
 )(GitOps);

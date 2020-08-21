@@ -25,6 +25,7 @@ type KOTSStore interface {
 	AppStatusStore
 	AppStore
 	LicenseStore
+	ClusterStore
 }
 
 type RegistryStore interface {
@@ -98,4 +99,8 @@ type AppStore interface {
 
 type LicenseStore interface {
 	GetLicenseForApp(string) (*kotsv1beta1.License, error)
+}
+
+type ClusterStore interface {
+	ListClusters() (map[string]string, error)
 }
