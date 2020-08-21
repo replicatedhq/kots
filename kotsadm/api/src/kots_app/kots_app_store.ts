@@ -381,21 +381,6 @@ export class KotsAppStore {
     return clusterIds;
   }
 
-  async listDownstreamsForApp(appId: string): Promise<string[]> {
-    const q = `select downstream_name from app_downstream where app_id = $1`;
-    const v = [
-      appId,
-    ];
-
-    const result = await this.pool.query(q, v);
-    const downstreams: string[] = [];
-    for (const row of result.rows) {
-      downstreams.push(row.downstream_name);
-    }
-
-    return downstreams;
-  }
-
   async listAppsForCluster(clusterId: string): Promise<KotsApp[]> {
     const q = `select app_id from app_downstream where cluster_id = $1`;
     const v = [

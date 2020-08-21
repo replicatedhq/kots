@@ -225,35 +225,6 @@ export const getKotsAppRaw = `
 `;
 export const getKotsApp = gql(getKotsAppRaw);
 
-export const listDownstreamsForAppRaw = `
-  query listDownstreamsForApp($slug: String!) {
-    listDownstreamsForApp(slug: $slug) {
-      id
-      title
-      slug
-      createdOn
-      lastUpdated
-      currentVersion {
-        title
-        status
-        createdOn
-        sequence
-        deployedAt
-        yamlErrors {
-          path
-          error
-        }
-      }
-      shipOpsRef {
-        token
-      }
-      totalApplicationCount
-    }
-  }
-`;
-
-export const listDownstreamsForApp = gql(listDownstreamsForAppRaw);
-
 export const getKotsDownstreamHistoryRaw = `
   query getKotsDownstreamHistory($clusterSlug: String!, $upstreamSlug: String!) {
     getKotsDownstreamHistory(clusterSlug: $clusterSlug, upstreamSlug: $upstreamSlug) {

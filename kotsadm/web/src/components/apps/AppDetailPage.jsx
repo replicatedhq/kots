@@ -6,7 +6,6 @@ import { Helmet } from "react-helmet";
 import Modal from "react-modal";
 
 import withTheme from "@src/components/context/withTheme";
-import { listDownstreamsForApp } from "@src/queries/AppsQueries";
 import { KotsSidebarItem } from "@src/components/watches/WatchSidebarItem";
 import { HelmChartSidebarItem } from "@src/components/watches/WatchSidebarItem";
 import NotFound from "../static/NotFound";
@@ -445,27 +444,4 @@ export default compose(
   withApollo,
   withRouter,
   withTheme,
-  graphql(listDownstreamsForApp, {
-    name: "listDownstreamsForAppQuery",
-    skip: props => {
-      const { slug } = props.match.params;
-
-      // Skip if no variables (user at "/watches" URL)
-      if (!slug) {
-        return true;
-      }
-
-      return false;
-
-    },
-    options: props => {
-      const { slug } = props.match.params;
-      return {
-        fetchPolicy: "no-cache",
-        variables: {
-          slug: slug
-        }
-      }
-    }
-  })
 )(AppDetailPage);
