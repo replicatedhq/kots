@@ -6,7 +6,7 @@ import Modal from "react-modal";
 import ReactTooltip from "react-tooltip"
 import moment from "moment";
 
-import AppSnapshotsRow from "./AppSnapshotRow";
+import AppSnapshotRow from "./AppSnapshotRow";
 import ScheduleSnapshotForm from "../shared/ScheduleSnapshotForm";
 import Loader from "../shared/Loader";
 import DeleteSnapshotModal from "../modals/DeleteSnapshotModal";
@@ -430,7 +430,7 @@ class AppSnapshots extends Component {
           <div className="flex flex-auto alignItems--flexStart justifyContent--spaceBetween">
             <p className="u-fontWeight--bold u-color--tuna u-fontSize--larger u-lineHeight--normal u-marginBottom--10">Snapshots</p>
             {startSnapshotErr ?
-              <div class="flex flex1 u-marginLeft--10 alignItems--center alignSelf--center u-marginBottom--10">
+              <div className="flex flex1 u-marginLeft--10 alignItems--center alignSelf--center u-marginBottom--10">
                 <p className="u-color--chestnut u-fontSize--small u-fontWeight--medium u-lineHeight--normal">{startSnapshotErrorMsg}</p>
               </div>
               : null}
@@ -447,7 +447,7 @@ class AppSnapshots extends Component {
             </div>
           </div>
           {snapshots?.map((snapshot) => (
-            <AppSnapshotsRow
+            <AppSnapshotRow
               key={`snapshot-${snapshot.name}-${snapshot.started}`}
               snapshot={snapshot}
               appSlug={app.slug}

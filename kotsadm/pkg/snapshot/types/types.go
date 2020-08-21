@@ -68,14 +68,15 @@ type Backup struct {
 }
 
 type BackupDetail struct {
-	Name            string           `json:"name"`
-	Status          string           `json:"status"`
-	VolumeSizeHuman string           `json:"volumeSizeHuman"`
-	Namespaces      []string         `json:"namespaces"`
-	Hooks           []SnapshotHook   `json:"hooks"`
-	Volumes         []SnapshotVolume `json:"volumes"`
-	Errors          []SnapshotError  `json:"errors"`
-	Warnings        []SnapshotError  `json:"warnings"`
+	Name             string           `json:"name"`
+	Status           string           `json:"status"`
+	VolumeSizeHuman  string           `json:"volumeSizeHuman"`
+	Namespaces       []string         `json:"namespaces"`
+	Hooks            []SnapshotHook   `json:"hooks"`
+	Volumes          []SnapshotVolume `json:"volumes"`
+	ValidationErrors []string         `json:"validationErrors,omitempty"`
+	Errors           []SnapshotError  `json:"errors"`
+	Warnings         []SnapshotError  `json:"warnings"`
 }
 
 type SnapshotHook struct {

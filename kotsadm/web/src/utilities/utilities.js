@@ -471,6 +471,8 @@ export const Utilities = {
         return "Incomplete (Failed)";
       case "InProgress":
         return "In Progress";
+      case "FailedValidation":
+        return "Failed Validation";
     }
 
     return status;
