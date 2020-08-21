@@ -85,9 +85,7 @@ export class NavBar extends PureComponent {
   }
 
   handleGoToGitOps = () => {
-    if (this.props.location.pathname === "/gitops") {
-
-    } else {
+    if (this.props.location.pathname !== "/gitops") {
       this.props.history.push("/gitops");
     }
   }
