@@ -30,7 +30,6 @@ export const Query = `
 
     getFiles(slug: String!, sequence: Int!, fileNames: [String!]): String
 
-    getAppConfigGroups(slug: String!, sequence: Int!): [KotsConfigGroup]
     getKotsDownstreamOutput(appSlug: String!, clusterSlug: String!, sequence: Int!): KotsDownstreamOutput
 
     listSupportBundles(watchSlug: String!): [SupportBundle]

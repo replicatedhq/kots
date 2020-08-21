@@ -24,7 +24,6 @@ const GoString = Struct({
 function kots() {
   return ffi.Library("/lib/kots.so", {
     TestRegistryCredentials: ["void", [GoString, GoString, GoString, GoString, GoString]],
-    TemplateConfig: [GoString, [GoString, GoString, GoString, GoString]],
     EncryptString: [GoString, [GoString, GoString]],
     DecryptString: [GoString, [GoString, GoString]],
     RenderFile: ["void", [GoString, GoString, GoString, GoString]],
@@ -135,36 +134,6 @@ export async function kotsTestRegistryCredentials(endpoint: string, username: st
 
   } finally {
     tmpDir.removeCallback();
-  }
-}
-
-export async function kotsTemplateConfig(configSpec: string, configValues: string, license: string, registryInfo: KotsAppRegistryDetails): Promise<any> {
-  const configDataParam = new GoString();
-  configDataParam["p"] = configSpec;
-  configDataParam["n"] = Buffer.from(configSpec).length;
-
-  const configValuesDataParam = new GoString();
-  configValuesDataParam["p"] = configValues;
-  configValuesDataParam["n"] = Buffer.from(configValues).length;
-
-  const licenseParam = new GoString();
-  licenseParam["p"] = license;
-  licenseParam["n"] = Buffer.from(license).length;
-
-  const registryJson = JSON.stringify(registryInfo)
-  const registryJsonParam = new GoString();
-  registryJsonParam["p"] = registryJson;
-  registryJsonParam["n"] = registryJson.length;
-
-  const templatedConfig = kots().TemplateConfig(configDataParam, configValuesDataParam, licenseParam, registryJsonParam);
-  if (templatedConfig == "" || templatedConfig["p"] == "") {
-    throw new ReplicatedError("failed to template config");
-  }
-
-  try {
-    return yaml.safeLoad(templatedConfig["p"]);
-  } catch (err) {
-    throw new ReplicatedError(`Failed to parse templated config ${err}`);
   }
 }
 
