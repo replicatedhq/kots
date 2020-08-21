@@ -71,6 +71,8 @@ type SocketService struct {
 }
 
 func Start() *SocketService {
+	logger.Debug("starting socket service")
+
 	service := &SocketService{
 		Server:               socket.NewServer(transport.GetDefaultWebsocketTransport()),
 		clusterSocketHistory: []ClusterSocket{},
