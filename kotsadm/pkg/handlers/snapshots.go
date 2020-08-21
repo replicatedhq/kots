@@ -2,10 +2,11 @@ package handlers
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
-	"regexp"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
@@ -15,6 +16,8 @@ import (
 	"github.com/replicatedhq/kots/kotsadm/pkg/snapshot"
 	snapshottypes "github.com/replicatedhq/kots/kotsadm/pkg/snapshot/types"
 	"github.com/replicatedhq/kots/kotsadm/pkg/store"
+	"github.com/robfig/cron"
+	"k8s.io/apimachinery/pkg/util/rand"
 )
 
 type GlobalSnapshotSettingsResponse struct {
@@ -418,6 +421,11 @@ func GetSnapshotConfig(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if err := requireValidSession(w, r); err != nil {
+		logger.Error(err)
+		return
+	}
+
 	appSlug := mux.Vars(r)["appSlug"]
 	foundApp, err := store.GetStore().GetAppFromSlug(appSlug)
 	if err != nil {
@@ -428,7 +436,7 @@ func GetSnapshotConfig(w http.ResponseWriter, r *http.Request) {
 
 	ttl := &snapshottypes.SnapshotTTL{}
 	if foundApp.SnapshotTTL != "" {
-		parsedTTL, err := parseTTL(foundApp.SnapshotTTL)
+		parsedTTL, err := snapshot.ParseTTL(foundApp.SnapshotTTL)
 		if err != nil {
 			logger.Error(err)
 			w.WriteHeader(http.StatusInternalServerError)
@@ -459,67 +467,13 @@ func GetSnapshotConfig(w http.ResponseWriter, r *http.Request) {
 	JSON(w, http.StatusOK, getSnapshotConfigResponse)
 }
 
-func parseTTL(s string) (*snapshottypes.ParsedTTL, error) {
-	parsedTTLResponse := &snapshottypes.ParsedTTL{}
-
-	ttlMatch, err := regexp.Compile(`^\d+(s|m|h)$`)
-	if err != nil {
-		return nil, errors.Wrapf(err, "invalid snapshot TTl %v", s)
-	}
-
-	matches := ttlMatch.FindStringSubmatch(s)
-	if len(matches) < 2 {
-		return nil, errors.Wrap(err, "failed to get a valid match")
-	}
-
-	unit := matches[1]
-	quantity := strings.Split(ttlMatch.FindStringSubmatch(s)[0], unit)
-	quantityInt, err := strconv.ParseInt(quantity[0], 10, 64)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to parseInt quanitity")
-	}
-
-	switch unit {
-	case "s":
-		parsedTTLResponse.Quantity = quantityInt
-		parsedTTLResponse.Unit = "seconds"
-		break
-	case "m":
-		parsedTTLResponse.Quantity = quantityInt
-		parsedTTLResponse.Unit = "minutes"
-		break
-	case "h":
-		if quantityInt/8766 >= 1 && quantityInt%8766 == 0 {
-			parsedTTLResponse.Quantity = quantityInt / 8766
-			parsedTTLResponse.Unit = "years"
-			break
-		}
-		if quantityInt/720 >= 1 && quantityInt%720 == 0 {
-			parsedTTLResponse.Quantity = quantityInt / 720
-			parsedTTLResponse.Unit = "months"
-			break
-		}
-		if quantityInt/168 >= 1 && quantityInt%168 == 0 {
-			parsedTTLResponse.Quantity = quantityInt / 168
-			parsedTTLResponse.Unit = "weeks"
-			break
-		}
-		if quantityInt/24 >= 1 && quantityInt%24 == 0 {
-			parsedTTLResponse.Quantity = quantityInt / 24
-			parsedTTLResponse.Unit = "days"
-			break
-		}
-		parsedTTLResponse.Quantity = quantityInt
-		parsedTTLResponse.Unit = "hours"
-		break
-	default:
-		return nil, errors.Wrap(nil, "unsupported unit type")
-	}
-	return parsedTTLResponse, nil
-}
-
 func GetVeleroStatus(w http.ResponseWriter, r *http.Request) {
 	if handleOptionsRequest(w, r) {
+		return
+	}
+
+	if err := requireValidSession(w, r); err != nil {
+		logger.Error(err)
 		return
 	}
 
@@ -541,4 +495,115 @@ func GetVeleroStatus(w http.ResponseWriter, r *http.Request) {
 
 	getVeleroStatusResponse.IsVeleroInstalled = true
 	JSON(w, 200, getVeleroStatusResponse)
+}
+
+type SaveSnapshotConfigRequest struct {
+	AppID         string `json:"appId"`
+	InputValue    string `json:"inputValue"`
+	InputTimeUnit string `json:"inputTimeUnit"`
+	Schedule      string `json:"schedule"`
+	AutoEnabled   bool   `json:"autoEnabled"`
+}
+
+type SaveSnapshotConfigResponse struct {
+	Success bool   `json:"success"`
+	Error   string `json:"error,omitempty"`
+}
+
+func SaveSnapshotConfig(w http.ResponseWriter, r *http.Request) {
+	if handleOptionsRequest(w, r) {
+		return
+	}
+
+	if err := requireValidSession(w, r); err != nil {
+		logger.Error(err)
+		return
+	}
+
+	responseBody := SaveSnapshotConfigResponse{}
+	requestBody := SaveSnapshotConfigRequest{}
+	if err := json.NewDecoder(r.Body).Decode(&requestBody); err != nil {
+		logger.Error(err)
+		responseBody.Error = "failed to decode request body"
+		JSON(w, http.StatusBadRequest, responseBody)
+		return
+	}
+
+	app, err := store.GetStore().GetApp(requestBody.AppID)
+	if err != nil {
+		logger.Error(err)
+		responseBody.Error = "Failed to get app"
+		JSON(w, http.StatuInternalServerError, responseBody)
+		return
+	}
+
+	retention, err := snapshot.FormatTTL(requestBody.InputValue, requestBody.InputTimeUnit)
+	if err != nil {
+		logger.Error(err)
+		responseBody.Error = fmt.Sprintf("Invalid snapshot retention: %s %s", requestBody.InputValue, requestBody.InputTimeUnit)
+		JSON(w, http.StatusBadRequest, responseBody)
+		return
+	}
+
+	if app.SnapshotTTL != retention {
+		app.SnapshotTTL = retention
+		if err := store.GetStore().SetSnapshotTTL(app.ID, retention); err != nil {
+			logger.Error(err)
+			responseBody.Error = "Failed to set snapshot retention"
+			JSON(w, http.StatuInternalServerError, responseBody)
+			return
+		}
+	}
+
+	if !requestBody.AutoEnabled {
+		if err := store.GetStore().SetSnapshotSchedule(app.ID, ""); err != nil {
+			logger.Error(err)
+			responseBody.Error = "Failed to clear snapshot schedule"
+			JSON(w, http.StatuInternalServerError, responseBody)
+			return
+		}
+		if err := store.GetStore().DeletePendingScheduledSnapshots(app.ID); err != nil {
+			logger.Error(err)
+			responseBody.Error = "Failed to delete scheduled snapshots"
+			JSON(w, http.StatuInternalServerError, responseBody)
+			return
+		}
+		responseBody.Success = true
+		JSON(w, 200, responseBody)
+		return
+	}
+
+	cronSchedule, err := cron.NewParser(cron.Minute | cron.Hour | cron.Dom | cron.Month | cron.Dow | cron.Descriptor).Parse(requestBody.Schedule)
+	if err != nil {
+		logger.Error(err)
+		responseBody.Error = fmt.Sprintf("Invalid cron schedule expression: %s", requestBody.Schedule)
+		JSON(w, http.StatusBadRequest, responseBody)
+		return
+	}
+
+	if requestBody.Schedule != app.SnapshotSchedule {
+		if err := store.GetStore().DeletePendingScheduledSnapshots(app.ID); err != nil {
+			logger.Error(err)
+			responseBody.Error = "Failed to delete scheduled snapshots"
+			JSON(w, http.StatuInternalServerError, responseBody)
+			return
+		}
+		if err := store.GetStore().SetSnapshotSchedule(app.ID, requestBody.Schedule); err != nil {
+			logger.Error(err)
+			responseBody.Error = "Failed to save snapshot schedule"
+			JSON(w, http.StatuInternalServerError, responseBody)
+			return
+		}
+		queued := cronSchedule.Next(time.Now())
+		id := strings.ToLower(rand.String(32))
+		if err := store.GetStore().CreateScheduledSnapshot(id, app.ID, queued); err != nil {
+			logger.Error(err)
+			responseBody.Error = "Failed to create first scheduled snapshot"
+			JSON(w, http.StatuInternalServerError, responseBody)
+			return
+		}
+	}
+
+	responseBody.Success = true
+	JSON(w, 200, responseBody)
 }

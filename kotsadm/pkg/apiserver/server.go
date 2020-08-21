@@ -153,6 +153,7 @@ func Start() {
 	r.Path("/api/v1/app/{appSlug}/snapshot/restore/{restoreName}").Methods("OPTIONS", "GET").HandlerFunc(handlers.GetKotsadmRestore)
 	r.Path("/api/v1/app/{appSlug}/snapshots").Methods("OPTIONS", "GET").HandlerFunc(handlers.ListBackups)
 	r.Path("/api/v1/app/{appSlug}/snapshot/config").Methods("OPTIONS", "GET").HandlerFunc(handlers.GetSnapshotConfig)
+	r.Path("/api/v1/app/{appSlug}/snapshot/config").Methods("OPTIONS", "PUT").HandlerFunc(handlers.SaveSnapshotConfig)
 
 	// Global snapshot routes
 	r.Path("/api/v1/snapshots/settings").Methods("OPTIONS", "GET").HandlerFunc(handlers.GetGlobalSnapshotSettings)

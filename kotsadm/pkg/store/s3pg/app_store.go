@@ -331,3 +331,29 @@ func (s S3PGStore) SetUpdateCheckerSpec(appID string, updateCheckerSpec string) 
 
 	return nil
 }
+
+func (c S3PGStore) SetSnapshotTTL(appID string, snapshotTTL string) error {
+	logger.Debug("Setting snapshot TTL",
+		zap.String("appID", appID))
+	db := persistence.MustGetPGSession()
+	query := `update app set snapshot_ttl_new = $1 where id = $2`
+	_, err := db.Exec(query, snapshotTTL, appID)
+	if err != nil {
+		return errors.Wrap(err, "failed to exec db query")
+	}
+
+	return nil
+}
+
+func (c S3PGStore) SetSnapshotSchedule(appID string, snapshotSchedule string) error {
+	logger.Debug("Setting snapshot Schedule",
+		zap.String("appID", appID))
+	db := persistence.MustGetPGSession()
+	query := `update app set snapshot_schedule = $1 where id = $2`
+	_, err := db.Exec(query, snapshotSchedule, appID)
+	if err != nil {
+		return errors.Wrap(err, "failed to exec db query")
+	}
+
+	return nil
+}
