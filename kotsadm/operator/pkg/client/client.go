@@ -91,7 +91,7 @@ func (c *Client) Run() error {
 		err := c.connect()
 		if err != nil {
 			// this needs a backoff
-			log.Println("unable to connect to api")
+			log.Printf("unable to connect to api: %v\n", err)
 			time.Sleep(time.Second * 2)
 			continue
 		}
@@ -147,7 +147,7 @@ func (c *Client) connect() error {
 	hasConnected := false
 	isUnexpectedlyDisconnected := false
 
-	log.Println("connecting to api")
+	log.Printf("connecting to api at %s\n", c.APIEndpoint)
 	socketClient := socket.NewClient()
 
 	err = socketClient.On(socket.OnConnection, func(h *socket.Channel) {

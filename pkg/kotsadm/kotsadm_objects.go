@@ -317,6 +317,10 @@ func kotsadmDeployment(deployOptions types.DeployOptions) *appsv1.Deployment {
 					},
 				},
 			},
+			{
+				Name:  "S3_BUCKET_ENDPOINT",
+				Value: "true",
+			},
 		}
 		env = append(env, s3env...)
 	}
