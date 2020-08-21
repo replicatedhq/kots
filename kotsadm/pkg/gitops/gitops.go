@@ -43,6 +43,13 @@ type GitOpsConfig struct {
 	IsConnected bool   `json:"isConnected"`
 }
 
+type GlobalGitopsConfig struct {
+	Enabled  bool   `json:"enabled"`
+	Hostname string `json:"hostname"`
+	Provider string `json:"provider"`
+	URI      string `json:"uri"`
+}
+
 func (g *GitOpsConfig) CommitURL(hash string) string {
 	switch g.Provider {
 	case "github", "github_enterprise":
@@ -382,6 +389,52 @@ func ResetGitOps() error {
 	}
 
 	return nil
+}
+
+func GetGitOps() (GlobalGitopsConfig, error) {
+	cfg, err := config.GetConfig()
+	if err != nil {
+		return GlobalGitopsConfig{}, errors.Wrap(err, "failed to get cluster config")
+	}
+
+	clientset, err := kubernetes.NewForConfig(cfg)
+	if err != nil {
+		return GlobalGitopsConfig{}, errors.Wrap(err, "failed to create kubernetes clientset")
+	}
+
+	secret, err := clientset.CoreV1().Secrets(os.Getenv("POD_NAMESPACE")).Get(context.TODO(), "kotsadm-gitops", metav1.GetOptions{})
+	if kuberneteserrors.IsNotFound(err) {
+		return GlobalGitopsConfig{}, nil
+	} else if err != nil {
+		return GlobalGitopsConfig{}, errors.Wrap(err, "get kotsadm-gitops secret")
+	}
+
+	providerString, err := base64.StdEncoding.DecodeString(secret.StringData["provider.0.type"])
+	if err != nil {
+		return GlobalGitopsConfig{}, errors.Wrap(err, "parse provider type")
+	}
+
+	uriString, err := base64.StdEncoding.DecodeString(secret.StringData["provider.0.repoUri"])
+	if err != nil {
+		return GlobalGitopsConfig{}, errors.Wrap(err, "parse repoUri")
+	}
+
+	hostnameString := []byte{}
+	if hostnameB64, ok := secret.StringData["provider.0.hostname"]; ok {
+		hostnameString, err = base64.StdEncoding.DecodeString(hostnameB64)
+		if err != nil {
+			return GlobalGitopsConfig{}, errors.Wrap(err, "parse hostname")
+		}
+	}
+
+	parsedConfig := GlobalGitopsConfig{
+		Enabled:  true,
+		Provider: string(providerString),
+		URI:      string(uriString),
+		Hostname: string(hostnameString),
+	}
+
+	return parsedConfig, nil
 }
 
 func gitOpsConfigFromSecretData(idx int64, secretData map[string][]byte) (string, string, string, string, error) {

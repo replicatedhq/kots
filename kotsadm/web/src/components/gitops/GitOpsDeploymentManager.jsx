@@ -5,7 +5,6 @@ import classNames from "classnames";
 import Loader from "../shared/Loader";
 import { withRouter, Link } from "react-router-dom";
 import { graphql, compose, withApollo } from "react-apollo";
-import { getGitOpsRepo } from "@src/queries/AppsQueries";
 import GitOpsFlowIllustration from "./GitOpsFlowIllustration";
 import GitOpsRepoDetails from "./GitOpsRepoDetails";
 import { createGitOpsRepo, updateGitOpsRepo } from "@src/mutations/AppsMutations";
@@ -75,17 +74,17 @@ class GitOpsDeploymentManager extends React.Component {
   }
 
   componentDidUpdate(lastProps) {
-    const { getGitOpsRepoQuery } = this.props;
-    if (getGitOpsRepoQuery?.getGitOpsRepo && getGitOpsRepoQuery.getGitOpsRepo !== lastProps.getGitOpsRepoQuery?.getGitOpsRepo) {
-      const { enabled, provider, hostname } = getGitOpsRepoQuery.getGitOpsRepo;
-      if (enabled) {
-        const selectedService = find(SERVICES, service => service.value === provider);
-        this.setState({
-          selectedService: selectedService ? selectedService : this.state.selectedService,
-          hostname: hostname || ""
-        });
-      }
-    }
+    // const { getGitOpsRepoQuery } = this.props;
+    // if (getGitOpsRepoQuery?.getGitOpsRepo && getGitOpsRepoQuery.getGitOpsRepo !== lastProps.getGitOpsRepoQuery?.getGitOpsRepo) {
+    //   const { enabled, provider, hostname } = this.getGitops();
+    //   if (enabled) {
+    //     const selectedService = find(SERVICES, service => service.value === provider);
+    //     this.setState({
+    //       selectedService: selectedService ? selectedService : this.state.selectedService,
+    //       hostname: hostname || ""
+    //     });
+    //   }
+    // }
   }
 
   getAppsList = async () => {
@@ -113,20 +112,40 @@ class GitOpsDeploymentManager extends React.Component {
     }
   }
 
+  getGitops = async () => {
+    try {
+      const res = await fetch(`${window.env.API_ENDPOINT}/gitops/get`, {
+        headers: {
+          "Authorization": Utilities.getToken(),
+          "Content-Type": "application/json",
+        },
+        method: "GET",
+      });
+      if (!res.ok) {
+        console.log("failed to get gitops settings, unexpected status code", res.status);
+        return;
+      }
+      return await res.json();
+    } catch(err) {
+      console.log(err);
+      throw err;
+    }
+  }
+
   isSingleApp = () => {
     return this.state.appsList?.length === 1;
   }
 
   providerChanged = () => {
     const { selectedService } = this.state;
-    const getGitOpsRepo = this.props.getGitOpsRepoQuery?.getGitOpsRepo;
+    const getGitOpsRepo = this.getGitops();
     return selectedService?.value !== getGitOpsRepo?.provider;
   }
 
   hostnameChanged = () => {
     const { hostname, selectedService } = this.state;
     const provider = selectedService?.value;
-    const getGitOpsRepo = this.props.getGitOpsRepoQuery?.getGitOpsRepo;
+    const getGitOpsRepo = this.getGitops();
     const savedHostname = getGitOpsRepo.hostname || "";
     return !this.providerChanged() && requiresHostname(provider) && hostname !== savedHostname;
   }
@@ -168,7 +187,7 @@ class GitOpsDeploymentManager extends React.Component {
     const gitOpsInput = this.getGitOpsInput(provider, repoUri, branch, path, format, action, hostname);
 
     try {
-      const getGitOpsRepo = this.props.getGitOpsRepoQuery?.getGitOpsRepo;
+      const getGitOpsRepo = this.getGitops();
       if (getGitOpsRepo?.enabled) {
         if (this.providerChanged()) {
           const success = await this.resetGitOps();
@@ -198,7 +217,7 @@ class GitOpsDeploymentManager extends React.Component {
       } else {
         this.setState({ step: "", finishingSetup: false });
         this.getAppsList();
-        this.props.getGitOpsRepoQuery.refetch();
+        this.getGitops();
       }
 
       return true;
@@ -268,7 +287,7 @@ class GitOpsDeploymentManager extends React.Component {
       return;
     }
 
-    const getGitOpsRepo = this.props.getGitOpsRepoQuery?.getGitOpsRepo;
+    const getGitOpsRepo = this.getGitops();
     if (!getGitOpsRepo) {
       return;
     }
@@ -535,8 +554,7 @@ class GitOpsDeploymentManager extends React.Component {
 
   render() {
     const { appsList } = this.state;
-    const { getGitOpsRepoQuery } = this.props;
-    if (!appsList.length || getGitOpsRepoQuery.loading) {
+    if (!appsList.length) {
       return (
         <div className="flex-column flex1 alignItems--center justifyContent--center">
           <Loader size="60" />
@@ -544,7 +562,7 @@ class GitOpsDeploymentManager extends React.Component {
       );
     }
 
-    const gitopsRepo = getGitOpsRepoQuery.getGitOpsRepo;
+    const gitopsRepo = this.getGitops();
     const activeStep = find(STEPS, { step: this.state.step });
     return (
       <div className="GitOpsDeploymentManager--wrapper flex-column flex1">
@@ -561,12 +579,6 @@ class GitOpsDeploymentManager extends React.Component {
 export default compose(
   withApollo,
   withRouter,
-  graphql(getGitOpsRepo, {
-    name: "getGitOpsRepoQuery",
-    options: () => ({
-      fetchPolicy: "no-cache"
-    })
-  }),
   graphql(createGitOpsRepo, {
     props: ({ mutate }) => ({
       createGitOpsRepo: (gitOpsInput) => mutate({ variables: { gitOpsInput } })
