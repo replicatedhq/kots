@@ -14,7 +14,6 @@ import (
 	"github.com/replicatedhq/kots/kotsadm/pkg/app"
 	"github.com/replicatedhq/kots/kotsadm/pkg/kotsutil"
 	"github.com/replicatedhq/kots/kotsadm/pkg/license"
-	kotsadmlicense "github.com/replicatedhq/kots/kotsadm/pkg/license"
 	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
 	"github.com/replicatedhq/kots/kotsadm/pkg/online"
 	"github.com/replicatedhq/kots/kotsadm/pkg/registry"
@@ -175,7 +174,7 @@ func GetLicense(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	license, err := kotsadmlicense.Get(foundApp.ID)
+	license, err := store.GetStore().GetLicenseForApp(foundApp.ID)
 	if err != nil {
 		logger.Error(err)
 		w.WriteHeader(500)

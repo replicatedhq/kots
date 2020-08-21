@@ -185,7 +185,7 @@ func CheckForUpdates(appID string, deploy bool) (int64, error) {
 		return 0, errors.Wrap(err, "failed to load kotskinds from path")
 	}
 
-	latestLicense, err := license.Get(a.ID)
+	latestLicense, err := store.GetStore().GetLicenseForApp(a.ID)
 	if err != nil {
 		return 0, errors.Wrap(err, "failed to get latest license")
 	}

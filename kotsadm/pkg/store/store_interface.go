@@ -10,6 +10,7 @@ import (
 	sessiontypes "github.com/replicatedhq/kots/kotsadm/pkg/session/types"
 	supportbundletypes "github.com/replicatedhq/kots/kotsadm/pkg/supportbundle/types"
 	usertypes "github.com/replicatedhq/kots/kotsadm/pkg/user/types"
+	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	troubleshootredact "github.com/replicatedhq/troubleshoot/pkg/redact"
 )
 
@@ -23,6 +24,7 @@ type KOTSStore interface {
 	SessionStore
 	AppStatusStore
 	AppStore
+	LicenseStore
 }
 
 type RegistryStore interface {
@@ -91,4 +93,8 @@ type AppStore interface {
 	GetDownstream(string) (*downstreamtypes.Downstream, error)
 	IsGitOpsEnabledForApp(string) (bool, error)
 	SetUpdateCheckerSpec(string, string) error
+}
+
+type LicenseStore interface {
+	GetLicenseForApp(string) (*kotsv1beta1.License, error)
 }

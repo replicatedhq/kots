@@ -18,7 +18,6 @@ import (
 	kotsadmconfig "github.com/replicatedhq/kots/kotsadm/pkg/config"
 	"github.com/replicatedhq/kots/kotsadm/pkg/downstream"
 	"github.com/replicatedhq/kots/kotsadm/pkg/kotsutil"
-	"github.com/replicatedhq/kots/kotsadm/pkg/license"
 	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
 	"github.com/replicatedhq/kots/kotsadm/pkg/preflight"
 	"github.com/replicatedhq/kots/kotsadm/pkg/render"
@@ -205,7 +204,7 @@ func LiveAppConfig(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	appLicense, err := license.Get(foundApp.ID)
+	appLicense, err := store.GetStore().GetLicenseForApp(foundApp.ID)
 	if err != nil {
 		logger.Error(err)
 		liveAppConfigResponse.Error = "failed to get license for app"
