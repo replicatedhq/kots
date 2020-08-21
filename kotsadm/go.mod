@@ -10,6 +10,7 @@ require (
 	github.com/aws/aws-sdk-go v1.28.2
 	github.com/bitnami-labs/sealed-secrets v0.12.5
 	github.com/containerd/containerd v1.3.2
+	github.com/coreos/etcd v3.3.13+incompatible
 	github.com/deislabs/oras v0.8.1
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/docker/go-units v0.4.0
@@ -44,7 +45,7 @@ require (
 	k8s.io/client-go v0.18.4
 	k8s.io/cluster-bootstrap v0.18.4
 	k8s.io/kubernetes v1.18.4
-	k8s.io/utils v0.0.0-20200603063816-c1c6865ac451 // indirect
+	k8s.io/utils v0.0.0-20200603063816-c1c6865ac451
 	sigs.k8s.io/application v0.8.2
 	sigs.k8s.io/controller-runtime v0.6.0
 )

@@ -25,8 +25,6 @@ type Mutation {
   retryPreflights(appSlug: String, clusterSlug: String, sequence: Int): Boolean
   resetGitOpsData: Boolean
 
-  deleteNode(name: String): Boolean
-
   setPrometheusAddress(value: String!): Boolean
   deletePrometheusAddress: Boolean
 
