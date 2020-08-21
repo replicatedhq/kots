@@ -544,3 +544,38 @@ WHERE
 
 	return output, nil
 }
+
+func IsDownstreamDeploySuccessful(appID string, clusterID string, sequence int64) (bool, error) {
+	db := persistence.MustGetPGSession()
+
+	query := `SELECT is_error
+	FROM app_downstream_output
+	WHERE app_id = $1 AND cluster_id = $2 AND downstream_sequence = $3`
+
+	row := db.QueryRow(query, appID, clusterID, sequence)
+
+	var isError bool
+	if err := row.Scan(&isError); err != nil {
+		if err == sql.ErrNoRows {
+			return false, nil
+		}
+		return false, errors.Wrap(err, "failed to select downstream")
+	}
+
+	return !isError, nil
+}
+
+func UpdateDownstreamDeployStatus(appID string, clusterID string, sequence int64, isError bool, output types.DownstreamOutput) error {
+	db := persistence.MustGetPGSession()
+
+	query := `insert into app_downstream_output (app_id, cluster_id, downstream_sequence, is_error, dryrun_stdout, dryrun_stderr, apply_stdout, apply_stderr)
+	values ($1, $2, $3, $4, $5, $6, $7, $8) on conflict (app_id, cluster_id, downstream_sequence) do update set is_error = EXCLUDED.is_error,
+	dryrun_stdout = EXCLUDED.dryrun_stdout, dryrun_stderr = EXCLUDED.dryrun_stderr, apply_stdout = EXCLUDED.apply_stdout, apply_stderr = EXCLUDED.apply_stderr`
+
+	_, err := db.Exec(query, appID, clusterID, sequence, isError, output.DryrunStdout, output.DryrunStderr, output.ApplyStdout, output.ApplyStderr)
+	if err != nil {
+		return errors.Wrap(err, "failed to exec")
+	}
+
+	return nil
+}
