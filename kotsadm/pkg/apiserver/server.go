@@ -60,7 +60,7 @@ func Start() {
 
 	// Functions that the operator calls
 	r.Path("/api/v1/appstatus").Methods("PUT", "OPTIONS").HandlerFunc(handlers.SetAppStatus)
-	r.Path("/api/v1/deploy/result").Methods("PUT").HandlerFunc(handlers.NodeProxy(upstream))
+	r.Path("/api/v1/deploy/result").Methods("PUT").HandlerFunc(handlers.UpdateDeployResult)
 
 	// Functions that are not called by the browser
 	r.Path("/api/v1/undeploy/result").Methods("PUT").HandlerFunc(handlers.NodeProxy(upstream))

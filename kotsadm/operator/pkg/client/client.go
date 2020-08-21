@@ -320,12 +320,12 @@ func (c *Client) sendResult(applicationManifests ApplicationManifests, isError b
 	log.Printf("Reporting results to %q", uri)
 
 	applyResult := struct {
-		AppID        string `json:"app_id"`
-		IsError      bool   `json:"is_error"`
-		DryrunStdout []byte `json:"dryrun_stdout"`
-		DryrunStderr []byte `json:"dryrun_stderr"`
-		ApplyStdout  []byte `json:"apply_stdout"`
-		ApplyStderr  []byte `json:"apply_stderr"`
+		AppID        string `json:"appId"`
+		IsError      bool   `json:"isError"`
+		DryrunStdout []byte `json:"dryrunStdout"`
+		DryrunStderr []byte `json:"dryrunStderr"`
+		ApplyStdout  []byte `json:"applyStdout"`
+		ApplyStderr  []byte `json:"applyStderr"`
 	}{
 		applicationManifests.AppID,
 		isError,

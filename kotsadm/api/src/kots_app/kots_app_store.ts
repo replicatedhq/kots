@@ -447,40 +447,6 @@ export class KotsAppStore {
     await this.pool.query(q, v);
   }
 
-  async updateDownstreamDeployStatus(appId: string, clusterId: string, sequence: number, isError: boolean, output: any): Promise<any> {
-    let q = `select is_error from app_downstream_output where app_id = $1 and cluster_id = $2 and downstream_sequence = $3`;
-    let v = [
-      appId,
-      clusterId,
-      sequence,
-    ];
-
-    let result = await this.pool.query(q, v);
-    const hasOtherResults = result.rows.length > 0;
-    const otherResultIsError = hasOtherResults ? result.rows[0].is_error : false;
-
-    // don't update successful results
-    if (hasOtherResults && !otherResultIsError) {
-      return;
-    }
-
-    q = `insert into app_downstream_output (app_id, cluster_id, downstream_sequence, is_error, dryrun_stdout, dryrun_stderr, apply_stdout, apply_stderr)
-      values ($1, $2, $3, $4, $5, $6, $7, $8) on conflict (app_id, cluster_id, downstream_sequence) do update set is_error = EXCLUDED.is_error,
-        dryrun_stdout = EXCLUDED.dryrun_stdout, dryrun_stderr = EXCLUDED.dryrun_stderr, apply_stdout = EXCLUDED.apply_stdout, apply_stderr = EXCLUDED.apply_stderr`;
-    v = [
-      appId,
-      clusterId,
-      sequence,
-      isError,
-      output.dryRun.stdout,
-      output.dryRun.stderr,
-      output.apply.stdout,
-      output.apply.stderr,
-    ];
-
-    await this.pool.query(q, v);
-  }
-
   async getDownstreamOutput(appId: string, clusterId: string, sequence: number): Promise<KotsDownstreamOutput> {
     const q = `
       select adv.status, adv.status_info, ado.dryrun_stdout, ado.dryrun_stderr, ado.apply_stdout, ado.apply_stderr
