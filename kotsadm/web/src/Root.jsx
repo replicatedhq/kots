@@ -148,6 +148,10 @@ class Root extends Component {
         method: "GET",
       });
       if (!res.ok) {
+        if (res.status === 401) {
+          Utilities.logoutUser();
+          return;
+        }
         console.log("failed to list apps, unexpected status code", res.status);
         return;
       }
