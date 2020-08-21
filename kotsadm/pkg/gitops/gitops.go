@@ -409,29 +409,11 @@ func GetGitOps() (GlobalGitopsConfig, error) {
 		return GlobalGitopsConfig{}, errors.Wrap(err, "get kotsadm-gitops secret")
 	}
 
-	providerString, err := base64.StdEncoding.DecodeString(secret.StringData["provider.0.type"])
-	if err != nil {
-		return GlobalGitopsConfig{}, errors.Wrap(err, "parse provider type")
-	}
-
-	uriString, err := base64.StdEncoding.DecodeString(secret.StringData["provider.0.repoUri"])
-	if err != nil {
-		return GlobalGitopsConfig{}, errors.Wrap(err, "parse repoUri")
-	}
-
-	hostnameString := []byte{}
-	if hostnameB64, ok := secret.StringData["provider.0.hostname"]; ok {
-		hostnameString, err = base64.StdEncoding.DecodeString(hostnameB64)
-		if err != nil {
-			return GlobalGitopsConfig{}, errors.Wrap(err, "parse hostname")
-		}
-	}
-
 	parsedConfig := GlobalGitopsConfig{
 		Enabled:  true,
-		Provider: string(providerString),
-		URI:      string(uriString),
-		Hostname: string(hostnameString),
+		Provider: string(secret.Data["provider.0.type"]),
+		URI:      string(secret.Data["provider.0.repoUri"]),
+		Hostname: string(secret.Data["provider.0.hostname"]),
 	}
 
 	return parsedConfig, nil
