@@ -177,9 +177,6 @@ func Start() {
 	r.Path("/api/v1/gitops/app/{appId}/cluster/{clusterId}/initconnection").Methods("OPTIONS", "POST").HandlerFunc(handlers.InitGitOpsConnection)
 	r.Path("/api/v1/gitops/reset").Methods("OPTIONS", "POST").HandlerFunc(handlers.ResetGitOps)
 
-	// Clusters
-	r.Path("/api/v1/clusters/list").Methods("OPTIONS", "GET").HandlerFunc(handlers.GetClusters)
-
 	// to avoid confusion, we don't serve this in the dev env...
 	if os.Getenv("DISABLE_SPA_SERVING") != "1" {
 		spa := handlers.SPAHandler{StaticPath: filepath.Join("web", "dist"), IndexPath: "index.html"}
