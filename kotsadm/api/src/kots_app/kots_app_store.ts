@@ -1118,33 +1118,6 @@ where app_id = $1 and sequence = $2`;
     return result.rows[0].app_spec;
   }
 
-  async getAppConfigData(appId: string, sequence: string): Promise<ConfigData | undefined> {
-    const q = `select config_spec, config_values from app_version where app_id = $1 and sequence = $2`;
-    const v = [
-      appId,
-      sequence
-    ];
-
-    const result = await this.pool.query(q, v);
-
-    if (result.rows.length === 0) {
-      throw new ReplicatedError(`No config found for app with id ${appId} and sequence ${sequence}`);
-    }
-
-    const row = result.rows[0];
-
-    if (!row.config_spec || !row.config_values) {
-      return undefined;
-    }
-
-    const configData: ConfigData = {
-      configSpec: row.config_spec,
-      configValues: row.config_values,
-    };
-
-    return configData;
-  }
-
   async updateAppConfigValues(appId: string, sequence: string, configValues: string): Promise<void> {
     const q = `update app_version set config_values = $1 where app_id = $2 and sequence = $3`;
     const v = [

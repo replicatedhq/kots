@@ -3,7 +3,7 @@ import { Stores } from "../schema/stores";
 import zlib from "zlib";
 import { KotsAppStore } from "./kots_app_store";
 import { eq, eqIgnoringLeadingSlash, FilesAsBuffers, TarballUnpacker, isTgzByName } from "../troubleshoot/util";
-import { kotsRenderFile, kotsTemplateConfig } from "./kots_ffi";
+import { kotsRenderFile } from "./kots_ffi";
 import { ReplicatedError } from "../server/errors";
 import { getS3 } from "../util/s3";
 import tmp from "tmp";
@@ -172,68 +172,7 @@ export class KotsApp {
     }
   }
 
-  async applyConfigValues(configSpec: string, configValues: string, license: string, registryInfo: KotsAppRegistryDetails): Promise<KotsConfigGroup[]> {
-    const templatedConfig = await kotsTemplateConfig(configSpec, configValues, license, registryInfo);
-
-    if (!templatedConfig.spec || !templatedConfig.spec.groups) {
-      throw new ReplicatedError("Config groups not found");
-    }
-
-    const specConfigGroups = templatedConfig.spec.groups;
-
-    return specConfigGroups;
-  }
-
-  async getAppConfigGroups(stores: Stores, appId: string, sequence: string): Promise<KotsConfigGroup[]> {
-    try {
-      const app = await stores.kotsAppStore.getApp(appId);
-      const registryInfo = await stores.kotsAppStore.getAppRegistryDetails(app.id);
-      const configData = await stores.kotsAppStore.getAppConfigData(appId, sequence);
-      const { configSpec, configValues } = configData!;
-      return await this.applyConfigValues(configSpec, configValues, String(app.license), registryInfo);
-    } catch (err) {
-      throw new ReplicatedError(`Failed to get config groups ${err}`);
-    }
-  }
-
   // Source files
-  async generateFileTreeIndex(sequence) {
-    const paths = await this.getFilesPaths(sequence);
-    const dirTree = await this.arrangeIntoTree(paths);
-    return dirTree;
-  }
-
-  arrangeIntoTree(paths) {
-    const tree: any[] = [];
-    _.each(paths, (path) => {
-      const pathParts = path.split("/");
-      if (pathParts[0] === "") {
-        pathParts.shift(); // remove first blank element from the parts array.
-      }
-      let currentLevel = tree; // initialize currentLevel to root
-      let currentPath = "";
-      _.each(pathParts, (part) => {
-        currentPath = currentPath + "/" + part;
-        // check to see if the path already exists.
-        const existingPath = _.find(currentLevel, ["name", part]);
-        if (existingPath) {
-          // the path to this item was already in the tree, so don't add it again.
-          // set the current level to this path's children
-          currentLevel = existingPath.children;
-        } else {
-          const newPart = {
-            name: part,
-            path: currentPath,
-            children: [],
-          };
-          currentLevel.push(newPart);
-          currentLevel = newPart.children;
-        }
-      });
-    });
-    return tree;
-  }
-
   async getFiles(sequence: string, fileNames: string[]): Promise<FilesAsBuffers> {
     const fileNameList = fileNames.map((fileName) => ({
       path: fileName,
@@ -241,23 +180,6 @@ export class KotsApp {
     }));
     const filesWeWant = await this.downloadFiles(this.id, sequence, fileNameList);
     return filesWeWant;
-  }
-
-  async getFilesJSON(sequence: string, fileNames: string[]): Promise<string> {
-    const files: FilesAsBuffers = await this.getFiles(sequence, fileNames);
-    let fileStrings: {
-      [key: string]: string;
-    } = {};
-    for (const path in files.files) {
-      const content = files.files[path];
-      if (isTgzByName(path)) {
-        fileStrings[path] = content.toString('base64');
-      } else {
-        fileStrings[path] = content.toString();
-      }
-    }
-    const jsonFiles = JSON.stringify(fileStrings);
-    return jsonFiles;
   }
 
   async downloadFiles(appId: string, sequence: string, filesWeCareAbout: Array<{ path: string; matcher }>): Promise<FilesAsBuffers> {

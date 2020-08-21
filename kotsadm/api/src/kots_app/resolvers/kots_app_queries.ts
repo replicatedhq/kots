@@ -79,12 +79,6 @@ export function KotsQueries(stores: Stores, params: Params) {
       return versions;
     },
 
-    async getAppConfigGroups(root: any, args: any, context: Context): Promise<KotsConfigGroup[]> {
-      const appId = await stores.kotsAppStore.getIdFromSlug(args.slug);
-      const app = await context.getApp(appId);
-      return await app.getAppConfigGroups(stores, app.id, args.sequence);
-    },
-
     async getOnlineInstallStatus(root: any, args: any, context: Context): Promise<{ currentMessage: string, installStatus: string}> {
       return await stores.kotsAppStore.getOnlineInstallStatus();
     },
