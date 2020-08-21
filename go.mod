@@ -53,6 +53,7 @@ require (
 	github.com/stretchr/testify v1.5.1
 	github.com/tj/go-spin v1.1.0
 	github.com/vbauerster/mpb v3.4.0+incompatible // indirect
+	github.com/vmware-tanzu/velero v1.4.2 // indirect
 	github.com/yvasiyarov/go-metrics v0.0.0-20150112132944-c25f46c4b940 // indirect
 	github.com/yvasiyarov/gorelic v0.0.7 // indirect
 	github.com/yvasiyarov/newrelic_platform_go v0.0.0-20160601141957-9c099fbc30e9 // indirect

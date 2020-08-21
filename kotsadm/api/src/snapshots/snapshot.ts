@@ -31,14 +31,6 @@ export interface Snapshot {
   volumeSizeHuman: string;
 }
 
-export interface SnapshotDetail extends Snapshot {
-  namespaces: string[];
-  hooks: SnapshotHook[];
-  volumes: SnapshotVolume[];
-  errors: SnapshotError[];
-  warnings: SnapshotError[];
-}
-
 export interface SnapshotError {
   title?: string;
   message: string;

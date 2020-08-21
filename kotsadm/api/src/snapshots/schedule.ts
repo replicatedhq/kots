@@ -2,7 +2,6 @@ import randomstring from "randomstring";
 import Cron from "cron-converter";
 import { Pool } from "pg";
 import { logger } from "../server/logger";
-import { getPostgresPool } from "../util/persistence/db";
 import { backup } from "./backup";
 import { KotsApp } from "../kots_app/kots_app";
 import { Stores } from "../schema/stores";

@@ -4,17 +4,7 @@ import { Context } from "../../context";
 import { Stores } from "../../schema/stores";
 import { VeleroClient } from "./veleroClient";
 import { ReplicatedError } from "../../server/errors";
-import {
-  kotsAppIdKey,
-  kotsAppSequenceKey,
-  kotsClusterIdKey,
-  RestoreDetail,
-} from "../snapshot";
-import { Phase } from "../velero";
-import { SnapshotProvider, SnapshotStore } from "../snapshot_config";
-import { logger } from "../../server/logger";
-import { formatTTL, backup } from "../backup";
-import { sleep } from "../../util/utilities";
+import { formatTTL } from "../backup";
 import { nextScheduled } from "../schedule";
 
 export function SnapshotMutations(stores: Stores) {

@@ -53,11 +53,7 @@ type VeleroStatus struct {
 }
 
 func UpdateGlobalSnapshotSettings(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Header().Set("Access-Control-Allow-Headers", "content-type, origin, accept, authorization")
-
-	if r.Method == "OPTIONS" {
-		w.WriteHeader(200)
+	if handleOptionsRequest(w, r) {
 		return
 	}
 
@@ -354,11 +350,7 @@ func UpdateGlobalSnapshotSettings(w http.ResponseWriter, r *http.Request) {
 }
 
 func GetGlobalSnapshotSettings(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Header().Set("Access-Control-Allow-Headers", "content-type, origin, accept, authorization")
-
-	if r.Method == "OPTIONS" {
-		w.WriteHeader(200)
+	if handleOptionsRequest(w, r) {
 		return
 	}
 
@@ -422,11 +414,7 @@ func GetGlobalSnapshotSettings(w http.ResponseWriter, r *http.Request) {
 }
 
 func GetSnapshotConfig(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Header().Set("Access-Control-Allow-Headers", "content-type, origin, accept, authorization")
-
-	if r.Method == "OPTIONS" {
-		w.WriteHeader(http.StatusOK)
+	if handleOptionsRequest(w, r) {
 		return
 	}
 
@@ -531,11 +519,7 @@ func parseTTL(s string) (*snapshottypes.ParsedTTL, error) {
 }
 
 func GetVeleroStatus(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Header().Set("Access-Control-Allow-Headers", "content-type, origin, accept, authorization")
-
-	if r.Method == "OPTIONS" {
-		w.WriteHeader(http.StatusOK)
+	if handleOptionsRequest(w, r) {
 		return
 	}
 
