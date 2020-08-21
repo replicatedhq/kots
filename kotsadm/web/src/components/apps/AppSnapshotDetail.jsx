@@ -317,18 +317,18 @@ class AppSnapshotDetail extends Component {
   renderShowAllScripts = (hooks) => {
     return (
       hooks.map((hook, i) => {
-        const diffMinutes = moment(hook?.finished).diff(moment(hook?.started), "minutes");
+        const diffMinutes = moment(hook?.finishedAt).diff(moment(hook?.startedAt), "minutes");
         return (
-          <div className="flex flex1 u-borderBottom--gray alignItems--center" key={`${hook.hookName}-${hook.phase}-${i}`}>
+          <div className="flex flex1 u-borderBottom--gray alignItems--center" key={`${hook.name}-${hook.phase}-${i}`}>
             <div className="flex flex1 u-paddingBottom--15 u-paddingTop--15 u-paddingLeft--10">
               <div className="flex flex-column">
-                <p className="u-fontSize--large u-color--tuna u-fontWeight--bold u-lineHeight--bold u-marginBottom--8">{hook.hookName} <span className="u-fontSize--small u-fontWeight--medium u-color--dustyGray u-marginLeft--5">Pod: {hook.podName} </span> </p>
+                <p className="u-fontSize--large u-color--tuna u-fontWeight--bold u-lineHeight--bold u-marginBottom--8">{hook.name} <span className="u-fontSize--small u-fontWeight--medium u-color--dustyGray u-marginLeft--5">Pod: {hook.podName} </span> </p>
                 <span className="u-fontSize--small u-fontWeight--normal u-color--dustyGray u-marginRight--10"> {hook.command} </span>
               </div>
             </div>
             <div className="flex flex-column justifyContent--flexEnd">
-              <p className="u-fontSize--small u-fontWeight--normal alignSelf--flexEnd u-marginBottom--8"><span className={`status-indicator ${hook.error ? "failed" : "completed"} u-marginLeft--5`}>{hook.error ? "Failed" : "Completed"}</span></p>
-              {!hook.error &&
+              <p className="u-fontSize--small u-fontWeight--normal alignSelf--flexEnd u-marginBottom--8"><span className={`status-indicator ${hook.errors ? "failed" : "completed"} u-marginLeft--5`}>{hook.errors ? "Failed" : "Completed"}</span></p>
+              {!hook.errors &&
                 <p className="u-fontSize--small u-fontWeight--normal u-marginBottom--8"> Finished in {diffMinutes === 0 ? "less than a minute" : `${diffMinutes} minutes`} </p>}
               {hook.stderr !== "" || hook.stdout !== "" &&
                 <span className="replicated-link u-fontSize--small alignSelf--flexEnd" onClick={() => this.toggleScriptsOutput(hook)}> View output </span>}

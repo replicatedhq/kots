@@ -419,6 +419,7 @@ class AppSnapshots extends Component {
         </div>
       )
     }
+    console.log(snapshots);
 
 
     return (

@@ -3,6 +3,7 @@ package snapshot
 import (
 	"context"
 	"fmt"
+	"math"
 	"os"
 	"strconv"
 	"time"
@@ -63,7 +64,7 @@ func createApplicationBackup(a *apptypes.App) error {
 		return errors.Wrap(err, "failed to get app version archive")
 	}
 
-	kotsadmVeleroBackendStorageLocation, err := findBackupStoreLocation()
+	kotsadmVeleroBackendStorageLocation, err := FindBackupStoreLocation()
 	if err != nil {
 		return errors.Wrap(err, "failed to find backupstoragelocations")
 	}
@@ -144,7 +145,7 @@ func createApplicationBackup(a *apptypes.App) error {
 func createAdminConsoleBackup() error {
 	logger.Debug("creating admin console backup")
 
-	kotsadmVeleroBackendStorageLocation, err := findBackupStoreLocation()
+	kotsadmVeleroBackendStorageLocation, err := FindBackupStoreLocation()
 	if err != nil {
 		return errors.Wrap(err, "failed to find backupstoragelocations")
 	}
@@ -202,7 +203,7 @@ func ListBackupsForApp(appID string) ([]*types.Backup, error) {
 		return nil, errors.Wrap(err, "failed to create clientset")
 	}
 
-	backendStorageLocation, err := findBackupStoreLocation()
+	backendStorageLocation, err := FindBackupStoreLocation()
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to find backupstoragelocations")
 	}
@@ -326,7 +327,7 @@ func ListKotsadmBackups() ([]*types.Backup, error) {
 		return nil, errors.Wrap(err, "failed to create clientset")
 	}
 
-	backendStorageLocation, err := findBackupStoreLocation()
+	backendStorageLocation, err := FindBackupStoreLocation()
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to find backupstoragelocations")
 	}
@@ -459,7 +460,7 @@ func getSnapshotVolumeSummary(veleroBackup *velerov1.Backup) (*types.VolumeSumma
 }
 
 func GetBackup(snapshotName string) (*velerov1.Backup, error) {
-	bsl, err := findBackupStoreLocation()
+	bsl, err := FindBackupStoreLocation()
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get velero namespace")
 	}
@@ -496,64 +497,91 @@ func GetKotsadmBackupDetail(backupName string) (*types.BackupDetail, error) {
 		return nil, errors.Wrap(err, "failed to create clientset")
 	}
 
-	backendStorageLocation, err := findBackupStoreLocation()
+	backendStorageLocation, err := FindBackupStoreLocation()
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to find backupstoragelocations")
 	}
 
-	backup, err := veleroClient.Backups(backendStorageLocation.Namespace).Get(context.TODO(), backupName, metav1.GetOptions{})
+	veleroNamespace := backendStorageLocation.Namespace
+
+	backup, err := veleroClient.Backups(veleroNamespace).Get(context.TODO(), backupName, metav1.GetOptions{})
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get backup")
 	}
 
-	backupVolumes, err := veleroClient.PodVolumeBackups(backendStorageLocation.Namespace).List(context.TODO(), metav1.ListOptions{
-		LabelSelector: fmt.Sprintf("velero.io/backup-name=%s", backupName),
+	backupVolumes, err := veleroClient.PodVolumeBackups(veleroNamespace).List(context.TODO(), metav1.ListOptions{
+		LabelSelector: fmt.Sprintf("velero.io/backup-name=%s", velerolabel.GetValidName(backupName)),
 	})
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to list volumes")
 	}
 
 	result := &types.BackupDetail{
-		Name:             backup.Name,
-		Status:           string(backup.Status.Phase),
-		Namespaces:       backup.Spec.IncludedNamespaces,
-		Hooks:            make([]types.SnapshotHook, 0), // TODO:
-		Volumes:          make([]types.SnapshotVolume, 0),
-		ValidationErrors: backup.Status.ValidationErrors,
-		Errors:           make([]types.SnapshotError, 0), // TODO
-		Warnings:         make([]types.SnapshotError, 0), // TODO
+		Name:       backup.Name,
+		Status:     string(backup.Status.Phase),
+		Namespaces: backup.Spec.IncludedNamespaces,
+		Volumes:    listBackupVolumes(backupVolumes.Items),
 	}
 
 	totalBytesDone := int64(0)
-	totalVolumes := 0
-	completedVolumes := 0
 	for _, backupVolume := range backupVolumes.Items {
-		totalVolumes += 1
 		totalBytesDone += backupVolume.Status.Progress.BytesDone
-		if backupVolume.Status.Phase == "Completed" {
-			completedVolumes += 1
-		}
+	}
+	result.VolumeSizeHuman = units.HumanSize(float64(totalBytesDone)) // TODO: should this be TotalBytes rather than BytesDone?
 
+	if backup.Status.Phase == velerov1.BackupPhaseCompleted || backup.Status.Phase == velerov1.BackupPhasePartiallyFailed || backup.Status.Phase == velerov1.BackupPhaseFailed {
+		errs, warnings, execs, err := downloadBackupLogs(veleroNamespace, backupName)
+		result.Errors = errs
+		result.Warnings = warnings
+		result.Hooks = execs
+		if err != nil {
+			// do not fail on error
+			logger.Error(errors.Wrap(err, "failed to download backup logs"))
+		}
+	}
+
+	return result, nil
+}
+
+func listBackupVolumes(backupVolumes []velerov1.PodVolumeBackup) []types.SnapshotVolume {
+	volumes := []types.SnapshotVolume{}
+	for _, backupVolume := range backupVolumes {
 		v := types.SnapshotVolume{
 			Name:           backupVolume.Name,
 			SizeBytesHuman: units.HumanSize(float64(backupVolume.Status.Progress.TotalBytes)),
 			DoneBytesHuman: units.HumanSize(float64(backupVolume.Status.Progress.BytesDone)),
-			// TODO: v.CompletionPercent,
-			// TODO: v.TimeRemainingSeconds,
-			Phase: string(backupVolume.Status.Phase),
+			Phase:          string(backupVolume.Status.Phase),
+		}
+
+		if backupVolume.Status.Progress.TotalBytes > 0 {
+			v.CompletionPercent = int(math.Round(float64(backupVolume.Status.Progress.BytesDone/backupVolume.Status.Progress.TotalBytes) * 100))
 		}
 
 		if backupVolume.Status.StartTimestamp != nil {
 			v.StartedAt = &backupVolume.Status.StartTimestamp.Time
+
+			if backupVolume.Status.Progress.TotalBytes > 0 {
+				bytesPerSecond := float64(backupVolume.Status.Progress.BytesDone) / time.Now().Sub(*v.StartedAt).Seconds()
+				bytesRemaining := float64(backupVolume.Status.Progress.TotalBytes - backupVolume.Status.Progress.BytesDone)
+				v.TimeRemainingSeconds = int(math.Round(bytesRemaining / bytesPerSecond))
+			}
 		}
 		if backupVolume.Status.CompletionTimestamp != nil {
 			v.FinishedAt = &backupVolume.Status.CompletionTimestamp.Time
 		}
 
-		result.Volumes = append(result.Volumes, v)
+		volumes = append(volumes, v)
 	}
+	return volumes
+}
 
-	result.VolumeSizeHuman = units.HumanSize(float64(totalBytesDone))
+func downloadBackupLogs(veleroNamespace, backupName string) ([]types.SnapshotError, []types.SnapshotError, []types.SnapshotHook, error) {
+	gzipReader, err := DownloadRequest(veleroNamespace, velerov1.DownloadTargetKindBackupLog, backupName)
+	if err != nil {
+		return nil, nil, nil, errors.Wrap(err, "failed to download backup log")
+	}
+	defer gzipReader.Close()
 
-	return result, nil
+	errs, warnings, execs, err := parseLogs(gzipReader)
+	return errs, warnings, execs, err
 }

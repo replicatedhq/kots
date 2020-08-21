@@ -68,24 +68,32 @@ type Backup struct {
 }
 
 type BackupDetail struct {
-	Name             string           `json:"name"`
-	Status           string           `json:"status"`
-	VolumeSizeHuman  string           `json:"volumeSizeHuman"`
-	Namespaces       []string         `json:"namespaces"`
-	Hooks            []SnapshotHook   `json:"hooks"`
-	Volumes          []SnapshotVolume `json:"volumes"`
-	ValidationErrors []string         `json:"validationErrors,omitempty"`
-	Errors           []SnapshotError  `json:"errors"`
-	Warnings         []SnapshotError  `json:"warnings"`
+	Name            string           `json:"name"`
+	Status          string           `json:"status"`
+	VolumeSizeHuman string           `json:"volumeSizeHuman"`
+	Namespaces      []string         `json:"namespaces"`
+	Hooks           []SnapshotHook   `json:"hooks"`
+	Volumes         []SnapshotVolume `json:"volumes"`
+	Errors          []SnapshotError  `json:"errors"`
+	Warnings        []SnapshotError  `json:"warnings"`
+}
+
+type RestoreDetail struct {
+	Name     string          `json:"name"`
+	Phase    string          `json:"pase"`
+	Volumes  []RestoreVolume `json:"volumes"`
+	Errors   []SnapshotError `json:"errors"`
+	Warnings []SnapshotError `json:"warnings"`
+	Active   bool            `json:"active"`
 }
 
 type SnapshotHook struct {
 	Name          string          `json:"name"`
 	Namespace     string          `json:"namespace"`
-	Phase         string          `json:"pase"`
+	Phase         string          `json:"phase"`
 	PodName       string          `json:"podName"`
-	Command       string          `json:"command"`
 	ContainerName string          `json:"containerName"`
+	Command       string          `json:"command"`
 	Stdout        string          `json:"stdout"`
 	Stderr        string          `json:"stderr"`
 	StartedAt     *time.Time      `json:"startedAt,omitempty"`
@@ -96,6 +104,19 @@ type SnapshotHook struct {
 
 type SnapshotVolume struct {
 	Name                 string     `json:"name"`
+	SizeBytesHuman       string     `json:"sizeBytesHuman"`
+	DoneBytesHuman       string     `json:"doneBytesHuman"`
+	CompletionPercent    int        `json:"completionPercent"`
+	TimeRemainingSeconds int        `json:"timeRemainingSeconds"`
+	StartedAt            *time.Time `json:"startedAt,omitempty"`
+	FinishedAt           *time.Time `json:"finishedAt,omitempty"`
+	Phase                string     `json:"phase"`
+}
+type RestoreVolume struct {
+	Name                 string     `json:"name"`
+	PodName              string     `json:"podName"`
+	PodNamespace         string     `json:"podNamespace"`
+	PodVolumeName        string     `json:"podVolumeName"`
 	SizeBytesHuman       string     `json:"sizeBytesHuman"`
 	DoneBytesHuman       string     `json:"doneBytesHuman"`
 	CompletionPercent    int        `json:"completionPercent"`
