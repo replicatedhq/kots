@@ -2,7 +2,6 @@ package license
 
 import (
 	"bytes"
-	"database/sql"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -11,7 +10,6 @@ import (
 	apptypes "github.com/replicatedhq/kots/kotsadm/pkg/app/types"
 	"github.com/replicatedhq/kots/kotsadm/pkg/kotsutil"
 	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
-	"github.com/replicatedhq/kots/kotsadm/pkg/persistence"
 	"github.com/replicatedhq/kots/kotsadm/pkg/preflight"
 	registrytypes "github.com/replicatedhq/kots/kotsadm/pkg/registry/types"
 	"github.com/replicatedhq/kots/kotsadm/pkg/render"
@@ -128,28 +126,4 @@ func GetCurrentLicenseString(a *apptypes.App) (string, error) {
 		return "", errors.Wrap(err, "failed to read license file from archive")
 	}
 	return string(kotsLicense), nil
-}
-
-// GetLicense gets the current (latest) license for an application with the given app id
-func Get(appID string) (*kotsv1beta1.License, error) {
-	db := persistence.MustGetPGSession()
-	query := `select kots_license from app_version where app_id = $1 order by sequence desc limit 1`
-	row := db.QueryRow(query, appID)
-
-	var licenseStr sql.NullString
-	if err := row.Scan(&licenseStr); err != nil {
-		return nil, errors.Wrap(err, "failed to scan")
-	}
-
-	if licenseStr.Valid {
-		decode := scheme.Codecs.UniversalDeserializer().Decode
-		obj, _, err := decode([]byte(licenseStr.String), nil, nil)
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to decode license yaml")
-		}
-		license := obj.(*kotsv1beta1.License)
-		return license, nil
-	}
-
-	return nil, nil
 }
