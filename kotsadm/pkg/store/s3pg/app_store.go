@@ -74,8 +74,9 @@ func (s S3PGStore) ListInstalledApps() ([]*apptypes.App, error) {
 }
 
 func (s S3PGStore) GetApp(id string) (*apptypes.App, error) {
-	logger.Debug("getting app from id",
-		zap.String("id", id))
+	// too noisy
+	// logger.Debug("getting app from id",
+	// 	zap.String("id", id))
 
 	db := persistence.MustGetPGSession()
 	query := `select id, name, license, upstream_uri, icon_uri, created_at, updated_at, slug, current_sequence, last_update_check_at, is_airgap, snapshot_ttl_new, snapshot_schedule, restore_in_progress_name, restore_undeploy_status, update_checker_spec from app where id = $1`
@@ -150,8 +151,9 @@ func (s S3PGStore) GetApp(id string) (*apptypes.App, error) {
 }
 
 func (s S3PGStore) GetAppFromSlug(slug string) (*apptypes.App, error) {
-	logger.Debug("getting app from slug",
-		zap.String("slug", slug))
+	// too noisy
+	// logger.Debug("getting app from slug",
+	// 	zap.String("slug", slug))
 
 	db := persistence.MustGetPGSession()
 	query := `select id from app where slug = $1`

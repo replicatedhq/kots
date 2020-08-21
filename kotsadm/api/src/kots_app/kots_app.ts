@@ -211,8 +211,8 @@ export class KotsApp {
   }
 
   async getArchive(sequence: string): Promise<any> {
-    const replicatedParams = await Params.getParams();
-    if (replicatedParams.storageBaseURI.startsWith("docker://")) {
+    const params = await Params.getParams();
+    if (!params.storageBaseURI || !params.storageBaseURI.startsWith("docker://")) {
       return this.getArchiveOras(sequence);
     }
 

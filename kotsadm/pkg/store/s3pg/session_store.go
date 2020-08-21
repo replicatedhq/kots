@@ -9,7 +9,6 @@ import (
 	sessiontypes "github.com/replicatedhq/kots/kotsadm/pkg/session/types"
 	usertypes "github.com/replicatedhq/kots/kotsadm/pkg/user/types"
 	"github.com/segmentio/ksuid"
-	"go.uber.org/zap"
 )
 
 func (s S3PGStore) CreateSession(forUser *usertypes.User) (*sessiontypes.Session, error) {
@@ -33,8 +32,9 @@ func (s S3PGStore) CreateSession(forUser *usertypes.User) (*sessiontypes.Session
 }
 
 func (s S3PGStore) GetSession(id string) (*sessiontypes.Session, error) {
-	logger.Debug("getting session from database",
-		zap.String("id", id))
+	// too noisy
+	// logger.Debug("getting session from database",
+	// 	zap.String("id", id))
 
 	db := persistence.MustGetPGSession()
 	query := `select id, expire_at from session where id = $1`
