@@ -36,9 +36,9 @@ func (s StatusInformerString) Parse() (i StatusInformer, err error) {
 }
 
 type AppStatus struct {
-	AppID          string         `json:"app_id"`
-	ResourceStates ResourceStates `json:"resource_states" hash:"set"`
-	UpdatedAt      time.Time      `json:"updated_at" hash:"ignore"`
+	AppID          string         `json:"appId"`
+	ResourceStates ResourceStates `json:"resourceStates" hash:"set"`
+	UpdatedAt      time.Time      `json:"updatedAt" hash:"ignore"`
 }
 
 type ResourceStates []ResourceState
