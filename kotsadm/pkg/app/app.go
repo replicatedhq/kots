@@ -7,7 +7,6 @@ import (
 	"github.com/replicatedhq/kots/kotsadm/pkg/app/types"
 	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
 	"github.com/replicatedhq/kots/kotsadm/pkg/persistence"
-	"github.com/replicatedhq/kots/kotsadm/pkg/store"
 	"go.uber.org/zap"
 )
 
@@ -71,29 +70,4 @@ func SetRestoreUndeployStatus(appID string, undeployStatus types.UndeployStatus)
 	}
 
 	return nil
-}
-
-func ListInstalledForDownstream(clusterID string) ([]*types.App, error) {
-	db := persistence.MustGetPGSession()
-	query := `select ad.app_id from app_downstream ad inner join app a on ad.app_id = a.id where ad.cluster_id = $1 and a.install_state = 'installed'`
-	rows, err := db.Query(query, clusterID)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to query db")
-	}
-	defer rows.Close()
-
-	apps := []*types.App{}
-	for rows.Next() {
-		var appID string
-		if err := rows.Scan(&appID); err != nil {
-			return nil, errors.Wrap(err, "failed to scan")
-		}
-		app, err := store.GetStore().GetApp(appID)
-		if err != nil {
-			return nil, errors.Wrapf(err, "failed to get app %s", appID)
-		}
-		apps = append(apps, app)
-	}
-
-	return apps, nil
 }

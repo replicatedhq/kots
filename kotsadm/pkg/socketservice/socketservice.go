@@ -129,7 +129,7 @@ func startLoop(fn func(), intervalInSeconds time.Duration) {
 
 func (s *SocketService) deployLoop() {
 	for _, clusterSocket := range s.clusterSocketHistory {
-		apps, err := app.ListInstalledForDownstream(clusterSocket.ClusterID)
+		apps, err := store.GetStore().ListAppsForDownstream(clusterSocket.ClusterID)
 		if err != nil {
 			logger.Error(errors.Wrap(err, "failed to list installed apps for downstream"))
 			continue
@@ -366,7 +366,7 @@ func (s *SocketService) processSupportBundle(clusterSocket ClusterSocket, pendin
 
 func (s *SocketService) restoreLoop() {
 	for _, clusterSocket := range s.clusterSocketHistory {
-		apps, err := app.ListInstalledForDownstream(clusterSocket.ClusterID)
+		apps, err := store.GetStore().ListAppsForDownstream(clusterSocket.ClusterID)
 		if err != nil {
 			logger.Error(errors.Wrap(err, "failed to list installed apps for downstream"))
 			continue
