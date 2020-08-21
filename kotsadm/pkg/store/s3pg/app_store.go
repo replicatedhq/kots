@@ -229,7 +229,7 @@ values ($1, $2, $3, $4, $5, $6, $7, $8, $9)`
 	return s.GetApp(id)
 }
 
-func (c S3PGStore) ListDownstreamsForApp(appID string) ([]downstreamtypes.Downstream, error) {
+func (s S3PGStore) ListDownstreamsForApp(appID string) ([]downstreamtypes.Downstream, error) {
 	db := persistence.MustGetPGSession()
 	query := `select c.id from app_downstream d inner join cluster c on d.cluster_id = c.id where app_id = $1`
 	rows, err := db.Query(query, appID)
@@ -244,7 +244,7 @@ func (c S3PGStore) ListDownstreamsForApp(appID string) ([]downstreamtypes.Downst
 		if err := rows.Scan(&clusterID); err != nil {
 			return nil, errors.Wrap(err, "failed to scan")
 		}
-		downstream, err := c.GetDownstream(clusterID)
+		downstream, err := s.GetDownstream(clusterID)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to get downstream")
 		}
@@ -256,7 +256,32 @@ func (c S3PGStore) ListDownstreamsForApp(appID string) ([]downstreamtypes.Downst
 	return downstreams, nil
 }
 
-func (c S3PGStore) GetDownstream(clusterID string) (*downstreamtypes.Downstream, error) {
+func (s S3PGStore) ListAppsForDownstream(clusterID string) ([]*apptypes.App, error) {
+	db := persistence.MustGetPGSession()
+	query := `select ad.app_id from app_downstream ad inner join app a on ad.app_id = a.id where ad.cluster_id = $1 and a.install_state = 'installed'`
+	rows, err := db.Query(query, clusterID)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to query db")
+	}
+	defer rows.Close()
+
+	apps := []*apptypes.App{}
+	for rows.Next() {
+		var appID string
+		if err := rows.Scan(&appID); err != nil {
+			return nil, errors.Wrap(err, "failed to scan")
+		}
+		app, err := s.GetApp(appID)
+		if err != nil {
+			return nil, errors.Wrapf(err, "failed to get app %s", appID)
+		}
+		apps = append(apps, app)
+	}
+
+	return apps, nil
+}
+
+func (s S3PGStore) GetDownstream(clusterID string) (*downstreamtypes.Downstream, error) {
 	db := persistence.MustGetPGSession()
 	query := `select c.id, c.slug, d.downstream_name, d.current_sequence from app_downstream d inner join cluster c on d.cluster_id = c.id where c.id = $1`
 	row := db.QueryRow(query, clusterID)
@@ -278,8 +303,8 @@ func (c S3PGStore) GetDownstream(clusterID string) (*downstreamtypes.Downstream,
 	return &downstream, nil
 }
 
-func (c S3PGStore) IsGitOpsEnabledForApp(appID string) (bool, error) {
-	downstreams, err := c.ListDownstreamsForApp(appID)
+func (s S3PGStore) IsGitOpsEnabledForApp(appID string) (bool, error) {
+	downstreams, err := s.ListDownstreamsForApp(appID)
 	if err != nil {
 		return false, errors.Wrap(err, "failed to list downstreams")
 	}
@@ -297,7 +322,7 @@ func (c S3PGStore) IsGitOpsEnabledForApp(appID string) (bool, error) {
 	return false, nil
 }
 
-func (c S3PGStore) SetUpdateCheckerSpec(appID string, updateCheckerSpec string) error {
+func (s S3PGStore) SetUpdateCheckerSpec(appID string, updateCheckerSpec string) error {
 	logger.Debug("setting update checker spec",
 		zap.String("appID", appID))
 

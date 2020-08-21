@@ -293,7 +293,7 @@ func CurrentAppConfig(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	appLicense, err := license.Get(foundApp.ID)
+	appLicense, err := store.GetStore().GetLicenseForApp(foundApp.ID)
 	if err != nil {
 		logger.Error(err)
 		currentAppConfigResponse.Error = "failed to get license for app"

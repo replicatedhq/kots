@@ -90,6 +90,7 @@ type AppStore interface {
 	GetAppFromSlug(string) (*apptypes.App, error)
 	CreateApp(string, string, string, bool) (*apptypes.App, error)
 	ListDownstreamsForApp(string) ([]downstreamtypes.Downstream, error)
+	ListAppsForDownstream(string) ([]*apptypes.App, error)
 	GetDownstream(string) (*downstreamtypes.Downstream, error)
 	IsGitOpsEnabledForApp(string) (bool, error)
 	SetUpdateCheckerSpec(string, string) error
