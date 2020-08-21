@@ -20,9 +20,9 @@ export class GitOps extends React.Component {
           <title>GitOps deployments</title>
         </Helmet>
         <div className="flex-column flex1">
-            <div className="flex-column flex-1-auto u-paddingBottom--20 u-paddingTop--30 u-marginTop--10 u-overflow--auto">
-              <GitOpsDeploymentManager appName={this.props.appName} />
-            </div>
+          <div className="flex-column flex-1-auto u-paddingBottom--20 u-paddingTop--30 u-marginTop--10 u-overflow--auto">
+            <GitOpsDeploymentManager appName={this.props.appName} />
+          </div>
         </div>
       </div>
     );
