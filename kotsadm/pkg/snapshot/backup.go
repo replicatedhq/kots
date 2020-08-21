@@ -514,13 +514,14 @@ func GetKotsadmBackupDetail(backupName string) (*types.BackupDetail, error) {
 	}
 
 	result := &types.BackupDetail{
-		Name:       backup.Name,
-		Status:     string(backup.Status.Phase),
-		Namespaces: backup.Spec.IncludedNamespaces,
-		Hooks:      make([]types.SnapshotHook, 0), // TODO:
-		Volumes:    make([]types.SnapshotVolume, 0),
-		Errors:     make([]types.SnapshotError, 0), // TODO
-		Warnings:   make([]types.SnapshotError, 0), // TODO
+		Name:             backup.Name,
+		Status:           string(backup.Status.Phase),
+		Namespaces:       backup.Spec.IncludedNamespaces,
+		Hooks:            make([]types.SnapshotHook, 0), // TODO:
+		Volumes:          make([]types.SnapshotVolume, 0),
+		ValidationErrors: backup.Status.ValidationErrors,
+		Errors:           make([]types.SnapshotError, 0), // TODO
+		Warnings:         make([]types.SnapshotError, 0), // TODO
 	}
 
 	totalBytesDone := int64(0)
