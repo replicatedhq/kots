@@ -14,7 +14,6 @@ import {
   snapshotTriggerKey,
   SnapshotTrigger
 } from "./snapshot";
-import { logger } from "../server/logger";
 
 // tslint:disable-next-line cyclomatic-complexity
 export async function backup(stores: Stores, appId: string, scheduled: boolean): Promise<Backup> {

@@ -1,5 +1,5 @@
 import React, { Component } from "react";
-import { graphql, compose, withApollo } from "react-apollo";
+import { compose, withApollo } from "react-apollo";
 import { Link, withRouter } from "react-router-dom";
 import MonacoEditor from "react-monaco-editor";
 import Modal from "react-modal";
@@ -9,9 +9,9 @@ import ReactApexChart from "react-apexcharts";
 import moment from "moment";
 
 import Loader from "../shared/Loader";
-import { snapshotDetail } from "../../queries/SnapshotQueries";
 import ShowAllModal from "../modals/ShowAllModal";
 import ViewSnapshotLogsModal from "../modals/ViewSnapshotLogsModal";
+import ErrorModal from "../modals/ErrorModal";
 import { Utilities } from "../../utilities/utilities";
 
 let colorIndex = 0;
@@ -29,13 +29,17 @@ class AppSnapshotDetail extends Component {
     selectedErrorsWarningTab: "Errors",
     showAllWarnings: false,
     showAllErrors: false,
-    snapshotDetails: {},
     series: [],
     toggleViewLogsModal: false,
     snapshotLogs: "",
     loadingSnapshotLogs: false,
     snapshotLogsErr: false,
     snapshotLogsErrMsg: "",
+
+    loading: false,
+    snapshotDetails: {},
+    errorMessage: "",
+    errorTitle: "",
 
     options: {
       chart: {
@@ -101,23 +105,66 @@ class AppSnapshotDetail extends Component {
   };
 
   componentDidMount() {
-    if (this.props.snapshotDetail) {
-      this.setState({ snapshotDetails: this.props.snapshotDetail?.snapshotDetail });
-    }
+    const { match } = this.props;
+    this.getSnapshotDetails(match.params.id);
   }
 
   componentDidUpdate(lastProps) {
-    if (this.props.snapshotDetail?.snapshotDetail !== lastProps.snapshotDetail?.snapshotDetail && this.props.snapshotDetail?.snapshotDetail) {
-      this.setState({ snapshotDetails: this.props.snapshotDetail?.snapshotDetail });
-      if (!isEmpty(this.props.snapshotDetail?.snapshotDetail?.volumes)) {
-        if (this.props.snapshotDetail?.snapshotDetail?.hooks && !isEmpty(this.props.snapshotDetail?.snapshotDetail?.hooks)) {
-          this.setState({ series: this.getSeriesData([...this.props.snapshotDetail?.snapshotDetail?.volumes, ...this.props.snapshotDetail?.snapshotDetail?.hooks].sort((a, b) => new Date(a.started) - new Date(b.started))) })
-        } else {
-          this.setState({ series: this.getSeriesData((this.props.snapshotDetail?.snapshotDetail?.volumes).sort((a, b) => new Date(a.started) - new Date(b.started))) })
+    const { match } = this.props;
+    if (match.params.id !== lastProps.match.params.id) {
+      this.getSnapshotDetails(match.params.id);
+    }
+  }
+
+  getSnapshotDetails = async (snapshotName) => {
+    this.setState({
+      loading: true,
+      errorMessage: "",
+      errorTitle: "",
+    });
+
+    try {
+      const res = await fetch(`${window.env.API_ENDPOINT}/snapshot/${snapshotName}`, {
+        method: "GET",
+        headers: {
+          "Authorization": Utilities.getToken(),
         }
-      } else if ((this.props.snapshotDetail?.snapshotDetail?.hooks && !isEmpty(this.props.snapshotDetail?.snapshotDetail?.hooks))) {
-        this.setState({ series: this.getSeriesData((this.props.snapshotDetail?.snapshotDetail?.hooks).sort((a, b) => new Date(a.started) - new Date(b.started))) })
+      });
+      if (!res.ok) {
+        this.setState({
+          loading: false,
+          errorMessage: `Unexpected status code: ${res.status}`,
+          errorTitle: "Failed to fetch snapshot details",
+        });
+        return;
       }
+      const response = await res.json();
+
+      const snapshotDetails = response.backupDetail;
+
+      if (!isEmpty(snapshotDetails?.volumes)) {
+        if (snapshotDetails?.hooks && !isEmpty(snapshotDetails?.hooks)) {
+          this.setState({ series: this.getSeriesData([...snapshotDetails?.volumes, ...snapshotDetails?.hooks].sort((a, b) => new Date(a.started) - new Date(b.started))) })
+        } else {
+          this.setState({ series: this.getSeriesData((snapshotDetails?.volumes).sort((a, b) => new Date(a.started) - new Date(b.started))) })
+        }
+      } else if ((snapshotDetails?.hooks && !isEmpty(snapshotDetails?.hooks))) {
+        this.setState({ series: this.getSeriesData((snapshotDetails?.hooks).sort((a, b) => new Date(a.started) - new Date(b.started))) })
+      }
+
+      this.setState({
+        loading: false,
+        snapshotDetails: snapshotDetails,
+        errorMessage: "",
+        errorTitle: "",
+      });
+    } catch(err) {
+      console.log(err);
+      this.setState({
+        loading: false,
+        errorMessage: err ? `${err.message}` : "Something went wrong, please try again.",
+        errorTitle: "Failed to fetch snapshot details",
+      });
     }
   }
 
@@ -415,6 +462,7 @@ class AppSnapshotDetail extends Component {
 
   render() {
     const {
+      loading,
       showScriptsOutput,
       selectedTab,
       selectedScriptTab,
@@ -426,10 +474,13 @@ class AppSnapshotDetail extends Component {
       showAllErrors,
       showAllWarnings,
       snapshotDetails,
-      series } = this.state;
-    const { app, snapshotDetail } = this.props;
+      series,
+      errorMessage,
+      errorTitle,
+    } = this.state;
+    const { app } = this.props;
 
-    if (snapshotDetail?.loading) {
+    if (loading) {
       return (
         <div className="flex-column flex1 alignItems--center justifyContent--center">
           <Loader size="60" />
@@ -449,7 +500,7 @@ class AppSnapshotDetail extends Component {
             <p className="u-fontSize--normal u-fontWeight--normal u-color--dustyGray">Total size: <span className="u-fontWeight--bold u-color--doveGray">{snapshotDetails?.volumeSizeHuman}</span></p>
           </div>
           <div className="flex-column u-lineHeight--normal u-textAlign--right">
-            <p className="u-fontSize--normal u-fontWeight--normal u-marginBottom--5">Status: <span className={`status-indicator ${snapshotDetails?.status.toLowerCase()} u-marginLeft--5`}>{Utilities.snapshotStatusToDisplayName(snapshotDetails?.status)}</span></p>
+            <p className="u-fontSize--normal u-fontWeight--normal u-marginBottom--5">Status: <span className={`status-indicator ${snapshotDetails?.status?.toLowerCase()} u-marginLeft--5`}>{Utilities.snapshotStatusToDisplayName(snapshotDetails?.status)}</span></p>
             <div className="u-fontSize--small">
               {snapshotDetails?.status !== "InProgress" &&
                 <span className="replicated-link" onClick={() => this.viewLogs()}>View logs</span>}
@@ -665,6 +716,16 @@ class AppSnapshotDetail extends Component {
             snapshotLogsErr={this.state.snapshotLogsErr}
             snapshotLogsErrMsg={this.state.snapshotLogsErrMsg}
           />}
+
+        {errorMessage &&
+          <ErrorModal
+            errorModal={this.state.displayErrorModal}
+            toggleErrorModal={this.toggleErrorModal}
+            errMsg={errorMessage}
+            tryAgain={() => this.getSnapshotDetails(this.props.match.params.id)}
+            err={errorTitle}
+            loading={this.state.loadingApp}
+          />}
       </div>
     );
   }
@@ -673,15 +734,4 @@ class AppSnapshotDetail extends Component {
 export default compose(
   withApollo,
   withRouter,
-  graphql(snapshotDetail, {
-    name: "snapshotDetail",
-    options: ({ match }) => {
-      const slug = match.params.slug;
-      const id = match.params.id;
-      return {
-        variables: { slug, id },
-        fetchPolicy: "no-cache"
-      }
-    }
-  })
 )(AppSnapshotDetail);

@@ -31,7 +31,7 @@ require (
 	github.com/spf13/cobra v1.0.0
 	github.com/spf13/viper v1.6.2
 	github.com/stretchr/testify v1.5.1
-	github.com/vmware-tanzu/velero v1.2.0
+	github.com/vmware-tanzu/velero v1.4.2
 	go.uber.org/zap v1.13.0
 	go.undefinedlabs.com/scopeagent v0.1.15
 	golang.org/x/crypto v0.0.0-20200414173820-0848c9571904

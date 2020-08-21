@@ -2,7 +2,6 @@ import * as _ from "lodash";
 import pg from "pg";
 import { Params } from "../server/params";
 import { ReplicatedError } from "../server/errors";
-import { Backup } from "./velero";
 import { ScheduledSnapshot } from "./snapshot";
 import { Querier } from "../util/persistence/db";
 

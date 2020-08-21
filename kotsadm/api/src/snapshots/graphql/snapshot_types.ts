@@ -89,19 +89,6 @@ const Snapshot = `
   }
 `
 
-const SnapshotDetail = `
-  type SnapshotDetail {
-    name: String
-    status: String
-    volumeSizeHuman: String
-    namespaces: [String]
-    hooks: [SnapshotHook]
-    volumes: [SnapshotVolume]
-    errors: [SnapshotError]
-    warnings: [SnapshotError]
-  }
-`
-
 const SnapshotError = `
   type SnapshotError {
     title: String
@@ -178,7 +165,6 @@ export default [
   SnapshotStoreAzure,
   SnapshotStoreGoogle,
   Snapshot,
-  SnapshotDetail,
   SnapshotError,
   SnapshotVolume,
   SnapshotHook,

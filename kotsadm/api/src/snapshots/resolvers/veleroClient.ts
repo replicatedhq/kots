@@ -23,12 +23,7 @@ import {
   snapshotVolumeBytesKey,
   RestoreVolume,
   Snapshot,
-  SnapshotDetail,
-  SnapshotError,
-  SnapshotHook,
-  SnapshotHookPhase,
-  SnapshotTrigger,
-  SnapshotVolume } from "../snapshot";
+  SnapshotTrigger } from "../snapshot";
 import {
   SnapshotProvider,
   SnapshotStore,
@@ -289,67 +284,6 @@ export class VeleroClient {
     });
 
     return volumes;
-  }
-
-  // tslint:disable-next-line cyclomatic-complexity
-  async getSnapshotDetail(name: string): Promise<SnapshotDetail> {
-    const path = `backups/${name}`;
-    const backup = await this.request("GET", path);
-    const snapshot = await this.snapshotFromBackup(backup);
-
-    const q = {
-      labelSelector: `velero.io/backup-name=${getValidName(name)}`,
-    };
-    const volumeList = await this.request("GET", `podvolumebackups?${querystring.stringify(q)}`);
-    const volumes: SnapshotVolume[] = [];
-
-    _.each(volumeList.items, (pvb) => {
-      const sv: SnapshotVolume = {
-        name: pvb.spec.volume
-      };
-      if (pvb.status) {
-        sv.started = pvb.status.startTimestamp;
-        sv.finished = pvb.status.completionTimestamp;
-        sv.phase = pvb.status.phase;
-        if (pvb.status.progress) {
-          // progress object is empty if volume size was 0
-          sv.sizeBytesHuman = pvb.status.progress.totalBytes ? prettyBytes(pvb.status.progress.totalBytes) : "0 B";
-          sv.doneBytesHuman = pvb.status.progress.bytesDone ? prettyBytes(pvb.status.progress.bytesDone): "0 B";
-          sv.completionPercent = Math.round(pvb.status.progress.bytesDone / pvb.status.progress.totalBytes * 100);
-          const bytesPerSecond = pvb.status.progress.bytesDone / moment().diff(moment(pvb.status.startTimestamp), "seconds");
-          const bytesRemaining = pvb.status.progress.totalBytes - pvb.status.progress.bytesDone;
-          sv.timeRemainingSeconds = Math.round(bytesRemaining / bytesPerSecond);
-        }
-      }
-      volumes.push(sv);
-    });
-
-    let logs;
-    if (snapshot.status === Phase.Completed || snapshot.status === Phase.PartiallyFailed || snapshot.status === Phase.Failed) {
-      try {
-        logs = await this.getBackupLogs(name);
-      } catch(e) {
-        logger.error(`Failed to get backup logs: ${e.message}`);
-      }
-    }
-
-    const errors: SnapshotError[] = logs ? logs.errors : [];
-
-    _.each(backup.status.validationErrors, (message: string) => {
-      errors.push({
-        title: "Validation Error",
-        message,
-      });
-    });
-
-    return {
-      ...snapshot,
-      namespaces: backup.spec.includedNamespaces,
-      volumes,
-      errors,
-      hooks: logs && logs.execs,
-      warnings: logs && logs.warnings,
-    };
   }
 
   async getBackupLogs(name: string): Promise<ParsedBackupLogs> {

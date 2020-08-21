@@ -4,14 +4,11 @@ import { Params } from "../../server/params";
 import { Context } from "../../context";
 import {
   RestoreDetail,
-  Snapshot,
-  SnapshotDetail
 } from "../snapshot";
 import { Phase } from "../velero";
-import { SnapshotConfig, SnapshotSettings } from "../snapshot_config";
+import { SnapshotConfig } from "../snapshot_config";
 import { VeleroClient } from "./veleroClient";
 import { parseTTL } from "../backup";
-import { logger } from "../../server/logger";
 
 export function SnapshotQueries(stores: Stores, params: Params) {
   // tslint:disable-next-line max-func-body-length
@@ -41,14 +38,6 @@ export function SnapshotQueries(stores: Stores, params: Params) {
         autoSchedule: app.snapshotSchedule ? { schedule: app.snapshotSchedule } : { schedule: "0 0 * * MON" },
         ttl
       };
-    },
-
-    async snapshotDetail(root: any, args: any, context: Context): Promise<SnapshotDetail> {
-      context.requireSingleTenantSession();
-      const { slug, id } = args;
-      const client = new VeleroClient("velero"); // TODO namespace
-      const detail = await client.getSnapshotDetail(id);
-      return detail;
     },
 
     // tslint:disable-next-line cyclomatic-complexity
