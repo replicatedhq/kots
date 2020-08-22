@@ -118,7 +118,6 @@ func Start() {
 	r.Path("/api/v1/app/{appSlug}/sequence/{sequence}/contents").Methods("OPTIONS", "GET").HandlerFunc(handlers.GetAppContents)
 	r.Path("/api/v1/app/{appSlug}/cluster/{clusterId}/dashboard").Methods("OPTIONS", "GET").HandlerFunc(handlers.GetAppDashboard)
 	r.Path("/api/v1/app/{appSlug}/cluster/{clusterId}/sequence/{sequence}/downstreamoutput").Methods("OPTIONS", "GET").HandlerFunc(handlers.GetDownstreamOutput)
-	r.Path("/api/v1/app/{appSlug}/downstreams").Methods("OPTIONS", "GET").HandlerFunc(handlers.GetDownstreams)
 
 	r.HandleFunc("/api/v1/login", handlers.Login)
 	r.HandleFunc("/api/v1/logout", handlers.Logout)
