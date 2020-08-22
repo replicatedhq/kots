@@ -77,10 +77,6 @@ export function KotsQueries(stores: Stores, params: Params) {
       return await stores.kotsAppStore.getImageRewriteStatus();
     },
 
-    async getUpdateDownloadStatus(root: any, args: any, context: Context): Promise<{ currentMessage: string, status: string}> {
-      return await stores.kotsAppStore.getUpdateDownloadStatus();
-    },
-
     async getKotsDownstreamOutput(root: any, args: any, context: Context): Promise<KotsDownstreamOutput> {
       const appId = await stores.kotsAppStore.getIdFromSlug(args.appSlug);
       const app = await context.getApp(appId);

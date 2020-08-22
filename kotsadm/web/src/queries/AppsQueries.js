@@ -277,16 +277,6 @@ export const getImageRewriteStatusRaw = `
 `;
 export const getImageRewriteStatus = gql(getImageRewriteStatusRaw);
 
-export const getUpdateDownloadStatusRaw = `
-  query getUpdateDownloadStatus {
-    getUpdateDownloadStatus {
-      currentMessage
-      status
-    }
-  }
-`;
-export const getUpdateDownloadStatus = gql(getUpdateDownloadStatusRaw);
-
 export const getKotsDownstreamOutput = gql`
   query getKotsDownstreamOutput($appSlug: String!, $clusterSlug: String!, $sequence: Int!) {
     getKotsDownstreamOutput(appSlug: $appSlug, clusterSlug: $clusterSlug, sequence: $sequence) {
