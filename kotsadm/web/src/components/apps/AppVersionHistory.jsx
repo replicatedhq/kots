@@ -542,6 +542,7 @@ class AppVersionHistory extends Component {
           if (this.props.updateCallback) {
             this.props.updateCallback();
           }
+          this.props.data.refetch();
         } else {
           this.setState({
             checkingForUpdates: true,
