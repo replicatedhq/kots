@@ -5,7 +5,6 @@ import { Link, withRouter } from "react-router-dom";
 import { compose, withApollo } from "react-apollo";
 
 import { Utilities } from "@src/utilities/utilities";
-import { listClusters } from "@src/queries/ClusterQueries";
 import Avatar from "../shared/Avatar";
 import ErrorModal from "../modals/ErrorModal";
 
@@ -86,12 +85,7 @@ export class NavBar extends PureComponent {
   }
 
   handleGoToGitOps = () => {
-    if (this.props.location.pathname === "/gitops") {
-      this.props.client.query({
-        query: listClusters,
-        fetchPolicy: "network-only",
-      });
-    } else {
+    if (this.props.location.pathname !== "/gitops") {
       this.props.history.push("/gitops");
     }
   }
