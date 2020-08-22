@@ -1770,10 +1770,6 @@ WHERE app_id = $1 AND cluster_id = $2 AND sequence = $3`;
     await this.updateApiTaskStatusLiveness("image-rewrite");
   }
 
-  async getUpdateDownloadStatus(): Promise<{ currentMessage: string, status: string }> {
-    return this.getApiTaskStatus("update-download");
-  }
-
   async setUpdateDownloadStatus(msg: string, status: string): Promise<void> {
     await this.setApiTaskStatus("update-download", msg, status);
   }

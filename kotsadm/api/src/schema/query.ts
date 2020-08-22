@@ -39,7 +39,6 @@ export const Query = `
     getAirgapInstallStatus: InstallStatus
     getOnlineInstallStatus: InstallStatus
     getImageRewriteStatus: ImageRewriteStatus
-    getUpdateDownloadStatus: UpdateDownloadStatus
 
     kurl: Kurl
 
