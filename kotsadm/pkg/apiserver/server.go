@@ -180,13 +180,13 @@ func Start() {
 	// task status
 	r.Path("/api/v1/task/updatedownload").Methods("OPTIONS", "GET").HandlerFunc(handlers.GetUpdateDownloadStatus)
 
+	r.Handle("/socket.io/", socketservice.Start().Server)
+
 	// to avoid confusion, we don't serve this in the dev env...
 	if os.Getenv("DISABLE_SPA_SERVING") != "1" {
 		spa := handlers.SPAHandler{StaticPath: filepath.Join("web", "dist"), IndexPath: "index.html"}
 		r.PathPrefix("/").Handler(spa)
 	}
-
-	r.Handle("/socket.io/", socketservice.Start().Server)
 
 	srv := &http.Server{
 		Handler: r,
