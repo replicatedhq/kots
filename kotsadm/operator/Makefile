@@ -1,5 +1,5 @@
-
 SHELL := /bin/bash -o pipefail
+CURRENT_USER := $(shell id -u -n)
 export GO111MODULE=on
 export GOPROXY=https://proxy.golang.org
 
@@ -36,6 +36,11 @@ build:
 .PHONY: run
 run: bin
 	./bin/kotsadm-operator --api-endpoint http://localhost:30065 --token local
+
+.PHONY: build-ttl.sh
+build-ttl.sh:
+	docker build -f deploy/Dockerfile -t ttl.sh/${CURRENT_USER}/kotsadm-operator:12h .
+	docker push ttl.sh/${CURRENT_USER}/kotsadm-operator:12h
 
 .PHONY: build-alpha
 build-alpha:
