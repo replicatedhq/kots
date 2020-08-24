@@ -33,12 +33,6 @@ export function AppsMutations(stores: Stores) {
       return true;
     },
 
-    async updateGitOpsRepo(root: any, args: any, context: Context): Promise<boolean> {
-      const { gitOpsInput, uriToUpdate } = args;
-      await stores.kotsAppStore.updateGitOpsRepo(uriToUpdate, gitOpsInput.uri, gitOpsInput.hostname);
-      return true;
-    },
-
     async resetGitOpsData(root: any, args: any, context: Context): Promise<boolean> {
       await stores.kotsAppStore.resetGitOpsData();
       return true;
