@@ -245,7 +245,7 @@ func DeleteKotsadmBackup(w http.ResponseWriter, r *http.Request) {
 	if err := snapshot.DeleteBackup(mux.Vars(r)["snapshotName"]); err != nil {
 		logger.Error(err)
 		deleteBackupResponse.Error = "failed to delete backup"
-		w.WriteHeader(http.StatusInternalServerError)
+		JSON(w, http.StatusInternalServerError, deleteBackupResponse)
 		return
 	}
 
