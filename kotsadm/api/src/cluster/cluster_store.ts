@@ -347,45 +347,6 @@ WHERE installation_id = $1 AND owner = $2 AND repo = $3 AND is_404 = TRUE`;
     }
   }
 
-  async getOperatorInstallationManifests(clusterId: string): Promise<string> {
-    const cluster = await this.getShipOpsCluster(clusterId);
-
-    const manifests = `apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: kotsadm-operator
-spec:
-  selector:
-    matchLabels:
-      app: kotsadm-operator
-  template:
-    metadata:
-      labels:
-        app: kotsadm-operator
-    spec:
-      containers:
-      - env:
-        - name: KOTSADM_API_ENDPOINT
-          value: ${this.params.shipApiEndpoint}
-        - name: KOTSADM_TOKEN
-          value: ${cluster.shipOpsRef!.token}
-        image: kotsadm-operator
-        imagePullPolicy: Always
-        name: kotsadm-operator
-        resources:
-          limits:
-            cpu: 200m
-            memory: 1000Mi
-          requests:
-            cpu: 100m
-            memory: 500Mi
-      restartPolicy: Always
-
-`;
-
-    return manifests;
-  }
-
   async updateCluster(userId: string, clusterId: string, clusterName: string): Promise<boolean> {
     const slugProposal = `${slugify(clusterName, { lower: true })}`;
     const clusters = await this.listClusters(userId);
