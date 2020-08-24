@@ -84,7 +84,6 @@ type RestoreDetail struct {
 	Volumes  []RestoreVolume `json:"volumes"`
 	Errors   []SnapshotError `json:"errors"`
 	Warnings []SnapshotError `json:"warnings"`
-	Active   bool            `json:"active"`
 }
 
 type SnapshotHook struct {

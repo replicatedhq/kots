@@ -5,27 +5,82 @@ import Helmet from "react-helmet";
 import { Line } from "rc-progress";
 import Loader from "../shared/Loader";
 import { Utilities } from "@src/utilities/utilities";
-import { restoreDetail } from "../../queries/SnapshotQueries";
+import { Repeater } from "@src/utilities/repeater";
 import { cancelRestore } from "../../mutations/SnapshotMutations";
 import "../../scss/components/snapshots/AppSnapshots.scss";
 
 class AppSnapshotRestore extends Component {
   state = {
+    fetchRestoreDetailJob: new Repeater(),
+    loading: false,
+    restoreDetail: {},
+    errorMessage: "",
+    errorTitle: "",
+
     cancelingRestore: false,
     cancelRestoreErr: "",
-    cancelRestoreErrorMsg: ""
+    cancelRestoreErrorMsg: "",
   }
 
   componentDidMount() {
-    this.props.restoreDetail.startPolling(2000);
+    this.state.fetchRestoreDetailJob.start(this.fetchRestoreDetail, 2000);
   }
 
   componentDidUpdate(lastProps) {
-    if (this.props.restoreDetail?.restoreDetail !== lastProps.restoreDetail?.restoreDetail && this.props.restoreDetail?.restoreDetail) {
-      const phase = this.props.restoreDetail?.restoreDetail?.phase;
-      if (phase !== "New" && phase !== "InProgress") {
-        this.props.restoreDetail.stopPolling();
+    const { match } = this.props;
+    if (match.params.id !== lastProps.match.params.id) {
+      this.state.fetchRestoreDetailJob.stop();
+      this.state.fetchRestoreDetailJob.start(this.fetchRestoreDetail, 2000);
+    } else {
+      const phase = this.state.restoreDetail?.phase;
+      if (phase && phase !== "New" && phase !== "InProgress") {
+        this.state.fetchRestoreDetailJob.stop();
       }
+    }
+  }
+
+  fetchRestoreDetail = async () => {
+    const { match } = this.props;
+    const restoreName = match.params.id;
+
+    this.setState({
+      loading: true,
+      errorMessage: "",
+      errorTitle: "",
+    });
+
+    try {
+      const res = await fetch(`${window.env.API_ENDPOINT}/app/${this.props.app?.slug}/snapshot/restore/${restoreName}`, {
+        method: "GET",
+        headers: {
+          "Authorization": Utilities.getToken(),
+        }
+      });
+      if (!res.ok) {
+        this.setState({
+          loading: false,
+          errorMessage: `Unexpected status code: ${res.status}`,
+          errorTitle: "Failed to fetch restore details",
+        });
+        return;
+      }
+      const response = await res.json();
+
+      const restoreDetail = response.restoreDetail;
+
+      this.setState({
+        loading: false,
+        snapshotDetails: restoreDetail,
+        errorMessage: "",
+        errorTitle: "",
+      });
+    } catch(err) {
+      console.log(err);
+      this.setState({
+        loading: false,
+        errorMessage: err ? `${err.message}` : "Something went wrong, please try again.",
+        errorTitle: "Failed to fetch restore details",
+      });
     }
   }
 
@@ -224,17 +279,6 @@ class AppSnapshotRestore extends Component {
 export default compose(
   withApollo,
   withRouter,
-  graphql(restoreDetail, {
-    name: "restoreDetail",
-    options: ({ app, match }) => {
-      const appId = app.id;
-      const restoreName = match.params.id;
-      return {
-        variables: { appId, restoreName },
-        fetchPolicy: "no-cache"
-      }
-    }
-  }),
   graphql(cancelRestore, {
     props: ({ mutate }) => ({
       cancelRestore: (appId) => mutate({ variables: { appId } })

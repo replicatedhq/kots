@@ -106,10 +106,11 @@ func DownloadRequest(veleroNamespace string, kind velerov1.DownloadTargetKind, n
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to execute get request")
 	}
-	defer resp.Body.Close()
+	// NOTE: it is up to the caller to close this response body
 
 	gzipReader, err := gzip.NewReader(resp.Body)
 	if err != nil {
+		resp.Body.Close()
 		return nil, errors.Wrap(err, "failed to create gzip reader")
 	}
 

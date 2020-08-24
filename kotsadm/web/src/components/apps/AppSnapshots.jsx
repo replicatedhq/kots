@@ -112,7 +112,7 @@ class AppSnapshots extends Component {
           })
         } else {
           this.setState({
-            snapshots: body.backups?.sort((a, b) => new Date(b.startedAt) - new Date(a.startedAt)),
+            snapshots: body.backups?.sort((a, b) => b.startedAt ? new Date(b.startedAt) - new Date(a.startedAt) : -99999999),
             hasSnapshotsLoaded: true
           });
         }

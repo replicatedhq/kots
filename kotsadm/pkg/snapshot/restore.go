@@ -169,7 +169,6 @@ func GetKotsadmRestoreDetail(ctx context.Context, restoreName string) (*types.Re
 		Volumes:  listRestoreVolumes(restoreVolumes.Items),
 		Errors:   make([]types.SnapshotError, 0),
 		Warnings: make([]types.SnapshotError, 0),
-		Active:   false, // TODO !!restoreInProgressName && restoreInProgressName === name;
 	}
 
 	if restore.Status.Phase == velerov1.RestorePhaseCompleted || restore.Status.Phase == velerov1.RestorePhasePartiallyFailed || restore.Status.Phase == velerov1.RestorePhaseFailed {
@@ -182,41 +181,6 @@ func GetKotsadmRestoreDetail(ctx context.Context, restoreName string) (*types.Re
 		result.Warnings = warnings
 		result.Errors = errs
 	}
-
-	// TODO
-	//       const { appId, restoreName: name } = args;
-	//       const { restoreInProgressName, restoreUndeployStatus } = await stores.kotsAppStore.getApp(appId);
-
-	//       const active = !!restoreInProgressName && restoreInProgressName === name;
-	//       const velero = new VeleroClient("velero"); // TODO namespace
-	//       const restore = await velero.readRestore(name);
-	//       if (!restore) {
-	//         if (restoreUndeployStatus === "failed") {
-	//           // HACK: once the user has see the error, clear it out.
-	//           // Otherwise there is no way to get back to snapshot list.
-	//           await stores.kotsAppStore.updateAppRestoreReset(appId);
-	//           return {
-	//             name,
-	//             active,
-	//             phase: Phase.Failed,
-	//             volumes: [],
-	//             errors: [{
-	//               title: "Restore has failed",
-	//               message: "Please check logs for errors.",
-	//             }],
-	//             warnings: [],
-	//           };
-	//         }
-
-	//         return {
-	//           name,
-	//           active,
-	//           phase: Phase.New,
-	//           volumes: [],
-	//           errors: [],
-	//           warnings: [],
-	//         };
-	//       }
 
 	return result, nil
 }

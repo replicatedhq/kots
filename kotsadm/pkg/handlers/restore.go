@@ -16,6 +16,8 @@ import (
 	"github.com/replicatedhq/kots/kotsadm/pkg/store"
 	"github.com/replicatedhq/kots/pkg/kotsadm"
 	"github.com/replicatedhq/kots/pkg/kotsadm/types"
+	velerov1 "github.com/vmware-tanzu/velero/pkg/apis/velero/v1"
+	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
 )
 
 type CreateRestoreResponse struct {
@@ -188,6 +190,7 @@ func GetRestoreStatus(w http.ResponseWriter, r *http.Request) {
 
 type GetKotsadmRestoreResponse struct {
 	RestoreDetail *snapshottypes.RestoreDetail `json:"restoreDetail"`
+	IsActive      bool                         `json:"active"`
 }
 
 func GetKotsadmRestore(w http.ResponseWriter, r *http.Request) {
@@ -200,17 +203,54 @@ func GetKotsadmRestore(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	appSlug := mux.Vars(r)["appSlug"]
 	restoreName := mux.Vars(r)["restoreName"]
-	restore, err := snapshot.GetKotsadmRestoreDetail(context.TODO(), restoreName)
+
+	foundApp, err := store.GetStore().GetAppFromSlug(appSlug)
 	if err != nil {
-		err = errors.Wrap(err, "failed to get restore detail")
+		err = errors.Wrap(err, "failed to get app from app slug")
 		logger.Error(err)
 		w.WriteHeader(500)
 		return
 	}
 
 	response := GetKotsadmRestoreResponse{
-		RestoreDetail: restore,
+		IsActive: foundApp.RestoreInProgressName == restoreName,
 	}
+
+	restoreDetail, err := snapshot.GetKotsadmRestoreDetail(context.TODO(), restoreName)
+	if kuberneteserrors.IsNotFound(errors.Cause(err)) {
+		if foundApp.RestoreUndeployStatus == "failed" {
+			// HACK: once the user has see the error, clear it out.
+			// Otherwise there is no way to get back to snapshot list.
+			if err := app.ResetRestore(foundApp.ID); err != nil {
+				err = errors.Wrap(err, "failed to reset app restore in progress name")
+				logger.Error(err)
+				w.WriteHeader(500)
+				return
+			}
+			restoreDetail = &snapshottypes.RestoreDetail{
+				Name:  restoreName,
+				Phase: string(velerov1.RestorePhaseFailed),
+				Errors: []snapshottypes.SnapshotError{{
+					Title:   "Restore has failed",
+					Message: "Please check logs for errors.",
+				}},
+			}
+		} else {
+			restoreDetail = &snapshottypes.RestoreDetail{
+				Name:  restoreName,
+				Phase: string(velerov1.RestorePhaseNew),
+			}
+		}
+	} else if err != nil {
+		err = errors.Wrap(err, "failed to get restore detail")
+		logger.Error(err)
+		w.WriteHeader(500)
+		return
+	}
+
+	response.RestoreDetail = restoreDetail
+
 	JSON(w, 200, response)
 }

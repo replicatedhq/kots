@@ -145,12 +145,12 @@ func Start() {
 	// kotsadm snapshots
 	r.Path("/api/v1/snapshots").Methods("OPTIONS", "GET").HandlerFunc(handlers.ListKotsadmBackups)
 	r.Path("/api/v1/snapshot/{snapshotName}").Methods("OPTIONS", "GET").HandlerFunc(handlers.GetKotsadmBackup)
-	r.Path("/api/v1/restore/{restoreName}").Methods("OPTIONS", "GET").HandlerFunc(handlers.GetKotsadmRestore)
 	r.Path("/api/v1/velero").Methods("OPTIONS", "GET").HandlerFunc(handlers.GetVeleroStatus)
 
 	// App snapshot routes
 	r.Path("/api/v1/app/{appSlug}/snapshot/backup").Methods("OPTIONS", "POST").HandlerFunc(handlers.CreateBackup)
 	r.Path("/api/v1/app/{appSlug}/snapshot/restore/status").Methods("OPTIONS", "GET").HandlerFunc(handlers.GetRestoreStatus)
+	r.Path("/api/v1/app/{appSlug}/snapshot/restore/{restoreName}").Methods("OPTIONS", "GET").HandlerFunc(handlers.GetKotsadmRestore)
 	r.Path("/api/v1/app/{appSlug}/snapshots").Methods("OPTIONS", "GET").HandlerFunc(handlers.ListBackups)
 	r.Path("/api/v1/app/{appSlug}/snapshot/config").Methods("OPTIONS", "GET").HandlerFunc(handlers.GetSnapshotConfig)
 

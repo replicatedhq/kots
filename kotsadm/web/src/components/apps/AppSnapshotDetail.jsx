@@ -13,6 +13,7 @@ import ShowAllModal from "../modals/ShowAllModal";
 import ViewSnapshotLogsModal from "../modals/ViewSnapshotLogsModal";
 import ErrorModal from "../modals/ErrorModal";
 import { Utilities } from "../../utilities/utilities";
+import { Repeater } from "../../utilities/repeater";
 
 let colorIndex = 0;
 let mapColors = {}
@@ -36,7 +37,8 @@ class AppSnapshotDetail extends Component {
     snapshotLogsErr: false,
     snapshotLogsErrMsg: "",
 
-    loading: false,
+    loading: true,
+    fetchSnapshotDetailsJob: new Repeater(),
     snapshotDetails: {},
     errorMessage: "",
     errorTitle: "",
@@ -105,20 +107,30 @@ class AppSnapshotDetail extends Component {
   };
 
   componentDidMount() {
-    const { match } = this.props;
-    this.getSnapshotDetails(match.params.id);
+    // this.state.fetchSnapshotDetailsJob.start(this.fetchSnapshotDetails, 2000);
+    this.fetchSnapshotDetails();
   }
 
   componentDidUpdate(lastProps) {
     const { match } = this.props;
     if (match.params.id !== lastProps.match.params.id) {
-      this.getSnapshotDetails(match.params.id);
+      // this.state.fetchSnapshotDetailsJob.stop();
+      // this.state.fetchSnapshotDetailsJob.start(this.fetchSnapshotDetails, 2000);
+      this.fetchSnapshotDetails();
     }
+    // } else {
+    //   const phase = this.state.snapshotDetails?.status;
+    //   if (phase && phase !== "New" && phase !== "InProgress") {
+    //     this.state.fetchSnapshotDetailsJob.stop();
+    //   }
+    // }
   }
 
-  getSnapshotDetails = async (snapshotName) => {
+  fetchSnapshotDetails = async () => {
+    const { match } = this.props;
+    const snapshotName = match.params.id;
+
     this.setState({
-      loading: true,
       errorMessage: "",
       errorTitle: "",
     });
@@ -142,15 +154,17 @@ class AppSnapshotDetail extends Component {
 
       const snapshotDetails = response.backupDetail;
 
+      let series = [];
       if (!isEmpty(snapshotDetails?.volumes)) {
         if (snapshotDetails?.hooks && !isEmpty(snapshotDetails?.hooks)) {
-          this.setState({ series: this.getSeriesData([...snapshotDetails?.volumes, ...snapshotDetails?.hooks].sort((a, b) => new Date(a.started) - new Date(b.started))) })
+          series = this.getSeriesData([...snapshotDetails?.volumes, ...snapshotDetails?.hooks].sort((a, b) => new Date(a.started) - new Date(b.started)));
         } else {
-          this.setState({ series: this.getSeriesData((snapshotDetails?.volumes).sort((a, b) => new Date(a.started) - new Date(b.started))) })
+          series = this.getSeriesData((snapshotDetails?.volumes).sort((a, b) => new Date(a.started) - new Date(b.started)));
         }
       } else if ((snapshotDetails?.hooks && !isEmpty(snapshotDetails?.hooks))) {
-        this.setState({ series: this.getSeriesData((snapshotDetails?.hooks).sort((a, b) => new Date(a.started) - new Date(b.started))) })
+        series = this.getSeriesData((snapshotDetails?.hooks).sort((a, b) => new Date(a.started) - new Date(b.started)));
       }
+      this.setState({series: series});
 
       this.setState({
         loading: false,
@@ -403,15 +417,15 @@ class AppSnapshotDetail extends Component {
 
     const data = seriesData.map((d, i) => {
       let finishedTime;
-      if (d.started === d.finished) {
-        finishedTime = new Date(moment(d.finished).add(1, "seconds")).getTime();
+      if (d.startedAt === d.finishedAt) {
+        finishedTime = new Date(moment(d.finishedAt).add(1, "seconds")).getTime();
       } else {
-        finishedTime = new Date(d.finished).getTime()
+        finishedTime = new Date(d.finishedAt).getTime()
       }
 
       return {
         x: d.name ? `${d.name}` : `${d.hookName} (${d.podName})-${i}`,
-        y: [new Date(d.started).getTime(), finishedTime],
+        y: [new Date(d.startedAt).getTime(), finishedTime],
         z: d.name ? "Volume" : `${d.phase}-snapshot-script`,
         fillColor: d.name ? this.assignColorToPath(d.name) : this.assignColorToPath(d.podName)
       }
@@ -722,7 +736,7 @@ class AppSnapshotDetail extends Component {
             errorModal={this.state.displayErrorModal}
             toggleErrorModal={this.toggleErrorModal}
             errMsg={errorMessage}
-            tryAgain={() => this.getSnapshotDetails(this.props.match.params.id)}
+            tryAgain={() => this.fetchSnapshotDetails()}
             err={errorTitle}
             loading={this.state.loadingApp}
           />}
