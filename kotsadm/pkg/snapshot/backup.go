@@ -502,7 +502,6 @@ func DeleteBackup(snapshotName string) error {
 		},
 	}
 
-	// delete the backup
 	cfg, err := config.GetConfig()
 	if err != nil {
 		return errors.Wrap(err, "failed to get cluster config")
