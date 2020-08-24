@@ -67,14 +67,13 @@ class GitOpsDeploymentManager extends React.Component {
     providerError: null,
     finishingSetup: false,
     appsList: [],
+    gitops: {},
   }
 
   componentDidMount() {
     this.getAppsList();
     this.getGitopsState();
   }
-
-  componentDidUpdate(lastProps) {}
 
   getAppsList = async () => {
     try {
@@ -86,6 +85,10 @@ class GitOpsDeploymentManager extends React.Component {
         method: "GET",
       });
       if (!res.ok) {
+        if (res.status === 401) {
+          Utilities.logoutUser();
+          return;
+        }
         console.log("failed to get apps list, unexpected status code", res.status);
         return;
       }
@@ -104,7 +107,7 @@ class GitOpsDeploymentManager extends React.Component {
   getGitopsState = async () => {
     const freshGitops = await this.getGitops()
 
-    if (freshGitops.enabled) {
+    if (freshGitops?.enabled) {
       const selectedService = find(SERVICES, service => service.value === freshGitops.provider);
       this.setState({
         selectedService: selectedService ? selectedService : this.state.selectedService,
@@ -128,6 +131,10 @@ class GitOpsDeploymentManager extends React.Component {
         method: "GET",
       });
       if (!res.ok) {
+        if (res.status === 401) {
+          Utilities.logoutUser();
+          return;
+        }
         console.log("failed to get gitops settings, unexpected status code", res.status);
         return;
       }
@@ -192,13 +199,10 @@ class GitOpsDeploymentManager extends React.Component {
     const gitOpsInput = this.getGitOpsInput(provider, repoUri, branch, path, format, action, hostname);
 
     try {
-      const getGitOpsRepo = await this.getGitops();
-      if (getGitOpsRepo?.enabled) {
-        if (this.providerChanged()) {
-          const success = await this.resetGitOps();
-          if (!success) {
-            return false;
-          }
+      if (this.providerChanged()) {
+        const success = await this.resetGitOps();
+        if (!success) {
+          return false;
         }
       }
 
@@ -218,7 +222,7 @@ class GitOpsDeploymentManager extends React.Component {
       } else {
         this.setState({ step: "", finishingSetup: false });
         this.getAppsList();
-        this.getGitops();
+        this.getGitopsState();
       }
 
       return true;
@@ -288,12 +292,11 @@ class GitOpsDeploymentManager extends React.Component {
       return;
     }
 
-    const freshGitops = await this.getGitops();
-    if (!freshGitops) {
+    if (!this.state.gitops) {
       return;
     }
 
-    const { provider, hostname, uri } = freshGitops;
+    const { provider, hostname, uri } = this.state.gitops;
     const branch = "master";
     const path = "";
     const format = "single";
@@ -563,11 +566,10 @@ class GitOpsDeploymentManager extends React.Component {
       );
     }
 
-    const gitopsRepo = this.state.gitops;
     const activeStep = find(STEPS, { step: this.state.step });
     return (
       <div className="GitOpsDeploymentManager--wrapper flex-column flex1">
-        {gitopsRepo && gitopsRepo.enabled && this.state.step !== "action" ?
+        {this.state.gitops?.enabled && this.state.step !== "action" ?
           this.renderConfiguredGitOps()
           : activeStep &&
           this.renderActiveStep(activeStep)
