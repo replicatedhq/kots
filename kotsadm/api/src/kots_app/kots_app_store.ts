@@ -136,55 +136,6 @@ export class KotsAppStore {
     }
   }
 
-  async updateGitOpsRepo(uriToUpdate: string, newUri: string, hostname: string): Promise<void> {
-    try {
-      const kc = new k8s.KubeConfig();
-      kc.loadFromDefault();
-      const k8sApi = kc.makeApiClient(k8s.CoreV1Api);
-
-      const namespace = process.env["POD_NAMESPACE"]!;
-      const secretName = "kotsadm-gitops";
-      const secret = await k8sApi.readNamespacedSecret(secretName, namespace);
-      const data = secret.body.data;
-
-      if (!data) {
-        throw new ReplicatedError("Failed to update gitops secret, no secret data found");
-      }
-
-      for (const key of Object.keys(data)) {
-        const value = base64Decode(data[key]);
-        const isSingleApp = uriToUpdate !== "";
-        if (!isSingleApp || value === uriToUpdate) {
-          const index = key.charAt(9);
-          if (isSingleApp) {
-            data[`provider.${index}.repoUri`] = base64Encode(newUri);
-          }
-          const hostnameKey = `provider.${index}.hostname`;
-          if (hostnameKey in data) {
-            delete data[hostnameKey];
-          }
-          if (hostname) {
-            data[hostnameKey] = base64Encode(hostname);
-          }
-        }
-      }
-
-      const secretObj: k8s.V1Secret = {
-        apiVersion: "v1",
-        kind: "Secret",
-        metadata: {
-          name: secretName,
-        },
-        data: data
-      }
-
-      await k8sApi.replaceNamespacedSecret(secretName, namespace, secretObj);
-    } catch (err) {
-      logger.error(err);
-      throw new ReplicatedError("Error updating gitops secret");
-    }
-  }
-
   async setGitOpsError(appId: string, clusterId: string, err: any): Promise<void> {
     try {
       const kc = new k8s.KubeConfig();
