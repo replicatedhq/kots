@@ -17,7 +17,6 @@ type Mutation {
   updateKotsApp(appId: String!, appName: String, iconUri: String): Boolean
 
   createGitOpsRepo(gitOpsInput: KotsGitOpsInput!): Boolean
-  updateGitOpsRepo(gitOpsInput: KotsGitOpsInput!, uriToUpdate: String): Boolean
   updateAppGitOps(appId: String!, clusterId: String!, gitOpsInput: KotsGitOpsInput!): Boolean
   testGitOpsConnection(appId: String!, clusterId: String!): Boolean
   disableAppGitops(appId: String!, clusterId: String!): Boolean

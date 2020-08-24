@@ -8,7 +8,7 @@ import { graphql, compose, withApollo } from "react-apollo";
 import { getGitOpsRepo } from "@src/queries/AppsQueries";
 import GitOpsFlowIllustration from "./GitOpsFlowIllustration";
 import GitOpsRepoDetails from "./GitOpsRepoDetails";
-import { createGitOpsRepo, updateGitOpsRepo } from "@src/mutations/AppsMutations";
+import { createGitOpsRepo } from "@src/mutations/AppsMutations";
 import { getServiceSite, requiresHostname, Utilities } from "../../utilities/utilities";
 
 import "../../scss/components/gitops/GitOpsDeploymentManager.scss";
@@ -169,20 +169,13 @@ class GitOpsDeploymentManager extends React.Component {
 
     try {
       const getGitOpsRepo = this.props.getGitOpsRepoQuery?.getGitOpsRepo;
-      if (getGitOpsRepo?.enabled) {
-        if (this.providerChanged()) {
-          const success = await this.resetGitOps();
-          if (!success) {
-            return false;
-          }
-          await this.props.createGitOpsRepo(gitOpsInput);
-        } else {
-          const uriToUpdate = this.isSingleApp() ? getGitOpsRepo?.uri : "";
-          await this.props.updateGitOpsRepo(gitOpsInput, uriToUpdate);
+      if (getGitOpsRepo?.enabled && this.providerChanged()) {
+        const success = await this.resetGitOps();
+        if (!success) {
+          return false;
         }
-      } else {
-        await this.props.createGitOpsRepo(gitOpsInput);
       }
+      await this.props.createGitOpsRepo(gitOpsInput);
 
       if (this.isSingleApp()) {
         const app = this.state.appsList[0];
@@ -570,11 +563,6 @@ export default compose(
   graphql(createGitOpsRepo, {
     props: ({ mutate }) => ({
       createGitOpsRepo: (gitOpsInput) => mutate({ variables: { gitOpsInput } })
-    })
-  }),
-  graphql(updateGitOpsRepo, {
-    props: ({ mutate }) => ({
-      updateGitOpsRepo: (gitOpsInput, uriToUpdate) => mutate({ variables: { gitOpsInput, uriToUpdate } })
     })
   }),
 )(GitOpsDeploymentManager);
