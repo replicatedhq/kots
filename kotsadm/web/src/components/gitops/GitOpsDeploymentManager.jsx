@@ -71,17 +71,19 @@ class GitOpsDeploymentManager extends React.Component {
 
   componentDidMount() {
     this.getAppsList();
-    this.getGitops();
+    this.getGitopsState();
   }
 
   componentDidUpdate(lastProps) {
-    const { enabled, provider, hostname } = this.state.gitops;
-    if (enabled) {
-      const selectedService = find(SERVICES, service => service.value === provider);
-      this.setState({
-        selectedService: selectedService ? selectedService : this.state.selectedService,
-        hostname: hostname || ""
-      });
+    if (this.state.gitops) {
+      const {enabled, provider, hostname} = this.state.gitops;
+      if (enabled) {
+        const selectedService = find(SERVICES, service => service.value === provider);
+        this.setState({
+          selectedService: selectedService ? selectedService : this.state.selectedService,
+          hostname: hostname || ""
+        });
+      }
     }
   }
 
@@ -110,6 +112,23 @@ class GitOpsDeploymentManager extends React.Component {
     }
   }
 
+  getGitopsState = async () => {
+    const freshGitops = await this.getGitops()
+
+    if (freshGitops.enabled) {
+      const selectedService = find(SERVICES, service => service.value === freshGitops.provider);
+      this.setState({
+        selectedService: selectedService ? selectedService : this.state.selectedService,
+        hostname: freshGitops.hostname || "",
+        gitops: freshGitops
+      })
+    } else {
+      this.setState({
+        gitops: freshGitops
+      })
+    }
+  }
+
   getGitops = async () => {
     try {
       const res = await fetch(`${window.env.API_ENDPOINT}/gitops/get`, {
@@ -124,21 +143,7 @@ class GitOpsDeploymentManager extends React.Component {
         return;
       }
   
-      const gitops = await res.json();
-      if (gitops.enabled) {
-        const selectedService = find(SERVICES, service => service.value === gitops.provider);
-        this.setState({
-          selectedService: selectedService ? selectedService : this.state.selectedService,
-          hostname: gitops.hostname || "",
-          gitops: gitops
-        })
-      } else {
-        this.setState({
-          gitops: gitops
-        })
-      }
-
-      return gitops;
+      return await res.json();
     } catch(err) {
       console.log(err);
       throw err;
@@ -157,7 +162,7 @@ class GitOpsDeploymentManager extends React.Component {
   hostnameChanged = () => {
     const { hostname, selectedService } = this.state;
     const provider = selectedService?.value;
-    const savedHostname = this.state.gitops.hostname || "";
+    const savedHostname = this.state.gitops?.hostname || "";
     return !this.providerChanged() && requiresHostname(provider) && hostname !== savedHostname;
   }
 
@@ -570,7 +575,7 @@ class GitOpsDeploymentManager extends React.Component {
     const activeStep = find(STEPS, { step: this.state.step });
     return (
       <div className="GitOpsDeploymentManager--wrapper flex-column flex1">
-        {gitopsRepo.enabled && this.state.step !== "action" ?
+        {gitopsRepo && gitopsRepo.enabled && this.state.step !== "action" ?
           this.renderConfiguredGitOps()
           : activeStep &&
           this.renderActiveStep(activeStep)
