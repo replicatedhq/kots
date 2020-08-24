@@ -494,7 +494,7 @@ func DeleteBackup(snapshotName string) error {
 	veleroNamespace := bsl.Namespace
 	veleroDeleteBackupRequest := &velerov1.DeleteBackupRequest{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      fmt.Sprintf("%s-%s", snapshotName, time.Now()),
+			Name:      snapshotName,
 			Namespace: veleroNamespace,
 		},
 		Spec: velerov1.DeleteBackupRequestSpec{
