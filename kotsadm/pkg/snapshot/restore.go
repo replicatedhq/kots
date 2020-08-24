@@ -42,9 +42,8 @@ func GetRestore(snapshotName string) (*velerov1.Restore, error) {
 	if err != nil {
 		if kuberneteserrors.IsNotFound(err) {
 			return nil, nil
-		} else {
-			return nil, errors.Wrap(err, "failed to get restore")
 		}
+		return nil, errors.Wrap(err, "failed to get restore")
 	}
 
 	return restore, nil
@@ -134,7 +133,7 @@ func DeleteRestore(snapshotName string) error {
 	return nil
 }
 
-func GetKotsadmRestoreDetail(restoreName string) (*types.RestoreDetail, error) {
+func GetKotsadmRestoreDetail(ctx context.Context, restoreName string) (*types.RestoreDetail, error) {
 	cfg, err := config.GetConfig()
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get cluster config")
@@ -152,7 +151,7 @@ func GetKotsadmRestoreDetail(restoreName string) (*types.RestoreDetail, error) {
 
 	veleroNamespace := backendStorageLocation.Namespace
 
-	restore, err := veleroClient.Restores(veleroNamespace).Get(context.TODO(), restoreName, metav1.GetOptions{})
+	restore, err := veleroClient.Restores(veleroNamespace).Get(ctx, restoreName, metav1.GetOptions{})
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get restore")
 	}

@@ -419,8 +419,6 @@ class AppSnapshots extends Component {
         </div>
       )
     }
-    console.log(snapshots);
-
 
     return (
       <div className="container flex-column flex1 u-overflow--auto u-paddingTop--30 u-paddingBottom--20 alignItems--center">

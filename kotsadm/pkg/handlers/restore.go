@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"net/http"
 	"strconv"
 
@@ -11,6 +12,7 @@ import (
 	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
 	"github.com/replicatedhq/kots/kotsadm/pkg/session"
 	"github.com/replicatedhq/kots/kotsadm/pkg/snapshot"
+	snapshottypes "github.com/replicatedhq/kots/kotsadm/pkg/snapshot/types"
 	"github.com/replicatedhq/kots/kotsadm/pkg/store"
 	"github.com/replicatedhq/kots/pkg/kotsadm"
 	"github.com/replicatedhq/kots/pkg/kotsadm/types"
@@ -33,11 +35,7 @@ type CreateKotsadmRestoreResponse struct {
 }
 
 func CreateRestore(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Header().Set("Access-Control-Allow-Headers", "content-type, origin, accept, authorization")
-
-	if r.Method == "OPTIONS" {
-		w.WriteHeader(200)
+	if handleOptionsRequest(w, r) {
 		return
 	}
 
@@ -149,11 +147,7 @@ func CreateRestore(w http.ResponseWriter, r *http.Request) {
 }
 
 func GetRestoreStatus(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Header().Set("Access-Control-Allow-Headers", "content-type, origin, accept, authorization")
-
-	if r.Method == "OPTIONS" {
-		w.WriteHeader(200)
+	if handleOptionsRequest(w, r) {
 		return
 	}
 
@@ -189,5 +183,34 @@ func GetRestoreStatus(w http.ResponseWriter, r *http.Request) {
 		response.Status = "running" // there is only one status right now
 	}
 
+	JSON(w, 200, response)
+}
+
+type GetKotsadmRestoreResponse struct {
+	RestoreDetail *snapshottypes.RestoreDetail `json:"restoreDetail"`
+}
+
+func GetKotsadmRestore(w http.ResponseWriter, r *http.Request) {
+	if handleOptionsRequest(w, r) {
+		return
+	}
+
+	if err := requireValidSession(w, r); err != nil {
+		logger.Error(err)
+		return
+	}
+
+	restoreName := mux.Vars(r)["restoreName"]
+	restore, err := snapshot.GetKotsadmRestoreDetail(context.TODO(), restoreName)
+	if err != nil {
+		err = errors.Wrap(err, "failed to get restore detail")
+		logger.Error(err)
+		w.WriteHeader(500)
+		return
+	}
+
+	response := GetKotsadmRestoreResponse{
+		RestoreDetail: restore,
+	}
 	JSON(w, 200, response)
 }
