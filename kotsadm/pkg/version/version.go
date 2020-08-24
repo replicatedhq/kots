@@ -559,3 +559,56 @@ func GetRealizedLinksFromAppSpec(appID string, sequence int64) ([]types.Realized
 
 	return realizedLinks, nil
 }
+
+func GetForwardedPortsFromAppSpec(appID string, sequence int64) ([]types.ForwardedPort, error) {
+	db := persistence.MustGetPGSession()
+	query := `select app_spec, kots_app_spec from app_version where app_id = $1 and sequence = $2`
+	row := db.QueryRow(query, appID, sequence)
+
+	var appSpecStr sql.NullString
+	var kotsAppSpecStr sql.NullString
+	if err := row.Scan(&appSpecStr, &kotsAppSpecStr); err != nil {
+		if err == sql.ErrNoRows {
+			return []types.ForwardedPort{}, nil
+		}
+		return nil, errors.Wrap(err, "failed to scan")
+	}
+
+	if appSpecStr.String == "" || kotsAppSpecStr.String == "" {
+		return []types.ForwardedPort{}, nil
+	}
+
+	decode := scheme.Codecs.UniversalDeserializer().Decode
+	obj, _, err := decode([]byte(appSpecStr.String), nil, nil)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to decode app spec yaml")
+	}
+	appSpec := obj.(*applicationv1beta1.Application)
+
+	obj, _, err = decode([]byte(kotsAppSpecStr.String), nil, nil)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to decode kots app spec yaml")
+	}
+	kotsAppSpec := obj.(*kotsv1beta1.Application)
+
+	if len(kotsAppSpec.Spec.ApplicationPorts) == 0 {
+		return []types.ForwardedPort{}, nil
+	}
+
+	ports := []types.ForwardedPort{}
+	for _, link := range appSpec.Spec.Descriptor.Links {
+		for _, port := range kotsAppSpec.Spec.ApplicationPorts {
+			if port.ApplicationURL == link.URL {
+				ports = append(ports, types.ForwardedPort{
+					ServiceName:    port.ServiceName,
+					ServicePort:    port.ServicePort,
+					LocalPort:      port.LocalPort,
+					ApplicationURL: port.ApplicationURL,
+				})
+			}
+
+		}
+	}
+
+	return ports, nil
+}
