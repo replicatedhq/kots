@@ -13,7 +13,6 @@ import ShowAllModal from "../modals/ShowAllModal";
 import ViewSnapshotLogsModal from "../modals/ViewSnapshotLogsModal";
 import ErrorModal from "../modals/ErrorModal";
 import { Utilities } from "../../utilities/utilities";
-import { Repeater } from "../../utilities/repeater";
 
 let colorIndex = 0;
 let mapColors = {}
@@ -38,7 +37,6 @@ class AppSnapshotDetail extends Component {
     snapshotLogsErrMsg: "",
 
     loading: true,
-    fetchSnapshotDetailsJob: new Repeater(),
     snapshotDetails: {},
     errorMessage: "",
     errorTitle: "",
@@ -107,23 +105,14 @@ class AppSnapshotDetail extends Component {
   };
 
   componentDidMount() {
-    // this.state.fetchSnapshotDetailsJob.start(this.fetchSnapshotDetails, 2000);
     this.fetchSnapshotDetails();
   }
 
   componentDidUpdate(lastProps) {
     const { match } = this.props;
     if (match.params.id !== lastProps.match.params.id) {
-      // this.state.fetchSnapshotDetailsJob.stop();
-      // this.state.fetchSnapshotDetailsJob.start(this.fetchSnapshotDetails, 2000);
       this.fetchSnapshotDetails();
     }
-    // } else {
-    //   const phase = this.state.snapshotDetails?.status;
-    //   if (phase && phase !== "New" && phase !== "InProgress") {
-    //     this.state.fetchSnapshotDetailsJob.stop();
-    //   }
-    // }
   }
 
   fetchSnapshotDetails = async () => {
