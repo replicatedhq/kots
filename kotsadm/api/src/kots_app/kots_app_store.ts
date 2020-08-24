@@ -28,36 +28,6 @@ interface UpdateCursor {
 export class KotsAppStore {
   constructor(private readonly pool: pg.Pool, private readonly params: Params) { }
 
-  async getGitOpsRepo(): Promise<any> {
-    try {
-      const kc = new k8s.KubeConfig();
-      kc.loadFromDefault();
-      const k8sApi = kc.makeApiClient(k8s.CoreV1Api);
-
-      const namespace = process.env["POD_NAMESPACE"]!;
-      const secretName = "kotsadm-gitops";
-      const secret = await k8sApi.readNamespacedSecret(secretName, namespace);
-      const data = secret.body.data!;
-
-      // use index 0 for now, since we don't support multiple providers yet
-      const provider = base64Decode(data["provider.0.type"]);
-      const uri = base64Decode(data["provider.0.repoUri"]);
-      const hostnameKey = "provider.0.hostname";
-      const hostname = hostnameKey in data ? { hostname: base64Decode(data[hostnameKey]) } : {};
-
-      return {
-        enabled: true,
-        uri,
-        provider,
-        ...hostname
-      };
-    } catch (err) {
-      return {
-        enabled: false
-      };
-    }
-  }
-
   async createGitOpsRepo(provider: string, uri: string, hostname: string, privateKey: string, publicKey: string): Promise<void> {
     try {
       const kc = new k8s.KubeConfig();

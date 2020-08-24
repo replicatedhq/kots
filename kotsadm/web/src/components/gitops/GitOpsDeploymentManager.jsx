@@ -75,16 +75,13 @@ class GitOpsDeploymentManager extends React.Component {
   }
 
   componentDidUpdate(lastProps) {
-    const { getGitOpsRepoQuery } = this.props;
-    if (getGitOpsRepoQuery?.getGitOpsRepo && getGitOpsRepoQuery.getGitOpsRepo !== lastProps.getGitOpsRepoQuery?.getGitOpsRepo) {
-      const { enabled, provider, hostname } = this.state.gitops;
-      if (enabled) {
-        const selectedService = find(SERVICES, service => service.value === provider);
-        this.setState({
-          selectedService: selectedService ? selectedService : this.state.selectedService,
-          hostname: hostname || ""
-        });
-      }
+    const { enabled, provider, hostname } = this.state.gitops;
+    if (enabled) {
+      const selectedService = find(SERVICES, service => service.value === provider);
+      this.setState({
+        selectedService: selectedService ? selectedService : this.state.selectedService,
+        hostname: hostname || ""
+      });
     }
   }
 
@@ -154,15 +151,13 @@ class GitOpsDeploymentManager extends React.Component {
 
   providerChanged = () => {
     const { selectedService } = this.state;
-    const getGitOpsRepo = this.state.gitops;
-    return selectedService?.value !== getGitOpsRepo?.provider;
+    return selectedService?.value !== this.state.gitops?.provider;
   }
 
   hostnameChanged = () => {
     const { hostname, selectedService } = this.state;
     const provider = selectedService?.value;
-    const getGitOpsRepo = this.state.gitops;
-    const savedHostname = getGitOpsRepo.hostname || "";
+    const savedHostname = this.state.gitops.hostname || "";
     return !this.providerChanged() && requiresHostname(provider) && hostname !== savedHostname;
   }
 
@@ -203,8 +198,8 @@ class GitOpsDeploymentManager extends React.Component {
     const gitOpsInput = this.getGitOpsInput(provider, repoUri, branch, path, format, action, hostname);
 
     try {
-      const getGitOpsRepo = await this.getGitops();
-      if (getGitOpsRepo?.enabled && this.providerChanged()) {
+      const updatedGitops = await this.getGitops();
+      if (updatedGitops?.enabled && this.providerChanged()) {
         const success = await this.resetGitOps();
         if (!success) {
           return false;
@@ -296,12 +291,12 @@ class GitOpsDeploymentManager extends React.Component {
       return;
     }
 
-    const getGitOpsRepo = await this.getGitops();
-    if (!getGitOpsRepo) {
+    const freshGitops = await this.getGitops();
+    if (!freshGitops) {
       return;
     }
 
-    const { provider, hostname, uri } = getGitOpsRepo;
+    const { provider, hostname, uri } = freshGitops;
     const branch = "master";
     const path = "";
     const format = "single";

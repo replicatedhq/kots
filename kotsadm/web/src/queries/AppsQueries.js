@@ -329,14 +329,3 @@ export const getPrometheusAddress = gql`
     getPrometheusAddress
   }
 `;
-
-export const getGitOpsRepo = gql`
-  query getGitOpsRepo {
-    getGitOpsRepo {
-      enabled
-      uri
-      provider
-      hostname
-    }
-  }
-`;
