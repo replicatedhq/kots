@@ -132,6 +132,10 @@ class AppSnapshotDetail extends Component {
         }
       });
       if (!res.ok) {
+        if (res.status === 401) {
+          Utilities.logoutUser();
+          return;
+        }
         this.setState({
           loading: false,
           errorMessage: `Unexpected status code: ${res.status}`,
@@ -153,11 +157,11 @@ class AppSnapshotDetail extends Component {
       } else if ((snapshotDetails?.hooks && !isEmpty(snapshotDetails?.hooks))) {
         series = this.getSeriesData((snapshotDetails?.hooks).sort((a, b) => new Date(a.started) - new Date(b.started)));
       }
-      this.setState({series: series});
 
       this.setState({
         loading: false,
         snapshotDetails: snapshotDetails,
+        series: series,
         errorMessage: "",
         errorTitle: "",
       });

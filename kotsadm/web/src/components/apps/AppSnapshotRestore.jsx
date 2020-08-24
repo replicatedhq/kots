@@ -56,6 +56,10 @@ class AppSnapshotRestore extends Component {
         }
       });
       if (!res.ok) {
+        if (res.status === 401) {
+          Utilities.logoutUser();
+          return;
+        }
         this.setState({
           loadingRestoreDetail: false,
           errorMessage: `Unexpected status code: ${res.status}`,
