@@ -74,18 +74,7 @@ class GitOpsDeploymentManager extends React.Component {
     this.getGitopsState();
   }
 
-  componentDidUpdate(lastProps) {
-    if (this.state.gitops) {
-      const {enabled, provider, hostname} = this.state.gitops;
-      if (enabled) {
-        const selectedService = find(SERVICES, service => service.value === provider);
-        this.setState({
-          selectedService: selectedService ? selectedService : this.state.selectedService,
-          hostname: hostname || ""
-        });
-      }
-    }
-  }
+  componentDidUpdate(lastProps) {}
 
   getAppsList = async () => {
     try {
@@ -203,13 +192,16 @@ class GitOpsDeploymentManager extends React.Component {
     const gitOpsInput = this.getGitOpsInput(provider, repoUri, branch, path, format, action, hostname);
 
     try {
-      const updatedGitops = await this.getGitops();
-      if (updatedGitops?.enabled && this.providerChanged()) {
-        const success = await this.resetGitOps();
-        if (!success) {
-          return false;
+      const getGitOpsRepo = await this.getGitops();
+      if (getGitOpsRepo?.enabled) {
+        if (this.providerChanged()) {
+          const success = await this.resetGitOps();
+          if (!success) {
+            return false;
+          }
         }
       }
+
       await this.props.createGitOpsRepo(gitOpsInput);
 
       if (this.isSingleApp()) {
