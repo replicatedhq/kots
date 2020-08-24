@@ -61,9 +61,9 @@ func Start() {
 	// Functions that the operator calls
 	r.Path("/api/v1/appstatus").Methods("PUT", "OPTIONS").HandlerFunc(handlers.SetAppStatus)
 	r.Path("/api/v1/deploy/result").Methods("PUT").HandlerFunc(handlers.UpdateDeployResult)
+	r.Path("/api/v1/undeploy/result").Methods("PUT").HandlerFunc(handlers.UpdateUndeployResult)
 
 	// Functions that are not called by the browser
-	r.Path("/api/v1/undeploy/result").Methods("PUT").HandlerFunc(handlers.NodeProxy(upstream))
 	r.Path("/api/v1/preflight/app/{appSlug}/sequence/{sequence}").Methods("GET").HandlerFunc(handlers.GetPreflightStatus)
 	r.Path("/api/v1/preflight/app/{appSlug}/sequence/{sequence}").Methods("POST").HandlerFunc(handlers.PostPreflightStatus)
 

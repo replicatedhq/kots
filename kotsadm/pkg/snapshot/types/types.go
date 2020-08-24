@@ -80,7 +80,7 @@ type BackupDetail struct {
 
 type RestoreDetail struct {
 	Name     string          `json:"name"`
-	Phase    string          `json:"pase"`
+	Phase    string          `json:"phase"`
 	Volumes  []RestoreVolume `json:"volumes"`
 	Errors   []SnapshotError `json:"errors"`
 	Warnings []SnapshotError `json:"warnings"`

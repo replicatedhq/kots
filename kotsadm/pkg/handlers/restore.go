@@ -8,6 +8,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/kotsadm/pkg/app"
+	apptypes "github.com/replicatedhq/kots/kotsadm/pkg/app/types"
 	"github.com/replicatedhq/kots/kotsadm/pkg/downstream"
 	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
 	"github.com/replicatedhq/kots/kotsadm/pkg/session"
@@ -220,7 +221,7 @@ func GetKotsadmRestore(w http.ResponseWriter, r *http.Request) {
 
 	restoreDetail, err := snapshot.GetKotsadmRestoreDetail(context.TODO(), restoreName)
 	if kuberneteserrors.IsNotFound(errors.Cause(err)) {
-		if foundApp.RestoreUndeployStatus == "failed" {
+		if foundApp.RestoreUndeployStatus == apptypes.UndeployFailed {
 			// HACK: once the user has see the error, clear it out.
 			// Otherwise there is no way to get back to snapshot list.
 			if err := app.ResetRestore(foundApp.ID); err != nil {

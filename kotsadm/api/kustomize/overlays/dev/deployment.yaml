@@ -36,7 +36,7 @@ spec:
             - name: S3_BUCKET_ENDPOINT
               value: "true"
             - name: SHIP_API_ENDPOINT
-              value: http://kotsadm-api.default.svc.cluster.local:3000
+              value: http://kotsadm.default.svc.cluster.local:3000
             - name: SHIP_API_ADVERTISE_ENDPOINT
               value: http://127.0.0.1:30065
             - name: GRAPHQL_PREM_ENDPOINT
