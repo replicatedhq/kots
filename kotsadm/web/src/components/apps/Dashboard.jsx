@@ -12,7 +12,6 @@ import UpdateCheckerModal from "@src/components/modals/UpdateCheckerModal";
 import Modal from "react-modal";
 import { Repeater } from "../../utilities/repeater";
 import { Utilities } from "../../utilities/utilities";
-import { getUpdateDownloadStatus } from "@src/queries/AppsQueries";
 
 import { XYPlot, XAxis, YAxis, HorizontalGridLines, VerticalGridLines, LineSeries, DiscreteColorLegend, Crosshair } from "react-vis";
 
@@ -221,30 +220,34 @@ class Dashboard extends Component {
 
   updateStatus = () => {
     return new Promise((resolve, reject) => {
-      this.props.client.query({
-        query: getUpdateDownloadStatus,
-        fetchPolicy: "no-cache",
-      }).then((res) => {
+      fetch(`${window.env.API_ENDPOINT}/task/updatedownload`, {
+        headers: {
+          "Authorization": Utilities.getToken(),
+          "Content-Type": "application/json",
+        },
+        method: "GET",
+      })
+      .then(async (res) => {
+        const response = await res.json();
 
-        this.setState({
-          checkingForUpdates: true,
-          checkingUpdateMessage: res.data.getUpdateDownloadStatus.currentMessage,
-        });
-
-        if (res.data.getUpdateDownloadStatus.status !== "running" && !this.props.isBundleUploading) {
+        if (response.status !== "running" && !this.props.isBundleUploading) {
           this.state.updateChecker.stop();
 
           this.setState({
             checkingForUpdates: false,
-            checkingUpdateMessage: res.data.getUpdateDownloadStatus?.currentMessage,
-            checkingForUpdateError: res.data.getUpdateDownloadStatus.status === "failed"
+            checkingUpdateMessage: response.currentMessage,
+            checkingForUpdateError: response === "failed"
           });
 
           if (this.props.updateCallback) {
             this.props.updateCallback();
           }
+        } else {
+          this.setState({
+            checkingForUpdates: true,
+            checkingUpdateMessage: response.currentMessage,
+          });
         }
-
         resolve();
       }).catch((err) => {
         console.log("failed to get rewrite status", err);

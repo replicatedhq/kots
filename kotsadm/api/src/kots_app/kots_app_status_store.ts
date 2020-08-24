@@ -26,18 +26,4 @@ export class KotsAppStatusStore {
 
     return kotsAppStatus;
   }
-
-  async setKotsAppStatus(appId: string, resourceStates: any, updatedAt: Date): Promise<void> {
-    const q = `
-    insert into app_status (app_id, resource_states, updated_at) values ($1, $2, $3)
-    on conflict (app_id) do update set resource_states = $2, updated_at = $3
-    `;
-    const v = [
-      appId,
-      JSON.stringify(resourceStates),
-      updatedAt,
-    ];
-
-    await this.pool.query(q, v);
-  }
 }

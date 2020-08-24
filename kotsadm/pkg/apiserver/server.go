@@ -59,8 +59,8 @@ func Start() {
 	r.HandleFunc("/api/v1/ping", handlers.Ping)
 
 	// Functions that the operator calls
-	r.Path("/api/v1/appstatus").Methods("PUT").HandlerFunc(handlers.NodeProxy(upstream))
-	r.Path("/api/v1/deploy/result").Methods("PUT").HandlerFunc(handlers.NodeProxy(upstream))
+	r.Path("/api/v1/appstatus").Methods("PUT", "OPTIONS").HandlerFunc(handlers.SetAppStatus)
+	r.Path("/api/v1/deploy/result").Methods("PUT").HandlerFunc(handlers.UpdateDeployResult)
 
 	// Functions that are not called by the browser
 	r.Path("/api/v1/undeploy/result").Methods("PUT").HandlerFunc(handlers.NodeProxy(upstream))
@@ -178,13 +178,16 @@ func Start() {
 	r.Path("/api/v1/gitops/reset").Methods("OPTIONS", "POST").HandlerFunc(handlers.ResetGitOps)
 	r.Path("/api/v1/gitops/get").Methods("OPTIONS", "GET").HandlerFunc(handlers.GetGitopsRepo)
 
+	// task status
+	r.Path("/api/v1/task/updatedownload").Methods("OPTIONS", "GET").HandlerFunc(handlers.GetUpdateDownloadStatus)
+
+	r.Handle("/socket.io/", socketservice.Start().Server)
+
 	// to avoid confusion, we don't serve this in the dev env...
 	if os.Getenv("DISABLE_SPA_SERVING") != "1" {
 		spa := handlers.SPAHandler{StaticPath: filepath.Join("web", "dist"), IndexPath: "index.html"}
 		r.PathPrefix("/").Handler(spa)
 	}
-
-	r.Handle("/socket.io/", socketservice.Start().Server)
 
 	srv := &http.Server{
 		Handler: r,

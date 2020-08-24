@@ -270,10 +270,6 @@ func kotsadmDeployment(deployOptions types.DeployOptions) *appsv1.Deployment {
 			Name:  "API_ADVERTISE_ENDPOINT",
 			Value: "http://localhost:8800",
 		},
-		{
-			Name:  "API_ENDPOINT",
-			Value: fmt.Sprintf("http://kotsadm.%s.svc.cluster.local:3000", deployOptions.Namespace),
-		},
 	}
 
 	if strings.HasPrefix(deployOptions.StorageBaseURI, "docker://") {

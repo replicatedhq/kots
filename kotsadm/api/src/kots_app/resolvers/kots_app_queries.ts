@@ -26,20 +26,6 @@ export function KotsQueries(stores: Stores, params: Params) {
       return app.toSchema(downstreams, stores);
     },
 
-    async listDownstreamsForApp(root: any, args: any, context: Context): Promise<Cluster[]> {
-      const { slug } = args;
-      const appId = await stores.kotsAppStore.getIdFromSlug(slug);
-      const app = await context.getApp(appId);
-
-      const downstreams = await stores.clusterStore.listClustersForKotsApp(app.id);
-      let results: Cluster[] = [];
-      _.map(downstreams, (downstream) => {
-        const kotsSchemaCluster = downstream.toKotsAppSchema(appId, stores);
-        results.push(kotsSchemaCluster);
-      });
-      return results;
-    },
-
     async listPendingKotsVersions(root: any, args: any, context: Context): Promise<KotsVersion[]> {
       const { slug, clusterId } = args;
       const id = await stores.kotsAppStore.getIdFromSlug(slug);
@@ -89,10 +75,6 @@ export function KotsQueries(stores: Stores, params: Params) {
 
     async getImageRewriteStatus(root: any, args: any, context: Context): Promise<{ currentMessage: string, status: string}> {
       return await stores.kotsAppStore.getImageRewriteStatus();
-    },
-
-    async getUpdateDownloadStatus(root: any, args: any, context: Context): Promise<{ currentMessage: string, status: string}> {
-      return await stores.kotsAppStore.getUpdateDownloadStatus();
     },
 
     async getKotsDownstreamOutput(root: any, args: any, context: Context): Promise<KotsDownstreamOutput> {

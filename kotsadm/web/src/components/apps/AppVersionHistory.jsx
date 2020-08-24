@@ -19,7 +19,7 @@ import DownstreamWatchVersionDiff from "@src/components/watches/DownstreamWatchV
 import AirgapUploadProgress from "@src/components/AirgapUploadProgress";
 import UpdateCheckerModal from "@src/components/modals/UpdateCheckerModal";
 import ShowDetailsModal from "@src/components/modals/ShowDetailsModal";
-import { getKotsDownstreamHistory, getUpdateDownloadStatus } from "../../queries/AppsQueries";
+import { getKotsDownstreamHistory } from "../../queries/AppsQueries";
 import { Utilities, isAwaitingResults, secondsAgo, getPreflightResultState, getGitProviderDiffUrl, getCommitHashFromUrl } from "../../utilities/utilities";
 import { Repeater } from "../../utilities/repeater";
 import has from "lodash/has";
@@ -520,32 +520,36 @@ class AppVersionHistory extends Component {
 
   updateStatus = () => {
     return new Promise((resolve, reject) => {
-      this.props.client.query({
-        query: getUpdateDownloadStatus,
-        fetchPolicy: "no-cache",
-      }).then((res) => {
+      fetch(`${window.env.API_ENDPOINT}/task/updatedownload`, {
+        headers: {
+          "Authorization": Utilities.getToken(),
+          "Content-Type": "application/json",
+        },
+        method: "GET",
+      })
+      .then(async (res) => {
+        const response = await res.json();
 
-        this.setState({
-          checkingForUpdates: true,
-          checkingUpdateMessage: res.data.getUpdateDownloadStatus?.currentMessage,
-        });
-
-        if (res.data.getUpdateDownloadStatus.status !== "running" && !this.props.isBundleUploading) {
+        if (response.status !== "running" && !this.props.isBundleUploading) {
           this.state.updateChecker.stop();
+
           this.setState({
             checkingForUpdates: false,
-            checkingForUpdateError: res.data.getUpdateDownloadStatus.status === "failed",
-            checkingUpdateMessage: res.data.getUpdateDownloadStatus?.currentMessage
+            checkingUpdateMessage: response.currentMessage,
+            checkingForUpdateError: response === "failed"
           });
 
           if (this.props.updateCallback) {
             this.props.updateCallback();
           }
           this.props.data.refetch();
+        } else {
+          this.setState({
+            checkingForUpdates: true,
+            checkingUpdateMessage: response.currentMessage,
+          });
         }
-
         resolve();
-
       }).catch((err) => {
         console.log("failed to get rewrite status", err);
         reject();

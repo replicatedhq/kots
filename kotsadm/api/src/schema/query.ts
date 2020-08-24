@@ -17,7 +17,6 @@ export const Query = `
     getGitOpsRepo: KotsGitOps
     getKotsApp(slug: String!): KotsApp
     getKotsAppDashboard(slug: String!, clusterId: String): KotsAppDashboard
-    listDownstreamsForApp(slug: String!): [Cluster]
     getKotsDownstreamHistory(clusterSlug: String!, upstreamSlug: String!): [KotsVersion]
     listPendingKotsVersions(slug: String!): [KotsVersion]
     listPastKotsVersions(slug: String!): [KotsVersion]
@@ -40,7 +39,6 @@ export const Query = `
     getAirgapInstallStatus: InstallStatus
     getOnlineInstallStatus: InstallStatus
     getImageRewriteStatus: ImageRewriteStatus
-    getUpdateDownloadStatus: UpdateDownloadStatus
 
     kurl: Kurl
 

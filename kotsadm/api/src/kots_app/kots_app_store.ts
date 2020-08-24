@@ -381,21 +381,6 @@ export class KotsAppStore {
     return clusterIds;
   }
 
-  async listDownstreamsForApp(appId: string): Promise<string[]> {
-    const q = `select downstream_name from app_downstream where app_id = $1`;
-    const v = [
-      appId,
-    ];
-
-    const result = await this.pool.query(q, v);
-    const downstreams: string[] = [];
-    for (const row of result.rows) {
-      downstreams.push(row.downstream_name);
-    }
-
-    return downstreams;
-  }
-
   async listAppsForCluster(clusterId: string): Promise<KotsApp[]> {
     const q = `select app_id from app_downstream where cluster_id = $1`;
     const v = [
@@ -444,40 +429,6 @@ export class KotsAppStore {
       status,
       statusInfo,
     ];
-    await this.pool.query(q, v);
-  }
-
-  async updateDownstreamDeployStatus(appId: string, clusterId: string, sequence: number, isError: boolean, output: any): Promise<any> {
-    let q = `select is_error from app_downstream_output where app_id = $1 and cluster_id = $2 and downstream_sequence = $3`;
-    let v = [
-      appId,
-      clusterId,
-      sequence,
-    ];
-
-    let result = await this.pool.query(q, v);
-    const hasOtherResults = result.rows.length > 0;
-    const otherResultIsError = hasOtherResults ? result.rows[0].is_error : false;
-
-    // don't update successful results
-    if (hasOtherResults && !otherResultIsError) {
-      return;
-    }
-
-    q = `insert into app_downstream_output (app_id, cluster_id, downstream_sequence, is_error, dryrun_stdout, dryrun_stderr, apply_stdout, apply_stderr)
-      values ($1, $2, $3, $4, $5, $6, $7, $8) on conflict (app_id, cluster_id, downstream_sequence) do update set is_error = EXCLUDED.is_error,
-        dryrun_stdout = EXCLUDED.dryrun_stdout, dryrun_stderr = EXCLUDED.dryrun_stderr, apply_stdout = EXCLUDED.apply_stdout, apply_stderr = EXCLUDED.apply_stderr`;
-    v = [
-      appId,
-      clusterId,
-      sequence,
-      isError,
-      output.dryRun.stdout,
-      output.dryRun.stderr,
-      output.apply.stdout,
-      output.apply.stderr,
-    ];
-
     await this.pool.query(q, v);
   }
 
@@ -1817,10 +1768,6 @@ WHERE app_id = $1 AND cluster_id = $2 AND sequence = $3`;
 
   async updateImageRewriteStatusLiveness(): Promise<void> {
     await this.updateApiTaskStatusLiveness("image-rewrite");
-  }
-
-  async getUpdateDownloadStatus(): Promise<{ currentMessage: string, status: string }> {
-    return this.getApiTaskStatus("update-download");
   }
 
   async setUpdateDownloadStatus(msg: string, status: string): Promise<void> {
