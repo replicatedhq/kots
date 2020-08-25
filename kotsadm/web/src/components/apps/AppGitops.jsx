@@ -173,7 +173,6 @@ class AppGitops extends Component {
       if (newUri !== oldUri || gitops?.branch !== branch) {
         await this.handleTestConnection();
       }
-      await this.props.refetch();
 
       this.setState({ showGitOpsSettings: false, ownerRepo });
       return true;

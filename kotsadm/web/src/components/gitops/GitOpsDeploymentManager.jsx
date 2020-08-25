@@ -325,8 +325,8 @@ class GitOpsDeploymentManager extends React.Component {
       await this.updateAppGitOps(app.id, clusterId, gitOpsInput);
       
       this.props.history.push(`/app/${app.slug}/gitops`);
-    } catch (error) {
-      console.log(error);
+    } catch (err) {
+      console.log(err);
       this.setState({
         errorTitle: "Failed to enable app gitops",
         errorMsg: err ? err.message : "Something went wrong, please try again.",
