@@ -72,7 +72,7 @@ class GitOpsDeploymentManager extends React.Component {
 
   componentDidMount() {
     this.getAppsList();
-    this.getGitopsState();
+    this.getGitops();
   }
 
   getAppsList = async () => {
@@ -104,23 +104,6 @@ class GitOpsDeploymentManager extends React.Component {
     }
   }
 
-  getGitopsState = async () => {
-    const freshGitops = await this.getGitops()
-
-    if (freshGitops?.enabled) {
-      const selectedService = find(SERVICES, service => service.value === freshGitops.provider);
-      this.setState({
-        selectedService: selectedService ? selectedService : this.state.selectedService,
-        hostname: freshGitops.hostname || "",
-        gitops: freshGitops
-      })
-    } else {
-      this.setState({
-        gitops: freshGitops
-      })
-    }
-  }
-
   getGitops = async () => {
     try {
       const res = await fetch(`${window.env.API_ENDPOINT}/gitops/get`, {
@@ -138,8 +121,23 @@ class GitOpsDeploymentManager extends React.Component {
         console.log("failed to get gitops settings, unexpected status code", res.status);
         return;
       }
-  
-      return await res.json();
+
+      const freshGitops = await res.json()
+
+      if (freshGitops?.enabled) {
+        const selectedService = find(SERVICES, service => service.value === freshGitops.provider);
+        this.setState({
+          selectedService: selectedService ? selectedService : this.state.selectedService,
+          hostname: freshGitops.hostname || "",
+          gitops: freshGitops
+        })
+      } else {
+        this.setState({
+          gitops: freshGitops
+        })
+      }
+
+      return freshGitops
     } catch(err) {
       console.log(err);
       throw err;
@@ -199,7 +197,7 @@ class GitOpsDeploymentManager extends React.Component {
     const gitOpsInput = this.getGitOpsInput(provider, repoUri, branch, path, format, action, hostname);
 
     try {
-      if (this.providerChanged()) {
+      if (this.state.gitops?.enabled && this.providerChanged()) {
         const success = await this.resetGitOps();
         if (!success) {
           return false;
@@ -222,7 +220,7 @@ class GitOpsDeploymentManager extends React.Component {
       } else {
         this.setState({ step: "", finishingSetup: false });
         this.getAppsList();
-        this.getGitopsState();
+        this.getGitops();
       }
 
       return true;
