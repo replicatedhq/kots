@@ -26,6 +26,8 @@ type KOTSStore interface {
 	AppStore
 	LicenseStore
 	ClusterStore
+
+	IsNotFound(err error) bool
 }
 
 type RegistryStore interface {
