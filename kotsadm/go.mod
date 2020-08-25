@@ -14,6 +14,7 @@ require (
 	github.com/deislabs/oras v0.8.1
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/docker/go-units v0.4.0
+	github.com/go-logfmt/logfmt v0.4.0
 	github.com/gorilla/mux v1.7.4
 	github.com/gorilla/websocket v1.4.0
 	github.com/gosimple/slug v1.9.0
@@ -48,6 +49,8 @@ require (
 	k8s.io/utils v0.0.0-20200603063816-c1c6865ac451
 	sigs.k8s.io/application v0.8.2
 	sigs.k8s.io/controller-runtime v0.6.0
+	xojoc.pw/logparse v0.0.0-20200116210938-e2e713e9bde6
+	xojoc.pw/useragent v0.0.0-20200116211053-1ec61d55e8fe // indirect
 )
 
 replace (
