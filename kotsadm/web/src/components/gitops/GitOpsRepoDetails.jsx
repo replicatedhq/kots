@@ -1,6 +1,7 @@
 import * as React from "react";
 import PropTypes from "prop-types";
-import { getServiceSite, requiresHostname } from "../../utilities/utilities";
+import { getServiceSite } from "../../utilities/utilities";
+import Loader from "../shared/Loader";
 
 import "../../scss/components/gitops/GitOpsDeploymentManager.scss";
 
@@ -292,6 +293,7 @@ class GitOpsRepoDetails extends React.Component {
               >
                 {finishingSetup ? this.props.ctaLoadingText : this.props.ctaText}
               </button>
+              {finishingSetup && <Loader className="u-marginLeft--5" size="30" />}
               {showFinishedConfirm &&
                 <div className="u-marginLeft--10 flex alignItems--center">
                   <span className="icon checkmark-icon" />

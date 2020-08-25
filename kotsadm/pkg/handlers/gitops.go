@@ -16,22 +16,27 @@ import (
 )
 
 type UpdateAppGitOpsRequest struct {
-	GitOpsInput GitOpsInput `json:"gitOpsInput"`
+	GitOpsInput UpdateAppGitOpsInput `json:"gitOpsInput"`
 }
-type GitOpsInput struct {
-	Uri    string `json:"uri"`
+type UpdateAppGitOpsInput struct {
+	URI    string `json:"uri"`
 	Branch string `json:"branch"`
 	Path   string `json:"path"`
 	Format string `json:"format"`
 	Action string `json:"action"`
 }
 
-func UpdateAppGitOps(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Header().Set("Access-Control-Allow-Headers", "content-type, origin, accept, authorization")
+type CreateGitOpsRequest struct {
+	GitOpsInput CreateGitOpsInput `json:"gitOpsInput"`
+}
+type CreateGitOpsInput struct {
+	Provider string `json:"provider"`
+	URI      string `json:"uri"`
+	Hostname string `json:"hostname"`
+}
 
-	if r.Method == "OPTIONS" {
-		w.WriteHeader(http.StatusOK)
+func UpdateAppGitOps(w http.ResponseWriter, r *http.Request) {
+	if handleOptionsRequest(w, r) {
 		return
 	}
 
@@ -58,7 +63,7 @@ func UpdateAppGitOps(w http.ResponseWriter, r *http.Request) {
 	}
 
 	gitOpsInput := updateAppGitOpsRequest.GitOpsInput
-	if err := gitops.UpdateDownstreamGitOps(a.ID, clusterID, gitOpsInput.Uri, gitOpsInput.Branch, gitOpsInput.Path, gitOpsInput.Format, gitOpsInput.Action); err != nil {
+	if err := gitops.UpdateDownstreamGitOps(a.ID, clusterID, gitOpsInput.URI, gitOpsInput.Branch, gitOpsInput.Path, gitOpsInput.Format, gitOpsInput.Action); err != nil {
 		logger.Error(err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
@@ -68,11 +73,7 @@ func UpdateAppGitOps(w http.ResponseWriter, r *http.Request) {
 }
 
 func DisableAppGitOps(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Header().Set("Access-Control-Allow-Headers", "content-type, origin, accept, authorization")
-
-	if r.Method == "OPTIONS" {
-		w.WriteHeader(http.StatusOK)
+	if handleOptionsRequest(w, r) {
 		return
 	}
 
@@ -111,11 +112,7 @@ func DisableAppGitOps(w http.ResponseWriter, r *http.Request) {
 }
 
 func InitGitOpsConnection(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Header().Set("Access-Control-Allow-Headers", "content-type, origin, accept, authorization")
-
-	if r.Method == "OPTIONS" {
-		w.WriteHeader(http.StatusOK)
+	if handleOptionsRequest(w, r) {
 		return
 	}
 
@@ -224,22 +221,24 @@ func InitGitOpsConnection(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		// Create git commit for current version
-		currentVersionArchive, err := version.GetAppVersionArchive(a.ID, currentVersion.ParentSequence)
-		if err != nil {
-			err = errors.Wrapf(err, "failed to get app version archive for current version %d", currentVersion.ParentSequence)
-			logger.Error(err)
-			finalError = err
-			return
-		}
-		defer os.RemoveAll(currentVersionArchive)
+		// Create git commit for current version (if exists)
+		if currentVersion != nil {
+			currentVersionArchive, err := version.GetAppVersionArchive(a.ID, currentVersion.ParentSequence)
+			if err != nil {
+				err = errors.Wrapf(err, "failed to get app version archive for current version %d", currentVersion.ParentSequence)
+				logger.Error(err)
+				finalError = err
+				return
+			}
+			defer os.RemoveAll(currentVersionArchive)
 
-		_, err = gitops.CreateGitOpsCommit(downstreamGitOps, a.Slug, a.Name, int(currentVersion.ParentSequence), currentVersionArchive, d.Name)
-		if err != nil {
-			err = errors.Wrapf(err, "failed to create gitops commit for current version %d", currentVersion.ParentSequence)
-			logger.Error(err)
-			finalError = err
-			return
+			_, err = gitops.CreateGitOpsCommit(downstreamGitOps, a.Slug, a.Name, int(currentVersion.ParentSequence), currentVersionArchive, d.Name)
+			if err != nil {
+				err = errors.Wrapf(err, "failed to create gitops commit for current version %d", currentVersion.ParentSequence)
+				logger.Error(err)
+				finalError = err
+				return
+			}
 		}
 
 		// Sort pending versions ascending before creating commits
@@ -271,11 +270,7 @@ func InitGitOpsConnection(w http.ResponseWriter, r *http.Request) {
 }
 
 func ResetGitOps(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Header().Set("Access-Control-Allow-Headers", "content-type, origin, accept, authorization")
-
-	if r.Method == "OPTIONS" {
-		w.WriteHeader(http.StatusOK)
+	if handleOptionsRequest(w, r) {
 		return
 	}
 
@@ -294,11 +289,7 @@ func ResetGitOps(w http.ResponseWriter, r *http.Request) {
 }
 
 func GetGitOpsRepo(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Header().Set("Access-Control-Allow-Headers", "content-type, origin, accept, authorization")
-
-	if r.Method == "OPTIONS" {
-		w.WriteHeader(http.StatusOK)
+	if handleOptionsRequest(w, r) {
 		return
 	}
 
@@ -315,4 +306,31 @@ func GetGitOpsRepo(w http.ResponseWriter, r *http.Request) {
 	}
 
 	JSON(w, http.StatusOK, gitOpsConfig)
+}
+
+func CreateGitOps(w http.ResponseWriter, r *http.Request) {
+	if handleOptionsRequest(w, r) {
+		return
+	}
+
+	if err := requireValidSession(w, r); err != nil {
+		logger.Error(err)
+		return
+	}
+
+	createGitOpsRequest := CreateGitOpsRequest{}
+	if err := json.NewDecoder(r.Body).Decode(&createGitOpsRequest); err != nil {
+		logger.Error(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	gitOpsInput := createGitOpsRequest.GitOpsInput
+	if err := gitops.CreateGitOps(gitOpsInput.Provider, gitOpsInput.URI, gitOpsInput.Hostname); err != nil {
+		logger.Error(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	JSON(w, http.StatusNoContent, "")
 }

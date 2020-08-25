@@ -176,6 +176,7 @@ func Start() {
 	r.Path("/api/v1/gitops/app/{appId}/cluster/{clusterId}/update").Methods("OPTIONS", "PUT").HandlerFunc(handlers.UpdateAppGitOps)
 	r.Path("/api/v1/gitops/app/{appId}/cluster/{clusterId}/disable").Methods("OPTIONS", "POST").HandlerFunc(handlers.DisableAppGitOps)
 	r.Path("/api/v1/gitops/app/{appId}/cluster/{clusterId}/initconnection").Methods("OPTIONS", "POST").HandlerFunc(handlers.InitGitOpsConnection)
+	r.Path("/api/v1/gitops/create").Methods("OPTIONS", "POST").HandlerFunc(handlers.CreateGitOps)
 	r.Path("/api/v1/gitops/reset").Methods("OPTIONS", "POST").HandlerFunc(handlers.ResetGitOps)
 	r.Path("/api/v1/gitops/get").Methods("OPTIONS", "GET").HandlerFunc(handlers.GetGitOpsRepo)
 
