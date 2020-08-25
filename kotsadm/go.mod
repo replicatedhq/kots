@@ -26,6 +26,7 @@ require (
 	github.com/replicatedhq/kots v0.0.0-00010101000000-000000000000
 	github.com/replicatedhq/troubleshoot v0.9.38
 	github.com/replicatedhq/yaml/v3 v3.0.0-beta5-replicatedhq
+	github.com/robfig/cron v1.1.0
 	github.com/robfig/cron/v3 v3.0.0
 	github.com/segmentio/ksuid v1.0.2
 	github.com/sergi/go-diff v1.0.0

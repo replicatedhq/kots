@@ -1,6 +1,8 @@
 package store
 
 import (
+	"time"
+
 	airgaptypes "github.com/replicatedhq/kots/kotsadm/pkg/airgap/types"
 	apptypes "github.com/replicatedhq/kots/kotsadm/pkg/app/types"
 	appstatustypes "github.com/replicatedhq/kots/kotsadm/pkg/appstatus/types"
@@ -26,6 +28,7 @@ type KOTSStore interface {
 	AppStore
 	LicenseStore
 	ClusterStore
+	SnapshotStore
 
 	IsNotFound(err error) bool
 }
@@ -99,6 +102,13 @@ type AppStore interface {
 	GetDownstream(string) (*downstreamtypes.Downstream, error)
 	IsGitOpsEnabledForApp(string) (bool, error)
 	SetUpdateCheckerSpec(string, string) error
+	SetSnapshotTTL(string, string) error
+	SetSnapshotSchedule(string, string) error
+}
+
+type SnapshotStore interface {
+	DeletePendingScheduledSnapshots(string) error
+	CreateScheduledSnapshot(string, string, time.Time) error
 }
 
 type LicenseStore interface {
