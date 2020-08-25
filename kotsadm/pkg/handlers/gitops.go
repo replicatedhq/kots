@@ -221,22 +221,24 @@ func InitGitOpsConnection(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		// Create git commit for current version
-		currentVersionArchive, err := version.GetAppVersionArchive(a.ID, currentVersion.ParentSequence)
-		if err != nil {
-			err = errors.Wrapf(err, "failed to get app version archive for current version %d", currentVersion.ParentSequence)
-			logger.Error(err)
-			finalError = err
-			return
-		}
-		defer os.RemoveAll(currentVersionArchive)
+		// Create git commit for current version (if exists)
+		if currentVersion != nil {
+			currentVersionArchive, err := version.GetAppVersionArchive(a.ID, currentVersion.ParentSequence)
+			if err != nil {
+				err = errors.Wrapf(err, "failed to get app version archive for current version %d", currentVersion.ParentSequence)
+				logger.Error(err)
+				finalError = err
+				return
+			}
+			defer os.RemoveAll(currentVersionArchive)
 
-		_, err = gitops.CreateGitOpsCommit(downstreamGitOps, a.Slug, a.Name, int(currentVersion.ParentSequence), currentVersionArchive, d.Name)
-		if err != nil {
-			err = errors.Wrapf(err, "failed to create gitops commit for current version %d", currentVersion.ParentSequence)
-			logger.Error(err)
-			finalError = err
-			return
+			_, err = gitops.CreateGitOpsCommit(downstreamGitOps, a.Slug, a.Name, int(currentVersion.ParentSequence), currentVersionArchive, d.Name)
+			if err != nil {
+				err = errors.Wrapf(err, "failed to create gitops commit for current version %d", currentVersion.ParentSequence)
+				logger.Error(err)
+				finalError = err
+				return
+			}
 		}
 
 		// Sort pending versions ascending before creating commits
