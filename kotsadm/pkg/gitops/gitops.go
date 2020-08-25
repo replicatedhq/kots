@@ -129,7 +129,7 @@ func GetDownstreamGitOps(appID string, clusterID string) (*GitOpsConfig, error) 
 
 	configMapData := map[string]string{}
 	if err := json.Unmarshal(configMapDataDecoded, &configMapData); err != nil {
-		return nil, errors.Wrap(err, "faield to unmarshal configmap data")
+		return nil, errors.Wrap(err, "failed to unmarshal configmap data")
 	}
 
 	repoURI := configMapData["repoUri"]
@@ -143,7 +143,10 @@ func GetDownstreamGitOps(appID string, clusterID string) (*GitOpsConfig, error) 
 		if splitKey[2] == "repoUri" {
 			if string(val) == repoURI {
 				// this is the provider we want
-				idx, _ := strconv.ParseInt(splitKey[1], 10, 64)
+				idx, err := strconv.ParseInt(splitKey[1], 10, 64)
+				if err != nil {
+					return nil, errors.Wrap(err, "failed to parse index")
+				}
 				provider, publicKey, privateKey, repoURI, hostname := gitOpsConfigFromSecretData(idx, secret.Data)
 
 				cipher, err := crypto.AESCipherFromString(os.Getenv("API_ENCRYPTION_KEY"))
@@ -403,6 +406,8 @@ func CreateGitOps(provider string, repoURI string, hostname string) error {
 
 	var repoIdx int64 = -1
 	var repoExists bool = false
+	var maxIdx int64 = -1
+
 	for key, val := range secretData {
 		splitKey := strings.Split(key, ".")
 		if len(splitKey) != 3 {
@@ -413,27 +418,22 @@ func CreateGitOps(provider string, repoURI string, hostname string) error {
 			continue
 		}
 
+		idx, err := strconv.ParseInt(splitKey[1], 10, 64)
+		if err != nil {
+			return errors.Wrap(err, "failed to parse repo index")
+		}
+
 		if string(val) == repoURI {
-			repoIdx, _ = strconv.ParseInt(splitKey[1], 10, 64)
+			repoIdx = idx
 			repoExists = true
-			break
+		}
+
+		if idx > maxIdx {
+			maxIdx = idx
 		}
 	}
 
 	if !repoExists {
-		// assign new index to the repo (max index in secret + 1)
-		var maxIdx int64 = -1
-		for key, _ := range secretData {
-			splitKey := strings.Split(key, ".")
-			if len(splitKey) != 3 {
-				continue
-			}
-
-			idx, _ := strconv.ParseInt(splitKey[1], 10, 64)
-			if idx > maxIdx {
-				maxIdx = idx
-			}
-		}
 		repoIdx = maxIdx + 1
 	}
 
