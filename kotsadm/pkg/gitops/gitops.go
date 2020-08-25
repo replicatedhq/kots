@@ -144,7 +144,7 @@ func GetDownstreamGitOps(appID string, clusterID string) (*GitOpsConfig, error) 
 			if string(val) == repoURI {
 				// this is the provider we want
 				idx, _ := strconv.ParseInt(splitKey[1], 10, 64)
-				provider, publicKey, privateKey, repoURI, err := gitOpsConfigFromSecretData(idx, secret.Data)
+				provider, publicKey, privateKey, repoURI, hostname := gitOpsConfigFromSecretData(idx, secret.Data)
 
 				cipher, err := crypto.AESCipherFromString(os.Getenv("API_ENCRYPTION_KEY"))
 				if err != nil {
@@ -165,6 +165,7 @@ func GetDownstreamGitOps(appID string, clusterID string) (*GitOpsConfig, error) 
 					PublicKey:  publicKey,
 					PrivateKey: string(decryptedPrivateKey),
 					RepoURI:    repoURI,
+					Hostname:   hostname,
 					Branch:     configMapData["branch"],
 					Path:       configMapData["path"],
 					Format:     configMapData["format"],
@@ -541,11 +542,12 @@ func GetGitOps() (GlobalGitOpsConfig, error) {
 	return parsedConfig, nil
 }
 
-func gitOpsConfigFromSecretData(idx int64, secretData map[string][]byte) (string, string, string, string, error) {
+func gitOpsConfigFromSecretData(idx int64, secretData map[string][]byte) (string, string, string, string, string) {
 	provider := ""
 	publicKey := ""
 	privateKey := ""
 	repoURI := ""
+	hostname := ""
 
 	providerDecoded, ok := secretData[fmt.Sprintf("provider.%d.type", idx)]
 	if ok {
@@ -567,7 +569,12 @@ func gitOpsConfigFromSecretData(idx int64, secretData map[string][]byte) (string
 		repoURI = string(repoURIDecoded)
 	}
 
-	return provider, publicKey, privateKey, repoURI, nil
+	hostnameDecoded, ok := secretData[fmt.Sprintf("provider.%d.hostname", idx)]
+	if ok {
+		hostname = string(hostnameDecoded)
+	}
+
+	return provider, publicKey, privateKey, repoURI, hostname
 }
 
 func getAuth(privateKey string) (transport.AuthMethod, error) {
