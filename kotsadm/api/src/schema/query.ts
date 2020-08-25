@@ -14,7 +14,6 @@ export const Query = `
     listClusters: [Cluster]
 
     listApps: Apps
-    getGitOpsRepo: KotsGitOps
     getKotsApp(slug: String!): KotsApp
     getKotsAppDashboard(slug: String!, clusterId: String): KotsAppDashboard
     getKotsDownstreamHistory(clusterSlug: String!, upstreamSlug: String!): [KotsVersion]
@@ -45,6 +44,5 @@ export const Query = `
     getPrometheusAddress: String
 
     snapshotConfig(slug: String!): SnapshotConfig
-    restoreDetail(appId: String!, restoreName: String!): RestoreDetail
   }
 `;

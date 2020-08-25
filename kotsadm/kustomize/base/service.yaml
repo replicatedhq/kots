@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: kotsadm-api
+  name: kotsadm
   labels:
     app: kotsadm
 spec:

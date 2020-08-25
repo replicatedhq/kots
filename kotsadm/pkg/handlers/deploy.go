@@ -2,16 +2,20 @@ package handlers
 
 import (
 	"encoding/json"
-	"io/ioutil"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/gorilla/mux"
+	"github.com/pkg/errors"
+	"github.com/replicatedhq/kots/kotsadm/pkg/app"
+	apptypes "github.com/replicatedhq/kots/kotsadm/pkg/app/types"
 	"github.com/replicatedhq/kots/kotsadm/pkg/downstream"
-	"github.com/replicatedhq/kots/kotsadm/pkg/downstream/types"
+	downstreamtypes "github.com/replicatedhq/kots/kotsadm/pkg/downstream/types"
 	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
 	"github.com/replicatedhq/kots/kotsadm/pkg/store"
 	"github.com/replicatedhq/kots/kotsadm/pkg/version"
+	"go.uber.org/zap"
 )
 
 func DeployAppVersion(w http.ResponseWriter, r *http.Request) {
@@ -71,15 +75,8 @@ func UpdateDeployResult(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	body, err := ioutil.ReadAll(r.Body)
-	if err != nil {
-		logger.Error(err)
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-
-	output := types.DownstreamOutput{}
-	err = json.Unmarshal(body, &output)
+	output := downstreamtypes.DownstreamOutput{}
+	err = json.NewDecoder(r.Body).Decode(&output)
 	if err != nil {
 		logger.Error(err)
 		w.WriteHeader(http.StatusInternalServerError)
@@ -111,6 +108,68 @@ func UpdateDeployResult(w http.ResponseWriter, r *http.Request) {
 		logger.Error(err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	return
+}
+
+func UpdateUndeployResult(w http.ResponseWriter, r *http.Request) {
+	if handleOptionsRequest(w, r) {
+		return
+	}
+
+	auth, err := parseClusterAuthorization(r.Header.Get("Authorization"))
+	if err != nil {
+		logger.Error(err)
+		w.WriteHeader(http.StatusForbidden)
+		return
+	}
+
+	_, err = downstream.GetClusterIDFromDeployToken(auth.Password)
+	if err != nil {
+		logger.Error(err)
+		w.WriteHeader(http.StatusForbidden)
+		return
+	}
+
+	output := downstreamtypes.DownstreamOutput{}
+	err = json.NewDecoder(r.Body).Decode(&output)
+	if err != nil {
+		logger.Error(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	var status apptypes.UndeployStatus
+	if output.IsError {
+		status = apptypes.UndeployFailed
+	} else {
+		status = apptypes.UndeployCompleted
+	}
+
+	logger.Info("restore API set undeploy status",
+		zap.String("status", string(status)),
+		zap.String("appID", output.AppID))
+
+	foundApp, err := store.GetStore().GetApp(output.AppID)
+	if err != nil {
+		err = errors.Wrap(err, "failed to get app")
+		logger.Error(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	if foundApp.RestoreInProgressName != "" {
+		go func() {
+			<-time.After(20 * time.Second)
+			err = app.SetRestoreUndeployStatus(output.AppID, status)
+			if err != nil {
+				err = errors.Wrap(err, "failed to set app undeploy status")
+				logger.Error(err)
+				return
+			}
+		}()
 	}
 
 	w.WriteHeader(http.StatusOK)

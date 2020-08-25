@@ -111,7 +111,7 @@ class AppSnapshots extends Component {
           })
         } else {
           this.setState({
-            snapshots: body.backups?.sort((a, b) => new Date(b.startedAt) - new Date(a.startedAt)),
+            snapshots: body.backups?.sort((a, b) => b.startedAt ? new Date(b.startedAt) - new Date(a.startedAt) : -99999999),
             hasSnapshotsLoaded: true
           });
         }
@@ -434,7 +434,6 @@ class AppSnapshots extends Component {
         </div>
       )
     }
-
 
     return (
       <div className="container flex-column flex1 u-overflow--auto u-paddingTop--30 u-paddingBottom--20 alignItems--center">

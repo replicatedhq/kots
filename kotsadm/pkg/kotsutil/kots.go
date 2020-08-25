@@ -14,6 +14,7 @@ import (
 	troubleshootv1beta1 "github.com/replicatedhq/troubleshoot/pkg/apis/troubleshoot/v1beta1"
 	troubleshootscheme "github.com/replicatedhq/troubleshoot/pkg/client/troubleshootclientset/scheme"
 	velerov1 "github.com/vmware-tanzu/velero/pkg/apis/velero/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	serializer "k8s.io/apimachinery/pkg/runtime/serializer/json"
 	"k8s.io/client-go/kubernetes/scheme"
 	applicationv1beta1 "sigs.k8s.io/application/api/v1beta1"
@@ -269,10 +270,16 @@ func (o KotsKinds) Marshal(g string, v string, k string) (string, error) {
 func emptyKotsKinds() KotsKinds {
 	kotsKinds := KotsKinds{
 		Installation: kotsv1beta1.Installation{
-			Spec: kotsv1beta1.InstallationSpec{},
+			TypeMeta: metav1.TypeMeta{
+				APIVersion: "kots.io/v1beta1",
+				Kind:       "Installation",
+			},
 		},
 		KotsApplication: kotsv1beta1.Application{
-			Spec: kotsv1beta1.ApplicationSpec{},
+			TypeMeta: metav1.TypeMeta{
+				APIVersion: "kots.io/v1beta1",
+				Kind:       "Application",
+			},
 		},
 	}
 
@@ -300,6 +307,7 @@ func LoadKotsKindsFromPath(fromDir string) (*KotsKinds, error) {
 
 			decoded, gvk, err := decode(contents, nil, nil)
 			if err != nil {
+				// TODO: log something on yaml errors (based on file extention)
 				return nil // not an error because the file might not be yaml
 			}
 

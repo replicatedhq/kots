@@ -52,7 +52,7 @@ spec:
             - name: REPLICATED_API_ENDPOINT
               value: http://replicated-app:3000
             - name: API_ENDPOINT
-              value: http://kotsadm-api.default.svc.cluster.local:3000
+              value: http://kotsadm.default.svc.cluster.local:3000
             - name: API_ADVERTISE_ENDPOINT
               value: http://127.0.0.1:30065
             # - name: DISABLE_OUTBOUND_CONNECTIONS  

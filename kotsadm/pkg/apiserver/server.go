@@ -61,11 +61,12 @@ func Start() {
 	// Functions that the operator calls
 	r.Path("/api/v1/appstatus").Methods("PUT", "OPTIONS").HandlerFunc(handlers.SetAppStatus)
 	r.Path("/api/v1/deploy/result").Methods("PUT").HandlerFunc(handlers.UpdateDeployResult)
+	r.Path("/api/v1/undeploy/result").Methods("PUT").HandlerFunc(handlers.UpdateUndeployResult)
 
 	// Functions that are not called by the browser
-	r.Path("/api/v1/undeploy/result").Methods("PUT").HandlerFunc(handlers.NodeProxy(upstream))
 	r.Path("/api/v1/preflight/app/{appSlug}/sequence/{sequence}").Methods("GET").HandlerFunc(handlers.GetPreflightStatus)
 	r.Path("/api/v1/preflight/app/{appSlug}/sequence/{sequence}").Methods("POST").HandlerFunc(handlers.PostPreflightStatus)
+	r.Path("/api/v1/kots/ports").Methods("GET").HandlerFunc(handlers.GetApplicationPorts)
 
 	// Support Bundles
 	r.Path("/api/v1/troubleshoot").Methods("OPTIONS", "GET").HandlerFunc(handlers.GetDefaultTroubleshoot)
@@ -151,6 +152,7 @@ func Start() {
 	// App snapshot routes
 	r.Path("/api/v1/app/{appSlug}/snapshot/backup").Methods("OPTIONS", "POST").HandlerFunc(handlers.CreateBackup)
 	r.Path("/api/v1/app/{appSlug}/snapshot/restore/status").Methods("OPTIONS", "GET").HandlerFunc(handlers.GetRestoreStatus)
+	r.Path("/api/v1/app/{appSlug}/snapshot/restore/{restoreName}").Methods("OPTIONS", "GET").HandlerFunc(handlers.GetKotsadmRestore)
 	r.Path("/api/v1/app/{appSlug}/snapshots").Methods("OPTIONS", "GET").HandlerFunc(handlers.ListBackups)
 	r.Path("/api/v1/app/{appSlug}/snapshot/config").Methods("OPTIONS", "GET").HandlerFunc(handlers.GetSnapshotConfig)
 
@@ -177,6 +179,7 @@ func Start() {
 	r.Path("/api/v1/gitops/app/{appId}/cluster/{clusterId}/disable").Methods("OPTIONS", "POST").HandlerFunc(handlers.DisableAppGitOps)
 	r.Path("/api/v1/gitops/app/{appId}/cluster/{clusterId}/initconnection").Methods("OPTIONS", "POST").HandlerFunc(handlers.InitGitOpsConnection)
 	r.Path("/api/v1/gitops/reset").Methods("OPTIONS", "POST").HandlerFunc(handlers.ResetGitOps)
+	r.Path("/api/v1/gitops/get").Methods("OPTIONS", "GET").HandlerFunc(handlers.GetGitOpsRepo)
 
 	// task status
 	r.Path("/api/v1/task/updatedownload").Methods("OPTIONS", "GET").HandlerFunc(handlers.GetUpdateDownloadStatus)
