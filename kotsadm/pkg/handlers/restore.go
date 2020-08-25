@@ -189,6 +189,36 @@ func GetRestoreStatus(w http.ResponseWriter, r *http.Request) {
 	JSON(w, 200, response)
 }
 
+func CancelRestore(w http.ResponseWriter, r *http.Request) {
+	if handleOptionsRequest(w, r) {
+		return
+	}
+
+	if err := requireValidSession(w, r); err != nil {
+		logger.Error(err)
+		return
+	}
+
+	appSlug := mux.Vars(r)["appSlug"]
+
+	foundApp, err := store.GetStore().GetAppFromSlug(appSlug)
+	if err != nil {
+		err = errors.Wrap(err, "failed to get app from app slug")
+		logger.Error(err)
+		w.WriteHeader(500)
+		return
+	}
+
+	if err := app.ResetRestore(foundApp.ID); err != nil {
+		err = errors.Wrap(err, "failed to reset app restore in progress name")
+		logger.Error(err)
+		w.WriteHeader(500)
+		return
+	}
+
+	w.WriteHeader(204)
+}
+
 type GetKotsadmRestoreResponse struct {
 	RestoreDetail *snapshottypes.RestoreDetail `json:"restoreDetail"`
 	IsActive      bool                         `json:"active"`

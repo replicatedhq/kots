@@ -6,7 +6,6 @@ import { Line } from "rc-progress";
 import Loader from "../shared/Loader";
 import { Utilities } from "@src/utilities/utilities";
 import { Repeater } from "@src/utilities/repeater";
-import { cancelRestore } from "../../mutations/SnapshotMutations";
 import "../../scss/components/snapshots/AppSnapshots.scss";
 
 class AppSnapshotRestore extends Component {
@@ -94,26 +93,35 @@ class AppSnapshotRestore extends Component {
     }
   }
 
-  onCancelRestore = () => {
-    const { app } = this.props;
+  onCancelRestore = async () => {
     this.setState({ cancelingRestore: true, cancelRestoreErr: false, cancelRestoreErrorMsg: "" });
-    this.props.cancelRestore(app.id)
-      .then(() => {
-        this.setState({ cancelingRestore: false });
-        this.props.history.push(`/app/${this.props.app?.slug}/snapshots`);
-      })
-      .catch(err => {
-        err.graphQLErrors.map(({ msg }) => {
-          this.setState({
-            cancelingRestore: false,
-            cancelRestoreErr: true,
-            cancelRestoreErrorMsg: msg,
-          });
-        })
-      })
-      .finally(() => {
-        this.setState({ cancelingRestore: false });
+    try {
+      await this.fetchCancelRestore();
+      this.props.history.push(`/app/${this.props.app?.slug}/snapshots`);
+    } catch (err) {
+      this.setState({
+        cancelRestoreErr: true,
+        cancelRestoreErrorMsg: err ? `${err.message}` : "Something went wrong, please try again.",
       });
+    }
+    this.setState({ cancelingRestore: false });
+  }
+
+  fetchCancelRestore = async () => {
+    const { app } = this.props;
+    const res = await fetch(`${window.env.API_ENDPOINT}/app/${app.slug}/snapshot/restore`, {
+      method: "DELETE",
+      headers: {
+        "Authorization": Utilities.getToken(),
+      }
+    });
+    if (!res.ok) {
+      if (res.status === 401) {
+        Utilities.logoutUser();
+        return;
+      }
+      throw new Error(`Unexpected status code: ${res.status}`);
+    }
   }
 
   renderErrors = (errors) => {
@@ -281,9 +289,4 @@ class AppSnapshotRestore extends Component {
 export default compose(
   withApollo,
   withRouter,
-  graphql(cancelRestore, {
-    props: ({ mutate }) => ({
-      cancelRestore: (appId) => mutate({ variables: { appId } })
-    })
-  })
 )(AppSnapshotRestore);
