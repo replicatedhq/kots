@@ -4,6 +4,7 @@ import find from "lodash/find";
 import isEmpty from "lodash/isEmpty";
 import classNames from "classnames";
 import Loader from "../shared/Loader";
+import ErrorModal from "../modals/ErrorModal";
 import { withRouter, Link } from "react-router-dom";
 import { compose } from "react-apollo";
 import GitOpsFlowIllustration from "./GitOpsFlowIllustration";
@@ -68,6 +69,9 @@ class GitOpsDeploymentManager extends React.Component {
     finishingSetup: false,
     appsList: [],
     gitops: {},
+    errorMsg: "",
+    errorTitle: "",
+    displayErrorModal: false,
   }
 
   componentDidMount() {
@@ -174,7 +178,7 @@ class GitOpsDeploymentManager extends React.Component {
   }
 
   finishSetup = async (repoDetails = {}) => {
-    this.setState({ finishingSetup: true });
+    this.setState({ finishingSetup: true, errorTitle: "", errorMsg: "", displayErrorModal: false });
 
     const {
       ownerRepo = "",
@@ -196,26 +200,16 @@ class GitOpsDeploymentManager extends React.Component {
 
     try {
       if (this.state.gitops?.enabled && this.providerChanged()) {
-        const success = await this.resetGitOps();
-        if (!success) {
-          return false;
-        }
+        await this.resetGitOps();
       }
-
-      const success = await this.createGitOpsRepo(gitOpsInput);
-      if (!success) {
-        return false;
-      }
+      await this.createGitOpsRepo(gitOpsInput);
 
       if (this.isSingleApp()) {
         const app = this.state.appsList[0];
         const downstream = app.downstreams[0];
         const clusterId = downstream?.cluster?.id;
 
-        const success = await this.updateAppGitOps(app.id, clusterId, gitOpsInput);
-        if (!success) {
-          return false;
-        }
+        await this.updateAppGitOps(app.id, clusterId, gitOpsInput);
 
         this.props.history.push(`/app/${app.slug}/gitops`);
       } else {
@@ -225,8 +219,13 @@ class GitOpsDeploymentManager extends React.Component {
       }
 
       return true;
-    } catch (error) {
-      console.log(error);
+    } catch (err) {
+      console.log(err);
+      this.setState({
+        errorTitle: "Failed to finish gitops setup",
+        errorMsg: err ? err.message : "Something went wrong, please try again.",
+        displayErrorModal: true,
+      });
       return false;
     } finally {
       this.setState({ finishingSetup: false });
@@ -234,63 +233,60 @@ class GitOpsDeploymentManager extends React.Component {
   }
 
   createGitOpsRepo = async (gitOpsInput) => {
-    try {
-      const res = await fetch(`${window.env.API_ENDPOINT}/gitops/create`, {
-        headers: {
-          "Authorization": Utilities.getToken(),
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          gitOpsInput: gitOpsInput,
-        }),
-        method: "POST",
-      });
-      if (res.ok && res.status === 204) {
-        return true;
+    const res = await fetch(`${window.env.API_ENDPOINT}/gitops/create`, {
+      headers: {
+        "Authorization": Utilities.getToken(),
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        gitOpsInput: gitOpsInput,
+      }),
+      method: "POST",
+    });
+    if (!res.ok) {
+      if (res.status === 401) {
+        Utilities.logoutUser();
+        return;
       }
-    } catch(err) {
-      console.log(err);
+      throw new Error(`Unexpected status code: ${res.status}`);
     }
-    return false;
   }
 
   resetGitOps = async () => {
-    try {
-      const res = await fetch(`${window.env.API_ENDPOINT}/gitops/reset`, {
-        headers: {
-          "Authorization": Utilities.getToken(),
-          "Content-Type": "application/json",
-        },
-        method: "POST",
-      });
-      if (res.ok && res.status === 204) {
-        return true;
+    const res = await fetch(`${window.env.API_ENDPOINT}/gitops/reset`, {
+      headers: {
+        "Authorization": Utilities.getToken(),
+        "Content-Type": "application/json",
+      },
+      method: "POST",
+    });
+    if (!res.ok) {
+      if (res.status === 401) {
+        Utilities.logoutUser();
+        return;
       }
-    } catch(err) {
-      console.log(err);
+      throw new Error(`Unexpected status code: ${res.status}`);
     }
-    return false;
   }
 
   updateAppGitOps = async (appId, clusterId, gitOpsInput) => {
-    try {
-      const res = await fetch(`${window.env.API_ENDPOINT}/gitops/app/${appId}/cluster/${clusterId}/update`, {
-        headers: {
-          "Authorization": Utilities.getToken(),
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          gitOpsInput: gitOpsInput,
-        }),
-        method: "PUT",
-      });
-      if (res.ok && res.status === 204) {
-        return true;
+    const res = await fetch(`${window.env.API_ENDPOINT}/gitops/app/${appId}/cluster/${clusterId}/update`, {
+      headers: {
+        "Authorization": Utilities.getToken(),
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        gitOpsInput: gitOpsInput,
+      }),
+      method: "PUT",
+    });
+    if (!res.ok) {
+      if (res.status === 401) {
+        Utilities.logoutUser();
+        return;
       }
-    } catch(err) {
-      console.log(err);
+      throw new Error(`Unexpected status code: ${res.status}`);
     }
-    return false;
   }
 
   updateSettings = () => {
@@ -326,14 +322,16 @@ class GitOpsDeploymentManager extends React.Component {
     try {
       const clusterId = downstream?.cluster?.id;
 
-      const success = await this.updateAppGitOps(app.id, clusterId, gitOpsInput);
-      if (!success) {
-        return;
-      }
+      await this.updateAppGitOps(app.id, clusterId, gitOpsInput);
       
       this.props.history.push(`/app/${app.slug}/gitops`);
     } catch (error) {
       console.log(error);
+      this.setState({
+        errorTitle: "Failed to enable app gitops",
+        errorMsg: err ? err.message : "Something went wrong, please try again.",
+        displayErrorModal: true,
+      });
     }
   }
 
@@ -576,8 +574,13 @@ class GitOpsDeploymentManager extends React.Component {
     );
   }
 
+  toggleErrorModal = () => {
+    this.setState({ displayErrorModal: !this.state.displayErrorModal });
+  }
+
   render() {
-    const { appsList } = this.state;
+    const { appsList, errorMsg, errorTitle, displayErrorModal } = this.state;
+
     if (!appsList.length) {
       return (
         <div className="flex-column flex1 alignItems--center justifyContent--center">
@@ -594,6 +597,14 @@ class GitOpsDeploymentManager extends React.Component {
           : activeStep &&
           this.renderActiveStep(activeStep)
         }
+
+        {errorMsg &&
+          <ErrorModal
+            errorModal={displayErrorModal}
+            toggleErrorModal={this.toggleErrorModal}
+            err={errorTitle}
+            errMsg={errorMsg}
+          />}
       </div>
     );
   }

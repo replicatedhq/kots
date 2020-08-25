@@ -1,9 +1,10 @@
 import React, { Component } from "react";
 import { withRouter } from "react-router-dom";
-import { graphql, compose, withApollo } from "react-apollo";
+import { compose } from "react-apollo";
 import Helmet from "react-helmet";
 import url from "url";
 import GitOpsRepoDetails from "../gitops/GitOpsRepoDetails";
+import ErrorModal from "../modals/ErrorModal";
 import CodeSnippet from "@src/components/shared/CodeSnippet";
 import { getServiceSite, getAddKeyUri, requiresHostname, Utilities } from "../../utilities/utilities";
 import Modal from "react-modal";
@@ -59,7 +60,10 @@ class AppGitops extends Component {
       testingConnection: false,
       disablingGitOps: false,
       showDisableGitopsModalPrompt: false,
-      showGitOpsSettings: false
+      showGitOpsSettings: false,
+      errorMsg: "",
+      errorTitle: "",
+      displayErrorModal: false,
     };
   }
 
@@ -162,16 +166,9 @@ class AppGitops extends Component {
     try {
       const oldUri = gitops?.uri;
       if (newUri !== oldUri) {
-        const success = await this.createGitOpsRepo(gitOpsInput);
-        if (!success) {
-          return false;
-        }
+        await this.createGitOpsRepo(gitOpsInput);
       }
-
-      const success = await this.updateAppGitOps(app.id, clusterId, gitOpsInput);
-      if (!success) {
-        return false;
-      }
+      await this.updateAppGitOps(app.id, clusterId, gitOpsInput);
 
       if (newUri !== oldUri || gitops?.branch !== branch) {
         await this.handleTestConnection();
@@ -182,58 +179,53 @@ class AppGitops extends Component {
       return true;
     } catch(err) {
       console.log(err);
+      this.setState({
+        errorTitle: "Failed to finish gitops setup",
+        errorMsg: err ? err.message : "Something went wrong, please try again.",
+        displayErrorModal: true,
+      });
       return false;
     }
   }
 
   createGitOpsRepo = async (gitOpsInput) => {
-    try {
-      const res = await fetch(`${window.env.API_ENDPOINT}/gitops/create`, {
-        headers: {
-          "Authorization": Utilities.getToken(),
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          gitOpsInput: gitOpsInput,
-        }),
-        method: "POST",
-      });
-      if (!res.ok && res.status === 401) {
+    const res = await fetch(`${window.env.API_ENDPOINT}/gitops/create`, {
+      headers: {
+        "Authorization": Utilities.getToken(),
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        gitOpsInput: gitOpsInput,
+      }),
+      method: "POST",
+    });
+    if (!res.ok) {
+      if (res.status === 401) {
         Utilities.logoutUser();
         return;
       }
-      if (res.ok && res.status === 204) {
-        return true;
-      }
-    } catch(err) {
-      console.log(err);
+      throw new Error(`Unexpected status code: ${res.status}`);
     }
-    return false;
   }
 
   updateAppGitOps = async (appId, clusterId, gitOpsInput) => {
-    try {
-      const res = await fetch(`${window.env.API_ENDPOINT}/gitops/app/${appId}/cluster/${clusterId}/update`, {
-        headers: {
-          "Authorization": Utilities.getToken(),
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          gitOpsInput: gitOpsInput,
-        }),
-        method: "PUT",
-      });
-      if (!res.ok && res.status === 401) {
+    const res = await fetch(`${window.env.API_ENDPOINT}/gitops/app/${appId}/cluster/${clusterId}/update`, {
+      headers: {
+        "Authorization": Utilities.getToken(),
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        gitOpsInput: gitOpsInput,
+      }),
+      method: "PUT",
+    });
+    if (!res.ok) {
+      if (res.status === 401) {
         Utilities.logoutUser();
         return;
       }
-      if (res.ok && res.status === 204) {
-        return true;
-      }
-    } catch(err) {
-      console.log(err);
+      throw new Error(`Unexpected status code: ${res.status}`);
     }
-    return false;
   }
 
   promptToDisableGitOps = () => {
@@ -289,6 +281,10 @@ class AppGitops extends Component {
     }
   }
 
+  toggleErrorModal = () => {
+    this.setState({ displayErrorModal: !this.state.displayErrorModal });
+  }
+
   componentDidMount() {
     const gitops = this.props.app.downstreams[0].gitops;
     const gitopsEnabled = gitops?.enabled;
@@ -321,6 +317,9 @@ class AppGitops extends Component {
       disablingGitOps,
       showGitOpsSettings,
       showDisableGitopsModalPrompt,
+      errorMsg,
+      errorTitle,
+      displayErrorModal,
     } = this.state;
 
     const deployKey = gitops?.deployKey;
@@ -450,6 +449,14 @@ class AppGitops extends Component {
             </div>
           </div>
         </Modal>
+
+        {errorMsg &&
+          <ErrorModal
+            errorModal={displayErrorModal}
+            toggleErrorModal={this.toggleErrorModal}
+            err={errorTitle}
+            errMsg={errorMsg}
+          />}
       </div>
     );
   }
