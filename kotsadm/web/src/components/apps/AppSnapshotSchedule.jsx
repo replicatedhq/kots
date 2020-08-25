@@ -202,7 +202,7 @@ class AppSnapshotSchedule extends Component {
       .catch((err) => {
         console.log(err);
         this.setState({
-          message: "Failed to connect to API",
+          message: err ? err.message : "Failed to connect to API",
           messageType: "error",
           updatingSchedule: false,
         });
