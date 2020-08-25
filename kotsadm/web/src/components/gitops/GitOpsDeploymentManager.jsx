@@ -5,10 +5,9 @@ import isEmpty from "lodash/isEmpty";
 import classNames from "classnames";
 import Loader from "../shared/Loader";
 import { withRouter, Link } from "react-router-dom";
-import { graphql, compose, withApollo } from "react-apollo";
+import { compose } from "react-apollo";
 import GitOpsFlowIllustration from "./GitOpsFlowIllustration";
 import GitOpsRepoDetails from "./GitOpsRepoDetails";
-import { createGitOpsRepo } from "@src/mutations/AppsMutations";
 import { getServiceSite, requiresHostname, Utilities } from "../../utilities/utilities";
 
 import "../../scss/components/gitops/GitOpsDeploymentManager.scss";
@@ -203,7 +202,10 @@ class GitOpsDeploymentManager extends React.Component {
         }
       }
 
-      await this.props.createGitOpsRepo(gitOpsInput);
+      const success = await this.createGitOpsRepo(gitOpsInput);
+      if (!success) {
+        return false;
+      }
 
       if (this.isSingleApp()) {
         const app = this.state.appsList[0];
@@ -229,6 +231,27 @@ class GitOpsDeploymentManager extends React.Component {
     } finally {
       this.setState({ finishingSetup: false });
     }
+  }
+
+  createGitOpsRepo = async (gitOpsInput) => {
+    try {
+      const res = await fetch(`${window.env.API_ENDPOINT}/gitops/create`, {
+        headers: {
+          "Authorization": Utilities.getToken(),
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          gitOpsInput: gitOpsInput,
+        }),
+        method: "POST",
+      });
+      if (res.ok && res.status === 204) {
+        return true;
+      }
+    } catch(err) {
+      console.log(err);
+    }
+    return false;
   }
 
   resetGitOps = async () => {
@@ -576,12 +599,4 @@ class GitOpsDeploymentManager extends React.Component {
   }
 }
 
-export default compose(
-  withApollo,
-  withRouter,
-  graphql(createGitOpsRepo, {
-    props: ({ mutate }) => ({
-      createGitOpsRepo: (gitOpsInput) => mutate({ variables: { gitOpsInput } })
-    })
-  }),
-)(GitOpsDeploymentManager);
+export default compose(withRouter)(GitOpsDeploymentManager);

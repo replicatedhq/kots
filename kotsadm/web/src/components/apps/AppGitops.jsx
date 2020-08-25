@@ -5,7 +5,6 @@ import Helmet from "react-helmet";
 import url from "url";
 import GitOpsRepoDetails from "../gitops/GitOpsRepoDetails";
 import CodeSnippet from "@src/components/shared/CodeSnippet";
-import { createGitOpsRepo } from "../../mutations/AppsMutations";
 import { getServiceSite, getAddKeyUri, requiresHostname, Utilities } from "../../utilities/utilities";
 import Modal from "react-modal";
 
@@ -159,7 +158,10 @@ class AppGitops extends Component {
     try {
       const oldUri = gitops?.uri;
       if (newUri !== oldUri) {
-        await this.props.createGitOpsRepo(gitOpsInput);
+        const success = await this.createGitOpsRepo(gitOpsInput);
+        if (!success) {
+          return false;
+        }
       }
 
       const success = await this.updateAppGitOps(app.id, clusterId, gitOpsInput);
@@ -178,6 +180,27 @@ class AppGitops extends Component {
       console.log(err);
       return false;
     }
+  }
+
+  createGitOpsRepo = async (gitOpsInput) => {
+    try {
+      const res = await fetch(`${window.env.API_ENDPOINT}/gitops/create`, {
+        headers: {
+          "Authorization": Utilities.getToken(),
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          gitOpsInput: gitOpsInput,
+        }),
+        method: "POST",
+      });
+      if (res.ok && res.status === 204) {
+        return true;
+      }
+    } catch(err) {
+      console.log(err);
+    }
+    return false;
   }
 
   updateAppGitOps = async (appId, clusterId, gitOpsInput) => {
@@ -416,12 +439,4 @@ class AppGitops extends Component {
   }
 }
 
-export default compose(
-  withApollo,
-  withRouter,
-  graphql(createGitOpsRepo, {
-    props: ({ mutate }) => ({
-      createGitOpsRepo: (gitOpsInput) => mutate({ variables: { gitOpsInput } })
-    })
-  }),
-)(AppGitops);
+export default compose(withRouter)(AppGitops);

@@ -16,14 +16,23 @@ import (
 )
 
 type UpdateAppGitOpsRequest struct {
-	GitOpsInput GitOpsInput `json:"gitOpsInput"`
+	GitOpsInput UpdateAppGitOpsInput `json:"gitOpsInput"`
 }
-type GitOpsInput struct {
-	Uri    string `json:"uri"`
+type UpdateAppGitOpsInput struct {
+	URI    string `json:"uri"`
 	Branch string `json:"branch"`
 	Path   string `json:"path"`
 	Format string `json:"format"`
 	Action string `json:"action"`
+}
+
+type CreateGitOpsRequest struct {
+	GitOpsInput CreateGitOpsInput `json:"gitOpsInput"`
+}
+type CreateGitOpsInput struct {
+	Provider string `json:"provider"`
+	URI      string `json:"uri"`
+	Hostname string `json:"hostname"`
 }
 
 func UpdateAppGitOps(w http.ResponseWriter, r *http.Request) {
@@ -58,7 +67,7 @@ func UpdateAppGitOps(w http.ResponseWriter, r *http.Request) {
 	}
 
 	gitOpsInput := updateAppGitOpsRequest.GitOpsInput
-	if err := gitops.UpdateDownstreamGitOps(a.ID, clusterID, gitOpsInput.Uri, gitOpsInput.Branch, gitOpsInput.Path, gitOpsInput.Format, gitOpsInput.Action); err != nil {
+	if err := gitops.UpdateDownstreamGitOps(a.ID, clusterID, gitOpsInput.URI, gitOpsInput.Branch, gitOpsInput.Path, gitOpsInput.Format, gitOpsInput.Action); err != nil {
 		logger.Error(err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
@@ -315,4 +324,35 @@ func GetGitOpsRepo(w http.ResponseWriter, r *http.Request) {
 	}
 
 	JSON(w, http.StatusOK, gitOpsConfig)
+}
+
+func CreateGitOps(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Headers", "content-type, origin, accept, authorization")
+
+	if r.Method == "OPTIONS" {
+		w.WriteHeader(http.StatusOK)
+		return
+	}
+
+	if err := requireValidSession(w, r); err != nil {
+		logger.Error(err)
+		return
+	}
+
+	createGitOpsRequest := CreateGitOpsRequest{}
+	if err := json.NewDecoder(r.Body).Decode(&createGitOpsRequest); err != nil {
+		logger.Error(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	gitOpsInput := createGitOpsRequest.GitOpsInput
+	if err := gitops.CreateGitOps(gitOpsInput.Provider, gitOpsInput.URI, gitOpsInput.Hostname); err != nil {
+		logger.Error(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	JSON(w, http.StatusNoContent, "")
 }

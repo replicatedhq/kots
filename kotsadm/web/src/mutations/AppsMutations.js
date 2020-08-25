@@ -52,13 +52,6 @@ export const updateKotsApp = gql`
   }
 `;
 
-export const createGitOpsRepoRaw = `
-  mutation createGitOpsRepo($gitOpsInput: KotsGitOpsInput!) {
-    createGitOpsRepo(gitOpsInput: $gitOpsInput)
-  }
-`;
-export const createGitOpsRepo = gql(createGitOpsRepoRaw);
-
 export const updateAppGitOpsRaw = `
   mutation updateAppGitOps($appId: String!, $clusterId: String!, $gitOpsInput: KotsGitOpsInput!) {
     updateAppGitOps(appId: $appId, clusterId: $clusterId, gitOpsInput: $gitOpsInput)
