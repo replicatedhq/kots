@@ -1,5 +1,5 @@
 import React, { Component } from "react";
-import { graphql, compose, withApollo } from "react-apollo";
+import { compose } from "react-apollo";
 import { Link, withRouter } from "react-router-dom"
 import Helmet from "react-helmet";
 import Modal from "react-modal";
@@ -12,7 +12,6 @@ import Loader from "../shared/Loader";
 import DeleteSnapshotModal from "../modals/DeleteSnapshotModal";
 import RestoreSnapshotModal from "../modals/RestoreSnapshotModal";
 
-import { deleteSnapshot } from "../../mutations/SnapshotMutations";
 import "../../scss/components/snapshots/AppSnapshots.scss";
 import { Utilities } from "../../utilities/utilities";
 
@@ -194,9 +193,30 @@ class AppSnapshots extends Component {
     }
 
     this.setState({ deletingSnapshot: true, deleteErr: false, deleteErrorMsg: "", snapshots: this.state.snapshots.map(s => s === snapshot ? fakeDeletionSnapshot : s) });
-    this.props
-      .deleteSnapshot(snapshot.name)
-      .then(() => {
+    
+    fetch(`${window.env.API_ENDPOINT}/snapshot/${snapshot.name}/delete`, {
+      method: "POST",
+      headers: {
+        "Authorization": Utilities.getToken(),
+        "Content-Type": "application/json",
+      }
+    })
+      .then(async (res) => {
+        if (!res.ok && res.status === 401) {
+          Utilities.logoutUser();
+          return;
+        }
+
+        const response = await res.json();
+        if (response.error) {
+          this.setState({
+            deletingSnapshot: false,
+            deleteErr: true,
+            deleteErrorMsg: response.error,
+          });
+          return;
+        }
+
         this.setState({
           deletingSnapshot: false,
           deleteSnapshotModal: false,
@@ -204,16 +224,11 @@ class AppSnapshots extends Component {
         });
       })
       .catch(err => {
-        err.graphQLErrors.map(({ msg }) => {
-          this.setState({
-            deletingSnapshot: false,
-            deleteErr: true,
-            deleteErrorMsg: msg,
-          });
-        })
-      })
-      .finally(() => {
-        this.setState({ deletingSnapshot: false });
+        this.setState({
+          deletingSnapshot: false,
+          deleteErr: true,
+          deleteErrorMsg: err ? err.message : "Something went wrong, please try again.",
+        });
       });
   };
 
@@ -507,12 +522,4 @@ class AppSnapshots extends Component {
   }
 }
 
-export default compose(
-  withApollo,
-  withRouter,
-  graphql(deleteSnapshot, {
-    props: ({ mutate }) => ({
-      deleteSnapshot: (snapshotName) => mutate({ variables: { snapshotName } })
-    })
-  }),
-)(AppSnapshots);
+export default compose(withRouter)(AppSnapshots);

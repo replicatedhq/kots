@@ -221,3 +221,36 @@ func GetKotsadmBackup(w http.ResponseWriter, r *http.Request) {
 
 	JSON(w, 200, getBackupResponse)
 }
+
+type DeleteKotsadmBackupResponse struct {
+	Success bool   `json:"success"`
+	Error   string `json:"error,omitempty"`
+}
+
+func DeleteKotsadmBackup(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Headers", "content-type, origin, accept, authorization")
+
+	if r.Method == "OPTIONS" {
+		w.WriteHeader(http.StatusOK)
+		return
+	}
+
+	if err := requireValidSession(w, r); err != nil {
+		logger.Error(err)
+		return
+	}
+
+	deleteBackupResponse := DeleteKotsadmBackupResponse{}
+
+	if err := snapshot.DeleteBackup(mux.Vars(r)["snapshotName"]); err != nil {
+		logger.Error(err)
+		deleteBackupResponse.Error = "failed to delete backup"
+		JSON(w, http.StatusInternalServerError, deleteBackupResponse)
+		return
+	}
+
+	deleteBackupResponse.Success = true
+
+	JSON(w, http.StatusOK, deleteBackupResponse)
+}

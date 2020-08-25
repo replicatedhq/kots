@@ -486,6 +486,41 @@ func GetBackup(snapshotName string) (*velerov1.Backup, error) {
 	return backup, nil
 }
 
+func DeleteBackup(snapshotName string) error {
+	bsl, err := FindBackupStoreLocation()
+	if err != nil {
+		return errors.Wrap(err, "failed to get velero namespace")
+	}
+
+	veleroNamespace := bsl.Namespace
+	veleroDeleteBackupRequest := &velerov1.DeleteBackupRequest{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      snapshotName,
+			Namespace: veleroNamespace,
+		},
+		Spec: velerov1.DeleteBackupRequestSpec{
+			BackupName: snapshotName,
+		},
+	}
+
+	cfg, err := config.GetConfig()
+	if err != nil {
+		return errors.Wrap(err, "failed to get cluster config")
+	}
+
+	veleroClient, err := veleroclientv1.NewForConfig(cfg)
+	if err != nil {
+		return errors.Wrap(err, "failed to create clientset")
+	}
+
+	_, err = veleroClient.DeleteBackupRequests(veleroNamespace).Create(context.TODO(), veleroDeleteBackupRequest, metav1.CreateOptions{})
+	if err != nil {
+		return errors.Wrap(err, "failed to create delete backup request")
+	}
+
+	return nil
+}
+
 func GetKotsadmBackupDetail(ctx context.Context, backupName string) (*types.BackupDetail, error) {
 	cfg, err := config.GetConfig()
 	if err != nil {
