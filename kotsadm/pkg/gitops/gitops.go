@@ -43,7 +43,7 @@ type GitOpsConfig struct {
 	IsConnected bool   `json:"isConnected"`
 }
 
-type GlobalGitopsConfig struct {
+type GlobalGitOpsConfig struct {
 	Enabled  bool   `json:"enabled"`
 	Hostname string `json:"hostname"`
 	Provider string `json:"provider"`
@@ -391,25 +391,25 @@ func ResetGitOps() error {
 	return nil
 }
 
-func GetGitOps() (GlobalGitopsConfig, error) {
+func GetGitOps() (GlobalGitOpsConfig, error) {
 	cfg, err := config.GetConfig()
 	if err != nil {
-		return GlobalGitopsConfig{}, errors.Wrap(err, "failed to get cluster config")
+		return GlobalGitOpsConfig{}, errors.Wrap(err, "failed to get cluster config")
 	}
 
 	clientset, err := kubernetes.NewForConfig(cfg)
 	if err != nil {
-		return GlobalGitopsConfig{}, errors.Wrap(err, "failed to create kubernetes clientset")
+		return GlobalGitOpsConfig{}, errors.Wrap(err, "failed to create kubernetes clientset")
 	}
 
 	secret, err := clientset.CoreV1().Secrets(os.Getenv("POD_NAMESPACE")).Get(context.TODO(), "kotsadm-gitops", metav1.GetOptions{})
 	if kuberneteserrors.IsNotFound(err) {
-		return GlobalGitopsConfig{}, nil
+		return GlobalGitOpsConfig{}, nil
 	} else if err != nil {
-		return GlobalGitopsConfig{}, errors.Wrap(err, "get kotsadm-gitops secret")
+		return GlobalGitOpsConfig{}, errors.Wrap(err, "get kotsadm-gitops secret")
 	}
 
-	parsedConfig := GlobalGitopsConfig{
+	parsedConfig := GlobalGitOpsConfig{
 		Enabled:  true,
 		Provider: string(secret.Data["provider.0.type"]),
 		URI:      string(secret.Data["provider.0.repoUri"]),

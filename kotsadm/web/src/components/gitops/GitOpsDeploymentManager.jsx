@@ -1,6 +1,7 @@
 import * as React from "react";
 import Select from "react-select";
 import find from "lodash/find";
+import isEmpty from "lodash/isEmpty";
 import classNames from "classnames";
 import Loader from "../shared/Loader";
 import { withRouter, Link } from "react-router-dom";
@@ -290,7 +291,7 @@ class GitOpsDeploymentManager extends React.Component {
       return;
     }
 
-    if (!this.state.gitops) {
+    if (isEmpty(this.state.gitops)) {
       return;
     }
 

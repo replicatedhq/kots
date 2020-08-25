@@ -293,7 +293,7 @@ func ResetGitOps(w http.ResponseWriter, r *http.Request) {
 	JSON(w, http.StatusNoContent, "")
 }
 
-func GetGitopsRepo(w http.ResponseWriter, r *http.Request) {
+func GetGitOpsRepo(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Access-Control-Allow-Headers", "content-type, origin, accept, authorization")
 
@@ -307,12 +307,12 @@ func GetGitopsRepo(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	gitopsConfig, err := gitops.GetGitOps()
+	gitOpsConfig, err := gitops.GetGitOps()
 	if err != nil {
 		logger.Error(err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
-	JSON(w, http.StatusOK, gitopsConfig)
+	JSON(w, http.StatusOK, gitOpsConfig)
 }
