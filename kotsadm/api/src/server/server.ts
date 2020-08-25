@@ -203,20 +203,6 @@ export class Server extends ServerLoader {
 
   async $onReady() {
     this.expressApp.get("*", (req: Request, res: Response) => res.sendStatus(404));
-
-    const params = await Params.getParams();
-
-    if (params.shipOutputBucket === "ship-pacts") {
-      logger.info({msg: "Not creating bucket because the desired name is ship-pacts. Consider using a different bucket name to make this work."});
-    } else if (params.s3SkipEnsureBucket) {
-      logger.info({msg: "Not creating bucket because S3_SKIP_ENSURE_BUCKET was set"});
-    } else {
-      if (!params.storageBaseURI || !params.storageBaseURI.startsWith("docker://")) {
-        logger.info({msg: "Ensuring bucket exists..."});
-        await ensureBucket(params);
-      }
-    }
-
     logger.info({msg: "Server started..."});
   }
 }

@@ -22,6 +22,10 @@ import (
 func Start() {
 	log.Printf("kotsadm version %s\n", os.Getenv("VERSION"))
 
+	if err := bootstrap(); err != nil {
+		panic(err)
+	}
+
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Minute)
 	if err := waitForDependencies(ctx); err != nil {
 		panic(err)
