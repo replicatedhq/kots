@@ -62,6 +62,20 @@ func (s S3PGStore) ListInstalledApps() ([]*apptypes.App, error) {
 	return apps, nil
 }
 
+func (s S3PGStore) GetAppIDFromSlug(slug string) (string, error) {
+	db := persistence.MustGetPGSession()
+	query := `select id from app where slug = $1`
+	row := db.QueryRow(query, slug)
+
+	id := ""
+
+	if err := row.Scan(&id); err != nil {
+		return "", errors.Wrap(err, "failed to scan id")
+	}
+
+	return id, nil
+}
+
 func (s S3PGStore) GetApp(id string) (*apptypes.App, error) {
 	// too noisy
 	// logger.Debug("getting app from id",
@@ -140,18 +154,9 @@ func (s S3PGStore) GetApp(id string) (*apptypes.App, error) {
 }
 
 func (s S3PGStore) GetAppFromSlug(slug string) (*apptypes.App, error) {
-	// too noisy
-	// logger.Debug("getting app from slug",
-	// 	zap.String("slug", slug))
-
-	db := persistence.MustGetPGSession()
-	query := `select id from app where slug = $1`
-	row := db.QueryRow(query, slug)
-
-	id := ""
-
-	if err := row.Scan(&id); err != nil {
-		return nil, errors.Wrap(err, "failed to scan id")
+	id, err := s.GetAppIDFromSlug(slug)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get id from slug")
 	}
 
 	return s.GetApp(id)

@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"net/http"
 
+	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/kotsadm/pkg/airgap"
 	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
@@ -45,6 +46,33 @@ func GetAirgapInstallStatus(w http.ResponseWriter, r *http.Request) {
 	}
 
 	JSON(w, 200, status)
+}
+
+func ResetAirgapInstallStatus(w http.ResponseWriter, r *http.Request) {
+	if handleOptionsRequest(w, r) {
+		return
+	}
+
+	if err := requireValidSession(w, r); err != nil {
+		logger.Error(err)
+		return
+	}
+
+	appID, err := store.GetStore().GetAppIDFromSlug(mux.Vars(r)["appSlug"])
+	if err != nil {
+		logger.Error(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	err = store.GetStore().ResetAirgapInstallInProgress(appID)
+	if err != nil {
+		logger.Error(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
 }
 
 func UploadAirgapBundle(w http.ResponseWriter, r *http.Request) {

@@ -91,8 +91,8 @@ func Start() {
 	r.Path("/api/v1/redact/spec/{slug}").Methods("DELETE").HandlerFunc(handlers.DeleteRedact)
 	r.Path("/api/v1/redact/enabled/{slug}").Methods("OPTIONS", "POST").HandlerFunc(handlers.SetRedactEnabled)
 
-	r.PathPrefix("/api/v1/kots/").Methods("OPTIONS").HandlerFunc(handlers.CORS)
-	r.PathPrefix("/api/v1/kots/").Methods("HEAD", "GET", "POST", "PUT", "DELETE").HandlerFunc(handlers.NodeProxy(upstream))
+	r.PathPrefix("/api/v1/kots/registry").Methods("OPTIONS").HandlerFunc(handlers.CORS)
+	r.PathPrefix("/api/v1/kots/registry").Methods("HEAD", "GET", "POST", "PUT", "DELETE").HandlerFunc(handlers.NodeProxy(upstream))
 
 	// proxy for license/titled api
 	r.Path("/license/v1/license").Methods("GET").HandlerFunc(handlers.NodeProxy(upstream))
@@ -104,6 +104,7 @@ func Start() {
 	// Airgap
 	r.Path("/api/v1/app/airgap").Methods("OPTIONS", "POST", "PUT").HandlerFunc(handlers.UploadAirgapBundle)
 	r.Path("/api/v1/app/airgap/status").Methods("OPTIONS", "GET").HandlerFunc(handlers.GetAirgapInstallStatus)
+	r.Path("/api/v1/kots/airgap/reset/{appSlug}").Methods("OPTIONS", "POST").HandlerFunc(handlers.ResetAirgapInstallStatus)
 
 	// Implemented handlers
 	r.Path("/api/v1/license/platform").Methods("OPTIONS", "POST").HandlerFunc(handlers.ExchangePlatformLicense)
