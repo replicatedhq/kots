@@ -137,8 +137,6 @@ class GitOpsDeploymentManager extends React.Component {
           gitops: freshGitops
         })
       }
-
-      return freshGitops
     } catch(err) {
       console.log(err);
       throw err;
