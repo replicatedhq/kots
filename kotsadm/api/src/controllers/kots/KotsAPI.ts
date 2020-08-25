@@ -50,25 +50,6 @@ interface UpdateAppBody {
 
 @Controller("/api/v1/kots")
 export class KotsAPI {
-  @Post("/airgap/reset/:slug")
-  async kotsResetAirgapUpload(
-    @Req() request: Request,
-    @Res() response: Response,
-    @HeaderParams("Authorization") auth: string,
-  ) {
-    const session: Session = await request.app.locals.stores.sessionStore.decode(auth);
-    if (!session || !session.userId) {
-      response.status(401);
-      return {};
-    }
-
-    const slug = request.params.slug;
-
-    const appId = await request.app.locals.stores.kotsAppStore.getIdFromSlug(slug);
-    await request.app.locals.stores.kotsAppStore.resetAirgapInstallInProgress(appId);
-    response.send(200);
-  }
-
   @Post("/registry")
   async kotsValidateRegistryAuth(
     @BodyParams("") body: any,

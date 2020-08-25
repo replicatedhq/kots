@@ -59,6 +59,18 @@ func (s S3PGStore) GetAirgapInstallStatus() (*airgaptypes.InstallStatus, error) 
 	return status, nil
 }
 
+func (s S3PGStore) ResetAirgapInstallInProgress(appID string) error {
+	db := persistence.MustGetPGSession()
+
+	query := `update app set install_state = 'airgap_upload_in_progress' where id = $1`
+	_, err := db.Exec(query, appID)
+	if err != nil {
+		return errors.Wrap(err, "failed to set update airgap install status")
+	}
+
+	return nil
+}
+
 func (s S3PGStore) SetAppIsAirgap(appID string) error {
 	db := persistence.MustGetPGSession()
 

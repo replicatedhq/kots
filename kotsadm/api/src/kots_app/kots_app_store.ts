@@ -1659,14 +1659,6 @@ WHERE app_id = $1 AND cluster_id = $2 AND sequence = $3`;
     await this.pool.query(q, v);
   }
 
-  async resetAirgapInstallInProgress(appId: string): Promise<void> {
-    const q = `update app set install_state = 'airgap_upload_in_progress' where id = $1`;
-    const v = [appId];
-    await this.pool.query(q, v);
-
-    await this.clearApiTaskStatus("airgap-install");
-  }
-
   async resetOnlineInstallInProgress(appId: string): Promise<void> {
     const q = `update app set install_state = 'online_upload_in_progress' where id = $1`;
     const v = [appId];
