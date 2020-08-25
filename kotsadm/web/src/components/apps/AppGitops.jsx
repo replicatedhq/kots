@@ -98,6 +98,10 @@ class AppGitops extends Component {
         }
       });
       if (!res.ok) {
+        if (res.status === 401) {
+          Utilities.logoutUser();
+          return;
+        }
         console.log("failed to init gitops connection, unexpected status code", res.status);
         this.props.refetch();
         return;
@@ -194,6 +198,10 @@ class AppGitops extends Component {
         }),
         method: "POST",
       });
+      if (!res.ok && res.status === 401) {
+        Utilities.logoutUser();
+        return;
+      }
       if (res.ok && res.status === 204) {
         return true;
       }
@@ -215,6 +223,10 @@ class AppGitops extends Component {
         }),
         method: "PUT",
       });
+      if (!res.ok && res.status === 401) {
+        Utilities.logoutUser();
+        return;
+      }
       if (res.ok && res.status === 204) {
         return true;
       }
@@ -245,6 +257,10 @@ class AppGitops extends Component {
         },
         method: "POST",
       });
+      if (!res.ok && res.status === 401) {
+        Utilities.logoutUser();
+        return;
+      }
       if (res.ok && res.status === 204) {
         this.props.history.push(`/app/${this.props.app?.slug}`);
         this.props.refetch();
