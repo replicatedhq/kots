@@ -43,6 +43,13 @@ type GitOpsConfig struct {
 	IsConnected bool   `json:"isConnected"`
 }
 
+type GlobalGitOpsConfig struct {
+	Enabled  bool   `json:"enabled"`
+	Hostname string `json:"hostname"`
+	Provider string `json:"provider"`
+	URI      string `json:"uri"`
+}
+
 func (g *GitOpsConfig) CommitURL(hash string) string {
 	switch g.Provider {
 	case "github", "github_enterprise":
@@ -382,6 +389,34 @@ func ResetGitOps() error {
 	}
 
 	return nil
+}
+
+func GetGitOps() (GlobalGitOpsConfig, error) {
+	cfg, err := config.GetConfig()
+	if err != nil {
+		return GlobalGitOpsConfig{}, errors.Wrap(err, "failed to get cluster config")
+	}
+
+	clientset, err := kubernetes.NewForConfig(cfg)
+	if err != nil {
+		return GlobalGitOpsConfig{}, errors.Wrap(err, "failed to create kubernetes clientset")
+	}
+
+	secret, err := clientset.CoreV1().Secrets(os.Getenv("POD_NAMESPACE")).Get(context.TODO(), "kotsadm-gitops", metav1.GetOptions{})
+	if kuberneteserrors.IsNotFound(err) {
+		return GlobalGitOpsConfig{}, nil
+	} else if err != nil {
+		return GlobalGitOpsConfig{}, errors.Wrap(err, "get kotsadm-gitops secret")
+	}
+
+	parsedConfig := GlobalGitOpsConfig{
+		Enabled:  true,
+		Provider: string(secret.Data["provider.0.type"]),
+		URI:      string(secret.Data["provider.0.repoUri"]),
+		Hostname: string(secret.Data["provider.0.hostname"]),
+	}
+
+	return parsedConfig, nil
 }
 
 func gitOpsConfigFromSecretData(idx int64, secretData map[string][]byte) (string, string, string, string, error) {
