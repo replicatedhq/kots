@@ -479,3 +479,84 @@ func GetOnlineInstallStatus(w http.ResponseWriter, r *http.Request) {
 
 	JSON(w, 200, status)
 }
+
+// This the handler for license API and should be called by the application only.
+func GetPlatformLicenseCompatibility(w http.ResponseWriter, r *http.Request) {
+	apps, err := store.GetStore().ListInstalledApps()
+	if err != nil {
+		if store.GetStore().IsNotFound(err) {
+			JSON(w, http.StatusNotFound, struct{}{})
+			return
+		}
+		logger.Error(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	if len(apps) == 0 {
+		JSON(w, http.StatusNotFound, struct{}{})
+		return
+	}
+
+	if len(apps) > 1 {
+		JSON(w, http.StatusBadRequest, struct{}{})
+		return
+	}
+
+	app := apps[0]
+	license, err := store.GetStore().GetLicenseForApp(app.ID)
+	if err != nil {
+		logger.Error(err)
+		JSON(w, http.StatusInternalServerError, struct{}{})
+		return
+	}
+
+	type licenseFieldType struct {
+		Field            string      `json:"field"`
+		Title            string      `json:"title"`
+		Type             string      `json:"type"`
+		Value            interface{} `json:"value"`
+		HideFromCustomer bool        `json:"hide_from_customer,omitempty"`
+	}
+
+	type licenseType struct {
+		LicenseID      string             `json:"license_id"`
+		InstallationID string             `json:"installation_id"`
+		Assignee       string             `json:"assignee"`
+		ReleaseChannel string             `json:"release_channel"`
+		LicenseType    string             `json:"license_type"`
+		ExpirationTime string             `json:"expiration_time,omitempty"`
+		Fields         []licenseFieldType `json:"fields"`
+	}
+
+	platformLicense := licenseType{
+		LicenseID:      license.Spec.LicenseID,
+		InstallationID: app.ID,
+		Assignee:       license.Spec.CustomerName,
+		ReleaseChannel: license.Spec.ChannelName,
+		LicenseType:    license.Spec.LicenseType,
+		Fields:         make([]licenseFieldType, 0),
+	}
+
+	for k, e := range license.Spec.Entitlements {
+		if k == "expires_at" {
+			if e.Value.StrVal != "" {
+				platformLicense.ExpirationTime = e.Value.StrVal
+			}
+			continue
+		}
+
+		field := licenseFieldType{
+			Field:            k,
+			Title:            e.Title,
+			Type:             e.ValueType,
+			Value:            e.Value.Value(),
+			HideFromCustomer: e.IsHidden,
+		}
+
+		platformLicense.Fields = append(platformLicense.Fields, field)
+	}
+
+	JSON(w, http.StatusOK, platformLicense)
+	return
+}
