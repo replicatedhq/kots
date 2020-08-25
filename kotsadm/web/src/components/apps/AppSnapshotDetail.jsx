@@ -36,7 +36,7 @@ class AppSnapshotDetail extends Component {
     snapshotLogsErr: false,
     snapshotLogsErrMsg: "",
 
-    loading: false,
+    loading: true,
     snapshotDetails: {},
     errorMessage: "",
     errorTitle: "",
@@ -105,20 +105,21 @@ class AppSnapshotDetail extends Component {
   };
 
   componentDidMount() {
-    const { match } = this.props;
-    this.getSnapshotDetails(match.params.id);
+    this.fetchSnapshotDetails();
   }
 
   componentDidUpdate(lastProps) {
     const { match } = this.props;
     if (match.params.id !== lastProps.match.params.id) {
-      this.getSnapshotDetails(match.params.id);
+      this.fetchSnapshotDetails();
     }
   }
 
-  getSnapshotDetails = async (snapshotName) => {
+  fetchSnapshotDetails = async () => {
+    const { match } = this.props;
+    const snapshotName = match.params.id;
+
     this.setState({
-      loading: true,
       errorMessage: "",
       errorTitle: "",
     });
@@ -131,6 +132,10 @@ class AppSnapshotDetail extends Component {
         }
       });
       if (!res.ok) {
+        if (res.status === 401) {
+          Utilities.logoutUser();
+          return;
+        }
         this.setState({
           loading: false,
           errorMessage: `Unexpected status code: ${res.status}`,
@@ -142,19 +147,21 @@ class AppSnapshotDetail extends Component {
 
       const snapshotDetails = response.backupDetail;
 
+      let series = [];
       if (!isEmpty(snapshotDetails?.volumes)) {
         if (snapshotDetails?.hooks && !isEmpty(snapshotDetails?.hooks)) {
-          this.setState({ series: this.getSeriesData([...snapshotDetails?.volumes, ...snapshotDetails?.hooks].sort((a, b) => new Date(a.started) - new Date(b.started))) })
+          series = this.getSeriesData([...snapshotDetails?.volumes, ...snapshotDetails?.hooks].sort((a, b) => new Date(a.started) - new Date(b.started)));
         } else {
-          this.setState({ series: this.getSeriesData((snapshotDetails?.volumes).sort((a, b) => new Date(a.started) - new Date(b.started))) })
+          series = this.getSeriesData((snapshotDetails?.volumes).sort((a, b) => new Date(a.started) - new Date(b.started)));
         }
       } else if ((snapshotDetails?.hooks && !isEmpty(snapshotDetails?.hooks))) {
-        this.setState({ series: this.getSeriesData((snapshotDetails?.hooks).sort((a, b) => new Date(a.started) - new Date(b.started))) })
+        series = this.getSeriesData((snapshotDetails?.hooks).sort((a, b) => new Date(a.started) - new Date(b.started)));
       }
 
       this.setState({
         loading: false,
         snapshotDetails: snapshotDetails,
+        series: series,
         errorMessage: "",
         errorTitle: "",
       });
@@ -317,18 +324,18 @@ class AppSnapshotDetail extends Component {
   renderShowAllScripts = (hooks) => {
     return (
       hooks.map((hook, i) => {
-        const diffMinutes = moment(hook?.finished).diff(moment(hook?.started), "minutes");
+        const diffMinutes = moment(hook?.finishedAt).diff(moment(hook?.startedAt), "minutes");
         return (
-          <div className="flex flex1 u-borderBottom--gray alignItems--center" key={`${hook.hookName}-${hook.phase}-${i}`}>
+          <div className="flex flex1 u-borderBottom--gray alignItems--center" key={`${hook.name}-${hook.phase}-${i}`}>
             <div className="flex flex1 u-paddingBottom--15 u-paddingTop--15 u-paddingLeft--10">
               <div className="flex flex-column">
-                <p className="u-fontSize--large u-color--tuna u-fontWeight--bold u-lineHeight--bold u-marginBottom--8">{hook.hookName} <span className="u-fontSize--small u-fontWeight--medium u-color--dustyGray u-marginLeft--5">Pod: {hook.podName} </span> </p>
+                <p className="u-fontSize--large u-color--tuna u-fontWeight--bold u-lineHeight--bold u-marginBottom--8">{hook.name} <span className="u-fontSize--small u-fontWeight--medium u-color--dustyGray u-marginLeft--5">Pod: {hook.podName} </span> </p>
                 <span className="u-fontSize--small u-fontWeight--normal u-color--dustyGray u-marginRight--10"> {hook.command} </span>
               </div>
             </div>
             <div className="flex flex-column justifyContent--flexEnd">
-              <p className="u-fontSize--small u-fontWeight--normal alignSelf--flexEnd u-marginBottom--8"><span className={`status-indicator ${hook.error ? "failed" : "completed"} u-marginLeft--5`}>{hook.error ? "Failed" : "Completed"}</span></p>
-              {!hook.error &&
+              <p className="u-fontSize--small u-fontWeight--normal alignSelf--flexEnd u-marginBottom--8"><span className={`status-indicator ${hook.errors ? "failed" : "completed"} u-marginLeft--5`}>{hook.errors ? "Failed" : "Completed"}</span></p>
+              {!hook.errors &&
                 <p className="u-fontSize--small u-fontWeight--normal u-marginBottom--8"> Finished in {diffMinutes === 0 ? "less than a minute" : `${diffMinutes} minutes`} </p>}
               {hook.stderr !== "" || hook.stdout !== "" &&
                 <span className="replicated-link u-fontSize--small alignSelf--flexEnd" onClick={() => this.toggleScriptsOutput(hook)}> View output </span>}
@@ -403,15 +410,15 @@ class AppSnapshotDetail extends Component {
 
     const data = seriesData.map((d, i) => {
       let finishedTime;
-      if (d.started === d.finished) {
-        finishedTime = new Date(moment(d.finished).add(1, "seconds")).getTime();
+      if (d.startedAt === d.finishedAt) {
+        finishedTime = new Date(moment(d.finishedAt).add(1, "seconds")).getTime();
       } else {
-        finishedTime = new Date(d.finished).getTime()
+        finishedTime = new Date(d.finishedAt).getTime()
       }
 
       return {
         x: d.name ? `${d.name}` : `${d.hookName} (${d.podName})-${i}`,
-        y: [new Date(d.started).getTime(), finishedTime],
+        y: [new Date(d.startedAt).getTime(), finishedTime],
         z: d.name ? "Volume" : `${d.phase}-snapshot-script`,
         fillColor: d.name ? this.assignColorToPath(d.name) : this.assignColorToPath(d.podName)
       }
@@ -722,7 +729,7 @@ class AppSnapshotDetail extends Component {
             errorModal={this.state.displayErrorModal}
             toggleErrorModal={this.toggleErrorModal}
             errMsg={errorMessage}
-            tryAgain={() => this.getSnapshotDetails(this.props.match.params.id)}
+            tryAgain={() => this.fetchSnapshotDetails()}
             err={errorTitle}
             loading={this.state.loadingApp}
           />}

@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"net/http"
 
 	"github.com/gorilla/mux"
@@ -207,7 +208,7 @@ func GetKotsadmBackup(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	backup, err := snapshot.GetKotsadmBackupDetail(mux.Vars(r)["snapshotName"])
+	backup, err := snapshot.GetKotsadmBackupDetail(context.TODO(), mux.Vars(r)["snapshotName"])
 	if err != nil {
 		logger.Error(err)
 		getBackupResponse.Error = "failed to get backup detail"

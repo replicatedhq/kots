@@ -45,6 +45,5 @@ export const Query = `
     getPrometheusAddress: String
 
     snapshotConfig(slug: String!): SnapshotConfig
-    restoreDetail(appId: String!, restoreName: String!): RestoreDetail
   }
 `;

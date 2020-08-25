@@ -5,27 +5,85 @@ import Helmet from "react-helmet";
 import { Line } from "rc-progress";
 import Loader from "../shared/Loader";
 import { Utilities } from "@src/utilities/utilities";
-import { restoreDetail } from "../../queries/SnapshotQueries";
+import { Repeater } from "@src/utilities/repeater";
 import { cancelRestore } from "../../mutations/SnapshotMutations";
 import "../../scss/components/snapshots/AppSnapshots.scss";
 
 class AppSnapshotRestore extends Component {
   state = {
+    fetchRestoreDetailJob: new Repeater(),
+    loadingRestoreDetail: true,
+    restoreDetail: {},
+    errorMessage: "",
+    errorTitle: "",
+
     cancelingRestore: false,
     cancelRestoreErr: "",
-    cancelRestoreErrorMsg: ""
+    cancelRestoreErrorMsg: "",
   }
 
   componentDidMount() {
-    this.props.restoreDetail.startPolling(2000);
+    this.state.fetchRestoreDetailJob.start(this.fetchRestoreDetail, 2000);
   }
 
   componentDidUpdate(lastProps) {
-    if (this.props.restoreDetail?.restoreDetail !== lastProps.restoreDetail?.restoreDetail && this.props.restoreDetail?.restoreDetail) {
-      const phase = this.props.restoreDetail?.restoreDetail?.phase;
-      if (phase !== "New" && phase !== "InProgress") {
-        this.props.restoreDetail.stopPolling();
+    const { match } = this.props;
+    if (match.params.id !== lastProps.match.params.id) {
+      this.state.fetchRestoreDetailJob.stop();
+      this.state.fetchRestoreDetailJob.start(this.fetchRestoreDetail, 2000);
+    } else {
+      const phase = this.state.restoreDetail?.phase;
+      if (phase && phase !== "New" && phase !== "InProgress") {
+        this.state.fetchRestoreDetailJob.stop();
       }
+    }
+  }
+
+  fetchRestoreDetail = async () => {
+    const { match } = this.props;
+    const restoreName = match.params.id;
+
+    this.setState({
+      errorMessage: "",
+      errorTitle: "",
+    });
+
+    try {
+      const res = await fetch(`${window.env.API_ENDPOINT}/app/${this.props.app?.slug}/snapshot/restore/${restoreName}`, {
+        method: "GET",
+        headers: {
+          "Authorization": Utilities.getToken(),
+        }
+      });
+      if (!res.ok) {
+        if (res.status === 401) {
+          Utilities.logoutUser();
+          return;
+        }
+        this.setState({
+          loadingRestoreDetail: false,
+          errorMessage: `Unexpected status code: ${res.status}`,
+          errorTitle: "Failed to fetch restore details",
+        });
+        return;
+      }
+      const response = await res.json();
+
+      const restoreDetail = response.restoreDetail;
+
+      this.setState({
+        loadingRestoreDetail: false,
+        restoreDetail: restoreDetail,
+        errorMessage: "",
+        errorTitle: "",
+      });
+    } catch(err) {
+      console.log(err);
+      this.setState({
+        loadingRestoreDetail: false,
+        errorMessage: err ? `${err.message}` : "Something went wrong, please try again.",
+        errorTitle: "Failed to fetch restore details",
+      });
     }
   }
 
@@ -144,14 +202,13 @@ class AppSnapshotRestore extends Component {
   }
 
   render() {
-    const { cancelingRestore } = this.state;
-    const { restoreDetail } = this.props;
+    const { cancelingRestore, restoreDetail, loadingRestoreDetail } = this.state;
 
-    const hasNoErrorsOrWarnings = restoreDetail?.restoreDetail?.warnings?.length === 0 && restoreDetail?.restoreDetail?.errors?.length === 0;
-    const restoreCompleted = restoreDetail?.restoreDetail?.phase === "Completed";
-    const restoreFailing = restoreDetail?.restoreDetail?.phase === "PartiallyFailed" || restoreDetail?.restoreDetail?.phase === "Failed";
+    const hasNoErrorsOrWarnings = restoreDetail?.warnings?.length === 0 && restoreDetail?.errors?.length === 0;
+    const restoreCompleted = restoreDetail?.phase === "Completed";
+    const restoreFailing = restoreDetail?.phase === "PartiallyFailed" || restoreDetail?.phase === "Failed";
 
-    if (restoreDetail?.loading) {
+    if (loadingRestoreDetail) {
       return (
         <div className="flex-column flex1 alignItems--center justifyContent--center">
           <Loader size="60" />
@@ -174,12 +231,12 @@ class AppSnapshotRestore extends Component {
             <p className="u-fontWeight--bold u-color--tuna u-fontSize--larger u-lineHeight--normal u-marginBottom--10"> Application restore in progress </p>
             <p className="u-fontSize--normal u-fontWeight--medium u-color--dustyGray u-lineHeight--normal"> After all volumes have been restored you will need to log back in to the admin console. </p>
             <div className="flex flex-column  u-marginTop--40">
-              {restoreDetail?.restoreDetail?.volumes?.length === 0 && hasNoErrorsOrWarnings &&
+              {restoreDetail?.volumes?.length === 0 && hasNoErrorsOrWarnings &&
                 <div className="flex-column flex1 alignItems--center justifyContent--center">
                   <Loader size="60" />
                 </div>
               }
-              {restoreDetail?.restoreDetail?.volumes?.map((volume, i) => {
+              {restoreDetail?.volumes?.map((volume, i) => {
                 const strokeColor = volume.completionPercent === 100 ? "#44BB66" : "#326DE6";
                 const minutes = Math.floor(volume.timeRemainingSeconds / 60);
                 const remainingTime = volume.timeRemainingSeconds < 60 ? `${volume.timeRemainingSeconds} seconds remaining` : `${minutes} minutes remaining`;
@@ -213,7 +270,7 @@ class AppSnapshotRestore extends Component {
           </div>
           :
           !hasNoErrorsOrWarnings || restoreFailing ?
-            this.renderFailedRestoreView(restoreDetail?.restoreDetail) 
+            this.renderFailedRestoreView(restoreDetail)
           : null
         }
       </div>
@@ -224,17 +281,6 @@ class AppSnapshotRestore extends Component {
 export default compose(
   withApollo,
   withRouter,
-  graphql(restoreDetail, {
-    name: "restoreDetail",
-    options: ({ app, match }) => {
-      const appId = app.id;
-      const restoreName = match.params.id;
-      return {
-        variables: { appId, restoreName },
-        fetchPolicy: "no-cache"
-      }
-    }
-  }),
   graphql(cancelRestore, {
     props: ({ mutate }) => ({
       cancelRestore: (appId) => mutate({ variables: { appId } })
