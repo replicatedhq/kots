@@ -16,7 +16,9 @@ type PingResponse struct {
 }
 
 func Ping(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Access-Control-Allow-Origin", "*")
+	if handleOptionsRequest(w, r) {
+		return
+	}
 
 	pingResponse := PingResponse{}
 

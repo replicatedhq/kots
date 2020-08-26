@@ -21,11 +21,7 @@ type CreateBackupResponse struct {
 }
 
 func CreateBackup(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Header().Set("Access-Control-Allow-Headers", "content-type, origin, accept, authorization")
-
-	if r.Method == "OPTIONS" {
-		w.WriteHeader(200)
+	if handleOptionsRequest(w, r) {
 		return
 	}
 
@@ -75,11 +71,7 @@ type ListBackupsResponse struct {
 }
 
 func ListBackups(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Header().Set("Access-Control-Allow-Headers", "content-type, origin, accept, authorization")
-
-	if r.Method == "OPTIONS" {
-		w.WriteHeader(200)
+	if handleOptionsRequest(w, r) {
 		return
 	}
 
@@ -139,11 +131,7 @@ type ListKotsadmBackupsResponse struct {
 }
 
 func ListKotsadmBackups(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Header().Set("Access-Control-Allow-Headers", "content-type, origin, accept, authorization")
-
-	if r.Method == "OPTIONS" {
-		w.WriteHeader(200)
+	if handleOptionsRequest(w, r) {
 		return
 	}
 
@@ -183,11 +171,7 @@ type GetKotsadmBackupResponse struct {
 }
 
 func GetKotsadmBackup(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Header().Set("Access-Control-Allow-Headers", "content-type, origin, accept, authorization")
-
-	if r.Method == "OPTIONS" {
-		w.WriteHeader(200)
+	if handleOptionsRequest(w, r) {
 		return
 	}
 
@@ -228,11 +212,7 @@ type DeleteKotsadmBackupResponse struct {
 }
 
 func DeleteKotsadmBackup(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Header().Set("Access-Control-Allow-Headers", "content-type, origin, accept, authorization")
-
-	if r.Method == "OPTIONS" {
-		w.WriteHeader(http.StatusOK)
+	if handleOptionsRequest(w, r) {
 		return
 	}
 
