@@ -110,22 +110,6 @@ export class Server extends ServerLoader {
       paramsStore: new ParamsStore(pool, params),
     };
 
-    logger.info({msg: "ensuring a local cluster exists"});
-    if (!process.env["AUTO_CREATE_CLUSTER_TOKEN"]) {
-      logger.error({msg: "you must set AUTO_CREATE_CLUSTER_TOKEN"});
-      process.exit(1);
-      return;
-    }
-    const cluster = await stores.clusterStore.maybeGetClusterWithTypeNameAndToken("ship", "this-cluster", process.env["AUTO_CREATE_CLUSTER_TOKEN"]!);
-    if (!cluster) {
-      await stores.clusterStore.createNewShipCluster(undefined, true, "this-cluster", process.env["AUTO_CREATE_CLUSTER_TOKEN"]);
-    }
-
-    if (process.env["SHARED_PASSWORD_BCRYPT"]) {
-      logger.info({msg: "ensuring that shared admin console password is provisioned"});
-      await stores.userStore.createAdminConsolePassword(process.env["SHARED_PASSWORD_BCRYPT"]!);
-    }
-
     const setContext = async (req: Request, res: Response, next: NextFunction) => {
       let token = req.get("Authorization") || "";
 
