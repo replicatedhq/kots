@@ -2,7 +2,6 @@ package ocistore
 
 import (
 	"time"
-	"database/sql"
 
 	snapshottypes "github.com/replicatedhq/kots/kotsadm/pkg/snapshot/types"
 )
@@ -11,18 +10,14 @@ func (c OCIStore) ListPendingScheduledSnapshots(appID string) ([]snapshottypes.S
 	return nil, ErrNotImplemented
 }
 
-func (c OCIStore) UpdateScheduledSnapshot(_ *sql.Tx, ID string, backupName string) error {
+func (c OCIStore) UpdateScheduledSnapshot(ID string, backupName string) error {
 	return ErrNotImplemented
 }
 
-func (c OCIStore) LockScheduledSnapshot(_ *sql.Tx, ID string) (bool, error) {
-	return false, ErrNotImplemented
-}
-
-func (c OCIStore) DeletePendingScheduledSnapshots(appID string, _ *sql.Tx) error {
+func (c OCIStore) DeletePendingScheduledSnapshots(appID string) error {
 	return ErrNotImplemented
 }
 
-func (c OCIStore) CreateScheduledSnapshot(id string, appID string, timestamp time.Time, _ *sql.Tx) error {
+func (c OCIStore) CreateScheduledSnapshot(id string, appID string, timestamp time.Time) error {
 	return ErrNotImplemented
 }

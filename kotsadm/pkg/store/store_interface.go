@@ -3,7 +3,6 @@ package store
 import (
 	"context"
 	"time"
-	"database/sql"
 
 	airgaptypes "github.com/replicatedhq/kots/kotsadm/pkg/airgap/types"
 	apptypes "github.com/replicatedhq/kots/kotsadm/pkg/app/types"
@@ -117,10 +116,9 @@ type AppStore interface {
 
 type SnapshotStore interface {
 	ListPendingScheduledSnapshots(appID string) ([]snapshottypes.ScheduledSnapshot, error)
-	UpdateScheduledSnapshot(*sql.Tx, string, string) error
-	LockScheduledSnapshot(*sql.Tx, string) (bool, error)
-	DeletePendingScheduledSnapshots(string, *sql.Tx) error
-	CreateScheduledSnapshot(string, string, time.Time, *sql.Tx) error
+	UpdateScheduledSnapshot(string, string) error
+	DeletePendingScheduledSnapshots(string) error
+	CreateScheduledSnapshot(string, string, time.Time) error
 }
 
 type VersionStore interface {

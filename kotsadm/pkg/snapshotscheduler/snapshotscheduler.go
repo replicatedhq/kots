@@ -7,7 +7,6 @@ import (
 	"github.com/pkg/errors"
 	apptypes "github.com/replicatedhq/kots/kotsadm/pkg/app/types"
 	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
-	"github.com/replicatedhq/kots/kotsadm/pkg/persistence"
 	"github.com/replicatedhq/kots/kotsadm/pkg/snapshot"
 	snapshottypes "github.com/replicatedhq/kots/kotsadm/pkg/snapshot/types"
 	"github.com/replicatedhq/kots/kotsadm/pkg/store"
@@ -87,7 +86,7 @@ func handleApp(a *apptypes.App) error {
 		if err != nil {
 			return errors.Wrap(err, "failed to get next schedule")
 		}
-		if err := store.GetStore().CreateScheduledSnapshot(queued.ID, queued.AppID, queued.ScheduledTimestamp, nil); err != nil {
+		if err := store.GetStore().CreateScheduledSnapshot(queued.ID, queued.AppID, queued.ScheduledTimestamp); err != nil {
 			return errors.Wrap(err, "failed to create scheduled snapshot")
 		}
 		return nil
@@ -108,36 +107,18 @@ func handleApp(a *apptypes.App) error {
 		return nil
 	}
 
-	db := persistence.MustGetPGSession()
-	tx, err := db.Begin()
-	if err != nil {
-		return errors.Wrap(err, "failed to begin transaction")
-	}
-	defer tx.Rollback()
-
-	logger.Infof("Acquiring lock on scheduled snapshot %s", next.ID)
-	acquiredLock, err := store.GetStore().LockScheduledSnapshot(tx, next.ID)
-	if err != nil {
-		return errors.Wrap(err, "failed to acquire lock")
-	}
-
-	if !acquiredLock {
-		logger.Infof("Failed to lock scheduled snapshot %s", next.ID)
-		return nil
-	}
-
 	backup, err := snapshot.CreateBackup(a, true)
 	if err != nil {
 		return errors.Wrap(err, "failed to create backup")
 	}
 
-	if err := store.GetStore().UpdateScheduledSnapshot(tx, next.ID, backup.ObjectMeta.Name); err != nil {
+	if err := store.GetStore().UpdateScheduledSnapshot(next.ID, backup.ObjectMeta.Name); err != nil {
 		return errors.Wrap(err, "failed to update scheduled snapshot")
 	}
 	logger.Infof("Created backup %s from scheduled snapshot %s", backup.ObjectMeta.Name, next.ID)
 
 	if len(pending) > 1 {
-		err := store.GetStore().DeletePendingScheduledSnapshots(a.ID, tx)
+		err := store.GetStore().DeletePendingScheduledSnapshots(a.ID)
 		if err != nil {
 			return errors.Wrap(err, "failed to delete pending scheduled snapshots")
 		}
@@ -148,14 +129,10 @@ func handleApp(a *apptypes.App) error {
 		return errors.Wrap(err, "failed to get next schedule")
 	}
 
-	if err := store.GetStore().CreateScheduledSnapshot(queued.ID, queued.AppID, queued.ScheduledTimestamp, tx); err != nil {
+	if err := store.GetStore().CreateScheduledSnapshot(queued.ID, queued.AppID, queued.ScheduledTimestamp); err != nil {
 		return errors.Wrap(err, "failed to create scheduled snapshot")
 	}
 	logger.Infof("Scheduled next snapshot %s", queued.ID)
-
-	if err := tx.Commit(); err != nil {
-		return errors.Wrap(err, "failed to commit transaction")
-	}
 
 	return nil
 }

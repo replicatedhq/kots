@@ -1,7 +1,6 @@
 package s3pg
 
 import (
-	"database/sql"
 	"time"
 
 	"github.com/pkg/errors"
@@ -35,56 +34,38 @@ func (c S3PGStore) ListPendingScheduledSnapshots(appID string) ([]snapshottypes.
 	return scheduledSnapshots, nil
 }
 
-func (c S3PGStore) UpdateScheduledSnapshot(tx *sql.Tx, ID string, backupName string) error {
+func (c S3PGStore) UpdateScheduledSnapshot(ID string, backupName string) error {
+	logger.Debug("Updating scheduled snapshot",
+		zap.String("ID", ID))
+
+	db := persistence.MustGetPGSession()
 	query := `UPDATE scheduled_snapshots SET backup_name = $1 WHERE id = $2`
-	_, err := tx.Exec(query, backupName, ID)
+	_, err := db.Exec(query, backupName, ID)
 	if err != nil {
 		return errors.Wrap(err, "failed to exec")
 	}
 	return nil
 }
 
-func (c S3PGStore) LockScheduledSnapshot(tx *sql.Tx, ID string) (bool, error) {
-	query := `SELECT * FROM scheduled_snapshots WHERE id = $1 FOR UPDATE SKIP LOCKED`
-	rows, err := tx.Query(query, ID)
-	if err != nil {
-		return false, errors.Wrap(err, "failed to query")
-	}
-	defer rows.Close()
-
-	for rows.Next() {
-		return true, nil
-	}
-
-	return false, nil
-}
-
-func (c S3PGStore) DeletePendingScheduledSnapshots(appID string, tx *sql.Tx) error {
+func (c S3PGStore) DeletePendingScheduledSnapshots(appID string) error {
 	logger.Debug("Deleting pending scheduled snapshots",
 		zap.String("appID", appID))
 
+	db := persistence.MustGetPGSession()
 	query := `DELETE FROM scheduled_snapshots WHERE app_id = $1 AND backup_name IS NULL`
-
-	if tx != nil {
-		_, err := tx.Exec(query, appID)
-		if err != nil {
-			return errors.Wrap(err, "failed to tx exec query")
-		}
-	} else {
-		db := persistence.MustGetPGSession()
-		_, err := db.Exec(query, appID)
-		if err != nil {
-			return errors.Wrap(err, "failed to db exec query")
-		}
+	_, err := db.Exec(query, appID)
+	if err != nil {
+		return errors.Wrap(err, "failed to db exec query")
 	}
 
 	return nil
 }
 
-func (c S3PGStore) CreateScheduledSnapshot(id string, appID string, timestamp time.Time, tx *sql.Tx) error {
+func (c S3PGStore) CreateScheduledSnapshot(id string, appID string, timestamp time.Time) error {
 	logger.Debug("Creating scheduled snapshot",
 		zap.String("appID", appID))
 
+	db := persistence.MustGetPGSession()
 	query := `
 		INSERT INTO scheduled_snapshots (
 			id,
@@ -96,18 +77,9 @@ func (c S3PGStore) CreateScheduledSnapshot(id string, appID string, timestamp ti
 			$3
 		)
 	`
-
-	if tx != nil {
-		_, err := tx.Exec(query, id, appID, timestamp)
-		if err != nil {
-			return errors.Wrap(err, "Failed to tx exec query")
-		}
-	} else {
-		db := persistence.MustGetPGSession()
-		_, err := db.Exec(query, id, appID, timestamp)
-		if err != nil {
-			return errors.Wrap(err, "Failed to db exec query")
-		}
+	_, err := db.Exec(query, id, appID, timestamp)
+	if err != nil {
+		return errors.Wrap(err, "Failed to db exec query")
 	}
 
 	return nil

@@ -562,7 +562,7 @@ func SaveSnapshotConfig(w http.ResponseWriter, r *http.Request) {
 			JSON(w, http.StatusInternalServerError, responseBody)
 			return
 		}
-		if err := store.GetStore().DeletePendingScheduledSnapshots(app.ID, nil); err != nil {
+		if err := store.GetStore().DeletePendingScheduledSnapshots(app.ID); err != nil {
 			logger.Error(err)
 			responseBody.Error = "Failed to delete scheduled snapshots"
 			JSON(w, http.StatusInternalServerError, responseBody)
@@ -582,7 +582,7 @@ func SaveSnapshotConfig(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if requestBody.Schedule != app.SnapshotSchedule {
-		if err := store.GetStore().DeletePendingScheduledSnapshots(app.ID, nil); err != nil {
+		if err := store.GetStore().DeletePendingScheduledSnapshots(app.ID); err != nil {
 			logger.Error(err)
 			responseBody.Error = "Failed to delete scheduled snapshots"
 			JSON(w, http.StatusInternalServerError, responseBody)
@@ -596,7 +596,7 @@ func SaveSnapshotConfig(w http.ResponseWriter, r *http.Request) {
 		}
 		queued := cronSchedule.Next(time.Now())
 		id := strings.ToLower(rand.String(32))
-		if err := store.GetStore().CreateScheduledSnapshot(id, app.ID, queued, nil); err != nil {
+		if err := store.GetStore().CreateScheduledSnapshot(id, app.ID, queued); err != nil {
 			logger.Error(err)
 			responseBody.Error = "Failed to create first scheduled snapshot"
 			JSON(w, http.StatusInternalServerError, responseBody)
