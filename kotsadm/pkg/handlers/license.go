@@ -86,11 +86,7 @@ type GetOnlineInstallStatusErrorResponse struct {
 }
 
 func SyncLicense(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Header().Set("Access-Control-Allow-Headers", "content-type, origin, accept, authorization")
-
-	if r.Method == "OPTIONS" {
-		w.WriteHeader(200)
+	if handleOptionsRequest(w, r) {
 		return
 	}
 
@@ -148,11 +144,7 @@ func SyncLicense(w http.ResponseWriter, r *http.Request) {
 }
 
 func GetLicense(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Header().Set("Access-Control-Allow-Headers", "content-type, origin, accept, authorization")
-
-	if r.Method == "OPTIONS" {
-		w.WriteHeader(200)
+	if handleOptionsRequest(w, r) {
 		return
 	}
 
@@ -234,11 +226,7 @@ func getLicenseEntitlements(license *kotsv1beta1.License) ([]EntitlementResponse
 }
 
 func UploadNewLicense(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Header().Set("Access-Control-Allow-Headers", "content-type, origin, accept, authorization")
-
-	if r.Method == "OPTIONS" {
-		w.WriteHeader(200)
+	if handleOptionsRequest(w, r) {
 		return
 	}
 
@@ -370,11 +358,7 @@ func UploadNewLicense(w http.ResponseWriter, r *http.Request) {
 }
 
 func ResumeInstallOnline(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Header().Set("Access-Control-Allow-Headers", "content-type, origin, accept, authorization")
-
-	if r.Method == "OPTIONS" {
-		w.WriteHeader(200)
+	if handleOptionsRequest(w, r) {
 		return
 	}
 
@@ -457,11 +441,7 @@ func ResumeInstallOnline(w http.ResponseWriter, r *http.Request) {
 }
 
 func GetOnlineInstallStatus(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Header().Set("Access-Control-Allow-Headers", "content-type, origin, accept, authorization")
-
-	if r.Method == "OPTIONS" {
-		w.WriteHeader(200)
+	if handleOptionsRequest(w, r) {
 		return
 	}
 

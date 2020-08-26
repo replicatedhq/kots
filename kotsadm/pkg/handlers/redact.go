@@ -56,11 +56,7 @@ type PostRedactorEnabledMetadata struct {
 }
 
 func UpdateRedact(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Header().Set("Access-Control-Allow-Headers", "content-type, origin, accept, authorization")
-
-	if r.Method == "OPTIONS" {
-		w.WriteHeader(200)
+	if handleOptionsRequest(w, r) {
 		return
 	}
 
@@ -148,11 +144,7 @@ func UpdateRedact(w http.ResponseWriter, r *http.Request) {
 }
 
 func GetRedact(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Header().Set("Access-Control-Allow-Headers", "content-type, origin, accept, authorization")
-
-	if r.Method == "OPTIONS" {
-		w.WriteHeader(200)
+	if handleOptionsRequest(w, r) {
 		return
 	}
 
@@ -188,11 +180,7 @@ func GetRedact(w http.ResponseWriter, r *http.Request) {
 }
 
 func GetRedactMetadataAndYaml(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Header().Set("Access-Control-Allow-Headers", "content-type, origin, accept, authorization")
-
-	if r.Method == "OPTIONS" {
-		w.WriteHeader(200)
+	if handleOptionsRequest(w, r) {
 		return
 	}
 
@@ -233,11 +221,7 @@ func GetRedactMetadataAndYaml(w http.ResponseWriter, r *http.Request) {
 }
 
 func ListRedactors(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Header().Set("Access-Control-Allow-Headers", "content-type, origin, accept, authorization")
-
-	if r.Method == "OPTIONS" {
-		w.WriteHeader(200)
+	if handleOptionsRequest(w, r) {
 		return
 	}
 
@@ -275,8 +259,9 @@ func ListRedactors(w http.ResponseWriter, r *http.Request) {
 }
 
 func SetRedactMetadataAndYaml(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Header().Set("Access-Control-Allow-Headers", "content-type, origin, accept, authorization")
+	if handleOptionsRequest(w, r) {
+		return
+	}
 
 	metadataResponse := GetRedactorResponse{
 		Success: false,
@@ -323,8 +308,9 @@ func SetRedactMetadataAndYaml(w http.ResponseWriter, r *http.Request) {
 }
 
 func DeleteRedact(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Header().Set("Access-Control-Allow-Headers", "content-type, origin, accept, authorization")
+	if handleOptionsRequest(w, r) {
+		return
+	}
 
 	sess, err := session.Parse(r.Header.Get("Authorization"))
 	if err != nil {
@@ -351,11 +337,7 @@ func DeleteRedact(w http.ResponseWriter, r *http.Request) {
 }
 
 func SetRedactEnabled(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Header().Set("Access-Control-Allow-Headers", "content-type, origin, accept, authorization")
-
-	if r.Method == "OPTIONS" {
-		w.WriteHeader(200)
+	if handleOptionsRequest(w, r) {
 		return
 	}
 

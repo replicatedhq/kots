@@ -90,11 +90,7 @@ type PutSupportBundleRedactions struct {
 }
 
 func GetSupportBundle(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Header().Set("Access-Control-Allow-Headers", "content-type, origin, accept, authorization")
-
-	if r.Method == "OPTIONS" {
-		w.WriteHeader(200)
+	if handleOptionsRequest(w, r) {
 		return
 	}
 
@@ -143,11 +139,7 @@ func GetSupportBundle(w http.ResponseWriter, r *http.Request) {
 }
 
 func GetSupportBundleFiles(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Header().Set("Access-Control-Allow-Headers", "content-type, origin, accept, authorization")
-
-	if r.Method == "OPTIONS" {
-		w.WriteHeader(200)
+	if handleOptionsRequest(w, r) {
 		return
 	}
 
@@ -188,11 +180,7 @@ func GetSupportBundleFiles(w http.ResponseWriter, r *http.Request) {
 }
 
 func ListSupportBundles(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Header().Set("Access-Control-Allow-Headers", "content-type, origin, accept, authorization")
-
-	if r.Method == "OPTIONS" {
-		w.WriteHeader(200)
+	if handleOptionsRequest(w, r) {
 		return
 	}
 
@@ -256,11 +244,7 @@ func ListSupportBundles(w http.ResponseWriter, r *http.Request) {
 }
 
 func GetSupportBundleCommand(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Header().Set("Access-Control-Allow-Headers", "content-type, origin, accept, authorization")
-
-	if r.Method == "OPTIONS" {
-		w.WriteHeader(200)
+	if handleOptionsRequest(w, r) {
 		return
 	}
 
@@ -292,11 +276,7 @@ func GetSupportBundleCommand(w http.ResponseWriter, r *http.Request) {
 }
 
 func DownloadSupportBundle(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Header().Set("Access-Control-Allow-Headers", "content-type, origin, accept, authorization")
-
-	if r.Method == "OPTIONS" {
-		w.WriteHeader(200)
+	if handleOptionsRequest(w, r) {
 		return
 	}
 
@@ -337,11 +317,7 @@ func DownloadSupportBundle(w http.ResponseWriter, r *http.Request) {
 }
 
 func CollectSupportBundle(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Header().Set("Access-Control-Allow-Headers", "content-type, origin, accept, authorization")
-
-	if r.Method == "OPTIONS" {
-		w.WriteHeader(200)
+	if handleOptionsRequest(w, r) {
 		return
 	}
 
@@ -367,11 +343,7 @@ func CollectSupportBundle(w http.ResponseWriter, r *http.Request) {
 }
 
 func UploadSupportBundle(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Header().Set("Access-Control-Allow-Headers", "content-type, origin, accept, authorization")
-
-	if r.Method == "OPTIONS" {
-		w.WriteHeader(200)
+	if handleOptionsRequest(w, r) {
 		return
 	}
 
@@ -478,11 +450,7 @@ func UploadSupportBundle(w http.ResponseWriter, r *http.Request) {
 }
 
 func GetDefaultTroubleshoot(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Header().Set("Access-Control-Allow-Headers", "content-type, origin, accept, authorization")
-
-	if r.Method == "OPTIONS" {
-		w.WriteHeader(200)
+	if handleOptionsRequest(w, r) {
 		return
 	}
 
@@ -509,11 +477,7 @@ func GetDefaultTroubleshoot(w http.ResponseWriter, r *http.Request) {
 }
 
 func GetTroubleshoot(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Header().Set("Access-Control-Allow-Headers", "content-type, origin, accept, authorization")
-
-	if r.Method == "OPTIONS" {
-		w.WriteHeader(200)
+	if handleOptionsRequest(w, r) {
 		return
 	}
 
@@ -603,11 +567,7 @@ func GetTroubleshoot(w http.ResponseWriter, r *http.Request) {
 }
 
 func GetSupportBundleRedactions(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Header().Set("Access-Control-Allow-Headers", "content-type, origin, accept, authorization")
-
-	if r.Method == "OPTIONS" {
-		w.WriteHeader(200)
+	if handleOptionsRequest(w, r) {
 		return
 	}
 
@@ -646,8 +606,9 @@ func GetSupportBundleRedactions(w http.ResponseWriter, r *http.Request) {
 }
 
 func SetSupportBundleRedactions(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Header().Set("Access-Control-Allow-Headers", "content-type, origin, accept, authorization")
+	if handleOptionsRequest(w, r) {
+		return
+	}
 
 	redactionsBody, err := ioutil.ReadAll(r.Body)
 	if err != nil {
