@@ -41,12 +41,6 @@ spec:
               value: http://127.0.0.1:30065
             - name: GRAPHQL_PREM_ENDPOINT
               value: http://graphql-api-prem:3000/graphql
-            - name: AUTO_CREATE_CLUSTER
-              value: "1"
-            - name: AUTO_CREATE_CLUSTER_NAME
-              value: "microk8s"
-            - name: AUTO_CREATE_CLUSTER_TOKEN
-              value: this-is-definitely-not-a-secret
             - name: ENABLE_KURL
               value: "1"
             - name: SHARED_PASSWORD_BCRYPT

@@ -24,15 +24,15 @@ import (
 func Start() {
 	log.Printf("kotsadm version %s\n", os.Getenv("VERSION"))
 
-	if err := bootstrap(); err != nil {
-		panic(err)
-	}
-
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Minute)
 	if err := store.GetStore().WaitForReady(ctx); err != nil {
 		panic(err)
 	}
 	cancel()
+
+	if err := bootstrap(); err != nil {
+		panic(err)
+	}
 
 	if err := informers.Start(); err != nil {
 		log.Println("Failed to start informers", err)
