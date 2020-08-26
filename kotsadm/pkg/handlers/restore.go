@@ -50,14 +50,14 @@ func CreateRestore(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		logger.Error(err)
 		createRestoreResponse.Error = "failed to parse authorization header"
-		JSON(w, 401, createRestoreResponse)
+		JSON(w, http.StatusUnauthorized, createRestoreResponse)
 		return
 	}
 
 	// we don't currently have roles, all valid tokens are valid sessions
 	if sess == nil || sess.ID == "" {
 		createRestoreResponse.Error = "failed to parse authorization header"
-		JSON(w, 401, createRestoreResponse)
+		JSON(w, http.StatusUnauthorized, createRestoreResponse)
 		return
 	}
 
@@ -67,7 +67,7 @@ func CreateRestore(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		logger.Error(err)
 		createRestoreResponse.Error = "failed to find backup"
-		JSON(w, 500, createRestoreResponse)
+		JSON(w, http.StatusInternalServerError, createRestoreResponse)
 		return
 	}
 
@@ -79,12 +79,12 @@ func CreateRestore(w http.ResponseWriter, r *http.Request) {
 		if err := kotsadm.CreateRestoreJob(opts); err != nil {
 			logger.Error(err)
 			createRestoreResponse.Error = "failed to initiate restore"
-			JSON(w, 500, createRestoreResponse)
+			JSON(w, http.StatusInternalServerError, createRestoreResponse)
 			return
 		}
 
 		createRestoreResponse.Success = true
-		JSON(w, 200, createRestoreResponse)
+		JSON(w, http.StatusOK, createRestoreResponse)
 		return
 	}
 
@@ -93,7 +93,7 @@ func CreateRestore(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		logger.Error(err)
 		createRestoreResponse.Error = "failed to parse sequence label"
-		JSON(w, 500, createRestoreResponse)
+		JSON(w, http.StatusInternalServerError, createRestoreResponse)
 		return
 	}
 
@@ -101,7 +101,7 @@ func CreateRestore(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		logger.Error(err)
 		createRestoreResponse.Error = "failed to find downstream version"
-		JSON(w, 500, createRestoreResponse)
+		JSON(w, http.StatusInternalServerError, createRestoreResponse)
 		return
 	}
 
@@ -109,7 +109,7 @@ func CreateRestore(w http.ResponseWriter, r *http.Request) {
 		err := errors.Errorf("sequence %d of app %s was never deployed to this cluster", sequence, appID)
 		logger.Error(err)
 		createRestoreResponse.Error = err.Error()
-		JSON(w, 500, createRestoreResponse)
+		JSON(w, http.StatusInternalServerError, createRestoreResponse)
 		return
 	}
 
@@ -117,7 +117,7 @@ func CreateRestore(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		logger.Error(err)
 		createRestoreResponse.Error = "failed to get app"
-		JSON(w, 500, createRestoreResponse)
+		JSON(w, http.StatusInternalServerError, createRestoreResponse)
 		return
 	}
 
@@ -125,14 +125,14 @@ func CreateRestore(w http.ResponseWriter, r *http.Request) {
 		err := errors.Errorf("restore is already in progress")
 		logger.Error(err)
 		createRestoreResponse.Error = err.Error()
-		JSON(w, 500, createRestoreResponse)
+		JSON(w, http.StatusInternalServerError, createRestoreResponse)
 		return
 	}
 
 	if err := snapshot.DeleteRestore(snapshotName); err != nil {
 		logger.Error(err)
 		createRestoreResponse.Error = "failed to initiate restore"
-		JSON(w, 500, createRestoreResponse)
+		JSON(w, http.StatusInternalServerError, createRestoreResponse)
 		return
 	}
 
@@ -140,13 +140,13 @@ func CreateRestore(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		logger.Error(err)
 		createRestoreResponse.Error = "failed to initiate restore"
-		JSON(w, 500, createRestoreResponse)
+		JSON(w, http.StatusInternalServerError, createRestoreResponse)
 		return
 	}
 
 	createRestoreResponse.Success = true
 
-	JSON(w, 200, createRestoreResponse)
+	JSON(w, http.StatusOK, createRestoreResponse)
 }
 
 func GetRestoreStatus(w http.ResponseWriter, r *http.Request) {
@@ -162,14 +162,14 @@ func GetRestoreStatus(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		logger.Error(err)
 		response.Error = "failed to parse authorization header"
-		JSON(w, 401, response)
+		JSON(w, http.StatusUnauthorized, response)
 		return
 	}
 
 	// we don't currently have roles, all valid tokens are valid sessions
 	if sess == nil || sess.ID == "" {
 		response.Error = "failed to parse authorization header"
-		JSON(w, 401, response)
+		JSON(w, http.StatusUnauthorized, response)
 		return
 	}
 
@@ -177,7 +177,7 @@ func GetRestoreStatus(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		logger.Error(err)
 		response.Error = "failed to get app from app slug"
-		JSON(w, 500, response)
+		JSON(w, http.StatusInternalServerError, response)
 		return
 	}
 
@@ -186,7 +186,7 @@ func GetRestoreStatus(w http.ResponseWriter, r *http.Request) {
 		response.Status = "running" // there is only one status right now
 	}
 
-	JSON(w, 200, response)
+	JSON(w, http.StatusOK, response)
 }
 
 func CancelRestore(w http.ResponseWriter, r *http.Request) {
@@ -205,18 +205,18 @@ func CancelRestore(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		err = errors.Wrap(err, "failed to get app from app slug")
 		logger.Error(err)
-		w.WriteHeader(500)
+		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
 	if err := app.ResetRestore(foundApp.ID); err != nil {
 		err = errors.Wrap(err, "failed to reset app restore in progress name")
 		logger.Error(err)
-		w.WriteHeader(500)
+		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
-	w.WriteHeader(204)
+	w.WriteHeader(http.StatusNoContent)
 }
 
 type GetKotsadmRestoreResponse struct {
@@ -241,7 +241,7 @@ func GetKotsadmRestore(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		err = errors.Wrap(err, "failed to get app from app slug")
 		logger.Error(err)
-		w.WriteHeader(500)
+		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
@@ -257,7 +257,7 @@ func GetKotsadmRestore(w http.ResponseWriter, r *http.Request) {
 			if err := app.ResetRestore(foundApp.ID); err != nil {
 				err = errors.Wrap(err, "failed to reset app restore in progress name")
 				logger.Error(err)
-				w.WriteHeader(500)
+				w.WriteHeader(http.StatusInternalServerError)
 				return
 			}
 			restoreDetail = &snapshottypes.RestoreDetail{
@@ -277,11 +277,11 @@ func GetKotsadmRestore(w http.ResponseWriter, r *http.Request) {
 	} else if err != nil {
 		err = errors.Wrap(err, "failed to get restore detail")
 		logger.Error(err)
-		w.WriteHeader(500)
+		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
 	response.RestoreDetail = restoreDetail
 
-	JSON(w, 200, response)
+	JSON(w, http.StatusOK, response)
 }
