@@ -256,3 +256,11 @@ func (c OCIStore) IsGitOpsEnabledForApp(appID string) (bool, error) {
 func (c OCIStore) SetUpdateCheckerSpec(appID string, updateCheckerSpec string) error {
 	return ErrNotImplemented
 }
+
+func (c OCIStore) SetSnapshotSchedule(appID string, snapshotSchedule string) error {
+	return ErrNotImplemented
+}
+
+func (c OCIStore) SetSnapshotTTL(appID string, snapshotTTL string) error {
+	return ErrNotImplemented
+}
