@@ -21,6 +21,10 @@ type authorization struct {
 	Password string
 }
 
+var (
+	ErrEmptySession = errors.New("empty session")
+)
+
 func parseClusterAuthorization(authHeader string) (authorization, error) {
 	if !strings.HasPrefix(authHeader, "Basic ") { // does this need "Kots " too?
 		return authorization{}, errors.New("only basic auth is supported")
@@ -60,7 +64,7 @@ func requireValidSession(w http.ResponseWriter, r *http.Request) error {
 	// we don't currently have roles, all valid tokens are valid sessions
 	if sess == nil || sess.ID == "" {
 		w.WriteHeader(http.StatusUnauthorized)
-		return errors.New("empty session")
+		return ErrEmptySession
 	}
 
 	return nil
