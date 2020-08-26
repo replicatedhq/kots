@@ -74,7 +74,7 @@ func (s S3PGStore) ResetAirgapInstallInProgress(appID string) error {
 func (s S3PGStore) SetAppIsAirgap(appID string, isAirgap bool) error {
 	db := persistence.MustGetPGSession()
 
-	query := `update app set is_airgap=$1 where id = $1`
+	query := `update app set is_airgap=$1 where id = $2`
 	_, err := db.Exec(query, isAirgap, appID)
 	if err != nil {
 		return errors.Wrap(err, "failed to set app airgap flag")
