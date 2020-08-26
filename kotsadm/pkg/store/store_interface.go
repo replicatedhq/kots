@@ -132,6 +132,7 @@ type LicenseStore interface {
 
 type ClusterStore interface {
 	ListClusters() (map[string]string, error)
+	GetClusterIDFromSlug(slug string) (string, error)
 	GetClusterIDFromDeployToken(string) (string, error)
 }
 

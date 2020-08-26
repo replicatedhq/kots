@@ -13,6 +13,10 @@ func (s OCIStore) ListClusters() (map[string]string, error) {
 	return nil, ErrNotImplemented
 }
 
+func (s OCIStore) GetClusterIDFromSlug(slug string) (string, error) {
+	return "", ErrNotImplemented
+}
+
 func (s OCIStore) GetClusterIDFromDeployToken(deployToken string) (string, error) {
 	secret, err := s.getSecret(ClusterDeployTokenSecret)
 	if err != nil {

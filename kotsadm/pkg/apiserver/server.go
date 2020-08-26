@@ -102,6 +102,7 @@ func Start() {
 	// Apps
 	r.Path("/api/v1/apps").Methods("OPTIONS", "GET").HandlerFunc(handlers.ListApps)
 	r.Path("/api/v1/apps/app/{appSlug}").Methods("OPTIONS", "GET").HandlerFunc(handlers.GetApp)
+	r.Path("/api/v1/app/{appSlug}/cluster/{clusterSlug}").Methods("OPTIONS", "GET").HandlerFunc(handlers.GetAppVersionHistory) // NOTE: why do we need cluster slug here?
 
 	// Airgap
 	r.Path("/api/v1/app/airgap").Methods("OPTIONS", "POST", "PUT").HandlerFunc(handlers.UploadAirgapBundle)

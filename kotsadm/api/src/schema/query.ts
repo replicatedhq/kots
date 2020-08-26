@@ -16,7 +16,6 @@ export const Query = `
     listApps: Apps
     getKotsApp(slug: String!): KotsApp
     getKotsAppDashboard(slug: String!, clusterId: String): KotsAppDashboard
-    getKotsDownstreamHistory(clusterSlug: String!, upstreamSlug: String!): [KotsVersion]
     listPendingKotsVersions(slug: String!): [KotsVersion]
     listPastKotsVersions(slug: String!): [KotsVersion]
     getCurrentKotsVersion(slug: String!): KotsVersion

@@ -47,24 +47,6 @@ export function KotsQueries(stores: Stores, params: Params) {
       return app.getCurrentVersion(clusterId, stores);
     },
 
-    async getKotsDownstreamHistory(root: any, args: any, context: Context): Promise<KotsVersion[]> {
-      const idFromSlug = await stores.kotsAppStore.getIdFromSlug(args.upstreamSlug);
-      const clusterId = await stores.clusterStore.getIdFromSlug(args.clusterSlug);
-      const app = await context.getApp(idFromSlug);
-      const current = await app.getCurrentVersion(clusterId, stores);
-      const past = await app.getPastVersions(clusterId, stores);
-      const pending = await app.getPendingVersions(clusterId, stores);
-
-      let versions: KotsVersion[];
-      if (current === undefined) {
-        versions = pending.concat(past);
-      } else {
-        versions = pending.concat(Array.of(current), past);
-      }
-
-      return versions;
-    },
-
     async getOnlineInstallStatus(root: any, args: any, context: Context): Promise<{ currentMessage: string, installStatus: string}> {
       return await stores.kotsAppStore.getOnlineInstallStatus();
     },

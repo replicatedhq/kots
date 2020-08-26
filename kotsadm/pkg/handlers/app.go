@@ -74,11 +74,7 @@ type ResponseCluster struct {
 }
 
 func ListApps(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Header().Set("Access-Control-Allow-Headers", "content-type, origin, accept, authorization")
-
-	if r.Method == "OPTIONS" {
-		w.WriteHeader(http.StatusOK)
+	if handleOptionsRequest(w, r) {
 		return
 	}
 
@@ -113,11 +109,7 @@ func ListApps(w http.ResponseWriter, r *http.Request) {
 }
 
 func GetApp(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Header().Set("Access-Control-Allow-Headers", "content-type, origin, accept, authorization")
-
-	if r.Method == "OPTIONS" {
-		w.WriteHeader(http.StatusOK)
+	if handleOptionsRequest(w, r) {
 		return
 	}
 
@@ -274,4 +266,73 @@ func responseAppFromApp(a *apptypes.App) (*ResponseApp, error) {
 	}
 
 	return &responseApp, nil
+}
+
+type GetAppVersionsResponse struct {
+	VersionHistory []downstreamtypes.DownstreamVersion `json:"versionHistory"`
+}
+
+func GetAppVersionHistory(w http.ResponseWriter, r *http.Request) {
+	if handleOptionsRequest(w, r) {
+		return
+	}
+
+	if err := requireValidSession(w, r); err != nil {
+		logger.Error(err)
+		return
+	}
+
+	appSlug := mux.Vars(r)["appSlug"]
+	clusterSlug := mux.Vars(r)["clusterSlug"]
+
+	a, err := store.GetStore().GetAppFromSlug(appSlug)
+	if err != nil {
+		err = errors.Wrap(err, "failed to get app from slug")
+		logger.Error(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	clusterID, err := store.GetStore().GetClusterIDFromSlug(clusterSlug)
+	if err != nil {
+		err = errors.Wrap(err, "failed to get cluster id from slug")
+		logger.Error(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	currentVersion, err := downstream.GetCurrentVersion(a.ID, clusterID)
+	if err != nil {
+		err = errors.Wrap(err, "failed to get current downstream version")
+		logger.Error(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	pendingVersions, err := downstream.GetPendingVersions(a.ID, clusterID)
+	if err != nil {
+		err = errors.Wrap(err, "failed to get pending versions")
+		logger.Error(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	pastVersions, err := downstream.GetPastVersions(a.ID, clusterID)
+	if err != nil {
+		err = errors.Wrap(err, "failed to get past versions")
+		logger.Error(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	response := GetAppVersionsResponse{
+		VersionHistory: []downstreamtypes.DownstreamVersion{},
+	}
+	response.VersionHistory = append(response.VersionHistory, pendingVersions...)
+	if currentVersion != nil {
+		response.VersionHistory = append(response.VersionHistory, *currentVersion)
+	}
+	response.VersionHistory = append(response.VersionHistory, pastVersions...)
+
+	JSON(w, http.StatusOK, response)
 }
