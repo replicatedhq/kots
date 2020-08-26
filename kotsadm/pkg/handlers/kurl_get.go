@@ -9,11 +9,7 @@ import (
 )
 
 func GetKurlNodes(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Header().Set("Access-Control-Allow-Headers", "content-type, origin, accept, authorization")
-
-	if r.Method == "OPTIONS" {
-		w.WriteHeader(http.StatusOK)
+	if handleOptionsRequest(w, r) {
 		return
 	}
 
