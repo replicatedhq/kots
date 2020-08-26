@@ -50,8 +50,6 @@ require (
 	k8s.io/utils v0.0.0-20200603063816-c1c6865ac451
 	sigs.k8s.io/application v0.8.2
 	sigs.k8s.io/controller-runtime v0.6.0
-	xojoc.pw/logparse v0.0.0-20200116210938-e2e713e9bde6
-	xojoc.pw/useragent v0.0.0-20200116211053-1ec61d55e8fe // indirect
 )
 
 replace (

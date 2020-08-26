@@ -33,6 +33,7 @@ type KOTSStore interface {
 	SnapshotStore
 	InstallationStore
 
+	Init() error // this may need options
 	IsNotFound(err error) bool
 }
 
