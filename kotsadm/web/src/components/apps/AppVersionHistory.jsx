@@ -19,10 +19,9 @@ import DownstreamWatchVersionDiff from "@src/components/watches/DownstreamWatchV
 import AirgapUploadProgress from "@src/components/AirgapUploadProgress";
 import UpdateCheckerModal from "@src/components/modals/UpdateCheckerModal";
 import ShowDetailsModal from "@src/components/modals/ShowDetailsModal";
-import { getKotsDownstreamHistory } from "../../queries/AppsQueries";
+import ErrorModal from "../modals/ErrorModal";
 import { Utilities, isAwaitingResults, secondsAgo, getPreflightResultState, getGitProviderDiffUrl, getCommitHashFromUrl } from "../../utilities/utilities";
 import { Repeater } from "../../utilities/repeater";
-import has from "lodash/has";
 import get from "lodash/get";
 
 import "@src/scss/components/apps/AppVersionHistory.scss";
@@ -63,10 +62,19 @@ class AppVersionHistory extends Component {
     yamlErrorDetails: [],
     deployView: false,
     selectedSequence: "",
-    releaseWithErr: {}
+    releaseWithErr: {},
+
+    versionHistoryJob: new Repeater(),
+    loadingVersionHistory: true,
+    versionHistory: [],
+    errorTitle: "",
+    errorMsg: "",
+    displayErrorModal: false,
   }
 
   componentDidMount() {
+    this.fetchKotsDownstreamHistory();
+
     this.state.updateChecker.start(this.updateStatus, 1000);
 
     const url = window.location.pathname;
@@ -80,8 +88,74 @@ class AppVersionHistory extends Component {
     }
   }
 
+  componentDidUpdate = async (lastProps) => {
+    if (lastProps.match.params.slug !== this.props.match.params.slug || lastProps.app.id !== this.props.app.id) {
+      this.fetchKotsDownstreamHistory();
+    }
+  }
+
   componentWillUnmount() {
     this.state.updateChecker.stop();
+    this.state.versionHistoryJob.stop();
+  }
+
+  fetchKotsDownstreamHistory = async() => {
+    const { match } = this.props;
+    const appSlug = match.params.slug;
+
+    this.setState({
+      loadingVersionHistory: true,
+      errorTitle: "",
+      errorMsg: "",
+      displayErrorModal: false,
+    });
+
+    try {
+      const res = await fetch(`${window.env.API_ENDPOINT}/app/${appSlug}/versions`, {
+        headers: {
+          "Authorization": Utilities.getToken(),
+          "Content-Type": "application/json",
+        },
+        method: "GET",
+      });
+      if (!res.ok) {
+        if (res.status === 401) {
+          Utilities.logoutUser();
+          return;
+        }
+        this.setState({
+          loadingVersionHistory: false,
+          errorTitle: "Failed to get version history",
+          errorMsg: `Unexpected status code: ${res.status}`,
+          displayErrorModal: true,
+        });
+        return;
+      }
+      const response = await res.json();
+      const versionHistory = response.versionHistory;
+
+      if (isAwaitingResults(versionHistory)) {
+        this.state.versionHistoryJob.start(this.fetchKotsDownstreamHistory, 2000);
+      } else {
+        this.state.versionHistoryJob.stop();
+      }
+
+      this.setState({
+        loadingVersionHistory: false,
+        versionHistory: versionHistory,
+      });
+    } catch (err) {
+      this.setState({
+        loadingVersionHistory: false,
+        errorTitle: "Failed to get version history",
+        errorMsg: err ? err.message : "Something went wrong, please try again.",
+        displayErrorModal: true,
+      });
+    }
+  }
+
+  toggleErrorModal = () => {
+    this.setState({ displayErrorModal: !this.state.displayErrorModal });
   }
 
   showReleaseNotes = () => {
@@ -434,7 +508,7 @@ class AppVersionHistory extends Component {
       }
     }
     await this.props.makeCurrentVersion(match.params.slug, version);
-    await this.props.data.refetch();
+    await this.fetchKotsDownstreamHistory();
     this.setState({ versionToDeploy: null });
 
     if (this.props.updateCallback) {
@@ -542,7 +616,7 @@ class AppVersionHistory extends Component {
           if (this.props.updateCallback) {
             this.props.updateCallback();
           }
-          this.props.data.refetch();
+          this.fetchKotsDownstreamHistory();
         } else {
           this.setState({
             checkingForUpdates: true,
@@ -587,9 +661,9 @@ class AppVersionHistory extends Component {
         this.props.refreshAppData();
         const response = await res.json();
         if (response.availableUpdates === 0) {
-          if (!find(this.props.data?.getKotsDownstreamHistory, { parentSequence: response.currentAppSequence })) {
+          if (!find(this.state.versionHistory, { parentSequence: response.currentAppSequence })) {
             // version history list is out of sync - most probably because of automatic updates happening in the background - refetch list
-            this.props.data?.refetch();
+            this.fetchKotsDownstreamHistory();
             this.setState({ checkingForUpdates: false });
           } else {
             this.setState({
@@ -695,7 +769,7 @@ class AppVersionHistory extends Component {
   }
 
   renderDiffBtn = () => {
-    const { app, data } = this.props;
+    const { app } = this.props;
     const {
       showDiffOverlay,
       selectedDiffReleases,
@@ -703,7 +777,7 @@ class AppVersionHistory extends Component {
     } = this.state;
     const downstream = app.downstreams.length && app.downstreams[0];
     const gitopsEnabled = downstream.gitops?.enabled;
-    const versionHistory = data?.getKotsDownstreamHistory?.length ? data.getKotsDownstreamHistory : [];
+    const versionHistory = this.state.versionHistory?.length ? this.state.versionHistory : [];
     return (
       versionHistory.length && selectedDiffReleases ?
         <div className="flex">
@@ -809,7 +883,6 @@ class AppVersionHistory extends Component {
   render() {
     const {
       app,
-      data,
       match,
       isBundleUploading,
       makingCurrentVersionErrMsg
@@ -839,6 +912,12 @@ class AppVersionHistory extends Component {
       uploadSent,
       noUpdateAvailiableText,
       showUpdateCheckerModal,
+
+      loadingVersionHistory,
+      versionHistory,
+      errorTitle,
+      errorMsg,
+      displayErrorModal,
     } = this.state;
 
     if (!app) {
@@ -863,7 +942,7 @@ class AppVersionHistory extends Component {
     }
 
     // only render loader if there is no app yet to avoid flickering
-    if (data?.loading && !data?.getKotsDownstreamHistory?.length) {
+    if (loadingVersionHistory && !versionHistory?.length) {
       return (
         <div className="flex-column flex1 alignItems--center justifyContent--center">
           <Loader size="60" />
@@ -914,15 +993,7 @@ class AppVersionHistory extends Component {
     const downstream = app.downstreams.length && app.downstreams[0];
     const gitopsEnabled = downstream.gitops?.enabled;
     const currentDownstreamVersion = downstream?.currentVersion;
-    const versionHistory = data?.getKotsDownstreamHistory?.length ? data.getKotsDownstreamHistory : [];
     const yamlErrorsDetails = this.yamlErrorsDetails(downstream, currentDownstreamVersion);
-
-    if (isAwaitingResults(versionHistory)) {
-      data?.startPolling(2000);
-    } else if (has(data, "stopPolling")) {
-      data?.stopPolling();
-    }
-
 
     return (
       <div className="flex flex-column flex1 u-position--relative u-overflow--auto u-padding--20">
@@ -1283,6 +1354,13 @@ class AppVersionHistory extends Component {
             slug={this.props.match.params.slug}
             sequence={this.state.selectedSequence}
           />}
+          {errorMsg &&
+            <ErrorModal
+              errorModal={displayErrorModal}
+              toggleErrorModal={this.toggleErrorModal}
+              err={errorTitle}
+              errMsg={errorMsg}
+            />}
       </div>
     );
   }
@@ -1291,19 +1369,4 @@ class AppVersionHistory extends Component {
 export default compose(
   withApollo,
   withRouter,
-  graphql(getKotsDownstreamHistory, {
-    skip: ({ app }) => {
-      return !app.downstreams || !app.downstreams.length;
-    },
-    options: ({ match, app }) => {
-      const downstream = app.downstreams[0];
-      return {
-        variables: {
-          upstreamSlug: match.params.slug,
-          clusterSlug: downstream.cluster.slug,
-        },
-        fetchPolicy: "no-cache"
-      }
-    }
-  }),
 )(AppVersionHistory);

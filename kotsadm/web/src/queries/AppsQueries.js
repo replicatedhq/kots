@@ -225,28 +225,6 @@ export const getKotsAppRaw = `
 `;
 export const getKotsApp = gql(getKotsAppRaw);
 
-export const getKotsDownstreamHistoryRaw = `
-  query getKotsDownstreamHistory($clusterSlug: String!, $upstreamSlug: String!) {
-    getKotsDownstreamHistory(clusterSlug: $clusterSlug, upstreamSlug: $upstreamSlug) {
-      title
-      status
-      createdOn
-      sequence
-      parentSequence
-      releaseNotes
-      deployedAt
-      source
-      diffSummary
-      diffSummaryError
-      preflightResult
-      preflightResultCreatedAt
-      commitUrl
-      gitDeployable
-    }
-  }
-`;
-export const getKotsDownstreamHistory = gql(getKotsDownstreamHistoryRaw);
-
 export const getAirgapInstallStatusRaw = `
   query getAirgapInstallStatus {
     getAirgapInstallStatus {

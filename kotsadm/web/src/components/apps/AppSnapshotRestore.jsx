@@ -28,7 +28,6 @@ class AppSnapshotRestore extends Component {
   componentDidUpdate(lastProps) {
     const { match } = this.props;
     if (match.params.id !== lastProps.match.params.id) {
-      this.state.fetchRestoreDetailJob.stop();
       this.state.fetchRestoreDetailJob.start(this.fetchRestoreDetail, 2000);
     } else {
       const phase = this.state.restoreDetail?.phase;
@@ -36,6 +35,10 @@ class AppSnapshotRestore extends Component {
         this.state.fetchRestoreDetailJob.stop();
       }
     }
+  }
+
+  componentWillUnmount() {
+    this.state.fetchRestoreDetailJob.stop();
   }
 
   fetchRestoreDetail = async () => {
