@@ -90,7 +90,7 @@ func (s OCIStore) getSecret(name string) (*corev1.Secret, error) {
 				Name:      name,
 				Namespace: os.Getenv("POD_NAMESPACE"),
 				Labels: map[string]string{
-					"app": "kots.io/kotsadm",
+					"owner": "kotsadm",
 				},
 			},
 			Data: map[string][]byte{},
@@ -126,7 +126,7 @@ func (s OCIStore) getConfigmap(name string) (*corev1.ConfigMap, error) {
 				Name:      name,
 				Namespace: os.Getenv("POD_NAMESPACE"),
 				Labels: map[string]string{
-					"app": "kots.io/kotsadm",
+					"owner": "kotsadm",
 				},
 			},
 			Data: map[string]string{},
