@@ -2,11 +2,13 @@ package ocistore
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net/http"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 
 	"github.com/containerd/containerd/remotes/docker"
@@ -16,15 +18,93 @@ import (
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
+	versiontypes "github.com/replicatedhq/kots/kotsadm/pkg/version/types"
+	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
+	"github.com/replicatedhq/kots/kotskinds/client/kotsclientset/scheme"
 	"go.uber.org/zap"
 )
 
+const (
+	AppVersionConfigmapPrefix = "kotsadm-appversion-"
+)
+
+func (s OCIStore) appVersionConfigMapNameForApp(appID string) (string, error) {
+	a, err := s.GetApp(appID)
+	if err != nil {
+		return "", errors.Wrap(err, "failed to get app")
+	}
+
+	return fmt.Sprintf("%s%s", AppVersionConfigmapPrefix, a.Slug), nil
+}
+
 func (s OCIStore) IsGitOpsSupportedForVersion(appID string, sequence int64) (bool, error) {
-	return false, ErrNotImplemented
+	configMapName, err := s.appVersionConfigMapNameForApp(appID)
+	if err != nil {
+		return false, errors.Wrap(err, "failed to get appversion config map name")
+	}
+
+	configMap, err := s.getConfigmap(configMapName)
+	if err != nil {
+		return false, errors.Wrap(err, "failed to get app version config map")
+	}
+
+	if configMap.Data == nil {
+		configMap.Data = map[string]string{}
+	}
+
+	sequenceData, ok := configMap.Data[strconv.FormatInt(sequence, 10)]
+	if !ok {
+		return false, nil // copied from s3pg store, this isn't an error?
+	}
+
+	appVersion := versiontypes.AppVersion{}
+	if err := json.Unmarshal([]byte(sequenceData), &appVersion); err != nil {
+		return false, errors.Wrap(err, "failed to unmarshal app version data")
+	}
+
+	decode := scheme.Codecs.UniversalDeserializer().Decode
+	obj, _, err := decode([]byte(appVersion.License), nil, nil)
+	if err != nil {
+		return false, errors.Wrap(err, "failed to read app version license data")
+	}
+	license := obj.(*kotsv1beta1.License)
+
+	return license.Spec.IsGitOpsSupported, nil
 }
 
 func (s OCIStore) IsRollbackSupportedForVersion(appID string, sequence int64) (bool, error) {
-	return false, ErrNotImplemented
+	configMapName, err := s.appVersionConfigMapNameForApp(appID)
+	if err != nil {
+		return false, errors.Wrap(err, "failed to get appversion config map name")
+	}
+
+	configMap, err := s.getConfigmap(configMapName)
+	if err != nil {
+		return false, errors.Wrap(err, "failed to get app version config map")
+	}
+
+	if configMap.Data == nil {
+		configMap.Data = map[string]string{}
+	}
+
+	sequenceData, ok := configMap.Data[strconv.FormatInt(sequence, 10)]
+	if !ok {
+		return false, nil // copied from s3pg store, this isn't an error?
+	}
+
+	appVersion := versiontypes.AppVersion{}
+	if err := json.Unmarshal([]byte(sequenceData), &appVersion); err != nil {
+		return false, errors.Wrap(err, "failed to unmarshal app version data")
+	}
+
+	decode := scheme.Codecs.UniversalDeserializer().Decode
+	obj, _, err := decode([]byte(appVersion.KotsAppSpec), nil, nil)
+	if err != nil {
+		return false, errors.Wrap(err, "failed to read app version license data")
+	}
+	kotsApp := obj.(*kotsv1beta1.Application)
+
+	return kotsApp.Spec.AllowRollback, nil
 }
 
 func (s OCIStore) IsSnapshotsSupportedForVersion(appID string, sequence int64) (bool, error) {
