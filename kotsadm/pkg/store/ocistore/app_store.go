@@ -264,3 +264,27 @@ func (c OCIStore) SetSnapshotSchedule(appID string, snapshotSchedule string) err
 func (c OCIStore) SetSnapshotTTL(appID string, snapshotTTL string) error {
 	return ErrNotImplemented
 }
+
+func (s OCIStore) updateApp(app *apptypes.App) error {
+	b, err := json.Marshal(app)
+	if err != nil {
+		return errors.Wrap(err, "failed to marhsal app")
+	}
+
+	configMap, err := s.getConfigmap(AppListConfigmapName)
+	if err != nil {
+		return errors.Wrap(err, "failed to get app list")
+	}
+
+	if configMap.Data == nil {
+		configMap.Data = map[string]string{}
+	}
+
+	configMap.Data[app.ID] = string(b)
+
+	if err := s.updateConfigmap(configMap); err != nil {
+		return errors.Wrap(err, "failed to update app list config map")
+	}
+
+	return nil
+}

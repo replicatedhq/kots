@@ -14,7 +14,6 @@ import (
 	"github.com/replicatedhq/kots/kotsadm/pkg/kotsutil"
 	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
 	"github.com/replicatedhq/kots/kotsadm/pkg/online/types"
-	"github.com/replicatedhq/kots/kotsadm/pkg/persistence"
 	"github.com/replicatedhq/kots/kotsadm/pkg/preflight"
 	"github.com/replicatedhq/kots/kotsadm/pkg/store"
 	"github.com/replicatedhq/kots/kotsadm/pkg/updatechecker"
@@ -69,8 +68,6 @@ func CreateAppFromOnline(pendingApp *types.PendingApp, upstreamURI string, isAut
 			}
 		}
 	}()
-
-	db := persistence.MustGetPGSession()
 
 	pipeReader, pipeWriter := io.Pipe()
 	go func() {
@@ -149,35 +146,11 @@ func CreateAppFromOnline(pendingApp *types.PendingApp, upstreamURI string, isAut
 	// copying this from typescript ...
 	// i'll leave this next line
 	// TODO: refactor this entire function to be testable, reliable and less monolithic
-	query := `select id, title from cluster`
-	rows, err := db.Query(query)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to query clusters")
+	if err := store.GetStore().AddAppToAllDownstreams(pendingApp.ID); err != nil {
+		return nil, errors.Wrap(err, "failed to add app to all downstreams")
 	}
-	defer rows.Close()
-
-	clusterIDs := map[string]string{}
-	for rows.Next() {
-		clusterID := ""
-		name := ""
-		if err := rows.Scan(&clusterID, &name); err != nil {
-			return nil, errors.Wrap(err, "failed to scan row")
-		}
-
-		clusterIDs[clusterID] = name
-	}
-	for clusterID, name := range clusterIDs {
-		query = `insert into app_downstream (app_id, cluster_id, downstream_name) values ($1, $2, $3)`
-		_, err = db.Exec(query, pendingApp.ID, clusterID, name)
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to create app downstream")
-		}
-	}
-
-	query = `update app set is_airgap=false where id = $1`
-	_, err = db.Exec(query, pendingApp.ID)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to update app to installed")
+	if err := store.GetStore().SetAppIsAirgap(pendingApp.ID, false); err != nil {
+		return nil, errors.Wrap(err, "failed to set app is not airgap")
 	}
 
 	newSequence, err := version.CreateFirstVersion(pendingApp.ID, tmpRoot, "Online Install")

@@ -76,7 +76,7 @@ type AirgapStore interface {
 	GetPendingAirgapUploadApp() (*airgaptypes.PendingApp, error)
 	GetAirgapInstallStatus() (*airgaptypes.InstallStatus, error)
 	ResetAirgapInstallInProgress(string) error
-	SetAppIsAirgap(string) error
+	SetAppIsAirgap(string, bool) error
 }
 
 type TaskStore interface {
