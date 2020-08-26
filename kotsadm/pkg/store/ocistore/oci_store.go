@@ -35,6 +35,10 @@ var (
 	ErrNotImplemented = errors.New("not implemented in ocistore")
 )
 
+func (s OCIStore) Init() error {
+	return nil
+}
+
 func (s OCIStore) IsNotFound(err error) bool {
 	if err == nil {
 		return false
