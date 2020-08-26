@@ -1551,12 +1551,6 @@ where app_id = $1 and sequence = $2`;
     await this.pool.query(q, v);
   }
 
-  async updateAppRestoreReset(appId): Promise<void> {
-    const q = `update app set restore_in_progress_name = NULL, restore_undeploy_status = '' where id = $1`;
-    const v = [appId];
-    await this.pool.query(q, v);
-  }
-
   async ignorePreflightPermissionErrors(appId: string, clusterId: string, sequence: number): Promise<void> {
     const q = `UPDATE app_downstream_version
 SET status = 'pending_preflight', preflight_ignore_permissions = true, preflight_result = null

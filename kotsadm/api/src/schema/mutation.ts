@@ -29,7 +29,6 @@ type Mutation {
 
   saveSnapshotConfig(appId: String!, inputValue: Int!, inputTimeUnit: String!, schedule: String!, autoEnabled: Boolean!): Boolean
   deleteSnapshot(snapshotName: String!): Boolean
-  cancelRestore(appId: String!): Boolean
 }
 `;
 
