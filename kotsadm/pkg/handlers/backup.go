@@ -56,7 +56,7 @@ func CreateBackup(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = snapshot.CreateBackup(foundApp)
+	_, err = snapshot.CreateBackup(foundApp, false)
 	if err != nil {
 		logger.Error(err)
 		createBackupResponse.Error = "failed to create backup"

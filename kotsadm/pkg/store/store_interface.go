@@ -3,6 +3,7 @@ package store
 import (
 	"context"
 	"time"
+	"database/sql"
 
 	airgaptypes "github.com/replicatedhq/kots/kotsadm/pkg/airgap/types"
 	apptypes "github.com/replicatedhq/kots/kotsadm/pkg/app/types"
@@ -12,6 +13,7 @@ import (
 	preflighttypes "github.com/replicatedhq/kots/kotsadm/pkg/preflight/types"
 	registrytypes "github.com/replicatedhq/kots/kotsadm/pkg/registry/types"
 	sessiontypes "github.com/replicatedhq/kots/kotsadm/pkg/session/types"
+	snapshottypes "github.com/replicatedhq/kots/kotsadm/pkg/snapshot/types"
 	supportbundletypes "github.com/replicatedhq/kots/kotsadm/pkg/supportbundle/types"
 	usertypes "github.com/replicatedhq/kots/kotsadm/pkg/user/types"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
@@ -114,8 +116,11 @@ type AppStore interface {
 }
 
 type SnapshotStore interface {
-	DeletePendingScheduledSnapshots(string) error
-	CreateScheduledSnapshot(string, string, time.Time) error
+	ListPendingScheduledSnapshots(appID string) ([]snapshottypes.ScheduledSnapshot, error)
+	UpdateScheduledSnapshot(*sql.Tx, string, string) error
+	LockScheduledSnapshot(*sql.Tx, string) (bool, error)
+	DeletePendingScheduledSnapshots(string, *sql.Tx) error
+	CreateScheduledSnapshot(string, string, time.Time, *sql.Tx) error
 }
 
 type VersionStore interface {

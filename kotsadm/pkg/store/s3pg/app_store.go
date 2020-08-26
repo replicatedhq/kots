@@ -219,7 +219,7 @@ values ($1, $2, $3, $4, $5, $6, $7, $8, $9)`
 	}
 
 	if err := tx.Commit(); err != nil {
-		return nil, errors.Wrap(err, "failerd to commit transaction")
+		return nil, errors.Wrap(err, "failed to commit transaction")
 	}
 
 	return s.GetApp(id)
