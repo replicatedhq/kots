@@ -22,7 +22,8 @@ type MetadataResponse struct {
 	IsKurlEnabled bool   `json:"isKurlEnabled"`
 }
 
-// NOTE: there is no auth on this route
+// Metadata route is UNAUTHENTICATED
+// It is needed for branding/some cluster flags before user is logged in.
 func Metadata(w http.ResponseWriter, r *http.Request) {
 	if handleOptionsRequest(w, r) {
 		return
