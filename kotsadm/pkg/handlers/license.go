@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -11,7 +12,6 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
-	"github.com/replicatedhq/kots/kotsadm/pkg/app"
 	"github.com/replicatedhq/kots/kotsadm/pkg/kotsutil"
 	"github.com/replicatedhq/kots/kotsadm/pkg/license"
 	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
@@ -23,6 +23,8 @@ import (
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	kotslicense "github.com/replicatedhq/kots/pkg/license"
 	kotspull "github.com/replicatedhq/kots/pkg/pull"
+	serializer "k8s.io/apimachinery/pkg/runtime/serializer/json"
+	"k8s.io/client-go/kubernetes/scheme"
 )
 
 type SyncLicenseRequest struct {
@@ -418,7 +420,7 @@ func ResumeInstallOnline(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// the license data is left in the table
-	licenseData, err := app.GetLicenseDataFromDatabase(a.ID)
+	kotsLicense, err := store.GetStore().GetLicenseForApp(a.ID)
 	if err != nil {
 		logger.Error(err)
 		resumeInstallOnlineResponse.Error = err.Error()
@@ -426,15 +428,17 @@ func ResumeInstallOnline(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	pendingApp.LicenseData = licenseData
-
-	kotsLicense, err := kotsutil.LoadLicenseFromBytes([]byte(licenseData))
-	if err != nil {
+	// marshal it
+	s := serializer.NewYAMLSerializer(serializer.DefaultMetaFactory, scheme.Scheme, scheme.Scheme)
+	var b bytes.Buffer
+	if err := s.Encode(kotsLicense, &b); err != nil {
 		logger.Error(err)
 		resumeInstallOnlineResponse.Error = err.Error()
 		JSON(w, 500, resumeInstallOnlineResponse)
 		return
 	}
+
+	pendingApp.LicenseData = string(b.Bytes())
 
 	kotsKinds, err := online.CreateAppFromOnline(&pendingApp, fmt.Sprintf("replicated://%s", kotsLicense.Spec.AppSlug), false)
 	if err != nil {

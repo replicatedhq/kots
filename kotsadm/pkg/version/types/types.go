@@ -12,6 +12,8 @@ type AppVersion struct {
 	CreatedOn    *time.Time `json:"createdOn"`
 	ReleaseNotes string     `json:"releaseNotes"`
 	DeployedAt   *time.Time `json:"deployedAt"`
+	License      string     `json:"license"`
+	KotsAppSpec  string     `json:"kotsAppSpec"`
 }
 
 type RealizedLink struct {

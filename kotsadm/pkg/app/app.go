@@ -5,27 +5,8 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/kotsadm/pkg/app/types"
-	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
 	"github.com/replicatedhq/kots/kotsadm/pkg/persistence"
-	"go.uber.org/zap"
 )
-
-func GetLicenseDataFromDatabase(id string) (string, error) {
-	logger.Debug("getting app license from database",
-		zap.String("id", id))
-
-	db := persistence.MustGetPGSession()
-	query := `select license from app where id = $1`
-	row := db.QueryRow(query, id)
-
-	license := ""
-
-	if err := row.Scan(&license); err != nil {
-		return "", errors.Wrap(err, "failed to scan license")
-	}
-
-	return license, nil
-}
 
 // LastUpdateAtTime sets the time that the client last checked for an update to now
 func LastUpdateAtTime(appID string) error {

@@ -67,7 +67,7 @@ func CreateAppFromAirgap(pendingApp *types.PendingApp, airgapBundle multipart.Fi
 		}
 	}()
 
-	if err := store.GetStore().SetAppIsAirgap(pendingApp.ID); err != nil {
+	if err := store.GetStore().SetAppIsAirgap(pendingApp.ID, true); err != nil {
 		return errors.Wrap(err, "failed to set app is airgap")
 	}
 
@@ -200,7 +200,7 @@ func CreateAppFromAirgap(pendingApp *types.PendingApp, airgapBundle multipart.Fi
 	}
 
 	// yes, again in case of errors
-	if err := store.GetStore().SetAppIsAirgap(pendingApp.ID); err != nil {
+	if err := store.GetStore().SetAppIsAirgap(pendingApp.ID, true); err != nil {
 		return errors.Wrap(err, "failed to set app is airgap the second time")
 	}
 
