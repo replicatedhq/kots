@@ -283,9 +283,8 @@ func GetAppVersionHistory(w http.ResponseWriter, r *http.Request) {
 	}
 
 	appSlug := mux.Vars(r)["appSlug"]
-	clusterSlug := mux.Vars(r)["clusterSlug"]
 
-	a, err := store.GetStore().GetAppFromSlug(appSlug)
+	foundApp, err := store.GetStore().GetAppFromSlug(appSlug)
 	if err != nil {
 		err = errors.Wrap(err, "failed to get app from slug")
 		logger.Error(err)
@@ -293,15 +292,22 @@ func GetAppVersionHistory(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	clusterID, err := store.GetStore().GetClusterIDFromSlug(clusterSlug)
+	downstreams, err := store.GetStore().ListDownstreamsForApp(foundApp.ID)
 	if err != nil {
-		err = errors.Wrap(err, "failed to get cluster id from slug")
+		err = errors.Wrap(err, "failed to list downstreams for app")
+		logger.Error(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	} else if len(downstreams) == 0 {
+		err = errors.New("no downstreams for app")
 		logger.Error(err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
-	currentVersion, err := downstream.GetCurrentVersion(a.ID, clusterID)
+	clusterID := downstreams[0].ClusterID
+
+	currentVersion, err := downstream.GetCurrentVersion(foundApp.ID, clusterID)
 	if err != nil {
 		err = errors.Wrap(err, "failed to get current downstream version")
 		logger.Error(err)
@@ -309,7 +315,7 @@ func GetAppVersionHistory(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	pendingVersions, err := downstream.GetPendingVersions(a.ID, clusterID)
+	pendingVersions, err := downstream.GetPendingVersions(foundApp.ID, clusterID)
 	if err != nil {
 		err = errors.Wrap(err, "failed to get pending versions")
 		logger.Error(err)
@@ -317,7 +323,7 @@ func GetAppVersionHistory(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	pastVersions, err := downstream.GetPastVersions(a.ID, clusterID)
+	pastVersions, err := downstream.GetPastVersions(foundApp.ID, clusterID)
 	if err != nil {
 		err = errors.Wrap(err, "failed to get past versions")
 		logger.Error(err)

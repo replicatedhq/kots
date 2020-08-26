@@ -22,7 +22,6 @@ import ShowDetailsModal from "@src/components/modals/ShowDetailsModal";
 import ErrorModal from "../modals/ErrorModal";
 import { Utilities, isAwaitingResults, secondsAgo, getPreflightResultState, getGitProviderDiffUrl, getCommitHashFromUrl } from "../../utilities/utilities";
 import { Repeater } from "../../utilities/repeater";
-import has from "lodash/has";
 import get from "lodash/get";
 
 import "@src/scss/components/apps/AppVersionHistory.scss";
@@ -65,6 +64,7 @@ class AppVersionHistory extends Component {
     selectedSequence: "",
     releaseWithErr: {},
 
+    versionHistoryJob: new Repeater(),
     loadingVersionHistory: true,
     versionHistory: [],
     errorTitle: "",
@@ -73,7 +73,7 @@ class AppVersionHistory extends Component {
   }
 
   componentDidMount() {
-    this.fetchKotsDownstreamHistory();
+    this.startVersionHistoryJob();
 
     this.state.updateChecker.start(this.updateStatus, 1000);
 
@@ -90,18 +90,21 @@ class AppVersionHistory extends Component {
 
   componentDidUpdate = async (lastProps) => {
     if (lastProps.match.params.slug !== this.props.match.params.slug || lastProps.app.id !== this.props.app.id) {
-      this.fetchKotsDownstreamHistory();
+      this.startVersionHistoryJob();
     }
   }
 
   componentWillUnmount() {
     this.state.updateChecker.stop();
+    this.state.versionHistoryJob.stop();
+  }
+
+  startVersionHistoryJob() {
+    this.state.versionHistoryJob.start(this.fetchKotsDownstreamHistory, 2000);
   }
 
   fetchKotsDownstreamHistory = async() => {
-    const { match, app } = this.props;
-    const downstream = app.downstreams[0];
-    const clusterSlug = downstream.cluster.slug;
+    const { match } = this.props;
     const appSlug = match.params.slug;
 
     this.setState({
@@ -112,7 +115,7 @@ class AppVersionHistory extends Component {
     });
 
     try {
-      const res = await fetch(`${window.env.API_ENDPOINT}/app/${appSlug}/cluster/${clusterSlug}`, {
+      const res = await fetch(`${window.env.API_ENDPOINT}/app/${appSlug}/versions`, {
         headers: {
           "Authorization": Utilities.getToken(),
           "Content-Type": "application/json",
@@ -135,8 +138,8 @@ class AppVersionHistory extends Component {
       const response = await res.json();
       const versionHistory = response.versionHistory;
 
-      if (isAwaitingResults(versionHistory)) {
-        setTimeout(() => this.fetchKotsDownstreamHistory(), 2000);
+      if (!isAwaitingResults(versionHistory)) {
+        this.state.versionHistoryJob.stop();
       }
 
       this.setState({
@@ -513,6 +516,8 @@ class AppVersionHistory extends Component {
     if (this.props.updateCallback) {
       this.props.updateCallback();
     }
+
+    this.startVersionHistoryJob();
   }
 
   onForceDeployClick = () => {
@@ -615,7 +620,7 @@ class AppVersionHistory extends Component {
           if (this.props.updateCallback) {
             this.props.updateCallback();
           }
-          this.fetchKotsDownstreamHistory();
+          this.startVersionHistoryJob();
         } else {
           this.setState({
             checkingForUpdates: true,
@@ -662,7 +667,7 @@ class AppVersionHistory extends Component {
         if (response.availableUpdates === 0) {
           if (!find(this.state.versionHistory, { parentSequence: response.currentAppSequence })) {
             // version history list is out of sync - most probably because of automatic updates happening in the background - refetch list
-            this.fetchKotsDownstreamHistory();
+            this.startVersionHistoryJob();
             this.setState({ checkingForUpdates: false });
           } else {
             this.setState({
