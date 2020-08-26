@@ -32,8 +32,6 @@ import { KurlStore } from "../kurl/kurl_store";
 import { ReplicatedError } from "./errors";
 import { MetricStore } from "../monitoring/metric_store";
 import { ParamsStore } from "../params/params_store";
-import { ensureBucket } from "../util/s3";
-import { SnapshotScheduler } from "../snapshots/schedule";
 
 let mount = {
   "/": "${rootDir}/../controllers/{*.*s,!(ship)/*.*s}"
@@ -127,9 +125,6 @@ export class Server extends ServerLoader {
       logger.info({msg: "ensuring that shared admin console password is provisioned"});
       await stores.userStore.createAdminConsolePassword(process.env["SHARED_PASSWORD_BCRYPT"]!);
     }
-
-    const scheduler = new SnapshotScheduler(stores, pool);
-    scheduler.run();
 
     const setContext = async (req: Request, res: Response, next: NextFunction) => {
       let token = req.get("Authorization") || "";

@@ -152,3 +152,11 @@ type ParsedTTL struct {
 	Quantity int64  `json:"quantity"`
 	Unit     string `json:"unit"`
 }
+
+type ScheduledSnapshot struct {
+	ID                 string    `json:"id"`
+	AppID              string    `json:"appId"`
+	ScheduledTimestamp time.Time `json:"scheduledTimestamp"`
+	// name of Backup CR will be set once scheduled
+	BackupName string `json:"backupName,omitempty"`
+}

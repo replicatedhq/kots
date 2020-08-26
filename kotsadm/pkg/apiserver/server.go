@@ -15,6 +15,7 @@ import (
 	"github.com/replicatedhq/kots/kotsadm/pkg/automation"
 	"github.com/replicatedhq/kots/kotsadm/pkg/handlers"
 	"github.com/replicatedhq/kots/kotsadm/pkg/informers"
+	"github.com/replicatedhq/kots/kotsadm/pkg/snapshotscheduler"
 	"github.com/replicatedhq/kots/kotsadm/pkg/socketservice"
 	"github.com/replicatedhq/kots/kotsadm/pkg/store"
 	"github.com/replicatedhq/kots/kotsadm/pkg/updatechecker"
@@ -39,6 +40,10 @@ func Start() {
 
 	if err := updatechecker.Start(); err != nil {
 		log.Println("Failed to start update checker", err)
+	}
+
+	if err := snapshotscheduler.Start(); err != nil {
+		log.Println("Failed to start snapshot scheduler", err)
 	}
 
 	if err := automation.AutomateInstall(); err != nil {

@@ -12,6 +12,7 @@ import (
 	preflighttypes "github.com/replicatedhq/kots/kotsadm/pkg/preflight/types"
 	registrytypes "github.com/replicatedhq/kots/kotsadm/pkg/registry/types"
 	sessiontypes "github.com/replicatedhq/kots/kotsadm/pkg/session/types"
+	snapshottypes "github.com/replicatedhq/kots/kotsadm/pkg/snapshot/types"
 	supportbundletypes "github.com/replicatedhq/kots/kotsadm/pkg/supportbundle/types"
 	usertypes "github.com/replicatedhq/kots/kotsadm/pkg/user/types"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
@@ -114,6 +115,8 @@ type AppStore interface {
 }
 
 type SnapshotStore interface {
+	ListPendingScheduledSnapshots(appID string) ([]snapshottypes.ScheduledSnapshot, error)
+	UpdateScheduledSnapshot(string, string) error
 	DeletePendingScheduledSnapshots(string) error
 	CreateScheduledSnapshot(string, string, time.Time) error
 }
