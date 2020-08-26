@@ -29,6 +29,7 @@ type UploadResponse struct {
 
 // UploadExistingApp can be used to upload a multipart form file to the existing app
 // This is used in the KOTS CLI when calling kots upload ...
+// NOTE: this uses special kots token authorization
 func UploadExistingApp(w http.ResponseWriter, r *http.Request) {
 	if err := requireValidKOTSToken(w, r); err != nil {
 		logger.Error(err)

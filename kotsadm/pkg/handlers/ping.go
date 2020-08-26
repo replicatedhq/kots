@@ -15,6 +15,7 @@ type PingResponse struct {
 	SnapshotInProgressApps []string `json:"snapshotInProgressApps"`
 }
 
+// NOTE: there is no auth on this route
 func Ping(w http.ResponseWriter, r *http.Request) {
 	if handleOptionsRequest(w, r) {
 		return

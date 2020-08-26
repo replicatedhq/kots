@@ -22,6 +22,7 @@ type MetadataResponse struct {
 	IsKurlEnabled bool   `json:"isKurlEnabled"`
 }
 
+// NOTE: there is no auth on this route
 func Metadata(w http.ResponseWriter, r *http.Request) {
 	if handleOptionsRequest(w, r) {
 		return

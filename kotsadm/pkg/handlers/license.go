@@ -18,7 +18,6 @@ import (
 	"github.com/replicatedhq/kots/kotsadm/pkg/online"
 	installationtypes "github.com/replicatedhq/kots/kotsadm/pkg/online/types"
 	"github.com/replicatedhq/kots/kotsadm/pkg/registry"
-	"github.com/replicatedhq/kots/kotsadm/pkg/session"
 	"github.com/replicatedhq/kots/kotsadm/pkg/store"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	kotslicense "github.com/replicatedhq/kots/pkg/license"
@@ -90,23 +89,15 @@ func SyncLicense(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if err := requireValidSession(w, r); err != nil {
+		logger.Error(err)
+		return
+	}
+
 	syncLicenseRequest := SyncLicenseRequest{}
 	if err := json.NewDecoder(r.Body).Decode(&syncLicenseRequest); err != nil {
 		logger.Error(err)
 		w.WriteHeader(500)
-		return
-	}
-
-	sess, err := session.Parse(r.Header.Get("Authorization"))
-	if err != nil {
-		logger.Error(err)
-		w.WriteHeader(401)
-		return
-	}
-
-	// we don't currently have roles, all valid tokens are valid sessions
-	if sess == nil || sess.ID == "" {
-		w.WriteHeader(401)
 		return
 	}
 
@@ -148,16 +139,8 @@ func GetLicense(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	sess, err := session.Parse(r.Header.Get("Authorization"))
-	if err != nil {
+	if err := requireValidSession(w, r); err != nil {
 		logger.Error(err)
-		w.WriteHeader(500)
-		return
-	}
-
-	// we don't currently have roles, all valid tokens are valid sessions
-	if sess == nil || sess.ID == "" {
-		w.WriteHeader(401)
 		return
 	}
 
@@ -230,23 +213,15 @@ func UploadNewLicense(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if err := requireValidSession(w, r); err != nil {
+		logger.Error(err)
+		return
+	}
+
 	uploadLicenseRequest := UploadLicenseRequest{}
 	if err := json.NewDecoder(r.Body).Decode(&uploadLicenseRequest); err != nil {
 		logger.Error(err)
 		w.WriteHeader(500)
-		return
-	}
-
-	sess, err := session.Parse(r.Header.Get("Authorization"))
-	if err != nil {
-		logger.Error(err)
-		w.WriteHeader(401)
-		return
-	}
-
-	// we don't currently have roles, all valid tokens are valid sessions
-	if sess == nil || sess.ID == "" {
-		w.WriteHeader(401)
 		return
 	}
 
@@ -362,6 +337,11 @@ func ResumeInstallOnline(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if err := requireValidSession(w, r); err != nil {
+		logger.Error(err)
+		return
+	}
+
 	resumeInstallOnlineResponse := ResumeInstallOnlineResponse{
 		Success: false,
 	}
@@ -371,21 +351,6 @@ func ResumeInstallOnline(w http.ResponseWriter, r *http.Request) {
 		logger.Error(err)
 		resumeInstallOnlineResponse.Error = err.Error()
 		JSON(w, 500, resumeInstallOnlineResponse)
-		return
-	}
-
-	sess, err := session.Parse(r.Header.Get("Authorization"))
-	if err != nil {
-		logger.Error(err)
-		resumeInstallOnlineResponse.Error = err.Error()
-		JSON(w, 401, resumeInstallOnlineResponse)
-		return
-	}
-
-	// we don't currently have roles, all valid tokens are valid sessions
-	if sess == nil || sess.ID == "" {
-		resumeInstallOnlineResponse.Error = "Unauthorized"
-		JSON(w, 401, resumeInstallOnlineResponse)
 		return
 	}
 
@@ -447,9 +412,6 @@ func GetOnlineInstallStatus(w http.ResponseWriter, r *http.Request) {
 
 	if err := requireValidSession(w, r); err != nil {
 		logger.Error(err)
-		JSON(w, 401, GetOnlineInstallStatusErrorResponse{
-			Error: fmt.Sprintf("failed to validate session: %v", err),
-		})
 		return
 	}
 
@@ -465,6 +427,7 @@ func GetOnlineInstallStatus(w http.ResponseWriter, r *http.Request) {
 	JSON(w, 200, status)
 }
 
+// NOTE: there is no auth on this route
 // This the handler for license API and should be called by the application only.
 func GetPlatformLicenseCompatibility(w http.ResponseWriter, r *http.Request) {
 	apps, err := store.GetStore().ListInstalledApps()

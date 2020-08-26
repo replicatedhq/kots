@@ -12,7 +12,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/kotsadm/pkg/kurl"
 	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
-	"github.com/replicatedhq/kots/kotsadm/pkg/session"
 	"github.com/replicatedhq/kots/kotsadm/pkg/snapshot"
 	snapshottypes "github.com/replicatedhq/kots/kotsadm/pkg/snapshot/types"
 	"github.com/replicatedhq/kots/kotsadm/pkg/store"
@@ -60,23 +59,13 @@ func UpdateGlobalSnapshotSettings(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if err := requireValidSession(w, r); err != nil {
+		logger.Error(err)
+		return
+	}
+
 	globalSnapshotSettingsResponse := GlobalSnapshotSettingsResponse{
 		Success: false,
-	}
-
-	sess, err := session.Parse(r.Header.Get("Authorization"))
-	if err != nil {
-		logger.Error(err)
-		globalSnapshotSettingsResponse.Error = "failed to parse authorization header"
-		JSON(w, 401, globalSnapshotSettingsResponse)
-		return
-	}
-
-	// we don't currently have roles, all valid tokens are valid sessions
-	if sess == nil || sess.ID == "" {
-		globalSnapshotSettingsResponse.Error = "failed to parse authorization header"
-		JSON(w, 401, globalSnapshotSettingsResponse)
-		return
 	}
 
 	updateGlobalSnapshotSettingsRequest := UpdateGlobalSnapshotSettingsRequest{}
@@ -357,23 +346,13 @@ func GetGlobalSnapshotSettings(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if err := requireValidSession(w, r); err != nil {
+		logger.Error(err)
+		return
+	}
+
 	globalSnapshotSettingsResponse := GlobalSnapshotSettingsResponse{
 		Success: false,
-	}
-
-	sess, err := session.Parse(r.Header.Get("Authorization"))
-	if err != nil {
-		logger.Error(err)
-		globalSnapshotSettingsResponse.Error = "failed to parse authorization header"
-		JSON(w, 401, globalSnapshotSettingsResponse)
-		return
-	}
-
-	// we don't currently have roles, all valid tokens are valid sessions
-	if sess == nil || sess.ID == "" {
-		globalSnapshotSettingsResponse.Error = "failed to parse authorization header"
-		JSON(w, 401, globalSnapshotSettingsResponse)
-		return
 	}
 
 	veleroStatus, err := snapshot.DetectVelero()

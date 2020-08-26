@@ -16,6 +16,7 @@ import (
 	"github.com/replicatedhq/kots/kotsadm/pkg/store"
 )
 
+// NOTE: this uses special kots token authorization
 func DownloadApp(w http.ResponseWriter, r *http.Request) {
 	if err := requireValidKOTSToken(w, r); err != nil {
 		logger.Error(err)

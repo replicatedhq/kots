@@ -21,6 +21,7 @@ type ExchangePlatformLicenseResponse struct {
 	LicenseData string `json:"licenseData"`
 }
 
+// NOTE: there is no auth on this route
 func ExchangePlatformLicense(w http.ResponseWriter, r *http.Request) {
 	if handleOptionsRequest(w, r) {
 		return
