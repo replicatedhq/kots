@@ -19,6 +19,12 @@ func Logout(w http.ResponseWriter, r *http.Request) {
 
 	sess, err := session.Parse(r.Header.Get("Authorization"))
 	if err != nil {
+		// If there is no session, this is not an error
+		if err == ErrEmptySession {
+			JSON(w, 204, "")
+			return
+		}
+
 		logger.Error(err)
 		w.WriteHeader(401)
 		return
@@ -26,7 +32,7 @@ func Logout(w http.ResponseWriter, r *http.Request) {
 
 	// we don't currently have roles, all valid tokens are valid sessions
 	if sess == nil || sess.ID == "" {
-		w.WriteHeader(401)
+		JSON(w, 204, "")
 		return
 	}
 
