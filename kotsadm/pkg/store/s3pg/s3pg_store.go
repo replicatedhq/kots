@@ -1,15 +1,19 @@
 package s3pg
 
 import (
+	"context"
 	"database/sql"
 	"log"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
 	awssession "github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/pkg/errors"
+	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
+	"github.com/replicatedhq/kots/kotsadm/pkg/persistence"
 	kotss3 "github.com/replicatedhq/kots/kotsadm/pkg/s3"
 	kotsscheme "github.com/replicatedhq/kots/kotskinds/client/kotsclientset/scheme"
 	troubleshootscheme "github.com/replicatedhq/troubleshoot/pkg/client/troubleshootclientset/scheme"
@@ -57,6 +61,55 @@ func (s S3PGStore) Init() error {
 	})
 	if err != nil {
 		return errors.Wrap(err, "failed to create bucket")
+	}
+
+	return nil
+}
+
+func (s S3PGStore) WaitForReady(ctx context.Context) error {
+	waitForPostgres := func(ctx context.Context) error {
+		logger.Debug("waiting for database to be ready")
+
+		period := 1 * time.Second // TOOD: backoff
+		for {
+			db := persistence.MustGetPGSession()
+
+			// any SQL will do.  just need tables to be created.
+			query := `select count(1) from app`
+			row := db.QueryRow(query)
+
+			var count int
+			if err := row.Scan(&count); err == nil {
+				logger.Debug("database is ready")
+				return nil
+			}
+
+			select {
+			case <-time.After(period):
+				continue
+			case <-ctx.Done():
+				return errors.Wrap(ctx.Err(), "failed to find valid database")
+			}
+		}
+	}
+
+	errCh := make(chan error, 1)
+
+	go func() {
+		errCh <- waitForPostgres(ctx)
+	}()
+
+	isError := false
+	for i := 0; i < 1; i++ {
+		err := <-errCh
+		if err != nil {
+			log.Println(err.Error())
+			isError = true
+		}
+	}
+
+	if isError {
+		return errors.New("failed to wait for dependencies")
 	}
 
 	return nil

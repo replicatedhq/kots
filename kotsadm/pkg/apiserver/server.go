@@ -16,6 +16,7 @@ import (
 	"github.com/replicatedhq/kots/kotsadm/pkg/handlers"
 	"github.com/replicatedhq/kots/kotsadm/pkg/informers"
 	"github.com/replicatedhq/kots/kotsadm/pkg/socketservice"
+	"github.com/replicatedhq/kots/kotsadm/pkg/store"
 	"github.com/replicatedhq/kots/kotsadm/pkg/updatechecker"
 )
 
@@ -27,7 +28,7 @@ func Start() {
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Minute)
-	if err := waitForDependencies(ctx); err != nil {
+	if err := store.GetStore().WaitForReady(ctx); err != nil {
 		panic(err)
 	}
 	cancel()

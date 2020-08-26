@@ -1,6 +1,7 @@
 package store
 
 import (
+	"context"
 	"time"
 
 	airgaptypes "github.com/replicatedhq/kots/kotsadm/pkg/airgap/types"
@@ -34,6 +35,7 @@ type KOTSStore interface {
 	InstallationStore
 
 	Init() error // this may need options
+	WaitForReady(context.Context) error
 	IsNotFound(err error) bool
 }
 
