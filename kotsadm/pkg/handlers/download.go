@@ -14,7 +14,6 @@ import (
 	"github.com/replicatedhq/kots/kotsadm/pkg/kotsutil"
 	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
 	"github.com/replicatedhq/kots/kotsadm/pkg/store"
-	"github.com/replicatedhq/kots/kotsadm/pkg/version"
 )
 
 func DownloadApp(w http.ResponseWriter, r *http.Request) {
@@ -44,7 +43,7 @@ func DownloadApp(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	archivePath, err := version.GetAppVersionArchive(a.ID, a.CurrentSequence)
+	archivePath, err := store.GetStore().GetAppVersionArchive(a.ID, a.CurrentSequence)
 	if err != nil {
 		logger.Error(err)
 		w.WriteHeader(500)

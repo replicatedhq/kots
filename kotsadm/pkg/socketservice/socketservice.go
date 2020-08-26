@@ -82,7 +82,7 @@ func Start() *SocketService {
 		service.socketMtx.Lock()
 		defer service.socketMtx.Unlock()
 
-		clusterID, err := downstream.GetClusterIDFromDeployToken(c.RequestURL().Query().Get("token"))
+		clusterID, err := store.GetStore().GetClusterIDFromDeployToken(c.RequestURL().Query().Get("token"))
 		if err != nil {
 			logger.Error(errors.Wrap(err, "failed to get cluster id from deploy token"))
 			return
@@ -180,7 +180,7 @@ func (s *SocketService) processDeploySocketForApp(clusterSocket ClusterSocket, a
 		}
 	}()
 
-	deployedVersionArchive, err := version.GetAppVersionArchive(a.ID, deployedVersion.ParentSequence)
+	deployedVersionArchive, err := store.GetStore().GetAppVersionArchive(a.ID, deployedVersion.ParentSequence)
 	if err != nil {
 		deployError = errors.Wrap(err, "failed to get app version archive")
 		return deployError
@@ -234,7 +234,7 @@ func (s *SocketService) processDeploySocketForApp(clusterSocket ClusterSocket, a
 		}
 
 		if previouslyDeployedParentSequence != -1 {
-			previouslyDeployedVersionArchive, err := version.GetAppVersionArchive(a.ID, previouslyDeployedParentSequence)
+			previouslyDeployedVersionArchive, err := store.GetStore().GetAppVersionArchive(a.ID, previouslyDeployedParentSequence)
 			if err != nil {
 				deployError = errors.Wrap(err, "failed to get previously deployed app version archive")
 				return deployError
@@ -328,14 +328,23 @@ func (s *SocketService) processDeploySocketForApp(clusterSocket ClusterSocket, a
 
 func (s *SocketService) supportBundleLoop() {
 	for _, clusterSocket := range s.clusterSocketHistory {
-		pendingSupportBundles, err := supportbundle.ListPendingForCluster(clusterSocket.ClusterID)
+		apps, err := store.GetStore().ListAppsForDownstream(clusterSocket.ClusterID)
 		if err != nil {
-			logger.Error(errors.Wrap(err, "failed to list pending support bundles"))
-			continue
+			logger.Error(errors.Wrap(err, "failed to list apps for cluster"))
+		}
+		pendingSupportBundles := []*supportbundletypes.PendingSupportBundle{}
+		for _, app := range apps {
+			appPendingSupportBundles, err := store.GetStore().ListPendingSupportBundlesForApp(app.ID)
+			if err != nil {
+				logger.Error(errors.Wrap(err, "failed to list pending support bundles for app"))
+				continue
+			}
+
+			pendingSupportBundles = append(pendingSupportBundles, appPendingSupportBundles...)
 		}
 
 		for _, sb := range pendingSupportBundles {
-			if err := s.processSupportBundle(clusterSocket, sb); err != nil {
+			if err := s.processSupportBundle(clusterSocket, *sb); err != nil {
 				logger.Error(errors.Wrapf(err, "failed to process support bundle %s for app %s", sb.ID, sb.AppID))
 				continue
 			}
@@ -493,7 +502,7 @@ func (s *SocketService) undeployApp(a *apptypes.App, d *downstreamtypes.Downstre
 		return errors.Wrap(err, "failed to get current downstream version")
 	}
 
-	deployedVersionArchive, err := version.GetAppVersionArchive(a.ID, deployedVersion.ParentSequence)
+	deployedVersionArchive, err := store.GetStore().GetAppVersionArchive(a.ID, deployedVersion.ParentSequence)
 	if err != nil {
 		return errors.Wrap(err, "failed to get app version archive")
 	}

@@ -23,7 +23,7 @@ import (
 )
 
 func Sync(a *apptypes.App, licenseData string, failOnVersionCreate bool) (*kotsv1beta1.License, error) {
-	archiveDir, err := version.GetAppVersionArchive(a.ID, a.CurrentSequence)
+	archiveDir, err := store.GetStore().GetAppVersionArchive(a.ID, a.CurrentSequence)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get latest app version")
 	}
@@ -97,7 +97,16 @@ func Sync(a *apptypes.App, licenseData string, failOnVersionCreate bool) (*kotsv
 }
 
 func createNewVersion(a *apptypes.App, archiveDir string, registrySettings *registrytypes.RegistrySettings) error {
-	if err := render.RenderDir(archiveDir, a.ID, registrySettings); err != nil {
+	app, err := store.GetStore().GetApp(a.ID)
+	if err != nil {
+		return errors.Wrap(err, "failed to get app")
+	}
+	downstreams, err := store.GetStore().ListDownstreamsForApp(a.ID)
+	if err != nil {
+		return errors.Wrap(err, "failed to list downstreams")
+	}
+
+	if err := render.RenderDir(archiveDir, app, downstreams, registrySettings); err != nil {
 		return errors.Wrap(err, "failed to render new version")
 	}
 
@@ -115,7 +124,7 @@ func createNewVersion(a *apptypes.App, archiveDir string, registrySettings *regi
 
 // Gets the license as it was at a given app sequence
 func GetCurrentLicenseString(a *apptypes.App) (string, error) {
-	archiveDir, err := version.GetAppVersionArchive(a.ID, a.CurrentSequence)
+	archiveDir, err := store.GetStore().GetAppVersionArchive(a.ID, a.CurrentSequence)
 	if err != nil {
 		return "", errors.Wrap(err, "failed to get latest app version")
 	}

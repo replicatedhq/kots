@@ -63,6 +63,30 @@ func (s S3PGStore) ListSupportBundles(appID string) ([]*supportbundletypes.Suppo
 	return supportBundles, nil
 }
 
+func (s S3PGStore) ListPendingSupportBundlesForApp(appID string) ([]*supportbundletypes.PendingSupportBundle, error) {
+	db := persistence.MustGetPGSession()
+	query := `select id, app_id, cluster_id from pending_supportbundle where app_id = $1`
+
+	rows, err := db.Query(query, appID)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to query")
+	}
+	defer rows.Close()
+
+	pendingSupportBundles := []*supportbundletypes.PendingSupportBundle{}
+
+	for rows.Next() {
+		s := supportbundletypes.PendingSupportBundle{}
+		if err := rows.Scan(&s.ID, &s.AppID, &s.ClusterID); err != nil {
+			return nil, errors.Wrap(err, "failed to scan")
+		}
+
+		pendingSupportBundles = append(pendingSupportBundles, &s)
+	}
+
+	return pendingSupportBundles, nil
+}
+
 func (s S3PGStore) GetSupportBundleFromSlug(slug string) (*supportbundletypes.SupportBundle, error) {
 	db := persistence.MustGetPGSession()
 	query := `select id from supportbundle where slug = $1`

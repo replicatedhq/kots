@@ -533,7 +533,7 @@ func SaveSnapshotConfig(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		logger.Error(err)
 		responseBody.Error = "Failed to get app"
-		JSON(w, http.StatuInternalServerError, responseBody)
+		JSON(w, http.StatusInternalServerError, responseBody)
 		return
 	}
 
@@ -550,7 +550,7 @@ func SaveSnapshotConfig(w http.ResponseWriter, r *http.Request) {
 		if err := store.GetStore().SetSnapshotTTL(app.ID, retention); err != nil {
 			logger.Error(err)
 			responseBody.Error = "Failed to set snapshot retention"
-			JSON(w, http.StatuInternalServerError, responseBody)
+			JSON(w, http.StatusInternalServerError, responseBody)
 			return
 		}
 	}
@@ -559,13 +559,13 @@ func SaveSnapshotConfig(w http.ResponseWriter, r *http.Request) {
 		if err := store.GetStore().SetSnapshotSchedule(app.ID, ""); err != nil {
 			logger.Error(err)
 			responseBody.Error = "Failed to clear snapshot schedule"
-			JSON(w, http.StatuInternalServerError, responseBody)
+			JSON(w, http.StatusInternalServerError, responseBody)
 			return
 		}
 		if err := store.GetStore().DeletePendingScheduledSnapshots(app.ID); err != nil {
 			logger.Error(err)
 			responseBody.Error = "Failed to delete scheduled snapshots"
-			JSON(w, http.StatuInternalServerError, responseBody)
+			JSON(w, http.StatusInternalServerError, responseBody)
 			return
 		}
 		responseBody.Success = true
@@ -585,13 +585,13 @@ func SaveSnapshotConfig(w http.ResponseWriter, r *http.Request) {
 		if err := store.GetStore().DeletePendingScheduledSnapshots(app.ID); err != nil {
 			logger.Error(err)
 			responseBody.Error = "Failed to delete scheduled snapshots"
-			JSON(w, http.StatuInternalServerError, responseBody)
+			JSON(w, http.StatusInternalServerError, responseBody)
 			return
 		}
 		if err := store.GetStore().SetSnapshotSchedule(app.ID, requestBody.Schedule); err != nil {
 			logger.Error(err)
 			responseBody.Error = "Failed to save snapshot schedule"
-			JSON(w, http.StatuInternalServerError, responseBody)
+			JSON(w, http.StatusInternalServerError, responseBody)
 			return
 		}
 		queued := cronSchedule.Next(time.Now())
@@ -599,7 +599,7 @@ func SaveSnapshotConfig(w http.ResponseWriter, r *http.Request) {
 		if err := store.GetStore().CreateScheduledSnapshot(id, app.ID, queued); err != nil {
 			logger.Error(err)
 			responseBody.Error = "Failed to create first scheduled snapshot"
-			JSON(w, http.StatuInternalServerError, responseBody)
+			JSON(w, http.StatusInternalServerError, responseBody)
 			return
 		}
 	}

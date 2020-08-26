@@ -212,7 +212,7 @@ func LiveAppConfig(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	archiveDir, err := version.GetAppVersionArchive(foundApp.ID, liveAppConfigRequest.Sequence)
+	archiveDir, err := store.GetStore().GetAppVersionArchive(foundApp.ID, liveAppConfigRequest.Sequence)
 	if err != nil {
 		liveAppConfigResponse.Error = "failed to get app version archive"
 		JSON(w, http.StatusInternalServerError, liveAppConfigResponse)
@@ -309,7 +309,7 @@ func CurrentAppConfig(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	archiveDir, err := version.GetAppVersionArchive(foundApp.ID, int64(sequence))
+	archiveDir, err := store.GetStore().GetAppVersionArchive(foundApp.ID, int64(sequence))
 	if err != nil {
 		currentAppConfigResponse.Error = "failed to get app version archive"
 		JSON(w, http.StatusInternalServerError, currentAppConfigResponse)
@@ -352,7 +352,7 @@ func updateAppConfig(updateApp *apptypes.App, sequence int64, req UpdateAppConfi
 		Success: false,
 	}
 
-	archiveDir, err := version.GetAppVersionArchive(updateApp.ID, sequence)
+	archiveDir, err := store.GetStore().GetAppVersionArchive(updateApp.ID, sequence)
 	if err != nil {
 		updateAppConfigResponse.Error = "failed to get app version archive"
 		return updateAppConfigResponse, err
@@ -448,7 +448,18 @@ func updateAppConfig(updateApp *apptypes.App, sequence int64, req UpdateAppConfi
 		updateAppConfigResponse.Error = "failed to get registry settings"
 		return updateAppConfigResponse, err
 	}
-	err = render.RenderDir(archiveDir, updateApp.ID, registrySettings)
+	app, err := store.GetStore().GetApp(updateApp.ID)
+	if err != nil {
+		updateAppConfigResponse.Error = "failed to get app"
+		return updateAppConfigResponse, err
+	}
+	downstreams, err := store.GetStore().ListDownstreamsForApp(updateApp.ID)
+	if err != nil {
+		updateAppConfigResponse.Error = "failed to list downstreams for app"
+		return updateAppConfigResponse, err
+	}
+
+	err = render.RenderDir(archiveDir, app, downstreams, registrySettings)
 	if err != nil {
 		updateAppConfigResponse.Error = "failed to render archive directory"
 		return updateAppConfigResponse, err
@@ -467,7 +478,7 @@ func updateAppConfig(updateApp *apptypes.App, sequence int64, req UpdateAppConfi
 			return updateAppConfigResponse, err
 		}
 
-		if err := version.CreateAppVersionArchive(updateApp.ID, int64(sequence), archiveDir); err != nil {
+		if err := store.GetStore().CreateAppVersionArchive(updateApp.ID, int64(sequence), archiveDir); err != nil {
 			updateAppConfigResponse.Error = "failed to create app version archive"
 			return updateAppConfigResponse, err
 		}

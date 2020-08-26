@@ -32,4 +32,5 @@ type App struct {
 	RestoreUndeployStatus UndeployStatus `json:"restoreUndeloyStatus"`
 	UpdateCheckerSpec     string         `json:"updateCheckerSpec"`
 	IsGitOps              bool           `json:"isGitOps"`
+	InstallState          string         `json:"installState"`
 }

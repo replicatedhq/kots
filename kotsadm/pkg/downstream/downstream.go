@@ -16,19 +16,6 @@ type scannable interface {
 	Scan(dest ...interface{}) error
 }
 
-func GetClusterIDFromDeployToken(token string) (string, error) {
-	db := persistence.MustGetPGSession()
-	query := `select id from cluster where token = $1`
-	row := db.QueryRow(query, token)
-
-	var clusterID string
-	if err := row.Scan(&clusterID); err != nil {
-		return "", errors.Wrap(err, "failed to scan")
-	}
-
-	return clusterID, nil
-}
-
 func GetCurrentSequence(appID string, clusterID string) (int64, error) {
 	db := persistence.MustGetPGSession()
 	query := `select current_sequence from app_downstream where app_id = $1 and cluster_id = $2`

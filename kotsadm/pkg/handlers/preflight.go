@@ -15,7 +15,6 @@ import (
 	preflighttypes "github.com/replicatedhq/kots/kotsadm/pkg/preflight/types"
 	"github.com/replicatedhq/kots/kotsadm/pkg/render"
 	"github.com/replicatedhq/kots/kotsadm/pkg/store"
-	"github.com/replicatedhq/kots/kotsadm/pkg/version"
 )
 
 type GetPreflightResultResponse struct {
@@ -118,7 +117,7 @@ func IgnorePreflightRBACErrors(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	archiveDir, err := version.GetAppVersionArchive(foundApp.ID, int64(sequence))
+	archiveDir, err := store.GetStore().GetAppVersionArchive(foundApp.ID, int64(sequence))
 	if err != nil {
 		logger.Error(err)
 		w.WriteHeader(500)
@@ -167,7 +166,7 @@ func StartPreflightChecks(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	archiveDir, err := version.GetAppVersionArchive(foundApp.ID, int64(sequence))
+	archiveDir, err := store.GetStore().GetAppVersionArchive(foundApp.ID, int64(sequence))
 	if err != nil {
 		logger.Error(err)
 		w.WriteHeader(500)
@@ -235,7 +234,7 @@ func GetPreflightStatus(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	archiveDir, err := version.GetAppVersionArchive(foundApp.ID, sequence)
+	archiveDir, err := store.GetStore().GetAppVersionArchive(foundApp.ID, sequence)
 	if err != nil {
 		err = errors.Wrap(err, "failed to get app version archive")
 		logger.Error(err)

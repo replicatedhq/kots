@@ -7,9 +7,10 @@ import (
 	"path/filepath"
 
 	"github.com/pkg/errors"
+	apptypes "github.com/replicatedhq/kots/kotsadm/pkg/app/types"
+	downstreamtypes "github.com/replicatedhq/kots/kotsadm/pkg/downstream/types"
 	"github.com/replicatedhq/kots/kotsadm/pkg/kotsutil"
 	registrytypes "github.com/replicatedhq/kots/kotsadm/pkg/registry/types"
-	"github.com/replicatedhq/kots/kotsadm/pkg/store"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	"github.com/replicatedhq/kots/pkg/crypto"
 	"github.com/replicatedhq/kots/pkg/rewrite"
@@ -89,7 +90,7 @@ func RenderContent(kotsKinds *kotsutil.KotsKinds, registrySettings *registrytype
 
 // RenderDir renders an app archive dir
 // this is useful for when the license/config have updated, and template functions need to be evaluated again
-func RenderDir(archiveDir string, appID string, registrySettings *registrytypes.RegistrySettings) error {
+func RenderDir(archiveDir string, a *apptypes.App, downstreams []downstreamtypes.Downstream, registrySettings *registrytypes.RegistrySettings) error {
 	installation, err := kotsutil.LoadInstallationFromPath(filepath.Join(archiveDir, "upstream", "userdata", "installation.yaml"))
 	if err != nil {
 		return errors.Wrap(err, "failed to load installation from path")
@@ -105,12 +106,6 @@ func RenderDir(archiveDir string, appID string, registrySettings *registrytypes.
 		return errors.Wrap(err, "failed to load config values from path")
 	}
 
-	// get the downstream names only
-	downstreams, err := store.GetStore().ListDownstreamsForApp(appID)
-	if err != nil {
-		return errors.Wrap(err, "failed to list downstreams")
-	}
-
 	downstreamNames := []string{}
 	for _, d := range downstreams {
 		downstreamNames = append(downstreamNames, d.Name)
@@ -119,11 +114,6 @@ func RenderDir(archiveDir string, appID string, registrySettings *registrytypes.
 	appNamespace := os.Getenv("POD_NAMESPACE")
 	if os.Getenv("KOTSADM_TARGET_NAMESPACE") != "" {
 		appNamespace = os.Getenv("KOTSADM_TARGET_NAMESPACE")
-	}
-
-	a, err := store.GetStore().GetApp(appID)
-	if err != nil {
-		return errors.Wrap(err, "failed to get app")
 	}
 
 	reOptions := rewrite.RewriteOptions{

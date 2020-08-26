@@ -11,7 +11,6 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
 	"github.com/replicatedhq/kots/kotsadm/pkg/store"
-	"github.com/replicatedhq/kots/kotsadm/pkg/version"
 )
 
 type GetAppContentsResponse struct {
@@ -47,7 +46,7 @@ func GetAppContents(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	archivePath, err := version.GetAppVersionArchive(a.ID, int64(sequence))
+	archivePath, err := store.GetStore().GetAppVersionArchive(a.ID, int64(sequence))
 	if err != nil {
 		logger.Error(err)
 		w.WriteHeader(500)

@@ -111,8 +111,20 @@ func UploadExistingApp(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(500)
 		return
 	}
+	app, err := store.GetStore().GetApp(a.ID)
+	if err != nil {
+		logger.Error(err)
+		w.WriteHeader(500)
+		return
+	}
+	downstreams, err := store.GetStore().ListDownstreamsForApp(a.ID)
+	if err != nil {
+		logger.Error(err)
+		w.WriteHeader(500)
+		return
+	}
 
-	err = render.RenderDir(archiveDir, a.ID, registrySettings)
+	err = render.RenderDir(archiveDir, app, downstreams, registrySettings)
 	if err != nil {
 		logger.Error(err)
 		w.WriteHeader(500)

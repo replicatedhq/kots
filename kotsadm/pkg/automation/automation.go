@@ -10,6 +10,7 @@ import (
 	"github.com/replicatedhq/kots/kotsadm/pkg/kotsutil"
 	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
 	"github.com/replicatedhq/kots/kotsadm/pkg/online"
+	installationtypes "github.com/replicatedhq/kots/kotsadm/pkg/online/types"
 	"github.com/replicatedhq/kots/kotsadm/pkg/store"
 	kotslicense "github.com/replicatedhq/kots/pkg/license"
 	kotspull "github.com/replicatedhq/kots/pkg/pull"
@@ -95,7 +96,7 @@ func AutomateInstall() error {
 		}
 
 		// complete the install online
-		pendingApp := online.PendingApp{
+		pendingApp := installationtypes.PendingApp{
 			ID:          a.ID,
 			Slug:        a.Slug,
 			Name:        a.Name,

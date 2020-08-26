@@ -145,12 +145,12 @@ func GetApp(w http.ResponseWriter, r *http.Request) {
 }
 
 func responseAppFromApp(a *apptypes.App) (*ResponseApp, error) {
-	isGitOpsSupported, err := version.IsGitOpsSupported(a.ID, a.CurrentSequence)
+	isGitOpsSupported, err := store.GetStore().IsGitOpsSupportedForVersion(a.ID, a.CurrentSequence)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to check if gitops is supported")
 	}
 
-	allowRollback, err := version.IsAllowRollback(a.ID, a.CurrentSequence)
+	allowRollback, err := store.GetStore().IsRollbackSupportedForVersion(a.ID, a.CurrentSequence)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to check if rollback is supported")
 	}
@@ -243,7 +243,7 @@ func responseAppFromApp(a *apptypes.App) (*ResponseApp, error) {
 			return nil, errors.Wrap(err, "failed to get current parent sequence for downstream")
 		}
 
-		s, err := version.IsAllowSnapshots(a.ID, parentSequence)
+		s, err := store.GetStore().IsSnapshotsSupportedForVersion(a.ID, parentSequence)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to check if snapshots is allowed")
 		}

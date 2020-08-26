@@ -1,11 +1,9 @@
 package version
 
 import (
-	"context"
 	"database/sql"
 	"encoding/json"
 	"fmt"
-	"os"
 	"time"
 
 	"github.com/pkg/errors"
@@ -14,17 +12,12 @@ import (
 	"github.com/replicatedhq/kots/kotsadm/pkg/gitops"
 	"github.com/replicatedhq/kots/kotsadm/pkg/kotsutil"
 	"github.com/replicatedhq/kots/kotsadm/pkg/persistence"
-	"github.com/replicatedhq/kots/kotsadm/pkg/render"
 	"github.com/replicatedhq/kots/kotsadm/pkg/secrets"
 	"github.com/replicatedhq/kots/kotsadm/pkg/store"
 	"github.com/replicatedhq/kots/kotsadm/pkg/version/types"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
-	velerov1 "github.com/vmware-tanzu/velero/pkg/apis/velero/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/scheme"
 	applicationv1beta1 "sigs.k8s.io/application/api/v1beta1"
-	k8sconfig "sigs.k8s.io/controller-runtime/pkg/client/config"
 )
 
 // GetNextAppSequence determines next available sequence for this app
@@ -180,7 +173,7 @@ backup_spec = EXCLUDED.backup_spec`
 	previousArchiveDir := ""
 	if currentSequence != nil {
 		// Get the previous archive, we need this to calculate the diff
-		previousDir, err := GetAppVersionArchive(appID, *currentSequence)
+		previousDir, err := store.GetStore().GetAppVersionArchive(appID, *currentSequence)
 		if err != nil {
 			return int64(0), errors.Wrap(err, "failed to get previous archive")
 		}
@@ -257,7 +250,7 @@ backup_spec = EXCLUDED.backup_spec`
 		}
 	}
 
-	if err := CreateAppVersionArchive(appID, int64(newSequence), filesInDir); err != nil {
+	if err := store.GetStore().CreateAppVersionArchive(appID, int64(newSequence), filesInDir); err != nil {
 		return int64(0), errors.Wrap(err, "failed to create app version archive")
 	}
 
@@ -363,129 +356,6 @@ func DeployVersion(appID string, sequence int64) error {
 	}
 
 	return nil
-}
-
-func IsGitOpsSupported(appID string, sequence int64) (bool, error) {
-	cfg, err := k8sconfig.GetConfig()
-	if err != nil {
-		return false, errors.Wrap(err, "failed to get cluster config")
-	}
-
-	clientset, err := kubernetes.NewForConfig(cfg)
-	if err != nil {
-		return false, errors.Wrap(err, "failed to create kubernetes clientset")
-	}
-
-	_, err = clientset.CoreV1().Secrets(os.Getenv("POD_NAMESPACE")).Get(context.TODO(), "kotsadm-gitops", metav1.GetOptions{})
-	if err == nil {
-		// gitops secret exists -> gitops is supported
-		return true, nil
-	}
-
-	db := persistence.MustGetPGSession()
-	query := `select kots_license from app_version where app_id = $1 and sequence = $2`
-	row := db.QueryRow(query, appID, sequence)
-
-	var licenseStr sql.NullString
-	if err := row.Scan(&licenseStr); err != nil {
-		if err == sql.ErrNoRows {
-			return false, nil
-		}
-		return false, errors.Wrap(err, "failed to scan")
-	}
-
-	decode := scheme.Codecs.UniversalDeserializer().Decode
-	obj, _, err := decode([]byte(licenseStr.String), nil, nil)
-	if err != nil {
-		return false, errors.Wrap(err, "failed to decode license yaml")
-	}
-	license := obj.(*kotsv1beta1.License)
-
-	return license.Spec.IsGitOpsSupported, nil
-}
-
-func IsAllowRollback(appID string, sequence int64) (bool, error) {
-	db := persistence.MustGetPGSession()
-	query := `select kots_app_spec from app_version where app_id = $1 and sequence = $2`
-	row := db.QueryRow(query, appID, sequence)
-
-	var kotsAppSpecStr sql.NullString
-	if err := row.Scan(&kotsAppSpecStr); err != nil {
-		if err == sql.ErrNoRows {
-			return false, nil
-		}
-		return false, errors.Wrap(err, "failed to scan")
-	}
-
-	decode := scheme.Codecs.UniversalDeserializer().Decode
-	obj, _, err := decode([]byte(kotsAppSpecStr.String), nil, nil)
-	if err != nil {
-		return false, errors.Wrap(err, "failed to decode kots app spec yaml")
-	}
-	kotsAppSpec := obj.(*kotsv1beta1.Application)
-
-	return kotsAppSpec.Spec.AllowRollback, nil
-}
-
-func IsAllowSnapshots(appID string, sequence int64) (bool, error) {
-	db := persistence.MustGetPGSession()
-	query := `select backup_spec from app_version where app_id = $1 and sequence = $2`
-	row := db.QueryRow(query, appID, sequence)
-
-	var backupSpecStr sql.NullString
-	if err := row.Scan(&backupSpecStr); err != nil {
-		if err == sql.ErrNoRows {
-			return false, nil
-		}
-		return false, errors.Wrap(err, "failed to scan")
-	}
-
-	if backupSpecStr.String == "" {
-		return false, nil
-	}
-
-	archiveDir, err := GetAppVersionArchive(appID, sequence)
-	if err != nil {
-		return false, errors.Wrap(err, "failed to get app version archive")
-	}
-
-	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(archiveDir)
-	if err != nil {
-		return false, errors.Wrap(err, "failed to load kots kinds from path")
-	}
-
-	registrySettings, err := store.GetStore().GetRegistryDetailsForApp(appID)
-	if err != nil {
-		return false, errors.Wrap(err, "failed to get registry settings for app")
-	}
-
-	rendered, err := render.RenderFile(kotsKinds, registrySettings, []byte(backupSpecStr.String))
-	if err != nil {
-		return false, errors.Wrap(err, "failed to render backup spec")
-	}
-
-	decode := scheme.Codecs.UniversalDeserializer().Decode
-	obj, _, err := decode(rendered, nil, nil)
-	if err != nil {
-		return false, errors.Wrap(err, "failed to decode rendered backup spec yaml")
-	}
-	backupSpec := obj.(*velerov1.Backup)
-
-	annotations := backupSpec.ObjectMeta.Annotations
-	if annotations == nil {
-		// Backup exists and there are no annotation overrides so snapshots are enabled
-		return true, nil
-	}
-
-	if exclude, ok := annotations["kots.io/exclude"]; ok && exclude == "true" {
-		return false, nil
-	}
-
-	if when, ok := annotations["kots.io/when"]; ok && when == "false" {
-		return false, nil
-	}
-
-	return true, nil
 }
 
 func GetLicenseType(appID string, sequence int64) (string, error) {

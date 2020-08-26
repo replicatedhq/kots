@@ -7,10 +7,10 @@ import (
 )
 
 type Downstream struct {
-	ClusterID       string
-	ClusterSlug     string
-	Name            string
-	CurrentSequence int64
+	ClusterID       string `json:"id"`
+	ClusterSlug     string `json:"slug"`
+	Name            string `json:"name"`
+	CurrentSequence int64  `json:"currentSequence"`
 }
 
 type DownstreamVersion struct {

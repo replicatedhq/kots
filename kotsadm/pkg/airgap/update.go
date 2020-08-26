@@ -75,7 +75,7 @@ func UpdateAppFromAirgap(a *apptypes.App, airgapBundle multipart.File) (finalErr
 	}
 
 	// Some info about the current version
-	currentArchivePath, err := version.GetAppVersionArchive(a.ID, a.CurrentSequence)
+	currentArchivePath, err := store.GetStore().GetAppVersionArchive(a.ID, a.CurrentSequence)
 	if err != nil {
 		return errors.Wrap(err, "failed to get current archive")
 	}
