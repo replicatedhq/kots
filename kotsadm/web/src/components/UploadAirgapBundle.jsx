@@ -361,7 +361,7 @@ class UploadAirgapBundle extends React.Component {
 
   getApp = async (slug) => {
     try {
-      const res = await fetch(`${window.env.API_ENDPOINT}/app/${slug}`, {
+      const res = await fetch(`${window.env.API_ENDPOINT}/apps/app/${slug}`, {
         headers: {
           "Authorization": Utilities.getToken(),
           "Content-Type": "application/json",

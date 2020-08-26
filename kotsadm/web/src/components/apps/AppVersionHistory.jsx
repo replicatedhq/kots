@@ -73,7 +73,7 @@ class AppVersionHistory extends Component {
   }
 
   componentDidMount() {
-    this.startVersionHistoryJob();
+    this.fetchKotsDownstreamHistory();
 
     this.state.updateChecker.start(this.updateStatus, 1000);
 
@@ -90,17 +90,13 @@ class AppVersionHistory extends Component {
 
   componentDidUpdate = async (lastProps) => {
     if (lastProps.match.params.slug !== this.props.match.params.slug || lastProps.app.id !== this.props.app.id) {
-      this.startVersionHistoryJob();
+      this.fetchKotsDownstreamHistory();
     }
   }
 
   componentWillUnmount() {
     this.state.updateChecker.stop();
     this.state.versionHistoryJob.stop();
-  }
-
-  startVersionHistoryJob() {
-    this.state.versionHistoryJob.start(this.fetchKotsDownstreamHistory, 2000);
   }
 
   fetchKotsDownstreamHistory = async() => {
@@ -138,7 +134,9 @@ class AppVersionHistory extends Component {
       const response = await res.json();
       const versionHistory = response.versionHistory;
 
-      if (!isAwaitingResults(versionHistory)) {
+      if (isAwaitingResults(versionHistory)) {
+        this.state.versionHistoryJob.start(this.fetchKotsDownstreamHistory, 2000);
+      } else {
         this.state.versionHistoryJob.stop();
       }
 
@@ -516,8 +514,6 @@ class AppVersionHistory extends Component {
     if (this.props.updateCallback) {
       this.props.updateCallback();
     }
-
-    this.startVersionHistoryJob();
   }
 
   onForceDeployClick = () => {
@@ -620,7 +616,7 @@ class AppVersionHistory extends Component {
           if (this.props.updateCallback) {
             this.props.updateCallback();
           }
-          this.startVersionHistoryJob();
+          this.fetchKotsDownstreamHistory();
         } else {
           this.setState({
             checkingForUpdates: true,
@@ -667,7 +663,7 @@ class AppVersionHistory extends Component {
         if (response.availableUpdates === 0) {
           if (!find(this.state.versionHistory, { parentSequence: response.currentAppSequence })) {
             // version history list is out of sync - most probably because of automatic updates happening in the background - refetch list
-            this.startVersionHistoryJob();
+            this.fetchKotsDownstreamHistory();
             this.setState({ checkingForUpdates: false });
           } else {
             this.setState({
