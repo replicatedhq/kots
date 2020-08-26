@@ -7,7 +7,6 @@ import { Helmet } from "react-helmet";
 import CodeSnippet from "../shared/CodeSnippet";
 import NodeRow from "./NodeRow";
 import Loader from "../shared/Loader";
-import { kurl } from "../../queries/KurlQueries";
 import { Utilities } from "../../utilities/utilities";
 
 import "@src/scss/components/apps/ClusterNodes.scss";
@@ -20,6 +19,38 @@ export class ClusterNodes extends Component {
     displayAddNode: false,
     selectedNodeType: "worker", // Change when master node script is enabled
     generateCommandErrMsg: ""
+  }
+
+  componentDidMount() {
+    this.getNodeStatus();
+  }
+
+  getNodeStatus = async () => {
+    try {
+      const res = await fetch(`${window.env.API_ENDPOINT}/kurl/nodes`, {
+        headers: {
+          "Authorization": Utilities.getToken(),
+          "Content-Type": "application/json",
+        },
+        method: "GET",
+      });
+      if (!res.ok) {
+        if (res.status === 401) {
+          Utilities.logoutUser();
+          return;
+        }
+        console.log("failed to get node status list, unexpected status code", res.status);
+        return;
+      }
+      const response = await res.json();
+      this.setState({
+        kurl: response,
+      });
+      return response;
+    } catch(err) {
+      console.log(err);
+      throw err;
+    }
   }
 
   deleteNode = (name) => {
@@ -118,7 +149,7 @@ export class ClusterNodes extends Component {
   }
 
   render() {
-    const { kurl } = this.props.data;
+    const { kurl } = this.state;
     const { displayAddNode, generateCommandErrMsg } = this.state;
 
     if (!kurl) {
@@ -259,10 +290,4 @@ export class ClusterNodes extends Component {
 export default compose(
   withRouter,
   withApollo,
-  graphql(kurl, {
-    options: {
-      pollInterval: 2000,
-      fetchPolicy: "no-cache",
-    },
-  }),
 )(ClusterNodes);

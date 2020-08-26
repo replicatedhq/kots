@@ -9,6 +9,8 @@ import (
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
+
+	metrics "k8s.io/metrics/pkg/client/clientset/versioned"
 )
 
 type KurlNodes struct {
@@ -29,8 +31,8 @@ type Node struct {
 }
 
 type CapacityAvailable struct {
-	Capacity  string `json:"capacity"`
-	Available string `json:"available"`
+	Capacity  float64 `json:"capacity"`
+	Available float64 `json:"available"`
 }
 
 type NodeConditions struct {
@@ -41,7 +43,7 @@ type NodeConditions struct {
 }
 
 // GetNodes will get a list of nodes with stats
-func GetNodes(client kubernetes.Interface) (KurlNodes, error) {
+func GetNodes(client kubernetes.Interface, metrics *metrics.Clientset) (KurlNodes, error) {
 	nodes, err := client.CoreV1().Nodes().List(context.TODO(), metav1.ListOptions{})
 	if err != nil {
 		return KurlNodes{}, errors.Wrap(err, "list nodes")
@@ -50,19 +52,23 @@ func GetNodes(client kubernetes.Interface) (KurlNodes, error) {
 	toReturn := KurlNodes{}
 
 	for _, node := range nodes.Items {
+		cpuCapacity, _ := strconv.ParseFloat(node.Status.Capacity.Cpu().String(), 64)
+		memCapacity := float64(node.Status.Capacity.Memory().Value()) / 1000000000 // capacity in GB
+		podCapacity, _ := strconv.ParseFloat(node.Status.Capacity.Pods().String(), 64)
+
 		toReturn.Nodes = append(toReturn.Nodes, Node{
 			Name:           node.Name,
 			IsConnected:    true,
 			CanDelete:      node.Spec.Unschedulable,
 			KubeletVersion: node.Status.NodeInfo.KubeletVersion,
 			CPU: CapacityAvailable{
-				Capacity: node.Status.Capacity.Cpu().String(), // TODO include available resources
+				Capacity: cpuCapacity, // TODO include available resources
 			},
 			Memory: CapacityAvailable{
-				Capacity: node.Status.Capacity.Memory().String(),
+				Capacity: memCapacity,
 			},
 			Pods: CapacityAvailable{
-				Capacity: node.Status.Capacity.Pods().String(),
+				Capacity: podCapacity,
 			},
 			Conditions: findNodeConditions(node.Status.Conditions),
 		})
