@@ -16,10 +16,6 @@ func bootstrap() error {
 		return errors.Wrap(err, "failed to bootstrap cluster token")
 	}
 
-	if err := bootstrapSharedPassword(); err != nil {
-		return errors.Wrap(err, "failed to bootstrap shared password")
-	}
-
 	return nil
 }
 
@@ -40,19 +36,6 @@ func bootstrapClusterToken() error {
 	_, err = store.GetStore().CreateNewCluster("", true, "this-cluster", os.Getenv("AUTO_CREATE_CLUSTER_TOKEN"))
 	if err != nil {
 		return errors.Wrap(err, "failed to create cluster")
-	}
-
-	return nil
-}
-
-func bootstrapSharedPassword() error {
-	if os.Getenv("SHARED_PASSWORD_BCRYPT") == "" {
-		return nil
-	}
-
-	_, err := store.GetStore().CreateAdminConsolePassword(os.Getenv("SHARED_PASSWORD_BCRYPT"))
-	if err != nil {
-		return errors.New("failed to admin password")
 	}
 
 	return nil

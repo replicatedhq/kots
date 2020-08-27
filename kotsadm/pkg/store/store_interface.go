@@ -27,7 +27,6 @@ type KOTSStore interface {
 	AirgapStore
 	TaskStore
 	SessionStore
-	UserStore
 	AppStatusStore
 	AppStore
 	VersionStore
@@ -94,10 +93,6 @@ type SessionStore interface {
 	GetSession(id string) (*sessiontypes.Session, error)
 }
 
-type UserStore interface {
-	CreateAdminConsolePassword(string) (string, error)
-}
-
 type AppStatusStore interface {
 	GetAppStatus(string) (*appstatustypes.AppStatus, error)
 }
@@ -141,7 +136,7 @@ type LicenseStore interface {
 }
 
 type ClusterStore interface {
-	ListClusters() (map[string]string, error)
+	ListClusters() ([]*downstreamtypes.Downstream, error)
 	GetClusterIDFromSlug(slug string) (string, error)
 	GetClusterIDFromDeployToken(string) (string, error)
 	CreateNewCluster(userId string, isAllUsers bool, title string, token string) (string, error)
