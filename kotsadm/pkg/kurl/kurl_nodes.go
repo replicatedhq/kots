@@ -6,6 +6,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/kotsadm/pkg/k8s"
+	"github.com/replicatedhq/kots/kotsadm/pkg/kurl/types"
 	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
 	v1 "k8s.io/api/core/v1"
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
@@ -13,37 +14,8 @@ import (
 	"k8s.io/client-go/kubernetes"
 )
 
-type KurlNodes struct {
-	Nodes         []Node `json:"nodes"`
-	HA            bool   `json:"ha"`
-	IsKurlEnabled bool   `json:"isKurlEnabled"`
-}
-
-type Node struct {
-	Name           string            `json:"name"`
-	IsConnected    bool              `json:"isConnected"`
-	CanDelete      bool              `json:"canDelete"`
-	KubeletVersion string            `json:"kubeletVersion"`
-	CPU            CapacityAvailable `json:"cpu"`
-	Memory         CapacityAvailable `json:"memory"`
-	Pods           CapacityAvailable `json:"pods"`
-	Conditions     NodeConditions    `json:"conditions"`
-}
-
-type CapacityAvailable struct {
-	Capacity  float64 `json:"capacity"`
-	Available float64 `json:"available"`
-}
-
-type NodeConditions struct {
-	MemoryPressure bool `json:"memoryPressure"`
-	DiskPressure   bool `json:"diskPressure"`
-	PidPressure    bool `json:"pidPressure"`
-	Ready          bool `json:"ready"`
-}
-
 // GetNodes will get a list of nodes with stats
-func GetNodes(client kubernetes.Interface) (*KurlNodes, error) {
+func GetNodes(client kubernetes.Interface) (*types.KurlNodes, error) {
 	nodes, err := client.CoreV1().Nodes().List(context.TODO(), metav1.ListOptions{})
 	if err != nil {
 		return nil, errors.Wrap(err, "list nodes")
@@ -54,12 +26,12 @@ func GetNodes(client kubernetes.Interface) (*KurlNodes, error) {
 		return nil, errors.Wrap(err, "get metrics client")
 	}
 
-	toReturn := KurlNodes{}
+	toReturn := types.KurlNodes{}
 
 	for _, node := range nodes.Items {
-		cpuCapacity := CapacityAvailable{}
-		memoryCapacity := CapacityAvailable{}
-		podCapacity := CapacityAvailable{}
+		cpuCapacity := types.CapacityAvailable{}
+		memoryCapacity := types.CapacityAvailable{}
+		podCapacity := types.CapacityAvailable{}
 
 		memoryCapacity.Capacity = float64(node.Status.Capacity.Memory().Value()) / 1000000000 // capacity in GB
 
@@ -94,7 +66,7 @@ func GetNodes(client kubernetes.Interface) (*KurlNodes, error) {
 			podCapacity.Available = podCapacity.Capacity - podCapacity.Available
 		}
 
-		toReturn.Nodes = append(toReturn.Nodes, Node{
+		toReturn.Nodes = append(toReturn.Nodes, types.Node{
 			Name:           node.Name,
 			IsConnected:    true,
 			CanDelete:      node.Spec.Unschedulable,
@@ -128,8 +100,8 @@ func GetNodes(client kubernetes.Interface) (*KurlNodes, error) {
 	return &toReturn, nil
 }
 
-func findNodeConditions(conditions []v1.NodeCondition) NodeConditions {
-	discoveredConditions := NodeConditions{}
+func findNodeConditions(conditions []v1.NodeCondition) types.NodeConditions {
+	discoveredConditions := types.NodeConditions{}
 	for _, condition := range conditions {
 		if condition.Type == "MemoryPressure" {
 			discoveredConditions.MemoryPressure = condition.Status == v1.ConditionTrue
