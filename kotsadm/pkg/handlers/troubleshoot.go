@@ -299,7 +299,8 @@ func CollectSupportBundle(w http.ResponseWriter, r *http.Request) {
 	JSON(w, 204, "")
 }
 
-// NOTE: there is no auth on this route
+// UploadSupportBundle route is UNAUTHENTICATED
+// This request comes from the `kubectl support-bundle` command.
 func UploadSupportBundle(w http.ResponseWriter, r *http.Request) {
 	if handleOptionsRequest(w, r) {
 		return
@@ -435,7 +436,8 @@ func GetDefaultTroubleshoot(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(fullTroubleshoot))
 }
 
-// NOTE: there is no auth on this route
+// GetTroubleshoot route is UNAUTHENTICATED
+// This request comes from the `kubectl support-bundle` command.
 func GetTroubleshoot(w http.ResponseWriter, r *http.Request) {
 	if handleOptionsRequest(w, r) {
 		return
@@ -555,7 +557,8 @@ func GetSupportBundleRedactions(w http.ResponseWriter, r *http.Request) {
 	JSON(w, 200, getSupportBundleRedactionsResponse)
 }
 
-// NOTE: there is no auth on this route
+// SetSupportBundleRedactions route is UNAUTHENTICATED
+// This request comes from the `kubectl support-bundle` command.
 func SetSupportBundleRedactions(w http.ResponseWriter, r *http.Request) {
 	if handleOptionsRequest(w, r) {
 		return
