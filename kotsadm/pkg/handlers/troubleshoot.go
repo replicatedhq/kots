@@ -408,7 +408,8 @@ func UploadSupportBundle(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// NOTE: there is no auth on this route
+// GetDefaultTroubleshoot route is UNAUTHENTICATED
+// This request comes from the `kubectl support-bundle` command.
 func GetDefaultTroubleshoot(w http.ResponseWriter, r *http.Request) {
 	if handleOptionsRequest(w, r) {
 		return

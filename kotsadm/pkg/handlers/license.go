@@ -427,8 +427,10 @@ func GetOnlineInstallStatus(w http.ResponseWriter, r *http.Request) {
 	JSON(w, 200, status)
 }
 
-// NOTE: there is no auth on this route
-// This the handler for license API and should be called by the application only.
+// GetPlatformLicenseCompatibility route is UNAUTHENTICATED
+// Authentication must be added here which will break backwards compatibility.
+// This route exists for backwards compatibility with platform License API and should be called by
+// the application only.
 func GetPlatformLicenseCompatibility(w http.ResponseWriter, r *http.Request) {
 	apps, err := store.GetStore().ListInstalledApps()
 	if err != nil {
