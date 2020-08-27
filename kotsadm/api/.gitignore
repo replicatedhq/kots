@@ -1,7 +1,0 @@
-.nyc_output
-build/
-coverage
-node_modules
-bin/
-pacts/*
-*.so
