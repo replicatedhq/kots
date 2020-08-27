@@ -383,9 +383,6 @@ func ensureKotsadm(deployOptions types.DeployOptions, clientset *kubernetes.Clie
 	if err := waitForKotsadm(&deployOptions, clientset); err != nil {
 		return errors.Wrap(err, "failed to wait for web")
 	}
-	if err := waitForAPI(&deployOptions, clientset); err != nil {
-		return errors.Wrap(err, "failed to wait for API")
-	}
 	log.FinishSpinner()
 
 	return nil
