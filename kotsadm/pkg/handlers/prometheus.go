@@ -13,15 +13,6 @@ type SetPrometheusAddressRequest struct {
 }
 
 func SetPrometheusAddress(w http.ResponseWriter, r *http.Request) {
-	if handleOptionsRequest(w, r) {
-		return
-	}
-
-	if err := requireValidSession(w, r); err != nil {
-		logger.Error(err)
-		return
-	}
-
 	setPrometheusAddressRequest := SetPrometheusAddressRequest{}
 	if err := json.NewDecoder(r.Body).Decode(&setPrometheusAddressRequest); err != nil {
 		logger.Error(err)

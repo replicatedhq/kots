@@ -20,10 +20,6 @@ type LoginResponse struct {
 }
 
 func Login(w http.ResponseWriter, r *http.Request) {
-	if handleOptionsRequest(w, r) {
-		return
-	}
-
 	loginRequest := LoginRequest{}
 	if err := json.NewDecoder(r.Body).Decode(&loginRequest); err != nil {
 		logger.Error(err)

@@ -21,10 +21,6 @@ type authorization struct {
 	Password string
 }
 
-var (
-	ErrEmptySession = errors.New("empty session")
-)
-
 func parseClusterAuthorization(authHeader string) (authorization, error) {
 	if !strings.HasPrefix(authHeader, "Basic ") { // does this need "Kots " too?
 		return authorization{}, errors.New("only basic auth is supported")
@@ -49,14 +45,20 @@ func parseClusterAuthorization(authHeader string) (authorization, error) {
 }
 
 func requireValidSession(w http.ResponseWriter, r *http.Request) error {
-	if r.Header.Get("Authorization") == "" {
+	if r.Method == "OPTIONS" {
+		return nil
+	}
+
+	auth := r.Header.Get("authorization")
+
+	if auth == "" {
 		err := errors.New("authorization header empty")
 		response := ErrorResponse{Error: err.Error()}
 		JSON(w, http.StatusUnauthorized, response)
 		return err
 	}
 
-	sess, err := session.Parse(r.Header.Get("Authorization"))
+	sess, err := session.Parse(auth)
 	if err != nil {
 		logger.Error(err)
 		response := ErrorResponse{Error: "failed to parse authorization header"}
@@ -68,7 +70,7 @@ func requireValidSession(w http.ResponseWriter, r *http.Request) error {
 	if sess == nil || sess.ID == "" {
 		response := ErrorResponse{Error: "no session in auth header"}
 		JSON(w, http.StatusUnauthorized, response)
-		return ErrEmptySession
+		return errors.Wrap(err, "empty session")
 	}
 
 	return nil

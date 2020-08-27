@@ -89,15 +89,6 @@ type PutSupportBundleRedactions struct {
 }
 
 func GetSupportBundle(w http.ResponseWriter, r *http.Request) {
-	if handleOptionsRequest(w, r) {
-		return
-	}
-
-	if err := requireValidSession(w, r); err != nil {
-		logger.Error(err)
-		return
-	}
-
 	bundleSlug := mux.Vars(r)["bundleSlug"]
 
 	bundle, err := store.GetStore().GetSupportBundleFromSlug(bundleSlug)
@@ -130,15 +121,6 @@ func GetSupportBundle(w http.ResponseWriter, r *http.Request) {
 }
 
 func GetSupportBundleFiles(w http.ResponseWriter, r *http.Request) {
-	if handleOptionsRequest(w, r) {
-		return
-	}
-
-	if err := requireValidSession(w, r); err != nil {
-		logger.Error(err)
-		return
-	}
-
 	getSupportBundleFilesResponse := GetSupportBundleFilesResponse{
 		Success: false,
 	}
@@ -161,15 +143,6 @@ func GetSupportBundleFiles(w http.ResponseWriter, r *http.Request) {
 }
 
 func ListSupportBundles(w http.ResponseWriter, r *http.Request) {
-	if handleOptionsRequest(w, r) {
-		return
-	}
-
-	if err := requireValidSession(w, r); err != nil {
-		logger.Error(err)
-		return
-	}
-
 	appSlug := mux.Vars(r)["appSlug"]
 
 	a, err := store.GetStore().GetAppFromSlug(appSlug)
@@ -217,15 +190,6 @@ func ListSupportBundles(w http.ResponseWriter, r *http.Request) {
 }
 
 func GetSupportBundleCommand(w http.ResponseWriter, r *http.Request) {
-	if handleOptionsRequest(w, r) {
-		return
-	}
-
-	if err := requireValidSession(w, r); err != nil {
-		logger.Error(err)
-		return
-	}
-
 	appSlug := mux.Vars(r)["appSlug"]
 
 	command := []string{
@@ -241,15 +205,6 @@ func GetSupportBundleCommand(w http.ResponseWriter, r *http.Request) {
 }
 
 func DownloadSupportBundle(w http.ResponseWriter, r *http.Request) {
-	if handleOptionsRequest(w, r) {
-		return
-	}
-
-	if err := requireValidSession(w, r); err != nil {
-		logger.Error(err)
-		return
-	}
-
 	bundleID := mux.Vars(r)["bundleId"]
 
 	bundleArchive, err := store.GetStore().GetSupportBundleArchive(bundleID)
@@ -274,15 +229,6 @@ func DownloadSupportBundle(w http.ResponseWriter, r *http.Request) {
 }
 
 func CollectSupportBundle(w http.ResponseWriter, r *http.Request) {
-	if handleOptionsRequest(w, r) {
-		return
-	}
-
-	if err := requireValidSession(w, r); err != nil {
-		logger.Error(err)
-		return
-	}
-
 	a, err := store.GetStore().GetApp(mux.Vars(r)["appId"])
 	if err != nil {
 		logger.Error(err)
@@ -302,10 +248,6 @@ func CollectSupportBundle(w http.ResponseWriter, r *http.Request) {
 // UploadSupportBundle route is UNAUTHENTICATED
 // This request comes from the `kubectl support-bundle` command.
 func UploadSupportBundle(w http.ResponseWriter, r *http.Request) {
-	if handleOptionsRequest(w, r) {
-		return
-	}
-
 	bundleContents, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		logger.Error(err)
@@ -411,10 +353,6 @@ func UploadSupportBundle(w http.ResponseWriter, r *http.Request) {
 // GetDefaultTroubleshoot route is UNAUTHENTICATED
 // This request comes from the `kubectl support-bundle` command.
 func GetDefaultTroubleshoot(w http.ResponseWriter, r *http.Request) {
-	if handleOptionsRequest(w, r) {
-		return
-	}
-
 	defaultTroubleshootSpec := addDefaultTroubleshoot(nil, "")
 	defaultBytes, err := yaml.Marshal(defaultTroubleshootSpec)
 	if err != nil {
@@ -440,10 +378,6 @@ func GetDefaultTroubleshoot(w http.ResponseWriter, r *http.Request) {
 // GetTroubleshoot route is UNAUTHENTICATED
 // This request comes from the `kubectl support-bundle` command.
 func GetTroubleshoot(w http.ResponseWriter, r *http.Request) {
-	if handleOptionsRequest(w, r) {
-		return
-	}
-
 	appSlug := mux.Vars(r)["appSlug"]
 	inCluster := r.URL.Query().Get("incluster")
 
@@ -530,15 +464,6 @@ func GetTroubleshoot(w http.ResponseWriter, r *http.Request) {
 }
 
 func GetSupportBundleRedactions(w http.ResponseWriter, r *http.Request) {
-	if handleOptionsRequest(w, r) {
-		return
-	}
-
-	if err := requireValidSession(w, r); err != nil {
-		logger.Error(err)
-		return
-	}
-
 	getSupportBundleRedactionsResponse := GetSupportBundleRedactionsResponse{
 		Success: false,
 	}
@@ -561,10 +486,6 @@ func GetSupportBundleRedactions(w http.ResponseWriter, r *http.Request) {
 // SetSupportBundleRedactions route is UNAUTHENTICATED
 // This request comes from the `kubectl support-bundle` command.
 func SetSupportBundleRedactions(w http.ResponseWriter, r *http.Request) {
-	if handleOptionsRequest(w, r) {
-		return
-	}
-
 	redactionsBody, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		logger.Error(err)

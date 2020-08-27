@@ -23,6 +23,7 @@ type StorageResponse struct {
 	Available bool `json:"available"`
 }
 
+// Healthz route is UNAUTHENTICATED
 func Healthz(w http.ResponseWriter, r *http.Request) {
 	// TODO
 	isDatabaseConnected := true

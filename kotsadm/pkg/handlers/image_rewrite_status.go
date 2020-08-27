@@ -13,15 +13,6 @@ type GetImageRewriteStatusResponse struct {
 }
 
 func GetImageRewriteStatus(w http.ResponseWriter, r *http.Request) {
-	if handleOptionsRequest(w, r) {
-		return
-	}
-
-	if err := requireValidSession(w, r); err != nil {
-		logger.Error(err)
-		return
-	}
-
 	status, message, err := store.GetStore().GetTaskStatus("image-rewrite")
 	if err != nil {
 		logger.Error(err)

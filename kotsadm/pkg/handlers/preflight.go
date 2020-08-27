@@ -26,15 +26,6 @@ type GetPreflightCommandResponse struct {
 }
 
 func GetPreflightResult(w http.ResponseWriter, r *http.Request) {
-	if handleOptionsRequest(w, r) {
-		return
-	}
-
-	if err := requireValidSession(w, r); err != nil {
-		logger.Error(err)
-		return
-	}
-
 	appSlug := mux.Vars(r)["appSlug"]
 	sequence, err := strconv.ParseInt(mux.Vars(r)["sequence"], 10, 64)
 	if err != nil {
@@ -64,15 +55,6 @@ func GetPreflightResult(w http.ResponseWriter, r *http.Request) {
 }
 
 func GetLatestPreflightResult(w http.ResponseWriter, r *http.Request) {
-	if handleOptionsRequest(w, r) {
-		return
-	}
-
-	if err := requireValidSession(w, r); err != nil {
-		logger.Error(err)
-		return
-	}
-
 	result, err := store.GetStore().GetLatestPreflightResults()
 	if err != nil {
 		logger.Error(err)
@@ -87,15 +69,6 @@ func GetLatestPreflightResult(w http.ResponseWriter, r *http.Request) {
 }
 
 func IgnorePreflightRBACErrors(w http.ResponseWriter, r *http.Request) {
-	if handleOptionsRequest(w, r) {
-		return
-	}
-
-	if err := requireValidSession(w, r); err != nil {
-		logger.Error(err)
-		return
-	}
-
 	appSlug := mux.Vars(r)["appSlug"]
 	sequence, err := strconv.Atoi(mux.Vars(r)["sequence"])
 	if err != nil {
@@ -136,15 +109,6 @@ func IgnorePreflightRBACErrors(w http.ResponseWriter, r *http.Request) {
 }
 
 func StartPreflightChecks(w http.ResponseWriter, r *http.Request) {
-	if handleOptionsRequest(w, r) {
-		return
-	}
-
-	if err := requireValidSession(w, r); err != nil {
-		logger.Error(err)
-		return
-	}
-
 	appSlug := mux.Vars(r)["appSlug"]
 	sequence, err := strconv.Atoi(mux.Vars(r)["sequence"])
 	if err != nil {
@@ -185,15 +149,6 @@ func StartPreflightChecks(w http.ResponseWriter, r *http.Request) {
 }
 
 func GetPreflightCommand(w http.ResponseWriter, r *http.Request) {
-	if handleOptionsRequest(w, r) {
-		return
-	}
-
-	if err := requireValidSession(w, r); err != nil {
-		logger.Error(err)
-		return
-	}
-
 	appSlug := mux.Vars(r)["appSlug"]
 	sequence, err := strconv.ParseInt(mux.Vars(r)["sequence"], 10, 64)
 	if err != nil {

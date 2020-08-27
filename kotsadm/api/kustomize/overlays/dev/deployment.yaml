@@ -48,6 +48,7 @@ spec:
           volumeMounts:
             - name: kubelet-client-cert
               mountPath: /etc/kubernetes/pki/kubelet
+          readinessProbe: ~
       volumes:
         - name: kubelet-client-cert
           secret:

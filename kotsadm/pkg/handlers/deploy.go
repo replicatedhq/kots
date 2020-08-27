@@ -19,15 +19,6 @@ import (
 )
 
 func DeployAppVersion(w http.ResponseWriter, r *http.Request) {
-	if handleOptionsRequest(w, r) {
-		return
-	}
-
-	if err := requireValidSession(w, r); err != nil {
-		logger.Error(err)
-		return
-	}
-
 	appSlug := mux.Vars(r)["appSlug"]
 	sequence, err := strconv.Atoi(mux.Vars(r)["sequence"])
 	if err != nil {
@@ -54,10 +45,6 @@ func DeployAppVersion(w http.ResponseWriter, r *http.Request) {
 
 // NOTE: this uses special cluster authorization
 func UpdateDeployResult(w http.ResponseWriter, r *http.Request) {
-	if handleOptionsRequest(w, r) {
-		return
-	}
-
 	auth, err := parseClusterAuthorization(r.Header.Get("Authorization"))
 	if err != nil {
 		logger.Error(err)
@@ -113,10 +100,6 @@ func UpdateDeployResult(w http.ResponseWriter, r *http.Request) {
 
 // NOTE: this uses special cluster authorization
 func UpdateUndeployResult(w http.ResponseWriter, r *http.Request) {
-	if handleOptionsRequest(w, r) {
-		return
-	}
-
 	auth, err := parseClusterAuthorization(r.Header.Get("Authorization"))
 	if err != nil {
 		logger.Error(err)

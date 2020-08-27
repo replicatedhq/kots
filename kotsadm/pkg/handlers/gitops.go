@@ -35,15 +35,6 @@ type CreateGitOpsInput struct {
 }
 
 func UpdateAppGitOps(w http.ResponseWriter, r *http.Request) {
-	if handleOptionsRequest(w, r) {
-		return
-	}
-
-	if err := requireValidSession(w, r); err != nil {
-		logger.Error(err)
-		return
-	}
-
 	updateAppGitOpsRequest := UpdateAppGitOpsRequest{}
 	if err := json.NewDecoder(r.Body).Decode(&updateAppGitOpsRequest); err != nil {
 		logger.Error(err)
@@ -72,15 +63,6 @@ func UpdateAppGitOps(w http.ResponseWriter, r *http.Request) {
 }
 
 func DisableAppGitOps(w http.ResponseWriter, r *http.Request) {
-	if handleOptionsRequest(w, r) {
-		return
-	}
-
-	if err := requireValidSession(w, r); err != nil {
-		logger.Error(err)
-		return
-	}
-
 	appID := mux.Vars(r)["appId"]
 	clusterID := mux.Vars(r)["clusterId"]
 
@@ -111,15 +93,6 @@ func DisableAppGitOps(w http.ResponseWriter, r *http.Request) {
 }
 
 func InitGitOpsConnection(w http.ResponseWriter, r *http.Request) {
-	if handleOptionsRequest(w, r) {
-		return
-	}
-
-	if err := requireValidSession(w, r); err != nil {
-		logger.Error(err)
-		return
-	}
-
 	currentStatus, _, err := store.GetStore().GetTaskStatus("gitops-init")
 	if err != nil {
 		logger.Error(err)
@@ -269,15 +242,6 @@ func InitGitOpsConnection(w http.ResponseWriter, r *http.Request) {
 }
 
 func ResetGitOps(w http.ResponseWriter, r *http.Request) {
-	if handleOptionsRequest(w, r) {
-		return
-	}
-
-	if err := requireValidSession(w, r); err != nil {
-		logger.Error(err)
-		return
-	}
-
 	if err := gitops.ResetGitOps(); err != nil {
 		logger.Error(err)
 		w.WriteHeader(http.StatusInternalServerError)
@@ -288,15 +252,6 @@ func ResetGitOps(w http.ResponseWriter, r *http.Request) {
 }
 
 func GetGitOpsRepo(w http.ResponseWriter, r *http.Request) {
-	if handleOptionsRequest(w, r) {
-		return
-	}
-
-	if err := requireValidSession(w, r); err != nil {
-		logger.Error(err)
-		return
-	}
-
 	gitOpsConfig, err := gitops.GetGitOps()
 	if err != nil {
 		logger.Error(err)
@@ -308,15 +263,6 @@ func GetGitOpsRepo(w http.ResponseWriter, r *http.Request) {
 }
 
 func CreateGitOps(w http.ResponseWriter, r *http.Request) {
-	if handleOptionsRequest(w, r) {
-		return
-	}
-
-	if err := requireValidSession(w, r); err != nil {
-		logger.Error(err)
-		return
-	}
-
 	createGitOpsRequest := CreateGitOpsRequest{}
 	if err := json.NewDecoder(r.Body).Decode(&createGitOpsRequest); err != nil {
 		logger.Error(err)

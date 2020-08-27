@@ -74,15 +74,6 @@ type ResponseCluster struct {
 }
 
 func ListApps(w http.ResponseWriter, r *http.Request) {
-	if handleOptionsRequest(w, r) {
-		return
-	}
-
-	if err := requireValidSession(w, r); err != nil {
-		logger.Error(err)
-		return
-	}
-
 	apps, err := store.GetStore().ListInstalledApps()
 	if err != nil {
 		logger.Error(err)
@@ -109,15 +100,6 @@ func ListApps(w http.ResponseWriter, r *http.Request) {
 }
 
 func GetApp(w http.ResponseWriter, r *http.Request) {
-	if handleOptionsRequest(w, r) {
-		return
-	}
-
-	if err := requireValidSession(w, r); err != nil {
-		logger.Error(err)
-		return
-	}
-
 	appSlug := mux.Vars(r)["appSlug"]
 	a, err := store.GetStore().GetAppFromSlug(appSlug)
 	if err != nil {
@@ -273,15 +255,6 @@ type GetAppVersionsResponse struct {
 }
 
 func GetAppVersionHistory(w http.ResponseWriter, r *http.Request) {
-	if handleOptionsRequest(w, r) {
-		return
-	}
-
-	if err := requireValidSession(w, r); err != nil {
-		logger.Error(err)
-		return
-	}
-
 	appSlug := mux.Vars(r)["appSlug"]
 
 	foundApp, err := store.GetStore().GetAppFromSlug(appSlug)

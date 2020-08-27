@@ -13,15 +13,6 @@ import (
 )
 
 func DrainNode(w http.ResponseWriter, r *http.Request) {
-	if handleOptionsRequest(w, r) {
-		return
-	}
-
-	if err := requireValidSession(w, r); err != nil {
-		logger.Error(err)
-		return
-	}
-
 	client, err := k8s.Clientset()
 	if err != nil {
 		logger.Error(err)

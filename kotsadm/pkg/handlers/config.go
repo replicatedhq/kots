@@ -61,15 +61,6 @@ type CurrentAppConfigResponse struct {
 }
 
 func UpdateAppConfig(w http.ResponseWriter, r *http.Request) {
-	if handleOptionsRequest(w, r) {
-		return
-	}
-
-	if err := requireValidSession(w, r); err != nil {
-		logger.Error(err)
-		return
-	}
-
 	updateAppConfigResponse := UpdateAppConfigResponse{
 		Success: false,
 	}
@@ -146,15 +137,6 @@ func UpdateAppConfig(w http.ResponseWriter, r *http.Request) {
 }
 
 func LiveAppConfig(w http.ResponseWriter, r *http.Request) {
-	if handleOptionsRequest(w, r) {
-		return
-	}
-
-	if err := requireValidSession(w, r); err != nil {
-		logger.Error(err)
-		return
-	}
-
 	liveAppConfigResponse := LiveAppConfigResponse{
 		Success: false,
 	}
@@ -229,15 +211,6 @@ func LiveAppConfig(w http.ResponseWriter, r *http.Request) {
 }
 
 func CurrentAppConfig(w http.ResponseWriter, r *http.Request) {
-	if handleOptionsRequest(w, r) {
-		return
-	}
-
-	if err := requireValidSession(w, r); err != nil {
-		logger.Error(err)
-		return
-	}
-
 	currentAppConfigResponse := CurrentAppConfigResponse{
 		Success: false,
 	}

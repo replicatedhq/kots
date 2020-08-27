@@ -11,15 +11,6 @@ import (
 )
 
 func GetDownstreamOutput(w http.ResponseWriter, r *http.Request) {
-	if handleOptionsRequest(w, r) {
-		return
-	}
-
-	if err := requireValidSession(w, r); err != nil {
-		logger.Error(err)
-		return
-	}
-
 	appSlug := mux.Vars(r)["appSlug"]
 	clusterID := mux.Vars(r)["clusterId"]
 	sequence, err := strconv.Atoi(mux.Vars(r)["sequence"])

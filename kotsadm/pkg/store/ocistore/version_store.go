@@ -201,9 +201,10 @@ func (s OCIStore) CreateAppVersionArchive(appID string, sequence int64, archiveP
 // GetAppVersionArchive will fetch the archive and return a string that contains a
 // directory name where it's extracted into
 func (s OCIStore) GetAppVersionArchive(appID string, sequence int64) (string, error) {
-	logger.Debug("getting app version archive",
-		zap.String("appID", appID),
-		zap.Int64("sequence", sequence))
+	// too noisy
+	// logger.Debug("getting app version archive",
+	// 	zap.String("appID", appID),
+	// 	zap.Int64("sequence", sequence))
 
 	tmpDir, err := ioutil.TempDir("", "kotsadm")
 	if err != nil {

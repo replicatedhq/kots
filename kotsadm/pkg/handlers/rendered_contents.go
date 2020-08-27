@@ -25,15 +25,6 @@ type GetAppRenderedContentsErrorResponse struct {
 }
 
 func GetAppRenderedContents(w http.ResponseWriter, r *http.Request) {
-	if handleOptionsRequest(w, r) {
-		return
-	}
-
-	if err := requireValidSession(w, r); err != nil {
-		logger.Error(err)
-		return
-	}
-
 	appSlug := mux.Vars(r)["appSlug"]
 	sequence, err := strconv.Atoi(mux.Vars(r)["sequence"])
 	if err != nil {

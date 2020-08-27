@@ -20,15 +20,6 @@ type CreateBackupResponse struct {
 }
 
 func CreateBackup(w http.ResponseWriter, r *http.Request) {
-	if handleOptionsRequest(w, r) {
-		return
-	}
-
-	if err := requireValidSession(w, r); err != nil {
-		logger.Error(err)
-		return
-	}
-
 	createBackupResponse := CreateBackupResponse{
 		Success: false,
 	}
@@ -60,15 +51,6 @@ type ListBackupsResponse struct {
 }
 
 func ListBackups(w http.ResponseWriter, r *http.Request) {
-	if handleOptionsRequest(w, r) {
-		return
-	}
-
-	if err := requireValidSession(w, r); err != nil {
-		logger.Error(err)
-		return
-	}
-
 	listBackupsResponse := ListBackupsResponse{}
 
 	foundApp, err := store.GetStore().GetAppFromSlug(mux.Vars(r)["appSlug"])
@@ -110,15 +92,6 @@ type ListKotsadmBackupsResponse struct {
 }
 
 func ListKotsadmBackups(w http.ResponseWriter, r *http.Request) {
-	if handleOptionsRequest(w, r) {
-		return
-	}
-
-	if err := requireValidSession(w, r); err != nil {
-		logger.Error(err)
-		return
-	}
-
 	listBackupsResponse := ListKotsadmBackupsResponse{}
 
 	backups, err := snapshot.ListKotsadmBackups()
@@ -140,15 +113,6 @@ type GetKotsadmBackupResponse struct {
 }
 
 func GetKotsadmBackup(w http.ResponseWriter, r *http.Request) {
-	if handleOptionsRequest(w, r) {
-		return
-	}
-
-	if err := requireValidSession(w, r); err != nil {
-		logger.Error(err)
-		return
-	}
-
 	getBackupResponse := GetKotsadmBackupResponse{}
 
 	backup, err := snapshot.GetKotsadmBackupDetail(context.TODO(), mux.Vars(r)["snapshotName"])
@@ -171,15 +135,6 @@ type DeleteKotsadmBackupResponse struct {
 }
 
 func DeleteKotsadmBackup(w http.ResponseWriter, r *http.Request) {
-	if handleOptionsRequest(w, r) {
-		return
-	}
-
-	if err := requireValidSession(w, r); err != nil {
-		logger.Error(err)
-		return
-	}
-
 	deleteBackupResponse := DeleteKotsadmBackupResponse{}
 
 	if err := snapshot.DeleteBackup(mux.Vars(r)["snapshotName"]); err != nil {

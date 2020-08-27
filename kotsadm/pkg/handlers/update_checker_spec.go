@@ -21,15 +21,6 @@ type UpdateCheckerSpecResponse struct {
 }
 
 func UpdateCheckerSpec(w http.ResponseWriter, r *http.Request) {
-	if handleOptionsRequest(w, r) {
-		return
-	}
-
-	if err := requireValidSession(w, r); err != nil {
-		logger.Error(err)
-		return
-	}
-
 	updateCheckerSpecResponse := &UpdateCheckerSpecResponse{}
 
 	updateCheckerSpecRequest := UpdateCheckerSpecRequest{}

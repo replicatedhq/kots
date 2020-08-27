@@ -85,15 +85,6 @@ type GetOnlineInstallStatusErrorResponse struct {
 }
 
 func SyncLicense(w http.ResponseWriter, r *http.Request) {
-	if handleOptionsRequest(w, r) {
-		return
-	}
-
-	if err := requireValidSession(w, r); err != nil {
-		logger.Error(err)
-		return
-	}
-
 	syncLicenseRequest := SyncLicenseRequest{}
 	if err := json.NewDecoder(r.Body).Decode(&syncLicenseRequest); err != nil {
 		logger.Error(err)
@@ -135,15 +126,6 @@ func SyncLicense(w http.ResponseWriter, r *http.Request) {
 }
 
 func GetLicense(w http.ResponseWriter, r *http.Request) {
-	if handleOptionsRequest(w, r) {
-		return
-	}
-
-	if err := requireValidSession(w, r); err != nil {
-		logger.Error(err)
-		return
-	}
-
 	appSlug := mux.Vars(r)["appSlug"]
 	foundApp, err := store.GetStore().GetAppFromSlug(appSlug)
 	if err != nil {
@@ -209,15 +191,6 @@ func getLicenseEntitlements(license *kotsv1beta1.License) ([]EntitlementResponse
 }
 
 func UploadNewLicense(w http.ResponseWriter, r *http.Request) {
-	if handleOptionsRequest(w, r) {
-		return
-	}
-
-	if err := requireValidSession(w, r); err != nil {
-		logger.Error(err)
-		return
-	}
-
 	uploadLicenseRequest := UploadLicenseRequest{}
 	if err := json.NewDecoder(r.Body).Decode(&uploadLicenseRequest); err != nil {
 		logger.Error(err)
@@ -333,15 +306,6 @@ func UploadNewLicense(w http.ResponseWriter, r *http.Request) {
 }
 
 func ResumeInstallOnline(w http.ResponseWriter, r *http.Request) {
-	if handleOptionsRequest(w, r) {
-		return
-	}
-
-	if err := requireValidSession(w, r); err != nil {
-		logger.Error(err)
-		return
-	}
-
 	resumeInstallOnlineResponse := ResumeInstallOnlineResponse{
 		Success: false,
 	}
@@ -406,15 +370,6 @@ func ResumeInstallOnline(w http.ResponseWriter, r *http.Request) {
 }
 
 func GetOnlineInstallStatus(w http.ResponseWriter, r *http.Request) {
-	if handleOptionsRequest(w, r) {
-		return
-	}
-
-	if err := requireValidSession(w, r); err != nil {
-		logger.Error(err)
-		return
-	}
-
 	status, err := store.GetStore().GetPendingInstallationStatus()
 	if err != nil {
 		logger.Error(err)

@@ -9,18 +9,8 @@ import (
 )
 
 func Logout(w http.ResponseWriter, r *http.Request) {
-	if handleOptionsRequest(w, r) {
-		return
-	}
-
 	sess, err := session.Parse(r.Header.Get("Authorization"))
 	if err != nil {
-		// If there is no session, this is not an error
-		if err == ErrEmptySession {
-			JSON(w, 204, "")
-			return
-		}
-
 		logger.Error(err)
 		w.WriteHeader(401)
 		return
@@ -38,5 +28,5 @@ func Logout(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	JSON(w, 204, "")
+	w.WriteHeader(204)
 }
