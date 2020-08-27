@@ -211,6 +211,17 @@ func kotsadmDeployment(deployOptions types.DeployOptions) *appsv1.Deployment {
 			},
 		},
 		{
+			Name: "AUTO_CREATE_CLUSTER_TOKEN",
+			ValueFrom: &corev1.EnvVarSource{
+				SecretKeyRef: &corev1.SecretKeySelector{
+					LocalObjectReference: corev1.LocalObjectReference{
+						Name: types.ClusterTokenSecret,
+					},
+					Key: types.ClusterTokenSecret,
+				},
+			},
+		},
+		{
 			Name: "SESSION_KEY",
 			ValueFrom: &corev1.EnvVarSource{
 				SecretKeyRef: &corev1.SecretKeySelector{
