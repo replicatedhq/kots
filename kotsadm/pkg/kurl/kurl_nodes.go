@@ -128,13 +128,7 @@ func findNodeConditions(conditions []v1.NodeCondition) types.NodeConditions {
 
 // get kubelet PKI info from /etc/kubernetes/pki/kubelet, use it to hit metrics server at `http://${nodeIP}:10255/stats/summary`
 func getNodeMetrics(nodeIP string) (*v1alpha1.Summary, error) {
-	client := http.Client{
-		Transport: &http.Transport{
-			TLSClientConfig: &tls.Config{
-				InsecureSkipVerify: true,
-			},
-		},
-	}
+	r := &http.Response{}
 
 	// only use mutual TLS if client cert exists
 	_, err := ioutil.ReadFile("/etc/kubernetes/pki/kubelet/client.crt")
@@ -144,15 +138,20 @@ func getNodeMetrics(nodeIP string) (*v1alpha1.Summary, error) {
 			return nil, errors.Wrap(err, "get client keypair")
 		}
 
-		client.Transport = &http.Transport{
-			TLSClientConfig: &tls.Config{
-				Certificates:       []tls.Certificate{cert},
-				InsecureSkipVerify: true,
+		client := http.Client{
+			Transport: &http.Transport{
+				TLSClientConfig: &tls.Config{
+					Certificates:       []tls.Certificate{cert},
+					InsecureSkipVerify: true,
+				},
 			},
 		}
+		r, err = client.Get(fmt.Sprintf("https://%s:10250/stats/summary", nodeIP))
+	} else {
+		client := http.Client{}
+		r, err = client.Get(fmt.Sprintf("http://%s:10255/stats/summary", nodeIP))
 	}
 
-	r, err := client.Get(fmt.Sprintf("https://%s:10250/stats/summary", nodeIP))
 	if err != nil {
 		return nil, errors.Wrapf(err, "get node %s stats", nodeIP)
 	}
