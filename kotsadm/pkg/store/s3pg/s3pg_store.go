@@ -21,6 +21,10 @@ import (
 	"k8s.io/client-go/kubernetes/scheme"
 )
 
+var (
+	ErrNotFound = errors.New("not found")
+)
+
 type S3PGStore struct {
 }
 
@@ -116,8 +120,11 @@ func (s S3PGStore) WaitForReady(ctx context.Context) error {
 }
 
 func (s S3PGStore) IsNotFound(err error) bool {
-	if err == nil {
-		return false
+	if errors.Cause(err) == sql.ErrNoRows {
+		return true
 	}
-	return errors.Cause(err) == sql.ErrNoRows
+	if errors.Cause(err) == ErrNotFound {
+		return true
+	}
+	return false
 }
