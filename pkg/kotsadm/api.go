@@ -3,12 +3,10 @@ package kotsadm
 import (
 	"bytes"
 	"context"
-	"time"
 
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/kotsadm/types"
-	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -46,31 +44,6 @@ func getApiYAML(deployOptions types.DeployOptions) (map[string][]byte, error) {
 	docs["api-service.yaml"] = service.Bytes()
 
 	return docs, nil
-}
-
-func waitForAPI(deployOptions *types.DeployOptions, clientset *kubernetes.Clientset) error {
-	start := time.Now()
-
-	for {
-		pods, err := clientset.CoreV1().Pods(deployOptions.Namespace).List(context.TODO(), metav1.ListOptions{LabelSelector: "app=kotsadm-api"})
-		if err != nil {
-			return errors.Wrap(err, "failed to list pods")
-		}
-
-		for _, pod := range pods.Items {
-			if pod.Status.Phase == corev1.PodRunning {
-				if pod.Status.ContainerStatuses[0].Ready == true {
-					return nil
-				}
-			}
-		}
-
-		time.Sleep(time.Second)
-
-		if time.Now().Sub(start) > deployOptions.Timeout {
-			return &types.ErrorTimeout{Message: "timeout waiting for api pod"}
-		}
-	}
 }
 
 func ensureAPI(deployOptions *types.DeployOptions, clientset *kubernetes.Clientset) error {
