@@ -18,7 +18,6 @@ import (
 	"github.com/replicatedhq/kots/kotsadm/pkg/license"
 	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
 	"github.com/replicatedhq/kots/kotsadm/pkg/redact"
-	"github.com/replicatedhq/kots/kotsadm/pkg/session"
 	"github.com/replicatedhq/kots/kotsadm/pkg/snapshot"
 	"github.com/replicatedhq/kots/kotsadm/pkg/store"
 	"github.com/replicatedhq/kots/kotsadm/pkg/supportbundle"
@@ -94,16 +93,8 @@ func GetSupportBundle(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	sess, err := session.Parse(r.Header.Get("Authorization"))
-	if err != nil {
+	if err := requireValidSession(w, r); err != nil {
 		logger.Error(err)
-		w.WriteHeader(401)
-		return
-	}
-
-	// we don't currently have roles, all valid tokens are valid sessions
-	if sess == nil || sess.ID == "" {
-		w.WriteHeader(401)
 		return
 	}
 
@@ -143,23 +134,13 @@ func GetSupportBundleFiles(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if err := requireValidSession(w, r); err != nil {
+		logger.Error(err)
+		return
+	}
+
 	getSupportBundleFilesResponse := GetSupportBundleFilesResponse{
 		Success: false,
-	}
-
-	sess, err := session.Parse(r.Header.Get("Authorization"))
-	if err != nil {
-		logger.Error(err)
-		getSupportBundleFilesResponse.Error = "failed to parse authorization header"
-		JSON(w, 401, getSupportBundleFilesResponse)
-		return
-	}
-
-	// we don't currently have roles, all valid tokens are valid sessions
-	if sess == nil || sess.ID == "" {
-		getSupportBundleFilesResponse.Error = "no session in auth header"
-		JSON(w, 401, getSupportBundleFilesResponse)
-		return
 	}
 
 	bundleID := mux.Vars(r)["bundleId"]
@@ -184,16 +165,8 @@ func ListSupportBundles(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	sess, err := session.Parse(r.Header.Get("Authorization"))
-	if err != nil {
+	if err := requireValidSession(w, r); err != nil {
 		logger.Error(err)
-		w.WriteHeader(401)
-		return
-	}
-
-	// we don't currently have roles, all valid tokens are valid sessions
-	if sess == nil || sess.ID == "" {
-		w.WriteHeader(401)
 		return
 	}
 
@@ -248,16 +221,8 @@ func GetSupportBundleCommand(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	sess, err := session.Parse(r.Header.Get("Authorization"))
-	if err != nil {
+	if err := requireValidSession(w, r); err != nil {
 		logger.Error(err)
-		w.WriteHeader(401)
-		return
-	}
-
-	// we don't currently have roles, all valid tokens are valid sessions
-	if sess == nil || sess.ID == "" {
-		w.WriteHeader(401)
 		return
 	}
 
@@ -280,16 +245,8 @@ func DownloadSupportBundle(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	sess, err := session.Parse(r.Header.Get("Authorization"))
-	if err != nil {
+	if err := requireValidSession(w, r); err != nil {
 		logger.Error(err)
-		JSON(w, 401, nil)
-		return
-	}
-
-	// we don't currently have roles, all valid tokens are valid sessions
-	if sess == nil || sess.ID == "" {
-		JSON(w, 401, nil)
 		return
 	}
 
@@ -342,6 +299,8 @@ func CollectSupportBundle(w http.ResponseWriter, r *http.Request) {
 	JSON(w, 204, "")
 }
 
+// UploadSupportBundle route is UNAUTHENTICATED
+// This request comes from the `kubectl support-bundle` command.
 func UploadSupportBundle(w http.ResponseWriter, r *http.Request) {
 	if handleOptionsRequest(w, r) {
 		return
@@ -449,6 +408,8 @@ func UploadSupportBundle(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// GetDefaultTroubleshoot route is UNAUTHENTICATED
+// This request comes from the `kubectl support-bundle` command.
 func GetDefaultTroubleshoot(w http.ResponseWriter, r *http.Request) {
 	if handleOptionsRequest(w, r) {
 		return
@@ -476,6 +437,8 @@ func GetDefaultTroubleshoot(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(fullTroubleshoot))
 }
 
+// GetTroubleshoot route is UNAUTHENTICATED
+// This request comes from the `kubectl support-bundle` command.
 func GetTroubleshoot(w http.ResponseWriter, r *http.Request) {
 	if handleOptionsRequest(w, r) {
 		return
@@ -571,23 +534,13 @@ func GetSupportBundleRedactions(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if err := requireValidSession(w, r); err != nil {
+		logger.Error(err)
+		return
+	}
+
 	getSupportBundleRedactionsResponse := GetSupportBundleRedactionsResponse{
 		Success: false,
-	}
-
-	sess, err := session.Parse(r.Header.Get("Authorization"))
-	if err != nil {
-		logger.Error(err)
-		getSupportBundleRedactionsResponse.Error = "failed to parse authorization header"
-		JSON(w, 401, getSupportBundleRedactionsResponse)
-		return
-	}
-
-	// we don't currently have roles, all valid tokens are valid sessions
-	if sess == nil || sess.ID == "" {
-		getSupportBundleRedactionsResponse.Error = "no session in auth header"
-		JSON(w, 401, getSupportBundleRedactionsResponse)
-		return
 	}
 
 	bundleID := mux.Vars(r)["bundleId"]
@@ -605,6 +558,8 @@ func GetSupportBundleRedactions(w http.ResponseWriter, r *http.Request) {
 	JSON(w, 200, getSupportBundleRedactionsResponse)
 }
 
+// SetSupportBundleRedactions route is UNAUTHENTICATED
+// This request comes from the `kubectl support-bundle` command.
 func SetSupportBundleRedactions(w http.ResponseWriter, r *http.Request) {
 	if handleOptionsRequest(w, r) {
 		return

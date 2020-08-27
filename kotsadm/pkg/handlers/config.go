@@ -21,7 +21,6 @@ import (
 	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
 	"github.com/replicatedhq/kots/kotsadm/pkg/preflight"
 	"github.com/replicatedhq/kots/kotsadm/pkg/render"
-	"github.com/replicatedhq/kots/kotsadm/pkg/session"
 	"github.com/replicatedhq/kots/kotsadm/pkg/store"
 	"github.com/replicatedhq/kots/kotsadm/pkg/version"
 	versiontypes "github.com/replicatedhq/kots/kotsadm/pkg/version/types"
@@ -66,6 +65,11 @@ func UpdateAppConfig(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if err := requireValidSession(w, r); err != nil {
+		logger.Error(err)
+		return
+	}
+
 	updateAppConfigResponse := UpdateAppConfigResponse{
 		Success: false,
 	}
@@ -75,21 +79,6 @@ func UpdateAppConfig(w http.ResponseWriter, r *http.Request) {
 		logger.Error(err)
 		updateAppConfigResponse.Error = "failed to decode request body"
 		JSON(w, http.StatusBadRequest, updateAppConfigResponse)
-		return
-	}
-
-	sess, err := session.Parse(r.Header.Get("Authorization"))
-	if err != nil {
-		logger.Error(err)
-		updateAppConfigResponse.Error = "failed to parse authorization header"
-		JSON(w, http.StatusUnauthorized, updateAppConfigResponse)
-		return
-	}
-
-	// we don't currently have roles, all valid tokens are valid sessions
-	if sess == nil || sess.ID == "" {
-		updateAppConfigResponse.Error = "failed to parse authorization header"
-		JSON(w, http.StatusUnauthorized, updateAppConfigResponse)
 		return
 	}
 
@@ -161,6 +150,11 @@ func LiveAppConfig(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if err := requireValidSession(w, r); err != nil {
+		logger.Error(err)
+		return
+	}
+
 	liveAppConfigResponse := LiveAppConfigResponse{
 		Success: false,
 	}
@@ -170,21 +164,6 @@ func LiveAppConfig(w http.ResponseWriter, r *http.Request) {
 		logger.Error(err)
 		liveAppConfigResponse.Error = "failed to decode request body"
 		JSON(w, http.StatusBadRequest, liveAppConfigResponse)
-		return
-	}
-
-	sess, err := session.Parse(r.Header.Get("Authorization"))
-	if err != nil {
-		logger.Error(err)
-		liveAppConfigResponse.Error = "failed to parse authorization header"
-		JSON(w, http.StatusUnauthorized, liveAppConfigResponse)
-		return
-	}
-
-	// we don't currently have roles, all valid tokens are valid sessions
-	if sess == nil || sess.ID == "" {
-		liveAppConfigResponse.Error = "failed to parse authorization header"
-		JSON(w, http.StatusUnauthorized, liveAppConfigResponse)
 		return
 	}
 
@@ -254,23 +233,13 @@ func CurrentAppConfig(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if err := requireValidSession(w, r); err != nil {
+		logger.Error(err)
+		return
+	}
+
 	currentAppConfigResponse := CurrentAppConfigResponse{
 		Success: false,
-	}
-
-	sess, err := session.Parse(r.Header.Get("Authorization"))
-	if err != nil {
-		logger.Error(err)
-		currentAppConfigResponse.Error = "failed to parse authorization header"
-		JSON(w, http.StatusUnauthorized, currentAppConfigResponse)
-		return
-	}
-
-	// we don't currently have roles, all valid tokens are valid sessions
-	if sess == nil || sess.ID == "" {
-		currentAppConfigResponse.Error = "failed to parse authorization header"
-		JSON(w, http.StatusUnauthorized, currentAppConfigResponse)
-		return
 	}
 
 	foundApp, err := store.GetStore().GetAppFromSlug(mux.Vars(r)["appSlug"])

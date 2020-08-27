@@ -50,20 +50,24 @@ func parseClusterAuthorization(authHeader string) (authorization, error) {
 
 func requireValidSession(w http.ResponseWriter, r *http.Request) error {
 	if r.Header.Get("Authorization") == "" {
-		w.WriteHeader(http.StatusUnauthorized)
-		return errors.New("authorization header empty")
+		err := errors.New("authorization header empty")
+		response := ErrorResponse{Error: err.Error()}
+		JSON(w, http.StatusUnauthorized, response)
+		return err
 	}
 
 	sess, err := session.Parse(r.Header.Get("Authorization"))
 	if err != nil {
 		logger.Error(err)
-		w.WriteHeader(http.StatusInternalServerError)
+		response := ErrorResponse{Error: "failed to parse authorization header"}
+		JSON(w, http.StatusUnauthorized, response)
 		return errors.Wrap(err, "invalid session")
 	}
 
 	// we don't currently have roles, all valid tokens are valid sessions
 	if sess == nil || sess.ID == "" {
-		w.WriteHeader(http.StatusUnauthorized)
+		response := ErrorResponse{Error: "no session in auth header"}
+		JSON(w, http.StatusUnauthorized, response)
 		return ErrEmptySession
 	}
 

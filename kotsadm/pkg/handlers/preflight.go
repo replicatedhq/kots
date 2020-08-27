@@ -213,7 +213,8 @@ func GetPreflightCommand(w http.ResponseWriter, r *http.Request) {
 	JSON(w, 200, response)
 }
 
-// GetPreflightStatus request comes from the kubectl preflight command. There is no authentication.
+// GetPreflightStatus route is UNAUTHENTICATED
+// This request comes from the `kubectl preflight` command.
 func GetPreflightStatus(w http.ResponseWriter, r *http.Request) {
 	appSlug := mux.Vars(r)["appSlug"]
 	sequence, err := strconv.ParseInt(mux.Vars(r)["sequence"], 10, 64)
@@ -301,7 +302,8 @@ func GetPreflightStatus(w http.ResponseWriter, r *http.Request) {
 	YAML(w, 200, specJSON)
 }
 
-// PostPreflightStatus request comes from the kubectl preflight command. There is no authentication.
+// PostPreflightStatus route is UNAUTHENTICATED
+// This request comes from the `kubectl preflight` command.
 func PostPreflightStatus(w http.ResponseWriter, r *http.Request) {
 	appSlug := mux.Vars(r)["appSlug"]
 	sequence, err := strconv.ParseInt(mux.Vars(r)["sequence"], 10, 64)

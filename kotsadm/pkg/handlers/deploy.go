@@ -52,6 +52,7 @@ func DeployAppVersion(w http.ResponseWriter, r *http.Request) {
 	JSON(w, 204, "")
 }
 
+// NOTE: this uses special cluster authorization
 func UpdateDeployResult(w http.ResponseWriter, r *http.Request) {
 	if handleOptionsRequest(w, r) {
 		return
@@ -110,6 +111,7 @@ func UpdateDeployResult(w http.ResponseWriter, r *http.Request) {
 	return
 }
 
+// NOTE: this uses special cluster authorization
 func UpdateUndeployResult(w http.ResponseWriter, r *http.Request) {
 	if handleOptionsRequest(w, r) {
 		return

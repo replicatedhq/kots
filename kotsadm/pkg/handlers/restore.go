@@ -11,7 +11,6 @@ import (
 	apptypes "github.com/replicatedhq/kots/kotsadm/pkg/app/types"
 	"github.com/replicatedhq/kots/kotsadm/pkg/downstream"
 	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
-	"github.com/replicatedhq/kots/kotsadm/pkg/session"
 	"github.com/replicatedhq/kots/kotsadm/pkg/snapshot"
 	snapshottypes "github.com/replicatedhq/kots/kotsadm/pkg/snapshot/types"
 	"github.com/replicatedhq/kots/kotsadm/pkg/store"
@@ -42,23 +41,13 @@ func CreateRestore(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if err := requireValidSession(w, r); err != nil {
+		logger.Error(err)
+		return
+	}
+
 	createRestoreResponse := CreateRestoreResponse{
 		Success: false,
-	}
-
-	sess, err := session.Parse(r.Header.Get("Authorization"))
-	if err != nil {
-		logger.Error(err)
-		createRestoreResponse.Error = "failed to parse authorization header"
-		JSON(w, http.StatusUnauthorized, createRestoreResponse)
-		return
-	}
-
-	// we don't currently have roles, all valid tokens are valid sessions
-	if sess == nil || sess.ID == "" {
-		createRestoreResponse.Error = "failed to parse authorization header"
-		JSON(w, http.StatusUnauthorized, createRestoreResponse)
-		return
 	}
 
 	snapshotName := mux.Vars(r)["snapshotName"]
@@ -154,23 +143,13 @@ func GetRestoreStatus(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if err := requireValidSession(w, r); err != nil {
+		logger.Error(err)
+		return
+	}
+
 	response := GetRestoreStatusResponse{
 		Status: "",
-	}
-
-	sess, err := session.Parse(r.Header.Get("Authorization"))
-	if err != nil {
-		logger.Error(err)
-		response.Error = "failed to parse authorization header"
-		JSON(w, http.StatusUnauthorized, response)
-		return
-	}
-
-	// we don't currently have roles, all valid tokens are valid sessions
-	if sess == nil || sess.ID == "" {
-		response.Error = "failed to parse authorization header"
-		JSON(w, http.StatusUnauthorized, response)
-		return
 	}
 
 	foundApp, err := store.GetStore().GetAppFromSlug(mux.Vars(r)["appSlug"])

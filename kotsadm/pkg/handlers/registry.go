@@ -63,6 +63,11 @@ func UpdateAppRegistry(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if err := requireValidSession(w, r); err != nil {
+		logger.Error(err)
+		return
+	}
+
 	updateAppRegistryResponse := UpdateAppRegistryResponse{
 		Success: false,
 	}
@@ -72,13 +77,6 @@ func UpdateAppRegistry(w http.ResponseWriter, r *http.Request) {
 		logger.Error(err)
 		updateAppRegistryResponse.Error = err.Error()
 		JSON(w, 500, updateAppRegistryResponse)
-		return
-	}
-
-	if err := requireValidSession(w, r); err != nil {
-		logger.Error(err)
-		updateAppRegistryResponse.Error = err.Error()
-		JSON(w, 401, updateAppRegistryResponse)
 		return
 	}
 
@@ -170,15 +168,13 @@ func GetAppRegistry(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	getAppRegistryResponse := GetAppRegistryResponse{
-		Success: false,
-	}
-
 	if err := requireValidSession(w, r); err != nil {
 		logger.Error(err)
-		getAppRegistryResponse.Error = err.Error()
-		JSON(w, 401, getAppRegistryResponse)
 		return
+	}
+
+	getAppRegistryResponse := GetAppRegistryResponse{
+		Success: false,
 	}
 
 	foundApp, err := store.GetStore().GetAppFromSlug(mux.Vars(r)["appSlug"])
@@ -214,15 +210,13 @@ func GetKotsadmRegistry(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	getKotsadmRegistryResponse := GetKotsadmRegistryResponse{
-		Success: false,
-	}
-
 	if err := requireValidSession(w, r); err != nil {
 		logger.Error(err)
-		getKotsadmRegistryResponse.Error = err.Error()
-		JSON(w, 401, getKotsadmRegistryResponse)
 		return
+	}
+
+	getKotsadmRegistryResponse := GetKotsadmRegistryResponse{
+		Success: false,
 	}
 
 	settings, err := registry.GetKotsadmRegistry()
@@ -249,6 +243,11 @@ func ValidateAppRegistry(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if err := requireValidSession(w, r); err != nil {
+		logger.Error(err)
+		return
+	}
+
 	validateAppRegistryResponse := ValidateAppRegistryResponse{
 		Success: false,
 	}
@@ -258,13 +257,6 @@ func ValidateAppRegistry(w http.ResponseWriter, r *http.Request) {
 		logger.Error(err)
 		validateAppRegistryResponse.Error = err.Error()
 		JSON(w, 500, validateAppRegistryResponse)
-		return
-	}
-
-	if err := requireValidSession(w, r); err != nil {
-		logger.Error(err)
-		validateAppRegistryResponse.Error = err.Error()
-		JSON(w, 401, validateAppRegistryResponse)
 		return
 	}
 

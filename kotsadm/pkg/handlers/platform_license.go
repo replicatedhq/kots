@@ -26,6 +26,11 @@ func ExchangePlatformLicense(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if err := requireValidSession(w, r); err != nil {
+		logger.Error(err)
+		return
+	}
+
 	request := ExchangePlatformLicenseRequest{}
 	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
 		logger.Error(err)

@@ -7,7 +7,6 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
-	"github.com/replicatedhq/kots/kotsadm/pkg/session"
 	"github.com/replicatedhq/kots/kotsadm/pkg/store"
 	"github.com/replicatedhq/kots/kotsadm/pkg/updatechecker"
 	cron "github.com/robfig/cron/v3"
@@ -26,22 +25,12 @@ func UpdateCheckerSpec(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	updateCheckerSpecResponse := &UpdateCheckerSpecResponse{}
-
-	sess, err := session.Parse(r.Header.Get("Authorization"))
-	if err != nil {
+	if err := requireValidSession(w, r); err != nil {
 		logger.Error(err)
-		updateCheckerSpecResponse.Error = "failed to parse authorization header"
-		JSON(w, 401, updateCheckerSpecResponse)
 		return
 	}
 
-	// we don't currently have roles, all valid tokens are valid sessions
-	if sess == nil || sess.ID == "" {
-		updateCheckerSpecResponse.Error = "failed to parse authorization header"
-		JSON(w, 401, updateCheckerSpecResponse)
-		return
-	}
+	updateCheckerSpecResponse := &UpdateCheckerSpecResponse{}
 
 	updateCheckerSpecRequest := UpdateCheckerSpecRequest{}
 	if err := json.NewDecoder(r.Body).Decode(&updateCheckerSpecRequest); err != nil {

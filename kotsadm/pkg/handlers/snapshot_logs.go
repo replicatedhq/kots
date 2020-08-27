@@ -16,13 +16,12 @@ func DownloadSnapshotLogs(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	backupName := mux.Vars(r)["backup"]
-
 	if err := requireValidSession(w, r); err != nil {
-		// header already written on error
 		logger.Error(err)
 		return
 	}
+
+	backupName := mux.Vars(r)["backup"]
 
 	bsl, err := snapshot.FindBackupStoreLocation()
 	if err != nil {
