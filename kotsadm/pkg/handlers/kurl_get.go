@@ -25,14 +25,7 @@ func GetKurlNodes(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	mc, err := k8s.Metricsset()
-	if err != nil {
-		logger.Error(err)
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-
-	nodes, err := kurl.GetNodes(client, mc)
+	nodes, err := kurl.GetNodes(client)
 	if err != nil {
 		logger.Error(err)
 		w.WriteHeader(http.StatusInternalServerError)

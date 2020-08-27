@@ -30,7 +30,7 @@ export class ClusterNodes extends Component {
       const res = await fetch(`${window.env.API_ENDPOINT}/kurl/nodes`, {
         headers: {
           "Authorization": Utilities.getToken(),
-          "Content-Type": "application/json",
+          "Accept": "application/json",
         },
         method: "GET",
       });
