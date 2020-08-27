@@ -17,7 +17,7 @@ import (
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
-	"k8s.io/kubernetes/pkg/kubelet/apis/stats/v1alpha1"
+	statsv1alpha1 "k8s.io/kubernetes/pkg/kubelet/apis/stats/v1alpha1"
 )
 
 // GetNodes will get a list of nodes with stats
@@ -127,7 +127,7 @@ func findNodeConditions(conditions []v1.NodeCondition) types.NodeConditions {
 }
 
 // get kubelet PKI info from /etc/kubernetes/pki/kubelet, use it to hit metrics server at `http://${nodeIP}:10255/stats/summary`
-func getNodeMetrics(nodeIP string) (*v1alpha1.Summary, error) {
+func getNodeMetrics(nodeIP string) (*statsv1alpha1.Summary, error) {
 	r := &http.Response{}
 
 	// only use mutual TLS if client cert exists
@@ -162,7 +162,7 @@ func getNodeMetrics(nodeIP string) (*v1alpha1.Summary, error) {
 		return nil, errors.Wrapf(err, "read node %s stats response", nodeIP)
 	}
 
-	summary := v1alpha1.Summary{}
+	summary := statsv1alpha1.Summary{}
 	err = json.Unmarshal(body, &summary)
 	if err != nil {
 		return nil, errors.Wrapf(err, "parse node %s stats response", nodeIP)
