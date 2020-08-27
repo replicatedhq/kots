@@ -1,7 +1,6 @@
 package s3pg
 
 import (
-	"database/sql"
 	"fmt"
 	"time"
 
@@ -89,12 +88,13 @@ func (s S3PGStore) CreateNewCluster(userID string, isAllUsers bool, title string
 
 		var count int
 		if err := row.Scan(&count); err != nil {
-			if err == sql.ErrNoRows {
-				clusterSlug = slugProposal
-				foundUniqueSlug = true
-				break
-			}
 			return "", errors.Wrap(err, "failed to scan")
+		}
+
+		if count == 0 {
+			clusterSlug = slugProposal
+			foundUniqueSlug = true
+			break
 		}
 	}
 
