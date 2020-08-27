@@ -1,6 +1,5 @@
 import React, { Component } from "react";
 import Select from "react-select";
-import { compose, withApollo } from "react-apollo";
 import { withRouter, Link } from "react-router-dom"
 import MonacoEditor from "react-monaco-editor";
 import find from "lodash/find";
@@ -732,7 +731,4 @@ class SnapshotStorageDestination extends Component {
   }
 }
 
-export default compose(
-  withApollo,
-  withRouter,
-)(SnapshotStorageDestination);
+export default withRouter(SnapshotStorageDestination);

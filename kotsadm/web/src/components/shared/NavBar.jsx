@@ -2,8 +2,6 @@ import React, { PureComponent } from "react";
 import PropTypes from "prop-types";
 import classNames from "classnames";
 import { Link, withRouter } from "react-router-dom";
-import { compose, withApollo } from "react-apollo";
-
 import { Utilities } from "@src/utilities/utilities";
 import Avatar from "../shared/Avatar";
 import ErrorModal from "../modals/ErrorModal";
@@ -227,4 +225,4 @@ export class NavBar extends PureComponent {
   }
 }
 
-export default compose(withRouter, withApollo)(NavBar);
+export default withRouter(NavBar);

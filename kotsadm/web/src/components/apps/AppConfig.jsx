@@ -1,6 +1,5 @@
 import React, { Component } from "react";
 import { ShipConfigRenderer } from "@replicatedhq/ship-init";
-import { compose, withApollo, graphql } from "react-apollo";
 import { withRouter, Link } from "react-router-dom";
 import PropTypes from "prop-types";
 import classNames from "classnames";
@@ -333,7 +332,4 @@ class AppConfig extends Component {
   }
 }
 
-export default withRouter(compose(
-  withApollo,
-  withRouter,
-)(AppConfig));
+export default withRouter(AppConfig);

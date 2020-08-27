@@ -1,5 +1,4 @@
 import React, { Component } from "react";
-import { compose, withApollo } from "react-apollo";
 import { Link, withRouter } from "react-router-dom";
 import MonacoEditor from "react-monaco-editor";
 import Modal from "react-modal";
@@ -498,7 +497,7 @@ class AppSnapshotDetail extends Component {
       <div className="container flex-column flex1 u-overflow--auto u-paddingTop--30 u-paddingBottom--20">
         <p className="u-marginBottom--30 u-fontSize--small u-color--tundora u-fontWeight--medium">
           <Link to={`/app/${app?.slug}/snapshots`} className="replicated-link">Snapshots</Link>
-          <span className="u-color--dustyGray"> > </span>
+          <span className="u-color--dustyGray"> &gt; </span>
           {snapshotDetails?.name}
         </p>
         <div className="flex justifyContent--spaceBetween alignItems--center u-paddingBottom--30 u-borderBottom--gray">
@@ -738,7 +737,4 @@ class AppSnapshotDetail extends Component {
   }
 }
 
-export default compose(
-  withApollo,
-  withRouter,
-)(AppSnapshotDetail);
+export default withRouter(AppSnapshotDetail);

@@ -1,5 +1,4 @@
 import React from "react";
-import { compose, withApollo } from "react-apollo";
 import { withRouter } from "react-router-dom";
 
 import { Utilities } from "../../utilities/utilities";
@@ -183,6 +182,4 @@ class DownstreamWatchVersionDiff extends React.Component {
   }
 }
 
-export default withRouter(compose(
-  withRouter
-)(DownstreamWatchVersionDiff));
+export default withRouter(DownstreamWatchVersionDiff);

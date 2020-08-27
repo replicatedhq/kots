@@ -6,8 +6,6 @@ import classNames from "classnames";
 import size from "lodash/size";
 import Modal from "react-modal";
 import { Link } from "react-router-dom";
-
-import { compose, withApollo } from "react-apollo";
 import { getFileContent, Utilities, getLicenseExpiryDate } from "../../utilities/utilities";
 import Loader from "../shared/Loader";
 
@@ -122,12 +120,6 @@ class AppLicense extends Component {
       })
       .catch(err => {
         console.log(err);
-        err.graphQLErrors.map(({ msg }) => {
-          this.setState({
-            message: msg,
-            messageType: "error"
-          });
-        });
       })
       .finally(() => {
         this.setState({ loading: false });
@@ -255,6 +247,4 @@ class AppLicense extends Component {
   }
 }
 
-export default compose(
-  withApollo,
-)(AppLicense);
+export default (AppLicense);
