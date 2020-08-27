@@ -18,7 +18,8 @@ export class ClusterNodes extends Component {
     expiry: null,
     displayAddNode: false,
     selectedNodeType: "worker", // Change when master node script is enabled
-    generateCommandErrMsg: ""
+    generateCommandErrMsg: "",
+    kurl: null
   }
 
   componentDidMount() {
