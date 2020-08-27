@@ -137,6 +137,7 @@ type VersionStore interface {
 type LicenseStore interface {
 	GetInitialLicenseForApp(string) (*kotsv1beta1.License, error)
 	GetLatestLicenseForApp(string) (*kotsv1beta1.License, error)
+	GetLicenseForAppVersion(string, int64) (*kotsv1beta1.License, error)
 }
 
 type ClusterStore interface {

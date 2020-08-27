@@ -129,9 +129,9 @@ func responseAppFromApp(a *apptypes.App) (*ResponseApp, error) {
 		return nil, errors.Wrap(err, "failed to check if rollback is supported")
 	}
 
-	licenseType, err := version.GetLicenseType(a.ID, a.CurrentSequence)
+	license, err := store.GetStore().GetLicenseForAppVersion(a.ID, a.CurrentSequence)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to get license type")
+		return nil, errors.Wrap(err, "failed to get license")
 	}
 
 	currentVersion, err := version.Get(a.ID, a.CurrentSequence)
@@ -242,7 +242,7 @@ func responseAppFromApp(a *apptypes.App) (*ResponseApp, error) {
 		IsGitOpsSupported: isGitOpsSupported,
 		AllowRollback:     allowRollback,
 		AllowSnapshots:    allowSnapshots,
-		LicenseType:       licenseType,
+		LicenseType:       license.Spec.LicenseType,
 		CurrentVersion:    currentVersion,
 		Downstreams:       responseDownstreams,
 	}

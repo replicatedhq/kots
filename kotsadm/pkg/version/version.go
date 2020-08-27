@@ -358,29 +358,6 @@ func DeployVersion(appID string, sequence int64) error {
 	return nil
 }
 
-func GetLicenseType(appID string, sequence int64) (string, error) {
-	db := persistence.MustGetPGSession()
-	query := `select kots_license from app_version where app_id = $1 and sequence = $2`
-	row := db.QueryRow(query, appID, sequence)
-
-	var licenseStr sql.NullString
-	if err := row.Scan(&licenseStr); err != nil {
-		if err == sql.ErrNoRows {
-			return "", nil
-		}
-		return "", errors.Wrap(err, "failed to scan")
-	}
-
-	decode := scheme.Codecs.UniversalDeserializer().Decode
-	obj, _, err := decode([]byte(licenseStr.String), nil, nil)
-	if err != nil {
-		return "", errors.Wrap(err, "failed to decode license yaml")
-	}
-	license := obj.(*kotsv1beta1.License)
-
-	return license.Spec.LicenseType, nil
-}
-
 func GetRealizedLinksFromAppSpec(appID string, sequence int64) ([]types.RealizedLink, error) {
 	db := persistence.MustGetPGSession()
 	query := `select app_spec, kots_app_spec from app_version where app_id = $1 and sequence = $2`
