@@ -12,26 +12,11 @@ endif
 .PHONY: deps
 deps:
 	yarn --silent --frozen-lockfile
-
-.PHONY: publish-pact
-publish-pact:
-	yarn run publish:pact
 	
 .PHONY: clean
 clean:
 	rm -rf node_modules
 	rm -rf dist
-
-.PHONY: test
-test: deps
-	rm -rf pacts/kotsadm-web-kotsadm-api.json
-	yarn test
-
-.PHONY: verify_local
-verify_local:
-	yarn test
-	mkdir -p ../ship-cloud-api/pacts
-	cp pacts/* ../ship-cloud-api/pacts
 
 .PHONY: serve
 serve: deps

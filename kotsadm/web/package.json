@@ -9,9 +9,6 @@
   "private": true,
   "scripts": {
     "test:unit": "jest",
-    "test": "npm run test:pact:api",
-    "test:pact:api": "cross-env CI=true `npm bin`/jest --runInBand --setupFiles ./pact/setup-api.js --setupFilesAfterEnv ./pact/jest-wrapper.js --testMatch \"**/ship-cloud-api.pact.js\"",
-    "publish:pact": "node pact/publish.js",
     "start": "VENDOR_WEB_ENV=dev webpack-dev-server --env dev"
   },
   "jest": {
