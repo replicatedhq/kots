@@ -27,8 +27,6 @@ jobs:
           name: kots
           path: bin/kots
 
-      - run: make ffi
-      - run: cp ./bin/kots.so kotsadm/api
       - run: make -C kotsadm kotsadm
       - run: make -C kotsadm/operator build
       - run: make -C kotsadm/kurl_proxy build
@@ -52,14 +50,6 @@ jobs:
           path: ./kotsadm
           dockerfile: ./kotsadm/deploy/Dockerfile          
 
-      - name: build and push api for e2e
-        uses: docker/build-push-action@v1
-        with:
-          repository: ttl.sh/automated-${{ github.run_id }}/kotsadm-api
-          tags: 2h
-          path: ./kotsadm/api
-          dockerfile: ./kotsadm/api/deploy/Dockerfile
-          
       - name: build and push operator for e2e
         uses: docker/build-push-action@v1
         with:
