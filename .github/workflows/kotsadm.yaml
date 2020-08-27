@@ -144,12 +144,12 @@ jobs:
       run: npm i -g cross-env
       shell: bash
 
-    - name: Test web
-      env:
-        PACT_BROKER_USERNAME: ${{ secrets.PACT_BROKER_USERNAME }}
-        PACT_BROKER_PASSWORD: ${{ secrets.PACT_BROKER_PASSWORD }}
-      run: |
-        make -C kotsadm/web deps test publish-pact
+    # - name: Test web
+    #   env:
+    #     PACT_BROKER_USERNAME: ${{ secrets.PACT_BROKER_USERNAME }}
+    #     PACT_BROKER_PASSWORD: ${{ secrets.PACT_BROKER_PASSWORD }}
+    #   run: |
+    #     make -C kotsadm/web deps test publish-pact
 
       # TODO: migrate retry logic for pacts
       # retry:
