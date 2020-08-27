@@ -144,7 +144,6 @@ type ClusterStore interface {
 	ListClusters() (map[string]string, error)
 	GetClusterIDFromSlug(slug string) (string, error)
 	GetClusterIDFromDeployToken(string) (string, error)
-	LookupClusterID(clusterType string, title string, token string) (string, error)
 	CreateNewCluster(userId string, isAllUsers bool, title string, token string) (string, error)
 }
 

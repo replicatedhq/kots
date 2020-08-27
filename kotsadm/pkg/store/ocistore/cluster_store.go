@@ -35,10 +35,6 @@ func (s OCIStore) GetClusterIDFromDeployToken(deployToken string) (string, error
 	return string(clusterID), nil
 }
 
-func (s OCIStore) LookupClusterID(clusterType string, title string, token string) (string, error) {
-	return "", ErrNotImplemented
-}
-
 func (s OCIStore) CreateNewCluster(userId string, isAllUsers bool, title string, token string) (string, error) {
 	return "", ErrNotImplemented
 }
