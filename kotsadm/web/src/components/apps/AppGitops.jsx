@@ -1,6 +1,5 @@
 import React, { Component } from "react";
 import { withRouter } from "react-router-dom";
-import { compose } from "react-apollo";
 import Helmet from "react-helmet";
 import url from "url";
 import GitOpsRepoDetails from "../gitops/GitOpsRepoDetails";
@@ -461,4 +460,4 @@ class AppGitops extends Component {
   }
 }
 
-export default compose(withRouter)(AppGitops);
+export default withRouter(AppGitops);

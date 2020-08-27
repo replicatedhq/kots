@@ -1,9 +1,7 @@
 import React, { Component } from "react";
 import Select from "react-select";
-import { graphql, compose, withApollo } from "react-apollo";
 import { Link, withRouter } from "react-router-dom"
 import { Utilities, getCronFrequency, getCronInterval, getReadableCronDescriptor } from "../../utilities/utilities";
-import { saveSnapshotConfig } from "../../mutations/SnapshotMutations";
 import ErrorModal from "../modals/ErrorModal";
 import Loader from "../shared/Loader";
 import find from "lodash/find";
@@ -335,12 +333,4 @@ class AppSnapshotSchedule extends Component {
   }
 }
 
-export default compose(
-  withApollo,
-  withRouter,
-  graphql(saveSnapshotConfig, {
-    props: ({ mutate }) => ({
-      saveSnapshotConfig: (appId, inputValue, inputTimeUnit, schedule, autoEnabled) => mutate({ variables: { appId, inputValue, inputTimeUnit, schedule, autoEnabled } })
-    })
-  })
-)(AppSnapshotSchedule);
+export default withRouter(AppSnapshotSchedule);

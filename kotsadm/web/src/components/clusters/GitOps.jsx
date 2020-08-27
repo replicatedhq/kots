@@ -1,7 +1,6 @@
 import * as React from "react";
 import PropTypes from "prop-types";
 import Helmet from "react-helmet";
-import { graphql, compose, withApollo } from "react-apollo";
 import { withRouter } from "react-router-dom";
 import GitOpsDeploymentManager from "../gitops/GitOpsDeploymentManager";
 
@@ -29,7 +28,4 @@ export class GitOps extends React.Component {
   }
 }
 
-export default compose(
-  withRouter,
-  withApollo,
-)(GitOps);
+export default withRouter(GitOps);

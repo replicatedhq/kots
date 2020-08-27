@@ -1,6 +1,5 @@
 import * as React from "react";
 import AceEditor from "react-ace";
-import { compose, withApollo } from "react-apollo";
 import { withRouter } from "react-router-dom";
 import { getFileFormat, rootPath, Utilities } from "../../utilities/utilities";
 import sortBy from "lodash/sortBy";
@@ -300,6 +299,4 @@ class AnalyzerFileTree extends React.Component {
   }
 }
 
-export default withRouter(compose(
-  withApollo
-)(AnalyzerFileTree));
+export default withRouter(AnalyzerFileTree);

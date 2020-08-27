@@ -1,7 +1,6 @@
 import React, { Component } from "react";
 import classNames from "classnames";
 import { withRouter, Link } from "react-router-dom";
-import { compose, withApollo, graphql } from "react-apollo";
 import Helmet from "react-helmet";
 import dayjs from "dayjs";
 import ReactTooltip from "react-tooltip"
@@ -1366,7 +1365,4 @@ class AppVersionHistory extends Component {
   }
 }
 
-export default compose(
-  withApollo,
-  withRouter,
-)(AppVersionHistory);
+export default withRouter(AppVersionHistory);

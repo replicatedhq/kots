@@ -2,7 +2,6 @@ import moment from "moment";
 import React, { Component } from "react";
 import Helmet from "react-helmet";
 import { withRouter } from "react-router-dom";
-import { compose, withApollo } from "react-apollo";
 import size from "lodash/size";
 import get from "lodash/get";
 import Loader from "../shared/Loader";
@@ -724,4 +723,4 @@ class Dashboard extends Component {
   }
 }
 
-export default compose(withApollo, withRouter)(Dashboard);
+export default withRouter(Dashboard);

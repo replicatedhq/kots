@@ -1,6 +1,5 @@
 import React, { Component } from "react";
 import { withRouter } from "react-router-dom";
-import { compose, withApollo } from "react-apollo";
 import get from "lodash/get";
 
 import Loader from "../shared/Loader";
@@ -388,7 +387,4 @@ class AirgapRegistrySettings extends Component {
   }
 }
 
-export default compose(
-  withRouter,
-  withApollo,
-)(AirgapRegistrySettings);
+export default withRouter(AirgapRegistrySettings);

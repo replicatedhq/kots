@@ -1,7 +1,6 @@
 import React, { Component, Fragment } from "react";
 import classNames from "classnames";
 import moment from "moment";
-import { graphql, compose, withApollo } from "react-apollo";
 import { withRouter } from "react-router-dom";
 import { Helmet } from "react-helmet";
 import CodeSnippet from "../shared/CodeSnippet";
@@ -85,8 +84,10 @@ export class ClusterNodes extends Component {
         this.setState({ generating: false, command: data.command, expiry: data.expiry });
       })
       .catch((err) => {
-        err.graphQLErrors.map(({ msg }) => {
-          this.setState({ generating: false, generateCommandErrMsg: msg });
+        console.log(err);
+        this.setState({
+          generating: false,
+          generateCommandErrMsg: err ? err.message : "Something went wrong",
         });
       });
   }
@@ -122,8 +123,10 @@ export class ClusterNodes extends Component {
         this.setState({ generating: false, command: data.command, expiry: data.expiry });
       })
       .catch((err) => {
-        err.graphQLErrors.map(({ msg }) => {
-          this.setState({ generating: false, generateCommandErrMsg: msg });
+        console.log(err);
+        this.setState({
+          generating: false,
+          generateCommandErrMsg: err ? err.message : "Something went wrong",
         });
       });
   }
@@ -288,7 +291,4 @@ export class ClusterNodes extends Component {
   }
 }
 
-export default compose(
-  withRouter,
-  withApollo,
-)(ClusterNodes);
+export default withRouter(ClusterNodes);

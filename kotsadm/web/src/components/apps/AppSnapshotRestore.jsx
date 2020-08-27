@@ -1,5 +1,4 @@
 import React, { Component } from "react";
-import { graphql, compose, withApollo } from "react-apollo";
 import { withRouter } from "react-router-dom";
 import Helmet from "react-helmet";
 import { Line } from "rc-progress";
@@ -289,7 +288,4 @@ class AppSnapshotRestore extends Component {
   }
 }
 
-export default compose(
-  withApollo,
-  withRouter,
-)(AppSnapshotRestore);
+export default withRouter(AppSnapshotRestore);

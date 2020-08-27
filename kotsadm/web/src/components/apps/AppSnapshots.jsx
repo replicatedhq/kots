@@ -1,5 +1,4 @@
 import React, { Component } from "react";
-import { compose } from "react-apollo";
 import { Link, withRouter } from "react-router-dom"
 import Helmet from "react-helmet";
 import Modal from "react-modal";
@@ -522,4 +521,4 @@ class AppSnapshots extends Component {
   }
 }
 
-export default compose(withRouter)(AppSnapshots);
+export default withRouter(AppSnapshots);
