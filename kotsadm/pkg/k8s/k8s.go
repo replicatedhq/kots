@@ -2,7 +2,6 @@ package k8s
 
 import (
 	"k8s.io/client-go/kubernetes"
-	metrics "k8s.io/metrics/pkg/client/clientset/versioned"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
 )
 
@@ -13,12 +12,4 @@ func Clientset() (kubernetes.Interface, error) {
 		return nil, err
 	}
 	return kubernetes.NewForConfig(cfg)
-}
-
-func Metricsset() (*metrics.Clientset, error) {
-	cfg, err := config.GetConfig()
-	if err != nil {
-		return nil, err
-	}
-	return metrics.NewForConfig(cfg)
 }

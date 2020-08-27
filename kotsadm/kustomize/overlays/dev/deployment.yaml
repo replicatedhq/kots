@@ -17,7 +17,9 @@ spec:
         - name: kotsadm
           volumeMounts:
             - mountPath: /backup
-              name: backup  
+              name: backup
+            - name: kubelet-client-cert
+              mountPath: /etc/kubernetes/pki/kubelet
           env:
             - name: DISABLE_SPA_SERVING
               value: "1"
@@ -53,4 +55,7 @@ spec:
             medium: Memory
             sizeLimit: 1Gi
           name: backup
-        
+        - name: kubelet-client-cert
+          secret:
+            secretName: kubelet-client-cert
+            optional: true
