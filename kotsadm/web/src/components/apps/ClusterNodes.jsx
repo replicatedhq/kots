@@ -8,6 +8,7 @@ import CodeSnippet from "../shared/CodeSnippet";
 import NodeRow from "./NodeRow";
 import Loader from "../shared/Loader";
 import { Utilities } from "../../utilities/utilities";
+import { Repeater } from "../../utilities/repeater";
 
 import "@src/scss/components/apps/ClusterNodes.scss";
 
@@ -19,11 +20,13 @@ export class ClusterNodes extends Component {
     displayAddNode: false,
     selectedNodeType: "worker", // Change when master node script is enabled
     generateCommandErrMsg: "",
-    kurl: null
+    kurl: null,
+    getNodeStatus: new Repeater()
   }
 
   componentDidMount() {
     this.getNodeStatus();
+    this.state.getNodeStatus.start(this.getNodeStatus, 1000);
   }
 
   getNodeStatus = async () => {
