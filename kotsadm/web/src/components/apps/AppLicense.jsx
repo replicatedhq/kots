@@ -120,6 +120,10 @@ class AppLicense extends Component {
       })
       .catch(err => {
         console.log(err);
+        this.setState({
+          message: err ? err.message : "Something went wrong",
+          messageType: "error"
+        });
       })
       .finally(() => {
         this.setState({ loading: false });

@@ -84,7 +84,11 @@ export class ClusterNodes extends Component {
         this.setState({ generating: false, command: data.command, expiry: data.expiry });
       })
       .catch((err) => {
-        console.log(err)
+        console.log(err);
+        this.setState({
+          generating: false,
+          generateCommandErrMsg: err ? err.message : "Something went wrong",
+        });
       });
   }
 
@@ -120,6 +124,10 @@ export class ClusterNodes extends Component {
       })
       .catch((err) => {
         console.log(err);
+        this.setState({
+          generating: false,
+          generateCommandErrMsg: err ? err.message : "Something went wrong",
+        });
       });
   }
 

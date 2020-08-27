@@ -40,13 +40,14 @@ build-release:
 
 .PHONY: project-pact-tests
 project-pact-tests:
+	make -C web test
 	make -C operator test
 
 	make -C migrations/fixtures schema-fixtures build run
 	cd migrations && docker build -t kotsadm/kotsadm-fixtures:local -f ./fixtures/deploy/Dockerfile ./fixtures
 
 	mkdir -p api/pacts
-	cp api/pacts/
+	cp web/pacts/kotsadm-web-kotsadm-api.json api/pacts/
 	make -C api test
 
 	@echo All contract tests have passed.
