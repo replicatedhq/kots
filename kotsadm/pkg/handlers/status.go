@@ -13,15 +13,6 @@ type GetUpdateDownloadStatusResponse struct {
 }
 
 func GetUpdateDownloadStatus(w http.ResponseWriter, r *http.Request) {
-	if handleOptionsRequest(w, r) {
-		return
-	}
-
-	if err := requireValidSession(w, r); err != nil {
-		logger.Error(err)
-		return
-	}
-
 	status, message, err := store.GetStore().GetTaskStatus("update-download")
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)

@@ -18,10 +18,6 @@ type PingResponse struct {
 // Ping route is UNAUTHENTICATED
 // It should work when user is not logged in. It returns no sensitive data.
 func Ping(w http.ResponseWriter, r *http.Request) {
-	if handleOptionsRequest(w, r) {
-		return
-	}
-
 	pingResponse := PingResponse{}
 
 	pingResponse.Ping = "pong"

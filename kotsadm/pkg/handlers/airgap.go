@@ -25,15 +25,6 @@ type UpdateAppFromAirgapResponse struct {
 }
 
 func GetAirgapInstallStatus(w http.ResponseWriter, r *http.Request) {
-	if handleOptionsRequest(w, r) {
-		return
-	}
-
-	if err := requireValidSession(w, r); err != nil {
-		logger.Error(err)
-		return
-	}
-
 	status, err := store.GetStore().GetAirgapInstallStatus()
 	if err != nil {
 		logger.Error(err)
@@ -45,15 +36,6 @@ func GetAirgapInstallStatus(w http.ResponseWriter, r *http.Request) {
 }
 
 func ResetAirgapInstallStatus(w http.ResponseWriter, r *http.Request) {
-	if handleOptionsRequest(w, r) {
-		return
-	}
-
-	if err := requireValidSession(w, r); err != nil {
-		logger.Error(err)
-		return
-	}
-
 	appID, err := store.GetStore().GetAppIDFromSlug(mux.Vars(r)["appSlug"])
 	if err != nil {
 		logger.Error(err)
@@ -72,15 +54,6 @@ func ResetAirgapInstallStatus(w http.ResponseWriter, r *http.Request) {
 }
 
 func UploadAirgapBundle(w http.ResponseWriter, r *http.Request) {
-	if handleOptionsRequest(w, r) {
-		return
-	}
-
-	if err := requireValidSession(w, r); err != nil {
-		logger.Error(err)
-		return
-	}
-
 	if r.Method == "POST" {
 		createAppFromAirgap(w, r)
 		return

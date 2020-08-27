@@ -59,15 +59,6 @@ type ValidateAppRegistryResponse struct {
 }
 
 func UpdateAppRegistry(w http.ResponseWriter, r *http.Request) {
-	if handleOptionsRequest(w, r) {
-		return
-	}
-
-	if err := requireValidSession(w, r); err != nil {
-		logger.Error(err)
-		return
-	}
-
 	updateAppRegistryResponse := UpdateAppRegistryResponse{
 		Success: false,
 	}
@@ -164,15 +155,6 @@ func UpdateAppRegistry(w http.ResponseWriter, r *http.Request) {
 }
 
 func GetAppRegistry(w http.ResponseWriter, r *http.Request) {
-	if handleOptionsRequest(w, r) {
-		return
-	}
-
-	if err := requireValidSession(w, r); err != nil {
-		logger.Error(err)
-		return
-	}
-
 	getAppRegistryResponse := GetAppRegistryResponse{
 		Success: false,
 	}
@@ -206,15 +188,6 @@ func GetAppRegistry(w http.ResponseWriter, r *http.Request) {
 }
 
 func GetKotsadmRegistry(w http.ResponseWriter, r *http.Request) {
-	if handleOptionsRequest(w, r) {
-		return
-	}
-
-	if err := requireValidSession(w, r); err != nil {
-		logger.Error(err)
-		return
-	}
-
 	getKotsadmRegistryResponse := GetKotsadmRegistryResponse{
 		Success: false,
 	}
@@ -239,15 +212,6 @@ func GetKotsadmRegistry(w http.ResponseWriter, r *http.Request) {
 }
 
 func ValidateAppRegistry(w http.ResponseWriter, r *http.Request) {
-	if handleOptionsRequest(w, r) {
-		return
-	}
-
-	if err := requireValidSession(w, r); err != nil {
-		logger.Error(err)
-		return
-	}
-
 	validateAppRegistryResponse := ValidateAppRegistryResponse{
 		Success: false,
 	}

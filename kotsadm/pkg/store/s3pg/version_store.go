@@ -15,13 +15,11 @@ import (
 	"github.com/mholt/archiver"
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/kotsadm/pkg/kotsutil"
-	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
 	"github.com/replicatedhq/kots/kotsadm/pkg/persistence"
 	"github.com/replicatedhq/kots/kotsadm/pkg/render"
 	kotss3 "github.com/replicatedhq/kots/kotsadm/pkg/s3"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	velerov1 "github.com/vmware-tanzu/velero/pkg/apis/velero/v1"
-	"go.uber.org/zap"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/scheme"
@@ -214,9 +212,10 @@ func (s S3PGStore) CreateAppVersionArchive(appID string, sequence int64, archive
 // GetAppVersionArchive will fetch the archive and return a string that contains a
 // directory name where it's extracted into
 func (s S3PGStore) GetAppVersionArchive(appID string, sequence int64) (string, error) {
-	logger.Debug("getting app version archive",
-		zap.String("appID", appID),
-		zap.Int64("sequence", sequence))
+	// too noisy
+	// logger.Debug("getting app version archive",
+	// 	zap.String("appID", appID),
+	// 	zap.Int64("sequence", sequence))
 
 	tmpDir, err := ioutil.TempDir("", "kotsadm")
 	if err != nil {

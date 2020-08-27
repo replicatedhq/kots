@@ -37,15 +37,6 @@ type CreateKotsadmRestoreResponse struct {
 }
 
 func CreateRestore(w http.ResponseWriter, r *http.Request) {
-	if handleOptionsRequest(w, r) {
-		return
-	}
-
-	if err := requireValidSession(w, r); err != nil {
-		logger.Error(err)
-		return
-	}
-
 	createRestoreResponse := CreateRestoreResponse{
 		Success: false,
 	}
@@ -139,15 +130,6 @@ func CreateRestore(w http.ResponseWriter, r *http.Request) {
 }
 
 func GetRestoreStatus(w http.ResponseWriter, r *http.Request) {
-	if handleOptionsRequest(w, r) {
-		return
-	}
-
-	if err := requireValidSession(w, r); err != nil {
-		logger.Error(err)
-		return
-	}
-
 	response := GetRestoreStatusResponse{
 		Status: "",
 	}
@@ -169,15 +151,6 @@ func GetRestoreStatus(w http.ResponseWriter, r *http.Request) {
 }
 
 func CancelRestore(w http.ResponseWriter, r *http.Request) {
-	if handleOptionsRequest(w, r) {
-		return
-	}
-
-	if err := requireValidSession(w, r); err != nil {
-		logger.Error(err)
-		return
-	}
-
 	appSlug := mux.Vars(r)["appSlug"]
 
 	foundApp, err := store.GetStore().GetAppFromSlug(appSlug)
@@ -204,15 +177,6 @@ type GetKotsadmRestoreResponse struct {
 }
 
 func GetKotsadmRestore(w http.ResponseWriter, r *http.Request) {
-	if handleOptionsRequest(w, r) {
-		return
-	}
-
-	if err := requireValidSession(w, r); err != nil {
-		logger.Error(err)
-		return
-	}
-
 	appSlug := mux.Vars(r)["appSlug"]
 	restoreName := mux.Vars(r)["restoreName"]
 

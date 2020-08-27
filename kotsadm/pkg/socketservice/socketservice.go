@@ -70,6 +70,7 @@ type SocketService struct {
 	socketMtx            sync.Mutex
 }
 
+// SocketService uses special cluster authorization
 func Start() *SocketService {
 	logger.Debug("starting socket service")
 

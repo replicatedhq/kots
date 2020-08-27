@@ -55,15 +55,6 @@ type PostRedactorEnabledMetadata struct {
 }
 
 func UpdateRedact(w http.ResponseWriter, r *http.Request) {
-	if handleOptionsRequest(w, r) {
-		return
-	}
-
-	if err := requireValidSession(w, r); err != nil {
-		logger.Error(err)
-		return
-	}
-
 	updateRedactResponse := UpdateRedactResponse{
 		Success: false,
 	}
@@ -133,15 +124,6 @@ func UpdateRedact(w http.ResponseWriter, r *http.Request) {
 }
 
 func GetRedact(w http.ResponseWriter, r *http.Request) {
-	if handleOptionsRequest(w, r) {
-		return
-	}
-
-	if err := requireValidSession(w, r); err != nil {
-		logger.Error(err)
-		return
-	}
-
 	getRedactResponse := GetRedactResponse{
 		Success: false,
 	}
@@ -159,15 +141,6 @@ func GetRedact(w http.ResponseWriter, r *http.Request) {
 }
 
 func GetRedactMetadataAndYaml(w http.ResponseWriter, r *http.Request) {
-	if handleOptionsRequest(w, r) {
-		return
-	}
-
-	if err := requireValidSession(w, r); err != nil {
-		logger.Error(err)
-		return
-	}
-
 	getRedactorResponse := GetRedactorResponse{
 		Success: false,
 	}
@@ -190,15 +163,6 @@ func GetRedactMetadataAndYaml(w http.ResponseWriter, r *http.Request) {
 }
 
 func ListRedactors(w http.ResponseWriter, r *http.Request) {
-	if handleOptionsRequest(w, r) {
-		return
-	}
-
-	if err := requireValidSession(w, r); err != nil {
-		logger.Error(err)
-		return
-	}
-
 	listRedactorsResponse := ListRedactorsResponse{
 		Success: false,
 	}
@@ -218,15 +182,6 @@ func ListRedactors(w http.ResponseWriter, r *http.Request) {
 }
 
 func SetRedactMetadataAndYaml(w http.ResponseWriter, r *http.Request) {
-	if handleOptionsRequest(w, r) {
-		return
-	}
-
-	if err := requireValidSession(w, r); err != nil {
-		logger.Error(err)
-		return
-	}
-
 	metadataResponse := GetRedactorResponse{
 		Success: false,
 	}
@@ -257,15 +212,6 @@ func SetRedactMetadataAndYaml(w http.ResponseWriter, r *http.Request) {
 }
 
 func DeleteRedact(w http.ResponseWriter, r *http.Request) {
-	if handleOptionsRequest(w, r) {
-		return
-	}
-
-	if err := requireValidSession(w, r); err != nil {
-		logger.Error(err)
-		return
-	}
-
 	redactorSlug := mux.Vars(r)["slug"]
 	err := redact.DeleteRedact(redactorSlug)
 	if err != nil {
@@ -278,15 +224,6 @@ func DeleteRedact(w http.ResponseWriter, r *http.Request) {
 }
 
 func SetRedactEnabled(w http.ResponseWriter, r *http.Request) {
-	if handleOptionsRequest(w, r) {
-		return
-	}
-
-	if err := requireValidSession(w, r); err != nil {
-		logger.Error(err)
-		return
-	}
-
 	metadataResponse := GetRedactorResponse{
 		Success: false,
 	}

@@ -13,10 +13,6 @@ import (
 
 // NOTE: this uses special cluster authorization
 func SetAppStatus(w http.ResponseWriter, r *http.Request) {
-	if handleOptionsRequest(w, r) {
-		return
-	}
-
 	auth, err := parseClusterAuthorization(r.Header.Get("Authorization"))
 	if err != nil {
 		logger.Error(err)

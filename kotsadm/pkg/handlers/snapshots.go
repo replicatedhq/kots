@@ -55,15 +55,6 @@ type VeleroStatus struct {
 }
 
 func UpdateGlobalSnapshotSettings(w http.ResponseWriter, r *http.Request) {
-	if handleOptionsRequest(w, r) {
-		return
-	}
-
-	if err := requireValidSession(w, r); err != nil {
-		logger.Error(err)
-		return
-	}
-
 	globalSnapshotSettingsResponse := GlobalSnapshotSettingsResponse{
 		Success: false,
 	}
@@ -342,15 +333,6 @@ func UpdateGlobalSnapshotSettings(w http.ResponseWriter, r *http.Request) {
 }
 
 func GetGlobalSnapshotSettings(w http.ResponseWriter, r *http.Request) {
-	if handleOptionsRequest(w, r) {
-		return
-	}
-
-	if err := requireValidSession(w, r); err != nil {
-		logger.Error(err)
-		return
-	}
-
 	globalSnapshotSettingsResponse := GlobalSnapshotSettingsResponse{
 		Success: false,
 	}
@@ -396,15 +378,6 @@ func GetGlobalSnapshotSettings(w http.ResponseWriter, r *http.Request) {
 }
 
 func GetSnapshotConfig(w http.ResponseWriter, r *http.Request) {
-	if handleOptionsRequest(w, r) {
-		return
-	}
-
-	if err := requireValidSession(w, r); err != nil {
-		logger.Error(err)
-		return
-	}
-
 	appSlug := mux.Vars(r)["appSlug"]
 	foundApp, err := store.GetStore().GetAppFromSlug(appSlug)
 	if err != nil {
@@ -447,15 +420,6 @@ func GetSnapshotConfig(w http.ResponseWriter, r *http.Request) {
 }
 
 func GetVeleroStatus(w http.ResponseWriter, r *http.Request) {
-	if handleOptionsRequest(w, r) {
-		return
-	}
-
-	if err := requireValidSession(w, r); err != nil {
-		logger.Error(err)
-		return
-	}
-
 	getVeleroStatusResponse := VeleroStatus{}
 
 	detectVelero, err := snapshot.DetectVelero()
@@ -490,15 +454,6 @@ type SaveSnapshotConfigResponse struct {
 }
 
 func SaveSnapshotConfig(w http.ResponseWriter, r *http.Request) {
-	if handleOptionsRequest(w, r) {
-		return
-	}
-
-	if err := requireValidSession(w, r); err != nil {
-		logger.Error(err)
-		return
-	}
-
 	responseBody := SaveSnapshotConfigResponse{}
 	requestBody := SaveSnapshotConfigRequest{}
 	if err := json.NewDecoder(r.Body).Decode(&requestBody); err != nil {
