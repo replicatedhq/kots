@@ -50,11 +50,6 @@ build:
       docker:
         dockerfile: ./Dockerfile.skaffold
 
-    - image: kotsadm-api
-      context: "./api"
-      docker:
-        dockerfile: ./Dockerfile.skaffold
-        
     - image: kotsadm
       context: "./"
       docker:

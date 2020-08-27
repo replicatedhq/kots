@@ -757,7 +757,6 @@ func makeKotsadmCollectors() []*v1beta1.Collect {
 	names := []string{
 		"kotsadm-postgres",
 		"kotsadm",
-		"kotsadm-api",
 		"kotsadm-operator",
 		"kurl-proxy-kotsadm",
 	}

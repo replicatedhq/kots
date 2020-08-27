@@ -39,12 +39,6 @@ func getApiYAML(deployOptions types.DeployOptions) (map[string][]byte, error) {
 	}
 	docs["api-serviceaccount.yaml"] = serviceAccount.Bytes()
 
-	var deployment bytes.Buffer
-	if err := s.Encode(apiDeployment(deployOptions), &deployment); err != nil {
-		return nil, errors.Wrap(err, "failed to marshal api deployment")
-	}
-	docs["api-deployment.yaml"] = deployment.Bytes()
-
 	var service bytes.Buffer
 	if err := s.Encode(apiService(deployOptions.Namespace), &service); err != nil {
 		return nil, errors.Wrap(err, "failed to marshal api service")
@@ -86,9 +80,6 @@ func ensureAPI(deployOptions *types.DeployOptions, clientset *kubernetes.Clients
 
 	if err := ensureApplicationMetadata(*deployOptions, clientset); err != nil {
 		return errors.Wrap(err, "failed to ensure custom branding")
-	}
-	if err := ensureAPIDeployment(*deployOptions, clientset); err != nil {
-		return errors.Wrap(err, "failed to ensure api deployment")
 	}
 
 	if err := ensureAPIService(deployOptions.Namespace, clientset); err != nil {
@@ -255,10 +246,6 @@ func ensureAPIDeployment(deployOptions types.DeployOptions, clientset *kubernete
 		}
 
 		return nil
-	}
-
-	if err = updateApiDeployment(existingDeployment, deployOptions); err != nil {
-		return errors.Wrap(err, "failed to merge deployments")
 	}
 
 	_, err = clientset.AppsV1().Deployments(deployOptions.Namespace).Update(context.TODO(), existingDeployment, metav1.UpdateOptions{})
