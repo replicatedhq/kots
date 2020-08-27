@@ -40,6 +40,11 @@ export class NavBar extends PureComponent {
         method: "POST",
       });
       if (!res.ok) {
+        if (res.status === 401) {
+          this.setState({ loggingOut: false, displayErrorModal: false  });
+          Utilities.logoutUser();
+          return;
+        }
         this.setState({ loggingOut: false, displayErrorModal: true });
         onLogoutError(`Unexpected status code: ${res.status}`);
       }

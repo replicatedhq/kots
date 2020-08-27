@@ -166,6 +166,10 @@ class Dashboard extends Component {
         method: "GET",
       })
         .then(async (res) => {
+          if (!res.ok && res.status === 401) {
+            Utilities.logoutUser();
+            return;
+          }
           const response = await res.json();
           this.setState({
             dashboard: {
