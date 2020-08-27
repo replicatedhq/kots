@@ -169,7 +169,7 @@ func GetLicense(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	license, err := store.GetStore().GetLicenseForApp(foundApp.ID)
+	license, err := store.GetStore().GetLatestLicenseForApp(foundApp.ID)
 	if err != nil {
 		logger.Error(err)
 		w.WriteHeader(500)
@@ -404,7 +404,7 @@ func ResumeInstallOnline(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// the license data is left in the table
-	kotsLicense, err := store.GetStore().GetLicenseForApp(a.ID)
+	kotsLicense, err := store.GetStore().GetInitialLicenseForApp(a.ID)
 	if err != nil {
 		logger.Error(err)
 		resumeInstallOnlineResponse.Error = err.Error()
@@ -489,7 +489,7 @@ func GetPlatformLicenseCompatibility(w http.ResponseWriter, r *http.Request) {
 	}
 
 	app := apps[0]
-	license, err := store.GetStore().GetLicenseForApp(app.ID)
+	license, err := store.GetStore().GetLatestLicenseForApp(app.ID)
 	if err != nil {
 		logger.Error(err)
 		JSON(w, http.StatusInternalServerError, struct{}{})

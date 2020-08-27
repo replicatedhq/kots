@@ -196,7 +196,7 @@ func LiveAppConfig(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	appLicense, err := store.GetStore().GetLicenseForApp(foundApp.ID)
+	appLicense, err := store.GetStore().GetLatestLicenseForApp(foundApp.ID)
 	if err != nil {
 		logger.Error(err)
 		liveAppConfigResponse.Error = "failed to get license for app"
@@ -281,7 +281,7 @@ func CurrentAppConfig(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	appLicense, err := store.GetStore().GetLicenseForApp(foundApp.ID)
+	appLicense, err := store.GetStore().GetLatestLicenseForApp(foundApp.ID)
 	if err != nil {
 		logger.Error(err)
 		currentAppConfigResponse.Error = "failed to get license for app"
