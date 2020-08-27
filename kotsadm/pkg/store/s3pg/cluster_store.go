@@ -58,19 +58,6 @@ func (s S3PGStore) GetClusterIDFromDeployToken(deployToken string) (string, erro
 	return clusterID, nil
 }
 
-func (s S3PGStore) LookupClusterID(clusterType string, title string, token string) (string, error) {
-	db := persistence.MustGetPGSession()
-	query := `select id from cluster where cluster_type = $1 and title = $2 and token = $3`
-	row := db.QueryRow(query, clusterType, title, token)
-
-	var clusterID string
-	if err := row.Scan(&clusterID); err != nil {
-		return "", errors.Wrap(err, "failed to scan")
-	}
-
-	return clusterID, nil
-}
-
 func (s S3PGStore) CreateNewCluster(userID string, isAllUsers bool, title string, token string) (string, error) {
 	clusterID := rand.StringWithCharset(32, rand.LOWER_CASE)
 	clusterSlug := slug.Make(title)

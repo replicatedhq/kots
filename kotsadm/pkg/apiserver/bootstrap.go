@@ -28,7 +28,7 @@ func bootstrapClusterToken() error {
 		return errors.New("AUTO_CREATE_CLUSTER_TOKEN is not set")
 	}
 
-	_, err := store.GetStore().LookupClusterID("ship", "this-cluster", os.Getenv("AUTO_CREATE_CLUSTER_TOKEN"))
+	_, err := store.GetStore().GetClusterIDFromDeployToken(os.Getenv("AUTO_CREATE_CLUSTER_TOKEN"))
 	if err == nil {
 		return nil
 	}
