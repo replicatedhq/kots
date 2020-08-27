@@ -349,6 +349,10 @@ func LoadInstallationFromPath(installationFilePath string) (*kotsv1beta1.Install
 		return nil, errors.Wrap(err, "failed to read installation file")
 	}
 
+	return LoadInstallationFromContents(installationData)
+}
+
+func LoadInstallationFromContents(installationData []byte) (*kotsv1beta1.Installation, error) {
 	decode := scheme.Codecs.UniversalDeserializer().Decode
 	obj, gvk, err := decode([]byte(installationData), nil, nil)
 	if err != nil {

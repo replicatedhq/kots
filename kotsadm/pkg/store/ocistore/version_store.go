@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/containerd/containerd/remotes/docker"
 	"github.com/deislabs/oras/pkg/content"
@@ -17,10 +18,9 @@ import (
 	"github.com/mholt/archiver"
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/pkg/errors"
+	"github.com/replicatedhq/kots/kotsadm/pkg/kotsutil"
 	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
 	versiontypes "github.com/replicatedhq/kots/kotsadm/pkg/version/types"
-	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
-	"github.com/replicatedhq/kots/kotskinds/client/kotsclientset/scheme"
 	"go.uber.org/zap"
 )
 
@@ -35,6 +35,44 @@ func (s OCIStore) appVersionConfigMapNameForApp(appID string) (string, error) {
 	}
 
 	return fmt.Sprintf("%s%s", AppVersionConfigmapPrefix, a.Slug), nil
+}
+
+func (s OCIStore) getLatestAppVersion(appID string) (*versiontypes.AppVersion, error) {
+	configMapName, err := s.appVersionConfigMapNameForApp(appID)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get appversion config map name")
+	}
+
+	configMap, err := s.getConfigmap(configMapName)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get app version config map")
+	}
+
+	if configMap.Data == nil {
+		configMap.Data = map[string]string{}
+	}
+
+	maxSequence := int64(-1)
+	for k := range configMap.Data {
+		possibleMaxSequence, err := strconv.ParseInt(k, 10, 64)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to parse sequence")
+		}
+		if possibleMaxSequence > maxSequence {
+			maxSequence = possibleMaxSequence
+		}
+	}
+
+	if maxSequence == int64(-1) {
+		return nil, ErrNotFound
+	}
+
+	appVersion := versiontypes.AppVersion{}
+	if err := json.Unmarshal([]byte(configMap.Data[strconv.FormatInt(maxSequence, 10)]), &appVersion); err != nil {
+		return nil, errors.Wrap(err, "failed to unmarshal app version")
+	}
+
+	return &appVersion, nil
 }
 
 func (s OCIStore) IsGitOpsSupportedForVersion(appID string, sequence int64) (bool, error) {
@@ -62,14 +100,7 @@ func (s OCIStore) IsGitOpsSupportedForVersion(appID string, sequence int64) (boo
 		return false, errors.Wrap(err, "failed to unmarshal app version data")
 	}
 
-	decode := scheme.Codecs.UniversalDeserializer().Decode
-	obj, _, err := decode([]byte(appVersion.License), nil, nil)
-	if err != nil {
-		return false, errors.Wrap(err, "failed to read app version license data")
-	}
-	license := obj.(*kotsv1beta1.License)
-
-	return license.Spec.IsGitOpsSupported, nil
+	return appVersion.KOTSKinds.License.Spec.IsGitOpsSupported, nil
 }
 
 func (s OCIStore) IsRollbackSupportedForVersion(appID string, sequence int64) (bool, error) {
@@ -97,14 +128,7 @@ func (s OCIStore) IsRollbackSupportedForVersion(appID string, sequence int64) (b
 		return false, errors.Wrap(err, "failed to unmarshal app version data")
 	}
 
-	decode := scheme.Codecs.UniversalDeserializer().Decode
-	obj, _, err := decode([]byte(appVersion.KotsAppSpec), nil, nil)
-	if err != nil {
-		return false, errors.Wrap(err, "failed to read app version license data")
-	}
-	kotsApp := obj.(*kotsv1beta1.Application)
-
-	return kotsApp.Spec.AllowRollback, nil
+	return appVersion.KOTSKinds.KotsApplication.Spec.AllowRollback, nil
 }
 
 func (s OCIStore) IsSnapshotsSupportedForVersion(appID string, sequence int64) (bool, error) {
@@ -268,6 +292,89 @@ func (s OCIStore) GetAppVersionArchive(appID string, sequence int64) (string, er
 	}
 
 	return tmpDir, nil
+}
+
+func (s OCIStore) CreateAppVersion(appID string, currentSequence *int64, appName string, appIcon string, kotsKinds *kotsutil.KotsKinds) (int64, error) {
+	// NOTE that this experimental store doesn't have a tx and it's possible that this
+	// could overwrite if there are multiple updates happening concurrently
+	latestAppVersion, err := s.getLatestAppVersion(appID)
+	if err != nil && err != ErrNotFound {
+		return int64(0), errors.Wrap(err, "failed to get latest app version")
+	}
+
+	newSequence := int64(0)
+	if latestAppVersion != nil {
+		newSequence = latestAppVersion.Sequence + 1
+	}
+
+	appVersion := versiontypes.AppVersion{
+		KOTSKinds: kotsKinds,
+		CreatedOn: time.Now(),
+		Sequence:  newSequence,
+	}
+
+	b, err := json.Marshal(appVersion)
+	if err != nil {
+		return int64(0), errors.Wrap(err, "failed to marshal app version")
+	}
+
+	configMapName, err := s.appVersionConfigMapNameForApp(appID)
+	if err != nil {
+		return int64(0), errors.Wrap(err, "failed to get app version config map name")
+	}
+
+	configMap, err := s.getConfigmap(configMapName)
+	if err != nil {
+		return int64(0), errors.Wrap(err, "failed to get app version config map")
+	}
+
+	if configMap.Data == nil {
+		configMap.Data = map[string]string{}
+	}
+
+	configMap.Data[strconv.FormatInt(newSequence, 10)] = string(b)
+
+	if err := s.updateConfigmap(configMap); err != nil {
+		return int64(0), errors.Wrap(err, "failed to update app version configmap")
+	}
+
+	return newSequence, nil
+}
+
+func (s OCIStore) AddAppVersionToDownstream(appID string, clusterID string, sequence int64, versionLabel string, status string, source string, diffSummary string, diffSummaryError string, commitURL string, gitDeployable bool) error {
+	return ErrNotImplemented
+}
+
+func (s OCIStore) GetAppVersion(appID string, sequence int64) (*versiontypes.AppVersion, error) {
+	configMapName, err := s.appVersionConfigMapNameForApp(appID)
+	if err != nil {
+		return nil, errors.New("failed to get configmap name for app version")
+	}
+
+	configMap, err := s.getConfigmap(configMapName)
+	if err != nil {
+		return nil, errors.New("failed to get app version config map")
+	}
+
+	if configMap.Data == nil {
+		return nil, nil // Matching S3PG store
+	}
+
+	data, ok := configMap.Data[strconv.FormatInt(sequence, 10)]
+	if !ok {
+		return nil, nil // Matching S3PG store
+	}
+
+	appVersion := versiontypes.AppVersion{}
+	if err := json.Unmarshal([]byte(data), &appVersion); err != nil {
+		return nil, errors.Wrap(err, "failed to unmarshal app version")
+	}
+
+	return &appVersion, nil
+}
+
+func (s OCIStore) GetAppVersionsAfter(appID string, sequence int64) ([]*versiontypes.AppVersion, error) {
+	return nil, ErrNotImplemented
 }
 
 func refFromAppVersion(appID string, sequence int64, baseURI string) string {
