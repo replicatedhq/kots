@@ -189,7 +189,7 @@ class AppDetailPage extends Component {
     }
 
     try {
-      this.setState({ loadingApp: true, gettingAppErrMsg: "", displayErrorModal: false });
+      this.setState({ loadingApp: true });
 
       const res = await fetch(`${window.env.API_ENDPOINT}/apps/app/${slug}`, {
         headers: {
