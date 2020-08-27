@@ -6,30 +6,32 @@ import (
 
 	"github.com/gosimple/slug"
 	"github.com/pkg/errors"
+	downstreamtypes "github.com/replicatedhq/kots/kotsadm/pkg/downstream/types"
 	"github.com/replicatedhq/kots/kotsadm/pkg/persistence"
 	"github.com/replicatedhq/kots/kotsadm/pkg/rand"
 )
 
-func (s S3PGStore) ListClusters() (map[string]string, error) {
+func (s S3PGStore) ListClusters() ([]*downstreamtypes.Downstream, error) {
 	db := persistence.MustGetPGSession()
 
-	query := `select id, title from cluster`
+	query := `select id, slug, title from cluster` // TODO the current sequence
 	rows, err := db.Query(query)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to query clusters")
 	}
 	defer rows.Close()
-	clusterIDs := map[string]string{}
+
+	clusters := []*downstreamtypes.Downstream{}
 	for rows.Next() {
-		clusterID := ""
-		name := ""
-		if err := rows.Scan(&clusterID, &name); err != nil {
+		cluster := downstreamtypes.Downstream{}
+		if err := rows.Scan(&cluster.ClusterID, &cluster.ClusterSlug, &cluster.Name); err != nil {
 			return nil, errors.Wrap(err, "failed to scan row")
 		}
-		clusterIDs[clusterID] = name
+
+		clusters = append(clusters, &cluster)
 	}
 
-	return clusterIDs, nil
+	return clusters, nil
 }
 
 func (s S3PGStore) GetClusterIDFromSlug(slug string) (string, error) {
