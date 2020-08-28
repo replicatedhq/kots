@@ -58,7 +58,7 @@ func (s S3PGStore) GetLatestLicenseForApp(appID string) (*kotsv1beta1.License, e
 func (s S3PGStore) GetLicenseForAppVersion(appID string, sequence int64) (*kotsv1beta1.License, error) {
 	db := persistence.MustGetPGSession()
 	query := `select kots_license from app_version where app_id = $1 and sequence = $2`
-	row := db.QueryRow(query, appID)
+	row := db.QueryRow(query, appID, sequence)
 
 	var licenseStr sql.NullString
 	if err := row.Scan(&licenseStr); err != nil {
