@@ -22,6 +22,14 @@
       min-width: 463px;
       max-width: 463px;
     }
+
+    &:nth-child(3n) {
+      margin-right: 30px;
+      min-width: 455px;
+      min-height: auto;
+      max-width: 455px;
+      max-height: none;
+    }
   }
 
   &.emptyGraph {

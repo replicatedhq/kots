@@ -424,10 +424,10 @@ class Dashboard extends Component {
 
     return (
       <div className="dashboard-card graph flex-column flex1 flex u-marginTop--20" key={chart.title}>
-        <XYPlot width={460} height={180} onMouseLeave={() => this.setState({ crosshairValues: [] })}>
+        <XYPlot width={460} height={180} onMouseLeave={() => this.setState({ crosshairValues: [] })} margin={{left: 60}}>
           <VerticalGridLines />
           <HorizontalGridLines />
-          <XAxis tickFormat={v => `${moment.unix(v).format("H:mm")}`} style={axisStyle} />
+          <XAxis tickFormat={v => `${moment.unix(v).format("H:mm")}`} style={axisStyle}/>
           <YAxis width={60} tickFormat={yAxisTickFormat} style={axisStyle} />
           {series}
           {this.state.crosshairValues?.length > 0 && this.state.activeChart === chart &&
