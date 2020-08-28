@@ -60,7 +60,7 @@ func (s OCIStore) GetClusterIDFromDeployToken(deployToken string) (string, error
 	return string(clusterID), nil
 }
 
-func (s OCIStore) CreateNewCluster(userId string, isAllUsers bool, title string, token string) (string, error) {
+func (s OCIStore) CreateNewCluster(userID string, isAllUsers bool, title string, token string) (string, error) {
 	downstream := downstreamtypes.Downstream{
 		ClusterID:   rand.StringWithCharset(32, rand.LOWER_CASE),
 		ClusterSlug: slug.Make(title),
