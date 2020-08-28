@@ -455,7 +455,9 @@ export const Utilities = {
       window.localStorage.removeItem("token");
     }
 
-    window.location = "/secure-console";
+    if (window.location.pathname !== "/secure-console") {
+      window.location = "/secure-console";
+    }
   },
 
   isEmailValid(email) {

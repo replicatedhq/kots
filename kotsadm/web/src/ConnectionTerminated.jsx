@@ -1,4 +1,5 @@
 import * as React from "react";
+import { Utilities } from "./utilities/utilities";
 
 export default class ConnectionTerminated extends React.Component {
 
@@ -26,7 +27,15 @@ export default class ConnectionTerminated extends React.Component {
   ping = async () => {
     const { reconnectAttempts } = this.state;
     await fetch(`${window.env.API_ENDPOINT}/ping`, {
-    }).then(() => {
+      headers: {
+        "Authorization": Utilities.getToken(),
+        "Content-Type": "application/json",
+      },
+    }).then(async (res) => {
+      if (res.status === 401) {
+        Utilities.logoutUser();
+        return;
+      }
       this.props.setTerminatedState(false);
     }).catch(() => {
       this.props.setTerminatedState(true);

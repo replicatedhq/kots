@@ -8,7 +8,6 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
-	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
 	"github.com/replicatedhq/kots/kotsadm/pkg/session"
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -60,7 +59,6 @@ func requireValidSession(w http.ResponseWriter, r *http.Request) error {
 
 	sess, err := session.Parse(auth)
 	if err != nil {
-		logger.Error(err)
 		response := ErrorResponse{Error: "failed to parse authorization header"}
 		JSON(w, http.StatusUnauthorized, response)
 		return errors.Wrap(err, "invalid session")

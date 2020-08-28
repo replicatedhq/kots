@@ -69,7 +69,6 @@ func Start() {
 	**********************************************************************/
 
 	r.HandleFunc("/healthz", handlers.Healthz)
-	r.HandleFunc("/api/v1/ping", handlers.Ping)
 	r.HandleFunc("/api/v1/login", handlers.Login)
 	r.HandleFunc("/api/v1/logout", handlers.Logout) // this route uses its own auth
 	r.Path("/api/v1/metadata").Methods("GET").HandlerFunc(handlers.Metadata)
@@ -101,6 +100,11 @@ func Start() {
 	/**********************************************************************
 	* Session auth routes
 	**********************************************************************/
+
+	sessionAuthQuietRouter := r.PathPrefix("").Subrouter()
+	sessionAuthQuietRouter.Use(handlers.RequireValidSessionQuietMiddleware)
+
+	sessionAuthQuietRouter.Path("/api/v1/ping").Methods("GET").HandlerFunc(handlers.Ping)
 
 	sessionAuthRouter := r.PathPrefix("").Subrouter()
 	sessionAuthRouter.Use(handlers.RequireValidSessionMiddleware)
