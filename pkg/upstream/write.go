@@ -11,6 +11,7 @@ import (
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	"github.com/replicatedhq/kots/pkg/crypto"
 	"github.com/replicatedhq/kots/pkg/upstream/types"
+	"github.com/replicatedhq/kots/pkg/util"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/serializer/json"
 	serializer "k8s.io/apimachinery/pkg/runtime/serializer/json"
@@ -69,6 +70,8 @@ func WriteUpstream(u *types.Upstream, options types.WriteOptions) error {
 	}
 	u.EncryptionKey = encryptionKey
 
+	u.APIAccessToken = getAPIAccessToken(prevInstallation)
+
 	for i, file := range u.Files {
 		fileRenderPath := path.Join(renderDir, file.Path)
 		d, _ := path.Split(fileRenderPath)
@@ -81,7 +84,7 @@ func WriteUpstream(u *types.Upstream, options types.WriteOptions) error {
 		if options.EncryptConfig {
 			configValues := contentToConfigValues(file.Content)
 			if configValues != nil {
-				content, err := encryptConfigValues(configValues, encryptionKey)
+				content, err := encryptConfigValues(configValues, u.EncryptionKey)
 				if err != nil {
 					return errors.Wrap(err, "encrypt config values")
 				}
@@ -111,11 +114,12 @@ func WriteUpstream(u *types.Upstream, options types.WriteOptions) error {
 			Name: u.Name,
 		},
 		Spec: kotsv1beta1.InstallationSpec{
-			UpdateCursor:  u.UpdateCursor,
-			ChannelName:   channelName,
-			VersionLabel:  u.VersionLabel,
-			ReleaseNotes:  u.ReleaseNotes,
-			EncryptionKey: encryptionKey,
+			UpdateCursor:   u.UpdateCursor,
+			ChannelName:    channelName,
+			VersionLabel:   u.VersionLabel,
+			ReleaseNotes:   u.ReleaseNotes,
+			EncryptionKey:  u.EncryptionKey,
+			APIAccessToken: u.APIAccessToken,
 		},
 	}
 
@@ -143,6 +147,15 @@ func getEncryptionKey(prevInstallation *kotsv1beta1.Installation) (string, error
 	}
 
 	return prevInstallation.Spec.EncryptionKey, nil
+}
+
+func getAPIAccessToken(prevInstallation *kotsv1beta1.Installation) string {
+	if prevInstallation == nil {
+		newToken := "APP " + util.GenPassword(32)
+		return newToken
+	}
+
+	return prevInstallation.Spec.APIAccessToken
 }
 
 func mustMarshalInstallation(installation *kotsv1beta1.Installation) []byte {

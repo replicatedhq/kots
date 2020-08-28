@@ -75,7 +75,7 @@ func RenderContent(kotsKinds *kotsutil.KotsKinds, registrySettings *registrytype
 		configGroups = kotsKinds.Config.Spec.Groups
 	}
 
-	builder, _, err := template.NewBuilder(configGroups, templateContextValues, localRegistry, appCipher, kotsKinds.License)
+	builder, _, err := template.NewBuilder(configGroups, templateContextValues, localRegistry, appCipher, kotsKinds.License, kotsKinds.Installation.Spec.APIAccessToken)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create builder")
 	}

@@ -17,15 +17,16 @@ type UpstreamFile struct {
 }
 
 type Upstream struct {
-	URI           string
-	Name          string
-	Type          string
-	Files         []UpstreamFile
-	UpdateCursor  string
-	ChannelName   string
-	VersionLabel  string
-	ReleaseNotes  string
-	EncryptionKey string
+	URI            string
+	Name           string
+	Type           string
+	Files          []UpstreamFile
+	UpdateCursor   string
+	ChannelName    string
+	VersionLabel   string
+	ReleaseNotes   string
+	EncryptionKey  string
+	APIAccessToken string
 }
 
 type WriteOptions struct {
