@@ -197,8 +197,8 @@ class Root extends Component {
         "Content-Type": "application/json",
       },
     }).then(async (result) => {
-      if (result.status === 401 && window.location.pathname !== "/secure-console") {
-        window.location.pathname = "/secure-console";
+      if (result.status === 401) {
+        Utilities.logoutUser();
         return;
       }
       const body = await result.json();

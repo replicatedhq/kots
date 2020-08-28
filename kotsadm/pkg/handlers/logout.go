@@ -9,14 +9,15 @@ import (
 )
 
 func Logout(w http.ResponseWriter, r *http.Request) {
+	if r.Header.Get("Authorization") == "" {
+		w.WriteHeader(http.StatusNoContent)
+		return
+	}
+
 	sess, err := session.Parse(r.Header.Get("Authorization"))
 	if err != nil {
 		if store.GetStore().IsNotFound(err) {
-			JSON(w, http.StatusNoContent, "")
-			return
-		}
-		if r.Header.Get("Authorization") == "" {
-			JSON(w, http.StatusNoContent, "")
+			w.WriteHeader(http.StatusNoContent)
 			return
 		}
 		logger.Error(err)
@@ -26,7 +27,7 @@ func Logout(w http.ResponseWriter, r *http.Request) {
 
 	// we don't currently have roles, all valid tokens are valid sessions
 	if sess == nil || sess.ID == "" {
-		JSON(w, http.StatusNoContent, "")
+		w.WriteHeader(http.StatusNoContent)
 		return
 	}
 

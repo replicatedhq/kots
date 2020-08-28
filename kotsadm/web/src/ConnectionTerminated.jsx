@@ -32,8 +32,8 @@ export default class ConnectionTerminated extends React.Component {
         "Content-Type": "application/json",
       },
     }).then(async (res) => {
-      if (res.status === 401 && window.location.pathname !== "/secure-console") {
-        window.location.pathname = "/secure-console";
+      if (res.status === 401) {
+        Utilities.logoutUser();
         return;
       }
       this.props.setTerminatedState(false);
