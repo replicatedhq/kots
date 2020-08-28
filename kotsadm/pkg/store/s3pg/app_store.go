@@ -35,6 +35,18 @@ func (s S3PGStore) AddAppToAllDownstreams(appID string) error {
 	return nil
 }
 
+func (s S3PGStore) SetAppInstallState(appID string, state string) error {
+	db := persistence.MustGetPGSession()
+
+	query := `update app set install_state = $2 where id = $1`
+	_, err := db.Exec(query, appID, state)
+	if err != nil {
+		return errors.Wrap(err, "failed to update app install state")
+	}
+
+	return nil
+}
+
 func (s S3PGStore) ListInstalledApps() ([]*apptypes.App, error) {
 	logger.Debug("getting all users apps")
 

@@ -34,13 +34,13 @@ func (c S3PGStore) ListPendingScheduledSnapshots(appID string) ([]snapshottypes.
 	return scheduledSnapshots, nil
 }
 
-func (c S3PGStore) UpdateScheduledSnapshot(ID string, backupName string) error {
+func (c S3PGStore) UpdateScheduledSnapshot(snapshotID string, backupName string) error {
 	logger.Debug("Updating scheduled snapshot",
-		zap.String("ID", ID))
+		zap.String("ID", snapshotID))
 
 	db := persistence.MustGetPGSession()
 	query := `UPDATE scheduled_snapshots SET backup_name = $1 WHERE id = $2`
-	_, err := db.Exec(query, backupName, ID)
+	_, err := db.Exec(query, backupName, snapshotID)
 	if err != nil {
 		return errors.Wrap(err, "failed to exec")
 	}
