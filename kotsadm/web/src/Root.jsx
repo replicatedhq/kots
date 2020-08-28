@@ -192,7 +192,15 @@ class Root extends Component {
     const appSlugs = apps?.map(a => a.slug);
     const url = `${window.env.API_ENDPOINT}/ping?slugs=${appSlugs}`
     await fetch(url, {
+      headers: {
+        "Authorization": Utilities.getToken(),
+        "Content-Type": "application/json",
+      },
     }).then(async (result) => {
+      if (result.status === 401 && window.location.pathname !== "/secure-console") {
+        window.location.pathname = "/secure-console";
+        return;
+      }
       const body = await result.json();
       this.setState({ connectionTerminated: false, snapshotInProgressApps: body.snapshotInProgressApps });
     }).catch(() => {

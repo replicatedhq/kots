@@ -25,3 +25,12 @@ func RequireValidSessionMiddleware(next http.Handler) http.Handler {
 		next.ServeHTTP(w, r)
 	})
 }
+
+func RequireValidSessionQuietMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if err := requireValidSession(w, r); err != nil {
+			return
+		}
+		next.ServeHTTP(w, r)
+	})
+}
