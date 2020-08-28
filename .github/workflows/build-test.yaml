@@ -159,7 +159,16 @@ jobs:
           --kotsadm-tag 2h 
       - name: execute suite bravo
         run: |
+          set +e
           ./bin/kots admin-console -n minimal-rbac &
           ADMIN_CONSOLE_PID=$!
           testim --token ${{ secrets.TESTIM_ACCESS_TOKEN }} --project ${{ secrets.TESTIM_PROJECT_ID }} --grid "Testim-grid" --report-file testim-report.xml --suite bravo --tunnel --tunnel-port 8800
-          kill $ADMIN_CONSOLE_PID          
+          EXIT_CODE=$?
+          echo "------pods:"
+          kubectl -n minimal-rbac get pods
+          echo "------kotsadm logs"
+          kubectl -n minimal-rbac logs deployment/kotsadm
+          echo "------kotsadm-operator logs"
+          kubectl -n minimal-rbac logs deployment/kotsadm-operator
+          kill $ADMIN_CONSOLE_PID
+          exit $EXIT_CODE
