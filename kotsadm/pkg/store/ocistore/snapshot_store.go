@@ -10,7 +10,7 @@ func (c OCIStore) ListPendingScheduledSnapshots(appID string) ([]snapshottypes.S
 	return nil, ErrNotImplemented
 }
 
-func (c OCIStore) UpdateScheduledSnapshot(ID string, backupName string) error {
+func (c OCIStore) UpdateScheduledSnapshot(snapshotID string, backupName string) error {
 	return ErrNotImplemented
 }
 
@@ -18,6 +18,6 @@ func (c OCIStore) DeletePendingScheduledSnapshots(appID string) error {
 	return ErrNotImplemented
 }
 
-func (c OCIStore) CreateScheduledSnapshot(id string, appID string, timestamp time.Time) error {
+func (c OCIStore) CreateScheduledSnapshot(snapshotID string, appID string, timestamp time.Time) error {
 	return ErrNotImplemented
 }

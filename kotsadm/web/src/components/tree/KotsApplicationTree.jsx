@@ -1,5 +1,4 @@
 import * as React from "react";
-import { compose } from "react-apollo";
 import { withRouter } from "react-router-dom";
 import { Utilities } from "../../utilities/utilities";
 import Helmet from "react-helmet";
@@ -192,6 +191,4 @@ class KotsApplicationTree extends React.Component {
   }
 }
 
-export default withRouter(compose(
-  withRouter,
-)(KotsApplicationTree));
+export default withRouter(KotsApplicationTree);

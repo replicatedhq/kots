@@ -2,7 +2,6 @@ import { hot } from "react-hot-loader/root";
 import React, { Component } from "react";
 import { createBrowserHistory } from "history";
 import { Switch, Route, Redirect, Router } from "react-router-dom";
-import { ApolloProvider } from "react-apollo";
 import { Helmet } from "react-helmet";
 import Modal from "react-modal";
 import find from "lodash/find";
@@ -18,7 +17,6 @@ import ClusterNodes from "./components/apps/ClusterNodes";
 import UnsupportedBrowser from "./components/static/UnsupportedBrowser";
 import NotFound from "./components/static/NotFound";
 import { Utilities } from "./utilities/utilities";
-import { ShipClientGQL } from "./ShipClientGQL";
 import SecureAdminConsole from "./components/SecureAdminConsole";
 import UploadLicenseFile from "./components/UploadLicenseFile";
 import BackupRestore from "./components/BackupRestore";
@@ -37,15 +35,6 @@ const INIT_SESSION_ID_STORAGE_KEY = "initSessionId";
 
 let browserHistory = createBrowserHistory();
 let history = connectHistory(browserHistory);
-
-/**
- * Create our GraphQL Client
- */
-const GraphQLClient = ShipClientGQL(
-  window.env.GRAPHQL_ENDPOINT,
-  window.env.API_ENDPOINT,
-  () => Utilities.getToken()
-);
 
 class ProtectedRoute extends Component {
   render() {
@@ -286,79 +275,77 @@ class Root extends Component {
             <link rel="shortcut icon" href={this.state.appLogo} />
           }
         </Helmet>
-        <ApolloProvider client={GraphQLClient}>
-          <ThemeContext.Provider value={{
-            setThemeState: this.setThemeState,
-            getThemeState: this.getThemeState,
-            clearThemeState: this.clearThemeState
-          }}>
-            <Router history={history}>
-              <div className="flex-column flex1">
-                <NavBar
-                  logo={themeState.navbarLogo || this.state.appLogo}
-                  refetchAppsList={this.getAppsList}
-                  fetchingMetadata={this.state.fetchingMetadata}
-                  isKurlEnabled={this.state.isKurlEnabled}
-                  isGitOpsSupported={this.isGitOpsSupported()}
-                  appsList={appsList}
-                  onLogoutError={this.onLogoutError}
-                  isSnapshotsSupported={this.isSnapshotsSupported()}
-                  errLoggingOut={errLoggingOut}
-                />
-                <div className="flex1 flex-column u-overflow--auto">
-                  <Switch>
+        <ThemeContext.Provider value={{
+          setThemeState: this.setThemeState,
+          getThemeState: this.getThemeState,
+          clearThemeState: this.clearThemeState
+        }}>
+          <Router history={history}>
+            <div className="flex-column flex1">
+              <NavBar
+                logo={themeState.navbarLogo || this.state.appLogo}
+                refetchAppsList={this.getAppsList}
+                fetchingMetadata={this.state.fetchingMetadata}
+                isKurlEnabled={this.state.isKurlEnabled}
+                isGitOpsSupported={this.isGitOpsSupported()}
+                appsList={appsList}
+                onLogoutError={this.onLogoutError}
+                isSnapshotsSupported={this.isSnapshotsSupported()}
+                errLoggingOut={errLoggingOut}
+              />
+              <div className="flex1 flex-column u-overflow--auto">
+                <Switch>
 
-                    <Route exact path="/" component={() => <Redirect to={Utilities.isLoggedIn() ? "/apps" : "/secure-console"} />} />
-                    <Route exact path="/crashz" render={() => {
-                      const Crashz = () => {
-                        throw new Error("Crashz!");
-                      };
-                      return <Crashz />;
+                  <Route exact path="/" component={() => <Redirect to={Utilities.isLoggedIn() ? "/apps" : "/secure-console"} />} />
+                  <Route exact path="/crashz" render={() => {
+                    const Crashz = () => {
+                      throw new Error("Crashz!");
+                    };
+                    return <Crashz />;
 
-                    }} />
-                    <ProtectedRoute path="/preflight" render={props => <PreflightResultPage {...props} logo={this.state.appLogo} appName={this.state.selectedAppName} fromLicenseFlow={true} refetchAppsList={this.getAppsList} />} />
-                    <ProtectedRoute exact path="/:slug/config" render={props => <AppConfig {...props} fromLicenseFlow={true} refetchAppsList={this.getAppsList} />} />
-                    <Route exact path="/secure-console" render={props => <SecureAdminConsole {...props} logo={this.state.appLogo} appName={this.state.selectedAppName} onLoginSuccess={this.getAppsList} fetchingMetadata={this.state.fetchingMetadata} />} />
-                    <ProtectedRoute exact path="/upload-license" render={props => <UploadLicenseFile {...props} logo={this.state.appLogo} appsListLength={appsList?.length} appName={this.state.selectedAppName} fetchingMetadata={this.state.fetchingMetadata} onUploadSuccess={this.getAppsList} />} />
-                    <ProtectedRoute exact path="/restore" render={props => <BackupRestore {...props} logo={this.state.appLogo} appName={this.state.selectedAppName} appsListLength={appsList?.length} fetchingMetadata={this.state.fetchingMetadata} />} />
-                    <ProtectedRoute exact path="/:slug/airgap" render={props => <UploadAirgapBundle {...props} showRegistry={true} logo={this.state.appLogo} appsListLength={appsList?.length} appName={this.state.selectedAppName} onUploadSuccess={this.getAppsList} fetchingMetadata={this.state.fetchingMetadata} />} />
-                    <ProtectedRoute exact path="/:slug/airgap-bundle" render={props => <UploadAirgapBundle {...props} showRegistry={false} logo={this.state.appLogo} appsListLength={appsList?.length} appName={this.state.selectedAppName} onUploadSuccess={this.getAppsList} fetchingMetadata={this.state.fetchingMetadata} />} />
-                    <Route path="/unsupported" component={UnsupportedBrowser} />
-                    <ProtectedRoute path="/cluster/manage" render={(props) => <ClusterNodes {...props} appName={this.state.selectedAppName} />} />
-                    <ProtectedRoute path="/gitops" render={(props) => <GitOps {...props} appName={this.state.selectedAppName} />} />
-                    <ProtectedRoute path="/snapshots" render={(props) => <Snapshots {...props} appName={this.state.selectedAppName} />} />
-                    {/* <ProtectedRoute exact path="/redactors" render={(props) => <Redactors {...props} appName={this.state.selectedAppName} />} />
-                    <ProtectedRoute exact path="/redactors/new" render={(props) => <EditRedactor {...props} appName={this.state.selectedAppName} isNew={true} />} />
-                    <ProtectedRoute exact path="/redactors/:slug" render={(props) => <EditRedactor {...props} appName={this.state.selectedAppName} />} /> */}
-                    <ProtectedRoute
-                      path={["/apps", "/app/:slug/:tab?"]}
-                      render={
-                        props => (
-                          <AppDetailPage
-                            {...props}
-                            rootDidInitialAppFetch={rootDidInitialWatchFetch}
-                            appsList={appsList}
-                            refetchAppsList={this.getAppsList}
-                            onActiveInitSession={this.handleActiveInitSession}
-                            appNameSpace={this.state.appNameSpace}
-                            appName={this.state.selectedAppName}
-                            snapshotInProgressApps={this.state.snapshotInProgressApps}
-                            ping={this.ping}
-                          />
-                        )
-                      }
-                    />
-                    <Route exact path="/restore-completed" render={props => <RestoreCompleted {...props} logo={this.state.appLogo} fetchingMetadata={this.state.fetchingMetadata} />} />
-                    <Route component={NotFound} />
-                  </Switch>
-                </div>
-                <div className="flex-auto Footer-wrapper u-width--full">
-                  <Footer />
-                </div>
+                  }} />
+                  <ProtectedRoute path="/preflight" render={props => <PreflightResultPage {...props} logo={this.state.appLogo} appName={this.state.selectedAppName} fromLicenseFlow={true} refetchAppsList={this.getAppsList} />} />
+                  <ProtectedRoute exact path="/:slug/config" render={props => <AppConfig {...props} fromLicenseFlow={true} refetchAppsList={this.getAppsList} />} />
+                  <Route exact path="/secure-console" render={props => <SecureAdminConsole {...props} logo={this.state.appLogo} appName={this.state.selectedAppName} onLoginSuccess={this.getAppsList} fetchingMetadata={this.state.fetchingMetadata} />} />
+                  <ProtectedRoute exact path="/upload-license" render={props => <UploadLicenseFile {...props} logo={this.state.appLogo} appsListLength={appsList?.length} appName={this.state.selectedAppName} fetchingMetadata={this.state.fetchingMetadata} onUploadSuccess={this.getAppsList} />} />
+                  <ProtectedRoute exact path="/restore" render={props => <BackupRestore {...props} logo={this.state.appLogo} appName={this.state.selectedAppName} appsListLength={appsList?.length} fetchingMetadata={this.state.fetchingMetadata} />} />
+                  <ProtectedRoute exact path="/:slug/airgap" render={props => <UploadAirgapBundle {...props} showRegistry={true} logo={this.state.appLogo} appsListLength={appsList?.length} appName={this.state.selectedAppName} onUploadSuccess={this.getAppsList} fetchingMetadata={this.state.fetchingMetadata} />} />
+                  <ProtectedRoute exact path="/:slug/airgap-bundle" render={props => <UploadAirgapBundle {...props} showRegistry={false} logo={this.state.appLogo} appsListLength={appsList?.length} appName={this.state.selectedAppName} onUploadSuccess={this.getAppsList} fetchingMetadata={this.state.fetchingMetadata} />} />
+                  <Route path="/unsupported" component={UnsupportedBrowser} />
+                  <ProtectedRoute path="/cluster/manage" render={(props) => <ClusterNodes {...props} appName={this.state.selectedAppName} />} />
+                  <ProtectedRoute path="/gitops" render={(props) => <GitOps {...props} appName={this.state.selectedAppName} />} />
+                  <ProtectedRoute path="/snapshots" render={(props) => <Snapshots {...props} appName={this.state.selectedAppName} />} />
+                  {/* <ProtectedRoute exact path="/redactors" render={(props) => <Redactors {...props} appName={this.state.selectedAppName} />} />
+                  <ProtectedRoute exact path="/redactors/new" render={(props) => <EditRedactor {...props} appName={this.state.selectedAppName} isNew={true} />} />
+                  <ProtectedRoute exact path="/redactors/:slug" render={(props) => <EditRedactor {...props} appName={this.state.selectedAppName} />} /> */}
+                  <ProtectedRoute
+                    path={["/apps", "/app/:slug/:tab?"]}
+                    render={
+                      props => (
+                        <AppDetailPage
+                          {...props}
+                          rootDidInitialAppFetch={rootDidInitialWatchFetch}
+                          appsList={appsList}
+                          refetchAppsList={this.getAppsList}
+                          onActiveInitSession={this.handleActiveInitSession}
+                          appNameSpace={this.state.appNameSpace}
+                          appName={this.state.selectedAppName}
+                          snapshotInProgressApps={this.state.snapshotInProgressApps}
+                          ping={this.ping}
+                        />
+                      )
+                    }
+                  />
+                  <Route exact path="/restore-completed" render={props => <RestoreCompleted {...props} logo={this.state.appLogo} fetchingMetadata={this.state.fetchingMetadata} />} />
+                  <Route component={NotFound} />
+                </Switch>
               </div>
-            </Router>
-          </ThemeContext.Provider>
-        </ApolloProvider>
+              <div className="flex-auto Footer-wrapper u-width--full">
+                <Footer />
+              </div>
+            </div>
+          </Router>
+        </ThemeContext.Provider>
         {connectionTerminated &&
           <Modal
             isOpen={connectionTerminated}
@@ -368,7 +355,7 @@ class Root extends Component {
             ariaHideApp={false}
             className="ConnectionTerminated--wrapper Modal DefaultSize"
           >
-            <ConnectionTerminated gqlClient={GraphQLClient} connectionTerminated={this.state.connectionTerminated} appLogo={this.state.appLogo} setTerminatedState={(status) => this.setState({ connectionTerminated: status })} />
+            <ConnectionTerminated connectionTerminated={this.state.connectionTerminated} appLogo={this.state.appLogo} setTerminatedState={(status) => this.setState({ connectionTerminated: status })} />
           </Modal>
         }
       </div>

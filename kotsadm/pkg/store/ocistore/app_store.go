@@ -30,6 +30,10 @@ func (s OCIStore) AddAppToAllDownstreams(appID string) error {
 	return ErrNotImplemented
 }
 
+func (s OCIStore) SetAppInstallState(appID string, state string) error {
+	return ErrNotImplemented
+}
+
 func (s OCIStore) ListInstalledApps() ([]*apptypes.App, error) {
 	appListConfigmap, err := s.getConfigmap(AppListConfigmapName)
 	if err != nil {

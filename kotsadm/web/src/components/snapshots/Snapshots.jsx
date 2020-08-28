@@ -1,5 +1,4 @@
 import React, { Component } from "react";
-import { compose, withApollo } from "react-apollo";
 import { withRouter } from "react-router-dom"
 import Helmet from "react-helmet";
 
@@ -164,7 +163,4 @@ class Snapshots extends Component {
   }
 }
 
-export default compose(
-  withApollo,
-  withRouter,
-)(Snapshots);
+export default withRouter(Snapshots);

@@ -1,6 +1,5 @@
 import get from "lodash/get";
 import React, { Component } from "react";
-import { compose, withApollo } from "react-apollo";
 import { withRouter } from "react-router-dom";
 import MonacoEditor from "react-monaco-editor"; 
 import CodeSnippet from "./shared/CodeSnippet";
@@ -160,7 +159,4 @@ class PreflightResultErrors extends Component {
   }
 }
 
-export default compose(
-  withApollo,
-  withRouter,
-)(PreflightResultErrors);
+export default withRouter(PreflightResultErrors);

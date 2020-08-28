@@ -1,6 +1,5 @@
 import React, { Component } from "react";
 import { Link } from "react-router-dom";
-import { compose, withApollo } from "react-apollo";
 import { Helmet } from "react-helmet";
 import { withRouter } from "react-router-dom";
 import Modal from "react-modal";
@@ -382,7 +381,4 @@ class PreflightResultPage extends Component {
   }
 }
 
-export default compose(
-  withApollo,
-  withRouter,
-)(PreflightResultPage);
+export default withRouter(PreflightResultPage);

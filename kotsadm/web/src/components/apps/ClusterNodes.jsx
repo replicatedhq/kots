@@ -1,13 +1,13 @@
 import React, { Component, Fragment } from "react";
 import classNames from "classnames";
 import moment from "moment";
-import { graphql, compose, withApollo } from "react-apollo";
 import { withRouter } from "react-router-dom";
 import { Helmet } from "react-helmet";
 import CodeSnippet from "../shared/CodeSnippet";
 import NodeRow from "./NodeRow";
 import Loader from "../shared/Loader";
 import { Utilities } from "../../utilities/utilities";
+import { Repeater } from "../../utilities/repeater";
 
 import "@src/scss/components/apps/ClusterNodes.scss";
 
@@ -19,11 +19,13 @@ export class ClusterNodes extends Component {
     displayAddNode: false,
     selectedNodeType: "worker", // Change when master node script is enabled
     generateCommandErrMsg: "",
-    kurl: null
+    kurl: null,
+    getNodeStatus: new Repeater()
   }
 
   componentDidMount() {
     this.getNodeStatus();
+    this.state.getNodeStatus.start(this.getNodeStatus, 1000);
   }
 
   getNodeStatus = async () => {
@@ -85,8 +87,10 @@ export class ClusterNodes extends Component {
         this.setState({ generating: false, command: data.command, expiry: data.expiry });
       })
       .catch((err) => {
-        err.graphQLErrors.map(({ msg }) => {
-          this.setState({ generating: false, generateCommandErrMsg: msg });
+        console.log(err);
+        this.setState({
+          generating: false,
+          generateCommandErrMsg: err ? err.message : "Something went wrong",
         });
       });
   }
@@ -122,8 +126,10 @@ export class ClusterNodes extends Component {
         this.setState({ generating: false, command: data.command, expiry: data.expiry });
       })
       .catch((err) => {
-        err.graphQLErrors.map(({ msg }) => {
-          this.setState({ generating: false, generateCommandErrMsg: msg });
+        console.log(err);
+        this.setState({
+          generating: false,
+          generateCommandErrMsg: err ? err.message : "Something went wrong",
         });
       });
   }
@@ -288,7 +294,4 @@ export class ClusterNodes extends Component {
   }
 }
 
-export default compose(
-  withRouter,
-  withApollo,
-)(ClusterNodes);
+export default withRouter(ClusterNodes);

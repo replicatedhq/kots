@@ -27,7 +27,6 @@ type KOTSStore interface {
 	AirgapStore
 	TaskStore
 	SessionStore
-	UserStore
 	AppStatusStore
 	AppStore
 	VersionStore
@@ -37,115 +36,110 @@ type KOTSStore interface {
 	InstallationStore
 
 	Init() error // this may need options
-	WaitForReady(context.Context) error
+	WaitForReady(ctx context.Context) error
 	IsNotFound(err error) bool
 }
 
 type RegistryStore interface {
-	GetRegistryDetailsForApp(string) (*registrytypes.RegistrySettings, error)
-	UpdateRegistry(string, string, string, string, string) error
+	GetRegistryDetailsForApp(appID string) (*registrytypes.RegistrySettings, error)
+	UpdateRegistry(appID string, hostname string, username string, password string, namespace string) error
 }
 
 type SupportBundleStore interface {
-	ListSupportBundles(string) ([]*supportbundletypes.SupportBundle, error)
-	ListPendingSupportBundlesForApp(string) ([]*supportbundletypes.PendingSupportBundle, error)
-	GetSupportBundleFromSlug(string) (*supportbundletypes.SupportBundle, error)
-	GetSupportBundle(id string) (*supportbundletypes.SupportBundle, error)
-	CreatePendingSupportBundle(string, string, string) error
-	CreateSupportBundle(string, string, string, []byte) (*supportbundletypes.SupportBundle, error)
-	GetSupportBundleArchive(string) (string, error)
-	GetSupportBundleAnalysis(string) (*supportbundletypes.SupportBundleAnalysis, error)
-	SetSupportBundleAnalysis(string, []byte) error
-	GetRedactions(string) (troubleshootredact.RedactionList, error)
-	SetRedactions(string, troubleshootredact.RedactionList) error
-	GetSupportBundleSpecForApp(string) (string, error)
+	ListSupportBundles(appID string) ([]*supportbundletypes.SupportBundle, error)
+	ListPendingSupportBundlesForApp(appID string) ([]*supportbundletypes.PendingSupportBundle, error)
+	GetSupportBundleFromSlug(slug string) (*supportbundletypes.SupportBundle, error)
+	GetSupportBundle(bundleID string) (*supportbundletypes.SupportBundle, error)
+	CreatePendingSupportBundle(bundleID string, appID string, clusterID string) error
+	CreateSupportBundle(bundleID string, appID string, archivePath string, marshalledTree []byte) (*supportbundletypes.SupportBundle, error)
+	GetSupportBundleArchive(bundleID string) (archivePath string, err error)
+	GetSupportBundleAnalysis(bundleID string) (*supportbundletypes.SupportBundleAnalysis, error)
+	SetSupportBundleAnalysis(bundleID string, insights []byte) error
+	GetRedactions(bundleID string) (troubleshootredact.RedactionList, error)
+	SetRedactions(bundleID string, redacts troubleshootredact.RedactionList) error
+	GetSupportBundleSpecForApp(id string) (spec string, err error)
 }
 
 type PreflightStore interface {
-	SetPreflightResults(string, int64, []byte) error
-	GetPreflightResults(string, int64) (*preflighttypes.PreflightResult, error)
+	SetPreflightResults(appID string, sequence int64, results []byte) error
+	GetPreflightResults(appID string, sequence int64) (*preflighttypes.PreflightResult, error)
 	GetLatestPreflightResults() (*preflighttypes.PreflightResult, error)
-	ResetPreflightResults(string, int64) error
-	SetIgnorePreflightPermissionErrors(string, int64) error
+	ResetPreflightResults(appID string, sequence int64) error
+	SetIgnorePreflightPermissionErrors(appID string, sequence int64) error
 }
 
 type PrometheusStore interface {
-	GetPrometheusAddress() (string, error)
-	SetPrometheusAddress(string) error
+	GetPrometheusAddress() (address string, err error)
+	SetPrometheusAddress(address string) error
 }
 
 type AirgapStore interface {
 	GetPendingAirgapUploadApp() (*airgaptypes.PendingApp, error)
 	GetAirgapInstallStatus() (*airgaptypes.InstallStatus, error)
-	ResetAirgapInstallInProgress(string) error
-	SetAppIsAirgap(string, bool) error
+	ResetAirgapInstallInProgress(appID string) error
+	SetAppIsAirgap(appID string, isAirgap bool) error
 }
 
 type TaskStore interface {
-	SetTaskStatus(string, string, string) error
-	UpdateTaskStatusTimestamp(string) error
-	ClearTaskStatus(string) error
-	GetTaskStatus(string) (string, string, error)
+	SetTaskStatus(taskID string, message string, status string) error
+	UpdateTaskStatusTimestamp(taskID string) error
+	ClearTaskStatus(taskID string) error
+	GetTaskStatus(taskID string) (status string, message string, err error)
 }
 
 type SessionStore interface {
-	CreateSession(*usertypes.User) (*sessiontypes.Session, error)
-	DeleteSession(string) error
-	GetSession(id string) (*sessiontypes.Session, error)
-}
-
-type UserStore interface {
-	CreateAdminConsolePassword(string) (string, error)
+	CreateSession(user *usertypes.User) (*sessiontypes.Session, error)
+	DeleteSession(sessionID string) error
+	GetSession(sessionID string) (*sessiontypes.Session, error)
 }
 
 type AppStatusStore interface {
-	GetAppStatus(string) (*appstatustypes.AppStatus, error)
+	GetAppStatus(appID string) (*appstatustypes.AppStatus, error)
 }
 
 type AppStore interface {
-	AddAppToAllDownstreams(string) error
-	SetAppInstallState(string, string) error
+	AddAppToAllDownstreams(appID string) error
+	SetAppInstallState(appID string, state string) error
 	ListInstalledApps() ([]*apptypes.App, error)
-	GetAppIDFromSlug(string) (string, error)
-	GetApp(string) (*apptypes.App, error)
-	GetAppFromSlug(string) (*apptypes.App, error)
-	CreateApp(string, string, string, bool) (*apptypes.App, error)
-	ListDownstreamsForApp(string) ([]downstreamtypes.Downstream, error)
-	ListAppsForDownstream(string) ([]*apptypes.App, error)
-	GetDownstream(string) (*downstreamtypes.Downstream, error)
-	IsGitOpsEnabledForApp(string) (bool, error)
-	SetUpdateCheckerSpec(string, string) error
-	SetSnapshotTTL(string, string) error
-	SetSnapshotSchedule(string, string) error
+	GetAppIDFromSlug(slug string) (appID string, err error)
+	GetApp(appID string) (*apptypes.App, error)
+	GetAppFromSlug(slug string) (*apptypes.App, error)
+	CreateApp(name string, upstreamURI string, licenseData string, isAirgapEnabled bool) (*apptypes.App, error)
+	ListDownstreamsForApp(appID string) ([]downstreamtypes.Downstream, error)
+	ListAppsForDownstream(clusterID string) ([]*apptypes.App, error)
+	GetDownstream(clusterID string) (*downstreamtypes.Downstream, error)
+	IsGitOpsEnabledForApp(appID string) (bool, error)
+	SetUpdateCheckerSpec(appID string, updateCheckerSpec string) error
+	SetSnapshotTTL(appID string, snapshotTTL string) error
+	SetSnapshotSchedule(appID string, snapshotSchedule string) error
 }
 
 type SnapshotStore interface {
 	ListPendingScheduledSnapshots(appID string) ([]snapshottypes.ScheduledSnapshot, error)
-	UpdateScheduledSnapshot(string, string) error
-	DeletePendingScheduledSnapshots(string) error
-	CreateScheduledSnapshot(string, string, time.Time) error
+	UpdateScheduledSnapshot(snapshotID string, backupName string) error
+	DeletePendingScheduledSnapshots(appID string) error
+	CreateScheduledSnapshot(snapshotID string, appID string, timestamp time.Time) error
 }
 
 type VersionStore interface {
-	IsGitOpsSupportedForVersion(string, int64) (bool, error)
-	IsRollbackSupportedForVersion(string, int64) (bool, error)
-	IsSnapshotsSupportedForVersion(string, int64) (bool, error)
-	GetAppVersionArchive(string, int64) (string, error)
-	CreateAppVersionArchive(string, int64, string) error
+	IsGitOpsSupportedForVersion(appID string, sequence int64) (bool, error)
+	IsRollbackSupportedForVersion(appID string, sequence int64) (bool, error)
+	IsSnapshotsSupportedForVersion(appID string, sequence int64) (bool, error)
+	GetAppVersionArchive(appID string, sequence int64) (archivePath string, err error)
+	CreateAppVersionArchive(appID string, sequence int64, archivePath string) error
 }
 
 type LicenseStore interface {
-	GetInitialLicenseForApp(string) (*kotsv1beta1.License, error)
-	GetLatestLicenseForApp(string) (*kotsv1beta1.License, error)
-	GetLicenseForAppVersion(string, int64) (*kotsv1beta1.License, error)
+	GetInitialLicenseForApp(appID string) (*kotsv1beta1.License, error)
+	GetLatestLicenseForApp(appID string) (*kotsv1beta1.License, error)
+	GetLicenseForAppVersion(appID string, sequence int64) (*kotsv1beta1.License, error)
 }
 
 type ClusterStore interface {
-	ListClusters() (map[string]string, error)
-	GetClusterIDFromSlug(slug string) (string, error)
-	GetClusterIDFromDeployToken(string) (string, error)
-	LookupClusterID(clusterType string, title string, token string) (string, error)
-	CreateNewCluster(userId string, isAllUsers bool, title string, token string) (string, error)
+	ListClusters() ([]*downstreamtypes.Downstream, error)
+	GetClusterIDFromSlug(slug string) (clusterID string, err error)
+	GetClusterIDFromDeployToken(deployToken string) (clusterID string, err error)
+	CreateNewCluster(userID string, isAllUsers bool, title string, token string) (clusterID string, err error)
 }
 
 type InstallationStore interface {

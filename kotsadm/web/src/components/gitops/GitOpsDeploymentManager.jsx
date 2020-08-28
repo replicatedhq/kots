@@ -6,7 +6,6 @@ import classNames from "classnames";
 import Loader from "../shared/Loader";
 import ErrorModal from "../modals/ErrorModal";
 import { withRouter, Link } from "react-router-dom";
-import { compose } from "react-apollo";
 import GitOpsFlowIllustration from "./GitOpsFlowIllustration";
 import GitOpsRepoDetails from "./GitOpsRepoDetails";
 import { getServiceSite, requiresHostname, Utilities } from "../../utilities/utilities";
@@ -610,4 +609,4 @@ class GitOpsDeploymentManager extends React.Component {
   }
 }
 
-export default compose(withRouter)(GitOpsDeploymentManager);
+export default withRouter(GitOpsDeploymentManager);

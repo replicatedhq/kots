@@ -1,7 +1,6 @@
 import React, { Component, Fragment } from "react";
 import classNames from "classnames";
 import { withRouter, Switch, Route } from "react-router-dom";
-import { graphql, compose, withApollo } from "react-apollo";
 import { Helmet } from "react-helmet";
 import Modal from "react-modal";
 
@@ -440,8 +439,4 @@ class AppDetailPage extends Component {
 }
 
 export { AppDetailPage };
-export default compose(
-  withApollo,
-  withRouter,
-  withTheme,
-)(AppDetailPage);
+export default withTheme(withRouter(AppDetailPage));

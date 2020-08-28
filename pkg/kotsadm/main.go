@@ -71,15 +71,6 @@ func YAML(deployOptions types.DeployOptions) (map[string][]byte, error) {
 		docs[n] = v
 	}
 
-	// api
-	apiDocs, err := getApiYAML(deployOptions)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to get api yaml")
-	}
-	for n, v := range apiDocs {
-		docs[n] = v
-	}
-
 	// kotsadm
 	kotsadmDocs, err := getKotsadmYAML(deployOptions)
 	if err != nil {
@@ -371,12 +362,16 @@ func ensureKotsadm(deployOptions types.DeployOptions, clientset *kubernetes.Clie
 		return errors.Wrap(err, "failed to ensure kotsadm exists")
 	}
 
-	if err := ensureAPI(&deployOptions, clientset); err != nil {
-		return errors.Wrap(err, "failed to ensure api exists")
+	if err := ensureApplicationMetadata(deployOptions, clientset); err != nil {
+		return errors.Wrap(err, "failed to ensure custom branding")
 	}
 
 	if err := ensureOperator(deployOptions, clientset); err != nil {
 		return errors.Wrap(err, "failed to ensure operator")
+	}
+
+	if err := removeNodeAPI(&deployOptions, clientset); err != nil {
+		log.Error(errors.Errorf("Failed to remove unused API: %v", err))
 	}
 
 	log.ChildActionWithSpinner("Waiting for Admin Console to be ready")

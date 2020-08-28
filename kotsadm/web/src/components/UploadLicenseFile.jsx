@@ -1,5 +1,4 @@
 import * as React from "react";
-import { compose } from "react-apollo";
 import { withRouter, Link } from "react-router-dom";
 import { Helmet } from "react-helmet";
 import Dropzone from "react-dropzone";
@@ -360,6 +359,4 @@ class UploadLicenseFile extends React.Component {
   }
 }
 
-export default compose(
-  withRouter,
-)(UploadLicenseFile);
+export default withRouter(UploadLicenseFile);

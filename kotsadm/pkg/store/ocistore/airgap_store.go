@@ -31,7 +31,3 @@ func (s OCIStore) SetAppIsAirgap(appID string, isAirgap bool) error {
 
 	return nil
 }
-
-func (s OCIStore) SetAppInstallState(appID string, state string) error {
-	return ErrNotImplemented
-}

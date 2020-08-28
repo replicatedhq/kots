@@ -1,5 +1,4 @@
 import React, { Component } from "react";
-import { compose, withApollo } from "react-apollo";
 import { withRouter, Link } from "react-router-dom"
 import Helmet from "react-helmet";
 import AceEditor from "react-ace";
@@ -255,7 +254,7 @@ spec:
         <div className="Redactors--wrapper flex1 flex-column u-width--full">
           {(createErrMsg || editingErrMsg) && <p className="ErrorToast flex justifyContent--center alignItems--center">{createErrMsg ? createErrMsg : editingErrMsg}</p>}
           <div className="u-fontSize--small u-fontWeight--medium u-color--dustyGray u-marginBottom--20">
-            <Link to={`/app/${this.props.appSlug}/troubleshoot/redactors`} className="replicated-link u-marginRight--5">Redactors</Link> > <span className="u-marginLeft--5">{this.state.redactorName}</span>
+            <Link to={`/app/${this.props.appSlug}/troubleshoot/redactors`} className="replicated-link u-marginRight--5">Redactors</Link> &gt; <span className="u-marginLeft--5">{this.state.redactorName}</span>
           </div>
           <div className="flex flex-auto alignItems--flexStart justifyContent--spaceBetween">
             <div className="flex flex1 alignItems--center">
@@ -324,7 +323,4 @@ spec:
   }
 }
 
-export default compose(
-  withApollo,
-  withRouter,
-)(EditRedactor);
+export default withRouter(EditRedactor);

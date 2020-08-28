@@ -1,6 +1,5 @@
 import * as React from "react";
 import classNames from "classnames";
-import { compose, withApollo } from "react-apollo";
 import { withRouter } from "react-router-dom";
 import { Helmet } from "react-helmet";
 import Dropzone from "react-dropzone";
@@ -608,7 +607,4 @@ class UploadAirgapBundle extends React.Component {
   }
 }
 
-export default compose(
-  withRouter,
-  withApollo,
-)(UploadAirgapBundle);
+export default withRouter(UploadAirgapBundle);
