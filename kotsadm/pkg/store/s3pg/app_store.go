@@ -20,13 +20,13 @@ import (
 func (s S3PGStore) AddAppToAllDownstreams(appID string) error {
 	db := persistence.MustGetPGSession()
 
-	clusterIDs, err := s.ListClusters()
+	clusters, err := s.ListClusters()
 	if err != nil {
 		return errors.Wrap(err, "failed to list clusters")
 	}
-	for clusterID, name := range clusterIDs {
+	for _, cluster := range clusters {
 		query := `insert into app_downstream (app_id, cluster_id, downstream_name) values ($1, $2, $3)`
-		_, err = db.Exec(query, appID, clusterID, name)
+		_, err = db.Exec(query, appID, cluster.ClusterID, cluster.Name)
 		if err != nil {
 			return errors.Wrap(err, "failed to create app downstream")
 		}
