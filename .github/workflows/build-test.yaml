@@ -116,10 +116,19 @@ jobs:
           --kotsadm-tag 2h
       - name: execute legacy tests
         run: |
+          set +e
           ./bin/kots admin-console -n legacy &
           ADMIN_CONSOLE_PID=$!
           testim --token ${{ secrets.TESTIM_ACCESS_TOKEN }} --project ${{ secrets.TESTIM_PROJECT_ID }} --grid "Testim-grid" --report-file testim-report.xml --suite legacy --tunnel --tunnel-port 8800
+          EXIT_CODE=$?
+          echo "------pods:"
+          kubectl -n legacy get pods
+          echo "------kotsadm logs"
+          kubectl -n legacy logs deployment/kotsadm
+          echo "------kotsadm-operator logs"
+          kubectl -n legacy logs deployment/kotsadm-operator
           kill $ADMIN_CONSOLE_PID
+          exit $EXIT_CODE
 
       # - name: prepare cluster-admin online install
       #   run: |
