@@ -62,6 +62,7 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 		CurrentCursor:       rewriteOptions.Installation.Spec.UpdateCursor,
 		CurrentVersionLabel: rewriteOptions.Installation.Spec.VersionLabel,
 		EncryptionKey:       rewriteOptions.Installation.Spec.EncryptionKey,
+		APIAccessToken:      rewriteOptions.Installation.Spec.APIAccessToken,
 		License:             rewriteOptions.License,
 	}
 

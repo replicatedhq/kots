@@ -37,7 +37,7 @@ BUILDFLAGS = -tags "netgo containers_image_ostree_stub exclude_graphdriver_devic
 
 .PHONY: test
 test:
-	go test $(BUILDFLAGS) ./pkg/... ./cmd/... ./ffi/... -coverprofile cover.out
+	go test $(BUILDFLAGS) ./pkg/... ./cmd/... -coverprofile cover.out
 
 .PHONY: integration-cli
 integration-cli:
@@ -45,23 +45,19 @@ integration-cli:
 
 .PHONY: ci-test
 ci-test:
-	go test $(BUILDFLAGS) ./pkg/... ./cmd/... ./ffi/... ./integration/... -coverprofile cover.out
+	go test $(BUILDFLAGS) ./pkg/... ./cmd/... ./integration/... -coverprofile cover.out
 
 .PHONY: kots
 kots: fmt vet
 	CGOENABLED=0 go build ${LDFLAGS} -o bin/kots $(BUILDFLAGS) github.com/replicatedhq/kots/cmd/kots
 
-.PHONY: ffi
-ffi: fmt vet
-	go build ${LDFLAGS} $(BUILDFLAGS) -o bin/kots.so -buildmode=c-shared ./ffi/...
-
 .PHONY: fmt
 fmt:
-	go fmt ./pkg/... ./cmd/... ./ffi/...
+	go fmt ./pkg/... ./cmd/...
 
 .PHONY: vet
 vet:
-	go vet $(BUILDFLAGS) ./pkg/... ./cmd/... ./ffi/...
+	go vet $(BUILDFLAGS) ./pkg/... ./cmd/...
 
 .PHONY: gosec
 gosec:

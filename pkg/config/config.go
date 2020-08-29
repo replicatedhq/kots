@@ -38,7 +38,7 @@ func TemplateConfigObjects(configSpec *kotsv1beta1.Config, configValues map[stri
 }
 
 func templateConfigObjects(configSpec *kotsv1beta1.Config, configValues map[string]template.ItemValue, license *kotsv1beta1.License, localRegistry template.LocalRegistry, marshalFunc func(config *kotsv1beta1.Config) (string, error)) (string, error) {
-	builder, configVals, err := template.NewBuilder(configSpec.Spec.Groups, configValues, localRegistry, nil, license)
+	builder, configVals, err := template.NewBuilder(configSpec.Spec.Groups, configValues, localRegistry, nil, license, "")
 	if err != nil {
 		return "", errors.Wrap(err, "failed to create config context")
 	}

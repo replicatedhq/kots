@@ -64,16 +64,18 @@ type ConfigCtx struct {
 	ItemValues    map[string]ItemValue
 	LocalRegistry LocalRegistry
 
-	license *kotsv1beta1.License // Another agument for unifying all these contexts
-	app     *kotsv1beta1.Application
+	license  *kotsv1beta1.License // Another agument for unifying all these contexts
+	app      *kotsv1beta1.Application
+	apiToken string
 }
 
 // newConfigContext creates and returns a context for template rendering
-func (b *Builder) newConfigContext(configGroups []kotsv1beta1.ConfigGroup, existingValues map[string]ItemValue, localRegistry LocalRegistry, cipher *crypto.AESCipher, license *kotsv1beta1.License) (*ConfigCtx, error) {
+func (b *Builder) newConfigContext(configGroups []kotsv1beta1.ConfigGroup, existingValues map[string]ItemValue, localRegistry LocalRegistry, cipher *crypto.AESCipher, license *kotsv1beta1.License, apiAccessToken string) (*ConfigCtx, error) {
 	configCtx := &ConfigCtx{
 		ItemValues:    existingValues,
 		LocalRegistry: localRegistry,
 		license:       license,
+		apiToken:      apiAccessToken,
 	}
 
 	builder := Builder{
@@ -163,6 +165,7 @@ func (ctx ConfigCtx) FuncMap() template.FuncMap {
 		"LocalImageName":               ctx.localImageName,
 		"LocalRegistryImagePullSecret": ctx.localRegistryImagePullSecret,
 		"HasLocalRegistry":             ctx.hasLocalRegistry,
+		"APIAccessToken":               ctx.apiAccessToken,
 	}
 }
 
@@ -369,4 +372,8 @@ func decrypt(input string, cipher *crypto.AESCipher) (string, error) {
 	}
 
 	return string(decrypted), nil
+}
+
+func (ctx ConfigCtx) apiAccessToken() string {
+	return ctx.apiToken
 }

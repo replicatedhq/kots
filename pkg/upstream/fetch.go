@@ -21,6 +21,7 @@ type FetchOptions struct {
 	ConfigValues        *kotsv1beta1.ConfigValues
 	Airgap              *kotsv1beta1.Airgap
 	EncryptionKey       string
+	APIAccessToken      string
 	CurrentCursor       string
 	CurrentChannel      string
 	CurrentVersionLabel string
@@ -57,7 +58,7 @@ func downloadUpstream(upstreamURI string, fetchOptions *FetchOptions) (*types.Up
 		return downloadHelm(u, fetchOptions.HelmRepoURI)
 	}
 	if u.Scheme == "replicated" {
-		return downloadReplicated(u, fetchOptions.LocalPath, fetchOptions.RootDir, fetchOptions.UseAppDir, fetchOptions.License, fetchOptions.ConfigValues, pickCursor(fetchOptions), pickVersionLabel(fetchOptions), cipher)
+		return downloadReplicated(u, fetchOptions.LocalPath, fetchOptions.RootDir, fetchOptions.UseAppDir, fetchOptions.License, fetchOptions.ConfigValues, pickCursor(fetchOptions), pickVersionLabel(fetchOptions), cipher, fetchOptions.APIAccessToken)
 	}
 	if u.Scheme == "git" {
 		return downloadGit(upstreamURI)

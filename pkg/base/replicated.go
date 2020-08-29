@@ -77,7 +77,7 @@ func renderReplicated(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (
 		Password:  renderOptions.LocalRegistryPassword,
 	}
 
-	builder, _, err := template.NewBuilder(configGroups, templateContext, localRegistry, cipher, license)
+	builder, _, err := template.NewBuilder(configGroups, templateContext, localRegistry, cipher, license, u.APIAccessToken)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create config context")
 	}
