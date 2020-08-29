@@ -298,7 +298,7 @@ func (s OCIStore) CreateAppVersion(appID string, currentSequence *int64, appName
 	// NOTE that this experimental store doesn't have a tx and it's possible that this
 	// could overwrite if there are multiple updates happening concurrently
 	latestAppVersion, err := s.getLatestAppVersion(appID)
-	if err != nil && err != ErrNotFound {
+	if !s.IsNotFound(err) {
 		return int64(0), errors.Wrap(err, "failed to get latest app version")
 	}
 
@@ -357,12 +357,12 @@ func (s OCIStore) GetAppVersion(appID string, sequence int64) (*versiontypes.App
 	}
 
 	if configMap.Data == nil {
-		return nil, nil // Matching S3PG store
+		return nil, ErrNotFound
 	}
 
 	data, ok := configMap.Data[strconv.FormatInt(sequence, 10)]
 	if !ok {
-		return nil, nil // Matching S3PG store
+		return nil, ErrNotFound
 	}
 
 	appVersion := versiontypes.AppVersion{}

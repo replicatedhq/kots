@@ -419,7 +419,7 @@ func (s S3PGStore) GetAppVersion(appID string, sequence int64) (*versiontypes.Ap
 	v := versiontypes.AppVersion{}
 	if err := row.Scan(&v.Sequence, &v.CreatedOn, &status, &deployedAt, &installationSpec); err != nil {
 		if err == sql.ErrNoRows {
-			return nil, nil
+			return nil, ErrNotFound
 		}
 		return nil, errors.Wrap(err, "failed to scan")
 	}

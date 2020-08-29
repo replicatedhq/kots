@@ -34,7 +34,7 @@ func (s OCIStore) GetLicenseForAppVersion(appID string, sequence int64) (*kotsv1
 	}
 
 	if appVersion == nil {
-		return nil, nil
+		return s.GetInitialLicenseForApp(appID)
 	}
 
 	return appVersion.KOTSKinds.License, nil
