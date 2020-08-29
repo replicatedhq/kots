@@ -150,9 +150,9 @@ func getEncryptionKey(prevInstallation *kotsv1beta1.Installation) (string, error
 }
 
 func getAPIAccessToken(prevInstallation *kotsv1beta1.Installation) string {
-	if prevInstallation == nil {
+	if prevInstallation == nil || prevInstallation.Spec.APIAccessToken == "" {
 		newToken := "APP " + util.GenPassword(32)
-		return newToken
+		return base64.StdEncoding.EncodeToString([]byte(newToken))
 	}
 
 	return prevInstallation.Spec.APIAccessToken
