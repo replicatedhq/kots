@@ -32,7 +32,8 @@ class GenerateSupportBundle extends React.Component {
       supportBundles: [],
       listSupportBundlesJob: new Repeater(),
       errorMsg: "",
-      displayErrorModal: false
+      displayErrorModal: false,
+      networkErr: false
     };
   }
 
@@ -51,10 +52,11 @@ class GenerateSupportBundle extends React.Component {
     this.state.listSupportBundlesJob.stop();
   }
 
-  componentDidUpdate(lastProps) {
+  componentDidUpdate(lastProps, lastState) {
     const { watch, history } = this.props;
-    const { totalBundles, loadingSupportBundles, supportBundles } = this.state;
+    const { totalBundles, loadingSupportBundles, supportBundles, networkErr } = this.state;
     const clusters = watch.downstream;
+
     if (watch !== lastProps.watch && clusters) {
       const watchClusters = clusters.map(c => c.cluster);
       const NEW_ADDED_CLUSTER = { title: NEW_CLUSTER };
@@ -76,11 +78,20 @@ class GenerateSupportBundle extends React.Component {
         history.push(`/app/${watch.slug}/troubleshoot/analyze/${bundle.id}`);
       }
     }
+
+    if (networkErr !== lastState.networkErr) {
+      if (networkErr) {
+        this.state.listSupportBundlesJob.stop();
+      } else {
+        this.state.listSupportBundlesJob.start(this.listSupportBundles, 2000);
+        return;
+      }
+    }
   }
 
   listSupportBundles = () => {
     return new Promise((resolve, reject) => {
-      this.setState({ loadingSupportBundles: true, errorMsg: "", displayErrorModal: false });
+      this.setState({ loadingSupportBundles: true, errorMsg: "", displayErrorModal: false, networkErr: false });
 
       fetch(`${window.env.API_ENDPOINT}/troubleshoot/app/${this.props.watch?.slug}/supportbundles`, {
         headers: {
@@ -91,7 +102,7 @@ class GenerateSupportBundle extends React.Component {
       })
         .then(async (res) => {
           if (!res.ok) {
-            this.setState({ loadingSupportBundles: false, errorMsg: `Unexpected status code: ${res.status}`, displayErrorModal: true });
+            this.setState({ loadingSupportBundles: false, errorMsg: `Unexpected status code: ${res.status}`, displayErrorModal: true, networkErr: false });
             return;
           }
           const response = await res.json();
@@ -99,14 +110,15 @@ class GenerateSupportBundle extends React.Component {
             supportBundles: response.supportBundles,
             loadingSupportBundles: false,
             errorMsg: "",
-            displayErrorModal: false
+            displayErrorModal: false,
+            networkErr: false
           });
 
           resolve();
         })
         .catch((err) => {
           console.log(err)
-          this.setState({ loadingSupportBundles: false, errorMsg: err ? err.message : "Something went wrong, please try again.", displayErrorModal: true });
+          this.setState({ loadingSupportBundles: false, errorMsg: err ? err.message : "Something went wrong, please try again.", displayErrorModal: true, networkErr: true });
           reject(err);
         });
     });
