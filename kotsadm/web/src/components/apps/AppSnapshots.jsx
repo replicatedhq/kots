@@ -10,6 +10,7 @@ import ScheduleSnapshotForm from "../shared/ScheduleSnapshotForm";
 import Loader from "../shared/Loader";
 import DeleteSnapshotModal from "../modals/DeleteSnapshotModal";
 import RestoreSnapshotModal from "../modals/RestoreSnapshotModal";
+import ErrorModal from "../modals/ErrorModal";
 
 import "../../scss/components/snapshots/AppSnapshots.scss";
 import { Utilities } from "../../utilities/utilities";
@@ -45,6 +46,8 @@ class AppSnapshots extends Component {
     appSlugToRestore: "",
     appSlugMismatch: false,
     listSnapshotsJob: new Repeater(),
+    networkErr: false,
+    displayErrorModal: false
   };
 
   componentDidMount = async () => {
@@ -59,9 +62,20 @@ class AppSnapshots extends Component {
   }
 
   componentDidUpdate(lastProps, lastState) {
-    if (this.state.snapshots?.length !== lastState.snapshots?.length && this.state.snapshots) {
-      if (this.state.snapshots?.length === 0 && lastState.snapshots?.length > 0) {
+    const { snapshots, networkErr } = this.state;
+
+    if (snapshots?.length !== lastState.snapshots?.length && snapshots) {
+      if (snapshots?.length === 0 && lastState.snapshots?.length > 0) {
         this.setState({ isStartButtonClicked: false });
+      }
+    }
+
+    if (networkErr !== lastState.networkErr) {
+      if (networkErr) {
+        this.state.listSnapshotsJob.stop();
+      } else {
+        this.state.listSnapshotsJob.start(this.listSnapshots, 2000);
+        return;
       }
     }
   }
@@ -100,7 +114,9 @@ class AppSnapshots extends Component {
     const { app } = this.props;
     this.setState({
       snapshotsListErr: false,
-      snapshotsListErrMsg: ""
+      snapshotsListErrMsg: "",
+      networkErr: false,
+      displayErrorModal: false
     })
     try {
       const res = await fetch(`${window.env.API_ENDPOINT}/app/${app.slug}/snapshots`, {
@@ -118,6 +134,8 @@ class AppSnapshots extends Component {
         this.setState({
           snapshotsListErr: true,
           snapshotsListErrMsg: `Unexpected status code: ${res.status}`,
+          networkErr: false,
+          displayErrorModal: true
         });
         return;
       }
@@ -127,12 +145,16 @@ class AppSnapshots extends Component {
         snapshots: response.backups?.sort((a, b) => b.startedAt ? new Date(b.startedAt) - new Date(a.startedAt) : -99999999),
         hasSnapshotsLoaded: true,
         snapshotsListErr: false,
-        snapshotsListErrMsg: ""
+        snapshotsListErrMsg: "",
+        networkErr: false,
+        displayErrorModal: false
       });
     } catch (err) {
       this.setState({
         snapshotsListErr: true,
-        snapshotsListErrMsg: err.message ? err.message : "There was an error while showing the snapshots. Please try again"
+        snapshotsListErrMsg: err.message ? err.message : "There was an error while showing the snapshots. Please try again",
+        networkErr: true,
+        displayErrorModal: true
       })
     }
   }
@@ -188,6 +210,10 @@ class AppSnapshots extends Component {
       this.setState({ restoreSnapshotModal: true, snapshotToRestore: snapshot, restoreErr: false, restoreErrorMsg: "" });
     }
   };
+
+  toggleErrorModal = () => {
+    this.setState({ displayErrorModal: !this.state.displayErrorModal });
+  }
 
   handleDeleteSnapshot = snapshot => {
     const fakeDeletionSnapshot = {
@@ -400,24 +426,25 @@ class AppSnapshots extends Component {
       this.props.history.replace("/snapshots");
     }
 
-    if (snapshotsListErr || !snapshots) {
-      return (
-        <div class="flex1 flex-column justifyContent--center alignItems--center">
-          <span className="icon redWarningIcon" />
-          <p className="u-color--chestnut u-fontSize--normal u-fontWeight--medium u-lineHeight--normal u-marginTop--10">{snapshotsListErrMsg ? snapshotsListErrMsg : "Something went wrong, please try again."}</p>
-          <p className="u-fontSize--small u-color--dustyGray u-lineHeight--normal u-fontWeight--medium u-marginTop--10">
-            To troubleshoot<Link to={`/app/${app.slug}/troubleshoot/generate`} className="replicated-link u-marginLeft--5">create a support bundle</Link>
-          </p>
-        </div>
-      )
-    }
-
     if (restoreInProgressErr) {
       return (
         <div class="flex1 flex-column justifyContent--center alignItems--center">
           <span className="icon redWarningIcon" />
           <p className="u-color--chestnut u-fontSize--normal u-fontWeight--medium u-lineHeight--normal u-marginTop--10">{restoreInProgressErrMsg}</p>
         </div>
+      )
+    }
+
+    if (snapshotsListErr || !snapshots) {
+      return (
+        <ErrorModal
+          errorModal={this.state.displayErrorModal}
+          toggleErrorModal={this.toggleErrorModal}
+          errMsg={snapshotsListErrMsg}
+          tryAgain={this.listSnapshots}
+          err="Failed to get snapshots"
+          loading={false}
+        />
       )
     }
 
