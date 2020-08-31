@@ -2,6 +2,7 @@ package ocistore
 
 import (
 	"encoding/json"
+	"time"
 
 	"github.com/pkg/errors"
 )
@@ -11,20 +12,105 @@ const (
 )
 
 type taskStatus struct {
-	Message string `json:"message"`
-	Status  string `json:"status"`
+	Message   string    `json:"message"`
+	Status    string    `json:"status"`
+	UpdatedAt time.Time `json:"updatedAt"`
 }
 
 func (s OCIStore) SetTaskStatus(id string, message string, status string) error {
-	return ErrNotImplemented
+	configmap, err := s.getConfigmap(TaskStatusConfigMapName)
+	if err != nil {
+		return errors.Wrap(err, "failed to get task status configmap")
+	}
+
+	if configmap.Data == nil {
+		configmap.Data = map[string]string{}
+	}
+
+	ts := taskStatus{}
+	existingTsData, ok := configmap.Data[id]
+	if ok {
+		if err := json.Unmarshal([]byte(existingTsData), &ts); err != nil {
+			return errors.Wrap(err, "failed to unmarshal task status")
+		}
+	}
+
+	ts.Message = message
+	ts.Status = status
+	ts.UpdatedAt = time.Now()
+
+	b, err := json.Marshal(ts)
+	if err != nil {
+		return errors.Wrap(err, "failed to marshal task status")
+	}
+
+	configmap.Data[id] = string(b)
+
+	if err := s.updateConfigmap(configmap); err != nil {
+		return errors.Wrap(err, "failed to update task status configmap")
+	}
+
+	return nil
 }
 
 func (s OCIStore) UpdateTaskStatusTimestamp(id string) error {
-	return ErrNotImplemented
+	configmap, err := s.getConfigmap(TaskStatusConfigMapName)
+	if err != nil {
+		return errors.Wrap(err, "failed to get task status configmap")
+	}
+
+	if configmap.Data == nil {
+		configmap.Data = map[string]string{}
+	}
+
+	data, ok := configmap.Data[id]
+	if !ok {
+		return nil // copied from s3pgstore
+	}
+
+	ts := taskStatus{}
+	if err := json.Unmarshal([]byte(data), &ts); err != nil {
+		return errors.Wrap(err, "failed to unmarshal task status")
+	}
+
+	ts.UpdatedAt = time.Now()
+
+	b, err := json.Marshal(ts)
+	if err != nil {
+		return errors.Wrap(err, "failed to marshal task status")
+	}
+
+	configmap.Data[id] = string(b)
+
+	if err := s.updateConfigmap(configmap); err != nil {
+		return errors.Wrap(err, "failed to update task status configmap")
+	}
+
+	return nil
 }
 
 func (s OCIStore) ClearTaskStatus(id string) error {
-	return ErrNotImplemented
+	configmap, err := s.getConfigmap(TaskStatusConfigMapName)
+	if err != nil {
+		return errors.Wrap(err, "failed to get task status configmap")
+	}
+
+	if configmap.Data == nil {
+		configmap.Data = map[string]string{}
+	}
+
+	_, ok := configmap.Data[id]
+	if !ok {
+		return nil // copied from s3pgstore
+	}
+
+	delete(configmap.Data, id)
+
+	if err := s.updateConfigmap(configmap); err != nil {
+		return errors.Wrap(err, "failed to update task status configmap")
+	}
+
+	return nil
 }
 
 func (s OCIStore) GetTaskStatus(id string) (string, string, error) {
