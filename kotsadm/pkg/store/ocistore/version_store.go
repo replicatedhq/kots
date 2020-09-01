@@ -17,6 +17,7 @@ import (
 	"github.com/mholt/archiver"
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/pkg/errors"
+	apptypes "github.com/replicatedhq/kots/kotsadm/pkg/app/types"
 	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
 	versiontypes "github.com/replicatedhq/kots/kotsadm/pkg/version/types"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
@@ -107,7 +108,7 @@ func (s OCIStore) IsRollbackSupportedForVersion(appID string, sequence int64) (b
 	return kotsApp.Spec.AllowRollback, nil
 }
 
-func (s OCIStore) IsSnapshotsSupportedForVersion(appID string, sequence int64) (bool, error) {
+func (s OCIStore) IsSnapshotsSupportedForVersion(a *apptypes.App, sequence int64) (bool, error) {
 	return false, ErrNotImplemented
 }
 

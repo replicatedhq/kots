@@ -8,7 +8,7 @@ import (
 	"go.undefinedlabs.com/scopeagent"
 )
 
-func TestLicenseContext_dockercfg(t *testing.T) {
+func TestVersionContext_dockercfg(t *testing.T) {
 	scopetest := scopeagent.StartTest(t)
 	defer scopetest.End()
 	req := require.New(t)
@@ -26,7 +26,7 @@ func TestLicenseContext_dockercfg(t *testing.T) {
 	req.Equal(expect, dockercfg)
 }
 
-func TestLicenseCtx_licenseFieldValue(t *testing.T) {
+func TestVersionCtx_licenseFieldValue(t *testing.T) {
 	tests := []struct {
 		name      string
 		License   *kotsv1beta1.License

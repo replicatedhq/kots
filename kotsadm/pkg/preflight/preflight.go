@@ -12,7 +12,7 @@ import (
 	"go.uber.org/zap"
 )
 
-func Run(appID string, sequence int64, archiveDir string) error {
+func Run(appID string, sequence int64, isAirgap bool, archiveDir string) error {
 	renderedKotsKinds, err := kotsutil.LoadKotsKindsFromPath(archiveDir)
 	if err != nil {
 		return errors.Wrap(err, "failed to load rendered kots kinds")
@@ -54,7 +54,7 @@ func Run(appID string, sequence int64, archiveDir string) error {
 			return errors.Wrap(err, "failed to get registry settings for app")
 		}
 
-		renderedPreflight, err := render.RenderFile(renderedKotsKinds, registrySettings, []byte(renderedMarshalledPreflights))
+		renderedPreflight, err := render.RenderFile(renderedKotsKinds, registrySettings, sequence, isAirgap, []byte(renderedMarshalledPreflights)) // TODO fix
 		if err != nil {
 			return errors.Wrap(err, "failed to render preflights")
 		}

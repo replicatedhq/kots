@@ -217,7 +217,7 @@ func responseAppFromApp(a *apptypes.App) (*ResponseApp, error) {
 			return nil, errors.Wrap(err, "failed to get current parent sequence for downstream")
 		}
 
-		s, err := store.GetStore().IsSnapshotsSupportedForVersion(a.ID, parentSequence)
+		s, err := store.GetStore().IsSnapshotsSupportedForVersion(a, parentSequence)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to check if snapshots is allowed")
 		}

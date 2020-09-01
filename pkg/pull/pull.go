@@ -110,6 +110,7 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 	fetchOptions.UseAppDir = pullOptions.CreateAppDir
 	fetchOptions.LocalPath = pullOptions.LocalPath
 	fetchOptions.CurrentCursor = pullOptions.UpdateCursor
+	fetchOptions.AppSequence = pullOptions.AppSequence
 
 	var installation *kotsv1beta1.Installation
 
@@ -238,6 +239,8 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 		LocalRegistryPassword:  pullOptions.RewriteImageOptions.Password,
 		ExcludeKotsKinds:       pullOptions.ExcludeKotsKinds,
 		Log:                    log,
+		Sequence:               pullOptions.AppSequence,
+		IsAirgap:               pullOptions.AirgapRoot != "",
 	}
 	log.ActionWithSpinner("Creating base")
 	io.WriteString(pullOptions.ReportWriter, "Creating base\n")

@@ -140,6 +140,7 @@ func RewriteImages(appID string, sequence int64, hostname string, username strin
 		RegistryNamespace: namespace,
 		AppSlug:           a.Slug,
 		IsGitOps:          a.IsGitOps,
+		AppSequence:       a.CurrentSequence + 1,
 	}
 
 	if err := rewrite.Rewrite(options); err != nil {
@@ -151,7 +152,7 @@ func RewriteImages(appID string, sequence int64, hostname string, username strin
 		return errors.Wrap(err, "failed to create new version")
 	}
 
-	if err := preflight.Run(appID, newSequence, appDir); err != nil {
+	if err := preflight.Run(appID, newSequence, a.IsAirgap, appDir); err != nil {
 		return errors.Wrap(err, "failed to run preflights")
 	}
 

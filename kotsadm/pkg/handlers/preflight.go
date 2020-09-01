@@ -99,7 +99,7 @@ func IgnorePreflightRBACErrors(w http.ResponseWriter, r *http.Request) {
 
 	go func() {
 		defer os.RemoveAll(archiveDir)
-		if err := preflight.Run(foundApp.ID, int64(sequence), archiveDir); err != nil {
+		if err := preflight.Run(foundApp.ID, int64(sequence), foundApp.IsAirgap, archiveDir); err != nil {
 			logger.Error(err)
 			return
 		}
@@ -139,7 +139,7 @@ func StartPreflightChecks(w http.ResponseWriter, r *http.Request) {
 
 	go func() {
 		defer os.RemoveAll(archiveDir)
-		if err := preflight.Run(foundApp.ID, int64(sequence), archiveDir); err != nil {
+		if err := preflight.Run(foundApp.ID, int64(sequence), foundApp.IsAirgap, archiveDir); err != nil {
 			logger.Error(err)
 			return
 		}
@@ -230,7 +230,7 @@ func GetPreflightStatus(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	renderedPreflight, err := render.RenderFile(renderedKotsKinds, registrySettings, []byte(renderedMarshalledPreflights))
+	renderedPreflight, err := render.RenderFile(renderedKotsKinds, registrySettings, sequence, foundApp.IsAirgap, []byte(renderedMarshalledPreflights))
 	if err != nil {
 		err = errors.Wrap(err, "failed to render preflights")
 		logger.Error(err)

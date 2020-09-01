@@ -204,7 +204,7 @@ func UpdateAppFromAirgap(a *apptypes.App, airgapBundle multipart.File) (finalErr
 		return errors.Wrap(err, "failed to create new version")
 	}
 
-	if err := preflight.Run(a.ID, newSequence, currentArchivePath); err != nil {
+	if err := preflight.Run(a.ID, newSequence, true, currentArchivePath); err != nil {
 		return errors.Wrap(err, "failed to start preflights")
 	}
 

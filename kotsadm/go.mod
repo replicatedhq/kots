@@ -47,7 +47,7 @@ require (
 	k8s.io/client-go v0.18.4
 	k8s.io/cluster-bootstrap v0.18.4
 	k8s.io/kubernetes v1.18.4
-	k8s.io/metrics v0.19.0
+	k8s.io/metrics v0.19.0 // indirect
 	k8s.io/utils v0.0.0-20200603063816-c1c6865ac451
 	sigs.k8s.io/application v0.8.2
 	sigs.k8s.io/controller-runtime v0.6.0

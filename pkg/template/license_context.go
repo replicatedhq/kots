@@ -10,19 +10,19 @@ import (
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 )
 
-type LicenseCtx struct {
+type licenseCtx struct {
 	License *kotsv1beta1.License
 }
 
-// FuncMap represents the available functions in the LicenseCtx.
-func (ctx LicenseCtx) FuncMap() template.FuncMap {
+// FuncMap represents the available functions in the licenseCtx.
+func (ctx licenseCtx) FuncMap() template.FuncMap {
 	return template.FuncMap{
 		"LicenseFieldValue": ctx.licenseFieldValue,
 		"LicenseDockerCfg":  ctx.licenseDockercfg,
 	}
 }
 
-func (ctx LicenseCtx) licenseFieldValue(name string) string {
+func (ctx licenseCtx) licenseFieldValue(name string) string {
 	// return "" for a nil license - it's better than an error, which makes the template engine return "" for the full string
 	if ctx.License == nil {
 		return ""
@@ -58,7 +58,7 @@ func (ctx LicenseCtx) licenseFieldValue(name string) string {
 	}
 }
 
-func (ctx LicenseCtx) licenseDockercfg() string {
+func (ctx licenseCtx) licenseDockercfg() string {
 	// return "" for a nil license - it's better than an error, which makes the template engine return "" for the full string
 	if ctx.License == nil {
 		return ""
