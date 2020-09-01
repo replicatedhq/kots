@@ -98,42 +98,6 @@ func CheckAirgapBundleChunk(w http.ResponseWriter, r *http.Request) {
 }
 
 func UploadAirgapBundleChunk(w http.ResponseWriter, r *http.Request) {
-	if r.Method == "POST" {
-		createAppFromAirgap(w, r)
-		return
-	}
-
-	updateAppFromAirgap(w, r)
-}
-
-func updateAppFromAirgap(w http.ResponseWriter, r *http.Request) {
-	a, err := store.GetStore().GetApp(r.FormValue("appId"))
-	if err != nil {
-		logger.Error(err)
-		w.WriteHeader(500)
-		return
-	}
-
-	airgapBundle, _, err := r.FormFile("file")
-	if err != nil {
-		logger.Error(err)
-		w.WriteHeader(500)
-		return
-	}
-
-	go func() {
-		defer airgapBundle.Close()
-		if err := airgap.UpdateAppFromAirgap(a, airgapBundle); err != nil {
-			logger.Error(err)
-		}
-	}()
-
-	updateAppFromAirgapResponse := UpdateAppFromAirgapResponse{}
-
-	JSON(w, 202, updateAppFromAirgapResponse)
-}
-
-func createAppFromAirgap(w http.ResponseWriter, r *http.Request) {
 	resumableTotalChunks := r.FormValue("resumableTotalChunks")
 	resumableChunkNumber := r.FormValue("resumableChunkNumber")
 	resumableFilename := r.FormValue("resumableFilename")
@@ -219,43 +183,75 @@ func createAppFromAirgap(w http.ResponseWriter, r *http.Request) {
 
 		logger.Infof("airgap bundle saved to: %s", airgapBundle)
 
-		pendingApp, err := store.GetStore().GetPendingAirgapUploadApp()
-		if err != nil {
-			logger.Error(err)
-			w.WriteHeader(http.StatusInternalServerError)
+		if r.Method == "POST" {
+			createAppFromAirgap(w, r, airgapBundle)
 			return
 		}
 
-		var registryHost, namespace, username, password string
-		registryHost, username, password, err = getKurlRegistryCreds()
-		if err != nil {
-			logger.Error(err)
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
-
-		// if found kurl registry creds, use kurl registry
-		if registryHost != "" {
-			namespace = pendingApp.Slug
-		} else {
-			registryHost = r.FormValue("registryHost")
-			namespace = r.FormValue("namespace")
-			username = r.FormValue("username")
-			password = r.FormValue("password")
-		}
-
-		go func() {
-			err := airgap.CreateAppFromAirgap(pendingApp, airgapBundle, registryHost, namespace, username, password)
-			if err != nil {
-				logger.Error(err)
-				return
-			}
-			// app created successfully, we can clean airgap bundle related chunks
-			if err := os.RemoveAll(chunksDir); err != nil {
-				logger.Error(errors.Wrap(err, "failed to remove chunks directory"))
-			}
-		}()
+		updateAppFromAirgap(w, r, airgapBundle)
 	}
+}
+
+func updateAppFromAirgap(w http.ResponseWriter, r *http.Request, airgapBundle string) {
+	a, err := store.GetStore().GetApp(r.FormValue("appId"))
+	if err != nil {
+		logger.Error(err)
+		w.WriteHeader(500)
+		return
+	}
+
+	go func() {
+		if err := airgap.UpdateAppFromAirgap(a, airgapBundle); err != nil {
+			logger.Error(errors.Wrap(err, "failed to update app from airgap bundle"))
+			return
+		}
+		// app updated successfully, we can remove the airgap bundle
+		if err := os.RemoveAll(airgapBundle); err != nil {
+			logger.Error(errors.Wrap(err, "failed to remove airgap bundle after update"))
+		}
+	}()
+
+	updateAppFromAirgapResponse := UpdateAppFromAirgapResponse{}
+
+	JSON(w, 202, updateAppFromAirgapResponse)
+}
+
+func createAppFromAirgap(w http.ResponseWriter, r *http.Request, airgapBundle string) {
+	pendingApp, err := store.GetStore().GetPendingAirgapUploadApp()
+	if err != nil {
+		logger.Error(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	var registryHost, namespace, username, password string
+	registryHost, username, password, err = getKurlRegistryCreds()
+	if err != nil {
+		logger.Error(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	// if found kurl registry creds, use kurl registry
+	if registryHost != "" {
+		namespace = pendingApp.Slug
+	} else {
+		registryHost = r.FormValue("registryHost")
+		namespace = r.FormValue("namespace")
+		username = r.FormValue("username")
+		password = r.FormValue("password")
+	}
+
+	go func() {
+		if err := airgap.CreateAppFromAirgap(pendingApp, airgapBundle, registryHost, namespace, username, password); err != nil {
+			logger.Error(errors.Wrap(err, "failed to create app from airgap bundle"))
+			return
+		}
+		// app created successfully, we can remove the airgap bundle
+		if err := os.RemoveAll(airgapBundle); err != nil {
+			logger.Error(errors.Wrap(err, "failed to remove airgap bundle after create"))
+		}
+	}()
 
 	createAppFromAirgapResponse := CreateAppFromAirgapResponse{}
 
@@ -313,6 +309,11 @@ func createFileFromChunks(uploadedFileName string, chunksDir string, totalChunks
 		}
 
 		chunkFile.Close()
+	}
+
+	// airgap file was created successfully from chunks, we can remove the chunks dir
+	if err := os.RemoveAll(chunksDir); err != nil {
+		logger.Error(errors.Wrap(err, "failed to remove chunks directory"))
 	}
 
 	return targetFilePath, nil

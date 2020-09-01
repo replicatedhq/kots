@@ -10,7 +10,7 @@ import ConfigureGraphsModal from "../shared/modals/ConfigureGraphsModal";
 import UpdateCheckerModal from "@src/components/modals/UpdateCheckerModal";
 import Modal from "react-modal";
 import { Repeater } from "../../utilities/repeater";
-import { Utilities } from "../../utilities/utilities";
+import { Utilities, createAirgapResumableUploader } from "../../utilities/utilities";
 
 import { XYPlot, XAxis, YAxis, HorizontalGridLines, VerticalGridLines, LineSeries, DiscreteColorLegend, Crosshair } from "react-vis";
 
@@ -111,6 +111,12 @@ class Dashboard extends Component {
     const { app } = this.props;
     if (app !== lastProps.app && app) {
       this.setWatchState(app)
+    }
+    if (!this.airgapUploader) {
+      const browseElement = document.getElementById('bundle-dropzone');
+      if (browseElement) {
+        this.airgapUploader = createAirgapResumableUploader("PUT", browseElement, this.onDropBundle)
+      }
     }
   }
 
@@ -263,65 +269,48 @@ class Dashboard extends Component {
     this.props.history.push(`${this.props.match.params.slug}/version-history/diff/${currentSequence}/${pendingSequence}`)
   }
 
-  onDropBundle = async files => {
+  onDropBundle = async () => {
     this.props.toggleIsBundleUploading(true);
+
     this.setState({
       uploadingAirgapFile: true,
       checkingForUpdates: true,
       airgapUploadError: null,
-      uploadSent: 0,
-      uploadTotal: 0
+      uploadProgress: 0,
     });
 
-    const formData = new FormData();
-    formData.append("file", files[0]);
-    formData.append("appId", this.props.app.id);
+    this.airgapUploader.opts.query = {
+      appId: this.props.app.id,
+    };
 
-    const url = `${window.env.API_ENDPOINT}/app/airgap`;
-    const xhr = new XMLHttpRequest();
-    xhr.open("PUT", url);
-
-    xhr.setRequestHeader("Authorization", Utilities.getToken())
-
-    xhr.upload.onprogress = event => {
-      const total = event.total;
-      const sent = event.loaded;
-
+    this.airgapUploader.on('progress', () => {
+      const progress = this.airgapUploader.progress();
       this.setState({
-        uploadSent: sent,
-        uploadTotal: total
+        uploadProgress: progress,
       });
-    }
+    });
 
-    xhr.upload.onerror = () => {
+    this.airgapUploader.on('error', message => {
+      this.airgapUploader.pause();
       this.setState({
         uploadingAirgapFile: false,
         checkingForUpdates: false,
-        uploadSent: 0,
-        uploadTotal: 0,
-        airgapUploadError: "Error uploading bundle, please try again"
+        uploadProgress: 0,
+        airgapUploadError: message || "Error uploading bundle, please try again"
       });
       this.props.toggleIsBundleUploading(false);
-    }
+    });
 
-    xhr.onloadend = async () => {
-      const response = xhr.response;
-      if (xhr.status === 202) {
-        this.state.updateChecker.start(this.updateStatus, 1000);
-        this.setState({
-          uploadingAirgapFile: false
-        });
-      } else {
-        this.setState({
-          uploadingAirgapFile: false,
-          checkingForUpdates: false,
-          airgapUploadError: `Error uploading airgap bundle: ${response}`
-        });
-      }
+    this.airgapUploader.on('complete', () => {
+      this.state.updateChecker.start(this.updateStatus, 1000);
+      this.setState({
+        uploadingAirgapFile: false,
+        uploadProgress: 0,
+      });
       this.props.toggleIsBundleUploading(false);
-    }
+    });
 
-    xhr.send(formData);
+    this.airgapUploader.upload();
   }
 
   onProgressError = async (airgapUploadError) => {
@@ -333,8 +322,7 @@ class Dashboard extends Component {
     this.setState({
       airgapUploadError,
       checkingForUpdates: false,
-      uploadSent: 0,
-      uploadTotal: 0
+      uploadProgress: 0,
     });
   }
 
@@ -585,8 +573,7 @@ class Dashboard extends Component {
                 onDropBundle={this.onDropBundle}
                 uploadingAirgapFile={uploadingAirgapFile}
                 airgapUploadError={airgapUploadError}
-                uploadSent={this.state.uploadSent}
-                uploadTotal={this.state.uploadTotal}
+                uploadProgress={this.state.uploadProgress}
                 onProgressError={this.onProgressError}
                 onCheckForUpdates={() => this.onCheckForUpdates()}
                 onUploadNewVersion={() => this.onUploadNewVersion()}

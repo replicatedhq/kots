@@ -2,16 +2,14 @@ import * as React from "react";
 import classNames from "classnames";
 import { withRouter } from "react-router-dom";
 import { Helmet } from "react-helmet";
-import Dropzone from "react-dropzone";
 import isEmpty from "lodash/isEmpty";
 import Modal from "react-modal";
-import Resumable from "resumablejs";
 import CodeSnippet from "@src/components/shared/CodeSnippet";
 import AirgapUploadProgress from "@src/components/AirgapUploadProgress";
 import LicenseUploadProgress from "./LicenseUploadProgress";
 import AirgapRegistrySettings from "./shared/AirgapRegistrySettings";
 import ErrorModal from "./modals/ErrorModal";
-import { Utilities } from "../utilities/utilities";
+import { Utilities, createAirgapResumableUploader } from "../utilities/utilities";
 
 import "../scss/components/troubleshoot/UploadSupportBundleModal.scss";
 import "../scss/components/Login.scss";
@@ -42,28 +40,7 @@ class UploadAirgapBundle extends React.Component {
   emptyNamespaceField = "Please enter a value for \"Namespace\" field"
 
   componentDidMount() {
-    this.setupResumableUploader();
-  }
-
-  setupResumableUploader = () => {
-    if (!this.resumableUploader) {
-      this.resumableUploader = new Resumable({
-        target: `${window.env.API_ENDPOINT}/app/airgap`,
-        headers: {
-          "Authorization": Utilities.getToken(),
-        },
-        fileType: ["airgap"],
-        maxFiles: 1,
-        simultaneousUploads: 3,
-        chunkRetryInterval: 500,
-        maxChunkRetries: 3,
-      });
-      this.resumableUploader.on('fileAdded', (resumableFile) => {
-        this.onDrop(resumableFile.file);
-      });
-    }
-    this.resumableUploader.assignBrowse(document.getElementById('bundle-dropzone'));
-    this.resumableUploader.assignDrop(document.getElementById('bundle-dropzone'));
+    this.airgapUploader = createAirgapResumableUploader("POST", document.getElementById('bundle-dropzone'), this.onDrop)
   }
 
   clearFile = () => {
@@ -170,30 +147,30 @@ class UploadAirgapBundle extends React.Component {
       }
     }
 
-    this.resumableUploader.opts.query = {
+    this.airgapUploader.opts.query = {
       registryHost: this.state.registryDetails.hostname,
       namespace: this.state.registryDetails.namespace,
       username: this.state.registryDetails.username,
       password: this.state.registryDetails.password,
     };
 
-    this.resumableUploader.on('progress', () => {
-      const progress = this.resumableUploader.progress();
+    this.airgapUploader.on('progress', () => {
+      const progress = this.airgapUploader.progress();
       this.setState({
         uploadProgress: progress,
       });
     });
 
-    this.resumableUploader.on('error', message => {
-      this.resumableUploader.pause();
+    this.airgapUploader.on('error', message => {
+      this.airgapUploader.pause();
       this.setState({
         fileUploading: false,
         uploadProgress: 0,
-        errorMessage: message,
+        errorMessage: message || "Error uploading bundle, please try again",
       });
     });
 
-    this.resumableUploader.upload();
+    this.airgapUploader.upload();
   }
 
   getRegistryDetails = (fields) => {
