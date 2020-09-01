@@ -56,7 +56,7 @@ export function getApplicationType(watch) {
  * @param {String} - Returns the commit SHA of the current build
  */
 export function getBuildVersion() {
-  return window.env.SHIP_CLUSTER_BUILD_VERSION;
+  return window.env.KOTSADM_BUILD_VERSION;
 }
 
 export function parseIconUri(uri) {
