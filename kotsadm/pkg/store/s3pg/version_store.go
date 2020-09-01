@@ -448,6 +448,7 @@ func (s S3PGStore) GetAppVersionsAfter(appID string, sequence int64) ([]*version
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to query")
 	}
+	defer rows.Close()
 
 	var status sql.NullString
 	var deployedAt sql.NullTime
@@ -459,9 +460,6 @@ func (s S3PGStore) GetAppVersionsAfter(appID string, sequence int64) ([]*version
 	for rows.Next() {
 		v := versiontypes.AppVersion{}
 		if err := rows.Scan(&v.Sequence, &v.CreatedOn, &status, &deployedAt, &installationSpec); err != nil {
-			if err == sql.ErrNoRows {
-				return nil, ErrNotFound
-			}
 			return nil, errors.Wrap(err, "failed to scan")
 		}
 
