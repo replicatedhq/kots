@@ -54,7 +54,7 @@ class UploadAirgapBundle extends React.Component {
         },
         fileType: ["airgap"],
         maxFiles: 1,
-        simultaneousUploads: 1,
+        simultaneousUploads: 3,
         chunkRetryInterval: 500,
         maxChunkRetries: 3,
       });
