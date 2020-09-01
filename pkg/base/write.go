@@ -106,7 +106,7 @@ func (b *Base) WriteBase(options WriteOptions) error {
 		kustomization.Namespace = b.Namespace
 	}
 
-	if err := k8sutil.WriteKustomizationToFile(&kustomization, path.Join(renderDir, "kustomization.yaml")); err != nil {
+	if err := k8sutil.WriteKustomizationToFile(kustomization, path.Join(renderDir, "kustomization.yaml")); err != nil {
 		return errors.Wrap(err, "failed to write kustomization to file")
 	}
 

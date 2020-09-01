@@ -114,7 +114,7 @@ func (m *Midstream) writeKustomization(options WriteOptions) error {
 		relativeBaseDir,
 	}
 
-	if err := k8sutil.WriteKustomizationToFile(m.Kustomization, fileRenderPath); err != nil {
+	if err := k8sutil.WriteKustomizationToFile(*m.Kustomization, fileRenderPath); err != nil {
 		return errors.Wrap(err, "failed to write kustomization to file")
 	}
 

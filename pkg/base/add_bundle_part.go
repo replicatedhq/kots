@@ -26,7 +26,7 @@ func AddBundlePart(baseDir string, filename string, content []byte) error {
 
 	k.Resources = append(k.Resources, path.Join("admin-console", filename))
 
-	if err := k8sutil.WriteKustomizationToFile(k, path.Join(baseDir, "kustomization.yaml")); err != nil {
+	if err := k8sutil.WriteKustomizationToFile(*k, path.Join(baseDir, "kustomization.yaml")); err != nil {
 		return errors.Wrap(err, "failed to write kustomiation file")
 	}
 

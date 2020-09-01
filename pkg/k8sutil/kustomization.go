@@ -37,7 +37,15 @@ func (s kustPatches) Less(i, j int) bool {
 	return strings.Compare(string(s[i]), string(s[j])) < 0
 }
 
-func WriteKustomizationToFile(kustomization *kustomizetypes.Kustomization, file string) error {
+func WriteKustomizationToFile(kustomization kustomizetypes.Kustomization, file string) error {
+	// we remove newTags from here... because...
+	cleanedImages := []kustomizetypes.Image{}
+	for _, image := range kustomization.Images {
+		image.NewTag = ""
+		cleanedImages = append(cleanedImages, image)
+	}
+	kustomization.Images = cleanedImages
+
 	sort.Strings(kustomization.Bases)
 	sort.Strings(kustomization.Resources)
 	sort.Sort(kustPatches(kustomization.PatchesStrategicMerge))

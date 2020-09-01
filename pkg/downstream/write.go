@@ -43,7 +43,7 @@ func (d *Downstream) WriteDownstream(options WriteOptions) error {
 		relativeMidstreamDir,
 	}
 
-	if err := k8sutil.WriteKustomizationToFile(d.Kustomization, fileRenderPath); err != nil {
+	if err := k8sutil.WriteKustomizationToFile(*d.Kustomization, fileRenderPath); err != nil {
 		return errors.Wrap(err, "failed to write kustomization to file")
 	}
 
