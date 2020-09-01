@@ -8,7 +8,7 @@ env:
   browser: true
 globals:
   ENVIRONMENT: true
-  SHIP_CLUSTER_BUILD_VERSION: true
+  KOTSADM_BUILD_VERSION: true
   GITHUB_CLIENTID: true
   BUGSNAG_RELEASE_STAGE: true
   INTERCOM_APP_ID: true
