@@ -60,7 +60,7 @@ class AirgapUploadProgress extends React.Component {
   }
   
   render() {
-    const { total, sent, onProgressError, onProgressSuccess, smallSize } = this.props;
+    const { progress, onProgressError, onProgressSuccess, smallSize } = this.props;
     const { installStatus, currentMessage } = this.state;
 
     if (installStatus === "installed") {
@@ -99,12 +99,12 @@ class AirgapUploadProgress extends React.Component {
     let percentage;
     let uploadComplete;
 
-    if (total > 0 && sent > 0) {
-      uploadComplete = sent === total
-      percentage = (sent / total * 100).toFixed(2) + "%";
+    if (progress > 0) {
+      uploadComplete = progress === 1
+      percentage = (progress * 100).toFixed(2) + "%";
       progressBar = (
         <div className={`progressbar ${smallSize ? "small" : ""}`}>
-          <div className={`progressbar-meter ${uploadComplete ? "complete" : ""}`} style={{ width: `${(sent / total) * (smallSize ? 100 : 600)}px` }} />
+          <div className={`progressbar-meter ${uploadComplete ? "complete" : ""}`} style={{ width: `${(progress) * (smallSize ? 100 : 600)}px` }} />
         </div>
       );
     } else {
@@ -214,7 +214,7 @@ class AirgapUploadProgress extends React.Component {
               <div className="flex alignItems--center u-marginTop--20">
                 <span className="u-fontWeight--bold u-fontSize--normal u-color--tundora u-marginRight--10">{percentage}</span>
                 {progressBar}
-                {uploadComplete ? <span className="u-marginLeft--10 icon checkmark-icon" /> : <span className="u-fontWeight--medium u-fontSize--normal u-color--tundora u-marginLeft--10">{formatByteSize(total)}</span>}
+                {uploadComplete ? <span className="u-marginLeft--10 icon checkmark-icon" /> : <span className="u-fontWeight--medium u-fontSize--normal u-color--tundora u-marginLeft--10">{formatByteSize(progress)}</span>}{/* TODO: fix this */}
               </div>
               {statusDiv}
             </div>
@@ -226,8 +226,7 @@ class AirgapUploadProgress extends React.Component {
 }
 
 AirgapUploadProgress.defaultProps = {
-  total: 0,
-  sent: 0
+  progress: 0,
 };
 
 export default withRouter(AirgapUploadProgress);

@@ -137,7 +137,8 @@ func Start() {
 	sessionAuthRouter.Path("/api/v1/app/{appSlug}/versions").Methods("GET").HandlerFunc(handlers.GetAppVersionHistory)
 
 	// Airgap
-	sessionAuthRouter.Path("/api/v1/app/airgap").Methods("POST", "PUT").HandlerFunc(handlers.UploadAirgapBundle)
+	sessionAuthRouter.Path("/api/v1/app/airgap").Methods("GET").HandlerFunc(handlers.CheckAirgapBundleChunk)
+	sessionAuthRouter.Path("/api/v1/app/airgap").Methods("POST", "PUT").HandlerFunc(handlers.UploadAirgapBundleChunk)
 	sessionAuthRouter.Path("/api/v1/app/airgap/status").Methods("GET").HandlerFunc(handlers.GetAirgapInstallStatus)
 	sessionAuthRouter.Path("/api/v1/kots/airgap/reset/{appSlug}").Methods("POST").HandlerFunc(handlers.ResetAirgapInstallStatus)
 
