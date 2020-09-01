@@ -60,7 +60,7 @@ export default class ConnectionTerminated extends React.Component {
           }
         </div>
         <h2 className="u-fontSize--largest u-color--tuna u-fontWeight--bold u-lineHeight--normal u-userSelect--none">Cannot connect</h2>
-        <p className="u-fontSize--normal u-fontWeight--medium u-color--dustyGray u-lineHeight--more u-marginTop--10 u-marginBottom--10 u-userSelect--none">We're unable to reach the API right now. Check to make sure your local server is running.</p>
+        <p className="u-fontSize--normal u-fontWeight--medium u-color--dustyGray u-lineHeight--more u-marginTop--10 u-marginBottom--10 u-userSelect--none">We're unable to reach the API right now. If you are using port-forwarding, check that the forwarding process is still active.</p>
         <div className="u-marginBottom--30">
           <span className="u-fontSize--normal u-fontWeight--bold u-color--tundora u-userSelect--none">Trying again in {`${seconds} second${seconds !== 1 ? "s" : ""}`}</span>
         </div>
