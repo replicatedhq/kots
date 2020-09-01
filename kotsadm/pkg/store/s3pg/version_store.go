@@ -442,5 +442,45 @@ func (s S3PGStore) GetAppVersion(appID string, sequence int64) (*versiontypes.Ap
 }
 
 func (s S3PGStore) GetAppVersionsAfter(appID string, sequence int64) ([]*versiontypes.AppVersion, error) {
-	return nil, errors.New("not implemented")
+	db := persistence.MustGetPGSession()
+	query := `select sequence, created_at, status, applied_at, kots_installation_spec from app_version where app_id = $1 and sequence > $2`
+	rows, err := db.Query(query, appID, sequence)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to query")
+	}
+
+	var status sql.NullString
+	var deployedAt sql.NullTime
+
+	var installationSpec string
+
+	versions := []*versiontypes.AppVersion{}
+
+	for rows.Next() {
+		v := versiontypes.AppVersion{}
+		if err := rows.Scan(&v.Sequence, &v.CreatedOn, &status, &deployedAt, &installationSpec); err != nil {
+			if err == sql.ErrNoRows {
+				return nil, ErrNotFound
+			}
+			return nil, errors.Wrap(err, "failed to scan")
+		}
+
+		kotsKinds := kotsutil.KotsKinds{}
+
+		installation, err := kotsutil.LoadInstallationFromContents([]byte(installationSpec))
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to read installation spec")
+		}
+		kotsKinds.Installation = *installation
+
+		if deployedAt.Valid {
+			v.DeployedAt = &deployedAt.Time
+		}
+
+		v.Status = status.String
+
+		versions = append(versions, &v)
+	}
+
+	return versions, nil
 }

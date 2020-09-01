@@ -183,8 +183,6 @@ func buildImageAltNames(rewrittenImage kustomizetypes.Image) []kustomizetypes.Im
 		})
 	}
 
-	fmt.Printf("\n\nimages %#v\n\n", images)
-
 	return images
 }
 
