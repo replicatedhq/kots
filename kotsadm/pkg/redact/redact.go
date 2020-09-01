@@ -12,7 +12,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/kotsadm/pkg/redact/types"
 	"github.com/replicatedhq/kots/pkg/util"
-	"github.com/replicatedhq/troubleshoot/pkg/apis/troubleshoot/v1beta1"
+	troubleshootv1beta2 "github.com/replicatedhq/troubleshoot/pkg/apis/troubleshoot/v1beta2"
 	troubleshootscheme "github.com/replicatedhq/troubleshoot/pkg/client/troubleshootclientset/scheme"
 	v1 "k8s.io/api/core/v1"
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
@@ -55,7 +55,7 @@ func getRedactSpec(configMap *v1.ConfigMap) (string, string, error) {
 	return string(yamlBytes), "", nil
 }
 
-func GetRedact() (*v1beta1.Redactor, error) {
+func GetRedact() (*troubleshootv1beta2.Redactor, error) {
 	configmap, _, err := getConfigmap()
 	if err != nil {
 		return nil, errors.Wrap(err, "get redactors configmap")
@@ -385,16 +385,16 @@ func getSlug(name string) string {
 	return name
 }
 
-func buildFullRedact(config *v1.ConfigMap) (*v1beta1.Redactor, error) {
-	full := &v1beta1.Redactor{
+func buildFullRedact(config *v1.ConfigMap) (*troubleshootv1beta2.Redactor, error) {
+	full := &troubleshootv1beta2.Redactor{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Redactor",
-			APIVersion: "troubleshoot.replicated.com/v1beta1",
+			APIVersion: "troubleshoot.sh/v1beta2",
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "kotsadm-redact",
 		},
-		Spec: v1beta1.RedactorSpec{},
+		Spec: troubleshootv1beta2.RedactorSpec{},
 	}
 
 	keys := []string{}
@@ -454,16 +454,16 @@ func splitRedactors(spec string, existingMap map[string]string) (map[string]stri
 			redactorSpec.Name = redactorName
 		}
 
-		newSpec, err := util.MarshalIndent(2, v1beta1.Redactor{
+		newSpec, err := util.MarshalIndent(2, troubleshootv1beta2.Redactor{
 			TypeMeta: metav1.TypeMeta{
 				Kind:       "Redactor",
-				APIVersion: "troubleshoot.replicated.com/v1beta1",
+				APIVersion: "troubleshoot.sh/v1beta2",
 			},
 			ObjectMeta: metav1.ObjectMeta{
 				Name: redactorName,
 			},
-			Spec: v1beta1.RedactorSpec{
-				Redactors: []*v1beta1.Redact{redactorSpec},
+			Spec: troubleshootv1beta2.RedactorSpec{
+				Redactors: []*troubleshootv1beta2.Redact{redactorSpec},
 			},
 		})
 
@@ -490,13 +490,13 @@ func splitRedactors(spec string, existingMap map[string]string) (map[string]stri
 	return existingMap, nil
 }
 
-func parseRedact(spec []byte) (*v1beta1.Redactor, error) {
+func parseRedact(spec []byte) (*troubleshootv1beta2.Redactor, error) {
 	decode := scheme.Codecs.UniversalDeserializer().Decode
 	obj, _, err := decode(spec, nil, nil)
 	if err != nil {
 		return nil, errors.Wrap(err, "deserialize combined redact spec")
 	}
-	redactor, ok := obj.(*v1beta1.Redactor)
+	redactor, ok := obj.(*troubleshootv1beta2.Redactor)
 	if ok && redactor != nil {
 		return redactor, nil
 	}
