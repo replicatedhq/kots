@@ -9,7 +9,7 @@ import "brace/mode/yaml";
 import "brace/theme/chrome";
 
 const CUSTOM_SPEC_TEMPLATE = `
-apiVersion: troubleshoot.replicated.com/v1beta1
+apiVersion: troubleshoot.sh/v1beta2
 kind: Redactor
 metadata:
   name: my-application-name

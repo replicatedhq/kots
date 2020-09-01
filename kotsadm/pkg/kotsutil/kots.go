@@ -6,13 +6,15 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	kotsscheme "github.com/replicatedhq/kots/kotskinds/client/kotsclientset/scheme"
 	"github.com/replicatedhq/kots/pkg/crypto"
-	troubleshootv1beta1 "github.com/replicatedhq/troubleshoot/pkg/apis/troubleshoot/v1beta1"
+	troubleshootv1beta2 "github.com/replicatedhq/troubleshoot/pkg/apis/troubleshoot/v1beta2"
 	troubleshootscheme "github.com/replicatedhq/troubleshoot/pkg/client/troubleshootclientset/scheme"
+	"github.com/replicatedhq/troubleshoot/pkg/docrewrite"
 	velerov1 "github.com/vmware-tanzu/velero/pkg/apis/velero/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	serializer "k8s.io/apimachinery/pkg/runtime/serializer/json"
@@ -35,9 +37,9 @@ type KotsKinds struct {
 	KotsApplication kotsv1beta1.Application
 	Application     *applicationv1beta1.Application
 
-	Collector *troubleshootv1beta1.Collector
-	Preflight *troubleshootv1beta1.Preflight
-	Analyzer  *troubleshootv1beta1.Analyzer
+	Collector *troubleshootv1beta2.Collector
+	Preflight *troubleshootv1beta2.Preflight
+	Analyzer  *troubleshootv1beta2.Analyzer
 
 	Config       *kotsv1beta1.Config
 	ConfigValues *kotsv1beta1.ConfigValues
@@ -311,6 +313,17 @@ func LoadKotsKindsFromPath(fromDir string) (*KotsKinds, error) {
 				return nil // not an error because the file might not be yaml
 			}
 
+			if strings.HasPrefix(gvk.String(), "troubleshoot.replicated.com/v1beta1,") {
+				contents, err = docrewrite.ConvertToV1Beta2(contents)
+				if err != nil {
+					return errors.Wrap(err, "failed to convert to v1beta2")
+				}
+				decoded, gvk, err = decode(contents, nil, nil)
+				if err != nil {
+					return err
+				}
+			}
+
 			switch gvk.String() {
 			case "kots.io/v1beta1, Kind=Config":
 				kotsKinds.Config = decoded.(*kotsv1beta1.Config)
@@ -322,12 +335,12 @@ func LoadKotsKindsFromPath(fromDir string) (*KotsKinds, error) {
 				kotsKinds.License = decoded.(*kotsv1beta1.License)
 			case "kots.io/v1beta1, Kind=Installation":
 				kotsKinds.Installation = *decoded.(*kotsv1beta1.Installation)
-			case "troubleshoot.replicated.com/v1beta1, Kind=Collector":
-				kotsKinds.Collector = decoded.(*troubleshootv1beta1.Collector)
-			case "troubleshoot.replicated.com/v1beta1, Kind=Analyzer":
-				kotsKinds.Analyzer = decoded.(*troubleshootv1beta1.Analyzer)
-			case "troubleshoot.replicated.com/v1beta1, Kind=Preflight":
-				kotsKinds.Preflight = decoded.(*troubleshootv1beta1.Preflight)
+			case "troubleshoot.sh/v1beta2, Kind=Collector":
+				kotsKinds.Collector = decoded.(*troubleshootv1beta2.Collector)
+			case "troubleshoot.sh/v1beta2, Kind=Analyzer":
+				kotsKinds.Analyzer = decoded.(*troubleshootv1beta2.Analyzer)
+			case "troubleshoot.sh/v1beta2, Kind=Preflight":
+				kotsKinds.Preflight = decoded.(*troubleshootv1beta2.Preflight)
 			case "velero.io/v1, Kind=Backup":
 				kotsKinds.Backup = decoded.(*velerov1.Backup)
 			case "app.k8s.io/v1beta1, Kind=Application":
@@ -408,7 +421,12 @@ func LoadConfigValuesFromFile(configValuesFilePath string) (*kotsv1beta1.ConfigV
 	return obj.(*kotsv1beta1.ConfigValues), nil
 }
 
-func LoadPreflightFromContents(content []byte) (*troubleshootv1beta1.Preflight, error) {
+func LoadPreflightFromContents(content []byte) (*troubleshootv1beta2.Preflight, error) {
+	content, err := docrewrite.ConvertToV1Beta2(content)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to convert to v1beta2")
+	}
+
 	decode := scheme.Codecs.UniversalDeserializer().Decode
 
 	obj, gvk, err := decode(content, nil, nil)
@@ -416,11 +434,16 @@ func LoadPreflightFromContents(content []byte) (*troubleshootv1beta1.Preflight, 
 		return nil, errors.Wrap(err, "not a preflight")
 	}
 
-	if gvk.String() != "troubleshoot.replicated.com/v1beta1, Kind=Preflight" {
-		return nil, errors.New("not a preflight")
+	if gvk.String() == "troubleshoot.sh/v1beta2, Kind=Preflight" {
+		return obj.(*troubleshootv1beta2.Preflight), nil
 	}
 
-	return obj.(*troubleshootv1beta1.Preflight), nil
+	if gvk.String() == "troubleshoot.replicated.com/v1beta1, Kind=Preflight" {
+		return obj.(*troubleshootv1beta2.Preflight), nil
+	}
+
+	return nil, errors.Errorf("not a preflight: %s", gvk.String())
+
 }
 
 func LoadBackupFromContents(content []byte) (*velerov1.Backup, error) {

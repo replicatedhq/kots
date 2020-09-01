@@ -24,8 +24,7 @@ import (
 	"github.com/replicatedhq/kots/kotsadm/pkg/supportbundle/types"
 	"github.com/replicatedhq/kots/pkg/template"
 	troubleshootanalyze "github.com/replicatedhq/troubleshoot/pkg/analyze"
-	"github.com/replicatedhq/troubleshoot/pkg/apis/troubleshoot/v1beta1"
-	troubleshootv1beta1 "github.com/replicatedhq/troubleshoot/pkg/apis/troubleshoot/v1beta1"
+	troubleshootv1beta2 "github.com/replicatedhq/troubleshoot/pkg/apis/troubleshoot/v1beta2"
 	"github.com/replicatedhq/troubleshoot/pkg/convert"
 	redact2 "github.com/replicatedhq/troubleshoot/pkg/redact"
 	"github.com/replicatedhq/yaml/v3"
@@ -299,16 +298,16 @@ func UploadSupportBundle(w http.ResponseWriter, r *http.Request) {
 
 	analyzer := kotsKinds.Analyzer
 	if analyzer == nil {
-		analyzer = &troubleshootv1beta1.Analyzer{
+		analyzer = &troubleshootv1beta2.Analyzer{
 			TypeMeta: metav1.TypeMeta{
-				APIVersion: "troubleshoot.replicated.com/v1beta1",
+				APIVersion: "troubleshoot.sh/v1beta2",
 				Kind:       "Analyzer",
 			},
 			ObjectMeta: metav1.ObjectMeta{
 				Name: "default-analyzers",
 			},
-			Spec: troubleshootv1beta1.AnalyzerSpec{
-				Analyzers: []*troubleshootv1beta1.Analyze{},
+			Spec: troubleshootv1beta2.AnalyzerSpec{
+				Analyzers: []*troubleshootv1beta2.Analyze{},
 			},
 		}
 	}
@@ -405,7 +404,7 @@ func GetTroubleshoot(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(500)
 		return
 	}
-	existingTs := obj.(*v1beta1.Collector)
+	existingTs := obj.(*troubleshootv1beta2.Collector)
 
 	existingTs = populateNamespaces(existingTs)
 
@@ -432,9 +431,9 @@ func GetTroubleshoot(w http.ResponseWriter, r *http.Request) {
 	}
 
 	tsSpec := addDefaultTroubleshoot(existingTs, licenseString)
-	tsSpec.Spec.AfterCollection = []*v1beta1.AfterCollection{
+	tsSpec.Spec.AfterCollection = []*troubleshootv1beta2.AfterCollection{
 		{
-			UploadResultsTo: &v1beta1.ResultRequest{
+			UploadResultsTo: &troubleshootv1beta2.ResultRequest{
 				URI:       uploadURL,
 				Method:    "PUT",
 				RedactURI: redactURL,
@@ -514,7 +513,7 @@ func SetSupportBundleRedactions(w http.ResponseWriter, r *http.Request) {
 }
 
 // if a namespace is not set for a secret/run/logs/exec/copy collector, set it to the current namespace
-func populateNamespaces(existingSpec *v1beta1.Collector) *v1beta1.Collector {
+func populateNamespaces(existingSpec *troubleshootv1beta2.Collector) *troubleshootv1beta2.Collector {
 	if existingSpec == nil {
 		return nil
 	} else if existingSpec.Spec.Collectors == nil {
@@ -535,7 +534,7 @@ func populateNamespaces(existingSpec *v1beta1.Collector) *v1beta1.Collector {
 		return os.Getenv("POD_NAMESPACE")
 	}
 
-	collects := []*v1beta1.Collect{}
+	collects := []*troubleshootv1beta2.Collect{}
 	for _, collect := range existingSpec.Spec.Collectors {
 		if collect.Secret != nil {
 			collect.Secret.Namespace = ns(collect.Secret.Namespace)
@@ -558,12 +557,12 @@ func populateNamespaces(existingSpec *v1beta1.Collector) *v1beta1.Collector {
 	return existingSpec
 }
 
-func addDefaultTroubleshoot(existingSpec *v1beta1.Collector, licenseData string) *v1beta1.Collector {
+func addDefaultTroubleshoot(existingSpec *troubleshootv1beta2.Collector, licenseData string) *troubleshootv1beta2.Collector {
 	if existingSpec == nil {
-		existingSpec = &v1beta1.Collector{
+		existingSpec = &troubleshootv1beta2.Collector{
 			TypeMeta: v1.TypeMeta{
 				Kind:       "Collector",
-				APIVersion: "troubleshoot.replicated.com/v1beta1",
+				APIVersion: "troubleshoot.sh/v1beta2",
 			},
 			ObjectMeta: v1.ObjectMeta{
 				Name: "default-collector",
@@ -571,10 +570,10 @@ func addDefaultTroubleshoot(existingSpec *v1beta1.Collector, licenseData string)
 		}
 	}
 
-	existingSpec.Spec.Collectors = append(existingSpec.Spec.Collectors, []*v1beta1.Collect{
+	existingSpec.Spec.Collectors = append(existingSpec.Spec.Collectors, []*troubleshootv1beta2.Collect{
 		{
-			Data: &v1beta1.Data{
-				CollectorMeta: v1beta1.CollectorMeta{
+			Data: &troubleshootv1beta2.Data{
+				CollectorMeta: troubleshootv1beta2.CollectorMeta{
 					CollectorName: "license.yaml",
 				},
 				Name: "kots/admin-console",
@@ -582,8 +581,8 @@ func addDefaultTroubleshoot(existingSpec *v1beta1.Collector, licenseData string)
 			},
 		},
 		{
-			Secret: &v1beta1.Secret{
-				CollectorMeta: v1beta1.CollectorMeta{
+			Secret: &troubleshootv1beta2.Secret{
+				CollectorMeta: troubleshootv1beta2.CollectorMeta{
 					CollectorName: "kotsadm-replicated-registry",
 				},
 				SecretName:   "kotsadm-replicated-registry",
@@ -601,8 +600,8 @@ func addDefaultTroubleshoot(existingSpec *v1beta1.Collector, licenseData string)
 	return existingSpec
 }
 
-func makeDbCollectors() []*v1beta1.Collect {
-	dbCollectors := []*v1beta1.Collect{}
+func makeDbCollectors() []*troubleshootv1beta2.Collect {
+	dbCollectors := []*troubleshootv1beta2.Collect{}
 
 	pgConnectionString := os.Getenv("POSTGRES_URI")
 	parsedPg, err := url.Parse(pgConnectionString)
@@ -611,9 +610,9 @@ func makeDbCollectors() []*v1beta1.Collect {
 		if parsedPg.User != nil {
 			username = parsedPg.User.Username()
 		}
-		dbCollectors = append(dbCollectors, &v1beta1.Collect{
-			Exec: &v1beta1.Exec{
-				CollectorMeta: v1beta1.CollectorMeta{
+		dbCollectors = append(dbCollectors, &troubleshootv1beta2.Collect{
+			Exec: &troubleshootv1beta2.Exec{
+				CollectorMeta: troubleshootv1beta2.CollectorMeta{
 					CollectorName: "kotsadm-postgres-db",
 				},
 				Name:          "kots/admin-console",
@@ -629,18 +628,18 @@ func makeDbCollectors() []*v1beta1.Collect {
 	return dbCollectors
 }
 
-func makeKotsadmCollectors() []*v1beta1.Collect {
+func makeKotsadmCollectors() []*troubleshootv1beta2.Collect {
 	names := []string{
 		"kotsadm-postgres",
 		"kotsadm",
 		"kotsadm-operator",
 		"kurl-proxy-kotsadm",
 	}
-	rookCollectors := []*v1beta1.Collect{}
+	rookCollectors := []*troubleshootv1beta2.Collect{}
 	for _, name := range names {
-		rookCollectors = append(rookCollectors, &v1beta1.Collect{
-			Logs: &v1beta1.Logs{
-				CollectorMeta: v1beta1.CollectorMeta{
+		rookCollectors = append(rookCollectors, &troubleshootv1beta2.Collect{
+			Logs: &troubleshootv1beta2.Logs{
+				CollectorMeta: troubleshootv1beta2.CollectorMeta{
 					CollectorName: name,
 				},
 				Name:      "kots/admin-console",
@@ -652,7 +651,7 @@ func makeKotsadmCollectors() []*v1beta1.Collect {
 	return rookCollectors
 }
 
-func makeRookCollectors() []*v1beta1.Collect {
+func makeRookCollectors() []*troubleshootv1beta2.Collect {
 	names := []string{
 		"rook-ceph-agent",
 		"rook-ceph-mgr",
@@ -663,11 +662,11 @@ func makeRookCollectors() []*v1beta1.Collect {
 		"rook-ceph-rgw",
 		"rook-discover",
 	}
-	rookCollectors := []*v1beta1.Collect{}
+	rookCollectors := []*troubleshootv1beta2.Collect{}
 	for _, name := range names {
-		rookCollectors = append(rookCollectors, &v1beta1.Collect{
-			Logs: &v1beta1.Logs{
-				CollectorMeta: v1beta1.CollectorMeta{
+		rookCollectors = append(rookCollectors, &troubleshootv1beta2.Collect{
+			Logs: &troubleshootv1beta2.Logs{
+				CollectorMeta: troubleshootv1beta2.CollectorMeta{
 					CollectorName: name,
 				},
 				Name:      "kots/rook",
@@ -679,15 +678,15 @@ func makeRookCollectors() []*v1beta1.Collect {
 	return rookCollectors
 }
 
-func makeKurlCollectors() []*v1beta1.Collect {
+func makeKurlCollectors() []*troubleshootv1beta2.Collect {
 	names := []string{
 		"registry",
 	}
-	rookCollectors := []*v1beta1.Collect{}
+	rookCollectors := []*troubleshootv1beta2.Collect{}
 	for _, name := range names {
-		rookCollectors = append(rookCollectors, &v1beta1.Collect{
-			Logs: &v1beta1.Logs{
-				CollectorMeta: v1beta1.CollectorMeta{
+		rookCollectors = append(rookCollectors, &troubleshootv1beta2.Collect{
+			Logs: &troubleshootv1beta2.Logs{
+				CollectorMeta: troubleshootv1beta2.CollectorMeta{
 					CollectorName: name,
 				},
 				Name:      "kots/kurl",
@@ -699,8 +698,8 @@ func makeKurlCollectors() []*v1beta1.Collect {
 	return rookCollectors
 }
 
-func makeVeleroCollectors() []*v1beta1.Collect {
-	collectors := []*v1beta1.Collect{}
+func makeVeleroCollectors() []*troubleshootv1beta2.Collect {
+	collectors := []*troubleshootv1beta2.Collect{}
 
 	veleroNamespace, err := snapshot.DetectVeleroNamespace()
 	if err != nil {
@@ -718,9 +717,9 @@ func makeVeleroCollectors() []*v1beta1.Collect {
 	}
 
 	for _, selector := range selectors {
-		collectors = append(collectors, &v1beta1.Collect{
-			Logs: &v1beta1.Logs{
-				CollectorMeta: v1beta1.CollectorMeta{
+		collectors = append(collectors, &troubleshootv1beta2.Collect{
+			Logs: &troubleshootv1beta2.Logs{
+				CollectorMeta: troubleshootv1beta2.CollectorMeta{
 					CollectorName: "velero",
 				},
 				Name:      "velero",

@@ -206,7 +206,7 @@ class EditRedactor extends Component {
       this.getRedactor(this.props.match.params.redactorSlug);
     } else {
       const defaultYaml = `kind: Redactor
-apiVersion: troubleshoot.replicated.com/v1beta1
+apiVersion: troubleshoot.sh/v1beta2
 metadata:
   name: 
 spec:
