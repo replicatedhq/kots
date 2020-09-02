@@ -994,6 +994,10 @@ class AppVersionHistory extends Component {
     const currentDownstreamVersion = downstream?.currentVersion;
     const yamlErrorsDetails = this.yamlErrorsDetails(downstream, currentDownstreamVersion);
 
+    // This is kinda hacky. This finds the equivalent downstream version because the midstream
+    // version type does not contain metadata like version label or release notes.
+    const currentMidstreamVersion = versionHistory.find(version => version.sequence === app.currentVersion.sequence) || app.currentVersion;
+
     return (
       <div className="flex flex-column flex1 u-position--relative u-overflow--auto u-padding--20">
         <Helmet>
@@ -1009,12 +1013,12 @@ class AppVersionHistory extends Component {
               }
               <div className="flex1 flex-column">
                 <p className="u-fontSize--34 u-fontWeight--bold u-color--tuna">
-                  {app.currentVersion ? app.currentVersion.versionLabel : "---"}
+                  {currentMidstreamVersion ? currentMidstreamVersion.versionLabel : "---"}
                 </p>
-                <p className="u-fontSize--large u-fontWeight--medium u-marginTop--5 u-color--nevada">{app.currentVersion ? "Current upstream version" : "No deployments have been made"}</p>
+                <p className="u-fontSize--large u-fontWeight--medium u-marginTop--5 u-color--nevada">{currentMidstreamVersion ? "Current upstream version" : "No deployments have been made"}</p>
                 <p className="u-marginTop--10 u-fontSize--small u-color--dustyGray u-fontWeight--medium">
-                  {app?.currentVersion?.deployedAt && `Released on ${dayjs(app.currentVersion.deployedAt).format("MMMM D, YYYY")}`}
-                  {app?.currentVersion?.releaseNotes && <span className={classNames("release-notes-link", { "u-paddingLeft--5": app?.currentVersion?.deployedAt })} onClick={this.showReleaseNotes}>Release Notes</span>}
+                  {currentMidstreamVersion?.deployedAt && `Released on ${dayjs(currentMidstreamVersion.deployedAt).format("MMMM D, YYYY")}`}
+                  {currentMidstreamVersion?.releaseNotes && <span className={classNames("release-notes-link", { "u-paddingLeft--5": currentMidstreamVersion?.deployedAt })} onClick={this.showReleaseNotes}>Release Notes</span>}
                 </p>
               </div>
             </div>
@@ -1181,7 +1185,7 @@ class AppVersionHistory extends Component {
         >
           <div className="flex-column">
             <MarkdownRenderer>
-              {app?.currentVersion?.releaseNotes || "No release notes for this version"}
+              {currentMidstreamVersion?.releaseNotes || "No release notes for this version"}
             </MarkdownRenderer>
           </div>
           <div className="flex u-marginTop--10 u-marginLeft--10 u-marginBottom--10">
