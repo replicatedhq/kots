@@ -367,6 +367,7 @@ class AppDetailPage extends Component {
                     <Route exact path="/app/:slug/registry-settings" render={() =>
                       <AppSettings
                         app={app}
+                        updateCallback={this.refetchData}
                       />
                     } />
                     <Route exact path="/app/:slug/gitops" render={() =>
