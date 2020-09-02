@@ -11,6 +11,7 @@ import url from "url";
 
 import AirgapUploadProgress from "../AirgapUploadProgress";
 import Loader from "../shared/Loader";
+import MountAware from "../shared/MountAware";
 
 import {
   dynamicallyResizeText,
@@ -183,9 +184,9 @@ export default class DashboardCard extends React.Component {
           ? <Loader className="flex justifyContent--center u-marginTop--10" size="32" />
           : showAirgapUI
             ?
-            <div id="bundle-dropzone">
+            <MountAware onMount={el => this.props.airgapUploader?.assignElement(el)}>
               <button className="btn secondary blue">Upload new version</button>
-            </div>
+            </MountAware>
             : showOnlineUI ?
               <div className="flex alignItems--center">
                 <button className="btn primary blue u-marginTop--10" onClick={isUpdateAvailable ? redirectToDiff : onCheckForUpdates}>{isUpdateAvailable ? "Show Update" : "Check for update"}</button>

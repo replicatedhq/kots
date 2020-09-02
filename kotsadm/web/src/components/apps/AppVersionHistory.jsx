@@ -12,6 +12,7 @@ import changeCase from "change-case";
 import find from "lodash/find";
 
 import Loader from "../shared/Loader";
+import MountAware from "../shared/MountAware";
 import MarkdownRenderer from "@src/components/shared/MarkdownRenderer";
 import DownstreamWatchVersionDiff from "@src/components/watches/DownstreamWatchVersionDiff";
 import AirgapUploadProgress from "@src/components/AirgapUploadProgress";
@@ -20,6 +21,7 @@ import ShowDetailsModal from "@src/components/modals/ShowDetailsModal";
 import ErrorModal from "../modals/ErrorModal";
 import { Utilities, isAwaitingResults, secondsAgo, getPreflightResultState, getGitProviderDiffUrl, getCommitHashFromUrl, createAirgapResumableUploader } from "../../utilities/utilities";
 import { Repeater } from "../../utilities/repeater";
+import { AirgapUploader } from "../../utilities/airgapUploader";
 import get from "lodash/get";
 
 import "@src/scss/components/apps/AppVersionHistory.scss";
@@ -60,13 +62,18 @@ class AppVersionHistory extends Component {
     deployView: false,
     selectedSequence: "",
     releaseWithErr: {},
-
     versionHistoryJob: new Repeater(),
     loadingVersionHistory: true,
     versionHistory: [],
     errorTitle: "",
     errorMsg: "",
     displayErrorModal: false,
+  }
+
+  componentWillMount() {
+    if (this.props.app.isAirgap) {
+      this.airgapUploader = new AirgapUploader(true, this.onDropBundle);
+    }
   }
 
   componentDidMount() {
@@ -87,12 +94,6 @@ class AppVersionHistory extends Component {
   componentDidUpdate = async (lastProps) => {
     if (lastProps.match.params.slug !== this.props.match.params.slug || lastProps.app.id !== this.props.app.id) {
       this.fetchKotsDownstreamHistory();
-    }
-    if (!this.airgapUploader) {
-      const browseElement = document.getElementById('bundle-dropzone');
-      if (browseElement) {
-        this.airgapUploader = createAirgapResumableUploader("PUT", browseElement, this.onDropBundle)
-      }
     }
   }
 
@@ -702,38 +703,35 @@ class AppVersionHistory extends Component {
 
     this.props.toggleIsBundleUploading(true);
 
-    this.airgapUploader.opts.query = {
+    const params = {
       appId: this.props.app.id,
     };
+    this.airgapUploader.upload(params, this.onUploadProgress, this.onUploadError, this.onUploadComplete);
+  }
 
-    this.airgapUploader.on('progress', () => {
-      const progress = this.airgapUploader.progress();
-      this.setState({
-        uploadProgress: progress,
-      });
+  onUploadProgress = progress => {
+    this.setState({
+      uploadProgress: progress,
     });
+  }
 
-    this.airgapUploader.on('error', message => {
-      this.airgapUploader.pause();
-      this.setState({
-        uploadingAirgapFile: false,
-        checkingForUpdates: false,
-        uploadProgress: 0,
-        airgapUploadError: message || "Error uploading bundle, please try again"
-      });
-      this.props.toggleIsBundleUploading(false);
+  onUploadError = message => {
+    this.setState({
+      uploadingAirgapFile: false,
+      checkingForUpdates: false,
+      uploadProgress: 0,
+      airgapUploadError: message || "Error uploading bundle, please try again"
     });
+    this.props.toggleIsBundleUploading(false);
+  }
 
-    this.airgapUploader.on('complete', () => {
-      this.state.updateChecker.start(this.updateStatus, 1000);
-      this.setState({
-        uploadingAirgapFile: false,
-        uploadProgress: 0,
-      });
-      this.props.toggleIsBundleUploading(false);
+  onUploadComplete = () => {
+    this.state.updateChecker.start(this.updateStatus, 1000);
+    this.setState({
+      uploadingAirgapFile: false,
+      uploadProgress: 0,
     });
-
-    this.airgapUploader.upload();
+    this.props.toggleIsBundleUploading(false);
   }
 
   onProgressError = async (airgapUploadError) => {
@@ -743,10 +741,12 @@ class AppVersionHistory extends Component {
       }
     });
     this.setState({
+      uploadingAirgapFile: false,
       airgapUploadError,
       checkingForUpdates: false,
       uploadProgress: 0,
     });
+    this.props.toggleIsBundleUploading(false);
   }
 
   renderDiffBtn = () => {
@@ -1004,9 +1004,9 @@ class AppVersionHistory extends Component {
                   ? <Loader size="32" />
                   : showAirgapUI
                     ?
-                    <div id="bundle-dropzone">
-                      <button className="btn secondary blue">Upload new version</button>
-                    </div>
+                    <MountAware id="bundle-dropzone" onMount={el => this.airgapUploader.assignElement(el)}>
+                      <span className="btn secondary blue">Upload new version</span>
+                    </MountAware>
                     : showOnlineUI ?
                       <div className="flex alignItems--center">
                         <button className="btn secondary blue" onClick={this.onCheckForUpdates}>Check for updates</button>

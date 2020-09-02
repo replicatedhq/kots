@@ -10,7 +10,8 @@ import ConfigureGraphsModal from "../shared/modals/ConfigureGraphsModal";
 import UpdateCheckerModal from "@src/components/modals/UpdateCheckerModal";
 import Modal from "react-modal";
 import { Repeater } from "../../utilities/repeater";
-import { Utilities, createAirgapResumableUploader } from "../../utilities/utilities";
+import { Utilities } from "../../utilities/utilities";
+import { AirgapUploader } from "../../utilities/airgapUploader";
 
 import { XYPlot, XAxis, YAxis, HorizontalGridLines, VerticalGridLines, LineSeries, DiscreteColorLegend, Crosshair } from "react-vis";
 
@@ -112,12 +113,6 @@ class Dashboard extends Component {
     if (app !== lastProps.app && app) {
       this.setWatchState(app)
     }
-    if (!this.airgapUploader) {
-      const browseElement = document.getElementById('bundle-dropzone');
-      if (browseElement) {
-        this.airgapUploader = createAirgapResumableUploader("PUT", browseElement, this.onDropBundle)
-      }
-    }
   }
 
   getAppLicense = async (app) => {
@@ -142,6 +137,12 @@ class Dashboard extends Component {
       console.log(err)
       this.setState({ gettingAppLicenseErrMsg: err ? `Error while getting the license: ${err.message}` : "Something went wrong, please try again."})
     });
+  }
+
+  componentWillMount() {
+    if (this.props.app?.isAirgap) {
+      this.airgapUploader = new AirgapUploader(true, this.onDropBundle);
+    }
   }
 
   componentDidMount() {
@@ -270,8 +271,6 @@ class Dashboard extends Component {
   }
 
   onDropBundle = async () => {
-    this.props.toggleIsBundleUploading(true);
-
     this.setState({
       uploadingAirgapFile: true,
       checkingForUpdates: true,
@@ -279,38 +278,37 @@ class Dashboard extends Component {
       uploadProgress: 0,
     });
 
-    this.airgapUploader.opts.query = {
-      appId: this.props.app.id,
+    this.props.toggleIsBundleUploading(true);
+
+    const params = {
+      appId: this.props.app?.id,
     };
+    this.airgapUploader.upload(params, this.onUploadProgress, this.onUploadError, this.onUploadComplete);
+  }
 
-    this.airgapUploader.on('progress', () => {
-      const progress = this.airgapUploader.progress();
-      this.setState({
-        uploadProgress: progress,
-      });
+  onUploadProgress = progress => {
+    this.setState({
+      uploadProgress: progress,
     });
+  }
 
-    this.airgapUploader.on('error', message => {
-      this.airgapUploader.pause();
-      this.setState({
-        uploadingAirgapFile: false,
-        checkingForUpdates: false,
-        uploadProgress: 0,
-        airgapUploadError: message || "Error uploading bundle, please try again"
-      });
-      this.props.toggleIsBundleUploading(false);
+  onUploadError = message => {
+    this.setState({
+      uploadingAirgapFile: false,
+      checkingForUpdates: false,
+      uploadProgress: 0,
+      airgapUploadError: message || "Error uploading bundle, please try again"
     });
+    this.props.toggleIsBundleUploading(false);
+  }
 
-    this.airgapUploader.on('complete', () => {
-      this.state.updateChecker.start(this.updateStatus, 1000);
-      this.setState({
-        uploadingAirgapFile: false,
-        uploadProgress: 0,
-      });
-      this.props.toggleIsBundleUploading(false);
+  onUploadComplete = () => {
+    this.state.updateChecker.start(this.updateStatus, 1000);
+    this.setState({
+      uploadingAirgapFile: false,
+      uploadProgress: 0,
     });
-
-    this.airgapUploader.upload();
+    this.props.toggleIsBundleUploading(false);
   }
 
   onProgressError = async (airgapUploadError) => {
@@ -320,6 +318,7 @@ class Dashboard extends Component {
       }
     });
     this.setState({
+      uploadingAirgapFile: false,
       airgapUploadError,
       checkingForUpdates: false,
       uploadProgress: 0,
@@ -571,6 +570,7 @@ class Dashboard extends Component {
                 checkingUpdateText={checkingUpdateText}
                 errorCheckingUpdate={errorCheckingUpdate}
                 onDropBundle={this.onDropBundle}
+                airgapUploader={this.airgapUploader}
                 uploadingAirgapFile={uploadingAirgapFile}
                 airgapUploadError={airgapUploadError}
                 uploadProgress={this.state.uploadProgress}

@@ -1,6 +1,5 @@
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
-import Resumable from "resumablejs";
 import utc from "dayjs/plugin/utc";
 import queryString from "query-string";
 import sortBy from "lodash/sortBy";
@@ -362,32 +361,6 @@ export function getCommitHashFromUrl(commitUrl) {
     return "";
   }
   return uriParts[uriParts.length - 1];
-}
-
-export function createAirgapResumableUploader(httpMethod, browseElement, onFileAdded) {
-  const resumableUploader = new Resumable({
-    target: `${window.env.API_ENDPOINT}/app/airgap`,
-    headers: {
-      "Authorization": Utilities.getToken(),
-    },
-    uploadMethod: httpMethod,
-    fileType: ["airgap"],
-    maxFiles: 1,
-    simultaneousUploads: 3,
-    chunkRetryInterval: 500,
-    maxChunkRetries: 3,
-  });
-
-  resumableUploader.on('fileAdded', (resumableFile) => {
-    if (onFileAdded) {
-      onFileAdded(resumableFile.file);
-    }
-  });
-
-  resumableUploader.assignBrowse(browseElement);
-  resumableUploader.assignDrop(browseElement);
-
-  return resumableUploader;
 }
 
 export const Utilities = {

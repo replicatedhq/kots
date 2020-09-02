@@ -21,7 +21,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/pull"
 )
 
-func UpdateAppFromAirgap(a *apptypes.App, airgapBundle string) (finalError error) {
+func UpdateAppFromAirgap(a *apptypes.App, airgapBundlePath string) (finalError error) {
 	if err := store.GetStore().SetTaskStatus("update-download", "Processing package...", "running"); err != nil {
 		return errors.Wrap(err, "failed to set tasks status")
 	}
@@ -92,7 +92,7 @@ func UpdateAppFromAirgap(a *apptypes.App, airgapBundle string) (finalError error
 		return errors.Wrap(err, "failed to set task status")
 	}
 
-	airgapRoot, err := version.ExtractArchiveToTempDirectory(airgapBundle)
+	airgapRoot, err := version.ExtractArchiveToTempDirectory(airgapBundlePath)
 	if err != nil {
 		return errors.Wrap(err, "failed to extract archive")
 	}

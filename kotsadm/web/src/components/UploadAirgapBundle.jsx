@@ -5,11 +5,13 @@ import { Helmet } from "react-helmet";
 import isEmpty from "lodash/isEmpty";
 import Modal from "react-modal";
 import CodeSnippet from "@src/components/shared/CodeSnippet";
+import MountAware from "@src/components/shared/MountAware";
 import AirgapUploadProgress from "@src/components/AirgapUploadProgress";
 import LicenseUploadProgress from "./LicenseUploadProgress";
 import AirgapRegistrySettings from "./shared/AirgapRegistrySettings";
 import ErrorModal from "./modals/ErrorModal";
-import { Utilities, createAirgapResumableUploader } from "../utilities/utilities";
+import { Utilities } from "../utilities/utilities";
+import { AirgapUploader } from "../utilities/airgapUploader";
 
 import "../scss/components/troubleshoot/UploadSupportBundleModal.scss";
 import "../scss/components/Login.scss";
@@ -39,8 +41,8 @@ class UploadAirgapBundle extends React.Component {
   emptyHostnameErrMessage = "Please enter a value for \"Hostname\" field"
   emptyNamespaceField = "Please enter a value for \"Namespace\" field"
 
-  componentDidMount() {
-    this.airgapUploader = createAirgapResumableUploader("POST", document.getElementById('bundle-dropzone'), this.onDrop)
+  componentWillMount() {
+    this.airgapUploader = new AirgapUploader(false, this.onDropBundle);
   }
 
   clearFile = () => {
@@ -147,30 +149,27 @@ class UploadAirgapBundle extends React.Component {
       }
     }
 
-    this.airgapUploader.opts.query = {
+    const params = {
       registryHost: this.state.registryDetails.hostname,
       namespace: this.state.registryDetails.namespace,
       username: this.state.registryDetails.username,
       password: this.state.registryDetails.password,
     };
+    this.airgapUploader.upload(params, this.onUploadProgress, this.onUploadError);
+  }
 
-    this.airgapUploader.on('progress', () => {
-      const progress = this.airgapUploader.progress();
-      this.setState({
-        uploadProgress: progress,
-      });
+  onUploadProgress = progress => {
+    this.setState({
+      uploadProgress: progress,
     });
+  }
 
-    this.airgapUploader.on('error', message => {
-      this.airgapUploader.pause();
-      this.setState({
-        fileUploading: false,
-        uploadProgress: 0,
-        errorMessage: message || "Error uploading bundle, please try again",
-      });
+  onUploadError = message => {
+    this.setState({
+      fileUploading: false,
+      uploadProgress: 0,
+      errorMessage: message || "Error uploading bundle, please try again",
     });
-
-    this.airgapUploader.upload();
   }
 
   getRegistryDetails = (fields) => {
@@ -185,7 +184,7 @@ class UploadAirgapBundle extends React.Component {
     });
   }
 
-  onDrop = async (file) => {
+  onDropBundle = async (file) => {
     this.setState({
       bundleFile: file,
       onlineInstallErrorMessage: ""
@@ -462,7 +461,7 @@ class UploadAirgapBundle extends React.Component {
                   </div>
                 }
                 <div className="u-marginTop--20 flex">
-                  <div id="bundle-dropzone" className={classNames("FileUpload-wrapper", "flex1", {
+                  <MountAware onMount={el => this.airgapUploader.assignElement(el)} className={classNames("FileUpload-wrapper", "flex1", {
                     "has-file": hasFile,
                     "has-error": errorMessage
                   })}>
@@ -476,7 +475,7 @@ class UploadAirgapBundle extends React.Component {
                         <p className="u-fontSize--normal u-color--dustyGray u-fontWeight--normal u-lineHeight--normal u-marginTop--10">This will be a .airgap file{applicationName?.length > 0 ? ` ${applicationName} provided` : ""}. Please contact your account rep if you are unable to locate your .airgap file.</p>
                       </div>
                     }
-                  </div>
+                  </MountAware>
                   {hasFile &&
                     <div className="flex-auto flex-column u-marginLeft--10 justifyContent--center">
                       <button

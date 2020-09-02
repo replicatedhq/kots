@@ -28,7 +28,7 @@ import (
 // This function assumes that there's an app in the database that doesn't have a version
 // After execution, there will be a sequence 0 of the app, and all clusters in the database
 // will also have a version
-func CreateAppFromAirgap(pendingApp *types.PendingApp, airgapBundle string, registryHost string, namespace string, username string, password string) (finalError error) {
+func CreateAppFromAirgap(pendingApp *types.PendingApp, airgapBundlePath string, registryHost string, namespace string, username string, password string) (finalError error) {
 	if err := store.GetStore().SetTaskStatus("airgap-install", "Processing package...", "running"); err != nil {
 		return errors.Wrap(err, "failed to set task status")
 	}
@@ -76,7 +76,7 @@ func CreateAppFromAirgap(pendingApp *types.PendingApp, airgapBundle string, regi
 	}
 
 	// we seem to need a lot of temp dirs here... maybe too many?
-	archiveDir, err := version.ExtractArchiveToTempDirectory(airgapBundle)
+	archiveDir, err := version.ExtractArchiveToTempDirectory(airgapBundlePath)
 	if err != nil {
 		return errors.Wrap(err, "failed to extract archive")
 	}
