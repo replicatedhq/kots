@@ -10,6 +10,7 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
+	"sync"
 
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
@@ -41,6 +42,7 @@ type AirgapBundleExistsResponse struct {
 }
 
 var uploadedAirgapBundleChunks = map[string]struct{}{}
+var mtx sync.Mutex
 
 func GetAirgapInstallStatus(w http.ResponseWriter, r *http.Request) {
 	status, err := store.GetStore().GetAirgapInstallStatus()
@@ -152,26 +154,34 @@ func UploadAirgapBundleChunk(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// create airgap bundle file if not exists
 	airgapBundlePath := getAirgapBundlePath(resumableIdentifier)
-	_, err = os.Stat(airgapBundlePath)
-	if os.IsNotExist(err) {
-		f, err := os.Create(airgapBundlePath)
-		if err != nil {
+
+	func() {
+		// create airgap bundle file if not exists
+		mtx.Lock()
+		defer mtx.Unlock()
+
+		_, err = os.Stat(airgapBundlePath)
+		if os.IsNotExist(err) {
+			f, err := os.Create(airgapBundlePath)
+			if err != nil {
+				logger.Error(err)
+				w.WriteHeader(http.StatusInternalServerError)
+				return
+			}
+			defer f.Close()
+
+			if err := f.Truncate(totalSize); err != nil {
+				logger.Error(err)
+				w.WriteHeader(http.StatusInternalServerError)
+				return
+			}
+		} else if err != nil {
 			logger.Error(err)
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
-		if err := f.Truncate(totalSize); err != nil {
-			logger.Error(err)
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
-	} else if err != nil {
-		logger.Error(err)
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
+	}()
 
 	airgapBundle, err := os.OpenFile(airgapBundlePath, os.O_RDWR, 0644)
 	if err != nil {

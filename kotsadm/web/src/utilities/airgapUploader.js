@@ -15,6 +15,7 @@ export class AirgapUploader {
       simultaneousUploads: 3,
       chunkRetryInterval: 500,
       maxChunkRetries: 3,
+      prioritizeFirstAndLastChunk: true,
     });
   
     this.resumableUploader.on('fileAdded', (resumableFile) => {
