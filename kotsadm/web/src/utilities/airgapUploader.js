@@ -19,6 +19,7 @@ export class AirgapUploader {
   
     this.resumableUploader.on('fileAdded', (resumableFile) => {
       this.resumableIdentifier = resumableFile.uniqueIdentifier;
+      this.resumableTotalChunks = resumableFile.chunks.length;
       if (onFileAdded) {
         onFileAdded(resumableFile.file);
       }
@@ -68,7 +69,7 @@ export class AirgapUploader {
   }
 
   airgapBundleExists = async () => {
-    const res = await fetch(`${window.env.API_ENDPOINT}/app/airgap/bundleexists/${this.resumableIdentifier}`, {
+    const res = await fetch(`${window.env.API_ENDPOINT}/app/airgap/bundleexists/${this.resumableIdentifier}/${this.resumableTotalChunks}`, {
       headers: {
         "Authorization": Utilities.getToken(),
       },
@@ -86,7 +87,7 @@ export class AirgapUploader {
   }
 
   processAirgapBundle = async params => {
-    const res = await fetch(`${window.env.API_ENDPOINT}/app/airgap/processbundle/${this.resumableIdentifier}`, {
+    const res = await fetch(`${window.env.API_ENDPOINT}/app/airgap/processbundle/${this.resumableIdentifier}/${this.resumableTotalChunks}`, {
       headers: {
         "Authorization": Utilities.getToken(),
       },
