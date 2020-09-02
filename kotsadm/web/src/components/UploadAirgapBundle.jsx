@@ -71,6 +71,7 @@ class UploadAirgapBundle extends React.Component {
       this.setState({
         fileUploading: false,
         uploadProgress: 0,
+        uploadSize: 0,
         errorMessage: "An error occurred while uploading your airgap bundle. Please try again"
       });
       return;
@@ -89,6 +90,7 @@ class UploadAirgapBundle extends React.Component {
         this.setState({
           fileUploading: false,
           uploadProgress: 0,
+          uploadSize: 0,
           errorMessage: this.emptyRequiredFields,
         });
         return;
@@ -97,6 +99,7 @@ class UploadAirgapBundle extends React.Component {
         this.setState({
           fileUploading: false,
           uploadProgress: 0,
+          uploadSize: 0,
           errorMessage: this.emptyHostnameErrMessage,
         });
         return;
@@ -105,6 +108,7 @@ class UploadAirgapBundle extends React.Component {
         this.setState({
           fileUploading: false,
           uploadProgress: 0,
+          uploadSize: 0,
           errorMessage: this.emptyNamespaceField,
         });
         return;
@@ -129,6 +133,7 @@ class UploadAirgapBundle extends React.Component {
         this.setState({
           fileUploading: false,
           uploadProgress: 0,
+          uploadSize: 0,
           errorMessage: err,
         });
         return;
@@ -143,6 +148,7 @@ class UploadAirgapBundle extends React.Component {
         this.setState({
           fileUploading: false,
           uploadProgress: 0,
+          uploadSize: 0,
           errorMessage: msg,
         });
         return;
@@ -158,9 +164,10 @@ class UploadAirgapBundle extends React.Component {
     this.airgapUploader.upload(params, this.onUploadProgress, this.onUploadError);
   }
 
-  onUploadProgress = progress => {
+  onUploadProgress = (progress, size) => {
     this.setState({
       uploadProgress: progress,
+      uploadSize: size,
     });
   }
 
@@ -168,6 +175,7 @@ class UploadAirgapBundle extends React.Component {
     this.setState({
       fileUploading: false,
       uploadProgress: 0,
+      uploadSize: 0,
       errorMessage: message || "Error uploading bundle, please try again",
     });
   }
@@ -313,6 +321,7 @@ class UploadAirgapBundle extends React.Component {
         errorMessage,
         fileUploading: false,
         uploadProgress: 0,
+        uploadSize: 0,
         supportBundleCommand: supportBundleCommand,
       });
     }, 0);
@@ -376,6 +385,7 @@ class UploadAirgapBundle extends React.Component {
       bundleFile,
       fileUploading,
       uploadProgress,
+      uploadSize,
       errorMessage,
       registryDetails,
       preparingOnlineInstall,
@@ -390,6 +400,7 @@ class UploadAirgapBundle extends React.Component {
     if (fileUploading) {
       return (
         <AirgapUploadProgress
+          total={uploadSize}
           progress={uploadProgress}
           onProgressError={this.onProgressError}
           onProgressSuccess={this.onProgressSuccess}

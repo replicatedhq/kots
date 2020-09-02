@@ -56,6 +56,7 @@ class AppVersionHistory extends Component {
     secondSequence: 0,
     updateChecker: new Repeater(),
     uploadProgress: 0,
+    uploadSize: 0,
     showUpdateCheckerModal: false,
     displayShowDetailsModal: false,
     yamlErrorDetails: [],
@@ -709,9 +710,10 @@ class AppVersionHistory extends Component {
     this.airgapUploader.upload(params, this.onUploadProgress, this.onUploadError, this.onUploadComplete);
   }
 
-  onUploadProgress = progress => {
+  onUploadProgress = (progress, size) => {
     this.setState({
       uploadProgress: progress,
+      uploadSize: size,
     });
   }
 
@@ -720,6 +722,7 @@ class AppVersionHistory extends Component {
       uploadingAirgapFile: false,
       checkingForUpdates: false,
       uploadProgress: 0,
+      uploadSize: 0,
       airgapUploadError: message || "Error uploading bundle, please try again"
     });
     this.props.toggleIsBundleUploading(false);
@@ -730,6 +733,7 @@ class AppVersionHistory extends Component {
     this.setState({
       uploadingAirgapFile: false,
       uploadProgress: 0,
+      uploadSize: 0,
     });
     this.props.toggleIsBundleUploading(false);
   }
@@ -745,6 +749,7 @@ class AppVersionHistory extends Component {
       airgapUploadError,
       checkingForUpdates: false,
       uploadProgress: 0,
+      uploadSize: 0,
     });
     this.props.toggleIsBundleUploading(false);
   }
@@ -890,6 +895,7 @@ class AppVersionHistory extends Component {
       secondSequence,
       uploadingAirgapFile,
       uploadProgress,
+      uploadSize,
       noUpdateAvailiableText,
       showUpdateCheckerModal,
 
@@ -938,6 +944,7 @@ class AppVersionHistory extends Component {
     } else if (uploadingAirgapFile) {
       updateText = (
         <AirgapUploadProgress
+          total={uploadSize}
           progress={uploadProgress}
           onProgressError={this.onProgressError}
           smallSize={true}

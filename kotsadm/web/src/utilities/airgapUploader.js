@@ -40,8 +40,9 @@ export class AirgapUploader {
 
       this.resumableUploader.on('progress', () => {
         const progress = this.resumableUploader.progress();
+        const size = this.resumableUploader.getSize();
         if (onProgress) {
-          onProgress(progress);
+          onProgress(progress, size);
         }
       });
 

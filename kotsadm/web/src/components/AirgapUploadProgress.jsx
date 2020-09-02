@@ -60,7 +60,7 @@ class AirgapUploadProgress extends React.Component {
   }
   
   render() {
-    const { progress, onProgressError, onProgressSuccess, smallSize } = this.props;
+    const { total, progress, onProgressError, onProgressSuccess, smallSize } = this.props;
     const { installStatus, currentMessage } = this.state;
 
     if (installStatus === "installed") {
@@ -214,7 +214,7 @@ class AirgapUploadProgress extends React.Component {
               <div className="flex alignItems--center u-marginTop--20">
                 <span className="u-fontWeight--bold u-fontSize--normal u-color--tundora u-marginRight--10">{percentage}</span>
                 {progressBar}
-                {uploadComplete ? <span className="u-marginLeft--10 icon checkmark-icon" /> : <span className="u-fontWeight--medium u-fontSize--normal u-color--tundora u-marginLeft--10">{formatByteSize(progress)}</span>}{/* TODO: fix this */}
+                {uploadComplete ? <span className="u-marginLeft--10 icon checkmark-icon" /> : <span className="u-fontWeight--medium u-fontSize--normal u-color--tundora u-marginLeft--10">{formatByteSize(total)}</span>}
               </div>
               {statusDiv}
             </div>
@@ -226,6 +226,7 @@ class AirgapUploadProgress extends React.Component {
 }
 
 AirgapUploadProgress.defaultProps = {
+  total: 0,
   progress: 0,
 };
 
