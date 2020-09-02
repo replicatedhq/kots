@@ -13,12 +13,12 @@ export class AirgapUploader {
       fileType: ["airgap"],
       maxFiles: 1,
       simultaneousUploads: 3,
-      chunkRetryInterval: 500,
-      maxChunkRetries: 3,
-      prioritizeFirstAndLastChunk: true,
+      maxChunkRetries: 0,
     });
   
     this.resumableUploader.on('fileAdded', (resumableFile) => {
+      this.attemptedFileUpload = false;
+      this.resumableFile = resumableFile;
       this.resumableIdentifier = resumableFile.uniqueIdentifier;
       this.resumableTotalChunks = resumableFile.chunks.length;
       if (onFileAdded) {
@@ -29,16 +29,24 @@ export class AirgapUploader {
 
   upload = async (processParams, onProgress, onError, onComplete) => {
     try {
+      this.processParams = processParams;
+
       const bundleExists = await this.airgapBundleExists();
       if (bundleExists) {
-        await this.processAirgapBundle(processParams);
+        onProgress(1, this.resumableUploader.getSize()); // progress 1 => 100%
+        await this.processAirgapBundle();
         if (onComplete) {
           onComplete();
         }
         return;
       }
 
-      this.resumableUploader.on('progress', () => {
+      if (this.attemptedFileUpload) {
+        this.resumableFile.retry();
+        return;
+      }
+
+      this.resumableUploader.on('fileProgress', () => {
         const progress = this.resumableUploader.progress();
         const size = this.resumableUploader.getSize();
         if (onProgress) {
@@ -46,7 +54,7 @@ export class AirgapUploader {
         }
       });
 
-      this.resumableUploader.on('error', message => {
+      this.resumableUploader.on('fileError', (_, message) => {
         if (onError) {
           const errMsg = message ? message : "Error uploading bundle, please try again";
           onError(errMsg);
@@ -54,13 +62,14 @@ export class AirgapUploader {
       });
 
       this.resumableUploader.on('fileSuccess', async () => {
-        await this.processAirgapBundle(processParams);
+        await this.processAirgapBundle();
         if (onComplete) {
           onComplete();
         }
       });
 
       this.resumableUploader.upload();
+      this.attemptedFileUpload = true;
     } catch(err) {
       console.log(err);
       if (onError) {
@@ -88,12 +97,12 @@ export class AirgapUploader {
     return response.exists;
   }
 
-  processAirgapBundle = async params => {
+  processAirgapBundle = async () => {
     const res = await fetch(`${window.env.API_ENDPOINT}/app/airgap/processbundle/${this.resumableIdentifier}/${this.resumableTotalChunks}`, {
       headers: {
         "Authorization": Utilities.getToken(),
       },
-      body: JSON.stringify(params),
+      body: JSON.stringify(this.processParams),
       method: this.isUpdate ? "PUT" : "POST",
     });
     if (!res.ok) {
