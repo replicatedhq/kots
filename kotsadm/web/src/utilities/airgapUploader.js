@@ -50,7 +50,7 @@ export class AirgapUploader {
         }
       });
 
-      this.resumableUploader.on('complete', async () => {
+      this.resumableUploader.on('fileSuccess', async () => {
         await this.processAirgapBundle(processParams);
         if (onComplete) {
           onComplete();
