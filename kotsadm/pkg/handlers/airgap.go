@@ -102,7 +102,7 @@ func CheckAirgapBundleChunk(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if chunkNumber % 25 == 0 {
+	if chunkNumber%25 == 0 {
 		logger.Infof("checking chunk %d / %d. chunk key: %s", chunkNumber, totalChunks, chunkKey)
 	}
 
@@ -203,7 +203,7 @@ func UploadAirgapBundleChunk(w http.ResponseWriter, r *http.Request) {
 	chunkKey := getChunkKey(resumableIdentifier, chunkNumber)
 	uploadedAirgapBundleChunks[chunkKey] = struct{}{}
 
-	if chunkNumber % 25 == 0 {
+	if chunkNumber%25 == 0 {
 		logger.Infof("written chunk number %d / %d. bundle id: %s", chunkNumber, totalChunks, resumableIdentifier)
 	}
 
@@ -373,7 +373,7 @@ func cleanUp(uploadedFileIdentifier string, totalChunks int64) error {
 	var i int64
 	for i = 1; i <= totalChunks; i++ {
 		chunkKey := getChunkKey(uploadedFileIdentifier, i)
-		delete(uploadedAirgapBundleChunks, chunkKey);
+		delete(uploadedAirgapBundleChunks, chunkKey)
 	}
 
 	airgapBundlePath := getAirgapBundlePath(uploadedFileIdentifier)
