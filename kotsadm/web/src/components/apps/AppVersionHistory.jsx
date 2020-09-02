@@ -996,7 +996,7 @@ class AppVersionHistory extends Component {
 
     // This is kinda hacky. This finds the equivalent downstream version because the midstream
     // version type does not contain metadata like version label or release notes.
-    const currentMidstreamVersion = versionHistory.find(version => version.sequence === app.currentVersion.sequence) || app.currentVersion;
+    const currentMidstreamVersion = versionHistory.find(version => version.parentSequence === app.currentVersion.sequence) || app.currentVersion;
 
     return (
       <div className="flex flex-column flex1 u-position--relative u-overflow--auto u-padding--20">
