@@ -3,14 +3,13 @@ module github.com/replicatedhq/kots
 go 1.14
 
 require (
-	cloud.google.com/go v0.46.2 // indirect
 	github.com/Masterminds/semver v1.4.2
 	github.com/Masterminds/semver/v3 v3.1.0
 	github.com/Masterminds/sprig v2.22.0+incompatible // indirect
 	github.com/Masterminds/sprig/v3 v3.1.0
 	github.com/Nvveen/Gotty v0.0.0-20120604004816-cd527374f1e5 // indirect
 	github.com/ahmetalpbalkan/go-cursor v0.0.0-20131010032410-8136607ea412
-	github.com/aws/aws-sdk-go v1.25.18
+	github.com/aws/aws-sdk-go v1.28.2
 	github.com/bitly/go-simplejson v0.5.0 // indirect
 	github.com/bmizerany/assert v0.0.0-20160611221934-b7ed37b82869 // indirect
 	github.com/bshuster-repo/logrus-logstash-hook v0.4.1 // indirect
@@ -46,26 +45,53 @@ require (
 	github.com/stevvooe/resumable v0.0.0-20180830230917-22b14a53ba50 // indirect
 	github.com/stretchr/testify v1.5.1
 	github.com/tj/go-spin v1.1.0
+	github.com/vmware-tanzu/velero v0.0.0-00010101000000-000000000000
 	github.com/yvasiyarov/go-metrics v0.0.0-20150112132944-c25f46c4b940 // indirect
 	github.com/yvasiyarov/gorelic v0.0.7 // indirect
 	github.com/yvasiyarov/newrelic_platform_go v0.0.0-20160601141957-9c099fbc30e9 // indirect
 	go.undefinedlabs.com/scopeagent v0.1.12
 	golang.org/x/crypto v0.0.0-20200414173820-0848c9571904
-	google.golang.org/genproto v0.0.0-20191220175831-5c49e3ecc1c1 // indirect
 	gopkg.in/yaml.v2 v2.3.0
 	helm.sh/helm/v3 v3.2.4
-	k8s.io/api v0.18.3
-	k8s.io/apiextensions-apiserver v0.18.3
-	k8s.io/apimachinery v0.18.3
-	k8s.io/cli-runtime v0.18.0
-	k8s.io/client-go v0.18.3
+	k8s.io/api v0.18.4
+	k8s.io/apiextensions-apiserver v0.18.4
+	k8s.io/apimachinery v0.18.4
+	k8s.io/cli-runtime v0.18.4
+	k8s.io/client-go v0.18.4
 	k8s.io/helm v2.14.3+incompatible
 	rsc.io/letsencrypt v0.0.3 // indirect
+	sigs.k8s.io/application v0.8.2
 	sigs.k8s.io/controller-runtime v0.6.0
 	sigs.k8s.io/kustomize/api v0.3.2
 	sigs.k8s.io/yaml v1.2.0
 )
 
-replace github.com/docker/distribution => github.com/docker/distribution v0.0.0-20170817175659-5f6282db7d65
-
-replace github.com/docker/docker => github.com/docker/docker v0.0.0-20180522102801-da99009bbb11
+replace (
+	github.com/docker/distribution => github.com/docker/distribution v0.0.0-20170817175659-5f6282db7d65
+	github.com/docker/docker => github.com/docker/docker v0.0.0-20180522102801-da99009bbb11
+	github.com/vmware-tanzu/velero => github.com/laverya/velero v1.4.1-0.20200618194205-ba7f18d4a7d8 // only until https://github.com/vmware-tanzu/velero/pull/2651 is merged
+	k8s.io/api => k8s.io/api v0.18.4
+	k8s.io/apiextensions-apiserver => k8s.io/apiextensions-apiserver v0.18.4
+	k8s.io/apimachinery => k8s.io/apimachinery v0.18.4
+	k8s.io/apiserver => k8s.io/apiserver v0.18.4
+	k8s.io/cli-runtime => k8s.io/cli-runtime v0.18.4
+	k8s.io/client-go => k8s.io/client-go v0.18.4
+	k8s.io/cloud-provider => k8s.io/cloud-provider v0.18.4
+	k8s.io/cluster-bootstrap => k8s.io/cluster-bootstrap v0.18.4
+	k8s.io/code-generator => k8s.io/code-generator v0.18.4
+	k8s.io/component-base => k8s.io/component-base v0.18.4
+	k8s.io/cri-api => k8s.io/cri-api v0.18.4
+	k8s.io/csi-translation-lib => k8s.io/csi-translation-lib v0.18.4
+	k8s.io/kube-aggregator => k8s.io/kube-aggregator v0.18.4
+	k8s.io/kube-controller-manager => k8s.io/kube-controller-manager v0.18.4
+	k8s.io/kube-proxy => k8s.io/kube-proxy v0.18.4
+	k8s.io/kube-scheduler => k8s.io/kube-scheduler v0.18.4
+	k8s.io/kubectl => k8s.io/kubectl v0.18.4
+	k8s.io/kubelet => k8s.io/kubelet v0.18.4
+	k8s.io/legacy-cloud-providers => k8s.io/legacy-cloud-providers v0.18.4
+	k8s.io/metrics => k8s.io/metrics v0.18.4
+	k8s.io/node-api => k8s.io/node-api v0.18.4
+	k8s.io/sample-apiserver => k8s.io/sample-apiserver v0.18.4
+	k8s.io/sample-cli-plugin => k8s.io/sample-cli-plugin v0.18.4
+	k8s.io/sample-controller => k8s.io/sample-controller v0.18.4
+)
