@@ -13,7 +13,7 @@ import (
 
 func DownloadCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:           "download",
+		Use:           "download [appSlug]",
 		Short:         "Download Kubernetes manifests from your cluster to the local filesystem",
 		Long:          `Download the active Kubernetes manifests from a cluster to the local filesystem so that they can be edited and then reapplied to the cluster with 'kots upload'.`,
 		SilenceUsage:  true,

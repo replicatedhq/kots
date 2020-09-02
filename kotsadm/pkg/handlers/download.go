@@ -59,23 +59,25 @@ func DownloadApp(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		if err := kotsKinds.DecryptConfigValues(); err != nil {
-			logger.Error(err)
-			w.WriteHeader(500)
-			return
-		}
+		if kotsKinds.ConfigValues != nil {
+			if err := kotsKinds.DecryptConfigValues(); err != nil {
+				logger.Error(err)
+				w.WriteHeader(500)
+				return
+			}
 
-		updated, err := kotsKinds.Marshal("kots.io", "v1beta1", "ConfigValues")
-		if err != nil {
-			logger.Error(err)
-			w.WriteHeader(500)
-			return
-		}
+			updated, err := kotsKinds.Marshal("kots.io", "v1beta1", "ConfigValues")
+			if err != nil {
+				logger.Error(err)
+				w.WriteHeader(500)
+				return
+			}
 
-		if err := ioutil.WriteFile(filepath.Join(archivePath, "upstream", "userdata", "config.yaml"), []byte(updated), 0644); err != nil {
-			logger.Error(err)
-			w.WriteHeader(500)
-			return
+			if err := ioutil.WriteFile(filepath.Join(archivePath, "upstream", "userdata", "config.yaml"), []byte(updated), 0644); err != nil {
+				logger.Error(err)
+				w.WriteHeader(500)
+				return
+			}
 		}
 	}
 
