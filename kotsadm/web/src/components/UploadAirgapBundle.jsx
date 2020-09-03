@@ -195,7 +195,8 @@ class UploadAirgapBundle extends React.Component {
   onDropBundle = async (file) => {
     this.setState({
       bundleFile: file,
-      onlineInstallErrorMessage: ""
+      onlineInstallErrorMessage: "",
+      errorMessage: "",
     });
   }
 

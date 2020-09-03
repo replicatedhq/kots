@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -294,7 +295,7 @@ func updateAppFromAirgap(w http.ResponseWriter, r *http.Request) {
 
 	updateAppFromAirgapResponse := UpdateAppFromAirgapResponse{}
 
-	JSON(w, 202, updateAppFromAirgapResponse)
+	JSON(w, http.StatusAccepted, updateAppFromAirgapResponse)
 }
 
 func createAppFromAirgap(w http.ResponseWriter, r *http.Request) {
@@ -354,7 +355,7 @@ func createAppFromAirgap(w http.ResponseWriter, r *http.Request) {
 
 	createAppFromAirgapResponse := CreateAppFromAirgapResponse{}
 
-	JSON(w, http.StatusOK, createAppFromAirgapResponse)
+	JSON(w, http.StatusAccepted, createAppFromAirgapResponse)
 }
 
 func getChunkKey(uploadedFileIdentifier string, chunkNumber int64) string {
@@ -442,4 +443,116 @@ func getKurlRegistryCreds() (hostname string, username string, password string, 
 	}
 
 	return
+}
+
+// Legacy airgap upload handler (only used by scripts)
+func LegacyUploadAirgapBundle(w http.ResponseWriter, r *http.Request) {
+	if r.Method == "POST" {
+		legacy_createAppFromAirgap(w, r)
+		return
+	}
+	legacy_updateAppFromAirgap(w, r)
+}
+
+func legacy_updateAppFromAirgap(w http.ResponseWriter, r *http.Request) {
+	a, err := store.GetStore().GetApp(r.FormValue("appId"))
+	if err != nil {
+		logger.Error(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	airgapBundle, _, err := r.FormFile("file")
+	if err != nil {
+		logger.Error(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	defer airgapBundle.Close()
+
+	// save the file
+	tmpFile, err := ioutil.TempFile("", "kotsadm")
+	if err != nil {
+		logger.Error(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	_, err = io.Copy(tmpFile, airgapBundle)
+	if err != nil {
+		logger.Error(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	airgapBundlePath := tmpFile.Name()
+
+	go func() {
+		defer os.RemoveAll(airgapBundlePath)
+		if err := airgap.UpdateAppFromAirgap(a, airgapBundlePath); err != nil {
+			logger.Error(err)
+		}
+	}()
+
+	updateAppFromAirgapResponse := UpdateAppFromAirgapResponse{}
+
+	JSON(w, http.StatusAccepted, updateAppFromAirgapResponse)
+}
+
+func legacy_createAppFromAirgap(w http.ResponseWriter, r *http.Request) {
+	pendingApp, err := store.GetStore().GetPendingAirgapUploadApp()
+	if err != nil {
+		logger.Error(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	var registryHost, namespace, username, password string
+	registryHost, username, password, err = getKurlRegistryCreds()
+	if err != nil {
+		logger.Error(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	// if found kurl registry creds, use kurl registry
+	if registryHost != "" {
+		namespace = pendingApp.Slug
+	} else {
+		registryHost = r.FormValue("registryHost")
+		namespace = r.FormValue("namespace")
+		username = r.FormValue("username")
+		password = r.FormValue("password")
+	}
+
+	airgapBundle, _, err := r.FormFile("file")
+	if err != nil {
+		logger.Error(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	defer airgapBundle.Close()
+
+	// save the file
+	tmpFile, err := ioutil.TempFile("", "kotsadm")
+	if err != nil {
+		logger.Error(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	_, err = io.Copy(tmpFile, airgapBundle)
+	if err != nil {
+		logger.Error(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	airgapBundlePath := tmpFile.Name()
+
+	go func() {
+		defer os.RemoveAll(airgapBundlePath)
+		if err := airgap.CreateAppFromAirgap(pendingApp, airgapBundlePath, registryHost, namespace, username, password); err != nil {
+			logger.Error(err)
+		}
+	}()
+
+	createAppFromAirgapResponse := CreateAppFromAirgapResponse{}
+	JSON(w, http.StatusAccepted, createAppFromAirgapResponse)
 }
