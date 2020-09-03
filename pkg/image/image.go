@@ -23,7 +23,10 @@ func ImageInfoFromFile(registry registry.RegistryOptions, nameParts []string) (k
 		return image, errors.Errorf("not enough parts in image name: %v", nameParts)
 	}
 
-	newImageNameParts := []string{registry.Endpoint, registry.Namespace}
+	newImageNameParts := []string{registry.Endpoint}
+	if registry.Namespace != "" {
+		newImageNameParts = append(newImageNameParts, registry.Namespace)
+	}
 	var originalName, tag, separator string
 	if nameParts[len(nameParts)-2] == "sha256" {
 		newImageNameParts = append(newImageNameParts, nameParts[len(nameParts)-3])
@@ -50,8 +53,10 @@ func DestRef(registry registry.RegistryOptions, srcImage string) string {
 	imageParts := strings.Split(srcImage, "/")
 	lastPart := imageParts[len(imageParts)-1]
 
-	image := fmt.Sprintf("%s/%s/%s", registry.Endpoint, registry.Namespace, lastPart)
-	return image
+	if registry.Namespace == "" {
+		return fmt.Sprintf("%s/%s", registry.Endpoint, lastPart)
+	}
+	return fmt.Sprintf("%s/%s/%s", registry.Endpoint, registry.Namespace, lastPart)
 }
 
 // stripImageTag removes the tag or digest from an image
@@ -76,8 +81,10 @@ func destImageName(registry registry.RegistryOptions, srcImage string) string {
 	lastPart := imageParts[len(imageParts)-1]
 	lastPart = stripImageTag(lastPart)
 
-	image := fmt.Sprintf("%s/%s/%s", registry.Endpoint, registry.Namespace, lastPart)
-	return image
+	if registry.Namespace == "" {
+		return fmt.Sprintf("%s/%s", registry.Endpoint, lastPart)
+	}
+	return fmt.Sprintf("%s/%s/%s", registry.Endpoint, registry.Namespace, lastPart)
 }
 
 func buildImageAlts(destRegistry registry.RegistryOptions, image string) ([]kustomizeimage.Image, error) {
