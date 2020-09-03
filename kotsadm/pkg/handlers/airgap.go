@@ -445,7 +445,7 @@ func getKurlRegistryCreds() (hostname string, username string, password string, 
 	return
 }
 
-// Legacy airgap upload handler (only used by scripts)
+// Legacy airgap upload handler
 func LegacyUploadAirgapBundle(w http.ResponseWriter, r *http.Request) {
 	if r.Method == "POST" {
 		legacy_createAppFromAirgap(w, r)
