@@ -445,16 +445,16 @@ func getKurlRegistryCreds() (hostname string, username string, password string, 
 	return
 }
 
-// Legacy airgap upload handler
-func LegacyUploadAirgapBundle(w http.ResponseWriter, r *http.Request) {
+// Backwards compatibility airgap upload handler
+func UploadAirgapBundle(w http.ResponseWriter, r *http.Request) {
 	if r.Method == "POST" {
-		legacy_createAppFromAirgap(w, r)
+		bc_createAppFromAirgap(w, r)
 		return
 	}
-	legacy_updateAppFromAirgap(w, r)
+	bc_updateAppFromAirgap(w, r)
 }
 
-func legacy_updateAppFromAirgap(w http.ResponseWriter, r *http.Request) {
+func bc_createAppFromAirgap(w http.ResponseWriter, r *http.Request) {
 	a, err := store.GetStore().GetApp(r.FormValue("appId"))
 	if err != nil {
 		logger.Error(err)
@@ -497,7 +497,7 @@ func legacy_updateAppFromAirgap(w http.ResponseWriter, r *http.Request) {
 	JSON(w, http.StatusAccepted, updateAppFromAirgapResponse)
 }
 
-func legacy_createAppFromAirgap(w http.ResponseWriter, r *http.Request) {
+func bc_updateAppFromAirgap(w http.ResponseWriter, r *http.Request) {
 	pendingApp, err := store.GetStore().GetPendingAirgapUploadApp()
 	if err != nil {
 		logger.Error(err)
