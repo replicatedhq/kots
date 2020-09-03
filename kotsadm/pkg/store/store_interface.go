@@ -8,7 +8,7 @@ import (
 	apptypes "github.com/replicatedhq/kots/kotsadm/pkg/app/types"
 	appstatustypes "github.com/replicatedhq/kots/kotsadm/pkg/appstatus/types"
 	downstreamtypes "github.com/replicatedhq/kots/kotsadm/pkg/downstream/types"
-	"github.com/replicatedhq/kots/kotsadm/pkg/kotsutil"
+	"github.com/replicatedhq/kots/pkg/kotsutil"
 	installationtypes "github.com/replicatedhq/kots/kotsadm/pkg/online/types"
 	preflighttypes "github.com/replicatedhq/kots/kotsadm/pkg/preflight/types"
 	registrytypes "github.com/replicatedhq/kots/kotsadm/pkg/registry/types"

@@ -17,7 +17,6 @@ import (
 	apptypes "github.com/replicatedhq/kots/kotsadm/pkg/app/types"
 	kotsadmconfig "github.com/replicatedhq/kots/kotsadm/pkg/config"
 	"github.com/replicatedhq/kots/kotsadm/pkg/downstream"
-	"github.com/replicatedhq/kots/kotsadm/pkg/kotsutil"
 	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
 	"github.com/replicatedhq/kots/kotsadm/pkg/preflight"
 	"github.com/replicatedhq/kots/kotsadm/pkg/render"
@@ -28,6 +27,7 @@ import (
 	"github.com/replicatedhq/kots/kotskinds/multitype"
 	kotsconfig "github.com/replicatedhq/kots/pkg/config"
 	"github.com/replicatedhq/kots/pkg/crypto"
+	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/template"
 )
 

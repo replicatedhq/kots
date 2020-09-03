@@ -1,9 +1,7 @@
 package airgap
 
 import (
-	"archive/tar"
 	"bufio"
-	"compress/gzip"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -21,6 +19,7 @@ import (
 	"github.com/replicatedhq/kots/kotsadm/pkg/store"
 	"github.com/replicatedhq/kots/kotsadm/pkg/version"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
+	"github.com/replicatedhq/kots/pkg/archives"
 	"github.com/replicatedhq/kots/pkg/pull"
 	"k8s.io/client-go/kubernetes/scheme"
 )
@@ -232,7 +231,7 @@ func extractAppRelease(workspace string, airgapDir string) (string, error) {
 		if file.IsDir() { // TODO: support nested dirs?
 			continue
 		}
-		err := extractTGZArchive(filepath.Join(airgapDir, file.Name()), destDir)
+		err := archives.ExtractTGZArchiveFromFile(filepath.Join(airgapDir, file.Name()), destDir)
 		if err != nil {
 			fmt.Printf("ignoring file %q: %v\n", file.Name(), err)
 			continue
@@ -245,62 +244,4 @@ func extractAppRelease(workspace string, airgapDir string) (string, error) {
 	}
 
 	return destDir, nil
-}
-
-// todo, figure out why this doesn't use the mholt tgz archiver that we
-// use elsewhere in kots
-func extractTGZArchive(tgzFile string, destDir string) error {
-	fileReader, err := os.Open(tgzFile)
-	if err != nil {
-		return errors.Wrap(err, "failed to open tgz file")
-	}
-
-	gzReader, err := gzip.NewReader(fileReader)
-	if err != nil {
-		return errors.Wrap(err, "failed to create gzip reader")
-	}
-
-	tarReader := tar.NewReader(gzReader)
-	for {
-		hdr, err := tarReader.Next()
-		if err == io.EOF {
-			break
-		}
-		if err != nil {
-			return errors.Wrap(err, "failed to read tar data")
-		}
-
-		if hdr.Typeflag != tar.TypeReg {
-			continue
-		}
-
-		err = func() error {
-			fileName := filepath.Join(destDir, hdr.Name)
-
-			filePath, _ := filepath.Split(fileName)
-			err := os.MkdirAll(filePath, 0755)
-			if err != nil {
-				return errors.Wrapf(err, "failed to create directory %q", filePath)
-			}
-
-			fileWriter, err := os.Create(fileName)
-			if err != nil {
-				return errors.Wrapf(err, "failed to create file %q", hdr.Name)
-			}
-
-			defer fileWriter.Close()
-
-			_, err = io.Copy(fileWriter, tarReader)
-			if err != nil {
-				return errors.Wrapf(err, "failed to write file %q", hdr.Name)
-			}
-
-			return nil
-		}()
-		if err != nil {
-			return err
-		}
-	}
-
-	return nil
 }

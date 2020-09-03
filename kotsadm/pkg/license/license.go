@@ -8,7 +8,6 @@ import (
 
 	"github.com/pkg/errors"
 	apptypes "github.com/replicatedhq/kots/kotsadm/pkg/app/types"
-	"github.com/replicatedhq/kots/kotsadm/pkg/kotsutil"
 	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
 	"github.com/replicatedhq/kots/kotsadm/pkg/preflight"
 	registrytypes "github.com/replicatedhq/kots/kotsadm/pkg/registry/types"
@@ -16,6 +15,7 @@ import (
 	"github.com/replicatedhq/kots/kotsadm/pkg/store"
 	"github.com/replicatedhq/kots/kotsadm/pkg/version"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
+	"github.com/replicatedhq/kots/pkg/kotsutil"
 	kotslicense "github.com/replicatedhq/kots/pkg/license"
 	kotspull "github.com/replicatedhq/kots/pkg/pull"
 	serializer "k8s.io/apimachinery/pkg/runtime/serializer/json"

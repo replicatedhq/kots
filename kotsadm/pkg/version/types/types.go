@@ -3,7 +3,7 @@ package types
 import (
 	"time"
 
-	"github.com/replicatedhq/kots/kotsadm/pkg/kotsutil"
+	"github.com/replicatedhq/kots/pkg/kotsutil"
 )
 
 type AppVersion struct {

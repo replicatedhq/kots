@@ -18,7 +18,7 @@ import (
 	"github.com/mholt/archiver"
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/pkg/errors"
-	"github.com/replicatedhq/kots/kotsadm/pkg/kotsutil"
+	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
 	versiontypes "github.com/replicatedhq/kots/kotsadm/pkg/version/types"
 	"go.uber.org/zap"

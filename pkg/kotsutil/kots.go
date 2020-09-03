@@ -292,7 +292,7 @@ func LoadKotsKindsFromPath(fromDir string) (*KotsKinds, error) {
 	kotsKinds := emptyKotsKinds()
 	decode := scheme.Codecs.UniversalDeserializer().Decode
 
-	err := filepath.Walk(filepath.Join(fromDir, "upstream"),
+	err := filepath.Walk(fromDir,
 		func(path string, info os.FileInfo, err error) error {
 			if err != nil {
 				return err
