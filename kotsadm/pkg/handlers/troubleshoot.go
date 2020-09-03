@@ -297,6 +297,10 @@ func UploadSupportBundle(w http.ResponseWriter, r *http.Request) {
 	}
 
 	analyzer := kotsKinds.Analyzer
+	// SupportBundle overwrites Analyzer if defined
+	if kotsKinds.SupportBundle != nil {
+		analyzer = kotsutil.SupportBundleToAnalyzer(kotsKinds.SupportBundle)
+	}
 	if analyzer == nil {
 		analyzer = &troubleshootv1beta2.Analyzer{
 			TypeMeta: metav1.TypeMeta{
