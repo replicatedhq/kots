@@ -454,7 +454,7 @@ func UploadAirgapBundle(w http.ResponseWriter, r *http.Request) {
 	bc_updateAppFromAirgap(w, r)
 }
 
-func bc_createAppFromAirgap(w http.ResponseWriter, r *http.Request) {
+func bc_updateAppFromAirgap(w http.ResponseWriter, r *http.Request) {
 	a, err := store.GetStore().GetApp(r.FormValue("appId"))
 	if err != nil {
 		logger.Error(err)
@@ -497,7 +497,7 @@ func bc_createAppFromAirgap(w http.ResponseWriter, r *http.Request) {
 	JSON(w, http.StatusAccepted, updateAppFromAirgapResponse)
 }
 
-func bc_updateAppFromAirgap(w http.ResponseWriter, r *http.Request) {
+func bc_createAppFromAirgap(w http.ResponseWriter, r *http.Request) {
 	pendingApp, err := store.GetStore().GetPendingAirgapUploadApp()
 	if err != nil {
 		logger.Error(err)
