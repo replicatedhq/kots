@@ -2,7 +2,6 @@ package gitops
 
 import (
 	"context"
-	"crypto/rand"
 	"crypto/rsa"
 	"crypto/x509"
 	"encoding/base64"
@@ -705,7 +704,7 @@ func CreateGitOpsCommit(gitOpsConfig *GitOpsConfig, appSlug string, appName stri
 }
 
 func generateKeyPair() (*KeyPair, error) {
-	privateKey, err := rsa.GenerateKey(rand.Reader, 4096)
+	privateKey, err := getPrivateKey()
 	if err != nil {
 		return nil, err
 	}

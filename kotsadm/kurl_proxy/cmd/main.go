@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
+	"math/rand"
 	"net"
 	"net/http"
 	"net/http/httputil"
@@ -38,6 +39,8 @@ type cert struct {
 
 func main() {
 	log.Printf("Commit %s\n", os.Getenv("COMMIT"))
+
+	rand.Seed(time.Now().UnixNano())
 
 	upstreamOrigin := os.Getenv("UPSTREAM_ORIGIN")
 	tlsSecretName := os.Getenv("TLS_SECRET_NAME")
