@@ -1,9 +1,10 @@
 package gitops
 
 import (
-	"crypto/rand"
 	"crypto/rsa"
+	"math/rand"
 	"sync"
+	"time"
 )
 
 var (
@@ -13,7 +14,11 @@ var (
 	preseedPrivateKeyMu sync.Mutex
 )
 
+var r *rand.Rand
+
 func init() {
+	r = rand.New(rand.NewSource(time.Now().UTC().UnixNano()))
+
 	go generatePreseedPrivateKey()
 }
 
@@ -28,11 +33,11 @@ func getPrivateKey() (*rsa.PrivateKey, error) {
 	if key != nil {
 		return key, nil
 	}
-	return rsa.GenerateKey(rand.Reader, 4096)
+	return rsa.GenerateKey(r, 4096)
 }
 
 func generatePreseedPrivateKey() {
 	preseedPrivateKeyMu.Lock()
 	defer preseedPrivateKeyMu.Unlock()
-	preseedPrivateKey, _ = rsa.GenerateKey(rand.Reader, 4096)
+	preseedPrivateKey, _ = rsa.GenerateKey(r, 4096)
 }
