@@ -3,7 +3,6 @@ package session
 import (
 	"context"
 	"fmt"
-	"math/rand"
 	"os"
 	"strings"
 	"time"
@@ -17,10 +16,6 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
 )
-
-func init() {
-	rand.Seed(time.Now().UnixNano())
-}
 
 func Parse(signedToken string) (*types.Session, error) {
 	if signedToken == "" {
