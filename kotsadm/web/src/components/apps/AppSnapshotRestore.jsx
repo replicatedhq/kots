@@ -149,7 +149,7 @@ class AppSnapshotRestore extends Component {
   }
 
   renderFailedRestoreView = (detail) => {
-    if (detail?.warnings?.length > 0 && !detail?.errors) {
+    if (detail?.warnings?.length > 0 && (!detail?.errors || detail?.errors?.length === 0)) {
       return this.renderWarningsRestoreView(detail?.warnings);
     } else if (detail?.errors?.length > 0) {
       return (
@@ -225,9 +225,10 @@ class AppSnapshotRestore extends Component {
   render() {
     const { cancelingRestore, restoreDetail, loadingRestoreDetail } = this.state;
 
-    const hasNoErrorsOrWarnings = !restoreDetail?.warnings && !restoreDetail?.errors;
+    const hasNoErrorsOrWarnings = restoreDetail?.warnings?.length === 0 && restoreDetail?.errors?.length === 0;
     const restoreCompleted = restoreDetail?.phase === "Completed";
     const restoreFailing = restoreDetail?.phase === "PartiallyFailed" || restoreDetail?.phase === "Failed";
+    const restoreLoading = !restoreDetail?.warnings && !restoreDetail?.errors;
 
     if (loadingRestoreDetail) {
       return (
@@ -252,7 +253,7 @@ class AppSnapshotRestore extends Component {
             <p className="u-fontWeight--bold u-color--tuna u-fontSize--larger u-lineHeight--normal u-marginBottom--10"> Application restore in progress </p>
             <p className="u-fontSize--normal u-fontWeight--medium u-color--dustyGray u-lineHeight--normal"> After all volumes have been restored you will need to log back in to the admin console. </p>
             <div className="flex flex-column  u-marginTop--40">
-              {hasNoErrorsOrWarnings &&
+              {restoreLoading &&
                 <div className="flex-column flex1 alignItems--center justifyContent--center">
                   <Loader size="60" />
                 </div>
