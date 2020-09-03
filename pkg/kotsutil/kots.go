@@ -3,6 +3,7 @@ package kotsutil
 import (
 	"bytes"
 	"encoding/base64"
+	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -37,9 +38,10 @@ type KotsKinds struct {
 	KotsApplication kotsv1beta1.Application
 	Application     *applicationv1beta1.Application
 
-	Collector *troubleshootv1beta2.Collector
-	Preflight *troubleshootv1beta2.Preflight
-	Analyzer  *troubleshootv1beta2.Analyzer
+	Collector     *troubleshootv1beta2.Collector
+	Preflight     *troubleshootv1beta2.Preflight
+	Analyzer      *troubleshootv1beta2.Analyzer
+	SupportBundle *troubleshootv1beta2.SupportBundle
 
 	Config       *kotsv1beta1.Config
 	ConfigValues *kotsv1beta1.ConfigValues
@@ -201,24 +203,34 @@ func (o KotsKinds) Marshal(g string, v string, k string) (string, error) {
 		}
 	}
 
-	if g == "troubleshoot.replicated.com" {
-		if v == "v1beta1" {
+	if g == "troubleshoot.replicated.com" || g == "troubleshoot.sh" {
+		if v == "v1beta1" || v == "v1beta2" {
 			switch k {
 			case "Collector":
-				if o.Collector == nil {
+				collector := o.Collector
+				// SupportBundle overwrites Collector if defined
+				if o.SupportBundle != nil {
+					collector = SupportBundleToCollector(o.SupportBundle)
+				}
+				if collector == nil {
 					return "", nil
 				}
 				var b bytes.Buffer
-				if err := s.Encode(o.Collector, &b); err != nil {
+				if err := s.Encode(collector, &b); err != nil {
 					return "", errors.Wrap(err, "failed to encode collector")
 				}
 				return string(b.Bytes()), nil
 			case "Analyzer":
-				if o.Analyzer == nil {
+				analyzer := o.Analyzer
+				// SupportBundle overwrites Analyzer if defined
+				if o.SupportBundle != nil {
+					analyzer = SupportBundleToAnalyzer(o.SupportBundle)
+				}
+				if analyzer == nil {
 					return "", nil
 				}
 				var b bytes.Buffer
-				if err := s.Encode(o.Analyzer, &b); err != nil {
+				if err := s.Encode(analyzer, &b); err != nil {
 					return "", errors.Wrap(err, "failed to encode analyzer")
 				}
 				return string(b.Bytes()), nil
@@ -229,6 +241,15 @@ func (o KotsKinds) Marshal(g string, v string, k string) (string, error) {
 				var b bytes.Buffer
 				if err := s.Encode(o.Preflight, &b); err != nil {
 					return "", errors.Wrap(err, "failed to encode preflight")
+				}
+				return string(b.Bytes()), nil
+			case "SupportBundle":
+				if o.SupportBundle == nil {
+					return "", nil
+				}
+				var b bytes.Buffer
+				if err := s.Encode(o.SupportBundle, &b); err != nil {
+					return "", errors.Wrap(err, "failed to encode support bundle")
 				}
 				return string(b.Bytes()), nil
 			}
@@ -339,6 +360,8 @@ func LoadKotsKindsFromPath(fromDir string) (*KotsKinds, error) {
 				kotsKinds.Collector = decoded.(*troubleshootv1beta2.Collector)
 			case "troubleshoot.sh/v1beta2, Kind=Analyzer":
 				kotsKinds.Analyzer = decoded.(*troubleshootv1beta2.Analyzer)
+			case "troubleshoot.sh/v1beta2, Kind=SupportBundle":
+				kotsKinds.SupportBundle = decoded.(*troubleshootv1beta2.SupportBundle)
 			case "troubleshoot.sh/v1beta2, Kind=Preflight":
 				kotsKinds.Preflight = decoded.(*troubleshootv1beta2.Preflight)
 			case "velero.io/v1, Kind=Backup":
@@ -459,4 +482,34 @@ func LoadBackupFromContents(content []byte) (*velerov1.Backup, error) {
 	}
 
 	return obj.(*velerov1.Backup), nil
+}
+
+func SupportBundleToCollector(sb *troubleshootv1beta2.SupportBundle) *troubleshootv1beta2.Collector {
+	return &troubleshootv1beta2.Collector{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: "troubleshoot.sh/v1beta2",
+			Kind:       "Collector",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name: fmt.Sprintf("%s-collector", sb.Name),
+		},
+		Spec: troubleshootv1beta2.CollectorSpec{
+			Collectors: sb.Spec.Collectors,
+		},
+	}
+}
+
+func SupportBundleToAnalyzer(sb *troubleshootv1beta2.SupportBundle) *troubleshootv1beta2.Analyzer {
+	return &troubleshootv1beta2.Analyzer{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: "troubleshoot.sh/v1beta2",
+			Kind:       "Analyzer",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name: fmt.Sprintf("%s-analyzer", sb.Name),
+		},
+		Spec: troubleshootv1beta2.AnalyzerSpec{
+			Analyzers: sb.Spec.Analyzers,
+		},
+	}
 }
