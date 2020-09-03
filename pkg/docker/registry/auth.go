@@ -166,5 +166,8 @@ func sanitizeEndpoint(endpoint string) string {
 	endpoint = strings.TrimSuffix(endpoint, "/v2")
 	endpoint = strings.TrimSuffix(endpoint, "/v1/")
 	endpoint = strings.TrimSuffix(endpoint, "/v1")
+	if endpoint == "docker.io" {
+		endpoint = "index.docker.io"
+	}
 	return endpoint
 }
