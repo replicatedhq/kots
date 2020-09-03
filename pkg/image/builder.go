@@ -127,7 +127,7 @@ func GetPrivateImages(upstreamDir string, checkedImages map[string]ImageInfo, al
 					} else {
 						p, err := IsPrivateImage(image)
 						if err != nil {
-							return errors.Wrap(err, "failed to check if image is private")
+							return errors.Wrapf(err, "failed to check if image in %q is private", info.Name())
 						}
 						isPrivate = p
 						checkedImages[image] = ImageInfo{
