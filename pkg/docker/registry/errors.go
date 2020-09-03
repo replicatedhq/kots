@@ -12,16 +12,21 @@ type registryError struct {
 	Detail  string `json:"detail"`
 }
 
+type dockerIOError struct {
+	Details string `json:"details,omitempty"`
+}
+
 type registryErrors struct {
 	Errors []registryError `json:"errors"`
 }
 
-func errorResponseToString(response []byte) string {
-	e := &registryErrors{}
-	err := json.Unmarshal(response, e)
-	if err != nil {
-		return string(response)
+func errorResponseToString(statusCode int, response []byte) string {
+	if len(response) == 0 {
+		return fmt.Sprintf("unexpected status code %d", statusCode)
 	}
+
+	e := &registryErrors{}
+	_ = json.Unmarshal(response, e)
 
 	messages := make([]string, 0)
 	for _, err := range e.Errors {
@@ -36,5 +41,16 @@ func errorResponseToString(response []byte) string {
 		}
 	}
 
-	return strings.Join(messages, "\n")
+	ee := &dockerIOError{}
+	_ = json.Unmarshal(response, ee)
+	if ee.Details != "" {
+		messages = append(messages, ee.Details)
+	}
+
+	errResponse := strings.Join(messages, "\n")
+	if errResponse == "" {
+		return string(response)
+	}
+
+	return errResponse
 }

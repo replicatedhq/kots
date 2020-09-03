@@ -10,9 +10,11 @@ require (
 	github.com/aws/aws-sdk-go v1.28.2
 	github.com/bitnami-labs/sealed-secrets v0.12.5
 	github.com/containerd/containerd v1.3.2
+	github.com/containers/image/v5 v5.2.0
 	github.com/coreos/etcd v3.3.13+incompatible
 	github.com/deislabs/oras v0.8.1
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
+	github.com/docker/distribution v2.7.1+incompatible
 	github.com/docker/go-units v0.4.0
 	github.com/go-logfmt/logfmt v0.4.0
 	github.com/gorilla/mux v1.7.4

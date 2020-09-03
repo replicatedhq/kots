@@ -113,7 +113,7 @@ func TestPushAccess(endpoint, username, password, org string) error {
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		return errors.New(errorResponseToString(authBody))
+		return errors.New(errorResponseToString(resp.StatusCode, authBody))
 	}
 
 	bearerToken, err := newBearerTokenFromJSONBlob(authBody)
