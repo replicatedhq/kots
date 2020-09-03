@@ -3,7 +3,11 @@ package handlers
 import (
 	"encoding/json"
 	"net/http"
+	"net/url"
 
+	"github.com/aws/aws-sdk-go/aws/awserr"
+	"github.com/containers/image/v5/docker"
+	"github.com/docker/distribution/registry/api/errcode"
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
@@ -137,9 +141,24 @@ func UpdateAppRegistry(w http.ResponseWriter, r *http.Request) {
 	// in a goroutine, start pushing the images to the remote registry
 	// we will let this function return while this happens
 	go func() {
-		if err := registry.RewriteImages(foundApp.ID, foundApp.CurrentSequence, updateAppRegistryRequest.Hostname, updateAppRegistryRequest.Username, updateAppRegistryRequest.Password,
-			updateAppRegistryRequest.Namespace, nil); err != nil {
-			logger.Error(err)
+		if err := registry.RewriteImages(
+			foundApp.ID, foundApp.CurrentSequence, updateAppRegistryRequest.Hostname,
+			updateAppRegistryRequest.Username, updateAppRegistryRequest.Password,
+			updateAppRegistryRequest.Namespace, nil,
+		); err != nil {
+			// log credential errors at info level
+			causeErr := errors.Cause(err)
+			switch causeErr.(type) {
+			case docker.ErrUnauthorizedForCredentials, errcode.Errors, errcode.Error, awserr.Error, *url.Error:
+				logger.Infof(
+					"Failed to rewrite images for host %q and username %q: %v",
+					updateAppRegistryRequest.Hostname,
+					updateAppRegistryRequest.Username,
+					causeErr,
+				)
+			default:
+				logger.Error(err)
+			}
 			return
 		}
 
@@ -256,9 +275,7 @@ func ValidateAppRegistry(w http.ResponseWriter, r *http.Request) {
 
 			if kotsadmSettings.Hostname != validateAppRegistryRequest.Hostname || kotsadmSettings.Password == "" {
 				err := errors.Errorf("no password found for %s", validateAppRegistryRequest.Hostname)
-				logger.Error(err)
-				validateAppRegistryResponse.Error = err.Error()
-				JSON(w, 400, validateAppRegistryResponse)
+				JSON(w, 400, NewErrorResponse(err))
 				return
 			}
 			password = kotsadmSettings.Password
@@ -266,17 +283,15 @@ func ValidateAppRegistry(w http.ResponseWriter, r *http.Request) {
 	}
 	if password == "" || password == registrytypes.PasswordMask {
 		err := errors.Errorf("no password found for %s", validateAppRegistryRequest.Hostname)
-		logger.Error(err)
-		validateAppRegistryResponse.Error = err.Error()
-		JSON(w, 400, validateAppRegistryResponse)
+		JSON(w, 400, NewErrorResponse(err))
 		return
 	}
 
 	err = dockerregistry.TestPushAccess(validateAppRegistryRequest.Hostname, validateAppRegistryRequest.Username, password, validateAppRegistryRequest.Namespace)
 	if err != nil {
-		logger.Error(err)
-		validateAppRegistryResponse.Error = err.Error()
-		JSON(w, 500, validateAppRegistryResponse)
+		// NOTE: it is possible this is a 500 sometimes
+		logger.Infof("Failed to test push access: %v", err)
+		JSON(w, 400, NewErrorResponse(err))
 		return
 	}
 

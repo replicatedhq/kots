@@ -55,7 +55,9 @@ func RewriteImages(appID string, sequence int64, hostname string, username strin
 				logger.Error(err)
 			}
 		} else {
-			if err := store.GetStore().SetTaskStatus("image-rewrite", finalError.Error(), "failed"); err != nil {
+			// do not show the stack trace to the user
+			causeErr := errors.Cause(finalError)
+			if err := store.GetStore().SetTaskStatus("image-rewrite", causeErr.Error(), "failed"); err != nil {
 				logger.Error(err)
 			}
 		}
