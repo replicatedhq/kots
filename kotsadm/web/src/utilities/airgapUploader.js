@@ -30,13 +30,16 @@ export class AirgapUploader {
   upload = async (processParams, onProgress, onError, onComplete) => {
     try {
       this.processParams = processParams;
+      this.onProgress = onProgress;
+      this.onError = onError;
+      this.onComplete = onComplete;
 
       const bundleExists = await this.airgapBundleExists();
       if (bundleExists) {
-        onProgress(1, this.resumableUploader.getSize()); // progress 1 => 100%
+        this.onProgress(1, this.resumableUploader.getSize()); // progress 1 => 100%
         await this.processAirgapBundle();
         if (onComplete) {
-          onComplete();
+          this.onComplete();
         }
         return;
       }
@@ -46,27 +49,31 @@ export class AirgapUploader {
         return;
       }
 
-      this.resumableUploader.on('fileProgress', () => {
-        const progress = this.resumableUploader.progress();
-        const size = this.resumableUploader.getSize();
-        if (onProgress) {
-          onProgress(progress, size);
-        }
-      });
+      if (!this.hasListeners) {
+        this.resumableUploader.on('fileProgress', () => {
+          if (this.onProgress) {
+            const progress = this.resumableUploader.progress();
+            const size = this.resumableUploader.getSize();
+            this.onProgress(progress, size);
+          }
+        });
+  
+        this.resumableUploader.on('fileError', (_, message) => {
+          if (this.onError) {
+            const errMsg = message ? message : "Error uploading bundle, please try again";
+            this.onError(errMsg);
+          }
+        });
+  
+        this.resumableUploader.on('fileSuccess', async () => {
+          await this.processAirgapBundle();
+          if (this.onComplete) {
+            this.onComplete();
+          }
+        });
 
-      this.resumableUploader.on('fileError', (_, message) => {
-        if (onError) {
-          const errMsg = message ? message : "Error uploading bundle, please try again";
-          onError(errMsg);
-        }
-      });
-
-      this.resumableUploader.on('fileSuccess', async () => {
-        await this.processAirgapBundle();
-        if (onComplete) {
-          onComplete();
-        }
-      });
+        this.hasListeners = true;
+      }
 
       this.resumableUploader.upload();
       this.attemptedFileUpload = true;
