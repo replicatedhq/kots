@@ -18,6 +18,7 @@ import (
 	appstatustypes "github.com/replicatedhq/kots/kotsadm/pkg/appstatus/types"
 	"github.com/replicatedhq/kots/kotsadm/pkg/downstream"
 	downstreamtypes "github.com/replicatedhq/kots/kotsadm/pkg/downstream/types"
+	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
 	"github.com/replicatedhq/kots/kotsadm/pkg/render"
 	"github.com/replicatedhq/kots/kotsadm/pkg/snapshot"
@@ -27,7 +28,6 @@ import (
 	"github.com/replicatedhq/kots/kotsadm/pkg/supportbundle"
 	supportbundletypes "github.com/replicatedhq/kots/kotsadm/pkg/supportbundle/types"
 	"github.com/replicatedhq/kots/kotsadm/pkg/version"
-	"github.com/replicatedhq/kots/pkg/kotsutil"
 
 	velerov1 "github.com/vmware-tanzu/velero/pkg/apis/velero/v1"
 )
@@ -71,7 +71,7 @@ type SocketService struct {
 }
 
 // SocketService uses special cluster authorization
-func Start(bootstrapComplete <-chan struct{}) *SocketService {
+func Start() *SocketService {
 	logger.Debug("starting socket service")
 
 	service := &SocketService{
@@ -114,13 +114,9 @@ func Start(bootstrapComplete <-chan struct{}) *SocketService {
 		service.clusterSocketHistory = updatedClusterSocketHistory
 	})
 
-	go func() {
-		<-bootstrapComplete
-
-		startLoop(service.deployLoop, 1)
-		startLoop(service.supportBundleLoop, 1)
-		startLoop(service.restoreLoop, 1)
-	}()
+	startLoop(service.deployLoop, 1)
+	startLoop(service.supportBundleLoop, 1)
+	startLoop(service.restoreLoop, 1)
 
 	return service
 }
