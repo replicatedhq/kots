@@ -3,7 +3,6 @@ import { withRouter } from "react-router-dom";
 import Helmet from "react-helmet";
 import url from "url";
 import GitOpsRepoDetails from "../gitops/GitOpsRepoDetails";
-import ErrorModal from "../modals/ErrorModal";
 import CodeSnippet from "@src/components/shared/CodeSnippet";
 import { getServiceSite, getAddKeyUri, requiresHostname, Utilities } from "../../utilities/utilities";
 import Modal from "react-modal";
@@ -61,8 +60,6 @@ class AppGitops extends Component {
       showDisableGitopsModalPrompt: false,
       showGitOpsSettings: false,
       errorMsg: "",
-      errorTitle: "",
-      displayErrorModal: false,
     };
   }
 
@@ -84,7 +81,7 @@ class AppGitops extends Component {
   }
 
   handleTestConnection = async () => {
-    this.setState({ testingConnection: true });
+    this.setState({ testingConnection: true, errorMsg: "" });
 
     const appId = this.props.app?.id;
     let clusterId;
@@ -105,33 +102,22 @@ class AppGitops extends Component {
           Utilities.logoutUser();
           return;
         }
-        let msg = `Unexpected status code: ${res.status}`;
-        if (res.status === 400) {
-          msg = `Unable to authenticate. Please make sure you have added your deployment key to the git repo.`;
-        }
-        try {
-          const data = await res.json();
-          if (data?.error) {
-            console.log(`Failed to test gitops connection: ${data.error}`);
-          }
-        } catch (err) {
-          console.log(`Failed to test gitops connection: ${err}`);
-        }
-        this.setState({
-          errorTitle: "Failed to test connection",
-          errorMsg: msg,
-          displayErrorModal: true,
-        });
         this.props.refetch();
-        return;
+
+        if (res.status === 400) {
+          const response = await res.json();
+          if (response?.error) {
+            console.log(response?.error);
+          }
+          throw new Error(`authentication failed`);
+        }
+        throw new Error(`unexpected status code: ${res.status}`);
       }
       this.props.history.push("/gitops");
     } catch (err) {
       console.log(err);
       this.setState({
-        errorTitle: "Failed to test connection",
-        errorMsg: err ? err.message : "Something went wrong, please try again.",
-        displayErrorModal: true,
+        errorMsg: `Failed to test connection: ${err ? err.message : "Something went wrong, please try again."}`,
       });
     } finally {
       this.setState({ testingConnection: false, connectionTested: true });
@@ -147,7 +133,7 @@ class AppGitops extends Component {
     this.setState({ showGitOpsSettings: true });
   }
 
-  finishGitOpsSetup = async repoDetails => {
+  finishGitOpsSetup = async repoDetails => {    
     const {
       ownerRepo,
       branch,
@@ -183,6 +169,8 @@ class AppGitops extends Component {
       gitOpsInput.otherServiceName = otherService;
     }
 
+    this.setState({ errorMsg: "" });
+
     try {
       const oldUri = gitops?.uri;
       if (newUri !== oldUri) {
@@ -199,9 +187,7 @@ class AppGitops extends Component {
     } catch(err) {
       console.log(err);
       this.setState({
-        errorTitle: "Failed to finish gitops setup",
         errorMsg: err ? err.message : "Something went wrong, please try again.",
-        displayErrorModal: true,
       });
       return false;
     }
@@ -337,8 +323,6 @@ class AppGitops extends Component {
       showGitOpsSettings,
       showDisableGitopsModalPrompt,
       errorMsg,
-      errorTitle,
-      displayErrorModal,
     } = this.state;
 
     const deployKey = gitops?.deployKey;
@@ -446,6 +430,10 @@ class AppGitops extends Component {
                   </div>
                   <button className="btn secondary dustyGray" onClick={this.updateGitOpsSettings}>Update GitOps Settings</button>
                 </div>
+                { errorMsg ?
+                  <p className="u-color--chestnut u-fontSize--small u-fontWeight--medium u-lineHeight--normal u-marginTop--12">{errorMsg}</p>
+                  : null
+                }
               </div>
             }
           </div>
@@ -468,14 +456,6 @@ class AppGitops extends Component {
             </div>
           </div>
         </Modal>
-
-        {errorMsg &&
-          <ErrorModal
-            errorModal={displayErrorModal}
-            toggleErrorModal={this.toggleErrorModal}
-            err={errorTitle}
-            errMsg={errorMsg}
-          />}
       </div>
     );
   }
