@@ -818,3 +818,37 @@ func Redact(store *types.Store) error {
 
 	return nil
 }
+
+func ResetResticRepositories() error {
+	// ResticRepositories store the previous snapshot location which breaks volume backup when location changes.
+	cfg, err := config.GetConfig()
+	if err != nil {
+		return errors.Wrap(err, "failed to get cluster config")
+	}
+
+	storageLocation, err := FindBackupStoreLocation()
+	if err != nil {
+		return errors.Wrap(err, "failed to find backupstoragelocations")
+	}
+
+	veleroClient, err := veleroclientv1.NewForConfig(cfg)
+	if err != nil {
+		return errors.Wrap(err, "failed to create clientset")
+	}
+
+	repos, err := veleroClient.ResticRepositories(storageLocation.Namespace).List(context.TODO(), metav1.ListOptions{
+		LabelSelector: "velero.io/storage-location=default",
+	})
+	if err != nil {
+		return errors.Wrap(err, "failed to list resticrepositories")
+	}
+
+	for _, repo := range repos.Items {
+		err := veleroClient.ResticRepositories(storageLocation.Namespace).Delete(context.TODO(), repo.Name, metav1.DeleteOptions{})
+		if err != nil {
+			return errors.Wrapf(err, "failed to delete resticrepository %s", repo.Name)
+		}
+	}
+
+	return nil
+}
