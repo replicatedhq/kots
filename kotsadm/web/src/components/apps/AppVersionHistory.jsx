@@ -462,7 +462,7 @@ class AppVersionHistory extends Component {
     if (!logs) {
       return null;
     }
-    const tabs = Object.keys(logs);
+    const tabs = ["applyStderr", "applyStdout", "dryrunStderr", "dryrunStdout"];
     return (
       <div className="flex action-tab-bar u-marginTop--10">
         {tabs.filter(tab => tab !== "renderError").map(tab => (
