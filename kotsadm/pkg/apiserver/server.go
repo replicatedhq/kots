@@ -11,7 +11,9 @@ import (
 	"path/filepath"
 	"time"
 
+	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/gorilla/mux"
+	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/kotsadm/pkg/automation"
 	"github.com/replicatedhq/kots/kotsadm/pkg/handlers"
 	"github.com/replicatedhq/kots/kotsadm/pkg/informers"
@@ -30,9 +32,29 @@ func Start() {
 	}
 	cancel()
 
-	if err := bootstrap(); err != nil {
-		panic(err)
-	}
+	bootstrapCtx, cancel := context.WithCancel(context.Background())
+	go func() {
+		defer cancel()
+
+		for i := 0; ; i++ {
+			err := bootstrap()
+			if err == nil {
+				log.Println("Bootstrap successful")
+				return
+			}
+
+			if i == 15 {
+				panic(errors.Wrap(err, "bootstrap failed"))
+			}
+
+			if _, ok := errors.Cause(err).(awserr.Error); ok {
+				log.Println("Bootstrap waiting for object store, sleeping 2 seconds...")
+			} else {
+				log.Printf("Bootstrap encountered an error %q, sleeping 2 seconds...", err)
+			}
+			time.Sleep(2 * time.Second)
+		}
+	}()
 
 	if err := informers.Start(); err != nil {
 		log.Println("Failed to start informers", err)
@@ -87,7 +109,7 @@ func Start() {
 	r.Path("/api/v1/appstatus").Methods("PUT").HandlerFunc(handlers.SetAppStatus)
 	r.Path("/api/v1/deploy/result").Methods("PUT").HandlerFunc(handlers.UpdateDeployResult)
 	r.Path("/api/v1/undeploy/result").Methods("PUT").HandlerFunc(handlers.UpdateUndeployResult)
-	r.Handle("/socket.io/", socketservice.Start().Server)
+	r.Handle("/socket.io/", socketservice.Start(bootstrapCtx.Done()).Server)
 
 	/**********************************************************************
 	* KOTS token auth routes
