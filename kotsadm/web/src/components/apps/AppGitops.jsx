@@ -105,13 +105,34 @@ class AppGitops extends Component {
           Utilities.logoutUser();
           return;
         }
-        console.log("failed to init gitops connection, unexpected status code", res.status);
+        let msg = `Unexpected status code: ${res.status}`;
+        if (res.status === 400) {
+          msg = `Unable to authenticate. Please make sure you have added your deployment key to the git repo.`;
+        }
+        try {
+          const data = await res.json();
+          if (data?.error) {
+            console.log(`Failed to test gitops connection: ${data.error}`);
+          }
+        } catch (err) {
+          console.log(`Failed to test gitops connection: ${err}`);
+        }
+        this.setState({
+          errorTitle: "Failed to test connection",
+          errorMsg: msg,
+          displayErrorModal: true,
+        });
         this.props.refetch();
         return;
       }
       this.props.history.push("/gitops");
     } catch (err) {
       console.log(err);
+      this.setState({
+        errorTitle: "Failed to test connection",
+        errorMsg: err ? err.message : "Something went wrong, please try again.",
+        displayErrorModal: true,
+      });
     } finally {
       this.setState({ testingConnection: false, connectionTested: true });
     }
