@@ -101,7 +101,7 @@ func CheckAirgapBundleChunk(w http.ResponseWriter, r *http.Request) {
 
 	chunkKey := getChunkKey(resumableIdentifier, chunkNumber)
 	if _, ok := uploadedAirgapBundleChunks[chunkKey]; !ok {
-		w.WriteHeader(http.StatusNotFound)
+		w.WriteHeader(http.StatusNoContent) // instead of 404 to avoid unwarranted notices in browser consoles
 		return
 	}
 
