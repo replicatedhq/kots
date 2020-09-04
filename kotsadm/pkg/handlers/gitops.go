@@ -144,12 +144,12 @@ func InitGitOpsConnection(w http.ResponseWriter, r *http.Request) {
 
 	if err := gitops.TestGitOpsConnection(downstreamGitOps); err != nil {
 		logger.Infof("Failed to test gitops connection: %v", err)
-		JSON(w, http.StatusBadRequest, NewErrorResponse(err))
 
-		err = gitops.SetGitOpsError(a.ID, d.ClusterID, err.Error())
-		if err != nil {
+		if err := gitops.SetGitOpsError(a.ID, d.ClusterID, err.Error()); err != nil {
 			logger.Error(err)
 		}
+
+		JSON(w, http.StatusBadRequest, NewErrorResponse(err))
 		return
 	}
 
