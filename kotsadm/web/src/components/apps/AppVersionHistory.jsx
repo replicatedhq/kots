@@ -586,7 +586,7 @@ class AppVersionHistory extends Component {
       if (res.ok && res.status === 200) {
         const response = await res.json();
         const selectedTab = Object.keys(response.logs)[0];
-        this.setState({ logs, selectedTab, logsLoading: false, viewLogsErrMsg: "" });
+        this.setState({ logs: response.logs, selectedTab, logsLoading: false, viewLogsErrMsg: "" });
       } else {
         this.setState({ logsLoading: false, viewLogsErrMsg: `Failed to view logs, unexpected status code, ${res.status}` });
       }
