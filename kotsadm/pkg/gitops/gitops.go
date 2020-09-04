@@ -16,16 +16,14 @@ import (
 	"strings"
 	"time"
 
+	"github.com/go-git/go-git/v5"
+	"github.com/go-git/go-git/v5/plumbing/object"
+	"github.com/go-git/go-git/v5/plumbing/transport"
+	go_git_ssh "github.com/go-git/go-git/v5/plumbing/transport/ssh"
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/crypto"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"golang.org/x/crypto/ssh"
-	"gopkg.in/src-d/go-git.v4"
-	go_git_config "gopkg.in/src-d/go-git.v4/config"
-	"gopkg.in/src-d/go-git.v4/plumbing"
-	"gopkg.in/src-d/go-git.v4/plumbing/object"
-	"gopkg.in/src-d/go-git.v4/plumbing/transport"
-	go_git_ssh "gopkg.in/src-d/go-git.v4/plumbing/transport/ssh"
 	v1 "k8s.io/api/core/v1"
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -370,7 +368,7 @@ func TestGitOpsConnection(gitOpsConfig *GitOpsConfig) error {
 		RecurseSubmodules: git.DefaultSubmoduleRecursionDepth,
 		Auth:              auth,
 	})
-	if err != nil {
+	if err != nil && errors.Cause(err) != transport.ErrEmptyRemoteRepository {
 		return errors.Wrap(err, "failed to clone repo")
 	}
 
@@ -615,43 +613,15 @@ func CreateGitOpsCommit(gitOpsConfig *GitOpsConfig, appSlug string, appName stri
 	}
 	defer os.RemoveAll(workDir)
 
-	cloned, err := git.PlainClone(workDir, false, &git.CloneOptions{
+	cloneOptions := &git.CloneOptions{
+		RemoteName:        git.DefaultRemoteName,
 		URL:               gitOpsConfig.CloneURL(),
 		RecurseSubmodules: git.DefaultSubmoduleRecursionDepth,
 		Auth:              auth,
-	})
-	if err != nil {
-		return "", errors.Wrap(err, "failed to clone repo")
 	}
-
-	workTree, err := cloned.Worktree()
+	cloned, workTree, err := CloneAndCheckout(workDir, cloneOptions, gitOpsConfig.Branch)
 	if err != nil {
-		return "", errors.Wrap(err, "failed to get worktree")
-	}
-
-	err = cloned.Fetch(&git.FetchOptions{
-		RefSpecs: []go_git_config.RefSpec{"refs/*:refs/*", "HEAD:refs/heads/HEAD"},
-		Auth:     auth,
-	})
-	if err != nil {
-		return "", errors.Wrap(err, "failed to fetch from repo")
-	}
-
-	// try to check out the branch if it exists
-	err = workTree.Checkout(&git.CheckoutOptions{
-		Create: false,
-		Force:  false,
-		Branch: plumbing.ReferenceName(fmt.Sprintf("refs/heads/%s", gitOpsConfig.Branch)),
-	})
-	if err != nil {
-		err := workTree.Checkout(&git.CheckoutOptions{
-			Create: true,
-			Force:  false,
-			Branch: plumbing.ReferenceName(fmt.Sprintf("refs/heads/%s", gitOpsConfig.Branch)),
-		})
-		if err != nil {
-			return "", errors.Wrap(err, "failed to get or create branch")
-		}
+		return "", err
 	}
 
 	filePath := filepath.Join(workDir, gitOpsConfig.Path, fmt.Sprintf("%s.yaml", appSlug))
@@ -694,7 +664,8 @@ func CreateGitOpsCommit(gitOpsConfig *GitOpsConfig, appSlug string, appName stri
 	}
 
 	err = cloned.Push(&git.PushOptions{
-		Auth: auth,
+		RemoteName: cloneOptions.RemoteName,
+		Auth:       auth,
 	})
 	if err != nil {
 		return "", errors.Wrap(err, "failed to push")

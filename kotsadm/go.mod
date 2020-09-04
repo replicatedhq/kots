@@ -16,6 +16,7 @@ require (
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/docker/distribution v2.7.1+incompatible
 	github.com/docker/go-units v0.4.0
+	github.com/go-git/go-git/v5 v5.1.0
 	github.com/go-logfmt/logfmt v0.4.0
 	github.com/gorilla/mux v1.7.4
 	github.com/gorilla/websocket v1.4.0
@@ -31,7 +32,7 @@ require (
 	github.com/robfig/cron v1.1.0
 	github.com/robfig/cron/v3 v3.0.0
 	github.com/segmentio/ksuid v1.0.2
-	github.com/sergi/go-diff v1.0.0
+	github.com/sergi/go-diff v1.1.0
 	github.com/spf13/cobra v1.0.0
 	github.com/spf13/viper v1.6.2
 	github.com/stretchr/testify v1.5.1
@@ -42,7 +43,6 @@ require (
 	google.golang.org/api v0.9.0
 	gopkg.in/go-playground/assert.v1 v1.2.1
 	gopkg.in/ini.v1 v1.51.0
-	gopkg.in/src-d/go-git.v4 v4.13.1
 	gopkg.in/yaml.v2 v2.3.0
 	k8s.io/api v0.18.4
 	k8s.io/apimachinery v0.18.4
