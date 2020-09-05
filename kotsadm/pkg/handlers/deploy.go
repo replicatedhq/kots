@@ -18,6 +18,21 @@ import (
 	"go.uber.org/zap"
 )
 
+type UpdateDeployResultRequest struct {
+	AppID        string `json:"appId"`
+	IsError      bool   `json:"isError"`
+	DryrunStdout string `json:"dryrunStdout"`
+	DryrunStderr string `json:"dryrunStderr"`
+	ApplyStdout  string `json:"applyStdout"`
+	ApplyStderr  string `json:"applyStderr"`
+	RenderError  string `json:"renderError"`
+}
+
+type UpdateUndeployResultRequest struct {
+	AppID   string `json:"appId"`
+	IsError bool   `json:"isError"`
+}
+
 func DeployAppVersion(w http.ResponseWriter, r *http.Request) {
 	appSlug := mux.Vars(r)["appSlug"]
 	sequence, err := strconv.Atoi(mux.Vars(r)["sequence"])
@@ -59,8 +74,8 @@ func UpdateDeployResult(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	output := downstreamtypes.DownstreamOutput{}
-	err = json.NewDecoder(r.Body).Decode(&output)
+	updateDeployResultRequest := UpdateDeployResultRequest{}
+	err = json.NewDecoder(r.Body).Decode(&updateDeployResultRequest)
 	if err != nil {
 		logger.Error(err)
 		w.WriteHeader(http.StatusInternalServerError)
@@ -68,14 +83,14 @@ func UpdateDeployResult(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// sequence really should be passed down to operator and returned from it
-	currentSequence, err := downstream.GetCurrentSequence(output.AppID, clusterID)
+	currentSequence, err := downstream.GetCurrentSequence(updateDeployResultRequest.AppID, clusterID)
 	if err != nil {
 		logger.Error(err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
-	alreadySuccessful, err := downstream.IsDownstreamDeploySuccessful(output.AppID, clusterID, currentSequence)
+	alreadySuccessful, err := downstream.IsDownstreamDeploySuccessful(updateDeployResultRequest.AppID, clusterID, currentSequence)
 	if err != nil {
 		logger.Error(err)
 		w.WriteHeader(http.StatusInternalServerError)
@@ -87,7 +102,14 @@ func UpdateDeployResult(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = downstream.UpdateDownstreamDeployStatus(output.AppID, clusterID, currentSequence, output.IsError, output)
+	downstreamOutput := downstreamtypes.DownstreamOutput{
+		DryrunStdout: updateDeployResultRequest.DryrunStdout,
+		DryrunStderr: updateDeployResultRequest.DryrunStderr,
+		ApplyStdout:  updateDeployResultRequest.ApplyStdout,
+		ApplyStderr:  updateDeployResultRequest.ApplyStderr,
+		RenderError:  updateDeployResultRequest.RenderError,
+	}
+	err = downstream.UpdateDownstreamDeployStatus(updateDeployResultRequest.AppID, clusterID, currentSequence, updateDeployResultRequest.IsError, downstreamOutput)
 	if err != nil {
 		logger.Error(err)
 		w.WriteHeader(http.StatusInternalServerError)
@@ -114,8 +136,8 @@ func UpdateUndeployResult(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	output := downstreamtypes.DownstreamOutput{}
-	err = json.NewDecoder(r.Body).Decode(&output)
+	updateUndeployResultRequest := UpdateUndeployResultRequest{}
+	err = json.NewDecoder(r.Body).Decode(&updateUndeployResultRequest)
 	if err != nil {
 		logger.Error(err)
 		w.WriteHeader(http.StatusInternalServerError)
@@ -123,7 +145,7 @@ func UpdateUndeployResult(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var status apptypes.UndeployStatus
-	if output.IsError {
+	if updateUndeployResultRequest.IsError {
 		status = apptypes.UndeployFailed
 	} else {
 		status = apptypes.UndeployCompleted
@@ -131,9 +153,9 @@ func UpdateUndeployResult(w http.ResponseWriter, r *http.Request) {
 
 	logger.Info("restore API set undeploy status",
 		zap.String("status", string(status)),
-		zap.String("appID", output.AppID))
+		zap.String("appID", updateUndeployResultRequest.AppID))
 
-	foundApp, err := store.GetStore().GetApp(output.AppID)
+	foundApp, err := store.GetStore().GetApp(updateUndeployResultRequest.AppID)
 	if err != nil {
 		err = errors.Wrap(err, "failed to get app")
 		logger.Error(err)
@@ -144,7 +166,7 @@ func UpdateUndeployResult(w http.ResponseWriter, r *http.Request) {
 	if foundApp.RestoreInProgressName != "" {
 		go func() {
 			<-time.After(20 * time.Second)
-			err = app.SetRestoreUndeployStatus(output.AppID, status)
+			err = app.SetRestoreUndeployStatus(updateUndeployResultRequest.AppID, status)
 			if err != nil {
 				err = errors.Wrap(err, "failed to set app undeploy status")
 				logger.Error(err)
