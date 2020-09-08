@@ -229,6 +229,9 @@ github.com/containerd/ttrpc v0.0.0-20190828154514-0e0f228740de/go.mod h1:PvCDdDG
 github.com/containerd/typeurl v0.0.0-20180627222232-a93fcdb778cd/go.mod h1:Cm3kwCdlkCfMSHURc+r6fwoGH6/F1hH3S4sg0rLFWPc=
 github.com/containerd/typeurl v0.0.0-20190228175220-2a93cfde8c20/go.mod h1:Cm3kwCdlkCfMSHURc+r6fwoGH6/F1hH3S4sg0rLFWPc=
 github.com/containernetworking/cni v0.7.1/go.mod h1:LGwApLUm2FpoOfxTDEeq8T9ipbpZ61X79hmU3w8FmsY=
+github.com/containers/image v1.5.1 h1:ssEuj1c24uJvdMkUa2IrawuEFZBP12p6WzrjNBTQxE0=
+github.com/containers/image v3.0.2+incompatible h1:B1lqAE8MUPCrsBLE86J0gnXleeRq8zJnQryhiiGQNyE=
+github.com/containers/image v3.0.2+incompatible/go.mod h1:8Vtij257IWSanUQKe1tAeNOm2sRVkSqQTVQ1IlwI3+M=
 github.com/containers/image/v5 v5.2.0 h1:DowY5OII5x9Pb6Pt76vnHU79BgG4/jdwhZjeAj2R+t8=
 github.com/containers/image/v5 v5.2.0/go.mod h1:IAub4gDGvXoxaIAdNy4e3FbVTDPVNMv9F0UfVVFbYCU=
 github.com/containers/libtrust v0.0.0-20190913040956-14b96171aa3b h1:Q8ePgVfHDplZ7U33NwHZkrVELsZP5fYj9pM5WBZB2GE=
@@ -349,8 +352,6 @@ github.com/ghodss/yaml v0.0.0-20150909031657-73d445a93680/go.mod h1:4dBDuWmgqj2H
 github.com/ghodss/yaml v0.0.0-20161207003320-04f313413ffd/go.mod h1:4dBDuWmgqj2HViK6kFavaiC9ZROes6MMH2rRYeMEF04=
 github.com/ghodss/yaml v1.0.0 h1:wQHKEahhL6wmXdzwWG11gIVCkOv05bNOh+Rxn0yngAk=
 github.com/ghodss/yaml v1.0.0/go.mod h1:4dBDuWmgqj2HViK6kFavaiC9ZROes6MMH2rRYeMEF04=
-github.com/gizak/termui/v3 v3.1.0 h1:ZZmVDgwHl7gR7elfKf1xc4IudXZ5qqfDh4wExk4Iajc=
-github.com/gizak/termui/v3 v3.1.0/go.mod h1:bXQEBkJpzxUAKf0+xq9MSWAvWZlE7c+aidmyFlkYTrY=
 github.com/gliderlabs/ssh v0.1.1/go.mod h1:U7qILu1NlMHj9FlMhZLlkCdDnU1DBEAqr0aevW3Awn0=
 github.com/gliderlabs/ssh v0.2.2 h1:6zsha5zo/TWhRhwqCD3+EarCAgZ2yN28ipRnGPnwkI0=
 github.com/gliderlabs/ssh v0.2.2/go.mod h1:U7qILu1NlMHj9FlMhZLlkCdDnU1DBEAqr0aevW3Awn0=
@@ -942,8 +943,9 @@ github.com/rainycape/unidecode v0.0.0-20150907023854-cb7f23ec59be/go.mod h1:MIDF
 github.com/remyoudompheng/bigfft v0.0.0-20170806203942-52369c62f446/go.mod h1:uYEyJGbgTkfkS4+E/PavXkNJcbFIpEtjt2B0KDQ5+9M=
 github.com/replicatedhq/kurl/kurlkinds v0.0.0-20200617224429-55f493a72baf h1:QPJidrFEmB3ej7ugwss3iYnVM+k6uyL1AJ85xdcpDgg=
 github.com/replicatedhq/kurl/kurlkinds v0.0.0-20200617224429-55f493a72baf/go.mod h1:ZSyX/rt3a2f6r6TgCARPUlbZ1IUAxNIUrUxR9vzEUKQ=
-github.com/replicatedhq/troubleshoot v0.9.38 h1:2NqiCwTNttH4+SS430N54PCjrNvFuOQl/3HumIn7NL4=
-github.com/replicatedhq/troubleshoot v0.9.38/go.mod h1:S4PzWxHUM5TpbM/wpPrejVckOM12oz+rqu5jca5f+8k=
+github.com/replicatedhq/termui/v3 v3.1.1-0.20200811145416-f40076d26851/go.mod h1:JDxG6+uubnk9/BZ2yUsyAJJwlptjrnmB2MPF5d2Xe/8=
+github.com/replicatedhq/troubleshoot v0.9.39 h1:zI1pMyr9trV8RpX6NroTWeVzLwHBuyfHoJEkSin2YxI=
+github.com/replicatedhq/troubleshoot v0.9.39/go.mod h1:jRNzUgZgeHJpJz3DYzzJkkHkZq1jeSrjWp2QDF+AwEY=
 github.com/replicatedhq/yaml/v3 v3.0.0-beta5-replicatedhq h1:PwPggruelq2336c1Ayg5STFqgbn/QB1tWLQwrVlU7ZQ=
 github.com/replicatedhq/yaml/v3 v3.0.0-beta5-replicatedhq/go.mod h1:Txa7LopbYCU8aRgmNe0n+y/EPMz50NbCPcVVJBquwag=
 github.com/robfig/cron v1.1.0 h1:jk4/Hud3TTdcrJgUOBgsqrZBarcxl6ADIjSC2iniwLY=
@@ -1588,13 +1590,15 @@ sigs.k8s.io/controller-runtime v0.4.0/go.mod h1:ApC79lpY3PHW9xj/w9pj+lYkLgwAAUZw
 sigs.k8s.io/controller-runtime v0.5.1-0.20200402191424-df180accb901/go.mod h1:j4echH3Y/UPHRpXS65rxGXujda8iWOheMQvDh1uNgaY=
 sigs.k8s.io/controller-runtime v0.6.0 h1:Fzna3DY7c4BIP6KwfSlrfnj20DJ+SeMBK8HSFvOk9NM=
 sigs.k8s.io/controller-runtime v0.6.0/go.mod h1:CpYf5pdNY/B352A1TFLAS2JVSlnGQ5O2cftPHndTroo=
-sigs.k8s.io/controller-tools v0.2.8/go.mod h1:9VKHPszmf2DHz/QmHkcfZoewO6BL7pPs9uAiBVsaJSE=
+sigs.k8s.io/controller-tools v0.3.0/go.mod h1:enhtKGfxZD1GFEoMgP8Fdbu+uKQ/cq1/WGJhdVChfvI=
 sigs.k8s.io/kustomize v2.0.3+incompatible h1:JUufWFNlI44MdtnjUqVnvh29rR37PQFzPbLXqhyOyX0=
 sigs.k8s.io/kustomize v2.0.3+incompatible/go.mod h1:MkjgH3RdOWrievjo6c9T245dYlB5QeXV4WCbnt/PEpU=
 sigs.k8s.io/kustomize/api v0.3.2 h1:64gvYVAvqe2fNfcTevtXh/GmLwVwHIcJ2Z5HBMfjncs=
 sigs.k8s.io/kustomize/api v0.3.2/go.mod h1:A+ATnlHqzictQfQC1q3KB/T6MSr0UWQsrrLxMWkge2E=
 sigs.k8s.io/structured-merge-diff v0.0.0-20190525122527-15d366b2352e h1:4Z09Hglb792X0kfOBBJUPFEyvVfQWrYT/l8h5EKA6JQ=
 sigs.k8s.io/structured-merge-diff v0.0.0-20190525122527-15d366b2352e/go.mod h1:wWxsB5ozmmv/SG7nM11ayaAW51xMvak/t1r0CSlcokI=
+sigs.k8s.io/structured-merge-diff v1.0.1-0.20191108220359-b1b620dd3f06 h1:zD2IemQ4LmOcAumeiyDWXKUI2SO0NYDe3H6QGvPOVgU=
+sigs.k8s.io/structured-merge-diff v1.0.1-0.20191108220359-b1b620dd3f06/go.mod h1:/ULNhyfzRopfcjskuui0cTITekDduZ7ycKN3oUT9R18=
 sigs.k8s.io/structured-merge-diff/v3 v3.0.0 h1:dOmIZBMfhcHS09XZkMyUgkq5trg3/jRyJYFZUiaOp8E=
 sigs.k8s.io/structured-merge-diff/v3 v3.0.0/go.mod h1:PlARxl6Hbt/+BC80dRLi1qAmnMqwqDg62YvvVkZjemw=
 sigs.k8s.io/testing_frameworks v0.1.2 h1:vK0+tvjF0BZ/RYFeZ1E6BYBwHJJXhjuZ3TdsEKH+UQM=

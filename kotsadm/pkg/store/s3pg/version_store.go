@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
 	awssession "github.com/aws/aws-sdk-go/aws/session"
@@ -14,11 +15,12 @@ import (
 	"github.com/aws/aws-sdk-go/service/s3/s3manager"
 	"github.com/mholt/archiver"
 	"github.com/pkg/errors"
-	"github.com/replicatedhq/kots/kotsadm/pkg/kotsutil"
 	"github.com/replicatedhq/kots/kotsadm/pkg/persistence"
 	"github.com/replicatedhq/kots/kotsadm/pkg/render"
 	kotss3 "github.com/replicatedhq/kots/kotsadm/pkg/s3"
+	versiontypes "github.com/replicatedhq/kots/kotsadm/pkg/version/types"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
+	"github.com/replicatedhq/kots/pkg/kotsutil"
 	velerov1 "github.com/vmware-tanzu/velero/pkg/apis/velero/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
@@ -261,4 +263,222 @@ func (s S3PGStore) GetAppVersionArchive(appID string, sequence int64) (string, e
 	}
 
 	return tmpDir, nil
+}
+
+func (s S3PGStore) CreateAppVersion(appID string, currentSequence *int64, appName string, appIcon string, kotsKinds *kotsutil.KotsKinds) (int64, error) {
+	// we marshal these here because it's a decision of the store to cache them in the app version table
+	// not all stores will do this
+	supportBundleSpec, err := kotsKinds.Marshal("troubleshoot.replicated.com", "v1beta1", "Collector")
+	if err != nil {
+		return int64(0), errors.Wrap(err, "failed to marshal support bundle spec")
+	}
+	analyzersSpec, err := kotsKinds.Marshal("troubleshoot.replicated.com", "v1beta1", "Analyzer")
+	if err != nil {
+		return int64(0), errors.Wrap(err, "failed to marshal analyzer spec")
+	}
+	preflightSpec, err := kotsKinds.Marshal("troubleshoot.replicated.com", "v1beta1", "Preflight")
+	if err != nil {
+		return int64(0), errors.Wrap(err, "failed to marshal preflight spec")
+	}
+
+	appSpec, err := kotsKinds.Marshal("app.k8s.io", "v1beta1", "Application")
+	if err != nil {
+		return int64(0), errors.Wrap(err, "failed to marshal app spec")
+	}
+	kotsAppSpec, err := kotsKinds.Marshal("kots.io", "v1beta1", "Application")
+	if err != nil {
+		return int64(0), errors.Wrap(err, "failed to marshal kots app spec")
+	}
+	kotsInstallationSpec, err := kotsKinds.Marshal("kots.io", "v1beta1", "Installation")
+	if err != nil {
+		return int64(0), errors.Wrap(err, "failed to marshal kots installation spec")
+	}
+	backupSpec, err := kotsKinds.Marshal("velero.io", "v1", "Backup")
+	if err != nil {
+		return int64(0), errors.Wrap(err, "failed to marshal backup spec")
+	}
+
+	licenseSpec, err := kotsKinds.Marshal("kots.io", "v1beta1", "License")
+	if err != nil {
+		return int64(0), errors.Wrap(err, "failed to marshal license spec")
+	}
+	configSpec, err := kotsKinds.Marshal("kots.io", "v1beta1", "Config")
+	if err != nil {
+		return int64(0), errors.Wrap(err, "failed to marshal config spec")
+	}
+	configValuesSpec, err := kotsKinds.Marshal("kots.io", "v1beta1", "ConfigValues")
+	if err != nil {
+		return int64(0), errors.Wrap(err, "failed to marshal configvalues spec")
+	}
+
+	db := persistence.MustGetPGSession()
+
+	tx, err := db.Begin()
+	if err != nil {
+		return int64(0), errors.Wrap(err, "failed to begin")
+	}
+	defer tx.Rollback()
+
+	newSequence := int64(0)
+	if currentSequence != nil {
+		row := db.QueryRow(`select max(sequence) from app_version where app_id = $1`, appID)
+		if err := row.Scan(&newSequence); err != nil {
+			return 0, errors.Wrap(err, "failed to find current max sequence in row")
+		}
+		newSequence++
+	}
+
+	query := `insert into app_version (app_id, sequence, created_at, version_label, release_notes, update_cursor, channel_name, encryption_key,
+		supportbundle_spec, analyzer_spec, preflight_spec, app_spec, kots_app_spec, kots_installation_spec, kots_license, config_spec, config_values, backup_spec)
+		values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)
+		ON CONFLICT(app_id, sequence) DO UPDATE SET
+		created_at = EXCLUDED.created_at,
+		version_label = EXCLUDED.version_label,
+		release_notes = EXCLUDED.release_notes,
+		update_cursor = EXCLUDED.update_cursor,
+		channel_name = EXCLUDED.channel_name,
+		encryption_key = EXCLUDED.encryption_key,
+		supportbundle_spec = EXCLUDED.supportbundle_spec,
+		analyzer_spec = EXCLUDED.analyzer_spec,
+		preflight_spec = EXCLUDED.preflight_spec,
+		app_spec = EXCLUDED.app_spec,
+		kots_app_spec = EXCLUDED.kots_app_spec,
+		kots_installation_spec = EXCLUDED.kots_installation_spec,
+		kots_license = EXCLUDED.kots_license,
+		config_spec = EXCLUDED.config_spec,
+		config_values = EXCLUDED.config_values,
+		backup_spec = EXCLUDED.backup_spec`
+	_, err = tx.Exec(query, appID, newSequence, time.Now(),
+		kotsKinds.Installation.Spec.VersionLabel,
+		kotsKinds.Installation.Spec.ReleaseNotes,
+		kotsKinds.Installation.Spec.UpdateCursor,
+		kotsKinds.Installation.Spec.ChannelName,
+		kotsKinds.Installation.Spec.EncryptionKey,
+		supportBundleSpec,
+		analyzersSpec,
+		preflightSpec,
+		appSpec,
+		kotsAppSpec,
+		kotsInstallationSpec,
+		licenseSpec,
+		configSpec,
+		configValuesSpec,
+		backupSpec)
+	if err != nil {
+		return int64(0), errors.Wrap(err, "failed to insert app version")
+	}
+
+	query = "update app set current_sequence = $1, name = $2, icon_uri = $3 where id = $4"
+	_, err = tx.Exec(query, int64(newSequence), appName, appIcon, appID)
+	if err != nil {
+		return int64(0), errors.Wrap(err, "failed to update app")
+	}
+
+	if err := tx.Commit(); err != nil {
+		return int64(0), errors.Wrap(err, "failed to commit tx")
+	}
+
+	return int64(newSequence), nil
+}
+
+func (s S3PGStore) AddAppVersionToDownstream(appID string, clusterID string, sequence int64, versionLabel string, status string, source string, diffSummary string, diffSummaryError string, commitURL string, gitDeployable bool) error {
+	db := persistence.MustGetPGSession()
+
+	query := `insert into app_downstream_version (app_id, cluster_id, sequence, parent_sequence, created_at, version_label, status, source, diff_summary, diff_summary_error, git_commit_url, git_deployable) values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)`
+	_, err := db.Exec(
+		query,
+		appID,
+		clusterID,
+		sequence,
+		sequence,
+		time.Now(),
+		versionLabel,
+		status,
+		source,
+		diffSummary,
+		diffSummaryError,
+		commitURL,
+		gitDeployable)
+	if err != nil {
+		return errors.Wrap(err, "failed to execute query")
+	}
+
+	return nil
+}
+
+func (s S3PGStore) GetAppVersion(appID string, sequence int64) (*versiontypes.AppVersion, error) {
+	db := persistence.MustGetPGSession()
+	query := `select sequence, created_at, status, applied_at, kots_installation_spec from app_version where app_id = $1 and sequence = $2`
+	row := db.QueryRow(query, appID, sequence)
+
+	var status sql.NullString
+	var deployedAt sql.NullTime
+
+	var installationSpec string
+
+	v := versiontypes.AppVersion{}
+	if err := row.Scan(&v.Sequence, &v.CreatedOn, &status, &deployedAt, &installationSpec); err != nil {
+		if err == sql.ErrNoRows {
+			return nil, ErrNotFound
+		}
+		return nil, errors.Wrap(err, "failed to scan")
+	}
+
+	kotsKinds := kotsutil.KotsKinds{}
+
+	installation, err := kotsutil.LoadInstallationFromContents([]byte(installationSpec))
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to read installation spec")
+	}
+	kotsKinds.Installation = *installation
+
+	if deployedAt.Valid {
+		v.DeployedAt = &deployedAt.Time
+	}
+
+	v.Status = status.String
+
+	return &v, nil
+}
+
+func (s S3PGStore) GetAppVersionsAfter(appID string, sequence int64) ([]*versiontypes.AppVersion, error) {
+	db := persistence.MustGetPGSession()
+	query := `select sequence, created_at, status, applied_at, kots_installation_spec from app_version where app_id = $1 and sequence > $2`
+	rows, err := db.Query(query, appID, sequence)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to query")
+	}
+	defer rows.Close()
+
+	var status sql.NullString
+	var deployedAt sql.NullTime
+
+	var installationSpec string
+
+	versions := []*versiontypes.AppVersion{}
+
+	for rows.Next() {
+		v := versiontypes.AppVersion{}
+		if err := rows.Scan(&v.Sequence, &v.CreatedOn, &status, &deployedAt, &installationSpec); err != nil {
+			return nil, errors.Wrap(err, "failed to scan")
+		}
+
+		kotsKinds := kotsutil.KotsKinds{}
+
+		installation, err := kotsutil.LoadInstallationFromContents([]byte(installationSpec))
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to read installation spec")
+		}
+		kotsKinds.Installation = *installation
+
+		if deployedAt.Valid {
+			v.DeployedAt = &deployedAt.Time
+		}
+
+		v.Status = status.String
+
+		versions = append(versions, &v)
+	}
+
+	return versions, nil
 }

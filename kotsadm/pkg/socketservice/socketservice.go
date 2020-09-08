@@ -18,7 +18,7 @@ import (
 	appstatustypes "github.com/replicatedhq/kots/kotsadm/pkg/appstatus/types"
 	"github.com/replicatedhq/kots/kotsadm/pkg/downstream"
 	downstreamtypes "github.com/replicatedhq/kots/kotsadm/pkg/downstream/types"
-	"github.com/replicatedhq/kots/kotsadm/pkg/kotsutil"
+	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
 	"github.com/replicatedhq/kots/kotsadm/pkg/render"
 	"github.com/replicatedhq/kots/kotsadm/pkg/snapshot"

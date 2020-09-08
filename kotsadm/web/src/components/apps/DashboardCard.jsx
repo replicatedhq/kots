@@ -1,6 +1,5 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import Dropzone from "react-dropzone";
 import ReactTooltip from "react-tooltip"
 
 import Select from "react-select";
@@ -12,6 +11,7 @@ import url from "url";
 
 import AirgapUploadProgress from "../AirgapUploadProgress";
 import Loader from "../shared/Loader";
+import MountAware from "../shared/MountAware";
 
 import {
   dynamicallyResizeText,
@@ -150,8 +150,8 @@ export default class DashboardCard extends React.Component {
     } else if (this.props.uploadingAirgapFile) {
       updateText = (
         <AirgapUploadProgress
-          total={this.props.uploadTotal}
-          sent={this.props.uploadSent}
+          total={this.props.uploadSize}
+          progress={this.props.uploadProgress}
           onProgressError={this.props.onProgressError}
           smallSize={true}
         />
@@ -185,14 +185,9 @@ export default class DashboardCard extends React.Component {
           ? <Loader className="flex justifyContent--center u-marginTop--10" size="32" />
           : showAirgapUI
             ?
-            <Dropzone
-              className="Dropzone-wrapper"
-              accept=".airgap"
-              onDropAccepted={this.props.onDropBundle}
-              multiple={false}
-            >
+            <MountAware onMount={el => this.props.airgapUploader?.assignElement(el)}>
               <button className="btn secondary blue">Upload new version</button>
-            </Dropzone>
+            </MountAware>
             : showOnlineUI ?
               <div className="flex alignItems--center">
                 <button className="btn primary blue u-marginTop--10" onClick={isUpdateAvailable ? redirectToDiff : onCheckForUpdates}>{isUpdateAvailable ? "Show Update" : "Check for update"}</button>

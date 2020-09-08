@@ -32,8 +32,6 @@ type DownstreamVersion struct {
 }
 
 type DownstreamOutput struct {
-	AppID        string `json:"appId"`
-	IsError      bool   `json:"isError"`
 	DryrunStdout string `json:"dryrunStdout"`
 	DryrunStderr string `json:"dryrunStderr"`
 	ApplyStdout  string `json:"applyStdout"`

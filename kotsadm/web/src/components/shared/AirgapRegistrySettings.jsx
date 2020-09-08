@@ -254,6 +254,10 @@ class AirgapRegistrySettings extends Component {
 
           if (res.status !== "running") {
             this.state.updateChecker.stop();
+
+            if (this.props.updateCallback) {
+              this.props.updateCallback();
+            }
           }
 
           resolve();

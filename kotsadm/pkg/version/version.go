@@ -10,7 +10,7 @@ import (
 	"github.com/replicatedhq/kots/kotsadm/pkg/config"
 	"github.com/replicatedhq/kots/kotsadm/pkg/downstream"
 	"github.com/replicatedhq/kots/kotsadm/pkg/gitops"
-	"github.com/replicatedhq/kots/kotsadm/pkg/kotsutil"
+	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/kotsadm/pkg/persistence"
 	"github.com/replicatedhq/kots/kotsadm/pkg/secrets"
 	"github.com/replicatedhq/kots/kotsadm/pkg/store"
@@ -55,103 +55,6 @@ func createVersion(appID string, filesInDir string, source string, currentSequen
 		return int64(0), errors.Wrap(err, "failed to read kots kinds")
 	}
 
-	supportBundleSpec, err := kotsKinds.Marshal("troubleshoot.replicated.com", "v1beta1", "Collector")
-	if err != nil {
-		return int64(0), errors.Wrap(err, "failed to marshal support bundle spec")
-	}
-	analyzersSpec, err := kotsKinds.Marshal("troubleshoot.replicated.com", "v1beta1", "Analyzer")
-	if err != nil {
-		return int64(0), errors.Wrap(err, "failed to marshal analyzer spec")
-	}
-	preflightSpec, err := kotsKinds.Marshal("troubleshoot.replicated.com", "v1beta1", "Preflight")
-	if err != nil {
-		return int64(0), errors.Wrap(err, "failed to marshal preflight spec")
-	}
-
-	appSpec, err := kotsKinds.Marshal("app.k8s.io", "v1beta1", "Application")
-	if err != nil {
-		return int64(0), errors.Wrap(err, "failed to marshal app spec")
-	}
-	kotsAppSpec, err := kotsKinds.Marshal("kots.io", "v1beta1", "Application")
-	if err != nil {
-		return int64(0), errors.Wrap(err, "failed to marshal kots app spec")
-	}
-	kotsInstallationSpec, err := kotsKinds.Marshal("kots.io", "v1beta1", "Installation")
-	if err != nil {
-		return int64(0), errors.Wrap(err, "failed to marshal kots installation spec")
-	}
-	backupSpec, err := kotsKinds.Marshal("velero.io", "v1", "Backup")
-	if err != nil {
-		return int64(0), errors.Wrap(err, "failed to marshal backup spec")
-	}
-
-	licenseSpec, err := kotsKinds.Marshal("kots.io", "v1beta1", "License")
-	if err != nil {
-		return int64(0), errors.Wrap(err, "failed to marshal license spec")
-	}
-	configSpec, err := kotsKinds.Marshal("kots.io", "v1beta1", "Config")
-	if err != nil {
-		return int64(0), errors.Wrap(err, "failed to marshal config spec")
-	}
-	configValuesSpec, err := kotsKinds.Marshal("kots.io", "v1beta1", "ConfigValues")
-	if err != nil {
-		return int64(0), errors.Wrap(err, "failed to marshal configvalues spec")
-	}
-
-	db := persistence.MustGetPGSession()
-
-	tx, err := db.Begin()
-	if err != nil {
-		return 0, errors.Wrap(err, "failed to begin")
-	}
-	defer tx.Rollback()
-
-	n, err := GetNextAppSequence(appID, currentSequence)
-	if err != nil {
-		return 0, errors.Wrap(err, "failed to get new app sequence")
-	}
-	newSequence := int(n)
-
-	query := `insert into app_version (app_id, sequence, created_at, version_label, release_notes, update_cursor, channel_name, encryption_key,
-supportbundle_spec, analyzer_spec, preflight_spec, app_spec, kots_app_spec, kots_installation_spec, kots_license, config_spec, config_values, backup_spec)
-values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)
-ON CONFLICT(app_id, sequence) DO UPDATE SET
-created_at = EXCLUDED.created_at,
-version_label = EXCLUDED.version_label,
-release_notes = EXCLUDED.release_notes,
-update_cursor = EXCLUDED.update_cursor,
-channel_name = EXCLUDED.channel_name,
-encryption_key = EXCLUDED.encryption_key,
-supportbundle_spec = EXCLUDED.supportbundle_spec,
-analyzer_spec = EXCLUDED.analyzer_spec,
-preflight_spec = EXCLUDED.preflight_spec,
-app_spec = EXCLUDED.app_spec,
-kots_app_spec = EXCLUDED.kots_app_spec,
-kots_installation_spec = EXCLUDED.kots_installation_spec,
-kots_license = EXCLUDED.kots_license,
-config_spec = EXCLUDED.config_spec,
-config_values = EXCLUDED.config_values,
-backup_spec = EXCLUDED.backup_spec`
-	_, err = tx.Exec(query, appID, newSequence, time.Now(),
-		kotsKinds.Installation.Spec.VersionLabel,
-		kotsKinds.Installation.Spec.ReleaseNotes,
-		kotsKinds.Installation.Spec.UpdateCursor,
-		kotsKinds.Installation.Spec.ChannelName,
-		kotsKinds.Installation.Spec.EncryptionKey,
-		supportBundleSpec,
-		analyzersSpec,
-		preflightSpec,
-		appSpec,
-		kotsAppSpec,
-		kotsInstallationSpec,
-		licenseSpec,
-		configSpec,
-		configValuesSpec,
-		backupSpec)
-	if err != nil {
-		return int64(0), errors.Wrap(err, "failed to insert app version")
-	}
-
 	appName := kotsKinds.KotsApplication.Spec.Title
 	if appName == "" {
 		a, err := store.GetStore().GetApp(appID)
@@ -164,10 +67,13 @@ backup_spec = EXCLUDED.backup_spec`
 
 	appIcon := kotsKinds.KotsApplication.Spec.Icon
 
-	query = "update app set current_sequence = $1, name = $2, icon_uri = $3 where id = $4"
-	_, err = tx.Exec(query, int64(newSequence), appName, appIcon, appID)
+	newSequence, err := store.GetStore().CreateAppVersion(appID, currentSequence, appName, appIcon, kotsKinds)
 	if err != nil {
-		return int64(0), errors.Wrap(err, "failed to update app")
+		return int64(0), errors.Wrap(err, "failed to create app version")
+	}
+
+	if err := store.GetStore().CreateAppVersionArchive(appID, int64(newSequence), filesInDir); err != nil {
+		return int64(0), errors.Wrap(err, "failed to create app version archive")
 	}
 
 	previousArchiveDir := ""
@@ -199,6 +105,21 @@ backup_spec = EXCLUDED.backup_spec`
 		}
 
 		if currentSequence != nil {
+			// there's a small chance this is not optimal, but no current code path
+			// will support multiple downstreams, so this is cleaner here for now
+			licenseSpec, err := kotsKinds.Marshal("kots.io", "v1beta1", "License")
+			if err != nil {
+				return int64(0), errors.Wrap(err, "failed to marshal license spec")
+			}
+			configSpec, err := kotsKinds.Marshal("kots.io", "v1beta1", "Config")
+			if err != nil {
+				return int64(0), errors.Wrap(err, "failed to marshal config spec")
+			}
+			configValuesSpec, err := kotsKinds.Marshal("kots.io", "v1beta1", "ConfigValues")
+			if err != nil {
+				return int64(0), errors.Wrap(err, "failed to marshal configvalues spec")
+			}
+
 			// check if version needs additional configuration
 			t, err := config.NeedsConfiguration(configSpec, configValuesSpec, licenseSpec)
 			if err != nil {
@@ -241,21 +162,12 @@ backup_spec = EXCLUDED.backup_spec`
 			commitURL = createdCommitURL
 		}
 
-		query = `insert into app_downstream_version (app_id, cluster_id, sequence, parent_sequence, created_at, version_label, status, source, diff_summary, diff_summary_error, git_commit_url, git_deployable) values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)`
-		_, err = tx.Exec(query, appID, d.ClusterID, newSequence, newSequence, time.Now(),
+		err = store.GetStore().AddAppVersionToDownstream(appID, d.ClusterID, newSequence,
 			kotsKinds.Installation.Spec.VersionLabel, downstreamStatus, source,
 			diffSummary, diffSummaryError, commitURL, commitURL != "")
 		if err != nil {
 			return int64(0), errors.Wrap(err, "failed to create downstream version")
 		}
-	}
-
-	if err := store.GetStore().CreateAppVersionArchive(appID, int64(newSequence), filesInDir); err != nil {
-		return int64(0), errors.Wrap(err, "failed to create app version archive")
-	}
-
-	if err := tx.Commit(); err != nil {
-		return int64(0), errors.Wrap(err, "failed to commit")
 	}
 
 	return int64(newSequence), nil
@@ -278,7 +190,7 @@ func GetVersions(appID string) ([]types.AppVersion, error) {
 			return nil, errors.Wrap(err, "failed to scan sequence from app_version table")
 		}
 
-		v, err := Get(appID, sequence)
+		v, err := store.GetStore().GetAppVersion(appID, sequence)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to get version")
 		}
@@ -288,45 +200,6 @@ func GetVersions(appID string) ([]types.AppVersion, error) {
 	}
 
 	return versions, nil
-}
-
-func Get(appID string, sequence int64) (*types.AppVersion, error) {
-	db := persistence.MustGetPGSession()
-	query := `select sequence, update_cursor, version_label, created_at, release_notes, status, applied_at from app_version where app_id = $1 and sequence = $2`
-	row := db.QueryRow(query, appID, sequence)
-
-	var updateCursor sql.NullInt32
-	var versionLabel sql.NullString
-	var createdOn sql.NullTime
-	var releaseNotes sql.NullString
-	var status sql.NullString
-	var deployedAt sql.NullTime
-
-	v := types.AppVersion{}
-	if err := row.Scan(&v.Sequence, &updateCursor, &versionLabel, &createdOn, &releaseNotes, &status, &deployedAt); err != nil {
-		if err == sql.ErrNoRows {
-			return nil, nil
-		}
-		return nil, errors.Wrap(err, "failed to scan")
-	}
-
-	if updateCursor.Valid {
-		v.UpdateCursor = int(updateCursor.Int32)
-	} else {
-		v.UpdateCursor = -1
-	}
-	if createdOn.Valid {
-		v.CreatedOn = &createdOn.Time
-	}
-	if deployedAt.Valid {
-		v.DeployedAt = &deployedAt.Time
-	}
-
-	v.VersionLabel = versionLabel.String
-	v.ReleaseNotes = releaseNotes.String
-	v.Status = status.String
-
-	return &v, nil
 }
 
 // DeployVersion deploys the version for the given sequence
