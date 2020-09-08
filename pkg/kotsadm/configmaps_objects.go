@@ -1,13 +1,17 @@
 package kotsadm
 
 import (
+	"fmt"
+
 	"github.com/replicatedhq/kots/pkg/kotsadm/types"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func kotsadmConfigMap(deployOptions types.DeployOptions) *corev1.ConfigMap {
-	data := map[string]string{}
+	data := map[string]string{
+		"initial-app-images-pushed": fmt.Sprintf("%v", deployOptions.AppImagesPushed),
+	}
 	if kotsadmPullSecret(deployOptions.Namespace, deployOptions.KotsadmOptions) != nil {
 		data["kotsadm-registry"] = kotsadmRegistry(deployOptions.KotsadmOptions)
 	}

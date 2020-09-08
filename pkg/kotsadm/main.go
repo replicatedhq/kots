@@ -2,7 +2,9 @@ package kotsadm
 
 import (
 	"context"
+	"io/ioutil"
 	"os"
+	"path/filepath"
 
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
@@ -126,6 +128,38 @@ func Upgrade(upgradeOptions types.UpgradeOptions) error {
 }
 
 func Deploy(deployOptions types.DeployOptions) error {
+	imagesPushed := false
+	if deployOptions.AirgapArchive != "" && deployOptions.KotsadmOptions.OverrideRegistry != "" {
+		airgapRootDir, err := ioutil.TempDir("", "kotsadm-airgap")
+		if err != nil {
+			return errors.Wrap(err, "failed to create temp dir")
+		}
+		defer os.RemoveAll(airgapRootDir)
+
+		err = extractAirgapImages(deployOptions.AirgapArchive, airgapRootDir, deployOptions.ProgressWriter)
+		if err != nil {
+			return errors.Wrap(err, "failed to extract images")
+		}
+
+		pushOptions := types.PushImagesOptions{
+			Registry: registry.RegistryOptions{
+				Endpoint:  deployOptions.KotsadmOptions.OverrideRegistry,
+				Namespace: deployOptions.KotsadmOptions.OverrideNamespace,
+				Username:  deployOptions.KotsadmOptions.Username,
+				Password:  deployOptions.KotsadmOptions.Password,
+			},
+			ProgressWriter: deployOptions.ProgressWriter,
+		}
+
+		imagesRootDir := filepath.Join(airgapRootDir, "images")
+		_, err = TagAndPushAppImages(imagesRootDir, pushOptions)
+		if err != nil {
+			return errors.Wrap(err, "failed to list image formats")
+		}
+
+		imagesPushed = true
+	}
+
 	clientset, err := k8sutil.GetClientset(deployOptions.KubernetesConfigFlags)
 	if err != nil {
 		return errors.Wrap(err, "failed to get clientset")
@@ -164,6 +198,7 @@ func Deploy(deployOptions types.DeployOptions) error {
 	deployOptions.LimitRange = limitRange
 
 	deployOptions.IsOpenShift = isOpenshift(clientset)
+	deployOptions.AppImagesPushed = imagesPushed
 
 	if err := ensureStorage(deployOptions, clientset, log); err != nil {
 		return errors.Wrap(err, "failed to deplioyt backing storage")

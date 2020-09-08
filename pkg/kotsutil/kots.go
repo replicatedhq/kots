@@ -2,11 +2,13 @@ package kotsutil
 
 import (
 	"bytes"
+	"context"
 	"encoding/base64"
 	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 
 	"github.com/pkg/errors"
@@ -17,10 +19,13 @@ import (
 	troubleshootscheme "github.com/replicatedhq/troubleshoot/pkg/client/troubleshootclientset/scheme"
 	"github.com/replicatedhq/troubleshoot/pkg/docrewrite"
 	velerov1 "github.com/vmware-tanzu/velero/pkg/apis/velero/v1"
+	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	serializer "k8s.io/apimachinery/pkg/runtime/serializer/json"
+	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/scheme"
 	applicationv1beta1 "sigs.k8s.io/application/api/v1beta1"
+	"sigs.k8s.io/controller-runtime/pkg/client/config"
 )
 
 func init() {
@@ -512,4 +517,28 @@ func SupportBundleToAnalyzer(sb *troubleshootv1beta2.SupportBundle) *troubleshoo
 			Analyzers: sb.Spec.Analyzers,
 		},
 	}
+}
+
+func IsImagesPushedSet(configMapName string) (bool, error) {
+	cfg, err := config.GetConfig()
+	if err != nil {
+		return false, errors.Wrap(err, "failed to get cluster config")
+	}
+
+	clientset, err := kubernetes.NewForConfig(cfg)
+	if err != nil {
+		return false, errors.Wrap(err, "failed to create kubernetes clientset")
+	}
+
+	skipImagePush := false
+	kotsadmConfigMap, err := clientset.CoreV1().ConfigMaps(os.Getenv("POD_NAMESPACE")).Get(context.TODO(), configMapName, metav1.GetOptions{})
+	if err != nil {
+		if !kuberneteserrors.IsNotFound(err) {
+			return false, errors.Wrap(err, "failed to get existing kotsadm config map")
+		}
+	} else if err == nil {
+		skipImagePush, _ = strconv.ParseBool(kotsadmConfigMap.Data["initial-app-images-pushed"])
+	}
+
+	return skipImagePush, nil
 }
