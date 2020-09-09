@@ -8,7 +8,6 @@ import (
 	apptypes "github.com/replicatedhq/kots/kotsadm/pkg/app/types"
 	appstatustypes "github.com/replicatedhq/kots/kotsadm/pkg/appstatus/types"
 	downstreamtypes "github.com/replicatedhq/kots/kotsadm/pkg/downstream/types"
-	"github.com/replicatedhq/kots/pkg/kotsutil"
 	installationtypes "github.com/replicatedhq/kots/kotsadm/pkg/online/types"
 	preflighttypes "github.com/replicatedhq/kots/kotsadm/pkg/preflight/types"
 	registrytypes "github.com/replicatedhq/kots/kotsadm/pkg/registry/types"
@@ -18,6 +17,7 @@ import (
 	usertypes "github.com/replicatedhq/kots/kotsadm/pkg/user/types"
 	versiontypes "github.com/replicatedhq/kots/kotsadm/pkg/version/types"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
+	"github.com/replicatedhq/kots/pkg/kotsutil"
 	troubleshootredact "github.com/replicatedhq/troubleshoot/pkg/redact"
 )
 
@@ -107,7 +107,7 @@ type AppStore interface {
 	GetAppIDFromSlug(slug string) (appID string, err error)
 	GetApp(appID string) (*apptypes.App, error)
 	GetAppFromSlug(slug string) (*apptypes.App, error)
-	CreateApp(name string, upstreamURI string, licenseData string, isAirgapEnabled bool) (*apptypes.App, error)
+	CreateApp(name string, upstreamURI string, licenseData string, isAirgapEnabled bool, skipImagePush bool) (*apptypes.App, error)
 	ListDownstreamsForApp(appID string) ([]downstreamtypes.Downstream, error)
 	ListAppsForDownstream(clusterID string) ([]*apptypes.App, error)
 	GetDownstream(clusterID string) (*downstreamtypes.Downstream, error)

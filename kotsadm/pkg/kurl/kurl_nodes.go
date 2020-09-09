@@ -96,7 +96,7 @@ func GetNodes(client kubernetes.Interface) (*types.KurlNodes, error) {
 
 	toReturn.IsKurlEnabled = true
 
-	if val, ok := kurlConf.Data["ha"]; ok {
+	if val, ok := kurlConf.Data["ha"]; ok && val != "" {
 		parsedBool, err := strconv.ParseBool(val)
 		if err != nil {
 			return nil, errors.Wrapf(err, "parse 'ha' entry in kurl config %q", val)

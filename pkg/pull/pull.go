@@ -371,7 +371,7 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 				pushUpstreamImageOptions.ReplicatedRegistry.Password = fetchOptions.License.Spec.LicenseID
 			}
 
-			// only run the TagAndPushImagesFromFiles code if the "copy directly" code hasn't already run
+			// only run the TagAndPushAppImages code if the "copy directly" code hasn't already run
 			var rewrittenImages []kustomizetypes.Image
 			if images == nil {
 				rewrittenImages, err = upstream.TagAndPushUpstreamImages(u, pushUpstreamImageOptions)
