@@ -147,7 +147,7 @@ func (s OCIStore) GetAppFromSlug(slug string) (*apptypes.App, error) {
 	return nil, ErrNotFound
 }
 
-func (s OCIStore) CreateApp(name string, upstreamURI string, licenseData string, isAirgapEnabled bool) (*apptypes.App, error) {
+func (s OCIStore) CreateApp(name string, upstreamURI string, licenseData string, isAirgapEnabled bool, skipImagePush bool) (*apptypes.App, error) {
 	appListConfigmap, err := s.getConfigmap(AppListConfigmapName)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get app list configmap")
@@ -186,7 +186,11 @@ func (s OCIStore) CreateApp(name string, upstreamURI string, licenseData string,
 		installState = "installed"
 	} else {
 		if isAirgapEnabled {
-			installState = "airgap_upload_pending"
+			if skipImagePush {
+				installState = "installed"
+			} else {
+				installState = "airgap_upload_pending"
+			}
 		} else {
 			installState = "online_upload_pending"
 		}

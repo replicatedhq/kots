@@ -53,6 +53,10 @@ func InstallCmd() *cobra.Command {
 			}
 			defer os.RemoveAll(rootDir)
 
+			if v.GetString("airgap-bundle") != "" && v.GetString("kotsadm-registry") == "" {
+				log.Info("Application images will not be pushed because \"kotsadm-registry\" argument is not specified.")
+			}
+
 			upstream := pull.RewriteUpstream(args[0])
 
 			namespace := v.GetString("namespace")
@@ -128,6 +132,8 @@ func InstallCmd() *cobra.Command {
 				ApplicationMetadata:       applicationMetadata,
 				License:                   license,
 				ConfigValues:              configValues,
+				AirgapArchive:             v.GetString("airgap-bundle"),
+				ProgressWriter:            os.Stdout,
 				StorageBaseURI:            v.GetString("storage-base-uri"),
 				StorageBaseURIPlainHTTP:   v.GetBool("storage-base-uri-plainhttp"),
 				IncludeMinio:              v.GetBool("with-minio"),
