@@ -10,7 +10,7 @@ require (
 	github.com/aws/aws-sdk-go v1.28.2
 	github.com/bitnami-labs/sealed-secrets v0.12.5
 	github.com/containerd/containerd v1.3.2
-	github.com/containers/image/v5 v5.2.0
+	github.com/containers/image/v5 v5.5.2
 	github.com/coreos/etcd v3.3.13+incompatible
 	github.com/deislabs/oras v0.8.1
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
@@ -34,11 +34,11 @@ require (
 	github.com/sergi/go-diff v1.0.0
 	github.com/spf13/cobra v1.0.0
 	github.com/spf13/viper v1.6.2
-	github.com/stretchr/testify v1.5.1
+	github.com/stretchr/testify v1.6.1
 	github.com/vmware-tanzu/velero v1.4.2
 	go.uber.org/zap v1.13.0
 	go.undefinedlabs.com/scopeagent v0.1.15
-	golang.org/x/crypto v0.0.0-20200414173820-0848c9571904
+	golang.org/x/crypto v0.0.0-20200423211502-4bdfaf469ed5
 	google.golang.org/api v0.9.0
 	gopkg.in/go-playground/assert.v1 v1.2.1
 	gopkg.in/ini.v1 v1.51.0
