@@ -31,7 +31,7 @@ func TagAndPushUpstreamImages(u *types.Upstream, options PushUpstreamImageOption
 		ProgressWriter: options.ReportWriter,
 		LogForUI:       true,
 	}
-	images, err := kotsadm.TagAndPushAppImages(options.RootDir, pushOpts)
+	images, err := kotsadm.TagAndPushAppImages(options.ImagesDir, pushOpts)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to push images")
 	}
