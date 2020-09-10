@@ -103,7 +103,7 @@ class AppVersionHistory extends Component {
     this.state.versionHistoryJob.stop();
   }
 
-  fetchKotsDownstreamHistory = async() => {
+  fetchKotsDownstreamHistory = async () => {
     const { match } = this.props;
     const appSlug = match.params.slug;
 
@@ -360,6 +360,7 @@ class AppVersionHistory extends Component {
     }
 
     const isPastVersion = find(downstream.pastVersions, { sequence: version.sequence });
+    const isPendingDeployedVersion = find(downstream.pendingVersions, { sequence: version.sequence, status: "deployed" });
     const clusterSlug = downstream.cluster?.slug;
     let preflightBlock = null;
 
@@ -383,7 +384,7 @@ class AppVersionHistory extends Component {
       }
     }
 
-    if (!isPastVersion) {
+    if (!isPastVersion && !isPendingDeployedVersion) {
       return (
         <div className="flex alignItems--center">
           <div className="flex alignItems--center">
@@ -605,33 +606,33 @@ class AppVersionHistory extends Component {
         },
         method: "GET",
       })
-      .then(async (res) => {
-        const response = await res.json();
+        .then(async (res) => {
+          const response = await res.json();
 
-        if (response.status !== "running" && !this.props.isBundleUploading) {
-          this.state.updateChecker.stop();
+          if (response.status !== "running" && !this.props.isBundleUploading) {
+            this.state.updateChecker.stop();
 
-          this.setState({
-            checkingForUpdates: false,
-            checkingUpdateMessage: response.currentMessage,
-            checkingForUpdateError: response === "failed"
-          });
+            this.setState({
+              checkingForUpdates: false,
+              checkingUpdateMessage: response.currentMessage,
+              checkingForUpdateError: response === "failed"
+            });
 
-          if (this.props.updateCallback) {
-            this.props.updateCallback();
+            if (this.props.updateCallback) {
+              this.props.updateCallback();
+            }
+            this.fetchKotsDownstreamHistory();
+          } else {
+            this.setState({
+              checkingForUpdates: true,
+              checkingUpdateMessage: response.currentMessage,
+            });
           }
-          this.fetchKotsDownstreamHistory();
-        } else {
-          this.setState({
-            checkingForUpdates: true,
-            checkingUpdateMessage: response.currentMessage,
-          });
-        }
-        resolve();
-      }).catch((err) => {
-        console.log("failed to get rewrite status", err);
-        reject();
-      });
+          resolve();
+        }).catch((err) => {
+          console.log("failed to get rewrite status", err);
+          reject();
+        });
     });
   }
 
@@ -1339,13 +1340,13 @@ class AppVersionHistory extends Component {
             slug={this.props.match.params.slug}
             sequence={this.state.selectedSequence}
           />}
-          {errorMsg &&
-            <ErrorModal
-              errorModal={displayErrorModal}
-              toggleErrorModal={this.toggleErrorModal}
-              err={errorTitle}
-              errMsg={errorMsg}
-            />}
+        {errorMsg &&
+          <ErrorModal
+            errorModal={displayErrorModal}
+            toggleErrorModal={this.toggleErrorModal}
+            err={errorTitle}
+            errMsg={errorMsg}
+          />}
       </div>
     );
   }
