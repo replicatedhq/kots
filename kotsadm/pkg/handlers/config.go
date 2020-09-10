@@ -200,15 +200,7 @@ func LiveAppConfig(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	versionInfo := template.VersionInfo{
-		Sequence:     liveAppConfigRequest.Sequence + 1,
-		Cursor:       kotsKinds.Installation.Spec.UpdateCursor,
-		ChannelName:  kotsKinds.Installation.Spec.ChannelName,
-		VersionLabel: kotsKinds.Installation.Spec.VersionLabel,
-		ReleaseNotes: kotsKinds.Installation.Spec.ReleaseNotes,
-		IsAirgap:     foundApp.IsAirgap,
-	}
-
+	versionInfo := template.VersionInfoFromInstallation(liveAppConfigRequest.Sequence+1, foundApp.IsAirgap, kotsKinds.Installation.Spec) // sequence +1 because the sequence will be incremented on save (and we want the preview to be accurate)
 	renderedConfig, err := kotsconfig.TemplateConfigObjects(kotsKinds.Config, configValues, appLicense, template.LocalRegistry{}, &versionInfo)
 	if err != nil {
 		liveAppConfigResponse.Error = "failed to render templates"
@@ -274,15 +266,7 @@ func CurrentAppConfig(w http.ResponseWriter, r *http.Request) {
 		configValues[key] = generatedValue
 	}
 
-	versionInfo := template.VersionInfo{
-		Sequence:     int64(sequence) + 1,
-		Cursor:       kotsKinds.Installation.Spec.UpdateCursor,
-		ChannelName:  kotsKinds.Installation.Spec.ChannelName,
-		VersionLabel: kotsKinds.Installation.Spec.VersionLabel,
-		ReleaseNotes: kotsKinds.Installation.Spec.ReleaseNotes,
-		IsAirgap:     foundApp.IsAirgap,
-	}
-
+	versionInfo := template.VersionInfoFromInstallation(int64(sequence)+1, foundApp.IsAirgap, kotsKinds.Installation.Spec) // sequence +1 because the sequence will be incremented on save (and we want the preview to be accurate)
 	renderedConfig, err := kotsconfig.TemplateConfigObjects(kotsKinds.Config, configValues, appLicense, template.LocalRegistry{}, &versionInfo)
 	if err != nil {
 		currentAppConfigResponse.Error = "failed to render templates"

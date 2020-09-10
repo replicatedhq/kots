@@ -54,7 +54,7 @@ func Run(appID string, sequence int64, isAirgap bool, archiveDir string) error {
 			return errors.Wrap(err, "failed to get registry settings for app")
 		}
 
-		renderedPreflight, err := render.RenderFile(renderedKotsKinds, registrySettings, sequence, isAirgap, []byte(renderedMarshalledPreflights)) // TODO fix
+		renderedPreflight, err := render.RenderFile(renderedKotsKinds, registrySettings, sequence, isAirgap, []byte(renderedMarshalledPreflights))
 		if err != nil {
 			return errors.Wrap(err, "failed to render preflights")
 		}

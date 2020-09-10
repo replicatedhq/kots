@@ -2,6 +2,8 @@ package template
 
 import (
 	"text/template"
+
+	"github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 )
 
 type VersionInfo struct {
@@ -19,6 +21,17 @@ type versionCtx struct {
 
 func newVersionCtx(info *VersionInfo) versionCtx {
 	return versionCtx{info: info}
+}
+
+func VersionInfoFromInstallation(sequence int64, isAirgap bool, spec v1beta1.InstallationSpec) VersionInfo {
+	return VersionInfo{
+		Sequence:     sequence,
+		Cursor:       spec.UpdateCursor,
+		ChannelName:  spec.ChannelName,
+		VersionLabel: spec.VersionLabel,
+		ReleaseNotes: spec.ReleaseNotes,
+		IsAirgap:     isAirgap,
+	}
 }
 
 // FuncMap represents the available functions in the versionCtx.
