@@ -271,10 +271,12 @@ class AppSnapshotRestore extends Component {
                     </div>
                     <div className="flex flex1 flex-column justifyContent--center">
                       <Line percent={percentage} strokeWidth="3" strokeColor={strokeColor} />
-                      {volume.timeRemainingSeconds !== 0 ?
-                        <div className="flex justifyContent--center u-fontSize--smaller u-fontWeight--medium u-color--silverSand u-marginTop--5"> {volume.timeRemainingSeconds ? remainingTime : null}</div>
-                        :
-                        <div className="flex justifyContent--center u-fontSize--smaller u-fontWeight--medium u-color--silverSand u-marginTop--5"> Complete </div>
+                      {volume.completionPercent === 100 ?
+                        <div className="flex justifyContent--center u-fontSize--smaller u-fontWeight--medium u-color--silverSand u-marginTop--5"> Complete </div> 
+                        : volume.timeRemainingSeconds !== 0 ?
+                          <div className="flex justifyContent--center u-fontSize--smaller u-fontWeight--medium u-color--silverSand u-marginTop--5"> {volume.timeRemainingSeconds ? remainingTime : null}</div>
+                          :
+                          <div className="flex justifyContent--center u-fontSize--smaller u-fontWeight--medium u-color--silverSand u-marginTop--5"> In progress </div>
                       }
                     </div>
                     {volume.completionPercent === 100 ?
