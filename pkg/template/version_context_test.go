@@ -3,240 +3,45 @@ package template
 import (
 	"testing"
 
-	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	"github.com/stretchr/testify/require"
 	"go.undefinedlabs.com/scopeagent"
 )
 
-func TestVersionContext_dockercfg(t *testing.T) {
+func TestVersionContext(t *testing.T) {
 	scopetest := scopeagent.StartTest(t)
 	defer scopetest.End()
 	req := require.New(t)
 
-	ctx := licenseCtx{
-		License: &kotsv1beta1.License{
-			Spec: kotsv1beta1.LicenseSpec{
-				LicenseID: "abcdef",
-			},
+	// a properly populated versionCtx - should return the appropriate values
+	ctx := versionCtx{
+		info: &VersionInfo{
+			Sequence:     5,
+			Cursor:       "five",
+			ChannelName:  "chanFive",
+			VersionLabel: "verFive",
+			ReleaseNotes: "this is five",
+			IsAirgap:     true,
 		},
 	}
 
-	expect := "eyJhdXRocyI6eyJwcm94eS5yZXBsaWNhdGVkLmNvbSI6eyJhdXRoIjoiWVdKalpHVm1PbUZpWTJSbFpnPT0ifSwicmVnaXN0cnkucmVwbGljYXRlZC5jb20iOnsiYXV0aCI6IllXSmpaR1ZtT21GaVkyUmxaZz09In19fQ=="
-	dockercfg := ctx.licenseDockercfg()
-	req.Equal(expect, dockercfg)
-}
+	// an unpopulated versionCtx - should not error/panic
+	nilCtx := versionCtx{}
 
-func TestVersionCtx_licenseFieldValue(t *testing.T) {
-	tests := []struct {
-		name      string
-		License   *kotsv1beta1.License
-		fieldName string
-		want      string
-	}{
-		{
-			name:      "license is nil",
-			License:   nil,
-			fieldName: "doesNotExist",
-			want:      "",
-		},
-		{
-			name: "licenseField does not exist",
-			License: &kotsv1beta1.License{
-				Spec: kotsv1beta1.LicenseSpec{
-					Entitlements: map[string]kotsv1beta1.EntitlementField{
-						"abc": {
-							Value: kotsv1beta1.EntitlementValue{
-								Type:   kotsv1beta1.String,
-								StrVal: "abc",
-							},
-						},
-					},
-				},
-			},
-			fieldName: "doesNotExist",
-			want:      "",
-		},
-		{
-			name: "exists as integer",
-			License: &kotsv1beta1.License{
-				Spec: kotsv1beta1.LicenseSpec{
-					Entitlements: map[string]kotsv1beta1.EntitlementField{
-						"integerField": {
-							Value: kotsv1beta1.EntitlementValue{
-								Type:   kotsv1beta1.Int,
-								IntVal: 587,
-							},
-						},
-					},
-				},
-			},
-			fieldName: "integerField",
-			want:      "587",
-		},
-		{
-			name: "exists as string",
-			License: &kotsv1beta1.License{
-				Spec: kotsv1beta1.LicenseSpec{
-					Entitlements: map[string]kotsv1beta1.EntitlementField{
-						"strField": {
-							Value: kotsv1beta1.EntitlementValue{
-								Type:   kotsv1beta1.String,
-								StrVal: "strValue",
-							},
-						},
-					},
-				},
-			},
-			fieldName: "strField",
-			want:      "strValue",
-		},
-		{
-			name: "built-in isGitOpsSupported",
-			License: &kotsv1beta1.License{
-				Spec: kotsv1beta1.LicenseSpec{
-					IsGitOpsSupported: true,
-					Entitlements: map[string]kotsv1beta1.EntitlementField{
-						"strField": {
-							Value: kotsv1beta1.EntitlementValue{
-								Type:   kotsv1beta1.String,
-								StrVal: "strValue",
-							},
-						},
-					},
-				},
-			},
-			fieldName: "isGitOpsSupported",
-			want:      "true",
-		},
-		{
-			name: "built-in isAirgapSupported",
-			License: &kotsv1beta1.License{
-				Spec: kotsv1beta1.LicenseSpec{
-					IsAirgapSupported: true,
-				},
-			},
-			fieldName: "isAirgapSupported",
-			want:      "true",
-		},
-		{
-			name: "built-in licenseSequence",
-			License: &kotsv1beta1.License{
-				Spec: kotsv1beta1.LicenseSpec{
-					LicenseSequence: 987,
-				},
-			},
-			fieldName: "licenseSequence",
-			want:      "987",
-		},
-		{
-			name: "built-in licenseType",
-			License: &kotsv1beta1.License{
-				Spec: kotsv1beta1.LicenseSpec{
-					LicenseType: "test",
-				},
-			},
-			fieldName: "licenseType",
-			want:      "test",
-		},
-		{
-			name: "built-in appSlug",
-			License: &kotsv1beta1.License{
-				Spec: kotsv1beta1.LicenseSpec{
-					AppSlug: "appSlug",
-				},
-			},
-			fieldName: "appSlug",
-			want:      "appSlug",
-		},
-		{
-			name: "built-in channelName",
-			License: &kotsv1beta1.License{
-				Spec: kotsv1beta1.LicenseSpec{
-					ChannelName: "stable",
-				},
-			},
-			fieldName: "channelName",
-			want:      "stable",
-		},
-		{
-			name: "built-in customerName",
-			License: &kotsv1beta1.License{
-				Spec: kotsv1beta1.LicenseSpec{
-					CustomerName: "name",
-				},
-			},
-			fieldName: "customerName",
-			want:      "name",
-		},
-		{
-			name: "built-in licenseID",
-			License: &kotsv1beta1.License{
-				Spec: kotsv1beta1.LicenseSpec{
-					LicenseID: "123",
-				},
-			},
-			fieldName: "licenseID",
-			want:      "123",
-		},
-		{
-			name: "built-in licenseId",
-			License: &kotsv1beta1.License{
-				Spec: kotsv1beta1.LicenseSpec{
-					LicenseID: "123",
-				},
-			},
-			fieldName: "licenseId",
-			want:      "123",
-		},
-		{
-			name: "built-in signature",
-			License: &kotsv1beta1.License{
-				Spec: kotsv1beta1.LicenseSpec{
-					IsGitOpsSupported: true,
-					Entitlements: map[string]kotsv1beta1.EntitlementField{
-						"strField": {
-							Value: kotsv1beta1.EntitlementValue{
-								Type:   kotsv1beta1.String,
-								StrVal: "strValue",
-							},
-						},
-					},
-					Signature: []byte("abcdef0123456789"),
-				},
-			},
-			fieldName: "signature",
-			want:      "abcdef0123456789",
-		},
-		{
-			name: "built-in signature with a custom field of the same name",
-			License: &kotsv1beta1.License{
-				Spec: kotsv1beta1.LicenseSpec{
-					IsGitOpsSupported: true,
-					Entitlements: map[string]kotsv1beta1.EntitlementField{
-						"signature": {
-							Value: kotsv1beta1.EntitlementValue{
-								Type:   kotsv1beta1.String,
-								StrVal: "strValue",
-							},
-						},
-					},
-					Signature: []byte("abcdef0123456789"),
-				},
-			},
-			fieldName: "signature",
-			want:      "abcdef0123456789",
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			scopetest := scopeagent.StartTest(t)
-			defer scopetest.End()
-			req := require.New(t)
+	req.Equal(int64(5), ctx.sequence())
+	req.Equal(int64(-1), nilCtx.sequence())
 
-			ctx := licenseCtx{
-				License: tt.License,
-			}
-			req.Equal(tt.want, ctx.licenseFieldValue(tt.fieldName))
-		})
-	}
+	req.Equal("five", ctx.cursor())
+	req.Equal("", nilCtx.cursor())
+
+	req.Equal("chanFive", ctx.channelName())
+	req.Equal("", nilCtx.channelName())
+
+	req.Equal("verFive", ctx.versionLabel())
+	req.Equal("", nilCtx.versionLabel())
+
+	req.Equal("this is five", ctx.releaseNotes())
+	req.Equal("", nilCtx.releaseNotes())
+
+	req.Equal(true, ctx.isAirgap())
+	req.Equal(false, nilCtx.isAirgap())
 }
