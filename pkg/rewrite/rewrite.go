@@ -321,11 +321,3 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 
 	return nil
 }
-
-func imagesDirFromOptions(upstream *upstreamtypes.Upstream, rewriteOptions RewriteOptions) string {
-	if rewriteOptions.CreateAppDir {
-		return filepath.Join(rewriteOptions.RootDir, upstream.Name, "images")
-	}
-
-	return filepath.Join(rewriteOptions.RootDir, "images")
-}
