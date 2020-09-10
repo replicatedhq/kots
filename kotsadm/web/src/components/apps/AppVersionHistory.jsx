@@ -6,13 +6,13 @@ import dayjs from "dayjs";
 import ReactTooltip from "react-tooltip"
 import MonacoEditor from "react-monaco-editor";
 import relativeTime from "dayjs/plugin/relativeTime";
-import Dropzone from "react-dropzone";
 import Modal from "react-modal";
 import moment from "moment";
 import changeCase from "change-case";
 import find from "lodash/find";
 
 import Loader from "../shared/Loader";
+import MountAware from "../shared/MountAware";
 import MarkdownRenderer from "@src/components/shared/MarkdownRenderer";
 import DownstreamWatchVersionDiff from "@src/components/watches/DownstreamWatchVersionDiff";
 import AirgapUploadProgress from "@src/components/AirgapUploadProgress";
@@ -21,6 +21,7 @@ import ShowDetailsModal from "@src/components/modals/ShowDetailsModal";
 import ErrorModal from "../modals/ErrorModal";
 import { Utilities, isAwaitingResults, secondsAgo, getPreflightResultState, getGitProviderDiffUrl, getCommitHashFromUrl } from "../../utilities/utilities";
 import { Repeater } from "../../utilities/repeater";
+import { AirgapUploader } from "../../utilities/airgapUploader";
 import get from "lodash/get";
 
 import "@src/scss/components/apps/AppVersionHistory.scss";
@@ -54,15 +55,14 @@ class AppVersionHistory extends Component {
     firstSequence: 0,
     secondSequence: 0,
     updateChecker: new Repeater(),
-    uploadTotal: 0,
-    uploadSent: 0,
+    uploadProgress: 0,
+    uploadSize: 0,
     showUpdateCheckerModal: false,
     displayShowDetailsModal: false,
     yamlErrorDetails: [],
     deployView: false,
     selectedSequence: "",
     releaseWithErr: {},
-
     versionHistoryJob: new Repeater(),
     loadingVersionHistory: true,
     versionHistory: [],
@@ -71,9 +71,14 @@ class AppVersionHistory extends Component {
     displayErrorModal: false,
   }
 
+  componentWillMount() {
+    if (this.props.app.isAirgap) {
+      this.airgapUploader = new AirgapUploader(true, this.onDropBundle);
+    }
+  }
+
   componentDidMount() {
     this.fetchKotsDownstreamHistory();
-
     this.state.updateChecker.start(this.updateStatus, 1000);
 
     const url = window.location.pathname;
@@ -98,7 +103,7 @@ class AppVersionHistory extends Component {
     this.state.versionHistoryJob.stop();
   }
 
-  fetchKotsDownstreamHistory = async() => {
+  fetchKotsDownstreamHistory = async () => {
     const { match } = this.props;
     const appSlug = match.params.slug;
 
@@ -355,6 +360,7 @@ class AppVersionHistory extends Component {
     }
 
     const isPastVersion = find(downstream.pastVersions, { sequence: version.sequence });
+    const isPendingDeployedVersion = find(downstream.pendingVersions, { sequence: version.sequence, status: "deployed" });
     const clusterSlug = downstream.cluster?.slug;
     let preflightBlock = null;
 
@@ -378,7 +384,7 @@ class AppVersionHistory extends Component {
       }
     }
 
-    if (!isPastVersion) {
+    if (!isPastVersion && !isPendingDeployedVersion) {
       return (
         <div className="flex alignItems--center">
           <div className="flex alignItems--center">
@@ -579,9 +585,9 @@ class AppVersionHistory extends Component {
         method: "GET",
       });
       if (res.ok && res.status === 200) {
-        const logs = await res.json();
-        const selectedTab = Object.keys(logs)[0];
-        this.setState({ logs, selectedTab, logsLoading: false, viewLogsErrMsg: "" });
+        const response = await res.json();
+        const selectedTab = Object.keys(response.logs)[0];
+        this.setState({ logs: response.logs, selectedTab, logsLoading: false, viewLogsErrMsg: "" });
       } else {
         this.setState({ logsLoading: false, viewLogsErrMsg: `Failed to view logs, unexpected status code, ${res.status}` });
       }
@@ -600,33 +606,33 @@ class AppVersionHistory extends Component {
         },
         method: "GET",
       })
-      .then(async (res) => {
-        const response = await res.json();
+        .then(async (res) => {
+          const response = await res.json();
 
-        if (response.status !== "running" && !this.props.isBundleUploading) {
-          this.state.updateChecker.stop();
+          if (response.status !== "running" && !this.props.isBundleUploading) {
+            this.state.updateChecker.stop();
 
-          this.setState({
-            checkingForUpdates: false,
-            checkingUpdateMessage: response.currentMessage,
-            checkingForUpdateError: response === "failed"
-          });
+            this.setState({
+              checkingForUpdates: false,
+              checkingUpdateMessage: response.currentMessage,
+              checkingForUpdateError: response === "failed"
+            });
 
-          if (this.props.updateCallback) {
-            this.props.updateCallback();
+            if (this.props.updateCallback) {
+              this.props.updateCallback();
+            }
+            this.fetchKotsDownstreamHistory();
+          } else {
+            this.setState({
+              checkingForUpdates: true,
+              checkingUpdateMessage: response.currentMessage,
+            });
           }
-          this.fetchKotsDownstreamHistory();
-        } else {
-          this.setState({
-            checkingForUpdates: true,
-            checkingUpdateMessage: response.currentMessage,
-          });
-        }
-        resolve();
-      }).catch((err) => {
-        console.log("failed to get rewrite status", err);
-        reject();
-      });
+          resolve();
+        }).catch((err) => {
+          console.log("failed to get rewrite status", err);
+          reject();
+        });
     });
   }
 
@@ -688,7 +694,7 @@ class AppVersionHistory extends Component {
       });
   }
 
-  onDropBundle = async files => {
+  onDropBundle = async () => {
     this.setState({
       uploadingAirgapFile: true,
       checkingForUpdates: true,
@@ -699,58 +705,38 @@ class AppVersionHistory extends Component {
 
     this.props.toggleIsBundleUploading(true);
 
-    const formData = new FormData();
-    formData.append("file", files[0]);
-    formData.append("appId", this.props.app.id);
+    const params = {
+      appId: this.props.app.id,
+    };
+    this.airgapUploader.upload(params, this.onUploadProgress, this.onUploadError, this.onUploadComplete);
+  }
 
-    const url = `${window.env.API_ENDPOINT}/app/airgap`;
-    const xhr = new XMLHttpRequest();
-    xhr.open("PUT", url);
+  onUploadProgress = (progress, size) => {
+    this.setState({
+      uploadProgress: progress,
+      uploadSize: size,
+    });
+  }
 
-    xhr.setRequestHeader("Authorization", Utilities.getToken())
-    xhr.upload.onprogress = event => {
-      const total = event.total;
-      const sent = event.loaded;
+  onUploadError = message => {
+    this.setState({
+      uploadingAirgapFile: false,
+      checkingForUpdates: false,
+      uploadProgress: 0,
+      uploadSize: 0,
+      airgapUploadError: message || "Error uploading bundle, please try again"
+    });
+    this.props.toggleIsBundleUploading(false);
+  }
 
-      this.setState({
-        uploadSent: sent,
-        uploadTotal: total,
-      });
-    }
-
-    xhr.upload.onerror = () => {
-      this.setState({
-        uploadingAirgapFile: false,
-        checkingForUpdates: false,
-        uploadSent: 0,
-        uploadTotal: 0,
-        airgapUploadError: "Error uploading bundle, please try again"
-      });
-      this.props.toggleIsBundleUploading(false);
-    }
-
-    xhr.onloadend = async () => {
-      const response = xhr.response;
-      if (xhr.status === 202) {
-        this.state.updateChecker.start(this.updateStatus, 1000);
-        this.setState({
-          uploadingAirgapFile: false,
-          uploadSent: 0,
-          uploadTotal: 0,
-        });
-      } else {
-        this.setState({
-          uploadingAirgapFile: false,
-          checkingForUpdates: false,
-          airgapUploadError: `Error uploading airgap bundle: ${response}`,
-          uploadSent: 0,
-          uploadTotal: 0,
-        });
-      }
-      this.props.toggleIsBundleUploading(false);
-    }
-
-    xhr.send(formData);
+  onUploadComplete = () => {
+    this.state.updateChecker.start(this.updateStatus, 1000);
+    this.setState({
+      uploadingAirgapFile: false,
+      uploadProgress: 0,
+      uploadSize: 0,
+    });
+    this.props.toggleIsBundleUploading(false);
   }
 
   onProgressError = async (airgapUploadError) => {
@@ -760,11 +746,13 @@ class AppVersionHistory extends Component {
       }
     });
     this.setState({
+      uploadingAirgapFile: false,
       airgapUploadError,
       checkingForUpdates: false,
-      uploadSent: 0,
-      uploadTotal: 0
+      uploadProgress: 0,
+      uploadSize: 0,
     });
+    this.props.toggleIsBundleUploading(false);
   }
 
   renderDiffBtn = () => {
@@ -907,8 +895,8 @@ class AppVersionHistory extends Component {
       firstSequence,
       secondSequence,
       uploadingAirgapFile,
-      uploadTotal,
-      uploadSent,
+      uploadProgress,
+      uploadSize,
       noUpdateAvailiableText,
       showUpdateCheckerModal,
 
@@ -957,8 +945,8 @@ class AppVersionHistory extends Component {
     } else if (uploadingAirgapFile) {
       updateText = (
         <AirgapUploadProgress
-          total={uploadTotal}
-          sent={uploadSent}
+          total={uploadSize}
+          progress={uploadProgress}
           onProgressError={this.onProgressError}
           smallSize={true}
         />
@@ -994,6 +982,10 @@ class AppVersionHistory extends Component {
     const currentDownstreamVersion = downstream?.currentVersion;
     const yamlErrorsDetails = this.yamlErrorsDetails(downstream, currentDownstreamVersion);
 
+    // This is kinda hacky. This finds the equivalent downstream version because the midstream
+    // version type does not contain metadata like version label or release notes.
+    const currentMidstreamVersion = versionHistory.find(version => version.parentSequence === app.currentVersion.sequence) || app.currentVersion;
+
     return (
       <div className="flex flex-column flex1 u-position--relative u-overflow--auto u-padding--20">
         <Helmet>
@@ -1009,12 +1001,12 @@ class AppVersionHistory extends Component {
               }
               <div className="flex1 flex-column">
                 <p className="u-fontSize--34 u-fontWeight--bold u-color--tuna">
-                  {app.currentVersion ? app.currentVersion.versionLabel : "---"}
+                  {currentMidstreamVersion ? currentMidstreamVersion.versionLabel : "---"}
                 </p>
-                <p className="u-fontSize--large u-fontWeight--medium u-marginTop--5 u-color--nevada">{app.currentVersion ? "Current upstream version" : "No deployments have been made"}</p>
+                <p className="u-fontSize--large u-fontWeight--medium u-marginTop--5 u-color--nevada">{currentMidstreamVersion ? "Current upstream version" : "No deployments have been made"}</p>
                 <p className="u-marginTop--10 u-fontSize--small u-color--dustyGray u-fontWeight--medium">
-                  {app?.currentVersion?.deployedAt && `Released on ${dayjs(app.currentVersion.deployedAt).format("MMMM D, YYYY")}`}
-                  {app?.currentVersion?.releaseNotes && <span className={classNames("release-notes-link", { "u-paddingLeft--5": app?.currentVersion?.deployedAt })} onClick={this.showReleaseNotes}>Release Notes</span>}
+                  {currentMidstreamVersion?.deployedAt && `Released on ${dayjs(currentMidstreamVersion.deployedAt).format("MMMM D, YYYY")}`}
+                  {currentMidstreamVersion?.releaseNotes && <span className={classNames("release-notes-link", { "u-paddingLeft--5": currentMidstreamVersion?.deployedAt })} onClick={this.showReleaseNotes}>Release Notes</span>}
                 </p>
               </div>
             </div>
@@ -1024,14 +1016,9 @@ class AppVersionHistory extends Component {
                   ? <Loader size="32" />
                   : showAirgapUI
                     ?
-                    <Dropzone
-                      className="Dropzone-wrapper"
-                      accept=".airgap"
-                      onDropAccepted={this.onDropBundle}
-                      multiple={false}
-                    >
-                      <button className="btn secondary blue">Upload new version</button>
-                    </Dropzone>
+                    <MountAware id="bundle-dropzone" onMount={el => this.airgapUploader.assignElement(el)}>
+                      <span className="btn secondary blue">Upload new version</span>
+                    </MountAware>
                     : showOnlineUI ?
                       <div className="flex alignItems--center">
                         <button className="btn secondary blue" onClick={this.onCheckForUpdates}>Check for updates</button>
@@ -1181,7 +1168,7 @@ class AppVersionHistory extends Component {
         >
           <div className="flex-column">
             <MarkdownRenderer>
-              {app?.currentVersion?.releaseNotes || "No release notes for this version"}
+              {currentMidstreamVersion?.releaseNotes || "No release notes for this version"}
             </MarkdownRenderer>
           </div>
           <div className="flex u-marginTop--10 u-marginLeft--10 u-marginBottom--10">
@@ -1353,13 +1340,13 @@ class AppVersionHistory extends Component {
             slug={this.props.match.params.slug}
             sequence={this.state.selectedSequence}
           />}
-          {errorMsg &&
-            <ErrorModal
-              errorModal={displayErrorModal}
-              toggleErrorModal={this.toggleErrorModal}
-              err={errorTitle}
-              errMsg={errorMsg}
-            />}
+        {errorMsg &&
+          <ErrorModal
+            errorModal={displayErrorModal}
+            toggleErrorModal={this.toggleErrorModal}
+            err={errorTitle}
+            errMsg={errorMsg}
+          />}
       </div>
     );
   }

@@ -10,6 +10,17 @@ import (
 	"github.com/replicatedhq/kots/kotsadm/pkg/store"
 )
 
+type GetDownstreamOutputResponse struct {
+	Logs DownstreamLogs `json:"logs"`
+}
+type DownstreamLogs struct {
+	DryrunStdout string `json:"dryrunStdout"`
+	DryrunStderr string `json:"dryrunStderr"`
+	ApplyStdout  string `json:"applyStdout"`
+	ApplyStderr  string `json:"applyStderr"`
+	RenderError  string `json:"renderError"`
+}
+
 func GetDownstreamOutput(w http.ResponseWriter, r *http.Request) {
 	appSlug := mux.Vars(r)["appSlug"]
 	clusterID := mux.Vars(r)["clusterId"]
@@ -34,5 +45,16 @@ func GetDownstreamOutput(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	JSON(w, http.StatusOK, output)
+	downstreamLogs := DownstreamLogs{
+		DryrunStdout: output.DryrunStdout,
+		DryrunStderr: output.DryrunStderr,
+		ApplyStdout:  output.ApplyStdout,
+		ApplyStderr:  output.ApplyStderr,
+		RenderError:  output.RenderError,
+	}
+	getDownstreamOutputResponse := GetDownstreamOutputResponse{
+		Logs: downstreamLogs,
+	}
+
+	JSON(w, http.StatusOK, getDownstreamOutputResponse)
 }

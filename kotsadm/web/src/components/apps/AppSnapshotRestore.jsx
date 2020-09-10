@@ -78,7 +78,7 @@ class AppSnapshotRestore extends Component {
         errorMessage: "",
         errorTitle: "",
       });
-    } catch(err) {
+    } catch (err) {
       console.log(err);
       this.setState({
         loadingRestoreDetail: false,
@@ -128,7 +128,7 @@ class AppSnapshotRestore extends Component {
 
   renderErrors = (errors) => {
     return (
-      errors.map((error, i) => (
+      errors?.map((error, i) => (
         <div className="RestoreError--wrapper flex justifyContent--space-between alignItems--center" key={`${error.title}-${i}`}>
           <div className="flex-auto icon error-small u-marginRight--10 u-marginLeft--10"> </div>
           <p className="u-fontSize--normal u-fontWeight--normal u-lineHeight--normal">{error.message}</p>
@@ -139,7 +139,7 @@ class AppSnapshotRestore extends Component {
 
   renderWarnings = (warnings) => {
     return (
-      warnings.map((warning, i) => (
+      warnings?.map((warning, i) => (
         <div className="RestoreWarning--wrapper flex justifyContent--space-between alignItems--center" key={`${warning.title}-${i}`}>
           <div className="flex-auto icon exclamationMark--icon u-marginRight--10 u-marginLeft--10"> </div>
           <p className="u-fontSize--normal u-fontWeight--normal u-lineHeight--normal">{warning.message}</p>
@@ -149,7 +149,7 @@ class AppSnapshotRestore extends Component {
   }
 
   renderFailedRestoreView = (detail) => {
-    if (detail?.warnings.length > 0 && detail?.errors?.length === 0) {
+    if (detail?.warnings?.length > 0 && (!detail?.errors || detail?.errors?.length === 0)) {
       return this.renderWarningsRestoreView(detail?.warnings);
     } else if (detail?.errors?.length > 0) {
       return (
@@ -158,13 +158,24 @@ class AppSnapshotRestore extends Component {
             <span className="icon u-superWarning--large"></span>
             <p className="u-fontWeight--bold u-color--tuna u-fontSize--larger u-lineHeight--normal u-marginTop--15 u-marginBottom--10">
               Application failed to restore </p>
-            <p className="u-fontSize--normal u-fontWeight--medium u-color--dustyGray u-lineHeight--normal">
-              Your application failed to restore to  <span className="u-fontWeight--bold u-color--dustyGray"> {this.props.match.params.id} </span> because of errors. During the restore there were
-            <span className="u-fontWeight--bold  u-color--tundora"> {detail.warnings?.length} warnings </span> and <span className="u-fontWeight--bold u-color--tundora"> {detail.errors?.length} errors</span>.</p>
+            {detail?.warnings?.length > 0 ?
+              <p className="u-fontSize--normal u-fontWeight--medium u-color--dustyGray u-lineHeight--normal">
+                Your application failed to restore to
+                <span className="u-fontWeight--bold u-color--dustyGray"> {this.props.match.params.id} </span> because of errors. During the restore there were
+                <span className="u-fontWeight--bold  u-color--tundora"> {detail?.warnings?.length} {detail?.warnings?.length === 1 ? "warning" : "warnings"} </span> and
+                <span className="u-fontWeight--bold u-color--tundora"> {detail?.errors?.length} {detail?.errors?.length === 1 ? "error" : "errors"}. </span>
+              </p>
+              :
+              <p className="u-fontSize--normal u-fontWeight--medium u-color--dustyGray u-lineHeight--normal">
+                Your application failed to restore to
+                <span className="u-fontWeight--bold u-color--dustyGray"> {this.props.match.params.id} </span> because of errors. During the restore there {detail?.errors?.length === 1 ? "was" : "were"}
+                <span className="u-fontWeight--bold u-color--tundora"> {detail?.errors?.length} {detail?.errors?.length === 1 ? "error" : "errors"}. </span>
+              </p>
+            }
           </div>
           <div className="u-marginTop--30">
             {this.renderErrors(detail?.errors)}
-            {this.renderWarnings(detail?.warnings)}
+            {detail?.warnings?.length > 0 && this.renderWarnings(detail?.warnings)}
           </div>
           <div className="flex alignItems--center justifyContent--center">
             <p className="u-fontSize--normal u-fontWeight--medium u-color--dustyGray u-lineHeight--normal u-marginTop--30"> Contact your vendor for help troubleshooting this restore. </p>
@@ -217,6 +228,7 @@ class AppSnapshotRestore extends Component {
     const hasNoErrorsOrWarnings = restoreDetail?.warnings?.length === 0 && restoreDetail?.errors?.length === 0;
     const restoreCompleted = restoreDetail?.phase === "Completed";
     const restoreFailing = restoreDetail?.phase === "PartiallyFailed" || restoreDetail?.phase === "Failed";
+    const restoreLoading = !restoreDetail?.warnings && !restoreDetail?.errors;
 
     if (loadingRestoreDetail) {
       return (
@@ -241,7 +253,7 @@ class AppSnapshotRestore extends Component {
             <p className="u-fontWeight--bold u-color--tuna u-fontSize--larger u-lineHeight--normal u-marginBottom--10"> Application restore in progress </p>
             <p className="u-fontSize--normal u-fontWeight--medium u-color--dustyGray u-lineHeight--normal"> After all volumes have been restored you will need to log back in to the admin console. </p>
             <div className="flex flex-column  u-marginTop--40">
-              {restoreDetail?.volumes?.length === 0 && hasNoErrorsOrWarnings &&
+              {restoreLoading &&
                 <div className="flex-column flex1 alignItems--center justifyContent--center">
                   <Loader size="60" />
                 </div>
@@ -259,10 +271,12 @@ class AppSnapshotRestore extends Component {
                     </div>
                     <div className="flex flex1 flex-column justifyContent--center">
                       <Line percent={percentage} strokeWidth="3" strokeColor={strokeColor} />
-                      {volume.timeRemainingSeconds !== 0 ?
-                        <div className="flex justifyContent--center u-fontSize--smaller u-fontWeight--medium u-color--silverSand u-marginTop--5"> {volume.timeRemainingSeconds ? remainingTime : null}</div>
-                        :
-                        <div className="flex justifyContent--center u-fontSize--smaller u-fontWeight--medium u-color--silverSand u-marginTop--5"> Complete </div>
+                      {volume.completionPercent === 100 ?
+                        <div className="flex justifyContent--center u-fontSize--smaller u-fontWeight--medium u-color--silverSand u-marginTop--5"> Complete </div> 
+                        : volume.timeRemainingSeconds !== 0 ?
+                          <div className="flex justifyContent--center u-fontSize--smaller u-fontWeight--medium u-color--silverSand u-marginTop--5"> {volume.timeRemainingSeconds ? remainingTime : null}</div>
+                          :
+                          <div className="flex justifyContent--center u-fontSize--smaller u-fontWeight--medium u-color--silverSand u-marginTop--5"> In progress </div>
                       }
                     </div>
                     {volume.completionPercent === 100 ?
@@ -281,7 +295,7 @@ class AppSnapshotRestore extends Component {
           :
           !hasNoErrorsOrWarnings || restoreFailing ?
             this.renderFailedRestoreView(restoreDetail)
-          : null
+            : null
         }
       </div>
     );

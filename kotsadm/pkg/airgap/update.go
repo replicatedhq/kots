@@ -5,25 +5,23 @@ import (
 	"encoding/base64"
 	"fmt"
 	"io"
-	"io/ioutil"
-	"mime/multipart"
 	"os"
 	"path/filepath"
 	"time"
 
 	"github.com/pkg/errors"
 	apptypes "github.com/replicatedhq/kots/kotsadm/pkg/app/types"
-	"github.com/replicatedhq/kots/kotsadm/pkg/kotsutil"
 	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
 	"github.com/replicatedhq/kots/kotsadm/pkg/preflight"
 	"github.com/replicatedhq/kots/kotsadm/pkg/store"
 	"github.com/replicatedhq/kots/kotsadm/pkg/version"
 	"github.com/replicatedhq/kots/pkg/crypto"
 	"github.com/replicatedhq/kots/pkg/cursor"
+	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/pull"
 )
 
-func UpdateAppFromAirgap(a *apptypes.App, airgapBundle multipart.File) (finalError error) {
+func UpdateAppFromAirgap(a *apptypes.App, airgapBundlePath string) (finalError error) {
 	if err := store.GetStore().SetTaskStatus("update-download", "Processing package...", "running"); err != nil {
 		return errors.Wrap(err, "failed to set tasks status")
 	}
@@ -90,26 +88,11 @@ func UpdateAppFromAirgap(a *apptypes.App, airgapBundle multipart.File) (finalErr
 	}
 
 	// Start processing the airgap package
-	tmpFile, err := ioutil.TempFile("", "kotsadm")
-	if err != nil {
-		return errors.Wrap(err, "failed to create temp file")
-	}
-
-	if err := store.GetStore().SetTaskStatus("update-download", "Copying package...", "running"); err != nil {
-		return errors.Wrap(err, "failed to set task status")
-	}
-
-	_, err = io.Copy(tmpFile, airgapBundle)
-	if err != nil {
-		return errors.Wrap(err, "failed to copy temp airgap")
-	}
-	defer os.RemoveAll(tmpFile.Name())
-
 	if err := store.GetStore().SetTaskStatus("update-download", "Extracting files...", "running"); err != nil {
 		return errors.Wrap(err, "failed to set task status")
 	}
 
-	airgapRoot, err := version.ExtractArchiveToTempDirectory(tmpFile.Name())
+	airgapRoot, err := version.ExtractArchiveToTempDirectory(airgapBundlePath)
 	if err != nil {
 		return errors.Wrap(err, "failed to extract archive")
 	}

@@ -7,7 +7,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
 	"github.com/replicatedhq/kots/kotsadm/pkg/store"
-	troubleshootv1beta1 "github.com/replicatedhq/troubleshoot/pkg/apis/troubleshoot/v1beta1"
+	troubleshootv1beta2 "github.com/replicatedhq/troubleshoot/pkg/apis/troubleshoot/v1beta2"
 	"github.com/replicatedhq/troubleshoot/pkg/preflight"
 	troubleshootpreflight "github.com/replicatedhq/troubleshoot/pkg/preflight"
 	"go.uber.org/zap"
@@ -16,7 +16,7 @@ import (
 
 // execute will execute the preflights using spec in preflightSpec.
 // This spec should be rendered, no template functions remaining
-func execute(appID string, sequence int64, preflightSpec *troubleshootv1beta1.Preflight, ignorePermissionErrors bool) (*troubleshootpreflight.UploadPreflightResults, error) {
+func execute(appID string, sequence int64, preflightSpec *troubleshootv1beta2.Preflight, ignorePermissionErrors bool) (*troubleshootpreflight.UploadPreflightResults, error) {
 	logger.Debug("executing preflight checks",
 		zap.String("appID", appID),
 		zap.Int64("sequence", sequence))

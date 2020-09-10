@@ -2,18 +2,16 @@ package types
 
 import (
 	"time"
+
+	"github.com/replicatedhq/kots/pkg/kotsutil"
 )
 
 type AppVersion struct {
-	Sequence     int64      `json:"sequence"`
-	UpdateCursor int        `json:"updateCursor"`
-	VersionLabel string     `json:"versionLabel"`
-	Status       string     `json:"status"`
-	CreatedOn    *time.Time `json:"createdOn"`
-	ReleaseNotes string     `json:"releaseNotes"`
-	DeployedAt   *time.Time `json:"deployedAt"`
-	License      string     `json:"license"`
-	KotsAppSpec  string     `json:"kotsAppSpec"`
+	KOTSKinds  *kotsutil.KotsKinds `json:"kotsKinds"`
+	Sequence   int64               `json:"sequence"`
+	Status     string              `json:"status"`
+	CreatedOn  time.Time           `json:"createdOn"`
+	DeployedAt *time.Time          `json:"deployedAt"`
 }
 
 type RealizedLink struct {

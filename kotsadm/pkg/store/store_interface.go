@@ -15,7 +15,9 @@ import (
 	snapshottypes "github.com/replicatedhq/kots/kotsadm/pkg/snapshot/types"
 	supportbundletypes "github.com/replicatedhq/kots/kotsadm/pkg/supportbundle/types"
 	usertypes "github.com/replicatedhq/kots/kotsadm/pkg/user/types"
+	versiontypes "github.com/replicatedhq/kots/kotsadm/pkg/version/types"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
+	"github.com/replicatedhq/kots/pkg/kotsutil"
 	troubleshootredact "github.com/replicatedhq/troubleshoot/pkg/redact"
 )
 
@@ -100,11 +102,12 @@ type AppStatusStore interface {
 type AppStore interface {
 	AddAppToAllDownstreams(appID string) error
 	SetAppInstallState(appID string, state string) error
+	AddAppVersionToDownstream(string, string, int64, string, string, string, string, string, string, bool) error
 	ListInstalledApps() ([]*apptypes.App, error)
 	GetAppIDFromSlug(slug string) (appID string, err error)
 	GetApp(appID string) (*apptypes.App, error)
 	GetAppFromSlug(slug string) (*apptypes.App, error)
-	CreateApp(name string, upstreamURI string, licenseData string, isAirgapEnabled bool) (*apptypes.App, error)
+	CreateApp(name string, upstreamURI string, licenseData string, isAirgapEnabled bool, skipImagePush bool) (*apptypes.App, error)
 	ListDownstreamsForApp(appID string) ([]downstreamtypes.Downstream, error)
 	ListAppsForDownstream(clusterID string) ([]*apptypes.App, error)
 	GetDownstream(clusterID string) (*downstreamtypes.Downstream, error)
@@ -127,6 +130,9 @@ type VersionStore interface {
 	IsSnapshotsSupportedForVersion(a *apptypes.App, sequence int64) (bool, error)
 	GetAppVersionArchive(appID string, sequence int64) (archivePath string, err error)
 	CreateAppVersionArchive(appID string, sequence int64, archivePath string) error
+	CreateAppVersion(string, *int64, string, string, *kotsutil.KotsKinds) (int64, error)
+	GetAppVersion(string, int64) (*versiontypes.AppVersion, error)
+	GetAppVersionsAfter(string, int64) ([]*versiontypes.AppVersion, error)
 }
 
 type LicenseStore interface {

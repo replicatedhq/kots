@@ -28,5 +28,14 @@ func (s OCIStore) GetLatestLicenseForApp(appID string) (*kotsv1beta1.License, er
 }
 
 func (s OCIStore) GetLicenseForAppVersion(appID string, sequence int64) (*kotsv1beta1.License, error) {
-	return nil, ErrNotImplemented
+	appVersion, err := s.GetAppVersion(appID, sequence)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get app version")
+	}
+
+	if appVersion == nil {
+		return s.GetInitialLicenseForApp(appID)
+	}
+
+	return appVersion.KOTSKinds.License, nil
 }

@@ -10,21 +10,24 @@ require (
 	github.com/aws/aws-sdk-go v1.28.2
 	github.com/bitnami-labs/sealed-secrets v0.12.5
 	github.com/containerd/containerd v1.3.2
+	github.com/containers/image/v5 v5.5.2
 	github.com/coreos/etcd v3.3.13+incompatible
 	github.com/deislabs/oras v0.8.1
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
+	github.com/docker/distribution v2.7.1+incompatible
 	github.com/docker/go-units v0.4.0
 	github.com/go-logfmt/logfmt v0.4.0
 	github.com/gorilla/mux v1.7.4
 	github.com/gorilla/websocket v1.4.0
 	github.com/gosimple/slug v1.9.0
+	github.com/gotestyourself/gotestyourself v1.4.0 // indirect
 	github.com/lib/pq v1.3.0
 	github.com/marccampbell/yaml-toolbox v0.0.0-20200328202846-85b6f7184a20
 	github.com/mholt/archiver v3.1.1+incompatible
 	github.com/opencontainers/image-spec v1.0.2-0.20190823105129-775207bd45b6
 	github.com/pkg/errors v0.9.1
 	github.com/replicatedhq/kots v0.0.0-00010101000000-000000000000
-	github.com/replicatedhq/troubleshoot v0.9.38
+	github.com/replicatedhq/troubleshoot v0.9.42
 	github.com/replicatedhq/yaml/v3 v3.0.0-beta5-replicatedhq
 	github.com/robfig/cron v1.1.0
 	github.com/robfig/cron/v3 v3.0.0
@@ -32,11 +35,11 @@ require (
 	github.com/sergi/go-diff v1.0.0
 	github.com/spf13/cobra v1.0.0
 	github.com/spf13/viper v1.6.2
-	github.com/stretchr/testify v1.5.1
+	github.com/stretchr/testify v1.6.1
 	github.com/vmware-tanzu/velero v1.4.2
 	go.uber.org/zap v1.13.0
 	go.undefinedlabs.com/scopeagent v0.1.15
-	golang.org/x/crypto v0.0.0-20200414173820-0848c9571904
+	golang.org/x/crypto v0.0.0-20200423211502-4bdfaf469ed5
 	google.golang.org/api v0.9.0
 	gopkg.in/go-playground/assert.v1 v1.2.1
 	gopkg.in/ini.v1 v1.51.0
@@ -47,7 +50,6 @@ require (
 	k8s.io/client-go v0.18.4
 	k8s.io/cluster-bootstrap v0.18.4
 	k8s.io/kubernetes v1.18.4
-	k8s.io/metrics v0.19.0 // indirect
 	k8s.io/utils v0.0.0-20200603063816-c1c6865ac451
 	sigs.k8s.io/application v0.8.2
 	sigs.k8s.io/controller-runtime v0.6.0

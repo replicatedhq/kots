@@ -2,7 +2,6 @@ package gitops
 
 import (
 	"context"
-	"crypto/rand"
 	"crypto/rsa"
 	"crypto/x509"
 	"encoding/base64"
@@ -18,8 +17,8 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	"github.com/replicatedhq/kots/kotsadm/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/crypto"
+	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"golang.org/x/crypto/ssh"
 	"gopkg.in/src-d/go-git.v4"
 	go_git_config "gopkg.in/src-d/go-git.v4/config"
@@ -705,7 +704,7 @@ func CreateGitOpsCommit(gitOpsConfig *GitOpsConfig, appSlug string, appName stri
 }
 
 func generateKeyPair() (*KeyPair, error) {
-	privateKey, err := rsa.GenerateKey(rand.Reader, 4096)
+	privateKey, err := getPrivateKey()
 	if err != nil {
 		return nil, err
 	}

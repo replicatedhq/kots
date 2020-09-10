@@ -22,16 +22,56 @@ import (
 
 const (
 	AppListConfigmapName        = "kotsadm-apps"
-	DownstreamListConfigmapName = "kotsadm-downstreams"
 	AppDownstreamsConfigMapName = "kotsadm-appdownstreams"
 )
 
 func (s OCIStore) AddAppToAllDownstreams(appID string) error {
-	return ErrNotImplemented
+	clusters, err := s.ListClusters()
+	if err != nil {
+		return errors.Wrap(err, "failed to list clusters")
+	}
+
+	configMap, err := s.getConfigmap(AppDownstreamsConfigMapName)
+	if err != nil {
+		return errors.Wrap(err, "failed to get appdownstreams configmap")
+	}
+
+	if configMap.Data == nil {
+		configMap.Data = map[string]string{}
+	}
+
+	clusterIDs := []string{}
+	for _, cluster := range clusters {
+		clusterIDs = append(clusterIDs, cluster.ClusterID)
+	}
+
+	b, err := json.Marshal(clusterIDs)
+	if err != nil {
+		return errors.Wrap(err, "failed to marshal cluster ids")
+	}
+
+	configMap.Data[fmt.Sprintf("app.%s", appID)] = string(b)
+
+	if err := s.updateConfigmap(configMap); err != nil {
+		return errors.Wrap(err, "failed to update config map")
+	}
+
+	return nil
 }
 
 func (s OCIStore) SetAppInstallState(appID string, state string) error {
-	return ErrNotImplemented
+	app, err := s.GetApp(appID)
+	if err != nil {
+		return errors.Wrap(err, "failed to get app")
+	}
+
+	app.InstallState = state
+
+	if err := s.updateApp(app); err != nil {
+		return errors.Wrap(err, "failed to update app")
+	}
+
+	return nil
 }
 
 func (s OCIStore) ListInstalledApps() ([]*apptypes.App, error) {
@@ -107,7 +147,7 @@ func (s OCIStore) GetAppFromSlug(slug string) (*apptypes.App, error) {
 	return nil, ErrNotFound
 }
 
-func (s OCIStore) CreateApp(name string, upstreamURI string, licenseData string, isAirgapEnabled bool) (*apptypes.App, error) {
+func (s OCIStore) CreateApp(name string, upstreamURI string, licenseData string, isAirgapEnabled bool, skipImagePush bool) (*apptypes.App, error) {
 	appListConfigmap, err := s.getConfigmap(AppListConfigmapName)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get app list configmap")
@@ -146,7 +186,11 @@ func (s OCIStore) CreateApp(name string, upstreamURI string, licenseData string,
 		installState = "installed"
 	} else {
 		if isAirgapEnabled {
-			installState = "airgap_upload_pending"
+			if skipImagePush {
+				installState = "installed"
+			} else {
+				installState = "airgap_upload_pending"
+			}
 		} else {
 			installState = "online_upload_pending"
 		}
@@ -187,7 +231,7 @@ func (s OCIStore) ListDownstreamsForApp(appID string) ([]downstreamtypes.Downstr
 		return nil, errors.Wrap(err, "failed to get app downstreams list configmap")
 	}
 
-	key := fmt.Sprintf("app:%s", appID)
+	key := fmt.Sprintf("app.%s", appID)
 	downstreamIDsMarshaled, ok := appDownstreamsConfigMap.Data[key]
 	if !ok {
 		return []downstreamtypes.Downstream{}, nil
@@ -197,22 +241,21 @@ func (s OCIStore) ListDownstreamsForApp(appID string) ([]downstreamtypes.Downstr
 		return nil, errors.Wrap(err, "failed to unmarshal downstream ids for app")
 	}
 
-	downstreamsConfigMap, err := s.getConfigmap(DownstreamListConfigmapName)
+	clusters, err := s.ListClusters()
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to get downsteams config map")
+		return nil, errors.Wrap(err, "failed to list clusters")
 	}
 
-	downstreams := []downstreamtypes.Downstream{}
-	for _, downstreamData := range downstreamsConfigMap.Data {
-		downstream := downstreamtypes.Downstream{}
-		if err := json.Unmarshal([]byte(downstreamData), &downstream); err != nil {
-			return nil, errors.Wrap(err, "failed to unmarshal app downstream data")
+	matchingClusters := []downstreamtypes.Downstream{}
+	for _, cluster := range clusters {
+		for _, downstreamID := range downstreamIDs {
+			if cluster.ClusterID == downstreamID {
+				matchingClusters = append(matchingClusters, *cluster)
+			}
 		}
-
-		downstreams = append(downstreams, downstream)
 	}
 
-	return downstreams, nil
+	return matchingClusters, nil
 }
 
 func (s OCIStore) ListAppsForDownstream(clusterID string) ([]*apptypes.App, error) {

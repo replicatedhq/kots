@@ -48,8 +48,6 @@ func (s S3PGStore) SetAppInstallState(appID string, state string) error {
 }
 
 func (s S3PGStore) ListInstalledApps() ([]*apptypes.App, error) {
-	logger.Debug("getting all users apps")
-
 	db := persistence.MustGetPGSession()
 	query := `select id from app where install_state = 'installed'`
 	rows, err := db.Query(query)
@@ -174,7 +172,7 @@ func (s S3PGStore) GetAppFromSlug(slug string) (*apptypes.App, error) {
 	return s.GetApp(id)
 }
 
-func (s S3PGStore) CreateApp(name string, upstreamURI string, licenseData string, isAirgapEnabled bool) (*apptypes.App, error) {
+func (s S3PGStore) CreateApp(name string, upstreamURI string, licenseData string, isAirgapEnabled bool, skipImagePush bool) (*apptypes.App, error) {
 	logger.Debug("creating app",
 		zap.String("name", name),
 		zap.String("upstreamURI", upstreamURI))
@@ -215,7 +213,11 @@ func (s S3PGStore) CreateApp(name string, upstreamURI string, licenseData string
 		installState = "installed"
 	} else {
 		if isAirgapEnabled {
-			installState = "airgap_upload_pending"
+			if skipImagePush {
+				installState = "installed"
+			} else {
+				installState = "airgap_upload_pending"
+			}
 		} else {
 			installState = "online_upload_pending"
 		}

@@ -68,7 +68,7 @@ func Test_getRedactSpec(t *testing.T) {
 				Data: map[string]string{
 					"kotsadm-redact": `
 kind: Redactor
-apiVersion: troubleshoot.replicated.com/v1beta1
+apiVersion: troubleshoot.sh/v1beta2
 metadata:
   name: kotsadm-redact
 spec:
@@ -90,7 +90,7 @@ spec:
 				},
 			},
 			want: `kind: Redactor
-apiVersion: troubleshoot.replicated.com/v1beta1
+apiVersion: troubleshoot.sh/v1beta2
 metadata:
   name: kotsadm-redact
 spec:
@@ -118,12 +118,12 @@ spec:
 				TypeMeta:   metav1.TypeMeta{},
 				ObjectMeta: metav1.ObjectMeta{},
 				Data: map[string]string{
-					"replace-password": `{"metadata":{"name":"replace password","slug":"replace-password","createdAt":"2020-06-15T14:26:10.721619-04:00","updatedAt":"2020-06-15T14:26:10.721619-04:00","enabled":true,"description":""},"redact":"kind: Redactor\napiVersion: troubleshoot.replicated.com/v1beta1\nmetadata:\n  name: replace password\nspec:\n  redactors:\n  - name: replace password\n    fileSelector:\n      file: data/my-password-dump\n    removals:\n      values:\n      - abc123\n"}`,
-					"all-files":        `{"metadata":{"name":"all files","slug":"all-files","createdAt":"2020-06-15T14:26:10.721733-04:00","updatedAt":"2020-06-15T14:26:10.721734-04:00","enabled":true,"description":""},"redact":"kind: Redactor\napiVersion: troubleshoot.replicated.com/v1beta1\nmetadata:\n  name: all files\nspec:\n  redactors:\n  - name: all files\n    removals:\n      regex:\n      - redactor: (another)(?P\u003cmask\u003e.*)(here)\n      - selector: S3_ENDPOINT\n        redactor: '(\"value\": \").*(\")'\n      yamlPath:\n      - abc.xyz.*\n"}`,
+					"replace-password": `{"metadata":{"name":"replace password","slug":"replace-password","createdAt":"2020-06-15T14:26:10.721619-04:00","updatedAt":"2020-06-15T14:26:10.721619-04:00","enabled":true,"description":""},"redact":"kind: Redactor\napiVersion: troubleshoot.sh/v1beta2\nmetadata:\n  name: replace password\nspec:\n  redactors:\n  - name: replace password\n    fileSelector:\n      file: data/my-password-dump\n    removals:\n      values:\n      - abc123\n"}`,
+					"all-files":        `{"metadata":{"name":"all files","slug":"all-files","createdAt":"2020-06-15T14:26:10.721733-04:00","updatedAt":"2020-06-15T14:26:10.721734-04:00","enabled":true,"description":""},"redact":"kind: Redactor\napiVersion: troubleshoot.sh/v1beta2\nmetadata:\n  name: all files\nspec:\n  redactors:\n  - name: all files\n    removals:\n      regex:\n      - redactor: (another)(?P\u003cmask\u003e.*)(here)\n      - selector: S3_ENDPOINT\n        redactor: '(\"value\": \").*(\")'\n      yamlPath:\n      - abc.xyz.*\n"}`,
 				},
 			},
 			want: `kind: Redactor
-apiVersion: troubleshoot.replicated.com/v1beta1
+apiVersion: troubleshoot.sh/v1beta2
 metadata:
   name: kotsadm-redact
 spec:
@@ -168,7 +168,7 @@ func Test_splitRedactors(t *testing.T) {
 		{
 			name: "no existing map",
 			spec: `kind: Redactor
-apiVersion: troubleshoot.replicated.com/v1beta1
+apiVersion: troubleshoot.sh/v1beta2
 metadata:
   name: kotsadm-redact
 spec:
@@ -196,7 +196,7 @@ spec:
 						Enabled: true,
 					},
 					Redact: `kind: Redactor
-apiVersion: troubleshoot.replicated.com/v1beta1
+apiVersion: troubleshoot.sh/v1beta2
 metadata:
   name: all files
 spec:
@@ -218,7 +218,7 @@ spec:
 						Enabled: true,
 					},
 					Redact: `kind: Redactor
-apiVersion: troubleshoot.replicated.com/v1beta1
+apiVersion: troubleshoot.sh/v1beta2
 metadata:
   name: replace password
 spec:
@@ -236,7 +236,7 @@ spec:
 		{
 			name: "no additions, remove old key",
 			spec: `kind: Redactor
-apiVersion: troubleshoot.replicated.com/v1beta1
+apiVersion: troubleshoot.sh/v1beta2
 metadata:
   name: kotsadm-redact`,
 			existingMap: map[string]string{
@@ -314,17 +314,17 @@ func Test_setRedactYaml(t *testing.T) {
 				enabled:     true,
 				newRedact:   true,
 				yamlBytes: []byte(`kind: Redactor
-apiVersion: troubleshoot.replicated.com/v1beta1
+apiVersion: troubleshoot.sh/v1beta2
 metadata:
   name: new redact`),
 				data: nil,
 			},
 			newMap: map[string]string{
-				"new-redact": `{"metadata":{"name":"new redact","slug":"new-redact","createdAt":"2020-06-15T14:26:10.721619-04:00","updatedAt":"2020-06-15T14:26:10.721619-04:00","enabled":true,"description":"new description"},"redact":"kind: Redactor\napiVersion: troubleshoot.replicated.com/v1beta1\nmetadata:\n  name: new redact"}`,
+				"new-redact": `{"metadata":{"name":"new redact","slug":"new-redact","createdAt":"2020-06-15T14:26:10.721619-04:00","updatedAt":"2020-06-15T14:26:10.721619-04:00","enabled":true,"description":"new description"},"redact":"kind: Redactor\napiVersion: troubleshoot.sh/v1beta2\nmetadata:\n  name: new redact"}`,
 			},
 			newMetadata: &RedactorMetadata{
 				Redact: `kind: Redactor
-apiVersion: troubleshoot.replicated.com/v1beta1
+apiVersion: troubleshoot.sh/v1beta2
 metadata:
   name: new redact`,
 				Metadata: types.RedactorList{
@@ -344,21 +344,21 @@ metadata:
 				description: "a description",
 				enabled:     true,
 				yamlBytes: []byte(`kind: Redactor
-apiVersion: troubleshoot.replicated.com/v1beta1
+apiVersion: troubleshoot.sh/v1beta2
 metadata:
   name: update redact`),
 				data: map[string]string{
-					"new-redact":      `{"metadata":{"name":"new redact","slug":"new-redact","createdAt":"2010-06-15T14:26:10.721619-04:00","updatedAt":"2010-06-15T14:26:10.721619-04:00","enabled":true,"description":"new description"},"redact":"kind: Redactor\napiVersion: troubleshoot.replicated.com/v1beta1\nmetadata:\n  name: new redact"}`,
+					"new-redact":      `{"metadata":{"name":"new redact","slug":"new-redact","createdAt":"2010-06-15T14:26:10.721619-04:00","updatedAt":"2010-06-15T14:26:10.721619-04:00","enabled":true,"description":"new description"},"redact":"kind: Redactor\napiVersion: troubleshoot.sh/v1beta2\nmetadata:\n  name: new redact"}`,
 					"leave-untouched": `other keys should not be modified`,
 				},
 			},
 			newMap: map[string]string{
-				"update-redact":   `{"metadata":{"name":"update redact","slug":"update-redact","createdAt":"2010-06-15T14:26:10.721619-04:00","updatedAt":"2020-06-15T14:26:10.721619-04:00","enabled":true,"description":"a description"},"redact":"kind: Redactor\napiVersion: troubleshoot.replicated.com/v1beta1\nmetadata:\n  name: update redact"}`,
+				"update-redact":   `{"metadata":{"name":"update redact","slug":"update-redact","createdAt":"2010-06-15T14:26:10.721619-04:00","updatedAt":"2020-06-15T14:26:10.721619-04:00","enabled":true,"description":"a description"},"redact":"kind: Redactor\napiVersion: troubleshoot.sh/v1beta2\nmetadata:\n  name: update redact"}`,
 				"leave-untouched": `other keys should not be modified`,
 			},
 			newMetadata: &RedactorMetadata{
 				Redact: `kind: Redactor
-apiVersion: troubleshoot.replicated.com/v1beta1
+apiVersion: troubleshoot.sh/v1beta2
 metadata:
   name: update redact`,
 				Metadata: types.RedactorList{
@@ -378,22 +378,22 @@ metadata:
 				description: "updated description",
 				enabled:     true,
 				yamlBytes: []byte(`kind: Redactor
-apiVersion: troubleshoot.replicated.com/v1beta1
+apiVersion: troubleshoot.sh/v1beta2
 metadata:
   name: update redact
 spec: {}`),
 				data: map[string]string{
-					"update-redact":   `{"metadata":{"name":"update redact","slug":"update-redact","createdAt":"2010-06-15T14:26:10.721619-04:00","updatedAt":"2010-06-15T14:26:10.721619-04:00","enabled":true,"description":"a description"},"redact":"kind: Redactor\napiVersion: troubleshoot.replicated.com/v1beta1\nmetadata:\n  name: update redact"}`,
+					"update-redact":   `{"metadata":{"name":"update redact","slug":"update-redact","createdAt":"2010-06-15T14:26:10.721619-04:00","updatedAt":"2010-06-15T14:26:10.721619-04:00","enabled":true,"description":"a description"},"redact":"kind: Redactor\napiVersion: troubleshoot.sh/v1beta2\nmetadata:\n  name: update redact"}`,
 					"leave-untouched": `other keys should not be modified`,
 				},
 			},
 			newMap: map[string]string{
-				"update-redact":   `{"metadata":{"name":"update redact","slug":"update-redact","createdAt":"2010-06-15T14:26:10.721619-04:00","updatedAt":"2020-06-15T14:26:10.721619-04:00","enabled":true,"description":"updated description"},"redact":"kind: Redactor\napiVersion: troubleshoot.replicated.com/v1beta1\nmetadata:\n  name: update redact\nspec: {}"}`,
+				"update-redact":   `{"metadata":{"name":"update redact","slug":"update-redact","createdAt":"2010-06-15T14:26:10.721619-04:00","updatedAt":"2020-06-15T14:26:10.721619-04:00","enabled":true,"description":"updated description"},"redact":"kind: Redactor\napiVersion: troubleshoot.sh/v1beta2\nmetadata:\n  name: update redact\nspec: {}"}`,
 				"leave-untouched": `other keys should not be modified`,
 			},
 			newMetadata: &RedactorMetadata{
 				Redact: `kind: Redactor
-apiVersion: troubleshoot.replicated.com/v1beta1
+apiVersion: troubleshoot.sh/v1beta2
 metadata:
   name: update redact
 spec: {}`,
@@ -450,17 +450,17 @@ func Test_setRedactEnabled(t *testing.T) {
 				slug:    "update-redact",
 				enabled: false,
 				data: map[string]string{
-					"update-redact":   `{"metadata":{"name":"update redact","slug":"update-redact","createdAt":"2010-06-15T14:26:10.721619-04:00","updatedAt":"2010-06-15T14:26:10.721619-04:00","enabled":true,"description":"a description"},"redact":"kind: Redactor\napiVersion: troubleshoot.replicated.com/v1beta1\nmetadata:\n  name: update redact"}`,
+					"update-redact":   `{"metadata":{"name":"update redact","slug":"update-redact","createdAt":"2010-06-15T14:26:10.721619-04:00","updatedAt":"2010-06-15T14:26:10.721619-04:00","enabled":true,"description":"a description"},"redact":"kind: Redactor\napiVersion: troubleshoot.sh/v1beta2\nmetadata:\n  name: update redact"}`,
 					"leave-untouched": `other keys should not be modified`,
 				},
 			},
 			newMap: map[string]string{
-				"update-redact":   `{"metadata":{"name":"update redact","slug":"update-redact","createdAt":"2010-06-15T14:26:10.721619-04:00","updatedAt":"2020-06-15T14:26:10.721619-04:00","enabled":false,"description":"a description"},"redact":"kind: Redactor\napiVersion: troubleshoot.replicated.com/v1beta1\nmetadata:\n  name: update redact"}`,
+				"update-redact":   `{"metadata":{"name":"update redact","slug":"update-redact","createdAt":"2010-06-15T14:26:10.721619-04:00","updatedAt":"2020-06-15T14:26:10.721619-04:00","enabled":false,"description":"a description"},"redact":"kind: Redactor\napiVersion: troubleshoot.sh/v1beta2\nmetadata:\n  name: update redact"}`,
 				"leave-untouched": `other keys should not be modified`,
 			},
 			newMetadata: &RedactorMetadata{
 				Redact: `kind: Redactor
-apiVersion: troubleshoot.replicated.com/v1beta1
+apiVersion: troubleshoot.sh/v1beta2
 metadata:
   name: update redact`,
 				Metadata: types.RedactorList{
@@ -479,17 +479,17 @@ metadata:
 				slug:    "update-redact",
 				enabled: true,
 				data: map[string]string{
-					"update-redact":   `{"metadata":{"name":"update redact","slug":"update-redact","createdAt":"2010-06-15T14:26:10.721619-04:00","updatedAt":"2010-06-15T14:26:10.721619-04:00","enabled":true,"description":"a description"},"redact":"kind: Redactor\napiVersion: troubleshoot.replicated.com/v1beta1\nmetadata:\n  name: update redact"}`,
+					"update-redact":   `{"metadata":{"name":"update redact","slug":"update-redact","createdAt":"2010-06-15T14:26:10.721619-04:00","updatedAt":"2010-06-15T14:26:10.721619-04:00","enabled":true,"description":"a description"},"redact":"kind: Redactor\napiVersion: troubleshoot.sh/v1beta2\nmetadata:\n  name: update redact"}`,
 					"leave-untouched": `other keys should not be modified`,
 				},
 			},
 			newMap: map[string]string{
-				"update-redact":   `{"metadata":{"name":"update redact","slug":"update-redact","createdAt":"2010-06-15T14:26:10.721619-04:00","updatedAt":"2020-06-15T14:26:10.721619-04:00","enabled":true,"description":"a description"},"redact":"kind: Redactor\napiVersion: troubleshoot.replicated.com/v1beta1\nmetadata:\n  name: update redact"}`,
+				"update-redact":   `{"metadata":{"name":"update redact","slug":"update-redact","createdAt":"2010-06-15T14:26:10.721619-04:00","updatedAt":"2020-06-15T14:26:10.721619-04:00","enabled":true,"description":"a description"},"redact":"kind: Redactor\napiVersion: troubleshoot.sh/v1beta2\nmetadata:\n  name: update redact"}`,
 				"leave-untouched": `other keys should not be modified`,
 			},
 			newMetadata: &RedactorMetadata{
 				Redact: `kind: Redactor
-apiVersion: troubleshoot.replicated.com/v1beta1
+apiVersion: troubleshoot.sh/v1beta2
 metadata:
   name: update redact`,
 				Metadata: types.RedactorList{

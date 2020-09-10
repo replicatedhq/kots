@@ -303,6 +303,13 @@ func UpdateGlobalSnapshotSettings(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if err := snapshot.ResetResticRepositories(); err != nil {
+		logger.Error(err)
+		globalSnapshotSettingsResponse.Error = "failed to try to reset restic repositories"
+		JSON(w, 500, globalSnapshotSettingsResponse)
+		return
+	}
+
 	// most plugins (all?) require that velero be restared after updating
 	if err := snapshot.RestartVelero(); err != nil {
 		logger.Error(err)

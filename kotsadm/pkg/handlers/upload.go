@@ -9,12 +9,12 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/replicatedhq/kots/kotsadm/pkg/kotsutil"
 	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
 	"github.com/replicatedhq/kots/kotsadm/pkg/preflight"
 	"github.com/replicatedhq/kots/kotsadm/pkg/render"
 	"github.com/replicatedhq/kots/kotsadm/pkg/store"
 	"github.com/replicatedhq/kots/kotsadm/pkg/version"
+	"github.com/replicatedhq/kots/pkg/kotsutil"
 )
 
 type UploadExistingAppRequest struct {
@@ -81,22 +81,24 @@ func UploadExistingApp(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := kotsKinds.EncryptConfigValues(); err != nil {
-		logger.Error(err)
-		w.WriteHeader(500)
-		return
-	}
-	updated, err := kotsKinds.Marshal("kots.io", "v1beta1", "ConfigValues")
-	if err != nil {
-		logger.Error(err)
-		w.WriteHeader(500)
-		return
-	}
+	if kotsKinds.ConfigValues != nil {
+		if err := kotsKinds.EncryptConfigValues(); err != nil {
+			logger.Error(err)
+			w.WriteHeader(500)
+			return
+		}
+		updated, err := kotsKinds.Marshal("kots.io", "v1beta1", "ConfigValues")
+		if err != nil {
+			logger.Error(err)
+			w.WriteHeader(500)
+			return
+		}
 
-	if err := ioutil.WriteFile(filepath.Join(archiveDir, "upstream", "userdata", "config.yaml"), []byte(updated), 0644); err != nil {
-		logger.Error(err)
-		w.WriteHeader(500)
-		return
+		if err := ioutil.WriteFile(filepath.Join(archiveDir, "upstream", "userdata", "config.yaml"), []byte(updated), 0644); err != nil {
+			logger.Error(err)
+			w.WriteHeader(500)
+			return
+		}
 	}
 
 	a, err := store.GetStore().GetAppFromSlug(uploadExistingAppRequest.Slug)

@@ -113,7 +113,7 @@ func TestPushAccess(endpoint, username, password, org string) error {
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		return errors.New(errorResponseToString(authBody))
+		return errors.New(errorResponseToString(resp.StatusCode, authBody))
 	}
 
 	bearerToken, err := newBearerTokenFromJSONBlob(authBody)
@@ -166,5 +166,8 @@ func sanitizeEndpoint(endpoint string) string {
 	endpoint = strings.TrimSuffix(endpoint, "/v2")
 	endpoint = strings.TrimSuffix(endpoint, "/v1/")
 	endpoint = strings.TrimSuffix(endpoint, "/v1")
+	if endpoint == "docker.io" {
+		endpoint = "index.docker.io"
+	}
 	return endpoint
 }

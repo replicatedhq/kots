@@ -5,6 +5,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
+	"github.com/replicatedhq/kots/kotsadm/pkg/store"
 )
 
 func CorsMiddleware(next http.Handler) http.Handler {
@@ -19,7 +20,18 @@ func CorsMiddleware(next http.Handler) http.Handler {
 func RequireValidSessionMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if err := requireValidSession(w, r); err != nil {
-			logger.Error(errors.Wrapf(err, "request %q", r.RequestURI))
+			if !store.GetStore().IsNotFound(err) {
+				logger.Error(errors.Wrapf(err, "request %q", r.RequestURI))
+			}
+			return
+		}
+		next.ServeHTTP(w, r)
+	})
+}
+
+func RequireValidSessionQuietMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if err := requireValidSession(w, r); err != nil {
 			return
 		}
 		next.ServeHTTP(w, r)

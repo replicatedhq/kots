@@ -17,7 +17,6 @@ import (
 	apptypes "github.com/replicatedhq/kots/kotsadm/pkg/app/types"
 	kotsadmconfig "github.com/replicatedhq/kots/kotsadm/pkg/config"
 	"github.com/replicatedhq/kots/kotsadm/pkg/downstream"
-	"github.com/replicatedhq/kots/kotsadm/pkg/kotsutil"
 	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
 	"github.com/replicatedhq/kots/kotsadm/pkg/preflight"
 	"github.com/replicatedhq/kots/kotsadm/pkg/render"
@@ -28,6 +27,7 @@ import (
 	"github.com/replicatedhq/kots/kotskinds/multitype"
 	kotsconfig "github.com/replicatedhq/kots/pkg/config"
 	"github.com/replicatedhq/kots/pkg/crypto"
+	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/template"
 )
 
@@ -129,7 +129,7 @@ func UpdateAppConfig(w http.ResponseWriter, r *http.Request) {
 	for _, version := range laterVersions {
 		_, err := updateAppConfig(foundApp, version.Sequence, updateAppConfigRequest, false)
 		if err != nil {
-			logger.Error(errors.Wrapf(err, "error creating app with new config based on sequence %d for upstream %q", version.Sequence, version.VersionLabel))
+			logger.Error(errors.Wrapf(err, "error creating app with new config based on sequence %d for upstream %q", version.Sequence, version.KOTSKinds.Installation.Spec.VersionLabel))
 		}
 	}
 
@@ -465,49 +465,52 @@ func decrypt(input string, cipher *crypto.AESCipher) (string, error) {
 }
 
 func getLaterVersions(versionedApp *apptypes.App, startSequence int64) (int64, []versiontypes.AppVersion, error) {
-	versions, err := version.GetVersions(versionedApp.ID)
+	thisAppVersion, err := store.GetStore().GetAppVersion(versionedApp.ID, startSequence)
 	if err != nil {
-		return -1, nil, errors.Wrap(err, "failed to get app versions")
+		return -1, nil, errors.Wrap(err, "failed to get this appversion")
 	}
 
-	thisUpdateCursor := -1
-	latestSequenceWithUpdateCursor := startSequence
-	laterVersions := map[int]versiontypes.AppVersion{}
-	for _, version := range versions {
-		if version.Sequence == startSequence {
-			thisUpdateCursor = version.UpdateCursor
-		}
+	laterAppVersions, err := store.GetStore().GetAppVersionsAfter(versionedApp.ID, startSequence)
+	if err != nil {
+		return -1, nil, errors.Wrap(err, "failed to get later app versions")
 	}
-	if thisUpdateCursor == -1 {
-		err := fmt.Errorf("unable to find update cursor for sequence %d in %+v", startSequence, versions)
-		return -1, nil, err
-	}
-	for _, version := range versions {
-		if version.UpdateCursor == thisUpdateCursor && version.Sequence > latestSequenceWithUpdateCursor {
-			latestSequenceWithUpdateCursor = version.Sequence
-		}
-		if version.UpdateCursor > thisUpdateCursor {
-			// save the latest sequence # for a given update cursor
-			ver, ok := laterVersions[version.UpdateCursor]
-			if !ok {
-				laterVersions[version.UpdateCursor] = version
-			} else if ver.Sequence < version.Sequence {
-				laterVersions[version.UpdateCursor] = version
+
+	// latestSequenceWithThisUpdateCursor is the newest local version
+	// of the same upstream version
+	latestSequenceWithThisUpdateCursor := thisAppVersion.Sequence
+	for _, laterAppVersion := range laterAppVersions {
+		if laterAppVersion.KOTSKinds.Installation.Spec.UpdateCursor == thisAppVersion.KOTSKinds.Installation.Spec.UpdateCursor {
+			if laterAppVersion.Sequence > latestSequenceWithThisUpdateCursor {
+				latestSequenceWithThisUpdateCursor = laterAppVersion.Sequence
 			}
 		}
 	}
 
-	// ensure that the returned versions array is sorted by GVK
-	keys := []int{}
-	for key, _ := range laterVersions {
+	laterVersions := map[string][]versiontypes.AppVersion{}
+	for _, laterAppVersion := range laterAppVersions {
+		if current, ok := laterVersions[laterAppVersion.KOTSKinds.Installation.Spec.UpdateCursor]; ok {
+			current = append(current, *laterAppVersion)
+			laterVersions[laterAppVersion.KOTSKinds.Installation.Spec.UpdateCursor] = current
+		} else {
+			laterVersions[laterAppVersion.KOTSKinds.Installation.Spec.UpdateCursor] = []versiontypes.AppVersion{
+				*laterAppVersion,
+			}
+		}
+	}
+
+	// ensure that the returned versions array is sorted
+	keys := []string{}
+	for key := range laterVersions {
 		keys = append(keys, key)
 	}
-	sort.Ints(keys)
+
+	// TODO sort by something in kotsutil that i need to write (these are either ints or semvers)
+	sort.Strings(keys)
 
 	sortedVersions := []versiontypes.AppVersion{}
 	for _, key := range keys {
-		sortedVersions = append(sortedVersions, laterVersions[key])
+		sortedVersions = append(sortedVersions, laterVersions[key]...)
 	}
 
-	return latestSequenceWithUpdateCursor, sortedVersions, nil
+	return latestSequenceWithThisUpdateCursor, sortedVersions, nil
 }

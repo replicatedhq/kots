@@ -39,11 +39,15 @@ func (s S3PGStore) GetLatestLicenseForApp(appID string) (*kotsv1beta1.License, e
 
 	var licenseStr sql.NullString
 	if err := row.Scan(&licenseStr); err != nil {
+		if err == sql.ErrNoRows {
+			return s.GetInitialLicenseForApp(appID)
+		}
+
 		return nil, errors.Wrap(err, "failed to scan")
 	}
 
 	if !licenseStr.Valid {
-		return nil, ErrNotFound
+		return s.GetInitialLicenseForApp(appID)
 	}
 
 	decode := scheme.Codecs.UniversalDeserializer().Decode
@@ -62,6 +66,10 @@ func (s S3PGStore) GetLicenseForAppVersion(appID string, sequence int64) (*kotsv
 
 	var licenseStr sql.NullString
 	if err := row.Scan(&licenseStr); err != nil {
+		if err == sql.ErrNoRows {
+			return s.GetInitialLicenseForApp(appID)
+		}
+
 		return nil, errors.Wrap(err, "failed to scan")
 	}
 

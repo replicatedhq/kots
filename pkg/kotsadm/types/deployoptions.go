@@ -1,6 +1,7 @@
 package types
 
 import (
+	"io"
 	"time"
 
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
@@ -27,6 +28,9 @@ type DeployOptions struct {
 	IsOpenShift               bool
 	License                   *kotsv1beta1.License
 	ConfigValues              *kotsv1beta1.ConfigValues
+	AirgapArchive             string
+	AppImagesPushed           bool
+	ProgressWriter            io.Writer
 	StorageBaseURI            string
 	StorageBaseURIPlainHTTP   bool
 	IncludeMinio              bool

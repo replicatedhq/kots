@@ -1,11 +1,34 @@
 package types
 
-import "io"
+import (
+	"io"
+	"time"
 
-type PushKotsadmImagesOptions struct {
-	AirgapArchive  string
-	Registry       string
-	Username       string
-	Password       string
-	ProgressWriter io.Writer // using a writer because of skopeo
+	"github.com/replicatedhq/kots/pkg/docker/registry"
+	"github.com/replicatedhq/kots/pkg/logger"
+)
+
+type PushImagesOptions struct {
+	Registry       registry.RegistryOptions
+	Log            *logger.Logger
+	ProgressWriter io.Writer
+	LogForUI       bool
+}
+
+type ImageFile struct {
+	Format      string
+	Status      string
+	Error       string
+	FilePath    string
+	Layers      map[string]*LayerInfo
+	FileSize    int64
+	UploadStart time.Time
+	UploadEnd   time.Time
+}
+
+type LayerInfo struct {
+	ID          string
+	Size        int64
+	UploadStart time.Time
+	UploadEnd   time.Time
 }
