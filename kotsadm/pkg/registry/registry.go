@@ -142,7 +142,7 @@ func RewriteImages(appID string, sequence int64, hostname string, username strin
 		RegistryNamespace: namespace,
 		AppSlug:           a.Slug,
 		IsGitOps:          a.IsGitOps,
-		AppSequence:       a.CurrentSequence + 1,
+		AppSequence:       a.CurrentSequence + 1, // sequence +1 because this is the current latest sequence, not the sequence that the rendered version will be saved as
 	}
 
 	if err := rewrite.Rewrite(options); err != nil {

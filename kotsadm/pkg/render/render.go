@@ -133,7 +133,7 @@ func RenderDir(archiveDir string, a *apptypes.App, downstreams []downstreamtypes
 		IsAirgap:         a.IsAirgap,
 		AppSlug:          a.Slug,
 		IsGitOps:         a.IsGitOps,
-		AppSequence:      a.CurrentSequence + 1,
+		AppSequence:      a.CurrentSequence + 1, // sequence +1 because this is the current latest sequence, not the sequence that the rendered version will be saved as
 	}
 
 	if registrySettings != nil {
