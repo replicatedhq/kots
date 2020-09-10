@@ -48,8 +48,6 @@ func (s S3PGStore) SetAppInstallState(appID string, state string) error {
 }
 
 func (s S3PGStore) ListInstalledApps() ([]*apptypes.App, error) {
-	logger.Debug("getting all users apps")
-
 	db := persistence.MustGetPGSession()
 	query := `select id from app where install_state = 'installed'`
 	rows, err := db.Query(query)
