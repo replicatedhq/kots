@@ -69,7 +69,7 @@ type ConfigCtx struct {
 }
 
 // newConfigContext creates and returns a context for template rendering
-func (b *Builder) newConfigContext(configGroups []kotsv1beta1.ConfigGroup, existingValues map[string]ItemValue, localRegistry LocalRegistry, cipher *crypto.AESCipher, license *kotsv1beta1.License) (*ConfigCtx, error) {
+func (b *Builder) newConfigContext(configGroups []kotsv1beta1.ConfigGroup, existingValues map[string]ItemValue, localRegistry LocalRegistry, cipher *crypto.AESCipher, license *kotsv1beta1.License, info *VersionInfo) (*ConfigCtx, error) {
 	configCtx := &ConfigCtx{
 		ItemValues:    existingValues,
 		LocalRegistry: localRegistry,
@@ -80,8 +80,9 @@ func (b *Builder) newConfigContext(configGroups []kotsv1beta1.ConfigGroup, exist
 		Ctx: []Ctx{
 			configCtx,
 			StaticCtx{},
-			&LicenseCtx{License: license},
-			NewKurlContext("base", "default"),
+			&licenseCtx{License: license},
+			newKurlContext("base", "default"),
+			newVersionCtx(info),
 		},
 	}
 

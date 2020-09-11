@@ -141,7 +141,7 @@ func UploadExistingApp(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := preflight.Run(a.ID, newSequence, archiveDir); err != nil {
+	if err := preflight.Run(a.ID, newSequence, a.IsAirgap, archiveDir); err != nil {
 		logger.Error(err)
 		w.WriteHeader(500)
 		return

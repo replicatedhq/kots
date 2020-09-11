@@ -200,7 +200,8 @@ func LiveAppConfig(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	renderedConfig, err := kotsconfig.TemplateConfigObjects(kotsKinds.Config, configValues, appLicense, template.LocalRegistry{})
+	versionInfo := template.VersionInfoFromInstallation(liveAppConfigRequest.Sequence+1, foundApp.IsAirgap, kotsKinds.Installation.Spec) // sequence +1 because the sequence will be incremented on save (and we want the preview to be accurate)
+	renderedConfig, err := kotsconfig.TemplateConfigObjects(kotsKinds.Config, configValues, appLicense, template.LocalRegistry{}, &versionInfo)
 	if err != nil {
 		liveAppConfigResponse.Error = "failed to render templates"
 		JSON(w, http.StatusInternalServerError, liveAppConfigResponse)
@@ -265,7 +266,8 @@ func CurrentAppConfig(w http.ResponseWriter, r *http.Request) {
 		configValues[key] = generatedValue
 	}
 
-	renderedConfig, err := kotsconfig.TemplateConfigObjects(kotsKinds.Config, configValues, appLicense, template.LocalRegistry{})
+	versionInfo := template.VersionInfoFromInstallation(int64(sequence)+1, foundApp.IsAirgap, kotsKinds.Installation.Spec) // sequence +1 because the sequence will be incremented on save (and we want the preview to be accurate)
+	renderedConfig, err := kotsconfig.TemplateConfigObjects(kotsKinds.Config, configValues, appLicense, template.LocalRegistry{}, &versionInfo)
 	if err != nil {
 		currentAppConfigResponse.Error = "failed to render templates"
 		JSON(w, http.StatusInternalServerError, currentAppConfigResponse)
@@ -419,7 +421,7 @@ func updateAppConfig(updateApp *apptypes.App, sequence int64, req UpdateAppConfi
 		return updateAppConfigResponse, err
 	}
 
-	if err := preflight.Run(updateApp.ID, int64(sequence), archiveDir); err != nil {
+	if err := preflight.Run(updateApp.ID, int64(sequence), updateApp.IsAirgap, archiveDir); err != nil {
 		updateAppConfigResponse.Error = errors.Cause(err).Error()
 		return updateAppConfigResponse, err
 	}

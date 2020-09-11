@@ -19,8 +19,8 @@ func TemplateConfig(log *logger.Logger, configSpecData string, configValuesData 
 	return templateConfig(log, configSpecData, configValuesData, licenseData, localRegistry, MarshalConfig)
 }
 
-func TemplateConfigObjects(configSpec *kotsv1beta1.Config, configValues map[string]template.ItemValue, license *kotsv1beta1.License, localRegistry template.LocalRegistry) (*kotsv1beta1.Config, error) {
-	templatedString, err := templateConfigObjects(configSpec, configValues, license, localRegistry, MarshalConfig)
+func TemplateConfigObjects(configSpec *kotsv1beta1.Config, configValues map[string]template.ItemValue, license *kotsv1beta1.License, localRegistry template.LocalRegistry, info *template.VersionInfo) (*kotsv1beta1.Config, error) {
+	templatedString, err := templateConfigObjects(configSpec, configValues, license, localRegistry, info, MarshalConfig)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to template config")
 	}
@@ -37,8 +37,8 @@ func TemplateConfigObjects(configSpec *kotsv1beta1.Config, configValues map[stri
 	return config, nil
 }
 
-func templateConfigObjects(configSpec *kotsv1beta1.Config, configValues map[string]template.ItemValue, license *kotsv1beta1.License, localRegistry template.LocalRegistry, marshalFunc func(config *kotsv1beta1.Config) (string, error)) (string, error) {
-	builder, configVals, err := template.NewBuilder(configSpec.Spec.Groups, configValues, localRegistry, nil, license)
+func templateConfigObjects(configSpec *kotsv1beta1.Config, configValues map[string]template.ItemValue, license *kotsv1beta1.License, localRegistry template.LocalRegistry, info *template.VersionInfo, marshalFunc func(config *kotsv1beta1.Config) (string, error)) (string, error) {
+	builder, configVals, err := template.NewBuilder(configSpec.Spec.Groups, configValues, localRegistry, nil, license, info)
 	if err != nil {
 		return "", errors.Wrap(err, "failed to create config context")
 	}
@@ -91,7 +91,7 @@ func templateConfig(log *logger.Logger, configSpecData string, configValuesData 
 		templateContext = map[string]template.ItemValue{}
 	}
 
-	return templateConfigObjects(config, templateContext, license, localRegistry, marshalFunc)
+	return templateConfigObjects(config, templateContext, license, localRegistry, &template.VersionInfo{}, marshalFunc)
 }
 
 func ApplyValuesToConfig(config *kotsv1beta1.Config, values map[string]template.ItemValue) {

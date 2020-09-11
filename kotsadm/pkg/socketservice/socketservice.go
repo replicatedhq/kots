@@ -18,7 +18,6 @@ import (
 	appstatustypes "github.com/replicatedhq/kots/kotsadm/pkg/appstatus/types"
 	"github.com/replicatedhq/kots/kotsadm/pkg/downstream"
 	downstreamtypes "github.com/replicatedhq/kots/kotsadm/pkg/downstream/types"
-	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
 	"github.com/replicatedhq/kots/kotsadm/pkg/render"
 	"github.com/replicatedhq/kots/kotsadm/pkg/snapshot"
@@ -28,6 +27,7 @@ import (
 	"github.com/replicatedhq/kots/kotsadm/pkg/supportbundle"
 	supportbundletypes "github.com/replicatedhq/kots/kotsadm/pkg/supportbundle/types"
 	"github.com/replicatedhq/kots/kotsadm/pkg/version"
+	"github.com/replicatedhq/kots/pkg/kotsutil"
 
 	velerov1 "github.com/vmware-tanzu/velero/pkg/apis/velero/v1"
 )
@@ -291,7 +291,7 @@ func (s *SocketService) processDeploySocketForApp(clusterSocket ClusterSocket, a
 		// render status informers
 		renderedInformers := []string{}
 		for _, informer := range kotsKinds.KotsApplication.Spec.StatusInformers {
-			renderedInformer, err := render.RenderContent(kotsKinds, registrySettings, []byte(informer))
+			renderedInformer, err := render.RenderContent(kotsKinds, registrySettings, deployedVersion.Sequence, a.IsAirgap, []byte(informer))
 			if err != nil {
 				logger.Error(errors.Wrap(err, "failed to render status informer"))
 				continue

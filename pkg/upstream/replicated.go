@@ -114,7 +114,7 @@ func getUpdatesReplicated(u *url.URL, localPath string, currentCursor Replicated
 	return updates, nil
 }
 
-func downloadReplicated(u *url.URL, localPath string, rootDir string, useAppDir bool, license *kotsv1beta1.License, existingConfigValues *kotsv1beta1.ConfigValues, updateCursor ReplicatedCursor, versionLabel string, cipher *crypto.AESCipher) (*types.Upstream, error) {
+func downloadReplicated(u *url.URL, localPath string, rootDir string, useAppDir bool, license *kotsv1beta1.License, existingConfigValues *kotsv1beta1.ConfigValues, updateCursor ReplicatedCursor, versionLabel string, cipher *crypto.AESCipher, appSequence int64, isAirgap bool) (*types.Upstream, error) {
 	var release *Release
 
 	if localPath != "" {
@@ -162,6 +162,12 @@ func downloadReplicated(u *url.URL, localPath string, rootDir string, useAppDir 
 		release.ReleaseNotes = application.Spec.ReleaseNotes
 	}
 
+	// get channel name from license, if one was provided
+	channelName := ""
+	if license != nil {
+		channelName = license.Spec.ChannelName
+	}
+
 	if existingConfigValues == nil {
 		var prevConfigFile string
 		if useAppDir {
@@ -181,9 +187,18 @@ func downloadReplicated(u *url.URL, localPath string, rootDir string, useAppDir 
 		return nil, errors.Wrap(err, "failed to find config in release")
 	}
 	if config != nil || existingConfigValues != nil {
+		versionInfo := template.VersionInfo{
+			Sequence:     appSequence,
+			Cursor:       updateCursor.Cursor,
+			ChannelName:  channelName,
+			VersionLabel: release.VersionLabel,
+			ReleaseNotes: release.ReleaseNotes,
+			IsAirgap:     isAirgap,
+		}
+
 		// If config existed and was removed from the app,
 		// values will be carried over to the new version anyway.
-		configValues, err := createConfigValues(application.Name, config, existingConfigValues, cipher, license)
+		configValues, err := createConfigValues(application.Name, config, existingConfigValues, cipher, license, &versionInfo)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to create empty config values")
 		}
@@ -199,12 +214,6 @@ func downloadReplicated(u *url.URL, localPath string, rootDir string, useAppDir 
 	files, err := releaseToFiles(release)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get files from release")
-	}
-
-	// get channel name from license, if one was provided
-	channelName := ""
-	if license != nil {
-		channelName = license.Spec.ChannelName
 	}
 
 	upstream := &types.Upstream{
@@ -487,7 +496,7 @@ func mustMarshalConfigValues(configValues *kotsv1beta1.ConfigValues) []byte {
 	return b.Bytes()
 }
 
-func createConfigValues(applicationName string, config *kotsv1beta1.Config, existingConfigValues *kotsv1beta1.ConfigValues, cipher *crypto.AESCipher, license *kotsv1beta1.License) (*kotsv1beta1.ConfigValues, error) {
+func createConfigValues(applicationName string, config *kotsv1beta1.Config, existingConfigValues *kotsv1beta1.ConfigValues, cipher *crypto.AESCipher, license *kotsv1beta1.License, versionInfo *template.VersionInfo) (*kotsv1beta1.ConfigValues, error) {
 	templateContextValues := make(map[string]template.ItemValue)
 
 	var newValues kotsv1beta1.ConfigValuesSpec
@@ -529,7 +538,7 @@ func createConfigValues(applicationName string, config *kotsv1beta1.Config, exis
 	// We should get this supported before 1.13.0 ships
 	localRegistry := template.LocalRegistry{}
 
-	builder, _, err := template.NewBuilder(config.Spec.Groups, templateContextValues, localRegistry, cipher, license)
+	builder, _, err := template.NewBuilder(config.Spec.Groups, templateContextValues, localRegistry, cipher, license, versionInfo)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create config context")
 	}

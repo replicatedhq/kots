@@ -36,8 +36,8 @@ func GetKurlValues(installerName, nameSpace string) *kurlv1beta1.Installer {
 	return retrieved
 }
 
-func NewKurlContext(installerName, nameSpace string) *KurlCtx {
-	ctx := &KurlCtx{
+func newKurlContext(installerName, nameSpace string) *kurlCtx {
+	ctx := &kurlCtx{
 		KurlValues: make(map[string]interface{}),
 	}
 
@@ -50,7 +50,7 @@ func NewKurlContext(installerName, nameSpace string) *KurlCtx {
 	return ctx
 }
 
-func (ctx KurlCtx) AddValuesToKurlContext(retrieved *kurlv1beta1.Installer) {
+func (ctx kurlCtx) AddValuesToKurlContext(retrieved *kurlv1beta1.Installer) {
 	Spec := reflect.ValueOf(retrieved.Spec)
 
 	for i := 0; i < Spec.NumField(); i++ {
@@ -70,11 +70,11 @@ func (ctx KurlCtx) AddValuesToKurlContext(retrieved *kurlv1beta1.Installer) {
 	}
 }
 
-type KurlCtx struct {
+type kurlCtx struct {
 	KurlValues map[string]interface{}
 }
 
-func (ctx KurlCtx) FuncMap() template.FuncMap {
+func (ctx kurlCtx) FuncMap() template.FuncMap {
 	return template.FuncMap{
 		"KurlString": ctx.kurlString,
 		"KurlInt":    ctx.kurlInt,
@@ -84,7 +84,7 @@ func (ctx KurlCtx) FuncMap() template.FuncMap {
 	}
 }
 
-func (ctx KurlCtx) kurlBool(yamlPath string) bool {
+func (ctx kurlCtx) kurlBool(yamlPath string) bool {
 	if len(ctx.KurlValues) == 0 {
 		return false
 	}
@@ -104,7 +104,7 @@ func (ctx KurlCtx) kurlBool(yamlPath string) bool {
 	return b
 }
 
-func (ctx KurlCtx) kurlInt(yamlPath string) int {
+func (ctx kurlCtx) kurlInt(yamlPath string) int {
 	if len(ctx.KurlValues) == 0 {
 		return 0
 	}
@@ -124,7 +124,7 @@ func (ctx KurlCtx) kurlInt(yamlPath string) int {
 	return i
 }
 
-func (ctx KurlCtx) kurlString(yamlPath string) string {
+func (ctx kurlCtx) kurlString(yamlPath string) string {
 	if len(ctx.KurlValues) == 0 {
 		return ""
 	}
@@ -144,7 +144,7 @@ func (ctx KurlCtx) kurlString(yamlPath string) string {
 	return s
 }
 
-func (ctx KurlCtx) kurlOption(yamlPath string) string {
+func (ctx kurlCtx) kurlOption(yamlPath string) string {
 	if len(ctx.KurlValues) == 0 {
 		return ""
 	}
@@ -168,7 +168,7 @@ func (ctx KurlCtx) kurlOption(yamlPath string) string {
 	}
 }
 
-func (ctx KurlCtx) kurlAll() string {
+func (ctx kurlCtx) kurlAll() string {
 	//debug function to show all supported k:v pairs
 
 	keys := make([]string, len(ctx.KurlValues))

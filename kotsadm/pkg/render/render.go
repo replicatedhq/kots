@@ -9,28 +9,28 @@ import (
 	"github.com/pkg/errors"
 	apptypes "github.com/replicatedhq/kots/kotsadm/pkg/app/types"
 	downstreamtypes "github.com/replicatedhq/kots/kotsadm/pkg/downstream/types"
-	"github.com/replicatedhq/kots/pkg/kotsutil"
 	registrytypes "github.com/replicatedhq/kots/kotsadm/pkg/registry/types"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	"github.com/replicatedhq/kots/pkg/crypto"
+	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/rewrite"
 	"github.com/replicatedhq/kots/pkg/template"
 )
 
 // RenderFile renders a single file
 // this is useful for upstream/kotskinds files that are not rendered in the dir
-func RenderFile(kotsKinds *kotsutil.KotsKinds, registrySettings *registrytypes.RegistrySettings, inputContent []byte) ([]byte, error) {
+func RenderFile(kotsKinds *kotsutil.KotsKinds, registrySettings *registrytypes.RegistrySettings, sequence int64, isAirgap bool, inputContent []byte) ([]byte, error) {
 	fixedUpContent, err := kotsutil.FixUpYAML(inputContent)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to fix up yaml")
 	}
 
-	return RenderContent(kotsKinds, registrySettings, fixedUpContent)
+	return RenderContent(kotsKinds, registrySettings, sequence, isAirgap, fixedUpContent)
 }
 
 // RenderContent renders any string/content
 // this is useful for rendering single values, like a status informer
-func RenderContent(kotsKinds *kotsutil.KotsKinds, registrySettings *registrytypes.RegistrySettings, inputContent []byte) ([]byte, error) {
+func RenderContent(kotsKinds *kotsutil.KotsKinds, registrySettings *registrytypes.RegistrySettings, sequence int64, isAirgap bool, inputContent []byte) ([]byte, error) {
 	apiCipher, err := crypto.AESCipherFromString(os.Getenv("API_ENCRYPTION_KEY"))
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to load apiCipher")
@@ -75,7 +75,8 @@ func RenderContent(kotsKinds *kotsutil.KotsKinds, registrySettings *registrytype
 		configGroups = kotsKinds.Config.Spec.Groups
 	}
 
-	builder, _, err := template.NewBuilder(configGroups, templateContextValues, localRegistry, appCipher, kotsKinds.License)
+	versionInfo := template.VersionInfoFromInstallation(sequence, isAirgap, kotsKinds.Installation.Spec)
+	builder, _, err := template.NewBuilder(configGroups, templateContextValues, localRegistry, appCipher, kotsKinds.License, &versionInfo)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create builder")
 	}
@@ -132,6 +133,7 @@ func RenderDir(archiveDir string, a *apptypes.App, downstreams []downstreamtypes
 		IsAirgap:         a.IsAirgap,
 		AppSlug:          a.Slug,
 		IsGitOps:         a.IsGitOps,
+		AppSequence:      a.CurrentSequence + 1, // sequence +1 because this is the current latest sequence, not the sequence that the rendered version will be saved as
 	}
 
 	if registrySettings != nil {

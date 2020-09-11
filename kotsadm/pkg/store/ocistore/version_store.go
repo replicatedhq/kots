@@ -18,9 +18,10 @@ import (
 	"github.com/mholt/archiver"
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/pkg/errors"
-	"github.com/replicatedhq/kots/pkg/kotsutil"
+	apptypes "github.com/replicatedhq/kots/kotsadm/pkg/app/types"
 	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
 	versiontypes "github.com/replicatedhq/kots/kotsadm/pkg/version/types"
+	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"go.uber.org/zap"
 )
 
@@ -131,7 +132,7 @@ func (s OCIStore) IsRollbackSupportedForVersion(appID string, sequence int64) (b
 	return appVersion.KOTSKinds.KotsApplication.Spec.AllowRollback, nil
 }
 
-func (s OCIStore) IsSnapshotsSupportedForVersion(appID string, sequence int64) (bool, error) {
+func (s OCIStore) IsSnapshotsSupportedForVersion(a *apptypes.App, sequence int64) (bool, error) {
 	return false, ErrNotImplemented
 }
 

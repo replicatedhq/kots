@@ -196,7 +196,7 @@ func CreateAppFromAirgap(pendingApp *types.PendingApp, airgapBundlePath string, 
 		return errors.Wrap(err, "failed to create new version")
 	}
 
-	if err := preflight.Run(pendingApp.ID, newSequence, tmpRoot); err != nil {
+	if err := preflight.Run(pendingApp.ID, newSequence, true, tmpRoot); err != nil {
 		return errors.Wrap(err, "failed to start preflights")
 	}
 

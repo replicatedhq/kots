@@ -13,7 +13,7 @@ func TestLicenseContext_dockercfg(t *testing.T) {
 	defer scopetest.End()
 	req := require.New(t)
 
-	ctx := LicenseCtx{
+	ctx := licenseCtx{
 		License: &kotsv1beta1.License{
 			Spec: kotsv1beta1.LicenseSpec{
 				LicenseID: "abcdef",
@@ -233,7 +233,7 @@ func TestLicenseCtx_licenseFieldValue(t *testing.T) {
 			defer scopetest.End()
 			req := require.New(t)
 
-			ctx := LicenseCtx{
+			ctx := licenseCtx{
 				License: tt.License,
 			}
 			req.Equal(tt.want, ctx.licenseFieldValue(tt.fieldName))

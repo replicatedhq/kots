@@ -10,12 +10,12 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
 	"github.com/replicatedhq/kots/kotsadm/pkg/preflight"
 	"github.com/replicatedhq/kots/kotsadm/pkg/store"
 	"github.com/replicatedhq/kots/kotsadm/pkg/version"
 	"github.com/replicatedhq/kots/pkg/crypto"
+	"github.com/replicatedhq/kots/pkg/kotsutil"
 	kotspull "github.com/replicatedhq/kots/pkg/pull"
 )
 
@@ -150,7 +150,7 @@ func DownloadUpdate(appID string, archiveDir string, toCursor string) (sequence 
 		return 0, errors.Wrap(err, "failed to create version")
 	}
 
-	if err := preflight.Run(appID, newSequence, archiveDir); err != nil {
+	if err := preflight.Run(appID, newSequence, a.IsAirgap, archiveDir); err != nil {
 		return 0, errors.Wrap(err, "failed to run preflights")
 	}
 

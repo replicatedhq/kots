@@ -15,6 +15,7 @@ import (
 	"github.com/aws/aws-sdk-go/service/s3/s3manager"
 	"github.com/mholt/archiver"
 	"github.com/pkg/errors"
+	apptypes "github.com/replicatedhq/kots/kotsadm/pkg/app/types"
 	"github.com/replicatedhq/kots/kotsadm/pkg/persistence"
 	"github.com/replicatedhq/kots/kotsadm/pkg/render"
 	kotss3 "github.com/replicatedhq/kots/kotsadm/pkg/s3"
@@ -90,10 +91,10 @@ func (s S3PGStore) IsRollbackSupportedForVersion(appID string, sequence int64) (
 	return kotsAppSpec.Spec.AllowRollback, nil
 }
 
-func (s S3PGStore) IsSnapshotsSupportedForVersion(appID string, sequence int64) (bool, error) {
+func (s S3PGStore) IsSnapshotsSupportedForVersion(a *apptypes.App, sequence int64) (bool, error) {
 	db := persistence.MustGetPGSession()
 	query := `select backup_spec from app_version where app_id = $1 and sequence = $2`
-	row := db.QueryRow(query, appID, sequence)
+	row := db.QueryRow(query, a.ID, sequence)
 
 	var backupSpecStr sql.NullString
 	if err := row.Scan(&backupSpecStr); err != nil {
@@ -107,7 +108,7 @@ func (s S3PGStore) IsSnapshotsSupportedForVersion(appID string, sequence int64) 
 		return false, nil
 	}
 
-	archiveDir, err := s.GetAppVersionArchive(appID, sequence)
+	archiveDir, err := s.GetAppVersionArchive(a.ID, sequence)
 	if err != nil {
 		return false, errors.Wrap(err, "failed to get app version archive")
 	}
@@ -117,12 +118,12 @@ func (s S3PGStore) IsSnapshotsSupportedForVersion(appID string, sequence int64) 
 		return false, errors.Wrap(err, "failed to load kots kinds from path")
 	}
 
-	registrySettings, err := s.GetRegistryDetailsForApp(appID)
+	registrySettings, err := s.GetRegistryDetailsForApp(a.ID)
 	if err != nil {
 		return false, errors.Wrap(err, "failed to get registry settings for app")
 	}
 
-	rendered, err := render.RenderFile(kotsKinds, registrySettings, []byte(backupSpecStr.String))
+	rendered, err := render.RenderFile(kotsKinds, registrySettings, sequence, a.IsAirgap, []byte(backupSpecStr.String))
 	if err != nil {
 		return false, errors.Wrap(err, "failed to render backup spec")
 	}

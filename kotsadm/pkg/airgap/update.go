@@ -11,13 +11,13 @@ import (
 
 	"github.com/pkg/errors"
 	apptypes "github.com/replicatedhq/kots/kotsadm/pkg/app/types"
-	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
 	"github.com/replicatedhq/kots/kotsadm/pkg/preflight"
 	"github.com/replicatedhq/kots/kotsadm/pkg/store"
 	"github.com/replicatedhq/kots/kotsadm/pkg/version"
 	"github.com/replicatedhq/kots/pkg/crypto"
 	"github.com/replicatedhq/kots/pkg/cursor"
+	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/pull"
 )
 
@@ -187,7 +187,7 @@ func UpdateAppFromAirgap(a *apptypes.App, airgapBundlePath string) (finalError e
 		return errors.Wrap(err, "failed to create new version")
 	}
 
-	if err := preflight.Run(a.ID, newSequence, currentArchivePath); err != nil {
+	if err := preflight.Run(a.ID, newSequence, true, currentArchivePath); err != nil {
 		return errors.Wrap(err, "failed to start preflights")
 	}
 
