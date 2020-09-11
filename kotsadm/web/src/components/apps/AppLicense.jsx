@@ -186,7 +186,7 @@ class AppLicense extends Component {
                 return (
                   <div key={entitlement.label} className="flex u-marginBottom--20">
                     <p className="u-marginRight--10">{entitlement.title}</p>
-                    <p className="u-fontWeight--bold u-color--tuna">{entitlement.value}</p>
+                    <p className="u-fontWeight--bold u-color--tuna">{`${entitlement.value}`}</p>
                   </div>
                 );
               })}
