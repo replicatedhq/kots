@@ -80,6 +80,9 @@ func Start() {
 	r.Path("/api/v1/preflight/app/{appSlug}/sequence/{sequence}").Methods("GET").HandlerFunc(handlers.GetPreflightStatus)
 	r.Path("/api/v1/preflight/app/{appSlug}/sequence/{sequence}").Methods("POST").HandlerFunc(handlers.PostPreflightStatus)
 
+	// This the handler for license API and should be called by the application only.
+	r.Path("/license/v1/license").Methods("GET").HandlerFunc(handlers.GetPlatformLicenseCompatibility)
+
 	/**********************************************************************
 	* Cluster auth routes (functions that the operator calls)
 	**********************************************************************/
@@ -127,9 +130,6 @@ func Start() {
 	sessionAuthRouter.Path("/api/v1/redact/spec/{slug}").Methods("POST").HandlerFunc(handlers.SetRedactMetadataAndYaml)
 	sessionAuthRouter.Path("/api/v1/redact/spec/{slug}").Methods("DELETE").HandlerFunc(handlers.DeleteRedact)
 	sessionAuthRouter.Path("/api/v1/redact/enabled/{slug}").Methods("POST").HandlerFunc(handlers.SetRedactEnabled)
-
-	// This the handler for license API and should be called by the application only.
-	sessionAuthRouter.Path("/license/v1/license").Methods("GET").HandlerFunc(handlers.GetPlatformLicenseCompatibility)
 
 	// Apps
 	sessionAuthRouter.Path("/api/v1/apps").Methods("GET").HandlerFunc(handlers.ListApps)
