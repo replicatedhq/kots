@@ -439,7 +439,7 @@ func GetVeleroStatus(w http.ResponseWriter, r *http.Request) {
 
 	if detectVelero == nil {
 		getVeleroStatusResponse.IsVeleroInstalled = false
-		JSON(w, 404, getVeleroStatusResponse)
+		JSON(w, 204, getVeleroStatusResponse)
 		return
 	}
 
