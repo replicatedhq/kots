@@ -14,9 +14,11 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
+	apptypes "github.com/replicatedhq/kots/kotsadm/pkg/app/types"
 	"github.com/replicatedhq/kots/kotsadm/pkg/license"
 	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
 	"github.com/replicatedhq/kots/kotsadm/pkg/redact"
+	"github.com/replicatedhq/kots/kotsadm/pkg/render"
 	"github.com/replicatedhq/kots/kotsadm/pkg/snapshot"
 	"github.com/replicatedhq/kots/kotsadm/pkg/store"
 	"github.com/replicatedhq/kots/kotsadm/pkg/supportbundle"
@@ -462,8 +464,36 @@ func GetTroubleshoot(w http.ResponseWriter, r *http.Request) {
 		fullTroubleshoot = fmt.Sprintf("%s\n---\n%s", string(specBytes), redactSpec)
 	}
 
+	renderedTroubleshoot, err := renderAppFile(foundApp, []byte(fullTroubleshoot))
+	if err != nil {
+		logger.Error(err)
+		w.WriteHeader(500)
+		return
+	}
+
 	w.WriteHeader(200)
-	w.Write([]byte(fullTroubleshoot))
+	w.Write(renderedTroubleshoot)
+}
+
+// renderAppFile renders a single file using the current sequence of the provided app
+// it's here for now to avoid an import cycle between kotsadm/pkg/render and kotsadm/pkg/store
+func renderAppFile(a *apptypes.App, inputContent []byte) ([]byte, error) {
+	archiveDir, err := store.GetStore().GetAppVersionArchive(a.ID, a.CurrentSequence)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get app version archive")
+	}
+
+	renderedKotsKinds, err := kotsutil.LoadKotsKindsFromPath(archiveDir)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to load kotskinds")
+	}
+
+	registrySettings, err := store.GetStore().GetRegistryDetailsForApp(a.ID)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to load registry settings")
+	}
+
+	return render.RenderFile(renderedKotsKinds, registrySettings, a.CurrentSequence, a.IsAirgap, inputContent)
 }
 
 func GetSupportBundleRedactions(w http.ResponseWriter, r *http.Request) {
