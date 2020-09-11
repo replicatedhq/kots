@@ -39,7 +39,7 @@ func Error(err error) {
 func Errorf(template string, args ...interface{}) {
 	defer log.Sync()
 	sugar := log.Sugar()
-	sugar.Errorf(template, args)
+	sugar.Errorf(template, args...)
 }
 
 func Info(msg string, fields ...zap.Field) {
@@ -51,7 +51,7 @@ func Info(msg string, fields ...zap.Field) {
 func Infof(template string, args ...interface{}) {
 	defer log.Sync()
 	sugar := log.Sugar()
-	sugar.Infof(template, args)
+	sugar.Infof(template, args...)
 }
 
 func Debug(msg string, fields ...zap.Field) {
@@ -63,5 +63,5 @@ func Debug(msg string, fields ...zap.Field) {
 func Debugf(template string, args ...interface{}) {
 	defer log.Sync()
 	sugar := log.Sugar()
-	sugar.Debugf(template, args)
+	sugar.Debugf(template, args...)
 }
