@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"strconv"
 	"strings"
 
 	"github.com/pkg/errors"
@@ -68,13 +69,17 @@ func AutomateInstall() error {
 			continue
 		}
 
-		// sync license
-		latestLicense, err := kotslicense.GetLatestLicense(verifiedLicense)
-		if err != nil {
-			logger.Error(err)
-			continue
+		disableOutboundConnections := false
+		// ignore the error, default to false
+		disableOutboundConnections, _ = strconv.ParseBool(os.Getenv("DISABLE_OUTBOUND_CONNECTIONS"))
+		if !disableOutboundConnections {
+			latestLicense, err := kotslicense.GetLatestLicense(verifiedLicense)
+			if err != nil {
+				logger.Error(err)
+				continue
+			}
+			verifiedLicense = latestLicense
 		}
-		verifiedLicense = latestLicense
 
 		// check license expiration
 		expired, err := kotspull.LicenseIsExpired(verifiedLicense)
