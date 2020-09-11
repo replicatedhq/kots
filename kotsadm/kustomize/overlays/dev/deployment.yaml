@@ -21,6 +21,8 @@ spec:
             - name: kubelet-client-cert
               mountPath: /etc/kubernetes/pki/kubelet
           env:
+            - name: KOTSADM_LOG_LEVEL
+              value: "debug"
             - name: DISABLE_SPA_SERVING
               value: "1"
             - name: KOTSADM_TARGET_NAMESPACE
