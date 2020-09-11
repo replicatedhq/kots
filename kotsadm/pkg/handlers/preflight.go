@@ -12,7 +12,7 @@ import (
 	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
 	"github.com/replicatedhq/kots/kotsadm/pkg/preflight"
 	preflighttypes "github.com/replicatedhq/kots/kotsadm/pkg/preflight/types"
-	"github.com/replicatedhq/kots/kotsadm/pkg/render"
+	"github.com/replicatedhq/kots/kotsadm/pkg/render/helper"
 	"github.com/replicatedhq/kots/kotsadm/pkg/store"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 )
@@ -222,15 +222,7 @@ func GetPreflightStatus(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	registrySettings, err := store.GetStore().GetRegistryDetailsForApp(foundApp.ID)
-	if err != nil {
-		err = errors.Wrap(err, "failed to get registry settings for app")
-		logger.Error(err)
-		w.WriteHeader(500)
-		return
-	}
-
-	renderedPreflight, err := render.RenderFile(renderedKotsKinds, registrySettings, sequence, foundApp.IsAirgap, []byte(renderedMarshalledPreflights))
+	renderedPreflight, err := helper.RenderAppFile(foundApp, &sequence, []byte(renderedMarshalledPreflights))
 	if err != nil {
 		err = errors.Wrap(err, "failed to render preflights")
 		logger.Error(err)

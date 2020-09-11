@@ -13,7 +13,7 @@ import (
 	apptypes "github.com/replicatedhq/kots/kotsadm/pkg/app/types"
 	"github.com/replicatedhq/kots/kotsadm/pkg/downstream"
 	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
-	"github.com/replicatedhq/kots/kotsadm/pkg/render"
+	"github.com/replicatedhq/kots/kotsadm/pkg/render/helper"
 	"github.com/replicatedhq/kots/kotsadm/pkg/snapshot/types"
 	"github.com/replicatedhq/kots/kotsadm/pkg/store"
 	kotstypes "github.com/replicatedhq/kots/pkg/kotsadm/types"
@@ -77,17 +77,12 @@ func createApplicationBackup(ctx context.Context, a *apptypes.App, isScheduled b
 		return nil, errors.Wrap(err, "failed to load kots kinds from path")
 	}
 
-	registrySettings, err := store.GetStore().GetRegistryDetailsForApp(a.ID)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to get registry settings for app")
-	}
-
 	backupSpec, err := kotsKinds.Marshal("velero.io", "v1", "Backup")
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get backup spec from kotskinds")
 	}
 
-	renderedBackup, err := render.RenderFile(kotsKinds, registrySettings, a.CurrentSequence, a.IsAirgap, []byte(backupSpec))
+	renderedBackup, err := helper.RenderAppFile(a, nil, []byte(backupSpec))
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to render backup")
 	}
