@@ -676,8 +676,12 @@ func imagesDirFromOptions(upstream *upstreamtypes.Upstream, pullOptions PullOpti
 
 func publicKeysMatch(license *kotsv1beta1.License, airgap *kotsv1beta1.Airgap) error {
 	if license == nil || airgap == nil {
-		// not sure when this would happen, but earlier logic allows this combinaion
+		// not sure when this would happen, but earlier logic allows this combination
 		return nil
+	}
+
+	if airgap.Spec.AppSlug != "" && license.Spec.AppSlug != airgap.Spec.AppSlug {
+		return fmt.Errorf("license for app %q does not match airgap package app %q", license.Spec.AppSlug, airgap.Spec.AppSlug)
 	}
 
 	publicKey, err := GetAppPublicKey(license)

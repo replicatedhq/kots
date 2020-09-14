@@ -27,6 +27,7 @@ type AirgapSpec struct {
 	UpdateCursor string `json:"updateCursor,omitempty"`
 	ChannelName  string `json:"channelName,omitempty"`
 	Signature    []byte `json:"signature,omitempty"`
+	AppSlug      string `json:"appSlug,omitempty"`
 }
 
 // AirgapStatus defines the observed state of Airgap
