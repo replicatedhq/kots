@@ -1,6 +1,8 @@
 package helper
 
 import (
+	"os"
+
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/kotsadm/pkg/app/types"
 	"github.com/replicatedhq/kots/kotsadm/pkg/render"
@@ -19,6 +21,7 @@ func RenderAppFile(a *types.App, overrideSequence *int64, inputContent []byte) (
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get app version archive")
 	}
+	defer os.RemoveAll(archiveDir)
 
 	renderedKotsKinds, err := kotsutil.LoadKotsKindsFromPath(archiveDir)
 	if err != nil {
