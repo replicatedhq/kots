@@ -17,6 +17,7 @@ import (
 	"github.com/replicatedhq/kots/kotsadm/pkg/license"
 	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
 	"github.com/replicatedhq/kots/kotsadm/pkg/redact"
+	"github.com/replicatedhq/kots/kotsadm/pkg/render/helper"
 	"github.com/replicatedhq/kots/kotsadm/pkg/snapshot"
 	"github.com/replicatedhq/kots/kotsadm/pkg/store"
 	"github.com/replicatedhq/kots/kotsadm/pkg/supportbundle"
@@ -462,8 +463,15 @@ func GetTroubleshoot(w http.ResponseWriter, r *http.Request) {
 		fullTroubleshoot = fmt.Sprintf("%s\n---\n%s", string(specBytes), redactSpec)
 	}
 
+	renderedTroubleshoot, err := helper.RenderAppFile(foundApp, nil, []byte(fullTroubleshoot))
+	if err != nil {
+		logger.Error(err)
+		w.WriteHeader(500)
+		return
+	}
+
 	w.WriteHeader(200)
-	w.Write([]byte(fullTroubleshoot))
+	w.Write(renderedTroubleshoot)
 }
 
 func GetSupportBundleRedactions(w http.ResponseWriter, r *http.Request) {
