@@ -2,8 +2,6 @@ package supportbundle
 
 import (
 	"testing"
-
-	_ "go.undefinedlabs.com/scopeagent/autoinstrument"
 )
 
 func Test_refFromBundleID(t *testing.T) {

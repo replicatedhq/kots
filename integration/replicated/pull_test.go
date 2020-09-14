@@ -1,9 +1,5 @@
 package replicated
 
-import (
-	_ "go.undefinedlabs.com/scopeagent/autoinstrument"
-)
-
 type replicatedPullTest struct {
 	name    string
 	testDir string

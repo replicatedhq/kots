@@ -9,7 +9,6 @@ import (
 	"github.com/replicatedhq/kots/pkg/upstream/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"go.undefinedlabs.com/scopeagent"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -55,8 +54,6 @@ func Test_parseReplicatedURL(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			scopetest := scopeagent.StartTest(t)
-			defer scopetest.End()
 			req := require.New(t)
 
 			u, err := url.ParseRequestURI(test.uri)
@@ -145,8 +142,6 @@ func Test_releaseToFiles(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			scopetest := scopeagent.StartTest(t)
-			defer scopetest.End()
 			req := require.New(t)
 
 			actual, err := releaseToFiles(test.release)
@@ -158,8 +153,6 @@ func Test_releaseToFiles(t *testing.T) {
 }
 
 func Test_createConfigValues(t *testing.T) {
-	test := scopeagent.StartTest(t)
-	defer test.End()
 	applicationName := "Test App"
 
 	config := &kotsv1beta1.Config{
@@ -323,8 +316,6 @@ func Test_getRequest(t *testing.T) {
 
 	req := require.New(t)
 	for _, test := range tests {
-		scopetest := scopeagent.StartTest(t)
-		defer scopetest.End()
 		license := &kotsv1beta1.License{
 			Spec: kotsv1beta1.LicenseSpec{
 				Endpoint:        test.endpoint,

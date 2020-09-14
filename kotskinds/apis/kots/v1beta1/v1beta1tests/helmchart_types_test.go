@@ -7,7 +7,6 @@ import (
 	kotsscheme "github.com/replicatedhq/kots/kotskinds/client/kotsclientset/scheme"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	_ "go.undefinedlabs.com/scopeagent/autoinstrument"
 	"k8s.io/client-go/kubernetes/scheme"
 )
 

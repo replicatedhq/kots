@@ -4,12 +4,9 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
-	"go.undefinedlabs.com/scopeagent"
 )
 
 func TestReleaseStartNum(t *testing.T) {
-	test := scopeagent.StartTest(t)
-	defer test.End()
 	var err error
 	var ref *ImageRef
 
