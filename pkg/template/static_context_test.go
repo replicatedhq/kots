@@ -7,12 +7,9 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
-	"go.undefinedlabs.com/scopeagent"
 )
 
 func TestStaticContext_kubeSeal_badCert(t *testing.T) {
-	scopetest := scopeagent.StartTest(t)
-	defer scopetest.End()
 	req := require.New(t)
 
 	ctx := StaticCtx{}
@@ -27,8 +24,6 @@ SPA=
 }
 
 func TestStaticContext_kubeSeal_goodCert(t *testing.T) {
-	scopetest := scopeagent.StartTest(t)
-	defer scopetest.End()
 	req := require.New(t)
 
 	ctx := StaticCtx{}
@@ -68,8 +63,6 @@ yw==
 }
 
 func TestSprigRandom(t *testing.T) {
-	scopetest := scopeagent.StartTest(t)
-	defer scopetest.End()
 	req := require.New(t)
 
 	builder := Builder{}
@@ -95,8 +88,6 @@ func validateAndClearCaCert(req *require.Assertions, builder Builder) {
 }
 
 func TestTlsCaCert(t *testing.T) {
-	scopetest := scopeagent.StartTest(t)
-	defer scopetest.End()
 	req := require.New(t)
 
 	builder := Builder{}
@@ -105,8 +96,6 @@ func TestTlsCaCert(t *testing.T) {
 }
 
 func TestTlsCertFromCa(t *testing.T) {
-	scopetest := scopeagent.StartTest(t)
-	defer scopetest.End()
 	req := require.New(t)
 
 	builder := Builder{}
@@ -131,8 +120,6 @@ func TestTlsCertFromCa(t *testing.T) {
 }
 
 func TestTlsKeyFromCa(t *testing.T) {
-	scopetest := scopeagent.StartTest(t)
-	defer scopetest.End()
 	req := require.New(t)
 
 	builder := Builder{}

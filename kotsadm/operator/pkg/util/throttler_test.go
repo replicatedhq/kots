@@ -4,8 +4,6 @@ import (
 	"sync/atomic"
 	"testing"
 	"time"
-
-	_ "go.undefinedlabs.com/scopeagent/autoinstrument"
 )
 
 func TestThrottle(t *testing.T) {

@@ -4,7 +4,6 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
-	"go.undefinedlabs.com/scopeagent"
 	kustomizetypes "sigs.k8s.io/kustomize/api/types"
 )
 
@@ -86,8 +85,6 @@ func Test_buildImageAltNames(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			scopetest := scopeagent.StartTest(t)
-			defer scopetest.End()
 			req := require.New(t)
 
 			got := buildImageAltNames(tt.rewrittenImage)

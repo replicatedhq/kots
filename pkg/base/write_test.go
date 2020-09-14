@@ -7,7 +7,6 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"go.undefinedlabs.com/scopeagent"
 )
 
 var (
@@ -243,8 +242,6 @@ func Test_DeduplicateOnContent(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			scopetest := scopeagent.StartTest(t)
-			defer scopetest.End()
 			req := require.New(t)
 
 			actualResources, actualPatches, err := deduplicateOnContent(test.files, test.excludeKotsKinds, "test")

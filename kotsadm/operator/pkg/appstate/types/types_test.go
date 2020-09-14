@@ -3,8 +3,6 @@ package types
 import (
 	"reflect"
 	"testing"
-
-	_ "go.undefinedlabs.com/scopeagent/autoinstrument"
 )
 
 func TestStatusInformerString_Parse(t *testing.T) {

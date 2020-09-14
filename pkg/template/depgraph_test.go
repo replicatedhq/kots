@@ -7,7 +7,6 @@ import (
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	"github.com/replicatedhq/kots/kotskinds/multitype"
 	"github.com/stretchr/testify/require"
-	"go.undefinedlabs.com/scopeagent"
 )
 
 type depGraphTestCase struct {
@@ -232,9 +231,6 @@ func TestDepGraph(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			scopetest := scopeagent.StartTest(t)
-			defer scopetest.End()
-
 			graph := depGraph{}
 			for source, deps := range test.dependencies {
 				graph.AddNode(source)
@@ -275,9 +271,6 @@ func TestDepGraph(t *testing.T) {
 		})
 
 		t.Run(test.name+"+parse", func(t *testing.T) {
-			scopetest := scopeagent.StartTest(t)
-			defer scopetest.End()
-
 			graph := depGraph{}
 
 			groups := buildTestConfigGroups(

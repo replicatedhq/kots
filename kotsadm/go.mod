@@ -20,7 +20,6 @@ require (
 	github.com/gorilla/mux v1.7.4
 	github.com/gorilla/websocket v1.4.0
 	github.com/gosimple/slug v1.9.0
-	github.com/gotestyourself/gotestyourself v1.4.0 // indirect
 	github.com/lib/pq v1.3.0
 	github.com/marccampbell/yaml-toolbox v0.0.0-20200328202846-85b6f7184a20
 	github.com/mholt/archiver v3.1.1+incompatible
@@ -38,7 +37,6 @@ require (
 	github.com/stretchr/testify v1.6.1
 	github.com/vmware-tanzu/velero v1.4.2
 	go.uber.org/zap v1.13.0
-	go.undefinedlabs.com/scopeagent v0.1.15
 	golang.org/x/crypto v0.0.0-20200423211502-4bdfaf469ed5
 	google.golang.org/api v0.9.0
 	gopkg.in/go-playground/assert.v1 v1.2.1

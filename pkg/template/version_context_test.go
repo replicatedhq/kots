@@ -4,12 +4,9 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
-	"go.undefinedlabs.com/scopeagent"
 )
 
 func TestVersionContext(t *testing.T) {
-	scopetest := scopeagent.StartTest(t)
-	defer scopetest.End()
 	req := require.New(t)
 
 	// a properly populated versionCtx - should return the appropriate values

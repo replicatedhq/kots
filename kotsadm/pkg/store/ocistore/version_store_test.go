@@ -4,7 +4,6 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	_ "go.undefinedlabs.com/scopeagent/autoinstrument"
 )
 
 func Test_refFromAppVersion(t *testing.T) {
