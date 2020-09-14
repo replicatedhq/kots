@@ -4,7 +4,6 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
-	_ "go.undefinedlabs.com/scopeagent/autoinstrument"
 	"gopkg.in/go-playground/assert.v1"
 )
 

@@ -6,7 +6,6 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
-	_ "go.undefinedlabs.com/scopeagent/autoinstrument"
 )
 
 func TestExpandDir(t *testing.T) {

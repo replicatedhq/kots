@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
+	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
 	"github.com/replicatedhq/kots/kotsadm/pkg/snapshot"
 	"github.com/replicatedhq/kots/pkg/kotsadm"
 	kotsadmtypes "github.com/replicatedhq/kots/pkg/kotsadm/types"
@@ -24,6 +25,11 @@ func RestoreCmd() *cobra.Command {
 			if len(args) == 0 {
 				cmd.Help()
 				os.Exit(1)
+			}
+
+			v := viper.GetViper()
+			if v.GetString("log-level") == "debug" {
+				logger.SetDebug()
 			}
 
 			if err := kotsadm.Delete(&kotsadmtypes.DeleteOptions{}); err != nil {
