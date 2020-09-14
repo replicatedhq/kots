@@ -676,7 +676,7 @@ func imagesDirFromOptions(upstream *upstreamtypes.Upstream, pullOptions PullOpti
 
 func publicKeysMatch(license *kotsv1beta1.License, airgap *kotsv1beta1.Airgap) error {
 	if license == nil || airgap == nil {
-		// not sure when this would happen, but earlier logic allows this combinaion
+		// not sure when this would happen, but earlier logic allows this combination
 		return nil
 	}
 
@@ -686,7 +686,11 @@ func publicKeysMatch(license *kotsv1beta1.License, airgap *kotsv1beta1.Airgap) e
 	}
 
 	if err := verify([]byte(license.Spec.AppSlug), []byte(airgap.Spec.Signature), publicKey); err != nil {
-		return errors.Wrap(err, "failed to verify bundle signature")
+		if airgap.Spec.AppSlug != "" {
+			return errors.Wrapf(err, "failed to verify bundle signature - license is for app %q, airgap package for app %q", license.Spec.AppSlug, airgap.Spec.AppSlug)
+		} else {
+			return errors.Wrapf(err, "failed to verify bundle signature - airgap package does not match license app %q", license.Spec.AppSlug)
+		}
 	}
 
 	return nil
