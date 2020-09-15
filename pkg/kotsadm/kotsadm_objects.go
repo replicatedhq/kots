@@ -415,6 +415,16 @@ func kotsadmDeployment(deployOptions types.DeployOptions) *appsv1.Deployment {
 									},
 								},
 							},
+							Resources: corev1.ResourceRequirements{
+								Limits: corev1.ResourceList{
+									"cpu":    resource.MustParse("500m"),
+									"memory": resource.MustParse("500Mi"),
+								},
+								Requests: corev1.ResourceList{
+									"cpu":    resource.MustParse("100m"),
+									"memory": resource.MustParse("100Mi"),
+								},
+							},
 						},
 						{
 							Image:           fmt.Sprintf("%s/kotsadm:%s", kotsadmRegistry(deployOptions.KotsadmOptions), kotsadmTag(deployOptions.KotsadmOptions)),
@@ -465,6 +475,16 @@ func kotsadmDeployment(deployOptions types.DeployOptions) *appsv1.Deployment {
 									Value: "true",
 								},
 							},
+							Resources: corev1.ResourceRequirements{
+								Limits: corev1.ResourceList{
+									"cpu":    resource.MustParse("500m"),
+									"memory": resource.MustParse("500Mi"),
+								},
+								Requests: corev1.ResourceList{
+									"cpu":    resource.MustParse("100m"),
+									"memory": resource.MustParse("100Mi"),
+								},
+							},
 						},
 					},
 					Containers: []corev1.Container{
@@ -497,6 +517,16 @@ func kotsadmDeployment(deployOptions types.DeployOptions) *appsv1.Deployment {
 								},
 							},
 							Env: env,
+							Resources: corev1.ResourceRequirements{
+								Limits: corev1.ResourceList{
+									"cpu":    resource.MustParse("500m"),
+									"memory": resource.MustParse("500Mi"),
+								},
+								Requests: corev1.ResourceList{
+									"cpu":    resource.MustParse("100m"),
+									"memory": resource.MustParse("100Mi"),
+								},
+							},
 						},
 					},
 				},

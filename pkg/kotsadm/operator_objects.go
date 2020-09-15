@@ -9,6 +9,7 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -265,6 +266,16 @@ func operatorDeployment(deployOptions types.DeployOptions) *appsv1.Deployment {
 											FieldPath: "metadata.namespace",
 										},
 									},
+								},
+							},
+							Resources: corev1.ResourceRequirements{
+								Limits: corev1.ResourceList{
+									"cpu":    resource.MustParse("500m"),
+									"memory": resource.MustParse("500Mi"),
+								},
+								Requests: corev1.ResourceList{
+									"cpu":    resource.MustParse("100m"),
+									"memory": resource.MustParse("100Mi"),
 								},
 							},
 						},
