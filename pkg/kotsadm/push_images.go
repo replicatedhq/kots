@@ -34,7 +34,7 @@ func PushImages(airgapArchive string, options types.PushImagesOptions) error {
 	}
 	defer os.RemoveAll(imagesRootDir)
 
-	err = extractAirgapImages(airgapArchive, imagesRootDir, options.ProgressWriter)
+	err = ExtractAirgapImages(airgapArchive, imagesRootDir, options.ProgressWriter)
 	if err != nil {
 		return errors.Wrap(err, "failed to extract images")
 	}
@@ -47,7 +47,7 @@ func PushImages(airgapArchive string, options types.PushImagesOptions) error {
 	return nil
 }
 
-func extractAirgapImages(archive string, destDir string, progressWriter io.Writer) error {
+func ExtractAirgapImages(archive string, destDir string, progressWriter io.Writer) error {
 	reader, err := os.Open(archive)
 	if err != nil {
 		return errors.Wrap(err, "failed to open airgap archive")

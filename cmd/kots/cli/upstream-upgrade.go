@@ -1,19 +1,27 @@
 package cli
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
+	"io"
 	"io/ioutil"
+	"mime/multipart"
 	"net/http"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/auth"
+	"github.com/replicatedhq/kots/pkg/docker/registry"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
+	"github.com/replicatedhq/kots/pkg/kotsadm"
+	kotsadmtypes "github.com/replicatedhq/kots/pkg/kotsadm/types"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+	kustomizetypes "sigs.k8s.io/kustomize/api/types"
 )
 
 func UpstreamUpgradeCmd() *cobra.Command {
@@ -32,6 +40,40 @@ func UpstreamUpgradeCmd() *cobra.Command {
 			if len(args) == 0 {
 				cmd.Help()
 				os.Exit(1)
+			}
+
+			var images []kustomizetypes.Image
+
+			airgapPath := ""
+			if v.GetString("airgap-bundle") != "" {
+				airgapRootDir, err := ioutil.TempDir("", "kotsadm-airgap")
+				if err != nil {
+					return errors.Wrap(err, "failed to create temp dir")
+				}
+				defer os.RemoveAll(airgapRootDir)
+
+				airgapPath = airgapRootDir
+
+				err = kotsadm.ExtractAirgapImages(v.GetString("airgap-bundle"), airgapRootDir, os.Stdout)
+				if err != nil {
+					return errors.Wrap(err, "failed to extract images")
+				}
+
+				pushOptions := kotsadmtypes.PushImagesOptions{
+					Registry: registry.RegistryOptions{
+						Endpoint:  v.GetString("kotsadm-registry"),
+						Namespace: v.GetString("kotsadm-namespace"),
+						Username:  v.GetString("registry-username"),
+						Password:  v.GetString("registry-password"),
+					},
+					ProgressWriter: os.Stdout,
+				}
+
+				imagesRootDir := filepath.Join(airgapRootDir, "images")
+				images, err = kotsadm.TagAndPushAppImages(imagesRootDir, pushOptions)
+				if err != nil {
+					return errors.Wrap(err, "failed to list image formats")
+				}
 			}
 
 			log := logger.NewLogger()
@@ -68,6 +110,44 @@ func UpstreamUpgradeCmd() *cobra.Command {
 				}
 			}()
 
+			contentType := "application/json"
+
+			var requestBody io.Reader
+			if airgapPath == "" {
+				requestBody = strings.NewReader("{}")
+			} else {
+				buffer := &bytes.Buffer{}
+				writer := multipart.NewWriter(buffer)
+
+				if err := createPartFromFile(writer, airgapPath, "airgap.yaml"); err != nil {
+					return errors.Wrap(err, "failed to create part from airgap.yaml")
+				}
+				if err := createPartFromFile(writer, airgapPath, "app.tar.gz"); err != nil {
+					return errors.Wrap(err, "failed to create part from app.tar.gz")
+				}
+
+				b, err := json.Marshal(images)
+				if err != nil {
+					return errors.Wrap(err, "failed to marshal images data")
+				}
+				err = ioutil.WriteFile(filepath.Join(airgapPath, "images.json"), b, 0644)
+				if err != nil {
+					return errors.Wrap(err, "failed to write images data")
+				}
+
+				if err := createPartFromFile(writer, airgapPath, "images.json"); err != nil {
+					return errors.Wrap(err, "failed to create part from images.json")
+				}
+
+				err = writer.Close()
+				if err != nil {
+					return errors.Wrap(err, "failed to close multi-part writer")
+				}
+
+				contentType = writer.FormDataContentType()
+				requestBody = buffer
+			}
+
 			appSlug := args[0]
 			updateCheckURI := fmt.Sprintf("http://localhost:%d/api/v1/app/%s/updatecheck", localPort, appSlug)
 			if viper.GetBool("deploy") {
@@ -84,12 +164,12 @@ func UpstreamUpgradeCmd() *cobra.Command {
 				os.Exit(2) // not returning error here as we don't want to show the entire stack trace to normal users
 			}
 
-			newReq, err := http.NewRequest("POST", updateCheckURI, strings.NewReader("{}"))
+			newReq, err := http.NewRequest("POST", updateCheckURI, requestBody)
 			if err != nil {
 				log.FinishSpinnerWithError()
 				return errors.Wrap(err, "failed to create update check request")
 			}
-			newReq.Header.Add("Content-Type", "application/json")
+			newReq.Header.Add("Content-Type", contentType)
 			newReq.Header.Add("Authorization", authSlug)
 			resp, err := http.DefaultClient.Do(newReq)
 			if err != nil {
@@ -98,18 +178,21 @@ func UpstreamUpgradeCmd() *cobra.Command {
 			}
 			defer resp.Body.Close()
 
+			b, err := ioutil.ReadAll(resp.Body)
+			if err != nil {
+				log.FinishSpinnerWithError()
+				return errors.Wrap(err, "failed to read server response")
+			}
+
 			if resp.StatusCode == 404 {
 				log.FinishSpinnerWithError()
 				return errors.Errorf("The application %s was not found in the cluster in the specified namespace", args[0])
 			} else if resp.StatusCode != 200 {
 				log.FinishSpinnerWithError()
+				if len(b) != 0 {
+					log.Error(errors.New(string(b)))
+				}
 				return errors.Errorf("Unexpected response from the API: %d", resp.StatusCode)
-			}
-
-			b, err := ioutil.ReadAll(resp.Body)
-			if err != nil {
-				log.FinishSpinnerWithError()
-				return errors.Wrap(err, "failed to read server response")
 			}
 
 			type updateCheckResponse struct {
@@ -155,8 +238,33 @@ func UpstreamUpgradeCmd() *cobra.Command {
 
 	cmd.Flags().Bool("deploy", false, "when set, automatically deploy the latest version")
 
+	cmd.Flags().String("airgap-bundle", "", "path to the application airgap bundle where application images and metadata will be loaded from")
+	cmd.Flags().String("kotsadm-registry", "", "registry endpoint where application images will be pushed")
+	cmd.Flags().String("kotsadm-namespace", "", "registry namespace to use for application images")
+	cmd.Flags().String("registry-username", "", "user name to use to authenticate with the registry")
+	cmd.Flags().String("registry-password", "", "password to use to authenticate with the registry")
+
 	cmd.Flags().Bool("debug", false, "when set, log full error traces in some cases where we provide a pretty message")
 	cmd.Flags().MarkHidden("debug")
 
 	return cmd
+}
+
+func createPartFromFile(partWriter *multipart.Writer, path string, fileName string) error {
+	file, err := os.Open(filepath.Join(path, fileName))
+	if err != nil {
+		return errors.Wrap(err, "failed to open file")
+	}
+	defer file.Close()
+
+	part, err := partWriter.CreateFormFile(fileName, fileName)
+	if err != nil {
+		return errors.Wrap(err, "failed to create form file")
+	}
+	_, err = io.Copy(part, file)
+	if err != nil {
+		return errors.Wrap(err, "failed to copy file to upload")
+	}
+
+	return nil
 }

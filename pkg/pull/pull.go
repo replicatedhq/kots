@@ -2,6 +2,7 @@ package pull
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -24,7 +25,7 @@ import (
 	upstreamtypes "github.com/replicatedhq/kots/pkg/upstream/types"
 	"github.com/replicatedhq/kots/pkg/util"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/runtime/serializer/json"
+	k8sjson "k8s.io/apimachinery/pkg/runtime/serializer/json"
 	"k8s.io/client-go/kubernetes/scheme"
 	kustomizetypes "sigs.k8s.io/kustomize/api/types"
 )
@@ -352,7 +353,7 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 		// If the request includes a rewrite image options host name, then also
 		// push the images
 		if pullOptions.RewriteImageOptions.Host != "" {
-			pushUpstreamImageOptions := upstream.PushUpstreamImageOptions{
+			processUpstreamImageOptions := upstream.ProcessUpstreamImagesOptions{
 				RootDir:      pullOptions.RootDir,
 				ImagesDir:    imagesDirFromOptions(u, pullOptions),
 				CreateAppDir: pullOptions.CreateAppDir,
@@ -370,14 +371,27 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 				},
 			}
 			if fetchOptions.License != nil {
-				pushUpstreamImageOptions.ReplicatedRegistry.Username = fetchOptions.License.Spec.LicenseID
-				pushUpstreamImageOptions.ReplicatedRegistry.Password = fetchOptions.License.Spec.LicenseID
+				processUpstreamImageOptions.ReplicatedRegistry.Username = fetchOptions.License.Spec.LicenseID
+				processUpstreamImageOptions.ReplicatedRegistry.Password = fetchOptions.License.Spec.LicenseID
 			}
 
-			// only run the TagAndPushAppImages code if the "copy directly" code hasn't already run
 			var rewrittenImages []kustomizetypes.Image
-			if images == nil {
-				rewrittenImages, err = upstream.TagAndPushUpstreamImages(u, pushUpstreamImageOptions)
+			if images == nil { // don't do ProcessUpstreamImages if we already copied them
+				imagesData, err := ioutil.ReadFile(filepath.Join(pullOptions.AirgapRoot, "images.json"))
+				if err != nil && !os.IsNotExist(err) {
+					return "", errors.Wrap(err, "failed to load images file")
+				}
+
+				if err == nil {
+					err := json.Unmarshal(imagesData, &images)
+					if err != nil && !os.IsNotExist(err) {
+						return "", errors.Wrap(err, "failed to unmarshal images data")
+					}
+					processUpstreamImageOptions.SkipImagePush = true
+					processUpstreamImageOptions.KnownImages = images
+				}
+
+				rewrittenImages, err = upstream.ProcessUpstreamImages(u, processUpstreamImageOptions)
 				if err != nil {
 					return "", errors.Wrap(err, "failed to push upstream images")
 				}
@@ -590,7 +604,7 @@ func GetAppMetadataFromAirgap(airgapArchive string) ([]byte, error) {
 		return nil, errors.Wrap(err, "failed to read kots kinds")
 	}
 
-	s := json.NewYAMLSerializer(json.DefaultMetaFactory, scheme.Scheme, scheme.Scheme)
+	s := k8sjson.NewYAMLSerializer(k8sjson.DefaultMetaFactory, scheme.Scheme, scheme.Scheme)
 
 	var b bytes.Buffer
 	if err := s.Encode(&kotsKinds.KotsApplication, &b); err != nil {
@@ -687,9 +701,9 @@ func publicKeysMatch(license *kotsv1beta1.License, airgap *kotsv1beta1.Airgap) e
 
 	if err := verify([]byte(license.Spec.AppSlug), []byte(airgap.Spec.Signature), publicKey); err != nil {
 		if airgap.Spec.AppSlug != "" {
-			return errors.Wrapf(err, "failed to verify bundle signature - license is for app %q, airgap package for app %q", license.Spec.AppSlug, airgap.Spec.AppSlug)
+			return util.ActionableError{Message: fmt.Sprintf("Failed to verify bundle signature - license is for app %q, airgap package for app %q", license.Spec.AppSlug, airgap.Spec.AppSlug)}
 		} else {
-			return errors.Wrapf(err, "failed to verify bundle signature - airgap package does not match license app %q", license.Spec.AppSlug)
+			return util.ActionableError{Message: fmt.Sprintf("Failed to verify bundle signature - airgap package does not match license app %q", license.Spec.AppSlug)}
 		}
 	}
 
