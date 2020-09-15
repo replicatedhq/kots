@@ -43,7 +43,8 @@ type AirgapBundleExistsResponse struct {
 }
 
 var uploadedAirgapBundleChunks = map[string]struct{}{}
-var mtx sync.Mutex
+var chunkLock sync.Mutex
+var fileLock sync.Mutex
 
 func GetAirgapInstallStatus(w http.ResponseWriter, r *http.Request) {
 	status, err := store.GetStore().GetAirgapInstallStatus()
@@ -100,7 +101,7 @@ func CheckAirgapBundleChunk(w http.ResponseWriter, r *http.Request) {
 	}
 
 	chunkKey := getChunkKey(resumableIdentifier, chunkNumber)
-	if _, ok := uploadedAirgapBundleChunks[chunkKey]; !ok {
+	if !isChunkPresent(chunkKey) {
 		w.WriteHeader(http.StatusNoContent) // instead of 404 to avoid unwarranted notices in browser consoles
 		return
 	}
@@ -159,8 +160,8 @@ func UploadAirgapBundleChunk(w http.ResponseWriter, r *http.Request) {
 
 	func() {
 		// create airgap bundle file if not exists
-		mtx.Lock()
-		defer mtx.Unlock()
+		fileLock.Lock()
+		defer fileLock.Unlock()
 
 		_, err = os.Stat(airgapBundlePath)
 		if os.IsNotExist(err) {
@@ -212,7 +213,7 @@ func UploadAirgapBundleChunk(w http.ResponseWriter, r *http.Request) {
 	}
 
 	chunkKey := getChunkKey(resumableIdentifier, chunkNumber)
-	uploadedAirgapBundleChunks[chunkKey] = struct{}{}
+	addUploadedChank(chunkKey)
 
 	if chunkNumber%25 == 0 {
 		logger.Infof("written chunk number %d / %d. bundle id: %s", chunkNumber, totalChunks, resumableIdentifier)
@@ -366,7 +367,23 @@ func getAirgapBundlePath(uploadedFileIdentifier string) string {
 	return filepath.Join(os.TempDir(), fmt.Sprintf("%s.%s", uploadedFileIdentifier, "airgap"))
 }
 
+func addUploadedChank(chunkKey string) {
+	chunkLock.Lock()
+	defer chunkLock.Unlock()
+	uploadedAirgapBundleChunks[chunkKey] = struct{}{}
+}
+
+func isChunkPresent(chunkKey string) bool {
+	chunkLock.Lock()
+	defer chunkLock.Unlock()
+	_, ok := uploadedAirgapBundleChunks[chunkKey]
+	return ok
+}
+
 func isUploadComplete(uploadedFileIdentifier string, totalChunks int64) bool {
+	chunkLock.Lock()
+	defer chunkLock.Unlock()
+
 	isUploadComplete := true
 
 	var i int64
@@ -381,6 +398,9 @@ func isUploadComplete(uploadedFileIdentifier string, totalChunks int64) bool {
 }
 
 func cleanUp(uploadedFileIdentifier string, totalChunks int64) error {
+	chunkLock.Lock()
+	defer chunkLock.Unlock()
+
 	var i int64
 	for i = 1; i <= totalChunks; i++ {
 		chunkKey := getChunkKey(uploadedFileIdentifier, i)
