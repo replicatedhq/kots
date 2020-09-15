@@ -19,13 +19,10 @@ import (
 	"github.com/replicatedhq/kots/pkg/cursor"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/pull"
+	"github.com/replicatedhq/kots/pkg/util"
 )
 
 func UpdateAppFromAirgap(a *apptypes.App, airgapBundlePath string) (finalError error) {
-	if err := store.GetStore().SetTaskStatus("update-download", "Processing package...", "running"); err != nil {
-		return errors.Wrap(err, "failed to set tasks status")
-	}
-
 	finishedCh := make(chan struct{})
 	defer close(finishedCh)
 	go func() {
@@ -52,6 +49,25 @@ func UpdateAppFromAirgap(a *apptypes.App, airgapBundlePath string) (finalError e
 			}
 		}
 	}()
+
+	if err := store.GetStore().SetTaskStatus("update-download", "Extracting files...", "running"); err != nil {
+		return errors.Wrap(err, "failed to set task status")
+	}
+
+	airgapRoot, err := version.ExtractArchiveToTempDirectory(airgapBundlePath)
+	if err != nil {
+		return errors.Wrap(err, "failed to extract archive")
+	}
+	defer os.RemoveAll(airgapRoot)
+
+	err = UpdateAppFromPath(a, airgapRoot)
+	return errors.Wrap(err, "failed to update app")
+}
+
+func UpdateAppFromPath(a *apptypes.App, airgapRoot string) error {
+	if err := store.GetStore().SetTaskStatus("update-download", "Processing package...", "running"); err != nil {
+		return errors.Wrap(err, "failed to set tasks status")
+	}
 
 	registrySettings, err := store.GetStore().GetRegistryDetailsForApp(a.ID)
 	if err != nil {
@@ -86,17 +102,6 @@ func UpdateAppFromAirgap(a *apptypes.App, airgapBundlePath string) (finalError e
 		err := errors.New("no license found in application")
 		return err
 	}
-
-	// Start processing the airgap package
-	if err := store.GetStore().SetTaskStatus("update-download", "Extracting files...", "running"); err != nil {
-		return errors.Wrap(err, "failed to set task status")
-	}
-
-	airgapRoot, err := version.ExtractArchiveToTempDirectory(airgapBundlePath)
-	if err != nil {
-		return errors.Wrap(err, "failed to extract archive")
-	}
-	defer os.RemoveAll(airgapRoot)
 
 	if err := store.GetStore().SetTaskStatus("update-download", "Processing app package...", "running"); err != nil {
 		return errors.Wrap(err, "failed to set task status")
@@ -176,9 +181,9 @@ func UpdateAppFromAirgap(a *apptypes.App, airgapBundlePath string) (finalError e
 	}
 
 	if bc.Equal(ac) {
-		return errors.Errorf("Version %s (%s) cannot be installed again because it is already the current version", afterKotsKinds.Installation.Spec.VersionLabel, afterKotsKinds.Installation.Spec.UpdateCursor)
+		return util.ActionableError{Message: fmt.Sprintf("Version %s (%s) cannot be installed again because it is already the current version", afterKotsKinds.Installation.Spec.VersionLabel, afterKotsKinds.Installation.Spec.UpdateCursor)}
 	} else if bc.After(ac) {
-		return errors.Errorf("Version %s (%s) cannot be installed because version %s (%s) is newer", afterKotsKinds.Installation.Spec.VersionLabel, afterKotsKinds.Installation.Spec.UpdateCursor, beforeKotsKinds.Installation.Spec.VersionLabel, beforeKotsKinds.Installation.Spec.UpdateCursor)
+		return util.ActionableError{Message: fmt.Sprintf("Version %s (%s) cannot be installed because version %s (%s) is newer", afterKotsKinds.Installation.Spec.VersionLabel, afterKotsKinds.Installation.Spec.UpdateCursor, beforeKotsKinds.Installation.Spec.VersionLabel, beforeKotsKinds.Installation.Spec.UpdateCursor)}
 	}
 
 	// Create the app in the db

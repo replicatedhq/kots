@@ -14,30 +14,39 @@ import (
 	kustomizetypes "sigs.k8s.io/kustomize/api/types"
 )
 
-type PushUpstreamImageOptions struct {
+type ProcessUpstreamImagesOptions struct {
 	RootDir             string
 	ImagesDir           string
 	CreateAppDir        bool
+	SkipImagePush       bool
+	KnownImages         []kustomizetypes.Image
 	Log                 *logger.Logger
 	ReplicatedRegistry  registry.RegistryOptions
 	ReportWriter        io.Writer
 	DestinationRegistry registry.RegistryOptions
 }
 
-func TagAndPushUpstreamImages(u *types.Upstream, options PushUpstreamImageOptions) ([]kustomizetypes.Image, error) {
+func ProcessUpstreamImages(u *types.Upstream, options ProcessUpstreamImagesOptions) ([]kustomizetypes.Image, error) {
 	pushOpts := kotsadmtypes.PushImagesOptions{
 		Registry:       options.DestinationRegistry,
 		Log:            options.Log,
 		ProgressWriter: options.ReportWriter,
 		LogForUI:       true,
 	}
-	images, err := kotsadm.TagAndPushAppImages(options.ImagesDir, pushOpts)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to push images")
+
+	var foundImages []kustomizetypes.Image
+	if !options.SkipImagePush {
+		images, err := kotsadm.TagAndPushAppImages(options.ImagesDir, pushOpts)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to push images")
+		}
+		foundImages = images
+	} else {
+		foundImages = options.KnownImages
 	}
 
 	withAltNames := make([]kustomizetypes.Image, 0)
-	for _, i := range images {
+	for _, i := range foundImages {
 		withAltNames = append(withAltNames, buildImageAltNames(i)...)
 	}
 

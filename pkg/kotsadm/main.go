@@ -136,7 +136,7 @@ func Deploy(deployOptions types.DeployOptions) error {
 		}
 		defer os.RemoveAll(airgapRootDir)
 
-		err = extractAirgapImages(deployOptions.AirgapArchive, airgapRootDir, deployOptions.ProgressWriter)
+		err = ExtractAirgapImages(deployOptions.AirgapArchive, airgapRootDir, deployOptions.ProgressWriter)
 		if err != nil {
 			return errors.Wrap(err, "failed to extract images")
 		}
