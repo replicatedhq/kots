@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -200,13 +199,7 @@ func UploadAirgapBundleChunk(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	buf := bytes.NewBuffer(nil)
-	if _, err := io.Copy(buf, airgapBundleChunk); err != nil {
-		logger.Error(err)
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-	if _, err = airgapBundle.Write(buf.Bytes()); err != nil {
+	if _, err := io.Copy(airgapBundle, airgapBundleChunk); err != nil {
 		logger.Error(err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
