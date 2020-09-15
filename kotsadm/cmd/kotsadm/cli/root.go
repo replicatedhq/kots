@@ -25,6 +25,8 @@ func RootCmd() *cobra.Command {
 
 	cobra.OnInitialize(initConfig)
 
+	cmd.PersistentFlags().String("log-level", "info", "set the log level")
+
 	cmd.AddCommand(APICmd())
 	cmd.AddCommand(OperatorCmd())
 	cmd.AddCommand(RestoreCmd())

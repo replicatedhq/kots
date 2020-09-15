@@ -1,20 +1,20 @@
 import React, { Component } from "react";
-import { graphql, compose, withApollo } from "react-apollo";
 import { Link, withRouter } from "react-router-dom"
 import Helmet from "react-helmet";
 import Modal from "react-modal";
 import ReactTooltip from "react-tooltip"
 import moment from "moment";
 
-import AppSnapshotsRow from "./AppSnapshotRow";
+import AppSnapshotRow from "./AppSnapshotRow";
 import ScheduleSnapshotForm from "../shared/ScheduleSnapshotForm";
 import Loader from "../shared/Loader";
 import DeleteSnapshotModal from "../modals/DeleteSnapshotModal";
 import RestoreSnapshotModal from "../modals/RestoreSnapshotModal";
+import ErrorModal from "../modals/ErrorModal";
 
-import { deleteSnapshot } from "../../mutations/SnapshotMutations";
 import "../../scss/components/snapshots/AppSnapshots.scss";
 import { Utilities } from "../../utilities/utilities";
+import { Repeater } from "../../utilities/repeater";
 
 
 class AppSnapshots extends Component {
@@ -44,18 +44,39 @@ class AppSnapshots extends Component {
     restoreInProgressErr: false,
     restoreInProgressMsg: "",
     appSlugToRestore: "",
-    appSlugMismatch: false
+    appSlugMismatch: false,
+    listSnapshotsJob: new Repeater(),
+    networkErr: false,
+    displayErrorModal: false
   };
 
   componentDidMount = async () => {
     await this.fetchSnapshotSettings();
 
-    this.checkRestoreInProgress()
+    this.checkRestoreInProgress();
+    this.state.listSnapshotsJob.start(this.listSnapshots, 2000);
   }
 
   componentWillUnmount() {
-    if (this.interval) {
-      window.clearInterval(this.interval);
+    this.state.listSnapshotsJob.stop();
+  }
+
+  componentDidUpdate(lastProps, lastState) {
+    const { snapshots, networkErr } = this.state;
+
+    if (snapshots?.length !== lastState.snapshots?.length && snapshots) {
+      if (snapshots?.length === 0 && lastState.snapshots?.length > 0) {
+        this.setState({ isStartButtonClicked: false });
+      }
+    }
+
+    if (networkErr !== lastState.networkErr) {
+      if (networkErr) {
+        this.state.listSnapshotsJob.stop();
+      } else {
+        this.state.listSnapshotsJob.start(this.listSnapshots, 2000);
+        return;
+      }
     }
   }
 
@@ -78,8 +99,7 @@ class AppSnapshots extends Component {
         } else if (body.status == "running") {
           this.props.history.replace(`/app/${this.props.app.slug}/snapshots/${body.restore_name}/restore`);
         } else {
-          this.listSnapshots();
-          this.interval = setInterval(() => this.listSnapshots(), 2000);
+          this.state.listSnapshotsJob.start(this.listSnapshots, 2000);
         }
       })
       .catch(err => {
@@ -90,39 +110,53 @@ class AppSnapshots extends Component {
       })
   }
 
-  listSnapshots() {
+  listSnapshots = async () => {
     const { app } = this.props;
     this.setState({
       snapshotsListErr: false,
-      snapshotsListErrMsg: ""
+      snapshotsListErrMsg: "",
+      networkErr: false,
+      displayErrorModal: false
     })
-    fetch(`${window.env.API_ENDPOINT}/app/${app.slug}/snapshots`, {
-      method: "GET",
-      headers: {
-        "Authorization": Utilities.getToken(),
-        "Content-Type": "application/json",
-      }
-    })
-      .then(async (result) => {
-        const body = await result.json();
-        if (!result.ok) {
-          this.setState({
-            snapshotsListErr: true,
-            snapshotsListErrMsg: body.error
-          })
-        } else {
-          this.setState({
-            snapshots: body.backups?.sort((a, b) => new Date(b.startedAt) - new Date(a.startedAt)),
-            hasSnapshotsLoaded: true
-          });
+    try {
+      const res = await fetch(`${window.env.API_ENDPOINT}/app/${app.slug}/snapshots`, {
+        method: "GET",
+        headers: {
+          "Authorization": Utilities.getToken(),
+          "Content-Type": "application/json",
         }
       })
-      .catch(err => {
+      if (!res.ok) {
+        if (res.status === 401) {
+          Utilities.logoutUser();
+          return;
+        }
         this.setState({
           snapshotsListErr: true,
-          snapshotsListErrMsg: err.message ? err.message : "There was an error while showing the snapshots. Please try again"
-        })
+          snapshotsListErrMsg: `Unexpected status code: ${res.status}`,
+          networkErr: false,
+          displayErrorModal: true
+        });
+        return;
+      }
+      const response = await res.json();
+
+      this.setState({
+        snapshots: response.backups?.sort((a, b) => b.startedAt ? new Date(b.startedAt) - new Date(a.startedAt) : -99999999),
+        hasSnapshotsLoaded: true,
+        snapshotsListErr: false,
+        snapshotsListErrMsg: "",
+        networkErr: false,
+        displayErrorModal: false
+      });
+    } catch (err) {
+      this.setState({
+        snapshotsListErr: true,
+        snapshotsListErrMsg: err.message ? err.message : "There was an error while showing the snapshots. Please try again",
+        networkErr: true,
+        displayErrorModal: true
       })
+    }
   }
 
   fetchSnapshotSettings = async () => {
@@ -177,6 +211,10 @@ class AppSnapshots extends Component {
     }
   };
 
+  toggleErrorModal = () => {
+    this.setState({ displayErrorModal: !this.state.displayErrorModal });
+  }
+
   handleDeleteSnapshot = snapshot => {
     const fakeDeletionSnapshot = {
       name: "Preparing for snapshot deletion",
@@ -194,9 +232,30 @@ class AppSnapshots extends Component {
     }
 
     this.setState({ deletingSnapshot: true, deleteErr: false, deleteErrorMsg: "", snapshots: this.state.snapshots.map(s => s === snapshot ? fakeDeletionSnapshot : s) });
-    this.props
-      .deleteSnapshot(snapshot.name)
-      .then(() => {
+
+    fetch(`${window.env.API_ENDPOINT}/snapshot/${snapshot.name}/delete`, {
+      method: "POST",
+      headers: {
+        "Authorization": Utilities.getToken(),
+        "Content-Type": "application/json",
+      }
+    })
+      .then(async (res) => {
+        if (!res.ok && res.status === 401) {
+          Utilities.logoutUser();
+          return;
+        }
+
+        const response = await res.json();
+        if (response.error) {
+          this.setState({
+            deletingSnapshot: false,
+            deleteErr: true,
+            deleteErrorMsg: response.error,
+          });
+          return;
+        }
+
         this.setState({
           deletingSnapshot: false,
           deleteSnapshotModal: false,
@@ -204,16 +263,11 @@ class AppSnapshots extends Component {
         });
       })
       .catch(err => {
-        err.graphQLErrors.map(({ msg }) => {
-          this.setState({
-            deletingSnapshot: false,
-            deleteErr: true,
-            deleteErrorMsg: msg,
-          });
-        })
-      })
-      .finally(() => {
-        this.setState({ deletingSnapshot: false });
+        this.setState({
+          deletingSnapshot: false,
+          deleteErr: true,
+          deleteErrorMsg: err ? err.message : "Something went wrong, please try again.",
+        });
       });
   };
 
@@ -322,18 +376,10 @@ class AppSnapshots extends Component {
       })
   }
 
-  componentDidUpdate(lastProps, lastState) {
-    if (this.state.snapshots?.length !== lastState.snapshots?.length && this.state.snapshots) {
-      if (this.state.snapshots?.length === 0 && lastState.snapshots?.length > 0) {
-        this.setState({ isStartButtonClicked: false });
-      }
-    }
-  }
-
   handleApplicationSlugChange = (e) => {
     if (this.state.appSlugMismatch) {
       this.setState({ appSlugMismatch: false });
-    } 
+    }
     this.setState({ appSlugToRestore: e.target.value });
   }
 
@@ -380,24 +426,25 @@ class AppSnapshots extends Component {
       this.props.history.replace("/snapshots");
     }
 
-    if (snapshotsListErr || !snapshots) {
-      return (
-        <div class="flex1 flex-column justifyContent--center alignItems--center">
-          <span className="icon redWarningIcon" />
-          <p className="u-color--chestnut u-fontSize--normal u-fontWeight--medium u-lineHeight--normal u-marginTop--10">{snapshotsListErrMsg ? snapshotsListErr : "Something went wrong, please try again."}</p>
-          <p className="u-fontSize--small u-color--dustyGray u-lineHeight--normal u-fontWeight--medium u-marginTop--10">
-            To troubleshoot<Link to={`/app/${app.slug}/troubleshoot/generate`} className="replicated-link u-marginLeft--5">create a support bundle</Link>
-          </p>
-        </div>
-      )
-    }
-
     if (restoreInProgressErr) {
       return (
         <div class="flex1 flex-column justifyContent--center alignItems--center">
           <span className="icon redWarningIcon" />
           <p className="u-color--chestnut u-fontSize--normal u-fontWeight--medium u-lineHeight--normal u-marginTop--10">{restoreInProgressErrMsg}</p>
         </div>
+      )
+    }
+
+    if (snapshotsListErr || !snapshots) {
+      return (
+        <ErrorModal
+          errorModal={this.state.displayErrorModal}
+          toggleErrorModal={this.toggleErrorModal}
+          errMsg={snapshotsListErrMsg}
+          tryAgain={this.listSnapshots}
+          err="Failed to get snapshots"
+          loading={false}
+        />
       )
     }
 
@@ -420,7 +467,6 @@ class AppSnapshots extends Component {
       )
     }
 
-
     return (
       <div className="container flex-column flex1 u-overflow--auto u-paddingTop--30 u-paddingBottom--20 alignItems--center">
         <Helmet>
@@ -430,7 +476,7 @@ class AppSnapshots extends Component {
           <div className="flex flex-auto alignItems--flexStart justifyContent--spaceBetween">
             <p className="u-fontWeight--bold u-color--tuna u-fontSize--larger u-lineHeight--normal u-marginBottom--10">Snapshots</p>
             {startSnapshotErr ?
-              <div class="flex flex1 u-marginLeft--10 alignItems--center alignSelf--center u-marginBottom--10">
+              <div className="flex flex1 u-marginLeft--10 alignItems--center alignSelf--center u-marginBottom--10">
                 <p className="u-color--chestnut u-fontSize--small u-fontWeight--medium u-lineHeight--normal">{startSnapshotErrorMsg}</p>
               </div>
               : null}
@@ -447,7 +493,7 @@ class AppSnapshots extends Component {
             </div>
           </div>
           {snapshots?.map((snapshot) => (
-            <AppSnapshotsRow
+            <AppSnapshotRow
               key={`snapshot-${snapshot.name}-${snapshot.started}`}
               snapshot={snapshot}
               appSlug={app.slug}
@@ -508,12 +554,4 @@ class AppSnapshots extends Component {
   }
 }
 
-export default compose(
-  withApollo,
-  withRouter,
-  graphql(deleteSnapshot, {
-    props: ({ mutate }) => ({
-      deleteSnapshot: (snapshotName) => mutate({ variables: { snapshotName } })
-    })
-  }),
-)(AppSnapshots);
+export default withRouter(AppSnapshots);

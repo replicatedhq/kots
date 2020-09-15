@@ -3,7 +3,6 @@ package online
 import (
 	"bufio"
 	"context"
-	"database/sql"
 	"io"
 	"io/ioutil"
 	"os"
@@ -12,13 +11,13 @@ import (
 	"github.com/pkg/errors"
 	kotsadmconfig "github.com/replicatedhq/kots/kotsadm/pkg/config"
 	"github.com/replicatedhq/kots/kotsadm/pkg/downstream"
-	"github.com/replicatedhq/kots/kotsadm/pkg/kotsutil"
 	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
-	"github.com/replicatedhq/kots/kotsadm/pkg/persistence"
+	"github.com/replicatedhq/kots/kotsadm/pkg/online/types"
 	"github.com/replicatedhq/kots/kotsadm/pkg/preflight"
-	"github.com/replicatedhq/kots/kotsadm/pkg/task"
+	"github.com/replicatedhq/kots/kotsadm/pkg/store"
 	"github.com/replicatedhq/kots/kotsadm/pkg/updatechecker"
 	"github.com/replicatedhq/kots/kotsadm/pkg/version"
+	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/pull"
 	"go.uber.org/zap"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -26,52 +25,11 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
 )
 
-type PendingApp struct {
-	ID          string
-	Slug        string
-	Name        string
-	LicenseData string
-}
-
-type InstallStatus struct {
-	InstallStatus  string `json:"installStatus"`
-	CurrentMessage string `json:"currentMessage"`
-}
-
-func GetInstallStatus() (*InstallStatus, error) {
-	db := persistence.MustGetPGSession()
-	query := `SELECT install_state from app ORDER BY created_at DESC LIMIT 1`
-	row := db.QueryRow(query)
-
-	var installState sql.NullString
-	if err := row.Scan(&installState); err != nil {
-		if err == sql.ErrNoRows {
-			return &InstallStatus{
-				InstallStatus:  "not_installed",
-				CurrentMessage: "",
-			}, nil
-		}
-		return nil, errors.Wrap(err, "failed to scan")
-	}
-
-	_, message, err := task.GetTaskStatus("online-install")
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to get task status")
-	}
-
-	status := &InstallStatus{
-		InstallStatus:  installState.String,
-		CurrentMessage: message,
-	}
-
-	return status, nil
-}
-
-func CreateAppFromOnline(pendingApp *PendingApp, upstreamURI string, isAutomated bool) (_ *kotsutil.KotsKinds, finalError error) {
+func CreateAppFromOnline(pendingApp *types.PendingApp, upstreamURI string, isAutomated bool) (_ *kotsutil.KotsKinds, finalError error) {
 	logger.Debug("creating app from online",
 		zap.String("upstreamURI", upstreamURI))
 
-	if err := task.SetTaskStatus("online-install", "Uploading license...", "running"); err != nil {
+	if err := store.GetStore().SetTaskStatus("online-install", "Uploading license...", "running"); err != nil {
 		return nil, errors.Wrap(err, "failed to set task status")
 	}
 
@@ -81,7 +39,7 @@ func CreateAppFromOnline(pendingApp *PendingApp, upstreamURI string, isAutomated
 		for {
 			select {
 			case <-time.After(time.Second):
-				if err := task.UpdateTaskStatusTimestamp("online-install"); err != nil {
+				if err := store.GetStore().UpdateTaskStatusTimestamp("online-install"); err != nil {
 					logger.Error(err)
 				}
 			case <-finishedCh:
@@ -92,32 +50,30 @@ func CreateAppFromOnline(pendingApp *PendingApp, upstreamURI string, isAutomated
 
 	defer func() {
 		if finalError == nil {
-			if err := task.ClearTaskStatus("online-install"); err != nil {
+			if err := store.GetStore().ClearTaskStatus("online-install"); err != nil {
 				logger.Error(errors.Wrap(err, "failed to clear install task status"))
 			}
-			if err := setAppInstallState(pendingApp.ID, "installed"); err != nil {
+			if err := store.GetStore().SetAppInstallState(pendingApp.ID, "installed"); err != nil {
 				logger.Error(errors.Wrap(err, "failed to set app status to installed"))
 			}
 			if err := updatechecker.Configure(pendingApp.ID); err != nil {
 				logger.Error(errors.Wrap(err, "failed to configure update checker"))
 			}
 		} else {
-			if err := task.SetTaskStatus("online-install", finalError.Error(), "failed"); err != nil {
+			if err := store.GetStore().SetTaskStatus("online-install", finalError.Error(), "failed"); err != nil {
 				logger.Error(errors.Wrap(err, "failed to set error on install task status"))
 			}
-			if err := setAppInstallState(pendingApp.ID, "install_error"); err != nil {
+			if err := store.GetStore().SetAppInstallState(pendingApp.ID, "install_error"); err != nil {
 				logger.Error(errors.Wrap(err, "failed to set app status to error"))
 			}
 		}
 	}()
 
-	db := persistence.MustGetPGSession()
-
 	pipeReader, pipeWriter := io.Pipe()
 	go func() {
 		scanner := bufio.NewScanner(pipeReader)
 		for scanner.Scan() {
-			if err := task.SetTaskStatus("online-install", scanner.Text(), "running"); err != nil {
+			if err := store.GetStore().SetTaskStatus("online-install", scanner.Text(), "running"); err != nil {
 				logger.Error(err)
 			}
 		}
@@ -190,35 +146,11 @@ func CreateAppFromOnline(pendingApp *PendingApp, upstreamURI string, isAutomated
 	// copying this from typescript ...
 	// i'll leave this next line
 	// TODO: refactor this entire function to be testable, reliable and less monolithic
-	query := `select id, title from cluster`
-	rows, err := db.Query(query)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to query clusters")
+	if err := store.GetStore().AddAppToAllDownstreams(pendingApp.ID); err != nil {
+		return nil, errors.Wrap(err, "failed to add app to all downstreams")
 	}
-	defer rows.Close()
-
-	clusterIDs := map[string]string{}
-	for rows.Next() {
-		clusterID := ""
-		name := ""
-		if err := rows.Scan(&clusterID, &name); err != nil {
-			return nil, errors.Wrap(err, "failed to scan row")
-		}
-
-		clusterIDs[clusterID] = name
-	}
-	for clusterID, name := range clusterIDs {
-		query = `insert into app_downstream (app_id, cluster_id, downstream_name) values ($1, $2, $3)`
-		_, err = db.Exec(query, pendingApp.ID, clusterID, name)
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to create app downstream")
-		}
-	}
-
-	query = `update app set is_airgap=false where id = $1`
-	_, err = db.Exec(query, pendingApp.ID)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to update app to installed")
+	if err := store.GetStore().SetAppIsAirgap(pendingApp.ID, false); err != nil {
+		return nil, errors.Wrap(err, "failed to set app is not airgap")
 	}
 
 	newSequence, err := version.CreateFirstVersion(pendingApp.ID, tmpRoot, "Online Install")
@@ -261,23 +193,11 @@ func CreateAppFromOnline(pendingApp *PendingApp, upstreamURI string, isAutomated
 		}
 	}
 
-	if err := preflight.Run(pendingApp.ID, newSequence, tmpRoot); err != nil {
+	if err := preflight.Run(pendingApp.ID, newSequence, false, tmpRoot); err != nil {
 		return nil, errors.Wrap(err, "failed to start preflights")
 	}
 
 	return kotsKinds, nil
-}
-
-func setAppInstallState(appID string, status string) error {
-	db := persistence.MustGetPGSession()
-
-	query := `update app set install_state = $2 where id = $1`
-	_, err := db.Exec(query, appID, status)
-	if err != nil {
-		return errors.Wrap(err, "failed to update app install state")
-	}
-
-	return nil
 }
 
 func readConfigValuesFromInClusterSecret() (string, error) {

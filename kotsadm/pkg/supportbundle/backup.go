@@ -11,8 +11,9 @@ import (
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
 	"github.com/replicatedhq/kots/kotsadm/pkg/redact"
+	"github.com/replicatedhq/kots/kotsadm/pkg/store"
 	troubleshootanalyze "github.com/replicatedhq/troubleshoot/pkg/analyze"
-	troubleshootv1beta1 "github.com/replicatedhq/troubleshoot/pkg/apis/troubleshoot/v1beta1"
+	troubleshootv1beta2 "github.com/replicatedhq/troubleshoot/pkg/apis/troubleshoot/v1beta2"
 	troubleshootcollect "github.com/replicatedhq/troubleshoot/pkg/collect"
 	"github.com/replicatedhq/troubleshoot/pkg/convert"
 	troubleshootversion "github.com/replicatedhq/troubleshoot/pkg/version"
@@ -55,9 +56,9 @@ func CreateBundleForBackup(appID string, backupName string, backupNamespace stri
 
 	for _, selector := range selectors {
 		collectors = append(collectors, &troubleshootcollect.Collector{
-			Collect: &troubleshootv1beta1.Collect{
-				Logs: &troubleshootv1beta1.Logs{
-					CollectorMeta: troubleshootv1beta1.CollectorMeta{
+			Collect: &troubleshootv1beta2.Collect{
+				Logs: &troubleshootv1beta2.Logs{
+					CollectorMeta: troubleshootv1beta2.CollectorMeta{
 						CollectorName: "velero",
 					},
 					Name:      "velero",
@@ -82,7 +83,7 @@ func CreateBundleForBackup(appID string, backupName string, backupNamespace stri
 		return "", errors.Wrap(err, "failed to write version file")
 	}
 
-	redacts := []*troubleshootv1beta1.Redact{}
+	redacts := []*troubleshootv1beta2.Redact{}
 	globalRedact, err := redact.GetRedact()
 	if err == nil && globalRedact != nil {
 		redacts = globalRedact.Spec.Redactors
@@ -139,46 +140,46 @@ func CreateBundleForBackup(appID string, backupName string, backupNamespace stri
 	}
 
 	// analyze it
-	analyzers := []*troubleshootv1beta1.Analyze{}
+	analyzers := []*troubleshootv1beta2.Analyze{}
 
-	analyzers = append(analyzers, &troubleshootv1beta1.Analyze{
-		TextAnalyze: &troubleshootv1beta1.TextAnalyze{
-			AnalyzeMeta: troubleshootv1beta1.AnalyzeMeta{
+	analyzers = append(analyzers, &troubleshootv1beta2.Analyze{
+		TextAnalyze: &troubleshootv1beta2.TextAnalyze{
+			AnalyzeMeta: troubleshootv1beta2.AnalyzeMeta{
 				CheckName: "Velero Errors",
 			},
 			CollectorName: "velero",
 			FileName:      "velero/velero*/velero.log",
 			RegexPattern:  "level=error",
-			Outcomes: []*troubleshootv1beta1.Outcome{
+			Outcomes: []*troubleshootv1beta2.Outcome{
 				{
-					Fail: &troubleshootv1beta1.SingleOutcome{
+					Fail: &troubleshootv1beta2.SingleOutcome{
 						Message: "Velero has errors",
 					},
 				},
 				{
-					Pass: &troubleshootv1beta1.SingleOutcome{
+					Pass: &troubleshootv1beta2.SingleOutcome{
 						Message: "Velero does not have errors",
 					},
 				},
 			},
 		},
 	})
-	analyzers = append(analyzers, &troubleshootv1beta1.Analyze{
-		TextAnalyze: &troubleshootv1beta1.TextAnalyze{
-			AnalyzeMeta: troubleshootv1beta1.AnalyzeMeta{
+	analyzers = append(analyzers, &troubleshootv1beta2.Analyze{
+		TextAnalyze: &troubleshootv1beta2.TextAnalyze{
+			AnalyzeMeta: troubleshootv1beta2.AnalyzeMeta{
 				CheckName: "Restic Volumes",
 			},
 			CollectorName: "restic",
 			FileName:      "restic/*.log",
 			RegexPattern:  "expected one matching path, got 0",
-			Outcomes: []*troubleshootv1beta1.Outcome{
+			Outcomes: []*troubleshootv1beta2.Outcome{
 				{
-					Fail: &troubleshootv1beta1.SingleOutcome{
+					Fail: &troubleshootv1beta2.SingleOutcome{
 						Message: "Restic volume error",
 					},
 				},
 				{
-					Pass: &troubleshootv1beta1.SingleOutcome{
+					Pass: &troubleshootv1beta2.SingleOutcome{
 						Message: "No restic volume error",
 					},
 				},
@@ -186,15 +187,15 @@ func CreateBundleForBackup(appID string, backupName string, backupNamespace stri
 		},
 	})
 
-	analyzer := troubleshootv1beta1.Analyzer{
+	analyzer := troubleshootv1beta2.Analyzer{
 		TypeMeta: metav1.TypeMeta{
-			APIVersion: "troubleshoot.replicated.com/v1beta1",
+			APIVersion: "troubleshoot.sh/v1beta2",
 			Kind:       "Analyzer",
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name: backupName,
 		},
-		Spec: troubleshootv1beta1.AnalyzerSpec{
+		Spec: troubleshootv1beta2.AnalyzerSpec{
 			Analyzers: analyzers,
 		},
 	}
@@ -214,7 +215,7 @@ func CreateBundleForBackup(appID string, backupName string, backupNamespace stri
 		return "", errors.Wrap(err, "failed to marshal analysis")
 	}
 
-	if err := SetBundleAnalysis(supportBundle.ID, insights); err != nil {
+	if err := store.GetStore().SetSupportBundleAnalysis(supportBundle.ID, insights); err != nil {
 		return "", errors.Wrap(err, "failed to update bundle status")
 	}
 	return supportBundle.ID, nil
@@ -267,10 +268,10 @@ func saveCollectorOutput(output map[string][]byte, bundlePath string) error {
 }
 
 func writeVersionFile(path string) error {
-	version := troubleshootv1beta1.SupportBundleVersion{
-		ApiVersion: "troubleshoot.replicated.com/v1beta1",
+	version := troubleshootv1beta2.SupportBundleVersion{
+		ApiVersion: "troubleshoot.sh/v1beta2",
 		Kind:       "SupportBundle",
-		Spec: troubleshootv1beta1.SupportBundleVersionSpec{
+		Spec: troubleshootv1beta2.SupportBundleVersionSpec{
 			VersionNumber: troubleshootversion.Version(),
 		},
 	}

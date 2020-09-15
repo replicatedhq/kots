@@ -8,7 +8,6 @@ import (
 	"testing"
 
 	"github.com/pact-foundation/pact-go/dsl"
-	_ "go.undefinedlabs.com/scopeagent/autoinstrument"
 )
 
 func Test_GetDesiredState(t *testing.T) {

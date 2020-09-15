@@ -1,18 +1,33 @@
 package logger
 
 import (
+	"os"
+
 	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 )
 
 var log *zap.Logger
+var atom zap.AtomicLevel
 
 func init() {
-	l, err := zap.NewDevelopment(zap.AddCallerSkip(1))
-	if err != nil {
-		panic(err)
-	}
+	atom = zap.NewAtomicLevel()
+	atom.SetLevel(zapcore.InfoLevel)
+
+	encoderCfg := zap.NewProductionEncoderConfig()
+
+	l := zap.New(zapcore.NewCore(
+		zapcore.NewJSONEncoder(encoderCfg),
+		zapcore.Lock(os.Stdout),
+		atom,
+	))
+	defer l.Sync()
 
 	log = l
+}
+
+func SetDebug() {
+	atom.SetLevel(zapcore.DebugLevel)
 }
 
 func Error(err error) {
@@ -24,13 +39,19 @@ func Error(err error) {
 func Errorf(template string, args ...interface{}) {
 	defer log.Sync()
 	sugar := log.Sugar()
-	sugar.Errorf(template, args)
+	sugar.Errorf(template, args...)
 }
 
 func Info(msg string, fields ...zap.Field) {
 	defer log.Sync()
 	sugar := log.Sugar()
 	sugar.Info(msg, fields)
+}
+
+func Infof(template string, args ...interface{}) {
+	defer log.Sync()
+	sugar := log.Sugar()
+	sugar.Infof(template, args...)
 }
 
 func Debug(msg string, fields ...zap.Field) {
@@ -42,5 +63,5 @@ func Debug(msg string, fields ...zap.Field) {
 func Debugf(template string, args ...interface{}) {
 	defer log.Sync()
 	sugar := log.Sugar()
-	sugar.Debugf(template, args)
+	sugar.Debugf(template, args...)
 }

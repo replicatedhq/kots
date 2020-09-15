@@ -9,7 +9,6 @@ import (
 	kotsupload "github.com/replicatedhq/kots/pkg/upload"
 	"github.com/replicatedhq/kots/pkg/util"
 	"github.com/stretchr/testify/require"
-	_ "go.undefinedlabs.com/scopeagent/autoinstrument"
 )
 
 func Test_Upload(t *testing.T) {

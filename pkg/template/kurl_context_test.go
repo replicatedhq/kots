@@ -5,16 +5,13 @@ import (
 
 	kurlv1beta1 "github.com/replicatedhq/kurl/kurlkinds/pkg/apis/cluster/v1beta1"
 	"github.com/stretchr/testify/require"
-	"go.undefinedlabs.com/scopeagent"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func TestBoolPresent(t *testing.T) {
-	scopetest := scopeagent.StartTest(t)
-	defer scopetest.End()
 	req := require.New(t)
 
-	ctx := &KurlCtx{
+	ctx := &kurlCtx{
 		KurlValues: make(map[string]interface{}),
 	}
 
@@ -25,11 +22,9 @@ func TestBoolPresent(t *testing.T) {
 }
 
 func TestBoolNotPresent(t *testing.T) {
-	scopetest := scopeagent.StartTest(t)
-	defer scopetest.End()
 	req := require.New(t)
 
-	ctx := &KurlCtx{
+	ctx := &kurlCtx{
 		KurlValues: make(map[string]interface{}),
 	}
 
@@ -40,11 +35,9 @@ func TestBoolNotPresent(t *testing.T) {
 }
 
 func TestBoolInvalidType(t *testing.T) {
-	scopetest := scopeagent.StartTest(t)
-	defer scopetest.End()
 	req := require.New(t)
 
-	ctx := &KurlCtx{
+	ctx := &kurlCtx{
 		KurlValues: make(map[string]interface{}),
 	}
 
@@ -55,11 +48,9 @@ func TestBoolInvalidType(t *testing.T) {
 }
 
 func TestStringPresent(t *testing.T) {
-	scopetest := scopeagent.StartTest(t)
-	defer scopetest.End()
 	req := require.New(t)
 
-	ctx := &KurlCtx{
+	ctx := &kurlCtx{
 		KurlValues: make(map[string]interface{}),
 	}
 
@@ -70,11 +61,9 @@ func TestStringPresent(t *testing.T) {
 }
 
 func TestStringNotPresent(t *testing.T) {
-	scopetest := scopeagent.StartTest(t)
-	defer scopetest.End()
 	req := require.New(t)
 
-	ctx := &KurlCtx{
+	ctx := &kurlCtx{
 		KurlValues: make(map[string]interface{}),
 	}
 
@@ -85,11 +74,9 @@ func TestStringNotPresent(t *testing.T) {
 }
 
 func TestStringInvalidType(t *testing.T) {
-	scopetest := scopeagent.StartTest(t)
-	defer scopetest.End()
 	req := require.New(t)
 
-	ctx := &KurlCtx{
+	ctx := &kurlCtx{
 		KurlValues: make(map[string]interface{}),
 	}
 
@@ -100,11 +87,9 @@ func TestStringInvalidType(t *testing.T) {
 }
 
 func TestIntPresent(t *testing.T) {
-	scopetest := scopeagent.StartTest(t)
-	defer scopetest.End()
 	req := require.New(t)
 
-	ctx := &KurlCtx{
+	ctx := &kurlCtx{
 		KurlValues: make(map[string]interface{}),
 	}
 
@@ -115,11 +100,9 @@ func TestIntPresent(t *testing.T) {
 }
 
 func TestIntNotPresent(t *testing.T) {
-	scopetest := scopeagent.StartTest(t)
-	defer scopetest.End()
 	req := require.New(t)
 
-	ctx := &KurlCtx{
+	ctx := &kurlCtx{
 		KurlValues: make(map[string]interface{}),
 	}
 
@@ -130,11 +113,9 @@ func TestIntNotPresent(t *testing.T) {
 }
 
 func TestIntInvalidType(t *testing.T) {
-	scopetest := scopeagent.StartTest(t)
-	defer scopetest.End()
 	req := require.New(t)
 
-	ctx := &KurlCtx{
+	ctx := &kurlCtx{
 		KurlValues: make(map[string]interface{}),
 	}
 
@@ -145,11 +126,9 @@ func TestIntInvalidType(t *testing.T) {
 }
 
 func TestOptionPresent(t *testing.T) {
-	scopetest := scopeagent.StartTest(t)
-	defer scopetest.End()
 	req := require.New(t)
 
-	ctx := &KurlCtx{
+	ctx := &kurlCtx{
 		KurlValues: make(map[string]interface{}),
 	}
 
@@ -160,11 +139,9 @@ func TestOptionPresent(t *testing.T) {
 }
 
 func TestOptionNotPresent(t *testing.T) {
-	scopetest := scopeagent.StartTest(t)
-	defer scopetest.End()
 	req := require.New(t)
 
-	ctx := &KurlCtx{
+	ctx := &kurlCtx{
 		KurlValues: make(map[string]interface{}),
 	}
 
@@ -175,11 +152,9 @@ func TestOptionNotPresent(t *testing.T) {
 }
 
 func TestKurlAll(t *testing.T) {
-	scopetest := scopeagent.StartTest(t)
-	defer scopetest.End()
 	req := require.New(t)
 
-	ctx := &KurlCtx{
+	ctx := &kurlCtx{
 		KurlValues: make(map[string]interface{}),
 	}
 
@@ -192,11 +167,9 @@ func TestKurlAll(t *testing.T) {
 }
 
 func TestParseInstallerProperly(t *testing.T) {
-	scopetest := scopeagent.StartTest(t)
-	defer scopetest.End()
 	req := require.New(t)
 
-	ctx := &KurlCtx{
+	ctx := &kurlCtx{
 		KurlValues: make(map[string]interface{}),
 	}
 

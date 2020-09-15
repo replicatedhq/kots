@@ -7,6 +7,7 @@ import (
 
 	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
 	"github.com/replicatedhq/kots/kotsadm/pkg/session"
+	"github.com/replicatedhq/kots/kotsadm/pkg/store"
 	"github.com/replicatedhq/kots/kotsadm/pkg/user"
 )
 
@@ -19,13 +20,6 @@ type LoginResponse struct {
 }
 
 func Login(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Header().Set("Access-Control-Allow-Headers", "content-type, origin, accept, authorization")
-
-	if r.Method == "OPTIONS" {
-		return
-	}
-
 	loginRequest := LoginRequest{}
 	if err := json.NewDecoder(r.Body).Decode(&loginRequest); err != nil {
 		logger.Error(err)
@@ -45,14 +39,14 @@ func Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	createdSession, err := session.Create(foundUser)
+	createdSession, err := store.GetStore().CreateSession(foundUser)
 	if err != nil {
 		logger.Error(err)
 		w.WriteHeader(500)
 		return
 	}
 
-	signedJWT, err := createdSession.SignJWT()
+	signedJWT, err := session.SignJWT(createdSession)
 	if err != nil {
 		logger.Error(err)
 		w.WriteHeader(500)

@@ -7,24 +7,30 @@ import (
 	"path/filepath"
 
 	"github.com/pkg/errors"
-	"github.com/replicatedhq/kots/kotsadm/pkg/app"
-	"github.com/replicatedhq/kots/kotsadm/pkg/downstream"
-	"github.com/replicatedhq/kots/kotsadm/pkg/kotsutil"
+	apptypes "github.com/replicatedhq/kots/kotsadm/pkg/app/types"
+	downstreamtypes "github.com/replicatedhq/kots/kotsadm/pkg/downstream/types"
 	registrytypes "github.com/replicatedhq/kots/kotsadm/pkg/registry/types"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	"github.com/replicatedhq/kots/pkg/crypto"
+	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/rewrite"
 	"github.com/replicatedhq/kots/pkg/template"
 )
 
 // RenderFile renders a single file
 // this is useful for upstream/kotskinds files that are not rendered in the dir
-func RenderFile(kotsKinds *kotsutil.KotsKinds, registrySettings *registrytypes.RegistrySettings, inputContent []byte) ([]byte, error) {
-	inputContent, err := kotsutil.FixUpYAML(inputContent)
+func RenderFile(kotsKinds *kotsutil.KotsKinds, registrySettings *registrytypes.RegistrySettings, sequence int64, isAirgap bool, inputContent []byte) ([]byte, error) {
+	fixedUpContent, err := kotsutil.FixUpYAML(inputContent)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to fix up yaml")
 	}
 
+	return RenderContent(kotsKinds, registrySettings, sequence, isAirgap, fixedUpContent)
+}
+
+// RenderContent renders any string/content
+// this is useful for rendering single values, like a status informer
+func RenderContent(kotsKinds *kotsutil.KotsKinds, registrySettings *registrytypes.RegistrySettings, sequence int64, isAirgap bool, inputContent []byte) ([]byte, error) {
 	apiCipher, err := crypto.AESCipherFromString(os.Getenv("API_ENCRYPTION_KEY"))
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to load apiCipher")
@@ -69,7 +75,8 @@ func RenderFile(kotsKinds *kotsutil.KotsKinds, registrySettings *registrytypes.R
 		configGroups = kotsKinds.Config.Spec.Groups
 	}
 
-	builder, _, err := template.NewBuilder(configGroups, templateContextValues, localRegistry, appCipher, kotsKinds.License)
+	versionInfo := template.VersionInfoFromInstallation(sequence, isAirgap, kotsKinds.Installation.Spec)
+	builder, _, err := template.NewBuilder(configGroups, templateContextValues, localRegistry, appCipher, kotsKinds.License, &versionInfo)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create builder")
 	}
@@ -84,7 +91,7 @@ func RenderFile(kotsKinds *kotsutil.KotsKinds, registrySettings *registrytypes.R
 
 // RenderDir renders an app archive dir
 // this is useful for when the license/config have updated, and template functions need to be evaluated again
-func RenderDir(archiveDir string, appID string, registrySettings *registrytypes.RegistrySettings) error {
+func RenderDir(archiveDir string, a *apptypes.App, downstreams []downstreamtypes.Downstream, registrySettings *registrytypes.RegistrySettings) error {
 	installation, err := kotsutil.LoadInstallationFromPath(filepath.Join(archiveDir, "upstream", "userdata", "installation.yaml"))
 	if err != nil {
 		return errors.Wrap(err, "failed to load installation from path")
@@ -100,12 +107,6 @@ func RenderDir(archiveDir string, appID string, registrySettings *registrytypes.
 		return errors.Wrap(err, "failed to load config values from path")
 	}
 
-	// get the downstream names only
-	downstreams, err := downstream.ListDownstreamsForApp(appID)
-	if err != nil {
-		return errors.Wrap(err, "failed to list downstreams")
-	}
-
 	downstreamNames := []string{}
 	for _, d := range downstreams {
 		downstreamNames = append(downstreamNames, d.Name)
@@ -114,11 +115,6 @@ func RenderDir(archiveDir string, appID string, registrySettings *registrytypes.
 	appNamespace := os.Getenv("POD_NAMESPACE")
 	if os.Getenv("KOTSADM_TARGET_NAMESPACE") != "" {
 		appNamespace = os.Getenv("KOTSADM_TARGET_NAMESPACE")
-	}
-
-	a, err := app.Get(appID)
-	if err != nil {
-		return errors.Wrap(err, "failed to get app")
 	}
 
 	reOptions := rewrite.RewriteOptions{
@@ -137,6 +133,7 @@ func RenderDir(archiveDir string, appID string, registrySettings *registrytypes.
 		IsAirgap:         a.IsAirgap,
 		AppSlug:          a.Slug,
 		IsGitOps:         a.IsGitOps,
+		AppSequence:      a.CurrentSequence + 1, // sequence +1 because this is the current latest sequence, not the sequence that the rendered version will be saved as
 	}
 
 	if registrySettings != nil {

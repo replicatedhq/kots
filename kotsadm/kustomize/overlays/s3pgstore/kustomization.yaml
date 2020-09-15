@@ -1,0 +1,9 @@
+bases:
+  - ../dev
+  - ./minio
+  - ../../../web/kustomize/overlays/dev
+  - ../../../operator/kustomize/overlays/dev
+  - ../../../migrations/kustomize/overlays/dev
+
+patches:
+  - ./deployment.yaml

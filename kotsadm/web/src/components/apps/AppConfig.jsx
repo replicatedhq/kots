@@ -1,6 +1,5 @@
 import React, { Component } from "react";
 import { ShipConfigRenderer } from "@replicatedhq/ship-init";
-import { compose, withApollo, graphql } from "react-apollo";
 import { withRouter, Link } from "react-router-dom";
 import PropTypes from "prop-types";
 import classNames from "classnames";
@@ -9,7 +8,6 @@ import debounce from "lodash/debounce";
 import map from "lodash/map";
 import Modal from "react-modal";
 import Loader from "../shared/Loader";
-import { getAppConfigGroups, templateConfigGroups } from "../../queries/AppsQueries";
 
 import "../../scss/components/watches/WatchConfig.scss";
 import { Utilities } from "../../utilities/utilities";
@@ -47,14 +45,10 @@ class AppConfig extends Component {
     if (!this.props.app) {
       this.getApp();
     }
+    this.getConfig();
   }
 
   componentDidUpdate(lastProps) {
-    const { getAppConfigGroups } = this.props.getAppConfigGroups;
-    if (getAppConfigGroups && getAppConfigGroups !== lastProps.getAppConfigGroups.getAppConfigGroups) {
-      const initialConfigGroups = JSON.parse(JSON.stringify(getAppConfigGroups)); // quick deep copy
-      this.setState({ configGroups: getAppConfigGroups, initialConfigGroups });
-    }
     if (this.state.app && !this.state.app.isConfigurable) {
       // app not configurable - redirect
       this.props.history.replace(`/app/${this.state.app.slug}`);
@@ -82,6 +76,24 @@ class AppConfig extends Component {
     } catch(err) {
       console.log(err);
     }
+  }
+
+  getConfig = async () => {
+    const sequence = this.getSequence();
+    const slug = this.getSlug();
+
+    fetch(`${window.env.API_ENDPOINT}/app/${slug}/config/${sequence}`, {
+      method: "GET",
+      headers: {
+        "Authorization": Utilities.getToken(),
+        "Content-Type": "application/json",
+      }
+    }).then(async (response) => {
+      const data = await response.json()
+      this.setState({ configGroups: data.configGroups, changed: false });
+    }).catch((error) => {
+      console.log(error);
+    });
   }
 
   getSequence = () => {
@@ -204,17 +216,18 @@ class AppConfig extends Component {
     const sequence = this.getSequence();
     const slug = this.getSlug();
 
-    this.props.client.query({
-      query: templateConfigGroups,
-      variables: {
-        slug: slug,
-        sequence: sequence,
-        configGroups: groups
+    fetch(`${window.env.API_ENDPOINT}/app/${slug}/liveconfig`, {
+      headers: {
+        "Authorization": Utilities.getToken(),
+        "Content-Type": "application/json",
+        "Accept": "application/json",
       },
-      fetchPolicy: "no-cache"
-    }).then(response => {
+      method: "POST",
+      body: JSON.stringify({"configGroups":groups, "sequence": sequence}),
+    }).then(async (response) => {
+      const data = await response.json()
       const oldGroups = this.state.configGroups;
-      const newGroups = response.data.templateConfigGroups;
+      const newGroups = data.configGroups;
       map(newGroups, group => {
         group.items.forEach(newItem => {
           if (newItem.type === "password") {
@@ -319,28 +332,4 @@ class AppConfig extends Component {
   }
 }
 
-export default withRouter(compose(
-  withApollo,
-  withRouter,
-  graphql(getAppConfigGroups, {
-    name: "getAppConfigGroups",
-    options: ({ match, app, fromLicenseFlow }) => {
-      let sequence;
-      if (fromLicenseFlow) {
-        sequence = 0;
-      } else if (match.params.sequence != undefined) {
-        sequence = match.params.sequence;
-      } else {
-        sequence = app.currentSequence;
-      }
-      const slug = fromLicenseFlow ? match.params.slug : app.slug;
-      return {
-        variables: {
-          slug,
-          sequence,
-        },
-        fetchPolicy: "no-cache"
-      }
-    }
-  }),
-)(AppConfig));
+export default withRouter(AppConfig);

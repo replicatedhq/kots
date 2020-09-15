@@ -1,15 +1,13 @@
 import React, { Component, Fragment } from "react";
 import classNames from "classnames";
 import moment from "moment";
-import { graphql, compose, withApollo } from "react-apollo";
 import { withRouter } from "react-router-dom";
 import { Helmet } from "react-helmet";
 import CodeSnippet from "../shared/CodeSnippet";
 import NodeRow from "./NodeRow";
 import Loader from "../shared/Loader";
-import { kurl } from "../../queries/KurlQueries";
-import { drainNode, deleteNode } from "../../mutations/KurlMutations"
 import { Utilities } from "../../utilities/utilities";
+import { Repeater } from "../../utilities/repeater";
 
 import "@src/scss/components/apps/ClusterNodes.scss";
 
@@ -20,25 +18,57 @@ export class ClusterNodes extends Component {
     expiry: null,
     displayAddNode: false,
     selectedNodeType: "worker", // Change when master node script is enabled
-    generateCommandErrMsg: ""
+    generateCommandErrMsg: "",
+    kurl: null,
+    getNodeStatus: new Repeater()
   }
 
-  drainNode = (name) => {
+  componentDidMount() {
+    this.getNodeStatus();
+    this.state.getNodeStatus.start(this.getNodeStatus, 1000);
+  }
+
+  getNodeStatus = async () => {
     try {
-      this.props.drainNode(name);
-      // feedback here showing the node was drained?
-    } catch (error) {
-      console.log(error)
+      const res = await fetch(`${window.env.API_ENDPOINT}/kurl/nodes`, {
+        headers: {
+          "Authorization": Utilities.getToken(),
+          "Accept": "application/json",
+        },
+        method: "GET",
+      });
+      if (!res.ok) {
+        if (res.status === 401) {
+          Utilities.logoutUser();
+          return;
+        }
+        console.log("failed to get node status list, unexpected status code", res.status);
+        return;
+      }
+      const response = await res.json();
+      this.setState({
+        kurl: response,
+      });
+      return response;
+    } catch(err) {
+      console.log(err);
+      throw err;
     }
   }
 
   deleteNode = (name) => {
-    try {
-      this.props.deleteNode(name);
-      // reflect nodes so deleted node is from the list?
-    } catch (error) {
-      console.log(error);
-    }
+    fetch(`${window.env.API_ENDPOINT}/kurl/nodes/${name}`, {
+      headers: {
+        "Authorization": Utilities.getToken(),
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+      },
+      method: "DELETE",
+    })
+      .then(async (res) => {})
+      .catch((err) => {
+        console.log(err);
+      })
   }
 
   generateWorkerAddNodeCommand = async () => {
@@ -57,10 +87,27 @@ export class ClusterNodes extends Component {
         this.setState({ generating: false, command: data.command, expiry: data.expiry });
       })
       .catch((err) => {
-        err.graphQLErrors.map(({ msg }) => {
-          this.setState({ generating: false, generateCommandErrMsg: msg });
+        console.log(err);
+        this.setState({
+          generating: false,
+          generateCommandErrMsg: err ? err.message : "Something went wrong",
         });
       });
+  }
+
+  drainNode = async (name) => {
+    fetch(`${window.env.API_ENDPOINT}/kurl/nodes/${name}/drain`, {
+      headers: {
+        "Authorization": Utilities.getToken(),
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+      },
+      method: "POST",
+    })
+      .then(async (res) => {})
+      .catch((err) => {
+        console.log(err);
+      })
   }
 
   generateMasterAddNodeCommand = async () => {
@@ -79,8 +126,10 @@ export class ClusterNodes extends Component {
         this.setState({ generating: false, command: data.command, expiry: data.expiry });
       })
       .catch((err) => {
-        err.graphQLErrors.map(({ msg }) => {
-          this.setState({ generating: false, generateCommandErrMsg: msg });
+        console.log(err);
+        this.setState({
+          generating: false,
+          generateCommandErrMsg: err ? err.message : "Something went wrong",
         });
       });
   }
@@ -107,7 +156,7 @@ export class ClusterNodes extends Component {
   }
 
   render() {
-    const { kurl } = this.props.data;
+    const { kurl } = this.state;
     const { displayAddNode, generateCommandErrMsg } = this.state;
 
     if (!kurl) {
@@ -245,23 +294,4 @@ export class ClusterNodes extends Component {
   }
 }
 
-export default compose(
-  withRouter,
-  withApollo,
-  graphql(kurl, {
-    options: {
-      pollInterval: 2000,
-      fetchPolicy: "no-cache",
-    },
-  }),
-  graphql(drainNode, {
-    props: ({ mutate }) => ({
-      drainNode: (name) => mutate({ variables: { name } })
-    })
-  }),
-  graphql(deleteNode, {
-    props: ({ mutate }) => ({
-      deleteNode: (name) => mutate({ variables: { name } })
-    })
-  }),
-)(ClusterNodes);
+export default withRouter(ClusterNodes);

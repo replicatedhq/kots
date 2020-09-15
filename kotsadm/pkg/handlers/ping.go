@@ -4,9 +4,9 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/replicatedhq/kots/kotsadm/pkg/app"
 	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
 	"github.com/replicatedhq/kots/kotsadm/pkg/snapshot"
+	"github.com/replicatedhq/kots/kotsadm/pkg/store"
 )
 
 type PingResponse struct {
@@ -16,8 +16,6 @@ type PingResponse struct {
 }
 
 func Ping(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-
 	pingResponse := PingResponse{}
 
 	pingResponse.Ping = "pong"
@@ -45,7 +43,7 @@ func snapshotProgress(slugs []string, pingResponse *PingResponse) {
 	}
 
 	for _, slug := range slugs {
-		currentApp, err := app.GetFromSlug(slug)
+		currentApp, err := store.GetStore().GetAppFromSlug(slug)
 		if err != nil {
 			logger.Error(err)
 			pingResponse.Error = "failed to get app from app slug"

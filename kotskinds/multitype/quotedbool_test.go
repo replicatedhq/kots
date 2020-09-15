@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
-	"go.undefinedlabs.com/scopeagent"
 	yaml "gopkg.in/yaml.v2"
 )
 
@@ -48,9 +47,6 @@ func TestQuotedBool_UnmarshalJSON(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			scopetest := scopeagent.StartTest(t)
-			defer scopetest.End()
-
 			req := require.New(t)
 
 			var newQuotBool QuotedBool
@@ -116,9 +112,6 @@ func TestQuotedBool_UnmarshalYAML(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			scopetest := scopeagent.StartTest(t)
-			defer scopetest.End()
-
 			req := require.New(t)
 
 			var newQuotBool QuotedBool

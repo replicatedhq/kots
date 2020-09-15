@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -11,17 +12,19 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
-	"github.com/replicatedhq/kots/kotsadm/pkg/app"
-	"github.com/replicatedhq/kots/kotsadm/pkg/kotsutil"
 	"github.com/replicatedhq/kots/kotsadm/pkg/license"
-	kotsadmlicense "github.com/replicatedhq/kots/kotsadm/pkg/license"
 	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
 	"github.com/replicatedhq/kots/kotsadm/pkg/online"
+	installationtypes "github.com/replicatedhq/kots/kotsadm/pkg/online/types"
 	"github.com/replicatedhq/kots/kotsadm/pkg/registry"
-	"github.com/replicatedhq/kots/kotsadm/pkg/session"
+	"github.com/replicatedhq/kots/kotsadm/pkg/store"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
+	kotsadmtypes "github.com/replicatedhq/kots/pkg/kotsadm/types"
+	"github.com/replicatedhq/kots/pkg/kotsutil"
 	kotslicense "github.com/replicatedhq/kots/pkg/license"
 	kotspull "github.com/replicatedhq/kots/pkg/pull"
+	serializer "k8s.io/apimachinery/pkg/runtime/serializer/json"
+	"k8s.io/client-go/kubernetes/scheme"
 )
 
 type SyncLicenseRequest struct {
@@ -83,14 +86,6 @@ type GetOnlineInstallStatusErrorResponse struct {
 }
 
 func SyncLicense(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Header().Set("Access-Control-Allow-Headers", "content-type, origin, accept, authorization")
-
-	if r.Method == "OPTIONS" {
-		w.WriteHeader(200)
-		return
-	}
-
 	syncLicenseRequest := SyncLicenseRequest{}
 	if err := json.NewDecoder(r.Body).Decode(&syncLicenseRequest); err != nil {
 		logger.Error(err)
@@ -98,20 +93,7 @@ func SyncLicense(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	sess, err := session.Parse(r.Header.Get("Authorization"))
-	if err != nil {
-		logger.Error(err)
-		w.WriteHeader(401)
-		return
-	}
-
-	// we don't currently have roles, all valid tokens are valid sessions
-	if sess == nil || sess.ID == "" {
-		w.WriteHeader(401)
-		return
-	}
-
-	foundApp, err := app.GetFromSlug(mux.Vars(r)["appSlug"])
+	foundApp, err := store.GetStore().GetAppFromSlug(mux.Vars(r)["appSlug"])
 	if err != nil {
 		logger.Error(err)
 		w.WriteHeader(500)
@@ -145,36 +127,15 @@ func SyncLicense(w http.ResponseWriter, r *http.Request) {
 }
 
 func GetLicense(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Header().Set("Access-Control-Allow-Headers", "content-type, origin, accept, authorization")
-
-	if r.Method == "OPTIONS" {
-		w.WriteHeader(200)
-		return
-	}
-
-	sess, err := session.Parse(r.Header.Get("Authorization"))
-	if err != nil {
-		logger.Error(err)
-		w.WriteHeader(500)
-		return
-	}
-
-	// we don't currently have roles, all valid tokens are valid sessions
-	if sess == nil || sess.ID == "" {
-		w.WriteHeader(401)
-		return
-	}
-
 	appSlug := mux.Vars(r)["appSlug"]
-	foundApp, err := app.GetFromSlug(appSlug)
+	foundApp, err := store.GetStore().GetAppFromSlug(appSlug)
 	if err != nil {
 		logger.Error(err)
 		w.WriteHeader(500)
 		return
 	}
 
-	license, err := kotsadmlicense.Get(foundApp.ID)
+	license, err := store.GetStore().GetLatestLicenseForApp(foundApp.ID)
 	if err != nil {
 		logger.Error(err)
 		w.WriteHeader(500)
@@ -231,31 +192,10 @@ func getLicenseEntitlements(license *kotsv1beta1.License) ([]EntitlementResponse
 }
 
 func UploadNewLicense(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Header().Set("Access-Control-Allow-Headers", "content-type, origin, accept, authorization")
-
-	if r.Method == "OPTIONS" {
-		w.WriteHeader(200)
-		return
-	}
-
 	uploadLicenseRequest := UploadLicenseRequest{}
 	if err := json.NewDecoder(r.Body).Decode(&uploadLicenseRequest); err != nil {
 		logger.Error(err)
 		w.WriteHeader(500)
-		return
-	}
-
-	sess, err := session.Parse(r.Header.Get("Authorization"))
-	if err != nil {
-		logger.Error(err)
-		w.WriteHeader(401)
-		return
-	}
-
-	// we don't currently have roles, all valid tokens are valid sessions
-	if sess == nil || sess.ID == "" {
-		w.WriteHeader(401)
 		return
 	}
 
@@ -308,10 +248,18 @@ func UploadNewLicense(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	skipImagePush, err := kotsutil.IsImagesPushedSet(kotsadmtypes.KotsadmConfigMap)
+	if err != nil {
+		logger.Error(err)
+		uploadLicenseResponse.Error = err.Error()
+		JSON(w, 500, uploadLicenseResponse)
+		return
+	}
+
 	desiredAppName := strings.Replace(verifiedLicense.Spec.AppSlug, "-", " ", 0)
 	upstreamURI := fmt.Sprintf("replicated://%s", verifiedLicense.Spec.AppSlug)
 
-	a, err := app.Create(desiredAppName, upstreamURI, uploadLicenseRequest.LicenseData, verifiedLicense.Spec.IsAirgapSupported)
+	a, err := store.GetStore().CreateApp(desiredAppName, upstreamURI, uploadLicenseRequest.LicenseData, verifiedLicense.Spec.IsAirgapSupported, skipImagePush)
 	if err != nil {
 		logger.Error(err)
 		uploadLicenseResponse.Error = err.Error()
@@ -321,7 +269,7 @@ func UploadNewLicense(w http.ResponseWriter, r *http.Request) {
 
 	if !verifiedLicense.Spec.IsAirgapSupported {
 		// complete the install online
-		pendingApp := online.PendingApp{
+		pendingApp := installationtypes.PendingApp{
 			ID:          a.ID,
 			Slug:        a.Slug,
 			Name:        a.Name,
@@ -367,14 +315,6 @@ func UploadNewLicense(w http.ResponseWriter, r *http.Request) {
 }
 
 func ResumeInstallOnline(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Header().Set("Access-Control-Allow-Headers", "content-type, origin, accept, authorization")
-
-	if r.Method == "OPTIONS" {
-		w.WriteHeader(200)
-		return
-	}
-
 	resumeInstallOnlineResponse := ResumeInstallOnlineResponse{
 		Success: false,
 	}
@@ -387,22 +327,7 @@ func ResumeInstallOnline(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	sess, err := session.Parse(r.Header.Get("Authorization"))
-	if err != nil {
-		logger.Error(err)
-		resumeInstallOnlineResponse.Error = err.Error()
-		JSON(w, 401, resumeInstallOnlineResponse)
-		return
-	}
-
-	// we don't currently have roles, all valid tokens are valid sessions
-	if sess == nil || sess.ID == "" {
-		resumeInstallOnlineResponse.Error = "Unauthorized"
-		JSON(w, 401, resumeInstallOnlineResponse)
-		return
-	}
-
-	a, err := app.GetFromSlug(resumeInstallOnlineRequest.Slug)
+	a, err := store.GetStore().GetAppFromSlug(resumeInstallOnlineRequest.Slug)
 	if err != nil {
 		logger.Error(err)
 		resumeInstallOnlineResponse.Error = err.Error()
@@ -410,14 +335,14 @@ func ResumeInstallOnline(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	pendingApp := online.PendingApp{
+	pendingApp := installationtypes.PendingApp{
 		ID:   a.ID,
 		Slug: a.Slug,
 		Name: a.Name,
 	}
 
 	// the license data is left in the table
-	licenseData, err := app.GetLicenseDataFromDatabase(a.ID)
+	kotsLicense, err := store.GetStore().GetInitialLicenseForApp(a.ID)
 	if err != nil {
 		logger.Error(err)
 		resumeInstallOnlineResponse.Error = err.Error()
@@ -425,15 +350,17 @@ func ResumeInstallOnline(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	pendingApp.LicenseData = licenseData
-
-	kotsLicense, err := kotsutil.LoadLicenseFromBytes([]byte(licenseData))
-	if err != nil {
+	// marshal it
+	s := serializer.NewYAMLSerializer(serializer.DefaultMetaFactory, scheme.Scheme, scheme.Scheme)
+	var b bytes.Buffer
+	if err := s.Encode(kotsLicense, &b); err != nil {
 		logger.Error(err)
 		resumeInstallOnlineResponse.Error = err.Error()
 		JSON(w, 500, resumeInstallOnlineResponse)
 		return
 	}
+
+	pendingApp.LicenseData = string(b.Bytes())
 
 	kotsKinds, err := online.CreateAppFromOnline(&pendingApp, fmt.Sprintf("replicated://%s", kotsLicense.Spec.AppSlug), false)
 	if err != nil {
@@ -452,23 +379,7 @@ func ResumeInstallOnline(w http.ResponseWriter, r *http.Request) {
 }
 
 func GetOnlineInstallStatus(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Header().Set("Access-Control-Allow-Headers", "content-type, origin, accept, authorization")
-
-	if r.Method == "OPTIONS" {
-		w.WriteHeader(200)
-		return
-	}
-
-	if err := requireValidSession(w, r); err != nil {
-		logger.Error(err)
-		JSON(w, 401, GetOnlineInstallStatusErrorResponse{
-			Error: fmt.Sprintf("failed to validate session: %v", err),
-		})
-		return
-	}
-
-	status, err := online.GetInstallStatus()
+	status, err := store.GetStore().GetPendingInstallationStatus()
 	if err != nil {
 		logger.Error(err)
 		JSON(w, 500, GetOnlineInstallStatusErrorResponse{
@@ -478,4 +389,88 @@ func GetOnlineInstallStatus(w http.ResponseWriter, r *http.Request) {
 	}
 
 	JSON(w, 200, status)
+}
+
+// GetPlatformLicenseCompatibility route is UNAUTHENTICATED
+// Authentication must be added here which will break backwards compatibility.
+// This route exists for backwards compatibility with platform License API and should be called by
+// the application only.
+func GetPlatformLicenseCompatibility(w http.ResponseWriter, r *http.Request) {
+	apps, err := store.GetStore().ListInstalledApps()
+	if err != nil {
+		if store.GetStore().IsNotFound(err) {
+			JSON(w, http.StatusNotFound, struct{}{})
+			return
+		}
+		logger.Error(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	if len(apps) == 0 {
+		JSON(w, http.StatusNotFound, struct{}{})
+		return
+	}
+
+	if len(apps) > 1 {
+		JSON(w, http.StatusBadRequest, struct{}{})
+		return
+	}
+
+	app := apps[0]
+	license, err := store.GetStore().GetLatestLicenseForApp(app.ID)
+	if err != nil {
+		logger.Error(err)
+		JSON(w, http.StatusInternalServerError, struct{}{})
+		return
+	}
+
+	type licenseFieldType struct {
+		Field            string      `json:"field"`
+		Title            string      `json:"title"`
+		Type             string      `json:"type"`
+		Value            interface{} `json:"value"`
+		HideFromCustomer bool        `json:"hide_from_customer,omitempty"`
+	}
+
+	type licenseType struct {
+		LicenseID      string             `json:"license_id"`
+		InstallationID string             `json:"installation_id"`
+		Assignee       string             `json:"assignee"`
+		ReleaseChannel string             `json:"release_channel"`
+		LicenseType    string             `json:"license_type"`
+		ExpirationTime string             `json:"expiration_time,omitempty"`
+		Fields         []licenseFieldType `json:"fields"`
+	}
+
+	platformLicense := licenseType{
+		LicenseID:      license.Spec.LicenseID,
+		InstallationID: app.ID,
+		Assignee:       license.Spec.CustomerName,
+		ReleaseChannel: license.Spec.ChannelName,
+		LicenseType:    license.Spec.LicenseType,
+		Fields:         make([]licenseFieldType, 0),
+	}
+
+	for k, e := range license.Spec.Entitlements {
+		if k == "expires_at" {
+			if e.Value.StrVal != "" {
+				platformLicense.ExpirationTime = e.Value.StrVal
+			}
+			continue
+		}
+
+		field := licenseFieldType{
+			Field:            k,
+			Title:            e.Title,
+			Type:             e.ValueType,
+			Value:            e.Value.Value(),
+			HideFromCustomer: e.IsHidden,
+		}
+
+		platformLicense.Fields = append(platformLicense.Fields, field)
+	}
+
+	JSON(w, http.StatusOK, platformLicense)
+	return
 }

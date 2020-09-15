@@ -8,13 +8,9 @@ import (
 	"unicode/utf8"
 
 	"github.com/stretchr/testify/require"
-	"go.undefinedlabs.com/scopeagent"
 )
 
 func TestGenerateRandomString(t *testing.T) {
-	scopetest := scopeagent.StartTest(t)
-	defer scopetest.End()
-
 	req := require.New(t)
 	ctx := &StaticCtx{}
 	seenStrings := map[string]struct{}{}
@@ -75,8 +71,6 @@ func TestGenerateRandomStringTemplates(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			scopetest := scopeagent.StartTest(t)
-			defer scopetest.End()
 			req := require.New(t)
 
 			builder := Builder{}
@@ -101,9 +95,6 @@ func TestGenerateRandomStringTemplates(t *testing.T) {
 }
 
 func TestRandomBytes(t *testing.T) {
-	scopetest := scopeagent.StartTest(t)
-	defer scopetest.End()
-
 	req := require.New(t)
 	ctx := &StaticCtx{}
 	seenStrings := map[string]struct{}{}

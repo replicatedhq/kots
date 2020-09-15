@@ -9,13 +9,12 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/replicatedhq/kots/kotsadm/pkg/app"
-	"github.com/replicatedhq/kots/kotsadm/pkg/kotsutil"
 	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
 	"github.com/replicatedhq/kots/kotsadm/pkg/preflight"
-	"github.com/replicatedhq/kots/kotsadm/pkg/registry"
 	"github.com/replicatedhq/kots/kotsadm/pkg/render"
+	"github.com/replicatedhq/kots/kotsadm/pkg/store"
 	"github.com/replicatedhq/kots/kotsadm/pkg/version"
+	"github.com/replicatedhq/kots/pkg/kotsutil"
 )
 
 type UploadExistingAppRequest struct {
@@ -30,6 +29,7 @@ type UploadResponse struct {
 
 // UploadExistingApp can be used to upload a multipart form file to the existing app
 // This is used in the KOTS CLI when calling kots upload ...
+// NOTE: this uses special kots token authorization
 func UploadExistingApp(w http.ResponseWriter, r *http.Request) {
 	if err := requireValidKOTSToken(w, r); err != nil {
 		logger.Error(err)
@@ -81,39 +81,53 @@ func UploadExistingApp(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := kotsKinds.EncryptConfigValues(); err != nil {
-		logger.Error(err)
-		w.WriteHeader(500)
-		return
+	if kotsKinds.ConfigValues != nil {
+		if err := kotsKinds.EncryptConfigValues(); err != nil {
+			logger.Error(err)
+			w.WriteHeader(500)
+			return
+		}
+		updated, err := kotsKinds.Marshal("kots.io", "v1beta1", "ConfigValues")
+		if err != nil {
+			logger.Error(err)
+			w.WriteHeader(500)
+			return
+		}
+
+		if err := ioutil.WriteFile(filepath.Join(archiveDir, "upstream", "userdata", "config.yaml"), []byte(updated), 0644); err != nil {
+			logger.Error(err)
+			w.WriteHeader(500)
+			return
+		}
 	}
-	updated, err := kotsKinds.Marshal("kots.io", "v1beta1", "ConfigValues")
+
+	a, err := store.GetStore().GetAppFromSlug(uploadExistingAppRequest.Slug)
 	if err != nil {
 		logger.Error(err)
 		w.WriteHeader(500)
 		return
 	}
 
-	if err := ioutil.WriteFile(filepath.Join(archiveDir, "upstream", "userdata", "config.yaml"), []byte(updated), 0644); err != nil {
+	registrySettings, err := store.GetStore().GetRegistryDetailsForApp(a.ID)
+	if err != nil {
 		logger.Error(err)
 		w.WriteHeader(500)
 		return
 	}
-
-	a, err := app.GetFromSlug(uploadExistingAppRequest.Slug)
+	app, err := store.GetStore().GetApp(a.ID)
+	if err != nil {
+		logger.Error(err)
+		w.WriteHeader(500)
+		return
+	}
+	downstreams, err := store.GetStore().ListDownstreamsForApp(a.ID)
 	if err != nil {
 		logger.Error(err)
 		w.WriteHeader(500)
 		return
 	}
 
-	registrySettings, err := registry.GetRegistrySettingsForApp(a.ID)
-	if err != nil {
-		logger.Error(err)
-		w.WriteHeader(500)
-		return
-	}
-
-	err = render.RenderDir(archiveDir, a.ID, registrySettings)
+	err = render.RenderDir(archiveDir, app, downstreams, registrySettings)
 	if err != nil {
 		logger.Error(err)
 		w.WriteHeader(500)
@@ -127,7 +141,7 @@ func UploadExistingApp(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := preflight.Run(a.ID, newSequence, archiveDir); err != nil {
+	if err := preflight.Run(a.ID, newSequence, a.IsAirgap, archiveDir); err != nil {
 		logger.Error(err)
 		w.WriteHeader(500)
 		return

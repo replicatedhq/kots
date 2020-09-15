@@ -70,7 +70,7 @@ apps:
         supportbundle_spec: null
         preflight_spec: null
         kots_app_spec:
-          apiVersion: troubleshoot.replicated.com/v1beta1
+          apiVersion: troubleshoot.sh/v1beta2
           kind: Collector
           metadata:
             name: sentry-enterprise

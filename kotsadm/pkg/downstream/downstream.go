@@ -16,55 +16,6 @@ type scannable interface {
 	Scan(dest ...interface{}) error
 }
 
-func ListDownstreamsForApp(appID string) ([]types.Downstream, error) {
-	db := persistence.MustGetPGSession()
-	query := `select c.id from app_downstream d inner join cluster c on d.cluster_id = c.id where app_id = $1`
-	rows, err := db.Query(query, appID)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to query")
-	}
-	defer rows.Close()
-
-	downstreams := []types.Downstream{}
-	for rows.Next() {
-		var clusterID string
-		if err := rows.Scan(&clusterID); err != nil {
-			return nil, errors.Wrap(err, "failed to scan")
-		}
-		downstream, err := Get(clusterID)
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to get downstream")
-		}
-		if downstream != nil {
-			downstreams = append(downstreams, *downstream)
-		}
-	}
-
-	return downstreams, nil
-}
-
-func Get(clusterID string) (*types.Downstream, error) {
-	db := persistence.MustGetPGSession()
-	query := `select c.id, c.slug, d.downstream_name, d.current_sequence from app_downstream d inner join cluster c on d.cluster_id = c.id where c.id = $1`
-	row := db.QueryRow(query, clusterID)
-
-	downstream := types.Downstream{
-		CurrentSequence: -1,
-	}
-	var sequence sql.NullInt64
-	if err := row.Scan(&downstream.ClusterID, &downstream.ClusterSlug, &downstream.Name, &sequence); err != nil {
-		if err == sql.ErrNoRows {
-			return nil, nil
-		}
-		return nil, errors.Wrap(err, "failed to scan downstream")
-	}
-	if sequence.Valid {
-		downstream.CurrentSequence = sequence.Int64
-	}
-
-	return &downstream, nil
-}
-
 func GetCurrentSequence(appID string, clusterID string) (int64, error) {
 	db := persistence.MustGetPGSession()
 	query := `select current_sequence from app_downstream where app_id = $1 and cluster_id = $2`
@@ -107,6 +58,45 @@ func GetCurrentParentSequence(appID string, clusterID string) (int64, error) {
 	return parentSequence.Int64, nil
 }
 
+func GetParentSequenceForSequence(appID string, clusterID string, sequence int64) (int64, error) {
+	db := persistence.MustGetPGSession()
+	query := `select parent_sequence from app_downstream_version where app_id = $1 and cluster_id = $2 and sequence = $3`
+	row := db.QueryRow(query, appID, clusterID, sequence)
+
+	var parentSequence sql.NullInt64
+	if err := row.Scan(&parentSequence); err != nil {
+		return -1, errors.Wrap(err, "failed to scan")
+	}
+
+	if !parentSequence.Valid {
+		return -1, nil
+	}
+
+	return parentSequence.Int64, nil
+}
+
+func GetPreviouslyDeployedSequence(appID string, clusterID string) (int64, error) {
+	db := persistence.MustGetPGSession()
+	query := `select sequence from app_downstream_version where app_id = $1 and cluster_id = $2 and applied_at is not null order by applied_at desc limit 2`
+	rows, err := db.Query(query, appID, clusterID)
+	if err != nil {
+		return -1, errors.Wrap(err, "failed to query")
+	}
+
+	for rowNumber := 1; rows.Next(); rowNumber++ {
+		if rowNumber != 2 {
+			continue
+		}
+		var sequence int64
+		if err := rows.Scan(&sequence); err != nil {
+			return -1, errors.Wrap(err, "failed to scan")
+		}
+		return sequence, nil
+	}
+
+	return -1, nil
+}
+
 // SetDownstreamVersionReady sets the status for the downstream version with the given sequence and app id to "pending"
 func SetDownstreamVersionReady(appID string, sequence int64) error {
 	db := persistence.MustGetPGSession()
@@ -131,6 +121,18 @@ func SetDownstreamVersionPendingPreflight(appID string, sequence int64) error {
 	return nil
 }
 
+// UpdateDownstreamStatus updates the status and status info for the downstream version with the given sequence and app id
+func UpdateDownstreamStatus(appID string, sequence int64, status string, statusInfo string) error {
+	db := persistence.MustGetPGSession()
+	query := `update app_downstream_version set status = $3, status_info = $4 where app_id = $1 and sequence = $2`
+	_, err := db.Exec(query, appID, sequence, status, statusInfo)
+	if err != nil {
+		return errors.Wrap(err, "failed to exec")
+	}
+
+	return nil
+}
+
 // GetDownstreamVersionStatus gets the status for the downstream version with the given sequence and app id
 func GetDownstreamVersionStatus(appID string, sequence int64) (string, error) {
 	db := persistence.MustGetPGSession()
@@ -139,6 +141,9 @@ func GetDownstreamVersionStatus(appID string, sequence int64) (string, error) {
 	var status sql.NullString
 	err := row.Scan(&status)
 	if err != nil {
+		if err == sql.ErrNoRows {
+			return "", nil
+		}
 		return "", errors.Wrap(err, "failed to get downstream version")
 	}
 
@@ -161,20 +166,6 @@ func GetIgnoreRBACErrors(appID string, sequence int64) (bool, error) {
 	}
 
 	return shouldIgnore.Bool, nil
-}
-
-func SetIgnorePreflightPermissionErrors(appID string, sequence int64) error {
-	db := persistence.MustGetPGSession()
-	query := `UPDATE app_downstream_version
-	SET status = 'pending_preflight', preflight_ignore_permissions = true, preflight_result = null
-	WHERE app_id = $1 AND sequence = $2`
-
-	_, err := db.Exec(query, appID, sequence)
-	if err != nil {
-		return errors.Wrap(err, "failed to set downstream version ignore rbac errors")
-	}
-
-	return nil
 }
 
 func GetCurrentVersion(appID string, clusterID string) (*types.DownstreamVersion, error) {
@@ -539,4 +530,39 @@ WHERE
 	}
 
 	return output, nil
+}
+
+func IsDownstreamDeploySuccessful(appID string, clusterID string, sequence int64) (bool, error) {
+	db := persistence.MustGetPGSession()
+
+	query := `SELECT is_error
+	FROM app_downstream_output
+	WHERE app_id = $1 AND cluster_id = $2 AND downstream_sequence = $3`
+
+	row := db.QueryRow(query, appID, clusterID, sequence)
+
+	var isError bool
+	if err := row.Scan(&isError); err != nil {
+		if err == sql.ErrNoRows {
+			return false, nil
+		}
+		return false, errors.Wrap(err, "failed to select downstream")
+	}
+
+	return !isError, nil
+}
+
+func UpdateDownstreamDeployStatus(appID string, clusterID string, sequence int64, isError bool, output types.DownstreamOutput) error {
+	db := persistence.MustGetPGSession()
+
+	query := `insert into app_downstream_output (app_id, cluster_id, downstream_sequence, is_error, dryrun_stdout, dryrun_stderr, apply_stdout, apply_stderr)
+	values ($1, $2, $3, $4, $5, $6, $7, $8) on conflict (app_id, cluster_id, downstream_sequence) do update set is_error = EXCLUDED.is_error,
+	dryrun_stdout = EXCLUDED.dryrun_stdout, dryrun_stderr = EXCLUDED.dryrun_stderr, apply_stdout = EXCLUDED.apply_stdout, apply_stderr = EXCLUDED.apply_stderr`
+
+	_, err := db.Exec(query, appID, clusterID, sequence, isError, output.DryrunStdout, output.DryrunStderr, output.ApplyStdout, output.ApplyStderr)
+	if err != nil {
+		return errors.Wrap(err, "failed to exec")
+	}
+
+	return nil
 }

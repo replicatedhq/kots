@@ -2,10 +2,7 @@ import React, { PureComponent } from "react";
 import PropTypes from "prop-types";
 import classNames from "classnames";
 import { Link, withRouter } from "react-router-dom";
-import { compose, withApollo } from "react-apollo";
-
 import { Utilities } from "@src/utilities/utilities";
-import { listClusters } from "@src/queries/ClusterQueries";
 import Avatar from "../shared/Avatar";
 import ErrorModal from "../modals/ErrorModal";
 
@@ -41,6 +38,11 @@ export class NavBar extends PureComponent {
         method: "POST",
       });
       if (!res.ok) {
+        if (res.status === 401) {
+          this.setState({ loggingOut: false, displayErrorModal: false  });
+          Utilities.logoutUser();
+          return;
+        }
         this.setState({ loggingOut: false, displayErrorModal: true });
         onLogoutError(`Unexpected status code: ${res.status}`);
       }
@@ -86,12 +88,7 @@ export class NavBar extends PureComponent {
   }
 
   handleGoToGitOps = () => {
-    if (this.props.location.pathname === "/gitops") {
-      this.props.client.query({
-        query: listClusters,
-        fetchPolicy: "network-only",
-      });
-    } else {
+    if (this.props.location.pathname !== "/gitops") {
       this.props.history.push("/gitops");
     }
   }
@@ -228,4 +225,4 @@ export class NavBar extends PureComponent {
   }
 }
 
-export default compose(withRouter, withApollo)(NavBar);
+export default withRouter(NavBar);

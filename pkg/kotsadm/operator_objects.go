@@ -246,7 +246,7 @@ func operatorDeployment(deployOptions types.DeployOptions) *appsv1.Deployment {
 							Env: []corev1.EnvVar{
 								{
 									Name:  "KOTSADM_API_ENDPOINT",
-									Value: fmt.Sprintf("http://kotsadm-api-node.%s.svc.cluster.local:3000", deployOptions.Namespace),
+									Value: fmt.Sprintf("http://kotsadm.%s.svc.cluster.local:3000", deployOptions.Namespace),
 								},
 								{
 									Name: "KOTSADM_TOKEN",

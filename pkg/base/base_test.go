@@ -5,7 +5,6 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"go.undefinedlabs.com/scopeagent"
 )
 
 func Test_transpileHelmHooksToKotsHooks(t *testing.T) {
@@ -120,8 +119,6 @@ status: {}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			scopetest := scopeagent.StartTest(t)
-			defer scopetest.End()
 			req := require.New(t)
 
 			b := BaseFile{
@@ -424,9 +421,6 @@ spec:
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			scopetest := scopeagent.StartTest(t)
-			defer scopetest.End()
-
 			b := BaseFile{
 				Path:    test.path,
 				Content: test.content,

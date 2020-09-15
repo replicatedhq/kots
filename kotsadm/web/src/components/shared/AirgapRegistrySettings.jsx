@@ -1,6 +1,5 @@
 import React, { Component } from "react";
 import { withRouter } from "react-router-dom";
-import { compose, withApollo } from "react-apollo";
 import get from "lodash/get";
 
 import Loader from "../shared/Loader";
@@ -255,6 +254,10 @@ class AirgapRegistrySettings extends Component {
 
           if (res.status !== "running") {
             this.state.updateChecker.stop();
+
+            if (this.props.updateCallback) {
+              this.props.updateCallback();
+            }
           }
 
           resolve();
@@ -267,7 +270,7 @@ class AirgapRegistrySettings extends Component {
   }
 
   render() {
-    const { app, hideTestConnection, hideCta, namespaceDescription, showRequiredFields, showHostnameAsRequired, showNamespaceAsRequired } = this.props;
+    const { app, hideTestConnection, hideCta, namespaceDescription, showHostnameAsRequired } = this.props;
     const { hostname, password, username, namespace, lastSync, testInProgress, testFailed, testMessage } = this.state;
     const { rewriteMessage, rewriteStatus } = this.state;
 
@@ -312,7 +315,7 @@ class AirgapRegistrySettings extends Component {
         <form>
           <div className="flex u-marginBottom--20">
             <div className="flex1">
-              <p className="u-fontSize--normal u-color--tuna u-fontWeight--bold u-lineHeight--normal u-marginBottom--5">Hostname {(showRequiredFields || showHostnameAsRequired) && <span className="u-color--chestnut">(Required)</span>}</p>
+              <p className="u-fontSize--normal u-color--tuna u-fontWeight--bold u-lineHeight--normal u-marginBottom--5">Hostname {showHostnameAsRequired && <span className="u-color--chestnut">(Required)</span>}</p>
               <p className="u-lineHeight--normal u-fontSize--small u-color--dustyGray u-fontWeight--medium u-marginBottom--10">Ensure this domain supports the Docker V2 protocol.</p>
               <input type="text" className={`Input ${app?.isAirgap && "is-disabled"}`} disabled={app?.isAirgap} placeholder="artifactory.some-big-bank.com" value={hostname || ""} autoComplete="" onChange={(e) => { this.handleFormChange("hostname", e.target.value) }} />
             </div>
@@ -348,7 +351,7 @@ class AirgapRegistrySettings extends Component {
           }
           <div className="flex u-marginBottom--5">
             <div className="flex1">
-              <p className="u-fontSize--normal u-color--tuna u-fontWeight--bold u-lineHeight--normal u-marginBottom--5">Registry Namespace {(showRequiredFields || showNamespaceAsRequired) && <span className="u-color--chestnut">(Required)</span>}</p>
+              <p className="u-fontSize--normal u-color--tuna u-fontWeight--bold u-lineHeight--normal u-marginBottom--5">Registry Namespace</p>
               <p className="u-lineHeight--normal u-fontSize--small u-color--dustyGray u-fontWeight--medium u-marginBottom--10">{namespaceSubtext}</p>
               <input type="text" className={`Input ${app?.isAirgap && "is-disabled"}`} placeholder="namespace" disabled={app?.isAirgap} value={namespace || ""} autoComplete="" onChange={(e) => { this.handleFormChange("namespace", e.target.value) }} />
             </div>
@@ -388,7 +391,4 @@ class AirgapRegistrySettings extends Component {
   }
 }
 
-export default compose(
-  withRouter,
-  withApollo,
-)(AirgapRegistrySettings);
+export default withRouter(AirgapRegistrySettings);

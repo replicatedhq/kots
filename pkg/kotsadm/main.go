@@ -2,7 +2,9 @@ package kotsadm
 
 import (
 	"context"
+	"io/ioutil"
 	"os"
+	"path/filepath"
 
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
@@ -71,15 +73,6 @@ func YAML(deployOptions types.DeployOptions) (map[string][]byte, error) {
 		docs[n] = v
 	}
 
-	// api
-	apiDocs, err := getApiYAML(deployOptions)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to get api yaml")
-	}
-	for n, v := range apiDocs {
-		docs[n] = v
-	}
-
 	// kotsadm
 	kotsadmDocs, err := getKotsadmYAML(deployOptions)
 	if err != nil {
@@ -119,7 +112,9 @@ func Upgrade(upgradeOptions types.UpgradeOptions) error {
 		return errors.Wrap(err, "failed to read deploy options")
 	}
 
+	// these options are not stored in cluster (yet)
 	deployOptions.Timeout = upgradeOptions.Timeout
+	deployOptions.KotsadmOptions = upgradeOptions.KotsadmOptions
 
 	if err := ensureKotsadm(*deployOptions, clientset, log); err != nil {
 		return errors.Wrap(err, "failed to upgrade admin console")
@@ -133,6 +128,38 @@ func Upgrade(upgradeOptions types.UpgradeOptions) error {
 }
 
 func Deploy(deployOptions types.DeployOptions) error {
+	imagesPushed := false
+	if deployOptions.AirgapArchive != "" && deployOptions.KotsadmOptions.OverrideRegistry != "" {
+		airgapRootDir, err := ioutil.TempDir("", "kotsadm-airgap")
+		if err != nil {
+			return errors.Wrap(err, "failed to create temp dir")
+		}
+		defer os.RemoveAll(airgapRootDir)
+
+		err = extractAirgapImages(deployOptions.AirgapArchive, airgapRootDir, deployOptions.ProgressWriter)
+		if err != nil {
+			return errors.Wrap(err, "failed to extract images")
+		}
+
+		pushOptions := types.PushImagesOptions{
+			Registry: registry.RegistryOptions{
+				Endpoint:  deployOptions.KotsadmOptions.OverrideRegistry,
+				Namespace: deployOptions.KotsadmOptions.OverrideNamespace,
+				Username:  deployOptions.KotsadmOptions.Username,
+				Password:  deployOptions.KotsadmOptions.Password,
+			},
+			ProgressWriter: deployOptions.ProgressWriter,
+		}
+
+		imagesRootDir := filepath.Join(airgapRootDir, "images")
+		_, err = TagAndPushAppImages(imagesRootDir, pushOptions)
+		if err != nil {
+			return errors.Wrap(err, "failed to list image formats")
+		}
+
+		imagesPushed = true
+	}
+
 	clientset, err := k8sutil.GetClientset(deployOptions.KubernetesConfigFlags)
 	if err != nil {
 		return errors.Wrap(err, "failed to get clientset")
@@ -171,6 +198,7 @@ func Deploy(deployOptions types.DeployOptions) error {
 	deployOptions.LimitRange = limitRange
 
 	deployOptions.IsOpenShift = isOpenshift(clientset)
+	deployOptions.AppImagesPushed = imagesPushed
 
 	if err := ensureStorage(deployOptions, clientset, log); err != nil {
 		return errors.Wrap(err, "failed to deplioyt backing storage")
@@ -369,20 +397,21 @@ func ensureKotsadm(deployOptions types.DeployOptions, clientset *kubernetes.Clie
 		return errors.Wrap(err, "failed to ensure kotsadm exists")
 	}
 
-	if err := ensureAPI(&deployOptions, clientset); err != nil {
-		return errors.Wrap(err, "failed to ensure api exists")
+	if err := ensureApplicationMetadata(deployOptions, clientset); err != nil {
+		return errors.Wrap(err, "failed to ensure custom branding")
 	}
 
 	if err := ensureOperator(deployOptions, clientset); err != nil {
 		return errors.Wrap(err, "failed to ensure operator")
 	}
 
+	if err := removeNodeAPI(&deployOptions, clientset); err != nil {
+		log.Error(errors.Errorf("Failed to remove unused API: %v", err))
+	}
+
 	log.ChildActionWithSpinner("Waiting for Admin Console to be ready")
 	if err := waitForKotsadm(&deployOptions, clientset); err != nil {
 		return errors.Wrap(err, "failed to wait for web")
-	}
-	if err := waitForAPI(&deployOptions, clientset); err != nil {
-		return errors.Wrap(err, "failed to wait for API")
 	}
 	log.FinishSpinner()
 

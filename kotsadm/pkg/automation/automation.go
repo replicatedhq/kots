@@ -4,13 +4,16 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"strconv"
 	"strings"
 
 	"github.com/pkg/errors"
-	"github.com/replicatedhq/kots/kotsadm/pkg/app"
-	"github.com/replicatedhq/kots/kotsadm/pkg/kotsutil"
 	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
 	"github.com/replicatedhq/kots/kotsadm/pkg/online"
+	installationtypes "github.com/replicatedhq/kots/kotsadm/pkg/online/types"
+	"github.com/replicatedhq/kots/kotsadm/pkg/store"
+	kotsadmtypes "github.com/replicatedhq/kots/pkg/kotsadm/types"
+	"github.com/replicatedhq/kots/pkg/kotsutil"
 	kotslicense "github.com/replicatedhq/kots/pkg/license"
 	kotspull "github.com/replicatedhq/kots/pkg/pull"
 	"go.uber.org/zap"
@@ -66,13 +69,17 @@ func AutomateInstall() error {
 			continue
 		}
 
-		// sync license
-		latestLicense, err := kotslicense.GetLatestLicense(verifiedLicense)
-		if err != nil {
-			logger.Error(err)
-			continue
+		disableOutboundConnections := false
+		// ignore the error, default to false
+		disableOutboundConnections, _ = strconv.ParseBool(os.Getenv("DISABLE_OUTBOUND_CONNECTIONS"))
+		if !disableOutboundConnections {
+			latestLicense, err := kotslicense.GetLatestLicense(verifiedLicense)
+			if err != nil {
+				logger.Error(err)
+				continue
+			}
+			verifiedLicense = latestLicense
 		}
-		verifiedLicense = latestLicense
 
 		// check license expiration
 		expired, err := kotspull.LicenseIsExpired(verifiedLicense)
@@ -85,17 +92,22 @@ func AutomateInstall() error {
 			continue
 		}
 
+		skipImagePush, err := kotsutil.IsImagesPushedSet(kotsadmtypes.KotsadmConfigMap)
+		if err != nil {
+			return errors.Wrap(err, "failed to get existing kotsadm config map")
+		}
+
 		desiredAppName := strings.Replace(verifiedLicense.Spec.AppSlug, "-", " ", 0)
 		upstreamURI := fmt.Sprintf("replicated://%s", verifiedLicense.Spec.AppSlug)
 
-		a, err := app.Create(desiredAppName, upstreamURI, string(license), verifiedLicense.Spec.IsAirgapSupported)
+		a, err := store.GetStore().CreateApp(desiredAppName, upstreamURI, string(license), verifiedLicense.Spec.IsAirgapSupported, skipImagePush)
 		if err != nil {
 			logger.Error(err)
 			continue
 		}
 
 		// complete the install online
-		pendingApp := online.PendingApp{
+		pendingApp := installationtypes.PendingApp{
 			ID:          a.ID,
 			Slug:        a.Slug,
 			Name:        a.Name,

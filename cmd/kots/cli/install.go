@@ -53,9 +53,14 @@ func InstallCmd() *cobra.Command {
 			}
 			defer os.RemoveAll(rootDir)
 
+			if v.GetString("airgap-bundle") != "" && v.GetString("kotsadm-registry") == "" {
+				log.Info("Application images will not be pushed because \"kotsadm-registry\" argument is not specified.")
+			}
+
 			upstream := pull.RewriteUpstream(args[0])
 
 			namespace := v.GetString("namespace")
+
 			if namespace != "" {
 				if strings.Contains(namespace, "_") {
 					return errors.New("a namespace should not contain the _ character")
@@ -74,9 +79,17 @@ func InstallCmd() *cobra.Command {
 				namespace = enteredNamespace
 			}
 
-			applicationMetadata, err := pull.PullApplicationMetadata(upstream)
-			if err != nil {
-				log.Info("Unable to pull application metadata. This can be ignored, but custom branding will not be available in the Admin Console until a license is installed.")
+			var applicationMetadata []byte
+			if airgapBundle := v.GetString("airgap-bundle"); airgapBundle != "" {
+				applicationMetadata, err = pull.GetAppMetadataFromAirgap(airgapBundle)
+				if err != nil {
+					return errors.Wrapf(err, "failed to get metadata from %s", airgapBundle)
+				}
+			} else {
+				applicationMetadata, err = pull.PullApplicationMetadata(upstream)
+				if err != nil {
+					log.Info("Unable to pull application metadata. This can be ignored, but custom branding will not be available in the Admin Console until a license is installed.")
+				}
 			}
 
 			var license *kotsv1beta1.License
@@ -102,7 +115,7 @@ func InstallCmd() *cobra.Command {
 			// alpha enablement here
 			// if deploy minio is set and there's no storage base uri, set it
 			// this is likely not going to be the final state of how this is configured
-			if v.GetBool("deploy-dockerdistribution") {
+			if v.GetBool("with-dockerdistribution") {
 				if v.GetString("storage-base-uri") == "" {
 					v.Set("storage-base-uri", "docker://kotsadm-storage-registry:5000")
 					v.Set("storage-base-uri-plainhttp", true)
@@ -119,15 +132,16 @@ func InstallCmd() *cobra.Command {
 				ApplicationMetadata:       applicationMetadata,
 				License:                   license,
 				ConfigValues:              configValues,
+				AirgapArchive:             v.GetString("airgap-bundle"),
+				ProgressWriter:            os.Stdout,
 				StorageBaseURI:            v.GetString("storage-base-uri"),
 				StorageBaseURIPlainHTTP:   v.GetBool("storage-base-uri-plainhttp"),
-				IncludeMinio:              v.GetBool("deploy-minio"),
-				IncludeDockerDistribution: v.GetBool("deploy-dockerdistribution"),
+				IncludeMinio:              v.GetBool("with-minio"),
+				IncludeDockerDistribution: v.GetBool("with-dockerdistribution"),
 				Timeout:                   time.Minute * 2,
 				HTTPProxyEnvValue:         v.GetString("http-proxy"),
 				HTTPSProxyEnvValue:        v.GetString("https-proxy"),
 				NoProxyEnvValue:           v.GetString("no-proxy"),
-
 				KotsadmOptions: kotsadmtypes.KotsadmOptions{
 					OverrideVersion:   v.GetString("kotsadm-tag"),
 					OverrideRegistry:  v.GetString("kotsadm-registry"),
@@ -244,6 +258,7 @@ func InstallCmd() *cobra.Command {
 	cmd.Flags().String("https-proxy", "", "sets HTTPS_PROXY environment variable in all KOTS Admin Console components")
 	cmd.Flags().String("no-proxy", "", "sets NO_PROXY environment variable in all KOTS Admin Console components")
 	cmd.Flags().Bool("copy-proxy-env", false, "copy proxy environment variables from current environment into all KOTS Admin Console components")
+	cmd.Flags().String("airgap-bundle", "", "path to the application airgap bundle where application metadata will be loaded from")
 
 	cmd.Flags().String("repo", "", "repo uri to use when installing a helm chart")
 	cmd.Flags().StringSlice("set", []string{}, "values to pass to helm when running helm template")
@@ -271,15 +286,10 @@ func InstallCmd() *cobra.Command {
 	cmd.Flags().MarkHidden("node-port")
 
 	// options for the alpha feature of using a reg instead of s3 for storage
-	// this was introduced as alpha in kots 1.16.0
 	cmd.Flags().String("storage-base-uri", "", "an s3 or oci-registry uri to use for kots persistent storage in the cluster")
-	cmd.Flags().Bool("deploy-minio", true, "when set, kots install will deploy a local minio instance for storage")
-	cmd.Flags().Bool("deploy-dockerdistribution", false, "when set, kots install will deploy a local instance of docker distribution for storage")
+	cmd.Flags().Bool("with-minio", true, "when set, kots install will deploy a local minio instance for storage")
+	cmd.Flags().Bool("with-dockerdistribution", false, "when set, kots install will deploy a local instance of docker distribution for storage")
 	cmd.Flags().Bool("storage-base-uri-plainhttp", false, "when set, use plain http (not https) connecting to the local oci storage")
-	cmd.Flags().MarkHidden("storage-base-uri")
-	cmd.Flags().MarkHidden("deploy-minio")
-	cmd.Flags().MarkHidden("deploy-dockerdistribution")
-	cmd.Flags().MarkHidden("storage-base-uri-plainhttp")
 
 	return cmd
 }

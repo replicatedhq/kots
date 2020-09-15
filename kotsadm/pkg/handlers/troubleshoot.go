@@ -14,21 +14,18 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
-	"github.com/replicatedhq/kots/kotsadm/pkg/app"
-	"github.com/replicatedhq/kots/kotsadm/pkg/kotsutil"
 	"github.com/replicatedhq/kots/kotsadm/pkg/license"
 	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
-	"github.com/replicatedhq/kots/kotsadm/pkg/persistence"
 	"github.com/replicatedhq/kots/kotsadm/pkg/redact"
-	"github.com/replicatedhq/kots/kotsadm/pkg/session"
+	"github.com/replicatedhq/kots/kotsadm/pkg/render/helper"
 	"github.com/replicatedhq/kots/kotsadm/pkg/snapshot"
+	"github.com/replicatedhq/kots/kotsadm/pkg/store"
 	"github.com/replicatedhq/kots/kotsadm/pkg/supportbundle"
 	"github.com/replicatedhq/kots/kotsadm/pkg/supportbundle/types"
-	"github.com/replicatedhq/kots/kotsadm/pkg/version"
+	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/template"
 	troubleshootanalyze "github.com/replicatedhq/troubleshoot/pkg/analyze"
-	"github.com/replicatedhq/troubleshoot/pkg/apis/troubleshoot/v1beta1"
-	troubleshootv1beta1 "github.com/replicatedhq/troubleshoot/pkg/apis/troubleshoot/v1beta1"
+	troubleshootv1beta2 "github.com/replicatedhq/troubleshoot/pkg/apis/troubleshoot/v1beta2"
 	"github.com/replicatedhq/troubleshoot/pkg/convert"
 	redact2 "github.com/replicatedhq/troubleshoot/pkg/redact"
 	"github.com/replicatedhq/yaml/v3"
@@ -76,6 +73,10 @@ type ResponseSupportBundle struct {
 	Analysis   *types.SupportBundleAnalysis `json:"analysis"`
 }
 
+type GetSupportBundleCommandResponse struct {
+	Command []string `json:"command"`
+}
+
 type GetSupportBundleRedactionsResponse struct {
 	Redactions redact2.RedactionList `json:"redactions"`
 
@@ -88,37 +89,16 @@ type PutSupportBundleRedactions struct {
 }
 
 func GetSupportBundle(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Header().Set("Access-Control-Allow-Headers", "content-type, origin, accept, authorization")
-
-	if r.Method == "OPTIONS" {
-		w.WriteHeader(200)
-		return
-	}
-
-	sess, err := session.Parse(r.Header.Get("Authorization"))
-	if err != nil {
-		logger.Error(err)
-		w.WriteHeader(401)
-		return
-	}
-
-	// we don't currently have roles, all valid tokens are valid sessions
-	if sess == nil || sess.ID == "" {
-		w.WriteHeader(401)
-		return
-	}
-
 	bundleSlug := mux.Vars(r)["bundleSlug"]
 
-	bundle, err := supportbundle.GetFromSlug(bundleSlug)
+	bundle, err := store.GetStore().GetSupportBundleFromSlug(bundleSlug)
 	if err != nil {
 		logger.Error(err)
 		w.WriteHeader(500)
 		return
 	}
 
-	analysis, err := supportbundle.GetBundleAnalysis(bundle.ID)
+	analysis, err := store.GetStore().GetSupportBundleAnalysis(bundle.ID)
 	if err != nil {
 		logger.Error(errors.Wrapf(err, "failed to get analysis for bundle %s", bundle.Slug))
 	}
@@ -141,31 +121,8 @@ func GetSupportBundle(w http.ResponseWriter, r *http.Request) {
 }
 
 func GetSupportBundleFiles(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Header().Set("Access-Control-Allow-Headers", "content-type, origin, accept, authorization")
-
-	if r.Method == "OPTIONS" {
-		w.WriteHeader(200)
-		return
-	}
-
 	getSupportBundleFilesResponse := GetSupportBundleFilesResponse{
 		Success: false,
-	}
-
-	sess, err := session.Parse(r.Header.Get("Authorization"))
-	if err != nil {
-		logger.Error(err)
-		getSupportBundleFilesResponse.Error = "failed to parse authorization header"
-		JSON(w, 401, getSupportBundleFilesResponse)
-		return
-	}
-
-	// we don't currently have roles, all valid tokens are valid sessions
-	if sess == nil || sess.ID == "" {
-		getSupportBundleFilesResponse.Error = "no session in auth header"
-		JSON(w, 401, getSupportBundleFilesResponse)
-		return
 	}
 
 	bundleID := mux.Vars(r)["bundleId"]
@@ -186,37 +143,16 @@ func GetSupportBundleFiles(w http.ResponseWriter, r *http.Request) {
 }
 
 func ListSupportBundles(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Header().Set("Access-Control-Allow-Headers", "content-type, origin, accept, authorization")
-
-	if r.Method == "OPTIONS" {
-		w.WriteHeader(200)
-		return
-	}
-
-	sess, err := session.Parse(r.Header.Get("Authorization"))
-	if err != nil {
-		logger.Error(err)
-		w.WriteHeader(401)
-		return
-	}
-
-	// we don't currently have roles, all valid tokens are valid sessions
-	if sess == nil || sess.ID == "" {
-		w.WriteHeader(401)
-		return
-	}
-
 	appSlug := mux.Vars(r)["appSlug"]
 
-	a, err := app.GetFromSlug(appSlug)
+	a, err := store.GetStore().GetAppFromSlug(appSlug)
 	if err != nil {
 		logger.Error(err)
 		w.WriteHeader(500)
 		return
 	}
 
-	supportBundles, err := supportbundle.List(a.ID)
+	supportBundles, err := store.GetStore().ListSupportBundles(a.ID)
 	if err != nil {
 		logger.Error(err)
 		w.WriteHeader(500)
@@ -225,7 +161,7 @@ func ListSupportBundles(w http.ResponseWriter, r *http.Request) {
 
 	responseSupportBundles := []ResponseSupportBundle{}
 	for _, bundle := range supportBundles {
-		analysis, err := supportbundle.GetBundleAnalysis(bundle.ID)
+		analysis, err := store.GetStore().GetSupportBundleAnalysis(bundle.ID)
 		if err != nil {
 			logger.Error(errors.Wrapf(err, "failed to get analysis for bundle %s", bundle.Slug))
 		}
@@ -253,39 +189,33 @@ func ListSupportBundles(w http.ResponseWriter, r *http.Request) {
 	JSON(w, 200, listSupportBundlesResponse)
 }
 
+func GetSupportBundleCommand(w http.ResponseWriter, r *http.Request) {
+	appSlug := mux.Vars(r)["appSlug"]
+
+	command := []string{
+		"curl https://krew.sh/support-bundle | bash",
+		fmt.Sprintf("kubectl support-bundle API_ADDRESS/api/v1/troubleshoot/%s", appSlug),
+	}
+
+	response := GetSupportBundleCommandResponse{
+		Command: command,
+	}
+
+	JSON(w, 200, response)
+}
+
 func DownloadSupportBundle(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Header().Set("Access-Control-Allow-Headers", "content-type, origin, accept, authorization")
-
-	if r.Method == "OPTIONS" {
-		w.WriteHeader(200)
-		return
-	}
-
-	sess, err := session.Parse(r.Header.Get("Authorization"))
-	if err != nil {
-		logger.Error(err)
-		JSON(w, 401, nil)
-		return
-	}
-
-	// we don't currently have roles, all valid tokens are valid sessions
-	if sess == nil || sess.ID == "" {
-		JSON(w, 401, nil)
-		return
-	}
-
 	bundleID := mux.Vars(r)["bundleId"]
 
-	bundle, err := supportbundle.GetSupportBundle(bundleID)
+	bundleArchive, err := store.GetStore().GetSupportBundleArchive(bundleID)
 	if err != nil {
 		logger.Error(err)
 		JSON(w, 500, nil)
 		return
 	}
-	defer os.RemoveAll(bundle)
+	defer os.RemoveAll(bundleArchive)
 
-	f, err := os.Open(bundle)
+	f, err := os.Open(bundleArchive)
 	if err != nil {
 		logger.Error(err)
 		JSON(w, 500, nil)
@@ -299,20 +229,7 @@ func DownloadSupportBundle(w http.ResponseWriter, r *http.Request) {
 }
 
 func CollectSupportBundle(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Header().Set("Access-Control-Allow-Headers", "content-type, origin, accept, authorization")
-
-	if r.Method == "OPTIONS" {
-		w.WriteHeader(200)
-		return
-	}
-
-	if err := requireValidSession(w, r); err != nil {
-		logger.Error(err)
-		return
-	}
-
-	a, err := app.Get(mux.Vars(r)["appId"])
+	a, err := store.GetStore().GetApp(mux.Vars(r)["appId"])
 	if err != nil {
 		logger.Error(err)
 		w.WriteHeader(500)
@@ -328,15 +245,9 @@ func CollectSupportBundle(w http.ResponseWriter, r *http.Request) {
 	JSON(w, 204, "")
 }
 
+// UploadSupportBundle route is UNAUTHENTICATED
+// This request comes from the `kubectl support-bundle` command.
 func UploadSupportBundle(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Header().Set("Access-Control-Allow-Headers", "content-type, origin, accept, authorization")
-
-	if r.Method == "OPTIONS" {
-		w.WriteHeader(200)
-		return
-	}
-
 	bundleContents, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		logger.Error(err)
@@ -366,13 +277,13 @@ func UploadSupportBundle(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// we need the app archive to get the analyzers
-	a, err := app.Get(mux.Vars(r)["appId"])
+	a, err := store.GetStore().GetApp(mux.Vars(r)["appId"])
 	if err != nil {
 		logger.Error(err)
 		w.WriteHeader(500)
 		return
 	}
-	archiveDir, err := version.GetAppVersionArchive(a.ID, a.CurrentSequence)
+	archiveDir, err := store.GetStore().GetAppVersionArchive(a.ID, a.CurrentSequence)
 	if err != nil {
 		logger.Error(err)
 		w.WriteHeader(500)
@@ -387,17 +298,21 @@ func UploadSupportBundle(w http.ResponseWriter, r *http.Request) {
 	}
 
 	analyzer := kotsKinds.Analyzer
+	// SupportBundle overwrites Analyzer if defined
+	if kotsKinds.SupportBundle != nil {
+		analyzer = kotsutil.SupportBundleToAnalyzer(kotsKinds.SupportBundle)
+	}
 	if analyzer == nil {
-		analyzer = &troubleshootv1beta1.Analyzer{
+		analyzer = &troubleshootv1beta2.Analyzer{
 			TypeMeta: metav1.TypeMeta{
-				APIVersion: "troubleshoot.replicated.com/v1beta1",
+				APIVersion: "troubleshoot.sh/v1beta2",
 				Kind:       "Analyzer",
 			},
 			ObjectMeta: metav1.ObjectMeta{
 				Name: "default-analyzers",
 			},
-			Spec: troubleshootv1beta1.AnalyzerSpec{
-				Analyzers: []*troubleshootv1beta1.Analyze{},
+			Spec: troubleshootv1beta2.AnalyzerSpec{
+				Analyzers: []*troubleshootv1beta2.Analyze{},
 			},
 		}
 	}
@@ -432,24 +347,16 @@ func UploadSupportBundle(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := supportbundle.SetBundleAnalysis(supportBundle.ID, insights); err != nil {
+	if err := store.GetStore().SetSupportBundleAnalysis(supportBundle.ID, insights); err != nil {
 		logger.Error(err)
 		w.WriteHeader(500)
 		return
 	}
-
-	fmt.Printf("analyzeResult %#v\n", analyzeResult)
 }
 
+// GetDefaultTroubleshoot route is UNAUTHENTICATED
+// This request comes from the `kubectl support-bundle` command.
 func GetDefaultTroubleshoot(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Header().Set("Access-Control-Allow-Headers", "content-type, origin, accept, authorization")
-
-	if r.Method == "OPTIONS" {
-		w.WriteHeader(200)
-		return
-	}
-
 	defaultTroubleshootSpec := addDefaultTroubleshoot(nil, "")
 	defaultBytes, err := yaml.Marshal(defaultTroubleshootSpec)
 	if err != nil {
@@ -472,20 +379,14 @@ func GetDefaultTroubleshoot(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(fullTroubleshoot))
 }
 
+// GetTroubleshoot route is UNAUTHENTICATED
+// This request comes from the `kubectl support-bundle` command.
 func GetTroubleshoot(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Header().Set("Access-Control-Allow-Headers", "content-type, origin, accept, authorization")
-
-	if r.Method == "OPTIONS" {
-		w.WriteHeader(200)
-		return
-	}
-
 	appSlug := mux.Vars(r)["appSlug"]
 	inCluster := r.URL.Query().Get("incluster")
 
 	// get app from slug
-	foundApp, err := app.GetFromSlug(appSlug)
+	foundApp, err := store.GetStore().GetAppFromSlug(appSlug)
 	if err != nil {
 		logger.Error(err)
 		w.WriteHeader(500)
@@ -494,7 +395,7 @@ func GetTroubleshoot(w http.ResponseWriter, r *http.Request) {
 	// TODO get from watch ID, not just app id
 
 	// get troubleshoot spec from db
-	existingSpec, err := getAppTroubleshoot(appSlug)
+	existingSpec, err := store.GetStore().GetSupportBundleSpecForApp(foundApp.ID)
 	if err != nil {
 		logger.Error(err)
 		w.WriteHeader(500)
@@ -508,7 +409,7 @@ func GetTroubleshoot(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(500)
 		return
 	}
-	existingTs := obj.(*v1beta1.Collector)
+	existingTs := obj.(*troubleshootv1beta2.Collector)
 
 	existingTs = populateNamespaces(existingTs)
 
@@ -520,8 +421,8 @@ func GetTroubleshoot(w http.ResponseWriter, r *http.Request) {
 		uploadURL = fmt.Sprintf("%s/api/v1/troubleshoot/%s/%s", r.Header.Get("Bundle-Upload-Host"), foundApp.ID, randomBundleID)
 		redactURL = fmt.Sprintf("%s/api/v1/troubleshoot/supportbundle/%s/redactions", r.Header.Get("Bundle-Upload-Host"), randomBundleID)
 	} else if inCluster == "true" {
-		uploadURL = fmt.Sprintf("%s/api/v1/troubleshoot/%s/%s", fmt.Sprintf("http://kotsadm-api.%s.svc.cluster.local:3000", os.Getenv("POD_NAMESPACE")), foundApp.ID, randomBundleID)
-		redactURL = fmt.Sprintf("%s/api/v1/troubleshoot/supportbundle/%s/redactions", fmt.Sprintf("http://kotsadm-api.%s.svc.cluster.local:3000", os.Getenv("POD_NAMESPACE")), randomBundleID)
+		uploadURL = fmt.Sprintf("%s/api/v1/troubleshoot/%s/%s", fmt.Sprintf("http://kotsadm.%s.svc.cluster.local:3000", os.Getenv("POD_NAMESPACE")), foundApp.ID, randomBundleID)
+		redactURL = fmt.Sprintf("%s/api/v1/troubleshoot/supportbundle/%s/redactions", fmt.Sprintf("http://kotsadm.%s.svc.cluster.local:3000", os.Getenv("POD_NAMESPACE")), randomBundleID)
 	} else {
 		uploadURL = fmt.Sprintf("%s/api/v1/troubleshoot/%s/%s", os.Getenv("API_ADVERTISE_ENDPOINT"), foundApp.ID, randomBundleID)
 		redactURL = fmt.Sprintf("%s/api/v1/troubleshoot/supportbundle/%s/redactions", os.Getenv("API_ADVERTISE_ENDPOINT"), randomBundleID)
@@ -535,9 +436,9 @@ func GetTroubleshoot(w http.ResponseWriter, r *http.Request) {
 	}
 
 	tsSpec := addDefaultTroubleshoot(existingTs, licenseString)
-	tsSpec.Spec.AfterCollection = []*v1beta1.AfterCollection{
+	tsSpec.Spec.AfterCollection = []*troubleshootv1beta2.AfterCollection{
 		{
-			UploadResultsTo: &v1beta1.ResultRequest{
+			UploadResultsTo: &troubleshootv1beta2.ResultRequest{
 				URI:       uploadURL,
 				Method:    "PUT",
 				RedactURI: redactURL,
@@ -562,40 +463,24 @@ func GetTroubleshoot(w http.ResponseWriter, r *http.Request) {
 		fullTroubleshoot = fmt.Sprintf("%s\n---\n%s", string(specBytes), redactSpec)
 	}
 
-	w.WriteHeader(200)
-	w.Write([]byte(fullTroubleshoot))
-}
-
-func GetSupportBundleRedactions(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Header().Set("Access-Control-Allow-Headers", "content-type, origin, accept, authorization")
-
-	if r.Method == "OPTIONS" {
-		w.WriteHeader(200)
+	renderedTroubleshoot, err := helper.RenderAppFile(foundApp, nil, []byte(fullTroubleshoot))
+	if err != nil {
+		logger.Error(err)
+		w.WriteHeader(500)
 		return
 	}
 
+	w.WriteHeader(200)
+	w.Write(renderedTroubleshoot)
+}
+
+func GetSupportBundleRedactions(w http.ResponseWriter, r *http.Request) {
 	getSupportBundleRedactionsResponse := GetSupportBundleRedactionsResponse{
 		Success: false,
 	}
 
-	sess, err := session.Parse(r.Header.Get("Authorization"))
-	if err != nil {
-		logger.Error(err)
-		getSupportBundleRedactionsResponse.Error = "failed to parse authorization header"
-		JSON(w, 401, getSupportBundleRedactionsResponse)
-		return
-	}
-
-	// we don't currently have roles, all valid tokens are valid sessions
-	if sess == nil || sess.ID == "" {
-		getSupportBundleRedactionsResponse.Error = "no session in auth header"
-		JSON(w, 401, getSupportBundleRedactionsResponse)
-		return
-	}
-
 	bundleID := mux.Vars(r)["bundleId"]
-	redactions, err := supportbundle.GetRedactions(bundleID)
+	redactions, err := store.GetStore().GetRedactions(bundleID)
 	if err != nil {
 		logger.Error(err)
 		getSupportBundleRedactionsResponse.Error = fmt.Sprintf("failed to find redactions for bundle %s", bundleID)
@@ -609,10 +494,9 @@ func GetSupportBundleRedactions(w http.ResponseWriter, r *http.Request) {
 	JSON(w, 200, getSupportBundleRedactionsResponse)
 }
 
+// SetSupportBundleRedactions route is UNAUTHENTICATED
+// This request comes from the `kubectl support-bundle` command.
 func SetSupportBundleRedactions(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Header().Set("Access-Control-Allow-Headers", "content-type, origin, accept, authorization")
-
 	redactionsBody, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		logger.Error(err)
@@ -629,7 +513,7 @@ func SetSupportBundleRedactions(w http.ResponseWriter, r *http.Request) {
 	}
 
 	bundleID := mux.Vars(r)["bundleId"]
-	err = supportbundle.SetRedactions(bundleID, redactions.Redactions)
+	err = store.GetStore().SetRedactions(bundleID, redactions.Redactions)
 	if err != nil {
 		logger.Error(err)
 		w.WriteHeader(500)
@@ -641,7 +525,7 @@ func SetSupportBundleRedactions(w http.ResponseWriter, r *http.Request) {
 }
 
 // if a namespace is not set for a secret/run/logs/exec/copy collector, set it to the current namespace
-func populateNamespaces(existingSpec *v1beta1.Collector) *v1beta1.Collector {
+func populateNamespaces(existingSpec *troubleshootv1beta2.Collector) *troubleshootv1beta2.Collector {
 	if existingSpec == nil {
 		return nil
 	} else if existingSpec.Spec.Collectors == nil {
@@ -662,7 +546,7 @@ func populateNamespaces(existingSpec *v1beta1.Collector) *v1beta1.Collector {
 		return os.Getenv("POD_NAMESPACE")
 	}
 
-	collects := []*v1beta1.Collect{}
+	collects := []*troubleshootv1beta2.Collect{}
 	for _, collect := range existingSpec.Spec.Collectors {
 		if collect.Secret != nil {
 			collect.Secret.Namespace = ns(collect.Secret.Namespace)
@@ -685,12 +569,12 @@ func populateNamespaces(existingSpec *v1beta1.Collector) *v1beta1.Collector {
 	return existingSpec
 }
 
-func addDefaultTroubleshoot(existingSpec *v1beta1.Collector, licenseData string) *v1beta1.Collector {
+func addDefaultTroubleshoot(existingSpec *troubleshootv1beta2.Collector, licenseData string) *troubleshootv1beta2.Collector {
 	if existingSpec == nil {
-		existingSpec = &v1beta1.Collector{
+		existingSpec = &troubleshootv1beta2.Collector{
 			TypeMeta: v1.TypeMeta{
 				Kind:       "Collector",
-				APIVersion: "troubleshoot.replicated.com/v1beta1",
+				APIVersion: "troubleshoot.sh/v1beta2",
 			},
 			ObjectMeta: v1.ObjectMeta{
 				Name: "default-collector",
@@ -698,10 +582,10 @@ func addDefaultTroubleshoot(existingSpec *v1beta1.Collector, licenseData string)
 		}
 	}
 
-	existingSpec.Spec.Collectors = append(existingSpec.Spec.Collectors, []*v1beta1.Collect{
+	existingSpec.Spec.Collectors = append(existingSpec.Spec.Collectors, []*troubleshootv1beta2.Collect{
 		{
-			Data: &v1beta1.Data{
-				CollectorMeta: v1beta1.CollectorMeta{
+			Data: &troubleshootv1beta2.Data{
+				CollectorMeta: troubleshootv1beta2.CollectorMeta{
 					CollectorName: "license.yaml",
 				},
 				Name: "kots/admin-console",
@@ -709,8 +593,8 @@ func addDefaultTroubleshoot(existingSpec *v1beta1.Collector, licenseData string)
 			},
 		},
 		{
-			Secret: &v1beta1.Secret{
-				CollectorMeta: v1beta1.CollectorMeta{
+			Secret: &troubleshootv1beta2.Secret{
+				CollectorMeta: troubleshootv1beta2.CollectorMeta{
 					CollectorName: "kotsadm-replicated-registry",
 				},
 				SecretName:   "kotsadm-replicated-registry",
@@ -728,8 +612,8 @@ func addDefaultTroubleshoot(existingSpec *v1beta1.Collector, licenseData string)
 	return existingSpec
 }
 
-func makeDbCollectors() []*v1beta1.Collect {
-	dbCollectors := []*v1beta1.Collect{}
+func makeDbCollectors() []*troubleshootv1beta2.Collect {
+	dbCollectors := []*troubleshootv1beta2.Collect{}
 
 	pgConnectionString := os.Getenv("POSTGRES_URI")
 	parsedPg, err := url.Parse(pgConnectionString)
@@ -738,9 +622,9 @@ func makeDbCollectors() []*v1beta1.Collect {
 		if parsedPg.User != nil {
 			username = parsedPg.User.Username()
 		}
-		dbCollectors = append(dbCollectors, &v1beta1.Collect{
-			Exec: &v1beta1.Exec{
-				CollectorMeta: v1beta1.CollectorMeta{
+		dbCollectors = append(dbCollectors, &troubleshootv1beta2.Collect{
+			Exec: &troubleshootv1beta2.Exec{
+				CollectorMeta: troubleshootv1beta2.CollectorMeta{
 					CollectorName: "kotsadm-postgres-db",
 				},
 				Name:          "kots/admin-console",
@@ -756,19 +640,18 @@ func makeDbCollectors() []*v1beta1.Collect {
 	return dbCollectors
 }
 
-func makeKotsadmCollectors() []*v1beta1.Collect {
+func makeKotsadmCollectors() []*troubleshootv1beta2.Collect {
 	names := []string{
 		"kotsadm-postgres",
 		"kotsadm",
-		"kotsadm-api",
 		"kotsadm-operator",
 		"kurl-proxy-kotsadm",
 	}
-	rookCollectors := []*v1beta1.Collect{}
+	rookCollectors := []*troubleshootv1beta2.Collect{}
 	for _, name := range names {
-		rookCollectors = append(rookCollectors, &v1beta1.Collect{
-			Logs: &v1beta1.Logs{
-				CollectorMeta: v1beta1.CollectorMeta{
+		rookCollectors = append(rookCollectors, &troubleshootv1beta2.Collect{
+			Logs: &troubleshootv1beta2.Logs{
+				CollectorMeta: troubleshootv1beta2.CollectorMeta{
 					CollectorName: name,
 				},
 				Name:      "kots/admin-console",
@@ -780,7 +663,7 @@ func makeKotsadmCollectors() []*v1beta1.Collect {
 	return rookCollectors
 }
 
-func makeRookCollectors() []*v1beta1.Collect {
+func makeRookCollectors() []*troubleshootv1beta2.Collect {
 	names := []string{
 		"rook-ceph-agent",
 		"rook-ceph-mgr",
@@ -791,11 +674,11 @@ func makeRookCollectors() []*v1beta1.Collect {
 		"rook-ceph-rgw",
 		"rook-discover",
 	}
-	rookCollectors := []*v1beta1.Collect{}
+	rookCollectors := []*troubleshootv1beta2.Collect{}
 	for _, name := range names {
-		rookCollectors = append(rookCollectors, &v1beta1.Collect{
-			Logs: &v1beta1.Logs{
-				CollectorMeta: v1beta1.CollectorMeta{
+		rookCollectors = append(rookCollectors, &troubleshootv1beta2.Collect{
+			Logs: &troubleshootv1beta2.Logs{
+				CollectorMeta: troubleshootv1beta2.CollectorMeta{
 					CollectorName: name,
 				},
 				Name:      "kots/rook",
@@ -807,15 +690,15 @@ func makeRookCollectors() []*v1beta1.Collect {
 	return rookCollectors
 }
 
-func makeKurlCollectors() []*v1beta1.Collect {
+func makeKurlCollectors() []*troubleshootv1beta2.Collect {
 	names := []string{
 		"registry",
 	}
-	rookCollectors := []*v1beta1.Collect{}
+	rookCollectors := []*troubleshootv1beta2.Collect{}
 	for _, name := range names {
-		rookCollectors = append(rookCollectors, &v1beta1.Collect{
-			Logs: &v1beta1.Logs{
-				CollectorMeta: v1beta1.CollectorMeta{
+		rookCollectors = append(rookCollectors, &troubleshootv1beta2.Collect{
+			Logs: &troubleshootv1beta2.Logs{
+				CollectorMeta: troubleshootv1beta2.CollectorMeta{
 					CollectorName: name,
 				},
 				Name:      "kots/kurl",
@@ -827,8 +710,8 @@ func makeKurlCollectors() []*v1beta1.Collect {
 	return rookCollectors
 }
 
-func makeVeleroCollectors() []*v1beta1.Collect {
-	collectors := []*v1beta1.Collect{}
+func makeVeleroCollectors() []*troubleshootv1beta2.Collect {
+	collectors := []*troubleshootv1beta2.Collect{}
 
 	veleroNamespace, err := snapshot.DetectVeleroNamespace()
 	if err != nil {
@@ -846,9 +729,9 @@ func makeVeleroCollectors() []*v1beta1.Collect {
 	}
 
 	for _, selector := range selectors {
-		collectors = append(collectors, &v1beta1.Collect{
-			Logs: &v1beta1.Logs{
-				CollectorMeta: v1beta1.CollectorMeta{
+		collectors = append(collectors, &troubleshootv1beta2.Collect{
+			Logs: &troubleshootv1beta2.Logs{
+				CollectorMeta: troubleshootv1beta2.CollectorMeta{
 					CollectorName: "velero",
 				},
 				Name:      "velero",
@@ -859,20 +742,4 @@ func makeVeleroCollectors() []*v1beta1.Collect {
 	}
 
 	return collectors
-}
-
-func getAppTroubleshoot(slug string) (string, error) {
-	q := `select supportbundle_spec from app_version
-      inner join app on app_version.app_id = app.id and app_version.sequence = app.current_sequence
-      where app.slug = $1`
-
-	spec := ""
-
-	db := persistence.MustGetPGSession()
-	row := db.QueryRow(q, slug)
-	err := row.Scan(&spec)
-	if err != nil {
-		return "", err
-	}
-	return spec, nil
 }

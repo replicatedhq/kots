@@ -5,25 +5,23 @@ import (
 	"strconv"
 
 	"github.com/gorilla/mux"
-	"github.com/replicatedhq/kots/kotsadm/pkg/app"
 	"github.com/replicatedhq/kots/kotsadm/pkg/downstream"
 	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
+	"github.com/replicatedhq/kots/kotsadm/pkg/store"
 )
 
+type GetDownstreamOutputResponse struct {
+	Logs DownstreamLogs `json:"logs"`
+}
+type DownstreamLogs struct {
+	DryrunStdout string `json:"dryrunStdout"`
+	DryrunStderr string `json:"dryrunStderr"`
+	ApplyStdout  string `json:"applyStdout"`
+	ApplyStderr  string `json:"applyStderr"`
+	RenderError  string `json:"renderError"`
+}
+
 func GetDownstreamOutput(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Header().Set("Access-Control-Allow-Headers", "content-type, origin, accept, authorization")
-
-	if r.Method == "OPTIONS" {
-		w.WriteHeader(http.StatusOK)
-		return
-	}
-
-	if err := requireValidSession(w, r); err != nil {
-		logger.Error(err)
-		return
-	}
-
 	appSlug := mux.Vars(r)["appSlug"]
 	clusterID := mux.Vars(r)["clusterId"]
 	sequence, err := strconv.Atoi(mux.Vars(r)["sequence"])
@@ -33,7 +31,7 @@ func GetDownstreamOutput(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	a, err := app.GetFromSlug(appSlug)
+	a, err := store.GetStore().GetAppFromSlug(appSlug)
 	if err != nil {
 		logger.Error(err)
 		w.WriteHeader(http.StatusInternalServerError)
@@ -47,5 +45,16 @@ func GetDownstreamOutput(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	JSON(w, http.StatusOK, output)
+	downstreamLogs := DownstreamLogs{
+		DryrunStdout: output.DryrunStdout,
+		DryrunStderr: output.DryrunStderr,
+		ApplyStdout:  output.ApplyStdout,
+		ApplyStderr:  output.ApplyStderr,
+		RenderError:  output.RenderError,
+	}
+	getDownstreamOutputResponse := GetDownstreamOutputResponse{
+		Logs: downstreamLogs,
+	}
+
+	JSON(w, http.StatusOK, getDownstreamOutputResponse)
 }

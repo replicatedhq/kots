@@ -54,7 +54,7 @@ func UpdateGlobalStore(store *types.Store) (*velerov1.BackupStorageLocation, err
 		return nil, errors.Wrap(err, "failed to create velero clientset")
 	}
 
-	kotsadmVeleroBackendStorageLocation, err := findBackupStoreLocation()
+	kotsadmVeleroBackendStorageLocation, err := FindBackupStoreLocation()
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to find backupstoragelocations")
 	}
@@ -543,7 +543,7 @@ func GetGlobalStore(kotsadmVeleroBackendStorageLocation *velerov1.BackupStorageL
 	return &store, nil
 }
 
-func findBackupStoreLocation() (*velerov1.BackupStorageLocation, error) {
+func FindBackupStoreLocation() (*velerov1.BackupStorageLocation, error) {
 	cfg, err := config.GetConfig()
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get cluster config")
@@ -599,7 +599,7 @@ func ValidateStore(store *types.Store) error {
 
 	if store.Internal != nil {
 		if err := validateInternal(store.Internal, store.Bucket); err != nil {
-			return errors.Wrap(err, "failed to validate S3-compatible configuration")
+			return errors.Wrap(err, "failed to validate Internal configuration")
 		}
 		return nil
 	}
@@ -813,6 +813,40 @@ func Redact(store *types.Store) error {
 	if store.Internal != nil {
 		if store.Internal.SecretAccessKey != "" {
 			store.Internal.SecretAccessKey = "--- REDACTED ---"
+		}
+	}
+
+	return nil
+}
+
+func ResetResticRepositories() error {
+	// ResticRepositories store the previous snapshot location which breaks volume backup when location changes.
+	cfg, err := config.GetConfig()
+	if err != nil {
+		return errors.Wrap(err, "failed to get cluster config")
+	}
+
+	storageLocation, err := FindBackupStoreLocation()
+	if err != nil {
+		return errors.Wrap(err, "failed to find backupstoragelocations")
+	}
+
+	veleroClient, err := veleroclientv1.NewForConfig(cfg)
+	if err != nil {
+		return errors.Wrap(err, "failed to create clientset")
+	}
+
+	repos, err := veleroClient.ResticRepositories(storageLocation.Namespace).List(context.TODO(), metav1.ListOptions{
+		LabelSelector: "velero.io/storage-location=default",
+	})
+	if err != nil {
+		return errors.Wrap(err, "failed to list resticrepositories")
+	}
+
+	for _, repo := range repos.Items {
+		err := veleroClient.ResticRepositories(storageLocation.Namespace).Delete(context.TODO(), repo.Name, metav1.DeleteOptions{})
+		if err != nil {
+			return errors.Wrapf(err, "failed to delete resticrepository %s", repo.Name)
 		}
 	}
 

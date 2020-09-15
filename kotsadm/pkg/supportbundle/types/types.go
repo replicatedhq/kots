@@ -17,6 +17,12 @@ type SupportBundle struct {
 	IsArchived bool       `json:"isArchived"`
 }
 
+type PendingSupportBundle struct {
+	ID        string `json:"id"`
+	AppID     string `json:"appId"`
+	ClusterID string `json:"clusterId"`
+}
+
 type SupportBundleAnalysis struct {
 	ID          string                 `json:"id"`
 	Error       string                 `json:"error"`

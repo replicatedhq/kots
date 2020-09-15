@@ -25,7 +25,7 @@ spec:
               memory: 500Mi
           env:
             - name: KOTSADM_API_ENDPOINT
-              value: http://kotsadm-api-node:3000
+              value: http://kotsadm:3000
             - name: KOTSADM_TOKEN
               value: this-is-definitely-not-a-secret
             - name: KOTSADM_TARGET_NAMESPACE

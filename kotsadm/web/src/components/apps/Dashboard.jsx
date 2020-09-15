@@ -2,7 +2,6 @@ import moment from "moment";
 import React, { Component } from "react";
 import Helmet from "react-helmet";
 import { withRouter } from "react-router-dom";
-import { compose, withApollo } from "react-apollo";
 import size from "lodash/size";
 import get from "lodash/get";
 import Loader from "../shared/Loader";
@@ -12,7 +11,7 @@ import UpdateCheckerModal from "@src/components/modals/UpdateCheckerModal";
 import Modal from "react-modal";
 import { Repeater } from "../../utilities/repeater";
 import { Utilities } from "../../utilities/utilities";
-import { getUpdateDownloadStatus } from "@src/queries/AppsQueries";
+import { AirgapUploader } from "../../utilities/airgapUploader";
 
 import { XYPlot, XAxis, YAxis, HorizontalGridLines, VerticalGridLines, LineSeries, DiscreteColorLegend, Crosshair } from "react-vis";
 
@@ -140,6 +139,12 @@ class Dashboard extends Component {
     });
   }
 
+  componentWillMount() {
+    if (this.props.app?.isAirgap) {
+      this.airgapUploader = new AirgapUploader(true, this.onDropBundle);
+    }
+  }
+
   componentDidMount() {
     const { app } = this.props;
 
@@ -167,6 +172,10 @@ class Dashboard extends Component {
         method: "GET",
       })
         .then(async (res) => {
+          if (!res.ok && res.status === 401) {
+            Utilities.logoutUser();
+            return;
+          }
           const response = await res.json();
           this.setState({
             dashboard: {
@@ -221,30 +230,34 @@ class Dashboard extends Component {
 
   updateStatus = () => {
     return new Promise((resolve, reject) => {
-      this.props.client.query({
-        query: getUpdateDownloadStatus,
-        fetchPolicy: "no-cache",
-      }).then((res) => {
+      fetch(`${window.env.API_ENDPOINT}/task/updatedownload`, {
+        headers: {
+          "Authorization": Utilities.getToken(),
+          "Content-Type": "application/json",
+        },
+        method: "GET",
+      })
+      .then(async (res) => {
+        const response = await res.json();
 
-        this.setState({
-          checkingForUpdates: true,
-          checkingUpdateMessage: res.data.getUpdateDownloadStatus.currentMessage,
-        });
-
-        if (res.data.getUpdateDownloadStatus.status !== "running" && !this.props.isBundleUploading) {
+        if (response.status !== "running" && !this.props.isBundleUploading) {
           this.state.updateChecker.stop();
 
           this.setState({
             checkingForUpdates: false,
-            checkingUpdateMessage: res.data.getUpdateDownloadStatus?.currentMessage,
-            checkingForUpdateError: res.data.getUpdateDownloadStatus.status === "failed"
+            checkingUpdateMessage: response.currentMessage,
+            checkingForUpdateError: response === "failed"
           });
 
           if (this.props.updateCallback) {
             this.props.updateCallback();
           }
+        } else {
+          this.setState({
+            checkingForUpdates: true,
+            checkingUpdateMessage: response.currentMessage,
+          });
         }
-
         resolve();
       }).catch((err) => {
         console.log("failed to get rewrite status", err);
@@ -257,65 +270,49 @@ class Dashboard extends Component {
     this.props.history.push(`${this.props.match.params.slug}/version-history/diff/${currentSequence}/${pendingSequence}`)
   }
 
-  onDropBundle = async files => {
-    this.props.toggleIsBundleUploading(true);
+  onDropBundle = async () => {
     this.setState({
       uploadingAirgapFile: true,
       checkingForUpdates: true,
       airgapUploadError: null,
-      uploadSent: 0,
-      uploadTotal: 0
+      uploadProgress: 0,
+      uploadSize: 0,
     });
 
-    const formData = new FormData();
-    formData.append("file", files[0]);
-    formData.append("appId", this.props.app.id);
+    this.props.toggleIsBundleUploading(true);
 
-    const url = `${window.env.API_ENDPOINT}/app/airgap`;
-    const xhr = new XMLHttpRequest();
-    xhr.open("PUT", url);
+    const params = {
+      appId: this.props.app?.id,
+    };
+    this.airgapUploader.upload(params, this.onUploadProgress, this.onUploadError, this.onUploadComplete);
+  }
 
-    xhr.setRequestHeader("Authorization", Utilities.getToken())
+  onUploadProgress = (progress, size) => {
+    this.setState({
+      uploadProgress: progress,
+      uploadSize: size,
+    });
+  }
 
-    xhr.upload.onprogress = event => {
-      const total = event.total;
-      const sent = event.loaded;
+  onUploadError = message => {
+    this.setState({
+      uploadingAirgapFile: false,
+      checkingForUpdates: false,
+      uploadProgress: 0,
+      uploadSize: 0,
+      airgapUploadError: message || "Error uploading bundle, please try again"
+    });
+    this.props.toggleIsBundleUploading(false);
+  }
 
-      this.setState({
-        uploadSent: sent,
-        uploadTotal: total
-      });
-    }
-
-    xhr.upload.onerror = () => {
-      this.setState({
-        uploadingAirgapFile: false,
-        checkingForUpdates: false,
-        uploadSent: 0,
-        uploadTotal: 0,
-        airgapUploadError: "Error uploading bundle, please try again"
-      });
-      this.props.toggleIsBundleUploading(false);
-    }
-
-    xhr.onloadend = async () => {
-      const response = xhr.response;
-      if (xhr.status === 202) {
-        this.state.updateChecker.start(this.updateStatus, 1000);
-        this.setState({
-          uploadingAirgapFile: false
-        });
-      } else {
-        this.setState({
-          uploadingAirgapFile: false,
-          checkingForUpdates: false,
-          airgapUploadError: `Error uploading airgap bundle: ${response}`
-        });
-      }
-      this.props.toggleIsBundleUploading(false);
-    }
-
-    xhr.send(formData);
+  onUploadComplete = () => {
+    this.state.updateChecker.start(this.updateStatus, 1000);
+    this.setState({
+      uploadingAirgapFile: false,
+      uploadProgress: 0,
+      uploadSize: 0,
+    });
+    this.props.toggleIsBundleUploading(false);
   }
 
   onProgressError = async (airgapUploadError) => {
@@ -325,10 +322,11 @@ class Dashboard extends Component {
       }
     });
     this.setState({
+      uploadingAirgapFile: false,
       airgapUploadError,
       checkingForUpdates: false,
-      uploadSent: 0,
-      uploadTotal: 0
+      uploadProgress: 0,
+      uploadSize: 0,
     });
   }
 
@@ -418,10 +416,10 @@ class Dashboard extends Component {
 
     return (
       <div className="dashboard-card graph flex-column flex1 flex u-marginTop--20" key={chart.title}>
-        <XYPlot width={460} height={180} onMouseLeave={() => this.setState({ crosshairValues: [] })}>
+        <XYPlot width={460} height={180} onMouseLeave={() => this.setState({ crosshairValues: [] })} margin={{left: 60}}>
           <VerticalGridLines />
           <HorizontalGridLines />
-          <XAxis tickFormat={v => `${moment.unix(v).format("H:mm")}`} style={axisStyle} />
+          <XAxis tickFormat={v => `${moment.unix(v).format("H:mm")}`} style={axisStyle}/>
           <YAxis width={60} tickFormat={yAxisTickFormat} style={axisStyle} />
           {series}
           {this.state.crosshairValues?.length > 0 && this.state.activeChart === chart &&
@@ -577,10 +575,11 @@ class Dashboard extends Component {
                 checkingUpdateText={checkingUpdateText}
                 errorCheckingUpdate={errorCheckingUpdate}
                 onDropBundle={this.onDropBundle}
+                airgapUploader={this.airgapUploader}
                 uploadingAirgapFile={uploadingAirgapFile}
                 airgapUploadError={airgapUploadError}
-                uploadSent={this.state.uploadSent}
-                uploadTotal={this.state.uploadTotal}
+                uploadProgress={this.state.uploadProgress}
+                uploadSize={this.state.uploadSize}
                 onProgressError={this.onProgressError}
                 onCheckForUpdates={() => this.onCheckForUpdates()}
                 onUploadNewVersion={() => this.onUploadNewVersion()}
@@ -717,4 +716,4 @@ class Dashboard extends Component {
   }
 }
 
-export default compose(withApollo, withRouter)(Dashboard);
+export default withRouter(Dashboard);

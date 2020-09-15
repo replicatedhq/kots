@@ -1,43 +1,53 @@
 package handlers
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
+	"io"
+	"io/ioutil"
 	"net/http"
+	"os"
+	"path/filepath"
+	"strconv"
+	"sync"
 
+	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/kotsadm/pkg/airgap"
-	"github.com/replicatedhq/kots/kotsadm/pkg/app"
 	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
+	"github.com/replicatedhq/kots/kotsadm/pkg/store"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
 )
 
 type CreateAppFromAirgapRequest struct {
+	RegistryHost string `json:"registryHost"`
+	Namespace    string `json:"namespace"`
+	Username     string `json:"username"`
+	Password     string `json:"password"`
 }
-
 type CreateAppFromAirgapResponse struct {
 }
 
+type UpdateAppFromAirgapRequest struct {
+	AppID string `json:"appId"`
+}
 type UpdateAppFromAirgapResponse struct {
 }
 
+type AirgapBundleExistsResponse struct {
+	Exists bool `json:"exists"`
+}
+
+var uploadedAirgapBundleChunks = map[string]struct{}{}
+var chunkLock sync.Mutex
+var fileLock sync.Mutex
+
 func GetAirgapInstallStatus(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Header().Set("Access-Control-Allow-Headers", "content-type, origin, accept, authorization")
-
-	if r.Method == "OPTIONS" {
-		w.WriteHeader(200)
-		return
-	}
-
-	if err := requireValidSession(w, r); err != nil {
-		logger.Error(err)
-		return
-	}
-
-	status, err := airgap.GetInstallStatus()
+	status, err := store.GetStore().GetAirgapInstallStatus()
 	if err != nil {
 		logger.Error(err)
 		w.WriteHeader(500)
@@ -47,20 +57,198 @@ func GetAirgapInstallStatus(w http.ResponseWriter, r *http.Request) {
 	JSON(w, 200, status)
 }
 
-func UploadAirgapBundle(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Header().Set("Access-Control-Allow-Headers", "content-type, origin, accept, authorization")
-
-	if r.Method == "OPTIONS" {
-		w.WriteHeader(http.StatusOK)
-		return
-	}
-
-	if err := requireValidSession(w, r); err != nil {
+func ResetAirgapInstallStatus(w http.ResponseWriter, r *http.Request) {
+	appID, err := store.GetStore().GetAppIDFromSlug(mux.Vars(r)["appSlug"])
+	if err != nil {
 		logger.Error(err)
+		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
+	err = store.GetStore().ResetAirgapInstallInProgress(appID)
+	if err != nil {
+		logger.Error(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+}
+
+func CheckAirgapBundleChunk(w http.ResponseWriter, r *http.Request) {
+	resumableIdentifier := r.FormValue("resumableIdentifier")
+	resumableChunkNumber := r.FormValue("resumableChunkNumber")
+	resumableTotalChunks := r.FormValue("resumableTotalChunks")
+
+	if resumableIdentifier == "" || resumableChunkNumber == "" {
+		logger.Error(errors.New("missing resumable upload parameters"))
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	chunkNumber, err := strconv.ParseInt(resumableChunkNumber, 10, 64)
+	if err != nil {
+		logger.Error(errors.New("failed to parse chunk number as integer"))
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	totalChunks, err := strconv.ParseInt(resumableTotalChunks, 10, 64)
+	if err != nil {
+		logger.Error(errors.New("failed to parse total chunks number as integer"))
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	chunkKey := getChunkKey(resumableIdentifier, chunkNumber)
+	if !isChunkPresent(chunkKey) {
+		w.WriteHeader(http.StatusNoContent) // instead of 404 to avoid unwarranted notices in browser consoles
+		return
+	}
+
+	if chunkNumber%25 == 0 {
+		logger.Infof("checking chunk %d / %d. chunk key: %s", chunkNumber, totalChunks, chunkKey)
+	}
+
+	JSON(w, http.StatusOK, "")
+}
+
+func UploadAirgapBundleChunk(w http.ResponseWriter, r *http.Request) {
+	resumableIdentifier := r.FormValue("resumableIdentifier")
+	resumableTotalChunks := r.FormValue("resumableTotalChunks")
+	resumableTotalSize := r.FormValue("resumableTotalSize")
+	resumableChunkNumber := r.FormValue("resumableChunkNumber")
+	resumableChunkSize := r.FormValue("resumableChunkSize")
+
+	totalChunks, err := strconv.ParseInt(resumableTotalChunks, 10, 64)
+	if err != nil {
+		logger.Error(errors.New("failed to parse total chunks number as integer"))
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	totalSize, err := strconv.ParseInt(resumableTotalSize, 10, 64)
+	if err != nil {
+		logger.Error(errors.New("failed to parse total size as integer"))
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	chunkNumber, err := strconv.ParseInt(resumableChunkNumber, 10, 64)
+	if err != nil {
+		logger.Error(errors.New("failed to parse chunk number as integer"))
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	chunkSize, err := strconv.ParseInt(resumableChunkSize, 10, 64)
+	if err != nil {
+		logger.Error(errors.New("failed to parse chunk size as integer"))
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	// read chunk data
+	airgapBundleChunk, _, err := r.FormFile("file")
+	if err != nil {
+		logger.Error(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	airgapBundlePath := getAirgapBundlePath(resumableIdentifier)
+
+	func() {
+		// create airgap bundle file if not exists
+		fileLock.Lock()
+		defer fileLock.Unlock()
+
+		_, err = os.Stat(airgapBundlePath)
+		if os.IsNotExist(err) {
+			f, err := os.Create(airgapBundlePath)
+			if err != nil {
+				logger.Error(err)
+				w.WriteHeader(http.StatusInternalServerError)
+				return
+			}
+			defer f.Close()
+
+			if err := f.Truncate(totalSize); err != nil {
+				logger.Error(err)
+				w.WriteHeader(http.StatusInternalServerError)
+				return
+			}
+		} else if err != nil {
+			logger.Error(err)
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+	}()
+
+	airgapBundle, err := os.OpenFile(airgapBundlePath, os.O_RDWR, 0644)
+	if err != nil {
+		logger.Error(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	defer airgapBundle.Close()
+
+	chunkOffset := (chunkNumber - 1) * chunkSize
+	if _, err := airgapBundle.Seek(chunkOffset, 0); err != nil {
+		logger.Error(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	buf := bytes.NewBuffer(nil)
+	if _, err := io.Copy(buf, airgapBundleChunk); err != nil {
+		logger.Error(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	if _, err = airgapBundle.Write(buf.Bytes()); err != nil {
+		logger.Error(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	chunkKey := getChunkKey(resumableIdentifier, chunkNumber)
+	addUploadedChank(chunkKey)
+
+	if chunkNumber%25 == 0 {
+		logger.Infof("written chunk number %d / %d. bundle id: %s", chunkNumber, totalChunks, resumableIdentifier)
+	}
+
+	// check if upload is complete
+	uploadComplete := isUploadComplete(resumableIdentifier, totalChunks)
+	if uploadComplete {
+		logger.Infof("bundle upload complete. bundle id: %s", resumableIdentifier)
+	}
+
+	JSON(w, http.StatusOK, "")
+}
+
+func AirgapBundleExists(w http.ResponseWriter, r *http.Request) {
+	identifier := mux.Vars(r)["identifier"]
+	totalChunksStr := mux.Vars(r)["totalChunks"]
+
+	totalChunks, err := strconv.ParseInt(totalChunksStr, 10, 64)
+	if err != nil {
+		logger.Error(errors.New("failed to parse total chunks number as integer"))
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	uploadComplete := isUploadComplete(identifier, totalChunks)
+
+	airgapBundleExistsResponse := AirgapBundleExistsResponse{
+		Exists: uploadComplete,
+	}
+
+	JSON(w, http.StatusOK, airgapBundleExistsResponse)
+}
+
+func ProcessAirgapBundle(w http.ResponseWriter, r *http.Request) {
 	if r.Method == "POST" {
 		createAppFromAirgap(w, r)
 		return
@@ -70,37 +258,59 @@ func UploadAirgapBundle(w http.ResponseWriter, r *http.Request) {
 }
 
 func updateAppFromAirgap(w http.ResponseWriter, r *http.Request) {
-	a, err := app.Get(r.FormValue("appId"))
-	if err != nil {
+	updateAppFromAirgapRequest := UpdateAppFromAirgapRequest{}
+	if err := json.NewDecoder(r.Body).Decode(&updateAppFromAirgapRequest); err != nil {
 		logger.Error(err)
-		w.WriteHeader(500)
+		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
-	airgapBundle, _, err := r.FormFile("file")
+	a, err := store.GetStore().GetApp(updateAppFromAirgapRequest.AppID)
 	if err != nil {
 		logger.Error(err)
-		w.WriteHeader(500)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	identifier := mux.Vars(r)["identifier"]
+	airgapBundlePath := getAirgapBundlePath(identifier)
+
+	totalChunksStr := mux.Vars(r)["totalChunks"]
+	totalChunks, err := strconv.ParseInt(totalChunksStr, 10, 64)
+	if err != nil {
+		logger.Error(errors.New("failed to parse total chunks number as integer"))
+		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
 	go func() {
-		defer airgapBundle.Close()
-		if err := airgap.UpdateAppFromAirgap(a, airgapBundle); err != nil {
-			logger.Error(err)
+		if err := airgap.UpdateAppFromAirgap(a, airgapBundlePath); err != nil {
+			logger.Error(errors.Wrap(err, "failed to update app from airgap bundle"))
+			return
+		}
+		// app updated successfully, we can remove the airgap bundle
+		if err := cleanUp(identifier, totalChunks); err != nil {
+			logger.Error(errors.Wrap(err, "failed to clean up"))
 		}
 	}()
 
 	updateAppFromAirgapResponse := UpdateAppFromAirgapResponse{}
 
-	JSON(w, 202, updateAppFromAirgapResponse)
+	JSON(w, http.StatusAccepted, updateAppFromAirgapResponse)
 }
 
 func createAppFromAirgap(w http.ResponseWriter, r *http.Request) {
-	pendingApp, err := airgap.GetPendingAirgapUploadApp()
+	createAppFromAirgapRequest := CreateAppFromAirgapRequest{}
+	if err := json.NewDecoder(r.Body).Decode(&createAppFromAirgapRequest); err != nil {
+		logger.Error(err)
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	pendingApp, err := store.GetStore().GetPendingAirgapUploadApp()
 	if err != nil {
 		logger.Error(err)
-		w.WriteHeader(500)
+		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
@@ -108,7 +318,7 @@ func createAppFromAirgap(w http.ResponseWriter, r *http.Request) {
 	registryHost, username, password, err = getKurlRegistryCreds()
 	if err != nil {
 		logger.Error(err)
-		w.WriteHeader(500)
+		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
@@ -116,29 +326,93 @@ func createAppFromAirgap(w http.ResponseWriter, r *http.Request) {
 	if registryHost != "" {
 		namespace = pendingApp.Slug
 	} else {
-		registryHost = r.FormValue("registryHost")
-		namespace = r.FormValue("namespace")
-		username = r.FormValue("username")
-		password = r.FormValue("password")
+		registryHost = createAppFromAirgapRequest.RegistryHost
+		namespace = createAppFromAirgapRequest.Namespace
+		username = createAppFromAirgapRequest.Username
+		password = createAppFromAirgapRequest.Password
 	}
 
-	airgapBundle, _, err := r.FormFile("file")
+	identifier := mux.Vars(r)["identifier"]
+	airgapBundlePath := getAirgapBundlePath(identifier)
+
+	totalChunksStr := mux.Vars(r)["totalChunks"]
+	totalChunks, err := strconv.ParseInt(totalChunksStr, 10, 64)
 	if err != nil {
-		logger.Error(err)
-		w.WriteHeader(500)
+		logger.Error(errors.New("failed to parse total chunks number as integer"))
+		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
 	go func() {
-		defer airgapBundle.Close()
-		if err := airgap.CreateAppFromAirgap(pendingApp, airgapBundle, registryHost, namespace, username, password); err != nil {
-			logger.Error(err)
+		if err := airgap.CreateAppFromAirgap(pendingApp, airgapBundlePath, registryHost, namespace, username, password); err != nil {
+			logger.Error(errors.Wrap(err, "failed to create app from airgap bundle"))
+			return
+		}
+		// app created successfully, we can remove the airgap bundle
+		if err := cleanUp(identifier, totalChunks); err != nil {
+			logger.Error(errors.Wrap(err, "failed to clean up"))
 		}
 	}()
 
 	createAppFromAirgapResponse := CreateAppFromAirgapResponse{}
 
-	JSON(w, 202, createAppFromAirgapResponse)
+	JSON(w, http.StatusAccepted, createAppFromAirgapResponse)
+}
+
+func getChunkKey(uploadedFileIdentifier string, chunkNumber int64) string {
+	return fmt.Sprintf("%s_part_%d", uploadedFileIdentifier, chunkNumber)
+}
+
+func getAirgapBundlePath(uploadedFileIdentifier string) string {
+	return filepath.Join(os.TempDir(), fmt.Sprintf("%s.%s", uploadedFileIdentifier, "airgap"))
+}
+
+func addUploadedChank(chunkKey string) {
+	chunkLock.Lock()
+	defer chunkLock.Unlock()
+	uploadedAirgapBundleChunks[chunkKey] = struct{}{}
+}
+
+func isChunkPresent(chunkKey string) bool {
+	chunkLock.Lock()
+	defer chunkLock.Unlock()
+	_, ok := uploadedAirgapBundleChunks[chunkKey]
+	return ok
+}
+
+func isUploadComplete(uploadedFileIdentifier string, totalChunks int64) bool {
+	chunkLock.Lock()
+	defer chunkLock.Unlock()
+
+	isUploadComplete := true
+
+	var i int64
+	for i = 1; i <= totalChunks; i++ {
+		chunkKey := getChunkKey(uploadedFileIdentifier, i)
+		if _, ok := uploadedAirgapBundleChunks[chunkKey]; !ok {
+			isUploadComplete = false
+		}
+	}
+
+	return isUploadComplete
+}
+
+func cleanUp(uploadedFileIdentifier string, totalChunks int64) error {
+	chunkLock.Lock()
+	defer chunkLock.Unlock()
+
+	var i int64
+	for i = 1; i <= totalChunks; i++ {
+		chunkKey := getChunkKey(uploadedFileIdentifier, i)
+		delete(uploadedAirgapBundleChunks, chunkKey)
+	}
+
+	airgapBundlePath := getAirgapBundlePath(uploadedFileIdentifier)
+	if err := os.RemoveAll(airgapBundlePath); err != nil {
+		return errors.Wrap(err, "failed to remove airgap bundle")
+	}
+
+	return nil
 }
 
 func getKurlRegistryCreds() (hostname string, username string, password string, finalErr error) {
@@ -189,4 +463,116 @@ func getKurlRegistryCreds() (hostname string, username string, password string, 
 	}
 
 	return
+}
+
+// Backwards compatibility airgap upload handler
+func UploadAirgapBundle(w http.ResponseWriter, r *http.Request) {
+	if r.Method == "POST" {
+		bc_createAppFromAirgap(w, r)
+		return
+	}
+	bc_updateAppFromAirgap(w, r)
+}
+
+func bc_updateAppFromAirgap(w http.ResponseWriter, r *http.Request) {
+	a, err := store.GetStore().GetApp(r.FormValue("appId"))
+	if err != nil {
+		logger.Error(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	airgapBundle, _, err := r.FormFile("file")
+	if err != nil {
+		logger.Error(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	defer airgapBundle.Close()
+
+	// save the file
+	tmpFile, err := ioutil.TempFile("", "kotsadm")
+	if err != nil {
+		logger.Error(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	_, err = io.Copy(tmpFile, airgapBundle)
+	if err != nil {
+		logger.Error(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	airgapBundlePath := tmpFile.Name()
+
+	go func() {
+		defer os.RemoveAll(airgapBundlePath)
+		if err := airgap.UpdateAppFromAirgap(a, airgapBundlePath); err != nil {
+			logger.Error(err)
+		}
+	}()
+
+	updateAppFromAirgapResponse := UpdateAppFromAirgapResponse{}
+
+	JSON(w, http.StatusAccepted, updateAppFromAirgapResponse)
+}
+
+func bc_createAppFromAirgap(w http.ResponseWriter, r *http.Request) {
+	pendingApp, err := store.GetStore().GetPendingAirgapUploadApp()
+	if err != nil {
+		logger.Error(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	var registryHost, namespace, username, password string
+	registryHost, username, password, err = getKurlRegistryCreds()
+	if err != nil {
+		logger.Error(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	// if found kurl registry creds, use kurl registry
+	if registryHost != "" {
+		namespace = pendingApp.Slug
+	} else {
+		registryHost = r.FormValue("registryHost")
+		namespace = r.FormValue("namespace")
+		username = r.FormValue("username")
+		password = r.FormValue("password")
+	}
+
+	airgapBundle, _, err := r.FormFile("file")
+	if err != nil {
+		logger.Error(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	defer airgapBundle.Close()
+
+	// save the file
+	tmpFile, err := ioutil.TempFile("", "kotsadm")
+	if err != nil {
+		logger.Error(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	_, err = io.Copy(tmpFile, airgapBundle)
+	if err != nil {
+		logger.Error(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	airgapBundlePath := tmpFile.Name()
+
+	go func() {
+		defer os.RemoveAll(airgapBundlePath)
+		if err := airgap.CreateAppFromAirgap(pendingApp, airgapBundlePath, registryHost, namespace, username, password); err != nil {
+			logger.Error(err)
+		}
+	}()
+
+	createAppFromAirgapResponse := CreateAppFromAirgapResponse{}
+	JSON(w, http.StatusAccepted, createAppFromAirgapResponse)
 }

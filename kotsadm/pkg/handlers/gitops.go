@@ -8,39 +8,33 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
-	"github.com/replicatedhq/kots/kotsadm/pkg/app"
 	"github.com/replicatedhq/kots/kotsadm/pkg/downstream"
 	"github.com/replicatedhq/kots/kotsadm/pkg/gitops"
 	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
-	"github.com/replicatedhq/kots/kotsadm/pkg/task"
-	"github.com/replicatedhq/kots/kotsadm/pkg/version"
+	"github.com/replicatedhq/kots/kotsadm/pkg/store"
 )
 
 type UpdateAppGitOpsRequest struct {
-	GitOpsInput GitOpsInput `json:"gitOpsInput"`
+	GitOpsInput UpdateAppGitOpsInput `json:"gitOpsInput"`
 }
-type GitOpsInput struct {
-	Uri    string `json:"uri"`
+type UpdateAppGitOpsInput struct {
+	URI    string `json:"uri"`
 	Branch string `json:"branch"`
 	Path   string `json:"path"`
 	Format string `json:"format"`
 	Action string `json:"action"`
 }
 
+type CreateGitOpsRequest struct {
+	GitOpsInput CreateGitOpsInput `json:"gitOpsInput"`
+}
+type CreateGitOpsInput struct {
+	Provider string `json:"provider"`
+	URI      string `json:"uri"`
+	Hostname string `json:"hostname"`
+}
+
 func UpdateAppGitOps(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Header().Set("Access-Control-Allow-Headers", "content-type, origin, accept, authorization")
-
-	if r.Method == "OPTIONS" {
-		w.WriteHeader(http.StatusOK)
-		return
-	}
-
-	if err := requireValidSession(w, r); err != nil {
-		logger.Error(err)
-		return
-	}
-
 	updateAppGitOpsRequest := UpdateAppGitOpsRequest{}
 	if err := json.NewDecoder(r.Body).Decode(&updateAppGitOpsRequest); err != nil {
 		logger.Error(err)
@@ -51,7 +45,7 @@ func UpdateAppGitOps(w http.ResponseWriter, r *http.Request) {
 	appID := mux.Vars(r)["appId"]
 	clusterID := mux.Vars(r)["clusterId"]
 
-	a, err := app.Get(appID)
+	a, err := store.GetStore().GetApp(appID)
 	if err != nil {
 		logger.Error(err)
 		w.WriteHeader(http.StatusInternalServerError)
@@ -59,7 +53,7 @@ func UpdateAppGitOps(w http.ResponseWriter, r *http.Request) {
 	}
 
 	gitOpsInput := updateAppGitOpsRequest.GitOpsInput
-	if err := gitops.UpdateDownstreamGitOps(a.ID, clusterID, gitOpsInput.Uri, gitOpsInput.Branch, gitOpsInput.Path, gitOpsInput.Format, gitOpsInput.Action); err != nil {
+	if err := gitops.UpdateDownstreamGitOps(a.ID, clusterID, gitOpsInput.URI, gitOpsInput.Branch, gitOpsInput.Path, gitOpsInput.Format, gitOpsInput.Action); err != nil {
 		logger.Error(err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
@@ -69,23 +63,10 @@ func UpdateAppGitOps(w http.ResponseWriter, r *http.Request) {
 }
 
 func DisableAppGitOps(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Header().Set("Access-Control-Allow-Headers", "content-type, origin, accept, authorization")
-
-	if r.Method == "OPTIONS" {
-		w.WriteHeader(http.StatusOK)
-		return
-	}
-
-	if err := requireValidSession(w, r); err != nil {
-		logger.Error(err)
-		return
-	}
-
 	appID := mux.Vars(r)["appId"]
 	clusterID := mux.Vars(r)["clusterId"]
 
-	a, err := app.Get(appID)
+	a, err := store.GetStore().GetApp(appID)
 	if err != nil {
 		logger.Error(err)
 		w.WriteHeader(http.StatusInternalServerError)
@@ -112,20 +93,7 @@ func DisableAppGitOps(w http.ResponseWriter, r *http.Request) {
 }
 
 func InitGitOpsConnection(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Header().Set("Access-Control-Allow-Headers", "content-type, origin, accept, authorization")
-
-	if r.Method == "OPTIONS" {
-		w.WriteHeader(http.StatusOK)
-		return
-	}
-
-	if err := requireValidSession(w, r); err != nil {
-		logger.Error(err)
-		return
-	}
-
-	currentStatus, _, err := task.GetTaskStatus("gitops-init")
+	currentStatus, _, err := store.GetStore().GetTaskStatus("gitops-init")
 	if err != nil {
 		logger.Error(err)
 		w.WriteHeader(http.StatusInternalServerError)
@@ -141,14 +109,14 @@ func InitGitOpsConnection(w http.ResponseWriter, r *http.Request) {
 	appID := mux.Vars(r)["appId"]
 	clusterID := mux.Vars(r)["clusterId"]
 
-	a, err := app.Get(appID)
+	a, err := store.GetStore().GetApp(appID)
 	if err != nil {
 		logger.Error(err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
-	d, err := downstream.Get(clusterID)
+	d, err := store.GetStore().GetDownstream(clusterID)
 	if err != nil {
 		logger.Error(err)
 		w.WriteHeader(http.StatusInternalServerError)
@@ -175,12 +143,13 @@ func InitGitOpsConnection(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := gitops.TestGitOpsConnection(downstreamGitOps); err != nil {
-		logger.Error(err)
-		err = gitops.SetGitOpsError(a.ID, d.ClusterID, err.Error())
-		if err != nil {
+		logger.Infof("Failed to test gitops connection: %v", err)
+
+		if err := gitops.SetGitOpsError(a.ID, d.ClusterID, err.Error()); err != nil {
 			logger.Error(err)
 		}
-		w.WriteHeader(http.StatusInternalServerError)
+
+		JSON(w, http.StatusBadRequest, NewErrorResponse(err))
 		return
 	}
 
@@ -191,7 +160,7 @@ func InitGitOpsConnection(w http.ResponseWriter, r *http.Request) {
 	}
 
 	go func() {
-		if err := task.SetTaskStatus("gitops-init", "Creating commits ...", "running"); err != nil {
+		if err := store.GetStore().SetTaskStatus("gitops-init", "Creating commits ...", "running"); err != nil {
 			logger.Error(errors.Wrap(err, "failed to set task status running"))
 			return
 		}
@@ -199,11 +168,11 @@ func InitGitOpsConnection(w http.ResponseWriter, r *http.Request) {
 		var finalError error
 		defer func() {
 			if finalError == nil {
-				if err := task.ClearTaskStatus("gitops-init"); err != nil {
+				if err := store.GetStore().ClearTaskStatus("gitops-init"); err != nil {
 					logger.Error(errors.Wrap(err, "failed to clear task status"))
 				}
 			} else {
-				if err := task.SetTaskStatus("gitops-init", finalError.Error(), "failed"); err != nil {
+				if err := store.GetStore().SetTaskStatus("gitops-init", finalError.Error(), "failed"); err != nil {
 					logger.Error(errors.Wrap(err, "failed to set task status error"))
 				}
 			}
@@ -225,22 +194,24 @@ func InitGitOpsConnection(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		// Create git commit for current version
-		currentVersionArchive, err := version.GetAppVersionArchive(a.ID, currentVersion.ParentSequence)
-		if err != nil {
-			err = errors.Wrapf(err, "failed to get app version archive for current version %d", currentVersion.ParentSequence)
-			logger.Error(err)
-			finalError = err
-			return
-		}
-		defer os.RemoveAll(currentVersionArchive)
+		// Create git commit for current version (if exists)
+		if currentVersion != nil {
+			currentVersionArchive, err := store.GetStore().GetAppVersionArchive(a.ID, currentVersion.ParentSequence)
+			if err != nil {
+				err = errors.Wrapf(err, "failed to get app version archive for current version %d", currentVersion.ParentSequence)
+				logger.Error(err)
+				finalError = err
+				return
+			}
+			defer os.RemoveAll(currentVersionArchive)
 
-		_, err = gitops.CreateGitOpsCommit(downstreamGitOps, a.Slug, a.Name, int(currentVersion.ParentSequence), currentVersionArchive, d.Name)
-		if err != nil {
-			err = errors.Wrapf(err, "failed to create gitops commit for current version %d", currentVersion.ParentSequence)
-			logger.Error(err)
-			finalError = err
-			return
+			_, err = gitops.CreateGitOpsCommit(downstreamGitOps, a.Slug, a.Name, int(currentVersion.ParentSequence), currentVersionArchive, d.Name)
+			if err != nil {
+				err = errors.Wrapf(err, "failed to create gitops commit for current version %d", currentVersion.ParentSequence)
+				logger.Error(err)
+				finalError = err
+				return
+			}
 		}
 
 		// Sort pending versions ascending before creating commits
@@ -249,7 +220,7 @@ func InitGitOpsConnection(w http.ResponseWriter, r *http.Request) {
 		})
 		// Create git commits for sorted pending versions
 		for _, pendingVersion := range pendingVersions {
-			pendingVersionArchive, err := version.GetAppVersionArchive(a.ID, pendingVersion.ParentSequence)
+			pendingVersionArchive, err := store.GetStore().GetAppVersionArchive(a.ID, pendingVersion.ParentSequence)
 			if err != nil {
 				err = errors.Wrapf(err, "failed to get app version archive for pending version %d", pendingVersion.ParentSequence)
 				logger.Error(err)
@@ -272,20 +243,36 @@ func InitGitOpsConnection(w http.ResponseWriter, r *http.Request) {
 }
 
 func ResetGitOps(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Header().Set("Access-Control-Allow-Headers", "content-type, origin, accept, authorization")
-
-	if r.Method == "OPTIONS" {
-		w.WriteHeader(http.StatusOK)
-		return
-	}
-
-	if err := requireValidSession(w, r); err != nil {
-		logger.Error(err)
-		return
-	}
-
 	if err := gitops.ResetGitOps(); err != nil {
+		logger.Error(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	JSON(w, http.StatusNoContent, "")
+}
+
+func GetGitOpsRepo(w http.ResponseWriter, r *http.Request) {
+	gitOpsConfig, err := gitops.GetGitOps()
+	if err != nil {
+		logger.Error(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	JSON(w, http.StatusOK, gitOpsConfig)
+}
+
+func CreateGitOps(w http.ResponseWriter, r *http.Request) {
+	createGitOpsRequest := CreateGitOpsRequest{}
+	if err := json.NewDecoder(r.Body).Decode(&createGitOpsRequest); err != nil {
+		logger.Error(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	gitOpsInput := createGitOpsRequest.GitOpsInput
+	if err := gitops.CreateGitOps(gitOpsInput.Provider, gitOpsInput.URI, gitOpsInput.Hostname); err != nil {
 		logger.Error(err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return

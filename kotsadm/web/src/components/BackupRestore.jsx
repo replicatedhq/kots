@@ -1,5 +1,4 @@
 import * as React from "react";
-import { compose } from "react-apollo";
 import { withRouter, Link } from "react-router-dom";
 import { Helmet } from "react-helmet";
 import isEmpty from "lodash/isEmpty";
@@ -236,6 +235,4 @@ class BackupRestore extends React.Component {
   }
 }
 
-export default compose(
-  withRouter,
-)(BackupRestore);
+export default withRouter(BackupRestore);

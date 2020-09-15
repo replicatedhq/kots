@@ -1,15 +1,8 @@
 bases:
   - ../../base
-  - ./minio
-  - ../../../web/kustomize/overlays/dev
-  - ../../../api/kustomize/overlays/dev
-  - ../../../operator/kustomize/overlays/dev
-  - ../../../migrations/kustomize/overlays/dev
 
 resources:
   - ./nodeport.yaml
-  - ./distribution/distribution.yaml
-#  - ./schemahero.yaml # removed to prevent CRD removal upon skaffold stopping
 
 patches:
   - ./deployment.yaml

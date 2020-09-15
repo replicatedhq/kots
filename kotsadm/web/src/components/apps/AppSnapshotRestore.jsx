@@ -1,31 +1,90 @@
 import React, { Component } from "react";
-import { graphql, compose, withApollo } from "react-apollo";
 import { withRouter } from "react-router-dom";
 import Helmet from "react-helmet";
 import { Line } from "rc-progress";
 import Loader from "../shared/Loader";
 import { Utilities } from "@src/utilities/utilities";
-import { restoreDetail } from "../../queries/SnapshotQueries";
-import { cancelRestore } from "../../mutations/SnapshotMutations";
+import { Repeater } from "@src/utilities/repeater";
 import "../../scss/components/snapshots/AppSnapshots.scss";
 
 class AppSnapshotRestore extends Component {
   state = {
+    fetchRestoreDetailJob: new Repeater(),
+    loadingRestoreDetail: true,
+    restoreDetail: {},
+    errorMessage: "",
+    errorTitle: "",
+
     cancelingRestore: false,
     cancelRestoreErr: "",
-    cancelRestoreErrorMsg: ""
+    cancelRestoreErrorMsg: "",
   }
 
   componentDidMount() {
-    this.props.restoreDetail.startPolling(2000);
+    this.state.fetchRestoreDetailJob.start(this.fetchRestoreDetail, 2000);
   }
 
   componentDidUpdate(lastProps) {
-    if (this.props.restoreDetail?.restoreDetail !== lastProps.restoreDetail?.restoreDetail && this.props.restoreDetail?.restoreDetail) {
-      const phase = this.props.restoreDetail?.restoreDetail?.phase;
-      if (phase !== "New" && phase !== "InProgress") {
-        this.props.restoreDetail.stopPolling();
+    const { match } = this.props;
+    if (match.params.id !== lastProps.match.params.id) {
+      this.state.fetchRestoreDetailJob.start(this.fetchRestoreDetail, 2000);
+    } else {
+      const phase = this.state.restoreDetail?.phase;
+      if (phase && phase !== "New" && phase !== "InProgress") {
+        this.state.fetchRestoreDetailJob.stop();
       }
+    }
+  }
+
+  componentWillUnmount() {
+    this.state.fetchRestoreDetailJob.stop();
+  }
+
+  fetchRestoreDetail = async () => {
+    const { match } = this.props;
+    const restoreName = match.params.id;
+
+    this.setState({
+      errorMessage: "",
+      errorTitle: "",
+    });
+
+    try {
+      const res = await fetch(`${window.env.API_ENDPOINT}/app/${this.props.app?.slug}/snapshot/restore/${restoreName}`, {
+        method: "GET",
+        headers: {
+          "Authorization": Utilities.getToken(),
+        }
+      });
+      if (!res.ok) {
+        if (res.status === 401) {
+          Utilities.logoutUser();
+          return;
+        }
+        this.setState({
+          loadingRestoreDetail: false,
+          errorMessage: `Unexpected status code: ${res.status}`,
+          errorTitle: "Failed to fetch restore details",
+        });
+        return;
+      }
+      const response = await res.json();
+
+      const restoreDetail = response.restoreDetail;
+
+      this.setState({
+        loadingRestoreDetail: false,
+        restoreDetail: restoreDetail,
+        errorMessage: "",
+        errorTitle: "",
+      });
+    } catch (err) {
+      console.log(err);
+      this.setState({
+        loadingRestoreDetail: false,
+        errorMessage: err ? `${err.message}` : "Something went wrong, please try again.",
+        errorTitle: "Failed to fetch restore details",
+      });
     }
   }
 
@@ -36,31 +95,40 @@ class AppSnapshotRestore extends Component {
     }
   }
 
-  onCancelRestore = () => {
-    const { app } = this.props;
+  onCancelRestore = async () => {
     this.setState({ cancelingRestore: true, cancelRestoreErr: false, cancelRestoreErrorMsg: "" });
-    this.props.cancelRestore(app.id)
-      .then(() => {
-        this.setState({ cancelingRestore: false });
-        this.props.history.push(`/app/${this.props.app?.slug}/snapshots`);
-      })
-      .catch(err => {
-        err.graphQLErrors.map(({ msg }) => {
-          this.setState({
-            cancelingRestore: false,
-            cancelRestoreErr: true,
-            cancelRestoreErrorMsg: msg,
-          });
-        })
-      })
-      .finally(() => {
-        this.setState({ cancelingRestore: false });
+    try {
+      await this.fetchCancelRestore();
+      this.props.history.push(`/app/${this.props.app?.slug}/snapshots`);
+    } catch (err) {
+      this.setState({
+        cancelRestoreErr: true,
+        cancelRestoreErrorMsg: err ? `${err.message}` : "Something went wrong, please try again.",
       });
+    }
+    this.setState({ cancelingRestore: false });
+  }
+
+  fetchCancelRestore = async () => {
+    const { app } = this.props;
+    const res = await fetch(`${window.env.API_ENDPOINT}/app/${app.slug}/snapshot/restore`, {
+      method: "DELETE",
+      headers: {
+        "Authorization": Utilities.getToken(),
+      }
+    });
+    if (!res.ok) {
+      if (res.status === 401) {
+        Utilities.logoutUser();
+        return;
+      }
+      throw new Error(`Unexpected status code: ${res.status}`);
+    }
   }
 
   renderErrors = (errors) => {
     return (
-      errors.map((error, i) => (
+      errors?.map((error, i) => (
         <div className="RestoreError--wrapper flex justifyContent--space-between alignItems--center" key={`${error.title}-${i}`}>
           <div className="flex-auto icon error-small u-marginRight--10 u-marginLeft--10"> </div>
           <p className="u-fontSize--normal u-fontWeight--normal u-lineHeight--normal">{error.message}</p>
@@ -71,7 +139,7 @@ class AppSnapshotRestore extends Component {
 
   renderWarnings = (warnings) => {
     return (
-      warnings.map((warning, i) => (
+      warnings?.map((warning, i) => (
         <div className="RestoreWarning--wrapper flex justifyContent--space-between alignItems--center" key={`${warning.title}-${i}`}>
           <div className="flex-auto icon exclamationMark--icon u-marginRight--10 u-marginLeft--10"> </div>
           <p className="u-fontSize--normal u-fontWeight--normal u-lineHeight--normal">{warning.message}</p>
@@ -81,7 +149,7 @@ class AppSnapshotRestore extends Component {
   }
 
   renderFailedRestoreView = (detail) => {
-    if (detail?.warnings.length > 0 && detail?.errors?.length === 0) {
+    if (detail?.warnings?.length > 0 && (!detail?.errors || detail?.errors?.length === 0)) {
       return this.renderWarningsRestoreView(detail?.warnings);
     } else if (detail?.errors?.length > 0) {
       return (
@@ -90,13 +158,24 @@ class AppSnapshotRestore extends Component {
             <span className="icon u-superWarning--large"></span>
             <p className="u-fontWeight--bold u-color--tuna u-fontSize--larger u-lineHeight--normal u-marginTop--15 u-marginBottom--10">
               Application failed to restore </p>
-            <p className="u-fontSize--normal u-fontWeight--medium u-color--dustyGray u-lineHeight--normal">
-              Your application failed to restore to  <span className="u-fontWeight--bold u-color--dustyGray"> {this.props.match.params.id} </span> because of errors. During the restore there were
-            <span className="u-fontWeight--bold  u-color--tundora"> {detail.warnings?.length} warnings </span> and <span className="u-fontWeight--bold u-color--tundora"> {detail.errors?.length} errors</span>.</p>
+            {detail?.warnings?.length > 0 ?
+              <p className="u-fontSize--normal u-fontWeight--medium u-color--dustyGray u-lineHeight--normal">
+                Your application failed to restore to
+                <span className="u-fontWeight--bold u-color--dustyGray"> {this.props.match.params.id} </span> because of errors. During the restore there were
+                <span className="u-fontWeight--bold  u-color--tundora"> {detail?.warnings?.length} {detail?.warnings?.length === 1 ? "warning" : "warnings"} </span> and
+                <span className="u-fontWeight--bold u-color--tundora"> {detail?.errors?.length} {detail?.errors?.length === 1 ? "error" : "errors"}. </span>
+              </p>
+              :
+              <p className="u-fontSize--normal u-fontWeight--medium u-color--dustyGray u-lineHeight--normal">
+                Your application failed to restore to
+                <span className="u-fontWeight--bold u-color--dustyGray"> {this.props.match.params.id} </span> because of errors. During the restore there {detail?.errors?.length === 1 ? "was" : "were"}
+                <span className="u-fontWeight--bold u-color--tundora"> {detail?.errors?.length} {detail?.errors?.length === 1 ? "error" : "errors"}. </span>
+              </p>
+            }
           </div>
           <div className="u-marginTop--30">
             {this.renderErrors(detail?.errors)}
-            {this.renderWarnings(detail?.warnings)}
+            {detail?.warnings?.length > 0 && this.renderWarnings(detail?.warnings)}
           </div>
           <div className="flex alignItems--center justifyContent--center">
             <p className="u-fontSize--normal u-fontWeight--medium u-color--dustyGray u-lineHeight--normal u-marginTop--30"> Contact your vendor for help troubleshooting this restore. </p>
@@ -144,14 +223,14 @@ class AppSnapshotRestore extends Component {
   }
 
   render() {
-    const { cancelingRestore } = this.state;
-    const { restoreDetail } = this.props;
+    const { cancelingRestore, restoreDetail, loadingRestoreDetail } = this.state;
 
-    const hasNoErrorsOrWarnings = restoreDetail?.restoreDetail?.warnings?.length === 0 && restoreDetail?.restoreDetail?.errors?.length === 0;
-    const restoreCompleted = restoreDetail?.restoreDetail?.phase === "Completed";
-    const restoreFailing = restoreDetail?.restoreDetail?.phase === "PartiallyFailed" || restoreDetail?.restoreDetail?.phase === "Failed";
+    const hasNoErrorsOrWarnings = restoreDetail?.warnings?.length === 0 && restoreDetail?.errors?.length === 0;
+    const restoreCompleted = restoreDetail?.phase === "Completed";
+    const restoreFailing = restoreDetail?.phase === "PartiallyFailed" || restoreDetail?.phase === "Failed";
+    const restoreLoading = !restoreDetail?.warnings && !restoreDetail?.errors;
 
-    if (restoreDetail?.loading) {
+    if (loadingRestoreDetail) {
       return (
         <div className="flex-column flex1 alignItems--center justifyContent--center">
           <Loader size="60" />
@@ -174,12 +253,12 @@ class AppSnapshotRestore extends Component {
             <p className="u-fontWeight--bold u-color--tuna u-fontSize--larger u-lineHeight--normal u-marginBottom--10"> Application restore in progress </p>
             <p className="u-fontSize--normal u-fontWeight--medium u-color--dustyGray u-lineHeight--normal"> After all volumes have been restored you will need to log back in to the admin console. </p>
             <div className="flex flex-column  u-marginTop--40">
-              {restoreDetail?.restoreDetail?.volumes?.length === 0 && hasNoErrorsOrWarnings &&
+              {restoreLoading &&
                 <div className="flex-column flex1 alignItems--center justifyContent--center">
                   <Loader size="60" />
                 </div>
               }
-              {restoreDetail?.restoreDetail?.volumes?.map((volume, i) => {
+              {restoreDetail?.volumes?.map((volume, i) => {
                 const strokeColor = volume.completionPercent === 100 ? "#44BB66" : "#326DE6";
                 const minutes = Math.floor(volume.timeRemainingSeconds / 60);
                 const remainingTime = volume.timeRemainingSeconds < 60 ? `${volume.timeRemainingSeconds} seconds remaining` : `${minutes} minutes remaining`;
@@ -192,10 +271,12 @@ class AppSnapshotRestore extends Component {
                     </div>
                     <div className="flex flex1 flex-column justifyContent--center">
                       <Line percent={percentage} strokeWidth="3" strokeColor={strokeColor} />
-                      {volume.timeRemainingSeconds !== 0 ?
-                        <div className="flex justifyContent--center u-fontSize--smaller u-fontWeight--medium u-color--silverSand u-marginTop--5"> {volume.timeRemainingSeconds ? remainingTime : null}</div>
-                        :
-                        <div className="flex justifyContent--center u-fontSize--smaller u-fontWeight--medium u-color--silverSand u-marginTop--5"> Complete </div>
+                      {volume.completionPercent === 100 ?
+                        <div className="flex justifyContent--center u-fontSize--smaller u-fontWeight--medium u-color--silverSand u-marginTop--5"> Complete </div> 
+                        : volume.timeRemainingSeconds !== 0 ?
+                          <div className="flex justifyContent--center u-fontSize--smaller u-fontWeight--medium u-color--silverSand u-marginTop--5"> {volume.timeRemainingSeconds ? remainingTime : null}</div>
+                          :
+                          <div className="flex justifyContent--center u-fontSize--smaller u-fontWeight--medium u-color--silverSand u-marginTop--5"> In progress </div>
                       }
                     </div>
                     {volume.completionPercent === 100 ?
@@ -213,31 +294,12 @@ class AppSnapshotRestore extends Component {
           </div>
           :
           !hasNoErrorsOrWarnings || restoreFailing ?
-            this.renderFailedRestoreView(restoreDetail?.restoreDetail) 
-          : null
+            this.renderFailedRestoreView(restoreDetail)
+            : null
         }
       </div>
     );
   }
 }
 
-export default compose(
-  withApollo,
-  withRouter,
-  graphql(restoreDetail, {
-    name: "restoreDetail",
-    options: ({ app, match }) => {
-      const appId = app.id;
-      const restoreName = match.params.id;
-      return {
-        variables: { appId, restoreName },
-        fetchPolicy: "no-cache"
-      }
-    }
-  }),
-  graphql(cancelRestore, {
-    props: ({ mutate }) => ({
-      cancelRestore: (appId) => mutate({ variables: { appId } })
-    })
-  })
-)(AppSnapshotRestore);
+export default withRouter(AppSnapshotRestore);

@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"math/rand"
 	"net/http"
+	"net/url"
 	"sync"
 	"time"
 
@@ -67,6 +68,13 @@ Get request header of this connection
 */
 func (c *Channel) RequestHeader() http.Header {
 	return c.requestHeader
+}
+
+/**
+Get request url of this connection
+*/
+func (c *Channel) RequestURL() *url.URL {
+	return c.requestURL
 }
 
 /**
@@ -305,7 +313,7 @@ func (s *Server) SendOpenSequence(c *Channel) {
 Setup event loop for given connection
 */
 func (s *Server) SetupEventLoop(conn transport.Connection, remoteAddr string,
-	requestHeader http.Header) {
+	requestHeader http.Header, requestURL *url.URL) {
 
 	interval, timeout := conn.PingParams()
 	hdr := Header{
@@ -319,6 +327,7 @@ func (s *Server) SetupEventLoop(conn transport.Connection, remoteAddr string,
 	c.conn = conn
 	c.ip = remoteAddr
 	c.requestHeader = requestHeader
+	c.requestURL = requestURL
 	c.initChannel()
 
 	c.server = s
@@ -341,7 +350,7 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	s.SetupEventLoop(conn, r.RemoteAddr, r.Header)
+	s.SetupEventLoop(conn, r.RemoteAddr, r.Header, r.URL)
 	s.tr.Serve(w, r)
 }
 

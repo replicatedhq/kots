@@ -127,7 +127,7 @@ func GetPrivateImages(upstreamDir string, checkedImages map[string]ImageInfo, al
 					} else {
 						p, err := IsPrivateImage(image)
 						if err != nil {
-							return errors.Wrap(err, "failed to check if image is private")
+							return errors.Wrapf(err, "failed to check if image in %q is private", info.Name())
 						}
 						isPrivate = p
 						checkedImages[image] = ImageInfo{
@@ -314,17 +314,33 @@ func copyOneImage(srcRegistry, destRegistry registry.RegistryOptions, image stri
 		return nil, errors.Wrapf(err, "failed to parse source image name %s", sourceImage)
 	}
 
+	destStr := fmt.Sprintf("docker://%s", DestRef(destRegistry, image))
+	destRef, err := alltransports.ParseImageName(destStr)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to parse dest image name %s", destStr)
+	}
+
 	destCtx := &types.SystemContext{
 		DockerInsecureSkipTLSVerify: types.OptionalBoolTrue,
 	}
-	destCtx.DockerAuthConfig = &types.DockerAuthConfig{
-		Username: destRegistry.Username,
-		Password: destRegistry.Password,
-	}
 
-	destRef, err := alltransports.ParseImageName(fmt.Sprintf("docker://%s", DestRef(destRegistry, image)))
-	if err != nil {
-		return nil, errors.Wrapf(err, "failed to parse dest image name %s", DestRef(destRegistry, image))
+	if destRegistry.Username != "" && destRegistry.Password != "" {
+		username, password := destRegistry.Username, destRegistry.Password
+
+		registryHost := reference.Domain(destRef.DockerReference())
+		if registry.IsECREndpoint(registryHost) {
+			login, err := registry.GetECRLogin(registryHost, username, password)
+			if err != nil {
+				return nil, errors.Wrap(err, "failed to get ECR login")
+			}
+			username = login.Username
+			password = login.Password
+		}
+
+		destCtx.DockerAuthConfig = &types.DockerAuthConfig{
+			Username: username,
+			Password: password,
+		}
 	}
 
 	if dryRun {
@@ -460,7 +476,7 @@ func CopyFromFileToRegistry(path string, name string, tag string, digest string,
 	destStr := fmt.Sprintf("docker://%s:%s", name, tag)
 	destRef, err := alltransports.ParseImageName(destStr)
 	if err != nil {
-		return errors.Wrapf(err, "failed to parse dest image name: %s", destStr)
+		return errors.Wrapf(err, "failed to parse dest image name %s", destStr)
 	}
 
 	destCtx := &types.SystemContext{
@@ -468,19 +484,21 @@ func CopyFromFileToRegistry(path string, name string, tag string, digest string,
 	}
 
 	if auth.Username != "" && auth.Password != "" {
+		username, password := auth.Username, auth.Password
+
 		registryHost := reference.Domain(destRef.DockerReference())
 		if registry.IsECREndpoint(registryHost) {
-			login, err := registry.GetECRLogin(registryHost, auth.Username, auth.Password)
+			login, err := registry.GetECRLogin(registryHost, username, password)
 			if err != nil {
 				return errors.Wrap(err, "failed to get ECR login")
 			}
-			auth.Username = login.Username
-			auth.Password = login.Password
+			username = login.Username
+			password = login.Password
 		}
 
 		destCtx.DockerAuthConfig = &types.DockerAuthConfig{
-			Username: auth.Username,
-			Password: auth.Password,
+			Username: username,
+			Password: password,
 		}
 	}
 

@@ -9,6 +9,8 @@ spec:
         - name: kotsadm-operator
           imagePullPolicy: IfNotPresent
           env:
+            - name: KOTSADM_API_ENDPOINT
+              value: http://kotsadm.default.svc.cluster.local:3000
             - name: KOTSADM_TARGET_NAMESPACE
               value: "test"
               valueFrom: ~

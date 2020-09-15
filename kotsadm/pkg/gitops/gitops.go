@@ -2,8 +2,11 @@ package gitops
 
 import (
 	"context"
+	"crypto/rsa"
+	"crypto/x509"
 	"encoding/base64"
 	"encoding/json"
+	"encoding/pem"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -14,8 +17,8 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	"github.com/replicatedhq/kots/kotsadm/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/crypto"
+	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"golang.org/x/crypto/ssh"
 	"gopkg.in/src-d/go-git.v4"
 	go_git_config "gopkg.in/src-d/go-git.v4/config"
@@ -41,6 +44,18 @@ type GitOpsConfig struct {
 	PublicKey   string `json:"publicKey"`
 	PrivateKey  string `json:"-"`
 	IsConnected bool   `json:"isConnected"`
+}
+
+type GlobalGitOpsConfig struct {
+	Enabled  bool   `json:"enabled"`
+	Hostname string `json:"hostname"`
+	Provider string `json:"provider"`
+	URI      string `json:"uri"`
+}
+
+type KeyPair struct {
+	PrivateKeyPEM string
+	PublicKeySSH  string
 }
 
 func (g *GitOpsConfig) CommitURL(hash string) string {
@@ -113,7 +128,7 @@ func GetDownstreamGitOps(appID string, clusterID string) (*GitOpsConfig, error) 
 
 	configMapData := map[string]string{}
 	if err := json.Unmarshal(configMapDataDecoded, &configMapData); err != nil {
-		return nil, errors.Wrap(err, "faield to unmarshal configmap data")
+		return nil, errors.Wrap(err, "failed to unmarshal configmap data")
 	}
 
 	repoURI := configMapData["repoUri"]
@@ -129,8 +144,9 @@ func GetDownstreamGitOps(appID string, clusterID string) (*GitOpsConfig, error) 
 				// this is the provider we want
 				idx, err := strconv.ParseInt(splitKey[1], 10, 64)
 				if err != nil {
+					return nil, errors.Wrap(err, "failed to parse index")
 				}
-				provider, publicKey, privateKey, repoURI, err := gitOpsConfigFromSecretData(idx, secret.Data)
+				provider, publicKey, privateKey, repoURI, hostname := gitOpsConfigFromSecretData(idx, secret.Data)
 
 				cipher, err := crypto.AESCipherFromString(os.Getenv("API_ENCRYPTION_KEY"))
 				if err != nil {
@@ -151,6 +167,7 @@ func GetDownstreamGitOps(appID string, clusterID string) (*GitOpsConfig, error) 
 					PublicKey:  publicKey,
 					PrivateKey: string(decryptedPrivateKey),
 					RepoURI:    repoURI,
+					Hostname:   hostname,
 					Branch:     configMapData["branch"],
 					Path:       configMapData["path"],
 					Format:     configMapData["format"],
@@ -360,6 +377,118 @@ func TestGitOpsConnection(gitOpsConfig *GitOpsConfig) error {
 	return nil
 }
 
+func CreateGitOps(provider string, repoURI string, hostname string) error {
+	cfg, err := config.GetConfig()
+	if err != nil {
+		return errors.Wrap(err, "failed to get cluster config")
+	}
+
+	clientset, err := kubernetes.NewForConfig(cfg)
+	if err != nil {
+		return errors.Wrap(err, "failed to create kubernetes clientset")
+	}
+
+	secret, err := clientset.CoreV1().Secrets(os.Getenv("POD_NAMESPACE")).Get(context.TODO(), "kotsadm-gitops", metav1.GetOptions{})
+	if err != nil && !kuberneteserrors.IsNotFound(err) {
+		return errors.Wrap(err, "failed to get secret")
+	}
+
+	secretExists := true
+	if kuberneteserrors.IsNotFound(err) {
+		secretExists = false
+	}
+
+	secretData := map[string][]byte{}
+	if secretExists && secret.Data != nil {
+		secretData = secret.Data
+	}
+
+	var repoIdx int64 = -1
+	var repoExists bool = false
+	var maxIdx int64 = -1
+
+	for key, val := range secretData {
+		splitKey := strings.Split(key, ".")
+		if len(splitKey) != 3 {
+			continue
+		}
+
+		if splitKey[2] != "repoUri" {
+			continue
+		}
+
+		idx, err := strconv.ParseInt(splitKey[1], 10, 64)
+		if err != nil {
+			return errors.Wrap(err, "failed to parse repo index")
+		}
+
+		if string(val) == repoURI {
+			repoIdx = idx
+			repoExists = true
+		}
+
+		if idx > maxIdx {
+			maxIdx = idx
+		}
+	}
+
+	if !repoExists {
+		repoIdx = maxIdx + 1
+	}
+
+	secretData[fmt.Sprintf("provider.%d.type", repoIdx)] = []byte(provider)
+	secretData[fmt.Sprintf("provider.%d.repoUri", repoIdx)] = []byte(repoURI)
+
+	if !repoExists {
+		keyPair, err := generateKeyPair()
+		if err != nil {
+			return errors.Wrap(err, "failed to generate key pair")
+		}
+
+		cipher, err := crypto.AESCipherFromString(os.Getenv("API_ENCRYPTION_KEY"))
+		if err != nil {
+			return errors.Wrap(err, "failed to create aes cipher")
+		}
+		encryptedPrivateKey := cipher.Encrypt([]byte(keyPair.PrivateKeyPEM))
+		encodedPrivateKey := base64.StdEncoding.EncodeToString(encryptedPrivateKey) // encoding here shouldn't be needed. moved logic from TS where ffi EncryptString function base64 encodes the value as well
+
+		secretData[fmt.Sprintf("provider.%d.privateKey", repoIdx)] = []byte(encodedPrivateKey)
+		secretData[fmt.Sprintf("provider.%d.publicKey", repoIdx)] = []byte(keyPair.PublicKeySSH)
+	}
+
+	hostnameKey := fmt.Sprintf("provider.%d.hostname", repoIdx)
+	_, ok := secretData[hostnameKey]
+	if ok {
+		delete(secretData, hostnameKey)
+	}
+
+	if hostname != "" {
+		secretData[hostnameKey] = []byte(hostname)
+	}
+
+	if secretExists {
+		secret.Data = secretData
+		_, err = clientset.CoreV1().Secrets(os.Getenv("POD_NAMESPACE")).Update(context.TODO(), secret, metav1.UpdateOptions{})
+		if err != nil {
+			return errors.Wrap(err, "failed to update secret")
+		}
+	} else {
+		secret = &v1.Secret{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "kotsadm-gitops",
+				Namespace: os.Getenv("POD_NAMESPACE"),
+			},
+			Data: secretData,
+		}
+		_, err = clientset.CoreV1().Secrets(os.Getenv("POD_NAMESPACE")).Create(context.TODO(), secret, metav1.CreateOptions{})
+		if err != nil {
+			return errors.Wrap(err, "failed to create secret")
+		}
+	}
+
+	return nil
+}
+
 func ResetGitOps() error {
 	cfg, err := config.GetConfig()
 	if err != nil {
@@ -384,11 +513,40 @@ func ResetGitOps() error {
 	return nil
 }
 
-func gitOpsConfigFromSecretData(idx int64, secretData map[string][]byte) (string, string, string, string, error) {
+func GetGitOps() (GlobalGitOpsConfig, error) {
+	cfg, err := config.GetConfig()
+	if err != nil {
+		return GlobalGitOpsConfig{}, errors.Wrap(err, "failed to get cluster config")
+	}
+
+	clientset, err := kubernetes.NewForConfig(cfg)
+	if err != nil {
+		return GlobalGitOpsConfig{}, errors.Wrap(err, "failed to create kubernetes clientset")
+	}
+
+	secret, err := clientset.CoreV1().Secrets(os.Getenv("POD_NAMESPACE")).Get(context.TODO(), "kotsadm-gitops", metav1.GetOptions{})
+	if kuberneteserrors.IsNotFound(err) {
+		return GlobalGitOpsConfig{}, nil
+	} else if err != nil {
+		return GlobalGitOpsConfig{}, errors.Wrap(err, "get kotsadm-gitops secret")
+	}
+
+	parsedConfig := GlobalGitOpsConfig{
+		Enabled:  true,
+		Provider: string(secret.Data["provider.0.type"]),
+		URI:      string(secret.Data["provider.0.repoUri"]),
+		Hostname: string(secret.Data["provider.0.hostname"]),
+	}
+
+	return parsedConfig, nil
+}
+
+func gitOpsConfigFromSecretData(idx int64, secretData map[string][]byte) (string, string, string, string, string) {
 	provider := ""
 	publicKey := ""
 	privateKey := ""
 	repoURI := ""
+	hostname := ""
 
 	providerDecoded, ok := secretData[fmt.Sprintf("provider.%d.type", idx)]
 	if ok {
@@ -410,7 +568,12 @@ func gitOpsConfigFromSecretData(idx int64, secretData map[string][]byte) (string
 		repoURI = string(repoURIDecoded)
 	}
 
-	return provider, publicKey, privateKey, repoURI, nil
+	hostnameDecoded, ok := secretData[fmt.Sprintf("provider.%d.hostname", idx)]
+	if ok {
+		hostname = string(hostnameDecoded)
+	}
+
+	return provider, publicKey, privateKey, repoURI, hostname
 }
 
 func getAuth(privateKey string) (transport.AuthMethod, error) {
@@ -538,4 +701,30 @@ func CreateGitOpsCommit(gitOpsConfig *GitOpsConfig, appSlug string, appName stri
 	}
 
 	return gitOpsConfig.CommitURL(updatedHash.String()), nil
+}
+
+func generateKeyPair() (*KeyPair, error) {
+	privateKey, err := getPrivateKey()
+	if err != nil {
+		return nil, err
+	}
+
+	var publicKey *rsa.PublicKey
+	publicKey = &privateKey.PublicKey
+
+	privateKeyBytes := x509.MarshalPKCS1PrivateKey(privateKey)
+	PrivateKeyPEM := pem.EncodeToMemory(
+		&pem.Block{
+			Type:  "RSA PRIVATE KEY",
+			Bytes: privateKeyBytes,
+		},
+	)
+
+	publicKeySSH, err := ssh.NewPublicKey(publicKey)
+	if err != nil {
+		return nil, err
+	}
+	pubKeySSHBytes := ssh.MarshalAuthorizedKey(publicKeySSH)
+
+	return &KeyPair{PrivateKeyPEM: string(PrivateKeyPEM), PublicKeySSH: string(pubKeySSHBytes)}, nil
 }

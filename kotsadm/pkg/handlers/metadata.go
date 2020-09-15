@@ -22,15 +22,9 @@ type MetadataResponse struct {
 	IsKurlEnabled bool   `json:"isKurlEnabled"`
 }
 
+// Metadata route is UNAUTHENTICATED
+// It is needed for branding/some cluster flags before user is logged in.
 func Metadata(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Header().Set("Access-Control-Allow-Headers", "content-type, origin, accept, authorization")
-
-	if r.Method == "OPTIONS" {
-		w.WriteHeader(http.StatusOK)
-		return
-	}
-
 	// This is not an authenticated request
 
 	clientset, err := k8s.Clientset()

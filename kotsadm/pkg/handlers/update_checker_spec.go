@@ -6,9 +6,8 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
-	"github.com/replicatedhq/kots/kotsadm/pkg/app"
 	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
-	"github.com/replicatedhq/kots/kotsadm/pkg/session"
+	"github.com/replicatedhq/kots/kotsadm/pkg/store"
 	"github.com/replicatedhq/kots/kotsadm/pkg/updatechecker"
 	cron "github.com/robfig/cron/v3"
 )
@@ -22,30 +21,7 @@ type UpdateCheckerSpecResponse struct {
 }
 
 func UpdateCheckerSpec(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Header().Set("Access-Control-Allow-Headers", "content-type, origin, accept, authorization")
-
-	if r.Method == "OPTIONS" {
-		w.WriteHeader(200)
-		return
-	}
-
 	updateCheckerSpecResponse := &UpdateCheckerSpecResponse{}
-
-	sess, err := session.Parse(r.Header.Get("Authorization"))
-	if err != nil {
-		logger.Error(err)
-		updateCheckerSpecResponse.Error = "failed to parse authorization header"
-		JSON(w, 401, updateCheckerSpecResponse)
-		return
-	}
-
-	// we don't currently have roles, all valid tokens are valid sessions
-	if sess == nil || sess.ID == "" {
-		updateCheckerSpecResponse.Error = "failed to parse authorization header"
-		JSON(w, 401, updateCheckerSpecResponse)
-		return
-	}
 
 	updateCheckerSpecRequest := UpdateCheckerSpecRequest{}
 	if err := json.NewDecoder(r.Body).Decode(&updateCheckerSpecRequest); err != nil {
@@ -55,7 +31,7 @@ func UpdateCheckerSpec(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	foundApp, err := app.GetFromSlug(mux.Vars(r)["appSlug"])
+	foundApp, err := store.GetStore().GetAppFromSlug(mux.Vars(r)["appSlug"])
 	if err != nil {
 		logger.Error(err)
 		updateCheckerSpecResponse.Error = "failed to get app from slug"
@@ -82,7 +58,7 @@ func UpdateCheckerSpec(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	if err := app.SetUpdateCheckerSpec(foundApp.ID, cronSpec); err != nil {
+	if err := store.GetStore().SetUpdateCheckerSpec(foundApp.ID, cronSpec); err != nil {
 		logger.Error(err)
 		updateCheckerSpecResponse.Error = "failed to set update checker spec"
 		JSON(w, 500, updateCheckerSpecResponse)

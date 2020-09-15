@@ -5,36 +5,37 @@ import (
 
 	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
 	"github.com/replicatedhq/kots/kotsadm/pkg/session"
-	"github.com/replicatedhq/kots/kotsadm/pkg/user"
+	"github.com/replicatedhq/kots/kotsadm/pkg/store"
 )
 
 func Logout(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Header().Set("Access-Control-Allow-Headers", "content-type, origin, accept, authorization")
-
-	if r.Method == "OPTIONS" {
-		w.WriteHeader(200)
+	if r.Header.Get("Authorization") == "" {
+		w.WriteHeader(http.StatusNoContent)
 		return
 	}
 
 	sess, err := session.Parse(r.Header.Get("Authorization"))
 	if err != nil {
+		if store.GetStore().IsNotFound(err) {
+			w.WriteHeader(http.StatusNoContent)
+			return
+		}
 		logger.Error(err)
-		w.WriteHeader(401)
+		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
 	// we don't currently have roles, all valid tokens are valid sessions
 	if sess == nil || sess.ID == "" {
-		w.WriteHeader(401)
+		w.WriteHeader(http.StatusNoContent)
 		return
 	}
 
-	if err := user.LogOut(sess.ID); err != nil {
+	if err := store.GetStore().DeleteSession(sess.ID); err != nil {
 		logger.Error(err)
-		w.WriteHeader(500)
+		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
-	JSON(w, 204, "")
+	w.WriteHeader(http.StatusNoContent)
 }

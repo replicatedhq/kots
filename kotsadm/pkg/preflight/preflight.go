@@ -1,26 +1,24 @@
 package preflight
 
 import (
-	"database/sql"
-
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/kotsadm/pkg/downstream"
-	"github.com/replicatedhq/kots/kotsadm/pkg/kotsutil"
 	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
-	"github.com/replicatedhq/kots/kotsadm/pkg/persistence"
-	registrytypes "github.com/replicatedhq/kots/kotsadm/pkg/registry/types"
 	"github.com/replicatedhq/kots/kotsadm/pkg/render"
+	"github.com/replicatedhq/kots/kotsadm/pkg/store"
 	"github.com/replicatedhq/kots/kotsadm/pkg/version"
+	"github.com/replicatedhq/kots/pkg/kotsutil"
+	troubleshootpreflight "github.com/replicatedhq/troubleshoot/pkg/preflight"
 	"go.uber.org/zap"
 )
 
-func Run(appID string, sequence int64, archiveDir string) error {
+func Run(appID string, sequence int64, isAirgap bool, archiveDir string) error {
 	renderedKotsKinds, err := kotsutil.LoadKotsKindsFromPath(archiveDir)
 	if err != nil {
 		return errors.Wrap(err, "failed to load rendered kots kinds")
 	}
 
-	status, err := downstream.GetDownstreamVersionStatus(appID, int64(sequence))
+	status, err := downstream.GetDownstreamVersionStatus(appID, sequence)
 	if err != nil {
 		return errors.Wrapf(err, "failed to check downstream version %d status", sequence)
 	}
@@ -35,11 +33,11 @@ func Run(appID string, sequence int64, archiveDir string) error {
 
 	if renderedKotsKinds.Preflight != nil {
 		// set the status to pending_preflights
-		if err := downstream.SetDownstreamVersionPendingPreflight(appID, int64(sequence)); err != nil {
+		if err := downstream.SetDownstreamVersionPendingPreflight(appID, sequence); err != nil {
 			return errors.Wrapf(err, "failed to set downstream version %d pending preflight", sequence)
 		}
 
-		ignoreRBAC, err := downstream.GetIgnoreRBACErrors(appID, int64(sequence))
+		ignoreRBAC, err := downstream.GetIgnoreRBACErrors(appID, sequence)
 		if err != nil {
 			return errors.Wrap(err, "failed to get ignore rbac flag")
 		}
@@ -51,12 +49,12 @@ func Run(appID string, sequence int64, archiveDir string) error {
 			return errors.Wrap(err, "failed to marshal rendered preflight")
 		}
 
-		registrySettings, err := getRegistrySettingsForApp(appID)
+		registrySettings, err := store.GetStore().GetRegistryDetailsForApp(appID)
 		if err != nil {
 			return errors.Wrap(err, "failed to get registry settings for app")
 		}
 
-		renderedPreflight, err := render.RenderFile(renderedKotsKinds, registrySettings, []byte(renderedMarshalledPreflights))
+		renderedPreflight, err := render.RenderFile(renderedKotsKinds, registrySettings, sequence, isAirgap, []byte(renderedMarshalledPreflights))
 		if err != nil {
 			return errors.Wrap(err, "failed to render preflights")
 		}
@@ -67,61 +65,89 @@ func Run(appID string, sequence int64, archiveDir string) error {
 
 		go func() {
 			logger.Debug("preflight checks beginning")
-			if err := execute(appID, sequence, p, ignoreRBAC); err != nil {
+			uploadPreflightResults, err := execute(appID, sequence, p, ignoreRBAC)
+			if err != nil {
+				err = errors.Wrap(err, "failed to run preflight checks")
 				logger.Error(err)
 				return
 			}
-
 			logger.Debug("preflight checks completed")
+
+			err = maybeDeployFirstVersion(appID, sequence, uploadPreflightResults)
+			if err != nil {
+				err = errors.Wrap(err, "failed to deploy first version")
+				logger.Error(err)
+				return
+			}
 		}()
 	} else if sequence == 0 {
-		if err := version.DeployVersion(appID, int64(sequence)); err != nil {
+		err := maybeDeployFirstVersion(appID, sequence, &troubleshootpreflight.UploadPreflightResults{})
+		if err != nil {
 			return errors.Wrap(err, "failed to deploy first version")
 		}
 	} else {
-		if err := downstream.SetDownstreamVersionReady(appID, int64(sequence)); err != nil {
-			return errors.Wrap(err, "failed to set downstream version ready")
+		status, err := downstream.GetDownstreamVersionStatus(appID, sequence)
+		if err != nil {
+			return errors.Wrap(err, "failed to get version status")
+		}
+		if status != "deployed" {
+			if err := downstream.SetDownstreamVersionReady(appID, sequence); err != nil {
+				return errors.Wrap(err, "failed to set downstream version ready")
+			}
 		}
 	}
 
 	return nil
 }
 
-func ResetPreflightResult(appID string, sequence int64) error {
-	db := persistence.MustGetPGSession()
-	query := `update app_downstream_version set preflight_result=null, preflight_result_created_at=null where app_id = $1 and parent_sequence = $2`
-	_, err := db.Exec(query, appID, sequence)
-	if err != nil {
-		return errors.Wrap(err, "failed to exec")
+// maybeDeployFirstVersion will deploy the first version if
+// 1. preflight checks pass
+// 2. we have not already deployed it
+func maybeDeployFirstVersion(appID string, sequence int64, preflightResults *troubleshootpreflight.UploadPreflightResults) error {
+	if sequence != 0 {
+		return nil
 	}
-	return nil
+
+	app, err := store.GetStore().GetApp(appID)
+	if err != nil {
+		return errors.Wrap(err, "failed to get app")
+	}
+
+	// do not revert to first version
+	if app.CurrentSequence != 0 {
+		return nil
+	}
+
+	preflightState := getPreflightState(preflightResults)
+	if preflightState != "pass" {
+		return nil
+	}
+
+	logger.Debug("automatically deploying first app version")
+
+	// note: this may attempt to re-deploy the first version but the operator will take care of
+	// comparing the version to current
+
+	return version.DeployVersion(appID, sequence)
 }
 
-// this is a copy from registry.  so many import cycles to unwind here, todo
-func getRegistrySettingsForApp(appID string) (*registrytypes.RegistrySettings, error) {
-	db := persistence.MustGetPGSession()
-	query := `select registry_hostname, registry_username, registry_password_enc, namespace from app where id = $1`
-	row := db.QueryRow(query, appID)
-
-	var registryHostname sql.NullString
-	var registryUsername sql.NullString
-	var registryPasswordEnc sql.NullString
-	var registryNamespace sql.NullString
-
-	if err := row.Scan(&registryHostname, &registryUsername, &registryPasswordEnc, &registryNamespace); err != nil {
-		return nil, errors.Wrap(err, "failed to scan registry")
+func getPreflightState(preflightResults *troubleshootpreflight.UploadPreflightResults) string {
+	if len(preflightResults.Errors) > 0 {
+		return "fail"
 	}
 
-	if !registryHostname.Valid {
-		return nil, nil
+	if len(preflightResults.Results) == 0 {
+		return "pass"
 	}
 
-	registrySettings := registrytypes.RegistrySettings{
-		Hostname:    registryHostname.String,
-		Username:    registryUsername.String,
-		PasswordEnc: registryPasswordEnc.String,
-		Namespace:   registryNamespace.String,
+	state := "pass"
+	for _, result := range preflightResults.Results {
+		if result.IsFail {
+			return "fail"
+		} else if result.IsWarn {
+			state = "warn"
+		}
 	}
 
-	return &registrySettings, nil
+	return state
 }

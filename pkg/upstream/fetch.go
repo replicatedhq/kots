@@ -24,6 +24,7 @@ type FetchOptions struct {
 	CurrentCursor       string
 	CurrentChannel      string
 	CurrentVersionLabel string
+	AppSequence         int64
 }
 
 func FetchUpstream(upstreamURI string, fetchOptions *FetchOptions) (*types.Upstream, error) {
@@ -57,7 +58,7 @@ func downloadUpstream(upstreamURI string, fetchOptions *FetchOptions) (*types.Up
 		return downloadHelm(u, fetchOptions.HelmRepoURI)
 	}
 	if u.Scheme == "replicated" {
-		return downloadReplicated(u, fetchOptions.LocalPath, fetchOptions.RootDir, fetchOptions.UseAppDir, fetchOptions.License, fetchOptions.ConfigValues, pickCursor(fetchOptions), pickVersionLabel(fetchOptions), cipher)
+		return downloadReplicated(u, fetchOptions.LocalPath, fetchOptions.RootDir, fetchOptions.UseAppDir, fetchOptions.License, fetchOptions.ConfigValues, pickCursor(fetchOptions), pickVersionLabel(fetchOptions), cipher, fetchOptions.AppSequence, fetchOptions.Airgap != nil)
 	}
 	if u.Scheme == "git" {
 		return downloadGit(upstreamURI)

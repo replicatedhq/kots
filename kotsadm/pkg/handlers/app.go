@@ -6,11 +6,12 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
-	"github.com/replicatedhq/kots/kotsadm/pkg/app"
+	apptypes "github.com/replicatedhq/kots/kotsadm/pkg/app/types"
 	"github.com/replicatedhq/kots/kotsadm/pkg/downstream"
 	downstreamtypes "github.com/replicatedhq/kots/kotsadm/pkg/downstream/types"
 	"github.com/replicatedhq/kots/kotsadm/pkg/gitops"
 	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
+	"github.com/replicatedhq/kots/kotsadm/pkg/store"
 	"github.com/replicatedhq/kots/kotsadm/pkg/version"
 	versiontypes "github.com/replicatedhq/kots/kotsadm/pkg/version/types"
 )
@@ -73,20 +74,7 @@ type ResponseCluster struct {
 }
 
 func ListApps(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Header().Set("Access-Control-Allow-Headers", "content-type, origin, accept, authorization")
-
-	if r.Method == "OPTIONS" {
-		w.WriteHeader(http.StatusOK)
-		return
-	}
-
-	if err := requireValidSession(w, r); err != nil {
-		logger.Error(err)
-		return
-	}
-
-	apps, err := app.ListInstalled()
+	apps, err := store.GetStore().ListInstalledApps()
 	if err != nil {
 		logger.Error(err)
 		w.WriteHeader(http.StatusInternalServerError)
@@ -112,21 +100,8 @@ func ListApps(w http.ResponseWriter, r *http.Request) {
 }
 
 func GetApp(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Header().Set("Access-Control-Allow-Headers", "content-type, origin, accept, authorization")
-
-	if r.Method == "OPTIONS" {
-		w.WriteHeader(http.StatusOK)
-		return
-	}
-
-	if err := requireValidSession(w, r); err != nil {
-		logger.Error(err)
-		return
-	}
-
 	appSlug := mux.Vars(r)["appSlug"]
-	a, err := app.GetFromSlug(appSlug)
+	a, err := store.GetStore().GetAppFromSlug(appSlug)
 	if err != nil {
 		logger.Error(err)
 		w.WriteHeader(http.StatusInternalServerError)
@@ -143,28 +118,28 @@ func GetApp(w http.ResponseWriter, r *http.Request) {
 	JSON(w, http.StatusOK, responseApp)
 }
 
-func responseAppFromApp(a *app.App) (*ResponseApp, error) {
-	isGitOpsSupported, err := version.IsGitOpsSupported(a.ID, a.CurrentSequence)
+func responseAppFromApp(a *apptypes.App) (*ResponseApp, error) {
+	isGitOpsSupported, err := store.GetStore().IsGitOpsSupportedForVersion(a.ID, a.CurrentSequence)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to check if gitops is supported")
 	}
 
-	allowRollback, err := version.IsAllowRollback(a.ID, a.CurrentSequence)
+	allowRollback, err := store.GetStore().IsRollbackSupportedForVersion(a.ID, a.CurrentSequence)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to check if rollback is supported")
 	}
 
-	licenseType, err := version.GetLicenseType(a.ID, a.CurrentSequence)
+	license, err := store.GetStore().GetLicenseForAppVersion(a.ID, a.CurrentSequence)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to get license type")
+		return nil, errors.Wrap(err, "failed to get license")
 	}
 
-	currentVersion, err := version.Get(a.ID, a.CurrentSequence)
+	currentVersion, err := store.GetStore().GetAppVersion(a.ID, a.CurrentSequence)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get app version")
 	}
 
-	downstreams, err := downstream.ListDownstreamsForApp(a.ID)
+	downstreams, err := store.GetStore().ListDownstreamsForApp(a.ID)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to list downstreams for app")
 	}
@@ -242,7 +217,7 @@ func responseAppFromApp(a *app.App) (*ResponseApp, error) {
 			return nil, errors.Wrap(err, "failed to get current parent sequence for downstream")
 		}
 
-		s, err := version.IsAllowSnapshots(a.ID, parentSequence)
+		s, err := store.GetStore().IsSnapshotsSupportedForVersion(a, parentSequence)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to check if snapshots is allowed")
 		}
@@ -267,10 +242,76 @@ func responseAppFromApp(a *app.App) (*ResponseApp, error) {
 		IsGitOpsSupported: isGitOpsSupported,
 		AllowRollback:     allowRollback,
 		AllowSnapshots:    allowSnapshots,
-		LicenseType:       licenseType,
+		LicenseType:       license.Spec.LicenseType,
 		CurrentVersion:    currentVersion,
 		Downstreams:       responseDownstreams,
 	}
 
 	return &responseApp, nil
+}
+
+type GetAppVersionsResponse struct {
+	VersionHistory []downstreamtypes.DownstreamVersion `json:"versionHistory"`
+}
+
+func GetAppVersionHistory(w http.ResponseWriter, r *http.Request) {
+	appSlug := mux.Vars(r)["appSlug"]
+
+	foundApp, err := store.GetStore().GetAppFromSlug(appSlug)
+	if err != nil {
+		err = errors.Wrap(err, "failed to get app from slug")
+		logger.Error(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	downstreams, err := store.GetStore().ListDownstreamsForApp(foundApp.ID)
+	if err != nil {
+		err = errors.Wrap(err, "failed to list downstreams for app")
+		logger.Error(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	} else if len(downstreams) == 0 {
+		err = errors.New("no downstreams for app")
+		logger.Error(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	clusterID := downstreams[0].ClusterID
+
+	currentVersion, err := downstream.GetCurrentVersion(foundApp.ID, clusterID)
+	if err != nil {
+		err = errors.Wrap(err, "failed to get current downstream version")
+		logger.Error(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	pendingVersions, err := downstream.GetPendingVersions(foundApp.ID, clusterID)
+	if err != nil {
+		err = errors.Wrap(err, "failed to get pending versions")
+		logger.Error(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	pastVersions, err := downstream.GetPastVersions(foundApp.ID, clusterID)
+	if err != nil {
+		err = errors.Wrap(err, "failed to get past versions")
+		logger.Error(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	response := GetAppVersionsResponse{
+		VersionHistory: []downstreamtypes.DownstreamVersion{},
+	}
+	response.VersionHistory = append(response.VersionHistory, pendingVersions...)
+	if currentVersion != nil {
+		response.VersionHistory = append(response.VersionHistory, *currentVersion)
+	}
+	response.VersionHistory = append(response.VersionHistory, pastVersions...)
+
+	JSON(w, http.StatusOK, response)
 }

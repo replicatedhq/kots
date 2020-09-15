@@ -1,5 +1,4 @@
 import React, { Component } from "react";
-import { graphql, compose, withApollo } from "react-apollo";
 import { Link, withRouter } from "react-router-dom";
 import MonacoEditor from "react-monaco-editor";
 import Modal from "react-modal";
@@ -9,9 +8,9 @@ import ReactApexChart from "react-apexcharts";
 import moment from "moment";
 
 import Loader from "../shared/Loader";
-import { snapshotDetail } from "../../queries/SnapshotQueries";
 import ShowAllModal from "../modals/ShowAllModal";
 import ViewSnapshotLogsModal from "../modals/ViewSnapshotLogsModal";
+import ErrorModal from "../modals/ErrorModal";
 import { Utilities } from "../../utilities/utilities";
 
 let colorIndex = 0;
@@ -29,13 +28,17 @@ class AppSnapshotDetail extends Component {
     selectedErrorsWarningTab: "Errors",
     showAllWarnings: false,
     showAllErrors: false,
-    snapshotDetails: {},
     series: [],
     toggleViewLogsModal: false,
     snapshotLogs: "",
     loadingSnapshotLogs: false,
     snapshotLogsErr: false,
     snapshotLogsErrMsg: "",
+
+    loading: true,
+    snapshotDetails: {},
+    errorMessage: "",
+    errorTitle: "",
 
     options: {
       chart: {
@@ -101,23 +104,73 @@ class AppSnapshotDetail extends Component {
   };
 
   componentDidMount() {
-    if (this.props.snapshotDetail) {
-      this.setState({ snapshotDetails: this.props.snapshotDetail?.snapshotDetail });
-    }
+    this.fetchSnapshotDetails();
   }
 
   componentDidUpdate(lastProps) {
-    if (this.props.snapshotDetail?.snapshotDetail !== lastProps.snapshotDetail?.snapshotDetail && this.props.snapshotDetail?.snapshotDetail) {
-      this.setState({ snapshotDetails: this.props.snapshotDetail?.snapshotDetail });
-      if (!isEmpty(this.props.snapshotDetail?.snapshotDetail?.volumes)) {
-        if (this.props.snapshotDetail?.snapshotDetail?.hooks && !isEmpty(this.props.snapshotDetail?.snapshotDetail?.hooks)) {
-          this.setState({ series: this.getSeriesData([...this.props.snapshotDetail?.snapshotDetail?.volumes, ...this.props.snapshotDetail?.snapshotDetail?.hooks].sort((a, b) => new Date(a.started) - new Date(b.started))) })
-        } else {
-          this.setState({ series: this.getSeriesData((this.props.snapshotDetail?.snapshotDetail?.volumes).sort((a, b) => new Date(a.started) - new Date(b.started))) })
+    const { match } = this.props;
+    if (match.params.id !== lastProps.match.params.id) {
+      this.fetchSnapshotDetails();
+    }
+  }
+
+  fetchSnapshotDetails = async () => {
+    const { match } = this.props;
+    const snapshotName = match.params.id;
+
+    this.setState({
+      errorMessage: "",
+      errorTitle: "",
+    });
+
+    try {
+      const res = await fetch(`${window.env.API_ENDPOINT}/snapshot/${snapshotName}`, {
+        method: "GET",
+        headers: {
+          "Authorization": Utilities.getToken(),
         }
-      } else if ((this.props.snapshotDetail?.snapshotDetail?.hooks && !isEmpty(this.props.snapshotDetail?.snapshotDetail?.hooks))) {
-        this.setState({ series: this.getSeriesData((this.props.snapshotDetail?.snapshotDetail?.hooks).sort((a, b) => new Date(a.started) - new Date(b.started))) })
+      });
+      if (!res.ok) {
+        if (res.status === 401) {
+          Utilities.logoutUser();
+          return;
+        }
+        this.setState({
+          loading: false,
+          errorMessage: `Unexpected status code: ${res.status}`,
+          errorTitle: "Failed to fetch snapshot details",
+        });
+        return;
       }
+      const response = await res.json();
+
+      const snapshotDetails = response.backupDetail;
+
+      let series = [];
+      if (!isEmpty(snapshotDetails?.volumes)) {
+        if (snapshotDetails?.hooks && !isEmpty(snapshotDetails?.hooks)) {
+          series = this.getSeriesData([...snapshotDetails?.volumes, ...snapshotDetails?.hooks].sort((a, b) => new Date(a.started) - new Date(b.started)));
+        } else {
+          series = this.getSeriesData((snapshotDetails?.volumes).sort((a, b) => new Date(a.started) - new Date(b.started)));
+        }
+      } else if ((snapshotDetails?.hooks && !isEmpty(snapshotDetails?.hooks))) {
+        series = this.getSeriesData((snapshotDetails?.hooks).sort((a, b) => new Date(a.started) - new Date(b.started)));
+      }
+
+      this.setState({
+        loading: false,
+        snapshotDetails: snapshotDetails,
+        series: series,
+        errorMessage: "",
+        errorTitle: "",
+      });
+    } catch(err) {
+      console.log(err);
+      this.setState({
+        loading: false,
+        errorMessage: err ? `${err.message}` : "Something went wrong, please try again.",
+        errorTitle: "Failed to fetch snapshot details",
+      });
     }
   }
 
@@ -270,18 +323,18 @@ class AppSnapshotDetail extends Component {
   renderShowAllScripts = (hooks) => {
     return (
       hooks.map((hook, i) => {
-        const diffMinutes = moment(hook?.finished).diff(moment(hook?.started), "minutes");
+        const diffMinutes = moment(hook?.finishedAt).diff(moment(hook?.startedAt), "minutes");
         return (
-          <div className="flex flex1 u-borderBottom--gray alignItems--center" key={`${hook.hookName}-${hook.phase}-${i}`}>
+          <div className="flex flex1 u-borderBottom--gray alignItems--center" key={`${hook.name}-${hook.phase}-${i}`}>
             <div className="flex flex1 u-paddingBottom--15 u-paddingTop--15 u-paddingLeft--10">
               <div className="flex flex-column">
-                <p className="u-fontSize--large u-color--tuna u-fontWeight--bold u-lineHeight--bold u-marginBottom--8">{hook.hookName} <span className="u-fontSize--small u-fontWeight--medium u-color--dustyGray u-marginLeft--5">Pod: {hook.podName} </span> </p>
+                <p className="u-fontSize--large u-color--tuna u-fontWeight--bold u-lineHeight--bold u-marginBottom--8">{hook.name} <span className="u-fontSize--small u-fontWeight--medium u-color--dustyGray u-marginLeft--5">Pod: {hook.podName} </span> </p>
                 <span className="u-fontSize--small u-fontWeight--normal u-color--dustyGray u-marginRight--10"> {hook.command} </span>
               </div>
             </div>
             <div className="flex flex-column justifyContent--flexEnd">
-              <p className="u-fontSize--small u-fontWeight--normal alignSelf--flexEnd u-marginBottom--8"><span className={`status-indicator ${hook.error ? "failed" : "completed"} u-marginLeft--5`}>{hook.error ? "Failed" : "Completed"}</span></p>
-              {!hook.error &&
+              <p className="u-fontSize--small u-fontWeight--normal alignSelf--flexEnd u-marginBottom--8"><span className={`status-indicator ${hook.errors ? "failed" : "completed"} u-marginLeft--5`}>{hook.errors ? "Failed" : "Completed"}</span></p>
+              {!hook.errors &&
                 <p className="u-fontSize--small u-fontWeight--normal u-marginBottom--8"> Finished in {diffMinutes === 0 ? "less than a minute" : `${diffMinutes} minutes`} </p>}
               {hook.stderr !== "" || hook.stdout !== "" &&
                 <span className="replicated-link u-fontSize--small alignSelf--flexEnd" onClick={() => this.toggleScriptsOutput(hook)}> View output </span>}
@@ -356,15 +409,15 @@ class AppSnapshotDetail extends Component {
 
     const data = seriesData.map((d, i) => {
       let finishedTime;
-      if (d.started === d.finished) {
-        finishedTime = new Date(moment(d.finished).add(1, "seconds")).getTime();
+      if (d.startedAt === d.finishedAt) {
+        finishedTime = new Date(moment(d.finishedAt).add(1, "seconds")).getTime();
       } else {
-        finishedTime = new Date(d.finished).getTime()
+        finishedTime = new Date(d.finishedAt).getTime()
       }
 
       return {
         x: d.name ? `${d.name}` : `${d.hookName} (${d.podName})-${i}`,
-        y: [new Date(d.started).getTime(), finishedTime],
+        y: [new Date(d.startedAt).getTime(), finishedTime],
         z: d.name ? "Volume" : `${d.phase}-snapshot-script`,
         fillColor: d.name ? this.assignColorToPath(d.name) : this.assignColorToPath(d.podName)
       }
@@ -415,6 +468,7 @@ class AppSnapshotDetail extends Component {
 
   render() {
     const {
+      loading,
       showScriptsOutput,
       selectedTab,
       selectedScriptTab,
@@ -426,10 +480,13 @@ class AppSnapshotDetail extends Component {
       showAllErrors,
       showAllWarnings,
       snapshotDetails,
-      series } = this.state;
-    const { app, snapshotDetail } = this.props;
+      series,
+      errorMessage,
+      errorTitle,
+    } = this.state;
+    const { app } = this.props;
 
-    if (snapshotDetail?.loading) {
+    if (loading) {
       return (
         <div className="flex-column flex1 alignItems--center justifyContent--center">
           <Loader size="60" />
@@ -440,7 +497,7 @@ class AppSnapshotDetail extends Component {
       <div className="container flex-column flex1 u-overflow--auto u-paddingTop--30 u-paddingBottom--20">
         <p className="u-marginBottom--30 u-fontSize--small u-color--tundora u-fontWeight--medium">
           <Link to={`/app/${app?.slug}/snapshots`} className="replicated-link">Snapshots</Link>
-          <span className="u-color--dustyGray"> > </span>
+          <span className="u-color--dustyGray"> &gt; </span>
           {snapshotDetails?.name}
         </p>
         <div className="flex justifyContent--spaceBetween alignItems--center u-paddingBottom--30 u-borderBottom--gray">
@@ -449,7 +506,7 @@ class AppSnapshotDetail extends Component {
             <p className="u-fontSize--normal u-fontWeight--normal u-color--dustyGray">Total size: <span className="u-fontWeight--bold u-color--doveGray">{snapshotDetails?.volumeSizeHuman}</span></p>
           </div>
           <div className="flex-column u-lineHeight--normal u-textAlign--right">
-            <p className="u-fontSize--normal u-fontWeight--normal u-marginBottom--5">Status: <span className={`status-indicator ${snapshotDetails?.status.toLowerCase()} u-marginLeft--5`}>{Utilities.snapshotStatusToDisplayName(snapshotDetails?.status)}</span></p>
+            <p className="u-fontSize--normal u-fontWeight--normal u-marginBottom--5">Status: <span className={`status-indicator ${snapshotDetails?.status?.toLowerCase()} u-marginLeft--5`}>{Utilities.snapshotStatusToDisplayName(snapshotDetails?.status)}</span></p>
             <div className="u-fontSize--small">
               {snapshotDetails?.status !== "InProgress" &&
                 <span className="replicated-link" onClick={() => this.viewLogs()}>View logs</span>}
@@ -665,23 +722,19 @@ class AppSnapshotDetail extends Component {
             snapshotLogsErr={this.state.snapshotLogsErr}
             snapshotLogsErrMsg={this.state.snapshotLogsErrMsg}
           />}
+
+        {errorMessage &&
+          <ErrorModal
+            errorModal={this.state.displayErrorModal}
+            toggleErrorModal={this.toggleErrorModal}
+            errMsg={errorMessage}
+            tryAgain={() => this.fetchSnapshotDetails()}
+            err={errorTitle}
+            loading={this.state.loadingApp}
+          />}
       </div>
     );
   }
 }
 
-export default compose(
-  withApollo,
-  withRouter,
-  graphql(snapshotDetail, {
-    name: "snapshotDetail",
-    options: ({ match }) => {
-      const slug = match.params.slug;
-      const id = match.params.id;
-      return {
-        variables: { slug, id },
-        fetchPolicy: "no-cache"
-      }
-    }
-  })
-)(AppSnapshotDetail);
+export default withRouter(AppSnapshotDetail);

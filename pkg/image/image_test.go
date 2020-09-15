@@ -7,34 +7,37 @@ import (
 	"github.com/replicatedhq/kots/pkg/docker/registry"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"go.undefinedlabs.com/scopeagent"
 	kustomizetypes "sigs.k8s.io/kustomize/api/types"
 )
 
 func Test_ImageNameFromNameParts(t *testing.T) {
-	registryOps := registry.RegistryOptions{
-		Endpoint:  "localhost:5000",
-		Namespace: "somebigbank",
-	}
-
 	tests := []struct {
-		name     string
-		parts    []string
-		expected kustomizetypes.Image
-		isError  bool
+		name        string
+		parts       []string
+		registryOps registry.RegistryOptions
+		expected    kustomizetypes.Image
+		isError     bool
 	}{
 		{
-			name:     "bad name format",
-			parts:    []string{"quay.io", "latest"},
+			name:  "bad name format",
+			parts: []string{"quay.io", "latest"},
+			registryOps: registry.RegistryOptions{
+				Endpoint:  "localhost:5000",
+				Namespace: "somebigbank",
+			},
 			expected: kustomizetypes.Image{},
 			isError:  true,
 		},
 		{
 			name:  "ECR style image",
 			parts: []string{"411111111111.dkr.ecr.us-west-1.amazonaws.com", "myrepo", "v0.0.1"},
+			registryOps: registry.RegistryOptions{
+				Endpoint:  "localhost:5000",
+				Namespace: "somebigbank",
+			},
 			expected: kustomizetypes.Image{
 				Name:    "411111111111.dkr.ecr.us-west-1.amazonaws.com/myrepo:v0.0.1",
-				NewName: fmt.Sprintf("%s/%s/myrepo", registryOps.Endpoint, registryOps.Namespace),
+				NewName: "localhost:5000/somebigbank/myrepo",
 				NewTag:  "v0.0.1",
 				Digest:  "",
 			},
@@ -43,9 +46,13 @@ func Test_ImageNameFromNameParts(t *testing.T) {
 		{
 			name:  "four parts with tag",
 			parts: []string{"quay.io", "someorg", "debian", "0.1"},
+			registryOps: registry.RegistryOptions{
+				Endpoint:  "localhost:5000",
+				Namespace: "somebigbank",
+			},
 			expected: kustomizetypes.Image{
 				Name:    "quay.io/someorg/debian:0.1",
-				NewName: fmt.Sprintf("%s/%s/debian", registryOps.Endpoint, registryOps.Namespace),
+				NewName: "localhost:5000/somebigbank/debian",
 				NewTag:  "0.1",
 				Digest:  "",
 			},
@@ -54,11 +61,29 @@ func Test_ImageNameFromNameParts(t *testing.T) {
 		{
 			name:  "five parts with sha",
 			parts: []string{"quay.io", "someorg", "debian", "sha256", "1234567890abcdef"},
+			registryOps: registry.RegistryOptions{
+				Endpoint:  "localhost:5000",
+				Namespace: "somebigbank",
+			},
 			expected: kustomizetypes.Image{
 				Name:    "quay.io/someorg/debian@sha256:1234567890abcdef",
-				NewName: fmt.Sprintf("%s/%s/debian", registryOps.Endpoint, registryOps.Namespace),
+				NewName: "localhost:5000/somebigbank/debian",
 				NewTag:  "",
 				Digest:  "1234567890abcdef",
+			},
+			isError: false,
+		},
+		{
+			name:  "no namespace",
+			parts: []string{"quay.io", "someorg", "debian", "0.1"},
+			registryOps: registry.RegistryOptions{
+				Endpoint: "localhost:5000",
+			},
+			expected: kustomizetypes.Image{
+				Name:    "quay.io/someorg/debian:0.1",
+				NewName: "localhost:5000/debian",
+				NewTag:  "0.1",
+				Digest:  "",
 			},
 			isError: false,
 		},
@@ -66,9 +91,7 @@ func Test_ImageNameFromNameParts(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			scopetest := scopeagent.StartTest(t)
-			defer scopetest.End()
-			image, err := ImageInfoFromFile(registryOps, test.parts)
+			image, err := ImageInfoFromFile(test.registryOps, test.parts)
 			if test.isError {
 				assert.Error(t, err)
 			} else {
@@ -118,11 +141,19 @@ func TestDestRef(t *testing.T) {
 			},
 			want: fmt.Sprintf("%s/%s/debian@sha256:mytestdigest", registryOps.Endpoint, registryOps.Namespace),
 		},
+		{
+			name: "No Namespace",
+			args: args{
+				registry: registry.RegistryOptions{
+					Endpoint: "localhost:5000",
+				},
+				srcImage: "quay.io/someorg/debian:0.1",
+			},
+			want: fmt.Sprintf("%s/debian:0.1", registryOps.Endpoint),
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			scopetest := scopeagent.StartTest(t)
-			defer scopetest.End()
 			if got := DestRef(tt.args.registry, tt.args.srcImage); got != tt.want {
 				t.Errorf("DestImageName() = %v, want %v", got, tt.want)
 			}
@@ -265,11 +296,24 @@ func Test_buildImageAlts(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "no namespace",
+			destRegistry: registry.RegistryOptions{
+				Endpoint: "localhost:5000",
+			},
+			image: "library/redis:v1",
+			want: []kustomizetypes.Image{
+				{
+					Name:    "library/redis",
+					NewName: "localhost:5000/redis",
+					NewTag:  "v1",
+					Digest:  "",
+				},
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			scopetest := scopeagent.StartTest(t)
-			defer scopetest.End()
 			req := require.New(t)
 			got, err := buildImageAlts(tt.destRegistry, tt.image)
 			req.NoError(err)
@@ -317,8 +361,6 @@ func Test_stripImageTag(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			scopetest := scopeagent.StartTest(t)
-			defer scopetest.End()
 			if got := stripImageTag(tt.image); got != tt.want {
 				t.Errorf("stripImageTag() = %v, want %v", got, tt.want)
 			}

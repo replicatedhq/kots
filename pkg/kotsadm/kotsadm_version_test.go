@@ -3,8 +3,8 @@ package kotsadm
 import (
 	"testing"
 
+	"github.com/replicatedhq/kots/pkg/kotsadm/types"
 	"github.com/stretchr/testify/assert"
-	_ "go.undefinedlabs.com/scopeagent/autoinstrument"
 )
 
 func Test_kotsadmTagForVersionString(t *testing.T) {
@@ -34,6 +34,45 @@ func Test_kotsadmTagForVersionString(t *testing.T) {
 		t.Run(test.version, func(t *testing.T) {
 			actual := kotsadmTagForVersionString(test.version)
 			assert.Equal(t, test.expect, actual)
+		})
+	}
+}
+
+func Test_kotsadmRegistry(t *testing.T) {
+	tests := []struct {
+		name              string
+		overrideVersion   string
+		overrideRegistry  string
+		overrideNamespace string
+		expected          string
+	}{
+		{
+			name:     "no overrides",
+			expected: "kotsadm",
+		},
+		{
+			name:             "local registry",
+			overrideRegistry: "localhost:32000",
+			expected:         "localhost:32000/kotsadm",
+		},
+		{
+			name:              "local registry, custom namespace",
+			overrideRegistry:  "registry.somebigbank.com",
+			overrideNamespace: "my-namespace",
+			expected:          "registry.somebigbank.com/my-namespace",
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			options := types.KotsadmOptions{
+				OverrideVersion:   test.overrideVersion,
+				OverrideRegistry:  test.overrideRegistry,
+				OverrideNamespace: test.overrideNamespace,
+			}
+
+			actual := kotsadmRegistry(options)
+			assert.Equal(t, test.expected, actual)
 		})
 	}
 }

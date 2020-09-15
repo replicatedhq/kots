@@ -1,6 +1,5 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import Dropzone from "react-dropzone";
 import ReactTooltip from "react-tooltip"
 
 import Select from "react-select";
@@ -12,18 +11,28 @@ import url from "url";
 
 import AirgapUploadProgress from "../AirgapUploadProgress";
 import Loader from "../shared/Loader";
+import MountAware from "../shared/MountAware";
 
 import {
+  dynamicallyResizeText,
   Utilities,
   getLicenseExpiryDate,
 } from "@src/utilities/utilities";
 
 import "../../scss/components/watches/DashboardCard.scss";
-import { isVeleroInstalled } from "../../queries/SnapshotQueries";
 
 export default class DashboardCard extends React.Component {
-  state = {
-    selectedAction: ""
+  constructor(props) {
+    super(props);
+    this.state = {
+      selectedAction: "",
+    }
+    this.cardTitleText = React.createRef();
+  }
+
+  resizeCardTitleFont = () => {
+    const newFontSize = dynamicallyResizeText(this.cardTitleText.current.innerHTML, this.cardTitleText.current.clientWidth, "20px", 14);
+    this.cardTitleText.current.style.fontSize = newFontSize;
   }
 
   componentDidMount() {
@@ -33,8 +42,14 @@ export default class DashboardCard extends React.Component {
   }
 
   componentDidUpdate(lastProps) {
+    const { cardName } = this.props;
     if (this.props.links !== lastProps.links && this.props.links && this.props.links.length > 0) {
       this.setState({ selectedAction: this.props.links[0] })
+    }
+    if (cardName && cardName !== lastProps.cardName) {
+      if (this.cardTitleText) {
+        this.resizeCardTitleFont();
+      }
     }
   }
 
@@ -135,8 +150,8 @@ export default class DashboardCard extends React.Component {
     } else if (this.props.uploadingAirgapFile) {
       updateText = (
         <AirgapUploadProgress
-          total={this.props.uploadTotal}
-          sent={this.props.uploadSent}
+          total={this.props.uploadSize}
+          progress={this.props.uploadProgress}
           onProgressError={this.props.onProgressError}
           smallSize={true}
         />
@@ -170,14 +185,9 @@ export default class DashboardCard extends React.Component {
           ? <Loader className="flex justifyContent--center u-marginTop--10" size="32" />
           : showAirgapUI
             ?
-            <Dropzone
-              className="Dropzone-wrapper"
-              accept=".airgap"
-              onDropAccepted={this.props.onDropBundle}
-              multiple={false}
-            >
+            <MountAware onMount={el => this.props.airgapUploader?.assignElement(el)}>
               <button className="btn secondary blue">Upload new version</button>
-            </Dropzone>
+            </MountAware>
             : showOnlineUI ?
               <div className="flex alignItems--center">
                 <button className="btn primary blue u-marginTop--10" onClick={isUpdateAvailable ? redirectToDiff : onCheckForUpdates}>{isUpdateAvailable ? "Show Update" : "Check for update"}</button>
@@ -231,7 +241,7 @@ export default class DashboardCard extends React.Component {
           <span className={`icon ${cardIcon} u-marginRight--10`}></span>
           <div className="flex1 justifyContent--center">
             <div className={`flex justifyContent--spaceBetween ${appLicense && size(appLicense) === 0 ? "u-marginTop--10" : ""}`}>
-              <p className={`flex1 u-fontWeight--bold u-fontSize--largest u-paddingRight--5 u-marginBottom--5 ${appLicense && size(appLicense) === 0 ? "u-color--doveGray" : "u-color--tundora"}`}>{cardName}</p>
+              <p ref={this.cardTitleText} style={{ fontSize: "20px" }} className={`flex1 u-fontWeight--bold u-fontSize--largest u-paddingRight--5 u-marginBottom--5 ${appLicense && size(appLicense) === 0 ? "u-color--doveGray" : "u-color--tundora"}`}>{cardName}</p>
             </div>
             {application ?
               app.isConfigurable && <Link to={`${url}/config`} className="card-link"> Configure </Link>

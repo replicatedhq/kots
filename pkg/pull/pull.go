@@ -1,6 +1,7 @@
 package pull
 
 import (
+	"bytes"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -11,16 +12,19 @@ import (
 
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
+	"github.com/replicatedhq/kots/pkg/archives"
 	"github.com/replicatedhq/kots/pkg/base"
 	"github.com/replicatedhq/kots/pkg/docker/registry"
 	"github.com/replicatedhq/kots/pkg/downstream"
 	"github.com/replicatedhq/kots/pkg/k8sdoc"
+	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/midstream"
 	"github.com/replicatedhq/kots/pkg/upstream"
 	upstreamtypes "github.com/replicatedhq/kots/pkg/upstream/types"
 	"github.com/replicatedhq/kots/pkg/util"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/runtime/serializer/json"
 	"k8s.io/client-go/kubernetes/scheme"
 	kustomizetypes "sigs.k8s.io/kustomize/api/types"
 )
@@ -110,6 +114,7 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 	fetchOptions.UseAppDir = pullOptions.CreateAppDir
 	fetchOptions.LocalPath = pullOptions.LocalPath
 	fetchOptions.CurrentCursor = pullOptions.UpdateCursor
+	fetchOptions.AppSequence = pullOptions.AppSequence
 
 	var installation *kotsv1beta1.Installation
 
@@ -238,6 +243,8 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 		LocalRegistryPassword:  pullOptions.RewriteImageOptions.Password,
 		ExcludeKotsKinds:       pullOptions.ExcludeKotsKinds,
 		Log:                    log,
+		Sequence:               pullOptions.AppSequence,
+		IsAirgap:               pullOptions.AirgapRoot != "",
 	}
 	log.ActionWithSpinner("Creating base")
 	io.WriteString(pullOptions.ReportWriter, "Creating base\n")
@@ -367,7 +374,7 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 				pushUpstreamImageOptions.ReplicatedRegistry.Password = fetchOptions.License.Spec.LicenseID
 			}
 
-			// only run the TagAndPushImagesFromFiles code if the "copy directly" code hasn't already run
+			// only run the TagAndPushAppImages code if the "copy directly" code hasn't already run
 			var rewrittenImages []kustomizetypes.Image
 			if images == nil {
 				rewrittenImages, err = upstream.TagAndPushUpstreamImages(u, pushUpstreamImageOptions)
@@ -561,6 +568,38 @@ func ParseConfigValuesFromFile(filename string) (*kotsv1beta1.ConfigValues, erro
 	return config, nil
 }
 
+func GetAppMetadataFromAirgap(airgapArchive string) ([]byte, error) {
+	appArchive, err := archives.GetFileFromAirgap("app.tar.gz", airgapArchive)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to extract app archive")
+	}
+
+	tempDir, err := ioutil.TempDir("", "kotsadm")
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to create temp dir")
+	}
+	defer os.RemoveAll(tempDir)
+
+	err = archives.ExtractTGZArchiveFromReader(bytes.NewReader(appArchive), tempDir)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to extract app archive")
+	}
+
+	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(tempDir)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to read kots kinds")
+	}
+
+	s := json.NewYAMLSerializer(json.DefaultMetaFactory, scheme.Scheme, scheme.Scheme)
+
+	var b bytes.Buffer
+	if err := s.Encode(&kotsKinds.KotsApplication, &b); err != nil {
+		errors.Wrap(err, "failed to encode metadata")
+	}
+
+	return b.Bytes(), nil
+}
+
 func parseInstallationFromFile(filename string) (*kotsv1beta1.Installation, error) {
 	contents, err := ioutil.ReadFile(filename)
 	if err != nil {
@@ -637,7 +676,7 @@ func imagesDirFromOptions(upstream *upstreamtypes.Upstream, pullOptions PullOpti
 
 func publicKeysMatch(license *kotsv1beta1.License, airgap *kotsv1beta1.Airgap) error {
 	if license == nil || airgap == nil {
-		// not sure when this would happen, but earlier logic allows this combinaion
+		// not sure when this would happen, but earlier logic allows this combination
 		return nil
 	}
 
@@ -647,7 +686,11 @@ func publicKeysMatch(license *kotsv1beta1.License, airgap *kotsv1beta1.Airgap) e
 	}
 
 	if err := verify([]byte(license.Spec.AppSlug), []byte(airgap.Spec.Signature), publicKey); err != nil {
-		return errors.Wrap(err, "failed to verify bundle signature")
+		if airgap.Spec.AppSlug != "" {
+			return errors.Wrapf(err, "failed to verify bundle signature - license is for app %q, airgap package for app %q", license.Spec.AppSlug, airgap.Spec.AppSlug)
+		} else {
+			return errors.Wrapf(err, "failed to verify bundle signature - airgap package does not match license app %q", license.Spec.AppSlug)
+		}
 	}
 
 	return nil

@@ -5,15 +5,12 @@ import (
 
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	"github.com/stretchr/testify/require"
-	"go.undefinedlabs.com/scopeagent"
 )
 
 func TestLicenseContext_dockercfg(t *testing.T) {
-	scopetest := scopeagent.StartTest(t)
-	defer scopetest.End()
 	req := require.New(t)
 
-	ctx := LicenseCtx{
+	ctx := licenseCtx{
 		License: &kotsv1beta1.License{
 			Spec: kotsv1beta1.LicenseSpec{
 				LicenseID: "abcdef",
@@ -229,11 +226,9 @@ func TestLicenseCtx_licenseFieldValue(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			scopetest := scopeagent.StartTest(t)
-			defer scopetest.End()
 			req := require.New(t)
 
-			ctx := LicenseCtx{
+			ctx := licenseCtx{
 				License: tt.License,
 			}
 			req.Equal(tt.want, ctx.licenseFieldValue(tt.fieldName))

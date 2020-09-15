@@ -38,7 +38,7 @@ serve: deps
 	node --max_old_space_size=6144 \
 		./node_modules/webpack-dev-server/bin/webpack-dev-server.js \
 		--config webpack.config.js \
-		--progress -w --debug --compress --color --env skaffold --mode development --hot \
+		-w --debug --compress --color --env skaffold --mode development --hot \
 		--host 0.0.0.0
 
 .PHONY: build-local
@@ -53,9 +53,9 @@ build-local:
 		--compress
 
 .PHONY: build-kotsadm
-build-kotsadm: SHIP_CLUSTER_BUILD_VERSION = $(if ${GIT_TAG},${GIT_TAG},$(shell echo ${GIT_COMMIT} | cut -c1-7))
+build-kotsadm: KOTSADM_BUILD_VERSION = $(if ${GIT_TAG},${GIT_TAG},$(shell echo ${GIT_COMMIT} | cut -c1-7))
 build-kotsadm:
-	SHIP_CLUSTER_BUILD_VERSION=$(SHIP_CLUSTER_BUILD_VERSION) \
+	KOTSADM_BUILD_VERSION=$(KOTSADM_BUILD_VERSION) \
 	node \
 		--max_old_space_size=6144 \
 		./node_modules/webpack/bin/webpack.js \

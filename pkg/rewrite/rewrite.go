@@ -41,6 +41,7 @@ type RewriteOptions struct {
 	RegistryNamespace string
 	AppSlug           string
 	IsGitOps          bool
+	AppSequence       int64
 }
 
 func Rewrite(rewriteOptions RewriteOptions) error {
@@ -98,6 +99,8 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 		LocalRegistryPassword:  rewriteOptions.RegistryPassword,
 		ExcludeKotsKinds:       rewriteOptions.ExcludeKotsKinds,
 		Log:                    log,
+		Sequence:               rewriteOptions.AppSequence,
+		IsAirgap:               rewriteOptions.IsAirgap,
 	}
 	log.ActionWithSpinner("Creating base")
 	io.WriteString(rewriteOptions.ReportWriter, "Creating base\n")
@@ -320,12 +323,4 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 	}
 
 	return nil
-}
-
-func imagesDirFromOptions(upstream *upstreamtypes.Upstream, rewriteOptions RewriteOptions) string {
-	if rewriteOptions.CreateAppDir {
-		return filepath.Join(rewriteOptions.RootDir, upstream.Name, "images")
-	}
-
-	return filepath.Join(rewriteOptions.RootDir, "images")
 }

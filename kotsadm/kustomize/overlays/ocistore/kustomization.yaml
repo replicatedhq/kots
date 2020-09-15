@@ -1,0 +1,10 @@
+bases:
+  - ../dev
+  - ../../../web/kustomize/overlays/dev
+  - ../../../operator/kustomize/overlays/dev
+
+resources:
+  - ./distribution/distribution.yaml
+
+patches:
+  - ./deployment.yaml

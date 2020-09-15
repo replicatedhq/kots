@@ -1,9 +1,7 @@
 import React, { Component } from "react";
 import Select from "react-select";
-import { graphql, compose, withApollo } from "react-apollo";
 import { Link, withRouter } from "react-router-dom"
 import { Utilities, getCronFrequency, getCronInterval, getReadableCronDescriptor } from "../../utilities/utilities";
-import { saveSnapshotConfig } from "../../mutations/SnapshotMutations";
 import ErrorModal from "../modals/ErrorModal";
 import Loader from "../shared/Loader";
 import find from "lodash/find";
@@ -164,28 +162,49 @@ class AppSnapshotSchedule extends Component {
 
   saveSnapshotConfig = () => {
     this.setState({ updatingSchedule: true });
-    this.props.saveSnapshotConfig(
-      this.props.app.id,
-      this.state.retentionInput,
-      this.state.selectedRetentionUnit?.value,
-      this.state.frequency,
-      this.state.autoEnabled,
-    ).then(() => {
-      this.setState({ updatingSchedule: false, updateConfirm: true });
-      setTimeout(() => {
-        this.setState({ updateConfirm: false })
-      }, 3000);
+    const body = {
+      appId: this.props.app.id,
+      inputValue: this.state.retentionInput,
+      inputTimeUnit: this.state.selectedRetentionUnit?.value,
+      schedule: this.state.frequency,
+      autoEnabled: this.state.autoEnabled,
+    };
+    fetch(`${window.env.API_ENDPOINT}/app/${this.props.app.slug}/snapshot/config`, {
+      headers: {
+        "Authorization": Utilities.getToken(),
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+      },
+      method: "PUT",
+      body: JSON.stringify(body),
     })
-    .catch(err => {
-      console.log(err);
-      err.graphQLErrors.map(({ msg }) => {
+      .then(async (res) => {
+        const data = await res.json();
+        if (!res.ok || !data.success) {
+          if (res.status === 401) {
+            Utilities.logoutUser();
+            return;
+          }
+          this.setState({
+            message: data.error || "Failed to save snapshot config",
+            messageType: "error",
+            updatingSchedule: false,
+          })
+          return
+        }
+        this.setState({ updatingSchedule: false, updateConfirm: true });
+        setTimeout(() => {
+          this.setState({ updateConfirm: false })
+        }, 3000);
+      })
+      .catch((err) => {
+        console.log(err);
         this.setState({
-          message: msg,
+          message: err ? err.message : "Failed to connect to API",
           messageType: "error",
-          updatingSchedule: false 
+          updatingSchedule: false,
         });
-      });
-    });
+      })
   }
 
   render() {
@@ -314,12 +333,4 @@ class AppSnapshotSchedule extends Component {
   }
 }
 
-export default compose(
-  withApollo,
-  withRouter,
-  graphql(saveSnapshotConfig, {
-    props: ({ mutate }) => ({
-      saveSnapshotConfig: (appId, inputValue, inputTimeUnit, schedule, autoEnabled) => mutate({ variables: { appId, inputValue, inputTimeUnit, schedule, autoEnabled } })
-    })
-  })
-)(AppSnapshotSchedule);
+export default withRouter(AppSnapshotSchedule);

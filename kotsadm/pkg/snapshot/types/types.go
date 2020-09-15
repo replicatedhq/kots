@@ -78,13 +78,21 @@ type BackupDetail struct {
 	Warnings        []SnapshotError  `json:"warnings"`
 }
 
+type RestoreDetail struct {
+	Name     string          `json:"name"`
+	Phase    string          `json:"phase"`
+	Volumes  []RestoreVolume `json:"volumes"`
+	Errors   []SnapshotError `json:"errors"`
+	Warnings []SnapshotError `json:"warnings"`
+}
+
 type SnapshotHook struct {
 	Name          string          `json:"name"`
 	Namespace     string          `json:"namespace"`
-	Phase         string          `json:"pase"`
+	Phase         string          `json:"phase"`
 	PodName       string          `json:"podName"`
-	Command       string          `json:"command"`
 	ContainerName string          `json:"containerName"`
+	Command       string          `json:"command"`
 	Stdout        string          `json:"stdout"`
 	Stderr        string          `json:"stderr"`
 	StartedAt     *time.Time      `json:"startedAt,omitempty"`
@@ -95,6 +103,19 @@ type SnapshotHook struct {
 
 type SnapshotVolume struct {
 	Name                 string     `json:"name"`
+	SizeBytesHuman       string     `json:"sizeBytesHuman"`
+	DoneBytesHuman       string     `json:"doneBytesHuman"`
+	CompletionPercent    int        `json:"completionPercent"`
+	TimeRemainingSeconds int        `json:"timeRemainingSeconds"`
+	StartedAt            *time.Time `json:"startedAt,omitempty"`
+	FinishedAt           *time.Time `json:"finishedAt,omitempty"`
+	Phase                string     `json:"phase"`
+}
+type RestoreVolume struct {
+	Name                 string     `json:"name"`
+	PodName              string     `json:"podName"`
+	PodNamespace         string     `json:"podNamespace"`
+	PodVolumeName        string     `json:"podVolumeName"`
 	SizeBytesHuman       string     `json:"sizeBytesHuman"`
 	DoneBytesHuman       string     `json:"doneBytesHuman"`
 	CompletionPercent    int        `json:"completionPercent"`
@@ -130,4 +151,12 @@ type SnapshotTTL struct {
 type ParsedTTL struct {
 	Quantity int64  `json:"quantity"`
 	Unit     string `json:"unit"`
+}
+
+type ScheduledSnapshot struct {
+	ID                 string    `json:"id"`
+	AppID              string    `json:"appId"`
+	ScheduledTimestamp time.Time `json:"scheduledTimestamp"`
+	// name of Backup CR will be set once scheduled
+	BackupName string `json:"backupName,omitempty"`
 }

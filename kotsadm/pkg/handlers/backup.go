@@ -1,14 +1,14 @@
 package handlers
 
 import (
+	"context"
 	"net/http"
 
 	"github.com/gorilla/mux"
-	"github.com/replicatedhq/kots/kotsadm/pkg/app"
 	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
-	"github.com/replicatedhq/kots/kotsadm/pkg/session"
 	"github.com/replicatedhq/kots/kotsadm/pkg/snapshot"
 	snapshottypes "github.com/replicatedhq/kots/kotsadm/pkg/snapshot/types"
+	"github.com/replicatedhq/kots/kotsadm/pkg/store"
 )
 
 type CreateBackupRequest struct {
@@ -20,34 +20,11 @@ type CreateBackupResponse struct {
 }
 
 func CreateBackup(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Header().Set("Access-Control-Allow-Headers", "content-type, origin, accept, authorization")
-
-	if r.Method == "OPTIONS" {
-		w.WriteHeader(200)
-		return
-	}
-
 	createBackupResponse := CreateBackupResponse{
 		Success: false,
 	}
 
-	sess, err := session.Parse(r.Header.Get("Authorization"))
-	if err != nil {
-		logger.Error(err)
-		createBackupResponse.Error = "failed to parse authorization header"
-		JSON(w, 401, createBackupResponse)
-		return
-	}
-
-	// we don't currently have roles, all valid tokens are valid sessions
-	if sess == nil || sess.ID == "" {
-		createBackupResponse.Error = "failed to parse authorization header"
-		JSON(w, 401, createBackupResponse)
-		return
-	}
-
-	foundApp, err := app.GetFromSlug(mux.Vars(r)["appSlug"])
+	foundApp, err := store.GetStore().GetAppFromSlug(mux.Vars(r)["appSlug"])
 	if err != nil {
 		logger.Error(err)
 		createBackupResponse.Error = "failed to get app from app slug"
@@ -55,7 +32,7 @@ func CreateBackup(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = snapshot.CreateBackup(foundApp)
+	_, err = snapshot.CreateBackup(foundApp, false)
 	if err != nil {
 		logger.Error(err)
 		createBackupResponse.Error = "failed to create backup"
@@ -74,32 +51,9 @@ type ListBackupsResponse struct {
 }
 
 func ListBackups(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Header().Set("Access-Control-Allow-Headers", "content-type, origin, accept, authorization")
-
-	if r.Method == "OPTIONS" {
-		w.WriteHeader(200)
-		return
-	}
-
 	listBackupsResponse := ListBackupsResponse{}
 
-	sess, err := session.Parse(r.Header.Get("Authorization"))
-	if err != nil {
-		logger.Error(err)
-		listBackupsResponse.Error = "failed to parse authorization header"
-		JSON(w, 401, listBackupsResponse)
-		return
-	}
-
-	// we don't currently have roles, all valid tokens are valid sessions
-	if sess == nil || sess.ID == "" {
-		listBackupsResponse.Error = "failed to parse authorization header"
-		JSON(w, 401, listBackupsResponse)
-		return
-	}
-
-	foundApp, err := app.GetFromSlug(mux.Vars(r)["appSlug"])
+	foundApp, err := store.GetStore().GetAppFromSlug(mux.Vars(r)["appSlug"])
 	if err != nil {
 		logger.Error(err)
 		listBackupsResponse.Error = "failed to get app from app slug"
@@ -138,30 +92,7 @@ type ListKotsadmBackupsResponse struct {
 }
 
 func ListKotsadmBackups(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Header().Set("Access-Control-Allow-Headers", "content-type, origin, accept, authorization")
-
-	if r.Method == "OPTIONS" {
-		w.WriteHeader(200)
-		return
-	}
-
 	listBackupsResponse := ListKotsadmBackupsResponse{}
-
-	sess, err := session.Parse(r.Header.Get("Authorization"))
-	if err != nil {
-		logger.Error(err)
-		listBackupsResponse.Error = "failed to parse authorization header"
-		JSON(w, 401, listBackupsResponse)
-		return
-	}
-
-	// we don't currently have roles, all valid tokens are valid sessions
-	if sess == nil || sess.ID == "" {
-		listBackupsResponse.Error = "authorization header does not contain a valid session"
-		JSON(w, 401, listBackupsResponse)
-		return
-	}
 
 	backups, err := snapshot.ListKotsadmBackups()
 	if err != nil {
@@ -182,32 +113,9 @@ type GetKotsadmBackupResponse struct {
 }
 
 func GetKotsadmBackup(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Header().Set("Access-Control-Allow-Headers", "content-type, origin, accept, authorization")
-
-	if r.Method == "OPTIONS" {
-		w.WriteHeader(200)
-		return
-	}
-
 	getBackupResponse := GetKotsadmBackupResponse{}
 
-	sess, err := session.Parse(r.Header.Get("Authorization"))
-	if err != nil {
-		logger.Error(err)
-		getBackupResponse.Error = "failed to parse authorization header"
-		JSON(w, 401, getBackupResponse)
-		return
-	}
-
-	// we don't currently have roles, all valid tokens are valid sessions
-	if sess == nil || sess.ID == "" {
-		getBackupResponse.Error = "authorization header does not contain a valid session"
-		JSON(w, 401, getBackupResponse)
-		return
-	}
-
-	backup, err := snapshot.GetKotsadmBackupDetail(mux.Vars(r)["snapshotName"])
+	backup, err := snapshot.GetKotsadmBackupDetail(context.TODO(), mux.Vars(r)["snapshotName"])
 	if err != nil {
 		logger.Error(err)
 		getBackupResponse.Error = "failed to get backup detail"
@@ -219,4 +127,24 @@ func GetKotsadmBackup(w http.ResponseWriter, r *http.Request) {
 	getBackupResponse.Success = true
 
 	JSON(w, 200, getBackupResponse)
+}
+
+type DeleteKotsadmBackupResponse struct {
+	Success bool   `json:"success"`
+	Error   string `json:"error,omitempty"`
+}
+
+func DeleteKotsadmBackup(w http.ResponseWriter, r *http.Request) {
+	deleteBackupResponse := DeleteKotsadmBackupResponse{}
+
+	if err := snapshot.DeleteBackup(mux.Vars(r)["snapshotName"]); err != nil {
+		logger.Error(err)
+		deleteBackupResponse.Error = "failed to delete backup"
+		JSON(w, http.StatusInternalServerError, deleteBackupResponse)
+		return
+	}
+
+	deleteBackupResponse.Success = true
+
+	JSON(w, http.StatusOK, deleteBackupResponse)
 }

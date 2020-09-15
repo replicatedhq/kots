@@ -1,18 +1,23 @@
 package handlers
 
 import (
+	"context"
 	"net/http"
 	"strconv"
 
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/kotsadm/pkg/app"
+	apptypes "github.com/replicatedhq/kots/kotsadm/pkg/app/types"
 	"github.com/replicatedhq/kots/kotsadm/pkg/downstream"
 	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
-	"github.com/replicatedhq/kots/kotsadm/pkg/session"
 	"github.com/replicatedhq/kots/kotsadm/pkg/snapshot"
+	snapshottypes "github.com/replicatedhq/kots/kotsadm/pkg/snapshot/types"
+	"github.com/replicatedhq/kots/kotsadm/pkg/store"
 	"github.com/replicatedhq/kots/pkg/kotsadm"
 	"github.com/replicatedhq/kots/pkg/kotsadm/types"
+	velerov1 "github.com/vmware-tanzu/velero/pkg/apis/velero/v1"
+	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
 )
 
 type CreateRestoreResponse struct {
@@ -32,31 +37,8 @@ type CreateKotsadmRestoreResponse struct {
 }
 
 func CreateRestore(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Header().Set("Access-Control-Allow-Headers", "content-type, origin, accept, authorization")
-
-	if r.Method == "OPTIONS" {
-		w.WriteHeader(200)
-		return
-	}
-
 	createRestoreResponse := CreateRestoreResponse{
 		Success: false,
-	}
-
-	sess, err := session.Parse(r.Header.Get("Authorization"))
-	if err != nil {
-		logger.Error(err)
-		createRestoreResponse.Error = "failed to parse authorization header"
-		JSON(w, 401, createRestoreResponse)
-		return
-	}
-
-	// we don't currently have roles, all valid tokens are valid sessions
-	if sess == nil || sess.ID == "" {
-		createRestoreResponse.Error = "failed to parse authorization header"
-		JSON(w, 401, createRestoreResponse)
-		return
 	}
 
 	snapshotName := mux.Vars(r)["snapshotName"]
@@ -65,7 +47,7 @@ func CreateRestore(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		logger.Error(err)
 		createRestoreResponse.Error = "failed to find backup"
-		JSON(w, 500, createRestoreResponse)
+		JSON(w, http.StatusInternalServerError, createRestoreResponse)
 		return
 	}
 
@@ -77,12 +59,12 @@ func CreateRestore(w http.ResponseWriter, r *http.Request) {
 		if err := kotsadm.CreateRestoreJob(opts); err != nil {
 			logger.Error(err)
 			createRestoreResponse.Error = "failed to initiate restore"
-			JSON(w, 500, createRestoreResponse)
+			JSON(w, http.StatusInternalServerError, createRestoreResponse)
 			return
 		}
 
 		createRestoreResponse.Success = true
-		JSON(w, 200, createRestoreResponse)
+		JSON(w, http.StatusOK, createRestoreResponse)
 		return
 	}
 
@@ -91,7 +73,7 @@ func CreateRestore(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		logger.Error(err)
 		createRestoreResponse.Error = "failed to parse sequence label"
-		JSON(w, 500, createRestoreResponse)
+		JSON(w, http.StatusInternalServerError, createRestoreResponse)
 		return
 	}
 
@@ -99,7 +81,7 @@ func CreateRestore(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		logger.Error(err)
 		createRestoreResponse.Error = "failed to find downstream version"
-		JSON(w, 500, createRestoreResponse)
+		JSON(w, http.StatusInternalServerError, createRestoreResponse)
 		return
 	}
 
@@ -107,15 +89,15 @@ func CreateRestore(w http.ResponseWriter, r *http.Request) {
 		err := errors.Errorf("sequence %d of app %s was never deployed to this cluster", sequence, appID)
 		logger.Error(err)
 		createRestoreResponse.Error = err.Error()
-		JSON(w, 500, createRestoreResponse)
+		JSON(w, http.StatusInternalServerError, createRestoreResponse)
 		return
 	}
 
-	kotsApp, err := app.Get(appID)
+	kotsApp, err := store.GetStore().GetApp(appID)
 	if err != nil {
 		logger.Error(err)
 		createRestoreResponse.Error = "failed to get app"
-		JSON(w, 500, createRestoreResponse)
+		JSON(w, http.StatusInternalServerError, createRestoreResponse)
 		return
 	}
 
@@ -123,14 +105,14 @@ func CreateRestore(w http.ResponseWriter, r *http.Request) {
 		err := errors.Errorf("restore is already in progress")
 		logger.Error(err)
 		createRestoreResponse.Error = err.Error()
-		JSON(w, 500, createRestoreResponse)
+		JSON(w, http.StatusInternalServerError, createRestoreResponse)
 		return
 	}
 
 	if err := snapshot.DeleteRestore(snapshotName); err != nil {
 		logger.Error(err)
 		createRestoreResponse.Error = "failed to initiate restore"
-		JSON(w, 500, createRestoreResponse)
+		JSON(w, http.StatusInternalServerError, createRestoreResponse)
 		return
 	}
 
@@ -138,48 +120,25 @@ func CreateRestore(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		logger.Error(err)
 		createRestoreResponse.Error = "failed to initiate restore"
-		JSON(w, 500, createRestoreResponse)
+		JSON(w, http.StatusInternalServerError, createRestoreResponse)
 		return
 	}
 
 	createRestoreResponse.Success = true
 
-	JSON(w, 200, createRestoreResponse)
+	JSON(w, http.StatusOK, createRestoreResponse)
 }
 
 func GetRestoreStatus(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Header().Set("Access-Control-Allow-Headers", "content-type, origin, accept, authorization")
-
-	if r.Method == "OPTIONS" {
-		w.WriteHeader(200)
-		return
-	}
-
 	response := GetRestoreStatusResponse{
 		Status: "",
 	}
 
-	sess, err := session.Parse(r.Header.Get("Authorization"))
-	if err != nil {
-		logger.Error(err)
-		response.Error = "failed to parse authorization header"
-		JSON(w, 401, response)
-		return
-	}
-
-	// we don't currently have roles, all valid tokens are valid sessions
-	if sess == nil || sess.ID == "" {
-		response.Error = "failed to parse authorization header"
-		JSON(w, 401, response)
-		return
-	}
-
-	foundApp, err := app.GetFromSlug(mux.Vars(r)["appSlug"])
+	foundApp, err := store.GetStore().GetAppFromSlug(mux.Vars(r)["appSlug"])
 	if err != nil {
 		logger.Error(err)
 		response.Error = "failed to get app from app slug"
-		JSON(w, 500, response)
+		JSON(w, http.StatusInternalServerError, response)
 		return
 	}
 
@@ -188,5 +147,84 @@ func GetRestoreStatus(w http.ResponseWriter, r *http.Request) {
 		response.Status = "running" // there is only one status right now
 	}
 
-	JSON(w, 200, response)
+	JSON(w, http.StatusOK, response)
+}
+
+func CancelRestore(w http.ResponseWriter, r *http.Request) {
+	appSlug := mux.Vars(r)["appSlug"]
+
+	foundApp, err := store.GetStore().GetAppFromSlug(appSlug)
+	if err != nil {
+		err = errors.Wrap(err, "failed to get app from app slug")
+		logger.Error(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	if err := app.ResetRestore(foundApp.ID); err != nil {
+		err = errors.Wrap(err, "failed to reset app restore in progress name")
+		logger.Error(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+}
+
+type GetKotsadmRestoreResponse struct {
+	RestoreDetail *snapshottypes.RestoreDetail `json:"restoreDetail"`
+	IsActive      bool                         `json:"active"`
+}
+
+func GetKotsadmRestore(w http.ResponseWriter, r *http.Request) {
+	appSlug := mux.Vars(r)["appSlug"]
+	restoreName := mux.Vars(r)["restoreName"]
+
+	foundApp, err := store.GetStore().GetAppFromSlug(appSlug)
+	if err != nil {
+		err = errors.Wrap(err, "failed to get app from app slug")
+		logger.Error(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	response := GetKotsadmRestoreResponse{
+		IsActive: foundApp.RestoreInProgressName == restoreName,
+	}
+
+	restoreDetail, err := snapshot.GetKotsadmRestoreDetail(context.TODO(), restoreName)
+	if kuberneteserrors.IsNotFound(errors.Cause(err)) {
+		if foundApp.RestoreUndeployStatus == apptypes.UndeployFailed {
+			// HACK: once the user has see the error, clear it out.
+			// Otherwise there is no way to get back to snapshot list.
+			if err := app.ResetRestore(foundApp.ID); err != nil {
+				err = errors.Wrap(err, "failed to reset app restore in progress name")
+				logger.Error(err)
+				w.WriteHeader(http.StatusInternalServerError)
+				return
+			}
+			restoreDetail = &snapshottypes.RestoreDetail{
+				Name:  restoreName,
+				Phase: string(velerov1.RestorePhaseFailed),
+				Errors: []snapshottypes.SnapshotError{{
+					Title:   "Restore has failed",
+					Message: "Please check logs for errors.",
+				}},
+			}
+		} else {
+			restoreDetail = &snapshottypes.RestoreDetail{
+				Name:  restoreName,
+				Phase: string(velerov1.RestorePhaseNew),
+			}
+		}
+	} else if err != nil {
+		err = errors.Wrap(err, "failed to get restore detail")
+		logger.Error(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	response.RestoreDetail = restoreDetail
+
+	JSON(w, http.StatusOK, response)
 }

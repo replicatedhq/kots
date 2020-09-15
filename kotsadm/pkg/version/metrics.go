@@ -7,12 +7,10 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
-	"os"
 	"strconv"
 	"time"
 
 	"github.com/pkg/errors"
-	"github.com/replicatedhq/kots/kotsadm/pkg/kotsadmparams"
 	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
 	"github.com/replicatedhq/kots/kotsadm/pkg/persistence"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
@@ -80,14 +78,7 @@ var (
 	}
 )
 
-func GetMetricCharts(appID string, sequence int64) ([]MetricChart, error) {
-	prometheusAddress, err := kotsadmparams.Get("PROMETHEUS_ADDRESS")
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to get prometheus address")
-	}
-	if prometheusAddress == "" {
-		prometheusAddress = os.Getenv("PROMETHEUS_ADDRESS")
-	}
+func GetMetricCharts(appID string, sequence int64, prometheusAddress string) ([]MetricChart, error) {
 	if prometheusAddress == "" {
 		return []MetricChart{}, nil
 	}

@@ -1,5 +1,4 @@
 import React, { Component } from "react";
-import { compose, withApollo } from "react-apollo";
 import { withRouter, Link } from "react-router-dom"
 import Helmet from "react-helmet";
 import dayjs from "dayjs";
@@ -268,7 +267,4 @@ class Redactors extends Component {
   }
 }
 
-export default compose(
-  withApollo,
-  withRouter,
-)(Redactors);
+export default withRouter(Redactors);

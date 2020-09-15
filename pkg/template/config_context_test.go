@@ -8,7 +8,6 @@ import (
 	"github.com/replicatedhq/kots/kotskinds/multitype"
 	"github.com/replicatedhq/kots/pkg/crypto"
 	"github.com/stretchr/testify/require"
-	"go.undefinedlabs.com/scopeagent"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -355,9 +354,6 @@ func TestBuilder_NewConfigContext(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			scopetest := scopeagent.StartTest(t)
-			defer scopetest.End()
-
 			req := require.New(t)
 
 			// expect license to be the one passed as an arg unless the test overrides this
@@ -369,7 +365,7 @@ func TestBuilder_NewConfigContext(t *testing.T) {
 			builder.AddCtx(StaticCtx{})
 
 			localRegistry := LocalRegistry{}
-			got, err := builder.newConfigContext(tt.args.configGroups, tt.args.templateContext, localRegistry, tt.args.cipher, tt.args.license)
+			got, err := builder.newConfigContext(tt.args.configGroups, tt.args.templateContext, localRegistry, tt.args.cipher, tt.args.license, nil)
 			req.NoError(err)
 			req.Equal(tt.want, got)
 		})
@@ -485,9 +481,6 @@ func Test_localImageName(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			scopetest := scopeagent.StartTest(t)
-			defer scopetest.End()
-
 			req := require.New(t)
 
 			newName := test.ctx.localImageName(test.image)
@@ -545,9 +538,6 @@ func TestConfigCtx_localRegistryImagePullSecret(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			scopetest := scopeagent.StartTest(t)
-			defer scopetest.End()
-
 			req := require.New(t)
 
 			ctx := ConfigCtx{

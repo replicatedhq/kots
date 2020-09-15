@@ -2,30 +2,28 @@ package license
 
 import (
 	"bytes"
-	"database/sql"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 
 	"github.com/pkg/errors"
-	"github.com/replicatedhq/kots/kotsadm/pkg/app"
-	"github.com/replicatedhq/kots/kotsadm/pkg/kotsutil"
+	apptypes "github.com/replicatedhq/kots/kotsadm/pkg/app/types"
 	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
-	"github.com/replicatedhq/kots/kotsadm/pkg/persistence"
 	"github.com/replicatedhq/kots/kotsadm/pkg/preflight"
-	"github.com/replicatedhq/kots/kotsadm/pkg/registry"
 	registrytypes "github.com/replicatedhq/kots/kotsadm/pkg/registry/types"
 	"github.com/replicatedhq/kots/kotsadm/pkg/render"
+	"github.com/replicatedhq/kots/kotsadm/pkg/store"
 	"github.com/replicatedhq/kots/kotsadm/pkg/version"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
+	"github.com/replicatedhq/kots/pkg/kotsutil"
 	kotslicense "github.com/replicatedhq/kots/pkg/license"
 	kotspull "github.com/replicatedhq/kots/pkg/pull"
 	serializer "k8s.io/apimachinery/pkg/runtime/serializer/json"
 	"k8s.io/client-go/kubernetes/scheme"
 )
 
-func Sync(a *app.App, licenseData string, failOnVersionCreate bool) (*kotsv1beta1.License, error) {
-	archiveDir, err := version.GetAppVersionArchive(a.ID, a.CurrentSequence)
+func Sync(a *apptypes.App, licenseData string, failOnVersionCreate bool) (*kotsv1beta1.License, error) {
+	archiveDir, err := store.GetStore().GetAppVersionArchive(a.ID, a.CurrentSequence)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get latest app version")
 	}
@@ -80,7 +78,7 @@ func Sync(a *app.App, licenseData string, failOnVersionCreate bool) (*kotsv1beta
 			return nil, errors.Wrap(err, "update app license")
 		}
 
-		registrySettings, err := registry.GetRegistrySettingsForApp(a.ID)
+		registrySettings, err := store.GetStore().GetRegistryDetailsForApp(a.ID)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to get registry settings for app")
 		}
@@ -98,8 +96,17 @@ func Sync(a *app.App, licenseData string, failOnVersionCreate bool) (*kotsv1beta
 	return latestLicense, nil
 }
 
-func createNewVersion(a *app.App, archiveDir string, registrySettings *registrytypes.RegistrySettings) error {
-	if err := render.RenderDir(archiveDir, a.ID, registrySettings); err != nil {
+func createNewVersion(a *apptypes.App, archiveDir string, registrySettings *registrytypes.RegistrySettings) error {
+	app, err := store.GetStore().GetApp(a.ID)
+	if err != nil {
+		return errors.Wrap(err, "failed to get app")
+	}
+	downstreams, err := store.GetStore().ListDownstreamsForApp(a.ID)
+	if err != nil {
+		return errors.Wrap(err, "failed to list downstreams")
+	}
+
+	if err := render.RenderDir(archiveDir, app, downstreams, registrySettings); err != nil {
 		return errors.Wrap(err, "failed to render new version")
 	}
 
@@ -108,7 +115,7 @@ func createNewVersion(a *app.App, archiveDir string, registrySettings *registryt
 		return errors.Wrap(err, "failed to create new version")
 	}
 
-	if err := preflight.Run(a.ID, newSequence, archiveDir); err != nil {
+	if err := preflight.Run(a.ID, newSequence, a.IsAirgap, archiveDir); err != nil {
 		return errors.Wrap(err, "failed to run preflights")
 	}
 
@@ -116,8 +123,8 @@ func createNewVersion(a *app.App, archiveDir string, registrySettings *registryt
 }
 
 // Gets the license as it was at a given app sequence
-func GetCurrentLicenseString(a *app.App) (string, error) {
-	archiveDir, err := version.GetAppVersionArchive(a.ID, a.CurrentSequence)
+func GetCurrentLicenseString(a *apptypes.App) (string, error) {
+	archiveDir, err := store.GetStore().GetAppVersionArchive(a.ID, a.CurrentSequence)
 	if err != nil {
 		return "", errors.Wrap(err, "failed to get latest app version")
 	}
@@ -128,28 +135,4 @@ func GetCurrentLicenseString(a *app.App) (string, error) {
 		return "", errors.Wrap(err, "failed to read license file from archive")
 	}
 	return string(kotsLicense), nil
-}
-
-// GetLicense gets the current (latest) license for an application with the given app id
-func Get(appID string) (*kotsv1beta1.License, error) {
-	db := persistence.MustGetPGSession()
-	query := `select kots_license from app_version where app_id = $1 order by sequence desc limit 1`
-	row := db.QueryRow(query, appID)
-
-	var licenseStr sql.NullString
-	if err := row.Scan(&licenseStr); err != nil {
-		return nil, errors.Wrap(err, "failed to scan")
-	}
-
-	if licenseStr.Valid {
-		decode := scheme.Codecs.UniversalDeserializer().Decode
-		obj, _, err := decode([]byte(licenseStr.String), nil, nil)
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to decode license yaml")
-		}
-		license := obj.(*kotsv1beta1.License)
-		return license, nil
-	}
-
-	return nil, nil
 }

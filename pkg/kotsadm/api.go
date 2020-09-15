@@ -1,288 +1,74 @@
 package kotsadm
 
 import (
-	"bytes"
 	"context"
-	"time"
 
 	"github.com/pkg/errors"
-	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/kotsadm/types"
-	corev1 "k8s.io/api/core/v1"
-	rbacv1 "k8s.io/api/rbac/v1"
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime/serializer/json"
 	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/kubernetes/scheme"
 )
 
-func getApiYAML(deployOptions types.DeployOptions) (map[string][]byte, error) {
-	docs := map[string][]byte{}
-	s := json.NewYAMLSerializer(json.DefaultMetaFactory, scheme.Scheme, scheme.Scheme)
+func removeNodeAPI(deployOptions *types.DeployOptions, clientset *kubernetes.Clientset) error {
+	ns := deployOptions.Namespace
 
-	var role bytes.Buffer
-	if err := s.Encode(apiRole(deployOptions.Namespace), &role); err != nil {
-		return nil, errors.Wrap(err, "failed to marshal api role")
+	err := clientset.AppsV1().Deployments(ns).Delete(context.TODO(), "kotsadm-api", metav1.DeleteOptions{})
+	if err != nil && !kuberneteserrors.IsNotFound(err) {
+		return errors.Wrap(err, "failed to delete deployment")
 	}
-	docs["api-role.yaml"] = role.Bytes()
 
-	var roleBinding bytes.Buffer
-	if err := s.Encode(apiRoleBinding(deployOptions.Namespace), &roleBinding); err != nil {
-		return nil, errors.Wrap(err, "failed to marshal api role binding")
+	err = clientset.CoreV1().Services(ns).Delete(context.TODO(), "kotsadm-api-node", metav1.DeleteOptions{})
+	if err != nil && !kuberneteserrors.IsNotFound(err) {
+		return errors.Wrap(err, "failed to delete service")
 	}
-	docs["api-rolebinding.yaml"] = roleBinding.Bytes()
 
-	var serviceAccount bytes.Buffer
-	if err := s.Encode(apiServiceAccount(deployOptions.Namespace), &serviceAccount); err != nil {
-		return nil, errors.Wrap(err, "failed to marshal api service account")
-	}
-	docs["api-serviceaccount.yaml"] = serviceAccount.Bytes()
-
-	var deployment bytes.Buffer
-	if err := s.Encode(apiDeployment(deployOptions), &deployment); err != nil {
-		return nil, errors.Wrap(err, "failed to marshal api deployment")
-	}
-	docs["api-deployment.yaml"] = deployment.Bytes()
-
-	var service bytes.Buffer
-	if err := s.Encode(apiService(deployOptions.Namespace), &service); err != nil {
-		return nil, errors.Wrap(err, "failed to marshal api service")
-	}
-	docs["api-service.yaml"] = service.Bytes()
-
-	return docs, nil
-}
-
-func waitForAPI(deployOptions *types.DeployOptions, clientset *kubernetes.Clientset) error {
-	start := time.Now()
-
-	for {
-		pods, err := clientset.CoreV1().Pods(deployOptions.Namespace).List(context.TODO(), metav1.ListOptions{LabelSelector: "app=kotsadm-api"})
-		if err != nil {
-			return errors.Wrap(err, "failed to list pods")
-		}
-
-		for _, pod := range pods.Items {
-			if pod.Status.Phase == corev1.PodRunning {
-				if pod.Status.ContainerStatuses[0].Ready == true {
-					return nil
-				}
-			}
-		}
-
-		time.Sleep(time.Second)
-
-		if time.Now().Sub(start) > deployOptions.Timeout {
-			return &types.ErrorTimeout{Message: "timeout waiting for api pod"}
-		}
-	}
-}
-
-func ensureAPI(deployOptions *types.DeployOptions, clientset *kubernetes.Clientset) error {
-	if err := ensureApiRBAC(deployOptions, clientset); err != nil {
+	if err := removeNodeAPIRBAC(deployOptions, clientset); err != nil {
 		return errors.Wrap(err, "failed to ensure api rbac")
-	}
-
-	if err := ensureApplicationMetadata(*deployOptions, clientset); err != nil {
-		return errors.Wrap(err, "failed to ensure custom branding")
-	}
-	if err := ensureAPIDeployment(*deployOptions, clientset); err != nil {
-		return errors.Wrap(err, "failed to ensure api deployment")
-	}
-
-	if err := ensureAPIService(deployOptions.Namespace, clientset); err != nil {
-		return errors.Wrap(err, "failed to ensure api service")
 	}
 
 	return nil
 }
 
-func ensureApiRBAC(deployOptions *types.DeployOptions, clientset *kubernetes.Clientset) error {
+func removeNodeAPIRBAC(deployOptions *types.DeployOptions, clientset *kubernetes.Clientset) error {
 	isClusterScoped, err := isKotsadmClusterScoped(deployOptions.ApplicationMetadata)
 	if err != nil {
 		return errors.Wrap(err, "failed to check if kotsadm api is cluster scoped")
 	}
 
 	if isClusterScoped {
-		err := ensureApiClusterRBAC(deployOptions, clientset)
+		err := removeNodeAPIClusterRBAC(deployOptions, clientset)
 		return errors.Wrap(err, "failed to ensure api cluster role")
 	}
 
-	if err := ensureApiRole(deployOptions.Namespace, clientset); err != nil {
-		return errors.Wrap(err, "failed to ensure api role")
+	err = clientset.RbacV1().Roles(deployOptions.Namespace).Delete(context.TODO(), "kotsadm-api-role", metav1.DeleteOptions{})
+	if err != nil && !kuberneteserrors.IsNotFound(err) {
+		return errors.Wrap(err, "failed to delete kotsadm-api-role role")
 	}
 
-	if err := ensureApiRoleBinding(deployOptions.Namespace, clientset); err != nil {
-		return errors.Wrap(err, "failed to ensure api role binding")
-	}
-
-	if err := ensureApiServiceAccount(deployOptions.Namespace, clientset); err != nil {
-		return errors.Wrap(err, "failed to ensure api service account")
-	}
-
-	return nil
-}
-
-func ensureApiClusterRBAC(deployOptions *types.DeployOptions, clientset *kubernetes.Clientset) error {
-	err := ensureApiClusterRole(clientset)
-	if err != nil {
-		return errors.Wrap(err, "failed to ensure api cluster role")
-	}
-
-	if err := ensureApiClusterRoleBinding(deployOptions.Namespace, clientset); err != nil {
-		return errors.Wrap(err, "failed to ensure api cluster role binding")
-	}
-
-	if err := ensureApiServiceAccount(deployOptions.Namespace, clientset); err != nil {
-		return errors.Wrap(err, "failed to ensure api service account")
+	err = clientset.RbacV1().RoleBindings(deployOptions.Namespace).Delete(context.TODO(), "kotsadm-api-rolebinding", metav1.DeleteOptions{})
+	if err != nil && !kuberneteserrors.IsNotFound(err) {
+		return errors.Wrap(err, "failed to delete rolebinding")
 	}
 
 	return nil
 }
 
-func ensureApiClusterRole(clientset *kubernetes.Clientset) error {
-	_, err := clientset.RbacV1().ClusterRoles().Create(context.TODO(), apiClusterRole(), metav1.CreateOptions{})
-	if err == nil || kuberneteserrors.IsAlreadyExists(err) {
-		return nil
+func removeNodeAPIClusterRBAC(deployOptions *types.DeployOptions, clientset *kubernetes.Clientset) error {
+	err := clientset.CoreV1().ServiceAccounts(deployOptions.Namespace).Delete(context.TODO(), "kotsadm-api", metav1.DeleteOptions{})
+	if err != nil && !kuberneteserrors.IsNotFound(err) {
+		return errors.Wrap(err, "failed to delete api service account")
 	}
 
-	return errors.Wrap(err, "failed to create cluster role")
-}
-
-func ensureApiClusterRoleBinding(serviceAccountNamespace string, clientset *kubernetes.Clientset) error {
-	clusterRoleBinding, err := clientset.RbacV1().ClusterRoleBindings().Get(context.TODO(), "kotsadm-api-rolebinding", metav1.GetOptions{})
-	if kuberneteserrors.IsNotFound(err) {
-		_, err := clientset.RbacV1().ClusterRoleBindings().Create(context.TODO(), apiClusterRoleBinding(serviceAccountNamespace), metav1.CreateOptions{})
-		if err != nil {
-			return errors.Wrap(err, "failed to create cluster rolebinding")
-		}
-		return nil
-	} else if err != nil {
-		return errors.Wrap(err, "failed to get cluster rolebinding")
+	err = clientset.RbacV1().ClusterRoleBindings().Delete(context.TODO(), "kotsadm-api-rolebinding", metav1.DeleteOptions{})
+	if err != nil && !kuberneteserrors.IsNotFound(err) {
+		return errors.Wrap(err, "failed to delete cluster rolebinding")
 	}
 
-	for _, subject := range clusterRoleBinding.Subjects {
-		if subject.Namespace == serviceAccountNamespace && subject.Name == "kotsadm-api" && subject.Kind == "ServiceAccount" {
-			return nil
-		}
+	err = clientset.RbacV1().ClusterRoles().Delete(context.TODO(), "kotsadm-api-role", metav1.DeleteOptions{})
+	if err != nil && !kuberneteserrors.IsNotFound(err) {
+		return errors.Wrap(err, "failed to delete cluster role")
 	}
-
-	clusterRoleBinding.Subjects = append(clusterRoleBinding.Subjects, rbacv1.Subject{
-		Kind:      "ServiceAccount",
-		Name:      "kotsadm-api",
-		Namespace: serviceAccountNamespace,
-	})
-
-	_, err = clientset.RbacV1().ClusterRoleBindings().Update(context.TODO(), clusterRoleBinding, metav1.UpdateOptions{})
-	if err != nil {
-		return errors.Wrap(err, "failed to create cluster rolebinding")
-	}
-
-	return nil
-}
-
-func ensureApiRole(namespace string, clientset *kubernetes.Clientset) error {
-	currentRole, err := clientset.RbacV1().Roles(namespace).Get(context.TODO(), "kotsadm-api-role", metav1.GetOptions{})
-	if err != nil {
-		if !kuberneteserrors.IsNotFound(err) {
-			return errors.Wrap(err, "failed to get role")
-		}
-
-		_, err := clientset.RbacV1().Roles(namespace).Create(context.TODO(), apiRole(namespace), metav1.CreateOptions{})
-		if err != nil {
-			return errors.Wrap(err, "failed to create role")
-		}
-		return nil
-	}
-
-	// we have now changed the role, so an upgrade is required
-	k8sutil.UpdateRole(currentRole, apiRole(namespace))
-	_, err = clientset.RbacV1().Roles(namespace).Update(context.TODO(), currentRole, metav1.UpdateOptions{})
-	if err != nil {
-		return errors.Wrap(err, "failed to update role")
-	}
-
-	return nil
-}
-
-func ensureApiRoleBinding(namespace string, clientset *kubernetes.Clientset) error {
-	_, err := clientset.RbacV1().RoleBindings(namespace).Get(context.TODO(), "kotsadm-api-rolebinding", metav1.GetOptions{})
-	if err != nil {
-		if !kuberneteserrors.IsNotFound(err) {
-			return errors.Wrap(err, "failed to get rolebinding")
-		}
-
-		_, err := clientset.RbacV1().RoleBindings(namespace).Create(context.TODO(), apiRoleBinding(namespace), metav1.CreateOptions{})
-		if err != nil {
-			return errors.Wrap(err, "failed to create rolebinding")
-		}
-	}
-
-	// We have never changed the role binding, so there is no "upgrade" applied
-
-	return nil
-}
-
-func ensureApiServiceAccount(namespace string, clientset *kubernetes.Clientset) error {
-	_, err := clientset.CoreV1().ServiceAccounts(namespace).Get(context.TODO(), "kotsadm-api", metav1.GetOptions{})
-	if err != nil {
-		if !kuberneteserrors.IsNotFound(err) {
-			return errors.Wrap(err, "failed to get serviceaccouont")
-		}
-
-		_, err := clientset.CoreV1().ServiceAccounts(namespace).Create(context.TODO(), apiServiceAccount(namespace), metav1.CreateOptions{})
-		if err != nil {
-			return errors.Wrap(err, "failed to create serviceaccount")
-		}
-	}
-
-	// We have never changed the service account, so there is no "upgrade" applied
-
-	return nil
-}
-
-func ensureAPIDeployment(deployOptions types.DeployOptions, clientset *kubernetes.Clientset) error {
-	existingDeployment, err := clientset.AppsV1().Deployments(deployOptions.Namespace).Get(context.TODO(), "kotsadm-api", metav1.GetOptions{})
-	if err != nil {
-		if !kuberneteserrors.IsNotFound(err) {
-			return errors.Wrap(err, "failed to get existing deployment")
-		}
-
-		_, err := clientset.AppsV1().Deployments(deployOptions.Namespace).Create(context.TODO(), apiDeployment(deployOptions), metav1.CreateOptions{})
-		if err != nil {
-			return errors.Wrap(err, "failed to create deployment")
-		}
-
-		return nil
-	}
-
-	if err = updateApiDeployment(existingDeployment, deployOptions); err != nil {
-		return errors.Wrap(err, "failed to merge deployments")
-	}
-
-	_, err = clientset.AppsV1().Deployments(deployOptions.Namespace).Update(context.TODO(), existingDeployment, metav1.UpdateOptions{})
-	if err != nil {
-		return errors.Wrap(err, "failed to update api deployment")
-	}
-
-	return nil
-}
-
-func ensureAPIService(namespace string, clientset *kubernetes.Clientset) error {
-	_, err := clientset.CoreV1().Services(namespace).Get(context.TODO(), "kotsadm-api-node", metav1.GetOptions{})
-	if err != nil {
-		if !kuberneteserrors.IsNotFound(err) {
-			return errors.Wrap(err, "failed to get existing service")
-		}
-
-		_, err := clientset.CoreV1().Services(namespace).Create(context.TODO(), apiService(namespace), metav1.CreateOptions{})
-		if err != nil {
-			return errors.Wrap(err, "Failed to create service")
-		}
-	}
-
-	// We have never changed the api service. We renamed it in 1.11.0, but that's a new object creation
 
 	return nil
 }

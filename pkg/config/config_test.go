@@ -9,7 +9,6 @@ import (
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/template"
 	"github.com/stretchr/testify/require"
-	"go.undefinedlabs.com/scopeagent"
 	"k8s.io/apimachinery/pkg/runtime/serializer/json"
 	"k8s.io/client-go/kubernetes/scheme"
 )
@@ -244,9 +243,6 @@ status: {}
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			scopetest := scopeagent.StartTest(t)
-			defer scopetest.End()
-
 			req := require.New(t)
 
 			decode := scheme.Codecs.UniversalDeserializer().Decode

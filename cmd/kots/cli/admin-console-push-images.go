@@ -4,6 +4,7 @@ import (
 	"os"
 
 	"github.com/pkg/errors"
+	"github.com/replicatedhq/kots/pkg/docker/registry"
 	"github.com/replicatedhq/kots/pkg/kotsadm"
 	kotsadmtypes "github.com/replicatedhq/kots/pkg/kotsadm/types"
 	"github.com/spf13/cobra"
@@ -28,15 +29,17 @@ func AdminPushImagesCmd() *cobra.Command {
 				os.Exit(1)
 			}
 
-			options := kotsadmtypes.PushKotsadmImagesOptions{
-				AirgapArchive:  args[0],
-				Registry:       args[1],
-				Username:       v.GetString("registry-username"),
-				Password:       v.GetString("registry-password"),
+			airgapArchive := args[0]
+			options := kotsadmtypes.PushImagesOptions{
+				Registry: registry.RegistryOptions{
+					Endpoint: args[1],
+					Username: v.GetString("registry-username"),
+					Password: v.GetString("registry-password"),
+				},
 				ProgressWriter: os.Stdout,
 			}
 
-			err := kotsadm.PushImages(options)
+			err := kotsadm.PushImages(airgapArchive, options)
 			if err != nil {
 				return errors.Wrap(err, "failed to push images")
 			}

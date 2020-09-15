@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
+	"net/url"
 	"sync"
 	"time"
 
@@ -52,6 +53,7 @@ type Channel struct {
 	server        *Server
 	ip            string
 	requestHeader http.Header
+	requestURL    *url.URL
 }
 
 /**

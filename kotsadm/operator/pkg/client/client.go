@@ -91,7 +91,7 @@ func (c *Client) Run() error {
 		err := c.connect()
 		if err != nil {
 			// this needs a backoff
-			log.Println("unable to connect to api")
+			log.Printf("unable to connect to api: %v\n", err)
 			time.Sleep(time.Second * 2)
 			continue
 		}
@@ -147,7 +147,7 @@ func (c *Client) connect() error {
 	hasConnected := false
 	isUnexpectedlyDisconnected := false
 
-	log.Println("connecting to api")
+	log.Printf("connecting to api at %s\n", c.APIEndpoint)
 	socketClient := socket.NewClient()
 
 	err = socketClient.On(socket.OnConnection, func(h *socket.Channel) {
@@ -320,12 +320,12 @@ func (c *Client) sendResult(applicationManifests ApplicationManifests, isError b
 	log.Printf("Reporting results to %q", uri)
 
 	applyResult := struct {
-		AppID        string `json:"app_id"`
-		IsError      bool   `json:"is_error"`
-		DryrunStdout []byte `json:"dryrun_stdout"`
-		DryrunStderr []byte `json:"dryrun_stderr"`
-		ApplyStdout  []byte `json:"apply_stdout"`
-		ApplyStderr  []byte `json:"apply_stderr"`
+		AppID        string `json:"appId"`
+		IsError      bool   `json:"isError"`
+		DryrunStdout []byte `json:"dryrunStdout"`
+		DryrunStderr []byte `json:"dryrunStderr"`
+		ApplyStdout  []byte `json:"applyStdout"`
+		ApplyStderr  []byte `json:"applyStderr"`
 	}{
 		applicationManifests.AppID,
 		isError,
