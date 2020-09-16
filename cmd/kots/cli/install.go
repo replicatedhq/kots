@@ -85,7 +85,7 @@ func InstallCmd() *cobra.Command {
 				if err != nil {
 					return errors.Wrapf(err, "failed to get metadata from %s", airgapBundle)
 				}
-			} else {
+			} else if !v.GetBool("airgap") {
 				applicationMetadata, err = pull.PullApplicationMetadata(upstream)
 				if err != nil {
 					log.Info("Unable to pull application metadata. This can be ignored, but custom branding will not be available in the Admin Console until a license is installed.")
@@ -259,6 +259,7 @@ func InstallCmd() *cobra.Command {
 	cmd.Flags().String("no-proxy", "", "sets NO_PROXY environment variable in all KOTS Admin Console components")
 	cmd.Flags().Bool("copy-proxy-env", false, "copy proxy environment variables from current environment into all KOTS Admin Console components")
 	cmd.Flags().String("airgap-bundle", "", "path to the application airgap bundle where application metadata will be loaded from")
+	cmd.Flags().Bool("airgap", false, "set to true to run install in airgapped mode. setting --airgap-bundle implies --airgap=true.")
 
 	cmd.Flags().String("repo", "", "repo uri to use when installing a helm chart")
 	cmd.Flags().StringSlice("set", []string{}, "values to pass to helm when running helm template")
