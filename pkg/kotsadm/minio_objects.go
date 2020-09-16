@@ -134,7 +134,7 @@ func minioStatefulset(deployOptions types.DeployOptions) *appsv1.StatefulSet {
 							Command: []string{
 								"/bin/sh",
 								"-ce",
-								"/usr/bin/docker-entrypoint.sh minio -C /home/minio/.minio/ server /export",
+								"/usr/bin/docker-entrypoint.sh minio -C /home/minio/.minio/ --quiet server /export",
 							},
 							Ports: []corev1.ContainerPort{
 								{
@@ -178,6 +178,10 @@ func minioStatefulset(deployOptions types.DeployOptions) *appsv1.StatefulSet {
 								{
 									Name:  "MINIO_BROWSER",
 									Value: "on",
+								},
+								{
+									Name:  "MINIO_UPDATE",
+									Value: "off",
 								},
 							},
 							LivenessProbe: &corev1.Probe{
