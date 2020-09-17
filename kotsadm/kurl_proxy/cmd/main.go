@@ -47,6 +47,9 @@ func main() {
 	tlsSecretName := os.Getenv("TLS_SECRET_NAME")
 	namespace := os.Getenv("NAMESPACE")
 	nodePort := os.Getenv("NODE_PORT")
+	if nodePort == "" {
+		nodePort = "8800"
+	}
 
 	gin.SetMode(gin.ReleaseMode)
 
@@ -85,7 +88,7 @@ func main() {
 			listener.Close()
 		}
 
-		l, err := net.Listen("tcp", ":8800")
+		l, err := net.Listen("tcp", ":"+nodePort)
 		if err != nil {
 			log.Panic(err)
 		}
@@ -93,7 +96,7 @@ func main() {
 
 		m := cmux.New(listener)
 
-		httpsServer = getHttpsServer(upstream, tlsSecretName, secrets, cert.acceptAnonymousUploads, nodePort)
+		httpsServer = getHttpsServer(upstream, tlsSecretName, secrets, cert.acceptAnonymousUploads)
 		tlsConfig := tlsconfig.ServerDefault()
 		tlsConfig.Certificates = []tls.Certificate{cert.tlsCert}
 		go httpsServer.Serve(tls.NewListener(m.Match(cmux.TLS()), tlsConfig))
@@ -101,7 +104,7 @@ func main() {
 		httpServer = getHttpServer(cert.fingerprint, cert.acceptAnonymousUploads)
 		go httpServer.Serve(m.Match(cmux.Any()))
 
-		log.Println("Kurl Proxy listening on :8800")
+		log.Printf("Kurl Proxy listening on :%s\n", nodePort)
 		log.Printf("\tupstream: %s\n", upstreamOrigin)
 		log.Printf("\tcert: %s\n", cert.fingerprint)
 		log.Printf("\tanonymous uploads enabled: %t\n", cert.acceptAnonymousUploads)
@@ -221,7 +224,7 @@ func getHttpServer(fingerprint string, acceptAnonymousUploads bool) *http.Server
 	}
 }
 
-func getHttpsServer(upstream *url.URL, tlsSecretName string, secrets corev1.SecretInterface, acceptAnonymousUploads bool, nodePort string) *http.Server {
+func getHttpsServer(upstream *url.URL, tlsSecretName string, secrets corev1.SecretInterface, acceptAnonymousUploads bool) *http.Server {
 	mux := http.NewServeMux()
 
 	r := gin.Default()
