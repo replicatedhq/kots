@@ -82,12 +82,22 @@ func getCertGenLogs(ctx context.Context, client kubernetes.Interface, pod *corev
 	defer podLogs.Close()
 
 	buf := new(bytes.Buffer)
-	_, err = io.Copy(buf, podLogs)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to copy log")
-	}
+	errChan := make(chan error, 0)
+	go func() {
+		_, err := io.Copy(buf, podLogs)
+		errChan <- err
+	}()
 
-	return buf.Bytes(), nil
+	select {
+	case resErr := <-errChan:
+		if resErr != nil {
+			return nil, errors.Wrap(resErr, "failed to copy log")
+		} else {
+			return buf.Bytes(), nil
+		}
+	case <-ctx.Done():
+		return nil, errors.Wrap(ctx.Err(), "context ended copying log")
+	}
 }
 
 func parseCertGenOutput(logs []byte) (string, error) {
@@ -112,7 +122,7 @@ func parseCertGenOutput(logs []byte) (string, error) {
 		}
 	}
 
-	return "", errors.New("key not found in output")
+	return "", fmt.Errorf("key not found in %d bytes of output", len(logs))
 }
 
 func getPodSpec(clientset kubernetes.Interface, namespace string) (*corev1.Pod, error) {
