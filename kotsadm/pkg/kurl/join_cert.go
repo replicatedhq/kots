@@ -70,7 +70,7 @@ func createCertAndKey(ctx context.Context, client kubernetes.Interface, namespac
 
 func getCertGenLogs(ctx context.Context, client kubernetes.Interface, pod *corev1.Pod) ([]byte, error) {
 	podLogOpts := corev1.PodLogOptions{
-		Follow:    false,
+		Follow:    true,
 		Container: pod.Spec.Containers[0].Name,
 	}
 
