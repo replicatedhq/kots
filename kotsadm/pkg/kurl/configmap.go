@@ -71,8 +71,7 @@ func UpdateConfigMap(client kubernetes.Interface, generateBootstrapToken, upload
 		certsDuration := time.Hour * 2
 		certsExpiration := time.Now().Add(certsDuration)
 
-		ctx, cancel := context.WithTimeout(context.TODO(), 60*time.Second)
-		defer cancel()
+		ctx, _ := context.WithTimeout(context.TODO(), 60*time.Second)
 
 		key, err := createCertAndKey(ctx, client, os.Getenv("POD_NAMESPACE"))
 		if err != nil {
