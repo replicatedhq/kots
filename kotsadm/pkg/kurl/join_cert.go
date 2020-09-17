@@ -30,7 +30,8 @@ func createCertAndKey(ctx context.Context, client kubernetes.Interface, namespac
 
 	defer func() {
 		go func() {
-			if err := client.CoreV1().Pods(pod.Namespace).Delete(ctx, pod.Name, metav1.DeleteOptions{}); err != nil {
+			// use context.background for the after-completion cleanup, as the parent context might already be over
+			if err := client.CoreV1().Pods(pod.Namespace).Delete(context.Background(), pod.Name, metav1.DeleteOptions{}); err != nil {
 				logger.Errorf("Failed to delete pod %s: %v\n", pod.Name, err)
 			}
 		}()
