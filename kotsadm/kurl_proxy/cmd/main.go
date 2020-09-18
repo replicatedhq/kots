@@ -18,6 +18,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/docker/go-connections/tlsconfig"
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
 	"github.com/soheilhy/cmux"
@@ -93,11 +94,8 @@ func main() {
 		m := cmux.New(listener)
 
 		httpsServer = getHttpsServer(upstream, tlsSecretName, secrets, cert.acceptAnonymousUploads, nodePort)
-		tlsConfig := &tls.Config{
-			Certificates:             []tls.Certificate{cert.tlsCert},
-			PreferServerCipherSuites: true,
-			MinVersion:               tls.VersionTLS12,
-		}
+		tlsConfig := tlsconfig.ServerDefault()
+		tlsConfig.Certificates = []tls.Certificate{cert.tlsCert}
 		go httpsServer.Serve(tls.NewListener(m.Match(cmux.TLS()), tlsConfig))
 
 		httpServer = getHttpServer(cert.fingerprint, cert.acceptAnonymousUploads)

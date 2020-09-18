@@ -3,6 +3,7 @@ module github.com/replicatedhq/kots/kotsadm/kurl_proxy
 go 1.14
 
 require (
+	github.com/docker/go-connections v0.4.0
 	github.com/gin-gonic/gin v1.4.0
 	github.com/googleapis/gnostic v0.3.1 // indirect
 	github.com/pkg/errors v0.8.1
