@@ -17,10 +17,12 @@ import (
 	"github.com/replicatedhq/kots/pkg/kotsadm"
 	"github.com/replicatedhq/kots/pkg/kotsadm/types"
 	kotsadmtypes "github.com/replicatedhq/kots/pkg/kotsadm/types"
+	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/pull"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/validation"
 )
 
@@ -52,10 +54,6 @@ func InstallCmd() *cobra.Command {
 				return errors.Wrap(err, "failed to create temp dir")
 			}
 			defer os.RemoveAll(rootDir)
-
-			if v.GetString("airgap-bundle") != "" && v.GetString("kotsadm-registry") == "" {
-				log.Info("Application images will not be pushed because \"kotsadm-registry\" argument is not specified.")
-			}
 
 			upstream := pull.RewriteUpstream(args[0])
 
@@ -92,6 +90,11 @@ func InstallCmd() *cobra.Command {
 				}
 			}
 
+			isAirgap := false
+			if v.GetString("airgap-bundle") != "" || v.GetBool("airgap") {
+				isAirgap = true
+			}
+
 			var license *kotsv1beta1.License
 			if v.GetString("license-file") != "" {
 				parsedLicense, err := pull.ParseLicenseFromFile(ExpandDir(v.GetString("license-file")))
@@ -122,6 +125,25 @@ func InstallCmd() *cobra.Command {
 				}
 			}
 
+			isKurl, err := kotsadm.IsKurl(kubernetesConfigFlags)
+			if err != nil {
+				return errors.Wrap(err, "failed to check kURL")
+			}
+
+			registryEndpoint := v.GetString("kotsadm-registry")
+			registryNamespace := v.GetString("kotsadm-namespace")
+			registryUsername := v.GetString("registry-username")
+			registryPassword := v.GetString("registry-password")
+			if registryEndpoint == "" && isKurl && isAirgap {
+				registryEndpoint, registryUsername, registryPassword, err = kotsutil.GetKurlRegistryCreds()
+				if err != nil {
+					return errors.Wrap(err, "failed to get kURL registry info")
+				}
+				if registryNamespace == "" {
+					return errors.New("--kotsadm-namespace is required")
+				}
+			}
+
 			deployOptions := kotsadmtypes.DeployOptions{
 				Namespace:                 namespace,
 				KubernetesConfigFlags:     kubernetesConfigFlags,
@@ -144,10 +166,10 @@ func InstallCmd() *cobra.Command {
 				NoProxyEnvValue:           v.GetString("no-proxy"),
 				KotsadmOptions: kotsadmtypes.KotsadmOptions{
 					OverrideVersion:   v.GetString("kotsadm-tag"),
-					OverrideRegistry:  v.GetString("kotsadm-registry"),
-					OverrideNamespace: v.GetString("kotsadm-namespace"),
-					Username:          v.GetString("registry-username"),
-					Password:          v.GetString("registry-password"),
+					OverrideRegistry:  registryEndpoint,
+					OverrideNamespace: registryNamespace,
+					Username:          registryUsername,
+					Password:          registryPassword,
 				},
 			}
 
@@ -171,6 +193,10 @@ func InstallCmd() *cobra.Command {
 				if deployOptions.NoProxyEnvValue == "" {
 					deployOptions.NoProxyEnvValue = os.Getenv("no_proxy")
 				}
+			}
+
+			if isKurl && deployOptions.Namespace == metav1.NamespaceDefault {
+				deployOptions.ExcludeAdminConsole = true
 			}
 
 			log.ActionWithoutSpinner("Deploying Admin Console")
@@ -214,7 +240,7 @@ func InstallCmd() *cobra.Command {
 				}
 			}()
 
-			if v.GetBool("port-forward") {
+			if v.GetBool("port-forward") && !deployOptions.ExcludeAdminConsole {
 				log.ActionWithoutSpinner("")
 
 				if adminConsolePort != 8800 {
@@ -235,7 +261,7 @@ func InstallCmd() *cobra.Command {
 				log.ActionWithoutSpinner("")
 				log.ActionWithoutSpinner("To access the Admin Console again, run kubectl kots admin-console --namespace %s", namespace)
 				log.ActionWithoutSpinner("")
-			} else {
+			} else if !deployOptions.ExcludeAdminConsole {
 				log.ActionWithoutSpinner("")
 				log.ActionWithoutSpinner("To access the Admin Console, run kubectl kots admin-console --namespace %s", namespace)
 				log.ActionWithoutSpinner("")

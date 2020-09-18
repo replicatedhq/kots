@@ -32,28 +32,28 @@ func getLicenseSecretYAML(deployOptions *types.DeployOptions) (map[string][]byte
 	return docs, nil
 }
 
-func ensureLicenseSecret(deployOptions *types.DeployOptions, clientset *kubernetes.Clientset) error {
+func ensureLicenseSecret(deployOptions *types.DeployOptions, clientset *kubernetes.Clientset) (bool, error) {
 	existingSecret, err := getLicenseSecret(deployOptions.Namespace, clientset)
 	if err != nil {
-		return errors.Wrap(err, "failed to check for existing license secret")
+		return false, errors.Wrap(err, "failed to check for existing license secret")
 	}
 
 	if existingSecret != nil {
-		return nil
+		return false, nil
 	}
 
 	s := json.NewYAMLSerializer(json.DefaultMetaFactory, scheme.Scheme, scheme.Scheme)
 	var b bytes.Buffer
 	if err := s.Encode(deployOptions.License, &b); err != nil {
-		return errors.Wrap(err, "failed to encode license")
+		return false, errors.Wrap(err, "failed to encode license")
 	}
 
 	_, err = clientset.CoreV1().Secrets(deployOptions.Namespace).Create(context.TODO(), licenseSecret(deployOptions.Namespace, b.String()), metav1.CreateOptions{})
 	if err != nil {
-		return errors.Wrap(err, "failed to create license secret")
+		return false, errors.Wrap(err, "failed to create license secret")
 	}
 
-	return nil
+	return true, nil
 }
 
 func getLicenseSecret(namespace string, clientset *kubernetes.Clientset) (*corev1.Secret, error) {

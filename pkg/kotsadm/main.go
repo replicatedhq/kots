@@ -2,9 +2,11 @@ package kotsadm
 
 import (
 	"context"
+	"encoding/json"
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
@@ -20,6 +22,7 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/scheme"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
+	kustomizetypes "sigs.k8s.io/kustomize/api/types"
 )
 
 func init() {
@@ -128,7 +131,10 @@ func Upgrade(upgradeOptions types.UpgradeOptions) error {
 }
 
 func Deploy(deployOptions types.DeployOptions) error {
-	imagesPushed := false
+
+	airgapPath := ""
+	var images []kustomizetypes.Image
+
 	if deployOptions.AirgapArchive != "" && deployOptions.KotsadmOptions.OverrideRegistry != "" {
 		airgapRootDir, err := ioutil.TempDir("", "kotsadm-airgap")
 		if err != nil {
@@ -152,12 +158,12 @@ func Deploy(deployOptions types.DeployOptions) error {
 		}
 
 		imagesRootDir := filepath.Join(airgapRootDir, "images")
-		_, err = TagAndPushAppImages(imagesRootDir, pushOptions)
+		images, err = TagAndPushAppImages(imagesRootDir, pushOptions)
 		if err != nil {
 			return errors.Wrap(err, "failed to list image formats")
 		}
 
-		imagesPushed = true
+		airgapPath = airgapRootDir
 	}
 
 	clientset, err := k8sutil.GetClientset(deployOptions.KubernetesConfigFlags)
@@ -166,39 +172,63 @@ func Deploy(deployOptions types.DeployOptions) error {
 	}
 
 	log := logger.NewLogger()
-	namespace := &corev1.Namespace{
-		TypeMeta: metav1.TypeMeta{
-			APIVersion: "v1",
-			Kind:       "Namespace",
-		},
-		ObjectMeta: metav1.ObjectMeta{
-			Name: deployOptions.Namespace,
-		},
-	}
-
-	log.ChildActionWithSpinner("Creating namespace")
-	_, err = clientset.CoreV1().Namespaces().Create(context.TODO(), namespace, metav1.CreateOptions{})
-	if err != nil && !kuberneteserrors.IsAlreadyExists(err) {
-		// Can't create namespace, but this might be a role restriction and namespace might already exist.
-		_, err := clientset.CoreV1().Pods(deployOptions.Namespace).List(context.TODO(), metav1.ListOptions{})
-		if err != nil {
-			return errors.Wrap(err, "failed to verify access to namespace")
+	if !deployOptions.ExcludeAdminConsole {
+		namespace := &corev1.Namespace{
+			TypeMeta: metav1.TypeMeta{
+				APIVersion: "v1",
+				Kind:       "Namespace",
+			},
+			ObjectMeta: metav1.ObjectMeta{
+				Name: deployOptions.Namespace,
+			},
 		}
-	}
-	log.FinishChildSpinner()
 
-	if deployOptions.AutoCreateClusterToken == "" {
-		deployOptions.AutoCreateClusterToken = uuid.New().String()
-	}
+		log.ChildActionWithSpinner("Creating namespace")
+		_, err = clientset.CoreV1().Namespaces().Create(context.TODO(), namespace, metav1.CreateOptions{})
+		if err != nil && !kuberneteserrors.IsAlreadyExists(err) {
+			// Can't create namespace, but this might be a role restriction and namespace might already exist.
+			_, err := clientset.CoreV1().Pods(deployOptions.Namespace).List(context.TODO(), metav1.ListOptions{})
+			if err != nil {
+				return errors.Wrap(err, "failed to verify access to namespace")
+			}
+		}
+		log.FinishChildSpinner()
 
-	limitRange, err := maybeGetNamespaceLimitRanges(clientset, deployOptions.Namespace)
-	if err != nil {
-		return errors.Wrap(err, "failed to get limit ranges for namespace")
+		if deployOptions.AutoCreateClusterToken == "" {
+			deployOptions.AutoCreateClusterToken = uuid.New().String()
+		}
+
+		limitRange, err := maybeGetNamespaceLimitRanges(clientset, deployOptions.Namespace)
+		if err != nil {
+			return errors.Wrap(err, "failed to get limit ranges for namespace")
+		}
+		deployOptions.LimitRange = limitRange
 	}
-	deployOptions.LimitRange = limitRange
 
 	deployOptions.IsOpenShift = isOpenshift(clientset)
-	deployOptions.AppImagesPushed = imagesPushed
+
+	if airgapPath != "" {
+		deployOptions.AppImagesPushed = true
+
+		b, err := json.Marshal(images)
+		if err != nil {
+			return errors.Wrap(err, "failed to marshal images data")
+		}
+		err = ioutil.WriteFile(filepath.Join(airgapPath, "images.json"), b, 0644)
+		if err != nil {
+			return errors.Wrap(err, "failed to write images data")
+		}
+
+		if err := ensureConfigFromFile(deployOptions, clientset, "kotsadm-airgap-meta", filepath.Join(airgapPath, "airgap.yaml")); err != nil {
+			return errors.Wrap(err, "failed to create config from airgap.yaml")
+		}
+		if err := ensureConfigFromFile(deployOptions, clientset, "kotsadm-airgap-app", filepath.Join(airgapPath, "app.tar.gz")); err != nil {
+			return errors.Wrap(err, "failed to create config from app.tar.gz")
+		}
+		if err := ensureConfigFromFile(deployOptions, clientset, "kotsadm-airgap-images", filepath.Join(airgapPath, "images.json")); err != nil {
+			return errors.Wrap(err, "failed to create config from images.json")
+		}
+	}
 
 	if err := ensureStorage(deployOptions, clientset, log); err != nil {
 		return errors.Wrap(err, "failed to deplioyt backing storage")
@@ -281,6 +311,17 @@ func CreateRestoreJob(options *types.RestoreJobOptions) error {
 	return nil
 }
 
+func IsKurl(k8sConfigFlags *genericclioptions.ConfigFlags) (bool, error) {
+	clientset, err := k8sutil.GetClientset(k8sConfigFlags)
+	if err != nil {
+		return false, errors.Wrap(err, "failed to get clientset")
+	}
+
+	log := logger.NewLogger()
+
+	return isKurl(clientset, log), nil
+}
+
 func canUpgrade(upgradeOptions types.UpgradeOptions, clientset *kubernetes.Clientset, log *logger.Logger) error {
 	_, err := clientset.CoreV1().Namespaces().Get(context.TODO(), upgradeOptions.Namespace, metav1.GetOptions{})
 	if kuberneteserrors.IsNotFound(err) {
@@ -297,20 +338,29 @@ func canUpgrade(upgradeOptions types.UpgradeOptions, clientset *kubernetes.Clien
 		return nil
 	}
 
+	if isKurl(clientset, log) {
+		return errors.New("upgrading kURL clusters is not supported")
+	}
+
+	return nil
+}
+
+func isKurl(clientset *kubernetes.Clientset, log *logger.Logger) bool {
 	nodes, err := clientset.CoreV1().Nodes().List(context.TODO(), metav1.ListOptions{})
 	if err != nil {
-		return errors.Wrap(err, "failed to list nodes")
+		log.Error(errors.Wrap(err, "failed to list nodes"))
+		return false
 	}
 
 	for _, node := range nodes.Items {
 		for k, v := range node.Labels {
 			if k == "kurl.sh/cluster" && v == "true" {
-				return errors.New("upgrading kURL clusters is not supported")
+				return true
 			}
 		}
 	}
 
-	return nil
+	return false
 }
 
 func removeUnusedKotsadmComponents(deployOptions types.DeployOptions, clientset *kubernetes.Clientset, log *logger.Logger) error {
@@ -334,6 +384,10 @@ func removeUnusedKotsadmComponents(deployOptions types.DeployOptions, clientset 
 }
 
 func ensureStorage(deployOptions types.DeployOptions, clientset *kubernetes.Clientset, log *logger.Logger) error {
+	if deployOptions.ExcludeAdminConsole {
+		return nil
+	}
+
 	if deployOptions.IncludeDockerDistribution {
 		if err := ensureDistribution(deployOptions, clientset); err != nil {
 			return errors.Wrap(err, "failed to ensure docker distribution")
@@ -350,6 +404,8 @@ func ensureStorage(deployOptions types.DeployOptions, clientset *kubernetes.Clie
 }
 
 func ensureKotsadm(deployOptions types.DeployOptions, clientset *kubernetes.Clientset, log *logger.Logger) error {
+	restartKotsadmAPI := false
+
 	// check additional namespaces early in case there are rbac issues we don't
 	// leave the cluster in a partially deployed state
 	if deployOptions.ApplicationMetadata != nil {
@@ -363,8 +419,13 @@ func ensureKotsadm(deployOptions types.DeployOptions, clientset *kubernetes.Clie
 	if deployOptions.License != nil {
 		// if there's a license, we write it as a secret and kotsadm will
 		// find it on startup and handle installation
-		if err := ensureLicenseSecret(&deployOptions, clientset); err != nil {
+		updated, err := ensureLicenseSecret(&deployOptions, clientset)
+		if err != nil {
 			return errors.Wrap(err, "failed to ensure license secret")
+		}
+
+		if updated {
+			restartKotsadmAPI = true
 		}
 	}
 
@@ -372,48 +433,71 @@ func ensureKotsadm(deployOptions types.DeployOptions, clientset *kubernetes.Clie
 		// if there's a configvalues file, store it as a secret (they may contain
 		// sensitive information) and kotsadm will find it on startup and apply
 		// it to the installation
-		if err := ensureConfigValuesSecret(&deployOptions, clientset); err != nil {
+		updated, err := ensureConfigValuesSecret(&deployOptions, clientset)
+		if err != nil {
 			return errors.Wrap(err, "failed to ensure config values secret")
+		}
+
+		if updated {
+			restartKotsadmAPI = true
 		}
 	}
 
-	if err := ensureKotsadmConfig(deployOptions, clientset); err != nil {
-		return errors.Wrap(err, "failed to ensure postgres")
-	}
+	if !deployOptions.ExcludeAdminConsole {
+		restartKotsadmAPI = false
 
-	if err := ensurePostgres(deployOptions, clientset); err != nil {
-		return errors.Wrap(err, "failed to ensure postgres")
-	}
+		if err := ensureKotsadmConfig(deployOptions, clientset); err != nil {
+			return errors.Wrap(err, "failed to ensure postgres")
+		}
 
-	if err := runSchemaHeroMigrations(deployOptions, clientset); err != nil {
-		return errors.Wrap(err, "failed to run database migrations")
-	}
+		if err := ensurePostgres(deployOptions, clientset); err != nil {
+			return errors.Wrap(err, "failed to ensure postgres")
+		}
 
-	if err := ensureSecrets(&deployOptions, clientset); err != nil {
-		return errors.Wrap(err, "failed to ensure secrets exist")
-	}
+		if err := runSchemaHeroMigrations(deployOptions, clientset); err != nil {
+			return errors.Wrap(err, "failed to run database migrations")
+		}
 
-	if err := ensureKotsadmComponent(&deployOptions, clientset); err != nil {
-		return errors.Wrap(err, "failed to ensure kotsadm exists")
+		if err := ensureSecrets(&deployOptions, clientset); err != nil {
+			return errors.Wrap(err, "failed to ensure secrets exist")
+		}
+
+		if err := ensureKotsadmComponent(&deployOptions, clientset); err != nil {
+			return errors.Wrap(err, "failed to ensure kotsadm exists")
+		}
 	}
 
 	if err := ensureApplicationMetadata(deployOptions, clientset); err != nil {
 		return errors.Wrap(err, "failed to ensure custom branding")
 	}
 
-	if err := ensureOperator(deployOptions, clientset); err != nil {
-		return errors.Wrap(err, "failed to ensure operator")
+	if !deployOptions.ExcludeAdminConsole {
+		if err := ensureOperator(deployOptions, clientset); err != nil {
+			return errors.Wrap(err, "failed to ensure operator")
+		}
+
+		if err := removeNodeAPI(&deployOptions, clientset); err != nil {
+			log.Error(errors.Errorf("Failed to remove unused API: %v", err))
+		}
+
+		log.ChildActionWithSpinner("Waiting for Admin Console to be ready")
+		if err := waitForKotsadm(&deployOptions, clientset); err != nil {
+			return errors.Wrap(err, "failed to wait for web")
+		}
+		log.FinishSpinner()
 	}
 
-	if err := removeNodeAPI(&deployOptions, clientset); err != nil {
-		log.Error(errors.Errorf("Failed to remove unused API: %v", err))
-	}
+	if restartKotsadmAPI {
+		log.ChildActionWithSpinner("Waiting for Admin Console to be ready")
+		if err := restartKotsadm(&deployOptions, clientset); err != nil {
+			return errors.Wrap(err, "failed to wait for web")
+		}
 
-	log.ChildActionWithSpinner("Waiting for Admin Console to be ready")
-	if err := waitForKotsadm(&deployOptions, clientset); err != nil {
-		return errors.Wrap(err, "failed to wait for web")
+		if err := waitForKotsadm(&deployOptions, clientset); err != nil {
+			return errors.Wrap(err, "failed to wait for web")
+		}
+		log.FinishSpinner()
 	}
-	log.FinishSpinner()
 
 	return nil
 }
@@ -528,9 +612,17 @@ func GetKotsadmOptionsFromCluster(namespace string, clientset *kubernetes.Client
 		return kotsadmOptions, errors.Wrap(err, "failed to get existing kotsadm config map")
 	}
 
-	kotsadmOptions.OverrideRegistry = configMap.Data["kotsadm-registry"]
-	if kotsadmOptions.OverrideRegistry == "" {
+	endpoint := configMap.Data["kotsadm-registry"]
+	if endpoint == "" {
 		return kotsadmOptions, nil
+	}
+
+	parts := strings.Split(endpoint, "/")
+	kotsadmOptions.OverrideRegistry = parts[0]
+	if len(parts) == 2 {
+		kotsadmOptions.OverrideNamespace = parts[1]
+	} else if len(parts) > 2 {
+		return kotsadmOptions, errors.Errorf("too many parts in endpoint %s", endpoint)
 	}
 
 	imagePullSecret, err := clientset.CoreV1().Secrets(namespace).Get(context.TODO(), types.PrivateKotsadmRegistrySecret, metav1.GetOptions{})

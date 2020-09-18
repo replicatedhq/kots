@@ -1,6 +1,9 @@
 package config
 
 import (
+	"context"
+	"os"
+
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/kotsadm/pkg/persistence"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
@@ -8,7 +11,10 @@ import (
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/template"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/scheme"
+	"sigs.k8s.io/controller-runtime/pkg/client/config"
 )
 
 func IsRequiredItem(item kotsv1beta1.ConfigItem) bool {
@@ -87,4 +93,44 @@ func UpdateConfigValuesInDB(filesInDir string, appID string, sequence int64) err
 	}
 
 	return nil
+}
+
+func ReadConfigValuesFromInClusterSecret() (string, error) {
+	log := logger.NewLogger()
+
+	cfg, err := config.GetConfig()
+	if err != nil {
+		return "", errors.Wrap(err, "failed to get cluster config")
+	}
+
+	clientset, err := kubernetes.NewForConfig(cfg)
+	if err != nil {
+		return "", errors.Wrap(err, "failed to create clientset")
+	}
+
+	configValuesSecrets, err := clientset.CoreV1().Secrets(os.Getenv("POD_NAMESPACE")).List(context.TODO(), metav1.ListOptions{
+		LabelSelector: "kots.io/automation=configvalues",
+	})
+	if err != nil {
+		return "", errors.Wrap(err, "failed to list configvalues secrets")
+	}
+
+	// just get the first
+	for _, configValuesSecret := range configValuesSecrets.Items {
+		configValues, ok := configValuesSecret.Data["configvalues"]
+		if !ok {
+			log.Error(errors.Errorf("config values secret %q does not contain config values key", configValuesSecret.Name))
+			continue
+		}
+
+		// delete it, these are one time use secrets
+		err = clientset.CoreV1().Secrets(configValuesSecret.Namespace).Delete(context.TODO(), configValuesSecret.Name, metav1.DeleteOptions{})
+		if err != nil {
+			log.Error(errors.Errorf("error deleting config values secret: %v", err))
+		}
+
+		return string(configValues), nil
+	}
+
+	return "", nil
 }
