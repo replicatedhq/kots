@@ -94,7 +94,9 @@ func main() {
 
 		httpsServer = getHttpsServer(upstream, tlsSecretName, secrets, cert.acceptAnonymousUploads, nodePort)
 		tlsConfig := &tls.Config{
-			Certificates: []tls.Certificate{cert.tlsCert},
+			Certificates:             []tls.Certificate{cert.tlsCert},
+			PreferServerCipherSuites: true,
+			MinVersion:               tls.VersionTLS12,
 		}
 		go httpsServer.Serve(tls.NewListener(m.Match(cmux.TLS()), tlsConfig))
 
