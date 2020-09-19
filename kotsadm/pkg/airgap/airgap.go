@@ -7,10 +7,13 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/kotsadm/pkg/airgap/types"
+	kotsadmconfig "github.com/replicatedhq/kots/kotsadm/pkg/config"
+	"github.com/replicatedhq/kots/kotsadm/pkg/downstream"
 	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
 	"github.com/replicatedhq/kots/kotsadm/pkg/preflight"
 	"github.com/replicatedhq/kots/kotsadm/pkg/registry"
@@ -19,6 +22,7 @@ import (
 	"github.com/replicatedhq/kots/kotsadm/pkg/version"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	"github.com/replicatedhq/kots/pkg/archives"
+	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/pull"
 	"k8s.io/client-go/kubernetes/scheme"
 )
@@ -27,7 +31,7 @@ import (
 // This function assumes that there's an app in the database that doesn't have a version
 // After execution, there will be a sequence 0 of the app, and all clusters in the database
 // will also have a version
-func CreateAppFromAirgap(pendingApp *types.PendingApp, airgapBundlePath string, registryHost string, namespace string, username string, password string) (finalError error) {
+func CreateAppFromAirgap(pendingApp *types.PendingApp, airgapPath string, registryHost string, namespace string, username string, password string, isAutomated bool) (finalError error) {
 	if err := store.GetStore().SetTaskStatus("airgap-install", "Processing package...", "running"); err != nil {
 		return errors.Wrap(err, "failed to set task status")
 	}
@@ -74,12 +78,17 @@ func CreateAppFromAirgap(pendingApp *types.PendingApp, airgapBundlePath string, 
 		return errors.Wrap(err, "failed to set task status")
 	}
 
-	// we seem to need a lot of temp dirs here... maybe too many?
-	archiveDir, err := version.ExtractArchiveToTempDirectory(airgapBundlePath)
-	if err != nil {
-		return errors.Wrap(err, "failed to extract archive")
+	archiveDir := airgapPath
+	if strings.ToLower(filepath.Ext(airgapPath)) == ".airgap" {
+		// on the api side, headless intalls don't have the airgap file
+		dir, err := version.ExtractArchiveToTempDirectory(airgapPath)
+		if err != nil {
+			return errors.Wrap(err, "failed to extract archive")
+		}
+		defer os.RemoveAll(dir)
+
+		archiveDir = dir
 	}
-	defer os.RemoveAll(archiveDir)
 
 	// extract the release
 	workspace, err := ioutil.TempDir("", "kots-airgap")
@@ -135,11 +144,30 @@ func CreateAppFromAirgap(pendingApp *types.PendingApp, airgapBundlePath string, 
 		appNamespace = os.Getenv("KOTSADM_TARGET_NAMESPACE")
 	}
 
+	configValues, err := kotsadmconfig.ReadConfigValuesFromInClusterSecret()
+	if err != nil {
+		return errors.Wrap(err, "failed to read config values from in cluster")
+	}
+	configFile := ""
+	if configValues != "" {
+		tmpFile, err := ioutil.TempFile("", "kots")
+		if err != nil {
+			return errors.Wrap(err, "failed to create temp file for config values")
+		}
+		defer os.RemoveAll(tmpFile.Name())
+		if err := ioutil.WriteFile(tmpFile.Name(), []byte(configValues), 0644); err != nil {
+			return errors.Wrap(err, "failed to write config values to temp file")
+		}
+
+		configFile = tmpFile.Name()
+	}
+
 	pullOptions := pull.PullOptions{
 		Downstreams:         []string{"this-cluster"},
 		LocalPath:           releaseDir,
 		Namespace:           appNamespace,
 		LicenseFile:         licenseFile.Name(),
+		ConfigFile:          configFile,
 		AirgapRoot:          archiveDir,
 		Silent:              true,
 		ExcludeKotsKinds:    true,
@@ -194,6 +222,41 @@ func CreateAppFromAirgap(pendingApp *types.PendingApp, airgapBundlePath string, 
 	newSequence, err := version.CreateFirstVersion(a.ID, tmpRoot, "Airgap Upload")
 	if err != nil {
 		return errors.Wrap(err, "failed to create new version")
+	}
+
+	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(tmpRoot)
+	if err != nil {
+		return errors.Wrap(err, "failed to load kotskinds from path")
+	}
+
+	if isAutomated && kotsKinds.Config != nil {
+		// bypass the config screen if no configuration is required
+		licenseSpec, err := kotsKinds.Marshal("kots.io", "v1beta1", "License")
+		if err != nil {
+			return errors.Wrap(err, "failed to marshal license spec")
+		}
+
+		configSpec, err := kotsKinds.Marshal("kots.io", "v1beta1", "Config")
+		if err != nil {
+			return errors.Wrap(err, "failed to marshal config spec")
+		}
+
+		configValuesSpec, err := kotsKinds.Marshal("kots.io", "v1beta1", "ConfigValues")
+		if err != nil {
+			return errors.Wrap(err, "failed to marshal configvalues spec")
+		}
+
+		needsConfig, err := kotsadmconfig.NeedsConfiguration(configSpec, configValuesSpec, licenseSpec)
+		if err != nil {
+			return errors.Wrap(err, "failed to check if app needs configuration")
+		}
+
+		if !needsConfig {
+			err := downstream.SetDownstreamVersionPendingPreflight(pendingApp.ID, newSequence)
+			if err != nil {
+				return errors.Wrap(err, "failed to set downstream version status to 'pending preflight'")
+			}
+		}
 	}
 
 	if err := preflight.Run(pendingApp.ID, newSequence, true, tmpRoot); err != nil {

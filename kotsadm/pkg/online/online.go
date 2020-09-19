@@ -2,7 +2,6 @@ package online
 
 import (
 	"bufio"
-	"context"
 	"io"
 	"io/ioutil"
 	"os"
@@ -20,9 +19,6 @@ import (
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/pull"
 	"go.uber.org/zap"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/kubernetes"
-	"sigs.k8s.io/controller-runtime/pkg/client/config"
 )
 
 func CreateAppFromOnline(pendingApp *types.PendingApp, upstreamURI string, isAutomated bool) (_ *kotsutil.KotsKinds, finalError error) {
@@ -102,7 +98,7 @@ func CreateAppFromOnline(pendingApp *types.PendingApp, upstreamURI string, isAut
 		appNamespace = os.Getenv("KOTSADM_TARGET_NAMESPACE")
 	}
 
-	configValues, err := readConfigValuesFromInClusterSecret()
+	configValues, err := kotsadmconfig.ReadConfigValuesFromInClusterSecret()
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to read config values from in cluster")
 	}
@@ -198,42 +194,4 @@ func CreateAppFromOnline(pendingApp *types.PendingApp, upstreamURI string, isAut
 	}
 
 	return kotsKinds, nil
-}
-
-func readConfigValuesFromInClusterSecret() (string, error) {
-	cfg, err := config.GetConfig()
-	if err != nil {
-		return "", errors.Wrap(err, "failed to get cluster config")
-	}
-
-	clientset, err := kubernetes.NewForConfig(cfg)
-	if err != nil {
-		return "", errors.Wrap(err, "failed to create clientset")
-	}
-
-	configValuesSecrets, err := clientset.CoreV1().Secrets(os.Getenv("POD_NAMESPACE")).List(context.TODO(), metav1.ListOptions{
-		LabelSelector: "kots.io/automation=configvalues",
-	})
-	if err != nil {
-		return "", errors.Wrap(err, "failed to list configvalues secrets")
-	}
-
-	// just get the first
-	for _, configValuesSecret := range configValuesSecrets.Items {
-		configValues, ok := configValuesSecret.Data["configvalues"]
-		if !ok {
-			logger.Errorf("config values secret %q does not contain config values key", configValuesSecret.Name)
-			continue
-		}
-
-		// delete it, these are one time use secrets
-		err = clientset.CoreV1().Secrets(configValuesSecret.Namespace).Delete(context.TODO(), configValuesSecret.Name, metav1.DeleteOptions{})
-		if err != nil {
-			logger.Errorf("error deleting config values secret: %v", err)
-		}
-
-		return string(configValues), nil
-	}
-
-	return "", nil
 }

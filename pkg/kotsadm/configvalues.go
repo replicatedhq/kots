@@ -14,28 +14,28 @@ import (
 	"k8s.io/client-go/kubernetes/scheme"
 )
 
-func ensureConfigValuesSecret(deployOptions *types.DeployOptions, clientset *kubernetes.Clientset) error {
+func ensureConfigValuesSecret(deployOptions *types.DeployOptions, clientset *kubernetes.Clientset) (bool, error) {
 	existingSecret, err := getConfigValuesSecret(deployOptions.Namespace, clientset)
 	if err != nil {
-		return errors.Wrap(err, "failed to check for existing config values secret")
+		return false, errors.Wrap(err, "failed to check for existing config values secret")
 	}
 
 	if existingSecret != nil {
-		return nil
+		return false, nil
 	}
 
 	s := json.NewYAMLSerializer(json.DefaultMetaFactory, scheme.Scheme, scheme.Scheme)
 	var b bytes.Buffer
 	if err := s.Encode(deployOptions.ConfigValues, &b); err != nil {
-		return errors.Wrap(err, "failed to encode config values")
+		return false, errors.Wrap(err, "failed to encode config values")
 	}
 
 	_, err = clientset.CoreV1().Secrets(deployOptions.Namespace).Create(context.TODO(), configValuesSecret(deployOptions.Namespace, b.String()), metav1.CreateOptions{})
 	if err != nil {
-		return errors.Wrap(err, "failed to create config values secret")
+		return false, errors.Wrap(err, "failed to create config values secret")
 	}
 
-	return nil
+	return true, nil
 }
 
 func getConfigValuesSecret(namespace string, clientset *kubernetes.Clientset) (*corev1.Secret, error) {

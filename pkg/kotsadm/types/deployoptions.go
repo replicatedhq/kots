@@ -39,6 +39,7 @@ type DeployOptions struct {
 	HTTPProxyEnvValue         string
 	HTTPSProxyEnvValue        string
 	NoProxyEnvValue           string
+	ExcludeAdminConsole       bool
 
 	KotsadmOptions KotsadmOptions
 }

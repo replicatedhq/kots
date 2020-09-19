@@ -80,6 +80,47 @@ func waitForKotsadm(deployOptions *types.DeployOptions, clientset *kubernetes.Cl
 	}
 }
 
+func restartKotsadm(deployOptions *types.DeployOptions, clientset *kubernetes.Clientset) error {
+	pods, err := clientset.CoreV1().Pods(deployOptions.Namespace).List(context.TODO(), metav1.ListOptions{LabelSelector: "app=kotsadm"})
+	if err != nil {
+		return errors.Wrap(err, "failed to list pods for termination")
+	}
+
+	for _, pod := range pods.Items {
+		err := clientset.CoreV1().Pods(deployOptions.Namespace).Delete(context.TODO(), pod.Name, metav1.DeleteOptions{})
+		if err != nil {
+			return errors.Wrap(err, "failed to delete admin console")
+		}
+	}
+
+	// wait for pods to stop running, or waiting for new pods will trip up.
+	start := time.Now()
+	for {
+		pods, err := clientset.CoreV1().Pods(deployOptions.Namespace).List(context.TODO(), metav1.ListOptions{LabelSelector: "app=kotsadm"})
+		if err != nil {
+			return errors.Wrap(err, "failed to list pods")
+		}
+
+		keepWaiting := false
+		for _, pod := range pods.Items {
+			if pod.Status.Phase == corev1.PodRunning {
+				keepWaiting = true
+				break
+			}
+		}
+
+		if !keepWaiting {
+			return nil
+		}
+
+		time.Sleep(time.Second)
+
+		if time.Now().Sub(start) > deployOptions.Timeout {
+			return &types.ErrorTimeout{Message: "timeout waiting for kotsadm pod to stop"}
+		}
+	}
+}
+
 func ensureKotsadmComponent(deployOptions *types.DeployOptions, clientset *kubernetes.Clientset) error {
 	if err := ensureKotsadmRBAC(*deployOptions, clientset); err != nil {
 		return errors.Wrap(err, "failed to ensure kotsadm rbac")

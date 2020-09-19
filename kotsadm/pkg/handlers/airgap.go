@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -17,9 +16,7 @@ import (
 	"github.com/replicatedhq/kots/kotsadm/pkg/airgap"
 	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
 	"github.com/replicatedhq/kots/kotsadm/pkg/store"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/kubernetes"
-	"sigs.k8s.io/controller-runtime/pkg/client/config"
+	"github.com/replicatedhq/kots/pkg/kotsutil"
 )
 
 type CreateAppFromAirgapRequest struct {
@@ -315,7 +312,7 @@ func createAppFromAirgap(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var registryHost, namespace, username, password string
-	registryHost, username, password, err = getKurlRegistryCreds()
+	registryHost, username, password, err = kotsutil.GetKurlRegistryCreds()
 	if err != nil {
 		logger.Error(err)
 		w.WriteHeader(http.StatusInternalServerError)
@@ -344,7 +341,7 @@ func createAppFromAirgap(w http.ResponseWriter, r *http.Request) {
 	}
 
 	go func() {
-		if err := airgap.CreateAppFromAirgap(pendingApp, airgapBundlePath, registryHost, namespace, username, password); err != nil {
+		if err := airgap.CreateAppFromAirgap(pendingApp, airgapBundlePath, registryHost, namespace, username, password, false); err != nil {
 			logger.Error(errors.Wrap(err, "failed to create app from airgap bundle"))
 			return
 		}
@@ -415,56 +412,6 @@ func cleanUp(uploadedFileIdentifier string, totalChunks int64) error {
 	return nil
 }
 
-func getKurlRegistryCreds() (hostname string, username string, password string, finalErr error) {
-	cfg, err := config.GetConfig()
-	if err != nil {
-		finalErr = errors.Wrap(err, "failed to get cluster config")
-		return
-	}
-
-	clientset, err := kubernetes.NewForConfig(cfg)
-	if err != nil {
-		finalErr = errors.Wrap(err, "failed to create kubernetes clientset")
-		return
-	}
-
-	// kURL registry secret is always in default namespace
-	secret, err := clientset.CoreV1().Secrets("default").Get(context.TODO(), "registry-creds", metav1.GetOptions{})
-	if err != nil {
-		return
-	}
-
-	dockerJson, ok := secret.Data[".dockerconfigjson"]
-	if !ok {
-		return
-	}
-
-	type dockerRegistryAuth struct {
-		Username string `json:"username"`
-		Password string `json:"password"`
-		Auth     string `json:"auth"`
-	}
-	dockerConfig := struct {
-		Auths map[string]dockerRegistryAuth `json:"auths"`
-	}{}
-
-	err = json.Unmarshal(dockerJson, &dockerConfig)
-	if err != nil {
-		return
-	}
-
-	for host, auth := range dockerConfig.Auths {
-		if auth.Username == "kurl" {
-			hostname = host
-			username = auth.Username
-			password = auth.Password
-			return
-		}
-	}
-
-	return
-}
-
 // Backwards compatibility airgap upload handler
 func UploadAirgapBundle(w http.ResponseWriter, r *http.Request) {
 	if r.Method == "POST" {
@@ -526,7 +473,7 @@ func bc_createAppFromAirgap(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var registryHost, namespace, username, password string
-	registryHost, username, password, err = getKurlRegistryCreds()
+	registryHost, username, password, err = kotsutil.GetKurlRegistryCreds()
 	if err != nil {
 		logger.Error(err)
 		w.WriteHeader(http.StatusInternalServerError)
@@ -568,7 +515,7 @@ func bc_createAppFromAirgap(w http.ResponseWriter, r *http.Request) {
 
 	go func() {
 		defer os.RemoveAll(airgapBundlePath)
-		if err := airgap.CreateAppFromAirgap(pendingApp, airgapBundlePath, registryHost, namespace, username, password); err != nil {
+		if err := airgap.CreateAppFromAirgap(pendingApp, airgapBundlePath, registryHost, namespace, username, password, false); err != nil {
 			logger.Error(err)
 		}
 	}()
