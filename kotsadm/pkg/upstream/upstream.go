@@ -20,6 +20,10 @@ import (
 )
 
 func DownloadUpdate(appID string, archiveDir string, toCursor string) (sequence int64, finalError error) {
+	if err := store.GetStore().SetTaskStatus("update-download", "Fetching update...", "running"); err != nil {
+		return 0, errors.Wrap(err, "failed to set task status")
+	}
+
 	finishedCh := make(chan struct{})
 	defer close(finishedCh)
 	go func() {

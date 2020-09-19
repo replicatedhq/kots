@@ -249,6 +249,12 @@ func CheckForUpdates(appID string, deploy bool) (int64, error) {
 
 	availableUpdates := int64(len(updates))
 
+	// this is to avoid a race condition where the UI polls the task status before it is set by the goroutine
+	status := fmt.Sprintf("%d Updates available...", availableUpdates)
+	if err := store.GetStore().SetTaskStatus("update-download", status, "running"); err != nil {
+		return 0, errors.Wrap(err, "failed to set task status")
+	}
+
 	go func() {
 		defer os.RemoveAll(archiveDir)
 		for index, update := range updates {
