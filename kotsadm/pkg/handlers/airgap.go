@@ -87,14 +87,14 @@ func CheckAirgapBundleChunk(w http.ResponseWriter, r *http.Request) {
 
 	chunkNumber, err := strconv.ParseInt(resumableChunkNumber, 10, 64)
 	if err != nil {
-		logger.Error(errors.New("failed to parse chunk number as integer"))
+		logger.Error(errors.Wrap(err, "failed to parse chunk number as integer"))
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
 	totalChunks, err := strconv.ParseInt(resumableTotalChunks, 10, 64)
 	if err != nil {
-		logger.Error(errors.New("failed to parse total chunks number as integer"))
+		logger.Error(errors.Wrap(err, "failed to parse total chunks number as integer"))
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
@@ -121,28 +121,28 @@ func UploadAirgapBundleChunk(w http.ResponseWriter, r *http.Request) {
 
 	totalChunks, err := strconv.ParseInt(resumableTotalChunks, 10, 64)
 	if err != nil {
-		logger.Error(errors.New("failed to parse total chunks number as integer"))
+		logger.Error(errors.Wrap(err, "failed to parse total chunks number as integer"))
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
 	totalSize, err := strconv.ParseInt(resumableTotalSize, 10, 64)
 	if err != nil {
-		logger.Error(errors.New("failed to parse total size as integer"))
+		logger.Error(errors.Wrap(err, "failed to parse total size as integer"))
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
 	chunkNumber, err := strconv.ParseInt(resumableChunkNumber, 10, 64)
 	if err != nil {
-		logger.Error(errors.New("failed to parse chunk number as integer"))
+		logger.Error(errors.Wrap(err, "failed to parse chunk number as integer"))
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
 	chunkSize, err := strconv.ParseInt(resumableChunkSize, 10, 64)
 	if err != nil {
-		logger.Error(errors.New("failed to parse chunk size as integer"))
+		logger.Error(errors.Wrap(err, "failed to parse chunk size as integer"))
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
@@ -227,7 +227,7 @@ func AirgapBundleExists(w http.ResponseWriter, r *http.Request) {
 
 	totalChunks, err := strconv.ParseInt(totalChunksStr, 10, 64)
 	if err != nil {
-		logger.Error(errors.New("failed to parse total chunks number as integer"))
+		logger.Error(errors.Wrap(err, "failed to parse total chunks number as integer"))
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
@@ -271,8 +271,15 @@ func updateAppFromAirgap(w http.ResponseWriter, r *http.Request) {
 	totalChunksStr := mux.Vars(r)["totalChunks"]
 	totalChunks, err := strconv.ParseInt(totalChunksStr, 10, 64)
 	if err != nil {
-		logger.Error(errors.New("failed to parse total chunks number as integer"))
+		logger.Error(errors.Wrap(err, "failed to parse total chunks number as integer"))
 		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	// this is to avoid a race condition where the UI polls the task status before it is set by the goroutine
+	if err := store.GetStore().SetTaskStatus("update-download", "Processing...", "running"); err != nil {
+		logger.Error(errors.Wrap(err, "failed to set task status"))
+		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
@@ -331,7 +338,7 @@ func createAppFromAirgap(w http.ResponseWriter, r *http.Request) {
 	totalChunksStr := mux.Vars(r)["totalChunks"]
 	totalChunks, err := strconv.ParseInt(totalChunksStr, 10, 64)
 	if err != nil {
-		logger.Error(errors.New("failed to parse total chunks number as integer"))
+		logger.Error(errors.Wrap(err, "failed to parse total chunks number as integer"))
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
