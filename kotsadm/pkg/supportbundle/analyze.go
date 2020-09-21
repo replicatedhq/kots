@@ -31,19 +31,13 @@ func InjectDefaultAnalyzers(analyzer *troubleshootv1beta2.Analyzer) error {
 func injectAPIReplicaAnalyzer(analyzer *troubleshootv1beta2.Analyzer) error {
 	analyzer.Spec.Analyzers = append(analyzer.Spec.Analyzers, &troubleshootv1beta2.Analyze{
 		DeploymentStatus: &troubleshootv1beta2.DeploymentStatus{
-			Name:      "kotsadm-api",
+			Name:      "kotsadm",
 			Namespace: os.Getenv("POD_NAMESPACE"),
 			Outcomes: []*troubleshootv1beta2.Outcome{
 				{
 					Pass: &troubleshootv1beta2.SingleOutcome{
-						When:    "> 1",
-						Message: "At least 2 replicas of the Admin Console API is running and ready",
-					},
-				},
-				{
-					Warn: &troubleshootv1beta2.SingleOutcome{
-						When:    "= 1",
-						Message: "Only 1 replica of the Admin Console API is running and ready",
+						When:    "> 0",
+						Message: "At least 1 replica of the Admin Console API is running and ready",
 					},
 				},
 				{
