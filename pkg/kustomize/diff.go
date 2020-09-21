@@ -1,4 +1,4 @@
-package downstream
+package kustomize
 
 import (
 	"bufio"

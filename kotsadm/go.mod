@@ -21,7 +21,7 @@ require (
 	github.com/gorilla/websocket v1.4.0
 	github.com/gosimple/slug v1.9.0
 	github.com/lib/pq v1.3.0
-	github.com/marccampbell/yaml-toolbox v0.0.0-20200328202846-85b6f7184a20
+	github.com/marccampbell/yaml-toolbox v0.0.0-20200805160637-950ceb36c770
 	github.com/mholt/archiver v3.1.1+incompatible
 	github.com/opencontainers/image-spec v1.0.2-0.20190823105129-775207bd45b6
 	github.com/pkg/errors v0.9.1
@@ -31,7 +31,6 @@ require (
 	github.com/robfig/cron v1.1.0
 	github.com/robfig/cron/v3 v3.0.0
 	github.com/segmentio/ksuid v1.0.2
-	github.com/sergi/go-diff v1.0.0
 	github.com/spf13/cobra v1.0.0
 	github.com/spf13/viper v1.6.2
 	github.com/stretchr/testify v1.6.1
@@ -39,7 +38,6 @@ require (
 	go.uber.org/zap v1.13.0
 	golang.org/x/crypto v0.0.0-20200423211502-4bdfaf469ed5
 	google.golang.org/api v0.9.0
-	gopkg.in/go-playground/assert.v1 v1.2.1
 	gopkg.in/ini.v1 v1.51.0
 	gopkg.in/src-d/go-git.v4 v4.13.1
 	gopkg.in/yaml.v2 v2.3.0
