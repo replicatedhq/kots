@@ -1,5 +1,6 @@
 import * as React from "react";
 import { Utilities } from "./utilities/utilities";
+import fetch from "./utilities/fetchWithTimeout";
 
 export default class ConnectionTerminated extends React.Component {
 
@@ -31,7 +32,7 @@ export default class ConnectionTerminated extends React.Component {
         "Authorization": Utilities.getToken(),
         "Content-Type": "application/json",
       },
-    }).then(async (res) => {
+    }, 10000).then(async (res) => {
       if (res.status === 401) {
         Utilities.logoutUser();
         return;
