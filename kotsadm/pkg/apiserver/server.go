@@ -138,6 +138,7 @@ func Start() {
 
 	// Airgap
 	sessionAuthRouter.Path("/api/v1/app/airgap").Methods("POST", "PUT").HandlerFunc(handlers.UploadAirgapBundle) // Backwards compatibility route
+	sessionAuthRouter.Path("/api/v1/app/airgap/bundleprogress/{identifier}/{totalChunks}").Methods("GET").HandlerFunc(handlers.AirgapBundleProgress)
 	sessionAuthRouter.Path("/api/v1/app/airgap/bundleexists/{identifier}/{totalChunks}").Methods("GET").HandlerFunc(handlers.AirgapBundleExists)
 	sessionAuthRouter.Path("/api/v1/app/airgap/processbundle/{identifier}/{totalChunks}").Methods("POST", "PUT").HandlerFunc(handlers.ProcessAirgapBundle)
 	sessionAuthRouter.Path("/api/v1/app/airgap/chunk").Methods("GET").HandlerFunc(handlers.CheckAirgapBundleChunk)

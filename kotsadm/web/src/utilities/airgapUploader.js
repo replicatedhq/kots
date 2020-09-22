@@ -75,6 +75,13 @@ export class AirgapUploader {
         return;
       }
 
+      // set the initial progress to the current api progress
+      this.apiCurrentProgress = await this.getApiCurrentProgress();
+      if (this.onProgress) {
+        const size = this.resumableUploader.getSize();
+        this.onProgress(this.apiCurrentProgress, size);
+      }
+
       if (this.attemptedFileUpload) {
         this.resumableFile.retry();
         return;
@@ -88,6 +95,12 @@ export class AirgapUploader {
           if (progress === 1 && !this.resumableFile.isComplete()) {
             return;
           }
+          // when an error occurs during uploading one of the chunks, the uploader or the user will retry uploading the file from the
+          // beginning to check if any previously uploaded chunks were lost. during that process, the progress will be less than the 
+          // actual progress if no data loss occured, so we keep the UI progress as is until it catches up.
+          if (progress < this.apiCurrentProgress) {
+            return;
+          }
           if (this.onProgress) {
             const size = this.resumableUploader.getSize();
             this.onProgress(progress, size);
@@ -96,10 +109,11 @@ export class AirgapUploader {
   
         this.resumableUploader.on('fileError', async (_, message) => {
           // an error occured while uploading one of the chunks due to internet connectivity issues or the api pod restarting.
-          // try reconnecting to the api. if reconnected successfully, retry uploading the file from the beginning.
-          // this is a workaround to the fact that the api pod stores bundles in the temp directory and will lose all data related to the bundle when restarted.
+          // try reconnecting to the api. if reconnected successfully, get the actual current progress from the api and retry uploading the file.
+          // this also handles an issue where the api pod loses all data related to the bundle when restarted.
           const reconnected = await this.reconnect();
           if (reconnected) {
+            this.apiCurrentProgress = await this.getApiCurrentProgress();
             this.resumableFile.retry();
             return;
           }
@@ -128,6 +142,24 @@ export class AirgapUploader {
         onError(errMsg);
       }
     }
+  }
+
+  getApiCurrentProgress = async () => {
+    const res = await fetch(`${window.env.API_ENDPOINT}/app/airgap/bundleprogress/${this.resumableIdentifier}/${this.resumableTotalChunks}`, {
+      headers: {
+        "Authorization": Utilities.getToken(),
+      },
+      method: "GET",
+    });
+    if (!res.ok) {
+      if (res.status === 401) {
+        Utilities.logoutUser();
+        return;
+      }
+      throw new Error(`Unexpected status code: ${res.status}`);
+    }
+    const response = await res.json();
+    return response.progress;
   }
 
   airgapBundleExists = async () => {

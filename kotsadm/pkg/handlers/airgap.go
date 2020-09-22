@@ -34,6 +34,10 @@ type UpdateAppFromAirgapRequest struct {
 type UpdateAppFromAirgapResponse struct {
 }
 
+type AirgapBundleProgressResponse struct {
+	Progress float64 `json:"progress"`
+}
+
 type AirgapBundleExistsResponse struct {
 	Exists bool `json:"exists"`
 }
@@ -218,6 +222,26 @@ func UploadAirgapBundleChunk(w http.ResponseWriter, r *http.Request) {
 	JSON(w, http.StatusOK, "")
 }
 
+func AirgapBundleProgress(w http.ResponseWriter, r *http.Request) {
+	identifier := mux.Vars(r)["identifier"]
+	totalChunksStr := mux.Vars(r)["totalChunks"]
+
+	totalChunks, err := strconv.ParseInt(totalChunksStr, 10, 64)
+	if err != nil {
+		logger.Error(errors.Wrap(err, "failed to parse total chunks number as integer"))
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	uploadProgress := getUploadProgress(identifier, totalChunks)
+
+	airgapBundleProgressResponse := AirgapBundleProgressResponse{
+		Progress: uploadProgress,
+	}
+
+	JSON(w, http.StatusOK, airgapBundleProgressResponse)
+}
+
 func AirgapBundleExists(w http.ResponseWriter, r *http.Request) {
 	identifier := mux.Vars(r)["identifier"]
 	totalChunksStr := mux.Vars(r)["totalChunks"]
@@ -375,6 +399,23 @@ func isChunkPresent(chunkKey string) bool {
 	defer chunkLock.Unlock()
 	_, ok := uploadedAirgapBundleChunks[chunkKey]
 	return ok
+}
+
+func getUploadProgress(uploadedFileIdentifier string, totalChunks int64) float64 {
+	chunkLock.Lock()
+	defer chunkLock.Unlock()
+
+	var numOfUploadedChunks int64 = 0
+
+	var i int64
+	for i = 1; i <= totalChunks; i++ {
+		chunkKey := getChunkKey(uploadedFileIdentifier, i)
+		if _, ok := uploadedAirgapBundleChunks[chunkKey]; ok {
+			numOfUploadedChunks++
+		}
+	}
+
+	return float64(numOfUploadedChunks) / float64(totalChunks)
 }
 
 func isUploadComplete(uploadedFileIdentifier string, totalChunks int64) bool {
