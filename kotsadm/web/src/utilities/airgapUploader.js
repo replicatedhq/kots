@@ -1,5 +1,6 @@
 import Resumable from "resumablejs";
 import { Utilities } from "./utilities";
+import fetch from "./fetchWithTimeout";
 
 export class AirgapUploader {
   constructor(isUpdate, onFileAdded) {
@@ -14,6 +15,7 @@ export class AirgapUploader {
       maxFiles: 1,
       simultaneousUploads: 3,
       maxChunkRetries: 0,
+      xhrTimeout: 10000,
     });
   
     this.resumableUploader.on('fileAdded', (resumableFile) => {
@@ -25,6 +27,35 @@ export class AirgapUploader {
         onFileAdded(resumableFile.file);
       }
     });
+  }
+
+  reconnect = async (reconnectAttempt = 0) => {
+    try {
+      const res = await fetch(`${window.env.API_ENDPOINT}/ping`, {
+        headers: {
+          "Authorization": Utilities.getToken(),
+          "Content-Type": "application/json",
+        },
+      }, 10000);
+
+      if (res.status === 401) {
+        Utilities.logoutUser();
+        return false;
+      }
+
+      return true;
+    } catch(_) {
+      reconnectAttempt++;
+      if (reconnectAttempt > 10) {
+        return false;
+      }
+      const reconnectPromise = new Promise(resolve => {
+        setTimeout(() => {
+          this.reconnect(reconnectAttempt).then(resolve);
+        }, 1000);
+      })
+      return await reconnectPromise;
+    }
   }
 
   upload = async (processParams, onProgress, onError, onComplete) => {
@@ -58,13 +89,18 @@ export class AirgapUploader {
           }
         });
   
-        this.resumableUploader.on('fileError', (_, message) => {
+        this.resumableUploader.on('fileError', async (_, message) => {
+          const reconnected = await this.reconnect();
+          if (reconnected) {
+            this.resumableFile.retry();
+            return;
+          }
           if (this.onError) {
             const errMsg = message ? message : "Error uploading bundle, please try again";
             this.onError(errMsg);
           }
         });
-  
+
         this.resumableUploader.on('fileSuccess', async () => {
           await this.processAirgapBundle();
           if (this.onComplete) {

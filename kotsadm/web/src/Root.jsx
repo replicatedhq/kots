@@ -17,6 +17,7 @@ import ClusterNodes from "./components/apps/ClusterNodes";
 import UnsupportedBrowser from "./components/static/UnsupportedBrowser";
 import NotFound from "./components/static/NotFound";
 import { Utilities } from "./utilities/utilities";
+import fetch from "./utilities/fetchWithTimeout";
 import SecureAdminConsole from "./components/SecureAdminConsole";
 import UploadLicenseFile from "./components/UploadLicenseFile";
 import BackupRestore from "./components/BackupRestore";
@@ -196,7 +197,7 @@ class Root extends Component {
         "Authorization": Utilities.getToken(),
         "Content-Type": "application/json",
       },
-    }).then(async (result) => {
+    }, 10000).then(async (result) => {
       if (result.status === 401) {
         Utilities.logoutUser();
         return;

@@ -32,9 +32,6 @@ class UploadAirgapBundle extends React.Component {
     showSupportBundleCommand: false,
     onlineInstallErrorMessage: "",
     viewOnlineInstallErrorMessage: false,
-    errorTitle: "",
-    errorMsg: "",
-    displayErrorModal: false,
   }
 
   emptyHostnameErrMessage = "Please enter a value for \"Hostname\" field"
@@ -278,20 +275,16 @@ class UploadAirgapBundle extends React.Component {
   }
 
   onProgressError = async (errorMessage) => {
-    // Push this setState call to the end of the call stack
     const { slug } = this.props.match.params;
 
     let supportBundleCommand = "";
     try {
       supportBundleCommand = await this.getSupportBundleCommand(slug);
     } catch (err) {
-      this.setState({
-        errorTitle: `Failed to get support bundle command`,
-        errorMsg: err ? err.message : "Something went wrong, please try again.",
-        displayErrorModal: true,
-      });
+      console.log(err);
     }
 
+    // Push this setState call to the end of the call stack
     setTimeout(() => {
       Object.entries(COMMON_ERRORS).forEach(([errorString, message]) => {
         if (errorMessage.includes(errorString)) {
@@ -552,14 +545,6 @@ class UploadAirgapBundle extends React.Component {
             <button type="button" className="btn primary u-marginTop--15" onClick={this.toggleViewOnlineInstallErrorMessage}>Ok, got it!</button>
           </div>
         </Modal>
-
-        {errorMsg &&
-          <ErrorModal
-            errorModal={this.state.displayErrorModal}
-            toggleErrorModal={this.toggleErrorModal}
-            err={errorTitle}
-            errMsg={errorMsg}
-          />}
       </div>
     );
   }

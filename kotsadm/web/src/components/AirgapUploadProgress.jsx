@@ -3,6 +3,7 @@ import { withRouter } from "react-router-dom";
 import Loader from "./shared/Loader";
 import { formatByteSize, calculateTimeDifference, Utilities } from "@src/utilities/utilities";
 import { Repeater } from "@src/utilities/repeater";
+import fetch from "../utilities/fetchWithTimeout";
 import "@src/scss/components/AirgapUploadProgress.scss";
 import get from "lodash/get";
 let processingImages = null;
@@ -35,11 +36,11 @@ class AirgapUploadProgress extends React.Component {
           "Content-Type": "application/json",
         },
         method: "GET",
-      });
+      }, 10000);
 
       if (!res.ok) {
         this.setState({
-          installStatus: "airgap_upload_error",
+          installStatus: "fetch_error",
           currentMessage: `Encountered an error while uploading: Status ${res.status}`
         });
       } else {
@@ -53,7 +54,7 @@ class AirgapUploadProgress extends React.Component {
     } catch(err) {
       console.log(err);
       this.setState({ 
-        installStatus: "airgap_upload_error",
+        installStatus: "fetch_error",
         currentMessage: err ? `Encountered an error while uploading: ${err.message}` : "Something went wrong, please try again."
       })
     }
