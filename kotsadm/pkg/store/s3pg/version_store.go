@@ -508,8 +508,7 @@ func (s S3PGStore) GetAppVersion(appID string, sequence int64) (*versiontypes.Ap
 
 	var status sql.NullString
 	var deployedAt sql.NullTime
-
-	var installationSpec string
+	var installationSpec sql.NullString
 
 	v := versiontypes.AppVersion{}
 	if err := row.Scan(&v.Sequence, &v.CreatedOn, &status, &deployedAt, &installationSpec); err != nil {
@@ -521,7 +520,7 @@ func (s S3PGStore) GetAppVersion(appID string, sequence int64) (*versiontypes.Ap
 
 	kotsKinds := kotsutil.KotsKinds{}
 
-	installation, err := kotsutil.LoadInstallationFromContents([]byte(installationSpec))
+	installation, err := kotsutil.LoadInstallationFromContents([]byte(installationSpec.String))
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to read installation spec")
 	}
@@ -547,8 +546,7 @@ func (s S3PGStore) GetAppVersionsAfter(appID string, sequence int64) ([]*version
 
 	var status sql.NullString
 	var deployedAt sql.NullTime
-
-	var installationSpec string
+	var installationSpec sql.NullString
 
 	versions := []*versiontypes.AppVersion{}
 
@@ -560,7 +558,7 @@ func (s S3PGStore) GetAppVersionsAfter(appID string, sequence int64) ([]*version
 
 		kotsKinds := kotsutil.KotsKinds{}
 
-		installation, err := kotsutil.LoadInstallationFromContents([]byte(installationSpec))
+		installation, err := kotsutil.LoadInstallationFromContents([]byte(installationSpec.String))
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to read installation spec")
 		}
