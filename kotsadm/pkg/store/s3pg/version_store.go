@@ -3,6 +3,7 @@ package s3pg
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -16,12 +17,15 @@ import (
 	"github.com/mholt/archiver"
 	"github.com/pkg/errors"
 	apptypes "github.com/replicatedhq/kots/kotsadm/pkg/app/types"
+	kotsconfig "github.com/replicatedhq/kots/kotsadm/pkg/config"
+	gitopstypes "github.com/replicatedhq/kots/kotsadm/pkg/gitops/types"
 	"github.com/replicatedhq/kots/kotsadm/pkg/persistence"
 	"github.com/replicatedhq/kots/kotsadm/pkg/render"
 	kotss3 "github.com/replicatedhq/kots/kotsadm/pkg/s3"
 	versiontypes "github.com/replicatedhq/kots/kotsadm/pkg/version/types"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
+	"github.com/replicatedhq/kots/pkg/kustomize"
 	velerov1 "github.com/vmware-tanzu/velero/pkg/apis/velero/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
@@ -267,7 +271,110 @@ func (s S3PGStore) GetAppVersionArchive(appID string, sequence int64) (string, e
 	return tmpDir, nil
 }
 
-func (s S3PGStore) CreateAppVersion(appID string, currentSequence *int64, appName string, appIcon string, kotsKinds *kotsutil.KotsKinds) (int64, error) {
+func (s S3PGStore) CreateAppVersion(appID string, currentSequence *int64, appName string, appIcon string, kotsKinds *kotsutil.KotsKinds, filesInDir string, gitops gitopstypes.DownstreamGitOps, source string) (int64, error) {
+	db := persistence.MustGetPGSession()
+
+	tx, err := db.Begin()
+	if err != nil {
+		return int64(0), errors.Wrap(err, "failed to begin")
+	}
+	defer tx.Rollback()
+
+	newSequence, err := s.createAppVersion(tx, appID, currentSequence, appName, appIcon, kotsKinds)
+	if err != nil {
+		return int64(0), errors.Wrap(err, "failed to create app version")
+	}
+
+	if err := s.CreateAppVersionArchive(appID, int64(newSequence), filesInDir); err != nil {
+		return int64(0), errors.Wrap(err, "failed to create app version archive")
+	}
+
+	previousArchiveDir := ""
+	if currentSequence != nil {
+		// Get the previous archive, we need this to calculate the diff
+		previousDir, err := s.GetAppVersionArchive(appID, *currentSequence)
+		if err != nil {
+			return int64(0), errors.Wrap(err, "failed to get previous archive")
+		}
+
+		previousArchiveDir = previousDir
+	}
+
+	downstreams, err := s.ListDownstreamsForApp(appID)
+	if err != nil {
+		return int64(0), errors.Wrap(err, "failed to list downstreams")
+	}
+
+	for _, d := range downstreams {
+		downstreamStatus := "pending"
+		if currentSequence == nil && kotsKinds.Config != nil {
+			downstreamStatus = "pending_config"
+		} else if kotsKinds.Preflight != nil {
+			downstreamStatus = "pending_preflight"
+		}
+
+		if currentSequence != nil {
+			// there's a small chance this is not optimal, but no current code path
+			// will support multiple downstreams, so this is cleaner here for now
+			licenseSpec, err := kotsKinds.Marshal("kots.io", "v1beta1", "License")
+			if err != nil {
+				return int64(0), errors.Wrap(err, "failed to marshal license spec")
+			}
+			configSpec, err := kotsKinds.Marshal("kots.io", "v1beta1", "Config")
+			if err != nil {
+				return int64(0), errors.Wrap(err, "failed to marshal config spec")
+			}
+			configValuesSpec, err := kotsKinds.Marshal("kots.io", "v1beta1", "ConfigValues")
+			if err != nil {
+				return int64(0), errors.Wrap(err, "failed to marshal configvalues spec")
+			}
+
+			// check if version needs additional configuration
+			t, err := kotsconfig.NeedsConfiguration(configSpec, configValuesSpec, licenseSpec)
+			if err != nil {
+				return int64(0), errors.Wrap(err, "failed to check if version needs configuration")
+			}
+			if t {
+				downstreamStatus = "pending_config"
+			}
+		}
+
+		diffSummary, diffSummaryError := "", ""
+		if currentSequence != nil {
+			// diff this release from the last release
+			diff, err := kustomize.DiffAppVersionsForDownstream(d.Name, filesInDir, previousArchiveDir, kotsKinds.KustomizeVersion())
+			if err != nil {
+				diffSummaryError = errors.Wrap(err, "failed to diff").Error()
+			} else {
+				b, err := json.Marshal(diff)
+				if err != nil {
+					diffSummaryError = errors.Wrap(err, "failed to marshal diff").Error()
+				}
+				diffSummary = string(b)
+			}
+		}
+
+		commitURL, err := gitops.CreateGitOpsDownstreamCommit(appID, d.ClusterID, int(newSequence), filesInDir, d.Name)
+		if err != nil {
+			return int64(0), errors.Wrap(err, "failed to create gitops commit")
+		}
+
+		err = s.addAppVersionToDownstream(tx, appID, d.ClusterID, newSequence,
+			kotsKinds.Installation.Spec.VersionLabel, downstreamStatus, source,
+			diffSummary, diffSummaryError, commitURL, commitURL != "")
+		if err != nil {
+			return int64(0), errors.Wrap(err, "failed to create downstream version")
+		}
+	}
+
+	if err := tx.Commit(); err != nil {
+		return int64(0), errors.Wrap(err, "failed to commit transaction")
+	}
+
+	return newSequence, nil
+}
+
+func (s S3PGStore) createAppVersion(tx *sql.Tx, appID string, currentSequence *int64, appName string, appIcon string, kotsKinds *kotsutil.KotsKinds) (int64, error) {
 	// we marshal these here because it's a decision of the store to cache them in the app version table
 	// not all stores will do this
 	supportBundleSpec, err := kotsKinds.Marshal("troubleshoot.replicated.com", "v1beta1", "Collector")
@@ -313,17 +420,9 @@ func (s S3PGStore) CreateAppVersion(appID string, currentSequence *int64, appNam
 		return int64(0), errors.Wrap(err, "failed to marshal configvalues spec")
 	}
 
-	db := persistence.MustGetPGSession()
-
-	tx, err := db.Begin()
-	if err != nil {
-		return int64(0), errors.Wrap(err, "failed to begin")
-	}
-	defer tx.Rollback()
-
 	newSequence := int64(0)
 	if currentSequence != nil {
-		row := db.QueryRow(`select max(sequence) from app_version where app_id = $1`, appID)
+		row := tx.QueryRow(`select max(sequence) from app_version where app_id = $1`, appID)
 		if err := row.Scan(&newSequence); err != nil {
 			return 0, errors.Wrap(err, "failed to find current max sequence in row")
 		}
@@ -376,18 +475,12 @@ func (s S3PGStore) CreateAppVersion(appID string, currentSequence *int64, appNam
 		return int64(0), errors.Wrap(err, "failed to update app")
 	}
 
-	if err := tx.Commit(); err != nil {
-		return int64(0), errors.Wrap(err, "failed to commit tx")
-	}
-
 	return int64(newSequence), nil
 }
 
-func (s S3PGStore) AddAppVersionToDownstream(appID string, clusterID string, sequence int64, versionLabel string, status string, source string, diffSummary string, diffSummaryError string, commitURL string, gitDeployable bool) error {
-	db := persistence.MustGetPGSession()
-
+func (s S3PGStore) addAppVersionToDownstream(tx *sql.Tx, appID string, clusterID string, sequence int64, versionLabel string, status string, source string, diffSummary string, diffSummaryError string, commitURL string, gitDeployable bool) error {
 	query := `insert into app_downstream_version (app_id, cluster_id, sequence, parent_sequence, created_at, version_label, status, source, diff_summary, diff_summary_error, git_commit_url, git_deployable) values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)`
-	_, err := db.Exec(
+	_, err := tx.Exec(
 		query,
 		appID,
 		clusterID,

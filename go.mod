@@ -30,6 +30,7 @@ require (
 	github.com/gotestyourself/gotestyourself v2.2.0+incompatible // indirect
 	github.com/kardianos/osext v0.0.0-20190222173326-2bc1f35cddc0 // indirect
 	github.com/manifoldco/promptui v0.3.2
+	github.com/marccampbell/yaml-toolbox v0.0.0-20200805160637-950ceb36c770
 	github.com/mattn/go-isatty v0.0.12
 	github.com/mholt/archiver v3.1.1+incompatible
 	github.com/otiai10/copy v1.0.2
@@ -38,8 +39,9 @@ require (
 	github.com/replicatedhq/kurl/kurlkinds v0.0.0-20200617224429-55f493a72baf
 	github.com/replicatedhq/troubleshoot v0.9.42
 	github.com/replicatedhq/yaml/v3 v3.0.0-beta5-replicatedhq
+	github.com/sergi/go-diff v1.0.0
 	github.com/spf13/cobra v1.0.0
-	github.com/spf13/viper v1.4.0
+	github.com/spf13/viper v1.6.2
 	github.com/stevvooe/resumable v0.0.0-20180830230917-22b14a53ba50 // indirect
 	github.com/stretchr/testify v1.6.1
 	github.com/tj/go-spin v1.1.0
@@ -48,6 +50,7 @@ require (
 	github.com/yvasiyarov/gorelic v0.0.7 // indirect
 	github.com/yvasiyarov/newrelic_platform_go v0.0.0-20160601141957-9c099fbc30e9 // indirect
 	golang.org/x/crypto v0.0.0-20200423211502-4bdfaf469ed5
+	gopkg.in/go-playground/assert.v1 v1.2.1
 	gopkg.in/yaml.v2 v2.3.0
 	helm.sh/helm/v3 v3.2.4
 	k8s.io/api v0.18.4

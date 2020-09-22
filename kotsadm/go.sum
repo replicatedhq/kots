@@ -728,8 +728,8 @@ github.com/mailru/easyjson v0.7.0/go.mod h1:KAzv3t3aY1NaHWoQz1+4F1ccyAH66Jk7yos7
 github.com/manifoldco/promptui v0.3.2 h1:rir7oByTERac6jhpHUPErHuopoRDvO3jxS+FdadEns8=
 github.com/manifoldco/promptui v0.3.2/go.mod h1:8JU+igZ+eeiiRku4T5BjtKh2ms8sziGpSYl1gN8Bazw=
 github.com/marccampbell/yaml-remarshaler v0.0.0-20200328184140-6002a2f30c7f/go.mod h1:oaJcbU9OP14sTuYsu9LvSBlyCJIlQTIvWrSfk+k3blE=
-github.com/marccampbell/yaml-toolbox v0.0.0-20200328202846-85b6f7184a20 h1:/y1it/UfmqfQEe6wg91Jy3iAUJ8bT4lh5ivdhPYqP+M=
-github.com/marccampbell/yaml-toolbox v0.0.0-20200328202846-85b6f7184a20/go.mod h1:jMJ6Zc40Nygk0M3+3xE6dsfcYqf7yTtD7Nk9oAU1zas=
+github.com/marccampbell/yaml-toolbox v0.0.0-20200805160637-950ceb36c770 h1:s2WLaBLLvtqZaADwaeQCjOoisJtYnTmtkTPg4mL7mnc=
+github.com/marccampbell/yaml-toolbox v0.0.0-20200805160637-950ceb36c770/go.mod h1:jMJ6Zc40Nygk0M3+3xE6dsfcYqf7yTtD7Nk9oAU1zas=
 github.com/marten-seemann/qtls v0.2.3/go.mod h1:xzjG7avBwGGbdZ8dTGxlBnLArsVKLvwmjgmPuiQEcYk=
 github.com/matoous/godox v0.0.0-20190911065817-5d6d842e92eb/go.mod h1:1BELzlh859Sh1c6+90blK8lbYy0kwQf1bYlBhBysy1s=
 github.com/mattn/go-colorable v0.0.9/go.mod h1:9vuHe8Xs5qXnSaW/c/ABM9alt+Vo+STaOChaDxuIBZU=

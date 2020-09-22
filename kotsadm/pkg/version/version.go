@@ -2,13 +2,10 @@ package version
 
 import (
 	"database/sql"
-	"encoding/json"
 	"fmt"
 	"time"
 
 	"github.com/pkg/errors"
-	"github.com/replicatedhq/kots/kotsadm/pkg/config"
-	"github.com/replicatedhq/kots/kotsadm/pkg/downstream"
 	"github.com/replicatedhq/kots/kotsadm/pkg/gitops"
 	"github.com/replicatedhq/kots/kotsadm/pkg/persistence"
 	"github.com/replicatedhq/kots/kotsadm/pkg/secrets"
@@ -47,6 +44,30 @@ func CreateVersion(appID string, filesInDir string, source string, currentSequen
 	return createVersion(appID, filesInDir, source, &currentSequence)
 }
 
+type downstreamGitOps struct {
+}
+
+func (d *downstreamGitOps) CreateGitOpsDownstreamCommit(appID string, clusterID string, newSequence int, filesInDir string, downstreamName string) (string, error) {
+	downstreamGitOps, err := gitops.GetDownstreamGitOps(appID, clusterID)
+	if err != nil {
+		return "", errors.Wrap(err, "failed to get downstream gitops")
+	}
+	if downstreamGitOps == nil {
+		return "", nil
+	}
+
+	a, err := store.GetStore().GetApp(appID)
+	if err != nil {
+		return "", errors.Wrap(err, "failed to get app")
+	}
+	createdCommitURL, err := gitops.CreateGitOpsCommit(downstreamGitOps, a.Slug, a.Name, int(newSequence), filesInDir, downstreamName)
+	if err != nil {
+		return "", errors.Wrap(err, "failed to create gitops commit")
+	}
+
+	return createdCommitURL, nil
+}
+
 // this is the common, internal function to create an app version, used in both
 // new and updates to apps
 func createVersion(appID string, filesInDir string, source string, currentSequence *int64) (int64, error) {
@@ -67,107 +88,13 @@ func createVersion(appID string, filesInDir string, source string, currentSequen
 
 	appIcon := kotsKinds.KotsApplication.Spec.Icon
 
-	newSequence, err := store.GetStore().CreateAppVersion(appID, currentSequence, appName, appIcon, kotsKinds)
-	if err != nil {
-		return int64(0), errors.Wrap(err, "failed to create app version")
-	}
-
-	if err := store.GetStore().CreateAppVersionArchive(appID, int64(newSequence), filesInDir); err != nil {
-		return int64(0), errors.Wrap(err, "failed to create app version archive")
-	}
-
-	previousArchiveDir := ""
-	if currentSequence != nil {
-		// Get the previous archive, we need this to calculate the diff
-		previousDir, err := store.GetStore().GetAppVersionArchive(appID, *currentSequence)
-		if err != nil {
-			return int64(0), errors.Wrap(err, "failed to get previous archive")
-		}
-
-		previousArchiveDir = previousDir
-	}
-
-	downstreams, err := store.GetStore().ListDownstreamsForApp(appID)
-	if err != nil {
-		return int64(0), errors.Wrap(err, "failed to list downstreams")
-	}
-
 	if err := secrets.ReplaceSecretsInPath(filesInDir); err != nil {
 		return int64(0), errors.Wrap(err, "failed to replace secrets")
 	}
 
-	for _, d := range downstreams {
-		downstreamStatus := "pending"
-		if currentSequence == nil && kotsKinds.Config != nil {
-			downstreamStatus = "pending_config"
-		} else if kotsKinds.Preflight != nil {
-			downstreamStatus = "pending_preflight"
-		}
-
-		if currentSequence != nil {
-			// there's a small chance this is not optimal, but no current code path
-			// will support multiple downstreams, so this is cleaner here for now
-			licenseSpec, err := kotsKinds.Marshal("kots.io", "v1beta1", "License")
-			if err != nil {
-				return int64(0), errors.Wrap(err, "failed to marshal license spec")
-			}
-			configSpec, err := kotsKinds.Marshal("kots.io", "v1beta1", "Config")
-			if err != nil {
-				return int64(0), errors.Wrap(err, "failed to marshal config spec")
-			}
-			configValuesSpec, err := kotsKinds.Marshal("kots.io", "v1beta1", "ConfigValues")
-			if err != nil {
-				return int64(0), errors.Wrap(err, "failed to marshal configvalues spec")
-			}
-
-			// check if version needs additional configuration
-			t, err := config.NeedsConfiguration(configSpec, configValuesSpec, licenseSpec)
-			if err != nil {
-				return int64(0), errors.Wrap(err, "failed to check if version needs configuration")
-			}
-			if t {
-				downstreamStatus = "pending_config"
-			}
-		}
-
-		diffSummary, diffSummaryError := "", ""
-		if currentSequence != nil {
-			// diff this release from the last release
-			diff, err := downstream.DiffAppVersionsForDownstream(d.Name, filesInDir, previousArchiveDir, kotsKinds.KustomizeVersion())
-			if err != nil {
-				diffSummaryError = errors.Wrap(err, "failed to diff").Error()
-			} else {
-				b, err := json.Marshal(diff)
-				if err != nil {
-					diffSummaryError = errors.Wrap(err, "failed to marshal diff").Error()
-				}
-				diffSummary = string(b)
-			}
-		}
-
-		commitURL := ""
-		downstreamGitOps, err := gitops.GetDownstreamGitOps(appID, d.ClusterID)
-		if err != nil {
-			return int64(0), errors.Wrap(err, "failed to get downstream gitops")
-		}
-		if downstreamGitOps != nil {
-			a, err := store.GetStore().GetApp(appID)
-			if err != nil {
-				return int64(0), errors.Wrap(err, "failed to get app")
-			}
-			createdCommitURL, err := gitops.CreateGitOpsCommit(downstreamGitOps, a.Slug, a.Name, int(newSequence), filesInDir, d.Name)
-			if err != nil {
-				return int64(0), errors.Wrap(err, "failed to create gitops commit")
-			}
-			commitURL = createdCommitURL
-		}
-
-		err = store.GetStore().AddAppVersionToDownstream(appID, d.ClusterID, newSequence,
-			kotsKinds.Installation.Spec.VersionLabel, downstreamStatus, source,
-			diffSummary, diffSummaryError, commitURL, commitURL != "")
-		if err != nil {
-			return int64(0), errors.Wrap(err, "failed to create downstream version")
-		}
+	newSequence, err := store.GetStore().CreateAppVersion(appID, currentSequence, appName, appIcon, kotsKinds, filesInDir, &downstreamGitOps{}, source)
+	if err != nil {
+		return int64(0), errors.Wrap(err, "failed to create app version")
 	}
 
 	return int64(newSequence), nil

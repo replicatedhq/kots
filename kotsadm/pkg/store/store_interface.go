@@ -8,6 +8,7 @@ import (
 	apptypes "github.com/replicatedhq/kots/kotsadm/pkg/app/types"
 	appstatustypes "github.com/replicatedhq/kots/kotsadm/pkg/appstatus/types"
 	downstreamtypes "github.com/replicatedhq/kots/kotsadm/pkg/downstream/types"
+	gitopstypes "github.com/replicatedhq/kots/kotsadm/pkg/gitops/types"
 	installationtypes "github.com/replicatedhq/kots/kotsadm/pkg/online/types"
 	preflighttypes "github.com/replicatedhq/kots/kotsadm/pkg/preflight/types"
 	registrytypes "github.com/replicatedhq/kots/kotsadm/pkg/registry/types"
@@ -102,7 +103,6 @@ type AppStatusStore interface {
 type AppStore interface {
 	AddAppToAllDownstreams(appID string) error
 	SetAppInstallState(appID string, state string) error
-	AddAppVersionToDownstream(string, string, int64, string, string, string, string, string, string, bool) error
 	ListInstalledApps() ([]*apptypes.App, error)
 	GetAppIDFromSlug(slug string) (appID string, err error)
 	GetApp(appID string) (*apptypes.App, error)
@@ -130,7 +130,7 @@ type VersionStore interface {
 	IsSnapshotsSupportedForVersion(a *apptypes.App, sequence int64) (bool, error)
 	GetAppVersionArchive(appID string, sequence int64) (archivePath string, err error)
 	CreateAppVersionArchive(appID string, sequence int64, archivePath string) error
-	CreateAppVersion(string, *int64, string, string, *kotsutil.KotsKinds) (int64, error)
+	CreateAppVersion(appID string, currentSequence *int64, appName string, appIcon string, kotsKinds *kotsutil.KotsKinds, filesInDir string, gitops gitopstypes.DownstreamGitOps, source string) (int64, error)
 	GetAppVersion(string, int64) (*versiontypes.AppVersion, error)
 	GetAppVersionsAfter(string, int64) ([]*versiontypes.AppVersion, error)
 }
