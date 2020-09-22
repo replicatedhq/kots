@@ -82,14 +82,22 @@ export class AirgapUploader {
 
       if (!this.hasListeners) {
         this.resumableUploader.on('fileProgress', () => {
+          // the resumablejs library returns progress as 1 in both cases of "error" and "success"
+          // we don't wanna show the progress as 100% while reconnecting in case of an error (upload is not complete)
+          const progress = this.resumableUploader.progress();
+          if (progress === 1 && !this.resumableFile.isComplete()) {
+            return;
+          }
           if (this.onProgress) {
-            const progress = this.resumableUploader.progress();
             const size = this.resumableUploader.getSize();
             this.onProgress(progress, size);
           }
         });
   
         this.resumableUploader.on('fileError', async (_, message) => {
+          // an error occured while uploading one of the chunks due to internet connectivity issues or the api pod restarting.
+          // try reconnecting to the api. if reconnected successfully, retry uploading the file from the beginning.
+          // this is a workaround to the fact that the api pod stores bundles in the temp directory and will lose all data related to the bundle when restarted.
           const reconnected = await this.reconnect();
           if (reconnected) {
             this.resumableFile.retry();
