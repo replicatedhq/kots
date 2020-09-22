@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"context"
+	goerrors "errors"
 	"net/http"
 
 	"github.com/gorilla/mux"
@@ -44,6 +45,11 @@ func DeleteNode(w http.ResponseWriter, r *http.Request) {
 
 	if err := kurl.DeleteNode(ctx, client, restconfig, node); err != nil {
 		logger.Error(err)
+		if goerrors.Is(err, kurl.ErrNoEkco) {
+			w.WriteHeader(http.StatusUnprocessableEntity)
+		} else {
+			w.WriteHeader(http.StatusInternalServerError)
+		}
 		return
 	}
 	logger.Infof("Node %s successfully deleted", node.Name)
