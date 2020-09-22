@@ -24,6 +24,10 @@ define GIT_SHA
 endef
 endif
 
+ifeq ($(KOTS_VERSION),)
+KOTS_VERSION := $(GIT_SHA)
+endif
+
 define LDFLAGS
 -ldflags "\
 	-X ${KOTS_VERSION_PACKAGE}.version=${KOTS_VERSION} \
