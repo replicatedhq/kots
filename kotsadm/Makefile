@@ -1,41 +1,5 @@
-SHELL := /bin/bash -o pipefail
+include ../Makefile.build
 CURRENT_USER := $(shell id -u -n)
-export GO111MODULE=on
-export GOPROXY=https://proxy.golang.org
-
-KOTS_VERSION_PACKAGE = github.com/replicatedhq/kots/pkg/version
-KOTS_VERSION ?=`git describe --tags --dirty`
-DATE=`date -u +"%Y-%m-%dT%H:%M:%SZ"`
-
-GIT_TREE = $(shell git rev-parse --is-inside-work-tree 2>/dev/null)
-ifneq "$(GIT_TREE)" ""
-define GIT_UPDATE_INDEX_CMD
-git update-index --assume-unchanged
-endef
-define GIT_SHA
-`git rev-parse HEAD`
-endef
-else
-define GIT_UPDATE_INDEX_CMD
-echo "Not a git repo, skipping git update-index"
-endef
-define GIT_SHA
-""
-endef
-endif
-
-ifeq ($(KOTS_VERSION),)
-KOTS_VERSION := $(GIT_SHA)
-endif
-
-define LDFLAGS
--ldflags "\
-	-X ${KOTS_VERSION_PACKAGE}.version=${KOTS_VERSION} \
-	-X ${KOTS_VERSION_PACKAGE}.gitSHA=${GIT_SHA} \
-	-X ${KOTS_VERSION_PACKAGE}.buildTime=${DATE} \
-"
-endef
-
 BUILDTAGS = containers_image_ostree_stub exclude_graphdriver_devicemapper exclude_graphdriver_btrfs containers_image_openpgp
 
 .PHONY: kotsadm

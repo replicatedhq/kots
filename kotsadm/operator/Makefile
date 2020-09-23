@@ -1,7 +1,5 @@
-SHELL := /bin/bash -o pipefail
+include ../../Makefile.build
 CURRENT_USER := $(shell id -u -n)
-export GO111MODULE=on
-export GOPROXY=https://proxy.golang.org
 
 .PHONY: publish-pact
 publish-pact:
@@ -31,7 +29,7 @@ test: fmt vet pacts
 
 .PHONY: build
 build:
-	go build -o bin/kotsadm-operator github.com/replicatedhq/kots/kotsadm/operator/cmd/kotsadm-operator
+	go build ${LDFLAGS} -o bin/kotsadm-operator github.com/replicatedhq/kots/kotsadm/operator/cmd/kotsadm-operator
 
 .PHONY: run
 run: bin
