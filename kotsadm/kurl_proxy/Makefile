@@ -1,4 +1,5 @@
-include ../../Makefile.build
+-include ../../Makefile.build
+-include ./Makefile.build # for Dockerfile.skaffold
 
 .PHONY: test
 test:

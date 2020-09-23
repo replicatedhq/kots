@@ -2,13 +2,14 @@ FROM golang:1.14
 
 ENV PROJECTPATH=/go/src/github.com/replicatedhq/kots/kotsadm/kurl_proxy
 WORKDIR $PROJECTPATH
-ADD Makefile ./
-ADD go.mod ./
-ADD go.sum ./
-ADD cmd ./cmd
+ADD ./Makefile.build ./
+ADD ./kotsadm/kurl_proxy/Makefile ./
+ADD ./kotsadm/kurl_proxy/go.mod ./
+ADD ./kotsadm/kurl_proxy/go.sum ./
+ADD ./kotsadm/kurl_proxy/cmd ./cmd
 
 RUN make build
 
-ADD assets /assets
+ADD ./kotsadm/kurl_proxy/assets /assets
 
 ENTRYPOINT ["./bin/kurl_proxy"]

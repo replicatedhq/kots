@@ -20,7 +20,7 @@ RUN curl -fsSLO "${KUBECTL_1_16_URL}" \
 	&& ln -s "/usr/local/bin/kubectl-${KUBECTL_1_16_VERSION}" /usr/local/bin/kubectl
 
 # Install krew
-ADD ./deploy/install-krew.sh /install-krew.sh
+ADD ./kotsadm/operator/deploy/install-krew.sh /install-krew.sh
 RUN /install-krew.sh
 ENV PATH="/root/.krew/bin:$PATH"
 
@@ -38,11 +38,12 @@ RUN curl -L "https://github.com/replicatedhq/troubleshoot/releases/download/v${T
 
 ENV PROJECTPATH=/go/src/github.com/replicatedhq/kots/kotsadm/operator
 WORKDIR $PROJECTPATH
-ADD Makefile ./
-ADD go.mod ./
-ADD go.sum ./
-ADD cmd ./cmd
-ADD pkg ./pkg
+ADD ./Makefile.build ./
+ADD ./kotsadm/operator/Makefile ./
+ADD ./kotsadm/operator/go.mod ./
+ADD ./kotsadm/operator/go.sum ./
+ADD ./kotsadm/operator/cmd ./cmd
+ADD ./kotsadm/operator/pkg ./pkg
 
 RUN make build
 

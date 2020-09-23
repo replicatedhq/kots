@@ -3,9 +3,9 @@ kind: Config
 build:
   artifacts:
     - image: kurl/proxy
-      context: "."
+      context: "../../"
       docker:
-        dockerfile: Dockerfile.skaffold
+        dockerfile: ./kotsadm/kurl_proxy/Dockerfile.skaffold
 deploy:
   kustomize:
     path: "./kustomize/overlays/dev"

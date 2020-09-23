@@ -1,4 +1,5 @@
-include ../../Makefile.build
+-include ../../Makefile.build
+-include ./Makefile.build # for Dockerfile.skaffold
 CURRENT_USER := $(shell id -u -n)
 
 .PHONY: publish-pact
