@@ -443,11 +443,17 @@ func ensureKotsadm(deployOptions types.DeployOptions, clientset *kubernetes.Clie
 		}
 	}
 
+	if deployOptions.ExcludeAdminConsole && deployOptions.EnsureKotsadmConfig {
+		if err := ensureKotsadmConfig(deployOptions, clientset); err != nil {
+			return errors.Wrap(err, "failed to ensure kotsadm config")
+		}
+	}
+
 	if !deployOptions.ExcludeAdminConsole {
 		restartKotsadmAPI = false
 
 		if err := ensureKotsadmConfig(deployOptions, clientset); err != nil {
-			return errors.Wrap(err, "failed to ensure postgres")
+			return errors.Wrap(err, "failed to ensure kotsadm config")
 		}
 
 		if err := ensurePostgres(deployOptions, clientset); err != nil {
