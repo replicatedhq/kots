@@ -273,9 +273,7 @@ jobs:
       options: --user root
     steps:
     - name: Checkout
-      uses: actions/checkout@v2
-      with:
-        fetch-depth: 0
+      uses: actions/checkout@v1 # not @v2 because of: https://github.com/actions/checkout/issues/126
 
     - name: Get the version
       if: startsWith(github.ref, 'refs/tags/')
