@@ -1,5 +1,4 @@
-
-export GO111MODULE=on
+include ../Makefile.build
 
 .PHONY: generate
 generate: controller-gen client-gen

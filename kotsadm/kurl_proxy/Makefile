@@ -1,5 +1,4 @@
-SHELL := /bin/bash -o pipefail
-export GO111MODULE=on
+include ../../Makefile.build
 
 .PHONY: test
 test:
@@ -7,7 +6,7 @@ test:
 
 .PHONY: build
 build:
-	go build -ldflags="-w -s" -o bin/kurl_proxy cmd/main.go
+	go build ${LDFLAGS} -o bin/kurl_proxy cmd/main.go
 
 .PHONY: up
 up:
