@@ -94,7 +94,7 @@ func handleApp(a *apptypes.App) error {
 
 	next := pending[0]
 	if next.ScheduledTimestamp.After(time.Now()) {
-		logger.Infof("Not yet time to snapshot app %s", a.ID)
+		logger.Debugf("Not yet time to snapshot app %s", a.ID)
 		return nil
 	}
 
