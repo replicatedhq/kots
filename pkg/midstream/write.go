@@ -58,6 +58,13 @@ func (m *Midstream) WriteMidstream(options WriteOptions) error {
 		return errors.Wrap(err, "failed to write patches")
 	}
 
+	if m.Kustomization.CommonAnnotations == nil {
+		m.Kustomization.CommonAnnotations = make(map[string]string)
+	}
+	m.Kustomization.CommonAnnotations["kots.io/app-slug"] = options.AppSlug
+
+	// Note that this function does nothing on the initial install
+	// if the user is not presented with the config screen.
 	m.mergeKustomization(options, existingKustomization)
 
 	if err := m.writeKustomization(options); err != nil {
@@ -87,7 +94,6 @@ func (m *Midstream) mergeKustomization(options WriteOptions, existing *kustomize
 	}
 
 	delete(existing.CommonAnnotations, "kots.io/app-sequence")
-	existing.CommonAnnotations["kots.io/app-slug"] = options.AppSlug
 	m.Kustomization.CommonAnnotations = mergeMaps(m.Kustomization.CommonAnnotations, existing.CommonAnnotations)
 }
 
