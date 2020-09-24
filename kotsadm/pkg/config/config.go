@@ -17,6 +17,16 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
 )
 
+type ConfigOptions struct {
+	ConfigSpec        string
+	ConfigValuesSpec  string
+	LicenseSpec       string
+	RegistryHost      string
+	RegistryNamespace string
+	RegistryUser      string
+	RegistryPassword  string
+}
+
 func IsRequiredItem(item kotsv1beta1.ConfigItem) bool {
 	if !item.Required {
 		return false
@@ -37,13 +47,19 @@ func IsUnsetItem(item kotsv1beta1.ConfigItem) bool {
 	return true
 }
 
-func NeedsConfiguration(configSpec string, configValuesSpec string, licenseSpec string) (bool, error) {
-	if configSpec == "" {
+func NeedsConfiguration(opts ConfigOptions) (bool, error) {
+	if opts.ConfigSpec == "" {
 		return false, nil
 	}
 
-	localRegistry := template.LocalRegistry{}
-	rendered, err := kotsconfig.TemplateConfig(logger.NewLogger(), configSpec, configValuesSpec, licenseSpec, localRegistry)
+	localRegistry := template.LocalRegistry{
+		Host:      opts.RegistryHost,
+		Namespace: opts.RegistryNamespace,
+		Username:  opts.RegistryUser,
+		Password:  opts.RegistryPassword,
+	}
+
+	rendered, err := kotsconfig.TemplateConfig(logger.NewLogger(), opts.ConfigSpec, opts.ConfigValuesSpec, opts.LicenseSpec, localRegistry)
 	if err != nil {
 		return false, errors.Wrap(err, "failed to template config")
 	}

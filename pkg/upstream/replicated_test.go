@@ -6,6 +6,7 @@ import (
 
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	"github.com/replicatedhq/kots/kotskinds/multitype"
+	"github.com/replicatedhq/kots/pkg/template"
 	"github.com/replicatedhq/kots/pkg/upstream/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -249,13 +250,13 @@ func Test_createConfigValues(t *testing.T) {
 			Default: "default_4",
 		},
 	}
-	values1, err := createConfigValues(applicationName, config, nil, nil, nil, nil)
+	values1, err := createConfigValues(applicationName, config, nil, nil, nil, nil, template.LocalRegistry{})
 	req.NoError(err)
 	assert.Equal(t, expected1, values1.Spec.Values)
 
 	// Like an app without a config, should have exact same values
 	expected2 := configValues.Spec.Values
-	values2, err := createConfigValues(applicationName, nil, configValues, nil, nil, nil)
+	values2, err := createConfigValues(applicationName, nil, configValues, nil, nil, nil, template.LocalRegistry{})
 	req.NoError(err)
 	assert.Equal(t, expected2, values2.Spec.Values)
 
@@ -276,7 +277,7 @@ func Test_createConfigValues(t *testing.T) {
 			Default: "default_4",
 		},
 	}
-	values3, err := createConfigValues(applicationName, config, configValues, nil, nil, nil)
+	values3, err := createConfigValues(applicationName, config, configValues, nil, nil, nil, template.LocalRegistry{})
 	req.NoError(err)
 	assert.Equal(t, expected3, values3.Spec.Values)
 }

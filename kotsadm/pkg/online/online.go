@@ -176,7 +176,13 @@ func CreateAppFromOnline(pendingApp *types.PendingApp, upstreamURI string, isAut
 			return nil, errors.Wrap(err, "failed to marshal configvalues spec")
 		}
 
-		needsConfig, err := kotsadmconfig.NeedsConfiguration(configSpec, configValuesSpec, licenseSpec)
+		configOptions := kotsadmconfig.ConfigOptions{
+			ConfigSpec:       configSpec,
+			ConfigValuesSpec: configValuesSpec,
+			LicenseSpec:      licenseSpec,
+			// TODO: are there ever registry settings here?
+		}
+		needsConfig, err := kotsadmconfig.NeedsConfiguration(configOptions)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to check if app needs configuration")
 		}

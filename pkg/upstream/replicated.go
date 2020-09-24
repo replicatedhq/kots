@@ -114,7 +114,7 @@ func getUpdatesReplicated(u *url.URL, localPath string, currentCursor Replicated
 	return updates, nil
 }
 
-func downloadReplicated(u *url.URL, localPath string, rootDir string, useAppDir bool, license *kotsv1beta1.License, existingConfigValues *kotsv1beta1.ConfigValues, updateCursor ReplicatedCursor, versionLabel string, cipher *crypto.AESCipher, appSequence int64, isAirgap bool) (*types.Upstream, error) {
+func downloadReplicated(u *url.URL, localPath string, rootDir string, useAppDir bool, license *kotsv1beta1.License, existingConfigValues *kotsv1beta1.ConfigValues, updateCursor ReplicatedCursor, versionLabel string, cipher *crypto.AESCipher, appSequence int64, isAirgap bool, registry LocalRegistry) (*types.Upstream, error) {
 	var release *Release
 
 	if localPath != "" {
@@ -196,9 +196,16 @@ func downloadReplicated(u *url.URL, localPath string, rootDir string, useAppDir 
 			IsAirgap:     isAirgap,
 		}
 
+		localRegistry := template.LocalRegistry{
+			Host:      registry.Host,
+			Namespace: registry.Namespace,
+			Username:  registry.Username,
+			Password:  registry.Password,
+		}
+
 		// If config existed and was removed from the app,
 		// values will be carried over to the new version anyway.
-		configValues, err := createConfigValues(application.Name, config, existingConfigValues, cipher, license, &versionInfo)
+		configValues, err := createConfigValues(application.Name, config, existingConfigValues, cipher, license, &versionInfo, localRegistry)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to create empty config values")
 		}
@@ -498,7 +505,7 @@ func mustMarshalConfigValues(configValues *kotsv1beta1.ConfigValues) []byte {
 	return b.Bytes()
 }
 
-func createConfigValues(applicationName string, config *kotsv1beta1.Config, existingConfigValues *kotsv1beta1.ConfigValues, cipher *crypto.AESCipher, license *kotsv1beta1.License, versionInfo *template.VersionInfo) (*kotsv1beta1.ConfigValues, error) {
+func createConfigValues(applicationName string, config *kotsv1beta1.Config, existingConfigValues *kotsv1beta1.ConfigValues, cipher *crypto.AESCipher, license *kotsv1beta1.License, versionInfo *template.VersionInfo, localRegistry template.LocalRegistry) (*kotsv1beta1.ConfigValues, error) {
 	templateContextValues := make(map[string]template.ItemValue)
 
 	var newValues kotsv1beta1.ConfigValuesSpec
@@ -534,11 +541,6 @@ func createConfigValues(applicationName string, config *kotsv1beta1.Config, exis
 			Spec: newValues,
 		}, nil
 	}
-
-	// Today, these aren't needed in this function
-	// They are needed in rendering the base
-	// We should get this supported before 1.13.0 ships
-	localRegistry := template.LocalRegistry{}
 
 	builder, _, err := template.NewBuilder(config.Spec.Groups, templateContextValues, localRegistry, cipher, license, versionInfo)
 	if err != nil {

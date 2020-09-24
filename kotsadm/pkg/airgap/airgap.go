@@ -246,7 +246,17 @@ func CreateAppFromAirgap(pendingApp *types.PendingApp, airgapPath string, regist
 			return errors.Wrap(err, "failed to marshal configvalues spec")
 		}
 
-		needsConfig, err := kotsadmconfig.NeedsConfiguration(configSpec, configValuesSpec, licenseSpec)
+		configOpts := kotsadmconfig.ConfigOptions{
+			ConfigSpec:        configSpec,
+			ConfigValuesSpec:  configValuesSpec,
+			LicenseSpec:       licenseSpec,
+			RegistryHost:      registryHost,
+			RegistryNamespace: namespace,
+			RegistryUser:      username,
+			RegistryPassword:  password,
+		}
+
+		needsConfig, err := kotsadmconfig.NeedsConfiguration(configOpts)
 		if err != nil {
 			return errors.Wrap(err, "failed to check if app needs configuration")
 		}

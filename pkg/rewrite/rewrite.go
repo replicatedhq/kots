@@ -64,6 +64,12 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 		CurrentVersionLabel: rewriteOptions.Installation.Spec.VersionLabel,
 		EncryptionKey:       rewriteOptions.Installation.Spec.EncryptionKey,
 		License:             rewriteOptions.License,
+		LocalRegistry: upstream.LocalRegistry{
+			Host:      rewriteOptions.RegistryEndpoint,
+			Namespace: rewriteOptions.RegistryNamespace,
+			Username:  rewriteOptions.RegistryUsername,
+			Password:  rewriteOptions.RegistryPassword,
+		},
 	}
 
 	log.ActionWithSpinner("Pulling upstream")

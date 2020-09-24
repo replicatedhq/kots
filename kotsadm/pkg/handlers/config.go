@@ -200,8 +200,23 @@ func LiveAppConfig(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	registryInfo, err := store.GetStore().GetRegistryDetailsForApp(foundApp.ID)
+	if err != nil {
+		liveAppConfigResponse.Error = "failed to get app registry info"
+		JSON(w, http.StatusInternalServerError, liveAppConfigResponse)
+		return
+	}
+
+	localRegistry := template.LocalRegistry{}
+	if registryInfo != nil {
+		localRegistry.Host = registryInfo.Hostname
+		localRegistry.Namespace = registryInfo.Namespace
+		localRegistry.Username = registryInfo.Username
+		localRegistry.Password = registryInfo.Password
+	}
+
 	versionInfo := template.VersionInfoFromInstallation(liveAppConfigRequest.Sequence+1, foundApp.IsAirgap, kotsKinds.Installation.Spec) // sequence +1 because the sequence will be incremented on save (and we want the preview to be accurate)
-	renderedConfig, err := kotsconfig.TemplateConfigObjects(kotsKinds.Config, configValues, appLicense, template.LocalRegistry{}, &versionInfo)
+	renderedConfig, err := kotsconfig.TemplateConfigObjects(kotsKinds.Config, configValues, appLicense, localRegistry, &versionInfo)
 	if err != nil {
 		liveAppConfigResponse.Error = "failed to render templates"
 		JSON(w, http.StatusInternalServerError, liveAppConfigResponse)
@@ -266,8 +281,23 @@ func CurrentAppConfig(w http.ResponseWriter, r *http.Request) {
 		configValues[key] = generatedValue
 	}
 
+	registryInfo, err := store.GetStore().GetRegistryDetailsForApp(foundApp.ID)
+	if err != nil {
+		currentAppConfigResponse.Error = "failed to get app registry info"
+		JSON(w, http.StatusInternalServerError, currentAppConfigResponse)
+		return
+	}
+
+	localRegistry := template.LocalRegistry{}
+	if registryInfo != nil {
+		localRegistry.Host = registryInfo.Hostname
+		localRegistry.Namespace = registryInfo.Namespace
+		localRegistry.Username = registryInfo.Username
+		localRegistry.Password = registryInfo.Password
+	}
+
 	versionInfo := template.VersionInfoFromInstallation(int64(sequence)+1, foundApp.IsAirgap, kotsKinds.Installation.Spec) // sequence +1 because the sequence will be incremented on save (and we want the preview to be accurate)
-	renderedConfig, err := kotsconfig.TemplateConfigObjects(kotsKinds.Config, configValues, appLicense, template.LocalRegistry{}, &versionInfo)
+	renderedConfig, err := kotsconfig.TemplateConfigObjects(kotsKinds.Config, configValues, appLicense, localRegistry, &versionInfo)
 	if err != nil {
 		currentAppConfigResponse.Error = "failed to render templates"
 		JSON(w, http.StatusInternalServerError, currentAppConfigResponse)
