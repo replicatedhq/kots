@@ -34,11 +34,15 @@ func getUpdatesUpstream(upstreamURI string, fetchOptions *FetchOptions) ([]Updat
 		return getUpdatesHelm(u, fetchOptions.HelmRepoURI)
 	}
 	if u.Scheme == "replicated" {
-		cursor := ReplicatedCursor{
+		currentCursor := ReplicatedCursor{
 			ChannelName: fetchOptions.CurrentChannel,
 			Cursor:      fetchOptions.CurrentCursor,
 		}
-		return getUpdatesReplicated(u, fetchOptions.LocalPath, cursor, fetchOptions.CurrentVersionLabel, fetchOptions.License)
+		downstreamCursor := ReplicatedCursor{
+			ChannelName: fetchOptions.DownstreamChannel,
+			Cursor:      fetchOptions.DownstreamCursor,
+		}
+		return getUpdatesReplicated(u, fetchOptions.LocalPath, currentCursor, fetchOptions.CurrentVersionLabel, downstreamCursor, fetchOptions.License)
 	}
 	if u.Scheme == "git" {
 		// return getUpdatesGit(upstreamURI)

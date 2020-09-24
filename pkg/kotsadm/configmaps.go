@@ -36,7 +36,7 @@ func ensureKotsadmConfig(deployOptions types.DeployOptions, clientset *kubernete
 	}
 
 	if err := ensureConfigMaps(deployOptions, clientset); err != nil {
-		return errors.Wrap(err, "failed to ensure private kotsadm registry secret")
+		return errors.Wrap(err, "failed to ensure kotsadm config maps")
 	}
 
 	return nil
