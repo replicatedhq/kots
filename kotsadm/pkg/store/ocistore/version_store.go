@@ -319,6 +319,11 @@ func (s OCIStore) CreateAppVersion(appID string, currentSequence *int64, appName
 		previousArchiveDir = previousDir
 	}
 
+	registryInfo, err := s.GetRegistryDetailsForApp(appID)
+	if err != nil {
+		return int64(0), errors.Wrap(err, "failed to get app registry info")
+	}
+
 	downstreams, err := s.ListDownstreamsForApp(appID)
 	if err != nil {
 		return int64(0), errors.Wrap(err, "failed to list downstreams")
@@ -348,8 +353,20 @@ func (s OCIStore) CreateAppVersion(appID string, currentSequence *int64, appName
 				return int64(0), errors.Wrap(err, "failed to marshal configvalues spec")
 			}
 
+			configOpts := kotsconfig.ConfigOptions{
+				ConfigSpec:       configSpec,
+				ConfigValuesSpec: configValuesSpec,
+				LicenseSpec:      licenseSpec,
+			}
+			if registryInfo != nil {
+				configOpts.RegistryHost = registryInfo.Hostname
+				configOpts.RegistryNamespace = registryInfo.Namespace
+				configOpts.RegistryUser = registryInfo.Username
+				configOpts.RegistryPassword = registryInfo.Password
+			}
+
 			// check if version needs additional configuration
-			t, err := kotsconfig.NeedsConfiguration(configSpec, configValuesSpec, licenseSpec)
+			t, err := kotsconfig.NeedsConfiguration(configOpts)
 			if err != nil {
 				return int64(0), errors.Wrap(err, "failed to check if version needs configuration")
 			}

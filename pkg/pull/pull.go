@@ -109,13 +109,20 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 		return "", errors.Wrap(err, "failed to parse uri")
 	}
 
-	fetchOptions := upstream.FetchOptions{}
-	fetchOptions.HelmRepoURI = pullOptions.HelmRepoURI
-	fetchOptions.RootDir = pullOptions.RootDir
-	fetchOptions.UseAppDir = pullOptions.CreateAppDir
-	fetchOptions.LocalPath = pullOptions.LocalPath
-	fetchOptions.CurrentCursor = pullOptions.UpdateCursor
-	fetchOptions.AppSequence = pullOptions.AppSequence
+	fetchOptions := upstream.FetchOptions{
+		HelmRepoURI:   pullOptions.HelmRepoURI,
+		RootDir:       pullOptions.RootDir,
+		UseAppDir:     pullOptions.CreateAppDir,
+		LocalPath:     pullOptions.LocalPath,
+		CurrentCursor: pullOptions.UpdateCursor,
+		AppSequence:   pullOptions.AppSequence,
+		LocalRegistry: upstream.LocalRegistry{
+			Host:      pullOptions.RewriteImageOptions.Host,
+			Namespace: pullOptions.RewriteImageOptions.Namespace,
+			Username:  pullOptions.RewriteImageOptions.Username,
+			Password:  pullOptions.RewriteImageOptions.Password,
+		},
+	}
 
 	var installation *kotsv1beta1.Installation
 
