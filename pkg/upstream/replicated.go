@@ -435,7 +435,6 @@ func listPendingChannelReleases(replicatedUpstream *ReplicatedUpstream, license 
 
 	urlValues := url.Values{}
 	urlValues.Set("channelSequence", sequence)
-	urlValues.Add("channelName", currentCursor.ChannelName)
 	urlValues.Add("downstreamChannelSequence", downstreamCursor.Cursor)
 	urlValues.Add("downstreamChannelName", downstreamCursor.ChannelName)
 	urlValues.Add("licenseSequence", fmt.Sprintf("%d", license.Spec.LicenseSequence))
