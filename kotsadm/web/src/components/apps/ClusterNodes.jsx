@@ -8,6 +8,8 @@ import NodeRow from "./NodeRow";
 import Loader from "../shared/Loader";
 import { Utilities } from "../../utilities/utilities";
 import { Repeater } from "../../utilities/repeater";
+import ErrorModal from "../modals/ErrorModal";
+import Modal from "react-modal";
 
 import "@src/scss/components/apps/ClusterNodes.scss";
 
@@ -20,7 +22,9 @@ export class ClusterNodes extends Component {
     selectedNodeType: "worker", // Change when master node script is enabled
     generateCommandErrMsg: "",
     kurl: null,
-    getNodeStatus: new Repeater()
+    getNodeStatus: new Repeater(),
+    deletNodeError: "",
+    confirmDeleteNode: ""
   }
 
   componentDidMount() {
@@ -57,6 +61,21 @@ export class ClusterNodes extends Component {
   }
 
   deleteNode = (name) => {
+    this.setState({
+      confirmDeleteNode: name,
+    });
+  }
+
+  cancelDeleteNode = () => {
+    this.setState({
+      confirmDeleteNode: "",
+    });
+  }
+
+  reallyDeleteNode = () => {
+    const name = this.state.confirmDeleteNode;
+    this.cancelDeleteNode();
+
     fetch(`${window.env.API_ENDPOINT}/kurl/nodes/${name}`, {
       headers: {
         "Authorization": Utilities.getToken(),
@@ -65,7 +84,23 @@ export class ClusterNodes extends Component {
       },
       method: "DELETE",
     })
-      .then(async (res) => {})
+      .then(async (res) => {
+        if (!res.ok) {
+          if (res.status === 401) {
+            Utilities.logoutUser();
+            return;
+          }
+          if (res.status === 422) {
+            this.setState({
+              deleteNodeError: "The ekco add-on is required to delete nodes but was not found in your cluster. https://kurl.sh/docs/add-ons/ekco",
+            });
+            return;
+          }
+          this.setState({
+            deleteNodeError: `Delete failed with status ${res.status}`,
+          });
+        }
+      })
       .catch((err) => {
         console.log(err);
       })
@@ -153,6 +188,10 @@ export class ClusterNodes extends Component {
         await this.generateMasterAddNodeCommand();
       }
     });
+  }
+
+  ackDeleteNodeError = () => {
+    this.setState({ deleteNodeError: "" });
   }
 
   render() {
@@ -289,6 +328,44 @@ export class ClusterNodes extends Component {
             : null}
           </div>
         </div>
+        {this.state.deleteNodeError &&
+          <ErrorModal
+            errorModal={true}
+            toggleErrorModal={this.ackDeleteNodeError}
+            err={"Failed to delete node"}
+            errMsg={this.state.deleteNodeError}
+          />
+        }
+        <Modal
+          isOpen={!!this.state.confirmDeleteNode}
+          onRequestClose={this.cancelDeleteNode}
+          shouldReturnFocusAfterClose={false}
+          contentLabel="Confirm Delete Node"
+          ariaHideApp={false}
+          className="Modal"
+        >
+          <div className="Modal-body">
+            <p className="u-fontSize--normal u-color--dustyGray u-lineHeight--normal u-marginBottom--20">
+              Deleting this node may cause data loss. Are you sure you want to proceed?
+            </p>
+            <div className="u-marginTop--10 flex">
+              <button
+                onClick={this.reallyDeleteNode}
+                type="button"
+                className="btn blue primary"
+              >
+                Delete {this.state.confirmDeleteNode}
+              </button>
+              <button
+                onClick={this.cancelDeleteNode}
+                type="button"
+                className="btn secondary u-marginLeft--20"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </Modal>
       </div>
     );
   }

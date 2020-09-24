@@ -11,39 +11,49 @@ require (
 	github.com/bitnami-labs/sealed-secrets v0.12.5
 	github.com/containerd/containerd v1.3.2
 	github.com/containers/image/v5 v5.5.2
-	github.com/coreos/etcd v3.3.13+incompatible
 	github.com/deislabs/oras v0.8.1
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/docker/distribution v2.7.1+incompatible
 	github.com/docker/go-units v0.4.0
+	github.com/emicklei/go-restful v2.10.0+incompatible // indirect
 	github.com/go-logfmt/logfmt v0.4.0
+	github.com/go-openapi/spec v0.19.5 // indirect
+	github.com/golang/groupcache v0.0.0-20191027212112-611e8accdfc9 // indirect
 	github.com/gorilla/mux v1.7.4
 	github.com/gorilla/websocket v1.4.0
 	github.com/gosimple/slug v1.9.0
+	github.com/hashicorp/go-version v1.2.0 // indirect
+	github.com/hashicorp/golang-lru v0.5.3 // indirect
 	github.com/lib/pq v1.3.0
 	github.com/marccampbell/yaml-toolbox v0.0.0-20200805160637-950ceb36c770
 	github.com/mholt/archiver v3.1.1+incompatible
 	github.com/opencontainers/image-spec v1.0.2-0.20190823105129-775207bd45b6
 	github.com/pkg/errors v0.9.1
+	github.com/prometheus/client_golang v1.5.0 // indirect
 	github.com/replicatedhq/kots v0.0.0-00010101000000-000000000000
 	github.com/replicatedhq/troubleshoot v0.9.42
 	github.com/replicatedhq/yaml/v3 v3.0.0-beta5-replicatedhq
 	github.com/robfig/cron v1.1.0
 	github.com/robfig/cron/v3 v3.0.0
 	github.com/segmentio/ksuid v1.0.2
+	github.com/sergi/go-diff v1.1.0
 	github.com/spf13/cobra v1.0.0
 	github.com/spf13/viper v1.6.2
 	github.com/stretchr/testify v1.6.1
 	github.com/vmware-tanzu/velero v1.4.2
 	go.uber.org/zap v1.13.0
 	golang.org/x/crypto v0.0.0-20200423211502-4bdfaf469ed5
+	golang.org/x/oauth2 v0.0.0-20200107190931-bf48bf16ab8d // indirect
+	golang.org/x/text v0.3.3 // indirect
+	golang.org/x/tools v0.0.0-20200319210407-521f4a0cd458 // indirect
 	google.golang.org/api v0.9.0
-	gopkg.in/ini.v1 v1.51.0
+	gopkg.in/go-playground/assert.v1 v1.2.1
+	gopkg.in/ini.v1 v1.51.1
 	gopkg.in/src-d/go-git.v4 v4.13.1
 	gopkg.in/yaml.v2 v2.3.0
 	k8s.io/api v0.18.4
 	k8s.io/apimachinery v0.18.4
-	k8s.io/client-go v0.18.4
+	k8s.io/client-go v12.0.0+incompatible
 	k8s.io/cluster-bootstrap v0.18.4
 	k8s.io/kubernetes v1.18.4
 	k8s.io/utils v0.0.0-20200603063816-c1c6865ac451

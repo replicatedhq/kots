@@ -9,10 +9,12 @@ import (
 	"math"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/kotsadm/pkg/kurl/types"
 	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
+	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/api/core/v1"
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -75,7 +77,7 @@ func GetNodes(client kubernetes.Interface) (*types.KurlNodes, error) {
 
 		toReturn.Nodes = append(toReturn.Nodes, types.Node{
 			Name:           node.Name,
-			IsConnected:    true,
+			IsConnected:    isConnected(node),
 			CanDelete:      node.Spec.Unschedulable,
 			KubeletVersion: node.Status.NodeInfo.KubeletVersion,
 			CPU:            cpuCapacity,
@@ -128,7 +130,10 @@ func findNodeConditions(conditions []v1.NodeCondition) types.NodeConditions {
 
 // get kubelet PKI info from /etc/kubernetes/pki/kubelet, use it to hit metrics server at `http://${nodeIP}:10255/stats/summary`
 func getNodeMetrics(nodeIP string) (*statsv1alpha1.Summary, error) {
-	r := &http.Response{}
+	client := http.Client{
+		Timeout: time.Second,
+	}
+	port := 10255
 
 	// only use mutual TLS if client cert exists
 	_, err := ioutil.ReadFile("/etc/kubernetes/pki/kubelet/client.crt")
@@ -138,20 +143,16 @@ func getNodeMetrics(nodeIP string) (*statsv1alpha1.Summary, error) {
 			return nil, errors.Wrap(err, "get client keypair")
 		}
 
-		client := http.Client{
-			Transport: &http.Transport{
-				TLSClientConfig: &tls.Config{
-					Certificates:       []tls.Certificate{cert},
-					InsecureSkipVerify: true,
-				},
+		client.Transport = &http.Transport{
+			TLSClientConfig: &tls.Config{
+				Certificates:       []tls.Certificate{cert},
+				InsecureSkipVerify: true,
 			},
 		}
-		r, err = client.Get(fmt.Sprintf("https://%s:10250/stats/summary", nodeIP))
-	} else {
-		client := http.Client{}
-		r, err = client.Get(fmt.Sprintf("http://%s:10255/stats/summary", nodeIP))
+		port = 10250
 	}
 
+	r, err := client.Get(fmt.Sprintf("https://%s:%d/stats/summary", nodeIP, port))
 	if err != nil {
 		return nil, errors.Wrapf(err, "get node %s stats", nodeIP)
 	}
@@ -169,4 +170,14 @@ func getNodeMetrics(nodeIP string) (*statsv1alpha1.Summary, error) {
 	}
 
 	return &summary, nil
+}
+
+func isConnected(node corev1.Node) bool {
+	for _, taint := range node.Spec.Taints {
+		if taint.Key == "node.kubernetes.io/unreachable" {
+			return false
+		}
+	}
+
+	return true
 }
