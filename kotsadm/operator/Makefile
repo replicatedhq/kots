@@ -1,4 +1,4 @@
-include ../../Makefile.build
+include ./Makefile.build
 CURRENT_USER := $(shell id -u -n)
 
 .PHONY: publish-pact
