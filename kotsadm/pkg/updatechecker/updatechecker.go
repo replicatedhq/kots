@@ -191,10 +191,37 @@ func CheckForUpdates(appID string, deploy bool) (int64, error) {
 	}
 
 	getUpdatesOptions := kotspull.GetUpdatesOptions{
-		License:        latestLicense,
-		CurrentCursor:  kotsKinds.Installation.Spec.UpdateCursor,
-		CurrentChannel: kotsKinds.Installation.Spec.ChannelName,
-		Silent:         false,
+		License:             latestLicense,
+		CurrentCursor:       kotsKinds.Installation.Spec.UpdateCursor,
+		CurrentChannel:      kotsKinds.Installation.Spec.ChannelName,
+		CurrentVersionLabel: kotsKinds.Installation.Spec.VersionLabel,
+		Silent:              false,
+	}
+
+	// get info about the deployed app version for reporting purposes
+	downstreams, err := store.GetStore().ListDownstreamsForApp(a.ID)
+	if err != nil {
+		return 0, errors.Wrap(err, "failed to list downstreams for app")
+	}
+
+	deployedAppSequence, err := downstream.GetCurrentParentSequence(a.ID, downstreams[0].ClusterID)
+	if err != nil {
+		return 0, errors.Wrap(err, "failed to get current downstream parent sequence")
+	}
+
+	if deployedAppSequence != -1 {
+		deployedArchiveDir, err := store.GetStore().GetAppVersionArchive(a.ID, deployedAppSequence)
+		if err != nil {
+			return 0, errors.Wrap(err, "failed to get app version archive")
+		}
+
+		deployedKotsKinds, err := kotsutil.LoadKotsKindsFromPath(deployedArchiveDir)
+		if err != nil {
+			return 0, errors.Wrap(err, "failed to load kotskinds from path")
+		}
+
+		getUpdatesOptions.DownstreamCursor = deployedKotsKinds.Installation.Spec.UpdateCursor
+		getUpdatesOptions.DownstreamChannel = deployedKotsKinds.Installation.Spec.ChannelName
 	}
 
 	updates, err := kotspull.GetUpdates(fmt.Sprintf("replicated://%s", kotsKinds.License.Spec.AppSlug), getUpdatesOptions)

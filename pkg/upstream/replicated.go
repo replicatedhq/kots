@@ -74,14 +74,14 @@ func (this ReplicatedCursor) Equal(other ReplicatedCursor) bool {
 	return this.ChannelName == other.ChannelName && this.Cursor == other.Cursor
 }
 
-func getUpdatesReplicated(u *url.URL, localPath string, currentCursor ReplicatedCursor, versionLabel string, license *kotsv1beta1.License) ([]Update, error) {
+func getUpdatesReplicated(u *url.URL, localPath string, currentCursor ReplicatedCursor, currentVersionLabel string, downstreamCursor ReplicatedCursor, license *kotsv1beta1.License) ([]Update, error) {
 	if localPath != "" {
-		parsedLocalRelease, err := readReplicatedAppFromLocalPath(localPath, currentCursor, versionLabel)
+		parsedLocalRelease, err := readReplicatedAppFromLocalPath(localPath, currentCursor, currentVersionLabel)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to read replicated app from local path")
 		}
 
-		return []Update{{Cursor: parsedLocalRelease.UpdateCursor.Cursor, VersionLabel: versionLabel}}, nil
+		return []Update{{Cursor: parsedLocalRelease.UpdateCursor.Cursor, VersionLabel: currentVersionLabel}}, nil
 	}
 
 	// A license file is required to be set for this to succeed
@@ -99,7 +99,7 @@ func getUpdatesReplicated(u *url.URL, localPath string, currentCursor Replicated
 		return nil, errors.Wrap(err, "failed to get successful head response")
 	}
 
-	pendingReleases, err := listPendingChannelReleases(replicatedUpstream, remoteLicense, currentCursor)
+	pendingReleases, err := listPendingChannelReleases(replicatedUpstream, remoteLicense, currentCursor, downstreamCursor)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to list replicated app releases")
 	}
@@ -417,7 +417,7 @@ func downloadReplicatedApp(replicatedUpstream *ReplicatedUpstream, license *kots
 	return &release, nil
 }
 
-func listPendingChannelReleases(replicatedUpstream *ReplicatedUpstream, license *kotsv1beta1.License, cursor ReplicatedCursor) ([]ChannelRelease, error) {
+func listPendingChannelReleases(replicatedUpstream *ReplicatedUpstream, license *kotsv1beta1.License, currentCursor ReplicatedCursor, downstreamCursor ReplicatedCursor) ([]ChannelRelease, error) {
 	u, err := url.Parse(license.Spec.Endpoint)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to parse endpoint from license")
@@ -428,13 +428,16 @@ func listPendingChannelReleases(replicatedUpstream *ReplicatedUpstream, license 
 		hostname = fmt.Sprintf("%s:%s", u.Hostname(), u.Port())
 	}
 
-	sequence := cursor.Cursor
-	if license.Spec.ChannelName != cursor.ChannelName {
+	sequence := currentCursor.Cursor
+	if license.Spec.ChannelName != currentCursor.ChannelName {
 		sequence = ""
 	}
 
 	urlValues := url.Values{}
 	urlValues.Set("channelSequence", sequence)
+	urlValues.Add("channelName", currentCursor.ChannelName)
+	urlValues.Add("downstreamChannelSequence", downstreamCursor.Cursor)
+	urlValues.Add("downstreamChannelName", downstreamCursor.ChannelName)
 	urlValues.Add("licenseSequence", fmt.Sprintf("%d", license.Spec.LicenseSequence))
 	url := fmt.Sprintf("%s://%s/release/%s/pending?%s", u.Scheme, hostname, license.Spec.AppSlug, urlValues.Encode())
 

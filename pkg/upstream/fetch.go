@@ -24,6 +24,8 @@ type FetchOptions struct {
 	CurrentCursor       string
 	CurrentChannel      string
 	CurrentVersionLabel string
+	DownstreamCursor    string
+	DownstreamChannel   string
 	AppSequence         int64
 }
 
