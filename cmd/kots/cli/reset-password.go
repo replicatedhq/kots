@@ -52,47 +52,8 @@ func ResetPasswordCmd() *cobra.Command {
 				os.Exit(1)
 			}
 
-			bcryptPassword, err := bcrypt.GenerateFromPassword([]byte(newPassword), 10)
-			if err != nil {
-				return errors.Wrap(err, "failed to create encrypt password")
-			}
-
-			clientset, err := k8sutil.GetClientset(kubernetesConfigFlags)
-			if err != nil {
-				return errors.Wrap(err, "failed to create k8s client")
-			}
-
-			existingSecret, err := clientset.CoreV1().Secrets(namespace).Get(context.TODO(), "kotsadm-password", metav1.GetOptions{})
-			if err != nil {
-				if !kuberneteserrors.IsNotFound(err) {
-					return errors.Wrap(err, "failed to lookup secret")
-				}
-
-				newSecret := &corev1.Secret{
-					TypeMeta: metav1.TypeMeta{
-						APIVersion: "v1",
-						Kind:       "Secret",
-					},
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "kotsadm-password",
-						Namespace: namespace,
-					},
-					Data: map[string][]byte{
-						"passwordBcrypt": []byte(bcryptPassword),
-					},
-				}
-
-				_, err := clientset.CoreV1().Secrets(namespace).Create(context.TODO(), newSecret, metav1.CreateOptions{})
-				if err != nil {
-					return errors.Wrap(err, "failed to create secret")
-				}
-			} else {
-				existingSecret.Data["passwordBcrypt"] = []byte(bcryptPassword)
-
-				_, err := clientset.CoreV1().Secrets(namespace).Update(context.TODO(), existingSecret, metav1.UpdateOptions{})
-				if err != nil {
-					return errors.Wrap(err, "failed to update secret")
-				}
+			if err := setKotsadmPassword(newPassword, namespace); err != nil {
+				return errors.Wrap(err, "failed to set new password")
 			}
 
 			log.ActionWithoutSpinner("The admin console password has been reset")
@@ -135,4 +96,51 @@ func promptForNewPassword() (string, error) {
 
 		return result, nil
 	}
+}
+
+func setKotsadmPassword(password string, namespace string) error {
+	bcryptPassword, err := bcrypt.GenerateFromPassword([]byte(password), 10)
+	if err != nil {
+		return errors.Wrap(err, "failed to create encrypt password")
+	}
+
+	clientset, err := k8sutil.GetClientset(kubernetesConfigFlags)
+	if err != nil {
+		return errors.Wrap(err, "failed to create k8s client")
+	}
+
+	existingSecret, err := clientset.CoreV1().Secrets(namespace).Get(context.TODO(), "kotsadm-password", metav1.GetOptions{})
+	if err != nil {
+		if !kuberneteserrors.IsNotFound(err) {
+			return errors.Wrap(err, "failed to lookup secret")
+		}
+
+		newSecret := &corev1.Secret{
+			TypeMeta: metav1.TypeMeta{
+				APIVersion: "v1",
+				Kind:       "Secret",
+			},
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "kotsadm-password",
+				Namespace: namespace,
+			},
+			Data: map[string][]byte{
+				"passwordBcrypt": []byte(bcryptPassword),
+			},
+		}
+
+		_, err := clientset.CoreV1().Secrets(namespace).Create(context.TODO(), newSecret, metav1.CreateOptions{})
+		if err != nil {
+			return errors.Wrap(err, "failed to create secret")
+		}
+	} else {
+		existingSecret.Data["passwordBcrypt"] = []byte(bcryptPassword)
+
+		_, err := clientset.CoreV1().Secrets(namespace).Update(context.TODO(), existingSecret, metav1.UpdateOptions{})
+		if err != nil {
+			return errors.Wrap(err, "failed to update secret")
+		}
+	}
+
+	return nil
 }

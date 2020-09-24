@@ -86,11 +86,13 @@ func restartKotsadm(deployOptions *types.DeployOptions, clientset *kubernetes.Cl
 		return errors.Wrap(err, "failed to list pods for termination")
 	}
 
+	deletedPods := make(map[string]bool)
 	for _, pod := range pods.Items {
 		err := clientset.CoreV1().Pods(deployOptions.Namespace).Delete(context.TODO(), pod.Name, metav1.DeleteOptions{})
 		if err != nil {
 			return errors.Wrap(err, "failed to delete admin console")
 		}
+		deletedPods[pod.Name] = true
 	}
 
 	// wait for pods to stop running, or waiting for new pods will trip up.
@@ -103,6 +105,10 @@ func restartKotsadm(deployOptions *types.DeployOptions, clientset *kubernetes.Cl
 
 		keepWaiting := false
 		for _, pod := range pods.Items {
+			if !deletedPods[pod.Name] {
+				continue
+			}
+
 			if pod.Status.Phase == corev1.PodRunning {
 				keepWaiting = true
 				break

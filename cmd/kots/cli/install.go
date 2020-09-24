@@ -130,6 +130,8 @@ func InstallCmd() *cobra.Command {
 				return errors.Wrap(err, "failed to check kURL")
 			}
 
+			sharedPassword := v.GetString("shared-password")
+
 			registryEndpoint := v.GetString("kotsadm-registry")
 			registryNamespace := v.GetString("kotsadm-namespace")
 			registryUsername := v.GetString("registry-username")
@@ -138,6 +140,9 @@ func InstallCmd() *cobra.Command {
 				registryEndpoint, registryUsername, registryPassword, err = kotsutil.GetKurlRegistryCreds()
 				if err != nil {
 					return errors.Wrap(err, "failed to get kURL registry info")
+				}
+				if registryNamespace == "" && license != nil {
+					registryNamespace = license.Spec.AppSlug
 				}
 				if registryNamespace == "" {
 					return errors.New("--kotsadm-namespace is required")
@@ -148,7 +153,7 @@ func InstallCmd() *cobra.Command {
 				Namespace:                 namespace,
 				KubernetesConfigFlags:     kubernetesConfigFlags,
 				Context:                   v.GetString("context"),
-				SharedPassword:            v.GetString("shared-password"),
+				SharedPassword:            sharedPassword,
 				ServiceType:               v.GetString("service-type"),
 				NodePort:                  v.GetInt32("node-port"),
 				ApplicationMetadata:       applicationMetadata,
@@ -197,6 +202,7 @@ func InstallCmd() *cobra.Command {
 
 			if isKurl && deployOptions.Namespace == metav1.NamespaceDefault {
 				deployOptions.ExcludeAdminConsole = true
+				deployOptions.EnsureKotsadmConfig = true
 			}
 
 			log.ActionWithoutSpinner("Deploying Admin Console")
@@ -205,6 +211,12 @@ func InstallCmd() *cobra.Command {
 					return errors.Errorf("Failed to deploy: %s. Use the --wait-duration flag to increase timeout.", err)
 				}
 				return errors.Wrap(err, "failed to deploy")
+			}
+
+			if deployOptions.ExcludeAdminConsole && sharedPassword != "" {
+				if err := setKotsadmPassword(sharedPassword, namespace); err != nil {
+					return errors.Wrap(err, "failed to set new password")
+				}
 			}
 
 			// port forward
