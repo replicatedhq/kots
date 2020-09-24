@@ -39,6 +39,7 @@ RUN curl -L "https://github.com/replicatedhq/troubleshoot/releases/download/v${T
 ENV PROJECTPATH=/go/src/github.com/replicatedhq/kots/kotsadm/operator
 WORKDIR $PROJECTPATH
 ADD Makefile ./
+ADD Makefile.build ./
 ADD go.mod ./
 ADD go.sum ./
 ADD cmd ./cmd

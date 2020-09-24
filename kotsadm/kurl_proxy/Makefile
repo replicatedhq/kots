@@ -1,4 +1,4 @@
-include ../../Makefile.build
+include ./Makefile.build
 
 .PHONY: test
 test:
