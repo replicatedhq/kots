@@ -72,7 +72,10 @@ type ChannelRelease struct {
 }
 
 func (this ReplicatedCursor) Equal(other ReplicatedCursor) bool {
-	return this.ChannelID == other.ChannelID && this.ChannelName == other.ChannelName && this.Cursor == other.Cursor
+	if this.ChannelID != "" && other.ChannelID != "" {
+		return this.ChannelID == other.ChannelID && this.Cursor == other.Cursor
+	}
+	return this.ChannelName == other.ChannelName && this.Cursor == other.Cursor
 }
 
 func getUpdatesReplicated(u *url.URL, localPath string, currentCursor ReplicatedCursor, currentVersionLabel string, downstreamCursor ReplicatedCursor, license *kotsv1beta1.License) ([]Update, error) {
