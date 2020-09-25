@@ -92,6 +92,7 @@ func pickVersionLabel(fetchOptions *FetchOptions) string {
 func pickCursor(fetchOptions *FetchOptions) ReplicatedCursor {
 	if fetchOptions.Airgap != nil && fetchOptions.Airgap.Spec.UpdateCursor != "" {
 		return ReplicatedCursor{
+			ChannelID:   fetchOptions.Airgap.Spec.ChannelID,
 			ChannelName: fetchOptions.Airgap.Spec.ChannelName,
 			Cursor:      fetchOptions.Airgap.Spec.UpdateCursor,
 		}
