@@ -61,7 +61,7 @@ class AirgapUploadProgress extends React.Component {
   }
   
   render() {
-    const { total, progress, onProgressError, onProgressSuccess, smallSize } = this.props;
+    const { total, progress, resuming, onProgressError, onProgressSuccess, smallSize } = this.props;
     const { installStatus, currentMessage } = this.state;
 
     if (installStatus === "installed") {
@@ -78,7 +78,6 @@ class AirgapUploadProgress extends React.Component {
     }
 
     const hasError = installStatus === "airgap_upload_error";
-
     if (hasError) {
       this.state.getAirgapInstallStatusJob.stop();
       onProgressError(currentMessage);
@@ -118,6 +117,9 @@ class AirgapUploadProgress extends React.Component {
     }
 
     let statusMsg = currentMessage;
+    if (!statusMsg && resuming) {
+      statusMsg = "Resuming, please wait"
+    }
     try {
       // Some of these messages will be JSON formatted progress reports.
       const jsonMessage = JSON.parse(statusMsg);

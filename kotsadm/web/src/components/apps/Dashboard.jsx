@@ -277,6 +277,7 @@ class Dashboard extends Component {
       airgapUploadError: null,
       uploadProgress: 0,
       uploadSize: 0,
+      uploadResuming: false,
     });
 
     this.props.toggleIsBundleUploading(true);
@@ -287,10 +288,11 @@ class Dashboard extends Component {
     this.airgapUploader.upload(params, this.onUploadProgress, this.onUploadError, this.onUploadComplete);
   }
 
-  onUploadProgress = (progress, size) => {
+  onUploadProgress = (progress, size, resuming = false) => {
     this.setState({
       uploadProgress: progress,
       uploadSize: size,
+      uploadResuming: resuming,
     });
   }
 
@@ -300,6 +302,7 @@ class Dashboard extends Component {
       checkingForUpdates: false,
       uploadProgress: 0,
       uploadSize: 0,
+      uploadResuming: false,
       airgapUploadError: message || "Error uploading bundle, please try again"
     });
     this.props.toggleIsBundleUploading(false);
@@ -311,6 +314,7 @@ class Dashboard extends Component {
       uploadingAirgapFile: false,
       uploadProgress: 0,
       uploadSize: 0,
+      uploadResuming: false,
     });
     this.props.toggleIsBundleUploading(false);
   }
@@ -327,6 +331,7 @@ class Dashboard extends Component {
       checkingForUpdates: false,
       uploadProgress: 0,
       uploadSize: 0,
+      uploadResuming: false,
     });
   }
 
@@ -580,6 +585,7 @@ class Dashboard extends Component {
                 airgapUploadError={airgapUploadError}
                 uploadProgress={this.state.uploadProgress}
                 uploadSize={this.state.uploadSize}
+                uploadResuming={this.state.uploadResuming}
                 onProgressError={this.onProgressError}
                 onCheckForUpdates={() => this.onCheckForUpdates()}
                 onUploadNewVersion={() => this.onUploadNewVersion()}

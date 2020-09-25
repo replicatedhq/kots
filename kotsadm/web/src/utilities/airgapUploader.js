@@ -89,20 +89,21 @@ export class AirgapUploader {
 
       if (!this.hasListeners) {
         this.resumableUploader.on('fileProgress', () => {
-          // the resumablejs library returns progress as 1 in both cases of "error" and "success"
-          // we don't wanna show the progress as 100% while reconnecting in case of an error (upload is not complete)
-          const progress = this.resumableUploader.progress();
-          if (progress === 1 && !this.resumableFile.isComplete()) {
-            return;
-          }
-          // when an error occurs during uploading one of the chunks, the uploader or the user will retry uploading the file from the
-          // beginning to check if any previously uploaded chunks were lost. during that process, the progress will be less than the 
-          // actual progress if no data loss occured, so we keep the UI progress as is until it catches up.
-          if (progress < this.apiCurrentProgress) {
-            return;
-          }
           if (this.onProgress) {
+            // the resumablejs library returns progress as 1 in both cases of "error" and "success"
+            // we don't wanna show the progress as 100% while reconnecting in case of an error (upload is not complete)
+            const progress = this.resumableUploader.progress();
+            if (progress === 1 && !this.resumableFile.isComplete()) {
+              return;
+            }
             const size = this.resumableUploader.getSize();
+            if (progress < this.apiCurrentProgress) {
+              // when an error occurs during uploading one of the chunks, the uploader or the user will retry uploading the file from the
+              // beginning to check if any previously uploaded chunks were lost. during that process, the progress will be less than the 
+              // actual progress if no data loss occured, so we keep the UI progress as is until it catches up, and show a "resuming" message to the user.
+              this.onProgress(this.apiCurrentProgress, size, true);
+              return;
+            }
             this.onProgress(progress, size);
           }
         });
