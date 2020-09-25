@@ -250,50 +250,50 @@ func CollectSupportBundle(w http.ResponseWriter, r *http.Request) {
 func UploadSupportBundle(w http.ResponseWriter, r *http.Request) {
 	bundleContents, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		logger.Error(err)
-		w.WriteHeader(500)
+		logger.Error(errors.Wrap(err, "failed to read request body"))
+		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
 	tmpFile, err := ioutil.TempFile("", "kots")
 	if err != nil {
-		logger.Error(err)
-		w.WriteHeader(500)
+		logger.Error(errors.Wrap(err, "failed to create temp file"))
+		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
 	err = ioutil.WriteFile(tmpFile.Name(), bundleContents, 0644)
 	if err != nil {
-		logger.Error(err)
-		w.WriteHeader(500)
+		logger.Error(errors.Wrap(err, "failed to save bundle to temp file"))
+		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
 	supportBundle, err := supportbundle.CreateBundle(mux.Vars(r)["bundleId"], mux.Vars(r)["appId"], tmpFile.Name())
 	if err != nil {
-		logger.Error(err)
-		w.WriteHeader(500)
+		logger.Error(errors.Wrap(err, "failed to create support bundle"))
+		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
 	// we need the app archive to get the analyzers
-	a, err := store.GetStore().GetApp(mux.Vars(r)["appId"])
+	foundApp, err := store.GetStore().GetApp(mux.Vars(r)["appId"])
 	if err != nil {
-		logger.Error(err)
-		w.WriteHeader(500)
+		logger.Error(errors.Wrap(err, "failed to get app"))
+		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-	archiveDir, err := store.GetStore().GetAppVersionArchive(a.ID, a.CurrentSequence)
+	archiveDir, err := store.GetStore().GetAppVersionArchive(foundApp.ID, foundApp.CurrentSequence)
 	if err != nil {
-		logger.Error(err)
-		w.WriteHeader(500)
+		logger.Error(errors.Wrap(err, "failed to get app version archive"))
+		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
 	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(archiveDir)
 	if err != nil {
-		logger.Error(err)
-		w.WriteHeader(500)
+		logger.Error(errors.Wrap(err, "failed to load kots kinds from archive"))
+		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
@@ -318,8 +318,8 @@ func UploadSupportBundle(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := supportbundle.InjectDefaultAnalyzers(analyzer); err != nil {
-		logger.Error(err)
-		w.WriteHeader(500)
+		logger.Error(errors.Wrap(err, "failed to inject analyzers"))
+		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
@@ -327,31 +327,40 @@ func UploadSupportBundle(w http.ResponseWriter, r *http.Request) {
 
 	var b bytes.Buffer
 	if err := s.Encode(analyzer, &b); err != nil {
-		logger.Error(err)
-		w.WriteHeader(500)
+		logger.Error(errors.Wrap(err, "failed to encode analyzers"))
+		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
-	analyzeResult, err := troubleshootanalyze.DownloadAndAnalyze(tmpFile.Name(), b.String())
+	renderedAnalyzers, err := helper.RenderAppFile(foundApp, nil, b.Bytes())
 	if err != nil {
-		logger.Error(err)
-		w.WriteHeader(500)
+		logger.Error(errors.Wrap(err, "failed to render analyzers"))
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	analyzeResult, err := troubleshootanalyze.DownloadAndAnalyze(tmpFile.Name(), string(renderedAnalyzers))
+	if err != nil {
+		logger.Error(errors.Wrap(err, "failed to analyze"))
+		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
 	data := convert.FromAnalyzerResult(analyzeResult)
 	insights, err := json.MarshalIndent(data, "", "    ")
 	if err != nil {
-		logger.Error(err)
-		w.WriteHeader(500)
+		logger.Error(errors.Wrap(err, "failed to marshal result"))
+		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
 	if err := store.GetStore().SetSupportBundleAnalysis(supportBundle.ID, insights); err != nil {
-		logger.Error(err)
-		w.WriteHeader(500)
+		logger.Error(errors.Wrap(err, "failed to save result"))
+		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
+
+	w.WriteHeader(http.StatusOK)
 }
 
 // GetDefaultTroubleshoot route is UNAUTHENTICATED
