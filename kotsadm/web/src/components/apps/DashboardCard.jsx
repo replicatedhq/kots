@@ -152,6 +152,7 @@ export default class DashboardCard extends React.Component {
         <AirgapUploadProgress
           total={this.props.uploadSize}
           progress={this.props.uploadProgress}
+          resuming={this.props.uploadResuming}
           onProgressError={this.props.onProgressError}
           smallSize={true}
         />
