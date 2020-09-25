@@ -446,14 +446,15 @@ func (s S3PGStore) createAppVersion(tx *sql.Tx, appID string, currentSequence *i
 		newSequence++
 	}
 
-	query := `insert into app_version (app_id, sequence, created_at, version_label, release_notes, update_cursor, channel_name, encryption_key,
+	query := `insert into app_version (app_id, sequence, created_at, version_label, release_notes, update_cursor, channel_id, channel_name, encryption_key,
 		supportbundle_spec, analyzer_spec, preflight_spec, app_spec, kots_app_spec, kots_installation_spec, kots_license, config_spec, config_values, backup_spec)
-		values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)
+		values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19)
 		ON CONFLICT(app_id, sequence) DO UPDATE SET
 		created_at = EXCLUDED.created_at,
 		version_label = EXCLUDED.version_label,
 		release_notes = EXCLUDED.release_notes,
 		update_cursor = EXCLUDED.update_cursor,
+		channel_id = EXCLUDED.channel_id,
 		channel_name = EXCLUDED.channel_name,
 		encryption_key = EXCLUDED.encryption_key,
 		supportbundle_spec = EXCLUDED.supportbundle_spec,
@@ -470,6 +471,7 @@ func (s S3PGStore) createAppVersion(tx *sql.Tx, appID string, currentSequence *i
 		kotsKinds.Installation.Spec.VersionLabel,
 		kotsKinds.Installation.Spec.ReleaseNotes,
 		kotsKinds.Installation.Spec.UpdateCursor,
+		kotsKinds.Installation.Spec.ChannelID,
 		kotsKinds.Installation.Spec.ChannelName,
 		kotsKinds.Installation.Spec.EncryptionKey,
 		supportBundleSpec,

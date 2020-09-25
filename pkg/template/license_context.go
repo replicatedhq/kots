@@ -43,6 +43,8 @@ func (ctx licenseCtx) licenseFieldValue(name string) string {
 		return string(ctx.License.Spec.Signature)
 	case "appSlug":
 		return ctx.License.Spec.AppSlug
+	case "channelID":
+		return ctx.License.Spec.ChannelID
 	case "channelName":
 		return ctx.License.Spec.ChannelName
 	case "customerName":

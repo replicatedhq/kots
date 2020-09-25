@@ -11,23 +11,25 @@ import (
 )
 
 type FetchOptions struct {
-	RootDir             string
-	UseAppDir           bool
-	HelmRepoName        string
-	HelmRepoURI         string
-	HelmOptions         []string
-	LocalPath           string
-	License             *kotsv1beta1.License
-	ConfigValues        *kotsv1beta1.ConfigValues
-	Airgap              *kotsv1beta1.Airgap
-	EncryptionKey       string
-	CurrentCursor       string
-	CurrentChannel      string
-	CurrentVersionLabel string
-	DownstreamCursor    string
-	DownstreamChannel   string
-	AppSequence         int64
-	LocalRegistry       LocalRegistry
+	RootDir               string
+	UseAppDir             bool
+	HelmRepoName          string
+	HelmRepoURI           string
+	HelmOptions           []string
+	LocalPath             string
+	License               *kotsv1beta1.License
+	ConfigValues          *kotsv1beta1.ConfigValues
+	Airgap                *kotsv1beta1.Airgap
+	EncryptionKey         string
+	CurrentCursor         string
+	CurrentChannelID      string
+	CurrentChannelName    string
+	CurrentVersionLabel   string
+	DownstreamCursor      string
+	DownstreamChannelID   string
+	DownstreamChannelName string
+	AppSequence           int64
+	LocalRegistry         LocalRegistry
 }
 
 type LocalRegistry struct {
@@ -95,7 +97,8 @@ func pickCursor(fetchOptions *FetchOptions) ReplicatedCursor {
 		}
 	}
 	return ReplicatedCursor{
-		ChannelName: fetchOptions.CurrentChannel,
+		ChannelID:   fetchOptions.CurrentChannelID,
+		ChannelName: fetchOptions.CurrentChannelName,
 		Cursor:      fetchOptions.CurrentCursor,
 	}
 }

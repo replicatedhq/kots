@@ -48,6 +48,7 @@ type ReplicatedUpstream struct {
 }
 
 type ReplicatedCursor struct {
+	ChannelID   string
 	ChannelName string
 	Cursor      string
 }
@@ -71,7 +72,7 @@ type ChannelRelease struct {
 }
 
 func (this ReplicatedCursor) Equal(other ReplicatedCursor) bool {
-	return this.ChannelName == other.ChannelName && this.Cursor == other.Cursor
+	return this.ChannelID == other.ChannelID && this.ChannelName == other.ChannelName && this.Cursor == other.Cursor
 }
 
 func getUpdatesReplicated(u *url.URL, localPath string, currentCursor ReplicatedCursor, currentVersionLabel string, downstreamCursor ReplicatedCursor, license *kotsv1beta1.License) ([]Update, error) {
@@ -163,8 +164,9 @@ func downloadReplicated(u *url.URL, localPath string, rootDir string, useAppDir 
 	}
 
 	// get channel name from license, if one was provided
-	channelName := ""
+	channelID, channelName := "", ""
 	if license != nil {
+		channelID = license.Spec.ChannelID
 		channelName = license.Spec.ChannelName
 	}
 
@@ -229,6 +231,7 @@ func downloadReplicated(u *url.URL, localPath string, rootDir string, useAppDir 
 		Files:         files,
 		Type:          "replicated",
 		UpdateCursor:  release.UpdateCursor.Cursor,
+		ChannelID:     channelID,
 		ChannelName:   channelName,
 		VersionLabel:  release.VersionLabel,
 		ReleaseNotes:  release.ReleaseNotes,
@@ -375,7 +378,8 @@ func downloadReplicatedApp(replicatedUpstream *ReplicatedUpstream, license *kots
 	}
 
 	updateSequence := getResp.Header.Get("X-Replicated-ChannelSequence")
-	updateChannel := getResp.Header.Get("X-Replicated-ChannelName")
+	updateChannelID := getResp.Header.Get("X-Replicated-ChannelID")
+	updateChannelName := getResp.Header.Get("X-Replicated-ChannelName")
 	versionLabel := getResp.Header.Get("X-Replicated-VersionLabel")
 
 	gzf, err := gzip.NewReader(getResp.Body)
@@ -386,7 +390,8 @@ func downloadReplicatedApp(replicatedUpstream *ReplicatedUpstream, license *kots
 	release := Release{
 		Manifests: make(map[string][]byte),
 		UpdateCursor: ReplicatedCursor{
-			ChannelName: updateChannel,
+			ChannelID:   updateChannelID,
+			ChannelName: updateChannelName,
 			Cursor:      updateSequence,
 		},
 		VersionLabel: versionLabel,
@@ -436,15 +441,23 @@ func listPendingChannelReleases(replicatedUpstream *ReplicatedUpstream, license 
 	}
 
 	sequence := currentCursor.Cursor
-	if license.Spec.ChannelName != currentCursor.ChannelName {
+	if license.Spec.ChannelID != "" && currentCursor.ChannelID != "" && license.Spec.ChannelID != currentCursor.ChannelID {
+		sequence = ""
+	} else if license.Spec.ChannelName != currentCursor.ChannelName {
 		sequence = ""
 	}
 
 	urlValues := url.Values{}
 	urlValues.Set("channelSequence", sequence)
-	urlValues.Add("downstreamChannelSequence", downstreamCursor.Cursor)
-	urlValues.Add("downstreamChannelName", downstreamCursor.ChannelName)
 	urlValues.Add("licenseSequence", fmt.Sprintf("%d", license.Spec.LicenseSequence))
+	urlValues.Add("downstreamChannelSequence", downstreamCursor.Cursor)
+
+	if downstreamCursor.ChannelID != "" {
+		urlValues.Add("downstreamChannelID", downstreamCursor.ChannelID)
+	} else {
+		urlValues.Add("downstreamChannelName", downstreamCursor.ChannelName)
+	}
+
 	url := fmt.Sprintf("%s://%s/release/%s/pending?%s", u.Scheme, hostname, license.Spec.AppSlug, urlValues.Encode())
 
 	req, err := http.NewRequest("GET", url, nil)
