@@ -8,16 +8,18 @@ import (
 )
 
 type GetUpdatesOptions struct {
-	HelmRepoURI         string
-	Namespace           string
-	LocalPath           string
-	License             *kotsv1beta1.License
-	CurrentCursor       string
-	CurrentChannel      string
-	CurrentVersionLabel string
-	DownstreamCursor    string
-	DownstreamChannel   string
-	Silent              bool
+	HelmRepoURI           string
+	Namespace             string
+	LocalPath             string
+	License               *kotsv1beta1.License
+	CurrentCursor         string
+	CurrentChannelID      string
+	CurrentChannelName    string
+	CurrentVersionLabel   string
+	DownstreamCursor      string
+	DownstreamChannelID   string
+	DownstreamChannelName string
+	Silent                bool
 }
 
 // GetUpdates will retrieve all later versions of the application specified in upstreamURI
@@ -35,10 +37,12 @@ func GetUpdates(upstreamURI string, getUpdatesOptions GetUpdatesOptions) ([]upst
 	fetchOptions.HelmRepoURI = getUpdatesOptions.HelmRepoURI
 	fetchOptions.LocalPath = getUpdatesOptions.LocalPath
 	fetchOptions.CurrentCursor = getUpdatesOptions.CurrentCursor
-	fetchOptions.CurrentChannel = getUpdatesOptions.CurrentChannel
+	fetchOptions.CurrentChannelID = getUpdatesOptions.CurrentChannelID
+	fetchOptions.CurrentChannelName = getUpdatesOptions.CurrentChannelName
 	fetchOptions.CurrentVersionLabel = getUpdatesOptions.CurrentVersionLabel
 	fetchOptions.DownstreamCursor = getUpdatesOptions.DownstreamCursor
-	fetchOptions.DownstreamChannel = getUpdatesOptions.DownstreamChannel
+	fetchOptions.DownstreamChannelID = getUpdatesOptions.DownstreamChannelID
+	fetchOptions.DownstreamChannelName = getUpdatesOptions.DownstreamChannelName
 
 	if getUpdatesOptions.License != nil {
 		fetchOptions.License = getUpdatesOptions.License

@@ -95,10 +95,12 @@ func WriteUpstream(u *types.Upstream, options types.WriteOptions) error {
 		}
 	}
 
-	var channelName string
+	channelID, channelName := "", ""
 	if prevInstallation != nil && options.PreserveInstallation {
+		channelID = prevInstallation.Spec.ChannelID
 		channelName = prevInstallation.Spec.ChannelName
 	} else {
+		channelID = u.ChannelID
 		channelName = u.ChannelName
 	}
 
@@ -112,6 +114,7 @@ func WriteUpstream(u *types.Upstream, options types.WriteOptions) error {
 		},
 		Spec: kotsv1beta1.InstallationSpec{
 			UpdateCursor:  u.UpdateCursor,
+			ChannelID:     channelID,
 			ChannelName:   channelName,
 			VersionLabel:  u.VersionLabel,
 			ReleaseNotes:  u.ReleaseNotes,

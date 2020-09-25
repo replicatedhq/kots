@@ -193,7 +193,8 @@ func CheckForUpdates(appID string, deploy bool) (int64, error) {
 	getUpdatesOptions := kotspull.GetUpdatesOptions{
 		License:             latestLicense,
 		CurrentCursor:       kotsKinds.Installation.Spec.UpdateCursor,
-		CurrentChannel:      kotsKinds.Installation.Spec.ChannelName,
+		CurrentChannelID:    kotsKinds.Installation.Spec.ChannelID,
+		CurrentChannelName:  kotsKinds.Installation.Spec.ChannelName,
 		CurrentVersionLabel: kotsKinds.Installation.Spec.VersionLabel,
 		Silent:              false,
 	}
@@ -221,7 +222,8 @@ func CheckForUpdates(appID string, deploy bool) (int64, error) {
 		}
 
 		getUpdatesOptions.DownstreamCursor = deployedKotsKinds.Installation.Spec.UpdateCursor
-		getUpdatesOptions.DownstreamChannel = deployedKotsKinds.Installation.Spec.ChannelName
+		getUpdatesOptions.DownstreamChannelID = deployedKotsKinds.Installation.Spec.ChannelID
+		getUpdatesOptions.DownstreamChannelName = deployedKotsKinds.Installation.Spec.ChannelName
 	}
 
 	updates, err := kotspull.GetUpdates(fmt.Sprintf("replicated://%s", kotsKinds.License.Spec.AppSlug), getUpdatesOptions)

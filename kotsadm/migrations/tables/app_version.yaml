@@ -18,6 +18,8 @@ spec:
         type: integer
       - name: update_cursor
         type: text
+      - name: channel_id
+        type: text
       - name: channel_name
         type: text
       - name: created_at

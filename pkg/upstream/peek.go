@@ -35,11 +35,13 @@ func getUpdatesUpstream(upstreamURI string, fetchOptions *FetchOptions) ([]Updat
 	}
 	if u.Scheme == "replicated" {
 		currentCursor := ReplicatedCursor{
-			ChannelName: fetchOptions.CurrentChannel,
+			ChannelID:   fetchOptions.CurrentChannelID,
+			ChannelName: fetchOptions.CurrentChannelName,
 			Cursor:      fetchOptions.CurrentCursor,
 		}
 		downstreamCursor := ReplicatedCursor{
-			ChannelName: fetchOptions.DownstreamChannel,
+			ChannelID:   fetchOptions.DownstreamChannelID,
+			ChannelName: fetchOptions.DownstreamChannelName,
 			Cursor:      fetchOptions.DownstreamCursor,
 		}
 		return getUpdatesReplicated(u, fetchOptions.LocalPath, currentCursor, fetchOptions.CurrentVersionLabel, downstreamCursor, fetchOptions.License)

@@ -104,6 +104,7 @@ type LicenseSpec struct {
 	AppSlug             string                      `json:"appSlug"`
 	Endpoint            string                      `json:"endpoint,omitempty"`
 	CustomerName        string                      `json:"customerName,omitempty"`
+	ChannelID           string                      `json:"channelID,omitempty"`
 	ChannelName         string                      `json:"channelName,omitempty"`
 	LicenseSequence     int64                       `json:"licenseSequence,omitempty"`
 	LicenseID           string                      `json:"licenseID"`
