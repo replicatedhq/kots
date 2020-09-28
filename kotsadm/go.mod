@@ -16,6 +16,7 @@ require (
 	github.com/docker/distribution v2.7.1+incompatible
 	github.com/docker/go-units v0.4.0
 	github.com/emicklei/go-restful v2.10.0+incompatible // indirect
+	github.com/go-git/go-git/v5 v5.1.0
 	github.com/go-logfmt/logfmt v0.4.0
 	github.com/go-openapi/spec v0.19.5 // indirect
 	github.com/golang/groupcache v0.0.0-20191027212112-611e8accdfc9 // indirect
@@ -36,7 +37,6 @@ require (
 	github.com/robfig/cron v1.1.0
 	github.com/robfig/cron/v3 v3.0.0
 	github.com/segmentio/ksuid v1.0.2
-	github.com/sergi/go-diff v1.1.0 // indirect
 	github.com/spf13/cobra v1.0.0
 	github.com/spf13/viper v1.6.2
 	github.com/stretchr/testify v1.6.1
@@ -47,9 +47,7 @@ require (
 	golang.org/x/text v0.3.3 // indirect
 	golang.org/x/tools v0.0.0-20200319210407-521f4a0cd458 // indirect
 	google.golang.org/api v0.9.0
-	gopkg.in/go-playground/assert.v1 v1.2.1 // indirect
-	gopkg.in/ini.v1 v1.51.1
-	gopkg.in/src-d/go-git.v4 v4.13.1
+	gopkg.in/ini.v1 v1.51.0
 	gopkg.in/yaml.v2 v2.3.0
 	k8s.io/api v0.18.4
 	k8s.io/apimachinery v0.18.4
