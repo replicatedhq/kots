@@ -273,7 +273,7 @@ func TagAndPushAppImages(imagesDir string, options types.PushImagesOptions) ([]k
 		reportWriter := options.ProgressWriter
 		if options.LogForUI {
 			wc := reportWriterWithProgress(imageFiles, options.ProgressWriter)
-			reportWriter = io.Writer(wc)
+			reportWriter = wc.(io.Writer)
 			defer wc.Write([]byte(fmt.Sprintf("+status.flush:\n")))
 			defer wc.Close()
 		}
