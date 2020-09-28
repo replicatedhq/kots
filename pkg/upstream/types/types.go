@@ -45,6 +45,40 @@ type WriteOptions struct {
 	SharedPassword string
 }
 
+type FetchOptions struct {
+	RootDir             string
+	UseAppDir           bool
+	HelmRepoName        string
+	HelmRepoURI         string
+	HelmOptions         []string
+	LocalPath           string
+	License             *kotsv1beta1.License
+	ConfigValues        *kotsv1beta1.ConfigValues
+	Airgap              *kotsv1beta1.Airgap
+	EncryptionKey       string
+	CurrentCursor       string
+	CurrentChannelID    string
+	CurrentChannelName  string
+	CurrentVersionLabel string
+	AppSequence         int64
+	LocalRegistry       LocalRegistry
+	Reporting           Reporting
+}
+
+type LocalRegistry struct {
+	Host      string
+	Namespace string
+	Username  string
+	Password  string
+}
+
+type Reporting struct {
+	DownstreamCursor      string
+	DownstreamChannelID   string
+	DownstreamChannelName string
+	AppStatus             string
+}
+
 func (u *Upstream) GetUpstreamDir(options WriteOptions) string {
 	renderDir := options.RootDir
 	if options.CreateAppDir {

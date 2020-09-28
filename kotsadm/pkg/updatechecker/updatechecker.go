@@ -221,11 +221,19 @@ func CheckForUpdates(appID string, deploy bool) (int64, error) {
 			return 0, errors.Wrap(err, "failed to load kotskinds from path")
 		}
 
-		getUpdatesOptions.DownstreamCursor = deployedKotsKinds.Installation.Spec.UpdateCursor
-		getUpdatesOptions.DownstreamChannelID = deployedKotsKinds.Installation.Spec.ChannelID
-		getUpdatesOptions.DownstreamChannelName = deployedKotsKinds.Installation.Spec.ChannelName
+		getUpdatesOptions.Reporting.DownstreamCursor = deployedKotsKinds.Installation.Spec.UpdateCursor
+		getUpdatesOptions.Reporting.DownstreamChannelID = deployedKotsKinds.Installation.Spec.ChannelID
+		getUpdatesOptions.Reporting.DownstreamChannelName = deployedKotsKinds.Installation.Spec.ChannelName
 	}
 
+	// include some additional reporting info
+	appStatus, err := store.GetStore().GetAppStatus(a.ID)
+	if err != nil {
+		return 0, errors.Wrap(err, "failed to get app status")
+	}
+	getUpdatesOptions.Reporting.AppStatus = appStatus.State
+
+	// get updates
 	updates, err := kotspull.GetUpdates(fmt.Sprintf("replicated://%s", kotsKinds.License.Spec.AppSlug), getUpdatesOptions)
 	if err != nil {
 		return 0, errors.Wrap(err, "failed to get updates")

@@ -5,21 +5,20 @@ import (
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/upstream"
+	upstreamtypes "github.com/replicatedhq/kots/pkg/upstream/types"
 )
 
 type GetUpdatesOptions struct {
-	HelmRepoURI           string
-	Namespace             string
-	LocalPath             string
-	License               *kotsv1beta1.License
-	CurrentCursor         string
-	CurrentChannelID      string
-	CurrentChannelName    string
-	CurrentVersionLabel   string
-	DownstreamCursor      string
-	DownstreamChannelID   string
-	DownstreamChannelName string
-	Silent                bool
+	HelmRepoURI         string
+	Namespace           string
+	LocalPath           string
+	License             *kotsv1beta1.License
+	CurrentCursor       string
+	CurrentChannelID    string
+	CurrentChannelName  string
+	CurrentVersionLabel string
+	Reporting           upstreamtypes.Reporting
+	Silent              bool
 }
 
 // GetUpdates will retrieve all later versions of the application specified in upstreamURI
@@ -33,16 +32,14 @@ func GetUpdates(upstreamURI string, getUpdatesOptions GetUpdatesOptions) ([]upst
 
 	log.Initialize()
 
-	fetchOptions := upstream.FetchOptions{}
+	fetchOptions := upstreamtypes.FetchOptions{}
 	fetchOptions.HelmRepoURI = getUpdatesOptions.HelmRepoURI
 	fetchOptions.LocalPath = getUpdatesOptions.LocalPath
 	fetchOptions.CurrentCursor = getUpdatesOptions.CurrentCursor
 	fetchOptions.CurrentChannelID = getUpdatesOptions.CurrentChannelID
 	fetchOptions.CurrentChannelName = getUpdatesOptions.CurrentChannelName
 	fetchOptions.CurrentVersionLabel = getUpdatesOptions.CurrentVersionLabel
-	fetchOptions.DownstreamCursor = getUpdatesOptions.DownstreamCursor
-	fetchOptions.DownstreamChannelID = getUpdatesOptions.DownstreamChannelID
-	fetchOptions.DownstreamChannelName = getUpdatesOptions.DownstreamChannelName
+	fetchOptions.Reporting = getUpdatesOptions.Reporting
 
 	if getUpdatesOptions.License != nil {
 		fetchOptions.License = getUpdatesOptions.License

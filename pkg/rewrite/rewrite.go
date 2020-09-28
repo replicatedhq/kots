@@ -57,7 +57,7 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 		rewriteOptions.ReportWriter = ioutil.Discard
 	}
 
-	fetchOptions := &upstream.FetchOptions{
+	fetchOptions := &upstreamtypes.FetchOptions{
 		RootDir:             rewriteOptions.RootDir,
 		LocalPath:           rewriteOptions.UpstreamPath,
 		CurrentCursor:       rewriteOptions.Installation.Spec.UpdateCursor,

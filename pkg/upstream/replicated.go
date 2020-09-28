@@ -18,6 +18,7 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
+	"github.com/replicatedhq/kots/kotsadm/pkg/kurl"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	"github.com/replicatedhq/kots/pkg/crypto"
 	kotslicense "github.com/replicatedhq/kots/pkg/license"
@@ -78,7 +79,7 @@ func (this ReplicatedCursor) Equal(other ReplicatedCursor) bool {
 	return this.ChannelName == other.ChannelName && this.Cursor == other.Cursor
 }
 
-func getUpdatesReplicated(u *url.URL, localPath string, currentCursor ReplicatedCursor, currentVersionLabel string, downstreamCursor ReplicatedCursor, license *kotsv1beta1.License) ([]Update, error) {
+func getUpdatesReplicated(u *url.URL, localPath string, currentCursor ReplicatedCursor, currentVersionLabel string, license *kotsv1beta1.License, reporting types.Reporting) ([]Update, error) {
 	if localPath != "" {
 		parsedLocalRelease, err := readReplicatedAppFromLocalPath(localPath, currentCursor, currentVersionLabel)
 		if err != nil {
@@ -103,7 +104,7 @@ func getUpdatesReplicated(u *url.URL, localPath string, currentCursor Replicated
 		return nil, errors.Wrap(err, "failed to get successful head response")
 	}
 
-	pendingReleases, err := listPendingChannelReleases(replicatedUpstream, remoteLicense, currentCursor, downstreamCursor)
+	pendingReleases, err := listPendingChannelReleases(replicatedUpstream, remoteLicense, currentCursor, reporting)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to list replicated app releases")
 	}
@@ -432,7 +433,7 @@ func downloadReplicatedApp(replicatedUpstream *ReplicatedUpstream, license *kots
 	return &release, nil
 }
 
-func listPendingChannelReleases(replicatedUpstream *ReplicatedUpstream, license *kotsv1beta1.License, currentCursor ReplicatedCursor, downstreamCursor ReplicatedCursor) ([]ChannelRelease, error) {
+func listPendingChannelReleases(replicatedUpstream *ReplicatedUpstream, license *kotsv1beta1.License, currentCursor ReplicatedCursor, reporting types.Reporting) ([]ChannelRelease, error) {
 	u, err := url.Parse(license.Spec.Endpoint)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to parse endpoint from license")
@@ -453,12 +454,15 @@ func listPendingChannelReleases(replicatedUpstream *ReplicatedUpstream, license 
 	urlValues := url.Values{}
 	urlValues.Set("channelSequence", sequence)
 	urlValues.Add("licenseSequence", fmt.Sprintf("%d", license.Spec.LicenseSequence))
-	urlValues.Add("downstreamChannelSequence", downstreamCursor.Cursor)
 
-	if downstreamCursor.ChannelID != "" {
-		urlValues.Add("downstreamChannelID", downstreamCursor.ChannelID)
-	} else {
-		urlValues.Add("downstreamChannelName", downstreamCursor.ChannelName)
+	if reporting.DownstreamCursor != "" {
+		urlValues.Add("downstreamChannelSequence", reporting.DownstreamCursor)
+	}
+
+	if reporting.DownstreamChannelID != "" {
+		urlValues.Add("downstreamChannelID", reporting.DownstreamChannelID)
+	} else if reporting.DownstreamChannelName != "" {
+		urlValues.Add("downstreamChannelName", reporting.DownstreamChannelName)
 	}
 
 	url := fmt.Sprintf("%s://%s/release/%s/pending?%s", u.Scheme, hostname, license.Spec.AppSlug, urlValues.Encode())
@@ -468,6 +472,7 @@ func listPendingChannelReleases(replicatedUpstream *ReplicatedUpstream, license 
 		return nil, errors.Wrap(err, "failed to call newrequest")
 	}
 
+	req.Header.Add("X-Replicated-IsKurl", kurl.IsKurl())
 	req.Header.Add("User-Agent", fmt.Sprintf("KOTS/%s", version.Version()))
 	req.Header.Set("Authorization", fmt.Sprintf("Basic %s", base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", license.Spec.LicenseID, license.Spec.LicenseID)))))
 
