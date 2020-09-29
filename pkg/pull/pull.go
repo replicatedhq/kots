@@ -116,7 +116,7 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 		LocalPath:     pullOptions.LocalPath,
 		CurrentCursor: pullOptions.UpdateCursor,
 		AppSequence:   pullOptions.AppSequence,
-		LocalRegistry: upstream.LocalRegistry{
+		LocalRegistry: upstreamtypes.LocalRegistry{
 			Host:      pullOptions.RewriteImageOptions.Host,
 			Namespace: pullOptions.RewriteImageOptions.Namespace,
 			Username:  pullOptions.RewriteImageOptions.Username,

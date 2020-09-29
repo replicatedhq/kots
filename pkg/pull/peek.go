@@ -17,7 +17,7 @@ type GetUpdatesOptions struct {
 	CurrentChannelID    string
 	CurrentChannelName  string
 	CurrentVersionLabel string
-	Reporting           upstreamtypes.Reporting
+	ReportingInfo       upstreamtypes.ReportingInfo
 	Silent              bool
 }
 
@@ -39,7 +39,7 @@ func GetUpdates(upstreamURI string, getUpdatesOptions GetUpdatesOptions) ([]upst
 	fetchOptions.CurrentChannelID = getUpdatesOptions.CurrentChannelID
 	fetchOptions.CurrentChannelName = getUpdatesOptions.CurrentChannelName
 	fetchOptions.CurrentVersionLabel = getUpdatesOptions.CurrentVersionLabel
-	fetchOptions.Reporting = getUpdatesOptions.Reporting
+	fetchOptions.ReportingInfo = getUpdatesOptions.ReportingInfo
 
 	if getUpdatesOptions.License != nil {
 		fetchOptions.License = getUpdatesOptions.License

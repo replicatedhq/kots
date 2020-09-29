@@ -40,7 +40,7 @@ func getUpdatesUpstream(upstreamURI string, fetchOptions *types.FetchOptions) ([
 			ChannelName: fetchOptions.CurrentChannelName,
 			Cursor:      fetchOptions.CurrentCursor,
 		}
-		return getUpdatesReplicated(u, fetchOptions.LocalPath, currentCursor, fetchOptions.CurrentVersionLabel, fetchOptions.License, fetchOptions.Reporting)
+		return getUpdatesReplicated(u, fetchOptions.LocalPath, currentCursor, fetchOptions.CurrentVersionLabel, fetchOptions.License, fetchOptions.ReportingInfo)
 	}
 	if u.Scheme == "git" {
 		// return getUpdatesGit(upstreamURI)

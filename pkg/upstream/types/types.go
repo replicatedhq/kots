@@ -3,6 +3,7 @@ package types
 import (
 	"path"
 
+	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	kotsscheme "github.com/replicatedhq/kots/kotskinds/client/kotsclientset/scheme"
 	"k8s.io/client-go/kubernetes/scheme"
 )
@@ -62,7 +63,7 @@ type FetchOptions struct {
 	CurrentVersionLabel string
 	AppSequence         int64
 	LocalRegistry       LocalRegistry
-	Reporting           Reporting
+	ReportingInfo       ReportingInfo
 }
 
 type LocalRegistry struct {
@@ -72,7 +73,8 @@ type LocalRegistry struct {
 	Password  string
 }
 
-type Reporting struct {
+type ReportingInfo struct {
+	ClusterID             string
 	DownstreamCursor      string
 	DownstreamChannelID   string
 	DownstreamChannelName string

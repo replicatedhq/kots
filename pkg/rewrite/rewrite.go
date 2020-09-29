@@ -64,7 +64,7 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 		CurrentVersionLabel: rewriteOptions.Installation.Spec.VersionLabel,
 		EncryptionKey:       rewriteOptions.Installation.Spec.EncryptionKey,
 		License:             rewriteOptions.License,
-		LocalRegistry: upstream.LocalRegistry{
+		LocalRegistry: upstreamtypes.LocalRegistry{
 			Host:      rewriteOptions.RegistryEndpoint,
 			Namespace: rewriteOptions.RegistryNamespace,
 			Username:  rewriteOptions.RegistryUsername,

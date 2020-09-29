@@ -79,7 +79,7 @@ func (this ReplicatedCursor) Equal(other ReplicatedCursor) bool {
 	return this.ChannelName == other.ChannelName && this.Cursor == other.Cursor
 }
 
-func getUpdatesReplicated(u *url.URL, localPath string, currentCursor ReplicatedCursor, currentVersionLabel string, license *kotsv1beta1.License, reporting types.Reporting) ([]Update, error) {
+func getUpdatesReplicated(u *url.URL, localPath string, currentCursor ReplicatedCursor, currentVersionLabel string, license *kotsv1beta1.License, reportingInfo types.ReportingInfo) ([]Update, error) {
 	if localPath != "" {
 		parsedLocalRelease, err := readReplicatedAppFromLocalPath(localPath, currentCursor, currentVersionLabel)
 		if err != nil {
@@ -104,7 +104,7 @@ func getUpdatesReplicated(u *url.URL, localPath string, currentCursor Replicated
 		return nil, errors.Wrap(err, "failed to get successful head response")
 	}
 
-	pendingReleases, err := listPendingChannelReleases(replicatedUpstream, remoteLicense, currentCursor, reporting)
+	pendingReleases, err := listPendingChannelReleases(replicatedUpstream, remoteLicense, currentCursor, reportingInfo)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to list replicated app releases")
 	}
@@ -119,7 +119,7 @@ func getUpdatesReplicated(u *url.URL, localPath string, currentCursor Replicated
 	return updates, nil
 }
 
-func downloadReplicated(u *url.URL, localPath string, rootDir string, useAppDir bool, license *kotsv1beta1.License, existingConfigValues *kotsv1beta1.ConfigValues, updateCursor ReplicatedCursor, versionLabel string, cipher *crypto.AESCipher, appSequence int64, isAirgap bool, registry LocalRegistry) (*types.Upstream, error) {
+func downloadReplicated(u *url.URL, localPath string, rootDir string, useAppDir bool, license *kotsv1beta1.License, existingConfigValues *kotsv1beta1.ConfigValues, updateCursor ReplicatedCursor, versionLabel string, cipher *crypto.AESCipher, appSequence int64, isAirgap bool, registry types.LocalRegistry) (*types.Upstream, error) {
 	var release *Release
 
 	if localPath != "" {
@@ -433,7 +433,7 @@ func downloadReplicatedApp(replicatedUpstream *ReplicatedUpstream, license *kots
 	return &release, nil
 }
 
-func listPendingChannelReleases(replicatedUpstream *ReplicatedUpstream, license *kotsv1beta1.License, currentCursor ReplicatedCursor, reporting types.Reporting) ([]ChannelRelease, error) {
+func listPendingChannelReleases(replicatedUpstream *ReplicatedUpstream, license *kotsv1beta1.License, currentCursor ReplicatedCursor, reportingInfo types.ReportingInfo) ([]ChannelRelease, error) {
 	u, err := url.Parse(license.Spec.Endpoint)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to parse endpoint from license")
@@ -455,14 +455,21 @@ func listPendingChannelReleases(replicatedUpstream *ReplicatedUpstream, license 
 	urlValues.Set("channelSequence", sequence)
 	urlValues.Add("licenseSequence", fmt.Sprintf("%d", license.Spec.LicenseSequence))
 
-	if reporting.DownstreamCursor != "" {
-		urlValues.Add("downstreamChannelSequence", reporting.DownstreamCursor)
-	}
+	// reporting info
+	urlValues.Add("isKurl", fmt.Sprintf("%t", kurl.IsKurl()))
+	urlValues.Add("appStatus", reportingInfo.AppStatus)
 
-	if reporting.DownstreamChannelID != "" {
-		urlValues.Add("downstreamChannelID", reporting.DownstreamChannelID)
-	} else if reporting.DownstreamChannelName != "" {
-		urlValues.Add("downstreamChannelName", reporting.DownstreamChannelName)
+	// cluster id is an internal name and does not denote a unique kubernetes cluster id.
+	// it is unique for each installation (instance) of the KOTS Admin Console.
+	urlValues.Add("kotsID", reportingInfo.ClusterID)
+
+	if reportingInfo.DownstreamCursor != "" {
+		urlValues.Add("downstreamChannelSequence", reportingInfo.DownstreamCursor)
+	}
+	if reportingInfo.DownstreamChannelID != "" {
+		urlValues.Add("downstreamChannelID", reportingInfo.DownstreamChannelID)
+	} else if reportingInfo.DownstreamChannelName != "" {
+		urlValues.Add("downstreamChannelName", reportingInfo.DownstreamChannelName)
 	}
 
 	url := fmt.Sprintf("%s://%s/release/%s/pending?%s", u.Scheme, hostname, license.Spec.AppSlug, urlValues.Encode())
@@ -472,7 +479,6 @@ func listPendingChannelReleases(replicatedUpstream *ReplicatedUpstream, license 
 		return nil, errors.Wrap(err, "failed to call newrequest")
 	}
 
-	req.Header.Add("X-Replicated-IsKurl", kurl.IsKurl())
 	req.Header.Add("User-Agent", fmt.Sprintf("KOTS/%s", version.Version()))
 	req.Header.Set("Authorization", fmt.Sprintf("Basic %s", base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", license.Spec.LicenseID, license.Spec.LicenseID)))))
 

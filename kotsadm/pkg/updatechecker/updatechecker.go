@@ -16,6 +16,7 @@ import (
 	"github.com/replicatedhq/kots/kotsadm/pkg/version"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	kotspull "github.com/replicatedhq/kots/pkg/pull"
+	upstreamtypes "github.com/replicatedhq/kots/pkg/upstream/types"
 	cron "github.com/robfig/cron/v3"
 	"go.uber.org/zap"
 )
@@ -199,39 +200,12 @@ func CheckForUpdates(appID string, deploy bool) (int64, error) {
 		Silent:              false,
 	}
 
-	// get info about the deployed app version for reporting purposes
-	downstreams, err := store.GetStore().ListDownstreamsForApp(a.ID)
+	// add info for reporting purposes
+	r, err := GetReportingInfo(a.ID)
 	if err != nil {
-		return 0, errors.Wrap(err, "failed to list downstreams for app")
+		return 0, errors.Wrap(err, "failed to get reporting info")
 	}
-
-	deployedAppSequence, err := downstream.GetCurrentParentSequence(a.ID, downstreams[0].ClusterID)
-	if err != nil {
-		return 0, errors.Wrap(err, "failed to get current downstream parent sequence")
-	}
-
-	if deployedAppSequence != -1 {
-		deployedArchiveDir, err := store.GetStore().GetAppVersionArchive(a.ID, deployedAppSequence)
-		if err != nil {
-			return 0, errors.Wrap(err, "failed to get app version archive")
-		}
-
-		deployedKotsKinds, err := kotsutil.LoadKotsKindsFromPath(deployedArchiveDir)
-		if err != nil {
-			return 0, errors.Wrap(err, "failed to load kotskinds from path")
-		}
-
-		getUpdatesOptions.Reporting.DownstreamCursor = deployedKotsKinds.Installation.Spec.UpdateCursor
-		getUpdatesOptions.Reporting.DownstreamChannelID = deployedKotsKinds.Installation.Spec.ChannelID
-		getUpdatesOptions.Reporting.DownstreamChannelName = deployedKotsKinds.Installation.Spec.ChannelName
-	}
-
-	// include some additional reporting info
-	appStatus, err := store.GetStore().GetAppStatus(a.ID)
-	if err != nil {
-		return 0, errors.Wrap(err, "failed to get app status")
-	}
-	getUpdatesOptions.Reporting.AppStatus = appStatus.State
+	getUpdatesOptions.ReportingInfo = *r
 
 	// get updates
 	updates, err := kotspull.GetUpdates(fmt.Sprintf("replicated://%s", kotsKinds.License.Spec.AppSlug), getUpdatesOptions)
@@ -312,4 +286,44 @@ func CheckForUpdates(appID string, deploy bool) (int64, error) {
 	}()
 
 	return availableUpdates, nil
+}
+
+func GetReportingInfo(appID string) (*upstreamtypes.ReportingInfo, error) {
+	r := upstreamtypes.ReportingInfo{}
+
+	downstreams, err := store.GetStore().ListDownstreamsForApp(appID)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to list downstreams for app")
+	}
+	r.ClusterID = downstreams[0].ClusterID
+
+	deployedAppSequence, err := downstream.GetCurrentParentSequence(appID, downstreams[0].ClusterID)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get current downstream parent sequence")
+	}
+
+	if deployedAppSequence != -1 {
+		deployedArchiveDir, err := store.GetStore().GetAppVersionArchive(appID, deployedAppSequence)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to get app version archive")
+		}
+
+		deployedKotsKinds, err := kotsutil.LoadKotsKindsFromPath(deployedArchiveDir)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to load kotskinds from path")
+		}
+
+		r.DownstreamCursor = deployedKotsKinds.Installation.Spec.UpdateCursor
+		r.DownstreamChannelID = deployedKotsKinds.Installation.Spec.ChannelID
+		r.DownstreamChannelName = deployedKotsKinds.Installation.Spec.ChannelName
+	}
+
+	// include some additional reporting info
+	appStatus, err := store.GetStore().GetAppStatus(appID)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get app status")
+	}
+	r.AppStatus = string(appStatus.State)
+
+	return &r, nil
 }
