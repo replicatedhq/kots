@@ -9,6 +9,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/kotsadm/pkg/app"
 	"github.com/replicatedhq/kots/kotsadm/pkg/downstream"
+	"github.com/replicatedhq/kots/kotsadm/pkg/kurl"
 	"github.com/replicatedhq/kots/kotsadm/pkg/license"
 	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
 	"github.com/replicatedhq/kots/kotsadm/pkg/store"
@@ -19,6 +20,8 @@ import (
 	upstreamtypes "github.com/replicatedhq/kots/pkg/upstream/types"
 	cron "github.com/robfig/cron/v3"
 	"go.uber.org/zap"
+	"k8s.io/client-go/kubernetes"
+	"sigs.k8s.io/controller-runtime/pkg/client/config"
 )
 
 // jobs maps app ids to their cron jobs
@@ -302,6 +305,7 @@ func GetReportingInfo(appID string) (*upstreamtypes.ReportingInfo, error) {
 		return nil, errors.Wrap(err, "failed to get current downstream parent sequence")
 	}
 
+	// info about the deployed app sequence
 	if deployedAppSequence != -1 {
 		deployedArchiveDir, err := store.GetStore().GetAppVersionArchive(appID, deployedAppSequence)
 		if err != nil {
@@ -318,12 +322,30 @@ func GetReportingInfo(appID string) (*upstreamtypes.ReportingInfo, error) {
 		r.DownstreamChannelName = deployedKotsKinds.Installation.Spec.ChannelName
 	}
 
-	// include some additional reporting info
+	// get kubernetes cluster version
+	cfg, err := config.GetConfig()
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get cluster config")
+	}
+	clientset, err := kubernetes.NewForConfig(cfg)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to create kubernetes clientset")
+	}
+	k8sVersion, err := clientset.ServerVersion()
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get server version")
+	}
+	r.K8sVersion = k8sVersion.String()
+
+	// get app status
 	appStatus, err := store.GetStore().GetAppStatus(appID)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get app status")
 	}
 	r.AppStatus = string(appStatus.State)
+
+	// check if embedded cluster
+	r.IsKurl = kurl.IsKurl()
 
 	return &r, nil
 }

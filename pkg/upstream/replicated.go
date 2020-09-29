@@ -18,7 +18,6 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
-	"github.com/replicatedhq/kots/kotsadm/pkg/kurl"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	"github.com/replicatedhq/kots/pkg/crypto"
 	kotslicense "github.com/replicatedhq/kots/pkg/license"
@@ -456,18 +455,16 @@ func listPendingChannelReleases(replicatedUpstream *ReplicatedUpstream, license 
 	urlValues.Add("licenseSequence", fmt.Sprintf("%d", license.Spec.LicenseSequence))
 
 	// reporting info
-	urlValues.Add("isKurl", fmt.Sprintf("%t", kurl.IsKurl()))
+	urlValues.Add("k8sVersion", reportingInfo.K8sVersion)
+	urlValues.Add("isKurl", fmt.Sprintf("%t", reportingInfo.IsKurl))
 	urlValues.Add("appStatus", reportingInfo.AppStatus)
-
-	// cluster id is an internal name and does not denote a unique kubernetes cluster id.
-	// it is unique for each installation (instance) of the KOTS Admin Console.
-	urlValues.Add("kotsID", reportingInfo.ClusterID)
+	urlValues.Add("clusterId", reportingInfo.ClusterID)
 
 	if reportingInfo.DownstreamCursor != "" {
 		urlValues.Add("downstreamChannelSequence", reportingInfo.DownstreamCursor)
 	}
 	if reportingInfo.DownstreamChannelID != "" {
-		urlValues.Add("downstreamChannelID", reportingInfo.DownstreamChannelID)
+		urlValues.Add("downstreamChannelId", reportingInfo.DownstreamChannelID)
 	} else if reportingInfo.DownstreamChannelName != "" {
 		urlValues.Add("downstreamChannelName", reportingInfo.DownstreamChannelName)
 	}

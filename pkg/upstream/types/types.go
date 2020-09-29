@@ -79,6 +79,8 @@ type ReportingInfo struct {
 	DownstreamChannelID   string
 	DownstreamChannelName string
 	AppStatus             string
+	IsKurl                bool
+	K8sVersion            string
 }
 
 func (u *Upstream) GetUpstreamDir(options WriteOptions) string {
