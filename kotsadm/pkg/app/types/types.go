@@ -23,7 +23,6 @@ type App struct {
 	UpdatedAt             *time.Time     `json:"createdAt"`
 	CreatedAt             time.Time      `json:"updatedAt"`
 	LastUpdateCheckAt     string         `json:"lastUpdateCheckAt"`
-	BundleCommand         string         `json:"bundleCommand"`
 	HasPreflight          bool           `json:"hasPreflight"`
 	IsConfigurable        bool           `json:"isConfigurable"`
 	SnapshotTTL           string         `json:"snapshotTtl"`

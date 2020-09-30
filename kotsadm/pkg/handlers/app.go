@@ -12,6 +12,7 @@ import (
 	"github.com/replicatedhq/kots/kotsadm/pkg/gitops"
 	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
 	"github.com/replicatedhq/kots/kotsadm/pkg/store"
+	"github.com/replicatedhq/kots/kotsadm/pkg/supportbundle"
 	"github.com/replicatedhq/kots/kotsadm/pkg/version"
 	versiontypes "github.com/replicatedhq/kots/kotsadm/pkg/version/types"
 )
@@ -31,7 +32,7 @@ type ResponseApp struct {
 	CreatedAt         time.Time  `json:"createdAt"`
 	UpdatedAt         *time.Time `json:"updatedAt"`
 	LastUpdateCheckAt string     `json:"lastUpdateCheckAt"`
-	BundleCommand     string     `json:"bundleCommand"`
+	BundleCommand     []string   `json:"bundleCommand"`
 	HasPreflight      bool       `json:"hasPreflight"`
 	IsConfigurable    bool       `json:"isConfigurable"`
 	UpdateCheckerSpec string     `json:"updateCheckerSpec"`
@@ -235,7 +236,7 @@ func responseAppFromApp(a *apptypes.App) (*ResponseApp, error) {
 		CreatedAt:         a.CreatedAt,
 		UpdatedAt:         a.UpdatedAt,
 		LastUpdateCheckAt: a.LastUpdateCheckAt,
-		BundleCommand:     a.BundleCommand,
+		BundleCommand:     supportbundle.GetBundleCommand(a.Slug),
 		HasPreflight:      a.HasPreflight,
 		IsConfigurable:    a.IsConfigurable,
 		UpdateCheckerSpec: a.UpdateCheckerSpec,

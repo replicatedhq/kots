@@ -152,8 +152,6 @@ func (s S3PGStore) GetApp(id string) (*apptypes.App, error) {
 		}
 	}
 
-	app.BundleCommand = fmt.Sprintf("curl https://krew.sh/support-bundle | bash\nkubectl support-bundle API_ADDRESS/api/v1/troubleshoot/%s\n", app.Slug)
-
 	isGitOps, err := s.IsGitOpsEnabledForApp(id)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to check if gitops is enabled")

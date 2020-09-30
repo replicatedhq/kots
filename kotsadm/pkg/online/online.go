@@ -14,6 +14,7 @@ import (
 	"github.com/replicatedhq/kots/kotsadm/pkg/online/types"
 	"github.com/replicatedhq/kots/kotsadm/pkg/preflight"
 	"github.com/replicatedhq/kots/kotsadm/pkg/store"
+	"github.com/replicatedhq/kots/kotsadm/pkg/supportbundle"
 	"github.com/replicatedhq/kots/kotsadm/pkg/updatechecker"
 	"github.com/replicatedhq/kots/kotsadm/pkg/version"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
@@ -157,6 +158,11 @@ func CreateAppFromOnline(pendingApp *types.PendingApp, upstreamURI string, isAut
 	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(tmpRoot)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to load kotskinds from path")
+	}
+
+	err = supportbundle.CreateRenderedSpec(pendingApp.ID, 0, "", true, kotsKinds.SupportBundle)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to create rendered support bundle spec")
 	}
 
 	if isAutomated && kotsKinds.Config != nil {
