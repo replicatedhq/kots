@@ -74,7 +74,7 @@ type LocalRegistry struct {
 }
 
 type ReportingInfo struct {
-	AppID                 string
+	InstanceID            string
 	ClusterID             string
 	DownstreamCursor      string
 	DownstreamChannelID   string

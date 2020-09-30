@@ -292,12 +292,15 @@ func CheckForUpdates(appID string, deploy bool) (int64, error) {
 
 func GetReportingInfo(appID string) (*upstreamtypes.ReportingInfo, error) {
 	r := upstreamtypes.ReportingInfo{
-		AppID: appID,
+		InstanceID: appID,
 	}
 
 	downstreams, err := store.GetStore().ListDownstreamsForApp(appID)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to list downstreams for app")
+	}
+	if len(downstreams) == 0 {
+		return nil, errors.New("no downstreams found for app")
 	}
 	r.ClusterID = downstreams[0].ClusterID
 
@@ -333,6 +336,7 @@ func GetReportingInfo(appID string) (*upstreamtypes.ReportingInfo, error) {
 		return nil, errors.Wrap(err, "failed to get kubernetes server version")
 	}
 	r.K8sVersion = k8sVersion.GitVersion
+	fmt.Println("HELLOOO +++++++++++ r.K8sVersion", r.K8sVersion)
 
 	// get app status
 	appStatus, err := store.GetStore().GetAppStatus(appID)
