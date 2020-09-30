@@ -336,7 +336,6 @@ func GetReportingInfo(appID string) (*upstreamtypes.ReportingInfo, error) {
 		return nil, errors.Wrap(err, "failed to get kubernetes server version")
 	}
 	r.K8sVersion = k8sVersion.GitVersion
-	fmt.Println("HELLOOO +++++++++++ r.K8sVersion", r.K8sVersion)
 
 	// get app status
 	appStatus, err := store.GetStore().GetAppStatus(appID)
