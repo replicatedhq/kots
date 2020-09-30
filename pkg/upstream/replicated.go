@@ -460,6 +460,7 @@ func listPendingChannelReleases(replicatedUpstream *ReplicatedUpstream, license 
 		urlValues.Add("isKurl", fmt.Sprintf("%t", reportingInfo.IsKurl))
 		urlValues.Add("appStatus", reportingInfo.AppStatus)
 		urlValues.Add("clusterId", reportingInfo.ClusterID)
+		urlValues.Add("instanceId", reportingInfo.AppID)
 
 		if reportingInfo.DownstreamCursor != "" {
 			urlValues.Add("downstreamChannelSequence", reportingInfo.DownstreamCursor)

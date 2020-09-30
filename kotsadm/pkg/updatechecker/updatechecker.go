@@ -291,7 +291,9 @@ func CheckForUpdates(appID string, deploy bool) (int64, error) {
 }
 
 func GetReportingInfo(appID string) (*upstreamtypes.ReportingInfo, error) {
-	r := upstreamtypes.ReportingInfo{}
+	r := upstreamtypes.ReportingInfo{
+		AppID: appID,
+	}
 
 	downstreams, err := store.GetStore().ListDownstreamsForApp(appID)
 	if err != nil {
