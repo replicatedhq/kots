@@ -393,6 +393,20 @@ func LoadInstallationFromPath(installationFilePath string) (*kotsv1beta1.Install
 	return LoadInstallationFromContents(installationData)
 }
 
+func LoadKotsAppFromContents(data []byte) (*kotsv1beta1.Application, error) {
+	decode := scheme.Codecs.UniversalDeserializer().Decode
+	obj, gvk, err := decode([]byte(data), nil, nil)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to decode kots app data of length %d", len(data))
+	}
+
+	if gvk.Group != "kots.io" || gvk.Version != "v1beta1" || gvk.Kind != "Application" {
+		return nil, errors.Errorf("unexpected GVK: %s", gvk.String())
+	}
+
+	return obj.(*kotsv1beta1.Application), nil
+}
+
 func LoadInstallationFromContents(installationData []byte) (*kotsv1beta1.Installation, error) {
 	decode := scheme.Codecs.UniversalDeserializer().Decode
 	obj, gvk, err := decode([]byte(installationData), nil, nil)
