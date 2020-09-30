@@ -1,18 +1,26 @@
 package version
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
+	"os"
 	"time"
 
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/kotsadm/pkg/gitops"
+	"github.com/replicatedhq/kots/kotsadm/pkg/k8s"
+	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
 	"github.com/replicatedhq/kots/kotsadm/pkg/persistence"
 	"github.com/replicatedhq/kots/kotsadm/pkg/secrets"
 	"github.com/replicatedhq/kots/kotsadm/pkg/store"
 	"github.com/replicatedhq/kots/kotsadm/pkg/version/types"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
+	"go.uber.org/zap"
+	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/client-go/kubernetes/scheme"
 	applicationv1beta1 "sigs.k8s.io/application/api/v1beta1"
 )
@@ -208,53 +216,78 @@ func GetRealizedLinksFromAppSpec(appID string, sequence int64) ([]types.Realized
 }
 
 func GetForwardedPortsFromAppSpec(appID string, sequence int64) ([]types.ForwardedPort, error) {
-	db := persistence.MustGetPGSession()
-	query := `select app_spec, kots_app_spec from app_version where app_id = $1 and sequence = $2`
-	row := db.QueryRow(query, appID, sequence)
-
-	var appSpecStr sql.NullString
-	var kotsAppSpecStr sql.NullString
-	if err := row.Scan(&appSpecStr, &kotsAppSpecStr); err != nil {
-		if err == sql.ErrNoRows {
-			return []types.ForwardedPort{}, nil
-		}
-		return nil, errors.Wrap(err, "failed to scan")
-	}
-
-	if appSpecStr.String == "" || kotsAppSpecStr.String == "" {
-		return []types.ForwardedPort{}, nil
-	}
-
-	decode := scheme.Codecs.UniversalDeserializer().Decode
-	obj, _, err := decode([]byte(appSpecStr.String), nil, nil)
+	appVersion, err := store.GetStore().GetAppVersion(appID, sequence)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to decode app spec yaml")
+		return nil, errors.Wrap(err, "failed to get app version")
 	}
-	appSpec := obj.(*applicationv1beta1.Application)
 
-	obj, _, err = decode([]byte(kotsAppSpecStr.String), nil, nil)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to decode kots app spec yaml")
+	if appVersion.KOTSKinds == nil {
+		return nil, errors.Wrap(err, "failed to get kots kinds for app")
 	}
-	kotsAppSpec := obj.(*kotsv1beta1.Application)
+
+	kotsAppSpec := appVersion.KOTSKinds.KotsApplication
 
 	if len(kotsAppSpec.Spec.ApplicationPorts) == 0 {
 		return []types.ForwardedPort{}, nil
 	}
 
 	ports := []types.ForwardedPort{}
-	for _, link := range appSpec.Spec.Descriptor.Links {
-		for _, port := range kotsAppSpec.Spec.ApplicationPorts {
-			if port.ApplicationURL == link.URL {
-				ports = append(ports, types.ForwardedPort{
-					ServiceName:    port.ServiceName,
-					ServicePort:    port.ServicePort,
-					LocalPort:      port.LocalPort,
-					ApplicationURL: port.ApplicationURL,
-				})
-			}
 
+	clientset, err := k8s.Clientset()
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get clientset")
+	}
+
+	appNamespace := os.Getenv("POD_NAMESPACE")
+	if os.Getenv("KOTSADM_TARGET_NAMESPACE") != "" {
+		appNamespace = os.Getenv("KOTSADM_TARGET_NAMESPACE")
+	}
+
+	// To forward the ports, we need to have the port listed
+	// in the kots spec only
+	for _, port := range kotsAppSpec.Spec.ApplicationPorts {
+		// make a best effort to not return ports to services that are not yet ready
+		// this is best effort because the service could restart at any time
+		// and the RBAC persona that this api is running as does not match
+		// the users RBAC persona. Finally, this will not work in a gitops-application
+		// unless it's deployed to the same namespace as the admin console
+		// This has always been a limitation though, we need to design for this
+
+		svc, err := clientset.CoreV1().Services(appNamespace).Get(context.TODO(), port.ServiceName, metav1.GetOptions{})
+		if err != nil {
+			logger.Error(errors.Wrapf(err, "failed to get service to check status, namespace = %s", os.Getenv("POD_NAMESPACE")))
+			continue
 		}
+
+		options := metav1.ListOptions{LabelSelector: labels.SelectorFromSet(svc.Spec.Selector).String()}
+		podList, err := clientset.CoreV1().Pods(appNamespace).List(context.TODO(), options)
+		if err != nil {
+			logger.Error(errors.Wrap(err, "failed to list pods in service"))
+			continue
+		}
+
+		hasReadyPod := false
+		for _, pod := range podList.Items {
+			if pod.Status.Phase == corev1.PodRunning {
+				for _, status := range pod.Status.ContainerStatuses {
+					if status.Ready {
+						hasReadyPod = true
+					}
+				}
+			}
+		}
+
+		if !hasReadyPod {
+			logger.Info("not forwarding to service because no pods are ready", zap.String("serviceName", port.ServiceName), zap.String("namespace", os.Getenv("POD_NAMESPACE")))
+			continue
+		}
+
+		ports = append(ports, types.ForwardedPort{
+			ServiceName:    port.ServiceName,
+			ServicePort:    port.ServicePort,
+			LocalPort:      port.LocalPort,
+			ApplicationURL: port.ApplicationURL,
+		})
 	}
 
 	return ports, nil

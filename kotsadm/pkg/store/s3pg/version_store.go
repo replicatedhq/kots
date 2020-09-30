@@ -522,15 +522,16 @@ func (s S3PGStore) addAppVersionToDownstream(tx *sql.Tx, appID string, clusterID
 
 func (s S3PGStore) GetAppVersion(appID string, sequence int64) (*versiontypes.AppVersion, error) {
 	db := persistence.MustGetPGSession()
-	query := `select sequence, created_at, status, applied_at, kots_installation_spec from app_version where app_id = $1 and sequence = $2`
+	query := `select sequence, created_at, status, applied_at, kots_installation_spec, kots_app_spec from app_version where app_id = $1 and sequence = $2`
 	row := db.QueryRow(query, appID, sequence)
 
 	var status sql.NullString
 	var deployedAt sql.NullTime
 	var installationSpec sql.NullString
+	var kotsAppSpec sql.NullString
 
 	v := versiontypes.AppVersion{}
-	if err := row.Scan(&v.Sequence, &v.CreatedOn, &status, &deployedAt, &installationSpec); err != nil {
+	if err := row.Scan(&v.Sequence, &v.CreatedOn, &status, &deployedAt, &installationSpec, &kotsAppSpec); err != nil {
 		if err == sql.ErrNoRows {
 			return nil, ErrNotFound
 		}
@@ -539,16 +540,28 @@ func (s S3PGStore) GetAppVersion(appID string, sequence int64) (*versiontypes.Ap
 
 	kotsKinds := kotsutil.KotsKinds{}
 
+	// why is this a nullstring but we don't check if it's null?
 	installation, err := kotsutil.LoadInstallationFromContents([]byte(installationSpec.String))
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to read installation spec")
 	}
 	kotsKinds.Installation = *installation
 
+	if kotsAppSpec.Valid {
+		kotsApp, err := kotsutil.LoadKotsAppFromContents([]byte(kotsAppSpec.String))
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to read kotsapp spec")
+		}
+		if kotsApp != nil {
+			kotsKinds.KotsApplication = *kotsApp
+		}
+	}
+
 	if deployedAt.Valid {
 		v.DeployedAt = &deployedAt.Time
 	}
 
+	v.KOTSKinds = &kotsKinds
 	v.Status = status.String
 
 	return &v, nil

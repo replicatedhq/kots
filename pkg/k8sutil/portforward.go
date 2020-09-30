@@ -9,8 +9,6 @@ import (
 	"net"
 	"net/http"
 	"net/url"
-	"os"
-	"path/filepath"
 	"strconv"
 	"time"
 
@@ -21,26 +19,12 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
-	"k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/portforward"
 	"k8s.io/client-go/transport/spdy"
 )
-
-func init() {
-	// Note this changes loggers globbaly for apimachinery packages,
-	// but this is the only way to silence port forwarder.
-	f, _ := os.Create(filepath.Join(os.TempDir(), "portforward.log"))
-	logger := func(err error) {
-		if f == nil {
-			return
-		}
-		fmt.Fprintf(f, "%v\n", err)
-	}
-	runtime.ErrorHandlers = []func(error){logger}
-}
 
 func IsPortAvailable(port int) bool {
 	host := ":" + strconv.Itoa(port)
@@ -194,38 +178,40 @@ func PortForward(kubernetesConfigFlags *genericclioptions.ConfigFlags, localPort
 
 				req, err := http.NewRequest("GET", uri, nil)
 				if err != nil {
-					runtime.HandleError(errors.Wrap(err, "failed to create request"))
+					log.Error(errors.Wrap(err, "failed to create request"))
 					continue
 				}
 				req.Header.Set("Accept", "application/json")
 
 				authSlug, err := auth.GetOrCreateAuthSlug(kubernetesConfigFlags, namespace)
 				if err != nil {
-					runtime.HandleError(errors.Wrap(err, "failed to get kotsadm auth slug"))
+					log.Error(errors.Wrap(err, "failed to get kotsadm auth slug"))
 					continue
 				}
 				req.Header.Add("Authorization", authSlug)
 
 				resp, err := http.DefaultClient.Do(req)
 				if err != nil {
-					runtime.HandleError(errors.Wrap(err, "failed to get ports"))
+					log.Error(errors.Wrap(err, "failed to get ports"))
 					continue
 				}
 
 				defer resp.Body.Close()
 				b, err := ioutil.ReadAll(resp.Body)
 				if err != nil {
-					runtime.HandleError(errors.Wrap(err, "failed to parse response"))
+					log.Error(errors.Wrap(err, "failed to parse response"))
 					continue
 				}
 
-				desiredAdditionalPorts := []AdditionalPort{}
-				if err := json.Unmarshal(b, &desiredAdditionalPorts); err != nil {
-					runtime.HandleError(errors.Wrap(err, "failed to decode response"))
+				response := struct {
+					DesiredAdditionalPorts []AdditionalPort `json:"ports"`
+				}{}
+				if err := json.Unmarshal(b, &response); err != nil {
+					log.Error(errors.Wrap(err, "failed to decode response"))
 					continue
 				}
 
-				for _, desiredAdditionalPort := range desiredAdditionalPorts {
+				for _, desiredAdditionalPort := range response.DesiredAdditionalPorts {
 					alreadyForwarded := false
 					for forwardedAdditionalPort := range forwardedAdditionalPorts {
 						// Avoid port conflicts by only taking the first to claim a local port
@@ -241,13 +227,14 @@ func PortForward(kubernetesConfigFlags *genericclioptions.ConfigFlags, localPort
 
 					serviceStopCh, err := ServiceForward(clientset, cfg, desiredAdditionalPort.LocalPort, desiredAdditionalPort.ServicePort, namespace, desiredAdditionalPort.ServiceName)
 					if err != nil {
-						runtime.HandleError(errors.Wrap(err, "failed to forward port"))
+						log.Error(errors.Wrap(err, fmt.Sprintf("failed to execute kubectl port-forward -n %s svc/%s %d:%d", namespace, desiredAdditionalPort.ServiceName, desiredAdditionalPort.LocalPort, desiredAdditionalPort.ServicePort)))
 						continue // try again
 					}
 					if serviceStopCh == nil {
 						// we didn't do the port forwarding, probably because the pod isn't ready.
 						// try again next loop
-						runtime.HandleError(errors.New("failed to forward port; pod not ready?"))
+						// The API doesn't return ports that aren't ready, so this is possibly rbac?
+						log.Error(errors.Errorf("failed to forward port. check that you have permission to run kubectl port-forward -n %s svc/%s %d:%d", namespace, desiredAdditionalPort.ServiceName, desiredAdditionalPort.LocalPort, desiredAdditionalPort.ServicePort))
 						continue // try again
 					}
 
