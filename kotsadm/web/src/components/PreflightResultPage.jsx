@@ -49,7 +49,7 @@ class PreflightResultPage extends Component {
         await this.deployKotsVersion(preflightResultData.appSlug, sequence);
       }
 
-      history.push(`/app/${preflightResultData.appSlug}/version-history`);
+      history.push(`/app/${preflightResultData.appSlug}`);
     } catch (err) {
       console.log(err);
       this.setState({

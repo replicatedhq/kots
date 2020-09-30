@@ -12,6 +12,7 @@ import url from "url";
 import AirgapUploadProgress from "../AirgapUploadProgress";
 import Loader from "../shared/Loader";
 import MountAware from "../shared/MountAware";
+import ShowLogsModal from "@src/components/modals/ShowLogsModal";
 
 import {
   dynamicallyResizeText,
@@ -26,6 +27,9 @@ export default class DashboardCard extends React.Component {
     super(props);
     this.state = {
       selectedAction: "",
+      logsLoading: false,
+      logs: null,
+      selectedTab: null,
     }
     this.cardTitleText = React.createRef();
   }
@@ -134,9 +138,98 @@ export default class DashboardCard extends React.Component {
     )
   }
 
+  renderVersionAvailable = (downstream) => {
+    if (downstream?.pendingVersions?.length > 0) {
+      return (
+        <div className="flex flex-column u-marginTop--12">
+          <p className="u-fontSize--small u-lineHeight--normal u-color--selectiveYellow u-fontWeight--medium">New version available</p>
+          <div className="flex flex1 alignItems--center u-marginTop--5">
+            <span className="u-fontSize--normal u-fontWeight--bold u-color--tundora"> {downstream?.pendingVersions[0].versionLabel} </span>
+            <Link to={`${this.props.url}/version-history`} className="card-link u-marginLeft--5"> View </Link>
+          </div>
+        </div>
+      )
+    } else {
+      return (
+        <p className="u-fontSize--small u-lineHeight--normal u-fontWeight--medium u-marginTop--12" style={{ color: "#DFDFDF" }}> No new version available </p>
+      )
+    }
+  }
+
+  hideLogsModal = () => {
+    this.setState({
+      showLogsModal: false
+    });
+  }
+
+  renderLogsTabs = () => {
+    const { logs, selectedTab } = this.state;
+    if (!logs) {
+      return null;
+    }
+    const tabs = Object.keys(logs);
+
+    return (
+      <div className="flex action-tab-bar u-marginTop--10">
+        {tabs.filter(tab => tab !== "renderError").map(tab => (
+          <div className={`tab-item blue ${tab === selectedTab && "is-active"}`} key={tab} onClick={() => this.setState({ selectedTab: tab })}>
+            {tab}
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  handleViewLogs = async (version, isFailing) => {
+    try {
+      const { app } = this.props;
+      const clusterId = app.downstreams?.length && app.downstreams[0].cluster?.id;
+
+      this.setState({ logsLoading: true, showLogsModal: true, viewLogsErrMsg: "" });
+
+      const res = await fetch(`${window.env.API_ENDPOINT}/app/${app?.slug}/cluster/${clusterId}/sequence/${version?.sequence}/downstreamoutput`, {
+        headers: {
+          "Authorization": Utilities.getToken(),
+          "Content-Type": "application/json",
+        },
+        method: "GET",
+      });
+      if (res.ok && res.status === 200) {
+        const response = await res.json();
+        let selectedTab;
+        if (isFailing) {
+          selectedTab = "applyStderr";
+        } else {
+          selectedTab = Object.keys(response.logs)[0];
+        }
+        this.setState({ logs: response.logs, selectedTab, logsLoading: false, viewLogsErrMsg: "" });
+      } else {
+        this.setState({ logsLoading: false, viewLogsErrMsg: `Failed to view logs, unexpected status code, ${res.status}` });
+      }
+    } catch (err) {
+      console.log(err)
+      this.setState({ logsLoading: false, viewLogsErrMsg: err ? `Failed to view logs: ${err.message}` : "Something went wrong, please try again." });
+    }
+  }
+
+  getCurrentVersionStatus = (version) => {
+    if (version?.status === "deployed" || version?.status === "merged" || version?.status === "pending") {
+      return <span className="u-fontSize--small u-lineHeight--normal u-color--dustyGray u-fontWeight--medium flex alignItems--center"> <span className="icon checkmark-icon u-marginRight--5" /> {Utilities.toTitleCase(version?.status).replace("_", " ")} </span>
+    } else if (version?.status === "failed") {
+      return <span className="u-fontSize--small u-lineHeight--normal u-color--red u-fontWeight--medium flex alignItems--center"> <span className="icon error-small u-marginRight--5" /> Failed <span className="u-marginLeft--5 replicated-link u-fontSize--small" onClick={() => this.handleViewLogs(version, true)}> See details </span></span>
+    } else if (version?.status === "deploying") {
+      return (
+        <span className="flex alignItems--center u-fontSize--small u-lineHeight--normal u-color--dustyGray u-fontWeight--medium">
+          <Loader className="flex alignItems--center u-marginRight--5" size="16" />
+            Deploying
+        </span>);
+    } else {
+      return <span className="u-fontSize--small u-lineHeight--normal u-color--dustyGray u-fontWeight--medium flex alignItems--center"> {Utilities.toTitleCase(version?.status).replace("_", " ")} </span>
+    }
+  }
+
   renderVersionHistoryCard = () => {
     const { app, currentVersion, downstream, checkingForUpdates, checkingForUpdateError, checkingUpdateText, errorCheckingUpdate, onCheckForUpdates, redirectToDiff, isBundleUploading } = this.props;
-    const updatesText = downstream?.pendingVersions?.length > 0 || app.isAirgap ? null : "No updates available.";
     const isUpdateAvailable = downstream?.pendingVersions?.length > 0;
 
     let checkingUpdateTextShort = checkingUpdateText;
@@ -144,9 +237,15 @@ export default class DashboardCard extends React.Component {
       checkingUpdateTextShort = checkingUpdateTextShort.slice(0, 30) + "...";
     }
 
-    let updateText = <p className="u-marginTop--10 u-fontSize--small u-color--dustyGray u-fontWeight--medium">Last checked {dayjs(app.lastUpdateCheck).fromNow()}</p>;
-    if (this.props.airgapUploadError) {
-      updateText = <p className="u-marginTop--10 u-fontSize--small u-color--chestnut u-fontWeight--medium">Error uploading bundle <span className="u-color--royalBlue u-textDecoration--underlineOnHover" onClick={this.props.viewAirgapUploadError}>View details</span></p>
+    const showOnlineUI = !app.isAirgap && !checkingForUpdates;
+    const showAirgapUI = app.isAirgap && !isBundleUploading;
+
+
+    let updateText;
+    if (showOnlineUI && app.lastUpdateCheckAt) {
+      updateText = <p className="u-marginTop--8 u-fontSize--smaller u-color--silverSand u-marginTop--8">Last checked <span className="u-fontWeight--bold">{dayjs(app.lastUpdateCheckAt).fromNow()}</span></p>;
+    } else if (this.props.airgapUploadError) {
+      updateText = <p className="u-marginTop--10 u-fontSize--small u-color--chestnut u-fontWeight--medium">Error uploading bundle <span className="u-color--royalBlue u-textDecoration--underlineOnHover" onClick={this.props.viewAirgapUploadError}>See details</span></p>
     } else if (this.props.uploadingAirgapFile) {
       updateText = (
         <AirgapUploadProgress
@@ -168,36 +267,39 @@ export default class DashboardCard extends React.Component {
       updateText = <p className="u-marginTop--10 u-fontSize--small u-color--chestnut u-fontWeight--medium">Error checking for updates, please try again</p>
     } else if (checkingForUpdates) {
       updateText = <p className="u-marginTop--10 u-fontSize--small u-color--dustyGray u-fontWeight--medium">{checkingUpdateTextShort}</p>
-    } else if (!app.lastUpdateCheck) {
+    } else if (!app.lastUpdateCheckAt) {
       updateText = null;
     }
 
-    const showAirgapUI = app.isAirgap && !isBundleUploading;
-    const showOnlineUI = !app.isAirgap && !checkingForUpdates;
-
-
     return (
-      <div>
-        <p className="u-fontWeight--bold u-fontSize--normal u-color--tundora"> {currentVersion?.status === "deployed" ? "Installed" : ""} </p>
-        <p className="u-fontSize--small u-fontWeight--medium u-color--dustyGray u-marginTop--5"> {moment(currentVersion?.createdOn).format("lll")} </p>
-
-        <p className="u-fontSize--small u-color--dustyGray u-marginTop--15"> {updatesText} </p>
+      <div className="flex1 flex-column">
+        {currentVersion?.deployedAt ?
+          <div className="flex flex-column" style={{ minHeight: "35px" }}>
+            {this.getCurrentVersionStatus(currentVersion)}
+            <p className="u-fontSize--small u-fontWeight--medium u-color--dustyGray u-marginTop--5"> {moment(currentVersion?.createdOn).format("lll")} </p>
+          </div>
+          :
+          <p className="u-fontWeight--bold u-fontSize--normal u-color--dustyGray" style={{ minHeight: "35px" }}> No version deployed </p>}
         {checkingForUpdates && !isBundleUploading
           ? <Loader className="flex justifyContent--center u-marginTop--10" size="32" />
           : showAirgapUI
             ?
-            <MountAware onMount={el => this.props.airgapUploader?.assignElement(el)}>
+            <MountAware className="u-marginTop--30" onMount={el => this.props.airgapUploader?.assignElement(el)}>
               <button className="btn secondary blue">Upload new version</button>
             </MountAware>
             : showOnlineUI ?
-              <div className="flex alignItems--center">
-                <button className="btn primary blue u-marginTop--10" onClick={isUpdateAvailable ? redirectToDiff : onCheckForUpdates}>{isUpdateAvailable ? "Show Update" : "Check for update"}</button>
-                <span className="icon settings-small-icon u-marginLeft--5 u-cursor--pointer u-marginTop--10" onClick={this.props.showUpdateCheckerModal} data-tip="Configure automatic updates"></span>
-                <ReactTooltip effect="solid" className="replicated-tooltip" />
+              <div className="flex1 flex-column" style={{ flexGrow: 1 }}>
+                {this.renderVersionAvailable(downstream)}
+                <div className="flex alignItems--center">
+                  <button className="btn primary blue u-marginTop--10" onClick={isUpdateAvailable ? redirectToDiff : onCheckForUpdates}>Check for update</button>
+                  <span className="icon settings-small-icon u-marginLeft--5 u-cursor--pointer u-marginTop--10" onClick={this.props.showUpdateCheckerModal} data-tip="Configure automatic update checks"></span>
+                  <ReactTooltip effect="solid" className="replicated-tooltip" />
+                </div>
+                {updateText}
               </div>
               : null
         }
-        {updateText}
+        {showAirgapUI && updateText}
         {checkingForUpdateError &&
           <div className="flex-column flex-auto u-marginTop--5">
             <p className="u-marginTop--10 u-fontSize--small u-color--chestnut u-fontWeight--medium">Error updating version <span className="u-color--royalBlue u-textDecoration--underlineOnHover" onClick={() => this.props.viewAirgapUpdateError(checkingUpdateText)}>View details</span></p>
@@ -237,10 +339,10 @@ export default class DashboardCard extends React.Component {
     const isSnapshotInProgress = !!snapshotInProgressApps?.find(a => a === app?.slug);
 
     return (
-      <div className={`${isSnapshotAllowed ? "small-dashboard-card" : appLicense?.licenseType === "community" ? "community-dashboard-card" : appLicense && size(appLicense) === 0 ? "grayed-dashboard-card" : "dashboard-card"} flex-column flex1 flex`}>
-        <div className="flex u-marginBottom--5">
+      <div className={`${isSnapshotAllowed ? "small-dashboard-card" : appLicense?.licenseType === "community" ? "community-dashboard-card" : appLicense && size(appLicense) === 0 ? "grayed-dashboard-card" : "dashboard-card"} flex flex1`}>
+        <div className="flex flex1 u-marginBottom--5">
           <span className={`icon ${cardIcon} u-marginRight--10`}></span>
-          <div className="flex1 justifyContent--center">
+          <div className="flex1 flex-column">
             <div className={`flex justifyContent--spaceBetween ${appLicense && size(appLicense) === 0 ? "u-marginTop--10" : ""}`}>
               <p ref={this.cardTitleText} style={{ fontSize: "20px" }} className={`flex1 u-fontWeight--bold u-fontSize--largest u-paddingRight--5 u-marginBottom--5 ${appLicense && size(appLicense) === 0 ? "u-color--doveGray" : "u-color--tundora"}`}>{cardName}</p>
             </div>
@@ -259,7 +361,7 @@ export default class DashboardCard extends React.Component {
                       !getingAppLicenseErrMsg && <span className="status-indicator completed"> Enabled </span>
                     : null
             }
-            <div className={`${isSnapshotAllowed ? "u-marginTop--8" : "u-marginTop--15"}`}>
+            <div className={`${isSnapshotAllowed || versionHistory ? "flex-auto flex-column u-marginTop--8" : "u-marginTop--15"}`}>
               <div className="flex flex1">
                 {application ?
                   this.renderApplicationCard()
@@ -279,6 +381,16 @@ export default class DashboardCard extends React.Component {
             </div>
           </div>
         </div>
+        {this.state.showLogsModal &&
+          <ShowLogsModal
+            showLogsModal={this.state.showLogsModal}
+            hideLogsModal={this.hideLogsModal}
+            viewLogsErrMsg={this.state.viewLogsErrMsg}
+            logs={this.state.logs}
+            selectedTab={this.state.selectedTab}
+            logsLoading={this.state.logsLoading}
+            renderLogsTabs={this.renderLogsTabs()}
+          />}
       </div>
     );
   }
