@@ -17,7 +17,7 @@ type GetUpdatesOptions struct {
 	CurrentChannelID    string
 	CurrentChannelName  string
 	CurrentVersionLabel string
-	ReportingInfo       upstreamtypes.ReportingInfo
+	ReportingInfo       *upstreamtypes.ReportingInfo
 	Silent              bool
 }
 

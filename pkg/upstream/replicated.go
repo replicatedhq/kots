@@ -78,7 +78,7 @@ func (this ReplicatedCursor) Equal(other ReplicatedCursor) bool {
 	return this.ChannelName == other.ChannelName && this.Cursor == other.Cursor
 }
 
-func getUpdatesReplicated(u *url.URL, localPath string, currentCursor ReplicatedCursor, currentVersionLabel string, license *kotsv1beta1.License, reportingInfo types.ReportingInfo) ([]Update, error) {
+func getUpdatesReplicated(u *url.URL, localPath string, currentCursor ReplicatedCursor, currentVersionLabel string, license *kotsv1beta1.License, reportingInfo *types.ReportingInfo) ([]Update, error) {
 	if localPath != "" {
 		parsedLocalRelease, err := readReplicatedAppFromLocalPath(localPath, currentCursor, currentVersionLabel)
 		if err != nil {
@@ -432,7 +432,7 @@ func downloadReplicatedApp(replicatedUpstream *ReplicatedUpstream, license *kots
 	return &release, nil
 }
 
-func listPendingChannelReleases(replicatedUpstream *ReplicatedUpstream, license *kotsv1beta1.License, currentCursor ReplicatedCursor, reportingInfo types.ReportingInfo) ([]ChannelRelease, error) {
+func listPendingChannelReleases(replicatedUpstream *ReplicatedUpstream, license *kotsv1beta1.License, currentCursor ReplicatedCursor, reportingInfo *types.ReportingInfo) ([]ChannelRelease, error) {
 	u, err := url.Parse(license.Spec.Endpoint)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to parse endpoint from license")
@@ -455,18 +455,20 @@ func listPendingChannelReleases(replicatedUpstream *ReplicatedUpstream, license 
 	urlValues.Add("licenseSequence", fmt.Sprintf("%d", license.Spec.LicenseSequence))
 
 	// reporting info
-	urlValues.Add("k8sVersion", reportingInfo.K8sVersion)
-	urlValues.Add("isKurl", fmt.Sprintf("%t", reportingInfo.IsKurl))
-	urlValues.Add("appStatus", reportingInfo.AppStatus)
-	urlValues.Add("clusterId", reportingInfo.ClusterID)
+	if reportingInfo != nil {
+		urlValues.Add("k8sVersion", reportingInfo.K8sVersion)
+		urlValues.Add("isKurl", fmt.Sprintf("%t", reportingInfo.IsKurl))
+		urlValues.Add("appStatus", reportingInfo.AppStatus)
+		urlValues.Add("clusterId", reportingInfo.ClusterID)
 
-	if reportingInfo.DownstreamCursor != "" {
-		urlValues.Add("downstreamChannelSequence", reportingInfo.DownstreamCursor)
-	}
-	if reportingInfo.DownstreamChannelID != "" {
-		urlValues.Add("downstreamChannelId", reportingInfo.DownstreamChannelID)
-	} else if reportingInfo.DownstreamChannelName != "" {
-		urlValues.Add("downstreamChannelName", reportingInfo.DownstreamChannelName)
+		if reportingInfo.DownstreamCursor != "" {
+			urlValues.Add("downstreamChannelSequence", reportingInfo.DownstreamCursor)
+		}
+		if reportingInfo.DownstreamChannelID != "" {
+			urlValues.Add("downstreamChannelId", reportingInfo.DownstreamChannelID)
+		} else if reportingInfo.DownstreamChannelName != "" {
+			urlValues.Add("downstreamChannelName", reportingInfo.DownstreamChannelName)
+		}
 	}
 
 	url := fmt.Sprintf("%s://%s/release/%s/pending?%s", u.Scheme, hostname, license.Spec.AppSlug, urlValues.Encode())

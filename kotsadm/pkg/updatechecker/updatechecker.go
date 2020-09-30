@@ -9,6 +9,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/kotsadm/pkg/app"
 	"github.com/replicatedhq/kots/kotsadm/pkg/downstream"
+	"github.com/replicatedhq/kots/kotsadm/pkg/k8s"
 	"github.com/replicatedhq/kots/kotsadm/pkg/kurl"
 	"github.com/replicatedhq/kots/kotsadm/pkg/license"
 	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
@@ -20,8 +21,6 @@ import (
 	upstreamtypes "github.com/replicatedhq/kots/pkg/upstream/types"
 	cron "github.com/robfig/cron/v3"
 	"go.uber.org/zap"
-	"k8s.io/client-go/kubernetes"
-	"sigs.k8s.io/controller-runtime/pkg/client/config"
 )
 
 // jobs maps app ids to their cron jobs
@@ -206,9 +205,9 @@ func CheckForUpdates(appID string, deploy bool) (int64, error) {
 	// add info for reporting purposes
 	r, err := GetReportingInfo(a.ID)
 	if err != nil {
-		return 0, errors.Wrap(err, "failed to get reporting info")
+		logger.Error(errors.Wrap(err, "failed to get reporting info"))
 	}
-	getUpdatesOptions.ReportingInfo = *r
+	getUpdatesOptions.ReportingInfo = r
 
 	// get updates
 	updates, err := kotspull.GetUpdates(fmt.Sprintf("replicated://%s", kotsKinds.License.Spec.AppSlug), getUpdatesOptions)
@@ -323,19 +322,15 @@ func GetReportingInfo(appID string) (*upstreamtypes.ReportingInfo, error) {
 	}
 
 	// get kubernetes cluster version
-	cfg, err := config.GetConfig()
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to get cluster config")
-	}
-	clientset, err := kubernetes.NewForConfig(cfg)
+	clientset, err := k8s.Clientset()
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create kubernetes clientset")
 	}
-	k8sVersion, err := clientset.ServerVersion()
+	k8sVersion, err := clientset.Discovery().ServerVersion()
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to get server version")
+		return nil, errors.Wrap(err, "failed to get kubernetes server version")
 	}
-	r.K8sVersion = k8sVersion.String()
+	r.K8sVersion = k8sVersion.GitVersion
 
 	// get app status
 	appStatus, err := store.GetStore().GetAppStatus(appID)

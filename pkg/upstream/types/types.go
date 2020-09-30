@@ -63,7 +63,7 @@ type FetchOptions struct {
 	CurrentVersionLabel string
 	AppSequence         int64
 	LocalRegistry       LocalRegistry
-	ReportingInfo       ReportingInfo
+	ReportingInfo       *ReportingInfo
 }
 
 type LocalRegistry struct {
