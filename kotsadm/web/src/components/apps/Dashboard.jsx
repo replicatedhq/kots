@@ -569,7 +569,7 @@ class Dashboard extends Component {
                 app={app}
               />
               <DashboardCard
-                cardName={`Version: ${currentVersion?.versionLabel ? currentVersion?.versionLabel : ""}`}
+                cardName={`Version ${currentVersion?.versionLabel ? currentVersion?.versionLabel : ""}`}
                 cardIcon="versionIcon"
                 versionHistory={true}
                 currentVersion={currentVersion}
