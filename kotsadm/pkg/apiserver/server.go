@@ -75,7 +75,6 @@ func Start() {
 
 	r.Path("/api/v1/troubleshoot/{appId}/{bundleId}").Methods("PUT").HandlerFunc(handlers.UploadSupportBundle)
 	r.Path("/api/v1/troubleshoot/supportbundle/{bundleId}/redactions").Methods("PUT").HandlerFunc(handlers.SetSupportBundleRedactions)
-	r.Path("/api/v1/preflight/app/{appSlug}/sequence/{sequence}").Methods("GET").HandlerFunc(handlers.GetPreflightStatus)
 	r.Path("/api/v1/preflight/app/{appSlug}/sequence/{sequence}").Methods("POST").HandlerFunc(handlers.PostPreflightStatus)
 
 	// This the handler for license API and should be called by the application only.
@@ -149,7 +148,7 @@ func Start() {
 	sessionAuthRouter.Path("/api/v1/app/{appSlug}/sequence/{sequence}/preflight/ignore-rbac").Methods("POST").HandlerFunc(handlers.IgnorePreflightRBACErrors)
 	sessionAuthRouter.Path("/api/v1/app/{appSlug}/sequence/{sequence}/preflight/run").Methods("POST").HandlerFunc(handlers.StartPreflightChecks)
 	sessionAuthRouter.Path("/api/v1/app/{appSlug}/sequence/{sequence}/preflight/result").Methods("GET").HandlerFunc(handlers.GetPreflightResult)
-	sessionAuthRouter.Path("/api/v1/app/{appSlug}/sequence/{sequence}/preflightcommand").Methods("GET").HandlerFunc(handlers.GetPreflightCommand)
+	sessionAuthRouter.Path("/api/v1/app/{appSlug}/sequence/{sequence}/preflightcommand").Methods("POST").HandlerFunc(handlers.GetPreflightCommand)
 	sessionAuthRouter.Path("/api/v1/preflight/result").Methods("GET").HandlerFunc(handlers.GetLatestPreflightResult)
 	sessionAuthRouter.Path("/api/v1/app/{appSlug}/sequence/{sequence}/deploy").Methods("POST").HandlerFunc(handlers.DeployAppVersion)
 	sessionAuthRouter.Path("/api/v1/app/{appSlug}/sequence/{sequence}/renderedcontents").Methods("GET").HandlerFunc(handlers.GetAppRenderedContents)

@@ -1,15 +1,34 @@
 package preflight
 
 import (
+	"bytes"
+	"context"
+	"fmt"
+	"os"
+
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/kotsadm/pkg/downstream"
 	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
 	"github.com/replicatedhq/kots/kotsadm/pkg/render"
+	"github.com/replicatedhq/kots/kotsadm/pkg/render/helper"
 	"github.com/replicatedhq/kots/kotsadm/pkg/store"
 	"github.com/replicatedhq/kots/kotsadm/pkg/version"
+	"github.com/replicatedhq/kots/kotskinds/client/kotsclientset/scheme"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
+	troubleshootv1beta2 "github.com/replicatedhq/troubleshoot/pkg/apis/troubleshoot/v1beta2"
 	troubleshootpreflight "github.com/replicatedhq/troubleshoot/pkg/preflight"
 	"go.uber.org/zap"
+	corev1 "k8s.io/api/core/v1"
+	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	serializer "k8s.io/apimachinery/pkg/runtime/serializer/json"
+	"k8s.io/client-go/kubernetes"
+	"sigs.k8s.io/controller-runtime/pkg/client/config"
+)
+
+const (
+	SpecDataKey = "preflight-spec"
 )
 
 func Run(appID string, sequence int64, isAirgap bool, archiveDir string) error {
@@ -150,4 +169,111 @@ func getPreflightState(preflightResults *troubleshootpreflight.UploadPreflightRe
 	}
 
 	return state
+}
+
+func GetSpecSecretName(appSlug string) string {
+	return fmt.Sprintf("kotsadm-%s-preflight", appSlug)
+}
+
+func GetSpecURI(appSlug string) string {
+	return fmt.Sprintf("secret/%s/%s", os.Getenv("POD_NAMESPACE"), GetSpecSecretName(appSlug))
+}
+
+func GetPreflightCommand(appSlug string) []string {
+	comamnd := []string{
+		"curl https://krew.sh/preflight | bash",
+		fmt.Sprintf("kubectl preflight %s\n", GetSpecURI(appSlug)),
+	}
+
+	return comamnd
+}
+
+func CreateRenderedSpec(appID string, sequence int64, origin string, inCluster bool, preflight *troubleshootv1beta2.Preflight) error {
+	if preflight == nil {
+		preflight = &troubleshootv1beta2.Preflight{
+			TypeMeta: v1.TypeMeta{
+				Kind:       "Preflight",
+				APIVersion: "troubleshoot.sh/v1beta2",
+			},
+			ObjectMeta: v1.ObjectMeta{
+				Name: "default-preflight",
+			},
+		}
+	}
+
+	app, err := store.GetStore().GetApp(appID)
+	if err != nil {
+		return errors.Wrap(err, "failed to get app")
+	}
+
+	baseURL := os.Getenv("API_ADVERTISE_ENDPOINT")
+	if inCluster {
+		baseURL = os.Getenv("API_ENDPOINT")
+	} else if origin != "" {
+		baseURL = origin
+	}
+	preflight.Spec.UploadResultsTo = fmt.Sprintf("%s/api/v1/preflight/app/%s/sequence/%d", baseURL, app.Slug, sequence)
+
+	s := serializer.NewYAMLSerializer(serializer.DefaultMetaFactory, scheme.Scheme, scheme.Scheme)
+	var b bytes.Buffer
+	if err := s.Encode(preflight, &b); err != nil {
+		return errors.Wrap(err, "failed to encode preflight")
+	}
+
+	templatedSpec := b.Bytes()
+
+	renderedSpec, err := helper.RenderAppFile(app, &sequence, templatedSpec)
+	if err != nil {
+		return errors.Wrap(err, "failed render preflight spec")
+	}
+
+	cfg, err := config.GetConfig()
+	if err != nil {
+		return errors.Wrap(err, "failed to get cluster config")
+	}
+
+	clientset, err := kubernetes.NewForConfig(cfg)
+	if err != nil {
+		return errors.Wrap(err, "failed to create clientset")
+	}
+
+	secretName := GetSpecSecretName(app.Slug)
+
+	existingSecret, err := clientset.CoreV1().Secrets(os.Getenv("POD_NAMESPACE")).Get(context.TODO(), secretName, metav1.GetOptions{})
+	if err != nil && !kuberneteserrors.IsNotFound(err) {
+		return errors.Wrap(err, "failed to read preflight secret")
+	} else if kuberneteserrors.IsNotFound(err) {
+		secret := &corev1.Secret{
+			TypeMeta: metav1.TypeMeta{
+				APIVersion: "v1",
+				Kind:       "Secret",
+			},
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      secretName,
+				Namespace: os.Getenv("POD_NAMESPACE"),
+			},
+			Data: map[string][]byte{
+				SpecDataKey: renderedSpec,
+			},
+		}
+
+		_, err = clientset.CoreV1().Secrets(os.Getenv("POD_NAMESPACE")).Create(context.TODO(), secret, metav1.CreateOptions{})
+		if err != nil {
+			return errors.Wrap(err, "failed to create preflight secret")
+		}
+
+		return nil
+	}
+
+	if existingSecret.Data == nil {
+		existingSecret.Data = map[string][]byte{}
+	}
+	existingSecret.Data[SpecDataKey] = renderedSpec
+
+	_, err = clientset.CoreV1().Secrets(os.Getenv("POD_NAMESPACE")).Update(context.TODO(), existingSecret, metav1.UpdateOptions{})
+	if err != nil {
+		return errors.Wrap(err, "failed to update preflight secret")
+	}
+
+	return nil
 }
