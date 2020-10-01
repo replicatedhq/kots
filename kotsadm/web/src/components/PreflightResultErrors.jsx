@@ -58,10 +58,14 @@ class PreflightResultErrors extends Component {
 
   fetchPreflightCommand = async (slug, sequence) => {
     const res = await fetch(`${window.env.API_ENDPOINT}/app/${slug}/sequence/${sequence}/preflightcommand`, {
-      method: "GET",
+      method: "POST",
       headers: {
         "Authorization": Utilities.getToken(),
-      }
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        origin: window.location.origin,
+      })
     });
     if (!res.ok) {
       throw new Error(`Unexpected status code: ${res.status}`);
@@ -80,14 +84,8 @@ class PreflightResultErrors extends Component {
       errorTitle,
       errorMsg,
       displayErrorModal,
+      command,
     } = this.state;
-
-    let command;
-    if (this.state.command) {
-      command = this.state.command.map((part) => {
-        return part.replace("API_ADDRESS", window.location.origin);
-      });
-    }
 
     return (
       <div className="flex flex1 flex-column">

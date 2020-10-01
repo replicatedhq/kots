@@ -1,7 +1,7 @@
 package handlers
 
 import (
-	"fmt"
+	"encoding/json"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -12,13 +12,16 @@ import (
 	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
 	"github.com/replicatedhq/kots/kotsadm/pkg/preflight"
 	preflighttypes "github.com/replicatedhq/kots/kotsadm/pkg/preflight/types"
-	"github.com/replicatedhq/kots/kotsadm/pkg/render/helper"
 	"github.com/replicatedhq/kots/kotsadm/pkg/store"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 )
 
 type GetPreflightResultResponse struct {
 	PreflightResult preflighttypes.PreflightResult `json:"preflightResult"`
+}
+
+type GetPreflightCommandRequest struct {
+	Origin string `json:"origin"`
 }
 
 type GetPreflightCommandResponse struct {
@@ -152,101 +155,54 @@ func GetPreflightCommand(w http.ResponseWriter, r *http.Request) {
 	appSlug := mux.Vars(r)["appSlug"]
 	sequence, err := strconv.ParseInt(mux.Vars(r)["sequence"], 10, 64)
 	if err != nil {
-		logger.Error(err)
-		w.WriteHeader(400)
+		logger.Error(errors.Wrap(err, "failed to parse sequence"))
+		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
-	command := []string{
-		"curl https://krew.sh/preflight | bash",
-		fmt.Sprintf("kubectl preflight API_ADDRESS/api/v1/preflight/app/%s/sequence/%d", appSlug, sequence),
-	}
+	inCluster := r.URL.Query().Get("inCluster") == "true"
 
-	response := GetPreflightCommandResponse{
-		Command: command,
-	}
-	JSON(w, 200, response)
-}
-
-// GetPreflightStatus route is UNAUTHENTICATED
-// This request comes from the `kubectl preflight` command.
-func GetPreflightStatus(w http.ResponseWriter, r *http.Request) {
-	appSlug := mux.Vars(r)["appSlug"]
-	sequence, err := strconv.ParseInt(mux.Vars(r)["sequence"], 10, 64)
-	if err != nil {
-		err = errors.Wrap(err, "failed to parse sequence")
-		logger.Error(err)
-		w.WriteHeader(400)
+	getPreflightCommandRequest := GetPreflightCommandRequest{}
+	if err := json.NewDecoder(r.Body).Decode(&getPreflightCommandRequest); err != nil {
+		logger.Error(errors.Wrap(err, "failed to decode request body"))
+		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
-
-	inCluster := r.URL.Query().Get("inCluster")
 
 	foundApp, err := store.GetStore().GetAppFromSlug(appSlug)
 	if err != nil {
-		err = errors.Wrap(err, "failed to get app from slug")
-		logger.Error(err)
-		w.WriteHeader(500)
+		logger.Error(errors.Wrap(err, "failed to get app"))
+		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
-	archiveDir, err := store.GetStore().GetAppVersionArchive(foundApp.ID, sequence)
+	archivePath, err := store.GetStore().GetAppVersionArchive(foundApp.ID, sequence)
 	if err != nil {
-		err = errors.Wrap(err, "failed to get app version archive")
-		logger.Error(err)
-		w.WriteHeader(500)
+		logger.Error(errors.Wrap(err, "failed to get app archive"))
+		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
+	defer os.RemoveAll(archivePath)
 
-	// we need a few objects from the app to check for updates
-	renderedKotsKinds, err := kotsutil.LoadKotsKindsFromPath(archiveDir)
+	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(archivePath)
 	if err != nil {
-		err = errors.Wrap(err, "failed to load kotskinds")
-		logger.Error(err)
-		w.WriteHeader(500)
+		logger.Error(errors.Wrap(err, "failed to load kots kinds"))
+		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
-	if renderedKotsKinds.Preflight == nil {
-		w.WriteHeader(404)
-		return
-	}
-
-	// render the preflight file
-	// we need to convert to bytes first, so that we can reuse the renderfile function
-	renderedMarshalledPreflights, err := renderedKotsKinds.Marshal("troubleshoot.replicated.com", "v1beta1", "Preflight")
+	err = preflight.CreateRenderedSpec(foundApp.ID, sequence, getPreflightCommandRequest.Origin, inCluster, kotsKinds.Preflight)
 	if err != nil {
-		err = errors.Wrap(err, "failed to marshal rendered preflight")
-		logger.Error(err)
-		w.WriteHeader(500)
+		logger.Error(errors.Wrap(err, "failed to render preflight spec"))
+		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
-	renderedPreflight, err := helper.RenderAppFile(foundApp, &sequence, []byte(renderedMarshalledPreflights))
-	if err != nil {
-		err = errors.Wrap(err, "failed to render preflights")
-		logger.Error(err)
-		w.WriteHeader(500)
-		return
+	response := GetPreflightCommandResponse{
+		Command: preflight.GetPreflightCommand(foundApp.Slug),
 	}
 
-	specJSON, err := kotsutil.LoadPreflightFromContents(renderedPreflight)
-	if err != nil {
-		err = errors.Wrap(err, "failed to load rendered preflight")
-		logger.Error(err)
-		w.WriteHeader(500)
-		return
-	}
-
-	var baseURL string
-	if inCluster == "true" {
-		baseURL = os.Getenv("API_ENDPOINT")
-	} else {
-		baseURL = os.Getenv("API_ADVERTISE_ENDPOINT")
-	}
-	specJSON.Spec.UploadResultsTo = fmt.Sprintf("%s/api/v1/preflight/app/%s/sequence/%d", baseURL, appSlug, sequence)
-
-	YAML(w, 200, specJSON)
+	JSON(w, http.StatusOK, response)
 }
 
 // PostPreflightStatus route is UNAUTHENTICATED
