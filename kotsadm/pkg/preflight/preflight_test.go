@@ -65,10 +65,11 @@ func Test_getPreflightState(t *testing.T) {
 			want:             "pass",
 		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := getPreflightState(tt.preflightResults); got != tt.want {
-				t.Errorf("getPreflightState() = %v, want %v", got, tt.want)
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			if got := getPreflightState(test.preflightResults); got != test.want {
+				t.Errorf("getPreflightState() = %v, want %v", got, test.want)
 			}
 		})
 	}

@@ -165,6 +165,9 @@ func (m *Midstream) writeObjectsWithPullSecret(options WriteOptions) error {
 
 	for _, o := range m.DocForPatches {
 		withPullSecret := o.PatchWithPullSecret(m.PullSecret)
+		if withPullSecret == nil {
+			continue
+		}
 
 		b, err := yaml.Marshal(withPullSecret)
 		if err != nil {

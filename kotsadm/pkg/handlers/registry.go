@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/url"
+	"os"
 
 	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/containers/image/v5/docker"
@@ -11,9 +12,11 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
+	"github.com/replicatedhq/kots/kotsadm/pkg/preflight"
 	"github.com/replicatedhq/kots/kotsadm/pkg/registry"
 	registrytypes "github.com/replicatedhq/kots/kotsadm/pkg/registry/types"
 	"github.com/replicatedhq/kots/kotsadm/pkg/store"
+	"github.com/replicatedhq/kots/kotsadm/pkg/version"
 	dockerregistry "github.com/replicatedhq/kots/pkg/docker/registry"
 )
 
@@ -115,7 +118,7 @@ func UpdateAppRegistry(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		logger.Error(err)
 		updateAppRegistryResponse.Error = err.Error()
-		JSON(w, 500, updateAppRegistryResponse)
+		JSON(w, http.StatusInternalServerError, updateAppRegistryResponse)
 		return
 	}
 
@@ -127,12 +130,12 @@ func UpdateAppRegistry(w http.ResponseWriter, r *http.Request) {
 				if err != nil {
 					logger.Error(err)
 					updateAppRegistryResponse.Error = err.Error()
-					JSON(w, 500, updateAppRegistryResponse)
+					JSON(w, http.StatusInternalServerError, updateAppRegistryResponse)
 					return
 				}
 
 				updateAppRegistryResponse.Success = true
-				JSON(w, 200, updateAppRegistryResponse)
+				JSON(w, http.StatusOK, updateAppRegistryResponse)
 				return
 			}
 		}
@@ -141,11 +144,11 @@ func UpdateAppRegistry(w http.ResponseWriter, r *http.Request) {
 	// in a goroutine, start pushing the images to the remote registry
 	// we will let this function return while this happens
 	go func() {
-		if err := registry.RewriteImages(
+		appDir, err := registry.RewriteImages(
 			foundApp.ID, foundApp.CurrentSequence, updateAppRegistryRequest.Hostname,
 			updateAppRegistryRequest.Username, updateAppRegistryRequest.Password,
-			updateAppRegistryRequest.Namespace, nil,
-		); err != nil {
+			updateAppRegistryRequest.Namespace, nil)
+		if err != nil {
 			// log credential errors at info level
 			causeErr := errors.Cause(err)
 			switch causeErr.(type) {
@@ -159,6 +162,22 @@ func UpdateAppRegistry(w http.ResponseWriter, r *http.Request) {
 			default:
 				logger.Error(err)
 			}
+			return
+		}
+		defer os.RemoveAll(appDir)
+
+		newSequence, err := version.CreateVersion(foundApp.ID, appDir, "Registry Change", foundApp.CurrentSequence)
+		if err != nil {
+			logger.Error(err)
+			updateAppRegistryResponse.Error = err.Error()
+			JSON(w, http.StatusInternalServerError, updateAppRegistryResponse)
+			return
+		}
+
+		if err := preflight.Run(foundApp.ID, newSequence, foundApp.IsAirgap, appDir); err != nil {
+			logger.Error(err)
+			updateAppRegistryResponse.Error = err.Error()
+			JSON(w, http.StatusInternalServerError, updateAppRegistryResponse)
 			return
 		}
 

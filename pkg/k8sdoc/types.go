@@ -2,6 +2,7 @@ package k8sdoc
 
 import (
 	"github.com/pkg/errors"
+	troubleshootv1beta2 "github.com/replicatedhq/troubleshoot/pkg/apis/troubleshoot/v1beta2"
 	"gopkg.in/yaml.v2"
 	corev1 "k8s.io/api/core/v1"
 )
@@ -10,6 +11,10 @@ type K8sDoc interface {
 	PatchWithPullSecret(secret *corev1.Secret) K8sDoc
 	ListImages() []string
 }
+
+var _ K8sDoc = (*Doc)(nil)
+var _ K8sDoc = (*PodDoc)(nil)
+var _ K8sDoc = (*SupportBundleDoc)(nil)
 
 type Doc struct {
 	APIVersion string   `yaml:"apiVersion"`
@@ -23,6 +28,13 @@ type PodDoc struct {
 	Kind       string   `yaml:"kind"`
 	Metadata   Metadata `yaml:"metadata"`
 	Spec       PodSpec  `yaml:"spec"`
+}
+
+type SupportBundleDoc struct {
+	APIVersion string                                `yaml:"apiVersion"`
+	Kind       string                                `yaml:"kind"`
+	Metadata   Metadata                              `yaml:"metadata"`
+	Spec       troubleshootv1beta2.SupportBundleSpec `yaml:"spec"`
 }
 
 type Metadata struct {
@@ -165,4 +177,20 @@ func (d *PodDoc) ListImages() []string {
 		images = append(images, container.Image)
 	}
 	return images
+}
+
+func (d *SupportBundleDoc) ListImages() []string {
+	images := make([]string, 0)
+	for _, collector := range d.Spec.Collectors {
+		if collector.Run != nil {
+			images = append(images, collector.Run.Image)
+		}
+	}
+
+	return images
+}
+
+func (d *SupportBundleDoc) PatchWithPullSecret(secret *corev1.Secret) K8sDoc {
+	// this is not a kustomize patch, so we return nil and it's ignored
+	return nil
 }

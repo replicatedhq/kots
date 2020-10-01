@@ -4,6 +4,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/kotsadm/pkg/downstream"
 	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
+	"github.com/replicatedhq/kots/kotsadm/pkg/registry"
 	"github.com/replicatedhq/kots/kotsadm/pkg/render"
 	"github.com/replicatedhq/kots/kotsadm/pkg/store"
 	"github.com/replicatedhq/kots/kotsadm/pkg/version"
@@ -62,6 +63,11 @@ func Run(appID string, sequence int64, isAirgap bool, archiveDir string) error {
 		if err != nil {
 			return errors.Wrap(err, "failed to load rendered preflight")
 		}
+		collectors, err := registry.UpdateCollectorSpecsWithRegistryData(p.Spec.Collectors, registrySettings, renderedKotsKinds.Installation.Spec.KnownImages, renderedKotsKinds.License)
+		if err != nil {
+			return errors.Wrap(err, "failed to rewrite images in preflight")
+		}
+		p.Spec.Collectors = collectors
 
 		go func() {
 			logger.Debug("preflight checks beginning")
