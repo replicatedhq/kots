@@ -364,8 +364,34 @@ func (s *SocketService) processSupportBundle(clusterSocket ClusterSocket, pendin
 		return errors.Wrap(err, "failed to get socket channel from server")
 	}
 
+	sequence := int64(0)
+
+	currentVersion, err := downstream.GetCurrentVersion(a.ID, clusterSocket.ClusterID)
+	if err != nil {
+		return errors.Wrap(err, "failed to get current downstream version")
+	}
+	if currentVersion != nil {
+		sequence = currentVersion.Sequence
+	}
+
+	archivePath, err := store.GetStore().GetAppVersionArchive(a.ID, sequence)
+	if err != nil {
+		return errors.Wrap(err, "failed to get current archive")
+	}
+	defer os.RemoveAll(archivePath)
+
+	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(archivePath)
+	if err != nil {
+		return errors.Wrap(err, "failed to load current kotskinds")
+	}
+
+	err = supportbundle.CreateRenderedSpec(a.ID, sequence, "", true, kotsKinds.SupportBundle)
+	if err != nil {
+		return errors.Wrap(err, "failed to create rendered support bundle spec")
+	}
+
 	supportBundleArgs := SupportBundleArgs{
-		URI: fmt.Sprintf(`%s/api/v1/troubleshoot/%s?incluster=true`, os.Getenv("API_ENDPOINT"), a.Slug),
+		URI: supportbundle.GetSpecURI(a.Slug),
 	}
 	c.Emit("supportbundle", supportBundleArgs)
 
@@ -476,6 +502,11 @@ func checkRestoreComplete(a *apptypes.App, restore *velerov1.Restore) error {
 			return errors.Wrap(err, "failed to deploy version")
 		}
 
+		if err := createSupportBundle(a.ID, sequence, "", true); err != nil {
+			// support bundle is not essential.  keep processing restore status
+			logger.Error(errors.Wrapf(err, "failed to create support bundle for sequence %d post restore", sequence))
+		}
+
 		if err := app.ResetRestore(a.ID); err != nil {
 			return errors.Wrap(err, "failed to reset restore")
 		}
@@ -492,6 +523,26 @@ func checkRestoreComplete(a *apptypes.App, restore *velerov1.Restore) error {
 	default:
 		// restore is in progress
 		break
+	}
+
+	return nil
+}
+
+func createSupportBundle(appID string, sequence int64, origin string, inCluster bool) error {
+	archivePath, err := store.GetStore().GetAppVersionArchive(appID, sequence)
+	if err != nil {
+		return errors.Wrap(err, "failed to get current archive")
+	}
+	defer os.RemoveAll(archivePath)
+
+	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(archivePath)
+	if err != nil {
+		return errors.Wrap(err, "failed to load current kotskinds")
+	}
+
+	err = supportbundle.CreateRenderedSpec(appID, sequence, origin, inCluster, kotsKinds.SupportBundle)
+	if err != nil {
+		return errors.Wrap(err, "failed to create rendered support bundle spec")
 	}
 
 	return nil

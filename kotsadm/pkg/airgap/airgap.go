@@ -19,6 +19,7 @@ import (
 	"github.com/replicatedhq/kots/kotsadm/pkg/registry"
 	registrytypes "github.com/replicatedhq/kots/kotsadm/pkg/registry/types"
 	"github.com/replicatedhq/kots/kotsadm/pkg/store"
+	"github.com/replicatedhq/kots/kotsadm/pkg/supportbundle"
 	"github.com/replicatedhq/kots/kotsadm/pkg/version"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	"github.com/replicatedhq/kots/pkg/archives"
@@ -227,6 +228,11 @@ func CreateAppFromAirgap(pendingApp *types.PendingApp, airgapPath string, regist
 	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(tmpRoot)
 	if err != nil {
 		return errors.Wrap(err, "failed to load kotskinds from path")
+	}
+
+	err = supportbundle.CreateRenderedSpec(a.ID, a.CurrentSequence, "", true, kotsKinds.SupportBundle)
+	if err != nil {
+		return errors.Wrap(err, "failed to create rendered support bundle spec")
 	}
 
 	if isAutomated && kotsKinds.Config != nil {

@@ -1,42 +1,30 @@
 package handlers
 
 import (
-	"archive/tar"
 	"bytes"
 	"encoding/json"
 	"fmt"
 	"io"
 	"io/ioutil"
 	"net/http"
-	"net/url"
 	"os"
-	"path/filepath"
-	"strings"
 	"time"
 
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
-	apptypes "github.com/replicatedhq/kots/kotsadm/pkg/app/types"
-	"github.com/replicatedhq/kots/kotsadm/pkg/license"
+	"github.com/replicatedhq/kots/kotsadm/pkg/downstream"
 	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
-	"github.com/replicatedhq/kots/kotsadm/pkg/redact"
 	"github.com/replicatedhq/kots/kotsadm/pkg/render/helper"
-	"github.com/replicatedhq/kots/kotsadm/pkg/snapshot"
 	"github.com/replicatedhq/kots/kotsadm/pkg/store"
 	"github.com/replicatedhq/kots/kotsadm/pkg/supportbundle"
 	"github.com/replicatedhq/kots/kotsadm/pkg/supportbundle/types"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
-	"github.com/replicatedhq/kots/pkg/template"
 	troubleshootanalyze "github.com/replicatedhq/troubleshoot/pkg/analyze"
 	troubleshootv1beta2 "github.com/replicatedhq/troubleshoot/pkg/apis/troubleshoot/v1beta2"
 	"github.com/replicatedhq/troubleshoot/pkg/convert"
 	redact2 "github.com/replicatedhq/troubleshoot/pkg/redact"
-	"github.com/replicatedhq/yaml/v3"
-	"go.uber.org/multierr"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	k8sjson "k8s.io/apimachinery/pkg/runtime/serializer/json"
-	"k8s.io/apimachinery/pkg/util/rand"
 	"k8s.io/client-go/kubernetes/scheme"
 )
 
@@ -75,6 +63,10 @@ type ResponseSupportBundle struct {
 	UploadedAt *time.Time                   `json:"uploadedAt"`
 	IsArchived bool                         `json:"isArchived"`
 	Analysis   *types.SupportBundleAnalysis `json:"analysis"`
+}
+
+type GetSupportBundleCommandRequest struct {
+	Origin string `json:"origin"`
 }
 
 type GetSupportBundleCommandResponse struct {
@@ -196,14 +188,53 @@ func ListSupportBundles(w http.ResponseWriter, r *http.Request) {
 func GetSupportBundleCommand(w http.ResponseWriter, r *http.Request) {
 	appSlug := mux.Vars(r)["appSlug"]
 
-	command := []string{
-		"curl https://krew.sh/support-bundle | bash",
-		fmt.Sprintf("kubectl support-bundle API_ADDRESS/api/v1/troubleshoot/%s", appSlug),
+	// in case of an error, return a generic command
+	response := GetSupportBundleCommandResponse{
+		Command: []string{
+			"curl https://krew.sh/support-bundle | bash",
+			fmt.Sprintf("kubectl support-bundle secret/%s/%s", os.Getenv("POD_NAMESPACE"), supportbundle.GetSpecSecretName(appSlug)),
+		},
 	}
 
-	response := GetSupportBundleCommandResponse{
-		Command: command,
+	getSupportBundleCommandRequest := GetSupportBundleCommandRequest{}
+	if err := json.NewDecoder(r.Body).Decode(&getSupportBundleCommandRequest); err != nil {
+		logger.Error(errors.Wrap(err, "failed to decode request"))
+		JSON(w, 200, response)
+		return
 	}
+
+	foundApp, err := store.GetStore().GetAppFromSlug(appSlug)
+	if err != nil {
+		logger.Error(errors.Wrap(err, "failed to get app"))
+		JSON(w, 200, response)
+		return
+	}
+
+	sequence := int64(0)
+
+	downstreams, err := store.GetStore().ListDownstreamsForApp(foundApp.ID)
+	if err != nil {
+		logger.Error(errors.Wrap(err, "failed to get downstreams for app"))
+		JSON(w, 200, response)
+		return
+	} else if len(downstreams) > 0 {
+		currentVersion, err := downstream.GetCurrentVersion(foundApp.ID, downstreams[0].ClusterID)
+		if err != nil {
+			logger.Error(errors.Wrap(err, "failed to get deployed app sequence"))
+			JSON(w, 200, response)
+			return
+		}
+
+		sequence = currentVersion.Sequence
+	}
+
+	if err := createSupportBundle(foundApp.ID, sequence, getSupportBundleCommandRequest.Origin, false); err != nil {
+		logger.Error(errors.Wrap(err, "failed to create support bundle spec"))
+		JSON(w, 200, response)
+		return
+	}
+
+	response.Command = supportbundle.GetBundleCommand(foundApp.Slug)
 
 	JSON(w, 200, response)
 }
@@ -367,126 +398,6 @@ func UploadSupportBundle(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
-// GetDefaultTroubleshoot route is UNAUTHENTICATED
-// This request comes from the `kubectl support-bundle` command.
-func GetDefaultTroubleshoot(w http.ResponseWriter, r *http.Request) {
-	defaultTroubleshootSpec := addDefaultTroubleshoot(nil, "", nil)
-	defaultBytes, err := yaml.Marshal(defaultTroubleshootSpec)
-	if err != nil {
-		logger.Error(err)
-		w.WriteHeader(500)
-		return
-	}
-	fullTroubleshoot := string(defaultBytes)
-	redactSpec, _, err := redact.GetRedactSpec()
-	if err != nil {
-		logger.Error(err)
-		w.WriteHeader(500)
-		return
-	}
-	if redactSpec != "" {
-		fullTroubleshoot = fmt.Sprintf("%s\n---\n%s", string(defaultBytes), redactSpec)
-	}
-
-	w.WriteHeader(200)
-	w.Write([]byte(fullTroubleshoot))
-}
-
-// GetTroubleshoot route is UNAUTHENTICATED
-// This request comes from the `kubectl support-bundle` command.
-func GetTroubleshoot(w http.ResponseWriter, r *http.Request) {
-	appSlug := mux.Vars(r)["appSlug"]
-	inCluster := r.URL.Query().Get("incluster")
-
-	// get app from slug
-	foundApp, err := store.GetStore().GetAppFromSlug(appSlug)
-	if err != nil {
-		logger.Error(err)
-		w.WriteHeader(500)
-		return
-	}
-	// TODO get from watch ID, not just app id
-
-	// get troubleshoot spec from db
-	existingSpec, err := store.GetStore().GetSupportBundleSpecForApp(foundApp.ID)
-	if err != nil {
-		logger.Error(err)
-		w.WriteHeader(500)
-		return
-	}
-
-	decode := scheme.Codecs.UniversalDeserializer().Decode
-	obj, _, err := decode([]byte(existingSpec), nil, nil)
-	if err != nil {
-		logger.Error(err)
-		w.WriteHeader(500)
-		return
-	}
-	existingTs := obj.(*troubleshootv1beta2.Collector)
-
-	existingTs = populateNamespaces(existingTs)
-
-	// determine an upload URL
-	var uploadURL string
-	var redactURL string
-	randomBundleID := strings.ToLower(rand.String(32))
-	if r.Header.Get("Bundle-Upload-Host") != "" {
-		uploadURL = fmt.Sprintf("%s/api/v1/troubleshoot/%s/%s", r.Header.Get("Bundle-Upload-Host"), foundApp.ID, randomBundleID)
-		redactURL = fmt.Sprintf("%s/api/v1/troubleshoot/supportbundle/%s/redactions", r.Header.Get("Bundle-Upload-Host"), randomBundleID)
-	} else if inCluster == "true" {
-		uploadURL = fmt.Sprintf("%s/api/v1/troubleshoot/%s/%s", fmt.Sprintf("http://kotsadm.%s.svc.cluster.local:3000", os.Getenv("POD_NAMESPACE")), foundApp.ID, randomBundleID)
-		redactURL = fmt.Sprintf("%s/api/v1/troubleshoot/supportbundle/%s/redactions", fmt.Sprintf("http://kotsadm.%s.svc.cluster.local:3000", os.Getenv("POD_NAMESPACE")), randomBundleID)
-	} else {
-		uploadURL = fmt.Sprintf("%s/api/v1/troubleshoot/%s/%s", os.Getenv("API_ADVERTISE_ENDPOINT"), foundApp.ID, randomBundleID)
-		redactURL = fmt.Sprintf("%s/api/v1/troubleshoot/supportbundle/%s/redactions", os.Getenv("API_ADVERTISE_ENDPOINT"), randomBundleID)
-	}
-
-	licenseString, err := license.GetCurrentLicenseString(foundApp)
-	if err != nil {
-		logger.Error(err)
-		w.WriteHeader(500)
-		return
-	}
-
-	tsSpec := addDefaultTroubleshoot(existingTs, licenseString, foundApp)
-	tsSpec.Spec.AfterCollection = []*troubleshootv1beta2.AfterCollection{
-		{
-			UploadResultsTo: &troubleshootv1beta2.ResultRequest{
-				URI:       uploadURL,
-				Method:    "PUT",
-				RedactURI: redactURL,
-			},
-		},
-	}
-
-	specBytes, err := yaml.Marshal(tsSpec)
-	if err != nil {
-		logger.Error(err)
-		w.WriteHeader(500)
-		return
-	}
-	fullTroubleshoot := string(specBytes)
-	redactSpec, _, err := redact.GetRedactSpec()
-	if err != nil {
-		logger.Error(err)
-		w.WriteHeader(500)
-		return
-	}
-	if redactSpec != "" {
-		fullTroubleshoot = fmt.Sprintf("%s\n---\n%s", string(specBytes), redactSpec)
-	}
-
-	renderedTroubleshoot, err := helper.RenderAppFile(foundApp, nil, []byte(fullTroubleshoot))
-	if err != nil {
-		logger.Error(err)
-		w.WriteHeader(500)
-		return
-	}
-
-	w.WriteHeader(200)
-	w.Write(renderedTroubleshoot)
-}
-
 func GetSupportBundleRedactions(w http.ResponseWriter, r *http.Request) {
 	getSupportBundleRedactionsResponse := GetSupportBundleRedactionsResponse{
 		Success: false,
@@ -535,350 +446,4 @@ func SetSupportBundleRedactions(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(201)
 	return
-}
-
-// if a namespace is not set for a secret/run/logs/exec/copy collector, set it to the current namespace
-func populateNamespaces(existingSpec *troubleshootv1beta2.Collector) *troubleshootv1beta2.Collector {
-	if existingSpec == nil {
-		return nil
-	} else if existingSpec.Spec.Collectors == nil {
-		return existingSpec
-	}
-
-	builder := template.Builder{}
-	builder.AddCtx(template.StaticCtx{})
-
-	ns := func(ns string) string {
-		templated, err := builder.RenderTemplate("ns", ns)
-		if err != nil {
-			logger.Error(err)
-		}
-		if templated != "" {
-			return templated
-		}
-		return os.Getenv("POD_NAMESPACE")
-	}
-
-	collects := []*troubleshootv1beta2.Collect{}
-	for _, collect := range existingSpec.Spec.Collectors {
-		if collect.Secret != nil {
-			collect.Secret.Namespace = ns(collect.Secret.Namespace)
-		}
-		if collect.Run != nil {
-			collect.Run.Namespace = ns(collect.Run.Namespace)
-		}
-		if collect.Logs != nil {
-			collect.Logs.Namespace = ns(collect.Logs.Namespace)
-		}
-		if collect.Exec != nil {
-			collect.Exec.Namespace = ns(collect.Exec.Namespace)
-		}
-		if collect.Copy != nil {
-			collect.Copy.Namespace = ns(collect.Copy.Namespace)
-		}
-		collects = append(collects, collect)
-	}
-	existingSpec.Spec.Collectors = collects
-	return existingSpec
-}
-
-func addDefaultTroubleshoot(existingSpec *troubleshootv1beta2.Collector, licenseData string, foundApp *apptypes.App) *troubleshootv1beta2.Collector {
-	if existingSpec == nil {
-		existingSpec = &troubleshootv1beta2.Collector{
-			TypeMeta: v1.TypeMeta{
-				Kind:       "Collector",
-				APIVersion: "troubleshoot.sh/v1beta2",
-			},
-			ObjectMeta: v1.ObjectMeta{
-				Name: "default-collector",
-			},
-		}
-	}
-
-	if licenseData != "" {
-		existingSpec.Spec.Collectors = append(existingSpec.Spec.Collectors, &troubleshootv1beta2.Collect{
-			Data: &troubleshootv1beta2.Data{
-				CollectorMeta: troubleshootv1beta2.CollectorMeta{
-					CollectorName: "license.yaml",
-				},
-				Name: "kots/admin-console",
-				Data: licenseData,
-			},
-		})
-	}
-
-	existingSpec.Spec.Collectors = append(existingSpec.Spec.Collectors, &troubleshootv1beta2.Collect{
-		Secret: &troubleshootv1beta2.Secret{
-			CollectorMeta: troubleshootv1beta2.CollectorMeta{
-				CollectorName: "kotsadm-replicated-registry",
-			},
-			SecretName:   "kotsadm-replicated-registry",
-			Namespace:    os.Getenv("POD_NAMESPACE"),
-			Key:          ".dockerconfigjson",
-			IncludeValue: false,
-		},
-	})
-
-	existingSpec.Spec.Collectors = append(existingSpec.Spec.Collectors, makeDbCollectors()...)
-	existingSpec.Spec.Collectors = append(existingSpec.Spec.Collectors, makeKotsadmCollectors()...)
-	existingSpec.Spec.Collectors = append(existingSpec.Spec.Collectors, makeRookCollectors()...)
-	existingSpec.Spec.Collectors = append(existingSpec.Spec.Collectors, makeKurlCollectors()...)
-	existingSpec.Spec.Collectors = append(existingSpec.Spec.Collectors, makeVeleroCollectors()...)
-
-	apps := []*apptypes.App{}
-	if foundApp != nil {
-		apps = append(apps, foundApp)
-	} else {
-		var err error
-		apps, err = store.GetStore().ListInstalledApps()
-		if err != nil {
-			logger.Errorf("Failed to list installed apps: %v", err)
-		}
-	}
-
-	if len(apps) > 0 {
-		collectors, err := makeAppVersionArchiveCollectors(apps)
-		if err != nil {
-			logger.Errorf("Failed to make app version archive collectors: %v", err)
-		}
-		existingSpec.Spec.Collectors = append(existingSpec.Spec.Collectors, collectors...)
-	}
-
-	return existingSpec
-}
-
-func makeDbCollectors() []*troubleshootv1beta2.Collect {
-	dbCollectors := []*troubleshootv1beta2.Collect{}
-
-	pgConnectionString := os.Getenv("POSTGRES_URI")
-	parsedPg, err := url.Parse(pgConnectionString)
-	if err == nil {
-		username := "kotsadm"
-		if parsedPg.User != nil {
-			username = parsedPg.User.Username()
-		}
-		dbCollectors = append(dbCollectors, &troubleshootv1beta2.Collect{
-			Exec: &troubleshootv1beta2.Exec{
-				CollectorMeta: troubleshootv1beta2.CollectorMeta{
-					CollectorName: "kotsadm-postgres-db",
-				},
-				Name:          "kots/admin-console",
-				Selector:      []string{fmt.Sprintf("app=%s", parsedPg.Host)},
-				Namespace:     os.Getenv("POD_NAMESPACE"),
-				ContainerName: parsedPg.Host,
-				Command:       []string{"pg_dump"},
-				Args:          []string{"-U", username},
-				Timeout:       "10s",
-			},
-		})
-	}
-	return dbCollectors
-}
-
-func makeKotsadmCollectors() []*troubleshootv1beta2.Collect {
-	names := []string{
-		"kotsadm-postgres",
-		"kotsadm",
-		"kotsadm-operator",
-		"kurl-proxy-kotsadm",
-	}
-	rookCollectors := []*troubleshootv1beta2.Collect{}
-	for _, name := range names {
-		rookCollectors = append(rookCollectors, &troubleshootv1beta2.Collect{
-			Logs: &troubleshootv1beta2.Logs{
-				CollectorMeta: troubleshootv1beta2.CollectorMeta{
-					CollectorName: name,
-				},
-				Name:      "kots/admin-console",
-				Selector:  []string{fmt.Sprintf("app=%s", name)},
-				Namespace: os.Getenv("POD_NAMESPACE"),
-			},
-		})
-	}
-	return rookCollectors
-}
-
-func makeRookCollectors() []*troubleshootv1beta2.Collect {
-	names := []string{
-		"rook-ceph-agent",
-		"rook-ceph-mgr",
-		"rook-ceph-mon",
-		"rook-ceph-operator",
-		"rook-ceph-osd",
-		"rook-ceph-osd-prepare",
-		"rook-ceph-rgw",
-		"rook-discover",
-	}
-	rookCollectors := []*troubleshootv1beta2.Collect{}
-	for _, name := range names {
-		rookCollectors = append(rookCollectors, &troubleshootv1beta2.Collect{
-			Logs: &troubleshootv1beta2.Logs{
-				CollectorMeta: troubleshootv1beta2.CollectorMeta{
-					CollectorName: name,
-				},
-				Name:      "kots/rook",
-				Selector:  []string{fmt.Sprintf("app=%s", name)},
-				Namespace: "rook-ceph",
-			},
-		})
-	}
-	return rookCollectors
-}
-
-func makeKurlCollectors() []*troubleshootv1beta2.Collect {
-	names := []string{
-		"registry",
-	}
-	rookCollectors := []*troubleshootv1beta2.Collect{}
-	for _, name := range names {
-		rookCollectors = append(rookCollectors, &troubleshootv1beta2.Collect{
-			Logs: &troubleshootv1beta2.Logs{
-				CollectorMeta: troubleshootv1beta2.CollectorMeta{
-					CollectorName: name,
-				},
-				Name:      "kots/kurl",
-				Selector:  []string{fmt.Sprintf("app=%s", name)},
-				Namespace: "kurl",
-			},
-		})
-	}
-	return rookCollectors
-}
-
-func makeVeleroCollectors() []*troubleshootv1beta2.Collect {
-	collectors := []*troubleshootv1beta2.Collect{}
-
-	veleroNamespace, err := snapshot.DetectVeleroNamespace()
-	if err != nil {
-		logger.Error(err)
-		return collectors
-	}
-
-	if veleroNamespace == "" {
-		return collectors
-	}
-
-	selectors := []string{
-		"component=velero",
-		"app.kubernetes.io/name=velero",
-	}
-
-	for _, selector := range selectors {
-		collectors = append(collectors, &troubleshootv1beta2.Collect{
-			Logs: &troubleshootv1beta2.Logs{
-				CollectorMeta: troubleshootv1beta2.CollectorMeta{
-					CollectorName: "velero",
-				},
-				Name:      "velero",
-				Selector:  []string{selector},
-				Namespace: veleroNamespace,
-			},
-		})
-	}
-
-	return collectors
-}
-
-func makeAppVersionArchiveCollectors(apps []*apptypes.App) ([]*troubleshootv1beta2.Collect, error) {
-	dirPrefix, err := ioutil.TempDir("", "app-version-archive")
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to create temp dir")
-	}
-	go func() {
-		<-time.After(10 * time.Minute)
-		_ = os.RemoveAll(dirPrefix)
-	}()
-
-	collectors := []*troubleshootv1beta2.Collect{}
-	for _, app := range apps {
-		collector, err := makeAppVersionArchiveCollector(app, dirPrefix)
-		if err != nil {
-			err = multierr.Append(err, errors.Wrapf(err, "failed to make collector for app %s", app.Slug))
-		} else {
-			collectors = append(collectors, collector)
-		}
-	}
-
-	return collectors, err
-}
-
-func makeAppVersionArchiveCollector(app *apptypes.App, dirPrefix string) (*troubleshootv1beta2.Collect, error) {
-	fileName := filepath.Join(dirPrefix, fmt.Sprintf("%s.tar", app.Slug))
-	archive, err := os.Create(fileName)
-	if err != nil {
-		return nil, errors.Wrapf(err, "failed to create temp file %s", fileName)
-	}
-
-	tempPath, err := store.GetStore().GetAppVersionArchive(app.ID, app.CurrentSequence)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to get app version archive")
-	}
-	defer os.RemoveAll(tempPath)
-
-	tarWriter := tar.NewWriter(archive)
-	defer tarWriter.Close()
-
-	// only upstream includes files that don't contain any secrets
-	archivePath := filepath.Join(tempPath, "upstream")
-
-	err = filepath.Walk(archivePath, func(path string, fi os.FileInfo, err error) error {
-		if err != nil {
-			return err
-		}
-		if archivePath == path {
-			// root dir itself is the first item in the walk
-			return nil
-		}
-
-		trimmedPath := strings.TrimPrefix(path, archivePath)
-
-		// do not include userdata in archive
-		if filepath.HasPrefix(trimmedPath, "/userdata") {
-			return nil
-		}
-
-		tarHeader, err := tar.FileInfoHeader(fi, "")
-		if err != nil {
-			return errors.Wrapf(err, "failed to get tar header from file info header for file %s", trimmedPath)
-		}
-		tarHeader.Name = trimmedPath
-
-		if err := tarWriter.WriteHeader(tarHeader); err != nil {
-			return errors.Wrapf(err, "failed to write tar header for file %s", trimmedPath)
-		}
-
-		if fi.IsDir() {
-			return nil
-		}
-
-		file, err := os.Open(path)
-		if err != nil {
-			return errors.Wrapf(err, "failed to open file %s", trimmedPath)
-		}
-		defer file.Close()
-
-		if _, err := io.Copy(tarWriter, file); err != nil {
-			return errors.Wrapf(err, "failed to write file %s contents", trimmedPath)
-		}
-
-		return nil
-	})
-	if err != nil {
-		return nil, errors.Wrapf(err, "failed to walk archive dir %s", archivePath)
-	}
-
-	return &troubleshootv1beta2.Collect{
-		Copy: &troubleshootv1beta2.Copy{
-			CollectorMeta: troubleshootv1beta2.CollectorMeta{
-				CollectorName: fmt.Sprintf("spec-%s", app.Slug),
-			},
-			Selector: []string{
-				"app=kotsadm", // can we assume this?
-			},
-			Namespace:     os.Getenv("POD_NAMESPACE"),
-			ContainerName: "kotsadm", // can we assume this? kotsadm-api
-			ContainerPath: fileName,
-			Name:          fmt.Sprintf("kots/admin-console/app/%s", app.Slug),
-		},
-	}, nil
 }

@@ -197,6 +197,29 @@ class GenerateSupportBundle extends React.Component {
       });
   }
 
+  fetchSupportBundleCommand = async () => {
+    const { watch } = this.props;
+
+    const res = await fetch(`${window.env.API_ENDPOINT}/troubleshoot/app/${watch.slug}/supportbundlecommand`, {
+      method: "POST",
+      headers: {
+        "Authorization": Utilities.getToken(),
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        origin: window.location.origin,
+      })
+    });
+    if (!res.ok) {
+      throw new Error(`Unexpected status code: ${res.status}`);
+    }
+    const response = await res.json();
+    this.setState({
+      showRunCommand: !this.state.showRunCommand,
+      bundleCommand: response.command,
+    });
+  }
+
   toggleErrorModal = () => {
     this.setState({ displayErrorModal: !this.state.displayErrorModal });
   }
@@ -226,13 +249,7 @@ class GenerateSupportBundle extends React.Component {
     const { selectedCluster, displayUploadModal, showRunCommand, isGeneratingBundle, generateBundleErrMsg, errorMsg } = this.state;
     const { watch } = this.props;
     const watchClusters = watch.downstreams;
-    const selectedWatch = watchClusters.find(c => c.cluster.id === selectedCluster.id);
     const appTitle = watch.watchName || watch.name;
-
-    let command = selectedWatch?.bundleCommand || watch.bundleCommand;
-    if (command) {
-      command = command.replace("API_ADDRESS", window.location.origin);
-    }
 
     return (
       <div className="GenerateSupportBundle--wrapper container flex-column u-overflow--auto u-paddingTop--30 u-paddingBottom--20 alignItems--center">
@@ -273,7 +290,7 @@ class GenerateSupportBundle extends React.Component {
                       canCopy={true}
                       onCopyText={<span className="u-color--chateauGreen">Command has been copied to your clipboard</span>}
                     >
-                      {command?.split("\n")}
+                      {this.state.bundleCommand}
                     </CodeSnippet>
                   </div>
                   <div className="u-marginTop--15">
@@ -283,7 +300,7 @@ class GenerateSupportBundle extends React.Component {
                 :
                 <div>
                   <div className="u-marginTop--40">
-                    If you'd prefer, <a href="#" className="replicated-link" onClick={(e) => this.toggleShow(e, "showRunCommand")}>click here</a> to get a command to manually generate a support bundle.
+                    If you'd prefer, <a href="#" className="replicated-link" onClick={(e) => this.fetchSupportBundleCommand()}>click here</a> to get a command to manually generate a support bundle.
                   </div>
                 </div>
               }

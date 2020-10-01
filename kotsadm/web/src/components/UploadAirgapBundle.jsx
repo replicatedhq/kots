@@ -271,10 +271,14 @@ class UploadAirgapBundle extends React.Component {
 
   getSupportBundleCommand = async (slug) => {
     const res = await fetch(`${window.env.API_ENDPOINT}/troubleshoot/app/${slug}/supportbundlecommand`, {
-      method: "GET",
+      method: "POST",
       headers: {
         "Authorization": Utilities.getToken(),
-      }
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        origin: window.location.origin,
+      })
     });
     if (!res.ok) {
       throw new Error(`Unexpected status code: ${res.status}`);
@@ -286,7 +290,7 @@ class UploadAirgapBundle extends React.Component {
   onProgressError = async (errorMessage) => {
     const { slug } = this.props.match.params;
 
-    let supportBundleCommand = "";
+    let supportBundleCommand = [];
     try {
       supportBundleCommand = await this.getSupportBundleCommand(slug);
     } catch (err) {
@@ -377,6 +381,7 @@ class UploadAirgapBundle extends React.Component {
       preparingOnlineInstall,
       onlineInstallErrorMessage,
       viewOnlineInstallErrorMessage,
+      supportBundleCommand,
     } = this.state;
 
     const hasFile = bundleFile && !isEmpty(bundleFile);
@@ -391,13 +396,6 @@ class UploadAirgapBundle extends React.Component {
           onProgressSuccess={this.onProgressSuccess}
         />
       );
-    }
-
-    let supportBundleCommand;
-    if (this.state.supportBundleCommand) {
-      supportBundleCommand = this.state.supportBundleCommand.map((part) => {
-        return part.replace("API_ADDRESS", window.location.origin);
-      });
     }
 
     let logoUri;

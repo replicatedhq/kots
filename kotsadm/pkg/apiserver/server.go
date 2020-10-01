@@ -73,8 +73,6 @@ func Start() {
 	r.HandleFunc("/api/v1/logout", handlers.Logout) // this route uses its own auth
 	r.Path("/api/v1/metadata").Methods("GET").HandlerFunc(handlers.Metadata)
 
-	r.Path("/api/v1/troubleshoot").Methods("GET").HandlerFunc(handlers.GetDefaultTroubleshoot)
-	r.Path("/api/v1/troubleshoot/{appSlug}").Methods("GET").HandlerFunc(handlers.GetTroubleshoot)
 	r.Path("/api/v1/troubleshoot/{appId}/{bundleId}").Methods("PUT").HandlerFunc(handlers.UploadSupportBundle)
 	r.Path("/api/v1/troubleshoot/supportbundle/{bundleId}/redactions").Methods("PUT").HandlerFunc(handlers.SetSupportBundleRedactions)
 	r.Path("/api/v1/preflight/app/{appSlug}/sequence/{sequence}").Methods("GET").HandlerFunc(handlers.GetPreflightStatus)
@@ -115,7 +113,7 @@ func Start() {
 	// Support Bundles
 	sessionAuthRouter.Path("/api/v1/troubleshoot/supportbundle/{bundleSlug}").Methods("GET").HandlerFunc(handlers.GetSupportBundle)
 	sessionAuthRouter.Path("/api/v1/troubleshoot/app/{appSlug}/supportbundles").Methods("GET").HandlerFunc(handlers.ListSupportBundles)
-	sessionAuthRouter.Path("/api/v1/troubleshoot/app/{appSlug}/supportbundlecommand").Methods("GET").HandlerFunc(handlers.GetSupportBundleCommand)
+	sessionAuthRouter.Path("/api/v1/troubleshoot/app/{appSlug}/supportbundlecommand").Methods("POST").HandlerFunc(handlers.GetSupportBundleCommand)
 	sessionAuthRouter.Path("/api/v1/troubleshoot/supportbundle/{bundleId}/files").Methods("GET").HandlerFunc(handlers.GetSupportBundleFiles)
 	sessionAuthRouter.Path("/api/v1/troubleshoot/supportbundle/{bundleId}/redactions").Methods("GET").HandlerFunc(handlers.GetSupportBundleRedactions)
 	sessionAuthRouter.Path("/api/v1/troubleshoot/supportbundle/{bundleId}/download").Methods("GET").HandlerFunc(handlers.DownloadSupportBundle)

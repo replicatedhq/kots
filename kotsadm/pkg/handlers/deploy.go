@@ -3,6 +3,7 @@ package handlers
 import (
 	"encoding/json"
 	"net/http"
+	"os"
 	"strconv"
 	"time"
 
@@ -14,7 +15,9 @@ import (
 	downstreamtypes "github.com/replicatedhq/kots/kotsadm/pkg/downstream/types"
 	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
 	"github.com/replicatedhq/kots/kotsadm/pkg/store"
+	"github.com/replicatedhq/kots/kotsadm/pkg/supportbundle"
 	"github.com/replicatedhq/kots/kotsadm/pkg/version"
+	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"go.uber.org/zap"
 )
 
@@ -90,6 +93,11 @@ func UpdateDeployResult(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if err := createSupportBundle(updateDeployResultRequest.AppID, currentSequence, "", true); err != nil {
+		// support bundle is not essential.  keep processing deployment request
+		logger.Error(errors.Wrapf(err, "failed to create support bundle for sequence %d after deploying", currentSequence))
+	}
+
 	alreadySuccessful, err := downstream.IsDownstreamDeploySuccessful(updateDeployResultRequest.AppID, clusterID, currentSequence)
 	if err != nil {
 		logger.Error(err)
@@ -118,6 +126,26 @@ func UpdateDeployResult(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusOK)
 	return
+}
+
+func createSupportBundle(appID string, sequence int64, origin string, inCluster bool) error {
+	archivePath, err := store.GetStore().GetAppVersionArchive(appID, sequence)
+	if err != nil {
+		return errors.Wrap(err, "failed to get current archive")
+	}
+	defer os.RemoveAll(archivePath)
+
+	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(archivePath)
+	if err != nil {
+		return errors.Wrap(err, "failed to load current kotskinds")
+	}
+
+	err = supportbundle.CreateRenderedSpec(appID, sequence, origin, inCluster, kotsKinds.SupportBundle)
+	if err != nil {
+		return errors.Wrap(err, "failed to create rendered support bundle spec")
+	}
+
+	return nil
 }
 
 // NOTE: this uses special cluster authorization
