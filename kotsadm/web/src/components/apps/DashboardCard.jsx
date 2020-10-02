@@ -142,7 +142,7 @@ export default class DashboardCard extends React.Component {
     if (downstream?.pendingVersions?.length > 0) {
       return (
         <div className="flex flex-column u-marginTop--12">
-          <p className="u-fontSize--small u-lineHeight--normal u-color--selectiveYellow u-fontWeight--medium">New version available</p>
+          <p className="u-fontSize--small u-lineHeight--normal u-color--chateauGreen u-fontWeight--bold">New version available</p>
           <div className="flex flex1 alignItems--center u-marginTop--5">
             <span className="u-fontSize--normal u-fontWeight--bold u-color--tundora"> {downstream?.pendingVersions[0].versionLabel} </span>
             <Link to={`${this.props.url}/version-history`} className="card-link u-marginLeft--5"> View </Link>
@@ -285,7 +285,7 @@ export default class DashboardCard extends React.Component {
           : showAirgapUI
             ?
             <MountAware className="u-marginTop--30" onMount={el => this.props.airgapUploader?.assignElement(el)}>
-              <button className="btn secondary blue">Upload new version</button>
+              <button className="btn primary blue">Upload a new version</button>
             </MountAware>
             : showOnlineUI ?
               <div className="flex1 flex-column" style={{ flexGrow: 1 }}>
@@ -299,7 +299,7 @@ export default class DashboardCard extends React.Component {
               </div>
               : null
         }
-        {showAirgapUI && updateText}
+        {!showOnlineUI && updateText}
         {checkingForUpdateError &&
           <div className="flex-column flex-auto u-marginTop--5">
             <p className="u-marginTop--10 u-fontSize--small u-color--chestnut u-fontWeight--medium">Error updating version <span className="u-color--royalBlue u-textDecoration--underlineOnHover" onClick={() => this.props.viewAirgapUpdateError(checkingUpdateText)}>View details</span></p>

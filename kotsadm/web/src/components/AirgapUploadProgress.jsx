@@ -157,7 +157,7 @@ class AirgapUploadProgress extends React.Component {
 
 
     return (
-      <div className="AirgapUploadProgress--wrapper flex-1-auto flex-column alignItems--center justifyContent--center">
+      <div className="AirgapUploadProgress--wrapper flex-1-auto flex-column alignItems--center justifyContent--center u-marginTop--10">
         <div className="flex1 flex-column u-color--tuna">
           {processingImages ?
             <div className="flex1 flex-column alignItems--center justifyContent--center">
