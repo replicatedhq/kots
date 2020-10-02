@@ -34,6 +34,8 @@ func Start() {
 		panic(err)
 	}
 
+	store.GetStore().RunMigrations()
+
 	if err := informers.Start(); err != nil {
 		log.Println("Failed to start informers", err)
 	}
