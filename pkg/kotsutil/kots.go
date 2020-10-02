@@ -393,6 +393,20 @@ func LoadInstallationFromPath(installationFilePath string) (*kotsv1beta1.Install
 	return LoadInstallationFromContents(installationData)
 }
 
+func LoadSupportBundleFromContents(data []byte) (*troubleshootv1beta2.SupportBundle, error) {
+	decode := scheme.Codecs.UniversalDeserializer().Decode
+	obj, gvk, err := decode([]byte(data), nil, nil)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to decode support bundle data of length %d", len(data))
+	}
+
+	if gvk.Group != "troubleshoot.sh" || gvk.Version != "v1beta2" || gvk.Kind != "SupportBundle" {
+		return nil, errors.Errorf("unexpected GVK: %s", gvk.String())
+	}
+
+	return obj.(*troubleshootv1beta2.SupportBundle), nil
+}
+
 func LoadKotsAppFromContents(data []byte) (*kotsv1beta1.Application, error) {
 	decode := scheme.Codecs.UniversalDeserializer().Decode
 	obj, gvk, err := decode([]byte(data), nil, nil)

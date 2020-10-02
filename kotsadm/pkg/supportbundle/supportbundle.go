@@ -20,11 +20,13 @@ import (
 	"github.com/replicatedhq/kots/kotsadm/pkg/license"
 	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
 	"github.com/replicatedhq/kots/kotsadm/pkg/persistence"
+	"github.com/replicatedhq/kots/kotsadm/pkg/registry"
 	"github.com/replicatedhq/kots/kotsadm/pkg/render/helper"
 	"github.com/replicatedhq/kots/kotsadm/pkg/snapshot"
 	"github.com/replicatedhq/kots/kotsadm/pkg/store"
 	"github.com/replicatedhq/kots/kotsadm/pkg/supportbundle/types"
 	"github.com/replicatedhq/kots/kotskinds/client/kotsclientset/scheme"
+	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/template"
 	troubleshootv1beta2 "github.com/replicatedhq/troubleshoot/pkg/apis/troubleshoot/v1beta2"
 	"github.com/segmentio/ksuid"
@@ -173,6 +175,41 @@ func CreateRenderedSpec(appID string, sequence int64, origin string, inCluster b
 	if err != nil {
 		return errors.Wrap(err, "failed render support bundle spec")
 	}
+
+	// unmarshal the spec, look for image replacements in collectors and then remarshal
+	// we do this after template rendering to support templating and then replacement
+	supportBundle, err = kotsutil.LoadSupportBundleFromContents(renderedSpec)
+	if err != nil {
+		return errors.Wrap(err, "failed to unmarshal rendered support bundle spec")
+	}
+
+	archiveDir, err := store.GetStore().GetAppVersionArchive(appID, sequence)
+	if err != nil {
+		return errors.Wrap(err, "failed to get app version archive")
+	}
+	defer os.RemoveAll(archiveDir)
+
+	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(archiveDir)
+	if err != nil {
+		return errors.Wrap(err, "failed to load rendered kots kinds")
+	}
+
+	registrySettings, err := store.GetStore().GetRegistryDetailsForApp(appID)
+	if err != nil {
+		return errors.Wrap(err, "failed to get registry settings for app")
+	}
+
+	collectors, err := registry.UpdateCollectorSpecsWithRegistryData(supportBundle.Spec.Collectors, registrySettings, kotsKinds.Installation.Spec.KnownImages, kotsKinds.License)
+	if err != nil {
+		return errors.Wrap(err, "failed to update collectors")
+	}
+	supportBundle.Spec.Collectors = collectors
+
+	if err := s.Encode(supportBundle, &b); err != nil {
+		return errors.Wrap(err, "failed to encode support bundle")
+	}
+
+	templatedSpec = b.Bytes()
 
 	cfg, err := config.GetConfig()
 	if err != nil {

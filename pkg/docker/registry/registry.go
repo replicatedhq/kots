@@ -64,7 +64,7 @@ func (r *RegistryProxyInfo) ToSlice() []string {
 	}
 }
 
-func PullSecretForRegistries(registries []string, username, password string, namespace string) (*corev1.Secret, error) {
+func PullSecretForRegistries(registries []string, username, password string, kuberneteNamespace string) (*corev1.Secret, error) {
 	dockercfgAuth := DockercfgAuth{
 		Auth: base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", username, password))),
 	}
@@ -89,7 +89,7 @@ func PullSecretForRegistries(registries []string, username, password string, nam
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "kotsadm-replicated-registry",
-			Namespace: namespace,
+			Namespace: kuberneteNamespace,
 		},
 		Type: corev1.SecretTypeDockerConfigJson,
 		Data: map[string][]byte{
