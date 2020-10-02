@@ -23,6 +23,7 @@ import (
 )
 
 type KOTSStore interface {
+	Migrations
 	RegistryStore
 	SupportBundleStore
 	PreflightStore
@@ -41,6 +42,10 @@ type KOTSStore interface {
 	Init() error // this may need options
 	WaitForReady(ctx context.Context) error
 	IsNotFound(err error) bool
+}
+
+type Migrations interface {
+	RunMigrations()
 }
 
 type RegistryStore interface {
