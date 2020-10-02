@@ -976,7 +976,7 @@ class AppVersionHistory extends Component {
     } else if (errorCheckingUpdate) {
       updateText = <p className="u-marginTop--10 u-fontSize--small u-color--chestnut u-fontWeight--medium">{errorText}</p>
     } else if (checkingForUpdates) {
-      updateText = <p className="u-marginTop--10 u-fontSize--small u-color--dustyGray u-fontWeight--medium">{checkingUpdateTextShort}</p>
+      updateText = <p className="u-fontSize--small u-color--dustyGray u-fontWeight--medium">{checkingUpdateTextShort}</p>
     } else if (app.lastUpdateCheckAt && !noUpdateAvailiableText) {
       updateText = <p className="u-marginTop--10 u-fontSize--small u-color--silverSand u-fontWeight--medium">Last checked {dayjs(app.lastUpdateCheckAt).fromNow()}</p>;
     } else if (!app.lastUpdateCheckat) {
