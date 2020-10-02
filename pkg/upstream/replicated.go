@@ -16,6 +16,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
@@ -61,6 +62,7 @@ type Release struct {
 	UpdateCursor ReplicatedCursor
 	VersionLabel string
 	ReleaseNotes string
+	ReleasedAt   *time.Time
 	Manifests    map[string][]byte
 }
 
@@ -68,7 +70,6 @@ type ChannelRelease struct {
 	ChannelSequence int    `json:"channelSequence"`
 	ReleaseSequence int    `json:"releaseSequence"`
 	VersionLabel    string `json:"versionLabel"`
-	CreatedAt       string `json:"createdAt"`
 }
 
 func (this ReplicatedCursor) Equal(other ReplicatedCursor) bool {
@@ -238,6 +239,7 @@ func downloadReplicated(u *url.URL, localPath string, rootDir string, useAppDir 
 		ChannelName:   channelName,
 		VersionLabel:  release.VersionLabel,
 		ReleaseNotes:  release.ReleaseNotes,
+		ReleasedAt:    release.ReleasedAt,
 		EncryptionKey: cipher.ToString(),
 	}
 
@@ -384,6 +386,13 @@ func downloadReplicatedApp(replicatedUpstream *ReplicatedUpstream, license *kots
 	updateChannelID := getResp.Header.Get("X-Replicated-ChannelID")
 	updateChannelName := getResp.Header.Get("X-Replicated-ChannelName")
 	versionLabel := getResp.Header.Get("X-Replicated-VersionLabel")
+	releasedAtStr := getResp.Header.Get("X-Replicated-ReleasedAt")
+
+	var releasedAt *time.Time
+	r, err := time.Parse(time.RFC3339, releasedAtStr)
+	if err == nil {
+		releasedAt = &r
+	}
 
 	gzf, err := gzip.NewReader(getResp.Body)
 	if err != nil {
@@ -398,6 +407,7 @@ func downloadReplicatedApp(replicatedUpstream *ReplicatedUpstream, license *kots
 			Cursor:      updateSequence,
 		},
 		VersionLabel: versionLabel,
+		ReleasedAt:   releasedAt,
 		// NOTE: release notes come from Application spec
 	}
 	tarReader := tar.NewReader(gzf)

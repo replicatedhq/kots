@@ -17,6 +17,8 @@ limitations under the License.
 package v1beta1
 
 import (
+	"time"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -27,6 +29,7 @@ type InstallationSpec struct {
 	ChannelName   string                  `json:"channelName,omitempty"`
 	VersionLabel  string                  `json:"versionLabel,omitempty"`
 	ReleaseNotes  string                  `json:"releaseNotes,omitempty"`
+	ReleasedAt    *time.Time              `json:"releasedAt,omitempty"`
 	EncryptionKey string                  `json:"encryptionKey,omitempty"`
 	KnownImages   []InstallationImage     `json:"knownImages,omitempty"`
 	YAMLErrors    []InstallationYAMLError `json:"yamlErrors,omitempty"`

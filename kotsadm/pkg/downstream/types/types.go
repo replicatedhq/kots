@@ -28,6 +28,7 @@ type DownstreamVersion struct {
 	DiffSummaryError         string                          `json:"diffSummaryError,omitempty"`
 	CommitURL                string                          `json:"commitUrl,omitempty"`
 	GitDeployable            bool                            `json:"gitDeployable,omitempty"`
+	UpstreamReleasedAt       *time.Time                      `json:"upstreamReleasedAt,omitempty"`
 	YamlErrors               []v1beta1.InstallationYAMLError `json:"yamlErrors,omitempty"`
 }
 
