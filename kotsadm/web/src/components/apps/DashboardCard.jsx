@@ -180,7 +180,6 @@ export default class DashboardCard extends React.Component {
     );
   }
 
-
   handleViewLogs = async (version, isFailing) => {
     try {
       const { app } = this.props;
@@ -210,22 +209,6 @@ export default class DashboardCard extends React.Component {
     } catch (err) {
       console.log(err)
       this.setState({ logsLoading: false, viewLogsErrMsg: err ? `Failed to view logs: ${err.message}` : "Something went wrong, please try again." });
-    }
-  }
-
-  getCurrentVersionStatus = (version) => {
-    if (version?.status === "deployed" || version?.status === "merged" || version?.status === "pending") {
-      return <span className="u-fontSize--small u-lineHeight--normal u-color--dustyGray u-fontWeight--medium flex alignItems--center"> <span className="icon checkmark-icon u-marginRight--5" /> {Utilities.toTitleCase(version?.status).replace("_", " ")} </span>
-    } else if (version?.status === "failed") {
-      return <span className="u-fontSize--small u-lineHeight--normal u-color--red u-fontWeight--medium flex alignItems--center"> <span className="icon error-small u-marginRight--5" /> Failed <span className="u-marginLeft--5 replicated-link u-fontSize--small" onClick={() => this.handleViewLogs(version, true)}> See details </span></span>
-    } else if (version?.status === "deploying") {
-      return (
-        <span className="flex alignItems--center u-fontSize--small u-lineHeight--normal u-color--dustyGray u-fontWeight--medium">
-          <Loader className="flex alignItems--center u-marginRight--5" size="16" />
-            Deploying
-        </span>);
-    } else {
-      return <span className="u-fontSize--small u-lineHeight--normal u-color--dustyGray u-fontWeight--medium flex alignItems--center"> {Utilities.toTitleCase(version?.status).replace("_", " ")} </span>
     }
   }
 
@@ -276,7 +259,7 @@ export default class DashboardCard extends React.Component {
       <div className="flex1 flex-column">
         {currentVersion?.deployedAt ?
           <div className="flex flex-column" style={{ minHeight: "35px" }}>
-            {this.getCurrentVersionStatus(currentVersion)}
+            {Utilities.getCurrentVersionStatus(currentVersion, this.handleViewLogs)}
             <p className="u-fontSize--small u-fontWeight--medium u-color--dustyGray u-marginTop--5"> {moment(currentVersion?.createdOn).format("lll")} </p>
           </div>
           :

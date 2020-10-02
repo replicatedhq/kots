@@ -6,13 +6,13 @@ import dayjs from "dayjs";
 import ReactTooltip from "react-tooltip"
 import relativeTime from "dayjs/plugin/relativeTime";
 import Modal from "react-modal";
-import moment from "moment";
 import find from "lodash/find";
 
 import Loader from "../shared/Loader";
 import MountAware from "../shared/MountAware";
 import MarkdownRenderer from "@src/components/shared/MarkdownRenderer";
 import DownstreamWatchVersionDiff from "@src/components/watches/DownstreamWatchVersionDiff";
+import AppVersionHistoryRow from "@src/components/apps/AppVersionHistoryRow";
 import AirgapUploadProgress from "@src/components/AirgapUploadProgress";
 import UpdateCheckerModal from "@src/components/modals/UpdateCheckerModal";
 import ShowDetailsModal from "@src/components/modals/ShowDetailsModal";
@@ -388,7 +388,7 @@ class AppVersionHistory extends Component {
                 "error-small": version.status === "failed" || preflightsFailed
               })}
             />
-            {version.status === "deploying" &&  <Loader className="flex alignItems--center" size="20" />}
+            {version.status === "deploying" && <Loader className="flex alignItems--center" size="20" />}
             <span className={classNames("u-fontSize--small u-fontWeight--medium u-lineHeight--normal u-marginLeft--5", {
               "u-color--nevada": version.status === "deployed" || version.status === "merged",
               "u-color--orange": version.status === "opened",
@@ -867,22 +867,6 @@ class AppVersionHistory extends Component {
     this.setState({ displayShowDetailsModal: !this.state.displayShowDetailsModal, deployView: false, yamlErrorDetails, selectedSequence });
   }
 
-  getCurrentVersionStatus = (version) => {
-    if (version?.status === "deployed" || version?.status === "merged" || version?.status === "pending") {
-      return <span className="u-fontSize--small u-lineHeight--normal u-color--dustyGray u-fontWeight--medium flex alignItems--center u-marginTop--8"> <span className="icon checkmark-icon u-marginRight--5" /> {Utilities.toTitleCase(version?.status).replace("_", " ")} </span>
-    } else if (version?.status === "failed") {
-      return <span className="u-fontSize--small u-lineHeight--normal u-color--red u-fontWeight--medium flex alignItems--center u-marginTop--8"> <span className="icon error-small u-marginRight--5" /> Failed <span className="u-marginLeft--5 replicated-link u-fontSize--small" onClick={() => this.handleViewLogs(version, true)}> See details </span></span>
-    } else if (version?.status === "deploying") {
-      return (
-        <span className="flex alignItems--center u-fontSize--small u-lineHeight--normal u-color--dustyGray u-fontWeight--medium u-marginTop--8">
-          <Loader className="flex alignItems--center u-marginRight--5" size="16" />
-            Deploying
-        </span>);
-    } else {
-      return <span className="u-fontSize--small u-lineHeight--normal u-color--dustyGray u-fontWeight--medium flex alignItems--center u-marginTop--8"> {Utilities.toTitleCase(version?.status).replace("_", " ")} </span>
-    }
-  }
-
   render() {
     const {
       app,
@@ -1023,7 +1007,7 @@ class AppVersionHistory extends Component {
                   <p className="u-fontSize--small u-lineHeight--normal u-color--tundora u-fontWeight--medium u-marginLeft--10"> {currentDownstreamVersion ? `Sequence ${currentDownstreamVersion?.sequence}` : null}</p>
                 </div>
                 {currentDownstreamVersion?.deployedAt ? <p className="u-fontSize--small u-lineHeight--normal u-color--silverSand u-fontWeight--medium u-marginTop--5">{`${dayjs(currentDownstreamVersion.deployedAt).format("MMMM D, YYYY  @ hh:mm a")}`}</p> : null}
-                {currentDownstreamVersion && this.getCurrentVersionStatus(currentDownstreamVersion)}
+                {currentDownstreamVersion && Utilities.getCurrentVersionStatus(currentDownstreamVersion, this.handleViewLogs)}
                 {currentDownstreamVersion ?
                   <div className="flex alignItems--center u-marginTop--8 u-marginTop--8">
                     {currentDownstreamVersion?.releaseNotes &&
@@ -1122,41 +1106,22 @@ class AppVersionHistory extends Component {
                     const nothingToCommit = gitopsEnabled && !version.commitUrl;
                     const yamlErrorsDetails = this.yamlErrorsDetails(downstream, version);
                     return (
-                      <div
+                      <AppVersionHistoryRow
                         key={version.sequence}
-                        className={classNames(`VersionHistoryDeploymentRow ${version.status} flex flex-auto`, { "overlay": selectedDiffReleases, "disabled": nothingToCommit, "selected": (isChecked && !nothingToCommit), "is-new": isNew })}
-                        onClick={() => selectedDiffReleases && !nothingToCommit && this.handleSelectReleasesToDiff(version, !isChecked)}
-                      >
-                        {selectedDiffReleases && <div className={classNames("checkbox u-marginRight--20", { "checked": (isChecked && !nothingToCommit) }, { "disabled": nothingToCommit })} />}
-                        <div className={`${nothingToCommit && selectedDiffReleases && "u-opacity--half"} flex-column flex1 u-paddingRight--20`}>
-                          <div className="flex alignItems--center">
-                            <p className="u-fontSize--large u-fontWeight--bold u-lineHeight--medium u-color--tuna">{version.versionLabel || version.title}</p>
-                            <p className="u-fontSize--small u-fontWeight--medium u-lineHeight--normal u-color--tundora u-marginLeft--5" style={{ marginTop: "2px" }}>Sequence {version.sequence}</p>
-                          </div>
-                          <div className="flex alignItems--center u-marginTop--10"></div>
-                          <div className="flex flex1 u-marginTop--15 alignItems--center">
-                            <p className="u-fontSize--small u-lineHeight--normal u-color--dustyGray u-fontWeight--medium">Released <span className="u-fontWeight--bold">{moment(version.createdOn).format("MM/DD/YY @ hh:mm a")}</span></p>
-                            {version.releaseNotes ?
-                              <p className="release-notes-link u-fontSize--small u-lineHeight--normal u-marginLeft--5 flex alignItems--center" onClick={() => this.showDownstreamReleaseNotes(version.releaseNotes)}> <span className="icon releaseNotes-small--icon u-marginRight--5" />Release notes</p> : null}
-                          </div>
-                        </div>
-                        <div className={`${nothingToCommit && selectedDiffReleases && "u-opacity--half"} flex-column flex1`}>
-                          <div className="flex flex-column">
-                            <p className="u-fontSize--normal u-fontWeight--bold u-color--tuna">{version.source}</p>
-                            <div className="flex alignItems--center u-fontSize--small u-marginTop--10 u-color--dustyGray">
-                              {this.renderSourceAndDiff(version)}
-                              {yamlErrorsDetails && this.renderYamlErrors(yamlErrorsDetails, version)}
-                            </div>
-                          </div>
-                          <div className="flex flex1 alignItems--flexEnd"> {gitopsEnabled ? this.renderViewPreflights(version) : this.renderVersionStatus(version)}</div>
-                        </div>
-                        <div className={`${nothingToCommit && selectedDiffReleases && "u-opacity--half"} flex-column flex1 alignItems--flexEnd`}>
-                          <div>
-                            {this.renderVersionAction(version, nothingToCommit && selectedDiffReleases)}
-                          </div>
-                          <p className="u-fontSize--small u-lineHeight--normal u-color--dustyGray u-fontWeight--medium u-marginTop--15">Deployed: <span className="u-fontWeight--bold">{version.deployedAt ? moment(version.deployedAt).format("MM/DD/YY @ hh:mm a") : "N/A"}</span></p>
-                        </div>
-                      </div>
+                        version={version}
+                        selectedDiffReleases={selectedDiffReleases}
+                        nothingToCommit={nothingToCommit}
+                        isChecked={isChecked}
+                        isNew={isNew}
+                        showDownstreamReleaseNotes={this.showDownstreamReleaseNotes}
+                        renderSourceAndDiff={this.renderSourceAndDiff}
+                        yamlErrorsDetails={yamlErrorsDetails}
+                        renderYamlErrors={this.renderYamlErrors}
+                        gitopsEnabled={gitopsEnabled}
+                        renderViewPreflights={this.renderViewPreflights}
+                        renderVersionStatus={this.renderVersionStatus}
+                        renderVersionAction={this.renderVersionAction}
+                      />
                     );
                   }) :
                     <div className="flex-column flex1 alignItems--center justifyContent--center">

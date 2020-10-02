@@ -1,3 +1,4 @@
+import React from "react";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
 import utc from "dayjs/plugin/utc";
@@ -8,6 +9,7 @@ import size from "lodash/size";
 import each from "lodash/each";
 import find from "lodash/find";
 import * as jsdiff from "diff";
+import Loader from "../components/shared/Loader";
 
 dayjs.extend(utc);
 dayjs.extend(relativeTime);
@@ -533,5 +535,21 @@ export const Utilities = {
     let i = parseInt(Math.floor(Math.log(bytes) / Math.log(1024)));
     if (i === 0) return bytes + " " + sizes[i];
     return (bytes / Math.pow(1024, i)).toFixed(1) + " " + sizes[i];
+  },
+
+  getCurrentVersionStatus(version, viewLogs) {
+    if (version?.status === "deployed" || version?.status === "merged" || version?.status === "pending") {
+      return <span className="u-fontSize--small u-lineHeight--normal u-color--dustyGray u-fontWeight--medium flex alignItems--center"> <span className="icon checkmark-icon u-marginRight--5" /> {this.toTitleCase(version?.status).replace("_", " ")} </span>
+    } else if (version?.status === "failed") {
+      return <span className="u-fontSize--small u-lineHeight--normal u-color--red u-fontWeight--medium flex alignItems--center"> <span className="icon error-small u-marginRight--5" /> Failed <span className="u-marginLeft--5 replicated-link u-fontSize--small" onClick={() => viewLogs(version, true)}> See details </span></span>
+    } else if (version?.status === "deploying") {
+      return (
+        <span className="flex alignItems--center u-fontSize--small u-lineHeight--normal u-color--dustyGray u-fontWeight--medium">
+          <Loader className="flex alignItems--center u-marginRight--5" size="16" />
+            Deploying
+        </span>);
+    } else {
+      return <span className="u-fontSize--small u-lineHeight--normal u-color--dustyGray u-fontWeight--medium flex alignItems--center"> {this.toTitleCase(version?.status).replace("_", " ")} </span>
+    }
   }
 };
