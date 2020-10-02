@@ -82,7 +82,7 @@ func createApplicationBackup(ctx context.Context, a *apptypes.App, isScheduled b
 		return nil, errors.Wrap(err, "failed to get backup spec from kotskinds")
 	}
 
-	renderedBackup, err := helper.RenderAppFile(a, nil, []byte(backupSpec))
+	renderedBackup, err := helper.RenderAppFile(a, nil, []byte(backupSpec), kotsKinds)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to render backup")
 	}

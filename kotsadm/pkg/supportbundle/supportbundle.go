@@ -171,7 +171,7 @@ func CreateRenderedSpec(appID string, sequence int64, origin string, inCluster b
 
 	templatedSpec := b.Bytes()
 
-	renderedSpec, err := helper.RenderAppFile(app, &sequence, templatedSpec)
+	renderedSpec, err := helper.RenderAppFile(app, &sequence, templatedSpec, kotsKinds)
 	if err != nil {
 		return errors.Wrap(err, "failed render support bundle spec")
 	}

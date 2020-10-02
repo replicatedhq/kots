@@ -367,7 +367,7 @@ func UploadSupportBundle(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	renderedAnalyzers, err := helper.RenderAppFile(foundApp, nil, b.Bytes())
+	renderedAnalyzers, err := helper.RenderAppFile(foundApp, nil, b.Bytes(), kotsKinds)
 	if err != nil {
 		logger.Error(errors.Wrap(err, "failed to render analyzers"))
 		w.WriteHeader(http.StatusInternalServerError)
