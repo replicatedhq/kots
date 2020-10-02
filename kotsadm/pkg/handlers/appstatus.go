@@ -44,14 +44,21 @@ func SetAppStatus(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	previousAppStatus, err := store.GetStore().GetAppStatus(status.AppID)
+	a, err := store.GetStore().GetApp(status.AppID)
+	if err != nil {
+		logger.Error(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	previousAppStatus, err := store.GetStore().GetAppStatus(a.ID)
 	if err != nil {
 		logger.Error(err)
 		w.WriteHeader(500)
 		return
 	}
 
-	err = appstatus.Set(status.AppID, status.ResourceStates, status.UpdatedAt)
+	err = appstatus.Set(a.ID, status.ResourceStates, status.UpdatedAt)
 	if err != nil {
 		logger.Error(err)
 		w.WriteHeader(http.StatusInternalServerError)
@@ -59,9 +66,9 @@ func SetAppStatus(w http.ResponseWriter, r *http.Request) {
 	}
 
 	currentAppState := appstatus.GetState(status.ResourceStates)
-	if previousAppStatus.State != currentAppState {
+	if !a.IsAirgap && previousAppStatus.State != currentAppState {
 		go func() {
-			_, err := updatechecker.CheckForUpdates(status.AppID, false)
+			_, err := updatechecker.CheckForUpdates(a.ID, false)
 			if err != nil {
 				logger.Error(errors.Wrap(err, "failed to check for updates on app status change"))
 			}
