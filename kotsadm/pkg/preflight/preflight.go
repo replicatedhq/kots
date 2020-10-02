@@ -226,9 +226,20 @@ func CreateRenderedSpec(appID string, sequence int64, origin string, inCluster b
 		return errors.Wrap(err, "failed to encode preflight")
 	}
 
+	archivePath, err := store.GetStore().GetAppVersionArchive(appID, sequence)
+	if err != nil {
+		return errors.Wrap(err, "failed to get current archive")
+	}
+	defer os.RemoveAll(archivePath)
+
+	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(archivePath)
+	if err != nil {
+		return errors.Wrap(err, "failed to load current kotskinds")
+	}
+
 	templatedSpec := b.Bytes()
 
-	renderedSpec, err := helper.RenderAppFile(app, &sequence, templatedSpec)
+	renderedSpec, err := helper.RenderAppFile(app, &sequence, templatedSpec, kotsKinds)
 	if err != nil {
 		return errors.Wrap(err, "failed render preflight spec")
 	}
