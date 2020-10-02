@@ -6,7 +6,6 @@ import dayjs from "dayjs";
 import ReactTooltip from "react-tooltip"
 import relativeTime from "dayjs/plugin/relativeTime";
 import Modal from "react-modal";
-import moment from "moment";
 import find from "lodash/find";
 
 import Loader from "../shared/Loader";
@@ -1068,7 +1067,9 @@ class AppVersionHistory extends Component {
                                 <span className="u-fontSize--small u-lineHeight--normal u-fontWeight--medium u-color--tundora u-marginLeft--5"> Sequence {pendingVersions[0]?.sequence}</span>
                               </div>
                               <div className="flex flex1 alignItems--center">
-                                {pendingVersions[0]?.createdOn ? <p className="u-fontSize--small u-lineHeight--normal u-fontWeight--medium u-color--dustyGray">Released <span className="u-fontWeight--bold">{`${dayjs(pendingVersions[0]?.createdOn).format("MMMM D, YYYY")}`}</span></p> : null}
+                                {pendingVersions[0]?.createdOn || pendingVersions[0].upstreamReleasedAt ? 
+                                <p className="u-fontSize--small u-lineHeight--normal u-fontWeight--medium u-color--dustyGray">Released <span className="u-fontWeight--bold">{pendingVersions[0].upstreamReleasedAt ? dayjs(pendingVersions[0]?.upstreamReleasedAt).format("MMMM D, YYYY") : dayjs(pendingVersions[0]?.createdOn).format("MMMM D, YYYY")}</span></p> 
+                                : null}
                                 {pendingVersions[0]?.releaseNotes ? <span className="release-notes-link u-fontSize--small u-fontWeight--medium u-marginLeft--5 flex alignItems--center" onClick={() => this.showDownstreamReleaseNotes(pendingVersions[0]?.releaseNotes)}><span className="icon releaseNotes-small--icon u-marginRight--5" />Release notes</span> : null}
                               </div>
                             </div>
@@ -1135,7 +1136,7 @@ class AppVersionHistory extends Component {
                           </div>
                           <div className="flex alignItems--center u-marginTop--10"></div>
                           <div className="flex flex1 u-marginTop--15 alignItems--center">
-                            <p className="u-fontSize--small u-lineHeight--normal u-color--dustyGray u-fontWeight--medium">Released <span className="u-fontWeight--bold">{moment(version.createdOn).format("MM/DD/YY @ hh:mm a")}</span></p>
+                            <p className="u-fontSize--small u-lineHeight--normal u-color--dustyGray u-fontWeight--medium">Released <span className="u-fontWeight--bold">{version.upstreamReleasedAt ? dayjs(version.upstreamReleasedAt).format("MMMM D, YYYY") : dayjs(version.createdOn).format("MMMM D, YYYY")}</span></p>
                             {version.releaseNotes ?
                               <p className="release-notes-link u-fontSize--small u-lineHeight--normal u-marginLeft--5 flex alignItems--center" onClick={() => this.showDownstreamReleaseNotes(version.releaseNotes)}> <span className="icon releaseNotes-small--icon u-marginRight--5" />Release notes</p> : null}
                           </div>
@@ -1154,7 +1155,7 @@ class AppVersionHistory extends Component {
                           <div>
                             {this.renderVersionAction(version, nothingToCommit && selectedDiffReleases)}
                           </div>
-                          <p className="u-fontSize--small u-lineHeight--normal u-color--dustyGray u-fontWeight--medium u-marginTop--15">Deployed: <span className="u-fontWeight--bold">{version.deployedAt ? moment(version.deployedAt).format("MM/DD/YY @ hh:mm a") : "N/A"}</span></p>
+                          <p className="u-fontSize--small u-lineHeight--normal u-color--dustyGray u-fontWeight--medium u-marginTop--15">Deployed: <span className="u-fontWeight--bold">{version.deployedAt ? dayjs(version.deployedAt).format("MMMM D, YYYY @ hh:mm a") : "N/A"}</span></p>
                         </div>
                       </div>
                     );
