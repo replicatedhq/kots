@@ -139,8 +139,8 @@ func GetBundleCommand(appSlug string) []string {
 	return comamnd
 }
 
-func CreateRenderedSpec(appID string, sequence int64, origin string, inCluster bool, supportBundle *troubleshootv1beta2.SupportBundle) error {
-	builtBundle := supportBundle.DeepCopy()
+func CreateRenderedSpec(appID string, sequence int64, origin string, inCluster bool, kotsKinds *kotsutil.KotsKinds) error {
+	builtBundle := kotsKinds.SupportBundle.DeepCopy()
 	if builtBundle == nil {
 		builtBundle = &troubleshootv1beta2.SupportBundle{
 			TypeMeta: v1.TypeMeta{
@@ -178,20 +178,9 @@ func CreateRenderedSpec(appID string, sequence int64, origin string, inCluster b
 
 	// unmarshal the spec, look for image replacements in collectors and then remarshal
 	// we do this after template rendering to support templating and then replacement
-	supportBundle, err = kotsutil.LoadSupportBundleFromContents(renderedSpec)
+	supportBundle, err := kotsutil.LoadSupportBundleFromContents(renderedSpec)
 	if err != nil {
 		return errors.Wrap(err, "failed to unmarshal rendered support bundle spec")
-	}
-
-	archiveDir, err := store.GetStore().GetAppVersionArchive(appID, sequence)
-	if err != nil {
-		return errors.Wrap(err, "failed to get app version archive")
-	}
-	defer os.RemoveAll(archiveDir)
-
-	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(archiveDir)
-	if err != nil {
-		return errors.Wrap(err, "failed to load rendered kots kinds")
 	}
 
 	registrySettings, err := store.GetStore().GetRegistryDetailsForApp(appID)

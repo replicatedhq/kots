@@ -230,7 +230,7 @@ func CreateAppFromAirgap(pendingApp *types.PendingApp, airgapPath string, regist
 		return errors.Wrap(err, "failed to load kotskinds from path")
 	}
 
-	err = supportbundle.CreateRenderedSpec(a.ID, a.CurrentSequence, "", true, kotsKinds.SupportBundle)
+	err = supportbundle.CreateRenderedSpec(a.ID, a.CurrentSequence, "", true, kotsKinds)
 	if err != nil {
 		return errors.Wrap(err, "failed to create rendered support bundle spec")
 	}

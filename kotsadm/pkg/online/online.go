@@ -160,7 +160,7 @@ func CreateAppFromOnline(pendingApp *types.PendingApp, upstreamURI string, isAut
 		return nil, errors.Wrap(err, "failed to load kotskinds from path")
 	}
 
-	err = supportbundle.CreateRenderedSpec(pendingApp.ID, 0, "", true, kotsKinds.SupportBundle)
+	err = supportbundle.CreateRenderedSpec(pendingApp.ID, 0, "", true, kotsKinds)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create rendered support bundle spec")
 	}
