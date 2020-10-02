@@ -270,13 +270,14 @@ export default class DashboardCard extends React.Component {
     } else if (!app.lastUpdateCheckAt) {
       updateText = null;
     }
+    
 
     return (
       <div className="flex1 flex-column">
         {currentVersion?.deployedAt ?
           <div className="flex flex-column" style={{ minHeight: "35px" }}>
             {this.getCurrentVersionStatus(currentVersion)}
-            <p className="u-fontSize--small u-fontWeight--medium u-color--dustyGray u-marginTop--5"> {moment(currentVersion?.createdOn).format("lll")} </p>
+            <p className="u-fontSize--small u-fontWeight--medium u-color--dustyGray u-marginTop--5"> {moment(currentVersion?.deployedAt).format("lll")} </p>
           </div>
           :
           <p className="u-fontWeight--bold u-fontSize--normal u-color--dustyGray" style={{ minHeight: "35px" }}> No version deployed </p>}
