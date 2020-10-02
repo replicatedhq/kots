@@ -3,6 +3,7 @@ package types
 import (
 	"path"
 
+	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	kotsscheme "github.com/replicatedhq/kots/kotskinds/client/kotsclientset/scheme"
 	"k8s.io/client-go/kubernetes/scheme"
 )
@@ -43,6 +44,44 @@ type WriteOptions struct {
 	// Set to true on initial installation when an unencrypted config file is provided
 	EncryptConfig  bool
 	SharedPassword string
+}
+
+type FetchOptions struct {
+	RootDir             string
+	UseAppDir           bool
+	HelmRepoName        string
+	HelmRepoURI         string
+	HelmOptions         []string
+	LocalPath           string
+	License             *kotsv1beta1.License
+	ConfigValues        *kotsv1beta1.ConfigValues
+	Airgap              *kotsv1beta1.Airgap
+	EncryptionKey       string
+	CurrentCursor       string
+	CurrentChannelID    string
+	CurrentChannelName  string
+	CurrentVersionLabel string
+	AppSequence         int64
+	LocalRegistry       LocalRegistry
+	ReportingInfo       *ReportingInfo
+}
+
+type LocalRegistry struct {
+	Host      string
+	Namespace string
+	Username  string
+	Password  string
+}
+
+type ReportingInfo struct {
+	InstanceID            string
+	ClusterID             string
+	DownstreamCursor      string
+	DownstreamChannelID   string
+	DownstreamChannelName string
+	AppStatus             string
+	IsKurl                bool
+	K8sVersion            string
 }
 
 func (u *Upstream) GetUpstreamDir(options WriteOptions) string {

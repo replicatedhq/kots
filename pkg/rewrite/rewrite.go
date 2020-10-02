@@ -57,14 +57,14 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 		rewriteOptions.ReportWriter = ioutil.Discard
 	}
 
-	fetchOptions := &upstream.FetchOptions{
+	fetchOptions := &upstreamtypes.FetchOptions{
 		RootDir:             rewriteOptions.RootDir,
 		LocalPath:           rewriteOptions.UpstreamPath,
 		CurrentCursor:       rewriteOptions.Installation.Spec.UpdateCursor,
 		CurrentVersionLabel: rewriteOptions.Installation.Spec.VersionLabel,
 		EncryptionKey:       rewriteOptions.Installation.Spec.EncryptionKey,
 		License:             rewriteOptions.License,
-		LocalRegistry: upstream.LocalRegistry{
+		LocalRegistry: upstreamtypes.LocalRegistry{
 			Host:      rewriteOptions.RegistryEndpoint,
 			Namespace: rewriteOptions.RegistryNamespace,
 			Username:  rewriteOptions.RegistryUsername,

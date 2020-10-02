@@ -4,6 +4,7 @@ import (
 	"net/url"
 
 	"github.com/pkg/errors"
+	types "github.com/replicatedhq/kots/pkg/upstream/types"
 	"github.com/replicatedhq/kots/pkg/util"
 )
 
@@ -12,7 +13,7 @@ type Update struct {
 	VersionLabel string `json:"versionLabel"`
 }
 
-func GetUpdatesUpstream(upstreamURI string, fetchOptions *FetchOptions) ([]Update, error) {
+func GetUpdatesUpstream(upstreamURI string, fetchOptions *types.FetchOptions) ([]Update, error) {
 	versions, err := getUpdatesUpstream(upstreamURI, fetchOptions)
 	if err != nil {
 		return nil, errors.Wrap(err, "download upstream failed")
@@ -21,7 +22,7 @@ func GetUpdatesUpstream(upstreamURI string, fetchOptions *FetchOptions) ([]Updat
 	return versions, nil
 }
 
-func getUpdatesUpstream(upstreamURI string, fetchOptions *FetchOptions) ([]Update, error) {
+func getUpdatesUpstream(upstreamURI string, fetchOptions *types.FetchOptions) ([]Update, error) {
 	if !util.IsURL(upstreamURI) {
 		return nil, errors.New("not implemented")
 	}
@@ -39,12 +40,7 @@ func getUpdatesUpstream(upstreamURI string, fetchOptions *FetchOptions) ([]Updat
 			ChannelName: fetchOptions.CurrentChannelName,
 			Cursor:      fetchOptions.CurrentCursor,
 		}
-		downstreamCursor := ReplicatedCursor{
-			ChannelID:   fetchOptions.DownstreamChannelID,
-			ChannelName: fetchOptions.DownstreamChannelName,
-			Cursor:      fetchOptions.DownstreamCursor,
-		}
-		return getUpdatesReplicated(u, fetchOptions.LocalPath, currentCursor, fetchOptions.CurrentVersionLabel, downstreamCursor, fetchOptions.License)
+		return getUpdatesReplicated(u, fetchOptions.LocalPath, currentCursor, fetchOptions.CurrentVersionLabel, fetchOptions.License, fetchOptions.ReportingInfo)
 	}
 	if u.Scheme == "git" {
 		// return getUpdatesGit(upstreamURI)

@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
+	types "github.com/replicatedhq/kots/pkg/upstream/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -56,7 +57,7 @@ ACgAAA==`,
 	}
 
 	for _, test := range tests {
-		fetchOptions := &FetchOptions{
+		fetchOptions := &types.FetchOptions{
 			RootDir:             workDir,
 			LocalPath:           srcDir,
 			CurrentVersionLabel: test.currentVersionLabel,

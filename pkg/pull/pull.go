@@ -109,14 +109,14 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 		return "", errors.Wrap(err, "failed to parse uri")
 	}
 
-	fetchOptions := upstream.FetchOptions{
+	fetchOptions := upstreamtypes.FetchOptions{
 		HelmRepoURI:   pullOptions.HelmRepoURI,
 		RootDir:       pullOptions.RootDir,
 		UseAppDir:     pullOptions.CreateAppDir,
 		LocalPath:     pullOptions.LocalPath,
 		CurrentCursor: pullOptions.UpdateCursor,
 		AppSequence:   pullOptions.AppSequence,
-		LocalRegistry: upstream.LocalRegistry{
+		LocalRegistry: upstreamtypes.LocalRegistry{
 			Host:      pullOptions.RewriteImageOptions.Host,
 			Namespace: pullOptions.RewriteImageOptions.Namespace,
 			Username:  pullOptions.RewriteImageOptions.Username,

@@ -78,7 +78,7 @@ func (this ReplicatedCursor) Equal(other ReplicatedCursor) bool {
 	return this.ChannelName == other.ChannelName && this.Cursor == other.Cursor
 }
 
-func getUpdatesReplicated(u *url.URL, localPath string, currentCursor ReplicatedCursor, currentVersionLabel string, downstreamCursor ReplicatedCursor, license *kotsv1beta1.License) ([]Update, error) {
+func getUpdatesReplicated(u *url.URL, localPath string, currentCursor ReplicatedCursor, currentVersionLabel string, license *kotsv1beta1.License, reportingInfo *types.ReportingInfo) ([]Update, error) {
 	if localPath != "" {
 		parsedLocalRelease, err := readReplicatedAppFromLocalPath(localPath, currentCursor, currentVersionLabel)
 		if err != nil {
@@ -103,7 +103,7 @@ func getUpdatesReplicated(u *url.URL, localPath string, currentCursor Replicated
 		return nil, errors.Wrap(err, "failed to get successful head response")
 	}
 
-	pendingReleases, err := listPendingChannelReleases(replicatedUpstream, remoteLicense, currentCursor, downstreamCursor)
+	pendingReleases, err := listPendingChannelReleases(replicatedUpstream, remoteLicense, currentCursor, reportingInfo)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to list replicated app releases")
 	}
@@ -118,7 +118,7 @@ func getUpdatesReplicated(u *url.URL, localPath string, currentCursor Replicated
 	return updates, nil
 }
 
-func downloadReplicated(u *url.URL, localPath string, rootDir string, useAppDir bool, license *kotsv1beta1.License, existingConfigValues *kotsv1beta1.ConfigValues, updateCursor ReplicatedCursor, versionLabel string, cipher *crypto.AESCipher, appSequence int64, isAirgap bool, registry LocalRegistry) (*types.Upstream, error) {
+func downloadReplicated(u *url.URL, localPath string, rootDir string, useAppDir bool, license *kotsv1beta1.License, existingConfigValues *kotsv1beta1.ConfigValues, updateCursor ReplicatedCursor, versionLabel string, cipher *crypto.AESCipher, appSequence int64, isAirgap bool, registry types.LocalRegistry) (*types.Upstream, error) {
 	var release *Release
 
 	if localPath != "" {
@@ -432,7 +432,7 @@ func downloadReplicatedApp(replicatedUpstream *ReplicatedUpstream, license *kots
 	return &release, nil
 }
 
-func listPendingChannelReleases(replicatedUpstream *ReplicatedUpstream, license *kotsv1beta1.License, currentCursor ReplicatedCursor, downstreamCursor ReplicatedCursor) ([]ChannelRelease, error) {
+func listPendingChannelReleases(replicatedUpstream *ReplicatedUpstream, license *kotsv1beta1.License, currentCursor ReplicatedCursor, reportingInfo *types.ReportingInfo) ([]ChannelRelease, error) {
 	u, err := url.Parse(license.Spec.Endpoint)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to parse endpoint from license")
@@ -453,12 +453,23 @@ func listPendingChannelReleases(replicatedUpstream *ReplicatedUpstream, license 
 	urlValues := url.Values{}
 	urlValues.Set("channelSequence", sequence)
 	urlValues.Add("licenseSequence", fmt.Sprintf("%d", license.Spec.LicenseSequence))
-	urlValues.Add("downstreamChannelSequence", downstreamCursor.Cursor)
 
-	if downstreamCursor.ChannelID != "" {
-		urlValues.Add("downstreamChannelID", downstreamCursor.ChannelID)
-	} else {
-		urlValues.Add("downstreamChannelName", downstreamCursor.ChannelName)
+	// reporting info
+	if reportingInfo != nil {
+		urlValues.Add("k8sVersion", reportingInfo.K8sVersion)
+		urlValues.Add("isKurl", fmt.Sprintf("%t", reportingInfo.IsKurl))
+		urlValues.Add("appStatus", reportingInfo.AppStatus)
+		urlValues.Add("clusterId", reportingInfo.ClusterID)
+		urlValues.Add("instanceId", reportingInfo.InstanceID)
+
+		if reportingInfo.DownstreamCursor != "" {
+			urlValues.Add("downstreamChannelSequence", reportingInfo.DownstreamCursor)
+		}
+		if reportingInfo.DownstreamChannelID != "" {
+			urlValues.Add("downstreamChannelId", reportingInfo.DownstreamChannelID)
+		} else if reportingInfo.DownstreamChannelName != "" {
+			urlValues.Add("downstreamChannelName", reportingInfo.DownstreamChannelName)
+		}
 	}
 
 	url := fmt.Sprintf("%s://%s/release/%s/pending?%s", u.Scheme, hostname, license.Spec.AppSlug, urlValues.Encode())

@@ -4,42 +4,12 @@ import (
 	"net/url"
 
 	"github.com/pkg/errors"
-	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	"github.com/replicatedhq/kots/pkg/crypto"
 	"github.com/replicatedhq/kots/pkg/upstream/types"
 	"github.com/replicatedhq/kots/pkg/util"
 )
 
-type FetchOptions struct {
-	RootDir               string
-	UseAppDir             bool
-	HelmRepoName          string
-	HelmRepoURI           string
-	HelmOptions           []string
-	LocalPath             string
-	License               *kotsv1beta1.License
-	ConfigValues          *kotsv1beta1.ConfigValues
-	Airgap                *kotsv1beta1.Airgap
-	EncryptionKey         string
-	CurrentCursor         string
-	CurrentChannelID      string
-	CurrentChannelName    string
-	CurrentVersionLabel   string
-	DownstreamCursor      string
-	DownstreamChannelID   string
-	DownstreamChannelName string
-	AppSequence           int64
-	LocalRegistry         LocalRegistry
-}
-
-type LocalRegistry struct {
-	Host      string
-	Namespace string
-	Username  string
-	Password  string
-}
-
-func FetchUpstream(upstreamURI string, fetchOptions *FetchOptions) (*types.Upstream, error) {
+func FetchUpstream(upstreamURI string, fetchOptions *types.FetchOptions) (*types.Upstream, error) {
 	upstream, err := downloadUpstream(upstreamURI, fetchOptions)
 	if err != nil {
 		return nil, errors.Wrap(err, "download upstream failed")
@@ -48,7 +18,7 @@ func FetchUpstream(upstreamURI string, fetchOptions *FetchOptions) (*types.Upstr
 	return upstream, nil
 }
 
-func downloadUpstream(upstreamURI string, fetchOptions *FetchOptions) (*types.Upstream, error) {
+func downloadUpstream(upstreamURI string, fetchOptions *types.FetchOptions) (*types.Upstream, error) {
 	if !util.IsURL(upstreamURI) {
 		return readFilesFromPath(upstreamURI)
 	}
@@ -82,14 +52,14 @@ func downloadUpstream(upstreamURI string, fetchOptions *FetchOptions) (*types.Up
 	return nil, errors.Errorf("unknown protocol scheme %q", u.Scheme)
 }
 
-func pickVersionLabel(fetchOptions *FetchOptions) string {
+func pickVersionLabel(fetchOptions *types.FetchOptions) string {
 	if fetchOptions.Airgap != nil && fetchOptions.Airgap.Spec.VersionLabel != "" {
 		return fetchOptions.Airgap.Spec.VersionLabel
 	}
 	return fetchOptions.CurrentVersionLabel
 }
 
-func pickCursor(fetchOptions *FetchOptions) ReplicatedCursor {
+func pickCursor(fetchOptions *types.FetchOptions) ReplicatedCursor {
 	if fetchOptions.Airgap != nil && fetchOptions.Airgap.Spec.UpdateCursor != "" {
 		return ReplicatedCursor{
 			ChannelID:   fetchOptions.Airgap.Spec.ChannelID,
