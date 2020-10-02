@@ -22,6 +22,8 @@ spec:
         type: text
       - name: channel_name
         type: text
+      - name: upstream_released_at
+        type: timestamp without time zone
       - name: created_at
         type: timestamp without time zone
       - name: version_label

@@ -193,13 +193,14 @@ func GetCurrentVersion(appID string, clusterID string) (*types.DownstreamVersion
 	adv.git_commit_url,
 	adv.git_deployable,
 	ado.is_error,
+	av.upstream_released_at,
 	av.kots_installation_spec
  FROM
 	 app_downstream_version AS adv
  LEFT JOIN
 	 app_version AS av
  ON
-	 adv.app_id = av.app_id AND adv.sequence = av.sequence
+	 adv.app_id = av.app_id AND adv.parent_sequence = av.sequence
  LEFT JOIN
 	 app_downstream_output AS ado
  ON
@@ -242,13 +243,14 @@ func GetPendingVersions(appID string, clusterID string) ([]types.DownstreamVersi
 	adv.git_commit_url,
 	adv.git_deployable,
 	ado.is_error,
+	av.upstream_released_at,
 	av.kots_installation_spec
  FROM
 	 app_downstream_version AS adv
  LEFT JOIN
 	 app_version AS av
  ON
-	 adv.app_id = av.app_id AND adv.sequence = av.sequence
+	 adv.app_id = av.app_id AND adv.parent_sequence = av.sequence
  LEFT JOIN
 	 app_downstream_output AS ado
  ON
@@ -305,13 +307,14 @@ func GetPastVersions(appID string, clusterID string) ([]types.DownstreamVersion,
 	adv.git_commit_url,
 	adv.git_deployable,
 	ado.is_error,
+	av.upstream_released_at,
 	av.kots_installation_spec
  FROM
 	 app_downstream_version AS adv
  LEFT JOIN
 	 app_version AS av
  ON
-	 adv.app_id = av.app_id AND adv.sequence = av.sequence
+	 adv.app_id = av.app_id AND adv.parent_sequence = av.sequence
  LEFT JOIN
 	 app_downstream_output AS ado
  ON
@@ -359,6 +362,7 @@ func versionFromRow(appID string, row scannable) (*types.DownstreamVersion, erro
 	var commitURL sql.NullString
 	var gitDeployable sql.NullBool
 	var hasError sql.NullBool
+	var upstreamReleasedAt sql.NullTime
 	var kotsInstallationSpecStr sql.NullString
 
 	if err := row.Scan(
@@ -376,6 +380,7 @@ func versionFromRow(appID string, row scannable) (*types.DownstreamVersion, erro
 		&commitURL,
 		&gitDeployable,
 		&hasError,
+		&upstreamReleasedAt,
 		&kotsInstallationSpecStr,
 	); err != nil {
 		return nil, errors.Wrap(err, "failed to scan")
@@ -407,6 +412,10 @@ func versionFromRow(appID string, row scannable) (*types.DownstreamVersion, erro
 		return nil, errors.Wrap(err, "failed to get release notes")
 	}
 	v.ReleaseNotes = releaseNotes
+
+	if upstreamReleasedAt.Valid {
+		v.UpstreamReleasedAt = &upstreamReleasedAt.Time
+	}
 
 	if kotsInstallationSpecStr.Valid && kotsInstallationSpecStr.String != "" {
 		decode := scheme.Codecs.UniversalDeserializer().Decode

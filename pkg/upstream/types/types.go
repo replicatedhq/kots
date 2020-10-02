@@ -2,6 +2,7 @@ package types
 
 import (
 	"path"
+	"time"
 
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	kotsscheme "github.com/replicatedhq/kots/kotskinds/client/kotsclientset/scheme"
@@ -27,6 +28,7 @@ type Upstream struct {
 	ChannelName   string
 	VersionLabel  string
 	ReleaseNotes  string
+	ReleasedAt    *time.Time
 	EncryptionKey string
 }
 
