@@ -266,9 +266,6 @@ class Dashboard extends Component {
     });
   }
 
-  redirectToDiff = (currentSequence, pendingSequence) => {
-    this.props.history.push(`${this.props.match.params.slug}/version-history/diff/${currentSequence}/${pendingSequence}`)
-  }
 
   onDropBundle = async () => {
     this.setState({
@@ -589,7 +586,6 @@ class Dashboard extends Component {
                 onProgressError={this.onProgressError}
                 onCheckForUpdates={() => this.onCheckForUpdates()}
                 onUploadNewVersion={() => this.onUploadNewVersion()}
-                redirectToDiff={() => this.redirectToDiff(currentSequence, latestSequence)}
                 isBundleUploading={isBundleUploading}
                 checkingForUpdateError={this.state.checkingForUpdateError}
                 viewAirgapUploadError={() => this.toggleViewAirgapUploadError()}

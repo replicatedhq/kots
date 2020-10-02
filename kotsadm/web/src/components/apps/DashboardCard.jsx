@@ -229,8 +229,7 @@ export default class DashboardCard extends React.Component {
   }
 
   renderVersionHistoryCard = () => {
-    const { app, currentVersion, downstream, checkingForUpdates, checkingForUpdateError, checkingUpdateText, errorCheckingUpdate, onCheckForUpdates, redirectToDiff, isBundleUploading } = this.props;
-    const isUpdateAvailable = downstream?.pendingVersions?.length > 0;
+    const { app, currentVersion, downstream, checkingForUpdates, checkingForUpdateError, checkingUpdateText, errorCheckingUpdate, onCheckForUpdates, isBundleUploading } = this.props;
 
     let checkingUpdateTextShort = checkingUpdateText;
     if (checkingUpdateTextShort && checkingUpdateTextShort.length > 30) {
@@ -270,7 +269,7 @@ export default class DashboardCard extends React.Component {
     } else if (!app.lastUpdateCheckAt) {
       updateText = null;
     }
-    
+
 
     return (
       <div className="flex1 flex-column">
@@ -292,7 +291,7 @@ export default class DashboardCard extends React.Component {
               <div className="flex1 flex-column" style={{ flexGrow: 1 }}>
                 {this.renderVersionAvailable(downstream)}
                 <div className="flex alignItems--center">
-                  <button className="btn primary blue u-marginTop--10" onClick={isUpdateAvailable ? redirectToDiff : onCheckForUpdates}>Check for update</button>
+                  <button className="btn primary blue u-marginTop--10" onClick={onCheckForUpdates}>Check for update</button>
                   <span className="icon settings-small-icon u-marginLeft--5 u-cursor--pointer u-marginTop--10" onClick={this.props.showUpdateCheckerModal} data-tip="Configure automatic update checks"></span>
                   <ReactTooltip effect="solid" className="replicated-tooltip" />
                 </div>
