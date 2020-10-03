@@ -168,7 +168,7 @@ func (s S3PGStore) migrateKotsInstallationSpec() error {
 
 func (s S3PGStore) migrateSupportBundleSpec() error {
 	db := persistence.MustGetPGSession()
-	query := `select app_id, sequence from app_version where supportbundle_spec is null or not supportbundle_spec like '%apiVersion%'`
+	query := `select app_id, sequence from app_version where supportbundle_spec is null`
 
 	rows, err := db.Query(query)
 	if err != nil {
@@ -233,7 +233,7 @@ func (s S3PGStore) migrateSupportBundleSpec() error {
 
 func (s S3PGStore) migratePreflightSpec() error {
 	db := persistence.MustGetPGSession()
-	query := `select app_id, sequence from app_version where preflight_spec is null or not preflight_spec like '%apiVersion%'`
+	query := `select app_id, sequence from app_version where preflight_spec is null`
 
 	rows, err := db.Query(query)
 	if err != nil {
@@ -298,7 +298,7 @@ func (s S3PGStore) migratePreflightSpec() error {
 
 func (s S3PGStore) migrateAnalyzerSpec() error {
 	db := persistence.MustGetPGSession()
-	query := `select app_id, sequence from app_version where analyzer_spec is null or not analyzer_spec like '%apiVersion%'`
+	query := `select app_id, sequence from app_version where analyzer_spec is null`
 
 	rows, err := db.Query(query)
 	if err != nil {
@@ -363,7 +363,7 @@ func (s S3PGStore) migrateAnalyzerSpec() error {
 
 func (s S3PGStore) migrateAppSpec() error {
 	db := persistence.MustGetPGSession()
-	query := `select app_id, sequence from app_version where app_spec is null or not app_spec like '%apiVersion%'`
+	query := `select app_id, sequence from app_version where app_spec is null`
 
 	rows, err := db.Query(query)
 	if err != nil {
