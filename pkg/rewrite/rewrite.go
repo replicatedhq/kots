@@ -42,7 +42,7 @@ type RewriteOptions struct {
 	AppSlug           string
 	IsGitOps          bool
 	AppSequence       int64
-	ReportingInfo			*upstreamtypes.ReportingInfo
+	ReportingInfo     *upstreamtypes.ReportingInfo
 }
 
 func Rewrite(rewriteOptions RewriteOptions) error {
