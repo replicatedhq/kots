@@ -522,7 +522,6 @@ func listPendingChannelReleases(replicatedUpstream *ReplicatedUpstream, license 
 }
 
 func injectReportingInfo(req *http.Request, reportingInfo *types.ReportingInfo) {
-	fmt.Printf("reportingInfo %+v\n", reportingInfo)
 	if reportingInfo == nil {
 		return
 	}
