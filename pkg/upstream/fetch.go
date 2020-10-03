@@ -40,7 +40,21 @@ func downloadUpstream(upstreamURI string, fetchOptions *types.FetchOptions) (*ty
 		return downloadHelm(u, fetchOptions.HelmRepoURI)
 	}
 	if u.Scheme == "replicated" {
-		return downloadReplicated(u, fetchOptions.LocalPath, fetchOptions.RootDir, fetchOptions.UseAppDir, fetchOptions.License, fetchOptions.ConfigValues, pickCursor(fetchOptions), pickVersionLabel(fetchOptions), cipher, fetchOptions.AppSequence, fetchOptions.Airgap != nil, fetchOptions.LocalRegistry)
+		return downloadReplicated(
+			u,
+			fetchOptions.LocalPath,
+			fetchOptions.RootDir,
+			fetchOptions.UseAppDir,
+			fetchOptions.License,
+			fetchOptions.ConfigValues,
+			pickCursor(fetchOptions),
+			pickVersionLabel(fetchOptions),
+			cipher,
+			fetchOptions.AppSequence,
+			fetchOptions.Airgap != nil,
+			fetchOptions.LocalRegistry,
+			fetchOptions.ReportingInfo,
+		)
 	}
 	if u.Scheme == "git" {
 		return downloadGit(upstreamURI)

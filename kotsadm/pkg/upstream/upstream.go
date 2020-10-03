@@ -12,6 +12,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
 	"github.com/replicatedhq/kots/kotsadm/pkg/preflight"
+	"github.com/replicatedhq/kots/kotsadm/pkg/reporting"
 	"github.com/replicatedhq/kots/kotsadm/pkg/store"
 	"github.com/replicatedhq/kots/kotsadm/pkg/version"
 	"github.com/replicatedhq/kots/pkg/crypto"
@@ -103,6 +104,7 @@ func DownloadUpdate(appID string, archiveDir string, toCursor string) (sequence 
 		AppSlug:             a.Slug,
 		AppSequence:         appSequence,
 		IsGitOps:            a.IsGitOps,
+		ReportingInfo:       reporting.GetReportingInfo(a.ID),
 	}
 
 	registrySettings, err := store.GetStore().GetRegistryDetailsForApp(appID)

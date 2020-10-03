@@ -17,6 +17,7 @@ import (
 	apptypes "github.com/replicatedhq/kots/kotsadm/pkg/app/types"
 	kotsadmconfig "github.com/replicatedhq/kots/kotsadm/pkg/config"
 	"github.com/replicatedhq/kots/kotsadm/pkg/downstream"
+	"github.com/replicatedhq/kots/kotsadm/pkg/reporting"
 	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
 	"github.com/replicatedhq/kots/kotsadm/pkg/preflight"
 	"github.com/replicatedhq/kots/kotsadm/pkg/render"
@@ -421,7 +422,7 @@ func updateAppConfig(updateApp *apptypes.App, sequence int64, req UpdateAppConfi
 		return updateAppConfigResponse, err
 	}
 
-	err = render.RenderDir(archiveDir, app, downstreams, registrySettings)
+	err = render.RenderDir(archiveDir, app, downstreams, registrySettings, reporting.GetReportingInfo(updateApp.ID))
 	if err != nil {
 		updateAppConfigResponse.Error = "failed to render archive directory"
 		return updateAppConfigResponse, err

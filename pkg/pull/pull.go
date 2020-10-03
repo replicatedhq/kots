@@ -58,6 +58,7 @@ type PullOptions struct {
 	HTTPProxyEnvValue   string
 	HTTPSProxyEnvValue  string
 	NoProxyEnvValue     string
+	ReportingInfo       *upstreamtypes.ReportingInfo
 }
 
 type RewriteImageOptions struct {
@@ -122,6 +123,7 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 			Username:  pullOptions.RewriteImageOptions.Username,
 			Password:  pullOptions.RewriteImageOptions.Password,
 		},
+		ReportingInfo: pullOptions.ReportingInfo,
 	}
 
 	var installation *kotsv1beta1.Installation
