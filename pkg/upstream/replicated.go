@@ -119,7 +119,21 @@ func getUpdatesReplicated(u *url.URL, localPath string, currentCursor Replicated
 	return updates, nil
 }
 
-func downloadReplicated(u *url.URL, localPath string, rootDir string, useAppDir bool, license *kotsv1beta1.License, existingConfigValues *kotsv1beta1.ConfigValues, updateCursor ReplicatedCursor, versionLabel string, cipher *crypto.AESCipher, appSequence int64, isAirgap bool, registry types.LocalRegistry) (*types.Upstream, error) {
+func downloadReplicated(
+	u *url.URL,
+	localPath string,
+	rootDir string,
+	useAppDir bool,
+	license *kotsv1beta1.License,
+	existingConfigValues *kotsv1beta1.ConfigValues,
+	updateCursor ReplicatedCursor,
+	versionLabel string,
+	cipher *crypto.AESCipher,
+	appSequence int64,
+	isAirgap bool,
+	registry types.LocalRegistry,
+	reportingInfo *types.ReportingInfo,
+) (*types.Upstream, error) {
 	var release *Release
 
 	if localPath != "" {
@@ -145,7 +159,7 @@ func downloadReplicated(u *url.URL, localPath string, rootDir string, useAppDir 
 			return nil, errors.Wrap(err, "failed to get successful head response")
 		}
 
-		downloadedRelease, err := downloadReplicatedApp(replicatedUpstream, remoteLicense, updateCursor)
+		downloadedRelease, err := downloadReplicatedApp(replicatedUpstream, remoteLicense, updateCursor, reportingInfo)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to download replicated app")
 		}
@@ -363,11 +377,14 @@ func readReplicatedAppFromLocalPath(localPath string, localCursor ReplicatedCurs
 	return &release, nil
 }
 
-func downloadReplicatedApp(replicatedUpstream *ReplicatedUpstream, license *kotsv1beta1.License, cursor ReplicatedCursor) (*Release, error) {
+func downloadReplicatedApp(replicatedUpstream *ReplicatedUpstream, license *kotsv1beta1.License, cursor ReplicatedCursor, reportingInfo *types.ReportingInfo) (*Release, error) {
 	getReq, err := replicatedUpstream.getRequest("GET", license, cursor)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create http request")
 	}
+
+	injectReportingInfo(getReq, reportingInfo)
+
 	getResp, err := http.DefaultClient.Do(getReq)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to execute get request")
@@ -464,30 +481,14 @@ func listPendingChannelReleases(replicatedUpstream *ReplicatedUpstream, license 
 	urlValues.Set("channelSequence", sequence)
 	urlValues.Add("licenseSequence", fmt.Sprintf("%d", license.Spec.LicenseSequence))
 
-	// reporting info
-	if reportingInfo != nil {
-		urlValues.Add("k8sVersion", reportingInfo.K8sVersion)
-		urlValues.Add("isKurl", fmt.Sprintf("%t", reportingInfo.IsKurl))
-		urlValues.Add("appStatus", reportingInfo.AppStatus)
-		urlValues.Add("clusterId", reportingInfo.ClusterID)
-		urlValues.Add("instanceId", reportingInfo.InstanceID)
-
-		if reportingInfo.DownstreamCursor != "" {
-			urlValues.Add("downstreamChannelSequence", reportingInfo.DownstreamCursor)
-		}
-		if reportingInfo.DownstreamChannelID != "" {
-			urlValues.Add("downstreamChannelId", reportingInfo.DownstreamChannelID)
-		} else if reportingInfo.DownstreamChannelName != "" {
-			urlValues.Add("downstreamChannelName", reportingInfo.DownstreamChannelName)
-		}
-	}
-
 	url := fmt.Sprintf("%s://%s/release/%s/pending?%s", u.Scheme, hostname, license.Spec.AppSlug, urlValues.Encode())
 
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to call newrequest")
 	}
+
+	injectReportingInfo(req, reportingInfo)
 
 	req.Header.Add("User-Agent", fmt.Sprintf("KOTS/%s", version.Version()))
 	req.Header.Set("Authorization", fmt.Sprintf("Basic %s", base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", license.Spec.LicenseID, license.Spec.LicenseID)))))
@@ -518,6 +519,27 @@ func listPendingChannelReleases(replicatedUpstream *ReplicatedUpstream, license 
 	}
 
 	return channelReleases.ChannelReleases, nil
+}
+
+func injectReportingInfo(req *http.Request, reportingInfo *types.ReportingInfo) {
+	if reportingInfo == nil {
+		return
+	}
+
+	req.Header.Set("X-Replicated-K8sVersion", reportingInfo.K8sVersion)
+	req.Header.Set("X-Replicated-IsKurl", fmt.Sprintf("%t", reportingInfo.IsKurl))
+	req.Header.Set("X-Replicated-AppStatus", reportingInfo.AppStatus)
+	req.Header.Set("X-Replicated-ClusterID", reportingInfo.ClusterID)
+	req.Header.Set("X-Replicated-InstanceID", reportingInfo.InstanceID)
+
+	if reportingInfo.DownstreamCursor != "" {
+		req.Header.Set("X-Replicated-DownstreamChannelSequence", reportingInfo.DownstreamCursor)
+	}
+	if reportingInfo.DownstreamChannelID != "" {
+		req.Header.Set("X-Replicated-DownstreamChannelID", reportingInfo.DownstreamChannelID)
+	} else if reportingInfo.DownstreamChannelName != "" {
+		req.Header.Set("X-Replicated-DownstreamChannelName", reportingInfo.DownstreamChannelName)
+	}
 }
 
 func MustMarshalLicense(license *kotsv1beta1.License) []byte {

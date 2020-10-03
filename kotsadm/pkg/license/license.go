@@ -12,6 +12,7 @@ import (
 	"github.com/replicatedhq/kots/kotsadm/pkg/preflight"
 	registrytypes "github.com/replicatedhq/kots/kotsadm/pkg/registry/types"
 	"github.com/replicatedhq/kots/kotsadm/pkg/render"
+	"github.com/replicatedhq/kots/kotsadm/pkg/reporting"
 	"github.com/replicatedhq/kots/kotsadm/pkg/store"
 	"github.com/replicatedhq/kots/kotsadm/pkg/version"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
@@ -106,7 +107,7 @@ func createNewVersion(a *apptypes.App, archiveDir string, registrySettings *regi
 		return errors.Wrap(err, "failed to list downstreams")
 	}
 
-	if err := render.RenderDir(archiveDir, app, downstreams, registrySettings); err != nil {
+	if err := render.RenderDir(archiveDir, app, downstreams, registrySettings, reporting.GetReportingInfo(a.ID)); err != nil {
 		return errors.Wrap(err, "failed to render new version")
 	}
 

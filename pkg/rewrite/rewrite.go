@@ -42,6 +42,7 @@ type RewriteOptions struct {
 	AppSlug           string
 	IsGitOps          bool
 	AppSequence       int64
+	ReportingInfo     *upstreamtypes.ReportingInfo
 }
 
 func Rewrite(rewriteOptions RewriteOptions) error {
@@ -70,6 +71,7 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 			Username:  rewriteOptions.RegistryUsername,
 			Password:  rewriteOptions.RegistryPassword,
 		},
+		ReportingInfo: rewriteOptions.ReportingInfo,
 	}
 
 	log.ActionWithSpinner("Pulling upstream")

@@ -15,6 +15,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/rewrite"
 	"github.com/replicatedhq/kots/pkg/template"
+	upstreamtypes "github.com/replicatedhq/kots/pkg/upstream/types"
 )
 
 // RenderFile renders a single file
@@ -91,7 +92,7 @@ func RenderContent(kotsKinds *kotsutil.KotsKinds, registrySettings *registrytype
 
 // RenderDir renders an app archive dir
 // this is useful for when the license/config have updated, and template functions need to be evaluated again
-func RenderDir(archiveDir string, a *apptypes.App, downstreams []downstreamtypes.Downstream, registrySettings *registrytypes.RegistrySettings) error {
+func RenderDir(archiveDir string, a *apptypes.App, downstreams []downstreamtypes.Downstream, registrySettings *registrytypes.RegistrySettings, reportingInfo *upstreamtypes.ReportingInfo) error {
 	installation, err := kotsutil.LoadInstallationFromPath(filepath.Join(archiveDir, "upstream", "userdata", "installation.yaml"))
 	if err != nil {
 		return errors.Wrap(err, "failed to load installation from path")
@@ -134,6 +135,7 @@ func RenderDir(archiveDir string, a *apptypes.App, downstreams []downstreamtypes
 		AppSlug:          a.Slug,
 		IsGitOps:         a.IsGitOps,
 		AppSequence:      a.CurrentSequence + 1, // sequence +1 because this is the current latest sequence, not the sequence that the rendered version will be saved as
+		ReportingInfo:    reportingInfo,
 	}
 
 	if registrySettings != nil {
