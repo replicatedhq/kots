@@ -198,7 +198,7 @@ func CheckForUpdates(appID string, deploy bool) (int64, error) {
 		CurrentChannelName:  kotsKinds.Installation.Spec.ChannelName,
 		CurrentVersionLabel: kotsKinds.Installation.Spec.VersionLabel,
 		Silent:              false,
-		ReportingInfo: 			 reporting.GetReportingInfo(a.ID),
+		ReportingInfo:       reporting.GetReportingInfo(a.ID),
 	}
 
 	// get updates
