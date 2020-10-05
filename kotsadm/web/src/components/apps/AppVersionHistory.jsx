@@ -1,15 +1,12 @@
 import React, { Component } from "react";
-import classNames from "classnames";
-import { withRouter, Link } from "react-router-dom";
+import { withRouter } from "react-router-dom";
 import Helmet from "react-helmet";
 import dayjs from "dayjs";
-import ReactTooltip from "react-tooltip"
 import relativeTime from "dayjs/plugin/relativeTime";
 import Modal from "react-modal";
 import find from "lodash/find";
 
 import Loader from "../shared/Loader";
-import MountAware from "../shared/MountAware";
 import MarkdownRenderer from "@src/components/shared/MarkdownRenderer";
 import DownstreamWatchVersionDiff from "@src/components/watches/DownstreamWatchVersionDiff";
 import AirgapUploadProgress from "@src/components/AirgapUploadProgress";
@@ -17,12 +14,14 @@ import UpdateCheckerModal from "@src/components/modals/UpdateCheckerModal";
 import ShowDetailsModal from "@src/components/modals/ShowDetailsModal";
 import ShowLogsModal from "@src/components/modals/ShowLogsModal";
 import ErrorModal from "../modals/ErrorModal";
+import AppVersionHistoryRow from "@src/components/apps/AppVersionHistoryRow";
 import { Utilities, isAwaitingResults, secondsAgo, getPreflightResultState, getGitProviderDiffUrl, getCommitHashFromUrl } from "../../utilities/utilities";
 import { Repeater } from "../../utilities/repeater";
 import { AirgapUploader } from "../../utilities/airgapUploader";
 import get from "lodash/get";
 
 import "@src/scss/components/apps/AppVersionHistory.scss";
+import AppVersionHistoryHeader from "./AppVersionHistoryHeader";
 dayjs.extend(relativeTime);
 
 const COMMON_ERRORS = {
@@ -215,16 +214,6 @@ class AppVersionHistory extends Component {
     }
   }
 
-  renderYamlErrors = (yamlErrorsDetails, version) => {
-    return (
-      <div className="flex alignItems--center u-marginLeft--5">
-        <span className="icon error-small" />
-        <span className="u-fontSize--small u-fontWeight--medium u-lineHeight--normal u-marginLeft--5 u-color--red">{yamlErrorsDetails?.length} Invalid file{yamlErrorsDetails?.length !== 1 ? "s" : ""} </span>
-        <span className="replicated-link u-marginLeft--5 u-fontSize--small" onClick={() => this.toggleShowDetailsModal(yamlErrorsDetails, version.sequence)}> See details </span>
-      </div>
-    )
-  }
-
   renderSourceAndDiff = version => {
     const { app } = this.props;
     const downstream = app.downstreams?.length && app.downstreams[0];
@@ -264,185 +253,6 @@ class AppVersionHistory extends Component {
               </div>
             )
             : <span>&nbsp;</span>}
-        </div>
-      );
-    }
-
-  }
-
-  renderVersionAction = (version, nothingToCommitDiff) => {
-    const { app } = this.props;
-    const downstream = app.downstreams[0];
-
-    if (downstream.gitops?.enabled) {
-      if (version.gitDeployable === false) {
-        return (<div className={nothingToCommitDiff && "u-opacity--half"}>Nothing to commit</div>);
-      }
-      if (!version.commitUrl) {
-        return null;
-      }
-      return (
-        <button
-          className="btn primary blue"
-          onClick={() => window.open(version.commitUrl, '_blank')}
-        >
-          View
-        </button>
-      );
-    }
-
-    const isCurrentVersion = version.sequence === downstream.currentVersion?.sequence;
-    const isPastVersion = find(downstream.pastVersions, { sequence: version.sequence });
-    const needsConfiguration = version.status === "pending_config";
-    const showActions = !isPastVersion || app.allowRollback;
-    const isSecondaryBtn = isPastVersion || needsConfiguration;
-    const isRollback = isPastVersion && version.deployedAt && app.allowRollback;
-
-    return (
-      <div className="flex flex1 justifyContent--flexEnd">
-        {showActions &&
-          <button
-            className={classNames("btn", { "secondary blue": isSecondaryBtn, "primary blue": !isSecondaryBtn })}
-            disabled={isCurrentVersion}
-            onClick={() => needsConfiguration ? this.props.history.push(`/app/${app.slug}/config/${version.sequence}`) : this.deployVersion(version)}
-          >
-            {needsConfiguration ?
-              "Configure" :
-              downstream.currentVersion?.sequence == undefined ?
-                "Deploy" :
-                isRollback ?
-                  "Rollback" :
-                  isCurrentVersion ?
-                    "Deployed" :
-                    "Deploy"
-            }
-          </button>
-        }
-      </div>
-    );
-  }
-
-  renderViewPreflights = version => {
-    const { match, app } = this.props;
-    const downstream = app.downstreams[0];
-    const clusterSlug = downstream.cluster?.slug;
-    return (
-      <Link className="u-marginTop--10" to={`/app/${match.params.slug}/downstreams/${clusterSlug}/version-history/preflight/${version?.sequence}`}>
-        <span className="replicated-link" style={{ fontSize: 12 }}>View preflight results</span>
-      </Link>
-    );
-  }
-
-
-  renderVersionStatus = version => {
-    const { app, match } = this.props;
-    const downstream = app.downstreams?.length && app.downstreams[0];
-    if (!downstream) {
-      return null;
-    }
-
-    let preflightsFailed = false;
-    if (version.status === "pending" && version.preflightResult) {
-      const preflightResult = JSON.parse(version.preflightResult);
-      const preflightState = getPreflightResultState(preflightResult);
-      preflightsFailed = preflightState === "fail";
-    }
-
-    const isPastVersion = find(downstream.pastVersions, { sequence: version.sequence });
-    const isPendingDeployedVersion = find(downstream.pendingVersions, { sequence: version.sequence, status: "deployed" });
-    const clusterSlug = downstream.cluster?.slug;
-    let preflightBlock = null;
-
-    if (isPastVersion && app.hasPreflight) {
-      if (preflightsFailed) {
-        preflightBlock = (<Link to={`/app/${match.params.slug}/downstreams/${clusterSlug}/version-history/preflight/${version.sequence}`} className="replicated-link u-marginLeft--5 u-fontSize--small">See details</Link>);
-      } else if (version.status !== "pending_config") {
-        preflightBlock = (<Link to={`/app/${match.params.slug}/downstreams/${clusterSlug}/version-history/preflight/${version.sequence}`} className="replicated-link u-marginLeft--5 u-fontSize--small">View preflights</Link>);
-      }
-    }
-    if (version.status === "pending_preflight") {
-      preflightBlock = (
-        <span className="flex u-marginLeft--5 alignItems--center">
-          <Loader size="20" />
-        </span>);
-    } else if (app.hasPreflight) {
-      if (preflightsFailed) {
-        preflightBlock = (<Link to={`/app/${match.params.slug}/downstreams/${clusterSlug}/version-history/preflight/${version.sequence}`} className="replicated-link u-marginLeft--5 u-fontSize--small">See details</Link>);
-      } else if (version.status !== "pending_config") {
-        preflightBlock = (<Link to={`/app/${match.params.slug}/downstreams/${clusterSlug}/version-history/preflight/${version.sequence}`} className="replicated-link u-marginLeft--5 u-fontSize--small">View preflights</Link>);
-      }
-    }
-
-    if (!isPastVersion && !isPendingDeployedVersion) {
-      return (
-        <div className="flex alignItems--center">
-          <div className="flex alignItems--center">
-            <div
-              data-tip={`${version.versionLabel || version.title}-${version.sequence}`}
-              data-for={`${version.versionLabel || version.title}-${version.sequence}`}
-              className={classNames("icon", {
-                "checkmark-icon": version.status === "deployed" || version.status === "merged" || version.status === "pending",
-                "exclamationMark--icon": version.status === "opened",
-                "grayCircleMinus--icon": version.status === "closed",
-                "error-small": version.status === "failed" || preflightsFailed
-              })}
-            />
-            {version.status === "deploying" &&  <Loader className="flex alignItems--center" size="20" />}
-            <span className={classNames("u-fontSize--small u-fontWeight--medium u-lineHeight--normal u-marginLeft--5", {
-              "u-color--nevada": version.status === "deployed" || version.status === "merged",
-              "u-color--orange": version.status === "opened",
-              "u-color--dustyGray": version.status === "closed" || version.status === "pending" || version.status === "pending_preflight",
-              "u-color--red": version.status === "failed" || preflightsFailed
-            })}>
-              {Utilities.toTitleCase(
-                version.status === "pending_preflight"
-                  ? "Running checks"
-                  : preflightsFailed
-                    ? "Checks failed"
-                    : version.status === "pending"
-                      ? "Ready to deploy"
-                      : version.status
-              ).replace("_", " ")}
-            </span>
-          </div>
-          {preflightBlock}
-          {version.status === "failed" &&
-            <span className="replicated-link u-marginLeft--5 u-fontSize--small" onClick={() => this.handleViewLogs(version, true)}>View logs</span>
-          }
-        </div>
-      );
-    } else {
-      return (
-        <div className="flex alignItems--center">
-          <div className="flex alignItems--center">
-            <div
-              data-tip={`${version.versionLabel || version.title}-${version.sequence}`}
-              data-for={`${version.versionLabel || version.title}-${version.sequence}`}
-              className={classNames("icon", {
-                "analysis-gray_checkmark": version.status === "deployed" || version.status === "merged",
-                "exclamationMark--icon": version.status === "opened",
-                "grayCircleMinus--icon": version.status === "closed" || version.status === "pending",
-                "error-small": version.status === "failed"
-              })}
-            />
-            <span className={classNames("u-fontSize--small u-fontWeight--medium u-lineHeight--normal u-marginLeft--5", {
-              "u-color--nevada": version.status === "deployed" || version.status === "merged",
-              "u-color--orange": version.status === "opened",
-              "u-color--dustyGray": version.status === "closed" || version.status === "pending" || version.status === "pending_preflight",
-              "u-color--red": version.status === "failed"
-            })}>
-              {version.status === "deployed" ?
-                "Previously Deployed" :
-                version.status === "pending" ?
-                  "Skipped" :
-                  version.status === "failed" ?
-                    "Failed" : ""}
-            </span>
-          </div>
-          {preflightBlock}
-          {version.status === "failed" &&
-            <span className="replicated-link u-marginLeft--5 u-fontSize--small" onClick={() => this.handleViewLogs(version, true)}>View logs</span>
-          }
         </div>
       );
     }
@@ -866,22 +676,6 @@ class AppVersionHistory extends Component {
     this.setState({ displayShowDetailsModal: !this.state.displayShowDetailsModal, deployView: false, yamlErrorDetails, selectedSequence });
   }
 
-  getCurrentVersionStatus = (version) => {
-    if (version?.status === "deployed" || version?.status === "merged" || version?.status === "pending") {
-      return <span className="u-fontSize--small u-lineHeight--normal u-color--dustyGray u-fontWeight--medium flex alignItems--center u-marginTop--8"> <span className="icon checkmark-icon u-marginRight--5" /> {Utilities.toTitleCase(version?.status).replace("_", " ")} </span>
-    } else if (version?.status === "failed") {
-      return <span className="u-fontSize--small u-lineHeight--normal u-color--red u-fontWeight--medium flex alignItems--center u-marginTop--8"> <span className="icon error-small u-marginRight--5" /> Failed <span className="u-marginLeft--5 replicated-link u-fontSize--small" onClick={() => this.handleViewLogs(version, true)}> See details </span></span>
-    } else if (version?.status === "deploying") {
-      return (
-        <span className="flex alignItems--center u-fontSize--small u-lineHeight--normal u-color--dustyGray u-fontWeight--medium u-marginTop--8">
-          <Loader className="flex alignItems--center u-marginRight--5" size="16" />
-            Deploying
-        </span>);
-    } else {
-      return <span className="u-fontSize--small u-lineHeight--normal u-color--dustyGray u-fontWeight--medium flex alignItems--center u-marginTop--8"> {Utilities.toTitleCase(version?.status).replace("_", " ")} </span>
-    }
-  }
-
   render() {
     const {
       app,
@@ -1007,90 +801,23 @@ class AppVersionHistory extends Component {
         <Helmet>
           <title>{`${app.name} Version History`}</title>
         </Helmet>
-        <div className="flex flex-auto alignItems--center justifyContent--center u-marginTop--10 u-marginBottom--30">
-          <div className="upstream-version-box-wrapper flex flex1">
-            <div className="flex flex1">
-              {app.iconUri &&
-                <div className="flex-auto u-marginRight--10">
-                  <div className="watch-icon" style={{ backgroundImage: `url(${app.iconUri})` }}></div>
-                </div>
-              }
-              <div className="flex1 flex-column">
-                <p className="u-fontSize--small u-fontWeight--bold u-lineHeight--normal u-color--tuna"> Current version </p>
-                <div className="flex alignItems--center u-marginTop--5">
-                  <p className="u-fontSize--header2 u-fontWeight--bold u-color--tuna"> {currentDownstreamVersion ? currentDownstreamVersion.versionLabel : "---"}</p>
-                  <p className="u-fontSize--small u-lineHeight--normal u-color--tundora u-fontWeight--medium u-marginLeft--10"> {currentDownstreamVersion ? `Sequence ${currentDownstreamVersion?.sequence}` : null}</p>
-                </div>
-                {currentDownstreamVersion?.deployedAt ? <p className="u-fontSize--small u-lineHeight--normal u-color--silverSand u-fontWeight--medium u-marginTop--5">{`${dayjs(currentDownstreamVersion.deployedAt).format("MMMM D, YYYY  @ hh:mm a")}`}</p> : null}
-                {currentDownstreamVersion && this.getCurrentVersionStatus(currentDownstreamVersion)}
-                {currentDownstreamVersion ?
-                  <div className="flex alignItems--center u-marginTop--8 u-marginTop--8">
-                    {currentDownstreamVersion?.releaseNotes &&
-                      <div>
-                        <span className="icon releaseNotes--icon u-marginRight--10 u-cursor--pointer" onClick={() => this.showDownstreamReleaseNotes(currentDownstreamVersion?.releaseNotes)} data-tip="View release notes" />
-                        <ReactTooltip effect="solid" className="replicated-tooltip" />
-                      </div>}
-                    <div>
-                      <Link to={`/app/${match.params.slug}/downstreams/${app.downstreams[0].cluster?.slug}/version-history/preflight/${currentDownstreamVersion?.sequence}`}
-                        className="icon preflightChecks--icon u-marginRight--10 u-cursor--pointer"
-                        data-tip="View preflight checks" />
-                      <ReactTooltip effect="solid" className="replicated-tooltip" />
-                    </div>
-                    <div>
-                      <span className="icon deployLogs--icon u-marginRight--10 u-cursor--pointer" onClick={() => this.handleViewLogs(currentDownstreamVersion)} data-tip="View deploy logs" />
-                      <ReactTooltip effect="solid" className="replicated-tooltip" />
-                    </div>
-                    {app.isConfigurable &&
-                      <div>
-                        <Link to={`/app/${match.params.slug}/config`} className="icon config--icon u-cursor--pointer" data-tip="Edit config" />
-                        <ReactTooltip effect="solid" className="replicated-tooltip" />
-                      </div>}
-                  </div> : null}
-              </div>
-            </div>
-            {!app.cluster &&
-              <div className={`flex flex1 justifyContent--center ${checkingForUpdates && !isBundleUploading && "alignItems--center"}`}>
-                {checkingForUpdates && !isBundleUploading
-                  ? <Loader size="32" />
-                  : showAirgapUI ?
-                    <MountAware className="flex alignItems--center" id="bundle-dropzone" onMount={el => this.airgapUploader.assignElement(el)}>
-                      <span className="btn secondary blue">Upload new version</span>
-                    </MountAware>
-                    : showOnlineUI ?
-                      <div className="flex1 flex-column">
-                        {pendingVersions?.length > 0 ?
-                          <div className="flex flex-column">
-                            <p className="u-fontSize--small u-lineHeight--normal u-color--selectiveYellow u-fontWeight--bold">New version available</p>
-                            <div className="flex flex-column u-marginTop--5">
-                              <div className="flex flex1 alignItems--center">
-                                <span className="u-fontSize--larger u-lineHeight--medium u-fontWeight--bold u-color--tundora">{pendingVersions[0]?.versionLabel}</span>
-                                <span className="u-fontSize--small u-lineHeight--normal u-fontWeight--medium u-color--tundora u-marginLeft--5"> Sequence {pendingVersions[0]?.sequence}</span>
-                              </div>
-                              <div className="flex flex1 alignItems--center">
-                                {pendingVersions[0]?.createdOn || pendingVersions[0].upstreamReleasedAt ? 
-                                <p className="u-fontSize--small u-lineHeight--normal u-fontWeight--medium u-color--dustyGray">Released <span className="u-fontWeight--bold">{pendingVersions[0].upstreamReleasedAt ? dayjs(pendingVersions[0]?.upstreamReleasedAt).format("MMMM D, YYYY") : dayjs(pendingVersions[0]?.createdOn).format("MMMM D, YYYY")}</span></p> 
-                                : null}
-                                {pendingVersions[0]?.releaseNotes ? <span className="release-notes-link u-fontSize--small u-fontWeight--medium u-marginLeft--5 flex alignItems--center" onClick={() => this.showDownstreamReleaseNotes(pendingVersions[0]?.releaseNotes)}><span className="icon releaseNotes-small--icon u-marginRight--5" />Release notes</span> : null}
-                              </div>
-                            </div>
-                          </div>
-                          : <p className="u-fontSize--small u-fontWeight--bold u-lineHeight--normal u-color--dustyGray"> No new version available </p>}
-                        <div className="flex alignItems--center u-marginTop--10">
-                          <button className="btn primary blue" onClick={this.onCheckForUpdates}>Check for update</button>
-                          <span className="icon settings-small-icon u-marginLeft--5 u-cursor--pointer" onClick={this.showUpdateCheckerModal} data-tip="Configure automatic update checks"></span>
-                          <ReactTooltip effect="solid" className="replicated-tooltip" />
-                        </div>
-                        {updateText}
-                        {noUpdateAvailiableMsg}
-                      </div>
-                      : null
-                }
-                {!showOnlineUI && updateText}
-                {!showOnlineUI && noUpdateAvailiableMsg}
-              </div>
-            }
-          </div>
-        </div>
+        <AppVersionHistoryHeader
+          app={app}
+          slug={this.props.match.params.slug}
+          currentDownstreamVersion={currentDownstreamVersion}
+          showDownstreamReleaseNotes={this.showDownstreamReleaseNotes}
+          handleViewLogs={this.handleViewLogs}
+          checkingForUpdates={checkingForUpdates}
+          isBundleUploading={isBundleUploading}
+          airgapUploader={this.airgapUploader}
+          pendingVersions={pendingVersions}
+          showOnlineUI={showOnlineUI}
+          showAirgapUI={showAirgapUI}
+          noUpdateAvailiableMsg={noUpdateAvailiableMsg}
+          updateText={updateText}
+          onCheckForUpdates={this.onCheckForUpdates}
+          showUpdateCheckerModal={this.showUpdateCheckerModal}
+        />
         {checkingForUpdateError &&
           <div className="flex-column flex-auto u-marginBottom--30">
             <div className="checking-update-error-wrapper">
@@ -1123,41 +850,25 @@ class AppVersionHistory extends Component {
                     const nothingToCommit = gitopsEnabled && !version.commitUrl;
                     const yamlErrorsDetails = this.yamlErrorsDetails(downstream, version);
                     return (
-                      <div
+                      <AppVersionHistoryRow
                         key={version.sequence}
-                        className={classNames(`VersionHistoryDeploymentRow ${version.status} flex flex-auto`, { "overlay": selectedDiffReleases, "disabled": nothingToCommit, "selected": (isChecked && !nothingToCommit), "is-new": isNew })}
-                        onClick={() => selectedDiffReleases && !nothingToCommit && this.handleSelectReleasesToDiff(version, !isChecked)}
-                      >
-                        {selectedDiffReleases && <div className={classNames("checkbox u-marginRight--20", { "checked": (isChecked && !nothingToCommit) }, { "disabled": nothingToCommit })} />}
-                        <div className={`${nothingToCommit && selectedDiffReleases && "u-opacity--half"} flex-column flex1 u-paddingRight--20`}>
-                          <div className="flex alignItems--center">
-                            <p className="u-fontSize--large u-fontWeight--bold u-lineHeight--medium u-color--tuna">{version.versionLabel || version.title}</p>
-                            <p className="u-fontSize--small u-fontWeight--medium u-lineHeight--normal u-color--tundora u-marginLeft--5" style={{ marginTop: "2px" }}>Sequence {version.sequence}</p>
-                          </div>
-                          <div className="flex alignItems--center u-marginTop--10"></div>
-                          <div className="flex flex1 u-marginTop--15 alignItems--center">
-                            <p className="u-fontSize--small u-lineHeight--normal u-color--dustyGray u-fontWeight--medium">Released <span className="u-fontWeight--bold">{version.upstreamReleasedAt ? dayjs(version.upstreamReleasedAt).format("MMMM D, YYYY") : dayjs(version.createdOn).format("MMMM D, YYYY")}</span></p>
-                            {version.releaseNotes ?
-                              <p className="release-notes-link u-fontSize--small u-lineHeight--normal u-marginLeft--5 flex alignItems--center" onClick={() => this.showDownstreamReleaseNotes(version.releaseNotes)}> <span className="icon releaseNotes-small--icon u-marginRight--5" />Release notes</p> : null}
-                          </div>
-                        </div>
-                        <div className={`${nothingToCommit && selectedDiffReleases && "u-opacity--half"} flex-column flex1`}>
-                          <div className="flex flex-column">
-                            <p className="u-fontSize--normal u-fontWeight--bold u-color--tuna">{version.source}</p>
-                            <div className="flex alignItems--center u-fontSize--small u-marginTop--10 u-color--dustyGray">
-                              {this.renderSourceAndDiff(version)}
-                              {yamlErrorsDetails && this.renderYamlErrors(yamlErrorsDetails, version)}
-                            </div>
-                          </div>
-                          <div className="flex flex1 alignItems--flexEnd"> {gitopsEnabled ? this.renderViewPreflights(version) : this.renderVersionStatus(version)}</div>
-                        </div>
-                        <div className={`${nothingToCommit && selectedDiffReleases && "u-opacity--half"} flex-column flex1 alignItems--flexEnd`}>
-                          <div>
-                            {this.renderVersionAction(version, nothingToCommit && selectedDiffReleases)}
-                          </div>
-                          <p className="u-fontSize--small u-lineHeight--normal u-color--dustyGray u-fontWeight--medium u-marginTop--15">Deployed: <span className="u-fontWeight--bold">{version.deployedAt ? dayjs(version.deployedAt).format("MMMM D, YYYY @ hh:mm a") : "N/A"}</span></p>
-                        </div>
-                      </div>
+                        app={this.props.app}
+                        match={this.props.match}
+                        history={this.props.history}
+                        version={version}
+                        selectedDiffReleases={selectedDiffReleases}
+                        nothingToCommit={nothingToCommit}
+                        isChecked={isChecked}
+                        isNew={isNew}
+                        showDownstreamReleaseNotes={this.showDownstreamReleaseNotes}
+                        renderSourceAndDiff={this.renderSourceAndDiff}
+                        yamlErrorsDetails={yamlErrorsDetails}
+                        toggleShowDetailsModal={this.toggleShowDetailsModal}
+                        gitopsEnabled={gitopsEnabled}
+                        deployVersion={this.deployVersion}
+                        handleViewLogs={this.handleViewLogs}
+                        handleSelectReleasesToDiff={this.handleSelectReleasesToDiff}
+                      />
                     );
                   }) :
                     <div className="flex-column flex1 alignItems--center justifyContent--center">
