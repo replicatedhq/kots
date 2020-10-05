@@ -151,6 +151,13 @@ func CreateRenderedSpec(appID string, sequence int64, origin string, inCluster b
 				Name: "default-supportbundle",
 			},
 		}
+
+		if kotsKinds.Collector != nil {
+			builtBundle.Spec.Collectors = kotsKinds.Collector.DeepCopy().Spec.Collectors
+		}
+		if kotsKinds.Analyzer != nil {
+			builtBundle.Spec.Analyzers = kotsKinds.Analyzer.DeepCopy().Spec.Analyzers
+		}
 	}
 
 	app, err := store.GetStore().GetApp(appID)
@@ -198,7 +205,7 @@ func CreateRenderedSpec(appID string, sequence int64, origin string, inCluster b
 		return errors.Wrap(err, "failed to encode support bundle")
 	}
 
-	templatedSpec = b.Bytes()
+	renderedSpec = b.Bytes()
 
 	cfg, err := config.GetConfig()
 	if err != nil {
