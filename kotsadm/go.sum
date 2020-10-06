@@ -973,8 +973,8 @@ github.com/remyoudompheng/bigfft v0.0.0-20170806203942-52369c62f446/go.mod h1:uY
 github.com/replicatedhq/kurl/kurlkinds v0.0.0-20200617224429-55f493a72baf h1:QPJidrFEmB3ej7ugwss3iYnVM+k6uyL1AJ85xdcpDgg=
 github.com/replicatedhq/kurl/kurlkinds v0.0.0-20200617224429-55f493a72baf/go.mod h1:ZSyX/rt3a2f6r6TgCARPUlbZ1IUAxNIUrUxR9vzEUKQ=
 github.com/replicatedhq/termui/v3 v3.1.1-0.20200811145416-f40076d26851/go.mod h1:JDxG6+uubnk9/BZ2yUsyAJJwlptjrnmB2MPF5d2Xe/8=
-github.com/replicatedhq/troubleshoot v0.9.46 h1:MgtxC4BkZXFg+fq0RsXprUNgBIE+fjMqnuRTJQEfJnw=
-github.com/replicatedhq/troubleshoot v0.9.46/go.mod h1:D1kD56FmMdXpnPFth6fhV/CITDtvMIbOk/kWPW4sh7c=
+github.com/replicatedhq/troubleshoot v0.9.47 h1:BwPYPWIpW+OmzDJp7KVp366GvMFqM0oL9fdWbK41Quo=
+github.com/replicatedhq/troubleshoot v0.9.47/go.mod h1:D1kD56FmMdXpnPFth6fhV/CITDtvMIbOk/kWPW4sh7c=
 github.com/replicatedhq/yaml/v3 v3.0.0-beta5-replicatedhq h1:PwPggruelq2336c1Ayg5STFqgbn/QB1tWLQwrVlU7ZQ=
 github.com/replicatedhq/yaml/v3 v3.0.0-beta5-replicatedhq/go.mod h1:Txa7LopbYCU8aRgmNe0n+y/EPMz50NbCPcVVJBquwag=
 github.com/robfig/cron v1.1.0 h1:jk4/Hud3TTdcrJgUOBgsqrZBarcxl6ADIjSC2iniwLY=
