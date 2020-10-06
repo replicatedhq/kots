@@ -41,6 +41,14 @@ jobs:
           tags: 2h
           path: ./kotsadm/migrations
           dockerfile: ./kotsadm/migrations/deploy/Dockerfile
+      - name: Scan migrations for vulnerabilities
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ttl.sh/automated-${{ github.run_id }}/kotsadm-migrations:2h
+          format: 'table'
+          exit-code: '0'
+          ignore-unfixed: true
+          severity: 'CRITICAL,HIGH'
 
       - name: build and push kotsadm for e2e
         uses: docker/build-push-action@v1
@@ -49,6 +57,14 @@ jobs:
           tags: 2h
           path: ./kotsadm
           dockerfile: ./kotsadm/deploy/Dockerfile          
+      - name: Scan kotsadm for vulnerabilities
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ttl.sh/automated-${{ github.run_id }}/kotsadm:2h
+          format: 'table'
+          exit-code: '0'
+          ignore-unfixed: true
+          severity: 'CRITICAL,HIGH'
 
       - name: build and push operator for e2e
         uses: docker/build-push-action@v1
@@ -57,6 +73,14 @@ jobs:
           tags: 2h
           path: ./kotsadm/operator
           dockerfile: ./kotsadm/operator/deploy/Dockerfile          
+      - name: Scan operator for vulnerabilities
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ttl.sh/automated-${{ github.run_id }}/kotsadm-operator:2h
+          format: 'table'
+          exit-code: '0'
+          ignore-unfixed: true
+          severity: 'CRITICAL,HIGH'
 
       - name: build and push kurl_proxy for e2e
         uses: docker/build-push-action@v1
@@ -65,6 +89,14 @@ jobs:
           tags: 2h
           path: ./kotsadm/kurl_proxy
           dockerfile: ./kotsadm/kurl_proxy/deploy/Dockerfile
+      - name: Scan kurl_proxy  for vulnerabilities
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ttl.sh/automated-${{ github.run_id }}/kurl_proxy:2h
+          format: 'table'
+          exit-code: '0'
+          ignore-unfixed: true
+          severity: 'CRITICAL,HIGH'
 
       - name: build and push minio for e2e
         uses: docker/build-push-action@v1
@@ -73,6 +105,14 @@ jobs:
           tags: 2h
           path: ./kotsadm/minio
           dockerfile: ./kotsadm/minio/Dockerfile
+      - name: Scan minio for vulnerabilities
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ttl.sh/automated-${{ github.run_id }}/minio:2h
+          format: 'table'
+          exit-code: '0'
+          ignore-unfixed: true
+          severity: 'CRITICAL,HIGH'
 
   validate:
     runs-on: ubuntu-18.04
