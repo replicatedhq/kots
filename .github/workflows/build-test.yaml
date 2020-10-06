@@ -89,10 +89,10 @@ jobs:
           tags: 2h
           path: ./kotsadm/kurl_proxy
           dockerfile: ./kotsadm/kurl_proxy/deploy/Dockerfile
-      - name: Scan kurl_proxy  for vulnerabilities
+      - name: Scan kurl_proxy for vulnerabilities
         uses: aquasecurity/trivy-action@master
         with:
-          image-ref: ttl.sh/automated-${{ github.run_id }}/kurl_proxy:2h
+          image-ref: ttl.sh/automated-${{ github.run_id }}/kurl-proxy:2h
           format: 'table'
           exit-code: '0'
           ignore-unfixed: true
