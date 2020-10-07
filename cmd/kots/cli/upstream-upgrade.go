@@ -18,6 +18,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/kotsadm"
 	kotsadmtypes "github.com/replicatedhq/kots/pkg/kotsadm/types"
+	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -52,6 +53,26 @@ func UpstreamUpgradeCmd() *cobra.Command {
 				}
 				defer os.RemoveAll(airgapRootDir)
 
+				registryEndpoint := v.GetString("kotsadm-registry")
+				registryNamespace := v.GetString("kotsadm-namespace")
+				registryUsername := v.GetString("registry-username")
+				registryPassword := v.GetString("registry-password")
+				isKurl, err := kotsadm.IsKurl(kubernetesConfigFlags)
+				if err != nil {
+					return errors.Wrap(err, "failed to check kURL")
+				}
+
+				if registryNamespace == "" {
+					return errors.New("--kotsadm-namespace is required")
+				}
+
+				if registryEndpoint == "" && isKurl {
+					registryEndpoint, registryUsername, registryPassword, err = kotsutil.GetKurlRegistryCreds()
+					if err != nil {
+						return errors.Wrap(err, "failed to get kURL registry info")
+					}
+				}
+
 				airgapPath = airgapRootDir
 
 				err = kotsadm.ExtractAirgapImages(v.GetString("airgap-bundle"), airgapRootDir, os.Stdout)
@@ -61,10 +82,10 @@ func UpstreamUpgradeCmd() *cobra.Command {
 
 				pushOptions := kotsadmtypes.PushImagesOptions{
 					Registry: registry.RegistryOptions{
-						Endpoint:  v.GetString("kotsadm-registry"),
-						Namespace: v.GetString("kotsadm-namespace"),
-						Username:  v.GetString("registry-username"),
-						Password:  v.GetString("registry-password"),
+						Endpoint:  registryEndpoint,
+						Namespace: registryNamespace,
+						Username:  registryUsername,
+						Password:  registryPassword,
 					},
 					ProgressWriter: os.Stdout,
 				}
