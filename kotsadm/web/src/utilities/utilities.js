@@ -7,6 +7,7 @@ import cronstrue from "cronstrue";
 import size from "lodash/size";
 import each from "lodash/each";
 import find from "lodash/find";
+import trim from "lodash/trim";
 import * as jsdiff from "diff";
 
 dayjs.extend(utc);
@@ -533,5 +534,15 @@ export const Utilities = {
     let i = parseInt(Math.floor(Math.log(bytes) / Math.log(1024)));
     if (i === 0) return bytes + " " + sizes[i];
     return (bytes / Math.pow(1024, i)).toFixed(1) + " " + sizes[i];
+  },
+
+  getDeployErrorTab(tabs) {
+    if (trim(tabs["dryrunStderr"]) !== "") {
+      return "dryrunStderr";
+    } else if (trim(tabs["applyStderr"]) !== "") {
+       return "applyStderr";
+    } else {
+      return Object.keys(tabs)[0];
+    }
   }
 };

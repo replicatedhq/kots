@@ -61,7 +61,7 @@ export default function AppVersionHistoryHeader(props) {
                   <ReactTooltip effect="solid" className="replicated-tooltip" />
                 </div>
                 <div>
-                  <span className="icon deployLogs--icon u-marginRight--10 u-cursor--pointer" onClick={() => handleViewLogs(currentDownstreamVersion)} data-tip="View deploy logs" />
+                  <span className="icon deployLogs--icon u-marginRight--10 u-cursor--pointer" onClick={() => handleViewLogs(currentDownstreamVersion, currentDownstreamVersion?.status === "failed")} data-tip="View deploy logs" />
                   <ReactTooltip effect="solid" className="replicated-tooltip" />
                 </div>
                 {app.isConfigurable &&
