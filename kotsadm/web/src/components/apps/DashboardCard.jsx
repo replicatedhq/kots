@@ -198,7 +198,7 @@ export default class DashboardCard extends React.Component {
         const response = await res.json();
         let selectedTab;
         if (isFailing) {
-          selectedTab = "applyStderr";
+          selectedTab = Utilities.getDeployErrorTab(response.logs);
         } else {
           selectedTab = Object.keys(response.logs)[0];
         }
