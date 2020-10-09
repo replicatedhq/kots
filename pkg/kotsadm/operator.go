@@ -26,7 +26,7 @@ func getOperatorYAML(deployOptions types.DeployOptions) (map[string][]byte, erro
 	docs["operator-role.yaml"] = role.Bytes()
 
 	var roleBinding bytes.Buffer
-	if err := s.Encode(operatorRoleBinding(deployOptions.Namespace), &roleBinding); err != nil {
+	if err := s.Encode(operatorRoleBinding(deployOptions.Namespace, deployOptions.Namespace), &roleBinding); err != nil {
 		return nil, errors.Wrap(err, "failed to marshal operator role binding")
 	}
 	docs["operator-rolebinding.yaml"] = roleBinding.Bytes()
@@ -97,7 +97,7 @@ func ensureOperatorRBAC(deployOptions types.DeployOptions, clientset *kubernetes
 		return errors.Wrap(err, "failed to ensure operator role")
 	}
 
-	if err := ensureOperatorRoleBinding(deployOptions.Namespace, clientset); err != nil {
+	if err := ensureOperatorRoleBinding(deployOptions.Namespace, deployOptions.Namespace, clientset); err != nil {
 		return errors.Wrap(err, "failed to ensure operator role binding")
 	}
 
@@ -117,7 +117,7 @@ func ensureOperatorRBAC(deployOptions types.DeployOptions, clientset *kubernetes
 			return errors.Wrap(err, "failed to ensure operator additional namespace role")
 		}
 
-		if err = ensureOperatorRoleBinding(additionalNamespace, clientset); err != nil {
+		if err = ensureOperatorRoleBinding(additionalNamespace, deployOptions.Namespace, clientset); err != nil {
 			return errors.Wrap(err, "failed to ensure operator additional namespace role binding")
 		}
 	}
@@ -179,8 +179,8 @@ func ensureOperatorClusterRoleBinding(serviceAccountNamespace string, clientset 
 	return nil
 }
 
-func ensureOperatorRoleBinding(namespace string, clientset *kubernetes.Clientset) error {
-	_, err := clientset.RbacV1().RoleBindings(namespace).Create(context.TODO(), operatorRoleBinding(namespace), metav1.CreateOptions{})
+func ensureOperatorRoleBinding(namespace string, subjectNamespace string, clientset *kubernetes.Clientset) error {
+	_, err := clientset.RbacV1().RoleBindings(namespace).Create(context.TODO(), operatorRoleBinding(namespace, subjectNamespace), metav1.CreateOptions{})
 	if err != nil && !kuberneteserrors.IsAlreadyExists(err) {
 		return errors.Wrap(err, "failed to create rolebinding")
 	}
