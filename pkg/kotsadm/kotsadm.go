@@ -3,6 +3,7 @@ package kotsadm
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/pkg/errors"
@@ -58,6 +59,8 @@ func getKotsadmYAML(deployOptions types.DeployOptions) (map[string][]byte, error
 func waitForKotsadm(deployOptions *types.DeployOptions, clientset *kubernetes.Clientset) error {
 	start := time.Now()
 
+	// When upgrading, the old pod is still running, so this function will terminate instantly if we don't check version.
+	expectedImage := fmt.Sprintf("%s/kotsadm:%s", kotsadmRegistry(deployOptions.KotsadmOptions), kotsadmTag(deployOptions.KotsadmOptions))
 	for {
 		pods, err := clientset.CoreV1().Pods(deployOptions.Namespace).List(context.TODO(), metav1.ListOptions{LabelSelector: "app=kotsadm"})
 		if err != nil {
@@ -65,6 +68,19 @@ func waitForKotsadm(deployOptions *types.DeployOptions, clientset *kubernetes.Cl
 		}
 
 		for _, pod := range pods.Items {
+			foundPod := false
+			for _, container := range pod.Spec.Containers {
+				if container.Image != expectedImage {
+					continue
+				}
+				foundPod = true
+				break
+			}
+
+			if !foundPod {
+				continue
+			}
+
 			if pod.Status.Phase == corev1.PodRunning {
 				if pod.Status.ContainerStatuses[0].Ready == true {
 					return nil
