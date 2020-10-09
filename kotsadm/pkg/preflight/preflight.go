@@ -52,9 +52,15 @@ func Run(appID string, sequence int64, isAirgap bool, archiveDir string) error {
 	}
 
 	if renderedKotsKinds.Preflight != nil {
-		// set the status to pending_preflights
-		if err := downstream.SetDownstreamVersionPendingPreflight(appID, sequence); err != nil {
-			return errors.Wrapf(err, "failed to set downstream version %d pending preflight", sequence)
+		status, err := downstream.GetDownstreamVersionStatus(appID, sequence)
+		if err != nil {
+			return errors.Wrap(err, "failed to get version status")
+		}
+
+		if status != "deployed" {
+			if err := downstream.SetDownstreamVersionPendingPreflight(appID, sequence); err != nil {
+				return errors.Wrapf(err, "failed to set downstream version %d pending preflight", sequence)
+			}
 		}
 
 		ignoreRBAC, err := downstream.GetIgnoreRBACErrors(appID, sequence)
