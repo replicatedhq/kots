@@ -406,6 +406,11 @@ func ensureStorage(deployOptions types.DeployOptions, clientset *kubernetes.Clie
 func ensureKotsadm(deployOptions types.DeployOptions, clientset *kubernetes.Clientset, log *logger.Logger) error {
 	restartKotsadmAPI := false
 
+	existingDeployment, err := clientset.AppsV1().Deployments(deployOptions.Namespace).Get(context.TODO(), "kotsadm", metav1.GetOptions{})
+	if err != nil && !kuberneteserrors.IsNotFound(err) {
+		return errors.Wrap(err, "failed to get existing deployment")
+	}
+
 	// check additional namespaces early in case there are rbac issues we don't
 	// leave the cluster in a partially deployed state
 	if deployOptions.ApplicationMetadata != nil {
@@ -487,7 +492,7 @@ func ensureKotsadm(deployOptions types.DeployOptions, clientset *kubernetes.Clie
 		}
 
 		log.ChildActionWithSpinner("Waiting for Admin Console to be ready")
-		if err := waitForKotsadm(&deployOptions, clientset); err != nil {
+		if err := waitForKotsadm(&deployOptions, existingDeployment, clientset); err != nil {
 			return errors.Wrap(err, "failed to wait for web")
 		}
 		log.FinishSpinner()
@@ -499,7 +504,7 @@ func ensureKotsadm(deployOptions types.DeployOptions, clientset *kubernetes.Clie
 			return errors.Wrap(err, "failed to wait for web")
 		}
 
-		if err := waitForKotsadm(&deployOptions, clientset); err != nil {
+		if err := waitForKotsadm(&deployOptions, existingDeployment, clientset); err != nil {
 			return errors.Wrap(err, "failed to wait for web")
 		}
 		log.FinishSpinner()

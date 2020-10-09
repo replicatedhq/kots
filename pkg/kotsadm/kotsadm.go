@@ -9,6 +9,7 @@ import (
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/kotsadm/types"
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
@@ -55,20 +56,23 @@ func getKotsadmYAML(deployOptions types.DeployOptions) (map[string][]byte, error
 	return docs, nil
 }
 
-func waitForKotsadm(deployOptions *types.DeployOptions, clientset *kubernetes.Clientset) error {
+func waitForKotsadm(deployOptions *types.DeployOptions, previousDeployment *appsv1.Deployment, clientset *kubernetes.Clientset) error {
 	start := time.Now()
 
+	prevVersion := ""
+	if previousDeployment != nil {
+		prevVersion = previousDeployment.ObjectMeta.ResourceVersion
+	}
+
 	for {
-		pods, err := clientset.CoreV1().Pods(deployOptions.Namespace).List(context.TODO(), metav1.ListOptions{LabelSelector: "app=kotsadm"})
+		newDeployment, err := clientset.AppsV1().Deployments(deployOptions.Namespace).Get(context.TODO(), "kotsadm", metav1.GetOptions{})
 		if err != nil {
-			return errors.Wrap(err, "failed to list pods")
+			return errors.Wrap(err, "failed to get new deployment")
 		}
 
-		for _, pod := range pods.Items {
-			if pod.Status.Phase == corev1.PodRunning {
-				if pod.Status.ContainerStatuses[0].Ready == true {
-					return nil
-				}
+		if newDeployment.ObjectMeta.ResourceVersion != prevVersion {
+			if newDeployment.Status.AvailableReplicas == newDeployment.Status.Replicas && newDeployment.Status.UnavailableReplicas == 0 {
+				return nil
 			}
 		}
 
