@@ -93,13 +93,28 @@ func IgnorePreflightRBACErrors(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	archiveDir, err := store.GetStore().GetAppVersionArchive(foundApp.ID, int64(sequence))
+	archiveDir, err := ioutil.TempDir("", "kotsadm")
 	if err != nil {
 		logger.Error(err)
 		w.WriteHeader(500)
 		return
 	}
 
+	removeArchiveDir := true
+	defer func() {
+		if removeArchiveDir {
+			os.RemoveAll(archiveDir)
+		}
+	}()
+
+	err = store.GetStore().GetAppVersionArchive(foundApp.ID, int64(sequence), archiveDir)
+	if err != nil {
+		logger.Error(err)
+		w.WriteHeader(500)
+		return
+	}
+
+	removeArchiveDir = false
 	go func() {
 		defer os.RemoveAll(archiveDir)
 		if err := preflight.Run(foundApp.ID, int64(sequence), foundApp.IsAirgap, archiveDir); err != nil {
@@ -133,13 +148,28 @@ func StartPreflightChecks(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	archiveDir, err := store.GetStore().GetAppVersionArchive(foundApp.ID, int64(sequence))
+	archiveDir, err := ioutil.TempDir("", "kotsadm")
 	if err != nil {
 		logger.Error(err)
 		w.WriteHeader(500)
 		return
 	}
 
+	removeArchiveDir := true
+	defer func() {
+		if removeArchiveDir {
+			os.RemoveAll(archiveDir)
+		}
+	}()
+
+	err = store.GetStore().GetAppVersionArchive(foundApp.ID, int64(sequence), archiveDir)
+	if err != nil {
+		logger.Error(err)
+		w.WriteHeader(500)
+		return
+	}
+
+	removeArchiveDir = false
 	go func() {
 		defer os.RemoveAll(archiveDir)
 		if err := preflight.Run(foundApp.ID, int64(sequence), foundApp.IsAirgap, archiveDir); err != nil {
@@ -176,13 +206,20 @@ func GetPreflightCommand(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	archivePath, err := store.GetStore().GetAppVersionArchive(foundApp.ID, sequence)
+	archivePath, err := ioutil.TempDir("", "kotsadm")
+	if err != nil {
+		logger.Error(errors.Wrap(err, "failed to create temp dir"))
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	defer os.RemoveAll(archivePath)
+
+	err = store.GetStore().GetAppVersionArchive(foundApp.ID, sequence, archivePath)
 	if err != nil {
 		logger.Error(errors.Wrap(err, "failed to get app archive"))
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-	defer os.RemoveAll(archivePath)
 
 	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(archivePath)
 	if err != nil {

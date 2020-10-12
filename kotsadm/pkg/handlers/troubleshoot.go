@@ -298,6 +298,7 @@ func UploadSupportBundle(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
+	defer os.RemoveAll(tmpFile.Name())
 
 	err = ioutil.WriteFile(tmpFile.Name(), bundleContents, 0644)
 	if err != nil {
@@ -320,7 +321,16 @@ func UploadSupportBundle(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-	archiveDir, err := store.GetStore().GetAppVersionArchive(foundApp.ID, foundApp.CurrentSequence)
+
+	archiveDir, err := ioutil.TempDir("", "kotsadm")
+	if err != nil {
+		logger.Error(errors.Wrap(err, "failed to create temp dir"))
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	defer os.RemoveAll(archiveDir)
+
+	err = store.GetStore().GetAppVersionArchive(foundApp.ID, foundApp.CurrentSequence, archiveDir)
 	if err != nil {
 		logger.Error(errors.Wrap(err, "failed to get app version archive"))
 		w.WriteHeader(http.StatusInternalServerError)

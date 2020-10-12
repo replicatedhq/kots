@@ -24,11 +24,16 @@ import (
 )
 
 func Sync(a *apptypes.App, licenseData string, failOnVersionCreate bool) (*kotsv1beta1.License, error) {
-	archiveDir, err := store.GetStore().GetAppVersionArchive(a.ID, a.CurrentSequence)
+	archiveDir, err := ioutil.TempDir("", "kotsadm")
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to create temp dir")
+	}
+	defer os.RemoveAll(archiveDir)
+
+	err = store.GetStore().GetAppVersionArchive(a.ID, a.CurrentSequence, archiveDir)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get latest app version")
 	}
-	defer os.RemoveAll(archiveDir)
 
 	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(archiveDir)
 	if err != nil {
@@ -125,11 +130,16 @@ func createNewVersion(a *apptypes.App, archiveDir string, registrySettings *regi
 
 // Gets the license as it was at a given app sequence
 func GetCurrentLicenseString(a *apptypes.App) (string, error) {
-	archiveDir, err := store.GetStore().GetAppVersionArchive(a.ID, a.CurrentSequence)
+	archiveDir, err := ioutil.TempDir("", "kotsadm")
+	if err != nil {
+		return "", errors.Wrap(err, "failed to create temp dir")
+	}
+	defer os.RemoveAll(archiveDir)
+
+	err = store.GetStore().GetAppVersionArchive(a.ID, a.CurrentSequence, archiveDir)
 	if err != nil {
 		return "", errors.Wrap(err, "failed to get latest app version")
 	}
-	defer os.RemoveAll(archiveDir)
 
 	kotsLicense, err := ioutil.ReadFile(filepath.Join(archiveDir, "upstream", "userdata", "license.yaml"))
 	if err != nil {

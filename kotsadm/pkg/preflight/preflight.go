@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"io/ioutil"
 	"os"
 
 	"github.com/pkg/errors"
@@ -233,11 +234,16 @@ func CreateRenderedSpec(appID string, sequence int64, origin string, inCluster b
 		return errors.Wrap(err, "failed to encode preflight")
 	}
 
-	archivePath, err := store.GetStore().GetAppVersionArchive(appID, sequence)
+	archivePath, err := ioutil.TempDir("", "kotsadm")
+	if err != nil {
+		return errors.Wrap(err, "failed to create temp dir")
+	}
+	defer os.RemoveAll(archivePath)
+
+	err = store.GetStore().GetAppVersionArchive(appID, sequence, archivePath)
 	if err != nil {
 		return errors.Wrap(err, "failed to get current archive")
 	}
-	defer os.RemoveAll(archivePath)
 
 	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(archivePath)
 	if err != nil {

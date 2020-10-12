@@ -5,6 +5,7 @@ import (
 	"encoding/base64"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"os"
 	"path/filepath"
 	"time"
@@ -88,8 +89,13 @@ func UpdateAppFromPath(a *apptypes.App, airgapRoot string) error {
 		return errors.Wrap(err, "failed to decrypt")
 	}
 
-	// Some info about the current version
-	currentArchivePath, err := store.GetStore().GetAppVersionArchive(a.ID, a.CurrentSequence)
+	currentArchivePath, err := ioutil.TempDir("", "kotsadm")
+	if err != nil {
+		return errors.Wrap(err, "failed to create temp dir")
+	}
+	defer os.RemoveAll(currentArchivePath)
+
+	err = store.GetStore().GetAppVersionArchive(a.ID, a.CurrentSequence, currentArchivePath)
 	if err != nil {
 		return errors.Wrap(err, "failed to get current archive")
 	}

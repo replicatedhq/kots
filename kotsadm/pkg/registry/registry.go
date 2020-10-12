@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -64,7 +65,13 @@ func RewriteImages(appID string, sequence int64, hostname string, username strin
 	}()
 
 	// get the archive and store it in a temporary location
-	appDir, err := store.GetStore().GetAppVersionArchive(appID, sequence)
+	appDir, err := ioutil.TempDir("", "kotsadm")
+	if err != nil {
+		return "", errors.Wrap(err, "failed to create temp dir")
+	}
+	// appDir is returned
+
+	err = store.GetStore().GetAppVersionArchive(appID, sequence, appDir)
 	if err != nil {
 		return "", errors.Wrap(err, "failed to get app version archive")
 	}
