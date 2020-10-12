@@ -133,7 +133,7 @@ type VersionStore interface {
 	IsGitOpsSupportedForVersion(appID string, sequence int64) (bool, error)
 	IsRollbackSupportedForVersion(appID string, sequence int64) (bool, error)
 	IsSnapshotsSupportedForVersion(a *apptypes.App, sequence int64) (bool, error)
-	GetAppVersionArchive(appID string, sequence int64) (archivePath string, err error)
+	GetAppVersionArchive(appID string, sequence int64, dstPath string) error
 	CreateAppVersionArchive(appID string, sequence int64, archivePath string) error
 	CreateAppVersion(appID string, currentSequence *int64, appName string, appIcon string, kotsKinds *kotsutil.KotsKinds, filesInDir string, gitops gitopstypes.DownstreamGitOps, source string) (int64, error)
 	GetAppVersion(string, int64) (*versiontypes.AppVersion, error)

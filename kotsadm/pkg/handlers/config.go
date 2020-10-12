@@ -166,13 +166,20 @@ func LiveAppConfig(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	archiveDir, err := store.GetStore().GetAppVersionArchive(foundApp.ID, liveAppConfigRequest.Sequence)
+	archiveDir, err := ioutil.TempDir("", "kotsadm")
+	if err != nil {
+		liveAppConfigResponse.Error = "failed to create temp dir"
+		JSON(w, http.StatusInternalServerError, liveAppConfigResponse)
+		return
+	}
+	defer os.RemoveAll(archiveDir)
+
+	err = store.GetStore().GetAppVersionArchive(foundApp.ID, liveAppConfigRequest.Sequence, archiveDir)
 	if err != nil {
 		liveAppConfigResponse.Error = "failed to get app version archive"
 		JSON(w, http.StatusInternalServerError, liveAppConfigResponse)
 		return
 	}
-	defer os.RemoveAll(archiveDir)
 
 	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(archiveDir)
 	if err != nil {
@@ -256,13 +263,20 @@ func CurrentAppConfig(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	archiveDir, err := store.GetStore().GetAppVersionArchive(foundApp.ID, int64(sequence))
+	archiveDir, err := ioutil.TempDir("", "kotsadm")
+	if err != nil {
+		currentAppConfigResponse.Error = "failed to create temp dir"
+		JSON(w, http.StatusInternalServerError, currentAppConfigResponse)
+		return
+	}
+	defer os.RemoveAll(archiveDir)
+
+	err = store.GetStore().GetAppVersionArchive(foundApp.ID, int64(sequence), archiveDir)
 	if err != nil {
 		currentAppConfigResponse.Error = "failed to get app version archive"
 		JSON(w, http.StatusInternalServerError, currentAppConfigResponse)
 		return
 	}
-	defer os.RemoveAll(archiveDir)
 
 	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(archiveDir)
 	if err != nil {
@@ -315,12 +329,18 @@ func updateAppConfig(updateApp *apptypes.App, sequence int64, req UpdateAppConfi
 		Success: false,
 	}
 
-	archiveDir, err := store.GetStore().GetAppVersionArchive(updateApp.ID, sequence)
+	archiveDir, err := ioutil.TempDir("", "kotsadm")
+	if err != nil {
+		updateAppConfigResponse.Error = "failed to create temp dir"
+		return updateAppConfigResponse, err
+	}
+	defer os.RemoveAll(archiveDir)
+
+	err = store.GetStore().GetAppVersionArchive(updateApp.ID, sequence, archiveDir)
 	if err != nil {
 		updateAppConfigResponse.Error = "failed to get app version archive"
 		return updateAppConfigResponse, err
 	}
-	defer os.RemoveAll(archiveDir)
 
 	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(archiveDir)
 	if err != nil {

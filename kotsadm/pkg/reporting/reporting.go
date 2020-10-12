@@ -1,6 +1,9 @@
 package reporting
 
 import (
+	"io/ioutil"
+	"os"
+
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/kotsadm/pkg/downstream"
 	"github.com/replicatedhq/kots/kotsadm/pkg/k8s"
@@ -90,7 +93,13 @@ func getDownstreamInfo(appID string) (*DownstreamInfo, error) {
 
 	// info about the deployed app sequence
 	if deployedAppSequence != -1 {
-		deployedArchiveDir, err := store.GetStore().GetAppVersionArchive(appID, deployedAppSequence)
+		deployedArchiveDir, err := ioutil.TempDir("", "kotsadm")
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to create temp dir")
+		}
+		defer os.RemoveAll(deployedArchiveDir)
+
+		err = store.GetStore().GetAppVersionArchive(appID, deployedAppSequence, deployedArchiveDir)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to get app version archive")
 		}

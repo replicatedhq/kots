@@ -181,7 +181,14 @@ func (s *SocketService) processDeploySocketForApp(clusterSocket ClusterSocket, a
 		}
 	}()
 
-	deployedVersionArchive, err := store.GetStore().GetAppVersionArchive(a.ID, deployedVersion.ParentSequence)
+	deployedVersionArchive, err := ioutil.TempDir("", "kotsadm")
+	if err != nil {
+		deployError = errors.Wrap(err, "failed to create temp dir")
+		return deployError
+	}
+	defer os.RemoveAll(deployedVersionArchive)
+
+	err = store.GetStore().GetAppVersionArchive(a.ID, deployedVersion.ParentSequence, deployedVersionArchive)
 	if err != nil {
 		deployError = errors.Wrap(err, "failed to get app version archive")
 		return deployError
@@ -235,7 +242,14 @@ func (s *SocketService) processDeploySocketForApp(clusterSocket ClusterSocket, a
 		}
 
 		if previouslyDeployedParentSequence != -1 {
-			previouslyDeployedVersionArchive, err := store.GetStore().GetAppVersionArchive(a.ID, previouslyDeployedParentSequence)
+			previouslyDeployedVersionArchive, err := ioutil.TempDir("", "kotsadm")
+			if err != nil {
+				deployError = errors.Wrap(err, "failed to create temp dir")
+				return deployError
+			}
+			defer os.RemoveAll(previouslyDeployedVersionArchive)
+
+			err = store.GetStore().GetAppVersionArchive(a.ID, previouslyDeployedParentSequence, previouslyDeployedVersionArchive)
 			if err != nil {
 				deployError = errors.Wrap(err, "failed to get previously deployed app version archive")
 				return deployError
@@ -374,11 +388,16 @@ func (s *SocketService) processSupportBundle(clusterSocket ClusterSocket, pendin
 		sequence = currentVersion.Sequence
 	}
 
-	archivePath, err := store.GetStore().GetAppVersionArchive(a.ID, sequence)
+	archivePath, err := ioutil.TempDir("", "kotsadm")
+	if err != nil {
+		return errors.Wrap(err, "failed to create temp dir")
+	}
+	defer os.RemoveAll(archivePath)
+
+	err = store.GetStore().GetAppVersionArchive(a.ID, sequence, archivePath)
 	if err != nil {
 		return errors.Wrap(err, "failed to get current archive")
 	}
-	defer os.RemoveAll(archivePath)
 
 	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(archivePath)
 	if err != nil {
@@ -529,11 +548,16 @@ func checkRestoreComplete(a *apptypes.App, restore *velerov1.Restore) error {
 }
 
 func createSupportBundle(appID string, sequence int64, origin string, inCluster bool) error {
-	archivePath, err := store.GetStore().GetAppVersionArchive(appID, sequence)
+	archivePath, err := ioutil.TempDir("", "kotsadm")
+	if err != nil {
+		return errors.Wrap(err, "failed to create temp dir")
+	}
+	defer os.RemoveAll(archivePath)
+
+	err = store.GetStore().GetAppVersionArchive(appID, sequence, archivePath)
 	if err != nil {
 		return errors.Wrap(err, "failed to get current archive")
 	}
-	defer os.RemoveAll(archivePath)
 
 	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(archivePath)
 	if err != nil {
@@ -554,7 +578,13 @@ func (s *SocketService) undeployApp(a *apptypes.App, d *downstreamtypes.Downstre
 		return errors.Wrap(err, "failed to get current downstream version")
 	}
 
-	deployedVersionArchive, err := store.GetStore().GetAppVersionArchive(a.ID, deployedVersion.ParentSequence)
+	deployedVersionArchive, err := ioutil.TempDir("", "kotsadm")
+	if err != nil {
+		return errors.Wrap(err, "failed to create temp dir")
+	}
+	defer os.RemoveAll(deployedVersionArchive)
+
+	err = store.GetStore().GetAppVersionArchive(a.ID, deployedVersion.ParentSequence, deployedVersionArchive)
 	if err != nil {
 		return errors.Wrap(err, "failed to get app version archive")
 	}

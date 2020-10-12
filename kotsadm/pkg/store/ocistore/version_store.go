@@ -228,16 +228,11 @@ func (s OCIStore) CreateAppVersionArchive(appID string, sequence int64, archiveP
 
 // GetAppVersionArchive will fetch the archive and return a string that contains a
 // directory name where it's extracted into
-func (s OCIStore) GetAppVersionArchive(appID string, sequence int64) (string, error) {
+func (s OCIStore) GetAppVersionArchive(appID string, sequence int64, dstPath string) error {
 	// too noisy
 	// logger.Debug("getting app version archive",
 	// 	zap.String("appID", appID),
 	// 	zap.Int64("sequence", sequence))
-
-	tmpDir, err := ioutil.TempDir("", "kotsadm")
-	if err != nil {
-		return "", errors.Wrap(err, "failed to create temp dir")
-	}
 
 	storageBaseURI := os.Getenv("STORAGE_BASEURI")
 	if storageBaseURI == "" {
@@ -245,7 +240,7 @@ func (s OCIStore) GetAppVersionArchive(appID string, sequence int64) (string, er
 		storageBaseURI = fmt.Sprintf("s3://%s/%s", os.Getenv("S3_ENDPOINT"), os.Getenv("S3_BUCKET_NAME"))
 	}
 
-	fileStore := content.NewFileStore(tmpDir)
+	fileStore := content.NewFileStore(dstPath)
 	defer fileStore.Close()
 
 	allowedMediaTypes := []string{"application/gzip"}
@@ -277,7 +272,7 @@ func (s OCIStore) GetAppVersionArchive(appID string, sequence int64) (string, er
 
 	pulledDescriptor, _, err := oras.Pull(context.Background(), resolver, ref, fileStore, oras.WithAllowedMediaTypes(allowedMediaTypes))
 	if err != nil {
-		return "", errors.Wrap(err, "failed to pull from registry storage")
+		return errors.Wrap(err, "failed to pull from registry storage")
 	}
 
 	logger.Debug("pulled app archive from docker registry",
@@ -291,11 +286,11 @@ func (s OCIStore) GetAppVersionArchive(appID string, sequence int64) (string, er
 			ImplicitTopLevelFolder: false,
 		},
 	}
-	if err := tarGz.Unarchive(filepath.Join(tmpDir, fmt.Sprintf("appversion-%s-%d.tar.gz", appID, sequence)), tmpDir); err != nil {
-		return "", errors.Wrap(err, "failed to unarchive")
+	if err := tarGz.Unarchive(filepath.Join(dstPath, fmt.Sprintf("appversion-%s-%d.tar.gz", appID, sequence)), dstPath); err != nil {
+		return errors.Wrap(err, "failed to unarchive")
 	}
 
-	return tmpDir, nil
+	return nil
 }
 
 func (s OCIStore) CreateAppVersion(appID string, currentSequence *int64, appName string, appIcon string, kotsKinds *kotsutil.KotsKinds, filesInDir string, gitops gitopstypes.DownstreamGitOps, source string) (int64, error) {
@@ -310,8 +305,14 @@ func (s OCIStore) CreateAppVersion(appID string, currentSequence *int64, appName
 
 	previousArchiveDir := ""
 	if currentSequence != nil {
+		previousDir, err := ioutil.TempDir("", "kotsadm")
+		if err != nil {
+			return int64(0), errors.Wrap(err, "failed to create temp dir")
+		}
+		defer os.RemoveAll(previousDir)
+
 		// Get the previous archive, we need this to calculate the diff
-		previousDir, err := s.GetAppVersionArchive(appID, *currentSequence)
+		err = s.GetAppVersionArchive(appID, *currentSequence, previousDir)
 		if err != nil {
 			return int64(0), errors.Wrap(err, "failed to get previous archive")
 		}
