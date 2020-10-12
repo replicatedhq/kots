@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
+	"io/ioutil"
 	"net/http"
 	"os"
 	"sort"
@@ -196,14 +197,22 @@ func InitGitOpsConnection(w http.ResponseWriter, r *http.Request) {
 
 		// Create git commit for current version (if exists)
 		if currentVersion != nil {
-			currentVersionArchive, err := store.GetStore().GetAppVersionArchive(a.ID, currentVersion.ParentSequence)
+			currentVersionArchive, err := ioutil.TempDir("", "kotsadm")
+			if err != nil {
+				err = errors.Wrap(err, "failed to create temp dir")
+				logger.Error(err)
+				finalError = err
+				return
+			}
+			defer os.RemoveAll(currentVersionArchive)
+
+			err = store.GetStore().GetAppVersionArchive(a.ID, currentVersion.ParentSequence, currentVersionArchive)
 			if err != nil {
 				err = errors.Wrapf(err, "failed to get app version archive for current version %d", currentVersion.ParentSequence)
 				logger.Error(err)
 				finalError = err
 				return
 			}
-			defer os.RemoveAll(currentVersionArchive)
 
 			_, err = gitops.CreateGitOpsCommit(downstreamGitOps, a.Slug, a.Name, int(currentVersion.ParentSequence), currentVersionArchive, d.Name)
 			if err != nil {
@@ -220,14 +229,22 @@ func InitGitOpsConnection(w http.ResponseWriter, r *http.Request) {
 		})
 		// Create git commits for sorted pending versions
 		for _, pendingVersion := range pendingVersions {
-			pendingVersionArchive, err := store.GetStore().GetAppVersionArchive(a.ID, pendingVersion.ParentSequence)
+			pendingVersionArchive, err := ioutil.TempDir("", "kotsadm")
+			if err != nil {
+				err = errors.Wrap(err, "failed to create temp dir")
+				logger.Error(err)
+				finalError = err
+				return
+			}
+			defer os.RemoveAll(pendingVersionArchive)
+
+			err = store.GetStore().GetAppVersionArchive(a.ID, pendingVersion.ParentSequence, pendingVersionArchive)
 			if err != nil {
 				err = errors.Wrapf(err, "failed to get app version archive for pending version %d", pendingVersion.ParentSequence)
 				logger.Error(err)
 				finalError = err
 				return
 			}
-			defer os.RemoveAll(pendingVersionArchive)
 
 			_, err = gitops.CreateGitOpsCommit(downstreamGitOps, a.Slug, a.Name, int(pendingVersion.ParentSequence), pendingVersionArchive, d.Name)
 			if err != nil {

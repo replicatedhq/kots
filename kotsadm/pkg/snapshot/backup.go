@@ -3,6 +3,7 @@ package snapshot
 import (
 	"context"
 	"fmt"
+	"io/ioutil"
 	"math"
 	"os"
 	"strconv"
@@ -62,7 +63,13 @@ func createApplicationBackup(ctx context.Context, a *apptypes.App, isScheduled b
 		zap.String("appID", a.ID),
 		zap.Int64("sequence", parentSequence))
 
-	archiveDir, err := store.GetStore().GetAppVersionArchive(a.ID, parentSequence)
+	archiveDir, err := ioutil.TempDir("", "kotsadm")
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to create temp dir")
+	}
+	defer os.RemoveAll(archiveDir)
+
+	err = store.GetStore().GetAppVersionArchive(a.ID, parentSequence, archiveDir)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get app version archive")
 	}

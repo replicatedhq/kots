@@ -40,13 +40,20 @@ func GetAppRenderedContents(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	archivePath, err := store.GetStore().GetAppVersionArchive(a.ID, int64(sequence))
+	archivePath, err := ioutil.TempDir("", "kotsadm")
 	if err != nil {
 		logger.Error(err)
 		w.WriteHeader(500)
 		return
 	}
 	defer os.RemoveAll(archivePath)
+
+	err = store.GetStore().GetAppVersionArchive(a.ID, int64(sequence), archivePath)
+	if err != nil {
+		logger.Error(err)
+		w.WriteHeader(500)
+		return
+	}
 
 	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(archivePath)
 	if err != nil {

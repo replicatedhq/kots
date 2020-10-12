@@ -166,6 +166,8 @@ func renderReplicated(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to create temp file")
 		}
+		defer os.RemoveAll(tmpFile.Name())
+
 		_, err = io.Copy(tmpFile, bytes.NewReader(archive))
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to copy chart to temp file")

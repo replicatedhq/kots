@@ -112,7 +112,13 @@ func (s S3PGStore) IsSnapshotsSupportedForVersion(a *apptypes.App, sequence int6
 		return false, nil
 	}
 
-	archiveDir, err := s.GetAppVersionArchive(a.ID, sequence)
+	archiveDir, err := ioutil.TempDir("", "kotsadm")
+	if err != nil {
+		return false, errors.Wrap(err, "failed to create temp dir")
+	}
+	defer os.RemoveAll(archiveDir)
+
+	err = s.GetAppVersionArchive(a.ID, sequence, archiveDir)
 	if err != nil {
 		return false, errors.Wrap(err, "failed to get app version archive")
 	}
@@ -219,16 +225,11 @@ func (s S3PGStore) CreateAppVersionArchive(appID string, sequence int64, archive
 
 // GetAppVersionArchive will fetch the archive and return a string that contains a
 // directory name where it's extracted into
-func (s S3PGStore) GetAppVersionArchive(appID string, sequence int64) (string, error) {
+func (s S3PGStore) GetAppVersionArchive(appID string, sequence int64, dstPath string) error {
 	// too noisy
 	// logger.Debug("getting app version archive",
 	// 	zap.String("appID", appID),
 	// 	zap.Int64("sequence", sequence))
-
-	tmpDir, err := ioutil.TempDir("", "kotsadm")
-	if err != nil {
-		return "", errors.Wrap(err, "failed to create temp dir")
-	}
 
 	storageBaseURI := os.Getenv("STORAGE_BASEURI")
 	if storageBaseURI == "" {
@@ -244,7 +245,7 @@ func (s S3PGStore) GetAppVersionArchive(appID string, sequence int64) (string, e
 
 	tmpFile, err := ioutil.TempFile("", "kotsadm")
 	if err != nil {
-		return "", errors.Wrap(err, "failed to create temp file")
+		return errors.Wrap(err, "failed to create temp file")
 	}
 	defer tmpFile.Close()
 	defer os.RemoveAll(tmpFile.Name())
@@ -256,7 +257,7 @@ func (s S3PGStore) GetAppVersionArchive(appID string, sequence int64) (string, e
 			Key:    key,
 		})
 	if err != nil {
-		return "", errors.Wrap(err, "failed to download file")
+		return errors.Wrap(err, "failed to download file")
 	}
 
 	tarGz := archiver.TarGz{
@@ -264,11 +265,11 @@ func (s S3PGStore) GetAppVersionArchive(appID string, sequence int64) (string, e
 			ImplicitTopLevelFolder: false,
 		},
 	}
-	if err := tarGz.Unarchive(tmpFile.Name(), tmpDir); err != nil {
-		return "", errors.Wrap(err, "failed to unarchive")
+	if err := tarGz.Unarchive(tmpFile.Name(), dstPath); err != nil {
+		return errors.Wrap(err, "failed to unarchive")
 	}
 
-	return tmpDir, nil
+	return nil
 }
 
 func (s S3PGStore) CreateAppVersion(appID string, currentSequence *int64, appName string, appIcon string, kotsKinds *kotsutil.KotsKinds, filesInDir string, gitops gitopstypes.DownstreamGitOps, source string) (int64, error) {
@@ -291,8 +292,14 @@ func (s S3PGStore) CreateAppVersion(appID string, currentSequence *int64, appNam
 
 	previousArchiveDir := ""
 	if currentSequence != nil {
+		previousDir, err := ioutil.TempDir("", "kotsadm")
+		if err != nil {
+			return int64(0), errors.Wrap(err, "failed to create temp dir")
+		}
+		defer os.RemoveAll(previousDir)
+
 		// Get the previous archive, we need this to calculate the diff
-		previousDir, err := s.GetAppVersionArchive(appID, *currentSequence)
+		err = s.GetAppVersionArchive(appID, *currentSequence, previousDir)
 		if err != nil {
 			return int64(0), errors.Wrap(err, "failed to get previous archive")
 		}

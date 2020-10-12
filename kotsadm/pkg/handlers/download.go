@@ -44,7 +44,15 @@ func DownloadApp(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	archivePath, err := store.GetStore().GetAppVersionArchive(a.ID, a.CurrentSequence)
+	archivePath, err := ioutil.TempDir("", "kotsadm")
+	if err != nil {
+		logger.Error(err)
+		w.WriteHeader(500)
+		return
+	}
+	defer os.RemoveAll(archivePath)
+
+	err = store.GetStore().GetAppVersionArchive(a.ID, a.CurrentSequence, archivePath)
 	if err != nil {
 		logger.Error(err)
 		w.WriteHeader(500)

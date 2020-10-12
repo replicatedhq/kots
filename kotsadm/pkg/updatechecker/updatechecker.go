@@ -2,6 +2,7 @@ package updatechecker
 
 import (
 	"fmt"
+	"io/ioutil"
 	"os"
 	"sync"
 	"time"
@@ -174,8 +175,19 @@ func CheckForUpdates(appID string, deploy bool) (int64, error) {
 		return 0, errors.Wrap(err, "failed to get app")
 	}
 
-	// download the app
-	archiveDir, err := store.GetStore().GetAppVersionArchive(a.ID, a.CurrentSequence)
+	archiveDir, err := ioutil.TempDir("", "kotsadm")
+	if err != nil {
+		return 0, errors.Wrap(err, "failed to create temp dir")
+	}
+
+	removeArchiveDir := true
+	defer func() {
+		if removeArchiveDir {
+			os.RemoveAll(archiveDir)
+		}
+	}()
+
+	err = store.GetStore().GetAppVersionArchive(a.ID, a.CurrentSequence, archiveDir)
 	if err != nil {
 		return 0, errors.Wrap(err, "failed to get app version archive")
 	}
@@ -260,6 +272,7 @@ func CheckForUpdates(appID string, deploy bool) (int64, error) {
 		return 0, errors.Wrap(err, "failed to set task status")
 	}
 
+	removeArchiveDir = false
 	go func() {
 		defer os.RemoveAll(archiveDir)
 		for index, update := range updates {

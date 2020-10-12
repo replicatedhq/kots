@@ -557,11 +557,16 @@ func makeAppVersionArchiveCollector(app *apptypes.App, dirPrefix string) (*troub
 		return nil, errors.Wrapf(err, "failed to create temp file %s", fileName)
 	}
 
-	tempPath, err := store.GetStore().GetAppVersionArchive(app.ID, app.CurrentSequence)
+	tempPath, err := ioutil.TempDir("", "kotsadm")
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to create temp dir")
+	}
+	defer os.RemoveAll(tempPath)
+
+	err = store.GetStore().GetAppVersionArchive(app.ID, app.CurrentSequence, tempPath)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get app version archive")
 	}
-	defer os.RemoveAll(tempPath)
 
 	tarWriter := tar.NewWriter(archive)
 	defer tarWriter.Close()

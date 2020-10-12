@@ -2,6 +2,7 @@ package s3pg
 
 import (
 	"fmt"
+	"io/ioutil"
 	"os"
 
 	"github.com/pkg/errors"
@@ -69,11 +70,16 @@ func (s S3PGStore) migrateKotsAppSpec() error {
 	for _, version := range versions {
 		logger.Info(fmt.Sprintf("Migrating kots_app_spec for app %s sequence %d", version.appID, version.sequence))
 		err := func() error {
-			archiveDir, err := s.GetAppVersionArchive(version.appID, version.sequence)
+			archiveDir, err := ioutil.TempDir("", "kotsadm")
+			if err != nil {
+				return errors.Wrap(err, "failed to create temp dir")
+			}
+			defer os.RemoveAll(archiveDir)
+
+			err = s.GetAppVersionArchive(version.appID, version.sequence, archiveDir)
 			if err != nil {
 				return errors.Wrap(err, "failed to get app version archive")
 			}
-			defer os.RemoveAll(archiveDir)
 
 			kotsKinds, err := kotsutil.LoadKotsKindsFromPath(archiveDir)
 			if err != nil {
@@ -134,11 +140,16 @@ func (s S3PGStore) migrateKotsInstallationSpec() error {
 	for _, version := range versions {
 		logger.Info(fmt.Sprintf("Migrating kots_installation_spec for app %s sequence %d", version.appID, version.sequence))
 		err := func() error {
-			archiveDir, err := s.GetAppVersionArchive(version.appID, version.sequence)
+			archiveDir, err := ioutil.TempDir("", "kotsadm")
+			if err != nil {
+				return errors.Wrap(err, "failed to create temp dir")
+			}
+			defer os.RemoveAll(archiveDir)
+
+			err = s.GetAppVersionArchive(version.appID, version.sequence, archiveDir)
 			if err != nil {
 				return errors.Wrap(err, "failed to get app version archive")
 			}
-			defer os.RemoveAll(archiveDir)
 
 			kotsKinds, err := kotsutil.LoadKotsKindsFromPath(archiveDir)
 			if err != nil {
@@ -199,11 +210,16 @@ func (s S3PGStore) migrateSupportBundleSpec() error {
 	for _, version := range versions {
 		logger.Info(fmt.Sprintf("Migrating kots_installation_spec for app %s sequence %d", version.appID, version.sequence))
 		err := func() error {
-			archiveDir, err := s.GetAppVersionArchive(version.appID, version.sequence)
+			archiveDir, err := ioutil.TempDir("", "kotsadm")
+			if err != nil {
+				return errors.Wrap(err, "failed to create temp dir")
+			}
+			defer os.RemoveAll(archiveDir)
+
+			err = s.GetAppVersionArchive(version.appID, version.sequence, archiveDir)
 			if err != nil {
 				return errors.Wrap(err, "failed to get app version archive")
 			}
-			defer os.RemoveAll(archiveDir)
 
 			kotsKinds, err := kotsutil.LoadKotsKindsFromPath(archiveDir)
 			if err != nil {
@@ -264,11 +280,16 @@ func (s S3PGStore) migratePreflightSpec() error {
 	for _, version := range versions {
 		logger.Info(fmt.Sprintf("Migrating preflight_spec for app %s sequence %d", version.appID, version.sequence))
 		err := func() error {
-			archiveDir, err := s.GetAppVersionArchive(version.appID, version.sequence)
+			archiveDir, err := ioutil.TempDir("", "kotsadm")
+			if err != nil {
+				return errors.Wrap(err, "failed to create temp dir")
+			}
+			defer os.RemoveAll(archiveDir)
+
+			err = s.GetAppVersionArchive(version.appID, version.sequence, archiveDir)
 			if err != nil {
 				return errors.Wrap(err, "failed to get app version archive")
 			}
-			defer os.RemoveAll(archiveDir)
 
 			kotsKinds, err := kotsutil.LoadKotsKindsFromPath(archiveDir)
 			if err != nil {
@@ -329,11 +350,16 @@ func (s S3PGStore) migrateAnalyzerSpec() error {
 	for _, version := range versions {
 		logger.Info(fmt.Sprintf("Migrating analyzer_spec for app %s sequence %d", version.appID, version.sequence))
 		err := func() error {
-			archiveDir, err := s.GetAppVersionArchive(version.appID, version.sequence)
+			archiveDir, err := ioutil.TempDir("", "kotsadm")
+			if err != nil {
+				return errors.Wrap(err, "failed to create temp dir")
+			}
+			defer os.RemoveAll(archiveDir)
+
+			err = s.GetAppVersionArchive(version.appID, version.sequence, archiveDir)
 			if err != nil {
 				return errors.Wrap(err, "failed to get app version archive")
 			}
-			defer os.RemoveAll(archiveDir)
 
 			kotsKinds, err := kotsutil.LoadKotsKindsFromPath(archiveDir)
 			if err != nil {
@@ -394,11 +420,16 @@ func (s S3PGStore) migrateAppSpec() error {
 	for _, version := range versions {
 		logger.Info(fmt.Sprintf("Migrating app_spec for app %s sequence %d", version.appID, version.sequence))
 		err := func() error {
-			archiveDir, err := s.GetAppVersionArchive(version.appID, version.sequence)
+			archiveDir, err := ioutil.TempDir("", "kotsadm")
+			if err != nil {
+				return errors.Wrap(err, "failed to create temp dir")
+			}
+			defer os.RemoveAll(archiveDir)
+
+			err = s.GetAppVersionArchive(version.appID, version.sequence, archiveDir)
 			if err != nil {
 				return errors.Wrap(err, "failed to get app version archive")
 			}
-			defer os.RemoveAll(archiveDir)
 
 			kotsKinds, err := kotsutil.LoadKotsKindsFromPath(archiveDir)
 			if err != nil {
