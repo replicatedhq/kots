@@ -24,13 +24,11 @@ require (
 	github.com/gorilla/websocket v1.4.0
 	github.com/gosimple/slug v1.9.0
 	github.com/hashicorp/go-version v1.2.0 // indirect
-	github.com/hashicorp/golang-lru v0.5.3 // indirect
 	github.com/lib/pq v1.3.0
 	github.com/marccampbell/yaml-toolbox v0.0.0-20200805160637-950ceb36c770
 	github.com/mholt/archiver v3.1.1+incompatible
 	github.com/opencontainers/image-spec v1.0.2-0.20190823105129-775207bd45b6
 	github.com/pkg/errors v0.9.1
-	github.com/prometheus/client_golang v1.5.0 // indirect
 	github.com/replicatedhq/kots v0.0.0-00010101000000-000000000000
 	github.com/replicatedhq/troubleshoot v0.9.47
 	github.com/replicatedhq/yaml/v3 v3.0.0-beta5-replicatedhq
@@ -40,12 +38,10 @@ require (
 	github.com/spf13/cobra v1.0.0
 	github.com/spf13/viper v1.6.2
 	github.com/stretchr/testify v1.6.1
-	github.com/vmware-tanzu/velero v1.4.2
+	github.com/vmware-tanzu/velero v1.5.1
 	go.uber.org/multierr v1.3.0
 	go.uber.org/zap v1.13.0
 	golang.org/x/crypto v0.0.0-20200423211502-4bdfaf469ed5
-	golang.org/x/oauth2 v0.0.0-20200107190931-bf48bf16ab8d // indirect
-	golang.org/x/text v0.3.3 // indirect
 	golang.org/x/tools v0.0.0-20200319210407-521f4a0cd458 // indirect
 	google.golang.org/api v0.9.0
 	gopkg.in/ini.v1 v1.51.0
@@ -55,9 +51,9 @@ require (
 	k8s.io/client-go v12.0.0+incompatible
 	k8s.io/cluster-bootstrap v0.18.4
 	k8s.io/kubernetes v1.18.4
-	k8s.io/utils v0.0.0-20200603063816-c1c6865ac451
+	k8s.io/utils v0.0.0-20200619165400-6e3d28b6ed19
 	sigs.k8s.io/application v0.8.2
-	sigs.k8s.io/controller-runtime v0.6.0
+	sigs.k8s.io/controller-runtime v0.6.1
 )
 
 replace (
@@ -65,7 +61,7 @@ replace (
 	github.com/docker/docker => github.com/docker/docker v0.0.0-20180522102801-da99009bbb11
 	github.com/nicksnyder/go-i18n => github.com/nicksnyder/go-i18n v1.10.1
 	github.com/replicatedhq/kots => ../
-	github.com/vmware-tanzu/velero => github.com/laverya/velero v1.4.1-0.20200618194205-ba7f18d4a7d8 // only until https://github.com/vmware-tanzu/velero/pull/2651 is merged
+	google.golang.org/grpc => google.golang.org/grpc v1.29.1
 	k8s.io/api => k8s.io/api v0.18.4
 	k8s.io/apiextensions-apiserver => k8s.io/apiextensions-apiserver v0.18.4
 	k8s.io/apimachinery => k8s.io/apimachinery v0.18.4

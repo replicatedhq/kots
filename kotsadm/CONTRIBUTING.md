@@ -27,6 +27,6 @@ skaffold dev
 
 ## Notes:
 - Go code will not be rebuilt automatically.  Run `make kotsadm` again to make the new binary and restart the pod.
-- After installing restic/velero, edit the restic daemonset to change the volume hostPath mount from:
+- After installing restic/velero, `kubectl -n velero edit daemonset restic` to change the volume hostPath mount from:
       `/var/lib/kubelet/pods` to `/var/snap/microk8s/common/var/lib/kubelet/pods`
 
