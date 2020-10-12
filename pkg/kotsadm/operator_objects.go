@@ -85,7 +85,7 @@ func operatorRole(namespace string) *rbacv1.Role {
 	return role
 }
 
-func operatorRoleBinding(namespace string) *rbacv1.RoleBinding {
+func operatorRoleBinding(namespace string, subjectNamespace string) *rbacv1.RoleBinding {
 	roleBinding := &rbacv1.RoleBinding{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "rbac.authorization.k8s.io/v1",
@@ -100,7 +100,7 @@ func operatorRoleBinding(namespace string) *rbacv1.RoleBinding {
 			{
 				Kind:      "ServiceAccount",
 				Name:      "kotsadm-operator",
-				Namespace: namespace,
+				Namespace: subjectNamespace,
 			},
 		},
 		RoleRef: rbacv1.RoleRef{
