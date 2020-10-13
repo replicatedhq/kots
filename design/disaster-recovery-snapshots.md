@@ -37,8 +37,19 @@ Using different `labelSelector` values allows to restore application and Admin C
 
 ### Backup
 
-- All resources (Admin Console and application) will have an additional label: `kots.io/backup: velero`
-- All application resources will have an additional label: `kots.io/app-slug: <slug>`
+- All resources (Admin Console and application) will have two additional labels:
+    - `kots.io/backup: velero`
+- All application resources will have two additional labels:
+    - `kots.io/backup: velero`
+    - `kots.io/app-slug: <slug>`
+- Backup will be created with `labelSelector` set as in the example below:
+
+        apiVersion: velero.io/v1
+        kind: Backup
+        spec:
+          labelSelector:
+            matchLabels:
+              kots.io/backup: velero
 
 ### Restore
 
@@ -49,7 +60,7 @@ Using different `labelSelector` values allows to restore application and Admin C
         spec:
           labelSelector:
             matchLabels:
-              kots.io/backup: velero
+              kots.io/kotsadm: "true"
 
 - Application restore will be created with `labelSelector` set as in the example below:
 
