@@ -1,6 +1,6 @@
 # Optionally enable disaster recovery snapshots
 
-Currently KOTS support application level snapshots, which can be used to restore a previously deployed application version along with its data.
+Currently KOTS supports application level snapshots, which can be used to restore a previously deployed application version along with its data.
 However in case of a disaster, only application can be restored to a new cluster and Admin Console can never be used to manage it again.
 This document proposes a way to implement disaster recovery snapshots using Velero.
 
@@ -12,8 +12,8 @@ This document proposes a way to implement disaster recovery snapshots using Vele
 
 ## Non Goals
 
-Improving application deployment process to avoid the `field is immutable` errors.
-Performing incremental backups of docker images.
+1. Improving application deployment process to avoid the `field is immutable` errors.
+1. Performing incremental backups of docker images.
 
 ## Background
 
@@ -37,7 +37,7 @@ Using different `labelSelector` values allows to restore application and Admin C
 
 ### Backup
 
-- All resources (Admin Console and application) will have two additional labels:
+- All resources (Admin Console and application) will have an additional label:
     - `kots.io/backup: velero`
 - All application resources will have two additional labels:
     - `kots.io/backup: velero`
@@ -100,7 +100,7 @@ In order to avoid the above problems, the following can be implemented:
 1. Only Postgres data, configmaps, and secrets will be backed up (i.e. pods will not have the `kots.io/backup=velero` label).
 1. There will be a sidecar pod created (`kotsadm-backup`) that will have the `kots.io/backup=velero` label
     - `kotsadm-backup` will run pre-snapshot hooks to backup Postgres data.
-    - `kotsadm-backup` will run post-retore hook to restore Postgres data
+    - `kotsadm-backup` will run post-restore hook to restore Postgres data
     - `kotsadm-backup` will be deleted once backup or restore has completed.
 1. `kots install` command will allow installing Admin Console only.
 
