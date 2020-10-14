@@ -45,7 +45,7 @@ export class SupportBundleAnalysis extends React.Component {
         if (disposition) {
           filename = disposition.split("filename=")[1];
         } else {
-          const createdAt = dayjs(bundle.createdAt).format("YYYY-MM-DDTHH:mm:ss");
+          const createdAt = dayjs(bundle.createdAt).format("YYYY-MM-DDTHH_mm_ss");
           filename = `supportbundle-${createdAt}.tar.gz`;
         }
 

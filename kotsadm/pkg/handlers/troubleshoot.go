@@ -265,7 +265,7 @@ func DownloadSupportBundle(w http.ResponseWriter, r *http.Request) {
 	}
 	defer f.Close()
 
-	filename := fmt.Sprintf("supportbundle-%s.tar.gz", bundle.CreatedAt.Format("2006-01-02T15:04:05"))
+	filename := fmt.Sprintf("supportbundle-%s.tar.gz", bundle.CreatedAt.Format("2006-01-02T15_04_05"))
 
 	w.Header().Set("Content-Type", "application/gzip")
 	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=%s", filename))
