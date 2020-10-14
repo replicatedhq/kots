@@ -225,7 +225,9 @@ func GetSupportBundleCommand(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		sequence = currentVersion.Sequence
+		if currentVersion != nil {
+			sequence = currentVersion.Sequence
+		}
 	}
 
 	if err := createSupportBundle(foundApp.ID, sequence, getSupportBundleCommandRequest.Origin, false); err != nil {
