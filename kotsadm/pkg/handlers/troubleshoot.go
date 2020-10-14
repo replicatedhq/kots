@@ -90,7 +90,7 @@ func GetSupportBundle(w http.ResponseWriter, r *http.Request) {
 	bundle, err := store.GetStore().GetSupportBundleFromSlug(bundleSlug)
 	if err != nil {
 		logger.Error(err)
-		w.WriteHeader(500)
+		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
@@ -113,7 +113,7 @@ func GetSupportBundle(w http.ResponseWriter, r *http.Request) {
 		Analysis:   analysis,
 	}
 
-	JSON(w, 200, getSupportBundleResponse)
+	JSON(w, http.StatusOK, getSupportBundleResponse)
 }
 
 func GetSupportBundleFiles(w http.ResponseWriter, r *http.Request) {
@@ -135,7 +135,7 @@ func GetSupportBundleFiles(w http.ResponseWriter, r *http.Request) {
 	getSupportBundleFilesResponse.Success = true
 	getSupportBundleFilesResponse.Files = files
 
-	JSON(w, 200, getSupportBundleFilesResponse)
+	JSON(w, http.StatusOK, getSupportBundleFilesResponse)
 }
 
 func ListSupportBundles(w http.ResponseWriter, r *http.Request) {
@@ -144,14 +144,14 @@ func ListSupportBundles(w http.ResponseWriter, r *http.Request) {
 	a, err := store.GetStore().GetAppFromSlug(appSlug)
 	if err != nil {
 		logger.Error(err)
-		w.WriteHeader(500)
+		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
 	supportBundles, err := store.GetStore().ListSupportBundles(a.ID)
 	if err != nil {
 		logger.Error(err)
-		w.WriteHeader(500)
+		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
@@ -182,7 +182,7 @@ func ListSupportBundles(w http.ResponseWriter, r *http.Request) {
 		SupportBundles: responseSupportBundles,
 	}
 
-	JSON(w, 200, listSupportBundlesResponse)
+	JSON(w, http.StatusOK, listSupportBundlesResponse)
 }
 
 func GetSupportBundleCommand(w http.ResponseWriter, r *http.Request) {
@@ -199,14 +199,14 @@ func GetSupportBundleCommand(w http.ResponseWriter, r *http.Request) {
 	getSupportBundleCommandRequest := GetSupportBundleCommandRequest{}
 	if err := json.NewDecoder(r.Body).Decode(&getSupportBundleCommandRequest); err != nil {
 		logger.Error(errors.Wrap(err, "failed to decode request"))
-		JSON(w, 200, response)
+		JSON(w, http.StatusOK, response)
 		return
 	}
 
 	foundApp, err := store.GetStore().GetAppFromSlug(appSlug)
 	if err != nil {
 		logger.Error(errors.Wrap(err, "failed to get app"))
-		JSON(w, 200, response)
+		JSON(w, http.StatusOK, response)
 		return
 	}
 
@@ -215,13 +215,13 @@ func GetSupportBundleCommand(w http.ResponseWriter, r *http.Request) {
 	downstreams, err := store.GetStore().ListDownstreamsForApp(foundApp.ID)
 	if err != nil {
 		logger.Error(errors.Wrap(err, "failed to get downstreams for app"))
-		JSON(w, 200, response)
+		JSON(w, http.StatusOK, response)
 		return
 	} else if len(downstreams) > 0 {
 		currentVersion, err := downstream.GetCurrentVersion(foundApp.ID, downstreams[0].ClusterID)
 		if err != nil {
 			logger.Error(errors.Wrap(err, "failed to get deployed app sequence"))
-			JSON(w, 200, response)
+			JSON(w, http.StatusOK, response)
 			return
 		}
 
@@ -232,22 +232,29 @@ func GetSupportBundleCommand(w http.ResponseWriter, r *http.Request) {
 
 	if err := createSupportBundle(foundApp.ID, sequence, getSupportBundleCommandRequest.Origin, false); err != nil {
 		logger.Error(errors.Wrap(err, "failed to create support bundle spec"))
-		JSON(w, 200, response)
+		JSON(w, http.StatusOK, response)
 		return
 	}
 
 	response.Command = supportbundle.GetBundleCommand(foundApp.Slug)
 
-	JSON(w, 200, response)
+	JSON(w, http.StatusOK, response)
 }
 
 func DownloadSupportBundle(w http.ResponseWriter, r *http.Request) {
 	bundleID := mux.Vars(r)["bundleId"]
 
-	bundleArchive, err := store.GetStore().GetSupportBundleArchive(bundleID)
+	bundle, err := store.GetStore().GetSupportBundle(bundleID)
 	if err != nil {
 		logger.Error(err)
-		JSON(w, 500, nil)
+		JSON(w, http.StatusInternalServerError, nil)
+		return
+	}
+
+	bundleArchive, err := store.GetStore().GetSupportBundleArchive(bundle.ID)
+	if err != nil {
+		logger.Error(err)
+		JSON(w, http.StatusInternalServerError, nil)
 		return
 	}
 	defer os.RemoveAll(bundleArchive)
@@ -255,13 +262,16 @@ func DownloadSupportBundle(w http.ResponseWriter, r *http.Request) {
 	f, err := os.Open(bundleArchive)
 	if err != nil {
 		logger.Error(err)
-		JSON(w, 500, nil)
+		JSON(w, http.StatusInternalServerError, nil)
 		return
 	}
 	defer f.Close()
 
+	filename := fmt.Sprintf("supportbundle-%s.tar.gz", bundle.CreatedAt.Format("2006-01-02T15_04_05"))
+
 	w.Header().Set("Content-Type", "application/gzip")
-	w.Header().Set("Content-Disposition", `attachment; filename="supportbundle.tar.gz"`)
+	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=%s", filename))
+	w.WriteHeader(http.StatusOK)
 	io.Copy(w, f)
 }
 
@@ -269,17 +279,17 @@ func CollectSupportBundle(w http.ResponseWriter, r *http.Request) {
 	a, err := store.GetStore().GetApp(mux.Vars(r)["appId"])
 	if err != nil {
 		logger.Error(err)
-		w.WriteHeader(500)
+		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
 	if err := supportbundle.Collect(a.ID, mux.Vars(r)["clusterId"]); err != nil {
 		logger.Error(err)
-		w.WriteHeader(500)
+		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
-	JSON(w, 204, "")
+	JSON(w, http.StatusNoContent, "")
 }
 
 // UploadSupportBundle route is UNAUTHENTICATED
@@ -420,14 +430,14 @@ func GetSupportBundleRedactions(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		logger.Error(err)
 		getSupportBundleRedactionsResponse.Error = fmt.Sprintf("failed to find redactions for bundle %s", bundleID)
-		JSON(w, 400, getSupportBundleRedactionsResponse)
+		JSON(w, http.StatusBadRequest, getSupportBundleRedactionsResponse)
 		return
 	}
 
 	getSupportBundleRedactionsResponse.Success = true
 	getSupportBundleRedactionsResponse.Redactions = redactions
 
-	JSON(w, 200, getSupportBundleRedactionsResponse)
+	JSON(w, http.StatusOK, getSupportBundleRedactionsResponse)
 }
 
 // SetSupportBundleRedactions route is UNAUTHENTICATED
@@ -436,7 +446,7 @@ func SetSupportBundleRedactions(w http.ResponseWriter, r *http.Request) {
 	redactionsBody, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		logger.Error(err)
-		w.WriteHeader(500)
+		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
@@ -444,7 +454,7 @@ func SetSupportBundleRedactions(w http.ResponseWriter, r *http.Request) {
 	err = json.Unmarshal(redactionsBody, &redactions)
 	if err != nil {
 		logger.Error(err)
-		w.WriteHeader(400)
+		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
@@ -452,10 +462,10 @@ func SetSupportBundleRedactions(w http.ResponseWriter, r *http.Request) {
 	err = store.GetStore().SetRedactions(bundleID, redactions.Redactions)
 	if err != nil {
 		logger.Error(err)
-		w.WriteHeader(500)
+		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
-	w.WriteHeader(201)
+	w.WriteHeader(http.StatusCreated)
 	return
 }

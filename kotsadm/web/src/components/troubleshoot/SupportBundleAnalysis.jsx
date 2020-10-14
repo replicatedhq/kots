@@ -39,8 +39,19 @@ export class SupportBundleAnalysis extends React.Component {
           this.setState({ downloadingBundle: false, downloadBundleErrMsg: `Unable to download bundle: Status ${result.status}, please try again.` });
           return;
         }
+
+        let filename = "";
+        const disposition = result.headers.get("Content-Disposition");
+        if (disposition) {
+          filename = disposition.split("filename=")[1];
+        } else {
+          const createdAt = dayjs(bundle.createdAt).format("YYYY-MM-DDTHH_mm_ss");
+          filename = `supportbundle-${createdAt}.tar.gz`;
+        }
+
         const blob = await result.blob();
-        download(blob, "supportbundle.tar.gz", "application/gzip");
+        download(blob, filename, "application/gzip");
+
         this.setState({ downloadingBundle: false, downloadBundleErrMsg: "" });
       })
       .catch(err => {
