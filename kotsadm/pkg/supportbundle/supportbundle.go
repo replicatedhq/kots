@@ -26,6 +26,7 @@ import (
 	"github.com/replicatedhq/kots/kotsadm/pkg/store"
 	"github.com/replicatedhq/kots/kotsadm/pkg/supportbundle/types"
 	"github.com/replicatedhq/kots/kotskinds/client/kotsclientset/scheme"
+	kotstypes "github.com/replicatedhq/kots/pkg/kotsadm/types"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/template"
 	troubleshootv1beta2 "github.com/replicatedhq/troubleshoot/pkg/apis/troubleshoot/v1beta2"
@@ -231,6 +232,7 @@ func CreateRenderedSpec(appID string, sequence int64, origin string, inCluster b
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      secretName,
 				Namespace: os.Getenv("POD_NAMESPACE"),
+				Labels:    kotstypes.GetKotsadmLabels(),
 			},
 			Data: map[string][]byte{
 				SpecDataKey: renderedSpec,
@@ -249,6 +251,7 @@ func CreateRenderedSpec(appID string, sequence int64, origin string, inCluster b
 		existingSecret.Data = map[string][]byte{}
 	}
 	existingSecret.Data[SpecDataKey] = renderedSpec
+	existingSecret.ObjectMeta.Labels = kotstypes.GetKotsadmLabels()
 
 	_, err = clientset.CoreV1().Secrets(os.Getenv("POD_NAMESPACE")).Update(context.TODO(), existingSecret, metav1.UpdateOptions{})
 	if err != nil {
