@@ -39,7 +39,7 @@ func FindPrivateImages(options FindPrivateImagesOptions) (*FindPrivateImagesResu
 		// ParseReference requires the // prefix
 		ref, err := imagedocker.ParseReference(fmt.Sprintf("//%s", upstreamImage))
 		if err != nil {
-			return nil, errors.Wrapf(err, "failed to parse image ref:%s", upstreamImage)
+			return nil, errors.Wrapf(err, "failed to parse image ref %q", upstreamImage)
 		}
 
 		registryHost := dockerref.Domain(ref.DockerReference())

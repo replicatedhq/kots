@@ -111,7 +111,7 @@ func GetPrivateImages(upstreamDir string, checkedImages map[string]ImageInfo, al
 
 			return listImagesInFile(contents, func(images []string, doc k8sdoc.K8sDoc) error {
 				numPrivateImages := 0
-				for _, image := range images {
+				for idx, image := range images {
 					if allPrivate {
 						checkedImages[image] = ImageInfo{
 							IsPrivate: true,
@@ -127,7 +127,7 @@ func GetPrivateImages(upstreamDir string, checkedImages map[string]ImageInfo, al
 					} else {
 						p, err := IsPrivateImage(image)
 						if err != nil {
-							return errors.Wrapf(err, "failed to check if image in %q is private", info.Name())
+							return errors.Wrapf(err, "failed to check if image %d of %d in %q is private", idx+1, len(images), info.Name())
 						}
 						isPrivate = p
 						checkedImages[image] = ImageInfo{
@@ -411,7 +411,7 @@ func RefFromImage(image string) (*ImageRef, error) {
 	// named, err := reference.ParseNormalizedNamed(image)
 	parsed, err := reference.ParseAnyReference(image)
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to parse image name %q", image)
+		return nil, errors.Wrapf(err, "failed to parse image ref %q", image)
 	}
 
 	if named, ok := parsed.(reference.Named); ok {
@@ -521,7 +521,7 @@ func IsPrivateImage(image string) (bool, error) {
 	// ParseReference requires the // prefix
 	ref, err := imagedocker.ParseReference(fmt.Sprintf("//%s", image))
 	if err != nil {
-		return false, errors.Wrapf(err, "failed to parse image ref:%s", image)
+		return false, errors.Wrapf(err, "failed to parse image ref %q", image)
 	}
 
 	sysCtx := types.SystemContext{}
@@ -554,7 +554,7 @@ func IsPrivateImage(image string) (bool, error) {
 func RewritePrivateImage(srcRegistry registry.RegistryOptions, image string, appSlug string) (string, error) {
 	ref, err := imagedocker.ParseReference(fmt.Sprintf("//%s", image))
 	if err != nil {
-		return "", errors.Wrapf(err, "failed to parse image ref:%s", image)
+		return "", errors.Wrapf(err, "failed to parse image ref %q", image)
 	}
 
 	registryHost := dockerref.Domain(ref.DockerReference())
