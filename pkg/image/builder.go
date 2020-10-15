@@ -544,10 +544,6 @@ func IsPrivateImage(image string) (bool, error) {
 		return false, nil
 	}
 
-	if !isUnauthorized(err) {
-		return false, errors.Wrapf(err, "failed to create image from ref:%s", image)
-	}
-
 	return true, nil
 }
 
