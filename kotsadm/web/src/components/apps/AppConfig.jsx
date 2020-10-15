@@ -28,7 +28,7 @@ class AppConfig extends Component {
       showNextStepModal: false,
       savingConfigError: "",
       app: null,
-    }
+    };
 
     this.handleConfigChange = debounce(this.handleConfigChange, 250);
   }
@@ -48,7 +48,7 @@ class AppConfig extends Component {
     this.getConfig();
   }
 
-  componentDidUpdate(lastProps) {
+  componentDidUpdate() {
     if (this.state.app && !this.state.app.isConfigurable) {
       // app not configurable - redirect
       this.props.history.replace(`/app/${this.state.app.slug}`);
@@ -216,7 +216,16 @@ class AppConfig extends Component {
     const sequence = this.getSequence();
     const slug = this.getSlug();
 
+    // cancel current request (if any)
+    if (this.fetchController) {
+      this.fetchController.abort();
+    }
+
+    this.fetchController = new AbortController();
+    const signal = this.fetchController.signal;
+
     fetch(`${window.env.API_ENDPOINT}/app/${slug}/liveconfig`, {
+      signal,
       headers: {
         "Authorization": Utilities.getToken(),
         "Content-Type": "application/json",
@@ -241,7 +250,9 @@ class AppConfig extends Component {
       const changed = this.isConfigChanged(newGroups);
       this.setState({ configGroups: newGroups, changed });
     }).catch((error) => {
-      console.log(error);
+      if (error.name !== 'AbortError') {
+        console.log(error);
+      }
     });
   }
 
