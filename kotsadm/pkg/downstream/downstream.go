@@ -575,3 +575,16 @@ func UpdateDownstreamDeployStatus(appID string, clusterID string, sequence int64
 
 	return nil
 }
+
+func DeleteDownstreamDeployStatus(appID string, clusterID string, sequence int64) error {
+	db := persistence.MustGetPGSession()
+
+	query := `delete from app_downstream_output where app_id = $1 and cluster_id = $2 and downstream_sequence = $3`
+
+	_, err := db.Exec(query, appID, clusterID, sequence)
+	if err != nil {
+		return errors.Wrap(err, "failed to exec")
+	}
+
+	return nil
+}
