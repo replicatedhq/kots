@@ -11,38 +11,38 @@ import (
 	"github.com/replicatedhq/kots/kotsadm/pkg/store"
 )
 
-type CreateBackupRequest struct {
+type CreateApplicationBackupRequest struct {
 }
 
-type CreateBackupResponse struct {
+type CreateApplicationBackupResponse struct {
 	Success bool   `json:"success"`
 	Error   string `json:"error,omitempty"`
 }
 
-func CreateBackup(w http.ResponseWriter, r *http.Request) {
-	createBackupResponse := CreateBackupResponse{
+func CreateApplicationBackup(w http.ResponseWriter, r *http.Request) {
+	createApplicationBackupResponse := CreateApplicationBackupResponse{
 		Success: false,
 	}
 
 	foundApp, err := store.GetStore().GetAppFromSlug(mux.Vars(r)["appSlug"])
 	if err != nil {
 		logger.Error(err)
-		createBackupResponse.Error = "failed to get app from app slug"
-		JSON(w, 500, createBackupResponse)
+		createApplicationBackupResponse.Error = "failed to get app from app slug"
+		JSON(w, 500, createApplicationBackupResponse)
 		return
 	}
 
-	_, err = snapshot.CreateBackup(foundApp, false)
+	_, err = snapshot.CreateApplicationBackup(context.TODO(), foundApp, false)
 	if err != nil {
 		logger.Error(err)
-		createBackupResponse.Error = "failed to create backup"
-		JSON(w, 500, createBackupResponse)
+		createApplicationBackupResponse.Error = "failed to create backup"
+		JSON(w, 500, createApplicationBackupResponse)
 		return
 	}
 
-	createBackupResponse.Success = true
+	createApplicationBackupResponse.Success = true
 
-	JSON(w, 200, createBackupResponse)
+	JSON(w, 200, createApplicationBackupResponse)
 }
 
 type ListBackupsResponse struct {
@@ -147,4 +147,30 @@ func DeleteKotsadmBackup(w http.ResponseWriter, r *http.Request) {
 	deleteBackupResponse.Success = true
 
 	JSON(w, http.StatusOK, deleteBackupResponse)
+}
+
+type CreateInstanceBackupRequest struct {
+}
+
+type CreateInstanceBackupResponse struct {
+	Success bool   `json:"success"`
+	Error   string `json:"error,omitempty"`
+}
+
+func CreateInstanceBackup(w http.ResponseWriter, r *http.Request) {
+	createInstanceBackupResponse := CreateInstanceBackupResponse{
+		Success: false,
+	}
+
+	err := snapshot.CreateInstanceBackup(context.TODO(), false)
+	if err != nil {
+		logger.Error(err)
+		createInstanceBackupResponse.Error = "failed to create instance backup"
+		JSON(w, http.StatusInternalServerError, createInstanceBackupResponse)
+		return
+	}
+
+	createInstanceBackupResponse.Success = true
+
+	JSON(w, 200, createInstanceBackupResponse)
 }

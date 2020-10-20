@@ -98,6 +98,7 @@ func Start() {
 	r.Path("/api/v1/kots/ports").Methods("GET").HandlerFunc(handlers.GetApplicationPorts)
 	r.Path("/api/v1/upload").Methods("PUT").HandlerFunc(handlers.UploadExistingApp)
 	r.Path("/api/v1/download").Methods("GET").HandlerFunc(handlers.DownloadApp)
+	r.Path("/api/v1/snapshot/backup").Methods("POST").HandlerFunc(handlers.CreateInstanceBackup)
 
 	/**********************************************************************
 	* Session auth routes
@@ -184,7 +185,7 @@ func Start() {
 	sessionAuthRouter.Path("/api/v1/velero").Methods("GET").HandlerFunc(handlers.GetVeleroStatus)
 
 	// App snapshot routes
-	sessionAuthRouter.Path("/api/v1/app/{appSlug}/snapshot/backup").Methods("POST").HandlerFunc(handlers.CreateBackup)
+	sessionAuthRouter.Path("/api/v1/app/{appSlug}/snapshot/backup").Methods("POST").HandlerFunc(handlers.CreateApplicationBackup)
 	sessionAuthRouter.Path("/api/v1/app/{appSlug}/snapshot/restore/status").Methods("GET").HandlerFunc(handlers.GetRestoreStatus)
 	sessionAuthRouter.Path("/api/v1/app/{appSlug}/snapshot/restore").Methods("DELETE").HandlerFunc(handlers.CancelRestore)
 	sessionAuthRouter.Path("/api/v1/app/{appSlug}/snapshot/restore/{restoreName}").Methods("GET").HandlerFunc(handlers.GetKotsadmRestore)

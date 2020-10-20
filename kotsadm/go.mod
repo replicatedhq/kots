@@ -16,7 +16,7 @@ require (
 	github.com/docker/distribution v2.7.1+incompatible
 	github.com/docker/go-units v0.4.0
 	github.com/emicklei/go-restful v2.10.0+incompatible // indirect
-	github.com/go-git/go-git/v5 v5.1.0
+	github.com/go-git/go-git/v5 v5.2.0
 	github.com/go-logfmt/logfmt v0.4.0
 	github.com/go-openapi/spec v0.19.5 // indirect
 	github.com/golang/groupcache v0.0.0-20191027212112-611e8accdfc9 // indirect

@@ -8,6 +8,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
+	kotsadmtypes "github.com/replicatedhq/kots/pkg/kotsadm/types"
 	yaml "gopkg.in/yaml.v2"
 	kustomizetypes "sigs.k8s.io/kustomize/api/types"
 	k8syaml "sigs.k8s.io/yaml"
@@ -58,10 +59,18 @@ func (m *Midstream) WriteMidstream(options WriteOptions) error {
 		return errors.Wrap(err, "failed to write patches")
 	}
 
+	// annotations
 	if m.Kustomization.CommonAnnotations == nil {
 		m.Kustomization.CommonAnnotations = make(map[string]string)
 	}
 	m.Kustomization.CommonAnnotations["kots.io/app-slug"] = options.AppSlug
+
+	// labels
+	if m.Kustomization.CommonLabels == nil {
+		m.Kustomization.CommonLabels = make(map[string]string)
+	}
+	m.Kustomization.CommonLabels[kotsadmtypes.BackupLabel] = kotsadmtypes.BackupLabelValue
+	m.Kustomization.CommonLabels["kots.io/app-slug"] = options.AppSlug
 
 	// Note that this function does nothing on the initial install
 	// if the user is not presented with the config screen.
@@ -89,12 +98,18 @@ func (m *Midstream) mergeKustomization(options WriteOptions, existing *kustomize
 	newResources := findNewStrings(m.Kustomization.Resources, existing.Resources)
 	m.Kustomization.Resources = append(existing.Resources, newResources...)
 
+	// annotations
 	if existing.CommonAnnotations == nil {
 		existing.CommonAnnotations = make(map[string]string)
 	}
-
 	delete(existing.CommonAnnotations, "kots.io/app-sequence")
 	m.Kustomization.CommonAnnotations = mergeMaps(m.Kustomization.CommonAnnotations, existing.CommonAnnotations)
+
+	// labels
+	if existing.CommonLabels == nil {
+		existing.CommonLabels = make(map[string]string)
+	}
+	m.Kustomization.CommonLabels = mergeMaps(m.Kustomization.CommonLabels, existing.CommonLabels)
 }
 
 func mergeMaps(new map[string]string, existing map[string]string) map[string]string {

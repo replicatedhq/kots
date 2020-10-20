@@ -1,6 +1,7 @@
 package snapshotscheduler
 
 import (
+	"context"
 	"strings"
 	"time"
 
@@ -107,7 +108,7 @@ func handleApp(a *apptypes.App) error {
 		return nil
 	}
 
-	backup, err := snapshot.CreateBackup(a, true)
+	backup, err := snapshot.CreateApplicationBackup(context.TODO(), a, true)
 	if err != nil {
 		return errors.Wrap(err, "failed to create backup")
 	}

@@ -360,13 +360,13 @@ func kotsadmDeployment(deployOptions types.DeployOptions) *appsv1.Deployment {
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
 					Labels: types.GetKotsadmLabels(map[string]string{
-						"app": "kotsadm",
+						"app":                 "kotsadm",
+						kotstypes.BackupLabel: kotstypes.BackupLabelValue,
 					}),
 					Annotations: map[string]string{
 						"backup.velero.io/backup-volumes":   "backup",
 						"pre.hook.backup.velero.io/command": `["/backup.sh"]`,
 						"pre.hook.backup.velero.io/timeout": "10m",
-						kotstypes.VeleroKey:                 kotstypes.VeleroLabelConsoleValue,
 					},
 				},
 				Spec: corev1.PodSpec{

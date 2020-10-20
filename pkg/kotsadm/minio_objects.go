@@ -100,11 +100,11 @@ func minioStatefulset(deployOptions types.DeployOptions) *appsv1.StatefulSet {
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
 					Labels: types.GetKotsadmLabels(map[string]string{
-						"app": "kotsadm-minio",
+						"app":                 "kotsadm-minio",
+						kotstypes.BackupLabel: kotstypes.BackupLabelValue,
 					}),
 					Annotations: map[string]string{
 						"backup.velero.io/backup-volumes": "kotsadm-minio,minio-config-dir",
-						kotstypes.VeleroKey:               kotstypes.VeleroLabelConsoleValue,
 					},
 				},
 				Spec: corev1.PodSpec{
