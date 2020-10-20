@@ -415,6 +415,8 @@ github.com/prometheus/tsdb v0.7.1/go.mod h1:qhTCs0VvXwvX/y3TZrWD7rabWM+ijKTux40T
 github.com/replicatedhq/termui/v3 v3.1.1-0.20200811145416-f40076d26851/go.mod h1:JDxG6+uubnk9/BZ2yUsyAJJwlptjrnmB2MPF5d2Xe/8=
 github.com/replicatedhq/troubleshoot v0.9.43 h1:Mub5qXheT0vs7Pe6HhqJBt88rNFIMwtg7Ckcy6ltEcU=
 github.com/replicatedhq/troubleshoot v0.9.43/go.mod h1:H6pikMAa8tpPN6iF94HANX2Ju2YpwKZs1qnmifITbPQ=
+github.com/replicatedhq/troubleshoot v0.9.48 h1:QTfzfghpF+3HeJymC/a07A18DdlZ1XQk0593TSKiD6s=
+github.com/replicatedhq/troubleshoot v0.9.48/go.mod h1:D1kD56FmMdXpnPFth6fhV/CITDtvMIbOk/kWPW4sh7c=
 github.com/rogpeppe/fastuuid v0.0.0-20150106093220-6724a57986af/go.mod h1:XWv6SoW27p1b0cqNHllgS5HIMJraePCO15w5zCzIWYg=
 github.com/rogpeppe/go-charset v0.0.0-20180617210344-2471d30d28b4/go.mod h1:qgYeAmZ5ZIpBWTGllZSQnw97Dj+woV0toclVaRGI8pc=
 github.com/russross/blackfriday v1.5.2/go.mod h1:JO/DiYxRf+HjHt06OyowR9PTA263kcR/rfWxYHBV53g=
