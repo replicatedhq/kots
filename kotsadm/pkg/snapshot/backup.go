@@ -129,12 +129,12 @@ func CreateApplicationBackup(ctx context.Context, a *apptypes.App, isScheduled b
 	return backup, nil
 }
 
-func CreateInstanceBackup(ctx context.Context, isScheduled bool) error {
+func CreateInstanceBackup(ctx context.Context, isScheduled bool) (*velerov1.Backup, error) {
 	logger.Debug("creating instance backup")
 
 	apps, err := store.GetStore().ListInstalledApps()
 	if err != nil {
-		return errors.Wrap(err, "failed to list installed apps")
+		return nil, errors.Wrap(err, "failed to list installed apps")
 	}
 
 	kotsadmNamespace := os.Getenv("POD_NAMESPACE")
@@ -147,7 +147,7 @@ func CreateInstanceBackup(ctx context.Context, isScheduled bool) error {
 	for _, a := range apps {
 		downstreams, err := store.GetStore().ListDownstreamsForApp(a.ID)
 		if err != nil {
-			return errors.Wrapf(err, "failed to list downstreams for app %s", a.Slug)
+			return nil, errors.Wrapf(err, "failed to list downstreams for app %s", a.Slug)
 		}
 
 		if len(downstreams) == 0 {
@@ -157,7 +157,7 @@ func CreateInstanceBackup(ctx context.Context, isScheduled bool) error {
 
 		parentSequence, err := downstream.GetCurrentParentSequence(a.ID, downstreams[0].ClusterID)
 		if err != nil {
-			return errors.Wrapf(err, "failed to get current downstream parent sequence for app %s", a.Slug)
+			return nil, errors.Wrapf(err, "failed to get current downstream parent sequence for app %s", a.Slug)
 		}
 		if parentSequence == -1 {
 			// no version is deployed for this app yet
@@ -166,18 +166,18 @@ func CreateInstanceBackup(ctx context.Context, isScheduled bool) error {
 
 		archiveDir, err := ioutil.TempDir("", "kotsadm")
 		if err != nil {
-			return errors.Wrapf(err, "failed to create temp dir for app %s", a.Slug)
+			return nil, errors.Wrapf(err, "failed to create temp dir for app %s", a.Slug)
 		}
 		defer os.RemoveAll(archiveDir)
 
 		err = store.GetStore().GetAppVersionArchive(a.ID, parentSequence, archiveDir)
 		if err != nil {
-			return errors.Wrapf(err, "failed to get app version archive for app %s", a.Slug)
+			return nil, errors.Wrapf(err, "failed to get app version archive for app %s", a.Slug)
 		}
 
 		kotsKinds, err := kotsutil.LoadKotsKindsFromPath(archiveDir)
 		if err != nil {
-			return errors.Wrap(err, "failed to load kots kinds from path")
+			return nil, errors.Wrap(err, "failed to load kots kinds from path")
 		}
 
 		includedNamespaces = append(includedNamespaces, kotsKinds.KotsApplication.Spec.AdditionalNamespaces...)
@@ -185,7 +185,7 @@ func CreateInstanceBackup(ctx context.Context, isScheduled bool) error {
 
 	kotsadmVeleroBackendStorageLocation, err := FindBackupStoreLocation()
 	if err != nil {
-		return errors.Wrap(err, "failed to find backupstoragelocations")
+		return nil, errors.Wrap(err, "failed to find backupstoragelocations")
 	}
 
 	snapshotTrigger := "manual"
@@ -216,20 +216,20 @@ func CreateInstanceBackup(ctx context.Context, isScheduled bool) error {
 
 	cfg, err := config.GetConfig()
 	if err != nil {
-		return errors.Wrap(err, "failed to get cluster config")
+		return nil, errors.Wrap(err, "failed to get cluster config")
 	}
 
 	veleroClient, err := veleroclientv1.NewForConfig(cfg)
 	if err != nil {
-		return errors.Wrap(err, "failed to create clientset")
+		return nil, errors.Wrap(err, "failed to create clientset")
 	}
 
-	_, err = veleroClient.Backups(kotsadmVeleroBackendStorageLocation.Namespace).Create(ctx, veleroBackup, metav1.CreateOptions{})
+	backup, err := veleroClient.Backups(kotsadmVeleroBackendStorageLocation.Namespace).Create(ctx, veleroBackup, metav1.CreateOptions{})
 	if err != nil {
-		return errors.Wrap(err, "failed to create velero backup")
+		return nil, errors.Wrap(err, "failed to create velero backup")
 	}
 
-	return nil
+	return backup, nil
 }
 
 func ListBackupsForApp(appID string) ([]*types.Backup, error) {

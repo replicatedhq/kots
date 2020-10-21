@@ -153,8 +153,9 @@ type CreateInstanceBackupRequest struct {
 }
 
 type CreateInstanceBackupResponse struct {
-	Success bool   `json:"success"`
-	Error   string `json:"error,omitempty"`
+	Success    bool   `json:"success"`
+	BackupName string `json:"backupName,omitempty"`
+	Error      string `json:"error,omitempty"`
 }
 
 func CreateInstanceBackup(w http.ResponseWriter, r *http.Request) {
@@ -162,7 +163,7 @@ func CreateInstanceBackup(w http.ResponseWriter, r *http.Request) {
 		Success: false,
 	}
 
-	err := snapshot.CreateInstanceBackup(context.TODO(), false)
+	backup, err := snapshot.CreateInstanceBackup(context.TODO(), false)
 	if err != nil {
 		logger.Error(err)
 		createInstanceBackupResponse.Error = "failed to create instance backup"
@@ -171,6 +172,7 @@ func CreateInstanceBackup(w http.ResponseWriter, r *http.Request) {
 	}
 
 	createInstanceBackupResponse.Success = true
+	createInstanceBackupResponse.BackupName = backup.ObjectMeta.Name
 
 	JSON(w, 200, createInstanceBackupResponse)
 }

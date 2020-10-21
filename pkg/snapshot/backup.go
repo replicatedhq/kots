@@ -1,6 +1,7 @@
 package snapshot
 
 import (
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -84,14 +85,30 @@ func InstanceBackup(instanceBackupOptions InstanceBackupOptions) error {
 		return errors.Errorf("unexpected status code from %s: %s", url, resp.Status)
 	}
 
-	b, err := ioutil.ReadAll(resp.Body)
+	respBody, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		log.FinishSpinnerWithError()
 		return errors.Wrap(err, "failed to read server response")
 	}
-	fmt.Println("RESPONSE", string(b))
+
+	type BackupResponse struct {
+		Success    bool   `json:"success"`
+		BackupName string `json:"backupName,omitempty"`
+		Error      string `json:"error,omitempty"`
+	}
+	var backupResponse BackupResponse
+	if err := json.Unmarshal(respBody, &backupResponse); err != nil {
+		log.FinishSpinnerWithError()
+		return errors.Wrap(err, "failed to unmarshal response")
+	}
+
+	if backupResponse.Error != "" {
+		log.FinishSpinnerWithError()
+		return errors.New(backupResponse.Error)
+	}
 
 	log.FinishSpinner()
+	log.ActionWithoutSpinner(fmt.Sprintf("Backup has been created successfully. Backup name is %s", backupResponse.BackupName))
 
 	return nil
 }
