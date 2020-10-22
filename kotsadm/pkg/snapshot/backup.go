@@ -111,7 +111,7 @@ func CreateApplicationBackup(ctx context.Context, a *apptypes.App, isScheduled b
 		MatchLabels: map[string]string{
 			"kots.io/app-slug": a.Slug,
 		},
-	},
+	}
 	veleroBackup.Spec.IncludedNamespaces = includedNamespaces
 
 	veleroBackup.Spec.StorageLocation = "default"
