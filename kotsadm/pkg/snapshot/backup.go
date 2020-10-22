@@ -107,6 +107,11 @@ func CreateApplicationBackup(ctx context.Context, a *apptypes.App, isScheduled b
 		"kots.io/app-sequence":       strconv.FormatInt(parentSequence, 10),
 		"kots.io/snapshot-requested": time.Now().UTC().Format(time.RFC3339),
 	}
+	veleroBackup.Spec.LabelSelector = &metav1.LabelSelector{
+		MatchLabels: map[string]string{
+			"kots.io/app-slug": a.Slug,
+		},
+	},
 	veleroBackup.Spec.IncludedNamespaces = includedNamespaces
 
 	veleroBackup.Spec.StorageLocation = "default"
