@@ -108,7 +108,7 @@ func InstanceBackup(instanceBackupOptions InstanceBackupOptions) error {
 	}
 
 	log.FinishSpinner()
-	log.ActionWithoutSpinner(fmt.Sprintf("Backup has been created successfully. Backup name is %s", backupResponse.BackupName))
+	log.ActionWithoutSpinner(fmt.Sprintf("Backup request has been created. Backup name is %s", backupResponse.BackupName))
 
 	return nil
 }

@@ -13,6 +13,7 @@ import (
 	"github.com/pkg/errors"
 	apptypes "github.com/replicatedhq/kots/kotsadm/pkg/app/types"
 	"github.com/replicatedhq/kots/kotsadm/pkg/downstream"
+	"github.com/replicatedhq/kots/kotsadm/pkg/k8s"
 	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
 	"github.com/replicatedhq/kots/kotsadm/pkg/render/helper"
 	"github.com/replicatedhq/kots/kotsadm/pkg/snapshot/types"
@@ -193,6 +194,11 @@ func CreateInstanceBackup(ctx context.Context, isScheduled bool) (*velerov1.Back
 		return nil, errors.Wrap(err, "failed to find backupstoragelocations")
 	}
 
+	kotsadmImage, err := k8s.FindKotsadmImage(kotsadmNamespace)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to find kotsadm image")
+	}
+
 	snapshotTrigger := "manual"
 	if isScheduled {
 		snapshotTrigger = "schedule"
@@ -204,8 +210,10 @@ func CreateInstanceBackup(ctx context.Context, isScheduled bool) (*velerov1.Back
 			GenerateName: "instance-",
 			Namespace:    kotsadmVeleroBackendStorageLocation.Namespace,
 			Annotations: map[string]string{
-				"kots.io/snapshot-trigger":   snapshotTrigger,
-				"kots.io/snapshot-requested": time.Now().UTC().Format(time.RFC3339),
+				"kots.io/snapshot-trigger":         snapshotTrigger,
+				"kots.io/snapshot-requested":       time.Now().UTC().Format(time.RFC3339),
+				"kots.io/kotsadm-image":            kotsadmImage,
+				"kots.io/kotsadm-deploy-namespace": kotsadmNamespace,
 			},
 		},
 		Spec: velerov1.BackupSpec{
