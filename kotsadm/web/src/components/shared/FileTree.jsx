@@ -30,6 +30,10 @@ export default class FileTree extends React.Component {
 
   componentDidMount() {
     this.scrollToActiveFile("active-file");
+
+    if (this.props.files?.length && this.props.autoExpand) {
+      this.handleCheckboxChange(this.props.files[0].path, true);
+    }
   }
 
   scrollToActiveFile = (id) => {
