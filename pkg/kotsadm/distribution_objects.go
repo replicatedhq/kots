@@ -13,9 +13,8 @@ import (
 )
 
 func distributionConfigMap(deployOptions types.DeployOptions) *corev1.ConfigMap {
-	labels := map[string]string{}
+	labels := types.GetKotsadmLabels()
 	labels["kotsadm"] = "application"
-	labels[types.KotsadmKey] = types.KotsadmLabelValue
 
 	configMap := &corev1.ConfigMap{
 		TypeMeta: metav1.TypeMeta{
