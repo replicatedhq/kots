@@ -228,6 +228,7 @@ class AnalyzerFileTree extends React.Component {
                   isRoot={true}
                   handleFileSelect={(path) => this.setSelectedFile(path)}
                   selectedFile={this.state.selectedFile}
+                  autoExpand={files?.length === 1 && files[0].children?.length > 0}
                 />
               </div>
             </div>
