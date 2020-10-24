@@ -2,16 +2,17 @@ package cli
 
 import (
 	"github.com/pkg/errors"
-	"github.com/replicatedhq/kots/pkg/snapshot"
+	"github.com/replicatedhq/kots/pkg/kotsadm"
+	"github.com/replicatedhq/kots/pkg/kotsadm/types"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
 
-func BackupCmd() *cobra.Command {
+func UpstreamUpgradeCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:           "backup",
-		Short:         "Create an instance backup/snapshot",
-		Long:          `Create an instance backup/snapshot`,
+		Use:           "enable",
+		Short:         "Enables the disaster recovery feature",
+		Long:          "",
 		SilenceUsage:  true,
 		SilenceErrors: false,
 		PreRun: func(cmd *cobra.Command, args []string) {
@@ -20,11 +21,10 @@ func BackupCmd() *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			v := viper.GetViper()
 
-			instanceBackupOptions := snapshot.InstanceBackupOptions{
-				Namespace:             v.GetString("namespace"),
-				KubernetesConfigFlags: kubernetesConfigFlags,
+			disasterRecoveryOptions := &types.DisasterRecoveryOptions{
+				Namespace: v.GetString("namespace"),
 			}
-			if err := snapshot.InstanceBackup(instanceBackupOptions); err != nil {
+			if err := kotsadm.EnableDisasterRecovery(disasterRecoveryOptions); err != nil {
 				return errors.Cause(err)
 			}
 

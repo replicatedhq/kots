@@ -212,6 +212,7 @@ func CreateInstanceBackup(ctx context.Context, isScheduled bool) (*velerov1.Back
 			Annotations: map[string]string{
 				"kots.io/snapshot-trigger":         snapshotTrigger,
 				"kots.io/snapshot-requested":       time.Now().UTC().Format(time.RFC3339),
+				"kots.io/instance":                 "true",
 				"kots.io/kotsadm-image":            kotsadmImage,
 				"kots.io/kotsadm-deploy-namespace": kotsadmNamespace,
 			},
@@ -369,7 +370,7 @@ func ListBackupsForApp(appID string) ([]*types.Backup, error) {
 	return backups, nil
 }
 
-func ListKotsadmBackups() ([]*types.Backup, error) {
+func ListInstanceBackups() ([]*types.Backup, error) {
 	cfg, err := config.GetConfig()
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get cluster config")
@@ -394,7 +395,7 @@ func ListKotsadmBackups() ([]*types.Backup, error) {
 
 	for _, veleroBackup := range veleroBackups.Items {
 		// TODO: Enforce version?
-		if veleroBackup.Annotations["kots.io/backup-type"] != "admin-console" {
+		if veleroBackup.Annotations["kots.io/instance"] != "true" {
 			continue
 		}
 
@@ -589,7 +590,7 @@ func HasUnfinishedBackup(appID string) (bool, error) {
 	return false, nil
 }
 
-func GetKotsadmBackupDetail(ctx context.Context, backupName string) (*types.BackupDetail, error) {
+func GetBackupDetail(ctx context.Context, backupName string) (*types.BackupDetail, error) {
 	cfg, err := config.GetConfig()
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get cluster config")

@@ -178,12 +178,6 @@ func Start() {
 	sessionAuthRouter.Path("/api/v1/app/{appSlug}/updatecheck").Methods("POST").HandlerFunc(handlers.AppUpdateCheck)
 	sessionAuthRouter.Path("/api/v1/app/{appSlug}/updatecheckerspec").Methods("PUT").HandlerFunc(handlers.UpdateCheckerSpec)
 
-	// kotsadm snapshots
-	sessionAuthRouter.Path("/api/v1/snapshots").Methods("GET").HandlerFunc(handlers.ListKotsadmBackups)
-	sessionAuthRouter.Path("/api/v1/snapshot/{snapshotName}").Methods("GET").HandlerFunc(handlers.GetKotsadmBackup)
-	sessionAuthRouter.Path("/api/v1/snapshot/{snapshotName}/delete").Methods("POST").HandlerFunc(handlers.DeleteKotsadmBackup)
-	sessionAuthRouter.Path("/api/v1/velero").Methods("GET").HandlerFunc(handlers.GetVeleroStatus)
-
 	// App snapshot routes
 	sessionAuthRouter.Path("/api/v1/app/{appSlug}/snapshot/backup").Methods("POST").HandlerFunc(handlers.CreateApplicationBackup)
 	sessionAuthRouter.Path("/api/v1/app/{appSlug}/snapshot/restore/status").Methods("GET").HandlerFunc(handlers.GetRestoreStatus)
@@ -194,12 +188,14 @@ func Start() {
 	sessionAuthRouter.Path("/api/v1/app/{appSlug}/snapshot/config").Methods("PUT").HandlerFunc(handlers.SaveSnapshotConfig)
 
 	// Global snapshot routes
+	sessionAuthRouter.Path("/api/v1/snapshots").Methods("GET").HandlerFunc(handlers.ListInstanceBackups)
 	sessionAuthRouter.Path("/api/v1/snapshots/settings").Methods("GET").HandlerFunc(handlers.GetGlobalSnapshotSettings)
 	sessionAuthRouter.Path("/api/v1/snapshots/settings").Methods("PUT").HandlerFunc(handlers.UpdateGlobalSnapshotSettings)
+	sessionAuthRouter.Path("/api/v1/snapshot/{snapshotName}").Methods("GET").HandlerFunc(handlers.GetBackup)
+	sessionAuthRouter.Path("/api/v1/snapshot/{snapshotName}/delete").Methods("POST").HandlerFunc(handlers.DeleteBackup)
 	sessionAuthRouter.Path("/api/v1/snapshot/{snapshotName}/restore").Methods("POST").HandlerFunc(handlers.CreateRestore)
-
-	// Find a home snapshot routes
 	sessionAuthRouter.Path("/api/v1/snapshot/{backup}/logs").Methods("GET").HandlerFunc(handlers.DownloadSnapshotLogs)
+	sessionAuthRouter.Path("/api/v1/velero").Methods("GET").HandlerFunc(handlers.GetVeleroStatus)
 
 	// KURL
 	sessionAuthRouter.HandleFunc("/api/v1/kurl", handlers.NotImplemented)

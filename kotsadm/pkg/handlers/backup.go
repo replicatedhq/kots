@@ -86,18 +86,18 @@ func ListBackups(w http.ResponseWriter, r *http.Request) {
 	JSON(w, 200, listBackupsResponse)
 }
 
-type ListKotsadmBackupsResponse struct {
+type ListInstanceBackupsResponse struct {
 	Error   string                  `json:"error,omitempty"`
 	Backups []*snapshottypes.Backup `json:"backups"`
 }
 
-func ListKotsadmBackups(w http.ResponseWriter, r *http.Request) {
-	listBackupsResponse := ListKotsadmBackupsResponse{}
+func ListInstanceBackups(w http.ResponseWriter, r *http.Request) {
+	listBackupsResponse := ListInstanceBackupsResponse{}
 
-	backups, err := snapshot.ListKotsadmBackups()
+	backups, err := snapshot.ListInstanceBackups()
 	if err != nil {
 		logger.Error(err)
-		listBackupsResponse.Error = "failed to list backups"
+		listBackupsResponse.Error = "failed to list instance backups"
 		JSON(w, 500, listBackupsResponse)
 		return
 	}
@@ -106,16 +106,16 @@ func ListKotsadmBackups(w http.ResponseWriter, r *http.Request) {
 	JSON(w, 200, listBackupsResponse)
 }
 
-type GetKotsadmBackupResponse struct {
+type GetBackupResponse struct {
 	BackupDetail *snapshottypes.BackupDetail `json:"backupDetail"`
 	Success      bool                        `json:"success"`
 	Error        string                      `json:"error,omitempty"`
 }
 
-func GetKotsadmBackup(w http.ResponseWriter, r *http.Request) {
-	getBackupResponse := GetKotsadmBackupResponse{}
+func GetBackup(w http.ResponseWriter, r *http.Request) {
+	getBackupResponse := GetBackupResponse{}
 
-	backup, err := snapshot.GetKotsadmBackupDetail(context.TODO(), mux.Vars(r)["snapshotName"])
+	backup, err := snapshot.GetBackupDetail(context.TODO(), mux.Vars(r)["snapshotName"])
 	if err != nil {
 		logger.Error(err)
 		getBackupResponse.Error = "failed to get backup detail"
@@ -129,13 +129,13 @@ func GetKotsadmBackup(w http.ResponseWriter, r *http.Request) {
 	JSON(w, 200, getBackupResponse)
 }
 
-type DeleteKotsadmBackupResponse struct {
+type DeleteBackupResponse struct {
 	Success bool   `json:"success"`
 	Error   string `json:"error,omitempty"`
 }
 
-func DeleteKotsadmBackup(w http.ResponseWriter, r *http.Request) {
-	deleteBackupResponse := DeleteKotsadmBackupResponse{}
+func DeleteBackup(w http.ResponseWriter, r *http.Request) {
+	deleteBackupResponse := DeleteBackupResponse{}
 
 	if err := snapshot.DeleteBackup(mux.Vars(r)["snapshotName"]); err != nil {
 		logger.Error(err)

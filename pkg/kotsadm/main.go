@@ -241,7 +241,7 @@ func Deploy(deployOptions types.DeployOptions) error {
 	return nil
 }
 
-func Delete(options *types.DeleteOptions) error {
+func EnableDisasterRecovery(options *types.DisasterRecoveryOptions) error {
 	cfg, err := config.GetConfig()
 	if err != nil {
 		return errors.Wrap(err, "failed to get config")
@@ -252,7 +252,7 @@ func Delete(options *types.DeleteOptions) error {
 		return errors.Wrap(err, "failed to get client set")
 	}
 
-	namespace := os.Getenv("POD_NAMESPACE")
+	namespace := options.Namespace
 	grace := int64(0)
 	policy := metav1.DeletePropagationBackground
 	opts := metav1.DeleteOptions{
@@ -263,11 +263,6 @@ func Delete(options *types.DeleteOptions) error {
 	err = clientset.AppsV1().Deployments(namespace).Delete(context.TODO(), "kotsadm", opts)
 	if err != nil {
 		return errors.Wrapf(err, "failed to delete deployment kotsadm")
-	}
-
-	err = clientset.AppsV1().Deployments(namespace).Delete(context.TODO(), "kotsadm-api", opts)
-	if err != nil {
-		return errors.Wrapf(err, "failed to delete deployment kotsadm-api")
 	}
 
 	err = clientset.AppsV1().Deployments(namespace).Delete(context.TODO(), "kotsadm-operator", opts)
