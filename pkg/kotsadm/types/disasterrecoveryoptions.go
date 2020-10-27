@@ -1,5 +1,10 @@
 package types
 
-type DisasterRecoveryOptions struct {
-	Namespace string
+import (
+	"k8s.io/cli-runtime/pkg/genericclioptions"
+)
+
+type EnableDisasterRecoveryOptions struct {
+	Namespace             string
+	KubernetesConfigFlags *genericclioptions.ConfigFlags
 }

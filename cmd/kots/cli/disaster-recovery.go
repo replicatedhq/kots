@@ -7,7 +7,7 @@ import (
 	"github.com/spf13/viper"
 )
 
-func UpstreamCmd() *cobra.Command {
+func DisasterRecoveryCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:           "disaster-recovery",
 		Short:         "Provides wrapper functionality to interface with the disaster recovery source",
@@ -27,7 +27,7 @@ func UpstreamCmd() *cobra.Command {
 		},
 	}
 
-	cmd.AddCommand(DisasterRecoveryInitCmd())
+	cmd.AddCommand(DisasterRecoveryEnableCmd())
 
 	return cmd
 }

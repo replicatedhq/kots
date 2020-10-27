@@ -7,7 +7,6 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/kotsadm/types"
-	kotstypes "github.com/replicatedhq/kots/pkg/kotsadm/types"
 	"github.com/replicatedhq/kots/pkg/util"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -360,8 +359,7 @@ func kotsadmDeployment(deployOptions types.DeployOptions) *appsv1.Deployment {
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
 					Labels: types.GetKotsadmLabels(map[string]string{
-						"app":                 "kotsadm",
-						kotstypes.BackupLabel: kotstypes.BackupLabelValue,
+						"app": "kotsadm",
 					}),
 					Annotations: map[string]string{
 						"backup.velero.io/backup-volumes":   "backup",

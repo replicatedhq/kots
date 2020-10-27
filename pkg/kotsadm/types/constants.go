@@ -16,6 +16,9 @@ const KotsadmConfigMap = "kotsadm-confg"
 const BackupLabel = "kots.io/backup"
 const BackupLabelValue = "velero"
 
+const ExcludeLabel = "velero.io/exclude-from-backup"
+const ExcludeLabelValue = "true"
+
 func GetKotsadmLabels(additionalLabels ...map[string]string) map[string]string {
 	labels := map[string]string{
 		KotsadmKey:  KotsadmLabelValue,
