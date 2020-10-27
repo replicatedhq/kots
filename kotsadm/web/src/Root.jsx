@@ -7,7 +7,8 @@ import Modal from "react-modal";
 import find from "lodash/find";
 import ConnectionTerminated from "./ConnectionTerminated";
 import GitOps from "././components/clusters/GitOps";
-import Snapshots from "./components/snapshots/Snapshots";
+import SnapshotSettings from "./components/snapshots/Snapshots";
+import SnapshotDetails from "./components/snapshots/SnapshotDetails";
 import PreflightResultPage from "./components/PreflightResultPage";
 // import Redactors from "./components/redactors/Redactors";
 // import EditRedactor from "./components/redactors/EditRedactor";
@@ -323,7 +324,8 @@ class Root extends Component {
                   <Route path="/unsupported" component={UnsupportedBrowser} />
                   <ProtectedRoute path="/cluster/manage" render={(props) => <ClusterNodes {...props} appName={this.state.selectedAppName} />} />
                   <ProtectedRoute path="/gitops" render={(props) => <GitOps {...props} appName={this.state.selectedAppName} />} />
-                  <ProtectedRoute path="/snapshots" render={(props) => <Snapshots {...props} appName={this.state.selectedAppName} />} />
+                  <ProtectedRoute path="/snapshots" render={(props) => <SnapshotSettings {...props} appName={this.state.selectedAppName} />} />
+                  <ProtectedRoute path="/snapshot/details" render={(props) => <SnapshotDetails {...props} appName={this.state.selectedAppName} />} />
                   {/* <ProtectedRoute exact path="/redactors" render={(props) => <Redactors {...props} appName={this.state.selectedAppName} />} />
                   <ProtectedRoute exact path="/redactors/new" render={(props) => <EditRedactor {...props} appName={this.state.selectedAppName} isNew={true} />} />
                   <ProtectedRoute exact path="/redactors/:slug" render={(props) => <EditRedactor {...props} appName={this.state.selectedAppName} />} /> */}
