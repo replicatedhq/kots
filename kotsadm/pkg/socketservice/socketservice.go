@@ -27,6 +27,7 @@ import (
 	"github.com/replicatedhq/kots/kotsadm/pkg/supportbundle"
 	supportbundletypes "github.com/replicatedhq/kots/kotsadm/pkg/supportbundle/types"
 	"github.com/replicatedhq/kots/kotsadm/pkg/version"
+	kotsadmtypes "github.com/replicatedhq/kots/pkg/kotsadm/types"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 
 	velerov1 "github.com/vmware-tanzu/velero/pkg/apis/velero/v1"
@@ -53,6 +54,14 @@ type DeployArgs struct {
 	ClearNamespaces      []string `json:"clear_namespaces"`
 	ClearPVCs            bool     `json:"clear_pvcs"`
 	AnnotateSlug         bool     `json:"annotate_slug"`
+}
+
+type PatchArgs struct {
+	KubectlVersion string   `json:"kubectl_version"`
+	Namespace      string   `json:"namespace"`
+	Manifests      string   `json:"manifests"`
+	Patches        []string `json:"patches"`
+	// ResultCallback       string   `json:"result_callback"` maybe?
 }
 
 type AppInformersArgs struct {
@@ -114,6 +123,10 @@ func Start() *SocketService {
 		service.clusterSocketHistory = updatedClusterSocketHistory
 	})
 
+	go func() {
+		service.enableDisasterRecovery() // TODO: move this to server.go?
+	}()
+
 	startLoop(service.deployLoop, 1)
 	startLoop(service.supportBundleLoop, 1)
 	startLoop(service.restoreLoop, 1)
@@ -128,6 +141,15 @@ func startLoop(fn func(), intervalInSeconds time.Duration) {
 			time.Sleep(time.Second * intervalInSeconds)
 		}
 	}()
+}
+
+func (s *SocketService) waitForConnection() {
+	for {
+		if len(s.clusterSocketHistory) > 0 {
+			break
+		}
+		time.Sleep(time.Second * 1)
+	}
 }
 
 func (s *SocketService) deployLoop() {
@@ -631,6 +653,90 @@ func (s *SocketService) undeployApp(a *apptypes.App, d *downstreamtypes.Downstre
 	if err := app.SetRestoreUndeployStatus(a.ID, apptypes.UndeployInProcess); err != nil {
 		return errors.Wrap(err, "failed to set restore undeploy status")
 	}
+
+	return nil
+}
+
+func (s *SocketService) enableDisasterRecovery() {
+	s.waitForConnection()
+
+	for _, clusterSocket := range s.clusterSocketHistory {
+		apps, err := store.GetStore().ListAppsForDownstream(clusterSocket.ClusterID)
+		if err != nil {
+			logger.Error(errors.Wrap(err, "failed to list installed apps for downstream"))
+			continue
+		}
+
+		for _, a := range apps {
+			if err := s.enableDisasterRecoveryForApp(clusterSocket, a); err != nil {
+				logger.Error(errors.Wrapf(err, "failed to enable disaster recovery for app %s in cluster %s", a.ID, clusterSocket.ClusterID))
+				continue
+			}
+		}
+	}
+}
+
+func (s *SocketService) enableDisasterRecoveryForApp(clusterSocket ClusterSocket, a *apptypes.App) error {
+	deployedVersion, err := downstream.GetCurrentVersion(a.ID, clusterSocket.ClusterID)
+	if err != nil {
+		return errors.Wrap(err, "failed to get current downstream version")
+	}
+
+	if deployedVersion == nil {
+		return nil
+	}
+
+	d, err := store.GetStore().GetDownstream(clusterSocket.ClusterID)
+	if err != nil {
+		return errors.Wrap(err, "failed to get downstream")
+	}
+
+	deployedVersionArchive, err := ioutil.TempDir("", "kotsadm")
+	if err != nil {
+		return errors.Wrap(err, "failed to create temp dir")
+	}
+	defer os.RemoveAll(deployedVersionArchive)
+
+	err = store.GetStore().GetAppVersionArchive(a.ID, deployedVersion.ParentSequence, deployedVersionArchive)
+	if err != nil {
+		return errors.Wrap(err, "failed to get app version archive")
+	}
+
+	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(deployedVersionArchive)
+	if err != nil {
+		return errors.Wrap(err, "failed to load kotskinds")
+	}
+
+	cmd := exec.Command(fmt.Sprintf("kustomize%s", kotsKinds.KustomizeVersion()), "build", filepath.Join(deployedVersionArchive, "overlays", "downstreams", d.Name))
+	renderedManifests, err := cmd.Output()
+	if err != nil {
+		if ee, ok := err.(*exec.ExitError); ok {
+			err = fmt.Errorf("kustomize stderr: %q", string(ee.Stderr))
+		}
+		return errors.Wrap(err, "failed to run kustomize")
+	}
+	base64EncodedManifests := base64.StdEncoding.EncodeToString(renderedManifests)
+
+	appLabels := map[string]string{
+		"kots.io/app-slug": a.Slug,
+	}
+	patches, err := kotsadmtypes.GetDisasterRecoveryPatches(appLabels)
+	if err != nil {
+		return errors.Wrap(err, "failed to get disaster recovery patches")
+	}
+
+	args := PatchArgs{
+		KubectlVersion: kotsKinds.KotsApplication.Spec.KubectlVersion,
+		Namespace:      ".",
+		Manifests:      base64EncodedManifests,
+		Patches:        patches,
+	}
+
+	c, err := s.Server.GetChannel(clusterSocket.SocketID)
+	if err != nil {
+		return errors.Wrap(err, "failed to get socket channel from server")
+	}
+	c.Emit("patch", args)
 
 	return nil
 }
