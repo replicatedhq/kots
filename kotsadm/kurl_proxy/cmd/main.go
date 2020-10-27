@@ -30,6 +30,7 @@ import (
 	"k8s.io/client-go/kubernetes"
 	corev1 "k8s.io/client-go/kubernetes/typed/core/v1"
 	"k8s.io/client-go/rest"
+	"html/template"
 )
 
 type cert struct {
@@ -239,12 +240,14 @@ func getHttpsServer(upstream *url.URL, tlsSecretName string, secrets corev1.Secr
 		}
 
 		app, err := kotsadmApplication()
+
 		if err != nil {
 			log.Printf("No kotsadm application metadata: %v", err) // continue
 		}
+		appIcon := template.URL(app.Spec.Icon)
 		c.HTML(http.StatusOK, "tls.html", gin.H{
 			"Secret":   tlsSecretName,
-			"AppIcon":  app.Spec.Icon,
+			"AppIcon":  appIcon,
 			"AppTitle": app.Spec.Title,
 		})
 	})
@@ -466,5 +469,6 @@ func kotsadmApplication() (kotsadmApp, error) {
 	if err != nil {
 		return app, errors.Wrap(err, "unmarshal /etc/kotsadm/application.yaml")
 	}
+
 	return app, nil
 }
