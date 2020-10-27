@@ -90,3 +90,18 @@
     -webkit-transform: rotate(45deg);
   }
 }
+
+.SnapshotRow--wrapper {
+  padding: 12px;
+  border-bottom: 1px solid #C4C8CA;
+  background-color: #ffffff;
+  transition: background-color .2s;
+}
+
+.snapshotDetails--wrapper {
+  padding: 10px;
+  background: #FFFFFF;
+  border: 1px solid #C4C8CA;
+  box-sizing: border-box;
+  border-radius: 6px;
+}
