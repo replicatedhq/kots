@@ -38,7 +38,7 @@ func Start() {
 	// run store migrations
 	store.GetStore().RunMigrations()
 
-	// run app migrations
+	// run other migrations
 	migration.RunMigrations()
 
 	if err := informers.Start(); err != nil {
