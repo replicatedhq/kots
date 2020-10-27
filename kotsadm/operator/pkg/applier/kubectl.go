@@ -97,31 +97,6 @@ func (c *Kubectl) Preflight(preflightURI string, ignorePermissions bool) error {
 	return nil
 }
 
-func (c *Kubectl) Patch(targetNamespace string, yamlDoc []byte, patch string) ([]byte, []byte, error) {
-	args := []string{
-		"patch",
-		fmt.Sprintf("-p=%s", patch),
-	}
-
-	if targetNamespace != "" {
-		args = append(args, []string{
-			"-n",
-			targetNamespace,
-		}...)
-	}
-
-	args = append(args, []string{
-		"-f",
-		"-",
-	}...)
-
-	cmd := c.kubectlCommand(args...)
-	cmd.Stdin = bytes.NewReader(yamlDoc)
-
-	stdout, stderr, err := Run(cmd)
-	return stdout, stderr, errors.Wrap(err, "failed to run kubectl patch")
-}
-
 func (c *Kubectl) Remove(targetNamespace string, yamlDoc []byte, wait bool) ([]byte, []byte, error) {
 	args := []string{
 		"delete",

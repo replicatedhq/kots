@@ -56,13 +56,6 @@ type PreflightRequest struct {
 	IgnorePermissions bool   `json:"ignorePermissions"`
 }
 
-type PatchRequest struct {
-	KubectlVersion string   `json:"kubectl_version"`
-	Namespace      string   `json:"namespace"`
-	Manifests      string   `json:"manifests"`
-	Patches        []string `json:"patches"`
-}
-
 type SupportBundleRequest struct {
 	URI string `json:"uri"`
 }
@@ -288,14 +281,6 @@ func (c *Client) registerHandlers(socketClient *socket.Client) error {
 	})
 	if err != nil {
 		return errors.Wrap(err, "failed to add deploy handler")
-	}
-
-	err = socketClient.On("patch", func(h *socket.Channel, args PatchRequest) {
-		log.Println("received a patch request")
-		c.patchResources(args)
-	})
-	if err != nil {
-		return errors.Wrap(err, "failed to add disaster recovery migration handler")
 	}
 
 	err = socketClient.On("supportbundle", func(h *socket.Channel, args SupportBundleRequest) {

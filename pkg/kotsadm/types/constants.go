@@ -1,9 +1,7 @@
 package types
 
 import (
-	"encoding/json"
-
-	"github.com/pkg/errors"
+	"fmt"
 )
 
 const KotsadmKey = "kots.io/kotsadm"
@@ -13,11 +11,11 @@ const ClusterTokenSecret = "kotsadm-cluster-token"
 const PrivateKotsadmRegistrySecret = "kotsadm-private-registry"
 const KotsadmConfigMap = "kotsadm-confg"
 
-const BackupLabel = "kots.io/backup"
-const BackupLabelValue = "velero"
-
 const ExcludeLabel = "velero.io/exclude-from-backup"
 const ExcludeLabelValue = "true"
+
+const BackupLabel = "kots.io/backup"
+const BackupLabelValue = "velero"
 
 func GetKotsadmLabels(additionalLabels ...map[string]string) map[string]string {
 	labels := map[string]string{
@@ -34,56 +32,53 @@ func GetKotsadmLabels(additionalLabels ...map[string]string) map[string]string {
 	return labels
 }
 
-func GetDisasterRecoveryPatches(additionalLabels ...map[string]string) ([]string, error) {
-	labels := map[string]string{
-		BackupLabel: BackupLabelValue,
-	}
-	for _, l := range additionalLabels {
-		for k, v := range l {
-			labels[k] = v
-		}
-	}
+func GetDisasterRecoveryLabelTransformerYAML() string {
+	// reference (selectors/matchLabels excluded): https://github.com/kubernetes-sigs/kustomize/blob/6b81ae9a93c06c2ef500a407e27a52c68b01e3d8/api/konfig/builtinpluginconsts/commonlabels.go
 
-	// top level object labels patch
-	type Metadata struct {
-		Labels map[string]string `json:"labels"`
-	}
-	type TopLevelPatch struct {
-		Metadata Metadata `json:"metadata"`
-	}
-	p1 := TopLevelPatch{
-		Metadata: Metadata{
-			Labels: labels,
-		},
-	}
-	p1Str, err := json.Marshal(p1)
-	if err != nil {
-		return []string{}, errors.Wrap(err, "failed to marshal disaster recovery top level patch")
-	}
+	// TODO: handle volumeClaimTemplates labels?
+	// - path: spec/volumeClaimTemplates[]/metadata/labels
+	// create: true
+	// group: apps
+	// kind: StatefulSet
 
-	// template level labels patch
-	type Template struct {
-		Metadata Metadata `json:"metadata"`
-	}
-	type Spec struct {
-		Template Template `json:"template"`
-	}
-	type TemplatePatch struct {
-		Spec Spec `json:"spec"`
-	}
-	p2 := TemplatePatch{
-		Spec: Spec{
-			Template: Template{
-				Metadata: Metadata{
-					Labels: labels,
-				},
-			},
-		},
-	}
-	p2Str, err := json.Marshal(p2)
-	if err != nil {
-		return []string{}, errors.Wrap(err, "failed to marshal disaster template level patch")
-	}
+	return fmt.Sprintf(`apiVersion: builtin
+kind: LabelTransformer
+metadata:
+  name: dr-label-transformer
+labels:
+  %s: %s
+fieldSpecs:
+- path: metadata/labels
+  create: true
+- path: spec/template/metadata/labels
+  create: true
+  version: v1
+  kind: ReplicationController
+- path: spec/template/metadata/labels
+  create: true
+  kind: Deployment
+- path: spec/template/metadata/labels
+  create: true
+  kind: ReplicaSet
+- path: spec/template/metadata/labels
+  create: true
+  kind: DaemonSet
+- path: spec/template/metadata/labels
+  create: true
+  group: apps
+  kind: StatefulSet
 
-	return []string{string(p1Str), string(p2Str)}, nil
+- path: spec/template/metadata/labels
+  create: true
+  group: batch
+  kind: Job
+- path: spec/jobTemplate/metadata/labels
+  create: true
+  group: batch
+  kind: CronJob
+- path: spec/jobTemplate/spec/template/metadata/labels
+  create: true
+  group: batch
+  kind: CronJob
+`, BackupLabel, BackupLabelValue)
 }
