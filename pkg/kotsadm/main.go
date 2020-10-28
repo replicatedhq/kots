@@ -503,7 +503,7 @@ func ensureDisasterRecoveryLabels(deployOptions *types.DeployOptions, clientset 
 	}
 
 	// RBAC
-	isClusterScoped, err := isKotsadmClusterScoped(deployOptions.ApplicationMetadata)
+	isClusterScoped, err := isKotsadmClusterScoped(deployOptions.ApplicationMetadata) // TODO: does ApplicationMetadata exist?
 	if err != nil {
 		return errors.Wrap(err, "failed to check if kotsadm is cluster scoped")
 	}

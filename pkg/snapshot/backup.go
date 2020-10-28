@@ -1,6 +1,7 @@
 package snapshot
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -10,21 +11,20 @@ import (
 	"github.com/replicatedhq/kots/pkg/auth"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/logger"
+	velerov1 "github.com/vmware-tanzu/velero/pkg/apis/velero/v1"
+	veleroclientv1 "github.com/vmware-tanzu/velero/pkg/generated/clientset/versioned/typed/velero/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
+	"sigs.k8s.io/controller-runtime/pkg/client/config"
 )
 
 type InstanceBackupOptions struct {
 	Namespace             string
 	KubernetesConfigFlags *genericclioptions.ConfigFlags
-	Silent                bool
 }
 
 func InstanceBackup(instanceBackupOptions InstanceBackupOptions) error {
 	log := logger.NewLogger()
-	if instanceBackupOptions.Silent {
-		log.Silence()
-	}
-
 	log.ActionWithSpinner("Connecting to cluster")
 
 	clientset, err := k8sutil.GetClientset(instanceBackupOptions.KubernetesConfigFlags)
@@ -111,4 +111,30 @@ func InstanceBackup(instanceBackupOptions InstanceBackupOptions) error {
 	log.ActionWithoutSpinner(fmt.Sprintf("Backup request has been created. Backup name is %s", backupResponse.BackupName))
 
 	return nil
+}
+
+func ListBackups() ([]velerov1.Backup, error) {
+	bsl, err := findBackupStoreLocation()
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get velero namespace")
+	}
+
+	veleroNamespace := bsl.Namespace
+
+	cfg, err := config.GetConfig()
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get cluster config")
+	}
+
+	veleroClient, err := veleroclientv1.NewForConfig(cfg)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to create clientset")
+	}
+
+	b, err := veleroClient.Backups(veleroNamespace).List(context.TODO(), metav1.ListOptions{})
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to list backups")
+	}
+
+	return b.Items, nil
 }

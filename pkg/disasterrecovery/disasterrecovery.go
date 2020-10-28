@@ -1,9 +1,9 @@
 package disasterrecovery
 
 import (
-	"filepath"
 	"fmt"
 	"io/ioutil"
+	"path/filepath"
 	"strings"
 
 	"github.com/pkg/errors"
@@ -12,7 +12,7 @@ import (
 )
 
 const (
-	LabelTransformerFileName = "dr-label-transformer.yaml"
+	LabelTransformerFileName = "backup-label-transformer.yaml"
 )
 
 func GetLabelTransformerYAML(additionalLabels map[string]string) string {
@@ -34,7 +34,7 @@ func GetLabelTransformerYAML(additionalLabels map[string]string) string {
 	return fmt.Sprintf(`apiVersion: builtin
 kind: LabelTransformer
 metadata:
-  name: dr-label-transformer
+  name: backup-label-transformer
 labels:
 %s
 fieldSpecs:

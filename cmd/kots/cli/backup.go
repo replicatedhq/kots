@@ -1,8 +1,8 @@
 package cli
 
 import (
-	"github.com/pkg/errors"
-	"github.com/replicatedhq/kots/pkg/snapshot"
+	"os"
+
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -10,29 +10,25 @@ import (
 func BackupCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:           "backup",
-		Short:         "Create an instance backup/snapshot",
-		Long:          `Create an instance backup/snapshot`,
+		Short:         "Provides wrapper functionality to interface with the backup source",
+		Long:          ``,
 		SilenceUsage:  true,
 		SilenceErrors: false,
 		PreRun: func(cmd *cobra.Command, args []string) {
 			viper.BindPFlags(cmd.Flags())
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
-			v := viper.GetViper()
-
-			instanceBackupOptions := snapshot.InstanceBackupOptions{
-				Namespace:             v.GetString("namespace"),
-				KubernetesConfigFlags: kubernetesConfigFlags,
-			}
-			if err := snapshot.InstanceBackup(instanceBackupOptions); err != nil {
-				return errors.Cause(err)
+			if len(args) == 0 {
+				cmd.Help()
+				os.Exit(1)
 			}
 
 			return nil
 		},
 	}
 
-	cmd.Flags().StringP("namespace", "n", "default", "namespace in which kots/kotsadm is installed")
+	cmd.AddCommand(BackupCreateCmd())
+	cmd.AddCommand(BackupListCmd())
 
 	return cmd
 }

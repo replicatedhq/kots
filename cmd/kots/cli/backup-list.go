@@ -1,16 +1,17 @@
 package cli
 
 import (
-	"os"
-
+	"github.com/pkg/errors"
+	"github.com/replicatedhq/kots/pkg/print"
+	"github.com/replicatedhq/kots/pkg/snapshot"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
 
-func RestoreCmd() *cobra.Command {
+func BackupListCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:           "restore",
-		Short:         "Provides wrapper functionality to interface with the restore source",
+		Use:           "ls",
+		Short:         "List available backups",
 		Long:          ``,
 		SilenceUsage:  true,
 		SilenceErrors: false,
@@ -18,17 +19,16 @@ func RestoreCmd() *cobra.Command {
 			viper.BindPFlags(cmd.Flags())
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if len(args) == 0 {
-				cmd.Help()
-				os.Exit(1)
+			backups, err := snapshot.ListBackups()
+			if err != nil {
+				return errors.Cause(err)
 			}
+
+			print.Backups(backups)
 
 			return nil
 		},
 	}
-
-	cmd.AddCommand(RestoreCreateCmd())
-	cmd.AddCommand(RestoreListCmd())
 
 	return cmd
 }

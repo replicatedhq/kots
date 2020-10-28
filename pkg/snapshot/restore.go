@@ -2,11 +2,10 @@ package snapshot
 
 import (
 	"context"
-	"fmt"
+	"strings"
 
 	"github.com/pkg/errors"
 	kotsadmtypes "github.com/replicatedhq/kots/pkg/kotsadm/types"
-	"github.com/replicatedhq/kots/pkg/logger"
 	velerov1 "github.com/vmware-tanzu/velero/pkg/apis/velero/v1"
 	veleroclientv1 "github.com/vmware-tanzu/velero/pkg/generated/clientset/versioned/typed/velero/v1"
 	"github.com/vmware-tanzu/velero/pkg/kuberesource"
@@ -18,18 +17,12 @@ import (
 
 type InstanceRestoreOptions struct {
 	BackupName string
-	Silent     bool
 }
 
-func InstanceRestore(instanceRestoreOptions InstanceRestoreOptions) error {
-	log := logger.NewLogger()
-	if instanceRestoreOptions.Silent {
-		log.Silence()
-	}
-
+func InstanceRestore(instanceRestoreOptions InstanceRestoreOptions) (*velerov1.Restore, error) {
 	bsl, err := findBackupStoreLocation()
 	if err != nil {
-		return errors.Wrap(err, "failed to get velero namespace")
+		return nil, errors.Wrap(err, "failed to get velero namespace")
 	}
 
 	veleroNamespace := bsl.Namespace
@@ -37,27 +30,27 @@ func InstanceRestore(instanceRestoreOptions InstanceRestoreOptions) error {
 	// get the backup
 	cfg, err := config.GetConfig()
 	if err != nil {
-		return errors.Wrap(err, "failed to get cluster config")
+		return nil, errors.Wrap(err, "failed to get cluster config")
 	}
 
 	veleroClient, err := veleroclientv1.NewForConfig(cfg)
 	if err != nil {
-		return errors.Wrap(err, "failed to create clientset")
+		return nil, errors.Wrap(err, "failed to create clientset")
 	}
 
 	backup, err := veleroClient.Backups(veleroNamespace).Get(context.TODO(), instanceRestoreOptions.BackupName, metav1.GetOptions{})
 	if err != nil {
-		return errors.Wrap(err, "failed to find backup")
+		return nil, errors.Wrap(err, "failed to find backup")
 	}
 
 	kotsadmImage, ok := backup.Annotations["kots.io/kotsadm-image"]
 	if !ok {
-		return errors.Wrap(err, "failed to find kotsadm image annotation")
+		return nil, errors.Wrap(err, "failed to find kotsadm image annotation")
 	}
 
 	kotsadmNamespace, ok := backup.Annotations["kots.io/kotsadm-deploy-namespace"]
 	if !ok {
-		return errors.Wrap(err, "failed to find kotsadm deploy namespace annotation")
+		return nil, errors.Wrap(err, "failed to find kotsadm deploy namespace annotation")
 	}
 
 	trueVal := true
@@ -198,17 +191,29 @@ func InstanceRestore(instanceRestoreOptions InstanceRestoreOptions) error {
 		},
 	}
 
-	restore, err = veleroClient.Restores(veleroNamespace).Create(context.TODO(), restore, metav1.CreateOptions{})
-	if err != nil {
-		return errors.Wrap(err, "failed to create restore")
+	// delete existing restore object (if exists)
+	err = veleroClient.Restores(veleroNamespace).Delete(context.TODO(), instanceRestoreOptions.BackupName, metav1.DeleteOptions{})
+	if err != nil && !strings.Contains(err.Error(), "not found") {
+		return nil, errors.Wrapf(err, "failed to delete restore %s", instanceRestoreOptions.BackupName)
 	}
 
-	log.ActionWithoutSpinner(fmt.Sprintf("Restore request has been created. Restore name is %s", restore.ObjectMeta.Name))
+	// create new restore object
+	restore, err = veleroClient.Restores(veleroNamespace).Create(context.TODO(), restore, metav1.CreateOptions{})
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to create restore")
+	}
 
-	return nil
+	return restore, nil
 }
 
-func findBackupStoreLocation() (*velerov1.BackupStorageLocation, error) {
+func ListRestores() ([]velerov1.Restore, error) {
+	bsl, err := findBackupStoreLocation()
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get velero namespace")
+	}
+
+	veleroNamespace := bsl.Namespace
+
 	cfg, err := config.GetConfig()
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get cluster config")
@@ -216,19 +221,13 @@ func findBackupStoreLocation() (*velerov1.BackupStorageLocation, error) {
 
 	veleroClient, err := veleroclientv1.NewForConfig(cfg)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to create velero clientset")
+		return nil, errors.Wrap(err, "failed to create clientset")
 	}
 
-	backupStorageLocations, err := veleroClient.BackupStorageLocations("").List(context.TODO(), metav1.ListOptions{})
+	r, err := veleroClient.Restores(veleroNamespace).List(context.TODO(), metav1.ListOptions{})
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to list backupstoragelocations")
+		return nil, errors.Wrap(err, "failed to list restores")
 	}
 
-	for _, backupStorageLocation := range backupStorageLocations.Items {
-		if backupStorageLocation.Name == "default" {
-			return &backupStorageLocation, nil
-		}
-	}
-
-	return nil, errors.New("global config not found")
+	return r.Items, nil
 }
