@@ -242,24 +242,6 @@ func Deploy(deployOptions types.DeployOptions) error {
 	return nil
 }
 
-func EnableDisasterRecovery(options *types.EnableDisasterRecoveryOptions) error {
-	clientset, err := k8sutil.GetClientset(options.KubernetesConfigFlags)
-	if err != nil {
-		return errors.Wrap(err, "failed to get clientset")
-	}
-
-	deployOptions, err := readDeployOptionsFromCluster(options.Namespace, options.KubernetesConfigFlags, clientset)
-	if err != nil {
-		return errors.Wrap(err, "failed to read deploy options")
-	}
-
-	if err := ensureDisasterRecoveryLabels(deployOptions, clientset); err != nil {
-		return errors.Wrap(err, "failed to ensure disaster recovery labels")
-	}
-
-	return nil
-}
-
 func CreateRestoreJob(options *types.RestoreJobOptions) error {
 	cfg, err := config.GetConfig()
 	if err != nil {
