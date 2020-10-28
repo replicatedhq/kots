@@ -334,7 +334,7 @@ func kotsadmDeployment(deployOptions types.DeployOptions) *appsv1.Deployment {
 
 	env = append(env, getProxyEnv(deployOptions)...)
 
-	if deployOptions.KotsadmOptions.OverrideRegistry != "" {
+	if deployOptions.KotsadmOptions.OverrideRegistry != "" || deployOptions.Airgap {
 		env = append(env, corev1.EnvVar{
 			Name:  "DISABLE_OUTBOUND_CONNECTIONS",
 			Value: "true",

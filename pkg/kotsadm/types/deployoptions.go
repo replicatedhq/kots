@@ -29,6 +29,7 @@ type DeployOptions struct {
 	License                   *kotsv1beta1.License
 	ConfigValues              *kotsv1beta1.ConfigValues
 	AirgapArchive             string
+	Airgap                    bool
 	AppImagesPushed           bool
 	ProgressWriter            io.Writer
 	StorageBaseURI            string
