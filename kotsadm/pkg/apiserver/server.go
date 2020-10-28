@@ -15,7 +15,6 @@ import (
 	"github.com/replicatedhq/kots/kotsadm/pkg/automation"
 	"github.com/replicatedhq/kots/kotsadm/pkg/handlers"
 	"github.com/replicatedhq/kots/kotsadm/pkg/informers"
-	"github.com/replicatedhq/kots/kotsadm/pkg/migration"
 	"github.com/replicatedhq/kots/kotsadm/pkg/snapshotscheduler"
 	"github.com/replicatedhq/kots/kotsadm/pkg/socketservice"
 	"github.com/replicatedhq/kots/kotsadm/pkg/store"
@@ -35,11 +34,7 @@ func Start() {
 		panic(err)
 	}
 
-	// run store migrations
 	store.GetStore().RunMigrations()
-
-	// run other migrations
-	migration.RunMigrations()
 
 	if err := informers.Start(); err != nil {
 		log.Println("Failed to start informers", err)

@@ -7,8 +7,8 @@ import (
 	"path/filepath"
 
 	"github.com/pkg/errors"
+	"github.com/replicatedhq/kots/pkg/disasterrecovery"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
-	kotsadmtypes "github.com/replicatedhq/kots/pkg/kotsadm/types"
 	yaml "gopkg.in/yaml.v2"
 	kustomizetypes "sigs.k8s.io/kustomize/api/types"
 	k8syaml "sigs.k8s.io/yaml"
@@ -28,10 +28,6 @@ type WriteOptions struct {
 
 func (m *Midstream) KustomizationFilename(options WriteOptions) string {
 	return path.Join(options.MidstreamDir, "kustomization.yaml")
-}
-
-func (m *Midstream) DisasterRecoveryLabelTransformerFilename(options WriteOptions) string {
-	return path.Join(options.MidstreamDir, "dr-label-transformer.yaml")
 }
 
 func (m *Midstream) WriteMidstream(options WriteOptions) error {
@@ -64,11 +60,11 @@ func (m *Midstream) WriteMidstream(options WriteOptions) error {
 	}
 
 	// transformers
-	drLabelTransformerRelPath, err := m.writeDisasterRecoveryLabelTransformer(options)
+	drLabelTransformerFilename, err := m.writeDisasterRecoveryLabelTransformer(options)
 	if err != nil {
 		return errors.Wrap(err, "failed to write disaster recovery label transformer")
 	}
-	m.Kustomization.Transformers = []string{drLabelTransformerRelPath}
+	m.Kustomization.Transformers = append(m.Kustomization.Transformers, drLabelTransformerFilename)
 
 	// annotations
 	if m.Kustomization.CommonAnnotations == nil {
@@ -144,25 +140,18 @@ func (m *Midstream) writeKustomization(options WriteOptions) error {
 }
 
 func (m *Midstream) writeDisasterRecoveryLabelTransformer(options WriteOptions) (string, error) {
-	drLabelTransformerYAML := kotsadmtypes.GetDisasterRecoveryLabelTransformerYAML()
-
-	path := m.DisasterRecoveryLabelTransformerFilename(options)
-	f, err := os.Create(path)
-	if err != nil {
-		return "", errors.Wrap(err, "failed to create disaster recovery label transformer file")
+	additionalLabels := map[string]string{
+		"kots.io/app-slug": options.AppSlug,
 	}
-	defer f.Close()
+	drLabelTransformerYAML := disasterrecovery.GetLabelTransformerYAML(additionalLabels)
 
-	if _, err := f.Write([]byte(drLabelTransformerYAML)); err != nil {
-		return "", errors.Wrap(err, "failed to write disaster recovery label transformer yaml to file")
+	absFilename := filepath.Join(options.MidstreamDir, disasterrecovery.LabelTransformerFileName)
+
+	if err := ioutil.WriteFile(absFilename, []byte(drLabelTransformerYAML), 0644); err != nil {
+		return "", errors.Wrap(err, "failed to write disaster recovery label transformer yaml file")
 	}
 
-	relativePath, err := filepath.Rel(options.MidstreamDir, path)
-	if err != nil {
-		return "", errors.Wrap(err, "failed to determine relative path for disaster recovery label transformer file from midstream")
-	}
-
-	return relativePath, nil
+	return disasterrecovery.LabelTransformerFileName, nil
 }
 
 func (m *Midstream) writePullSecret(options WriteOptions) (string, error) {
