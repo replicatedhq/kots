@@ -45,7 +45,7 @@ func RestoreCreateCmd() *cobra.Command {
 		},
 	}
 
-	cmd.Flags().String("from-backup", "", "the backup to create the restore from")
+	cmd.Flags().String("from-backup", "", "the name of the backup to restore from")
 
 	return cmd
 }
