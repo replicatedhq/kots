@@ -143,11 +143,14 @@ func (m *Midstream) writeDisasterRecoveryLabelTransformer(options WriteOptions) 
 	additionalLabels := map[string]string{
 		"kots.io/app-slug": options.AppSlug,
 	}
-	drLabelTransformerYAML := disasterrecovery.GetLabelTransformerYAML(additionalLabels)
+	drLabelTransformerYAML, err := disasterrecovery.GetLabelTransformerYAML(additionalLabels)
+	if err != nil {
+		return "", errors.Wrap(err, "failed to get disaster recovery label transformer yaml")
+	}
 
 	absFilename := filepath.Join(options.MidstreamDir, disasterrecovery.LabelTransformerFileName)
 
-	if err := ioutil.WriteFile(absFilename, []byte(drLabelTransformerYAML), 0644); err != nil {
+	if err := ioutil.WriteFile(absFilename, drLabelTransformerYAML, 0644); err != nil {
 		return "", errors.Wrap(err, "failed to write disaster recovery label transformer yaml file")
 	}
 
