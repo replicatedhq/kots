@@ -23,6 +23,7 @@ require (
 	github.com/fatih/color v1.7.0
 	github.com/garyburd/redigo v1.6.0 // indirect
 	github.com/ghodss/yaml v1.0.0
+	github.com/gin-gonic/gin v1.6.3 // indirect
 	github.com/gofrs/uuid v3.3.0+incompatible // indirect
 	github.com/google/gofuzz v1.1.0
 	github.com/google/uuid v1.1.1
@@ -38,6 +39,7 @@ require (
 	github.com/otiai10/copy v1.0.2
 	github.com/phayes/freeport v0.0.0-20180830031419-95f893ade6f2
 	github.com/pkg/errors v0.9.1
+	github.com/replicatedhq/kots/kotsadm/operator v0.0.0-20201029043215-1048f9f7a79f // indirect
 	github.com/replicatedhq/kurl/kurlkinds v0.0.0-20200617224429-55f493a72baf
 	github.com/replicatedhq/troubleshoot v0.9.48
 	github.com/replicatedhq/yaml/v3 v3.0.0-beta5-replicatedhq
