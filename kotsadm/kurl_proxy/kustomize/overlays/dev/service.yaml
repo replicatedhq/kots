@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: kurl-proxy
+spec:
+  ports:
+  - port: 8800
+    targetPort: 30880
+    nodePort: 30880

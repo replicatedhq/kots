@@ -48,8 +48,13 @@ func Start() {
 		log.Println("Failed to start snapshot scheduler", err)
 	}
 
-	if err := automation.AutomateInstall(); err != nil {
-		log.Println("Failed to run automated installs", err)
+	waitForAirgap, err := automation.NeedToWaitForAirgapApp()
+	if err != nil {
+		log.Println("Failed to check if airgap install is in progress", err)
+	} else if !waitForAirgap {
+		if err := automation.AutomateInstall(); err != nil {
+			log.Println("Failed to run automated installs", err)
+		}
 	}
 
 	u, err := url.Parse("http://kotsadm-api-node:3000")
@@ -99,6 +104,7 @@ func Start() {
 	r.Path("/api/v1/upload").Methods("PUT").HandlerFunc(handlers.UploadExistingApp)
 	r.Path("/api/v1/download").Methods("GET").HandlerFunc(handlers.DownloadApp)
 	r.Path("/api/v1/snapshot/backup").Methods("POST").HandlerFunc(handlers.CreateInstanceBackup)
+	r.Path("/api/v1/airgap/install").Methods("POST").HandlerFunc(handlers.UploadInitialAirgapApp)
 
 	/**********************************************************************
 	* Session auth routes

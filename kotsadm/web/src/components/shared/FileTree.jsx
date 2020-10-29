@@ -28,6 +28,22 @@ export default class FileTree extends React.Component {
     return newPath1.split(/\//).slice(1, 2 + this.getLevel()).join("/") === newPath2.split(/\//).slice(1, 2 + this.getLevel()).join("/")
   }
 
+  componentDidMount() {
+    this.scrollToActiveFile("active-file");
+
+    if (this.props.files?.length && this.props.autoExpand) {
+      this.handleCheckboxChange(this.props.files[0].path, true);
+    }
+  }
+
+  scrollToActiveFile = (id) => {
+    var e = document.getElementById(id);
+    if (!!e && e.scrollIntoView) {
+        e.scrollIntoView();
+    }
+ }
+
+
   render() {
     const { files, selectedFile, handleFileSelect, isRoot } = this.props;
 
@@ -50,7 +66,7 @@ export default class FileTree extends React.Component {
               />
             </li>
             :
-            <li key={`${file.path}-${i}`} title={file.name} className={`u-position--relative is-file ${selectedFile.includes(file.path) ? "is-selected" : ""}`} onClick={() => this.handleFileSelect(file.path)}>
+            <li key={`${file.path}-${i}`} id={`${selectedFile.includes(file.path) ? "active-file" : ""}`} title={file.name} className={`u-position--relative is-file ${selectedFile.includes(file.path) ? "is-selected" : ""}`} onClick={() => this.handleFileSelect(file.path)}>
               <div>{file.name}</div>
             </li>
         ))

@@ -290,8 +290,10 @@ class AppVersionHistory extends Component {
         this.setState({
           displayShowDetailsModal: !this.state.displayShowDetailsModal,
           deployView: true,
+          versionToDeploy: version,
           yamlErrorDetails
         });
+        return;
       }
       if (version.status === "pending_preflight") {
         this.setState({

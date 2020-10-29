@@ -42,20 +42,39 @@ func DeployAppVersion(w http.ResponseWriter, r *http.Request) {
 	sequence, err := strconv.Atoi(mux.Vars(r)["sequence"])
 	if err != nil {
 		logger.Error(err)
-		w.WriteHeader(500)
+		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
 	a, err := store.GetStore().GetAppFromSlug(appSlug)
 	if err != nil {
 		logger.Error(err)
-		w.WriteHeader(500)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	downstreams, err := store.GetStore().ListDownstreamsForApp(a.ID)
+	if err != nil {
+		err = errors.Wrap(err, "failed to list downstreams for app")
+		logger.Error(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	} else if len(downstreams) == 0 {
+		err = errors.New("no downstreams for app")
+		logger.Error(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	if err := downstream.DeleteDownstreamDeployStatus(a.ID, downstreams[0].ClusterID, int64(sequence)); err != nil {
+		logger.Error(err)
+		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
 	if err := version.DeployVersion(a.ID, int64(sequence)); err != nil {
 		logger.Error(err)
-		w.WriteHeader(500)
+		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
