@@ -81,20 +81,20 @@ func getAPIAutoCreateClusterToken(namespace string, clientset *kubernetes.Client
 		return autoCreateClusterTokenSecretVal, nil
 	}
 
-	existingDeployment, err := clientset.AppsV1().Deployments(namespace).Get(context.TODO(), "kotsadm-api", metav1.GetOptions{})
+	existingDeployment, err := clientset.AppsV1().Deployments(namespace).Get(context.TODO(), "kotsadm", metav1.GetOptions{})
 	if err != nil {
 		return "", errors.Wrap(err, "failed to read deployment")
 	}
 
 	containerIdx := -1
 	for idx, c := range existingDeployment.Spec.Template.Spec.Containers {
-		if c.Name == "kotsadm-api" {
+		if c.Name == "kotsadm" {
 			containerIdx = idx
 		}
 	}
 
 	if containerIdx == -1 {
-		return "", errors.New("failed to find kotsadm-api container in deployment")
+		return "", errors.New("failed to find kotsadm container in deployment")
 	}
 
 	for _, env := range existingDeployment.Spec.Template.Spec.Containers[containerIdx].Env {

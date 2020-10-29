@@ -32,6 +32,8 @@ func RootCmd() *cobra.Command {
 	cmd.AddCommand(AdminConsoleCmd())
 	cmd.AddCommand(ResetPasswordCmd())
 	cmd.AddCommand(VersionCmd())
+	cmd.AddCommand(BackupCmd())
+	cmd.AddCommand(RestoreCmd())
 
 	viper.BindPFlags(cmd.Flags())
 

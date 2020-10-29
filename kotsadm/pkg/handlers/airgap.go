@@ -14,6 +14,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/kotsadm/pkg/airgap"
+	"github.com/replicatedhq/kots/kotsadm/pkg/automation"
 	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
 	"github.com/replicatedhq/kots/kotsadm/pkg/store"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
@@ -451,6 +452,41 @@ func cleanUp(uploadedFileIdentifier string, totalChunks int64) error {
 	}
 
 	return nil
+}
+
+func UploadInitialAirgapApp(w http.ResponseWriter, r *http.Request) {
+	if err := requireValidKOTSToken(w, r); err != nil {
+		logger.Error(errors.Wrap(err, "failed to validate token"))
+		return
+	}
+
+	appSlug := r.FormValue("appSlug")
+	archiveFile, archiveHeader, err := r.FormFile("appArchive")
+	if err != nil {
+		logger.Error(errors.Wrap(err, "failed to get form file reader"))
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	defer archiveFile.Close()
+
+	appArchive, err := ioutil.ReadAll(archiveFile)
+	if err != nil {
+		logger.Error(errors.Wrap(err, "failed to get read form file"))
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	files := map[string][]byte{
+		archiveHeader.Filename: appArchive,
+	}
+	err = automation.AirgapInstall(appSlug, files)
+	if err != nil {
+		logger.Error(errors.Wrap(err, "failed to install app"))
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
 }
 
 // Backwards compatibility airgap upload handler

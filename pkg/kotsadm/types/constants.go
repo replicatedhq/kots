@@ -7,13 +7,16 @@ const ClusterTokenSecret = "kotsadm-cluster-token"
 const PrivateKotsadmRegistrySecret = "kotsadm-private-registry"
 const KotsadmConfigMap = "kotsadm-confg"
 
-const VeleroKey = "velero.io/exclude-from-backup"
-const VeleroLabelConsoleValue = "true"
+const ExcludeLabel = "velero.io/exclude-from-backup"
+const ExcludeLabelValue = "true"
+
+const BackupLabel = "kots.io/backup"
+const BackupLabelValue = "velero"
 
 func GetKotsadmLabels(additionalLabels ...map[string]string) map[string]string {
 	labels := map[string]string{
-		KotsadmKey: KotsadmLabelValue,
-		VeleroKey:  VeleroLabelConsoleValue,
+		KotsadmKey:  KotsadmLabelValue,
+		BackupLabel: BackupLabelValue,
 	}
 
 	for _, l := range additionalLabels {

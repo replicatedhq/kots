@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 
 	"github.com/pkg/errors"
+	"github.com/replicatedhq/kots/pkg/disasterrecovery"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	yaml "gopkg.in/yaml.v2"
 	kustomizetypes "sigs.k8s.io/kustomize/api/types"
@@ -58,6 +59,14 @@ func (m *Midstream) WriteMidstream(options WriteOptions) error {
 		return errors.Wrap(err, "failed to write patches")
 	}
 
+	// transformers
+	drLabelTransformerFilename, err := m.writeDisasterRecoveryLabelTransformer(options)
+	if err != nil {
+		return errors.Wrap(err, "failed to write disaster recovery label transformer")
+	}
+	m.Kustomization.Transformers = append(m.Kustomization.Transformers, drLabelTransformerFilename)
+
+	// annotations
 	if m.Kustomization.CommonAnnotations == nil {
 		m.Kustomization.CommonAnnotations = make(map[string]string)
 	}
@@ -89,10 +98,13 @@ func (m *Midstream) mergeKustomization(options WriteOptions, existing *kustomize
 	newResources := findNewStrings(m.Kustomization.Resources, existing.Resources)
 	m.Kustomization.Resources = append(existing.Resources, newResources...)
 
+	newTransformers := findNewStrings(m.Kustomization.Transformers, existing.Transformers)
+	m.Kustomization.Transformers = append(existing.Transformers, newTransformers...)
+
+	// annotations
 	if existing.CommonAnnotations == nil {
 		existing.CommonAnnotations = make(map[string]string)
 	}
-
 	delete(existing.CommonAnnotations, "kots.io/app-sequence")
 	m.Kustomization.CommonAnnotations = mergeMaps(m.Kustomization.CommonAnnotations, existing.CommonAnnotations)
 }
@@ -125,6 +137,24 @@ func (m *Midstream) writeKustomization(options WriteOptions) error {
 	}
 
 	return nil
+}
+
+func (m *Midstream) writeDisasterRecoveryLabelTransformer(options WriteOptions) (string, error) {
+	additionalLabels := map[string]string{
+		"kots.io/app-slug": options.AppSlug,
+	}
+	drLabelTransformerYAML, err := disasterrecovery.GetLabelTransformerYAML(additionalLabels)
+	if err != nil {
+		return "", errors.Wrap(err, "failed to get disaster recovery label transformer yaml")
+	}
+
+	absFilename := filepath.Join(options.MidstreamDir, disasterrecovery.LabelTransformerFileName)
+
+	if err := ioutil.WriteFile(absFilename, drLabelTransformerYAML, 0644); err != nil {
+		return "", errors.Wrap(err, "failed to write disaster recovery label transformer yaml file")
+	}
+
+	return disasterrecovery.LabelTransformerFileName, nil
 }
 
 func (m *Midstream) writePullSecret(options WriteOptions) (string, error) {

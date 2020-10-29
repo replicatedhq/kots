@@ -14,8 +14,6 @@ import (
 	"github.com/replicatedhq/kots/kotsadm/pkg/snapshot"
 	snapshottypes "github.com/replicatedhq/kots/kotsadm/pkg/snapshot/types"
 	"github.com/replicatedhq/kots/kotsadm/pkg/store"
-	"github.com/replicatedhq/kots/pkg/kotsadm"
-	"github.com/replicatedhq/kots/pkg/kotsadm/types"
 	velerov1 "github.com/vmware-tanzu/velero/pkg/apis/velero/v1"
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
 )
@@ -48,23 +46,6 @@ func CreateRestore(w http.ResponseWriter, r *http.Request) {
 		logger.Error(err)
 		createRestoreResponse.Error = "failed to find backup"
 		JSON(w, http.StatusInternalServerError, createRestoreResponse)
-		return
-	}
-
-	if backup.Annotations[types.VeleroKey] == types.VeleroLabelConsoleValue {
-		// this is a kotsadm snapshot being restored
-		opts := &types.RestoreJobOptions{
-			BackupName: snapshotName,
-		}
-		if err := kotsadm.CreateRestoreJob(opts); err != nil {
-			logger.Error(err)
-			createRestoreResponse.Error = "failed to initiate restore"
-			JSON(w, http.StatusInternalServerError, createRestoreResponse)
-			return
-		}
-
-		createRestoreResponse.Success = true
-		JSON(w, http.StatusOK, createRestoreResponse)
 		return
 	}
 

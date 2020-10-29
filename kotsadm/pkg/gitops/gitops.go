@@ -22,6 +22,7 @@ import (
 	go_git_ssh "github.com/go-git/go-git/v5/plumbing/transport/ssh"
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/crypto"
+	"github.com/replicatedhq/kots/pkg/kotsadm/types"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"golang.org/x/crypto/ssh"
 	v1 "k8s.io/api/core/v1"
@@ -291,6 +292,7 @@ func UpdateDownstreamGitOps(appID, clusterID, uri, branch, path, format, action 
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "kotsadm-gitops",
 				Namespace: os.Getenv("POD_NAMESPACE"),
+				Labels:    types.GetKotsadmLabels(),
 			},
 			Data: configMapData,
 		}
@@ -475,6 +477,7 @@ func CreateGitOps(provider string, repoURI string, hostname string) error {
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "kotsadm-gitops",
 				Namespace: os.Getenv("POD_NAMESPACE"),
+				Labels:    types.GetKotsadmLabels(),
 			},
 			Data: secretData,
 		}

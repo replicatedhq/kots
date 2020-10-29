@@ -7,7 +7,6 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/kotsadm/types"
-	kotstypes "github.com/replicatedhq/kots/pkg/kotsadm/types"
 	"github.com/replicatedhq/kots/pkg/util"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -366,7 +365,6 @@ func kotsadmDeployment(deployOptions types.DeployOptions) *appsv1.Deployment {
 						"backup.velero.io/backup-volumes":   "backup",
 						"pre.hook.backup.velero.io/command": `["/backup.sh"]`,
 						"pre.hook.backup.velero.io/timeout": "10m",
-						kotstypes.VeleroKey:                 kotstypes.VeleroLabelConsoleValue,
 					},
 				},
 				Spec: corev1.PodSpec{
@@ -388,105 +386,6 @@ func kotsadmDeployment(deployOptions types.DeployOptions) *appsv1.Deployment {
 					ServiceAccountName: "kotsadm",
 					RestartPolicy:      corev1.RestartPolicyAlways,
 					ImagePullSecrets:   pullSecrets,
-					InitContainers: []corev1.Container{
-						{
-							Image:           fmt.Sprintf("%s/kotsadm:%s", kotsadmRegistry(deployOptions.KotsadmOptions), kotsadmTag(deployOptions.KotsadmOptions)),
-							ImagePullPolicy: corev1.PullAlways,
-							Name:            "restore-db",
-							Command: []string{
-								"/restore-db.sh",
-							},
-							VolumeMounts: []corev1.VolumeMount{
-								{
-									Name:      "backup",
-									MountPath: "/backup",
-								},
-							},
-							Env: []corev1.EnvVar{
-								{
-									Name: "POSTGRES_PASSWORD",
-									ValueFrom: &corev1.EnvVarSource{
-										SecretKeyRef: &corev1.SecretKeySelector{
-											LocalObjectReference: corev1.LocalObjectReference{
-												Name: "kotsadm-postgres",
-											},
-											Key: "password",
-										},
-									},
-								},
-							},
-							Resources: corev1.ResourceRequirements{
-								Limits: corev1.ResourceList{
-									"cpu":    resource.MustParse("500m"),
-									"memory": resource.MustParse("500Mi"),
-								},
-								Requests: corev1.ResourceList{
-									"cpu":    resource.MustParse("100m"),
-									"memory": resource.MustParse("100Mi"),
-								},
-							},
-						},
-						{
-							Image:           fmt.Sprintf("%s/kotsadm:%s", kotsadmRegistry(deployOptions.KotsadmOptions), kotsadmTag(deployOptions.KotsadmOptions)),
-							ImagePullPolicy: corev1.PullAlways,
-							Name:            "restore-s3",
-							Command: []string{
-								"/restore-s3.sh",
-							},
-							VolumeMounts: []corev1.VolumeMount{
-								{
-									Name:      "backup",
-									MountPath: "/backup",
-								},
-							},
-							Env: []corev1.EnvVar{
-								{
-									Name:  "S3_ENDPOINT",
-									Value: "http://kotsadm-minio:9000",
-								},
-								{
-									Name:  "S3_BUCKET_NAME",
-									Value: "kotsadm",
-								},
-								{
-									Name: "S3_ACCESS_KEY_ID",
-									ValueFrom: &corev1.EnvVarSource{
-										SecretKeyRef: &corev1.SecretKeySelector{
-											LocalObjectReference: corev1.LocalObjectReference{
-												Name: "kotsadm-minio",
-											},
-											Key: "accesskey",
-										},
-									},
-								},
-								{
-									Name: "S3_SECRET_ACCESS_KEY",
-									ValueFrom: &corev1.EnvVarSource{
-										SecretKeyRef: &corev1.SecretKeySelector{
-											LocalObjectReference: corev1.LocalObjectReference{
-												Name: "kotsadm-minio",
-											},
-											Key: "secretkey",
-										},
-									},
-								},
-								{
-									Name:  "S3_BUCKET_ENDPOINT",
-									Value: "true",
-								},
-							},
-							Resources: corev1.ResourceRequirements{
-								Limits: corev1.ResourceList{
-									"cpu":    resource.MustParse("500m"),
-									"memory": resource.MustParse("500Mi"),
-								},
-								Requests: corev1.ResourceList{
-									"cpu":    resource.MustParse("100m"),
-									"memory": resource.MustParse("100Mi"),
-								},
-							},
-						},
-					},
 					Containers: []corev1.Container{
 						{
 							Image:           fmt.Sprintf("%s/kotsadm:%s", kotsadmRegistry(deployOptions.KotsadmOptions), kotsadmTag(deployOptions.KotsadmOptions)),

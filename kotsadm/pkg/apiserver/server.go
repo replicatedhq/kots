@@ -48,8 +48,13 @@ func Start() {
 		log.Println("Failed to start snapshot scheduler", err)
 	}
 
-	if err := automation.AutomateInstall(); err != nil {
-		log.Println("Failed to run automated installs", err)
+	waitForAirgap, err := automation.NeedToWaitForAirgapApp()
+	if err != nil {
+		log.Println("Failed to check if airgap install is in progress", err)
+	} else if !waitForAirgap {
+		if err := automation.AutomateInstall(); err != nil {
+			log.Println("Failed to run automated installs", err)
+		}
 	}
 
 	u, err := url.Parse("http://kotsadm-api-node:3000")
@@ -98,6 +103,8 @@ func Start() {
 	r.Path("/api/v1/kots/ports").Methods("GET").HandlerFunc(handlers.GetApplicationPorts)
 	r.Path("/api/v1/upload").Methods("PUT").HandlerFunc(handlers.UploadExistingApp)
 	r.Path("/api/v1/download").Methods("GET").HandlerFunc(handlers.DownloadApp)
+	r.Path("/api/v1/snapshot/backup").Methods("POST").HandlerFunc(handlers.CreateInstanceBackup)
+	r.Path("/api/v1/airgap/install").Methods("POST").HandlerFunc(handlers.UploadInitialAirgapApp)
 
 	/**********************************************************************
 	* Session auth routes
@@ -177,14 +184,8 @@ func Start() {
 	sessionAuthRouter.Path("/api/v1/app/{appSlug}/updatecheck").Methods("POST").HandlerFunc(handlers.AppUpdateCheck)
 	sessionAuthRouter.Path("/api/v1/app/{appSlug}/updatecheckerspec").Methods("PUT").HandlerFunc(handlers.UpdateCheckerSpec)
 
-	// kotsadm snapshots
-	sessionAuthRouter.Path("/api/v1/snapshots").Methods("GET").HandlerFunc(handlers.ListKotsadmBackups)
-	sessionAuthRouter.Path("/api/v1/snapshot/{snapshotName}").Methods("GET").HandlerFunc(handlers.GetKotsadmBackup)
-	sessionAuthRouter.Path("/api/v1/snapshot/{snapshotName}/delete").Methods("POST").HandlerFunc(handlers.DeleteKotsadmBackup)
-	sessionAuthRouter.Path("/api/v1/velero").Methods("GET").HandlerFunc(handlers.GetVeleroStatus)
-
 	// App snapshot routes
-	sessionAuthRouter.Path("/api/v1/app/{appSlug}/snapshot/backup").Methods("POST").HandlerFunc(handlers.CreateBackup)
+	sessionAuthRouter.Path("/api/v1/app/{appSlug}/snapshot/backup").Methods("POST").HandlerFunc(handlers.CreateApplicationBackup)
 	sessionAuthRouter.Path("/api/v1/app/{appSlug}/snapshot/restore/status").Methods("GET").HandlerFunc(handlers.GetRestoreStatus)
 	sessionAuthRouter.Path("/api/v1/app/{appSlug}/snapshot/restore").Methods("DELETE").HandlerFunc(handlers.CancelRestore)
 	sessionAuthRouter.Path("/api/v1/app/{appSlug}/snapshot/restore/{restoreName}").Methods("GET").HandlerFunc(handlers.GetKotsadmRestore)
@@ -193,12 +194,14 @@ func Start() {
 	sessionAuthRouter.Path("/api/v1/app/{appSlug}/snapshot/config").Methods("PUT").HandlerFunc(handlers.SaveSnapshotConfig)
 
 	// Global snapshot routes
+	sessionAuthRouter.Path("/api/v1/snapshots").Methods("GET").HandlerFunc(handlers.ListInstanceBackups)
 	sessionAuthRouter.Path("/api/v1/snapshots/settings").Methods("GET").HandlerFunc(handlers.GetGlobalSnapshotSettings)
 	sessionAuthRouter.Path("/api/v1/snapshots/settings").Methods("PUT").HandlerFunc(handlers.UpdateGlobalSnapshotSettings)
+	sessionAuthRouter.Path("/api/v1/snapshot/{snapshotName}").Methods("GET").HandlerFunc(handlers.GetBackup)
+	sessionAuthRouter.Path("/api/v1/snapshot/{snapshotName}/delete").Methods("POST").HandlerFunc(handlers.DeleteBackup)
 	sessionAuthRouter.Path("/api/v1/snapshot/{snapshotName}/restore").Methods("POST").HandlerFunc(handlers.CreateRestore)
-
-	// Find a home snapshot routes
 	sessionAuthRouter.Path("/api/v1/snapshot/{backup}/logs").Methods("GET").HandlerFunc(handlers.DownloadSnapshotLogs)
+	sessionAuthRouter.Path("/api/v1/velero").Methods("GET").HandlerFunc(handlers.GetVeleroStatus)
 
 	// KURL
 	sessionAuthRouter.HandleFunc("/api/v1/kurl", handlers.NotImplemented)
