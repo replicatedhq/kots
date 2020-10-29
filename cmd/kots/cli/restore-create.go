@@ -13,7 +13,7 @@ import (
 
 func RestoreCreateCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:           "create [backup name]",
+		Use:           "create --from-backup [backup name]",
 		Short:         "Starts an instance restore from a backup",
 		Long:          ``,
 		SilenceUsage:  true,
@@ -22,13 +22,16 @@ func RestoreCreateCmd() *cobra.Command {
 			viper.BindPFlags(cmd.Flags())
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if len(args) == 0 {
-				cmd.Help()
+			v := viper.GetViper()
+
+			backupName := v.GetString("from-backup")
+			if backupName == "" {
+				fmt.Printf("a backup name must be provided via the '--from-backup' flag\n")
 				os.Exit(1)
 			}
 
 			instanceRestoreOptions := snapshot.InstanceRestoreOptions{
-				BackupName: args[0],
+				BackupName: backupName,
 			}
 			restore, err := snapshot.InstanceRestore(instanceRestoreOptions)
 			if err != nil {
@@ -41,6 +44,8 @@ func RestoreCreateCmd() *cobra.Command {
 			return nil
 		},
 	}
+
+	cmd.Flags().String("from-backup", "", "the backup to create the restore from")
 
 	return cmd
 }
