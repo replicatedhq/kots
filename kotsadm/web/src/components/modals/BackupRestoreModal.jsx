@@ -28,19 +28,19 @@ export default function BackupRestoreModal(props) {
               <p className="u-fontSize--normal u-color--doveGray u-fontWeight--medium u-lineHeight--normal u-marginRight--20">{Utilities.dateFormat(snapshotToRestore?.startedAt, "MMM D YYYY @ hh:mm a")}</p>
             </div>
             <div className="flex flex1 justifyContent--flexEnd">
-            <p className="u-fontSize--normal u-color--doveGray u-fontWeight--bold u-lineHeight--normal u-marginRight--30 justifyContent--center flex alignItems--center"><span className="icon snapshot-volume-size-icon" /> {snapshotToRestore?.volumeSizeHuman} </p>
+              <p className="u-fontSize--normal u-color--doveGray u-fontWeight--bold u-lineHeight--normal u-marginRight--30 justifyContent--center flex alignItems--center"><span className="icon snapshot-volume-size-icon" /> {snapshotToRestore?.volumeSizeHuman} </p>
               <p className="u-fontSize--normal u-color--doveGray u-fontWeight--bold u-lineHeight--normal justifyContent--center flex alignItems--center"><span className="icon snapshot-volume-icon" /> {snapshotToRestore?.volumeSuccessCount}/{snapshotToRestore?.volumeCount}</p>
             </div>
           </div>
           <div className="flex flex-column u-marginTop--20">
             <p className="u-fontSize--normal u-fontWeight--normal u-color--dustyGray u-lineHeight--normal"> To start the restore, run this command on your cluster. </p>
             <CodeSnippet
-                language="bash"
-                canCopy={true}
-                onCopyText={<span className="u-color--chateauGreen">Command has been copied to your clipboard</span>}
-              >
-                kubectl kots TBD restore command
-              </CodeSnippet>
+              language="bash"
+              canCopy={true}
+              onCopyText={<span className="u-color--chateauGreen">Command has been copied to your clipboard</span>}
+            >
+              {`kubectl kots restore create --from-backup ${snapshotToRestore?.name}`}
+            </CodeSnippet>
           </div>
         </div>
         <div className="flex justifyContent--flexStart u-marginTop--20">

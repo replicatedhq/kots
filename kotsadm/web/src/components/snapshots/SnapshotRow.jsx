@@ -10,7 +10,6 @@ import { Utilities } from "../../utilities/utilities";
 
 
 class SnapshotRow extends React.Component {
-
   handleDeleteClick = snapshot => {
     this.props.toggleConfirmDeleteModal(snapshot);
   }
@@ -41,7 +40,8 @@ class SnapshotRow extends React.Component {
         <div className="flex flex1">
           <div className="flex flex-auto alignItems--center u-marginTop--5">
             <div className="flex flex1 alignItems--center">
-              <p className="u-fontSize--normal u-color--doveGray u-fontWeight--bold u-lineHeight--normal u-marginRight--30 justifyContent--center flex alignItems--center"><span className="icon snapshot-volume-size-icon" /> {snapshot?.volumeSizeHuman} </p>
+              {snapshot?.volumeSizeHuman &&
+                <p className="u-fontSize--normal u-color--doveGray u-fontWeight--bold u-lineHeight--normal u-marginRight--30 justifyContent--center flex alignItems--center"><span className="icon snapshot-volume-size-icon" /> {snapshot?.volumeSizeHuman} </p>}
               <p className="u-fontSize--normal u-color--doveGray u-fontWeight--bold u-lineHeight--normal justifyContent--center flex alignItems--center"><span className="icon snapshot-volume-icon" /> {snapshot?.volumeSuccessCount}/{snapshot?.volumeCount}</p>
             </div>
           </div>
