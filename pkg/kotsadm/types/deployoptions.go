@@ -30,6 +30,7 @@ type DeployOptions struct {
 	ConfigValues              *kotsv1beta1.ConfigValues
 	AirgapArchive             string
 	Airgap                    bool
+	AirgapRootDir             string
 	AppImagesPushed           bool
 	ProgressWriter            io.Writer
 	StorageBaseURI            string

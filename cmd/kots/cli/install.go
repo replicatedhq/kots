@@ -1,11 +1,16 @@
 package cli
 
 import (
+	"bytes"
 	"fmt"
+	"io"
 	"io/ioutil"
+	"mime/multipart"
+	"net/http"
 	"net/url"
 	"os"
 	"os/signal"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -13,6 +18,7 @@ import (
 	"github.com/manifoldco/promptui"
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
+	"github.com/replicatedhq/kots/pkg/auth"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/kotsadm"
 	"github.com/replicatedhq/kots/pkg/kotsadm/types"
@@ -24,6 +30,7 @@ import (
 	"github.com/spf13/viper"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/validation"
+	"k8s.io/client-go/kubernetes"
 )
 
 func InstallCmd() *cobra.Command {
@@ -206,6 +213,27 @@ func InstallCmd() *cobra.Command {
 				deployOptions.EnsureKotsadmConfig = true
 			}
 
+			if airgapArchive := v.GetString("airgap-bundle"); airgapArchive != "" {
+				if deployOptions.License == nil {
+					return errors.New("license is requires when airgap bundle is specified")
+				}
+
+				log.ActionWithoutSpinner("Extracting airgap bundle")
+
+				airgapRootDir, err := ioutil.TempDir("", "kotsadm-airgap")
+				if err != nil {
+					return errors.Wrap(err, "failed to create temp dir")
+				}
+				defer os.RemoveAll(airgapRootDir)
+
+				err = kotsadm.ExtractAirgapImages(airgapArchive, airgapRootDir, deployOptions.ProgressWriter)
+				if err != nil {
+					return errors.Wrap(err, "failed to extract images")
+				}
+
+				deployOptions.AirgapRootDir = airgapRootDir
+			}
+
 			log.ActionWithoutSpinner("Deploying Admin Console")
 			if err := kotsadm.Deploy(deployOptions); err != nil {
 				if _, ok := errors.Cause(err).(*types.ErrorTimeout); ok {
@@ -240,6 +268,38 @@ func InstallCmd() *cobra.Command {
 			adminConsolePort, errChan, err := k8sutil.PortForward(kubernetesConfigFlags, 8800, 3000, namespace, podName, true, stopCh, log)
 			if err != nil {
 				return errors.Wrap(err, "failed to forward port")
+			}
+
+			if deployOptions.AirgapRootDir != "" {
+				log.ActionWithoutSpinner("Uploading app archive")
+
+				var tryAgain bool
+				var err error
+
+				apiEndpoint := fmt.Sprintf("http://localhost:%d/api/v1", adminConsolePort)
+				for i := 0; i < 5; i++ {
+					tryAgain, err = uploadAirgapArchive(deployOptions, clientset, apiEndpoint, filepath.Join(deployOptions.AirgapRootDir, "app.tar.gz"))
+					if err == nil {
+						break
+					}
+
+					if tryAgain {
+						time.Sleep(10 * time.Second)
+						log.ActionWithoutSpinner("Retrying upload...")
+						continue
+					}
+
+					if err != nil {
+						return errors.Wrap(err, "failed to upload app.tar.gz")
+					}
+				}
+
+				if tryAgain {
+					return errors.Wrap(err, "giving up uploading app.tar.gz")
+				}
+
+				// remove here in case CLI is killed and defer doesn't run
+				_ = os.RemoveAll(deployOptions.AirgapRootDir)
 			}
 
 			go func() {
@@ -316,6 +376,7 @@ func InstallCmd() *cobra.Command {
 	// the following group of flags are experiemental and can be used to pull and push images during install time
 	cmd.Flags().Bool("rewrite-images", false, "set to true to force all container images to be rewritten and pushed to a local registry")
 	cmd.Flags().String("image-namespace", "", "the namespace/org in the docker registry to push images to (required when --rewrite-images is set)")
+	// set this to http://127.0.0.1:30065/api/v1 in dev environment
 	cmd.Flags().String("registry-endpoint", "", "the endpoint of the local docker registry to use when pushing images (required when --rewrite-images is set)")
 	cmd.Flags().MarkHidden("rewrite-images")
 	cmd.Flags().MarkHidden("image-namespace")
@@ -380,4 +441,61 @@ func promptForNamespace(upstreamURI string) (string, error) {
 
 		return result, nil
 	}
+}
+
+func uploadAirgapArchive(deployOptions kotsadmtypes.DeployOptions, clientset *kubernetes.Clientset, apiEndpoint string, filename string) (bool, error) {
+	body := &bytes.Buffer{}
+	bodyWriter := multipart.NewWriter(body)
+
+	metadataPart, err := bodyWriter.CreateFormField("appSlug")
+	if err != nil {
+		return false, errors.Wrap(err, "failed to add metadata")
+	}
+	if _, err := io.Copy(metadataPart, bytes.NewReader([]byte(deployOptions.License.Spec.AppSlug))); err != nil {
+		return false, errors.Wrap(err, "failed to copy metadata")
+	}
+
+	fileWriter, err := bodyWriter.CreateFormFile("appArchive", filepath.Base(filename))
+	if err != nil {
+		return false, errors.Wrap(err, "failed to create form from file")
+	}
+
+	fileReader, err := os.Open(filename)
+	if err != nil {
+		return false, errors.Wrap(err, "failed to open app archive")
+	}
+	defer fileReader.Close()
+
+	_, err = io.Copy(fileWriter, fileReader)
+	if err != nil {
+		return false, errors.Wrap(err, "failed to copy app archive")
+	}
+
+	contentType := bodyWriter.FormDataContentType()
+	bodyWriter.Close()
+
+	authSlug, err := auth.GetOrCreateAuthSlug(deployOptions.KubernetesConfigFlags, deployOptions.Namespace)
+	if err != nil {
+		return false, errors.Wrap(err, "failed to get kotsadm auth slug")
+	}
+
+	url := fmt.Sprintf("%s/airgap/install", apiEndpoint)
+	newRequest, err := http.NewRequest("POST", url, body)
+	if err != nil {
+		return false, errors.Wrap(err, "failed to create upload request")
+	}
+	newRequest.Header.Add("Authorization", authSlug)
+	newRequest.Header.Add("Content-Type", contentType)
+
+	resp, err := http.DefaultClient.Do(newRequest)
+	if err != nil {
+		return false, errors.Wrap(err, "failed to get from kotsadm")
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return true, errors.Errorf("unexpected response status: %v", resp.StatusCode)
+	}
+
+	return false, nil
 }
