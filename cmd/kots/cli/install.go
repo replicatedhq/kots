@@ -166,7 +166,6 @@ func InstallCmd() *cobra.Command {
 				ApplicationMetadata:       applicationMetadata,
 				License:                   license,
 				ConfigValues:              configValues,
-				AirgapArchive:             v.GetString("airgap-bundle"),
 				Airgap:                    v.GetBool("airgap"),
 				ProgressWriter:            os.Stdout,
 				StorageBaseURI:            v.GetString("storage-base-uri"),
