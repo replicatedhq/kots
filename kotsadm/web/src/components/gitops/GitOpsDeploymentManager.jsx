@@ -48,14 +48,14 @@ const SERVICES = [
     value: "bitbucket",
     label: "Bitbucket",
   },
-  {
-    value: "bitbucket_server",
-    label: "Bitbucket Server",
-  },
-  {
-    value: "other",
-    label: "Other",
-  }
+  // {
+  //   value: "bitbucket_server",
+  //   label: "Bitbucket Server",
+  // },
+  // {
+  //   value: "other",
+  //   label: "Other",
+  // }
 ];
 
 class GitOpsDeploymentManager extends React.Component {

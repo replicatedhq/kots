@@ -196,6 +196,8 @@ export function getServiceSite(provider, hostname = "") {
       return hostname;
     case "gitlab":
       return "gitlab.com";
+    case "gitlab_enterprise":
+      return hostname;
     case "bitbucket":
       return "bitbucket.org";
     default:
