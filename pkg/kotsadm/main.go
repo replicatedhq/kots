@@ -135,18 +135,7 @@ func Deploy(deployOptions types.DeployOptions) error {
 	airgapPath := ""
 	var images []kustomizetypes.Image
 
-	if deployOptions.AirgapArchive != "" && deployOptions.KotsadmOptions.OverrideRegistry != "" {
-		airgapRootDir, err := ioutil.TempDir("", "kotsadm-airgap")
-		if err != nil {
-			return errors.Wrap(err, "failed to create temp dir")
-		}
-		defer os.RemoveAll(airgapRootDir)
-
-		err = ExtractAirgapImages(deployOptions.AirgapArchive, airgapRootDir, deployOptions.ProgressWriter)
-		if err != nil {
-			return errors.Wrap(err, "failed to extract images")
-		}
-
+	if deployOptions.AirgapRootDir != "" && deployOptions.KotsadmOptions.OverrideRegistry != "" {
 		pushOptions := types.PushImagesOptions{
 			Registry: registry.RegistryOptions{
 				Endpoint:  deployOptions.KotsadmOptions.OverrideRegistry,
@@ -157,13 +146,14 @@ func Deploy(deployOptions types.DeployOptions) error {
 			ProgressWriter: deployOptions.ProgressWriter,
 		}
 
-		imagesRootDir := filepath.Join(airgapRootDir, "images")
+		var err error
+		imagesRootDir := filepath.Join(deployOptions.AirgapRootDir, "images")
 		images, err = TagAndPushAppImages(imagesRootDir, pushOptions)
 		if err != nil {
 			return errors.Wrap(err, "failed to list image formats")
 		}
 
-		airgapPath = airgapRootDir
+		airgapPath = deployOptions.AirgapRootDir
 	}
 
 	clientset, err := k8sutil.GetClientset(deployOptions.KubernetesConfigFlags)
@@ -222,11 +212,11 @@ func Deploy(deployOptions types.DeployOptions) error {
 		if err := ensureConfigFromFile(deployOptions, clientset, "kotsadm-airgap-meta", filepath.Join(airgapPath, "airgap.yaml")); err != nil {
 			return errors.Wrap(err, "failed to create config from airgap.yaml")
 		}
-		if err := ensureConfigFromFile(deployOptions, clientset, "kotsadm-airgap-app", filepath.Join(airgapPath, "app.tar.gz")); err != nil {
-			return errors.Wrap(err, "failed to create config from app.tar.gz")
-		}
 		if err := ensureConfigFromFile(deployOptions, clientset, "kotsadm-airgap-images", filepath.Join(airgapPath, "images.json")); err != nil {
 			return errors.Wrap(err, "failed to create config from images.json")
+		}
+		if err := ensureWaitForAirgapConfig(deployOptions, clientset, "kotsadm-airgap-app"); err != nil {
+			return errors.Wrap(err, "failed to create config from app.tar.gz")
 		}
 	}
 

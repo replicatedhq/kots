@@ -6,7 +6,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func licenseSecret(namespace string, license string) *corev1.Secret {
+func licenseSecret(namespace string, appSlug string, license string) *corev1.Secret {
 	secret := &corev1.Secret{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "v1",
@@ -17,6 +17,7 @@ func licenseSecret(namespace string, license string) *corev1.Secret {
 			Namespace: namespace,
 			Labels: types.GetKotsadmLabels(map[string]string{
 				"kots.io/automation": "license",
+				"kots.io/app":        appSlug,
 			}),
 		},
 		Data: map[string][]byte{

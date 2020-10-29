@@ -58,6 +58,46 @@ func ensureConfigMaps(deployOptions types.DeployOptions, clientset *kubernetes.C
 	return nil
 }
 
+func ensureWaitForAirgapConfig(deployOptions types.DeployOptions, clientset *kubernetes.Clientset, configMapName string) error {
+	additionalLabels := map[string]string{
+		"kots.io/automation": "airgap",
+	}
+	if deployOptions.License != nil {
+		additionalLabels["kots.io/app"] = deployOptions.License.Spec.AppSlug
+	}
+
+	configMap := &corev1.ConfigMap{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: "v1",
+			Kind:       "ConfigMap",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      configMapName,
+			Namespace: deployOptions.Namespace,
+			Labels:    types.GetKotsadmLabels(additionalLabels),
+		},
+		Data: map[string]string{
+			"wait-for-airgap-app": "true",
+		},
+	}
+
+	_, err := clientset.CoreV1().ConfigMaps(deployOptions.Namespace).Create(context.TODO(), configMap, metav1.CreateOptions{})
+	if err != nil {
+		if !kuberneteserrors.IsAlreadyExists(err) {
+			return errors.Wrap(err, "failed to create kotsadm config map")
+		}
+	} else {
+		return nil
+	}
+
+	_, err = clientset.CoreV1().ConfigMaps(deployOptions.Namespace).Update(context.TODO(), configMap, metav1.UpdateOptions{})
+	if err != nil {
+		return errors.Wrap(err, "failed to update kotsadm config map")
+	}
+
+	return nil
+}
+
 func ensureConfigFromFile(deployOptions types.DeployOptions, clientset *kubernetes.Clientset, configMapName string, filename string) error {
 	configMap, err := configMapFromFile(deployOptions, configMapName, filename)
 	if err != nil {
