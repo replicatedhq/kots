@@ -68,7 +68,7 @@
   user-select: none;
 
   &.is-active {
-    border-bottom: 2px solid #337AB7;
+    border-bottom: 2px solid #326DE6;
   }
 
   &:hover {
@@ -121,6 +121,20 @@
   font-weight: 500;
   font-size: 12px;
   line-height: 12px;
+}
+
+.beta-tag {
+  font-weight: bold;
+  font-size: 8px;
+  line-height: 8px;
+  letter-spacing: 2px;
+  color: #FFFFFF;
+  padding: 3px 6px;
+  border-radius: 13px;
+  text-transform: uppercase;
+  background: #0089D6;
+  position: absolute;
+  left: 90px;
 }
 
 /* ≥ 960px */

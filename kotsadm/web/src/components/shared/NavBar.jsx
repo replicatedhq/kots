@@ -180,9 +180,10 @@ export class NavBar extends PureComponent {
                     {isSnapshotsSupported &&
                       <div className={classNames("NavItem u-position--relative flex", { "is-active": selectedTab === "snapshots" })}>
                         <span className="HeaderLink flex flex1 u-cursor--pointer" onClick={this.handleGoToSnapshots}>
-                          <span className="text u-fontSize--normal u-fontWeight--medium flex-column justifyContent--center">
-                            <span>Snapshots</span>
-                          </span>
+                          <div className="flex flex1 alignItems--center">
+                          <span className="text u-fontSize--normal u-fontWeight--medium flex"> Snapshots </span>
+                          <span className="flex beta-tag"> beta </span>
+                          </div>
                         </span>
                       </div>
                     }
