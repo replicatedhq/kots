@@ -30,14 +30,14 @@ const SERVICES = [
     value: "bitbucket",
     label: "Bitbucket",
   },
-  {
-    value: "bitbucket_server",
-    label: "Bitbucket Server",
-  },
-  {
-    value: "other",
-    label: "Other",
-  }
+  // {
+  //   value: "bitbucket_server",
+  //   label: "Bitbucket Server",
+  // },
+  // {
+  //   value: "other",
+  //   label: "Other",
+  // }
 ]
 
 class AppGitops extends Component {
@@ -275,9 +275,11 @@ class AppGitops extends Component {
 
   getProviderIconClassName = provider => {
     switch (provider) {
-      case "github" || "github_enterprise":
+      case "github":
+      case "github_enterprise":
         return "github-icon";
       case "gitlab":
+      case "gitlab_enterprise":
         return "gitlab-icon";
       case "bitbucket":
         return "bitbucket-icon";
