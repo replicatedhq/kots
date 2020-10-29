@@ -542,6 +542,22 @@ func ensureDisasterRecoveryLabels(deployOptions *types.DeployOptions, clientset 
 		}
 	}
 
+	// pods
+	pods, err := clientset.CoreV1().Pods(deployOptions.Namespace).List(context.TODO(), listOptions)
+	if err != nil {
+		return errors.Wrap(err, "failed to list pods")
+	}
+	for _, pod := range pods.Items {
+		if _, ok := pod.ObjectMeta.Labels[types.BackupLabel]; !ok {
+			pod.ObjectMeta.Labels = types.GetKotsadmLabels(pod.ObjectMeta.Labels)
+			delete(pod.ObjectMeta.Labels, types.ExcludeLabel) // remove existing velero exclude label (if exists)
+			_, err = clientset.CoreV1().Pods(deployOptions.Namespace).Update(context.TODO(), &pod, metav1.UpdateOptions{})
+			if err != nil {
+				return errors.Wrapf(err, "failed to update %s pod in namespace %s", pod.ObjectMeta.Name, pod.ObjectMeta.Namespace)
+			}
+		}
+	}
+
 	// deployments
 	deployments, err := clientset.AppsV1().Deployments(deployOptions.Namespace).List(context.TODO(), listOptions)
 	if err != nil {
@@ -636,31 +652,7 @@ func ensureDisasterRecoveryLabels(deployOptions *types.DeployOptions, clientset 
 		}
 	}
 
-	// jobs
-	jobs, err := clientset.BatchV1().Jobs(deployOptions.Namespace).List(context.TODO(), listOptions)
-	if err != nil {
-		return errors.Wrap(err, "failed to list jobs")
-	}
-	for _, job := range jobs.Items {
-		if _, ok := job.ObjectMeta.Labels[types.BackupLabel]; !ok {
-			job.ObjectMeta.Labels = types.GetKotsadmLabels(job.ObjectMeta.Labels)
-
-			// ensure labels
-			job.ObjectMeta.Labels = types.GetKotsadmLabels(job.ObjectMeta.Labels)
-			job.Spec.Template.ObjectMeta.Labels = types.GetKotsadmLabels(job.Spec.Template.ObjectMeta.Labels)
-
-			// remove existing velero exclude label (if exists)
-			delete(job.ObjectMeta.Labels, types.ExcludeLabel)
-			delete(job.Spec.Template.ObjectMeta.Labels, types.ExcludeLabel)
-
-			_, err = clientset.BatchV1().Jobs(deployOptions.Namespace).Update(context.TODO(), &job, metav1.UpdateOptions{})
-			if err != nil {
-				return errors.Wrapf(err, "failed to update %s job in namespace %s", job.ObjectMeta.Name, job.ObjectMeta.Namespace)
-			}
-		}
-	}
-
-	// objects that do not have the kotsadm label set
+	// objects that _did_ not have the kotsadm label set
 	// gitops secret
 	gitopsSecret, err := clientset.CoreV1().Secrets(deployOptions.Namespace).Get(context.TODO(), "kotsadm-gitops", metav1.GetOptions{})
 	if err != nil && !kuberneteserrors.IsNotFound(err) {
