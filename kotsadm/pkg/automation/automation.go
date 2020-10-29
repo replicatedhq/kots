@@ -197,6 +197,186 @@ LICENSE_LOOP:
 	return nil
 }
 
+func AirgapInstall(appSlug string, additionalFiles map[string][]byte) error {
+	cfg, err := config.GetConfig()
+	if err != nil {
+		return errors.Wrap(err, "failed to get cluster config")
+	}
+
+	clientset, err := kubernetes.NewForConfig(cfg)
+	if err != nil {
+		return errors.Wrap(err, "failed to create kubernetes clientset")
+	}
+
+	selectorLabels := map[string]string{
+		"kots.io/automation": "license",
+		"kots.io/app":        appSlug,
+	}
+	licenseSecrets, err := clientset.CoreV1().Secrets(os.Getenv("POD_NAMESPACE")).List(context.TODO(), metav1.ListOptions{
+		LabelSelector: labels.SelectorFromSet(selectorLabels).String(),
+	})
+	if err != nil {
+		return errors.Wrap(err, "failed to list license secrets")
+	}
+
+	if len(licenseSecrets.Items) != 1 {
+		return errors.Errorf("expected one license for app %s, but found %d", appSlug, len(licenseSecrets.Items))
+	}
+
+	licenseSecret := licenseSecrets.Items[0]
+	license, ok := licenseSecret.Data["license"]
+	if !ok {
+		return errors.Errorf("license secret %q does not contain a license field", licenseSecret.Name)
+	}
+
+	unverifiedLicense, err := kotsutil.LoadLicenseFromBytes(license)
+	if err != nil {
+		return errors.Wrap(err, "failed to unmarshal license data")
+	}
+
+	logger.Debug("automated license install found",
+		zap.String("appSlug", unverifiedLicense.Spec.AppSlug))
+
+	verifiedLicense, err := kotspull.VerifySignature(unverifiedLicense)
+	if err != nil {
+		return errors.Wrap(err, "failed to verify lincense signature")
+	}
+
+	// check license expiration
+	expired, err := kotspull.LicenseIsExpired(verifiedLicense)
+	if err != nil {
+		return errors.Wrap(err, "failed to check is lincense is expired")
+	}
+	if expired {
+		return errors.Errorf("license is expired for app %s", verifiedLicense.Spec.AppSlug)
+	}
+
+	skipImagePush, err := kotsutil.IsImagesPushedSet(kotsadmtypes.KotsadmConfigMap)
+	if err != nil {
+		return errors.Wrap(err, "failed to get existing kotsadm config map")
+	}
+
+	desiredAppName := strings.Replace(verifiedLicense.Spec.AppSlug, "-", " ", 0)
+	upstreamURI := fmt.Sprintf("replicated://%s", verifiedLicense.Spec.AppSlug)
+
+	a, err := store.GetStore().CreateApp(desiredAppName, upstreamURI, string(license), verifiedLicense.Spec.IsAirgapSupported, skipImagePush)
+	if err != nil {
+		return errors.Wrap(err, "failed to create app record")
+	}
+
+	// airgap data is the airgap manifest + app specs + image list laoded from configmaps
+	airgapData, err := getAirgapData(clientset, verifiedLicense)
+	if err != nil {
+		return errors.Wrapf(err, "failed to load airgap data for %s", verifiedLicense.Spec.AppSlug)
+	}
+
+	if len(airgapData) == 0 {
+		return errors.Errorf("failed to find airgap automation data")
+	}
+
+	for k, v := range additionalFiles {
+		airgapData[k] = v
+	}
+
+	// Images have been pushed and there is airgap app data available, so this is an airgap install.
+	airgapFilesDir, err := ioutil.TempDir("", "headless-airgap")
+	if err != nil {
+		return errors.Wrap(err, "failed to create temp dir")
+	}
+	defer os.RemoveAll(airgapFilesDir)
+
+	for filename, data := range airgapData {
+		err := ioutil.WriteFile(filepath.Join(airgapFilesDir, filename), data, 0644)
+		if err != nil {
+			return errors.Wrapf(err, "failed to create file %s", filename)
+		}
+	}
+
+	kotsadmOpts, err := kotsadm.GetKotsadmOptionsFromCluster(os.Getenv("POD_NAMESPACE"), clientset)
+	if err != nil {
+		return errors.Wrap(err, "failed to load registry info")
+	}
+
+	registryHost := kotsadmOpts.OverrideRegistry
+	namespace := kotsadmOpts.OverrideNamespace
+	username := kotsadmOpts.Username
+	password := kotsadmOpts.Password
+
+	pendingApp := airgaptypes.PendingApp{
+		ID:          a.ID,
+		Slug:        a.Slug,
+		Name:        a.Name,
+		LicenseData: string(license),
+	}
+
+	err = airgap.CreateAppFromAirgap(&pendingApp, airgapFilesDir, registryHost, namespace, username, password, true)
+	if err != nil {
+		return errors.Wrap(err, "failed to create airgap app")
+	}
+
+	// delete the license secret
+	err = clientset.CoreV1().Secrets(licenseSecret.Namespace).Delete(context.TODO(), licenseSecret.Name, metav1.DeleteOptions{})
+	if err != nil {
+		logger.Error(errors.Wrapf(err, "failed to delete license data %s", licenseSecret.Name))
+	}
+
+	err = deleteAirgapData(clientset, verifiedLicense)
+	if err != nil {
+		logger.Error(errors.Wrap(err, "failed to delete airgap data"))
+	}
+
+	return nil
+}
+
+func NeedToWaitForAirgapApp() (bool, error) {
+	logger.Debug("looking for any automated installs to complete")
+
+	// look for a license secret
+	cfg, err := config.GetConfig()
+	if err != nil {
+		return false, errors.Wrap(err, "failed to get cluster config")
+	}
+
+	clientset, err := kubernetes.NewForConfig(cfg)
+	if err != nil {
+		return false, errors.Wrap(err, "failed to create kubernetes clientset")
+	}
+
+	licenseSecrets, err := clientset.CoreV1().Secrets(os.Getenv("POD_NAMESPACE")).List(context.TODO(), metav1.ListOptions{
+		LabelSelector: "kots.io/automation=license",
+	})
+	if err != nil {
+		return false, errors.Wrap(err, "failed to list license secrets")
+	}
+
+	for _, licenseSecret := range licenseSecrets.Items {
+		license, ok := licenseSecret.Data["license"]
+		if !ok {
+			logger.Errorf("license secret %q does not contain a license field", licenseSecret.Name)
+			continue
+		}
+
+		unverifiedLicense, err := kotsutil.LoadLicenseFromBytes(license)
+		if err != nil {
+			logger.Error(errors.Wrap(err, "failed to unmarshal license data"))
+			continue
+		}
+
+		// airgap data is the airgap manifest + app specs + image list laoded from configmaps
+		needToWait, err := needToWaitForAirgapApp(clientset, unverifiedLicense)
+		if err != nil {
+			logger.Error(errors.Wrapf(err, "failed to load airgap data for %s", unverifiedLicense.Spec.AppSlug))
+			continue
+		}
+
+		if needToWait {
+			return true, nil
+		}
+	}
+
+	return false, nil
+}
+
 func getAirgapData(clientset kubernetes.Interface, license *kotsv1beta1.License) (map[string][]byte, error) {
 	selectorLabels := map[string]string{
 		"kots.io/automation": "airgap",
@@ -213,6 +393,9 @@ func getAirgapData(clientset kubernetes.Interface, license *kotsv1beta1.License)
 	result := map[string][]byte{}
 	for _, configMap := range configMaps.Items {
 		for key, value := range configMap.Data {
+			if key == "wait-for-airgap-app" { // do this better
+				continue
+			}
 			decoded, err := base64.StdEncoding.DecodeString(value)
 			if err != nil {
 				return nil, errors.Wrap(err, "failed to decode configmap value")
@@ -222,6 +405,32 @@ func getAirgapData(clientset kubernetes.Interface, license *kotsv1beta1.License)
 	}
 
 	return result, nil
+}
+
+func needToWaitForAirgapApp(clientset kubernetes.Interface, license *kotsv1beta1.License) (bool, error) {
+	selectorLabels := map[string]string{
+		"kots.io/automation": "airgap",
+		"kots.io/app":        license.Spec.AppSlug,
+	}
+
+	configMaps, err := clientset.CoreV1().ConfigMaps(os.Getenv("POD_NAMESPACE")).List(context.TODO(), metav1.ListOptions{
+		LabelSelector: labels.SelectorFromSet(selectorLabels).String(),
+	})
+	if err != nil {
+		return false, errors.Wrap(err, "failed to list configmaps")
+	}
+
+	for _, configMap := range configMaps.Items {
+		value, ok := configMap.Data["wait-for-airgap-app"]
+		if !ok {
+			continue
+		}
+
+		b, _ := strconv.ParseBool(value)
+		return b, nil
+	}
+
+	return false, nil
 }
 
 func deleteAirgapData(clientset kubernetes.Interface, license *kotsv1beta1.License) error {
