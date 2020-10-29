@@ -22,7 +22,6 @@ import (
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/scheme"
-	"sigs.k8s.io/controller-runtime/pkg/client/config"
 	kustomizetypes "sigs.k8s.io/kustomize/api/types"
 )
 
@@ -237,34 +236,6 @@ func Deploy(deployOptions types.DeployOptions) error {
 
 	if err := ensureKotsadm(deployOptions, clientset, log); err != nil {
 		return errors.Wrap(err, "failed to deploy admin console")
-	}
-
-	return nil
-}
-
-func CreateRestoreJob(options *types.RestoreJobOptions) error {
-	cfg, err := config.GetConfig()
-	if err != nil {
-		return errors.Wrap(err, "failed to get config")
-	}
-
-	clientset, err := kubernetes.NewForConfig(cfg)
-	if err != nil {
-		return errors.Wrap(err, "failed to get client set")
-	}
-
-	namespace := os.Getenv("POD_NAMESPACE")
-	isOpenShift := isOpenshift(clientset)
-
-	kotsadmOptions, err := GetKotsadmOptionsFromCluster(namespace, clientset)
-	if err != nil {
-		return errors.Wrap(err, "failed to get kotsadm options from cluster")
-	}
-
-	job := restoreJob(options.BackupName, namespace, isOpenShift, kotsadmOptions)
-	_, err = clientset.BatchV1().Jobs(namespace).Create(context.TODO(), job, metav1.CreateOptions{})
-	if err != nil {
-		return errors.Wrap(err, "failed to create restore job")
 	}
 
 	return nil
