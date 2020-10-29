@@ -24,7 +24,40 @@ class Snapshots extends Component {
     snapshotSettings: null,
     isLoadingSnapshotSettings: true,
     snapshotSettingsErr: false,
-    snapshotSettingsErrMsg: ""
+    snapshotSettingsErrMsg: "",
+    //dummy snapshots
+    snapshots: [
+      {
+        appID: "1jR0VjB2Vm1lxrqoE3H0BTer6rd",
+        expiresAt: "2020-11-25T22:56:15Z",
+        finishedAt: "2020-10-26T22:56:22Z",
+        name: "qakots-g4bjh",
+        sequence: 0,
+        startedAt: "2020-10-26T22:56:15Z",
+        status: "PartiallyFailed",
+        supportBundleId: "backup-qakots-g4bjh",
+        trigger: "manual",
+        volumeBytes: 0,
+        volumeCount: 0,
+        volumeSizeHuman: "0B",
+        volumeSuccessCount: 0
+      },
+      {
+        appID: "1jR0VjB2Vm1lxrqoE3H0BTer6rk",
+        expiresAt: "2020-11-27T20:56:15Z",
+        finishedAt: "2020-10-26T20:56:22Z",
+        name: "qakots-g4bjk",
+        sequence: 0,
+        startedAt: "2020-10-25T20:56:15Z",
+        status: "Completed",
+        supportBundleId: "backup-qakots-g4bjh",
+        trigger: "manual",
+        volumeBytes: 4,
+        volumeCount: 0,
+        volumeSizeHuman: "4B",
+        volumeSuccessCount: 0
+      }
+    ]
   };
 
   toggleConfirmDeleteModal = snapshot => {
@@ -36,7 +69,58 @@ class Snapshots extends Component {
   };
 
   handleDeleteSnapshot = snapshot => {
-    console.log("delete", snapshot);
+    const fakeDeletionSnapshot = {
+      name: "Preparing for snapshot deletion",
+      status: "Deleting",
+      trigger: "manual",
+      sequence: snapshot.sequence,
+      startedAt: Utilities.dateFormat(snapshot.startedAt, "MM/DD/YY @ hh:mm a"),
+      finishedAt: Utilities.dateFormat(snapshot.finishedAt, "MM/DD/YY @ hh:mm a"),
+      expiresAt: Utilities.dateFormat(snapshot.expiresAt, "MM/DD/YY @ hh:mm a"),
+      volumeCount: snapshot.volumeCount,
+      volumeSuccessCount: snapshot.volumeSuccessCount,
+      volumeBytes: 0,
+      volumeSizeHuman: snapshot.volumeSizeHuman
+    }
+
+    this.setState({ deletingSnapshot: true, deleteErr: false, deleteErrorMsg: "", snapshots: this.state.snapshots.map(s => s === snapshot ? fakeDeletionSnapshot : s) });
+
+    fetch(`${window.env.API_ENDPOINT}/snapshot/${snapshot.name}/delete`, {
+      method: "POST",
+      headers: {
+        "Authorization": Utilities.getToken(),
+        "Content-Type": "application/json",
+      }
+    })
+      .then(async (res) => {
+        if (!res.ok && res.status === 401) {
+          Utilities.logoutUser();
+          return;
+        }
+
+        const response = await res.json();
+        if (response.error) {
+          this.setState({
+            deletingSnapshot: false,
+            deleteErr: true,
+            deleteErrorMsg: response.error,
+          });
+          return;
+        }
+
+        this.setState({
+          deletingSnapshot: false,
+          deleteSnapshotModal: false,
+          snapshotToDelete: ""
+        });
+      })
+      .catch(err => {
+        this.setState({
+          deletingSnapshot: false,
+          deleteErr: true,
+          deleteErrorMsg: err ? err.message : "Something went wrong, please try again.",
+        });
+      });
   }
 
   toggleRestoreModal = snapshot => {
@@ -85,40 +169,7 @@ class Snapshots extends Component {
 
 
   render() {
-    const snapshots = [
-      {
-        appID: "1jR0VjB2Vm1lxrqoE3H0BTer6rd",
-        expiresAt: "2020-11-25T22:56:15Z",
-        finishedAt: "2020-10-26T22:56:22Z",
-        name: "qakots-g4bjh",
-        sequence: 0,
-        startedAt: "2020-10-26T22:56:15Z",
-        status: "PartiallyFailed",
-        supportBundleId: "backup-qakots-g4bjh",
-        trigger: "manual",
-        volumeBytes: 0,
-        volumeCount: 0,
-        volumeSizeHuman: "0B",
-        volumeSuccessCount: 0
-      },
-      {
-        appID: "1jR0VjB2Vm1lxrqoE3H0BTer6rk",
-        expiresAt: "2020-11-27T20:56:15Z",
-        finishedAt: "2020-10-26T20:56:22Z",
-        name: "qakots-g4bjk",
-        sequence: 0,
-        startedAt: "2020-10-25T20:56:15Z",
-        status: "Completed",
-        supportBundleId: "backup-qakots-g4bjh",
-        trigger: "manual",
-        volumeBytes: 4,
-        volumeCount: 0,
-        volumeSizeHuman: "4B",
-        volumeSuccessCount: 0
-      }
-    ]
-
-    const { isLoadingSnapshotSettings, snapshotSettings } = this.state;
+    const { isLoadingSnapshotSettings, snapshotSettings, snapshots } = this.state;
 
     if (isLoadingSnapshotSettings) {
       return (
