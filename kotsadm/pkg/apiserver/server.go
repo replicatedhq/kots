@@ -103,7 +103,6 @@ func Start() {
 	r.Path("/api/v1/kots/ports").Methods("GET").HandlerFunc(handlers.GetApplicationPorts)
 	r.Path("/api/v1/upload").Methods("PUT").HandlerFunc(handlers.UploadExistingApp)
 	r.Path("/api/v1/download").Methods("GET").HandlerFunc(handlers.DownloadApp)
-	r.Path("/api/v1/snapshot/backup").Methods("POST").HandlerFunc(handlers.CreateInstanceBackup)
 	r.Path("/api/v1/airgap/install").Methods("POST").HandlerFunc(handlers.UploadInitialAirgapApp)
 
 	/**********************************************************************
@@ -195,6 +194,7 @@ func Start() {
 
 	// Global snapshot routes
 	sessionAuthRouter.Path("/api/v1/snapshots").Methods("GET").HandlerFunc(handlers.ListInstanceBackups)
+	sessionAuthRouter.Path("/api/v1/snapshot/backup").Methods("POST").HandlerFunc(handlers.CreateInstanceBackup)
 	sessionAuthRouter.Path("/api/v1/snapshot/config").Methods("GET").HandlerFunc(handlers.GetInstanceSnapshotConfig)
 	sessionAuthRouter.Path("/api/v1/snapshot/config").Methods("PUT").HandlerFunc(handlers.SaveInstanceSnapshotConfig)
 	sessionAuthRouter.Path("/api/v1/snapshots/settings").Methods("GET").HandlerFunc(handlers.GetGlobalSnapshotSettings)
