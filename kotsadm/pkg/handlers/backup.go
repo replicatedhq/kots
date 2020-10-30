@@ -160,16 +160,13 @@ type CreateInstanceBackupResponse struct {
 }
 
 func CreateInstanceBackup(w http.ResponseWriter, r *http.Request) {
-	createInstanceBackupResponse := CreateInstanceBackupResponse{
-		Success: false,
+	if err := requireValidKOTSToken(w, r); err != nil {
+		logger.Error(errors.Wrap(err, "failed to validate token"))
+		return
 	}
 
-	if err := requireValidKOTSToken(w, r); err != nil {
-		err = errors.Wrap(err, "failed to validate token")
-		logger.Error(err)
-		createInstanceBackupResponse.Error = err.Error()
-		JSON(w, http.StatusUnauthorized, createInstanceBackupResponse)
-		return
+	createInstanceBackupResponse := CreateInstanceBackupResponse{
+		Success: false,
 	}
 
 	backup, err := snapshot.CreateInstanceBackup(context.TODO(), false)
