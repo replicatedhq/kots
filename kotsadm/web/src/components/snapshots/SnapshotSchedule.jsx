@@ -5,6 +5,7 @@ import { Utilities, getCronFrequency, getCronInterval, getReadableCronDescriptor
 import ErrorModal from "../modals/ErrorModal";
 import Loader from "../shared/Loader";
 import find from "lodash/find";
+import isEmpty from "lodash/isEmpty";
 import "../../scss/components/shared/SnapshotForm.scss";
 
 const SCHEDULES = [
@@ -56,16 +57,7 @@ class SnapshotSchedule extends Component {
     updateConfirm: false,
     displayErrorModal: false,
     gettingConfigErrMsg: "",
-    // dummy data
-    snapshotConfig: {
-      autoEnabled: false,
-      autoSchedule: { schedule: "0 0 * * MON" },
-      schedule: "0 0 * * MON",
-      ttl: { inputValue: "1", inputTimeUnit: "months", converted: "720h" },
-      converted: "720h",
-      inputTimeUnit: "months",
-      inputValue: "1"
-    }
+    snapshotConfig: {}
   };
 
   setFields = () => {
@@ -129,6 +121,32 @@ class SnapshotSchedule extends Component {
     this.setState({ selectedRetentionUnit: retentionUnit });
   }
 
+  getSnapshotConfig = async () => {
+    this.setState({ loadingConfig: true, gettingConfigErrMsg: "", displayErrorModal: false });
+    try {
+      const res = await fetch(`${window.env.API_ENDPOINT}/snapshot/config`, {
+        method: "GET",
+        headers: {
+          "Authorization": Utilities.getToken(),
+          "Content-Type": "application/json",
+        }
+      });
+      if (!res.ok) {
+        this.setState({ loadingConfig: false, gettingConfigErrMsg: `Unable to get snapshot config: Unexpected status code: ${res.status}`, displayErrorModal: true });
+        return;
+      }
+      const body = await res.json();
+      this.setState({
+        snapshotConfig: body,
+        loadingConfig: false
+      });
+
+    } catch (err) {
+      console.log(err);
+      this.setState({ loadingConfig: false, gettingConfigErrMsg: err ? err.message : "Something went wrong, please try again.", displayErrorModal: true });
+    }
+  }
+
   componentDidUpdate = (lastProps, lastState) => {
     if (this.state.snapshotConfig && this.state.snapshotConfig !== lastState.snapshotConfig) {
       this.setFields();
@@ -136,14 +154,58 @@ class SnapshotSchedule extends Component {
   }
 
   componentDidMount = () => {
-    if (this.state.snapshotConfig) {
+    if (!isEmpty(this.state.snapshotConfig)) {
       this.setFields();
+    } else {
+      this.getSnapshotConfig();
     }
     this.getReadableCronExpression();
   }
 
   saveSnapshotConfig = () => {
-    console.log("updating schedule")
+    this.setState({ updatingSchedule: true });
+    const body = {
+      inputValue: this.state.retentionInput,
+      inputTimeUnit: this.state.selectedRetentionUnit?.value,
+      schedule: this.state.frequency,
+      autoEnabled: this.state.autoEnabled,
+    };
+    fetch(`${window.env.API_ENDPOINT}/snapshot/config`, {
+      headers: {
+        "Authorization": Utilities.getToken(),
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+      },
+      method: "PUT",
+      body: JSON.stringify(body),
+    })
+      .then(async (res) => {
+        const data = await res.json();
+        if (!res.ok || !data.success) {
+          if (res.status === 401) {
+            Utilities.logoutUser();
+            return;
+          }
+          this.setState({
+            message: data.error || "Failed to save snapshot config",
+            messageType: "error",
+            updatingSchedule: false,
+          })
+          return
+        }
+        this.setState({ updatingSchedule: false, updateConfirm: true });
+        setTimeout(() => {
+          this.setState({ updateConfirm: false })
+        }, 3000);
+      })
+      .catch((err) => {
+        console.log(err);
+        this.setState({
+          message: err ? err.message : "Failed to connect to API",
+          messageType: "error",
+          updatingSchedule: false,
+        });
+      })
   }
 
   render() {
