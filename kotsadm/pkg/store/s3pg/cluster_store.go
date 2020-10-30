@@ -1,9 +1,9 @@
 package s3pg
 
 import (
+	"database/sql"
 	"fmt"
 	"time"
-	"database/sql"
 
 	"github.com/gosimple/slug"
 	"github.com/pkg/errors"
