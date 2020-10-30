@@ -7,8 +7,8 @@ const ClusterTokenSecret = "kotsadm-cluster-token"
 const PrivateKotsadmRegistrySecret = "kotsadm-private-registry"
 const KotsadmConfigMap = "kotsadm-confg"
 
-const ExcludeLabel = "velero.io/exclude-from-backup"
-const ExcludeLabelValue = "true"
+const ExcludeKey = "velero.io/exclude-from-backup"
+const ExcludeValue = "true"
 
 const BackupLabel = "kots.io/backup"
 const BackupLabelValue = "velero"
