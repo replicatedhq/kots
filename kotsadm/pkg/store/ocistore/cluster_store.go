@@ -121,3 +121,11 @@ func (s OCIStore) CreateNewCluster(userID string, isAllUsers bool, title string,
 
 	return downstream.ClusterID, nil
 }
+
+func (s OCIStore) SetInstanceSnapshotTTL(clusterID string, snapshotTTL string) error {
+	return ErrNotImplemented
+}
+
+func (s OCIStore) SetInstanceSnapshotSchedule(clusterID string, snapshotSchedule string) error {
+	return ErrNotImplemented
+}

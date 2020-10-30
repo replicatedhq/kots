@@ -1,20 +1,23 @@
 package s3pg
 
 import (
+	"database/sql"
 	"fmt"
 	"time"
 
 	"github.com/gosimple/slug"
 	"github.com/pkg/errors"
 	downstreamtypes "github.com/replicatedhq/kots/kotsadm/pkg/downstream/types"
+	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
 	"github.com/replicatedhq/kots/kotsadm/pkg/persistence"
 	"github.com/replicatedhq/kots/kotsadm/pkg/rand"
+	"go.uber.org/zap"
 )
 
 func (s S3PGStore) ListClusters() ([]*downstreamtypes.Downstream, error) {
 	db := persistence.MustGetPGSession()
 
-	query := `select id, slug, title from cluster` // TODO the current sequence
+	query := `select id, slug, title, snapshot_schedule, snapshot_ttl from cluster` // TODO the current sequence
 	rows, err := db.Query(query)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to query clusters")
@@ -24,9 +27,16 @@ func (s S3PGStore) ListClusters() ([]*downstreamtypes.Downstream, error) {
 	clusters := []*downstreamtypes.Downstream{}
 	for rows.Next() {
 		cluster := downstreamtypes.Downstream{}
-		if err := rows.Scan(&cluster.ClusterID, &cluster.ClusterSlug, &cluster.Name); err != nil {
+
+		var snapshotSchedule sql.NullString
+		var snapshotTTL sql.NullString
+
+		if err := rows.Scan(&cluster.ClusterID, &cluster.ClusterSlug, &cluster.Name, &snapshotSchedule, &snapshotTTL); err != nil {
 			return nil, errors.Wrap(err, "failed to scan row")
 		}
+
+		cluster.SnapshotSchedule = snapshotSchedule.String
+		cluster.SnapshotTTL = snapshotTTL.String
 
 		clusters = append(clusters, &cluster)
 	}
@@ -116,4 +126,30 @@ func (s S3PGStore) CreateNewCluster(userID string, isAllUsers bool, title string
 	}
 
 	return clusterID, nil
+}
+
+func (c S3PGStore) SetInstanceSnapshotTTL(clusterID string, snapshotTTL string) error {
+	logger.Debug("Setting instance snapshot TTL",
+		zap.String("clusterID", clusterID))
+	db := persistence.MustGetPGSession()
+	query := `update cluster set snapshot_ttl = $1 where id = $2`
+	_, err := db.Exec(query, snapshotTTL, clusterID)
+	if err != nil {
+		return errors.Wrap(err, "failed to exec db query")
+	}
+
+	return nil
+}
+
+func (c S3PGStore) SetInstanceSnapshotSchedule(clusterID string, snapshotSchedule string) error {
+	logger.Debug("Setting instance snapshot Schedule",
+		zap.String("clusterID", clusterID))
+	db := persistence.MustGetPGSession()
+	query := `update cluster set snapshot_schedule = $1 where id = $2`
+	_, err := db.Exec(query, snapshotSchedule, clusterID)
+	if err != nil {
+		return errors.Wrap(err, "failed to exec db query")
+	}
+
+	return nil
 }

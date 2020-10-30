@@ -548,3 +548,165 @@ func SaveSnapshotConfig(w http.ResponseWriter, r *http.Request) {
 	responseBody.Success = true
 	JSON(w, 200, responseBody)
 }
+
+type InstanceSnapshotConfig struct {
+	AutoEnabled  bool                            `json:"autoEnabled"`
+	AutoSchedule *snapshottypes.SnapshotSchedule `json:"autoSchedule"`
+	TTl          *snapshottypes.SnapshotTTL      `json:"ttl"`
+}
+
+func GetInstanceSnapshotConfig(w http.ResponseWriter, r *http.Request) {
+	clusters, err := store.GetStore().ListClusters()
+	if err != nil {
+		logger.Error(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	if len(clusters) == 0 {
+		logger.Error(errors.New("No clusters found"))
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	c := clusters[0]
+
+	ttl := &snapshottypes.SnapshotTTL{}
+	if c.SnapshotTTL != "" {
+		parsedTTL, err := snapshot.ParseTTL(c.SnapshotTTL)
+		if err != nil {
+			logger.Error(err)
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+
+		ttl.InputValue = strconv.FormatInt(parsedTTL.Quantity, 10)
+		ttl.InputTimeUnit = parsedTTL.Unit
+		ttl.Converted = c.SnapshotTTL
+	} else {
+		ttl.InputValue = "1"
+		ttl.InputTimeUnit = "month"
+		ttl.Converted = "720h"
+	}
+
+	snapshotSchedule := &snapshottypes.SnapshotSchedule{}
+	if c.SnapshotSchedule != "" {
+		snapshotSchedule.Schedule = c.SnapshotSchedule
+	} else {
+		snapshotSchedule.Schedule = "0 0 * * MON"
+	}
+
+	getInstanceSnapshotConfigResponse := InstanceSnapshotConfig{}
+	getInstanceSnapshotConfigResponse.AutoEnabled = c.SnapshotSchedule != ""
+	getInstanceSnapshotConfigResponse.AutoSchedule = snapshotSchedule
+	getInstanceSnapshotConfigResponse.TTl = ttl
+
+	JSON(w, http.StatusOK, getInstanceSnapshotConfigResponse)
+}
+
+type SaveInstanceSnapshotConfigRequest struct {
+	InputValue    string `json:"inputValue"`
+	InputTimeUnit string `json:"inputTimeUnit"`
+	Schedule      string `json:"schedule"`
+	AutoEnabled   bool   `json:"autoEnabled"`
+}
+
+type SaveInstanceSnapshotConfigResponse struct {
+	Success bool   `json:"success"`
+	Error   string `json:"error,omitempty"`
+}
+
+func SaveInstanceSnapshotConfig(w http.ResponseWriter, r *http.Request) {
+	responseBody := SaveInstanceSnapshotConfigResponse{}
+	requestBody := SaveInstanceSnapshotConfigRequest{}
+	if err := json.NewDecoder(r.Body).Decode(&requestBody); err != nil {
+		logger.Error(err)
+		responseBody.Error = "failed to decode request body"
+		JSON(w, http.StatusBadRequest, responseBody)
+		return
+	}
+
+	clusters, err := store.GetStore().ListClusters()
+	if err != nil {
+		logger.Error(err)
+		responseBody.Error = "Failed to list clusters"
+		JSON(w, http.StatusInternalServerError, responseBody)
+		return
+	}
+	if len(clusters) == 0 {
+		err := errors.New("No clusters found")
+		logger.Error(err)
+		responseBody.Error = err.Error()
+		JSON(w, http.StatusInternalServerError, responseBody)
+		return
+	}
+	c := clusters[0]
+
+	retention, err := snapshot.FormatTTL(requestBody.InputValue, requestBody.InputTimeUnit)
+	if err != nil {
+		logger.Error(err)
+		responseBody.Error = fmt.Sprintf("Invalid instance snapshot retention: %s %s", requestBody.InputValue, requestBody.InputTimeUnit)
+		JSON(w, http.StatusBadRequest, responseBody)
+		return
+	}
+
+	if c.SnapshotTTL != retention {
+		c.SnapshotTTL = retention
+		if err := store.GetStore().SetInstanceSnapshotTTL(c.ClusterID, retention); err != nil {
+			logger.Error(err)
+			responseBody.Error = "Failed to set instance snapshot retention"
+			JSON(w, http.StatusInternalServerError, responseBody)
+			return
+		}
+	}
+
+	if !requestBody.AutoEnabled {
+		if err := store.GetStore().SetInstanceSnapshotSchedule(c.ClusterID, ""); err != nil {
+			logger.Error(err)
+			responseBody.Error = "Failed to clear instance snapshot schedule"
+			JSON(w, http.StatusInternalServerError, responseBody)
+			return
+		}
+		if err := store.GetStore().DeletePendingScheduledInstanceSnapshots(c.ClusterID); err != nil {
+			logger.Error(err)
+			responseBody.Error = "Failed to delete pending scheduled instance snapshots"
+			JSON(w, http.StatusInternalServerError, responseBody)
+			return
+		}
+		responseBody.Success = true
+		JSON(w, 200, responseBody)
+		return
+	}
+
+	cronSchedule, err := cron.ParseStandard(requestBody.Schedule)
+	if err != nil {
+		logger.Error(err)
+		responseBody.Error = fmt.Sprintf("Invalid cron schedule expression: %s", requestBody.Schedule)
+		JSON(w, http.StatusBadRequest, responseBody)
+		return
+	}
+
+	if requestBody.Schedule != c.SnapshotSchedule {
+		if err := store.GetStore().DeletePendingScheduledInstanceSnapshots(c.ClusterID); err != nil {
+			logger.Error(err)
+			responseBody.Error = "Failed to delete scheduled snapshots"
+			JSON(w, http.StatusInternalServerError, responseBody)
+			return
+		}
+		if err := store.GetStore().SetInstanceSnapshotSchedule(c.ClusterID, requestBody.Schedule); err != nil {
+			logger.Error(err)
+			responseBody.Error = "Failed to save instance snapshot schedule"
+			JSON(w, http.StatusInternalServerError, responseBody)
+			return
+		}
+		queued := cronSchedule.Next(time.Now())
+		id := strings.ToLower(rand.String(32))
+		if err := store.GetStore().CreateScheduledInstanceSnapshot(id, c.ClusterID, queued); err != nil {
+			logger.Error(err)
+			responseBody.Error = "Failed to create first scheduled instance snapshot"
+			JSON(w, http.StatusInternalServerError, responseBody)
+			return
+		}
+	}
+
+	responseBody.Success = true
+	JSON(w, http.StatusOK, responseBody)
+}

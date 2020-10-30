@@ -23,6 +23,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/soheilhy/cmux"
 	"gopkg.in/yaml.v2"
+	"html/template"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
@@ -30,7 +31,6 @@ import (
 	"k8s.io/client-go/kubernetes"
 	corev1 "k8s.io/client-go/kubernetes/typed/core/v1"
 	"k8s.io/client-go/rest"
-	"html/template"
 )
 
 type cert struct {

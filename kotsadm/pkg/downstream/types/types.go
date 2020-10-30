@@ -7,10 +7,12 @@ import (
 )
 
 type Downstream struct {
-	ClusterID       string `json:"id"`
-	ClusterSlug     string `json:"slug"`
-	Name            string `json:"name"`
-	CurrentSequence int64  `json:"currentSequence"`
+	ClusterID        string `json:"id"`
+	ClusterSlug      string `json:"slug"`
+	Name             string `json:"name"`
+	CurrentSequence  int64  `json:"currentSequence"`
+	SnapshotSchedule string `json:"snapshotSchedule,omitempty"`
+	SnapshotTTL      string `json:"snapshotTtl,omitempty"`
 }
 
 type DownstreamVersion struct {

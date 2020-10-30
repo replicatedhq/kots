@@ -195,6 +195,8 @@ func Start() {
 
 	// Global snapshot routes
 	sessionAuthRouter.Path("/api/v1/snapshots").Methods("GET").HandlerFunc(handlers.ListInstanceBackups)
+	sessionAuthRouter.Path("/api/v1/snapshot/config").Methods("GET").HandlerFunc(handlers.GetInstanceSnapshotConfig)
+	sessionAuthRouter.Path("/api/v1/snapshot/config").Methods("PUT").HandlerFunc(handlers.SaveInstanceSnapshotConfig)
 	sessionAuthRouter.Path("/api/v1/snapshots/settings").Methods("GET").HandlerFunc(handlers.GetGlobalSnapshotSettings)
 	sessionAuthRouter.Path("/api/v1/snapshots/settings").Methods("PUT").HandlerFunc(handlers.UpdateGlobalSnapshotSettings)
 	sessionAuthRouter.Path("/api/v1/snapshot/{snapshotName}").Methods("GET").HandlerFunc(handlers.GetBackup)

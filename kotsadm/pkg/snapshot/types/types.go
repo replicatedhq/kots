@@ -160,3 +160,11 @@ type ScheduledSnapshot struct {
 	// name of Backup CR will be set once scheduled
 	BackupName string `json:"backupName,omitempty"`
 }
+
+type ScheduledInstanceSnapshot struct {
+	ID                 string    `json:"id"`
+	ClusterID          string    `json:"clusterId"`
+	ScheduledTimestamp time.Time `json:"scheduledTimestamp"`
+	// name of Backup CR will be set once scheduled
+	BackupName string `json:"backupName,omitempty"`
+}

@@ -127,6 +127,11 @@ type SnapshotStore interface {
 	UpdateScheduledSnapshot(snapshotID string, backupName string) error
 	DeletePendingScheduledSnapshots(appID string) error
 	CreateScheduledSnapshot(snapshotID string, appID string, timestamp time.Time) error
+
+	ListPendingScheduledInstanceSnapshots(clusterID string) ([]snapshottypes.ScheduledInstanceSnapshot, error)
+	UpdateScheduledInstanceSnapshot(snapshotID string, backupName string) error
+	DeletePendingScheduledInstanceSnapshots(clusterID string) error
+	CreateScheduledInstanceSnapshot(snapshotID string, clusterID string, timestamp time.Time) error
 }
 
 type VersionStore interface {
@@ -151,6 +156,8 @@ type ClusterStore interface {
 	GetClusterIDFromSlug(slug string) (clusterID string, err error)
 	GetClusterIDFromDeployToken(deployToken string) (clusterID string, err error)
 	CreateNewCluster(userID string, isAllUsers bool, title string, token string) (clusterID string, err error)
+	SetInstanceSnapshotTTL(clusterID string, snapshotTTL string) error
+	SetInstanceSnapshotSchedule(clusterID string, snapshotSchedule string) error
 }
 
 type InstallationStore interface {
