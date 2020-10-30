@@ -24,7 +24,7 @@ import Loader from "../shared/Loader";
 import AppSettings from "./AppSettings";
 import AppGitops from "./AppGitops";
 import AppSnapshots from "./AppSnapshots";
-import AppSnapshotSchedule from "./AppSnapshotSchedule";
+import SnapshotSchedule from "../snapshots/SnapshotSchedule";
 import SnapshotDetails from "../snapshots/SnapshotDetails";
 import AppSnapshotRestore from "./AppSnapshotRestore";
 import TroubleshootContainer from "../troubleshoot/TroubleshootContainer";
@@ -384,7 +384,7 @@ class AppDetailPage extends Component {
                       />
                     } />
                     <Route exact path="/app/:slug/snapshots/schedule" render={() =>
-                      <AppSnapshotSchedule app={app} />
+                      <SnapshotSchedule app={app} />
                     } />
                     <Route exact path="/app/:slug/snapshots/:id" render={() =>
                       <SnapshotDetails app={app} />

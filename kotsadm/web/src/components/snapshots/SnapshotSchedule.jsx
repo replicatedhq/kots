@@ -122,9 +122,12 @@ class SnapshotSchedule extends Component {
   }
 
   getSnapshotConfig = async () => {
+    const isAppConfig = this.checkIsAppConfig();
+
     this.setState({ loadingConfig: true, gettingConfigErrMsg: "", displayErrorModal: false });
+    const url = isAppConfig ? `${window.env.API_ENDPOINT}/app/${this.props.app.slug}/snapshot/config` : `${window.env.API_ENDPOINT}/snapshot/config`;
     try {
-      const res = await fetch(`${window.env.API_ENDPOINT}/snapshot/config`, {
+      const res = await fetch(url, {
         method: "GET",
         headers: {
           "Authorization": Utilities.getToken(),
@@ -153,6 +156,14 @@ class SnapshotSchedule extends Component {
     }
   }
 
+  checkIsAppConfig = () => {
+    if (!isEmpty(this.props.match.params)) {
+      return true;
+    } else {
+      return false;
+    }
+  }
+
   componentDidMount = () => {
     if (!isEmpty(this.state.snapshotConfig)) {
       this.setFields();
@@ -163,14 +174,30 @@ class SnapshotSchedule extends Component {
   }
 
   saveSnapshotConfig = () => {
+    const isAppConfig = this.checkIsAppConfig();
+
     this.setState({ updatingSchedule: true });
-    const body = {
-      inputValue: this.state.retentionInput,
-      inputTimeUnit: this.state.selectedRetentionUnit?.value,
-      schedule: this.state.frequency,
-      autoEnabled: this.state.autoEnabled,
-    };
-    fetch(`${window.env.API_ENDPOINT}/snapshot/config`, {
+    let body;
+    let url;
+    if (isAppConfig) {
+      body = {
+        appId: this.props.app.id,
+        inputValue: this.state.retentionInput,
+        inputTimeUnit: this.state.selectedRetentionUnit?.value,
+        schedule: this.state.frequency,
+        autoEnabled: this.state.autoEnabled,
+      };
+      url = `${window.env.API_ENDPOINT}/app/${this.props.app.slug}/snapshot/config`
+    } else {
+      body = {
+        inputValue: this.state.retentionInput,
+        inputTimeUnit: this.state.selectedRetentionUnit?.value,
+        schedule: this.state.frequency,
+        autoEnabled: this.state.autoEnabled,
+      };
+      url = `${window.env.API_ENDPOINT}/snapshot/config`;
+    }
+    fetch(url, {
       headers: {
         "Authorization": Utilities.getToken(),
         "Content-Type": "application/json",
@@ -209,6 +236,7 @@ class SnapshotSchedule extends Component {
   }
 
   render() {
+    const { app } = this.props;
     const { hasValidCron, updatingSchedule, updateConfirm, loadingConfig } = this.state;
     const selectedRetentionUnit = RETENTION_UNITS.find((ru) => {
       return ru.value === this.state.selectedRetentionUnit?.value;
@@ -216,6 +244,8 @@ class SnapshotSchedule extends Component {
     const selectedSchedule = SCHEDULES.find((schedule) => {
       return schedule.value === this.state.selectedSchedule?.value;
     });
+    const isAppConfig = this.checkIsAppConfig();
+
 
     if (loadingConfig) {
       return (
@@ -226,9 +256,9 @@ class SnapshotSchedule extends Component {
     }
 
     return (
-      <div className="flex-auto">
+      <div className={`${isAppConfig ? "container flex-column flex1 u-overflow--auto u-paddingTop--30 u-paddingBottom--20 alignItems--center" : "flex-auto"}`}>
         <div className="flex flex-column">
-        {!this.props.isVeleroRunning &&
+          {!isAppConfig && !this.props.isVeleroRunning &&
             <div className="Info--wrapper flex flex1 u-marginBottom--15">
               <span className="icon info-icon flex u-marginTop--5" />
               <div className="flex flex-column u-marginLeft--5">
@@ -236,16 +266,22 @@ class SnapshotSchedule extends Component {
                 <span className="u-fontSize--small u-fontWeight--normal u-lineHeight--normal u-color--dustyGray"> Schedules will not take affect until Velero is running and a storage destination has been configured.</span>
               </div>
             </div>}
+          {isAppConfig &&
+            <p className="u-marginBottom--30 u-fontSize--small u-color--tundora u-fontWeight--medium">
+              <Link to={`/app/${app?.slug}/snapshots`} className="replicated-link">Snapshots</Link>
+              <span className="u-color--dustyGray"> &gt; </span>
+            Schedule
+          </p>}
           <form className="flex flex-column snapshot-form-wrapper">
-            <p className="u-fontSize--normal u-color--tundora u-fontWeight--bold"> Scheduling</p>
-            <div className="flex-column u-marginTop--12">
-              <div className="flex1 u-marginBottom--20 ">
+            {!isAppConfig && <p className="u-fontSize--normal u-color--tundora u-fontWeight--bold"> Scheduling</p>}
+            <div className={`flex-column ${!isAppConfig ? "u-marginTop--12" : "u-marginBottom--20"}`}>
+              <div className="flex1 u-marginBottom--20">
                 <p className="u-fontSize--normal u-color--tuna u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">Automatic snapshots</p>
-                <div className="flex1 u-textAlign--left">
-                  <div className={`flex-auto flex alignItems--center ${this.state.autoEnabled ? "is-active" : ""}`}>
+                <div className="BoxedCheckbox-wrapper flex1 u-textAlign--left">
+                  <div className={`BoxedCheckbox flex-auto flex alignItems--center ${this.state.autoEnabled ? "is-active" : ""}`}>
                     <input
                       type="checkbox"
-                      className="u-cursor--pointer u-marginRight--10"
+                      className="u-cursor--pointer u-marginLeft--10"
                       id="autoEnabled"
                       checked={this.state.autoEnabled}
                       onChange={(e) => { this.handleFormChange("autoEnabled", e) }}
@@ -259,7 +295,7 @@ class SnapshotSchedule extends Component {
                 </div>
               </div>
               {this.state.autoEnabled &&
-                <div className="flex-column flex1 u-position--relative u-marginBottom--50 u-marginTop--5">
+                <div className="flex-column flex1 u-position--relative u-marginBottom--50">
                   <div className="flex flex1">
                     <div className="flex1 u-paddingRight--5">
                       <p className="u-fontSize--normal u-color--tuna u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">Schedule</p>
@@ -289,7 +325,7 @@ class SnapshotSchedule extends Component {
                   }
                 </div>
               }
-              <div className="flex flex-column">
+              <div>
                 <p className="u-fontSize--normal u-color--tuna u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">Retention policy</p>
                 <p className="u-fontSize--small u-color--dustyGray u-fontWeight--normal u-lineHeight--normal u-marginBottom--10">The Admin Console can reclaim space by automatically deleting older scheduled snapshots.</p>
                 <p className="u-fontSize--small u-color--dustyGray u-fontWeight--normal u-lineHeight--normal u-marginBottom--10">Snapshots older than this will be deleted.</p>
@@ -313,7 +349,7 @@ class SnapshotSchedule extends Component {
                 </div>
               </div>
               <div className="flex">
-                <button className="btn primary blue" disabled={updatingSchedule} onClick={this.saveSnapshotConfig}>{updatingSchedule ? "Updating schedule" : "Update Schedule"}</button>
+                <button className="btn primary blue" disabled={updatingSchedule} onClick={this.saveSnapshotConfig}>{updatingSchedule ? "Updating schedule" : "Update schedule"}</button>
                 {updateConfirm &&
                   <div className="u-marginLeft--10 flex alignItems--center">
                     <span className="icon checkmark-icon" />
