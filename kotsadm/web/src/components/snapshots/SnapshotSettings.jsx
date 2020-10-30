@@ -1,6 +1,7 @@
 import React, { Component } from "react";
 import { withRouter } from "react-router-dom"
 import Helmet from "react-helmet";
+import isEmpty from "lodash/isEmpty";
 
 import Loader from "../shared/Loader";
 import SnapshotStorageDestination from "./SnapshotStorageDestination";
@@ -65,6 +66,10 @@ class SnapshotSettings extends Component {
 
   componentDidMount() {
     this.fetchSnapshotSettings();
+
+    if (!isEmpty(this.props.location.search)) {
+      this.setState({ configureSnapshotsModal: true });
+    }
   }
 
   componentDidUpdate(lastProps, lastState) {
