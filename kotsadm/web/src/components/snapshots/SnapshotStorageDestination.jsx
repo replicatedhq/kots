@@ -1,12 +1,14 @@
 import React, { Component } from "react";
 import Select from "react-select";
-import { withRouter, Link } from "react-router-dom"
+import { withRouter } from "react-router-dom"
 import MonacoEditor from "react-monaco-editor";
 import find from "lodash/find";
 
+import ConfigureSnapshots from "./ConfigureSnapshots";
+
 import "../../scss/components/shared/SnapshotForm.scss";
 
-import SnapshotInstallationBox from "./SnapshotInstallationBox";
+import SnapshotSchedule from "./SnapshotSchedule";
 
 const DESTINATIONS = [
   {
@@ -602,7 +604,7 @@ class SnapshotStorageDestination extends Component {
   }
 
   render() {
-    const { snapshotSettings, updatingSettings, updateConfirm, updateErrorMsg, toggleSnapshotView, isEmptyView, isLicenseUpload } = this.props;
+    const { snapshotSettings, updatingSettings, updateConfirm, updateErrorMsg } = this.props;
 
     const availableDestinations = [];
     if (snapshotSettings?.veleroPlugins) {
@@ -646,86 +648,85 @@ class SnapshotStorageDestination extends Component {
 
 
     return (
-      <div className={`flex1 flex-column ${isLicenseUpload ? "" : "AppSnapshotsEmptyState--wrapper"}`}>
-        {isLicenseUpload ?
-          isEmptyView ?
-            <div className="u-fontWeight--bold u-color--astral u-cursor--pointer" onClick={toggleSnapshotView}>
-              <span className="icon clickable backArrow-icon u-marginRight--10" style={{ verticalAlign: "0" }} />
-            Back
-          </div>
-            :
-            <Link to="/restore" className="u-fontSize--normal u-fontWeight--medium u-color--royalBlue u-cursor--pointer">
-              <span className="icon clickable backArrow-icon u-marginRight--10" style={{ verticalAlign: "0" }} />
-          Back to license upload
-        </Link>
-          : <div className="u-fontWeight--bold u-color--royalBlue u-cursor--pointer" onClick={() => this.props.history.goBack()}>
-            <span className="icon clickable backArrow-icon u-marginRight--10" style={{ verticalAlign: "0" }} />
-            Back
-        </div>}
-        <p className="u-fontSize--largest u-marginBottom--20 u-fontWeight--bold u-color--tundora u-marginTop--12">{isLicenseUpload ? "Select a snapshot to restore from" : "Configure storage destination"}</p>
-        <p className="u-fontSize--normal u-color--dustyGray u-lineHeight--normal u-fontWeight--medium">
-          {isLicenseUpload ? "Choose the snapshot backup that you want to restore your application from." :
-            "To begin with snapshots you need to configure where you want them to be stored. Snapshots can be stored on Amazon S3, Google Cloud Storage, Azure Blob Storage, and other S3 compatible storage providers."
-          }
-        </p>
-        <div className="flex u-marginTop--20">
-          <form className="flex flex-column snapshot-form-wrapper u-marginRight--50">
-            {updateErrorMsg &&
-              <div className="flex u-fontWeight--bold u-fontSize--small u-color--red u-marginBottom--10">{updateErrorMsg}</div>}
-            <div className="flex flex-column u-marginBottom--20">
-              <p className="u-fontSize--normal u-color--tuna u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">Destination</p>
-              {!snapshotSettings?.isVeleroRunning &&
-                <div className="flex u-fontWeight--bold u-fontSize--small u-color--red u-marginBottom--10"> Please fix Velero so that the deployment is running. <a href="https://kots.io/kotsadm/snapshots/troubleshooting/" target="_blank" rel="noopener noreferrer" className="replicated-link u-marginLeft--5">View docs</a>  </div>}
-              <div className="flex1">
-                {availableDestinations.length > 1 ?
-                  <Select
-                    className="replicated-select-container"
-                    classNamePrefix="replicated-select"
-                    placeholder="Select unit"
-                    options={availableDestinations}
-                    isSearchable={false}
-                    getOptionLabel={(destination) => this.getDestinationLabel(destination, destination.label)}
-                    getOptionValue={(destination) => destination.label}
-                    value={selectedDestination}
-                    onChange={this.handleDestinationChange}
-                    isOptionSelected={(option) => { option.value === selectedDestination }}
-                  />
-                  : 
-                  availableDestinations.length === 1 ?
-                    <div className="u-color--tuna u-fontWeight--medium flex alignItems--center">
-                      {this.getDestinationLabel(availableDestinations[0], availableDestinations[0].label)}
-                    </div>
+      <div className="flex1 flex-column">
+        <p className="u-marginBottom--20 u-fontSize--small u-color--tundora u-fontWeight--medium">
+          <span className="replicated-link" onClick={() => this.props.history.goBack()}>Snapshots</span>
+          <span className="u-color--dustyGray"> &gt; </span>
+            Settings
+          </p>
+        <p className="u-fontSize--normal u-marginBottom--15 u-fontWeight--bold u-color--tundora">Snapshot settings</p>
+        <div className="flex">
+          <div className="flex flex-column u-marginRight--50">
+            <form className="flex flex-column snapshot-form-wrapper">
+              <p className="u-fontSize--normal u-marginBottom--20 u-fontWeight--bold u-color--tundora">Storage</p>
+              {updateErrorMsg &&
+                <div className="flex u-fontWeight--bold u-fontSize--small u-color--red u-marginBottom--10">{updateErrorMsg}</div>}
+              <div className="flex flex-column u-marginBottom--20">
+                <div className="flex flex1 justifyContent--spaceBetween alignItems--center">
+                  <p className="u-fontSize--normal u-color--tuna u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">Destination</p>
+                  <span className="replicated-link u-fontSize--normal flex justifyContent--flexEnd u-cursor--pointer" onClick={() => this.props.toggleConfigureModal(this.props.history)}> + Add a new storage destination </span>
+                </div>
+                {!snapshotSettings?.isVeleroRunning &&
+                  <div className="flex u-fontWeight--bold u-fontSize--small u-color--red u-marginBottom--10"> Please fix Velero so that the deployment is running. <a href="https://kots.io/kotsadm/snapshots/troubleshooting/" target="_blank" rel="noopener noreferrer" className="replicated-link u-marginLeft--5">View docs</a>  </div>}
+                <div className="flex1">
+                  {availableDestinations.length > 1 ?
+                    <Select
+                      className="replicated-select-container"
+                      classNamePrefix="replicated-select"
+                      placeholder="Select unit"
+                      options={availableDestinations}
+                      isSearchable={false}
+                      getOptionLabel={(destination) => this.getDestinationLabel(destination, destination.label)}
+                      getOptionValue={(destination) => destination.label}
+                      value={selectedDestination}
+                      onChange={this.handleDestinationChange}
+                      isOptionSelected={(option) => { option.value === selectedDestination }}
+                    />
                     :
-                    null
-                }
-              </div>
-            </div>
-            {!this.state.determiningDestination &&
-              <div>
-                {this.renderDestinationFields()}
-                <div className="flex u-marginBottom--30">
-                  {isLicenseUpload ? <Link to="/restore" className="btn secondary blue u-marginRight--10">Cancel</Link> : null}
-                  <button className="btn primary blue" disabled={updatingSettings} onClick={this.onSubmit}>{updatingSettings ? "Updating" : isLicenseUpload ? "Use bucket" : "Update settings"}</button>
-                  {updateConfirm &&
-                    <div className="u-marginLeft--10 flex alignItems--center">
-                      <span className="icon checkmark-icon" />
-                      <span className="u-marginLeft--5 u-fontSize--small u-fontWeight--medium u-color--chateauGreen">Settings updated</span>
-                    </div>
+                    availableDestinations.length === 1 ?
+                      <div className="u-color--tuna u-fontWeight--medium flex alignItems--center">
+                        {this.getDestinationLabel(availableDestinations[0], availableDestinations[0].label)}
+                      </div>
+                      :
+                      null
                   }
                 </div>
               </div>
-            }
-          </form>
-
-          {!isLicenseUpload &&
-            <SnapshotInstallationBox
-              fetchSnapshotSettings={this.props.fetchSnapshotSettings}
-              renderNotVeleroMessage={this.props.renderNotVeleroMessage}
-              snapshotSettings={snapshotSettings}
-              hideCheckVeleroButton={this.props.hideCheckVeleroButton}
-            />
-          }
+              {!this.state.determiningDestination &&
+                <div>
+                  {this.renderDestinationFields()}
+                  <div className="flex">
+                    <button className="btn primary blue" disabled={updatingSettings} onClick={this.onSubmit}>{updatingSettings ? "Updating" : "Update storage settings"}</button>
+                    {updateConfirm &&
+                      <div className="u-marginLeft--10 flex alignItems--center">
+                        <span className="icon checkmark-icon" />
+                        <span className="u-marginLeft--5 u-fontSize--small u-fontWeight--medium u-color--chateauGreen">Settings updated</span>
+                      </div>
+                    }
+                  </div>
+                </div>
+              }
+            </form>
+            <div className="Info--wrapper flex flex1 u-marginTop--15">
+              <span className="icon info-icon flex u-marginTop--5" />
+              <div className="flex flex-column u-marginLeft--5">
+                <p className="u-fontSize--normal u-fontWeight--bold u-lineHeight--normal u-color--tuna"> Deduplication </p>
+                <span className="u-fontSize--small u-fontWeight--normal u-lineHeight--normal u-color--dustyGray"> All data in your snapshots will be deduplicated. To learn more about how,
+                <a href="" target="_blank" rel="noopener noreferrer" className="replicated-link"> check out our docs</a>. </span>
+              </div>
+            </div>
+          </div>
+          <SnapshotSchedule isVeleroRunning={snapshotSettings?.isVeleroRunning} />
         </div>
+        {this.props.configureSnapshotsModal &&
+          <ConfigureSnapshots
+            snapshotSettings={this.props.snapshotSettings}
+            fetchSnapshotSettings={this.props.fetchSnapshotSettings}
+            renderNotVeleroMessage={this.props.renderNotVeleroMessage}
+            hideCheckVeleroButton={this.props.hideCheckVeleroButton}
+            configureSnapshotsModal={this.props.configureSnapshotsModal}
+            toggleConfigureModal={this.props.toggleConfigureModal}
+          />}
       </div>
     );
   }

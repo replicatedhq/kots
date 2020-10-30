@@ -39,7 +39,7 @@ export class NavBar extends PureComponent {
       });
       if (!res.ok) {
         if (res.status === 401) {
-          this.setState({ loggingOut: false, displayErrorModal: false  });
+          this.setState({ loggingOut: false, displayErrorModal: false });
           Utilities.logoutUser();
           return;
         }
@@ -47,12 +47,12 @@ export class NavBar extends PureComponent {
         onLogoutError(`Unexpected status code: ${res.status}`);
       }
       if (res.ok && res.status === 204) {
-        this.setState({ loggingOut: false, displayErrorModal: false  });
+        this.setState({ loggingOut: false, displayErrorModal: false });
         Utilities.logoutUser();
       }
-    } catch(err) {
+    } catch (err) {
       console.log(err)
-      this.setState({ loggingOut: false, displayErrorModal: true  });
+      this.setState({ loggingOut: false, displayErrorModal: true });
       onLogoutError(err ? err.message : "Something went wrong, please try again.")
     }
   }
@@ -81,7 +81,7 @@ export class NavBar extends PureComponent {
       selectedTab = "cluster_management";
     } else if (pathname.startsWith("/app")) {
       selectedTab = "dashboard"
-    } else if (pathname === "/snapshots") {
+    } else if (pathname === "/snapshots" || pathname === "/snapshots/settings") {
       selectedTab = "snapshots";
     }
     this.setState({ selectedTab });
@@ -180,9 +180,10 @@ export class NavBar extends PureComponent {
                     {isSnapshotsSupported &&
                       <div className={classNames("NavItem u-position--relative flex", { "is-active": selectedTab === "snapshots" })}>
                         <span className="HeaderLink flex flex1 u-cursor--pointer" onClick={this.handleGoToSnapshots}>
-                          <span className="text u-fontSize--normal u-fontWeight--medium flex-column justifyContent--center">
-                            <span>Snapshot Settings</span>
-                          </span>
+                          <div className="flex flex1 alignItems--center">
+                          <span className="text u-fontSize--normal u-fontWeight--medium flex"> Snapshots </span>
+                          <span className="flex beta-tag"> beta </span>
+                          </div>
                         </span>
                       </div>
                     }

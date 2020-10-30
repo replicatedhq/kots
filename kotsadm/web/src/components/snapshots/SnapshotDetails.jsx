@@ -1,5 +1,5 @@
 import React, { Component } from "react";
-import { Link, withRouter } from "react-router-dom";
+import { withRouter } from "react-router-dom";
 import MonacoEditor from "react-monaco-editor";
 import Modal from "react-modal";
 import filter from "lodash/filter";
@@ -16,7 +16,7 @@ import { Utilities } from "../../utilities/utilities";
 let colorIndex = 0;
 let mapColors = {}
 
-class AppSnapshotDetail extends Component {
+class SnapshotDetails extends Component {
   state = {
     showScriptsOutput: false,
     scriptOutput: "",
@@ -484,7 +484,6 @@ class AppSnapshotDetail extends Component {
       errorMessage,
       errorTitle,
     } = this.state;
-    const { app } = this.props;
 
     if (loading) {
       return (
@@ -496,7 +495,7 @@ class AppSnapshotDetail extends Component {
     return (
       <div className="container flex-column flex1 u-overflow--auto u-paddingTop--30 u-paddingBottom--20">
         <p className="u-marginBottom--30 u-fontSize--small u-color--tundora u-fontWeight--medium">
-          <Link to={`/app/${app?.slug}/snapshots`} className="replicated-link">Snapshots</Link>
+          <span className="replicated-link" onClick={() => this.props.history.goBack()}>Snapshots</span>
           <span className="u-color--dustyGray"> &gt; </span>
           {snapshotDetails?.name}
         </p>
@@ -737,4 +736,4 @@ class AppSnapshotDetail extends Component {
   }
 }
 
-export default withRouter(AppSnapshotDetail);
+export default withRouter(SnapshotDetails);
