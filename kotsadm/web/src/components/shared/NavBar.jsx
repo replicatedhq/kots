@@ -81,7 +81,7 @@ export class NavBar extends PureComponent {
       selectedTab = "cluster_management";
     } else if (pathname.startsWith("/app")) {
       selectedTab = "dashboard"
-    } else if (pathname === "/snapshots" || pathname === "/snapshots/settings") {
+    } else if (pathname.startsWith("/snapshots")) {
       selectedTab = "snapshots";
     }
     this.setState({ selectedTab });
