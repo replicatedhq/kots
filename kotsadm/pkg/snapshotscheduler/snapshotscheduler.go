@@ -202,7 +202,7 @@ func handleCluster(c *downstreamtypes.Downstream) error {
 		return nil
 	}
 
-	backup, err := snapshot.CreateInstanceBackup(context.TODO(), true)
+	backup, err := snapshot.CreateInstanceBackup(context.TODO(), c, true)
 	if err != nil {
 		return errors.Wrap(err, "failed to create instance backup")
 	}

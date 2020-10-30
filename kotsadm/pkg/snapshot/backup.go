@@ -13,6 +13,7 @@ import (
 	"github.com/pkg/errors"
 	apptypes "github.com/replicatedhq/kots/kotsadm/pkg/app/types"
 	"github.com/replicatedhq/kots/kotsadm/pkg/downstream"
+	downstreamtypes "github.com/replicatedhq/kots/kotsadm/pkg/downstream/types"
 	"github.com/replicatedhq/kots/kotsadm/pkg/k8s"
 	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
 	"github.com/replicatedhq/kots/kotsadm/pkg/render/helper"
@@ -117,6 +118,16 @@ func CreateApplicationBackup(ctx context.Context, a *apptypes.App, isScheduled b
 
 	veleroBackup.Spec.StorageLocation = "default"
 
+	if a.SnapshotTTL != "" {
+		ttlDuration, err := time.ParseDuration(a.SnapshotTTL)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to parse app snapshot ttl value as duration")
+		}
+		veleroBackup.Spec.TTL = metav1.Duration{
+			Duration: ttlDuration,
+		}
+	}
+
 	cfg, err := config.GetConfig()
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get cluster config")
@@ -135,7 +146,7 @@ func CreateApplicationBackup(ctx context.Context, a *apptypes.App, isScheduled b
 	return backup, nil
 }
 
-func CreateInstanceBackup(ctx context.Context, isScheduled bool) (*velerov1.Backup, error) {
+func CreateInstanceBackup(ctx context.Context, cluster *downstreamtypes.Downstream, isScheduled bool) (*velerov1.Backup, error) {
 	logger.Debug("creating instance backup")
 
 	apps, err := store.GetStore().ListInstalledApps()
@@ -226,6 +237,16 @@ func CreateInstanceBackup(ctx context.Context, isScheduled bool) (*velerov1.Back
 				},
 			},
 		},
+	}
+
+	if cluster.SnapshotTTL != "" {
+		ttlDuration, err := time.ParseDuration(cluster.SnapshotTTL)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to parse cluster snapshot ttl value as duration")
+		}
+		veleroBackup.Spec.TTL = metav1.Duration{
+			Duration: ttlDuration,
+		}
 	}
 
 	cfg, err := config.GetConfig()

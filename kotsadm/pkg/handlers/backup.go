@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
+	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
 	"github.com/replicatedhq/kots/kotsadm/pkg/snapshot"
 	snapshottypes "github.com/replicatedhq/kots/kotsadm/pkg/snapshot/types"
@@ -163,7 +164,22 @@ func CreateInstanceBackup(w http.ResponseWriter, r *http.Request) {
 		Success: false,
 	}
 
-	backup, err := snapshot.CreateInstanceBackup(context.TODO(), false)
+	clusters, err := store.GetStore().ListClusters()
+	if err != nil {
+		logger.Error(err)
+		createInstanceBackupResponse.Error = "failed to list clusters"
+		JSON(w, http.StatusInternalServerError, createInstanceBackupResponse)
+		return
+	}
+	if len(clusters) == 0 {
+		logger.Error(errors.New("No clusters found"))
+		createInstanceBackupResponse.Error = "no clusters found"
+		JSON(w, http.StatusInternalServerError, createInstanceBackupResponse)
+		return
+	}
+	c := clusters[0]
+
+	backup, err := snapshot.CreateInstanceBackup(context.TODO(), c, false)
 	if err != nil {
 		logger.Error(err)
 		createInstanceBackupResponse.Error = "failed to create instance backup"
