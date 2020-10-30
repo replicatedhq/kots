@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
+	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
 	"github.com/replicatedhq/kots/kotsadm/pkg/snapshot"
 	snapshottypes "github.com/replicatedhq/kots/kotsadm/pkg/snapshot/types"
@@ -161,6 +162,14 @@ type CreateInstanceBackupResponse struct {
 func CreateInstanceBackup(w http.ResponseWriter, r *http.Request) {
 	createInstanceBackupResponse := CreateInstanceBackupResponse{
 		Success: false,
+	}
+
+	if err := requireValidKOTSToken(w, r); err != nil {
+		err = errors.Wrap(err, "failed to validate token")
+		logger.Error(err)
+		createInstanceBackupResponse.Error = err.Error()
+		JSON(w, http.StatusUnauthorized, createInstanceBackupResponse)
+		return
 	}
 
 	backup, err := snapshot.CreateInstanceBackup(context.TODO(), false)

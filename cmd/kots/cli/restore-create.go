@@ -30,12 +30,12 @@ func RestoreCreateCmd() *cobra.Command {
 				os.Exit(1)
 			}
 
-			instanceRestoreOptions := snapshot.InstanceRestoreOptions{
+			options := snapshot.CreateInstanceRestoreOptions{
 				BackupName: backupName,
 			}
-			restore, err := snapshot.InstanceRestore(instanceRestoreOptions)
+			restore, err := snapshot.CreateInstanceRestore(options)
 			if err != nil {
-				return errors.Cause(err)
+				return errors.Wrap(err, "failed to create instance restore")
 			}
 
 			log := logger.NewLogger()

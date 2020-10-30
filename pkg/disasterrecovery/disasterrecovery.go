@@ -1,19 +1,11 @@
 package disasterrecovery
 
 import (
-	"io/ioutil"
-	"path/filepath"
-
 	"github.com/pkg/errors"
-	"github.com/replicatedhq/kots/pkg/k8sutil"
 	kotsadmtypes "github.com/replicatedhq/kots/pkg/kotsadm/types"
 	"gopkg.in/yaml.v2"
 	"sigs.k8s.io/kustomize/api/resid"
 	kustomizetypes "sigs.k8s.io/kustomize/api/types"
-)
-
-const (
-	LabelTransformerFileName = "backup-label-transformer.yaml"
 )
 
 type LabelTransformer struct {
@@ -123,41 +115,4 @@ func GetLabelTransformerYAML(additionalLabels map[string]string) ([]byte, error)
 	}
 
 	return b, nil
-}
-
-func EnsureLabelTransformer(archiveDir string, additionalLabels map[string]string) error {
-	labelTransformerExists := false
-
-	k, err := k8sutil.ReadKustomizationFromFile(filepath.Join(archiveDir, "overlays", "midstream", "kustomization.yaml"))
-	if err != nil {
-		return errors.Wrap(err, "failed to read kustomization file from midstream")
-	}
-
-	for _, transformer := range k.Transformers {
-		if transformer == LabelTransformerFileName {
-			labelTransformerExists = true
-			break
-		}
-	}
-
-	if !labelTransformerExists {
-		drLabelTransformerYAML, err := GetLabelTransformerYAML(additionalLabels)
-		if err != nil {
-			return errors.Wrap(err, "failed to get disaster recovery label transformer yaml")
-		}
-
-		absFilename := filepath.Join(archiveDir, "overlays", "midstream", LabelTransformerFileName)
-
-		if err := ioutil.WriteFile(absFilename, drLabelTransformerYAML, 0644); err != nil {
-			return errors.Wrap(err, "failed to write disaster recovery label transformer yaml file")
-		}
-
-		k.Transformers = append(k.Transformers, LabelTransformerFileName)
-
-		if err := k8sutil.WriteKustomizationToFile(*k, filepath.Join(archiveDir, "overlays", "midstream", "kustomization.yaml")); err != nil {
-			return errors.Wrap(err, "failed to write kustomization file to midstream")
-		}
-	}
-
-	return nil
 }

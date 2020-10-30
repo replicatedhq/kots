@@ -2,7 +2,6 @@ package print
 
 import (
 	"fmt"
-	"time"
 
 	velerov1 "github.com/vmware-tanzu/velero/pkg/apis/velero/v1"
 )
@@ -11,10 +10,9 @@ func Restores(restores []velerov1.Restore) {
 	w := NewTabWriter()
 	defer w.Flush()
 
-	fmt.Fprintf(w, "%s\t%s\n", "NAME", "AGE")
-	for _, restore := range restores {
-		age := time.Now().Sub(restore.ObjectMeta.CreationTimestamp.Time)
-		age = age.Round(time.Second)
-		fmt.Fprintf(w, "%s\t%s\n", restore.ObjectMeta.Name, age.String())
+	fmtColumns := "%s\t%s\t%s\t%s\t%s\t%s\n"
+	fmt.Fprintf(w, fmtColumns, "NAME", "BACKUP", "STATUS", "ERRORS", "WARNINGS", "CREATED")
+	for _, r := range restores {
+		fmt.Fprintf(w, fmtColumns, r.ObjectMeta.Name, r.Spec.BackupName, r.Status.Phase, fmt.Sprintf("%d", r.Status.Errors), fmt.Sprintf("%d", r.Status.Warnings), r.CreationTimestamp.Time)
 	}
 }

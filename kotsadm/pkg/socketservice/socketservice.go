@@ -27,8 +27,8 @@ import (
 	"github.com/replicatedhq/kots/kotsadm/pkg/supportbundle"
 	supportbundletypes "github.com/replicatedhq/kots/kotsadm/pkg/supportbundle/types"
 	"github.com/replicatedhq/kots/kotsadm/pkg/version"
-	"github.com/replicatedhq/kots/pkg/disasterrecovery"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
+	"github.com/replicatedhq/kots/pkg/midstream"
 
 	velerov1 "github.com/vmware-tanzu/velero/pkg/apis/velero/v1"
 )
@@ -199,7 +199,7 @@ func (s *SocketService) processDeploySocketForApp(clusterSocket ClusterSocket, a
 	additionalLabels := map[string]string{
 		"kots.io/app-slug": a.Slug,
 	}
-	if err := disasterrecovery.EnsureLabelTransformer(deployedVersionArchive, additionalLabels); err != nil {
+	if err := midstream.EnsureDisasterRecoveryLabelTransformer(deployedVersionArchive, additionalLabels); err != nil {
 		deployError = errors.Wrap(err, "failed to ensure disaster recovery label transformer")
 		return deployError
 	}

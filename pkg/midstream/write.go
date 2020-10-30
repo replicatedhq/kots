@@ -15,8 +15,9 @@ import (
 )
 
 const (
-	secretFilename  = "secret.yaml"
-	patchesFilename = "pullsecrets.yaml"
+	secretFilename                           = "secret.yaml"
+	patchesFilename                          = "pullsecrets.yaml"
+	disasterRecoveryLabelTransformerFileName = "backup-label-transformer.yaml"
 )
 
 type WriteOptions struct {
@@ -148,13 +149,13 @@ func (m *Midstream) writeDisasterRecoveryLabelTransformer(options WriteOptions) 
 		return "", errors.Wrap(err, "failed to get disaster recovery label transformer yaml")
 	}
 
-	absFilename := filepath.Join(options.MidstreamDir, disasterrecovery.LabelTransformerFileName)
+	absFilename := filepath.Join(options.MidstreamDir, disasterRecoveryLabelTransformerFileName)
 
 	if err := ioutil.WriteFile(absFilename, drLabelTransformerYAML, 0644); err != nil {
 		return "", errors.Wrap(err, "failed to write disaster recovery label transformer yaml file")
 	}
 
-	return disasterrecovery.LabelTransformerFileName, nil
+	return disasterRecoveryLabelTransformerFileName, nil
 }
 
 func (m *Midstream) writePullSecret(options WriteOptions) (string, error) {
@@ -213,6 +214,43 @@ func (m *Midstream) writeObjectsWithPullSecret(options WriteOptions) error {
 	}
 
 	m.Kustomization.PatchesStrategicMerge = append(m.Kustomization.PatchesStrategicMerge, patchesFilename)
+
+	return nil
+}
+
+func EnsureDisasterRecoveryLabelTransformer(archiveDir string, additionalLabels map[string]string) error {
+	labelTransformerExists := false
+
+	k, err := k8sutil.ReadKustomizationFromFile(filepath.Join(archiveDir, "overlays", "midstream", "kustomization.yaml"))
+	if err != nil {
+		return errors.Wrap(err, "failed to read kustomization file from midstream")
+	}
+
+	for _, transformer := range k.Transformers {
+		if transformer == disasterRecoveryLabelTransformerFileName {
+			labelTransformerExists = true
+			break
+		}
+	}
+
+	if !labelTransformerExists {
+		drLabelTransformerYAML, err := disasterrecovery.GetLabelTransformerYAML(additionalLabels)
+		if err != nil {
+			return errors.Wrap(err, "failed to get disaster recovery label transformer yaml")
+		}
+
+		absFilename := filepath.Join(archiveDir, "overlays", "midstream", disasterRecoveryLabelTransformerFileName)
+
+		if err := ioutil.WriteFile(absFilename, drLabelTransformerYAML, 0644); err != nil {
+			return errors.Wrap(err, "failed to write disaster recovery label transformer yaml file")
+		}
+
+		k.Transformers = append(k.Transformers, disasterRecoveryLabelTransformerFileName)
+
+		if err := k8sutil.WriteKustomizationToFile(*k, filepath.Join(archiveDir, "overlays", "midstream", "kustomization.yaml")); err != nil {
+			return errors.Wrap(err, "failed to write kustomization file to midstream")
+		}
+	}
 
 	return nil
 }

@@ -11,7 +11,7 @@ import (
 func BackupListCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:           "ls",
-		Short:         "List available backups",
+		Short:         "List available instance backups",
 		Long:          ``,
 		SilenceUsage:  true,
 		SilenceErrors: false,
@@ -19,9 +19,14 @@ func BackupListCmd() *cobra.Command {
 			viper.BindPFlags(cmd.Flags())
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
-			backups, err := snapshot.ListBackups()
+			v := viper.GetViper()
+
+			options := snapshot.ListInstanceBackupsOptions{
+				Namespace: v.GetString("namespace"),
+			}
+			backups, err := snapshot.ListInstanceBackups(options)
 			if err != nil {
-				return errors.Cause(err)
+				return errors.Wrap(err, "failed to list instance backups")
 			}
 
 			print.Backups(backups)
@@ -29,6 +34,8 @@ func BackupListCmd() *cobra.Command {
 			return nil
 		},
 	}
+
+	cmd.Flags().StringP("namespace", "n", "", "filter by the namespace in which kots/kotsadm is installed")
 
 	return cmd
 }

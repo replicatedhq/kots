@@ -20,12 +20,12 @@ func BackupCreateCmd() *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			v := viper.GetViper()
 
-			instanceBackupOptions := snapshot.InstanceBackupOptions{
+			options := snapshot.CreateInstanceBackupOptions{
 				Namespace:             v.GetString("namespace"),
 				KubernetesConfigFlags: kubernetesConfigFlags,
 			}
-			if err := snapshot.InstanceBackup(instanceBackupOptions); err != nil {
-				return errors.Cause(err)
+			if err := snapshot.CreateInstanceBackup(options); err != nil {
+				return errors.Wrap(err, "failed to create instance backup")
 			}
 
 			return nil

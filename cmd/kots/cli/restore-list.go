@@ -19,9 +19,14 @@ func RestoreListCmd() *cobra.Command {
 			viper.BindPFlags(cmd.Flags())
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
-			restores, err := snapshot.ListRestores()
+			v := viper.GetViper()
+
+			options := snapshot.ListInstanceRestoresOptions{
+				Namespace: v.GetString("namespace"),
+			}
+			restores, err := snapshot.ListInstanceRestores(options)
 			if err != nil {
-				return errors.Cause(err)
+				return errors.Wrap(err, "failed to list instance restores")
 			}
 
 			print.Restores(restores)
@@ -29,6 +34,8 @@ func RestoreListCmd() *cobra.Command {
 			return nil
 		},
 	}
+
+	cmd.Flags().StringP("namespace", "n", "", "filter by the namespace in which kots/kotsadm is installed")
 
 	return cmd
 }

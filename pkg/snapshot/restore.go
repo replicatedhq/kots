@@ -15,11 +15,15 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
 )
 
-type InstanceRestoreOptions struct {
+type CreateInstanceRestoreOptions struct {
 	BackupName string
 }
 
-func InstanceRestore(instanceRestoreOptions InstanceRestoreOptions) (*velerov1.Restore, error) {
+type ListInstanceRestoresOptions struct {
+	Namespace string
+}
+
+func CreateInstanceRestore(options CreateInstanceRestoreOptions) (*velerov1.Restore, error) {
 	bsl, err := findBackupStoreLocation()
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get velero namespace")
@@ -38,7 +42,7 @@ func InstanceRestore(instanceRestoreOptions InstanceRestoreOptions) (*velerov1.R
 		return nil, errors.Wrap(err, "failed to create clientset")
 	}
 
-	backup, err := veleroClient.Backups(veleroNamespace).Get(context.TODO(), instanceRestoreOptions.BackupName, metav1.GetOptions{})
+	backup, err := veleroClient.Backups(veleroNamespace).Get(context.TODO(), options.BackupName, metav1.GetOptions{})
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to find backup")
 	}
@@ -57,10 +61,15 @@ func InstanceRestore(instanceRestoreOptions InstanceRestoreOptions) (*velerov1.R
 	restore := &velerov1.Restore{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: veleroNamespace,
-			Name:      instanceRestoreOptions.BackupName, // restore name same as backup name
+			Name:      options.BackupName, // restore name same as backup name
+			Annotations: map[string]string{
+				"kots.io/instance":                 "true",
+				"kots.io/kotsadm-image":            kotsadmImage,
+				"kots.io/kotsadm-deploy-namespace": kotsadmNamespace,
+			},
 		},
 		Spec: velerov1.RestoreSpec{
-			BackupName: instanceRestoreOptions.BackupName,
+			BackupName: options.BackupName,
 			LabelSelector: &metav1.LabelSelector{
 				MatchLabels: map[string]string{
 					kotsadmtypes.BackupLabel: kotsadmtypes.BackupLabelValue,
@@ -192,9 +201,9 @@ func InstanceRestore(instanceRestoreOptions InstanceRestoreOptions) (*velerov1.R
 	}
 
 	// delete existing restore object (if exists)
-	err = veleroClient.Restores(veleroNamespace).Delete(context.TODO(), instanceRestoreOptions.BackupName, metav1.DeleteOptions{})
+	err = veleroClient.Restores(veleroNamespace).Delete(context.TODO(), options.BackupName, metav1.DeleteOptions{})
 	if err != nil && !strings.Contains(err.Error(), "not found") {
-		return nil, errors.Wrapf(err, "failed to delete restore %s", instanceRestoreOptions.BackupName)
+		return nil, errors.Wrapf(err, "failed to delete restore %s", options.BackupName)
 	}
 
 	// create new restore object
@@ -206,7 +215,7 @@ func InstanceRestore(instanceRestoreOptions InstanceRestoreOptions) (*velerov1.R
 	return restore, nil
 }
 
-func ListRestores() ([]velerov1.Restore, error) {
+func ListInstanceRestores(options ListInstanceRestoresOptions) ([]velerov1.Restore, error) {
 	bsl, err := findBackupStoreLocation()
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get velero namespace")
@@ -229,5 +238,19 @@ func ListRestores() ([]velerov1.Restore, error) {
 		return nil, errors.Wrap(err, "failed to list restores")
 	}
 
-	return r.Items, nil
+	restores := []velerov1.Restore{}
+
+	for _, restore := range r.Items {
+		if restore.Annotations["kots.io/instance"] != "true" {
+			continue
+		}
+
+		if options.Namespace != "" && restore.Annotations["kots.io/kotsadm-deploy-namespace"] != options.Namespace {
+			continue
+		}
+
+		restores = append(restores, restore)
+	}
+
+	return restores, nil
 }

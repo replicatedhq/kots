@@ -18,22 +18,26 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
 )
 
-type InstanceBackupOptions struct {
+type CreateInstanceBackupOptions struct {
 	Namespace             string
 	KubernetesConfigFlags *genericclioptions.ConfigFlags
 }
 
-func InstanceBackup(instanceBackupOptions InstanceBackupOptions) error {
+type ListInstanceBackupsOptions struct {
+	Namespace string
+}
+
+func CreateInstanceBackup(options CreateInstanceBackupOptions) error {
 	log := logger.NewLogger()
 	log.ActionWithSpinner("Connecting to cluster")
 
-	clientset, err := k8sutil.GetClientset(instanceBackupOptions.KubernetesConfigFlags)
+	clientset, err := k8sutil.GetClientset(options.KubernetesConfigFlags)
 	if err != nil {
 		log.FinishSpinnerWithError()
 		return errors.Wrap(err, "failed to get clientset")
 	}
 
-	podName, err := k8sutil.FindKotsadm(clientset, instanceBackupOptions.Namespace)
+	podName, err := k8sutil.FindKotsadm(clientset, options.Namespace)
 	if err != nil {
 		log.FinishSpinnerWithError()
 		return errors.Wrap(err, "failed to find kotsadm pod")
@@ -42,7 +46,7 @@ func InstanceBackup(instanceBackupOptions InstanceBackupOptions) error {
 	stopCh := make(chan struct{})
 	defer close(stopCh)
 
-	localPort, errChan, err := k8sutil.PortForward(instanceBackupOptions.KubernetesConfigFlags, 0, 3000, instanceBackupOptions.Namespace, podName, false, stopCh, log)
+	localPort, errChan, err := k8sutil.PortForward(options.KubernetesConfigFlags, 0, 3000, options.Namespace, podName, false, stopCh, log)
 	if err != nil {
 		log.FinishSpinnerWithError()
 		return errors.Wrap(err, "failed to start port forwarding")
@@ -58,7 +62,7 @@ func InstanceBackup(instanceBackupOptions InstanceBackupOptions) error {
 		}
 	}()
 
-	authSlug, err := auth.GetOrCreateAuthSlug(instanceBackupOptions.KubernetesConfigFlags, instanceBackupOptions.Namespace)
+	authSlug, err := auth.GetOrCreateAuthSlug(options.KubernetesConfigFlags, options.Namespace)
 	if err != nil {
 		log.FinishSpinnerWithError()
 		return errors.Wrap(err, "failed to get kotsadm auth slug")
@@ -113,7 +117,7 @@ func InstanceBackup(instanceBackupOptions InstanceBackupOptions) error {
 	return nil
 }
 
-func ListBackups() ([]velerov1.Backup, error) {
+func ListInstanceBackups(options ListInstanceBackupsOptions) ([]velerov1.Backup, error) {
 	bsl, err := findBackupStoreLocation()
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get velero namespace")
@@ -136,5 +140,19 @@ func ListBackups() ([]velerov1.Backup, error) {
 		return nil, errors.Wrap(err, "failed to list backups")
 	}
 
-	return b.Items, nil
+	backups := []velerov1.Backup{}
+
+	for _, backup := range b.Items {
+		if backup.Annotations["kots.io/instance"] != "true" {
+			continue
+		}
+
+		if options.Namespace != "" && backup.Annotations["kots.io/kotsadm-deploy-namespace"] != options.Namespace {
+			continue
+		}
+
+		backups = append(backups, backup)
+	}
+
+	return backups, nil
 }
