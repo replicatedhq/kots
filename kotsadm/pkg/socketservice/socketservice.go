@@ -28,6 +28,7 @@ import (
 	supportbundletypes "github.com/replicatedhq/kots/kotsadm/pkg/supportbundle/types"
 	"github.com/replicatedhq/kots/kotsadm/pkg/version"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
+	"github.com/replicatedhq/kots/pkg/midstream"
 
 	velerov1 "github.com/vmware-tanzu/velero/pkg/apis/velero/v1"
 )
@@ -191,6 +192,15 @@ func (s *SocketService) processDeploySocketForApp(clusterSocket ClusterSocket, a
 	err = store.GetStore().GetAppVersionArchive(a.ID, deployedVersion.ParentSequence, deployedVersionArchive)
 	if err != nil {
 		deployError = errors.Wrap(err, "failed to get app version archive")
+		return deployError
+	}
+
+	// ensure disaster recovery label transformer in midstream
+	additionalLabels := map[string]string{
+		"kots.io/app-slug": a.Slug,
+	}
+	if err := midstream.EnsureDisasterRecoveryLabelTransformer(deployedVersionArchive, additionalLabels); err != nil {
+		deployError = errors.Wrap(err, "failed to ensure disaster recovery label transformer")
 		return deployError
 	}
 

@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"io/ioutil"
-	"os"
 	"path/filepath"
 	"strings"
 
@@ -18,10 +17,10 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/scheme"
-	"sigs.k8s.io/controller-runtime/pkg/client/config"
 	kustomizetypes "sigs.k8s.io/kustomize/api/types"
 )
 
@@ -231,76 +230,6 @@ func Deploy(deployOptions types.DeployOptions) error {
 	return nil
 }
 
-func Delete(options *types.DeleteOptions) error {
-	cfg, err := config.GetConfig()
-	if err != nil {
-		return errors.Wrap(err, "failed to get config")
-	}
-
-	clientset, err := kubernetes.NewForConfig(cfg)
-	if err != nil {
-		return errors.Wrap(err, "failed to get client set")
-	}
-
-	namespace := os.Getenv("POD_NAMESPACE")
-	grace := int64(0)
-	policy := metav1.DeletePropagationBackground
-	opts := metav1.DeleteOptions{
-		GracePeriodSeconds: &grace,
-		PropagationPolicy:  &policy,
-	}
-
-	err = clientset.AppsV1().Deployments(namespace).Delete(context.TODO(), "kotsadm", opts)
-	if err != nil {
-		return errors.Wrapf(err, "failed to delete deployment kotsadm")
-	}
-
-	err = clientset.AppsV1().Deployments(namespace).Delete(context.TODO(), "kotsadm-api", opts)
-	if err != nil {
-		return errors.Wrapf(err, "failed to delete deployment kotsadm-api")
-	}
-
-	err = clientset.AppsV1().Deployments(namespace).Delete(context.TODO(), "kotsadm-operator", opts)
-	if err != nil {
-		return errors.Wrapf(err, "failed to delete deployment kotsadm-operator")
-	}
-
-	err = clientset.AppsV1().StatefulSets(namespace).Delete(context.TODO(), "kotsadm-postgres", opts)
-	if err != nil {
-		return errors.Wrapf(err, "failed to delete statefulset kotsadm-postgres")
-	}
-
-	return nil
-}
-
-func CreateRestoreJob(options *types.RestoreJobOptions) error {
-	cfg, err := config.GetConfig()
-	if err != nil {
-		return errors.Wrap(err, "failed to get config")
-	}
-
-	clientset, err := kubernetes.NewForConfig(cfg)
-	if err != nil {
-		return errors.Wrap(err, "failed to get client set")
-	}
-
-	namespace := os.Getenv("POD_NAMESPACE")
-	isOpenShift := isOpenshift(clientset)
-
-	kotsadmOptions, err := GetKotsadmOptionsFromCluster(namespace, clientset)
-	if err != nil {
-		return errors.Wrap(err, "failed to get kotsadm options from cluster")
-	}
-
-	job := restoreJob(options.BackupName, namespace, isOpenShift, kotsadmOptions)
-	_, err = clientset.BatchV1().Jobs(namespace).Create(context.TODO(), job, metav1.CreateOptions{})
-	if err != nil {
-		return errors.Wrap(err, "failed to create restore job")
-	}
-
-	return nil
-}
-
 func IsKurl(k8sConfigFlags *genericclioptions.ConfigFlags) (bool, error) {
 	clientset, err := k8sutil.GetClientset(k8sConfigFlags)
 	if err != nil {
@@ -481,6 +410,10 @@ func ensureKotsadm(deployOptions types.DeployOptions, clientset *kubernetes.Clie
 			log.Error(errors.Errorf("Failed to remove unused API: %v", err))
 		}
 
+		if err := ensureDisasterRecoveryLabels(&deployOptions, clientset); err != nil {
+			return errors.Wrap(err, "failed to ensure disaster recovery labels")
+		}
+
 		log.ChildActionWithSpinner("Waiting for Admin Console to be ready")
 		if err := waitForKotsadm(&deployOptions, existingDeployment, clientset); err != nil {
 			return errors.Wrap(err, "failed to wait for web")
@@ -498,6 +431,253 @@ func ensureKotsadm(deployOptions types.DeployOptions, clientset *kubernetes.Clie
 			return errors.Wrap(err, "failed to wait for web")
 		}
 		log.FinishSpinner()
+	}
+
+	return nil
+}
+
+func ensureDisasterRecoveryLabels(deployOptions *types.DeployOptions, clientset *kubernetes.Clientset) error {
+	selectorLabels := map[string]string{
+		types.KotsadmKey: types.KotsadmLabelValue,
+	}
+	listOptions := metav1.ListOptions{
+		LabelSelector: labels.SelectorFromSet(selectorLabels).String(),
+	}
+
+	// RBAC
+	isClusterScoped, err := isKotsadmClusterScoped(deployOptions.ApplicationMetadata)
+	if err != nil {
+		return errors.Wrap(err, "failed to check if kotsadm is cluster scoped")
+	}
+	if isClusterScoped {
+		// cluster roles
+		clusterRoles, err := clientset.RbacV1().ClusterRoles().List(context.TODO(), listOptions)
+		if err != nil {
+			return errors.Wrap(err, "failed to list clusterroles")
+		}
+		for _, clusterRole := range clusterRoles.Items {
+			if _, ok := clusterRole.ObjectMeta.Labels[types.BackupLabel]; !ok {
+				clusterRole.ObjectMeta.Labels = types.GetKotsadmLabels(clusterRole.ObjectMeta.Labels)
+				delete(clusterRole.ObjectMeta.Labels, types.ExcludeLabel) // remove existing velero exclude label (if exists)
+				_, err = clientset.RbacV1().ClusterRoles().Update(context.TODO(), &clusterRole, metav1.UpdateOptions{})
+				if err != nil {
+					return errors.Wrapf(err, "failed to update %s clusterrole", clusterRole.ObjectMeta.Name)
+				}
+			}
+		}
+
+		// cluster role bindings
+		clusterRoleBinding, err := clientset.RbacV1().ClusterRoleBindings().List(context.TODO(), listOptions)
+		if err != nil {
+			return errors.Wrap(err, "failed to list clusterrolebindings")
+		}
+		for _, binding := range clusterRoleBinding.Items {
+			if _, ok := binding.ObjectMeta.Labels[types.BackupLabel]; !ok {
+				binding.ObjectMeta.Labels = types.GetKotsadmLabels(binding.ObjectMeta.Labels)
+				delete(binding.ObjectMeta.Labels, types.ExcludeLabel) // remove existing velero exclude label (if exists)
+				_, err = clientset.RbacV1().ClusterRoleBindings().Update(context.TODO(), &binding, metav1.UpdateOptions{})
+				if err != nil {
+					return errors.Wrapf(err, "failed to update %s clusterrolebinding", binding.ObjectMeta.Name)
+				}
+			}
+		}
+	} else {
+		// roles
+		roles, err := clientset.RbacV1().Roles(deployOptions.Namespace).List(context.TODO(), listOptions)
+		if err != nil {
+			return errors.Wrap(err, "failed to list roles")
+		}
+		for _, role := range roles.Items {
+			if _, ok := role.ObjectMeta.Labels[types.BackupLabel]; !ok {
+				role.ObjectMeta.Labels = types.GetKotsadmLabels(role.ObjectMeta.Labels)
+				delete(role.ObjectMeta.Labels, types.ExcludeLabel) // remove existing velero exclude label (if exists)
+				_, err = clientset.RbacV1().Roles(deployOptions.Namespace).Update(context.TODO(), &role, metav1.UpdateOptions{})
+				if err != nil {
+					return errors.Wrapf(err, "failed to update %s role", role.ObjectMeta.Name)
+				}
+			}
+		}
+
+		// role bindings
+		roleBindings, err := clientset.RbacV1().RoleBindings(deployOptions.Namespace).List(context.TODO(), listOptions)
+		if err != nil {
+			return errors.Wrap(err, "failed to list rolebindings")
+		}
+		for _, roleBinding := range roleBindings.Items {
+			if _, ok := roleBinding.ObjectMeta.Labels[types.BackupLabel]; !ok {
+				roleBinding.ObjectMeta.Labels = types.GetKotsadmLabels(roleBinding.ObjectMeta.Labels)
+				delete(roleBinding.ObjectMeta.Labels, types.ExcludeLabel) // remove existing velero exclude label (if exists)
+				_, err = clientset.RbacV1().RoleBindings(deployOptions.Namespace).Update(context.TODO(), &roleBinding, metav1.UpdateOptions{})
+				if err != nil {
+					return errors.Wrapf(err, "failed to update %s rolebinding", roleBinding.ObjectMeta.Name)
+				}
+			}
+		}
+	}
+
+	// service accounts
+	serviceAccount, err := clientset.CoreV1().ServiceAccounts(deployOptions.Namespace).List(context.TODO(), listOptions)
+	if err != nil {
+		return errors.Wrap(err, "failed to list serviceaccounts")
+	}
+	for _, serviceAccount := range serviceAccount.Items {
+		if _, ok := serviceAccount.ObjectMeta.Labels[types.BackupLabel]; !ok {
+			serviceAccount.ObjectMeta.Labels = types.GetKotsadmLabels(serviceAccount.ObjectMeta.Labels)
+			delete(serviceAccount.ObjectMeta.Labels, types.ExcludeLabel) // remove existing velero exclude label (if exists)
+			_, err = clientset.CoreV1().ServiceAccounts(deployOptions.Namespace).Update(context.TODO(), &serviceAccount, metav1.UpdateOptions{})
+			if err != nil {
+				return errors.Wrapf(err, "failed to update %s serviceaccount in namespace %s", serviceAccount.ObjectMeta.Name, serviceAccount.ObjectMeta.Namespace)
+			}
+		}
+	}
+
+	// pods
+	pods, err := clientset.CoreV1().Pods(deployOptions.Namespace).List(context.TODO(), listOptions)
+	if err != nil {
+		return errors.Wrap(err, "failed to list pods")
+	}
+	for _, pod := range pods.Items {
+		if _, ok := pod.ObjectMeta.Labels[types.BackupLabel]; !ok {
+			pod.ObjectMeta.Labels = types.GetKotsadmLabels(pod.ObjectMeta.Labels)
+			delete(pod.ObjectMeta.Labels, types.ExcludeLabel) // remove existing velero exclude label (if exists)
+			_, err = clientset.CoreV1().Pods(deployOptions.Namespace).Update(context.TODO(), &pod, metav1.UpdateOptions{})
+			if err != nil {
+				return errors.Wrapf(err, "failed to update %s pod in namespace %s", pod.ObjectMeta.Name, pod.ObjectMeta.Namespace)
+			}
+		}
+	}
+
+	// deployments
+	deployments, err := clientset.AppsV1().Deployments(deployOptions.Namespace).List(context.TODO(), listOptions)
+	if err != nil {
+		return errors.Wrap(err, "failed to list deployments")
+	}
+	for _, deployment := range deployments.Items {
+		if _, ok := deployment.ObjectMeta.Labels[types.BackupLabel]; !ok {
+			// ensure labels
+			deployment.ObjectMeta.Labels = types.GetKotsadmLabels(deployment.ObjectMeta.Labels)
+			deployment.Spec.Template.ObjectMeta.Labels = types.GetKotsadmLabels(deployment.Spec.Template.ObjectMeta.Labels)
+
+			// remove existing velero exclude label (if exists)
+			delete(deployment.ObjectMeta.Labels, types.ExcludeLabel)
+			delete(deployment.Spec.Template.ObjectMeta.Labels, types.ExcludeLabel)
+
+			// update deployment
+			_, err = clientset.AppsV1().Deployments(deployOptions.Namespace).Update(context.TODO(), &deployment, metav1.UpdateOptions{})
+			if err != nil {
+				return errors.Wrapf(err, "failed to update %s deployment in namespace %s", deployment.ObjectMeta.Name, deployment.ObjectMeta.Namespace)
+			}
+		}
+	}
+
+	// statefulsets
+	statefulSets, err := clientset.AppsV1().StatefulSets(deployOptions.Namespace).List(context.TODO(), listOptions)
+	if err != nil {
+		return errors.Wrap(err, "failed to list statefulsets")
+	}
+	for _, statefulSet := range statefulSets.Items {
+		if _, ok := statefulSet.ObjectMeta.Labels[types.BackupLabel]; !ok {
+			// ensure labels
+			statefulSet.ObjectMeta.Labels = types.GetKotsadmLabels(statefulSet.ObjectMeta.Labels)
+			statefulSet.Spec.Template.ObjectMeta.Labels = types.GetKotsadmLabels(statefulSet.Spec.Template.ObjectMeta.Labels)
+
+			// remove existing velero exclude label (if exists)
+			delete(statefulSet.ObjectMeta.Labels, types.ExcludeLabel)
+			delete(statefulSet.Spec.Template.ObjectMeta.Labels, types.ExcludeLabel)
+
+			// update statefulset
+			_, err = clientset.AppsV1().StatefulSets(deployOptions.Namespace).Update(context.TODO(), &statefulSet, metav1.UpdateOptions{})
+			if err != nil {
+				return errors.Wrapf(err, "failed to update %s statefulSet in namespace %s", statefulSet.ObjectMeta.Name, statefulSet.ObjectMeta.Namespace)
+			}
+		}
+	}
+
+	// secrets
+	secrets, err := clientset.CoreV1().Secrets(deployOptions.Namespace).List(context.TODO(), listOptions)
+	if err != nil {
+		return errors.Wrap(err, "failed to list secrets")
+	}
+	for _, secret := range secrets.Items {
+		if _, ok := secret.ObjectMeta.Labels[types.BackupLabel]; !ok {
+			secret.ObjectMeta.Labels = types.GetKotsadmLabels(secret.ObjectMeta.Labels)
+			delete(secret.ObjectMeta.Labels, types.ExcludeLabel) // remove existing velero exclude label (if exists)
+			_, err = clientset.CoreV1().Secrets(deployOptions.Namespace).Update(context.TODO(), &secret, metav1.UpdateOptions{})
+			if err != nil {
+				return errors.Wrapf(err, "failed to update %s secret in namespace %s", secret.ObjectMeta.Name, secret.ObjectMeta.Namespace)
+			}
+		}
+	}
+
+	// configmaps
+	configMaps, err := clientset.CoreV1().ConfigMaps(deployOptions.Namespace).List(context.TODO(), listOptions)
+	if err != nil {
+		return errors.Wrap(err, "failed to list configmaps")
+	}
+	for _, configMap := range configMaps.Items {
+		if _, ok := configMap.ObjectMeta.Labels[types.BackupLabel]; !ok {
+			configMap.ObjectMeta.Labels = types.GetKotsadmLabels(configMap.ObjectMeta.Labels)
+			delete(configMap.ObjectMeta.Labels, types.ExcludeLabel) // remove existing velero exclude label (if exists)
+			_, err = clientset.CoreV1().ConfigMaps(deployOptions.Namespace).Update(context.TODO(), &configMap, metav1.UpdateOptions{})
+			if err != nil {
+				return errors.Wrapf(err, "failed to update %s configmap in namespace %s", configMap.ObjectMeta.Name, configMap.ObjectMeta.Namespace)
+			}
+		}
+	}
+
+	// services
+	services, err := clientset.CoreV1().Services(deployOptions.Namespace).List(context.TODO(), listOptions)
+	if err != nil {
+		return errors.Wrap(err, "failed to list services")
+	}
+	for _, service := range services.Items {
+		if _, ok := service.ObjectMeta.Labels[types.BackupLabel]; !ok {
+			service.ObjectMeta.Labels = types.GetKotsadmLabels(service.ObjectMeta.Labels)
+			delete(service.ObjectMeta.Labels, types.ExcludeLabel) // remove existing velero exclude label (if exists)
+			_, err = clientset.CoreV1().Services(deployOptions.Namespace).Update(context.TODO(), &service, metav1.UpdateOptions{})
+			if err != nil {
+				return errors.Wrapf(err, "failed to update %s service in namespace %s", service.ObjectMeta.Name, service.ObjectMeta.Namespace)
+			}
+		}
+	}
+
+	// objects that _did_ not have the kotsadm label set
+	// gitops secret
+	gitopsSecret, err := clientset.CoreV1().Secrets(deployOptions.Namespace).Get(context.TODO(), "kotsadm-gitops", metav1.GetOptions{})
+	if err != nil && !kuberneteserrors.IsNotFound(err) {
+		return errors.Wrap(err, "failed to get gitops secret")
+	}
+	if err == nil {
+		if gitopsSecret.ObjectMeta.Labels == nil {
+			gitopsSecret.ObjectMeta.Labels = map[string]string{}
+		}
+		if _, ok := gitopsSecret.ObjectMeta.Labels[types.BackupLabel]; !ok {
+			gitopsSecret.ObjectMeta.Labels = types.GetKotsadmLabels(gitopsSecret.ObjectMeta.Labels)
+			delete(gitopsSecret.ObjectMeta.Labels, types.ExcludeLabel) // remove existing velero exclude label (if exists)
+			_, err = clientset.CoreV1().Secrets(deployOptions.Namespace).Update(context.TODO(), gitopsSecret, metav1.UpdateOptions{})
+			if err != nil {
+				return errors.Wrapf(err, "failed to update kotsadm-gitops secret in namespace %s", gitopsSecret.ObjectMeta.Namespace)
+			}
+		}
+	}
+
+	// gitops configmap
+	gitopsConfigMap, err := clientset.CoreV1().ConfigMaps(deployOptions.Namespace).Get(context.TODO(), "kotsadm-gitops", metav1.GetOptions{})
+	if err != nil && !kuberneteserrors.IsNotFound(err) {
+		return errors.Wrap(err, "failed to get gitops configmap")
+	}
+	if err == nil {
+		if gitopsConfigMap.ObjectMeta.Labels == nil {
+			gitopsConfigMap.ObjectMeta.Labels = map[string]string{}
+		}
+		if _, ok := gitopsConfigMap.ObjectMeta.Labels[types.BackupLabel]; !ok {
+			gitopsConfigMap.ObjectMeta.Labels = types.GetKotsadmLabels(gitopsConfigMap.ObjectMeta.Labels)
+			delete(gitopsConfigMap.ObjectMeta.Labels, types.ExcludeLabel) // remove existing velero exclude label (if exists)
+			_, err = clientset.CoreV1().ConfigMaps(deployOptions.Namespace).Update(context.TODO(), gitopsConfigMap, metav1.UpdateOptions{})
+			if err != nil {
+				return errors.Wrapf(err, "failed to update kotsadm-gitops configmap in namespace %s", gitopsConfigMap.ObjectMeta.Namespace)
+			}
+		}
 	}
 
 	return nil

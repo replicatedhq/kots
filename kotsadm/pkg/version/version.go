@@ -46,8 +46,7 @@ func CreateFirstVersion(appID string, filesInDir string, source string) (int64, 
 	return createVersion(appID, filesInDir, source, nil)
 }
 
-// CreateVersion creates a new version of the app in the database, but the caller
-// is responsible for uploading the archive to s3
+// CreateVersion creates a new version of the app
 func CreateVersion(appID string, filesInDir string, source string, currentSequence int64) (int64, error) {
 	return createVersion(appID, filesInDir, source, &currentSequence)
 }

@@ -144,12 +144,12 @@ func updateOperatorDeployment(deployment *appsv1.Deployment, deployOptions types
 		deployment.ObjectMeta.Labels = map[string]string{}
 	}
 	deployment.ObjectMeta.Labels[types.KotsadmKey] = types.KotsadmLabelValue
-	deployment.ObjectMeta.Labels[types.VeleroKey] = types.VeleroLabelConsoleValue
+	deployment.ObjectMeta.Labels[types.BackupLabel] = types.BackupLabelValue
 	if deployment.Spec.Template.ObjectMeta.Labels == nil {
 		deployment.Spec.Template.ObjectMeta.Labels = map[string]string{}
 	}
 	deployment.Spec.Template.ObjectMeta.Labels[types.KotsadmKey] = types.KotsadmLabelValue
-	deployment.Spec.Template.ObjectMeta.Labels[types.VeleroKey] = types.VeleroLabelConsoleValue
+	deployment.Spec.Template.ObjectMeta.Labels[types.BackupLabel] = types.BackupLabelValue
 
 	// security context (added in 1.11.0)
 	deployment.Spec.Template.Spec.SecurityContext = &securityContext

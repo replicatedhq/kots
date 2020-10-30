@@ -83,17 +83,9 @@ func CreateRestore(snapshotName string) error {
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: veleroNamespace,
 			Name:      snapshotName, // restore name same as snapshot name
-			// Labels:    o.Labels.Data(),
 		},
 		Spec: velerov1.RestoreSpec{
-			BackupName: snapshotName,
-			// ScheduleName: o.ScheduleName,
-			// IncludedNamespaces:      o.IncludeNamespaces,
-			// ExcludedNamespaces:      o.ExcludeNamespaces,
-			// IncludedResources:       o.IncludeResources,
-			// ExcludedResources:       o.ExcludeResources,
-			// NamespaceMapping:        o.NamespaceMappings.Data(),
-			// LabelSelector:           o.Selector.LabelSelector,
+			BackupName:              snapshotName,
 			RestorePVs:              &trueVal,
 			IncludeClusterResources: &trueVal,
 		},

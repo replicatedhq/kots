@@ -23,20 +23,23 @@ require (
 	github.com/fatih/color v1.7.0
 	github.com/garyburd/redigo v1.6.0 // indirect
 	github.com/ghodss/yaml v1.0.0
-	github.com/go-git/go-git/v5 v5.2.0 // indirect
+	github.com/gin-gonic/gin v1.6.3 // indirect
 	github.com/gofrs/uuid v3.3.0+incompatible // indirect
 	github.com/google/gofuzz v1.1.0
 	github.com/google/uuid v1.1.1
 	github.com/gorilla/handlers v1.4.2 // indirect
 	github.com/gotestyourself/gotestyourself v2.2.0+incompatible // indirect
 	github.com/kardianos/osext v0.0.0-20190222173326-2bc1f35cddc0 // indirect
+	github.com/kr/text v0.2.0 // indirect
 	github.com/manifoldco/promptui v0.3.2
 	github.com/marccampbell/yaml-toolbox v0.0.0-20200805160637-950ceb36c770
 	github.com/mattn/go-isatty v0.0.12
 	github.com/mholt/archiver v3.1.1+incompatible
+	github.com/niemeyer/pretty v0.0.0-20200227124842-a10e7caefd8e // indirect
 	github.com/otiai10/copy v1.0.2
 	github.com/phayes/freeport v0.0.0-20180830031419-95f893ade6f2
 	github.com/pkg/errors v0.9.1
+	github.com/replicatedhq/kots/kotsadm/operator v0.0.0-20201029043215-1048f9f7a79f // indirect
 	github.com/replicatedhq/kurl/kurlkinds v0.0.0-20200617224429-55f493a72baf
 	github.com/replicatedhq/troubleshoot v0.9.48
 	github.com/replicatedhq/yaml/v3 v3.0.0-beta5-replicatedhq
@@ -51,6 +54,7 @@ require (
 	github.com/yvasiyarov/gorelic v0.0.7 // indirect
 	github.com/yvasiyarov/newrelic_platform_go v0.0.0-20160601141957-9c099fbc30e9 // indirect
 	golang.org/x/crypto v0.0.0-20200423211502-4bdfaf469ed5
+	gopkg.in/check.v1 v1.0.0-20200227125254-8fa46927fb4f // indirect
 	gopkg.in/go-playground/assert.v1 v1.2.1
 	gopkg.in/yaml.v2 v2.3.0
 	helm.sh/helm/v3 v3.2.4

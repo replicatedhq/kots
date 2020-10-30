@@ -30,7 +30,7 @@ func AdminConsoleCmd() *cobra.Command {
 
 			clientset, err := k8sutil.GetClientset(kubernetesConfigFlags)
 			if err != nil {
-				return errors.Wrap(err, "failed get to get clientset")
+				return errors.Wrap(err, "failed to get clientset")
 			}
 
 			podName, err := k8sutil.WaitForKotsadm(clientset, v.GetString("namespace"), time.Second*5)
