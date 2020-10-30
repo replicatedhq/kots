@@ -6,7 +6,7 @@ function navigateToConfiguration(props) {
 }
 
 export default function GettingStartedSnapshots(props) {
-  const { isVeleroInstalled } = props;
+  const { isVeleroInstalled, startInstanceSnapshot } = props;
 
   return (
     <div className="flex flex-column GettingStartedSnapshots--wrapper alignItems--center">
@@ -18,7 +18,7 @@ export default function GettingStartedSnapshots(props) {
         <p className="u-marginTop--10 u-fontSize--normal u-lineHeight--more u-fontWeight--medium u-color--dustyGray">To start backing up your data and applications you need to make sure you have <a href="https://kots.io/kotsadm/snapshots/" target="_blank" rel="noopener noreferrer" className="replicated-link u-fontSize--normal">Velero</a> installed to the cluster along with the CLI tools for the cloud provider you want to send your backups to.</p>
       }
       <div className="flex justifyContent--cenyer u-marginTop--20">
-        <button className="btn primary blue" onClick={isVeleroInstalled ? "" : () => navigateToConfiguration(props)}> {isVeleroInstalled ? "Start a snapshot" : "Configure snapshot settings"}</button>
+        <button className="btn primary blue" onClick={isVeleroInstalled ? startInstanceSnapshot : () => navigateToConfiguration(props)}> {isVeleroInstalled ? "Start a snapshot" : "Configure snapshot settings"}</button>
       </div>
     </div>
   )
