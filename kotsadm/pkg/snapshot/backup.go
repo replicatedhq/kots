@@ -575,8 +575,23 @@ func DeleteBackup(snapshotName string) error {
 	return nil
 }
 
-func HasUnfinishedBackup(appID string) (bool, error) {
+func HasUnfinishedApplicationBackup(appID string) (bool, error) {
 	backups, err := ListBackupsForApp(appID)
+	if err != nil {
+		return false, errors.Wrap(err, "failed to list backups")
+	}
+
+	for _, backup := range backups {
+		if backup.Status == "New" || backup.Status == "InProgress" {
+			return true, nil
+		}
+	}
+
+	return false, nil
+}
+
+func HasUnfinishedInstanceBackup() (bool, error) {
+	backups, err := ListInstanceBackups()
 	if err != nil {
 		return false, errors.Wrap(err, "failed to list backups")
 	}

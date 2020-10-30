@@ -13,6 +13,8 @@ func FindKotsadmImage(namespace string) (string, error) {
 		return "", errors.Wrap(err, "failed to get k8s client set")
 	}
 
+	namespace = "default" // TODOOOOO: REMOVE THIS
+
 	kotsadmDeployment, err := client.AppsV1().Deployments(namespace).Get(context.TODO(), "kotsadm", metav1.GetOptions{})
 	if err != nil {
 		return "", errors.Wrap(err, "failed to get kotsadm deployment")

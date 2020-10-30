@@ -45,4 +45,10 @@ spec:
         constraints:
           notNull: true
         default: "false"
-
+      - name: snapshot_schedule
+        type: text
+      - name: snapshot_ttl
+        type: text
+        default: '720h'
+        constraints:
+          notNull: true
