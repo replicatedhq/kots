@@ -458,8 +458,11 @@ func ensureDisasterRecoveryLabels(deployOptions *types.DeployOptions, clientset 
 		for _, clusterRole := range clusterRoles.Items {
 			if _, ok := clusterRole.ObjectMeta.Labels[types.BackupLabel]; !ok {
 				clusterRole.ObjectMeta.Labels = types.GetKotsadmLabels(clusterRole.ObjectMeta.Labels)
-				delete(clusterRole.ObjectMeta.Labels, types.ExcludeKey)      // remove existing velero exclude label (if exists)
-				delete(clusterRole.ObjectMeta.Annotations, types.ExcludeKey) // remove existing velero exclude annotation (if exists)
+
+				// remove existing velero exclude label/annotation (if exists)
+				delete(clusterRole.ObjectMeta.Labels, types.ExcludeKey)
+				delete(clusterRole.ObjectMeta.Annotations, types.ExcludeKey)
+
 				_, err = clientset.RbacV1().ClusterRoles().Update(context.TODO(), &clusterRole, metav1.UpdateOptions{})
 				if err != nil {
 					return errors.Wrapf(err, "failed to update %s clusterrole", clusterRole.ObjectMeta.Name)
@@ -475,8 +478,11 @@ func ensureDisasterRecoveryLabels(deployOptions *types.DeployOptions, clientset 
 		for _, binding := range clusterRoleBinding.Items {
 			if _, ok := binding.ObjectMeta.Labels[types.BackupLabel]; !ok {
 				binding.ObjectMeta.Labels = types.GetKotsadmLabels(binding.ObjectMeta.Labels)
-				delete(binding.ObjectMeta.Labels, types.ExcludeKey)      // remove existing velero exclude label (if exists)
-				delete(binding.ObjectMeta.Annotations, types.ExcludeKey) // remove existing velero exclude annotation (if exists)
+
+				// remove existing velero exclude label/annotation (if exists)
+				delete(binding.ObjectMeta.Labels, types.ExcludeKey)
+				delete(binding.ObjectMeta.Annotations, types.ExcludeKey)
+
 				_, err = clientset.RbacV1().ClusterRoleBindings().Update(context.TODO(), &binding, metav1.UpdateOptions{})
 				if err != nil {
 					return errors.Wrapf(err, "failed to update %s clusterrolebinding", binding.ObjectMeta.Name)
@@ -492,8 +498,11 @@ func ensureDisasterRecoveryLabels(deployOptions *types.DeployOptions, clientset 
 		for _, role := range roles.Items {
 			if _, ok := role.ObjectMeta.Labels[types.BackupLabel]; !ok {
 				role.ObjectMeta.Labels = types.GetKotsadmLabels(role.ObjectMeta.Labels)
-				delete(role.ObjectMeta.Labels, types.ExcludeKey)      // remove existing velero exclude label (if exists)
-				delete(role.ObjectMeta.Annotations, types.ExcludeKey) // remove existing velero exclude annotation (if exists)
+
+				// remove existing velero exclude label/annotation (if exists)
+				delete(role.ObjectMeta.Labels, types.ExcludeKey)
+				delete(role.ObjectMeta.Annotations, types.ExcludeKey)
+
 				_, err = clientset.RbacV1().Roles(deployOptions.Namespace).Update(context.TODO(), &role, metav1.UpdateOptions{})
 				if err != nil {
 					return errors.Wrapf(err, "failed to update %s role", role.ObjectMeta.Name)
@@ -509,8 +518,11 @@ func ensureDisasterRecoveryLabels(deployOptions *types.DeployOptions, clientset 
 		for _, roleBinding := range roleBindings.Items {
 			if _, ok := roleBinding.ObjectMeta.Labels[types.BackupLabel]; !ok {
 				roleBinding.ObjectMeta.Labels = types.GetKotsadmLabels(roleBinding.ObjectMeta.Labels)
-				delete(roleBinding.ObjectMeta.Labels, types.ExcludeKey)      // remove existing velero exclude label (if exists)
-				delete(roleBinding.ObjectMeta.Annotations, types.ExcludeKey) // remove existing velero exclude annotation (if exists)
+
+				// remove existing velero exclude label/annotation (if exists)
+				delete(roleBinding.ObjectMeta.Labels, types.ExcludeKey)
+				delete(roleBinding.ObjectMeta.Annotations, types.ExcludeKey)
+
 				_, err = clientset.RbacV1().RoleBindings(deployOptions.Namespace).Update(context.TODO(), &roleBinding, metav1.UpdateOptions{})
 				if err != nil {
 					return errors.Wrapf(err, "failed to update %s rolebinding", roleBinding.ObjectMeta.Name)
@@ -527,11 +539,34 @@ func ensureDisasterRecoveryLabels(deployOptions *types.DeployOptions, clientset 
 	for _, serviceAccount := range serviceAccount.Items {
 		if _, ok := serviceAccount.ObjectMeta.Labels[types.BackupLabel]; !ok {
 			serviceAccount.ObjectMeta.Labels = types.GetKotsadmLabels(serviceAccount.ObjectMeta.Labels)
-			delete(serviceAccount.ObjectMeta.Labels, types.ExcludeKey)      // remove existing velero exclude label (if exists)
-			delete(serviceAccount.ObjectMeta.Annotations, types.ExcludeKey) // remove existing velero exclude annotation (if exists)
+
+			// remove existing velero exclude label/annotation (if exists)
+			delete(serviceAccount.ObjectMeta.Labels, types.ExcludeKey)
+			delete(serviceAccount.ObjectMeta.Annotations, types.ExcludeKey)
+
 			_, err = clientset.CoreV1().ServiceAccounts(deployOptions.Namespace).Update(context.TODO(), &serviceAccount, metav1.UpdateOptions{})
 			if err != nil {
 				return errors.Wrapf(err, "failed to update %s serviceaccount in namespace %s", serviceAccount.ObjectMeta.Name, serviceAccount.ObjectMeta.Namespace)
+			}
+		}
+	}
+
+	// PVCs
+	pvcs, err := clientset.CoreV1().PersistentVolumeClaims(deployOptions.Namespace).List(context.TODO(), listOptions)
+	if err != nil {
+		return errors.Wrap(err, "failed to list persistent volume claims")
+	}
+	for _, pvc := range pvcs.Items {
+		if _, ok := pvc.ObjectMeta.Labels[types.BackupLabel]; !ok {
+			pvc.ObjectMeta.Labels = types.GetKotsadmLabels(pvc.ObjectMeta.Labels)
+
+			// remove existing velero exclude label/annotation (if exists)
+			delete(pvc.ObjectMeta.Labels, types.ExcludeKey)
+			delete(pvc.ObjectMeta.Annotations, types.ExcludeKey)
+
+			_, err = clientset.CoreV1().PersistentVolumeClaims(deployOptions.Namespace).Update(context.TODO(), &pvc, metav1.UpdateOptions{})
+			if err != nil {
+				return errors.Wrapf(err, "failed to update %s pvc in namespace %s", pvc.ObjectMeta.Name, pvc.ObjectMeta.Namespace)
 			}
 		}
 	}
@@ -544,8 +579,11 @@ func ensureDisasterRecoveryLabels(deployOptions *types.DeployOptions, clientset 
 	for _, pod := range pods.Items {
 		if _, ok := pod.ObjectMeta.Labels[types.BackupLabel]; !ok {
 			pod.ObjectMeta.Labels = types.GetKotsadmLabels(pod.ObjectMeta.Labels)
-			delete(pod.ObjectMeta.Labels, types.ExcludeKey)      // remove existing velero exclude label (if exists)
-			delete(pod.ObjectMeta.Annotations, types.ExcludeKey) // remove existing velero exclude annotation (if exists)
+
+			// remove existing velero exclude label/annotation (if exists)
+			delete(pod.ObjectMeta.Labels, types.ExcludeKey)
+			delete(pod.ObjectMeta.Annotations, types.ExcludeKey)
+
 			_, err = clientset.CoreV1().Pods(deployOptions.Namespace).Update(context.TODO(), &pod, metav1.UpdateOptions{})
 			if err != nil {
 				return errors.Wrapf(err, "failed to update %s pod in namespace %s", pod.ObjectMeta.Name, pod.ObjectMeta.Namespace)
@@ -611,8 +649,11 @@ func ensureDisasterRecoveryLabels(deployOptions *types.DeployOptions, clientset 
 	for _, secret := range secrets.Items {
 		if _, ok := secret.ObjectMeta.Labels[types.BackupLabel]; !ok {
 			secret.ObjectMeta.Labels = types.GetKotsadmLabels(secret.ObjectMeta.Labels)
-			delete(secret.ObjectMeta.Labels, types.ExcludeKey)      // remove existing velero exclude label (if exists)
-			delete(secret.ObjectMeta.Annotations, types.ExcludeKey) // remove existing velero exclude annotation (if exists)
+
+			// remove existing velero exclude label/annotation (if exists)
+			delete(secret.ObjectMeta.Labels, types.ExcludeKey)
+			delete(secret.ObjectMeta.Annotations, types.ExcludeKey)
+
 			_, err = clientset.CoreV1().Secrets(deployOptions.Namespace).Update(context.TODO(), &secret, metav1.UpdateOptions{})
 			if err != nil {
 				return errors.Wrapf(err, "failed to update %s secret in namespace %s", secret.ObjectMeta.Name, secret.ObjectMeta.Namespace)
@@ -628,8 +669,11 @@ func ensureDisasterRecoveryLabels(deployOptions *types.DeployOptions, clientset 
 	for _, configMap := range configMaps.Items {
 		if _, ok := configMap.ObjectMeta.Labels[types.BackupLabel]; !ok {
 			configMap.ObjectMeta.Labels = types.GetKotsadmLabels(configMap.ObjectMeta.Labels)
-			delete(configMap.ObjectMeta.Labels, types.ExcludeKey)      // remove existing velero exclude label (if exists)
-			delete(configMap.ObjectMeta.Annotations, types.ExcludeKey) // remove existing velero exclude annotation (if exists)
+
+			// remove existing velero exclude label/annotation (if exists)
+			delete(configMap.ObjectMeta.Labels, types.ExcludeKey)
+			delete(configMap.ObjectMeta.Annotations, types.ExcludeKey)
+
 			_, err = clientset.CoreV1().ConfigMaps(deployOptions.Namespace).Update(context.TODO(), &configMap, metav1.UpdateOptions{})
 			if err != nil {
 				return errors.Wrapf(err, "failed to update %s configmap in namespace %s", configMap.ObjectMeta.Name, configMap.ObjectMeta.Namespace)
@@ -645,8 +689,11 @@ func ensureDisasterRecoveryLabels(deployOptions *types.DeployOptions, clientset 
 	for _, service := range services.Items {
 		if _, ok := service.ObjectMeta.Labels[types.BackupLabel]; !ok {
 			service.ObjectMeta.Labels = types.GetKotsadmLabels(service.ObjectMeta.Labels)
-			delete(service.ObjectMeta.Labels, types.ExcludeKey)      // remove existing velero exclude label (if exists)
-			delete(service.ObjectMeta.Annotations, types.ExcludeKey) // remove existing velero exclude annotation (if exists)
+
+			// remove existing velero exclude label/annotation (if exists)
+			delete(service.ObjectMeta.Labels, types.ExcludeKey)
+			delete(service.ObjectMeta.Annotations, types.ExcludeKey)
+
 			_, err = clientset.CoreV1().Services(deployOptions.Namespace).Update(context.TODO(), &service, metav1.UpdateOptions{})
 			if err != nil {
 				return errors.Wrapf(err, "failed to update %s service in namespace %s", service.ObjectMeta.Name, service.ObjectMeta.Namespace)
@@ -666,8 +713,11 @@ func ensureDisasterRecoveryLabels(deployOptions *types.DeployOptions, clientset 
 		}
 		if _, ok := gitopsSecret.ObjectMeta.Labels[types.BackupLabel]; !ok {
 			gitopsSecret.ObjectMeta.Labels = types.GetKotsadmLabels(gitopsSecret.ObjectMeta.Labels)
-			delete(gitopsSecret.ObjectMeta.Labels, types.ExcludeKey)      // remove existing velero exclude label (if exists)
-			delete(gitopsSecret.ObjectMeta.Annotations, types.ExcludeKey) // remove existing velero exclude annotation (if exists)
+
+			// remove existing velero exclude label/annotation (if exists)
+			delete(gitopsSecret.ObjectMeta.Labels, types.ExcludeKey)
+			delete(gitopsSecret.ObjectMeta.Annotations, types.ExcludeKey)
+
 			_, err = clientset.CoreV1().Secrets(deployOptions.Namespace).Update(context.TODO(), gitopsSecret, metav1.UpdateOptions{})
 			if err != nil {
 				return errors.Wrapf(err, "failed to update kotsadm-gitops secret in namespace %s", gitopsSecret.ObjectMeta.Namespace)
@@ -686,8 +736,11 @@ func ensureDisasterRecoveryLabels(deployOptions *types.DeployOptions, clientset 
 		}
 		if _, ok := gitopsConfigMap.ObjectMeta.Labels[types.BackupLabel]; !ok {
 			gitopsConfigMap.ObjectMeta.Labels = types.GetKotsadmLabels(gitopsConfigMap.ObjectMeta.Labels)
-			delete(gitopsConfigMap.ObjectMeta.Labels, types.ExcludeKey)      // remove existing velero exclude label (if exists)
-			delete(gitopsConfigMap.ObjectMeta.Annotations, types.ExcludeKey) // remove existing velero exclude annotation (if exists)
+
+			// remove existing velero exclude label/annotation (if exists)
+			delete(gitopsConfigMap.ObjectMeta.Labels, types.ExcludeKey)
+			delete(gitopsConfigMap.ObjectMeta.Annotations, types.ExcludeKey)
+
 			_, err = clientset.CoreV1().ConfigMaps(deployOptions.Namespace).Update(context.TODO(), gitopsConfigMap, metav1.UpdateOptions{})
 			if err != nil {
 				return errors.Wrapf(err, "failed to update kotsadm-gitops configmap in namespace %s", gitopsConfigMap.ObjectMeta.Namespace)
