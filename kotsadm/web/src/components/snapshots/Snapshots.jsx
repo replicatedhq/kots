@@ -34,7 +34,7 @@ class Snapshots extends Component {
     snapshotSettingsErrMsg: "",
 
     snapshots: [],
-    hasSnapshotsLoaded: false,
+    isStartButtonClicked: false,
     snapshotsListErr: false,
     snapshotsListErrMsg: "",
     listSnapshotsJob: new Repeater(),
@@ -102,7 +102,6 @@ class Snapshots extends Component {
 
       this.setState({
         snapshots: response.backups?.sort((a, b) => b.startedAt ? new Date(b.startedAt) - new Date(a.startedAt) : -99999999),
-        hasSnapshotsLoaded: true,
         snapshotsListErr: false,
         snapshotsListErrMsg: "",
         networkErr: false,
@@ -278,17 +277,16 @@ class Snapshots extends Component {
 
 
   render() {
-    const { isLoadingSnapshotSettings, snapshotSettings, startingSnapshot, startSnapshotErr, startSnapshotErrorMsg, snapshots } = this.state;
+    const { isLoadingSnapshotSettings, snapshotSettings, startingSnapshot, startSnapshotErr, startSnapshotErrorMsg, snapshots, isStartButtonClicked } = this.state;
     const inProgressSnapshotExist = snapshots?.find(snapshot => snapshot.status === "InProgress");
 
-    if (isLoadingSnapshotSettings) {
+    if (isLoadingSnapshotSettings || (isStartButtonClicked && snapshots?.length === 0) || startingSnapshot) {
       return (
         <div className="flex-column flex1 alignItems--center justifyContent--center">
           <Loader size="60" />
         </div>
       )
     }
-
 
     return (
       <div className="container flex-column flex1 u-overflow--auto u-paddingTop--30 u-paddingBottom--20 alignItems--center">
@@ -326,11 +324,12 @@ class Snapshots extends Component {
                 />
               ))}
             </div> :
-            <div className="flex flex-column u-position--relative">
-              {[0, 1, 2, 3, 4, 5].map((el) => (<DummySnapshotRow key={el} />
-              ))}
-              <GettingStartedSnapshots isVeleroInstalled={snapshotSettings?.veleroVersion !== ""} history={this.props.history} startInstanceSnapshot={this.startInstanceSnapshot} />
-            </div>}
+            !isStartButtonClicked ?
+              <div className="flex flex-column u-position--relative">
+                {[0, 1, 2, 3, 4, 5].map((el) => (<DummySnapshotRow key={el} />
+                ))}
+                <GettingStartedSnapshots isVeleroInstalled={snapshotSettings?.veleroVersion !== ""} history={this.props.history} startInstanceSnapshot={this.startInstanceSnapshot} />
+              </div> : null}
         </div>
         {this.state.deleteSnapshotModal &&
           <DeleteSnapshotModal
