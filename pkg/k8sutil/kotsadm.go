@@ -165,19 +165,6 @@ func waitForDeleteServices(clientset *kubernetes.Clientset, namespace string, li
 	}
 }
 
-func waitForDeletePods(clientset *kubernetes.Clientset, namespace string, listOptions metav1.ListOptions) error {
-	for {
-		pods, err := clientset.CoreV1().Pods(namespace).List(context.TODO(), listOptions)
-		if err != nil {
-			return errors.Wrap(err, "failed to list pods")
-		}
-		if len(pods.Items) == 0 {
-			return nil
-		}
-		time.Sleep(time.Second)
-	}
-}
-
 func waitForDeleteDeployments(clientset *kubernetes.Clientset, namespace string, listOptions metav1.ListOptions) error {
 	for {
 		deployments, err := clientset.AppsV1().Deployments(namespace).List(context.TODO(), listOptions)
@@ -198,6 +185,19 @@ func waitForDeleteStatefulSets(clientset *kubernetes.Clientset, namespace string
 			return errors.Wrap(err, "failed to list statefulsets")
 		}
 		if len(statefulsets.Items) == 0 {
+			return nil
+		}
+		time.Sleep(time.Second)
+	}
+}
+
+func waitForDeletePods(clientset *kubernetes.Clientset, namespace string, listOptions metav1.ListOptions) error {
+	for {
+		pods, err := clientset.CoreV1().Pods(namespace).List(context.TODO(), listOptions)
+		if err != nil {
+			return errors.Wrap(err, "failed to list pods")
+		}
+		if len(pods.Items) == 0 {
 			return nil
 		}
 		time.Sleep(time.Second)
