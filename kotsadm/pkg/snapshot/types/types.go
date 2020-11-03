@@ -112,17 +112,18 @@ type SnapshotVolume struct {
 	Phase                string     `json:"phase"`
 }
 type RestoreVolume struct {
-	Name                 string     `json:"name"`
-	PodName              string     `json:"podName"`
-	PodNamespace         string     `json:"podNamespace"`
-	PodVolumeName        string     `json:"podVolumeName"`
-	SizeBytesHuman       string     `json:"sizeBytesHuman"`
-	DoneBytesHuman       string     `json:"doneBytesHuman"`
-	CompletionPercent    int        `json:"completionPercent"`
-	TimeRemainingSeconds int        `json:"timeRemainingSeconds"`
-	StartedAt            *time.Time `json:"startedAt,omitempty"`
-	FinishedAt           *time.Time `json:"finishedAt,omitempty"`
-	Phase                string     `json:"phase"`
+	Name                  string     `json:"name"`
+	PodName               string     `json:"podName"`
+	PodNamespace          string     `json:"podNamespace"`
+	PodVolumeName         string     `json:"podVolumeName"`
+	SizeBytesHuman        string     `json:"sizeBytesHuman"`
+	DoneBytesHuman        string     `json:"doneBytesHuman"`
+	CompletionPercent     int        `json:"completionPercent"`
+	RemainingSecondsExist bool       `json:"remainingSecondsExist"`
+	TimeRemainingSeconds  int        `json:"timeRemainingSeconds"`
+	StartedAt             *time.Time `json:"startedAt,omitempty"`
+	FinishedAt            *time.Time `json:"finishedAt,omitempty"`
+	Phase                 string     `json:"phase"`
 }
 
 type SnapshotError struct {

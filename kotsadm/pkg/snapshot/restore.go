@@ -198,9 +198,15 @@ func listRestoreVolumes(restoreVolumes []velerov1.PodVolumeRestore) []types.Rest
 			v.StartedAt = &restoreVolume.Status.StartTimestamp.Time
 
 			if restoreVolume.Status.Progress.TotalBytes > 0 {
-				bytesPerSecond := float64(restoreVolume.Status.Progress.BytesDone) / time.Now().Sub(*v.StartedAt).Seconds()
-				bytesRemaining := float64(restoreVolume.Status.Progress.TotalBytes - restoreVolume.Status.Progress.BytesDone)
-				v.TimeRemainingSeconds = int(math.Round(bytesRemaining / bytesPerSecond))
+				if restoreVolume.Status.Progress.BytesDone > 0 {
+					bytesPerSecond := float64(restoreVolume.Status.Progress.BytesDone) / time.Now().Sub(*v.StartedAt).Seconds()
+					bytesRemaining := float64(restoreVolume.Status.Progress.TotalBytes - restoreVolume.Status.Progress.BytesDone)
+					v.RemainingSecondsExist = true
+					v.TimeRemainingSeconds = int(math.Round(bytesRemaining / bytesPerSecond))
+				} else {
+					v.RemainingSecondsExist = false
+					v.TimeRemainingSeconds = 0
+				}
 			}
 		}
 		if restoreVolume.Status.CompletionTimestamp != nil {
