@@ -28,6 +28,7 @@ type DeployOptions struct {
 	IsOpenShift               bool
 	License                   *kotsv1beta1.License
 	ConfigValues              *kotsv1beta1.ConfigValues
+	Airgap                    bool
 	AirgapRootDir             string
 	AppImagesPushed           bool
 	ProgressWriter            io.Writer
