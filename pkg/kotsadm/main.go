@@ -532,11 +532,11 @@ func ensureDisasterRecoveryLabels(deployOptions *types.DeployOptions, clientset 
 	}
 
 	// service accounts
-	serviceAccount, err := clientset.CoreV1().ServiceAccounts(deployOptions.Namespace).List(context.TODO(), listOptions)
+	serviceAccounts, err := clientset.CoreV1().ServiceAccounts(deployOptions.Namespace).List(context.TODO(), listOptions)
 	if err != nil {
 		return errors.Wrap(err, "failed to list serviceaccounts")
 	}
-	for _, serviceAccount := range serviceAccount.Items {
+	for _, serviceAccount := range serviceAccounts.Items {
 		if _, ok := serviceAccount.ObjectMeta.Labels[types.BackupLabel]; !ok {
 			serviceAccount.ObjectMeta.Labels = types.GetKotsadmLabels(serviceAccount.ObjectMeta.Labels)
 
