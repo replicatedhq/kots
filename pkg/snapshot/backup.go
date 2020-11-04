@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"time"
 
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/auth"
@@ -62,6 +63,9 @@ func CreateInstanceBackup(options CreateInstanceBackupOptions) error {
 		}
 	}()
 
+	log.FinishSpinner()
+	log.ActionWithSpinner("Creating Backup")
+
 	authSlug, err := auth.GetOrCreateAuthSlug(options.KubernetesConfigFlags, options.Namespace)
 	if err != nil {
 		log.FinishSpinnerWithError()
@@ -111,8 +115,21 @@ func CreateInstanceBackup(options CreateInstanceBackupOptions) error {
 		return errors.New(backupResponse.Error)
 	}
 
+	// wait for backup to complete
+	backup, err := waitForVeleroBackupCompleted(backupResponse.BackupName)
+	if err != nil {
+		if backup != nil {
+			errMsg := fmt.Sprintf("backup failed with %d errors and %d warnings.", backup.Status.Errors, backup.Status.Warnings)
+			log.FinishSpinnerWithError()
+			log.ActionWithoutSpinner(errMsg)
+			return errors.Wrap(err, errMsg)
+		}
+		log.FinishSpinnerWithError()
+		return errors.Wrap(err, "failed to wait for velero backup completed")
+	}
+
 	log.FinishSpinner()
-	log.ActionWithoutSpinner(fmt.Sprintf("Backup request has been created. Backup name is %s", backupResponse.BackupName))
+	log.ActionWithoutSpinner(fmt.Sprintf("Backup completed successfully. Backup name is %s", backupResponse.BackupName))
 
 	return nil
 }
@@ -155,4 +172,43 @@ func ListInstanceBackups(options ListInstanceBackupsOptions) ([]velerov1.Backup,
 	}
 
 	return backups, nil
+}
+
+func waitForVeleroBackupCompleted(backupName string) (*velerov1.Backup, error) {
+	bsl, err := findBackupStoreLocation()
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get velero namespace")
+	}
+
+	veleroNamespace := bsl.Namespace
+
+	cfg, err := config.GetConfig()
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get cluster config")
+	}
+
+	veleroClient, err := veleroclientv1.NewForConfig(cfg)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to create clientset")
+	}
+
+	for {
+		backup, err := veleroClient.Backups(veleroNamespace).Get(context.TODO(), backupName, metav1.GetOptions{})
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to get backup")
+		}
+
+		switch backup.Status.Phase {
+		case velerov1.BackupPhaseCompleted:
+			return backup, nil
+		case velerov1.BackupPhaseFailed:
+			return backup, errors.Wrap(err, "backup failed")
+		case velerov1.BackupPhasePartiallyFailed:
+			return backup, errors.Wrap(err, "backup partially failed")
+		default:
+			// in progress
+		}
+
+		time.Sleep(time.Second)
+	}
 }

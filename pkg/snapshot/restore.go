@@ -21,7 +21,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
 )
 
-type CreateInstanceRestoreOptions struct {
+type RestoreInstanceBackupOptions struct {
 	BackupName            string
 	KubernetesConfigFlags *genericclioptions.ConfigFlags
 }
@@ -30,7 +30,7 @@ type ListInstanceRestoresOptions struct {
 	Namespace string
 }
 
-func CreateInstanceRestore(options CreateInstanceRestoreOptions) (*velerov1.Restore, error) {
+func RestoreInstanceBackup(options RestoreInstanceBackupOptions) (*velerov1.Restore, error) {
 	bsl, err := findBackupStoreLocation()
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get velero namespace")
@@ -136,7 +136,7 @@ func CreateInstanceRestore(options CreateInstanceRestoreOptions) (*velerov1.Rest
 	}
 
 	// wait for restore to complete
-	restore, err = waitForVeleroRestoreCompleted(veleroClient, veleroNamespace, restore.ObjectMeta.Name)
+	restore, err = waitForVeleroRestoreCompleted(restore.ObjectMeta.Name)
 	if err != nil {
 		if restore != nil {
 			errMsg := fmt.Sprintf("Admin Console restore failed with %d errors and %d warnings.", restore.Status.Errors, restore.Status.Warnings)
@@ -227,7 +227,24 @@ func ListInstanceRestores(options ListInstanceRestoresOptions) ([]velerov1.Resto
 	return restores, nil
 }
 
-func waitForVeleroRestoreCompleted(veleroClient *veleroclientv1.VeleroV1Client, veleroNamespace string, restoreName string) (*velerov1.Restore, error) {
+func waitForVeleroRestoreCompleted(restoreName string) (*velerov1.Restore, error) {
+	bsl, err := findBackupStoreLocation()
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get velero namespace")
+	}
+
+	veleroNamespace := bsl.Namespace
+
+	cfg, err := config.GetConfig()
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get cluster config")
+	}
+
+	veleroClient, err := veleroclientv1.NewForConfig(cfg)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to create clientset")
+	}
+
 	for {
 		restore, err := veleroClient.Restores(veleroNamespace).Get(context.TODO(), restoreName, metav1.GetOptions{})
 		if err != nil {
