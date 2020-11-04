@@ -83,6 +83,12 @@ func AppUpdateCheck(w http.ResponseWriter, r *http.Request) {
 		defer os.RemoveAll(rootDir)
 
 		formReader, err := r.MultipartReader()
+		if err != nil {
+			logger.Error(errors.Wrap(err, "failed to get multipart reader"))
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+
 		for {
 			part, err := formReader.NextPart()
 			if err != nil {
