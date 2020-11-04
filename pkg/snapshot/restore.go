@@ -175,7 +175,7 @@ func CreateInstanceRestore(options CreateInstanceRestoreOptions) (*velerov1.Rest
 	if err != nil {
 		if _, ok := errors.Cause(err).(*kotsadmtypes.ErrorAppsRestore); ok {
 			log.FinishSpinnerWithError()
-			return nil, errors.Errorf("failed to restore kotsadm applications", err)
+			return nil, errors.Errorf("failed to restore kotsadm applications: %s", err)
 		}
 		log.FinishSpinnerWithError()
 		return nil, errors.Wrap(err, "failed to wait for kotsadm applications restore")

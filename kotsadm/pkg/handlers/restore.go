@@ -224,7 +224,7 @@ func GetRestoreAppsStatus(w http.ResponseWriter, r *http.Request) {
 		}
 
 		appRestoreStatus := AppRestoreStatus{
-			appSlug: a.Slug,
+			AppSlug: a.Slug,
 		}
 
 		if restore == nil {
