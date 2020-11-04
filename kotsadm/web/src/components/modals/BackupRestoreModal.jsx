@@ -39,7 +39,7 @@ export default function BackupRestoreModal(props) {
                 canCopy={true}
                 onCopyText={<span className="u-color--chateauGreen">Command has been copied to your clipboard</span>}
               >
-                {`kubectl kots restore create --from-backup ${snapshotToRestore?.name}`}
+                {`kubectl kots restore --from-backup ${snapshotToRestore?.name}`}
               </CodeSnippet>
           </div>
         </div>
