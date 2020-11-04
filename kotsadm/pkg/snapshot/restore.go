@@ -49,7 +49,7 @@ func GetRestore(snapshotName string) (*velerov1.Restore, error) {
 	return restore, nil
 }
 
-func CreateRestore(snapshotName string) error {
+func CreateApplicationRestore(snapshotName string, appSlug string) error {
 	// Reference https://github.com/vmware-tanzu/velero/blob/42b612645863c2b3e451b447f9bf798295dd7dba/pkg/cmd/cli/restore/create.go#L222
 
 	logger.Debug("creating restore",
@@ -73,7 +73,7 @@ func CreateRestore(snapshotName string) error {
 		return errors.Wrap(err, "failed to create clientset")
 	}
 
-	_, err = veleroClient.Backups(veleroNamespace).Get(context.TODO(), snapshotName, metav1.GetOptions{})
+	backup, err := veleroClient.Backups(veleroNamespace).Get(context.TODO(), snapshotName, metav1.GetOptions{})
 	if err != nil {
 		return errors.Wrap(err, "failed to find backup")
 	}
@@ -89,6 +89,19 @@ func CreateRestore(snapshotName string) error {
 			RestorePVs:              &trueVal,
 			IncludeClusterResources: &trueVal,
 		},
+	}
+
+	if backup.Annotations["kots.io/instance"] == "true" {
+		// only restore app-specific objects
+		restore.ObjectMeta.Name = fmt.Sprintf("%s.%s", snapshotName, appSlug)
+		restore.ObjectMeta.Annotations = map[string]string{
+			"kots.io/instance": "true",
+		}
+		restore.Spec.LabelSelector = &metav1.LabelSelector{
+			MatchLabels: map[string]string{
+				"kots.io/app-slug": appSlug,
+			},
+		}
 	}
 
 	_, err = veleroClient.Restores(veleroNamespace).Create(context.TODO(), restore, metav1.CreateOptions{})
@@ -125,7 +138,7 @@ func DeleteRestore(snapshotName string) error {
 	return nil
 }
 
-func GetKotsadmRestoreDetail(ctx context.Context, restoreName string) (*types.RestoreDetail, error) {
+func GetRestoreDetails(ctx context.Context, restoreName string) (*types.RestoreDetail, error) {
 	cfg, err := config.GetConfig()
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get cluster config")

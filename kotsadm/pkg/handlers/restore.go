@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"strconv"
 
@@ -18,7 +19,7 @@ import (
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
 )
 
-type CreateRestoreResponse struct {
+type CreateApplicationRestoreResponse struct {
 	Success bool   `json:"success"`
 	Error   string `json:"error,omitempty"`
 }
@@ -29,13 +30,8 @@ type GetRestoreStatusResponse struct {
 	Error       string `json:"error,omitempty"`
 }
 
-type CreateKotsadmRestoreResponse struct {
-	Success bool   `json:"success"`
-	Error   string `json:"error,omitempty"`
-}
-
-func CreateRestore(w http.ResponseWriter, r *http.Request) {
-	createRestoreResponse := CreateRestoreResponse{
+func CreateApplicationRestore(w http.ResponseWriter, r *http.Request) {
+	createRestoreResponse := CreateApplicationRestoreResponse{
 		Success: false,
 	}
 
@@ -92,7 +88,7 @@ func CreateRestore(w http.ResponseWriter, r *http.Request) {
 
 	if err := snapshot.DeleteRestore(snapshotName); err != nil {
 		logger.Error(err)
-		createRestoreResponse.Error = "failed to initiate restore"
+		createRestoreResponse.Error = "failed to delete restore"
 		JSON(w, http.StatusInternalServerError, createRestoreResponse)
 		return
 	}
@@ -108,6 +104,100 @@ func CreateRestore(w http.ResponseWriter, r *http.Request) {
 	createRestoreResponse.Success = true
 
 	JSON(w, http.StatusOK, createRestoreResponse)
+}
+
+type RestoreAppsResponse struct {
+	Success bool   `json:"success"`
+	Error   string `json:"error,omitempty"`
+}
+
+func RestoreApps(w http.ResponseWriter, r *http.Request) {
+	restoreResponse := RestoreAppsResponse{
+		Success: false,
+	}
+
+	snapshotName := mux.Vars(r)["snapshotName"]
+
+	backup, err := snapshot.GetBackup(snapshotName)
+	if err != nil {
+		logger.Error(err)
+		restoreResponse.Error = "failed to find backup"
+		JSON(w, http.StatusInternalServerError, restoreResponse)
+		return
+	}
+
+	if backup.Annotations["kots.io/instance"] != "true" {
+		err := errors.Errorf("backup %s is not an instance backup", backup.ObjectMeta.Name)
+		logger.Error(err)
+		restoreResponse.Error = err.Error()
+		JSON(w, http.StatusInternalServerError, restoreResponse)
+		return
+	}
+
+	apps, err := store.GetStore().ListInstalledApps()
+	if err != nil {
+		logger.Error(err)
+		restoreResponse.Error = "failed to list installed apps"
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	for _, a := range apps {
+		if err := app.ResetRestore(a.ID); err != nil {
+			err = errors.Wrapf(err, "failed to reset app restore in progress name for app %s", a.Slug)
+			logger.Error(err)
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+
+		restoreName := fmt.Sprintf("%s.%s", snapshotName, a.Slug)
+		if err := snapshot.DeleteRestore(restoreName); err != nil {
+			logger.Error(err)
+			restoreResponse.Error = fmt.Sprintf("failed to delete restore for app %s", a.Slug)
+			JSON(w, http.StatusInternalServerError, restoreResponse)
+			return
+		}
+
+		if err := app.InitiateRestore(snapshotName, a.ID); err != nil {
+			logger.Error(err)
+			restoreResponse.Error = fmt.Sprintf("failed to initiate restore for app %s", a.Slug)
+			JSON(w, http.StatusInternalServerError, restoreResponse)
+			return
+		}
+	}
+
+	restoreResponse.Success = true
+
+	JSON(w, http.StatusOK, restoreResponse)
+}
+
+type GetRestoreAppsStatusResponse struct {
+	Status string `json:"status,omitempty"`
+	Error  string `json:"error,omitempty"`
+}
+
+func GetRestoreAppsStatus(w http.ResponseWriter, r *http.Request) {
+	response := GetRestoreAppsStatusResponse{
+		Status: "",
+	}
+
+	apps, err := store.GetStore().ListInstalledApps()
+	if err != nil {
+		logger.Error(err)
+		response.Error = "failed to list installed apps"
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	for _, a := range apps {
+		if a.RestoreInProgressName != "" {
+			response.Status = "running" // there is only one status right now
+			JSON(w, http.StatusOK, response)
+			return
+		}
+	}
+
+	JSON(w, http.StatusOK, response)
 }
 
 func GetRestoreStatus(w http.ResponseWriter, r *http.Request) {
@@ -152,12 +242,12 @@ func CancelRestore(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
-type GetKotsadmRestoreResponse struct {
+type GetRestoreDetailsResponse struct {
 	RestoreDetail *snapshottypes.RestoreDetail `json:"restoreDetail"`
 	IsActive      bool                         `json:"active"`
 }
 
-func GetKotsadmRestore(w http.ResponseWriter, r *http.Request) {
+func GetRestoreDetails(w http.ResponseWriter, r *http.Request) {
 	appSlug := mux.Vars(r)["appSlug"]
 	restoreName := mux.Vars(r)["restoreName"]
 
@@ -169,11 +259,11 @@ func GetKotsadmRestore(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	response := GetKotsadmRestoreResponse{
+	response := GetRestoreDetailsResponse{
 		IsActive: foundApp.RestoreInProgressName == restoreName,
 	}
 
-	restoreDetail, err := snapshot.GetKotsadmRestoreDetail(context.TODO(), restoreName)
+	restoreDetail, err := snapshot.GetRestoreDetails(context.TODO(), restoreName)
 	if kuberneteserrors.IsNotFound(errors.Cause(err)) {
 		if foundApp.RestoreUndeployStatus == apptypes.UndeployFailed {
 			// HACK: once the user has see the error, clear it out.

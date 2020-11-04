@@ -2,6 +2,7 @@ package socketservice
 
 import (
 	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -480,22 +481,33 @@ func (s *SocketService) processRestoreForApp(clusterSocket ClusterSocket, a *app
 }
 
 func handleUndeployCompleted(a *apptypes.App) error {
-	restore, err := snapshot.GetRestore(a.RestoreInProgressName)
+	snapshotName := a.RestoreInProgressName
+	restoreName := a.RestoreInProgressName
+
+	backup, err := snapshot.GetBackup(snapshotName)
+	if err != nil {
+		return errors.Wrap(err, "failed to get backup")
+	}
+	if backup.Annotations["kots.io/instance"] == "true" {
+		restoreName = fmt.Sprintf("%s.%s", snapshotName, a.Slug)
+	}
+
+	restore, err := snapshot.GetRestore(restoreName)
 	if err != nil {
 		return errors.Wrap(err, "failed to get restore")
 	}
 
 	if restore == nil {
-		return errors.Wrap(startVeleroRestore(a.RestoreInProgressName), "failed to start velero restore")
+		return errors.Wrap(startVeleroRestore(snapshotName, a.Slug), "failed to start velero restore")
 	}
 
-	return errors.Wrap(checkRestoreComplete(a, restore), "failed to check restore comlete")
+	return errors.Wrap(checkRestoreComplete(a, restore), "failed to check restore complete")
 }
 
-func startVeleroRestore(restoreName string) error {
-	logger.Info(fmt.Sprintf("creating velero restore object %s", restoreName))
+func startVeleroRestore(snapshotName string, appSlug string) error {
+	logger.Info(fmt.Sprintf("creating velero restore object from snapshot %s", snapshotName))
 
-	if err := snapshot.CreateRestore(restoreName); err != nil {
+	if err := snapshot.CreateApplicationRestore(snapshotName, appSlug); err != nil {
 		return errors.Wrap(err, "failed to create restore")
 	}
 
@@ -515,9 +527,29 @@ func checkRestoreComplete(a *apptypes.App, restore *velerov1.Restore) error {
 			return errors.New("backup is missing required annotations")
 		}
 
-		sequenceStr, ok := backupAnnotations["kots.io/app-sequence"]
-		if !ok || sequenceStr == "" {
-			return errors.New("backup is missing sequence annotation")
+		sequenceStr := ""
+		if backupAnnotations["kots.io/instance"] == "true" {
+			b, ok := backupAnnotations["kots.io/apps-sequences"]
+			if !ok || b == "" {
+				return errors.New("instance backup is missing apps sequences annotation")
+			}
+
+			appsSequences := map[string]string{}
+			if err := json.Unmarshal([]byte(b), appsSequences); err != nil {
+				return errors.Wrap(err, "failed to unmarshal apps sequences")
+			}
+
+			s, ok := appsSequences[a.Slug]
+			if !ok || s == "" {
+				return errors.New("instance backup is missing sequence annotation")
+			}
+			sequenceStr = s
+		} else {
+			s, ok := backupAnnotations["kots.io/app-sequence"]
+			if !ok || s == "" {
+				return errors.New("backup is missing sequence annotation")
+			}
+			sequenceStr = s
 		}
 
 		sequence, err := strconv.ParseInt(sequenceStr, 10, 64)
