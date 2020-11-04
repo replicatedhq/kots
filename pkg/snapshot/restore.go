@@ -261,9 +261,9 @@ func waitForVeleroRestoreCompleted(restoreName string) (*velerov1.Restore, error
 		case velerov1.RestorePhaseCompleted:
 			return restore, nil
 		case velerov1.RestorePhaseFailed:
-			return restore, errors.Wrap(err, "restore failed")
+			return restore, errors.New("restore failed")
 		case velerov1.RestorePhasePartiallyFailed:
-			return restore, errors.Wrap(err, "restore partially failed")
+			return restore, errors.New("restore partially failed")
 		default:
 			// in progress
 		}

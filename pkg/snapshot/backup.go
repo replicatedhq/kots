@@ -208,9 +208,9 @@ func waitForVeleroBackupCompleted(backupName string) (*velerov1.Backup, error) {
 		case velerov1.BackupPhaseCompleted:
 			return backup, nil
 		case velerov1.BackupPhaseFailed:
-			return backup, errors.Wrap(err, "backup failed")
+			return backup, errors.New("backup failed")
 		case velerov1.BackupPhasePartiallyFailed:
-			return backup, errors.Wrap(err, "backup partially failed")
+			return backup, errors.New("backup partially failed")
 		default:
 			// in progress
 		}
