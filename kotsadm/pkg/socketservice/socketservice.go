@@ -539,7 +539,7 @@ func checkRestoreComplete(a *apptypes.App, restore *velerov1.Restore) error {
 			}
 
 			var appsSequences map[string]int64
-			if err := json.Unmarshal([]byte(b), appsSequences); err != nil {
+			if err := json.Unmarshal([]byte(b), &appsSequences); err != nil {
 				return errors.Wrap(err, "failed to unmarshal apps sequences")
 			}
 
