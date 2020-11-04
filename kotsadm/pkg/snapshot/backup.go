@@ -2,6 +2,7 @@ package snapshot
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"math"
@@ -159,6 +160,7 @@ func CreateInstanceBackup(ctx context.Context, cluster *downstreamtypes.Downstre
 		kotsadmNamespace = os.Getenv("KOTSADM_TARGET_NAMESPACE")
 	}
 
+	appsSequences := map[string]int64{}
 	includedNamespaces := []string{kotsadmNamespace}
 
 	for _, a := range apps {
@@ -180,6 +182,7 @@ func CreateInstanceBackup(ctx context.Context, cluster *downstreamtypes.Downstre
 			// no version is deployed for this app yet
 			continue
 		}
+		appsSequences[a.Slug] = parentSequence
 
 		archiveDir, err := ioutil.TempDir("", "kotsadm")
 		if err != nil {
@@ -215,6 +218,13 @@ func CreateInstanceBackup(ctx context.Context, cluster *downstreamtypes.Downstre
 		snapshotTrigger = "schedule"
 	}
 
+	// marshal apps sequences map
+	b, err := json.Marshal(appsSequences)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to marshal apps sequences")
+	}
+	marshalledAppsSequences := string(b)
+
 	veleroBackup := &velerov1.Backup{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:         "",
@@ -226,6 +236,7 @@ func CreateInstanceBackup(ctx context.Context, cluster *downstreamtypes.Downstre
 				"kots.io/instance":                 "true",
 				"kots.io/kotsadm-image":            kotsadmImage,
 				"kots.io/kotsadm-deploy-namespace": kotsadmNamespace,
+				"kots.io/apps-sequences":           marshalledAppsSequences,
 			},
 		},
 		Spec: velerov1.BackupSpec{

@@ -2,6 +2,7 @@ package socketservice
 
 import (
 	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -456,14 +457,17 @@ func (s *SocketService) processRestoreForApp(clusterSocket ClusterSocket, a *app
 	switch a.RestoreUndeployStatus {
 	case apptypes.UndeployInProcess:
 		// no-op
+		break
 
 	case apptypes.UndeployCompleted:
 		if err := handleUndeployCompleted(a); err != nil {
 			return errors.Wrap(err, "failed to handle undeploy completed")
 		}
+		break
 
 	case apptypes.UndeployFailed:
 		// no-op
+		break
 
 	default:
 		d, err := store.GetStore().GetDownstream(clusterSocket.ClusterID)
@@ -474,28 +478,40 @@ func (s *SocketService) processRestoreForApp(clusterSocket ClusterSocket, a *app
 		if err := s.undeployApp(a, d, clusterSocket); err != nil {
 			return errors.Wrap(err, "failed to undeploy app")
 		}
+		break
 	}
 
 	return nil
 }
 
 func handleUndeployCompleted(a *apptypes.App) error {
-	restore, err := snapshot.GetRestore(a.RestoreInProgressName)
+	snapshotName := a.RestoreInProgressName
+	restoreName := a.RestoreInProgressName
+
+	backup, err := snapshot.GetBackup(snapshotName)
+	if err != nil {
+		return errors.Wrap(err, "failed to get backup")
+	}
+	if backup.Annotations["kots.io/instance"] == "true" {
+		restoreName = fmt.Sprintf("%s.%s", snapshotName, a.Slug)
+	}
+
+	restore, err := snapshot.GetRestore(restoreName)
 	if err != nil {
 		return errors.Wrap(err, "failed to get restore")
 	}
 
 	if restore == nil {
-		return errors.Wrap(startVeleroRestore(a.RestoreInProgressName), "failed to start velero restore")
+		return errors.Wrap(startVeleroRestore(snapshotName, a.Slug), "failed to start velero restore")
 	}
 
-	return errors.Wrap(checkRestoreComplete(a, restore), "failed to check restore comlete")
+	return errors.Wrap(checkRestoreComplete(a, restore), "failed to check restore complete")
 }
 
-func startVeleroRestore(restoreName string) error {
-	logger.Info(fmt.Sprintf("creating velero restore object %s", restoreName))
+func startVeleroRestore(snapshotName string, appSlug string) error {
+	logger.Info(fmt.Sprintf("creating velero restore object from snapshot %s", snapshotName))
 
-	if err := snapshot.CreateRestore(restoreName); err != nil {
+	if err := snapshot.CreateApplicationRestore(snapshotName, appSlug); err != nil {
 		return errors.Wrap(err, "failed to create restore")
 	}
 
@@ -515,14 +531,34 @@ func checkRestoreComplete(a *apptypes.App, restore *velerov1.Restore) error {
 			return errors.New("backup is missing required annotations")
 		}
 
-		sequenceStr, ok := backupAnnotations["kots.io/app-sequence"]
-		if !ok || sequenceStr == "" {
-			return errors.New("backup is missing sequence annotation")
-		}
+		var sequence int64 = 0
+		if backupAnnotations["kots.io/instance"] == "true" {
+			b, ok := backupAnnotations["kots.io/apps-sequences"]
+			if !ok || b == "" {
+				return errors.New("instance backup is missing apps sequences annotation")
+			}
 
-		sequence, err := strconv.ParseInt(sequenceStr, 10, 64)
-		if err != nil {
-			return errors.Wrap(err, "failed to parse sequence")
+			var appsSequences map[string]int64
+			if err := json.Unmarshal([]byte(b), &appsSequences); err != nil {
+				return errors.Wrap(err, "failed to unmarshal apps sequences")
+			}
+
+			s, ok := appsSequences[a.Slug]
+			if !ok {
+				return errors.New("instance backup is missing sequence annotation")
+			}
+			sequence = s
+		} else {
+			sequenceStr, ok := backupAnnotations["kots.io/app-sequence"]
+			if !ok || sequenceStr == "" {
+				return errors.New("backup is missing sequence annotation")
+			}
+
+			s, err := strconv.ParseInt(sequenceStr, 10, 64)
+			if err != nil {
+				return errors.Wrap(err, "failed to parse sequence")
+			}
+			sequence = s
 		}
 
 		logger.Info(fmt.Sprintf("restore complete, setting deploy version to %d", sequence))

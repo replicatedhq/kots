@@ -190,5 +190,5 @@ func CreateInstanceBackup(w http.ResponseWriter, r *http.Request) {
 	createInstanceBackupResponse.Success = true
 	createInstanceBackupResponse.BackupName = backup.ObjectMeta.Name
 
-	JSON(w, 200, createInstanceBackupResponse)
+	JSON(w, http.StatusOK, createInstanceBackupResponse)
 }
