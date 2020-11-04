@@ -4,7 +4,7 @@ set -e
 
 export BACKUP_FILE=/backup/kotsadm-postgres.sql
 export PGPASSWORD=$POSTGRES_PASSWORD
-pg_dump -U kotsadm -h kotsadm-postgres > $BACKUP_FILE
+pg_dump -U kotsadm -h kotsadm-postgres --clean > $BACKUP_FILE
 
 export S3_DIR=/backup/s3/
 export S3_HOST=`echo $S3_ENDPOINT | awk -F/ '{print $3}'`

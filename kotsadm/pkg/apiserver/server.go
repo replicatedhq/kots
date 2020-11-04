@@ -199,11 +199,11 @@ func Start() {
 	sessionAuthRouter.Path("/api/v1/snapshot/config").Methods("PUT").HandlerFunc(handlers.SaveInstanceSnapshotConfig)
 	sessionAuthRouter.Path("/api/v1/snapshots/settings").Methods("GET").HandlerFunc(handlers.GetGlobalSnapshotSettings)
 	sessionAuthRouter.Path("/api/v1/snapshots/settings").Methods("PUT").HandlerFunc(handlers.UpdateGlobalSnapshotSettings)
-	sessionAuthRouter.Path("/api/v1/snapshot/apps-restore-status").Methods("GET").HandlerFunc(handlers.GetRestoreAppsStatus) // TODO modify
 	sessionAuthRouter.Path("/api/v1/snapshot/{snapshotName}").Methods("GET").HandlerFunc(handlers.GetBackup)
 	sessionAuthRouter.Path("/api/v1/snapshot/{snapshotName}/delete").Methods("POST").HandlerFunc(handlers.DeleteBackup)
-	sessionAuthRouter.Path("/api/v1/snapshot/{snapshotName}/restore").Methods("POST").HandlerFunc(handlers.CreateApplicationRestore) // TODO modify
-	sessionAuthRouter.Path("/api/v1/snapshot/{snapshotName}/restore-apps").Methods("POST").HandlerFunc(handlers.RestoreApps)         // TODO modify
+	sessionAuthRouter.Path("/api/v1/snapshot/{snapshotName}/restore").Methods("POST").HandlerFunc(handlers.CreateApplicationRestore)        // TODO modify
+	sessionAuthRouter.Path("/api/v1/snapshot/{snapshotName}/restore-apps").Methods("POST").HandlerFunc(handlers.RestoreApps)                // TODO modify
+	sessionAuthRouter.Path("/api/v1/snapshot/{snapshotName}/apps-restore-status").Methods("GET").HandlerFunc(handlers.GetRestoreAppsStatus) // TODO modify
 	sessionAuthRouter.Path("/api/v1/snapshot/{backup}/logs").Methods("GET").HandlerFunc(handlers.DownloadSnapshotLogs)
 	sessionAuthRouter.Path("/api/v1/velero").Methods("GET").HandlerFunc(handlers.GetVeleroStatus)
 

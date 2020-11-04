@@ -457,14 +457,17 @@ func (s *SocketService) processRestoreForApp(clusterSocket ClusterSocket, a *app
 	switch a.RestoreUndeployStatus {
 	case apptypes.UndeployInProcess:
 		// no-op
+		break
 
 	case apptypes.UndeployCompleted:
 		if err := handleUndeployCompleted(a); err != nil {
 			return errors.Wrap(err, "failed to handle undeploy completed")
 		}
+		break
 
 	case apptypes.UndeployFailed:
 		// no-op
+		break
 
 	default:
 		d, err := store.GetStore().GetDownstream(clusterSocket.ClusterID)
@@ -475,6 +478,7 @@ func (s *SocketService) processRestoreForApp(clusterSocket ClusterSocket, a *app
 		if err := s.undeployApp(a, d, clusterSocket); err != nil {
 			return errors.Wrap(err, "failed to undeploy app")
 		}
+		break
 	}
 
 	return nil

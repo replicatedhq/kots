@@ -138,15 +138,15 @@ func RestoreApps(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		logger.Error(err)
 		restoreResponse.Error = "failed to list installed apps"
-		w.WriteHeader(http.StatusInternalServerError)
+		JSON(w, http.StatusInternalServerError, restoreResponse)
 		return
 	}
 
 	for _, a := range apps {
 		if err := app.ResetRestore(a.ID); err != nil {
-			err = errors.Wrapf(err, "failed to reset app restore in progress name for app %s", a.Slug)
 			logger.Error(err)
-			w.WriteHeader(http.StatusInternalServerError)
+			restoreResponse.Error = fmt.Sprintf("failed to reset restore for app %s", a.Slug)
+			JSON(w, http.StatusInternalServerError, restoreResponse)
 			return
 		}
 
@@ -172,30 +172,71 @@ func RestoreApps(w http.ResponseWriter, r *http.Request) {
 }
 
 type GetRestoreAppsStatusResponse struct {
-	Status string `json:"status,omitempty"`
-	Error  string `json:"error,omitempty"`
+	Statuses []AppRestoreStatus `json:"statuses"`
+	Error    string             `json:"error,omitempty"`
+}
+type AppRestoreStatus struct {
+	AppSlug string                 `json:"appSlug"`
+	Status  velerov1.RestoreStatus `json:"status,omitempty"`
 }
 
 func GetRestoreAppsStatus(w http.ResponseWriter, r *http.Request) {
 	response := GetRestoreAppsStatusResponse{
-		Status: "",
+		Statuses: []AppRestoreStatus{},
+	}
+
+	snapshotName := mux.Vars(r)["snapshotName"]
+
+	backup, err := snapshot.GetBackup(snapshotName)
+	if err != nil {
+		logger.Error(err)
+		response.Error = "failed to find backup"
+		JSON(w, http.StatusInternalServerError, response)
+		return
+	}
+
+	if backup.Annotations["kots.io/instance"] != "true" {
+		err := errors.Errorf("backup %s is not an instance backup", backup.ObjectMeta.Name)
+		logger.Error(err)
+		response.Error = err.Error()
+		JSON(w, http.StatusInternalServerError, response)
+		return
 	}
 
 	apps, err := store.GetStore().ListInstalledApps()
 	if err != nil {
 		logger.Error(err)
 		response.Error = "failed to list installed apps"
-		w.WriteHeader(http.StatusInternalServerError)
+		JSON(w, http.StatusInternalServerError, response)
 		return
 	}
 
+	statuses := []AppRestoreStatus{}
+
 	for _, a := range apps {
-		if a.RestoreInProgressName != "" {
-			response.Status = "running" // there is only one status right now
-			JSON(w, http.StatusOK, response)
+		restoreName := fmt.Sprintf("%s.%s", snapshotName, a.Slug)
+		restore, err := snapshot.GetRestore(restoreName)
+		if err != nil {
+			logger.Error(err)
+			response.Error = fmt.Sprintf("failed to get restore for app %s", a.Slug)
+			JSON(w, http.StatusInternalServerError, response)
 			return
 		}
+
+		appRestoreStatus := AppRestoreStatus{
+			appSlug: a.Slug,
+		}
+
+		if restore == nil {
+			statuses = append(statuses, appRestoreStatus)
+			continue
+		}
+
+		appRestoreStatus.Status = restore.Status
+		statuses = append(statuses, appRestoreStatus)
 	}
+
+	response.Statuses = statuses
 
 	JSON(w, http.StatusOK, response)
 }

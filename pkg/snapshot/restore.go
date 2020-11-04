@@ -129,13 +129,26 @@ func CreateInstanceRestore(options CreateInstanceRestoreOptions) (*velerov1.Rest
 	}
 
 	// create new restore object
-	_, err = veleroClient.Restores(veleroNamespace).Create(context.TODO(), restore, metav1.CreateOptions{})
+	restore, err = veleroClient.Restores(veleroNamespace).Create(context.TODO(), restore, metav1.CreateOptions{})
 	if err != nil {
 		log.FinishSpinnerWithError()
 		return nil, errors.Wrap(err, "failed to create restore")
 	}
 
-	// wait for kotsadm to start
+	// wait for restore to complete
+	restore, err = waitForVeleroRestoreCompleted(veleroClient, veleroNamespace, restore.ObjectMeta.Name)
+	if err != nil {
+		if restore != nil {
+			errMsg := fmt.Sprintf("Admin Console restore failed with %d errors and %d warnings.", restore.Status.Errors, restore.Status.Warnings)
+			log.FinishSpinnerWithError()
+			log.ActionWithoutSpinner(errMsg)
+			return nil, errors.Wrap(err, errMsg)
+		}
+		log.FinishSpinnerWithError()
+		return nil, errors.Wrap(err, "failed to wait for velero restore completed")
+	}
+
+	// wait for kotsadm to start up
 	timeout, err := time.ParseDuration("10m")
 	if err != nil {
 		log.FinishSpinnerWithError()
@@ -160,6 +173,10 @@ func CreateInstanceRestore(options CreateInstanceRestoreOptions) (*velerov1.Rest
 	// wait for applications restore to finish
 	err = waitForKotsadmApplicationsRestore(kotsadmNamespace, kotsadmPodName, options.KubernetesConfigFlags, log)
 	if err != nil {
+		if _, ok := errors.Cause(err).(*kotsadmtypes.ErrorAppsRestore); ok {
+			log.FinishSpinnerWithError()
+			return nil, errors.Errorf("failed to restore kotsadm applications", err)
+		}
 		log.FinishSpinnerWithError()
 		return nil, errors.Wrap(err, "failed to wait for kotsadm applications restore")
 	}
@@ -208,6 +225,28 @@ func ListInstanceRestores(options ListInstanceRestoresOptions) ([]velerov1.Resto
 	}
 
 	return restores, nil
+}
+
+func waitForVeleroRestoreCompleted(veleroClient *veleroclientv1.VeleroV1Client, veleroNamespace string, restoreName string) (*velerov1.Restore, error) {
+	for {
+		restore, err := veleroClient.Restores(veleroNamespace).Get(context.TODO(), restoreName, metav1.GetOptions{})
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to get restore")
+		}
+
+		switch restore.Status.Phase {
+		case velerov1.RestorePhaseCompleted:
+			return restore, nil
+		case velerov1.RestorePhaseFailed:
+			return restore, errors.Wrap(err, "restore failed")
+		case velerov1.RestorePhasePartiallyFailed:
+			return restore, errors.Wrap(err, "restore partially failed")
+		default:
+			// in progress
+		}
+
+		time.Sleep(time.Second)
+	}
 }
 
 func initiateKotsadmApplicationsRestore(backupName string, kotsadmNamespace string, kotsadmPodName string, kubernetesConfigFlags *genericclioptions.ConfigFlags, log *logger.Logger) error {
@@ -303,9 +342,13 @@ func waitForKotsadmApplicationsRestore(kotsadmNamespace string, kotsadmPodName s
 			return errors.Wrap(err, "failed to read server response")
 		}
 
+		type AppRestoreStatus struct {
+			AppSlug string                 `json:"appSlug"`
+			Status  velerov1.RestoreStatus `json:"status,omitempty"`
+		}
 		type AppsRestoreStatusResponse struct {
-			Status string `json:"status,omitempty"`
-			Error  string `json:"error,omitempty"`
+			Statuses []AppRestoreStatus `json:"statuses"`
+			Error    string             `json:"error,omitempty"`
 		}
 		var appsRestoreStatusResponse AppsRestoreStatusResponse
 		if err := json.Unmarshal(respBody, &appsRestoreStatusResponse); err != nil {
@@ -316,8 +359,31 @@ func waitForKotsadmApplicationsRestore(kotsadmNamespace string, kotsadmPodName s
 			return errors.New(appsRestoreStatusResponse.Error)
 		}
 
-		if appsRestoreStatusResponse.Status != "running" {
-			return nil
+		inProgress := false
+		errs := []string{}
+
+		for _, s := range appsRestoreStatusResponse.Statuses {
+			switch s.Status.Phase {
+			case velerov1.RestorePhaseCompleted:
+				break
+			case velerov1.RestorePhaseFailed, velerov1.RestorePhasePartiallyFailed:
+				errMsg := fmt.Sprintf("restore failed for app %s with %d errors and %d warnings", s.AppSlug, s.Status.Errors, s.Status.Warnings)
+				errs = append(errs, errMsg)
+				break
+			default:
+				inProgress = true
+			}
+		}
+
+		if !inProgress {
+			if len(errs) == 0 {
+				return nil
+			} else {
+				errMsg := strings.Join(errs, " AND ")
+				return &kotsadmtypes.ErrorAppsRestore{
+					Message: errMsg,
+				}
+			}
 		}
 
 		time.Sleep(time.Second * 2)
