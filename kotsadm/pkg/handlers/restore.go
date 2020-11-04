@@ -35,6 +35,7 @@ func CreateApplicationRestore(w http.ResponseWriter, r *http.Request) {
 		Success: false,
 	}
 
+	appSlug := mux.Vars(r)["appSlug"]
 	snapshotName := mux.Vars(r)["snapshotName"]
 
 	backup, err := snapshot.GetBackup(snapshotName)
@@ -54,7 +55,23 @@ func CreateApplicationRestore(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	status, err := downstream.GetDownstreamVersionStatus(appID, sequence)
+	kotsApp, err := store.GetStore().GetApp(appID)
+	if err != nil {
+		logger.Error(err)
+		createRestoreResponse.Error = "failed to get app"
+		JSON(w, http.StatusInternalServerError, createRestoreResponse)
+		return
+	}
+
+	if kotsApp.Slug != appSlug {
+		err := errors.New(fmt.Sprintf("snapshot %s does not belong to app %s", snapshotName, appSlug))
+		logger.Error(err)
+		createRestoreResponse.Error = err.Error()
+		JSON(w, http.StatusInternalServerError, createRestoreResponse)
+		return
+	}
+
+	status, err := downstream.GetDownstreamVersionStatus(kotsApp.ID, sequence)
 	if err != nil {
 		logger.Error(err)
 		createRestoreResponse.Error = "failed to find downstream version"
@@ -63,17 +80,9 @@ func CreateApplicationRestore(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if status != "deployed" {
-		err := errors.Errorf("sequence %d of app %s was never deployed to this cluster", sequence, appID)
+		err := errors.Errorf("sequence %d of app %s was never deployed to this cluster", sequence, kotsApp.ID)
 		logger.Error(err)
 		createRestoreResponse.Error = err.Error()
-		JSON(w, http.StatusInternalServerError, createRestoreResponse)
-		return
-	}
-
-	kotsApp, err := store.GetStore().GetApp(appID)
-	if err != nil {
-		logger.Error(err)
-		createRestoreResponse.Error = "failed to get app"
 		JSON(w, http.StatusInternalServerError, createRestoreResponse)
 		return
 	}
@@ -93,7 +102,7 @@ func CreateApplicationRestore(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = app.InitiateRestore(snapshotName, appID)
+	err = app.InitiateRestore(snapshotName, kotsApp.ID)
 	if err != nil {
 		logger.Error(err)
 		createRestoreResponse.Error = "failed to initiate restore"
