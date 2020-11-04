@@ -32,6 +32,7 @@ func RestoreCmd() *cobra.Command {
 			options := snapshot.RestoreInstanceBackupOptions{
 				BackupName:            backupName,
 				KubernetesConfigFlags: kubernetesConfigFlags,
+				WaitForApps:           v.GetBool("wait-for-apps"),
 			}
 			_, err := snapshot.RestoreInstanceBackup(options)
 			if err != nil {
@@ -43,6 +44,7 @@ func RestoreCmd() *cobra.Command {
 	}
 
 	cmd.Flags().String("from-backup", "", "the name of the backup to restore from")
+	cmd.Flags().Bool("wait-for-apps", true, "wait for all applications to be restored")
 
 	cmd.AddCommand(RestoreListCmd())
 

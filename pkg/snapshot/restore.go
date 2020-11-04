@@ -24,6 +24,7 @@ import (
 type RestoreInstanceBackupOptions struct {
 	BackupName            string
 	KubernetesConfigFlags *genericclioptions.ConfigFlags
+	WaitForApps           bool
 }
 
 type ListInstanceRestoresOptions struct {
@@ -170,19 +171,24 @@ func RestoreInstanceBackup(options RestoreInstanceBackupOptions) (*velerov1.Rest
 		return nil, errors.Wrap(err, "failed to restore kotsadm applications")
 	}
 
-	// wait for applications restore to finish
-	err = waitForKotsadmApplicationsRestore(options.BackupName, kotsadmNamespace, kotsadmPodName, options.KubernetesConfigFlags, log)
-	if err != nil {
-		if _, ok := errors.Cause(err).(*kotsadmtypes.ErrorAppsRestore); ok {
+	if options.WaitForApps {
+		// wait for applications restore to finish
+		err = waitForKotsadmApplicationsRestore(options.BackupName, kotsadmNamespace, kotsadmPodName, options.KubernetesConfigFlags, log)
+		if err != nil {
+			if _, ok := errors.Cause(err).(*kotsadmtypes.ErrorAppsRestore); ok {
+				log.FinishSpinnerWithError()
+				return nil, errors.Errorf("failed to restore kotsadm applications: %s", err)
+			}
 			log.FinishSpinnerWithError()
-			return nil, errors.Errorf("failed to restore kotsadm applications: %s", err)
+			return nil, errors.Wrap(err, "failed to wait for kotsadm applications restore")
 		}
-		log.FinishSpinnerWithError()
-		return nil, errors.Wrap(err, "failed to wait for kotsadm applications restore")
-	}
 
-	log.FinishSpinner()
-	log.ActionWithoutSpinner("Restore completed successfully.")
+		log.FinishSpinner()
+		log.ActionWithoutSpinner("Restore completed successfully.")
+	} else {
+		log.FinishSpinner()
+		log.ActionWithoutSpinner("Admin Console restored successfully. Applications restore is still in progress.")
+	}
 
 	return restore, nil
 }

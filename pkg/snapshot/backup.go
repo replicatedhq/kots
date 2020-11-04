@@ -22,6 +22,7 @@ import (
 type CreateInstanceBackupOptions struct {
 	Namespace             string
 	KubernetesConfigFlags *genericclioptions.ConfigFlags
+	Wait                  bool
 }
 
 type ListInstanceBackupsOptions struct {
@@ -115,21 +116,26 @@ func CreateInstanceBackup(options CreateInstanceBackupOptions) error {
 		return errors.New(backupResponse.Error)
 	}
 
-	// wait for backup to complete
-	backup, err := waitForVeleroBackupCompleted(backupResponse.BackupName)
-	if err != nil {
-		if backup != nil {
-			errMsg := fmt.Sprintf("backup failed with %d errors and %d warnings.", backup.Status.Errors, backup.Status.Warnings)
+	if options.Wait {
+		// wait for backup to complete
+		backup, err := waitForVeleroBackupCompleted(backupResponse.BackupName)
+		if err != nil {
+			if backup != nil {
+				errMsg := fmt.Sprintf("backup failed with %d errors and %d warnings.", backup.Status.Errors, backup.Status.Warnings)
+				log.FinishSpinnerWithError()
+				log.ActionWithoutSpinner(errMsg)
+				return errors.Wrap(err, errMsg)
+			}
 			log.FinishSpinnerWithError()
-			log.ActionWithoutSpinner(errMsg)
-			return errors.Wrap(err, errMsg)
+			return errors.Wrap(err, "failed to wait for velero backup completed")
 		}
-		log.FinishSpinnerWithError()
-		return errors.Wrap(err, "failed to wait for velero backup completed")
-	}
 
-	log.FinishSpinner()
-	log.ActionWithoutSpinner(fmt.Sprintf("Backup completed successfully. Backup name is %s", backupResponse.BackupName))
+		log.FinishSpinner()
+		log.ActionWithoutSpinner(fmt.Sprintf("Backup completed successfully. Backup name is %s", backupResponse.BackupName))
+	} else {
+		log.FinishSpinner()
+		log.ActionWithoutSpinner(fmt.Sprintf("Backup is in progress. Backup name is %s", backupResponse.BackupName))
+	}
 
 	return nil
 }

@@ -531,34 +531,34 @@ func checkRestoreComplete(a *apptypes.App, restore *velerov1.Restore) error {
 			return errors.New("backup is missing required annotations")
 		}
 
-		sequenceStr := ""
+		var sequence int64 = 0
 		if backupAnnotations["kots.io/instance"] == "true" {
 			b, ok := backupAnnotations["kots.io/apps-sequences"]
 			if !ok || b == "" {
 				return errors.New("instance backup is missing apps sequences annotation")
 			}
 
-			var appsSequences map[string]string
+			var appsSequences map[string]int64
 			if err := json.Unmarshal([]byte(b), appsSequences); err != nil {
 				return errors.Wrap(err, "failed to unmarshal apps sequences")
 			}
 
 			s, ok := appsSequences[a.Slug]
-			if !ok || s == "" {
+			if !ok {
 				return errors.New("instance backup is missing sequence annotation")
 			}
-			sequenceStr = s
+			sequence = s
 		} else {
-			s, ok := backupAnnotations["kots.io/app-sequence"]
-			if !ok || s == "" {
+			sequenceStr, ok := backupAnnotations["kots.io/app-sequence"]
+			if !ok || sequenceStr == "" {
 				return errors.New("backup is missing sequence annotation")
 			}
-			sequenceStr = s
-		}
 
-		sequence, err := strconv.ParseInt(sequenceStr, 10, 64)
-		if err != nil {
-			return errors.Wrap(err, "failed to parse sequence")
+			s, err := strconv.ParseInt(sequenceStr, 10, 64)
+			if err != nil {
+				return errors.Wrap(err, "failed to parse sequence")
+			}
+			sequence = s
 		}
 
 		logger.Info(fmt.Sprintf("restore complete, setting deploy version to %d", sequence))

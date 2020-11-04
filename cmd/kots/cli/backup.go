@@ -23,6 +23,7 @@ func BackupCmd() *cobra.Command {
 			options := snapshot.CreateInstanceBackupOptions{
 				Namespace:             v.GetString("namespace"),
 				KubernetesConfigFlags: kubernetesConfigFlags,
+				Wait:                  v.GetBool("wait"),
 			}
 			if err := snapshot.CreateInstanceBackup(options); err != nil {
 				return errors.Wrap(err, "failed to create instance backup")
@@ -33,6 +34,7 @@ func BackupCmd() *cobra.Command {
 	}
 
 	cmd.Flags().StringP("namespace", "n", "default", "namespace in which kots/kotsadm is installed")
+	cmd.Flags().Bool("wait", true, "wait for the backup to finish")
 
 	cmd.AddCommand(BackupListCmd())
 
