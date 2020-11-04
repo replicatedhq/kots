@@ -285,7 +285,7 @@ class AppSnapshots extends Component {
       restoreErrorMsg: "",
     });
 
-    fetch(`${window.env.API_ENDPOINT}/snapshot/${snapshot.name}/restore`, {
+    fetch(`${window.env.API_ENDPOINT}/app/${app?.slug}/snapshot/restore/${snapshot.name}`, {
       method: "POST",
       headers: {
         "Authorization": Utilities.getToken(),

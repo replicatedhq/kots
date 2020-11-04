@@ -171,7 +171,7 @@ func CreateInstanceRestore(options CreateInstanceRestoreOptions) (*velerov1.Rest
 	}
 
 	// wait for applications restore to finish
-	err = waitForKotsadmApplicationsRestore(kotsadmNamespace, kotsadmPodName, options.KubernetesConfigFlags, log)
+	err = waitForKotsadmApplicationsRestore(options.BackupName, kotsadmNamespace, kotsadmPodName, options.KubernetesConfigFlags, log)
 	if err != nil {
 		if _, ok := errors.Cause(err).(*kotsadmtypes.ErrorAppsRestore); ok {
 			log.FinishSpinnerWithError()
@@ -294,7 +294,7 @@ func initiateKotsadmApplicationsRestore(backupName string, kotsadmNamespace stri
 	return nil
 }
 
-func waitForKotsadmApplicationsRestore(kotsadmNamespace string, kotsadmPodName string, kubernetesConfigFlags *genericclioptions.ConfigFlags, log *logger.Logger) error {
+func waitForKotsadmApplicationsRestore(backupName string, kotsadmNamespace string, kotsadmPodName string, kubernetesConfigFlags *genericclioptions.ConfigFlags, log *logger.Logger) error {
 	stopCh := make(chan struct{})
 	defer close(stopCh)
 
@@ -318,7 +318,7 @@ func waitForKotsadmApplicationsRestore(kotsadmNamespace string, kotsadmPodName s
 		return errors.Wrap(err, "failed to get kotsadm auth slug")
 	}
 
-	url := fmt.Sprintf("http://localhost:%d/api/v1/snapshot/apps-restore-status", localPort)
+	url := fmt.Sprintf("http://localhost:%d/api/v1/snapshot/%s/apps-restore-status", localPort, backupName)
 
 	for {
 		newRequest, err := http.NewRequest("GET", url, nil)
