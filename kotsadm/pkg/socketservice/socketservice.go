@@ -538,7 +538,7 @@ func checkRestoreComplete(a *apptypes.App, restore *velerov1.Restore) error {
 				return errors.New("instance backup is missing apps sequences annotation")
 			}
 
-			appsSequences := map[string]string{}
+			var appsSequences map[string]string
 			if err := json.Unmarshal([]byte(b), appsSequences); err != nil {
 				return errors.Wrap(err, "failed to unmarshal apps sequences")
 			}
