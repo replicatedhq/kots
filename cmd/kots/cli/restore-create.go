@@ -5,7 +5,6 @@ import (
 	"os"
 
 	"github.com/pkg/errors"
-	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/snapshot"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -31,15 +30,13 @@ func RestoreCreateCmd() *cobra.Command {
 			}
 
 			options := snapshot.CreateInstanceRestoreOptions{
-				BackupName: backupName,
+				BackupName:            backupName,
+				KubernetesConfigFlags: kubernetesConfigFlags,
 			}
-			restore, err := snapshot.CreateInstanceRestore(options)
+			_, err := snapshot.CreateInstanceRestore(options)
 			if err != nil {
 				return errors.Wrap(err, "failed to create instance restore")
 			}
-
-			log := logger.NewLogger()
-			log.ActionWithoutSpinner(fmt.Sprintf("Restore request has been created. Restore name is %s", restore.ObjectMeta.Name))
 
 			return nil
 		},
