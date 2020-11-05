@@ -157,8 +157,7 @@ class Snapshots extends Component {
           this.setState({
             startingSnapshot: false,
             startSnapshotErr: true,
-            startSnapshotErrorMsg: body.error,
-            snapshots: this.state.snapshots.filter(s => s.name !== "Preparing snapshot")
+            startSnapshotErrorMsg: body.error
           });
         }
       })
@@ -166,8 +165,7 @@ class Snapshots extends Component {
         this.setState({
           startingSnapshot: false,
           startSnapshotErr: true,
-          startSnapshotErrorMsg: err,
-          snapshots: this.state.snapshots.filter(s => s.name !== "Preparing snapshot")
+          startSnapshotErrorMsg: err
         })
       })
   }
