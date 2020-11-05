@@ -246,7 +246,7 @@ class Dashboard extends Component {
           this.setState({
             checkingForUpdates: false,
             checkingUpdateMessage: response.currentMessage,
-            checkingForUpdateError: response === "failed"
+            checkingForUpdateError: response.status === "failed"
           });
 
           if (this.props.updateCallback) {

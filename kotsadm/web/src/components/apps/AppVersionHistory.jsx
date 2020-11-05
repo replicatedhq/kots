@@ -422,7 +422,7 @@ class AppVersionHistory extends Component {
             this.setState({
               checkingForUpdates: false,
               checkingUpdateMessage: response.currentMessage,
-              checkingForUpdateError: response === "failed"
+              checkingForUpdateError: response.status === "failed"
             });
 
             if (this.props.updateCallback) {
@@ -466,12 +466,13 @@ class AppVersionHistory extends Component {
           this.setState({
             errorCheckingUpdate: true,
             checkingForUpdates: false,
-            checkingUpdateMessage: text,
+            checkingUpdateMessage: text
           });
           return;
         }
         this.props.refreshAppData();
         const response = await res.json();
+
         if (response.availableUpdates === 0) {
           if (!find(this.state.versionHistory, { parentSequence: response.currentAppSequence })) {
             // version history list is out of sync - most probably because of automatic updates happening in the background - refetch list
@@ -769,7 +770,7 @@ class AppVersionHistory extends Component {
           onProgressError={this.onProgressError}
           smallSize={true}
         />);
-    } else if (errorCheckingUpdate) {
+    } else if (errorCheckingUpdate || checkingForUpdateError) {
       updateText = <p className="u-marginTop--10 u-fontSize--small u-color--chestnut u-fontWeight--medium">{errorText}</p>
     } else if (checkingForUpdates) {
       updateText = <p className="u-fontSize--small u-color--dustyGray u-fontWeight--medium">{checkingUpdateTextShort}</p>
@@ -820,13 +821,6 @@ class AppVersionHistory extends Component {
           onCheckForUpdates={this.onCheckForUpdates}
           showUpdateCheckerModal={this.showUpdateCheckerModal}
         />
-        {checkingForUpdateError &&
-          <div className="flex-column flex-auto u-marginBottom--30">
-            <div className="checking-update-error-wrapper">
-              <p className="u-color--chestnut u-fontSize--normal u-lineHeight--normal">{checkingUpdateTextShort}</p>
-            </div>
-          </div>
-        }
         <div className="flex-column flex1">
           <div className="flex flex1">
             <div className="flex1 flex-column alignItems--center">
