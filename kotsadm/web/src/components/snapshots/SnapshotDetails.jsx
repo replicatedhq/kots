@@ -164,7 +164,7 @@ class SnapshotDetails extends Component {
         errorMessage: "",
         errorTitle: "",
       });
-    } catch(err) {
+    } catch (err) {
       console.log(err);
       this.setState({
         loading: false,
@@ -376,9 +376,9 @@ class SnapshotDetails extends Component {
     const finishedTimes = data.map((d) => moment(d.finishedAt).format("MM/DD/YY @ hh:mm a"));
     const minStarted = startedTimes?.length ? startedTimes.reduce((a, b) => { return a <= b ? a : b; }) : "";
     const maxFinished = finishedTimes?.length ? finishedTimes.reduce((a, b) => { return a <= b ? b : a; }) : "";
-
-    const diffHours = moment(maxFinished).diff(moment(minStarted), "hours")
-    const diffMinutes = moment(maxFinished).diff(moment(minStarted), "minutes");
+    const duration = moment.duration(moment(maxFinished).diff(moment(minStarted)));
+    const diffHours = parseInt(duration.asHours());
+    const diffMinutes = parseInt(duration.asMinutes()) % 60;
 
     return {
       "minStarted": minStarted,
