@@ -120,5 +120,5 @@ func SyncKurlKotsadmS3Secret(k8sConfigFlags *genericclioptions.ConfigFlags) erro
 		return nil
 	}
 
-	return errors.New("unsupported object store")
+	return errors.Errorf("unsupported object store %s", s3Endpoint)
 }
