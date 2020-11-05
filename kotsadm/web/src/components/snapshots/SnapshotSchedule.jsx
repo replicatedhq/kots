@@ -57,7 +57,8 @@ class SnapshotSchedule extends Component {
     updateConfirm: false,
     displayErrorModal: false,
     gettingConfigErrMsg: "",
-    snapshotConfig: {}
+    snapshotConfig: {},
+    updateScheduleErrMsg: ""
   };
 
   setFields = () => {
@@ -214,13 +215,13 @@ class SnapshotSchedule extends Component {
             return;
           }
           this.setState({
-            message: data.error || "Failed to save snapshot config",
+            updateScheduleErrMsg: data.error || "Failed to save snapshot config",
             messageType: "error",
             updatingSchedule: false,
           })
           return
         }
-        this.setState({ updatingSchedule: false, updateConfirm: true });
+        this.setState({ updatingSchedule: false, updateConfirm: true, updateScheduleErrMsg: " " });
         setTimeout(() => {
           this.setState({ updateConfirm: false })
         }, 3000);
@@ -228,7 +229,7 @@ class SnapshotSchedule extends Component {
       .catch((err) => {
         console.log(err);
         this.setState({
-          message: err ? err.message : "Failed to connect to API",
+          updateScheduleErrMsg: err ? err.message : "Failed to connect to API",
           messageType: "error",
           updatingSchedule: false,
         });
@@ -237,7 +238,7 @@ class SnapshotSchedule extends Component {
 
   render() {
     const { app } = this.props;
-    const { hasValidCron, updatingSchedule, updateConfirm, loadingConfig } = this.state;
+    const { hasValidCron, updatingSchedule, updateConfirm, loadingConfig, updateScheduleErrMsg } = this.state;
     const selectedRetentionUnit = RETENTION_UNITS.find((ru) => {
       return ru.value === this.state.selectedRetentionUnit?.value;
     });
@@ -278,17 +279,17 @@ class SnapshotSchedule extends Component {
               <div className="flex1 u-marginBottom--20">
                 <p className="u-fontSize--normal u-color--tuna u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">Automatic snapshots</p>
                 <div className="BoxedCheckbox-wrapper flex1 u-textAlign--left">
-                  <div className={`BoxedCheckbox flex-auto flex alignItems--center ${this.state.autoEnabled ? "is-active" : ""}`}>
+                  <div className={`flex-auto flex alignItems--center ${this.state.autoEnabled ? "is-active" : ""}`}>
                     <input
                       type="checkbox"
-                      className="u-cursor--pointer u-marginLeft--10"
+                      className="u-cursor--pointer"
                       id="autoEnabled"
                       checked={this.state.autoEnabled}
                       onChange={(e) => { this.handleFormChange("autoEnabled", e) }}
                     />
                     <label htmlFor="autoEnabled" className="flex1 flex u-width--full u-position--relative u-cursor--pointer u-userSelect--none">
                       <div className="flex1">
-                        <p className="u-color--tuna u-fontSize--normal u-fontWeight--medium">Enable automatic scheduled snapshots</p>
+                        <p className="u-color--tuna u-fontSize--normal u-fontWeight--medium u-marginLeft--5">Enable automatic scheduled snapshots</p>
                       </div>
                     </label>
                   </div>
@@ -356,6 +357,10 @@ class SnapshotSchedule extends Component {
                     <span className="u-marginLeft--5 u-fontSize--small u-fontWeight--medium u-color--chateauGreen">Schedule updated</span>
                   </div>
                 }
+                {updateScheduleErrMsg &&
+                  <div className="u-marginLeft--10 flex alignItems--center">
+                    <span className="u-marginLeft--5 u-fontSize--small u-fontWeight--medium u-color--chestnut">{updateScheduleErrMsg}</span>
+                  </div>}
               </div>
             </div>
           </form>
