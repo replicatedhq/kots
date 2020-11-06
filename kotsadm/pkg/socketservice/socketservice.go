@@ -682,12 +682,12 @@ func undeployApp(a *apptypes.App, d *downstreamtypes.Downstream, clusterSocket *
 // RedeployAppVersion will force trigger a redeploy of the app version, even if it's currently deployed
 // if clusterSocket is nil, a redeploy to all the cluster sockets (downstreams - which theoratically should always be 1) will be triggered
 func RedeployAppVersion(appID string, sequence int64, clusterSocket *ClusterSocket) error {
-	socketMtx.Lock()
-	defer socketMtx.Unlock()
-
 	if err := version.DeployVersion(appID, sequence); err != nil {
 		return errors.Wrap(err, "failed to deploy version")
 	}
+
+	socketMtx.Lock()
+	defer socketMtx.Unlock()
 
 	if clusterSocket != nil {
 		delete(clusterSocket.LastDeployedSequences, appID)
