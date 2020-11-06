@@ -8,14 +8,6 @@ export class Footer extends React.Component {
   getItems() {
     return [
       {
-        label: "Terms",
-        href: "https://www.replicated.com/terms",
-      },
-      {
-        label: "Privacy",
-        href: "https://www.replicated.com/privacy",
-      },
-      {
         label: getBuildVersion()
       }
     ];
