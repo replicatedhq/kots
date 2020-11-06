@@ -34,6 +34,7 @@ class Snapshots extends Component {
     snapshotSettingsErrMsg: "",
 
     snapshots: [],
+    hasSnapshotsLoaded: false,
     isStartButtonClicked: false,
     snapshotsListErr: false,
     snapshotsListErrMsg: "",
@@ -102,6 +103,7 @@ class Snapshots extends Component {
 
       this.setState({
         snapshots: response.backups?.sort((a, b) => b.startedAt ? new Date(b.startedAt) - new Date(a.startedAt) : -99999999),
+        hasSnapshotsLoaded: true,
         snapshotsListErr: false,
         snapshotsListErrMsg: "",
         networkErr: false,
@@ -117,7 +119,7 @@ class Snapshots extends Component {
     }
   }
 
-  startInstanceSnapshot = () => {
+  startInstanceSnapshot =  () => {
     const fakeProgressSnapshot = {
       name: "Preparing snapshot",
       status: "InProgress",
@@ -138,36 +140,36 @@ class Snapshots extends Component {
       startSnapshotErrorMsg: "",
       isStartButtonClicked: true,
       snapshots: [...this.state.snapshots, fakeProgressSnapshot].sort((a, b) => new Date(b.startedAt) - new Date(a.startedAt))
-    });
-
-    fetch(`${window.env.API_ENDPOINT}/snapshot/backup`, {
-      method: "POST",
-      headers: {
-        "Authorization": Utilities.getToken(),
-        "Content-Type": "application/json",
-      }
-    })
-      .then(async (result) => {
-        if (result.ok) {
-          this.setState({
-            startingSnapshot: false
-          });
-        } else {
-          const body = await result.json();
+    }, () => {
+      fetch(`${window.env.API_ENDPOINT}/snapshot/backup`, {
+        method: "POST",
+        headers: {
+          "Authorization": Utilities.getToken(),
+          "Content-Type": "application/json",
+        }
+      })
+        .then(async (result) => {
+          if (result.ok) {
+            this.setState({
+              startingSnapshot: false
+            });
+          } else {
+            const body = await result.json();
+            this.setState({
+              startingSnapshot: false,
+              startSnapshotErr: true,
+              startSnapshotErrorMsg: body.error
+            });
+          }
+        })
+        .catch(err => {
           this.setState({
             startingSnapshot: false,
             startSnapshotErr: true,
-            startSnapshotErrorMsg: body.error
-          });
-        }
-      })
-      .catch(err => {
-        this.setState({
-          startingSnapshot: false,
-          startSnapshotErr: true,
-          startSnapshotErrorMsg: err
+            startSnapshotErrorMsg: err
+          })
         })
-      })
+    });
   }
 
   toggleConfirmDeleteModal = snapshot => {
@@ -275,10 +277,11 @@ class Snapshots extends Component {
 
 
   render() {
-    const { isLoadingSnapshotSettings, snapshotSettings, startingSnapshot, startSnapshotErr, startSnapshotErrorMsg, snapshots, isStartButtonClicked } = this.state;
+    const { isLoadingSnapshotSettings, snapshotSettings, hasSnapshotsLoaded, startingSnapshot, startSnapshotErr, startSnapshotErrorMsg, snapshots, isStartButtonClicked } = this.state;
     const inProgressSnapshotExist = snapshots?.find(snapshot => snapshot.status === "InProgress");
 
-    if (isLoadingSnapshotSettings || (isStartButtonClicked && snapshots?.length === 0) || startingSnapshot) {
+    
+    if (isLoadingSnapshotSettings || !hasSnapshotsLoaded || (isStartButtonClicked && snapshots?.length === 0) || startingSnapshot) {
       return (
         <div className="flex-column flex1 alignItems--center justifyContent--center">
           <Loader size="60" />
