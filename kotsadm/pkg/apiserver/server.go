@@ -94,7 +94,7 @@ func Start() {
 	r.Path("/api/v1/appstatus").Methods("PUT").HandlerFunc(handlers.SetAppStatus)
 	r.Path("/api/v1/deploy/result").Methods("PUT").HandlerFunc(handlers.UpdateDeployResult)
 	r.Path("/api/v1/undeploy/result").Methods("PUT").HandlerFunc(handlers.UpdateUndeployResult)
-	r.Handle("/socket.io/", socketservice.Start().Server)
+	r.Handle("/socket.io/", socketservice.Start())
 
 	/**********************************************************************
 	* KOTS token auth routes

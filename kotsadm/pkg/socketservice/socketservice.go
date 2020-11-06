@@ -66,24 +66,19 @@ type SupportBundleArgs struct {
 	URI string `json:"uri"`
 }
 
-type SocketService struct {
-	Server               *socket.Server
-	clusterSocketHistory []ClusterSocket
-	socketMtx            sync.Mutex
-}
+var server *socket.Server
+var clusterSocketHistory = []*ClusterSocket{}
+var socketMtx sync.Mutex
 
 // SocketService uses special cluster authorization
-func Start() *SocketService {
+func Start() *socket.Server {
 	logger.Debug("starting socket service")
 
-	service := &SocketService{
-		Server:               socket.NewServer(transport.GetDefaultWebsocketTransport()),
-		clusterSocketHistory: []ClusterSocket{},
-	}
+	server = socket.NewServer(transport.GetDefaultWebsocketTransport())
 
-	service.Server.On(socket.OnConnection, func(c *socket.Channel, args interface{}) {
-		service.socketMtx.Lock()
-		defer service.socketMtx.Unlock()
+	server.On(socket.OnConnection, func(c *socket.Channel, args interface{}) {
+		socketMtx.Lock()
+		defer socketMtx.Unlock()
 
 		clusterID, err := store.GetStore().GetClusterIDFromDeployToken(c.RequestURL().Query().Get("token"))
 		if err != nil {
@@ -94,33 +89,33 @@ func Start() *SocketService {
 		logger.Info(fmt.Sprintf("Cluster %s connected to the socket service", clusterID))
 		c.Join(clusterID)
 
-		clusterSocket := ClusterSocket{
+		clusterSocket := &ClusterSocket{
 			ClusterID:             clusterID,
 			SocketID:              c.Id(),
 			SentPreflightURLs:     make(map[string]bool, 0),
 			LastDeployedSequences: make(map[string]int64, 0),
 		}
-		service.clusterSocketHistory = append(service.clusterSocketHistory, clusterSocket)
+		clusterSocketHistory = append(clusterSocketHistory, clusterSocket)
 	})
 
-	service.Server.On(socket.OnDisconnection, func(c *socket.Channel) {
-		service.socketMtx.Lock()
-		defer service.socketMtx.Unlock()
+	server.On(socket.OnDisconnection, func(c *socket.Channel) {
+		socketMtx.Lock()
+		defer socketMtx.Unlock()
 
-		updatedClusterSocketHistory := []ClusterSocket{}
-		for _, clusterSocket := range service.clusterSocketHistory {
+		updatedClusterSocketHistory := []*ClusterSocket{}
+		for _, clusterSocket := range clusterSocketHistory {
 			if clusterSocket.SocketID != c.Id() {
 				updatedClusterSocketHistory = append(updatedClusterSocketHistory, clusterSocket)
 			}
 		}
-		service.clusterSocketHistory = updatedClusterSocketHistory
+		clusterSocketHistory = updatedClusterSocketHistory
 	})
 
-	startLoop(service.deployLoop, 1)
-	startLoop(service.supportBundleLoop, 1)
-	startLoop(service.restoreLoop, 1)
+	startLoop(deployLoop, 1)
+	startLoop(supportBundleLoop, 1)
+	startLoop(restoreLoop, 1)
 
-	return service
+	return server
 }
 
 func startLoop(fn func(), intervalInSeconds time.Duration) {
@@ -132,8 +127,8 @@ func startLoop(fn func(), intervalInSeconds time.Duration) {
 	}()
 }
 
-func (s *SocketService) deployLoop() {
-	for _, clusterSocket := range s.clusterSocketHistory {
+func deployLoop() {
+	for _, clusterSocket := range clusterSocketHistory {
 		apps, err := store.GetStore().ListAppsForDownstream(clusterSocket.ClusterID)
 		if err != nil {
 			logger.Error(errors.Wrap(err, "failed to list installed apps for downstream"))
@@ -141,7 +136,7 @@ func (s *SocketService) deployLoop() {
 		}
 
 		for _, a := range apps {
-			if err := s.processDeploySocketForApp(clusterSocket, a); err != nil {
+			if err := processDeploySocketForApp(clusterSocket, a); err != nil {
 				logger.Error(errors.Wrapf(err, "failed to run deploy loop for app %s in cluster %s", a.ID, clusterSocket.ClusterID))
 				continue
 			}
@@ -149,7 +144,7 @@ func (s *SocketService) deployLoop() {
 	}
 }
 
-func (s *SocketService) processDeploySocketForApp(clusterSocket ClusterSocket, a *apptypes.App) error {
+func processDeploySocketForApp(clusterSocket *ClusterSocket, a *apptypes.App) error {
 	if a.RestoreInProgressName != "" {
 		return nil
 	}
@@ -299,12 +294,15 @@ func (s *SocketService) processDeploySocketForApp(clusterSocket ClusterSocket, a
 		AnnotateSlug:         os.Getenv("ANNOTATE_SLUG") != "",
 	}
 
-	c, err := s.Server.GetChannel(clusterSocket.SocketID)
+	c, err := server.GetChannel(clusterSocket.SocketID)
 	if err != nil {
 		return errors.Wrap(err, "failed to get socket channel from server")
 	}
 	c.Emit("deploy", deployArgs)
+
+	socketMtx.Lock()
 	clusterSocket.LastDeployedSequences[a.ID] = deployedVersion.ParentSequence
+	socketMtx.Unlock()
 
 	// deploy status informers
 	if len(kotsKinds.KotsApplication.Spec.StatusInformers) > 0 {
@@ -352,8 +350,8 @@ func (s *SocketService) processDeploySocketForApp(clusterSocket ClusterSocket, a
 	return nil
 }
 
-func (s *SocketService) supportBundleLoop() {
-	for _, clusterSocket := range s.clusterSocketHistory {
+func supportBundleLoop() {
+	for _, clusterSocket := range clusterSocketHistory {
 		apps, err := store.GetStore().ListAppsForDownstream(clusterSocket.ClusterID)
 		if err != nil {
 			logger.Error(errors.Wrap(err, "failed to list apps for cluster"))
@@ -370,7 +368,7 @@ func (s *SocketService) supportBundleLoop() {
 		}
 
 		for _, sb := range pendingSupportBundles {
-			if err := s.processSupportBundle(clusterSocket, *sb); err != nil {
+			if err := processSupportBundle(clusterSocket, *sb); err != nil {
 				logger.Error(errors.Wrapf(err, "failed to process support bundle %s for app %s", sb.ID, sb.AppID))
 				continue
 			}
@@ -378,13 +376,13 @@ func (s *SocketService) supportBundleLoop() {
 	}
 }
 
-func (s *SocketService) processSupportBundle(clusterSocket ClusterSocket, pendingSupportBundle supportbundletypes.PendingSupportBundle) error {
+func processSupportBundle(clusterSocket *ClusterSocket, pendingSupportBundle supportbundletypes.PendingSupportBundle) error {
 	a, err := store.GetStore().GetApp(pendingSupportBundle.AppID)
 	if err != nil {
 		return errors.Wrapf(err, "failed to get app %s", pendingSupportBundle.AppID)
 	}
 
-	c, err := s.Server.GetChannel(clusterSocket.SocketID)
+	c, err := server.GetChannel(clusterSocket.SocketID)
 	if err != nil {
 		return errors.Wrap(err, "failed to get socket channel from server")
 	}
@@ -432,8 +430,8 @@ func (s *SocketService) processSupportBundle(clusterSocket ClusterSocket, pendin
 	return nil
 }
 
-func (s *SocketService) restoreLoop() {
-	for _, clusterSocket := range s.clusterSocketHistory {
+func restoreLoop() {
+	for _, clusterSocket := range clusterSocketHistory {
 		apps, err := store.GetStore().ListAppsForDownstream(clusterSocket.ClusterID)
 		if err != nil {
 			logger.Error(errors.Wrap(err, "failed to list installed apps for downstream"))
@@ -441,7 +439,7 @@ func (s *SocketService) restoreLoop() {
 		}
 
 		for _, a := range apps {
-			if err := s.processRestoreForApp(clusterSocket, a); err != nil {
+			if err := processRestoreForApp(clusterSocket, a); err != nil {
 				logger.Error(errors.Wrapf(err, "failed to handle restoe for app %s", a.ID))
 				continue
 			}
@@ -449,7 +447,7 @@ func (s *SocketService) restoreLoop() {
 	}
 }
 
-func (s *SocketService) processRestoreForApp(clusterSocket ClusterSocket, a *apptypes.App) error {
+func processRestoreForApp(clusterSocket *ClusterSocket, a *apptypes.App) error {
 	if a.RestoreInProgressName == "" {
 		return nil
 	}
@@ -460,7 +458,7 @@ func (s *SocketService) processRestoreForApp(clusterSocket ClusterSocket, a *app
 		break
 
 	case apptypes.UndeployCompleted:
-		if err := handleUndeployCompleted(a); err != nil {
+		if err := handleUndeployCompleted(clusterSocket, a); err != nil {
 			return errors.Wrap(err, "failed to handle undeploy completed")
 		}
 		break
@@ -475,7 +473,7 @@ func (s *SocketService) processRestoreForApp(clusterSocket ClusterSocket, a *app
 			return errors.Wrap(err, "failed to get downstream")
 		}
 
-		if err := s.undeployApp(a, d, clusterSocket); err != nil {
+		if err := undeployApp(a, d, clusterSocket); err != nil {
 			return errors.Wrap(err, "failed to undeploy app")
 		}
 		break
@@ -484,7 +482,7 @@ func (s *SocketService) processRestoreForApp(clusterSocket ClusterSocket, a *app
 	return nil
 }
 
-func handleUndeployCompleted(a *apptypes.App) error {
+func handleUndeployCompleted(clusterSocket *ClusterSocket, a *apptypes.App) error {
 	snapshotName := a.RestoreInProgressName
 	restoreName := a.RestoreInProgressName
 
@@ -505,7 +503,7 @@ func handleUndeployCompleted(a *apptypes.App) error {
 		return errors.Wrap(startVeleroRestore(snapshotName, a.Slug), "failed to start velero restore")
 	}
 
-	return errors.Wrap(checkRestoreComplete(a, restore), "failed to check restore complete")
+	return errors.Wrap(checkRestoreComplete(clusterSocket, a, restore), "failed to check restore complete")
 }
 
 func startVeleroRestore(snapshotName string, appSlug string) error {
@@ -518,7 +516,7 @@ func startVeleroRestore(snapshotName string, appSlug string) error {
 	return nil
 }
 
-func checkRestoreComplete(a *apptypes.App, restore *velerov1.Restore) error {
+func checkRestoreComplete(clusterSocket *ClusterSocket, a *apptypes.App, restore *velerov1.Restore) error {
 	switch restore.Status.Phase {
 	case velerov1.RestorePhaseCompleted:
 		backup, err := snapshot.GetBackup(restore.Spec.BackupName)
@@ -561,10 +559,10 @@ func checkRestoreComplete(a *apptypes.App, restore *velerov1.Restore) error {
 			sequence = s
 		}
 
-		logger.Info(fmt.Sprintf("restore complete, setting deploy version to %d", sequence))
+		logger.Info(fmt.Sprintf("restore complete, re-deploying version %d", sequence))
 
-		if err := version.DeployVersion(a.ID, sequence); err != nil {
-			return errors.Wrap(err, "failed to deploy version")
+		if err := RedeployAppVersion(a.ID, sequence, clusterSocket); err != nil {
+			return errors.Wrap(err, "failed to redeploy app version")
 		}
 
 		if err := createSupportBundle(a.ID, sequence, "", true); err != nil {
@@ -618,7 +616,7 @@ func createSupportBundle(appID string, sequence int64, origin string, inCluster 
 	return nil
 }
 
-func (s *SocketService) undeployApp(a *apptypes.App, d *downstreamtypes.Downstream, clusterSocket ClusterSocket) error {
+func undeployApp(a *apptypes.App, d *downstreamtypes.Downstream, clusterSocket *ClusterSocket) error {
 	deployedVersion, err := downstream.GetCurrentVersion(a.ID, d.ClusterID)
 	if err != nil {
 		return errors.Wrap(err, "failed to get current downstream version")
@@ -668,7 +666,7 @@ func (s *SocketService) undeployApp(a *apptypes.App, d *downstreamtypes.Downstre
 		ClearPVCs:         true,
 	}
 
-	c, err := s.Server.GetChannel(clusterSocket.SocketID)
+	c, err := server.GetChannel(clusterSocket.SocketID)
 	if err != nil {
 		return errors.Wrap(err, "failed to get socket channel from server")
 	}
@@ -676,6 +674,27 @@ func (s *SocketService) undeployApp(a *apptypes.App, d *downstreamtypes.Downstre
 
 	if err := app.SetRestoreUndeployStatus(a.ID, apptypes.UndeployInProcess); err != nil {
 		return errors.Wrap(err, "failed to set restore undeploy status")
+	}
+
+	return nil
+}
+
+// RedeployAppVersion will force trigger a redeploy of the app version, even if it's currently deployed
+// if clusterSocket is nil, a redeploy to all the cluster sockets (downstreams - which theoratically should always be 1) will be triggered
+func RedeployAppVersion(appID string, sequence int64, clusterSocket *ClusterSocket) error {
+	if err := version.DeployVersion(appID, sequence); err != nil {
+		return errors.Wrap(err, "failed to deploy version")
+	}
+
+	socketMtx.Lock()
+	defer socketMtx.Unlock()
+
+	if clusterSocket != nil {
+		delete(clusterSocket.LastDeployedSequences, appID)
+	} else {
+		for _, clusterSocket := range clusterSocketHistory {
+			delete(clusterSocket.LastDeployedSequences, appID)
+		}
 	}
 
 	return nil
