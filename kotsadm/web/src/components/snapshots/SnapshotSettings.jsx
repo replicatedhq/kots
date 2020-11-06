@@ -179,7 +179,8 @@ class SnapshotSettings extends Component {
           hideCheckVeleroButton={hideCheckVeleroButton}
           isLicenseUpload={isLicenseUpload}
           configureSnapshotsModal={this.state.configureSnapshotsModal}
-          toggleConfigureModal={this.toggleConfigureModal} />
+          toggleConfigureModal={this.toggleConfigureModal}
+          isKurlEnabled={this.props.isKurlEnabled} />
       </div>
     );
   }

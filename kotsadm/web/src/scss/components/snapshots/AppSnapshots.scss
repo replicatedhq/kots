@@ -158,3 +158,27 @@
   padding: 25px;
   text-align: center;
 }
+
+.WarningScheduleSnapshots--wrapper {
+  position: absolute;
+  top: 250px;
+  left: 60%;
+  background: #FFFFFF;
+  box-shadow: 0px 0px 4px rgba(0, 0, 0, 0.2);
+  border-radius: 8px;
+  width: 250px;
+  padding: 25px;
+  text-align: center;
+}
+
+.WarningInstanceSnapshots--wrapper {
+  position: absolute;
+  top: 220px;
+  left: 40%;
+  background: #FFFFFF;
+  box-shadow: 0px 0px 4px rgba(0, 0, 0, 0.2);
+  border-radius: 8px;
+  width: 250px;
+  padding: 25px;
+  text-align: center;
+}

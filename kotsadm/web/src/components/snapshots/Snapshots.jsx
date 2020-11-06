@@ -278,9 +278,9 @@ class Snapshots extends Component {
 
   render() {
     const { isLoadingSnapshotSettings, snapshotSettings, hasSnapshotsLoaded, startingSnapshot, startSnapshotErr, startSnapshotErrorMsg, snapshots, isStartButtonClicked } = this.state;
+    const { isKurlEnabled } = this.props;
     const inProgressSnapshotExist = snapshots?.find(snapshot => snapshot.status === "InProgress");
 
-    
     if (isLoadingSnapshotSettings || !hasSnapshotsLoaded || (isStartButtonClicked && snapshots?.length === 0) || startingSnapshot) {
       return (
         <div className="flex-column flex1 alignItems--center justifyContent--center">
@@ -295,7 +295,7 @@ class Snapshots extends Component {
           <title>Snapshots</title>
         </Helmet>
         <div className="AppSnapshots--wrapper flex1 flex-column u-width--full">
-          <div className={`flex flex-auto alignItems--flexStart justifyContent--spaceBetween ${(snapshots?.length > 0 && snapshotSettings?.veleroVersion !== "") && "u-borderBottom--gray darker"}`}>
+          <div className={`flex flex-auto alignItems--center justifyContent--spaceBetween ${(snapshots?.length > 0 && snapshotSettings?.veleroVersion !== "") && "u-borderBottom--gray darker"}`}>
             <p className="u-fontWeight--bold u-color--tuna u-fontSize--larger u-lineHeight--normal u-marginBottom--15">Snapshots</p>
             {startSnapshotErr ?
               <div className="flex flex1 alignItems--center alignSelf--center justifyContent--center u-marginBottom--10">
@@ -304,7 +304,7 @@ class Snapshots extends Component {
               : null}
             <div className="flex u-marginBottom--15">
               <Link to={`/snapshots/settings`} className="replicated-link u-fontSize--small u-fontWeight--bold u-marginRight--20 flex alignItems--center"><span className="icon snapshotSettingsIcon u-marginRight--5" />Settings</Link>
-              {snapshotSettings?.veleroVersion !== "" &&
+              {snapshotSettings?.veleroVersion !== "" && !isKurlEnabled &&
                 <span data-for="startSnapshotBtn" data-tip="startSnapshotBtn" data-tip-disable={false}>
                   <button className="btn primary blue" disabled={startingSnapshot || (inProgressSnapshotExist && !startSnapshotErr)} onClick={this.startInstanceSnapshot}>{startingSnapshot ? "Starting a snapshot..." : "Start a snapshot"}</button>
                 </span>}
@@ -314,7 +314,7 @@ class Snapshots extends Component {
                 </ReactTooltip>}
             </div>
           </div>
-          {snapshots?.length > 0 && snapshotSettings?.veleroVersion !== "" ?
+          {snapshots?.length > 0 && snapshotSettings?.veleroVersion !== "" && !isKurlEnabled ?
             <div className="flex flex-column">
               {snapshots?.map((snapshot) => (
                 <SnapshotRow
@@ -329,7 +329,7 @@ class Snapshots extends Component {
               <div className="flex flex-column u-position--relative">
                 {[0, 1, 2, 3, 4, 5].map((el) => (<DummySnapshotRow key={el} />
                 ))}
-                <GettingStartedSnapshots isVeleroInstalled={snapshotSettings?.veleroVersion !== ""} history={this.props.history} startInstanceSnapshot={this.startInstanceSnapshot} />
+                <GettingStartedSnapshots isVeleroInstalled={snapshotSettings?.veleroVersion !== ""} history={this.props.history} startInstanceSnapshot={this.startInstanceSnapshot} isKurlEnabled={isKurlEnabled} />
               </div> : null}
         </div>
         {this.state.deleteSnapshotModal &&
