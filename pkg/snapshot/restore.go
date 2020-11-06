@@ -14,7 +14,6 @@ import (
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/kotsadm"
 	kotsadmtypes "github.com/replicatedhq/kots/pkg/kotsadm/types"
-	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/logger"
 	velerov1 "github.com/vmware-tanzu/velero/pkg/apis/velero/v1"
 	veleroclientv1 "github.com/vmware-tanzu/velero/pkg/generated/clientset/versioned/typed/velero/v1"
@@ -70,6 +69,10 @@ func RestoreInstanceBackup(options RestoreInstanceBackupOptions) (*velerov1.Rest
 	kotsadmNamespace, ok := backup.Annotations["kots.io/kotsadm-deploy-namespace"]
 	if !ok {
 		return nil, errors.Wrap(err, "failed to find kotsadm deploy namespace annotation")
+	}
+
+	if err := canRestoreKotsadm(kotsadmNamespace, options.KubernetesConfigFlags); err != nil {
+		return nil, err
 	}
 
 	// make sure backup is restorable/complete
@@ -149,18 +152,6 @@ func RestoreInstanceBackup(options RestoreInstanceBackupOptions) (*velerov1.Rest
 		}
 		log.FinishSpinnerWithError()
 		return nil, errors.Wrap(err, "failed to wait for velero restore completed")
-	}
-
-	// if kurl, update kotsadm-s3 secret with correct object store information
-	isKurl, err := kotsadm.IsKurl(options.KubernetesConfigFlags)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to check kURL")
-	}
-	if isKurl {
-		err := kotsutil.SyncKurlKotsadmS3Secret(options.KubernetesConfigFlags)
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to sync kurl kotsadm s3 secret")
-		}
 	}
 
 	// wait for kotsadm to start up
@@ -425,4 +416,24 @@ func waitForKotsadmApplicationsRestore(backupName string, kotsadmNamespace strin
 
 		time.Sleep(time.Second * 2)
 	}
+}
+
+func canRestoreKotsadm(kotsadmNamespace string, kubernetesConfigFlags *genericclioptions.ConfigFlags) error {
+	if kotsadmNamespace == "" {
+		return errors.New("kotsadm namespace is not set")
+	}
+
+	if kotsadmNamespace != "default" {
+		return nil
+	}
+
+	isKurl, err := kotsadm.IsKurl(kubernetesConfigFlags)
+	if err != nil {
+		return errors.Wrap(err, "failed to check kURL")
+	}
+	if isKurl {
+		return errors.New("restoring kURL clusters is not supported")
+	}
+
+	return nil
 }
