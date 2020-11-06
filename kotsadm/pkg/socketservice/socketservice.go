@@ -299,7 +299,10 @@ func processDeploySocketForApp(clusterSocket *ClusterSocket, a *apptypes.App) er
 		return errors.Wrap(err, "failed to get socket channel from server")
 	}
 	c.Emit("deploy", deployArgs)
+
+	socketMtx.Lock()
 	clusterSocket.LastDeployedSequences[a.ID] = deployedVersion.ParentSequence
+	socketMtx.Unlock()
 
 	// deploy status informers
 	if len(kotsKinds.KotsApplication.Spec.StatusInformers) > 0 {
