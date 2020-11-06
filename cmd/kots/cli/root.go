@@ -35,6 +35,8 @@ func RootCmd() *cobra.Command {
 	cmd.AddCommand(BackupCmd())
 	cmd.AddCommand(RestoreCmd())
 
+	cmd.AddCommand(GitopsInfoCmd())
+
 	viper.BindPFlags(cmd.Flags())
 
 	viper.SetEnvKeyReplacer(strings.NewReplacer("-", "_"))
