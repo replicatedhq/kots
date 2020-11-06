@@ -71,7 +71,7 @@ func RestoreInstanceBackup(options RestoreInstanceBackupOptions) (*velerov1.Rest
 		return nil, errors.Wrap(err, "failed to find kotsadm deploy namespace annotation")
 	}
 
-	if err := canRestore(kotsadmNamespace, options.KubernetesConfigFlags); err != nil {
+	if err := canRestoreKotsadm(kotsadmNamespace, options.KubernetesConfigFlags); err != nil {
 		return nil, err
 	}
 
@@ -418,7 +418,7 @@ func waitForKotsadmApplicationsRestore(backupName string, kotsadmNamespace strin
 	}
 }
 
-func canRestore(kotsadmNamespace string, kubernetesConfigFlags *genericclioptions.ConfigFlags) error {
+func canRestoreKotsadm(kotsadmNamespace string, kubernetesConfigFlags *genericclioptions.ConfigFlags) error {
 	if kotsadmNamespace == "" {
 		return errors.New("kotsadm namespace is not set")
 	}
