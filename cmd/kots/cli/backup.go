@@ -2,6 +2,7 @@ package cli
 
 import (
 	"github.com/pkg/errors"
+	"github.com/replicatedhq/kots/pkg/kotsadm"
 	"github.com/replicatedhq/kots/pkg/snapshot"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -20,8 +21,20 @@ func BackupCmd() *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			v := viper.GetViper()
 
+			namespace := v.GetString("namespace")
+
+			if namespace == "default" {
+				isKurl, err := kotsadm.IsKurl(kubernetesConfigFlags)
+				if err != nil {
+					return errors.Wrap(err, "failed to check kURL")
+				}
+				if isKurl {
+					return errors.New("backing up kURL clusters is not supported")
+				}
+			}
+
 			options := snapshot.CreateInstanceBackupOptions{
-				Namespace:             v.GetString("namespace"),
+				Namespace:             namespace,
 				KubernetesConfigFlags: kubernetesConfigFlags,
 				Wait:                  v.GetBool("wait"),
 			}
