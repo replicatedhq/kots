@@ -6,6 +6,8 @@ import ErrorModal from "../modals/ErrorModal";
 import Loader from "../shared/Loader";
 import find from "lodash/find";
 import isEmpty from "lodash/isEmpty";
+
+import GettingStartedSnapshots from "./GettingStartedSnapshots";
 import "../../scss/components/shared/SnapshotForm.scss";
 
 const SCHEDULES = [
@@ -237,7 +239,7 @@ class SnapshotSchedule extends Component {
   }
 
   render() {
-    const { app } = this.props;
+    const { app, isKurlEnabled } = this.props;
     const { hasValidCron, updatingSchedule, updateConfirm, loadingConfig, updateScheduleErrMsg } = this.state;
     const selectedRetentionUnit = RETENTION_UNITS.find((ru) => {
       return ru.value === this.state.selectedRetentionUnit?.value;
@@ -273,7 +275,7 @@ class SnapshotSchedule extends Component {
               <span className="u-color--dustyGray"> &gt; </span>
             Schedule
           </p>}
-          <form className="flex flex-column snapshot-form-wrapper">
+          <form className={`flex flex-column snapshot-form-wrapper ${isKurlEnabled && "u-opacity--half"}`}>
             {!isAppConfig && <p className="u-fontSize--normal u-color--tundora u-fontWeight--bold"> Scheduling</p>}
             <div className={`flex-column ${!isAppConfig ? "u-marginTop--12" : "u-marginBottom--20"}`}>
               <div className="flex1 u-marginBottom--20">
@@ -285,6 +287,7 @@ class SnapshotSchedule extends Component {
                       className="u-cursor--pointer"
                       id="autoEnabled"
                       checked={this.state.autoEnabled}
+                      disabled={(!isAppConfig && isKurlEnabled)}
                       onChange={(e) => { this.handleFormChange("autoEnabled", e) }}
                     />
                     <label htmlFor="autoEnabled" className="flex1 flex u-width--full u-position--relative u-cursor--pointer u-userSelect--none">
@@ -309,6 +312,7 @@ class SnapshotSchedule extends Component {
                         getOptionValue={(schedule) => schedule.label}
                         value={selectedSchedule}
                         onChange={this.handleScheduleChange}
+                        isDisabled={(!isAppConfig && isKurlEnabled)}
                         isOptionSelected={(option) => { option.value === selectedSchedule }}
                       />
                     </div>
@@ -332,7 +336,7 @@ class SnapshotSchedule extends Component {
                 <p className="u-fontSize--small u-color--dustyGray u-fontWeight--normal u-lineHeight--normal u-marginBottom--10">Snapshots older than this will be deleted.</p>
                 <div className="flex u-marginBottom--20">
                   <div className="flex-auto u-paddingRight--5">
-                    <input type="text" className="Input" placeholder="4" value={this.state.retentionInput} onChange={(e) => { this.handleFormChange("retentionInput", e) }} />
+                    <input type="text" className="Input" placeholder="4" value={this.state.retentionInput} disabled={(!isAppConfig && isKurlEnabled)} onChange={(e) => { this.handleFormChange("retentionInput", e) }} />
                   </div>
                   <div className="flex1 u-paddingLeft--5">
                     <Select
@@ -344,13 +348,14 @@ class SnapshotSchedule extends Component {
                       getOptionValue={(retentionUnit) => retentionUnit.label}
                       value={selectedRetentionUnit}
                       onChange={this.handleRetentionUnitChange}
+                      isDisabled={(!isAppConfig && isKurlEnabled)}
                       isOptionSelected={(option) => { option.value === selectedRetentionUnit }}
                     />
                   </div>
                 </div>
               </div>
               <div className="flex">
-                <button className="btn primary blue" disabled={updatingSchedule} onClick={this.saveSnapshotConfig}>{updatingSchedule ? "Updating schedule" : "Update schedule"}</button>
+                <button className="btn primary blue" disabled={updatingSchedule || (!isAppConfig && isKurlEnabled)} onClick={this.saveSnapshotConfig}>{updatingSchedule ? "Updating schedule" : "Update schedule"}</button>
                 {updateConfirm &&
                   <div className="u-marginLeft--10 flex alignItems--center">
                     <span className="icon checkmark-icon" />
@@ -373,6 +378,9 @@ class SnapshotSchedule extends Component {
           err="Failed to get snapshot schedule settings"
           loading={loadingConfig}
         />
+        {!isAppConfig && isKurlEnabled &&
+          <GettingStartedSnapshots isKurlEnabled={isKurlEnabled} isSettingsPage={true} />
+        }
       </div>
     );
   }
