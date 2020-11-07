@@ -1,28 +1,26 @@
 package ocistore
 
 import (
+	"database/sql"
+
 	"github.com/pkg/errors"
 	installationtypes "github.com/replicatedhq/kots/kotsadm/pkg/online/types"
 )
 
-const (
-	PendingInstallationsConfigMapName = "kotsadm-pendinginstallation"
-)
-
 func (s OCIStore) GetPendingInstallationStatus() (*installationtypes.InstallStatus, error) {
-	apps, err := s.ListInstalledApps()
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to list installed apps")
-	}
+	query := `SELECT install_state from app ORDER BY created_at DESC LIMIT 1`
+	row := s.connection.DB.QueryRow(query)
 
-	if len(apps) == 0 {
-		return &installationtypes.InstallStatus{
-			InstallStatus:  "not_installed",
-			CurrentMessage: "",
-		}, nil
+	var installState sql.NullString
+	if err := row.Scan(&installState); err != nil {
+		if err == sql.ErrNoRows {
+			return &installationtypes.InstallStatus{
+				InstallStatus:  "not_installed",
+				CurrentMessage: "",
+			}, nil
+		}
+		return nil, errors.Wrap(err, "failed to scan")
 	}
-
-	app := apps[0]
 
 	_, message, err := s.GetTaskStatus("online-install")
 	if err != nil {
@@ -30,7 +28,7 @@ func (s OCIStore) GetPendingInstallationStatus() (*installationtypes.InstallStat
 	}
 
 	status := &installationtypes.InstallStatus{
-		InstallStatus:  app.InstallState,
+		InstallStatus:  installState.String,
 		CurrentMessage: message,
 	}
 

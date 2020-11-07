@@ -131,6 +131,7 @@ func (s S3PGStore) CreateNewCluster(userID string, isAllUsers bool, title string
 func (c S3PGStore) SetInstanceSnapshotTTL(clusterID string, snapshotTTL string) error {
 	logger.Debug("Setting instance snapshot TTL",
 		zap.String("clusterID", clusterID))
+
 	db := persistence.MustGetPGSession()
 	query := `update cluster set snapshot_ttl = $1 where id = $2`
 	_, err := db.Exec(query, snapshotTTL, clusterID)
@@ -144,6 +145,7 @@ func (c S3PGStore) SetInstanceSnapshotTTL(clusterID string, snapshotTTL string) 
 func (c S3PGStore) SetInstanceSnapshotSchedule(clusterID string, snapshotSchedule string) error {
 	logger.Debug("Setting instance snapshot Schedule",
 		zap.String("clusterID", clusterID))
+
 	db := persistence.MustGetPGSession()
 	query := `update cluster set snapshot_schedule = $1 where id = $2`
 	_, err := db.Exec(query, snapshotSchedule, clusterID)

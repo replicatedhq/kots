@@ -4,7 +4,11 @@ import (
 	"context"
 	"os"
 
+	"github.com/ocidb/ocidb/pkg/ocidb"
+	ocidbtypes "github.com/ocidb/ocidb/pkg/ocidb/types"
 	"github.com/pkg/errors"
+	"github.com/replicatedhq/kots/kotsadm/pkg/store/ocistore/tables"
+	schemasv1alpha4 "github.com/schemahero/schemahero/pkg/apis/schemas/v1alpha4"
 	corev1 "k8s.io/api/core/v1"
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -13,7 +17,7 @@ import (
 )
 
 /* OCIStore stores most data in an OCI compatible image repository,
-   but does not make guarantees that every thing is stored there.
+   but does not make guarantees that every thing is sted there.
    Some data is stored locally in Kuberntes ConfigMaps and Secrets
    to speed up retrieval
 
@@ -26,8 +30,8 @@ import (
    be rejected. This level of consistency is all that's needed for KOTS
 */
 type OCIStore struct {
-	BaseURI   string
-	PlainHTTP bool
+	ocidbtypes.ConnectOpts
+	connection *ocidbtypes.Connection
 }
 
 var (
@@ -51,9 +55,24 @@ func (s OCIStore) IsNotFound(err error) bool {
 }
 
 func StoreFromEnv() OCIStore {
+	connectOpts := ocidbtypes.ConnectOpts{
+		Host:      "kotsadm-storage-registry",
+		Port:      5000,
+		Namespace: "",
+		Username:  "",
+		Password:  "",
+		Database:  "kots",
+		Tables:    getSQLiteTables(),
+	}
+
+	connection, err := ocidb.Connect(context.TODO(), &connectOpts)
+	if err != nil {
+		panic(err)
+	}
+
 	return OCIStore{
-		BaseURI:   os.Getenv("STORAGE_BASEURI"),
-		PlainHTTP: os.Getenv("STORAGE_BASEURI_PLAINHTTP") == "true",
+		connectOpts,
+		connection,
 	}
 }
 
@@ -107,52 +126,42 @@ func (s OCIStore) getSecret(name string) (*corev1.Secret, error) {
 	return existingSecret, nil
 }
 
-func (s OCIStore) getConfigmap(name string) (*corev1.ConfigMap, error) {
-	clientset, err := s.GetClientset()
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to get clientset")
-	}
-
-	existingConfigmap, err := clientset.CoreV1().ConfigMaps(os.Getenv("POD_NAMESPACE")).Get(context.TODO(), name, metav1.GetOptions{})
-	if err != nil && !kuberneteserrors.IsNotFound(err) {
-		return nil, errors.Wrap(err, "failed to get configmap")
-	} else if kuberneteserrors.IsNotFound(err) {
-		configmap := corev1.ConfigMap{
-			TypeMeta: metav1.TypeMeta{
-				APIVersion: "v1",
-				Kind:       "ConfigMap",
-			},
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      name,
-				Namespace: os.Getenv("POD_NAMESPACE"),
-				Labels: map[string]string{
-					"owner": "kotsadm",
-				},
-			},
-			Data: map[string]string{},
-		}
-
-		createdConfigmap, err := clientset.CoreV1().ConfigMaps(os.Getenv("POD_NAMESPACE")).Create(context.TODO(), &configmap, metav1.CreateOptions{})
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to create configmap")
-		}
-
-		return createdConfigmap, nil
-	}
-
-	return existingConfigmap, nil
-}
-
-func (s OCIStore) updateConfigmap(configmap *corev1.ConfigMap) error {
+func (s OCIStore) updateSecret(secret *corev1.Secret) error {
 	clientset, err := s.GetClientset()
 	if err != nil {
 		return errors.Wrap(err, "failed to get clientset")
 	}
 
-	_, err = clientset.CoreV1().ConfigMaps(os.Getenv("POD_NAMESPACE")).Update(context.Background(), configmap, metav1.UpdateOptions{})
+	_, err = clientset.CoreV1().Secrets(os.Getenv("POD_NAMESPACE")).Update(context.Background(), secret, metav1.UpdateOptions{})
 	if err != nil {
 		return errors.Wrap(err, "failed to update config map")
 	}
 
 	return nil
+}
+
+func getSQLiteTables() []schemasv1alpha4.TableSpec {
+	return []schemasv1alpha4.TableSpec{
+		tables.APITaskStatus(),
+		tables.AppDownstreamOutput(),
+		tables.AppDownstreamVersion(),
+		tables.AppDownstream(),
+		tables.AppStatus(),
+		tables.AppVersion(),
+		tables.App(),
+		tables.Cluster(),
+		tables.KotsadmParams(),
+		tables.ObjectStore(),
+		tables.PendingSupportBundle(),
+		tables.PreflightResult(),
+		tables.PreflightSpec(),
+		tables.ScheduledInstanceSnapshots(),
+		tables.ScheduledSnapshots(),
+		tables.ShipUserLocal(),
+		tables.ShipUser(),
+		tables.SupportBundleAnalysis(),
+		tables.SupportBundle(),
+		tables.UserApp(),
+		tables.UserCluster(),
+	}
 }

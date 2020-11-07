@@ -4,7 +4,6 @@ import (
 	"database/sql"
 
 	"github.com/pkg/errors"
-	"github.com/replicatedhq/kots/kotsadm/pkg/airgap/types"
 	airgaptypes "github.com/replicatedhq/kots/kotsadm/pkg/airgap/types"
 	"github.com/replicatedhq/kots/kotsadm/pkg/persistence"
 )
@@ -38,7 +37,7 @@ func (s S3PGStore) GetAirgapInstallStatus() (*airgaptypes.InstallStatus, error) 
 	var installState sql.NullString
 	if err := row.Scan(&installState); err != nil {
 		if err == sql.ErrNoRows {
-			return &types.InstallStatus{
+			return &airgaptypes.InstallStatus{
 				InstallStatus:  "not_installed",
 				CurrentMessage: "",
 			}, nil

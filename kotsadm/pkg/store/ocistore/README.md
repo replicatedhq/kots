@@ -3,6 +3,13 @@
 The OCIStore uses an OCI-compatible image registry for persistent storage.
 In addition, this store stores some cache in Kubernetes objects (secrets, configmaps).
 
+To use this locally:
+
+```
+export KOTSSTORE=oci
+skaffold dev
+```
+
 ## Kubernetes Objects
 
 To enable this store to function quickly, some data is stored in the cluster. 
@@ -17,3 +24,10 @@ Activity on an application will not increase the number of objects stored in the
 | Secret | `kotsadm-sessions | List of all active user sessions |
 | ConfigMap | `kotsadm-clusters` | List of all clusters/downstreams |
 | Secret | `kotsadm-clustertokens` | Lookup from deploy token to cluster id |
+| Secret | `kotsadm-registry` | The details for a locally configured image registry |
+
+## Dev tips
+
+Resetting all state: `k delete configmap -l owner=kotsadm && k delete secret -l owner=kotsadm`
+
+This shows up in the log when bootstrapping: `failed to list installed apps for downstream: failed to get app downstreams list configmap: failed to create configmap: configmaps \"kotsadm-appdownstreams\" already exists`:  Yes, there's a bug.  it's a race condition but it's not causing an error.

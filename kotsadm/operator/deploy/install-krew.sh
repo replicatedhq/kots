@@ -2,9 +2,8 @@
 
 (
   set -x; cd "$(mktemp -d)" &&
-  curl -fsSLO "https://storage.googleapis.com/krew/v0.2.1/krew.{tar.gz,yaml}" &&
+  curl -fsSLO "https://github.com/kubernetes-sigs/krew/releases/latest/download/krew.tar.gz" &&
   tar zxvf krew.tar.gz &&
-  ./krew-"$(uname | tr '[:upper:]' '[:lower:]')_amd64" install \
-    --manifest=krew.yaml --archive=krew.tar.gz
+  KREW=./krew-"$(uname | tr '[:upper:]' '[:lower:]')_$(uname -m | sed -e 's/x86_64/amd64/' -e 's/arm.*$/arm/')" &&
+  "$KREW" install krew
 )
-

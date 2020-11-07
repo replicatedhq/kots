@@ -1,28 +1,21 @@
 package ocistore
 
 import (
-	"encoding/json"
+	"context"
+	"database/sql"
 	"fmt"
 	"strings"
 	"time"
 
 	"github.com/gosimple/slug"
+	"github.com/ocidb/ocidb/pkg/ocidb"
 	"github.com/pkg/errors"
 	apptypes "github.com/replicatedhq/kots/kotsadm/pkg/app/types"
 	downstreamtypes "github.com/replicatedhq/kots/kotsadm/pkg/downstream/types"
+	"github.com/replicatedhq/kots/kotsadm/pkg/gitops"
+	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
 	"github.com/segmentio/ksuid"
-)
-
-/* AppStore
-   The app store stores each version archive a single artifact in the registry
-   The list of all apps is stored in a config map
-   The list of all downstreams is stored in a config map
-   The relation of apps->downstreams is stored in a config map
-*/
-
-const (
-	AppListConfigmapName        = "kotsadm-apps"
-	AppDownstreamsConfigMapName = "kotsadm-appdownstreams"
+	"go.uber.org/zap"
 )
 
 func (s OCIStore) AddAppToAllDownstreams(appID string) error {
@@ -30,150 +23,179 @@ func (s OCIStore) AddAppToAllDownstreams(appID string) error {
 	if err != nil {
 		return errors.Wrap(err, "failed to list clusters")
 	}
-
-	configMap, err := s.getConfigmap(AppDownstreamsConfigMapName)
-	if err != nil {
-		return errors.Wrap(err, "failed to get appdownstreams configmap")
-	}
-
-	if configMap.Data == nil {
-		configMap.Data = map[string]string{}
-	}
-
-	clusterIDs := []string{}
 	for _, cluster := range clusters {
-		clusterIDs = append(clusterIDs, cluster.ClusterID)
-	}
-
-	b, err := json.Marshal(clusterIDs)
-	if err != nil {
-		return errors.Wrap(err, "failed to marshal cluster ids")
-	}
-
-	configMap.Data[fmt.Sprintf("app.%s", appID)] = string(b)
-
-	if err := s.updateConfigmap(configMap); err != nil {
-		return errors.Wrap(err, "failed to update config map")
+		query := `insert into app_downstream (app_id, cluster_id, downstream_name) values ($1, $2, $3)`
+		_, err = s.connection.DB.Exec(query, appID, cluster.ClusterID, cluster.Name)
+		if err != nil {
+			return errors.Wrap(err, "failed to create app downstream")
+		}
 	}
 
 	return nil
 }
 
 func (s OCIStore) SetAppInstallState(appID string, state string) error {
-	app, err := s.GetApp(appID)
+	query := `update app set install_state = $2 where id = $1`
+	_, err := s.connection.DB.Exec(query, appID, state)
 	if err != nil {
-		return errors.Wrap(err, "failed to get app")
+		return errors.Wrap(err, "failed to update app install state")
 	}
-
-	app.InstallState = state
-
-	if err := s.updateApp(app); err != nil {
-		return errors.Wrap(err, "failed to update app")
+	if err := ocidb.Commit(context.TODO(), s.connection); err != nil {
+		return errors.Wrap(err, "failed to commit")
 	}
 
 	return nil
 }
 
 func (s OCIStore) ListInstalledApps() ([]*apptypes.App, error) {
-	appListConfigmap, err := s.getConfigmap(AppListConfigmapName)
+	query := `select id from app where install_state = 'installed'`
+	rows, err := s.connection.DB.Query(query)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to get app list configmap")
+		return nil, errors.Wrap(err, "failed to query db")
 	}
+	defer rows.Close()
 
 	apps := []*apptypes.App{}
-	for _, appData := range appListConfigmap.Data {
-		app := apptypes.App{}
-		if err := json.Unmarshal([]byte(appData), &app); err != nil {
-			return nil, errors.Wrap(err, "failed to unmarshal app data")
+	for rows.Next() {
+		var appID string
+		if err := rows.Scan(&appID); err != nil {
+			return nil, errors.Wrap(err, "failed to scan")
 		}
-
-		apps = append(apps, &app)
+		app, err := s.GetApp(appID)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to get app")
+		}
+		apps = append(apps, app)
 	}
 
 	return apps, nil
 }
 
 func (s OCIStore) ListInstalledAppSlugs() ([]string, error) {
-	apps, err := s.ListInstalledApps()
+	query := `select slug from app where install_state = 'installed'`
+	rows, err := s.connection.DB.Query(query)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "failed to query db")
 	}
+	defer rows.Close()
+
 	appSlugs := []string{}
-	for _, app := range apps {
-		appSlugs = append(appSlugs, app.Slug)
+	for rows.Next() {
+		var appSlug string
+		if err := rows.Scan(&appSlug); err != nil {
+			return nil, errors.Wrap(err, "failed to scan")
+		}
+		appSlugs = append(appSlugs, appSlug)
 	}
 	return appSlugs, nil
 }
 
 func (s OCIStore) GetAppIDFromSlug(slug string) (string, error) {
-	appListConfigmap, err := s.getConfigmap(AppListConfigmapName)
-	if err != nil {
-		return "", errors.Wrap(err, "failed to get app list configmap")
+	query := `select id from app where slug = $1`
+	row := s.connection.DB.QueryRow(query, slug)
+
+	id := ""
+
+	if err := row.Scan(&id); err != nil {
+		return "", errors.Wrap(err, "failed to scan id")
 	}
 
-	for _, appData := range appListConfigmap.Data {
-		app := apptypes.App{}
-		if err := json.Unmarshal([]byte(appData), &app); err != nil {
-			return "", errors.Wrap(err, "failed to unmarshal app data")
-		}
-
-		if app.Slug == slug {
-			return app.ID, nil
-		}
-	}
-
-	return "", ErrNotFound
+	return id, nil
 }
 
 func (s OCIStore) GetApp(id string) (*apptypes.App, error) {
-	appListConfigmap, err := s.getConfigmap(AppListConfigmapName)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to get app list configmap")
-	}
+	// too noisy
+	// logger.Debug("getting app from id",
+	// 	zap.String("id", id))
+
+	query := `select id, name, license, upstream_uri, icon_uri, created_at, updated_at, slug, current_sequence, last_update_check_at, is_airgap, snapshot_ttl_new, snapshot_schedule, restore_in_progress_name, restore_undeploy_status, update_checker_spec, install_state from app where id = $1`
+	row := s.connection.DB.QueryRow(query, id)
 
 	app := apptypes.App{}
-	if err := json.Unmarshal([]byte(appListConfigmap.Data[id]), &app); err != nil {
-		return nil, errors.Wrap(err, "failed to unmarshal app data")
+
+	var licenseStr sql.NullString
+	var upstreamURI sql.NullString
+	var iconURI sql.NullString
+	var updatedAt sql.NullTime
+	var currentSequence sql.NullInt64
+	var lastUpdateCheckAt sql.NullString
+	var snapshotTTLNew sql.NullString
+	var snapshotSchedule sql.NullString
+	var restoreInProgressName sql.NullString
+	var restoreUndeployStatus sql.NullString
+	var updateCheckerSpec sql.NullString
+
+	if err := row.Scan(&app.ID, &app.Name, &licenseStr, &upstreamURI, &iconURI, &app.CreatedAt, &updatedAt, &app.Slug, &currentSequence, &lastUpdateCheckAt, &app.IsAirgap, &snapshotTTLNew, &snapshotSchedule, &restoreInProgressName, &restoreUndeployStatus, &updateCheckerSpec, &app.InstallState); err != nil {
+		return nil, errors.Wrap(err, "failed to scan app")
 	}
+
+	app.License = licenseStr.String
+	app.UpstreamURI = upstreamURI.String
+	app.IconURI = iconURI.String
+	app.LastUpdateCheckAt = lastUpdateCheckAt.String
+	app.SnapshotTTL = snapshotTTLNew.String
+	app.SnapshotSchedule = snapshotSchedule.String
+	app.RestoreInProgressName = restoreInProgressName.String
+	app.RestoreUndeployStatus = apptypes.UndeployStatus(restoreUndeployStatus.String)
+	app.UpdateCheckerSpec = updateCheckerSpec.String
+
+	if updatedAt.Valid {
+		app.UpdatedAt = &updatedAt.Time
+	}
+
+	if currentSequence.Valid {
+		app.CurrentSequence = currentSequence.Int64
+	} else {
+		app.CurrentSequence = -1
+	}
+
+	if app.CurrentSequence != -1 {
+		query = `select preflight_spec, config_spec from app_version where app_id = $1 AND sequence = $2`
+		row = s.connection.DB.QueryRow(query, id, app.CurrentSequence)
+
+		var preflightSpec sql.NullString
+		var configSpec sql.NullString
+
+		if err := row.Scan(&preflightSpec, &configSpec); err != nil {
+			return nil, errors.Wrap(err, "failed to scan app_version")
+		}
+
+		if preflightSpec.Valid && preflightSpec.String != "" {
+			app.HasPreflight = true
+		}
+		if configSpec.Valid && configSpec.String != "" {
+			app.IsConfigurable = true
+		}
+	}
+
+	isGitOps, err := s.IsGitOpsEnabledForApp(id)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to check if gitops is enabled")
+	}
+	app.IsGitOps = isGitOps
 
 	return &app, nil
 }
 
 func (s OCIStore) GetAppFromSlug(slug string) (*apptypes.App, error) {
-	appListConfigmap, err := s.getConfigmap(AppListConfigmapName)
+	id, err := s.GetAppIDFromSlug(slug)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to get app list configmap")
+		return nil, errors.Wrap(err, "failed to get id from slug")
 	}
 
-	for _, appData := range appListConfigmap.Data {
-		app := apptypes.App{}
-		if err := json.Unmarshal([]byte(appData), &app); err != nil {
-			return nil, errors.Wrap(err, "failed to unmarshal app data")
-		}
-
-		if app.Slug == slug {
-			return &app, nil
-		}
-	}
-
-	return nil, ErrNotFound
+	return s.GetApp(id)
 }
 
 func (s OCIStore) CreateApp(name string, upstreamURI string, licenseData string, isAirgapEnabled bool, skipImagePush bool) (*apptypes.App, error) {
-	appListConfigmap, err := s.getConfigmap(AppListConfigmapName)
+	logger.Debug("creating app",
+		zap.String("name", name),
+		zap.String("upstreamURI", upstreamURI))
+
+	tx, err := s.connection.DB.Begin()
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to get app list configmap")
+		return nil, errors.Wrap(err, "failed to begin transaction")
 	}
-
-	existingAppSlugs := []string{}
-	for _, appData := range appListConfigmap.Data {
-		app := apptypes.App{}
-		if err := json.Unmarshal([]byte(appData), &app); err != nil {
-			return nil, errors.Wrap(err, "failed to unmarshal app data")
-		}
-
-		existingAppSlugs = append(existingAppSlugs, app.Slug)
-	}
+	defer tx.Rollback()
 
 	titleForSlug := strings.Replace(name, ".", "-", 0)
 	slugProposal := slug.Make(titleForSlug)
@@ -185,11 +207,17 @@ func (s OCIStore) CreateApp(name string, upstreamURI string, licenseData string,
 			slugProposal = fmt.Sprintf("%s-%d", titleForSlug, i)
 		}
 
-		foundUniqueSlug = true
-		for _, existingAppSlug := range existingAppSlugs {
-			if slugProposal == existingAppSlug {
-				foundUniqueSlug = false
-			}
+		query := `select count(1) as count from app where slug = $1`
+		row := tx.QueryRow(query, slugProposal)
+		exists := 0
+		if err := row.Scan(&exists); err != nil {
+			return nil, errors.Wrap(err, "failed to scan existing slug")
+		}
+
+		if exists == 0 {
+			foundUniqueSlug = true
+		} else {
+			i++
 		}
 	}
 
@@ -210,144 +238,231 @@ func (s OCIStore) CreateApp(name string, upstreamURI string, licenseData string,
 
 	id := ksuid.New().String()
 
-	app := apptypes.App{
-		ID:           id,
-		Name:         name,
-		IconURI:      "",
-		CreatedAt:    time.Now(),
-		Slug:         slugProposal,
-		UpstreamURI:  upstreamURI,
-		License:      licenseData,
-		InstallState: installState,
-	}
-	b, err := json.Marshal(app)
+	query := `insert into app (id, name, icon_uri, created_at, slug, upstream_uri, license, is_all_users, install_state)
+values ($1, $2, $3, $4, $5, $6, $7, $8, $9)`
+	_, err = tx.Exec(query, id, name, "", time.Now(), slugProposal, upstreamURI, licenseData, true, installState)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to marshal app")
+		return nil, errors.Wrap(err, "failed to insert app")
 	}
 
-	if appListConfigmap.Data == nil {
-		appListConfigmap.Data = map[string]string{}
+	if err := tx.Commit(); err != nil {
+		return nil, errors.Wrap(err, "failed to commit transaction")
 	}
-
-	appListConfigmap.Data[id] = string(b)
-	if err := s.updateConfigmap(appListConfigmap); err != nil {
-		return nil, errors.Wrap(err, "failed to update app list")
+	if err := ocidb.Commit(context.TODO(), s.connection); err != nil {
+		return nil, errors.Wrap(err, "failed to commit")
 	}
 
 	return s.GetApp(id)
 }
 
 func (s OCIStore) ListDownstreamsForApp(appID string) ([]downstreamtypes.Downstream, error) {
-	appDownstreamsConfigMap, err := s.getConfigmap(AppDownstreamsConfigMapName)
+	query := `select c.id from app_downstream d inner join cluster c on d.cluster_id = c.id where app_id = $1`
+	rows, err := s.connection.DB.Query(query, appID)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to get app downstreams list configmap")
+		return nil, errors.Wrap(err, "failed to query")
 	}
+	defer rows.Close()
 
-	key := fmt.Sprintf("app.%s", appID)
-	downstreamIDsMarshaled, ok := appDownstreamsConfigMap.Data[key]
-	if !ok {
-		return []downstreamtypes.Downstream{}, nil
-	}
-	downstreamIDs := []string{}
-	if err := json.Unmarshal([]byte(downstreamIDsMarshaled), &downstreamIDs); err != nil {
-		return nil, errors.Wrap(err, "failed to unmarshal downstream ids for app")
-	}
-
-	clusters, err := s.ListClusters()
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to list clusters")
-	}
-
-	matchingClusters := []downstreamtypes.Downstream{}
-	for _, cluster := range clusters {
-		for _, downstreamID := range downstreamIDs {
-			if cluster.ClusterID == downstreamID {
-				matchingClusters = append(matchingClusters, *cluster)
-			}
+	downstreams := []downstreamtypes.Downstream{}
+	for rows.Next() {
+		var clusterID string
+		if err := rows.Scan(&clusterID); err != nil {
+			return nil, errors.Wrap(err, "failed to scan")
+		}
+		downstream, err := s.GetDownstream(clusterID)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to get downstream")
+		}
+		if downstream != nil {
+			downstreams = append(downstreams, *downstream)
 		}
 	}
 
-	return matchingClusters, nil
+	return downstreams, nil
 }
 
 func (s OCIStore) ListAppsForDownstream(clusterID string) ([]*apptypes.App, error) {
-	appDownstreamsConfigMap, err := s.getConfigmap(AppDownstreamsConfigMapName)
+	query := `select ad.app_id from app_downstream ad inner join app a on ad.app_id = a.id where ad.cluster_id = $1 and a.install_state = 'installed'`
+	rows, err := s.connection.DB.Query(query, clusterID)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to get app downstreams list configmap")
+		return nil, errors.Wrap(err, "failed to query db")
 	}
-
-	key := fmt.Sprintf("downstream:%s", clusterID)
-	appIDsMarshaled, ok := appDownstreamsConfigMap.Data[key]
-	if !ok {
-		return []*apptypes.App{}, nil
-	}
-	appIDs := []string{}
-	if err := json.Unmarshal([]byte(appIDsMarshaled), &appIDs); err != nil {
-		return nil, errors.Wrap(err, "failed to unmarshal downstream ids for app")
-	}
-
-	appsConfigmap, err := s.getConfigmap(AppListConfigmapName)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to get downsteams config map")
-	}
+	defer rows.Close()
 
 	apps := []*apptypes.App{}
-	for _, appData := range appsConfigmap.Data {
-		app := apptypes.App{}
-		if err := json.Unmarshal([]byte(appData), &app); err != nil {
-			return nil, errors.Wrap(err, "failed to unmarshal app data")
+	for rows.Next() {
+		var appID string
+		if err := rows.Scan(&appID); err != nil {
+			return nil, errors.Wrap(err, "failed to scan")
 		}
-
-		apps = append(apps, &app)
+		app, err := s.GetApp(appID)
+		if err != nil {
+			return nil, errors.Wrapf(err, "failed to get app %s", appID)
+		}
+		apps = append(apps, app)
 	}
 
 	return apps, nil
 }
 
-func (c OCIStore) GetDownstream(clusterID string) (*downstreamtypes.Downstream, error) {
-	return nil, ErrNotImplemented
+func (s OCIStore) GetDownstream(clusterID string) (*downstreamtypes.Downstream, error) {
+	query := `select c.id, c.slug, d.downstream_name, d.current_sequence from app_downstream d inner join cluster c on d.cluster_id = c.id where c.id = $1`
+	row := s.connection.DB.QueryRow(query, clusterID)
+
+	downstream := downstreamtypes.Downstream{
+		CurrentSequence: -1,
+	}
+	var sequence sql.NullInt64
+	if err := row.Scan(&downstream.ClusterID, &downstream.ClusterSlug, &downstream.Name, &sequence); err != nil {
+		if err == sql.ErrNoRows {
+			return nil, nil
+		}
+		return nil, errors.Wrap(err, "failed to scan downstream")
+	}
+	if sequence.Valid {
+		downstream.CurrentSequence = sequence.Int64
+	}
+
+	return &downstream, nil
 }
 
-func (c OCIStore) IsGitOpsEnabledForApp(appID string) (bool, error) {
-	return false, ErrNotImplemented
-}
-
-func (c OCIStore) SetUpdateCheckerSpec(appID string, updateCheckerSpec string) error {
-	return ErrNotImplemented
-}
-
-func (c OCIStore) SetSnapshotSchedule(appID string, snapshotSchedule string) error {
-	return ErrNotImplemented
-}
-
-func (c OCIStore) SetSnapshotTTL(appID string, snapshotTTL string) error {
-	return ErrNotImplemented
-}
-
-func (s OCIStore) updateApp(app *apptypes.App) error {
-	b, err := json.Marshal(app)
+func (s OCIStore) IsGitOpsEnabledForApp(appID string) (bool, error) {
+	downstreams, err := s.ListDownstreamsForApp(appID)
 	if err != nil {
-		return errors.Wrap(err, "failed to marhsal app")
+		return false, errors.Wrap(err, "failed to list downstreams")
 	}
 
-	configMap, err := s.getConfigmap(AppListConfigmapName)
+	for _, d := range downstreams {
+		downstreamGitOps, err := gitops.GetDownstreamGitOps(appID, d.ClusterID)
+		if err != nil {
+			return false, errors.Wrap(err, "failed to get downstream gitops")
+		}
+		if downstreamGitOps != nil {
+			return true, nil
+		}
+	}
+
+	return false, nil
+}
+
+func (s OCIStore) SetUpdateCheckerSpec(appID string, updateCheckerSpec string) error {
+	logger.Debug("setting update checker spec",
+		zap.String("appID", appID))
+
+	query := `update app set update_checker_spec = $1 where id = $2`
+	_, err := s.connection.DB.Exec(query, updateCheckerSpec, appID)
 	if err != nil {
-		return errors.Wrap(err, "failed to get app list")
+		return errors.Wrap(err, "failed to exec db query")
+	}
+	if err := ocidb.Commit(context.TODO(), s.connection); err != nil {
+		return errors.Wrap(err, "failed to commit")
 	}
 
-	if configMap.Data == nil {
-		configMap.Data = map[string]string{}
+	return nil
+}
+
+func (s OCIStore) SetSnapshotTTL(appID string, snapshotTTL string) error {
+	logger.Debug("Setting snapshot Schedule",
+		zap.String("appID", appID))
+
+	query := `update app set snapshot_ttl_new = $1 where id = $2`
+	_, err := s.connection.DB.Exec(query, snapshotTTL, appID)
+	if err != nil {
+		return errors.Wrap(err, "failed to exec db query")
 	}
 
-	configMap.Data[app.ID] = string(b)
+	if err := ocidb.Commit(context.TODO(), s.connection); err != nil {
+		return errors.Wrap(err, "failed to commit")
+	}
 
-	if err := s.updateConfigmap(configMap); err != nil {
-		return errors.Wrap(err, "failed to update app list config map")
+	return nil
+}
+
+func (s OCIStore) SetSnapshotSchedule(appID string, snapshotSchedule string) error {
+	logger.Debug("Setting snapshot TTL",
+		zap.String("appID", appID))
+
+	query := `update app set snapshot_schedule = $1 where id = $2`
+	_, err := s.connection.DB.Exec(query, snapshotSchedule, appID)
+	if err != nil {
+		return errors.Wrap(err, "failed to exec db query")
+	}
+	if err := ocidb.Commit(context.TODO(), s.connection); err != nil {
+		return errors.Wrap(err, "failed to commit")
 	}
 
 	return nil
 }
 
 func (s OCIStore) RemoveApp(appID string) error {
-	return ErrNotImplemented
+	logger.Debug("Removing app",
+		zap.String("appID", appID))
+
+	tx, err := s.connection.DB.Begin()
+	if err != nil {
+		return errors.Wrap(err, "failed to begin transaction")
+	}
+	defer tx.Rollback()
+
+	var query string
+
+	// TODO: api_task_status needs app ID
+
+	query = "delete from app_status where app_id = $1"
+	_, err = tx.Exec(query, appID)
+	if err != nil {
+		return errors.Wrap(err, "failed to delete from app_status")
+	}
+
+	query = "delete from app_downstream_output where app_id = $1"
+	_, err = tx.Exec(query, appID)
+	if err != nil {
+		return errors.Wrap(err, "failed to delete from app_downstream_output")
+	}
+
+	query = "delete from app_downstream_version where app_id = $1"
+	_, err = tx.Exec(query, appID)
+	if err != nil {
+		return errors.Wrap(err, "failed to delete from app_downstream_version")
+	}
+
+	query = "delete from app_downstream where app_id = $1"
+	_, err = tx.Exec(query, appID)
+	if err != nil {
+		return errors.Wrap(err, "failed to delete from app_downstream")
+	}
+
+	query = "delete from app_version where app_id = $1"
+	_, err = tx.Exec(query, appID)
+	if err != nil {
+		return errors.Wrap(err, "failed to delete from app_version")
+	}
+
+	query = "delete from user_app where app_id = $1"
+	_, err = tx.Exec(query, appID)
+	if err != nil {
+		return errors.Wrap(err, "failed to delete from user_app")
+	}
+
+	query = "delete from pending_supportbundle where app_id = $1"
+	_, err = tx.Exec(query, appID)
+	if err != nil {
+		return errors.Wrap(err, "failed to delete from pending_supportbundle")
+	}
+
+	query = "delete from app where id = $1"
+	_, err = tx.Exec(query, appID)
+	if err != nil {
+		return errors.Wrap(err, "failed to delete from app")
+	}
+
+	if err := tx.Commit(); err != nil {
+		return errors.Wrap(err, "failed to commit transaction")
+	}
+
+	if err := ocidb.Commit(context.TODO(), s.connection); err != nil {
+		return errors.Wrap(err, "failed to commit")
+	}
+
+	return nil
 }

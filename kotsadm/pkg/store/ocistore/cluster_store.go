@@ -1,13 +1,18 @@
 package ocistore
 
 import (
-	"encoding/json"
+	"context"
+	"database/sql"
 	"fmt"
+	"time"
 
 	"github.com/gosimple/slug"
+	"github.com/ocidb/ocidb/pkg/ocidb"
 	"github.com/pkg/errors"
 	downstreamtypes "github.com/replicatedhq/kots/kotsadm/pkg/downstream/types"
+	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
 	"github.com/replicatedhq/kots/kotsadm/pkg/rand"
+	"go.uber.org/zap"
 )
 
 const (
@@ -16,21 +21,25 @@ const (
 )
 
 func (s OCIStore) ListClusters() ([]*downstreamtypes.Downstream, error) {
-	configMap, err := s.getConfigmap(ClusterListConfigmapName)
+	rows, err := s.connection.DB.Query("select id, slug, title, snapshot_schedule, snapshot_ttl from cluster")
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to get clusters config map")
+		return nil, errors.Wrap(err, "failed to query")
 	}
-
-	if configMap.Data == nil {
-		configMap.Data = map[string]string{}
-	}
+	defer rows.Close()
 
 	clusters := []*downstreamtypes.Downstream{}
-	for _, data := range configMap.Data {
+	for rows.Next() {
 		cluster := downstreamtypes.Downstream{}
-		if err := json.Unmarshal([]byte(data), &cluster); err != nil {
-			return nil, errors.Wrap(err, "failed to unmarshal cluster")
+
+		var snapshotSchedule sql.NullString
+		var snapshotTTL sql.NullString
+
+		if err := rows.Scan(&cluster.ClusterID, &cluster.ClusterSlug, &cluster.Name, &snapshotSchedule, &snapshotTTL); err != nil {
+			return nil, errors.Wrap(err, "failed to scan row")
 		}
+
+		cluster.SnapshotSchedule = snapshotSchedule.String
+		cluster.SnapshotTTL = snapshotTTL.String
 
 		clusters = append(clusters, &cluster)
 	}
@@ -39,28 +48,35 @@ func (s OCIStore) ListClusters() ([]*downstreamtypes.Downstream, error) {
 }
 
 func (s OCIStore) GetClusterIDFromSlug(slug string) (string, error) {
-	return "", ErrNotImplemented
+	query := `select id from cluster where slug = $1`
+	row := s.connection.DB.QueryRow(query, slug)
+
+	var clusterID string
+	if err := row.Scan(&clusterID); err != nil {
+		return "", errors.Wrap(err, "failed to scan")
+	}
+
+	return clusterID, nil
 }
 
 func (s OCIStore) GetClusterIDFromDeployToken(deployToken string) (string, error) {
-	secret, err := s.getSecret(ClusterDeployTokenSecret)
-	if err != nil {
-		return "", errors.Wrap(err, "failed to get cluster deploy token secret")
+	query := `select id from cluster where token = $1`
+	row := s.connection.DB.QueryRow(query, deployToken)
+
+	var clusterID string
+	if err := row.Scan(&clusterID); err != nil {
+		return "", errors.Wrap(err, "failed to scan")
 	}
 
-	if secret.Data == nil {
-		secret.Data = map[string][]byte{}
-	}
-
-	clusterID, ok := secret.Data[deployToken]
-	if !ok {
-		return "", errors.New("cluster deploy token not found")
-	}
-
-	return string(clusterID), nil
+	return clusterID, nil
 }
 
 func (s OCIStore) CreateNewCluster(userID string, isAllUsers bool, title string, token string) (string, error) {
+	logger.Debug("creating new cluster",
+		zap.String("userID", userID),
+		zap.Bool("isAllUsers", isAllUsers),
+		zap.String("title", title))
+
 	downstream := downstreamtypes.Downstream{
 		ClusterID:   rand.StringWithCharset(32, rand.LOWER_CASE),
 		ClusterSlug: slug.Make(title),
@@ -83,7 +99,7 @@ func (s OCIStore) CreateNewCluster(userID string, isAllUsers bool, title string,
 			slugProposal = fmt.Sprintf("%s-%d", downstream.ClusterSlug, i)
 		}
 
-		foundUniqueSlug := true
+		foundUniqueSlug = true
 		for _, existingClusterSlug := range existingClusterSlugs {
 			if slugProposal == existingClusterSlug {
 				foundUniqueSlug = false
@@ -99,33 +115,65 @@ func (s OCIStore) CreateNewCluster(userID string, isAllUsers bool, title string,
 		token = rand.StringWithCharset(32, rand.LOWER_CASE)
 	}
 
-	b, err := json.Marshal(downstream)
+	tx, err := s.connection.DB.Begin()
 	if err != nil {
-		return "", errors.Wrap(err, "failed to marshal cluster")
+		return "", errors.Wrap(err, "failed to begin transaction")
 	}
+	defer tx.Rollback()
 
-	configMap, err := s.getConfigmap(ClusterListConfigmapName)
+	query := `insert into cluster (id, title, slug, created_at, updated_at, cluster_type, is_all_users, token) values ($1, $2, $3, $4, $5, $6, $7, $8)`
+	_, err = s.connection.DB.Exec(query, downstream.ClusterID, title, downstream.ClusterSlug, time.Now(), nil, "ship", isAllUsers, token)
 	if err != nil {
-		return "", errors.Wrap(err, "failed to list clusters")
+		return "", errors.Wrap(err, "failed to insert cluster row")
 	}
 
-	if configMap.Data == nil {
-		configMap.Data = map[string]string{}
+	if userID != "" {
+		query := `insert into user_cluster (user_id, cluster_id) values ($1, $2)`
+		_, err := s.connection.DB.Exec(query, userID, downstream.ClusterID)
+		if err != nil {
+			return "", errors.Wrap(err, "failed to insert user_cluster row")
+		}
 	}
 
-	configMap.Data[downstream.ClusterID] = string(b)
+	if err := tx.Commit(); err != nil {
+		return "", errors.Wrap(err, "failed to commit transaction")
+	}
 
-	if err := s.updateConfigmap(configMap); err != nil {
-		return "", errors.Wrap(err, "failed to update config map")
+	if err := ocidb.Commit(context.TODO(), s.connection); err != nil {
+		return "", errors.Wrap(err, "failed to commit")
 	}
 
 	return downstream.ClusterID, nil
 }
 
 func (s OCIStore) SetInstanceSnapshotTTL(clusterID string, snapshotTTL string) error {
-	return ErrNotImplemented
+	logger.Debug("Setting instance snapshot TTL",
+		zap.String("clusterID", clusterID))
+
+	query := `update cluster set snapshot_ttl = $1 where id = $2`
+	_, err := s.connection.DB.Exec(query, snapshotTTL, clusterID)
+	if err != nil {
+		return errors.Wrap(err, "failed to exec db query")
+	}
+	if err := ocidb.Commit(context.TODO(), s.connection); err != nil {
+		return errors.Wrap(err, "failed to commit")
+	}
+
+	return nil
 }
 
 func (s OCIStore) SetInstanceSnapshotSchedule(clusterID string, snapshotSchedule string) error {
-	return ErrNotImplemented
+	logger.Debug("Setting instance snapshot Schedule",
+		zap.String("clusterID", clusterID))
+
+	query := `update cluster set snapshot_schedule = $1 where id = $2`
+	_, err := s.connection.DB.Exec(query, snapshotSchedule, clusterID)
+	if err != nil {
+		return errors.Wrap(err, "failed to exec db query")
+	}
+	if err := ocidb.Commit(context.TODO(), s.connection); err != nil {
+		return errors.Wrap(err, "failed to commit")
+	}
+
+	return nil
 }

@@ -9,7 +9,7 @@ require (
 	github.com/Azure/go-autorest/autorest/adal v0.8.2
 	github.com/aws/aws-sdk-go v1.28.2
 	github.com/bitnami-labs/sealed-secrets v0.12.5
-	github.com/containerd/containerd v1.3.2
+	github.com/containerd/containerd v1.4.1
 	github.com/containers/image/v5 v5.5.2
 	github.com/coreos/go-oidc v2.2.1+incompatible
 	github.com/deislabs/oras v0.8.1
@@ -26,12 +26,11 @@ require (
 	github.com/gorilla/mux v1.8.0
 	github.com/gorilla/websocket v1.4.0
 	github.com/gosimple/slug v1.9.0
-	github.com/gtank/cryptopasta v0.0.0-20170601214702-1f550f6f2f69 // indirect
-	github.com/hashicorp/go-cleanhttp v0.5.0
 	github.com/hashicorp/go-version v1.2.0 // indirect
 	github.com/lib/pq v1.3.0
 	github.com/marccampbell/yaml-toolbox v0.0.0-20200805160637-950ceb36c770
 	github.com/mholt/archiver v3.1.1+incompatible
+	github.com/ocidb/ocidb v0.0.0-20201206152354-613063128535
 	github.com/opencontainers/image-spec v1.0.2-0.20190823105129-775207bd45b6
 	github.com/pkg/errors v0.9.1
 	github.com/replicatedhq/kots v0.0.0-00010101000000-000000000000
@@ -39,12 +38,13 @@ require (
 	github.com/replicatedhq/yaml/v3 v3.0.0-beta5-replicatedhq
 	github.com/robfig/cron v1.1.0
 	github.com/robfig/cron/v3 v3.0.0
+	github.com/schemahero/schemahero v0.11.2-0.20201205002054-607626aebdda
 	github.com/segmentio/ksuid v1.0.3
 	github.com/spf13/cobra v1.0.0
 	github.com/spf13/viper v1.6.2
 	github.com/stretchr/testify v1.6.1
 	github.com/vmware-tanzu/velero v1.5.1
-	go.uber.org/multierr v1.3.0
+	go.uber.org/multierr v1.5.0
 	go.uber.org/zap v1.13.0
 	golang.org/x/crypto v0.0.0-20200622213623-75b288015ac9
 	golang.org/x/oauth2 v0.0.0-20200107190931-bf48bf16ab8d
@@ -52,6 +52,7 @@ require (
 	google.golang.org/api v0.15.0
 	gopkg.in/ini.v1 v1.51.0
 	gopkg.in/yaml.v2 v2.3.0
+	gotest.tools/v3 v3.0.3 // indirect
 	k8s.io/api v0.18.4
 	k8s.io/apimachinery v0.18.4
 	k8s.io/client-go v12.0.0+incompatible

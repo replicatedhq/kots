@@ -5,6 +5,26 @@ metadata:
 spec:
   template:
     spec:
+      initContainers:
+        - name: init-dex-db
+          volumeMounts:
+            - name: init-dex-db
+              readOnly: true
+              mountPath: /etc/dex/init
+          command: ["bash", "/etc/dex/init/init.sh"]
+          env:
+          - name: PGPASSWORD
+            valueFrom:
+              secretKeyRef:
+                key: password
+                name: kotsadm-postgres
+          - name: DEX_PGPASSWORD
+            valueFrom:
+              secretKeyRef:
+                key: password
+                name: kotsadm-dex-postgres
+          image: kotsadm
+          imagePullPolicy: IfNotPresent
       containers:
         - name: kotsadm
           env:

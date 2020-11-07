@@ -1,14 +1,12 @@
 package ocistore
 
 import (
-	"encoding/json"
+	"context"
+	"database/sql"
 	"time"
 
+	"github.com/ocidb/ocidb/pkg/ocidb"
 	"github.com/pkg/errors"
-)
-
-const (
-	TaskStatusConfigMapName = `kotsadm-tasks`
 )
 
 type taskStatus struct {
@@ -18,120 +16,62 @@ type taskStatus struct {
 }
 
 func (s OCIStore) SetTaskStatus(id string, message string, status string) error {
-	configmap, err := s.getConfigmap(TaskStatusConfigMapName)
+	query := `insert into api_task_status (id, updated_at, current_message, status) values ($1, $2, $3, $4)
+on conflict(id) do update set current_message = EXCLUDED.current_message, status = EXCLUDED.status`
+
+	_, err := s.connection.DB.Exec(query, id, time.Now(), message, status)
 	if err != nil {
-		return errors.Wrap(err, "failed to get task status configmap")
+		return errors.Wrap(err, "failed to set task status")
 	}
-
-	if configmap.Data == nil {
-		configmap.Data = map[string]string{}
-	}
-
-	ts := taskStatus{}
-	existingTsData, ok := configmap.Data[id]
-	if ok {
-		if err := json.Unmarshal([]byte(existingTsData), &ts); err != nil {
-			return errors.Wrap(err, "failed to unmarshal task status")
-		}
-	}
-
-	ts.Message = message
-	ts.Status = status
-	ts.UpdatedAt = time.Now()
-
-	b, err := json.Marshal(ts)
-	if err != nil {
-		return errors.Wrap(err, "failed to marshal task status")
-	}
-
-	configmap.Data[id] = string(b)
-
-	if err := s.updateConfigmap(configmap); err != nil {
-		return errors.Wrap(err, "failed to update task status configmap")
+	if err := ocidb.Commit(context.TODO(), s.connection); err != nil {
+		return errors.Wrap(err, "failed to commit")
 	}
 
 	return nil
 }
 
 func (s OCIStore) UpdateTaskStatusTimestamp(id string) error {
-	configmap, err := s.getConfigmap(TaskStatusConfigMapName)
+	query := `update api_task_status set updated_at = $1 where id = $2`
+
+	_, err := s.connection.DB.Exec(query, time.Now(), id)
 	if err != nil {
-		return errors.Wrap(err, "failed to get task status configmap")
+		return errors.Wrap(err, "failed to update task status")
 	}
-
-	if configmap.Data == nil {
-		configmap.Data = map[string]string{}
-	}
-
-	data, ok := configmap.Data[id]
-	if !ok {
-		return nil // copied from s3pgstore
-	}
-
-	ts := taskStatus{}
-	if err := json.Unmarshal([]byte(data), &ts); err != nil {
-		return errors.Wrap(err, "failed to unmarshal task status")
-	}
-
-	ts.UpdatedAt = time.Now()
-
-	b, err := json.Marshal(ts)
-	if err != nil {
-		return errors.Wrap(err, "failed to marshal task status")
-	}
-
-	configmap.Data[id] = string(b)
-
-	if err := s.updateConfigmap(configmap); err != nil {
-		return errors.Wrap(err, "failed to update task status configmap")
+	if err := ocidb.Commit(context.TODO(), s.connection); err != nil {
+		return errors.Wrap(err, "failed to commit")
 	}
 
 	return nil
 }
 
 func (s OCIStore) ClearTaskStatus(id string) error {
-	configmap, err := s.getConfigmap(TaskStatusConfigMapName)
+	query := `delete from api_task_status where id = $1`
+
+	_, err := s.connection.DB.Exec(query, id)
 	if err != nil {
-		return errors.Wrap(err, "failed to get task status configmap")
+		return errors.Wrap(err, "failed to clear task status")
 	}
-
-	if configmap.Data == nil {
-		configmap.Data = map[string]string{}
-	}
-
-	_, ok := configmap.Data[id]
-	if !ok {
-		return nil // copied from s3pgstore
-	}
-
-	delete(configmap.Data, id)
-
-	if err := s.updateConfigmap(configmap); err != nil {
-		return errors.Wrap(err, "failed to update task status configmap")
+	if err := ocidb.Commit(context.TODO(), s.connection); err != nil {
+		return errors.Wrap(err, "failed to commit")
 	}
 
 	return nil
 }
 
 func (s OCIStore) GetTaskStatus(id string) (string, string, error) {
-	configmap, err := s.getConfigmap(TaskStatusConfigMapName)
-	if err != nil {
-		return "", "", errors.Wrap(err, "failed to get task status configmap")
+	query := `select status, current_message from api_task_status where id = $1 AND updated_at > ($2::timestamp - '10 seconds'::interval)`
+	row := s.connection.DB.QueryRow(query, id, time.Now())
+
+	var status sql.NullString
+	var message sql.NullString
+
+	if err := row.Scan(&status, &message); err != nil {
+		if err == sql.ErrNoRows {
+			return "", "", nil
+		}
+
+		return "", "", errors.Wrap(err, "failed to scan task status")
 	}
 
-	if configmap.Data == nil {
-		configmap.Data = map[string]string{}
-	}
-
-	marshalled, ok := configmap.Data[id]
-	if !ok {
-		return "", "", nil
-	}
-
-	ts := taskStatus{}
-	if err := json.Unmarshal([]byte(marshalled), &ts); err != nil {
-		return "", "", errors.Wrap(err, "error unmarshalling task status")
-	}
-
-	return ts.Status, ts.Message, nil
+	return status.String, message.String, nil
 }

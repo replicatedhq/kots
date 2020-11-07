@@ -61,23 +61,13 @@ func (c S3PGStore) DeletePendingScheduledSnapshots(appID string) error {
 	return nil
 }
 
-func (c S3PGStore) CreateScheduledSnapshot(id string, appID string, timestamp time.Time) error {
+func (c S3PGStore) CreateScheduledSnapshot(snapshotID string, appID string, timestamp time.Time) error {
 	logger.Debug("Creating scheduled snapshot",
 		zap.String("appID", appID))
 
 	db := persistence.MustGetPGSession()
-	query := `
-		INSERT INTO scheduled_snapshots (
-			id,
-			app_id,
-			scheduled_timestamp
-		) VALUES (
-			$1,
-			$2,
-			$3
-		)
-	`
-	_, err := db.Exec(query, id, appID, timestamp)
+	query := `INSERT INTO scheduled_snapshots (id, app_id, scheduled_timestamp) VALUES ($1, $2, $3)`
+	_, err := db.Exec(query, snapshotID, appID, timestamp)
 	if err != nil {
 		return errors.Wrap(err, "Failed to db exec query")
 	}
@@ -119,6 +109,7 @@ func (c S3PGStore) UpdateScheduledInstanceSnapshot(snapshotID string, backupName
 	if err != nil {
 		return errors.Wrap(err, "failed to exec")
 	}
+
 	return nil
 }
 
@@ -136,23 +127,13 @@ func (c S3PGStore) DeletePendingScheduledInstanceSnapshots(clusterID string) err
 	return nil
 }
 
-func (c S3PGStore) CreateScheduledInstanceSnapshot(id string, clusterID string, timestamp time.Time) error {
+func (c S3PGStore) CreateScheduledInstanceSnapshot(snapshotID string, clusterID string, timestamp time.Time) error {
 	logger.Debug("Creating scheduled instance snapshot",
 		zap.String("clusterID", clusterID))
 
 	db := persistence.MustGetPGSession()
-	query := `
-		INSERT INTO scheduled_instance_snapshots (
-			id,
-			cluster_id,
-			scheduled_timestamp
-		) VALUES (
-			$1,
-			$2,
-			$3
-		)
-	`
-	_, err := db.Exec(query, id, clusterID, timestamp)
+	query := `INSERT INTO scheduled_instance_snapshots (id, cluster_id, scheduled_timestamp) VALUES ($1, $2, $3)`
+	_, err := db.Exec(query, snapshotID, clusterID, timestamp)
 	if err != nil {
 		return errors.Wrap(err, "Failed to db exec query")
 	}
