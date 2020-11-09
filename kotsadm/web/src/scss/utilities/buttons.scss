@@ -139,8 +139,24 @@
     box-shadow: none;
 
     &:not(:disabled):hover {
-      border-color: #2158CA;
-      color: #2158CA;
+      background-color: #EBF0FC;
+      border-color: #326DE6;
+      color: #326DE6;
+    }
+  }
+
+  &.secondary.dark {
+    background-color: #ffffff;
+    border-width: 1px;
+    border-style: solid;
+    border-color: #193B5B;
+    color: #193B5B;
+    box-shadow: none;
+
+    &:not(:disabled):hover {
+      background-color: #E8EBEF;
+      border-color: #193B5B;
+      color: #193B5B;
     }
   }
 

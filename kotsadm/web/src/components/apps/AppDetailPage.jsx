@@ -50,7 +50,8 @@ class AppDetailPage extends Component {
       makingCurrentReleaseErrMsg: "",
       makingCurrentRelease: false,
       displayErrorModal: false,
-      isVeleroInstalled: false
+      isVeleroInstalled: false,
+      redeployVersionErrMsg: ""
     }
   }
 
@@ -125,6 +126,33 @@ class AppDetailPage extends Component {
       console.log(err)
       this.setState({
         makingCurrentReleaseErrMsg: err ? `Unable to deploy release ${version.title}, sequence ${version.sequence}: ${err.message}` : "Something went wrong, please try again.",
+      });
+    }
+  }
+
+  redeployVersion = async (upstreamSlug, version) => {
+    try {
+      this.setState({ redeployVersionErrMsg: "" });
+
+      const res = await fetch(`${window.env.API_ENDPOINT}/app/${upstreamSlug}/sequence/${version.sequence}/redeploy`, {
+        headers: {
+          "Authorization": Utilities.getToken(),
+          "Content-Type": "application/json",
+        },
+        method: "POST",
+      });
+      if (res.ok && res.status === 204) {
+        this.setState({ redeployVersionErrMsg: "" });
+        this.refetchData();
+      } else {
+        this.setState({
+          redeployVersionErrMsg: `Unable to redeploy release ${version.title}, sequence ${version.sequence}: Unexpected status code: ${res.status}`
+        });
+      }
+    } catch (err) {
+      console.log(err)
+      this.setState({
+        redeployVersionErrMsg: err ? `Unable to deploy release ${version.title}, sequence ${version.sequence}: ${err.message}` : "Something went wrong, please try again."
       });
     }
   }
@@ -343,6 +371,8 @@ class AppDetailPage extends Component {
                         displayErrorModal={this.state.displayErrorModal}
                         toggleErrorModal={this.toggleErrorModal}
                         makingCurrentRelease={this.state.makingCurrentRelease}
+                        redeployVersion={this.redeployVersion}
+                        redeployVersionErrMsg={this.state.redeployVersionErrMsg}
                       />
                     } />
                     <Route exact path="/app/:slug/downstreams/:downstreamSlug/version-history/preflight/:sequence" render={props => <PreflightResultPage logo={app.iconUri} {...props} />} />

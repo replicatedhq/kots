@@ -21,6 +21,31 @@ function renderYamlErrors(yamlErrorsDetails, version, toggleShowDetailsModal) {
   )
 }
 
+function deployButtonStatus(downstream, version, app) {
+  const isCurrentVersion = version.sequence === downstream.currentVersion?.sequence;
+  const isDeploying = version.status === "deploying";
+  const isPastVersion = find(downstream.pastVersions, { sequence: version.sequence });
+  const needsConfiguration = version.status === "pending_config";
+  const isRollback = isPastVersion && version.deployedAt && app.allowRollback;
+  const isRedeploy = isCurrentVersion && version.status === "failed";
+
+  if (needsConfiguration) {
+    return "Configure";
+  } else if (downstream?.currentVersion?.sequence == undefined) {
+    return "Deploy";
+  } else if (isRedeploy) {
+    return "Redeploy";
+  } else if (isRollback) {
+    return "Rollback";
+  } else if (isDeploying) {
+    return "Deploying...";
+  } else if (isCurrentVersion) {
+    return "Deployed";
+  } else {
+    return "Deploy";
+  }
+}
+
 function renderVersionAction(version, nothingToCommitDiff, app, history, deployVersion) {
   const downstream = app.downstreams[0];
 
@@ -45,27 +70,21 @@ function renderVersionAction(version, nothingToCommitDiff, app, history, deployV
   const isPastVersion = find(downstream.pastVersions, { sequence: version.sequence });
   const needsConfiguration = version.status === "pending_config";
   const showActions = !isPastVersion || app.allowRollback;
-  const isSecondaryBtn = isPastVersion || needsConfiguration;
+  const isRedeploy = isCurrentVersion && version.status === "failed";
   const isRollback = isPastVersion && version.deployedAt && app.allowRollback;
+
+  const isSecondaryBtn = isPastVersion || needsConfiguration || isRedeploy && !isRollback;
+  const isPrimaryButton = !isSecondaryBtn && !isRedeploy && !isRollback;
 
   return (
     <div className="flex flex1 justifyContent--flexEnd">
       {showActions &&
         <button
-          className={classNames("btn", { "secondary blue": isSecondaryBtn, "primary blue": !isSecondaryBtn })}
-          disabled={isCurrentVersion}
+          className={classNames("btn", { "secondary dark": isRollback, "secondary blue": isSecondaryBtn, "primary blue": isPrimaryButton })}
+          disabled={isCurrentVersion && version.status !== "failed" || version.status === "deploying"}
           onClick={() => needsConfiguration ? history.push(`/app/${app.slug}/config/${version.sequence}`) : deployVersion(version)}
         >
-          {needsConfiguration ?
-            "Configure" :
-            downstream.currentVersion?.sequence == undefined ?
-              "Deploy" :
-              isRollback ?
-                "Rollback" :
-                isCurrentVersion ?
-                  "Deployed" :
-                  "Deploy"
-          }
+          {deployButtonStatus(downstream, version, app)}
         </button>
       }
     </div>
@@ -82,7 +101,7 @@ function renderViewPreflights(version, app, match) {
   );
 }
 
-function renderVersionStatus(version, app, match, viewLogs){
+function renderVersionStatus(version, app, match, viewLogs) {
   const downstream = app.downstreams?.length && app.downstreams[0];
   if (!downstream) {
     return null;
@@ -231,7 +250,10 @@ export default function AppVersionHistoryRow(props) {
       </div>
       <div className={`${nothingToCommit && selectedDiffReleases && "u-opacity--half"} flex-column flex1 alignItems--flexEnd`}>
         <div>
-          {renderVersionAction(version, nothingToCommit && selectedDiffReleases, props.app, props.history, props.deployVersion)}
+          {version.status === "failed" ?
+            renderVersionAction(version, nothingToCommit && selectedDiffReleases, props.app, props.history, props.redeployVersion) :
+            renderVersionAction(version, nothingToCommit && selectedDiffReleases, props.app, props.history, props.deployVersion)
+          }
         </div>
         <p className="u-fontSize--small u-lineHeight--normal u-color--dustyGray u-fontWeight--medium u-marginTop--15">Deployed: <span className="u-fontWeight--bold">{version.deployedAt ? dayjs(version.deployedAt).format("MMMM D, YYYY @ hh:mm a") : "N/A"}</span></p>
       </div>
