@@ -7,6 +7,7 @@ import (
 	"crypto/x509"
 	"encoding/pem"
 	"fmt"
+	"html/template"
 	"io/ioutil"
 	"log"
 	"math/rand"
@@ -23,7 +24,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/soheilhy/cmux"
 	"gopkg.in/yaml.v2"
-	"html/template"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
@@ -121,56 +121,63 @@ func watchSecret(certs chan cert, name string, secrets corev1.SecretInterface) {
 	opts := metav1.ListOptions{
 		FieldSelector: fields.OneTermEqualSelector("metadata.name", name).String(),
 	}
-	w, err := secrets.Watch(opts)
-	if err != nil {
-		log.Panic(err)
-	}
-	for e := range w.ResultChan() {
-		switch e.Type {
-		case watch.Added:
-			fallthrough
-		case watch.Modified:
-			secret, ok := e.Object.(*v1.Secret)
-			if !ok {
-				log.Printf("Watched object wasn't a secret")
-				break
-			}
-			certData := secret.Data["tls.crt"]
-			keyData := secret.Data["tls.key"]
-			crt, err := tls.X509KeyPair(certData, keyData)
-			if err != nil {
-				log.Printf("Ignoring secret %s: invalid cert/key pair: %v", name, err)
-				break
-			}
-
-			fingerprint, err := getFingerprint(certData)
-			if err != nil {
-				log.Printf("Ignoring secret %s: %v", name, err)
-				break
-			}
-
-			acceptAnonymousUploads := false
-			if secret.Type == "Opaque" {
-				// Old version version of secret was type 'Opaque' and the
-				// the flag was stored in the Data field.  The new flag is stored as
-				// an annotation.
-				acceptAnonymousUploadsVal, ok := secret.Data["acceptAnonymousUploads"]
-				if ok && string(acceptAnonymousUploadsVal) == "1" {
-					acceptAnonymousUploads = true
+	for {
+		w, err := secrets.Watch(opts)
+		if err != nil {
+			log.Printf("Failed to watch secret %s: %v", name, err)
+			time.Sleep(time.Second * 5)
+			continue
+		}
+		log.Printf("Watching for changes to secret %s", name)
+		for e := range w.ResultChan() {
+			switch e.Type {
+			case watch.Added:
+				fallthrough
+			case watch.Modified:
+				secret, ok := e.Object.(*v1.Secret)
+				if !ok {
+					log.Printf("Watched object wasn't a secret")
+					break
 				}
-			} else {
-				acceptAnonymousUploadsVal, ok := secret.Annotations["acceptAnonymousUploads"]
-				if ok && acceptAnonymousUploadsVal == "1" {
-					acceptAnonymousUploads = true
+				certData := secret.Data["tls.crt"]
+				keyData := secret.Data["tls.key"]
+				crt, err := tls.X509KeyPair(certData, keyData)
+				if err != nil {
+					log.Printf("Ignoring secret %s: invalid cert/key pair: %v", name, err)
+					break
 				}
-			}
 
-			certs <- cert{
-				tlsCert:                crt,
-				fingerprint:            fingerprint,
-				acceptAnonymousUploads: acceptAnonymousUploads,
+				fingerprint, err := getFingerprint(certData)
+				if err != nil {
+					log.Printf("Ignoring secret %s: %v", name, err)
+					break
+				}
+
+				acceptAnonymousUploads := false
+				if secret.Type == "Opaque" {
+					// Old version of secret was type 'Opaque' and
+					// the flag was stored in the Data field.  The new flag is stored as
+					// an annotation.
+					acceptAnonymousUploadsVal, ok := secret.Data["acceptAnonymousUploads"]
+					if ok && string(acceptAnonymousUploadsVal) == "1" {
+						acceptAnonymousUploads = true
+					}
+				} else {
+					acceptAnonymousUploadsVal, ok := secret.Annotations["acceptAnonymousUploads"]
+					if ok && acceptAnonymousUploadsVal == "1" {
+						acceptAnonymousUploads = true
+					}
+				}
+
+				certs <- cert{
+					tlsCert:                crt,
+					fingerprint:            fingerprint,
+					acceptAnonymousUploads: acceptAnonymousUploads,
+				}
 			}
 		}
+		log.Printf("Watch of secret %s unexpectedly terminated. Reconnecting...\n", name)
+		time.Sleep(time.Second * 5)
 	}
 }
 

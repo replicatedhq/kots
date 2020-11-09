@@ -1,4 +1,5 @@
 include ./Makefile.build
+CURRENT_USER := $(shell id -u -n)
 
 .PHONY: test
 test:
@@ -21,3 +22,8 @@ build-alpha:
 build-release:
 	docker build -f deploy/Dockerfile -t kotsadm/kurl-proxy:${GIT_TAG} .
 	docker push kotsadm/kurl-proxy:${GIT_TAG}
+
+.PHONY: build-ttl.sh
+build-ttl.sh: build
+	docker build -f deploy/Dockerfile -t ttl.sh/${CURRENT_USER}/kurl-proxy:12h .
+	docker push ttl.sh/${CURRENT_USER}/kurl-proxy:12h
