@@ -159,6 +159,7 @@ func Start() {
 	sessionAuthRouter.Path("/api/v1/app/{appSlug}/sequence/{sequence}/preflightcommand").Methods("POST").HandlerFunc(handlers.GetPreflightCommand)
 	sessionAuthRouter.Path("/api/v1/preflight/result").Methods("GET").HandlerFunc(handlers.GetLatestPreflightResult)
 	sessionAuthRouter.Path("/api/v1/app/{appSlug}/sequence/{sequence}/deploy").Methods("POST").HandlerFunc(handlers.DeployAppVersion)
+	sessionAuthRouter.Path("/api/v1/app/{appSlug}/sequence/{sequence}/redeploy").Methods("POST").HandlerFunc(handlers.RedeployAppVersion)
 	sessionAuthRouter.Path("/api/v1/app/{appSlug}/sequence/{sequence}/renderedcontents").Methods("GET").HandlerFunc(handlers.GetAppRenderedContents)
 	sessionAuthRouter.Path("/api/v1/app/{appSlug}/sequence/{sequence}/contents").Methods("GET").HandlerFunc(handlers.GetAppContents)
 	sessionAuthRouter.Path("/api/v1/app/{appSlug}/cluster/{clusterId}/dashboard").Methods("GET").HandlerFunc(handlers.GetAppDashboard)

@@ -323,6 +323,21 @@ class AppVersionHistory extends Component {
     }
   }
 
+  redeployVersion = async (version) => {
+    const { match, app } = this.props;
+    const clusterSlug = app.downstreams?.length && app.downstreams[0].cluster?.slug;
+    if (!clusterSlug) {
+      return;
+    }
+
+    await this.props.redeployVersion(match.params.slug, version);
+    await this.fetchKotsDownstreamHistory();
+
+    if (this.props.updateCallback) {
+      this.props.updateCallback();
+    }
+  }
+
   onForceDeployClick = () => {
     this.setState({ showSkipModal: false, showDeployWarningModal: false, displayShowDetailsModal: false });
     const versionToDeploy = this.state.versionToDeploy;
@@ -684,7 +699,8 @@ class AppVersionHistory extends Component {
       app,
       match,
       isBundleUploading,
-      makingCurrentVersionErrMsg
+      makingCurrentVersionErrMsg,
+      redeployVersionErrMsg
     } = this.props;
 
     const {
@@ -832,6 +848,15 @@ class AppVersionHistory extends Component {
                     <p className="err">{makingCurrentVersionErrMsg}</p>
                   </div>
                 </div>}
+              {redeployVersionErrMsg &&
+                <div className="ErrorWrapper flex justifyContent--center">
+                  <div className="icon redWarningIcon u-marginRight--10" />
+                  <div>
+                    <p className="title">Failed to redeploy version</p>
+                    <p className="err">{redeployVersionErrMsg}</p>
+                  </div>
+                </div>
+              }
 
               <div className="TableDiff--Wrapper flex-column flex1">
                 <div className={`flex-column flex1 ${showDiffOverlay ? "u-visibility--hidden" : ""}`}>
@@ -864,6 +889,7 @@ class AppVersionHistory extends Component {
                         deployVersion={this.deployVersion}
                         handleViewLogs={this.handleViewLogs}
                         handleSelectReleasesToDiff={this.handleSelectReleasesToDiff}
+                        redeployVersion={this.redeployVersion}
                       />
                     );
                   }) :
