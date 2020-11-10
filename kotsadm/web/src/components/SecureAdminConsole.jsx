@@ -59,10 +59,15 @@ class SecureAdminConsole extends React.Component {
       })
       .then(async (res) => {
         if (res.status >= 400) {
+          let body = await res.json();
+          let msg = body.error;
+          if (!msg) {
+            msg = res.status === 401 ? "Invalid password. Please try again" : "There was an error logging in. Please try again.";
+          }
           this.setState({
             authLoading: false,
             passwordErr: true,
-            passwordErrMessage: res.status === 401 ? "Invalid password. Please try again" : "There was an error logging in. Please try again",
+            passwordErrMessage: msg,
           });
           return;
         }
