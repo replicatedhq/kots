@@ -165,6 +165,7 @@ func (ctx ConfigCtx) FuncMap() template.FuncMap {
 		"LocalImageName":               ctx.localImageName,
 		"LocalRegistryImagePullSecret": ctx.localRegistryImagePullSecret,
 		"HasLocalRegistry":             ctx.hasLocalRegistry,
+		"SemverNE":                     ctx.SemverNE,
 		"SemverEQ":                     ctx.SemverEQ,
 		"SemverGT":                     ctx.SemverGT,
 		"SemverGTE":                    ctx.SemverGTE,
@@ -376,6 +377,20 @@ func decrypt(input string, cipher *crypto.AESCipher) (string, error) {
 	}
 
 	return string(decrypted), nil
+}
+
+func (ctx ConfigCtx) SemverNE(semver1 string, semver2 string) (bool, error) {
+	s1, err := semver.NewVersion(semver1)
+	if err != nil {
+		return false, errors.Wrapf(err, "failed to parse semver %s", semver1)
+	}
+
+	s2, err := semver.NewVersion(semver2)
+	if err != nil {
+		return false, errors.Wrapf(err, "failed to parse semver %s", semver2)
+	}
+
+	return !s1.Equal(s2), nil
 }
 
 func (ctx ConfigCtx) SemverEQ(semver1 string, semver2 string) (bool, error) {
