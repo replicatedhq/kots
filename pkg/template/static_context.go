@@ -27,6 +27,7 @@ import (
 	sprig "github.com/Masterminds/sprig/v3"
 	units "github.com/docker/go-units"
 	"github.com/pkg/errors"
+	"github.com/replicatedhq/kots/pkg/version"
 	analyze "github.com/replicatedhq/troubleshoot/pkg/analyze"
 	"gopkg.in/yaml.v2"
 	corev1 "k8s.io/api/core/v1"
@@ -87,6 +88,7 @@ func (ctx StaticCtx) FuncMap() template.FuncMap {
 	funcMap["TLSCertFromCA"] = ctx.tlsCertFromCa
 	funcMap["TLSKeyFromCA"] = ctx.tlsKeyFromCa
 
+	funcMap["KotsVersion"] = ctx.kotsVersion
 	funcMap["IsKurl"] = ctx.isKurl
 	funcMap["Distribution"] = ctx.distribution
 	funcMap["NodeCount"] = ctx.nodeCount
@@ -591,4 +593,8 @@ func (ctx StaticCtx) httpProxy() string {
 
 func (ctx StaticCtx) noProxy() string {
 	return os.Getenv("NO_PROXY")
+}
+
+func (ctx StaticCtx) kotsVersion() string {
+	return strings.TrimPrefix(version.Version(), "v")
 }
