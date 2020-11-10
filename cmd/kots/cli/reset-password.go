@@ -135,6 +135,8 @@ func setKotsadmPassword(password string, namespace string) error {
 		}
 	} else {
 		existingSecret.Data["passwordBcrypt"] = []byte(bcryptPassword)
+		delete(existingSecret.Labels, "numAttempts")
+		delete(existingSecret.Labels, "lastFailure")
 
 		_, err := clientset.CoreV1().Secrets(namespace).Update(context.TODO(), existingSecret, metav1.UpdateOptions{})
 		if err != nil {

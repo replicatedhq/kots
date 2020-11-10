@@ -16,46 +16,50 @@ type LoginRequest struct {
 }
 
 type LoginResponse struct {
-	Token string `json:"token"`
+	Error string `json:"error,omitempty"`
+	Token string `json:"token,omitempty"`
 }
 
 func Login(w http.ResponseWriter, r *http.Request) {
+	loginResponse := LoginResponse{}
+
 	loginRequest := LoginRequest{}
 	if err := json.NewDecoder(r.Body).Decode(&loginRequest); err != nil {
 		logger.Error(err)
-		w.WriteHeader(400)
+		JSON(w, http.StatusBadRequest, loginResponse)
 		return
 	}
 
 	foundUser, err := user.LogIn(loginRequest.Password)
-	if err != nil {
-		logger.Error(err)
-		w.WriteHeader(500)
+	if err == user.ErrInvalidPassword {
+		loginResponse.Error = "Invalid password. Please try again."
+		JSON(w, http.StatusUnauthorized, loginResponse)
 		return
-	}
-
-	if foundUser == nil {
-		w.WriteHeader(401)
+	} else if err == user.ErrTooManyAttempts {
+		loginResponse.Error = "Admin Console has been locked.  Please reset password using the \"kubectl kots reset-password\" command."
+		JSON(w, http.StatusUnauthorized, loginResponse)
+		return
+	} else if err != nil {
+		logger.Error(err)
+		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
 	createdSession, err := store.GetStore().CreateSession(foundUser)
 	if err != nil {
 		logger.Error(err)
-		w.WriteHeader(500)
+		JSON(w, http.StatusInternalServerError, loginResponse)
 		return
 	}
 
 	signedJWT, err := session.SignJWT(createdSession)
 	if err != nil {
 		logger.Error(err)
-		w.WriteHeader(500)
+		JSON(w, http.StatusInternalServerError, loginResponse)
 		return
 	}
 
-	loginResponse := LoginResponse{
-		Token: fmt.Sprintf("Bearer %s", signedJWT),
-	}
+	loginResponse.Token = fmt.Sprintf("Bearer %s", signedJWT)
 
-	JSON(w, 200, loginResponse)
+	JSON(w, http.StatusOK, loginResponse)
 }
