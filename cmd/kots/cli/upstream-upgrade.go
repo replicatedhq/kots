@@ -98,7 +98,11 @@ func UpstreamUpgradeCmd() *cobra.Command {
 			}
 
 			log := logger.NewLogger()
-			log.ActionWithSpinner("Checking for application updates")
+			if airgapPath == "" {
+				log.ActionWithSpinner("Checking for application updates")
+			} else {
+				log.ActionWithSpinner("Uploading application update")
+			}
 
 			stopCh := make(chan struct{})
 			defer close(stopCh)
@@ -227,6 +231,12 @@ func UpstreamUpgradeCmd() *cobra.Command {
 			log.FinishSpinner()
 
 			if viper.GetBool("deploy") {
+				if airgapPath != "" {
+					log.ActionWithoutSpinner("")
+					log.ActionWithoutSpinner("Update has been uploaded and is being deployed")
+					return nil
+				}
+
 				if ucr.AvailableUpdates == 0 {
 					log.ActionWithoutSpinner("")
 					log.ActionWithoutSpinner("There are no application updates available, ensuring latest is marked as deployed")
@@ -242,12 +252,17 @@ func UpstreamUpgradeCmd() *cobra.Command {
 				return nil
 			}
 
-			if ucr.AvailableUpdates == 0 {
+			if airgapPath != "" {
 				log.ActionWithoutSpinner("")
-				log.ActionWithoutSpinner("There are no application updates available")
+				log.ActionWithoutSpinner("Update has been uploaded")
 			} else {
-				log.ActionWithoutSpinner("")
-				log.ActionWithoutSpinner(fmt.Sprintf("There are currently %d updates available in the Admin Console", ucr.AvailableUpdates))
+				if ucr.AvailableUpdates == 0 {
+					log.ActionWithoutSpinner("")
+					log.ActionWithoutSpinner("There are no application updates available")
+				} else {
+					log.ActionWithoutSpinner("")
+					log.ActionWithoutSpinner(fmt.Sprintf("There are currently %d updates available in the Admin Console", ucr.AvailableUpdates))
+				}
 			}
 
 			log.ActionWithoutSpinner("To access the Admin Console, run kubectl kots admin-console --namespace %s", v.GetString("namespace"))

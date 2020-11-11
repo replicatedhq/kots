@@ -306,7 +306,7 @@ func updateAppFromAirgap(w http.ResponseWriter, r *http.Request) {
 	}
 
 	go func() {
-		if err := airgap.UpdateAppFromAirgap(a, airgapBundlePath); err != nil {
+		if err := airgap.UpdateAppFromAirgap(a, airgapBundlePath, false); err != nil {
 			logger.Error(errors.Wrap(err, "failed to update app from airgap bundle"))
 			return
 		}
@@ -531,7 +531,7 @@ func bc_updateAppFromAirgap(w http.ResponseWriter, r *http.Request) {
 
 	go func() {
 		defer os.RemoveAll(airgapBundlePath)
-		if err := airgap.UpdateAppFromAirgap(a, airgapBundlePath); err != nil {
+		if err := airgap.UpdateAppFromAirgap(a, airgapBundlePath, false); err != nil {
 			logger.Error(err)
 		}
 	}()

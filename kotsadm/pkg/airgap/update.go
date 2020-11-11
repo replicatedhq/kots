@@ -23,7 +23,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/util"
 )
 
-func UpdateAppFromAirgap(a *apptypes.App, airgapBundlePath string) (finalError error) {
+func UpdateAppFromAirgap(a *apptypes.App, airgapBundlePath string, deploy bool) (finalError error) {
 	finishedCh := make(chan struct{})
 	defer close(finishedCh)
 	go func() {
@@ -61,11 +61,11 @@ func UpdateAppFromAirgap(a *apptypes.App, airgapBundlePath string) (finalError e
 	}
 	defer os.RemoveAll(airgapRoot)
 
-	err = UpdateAppFromPath(a, airgapRoot)
+	err = UpdateAppFromPath(a, airgapRoot, deploy)
 	return errors.Wrap(err, "failed to update app")
 }
 
-func UpdateAppFromPath(a *apptypes.App, airgapRoot string) error {
+func UpdateAppFromPath(a *apptypes.App, airgapRoot string, deploy bool) error {
 	if err := store.GetStore().SetTaskStatus("update-download", "Processing package...", "running"); err != nil {
 		return errors.Wrap(err, "failed to set tasks status")
 	}
@@ -200,6 +200,13 @@ func UpdateAppFromPath(a *apptypes.App, airgapRoot string) error {
 
 	if err := preflight.Run(a.ID, newSequence, true, currentArchivePath); err != nil {
 		return errors.Wrap(err, "failed to start preflights")
+	}
+
+	if deploy {
+		err := version.DeployVersion(a.ID, newSequence)
+		if err != nil {
+			return errors.Wrap(err, "failed to deploy app version")
+		}
 	}
 
 	return nil
