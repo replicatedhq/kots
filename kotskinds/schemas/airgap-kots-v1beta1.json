@@ -17,6 +17,12 @@
       "description": "AirgapSpec defines the desired state of AirgapSpec",
       "type": "object",
       "properties": {
+        "appSlug": {
+          "type": "string"
+        },
+        "channelID": {
+          "type": "string"
+        },
         "channelName": {
           "type": "string"
         },
