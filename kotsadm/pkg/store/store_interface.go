@@ -8,7 +8,6 @@ import (
 	apptypes "github.com/replicatedhq/kots/kotsadm/pkg/app/types"
 	appstatustypes "github.com/replicatedhq/kots/kotsadm/pkg/appstatus/types"
 	downstreamtypes "github.com/replicatedhq/kots/kotsadm/pkg/downstream/types"
-	gitopstypes "github.com/replicatedhq/kots/kotsadm/pkg/gitops/types"
 	installationtypes "github.com/replicatedhq/kots/kotsadm/pkg/online/types"
 	preflighttypes "github.com/replicatedhq/kots/kotsadm/pkg/preflight/types"
 	registrytypes "github.com/replicatedhq/kots/kotsadm/pkg/registry/types"
@@ -18,6 +17,7 @@ import (
 	usertypes "github.com/replicatedhq/kots/kotsadm/pkg/user/types"
 	versiontypes "github.com/replicatedhq/kots/kotsadm/pkg/version/types"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
+	gitopstypes "github.com/replicatedhq/kots/pkg/gitops/types"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	troubleshootredact "github.com/replicatedhq/troubleshoot/pkg/redact"
 )

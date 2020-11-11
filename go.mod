@@ -23,7 +23,7 @@ require (
 	github.com/fatih/color v1.7.0
 	github.com/garyburd/redigo v1.6.0 // indirect
 	github.com/ghodss/yaml v1.0.0
-	github.com/gin-gonic/gin v1.6.3 // indirect
+	github.com/go-git/go-git/v5 v5.2.0
 	github.com/gofrs/uuid v3.3.0+incompatible // indirect
 	github.com/google/gofuzz v1.1.0
 	github.com/google/uuid v1.1.1

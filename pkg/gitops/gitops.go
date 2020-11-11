@@ -108,11 +108,15 @@ func GetDownstreamGitOps(appID string, clusterID string) (*GitOpsConfig, error) 
 	secret, err := clientset.CoreV1().Secrets(os.Getenv("POD_NAMESPACE")).Get(context.TODO(), "kotsadm-gitops", metav1.GetOptions{})
 	if kuberneteserrors.IsNotFound(err) {
 		return nil, nil
+	} else if err != nil {
+		return nil, errors.Wrap(err, "get kotsadm-gitops secret")
 	}
 
 	configMap, err := clientset.CoreV1().ConfigMaps(os.Getenv("POD_NAMESPACE")).Get(context.TODO(), "kotsadm-gitops", metav1.GetOptions{})
 	if kuberneteserrors.IsNotFound(err) {
 		return nil, nil
+	} else if err != nil {
+		return nil, errors.Wrap(err, "get kotsadm-gitops configmap")
 	}
 
 	configMapDataKey := fmt.Sprintf("%s-%s", appID, clusterID)
@@ -199,6 +203,8 @@ func DisableDownstreamGitOps(appID string, clusterID string) error {
 	configMap, err := clientset.CoreV1().ConfigMaps(os.Getenv("POD_NAMESPACE")).Get(context.TODO(), "kotsadm-gitops", metav1.GetOptions{})
 	if kuberneteserrors.IsNotFound(err) {
 		return errors.Wrap(err, "gitops config map not found")
+	} else if err != nil {
+		return errors.Wrap(err, "get kotsadm-gitops configmap")
 	}
 
 	configMapDataKey := fmt.Sprintf("%s-%s", appID, clusterID)
@@ -675,6 +681,75 @@ func CreateGitOpsCommit(gitOpsConfig *GitOpsConfig, appSlug string, appName stri
 	}
 
 	return gitOpsConfig.CommitURL(updatedHash.String()), nil
+}
+
+// GetGitopsKeypairs will return all gitops keypairs in a namespace.
+func GetGitopsKeypairs(namespace string) (map[string]KeyPair, error) {
+	cfg, err := config.GetConfig()
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get cluster config")
+	}
+
+	clientset, err := kubernetes.NewForConfig(cfg)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to create kubernetes clientset")
+	}
+
+	secret, err := clientset.CoreV1().Secrets(namespace).Get(context.TODO(), "kotsadm-gitops", metav1.GetOptions{})
+	if kuberneteserrors.IsNotFound(err) {
+		return nil, nil
+	} else if err != nil {
+		return nil, errors.Wrap(err, "get kotsadm-gitops secret")
+	}
+
+	indexes := map[int64]struct{}{}
+
+	for key, _ := range secret.Data {
+		splitKey := strings.Split(key, ".")
+		if len(splitKey) != 3 {
+			continue
+		}
+
+		newIndex, err := strconv.ParseInt(splitKey[1], 10, 64)
+		if err != nil {
+			continue
+		}
+		indexes[newIndex] = struct{}{}
+	}
+
+	encryptionKeySecret, err := clientset.CoreV1().Secrets(namespace).Get(context.TODO(), "kotsadm-encryption", metav1.GetOptions{})
+	if kuberneteserrors.IsNotFound(err) {
+		return nil, nil
+	} else if err != nil {
+		return nil, errors.Wrap(err, "get kotsadm-encryption secret")
+	}
+
+	cipher, err := crypto.AESCipherFromString(string(encryptionKeySecret.Data["encryptionKey"]))
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to create aes cipher")
+	}
+
+	keypairs := map[string]KeyPair{}
+	for idx, _ := range indexes {
+		provider, publicKey, privateKey, _, _ := gitOpsConfigFromSecretData(idx, secret.Data)
+
+		decodedPrivateKey, err := base64.StdEncoding.DecodeString(privateKey)
+		if err != nil {
+			return nil, errors.Wrapf(err, "failed to decode idx %d private key", idx)
+		}
+
+		decryptedPrivateKey, err := cipher.Decrypt([]byte(decodedPrivateKey))
+		if err != nil {
+			return nil, errors.Wrapf(err, "failed to decrypt idx %d", idx)
+		}
+
+		keypairs[provider] = KeyPair{
+			PrivateKeyPEM: string(decryptedPrivateKey),
+			PublicKeySSH:  publicKey,
+		}
+	}
+
+	return keypairs, nil
 }
 
 func generateKeyPair() (*KeyPair, error) {
