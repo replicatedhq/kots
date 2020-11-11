@@ -165,12 +165,12 @@ func (ctx ConfigCtx) FuncMap() template.FuncMap {
 		"LocalImageName":               ctx.localImageName,
 		"LocalRegistryImagePullSecret": ctx.localRegistryImagePullSecret,
 		"HasLocalRegistry":             ctx.hasLocalRegistry,
-		"SemverNE":                     ctx.SemverNE,
-		"SemverEQ":                     ctx.SemverEQ,
-		"SemverGT":                     ctx.SemverGT,
-		"SemverGTE":                    ctx.SemverGTE,
-		"SemverLT":                     ctx.SemverLT,
-		"SemverLTE":                    ctx.SemverLTE,
+		"SemverNE":                     ctx.semverNE,
+		"SemverEQ":                     ctx.semverEQ,
+		"SemverGT":                     ctx.semverGT,
+		"SemverGTE":                    ctx.semverGTE,
+		"SemverLT":                     ctx.semverLT,
+		"SemverLTE":                    ctx.semverLTE,
 	}
 }
 
@@ -379,7 +379,7 @@ func decrypt(input string, cipher *crypto.AESCipher) (string, error) {
 	return string(decrypted), nil
 }
 
-func (ctx ConfigCtx) SemverNE(semver1 string, semver2 string) (bool, error) {
+func (ctx ConfigCtx) semverNE(semver1 string, semver2 string) (bool, error) {
 	s1, err := semver.NewVersion(semver1)
 	if err != nil {
 		return false, errors.Wrapf(err, "failed to parse semver %s", semver1)
@@ -393,7 +393,7 @@ func (ctx ConfigCtx) SemverNE(semver1 string, semver2 string) (bool, error) {
 	return !s1.Equal(s2), nil
 }
 
-func (ctx ConfigCtx) SemverEQ(semver1 string, semver2 string) (bool, error) {
+func (ctx ConfigCtx) semverEQ(semver1 string, semver2 string) (bool, error) {
 	s1, err := semver.NewVersion(semver1)
 	if err != nil {
 		return false, errors.Wrapf(err, "failed to parse semver %s", semver1)
@@ -407,7 +407,7 @@ func (ctx ConfigCtx) SemverEQ(semver1 string, semver2 string) (bool, error) {
 	return s1.Equal(s2), nil
 }
 
-func (ctx ConfigCtx) SemverGT(semver1 string, semver2 string) (bool, error) {
+func (ctx ConfigCtx) semverGT(semver1 string, semver2 string) (bool, error) {
 	s1, err := semver.NewVersion(semver1)
 	if err != nil {
 		return false, errors.Wrapf(err, "failed to parse semver %s", semver1)
@@ -421,7 +421,7 @@ func (ctx ConfigCtx) SemverGT(semver1 string, semver2 string) (bool, error) {
 	return s1.GreaterThan(s2), nil
 }
 
-func (ctx ConfigCtx) SemverGTE(semver1 string, semver2 string) (bool, error) {
+func (ctx ConfigCtx) semverGTE(semver1 string, semver2 string) (bool, error) {
 	s1, err := semver.NewVersion(semver1)
 	if err != nil {
 		return false, errors.Wrapf(err, "failed to parse semver %s", semver1)
@@ -435,7 +435,7 @@ func (ctx ConfigCtx) SemverGTE(semver1 string, semver2 string) (bool, error) {
 	return s1.GreaterThan(s2) || s1.Equal(s2), nil
 }
 
-func (ctx ConfigCtx) SemverLT(semver1 string, semver2 string) (bool, error) {
+func (ctx ConfigCtx) semverLT(semver1 string, semver2 string) (bool, error) {
 	s1, err := semver.NewVersion(semver1)
 	if err != nil {
 		return false, errors.Wrapf(err, "failed to parse semver %s", semver1)
@@ -449,7 +449,7 @@ func (ctx ConfigCtx) SemverLT(semver1 string, semver2 string) (bool, error) {
 	return s1.LessThan(s2), nil
 }
 
-func (ctx ConfigCtx) SemverLTE(semver1 string, semver2 string) (bool, error) {
+func (ctx ConfigCtx) semverLTE(semver1 string, semver2 string) (bool, error) {
 	s1, err := semver.NewVersion(semver1)
 	if err != nil {
 		return false, errors.Wrapf(err, "failed to parse semver %s", semver1)
