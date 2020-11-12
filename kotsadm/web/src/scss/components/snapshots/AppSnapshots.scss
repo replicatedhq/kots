@@ -182,3 +182,19 @@
   padding: 25px;
   text-align: center;
 }
+
+.VeleroWarningBlock {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: #FBE9D7;
+  padding: 10px;
+
+  p {
+    font-weight: 500;
+    font-size: 14px;
+    line-height: 16px;
+    color: #EC8F39;
+    margin-left: 10px;
+  }
+}
