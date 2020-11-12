@@ -467,88 +467,99 @@ class AppSnapshots extends Component {
       )
     }
 
+    const isVeleroCorrectVersion = snapshotSettings?.isVeleroRunning && snapshotSettings?.veleroVersion === "v1.5.1";
+
+    
     return (
-      <div className="container flex-column flex1 u-overflow--auto u-paddingTop--30 u-paddingBottom--20 alignItems--center">
+      <div className="flex1 flex-column u-overflow--auto">
         <Helmet>
           <title>{`${appTitle} Snapshots`}</title>
         </Helmet>
-        <div className="AppSnapshots--wrapper flex1 flex-column u-width--full">
-          <div className="flex flex-auto alignItems--flexStart justifyContent--spaceBetween">
-            <p className="u-fontWeight--bold u-color--tuna u-fontSize--larger u-lineHeight--normal u-marginBottom--10">Snapshots</p>
-            {startSnapshotErr ?
-              <div className="flex flex1 u-marginLeft--10 alignItems--center alignSelf--center u-marginBottom--10">
-                <p className="u-color--chestnut u-fontSize--small u-fontWeight--medium u-lineHeight--normal">{startSnapshotErrorMsg}</p>
-              </div>
-              : null}
-            <div className="flex">
-              <Link to={`/snapshots/settings`} className="replicated-link u-fontSize--small u-fontWeight--bold u-marginRight--20 flex alignItems--center"><span className="icon snapshotSettingsIcon u-marginRight--5" />Settings</Link>
-              <Link to={`/app/${app.slug}/snapshots/schedule`} className="replicated-link u-fontSize--small u-fontWeight--bold u-marginRight--20 flex alignItems--center"><span className="icon snapshotScheduleIcon u-marginRight--5" />Schedule</Link>
-              <span data-for="startSnapshotBtn" data-tip="startSnapshotBtn" data-tip-disable={false}>
-                <button className="btn primary blue" disabled={startingSnapshot || inProgressSnapshotExist} onClick={this.startManualSnapshot}>{startingSnapshot ? "Starting a snapshot..." : "Start a snapshot"}</button>
-              </span>
-              {inProgressSnapshotExist &&
-                <ReactTooltip id="startSnapshotBtn" effect="solid" className="replicated-tooltip">
-                  <span>You can't start a snapshot while another one is In Progress</span>
-                </ReactTooltip>}
-            </div>
+        {!isVeleroCorrectVersion ?
+          <div className="VeleroWarningBlock">
+            <span className="icon snapshot-warning-icon" />
+            <p> To use snapshots reliably you have to install velero version 1.5.1 </p>
           </div>
-          {snapshots?.map((snapshot) => (
-            <AppSnapshotRow
-              key={`snapshot-${snapshot.name}-${snapshot.started}`}
-              snapshot={snapshot}
-              appSlug={app.slug}
+          : null}
+        <div className="container flex-column flex1 u-paddingTop--30 u-paddingBottom--20 alignItems--center">
+          <div className="AppSnapshots--wrapper flex1 flex-column u-width--full">
+            <div className="flex flex-auto alignItems--flexStart justifyContent--spaceBetween">
+              <p className="u-fontWeight--bold u-color--tuna u-fontSize--larger u-lineHeight--normal u-marginBottom--10">Snapshots</p>
+              {startSnapshotErr ?
+                <div className="flex flex1 u-marginLeft--10 alignItems--center alignSelf--center u-marginBottom--10">
+                  <p className="u-color--chestnut u-fontSize--small u-fontWeight--medium u-lineHeight--normal">{startSnapshotErrorMsg}</p>
+                </div>
+                : null}
+              <div className="flex">
+                <Link to={`/snapshots/settings`} className="replicated-link u-fontSize--small u-fontWeight--bold u-marginRight--20 flex alignItems--center"><span className="icon snapshotSettingsIcon u-marginRight--5" />Settings</Link>
+                <Link to={`/app/${app.slug}/snapshots/schedule`} className="replicated-link u-fontSize--small u-fontWeight--bold u-marginRight--20 flex alignItems--center"><span className="icon snapshotScheduleIcon u-marginRight--5" />Schedule</Link>
+                <span data-for="startSnapshotBtn" data-tip="startSnapshotBtn" data-tip-disable={false}>
+                  <button className="btn primary blue" disabled={startingSnapshot || inProgressSnapshotExist} onClick={this.startManualSnapshot}>{startingSnapshot ? "Starting a snapshot..." : "Start a snapshot"}</button>
+                </span>
+                {inProgressSnapshotExist &&
+                  <ReactTooltip id="startSnapshotBtn" effect="solid" className="replicated-tooltip">
+                    <span>You can't start a snapshot while another one is In Progress</span>
+                  </ReactTooltip>}
+              </div>
+            </div>
+            {snapshots?.map((snapshot) => (
+              <AppSnapshotRow
+                key={`snapshot-${snapshot.name}-${snapshot.started}`}
+                snapshot={snapshot}
+                appSlug={app.slug}
+                toggleConfirmDeleteModal={this.toggleConfirmDeleteModal}
+                toggleRestoreModal={this.toggleRestoreModal}
+              />
+            ))
+            }
+          </div>
+          {displayScheduleSnapshotModal &&
+            <Modal
+              isOpen={displayScheduleSnapshotModal}
+              onRequestClose={this.toggleScheduleSnapshotModal}
+              shouldReturnFocusAfterClose={false}
+              contentLabel="Schedule snapshot modal"
+              ariaHideApp={false}
+              className="ScheduleSnapshotModal--wrapper MediumSize Modal"
+            >
+              <div className="Modal-body">
+                <ScheduleSnapshotForm
+                  onSubmit={this.handleScheduleSubmit}
+                />
+                <div className="u-marginTop--10 flex">
+                  <button onClick={this.toggleScheduleSnapshotModal} className="btn secondary blue u-marginRight--10">Cancel</button>
+                  <button onClick={this.scheduleSnapshot} className="btn primary blue">Save</button>
+                </div>
+              </div>
+            </Modal>
+          }
+          {deleteSnapshotModal &&
+            <DeleteSnapshotModal
+              deleteSnapshotModal={deleteSnapshotModal}
               toggleConfirmDeleteModal={this.toggleConfirmDeleteModal}
-              toggleRestoreModal={this.toggleRestoreModal}
+              handleDeleteSnapshot={this.handleDeleteSnapshot}
+              snapshotToDelete={snapshotToDelete}
+              deletingSnapshot={deletingSnapshot}
+              deleteErr={deleteErr}
+              deleteErrorMsg={deleteErrorMsg}
             />
-          ))
+          }
+          {restoreSnapshotModal &&
+            <RestoreSnapshotModal
+              restoreSnapshotModal={restoreSnapshotModal}
+              toggleRestoreModal={this.toggleRestoreModal}
+              handleRestoreSnapshot={this.handleRestoreSnapshot}
+              snapshotToRestore={snapshotToRestore}
+              restoringSnapshot={restoringSnapshot}
+              restoreErr={restoreErr}
+              restoreErrorMsg={restoreErrorMsg}
+              app={this.props.app}
+              appSlugToRestore={this.state.appSlugToRestore}
+              appSlugMismatch={this.state.appSlugMismatch}
+              handleApplicationSlugChange={this.handleApplicationSlugChange}
+            />
           }
         </div>
-        {displayScheduleSnapshotModal &&
-          <Modal
-            isOpen={displayScheduleSnapshotModal}
-            onRequestClose={this.toggleScheduleSnapshotModal}
-            shouldReturnFocusAfterClose={false}
-            contentLabel="Schedule snapshot modal"
-            ariaHideApp={false}
-            className="ScheduleSnapshotModal--wrapper MediumSize Modal"
-          >
-            <div className="Modal-body">
-              <ScheduleSnapshotForm
-                onSubmit={this.handleScheduleSubmit}
-              />
-              <div className="u-marginTop--10 flex">
-                <button onClick={this.toggleScheduleSnapshotModal} className="btn secondary blue u-marginRight--10">Cancel</button>
-                <button onClick={this.scheduleSnapshot} className="btn primary blue">Save</button>
-              </div>
-            </div>
-          </Modal>
-        }
-        {deleteSnapshotModal &&
-          <DeleteSnapshotModal
-            deleteSnapshotModal={deleteSnapshotModal}
-            toggleConfirmDeleteModal={this.toggleConfirmDeleteModal}
-            handleDeleteSnapshot={this.handleDeleteSnapshot}
-            snapshotToDelete={snapshotToDelete}
-            deletingSnapshot={deletingSnapshot}
-            deleteErr={deleteErr}
-            deleteErrorMsg={deleteErrorMsg}
-          />
-        }
-        {restoreSnapshotModal &&
-          <RestoreSnapshotModal
-            restoreSnapshotModal={restoreSnapshotModal}
-            toggleRestoreModal={this.toggleRestoreModal}
-            handleRestoreSnapshot={this.handleRestoreSnapshot}
-            snapshotToRestore={snapshotToRestore}
-            restoringSnapshot={restoringSnapshot}
-            restoreErr={restoreErr}
-            restoreErrorMsg={restoreErrorMsg}
-            app={this.props.app}
-            appSlugToRestore={this.state.appSlugToRestore}
-            appSlugMismatch={this.state.appSlugMismatch}
-            handleApplicationSlugChange={this.handleApplicationSlugChange}
-          />
-        }
       </div>
     );
   }

@@ -161,26 +161,36 @@ class SnapshotSettings extends Component {
       )
     }
 
+    const isVeleroCorrectVersion = snapshotSettings?.isVeleroRunning && snapshotSettings?.veleroVersion === "v1.5.1";
+
     return (
-      <div className="container flex-column flex1 u-overflow--auto u-paddingTop--30 u-paddingBottom--20 u-marginTop--10 alignItems--center">
+      <div className="flex1 flex-column u-overflow--auto">
         <Helmet>
           <title>Snapshot Settings</title>
         </Helmet>
-        <SnapshotStorageDestination
-          snapshotSettings={snapshotSettings}
-          updateSettings={this.updateSettings}
-          fetchSnapshotSettings={this.fetchSnapshotSettings}
-          updateConfirm={updateConfirm}
-          updatingSettings={updatingSettings}
-          updateErrorMsg={updateErrorMsg}
-          renderNotVeleroMessage={this.renderNotVeleroMessage}
-          toggleSnapshotView={this.toggleSnapshotView}
-          isEmptyView={isEmptyView}
-          hideCheckVeleroButton={hideCheckVeleroButton}
-          isLicenseUpload={isLicenseUpload}
-          configureSnapshotsModal={this.state.configureSnapshotsModal}
-          toggleConfigureModal={this.toggleConfigureModal}
-          isKurlEnabled={this.props.isKurlEnabled} />
+        {!isVeleroCorrectVersion ?
+          <div className="VeleroWarningBlock">
+            <span className="icon snapshot-warning-icon" />
+            <p> To use snapshots reliably you have to install velero version 1.5.1 </p>
+          </div>
+          : null}
+        <div className="container flex-column flex1u-paddingTop--30 u-paddingBottom--20 u-marginTop--10 alignItems--center">
+          <SnapshotStorageDestination
+            snapshotSettings={snapshotSettings}
+            updateSettings={this.updateSettings}
+            fetchSnapshotSettings={this.fetchSnapshotSettings}
+            updateConfirm={updateConfirm}
+            updatingSettings={updatingSettings}
+            updateErrorMsg={updateErrorMsg}
+            renderNotVeleroMessage={this.renderNotVeleroMessage}
+            toggleSnapshotView={this.toggleSnapshotView}
+            isEmptyView={isEmptyView}
+            hideCheckVeleroButton={hideCheckVeleroButton}
+            isLicenseUpload={isLicenseUpload}
+            configureSnapshotsModal={this.state.configureSnapshotsModal}
+            toggleConfigureModal={this.toggleConfigureModal}
+            isKurlEnabled={this.props.isKurlEnabled} />
+        </div>
       </div>
     );
   }

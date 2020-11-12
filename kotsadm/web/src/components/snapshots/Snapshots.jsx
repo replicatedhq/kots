@@ -119,7 +119,7 @@ class Snapshots extends Component {
     }
   }
 
-  startInstanceSnapshot =  () => {
+  startInstanceSnapshot = () => {
     const fakeProgressSnapshot = {
       name: "Preparing snapshot",
       status: "InProgress",
@@ -289,65 +289,76 @@ class Snapshots extends Component {
       )
     }
 
+    const isVeleroCorrectVersion = snapshotSettings?.isVeleroRunning && snapshotSettings?.veleroVersion === "v1.5.1";
+
+
     return (
-      <div className="container flex-column flex1 u-overflow--auto u-paddingTop--30 u-paddingBottom--20 alignItems--center">
+      <div className="flex1 flex-column u-overflow--auto">
         <Helmet>
           <title>Snapshots</title>
         </Helmet>
-        <div className="AppSnapshots--wrapper flex1 flex-column u-width--full">
-          <div className={`flex flex-auto alignItems--center justifyContent--spaceBetween ${(snapshots?.length > 0 && snapshotSettings?.veleroVersion !== "") && "u-borderBottom--gray darker"}`}>
-            <p className="u-fontWeight--bold u-color--tuna u-fontSize--larger u-lineHeight--normal u-marginBottom--15">Snapshots</p>
-            {startSnapshotErr ?
-              <div className="flex flex1 alignItems--center alignSelf--center justifyContent--center u-marginBottom--10">
-                <p className="u-color--chestnut u-fontSize--small u-fontWeight--medium u-lineHeight--normal">{startSnapshotErrorMsg}</p>
-              </div>
-              : null}
-            <div className="flex u-marginBottom--15">
-              <Link to={`/snapshots/settings`} className="replicated-link u-fontSize--small u-fontWeight--bold u-marginRight--20 flex alignItems--center"><span className="icon snapshotSettingsIcon u-marginRight--5" />Settings</Link>
-              {snapshotSettings?.veleroVersion !== "" && !isKurlEnabled &&
-                <span data-for="startSnapshotBtn" data-tip="startSnapshotBtn" data-tip-disable={false}>
-                  <button className="btn primary blue" disabled={startingSnapshot || (inProgressSnapshotExist && !startSnapshotErr)} onClick={this.startInstanceSnapshot}>{startingSnapshot ? "Starting a snapshot..." : "Start a snapshot"}</button>
-                </span>}
-              {(inProgressSnapshotExist && !startSnapshotErr) &&
-                <ReactTooltip id="startSnapshotBtn" effect="solid" className="replicated-tooltip">
-                  <span>You can't start a snapshot while another one is In Progress</span>
-                </ReactTooltip>}
-            </div>
+        {!isVeleroCorrectVersion ?
+          <div className="VeleroWarningBlock">
+            <span className="icon snapshot-warning-icon" />
+            <p> To use snapshots reliably you have to install velero version 1.5.1 </p>
           </div>
-          {snapshots?.length > 0 && snapshotSettings?.veleroVersion !== "" && !isKurlEnabled ?
-            <div className="flex flex-column">
-              {snapshots?.map((snapshot) => (
-                <SnapshotRow
-                  key={`snapshot-${snapshot.name}-${snapshot.started}`}
-                  snapshot={snapshot}
-                  toggleConfirmDeleteModal={this.toggleConfirmDeleteModal}
-                  toggleRestoreModal={this.toggleRestoreModal}
-                />
-              ))}
-            </div> :
-            !isStartButtonClicked ?
-              <div className="flex flex-column u-position--relative">
-                {[0, 1, 2, 3, 4, 5].map((el) => (<DummySnapshotRow key={el} />
+          : null}
+        <div className="container flex-column flex1 u-paddingTop--30 u-paddingBottom--20 alignItems--center">
+          <div className="AppSnapshots--wrapper flex1 flex-column u-width--full">
+            <div className={`flex flex-auto alignItems--center justifyContent--spaceBetween ${(snapshots?.length > 0 && snapshotSettings?.veleroVersion !== "") && "u-borderBottom--gray darker"}`}>
+              <p className="u-fontWeight--bold u-color--tuna u-fontSize--larger u-lineHeight--normal u-marginBottom--15">Snapshots</p>
+              {startSnapshotErr ?
+                <div className="flex flex1 alignItems--center alignSelf--center justifyContent--center u-marginBottom--10">
+                  <p className="u-color--chestnut u-fontSize--small u-fontWeight--medium u-lineHeight--normal">{startSnapshotErrorMsg}</p>
+                </div>
+                : null}
+              <div className="flex u-marginBottom--15">
+                <Link to={`/snapshots/settings`} className="replicated-link u-fontSize--small u-fontWeight--bold u-marginRight--20 flex alignItems--center"><span className="icon snapshotSettingsIcon u-marginRight--5" />Settings</Link>
+                {snapshotSettings?.veleroVersion !== "" && !isKurlEnabled &&
+                  <span data-for="startSnapshotBtn" data-tip="startSnapshotBtn" data-tip-disable={false}>
+                    <button className="btn primary blue" disabled={startingSnapshot || (inProgressSnapshotExist && !startSnapshotErr)} onClick={this.startInstanceSnapshot}>{startingSnapshot ? "Starting a snapshot..." : "Start a snapshot"}</button>
+                  </span>}
+                {(inProgressSnapshotExist && !startSnapshotErr) &&
+                  <ReactTooltip id="startSnapshotBtn" effect="solid" className="replicated-tooltip">
+                    <span>You can't start a snapshot while another one is In Progress</span>
+                  </ReactTooltip>}
+              </div>
+            </div>
+            {snapshots?.length > 0 && snapshotSettings?.veleroVersion !== "" && !isKurlEnabled ?
+              <div className="flex flex-column">
+                {snapshots?.map((snapshot) => (
+                  <SnapshotRow
+                    key={`snapshot-${snapshot.name}-${snapshot.started}`}
+                    snapshot={snapshot}
+                    toggleConfirmDeleteModal={this.toggleConfirmDeleteModal}
+                    toggleRestoreModal={this.toggleRestoreModal}
+                  />
                 ))}
-                <GettingStartedSnapshots isVeleroInstalled={snapshotSettings?.veleroVersion !== ""} history={this.props.history} startInstanceSnapshot={this.startInstanceSnapshot} isKurlEnabled={isKurlEnabled} />
-              </div> : null}
+              </div> :
+              !isStartButtonClicked ?
+                <div className="flex flex-column u-position--relative">
+                  {[0, 1, 2, 3, 4, 5].map((el) => (<DummySnapshotRow key={el} />
+                  ))}
+                  <GettingStartedSnapshots isVeleroInstalled={snapshotSettings?.veleroVersion !== ""} history={this.props.history} startInstanceSnapshot={this.startInstanceSnapshot} isKurlEnabled={isKurlEnabled} />
+                </div> : null}
+          </div>
+          {this.state.deleteSnapshotModal &&
+            <DeleteSnapshotModal
+              deleteSnapshotModal={this.state.deleteSnapshotModal}
+              toggleConfirmDeleteModal={this.toggleConfirmDeleteModal}
+              handleDeleteSnapshot={this.handleDeleteSnapshot}
+              snapshotToDelete={this.state.snapshotToDelete}
+              deleteErr={this.state.deleteErr}
+              deleteErrorMsg={this.state.deleteErrorMsg}
+            />
+          }
+          {this.state.restoreSnapshotModal &&
+            <BackupRestoreModal
+              restoreSnapshotModal={this.state.restoreSnapshotModal}
+              toggleRestoreModal={this.toggleRestoreModal}
+              snapshotToRestore={this.state.snapshotToRestore}
+            />}
         </div>
-        {this.state.deleteSnapshotModal &&
-          <DeleteSnapshotModal
-            deleteSnapshotModal={this.state.deleteSnapshotModal}
-            toggleConfirmDeleteModal={this.toggleConfirmDeleteModal}
-            handleDeleteSnapshot={this.handleDeleteSnapshot}
-            snapshotToDelete={this.state.snapshotToDelete}
-            deleteErr={this.state.deleteErr}
-            deleteErrorMsg={this.state.deleteErrorMsg}
-          />
-        }
-        {this.state.restoreSnapshotModal &&
-          <BackupRestoreModal
-            restoreSnapshotModal={this.state.restoreSnapshotModal}
-            toggleRestoreModal={this.toggleRestoreModal}
-            snapshotToRestore={this.state.snapshotToRestore}
-          />}
       </div>
     );
   }
