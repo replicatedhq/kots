@@ -11,23 +11,26 @@ import (
 
 func TestVersion(t *testing.T) {
 	tests := []struct {
-		name string
-		want string
+		name    string
+		version string
+		want    string
 	}{
 		{
-			name: "empty",
-			want: "",
+			name:    "empty",
+			version: "",
+			want:    "v0.0.0-unknown",
 		},
 		{
-			name: "version string",
-			want: "v0.1.2",
+			name:    "version string",
+			version: "v0.1.2",
+			want:    "v0.1.2",
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			req := require.New(t)
 
-			version = tt.want
+			version = tt.version
 			initBuild()
 
 			got := Version()
