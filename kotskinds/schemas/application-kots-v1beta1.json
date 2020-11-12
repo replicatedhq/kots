@@ -115,6 +115,9 @@
             }
           }
         },
+        "proxyPublicImages": {
+          "type": "boolean"
+        },
         "releaseNotes": {
           "type": "string"
         },

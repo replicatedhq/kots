@@ -17,6 +17,9 @@
       "description": "InstallationSpec defines the desired state of InstallationSpec",
       "type": "object",
       "properties": {
+        "channelID": {
+          "type": "string"
+        },
         "channelName": {
           "type": "string"
         },
@@ -40,11 +43,32 @@
         "releaseNotes": {
           "type": "string"
         },
+        "releasedAt": {
+          "type": "string",
+          "format": "date-time"
+        },
         "updateCursor": {
           "type": "string"
         },
         "versionLabel": {
           "type": "string"
+        },
+        "yamlErrors": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "path"
+            ],
+            "properties": {
+              "error": {
+                "type": "string"
+              },
+              "path": {
+                "type": "string"
+              }
+            }
+          }
         }
       }
     },

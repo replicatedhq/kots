@@ -116,11 +116,15 @@ func WriteUpstream(u *types.Upstream, options types.WriteOptions) error {
 			UpdateCursor:  u.UpdateCursor,
 			ChannelID:     channelID,
 			ChannelName:   channelName,
-			ReleasedAt:    u.ReleasedAt,
 			VersionLabel:  u.VersionLabel,
 			ReleaseNotes:  u.ReleaseNotes,
 			EncryptionKey: encryptionKey,
 		},
+	}
+
+	if u.ReleasedAt != nil {
+		releasedAt := metav1.NewTime(*u.ReleasedAt)
+		installation.Spec.ReleasedAt = &releasedAt
 	}
 
 	if _, err := os.Stat(path.Join(renderDir, "userdata")); os.IsNotExist(err) {

@@ -25,6 +25,9 @@
         "appSlug": {
           "type": "string"
         },
+        "channelID": {
+          "type": "string"
+        },
         "channelName": {
           "type": "string"
         },
