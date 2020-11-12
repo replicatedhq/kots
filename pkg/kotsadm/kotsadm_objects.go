@@ -61,6 +61,16 @@ func kotsadmRole(namespace string) *rbacv1.Role {
 				Resources: []string{"secrets"},
 				Verbs:     metav1.Verbs{"*"},
 			},
+			{
+				APIGroups: []string{""},
+				Resources: []string{"pods"},
+				Verbs:     metav1.Verbs{"list"},
+			},
+			{
+				APIGroups: []string{""},
+				Resources: []string{"services"},
+				Verbs:     metav1.Verbs{"get"},
+			},
 		},
 	}
 
