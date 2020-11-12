@@ -85,3 +85,32 @@ func (s S3PGStore) GetLicenseForAppVersion(appID string, sequence int64) (*kotsv
 
 	return nil, nil
 }
+
+func (s S3PGStore) GetAllAppLicenses() ([]*kotsv1beta1.License, error) {
+	db := persistence.MustGetPGSession()
+	query := `select license from app`
+	rows, err := db.Query(query)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to query")
+	}
+	defer rows.Close()
+
+	var licenseStr sql.NullString
+	licenses := []*kotsv1beta1.License{}
+	for rows.Next() {
+		if err := rows.Scan(&licenseStr); err != nil {
+			return nil, errors.Wrap(err, "failed to scan")
+		}
+		if licenseStr.Valid {
+			decode := scheme.Codecs.UniversalDeserializer().Decode
+			obj, _, err := decode([]byte(licenseStr.String), nil, nil)
+			if err != nil {
+				return nil, errors.Wrap(err, "failed to decode license yaml")
+			}
+			license := obj.(*kotsv1beta1.License)
+			licenses = append(licenses, license)
+		}
+	}
+
+	return licenses, nil
+}

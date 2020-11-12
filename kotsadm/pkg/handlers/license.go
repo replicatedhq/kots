@@ -264,6 +264,30 @@ func UploadNewLicense(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	allLicenses, err := store.GetStore().GetAllAppLicenses()
+	if err != nil {
+		logger.Error(err)
+		uploadLicenseResponse.Error = err.Error()
+		JSON(w, 500, uploadLicenseResponse)
+		return
+	}
+
+	// check does license already exist
+	existingLicense, err := license.CheckDoesLicenseExists(allLicenses, uploadLicenseRequest.LicenseData)
+	if err != nil {
+		logger.Error(err)
+		uploadLicenseResponse.Error = err.Error()
+		JSON(w, 500, uploadLicenseResponse)
+		return
+	}
+
+	if existingLicense != nil {
+		uploadLicenseResponse.Error = "License already exists"
+		uploadLicenseResponse.Slug = existingLicense.Spec.AppSlug
+		JSON(w, 400, uploadLicenseResponse)
+		return
+	}
+
 	skipImagePush, err := kotsutil.IsImagesPushedSet(kotsadmtypes.KotsadmConfigMap)
 	if err != nil {
 		logger.Error(err)
