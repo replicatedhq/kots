@@ -11,6 +11,7 @@ type RenderOptions struct {
 	Namespace              string
 	HelmVersion            string
 	HelmOptions            []string
+	HelmValues             map[string]interface{}
 	LocalRegistryHost      string
 	LocalRegistryNamespace string
 	LocalRegistryUsername  string

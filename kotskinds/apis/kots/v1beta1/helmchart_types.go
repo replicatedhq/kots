@@ -18,7 +18,6 @@ package v1beta1
 
 import (
 	"encoding/json"
-	"fmt"
 	"strings"
 
 	"github.com/pkg/errors"
@@ -40,13 +39,13 @@ type MappedChartValue struct {
 	array    []*MappedChartValue          `json:"-"`
 }
 
-func (m *MappedChartValue) GetBuiltValue(updater func(string) (string, error)) (interface{}, error) {
+func (m *MappedChartValue) getBuiltValue(updater func(string) (string, error)) (interface{}, error) {
 	if m.valueType == "string" {
 		updatedString, err := updater(m.strValue)
 		if err != nil {
 			return nil, errors.Wrap(err, "update built value")
 		}
-		return escapeValueIfNeeded(updatedString), nil
+		return updatedString, nil
 	}
 	if m.valueType == "bool" {
 		return m.boolValue, nil
@@ -61,7 +60,7 @@ func (m *MappedChartValue) GetBuiltValue(updater func(string) (string, error)) (
 	if m.valueType == "children" {
 		children := map[string]interface{}{}
 		for k, v := range m.children {
-			childValue, err := v.GetBuiltValue(updater)
+			childValue, err := v.getBuiltValue(updater)
 			if err != nil {
 				return nil, errors.Wrapf(err, "failed to get value of child %s", k)
 			}
@@ -72,7 +71,7 @@ func (m *MappedChartValue) GetBuiltValue(updater func(string) (string, error)) (
 	if m.valueType == "array" {
 		var elements []interface{}
 		for i, v := range m.array {
-			elValue, err := v.GetBuiltValue(updater)
+			elValue, err := v.getBuiltValue(updater)
 			if err != nil {
 				return nil, errors.Wrapf(err, "failed to get value of child %d", i)
 			}
@@ -164,59 +163,6 @@ type ChartIdentifier struct {
 	ChartVersion string `json:"chartVersion"`
 }
 
-func renderOneLevelValues(values map[string]MappedChartValue, parent []string, updater func(string) (string, error)) ([]string, error) {
-	keys := []string{}
-
-	for k, v := range values {
-		if v.valueType == "children" {
-			notNilChildren := map[string]MappedChartValue{}
-			for ck, cv := range v.children {
-				if cv != nil {
-					notNilChildren[ck] = *cv
-				}
-			}
-
-			next := append([]string{}, parent...)
-			if k != "" {
-				next = append(next, escapeKeyIfNeeded(k))
-			}
-			childKeys, err := renderOneLevelValues(notNilChildren, next, updater)
-			if err != nil {
-				return nil, errors.Wrap(err, "failed to get children")
-			}
-
-			keys = append(keys, childKeys...)
-		} else if v.valueType == "array" {
-			for i, mv := range v.array {
-				notNilChildren := map[string]MappedChartValue{}
-				notNilChildren[""] = *mv
-
-				key := fmt.Sprintf("%s[%d]", escapeKeyIfNeeded(k), i)
-				childKeys, err := renderOneLevelValues(notNilChildren, append(parent, key), updater)
-				if err != nil {
-					return nil, errors.Wrap(err, "failed to get children")
-				}
-
-				keys = append(keys, childKeys...)
-			}
-		} else {
-			value, err := v.GetBuiltValue(updater)
-			if err != nil {
-				return nil, errors.Wrap(err, "failed to get value")
-			}
-
-			next := append([]string{}, parent...)
-			if k != "" {
-				next = append(next, escapeKeyIfNeeded(k))
-			}
-			key := strings.Join(next, ".")
-			keys = append(keys, fmt.Sprintf("%s=%v", key, value))
-		}
-	}
-
-	return keys, nil
-}
-
 func escapeKeyIfNeeded(in string) string {
 	return strings.NewReplacer(
 		".", `\.`,
@@ -229,8 +175,49 @@ func escapeValueIfNeeded(in string) string {
 	).Replace(in)
 }
 
-func (h *HelmChartSpec) RenderValues(values map[string]MappedChartValue, updater func(string) (string, error)) ([]string, error) {
-	return renderOneLevelValues(values, []string{}, updater)
+func (h *HelmChartSpec) RenderValues(values map[string]MappedChartValue, updater func(string) (string, error)) (map[string]interface{}, error) {
+	result := map[string]interface{}{}
+
+	for k, v := range values {
+		value, err := h.renderValue(&v, updater)
+		if err != nil {
+			return nil, errors.Wrapf(err, "failed to render value at %s", k)
+		}
+
+		result[k] = value
+	}
+
+	return result, nil
+}
+
+func (h *HelmChartSpec) renderValue(value *MappedChartValue, updater func(string) (string, error)) (interface{}, error) {
+	if value.valueType == "children" {
+		result := map[string]interface{}{}
+		for k, v := range value.children {
+			built, err := h.renderValue(v, updater)
+			if err != nil {
+				return nil, errors.Wrapf(err, "failed to render child value at key %s", k)
+			}
+			result[k] = built
+		}
+		return result, nil
+	} else if value.valueType == "array" {
+		result := []interface{}{}
+		for _, v := range value.array {
+			built, err := h.renderValue(v, updater)
+			if err != nil {
+				return nil, errors.Wrap(err, "failed to render array value")
+			}
+			result = append(result, built)
+		}
+		return result, nil
+	} else {
+		built, err := value.getBuiltValue(updater)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to build value")
+		}
+		return built, nil
+	}
 }
 
 type OptionalValue struct {
