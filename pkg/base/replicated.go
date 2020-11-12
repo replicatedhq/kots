@@ -214,7 +214,7 @@ func renderReplicated(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (
 			SplitMultiDocYAML: true,
 			Namespace:         namespace,
 			HelmVersion:       kotsHelmChart.Spec.HelmVersion,
-			HelmOptions:       localValues,
+			HelmValues:        localValues,
 			ExcludeKotsKinds:  renderOptions.ExcludeKotsKinds,
 			Log:               nil,
 		})
