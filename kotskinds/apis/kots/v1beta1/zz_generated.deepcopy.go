@@ -631,6 +631,7 @@ func (in *HelmChartList) DeepCopyObject() runtime.Object {
 func (in *HelmChartSpec) DeepCopyInto(out *HelmChartSpec) {
 	*out = *in
 	out.Chart = in.Chart
+	out.Exclude = in.Exclude
 	if in.Values != nil {
 		in, out := &in.Values, &out.Values
 		*out = make(map[string]MappedChartValue, len(*in))

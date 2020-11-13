@@ -138,14 +138,14 @@ func renderReplicated(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (
 	// we just inject them into u.Files
 	kotsHelmCharts := findAllKotsHelmCharts(u.Files, builder, renderOptions.Log)
 	for _, kotsHelmChart := range kotsHelmCharts {
-		if kotsHelmChart.Spec.Exclude != "" {
-			parsedBool, err := strconv.ParseBool(kotsHelmChart.Spec.Exclude)
+		if !kotsHelmChart.Spec.Exclude.IsEmpty() {
+			boolVal, err := kotsHelmChart.Spec.Exclude.Boolean()
 			if err != nil {
-				renderOptions.Log.Error(errors.Errorf("Kots.io/v1beta1 HelmChart rendered exclude is not parseable as bool, value = %s, filename = %s. Not excluding chart.", kotsHelmChart.Spec.Exclude, u.Name))
+				renderOptions.Log.Error(errors.Errorf("Kots.io/v1beta1 HelmChart rendered exclude is not parseable as bool, value = %s, filename = %s. Not excluding chart.", kotsHelmChart.Spec.Exclude.String(), u.Name))
 				return nil, errors.Wrap(err, "failed to parse helm chart exclude")
 			}
 
-			if parsedBool {
+			if boolVal {
 				continue
 			}
 		}

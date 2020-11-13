@@ -20,6 +20,7 @@ import (
 	"encoding/json"
 
 	"github.com/pkg/errors"
+	"github.com/replicatedhq/kots/kotskinds/multitype"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -212,7 +213,7 @@ type OptionalValue struct {
 // HelmChartSpec defines the desired state of HelmChartSpec
 type HelmChartSpec struct {
 	Chart          ChartIdentifier             `json:"chart"`
-	Exclude        string                      `json:"exclude,omitempty"`
+	Exclude        multitype.BoolOrString      `json:"exclude,omitempty"`
 	HelmVersion    string                      `json:"helmVersion,omitempty"`
 	Namespace      string                      `json:"namespace,omitempty"`
 	Values         map[string]MappedChartValue `json:"values,omitempty"`
