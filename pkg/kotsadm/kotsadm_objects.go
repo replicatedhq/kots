@@ -197,7 +197,6 @@ func kotsadmDeployment(deployOptions types.DeployOptions) *appsv1.Deployment {
 		}
 	}
 
-	backupSize := resource.MustParse("1Gi")
 	var pullSecrets []corev1.LocalObjectReference
 	if s := kotsadmPullSecret(deployOptions.Namespace, deployOptions.KotsadmOptions); s != nil {
 		pullSecrets = []corev1.LocalObjectReference{
@@ -387,8 +386,7 @@ func kotsadmDeployment(deployOptions types.DeployOptions) *appsv1.Deployment {
 							Name: "backup",
 							VolumeSource: corev1.VolumeSource{
 								EmptyDir: &corev1.EmptyDirVolumeSource{
-									Medium:    corev1.StorageMediumMemory,
-									SizeLimit: &backupSize,
+									Medium: corev1.StorageMediumMemory,
 								},
 							},
 						},
