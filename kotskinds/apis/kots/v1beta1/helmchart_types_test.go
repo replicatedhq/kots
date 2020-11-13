@@ -1,102 +1,12 @@
 package v1beta1
 
 import (
-	"encoding/json"
-	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
-func Test_UnmarshalValues(t *testing.T) {
-	tests := []struct {
-		name   string
-		value  string
-		expect map[string]MappedChartValue
-	}{
-		{
-			name: "simple",
-			value: `{
-  "apiVersion": "kots.io/v1beta1",
-  "kind": "HelmChart",
-  "metadata": {
-    "name": "test"
-  },
-  "spec": {
-    "values": {
-      "k8s": "blue"
-    }
-  }
-}`,
-			expect: map[string]MappedChartValue{
-				"k8s": MappedChartValue{
-					strValue:  "blue",
-					valueType: "string",
-				},
-			},
-		},
-		{
-			name: "array",
-			value: `{
-  "apiVersion": "kots.io/v1beta1",
-  "kind": "HelmChart",
-  "metadata": {
-    "name": "test"
-  },
-  "spec": {
-    "values": {
-      "l": [
-        {
-	  "a": "b"
-	},
-	{
-	  "a": "c"
-	}
-      ]
-    }
-  }
-}`,
-			expect: map[string]MappedChartValue{
-				"l": MappedChartValue{
-					valueType: "array",
-					array: []*MappedChartValue{
-						{
-							valueType: "children",
-							children: map[string]*MappedChartValue{
-								"a": &MappedChartValue{
-									valueType: "string",
-									strValue:  "b",
-								},
-							},
-						},
-						{
-							valueType: "children",
-							children: map[string]*MappedChartValue{
-								"a": &MappedChartValue{
-									valueType: "string",
-									strValue:  "c",
-								},
-							},
-						},
-					},
-				},
-			},
-		},
-	}
-
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			req := require.New(t)
-
-			actual := HelmChart{}
-			err := json.Unmarshal([]byte(test.value), &actual)
-			req.NoError(err)
-
-			assert.Equal(t, test.expect, actual.Spec.Values)
-		})
-	}
-}
 func Test_HelmChartSpecRenderValues(t *testing.T) {
 	tests := []struct {
 		name   string
@@ -122,16 +32,6 @@ func Test_HelmChartSpecRenderValues(t *testing.T) {
 				},
 			},
 			expect: map[string]interface{}{"a": "b,c,d"},
-		},
-		{
-			name: "string with comma in generated string",
-			values: map[string]MappedChartValue{
-				"a": MappedChartValue{
-					strValue:  "replaceme",
-					valueType: "string",
-				},
-			},
-			expect: map[string]interface{}{"a": "I,was,replaced"},
 		},
 		{
 
@@ -214,7 +114,7 @@ func Test_HelmChartSpecRenderValues(t *testing.T) {
 									valueType: "bool",
 								},
 								"replacementtest": &MappedChartValue{
-									strValue:  "replaceme",
+									strValue:  "something",
 									valueType: `string`,
 								},
 							},
@@ -227,7 +127,7 @@ func Test_HelmChartSpecRenderValues(t *testing.T) {
 					"storage": map[string]interface{}{
 						"postgres": map[string]interface{}{
 							"enabled":         true,
-							"replacementtest": "I,was,replaced",
+							"replacementtest": "something",
 						},
 					},
 				},
@@ -254,10 +154,6 @@ func Test_HelmChartSpecRenderValues(t *testing.T) {
 									strValue:  "amazonaws.com",
 									valueType: "string",
 								},
-								"replacementtest": &MappedChartValue{
-									strValue:  "replaceme",
-									valueType: `string`,
-								},
 							},
 						},
 					},
@@ -268,9 +164,8 @@ func Test_HelmChartSpecRenderValues(t *testing.T) {
 					"replicas": float64(4),
 					"storage": map[string]interface{}{
 						"postgres": map[string]interface{}{
-							"enabled":         true,
-							"host":            "amazonaws.com",
-							"replacementtest": "I,was,replaced",
+							"enabled": true,
+							"host":    "amazonaws.com",
 						},
 					},
 				},
@@ -293,8 +188,8 @@ func Test_HelmChartSpecRenderValues(t *testing.T) {
 									strValue:  "nginx",
 									valueType: "string",
 								},
-								"replacementtest": &MappedChartValue{
-									strValue:  "replaceme please",
+								"anotherstring": &MappedChartValue{
+									strValue:  "something",
 									valueType: `string`,
 								},
 							},
@@ -307,7 +202,7 @@ func Test_HelmChartSpecRenderValues(t *testing.T) {
 					"ingress": map[string]interface{}{
 						"annotations": map[string]interface{}{
 							"kubernetes.io/ingress.class": "nginx",
-							"replacementtest":             "I,was,replaced please",
+							"anotherstring":               "something",
 						},
 						"enabled": true,
 					},
@@ -323,11 +218,7 @@ func Test_HelmChartSpecRenderValues(t *testing.T) {
 			h := HelmChartSpec{
 				Values: test.values,
 			}
-			actual, err := h.RenderValues(h.Values, func(s2 string) (s string, err error) {
-				return strings.NewReplacer(
-					"replaceme", "I,was,replaced",
-				).Replace(s2), nil
-			})
+			actual, err := h.GetHelmValues(h.Values)
 			req.NoError(err)
 
 			assert.Equal(t, test.expect, actual)
@@ -404,7 +295,7 @@ func Test_MappedChartValueGetValue(t *testing.T) {
 				},
 			},
 			expected: []interface{}{
-				"val9",
+				"val1",
 				"val2",
 			},
 		},
@@ -430,7 +321,7 @@ func Test_MappedChartValueGetValue(t *testing.T) {
 			},
 			expected: map[string]interface{}{
 				"child": []interface{}{
-					"val9",
+					"val1",
 					"val2",
 				},
 			},
@@ -441,11 +332,7 @@ func Test_MappedChartValueGetValue(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			req := require.New(t)
 
-			actual, err := test.mappedChartValue.getBuiltValue(func(s2 string) (s string, err error) {
-				return strings.NewReplacer(
-					"1", `9`,
-				).Replace(s2), nil
-			})
+			actual, err := test.mappedChartValue.getBuiltValue()
 			req.NoError(err)
 
 			assert.Equal(t, test.expected, actual)
