@@ -290,6 +290,7 @@ class Snapshots extends Component {
     }
 
     const isVeleroCorrectVersion = snapshotSettings?.isVeleroRunning && snapshotSettings?.veleroVersion === "v1.5.1";
+    const snapshotApp = this.props.appsList?.find(app => app.allowSnapshots);
 
 
     return (
@@ -304,6 +305,18 @@ class Snapshots extends Component {
           </div>
           : null}
         <div className="container flex-column flex1 u-paddingTop--30 u-paddingBottom--20 alignItems--center">
+          <div className="InfoSnapshots--wrapper flex flex-auto u-marginBottom--20">
+            <span className="icon snapshot-getstarted-icon flex-auto u-marginRight--20 u-marginTop--5" />
+            <div className="flex-column">
+              <p className="u-fontSize--large u-fontWeight--bold u-lineHeight--normal u-color--tundora flex alignItems--center"> Instance Snapshots <span className="beta-tag u-marginLeft--5"> beta </span> </p>
+              <p className="u-fontSize--small u-fontWeight--normal u-lineHeight--normal u-color--doveGray u-marginTop--5">
+                Instance snapshots back up the Admin Console and all application data. They can be used for full Disaster Recovery; by restoring over top of this instance, or into a new cluster.
+              </p>
+              <p className="u-fontSize--small u-fontWeight--normal u-lineHeight--normal u-color--doveGray u-marginTop--5">
+                If you only need a partial backup of just application volumes and manifests for rollbacks, <Link to={`/app/${snapshotApp?.slug}/snapshots`} className="replicated-link u-fontSize--small">use Application Snapshots</Link>.
+              </p>
+            </div>
+          </div>
           <div className="AppSnapshots--wrapper flex1 flex-column u-width--full">
             <div className={`flex flex-auto alignItems--center justifyContent--spaceBetween ${(snapshots?.length > 0 && snapshotSettings?.veleroVersion !== "") && "u-borderBottom--gray darker"}`}>
               <p className="u-fontWeight--bold u-color--tuna u-fontSize--larger u-lineHeight--normal u-marginBottom--15">Snapshots</p>
