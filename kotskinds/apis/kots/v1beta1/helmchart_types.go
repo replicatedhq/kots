@@ -18,7 +18,6 @@ package v1beta1
 
 import (
 	"encoding/json"
-	"strings"
 
 	"github.com/pkg/errors"
 
@@ -39,13 +38,9 @@ type MappedChartValue struct {
 	array    []*MappedChartValue          `json:"-"`
 }
 
-func (m *MappedChartValue) getBuiltValue(updater func(string) (string, error)) (interface{}, error) {
+func (m *MappedChartValue) getBuiltValue() (interface{}, error) {
 	if m.valueType == "string" {
-		updatedString, err := updater(m.strValue)
-		if err != nil {
-			return nil, errors.Wrap(err, "update built value")
-		}
-		return updatedString, nil
+		return m.strValue, nil
 	}
 	if m.valueType == "bool" {
 		return m.boolValue, nil
@@ -60,7 +55,7 @@ func (m *MappedChartValue) getBuiltValue(updater func(string) (string, error)) (
 	if m.valueType == "children" {
 		children := map[string]interface{}{}
 		for k, v := range m.children {
-			childValue, err := v.getBuiltValue(updater)
+			childValue, err := v.getBuiltValue()
 			if err != nil {
 				return nil, errors.Wrapf(err, "failed to get value of child %s", k)
 			}
@@ -71,7 +66,7 @@ func (m *MappedChartValue) getBuiltValue(updater func(string) (string, error)) (
 	if m.valueType == "array" {
 		var elements []interface{}
 		for i, v := range m.array {
-			elValue, err := v.getBuiltValue(updater)
+			elValue, err := v.getBuiltValue()
 			if err != nil {
 				return nil, errors.Wrapf(err, "failed to get value of child %d", i)
 			}
@@ -163,23 +158,11 @@ type ChartIdentifier struct {
 	ChartVersion string `json:"chartVersion"`
 }
 
-func escapeKeyIfNeeded(in string) string {
-	return strings.NewReplacer(
-		".", `\.`,
-	).Replace(in)
-}
-
-func escapeValueIfNeeded(in string) string {
-	return strings.NewReplacer(
-		",", `\,`,
-	).Replace(in)
-}
-
-func (h *HelmChartSpec) RenderValues(values map[string]MappedChartValue, updater func(string) (string, error)) (map[string]interface{}, error) {
+func (h *HelmChartSpec) GetHelmValues(values map[string]MappedChartValue) (map[string]interface{}, error) {
 	result := map[string]interface{}{}
 
 	for k, v := range values {
-		value, err := h.renderValue(&v, updater)
+		value, err := h.renderValue(&v)
 		if err != nil {
 			return nil, errors.Wrapf(err, "failed to render value at %s", k)
 		}
@@ -190,11 +173,11 @@ func (h *HelmChartSpec) RenderValues(values map[string]MappedChartValue, updater
 	return result, nil
 }
 
-func (h *HelmChartSpec) renderValue(value *MappedChartValue, updater func(string) (string, error)) (interface{}, error) {
+func (h *HelmChartSpec) renderValue(value *MappedChartValue) (interface{}, error) {
 	if value.valueType == "children" {
 		result := map[string]interface{}{}
 		for k, v := range value.children {
-			built, err := h.renderValue(v, updater)
+			built, err := h.renderValue(v)
 			if err != nil {
 				return nil, errors.Wrapf(err, "failed to render child value at key %s", k)
 			}
@@ -204,7 +187,7 @@ func (h *HelmChartSpec) renderValue(value *MappedChartValue, updater func(string
 	} else if value.valueType == "array" {
 		result := []interface{}{}
 		for _, v := range value.array {
-			built, err := h.renderValue(v, updater)
+			built, err := h.renderValue(v)
 			if err != nil {
 				return nil, errors.Wrap(err, "failed to render array value")
 			}
@@ -212,7 +195,7 @@ func (h *HelmChartSpec) renderValue(value *MappedChartValue, updater func(string
 		}
 		return result, nil
 	} else {
-		built, err := value.getBuiltValue(updater)
+		built, err := value.getBuiltValue()
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to build value")
 		}
