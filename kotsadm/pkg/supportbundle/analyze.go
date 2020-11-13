@@ -24,6 +24,10 @@ func InjectDefaultAnalyzers(analyzer *troubleshootv1beta2.Analyzer) error {
 		return errors.Wrap(err, "failed to inject k8s version analyzer")
 	}
 
+	if err := injectCephAnalyzers(analyzer); err != nil {
+		return errors.Wrap(err, "failed to inject k8s version analyzer")
+	}
+
 	return nil
 
 }
@@ -119,6 +123,13 @@ func injectIfMissingKubernetesVersionAnalyzer(analyzer *troubleshootv1beta2.Anal
 				},
 			},
 		},
+	})
+	return nil
+}
+
+func injectCephAnalyzers(analyzer *troubleshootv1beta2.Analyzer) error {
+	analyzer.Spec.Analyzers = append(analyzer.Spec.Analyzers, &troubleshootv1beta2.Analyze{
+		CephStatus: &troubleshootv1beta2.CephStatusAnalyze{},
 	})
 	return nil
 }

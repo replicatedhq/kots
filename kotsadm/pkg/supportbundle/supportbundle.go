@@ -473,6 +473,11 @@ func makeRookCollectors() []*troubleshootv1beta2.Collect {
 			},
 		})
 	}
+
+	rookCollectors = append(rookCollectors, &troubleshootv1beta2.Collect{
+		Ceph: &troubleshootv1beta2.Ceph{},
+	})
+
 	return rookCollectors
 }
 

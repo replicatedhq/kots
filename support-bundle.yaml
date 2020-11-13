@@ -6,6 +6,7 @@ spec:
   collectors:
     - clusterInfo: {}
     - clusterResources: {}
+    - ceph: {}
     - exec:
         args:
           - "-U"
