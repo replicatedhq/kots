@@ -136,16 +136,10 @@ func renderReplicated(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (
 
 	// render helm charts that were specified
 	// we just inject them into u.Files
-	kotsHelmCharts := findAllKotsHelmCharts(u.Files)
+	kotsHelmCharts := findAllKotsHelmCharts(u.Files, builder, renderOptions.Log)
 	for _, kotsHelmChart := range kotsHelmCharts {
 		if kotsHelmChart.Spec.Exclude != "" {
-			renderedExclude, err := builder.RenderTemplate(kotsHelmChart.Name, kotsHelmChart.Spec.Exclude)
-			if err != nil {
-				renderOptions.Log.Error(errors.Errorf("Failed to render helm chart exclude %s", kotsHelmChart.Spec.Exclude))
-				return nil, errors.Wrap(err, "failed to render kots helm chart exclude")
-			}
-
-			parsedBool, err := strconv.ParseBool(renderedExclude)
+			parsedBool, err := strconv.ParseBool(kotsHelmChart.Spec.Exclude)
 			if err != nil {
 				renderOptions.Log.Error(errors.Errorf("Kots.io/v1beta1 HelmChart rendered exclude is not parseable as bool, value = %s, filename = %s. Not excluding chart.", kotsHelmChart.Spec.Exclude, u.Name))
 				return nil, errors.Wrap(err, "failed to parse helm chart exclude")
@@ -181,11 +175,7 @@ func renderReplicated(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (
 
 		mergedValues := kotsHelmChart.Spec.Values
 		for _, optionalValues := range kotsHelmChart.Spec.OptionalValues {
-			renderedWhen, err := builder.RenderTemplate(kotsHelmChart.Name, optionalValues.When)
-			if err != nil {
-				return nil, errors.Wrap(err, "failed to render when from conditional on optional value")
-			}
-			parsedBool, err := strconv.ParseBool(renderedWhen)
+			parsedBool, err := strconv.ParseBool(optionalValues.When)
 			if err != nil {
 				return nil, errors.Wrap(err, "failed to parse when conditional on optional values")
 			}
@@ -198,9 +188,7 @@ func renderReplicated(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (
 			}
 		}
 
-		localValues, err := kotsHelmChart.Spec.RenderValues(mergedValues, func(s2 string) (s string, err error) {
-			return builder.RenderTemplate(s2, s2)
-		})
+		helmValues, err := kotsHelmChart.Spec.GetHelmValues(mergedValues)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to render local values for chart")
 		}
@@ -214,7 +202,7 @@ func renderReplicated(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (
 			SplitMultiDocYAML: true,
 			Namespace:         namespace,
 			HelmVersion:       kotsHelmChart.Spec.HelmVersion,
-			HelmValues:        localValues,
+			HelmValues:        helmValues,
 			ExcludeKotsKinds:  renderOptions.ExcludeKotsKinds,
 			Log:               nil,
 		})
@@ -281,13 +269,25 @@ func upstreamFileToBaseFile(upstreamFile types.UpstreamFile, builder template.Bu
 	}, nil
 }
 
-func findAllKotsHelmCharts(upstreamFiles []upstreamtypes.UpstreamFile) []*kotsv1beta1.HelmChart {
+func findAllKotsHelmCharts(upstreamFiles []upstreamtypes.UpstreamFile, builder template.Builder, log *logger.Logger) []*kotsv1beta1.HelmChart {
 	kotsHelmCharts := []*kotsv1beta1.HelmChart{}
 	for _, upstreamFile := range upstreamFiles {
-		kotsHelmChart := tryParsingAsHelmChartGVK(upstreamFile.Content)
-		if kotsHelmChart != nil {
-			kotsHelmCharts = append(kotsHelmCharts, kotsHelmChart)
+		helmChart := tryParsingAsHelmChartGVK(upstreamFile.Content)
+		if helmChart == nil {
+			continue
 		}
+
+		baseFile, err := upstreamFileToBaseFile(upstreamFile, builder, log)
+		if err != nil {
+			continue
+		}
+
+		helmChart = tryParsingAsHelmChartGVK(baseFile.Content)
+		if helmChart == nil {
+			continue
+		}
+
+		kotsHelmCharts = append(kotsHelmCharts, helmChart)
 	}
 
 	return kotsHelmCharts
