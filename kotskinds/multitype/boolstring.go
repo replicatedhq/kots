@@ -5,6 +5,7 @@ package multitype
 import (
 	"encoding/json"
 	"fmt"
+	"strconv"
 
 	fuzz "github.com/google/gofuzz"
 )
@@ -66,6 +67,20 @@ func (boolstr *BoolOrString) String() string {
 	} else {
 		return "0"
 	}
+}
+
+// Converts string to boolean if needed and returns its value
+func (boolstr *BoolOrString) Boolean() (bool, error) {
+	if boolstr.Type == Bool {
+		return boolstr.BoolVal, nil
+	}
+
+	return strconv.ParseBool(boolstr.StrVal)
+}
+
+// Returns true if type is String and the value is the empty string
+func (boolstr *BoolOrString) IsEmpty() bool {
+	return boolstr.Type == String && boolstr.StrVal == ""
 }
 
 // MarshalJSON implements the json.Marshaller interface.
