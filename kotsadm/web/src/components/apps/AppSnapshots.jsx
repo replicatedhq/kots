@@ -469,7 +469,7 @@ class AppSnapshots extends Component {
 
     const isVeleroCorrectVersion = snapshotSettings?.isVeleroRunning && snapshotSettings?.veleroVersion === "v1.5.1";
 
-    
+
     return (
       <div className="flex1 flex-column u-overflow--auto">
         <Helmet>
@@ -482,6 +482,17 @@ class AppSnapshots extends Component {
           </div>
           : null}
         <div className="container flex-column flex1 u-paddingTop--30 u-paddingBottom--20 alignItems--center">
+          <div className="InfoSnapshots--wrapper flex flex-auto u-marginBottom--20">
+            <span className="icon snapshot-getstarted-icon flex-auto u-marginRight--20 u-marginTop--5" />
+            <div className="flex-column">
+              <p className="u-fontSize--large u-fontWeight--bold u-lineHeight--normal u-color--tundora"> Application Snapshots </p>
+              <p className="u-fontSize--small u-fontWeight--normal u-lineHeight--normal u-color--doveGray u-marginTop--5">
+                Application snapshots only back up applications volumes and application manifests; they <span className="u-fontWeight--bold">do not</span> back up the Admin Console or the metadata about an application.
+                  They are great for capturing information before deploying a new release, in case you need to roll back, but they are not suitable for full disaster recovery.
+                  For backups that give you the ability to do full Disaster Recovery, <Link to="/snapshots" className="replicated-link u-fontSize--small">use Instance Snapshots</Link>.
+              </p>
+            </div>
+          </div>
           <div className="AppSnapshots--wrapper flex1 flex-column u-width--full">
             <div className="flex flex-auto alignItems--flexStart justifyContent--spaceBetween">
               <p className="u-fontWeight--bold u-color--tuna u-fontSize--larger u-lineHeight--normal u-marginBottom--10">Snapshots</p>

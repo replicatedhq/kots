@@ -188,7 +188,6 @@ export class NavBar extends PureComponent {
                         <span className="HeaderLink flex flex1 u-cursor--pointer" onClick={this.handleGoToSnapshots}>
                           <div className="flex flex1 alignItems--center">
                           <span className="text u-fontSize--normal u-fontWeight--medium flex"> Snapshots </span>
-                          <span className="flex beta-tag"> beta </span>
                           </div>
                         </span>
                       </div>
