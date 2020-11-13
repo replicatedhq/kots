@@ -168,6 +168,7 @@ func LiveAppConfig(w http.ResponseWriter, r *http.Request) {
 
 	archiveDir, err := ioutil.TempDir("", "kotsadm")
 	if err != nil {
+		logger.Error(err)
 		liveAppConfigResponse.Error = "failed to create temp dir"
 		JSON(w, http.StatusInternalServerError, liveAppConfigResponse)
 		return
@@ -176,6 +177,7 @@ func LiveAppConfig(w http.ResponseWriter, r *http.Request) {
 
 	err = store.GetStore().GetAppVersionArchive(foundApp.ID, liveAppConfigRequest.Sequence, archiveDir)
 	if err != nil {
+		logger.Error(err)
 		liveAppConfigResponse.Error = "failed to get app version archive"
 		JSON(w, http.StatusInternalServerError, liveAppConfigResponse)
 		return
@@ -183,6 +185,7 @@ func LiveAppConfig(w http.ResponseWriter, r *http.Request) {
 
 	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(archiveDir)
 	if err != nil {
+		logger.Error(err)
 		liveAppConfigResponse.Error = "failed to load kots kinds from path"
 		JSON(w, http.StatusInternalServerError, liveAppConfigResponse)
 		return
@@ -210,6 +213,7 @@ func LiveAppConfig(w http.ResponseWriter, r *http.Request) {
 
 	registryInfo, err := store.GetStore().GetRegistryDetailsForApp(foundApp.ID)
 	if err != nil {
+		logger.Error(err)
 		liveAppConfigResponse.Error = "failed to get app registry info"
 		JSON(w, http.StatusInternalServerError, liveAppConfigResponse)
 		return
@@ -226,6 +230,7 @@ func LiveAppConfig(w http.ResponseWriter, r *http.Request) {
 	versionInfo := template.VersionInfoFromInstallation(liveAppConfigRequest.Sequence+1, foundApp.IsAirgap, kotsKinds.Installation.Spec) // sequence +1 because the sequence will be incremented on save (and we want the preview to be accurate)
 	renderedConfig, err := kotsconfig.TemplateConfigObjects(kotsKinds.Config, configValues, appLicense, localRegistry, &versionInfo)
 	if err != nil {
+		logger.Error(err)
 		liveAppConfigResponse.Error = "failed to render templates"
 		JSON(w, http.StatusInternalServerError, liveAppConfigResponse)
 		return
@@ -265,6 +270,7 @@ func CurrentAppConfig(w http.ResponseWriter, r *http.Request) {
 
 	archiveDir, err := ioutil.TempDir("", "kotsadm")
 	if err != nil {
+		logger.Error(err)
 		currentAppConfigResponse.Error = "failed to create temp dir"
 		JSON(w, http.StatusInternalServerError, currentAppConfigResponse)
 		return
@@ -273,6 +279,7 @@ func CurrentAppConfig(w http.ResponseWriter, r *http.Request) {
 
 	err = store.GetStore().GetAppVersionArchive(foundApp.ID, int64(sequence), archiveDir)
 	if err != nil {
+		logger.Error(err)
 		currentAppConfigResponse.Error = "failed to get app version archive"
 		JSON(w, http.StatusInternalServerError, currentAppConfigResponse)
 		return
@@ -280,6 +287,7 @@ func CurrentAppConfig(w http.ResponseWriter, r *http.Request) {
 
 	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(archiveDir)
 	if err != nil {
+		logger.Error(err)
 		currentAppConfigResponse.Error = "failed to load kots kinds from path"
 		JSON(w, http.StatusInternalServerError, currentAppConfigResponse)
 		return
@@ -298,6 +306,7 @@ func CurrentAppConfig(w http.ResponseWriter, r *http.Request) {
 
 	registryInfo, err := store.GetStore().GetRegistryDetailsForApp(foundApp.ID)
 	if err != nil {
+		logger.Error(err)
 		currentAppConfigResponse.Error = "failed to get app registry info"
 		JSON(w, http.StatusInternalServerError, currentAppConfigResponse)
 		return
@@ -314,6 +323,7 @@ func CurrentAppConfig(w http.ResponseWriter, r *http.Request) {
 	versionInfo := template.VersionInfoFromInstallation(int64(sequence)+1, foundApp.IsAirgap, kotsKinds.Installation.Spec) // sequence +1 because the sequence will be incremented on save (and we want the preview to be accurate)
 	renderedConfig, err := kotsconfig.TemplateConfigObjects(kotsKinds.Config, configValues, appLicense, localRegistry, &versionInfo)
 	if err != nil {
+		logger.Error(err)
 		currentAppConfigResponse.Error = "failed to render templates"
 		JSON(w, http.StatusInternalServerError, currentAppConfigResponse)
 		return
