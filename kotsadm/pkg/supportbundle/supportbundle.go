@@ -17,6 +17,7 @@ import (
 	"github.com/mholt/archiver"
 	"github.com/pkg/errors"
 	apptypes "github.com/replicatedhq/kots/kotsadm/pkg/app/types"
+	"github.com/replicatedhq/kots/kotsadm/pkg/kurl"
 	"github.com/replicatedhq/kots/kotsadm/pkg/license"
 	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
 	"github.com/replicatedhq/kots/kotsadm/pkg/persistence"
@@ -395,6 +396,13 @@ func addDefaultTroubleshoot(supportBundle *troubleshootv1beta2.SupportBundle, ap
 		supportBundle.Spec.Collectors = append(supportBundle.Spec.Collectors, collectors...)
 	}
 
+	collectd, err := makeCollectDCollectors()
+	if err != nil {
+		logger.Errorf("Failed to make collectd collectors: %v", err)
+	} else {
+		supportBundle.Spec.Collectors = append(supportBundle.Spec.Collectors, collectd...)
+	}
+
 	return supportBundle
 }
 
@@ -642,4 +650,64 @@ func makeAppVersionArchiveCollector(app *apptypes.App, dirPrefix string) (*troub
 			Name:          fmt.Sprintf("kots/admin-console/app/%s", app.Slug),
 		},
 	}, nil
+}
+
+func makeCollectDCollectors() ([]*troubleshootv1beta2.Collect, error) {
+	collectors := []*troubleshootv1beta2.Collect{}
+
+	if !kurl.IsKurl() {
+		return collectors, nil
+	}
+
+	cfg, err := config.GetConfig()
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get cluster config")
+	}
+
+	clientset, err := kubernetes.NewForConfig(cfg)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to create clientset")
+	}
+
+	namespace := os.Getenv("POD_NAMESPACE")
+	existingDeployment, err := clientset.AppsV1().Deployments(namespace).Get(context.TODO(), "kotsadm", metav1.GetOptions{})
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get existing deployment")
+	}
+
+	imageName := ""
+	for _, container := range existingDeployment.Spec.Template.Spec.Containers {
+		if container.Name == "kotsadm" {
+			imageName = container.Image
+			break
+		}
+	}
+	if imageName == "" {
+		return nil, errors.New("kotsadm container not found")
+	}
+
+	var pullSecret *troubleshootv1beta2.ImagePullSecrets
+	if len(existingDeployment.Spec.Template.Spec.ImagePullSecrets) > 0 {
+		existingSecret := existingDeployment.Spec.Template.Spec.ImagePullSecrets[0]
+		pullSecret = &troubleshootv1beta2.ImagePullSecrets{
+			Name: existingSecret.Name,
+		}
+	}
+
+	collector := &troubleshootv1beta2.Collect{
+		Collectd: &troubleshootv1beta2.Collectd{
+			CollectorMeta: troubleshootv1beta2.CollectorMeta{
+				CollectorName: "collectd",
+			},
+			Namespace:       namespace,
+			Image:           imageName,
+			ImagePullSecret: pullSecret,
+			ImagePullPolicy: string(corev1.PullIfNotPresent),
+			HostPath:        "/var/lib/collectd/rrd",
+		},
+	}
+
+	collectors = append(collectors, collector)
+
+	return collectors, nil
 }

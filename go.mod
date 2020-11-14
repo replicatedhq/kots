@@ -20,11 +20,13 @@ require (
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/docker/distribution v2.7.1+incompatible
 	github.com/docker/go-units v0.4.0
+	github.com/dsnet/compress v0.0.1 // indirect
 	github.com/fatih/color v1.7.0
+	github.com/frankban/quicktest v1.7.2 // indirect
 	github.com/garyburd/redigo v1.6.0 // indirect
 	github.com/ghodss/yaml v1.0.0
-	github.com/gin-gonic/gin v1.6.3 // indirect
 	github.com/gofrs/uuid v3.3.0+incompatible // indirect
+	github.com/golang/snappy v0.0.1 // indirect
 	github.com/google/gofuzz v1.1.0
 	github.com/google/uuid v1.1.1
 	github.com/gorilla/handlers v1.4.2 // indirect
@@ -36,12 +38,13 @@ require (
 	github.com/mattn/go-isatty v0.0.12
 	github.com/mholt/archiver v3.1.1+incompatible
 	github.com/niemeyer/pretty v0.0.0-20200227124842-a10e7caefd8e // indirect
+	github.com/nwaples/rardecode v1.0.0 // indirect
 	github.com/otiai10/copy v1.0.2
 	github.com/phayes/freeport v0.0.0-20180830031419-95f893ade6f2
+	github.com/pierrec/lz4 v2.2.6+incompatible // indirect
 	github.com/pkg/errors v0.9.1
-	github.com/replicatedhq/kots/kotsadm/operator v0.0.0-20201029043215-1048f9f7a79f // indirect
 	github.com/replicatedhq/kurl/kurlkinds v0.0.0-20200617224429-55f493a72baf
-	github.com/replicatedhq/troubleshoot v0.9.50
+	github.com/replicatedhq/troubleshoot v0.9.51
 	github.com/replicatedhq/yaml/v3 v3.0.0-beta5-replicatedhq
 	github.com/sergi/go-diff v1.1.0
 	github.com/spf13/cobra v1.0.0
@@ -50,6 +53,7 @@ require (
 	github.com/stretchr/testify v1.6.1
 	github.com/tj/go-spin v1.1.0
 	github.com/vmware-tanzu/velero v1.5.1
+	github.com/xi2/xz v0.0.0-20171230120015-48954b6210f8 // indirect
 	github.com/yvasiyarov/go-metrics v0.0.0-20150112132944-c25f46c4b940 // indirect
 	github.com/yvasiyarov/gorelic v0.0.7 // indirect
 	github.com/yvasiyarov/newrelic_platform_go v0.0.0-20160601141957-9c099fbc30e9 // indirect
@@ -67,7 +71,6 @@ require (
 	rsc.io/letsencrypt v0.0.3 // indirect
 	sigs.k8s.io/application v0.8.2
 	sigs.k8s.io/controller-runtime v0.6.1
-	sigs.k8s.io/controller-tools v0.2.8 // indirect
 	sigs.k8s.io/kustomize/api v0.3.2
 	sigs.k8s.io/yaml v1.2.0
 )
