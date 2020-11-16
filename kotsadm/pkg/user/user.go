@@ -43,6 +43,10 @@ func LogIn(password string) (*usertypes.User, error) {
 		// so instead we fallback to the environment variable
 		shaBytes = []byte(os.Getenv("SHARED_PASSWORD_BCRYPT"))
 	} else {
+		if passwordSecret.Labels == nil {
+			passwordSecret.Labels = map[string]string{}
+		}
+
 		numAttempts, _ := strconv.Atoi(passwordSecret.Labels["numAttempts"])
 		if numAttempts > 10 {
 			return nil, ErrTooManyAttempts
@@ -84,6 +88,10 @@ func flagSuccessfulLogin(clientset kubernetes.Interface) error {
 			return errors.Wrap(err, "failed to get password secret")
 		}
 
+		if secret.Labels == nil {
+			secret.Labels = map[string]string{}
+		}
+
 		secret.Labels["lastLogin"] = fmt.Sprintf("%d", time.Now().Unix())
 		secret.Labels["numAttempts"] = "0"
 		if _, err := clientset.CoreV1().Secrets(os.Getenv("POD_NAMESPACE")).Update(context.TODO(), secret, metav1.UpdateOptions{}); err != nil {
@@ -111,6 +119,10 @@ func flagInvalidPassword(clientset kubernetes.Interface) error {
 				return nil
 			}
 			return errors.Wrap(err, "failed to get password secret")
+		}
+
+		if secret.Labels == nil {
+			secret.Labels = map[string]string{}
 		}
 
 		secret.Labels["lastFailure"] = fmt.Sprintf("%d", time.Now().Unix())
