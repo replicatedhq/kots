@@ -9,14 +9,14 @@ jobs:
   build-kots:
     runs-on: ubuntu-18.04
     steps:
-      - uses: actions/setup-go@v2.1.2
+      - uses: actions/setup-go@v2.1.3
         with:
           go-version: "1.14.3"
 
       - name: setup env
         run: |
-          echo "::set-env name=GOPATH::$(go env GOPATH)"
-          echo "::add-path::$(go env GOPATH)/bin"
+          echo "GOPATH=$(go env GOPATH)" >> $GITHUB_ENV
+          echo "$(go env GOPATH)/bin" >> $GITHUB_PATH
         shell: bash
 
       - uses: actions/checkout@v2
@@ -134,7 +134,7 @@ jobs:
 
       - run: chmod +x bin/kots
 
-      - uses: actions/setup-node@v2.1.1
+      - uses: actions/setup-node@v2.1.2
         with:
           node-version: '10.x'
 

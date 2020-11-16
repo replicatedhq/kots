@@ -45,7 +45,6 @@ class Snapshots extends Component {
 
   componentDidMount() {
     this.fetchSnapshotSettings();
-    this.state.listSnapshotsJob.start(this.listInstanceSnapshots, 2000);
   }
 
   componentWillUnmount() {
@@ -265,6 +264,9 @@ class Snapshots extends Component {
           snapshotSettingsErr: false,
           snapshotSettingsErrMsg: "",
         })
+        if (result.veleroVersion) {
+          this.state.listSnapshotsJob.start(this.listInstanceSnapshots, 2000);
+        }
       })
       .catch(err => {
         this.setState({
@@ -281,7 +283,7 @@ class Snapshots extends Component {
     const { isKurlEnabled } = this.props;
     const inProgressSnapshotExist = snapshots?.find(snapshot => snapshot.status === "InProgress");
 
-    if (isLoadingSnapshotSettings || !hasSnapshotsLoaded || (isStartButtonClicked && snapshots?.length === 0) || startingSnapshot) {
+    if (isLoadingSnapshotSettings && !hasSnapshotsLoaded) {
       return (
         <div className="flex-column flex1 alignItems--center justifyContent--center">
           <Loader size="60" />
