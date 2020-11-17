@@ -291,7 +291,7 @@ class Snapshots extends Component {
       )
     }
 
-    const isVeleroCorrectVersion = snapshotSettings?.isVeleroRunning && snapshotSettings?.veleroVersion === "v1.5.1";
+    const isVeleroCorrectVersion = snapshotSettings?.isVeleroRunning && snapshotSettings?.veleroVersion.includes("v1.5");
     const snapshotApp = this.props.appsList?.find(app => app.allowSnapshots);
 
 
