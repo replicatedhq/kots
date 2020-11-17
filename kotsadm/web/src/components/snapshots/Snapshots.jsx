@@ -10,6 +10,7 @@ import BackupRestoreModal from "../modals/BackupRestoreModal";
 import DeleteSnapshotModal from "../modals/DeleteSnapshotModal";
 import DummySnapshotRow from "./DummySnapshotRow";
 import GettingStartedSnapshots from "./GettingStartedSnapshots";
+import ErrorModal from "../modals/ErrorModal";
 
 import "../../scss/components/snapshots/AppSnapshots.scss";
 import { Utilities } from "../../utilities/utilities";
@@ -30,14 +31,13 @@ class Snapshots extends Component {
 
     snapshotSettings: null,
     isLoadingSnapshotSettings: true,
-    snapshotSettingsErr: false,
-    snapshotSettingsErrMsg: "",
+
+    errorMsg: "",
+    errorTitle: "",
 
     snapshots: [],
     hasSnapshotsLoaded: false,
     isStartButtonClicked: false,
-    snapshotsListErr: false,
-    snapshotsListErrMsg: "",
     listSnapshotsJob: new Repeater(),
     networkErr: false,
     displayErrorModal: false
@@ -72,8 +72,8 @@ class Snapshots extends Component {
 
   listInstanceSnapshots = async () => {
     this.setState({
-      snapshotsListErr: false,
-      snapshotsListErrMsg: "",
+      errorMsg: "",
+      errorTitle: "",
       networkErr: false,
       displayErrorModal: false
     })
@@ -90,10 +90,11 @@ class Snapshots extends Component {
           Utilities.logoutUser();
           return;
         }
+        const err = await res.json();
         this.setState({
-          snapshotsListErr: true,
-          snapshotsListErrMsg: `Unexpected status code: ${res.status}`,
-          networkErr: false,
+          errorTitle: "Failed to get snapshots",
+          errorMsg: err ? err.error : `Unexpected status code: ${res.status}`,
+          networkErr: true,
           displayErrorModal: true
         });
         return;
@@ -103,15 +104,15 @@ class Snapshots extends Component {
       this.setState({
         snapshots: response.backups?.sort((a, b) => b.startedAt ? new Date(b.startedAt) - new Date(a.startedAt) : -99999999),
         hasSnapshotsLoaded: true,
-        snapshotsListErr: false,
-        snapshotsListErrMsg: "",
+        errorMsg: "",
+        errorTitle: "",
         networkErr: false,
         displayErrorModal: false
       });
     } catch (err) {
       this.setState({
-        snapshotsListErr: true,
-        snapshotsListErrMsg: err.message ? err.message : "There was an error while showing the snapshots. Please try again",
+        errorTitle: "Failed to get snapshots",
+        errorMsg: err.message ? err.message : "There was an error while showing the snapshots. Please try again",
         networkErr: true,
         displayErrorModal: true
       })
@@ -242,39 +243,59 @@ class Snapshots extends Component {
     }
   };
 
-  fetchSnapshotSettings = () => {
+  fetchSnapshotSettings = async () => {
     this.setState({
       isLoadingSnapshotSettings: true,
-      snapshotSettingsErr: false,
-      snapshotSettingsErrMsg: ""
+      errorMsg: "",
+      errorTitle: "",
+      displayErrorModal: false
     });
-
-    fetch(`${window.env.API_ENDPOINT}/snapshots/settings`, {
-      method: "GET",
-      headers: {
-        "Authorization": Utilities.getToken(),
-        "Content-Type": "application/json",
-      }
-    })
-      .then(res => res.json())
-      .then(result => {
-        this.setState({
-          snapshotSettings: result,
-          isLoadingSnapshotSettings: false,
-          snapshotSettingsErr: false,
-          snapshotSettingsErrMsg: "",
-        })
-        if (result.veleroVersion) {
-          this.state.listSnapshotsJob.start(this.listInstanceSnapshots, 2000);
+    try {
+      const res = await fetch(`${window.env.API_ENDPOINT}/snapshots/settings`, {
+        method: "GET",
+        headers: {
+          "Authorization": Utilities.getToken(),
+          "Content-Type": "application/json",
         }
       })
-      .catch(err => {
+      if (!res.ok) {
+        if (res.status === 401) {
+          Utilities.logoutUser();
+          return;
+        }
+        const err = await res.json();
         this.setState({
           isLoadingSnapshotSettings: false,
-          snapshotSettingsErr: true,
-          snapshotSettingsErrMsg: err,
-        })
+          errorTitle: "Failed to get snapshot settings",
+          errorMsg: err ? err.error : `Unexpected status code: ${res.status}`,
+          networkErr: false,
+          displayErrorModal: true
+        });
+        return;
+      }
+      const result = await res.json();
+      this.setState({
+        snapshotSettings: result,
+        isLoadingSnapshotSettings: false,
+        errorMsg: "",
+        errorTitle: "",
+        displayErrorModal: false
       })
+      if (result?.veleroVersion) {
+        this.state.listSnapshotsJob.start(this.listInstanceSnapshots, 2000);
+      }
+    } catch (err) {
+      this.setState({
+        isLoadingSnapshotSettings: false,
+        errorMsg: err,
+        errorTitle: "Failed to get snapshot settings",
+        displayErrorModal: true
+      })
+    }
+  }
+
+  toggleErrorModal = () => {
+    this.setState({ displayErrorModal: !this.state.displayErrorModal });
   }
 
 
@@ -372,6 +393,15 @@ class Snapshots extends Component {
               restoreSnapshotModal={this.state.restoreSnapshotModal}
               toggleRestoreModal={this.toggleRestoreModal}
               snapshotToRestore={this.state.snapshotToRestore}
+            />}
+          {this.state.displayErrorModal &&
+            <ErrorModal
+              errorModal={this.state.displayErrorModal}
+              toggleErrorModal={this.toggleErrorModal}
+              errMsg={this.state.errorMsg}
+              err={this.state.errorTitle}
+              tryAgain={this.fetchSnapshotSettings}
+              loading={isLoadingSnapshotSettings}
             />}
         </div>
       </div>
