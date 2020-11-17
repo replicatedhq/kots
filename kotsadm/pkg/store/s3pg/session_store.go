@@ -1,6 +1,7 @@
 package s3pg
 
 import (
+	"encoding/json"
 	"time"
 
 	"github.com/pkg/errors"
@@ -11,7 +12,11 @@ import (
 	"github.com/segmentio/ksuid"
 )
 
-func (s S3PGStore) CreateSession(forUser *usertypes.User) (*sessiontypes.Session, error) {
+type SessionMetadata struct {
+	Roles []sessiontypes.SessionRole
+}
+
+func (s S3PGStore) CreateSession(forUser *usertypes.User, expiresAt *time.Time, roles []sessiontypes.SessionRole) (*sessiontypes.Session, error) {
 	logger.Debug("creating session")
 
 	randomID, err := ksuid.NewRandom()
@@ -21,9 +26,19 @@ func (s S3PGStore) CreateSession(forUser *usertypes.User) (*sessiontypes.Session
 
 	id := randomID.String()
 
+	metadata, err := json.Marshal(SessionMetadata{Roles: roles})
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to marshal session metadata")
+	}
+
+	if expiresAt == nil {
+		e := time.Now().AddDate(0, 0, 14)
+		expiresAt = &e
+	}
+
 	db := persistence.MustGetPGSession()
 	query := `insert into session (id, user_id, metadata, expire_at) values ($1, $2, $3, $4)`
-	_, err = db.Exec(query, id, forUser.ID, "", time.Now().AddDate(0, 0, 14))
+	_, err = db.Exec(query, id, forUser.ID, string(metadata), *expiresAt)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create session")
 	}
@@ -37,13 +52,23 @@ func (s S3PGStore) GetSession(id string) (*sessiontypes.Session, error) {
 	// 	zap.String("id", id))
 
 	db := persistence.MustGetPGSession()
-	query := `select id, expire_at from session where id = $1`
+	query := `select id, metadata, expire_at from session where id = $1`
 	row := db.QueryRow(query, id)
 	session := sessiontypes.Session{}
 
 	var expiresAt time.Time
-	if err := row.Scan(&session.ID, &expiresAt); err != nil {
+	var metadataStr string
+	if err := row.Scan(&session.ID, &metadataStr, &expiresAt); err != nil {
 		return nil, errors.Wrap(err, "failed to get session")
+	}
+
+	if metadataStr != "" {
+		metadata := SessionMetadata{}
+		if err := json.Unmarshal([]byte(metadataStr), &metadata); err != nil {
+			return nil, errors.Wrap(err, "failed to unmarshal session metadata")
+		}
+		session.HasRBAC = true
+		session.Roles = metadata.Roles
 	}
 
 	session.ExpiresAt = expiresAt

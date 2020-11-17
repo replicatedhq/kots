@@ -161,7 +161,7 @@ class SnapshotSettings extends Component {
       )
     }
 
-    const isVeleroCorrectVersion = snapshotSettings?.isVeleroRunning && snapshotSettings?.veleroVersion === "v1.5.1";
+    const isVeleroCorrectVersion = snapshotSettings?.isVeleroRunning && snapshotSettings?.veleroVersion.includes("v1.5");
 
     return (
       <div className="flex1 flex-column u-overflow--auto">

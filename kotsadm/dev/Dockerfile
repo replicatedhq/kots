@@ -59,10 +59,6 @@ RUN curl -fsSLO "${KUBECTL_1_19_URL}" \
 	&& mv kubectl "/usr/local/bin/kubectl-${KUBECTL_1_19_VERSION}" \
 	&& ln -s "/usr/local/bin/kubectl-${KUBECTL_1_19_VERSION}" /usr/local/bin/kubectl
 
-RUN curl -L "https://github.com/kubernetes-sigs/kustomize/releases/download/v2.0.3/kustomize_2.0.3_linux_amd64" > /tmp/kustomize && \
-  chmod a+x /tmp/kustomize && \
-  mv /tmp/kustomize "/usr/local/bin/kustomize2.0.3"
-
 # Install kustomize 3
 RUN curl -L "https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize%2Fv3.5.4/kustomize_v3.5.4_linux_amd64.tar.gz" > /tmp/kustomize.tar.gz && \
   tar -xzvf /tmp/kustomize.tar.gz && \

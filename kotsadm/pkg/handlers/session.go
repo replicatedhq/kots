@@ -3,12 +3,14 @@ package handlers
 import (
 	"context"
 	"encoding/base64"
+	"fmt"
 	"net/http"
 	"os"
 	"strings"
 
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/kotsadm/pkg/session"
+	"github.com/replicatedhq/kots/kotsadm/pkg/session/types"
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
@@ -66,12 +68,37 @@ func requireValidSession(w http.ResponseWriter, r *http.Request) error {
 
 	// we don't currently have roles, all valid tokens are valid sessions
 	if sess == nil || sess.ID == "" {
-		response := ErrorResponse{Error: "no session in auth header"}
+		err := errors.New("no session in auth header")
+		response := ErrorResponse{Error: err.Error()}
 		JSON(w, http.StatusUnauthorized, response)
-		return errors.Wrap(err, "empty session")
+		return err
+	}
+
+	if sess.HasRBAC { // handle pre-rbac sessions
+		resource := strings.TrimPrefix(r.URL.Path, "/api/v1")
+		if !sessionAuthorize(resource, sess.Roles) {
+			err := fmt.Errorf("access denied to resource %s", resource)
+			response := ErrorResponse{Error: err.Error()}
+			JSON(w, http.StatusForbidden, response)
+			return err
+		}
 	}
 
 	return nil
+}
+
+func sessionAuthorize(resource string, roles []types.SessionRole) bool {
+	// TODO
+	for _, role := range roles {
+		for _, policies := range role.Policies {
+			for _, allowed := range policies.Allowed {
+				if allowed == "**/*" {
+					return true
+				}
+			}
+		}
+	}
+	return false
 }
 
 func requireValidKOTSToken(w http.ResponseWriter, r *http.Request) error {

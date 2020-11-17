@@ -11,6 +11,9 @@ import (
 	"github.com/pkg/errors"
 	kotsscheme "github.com/replicatedhq/kots/kotskinds/client/kotsclientset/scheme"
 	"github.com/replicatedhq/kots/pkg/docker/registry"
+	"github.com/replicatedhq/kots/pkg/identity"
+	"github.com/replicatedhq/kots/pkg/ingress"
+	ingresstypes "github.com/replicatedhq/kots/pkg/ingress/types"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/kotsadm/types"
 	"github.com/replicatedhq/kots/pkg/logger"
@@ -117,6 +120,7 @@ func Upgrade(upgradeOptions types.UpgradeOptions) error {
 	// these options are not stored in cluster (yet)
 	deployOptions.Timeout = upgradeOptions.Timeout
 	deployOptions.KotsadmOptions = upgradeOptions.KotsadmOptions
+	deployOptions.EnableIdentityService = upgradeOptions.EnableIdentityService
 
 	if err := ensureKotsadm(*deployOptions, clientset, log); err != nil {
 		return errors.Wrap(err, "failed to upgrade admin console")
@@ -413,7 +417,39 @@ func ensureKotsadm(deployOptions types.DeployOptions, clientset *kubernetes.Clie
 		if err := ensureDisasterRecoveryLabels(&deployOptions, clientset); err != nil {
 			return errors.Wrap(err, "failed to ensure disaster recovery labels")
 		}
+	}
 
+	if deployOptions.EnableIngress {
+		log.ChildActionWithSpinner("Enabling ingress for the Admin Console")
+
+		if err := ingress.SetConfig(context.TODO(), deployOptions.Namespace, deployOptions.IngressConfig); err != nil {
+			return errors.Wrap(err, "failed to set identity config")
+		}
+
+		if err := ensureIngress(deployOptions.Namespace, clientset, deployOptions.IngressConfig); err != nil {
+			return errors.Wrap(err, "failed to ensure ingress")
+		}
+		log.FinishSpinner()
+	}
+
+	if deployOptions.EnableIdentityService {
+		if !deployOptions.EnableIngress {
+			return errors.New("KOTS identity service requires ingress to be enabled")
+		}
+
+		log.ChildActionWithSpinner("Deploying the Identity Service")
+
+		if err := identity.SetConfig(context.TODO(), deployOptions.Namespace, deployOptions.IdentityConfig); err != nil {
+			return errors.Wrap(err, "failed to set identity config")
+		}
+
+		if err := identity.Deploy(context.TODO(), log, clientset, deployOptions.Namespace, deployOptions.IdentityConfig.DexConnectors, deployOptions.IngressConfig); err != nil {
+			return errors.Wrap(err, "failed to deploy identity service")
+		}
+		log.FinishSpinner()
+	}
+
+	if !deployOptions.ExcludeAdminConsole {
 		log.ChildActionWithSpinner("Waiting for Admin Console to be ready")
 		if err := waitForKotsadm(&deployOptions, existingDeployment, clientset); err != nil {
 			return errors.Wrap(err, "failed to wait for web")
@@ -746,6 +782,31 @@ func ensureDisasterRecoveryLabels(deployOptions *types.DeployOptions, clientset 
 				return errors.Wrapf(err, "failed to update kotsadm-gitops configmap in namespace %s", gitopsConfigMap.ObjectMeta.Namespace)
 			}
 		}
+	}
+
+	return nil
+}
+
+func ensureIngress(namespace string, clientset *kubernetes.Clientset, config ingresstypes.Config) error {
+	existingIngress, err := clientset.ExtensionsV1beta1().Ingresses(namespace).Get(context.TODO(), "kotsadm", metav1.GetOptions{})
+	if err != nil {
+		if !kuberneteserrors.IsNotFound(err) {
+			return errors.Wrap(err, "failed to get existing kotsadm ingress")
+		}
+
+		_, err = clientset.ExtensionsV1beta1().Ingresses(namespace).Create(context.TODO(), kotsadmIngress(namespace, config), metav1.CreateOptions{})
+		if err != nil {
+			return errors.Wrap(err, "failed to create kotsadm ingress")
+		}
+
+		return nil
+	}
+
+	existingIngress = updateIngress(existingIngress, namespace, config)
+
+	_, err = clientset.ExtensionsV1beta1().Ingresses(namespace).Update(context.TODO(), existingIngress, metav1.UpdateOptions{})
+	if err != nil {
+		return errors.Wrap(err, "failed to update kotsadm ingress")
 	}
 
 	return nil

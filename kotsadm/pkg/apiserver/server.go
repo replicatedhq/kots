@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/gorilla/mux"
+	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/kotsadm/pkg/automation"
 	"github.com/replicatedhq/kots/kotsadm/pkg/handlers"
 	"github.com/replicatedhq/kots/kotsadm/pkg/informers"
@@ -19,6 +20,7 @@ import (
 	"github.com/replicatedhq/kots/kotsadm/pkg/socketservice"
 	"github.com/replicatedhq/kots/kotsadm/pkg/store"
 	"github.com/replicatedhq/kots/kotsadm/pkg/updatechecker"
+	"github.com/replicatedhq/kots/pkg/identity"
 )
 
 func Start() {
@@ -63,6 +65,11 @@ func Start() {
 	}
 	upstream := httputil.NewSingleHostReverseProxy(u)
 
+	upstreamDex, err := identity.NewDexProxy(fmt.Sprintf("http://%s:5556", identity.DexServiceName))
+	if err != nil {
+		panic(errors.Wrap(err, "failed to create dex proxy"))
+	}
+
 	r := mux.NewRouter()
 
 	r.Use(handlers.CorsMiddleware)
@@ -80,12 +87,18 @@ func Start() {
 	r.HandleFunc("/api/v1/logout", handlers.Logout) // this route uses its own auth
 	r.Path("/api/v1/metadata").Methods("GET").HandlerFunc(handlers.Metadata)
 
+	r.HandleFunc("/api/v1/oidc/login", handlers.OIDCLogin)
+	r.HandleFunc("/api/v1/oidc/login/callback", handlers.OIDCLoginCallback)
+
 	r.Path("/api/v1/troubleshoot/{appId}/{bundleId}").Methods("PUT").HandlerFunc(handlers.UploadSupportBundle)
 	r.Path("/api/v1/troubleshoot/supportbundle/{bundleId}/redactions").Methods("PUT").HandlerFunc(handlers.SetSupportBundleRedactions)
 	r.Path("/api/v1/preflight/app/{appSlug}/sequence/{sequence}").Methods("POST").HandlerFunc(handlers.PostPreflightStatus)
 
 	// This the handler for license API and should be called by the application only.
 	r.Path("/license/v1/license").Methods("GET").HandlerFunc(handlers.GetPlatformLicenseCompatibility)
+
+	// This handler proxies all requests with prefix /dex to the Dex identity proxy
+	r.PathPrefix("/dex/").HandlerFunc(upstreamDex)
 
 	/**********************************************************************
 	* Cluster auth routes (functions that the operator calls)

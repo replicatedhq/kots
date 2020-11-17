@@ -108,6 +108,26 @@ class SecureAdminConsole extends React.Component {
   }
 
   componentDidMount() {
+    fetch(`${window.env.API_ENDPOINT}/oidc/login`, {
+      headers: {
+        "Authorization": Utilities.getToken(),
+        "Content-Type": "application/json",
+      },
+      method: "POST",
+      body: JSON.stringify({
+      }),
+      redirect: "follow",
+    }).then(response => {
+      console.log(response)
+      if (response.status != 303) {
+        return
+      }
+      // console.log(response)
+      // const redirectUrl = response.headers["location"]
+      // window.location.href = redirectUrl;
+    }).catch(err => {
+      console.log("hello?", err)
+    });
     window.addEventListener("keydown", this.submitForm);
   }
 

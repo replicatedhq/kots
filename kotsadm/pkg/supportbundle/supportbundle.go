@@ -704,6 +704,7 @@ func makeCollectDCollectors() ([]*troubleshootv1beta2.Collect, error) {
 			ImagePullSecret: pullSecret,
 			ImagePullPolicy: string(corev1.PullIfNotPresent),
 			HostPath:        "/var/lib/collectd/rrd",
+			Timeout:         "5m",
 		},
 	}
 

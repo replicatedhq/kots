@@ -5,6 +5,8 @@ import (
 	"time"
 
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
+	identitytypes "github.com/replicatedhq/kots/pkg/identity/types"
+	ingresstypes "github.com/replicatedhq/kots/pkg/ingress/types"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 )
@@ -42,6 +44,12 @@ type DeployOptions struct {
 	NoProxyEnvValue           string
 	ExcludeAdminConsole       bool
 	EnsureKotsadmConfig       bool
+
+	EnableIdentityService bool
+	IdentityConfig        identitytypes.Config
+
+	EnableIngress bool
+	IngressConfig ingresstypes.Config
 
 	KotsadmOptions KotsadmOptions
 }

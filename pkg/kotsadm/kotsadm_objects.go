@@ -6,10 +6,12 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
+	ingresstypes "github.com/replicatedhq/kots/pkg/ingress/types"
 	"github.com/replicatedhq/kots/pkg/kotsadm/types"
 	"github.com/replicatedhq/kots/pkg/util"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	extensionsv1beta1 "k8s.io/api/extensions/v1beta1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -574,4 +576,59 @@ func kotsadmService(namespace string) *corev1.Service {
 	}
 
 	return service
+}
+
+func kotsadmIngress(namespace string, config ingresstypes.Config) *extensionsv1beta1.Ingress {
+	ingress := &extensionsv1beta1.Ingress{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: "v1beta1",
+			Kind:       "Ingress",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "kotsadm",
+			Namespace: namespace,
+			Labels:    types.GetKotsadmLabels(),
+		},
+		Spec: extensionsv1beta1.IngressSpec{
+			Rules: []extensionsv1beta1.IngressRule{
+				{
+					IngressRuleValue: extensionsv1beta1.IngressRuleValue{
+						HTTP: &extensionsv1beta1.HTTPIngressRuleValue{
+							Paths: []extensionsv1beta1.HTTPIngressPath{
+								{
+									Path: config.KotsadmPath(),
+									Backend: extensionsv1beta1.IngressBackend{
+										ServiceName: "kotsadm",
+										ServicePort: intstr.IntOrString{
+											IntVal: 3000,
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	if config.Kotsadm.Annotations != nil {
+		ingress.ObjectMeta.Annotations = config.Kotsadm.Annotations
+	}
+
+	if config.Kotsadm.Host != "" {
+		ingress.Spec.Rules[0].Host = config.Kotsadm.Host
+	}
+
+	if len(config.Kotsadm.TLS) > 0 {
+		ingress.Spec.TLS = config.Kotsadm.TLS
+	}
+
+	return ingress
+}
+
+func updateIngress(existingIngress *extensionsv1beta1.Ingress, namespace string, config ingresstypes.Config) *extensionsv1beta1.Ingress {
+	desiredIngress := kotsadmIngress(namespace, config)
+	existingIngress.Spec.Rules = desiredIngress.Spec.Rules
+	return existingIngress
 }

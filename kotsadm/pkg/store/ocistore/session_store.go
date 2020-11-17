@@ -26,7 +26,7 @@ const (
 	SessionSecretName = "kotsadm-sessions"
 )
 
-func (s OCIStore) CreateSession(forUser *usertypes.User) (*sessiontypes.Session, error) {
+func (s OCIStore) CreateSession(forUser *usertypes.User, expiresAt *time.Time, roles []sessiontypes.SessionRole) (*sessiontypes.Session, error) {
 	logger.Debug("creating session")
 
 	randomID, err := ksuid.NewRandom()
@@ -44,7 +44,14 @@ func (s OCIStore) CreateSession(forUser *usertypes.User) (*sessiontypes.Session,
 	session := sessiontypes.Session{
 		ID:        id,
 		CreatedAt: time.Now(),
-		ExpiresAt: time.Now().AddDate(0, 0, 14),
+		Roles:     roles,
+		HasRBAC:   true,
+	}
+
+	if expiresAt != nil {
+		session.ExpiresAt = *expiresAt
+	} else {
+		session.ExpiresAt = time.Now().AddDate(0, 0, 14)
 	}
 
 	b, err := json.Marshal(session)
