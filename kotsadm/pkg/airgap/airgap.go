@@ -120,7 +120,7 @@ func CreateAppFromAirgap(pendingApp *types.PendingApp, airgapPath string, regist
 	}
 	license := obj.(*kotsv1beta1.License)
 
-	licenseFile, err := ioutil.TempFile("", "kotadm")
+	licenseFile, err := ioutil.TempFile("", "kotsadm")
 	if err != nil {
 		return errors.Wrap(err, "failed to create temp file")
 	}
