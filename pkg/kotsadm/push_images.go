@@ -288,6 +288,8 @@ func TagAndPushAppImages(imagesDir string, options types.PushImagesOptions) ([]k
 
 			if !options.LogForUI {
 				writeProgressLine(reportWriter, fmt.Sprintf("Pushing image %s:%s", rewrittenImage.NewName, rewrittenImage.NewTag))
+			} else {
+				options.Log.ChildActionWithoutSpinner("Pushing image %s:%s", rewrittenImage.NewName, rewrittenImage.NewTag)
 			}
 
 			registryAuth := image.RegistryAuth{
