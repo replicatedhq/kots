@@ -120,6 +120,7 @@ type AppStore interface {
 	SetUpdateCheckerSpec(appID string, updateCheckerSpec string) error
 	SetSnapshotTTL(appID string, snapshotTTL string) error
 	SetSnapshotSchedule(appID string, snapshotSchedule string) error
+	RemoveApp(appID string) error
 }
 
 type SnapshotStore interface {

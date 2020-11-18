@@ -1,6 +1,8 @@
 package handlers
 
 import (
+	"encoding/json"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -313,6 +315,79 @@ func GetAppVersionHistory(w http.ResponseWriter, r *http.Request) {
 		response.VersionHistory = append(response.VersionHistory, *currentVersion)
 	}
 	response.VersionHistory = append(response.VersionHistory, pastVersions...)
+
+	JSON(w, http.StatusOK, response)
+}
+
+type RemoveAppRequest struct {
+	Force bool `json:"force"`
+}
+
+type RemoveAppResponse struct {
+	Error string `json:"error,omitempty"`
+}
+
+func RemoveApp(w http.ResponseWriter, r *http.Request) {
+	appSlug := mux.Vars(r)["appSlug"]
+
+	response := RemoveAppResponse{}
+
+	removeAppRequest := RemoveAppRequest{}
+	if err := json.NewDecoder(r.Body).Decode(&removeAppRequest); err != nil {
+		response.Error = "failed to parse request body"
+		logger.Error(errors.Wrap(err, response.Error))
+		JSON(w, http.StatusBadRequest, response)
+		return
+	}
+
+	app, err := store.GetStore().GetAppFromSlug(appSlug)
+	if err != nil {
+		if store.GetStore().IsNotFound(err) {
+			response.Error = "app slug not found"
+			logger.Error(errors.Wrap(err, response.Error))
+			JSON(w, http.StatusNotFound, response)
+		} else {
+			response.Error = "failed to find app slug"
+			logger.Error(errors.Wrap(err, response.Error))
+			JSON(w, http.StatusInternalServerError, response)
+		}
+		return
+	}
+
+	if !removeAppRequest.Force {
+		downstreams, err := store.GetStore().ListDownstreamsForApp(app.ID)
+		if err != nil {
+			response.Error = "failed to list downstreams"
+			logger.Error(errors.Wrap(err, response.Error))
+			JSON(w, http.StatusInternalServerError, response)
+			return
+		}
+
+		for _, d := range downstreams {
+			currentVersion, err := downstream.GetCurrentVersion(app.ID, d.ClusterID)
+			if err != nil {
+				response.Error = "failed to get current downstream version"
+				logger.Error(errors.Wrap(err, response.Error))
+				JSON(w, http.StatusInternalServerError, response)
+				return
+			}
+
+			if currentVersion != nil {
+				response.Error = fmt.Sprintf("version %d is deployed", currentVersion.Sequence)
+				logger.Error(errors.Wrap(err, response.Error))
+				JSON(w, http.StatusBadRequest, response)
+				return
+			}
+		}
+	}
+
+	err = store.GetStore().RemoveApp(app.ID)
+	if err != nil {
+		response.Error = "failed to remove app"
+		logger.Error(errors.Wrap(err, response.Error))
+		JSON(w, http.StatusInternalServerError, response)
+		return
+	}
 
 	JSON(w, http.StatusOK, response)
 }
