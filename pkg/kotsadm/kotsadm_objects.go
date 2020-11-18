@@ -397,7 +397,7 @@ func kotsadmDeployment(deployOptions types.DeployOptions) *appsv1.Deployment {
 					InitContainers: []corev1.Container{
 						{
 							Image:           fmt.Sprintf("%s/kotsadm:%s", kotsadmRegistry(deployOptions.KotsadmOptions), kotsadmTag(deployOptions.KotsadmOptions)),
-							ImagePullPolicy: corev1.PullAlways,
+							ImagePullPolicy: corev1.PullIfNotPresent,
 							Name:            "restore-db",
 							Command: []string{
 								"/restore-db.sh",
@@ -434,7 +434,7 @@ func kotsadmDeployment(deployOptions types.DeployOptions) *appsv1.Deployment {
 						},
 						{
 							Image:           fmt.Sprintf("%s/kotsadm:%s", kotsadmRegistry(deployOptions.KotsadmOptions), kotsadmTag(deployOptions.KotsadmOptions)),
-							ImagePullPolicy: corev1.PullAlways,
+							ImagePullPolicy: corev1.PullIfNotPresent,
 							Name:            "restore-s3",
 							Command: []string{
 								"/restore-s3.sh",
@@ -496,7 +496,7 @@ func kotsadmDeployment(deployOptions types.DeployOptions) *appsv1.Deployment {
 					Containers: []corev1.Container{
 						{
 							Image:           fmt.Sprintf("%s/kotsadm:%s", kotsadmRegistry(deployOptions.KotsadmOptions), kotsadmTag(deployOptions.KotsadmOptions)),
-							ImagePullPolicy: corev1.PullAlways,
+							ImagePullPolicy: corev1.PullIfNotPresent,
 							Name:            "kotsadm",
 							Ports: []corev1.ContainerPort{
 								{

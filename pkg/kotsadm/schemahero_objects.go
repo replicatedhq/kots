@@ -61,7 +61,7 @@ func migrationsPod(deployOptions types.DeployOptions) *corev1.Pod {
 			InitContainers: []corev1.Container{
 				{
 					Image:           fmt.Sprintf("%s/kotsadm-migrations:%s", kotsadmRegistry(deployOptions.KotsadmOptions), kotsadmTag(deployOptions.KotsadmOptions)),
-					ImagePullPolicy: corev1.PullAlways,
+					ImagePullPolicy: corev1.PullIfNotPresent,
 					Name:            "plan",
 					Args:            []string{"plan"},
 					VolumeMounts: []corev1.VolumeMount{
@@ -110,7 +110,7 @@ func migrationsPod(deployOptions types.DeployOptions) *corev1.Pod {
 			Containers: []corev1.Container{
 				{
 					Image:           fmt.Sprintf("%s/kotsadm-migrations:%s", kotsadmRegistry(deployOptions.KotsadmOptions), kotsadmTag(deployOptions.KotsadmOptions)),
-					ImagePullPolicy: corev1.PullAlways,
+					ImagePullPolicy: corev1.PullIfNotPresent,
 					Name:            "apply",
 					Args:            []string{"apply"},
 					VolumeMounts: []corev1.VolumeMount{
