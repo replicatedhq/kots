@@ -9,6 +9,7 @@ import each from "lodash/each";
 import find from "lodash/find";
 import trim from "lodash/trim";
 import * as jsdiff from "diff";
+import moment from "moment";
 
 dayjs.extend(utc);
 dayjs.extend(relativeTime);
@@ -545,6 +546,17 @@ export const Utilities = {
        return "applyStderr";
     } else {
       return Object.keys(tabs)[0];
+    }
+  },
+
+  checkIsDateExpired(date) {
+    const currentDate = moment();
+    const diff = currentDate.diff(moment(date), "days");
+    
+    if(diff > 0) {
+      return true;
+    } else {
+      return false;
     }
   }
 };

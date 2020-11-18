@@ -33,6 +33,7 @@ type SyncLicenseRequest struct {
 
 type SyncLicenseResponse struct {
 	ID              string                `json:"id"`
+	Assignee        string                `json:"assignee"`
 	ExpiresAt       time.Time             `json:"expiresAt"`
 	ChannelName     string                `json:"channelName"`
 	LicenseSequence int64                 `json:"licenseSequence"`
@@ -42,6 +43,7 @@ type SyncLicenseResponse struct {
 
 type GetLicenseResponse struct {
 	ID              string                `json:"id"`
+	Assignee        string                `json:"assignee"`
 	ExpiresAt       time.Time             `json:"expiresAt"`
 	ChannelName     string                `json:"channelName"`
 	LicenseSequence int64                 `json:"licenseSequence"`
@@ -116,6 +118,7 @@ func SyncLicense(w http.ResponseWriter, r *http.Request) {
 
 	syncLicenseResponse := SyncLicenseResponse{
 		ID:              latestLicense.Spec.LicenseID,
+		Assignee:        latestLicense.Spec.CustomerName,
 		ChannelName:     latestLicense.Spec.ChannelName,
 		LicenseSequence: latestLicense.Spec.LicenseSequence,
 		LicenseType:     latestLicense.Spec.LicenseType,
@@ -151,6 +154,7 @@ func GetLicense(w http.ResponseWriter, r *http.Request) {
 
 	getLicenseResponse := GetLicenseResponse{
 		ID:              license.Spec.LicenseID,
+		Assignee:        license.Spec.CustomerName,
 		ChannelName:     license.Spec.ChannelName,
 		LicenseSequence: license.Spec.LicenseSequence,
 		LicenseType:     license.Spec.LicenseType,

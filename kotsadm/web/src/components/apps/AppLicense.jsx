@@ -150,64 +150,74 @@ class AppLicense extends Component {
     const gitops = app?.downstreams?.length && app.downstreams[0]?.gitops;
     const appName = app?.name || "Your application";
 
+
     return (
       <div className="flex flex-column justifyContent--center alignItems--center">
         <Helmet>
           <title>{`${appName} License`}</title>
         </Helmet>
-        {appLicense?.licenseType === "community" &&
-          <div className="CommunityLicense--wrapper u-marginTop--30 flex flex1 alignItems--center">
-            <div className="flex flex-auto">
-              <span className="icon communityIcon"></span>
-            </div>
-            <div className="flex1 flex-column u-marginLeft--10">
-              <p className="u-color--emperor u-fontSize--large u-fontWeight--bold u-lineHeight--medium u-marginBottom--5"> You are running a Community Edition of {appName} </p>
-              <p className="u-color--silverChalice u-fontSize--normal u-lineHeight--medium"> To change your license, please contact your account representative. </p>
-            </div>
-          </div>
-        }
         {size(appLicense) > 0 ?
-          <div className="LicenseDetails--wrapper u-textAlign--left u-paddingRight--20 u-paddingLeft--20">
-            <div className="flex u-marginBottom--20 u-paddingBottom--5 u-marginTop--20 alignItems--center">
-              <p className="u-fontWeight--bold u-color--tuna u-fontSize--larger u-lineHeight--normal u-marginRight--10">License details</p>
+          <div className="License--wrapper flex flex-column">
+            <div className="flex flex1 alignItems--center">
+              <span className="u-fontSize--large u-fontWeight--bold u-lineHeight--normal u-color--tuna"> License </span>
+              {appLicense?.licenseType === "community" &&
+                <div className="flex-auto">
+                  <span className="CommunityEditionTag u-marginLeft--10"> Community Edition </span>
+                  <span className="u-fontSize--small u-fontWeight--normal u-lineHeight--normal u-marginLeft--10" style={{ color: "#A5A5A5" }}> To change your license, please contact your account representative. </span>
+                </div>}
             </div>
-            <div className="u-color--tundora u-fontSize--normal u-fontWeight--medium">
-              <div className="flex u-marginBottom--20">
-                <p className="u-marginRight--10">Expires:</p>
-                <p className="u-fontWeight--bold u-color--tuna">{expiresAt}</p>
-              </div>
-              {appLicense.channelName &&
-                <div className="flex u-marginBottom--20">
-                  <p className="u-marginRight--10">Channel:</p>
-                  <p className="u-fontWeight--bold u-color--tuna">{appLicense.channelName}</p>
+            <div className="LicenseDetails flex justifyContent--spaceBetween">
+              <div className="flex1 flex-column">
+                <div className="flex flex-auto alignItems--center">
+                  <span className="u-fontSize--larger u-fontWeight--bold u-lineHeight--normal u-color--tundora"> {appLicense.assignee} </span>
+                  {appLicense?.channelName &&
+                    <span className="channelTag flex-auto alignItems--center u-fontWeight--medium u-marginLeft--10"> {appLicense.channelName} </span>}
                 </div>
-              }
-              {appLicense.entitlements?.map(entitlement => {
-                return (
-                  <div key={entitlement.label} className="flex u-marginBottom--20">
-                    <p className="u-marginRight--10">{entitlement.title}</p>
-                    <p className="u-fontWeight--bold u-color--tuna">{`${entitlement.value}`}</p>
+                <div className="flex flex1 alignItems--center u-marginTop--5">
+                  <div className={`LicenseTypeTag ${appLicense?.licenseType} flex-auto flex-verticalCenter alignItems--center`}>
+                    <span className={`icon ${appLicense?.licenseType === "---" ? "" : appLicense?.licenseType}-icon`}></span>
+                    {appLicense?.licenseType !== "---"
+                      ? `${Utilities.toTitleCase(appLicense.licenseType)} license`
+                      : `---`}
                   </div>
-                );
-              })}
-              {app.isAirgap ?
-                <Dropzone
-                  className="Dropzone-wrapper"
-                  accept={["application/x-yaml", ".yaml", ".yml"]}
-                  onDropAccepted={this.onDrop}
-                  multiple={false}
-                >
-                  <button className="btn secondary blue u-marginBottom--10" disabled={loading}>{loading ? "Uploading" : "Upload license"}</button>
-                </Dropzone>
-                :
-                <button className="btn secondary blue u-marginBottom--10" disabled={loading} onClick={this.syncAppLicense.bind(this, "")}>{loading ? "Syncing" : "Sync license"}</button>
-              }
-              {message &&
-                <p className={classNames("u-fontWeight--bold u-fontSize--small u-position--absolute", {
-                  "u-color--red": messageType === "error",
-                  "u-color--tuna": messageType === "info",
-                })}>{message}</p>
-              }
+                  <p className={`u-fontWeight--medium u-fontSize--small u-lineHeight--normal u-marginLeft--10 ${Utilities.checkIsDateExpired(expiresAt) ? "u-color--chestnut" : "u-color--silverSand"}`}>
+                    {expiresAt === "Never" ? "Does not expire" : Utilities.checkIsDateExpired(expiresAt) ? `Expired ${expiresAt}` : `Expires ${expiresAt}`}
+                  </p>
+                </div>
+                {size(appLicense?.entitlements) > 0 &&
+                  <div className="flexWrap--wrap flex alignItems--center u-marginTop--12">
+                    {appLicense.entitlements?.map(entitlement => {
+                      return (
+                        <span key={entitlement.label} className="u-fontSize--small u-lineHeight--normal u-color--doveGray u-fontWeight--medium u-marginRight--10"> {entitlement.title}: <span className="u-fontWeight--bold"> {entitlement.value} </span></span>
+                      );
+                    })}
+                  </div>}
+                <div className="flexWrap--wrap flex alignItems--center u-marginTop--10">
+                  {app?.isAirgap ? <span className="flex alignItems--center u-fontWeight--medium u-fontSize--small u-lineHeight--normal u-color--tundora u-marginRight--10"><span className="icon licenseAirgapIcon" /> Airgap enabled </span> : null}
+                  {app?.allowSnapshots ? <span className="flex alignItems--center u-fontWeight--medium u-fontSize--small u-lineHeight--normal u-color--tundora u-marginRight--10"><span className="icon licenseVeleroIcon" /> Snapshots enabled </span> : null}
+                  {app?.isGitOpsSupported ? <span className="flex alignItems--center u-fontWeight--medium u-fontSize--small u-lineHeight--normal u-color--tundora u-marginRight--10"><span className="icon licenseGithubIcon" /> GitOps enabled </span> : null}
+                </div>
+              </div>
+              <div className="flex-column flex-auto alignItems--center justifyContent--center">
+                {app.isAirgap ?
+                  <Dropzone
+                    className="Dropzone-wrapper"
+                    accept={["application/x-yaml", ".yaml", ".yml"]}
+                    onDropAccepted={this.onDrop}
+                    multiple={false}
+                  >
+                    <button className="btn primary blue u-marginBottom--10" disabled={loading}>{loading ? "Uploading" : "Upload license"}</button>
+                  </Dropzone>
+                  :
+                  <button className="btn primary blue u-marginBottom--10" disabled={loading} onClick={this.syncAppLicense.bind(this, "")}>{loading ? "Syncing" : "Sync license"}</button>
+                }
+                {message &&
+                  <p className={classNames("u-fontWeight--bold u-fontSize--small", {
+                    "u-color--red": messageType === "error",
+                    "u-color--tuna": messageType === "info",
+                  })}>{message}</p>
+                }
+              </div>
             </div>
           </div>
           :
