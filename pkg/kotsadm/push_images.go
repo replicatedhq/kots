@@ -286,10 +286,11 @@ func TagAndPushAppImages(imagesDir string, options types.PushImagesOptions) ([]k
 				return nil, errors.Wrap(err, "failed to decode image from path")
 			}
 
-			if !options.LogForUI {
-				writeProgressLine(reportWriter, fmt.Sprintf("Pushing image %s:%s", rewrittenImage.NewName, rewrittenImage.NewTag))
+			if options.LogForUI {
+				// still log in console for future reference
+				fmt.Printf("Pushing image %s:%s\n", rewrittenImage.NewName, rewrittenImage.NewTag)
 			} else {
-				options.Log.ChildActionWithoutSpinner("Pushing image %s:%s", rewrittenImage.NewName, rewrittenImage.NewTag)
+				writeProgressLine(reportWriter, fmt.Sprintf("Pushing image %s:%s", rewrittenImage.NewName, rewrittenImage.NewTag))
 			}
 
 			registryAuth := image.RegistryAuth{

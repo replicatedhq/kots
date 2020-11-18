@@ -347,8 +347,6 @@ func copyOneImage(srcRegistry, destRegistry registry.RegistryOptions, image stri
 		return buildImageAlts(destRegistry, image)
 	}
 
-	log.Info("copying image from %q to %q", sourceImage, DestRef(destRegistry, image))
-
 	_, err = copy.Image(context.Background(), policyContext, destRef, srcRef, &copy.Options{
 		RemoveSignatures:      true,
 		SignBy:                "",
