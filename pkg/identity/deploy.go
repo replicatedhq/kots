@@ -191,7 +191,7 @@ func marshalDexConfig(identityConfig identitytypes.Config, ingressConfig ingress
 		return nil, errors.Wrap(err, "failed to execute template")
 	}
 
-	return marshalledConfig, nil
+	return buf.Bytes(), nil
 }
 
 func secretResource(secretName string, marshalledConfig []byte) (*corev1.Secret, error) {
@@ -205,7 +205,7 @@ func secretResource(secretName string, marshalledConfig []byte) (*corev1.Secret,
 			Labels: kotsadmtypes.GetKotsadmLabels(DexAdditionalLabels),
 		},
 		Data: map[string][]byte{
-			"dexConfig.yaml": []byte(marshalledConfig),
+			"dexConfig.yaml": marshalledConfig,
 		},
 	}, nil
 }
