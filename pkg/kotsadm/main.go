@@ -421,11 +421,13 @@ func ensureKotsadm(deployOptions types.DeployOptions, clientset *kubernetes.Clie
 	if deployOptions.EnableIngress {
 		log.ChildActionWithSpinner("Enabling ingress for the Admin Console")
 
+		deployOptions.IngressConfig.Enabled = true
+
 		if err := ingress.SetConfig(context.TODO(), deployOptions.Namespace, deployOptions.IngressConfig); err != nil {
 			return errors.Wrap(err, "failed to set identity config")
 		}
 
-		if err := EnsureIngress(deployOptions.Namespace, clientset, deployOptions.IngressConfig); err != nil {
+		if err := EnsureIngress(context.TODO(), deployOptions.Namespace, clientset, deployOptions.IngressConfig); err != nil {
 			return errors.Wrap(err, "failed to ensure ingress")
 		}
 		log.FinishSpinner()

@@ -10,14 +10,14 @@ import (
 	"k8s.io/client-go/kubernetes"
 )
 
-func EnsureIngress(namespace string, clientset *kubernetes.Clientset, ingressConfig ingresstypes.Config) error {
-	existingIngress, err := clientset.ExtensionsV1beta1().Ingresses(namespace).Get(context.TODO(), "kotsadm", metav1.GetOptions{})
+func EnsureIngress(ctx context.Context, namespace string, clientset *kubernetes.Clientset, ingressConfig ingresstypes.Config) error {
+	existingIngress, err := clientset.ExtensionsV1beta1().Ingresses(namespace).Get(ctx, "kotsadm", metav1.GetOptions{})
 	if err != nil {
 		if !kuberneteserrors.IsNotFound(err) {
 			return errors.Wrap(err, "failed to get existing kotsadm ingress")
 		}
 
-		_, err = clientset.ExtensionsV1beta1().Ingresses(namespace).Create(context.TODO(), kotsadmIngress(namespace, ingressConfig), metav1.CreateOptions{})
+		_, err = clientset.ExtensionsV1beta1().Ingresses(namespace).Create(ctx, kotsadmIngress(namespace, ingressConfig), metav1.CreateOptions{})
 		if err != nil {
 			return errors.Wrap(err, "failed to create kotsadm ingress")
 		}
@@ -27,10 +27,18 @@ func EnsureIngress(namespace string, clientset *kubernetes.Clientset, ingressCon
 
 	existingIngress = updateIngress(existingIngress, namespace, ingressConfig)
 
-	_, err = clientset.ExtensionsV1beta1().Ingresses(namespace).Update(context.TODO(), existingIngress, metav1.UpdateOptions{})
+	_, err = clientset.ExtensionsV1beta1().Ingresses(namespace).Update(ctx, existingIngress, metav1.UpdateOptions{})
 	if err != nil {
 		return errors.Wrap(err, "failed to update kotsadm ingress")
 	}
 
 	return nil
+}
+
+func DeleteIngress(ctx context.Context, namespace string, clientset *kubernetes.Clientset) error {
+	err := clientset.ExtensionsV1beta1().Ingresses(namespace).Delete(ctx, "kotsadm", metav1.DeleteOptions{})
+	if kuberneteserrors.IsNotFound(err) {
+		err = nil
+	}
+	return errors.Wrap(err, "failed to delete ingress")
 }

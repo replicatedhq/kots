@@ -5,6 +5,7 @@ import (
 )
 
 type Config struct {
+	Enabled     bool                    `json:"enabled" yaml:"enabled"`
 	Annotations map[string]string       `json:"annotations,omitempty" yaml:"annotations,omitempty"`
 	Path        string                  `json:"path" yaml:"path"`
 	Host        string                  `json:"host" yaml:"host"`

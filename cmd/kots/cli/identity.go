@@ -58,8 +58,7 @@ func IdentityServiceInstallCmd() *cobra.Command {
 			if err != nil {
 				return errors.Wrap(err, "failed to get ingress config")
 			}
-			if ingressConfig == nil {
-				// TODO: a cli command to enable ingress
+			if !ingressConfig.Enabled {
 				return errors.New("ingress is not enabled")
 			}
 
