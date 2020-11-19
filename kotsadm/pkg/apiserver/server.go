@@ -183,6 +183,7 @@ func Start() {
 	sessionAuthRouter.Path("/api/v1/app/{appSlug}/license").Methods("GET").HandlerFunc(handlers.GetLicense)
 	sessionAuthRouter.Path("/api/v1/app/{appSlug}/updatecheck").Methods("POST").HandlerFunc(handlers.AppUpdateCheck)
 	sessionAuthRouter.Path("/api/v1/app/{appSlug}/updatecheckerspec").Methods("PUT").HandlerFunc(handlers.UpdateCheckerSpec)
+	sessionAuthRouter.Path("/api/v1/app/{appSlug}/remove").Methods("POST").HandlerFunc(handlers.RemoveApp)
 
 	// App snapshot routes
 	sessionAuthRouter.Path("/api/v1/app/{appSlug}/snapshot/backup").Methods("POST").HandlerFunc(handlers.CreateApplicationBackup)
