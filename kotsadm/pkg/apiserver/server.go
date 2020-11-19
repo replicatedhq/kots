@@ -18,6 +18,7 @@ import (
 	"github.com/replicatedhq/kots/kotsadm/pkg/snapshotscheduler"
 	"github.com/replicatedhq/kots/kotsadm/pkg/socketservice"
 	"github.com/replicatedhq/kots/kotsadm/pkg/store"
+	"github.com/replicatedhq/kots/kotsadm/pkg/supportbundle"
 	"github.com/replicatedhq/kots/kotsadm/pkg/updatechecker"
 )
 
@@ -35,6 +36,8 @@ func Start() {
 	}
 
 	store.GetStore().RunMigrations()
+
+	supportbundle.StartServer()
 
 	if err := informers.Start(); err != nil {
 		log.Println("Failed to start informers", err)

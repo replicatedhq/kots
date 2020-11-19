@@ -373,6 +373,7 @@ func addDefaultTroubleshoot(supportBundle *troubleshootv1beta2.SupportBundle, ap
 
 	supportBundle.Spec.Collectors = append(supportBundle.Spec.Collectors, makeDbCollectors()...)
 	supportBundle.Spec.Collectors = append(supportBundle.Spec.Collectors, makeKotsadmCollectors()...)
+	supportBundle.Spec.Collectors = append(supportBundle.Spec.Collectors, makeGoRoutineCollectors()...)
 	supportBundle.Spec.Collectors = append(supportBundle.Spec.Collectors, makeRookCollectors()...)
 	supportBundle.Spec.Collectors = append(supportBundle.Spec.Collectors, makeKurlCollectors()...)
 	supportBundle.Spec.Collectors = append(supportBundle.Spec.Collectors, makeVeleroCollectors()...)
@@ -441,9 +442,9 @@ func makeKotsadmCollectors() []*troubleshootv1beta2.Collect {
 		"kotsadm-operator",
 		"kurl-proxy-kotsadm",
 	}
-	rookCollectors := []*troubleshootv1beta2.Collect{}
+	kotsadmCollectors := []*troubleshootv1beta2.Collect{}
 	for _, name := range names {
-		rookCollectors = append(rookCollectors, &troubleshootv1beta2.Collect{
+		kotsadmCollectors = append(kotsadmCollectors, &troubleshootv1beta2.Collect{
 			Logs: &troubleshootv1beta2.Logs{
 				CollectorMeta: troubleshootv1beta2.CollectorMeta{
 					CollectorName: name,
@@ -454,7 +455,32 @@ func makeKotsadmCollectors() []*troubleshootv1beta2.Collect {
 			},
 		})
 	}
-	return rookCollectors
+	return kotsadmCollectors
+}
+
+func makeGoRoutineCollectors() []*troubleshootv1beta2.Collect {
+	names := []string{
+		"kotsadm",
+		"kotsadm-operator",
+	}
+	goroutineCollectors := []*troubleshootv1beta2.Collect{}
+	for _, name := range names {
+		goroutineCollectors = append(goroutineCollectors, &troubleshootv1beta2.Collect{
+			Exec: &troubleshootv1beta2.Exec{
+				CollectorMeta: troubleshootv1beta2.CollectorMeta{
+					CollectorName: fmt.Sprintf("%s-goroutines", name),
+				},
+				Name:          "kots/admin-console",
+				Selector:      []string{fmt.Sprintf("app=%s", name)},
+				Namespace:     os.Getenv("POD_NAMESPACE"),
+				ContainerName: name,
+				Command:       []string{"curl"},
+				Args:          []string{"http://localhost:3030/goroutines"},
+				Timeout:       "10s",
+			},
+		})
+	}
+	return goroutineCollectors
 }
 
 func makeRookCollectors() []*troubleshootv1beta2.Collect {
