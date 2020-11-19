@@ -175,14 +175,15 @@ func secretResource(secretName string, identityConfig identitytypes.Config, ingr
 		return nil, errors.Wrap(err, "failed to marshal dex config")
 	}
 
+	redirectURI := fmt.Sprintf("%s/callback", dexIssuerURL(identityConfig.IngressConfig))
 	buf := bytes.NewBuffer(nil)
-	t, err := template.New(secretName).Parse(string(marshalledConfig))
+	t, err := template.New(secretName).Funcs(template.FuncMap{
+		"OIDCIdentityRedirectURI": func() string { return redirectURI },
+	}).Parse(string(marshalledConfig))
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to parse dex config for templating")
 	}
-	t.Execute(buf, map[string]string{
-		"OIDCIdentityRedirectURI": fmt.Sprintf("%s/callback", dexIssuerURL(identityConfig.IngressConfig)),
-	})
+	t.Execute(buf, nil)
 
 	return &corev1.Secret{
 		TypeMeta: metav1.TypeMeta{
