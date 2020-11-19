@@ -428,7 +428,7 @@ func InstallCmd() *cobra.Command {
 
 	cmd.Flags().Bool("enable-ingress", false, "when set, ingress will be enabled for the KOTS Admin Console")
 	cmd.Flags().MarkHidden("enable-ingress")
-	cmd.Flags().String("ingress-config", "", "path to a yaml file containing the KOTS ingress configuration")
+	cmd.Flags().String("ingress-config", "", "path to a yaml file containing the KOTS Admin Console ingress configuration")
 	cmd.Flags().MarkHidden("ingress-config")
 
 	return cmd

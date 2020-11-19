@@ -5,14 +5,11 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"net/http/httputil"
-	"net/url"
 	"os"
 	"path/filepath"
 	"time"
 
 	"github.com/gorilla/mux"
-	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/kotsadm/pkg/automation"
 	"github.com/replicatedhq/kots/kotsadm/pkg/handlers"
 	"github.com/replicatedhq/kots/kotsadm/pkg/informers"
@@ -20,7 +17,6 @@ import (
 	"github.com/replicatedhq/kots/kotsadm/pkg/socketservice"
 	"github.com/replicatedhq/kots/kotsadm/pkg/store"
 	"github.com/replicatedhq/kots/kotsadm/pkg/updatechecker"
-	"github.com/replicatedhq/kots/pkg/identity"
 )
 
 func Start() {
@@ -59,24 +55,10 @@ func Start() {
 		}
 	}
 
-	u, err := url.Parse("http://kotsadm-api-node:3000")
-	if err != nil {
-		panic(err)
-	}
-	upstream := httputil.NewSingleHostReverseProxy(u)
-
-	upstreamDex, err := identity.NewDexProxy(fmt.Sprintf("http://%s:5556", identity.DexServiceName))
-	if err != nil {
-		panic(errors.Wrap(err, "failed to create dex proxy"))
-	}
-
 	r := mux.NewRouter()
 
 	r.Use(handlers.CorsMiddleware)
 	r.Methods("OPTIONS").HandlerFunc(handlers.CORS)
-
-	// proxy all graphql requests
-	r.Path("/graphql").Methods("POST").HandlerFunc(handlers.NodeProxy(upstream))
 
 	/**********************************************************************
 	* Unauthenticated routes
@@ -96,9 +78,6 @@ func Start() {
 
 	// This the handler for license API and should be called by the application only.
 	r.Path("/license/v1/license").Methods("GET").HandlerFunc(handlers.GetPlatformLicenseCompatibility)
-
-	// This handler proxies all requests with prefix /dex to the Dex identity proxy
-	r.PathPrefix("/dex/").HandlerFunc(upstreamDex)
 
 	/**********************************************************************
 	* Cluster auth routes (functions that the operator calls)
@@ -138,7 +117,6 @@ func Start() {
 	sessionAuthRouter.Path("/api/v1/troubleshoot/supportbundle/{bundleId}/redactions").Methods("GET").HandlerFunc(handlers.GetSupportBundleRedactions)
 	sessionAuthRouter.Path("/api/v1/troubleshoot/supportbundle/{bundleId}/download").Methods("GET").HandlerFunc(handlers.DownloadSupportBundle)
 	sessionAuthRouter.Path("/api/v1/troubleshoot/supportbundle/app/{appId}/cluster/{clusterId}/collect").Methods("POST").HandlerFunc(handlers.CollectSupportBundle)
-	sessionAuthRouter.Path("/api/v1/troubleshoot/analyzebundle/{bundleId}").Methods("POST").HandlerFunc(handlers.NodeProxy(upstream))
 
 	// redactor routes
 	sessionAuthRouter.Path("/api/v1/redact/set").Methods("PUT").HandlerFunc(handlers.UpdateRedact)

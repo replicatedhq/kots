@@ -2,7 +2,6 @@ package dex
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 	"os"
 
@@ -79,21 +78,18 @@ func GetKotsadmOAuth2Config() (*oauth2.Config, error) {
 		return nil, errors.New("kotsadm dex client not found")
 	}
 
-	baseURL := os.Getenv("API_ADVERTISE_ENDPOINT")
-	redirectURL := fmt.Sprintf("%s/api/v1/oidc/login/callback", baseURL)
-
 	oauth2Config := oauth2.Config{
 		ClientID:     kotsadmClient.ID,
 		ClientSecret: kotsadmClient.Secret,
 		Endpoint:     provider.Endpoint(),
 		Scopes:       getScopes(),
-		RedirectURL:  redirectURL, // TODO: read from dex config
+		RedirectURL:  kotsadmClient.RedirectURIs[0],
 	}
 
 	return &oauth2Config, nil
 }
 
 func getScopes() []string {
-	// "offline_access"
+	// TODO "offline_access"
 	return []string{"openid", "profile", "email", "groups"}
 }

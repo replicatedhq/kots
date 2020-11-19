@@ -149,7 +149,7 @@ func marshalDexConfig(identityConfig identitytypes.Config, ingressConfig ingress
 			},
 		},
 		Web: dextypes.Web{
-			HTTP: fmt.Sprintf("http://%s", path.Join(identityConfig.IngressConfig.Host, identityConfig.IngressPath(), "/dex")),
+			HTTP: "0.0.0.0:5556",
 		},
 		OAuth2: dextypes.OAuth2{
 			SkipApprovalScreen: true,
