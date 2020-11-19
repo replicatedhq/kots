@@ -39,7 +39,13 @@ func getKurlValues(installerName, nameSpace string) *kurlv1beta1.Installer {
 	if allInstallers == nil || len(allInstallers.Items) == 0 {
 		return nil
 	}
-	return &allInstallers.Items[0]
+	newestInstaller := allInstallers.Items[0]
+	for _, installer := range allInstallers.Items {
+		if installer.CreationTimestamp.After(newestInstaller.CreationTimestamp.Time) {
+			newestInstaller = installer
+		}
+	}
+	return &newestInstaller
 }
 
 func newKurlContext(installerName, nameSpace string) *kurlCtx {
