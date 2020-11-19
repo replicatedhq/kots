@@ -64,4 +64,5 @@ spec:
       hostAliases:
         - ip: 172.17.0.1
           hostnames:
-            - kotsadmdevenv.com
+            - kotsadm.kotsadmdevenv.com
+            - dex.kotsadmdevenv.com
