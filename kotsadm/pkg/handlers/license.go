@@ -32,21 +32,29 @@ type SyncLicenseRequest struct {
 }
 
 type SyncLicenseResponse struct {
-	ID              string                `json:"id"`
-	ExpiresAt       time.Time             `json:"expiresAt"`
-	ChannelName     string                `json:"channelName"`
-	LicenseSequence int64                 `json:"licenseSequence"`
-	LicenseType     string                `json:"licenseType"`
-	Entitlements    []EntitlementResponse `json:"entitlements"`
+	ID                  string                `json:"id"`
+	Assignee            string                `json:"assignee"`
+	ExpiresAt           time.Time             `json:"expiresAt"`
+	ChannelName         string                `json:"channelName"`
+	LicenseSequence     int64                 `json:"licenseSequence"`
+	LicenseType         string                `json:"licenseType"`
+	Entitlements        []EntitlementResponse `json:"entitlements"`
+	IsAirgapSupported   bool                  `json:"isAirgapSupported"`
+	IsGitOpsSupported   bool                  `json:"isGitOpsSupported"`
+	IsSnapshotSupported bool                  `json:"isSnapshotSupported"`
 }
 
 type GetLicenseResponse struct {
-	ID              string                `json:"id"`
-	ExpiresAt       time.Time             `json:"expiresAt"`
-	ChannelName     string                `json:"channelName"`
-	LicenseSequence int64                 `json:"licenseSequence"`
-	LicenseType     string                `json:"licenseType"`
-	Entitlements    []EntitlementResponse `json:"entitlements"`
+	ID                  string                `json:"id"`
+	Assignee            string                `json:"assignee"`
+	ExpiresAt           time.Time             `json:"expiresAt"`
+	ChannelName         string                `json:"channelName"`
+	LicenseSequence     int64                 `json:"licenseSequence"`
+	LicenseType         string                `json:"licenseType"`
+	Entitlements        []EntitlementResponse `json:"entitlements"`
+	IsAirgapSupported   bool                  `json:"isAirgapSupported"`
+	IsGitOpsSupported   bool                  `json:"isGitOpsSupported"`
+	IsSnapshotSupported bool                  `json:"isSnapshotSupported"`
 }
 
 type EntitlementResponse struct {
@@ -115,12 +123,16 @@ func SyncLicense(w http.ResponseWriter, r *http.Request) {
 	}
 
 	syncLicenseResponse := SyncLicenseResponse{
-		ID:              latestLicense.Spec.LicenseID,
-		ChannelName:     latestLicense.Spec.ChannelName,
-		LicenseSequence: latestLicense.Spec.LicenseSequence,
-		LicenseType:     latestLicense.Spec.LicenseType,
-		Entitlements:    entitlements,
-		ExpiresAt:       expiresAt,
+		ID:                  latestLicense.Spec.LicenseID,
+		Assignee:            latestLicense.Spec.CustomerName,
+		ChannelName:         latestLicense.Spec.ChannelName,
+		LicenseSequence:     latestLicense.Spec.LicenseSequence,
+		LicenseType:         latestLicense.Spec.LicenseType,
+		Entitlements:        entitlements,
+		ExpiresAt:           expiresAt,
+		IsAirgapSupported:   latestLicense.Spec.IsAirgapSupported,
+		IsGitOpsSupported:   latestLicense.Spec.IsGitOpsSupported,
+		IsSnapshotSupported: latestLicense.Spec.IsSnapshotSupported,
 	}
 
 	JSON(w, 200, syncLicenseResponse)
@@ -150,12 +162,16 @@ func GetLicense(w http.ResponseWriter, r *http.Request) {
 	}
 
 	getLicenseResponse := GetLicenseResponse{
-		ID:              license.Spec.LicenseID,
-		ChannelName:     license.Spec.ChannelName,
-		LicenseSequence: license.Spec.LicenseSequence,
-		LicenseType:     license.Spec.LicenseType,
-		Entitlements:    entitlements,
-		ExpiresAt:       expiresAt,
+		ID:                  license.Spec.LicenseID,
+		Assignee:            license.Spec.CustomerName,
+		ChannelName:         license.Spec.ChannelName,
+		LicenseSequence:     license.Spec.LicenseSequence,
+		LicenseType:         license.Spec.LicenseType,
+		Entitlements:        entitlements,
+		ExpiresAt:           expiresAt,
+		IsAirgapSupported:   license.Spec.IsAirgapSupported,
+		IsGitOpsSupported:   license.Spec.IsGitOpsSupported,
+		IsSnapshotSupported: license.Spec.IsSnapshotSupported,
 	}
 
 	JSON(w, 200, getLicenseResponse)
