@@ -126,6 +126,15 @@ func IngressUninstallCmd() *cobra.Command {
 				return err
 			}
 
+			identityConfig, err := identity.GetConfig(cmd.Context(), namespace)
+			if err != nil {
+				return errors.Wrap(err, "failed to get identity config")
+			}
+
+			if identityConfig.Enabled {
+				return errors.New("identity service is enabled")
+			}
+
 			log.ChildActionWithSpinner("Updating the Admin Console ingress configuration")
 
 			ingressConfig, err := ingress.GetConfig(cmd.Context(), namespace)
