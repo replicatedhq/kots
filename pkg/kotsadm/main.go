@@ -443,7 +443,7 @@ func ensureKotsadm(deployOptions types.DeployOptions, clientset *kubernetes.Clie
 			return errors.Wrap(err, "failed to set identity config")
 		}
 
-		if err := identity.Deploy(context.TODO(), log, clientset, deployOptions.Namespace, deployOptions.IdentityConfig.DexConnectors, deployOptions.IngressConfig); err != nil {
+		if err := identity.Deploy(context.TODO(), log, clientset, deployOptions.Namespace, deployOptions.IdentityConfig, deployOptions.IngressConfig); err != nil {
 			return errors.Wrap(err, "failed to deploy identity service")
 		}
 		log.FinishSpinner()

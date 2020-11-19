@@ -612,16 +612,16 @@ func kotsadmIngress(namespace string, config ingresstypes.Config) *extensionsv1b
 		},
 	}
 
-	if config.Kotsadm.Annotations != nil {
-		ingress.ObjectMeta.Annotations = config.Kotsadm.Annotations
+	if config.Annotations != nil {
+		ingress.ObjectMeta.Annotations = config.Annotations
 	}
 
-	if config.Kotsadm.Host != "" {
-		ingress.Spec.Rules[0].Host = config.Kotsadm.Host
+	if config.Host != "" {
+		ingress.Spec.Rules[0].Host = config.Host
 	}
 
-	if len(config.Kotsadm.TLS) > 0 {
-		ingress.Spec.TLS = config.Kotsadm.TLS
+	if len(config.TLS) > 0 {
+		ingress.Spec.TLS = config.TLS
 	}
 
 	return ingress

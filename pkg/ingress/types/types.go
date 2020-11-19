@@ -5,18 +5,6 @@ import (
 )
 
 type Config struct {
-	Kotsadm Kotsadm `json:"kotsadm" yaml:"kotsadm"`
-	Dex     Dex     `json:"dex,omitempty" yaml:"dex,omitempty"`
-}
-
-type Kotsadm struct {
-	Annotations map[string]string       `json:"annotations,omitempty" yaml:"annotations,omitempty"`
-	Path        string                  `json:"path" yaml:"path"`
-	Host        string                  `json:"host" yaml:"host"`
-	TLS         []extensions.IngressTLS `json:"tls,omitempty" yaml:"tls,omitempty"`
-}
-
-type Dex struct {
 	Annotations map[string]string       `json:"annotations,omitempty" yaml:"annotations,omitempty"`
 	Path        string                  `json:"path" yaml:"path"`
 	Host        string                  `json:"host" yaml:"host"`
@@ -24,25 +12,13 @@ type Dex struct {
 }
 
 func (c Config) KotsadmPath() string {
-	if c.Kotsadm.Path != "" {
-		return c.Kotsadm.Path
+	if c.Path != "" {
+		return c.Path
 	}
 
-	if c.Kotsadm.Host != "" {
+	if c.Host != "" {
 		return ""
 	}
 
 	return "/kotsadm"
-}
-
-func (c Config) DexPath() string {
-	if c.Dex.Path != "" {
-		return c.Dex.Path
-	}
-
-	if c.Dex.Host != "" {
-		return ""
-	}
-
-	return "/dex"
 }

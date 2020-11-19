@@ -79,7 +79,7 @@ func IdentityServiceInstallCmd() *cobra.Command {
 				return errors.Wrap(err, "failed to set identity config")
 			}
 
-			if err := identity.Deploy(cmd.Context(), log, clientset, namespace, identityConfig.DexConnectors, *ingressConfig); err != nil {
+			if err := identity.Deploy(cmd.Context(), log, clientset, namespace, identityConfig, *ingressConfig); err != nil {
 				return errors.Wrap(err, "failed to deploy identity service")
 			}
 
