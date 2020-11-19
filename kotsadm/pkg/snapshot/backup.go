@@ -110,11 +110,17 @@ func CreateApplicationBackup(ctx context.Context, a *apptypes.App, isScheduled b
 		"kots.io/app-sequence":       strconv.FormatInt(parentSequence, 10),
 		"kots.io/snapshot-requested": time.Now().UTC().Format(time.RFC3339),
 	}
-	veleroBackup.Spec.LabelSelector = &metav1.LabelSelector{
+
+	labelSelector := metav1.LabelSelector{
 		MatchLabels: map[string]string{
 			"kots.io/app-slug": a.Slug,
 		},
 	}
+	if veleroBackup.Spec.LabelSelector != nil {
+		labelSelector = mergeLabelSelector(labelSelector, *veleroBackup.Spec.LabelSelector)
+	}
+	veleroBackup.Spec.LabelSelector = &labelSelector
+
 	veleroBackup.Spec.IncludedNamespaces = includedNamespaces
 
 	veleroBackup.Spec.StorageLocation = "default"
@@ -162,6 +168,11 @@ func CreateInstanceBackup(ctx context.Context, cluster *downstreamtypes.Downstre
 
 	appsSequences := map[string]int64{}
 	includedNamespaces := []string{kotsadmNamespace}
+	labelSelector := metav1.LabelSelector{
+		MatchLabels: map[string]string{
+			kotsadmtypes.BackupLabel: kotsadmtypes.BackupLabelValue,
+		},
+	}
 
 	for _, a := range apps {
 		downstreams, err := store.GetStore().ListDownstreamsForApp(a.ID)
@@ -198,6 +209,24 @@ func CreateInstanceBackup(ctx context.Context, cluster *downstreamtypes.Downstre
 		kotsKinds, err := kotsutil.LoadKotsKindsFromPath(archiveDir)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to load kots kinds from path")
+		}
+
+		backupSpec, err := kotsKinds.Marshal("velero.io", "v1", "Backup")
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to get backup spec from kotskinds")
+		}
+
+		renderedBackup, err := helper.RenderAppFile(a, nil, []byte(backupSpec), kotsKinds)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to render backup")
+		}
+		veleroBackup, err := kotsutil.LoadBackupFromContents(renderedBackup)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to load backup from contents")
+		}
+
+		if veleroBackup.Spec.LabelSelector != nil {
+			labelSelector = mergeLabelSelector(labelSelector, *veleroBackup.Spec.LabelSelector)
 		}
 
 		includedNamespaces = append(includedNamespaces, kotsKinds.KotsApplication.Spec.AdditionalNamespaces...)
@@ -242,11 +271,7 @@ func CreateInstanceBackup(ctx context.Context, cluster *downstreamtypes.Downstre
 		Spec: velerov1.BackupSpec{
 			StorageLocation:    "default",
 			IncludedNamespaces: includedNamespaces,
-			LabelSelector: &metav1.LabelSelector{
-				MatchLabels: map[string]string{
-					kotsadmtypes.BackupLabel: kotsadmtypes.BackupLabelValue,
-				},
-			},
+			LabelSelector:      &labelSelector,
 		},
 	}
 
@@ -735,4 +760,17 @@ func downloadBackupLogs(veleroNamespace, backupName string) ([]types.SnapshotErr
 
 	errs, warnings, execs, err := parseLogs(gzipReader)
 	return errs, warnings, execs, err
+}
+
+func mergeLabelSelector(kots metav1.LabelSelector, app metav1.LabelSelector) metav1.LabelSelector {
+	for k, v := range app.MatchLabels {
+		if _, ok := kots.MatchLabels[k]; ok {
+			logger.Errorf("application label %s is already defined, skipping duplicate", k)
+			continue
+		}
+		kots.MatchLabels[k] = v
+	}
+
+	kots.MatchExpressions = append(kots.MatchExpressions, app.MatchExpressions...)
+	return kots
 }
