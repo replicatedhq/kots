@@ -15,25 +15,31 @@ import (
 	k8sconfig "sigs.k8s.io/controller-runtime/pkg/client/config"
 )
 
-func GetKurlValues(installerName, nameSpace string) *kurlv1beta1.Installer {
-
+// getKurlValues returns the values found in the specified installer and namespace, if it exists
+// otherwise it returns the values found in the first installer in the specified namespace, if one exists
+// otherwise it returns nil
+func getKurlValues(installerName, nameSpace string) *kurlv1beta1.Installer {
 	cfg, err := k8sconfig.GetConfig()
-
 	if err != nil {
 		return nil
 	}
 
 	clientset := kurlclientset.NewForConfigOrDie(cfg)
-
 	installers := clientset.Installers(nameSpace)
 
 	retrieved, err := installers.Get(context.TODO(), installerName, metav1.GetOptions{})
+	if err == nil && retrieved != nil {
+		return retrieved
+	}
 
+	allInstallers, err := installers.List(context.TODO(), metav1.ListOptions{})
 	if err != nil {
 		return nil
 	}
-
-	return retrieved
+	if allInstallers == nil || len(allInstallers.Items) == 0 {
+		return nil
+	}
+	return &allInstallers.Items[0]
 }
 
 func newKurlContext(installerName, nameSpace string) *kurlCtx {
@@ -41,7 +47,7 @@ func newKurlContext(installerName, nameSpace string) *kurlCtx {
 		KurlValues: make(map[string]interface{}),
 	}
 
-	retrieved := GetKurlValues(installerName, nameSpace)
+	retrieved := getKurlValues(installerName, nameSpace)
 
 	if retrieved != nil {
 		ctx.AddValuesToKurlContext(retrieved)
