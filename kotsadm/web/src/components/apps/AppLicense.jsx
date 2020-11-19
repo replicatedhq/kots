@@ -193,9 +193,9 @@ class AppLicense extends Component {
                     })}
                   </div>}
                 <div className="flexWrap--wrap flex alignItems--center u-marginTop--10">
-                  {app?.isAirgap ? <span className="flex alignItems--center u-fontWeight--medium u-fontSize--small u-lineHeight--normal u-color--tundora u-marginRight--10"><span className="icon licenseAirgapIcon" /> Airgap enabled </span> : null}
-                  {app?.allowSnapshots ? <span className="flex alignItems--center u-fontWeight--medium u-fontSize--small u-lineHeight--normal u-color--tundora u-marginRight--10"><span className="icon licenseVeleroIcon" /> Snapshots enabled </span> : null}
-                  {app?.isGitOpsSupported ? <span className="flex alignItems--center u-fontWeight--medium u-fontSize--small u-lineHeight--normal u-color--tundora u-marginRight--10"><span className="icon licenseGithubIcon" /> GitOps enabled </span> : null}
+                  {appLicense?.isAirgapSupported ? <span className="flex alignItems--center u-fontWeight--medium u-fontSize--small u-lineHeight--normal u-color--tundora u-marginRight--10"><span className="icon licenseAirgapIcon" /> Airgap enabled </span> : null}
+                  {appLicense?.isSnapshotSupported ? <span className="flex alignItems--center u-fontWeight--medium u-fontSize--small u-lineHeight--normal u-color--tundora u-marginRight--10"><span className="icon licenseVeleroIcon" /> Snapshots enabled </span> : null}
+                  {appLicense?.isGitOpsSupported ? <span className="flex alignItems--center u-fontWeight--medium u-fontSize--small u-lineHeight--normal u-color--tundora u-marginRight--10"><span className="icon licenseGithubIcon" /> GitOps enabled </span> : null}
                 </div>
               </div>
               <div className="flex-column flex-auto alignItems--center justifyContent--center">
