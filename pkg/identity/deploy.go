@@ -1,9 +1,11 @@
 package identity
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"path"
+	"text/template"
 
 	dexstorage "github.com/dexidp/dex/storage"
 	dexk8sstorage "github.com/dexidp/dex/storage/kubernetes"
@@ -128,13 +130,13 @@ func ensureSecret(ctx context.Context, clientset kubernetes.Interface, namespace
 	return nil
 }
 
-func secretResource(secretName string, identityConfig identitytypes.Config, kotsIngressConfig ingresstypes.Config) (*corev1.Secret, error) {
+func secretResource(secretName string, identityConfig identitytypes.Config, ingressConfig ingresstypes.Config) (*corev1.Secret, error) {
 	config := dextypes.Config{
 		Logger: dextypes.Logger{
 			Level:  "debug",
 			Format: "text",
 		},
-		Issuer: fmt.Sprintf("http://%s", path.Join(kotsIngressConfig.Host, kotsIngressConfig.KotsadmPath(), "/dex")),
+		Issuer: dexIssuerURL(identityConfig.IngressConfig),
 		Storage: dextypes.Storage{
 			Type: "kubernetes",
 			Config: dexk8sstorage.Config{
@@ -153,7 +155,7 @@ func secretResource(secretName string, identityConfig identitytypes.Config, kots
 				Name:   "kotsadm",
 				Secret: ksuid.New().String(),
 				RedirectURIs: []string{
-					fmt.Sprintf("http://%s", path.Join(kotsIngressConfig.Host, kotsIngressConfig.KotsadmPath(), "/api/v1/oidc/login/callback")),
+					fmt.Sprintf("http://%s", path.Join(ingressConfig.Host, ingressConfig.KotsadmPath(), "api/v1/oidc/login/callback")),
 				},
 			},
 		},
@@ -172,6 +174,15 @@ func secretResource(secretName string, identityConfig identitytypes.Config, kots
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to marshal dex config")
 	}
+
+	buf := bytes.NewBuffer(nil)
+	t, err := template.New(secretName).Parse(string(marshalledConfig))
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to parse dex config for templating")
+	}
+	t.Execute(buf, map[string]string{
+		"OIDCIdentityRedirectURI": fmt.Sprintf("%s/callback", dexIssuerURL(identityConfig.IngressConfig)),
+	})
 
 	return &corev1.Secret{
 		TypeMeta: metav1.TypeMeta{
@@ -609,4 +620,8 @@ func updateIngress(existingIngress *extensionsv1beta1.Ingress, namespace string,
 	desiredIngress := ingressResource(namespace, config)
 	existingIngress.Spec.Rules = desiredIngress.Spec.Rules
 	return existingIngress
+}
+
+func dexIssuerURL(ingressConfig identitytypes.IngressConfig) string {
+	return fmt.Sprintf("http://%s", path.Join(ingressConfig.Host, ingressConfig.IngressPath(), "dex"))
 }

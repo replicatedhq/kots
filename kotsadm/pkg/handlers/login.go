@@ -67,7 +67,7 @@ func Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// TODO
+	// TODO: super user permissions
 	roles := session.GetSessionRolesFromRBAC(nil, rbac.DefaultGroups, rbac.DefaultRoles, rbac.DefaultPolicies)
 
 	createdSession, err := store.GetStore().CreateSession(foundUser, nil, roles)
