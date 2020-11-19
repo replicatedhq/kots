@@ -61,3 +61,7 @@ spec:
           secret:
             secretName: kubelet-client-cert
             optional: true
+      hostAliases:
+        - ip: 172.17.0.1
+          hostnames:
+            - kotsadmdevenv.com

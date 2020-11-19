@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"fmt"
 	"io/ioutil"
 
 	ghodssyaml "github.com/ghodss/yaml"
@@ -23,6 +24,7 @@ func IdentityServiceCmd() *cobra.Command {
 
 	cmd.AddCommand(IdentityServiceInstallCmd())
 	cmd.AddCommand(IdentityServiceEnableSharedPasswordCmd())
+	cmd.AddCommand(IdentityServiceOIDCCallbackURLCmd())
 
 	return cmd
 }
@@ -64,15 +66,16 @@ func IdentityServiceInstallCmd() *cobra.Command {
 			if identityConfigPath := v.GetString("identity-config"); identityConfigPath != "" {
 				content, err := ioutil.ReadFile(identityConfigPath)
 				if err != nil {
-					return errors.Wrap(err, "failed to read identity service connectors file")
+					return errors.Wrap(err, "failed to read identity service config file")
 				}
 				if err := ghodssyaml.Unmarshal(content, &identityConfig); err != nil {
-					return errors.Wrap(err, "failed to unmarshal identity service connectors yaml")
+					return errors.Wrap(err, "failed to unmarshal identity service config yaml")
 				}
 			}
 
 			log.ChildActionWithSpinner("Deploying the Identity Service")
 
+			identityConfig.Enabled = true
 			identityConfig.DisablePasswordAuth = true
 
 			if err := identity.SetConfig(cmd.Context(), namespace, identityConfig); err != nil {
@@ -128,6 +131,37 @@ func IdentityServiceEnableSharedPasswordCmd() *cobra.Command {
 			}
 
 			log.FinishSpinner()
+
+			return nil
+		},
+	}
+
+	return cmd
+}
+
+func IdentityServiceOIDCCallbackURLCmd() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:           "oidc-callback-url",
+		Short:         "Prints OICD callback URL",
+		SilenceUsage:  true,
+		SilenceErrors: false,
+		PreRun: func(cmd *cobra.Command, args []string) {
+			viper.BindPFlags(cmd.Flags())
+		},
+		RunE: func(cmd *cobra.Command, args []string) error {
+			v := viper.GetViper()
+
+			namespace := v.GetString("namespace")
+			if err := validateNamespace(namespace); err != nil {
+				return err
+			}
+
+			identityConfig, err := identity.GetConfig(cmd.Context(), namespace)
+			if err != nil {
+				return errors.Wrap(err, "failed to get identity config")
+			}
+
+			fmt.Fprintln(cmd.OutOrStdout(), identity.DexCallbackURL(*identityConfig))
 
 			return nil
 		},

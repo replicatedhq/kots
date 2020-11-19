@@ -578,25 +578,27 @@ func kotsadmService(namespace string) *corev1.Service {
 	return service
 }
 
-func kotsadmIngress(namespace string, config ingresstypes.Config) *extensionsv1beta1.Ingress {
-	ingress := &extensionsv1beta1.Ingress{
+func kotsadmIngress(namespace string, ingressConfig ingresstypes.Config) *extensionsv1beta1.Ingress {
+	return &extensionsv1beta1.Ingress{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "v1beta1",
 			Kind:       "Ingress",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "kotsadm",
-			Namespace: namespace,
-			Labels:    types.GetKotsadmLabels(),
+			Name:        "kotsadm",
+			Namespace:   namespace,
+			Labels:      types.GetKotsadmLabels(),
+			Annotations: ingressConfig.Annotations,
 		},
 		Spec: extensionsv1beta1.IngressSpec{
 			Rules: []extensionsv1beta1.IngressRule{
 				{
+					Host: ingressConfig.Host,
 					IngressRuleValue: extensionsv1beta1.IngressRuleValue{
 						HTTP: &extensionsv1beta1.HTTPIngressRuleValue{
 							Paths: []extensionsv1beta1.HTTPIngressPath{
 								{
-									Path: config.KotsadmPath(),
+									Path: ingressConfig.GetPath("/kotsadm"),
 									Backend: extensionsv1beta1.IngressBackend{
 										ServiceName: "kotsadm",
 										ServicePort: intstr.IntOrString{
@@ -609,26 +611,15 @@ func kotsadmIngress(namespace string, config ingresstypes.Config) *extensionsv1b
 					},
 				},
 			},
+			TLS: ingressConfig.TLS,
 		},
 	}
-
-	if config.Annotations != nil {
-		ingress.ObjectMeta.Annotations = config.Annotations
-	}
-
-	if config.Host != "" {
-		ingress.Spec.Rules[0].Host = config.Host
-	}
-
-	if len(config.TLS) > 0 {
-		ingress.Spec.TLS = config.TLS
-	}
-
-	return ingress
 }
 
-func updateIngress(existingIngress *extensionsv1beta1.Ingress, namespace string, config ingresstypes.Config) *extensionsv1beta1.Ingress {
-	desiredIngress := kotsadmIngress(namespace, config)
+func updateIngress(existingIngress *extensionsv1beta1.Ingress, namespace string, ingressConfig ingresstypes.Config) *extensionsv1beta1.Ingress {
+	desiredIngress := kotsadmIngress(namespace, ingressConfig)
+	existingIngress.Annotations = desiredIngress.Annotations
 	existingIngress.Spec.Rules = desiredIngress.Spec.Rules
+	existingIngress.Spec.TLS = desiredIngress.Spec.TLS
 	return existingIngress
 }

@@ -11,7 +11,7 @@ type Config struct {
 	TLS         []extensions.IngressTLS `json:"tls,omitempty" yaml:"tls,omitempty"`
 }
 
-func (c Config) KotsadmPath() string {
+func (c Config) GetPath(dflt string) string {
 	if c.Path != "" {
 		return c.Path
 	}
@@ -20,5 +20,5 @@ func (c Config) KotsadmPath() string {
 		return ""
 	}
 
-	return "/kotsadm"
+	return dflt
 }

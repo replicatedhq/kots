@@ -3,6 +3,7 @@ package identity
 import (
 	"bytes"
 	"context"
+	"crypto/md5"
 	"fmt"
 	"path"
 	"text/template"
@@ -51,16 +52,20 @@ func Deploy(ctx context.Context, logger *logger.Logger, clientset kubernetes.Int
 	if err := DeployServiceAccount(ctx, logger, clientset, namespace); err != nil {
 		return errors.Wrap(err, "failed to deploy service account")
 	}
-	if err := ensureSecret(ctx, clientset, namespace, identityConfig, kotsIngressConfig); err != nil {
+	marshalledDexConfig, err := marshalDexConfig(identityConfig, kotsIngressConfig)
+	if err != nil {
+		return errors.Wrap(err, "failed to marshal dex config")
+	}
+	if err := ensureSecret(ctx, clientset, namespace, marshalledDexConfig); err != nil {
 		return errors.Wrap(err, "failed to ensure secret")
 	}
-	if err := ensureDeployment(ctx, clientset, namespace); err != nil {
+	if err := ensureDeployment(ctx, clientset, namespace, marshalledDexConfig); err != nil {
 		return errors.Wrap(err, "failed to ensure deployment")
 	}
 	if err := ensureService(ctx, clientset, namespace); err != nil {
 		return errors.Wrap(err, "failed to ensure service")
 	}
-	if err := ensureIngress(ctx, clientset, namespace, identityConfig.IngressConfig); err != nil {
+	if err := ensureIngress(ctx, clientset, namespace, identityConfig); err != nil {
 		return errors.Wrap(err, "failed to ensure ingress")
 	}
 	return nil
@@ -100,8 +105,8 @@ func DeployCRDs(ctx context.Context, logger *logger.Logger, clientset kubernetes
 	return nil
 }
 
-func ensureSecret(ctx context.Context, clientset kubernetes.Interface, namespace string, identityConfig identitytypes.Config, kotsIngressConfig ingresstypes.Config) error {
-	secret, err := secretResource(DexSecretName, identityConfig, kotsIngressConfig)
+func ensureSecret(ctx context.Context, clientset kubernetes.Interface, namespace string, marshalledConfig []byte) error {
+	secret, err := secretResource(DexSecretName, marshalledConfig)
 	if err != nil {
 		return errors.Wrap(err, "failed to get secret resource")
 	}
@@ -130,13 +135,13 @@ func ensureSecret(ctx context.Context, clientset kubernetes.Interface, namespace
 	return nil
 }
 
-func secretResource(secretName string, identityConfig identitytypes.Config, ingressConfig ingresstypes.Config) (*corev1.Secret, error) {
+func marshalDexConfig(identityConfig identitytypes.Config, ingressConfig ingresstypes.Config) ([]byte, error) {
 	config := dextypes.Config{
 		Logger: dextypes.Logger{
 			Level:  "debug",
 			Format: "text",
 		},
-		Issuer: dexIssuerURL(identityConfig.IngressConfig),
+		Issuer: DexIssuerURL(identityConfig),
 		Storage: dextypes.Storage{
 			Type: "kubernetes",
 			Config: dexk8sstorage.Config{
@@ -144,7 +149,7 @@ func secretResource(secretName string, identityConfig identitytypes.Config, ingr
 			},
 		},
 		Web: dextypes.Web{
-			HTTP: fmt.Sprintf("http://%s", path.Join(identityConfig.IngressConfig.Host, identityConfig.IngressConfig.IngressPath(), "/dex")),
+			HTTP: fmt.Sprintf("http://%s", path.Join(identityConfig.IngressConfig.Host, identityConfig.IngressPath(), "/dex")),
 		},
 		OAuth2: dextypes.OAuth2{
 			SkipApprovalScreen: true,
@@ -155,7 +160,7 @@ func secretResource(secretName string, identityConfig identitytypes.Config, ingr
 				Name:   "kotsadm",
 				Secret: ksuid.New().String(),
 				RedirectURIs: []string{
-					fmt.Sprintf("http://%s", path.Join(ingressConfig.Host, ingressConfig.KotsadmPath(), "api/v1/oidc/login/callback")),
+					fmt.Sprintf("http://%s", path.Join(ingressConfig.Host, ingressConfig.GetPath("/kotsadm"), "api/v1/oidc/login/callback")),
 				},
 			},
 		},
@@ -167,7 +172,7 @@ func secretResource(secretName string, identityConfig identitytypes.Config, ingr
 	}
 
 	if err := config.Validate(); err != nil {
-		return nil, errors.Wrap(err, "invalid dex config")
+		return nil, errors.Wrap(err, "failed to validate dex config")
 	}
 
 	marshalledConfig, err := yaml.Marshal(config)
@@ -175,16 +180,21 @@ func secretResource(secretName string, identityConfig identitytypes.Config, ingr
 		return nil, errors.Wrap(err, "failed to marshal dex config")
 	}
 
-	redirectURI := fmt.Sprintf("%s/callback", dexIssuerURL(identityConfig.IngressConfig))
 	buf := bytes.NewBuffer(nil)
-	t, err := template.New(secretName).Funcs(template.FuncMap{
-		"OIDCIdentityRedirectURI": func() string { return redirectURI },
+	t, err := template.New("kotsadm-dex").Funcs(template.FuncMap{
+		"OIDCIdentityCallbackURL": func() string { return DexCallbackURL(identityConfig) },
 	}).Parse(string(marshalledConfig))
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to parse dex config for templating")
 	}
-	t.Execute(buf, nil)
+	if err := t.Execute(buf, nil); err != nil {
+		return nil, errors.Wrap(err, "failed to execute template")
+	}
 
+	return marshalledConfig, nil
+}
+
+func secretResource(secretName string, marshalledConfig []byte) (*corev1.Secret, error) {
 	return &corev1.Secret{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "v1",
@@ -205,8 +215,10 @@ func updateSecret(existingSecret, desiredSecret *corev1.Secret) *corev1.Secret {
 	return existingSecret
 }
 
-func ensureDeployment(ctx context.Context, clientset kubernetes.Interface, namespace string) error {
-	deployment := deploymentResource(DexDeploymentName, DexServiceAccountName)
+func ensureDeployment(ctx context.Context, clientset kubernetes.Interface, namespace string, marshalledDexConfig []byte) error {
+	configChecksum := fmt.Sprintf("%x", md5.Sum(marshalledDexConfig))
+
+	deployment := deploymentResource(DexDeploymentName, DexServiceAccountName, configChecksum)
 
 	existingDeployment, err := clientset.AppsV1().Deployments(namespace).Get(ctx, DexDeploymentName, metav1.GetOptions{})
 	if err != nil {
@@ -237,7 +249,7 @@ var (
 	dexMemoryResource = resource.MustParse("50Mi")
 )
 
-func deploymentResource(deploymentName, serviceAccountName string) *appsv1.Deployment {
+func deploymentResource(deploymentName, serviceAccountName string, configChecksum string) *appsv1.Deployment {
 	replicas := int32(2)
 	volume := configSecretVolume()
 	return &appsv1.Deployment{
@@ -248,6 +260,9 @@ func deploymentResource(deploymentName, serviceAccountName string) *appsv1.Deplo
 		ObjectMeta: metav1.ObjectMeta{
 			Name:   deploymentName,
 			Labels: kotsadmtypes.GetKotsadmLabels(DexAdditionalLabels),
+			Annotations: map[string]string{
+				"kots.io/dex-secret-checksum": configChecksum,
+			},
 		},
 		Spec: appsv1.DeploymentSpec{
 			Replicas: &replicas,
@@ -315,6 +330,11 @@ func updateDeployment(existingDeployment, desiredDeployment *appsv1.Deployment) 
 		// wtf
 		return desiredDeployment
 	}
+
+	if existingDeployment.Annotations == nil {
+		existingDeployment.Annotations = map[string]string{}
+	}
+	existingDeployment.Annotations["kots.io/dex-secret-checksum"] = desiredDeployment.Annotations["kots.io/dex-secret-checksum"]
 
 	existingDeployment.Spec.Template.Spec.Containers[0].Image = desiredDeployment.Spec.Template.Spec.Containers[0].Image
 
@@ -543,14 +563,14 @@ func ensureCRD(ctx context.Context, clientset apiextensionsclientset.Interface, 
 	return nil
 }
 
-func ensureIngress(ctx context.Context, clientset kubernetes.Interface, namespace string, config identitytypes.IngressConfig) error {
+func ensureIngress(ctx context.Context, clientset kubernetes.Interface, namespace string, identityConfig identitytypes.Config) error {
 	existingIngress, err := clientset.ExtensionsV1beta1().Ingresses(namespace).Get(ctx, DexIngressName, metav1.GetOptions{})
 	if err != nil {
 		if !kuberneteserrors.IsNotFound(err) {
 			return errors.Wrap(err, "failed to get existing dex ingress")
 		}
 
-		_, err = clientset.ExtensionsV1beta1().Ingresses(namespace).Create(ctx, ingressResource(namespace, config), metav1.CreateOptions{})
+		_, err = clientset.ExtensionsV1beta1().Ingresses(namespace).Create(ctx, ingressResource(namespace, identityConfig), metav1.CreateOptions{})
 		if err != nil {
 			return errors.Wrap(err, "failed to create dex ingress")
 		}
@@ -558,7 +578,7 @@ func ensureIngress(ctx context.Context, clientset kubernetes.Interface, namespac
 		return nil
 	}
 
-	existingIngress = updateIngress(existingIngress, namespace, config)
+	existingIngress = updateIngress(existingIngress, namespace, identityConfig)
 
 	_, err = clientset.ExtensionsV1beta1().Ingresses(namespace).Update(ctx, existingIngress, metav1.UpdateOptions{})
 	if err != nil {
@@ -568,25 +588,26 @@ func ensureIngress(ctx context.Context, clientset kubernetes.Interface, namespac
 	return nil
 }
 
-func ingressResource(namespace string, config identitytypes.IngressConfig) *extensionsv1beta1.Ingress {
-	ingress := &extensionsv1beta1.Ingress{
+func ingressResource(namespace string, identityConfig identitytypes.Config) *extensionsv1beta1.Ingress {
+	return &extensionsv1beta1.Ingress{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "v1beta1",
 			Kind:       "Ingress",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      DexIngressName,
-			Namespace: namespace,
-			Labels:    kotsadmtypes.GetKotsadmLabels(DexAdditionalLabels),
+			Name:        DexIngressName,
+			Labels:      kotsadmtypes.GetKotsadmLabels(DexAdditionalLabels),
+			Annotations: identityConfig.IngressConfig.Annotations,
 		},
 		Spec: extensionsv1beta1.IngressSpec{
 			Rules: []extensionsv1beta1.IngressRule{
 				{
+					Host: identityConfig.IngressConfig.Host,
 					IngressRuleValue: extensionsv1beta1.IngressRuleValue{
 						HTTP: &extensionsv1beta1.HTTPIngressRuleValue{
 							Paths: []extensionsv1beta1.HTTPIngressPath{
 								{
-									Path: config.IngressPath(),
+									Path: identityConfig.IngressPath(),
 									Backend: extensionsv1beta1.IngressBackend{
 										ServiceName: DexServiceName,
 										ServicePort: intstr.IntOrString{
@@ -599,30 +620,15 @@ func ingressResource(namespace string, config identitytypes.IngressConfig) *exte
 					},
 				},
 			},
+			TLS: identityConfig.IngressConfig.TLS,
 		},
 	}
-
-	if config.Annotations != nil {
-		ingress.ObjectMeta.Annotations = config.Annotations
-	}
-
-	if config.Host != "" {
-		ingress.Spec.Rules[0].Host = config.Host
-	}
-
-	if len(config.TLS) > 0 {
-		ingress.Spec.TLS = config.TLS
-	}
-
-	return ingress
 }
 
-func updateIngress(existingIngress *extensionsv1beta1.Ingress, namespace string, config identitytypes.IngressConfig) *extensionsv1beta1.Ingress {
-	desiredIngress := ingressResource(namespace, config)
+func updateIngress(existingIngress *extensionsv1beta1.Ingress, namespace string, identityConfig identitytypes.Config) *extensionsv1beta1.Ingress {
+	desiredIngress := ingressResource(namespace, identityConfig)
+	existingIngress.Annotations = desiredIngress.Annotations
 	existingIngress.Spec.Rules = desiredIngress.Spec.Rules
+	existingIngress.Spec.TLS = desiredIngress.Spec.TLS
 	return existingIngress
-}
-
-func dexIssuerURL(ingressConfig identitytypes.IngressConfig) string {
-	return fmt.Sprintf("http://%s", path.Join(ingressConfig.Host, ingressConfig.IngressPath(), "dex"))
 }

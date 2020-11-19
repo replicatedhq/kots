@@ -175,10 +175,10 @@ func InstallCmd() *cobra.Command {
 			if identityConfigPath != "" {
 				content, err := ioutil.ReadFile(identityConfigPath)
 				if err != nil {
-					return errors.Wrap(err, "failed to read identity service connectors file")
+					return errors.Wrap(err, "failed to read identity service config file")
 				}
 				if err := ghodssyaml.Unmarshal(content, &identityConfig); err != nil {
-					return errors.Wrap(err, "failed to unmarshal identity service connectors yaml")
+					return errors.Wrap(err, "failed to unmarshal identity service config yaml")
 				}
 			}
 

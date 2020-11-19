@@ -34,6 +34,7 @@ func RootCmd() *cobra.Command {
 	cmd.AddCommand(VersionCmd())
 	cmd.AddCommand(BackupCmd())
 	cmd.AddCommand(RestoreCmd())
+	cmd.AddCommand(IngressCmd())
 	cmd.AddCommand(IdentityServiceCmd())
 
 	viper.BindPFlags(cmd.Flags())
