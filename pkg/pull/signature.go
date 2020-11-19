@@ -59,10 +59,12 @@ func VerifySignature(license *kotsv1beta1.License) (*kotsv1beta1.License, error)
 		return nil, errors.New("unknown global key")
 	}
 
+	// verify that the app public key is properly signed with a replicated private key
 	if err := verify([]byte(innerSignature.PublicKey), keySignature.Signature, globalKeyPEM); err != nil {
 		return nil, errors.Wrap(err, "failed to verify key signature")
 	}
 
+	// verify that the license data is properly signed with the app private key
 	if err := verify(outerSignature.LicenseData, innerSignature.LicenseSignature, []byte(innerSignature.PublicKey)); err != nil {
 		return nil, errors.Wrap(err, "failed to verify license signature")
 	}
