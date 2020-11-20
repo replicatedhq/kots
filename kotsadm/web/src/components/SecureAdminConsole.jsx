@@ -25,7 +25,7 @@ class SecureAdminConsole extends React.Component {
       window.localStorage.setItem("token", token);
       setTimeout(() => {
         Utilities.removeCookie("token");
-      }, 5000); // didn't work without a delay for some reason
+      }, 5000); // was removing the local storage token without a delay for some reason
 
       this.props.onLoginSuccess().then((res) => {
         this.setState({ authLoading: false });
