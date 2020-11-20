@@ -4,9 +4,10 @@ import (
 	"context"
 	"net/http"
 	"os"
+	"sync"
+	"time"
 
 	oidc "github.com/coreos/go-oidc"
-	corev1 "k8s.io/api/core/v1"
 	dexstorage "github.com/dexidp/dex/storage"
 	"github.com/ghodss/yaml"
 	"github.com/pkg/errors"
@@ -15,13 +16,16 @@ import (
 	dextypes "github.com/replicatedhq/kots/pkg/identity/types/dex"
 	kotsadmtypes "github.com/replicatedhq/kots/pkg/kotsadm/types"
 	"golang.org/x/oauth2"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	corev1 "k8s.io/api/core/v1"
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 const (
 	DexStateSecretName = "kotsadm-dex-state"
 )
+
+var stateMtx sync.Mutex
 
 func GetKotsadmDexConfig() (*dextypes.Config, error) {
 	clientset, err := k8s.Clientset()
@@ -97,6 +101,9 @@ func getScopes() []string {
 }
 
 func SetDexState(state string) error {
+	stateMtx.Lock()
+	defer stateMtx.Unlock()
+
 	secret := stateSecretResource(DexStateSecretName, state)
 
 	clientset, err := k8s.Clientset()
@@ -143,6 +150,9 @@ func GetDexState(state string) (string, error) {
 }
 
 func ResetDexState(state string) error {
+	stateMtx.Lock()
+	defer stateMtx.Unlock()
+
 	clientset, err := k8s.Clientset()
 	if err != nil {
 		return errors.Wrap(err, "failed to get k8s client set")
@@ -174,14 +184,32 @@ func stateSecretResource(secretName, state string) *corev1.Secret {
 			Labels: kotsadmtypes.GetKotsadmLabels(identity.DexAdditionalLabels),
 		},
 		Data: map[string][]byte{
-			state: []byte(state),
+			state: []byte(time.Now().UTC().Format(time.RFC3339)),
 		},
 	}
 }
 
 func updateStateSecret(existingSecret, desiredSecret *corev1.Secret) *corev1.Secret {
 	existingSecret.Data = mergeMaps(existingSecret.Data, desiredSecret.Data)
+	expireOldDexStates(existingSecret)
 	return existingSecret
+}
+
+func expireOldDexStates(secret *corev1.Secret) error {
+	for s, t := range secret.Data {
+		stateTime, err := time.Parse(time.RFC3339, string(t))
+		if err != nil {
+			return errors.Wrap(err, "failed to parse state time")
+		}
+
+		ttlTime := time.Now().Add(-5 * time.Minute)
+		if stateTime.Before(ttlTime) {
+			delete(secret.Data, s)
+			continue
+		}
+	}
+
+	return nil
 }
 
 func mergeMaps(existing map[string][]byte, new map[string][]byte) map[string][]byte {

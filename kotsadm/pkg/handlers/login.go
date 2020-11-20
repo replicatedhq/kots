@@ -20,8 +20,8 @@ import (
 	"github.com/replicatedhq/kots/pkg/identity"
 	ingress "github.com/replicatedhq/kots/pkg/ingress"
 	"github.com/replicatedhq/kots/pkg/rbac"
-	"golang.org/x/oauth2"
 	"github.com/segmentio/ksuid"
+	"golang.org/x/oauth2"
 )
 
 type LoginRequest struct {
@@ -167,14 +167,14 @@ func OIDCLoginCallback(w http.ResponseWriter, r *http.Request) {
 		}
 
 		state := r.FormValue("state")
-		expectedState, err := kotsadmdex.GetDexState(state)
+		foundState, err := kotsadmdex.GetDexState(state)
 		if err != nil {
 			logger.Error(errors.Wrap(err, "failed to get saved dex state"))
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
 
-		if state != expectedState {
+		if foundState == "" {
 			logger.Error(errors.Errorf("invalid state %s", state))
 			w.WriteHeader(http.StatusBadRequest)
 			return
