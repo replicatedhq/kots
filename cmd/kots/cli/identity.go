@@ -18,11 +18,12 @@ import (
 func IdentityServiceCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:    "identity-service",
-		Short:  "KOTS identity service",
+		Short:  "KOTS Identity Service",
 		Hidden: true,
 	}
 
 	cmd.AddCommand(IdentityServiceInstallCmd())
+	cmd.AddCommand(IdentityServiceUninstallCmd())
 	cmd.AddCommand(IdentityServiceEnableSharedPasswordCmd())
 	cmd.AddCommand(IdentityServiceOIDCCallbackURLCmd())
 
@@ -32,7 +33,7 @@ func IdentityServiceCmd() *cobra.Command {
 func IdentityServiceInstallCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:           "install",
-		Short:         "Install the KOTS identity service",
+		Short:         "Install the KOTS Identity Service",
 		SilenceUsage:  true,
 		SilenceErrors: false,
 		PreRun: func(cmd *cobra.Command, args []string) {
@@ -57,8 +58,7 @@ func IdentityServiceInstallCmd() *cobra.Command {
 			if err != nil {
 				return errors.Wrap(err, "failed to get ingress config")
 			}
-			if ingressConfig == nil {
-				// TODO: a cli command to enable ingress
+			if !ingressConfig.Enabled {
 				return errors.New("ingress is not enabled")
 			}
 
@@ -83,7 +83,7 @@ func IdentityServiceInstallCmd() *cobra.Command {
 			}
 
 			if err := identity.Deploy(cmd.Context(), log, clientset, namespace, identityConfig, *ingressConfig); err != nil {
-				return errors.Wrap(err, "failed to deploy identity service")
+				return errors.Wrap(err, "failed to deploy the identity service")
 			}
 
 			log.FinishSpinner()
@@ -93,6 +93,62 @@ func IdentityServiceInstallCmd() *cobra.Command {
 	}
 
 	cmd.Flags().String("identity-config", "", "path to a yaml file containing the KOTS identity service configuration")
+
+	return cmd
+}
+
+func IdentityServiceUninstallCmd() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:           "uninstall",
+		Short:         "Uninstall the KOTS identity service",
+		Long:          "Uninstall the KOTS identity service. This will re-enable shared password authentication.",
+		SilenceUsage:  true,
+		SilenceErrors: false,
+		PreRun: func(cmd *cobra.Command, args []string) {
+			viper.BindPFlags(cmd.Flags())
+		},
+		RunE: func(cmd *cobra.Command, args []string) error {
+			v := viper.GetViper()
+
+			log := logger.NewLogger()
+
+			clientset, err := k8sutil.GetClientset(kubernetesConfigFlags)
+			if err != nil {
+				return errors.Wrap(err, "failed to get clientset")
+			}
+
+			namespace := v.GetString("namespace")
+			if err := validateNamespace(namespace); err != nil {
+				return err
+			}
+
+			log.ChildActionWithSpinner("Updating the Identity Service configuration")
+
+			identityConfig, err := identity.GetConfig(cmd.Context(), namespace)
+			if err != nil {
+				return errors.Wrap(err, "failed to get identity config")
+			}
+
+			identityConfig.Enabled = false
+			identityConfig.DisablePasswordAuth = false
+
+			if err := identity.SetConfig(cmd.Context(), namespace, *identityConfig); err != nil {
+				return errors.Wrap(err, "failed to set identity config")
+			}
+
+			log.FinishSpinner()
+
+			log.ChildActionWithSpinner("Uninstalling the Identity Service")
+
+			if err := identity.Undeploy(cmd.Context(), log, clientset, namespace); err != nil {
+				return errors.Wrap(err, "failed to uninstall the identity service")
+			}
+
+			log.FinishSpinner()
+
+			return nil
+		},
+	}
 
 	return cmd
 }

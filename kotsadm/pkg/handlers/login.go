@@ -39,7 +39,7 @@ func Login(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-	if identityConfig.DisablePasswordAuth {
+	if identityConfig.Enabled && identityConfig.DisablePasswordAuth {
 		err := errors.New("password authentication disabled")
 		JSON(w, http.StatusForbidden, NewErrorResponse(err))
 		return

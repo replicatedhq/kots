@@ -29,20 +29,22 @@ func GetConfig(ctx context.Context, namespace string) (*types.Config, error) {
 		return nil, errors.Wrap(err, "failed to get client set")
 	}
 
+	config := &types.Config{}
+
 	configMap, err := clientset.CoreV1().ConfigMaps(namespace).Get(ctx, ConfigMapName, metav1.GetOptions{})
 	if err != nil {
 		if kuberneteserrors.IsNotFound(err) {
-			return nil, nil
+			return config, nil
 		}
 		return nil, errors.Wrap(err, "failed to get config map")
 	}
 
-	config := types.Config{}
 	err = yaml.Unmarshal([]byte(configMap.Data["config.yaml"]), &config)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to unmarshal config")
 	}
-	return &config, err
+
+	return config, err
 }
 
 func SetConfig(ctx context.Context, namespace string, config types.Config) error {

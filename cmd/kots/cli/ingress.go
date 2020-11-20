@@ -23,6 +23,7 @@ func IngressCmd() *cobra.Command {
 	}
 
 	cmd.AddCommand(IngressInstallCmd())
+	cmd.AddCommand(IngressUninstallCmd())
 
 	return cmd
 }
@@ -64,11 +65,13 @@ func IngressInstallCmd() *cobra.Command {
 
 			log.ChildActionWithSpinner("Enabling ingress for the Admin Console")
 
+			ingressConfig.Enabled = true
+
 			if err := ingress.SetConfig(cmd.Context(), namespace, ingressConfig); err != nil {
 				return errors.Wrap(err, "failed to set identity config")
 			}
 
-			if err := kotsadm.EnsureIngress(namespace, clientset, ingressConfig); err != nil {
+			if err := kotsadm.EnsureIngress(cmd.Context(), namespace, clientset, ingressConfig); err != nil {
 				return errors.Wrap(err, "failed to ensure ingress")
 			}
 
@@ -89,6 +92,71 @@ func IngressInstallCmd() *cobra.Command {
 
 				log.FinishSpinner()
 			}
+
+			return nil
+		},
+	}
+
+	cmd.Flags().String("ingress-config", "", "path to a yaml file containing the KOTS ingress configuration")
+
+	return cmd
+}
+
+func IngressUninstallCmd() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:           "uninstall",
+		Short:         "Uninstall Ingress for the KOTS Admin Console",
+		SilenceUsage:  true,
+		SilenceErrors: false,
+		PreRun: func(cmd *cobra.Command, args []string) {
+			viper.BindPFlags(cmd.Flags())
+		},
+		RunE: func(cmd *cobra.Command, args []string) error {
+			v := viper.GetViper()
+
+			log := logger.NewLogger()
+
+			clientset, err := k8sutil.GetClientset(kubernetesConfigFlags)
+			if err != nil {
+				return errors.Wrap(err, "failed to get clientset")
+			}
+
+			namespace := v.GetString("namespace")
+			if err := validateNamespace(namespace); err != nil {
+				return err
+			}
+
+			identityConfig, err := identity.GetConfig(cmd.Context(), namespace)
+			if err != nil {
+				return errors.Wrap(err, "failed to get identity config")
+			}
+
+			if identityConfig.Enabled {
+				return errors.New("identity service is enabled")
+			}
+
+			log.ChildActionWithSpinner("Updating the Admin Console ingress configuration")
+
+			ingressConfig, err := ingress.GetConfig(cmd.Context(), namespace)
+			if err != nil {
+				return errors.Wrap(err, "failed to get ingress config")
+			}
+
+			ingressConfig.Enabled = false
+
+			if err := ingress.SetConfig(cmd.Context(), namespace, *ingressConfig); err != nil {
+				return errors.Wrap(err, "failed to set ingress config")
+			}
+
+			log.FinishSpinner()
+
+			log.ChildActionWithSpinner("Uninstalling ingress for the Admin Console")
+
+			if err := kotsadm.DeleteIngress(cmd.Context(), namespace, clientset); err != nil {
+				return errors.Wrap(err, "failed to uninstall ingress")
+			}
+
+			log.FinishSpinner()
 
 			return nil
 		},

@@ -15,7 +15,8 @@ import (
 )
 
 var (
-	ConfigMapName = "kotsadm-identity-config"
+	ConfigConfigMapName = "kotsadm-identity-config"
+	ConfigSecretName    = "kotsadm-identity-secret"
 )
 
 func GetConfig(ctx context.Context, namespace string) (*types.Config, error) {
@@ -31,7 +32,7 @@ func GetConfig(ctx context.Context, namespace string) (*types.Config, error) {
 
 	config := &types.Config{}
 
-	configMap, err := clientset.CoreV1().ConfigMaps(namespace).Get(ctx, ConfigMapName, metav1.GetOptions{})
+	configMap, err := clientset.CoreV1().ConfigMaps(namespace).Get(ctx, ConfigConfigMapName, metav1.GetOptions{})
 	if err != nil {
 		if kuberneteserrors.IsNotFound(err) {
 			return config, nil
@@ -43,6 +44,20 @@ func GetConfig(ctx context.Context, namespace string) (*types.Config, error) {
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to unmarshal config")
 	}
+
+	secret, err := clientset.CoreV1().Secrets(namespace).Get(ctx, ConfigSecretName, metav1.GetOptions{})
+	if err != nil {
+		if kuberneteserrors.IsNotFound(err) {
+			return config, nil
+		}
+		return nil, errors.Wrap(err, "failed to get secret")
+	}
+
+	err = ghodssyaml.Unmarshal(secret.Data["dexConnectors"], &config.DexConnectors)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to unmarshal dex connectors")
+	}
+
 	return config, err
 }
 
@@ -57,12 +72,26 @@ func SetConfig(ctx context.Context, namespace string, config types.Config) error
 		return errors.Wrap(err, "failed to get client set")
 	}
 
-	configMap, err := identityConfigResource(config)
+	err = ensureConfigSecret(ctx, clientset, namespace, config)
+	if err != nil {
+		return errors.Wrap(err, "failed to ensure secret")
+	}
+
+	err = ensureConfigConfigMap(ctx, clientset, namespace, config)
+	if err != nil {
+		return errors.Wrap(err, "failed to ensure config map")
+	}
+
+	return nil
+}
+
+func ensureConfigConfigMap(ctx context.Context, clientset kubernetes.Interface, namespace string, config types.Config) error {
+	configMap, err := identityConfigMapResource(config)
 	if err != nil {
 		return err
 	}
 
-	existingConfigMap, err := clientset.CoreV1().ConfigMaps(namespace).Get(ctx, ConfigMapName, metav1.GetOptions{})
+	existingConfigMap, err := clientset.CoreV1().ConfigMaps(namespace).Get(ctx, ConfigConfigMapName, metav1.GetOptions{})
 	if err != nil {
 		if !kuberneteserrors.IsNotFound(err) {
 			return errors.Wrap(err, "failed to get config map")
@@ -86,7 +115,9 @@ func SetConfig(ctx context.Context, namespace string, config types.Config) error
 	return nil
 }
 
-func identityConfigResource(config types.Config) (*corev1.ConfigMap, error) {
+func identityConfigMapResource(config types.Config) (*corev1.ConfigMap, error) {
+	config.DexConnectors = nil // stored in a secret
+
 	data, err := ghodssyaml.Marshal(config)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to marshal config")
@@ -97,13 +128,65 @@ func identityConfigResource(config types.Config) (*corev1.ConfigMap, error) {
 			Kind:       "ConfigMap",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name: ConfigMapName,
+			Name: ConfigConfigMapName,
 			Labels: kotsadmtypes.GetKotsadmLabels(map[string]string{
 				KotsIdentityLabelKey: KotsIdentityLabelValue,
 			}),
 		},
 		Data: map[string]string{
 			"config.yaml": string(data),
+		},
+	}, nil
+}
+
+func ensureConfigSecret(ctx context.Context, clientset kubernetes.Interface, namespace string, config types.Config) error {
+	secret, err := identitySecretResource(config)
+	if err != nil {
+		return err
+	}
+
+	existingSecret, err := clientset.CoreV1().Secrets(namespace).Get(ctx, ConfigSecretName, metav1.GetOptions{})
+	if err != nil {
+		if !kuberneteserrors.IsNotFound(err) {
+			return errors.Wrap(err, "failed to get secret")
+		}
+
+		_, err = clientset.CoreV1().Secrets(namespace).Create(ctx, secret, metav1.CreateOptions{})
+		if err != nil {
+			return errors.Wrap(err, "failed to create secret")
+		}
+
+		return nil
+	}
+
+	existingSecret.Data = secret.Data
+
+	_, err = clientset.CoreV1().Secrets(namespace).Update(ctx, existingSecret, metav1.UpdateOptions{})
+	if err != nil {
+		return errors.Wrap(err, "failed to update secret")
+	}
+
+	return nil
+}
+
+func identitySecretResource(config types.Config) (*corev1.Secret, error) {
+	data, err := ghodssyaml.Marshal(config.DexConnectors)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to marshal secret")
+	}
+	return &corev1.Secret{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: "v1",
+			Kind:       "Secret",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name: ConfigSecretName,
+			Labels: kotsadmtypes.GetKotsadmLabels(map[string]string{
+				KotsIdentityLabelKey: KotsIdentityLabelValue,
+			}),
+		},
+		Data: map[string][]byte{
+			"dexConnectors": data,
 		},
 	}, nil
 }
