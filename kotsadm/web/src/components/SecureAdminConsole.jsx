@@ -1,6 +1,7 @@
 import * as React from "react";
 import Helmet from "react-helmet";
 import { Utilities, dynamicallyResizeText } from "../utilities/utilities";
+import Loader from "./shared/Loader";
 import "../scss/components/Login.scss";
 
 class SecureAdminConsole extends React.Component {
@@ -12,6 +13,7 @@ class SecureAdminConsole extends React.Component {
       passwordErr: false,
       passwordErrMessage: "",
       authLoading: false,
+      loginInfo: null,
     }
 
     this.loginText = React.createRef();
@@ -21,6 +23,7 @@ class SecureAdminConsole extends React.Component {
     let token = data.token;
     if (Utilities.localStorageEnabled()) {
       window.localStorage.setItem("token", token);
+      Utilities.eraseCookie("token");
       this.props.onLoginSuccess().then((res) => {
         this.setState({ authLoading: false });
         if (res.length > 0) {
@@ -45,7 +48,7 @@ class SecureAdminConsole extends React.Component {
     return true;
   }
 
-  loginToConsole = async () => {
+  loginWithSharedPassword = async () => {
     if (this.validatePassword()) {
       this.setState({ authLoading: true, passwordErr: false, passwordErrMessage: "" });
       fetch(`${window.env.API_ENDPOINT}/login`, {
@@ -84,18 +87,57 @@ class SecureAdminConsole extends React.Component {
     }
   }
 
+  loginWithIdentityProvider = () => {
+    fetch(`${window.env.API_ENDPOINT}/oidc/login`, {
+      headers: {
+        "Content-Type": "application/json",
+      },
+      method: "POST",
+      body: JSON.stringify({
+      }),
+      redirect: "follow",
+    }).catch(err => {
+      console.log(err);
+    });
+  }
+
   submitForm = (e) => {
     const enterKey = e.keyCode === 13;
     if (enterKey) {
       e.preventDefault();
       e.stopPropagation();
-      this.loginToConsole();
+      this.loginWithSharedPassword();
     }
   }
 
   resizeLoginFont = () => {
+    if (!this.loginText?.current) {
+      return;
+    }
     const newFontSize = dynamicallyResizeText(this.loginText.current.innerHTML, this.loginText.current.clientWidth, "32px");
     this.loginText.current.style.fontSize = newFontSize;
+  }
+
+  getLoginInfo = async () => {
+    try {
+      const response = await fetch(`${window.env.API_ENDPOINT}/login/info`, {
+        headers: {
+          "Content-Type": "application/json",
+        },
+        method: "GET",
+        redirect: "follow",
+      });
+  
+      if (!response.ok) {
+        console.log(`Unexpected status code ${response.status}`)
+        return;
+      }
+
+      const res = await response.json();
+      this.setState({ loginInfo: res });
+    } catch(err) {
+      console.log(err);
+    }
   }
 
   componentDidUpdate(lastProps) {
@@ -107,27 +149,21 @@ class SecureAdminConsole extends React.Component {
     }
   }
 
+  async componentWillMount() {
+    const token = Utilities.getCookie("token");
+    if (token !== "") {
+      // this is a redirect from identity service login
+      const loginData = {
+        token: token,
+      };
+      this.completeLogin(loginData);
+      return;
+    }
+
+    await this.getLoginInfo();
+  }
+
   componentDidMount() {
-    fetch(`${window.env.API_ENDPOINT}/oidc/login`, {
-      headers: {
-        "Authorization": Utilities.getToken(),
-        "Content-Type": "application/json",
-      },
-      method: "POST",
-      body: JSON.stringify({
-      }),
-      redirect: "follow",
-    }).then(response => {
-      console.log(response)
-      if (response.status != 303) {
-        return
-      }
-      // console.log(response)
-      // const redirectUrl = response.headers["location"]
-      // window.location.href = redirectUrl;
-    }).catch(err => {
-      console.log("hello?", err)
-    });
     window.addEventListener("keydown", this.submitForm);
   }
 
@@ -146,9 +182,16 @@ class SecureAdminConsole extends React.Component {
       authLoading,
       passwordErr,
       passwordErrMessage,
+      loginInfo,
     } = this.state;
 
-    if (fetchingMetadata) { return null; }
+    if (fetchingMetadata || !loginInfo) {
+      return (
+        <div className="flex-column flex1 alignItems--center justifyContent--center">
+          <Loader size="60" />
+        </div>
+      );
+    }
 
     return (
       <div className="container flex-column flex1 u-overflow--auto Login-wrapper justifyContent--center alignItems--center">
@@ -165,20 +208,26 @@ class SecureAdminConsole extends React.Component {
               }
               <p ref={this.loginText} style={{ fontSize: "32px" }} className="u-marginTop--10 u-paddingTop--5 u-lineHeight--more u-color--tuna u-fontWeight--bold u-width--full u-textAlign--center">Log in{appName && appName !== "" ? ` to ${appName}` : ""}</p>
             </div>
-            <p className="u-marginTop--10 u-marginTop--5 u-fontSize--large u-textAlign--center u-fontWeight--medium u-lineHeight--normal u-color--dustyGray">
-              Enter the password to access the {appName} admin console.
-            </p>
-            <div className="u-marginTop--20 flex-column">
-              {passwordErr && <p className="u-fontSize--normal u-fontWeight--medium u-color--chestnut u-lineHeight--normal u-marginBottom--20">{passwordErrMessage}</p>}
-              <div>
-                <div className="component-wrapper">
-                  <input type="password" className="Input" placeholder="password" autoComplete="current-password" value={password} onChange={(e) => { this.setState({ password: e.target.value }) }}/>
-                </div>
-                <div className="u-marginTop--20 flex">
-                  <button type="submit" className="btn primary" disabled={authLoading} onClick={this.loginToConsole}>{authLoading ? "Logging in" : "Log in"}</button>
+            {loginInfo?.method === "identity-service" ?
+              <button type="submit" className="btn primary u-marginTop--20" onClick={this.loginWithIdentityProvider}>{`Log in with ${loginInfo?.identityConnector}`}</button>
+              : 
+              <div className="flex-auto flex-column justifyContent--center">
+                <p className="u-marginTop--10 u-marginTop--5 u-fontSize--large u-textAlign--center u-fontWeight--medium u-lineHeight--normal u-color--dustyGray">
+                  Enter the password to access the {appName} admin console.
+                </p>
+                <div className="u-marginTop--20 flex-column">
+                  {passwordErr && <p className="u-fontSize--normal u-fontWeight--medium u-color--chestnut u-lineHeight--normal u-marginBottom--20">{passwordErrMessage}</p>}
+                  <div>
+                    <div className="component-wrapper">
+                      <input type="password" className="Input" placeholder="password" autoComplete="current-password" value={password} onChange={(e) => { this.setState({ password: e.target.value }) }}/>
+                    </div>
+                    <div className="u-marginTop--20 flex">
+                      <button type="submit" className="btn primary" disabled={authLoading} onClick={this.loginWithSharedPassword}>{authLoading ? "Logging in" : "Log in"}</button>
+                    </div>
+                  </div>
                 </div>
               </div>
-            </div>
+            }
           </div>
         </div>
       </div>

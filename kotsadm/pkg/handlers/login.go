@@ -32,6 +32,13 @@ type LoginResponse struct {
 	Token string `json:"token,omitempty"`
 }
 
+type LoginMethod string
+
+const (
+	PasswordAuth    LoginMethod = "shared-password"
+	IdentityService LoginMethod = "identity-service"
+)
+
 func Login(w http.ResponseWriter, r *http.Request) {
 	identityConfig, err := identity.GetConfig(r.Context(), os.Getenv("POD_NAMESPACE"))
 	if err != nil {
@@ -249,10 +256,41 @@ func OIDCLoginCallback(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if os.Getenv("KOTSADM_ENV") == "dev" {
-		w.Header().Set("Set-Cookie", fmt.Sprintf(`token=%s; Domain=localhost;`, responseToken))
+		w.Header().Set("Set-Cookie", fmt.Sprintf(`token=%s; Domain=NULL;`, responseToken))
 		http.Redirect(w, r, "http://localhost:8000", http.StatusSeeOther)
 	} else {
 		w.Header().Set("Set-Cookie", fmt.Sprintf("token=%s", responseToken))
 		http.Redirect(w, r, fmt.Sprintf("http://%s", path.Join(ingressConfig.Host, ingressConfig.GetPath("/kotsadm"))), http.StatusSeeOther)
 	}
+}
+
+type GetLoginInfoResponse struct {
+	Method            LoginMethod `json:"method"`
+	IdentityConnector string      `json:"identityConnector,omitempty"` // TODO: support multiple connectors
+	Error             string      `json:"error,omitempty"`
+}
+
+func GetLoginInfo(w http.ResponseWriter, r *http.Request) {
+	getLoginInfoResponse := GetLoginInfoResponse{}
+
+	identityConfig, err := identity.GetConfig(r.Context(), os.Getenv("POD_NAMESPACE"))
+	if err != nil {
+		logger.Error(err)
+		getLoginInfoResponse.Error = "failed to get identity config"
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	if !identityConfig.Enabled {
+		getLoginInfoResponse.Method = PasswordAuth
+		JSON(w, http.StatusOK, getLoginInfoResponse)
+		return
+	}
+
+	getLoginInfoResponse.Method = IdentityService
+
+	if len(identityConfig.DexConnectors) > 0 {
+		getLoginInfoResponse.IdentityConnector = identityConfig.DexConnectors[0].Name
+	}
+
+	JSON(w, http.StatusOK, getLoginInfoResponse)
 }
