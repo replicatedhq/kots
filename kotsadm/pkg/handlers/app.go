@@ -373,7 +373,7 @@ func RemoveApp(w http.ResponseWriter, r *http.Request) {
 			}
 
 			if currentVersion != nil {
-				response.Error = fmt.Sprintf("version %d is deployed", currentVersion.Sequence)
+				response.Error = fmt.Sprintf("application %s is deployed and cannot be removed", appSlug)
 				logger.Error(errors.Wrap(err, response.Error))
 				JSON(w, http.StatusBadRequest, response)
 				return
