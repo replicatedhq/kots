@@ -52,7 +52,7 @@ func Deploy(ctx context.Context, logger *logger.Logger, clientset kubernetes.Int
 	if err := DeployServiceAccount(ctx, logger, clientset, namespace); err != nil {
 		return errors.Wrap(err, "failed to deploy service account")
 	}
-	marshalledDexConfig, err := marshalDexConfig(identityConfig, ingressConfig)
+	marshalledDexConfig, err := getDexConfig(ctx, clientset, namespace, identityConfig, ingressConfig)
 	if err != nil {
 		return errors.Wrap(err, "failed to marshal dex config")
 	}
@@ -135,7 +135,51 @@ func ensureSecret(ctx context.Context, clientset kubernetes.Interface, namespace
 	return nil
 }
 
-func marshalDexConfig(identityConfig identitytypes.Config, ingressConfig ingresstypes.Config) ([]byte, error) {
+func getExistingDexConfig(ctx context.Context, clientset kubernetes.Interface, namespace string) (*dextypes.Config, error) {
+	dexConfig := dextypes.Config{}
+
+	existingSecret, err := clientset.CoreV1().Secrets(namespace).Get(ctx, DexSecretName, metav1.GetOptions{})
+	if err != nil {
+		if !kuberneteserrors.IsNotFound(err) {
+			return nil, errors.Wrap(err, "failed to get existing secret")
+		}
+		return &dexConfig, nil
+	}
+
+	err = yaml.Unmarshal(existingSecret.Data["dexConfig.yaml"], &dexConfig)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to unmarshal dexConfig.yaml")
+	}
+
+	return &dexConfig, nil
+}
+
+func getDexConfig(ctx context.Context, clientset kubernetes.Interface, namespace string, identityConfig identitytypes.Config, ingressConfig ingresstypes.Config) ([]byte, error) {
+	existingConfig, err := getExistingDexConfig(ctx, clientset, namespace)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get existing dex config")
+	}
+
+	staticClients := existingConfig.StaticClients
+	kotsadmClient := dexstorage.Client{
+		ID:     "kotsadm",
+		Name:   "kotsadm",
+		Secret: ksuid.New().String(),
+		RedirectURIs: []string{
+			fmt.Sprintf("http://%s", path.Join(ingressConfig.Host, ingressConfig.GetPath("/kotsadm"), "api/v1/oidc/login/callback")),
+		},
+	}
+	foundKotsClient := false
+	for i := range staticClients {
+		if staticClients[i].ID == "kotsadm" {
+			staticClients[i].RedirectURIs = kotsadmClient.RedirectURIs
+			foundKotsClient = true
+		}
+	}
+	if !foundKotsClient {
+		staticClients = append(staticClients, kotsadmClient)
+	}
+
 	config := dextypes.Config{
 		Logger: dextypes.Logger{
 			Level:  "debug",
@@ -154,16 +198,7 @@ func marshalDexConfig(identityConfig identitytypes.Config, ingressConfig ingress
 		OAuth2: dextypes.OAuth2{
 			SkipApprovalScreen: true,
 		},
-		StaticClients: []dexstorage.Client{
-			{
-				ID:     "kotsadm",
-				Name:   "kotsadm",
-				Secret: ksuid.New().String(),
-				RedirectURIs: []string{
-					fmt.Sprintf("http://%s", path.Join(ingressConfig.Host, ingressConfig.GetPath("/kotsadm"), "api/v1/oidc/login/callback")),
-				},
-			},
-		},
+		StaticClients:    staticClients,
 		EnablePasswordDB: false,
 	}
 
@@ -260,9 +295,6 @@ func deploymentResource(deploymentName, serviceAccountName string, configChecksu
 		ObjectMeta: metav1.ObjectMeta{
 			Name:   deploymentName,
 			Labels: kotsadmtypes.GetKotsadmLabels(DexAdditionalLabels),
-			Annotations: map[string]string{
-				"kots.io/dex-secret-checksum": configChecksum,
-			},
 		},
 		Spec: appsv1.DeploymentSpec{
 			Replicas: &replicas,
@@ -275,6 +307,9 @@ func deploymentResource(deploymentName, serviceAccountName string, configChecksu
 				ObjectMeta: metav1.ObjectMeta{
 					Labels: map[string]string{
 						"app": "dex",
+					},
+					Annotations: map[string]string{
+						"kots.io/dex-secret-checksum": configChecksum,
 					},
 				},
 				Spec: corev1.PodSpec{
@@ -331,10 +366,10 @@ func updateDeployment(existingDeployment, desiredDeployment *appsv1.Deployment) 
 		return desiredDeployment
 	}
 
-	if existingDeployment.Annotations == nil {
-		existingDeployment.Annotations = map[string]string{}
+	if existingDeployment.Spec.Template.Annotations == nil {
+		existingDeployment.Spec.Template.Annotations = map[string]string{}
 	}
-	existingDeployment.Annotations["kots.io/dex-secret-checksum"] = desiredDeployment.Annotations["kots.io/dex-secret-checksum"]
+	existingDeployment.Spec.Template.Annotations["kots.io/dex-secret-checksum"] = desiredDeployment.Spec.Template.Annotations["kots.io/dex-secret-checksum"]
 
 	existingDeployment.Spec.Template.Spec.Containers[0].Image = desiredDeployment.Spec.Template.Spec.Containers[0].Image
 
