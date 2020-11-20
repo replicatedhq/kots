@@ -33,7 +33,7 @@ build:
 
 .PHONY: run
 run: bin
-	./bin/kotsadm-operator --api-endpoint http://localhost:30065 --token local
+	./bin/kotsadm-operator --api-endpoint http://localhost:30000 --token local
 
 .PHONY: build-ttl.sh
 build-ttl.sh:

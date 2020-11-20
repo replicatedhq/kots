@@ -163,7 +163,7 @@ func OIDCLoginCallback(w http.ResponseWriter, r *http.Request) {
 		ctx := oidc.ClientContext(r.Context(), http.DefaultClient)
 		token, err = oauth2Config.Exchange(ctx, code)
 		if err != nil {
-			logger.Error(errors.Wrap(err, "failed to get token"))
+			logger.Error(errors.Wrap(err, "failed to exchange token"))
 			w.WriteHeader(http.StatusBadRequest)
 			return
 		}

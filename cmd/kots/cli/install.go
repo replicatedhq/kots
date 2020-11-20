@@ -390,7 +390,7 @@ func InstallCmd() *cobra.Command {
 	// the following group of flags are experiemental and can be used to pull and push images during install time
 	cmd.Flags().Bool("rewrite-images", false, "set to true to force all container images to be rewritten and pushed to a local registry")
 	cmd.Flags().String("image-namespace", "", "the namespace/org in the docker registry to push images to (required when --rewrite-images is set)")
-	// set this to http://127.0.0.1:30065/api/v1 in dev environment
+	// set this to http://127.0.0.1:30000/api/v1 in dev environment
 	cmd.Flags().String("registry-endpoint", "", "the endpoint of the local docker registry to use when pushing images (required when --rewrite-images is set)")
 	cmd.Flags().MarkHidden("rewrite-images")
 	cmd.Flags().MarkHidden("image-namespace")
