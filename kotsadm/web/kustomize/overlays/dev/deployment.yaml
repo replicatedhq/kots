@@ -10,8 +10,3 @@ spec:
           ports:
             - name: http
               containerPort: 30000
-          env:
-            - name: SHIP_CLUSTER_API_SERVER
-              value: "http://127.0.0.1:30065"
-            - name: SHIP_CLUSTER_WEB_URI
-              value: "http://127.0.0.1:30000"

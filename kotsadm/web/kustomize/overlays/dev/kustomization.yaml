@@ -3,6 +3,8 @@ bases:
 
 resources:
   - ./nodeport.yaml
+  - ./nginx.yaml
+  - ./web.yaml
 
 patchesStrategicMerge:
   - ./deployment.yaml

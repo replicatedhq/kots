@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"path"
 	"time"
 
 	oidc "github.com/coreos/go-oidc"
@@ -17,6 +18,7 @@ import (
 	"github.com/replicatedhq/kots/kotsadm/pkg/user"
 	usertypes "github.com/replicatedhq/kots/kotsadm/pkg/user/types"
 	"github.com/replicatedhq/kots/pkg/identity"
+	ingress "github.com/replicatedhq/kots/pkg/ingress"
 	"github.com/replicatedhq/kots/pkg/rbac"
 	"golang.org/x/oauth2"
 )
@@ -100,10 +102,6 @@ func OIDCLogin(w http.ResponseWriter, r *http.Request) {
 	authCodeURL := oauth2Config.AuthCodeURL("state")
 
 	http.Redirect(w, r, authCodeURL, http.StatusSeeOther)
-}
-
-type OIDCLoginCallbackResponse struct {
-	Token string `json:"token,omitempty"`
 }
 
 func OIDCLoginCallback(w http.ResponseWriter, r *http.Request) {
@@ -212,7 +210,7 @@ func OIDCLoginCallback(w http.ResponseWriter, r *http.Request) {
 
 	identityConfig, err := identity.GetConfig(r.Context(), os.Getenv("POD_NAMESPACE"))
 	if err != nil {
-		logger.Error(err)
+		logger.Error(errors.Wrap(err, "failed to get identity config"))
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
@@ -235,16 +233,26 @@ func OIDCLoginCallback(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	callbackResponse := OIDCLoginCallbackResponse{}
-
 	signedJWT, err := session.SignJWT(createdSession)
 	if err != nil {
 		logger.Error(errors.Wrap(err, "failed to sign jwt"))
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
+	responseToken := fmt.Sprintf("Bearer %s", signedJWT)
 
-	callbackResponse.Token = fmt.Sprintf("Bearer %s", signedJWT)
+	ingressConfig, err := ingress.GetConfig(r.Context(), os.Getenv("POD_NAMESPACE"))
+	if err != nil {
+		logger.Error(errors.Wrap(err, "failed to get ingress config"))
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
 
-	JSON(w, http.StatusOK, callbackResponse)
+	if os.Getenv("KOTSADM_ENV") == "dev" {
+		w.Header().Set("Set-Cookie", fmt.Sprintf(`token=%s; Domain=localhost;`, responseToken))
+		http.Redirect(w, r, "http://localhost:8000", http.StatusSeeOther)
+	} else {
+		w.Header().Set("Set-Cookie", fmt.Sprintf("token=%s", responseToken))
+		http.Redirect(w, r, fmt.Sprintf("http://%s", path.Join(ingressConfig.Host, ingressConfig.GetPath("/kotsadm"))), http.StatusSeeOther)
+	}
 }

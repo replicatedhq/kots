@@ -47,6 +47,7 @@ module.exports = {
     host: "0.0.0.0",
     hot: true,
     hotOnly: true,
+    disableHostCheck: true,
     historyApiFallback: {
       verbose: true,
       disableDotRule: true

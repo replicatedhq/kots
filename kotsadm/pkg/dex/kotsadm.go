@@ -22,12 +22,7 @@ func GetKotsadmDexConfig() (*dextypes.Config, error) {
 		return nil, errors.Wrap(err, "failed to get k8s client set")
 	}
 
-	namespace := os.Getenv("POD_NAMESPACE")
-	if namespace == "test" { // TODO
-		namespace = "default"
-	}
-
-	secret, err := clientset.CoreV1().Secrets(namespace).Get(context.TODO(), identity.DexSecretName, metav1.GetOptions{})
+	secret, err := clientset.CoreV1().Secrets(os.Getenv("POD_NAMESPACE")).Get(context.TODO(), identity.DexSecretName, metav1.GetOptions{})
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get kotsadm-dex secret")
 	}

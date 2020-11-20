@@ -1,0 +1,29 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kotsadm-nginx
+spec:
+  selector:
+    matchLabels:
+      app: kotsadm-nginx
+  template:
+    metadata:
+      labels:
+        app: kotsadm-nginx
+    spec:
+      containers:
+        - name: kotsadm-nginx
+          image: kotsadm-nginx
+          ports:
+            - name: http
+              containerPort: 30000
+          readinessProbe:
+            failureThreshold: 3
+            httpGet:
+              path: /healthz
+              port: 30000
+              scheme: HTTP
+            initialDelaySeconds: 2
+            periodSeconds: 2
+            successThreshold: 1
+            timeoutSeconds: 1

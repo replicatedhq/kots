@@ -8,8 +8,8 @@ import (
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/kotsadm/pkg/downstream"
 	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
-	"github.com/replicatedhq/kots/kotsadm/pkg/store"
 	"github.com/replicatedhq/kots/kotsadm/pkg/socketservice"
+	"github.com/replicatedhq/kots/kotsadm/pkg/store"
 )
 
 func RedeployAppVersion(w http.ResponseWriter, r *http.Request) {
@@ -55,4 +55,3 @@ func RedeployAppVersion(w http.ResponseWriter, r *http.Request) {
 
 	JSON(w, http.StatusNoContent, "")
 }
-

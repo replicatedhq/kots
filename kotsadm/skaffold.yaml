@@ -50,6 +50,11 @@ build:
       docker:
         dockerfile: ./Dockerfile.skaffold
 
+    - image: kotsadm-nginx
+      context: "./web/nginx"
+      docker:
+        dockerfile: ./Dockerfile
+
     - image: kotsadm
       context: "./"
       docker:
