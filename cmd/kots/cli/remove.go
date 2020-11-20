@@ -23,7 +23,7 @@ func RemoveCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:           "remove [slug]",
 		Short:         "Remove an application from console",
-		Long:          `Remove application identified by slug from Admin Console.`,
+		Long:          `Remove application reference identified by slug from Admin Console.  This command does not remove application resources from the cluster.`,
 		SilenceUsage:  true,
 		SilenceErrors: false,
 		PreRun: func(cmd *cobra.Command, args []string) {
@@ -57,7 +57,7 @@ func RemoveCmd() *cobra.Command {
 			stopCh := make(chan struct{})
 			defer close(stopCh)
 
-			log.ActionWithoutSpinner("Removing application %s", appSlug)
+			log.ActionWithoutSpinner("Removing application %s reference from Admin Console", appSlug)
 
 			localPort, errChan, err := k8sutil.PortForward(kubernetesConfigFlags, 0, 3000, namespace, podName, false, stopCh, log)
 			if err != nil {
@@ -121,7 +121,7 @@ func RemoveCmd() *cobra.Command {
 					if v.GetBool("force") {
 						return errors.Wrap(errors.New(response.Error), "failed to remove app")
 					} else {
-						return errors.Wrap(errors.New(response.Error), "failed to remove app, command may be retried with --force flag")
+						return errors.Errorf("Application is already deployed. Re-run the command with --force flag to remove application reference anyway.")
 					}
 				} else {
 					return errors.Wrapf(errors.New(response.Error), "unexpected status code from %v", resp.StatusCode)
@@ -135,7 +135,7 @@ func RemoveCmd() *cobra.Command {
 	}
 
 	cmd.Flags().StringP("namespace", "n", "", "the namespace in which kots/kotsadm is installed")
-	cmd.Flags().BoolP("force", "f", false, "try removing application ignoring errors if possible")
+	cmd.Flags().BoolP("force", "f", false, "removing application reference even if it was already deployed")
 
 	return cmd
 }
