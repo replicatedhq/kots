@@ -23,7 +23,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/util"
 )
 
-func UpdateAppFromAirgap(a *apptypes.App, airgapBundlePath string, deploy bool) (finalError error) {
+func UpdateAppFromAirgap(a *apptypes.App, airgapBundlePath string, deploy bool, skipPreflights bool) (finalError error) {
 	finishedCh := make(chan struct{})
 	defer close(finishedCh)
 	go func() {
@@ -61,11 +61,11 @@ func UpdateAppFromAirgap(a *apptypes.App, airgapBundlePath string, deploy bool) 
 	}
 	defer os.RemoveAll(airgapRoot)
 
-	err = UpdateAppFromPath(a, airgapRoot, deploy)
+	err = UpdateAppFromPath(a, airgapRoot, deploy, skipPreflights)
 	return errors.Wrap(err, "failed to update app")
 }
 
-func UpdateAppFromPath(a *apptypes.App, airgapRoot string, deploy bool) error {
+func UpdateAppFromPath(a *apptypes.App, airgapRoot string, deploy bool, skipPreflights bool) error {
 	if err := store.GetStore().SetTaskStatus("update-download", "Processing package...", "running"); err != nil {
 		return errors.Wrap(err, "failed to set tasks status")
 	}
@@ -193,13 +193,15 @@ func UpdateAppFromPath(a *apptypes.App, airgapRoot string, deploy bool) error {
 	}
 
 	// Create the app in the db
-	newSequence, err := version.CreateVersion(a.ID, currentArchivePath, "Airgap Upload", a.CurrentSequence)
+	newSequence, err := version.CreateVersion(a.ID, currentArchivePath, "Airgap Upload", a.CurrentSequence, skipPreflights)
 	if err != nil {
 		return errors.Wrap(err, "failed to create new version")
 	}
 
-	if err := preflight.Run(a.ID, newSequence, true, currentArchivePath); err != nil {
-		return errors.Wrap(err, "failed to start preflights")
+	if !skipPreflights {
+		if err := preflight.Run(a.ID, newSequence, true, currentArchivePath); err != nil {
+			return errors.Wrap(err, "failed to start preflights")
+		}
 	}
 
 	if deploy {

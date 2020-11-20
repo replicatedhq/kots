@@ -166,7 +166,7 @@ func UpdateAppRegistry(w http.ResponseWriter, r *http.Request) {
 		}
 		defer os.RemoveAll(appDir)
 
-		newSequence, err := version.CreateVersion(foundApp.ID, appDir, "Registry Change", foundApp.CurrentSequence)
+		newSequence, err := version.CreateVersion(foundApp.ID, appDir, "Registry Change", foundApp.CurrentSequence, false)
 		if err != nil {
 			logger.Error(err)
 			updateAppRegistryResponse.Error = err.Error()

@@ -42,13 +42,13 @@ func GetNextAppSequence(appID string, currentSequence *int64) (int64, error) {
 
 // CreateFirstVersion works much likst CreateVersion except that it assumes version 0
 // and never attempts to calculate a diff, or look at previous versions
-func CreateFirstVersion(appID string, filesInDir string, source string) (int64, error) {
-	return createVersion(appID, filesInDir, source, nil)
+func CreateFirstVersion(appID string, filesInDir string, source string, skipPreflights bool) (int64, error) {
+	return createVersion(appID, filesInDir, source, nil, skipPreflights)
 }
 
 // CreateVersion creates a new version of the app
-func CreateVersion(appID string, filesInDir string, source string, currentSequence int64) (int64, error) {
-	return createVersion(appID, filesInDir, source, &currentSequence)
+func CreateVersion(appID string, filesInDir string, source string, currentSequence int64, skipPreflights bool) (int64, error) {
+	return createVersion(appID, filesInDir, source, &currentSequence, skipPreflights)
 }
 
 type downstreamGitOps struct {
@@ -77,7 +77,7 @@ func (d *downstreamGitOps) CreateGitOpsDownstreamCommit(appID string, clusterID 
 
 // this is the common, internal function to create an app version, used in both
 // new and updates to apps
-func createVersion(appID string, filesInDir string, source string, currentSequence *int64) (int64, error) {
+func createVersion(appID string, filesInDir string, source string, currentSequence *int64, skipPreflights bool) (int64, error) {
 	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(filesInDir)
 	if err != nil {
 		return int64(0), errors.Wrap(err, "failed to read kots kinds")
@@ -99,7 +99,7 @@ func createVersion(appID string, filesInDir string, source string, currentSequen
 		return int64(0), errors.Wrap(err, "failed to replace secrets")
 	}
 
-	newSequence, err := store.GetStore().CreateAppVersion(appID, currentSequence, appName, appIcon, kotsKinds, filesInDir, &downstreamGitOps{}, source)
+	newSequence, err := store.GetStore().CreateAppVersion(appID, currentSequence, appName, appIcon, kotsKinds, filesInDir, &downstreamGitOps{}, source, skipPreflights)
 	if err != nil {
 		return int64(0), errors.Wrap(err, "failed to create app version")
 	}

@@ -543,26 +543,35 @@ func SupportBundleToAnalyzer(sb *troubleshootv1beta2.SupportBundle) *troubleshoo
 	}
 }
 
-func IsImagesPushedSet(configMapName string) (bool, error) {
+type InstallationParams struct {
+	SkipImagePush  bool
+	SkipPreflights bool
+}
+
+func GetInstallationParams(configMapName string) (InstallationParams, error) {
+	autoConfig := InstallationParams{}
+
 	cfg, err := config.GetConfig()
 	if err != nil {
-		return false, errors.Wrap(err, "failed to get cluster config")
+		return autoConfig, errors.Wrap(err, "failed to get cluster config")
 	}
 
 	clientset, err := kubernetes.NewForConfig(cfg)
 	if err != nil {
-		return false, errors.Wrap(err, "failed to create kubernetes clientset")
+		return autoConfig, errors.Wrap(err, "failed to create kubernetes clientset")
 	}
 
-	skipImagePush := false
 	kotsadmConfigMap, err := clientset.CoreV1().ConfigMaps(os.Getenv("POD_NAMESPACE")).Get(context.TODO(), configMapName, metav1.GetOptions{})
+
 	if err != nil {
-		if !kuberneteserrors.IsNotFound(err) {
-			return false, errors.Wrap(err, "failed to get existing kotsadm config map")
+		if kuberneteserrors.IsNotFound(err) {
+			return autoConfig, nil
 		}
-	} else if err == nil {
-		skipImagePush, _ = strconv.ParseBool(kotsadmConfigMap.Data["initial-app-images-pushed"])
+		return autoConfig, errors.Wrap(err, "failed to get existing kotsadm config map")
 	}
 
-	return skipImagePush, nil
+	autoConfig.SkipImagePush, _ = strconv.ParseBool(kotsadmConfigMap.Data["initial-app-images-pushed"])
+	autoConfig.SkipPreflights, _ = strconv.ParseBool(kotsadmConfigMap.Data["skip-preflights"])
+
+	return autoConfig, nil
 }
