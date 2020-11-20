@@ -265,13 +265,17 @@ func OIDCLoginCallback(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if os.Getenv("KOTSADM_ENV") == "dev" {
-		w.Header().Set("Set-Cookie", fmt.Sprintf(`token=%s; Domain=NULL;`, responseToken))
-		http.Redirect(w, r, "http://localhost:8000", http.StatusSeeOther)
-	} else {
-		w.Header().Set("Set-Cookie", fmt.Sprintf("token=%s", responseToken))
-		http.Redirect(w, r, fmt.Sprintf("http://%s", path.Join(ingressConfig.Host, ingressConfig.GetPath("/kotsadm"))), http.StatusSeeOther)
+	// TODO: support tls?
+	expire := time.Now().Add(30 * time.Minute)
+	cookie := http.Cookie{
+		Name:    "token",
+		Value:   responseToken,
+		Expires: expire,
+		Path:    "/",
 	}
+	http.SetCookie(w, &cookie)
+
+	http.Redirect(w, r, fmt.Sprintf("http://%s", path.Join(ingressConfig.Host, ingressConfig.GetPath("/kotsadm"))), http.StatusSeeOther)
 }
 
 type GetLoginInfoResponse struct {

@@ -146,7 +146,6 @@ class SecureAdminConsole extends React.Component {
           "Content-Type": "application/json",
         },
         method: "GET",
-        redirect: "follow",
       });
   
       if (!response.ok) {
@@ -174,8 +173,9 @@ class SecureAdminConsole extends React.Component {
     const token = Utilities.getCookie("token");
     if (token !== "") {
       // this is a redirect from identity service login
+      // strip quotes from token (golang adds them when the cookie value has spaces, commas, etc..)
       const loginData = {
-        token: token,
+        token: token.replace(/"/g, ""),
       };
       this.completeLogin(loginData);
       return;
