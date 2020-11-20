@@ -439,13 +439,15 @@ func ensureService(ctx context.Context, clientset kubernetes.Interface, namespac
 }
 
 func serviceResource(serviceName string, nodePortConfig *ingresstypes.NodePortConfig) *corev1.Service {
+	serviceType := corev1.ServiceTypeClusterIP
 	port := corev1.ServicePort{
 		Name:       "http",
 		Port:       5556,
 		TargetPort: intstr.IntOrString{Type: intstr.Int, IntVal: 5556},
 	}
-	if nodePortConfig != nil {
+	if nodePortConfig != nil && nodePortConfig.Port != 0 {
 		port.NodePort = int32(nodePortConfig.Port)
+		serviceType = corev1.ServiceTypeNodePort
 	}
 	return &corev1.Service{
 		TypeMeta: metav1.TypeMeta{
@@ -457,7 +459,7 @@ func serviceResource(serviceName string, nodePortConfig *ingresstypes.NodePortCo
 			Labels: kotsadmtypes.GetKotsadmLabels(DexAdditionalLabels),
 		},
 		Spec: corev1.ServiceSpec{
-			Type: corev1.ServiceTypeClusterIP,
+			Type: serviceType,
 			Selector: map[string]string{
 				"app": "dex",
 			},

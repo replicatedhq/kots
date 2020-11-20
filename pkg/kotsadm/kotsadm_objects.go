@@ -555,6 +555,9 @@ func kotsadmService(namespace string, nodePort int32) *corev1.Service {
 	}
 
 	serviceType := corev1.ServiceTypeClusterIP
+	if nodePort != 0 {
+		serviceType = corev1.ServiceTypeNodePort
+	}
 
 	service := &corev1.Service{
 		TypeMeta: metav1.TypeMeta{
