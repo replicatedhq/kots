@@ -52,7 +52,6 @@ func AdminConsoleUpgradeCmd() *cobra.Command {
 				Namespace:             v.GetString("namespace"),
 				KubernetesConfigFlags: kubernetesConfigFlags,
 				ForceUpgradeKurl:      v.GetBool("force-upgrade-kurl"),
-				EnableIdentityService: v.GetBool("enable-identity-service"),
 
 				KotsadmOptions: kotsadmtypes.KotsadmOptions{
 					OverrideVersion:   v.GetString("kotsadm-tag"),
@@ -100,9 +99,6 @@ func AdminConsoleUpgradeCmd() *cobra.Command {
 	cmd.Flags().MarkHidden("force-upgrade-kurl")
 	cmd.Flags().MarkHidden("kotsadm-tag")
 	cmd.Flags().MarkHidden("kotsadm-namespace")
-
-	cmd.Flags().Bool("enable-identity-service", false, "when set, the KOTS identity service will be enabled")
-	cmd.Flags().MarkHidden("enable-identity-service")
 
 	return cmd
 }
