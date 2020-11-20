@@ -4,7 +4,6 @@ import (
 	"testing"
 
 	"github.com/replicatedhq/kots/pkg/ingress/types"
-	extensions "k8s.io/api/extensions/v1beta1"
 )
 
 func Test_getIngressConfigAddress(t *testing.T) {
@@ -32,14 +31,9 @@ func Test_getIngressConfigAddress(t *testing.T) {
 		{
 			name: "no address tls",
 			ingressConfig: types.IngressConfig{
-				Host: "somebigbank.com",
-				Path: "/test",
-				TLS: []extensions.IngressTLS{
-					{
-						Hosts:      []string{"somebigbank.com"},
-						SecretName: "kotsadm-tls",
-					},
-				},
+				Host:          "somebigbank.com",
+				Path:          "/test",
+				TLSSecretName: "kotsadm-tls",
 			},
 			want: "https://somebigbank.com/test",
 		},

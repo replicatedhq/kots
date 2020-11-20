@@ -3,12 +3,23 @@ package ingress
 import (
 	"github.com/replicatedhq/kots/pkg/ingress/types"
 	kotsadmtypes "github.com/replicatedhq/kots/pkg/kotsadm/types"
+	extensions "k8s.io/api/extensions/v1beta1"
 	extensionsv1beta1 "k8s.io/api/extensions/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
 func IngressFromConfig(ingressConfig types.IngressConfig, name string, serviceName string, servicePort int, additionalLabels map[string]string) *extensionsv1beta1.Ingress {
+	ingressTLS := []extensions.IngressTLS{}
+	if ingressConfig.TLSSecretName != "" {
+		tls := extensions.IngressTLS{
+			SecretName: ingressConfig.TLSSecretName,
+		}
+		if ingressConfig.Host != "" {
+			tls.Hosts = append(tls.Hosts, ingressConfig.Host)
+		}
+		ingressTLS = append(ingressTLS, tls)
+	}
 	return &extensionsv1beta1.Ingress{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "v1beta1",
@@ -38,7 +49,7 @@ func IngressFromConfig(ingressConfig types.IngressConfig, name string, serviceNa
 					},
 				},
 			},
-			TLS: ingressConfig.TLS,
+			TLS: ingressTLS,
 		},
 	}
 }

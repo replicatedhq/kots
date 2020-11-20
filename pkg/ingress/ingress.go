@@ -28,7 +28,7 @@ func getIngressConfigAddress(ingressConfig types.IngressConfig) string {
 	}
 
 	var u url.URL
-	if len(ingressConfig.TLS) > 0 {
+	if ingressConfig.TLSSecretName != "" {
 		u.Scheme = "https"
 	} else {
 		u.Scheme = "http"
