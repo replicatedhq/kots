@@ -46,10 +46,10 @@ type DeployOptions struct {
 	EnsureKotsadmConfig       bool
 
 	EnableIdentityService bool
-	IdentityConfig        identitytypes.Config
+	IdentityConfig        *identitytypes.Config
 
 	EnableIngress bool
-	IngressConfig ingresstypes.Config
+	IngressConfig *ingresstypes.Config
 
 	KotsadmOptions KotsadmOptions
 }

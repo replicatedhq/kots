@@ -119,7 +119,6 @@ func Upgrade(upgradeOptions types.UpgradeOptions) error {
 	// these options are not stored in cluster (yet)
 	deployOptions.Timeout = upgradeOptions.Timeout
 	deployOptions.KotsadmOptions = upgradeOptions.KotsadmOptions
-	deployOptions.EnableIdentityService = upgradeOptions.EnableIdentityService
 
 	if err := ensureKotsadm(*deployOptions, clientset, log); err != nil {
 		return errors.Wrap(err, "failed to upgrade admin console")
@@ -418,39 +417,39 @@ func ensureKotsadm(deployOptions types.DeployOptions, clientset *kubernetes.Clie
 		}
 	}
 
-	if deployOptions.EnableIngress {
+	if deployOptions.EnableIngress && deployOptions.IngressConfig != nil {
 		log.ChildActionWithSpinner("Enabling ingress for the Admin Console")
 
 		deployOptions.IngressConfig.Enabled = true
 
-		if err := ingress.SetConfig(context.TODO(), deployOptions.Namespace, deployOptions.IngressConfig); err != nil {
+		if err := ingress.SetConfig(context.TODO(), deployOptions.Namespace, *deployOptions.IngressConfig); err != nil {
 			return errors.Wrap(err, "failed to set identity config")
 		}
 
-		if err := EnsureIngress(context.TODO(), deployOptions.Namespace, clientset, deployOptions.IngressConfig); err != nil {
+		if err := EnsureIngress(context.TODO(), deployOptions.Namespace, clientset, *deployOptions.IngressConfig); err != nil {
 			return errors.Wrap(err, "failed to ensure ingress")
 		}
 		log.FinishSpinner()
-	}
 
-	if deployOptions.EnableIdentityService {
-		if !deployOptions.EnableIngress {
-			return errors.New("KOTS identity service requires ingress to be enabled")
+		if deployOptions.EnableIdentityService && deployOptions.IdentityConfig != nil {
+			if !deployOptions.EnableIngress {
+				return errors.New("KOTS identity service requires ingress to be enabled")
+			}
+
+			log.ChildActionWithSpinner("Deploying the Identity Service")
+
+			deployOptions.IdentityConfig.Enabled = true
+			deployOptions.IdentityConfig.DisablePasswordAuth = true
+
+			if err := identity.SetConfig(context.TODO(), deployOptions.Namespace, *deployOptions.IdentityConfig); err != nil {
+				return errors.Wrap(err, "failed to set identity config")
+			}
+
+			if err := identity.Deploy(context.TODO(), log, clientset, deployOptions.Namespace, *deployOptions.IdentityConfig, *deployOptions.IngressConfig); err != nil {
+				return errors.Wrap(err, "failed to deploy identity service")
+			}
+			log.FinishSpinner()
 		}
-
-		log.ChildActionWithSpinner("Deploying the Identity Service")
-
-		deployOptions.IdentityConfig.Enabled = true
-		deployOptions.IdentityConfig.DisablePasswordAuth = true
-
-		if err := identity.SetConfig(context.TODO(), deployOptions.Namespace, deployOptions.IdentityConfig); err != nil {
-			return errors.Wrap(err, "failed to set identity config")
-		}
-
-		if err := identity.Deploy(context.TODO(), log, clientset, deployOptions.Namespace, deployOptions.IdentityConfig, deployOptions.IngressConfig); err != nil {
-			return errors.Wrap(err, "failed to deploy identity service")
-		}
-		log.FinishSpinner()
 	}
 
 	if !deployOptions.ExcludeAdminConsole {

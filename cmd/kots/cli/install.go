@@ -151,35 +151,18 @@ func InstallCmd() *cobra.Command {
 				}
 			}
 
-			ingressConfigPath := v.GetString("ingress-config")
-			enableIngress := v.GetBool("enable-ingress") || ingressConfigPath != ""
-			identityConfigPath := v.GetString("identity-config")
-			enableIdentityService := v.GetBool("enable-identity-service") || identityConfigPath != ""
+			ingressConfig, err := getIngressConfig(v)
+			if err != nil {
+				return errors.Wrap(err, "failed to get ingress config")
+			}
 
-			if enableIdentityService && !enableIngress {
+			identityConfig, err := getIdentityConfig(v)
+			if err != nil {
+				return errors.Wrap(err, "failed to get identity config")
+			}
+
+			if identityConfig != nil && ingressConfig == nil {
 				return errors.New("KOTS identity service requires ingress to be enabled")
-			}
-
-			ingressConfig := ingresstypes.Config{}
-			if ingressConfigPath != "" {
-				content, err := ioutil.ReadFile(ingressConfigPath)
-				if err != nil {
-					return errors.Wrap(err, "failed to read ingress config file")
-				}
-				if err := ghodssyaml.Unmarshal(content, &ingressConfig); err != nil {
-					return errors.Wrap(err, "failed to unmarshal ingress config yaml")
-				}
-			}
-
-			identityConfig := identitytypes.Config{}
-			if identityConfigPath != "" {
-				content, err := ioutil.ReadFile(identityConfigPath)
-				if err != nil {
-					return errors.Wrap(err, "failed to read identity service config file")
-				}
-				if err := ghodssyaml.Unmarshal(content, &identityConfig); err != nil {
-					return errors.Wrap(err, "failed to unmarshal identity service config yaml")
-				}
 			}
 
 			deployOptions := kotsadmtypes.DeployOptions{
@@ -202,6 +185,7 @@ func InstallCmd() *cobra.Command {
 				HTTPProxyEnvValue:         v.GetString("http-proxy"),
 				HTTPSProxyEnvValue:        v.GetString("https-proxy"),
 				NoProxyEnvValue:           v.GetString("no-proxy"),
+
 				KotsadmOptions: kotsadmtypes.KotsadmOptions{
 					OverrideVersion:   v.GetString("kotsadm-tag"),
 					OverrideRegistry:  registryEndpoint,
@@ -209,9 +193,10 @@ func InstallCmd() *cobra.Command {
 					Username:          registryUsername,
 					Password:          registryPassword,
 				},
-				EnableIdentityService: enableIdentityService,
+
+				EnableIdentityService: identityConfig != nil,
 				IdentityConfig:        identityConfig,
-				EnableIngress:         enableIngress,
+				EnableIngress:         ingressConfig != nil,
 				IngressConfig:         ingressConfig,
 			}
 
@@ -522,4 +507,46 @@ func uploadAirgapArchive(deployOptions kotsadmtypes.DeployOptions, clientset *ku
 	}
 
 	return false, nil
+}
+
+func getIngressConfig(v *viper.Viper) (*ingresstypes.Config, error) {
+	ingressConfigPath := v.GetString("ingress-config")
+	enableIngress := v.GetBool("enable-ingress") || ingressConfigPath != ""
+
+	if !enableIngress {
+		return nil, nil
+	}
+
+	ingressConfig := ingresstypes.Config{}
+	if ingressConfigPath != "" {
+		content, err := ioutil.ReadFile(ingressConfigPath)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to read ingress config file")
+		}
+		if err := ghodssyaml.Unmarshal(content, &ingressConfig); err != nil {
+			return nil, errors.Wrap(err, "failed to unmarshal ingress config yaml")
+		}
+	}
+	return &ingressConfig, nil
+}
+
+func getIdentityConfig(v *viper.Viper) (*identitytypes.Config, error) {
+	identityConfigPath := v.GetString("identity-config")
+	enableIdentityService := v.GetBool("enable-identity-service") || identityConfigPath != ""
+
+	if !enableIdentityService {
+		return nil, nil
+	}
+
+	identityConfig := identitytypes.Config{}
+	if identityConfigPath != "" {
+		content, err := ioutil.ReadFile(identityConfigPath)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to read identity service config file")
+		}
+		if err := ghodssyaml.Unmarshal(content, &identityConfig); err != nil {
+			return nil, errors.Wrap(err, "failed to unmarshal identity service config yaml")
+		}
+	}
+	return &identityConfig, nil
 }
