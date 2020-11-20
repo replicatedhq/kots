@@ -8,12 +8,14 @@ import (
 
 func Test_sessionAuthorize(t *testing.T) {
 	tests := []struct {
-		name  string
-		roles []types.SessionRole
-		want  bool
+		name     string
+		resource string
+		roles    []types.SessionRole
+		want     bool
 	}{
 		{
-			name: "allowed",
+			name:     "allowed",
+			resource: "/apps",
 			roles: []types.SessionRole{{
 				Policies: []types.SessionPolicy{{
 					Allowed: []string{"**/*"},
@@ -22,7 +24,8 @@ func Test_sessionAuthorize(t *testing.T) {
 			want: true,
 		},
 		{
-			name: "denied",
+			name:     "denied",
+			resource: "/apps",
 			roles: []types.SessionRole{{
 				Policies: []types.SessionPolicy{{
 					Denied: []string{"**/*"},
@@ -33,7 +36,7 @@ func Test_sessionAuthorize(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := sessionAuthorize(tt.roles); got != tt.want {
+			if got := sessionAuthorize(tt.resource, tt.roles); got != tt.want {
 				t.Errorf("sessionAuthorize() = %v, want %v", got, tt.want)
 			}
 		})
