@@ -23,7 +23,10 @@ class SecureAdminConsole extends React.Component {
     let token = data.token;
     if (Utilities.localStorageEnabled()) {
       window.localStorage.setItem("token", token);
-      Utilities.eraseCookie("token");
+      setTimeout(() => {
+        Utilities.removeCookie("token");
+      }, 5000); // didn't work without a delay for some reason
+
       this.props.onLoginSuccess().then((res) => {
         this.setState({ authLoading: false });
         if (res.length > 0) {
@@ -171,7 +174,7 @@ class SecureAdminConsole extends React.Component {
 
   async componentWillMount() {
     const token = Utilities.getCookie("token");
-    if (token !== "") {
+    if (token) {
       // this is a redirect from identity service login
       // strip quotes from token (golang adds them when the cookie value has spaces, commas, etc..)
       const loginData = {
