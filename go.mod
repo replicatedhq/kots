@@ -44,7 +44,7 @@ require (
 	github.com/pierrec/lz4 v2.2.6+incompatible // indirect
 	github.com/pkg/errors v0.9.1
 	github.com/replicatedhq/kurl/kurlkinds v0.0.0-20200617224429-55f493a72baf
-	github.com/replicatedhq/troubleshoot v0.9.51
+	github.com/replicatedhq/troubleshoot v0.9.52
 	github.com/replicatedhq/yaml/v3 v3.0.0-beta5-replicatedhq
 	github.com/sergi/go-diff v1.1.0
 	github.com/spf13/cobra v1.0.0
