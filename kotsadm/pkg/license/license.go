@@ -147,3 +147,27 @@ func GetCurrentLicenseString(a *apptypes.App) (string, error) {
 	}
 	return string(kotsLicense), nil
 }
+
+func CheckDoesLicenseExists(allLicenses []*kotsv1beta1.License, uploadedLicense string) (*kotsv1beta1.License, error) {
+	parsedUploadedLicense, err := GetParsedLicense(uploadedLicense)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to parse uploaded license")
+	}
+
+	for _, license := range allLicenses {
+		if license.Spec.LicenseID == parsedUploadedLicense.Spec.LicenseID {
+			return license, nil
+		}
+	}
+	return nil, nil
+}
+
+func GetParsedLicense(licenseStr string) (*kotsv1beta1.License, error) {
+	decode := scheme.Codecs.UniversalDeserializer().Decode
+	obj, _, err := decode([]byte(licenseStr), nil, nil)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to decode license yaml")
+	}
+	license := obj.(*kotsv1beta1.License)
+	return license, nil
+}
