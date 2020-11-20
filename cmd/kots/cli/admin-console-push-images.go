@@ -1,8 +1,16 @@
 package cli
 
 import (
+	"encoding/base64"
+	"fmt"
+	"net/url"
 	"os"
+	"strings"
 
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/credentials"
+	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/aws/aws-sdk-go/service/ecr"
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/docker/registry"
 	"github.com/replicatedhq/kots/pkg/kotsadm"
@@ -30,11 +38,22 @@ func AdminPushImagesCmd() *cobra.Command {
 			}
 
 			airgapArchive := args[0]
+			endpoint := args[1]
+			username := v.GetString("registry-username")
+			password := v.GetString("registry-password")
+			if isECR(endpoint) && username != "AWS" {
+				var err error
+				username, password, err = getECRLogin(endpoint, username, password)
+				if err != nil {
+					return errors.Wrap(err, "failed get ecr login")
+				}
+			}
+
 			options := kotsadmtypes.PushImagesOptions{
 				Registry: registry.RegistryOptions{
 					Endpoint: args[1],
-					Username: v.GetString("registry-username"),
-					Password: v.GetString("registry-password"),
+					Username: username,
+					Password: password,
 				},
 				ProgressWriter: os.Stdout,
 			}
@@ -52,4 +71,74 @@ func AdminPushImagesCmd() *cobra.Command {
 	cmd.Flags().String("registry-password", "", "password to use to authenticate with the registry")
 
 	return cmd
+}
+
+func isECR(endpoint string) bool {
+	if !strings.HasPrefix(endpoint, "http") {
+		// url.Parse doesn't work without scheme
+		endpoint = fmt.Sprintf("https://%s", endpoint)
+	}
+
+	parsed, err := url.Parse(endpoint)
+	if err != nil {
+		return false
+	}
+
+	return strings.HasSuffix(parsed.Hostname(), ".amazonaws.com")
+}
+
+func getECRLogin(endpoint string, keyID string, accessKey string) (string, string, error) {
+	registry, zone, err := parseECREndpoint(endpoint)
+	if err != nil {
+		return "", "", errors.Wrap(err, "failed to parse ECR endpoint")
+	}
+
+	ecrService := getECRService(keyID, accessKey, zone)
+
+	ecrToken, err := ecrService.GetAuthorizationToken(&ecr.GetAuthorizationTokenInput{
+		RegistryIds: []*string{
+			&registry,
+		},
+	})
+	if err != nil {
+		return "", "", errors.Wrap(err, "failed to get ecr token")
+	}
+
+	if len(ecrToken.AuthorizationData) == 0 {
+		return "", "", errors.Errorf("repo %s not accessible with specified credentials", endpoint)
+	}
+
+	decoded, err := base64.StdEncoding.DecodeString(*ecrToken.AuthorizationData[0].AuthorizationToken)
+	if err != nil {
+		return "", "", errors.Wrap(err, "failed to decode ecr token")
+	}
+
+	parts := strings.Split(string(decoded), ":")
+	if len(parts) != 2 {
+		return "", "", errors.New("ecr token is not in user:password format")
+	}
+
+	username := parts[0]
+	password := parts[1]
+
+	return username, password, nil
+}
+
+func getECRService(accessKeyID, secretAccessKey, zone string) *ecr.ECR {
+	awsConfig := &aws.Config{Region: aws.String(zone)}
+	awsConfig.Credentials = credentials.NewStaticCredentials(accessKeyID, secretAccessKey, "")
+	return ecr.New(session.New(awsConfig))
+}
+
+func parseECREndpoint(endpoint string) (registry, zone string, err error) {
+	splitEndpoint := strings.Split(endpoint, ".")
+	if len(splitEndpoint) < 6 {
+		return "", "", errors.Errorf("invalid ecr endpoint: %s", endpoint)
+	}
+
+	if splitEndpoint[1] != "dkr" || splitEndpoint[2] != "ecr" {
+		return "", "", errors.Errorf("only dkr and ecr endpoints are supported: %s", endpoint)
+	}
+
+	return splitEndpoint[0], splitEndpoint[3], nil
 }
