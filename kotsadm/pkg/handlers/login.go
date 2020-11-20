@@ -21,6 +21,7 @@ import (
 	ingress "github.com/replicatedhq/kots/pkg/ingress"
 	"github.com/replicatedhq/kots/pkg/rbac"
 	"golang.org/x/oauth2"
+	"github.com/segmentio/ksuid"
 )
 
 type LoginRequest struct {
@@ -114,7 +115,18 @@ func OIDCLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	authCodeURL := oauth2Config.AuthCodeURL("state")
+	// generate a random state
+	state := ksuid.New().String()
+
+	// save the generated state to compare on callback
+	if err := kotsadmdex.SetDexState(state); err != nil {
+		oidcLoginResponse.Error = "failed to set dex state"
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	authCodeURL := oauth2Config.AuthCodeURL(state)
+
 	oidcLoginResponse.AuthCodeURL = authCodeURL
 
 	// return a response instead of a redirect because Dex doesn't allow redirects from different origins (CORS)
@@ -154,9 +166,23 @@ func OIDCLoginCallback(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		if state := r.FormValue("state"); state != "state" { // TODO: unhardcode this
-			logger.Error(errors.Errorf("expected state %q got %q", "state", state))
+		state := r.FormValue("state")
+		expectedState, err := kotsadmdex.GetDexState(state)
+		if err != nil {
+			logger.Error(errors.Wrap(err, "failed to get saved dex state"))
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+
+		if state != expectedState {
+			logger.Error(errors.Errorf("invalid state %s", state))
 			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
+
+		if err := kotsadmdex.ResetDexState(state); err != nil {
+			logger.Error(errors.Wrap(err, "failed to reset dex state"))
+			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
 
