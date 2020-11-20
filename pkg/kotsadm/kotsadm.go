@@ -47,11 +47,19 @@ func getKotsadmYAML(deployOptions types.DeployOptions) (map[string][]byte, error
 	}
 	docs["kotsadm-deployment.yaml"] = deployment.Bytes()
 
+	var nodePort int32
+	if deployOptions.IngressConfig.Enabled && deployOptions.IngressConfig.NodePort != nil {
+		nodePort = int32(deployOptions.IngressConfig.NodePort.Port)
+	}
+
 	var service bytes.Buffer
-	if err := s.Encode(kotsadmService(deployOptions.Namespace), &service); err != nil {
+	if err := s.Encode(kotsadmService(deployOptions.Namespace, nodePort), &service); err != nil {
 		return nil, errors.Wrap(err, "failed to marshal kotsadm service")
 	}
 	docs["kotsadm-service.yaml"] = service.Bytes()
+
+	// TODO (ethan): ingress
+	// TODO (ethan): identity-service
 
 	return docs, nil
 }
@@ -143,7 +151,12 @@ func ensureKotsadmComponent(deployOptions *types.DeployOptions, clientset *kuber
 		return errors.Wrap(err, "failed to ensure kotsadm deployment")
 	}
 
-	if err := ensureKotsadmService(deployOptions.Namespace, clientset); err != nil {
+	var nodePort int32
+	if deployOptions.IngressConfig.Enabled && deployOptions.IngressConfig.NodePort != nil {
+		nodePort = int32(deployOptions.IngressConfig.NodePort.Port)
+	}
+
+	if err := ensureKotsadmService(deployOptions.Namespace, clientset, nodePort); err != nil {
 		return errors.Wrap(err, "failed to ensure kotsadm service")
 	}
 
@@ -316,20 +329,35 @@ func ensureKotsadmDeployment(deployOptions types.DeployOptions, clientset *kuber
 	return nil
 }
 
-func ensureKotsadmService(namespace string, clientset *kubernetes.Clientset) error {
-	_, err := clientset.CoreV1().Services(namespace).Get(context.TODO(), "kotsadm", metav1.GetOptions{})
+func ensureKotsadmService(namespace string, clientset *kubernetes.Clientset, nodePort int32) error {
+	service := kotsadmService(namespace, nodePort)
+
+	existing, err := clientset.CoreV1().Services(namespace).Get(context.TODO(), "kotsadm", metav1.GetOptions{})
 	if err != nil {
 		if !kuberneteserrors.IsNotFound(err) {
 			return errors.Wrap(err, "failed to get existing service")
 		}
 
-		_, err := clientset.CoreV1().Services(namespace).Create(context.TODO(), kotsadmService(namespace), metav1.CreateOptions{})
+		_, err := clientset.CoreV1().Services(namespace).Create(context.TODO(), service, metav1.CreateOptions{})
 		if err != nil {
-			return errors.Wrap(err, "Failed to create service")
+			return errors.Wrap(err, "failed to create service")
 		}
 	}
 
+	existing = updateKotsadmService(existing, service)
+
+	_, err = clientset.CoreV1().Services(namespace).Update(context.TODO(), existing, metav1.UpdateOptions{})
+	if err != nil {
+		return errors.Wrap(err, "failed to update service")
+	}
+
 	return nil
+}
+
+func updateKotsadmService(existing, desiredService *corev1.Service) *corev1.Service {
+	existing.Spec.Ports = desiredService.Spec.Ports
+
+	return existing
 }
 
 // isKotsadmClusterScoped determines if the kotsadm pod should be running

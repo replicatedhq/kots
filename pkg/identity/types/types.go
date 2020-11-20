@@ -4,7 +4,6 @@ import (
 	dextypes "github.com/replicatedhq/kots/pkg/identity/types/dex"
 	ingresstypes "github.com/replicatedhq/kots/pkg/ingress/types"
 	rbactypes "github.com/replicatedhq/kots/pkg/rbac/types"
-	extensions "k8s.io/api/extensions/v1beta1"
 )
 
 type Config struct {
@@ -19,15 +18,4 @@ type Config struct {
 	} `json:"rbac,omitempty" yaml:"rbac,omitempty"`
 	IngressConfig ingresstypes.Config  `json:"ingressConfig" yaml:"ingressConfig"`
 	DexConnectors []dextypes.Connector `json:"dexConnectors,omitempty" yaml:"dexConnectors,omitempty"`
-}
-
-type IngressConfig struct {
-	Annotations map[string]string       `json:"annotations,omitempty" yaml:"annotations,omitempty"`
-	Path        string                  `json:"path" yaml:"path"`
-	Host        string                  `json:"host" yaml:"host"`
-	TLS         []extensions.IngressTLS `json:"tls,omitempty" yaml:"tls,omitempty"`
-}
-
-func (c Config) IngressPath() string {
-	return c.IngressConfig.GetPath("/dex")
 }

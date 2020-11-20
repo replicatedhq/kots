@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
+	"github.com/replicatedhq/kots/pkg/ingress"
 	ingresstypes "github.com/replicatedhq/kots/pkg/ingress/types"
 	"github.com/replicatedhq/kots/pkg/kotsadm/types"
 	"github.com/replicatedhq/kots/pkg/util"
@@ -545,11 +546,12 @@ func kotsadmDeployment(deployOptions types.DeployOptions) *appsv1.Deployment {
 	return deployment
 }
 
-func kotsadmService(namespace string) *corev1.Service {
+func kotsadmService(namespace string, nodePort int32) *corev1.Service {
 	port := corev1.ServicePort{
 		Name:       "http",
 		Port:       3000,
 		TargetPort: intstr.FromString("http"),
+		NodePort:   nodePort,
 	}
 
 	serviceType := corev1.ServiceTypeClusterIP
@@ -578,48 +580,6 @@ func kotsadmService(namespace string) *corev1.Service {
 	return service
 }
 
-func kotsadmIngress(namespace string, ingressConfig ingresstypes.Config) *extensionsv1beta1.Ingress {
-	return &extensionsv1beta1.Ingress{
-		TypeMeta: metav1.TypeMeta{
-			APIVersion: "v1beta1",
-			Kind:       "Ingress",
-		},
-		ObjectMeta: metav1.ObjectMeta{
-			Name:        "kotsadm",
-			Namespace:   namespace,
-			Labels:      types.GetKotsadmLabels(),
-			Annotations: ingressConfig.Annotations,
-		},
-		Spec: extensionsv1beta1.IngressSpec{
-			Rules: []extensionsv1beta1.IngressRule{
-				{
-					Host: ingressConfig.Host,
-					IngressRuleValue: extensionsv1beta1.IngressRuleValue{
-						HTTP: &extensionsv1beta1.HTTPIngressRuleValue{
-							Paths: []extensionsv1beta1.HTTPIngressPath{
-								{
-									Path: ingressConfig.GetPath("/kotsadm"),
-									Backend: extensionsv1beta1.IngressBackend{
-										ServiceName: "kotsadm",
-										ServicePort: intstr.IntOrString{
-											IntVal: 3000,
-										},
-									},
-								},
-							},
-						},
-					},
-				},
-			},
-			TLS: ingressConfig.TLS,
-		},
-	}
-}
-
-func updateIngress(existingIngress *extensionsv1beta1.Ingress, namespace string, ingressConfig ingresstypes.Config) *extensionsv1beta1.Ingress {
-	desiredIngress := kotsadmIngress(namespace, ingressConfig)
-	existingIngress.Annotations = desiredIngress.Annotations
-	existingIngress.Spec.Rules = desiredIngress.Spec.Rules
-	existingIngress.Spec.TLS = desiredIngress.Spec.TLS
-	return existingIngress
+func kotsadmIngress(namespace string, ingressConfig ingresstypes.IngressConfig) *extensionsv1beta1.Ingress {
+	return ingress.IngressFromConfig(ingressConfig, "kotsadm", "kotsadm", 3000, nil)
 }

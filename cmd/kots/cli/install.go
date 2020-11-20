@@ -161,7 +161,7 @@ func InstallCmd() *cobra.Command {
 				return errors.Wrap(err, "failed to get identity config")
 			}
 
-			if identityConfig != nil && ingressConfig == nil {
+			if identityConfig.Enabled && !ingressConfig.Enabled {
 				return errors.New("KOTS identity service requires ingress to be enabled")
 			}
 
@@ -194,10 +194,8 @@ func InstallCmd() *cobra.Command {
 					Password:          registryPassword,
 				},
 
-				EnableIdentityService: identityConfig != nil,
-				IdentityConfig:        identityConfig,
-				EnableIngress:         ingressConfig != nil,
-				IngressConfig:         ingressConfig,
+				IdentityConfig: *identityConfig,
+				IngressConfig:  *ingressConfig,
 			}
 
 			timeout, err := time.ParseDuration(v.GetString("wait-duration"))
@@ -513,11 +511,14 @@ func getIngressConfig(v *viper.Viper) (*ingresstypes.Config, error) {
 	ingressConfigPath := v.GetString("ingress-config")
 	enableIngress := v.GetBool("enable-ingress") || ingressConfigPath != ""
 
+	ingressConfig := ingresstypes.Config{}
+
 	if !enableIngress {
-		return nil, nil
+		return &ingressConfig, nil
 	}
 
-	ingressConfig := ingresstypes.Config{}
+	ingressConfig.Enabled = true
+
 	if ingressConfigPath != "" {
 		content, err := ioutil.ReadFile(ingressConfigPath)
 		if err != nil {
@@ -534,11 +535,14 @@ func getIdentityConfig(v *viper.Viper) (*identitytypes.Config, error) {
 	identityConfigPath := v.GetString("identity-config")
 	enableIdentityService := v.GetBool("enable-identity-service") || identityConfigPath != ""
 
+	identityConfig := identitytypes.Config{}
+
 	if !enableIdentityService {
-		return nil, nil
+		return &identityConfig, nil
 	}
 
-	identityConfig := identitytypes.Config{}
+	identityConfig.Enabled = true
+
 	if identityConfigPath != "" {
 		content, err := ioutil.ReadFile(identityConfigPath)
 		if err != nil {

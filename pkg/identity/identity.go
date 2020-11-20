@@ -2,9 +2,9 @@ package identity
 
 import (
 	"fmt"
-	"path"
 
-	"github.com/replicatedhq/kots/pkg/identity/types"
+	"github.com/replicatedhq/kots/pkg/ingress"
+	ingresstypes "github.com/replicatedhq/kots/pkg/ingress/types"
 )
 
 var (
@@ -12,10 +12,10 @@ var (
 	KotsIdentityLabelValue = "true"
 )
 
-func DexIssuerURL(identityConfig types.Config) string {
-	return fmt.Sprintf("http://%s", path.Join(identityConfig.IngressConfig.Host, identityConfig.IngressPath(), "dex"))
+func DexIssuerURL(ingressConfig ingresstypes.Config) string {
+	return fmt.Sprintf("%s/dex", ingress.GetAddress(ingressConfig))
 }
 
-func DexCallbackURL(identityConfig types.Config) string {
-	return fmt.Sprintf("%s/callback", DexIssuerURL(identityConfig))
+func DexCallbackURL(ingressConfig ingresstypes.Config) string {
+	return fmt.Sprintf("%s/callback", DexIssuerURL(ingressConfig))
 }

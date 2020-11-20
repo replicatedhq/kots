@@ -45,11 +45,8 @@ type DeployOptions struct {
 	ExcludeAdminConsole       bool
 	EnsureKotsadmConfig       bool
 
-	EnableIdentityService bool
-	IdentityConfig        *identitytypes.Config
-
-	EnableIngress bool
-	IngressConfig *ingresstypes.Config
+	IdentityConfig identitytypes.Config
+	IngressConfig  ingresstypes.Config
 
 	KotsadmOptions KotsadmOptions
 }
