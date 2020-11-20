@@ -98,17 +98,27 @@ func Login(w http.ResponseWriter, r *http.Request) {
 	JSON(w, http.StatusOK, loginResponse)
 }
 
+type OIDCLoginResponse struct {
+	AuthCodeURL string `json:"authCodeURL"`
+	Error       string `json:"error,omitempty"`
+}
+
 func OIDCLogin(w http.ResponseWriter, r *http.Request) {
+	oidcLoginResponse := OIDCLoginResponse{}
+
 	oauth2Config, err := kotsadmdex.GetKotsadmOAuth2Config()
 	if err != nil {
 		logger.Error(errors.Wrap(err, "failed to get kotsadm oauth2 config"))
+		oidcLoginResponse.Error = "failed to get kotsadm oauth2 config"
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
 	authCodeURL := oauth2Config.AuthCodeURL("state")
+	oidcLoginResponse.AuthCodeURL = authCodeURL
 
-	http.Redirect(w, r, authCodeURL, http.StatusSeeOther)
+	// return a response instead of a redirect because Dex doesn't allow redirects from different origins (CORS)
+	JSON(w, http.StatusOK, oidcLoginResponse)
 }
 
 func OIDCLoginCallback(w http.ResponseWriter, r *http.Request) {
@@ -255,7 +265,16 @@ func OIDCLoginCallback(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Header().Set("Set-Cookie", fmt.Sprintf("token=%s", responseToken))
+	// TODO: support tls?
+	expire := time.Now().Add(30 * time.Minute)
+	cookie := http.Cookie{
+		Name:    "token",
+		Value:   responseToken,
+		Expires: expire,
+		Path:    "/",
+	}
+	http.SetCookie(w, &cookie)
+
 	http.Redirect(w, r, fmt.Sprintf("http://%s", path.Join(ingressConfig.Host, ingressConfig.GetPath("/kotsadm"))), http.StatusSeeOther)
 }
 
