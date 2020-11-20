@@ -19,25 +19,30 @@ class SecureAdminConsole extends React.Component {
     this.loginText = React.createRef();
   }
 
-  completeLogin = (data) => {
-    let token = data.token;
-    if (Utilities.localStorageEnabled()) {
-      window.localStorage.setItem("token", token);
-      setTimeout(() => {
-        Utilities.removeCookie("token");
-      }, 5000); // was removing the local storage token without a delay for some reason
+  completeLogin = async data => {
+    let loggedIn = false;
 
-      this.props.onLoginSuccess().then((res) => {
+    try {
+      let token = data.token;
+      if (Utilities.localStorageEnabled()) {
+        window.localStorage.setItem("token", token);
+        loggedIn = true;
+
+        const apps = await this.props.onLoginSuccess();
         this.setState({ authLoading: false });
-        if (res.length > 0) {
-          this.props.history.replace(`/app/${res[0].slug}`);
+        if (apps.length > 0) {
+          this.props.history.replace(`/app/${apps[0].slug}`);
         } else {
           this.props.history.replace("upload-license");
         }
-      });
-    } else {
-      this.props.history.push("/unsupported");
+      } else {
+        this.props.history.push("/unsupported");
+      }
+    } catch(err) {
+      console.log(err);
     }
+
+    return loggedIn;
   }
 
   validatePassword = () => {
@@ -180,7 +185,10 @@ class SecureAdminConsole extends React.Component {
       const loginData = {
         token: token.replace(/"/g, ""),
       };
-      this.completeLogin(loginData);
+      const loggedIn = await this.completeLogin(loginData);
+      if (loggedIn) {
+        Utilities.removeCookie("token");
+      }
       return;
     }
 
