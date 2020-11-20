@@ -44,7 +44,7 @@ var (
 	}
 )
 
-func Deploy(ctx context.Context, logger *logger.Logger, clientset kubernetes.Interface, namespace string, identityConfig identitytypes.Config, kotsIngressConfig ingresstypes.Config) error {
+func Deploy(ctx context.Context, logger *logger.Logger, clientset kubernetes.Interface, namespace string, identityConfig identitytypes.Config, ingressConfig ingresstypes.Config) error {
 	if err := DeployCRDs(ctx, logger, clientset); err != nil {
 		// Dex will deploy this if it has permissions
 		logger.Error(errors.Wrap(err, "failed to deploy crds"))
@@ -52,7 +52,7 @@ func Deploy(ctx context.Context, logger *logger.Logger, clientset kubernetes.Int
 	if err := DeployServiceAccount(ctx, logger, clientset, namespace); err != nil {
 		return errors.Wrap(err, "failed to deploy service account")
 	}
-	marshalledDexConfig, err := marshalDexConfig(identityConfig, kotsIngressConfig)
+	marshalledDexConfig, err := marshalDexConfig(identityConfig, ingressConfig)
 	if err != nil {
 		return errors.Wrap(err, "failed to marshal dex config")
 	}
