@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"net/http"
 	"os"
-	"path"
 	"time"
 
 	oidc "github.com/coreos/go-oidc"
@@ -301,7 +300,7 @@ func OIDCLoginCallback(w http.ResponseWriter, r *http.Request) {
 	}
 	http.SetCookie(w, &cookie)
 
-	http.Redirect(w, r, fmt.Sprintf("http://%s", path.Join(ingressConfig.Host, ingressConfig.GetPath("/kotsadm"))), http.StatusSeeOther)
+	http.Redirect(w, r, ingress.GetAddress(*ingressConfig), http.StatusSeeOther)
 }
 
 type GetLoginInfoResponse struct {
