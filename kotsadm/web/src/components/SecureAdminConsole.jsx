@@ -87,18 +87,39 @@ class SecureAdminConsole extends React.Component {
     }
   }
 
-  loginWithIdentityProvider = () => {
-    fetch(`${window.env.API_ENDPOINT}/oidc/login`, {
-      headers: {
-        "Content-Type": "application/json",
-      },
-      method: "POST",
-      body: JSON.stringify({
-      }),
-      redirect: "follow",
-    }).catch(err => {
-      console.log(err);
-    });
+  loginWithIdentityProvider = async () => {
+    try {
+      this.setState({ passwordErr: false, passwordErrMessage: "" });
+
+      const res = await fetch(`${window.env.API_ENDPOINT}/oidc/login`, {
+        headers: {
+          "Content-Type": "application/json",
+        },
+        method: "GET",
+      });
+
+      if (res.status >= 400) {
+        const body = await res.json();
+        let msg = body.error;
+        if (!msg) {
+          msg = "There was an error logging in. Please try again.";
+        }
+        this.setState({
+          passwordErr: true,
+          passwordErrMessage: msg,
+        });
+        return;
+      }
+
+      const body = await res.json();
+      window.location = body.authCodeURL
+    } catch(err) {
+      console.log("Login failed:", err);
+      this.setState({
+        passwordErr: true,
+        passwordErrMessage: "There was an error logging in. Please try again",
+      });
+    }
   }
 
   submitForm = (e) => {
