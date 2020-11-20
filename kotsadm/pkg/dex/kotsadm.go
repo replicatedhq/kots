@@ -202,7 +202,7 @@ func expireOldDexStates(secret *corev1.Secret) error {
 			return errors.Wrap(err, "failed to parse state time")
 		}
 
-		ttlTime := time.Now().Add(-5 * time.Minute)
+		ttlTime := time.Now().Add(-24 * time.Hour)
 		if stateTime.Before(ttlTime) {
 			delete(secret.Data, s)
 			continue
