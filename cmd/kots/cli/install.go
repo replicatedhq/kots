@@ -161,7 +161,7 @@ func InstallCmd() *cobra.Command {
 				return errors.Wrap(err, "failed to get identity config")
 			}
 
-			if ingressConfig != nil && identityConfig == nil {
+			if identityConfig != nil && ingressConfig == nil {
 				return errors.New("KOTS identity service requires ingress to be enabled")
 			}
 
