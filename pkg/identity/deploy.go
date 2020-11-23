@@ -27,6 +27,7 @@ import (
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	k8stypes "k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/client-go/kubernetes"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
@@ -43,6 +44,20 @@ var (
 		KotsIdentityLabelKey: KotsIdentityLabelValue,
 	}
 )
+
+func DeploySecret(ctx context.Context, logger *logger.Logger, clientset kubernetes.Interface, namespace string, identityConfig identitytypes.Config, ingressConfig ingresstypes.Config) error {
+	marshalledDexConfig, err := getDexConfig(ctx, clientset, namespace, identityConfig, ingressConfig)
+	if err != nil {
+		return errors.Wrap(err, "failed to marshal dex config")
+	}
+	if err := ensureSecret(ctx, clientset, namespace, marshalledDexConfig); err != nil {
+		return errors.Wrap(err, "failed to ensure secret")
+	}
+	if err := patchDeploymentSecret(ctx, clientset, namespace, marshalledDexConfig); err != nil {
+		return errors.Wrap(err, "failed to patch deployment secret")
+	}
+	return nil
+}
 
 func Deploy(ctx context.Context, logger *logger.Logger, clientset kubernetes.Interface, namespace string, identityConfig identitytypes.Config, ingressConfig ingresstypes.Config) error {
 	if err := DeployCRDs(ctx, logger, clientset); err != nil {
@@ -279,6 +294,21 @@ func ensureDeployment(ctx context.Context, clientset kubernetes.Interface, names
 	return nil
 }
 
+func patchDeploymentSecret(ctx context.Context, clientset kubernetes.Interface, namespace string, marshalledDexConfig []byte) error {
+	configChecksum := fmt.Sprintf("%x", md5.Sum(marshalledDexConfig))
+
+	deployment := deploymentResource(DexDeploymentName, DexServiceAccountName, configChecksum)
+
+	patch := fmt.Sprintf(`{"spec":{"template":{"metadata":{"annotations":{"kots.io/dex-secret-checksum":"%s"}}}}}`, deployment.Spec.Template.ObjectMeta.Annotations["kots.io/dex-secret-checksum"])
+
+	_, err := clientset.AppsV1().Deployments(namespace).Patch(ctx, deployment.Name, k8stypes.StrategicMergePatchType, []byte(patch), metav1.PatchOptions{})
+	if err != nil {
+		return errors.Wrap(err, "failed to patch deployment")
+	}
+
+	return nil
+}
+
 var (
 	dexCPUResource    = resource.MustParse("100m")
 	dexMemoryResource = resource.MustParse("50Mi")
@@ -367,9 +397,9 @@ func updateDeployment(existingDeployment, desiredDeployment *appsv1.Deployment) 
 	}
 
 	if existingDeployment.Spec.Template.Annotations == nil {
-		existingDeployment.Spec.Template.Annotations = map[string]string{}
+		existingDeployment.Spec.Template.ObjectMeta.Annotations = map[string]string{}
 	}
-	existingDeployment.Spec.Template.Annotations["kots.io/dex-secret-checksum"] = desiredDeployment.Spec.Template.Annotations["kots.io/dex-secret-checksum"]
+	existingDeployment.Spec.Template.ObjectMeta.Annotations["kots.io/dex-secret-checksum"] = desiredDeployment.Spec.Template.ObjectMeta.Annotations["kots.io/dex-secret-checksum"]
 
 	existingDeployment.Spec.Template.Spec.Containers[0].Image = desiredDeployment.Spec.Template.Spec.Containers[0].Image
 
