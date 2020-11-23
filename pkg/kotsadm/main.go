@@ -439,6 +439,7 @@ func ensureKotsadm(deployOptions types.DeployOptions, clientset *kubernetes.Clie
 			log.ChildActionWithSpinner("Deploying the Identity Service")
 
 			deployOptions.IdentityConfig.DisablePasswordAuth = true
+			deployOptions.IdentityConfig.IngressConfig.Enabled = true
 
 			if err := identity.SetConfig(ctx, deployOptions.Namespace, deployOptions.IdentityConfig); err != nil {
 				return errors.Wrap(err, "failed to set identity config")
