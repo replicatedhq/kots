@@ -13,7 +13,7 @@ import (
 
 func EnsureIngress(ctx context.Context, namespace string, clientset *kubernetes.Clientset, ingressConfig ingresstypes.Config) error {
 	if ingressConfig.Ingress == nil {
-		return nil
+		return DeleteIngress(ctx, namespace, clientset)
 	}
 	kotsadmIngress := kotsadmIngress(namespace, *ingressConfig.Ingress)
 	return ingress.EnsureIngress(ctx, clientset, namespace, kotsadmIngress)

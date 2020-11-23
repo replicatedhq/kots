@@ -623,7 +623,7 @@ func ensureCRD(ctx context.Context, clientset apiextensionsclientset.Interface, 
 
 func ensureIngress(ctx context.Context, clientset kubernetes.Interface, namespace string, ingressConfig ingresstypes.Config) error {
 	if ingressConfig.Ingress == nil {
-		return nil
+		return deleteIngress(ctx, clientset, namespace)
 	}
 	dexIngress := ingressResource(namespace, ingressConfig)
 	return ingress.EnsureIngress(ctx, clientset, namespace, dexIngress)
