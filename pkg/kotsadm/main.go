@@ -438,6 +438,7 @@ func ensureKotsadm(deployOptions types.DeployOptions, clientset *kubernetes.Clie
 
 			if err := EnsureIngress(ctx, deployOptions.Namespace, clientset, deployOptions.IngressConfig); err != nil {
 				return errors.Wrap(err, "failed to ensure ingress")
+
 			}
 			log.FinishSpinner()
 
@@ -451,7 +452,7 @@ func ensureKotsadm(deployOptions types.DeployOptions, clientset *kubernetes.Clie
 					return errors.Wrap(err, "failed to set identity config")
 				}
 
-				if err := identity.Deploy(ctx, log, clientset, deployOptions.Namespace, deployOptions.IdentityConfig, deployOptions.IngressConfig); err != nil {
+				if err := identity.Deploy(ctx, log, clientset, deployOptions.Namespace, deployOptions.IdentityConfig, deployOptions.IngressConfig, &deployOptions.KotsadmOptions); err != nil {
 					return errors.Wrap(err, "failed to deploy identity service")
 				}
 				log.FinishSpinner()

@@ -9,6 +9,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/ingress"
 	ingresstypes "github.com/replicatedhq/kots/pkg/ingress/types"
 	"github.com/replicatedhq/kots/pkg/kotsadm/types"
+	kotsadmversion "github.com/replicatedhq/kots/pkg/kotsadm/version"
 	"github.com/replicatedhq/kots/pkg/util"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -166,7 +167,7 @@ func updateKotsadmDeployment(deployment *appsv1.Deployment, deployOptions types.
 	}
 
 	// image
-	deployment.Spec.Template.Spec.Containers[containerIdx].Image = fmt.Sprintf("%s/kotsadm:%s", kotsadmRegistry(deployOptions.KotsadmOptions), kotsadmTag(deployOptions.KotsadmOptions))
+	deployment.Spec.Template.Spec.Containers[containerIdx].Image = fmt.Sprintf("%s/kotsadm:%s", kotsadmversion.KotsadmRegistry(deployOptions.KotsadmOptions), kotsadmversion.KotsadmTag(deployOptions.KotsadmOptions))
 
 	// copy the env vars from the desired to existing. this could undo a change that the user had.
 	// we don't know which env vars we set and which are user edited. this method avoids deleting
@@ -201,7 +202,7 @@ func kotsadmDeployment(deployOptions types.DeployOptions) *appsv1.Deployment {
 	}
 
 	var pullSecrets []corev1.LocalObjectReference
-	if s := kotsadmPullSecret(deployOptions.Namespace, deployOptions.KotsadmOptions); s != nil {
+	if s := kotsadmversion.KotsadmPullSecret(deployOptions.Namespace, deployOptions.KotsadmOptions); s != nil {
 		pullSecrets = []corev1.LocalObjectReference{
 			{
 				Name: s.ObjectMeta.Name,
@@ -399,7 +400,7 @@ func kotsadmDeployment(deployOptions types.DeployOptions) *appsv1.Deployment {
 					ImagePullSecrets:   pullSecrets,
 					InitContainers: []corev1.Container{
 						{
-							Image:           fmt.Sprintf("%s/kotsadm:%s", kotsadmRegistry(deployOptions.KotsadmOptions), kotsadmTag(deployOptions.KotsadmOptions)),
+							Image:           fmt.Sprintf("%s/kotsadm:%s", kotsadmversion.KotsadmRegistry(deployOptions.KotsadmOptions), kotsadmversion.KotsadmTag(deployOptions.KotsadmOptions)),
 							ImagePullPolicy: corev1.PullAlways,
 							Name:            "restore-db",
 							Command: []string{
@@ -436,7 +437,7 @@ func kotsadmDeployment(deployOptions types.DeployOptions) *appsv1.Deployment {
 							},
 						},
 						{
-							Image:           fmt.Sprintf("%s/kotsadm:%s", kotsadmRegistry(deployOptions.KotsadmOptions), kotsadmTag(deployOptions.KotsadmOptions)),
+							Image:           fmt.Sprintf("%s/kotsadm:%s", kotsadmversion.KotsadmRegistry(deployOptions.KotsadmOptions), kotsadmversion.KotsadmTag(deployOptions.KotsadmOptions)),
 							ImagePullPolicy: corev1.PullAlways,
 							Name:            "restore-s3",
 							Command: []string{
@@ -498,7 +499,7 @@ func kotsadmDeployment(deployOptions types.DeployOptions) *appsv1.Deployment {
 					},
 					Containers: []corev1.Container{
 						{
-							Image:           fmt.Sprintf("%s/kotsadm:%s", kotsadmRegistry(deployOptions.KotsadmOptions), kotsadmTag(deployOptions.KotsadmOptions)),
+							Image:           fmt.Sprintf("%s/kotsadm:%s", kotsadmversion.KotsadmRegistry(deployOptions.KotsadmOptions), kotsadmversion.KotsadmTag(deployOptions.KotsadmOptions)),
 							ImagePullPolicy: corev1.PullAlways,
 							Name:            "kotsadm",
 							Ports: []corev1.ContainerPort{
