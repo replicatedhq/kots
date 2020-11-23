@@ -359,10 +359,10 @@ func deploymentResource(deploymentName, serviceAccountName string, configChecksu
 								{Name: volume.Name, MountPath: "/etc/dex/cfg"},
 							},
 							Resources: corev1.ResourceRequirements{
-								Limits: corev1.ResourceList{
-									"cpu":    dexCPUResource,
-									"memory": dexMemoryResource,
-								},
+								// Limits: corev1.ResourceList{
+								// 	"cpu":    dexCPUResource,
+								// 	"memory": dexMemoryResource,
+								// },
 								Requests: corev1.ResourceList{
 									"cpu":    dexCPUResource,
 									"memory": dexMemoryResource,
