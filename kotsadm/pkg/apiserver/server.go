@@ -68,7 +68,6 @@ func Start() {
 
 	r.HandleFunc("/healthz", handlers.Healthz)
 	r.HandleFunc("/api/v1/login", handlers.Login)
-	r.HandleFunc("/api/v1/login/info", handlers.GetLoginInfo)
 	r.HandleFunc("/api/v1/logout", handlers.Logout) // this route uses its own auth
 	r.Path("/api/v1/metadata").Methods("GET").HandlerFunc(handlers.Metadata)
 

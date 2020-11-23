@@ -302,34 +302,3 @@ func OIDCLoginCallback(w http.ResponseWriter, r *http.Request) {
 
 	http.Redirect(w, r, ingress.GetAddress(*ingressConfig), http.StatusSeeOther)
 }
-
-type GetLoginInfoResponse struct {
-	Method            LoginMethod `json:"method"`
-	IdentityConnector string      `json:"identityConnector,omitempty"` // TODO: support multiple connectors
-	Error             string      `json:"error,omitempty"`
-}
-
-func GetLoginInfo(w http.ResponseWriter, r *http.Request) {
-	getLoginInfoResponse := GetLoginInfoResponse{}
-
-	identityConfig, err := identity.GetConfig(r.Context(), os.Getenv("POD_NAMESPACE"))
-	if err != nil {
-		logger.Error(err)
-		getLoginInfoResponse.Error = "failed to get identity config"
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-	if !identityConfig.Enabled {
-		getLoginInfoResponse.Method = PasswordAuth
-		JSON(w, http.StatusOK, getLoginInfoResponse)
-		return
-	}
-
-	getLoginInfoResponse.Method = IdentityService
-
-	if len(identityConfig.DexConnectors) > 0 {
-		getLoginInfoResponse.IdentityConnector = identityConfig.DexConnectors[0].Name
-	}
-
-	JSON(w, http.StatusOK, getLoginInfoResponse)
-}
