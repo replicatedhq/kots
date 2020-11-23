@@ -327,7 +327,7 @@ func deploymentResource(deploymentName, serviceAccountName string, configChecksu
 	imagePullSecrets := []corev1.LocalObjectReference{}
 	if registryOptions != nil {
 		if s := kotsadmversion.KotsadmPullSecret("whocares", *registryOptions); s != nil {
-			image = fmt.Sprintf("%s/postgres:%s", kotsadmversion.KotsadmRegistry(*registryOptions), kotsadmversion.KotsadmTag(*registryOptions))
+			image = fmt.Sprintf("%s/dex:%s", kotsadmversion.KotsadmRegistry(*registryOptions), kotsadmversion.KotsadmTag(*registryOptions))
 			imagePullSecrets = []corev1.LocalObjectReference{
 				{
 					Name: s.ObjectMeta.Name,
