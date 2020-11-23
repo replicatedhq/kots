@@ -40,7 +40,7 @@ const (
 )
 
 var (
-	DexAdditionalLabels = map[string]string{
+	AdditionalLabels = map[string]string{
 		KotsIdentityLabelKey: KotsIdentityLabelValue,
 	}
 )
@@ -252,7 +252,7 @@ func secretResource(secretName string, marshalledConfig []byte) (*corev1.Secret,
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:   secretName,
-			Labels: kotsadmtypes.GetKotsadmLabels(DexAdditionalLabels),
+			Labels: kotsadmtypes.GetKotsadmLabels(AdditionalLabels),
 		},
 		Data: map[string][]byte{
 			"dexConfig.yaml": marshalledConfig,
@@ -324,7 +324,7 @@ func deploymentResource(deploymentName, serviceAccountName string, configChecksu
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:   deploymentName,
-			Labels: kotsadmtypes.GetKotsadmLabels(DexAdditionalLabels),
+			Labels: kotsadmtypes.GetKotsadmLabels(AdditionalLabels),
 		},
 		Spec: appsv1.DeploymentSpec{
 			Replicas: &replicas,
@@ -486,7 +486,7 @@ func serviceResource(serviceName string, nodePortConfig *ingresstypes.NodePortCo
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:   serviceName,
-			Labels: kotsadmtypes.GetKotsadmLabels(DexAdditionalLabels),
+			Labels: kotsadmtypes.GetKotsadmLabels(AdditionalLabels),
 		},
 		Spec: corev1.ServiceSpec{
 			Type: serviceType,
@@ -534,7 +534,7 @@ func serviceAccountResource(serviceAccountName string) *corev1.ServiceAccount {
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:   serviceAccountName,
-			Labels: kotsadmtypes.GetKotsadmLabels(DexAdditionalLabels),
+			Labels: kotsadmtypes.GetKotsadmLabels(AdditionalLabels),
 		},
 	}
 }
@@ -567,7 +567,7 @@ func roleResource(roleName string) *rbacv1.Role {
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:   roleName,
-			Labels: kotsadmtypes.GetKotsadmLabels(DexAdditionalLabels),
+			Labels: kotsadmtypes.GetKotsadmLabels(AdditionalLabels),
 		},
 		Rules: []rbacv1.PolicyRule{
 			{
@@ -614,7 +614,7 @@ func roleBindingResource(roleBindingName, roleName, serviceAccountName, serviceA
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:   roleBindingName,
-			Labels: kotsadmtypes.GetKotsadmLabels(DexAdditionalLabels),
+			Labels: kotsadmtypes.GetKotsadmLabels(AdditionalLabels),
 		},
 		RoleRef: rbacv1.RoleRef{
 			APIGroup: "rbac.authorization.k8s.io",
@@ -660,5 +660,5 @@ func ensureIngress(ctx context.Context, clientset kubernetes.Interface, namespac
 }
 
 func ingressResource(namespace string, ingressConfig ingresstypes.Config) *extensionsv1beta1.Ingress {
-	return ingress.IngressFromConfig(*ingressConfig.Ingress, DexIngressName, DexServiceName, 5556, DexAdditionalLabels)
+	return ingress.IngressFromConfig(*ingressConfig.Ingress, DexIngressName, DexServiceName, 5556, AdditionalLabels)
 }
