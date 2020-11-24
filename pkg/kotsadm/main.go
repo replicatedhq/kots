@@ -419,36 +419,43 @@ func ensureKotsadm(deployOptions types.DeployOptions, clientset *kubernetes.Clie
 		if err := ensureDisasterRecoveryLabels(&deployOptions, clientset); err != nil {
 			return errors.Wrap(err, "failed to ensure disaster recovery labels")
 		}
-	}
 
-	if deployOptions.IngressConfig.Enabled {
-		ctx := context.TODO()
-
-		log.ChildActionWithSpinner("Enabling ingress for the Admin Console")
-
-		if err := ingress.SetConfig(ctx, deployOptions.Namespace, deployOptions.IngressConfig); err != nil {
-			return errors.Wrap(err, "failed to set identity config")
+		// Always initialize the identity service. This will deploy the Dex CRDs, ServiceAccount, Role, RoleBinding
+		// and any other k8s objects which require RBAC permissions the Admin Console may not have.
+		// This will not enable the identity service
+		if err := identity.Initialize(context.TODO(), log, clientset, deployOptions.Namespace); err != nil {
+			return errors.Wrap(err, "failed to initialize identity service")
 		}
 
-		if err := EnsureIngress(ctx, deployOptions.Namespace, clientset, deployOptions.IngressConfig); err != nil {
-			return errors.Wrap(err, "failed to ensure ingress")
-		}
-		log.FinishSpinner()
+		if deployOptions.IngressConfig.Enabled {
+			ctx := context.TODO()
 
-		if deployOptions.IdentityConfig.Enabled {
-			log.ChildActionWithSpinner("Deploying the Identity Service")
+			log.ChildActionWithSpinner("Enabling ingress for the Admin Console")
 
-			deployOptions.IdentityConfig.DisablePasswordAuth = true
-			deployOptions.IdentityConfig.IngressConfig.Enabled = true
-
-			if err := identity.SetConfig(ctx, deployOptions.Namespace, deployOptions.IdentityConfig); err != nil {
+			if err := ingress.SetConfig(ctx, deployOptions.Namespace, deployOptions.IngressConfig); err != nil {
 				return errors.Wrap(err, "failed to set identity config")
 			}
 
-			if err := identity.Deploy(ctx, log, clientset, deployOptions.Namespace, deployOptions.IdentityConfig, deployOptions.IngressConfig); err != nil {
-				return errors.Wrap(err, "failed to deploy identity service")
+			if err := EnsureIngress(ctx, deployOptions.Namespace, clientset, deployOptions.IngressConfig); err != nil {
+				return errors.Wrap(err, "failed to ensure ingress")
 			}
 			log.FinishSpinner()
+
+			if deployOptions.IdentityConfig.Enabled {
+				log.ChildActionWithSpinner("Deploying the Identity Service")
+
+				deployOptions.IdentityConfig.DisablePasswordAuth = true
+				deployOptions.IdentityConfig.IngressConfig.Enabled = true
+
+				if err := identity.SetConfig(ctx, deployOptions.Namespace, deployOptions.IdentityConfig); err != nil {
+					return errors.Wrap(err, "failed to set identity config")
+				}
+
+				if err := identity.Deploy(ctx, log, clientset, deployOptions.Namespace, deployOptions.IdentityConfig, deployOptions.IngressConfig); err != nil {
+					return errors.Wrap(err, "failed to deploy identity service")
+				}
+				log.FinishSpinner()
+			}
 		}
 	}
 

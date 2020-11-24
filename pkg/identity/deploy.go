@@ -27,7 +27,6 @@ import (
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	k8stypes "k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/client-go/kubernetes"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
@@ -45,28 +44,18 @@ var (
 	}
 )
 
-func DeploySecret(ctx context.Context, logger *logger.Logger, clientset kubernetes.Interface, namespace string, identityConfig identitytypes.Config, ingressConfig ingresstypes.Config) error {
-	marshalledDexConfig, err := getDexConfig(ctx, clientset, namespace, identityConfig, ingressConfig)
-	if err != nil {
-		return errors.Wrap(err, "failed to marshal dex config")
+func Initialize(ctx context.Context, logger *logger.Logger, clientset kubernetes.Interface, namespace string) error {
+	if err := deployCRDs(ctx, logger, clientset); err != nil {
+		// Dex will deploy this if it has permissions
+		logger.Error(errors.Wrap(err, "failed to deploy crds"))
 	}
-	if err := ensureSecret(ctx, clientset, namespace, marshalledDexConfig); err != nil {
-		return errors.Wrap(err, "failed to ensure secret")
-	}
-	if err := patchDeploymentSecret(ctx, clientset, namespace, marshalledDexConfig); err != nil {
-		return errors.Wrap(err, "failed to patch deployment secret")
+	if err := deployServiceAccount(ctx, logger, clientset, namespace); err != nil {
+		return errors.Wrap(err, "failed to deploy service account")
 	}
 	return nil
 }
 
 func Deploy(ctx context.Context, logger *logger.Logger, clientset kubernetes.Interface, namespace string, identityConfig identitytypes.Config, ingressConfig ingresstypes.Config) error {
-	if err := DeployCRDs(ctx, logger, clientset); err != nil {
-		// Dex will deploy this if it has permissions
-		logger.Error(errors.Wrap(err, "failed to deploy crds"))
-	}
-	if err := DeployServiceAccount(ctx, logger, clientset, namespace); err != nil {
-		return errors.Wrap(err, "failed to deploy service account")
-	}
 	marshalledDexConfig, err := getDexConfig(ctx, clientset, namespace, identityConfig, ingressConfig)
 	if err != nil {
 		return errors.Wrap(err, "failed to marshal dex config")
@@ -86,7 +75,7 @@ func Deploy(ctx context.Context, logger *logger.Logger, clientset kubernetes.Int
 	return nil
 }
 
-func DeployServiceAccount(ctx context.Context, logger *logger.Logger, clientset kubernetes.Interface, namespace string) error {
+func deployServiceAccount(ctx context.Context, logger *logger.Logger, clientset kubernetes.Interface, namespace string) error {
 	if err := ensureServiceAccount(ctx, clientset, namespace); err != nil {
 		return err
 	}
@@ -99,7 +88,7 @@ func DeployServiceAccount(ctx context.Context, logger *logger.Logger, clientset 
 	return nil
 }
 
-func DeployCRDs(ctx context.Context, logger *logger.Logger, clientset kubernetes.Interface) error {
+func deployCRDs(ctx context.Context, logger *logger.Logger, clientset kubernetes.Interface) error {
 	cfg, err := config.GetConfig()
 	if err != nil {
 		return errors.Wrap(err, "failed to get cluster config")
@@ -289,21 +278,6 @@ func ensureDeployment(ctx context.Context, clientset kubernetes.Interface, names
 	_, err = clientset.AppsV1().Deployments(namespace).Update(ctx, existingDeployment, metav1.UpdateOptions{})
 	if err != nil {
 		return errors.Wrap(err, "failed to update deployment")
-	}
-
-	return nil
-}
-
-func patchDeploymentSecret(ctx context.Context, clientset kubernetes.Interface, namespace string, marshalledDexConfig []byte) error {
-	configChecksum := fmt.Sprintf("%x", md5.Sum(marshalledDexConfig))
-
-	deployment := deploymentResource(DexDeploymentName, DexServiceAccountName, configChecksum)
-
-	patch := fmt.Sprintf(`{"spec":{"template":{"metadata":{"annotations":{"kots.io/dex-secret-checksum":"%s"}}}}}`, deployment.Spec.Template.ObjectMeta.Annotations["kots.io/dex-secret-checksum"])
-
-	_, err := clientset.AppsV1().Deployments(namespace).Patch(ctx, deployment.Name, k8stypes.StrategicMergePatchType, []byte(patch), metav1.PatchOptions{})
-	if err != nil {
-		return errors.Wrap(err, "failed to patch deployment")
 	}
 
 	return nil

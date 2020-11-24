@@ -79,6 +79,10 @@ func IdentityServiceInstallCmd() *cobra.Command {
 			identityConfig.DisablePasswordAuth = true
 			identityConfig.IngressConfig.Enabled = true
 
+			if err := identity.Initialize(cmd.Context(), log, clientset, namespace); err != nil {
+				return errors.Wrap(err, "failed to initialize identity service")
+			}
+
 			if err := identity.SetConfig(cmd.Context(), namespace, identityConfig); err != nil {
 				return errors.Wrap(err, "failed to set identity config")
 			}
