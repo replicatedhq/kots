@@ -421,7 +421,7 @@ func ensureKotsadm(deployOptions types.DeployOptions, clientset *kubernetes.Clie
 		}
 
 		// Always initialize the identity service. This will deploy the Dex CRDs, ServiceAccount, Role, RoleBinding
-		// and any other k8s objects which require RBAC permissions the Admin Console may not have.
+		// and any other k8s objects which do not require any configuration from kotsadm.
 		// This will not enable the identity service
 		if err := identity.Initialize(context.TODO(), log, clientset, deployOptions.Namespace); err != nil {
 			return errors.Wrap(err, "failed to initialize identity service")
