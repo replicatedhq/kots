@@ -29,8 +29,9 @@ class AirgapUploadProgress extends React.Component {
   }
 
   getAirgapInstallStatus = async () => {
+    const { appSlug } = this.props;
     try {
-      const res = await fetch(`${window.env.API_ENDPOINT}/app/airgap/status`, {
+      const res = await fetch(`${window.env.API_ENDPOINT}/app/${appSlug}/airgap/status`, {
         headers: {
           "Authorization": Utilities.getToken(),
           "Content-Type": "application/json",

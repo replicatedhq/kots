@@ -24,7 +24,7 @@ require (
 	github.com/go-openapi/spec v0.19.5 // indirect
 	github.com/golang/gddo v0.0.0-20200831202555-721e228c7686
 	github.com/golang/groupcache v0.0.0-20191027212112-611e8accdfc9 // indirect
-	github.com/gorilla/mux v1.7.4
+	github.com/gorilla/mux v1.8.0
 	github.com/gorilla/websocket v1.4.0
 	github.com/gosimple/slug v1.9.0
 	github.com/gtank/cryptopasta v0.0.0-20170601214702-1f550f6f2f69 // indirect
@@ -32,6 +32,7 @@ require (
 	github.com/lib/pq v1.3.0
 	github.com/marccampbell/yaml-toolbox v0.0.0-20200805160637-950ceb36c770
 	github.com/mholt/archiver v3.1.1+incompatible
+	github.com/open-policy-agent/opa v0.24.0 // indirect
 	github.com/opencontainers/image-spec v1.0.2-0.20190823105129-775207bd45b6
 	github.com/pkg/errors v0.9.1
 	github.com/replicatedhq/kots v0.0.0-00010101000000-000000000000
@@ -46,7 +47,7 @@ require (
 	github.com/vmware-tanzu/velero v1.5.1
 	go.uber.org/multierr v1.3.0
 	go.uber.org/zap v1.13.0
-	golang.org/x/crypto v0.0.0-20200423211502-4bdfaf469ed5
+	golang.org/x/crypto v0.0.0-20200622213623-75b288015ac9
 	golang.org/x/oauth2 v0.0.0-20200107190931-bf48bf16ab8d
 	golang.org/x/tools v0.0.0-20200319210407-521f4a0cd458 // indirect
 	google.golang.org/api v0.15.0

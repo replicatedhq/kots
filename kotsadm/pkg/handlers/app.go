@@ -17,6 +17,7 @@ import (
 	"github.com/replicatedhq/kots/kotsadm/pkg/supportbundle"
 	"github.com/replicatedhq/kots/kotsadm/pkg/version"
 	versiontypes "github.com/replicatedhq/kots/kotsadm/pkg/version/types"
+	"github.com/replicatedhq/kots/pkg/rbac"
 )
 
 type ListAppsResponse struct {
@@ -77,6 +78,13 @@ type ResponseCluster struct {
 }
 
 func ListApps(w http.ResponseWriter, r *http.Request) {
+	sess := GetSession(r)
+	if sess == nil {
+		logger.Error(errors.New("invalid session"))
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
 	apps, err := store.GetStore().ListInstalledApps()
 	if err != nil {
 		logger.Error(err)
@@ -84,8 +92,23 @@ func ListApps(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	appSlugs := []string{}
+	for _, a := range apps {
+		appSlugs = append(appSlugs, a.Slug)
+	}
+
 	responseApps := []ResponseApp{}
 	for _, a := range apps {
+		allow, err := rbac.CheckAccess(r.Context(), "read", fmt.Sprintf("app.%s", a.Slug), sess.Roles, appSlugs)
+		if err != nil {
+			logger.Error(errors.Wrapf(err, "failed to check access for app %s", a.Slug))
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+			return
+		} else if !allow {
+			continue
+		}
+
 		responseApp, err := responseAppFromApp(a)
 		if err != nil {
 			logger.Error(err)

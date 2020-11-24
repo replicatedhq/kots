@@ -62,7 +62,7 @@ class AppConfig extends Component {
 
     try {
       const { slug } = this.props.match.params;
-      const res = await fetch(`${window.env.API_ENDPOINT}/apps/app/${slug}`, {
+      const res = await fetch(`${window.env.API_ENDPOINT}/app/${slug}`, {
         headers: {
           "Authorization": Utilities.getToken(),
           "Content-Type": "application/json",
@@ -169,7 +169,7 @@ class AppConfig extends Component {
         if (fromLicenseFlow) {
           const hasPreflight = this.state.app?.hasPreflight;
           if (hasPreflight) {
-            history.replace("/preflight");
+            history.replace(`/${slug}/preflight`);
           } else {
             if (this.props.refetchAppsList) {
               await this.props.refetchAppsList();

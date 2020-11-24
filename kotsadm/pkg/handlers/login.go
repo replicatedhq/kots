@@ -13,7 +13,6 @@ import (
 	kotsadmdex "github.com/replicatedhq/kots/kotsadm/pkg/dex"
 	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
 	"github.com/replicatedhq/kots/kotsadm/pkg/session"
-	sessiontypes "github.com/replicatedhq/kots/kotsadm/pkg/session/types"
 	"github.com/replicatedhq/kots/kotsadm/pkg/store"
 	"github.com/replicatedhq/kots/kotsadm/pkg/user"
 	usertypes "github.com/replicatedhq/kots/kotsadm/pkg/user/types"
@@ -78,7 +77,7 @@ func Login(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// TODO: super user permissions
-	roles := session.GetSessionRolesFromRBAC(nil, rbac.DefaultGroups, rbac.DefaultRoles, rbac.DefaultPolicies)
+	roles := session.GetSessionRolesFromRBAC(nil, rbac.DefaultGroups)
 
 	createdSession, err := store.GetStore().CreateSession(foundUser, nil, roles)
 	if err != nil {
@@ -258,17 +257,17 @@ func OIDCLoginCallback(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	roles := []sessiontypes.SessionRole{}
-	if identityConfig.EnableAdvancedRBAC {
-		roles = session.GetSessionRolesFromRBAC(claims.Groups, identityConfig.RBAC.Groups, identityConfig.RBAC.Roles, identityConfig.RBAC.Policies)
-	} else {
-		groups := rbac.DefaultGroups
-		if len(identityConfig.RestrictedGroups) > 0 {
-			groups = identity.RestrictedGroupsToRBACGroups(identityConfig.RestrictedGroups)
+	groups := rbac.DefaultGroups
+	if len(identityConfig.Groups) > 0 {
+		groups = identityConfig.Groups
+	}
+	roles := session.GetSessionRolesFromRBAC(claims.Groups, groups)
 
-			// TODO: login should fail here
-		}
-		roles = session.GetSessionRolesFromRBAC(claims.Groups, groups, rbac.DefaultRoles, rbac.DefaultPolicies)
+	if len(roles) == 0 {
+		loginResponse := LoginResponse{}
+		loginResponse.Error = "user must be a part of at least 1 group with roles"
+		JSON(w, http.StatusUnauthorized, loginResponse)
+		return
 	}
 
 	createdSession, err := store.GetStore().CreateSession(user, &idToken.Expiry, roles)

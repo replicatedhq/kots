@@ -72,6 +72,26 @@ func (s S3PGStore) ListInstalledApps() ([]*apptypes.App, error) {
 	return apps, nil
 }
 
+func (s S3PGStore) ListInstalledAppSlugs() ([]string, error) {
+	db := persistence.MustGetPGSession()
+	query := `select slug from app where install_state = 'installed'`
+	rows, err := db.Query(query)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to query db")
+	}
+	defer rows.Close()
+
+	appSlugs := []string{}
+	for rows.Next() {
+		var appSlug string
+		if err := rows.Scan(&appSlug); err != nil {
+			return nil, errors.Wrap(err, "failed to scan")
+		}
+		appSlugs = append(appSlugs, appSlug)
+	}
+	return appSlugs, nil
+}
+
 func (s S3PGStore) GetAppIDFromSlug(slug string) (string, error) {
 	db := persistence.MustGetPGSession()
 	query := `select id from app where slug = $1`

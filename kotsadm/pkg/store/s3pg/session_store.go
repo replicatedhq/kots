@@ -13,10 +13,10 @@ import (
 )
 
 type SessionMetadata struct {
-	Roles []sessiontypes.SessionRole
+	Roles []string
 }
 
-func (s S3PGStore) CreateSession(forUser *usertypes.User, expiresAt *time.Time, roles []sessiontypes.SessionRole) (*sessiontypes.Session, error) {
+func (s S3PGStore) CreateSession(forUser *usertypes.User, expiresAt *time.Time, roles []string) (*sessiontypes.Session, error) {
 	logger.Debug("creating session")
 
 	randomID, err := ksuid.NewRandom()

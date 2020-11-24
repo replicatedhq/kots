@@ -1,9 +1,121 @@
 package policy
 
-// Support bundles
+var (
+	ActionRead  = "read"
+	ActionWrite = "write"
+)
 
-var SupportBundlesRead = Must(NewPolicy("/supportbundles/{{.bundleId}}/read"))
+// Redactor
 
-// Apps
+var (
+	RedactorRead  = Must(NewPolicy(ActionRead, "redactor."))
+	RedactorWrite = Must(NewPolicy(ActionWrite, "redactor."))
+)
 
-var AppSupportBundlesList = Must(NewPolicy("/app/{{.appSlug}}/supportbundles/list"))
+// Registry
+
+var (
+	RegistryRead = Must(NewPolicy(ActionRead, "registry."))
+)
+
+// Snapshots
+
+var (
+	BackupRead            = Must(NewPolicy(ActionRead, "backup."))
+	BackupWrite           = Must(NewPolicy(ActionWrite, "backup."))
+	RestoreRead           = Must(NewPolicy(ActionRead, "restore."))
+	RestoreWrite          = Must(NewPolicy(ActionWrite, "restore."))
+	SnapshotsettingsRead  = Must(NewPolicy(ActionRead, "snapshotsettings."))
+	SnapshotsettingsWrite = Must(NewPolicy(ActionWrite, "snapshotsettings."))
+)
+
+// Cluster
+
+var (
+	ClusterRead  = Must(NewPolicy(ActionRead, "cluster."))
+	ClusterWrite = Must(NewPolicy(ActionWrite, "cluster."))
+)
+
+// Gitops
+
+var (
+	GitopsRead  = Must(NewPolicy(ActionRead, "gitops."))
+	GitopsWrite = Must(NewPolicy(ActionWrite, "gitops."))
+)
+
+// Prometheus
+
+var (
+	PrometheussettingsWrite = Must(NewPolicy(ActionWrite, "prometheussettings."))
+)
+
+// App
+
+var (
+	AppList   = Must(NewPolicy(ActionRead, "app."))
+	AppRead   = Must(NewPolicy(ActionRead, "app.{{.appSlug}}"))
+	AppCreate = Must(NewPolicy(ActionWrite, "app."))
+	AppUpdate = Must(NewPolicy(ActionWrite, "app.{{.appSlug}}", appSlugFromAppIDGetter))
+)
+
+// App supportbundle
+
+var (
+	AppSupportbundleRead  = Must(NewPolicy(ActionRead, "app.{{.appSlug}}.supportbundle.", appSlugFromSupportbundleGetter))
+	AppSupportbundleWrite = Must(NewPolicy(ActionWrite, "app.{{.appSlug}}.supportbundle.", appSlugFromAppIDGetter))
+)
+
+// App snapshots
+
+var (
+	AppBackupRead            = Must(NewPolicy(ActionRead, "app.{{.appSlug}}.backup."))
+	AppBackupWrite           = Must(NewPolicy(ActionWrite, "app.{{.appSlug}}.backup."))
+	AppRestoreRead           = Must(NewPolicy(ActionRead, "app.{{.appSlug}}.restore."))
+	AppRestoreWrite          = Must(NewPolicy(ActionWrite, "app.{{.appSlug}}.restore."))
+	AppSnapshotsettingsRead  = Must(NewPolicy(ActionRead, "app.{{.appSlug}}.snapshotsettings."))
+	AppSnapshotsettingsWrite = Must(NewPolicy(ActionWrite, "app.{{.appSlug}}.snapshotsettings."))
+)
+
+// App registry
+
+var (
+	AppRegistryRead  = Must(NewPolicy(ActionRead, "app.{{.appSlug}}.registry."))
+	AppRegistryWrite = Must(NewPolicy(ActionWrite, "app.{{.appSlug}}.registry."))
+)
+
+// App license
+
+var (
+	AppLicenseRead  = Must(NewPolicy(ActionRead, "app.{{.appSlug}}.license."))
+	AppLicenseWrite = Must(NewPolicy(ActionWrite, "app.{{.appSlug}}.license."))
+)
+
+// App gitops
+
+var (
+	AppGitopsRead  = Must(NewPolicy(ActionRead, "app.{{.appSlug}}.gitops.", appSlugFromAppIDGetter))
+	AppGitopsWrite = Must(NewPolicy(ActionWrite, "app.{{.appSlug}}.gitops.", appSlugFromAppIDGetter))
+)
+
+// App downstream
+
+var (
+	AppDownstreamRead         = Must(NewPolicy(ActionRead, "app.{{.appSlug}}.downstream."))
+	AppDownstreamWrite        = Must(NewPolicy(ActionWrite, "app.{{.appSlug}}.downstream."))
+	AppDownstreamLogsRead     = Must(NewPolicy(ActionRead, "app.{{.appSlug}}.downstream.logs."))
+	AppDownstreamFiletreeRead = Must(NewPolicy(ActionRead, "app.{{.appSlug}}.downstream.filetree."))
+)
+
+// App downstream preflight
+
+var (
+	AppDownstreamPreflightRead  = Must(NewPolicy(ActionRead, "app.{{.appSlug}}.downstream.preflight."))
+	AppDownstreamPreflightWrite = Must(NewPolicy(ActionWrite, "app.{{.appSlug}}.downstream.preflight."))
+)
+
+// App downstream config
+
+var (
+	AppDownstreamConfigRead  = Must(NewPolicy(ActionRead, "app.{{.appSlug}}.downstream.config."))
+	AppDownstreamConfigWrite = Must(NewPolicy(ActionWrite, "app.{{.appSlug}}.downstream.config."))
+)

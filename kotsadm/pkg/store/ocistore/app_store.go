@@ -93,6 +93,18 @@ func (s OCIStore) ListInstalledApps() ([]*apptypes.App, error) {
 	return apps, nil
 }
 
+func (s OCIStore) ListInstalledAppSlugs() ([]string, error) {
+	apps, err := s.ListInstalledApps()
+	if err != nil {
+		return nil, err
+	}
+	appSlugs := []string{}
+	for _, app := range apps {
+		appSlugs = append(appSlugs, app.Slug)
+	}
+	return appSlugs, nil
+}
+
 func (s OCIStore) GetAppIDFromSlug(slug string) (string, error) {
 	appListConfigmap, err := s.getConfigmap(AppListConfigmapName)
 	if err != nil {
