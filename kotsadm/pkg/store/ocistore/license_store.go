@@ -39,3 +39,7 @@ func (s OCIStore) GetLicenseForAppVersion(appID string, sequence int64) (*kotsv1
 
 	return appVersion.KOTSKinds.License, nil
 }
+
+func (s OCIStore) GetAllAppLicenses() ([]*kotsv1beta1.License, error) {
+	return nil, ErrNotImplemented
+}

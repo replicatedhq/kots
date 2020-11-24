@@ -369,3 +369,73 @@ func (c S3PGStore) SetSnapshotSchedule(appID string, snapshotSchedule string) er
 
 	return nil
 }
+
+func (c S3PGStore) RemoveApp(appID string) error {
+	logger.Debug("Removing app",
+		zap.String("appID", appID))
+
+	db := persistence.MustGetPGSession()
+	tx, err := db.Begin()
+	if err != nil {
+		return errors.Wrap(err, "failed to begin transaction")
+	}
+	defer tx.Rollback()
+
+	var query string
+
+	// TODO: api_task_status needs app ID
+
+	query = "delete from app_status where app_id = $1"
+	_, err = tx.Exec(query, appID)
+	if err != nil {
+		return errors.Wrap(err, "failed to delete from app_status")
+	}
+
+	query = "delete from app_downstream_output where app_id = $1"
+	_, err = tx.Exec(query, appID)
+	if err != nil {
+		return errors.Wrap(err, "failed to delete from app_downstream_output")
+	}
+
+	query = "delete from app_downstream_version where app_id = $1"
+	_, err = tx.Exec(query, appID)
+	if err != nil {
+		return errors.Wrap(err, "failed to delete from app_downstream_version")
+	}
+
+	query = "delete from app_downstream where app_id = $1"
+	_, err = tx.Exec(query, appID)
+	if err != nil {
+		return errors.Wrap(err, "failed to delete from app_downstream")
+	}
+
+	query = "delete from app_version where app_id = $1"
+	_, err = tx.Exec(query, appID)
+	if err != nil {
+		return errors.Wrap(err, "failed to delete from app_version")
+	}
+
+	query = "delete from user_app where app_id = $1"
+	_, err = tx.Exec(query, appID)
+	if err != nil {
+		return errors.Wrap(err, "failed to delete from user_app")
+	}
+
+	query = "delete from pending_supportbundle where app_id = $1"
+	_, err = tx.Exec(query, appID)
+	if err != nil {
+		return errors.Wrap(err, "failed to delete from pending_supportbundle")
+	}
+
+	query = "delete from app where id = $1"
+	_, err = tx.Exec(query, appID)
+	if err != nil {
+		return errors.Wrap(err, "failed to delete from app")
+	}
+
+	if err := tx.Commit(); err != nil {
+		return errors.Wrap(err, "failed to commit transaction")
+	}
+
+	return nil
+}

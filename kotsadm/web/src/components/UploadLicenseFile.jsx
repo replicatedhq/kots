@@ -17,7 +17,8 @@ class UploadLicenseFile extends React.Component {
     licenseFileContent: null,
     fileUploading: false,
     errorMessage: "",
-    viewErrorMessage: false
+    viewErrorMessage: false,
+    licenseExistErrData: {}
   }
 
   clearFile = () => {
@@ -91,9 +92,11 @@ class UploadLicenseFile extends React.Component {
           clearInterval(interval);
 
           if (!data.success) {
+            const licenseExistErr = data?.error?.includes("License already exist");
             this.setState({
               fileUploading: false,
               errorMessage: data.error,
+              licenseExistErrData: licenseExistErr ? data : ""
             });
             return;
           }
@@ -224,6 +227,7 @@ class UploadLicenseFile extends React.Component {
     })
   }
 
+
   render() {
     const {
       appName,
@@ -233,7 +237,7 @@ class UploadLicenseFile extends React.Component {
       isBackupRestore,
       snapshot
     } = this.props;
-    const { licenseFile, fileUploading, errorMessage, viewErrorMessage } = this.state;
+    const { licenseFile, fileUploading, errorMessage, viewErrorMessage, licenseExistErrData } = this.state;
     const hasFile = licenseFile && !isEmpty(licenseFile);
 
     let logoUri;
@@ -342,19 +346,33 @@ class UploadLicenseFile extends React.Component {
             <div className="ExpandedError--wrapper u-marginTop--10 u-marginBottom--10">
               <p className="u-fontSize--small u-fontWeight--bold u-color--tuna u-marginBottom--5">Error description</p>
               <p className="u-fontSize--small u-color--chestnut">{typeof errorMessage === "object" ? "An unknown error orrcured while trying to upload your license. Please try again." : errorMessage}</p>
-              <p className="u-fontSize--small u-fontWeight--bold u-marginTop--15 u-color--tuna">Run this command to generate a support bundle</p>
-              <CodeSnippet
-                language="bash"
-                canCopy={true}
-                onCopyText={<span className="u-color--chateauGreen">Command has been copied to your clipboard</span>}
-              >
-                kubectl support-bundle https://kots.io
+              {!licenseExistErrData ?
+                <div className="flex flex-column">
+                  <p className="u-fontSize--small u-fontWeight--bold u-marginTop--15 u-color--tuna">Run this command to generate a support bundle</p>
+                  <CodeSnippet
+                    language="bash"
+                    canCopy={true}
+                    onCopyText={<span className="u-color--chateauGreen">Command has been copied to your clipboard</span>}
+                  >
+                    kubectl support-bundle https://kots.io
               </CodeSnippet>
+                </div> :
+                <div className="flex flex-column">
+                  <p className="u-fontSize--small u-fontWeight--bold u-marginTop--15 u-color--tuna">Run this command to remove the app</p>
+                  <CodeSnippet
+                    language="bash"
+                    canCopy={true}
+                    onCopyText={<span className="u-color--chateauGreen">Command has been copied to your clipboard</span>}
+                  >
+                    {`kubectl kots remove ${licenseExistErrData?.slug} -n default --force`}
+                  </CodeSnippet>
+                </div>
+              }
             </div>
             <button type="button" className="btn primary u-marginTop--15" onClick={this.toggleViewErrorMessage}>Ok, got it!</button>
           </div>
         </Modal>
-      </div>
+      </div >
     );
   }
 }

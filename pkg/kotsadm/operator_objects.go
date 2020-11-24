@@ -239,7 +239,7 @@ func operatorDeployment(deployOptions types.DeployOptions) *appsv1.Deployment {
 					Containers: []corev1.Container{
 						{
 							Image:           fmt.Sprintf("%s/kotsadm-operator:%s", kotsadmRegistry(deployOptions.KotsadmOptions), kotsadmTag(deployOptions.KotsadmOptions)),
-							ImagePullPolicy: corev1.PullAlways,
+							ImagePullPolicy: corev1.PullIfNotPresent,
 							Name:            "kotsadm-operator",
 							Env: []corev1.EnvVar{
 								{

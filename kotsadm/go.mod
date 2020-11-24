@@ -22,6 +22,7 @@ require (
 	github.com/go-git/go-git/v5 v5.2.0
 	github.com/go-logfmt/logfmt v0.4.0
 	github.com/go-openapi/spec v0.19.5 // indirect
+	github.com/golang/gddo v0.0.0-20200831202555-721e228c7686
 	github.com/golang/groupcache v0.0.0-20191027212112-611e8accdfc9 // indirect
 	github.com/gorilla/mux v1.7.4
 	github.com/gorilla/websocket v1.4.0
@@ -34,7 +35,7 @@ require (
 	github.com/opencontainers/image-spec v1.0.2-0.20190823105129-775207bd45b6
 	github.com/pkg/errors v0.9.1
 	github.com/replicatedhq/kots v0.0.0-00010101000000-000000000000
-	github.com/replicatedhq/troubleshoot v0.9.51
+	github.com/replicatedhq/troubleshoot v0.9.52
 	github.com/replicatedhq/yaml/v3 v3.0.0-beta5-replicatedhq
 	github.com/robfig/cron v1.1.0
 	github.com/robfig/cron/v3 v3.0.0

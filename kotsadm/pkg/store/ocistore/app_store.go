@@ -335,3 +335,7 @@ func (s OCIStore) updateApp(app *apptypes.App) error {
 
 	return nil
 }
+
+func (s OCIStore) RemoveApp(appID string) error {
+	return ErrNotImplemented
+}

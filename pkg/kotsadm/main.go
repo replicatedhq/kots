@@ -419,6 +419,21 @@ func ensureKotsadm(deployOptions types.DeployOptions, clientset *kubernetes.Clie
 		if err := ensureDisasterRecoveryLabels(&deployOptions, clientset); err != nil {
 			return errors.Wrap(err, "failed to ensure disaster recovery labels")
 		}
+	}
+
+	if deployOptions.IngressConfig.Enabled {
+		ctx := context.TODO()
+
+		log.ChildActionWithSpinner("Enabling ingress for the Admin Console")
+
+		if err := ingress.SetConfig(ctx, deployOptions.Namespace, deployOptions.IngressConfig); err != nil {
+			return errors.Wrap(err, "failed to set identity config")
+		}
+
+		if err := EnsureIngress(ctx, deployOptions.Namespace, clientset, deployOptions.IngressConfig); err != nil {
+			return errors.Wrap(err, "failed to ensure ingress")
+		}
+		log.FinishSpinner()
 
 		// Always initialize the identity service. This will deploy the Dex CRDs, ServiceAccount, Role, RoleBinding
 		// and any other k8s objects which do not require any configuration from kotsadm.

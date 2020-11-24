@@ -120,6 +120,7 @@ type AppStore interface {
 	SetUpdateCheckerSpec(appID string, updateCheckerSpec string) error
 	SetSnapshotTTL(appID string, snapshotTTL string) error
 	SetSnapshotSchedule(appID string, snapshotSchedule string) error
+	RemoveApp(appID string) error
 }
 
 type SnapshotStore interface {
@@ -149,7 +150,9 @@ type LicenseStore interface {
 	GetInitialLicenseForApp(appID string) (*kotsv1beta1.License, error)
 	GetLatestLicenseForApp(appID string) (*kotsv1beta1.License, error)
 	GetLicenseForAppVersion(appID string, sequence int64) (*kotsv1beta1.License, error)
+	GetAllAppLicenses() ([]*kotsv1beta1.License, error)
 }
+
 
 type ClusterStore interface {
 	ListClusters() ([]*downstreamtypes.Downstream, error)

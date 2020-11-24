@@ -19,6 +19,7 @@ import (
 	"github.com/replicatedhq/kots/kotsadm/operator/pkg/appstate/types"
 	"github.com/replicatedhq/kots/kotsadm/operator/pkg/socket"
 	"github.com/replicatedhq/kots/kotsadm/operator/pkg/socket/transport"
+	"github.com/replicatedhq/kots/kotsadm/operator/pkg/supportbundle"
 	"github.com/replicatedhq/kots/kotsadm/operator/pkg/util"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
@@ -81,6 +82,8 @@ type Client struct {
 // Run is the main entrypoint of the operator when running in standard, normal operations
 func (c *Client) Run() error {
 	log.Println("Starting kotsadm-operator loop")
+
+	supportbundle.StartServer()
 
 	c.runHooksInformer()
 	defer c.shutdownHooksInformer()

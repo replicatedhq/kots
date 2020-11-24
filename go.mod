@@ -38,14 +38,16 @@ require (
 	github.com/marccampbell/yaml-toolbox v0.0.0-20200805160637-950ceb36c770
 	github.com/mattn/go-isatty v0.0.12
 	github.com/mholt/archiver v3.1.1+incompatible
+	github.com/mitchellh/hashstructure v1.1.0 // indirect
 	github.com/niemeyer/pretty v0.0.0-20200227124842-a10e7caefd8e // indirect
 	github.com/nwaples/rardecode v1.0.0 // indirect
 	github.com/otiai10/copy v1.0.2
 	github.com/phayes/freeport v0.0.0-20180830031419-95f893ade6f2
 	github.com/pierrec/lz4 v2.2.6+incompatible // indirect
 	github.com/pkg/errors v0.9.1
+	github.com/replicatedhq/kots/kotsadm/operator v0.0.0-20201124184048-1a3cebed333c // indirect
 	github.com/replicatedhq/kurl/kurlkinds v0.0.0-20200617224429-55f493a72baf
-	github.com/replicatedhq/troubleshoot v0.9.51
+	github.com/replicatedhq/troubleshoot v0.9.52
 	github.com/replicatedhq/yaml/v3 v3.0.0-beta5-replicatedhq
 	github.com/russellhaering/goxmldsig v1.1.0 // indirect
 	github.com/segmentio/ksuid v1.0.3
