@@ -3,6 +3,7 @@ package client
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/pkg/errors"
 	"gopkg.in/yaml.v2"
@@ -46,7 +47,11 @@ func IsCRD(content []byte) bool {
 		return false
 	}
 
-	return o.APIVersion == "apiextensions.k8s.io/v1beta1" && o.Kind == "CustomResourceDefinition"
+	if o.Kind == "CustomResourceDefinition" {
+		return strings.HasPrefix(o.APIVersion, "apiextensions.k8s.io/")
+	}
+
+	return false
 }
 
 func IsNamespace(content []byte) bool {
