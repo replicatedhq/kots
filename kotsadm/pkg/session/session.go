@@ -147,3 +147,17 @@ func GetSessionRolesFromRBAC(sessionGroupIDs []string, groups []rbactypes.Group,
 	}
 	return sessionRoles
 }
+
+func RBACPoliciesFromSessionRoles(roles []types.SessionRole) []rbactypes.Policy {
+	policies := []rbactypes.Policy{}
+	for _, role := range roles {
+		for _, policy := range role.Policies {
+			policies = append(policies, rbactypes.Policy{
+				ID:      policy.ID,
+				Allowed: policy.Allowed,
+				Denied:  policy.Denied,
+			})
+		}
+	}
+	return policies
+}
