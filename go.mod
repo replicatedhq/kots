@@ -53,6 +53,7 @@ require (
 	github.com/segmentio/ksuid v1.0.3
 	github.com/sergi/go-diff v1.1.0
 	github.com/spf13/cobra v1.0.0
+	github.com/spf13/pflag v1.0.5
 	github.com/spf13/viper v1.6.2
 	github.com/stevvooe/resumable v0.0.0-20180830230917-22b14a53ba50 // indirect
 	github.com/stretchr/testify v1.6.1

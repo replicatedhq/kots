@@ -264,6 +264,8 @@ func OIDCLoginCallback(w http.ResponseWriter, r *http.Request) {
 		groups := rbac.DefaultGroups
 		if len(identityConfig.RestrictedGroups) > 0 {
 			groups = identity.RestrictedGroupsToRBACGroups(identityConfig.RestrictedGroups)
+
+			// TODO: login should fail here
 		}
 		roles = session.GetSessionRolesFromRBAC(claims.Groups, groups, rbac.DefaultRoles, rbac.DefaultPolicies)
 	}

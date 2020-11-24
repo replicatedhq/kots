@@ -1,4 +1,4 @@
-package kotsadm
+package version
 
 import (
 	"testing"
@@ -7,7 +7,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func Test_kotsadmTagForVersionString(t *testing.T) {
+func Test_KotsadmTagForVersionString(t *testing.T) {
 	tests := []struct {
 		version string
 		expect  string
@@ -32,13 +32,13 @@ func Test_kotsadmTagForVersionString(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.version, func(t *testing.T) {
-			actual := kotsadmTagForVersionString(test.version)
+			actual := KotsadmTagForVersionString(test.version)
 			assert.Equal(t, test.expect, actual)
 		})
 	}
 }
 
-func Test_kotsadmRegistry(t *testing.T) {
+func Test_KotsadmRegistry(t *testing.T) {
 	tests := []struct {
 		name              string
 		overrideVersion   string
@@ -71,7 +71,7 @@ func Test_kotsadmRegistry(t *testing.T) {
 				OverrideNamespace: test.overrideNamespace,
 			}
 
-			actual := kotsadmRegistry(options)
+			actual := KotsadmRegistry(options)
 			assert.Equal(t, test.expected, actual)
 		})
 	}

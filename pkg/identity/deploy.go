@@ -16,6 +16,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/ingress"
 	ingresstypes "github.com/replicatedhq/kots/pkg/ingress/types"
 	kotsadmtypes "github.com/replicatedhq/kots/pkg/kotsadm/types"
+	kotsadmversion "github.com/replicatedhq/kots/pkg/kotsadm/version"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/segmentio/ksuid"
 	appsv1 "k8s.io/api/apps/v1"
@@ -27,6 +28,7 @@ import (
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	k8stypes "k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/client-go/kubernetes"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
@@ -44,18 +46,18 @@ var (
 	}
 )
 
-func Initialize(ctx context.Context, logger *logger.Logger, clientset kubernetes.Interface, namespace string) error {
-	if err := deployCRDs(ctx, logger, clientset); err != nil {
+func Initialize(ctx context.Context, log *logger.Logger, clientset kubernetes.Interface, namespace string) error {
+	if err := deployCRDs(ctx, log, clientset); err != nil {
 		// Dex will deploy this if it has permissions
-		logger.Error(errors.Wrap(err, "failed to deploy crds"))
+		log.Error(errors.Wrap(err, "failed to deploy crds"))
 	}
-	if err := deployServiceAccount(ctx, logger, clientset, namespace); err != nil {
+	if err := deployServiceAccount(ctx, log, clientset, namespace); err != nil {
 		return errors.Wrap(err, "failed to deploy service account")
 	}
 	return nil
 }
 
-func Deploy(ctx context.Context, logger *logger.Logger, clientset kubernetes.Interface, namespace string, identityConfig identitytypes.Config, ingressConfig ingresstypes.Config) error {
+func Deploy(ctx context.Context, log *logger.Logger, clientset kubernetes.Interface, namespace string, identityConfig identitytypes.Config, ingressConfig ingresstypes.Config, registryOptions *kotsadmtypes.KotsadmOptions) error {
 	marshalledDexConfig, err := getDexConfig(ctx, clientset, namespace, identityConfig, ingressConfig)
 	if err != nil {
 		return errors.Wrap(err, "failed to marshal dex config")
@@ -63,7 +65,7 @@ func Deploy(ctx context.Context, logger *logger.Logger, clientset kubernetes.Int
 	if err := ensureSecret(ctx, clientset, namespace, marshalledDexConfig); err != nil {
 		return errors.Wrap(err, "failed to ensure secret")
 	}
-	if err := ensureDeployment(ctx, clientset, namespace, marshalledDexConfig); err != nil {
+	if err := ensureDeployment(ctx, clientset, namespace, marshalledDexConfig, registryOptions); err != nil {
 		return errors.Wrap(err, "failed to ensure deployment")
 	}
 	if err := ensureService(ctx, clientset, namespace, identityConfig.IngressConfig.NodePort); err != nil {
@@ -75,7 +77,21 @@ func Deploy(ctx context.Context, logger *logger.Logger, clientset kubernetes.Int
 	return nil
 }
 
-func deployServiceAccount(ctx context.Context, logger *logger.Logger, clientset kubernetes.Interface, namespace string) error {
+func Configure(ctx context.Context, log *logger.Logger, clientset kubernetes.Interface, namespace string, identityConfig identitytypes.Config, ingressConfig ingresstypes.Config) error {
+	marshalledDexConfig, err := getDexConfig(ctx, clientset, namespace, identityConfig, ingressConfig)
+	if err != nil {
+		return errors.Wrap(err, "failed to marshal dex config")
+	}
+	if err := ensureSecret(ctx, clientset, namespace, marshalledDexConfig); err != nil {
+		return errors.Wrap(err, "failed to ensure secret")
+	}
+	if err := patchDeploymentSecret(ctx, clientset, namespace, marshalledDexConfig); err != nil {
+		return errors.Wrap(err, "failed to patch deployment secret")
+	}
+	return nil
+}
+
+func deployServiceAccount(ctx context.Context, log *logger.Logger, clientset kubernetes.Interface, namespace string) error {
 	if err := ensureServiceAccount(ctx, clientset, namespace); err != nil {
 		return err
 	}
@@ -88,7 +104,7 @@ func deployServiceAccount(ctx context.Context, logger *logger.Logger, clientset 
 	return nil
 }
 
-func deployCRDs(ctx context.Context, logger *logger.Logger, clientset kubernetes.Interface) error {
+func deployCRDs(ctx context.Context, log *logger.Logger, clientset kubernetes.Interface) error {
 	cfg, err := config.GetConfig()
 	if err != nil {
 		return errors.Wrap(err, "failed to get cluster config")
@@ -254,10 +270,10 @@ func updateSecret(existingSecret, desiredSecret *corev1.Secret) *corev1.Secret {
 	return existingSecret
 }
 
-func ensureDeployment(ctx context.Context, clientset kubernetes.Interface, namespace string, marshalledDexConfig []byte) error {
+func ensureDeployment(ctx context.Context, clientset kubernetes.Interface, namespace string, marshalledDexConfig []byte, registryOptions *kotsadmtypes.KotsadmOptions) error {
 	configChecksum := fmt.Sprintf("%x", md5.Sum(marshalledDexConfig))
 
-	deployment := deploymentResource(DexDeploymentName, DexServiceAccountName, configChecksum)
+	deployment := deploymentResource(DexDeploymentName, DexServiceAccountName, configChecksum, registryOptions)
 
 	existingDeployment, err := clientset.AppsV1().Deployments(namespace).Get(ctx, DexDeploymentName, metav1.GetOptions{})
 	if err != nil {
@@ -283,14 +299,43 @@ func ensureDeployment(ctx context.Context, clientset kubernetes.Interface, names
 	return nil
 }
 
+func patchDeploymentSecret(ctx context.Context, clientset kubernetes.Interface, namespace string, marshalledDexConfig []byte) error {
+	configChecksum := fmt.Sprintf("%x", md5.Sum(marshalledDexConfig))
+
+	deployment := deploymentResource(DexDeploymentName, DexServiceAccountName, configChecksum, nil)
+
+	patch := fmt.Sprintf(`{"spec":{"template":{"metadata":{"annotations":{"kots.io/dex-secret-checksum":"%s"}}}}}`, deployment.Spec.Template.ObjectMeta.Annotations["kots.io/dex-secret-checksum"])
+
+	_, err := clientset.AppsV1().Deployments(namespace).Patch(ctx, deployment.Name, k8stypes.StrategicMergePatchType, []byte(patch), metav1.PatchOptions{})
+	if err != nil {
+		return errors.Wrap(err, "failed to patch deployment")
+	}
+
+	return nil
+}
+
 var (
 	dexCPUResource    = resource.MustParse("100m")
 	dexMemoryResource = resource.MustParse("50Mi")
 )
 
-func deploymentResource(deploymentName, serviceAccountName string, configChecksum string) *appsv1.Deployment {
+func deploymentResource(deploymentName, serviceAccountName string, configChecksum string, registryOptions *kotsadmtypes.KotsadmOptions) *appsv1.Deployment {
 	replicas := int32(2)
 	volume := configSecretVolume()
+
+	image := "quay.io/dexidp/dex:v2.26.0"
+	imagePullSecrets := []corev1.LocalObjectReference{}
+	if registryOptions != nil {
+		if s := kotsadmversion.KotsadmPullSecret("whocares", *registryOptions); s != nil {
+			image = fmt.Sprintf("%s/dex:%s", kotsadmversion.KotsadmRegistry(*registryOptions), kotsadmversion.KotsadmTag(*registryOptions))
+			imagePullSecrets = []corev1.LocalObjectReference{
+				{
+					Name: s.ObjectMeta.Name,
+				},
+			}
+		}
+	}
+
 	return &appsv1.Deployment{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "apps/v1",
@@ -318,11 +363,10 @@ func deploymentResource(deploymentName, serviceAccountName string, configChecksu
 				},
 				Spec: corev1.PodSpec{
 					ServiceAccountName: serviceAccountName,
+					ImagePullSecrets:   imagePullSecrets,
 					Containers: []corev1.Container{
 						{
-							// TODO: airgap registry
-							// fmt.Sprintf("%s/kotsadm:%s", kotsadmRegistry(deployOptions.KotsadmOptions), kotsadmTag(deployOptions.KotsadmOptions)),
-							Image:           "quay.io/dexidp/dex:v2.26.0",
+							Image:           image,
 							ImagePullPolicy: corev1.PullIfNotPresent,
 							Name:            "dex",
 							Command:         []string{"/usr/local/bin/dex", "serve", "/etc/dex/cfg/dexConfig.yaml"},

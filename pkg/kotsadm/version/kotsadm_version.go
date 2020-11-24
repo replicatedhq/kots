@@ -1,4 +1,4 @@
-package kotsadm
+package version
 
 import (
 	"fmt"
@@ -13,15 +13,15 @@ import (
 
 // return "alpha" for all invalid versions of kots,
 // kotsadm tag that matches this version for others
-func kotsadmTag(options types.KotsadmOptions) string {
+func KotsadmTag(options types.KotsadmOptions) string {
 	if options.OverrideVersion != "" {
 		return options.OverrideVersion
 	}
 
-	return kotsadmTagForVersionString(version.Version())
+	return KotsadmTagForVersionString(version.Version())
 }
 
-func kotsadmTagForVersionString(kotsVersion string) string {
+func KotsadmTagForVersionString(kotsVersion string) string {
 	version, err := semver.NewVersion(kotsVersion)
 	if err != nil {
 		return "alpha"
@@ -38,7 +38,7 @@ func kotsadmTagForVersionString(kotsVersion string) string {
 	return kotsVersion
 }
 
-func kotsadmRegistry(options types.KotsadmOptions) string {
+func KotsadmRegistry(options types.KotsadmOptions) string {
 	if options.OverrideRegistry == "" {
 		if options.OverrideNamespace == "" {
 			return "kotsadm"
@@ -65,7 +65,7 @@ func kotsadmRegistry(options types.KotsadmOptions) string {
 	return fmt.Sprintf("%s/%s", registry, namespace)
 }
 
-func kotsadmPullSecret(namespace string, options types.KotsadmOptions) *corev1.Secret {
+func KotsadmPullSecret(namespace string, options types.KotsadmOptions) *corev1.Secret {
 	if options.OverrideRegistry == "" || options.Username == "" || options.Password == "" {
 		return nil
 	}
