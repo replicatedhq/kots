@@ -5,7 +5,6 @@ import (
 	"net/http"
 
 	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
-	"github.com/replicatedhq/kots/kotsadm/pkg/session"
 	"github.com/replicatedhq/kots/kotsadm/pkg/session/types"
 	"github.com/replicatedhq/kots/pkg/rbac"
 )
@@ -33,7 +32,7 @@ func (e RBACError) Abort(w http.ResponseWriter) error {
 	return err
 }
 
-func CheckAccessOrAbort(w http.ResponseWriter, r *http.Request, resource string) error {
+func CheckAccessOrAbort(w http.ResponseWriter, r *http.Request, action, resource string) error {
 	rbacErr := NewRBACError(resource)
 
 	val := r.Context().Value(sessionKey{})
@@ -46,12 +45,13 @@ func CheckAccessOrAbort(w http.ResponseWriter, r *http.Request, resource string)
 		return nil
 	}
 
-	policies := session.RBACPoliciesFromSessionRoles(sess.Roles)
-
-	log := Logger{}
-	if rbac.CheckAccess(log, policies, resource) {
-		return nil
+	allow, err := rbac.CheckAccess(r.Context(), action, resource, sess.Roles)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return err
 	}
-
-	return rbacErr.Abort(w)
+	if !allow {
+		return rbacErr.Abort(w)
+	}
+	return nil
 }

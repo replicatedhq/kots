@@ -10,26 +10,30 @@ const (
 )
 
 var (
-	DefaultGroups   = []types.Group{DefaultGroup}
-	DefaultRoles    = []types.Role{ClusterAdminRole}
-	DefaultPolicies = []types.Policy{PolicyAllowAll}
+	DefaultGroups = []types.Group{DefaultGroup}
+
+	DefaultAllowRolePolicies = map[string][]types.Policy{
+		ClusterAdminRole.ID: ClusterAdminRole.Allow,
+	}
+	DefaultDenyRolePolicies = map[string][]types.Policy{
+		ClusterAdminRole.ID: ClusterAdminRole.Deny,
+	}
 
 	DefaultGroup = types.Group{
 		ID:      WildcardGroupID,
-		RoleIDs: []string{ClusterAdminRoleID},
+		RoleIDs: []string{ClusterAdminRole.ID},
 	}
 
 	ClusterAdminRole = types.Role{
-		ID:          ClusterAdminRoleID,
+		ID:          "cluster-admin",
 		Name:        "Cluster Admin",
-		Description: "Read/write access to all resounces",
-		PolicyIDs:   []string{"allow-all"},
+		Description: "Read/write access to all resources",
+		Allow:       []types.Policy{PolicyAllowAll},
 	}
 
 	PolicyAllowAll = types.Policy{
-		ID: "allow-all",
-		Allowed: []string{
-			"**/*",
-		},
+		Name:     "Allow All",
+		Action:   "**",
+		Resource: "**",
 	}
 )

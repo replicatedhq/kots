@@ -328,6 +328,8 @@ type RemoveAppResponse struct {
 }
 
 func RemoveApp(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("HERE")
+	return
 	appSlug := mux.Vars(r)["appSlug"]
 
 	response := RemoveAppResponse{}

@@ -140,9 +140,11 @@ class Dashboard extends Component {
   }
 
   componentWillMount() {
-    if (this.props.app?.isAirgap) {
-      this.airgapUploader = new AirgapUploader(true, this.onDropBundle);
+    const { app } = this.props;
+    if (!app?.isAirgap) {
+      return
     }
+    this.airgapUploader = new AirgapUploader(true, app.slug, this.onDropBundle);
   }
 
   componentDidMount() {
@@ -229,8 +231,10 @@ class Dashboard extends Component {
   }
 
   updateStatus = () => {
+    const { app } = this.props;
+
     return new Promise((resolve, reject) => {
-      fetch(`${window.env.API_ENDPOINT}/task/updatedownload`, {
+      fetch(`${window.env.API_ENDPOINT}/app/${app?.slug}/task/updatedownload`, {
         headers: {
           "Authorization": Utilities.getToken(),
           "Content-Type": "application/json",

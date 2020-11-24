@@ -212,7 +212,11 @@ class AirgapRegistrySettings extends Component {
   }
 
   triggerStatusUpdates = () => {
-    fetch(`${window.env.API_ENDPOINT}/imagerewritestatus`, {
+    let url = `${window.env.API_ENDPOINT}/imagerewritestatus`;
+    if (this.props.app) {
+      url = `${window.env.API_ENDPOINT}/app/${this.props.app.slug}/imagerewritestatus`;
+    }
+    fetch(url, {
       headers: {
         "Authorization": Utilities.getToken(),
         "Content-Type": "application/json",
@@ -236,8 +240,12 @@ class AirgapRegistrySettings extends Component {
   }
 
   updateStatus = () => {
+    let url = `${window.env.API_ENDPOINT}/imagerewritestatus`;
+    if (this.props.app) {
+      url = `${window.env.API_ENDPOINT}/app/${this.props.app.slug}/imagerewritestatus`;
+    }
     return new Promise((resolve, reject) => {
-      fetch(`${window.env.API_ENDPOINT}/imagerewritestatus`, {
+      fetch(url, {
         headers: {
           "Authorization": Utilities.getToken(),
           "Content-Type": "application/json",

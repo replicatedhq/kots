@@ -47,7 +47,7 @@ func (c S3PGStore) GetPreflightResults(appID string, sequence int64) (*preflight
 	return r, nil
 }
 
-func (c S3PGStore) GetLatestPreflightResults() (*preflighttypes.PreflightResult, error) {
+func (c S3PGStore) GetLatestPreflightResultsForSequenceZero() (*preflighttypes.PreflightResult, error) {
 	db := persistence.MustGetPGSession()
 	query := `
 	SELECT

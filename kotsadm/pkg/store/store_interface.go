@@ -71,7 +71,7 @@ type SupportBundleStore interface {
 type PreflightStore interface {
 	SetPreflightResults(appID string, sequence int64, results []byte) error
 	GetPreflightResults(appID string, sequence int64) (*preflighttypes.PreflightResult, error)
-	GetLatestPreflightResults() (*preflighttypes.PreflightResult, error)
+	GetLatestPreflightResultsForSequenceZero() (*preflighttypes.PreflightResult, error)
 	ResetPreflightResults(appID string, sequence int64) error
 	SetIgnorePreflightPermissionErrors(appID string, sequence int64) error
 }
@@ -96,7 +96,7 @@ type TaskStore interface {
 }
 
 type SessionStore interface {
-	CreateSession(user *usertypes.User, expiresAt *time.Time, roles []sessiontypes.SessionRole) (*sessiontypes.Session, error)
+	CreateSession(user *usertypes.User, expiresAt *time.Time, roles []string) (*sessiontypes.Session, error)
 	DeleteSession(sessionID string) error
 	GetSession(sessionID string) (*sessiontypes.Session, error)
 }
@@ -152,7 +152,6 @@ type LicenseStore interface {
 	GetLicenseForAppVersion(appID string, sequence int64) (*kotsv1beta1.License, error)
 	GetAllAppLicenses() ([]*kotsv1beta1.License, error)
 }
-
 
 type ClusterStore interface {
 	ListClusters() ([]*downstreamtypes.Downstream, error)

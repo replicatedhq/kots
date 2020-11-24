@@ -218,7 +218,7 @@ class AppDetailPage extends Component {
     try {
       this.setState({ loadingApp: true });
 
-      const res = await fetch(`${window.env.API_ENDPOINT}/apps/app/${slug}`, {
+      const res = await fetch(`${window.env.API_ENDPOINT}/app/${slug}`, {
         headers: {
           "Authorization": Utilities.getToken(),
           "Content-Type": "application/json",

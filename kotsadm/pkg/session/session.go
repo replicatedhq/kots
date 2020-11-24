@@ -66,7 +66,7 @@ func Parse(signedToken string) (*types.Session, error) {
 			CreatedAt: time.Now(),
 			ExpiresAt: time.Now().Add(time.Minute),
 			// TODO: super user permissions
-			Roles:   GetSessionRolesFromRBAC(nil, rbac.DefaultGroups, rbac.DefaultRoles, rbac.DefaultPolicies),
+			Roles:   GetSessionRolesFromRBAC(nil, rbac.DefaultGroups),
 			HasRBAC: true,
 		}
 
@@ -105,7 +105,7 @@ func SignJWT(s *types.Session) (string, error) {
 	return signedToken, nil
 }
 
-func GetSessionRolesFromRBAC(sessionGroupIDs []string, groups []rbactypes.Group, roles []rbactypes.Role, policies []rbactypes.Policy) []types.SessionRole {
+func GetSessionRolesFromRBAC(sessionGroupIDs []string, groups []rbactypes.Group) []string {
 	var sessionRolesIDs []string
 	for _, group := range groups {
 		if group.ID == rbac.WildcardGroupID {
@@ -119,45 +119,5 @@ func GetSessionRolesFromRBAC(sessionGroupIDs []string, groups []rbactypes.Group,
 			}
 		}
 	}
-
-	var sessionRoles []types.SessionRole
-	for _, role := range roles {
-		for _, roleID := range sessionRolesIDs {
-			if role.ID == roleID {
-				sessionRole := types.SessionRole{
-					ID:       role.ID,
-					Policies: []types.SessionPolicy{},
-				}
-				for _, policy := range policies {
-					for _, policyID := range role.PolicyIDs {
-						if policy.ID == policyID {
-							sessionRole.Policies = append(sessionRole.Policies, types.SessionPolicy{
-								ID:      policy.ID,
-								Allowed: policy.Allowed,
-								Denied:  policy.Denied,
-							})
-							break
-						}
-					}
-				}
-				sessionRoles = append(sessionRoles, sessionRole)
-				break
-			}
-		}
-	}
-	return sessionRoles
-}
-
-func RBACPoliciesFromSessionRoles(roles []types.SessionRole) []rbactypes.Policy {
-	policies := []rbactypes.Policy{}
-	for _, role := range roles {
-		for _, policy := range role.Policies {
-			policies = append(policies, rbactypes.Policy{
-				ID:      policy.ID,
-				Allowed: policy.Allowed,
-				Denied:  policy.Denied,
-			})
-		}
-	}
-	return policies
+	return sessionRolesIDs
 }

@@ -70,8 +70,9 @@ class AppVersionHistory extends Component {
   }
 
   componentWillMount() {
-    if (this.props.app.isAirgap) {
-      this.airgapUploader = new AirgapUploader(true, this.onDropBundle);
+    const { app } = this.props.app;
+    if (app.isAirgap) {
+      this.airgapUploader = new AirgapUploader(true, app.slug, this.onDropBundle);
     }
   }
 
@@ -420,8 +421,10 @@ class AppVersionHistory extends Component {
   }
 
   updateStatus = () => {
+    const { app } = this.props;
+
     return new Promise((resolve, reject) => {
-      fetch(`${window.env.API_ENDPOINT}/task/updatedownload`, {
+      fetch(`${window.env.API_ENDPOINT}/app/${app?.slug}/task/updatedownload`, {
         headers: {
           "Authorization": Utilities.getToken(),
           "Content-Type": "application/json",
@@ -772,6 +775,7 @@ class AppVersionHistory extends Component {
     } else if (uploadingAirgapFile) {
       updateText = (
         <AirgapUploadProgress
+          appSlug={app.slug}
           total={uploadSize}
           progress={uploadProgress}
           resuming={uploadResuming}
@@ -782,6 +786,7 @@ class AppVersionHistory extends Component {
     } else if (isBundleUploading) {
       updateText = (
         <AirgapUploadProgress
+          appSlug={app.slug}
           unkownProgress={true}
           onProgressError={this.onProgressError}
           smallSize={true}

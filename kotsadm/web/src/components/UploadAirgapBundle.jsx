@@ -9,7 +9,6 @@ import MountAware from "@src/components/shared/MountAware";
 import AirgapUploadProgress from "@src/components/AirgapUploadProgress";
 import LicenseUploadProgress from "./LicenseUploadProgress";
 import AirgapRegistrySettings from "./shared/AirgapRegistrySettings";
-import ErrorModal from "./modals/ErrorModal";
 import { Utilities } from "../utilities/utilities";
 import { AirgapUploader } from "../utilities/airgapUploader";
 
@@ -40,7 +39,8 @@ class UploadAirgapBundle extends React.Component {
   emptyHostnameErrMessage = "Please enter a value for \"Hostname\" field"
 
   componentWillMount() {
-    this.airgapUploader = new AirgapUploader(false, this.onDropBundle);
+    const { match } = this.props;
+    this.airgapUploader = new AirgapUploader(false, match.params.slug, this.onDropBundle);
   }
 
   clearFile = () => {
@@ -55,7 +55,7 @@ class UploadAirgapBundle extends React.Component {
     const { match, showRegistry } = this.props;
 
     // Reset the airgap upload state
-    const resetUrl = `${window.env.API_ENDPOINT}/kots/airgap/reset/${match.params.slug}`;
+    const resetUrl = `${window.env.API_ENDPOINT}/app/${match.params.slug}/airgap/reset`;
     try {
       await fetch(resetUrl, {
         method: "POST",
@@ -334,7 +334,7 @@ class UploadAirgapBundle extends React.Component {
 
   getApp = async (slug) => {
     try {
-      const res = await fetch(`${window.env.API_ENDPOINT}/apps/app/${slug}`, {
+      const res = await fetch(`${window.env.API_ENDPOINT}/app/${slug}`, {
         headers: {
           "Authorization": Utilities.getToken(),
           "Content-Type": "application/json",
@@ -371,6 +371,10 @@ class UploadAirgapBundle extends React.Component {
     } = this.props;
 
     const {
+      slug,
+    } = this.props.match.params;
+
+    const {
       bundleFile,
       fileUploading,
       uploadProgress,
@@ -389,6 +393,7 @@ class UploadAirgapBundle extends React.Component {
     if (fileUploading) {
       return (
         <AirgapUploadProgress
+          appSlug={slug}
           total={uploadSize}
           progress={uploadProgress}
           resuming={uploadResuming}

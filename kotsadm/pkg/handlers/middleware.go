@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 
 	"github.com/pkg/errors"
@@ -23,6 +24,7 @@ func CorsMiddleware(next http.Handler) http.Handler {
 func RequireValidSessionMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		sess, err := requireValidSession(w, r)
+		fmt.Println("requireValidSession", sess.ID, err)
 		if err != nil {
 			if !store.GetStore().IsNotFound(err) {
 				logger.Error(errors.Wrapf(err, "request %q", r.RequestURI))

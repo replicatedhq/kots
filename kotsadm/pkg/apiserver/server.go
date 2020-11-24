@@ -116,122 +116,206 @@ func Start() {
 	sessionAuthRouter.Use(handlers.RequireValidSessionMiddleware)
 
 	// Support Bundles
-	sessionAuthRouter.Path("/api/v1/troubleshoot/supportbundle/{bundleSlug}").Methods("GET").HandlerFunc(handlers.GetSupportBundle)
+	sessionAuthRouter.Path("/api/v1/troubleshoot/supportbundle/{bundleSlug}").Methods("GET").
+		HandlerFunc(policy.AppSupportbundleRead.Enforce(handlers.GetSupportBundle)) // TODO: appSlug
 	sessionAuthRouter.Path("/api/v1/troubleshoot/app/{appSlug}/supportbundles").Methods("GET").
-		HandlerFunc(policy.AppSupportBundlesList.Enforce(handlers.ListSupportBundles))
+		HandlerFunc(policy.AppSupportbundleRead.Enforce(handlers.ListSupportBundles))
 	sessionAuthRouter.Path("/api/v1/troubleshoot/app/{appSlug}/supportbundlecommand").Methods("POST").
-		HandlerFunc(policy.SupportBundlesRead.Enforce(handlers.GetSupportBundleCommand))
+		HandlerFunc(policy.AppSupportbundleRead.Enforce(handlers.GetSupportBundleCommand))
 	sessionAuthRouter.Path("/api/v1/troubleshoot/supportbundle/{bundleId}/files").Methods("GET").
-		HandlerFunc(policy.SupportBundlesRead.Enforce(handlers.GetSupportBundleFiles))
+		HandlerFunc(policy.AppSupportbundleRead.Enforce(handlers.GetSupportBundleFiles)) // TODO: appSlug
 	sessionAuthRouter.Path("/api/v1/troubleshoot/supportbundle/{bundleId}/redactions").Methods("GET").
-		HandlerFunc(policy.SupportBundlesRead.Enforce(handlers.GetSupportBundleRedactions))
+		HandlerFunc(policy.AppSupportbundleRead.Enforce(handlers.GetSupportBundleRedactions)) // TODO: appSlug
 	sessionAuthRouter.Path("/api/v1/troubleshoot/supportbundle/{bundleId}/download").Methods("GET").
-		HandlerFunc(policy.SupportBundlesRead.Enforce(handlers.DownloadSupportBundle))
-	sessionAuthRouter.Path("/api/v1/troubleshoot/supportbundle/app/{appId}/cluster/{clusterId}/collect").Methods("POST").HandlerFunc(handlers.CollectSupportBundle)
+		HandlerFunc(policy.AppSupportbundleRead.Enforce(handlers.DownloadSupportBundle)) // TODO: appSlug
+	sessionAuthRouter.Path("/api/v1/troubleshoot/supportbundle/app/{appId}/cluster/{clusterId}/collect").Methods("POST").
+		HandlerFunc(policy.AppSupportbundleWrite.Enforce(handlers.CollectSupportBundle)) // TODO: appSlug
 
 	// redactor routes
-	sessionAuthRouter.Path("/api/v1/redact/set").Methods("PUT").HandlerFunc(handlers.UpdateRedact)
-	sessionAuthRouter.Path("/api/v1/redact/get").Methods("GET").HandlerFunc(handlers.GetRedact)
-	sessionAuthRouter.Path("/api/v1/redacts").Methods("GET").HandlerFunc(handlers.ListRedactors)
-	sessionAuthRouter.Path("/api/v1/redact/spec/{slug}").Methods("GET").HandlerFunc(handlers.GetRedactMetadataAndYaml)
-	sessionAuthRouter.Path("/api/v1/redact/spec/{slug}").Methods("POST").HandlerFunc(handlers.SetRedactMetadataAndYaml)
-	sessionAuthRouter.Path("/api/v1/redact/spec/{slug}").Methods("DELETE").HandlerFunc(handlers.DeleteRedact)
-	sessionAuthRouter.Path("/api/v1/redact/enabled/{slug}").Methods("POST").HandlerFunc(handlers.SetRedactEnabled)
+	sessionAuthRouter.Path("/api/v1/redact/set").Methods("PUT").
+		HandlerFunc(policy.RedactorWrite.Enforce(handlers.UpdateRedact))
+	sessionAuthRouter.Path("/api/v1/redact/get").Methods("GET").
+		HandlerFunc(policy.RedactorRead.Enforce(handlers.GetRedact))
+	sessionAuthRouter.Path("/api/v1/redacts").Methods("GET").
+		HandlerFunc(policy.RedactorRead.Enforce(handlers.ListRedactors))
+	sessionAuthRouter.Path("/api/v1/redact/spec/{slug}").Methods("GET").
+		HandlerFunc(policy.RedactorRead.Enforce(handlers.GetRedactMetadataAndYaml))
+	sessionAuthRouter.Path("/api/v1/redact/spec/{slug}").Methods("POST").
+		HandlerFunc(policy.RedactorWrite.Enforce(handlers.SetRedactMetadataAndYaml))
+	sessionAuthRouter.Path("/api/v1/redact/spec/{slug}").Methods("DELETE").
+		HandlerFunc(policy.RedactorWrite.Enforce(handlers.DeleteRedact))
+	sessionAuthRouter.Path("/api/v1/redact/enabled/{slug}").Methods("POST").
+		HandlerFunc(policy.RedactorWrite.Enforce(handlers.SetRedactEnabled))
 
 	// Apps
-	sessionAuthRouter.Path("/api/v1/apps").Methods("GET").HandlerFunc(handlers.ListApps)
-	sessionAuthRouter.Path("/api/v1/apps/app/{appSlug}").Methods("GET").HandlerFunc(handlers.GetApp)
-	sessionAuthRouter.Path("/api/v1/app/{appSlug}/versions").Methods("GET").HandlerFunc(handlers.GetAppVersionHistory)
+	sessionAuthRouter.Path("/api/v1/apps").Methods("GET").
+		HandlerFunc(policy.AppList.Enforce(handlers.ListApps))
+	sessionAuthRouter.Path("/api/v1/app/{appSlug}").Methods("GET").
+		HandlerFunc(policy.AppRead.Enforce(handlers.GetApp))
+	sessionAuthRouter.Path("/api/v1/app/{appSlug}/versions").Methods("GET").
+		HandlerFunc(policy.AppDownstreamRead.Enforce(handlers.GetAppVersionHistory))
+	sessionAuthRouter.Path("/api/v1/app/{appSlug}/task/updatedownload").Methods("GET").
+		HandlerFunc(policy.AppRead.Enforce(handlers.GetUpdateDownloadStatus)) // NOTE: appSlug is unused
 
 	// Airgap
-	sessionAuthRouter.Path("/api/v1/app/airgap").Methods("POST", "PUT").HandlerFunc(handlers.UploadAirgapBundle) // Backwards compatibility route
-	sessionAuthRouter.Path("/api/v1/app/airgap/bundleprogress/{identifier}/{totalChunks}").Methods("GET").HandlerFunc(handlers.AirgapBundleProgress)
-	sessionAuthRouter.Path("/api/v1/app/airgap/bundleexists/{identifier}/{totalChunks}").Methods("GET").HandlerFunc(handlers.AirgapBundleExists)
-	sessionAuthRouter.Path("/api/v1/app/airgap/processbundle/{identifier}/{totalChunks}").Methods("POST", "PUT").HandlerFunc(handlers.ProcessAirgapBundle)
-	sessionAuthRouter.Path("/api/v1/app/airgap/chunk").Methods("GET").HandlerFunc(handlers.CheckAirgapBundleChunk)
-	sessionAuthRouter.Path("/api/v1/app/airgap/chunk").Methods("POST").HandlerFunc(handlers.UploadAirgapBundleChunk)
-	sessionAuthRouter.Path("/api/v1/app/airgap/status").Methods("GET").HandlerFunc(handlers.GetAirgapInstallStatus)
-	sessionAuthRouter.Path("/api/v1/kots/airgap/reset/{appSlug}").Methods("POST").HandlerFunc(handlers.ResetAirgapInstallStatus)
+	sessionAuthRouter.Path("/api/v1/app/{appSlug}/airgap/bundleprogress/{identifier}/{totalChunks}").Methods("GET").
+		HandlerFunc(policy.AppDownstreamWrite.Enforce(handlers.AirgapBundleProgress))
+	sessionAuthRouter.Path("/api/v1/app/{appSlug}/airgap/bundleexists/{identifier}/{totalChunks}").Methods("GET").
+		HandlerFunc(policy.AppDownstreamWrite.Enforce(handlers.AirgapBundleExists))
+	sessionAuthRouter.Path("/api/v1/app/{appSlug}/airgap/processbundle/{identifier}/{totalChunks}").Methods("PUT").
+		HandlerFunc(policy.AppDownstreamWrite.Enforce(handlers.UpdateAppFromAirgap))
+	sessionAuthRouter.Path("/api/v1/app/{appSlug}/airgap/chunk").Methods("GET").
+		HandlerFunc(policy.AppDownstreamWrite.Enforce(handlers.CheckAirgapBundleChunk))
+	sessionAuthRouter.Path("/api/v1/app/{appSlug}/airgap/chunk").Methods("POST").
+		HandlerFunc(policy.AppDownstreamWrite.Enforce(handlers.UploadAirgapBundleChunk))
+	sessionAuthRouter.Path("/api/v1/app/{appSlug}/airgap/status").Methods("GET").
+		HandlerFunc(policy.AppDownstreamWrite.Enforce(handlers.GetAirgapInstallStatus))
+	sessionAuthRouter.Path("/api/v1/app/{appSlug}/airgap/reset").Methods("POST").
+		HandlerFunc(policy.AppDownstreamWrite.Enforce(handlers.ResetAirgapInstallStatus))
 
 	// Implemented handlers
-	sessionAuthRouter.Path("/api/v1/license/platform").Methods("POST").HandlerFunc(handlers.ExchangePlatformLicense)
-	sessionAuthRouter.Path("/api/v1/app/{appSlug}/sequence/{sequence}/preflight/ignore-rbac").Methods("POST").HandlerFunc(handlers.IgnorePreflightRBACErrors)
-	sessionAuthRouter.Path("/api/v1/app/{appSlug}/sequence/{sequence}/preflight/run").Methods("POST").HandlerFunc(handlers.StartPreflightChecks)
-	sessionAuthRouter.Path("/api/v1/app/{appSlug}/sequence/{sequence}/preflight/result").Methods("GET").HandlerFunc(handlers.GetPreflightResult)
-	sessionAuthRouter.Path("/api/v1/app/{appSlug}/sequence/{sequence}/preflightcommand").Methods("POST").HandlerFunc(handlers.GetPreflightCommand)
-	sessionAuthRouter.Path("/api/v1/preflight/result").Methods("GET").HandlerFunc(handlers.GetLatestPreflightResult)
-	sessionAuthRouter.Path("/api/v1/app/{appSlug}/sequence/{sequence}/deploy").Methods("POST").HandlerFunc(handlers.DeployAppVersion)
-	sessionAuthRouter.Path("/api/v1/app/{appSlug}/sequence/{sequence}/redeploy").Methods("POST").HandlerFunc(handlers.RedeployAppVersion)
-	sessionAuthRouter.Path("/api/v1/app/{appSlug}/sequence/{sequence}/renderedcontents").Methods("GET").HandlerFunc(handlers.GetAppRenderedContents)
-	sessionAuthRouter.Path("/api/v1/app/{appSlug}/sequence/{sequence}/contents").Methods("GET").HandlerFunc(handlers.GetAppContents)
-	sessionAuthRouter.Path("/api/v1/app/{appSlug}/cluster/{clusterId}/dashboard").Methods("GET").HandlerFunc(handlers.GetAppDashboard)
-	sessionAuthRouter.Path("/api/v1/app/{appSlug}/cluster/{clusterId}/sequence/{sequence}/downstreamoutput").Methods("GET").HandlerFunc(handlers.GetDownstreamOutput)
+	sessionAuthRouter.Path("/api/v1/app/{appSlug}/sequence/{sequence}/preflight/ignore-rbac").Methods("POST").
+		HandlerFunc(policy.AppDownstreamPreflightWrite.Enforce(handlers.IgnorePreflightRBACErrors))
+	sessionAuthRouter.Path("/api/v1/app/{appSlug}/sequence/{sequence}/preflight/run").Methods("POST").
+		HandlerFunc(policy.AppDownstreamPreflightWrite.Enforce(handlers.StartPreflightChecks))
+	sessionAuthRouter.Path("/api/v1/app/{appSlug}/sequence/{sequence}/preflight/result").Methods("GET").
+		HandlerFunc(policy.AppDownstreamPreflightRead.Enforce(handlers.GetPreflightResult))
+	sessionAuthRouter.Path("/api/v1/app/{appSlug}/sequence/{sequence}/preflightcommand").Methods("POST").
+		HandlerFunc(policy.AppRead.Enforce(handlers.GetPreflightCommand)) // this is intentionally policy.AppRead
+	sessionAuthRouter.Path("/api/v1/preflight/result").Methods("GET").
+		HandlerFunc(policy.AppDownstreamPreflightRead.Enforce(handlers.GetLatestPreflightResultsForSequenceZero)) // TODO!!!!
+
+	sessionAuthRouter.Path("/api/v1/app/{appSlug}/sequence/{sequence}/deploy").Methods("POST").
+		HandlerFunc(policy.AppDownstreamWrite.Enforce(handlers.DeployAppVersion))
+	sessionAuthRouter.Path("/api/v1/app/{appSlug}/sequence/{sequence}/redeploy").Methods("POST").
+		HandlerFunc(policy.AppDownstreamWrite.Enforce(handlers.RedeployAppVersion))
+	sessionAuthRouter.Path("/api/v1/app/{appSlug}/sequence/{sequence}/renderedcontents").Methods("GET").
+		HandlerFunc(policy.AppDownstreamFiletreeRead.Enforce(handlers.GetAppRenderedContents))
+	sessionAuthRouter.Path("/api/v1/app/{appSlug}/sequence/{sequence}/contents").Methods("GET").
+		HandlerFunc(policy.AppDownstreamFiletreeRead.Enforce(handlers.GetAppContents))
+	sessionAuthRouter.Path("/api/v1/app/{appSlug}/cluster/{clusterId}/dashboard").Methods("GET").
+		HandlerFunc(policy.AppRead.Enforce(handlers.GetAppDashboard))
+	sessionAuthRouter.Path("/api/v1/app/{appSlug}/cluster/{clusterId}/sequence/{sequence}/downstreamoutput").Methods("GET").
+		HandlerFunc(policy.AppDownstreamLogsRead.Enforce(handlers.GetDownstreamOutput))
 
 	// Installation
-	sessionAuthRouter.Path("/api/v1/license").Methods("POST").HandlerFunc(handlers.UploadNewLicense)
-	sessionAuthRouter.Path("/api/v1/license/resume").Methods("PUT").HandlerFunc(handlers.ResumeInstallOnline)
+	sessionAuthRouter.Path("/api/v1/license").Methods("POST").
+		HandlerFunc(policy.AppCreate.Enforce(handlers.UploadNewLicense))
+	sessionAuthRouter.Path("/api/v1/license/platform").Methods("POST").
+		HandlerFunc(policy.AppCreate.Enforce(handlers.ExchangePlatformLicense))
+	sessionAuthRouter.Path("/api/v1/license/resume").Methods("PUT").
+		HandlerFunc(policy.AppCreate.Enforce(handlers.ResumeInstallOnline))
 
-	sessionAuthRouter.Path("/api/v1/registry").Methods("GET").HandlerFunc(handlers.GetKotsadmRegistry)
-	sessionAuthRouter.Path("/api/v1/imagerewritestatus").Methods("GET").HandlerFunc(handlers.GetImageRewriteStatus)
+	sessionAuthRouter.Path("/api/v1/app/online/status").Methods("GET").
+		HandlerFunc(policy.AppRead.Enforce(handlers.GetOnlineInstallStatus))
 
-	sessionAuthRouter.Path("/api/v1/app/online/status").Methods("GET").HandlerFunc(handlers.GetOnlineInstallStatus)
-	sessionAuthRouter.Path("/api/v1/app/{appSlug}/registry").Methods("PUT").HandlerFunc(handlers.UpdateAppRegistry)
-	sessionAuthRouter.Path("/api/v1/app/{appSlug}/registry").Methods("GET").HandlerFunc(handlers.GetAppRegistry)
-	sessionAuthRouter.Path("/api/v1/app/{appSlug}/registry/validate").Methods("POST").HandlerFunc(handlers.ValidateAppRegistry)
-	sessionAuthRouter.Path("/api/v1/app/{appSlug}/config").Methods("PUT").HandlerFunc(handlers.UpdateAppConfig)
-	sessionAuthRouter.Path("/api/v1/app/{appSlug}/config/{sequence}").Methods("GET").HandlerFunc(handlers.CurrentAppConfig)
-	sessionAuthRouter.Path("/api/v1/app/{appSlug}/liveconfig").Methods("POST").HandlerFunc(handlers.LiveAppConfig)
-	sessionAuthRouter.Path("/api/v1/app/{appSlug}/license").Methods("PUT").HandlerFunc(handlers.SyncLicense)
-	sessionAuthRouter.Path("/api/v1/app/{appSlug}/license").Methods("GET").HandlerFunc(handlers.GetLicense)
-	sessionAuthRouter.Path("/api/v1/app/{appSlug}/updatecheck").Methods("POST").HandlerFunc(handlers.AppUpdateCheck)
-	sessionAuthRouter.Path("/api/v1/app/{appSlug}/updatecheckerspec").Methods("PUT").HandlerFunc(handlers.UpdateCheckerSpec)
-	sessionAuthRouter.Path("/api/v1/app/{appSlug}/remove").Methods("POST").HandlerFunc(handlers.RemoveApp)
+	sessionAuthRouter.Path("/api/v1/registry").Methods("GET").
+		HandlerFunc(policy.RegistryRead.Enforce(handlers.GetKotsadmRegistry))
+	sessionAuthRouter.Path("/api/v1/imagerewritestatus").Methods("GET").
+		HandlerFunc(policy.RegistryRead.Enforce(handlers.GetImageRewriteStatus))
+
+	sessionAuthRouter.Path("/api/v1/app/{appSlug}/registry").Methods("PUT").
+		HandlerFunc(policy.AppRegistryWrite.Enforce(handlers.UpdateAppRegistry))
+	sessionAuthRouter.Path("/api/v1/app/{appSlug}/registry").Methods("GET").
+		HandlerFunc(policy.AppRegistryRead.Enforce(handlers.GetAppRegistry))
+	sessionAuthRouter.Path("/api/v1/app/{appSlug}/imagerewritestatus").Methods("GET").
+		HandlerFunc(policy.AppRegistryRead.Enforce(handlers.GetImageRewriteStatus))
+	sessionAuthRouter.Path("/api/v1/app/{appSlug}/registry/validate").Methods("POST").
+		HandlerFunc(policy.AppRegistryWrite.Enforce(handlers.ValidateAppRegistry))
+
+	sessionAuthRouter.Path("/api/v1/app/{appSlug}/config").Methods("PUT").
+		HandlerFunc(policy.AppDownstreamConfigWrite.Enforce(handlers.UpdateAppConfig))
+	sessionAuthRouter.Path("/api/v1/app/{appSlug}/config/{sequence}").Methods("GET").
+		HandlerFunc(policy.AppDownstreamConfigRead.Enforce(handlers.CurrentAppConfig))
+	sessionAuthRouter.Path("/api/v1/app/{appSlug}/liveconfig").Methods("POST").
+		HandlerFunc(policy.AppDownstreamConfigWrite.Enforce(handlers.LiveAppConfig))
+
+	sessionAuthRouter.Path("/api/v1/app/{appSlug}/license").Methods("PUT").
+		HandlerFunc(policy.AppLicenseWrite.Enforce(handlers.SyncLicense))
+	sessionAuthRouter.Path("/api/v1/app/{appSlug}/license").Methods("GET").
+		HandlerFunc(policy.AppLicenseRead.Enforce(handlers.GetLicense))
+
+	sessionAuthRouter.Path("/api/v1/app/{appSlug}/updatecheck").Methods("POST").
+		HandlerFunc(policy.AppDownstreamWrite.Enforce(handlers.AppUpdateCheck))
+	sessionAuthRouter.Path("/api/v1/app/{appSlug}/updatecheckerspec").Methods("PUT").
+		HandlerFunc(policy.AppDownstreamWrite.Enforce(handlers.UpdateCheckerSpec))
+	sessionAuthRouter.Path("/api/v1/app/{appSlug}/remove").Methods("POST").
+		HandlerFunc(policy.AppUpdate.Enforce(handlers.RemoveApp))
 
 	// App snapshot routes
-	sessionAuthRouter.Path("/api/v1/app/{appSlug}/snapshot/backup").Methods("POST").HandlerFunc(handlers.CreateApplicationBackup)
-	sessionAuthRouter.Path("/api/v1/app/{appSlug}/snapshot/restore/status").Methods("GET").HandlerFunc(handlers.GetRestoreStatus)
-	sessionAuthRouter.Path("/api/v1/app/{appSlug}/snapshot/restore").Methods("DELETE").HandlerFunc(handlers.CancelRestore)
-	sessionAuthRouter.Path("/api/v1/app/{appSlug}/snapshot/restore/{snapshotName}").Methods("POST").HandlerFunc(handlers.CreateApplicationRestore)
-	sessionAuthRouter.Path("/api/v1/app/{appSlug}/snapshot/restore/{restoreName}").Methods("GET").HandlerFunc(handlers.GetRestoreDetails)
-	sessionAuthRouter.Path("/api/v1/app/{appSlug}/snapshots").Methods("GET").HandlerFunc(handlers.ListBackups)
-	sessionAuthRouter.Path("/api/v1/app/{appSlug}/snapshot/config").Methods("GET").HandlerFunc(handlers.GetSnapshotConfig)
-	sessionAuthRouter.Path("/api/v1/app/{appSlug}/snapshot/config").Methods("PUT").HandlerFunc(handlers.SaveSnapshotConfig)
+	sessionAuthRouter.Path("/api/v1/app/{appSlug}/snapshot/backup").Methods("POST").
+		HandlerFunc(policy.AppBackupWrite.Enforce(handlers.CreateApplicationBackup))
+	sessionAuthRouter.Path("/api/v1/app/{appSlug}/snapshot/restore/status").Methods("GET").
+		HandlerFunc(policy.AppRestoreRead.Enforce(handlers.GetRestoreStatus))
+	sessionAuthRouter.Path("/api/v1/app/{appSlug}/snapshot/restore").Methods("DELETE").
+		HandlerFunc(policy.AppRestoreWrite.Enforce(handlers.CancelRestore))
+	sessionAuthRouter.Path("/api/v1/app/{appSlug}/snapshot/restore/{snapshotName}").Methods("POST").
+		HandlerFunc(policy.AppRestoreWrite.Enforce(handlers.CreateApplicationRestore))
+	sessionAuthRouter.Path("/api/v1/app/{appSlug}/snapshot/restore/{restoreName}").Methods("GET").
+		HandlerFunc(policy.AppRestoreRead.Enforce(handlers.GetRestoreDetails))
+	sessionAuthRouter.Path("/api/v1/app/{appSlug}/snapshots").Methods("GET").
+		HandlerFunc(policy.AppBackupRead.Enforce(handlers.ListBackups))
+	sessionAuthRouter.Path("/api/v1/app/{appSlug}/snapshot/config").Methods("GET").
+		HandlerFunc(policy.AppSnapshotsettingsRead.Enforce(handlers.GetSnapshotConfig))
+	sessionAuthRouter.Path("/api/v1/app/{appSlug}/snapshot/config").Methods("PUT").
+		HandlerFunc(policy.AppSnapshotsettingsWrite.Enforce(handlers.SaveSnapshotConfig))
 
 	// Global snapshot routes
-	sessionAuthRouter.Path("/api/v1/snapshots").Methods("GET").HandlerFunc(handlers.ListInstanceBackups)
-	sessionAuthRouter.Path("/api/v1/snapshot/backup").Methods("POST").HandlerFunc(handlers.CreateInstanceBackup)
-	sessionAuthRouter.Path("/api/v1/snapshot/config").Methods("GET").HandlerFunc(handlers.GetInstanceSnapshotConfig)
-	sessionAuthRouter.Path("/api/v1/snapshot/config").Methods("PUT").HandlerFunc(handlers.SaveInstanceSnapshotConfig)
-	sessionAuthRouter.Path("/api/v1/snapshots/settings").Methods("GET").HandlerFunc(handlers.GetGlobalSnapshotSettings)
-	sessionAuthRouter.Path("/api/v1/snapshots/settings").Methods("PUT").HandlerFunc(handlers.UpdateGlobalSnapshotSettings)
-	sessionAuthRouter.Path("/api/v1/snapshot/{snapshotName}").Methods("GET").HandlerFunc(handlers.GetBackup)
-	sessionAuthRouter.Path("/api/v1/snapshot/{snapshotName}/delete").Methods("POST").HandlerFunc(handlers.DeleteBackup)
-	sessionAuthRouter.Path("/api/v1/snapshot/{snapshotName}/restore-apps").Methods("POST").HandlerFunc(handlers.RestoreApps)
-	sessionAuthRouter.Path("/api/v1/snapshot/{snapshotName}/apps-restore-status").Methods("GET").HandlerFunc(handlers.GetRestoreAppsStatus)
-	sessionAuthRouter.Path("/api/v1/snapshot/{backup}/logs").Methods("GET").HandlerFunc(handlers.DownloadSnapshotLogs)
-	sessionAuthRouter.Path("/api/v1/velero").Methods("GET").HandlerFunc(handlers.GetVeleroStatus)
+	sessionAuthRouter.Path("/api/v1/snapshots").Methods("GET").
+		HandlerFunc(policy.BackupRead.Enforce(handlers.ListInstanceBackups))
+	sessionAuthRouter.Path("/api/v1/snapshot/backup").Methods("POST").
+		HandlerFunc(policy.BackupWrite.Enforce(handlers.CreateInstanceBackup))
+	sessionAuthRouter.Path("/api/v1/snapshot/config").Methods("GET").
+		HandlerFunc(policy.SnapshotsettingsRead.Enforce(handlers.GetInstanceSnapshotConfig))
+	sessionAuthRouter.Path("/api/v1/snapshot/config").Methods("PUT").
+		HandlerFunc(policy.SnapshotsettingsWrite.Enforce(handlers.SaveInstanceSnapshotConfig))
+	sessionAuthRouter.Path("/api/v1/snapshots/settings").Methods("GET").
+		HandlerFunc(policy.SnapshotsettingsRead.Enforce(handlers.GetGlobalSnapshotSettings))
+	sessionAuthRouter.Path("/api/v1/snapshots/settings").Methods("PUT").
+		HandlerFunc(policy.SnapshotsettingsWrite.Enforce(handlers.UpdateGlobalSnapshotSettings))
+	sessionAuthRouter.Path("/api/v1/snapshot/{snapshotName}").Methods("GET").
+		HandlerFunc(policy.BackupRead.Enforce(handlers.GetBackup))
+	sessionAuthRouter.Path("/api/v1/snapshot/{snapshotName}/delete").Methods("POST").
+		HandlerFunc(policy.BackupWrite.Enforce(handlers.DeleteBackup))
+	sessionAuthRouter.Path("/api/v1/snapshot/{snapshotName}/restore-apps").Methods("POST").
+		HandlerFunc(policy.RestoreWrite.Enforce(handlers.RestoreApps))
+	sessionAuthRouter.Path("/api/v1/snapshot/{snapshotName}/apps-restore-status").Methods("GET").
+		HandlerFunc(policy.RestoreWrite.Enforce(handlers.GetRestoreAppsStatus))
+	sessionAuthRouter.Path("/api/v1/snapshot/{backup}/logs").Methods("GET").
+		HandlerFunc(policy.BackupRead.Enforce(handlers.DownloadSnapshotLogs))
+	sessionAuthRouter.Path("/api/v1/velero").Methods("GET").
+		HandlerFunc(policy.BackupRead.Enforce(handlers.GetVeleroStatus))
 
 	// KURL
-	sessionAuthRouter.HandleFunc("/api/v1/kurl", handlers.NotImplemented)
-	sessionAuthRouter.Path("/api/v1/kurl/generate-node-join-command-worker").Methods("POST").HandlerFunc(handlers.GenerateNodeJoinCommandWorker)
-	sessionAuthRouter.Path("/api/v1/kurl/generate-node-join-command-master").Methods("POST").HandlerFunc(handlers.GenerateNodeJoinCommandMaster)
-	sessionAuthRouter.Path("/api/v1/kurl/nodes/{nodeName}/drain").Methods("POST").HandlerFunc(handlers.DrainNode)
-	sessionAuthRouter.Path("/api/v1/kurl/nodes/{nodeName}").Methods("DELETE").HandlerFunc(handlers.DeleteNode)
-	sessionAuthRouter.Path("/api/v1/kurl/nodes").Methods("GET").HandlerFunc(handlers.GetKurlNodes)
+	sessionAuthRouter.HandleFunc("/api/v1/kurl", handlers.NotImplemented) // I'm not sure why this is here
+	sessionAuthRouter.Path("/api/v1/kurl/generate-node-join-command-worker").Methods("POST").
+		HandlerFunc(policy.ClusterWrite.Enforce(handlers.GenerateNodeJoinCommandWorker))
+	sessionAuthRouter.Path("/api/v1/kurl/generate-node-join-command-master").Methods("POST").
+		HandlerFunc(policy.ClusterWrite.Enforce(handlers.GenerateNodeJoinCommandMaster))
+	sessionAuthRouter.Path("/api/v1/kurl/nodes/{nodeName}/drain").Methods("POST").
+		HandlerFunc(policy.ClusterWrite.Enforce(handlers.DrainNode))
+	sessionAuthRouter.Path("/api/v1/kurl/nodes/{nodeName}").Methods("DELETE").
+		HandlerFunc(policy.ClusterWrite.Enforce(handlers.DeleteNode))
+	sessionAuthRouter.Path("/api/v1/kurl/nodes").Methods("GET").
+		HandlerFunc(policy.ClusterRead.Enforce(handlers.GetKurlNodes))
 
 	// Prometheus
-	sessionAuthRouter.Path("/api/v1/prometheus").Methods("POST").HandlerFunc(handlers.SetPrometheusAddress)
+	sessionAuthRouter.Path("/api/v1/prometheus").Methods("POST").
+		HandlerFunc(policy.PrometheussettingsWrite.Enforce(handlers.SetPrometheusAddress))
 
 	// GitOps
-	sessionAuthRouter.Path("/api/v1/gitops/app/{appId}/cluster/{clusterId}/update").Methods("PUT").HandlerFunc(handlers.UpdateAppGitOps)
-	sessionAuthRouter.Path("/api/v1/gitops/app/{appId}/cluster/{clusterId}/disable").Methods("POST").HandlerFunc(handlers.DisableAppGitOps)
-	sessionAuthRouter.Path("/api/v1/gitops/app/{appId}/cluster/{clusterId}/initconnection").Methods("POST").HandlerFunc(handlers.InitGitOpsConnection)
-	sessionAuthRouter.Path("/api/v1/gitops/create").Methods("POST").HandlerFunc(handlers.CreateGitOps)
-	sessionAuthRouter.Path("/api/v1/gitops/reset").Methods("POST").HandlerFunc(handlers.ResetGitOps)
-	sessionAuthRouter.Path("/api/v1/gitops/get").Methods("GET").HandlerFunc(handlers.GetGitOpsRepo)
-
-	// task status
-	sessionAuthRouter.Path("/api/v1/task/updatedownload").Methods("GET").HandlerFunc(handlers.GetUpdateDownloadStatus)
+	sessionAuthRouter.Path("/api/v1/gitops/app/{appId}/cluster/{clusterId}/update").Methods("PUT").
+		HandlerFunc(policy.AppGitopsWrite.Enforce(handlers.UpdateAppGitOps))
+	sessionAuthRouter.Path("/api/v1/gitops/app/{appId}/cluster/{clusterId}/disable").Methods("POST").
+		HandlerFunc(policy.AppGitopsWrite.Enforce(handlers.DisableAppGitOps))
+	sessionAuthRouter.Path("/api/v1/gitops/app/{appId}/cluster/{clusterId}/initconnection").Methods("POST").
+		HandlerFunc(policy.AppGitopsWrite.Enforce(handlers.InitGitOpsConnection))
+	sessionAuthRouter.Path("/api/v1/gitops/create").Methods("POST").
+		HandlerFunc(policy.GitopsWrite.Enforce(handlers.CreateGitOps))
+	sessionAuthRouter.Path("/api/v1/gitops/reset").Methods("POST").
+		HandlerFunc(policy.GitopsWrite.Enforce(handlers.ResetGitOps))
+	sessionAuthRouter.Path("/api/v1/gitops/get").Methods("GET").
+		HandlerFunc(policy.GitopsRead.Enforce(handlers.GetGitOpsRepo))
 
 	/**********************************************************************
 	* Static routes

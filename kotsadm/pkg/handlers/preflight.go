@@ -57,8 +57,8 @@ func GetPreflightResult(w http.ResponseWriter, r *http.Request) {
 	JSON(w, 200, response)
 }
 
-func GetLatestPreflightResult(w http.ResponseWriter, r *http.Request) {
-	result, err := store.GetStore().GetLatestPreflightResults()
+func GetLatestPreflightResultsForSequenceZero(w http.ResponseWriter, r *http.Request) {
+	result, err := store.GetStore().GetLatestPreflightResultsForSequenceZero()
 	if err != nil {
 		logger.Error(err)
 		w.WriteHeader(500)
