@@ -96,7 +96,7 @@ type TaskStore interface {
 }
 
 type SessionStore interface {
-	CreateSession(user *usertypes.User) (*sessiontypes.Session, error)
+	CreateSession(user *usertypes.User, expiresAt *time.Time, roles []sessiontypes.SessionRole) (*sessiontypes.Session, error)
 	DeleteSession(sessionID string) error
 	GetSession(sessionID string) (*sessiontypes.Session, error)
 }

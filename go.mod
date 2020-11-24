@@ -17,6 +17,7 @@ require (
 	github.com/bugsnag/panicwrap v1.2.0 // indirect
 	github.com/containerd/continuity v0.0.0-20200228182428-0f16d7a0959c // indirect
 	github.com/containers/image/v5 v5.5.2
+	github.com/dexidp/dex v0.0.0-20201105145354-71bbbee07527
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/docker/distribution v2.7.1+incompatible
 	github.com/docker/go-units v0.4.0
@@ -29,7 +30,7 @@ require (
 	github.com/golang/snappy v0.0.1 // indirect
 	github.com/google/gofuzz v1.1.0
 	github.com/google/uuid v1.1.1
-	github.com/gorilla/handlers v1.4.2 // indirect
+	github.com/gorilla/handlers v1.5.1 // indirect
 	github.com/gotestyourself/gotestyourself v2.2.0+incompatible // indirect
 	github.com/kardianos/osext v0.0.0-20190222173326-2bc1f35cddc0 // indirect
 	github.com/kr/text v0.2.0 // indirect
@@ -46,6 +47,8 @@ require (
 	github.com/replicatedhq/kurl/kurlkinds v0.0.0-20200617224429-55f493a72baf
 	github.com/replicatedhq/troubleshoot v0.9.52
 	github.com/replicatedhq/yaml/v3 v3.0.0-beta5-replicatedhq
+	github.com/russellhaering/goxmldsig v1.1.0 // indirect
+	github.com/segmentio/ksuid v1.0.3
 	github.com/sergi/go-diff v1.1.0
 	github.com/spf13/cobra v1.0.0
 	github.com/spf13/viper v1.6.2

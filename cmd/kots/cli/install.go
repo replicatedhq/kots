@@ -11,14 +11,16 @@ import (
 	"os"
 	"os/signal"
 	"path/filepath"
-	"strings"
 	"time"
 
 	cursor "github.com/ahmetalpbalkan/go-cursor"
+	ghodssyaml "github.com/ghodss/yaml"
 	"github.com/manifoldco/promptui"
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	"github.com/replicatedhq/kots/pkg/auth"
+	identitytypes "github.com/replicatedhq/kots/pkg/identity/types"
+	ingresstypes "github.com/replicatedhq/kots/pkg/ingress/types"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/kotsadm"
 	"github.com/replicatedhq/kots/pkg/kotsadm/types"
@@ -29,7 +31,6 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/util/validation"
 	"k8s.io/client-go/kubernetes"
 )
 
@@ -66,22 +67,16 @@ func InstallCmd() *cobra.Command {
 
 			namespace := v.GetString("namespace")
 
-			if namespace != "" {
-				if strings.Contains(namespace, "_") {
-					return errors.New("a namespace should not contain the _ character")
-				}
-
-				errs := validation.IsValidLabelValue(namespace)
-				if len(errs) > 0 {
-					return errors.New(errs[0])
-				}
-			} else {
+			if namespace == "" {
 				enteredNamespace, err := promptForNamespace(upstream)
 				if err != nil {
 					return errors.Wrap(err, "failed to prompt for namespace")
 				}
 
 				namespace = enteredNamespace
+			}
+			if err := validateNamespace(namespace); err != nil {
+				return err
 			}
 
 			var applicationMetadata []byte
@@ -156,6 +151,20 @@ func InstallCmd() *cobra.Command {
 				}
 			}
 
+			ingressConfig, err := getIngressConfig(v)
+			if err != nil {
+				return errors.Wrap(err, "failed to get ingress config")
+			}
+
+			identityConfig, err := getIdentityConfig(v)
+			if err != nil {
+				return errors.Wrap(err, "failed to get identity config")
+			}
+
+			if identityConfig.Enabled && !ingressConfig.Enabled {
+				return errors.New("KOTS identity service requires ingress to be enabled")
+			}
+
 			deployOptions := kotsadmtypes.DeployOptions{
 				Namespace:                 namespace,
 				KubernetesConfigFlags:     kubernetesConfigFlags,
@@ -176,6 +185,7 @@ func InstallCmd() *cobra.Command {
 				HTTPProxyEnvValue:         v.GetString("http-proxy"),
 				HTTPSProxyEnvValue:        v.GetString("https-proxy"),
 				NoProxyEnvValue:           v.GetString("no-proxy"),
+
 				KotsadmOptions: kotsadmtypes.KotsadmOptions{
 					OverrideVersion:   v.GetString("kotsadm-tag"),
 					OverrideRegistry:  registryEndpoint,
@@ -183,6 +193,9 @@ func InstallCmd() *cobra.Command {
 					Username:          registryUsername,
 					Password:          registryPassword,
 				},
+
+				IdentityConfig: *identityConfig,
+				IngressConfig:  *ingressConfig,
 			}
 
 			timeout, err := time.ParseDuration(v.GetString("wait-duration"))
@@ -375,7 +388,7 @@ func InstallCmd() *cobra.Command {
 	// the following group of flags are experiemental and can be used to pull and push images during install time
 	cmd.Flags().Bool("rewrite-images", false, "set to true to force all container images to be rewritten and pushed to a local registry")
 	cmd.Flags().String("image-namespace", "", "the namespace/org in the docker registry to push images to (required when --rewrite-images is set)")
-	// set this to http://127.0.0.1:30065/api/v1 in dev environment
+	// set this to http://127.0.0.1:30000/api/v1 in dev environment
 	cmd.Flags().String("registry-endpoint", "", "the endpoint of the local docker registry to use when pushing images (required when --rewrite-images is set)")
 	cmd.Flags().MarkHidden("rewrite-images")
 	cmd.Flags().MarkHidden("image-namespace")
@@ -390,6 +403,16 @@ func InstallCmd() *cobra.Command {
 	cmd.Flags().Bool("with-minio", true, "when set, kots install will deploy a local minio instance for storage")
 	cmd.Flags().Bool("with-dockerdistribution", false, "when set, kots install will deploy a local instance of docker distribution for storage")
 	cmd.Flags().Bool("storage-base-uri-plainhttp", false, "when set, use plain http (not https) connecting to the local oci storage")
+
+	cmd.Flags().Bool("enable-identity-service", false, "when set, the KOTS identity service will be enabled")
+	cmd.Flags().MarkHidden("enable-identity-service")
+	cmd.Flags().String("identity-config", "", "path to a yaml file containing the KOTS identity service configuration")
+	cmd.Flags().MarkHidden("identity-config")
+
+	cmd.Flags().Bool("enable-ingress", false, "when set, ingress will be enabled for the KOTS Admin Console")
+	cmd.Flags().MarkHidden("enable-ingress")
+	cmd.Flags().String("ingress-config", "", "path to a yaml file containing the KOTS Admin Console ingress configuration")
+	cmd.Flags().MarkHidden("ingress-config")
 
 	return cmd
 }
@@ -411,22 +434,7 @@ func promptForNamespace(upstreamURI string) (string, error) {
 		Label:     "Enter the namespace to deploy to:",
 		Templates: templates,
 		Default:   u.Hostname(),
-		Validate: func(input string) error {
-			if len(input) == 0 {
-				return errors.New("invalid namespace")
-			}
-
-			if strings.Contains(input, "_") {
-				return errors.New("a namespace should not contain the _ character")
-			}
-
-			errs := validation.IsValidLabelValue(input)
-			if len(errs) > 0 {
-				return errors.New(errs[0])
-			}
-
-			return nil
-		},
+		Validate:  validateNamespace,
 	}
 
 	for {
@@ -497,4 +505,52 @@ func uploadAirgapArchive(deployOptions kotsadmtypes.DeployOptions, clientset *ku
 	}
 
 	return false, nil
+}
+
+func getIngressConfig(v *viper.Viper) (*ingresstypes.Config, error) {
+	ingressConfigPath := v.GetString("ingress-config")
+	enableIngress := v.GetBool("enable-ingress") || ingressConfigPath != ""
+
+	ingressConfig := ingresstypes.Config{}
+
+	if !enableIngress {
+		return &ingressConfig, nil
+	}
+
+	ingressConfig.Enabled = true
+
+	if ingressConfigPath != "" {
+		content, err := ioutil.ReadFile(ingressConfigPath)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to read ingress config file")
+		}
+		if err := ghodssyaml.Unmarshal(content, &ingressConfig); err != nil {
+			return nil, errors.Wrap(err, "failed to unmarshal ingress config yaml")
+		}
+	}
+	return &ingressConfig, nil
+}
+
+func getIdentityConfig(v *viper.Viper) (*identitytypes.Config, error) {
+	identityConfigPath := v.GetString("identity-config")
+	enableIdentityService := v.GetBool("enable-identity-service") || identityConfigPath != ""
+
+	identityConfig := identitytypes.Config{}
+
+	if !enableIdentityService {
+		return &identityConfig, nil
+	}
+
+	identityConfig.Enabled = true
+
+	if identityConfigPath != "" {
+		content, err := ioutil.ReadFile(identityConfigPath)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to read identity service config file")
+		}
+		if err := ghodssyaml.Unmarshal(content, &identityConfig); err != nil {
+			return nil, errors.Wrap(err, "failed to unmarshal identity service config yaml")
+		}
+	}
+	return &identityConfig, nil
 }

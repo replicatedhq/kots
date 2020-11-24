@@ -11,6 +11,8 @@ import (
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/kotsadm/pkg/session/types"
 	"github.com/replicatedhq/kots/kotsadm/pkg/store"
+	"github.com/replicatedhq/kots/pkg/rbac"
+	rbactypes "github.com/replicatedhq/kots/pkg/rbac/types"
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
@@ -63,6 +65,9 @@ func Parse(signedToken string) (*types.Session, error) {
 			ID:        "kots-cli",
 			CreatedAt: time.Now(),
 			ExpiresAt: time.Now().Add(time.Minute),
+			// TODO: super user permissions
+			Roles:   GetSessionRolesFromRBAC(nil, rbac.DefaultGroups, rbac.DefaultRoles, rbac.DefaultPolicies),
+			HasRBAC: true,
 		}
 
 		return &s, nil
@@ -98,4 +103,47 @@ func SignJWT(s *types.Session) (string, error) {
 	}
 
 	return signedToken, nil
+}
+
+func GetSessionRolesFromRBAC(sessionGroupIDs []string, groups []rbactypes.Group, roles []rbactypes.Role, policies []rbactypes.Policy) []types.SessionRole {
+	var sessionRolesIDs []string
+	for _, group := range groups {
+		if group.ID == rbac.WildcardGroupID {
+			sessionRolesIDs = append(sessionRolesIDs, group.RoleIDs...)
+			continue
+		}
+		for _, groupID := range sessionGroupIDs {
+			if group.ID == groupID {
+				sessionRolesIDs = append(sessionRolesIDs, group.RoleIDs...)
+				break
+			}
+		}
+	}
+
+	var sessionRoles []types.SessionRole
+	for _, role := range roles {
+		for _, roleID := range sessionRolesIDs {
+			if role.ID == roleID {
+				sessionRole := types.SessionRole{
+					ID:       role.ID,
+					Policies: []types.SessionPolicy{},
+				}
+				for _, policy := range policies {
+					for _, policyID := range role.PolicyIDs {
+						if policy.ID == policyID {
+							sessionRole.Policies = append(sessionRole.Policies, types.SessionPolicy{
+								ID:      policy.ID,
+								Allowed: policy.Allowed,
+								Denied:  policy.Denied,
+							})
+							break
+						}
+					}
+				}
+				sessionRoles = append(sessionRoles, sessionRole)
+				break
+			}
+		}
+	}
+	return sessionRoles
 }

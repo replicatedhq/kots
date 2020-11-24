@@ -138,6 +138,7 @@
     "resumablejs": "^1.1.0",
     "trim": "^0.0.1",
     "truncate-middle": "^1.0.6",
+    "universal-cookie": "^4.0.4",
     "urlize": "^0.2.1",
     "webpack-bugsnag-plugins": "^1.4.3"
   },

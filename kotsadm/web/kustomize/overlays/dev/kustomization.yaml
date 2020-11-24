@@ -2,7 +2,7 @@ bases:
   - ../../base
 
 resources:
-  - ./nodeport.yaml
+  - ./service.yaml
 
 patchesStrategicMerge:
   - ./deployment.yaml

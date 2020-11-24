@@ -1,5 +1,6 @@
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
+import Cookies from 'universal-cookie';
 import utc from "dayjs/plugin/utc";
 import queryString from "query-string";
 import sortBy from "lodash/sortBy";
@@ -387,9 +388,14 @@ export const Utilities = {
     }
   },
 
-  getCookieValue(a) {
-    var b = document.cookie.match("(^|[^;]+)\\s*" + a + "\\s*=\\s*([^;]+)");
-    return b ? b.pop() : "";
+  getCookie(cname) {
+    const cookies = new Cookies();
+    return cookies.get(cname);
+  },
+
+  removeCookie(cname) {
+    const cookies = new Cookies();
+    cookies.remove(cname)
   },
 
   isLoggedIn() {

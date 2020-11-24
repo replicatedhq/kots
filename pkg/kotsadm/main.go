@@ -11,6 +11,8 @@ import (
 	"github.com/pkg/errors"
 	kotsscheme "github.com/replicatedhq/kots/kotskinds/client/kotsclientset/scheme"
 	"github.com/replicatedhq/kots/pkg/docker/registry"
+	"github.com/replicatedhq/kots/pkg/identity"
+	"github.com/replicatedhq/kots/pkg/ingress"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/kotsadm/types"
 	"github.com/replicatedhq/kots/pkg/logger"
@@ -325,6 +327,10 @@ func ensureStorage(deployOptions types.DeployOptions, clientset *kubernetes.Clie
 func ensureKotsadm(deployOptions types.DeployOptions, clientset *kubernetes.Clientset, log *logger.Logger) error {
 	restartKotsadmAPI := false
 
+	if !deployOptions.IngressConfig.Enabled && deployOptions.IdentityConfig.Enabled {
+		return errors.New("KOTS identity service requires ingress to be enabled")
+	}
+
 	existingDeployment, err := clientset.AppsV1().Deployments(deployOptions.Namespace).Get(context.TODO(), "kotsadm", metav1.GetOptions{})
 	if err != nil && !kuberneteserrors.IsNotFound(err) {
 		return errors.Wrap(err, "failed to get existing deployment")
@@ -413,7 +419,39 @@ func ensureKotsadm(deployOptions types.DeployOptions, clientset *kubernetes.Clie
 		if err := ensureDisasterRecoveryLabels(&deployOptions, clientset); err != nil {
 			return errors.Wrap(err, "failed to ensure disaster recovery labels")
 		}
+	}
 
+	if deployOptions.IngressConfig.Enabled {
+		ctx := context.TODO()
+
+		log.ChildActionWithSpinner("Enabling ingress for the Admin Console")
+
+		if err := ingress.SetConfig(ctx, deployOptions.Namespace, deployOptions.IngressConfig); err != nil {
+			return errors.Wrap(err, "failed to set identity config")
+		}
+
+		if err := EnsureIngress(ctx, deployOptions.Namespace, clientset, deployOptions.IngressConfig); err != nil {
+			return errors.Wrap(err, "failed to ensure ingress")
+		}
+		log.FinishSpinner()
+
+		if deployOptions.IdentityConfig.Enabled {
+			log.ChildActionWithSpinner("Deploying the Identity Service")
+
+			deployOptions.IdentityConfig.DisablePasswordAuth = true
+
+			if err := identity.SetConfig(ctx, deployOptions.Namespace, deployOptions.IdentityConfig); err != nil {
+				return errors.Wrap(err, "failed to set identity config")
+			}
+
+			if err := identity.Deploy(ctx, log, clientset, deployOptions.Namespace, deployOptions.IdentityConfig, deployOptions.IngressConfig); err != nil {
+				return errors.Wrap(err, "failed to deploy identity service")
+			}
+			log.FinishSpinner()
+		}
+	}
+
+	if !deployOptions.ExcludeAdminConsole {
 		log.ChildActionWithSpinner("Waiting for Admin Console to be ready")
 		if err := waitForKotsadm(&deployOptions, existingDeployment, clientset); err != nil {
 			return errors.Wrap(err, "failed to wait for web")

@@ -49,7 +49,11 @@ spec:
             - name: API_ENDPOINT
               value: http://kotsadm.default.svc.cluster.local:3000
             - name: API_ADVERTISE_ENDPOINT
-              value: http://127.0.0.1:30065
+              value: http://127.0.0.1:30000
+            - name: KOTSADM_ENV
+              value: "dev"
+            - name: ENABLE_WEB_PROXY
+              value: "1"
             # - name: DISABLE_OUTBOUND_CONNECTIONS  
             #   value: "true"
       volumes:
@@ -61,3 +65,8 @@ spec:
           secret:
             secretName: kubelet-client-cert
             optional: true
+      hostAliases:
+        - ip: 172.17.0.1
+          hostnames:
+            - kotsadm.kotsadmdevenv.com
+            - dex.kotsadmdevenv.com

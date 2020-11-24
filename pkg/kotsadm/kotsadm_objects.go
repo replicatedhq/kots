@@ -6,10 +6,13 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
+	"github.com/replicatedhq/kots/pkg/ingress"
+	ingresstypes "github.com/replicatedhq/kots/pkg/ingress/types"
 	"github.com/replicatedhq/kots/pkg/kotsadm/types"
 	"github.com/replicatedhq/kots/pkg/util"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	extensionsv1beta1 "k8s.io/api/extensions/v1beta1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -543,14 +546,18 @@ func kotsadmDeployment(deployOptions types.DeployOptions) *appsv1.Deployment {
 	return deployment
 }
 
-func kotsadmService(namespace string) *corev1.Service {
+func kotsadmService(namespace string, nodePort int32) *corev1.Service {
 	port := corev1.ServicePort{
 		Name:       "http",
 		Port:       3000,
 		TargetPort: intstr.FromString("http"),
+		NodePort:   nodePort,
 	}
 
 	serviceType := corev1.ServiceTypeClusterIP
+	if nodePort != 0 {
+		serviceType = corev1.ServiceTypeNodePort
+	}
 
 	service := &corev1.Service{
 		TypeMeta: metav1.TypeMeta{
@@ -574,4 +581,8 @@ func kotsadmService(namespace string) *corev1.Service {
 	}
 
 	return service
+}
+
+func kotsadmIngress(namespace string, ingressConfig ingresstypes.IngressConfig) *extensionsv1beta1.Ingress {
+	return ingress.IngressFromConfig(ingressConfig, "kotsadm", "kotsadm", 3000, nil)
 }
