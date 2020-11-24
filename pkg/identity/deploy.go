@@ -46,18 +46,18 @@ var (
 	}
 )
 
-func Initialize(ctx context.Context, logger *logger.Logger, clientset kubernetes.Interface, namespace string) error {
-	if err := deployCRDs(ctx, logger, clientset); err != nil {
+func Initialize(ctx context.Context, log *logger.Logger, clientset kubernetes.Interface, namespace string) error {
+	if err := deployCRDs(ctx, log, clientset); err != nil {
 		// Dex will deploy this if it has permissions
-		logger.Error(errors.Wrap(err, "failed to deploy crds"))
+		log.Error(errors.Wrap(err, "failed to deploy crds"))
 	}
-	if err := deployServiceAccount(ctx, logger, clientset, namespace); err != nil {
+	if err := deployServiceAccount(ctx, log, clientset, namespace); err != nil {
 		return errors.Wrap(err, "failed to deploy service account")
 	}
 	return nil
 }
 
-func Deploy(ctx context.Context, logger *logger.Logger, clientset kubernetes.Interface, namespace string, identityConfig identitytypes.Config, ingressConfig ingresstypes.Config, registryOptions *kotsadmtypes.KotsadmOptions) error {
+func Deploy(ctx context.Context, log *logger.Logger, clientset kubernetes.Interface, namespace string, identityConfig identitytypes.Config, ingressConfig ingresstypes.Config, registryOptions *kotsadmtypes.KotsadmOptions) error {
 	marshalledDexConfig, err := getDexConfig(ctx, clientset, namespace, identityConfig, ingressConfig)
 	if err != nil {
 		return errors.Wrap(err, "failed to marshal dex config")
@@ -77,7 +77,7 @@ func Deploy(ctx context.Context, logger *logger.Logger, clientset kubernetes.Int
 	return nil
 }
 
-func Configure(ctx context.Context, logger *logger.Logger, clientset kubernetes.Interface, namespace string, identityConfig identitytypes.Config, ingressConfig ingresstypes.Config) error {
+func Configure(ctx context.Context, log *logger.Logger, clientset kubernetes.Interface, namespace string, identityConfig identitytypes.Config, ingressConfig ingresstypes.Config) error {
 	marshalledDexConfig, err := getDexConfig(ctx, clientset, namespace, identityConfig, ingressConfig)
 	if err != nil {
 		return errors.Wrap(err, "failed to marshal dex config")
@@ -91,7 +91,7 @@ func Configure(ctx context.Context, logger *logger.Logger, clientset kubernetes.
 	return nil
 }
 
-func deployServiceAccount(ctx context.Context, logger *logger.Logger, clientset kubernetes.Interface, namespace string) error {
+func deployServiceAccount(ctx context.Context, log *logger.Logger, clientset kubernetes.Interface, namespace string) error {
 	if err := ensureServiceAccount(ctx, clientset, namespace); err != nil {
 		return err
 	}
@@ -104,7 +104,7 @@ func deployServiceAccount(ctx context.Context, logger *logger.Logger, clientset 
 	return nil
 }
 
-func deployCRDs(ctx context.Context, logger *logger.Logger, clientset kubernetes.Interface) error {
+func deployCRDs(ctx context.Context, log *logger.Logger, clientset kubernetes.Interface) error {
 	cfg, err := config.GetConfig()
 	if err != nil {
 		return errors.Wrap(err, "failed to get cluster config")

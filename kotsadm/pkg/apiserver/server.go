@@ -15,6 +15,7 @@ import (
 	"github.com/replicatedhq/kots/kotsadm/pkg/automation"
 	"github.com/replicatedhq/kots/kotsadm/pkg/handlers"
 	"github.com/replicatedhq/kots/kotsadm/pkg/informers"
+	"github.com/replicatedhq/kots/kotsadm/pkg/policy"
 	"github.com/replicatedhq/kots/kotsadm/pkg/snapshotscheduler"
 	"github.com/replicatedhq/kots/kotsadm/pkg/socketservice"
 	"github.com/replicatedhq/kots/kotsadm/pkg/store"
@@ -114,11 +115,16 @@ func Start() {
 
 	// Support Bundles
 	sessionAuthRouter.Path("/api/v1/troubleshoot/supportbundle/{bundleSlug}").Methods("GET").HandlerFunc(handlers.GetSupportBundle)
-	sessionAuthRouter.Path("/api/v1/troubleshoot/app/{appSlug}/supportbundles").Methods("GET").HandlerFunc(handlers.ListSupportBundles)
-	sessionAuthRouter.Path("/api/v1/troubleshoot/app/{appSlug}/supportbundlecommand").Methods("POST").HandlerFunc(handlers.GetSupportBundleCommand)
-	sessionAuthRouter.Path("/api/v1/troubleshoot/supportbundle/{bundleId}/files").Methods("GET").HandlerFunc(handlers.GetSupportBundleFiles)
-	sessionAuthRouter.Path("/api/v1/troubleshoot/supportbundle/{bundleId}/redactions").Methods("GET").HandlerFunc(handlers.GetSupportBundleRedactions)
-	sessionAuthRouter.Path("/api/v1/troubleshoot/supportbundle/{bundleId}/download").Methods("GET").HandlerFunc(handlers.DownloadSupportBundle)
+	sessionAuthRouter.Path("/api/v1/troubleshoot/app/{appSlug}/supportbundles").Methods("GET").
+		HandlerFunc(policy.AppSupportBundlesList.Enforce(handlers.ListSupportBundles))
+	sessionAuthRouter.Path("/api/v1/troubleshoot/app/{appSlug}/supportbundlecommand").Methods("POST").
+		HandlerFunc(policy.SupportBundlesRead.Enforce(handlers.GetSupportBundleCommand))
+	sessionAuthRouter.Path("/api/v1/troubleshoot/supportbundle/{bundleId}/files").Methods("GET").
+		HandlerFunc(policy.SupportBundlesRead.Enforce(handlers.GetSupportBundleFiles))
+	sessionAuthRouter.Path("/api/v1/troubleshoot/supportbundle/{bundleId}/redactions").Methods("GET").
+		HandlerFunc(policy.SupportBundlesRead.Enforce(handlers.GetSupportBundleRedactions))
+	sessionAuthRouter.Path("/api/v1/troubleshoot/supportbundle/{bundleId}/download").Methods("GET").
+		HandlerFunc(policy.SupportBundlesRead.Enforce(handlers.DownloadSupportBundle))
 	sessionAuthRouter.Path("/api/v1/troubleshoot/supportbundle/app/{appId}/cluster/{clusterId}/collect").Methods("POST").HandlerFunc(handlers.CollectSupportBundle)
 
 	// redactor routes
