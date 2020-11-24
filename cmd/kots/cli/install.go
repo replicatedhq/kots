@@ -29,6 +29,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/pull"
 	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
@@ -97,14 +98,9 @@ func InstallCmd() *cobra.Command {
 				isAirgap = true
 			}
 
-			var license *kotsv1beta1.License
-			if v.GetString("license-file") != "" {
-				parsedLicense, err := pull.ParseLicenseFromFile(ExpandDir(v.GetString("license-file")))
-				if err != nil {
-					return errors.Wrap(err, "failed to parse license file")
-				}
-
-				license = parsedLicense
+			license, err := getLicense(v)
+			if err != nil {
+				return errors.Wrap(err, "failed to get license")
 			}
 
 			var configValues *kotsv1beta1.ConfigValues
@@ -134,21 +130,9 @@ func InstallCmd() *cobra.Command {
 
 			sharedPassword := v.GetString("shared-password")
 
-			registryEndpoint := v.GetString("kotsadm-registry")
-			registryNamespace := v.GetString("kotsadm-namespace")
-			registryUsername := v.GetString("registry-username")
-			registryPassword := v.GetString("registry-password")
-			if registryEndpoint == "" && isKurl && isAirgap {
-				registryEndpoint, registryUsername, registryPassword, err = kotsutil.GetKurlRegistryCreds()
-				if err != nil {
-					return errors.Wrap(err, "failed to get kURL registry info")
-				}
-				if registryNamespace == "" && license != nil {
-					registryNamespace = license.Spec.AppSlug
-				}
-				if registryNamespace == "" {
-					return errors.New("--kotsadm-namespace is required")
-				}
+			registryConfig, err := getRegistryConfig(v)
+			if err != nil {
+				return errors.Wrap(err, "failed to get registry config")
 			}
 
 			ingressConfig, err := getIngressConfig(v)
@@ -186,13 +170,7 @@ func InstallCmd() *cobra.Command {
 				HTTPSProxyEnvValue:        v.GetString("https-proxy"),
 				NoProxyEnvValue:           v.GetString("no-proxy"),
 
-				KotsadmOptions: kotsadmtypes.KotsadmOptions{
-					OverrideVersion:   v.GetString("kotsadm-tag"),
-					OverrideRegistry:  registryEndpoint,
-					OverrideNamespace: registryNamespace,
-					Username:          registryUsername,
-					Password:          registryPassword,
-				},
+				KotsadmOptions: *registryConfig,
 
 				IdentityConfig: *identityConfig,
 				IngressConfig:  *ingressConfig,
@@ -375,15 +353,7 @@ func InstallCmd() *cobra.Command {
 	cmd.Flags().String("repo", "", "repo uri to use when installing a helm chart")
 	cmd.Flags().StringSlice("set", []string{}, "values to pass to helm when running helm template")
 
-	cmd.Flags().String("kotsadm-registry", "", "set to override the registry of kotsadm images")
-	cmd.Flags().String("registry-username", "", "user name to use to authenticate with the registry")
-	cmd.Flags().String("registry-password", "", "password to use to authenticate with the registry")
-
-	// the following group of flags are useful for testing, but we don't want to pollute the help screen with them
-	cmd.Flags().String("kotsadm-tag", "", "set to override the tag of kotsadm. this may create an incompatible deployment because the version of kots and kotsadm are designed to work together")
-	cmd.Flags().String("kotsadm-namespace", "", "set to override the namespace of kotsadm image. this may create an incompatible deployment because the version of kots and kotsadm are designed to work together")
-	cmd.Flags().MarkHidden("kotsadm-tag")
-	cmd.Flags().MarkHidden("kotsadm-namespace")
+	registryFlags(cmd.Flags())
 
 	// the following group of flags are experiemental and can be used to pull and push images during install time
 	cmd.Flags().Bool("rewrite-images", false, "set to true to force all container images to be rewritten and pushed to a local registry")
@@ -553,4 +523,70 @@ func getIdentityConfig(v *viper.Viper) (*identitytypes.Config, error) {
 		}
 	}
 	return &identityConfig, nil
+}
+
+func registryFlags(flagset *pflag.FlagSet) {
+	flagset.String("kotsadm-registry", "", "set to override the registry of kotsadm images")
+	flagset.String("registry-username", "", "user name to use to authenticate with the registry")
+	flagset.String("registry-password", "", "password to use to authenticate with the registry")
+
+	// the following group of flags are useful for testing, but we don't want to pollute the help screen with them
+	flagset.String("kotsadm-tag", "", "set to override the tag of kotsadm. this may create an incompatible deployment because the version of kots and kotsadm are designed to work together")
+	flagset.String("kotsadm-namespace", "", "set to override the namespace of kotsadm image. this may create an incompatible deployment because the version of kots and kotsadm are designed to work together")
+	flagset.MarkHidden("kotsadm-tag")
+	flagset.MarkHidden("kotsadm-namespace")
+}
+
+func getRegistryConfig(v *viper.Viper) (*kotsadmtypes.KotsadmOptions, error) {
+	registryEndpoint := v.GetString("kotsadm-registry")
+	registryNamespace := v.GetString("kotsadm-namespace")
+	registryUsername := v.GetString("registry-username")
+	registryPassword := v.GetString("registry-password")
+
+	isKurl, err := kotsadm.IsKurl(kubernetesConfigFlags)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to check kURL")
+	}
+
+	isAirgap := false
+	if v.GetString("airgap-bundle") != "" || v.GetBool("airgap") {
+		isAirgap = true
+	}
+
+	if registryEndpoint == "" && isKurl && isAirgap {
+		license, err := getLicense(v)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to get license")
+		}
+		registryEndpoint, registryUsername, registryPassword, err = kotsutil.GetKurlRegistryCreds()
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to get kURL registry info")
+		}
+		if registryNamespace == "" && license != nil {
+			registryNamespace = license.Spec.AppSlug
+		}
+		if registryNamespace == "" {
+			return nil, errors.New("--kotsadm-namespace is required")
+		}
+	}
+	return &kotsadmtypes.KotsadmOptions{
+		OverrideVersion:   v.GetString("kotsadm-tag"),
+		OverrideRegistry:  registryEndpoint,
+		OverrideNamespace: registryNamespace,
+		Username:          registryUsername,
+		Password:          registryPassword,
+	}, nil
+}
+
+func getLicense(v *viper.Viper) (*kotsv1beta1.License, error) {
+	if v.GetString("license-file") == "" {
+		return nil, nil
+	}
+
+	license, err := pull.ParseLicenseFromFile(ExpandDir(v.GetString("license-file")))
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to parse license file")
+	}
+
+	return license, nil
 }

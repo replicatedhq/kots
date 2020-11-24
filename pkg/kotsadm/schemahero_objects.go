@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/replicatedhq/kots/pkg/kotsadm/types"
+	kotsadmversion "github.com/replicatedhq/kots/pkg/kotsadm/version"
 	"github.com/replicatedhq/kots/pkg/util"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -23,7 +24,7 @@ func migrationsPod(deployOptions types.DeployOptions) *corev1.Pod {
 	}
 
 	var pullSecrets []corev1.LocalObjectReference
-	if s := kotsadmPullSecret(deployOptions.Namespace, deployOptions.KotsadmOptions); s != nil {
+	if s := kotsadmversion.KotsadmPullSecret(deployOptions.Namespace, deployOptions.KotsadmOptions); s != nil {
 		pullSecrets = []corev1.LocalObjectReference{
 			{
 				Name: s.ObjectMeta.Name,
@@ -60,7 +61,7 @@ func migrationsPod(deployOptions types.DeployOptions) *corev1.Pod {
 			},
 			InitContainers: []corev1.Container{
 				{
-					Image:           fmt.Sprintf("%s/kotsadm-migrations:%s", kotsadmRegistry(deployOptions.KotsadmOptions), kotsadmTag(deployOptions.KotsadmOptions)),
+					Image:           fmt.Sprintf("%s/kotsadm-migrations:%s", kotsadmversion.KotsadmRegistry(deployOptions.KotsadmOptions), kotsadmversion.KotsadmTag(deployOptions.KotsadmOptions)),
 					ImagePullPolicy: corev1.PullAlways,
 					Name:            "plan",
 					Args:            []string{"plan"},
@@ -109,7 +110,7 @@ func migrationsPod(deployOptions types.DeployOptions) *corev1.Pod {
 			},
 			Containers: []corev1.Container{
 				{
-					Image:           fmt.Sprintf("%s/kotsadm-migrations:%s", kotsadmRegistry(deployOptions.KotsadmOptions), kotsadmTag(deployOptions.KotsadmOptions)),
+					Image:           fmt.Sprintf("%s/kotsadm-migrations:%s", kotsadmversion.KotsadmRegistry(deployOptions.KotsadmOptions), kotsadmversion.KotsadmTag(deployOptions.KotsadmOptions)),
 					ImagePullPolicy: corev1.PullAlways,
 					Name:            "apply",
 					Args:            []string{"apply"},

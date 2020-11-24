@@ -23,6 +23,7 @@ func IdentityServiceCmd() *cobra.Command {
 	}
 
 	cmd.AddCommand(IdentityServiceInstallCmd())
+	cmd.AddCommand(IdentityServiceConfigureCmd())
 	cmd.AddCommand(IdentityServiceUninstallCmd())
 	cmd.AddCommand(IdentityServiceEnableSharedPasswordCmd())
 	cmd.AddCommand(IdentityServiceOIDCCallbackURLCmd())
@@ -73,6 +74,11 @@ func IdentityServiceInstallCmd() *cobra.Command {
 				}
 			}
 
+			registryConfig, err := getRegistryConfig(v)
+			if err != nil {
+				return errors.Wrap(err, "failed to get registry config")
+			}
+
 			log.ChildActionWithSpinner("Deploying the Identity Service")
 
 			identityConfig.Enabled = true
@@ -87,8 +93,83 @@ func IdentityServiceInstallCmd() *cobra.Command {
 				return errors.Wrap(err, "failed to set identity config")
 			}
 
-			if err := identity.Deploy(cmd.Context(), log, clientset, namespace, identityConfig, *ingressConfig); err != nil {
+			if err := identity.Deploy(cmd.Context(), log, clientset, namespace, identityConfig, *ingressConfig, registryConfig); err != nil {
 				return errors.Wrap(err, "failed to deploy the identity service")
+			}
+
+			log.FinishSpinner()
+
+			return nil
+		},
+	}
+
+	cmd.Flags().String("identity-config", "", "path to a yaml file containing the KOTS identity service configuration")
+
+	// random other registry flags
+	cmd.Flags().String("license-file", "", "path to a license file to use when download a replicated app")
+	cmd.Flags().String("airgap-bundle", "", "path to the application airgap bundle where application metadata will be loaded from")
+	cmd.Flags().Bool("airgap", false, "set to true to run install in airgapped mode. setting --airgap-bundle implies --airgap=true.")
+
+	registryFlags(cmd.Flags())
+
+	return cmd
+}
+
+func IdentityServiceConfigureCmd() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:           "configure",
+		Short:         "Configure the KOTS Identity Service",
+		SilenceUsage:  true,
+		SilenceErrors: false,
+		PreRun: func(cmd *cobra.Command, args []string) {
+			viper.BindPFlags(cmd.Flags())
+		},
+		RunE: func(cmd *cobra.Command, args []string) error {
+			v := viper.GetViper()
+
+			log := logger.NewLogger()
+
+			clientset, err := k8sutil.GetClientset(kubernetesConfigFlags)
+			if err != nil {
+				return errors.Wrap(err, "failed to get clientset")
+			}
+
+			namespace := v.GetString("namespace")
+			if err := validateNamespace(namespace); err != nil {
+				return err
+			}
+
+			ingressConfig, err := ingress.GetConfig(cmd.Context(), namespace)
+			if err != nil {
+				return errors.Wrap(err, "failed to get ingress config")
+			}
+			if !ingressConfig.Enabled {
+				return errors.New("ingress is not enabled")
+			}
+
+			identityConfig := identitytypes.Config{}
+			if identityConfigPath := v.GetString("identity-config"); identityConfigPath != "" {
+				content, err := ioutil.ReadFile(identityConfigPath)
+				if err != nil {
+					return errors.Wrap(err, "failed to read identity service config file")
+				}
+				if err := ghodssyaml.Unmarshal(content, &identityConfig); err != nil {
+					return errors.Wrap(err, "failed to unmarshal identity service config yaml")
+				}
+			}
+
+			log.ChildActionWithSpinner("Configuring the Identity Service")
+
+			identityConfig.Enabled = true
+			identityConfig.DisablePasswordAuth = true
+			identityConfig.IngressConfig.Enabled = true
+
+			if err := identity.SetConfig(cmd.Context(), namespace, identityConfig); err != nil {
+				return errors.Wrap(err, "failed to set identity config")
+			}
+
+			if err := identity.Configure(cmd.Context(), log, clientset, namespace, identityConfig, *ingressConfig); err != nil {
+				return errors.Wrap(err, "failed to patch identity service")
 			}
 
 			log.FinishSpinner()

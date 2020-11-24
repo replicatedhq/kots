@@ -34,6 +34,8 @@ build-release:
 	docker push kotsadm/kotsadm:${GIT_TAG}
 	mkdir -p bin/docker-archive/kotsadm
 	skopeo copy docker-daemon:kotsadm/kotsadm:${GIT_TAG} docker-archive:bin/docker-archive/kotsadm/${GIT_TAG}
+	mkdir -p bin/docker-archive/dex
+	skopeo copy docker://quay.io/dexidp/dex:v2.26.0 docker-archive:bin/docker-archive/dex/${GIT_TAG}
 
 .PHONY: project-pact-tests
 project-pact-tests:
