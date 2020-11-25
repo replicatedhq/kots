@@ -33,7 +33,7 @@ const (
 	DexDeploymentName, DexServiceName, DexIngressName      = "kotsadm-dex", "kotsadm-dex", "kotsadm-dex"
 	DexServiceAccountName, DexRoleName, DexRoleBindingName = "kotsadm-dex", "kotsadm-dex", "kotsadm-dex"
 	DexSecretName                                          = "kotsadm-dex"
-	DexPostgresJobName, DexPostgresSecretName              = "kotsadm-dex-pg", "kotsadm-dex-pg"
+	DexPostgresSecretName                                  = "kotsadm-dex-pg"
 )
 
 var (
