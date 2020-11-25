@@ -235,7 +235,7 @@ export default function AppVersionHistoryRow(props) {
         <div className="flex flex1 u-marginTop--15 alignItems--center">
           <p className="u-fontSize--small u-lineHeight--normal u-color--dustyGray u-fontWeight--medium">Released <span className="u-fontWeight--bold">{version.upstreamReleasedAt ? dayjs(version.upstreamReleasedAt).format("MMMM D, YYYY") : dayjs(version.createdOn).format("MMMM D, YYYY")}</span></p>
           {version.releaseNotes ?
-            <p className="release-notes-link u-fontSize--small u-lineHeight--normal u-marginLeft--5 flex alignItems--center" onClick={() => showDownstreamReleaseNotes(version.releaseNotes)}> <span className="icon releaseNotes-small--icon u-marginRight--5" />Release notes</p> : null}
+            <p className="release-notes-link u-fontSize--small u-fontWeight--medium u-lineHeight--normal u-marginLeft--10 flex alignItems--center" onClick={() => showDownstreamReleaseNotes(version.releaseNotes)}> <span className="icon releaseNotes-small--icon clickable u-marginRight--5" />Release notes</p> : null}
         </div>
       </div>
       <div className={`${nothingToCommit && selectedDiffReleases && "u-opacity--half"} flex-column flex1`}>

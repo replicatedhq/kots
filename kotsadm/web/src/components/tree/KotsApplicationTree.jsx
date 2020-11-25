@@ -86,7 +86,7 @@ class KotsApplicationTree extends React.Component {
           <title>{`${this.props.app?.name} Files`}</title>
         </Helmet>
 
-        <div className="edit-files-banner u-fontSize--small u-fontWeight--medium">Need to edit these files? <span onClick={this.toggleInstructionsModal} className="u-textDecoration--underline u-fontWeight--bold u-cursor--pointer">Click here</span> to learn how</div>
+        <div className="edit-files-banner u-fontSize--small u-fontWeight--medium">Need to edit these files? <span onClick={this.toggleInstructionsModal} className="replicated-link">Click here</span> to learn how</div>
         <div className="flex flex1">
           <div className="flex1 dirtree-wrapper flex-column u-overflow-hidden u-background--biscay">
             <div className="u-overflow--auto dirtree">
