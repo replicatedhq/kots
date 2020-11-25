@@ -342,6 +342,8 @@ func ensureKotsadmService(namespace string, clientset *kubernetes.Clientset, nod
 		if err != nil {
 			return errors.Wrap(err, "failed to create service")
 		}
+
+		return nil
 	}
 
 	existing = updateKotsadmService(existing, service)
