@@ -500,7 +500,7 @@ func kotsadmDeployment(deployOptions types.DeployOptions) *appsv1.Deployment {
 						{
 							Image:           fmt.Sprintf("%s/kotsadm:%s", kotsadmversion.KotsadmRegistry(deployOptions.KotsadmOptions), kotsadmversion.KotsadmTag(deployOptions.KotsadmOptions)),
 							ImagePullPolicy: corev1.PullIfNotPresent,
-							Name:            "dex-db",
+							Name:            "init-dex-db",
 							Command: []string{
 								"psql",
 							},
