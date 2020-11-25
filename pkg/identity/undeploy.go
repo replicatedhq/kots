@@ -23,12 +23,6 @@ func Undeploy(ctx context.Context, log *logger.Logger, clientset kubernetes.Inte
 	if err := deleteSecret(ctx, clientset, namespace); err != nil {
 		return errors.Wrap(err, "failed to delete secret")
 	}
-	if err := deletePostgresSecret(ctx, clientset, namespace); err != nil {
-		return errors.Wrap(err, "failed to delete postgres secret")
-	}
-	if err := deletePostgresJob(ctx, clientset, namespace); err != nil {
-		return errors.Wrap(err, "failed to delete postgres job")
-	}
 	return nil
 }
 
@@ -62,20 +56,4 @@ func deleteSecret(ctx context.Context, clientset kubernetes.Interface, namespace
 		err = nil
 	}
 	return errors.Wrap(err, "failed to delete secret")
-}
-
-func deletePostgresSecret(ctx context.Context, clientset kubernetes.Interface, namespace string) error {
-	err := clientset.CoreV1().Secrets(namespace).Delete(ctx, DexPostgresSecretName, metav1.DeleteOptions{})
-	if kuberneteserrors.IsNotFound(err) {
-		err = nil
-	}
-	return errors.Wrap(err, "failed to delete postgres secret")
-}
-
-func deletePostgresJob(ctx context.Context, clientset kubernetes.Interface, namespace string) error {
-	err := clientset.BatchV1().Jobs(namespace).Delete(ctx, DexPostgresJobName, metav1.DeleteOptions{})
-	if kuberneteserrors.IsNotFound(err) {
-		err = nil
-	}
-	return errors.Wrap(err, "failed to delete postgres job")
 }
