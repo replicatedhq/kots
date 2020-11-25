@@ -514,7 +514,7 @@ func kotsadmDeployment(deployOptions types.DeployOptions) *appsv1.Deployment {
 								"-c",
 								"CREATE USER dex;",
 								"-c",
-								"ALTER USER dex WITH PASSWORD '$(DEX_PG_PASSWORD)';",
+								"ALTER USER dex WITH PASSWORD '$(DEX_PGPASSWORD)';",
 								"-c",
 								"GRANT ALL PRIVILEGES ON DATABASE dex TO dex;",
 							},
@@ -531,7 +531,7 @@ func kotsadmDeployment(deployOptions types.DeployOptions) *appsv1.Deployment {
 									},
 								},
 								{
-									Name: "DEX_PG_PASSWORD",
+									Name: "DEX_PGPASSWORD",
 									ValueFrom: &corev1.EnvVarSource{
 										SecretKeyRef: &corev1.SecretKeySelector{
 											LocalObjectReference: corev1.LocalObjectReference{
