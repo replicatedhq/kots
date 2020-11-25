@@ -56,9 +56,7 @@
 
   &.primary {
     background-color: #326DE6;
-    border-width: 1px;
-    border-style: solid;
-    border-color: transparent;
+    padding: 8px 14px 9px;
     color: #ffffff;
     -webkit-box-shadow: inset 0px -2px 0px 0px rgba(0,0,0,0.25);
     -moz-box-shadow: inset 0px -2px 0px 0px rgba(0,0,0,0.25);
@@ -111,6 +109,7 @@
     border-color: #9B9B9B;
     color: #9B9B9B;
     box-shadow: none;
+    padding: 8px 12px 7px;
 
     &:not(:disabled):hover {
       border-color: #717171;

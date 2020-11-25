@@ -186,16 +186,16 @@ class AppLicense extends Component {
                 </div>
                 {size(appLicense?.entitlements) > 0 &&
                   <div className="flexWrap--wrap flex alignItems--center u-marginTop--12">
-                    {appLicense.entitlements?.map(entitlement => {
+                    {appLicense.entitlements?.map((entitlement, i) => {
                       return (
-                        <span key={entitlement.label} className="u-fontSize--small u-lineHeight--normal u-color--doveGray u-fontWeight--medium u-marginRight--10"> {entitlement.title}: <span className="u-fontWeight--bold"> {entitlement.value} </span></span>
+                        <span key={entitlement.label} className={`u-fontSize--small u-lineHeight--normal u-color--doveGray u-fontWeight--medium u-marginRight--10 ${i !== 0 ? "u-marginLeft--5" : ""}`}> {entitlement.title}: <span className="u-fontWeight--bold"> {entitlement.value} </span></span>
                       );
                     })}
                   </div>}
                 <div className="flexWrap--wrap flex alignItems--center u-marginTop--10">
                   {appLicense?.isAirgapSupported ? <span className="flex alignItems--center u-fontWeight--medium u-fontSize--small u-lineHeight--normal u-color--tundora u-marginRight--10"><span className="icon licenseAirgapIcon" /> Airgap enabled </span> : null}
-                  {appLicense?.isSnapshotSupported ? <span className="flex alignItems--center u-fontWeight--medium u-fontSize--small u-lineHeight--normal u-color--tundora u-marginRight--10"><span className="icon licenseVeleroIcon" /> Snapshots enabled </span> : null}
-                  {appLicense?.isGitOpsSupported ? <span className="flex alignItems--center u-fontWeight--medium u-fontSize--small u-lineHeight--normal u-color--tundora u-marginRight--10"><span className="icon licenseGithubIcon" /> GitOps enabled </span> : null}
+                  {appLicense?.isSnapshotSupported ? <span className="flex alignItems--center u-fontWeight--medium u-fontSize--small u-lineHeight--normal u-color--tundora u-marginLeft--5 u-marginRight--10"><span className="icon licenseVeleroIcon" /> Snapshots enabled </span> : null}
+                  {appLicense?.isGitOpsSupported ? <span className="flex alignItems--center u-fontWeight--medium u-fontSize--small u-lineHeight--normal u-color--tundora u-marginLeft--5 u-marginRight--10"><span className="icon licenseGithubIcon" /> GitOps enabled </span> : null}
                 </div>
               </div>
               <div className="flex-column flex-auto alignItems--center justifyContent--center">
@@ -206,10 +206,10 @@ class AppLicense extends Component {
                     onDropAccepted={this.onDrop}
                     multiple={false}
                   >
-                    <button className="btn primary blue u-marginBottom--10" disabled={loading}>{loading ? "Uploading" : "Upload license"}</button>
+                    <button className="btn primary blue" disabled={loading}>{loading ? "Uploading" : "Upload license"}</button>
                   </Dropzone>
                   :
-                  <button className="btn primary blue u-marginBottom--10" disabled={loading} onClick={this.syncAppLicense.bind(this, "")}>{loading ? "Syncing" : "Sync license"}</button>
+                  <button className="btn primary blue" disabled={loading} onClick={this.syncAppLicense.bind(this, "")}>{loading ? "Syncing" : "Sync license"}</button>
                 }
                 {message &&
                   <p className={classNames("u-fontWeight--bold u-fontSize--small", {
