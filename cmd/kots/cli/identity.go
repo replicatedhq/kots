@@ -85,7 +85,7 @@ func IdentityServiceInstallCmd() *cobra.Command {
 			identityConfig.DisablePasswordAuth = true
 			identityConfig.IngressConfig.Enabled = true
 
-			if err := identity.Initialize(cmd.Context(), log, clientset, namespace); err != nil {
+			if err := identity.Initialize(cmd.Context(), clientset, namespace, registryConfig); err != nil {
 				return errors.Wrap(err, "failed to initialize identity service")
 			}
 
@@ -93,7 +93,7 @@ func IdentityServiceInstallCmd() *cobra.Command {
 				return errors.Wrap(err, "failed to set identity config")
 			}
 
-			if err := identity.Deploy(cmd.Context(), log, clientset, namespace, identityConfig, *ingressConfig, registryConfig); err != nil {
+			if err := identity.Deploy(cmd.Context(), clientset, namespace, identityConfig, *ingressConfig, registryConfig); err != nil {
 				return errors.Wrap(err, "failed to deploy the identity service")
 			}
 
@@ -168,7 +168,7 @@ func IdentityServiceConfigureCmd() *cobra.Command {
 				return errors.Wrap(err, "failed to set identity config")
 			}
 
-			if err := identity.Configure(cmd.Context(), log, clientset, namespace, identityConfig, *ingressConfig); err != nil {
+			if err := identity.Configure(cmd.Context(), clientset, namespace, identityConfig, *ingressConfig); err != nil {
 				return errors.Wrap(err, "failed to patch identity service")
 			}
 

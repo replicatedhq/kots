@@ -424,7 +424,7 @@ func ensureKotsadm(deployOptions types.DeployOptions, clientset *kubernetes.Clie
 	// Always initialize the identity service. This will deploy the Dex CRDs, ServiceAccount, Role, RoleBinding
 	// and any other k8s objects which do not require any configuration from kotsadm.
 	// This will not enable the identity service
-	if err := identity.Initialize(context.TODO(), log, clientset, deployOptions.Namespace, &deployOptions.KotsadmOptions); err != nil {
+	if err := identity.Initialize(context.TODO(), clientset, deployOptions.Namespace, &deployOptions.KotsadmOptions); err != nil {
 		return errors.Wrap(err, "failed to initialize identity service")
 	}
 
@@ -453,7 +453,7 @@ func ensureKotsadm(deployOptions types.DeployOptions, clientset *kubernetes.Clie
 				return errors.Wrap(err, "failed to set identity config")
 			}
 
-			if err := identity.Deploy(ctx, log, clientset, deployOptions.Namespace, deployOptions.IdentityConfig, deployOptions.IngressConfig, &deployOptions.KotsadmOptions); err != nil {
+			if err := identity.Deploy(ctx, clientset, deployOptions.Namespace, deployOptions.IdentityConfig, deployOptions.IngressConfig, &deployOptions.KotsadmOptions); err != nil {
 				return errors.Wrap(err, "failed to deploy identity service")
 			}
 			log.FinishSpinner()

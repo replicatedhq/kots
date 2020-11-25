@@ -11,7 +11,7 @@ spec:
             - name: POSTGRES_URI
               valueFrom:
                 secretKeyRef:
-                  name: ship-postgres # This secret is created in the migrations directory
+                  name: kotsadm-postgres # This secret is created in the migrations directory
                   key: uri
             - name: S3_BUCKET_NAME
               value: "shipbucket"
