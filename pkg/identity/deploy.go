@@ -6,7 +6,6 @@ import (
 	"crypto/md5"
 	"fmt"
 	"text/template"
-	"time"
 
 	dexstorage "github.com/dexidp/dex/storage"
 	"github.com/ghodss/yaml"
@@ -15,12 +14,10 @@ import (
 	dextypes "github.com/replicatedhq/kots/pkg/identity/types/dex"
 	"github.com/replicatedhq/kots/pkg/ingress"
 	ingresstypes "github.com/replicatedhq/kots/pkg/ingress/types"
-	"github.com/replicatedhq/kots/pkg/kotsadm/types"
 	kotsadmtypes "github.com/replicatedhq/kots/pkg/kotsadm/types"
 	kotsadmversion "github.com/replicatedhq/kots/pkg/kotsadm/version"
 	"github.com/segmentio/ksuid"
 	appsv1 "k8s.io/api/apps/v1"
-	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	extensionsv1beta1 "k8s.io/api/extensions/v1beta1"
 	rbacv1 "k8s.io/api/rbac/v1"
@@ -46,12 +43,6 @@ var (
 )
 
 func Deploy(ctx context.Context, clientset kubernetes.Interface, namespace string, identityConfig identitytypes.Config, ingressConfig ingresstypes.Config, registryOptions *kotsadmtypes.KotsadmOptions) error {
-	if err := ensurePostgresSecret(ctx, clientset, namespace); err != nil {
-		return errors.Wrap(err, "failed to ensure postgres secret")
-	}
-	if err := ensurePostgresJob(ctx, clientset, namespace, registryOptions); err != nil {
-		return errors.Wrap(err, "failed to ensure postgres job")
-	}
 	if err := ensureServiceAccount(ctx, clientset, namespace); err != nil {
 		return errors.Wrap(err, "failed to ensure service account")
 	}
@@ -641,7 +632,7 @@ func roleBindingResource(roleBindingName, roleName, serviceAccountName, serviceA
 	}
 }
 
-func ensurePostgresSecret(ctx context.Context, clientset kubernetes.Interface, namespace string) error {
+func EnsurePostgresSecret(ctx context.Context, clientset kubernetes.Interface, namespace string) error {
 	secret := postgresSecretResource(DexPostgresSecretName)
 
 	_, err := clientset.CoreV1().Secrets(namespace).Get(ctx, DexPostgresSecretName, metav1.GetOptions{})
@@ -679,137 +670,6 @@ func postgresSecretResource(secretName string) *corev1.Secret {
 			"password": []byte(generatedPassword),
 		},
 	}
-}
-
-func ensurePostgresJob(ctx context.Context, clientset kubernetes.Interface, namespace string, registryOptions *kotsadmtypes.KotsadmOptions) error {
-	job := postgresJobResource(DexPostgresJobName, namespace, registryOptions)
-
-	_, err := clientset.BatchV1().Jobs(namespace).Get(ctx, DexPostgresJobName, metav1.GetOptions{})
-	if err != nil {
-		if !kuberneteserrors.IsNotFound(err) {
-			return errors.Wrap(err, "failed to get existing job")
-		}
-
-		_, err = clientset.BatchV1().Jobs(namespace).Create(ctx, job, metav1.CreateOptions{})
-		if err != nil {
-			return errors.Wrap(err, "failed to create job")
-		}
-
-		return nil
-	}
-
-	// no patch needed
-
-	return nil
-}
-
-func waitForPostgresJobTermination(clientset kubernetes.Interface, namespace string, timeout time.Duration) error {
-	start := time.Now()
-
-	for {
-		_, err := clientset.BatchV1().Jobs(namespace).Get(context.TODO(), DexPostgresJobName, metav1.GetOptions{})
-		if err != nil && !kuberneteserrors.IsNotFound(err) {
-			return errors.Wrap(err, "failed to get postgres job")
-		}
-
-		if kuberneteserrors.IsNotFound(err) {
-			return nil
-		}
-
-		time.Sleep(time.Second)
-
-		if time.Now().Sub(start) > timeout {
-			return errors.New("timeout waiting for postgres job termination")
-		}
-	}
-}
-
-func postgresJobResource(name string, namespace string, registryOptions *kotsadmtypes.KotsadmOptions) *batchv1.Job {
-	image := "postgres:10.7"
-	imagePullSecrets := []corev1.LocalObjectReference{}
-	if registryOptions != nil {
-		if s := kotsadmversion.KotsadmPullSecret(namespace, *registryOptions); s != nil {
-			image = fmt.Sprintf("%s/postgres:%s", kotsadmversion.KotsadmRegistry(*registryOptions), kotsadmversion.KotsadmTag(*registryOptions))
-			imagePullSecrets = []corev1.LocalObjectReference{
-				{
-					Name: s.ObjectMeta.Name,
-				},
-			}
-		}
-	}
-
-	job := &batchv1.Job{
-		TypeMeta: metav1.TypeMeta{
-			APIVersion: "batch/v1",
-			Kind:       "Job",
-		},
-		ObjectMeta: metav1.ObjectMeta{
-			Name:   name,
-			Labels: types.GetKotsadmLabels(),
-		},
-		Spec: batchv1.JobSpec{
-			Template: corev1.PodTemplateSpec{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:   name,
-					Labels: types.GetKotsadmLabels(),
-				},
-				Spec: corev1.PodSpec{
-					RestartPolicy:    "OnFailure",
-					ImagePullSecrets: imagePullSecrets,
-					Containers: []corev1.Container{
-						{
-							Image:           image,
-							ImagePullPolicy: corev1.PullIfNotPresent,
-							Name:            name,
-							Command: []string{
-								"psql",
-							},
-							Args: []string{
-								"-h",
-								"kotsadm-postgres",
-								"-U",
-								"kotsadm",
-								"-c",
-								"CREATE DATABASE dex;",
-								"-c",
-								"CREATE USER dex;",
-								"-c",
-								"ALTER USER dex WITH PASSWORD '$(DEX_PG_PASSWORD)';",
-								"-c",
-								"GRANT ALL PRIVILEGES ON DATABASE dex TO dex;",
-							},
-							Env: []corev1.EnvVar{
-								{
-									Name: "PGPASSWORD",
-									ValueFrom: &corev1.EnvVarSource{
-										SecretKeyRef: &corev1.SecretKeySelector{
-											LocalObjectReference: corev1.LocalObjectReference{
-												Name: "kotsadm-postgres",
-											},
-											Key: "password",
-										},
-									},
-								},
-								{
-									Name: "DEX_PG_PASSWORD",
-									ValueFrom: &corev1.EnvVarSource{
-										SecretKeyRef: &corev1.SecretKeySelector{
-											LocalObjectReference: corev1.LocalObjectReference{
-												Name: DexPostgresSecretName,
-											},
-											Key: "password",
-										},
-									},
-								},
-							},
-						},
-					},
-				},
-			},
-		},
-	}
-
-	return job
 }
 
 func ensureIngress(ctx context.Context, clientset kubernetes.Interface, namespace string, ingressConfig ingresstypes.Config) error {
