@@ -10,7 +10,7 @@ spec:
       annotations:
         backup.velero.io/backup-volumes: backup
         kots.io/backup-type: admin-console
-        pre.hook.backup.velero.io/command: '["/bin/bash", "-c", "PGPASSWORD=password pg_dump -U shipcloud -h postgres > /backup/kotsadm-postgres.sql"]'
+        pre.hook.backup.velero.io/command: '["/bin/bash", "-c", "PGPASSWORD=password pg_dump -U kotsadm -h kotsadm-postgres > /backup/kotsadm-postgres.sql"]'
         pre.hook.backup.velero.io/timeout: 3m
     spec:
       containers:

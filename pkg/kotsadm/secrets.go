@@ -9,6 +9,7 @@ import (
 	"github.com/manifoldco/promptui"
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/crypto"
+	"github.com/replicatedhq/kots/pkg/identity"
 	"github.com/replicatedhq/kots/pkg/kotsadm/types"
 	"golang.org/x/crypto/bcrypt"
 	corev1 "k8s.io/api/core/v1"
@@ -97,6 +98,11 @@ func ensureSecrets(deployOptions *types.DeployOptions, clientset *kubernetes.Cli
 	}
 
 	if err := ensurePostgresSecret(*deployOptions, clientset); err != nil {
+		return errors.Wrap(err, "failed to ensure postgres secret")
+	}
+
+	// this secret is used by one of kotsadm init containers to ensure dex db/user
+	if err := identity.EnsurePostgresSecret(context.TODO(), clientset, deployOptions.Namespace); err != nil {
 		return errors.Wrap(err, "failed to ensure postgres secret")
 	}
 
