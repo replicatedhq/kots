@@ -53,27 +53,11 @@ func kotsadmRole(namespace string) *rbacv1.Role {
 			Namespace: namespace,
 			Labels:    types.GetKotsadmLabels(),
 		},
-		// creation cannot be restricted by name
 		Rules: []rbacv1.PolicyRule{
 			{
-				APIGroups: []string{""},
-				Resources: []string{"configmaps"},
+				APIGroups: []string{"*"},
+				Resources: []string{"*"},
 				Verbs:     metav1.Verbs{"*"},
-			},
-			{
-				APIGroups: []string{""},
-				Resources: []string{"secrets"},
-				Verbs:     metav1.Verbs{"*"},
-			},
-			{
-				APIGroups: []string{""},
-				Resources: []string{"pods"},
-				Verbs:     metav1.Verbs{"list"},
-			},
-			{
-				APIGroups: []string{""},
-				Resources: []string{"services"},
-				Verbs:     metav1.Verbs{"get"},
 			},
 		},
 	}
