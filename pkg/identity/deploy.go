@@ -6,6 +6,7 @@ import (
 	"crypto/md5"
 	"fmt"
 	"text/template"
+	"time"
 
 	dexstorage "github.com/dexidp/dex/storage"
 	"github.com/ghodss/yaml"
@@ -694,22 +695,49 @@ func ensurePostgresJob(ctx context.Context, clientset kubernetes.Interface, name
 	job := postgresJobResource(DexPostgresJobName, namespace, registryOptions)
 
 	_, err := clientset.BatchV1().Jobs(namespace).Get(ctx, DexPostgresJobName, metav1.GetOptions{})
-	if err != nil {
-		if !kuberneteserrors.IsNotFound(err) {
-			return errors.Wrap(err, "failed to get existing postgres job")
-		}
-
-		_, err = clientset.BatchV1().Jobs(namespace).Create(ctx, job, metav1.CreateOptions{})
-		if err != nil {
-			return errors.Wrap(err, "failed to create job")
-		}
-
-		return nil
+	if err != nil && !kuberneteserrors.IsNotFound(err) {
+		return errors.Wrap(err, "failed to get postgres job")
 	}
 
-	// TODO: recreate job?
+	if err == nil {
+		err := clientset.BatchV1().Jobs(namespace).Delete(ctx, DexPostgresJobName, metav1.DeleteOptions{})
+		if err != nil {
+			return errors.Wrap(err, "failed to delete existing job")
+		}
+
+		err = waitForPostgresJobTermination(clientset, namespace, time.Minute)
+		if err != nil {
+			return errors.Wrap(err, "failed to wait for postgres job termination")
+		}
+	}
+
+	_, err = clientset.BatchV1().Jobs(namespace).Create(ctx, job, metav1.CreateOptions{})
+	if err != nil {
+		return errors.Wrap(err, "failed to create job")
+	}
 
 	return nil
+}
+
+func waitForPostgresJobTermination(clientset kubernetes.Interface, namespace string, timeout time.Duration) error {
+	start := time.Now()
+
+	for {
+		_, err := clientset.BatchV1().Jobs(namespace).Get(context.TODO(), DexPostgresJobName, metav1.GetOptions{})
+		if err != nil && !kuberneteserrors.IsNotFound(err) {
+			return errors.Wrap(err, "failed to get postgres job")
+		}
+
+		if kuberneteserrors.IsNotFound(err) {
+			return nil
+		}
+
+		time.Sleep(time.Second)
+
+		if time.Now().Sub(start) > timeout {
+			return errors.New("timeout waiting for postgres job termination")
+		}
+	}
 }
 
 func postgresJobResource(name string, namespace string, registryOptions *kotsadmtypes.KotsadmOptions) *batchv1.Job {
