@@ -403,6 +403,52 @@ func kotsadmDeployment(deployOptions types.DeployOptions) *appsv1.Deployment {
 						{
 							Image:           fmt.Sprintf("%s/kotsadm:%s", kotsadmversion.KotsadmRegistry(deployOptions.KotsadmOptions), kotsadmversion.KotsadmTag(deployOptions.KotsadmOptions)),
 							ImagePullPolicy: corev1.PullIfNotPresent,
+							Name:            "init-dex-db",
+							Command: []string{
+								"psql",
+							},
+							Args: []string{
+								"-h",
+								"kotsadm-postgres",
+								"-U",
+								"kotsadm",
+								"-c",
+								"CREATE DATABASE dex;",
+								"-c",
+								"CREATE USER dex;",
+								"-c",
+								"ALTER USER dex WITH PASSWORD '$(DEX_PGPASSWORD)';",
+								"-c",
+								"GRANT ALL PRIVILEGES ON DATABASE dex TO dex;",
+							},
+							Env: []corev1.EnvVar{
+								{
+									Name: "PGPASSWORD",
+									ValueFrom: &corev1.EnvVarSource{
+										SecretKeyRef: &corev1.SecretKeySelector{
+											LocalObjectReference: corev1.LocalObjectReference{
+												Name: "kotsadm-postgres",
+											},
+											Key: "password",
+										},
+									},
+								},
+								{
+									Name: "DEX_PGPASSWORD",
+									ValueFrom: &corev1.EnvVarSource{
+										SecretKeyRef: &corev1.SecretKeySelector{
+											LocalObjectReference: corev1.LocalObjectReference{
+												Name: identity.DexPostgresSecretName,
+											},
+											Key: "password",
+										},
+									},
+								},
+							},
+						},
+						{
+							Image:           fmt.Sprintf("%s/kotsadm:%s", kotsadmversion.KotsadmRegistry(deployOptions.KotsadmOptions), kotsadmversion.KotsadmTag(deployOptions.KotsadmOptions)),
+							ImagePullPolicy: corev1.PullIfNotPresent,
 							Name:            "restore-db",
 							Command: []string{
 								"/restore-db.sh",
@@ -494,52 +540,6 @@ func kotsadmDeployment(deployOptions types.DeployOptions) *appsv1.Deployment {
 								Requests: corev1.ResourceList{
 									"cpu":    resource.MustParse("100m"),
 									"memory": resource.MustParse("100Mi"),
-								},
-							},
-						},
-						{
-							Image:           fmt.Sprintf("%s/kotsadm:%s", kotsadmversion.KotsadmRegistry(deployOptions.KotsadmOptions), kotsadmversion.KotsadmTag(deployOptions.KotsadmOptions)),
-							ImagePullPolicy: corev1.PullIfNotPresent,
-							Name:            "init-dex-db",
-							Command: []string{
-								"psql",
-							},
-							Args: []string{
-								"-h",
-								"kotsadm-postgres",
-								"-U",
-								"kotsadm",
-								"-c",
-								"CREATE DATABASE dex;",
-								"-c",
-								"CREATE USER dex;",
-								"-c",
-								"ALTER USER dex WITH PASSWORD '$(DEX_PGPASSWORD)';",
-								"-c",
-								"GRANT ALL PRIVILEGES ON DATABASE dex TO dex;",
-							},
-							Env: []corev1.EnvVar{
-								{
-									Name: "PGPASSWORD",
-									ValueFrom: &corev1.EnvVarSource{
-										SecretKeyRef: &corev1.SecretKeySelector{
-											LocalObjectReference: corev1.LocalObjectReference{
-												Name: "kotsadm-postgres",
-											},
-											Key: "password",
-										},
-									},
-								},
-								{
-									Name: "DEX_PGPASSWORD",
-									ValueFrom: &corev1.EnvVarSource{
-										SecretKeyRef: &corev1.SecretKeySelector{
-											LocalObjectReference: corev1.LocalObjectReference{
-												Name: identity.DexPostgresSecretName,
-											},
-											Key: "password",
-										},
-									},
 								},
 							},
 						},
