@@ -86,7 +86,7 @@ func IngressInstallCmd() *cobra.Command {
 				log.ChildActionWithSpinner("Configuring the Identity Service")
 
 				// we have to update the dex secret if kotsadm ingress is changing because it relies on the redirect uri
-				if err := identity.Configure(cmd.Context(), log, clientset, namespace, *identityConfig, ingressConfig); err != nil {
+				if err := identity.Configure(cmd.Context(), clientset, namespace, *identityConfig, ingressConfig); err != nil {
 					return errors.Wrap(err, "failed to patch identity service")
 				}
 

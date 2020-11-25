@@ -17,7 +17,6 @@ import (
 
 	"github.com/dexidp/dex/server"
 	"github.com/dexidp/dex/storage"
-	k8sstorage "github.com/dexidp/dex/storage/kubernetes"
 )
 
 // Config is the config format for the main application.
@@ -164,8 +163,8 @@ type GRPC struct {
 
 // Storage holds app's storage configuration.
 type Storage struct {
-	Type   string            `json:"type"`
-	Config k8sstorage.Config `json:"config"`
+	Type   string   `json:"type"`
+	Config Postgres `json:"config"`
 }
 
 // Connector is a magical type that can unmarshal YAML dynamically. The

@@ -2,9 +2,9 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: postgres
+  name: kotsadm-postgres
   labels:
-    app: postgres
+    app: kotsadm-postgres
 spec:
   type: NodePort
   ports:
@@ -13,31 +13,32 @@ spec:
     targetPort: postgres
     nodePort: 30432
   selector:
-    app: postgres
+    app: kotsadm-postgres
 ---
 apiVersion: v1
 kind: Secret
 metadata:
-  name: ship-postgres
+  name: kotsadm-postgres
   labels:
-    app: postgres
+    app: kotsadm-postgres
 type: Opaque
 data:
-  uri: "cG9zdGdyZXNxbDovL3NoaXBjbG91ZDpwYXNzd29yZEBwb3N0Z3Jlcy9zaGlwY2xvdWQ/Y29ubmVjdF90aW1lb3V0PTEwJmFwcGxpY2F0aW9uX25hbWU9c2hpcCZzc2xtb2RlPWRpc2FibGU="
+  password: "cGFzc3dvcmQ="
+  uri: "cG9zdGdyZXNxbDovL2tvdHNhZG06cGFzc3dvcmRAa290c2FkbS1wb3N0Z3Jlcy9rb3RzYWRtP2Nvbm5lY3RfdGltZW91dD0xMCZhcHBsaWNhdGlvbl9uYW1lPXNoaXAmc3NsbW9kZT1kaXNhYmxl"
 ---
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: postgres
+  name: kotsadm-postgres
 spec:
   selector:
     matchLabels:
-      app: postgres
-  serviceName: postgres
+      app: kotsadm-postgres
+  serviceName: kotsadm-postgres
   template:
     metadata:
       labels:
-        app: postgres
+        app: kotsadm-postgres
     spec:
       securityContext:
         runAsUser: 999 # the default 'postgres' user
@@ -48,13 +49,13 @@ spec:
         imagePullPolicy: IfNotPresent
         env:
         - name: PGDATA
-          value: /var/lib/postgresql/data/pgdata
+          value: /var/lib/postgresql/data/devpgdata
         - name: POSTGRES_USER
-          value: shipcloud
+          value: kotsadm
         - name: POSTGRES_PASSWORD
           value: password
         - name: POSTGRES_DB
-          value: shipcloud
+          value: kotsadm
         ports:
         - name: postgres
           containerPort: 5432
@@ -64,7 +65,7 @@ spec:
             - /bin/sh
             - -i
             - -c
-            - pg_isready -U shipcloud -h 127.0.0.1 -p 5432
+            - pg_isready -U kotsadm -h 127.0.0.1 -p 5432
           initialDelaySeconds: 30
           timeoutSeconds: 5
           failureThreshold: 3
@@ -74,7 +75,7 @@ spec:
             - /bin/sh
             - -i
             - -c
-            - pg_isready -U shipcloud -h 127.0.0.1 -p 5432
+            - pg_isready -U kotsadm -h 127.0.0.1 -p 5432
           initialDelaySeconds: 1
           timeoutSeconds: 1
           periodSeconds: 1
