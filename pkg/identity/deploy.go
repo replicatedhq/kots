@@ -45,20 +45,23 @@ var (
 	}
 )
 
-func Initialize(ctx context.Context, clientset kubernetes.Interface, namespace string, registryOptions *kotsadmtypes.KotsadmOptions) error {
+func Deploy(ctx context.Context, clientset kubernetes.Interface, namespace string, identityConfig identitytypes.Config, ingressConfig ingresstypes.Config, registryOptions *kotsadmtypes.KotsadmOptions) error {
 	if err := ensurePostgresSecret(ctx, clientset, namespace); err != nil {
 		return errors.Wrap(err, "failed to ensure postgres secret")
 	}
 	if err := ensurePostgresJob(ctx, clientset, namespace, registryOptions); err != nil {
 		return errors.Wrap(err, "failed to ensure postgres job")
 	}
-	if err := deployServiceAccount(ctx, clientset, namespace); err != nil {
-		return errors.Wrap(err, "failed to deploy service account")
+	if err := ensureServiceAccount(ctx, clientset, namespace); err != nil {
+		return errors.Wrap(err, "failed to ensure service account")
 	}
-	return nil
-}
+	if err := ensureRole(ctx, clientset, namespace); err != nil {
+		return errors.Wrap(err, "failed to ensure role")
+	}
+	if err := ensureRoleBinding(ctx, clientset, namespace); err != nil {
+		return errors.Wrap(err, "failed to ensure role binding")
+	}
 
-func Deploy(ctx context.Context, clientset kubernetes.Interface, namespace string, identityConfig identitytypes.Config, ingressConfig ingresstypes.Config, registryOptions *kotsadmtypes.KotsadmOptions) error {
 	marshalledDexConfig, err := getDexConfig(ctx, clientset, namespace, identityConfig, ingressConfig)
 	if err != nil {
 		return errors.Wrap(err, "failed to marshal dex config")
@@ -88,19 +91,6 @@ func Configure(ctx context.Context, clientset kubernetes.Interface, namespace st
 	}
 	if err := patchDeploymentSecret(ctx, clientset, namespace, marshalledDexConfig); err != nil {
 		return errors.Wrap(err, "failed to patch deployment secret")
-	}
-	return nil
-}
-
-func deployServiceAccount(ctx context.Context, clientset kubernetes.Interface, namespace string) error {
-	if err := ensureServiceAccount(ctx, clientset, namespace); err != nil {
-		return err
-	}
-	if err := ensureRole(ctx, clientset, namespace); err != nil {
-		return err
-	}
-	if err := ensureRoleBinding(ctx, clientset, namespace); err != nil {
-		return err
 	}
 	return nil
 }
@@ -695,26 +685,20 @@ func ensurePostgresJob(ctx context.Context, clientset kubernetes.Interface, name
 	job := postgresJobResource(DexPostgresJobName, namespace, registryOptions)
 
 	_, err := clientset.BatchV1().Jobs(namespace).Get(ctx, DexPostgresJobName, metav1.GetOptions{})
-	if err != nil && !kuberneteserrors.IsNotFound(err) {
-		return errors.Wrap(err, "failed to get postgres job")
-	}
-
-	if err == nil {
-		err := clientset.BatchV1().Jobs(namespace).Delete(ctx, DexPostgresJobName, metav1.DeleteOptions{})
-		if err != nil {
-			return errors.Wrap(err, "failed to delete existing job")
-		}
-
-		err = waitForPostgresJobTermination(clientset, namespace, time.Minute)
-		if err != nil {
-			return errors.Wrap(err, "failed to wait for postgres job termination")
-		}
-	}
-
-	_, err = clientset.BatchV1().Jobs(namespace).Create(ctx, job, metav1.CreateOptions{})
 	if err != nil {
-		return errors.Wrap(err, "failed to create job")
+		if !kuberneteserrors.IsNotFound(err) {
+			return errors.Wrap(err, "failed to get existing job")
+		}
+
+		_, err = clientset.BatchV1().Jobs(namespace).Create(ctx, job, metav1.CreateOptions{})
+		if err != nil {
+			return errors.Wrap(err, "failed to create job")
+		}
+
+		return nil
 	}
+
+	// no patch needed
 
 	return nil
 }
