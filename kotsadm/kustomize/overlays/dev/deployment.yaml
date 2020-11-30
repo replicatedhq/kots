@@ -6,10 +6,10 @@ spec:
   template:
     metadata:
       labels:
-        kots.io/backup-type: admin-console
+        kots.io/kotsadm: 'true'
+        kots.io/backup: velero
       annotations:
         backup.velero.io/backup-volumes: backup
-        kots.io/backup-type: admin-console
         pre.hook.backup.velero.io/command: '["/bin/bash", "-c", "PGPASSWORD=password pg_dump -U kotsadm -h kotsadm-postgres > /backup/kotsadm-postgres.sql"]'
         pre.hook.backup.velero.io/timeout: 3m
     spec:
@@ -56,6 +56,36 @@ spec:
               value: "1"
             # - name: DISABLE_OUTBOUND_CONNECTIONS  
             #   value: "true"
+      initContainers:
+        - name: init-dex-db
+          command:
+          - "psql"
+          args:
+          - "-h"
+          - "kotsadm-postgres"
+          - "-U"
+          - "kotsadm"
+          - "-c"
+          - "CREATE DATABASE dex;"
+          - "-c"
+          - "CREATE USER dex;"
+          - "-c"
+          - "ALTER USER dex WITH PASSWORD '$(DEX_PGPASSWORD)';"
+          - "-c"
+          - "GRANT ALL PRIVILEGES ON DATABASE dex TO dex;"
+          env:
+          - name: PGPASSWORD
+            valueFrom:
+              secretKeyRef:
+                key: password
+                name: kotsadm-postgres
+          - name: DEX_PGPASSWORD
+            valueFrom:
+              secretKeyRef:
+                key: password
+                name: kotsadm-dex-postgres
+          image: kotsadm
+          imagePullPolicy: IfNotPresent
       volumes:
         - emptyDir:
             medium: Memory
