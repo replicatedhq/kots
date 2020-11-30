@@ -584,7 +584,7 @@ func isUnauthorized(err error) bool {
 		}
 		return false
 	case errcode.Error:
-		return err.Code.Descriptor().HTTPStatusCode == http.StatusUnauthorized
+		return err.Code.Descriptor().HTTPStatusCode == http.StatusUnauthorized || err.Code.Descriptor().HTTPStatusCode == http.StatusTooManyRequests
 	}
 
 	if _, ok := err.(imagedocker.ErrUnauthorizedForCredentials); ok {
