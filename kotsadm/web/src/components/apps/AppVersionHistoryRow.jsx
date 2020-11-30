@@ -27,7 +27,7 @@ function deployButtonStatus(downstream, version, app) {
   const isPastVersion = find(downstream.pastVersions, { sequence: version.sequence });
   const needsConfiguration = version.status === "pending_config";
   const isRollback = isPastVersion && version.deployedAt && app.allowRollback;
-  const isRedeploy = isCurrentVersion && version.status === "failed";
+  const isRedeploy = isCurrentVersion && (version.status === "failed" || version.status === "deployed");
 
   if (needsConfiguration) {
     return "Configure";
@@ -38,7 +38,7 @@ function deployButtonStatus(downstream, version, app) {
   } else if (isRollback) {
     return "Rollback";
   } else if (isDeploying) {
-    return "Deploying...";
+    return "Deploying";
   } else if (isCurrentVersion) {
     return "Deployed";
   } else {
@@ -70,7 +70,7 @@ function renderVersionAction(version, nothingToCommitDiff, app, history, deployV
   const isPastVersion = find(downstream.pastVersions, { sequence: version.sequence });
   const needsConfiguration = version.status === "pending_config";
   const showActions = !isPastVersion || app.allowRollback;
-  const isRedeploy = isCurrentVersion && version.status === "failed";
+  const isRedeploy = isCurrentVersion && (version.status === "failed" || version.status === "deployed");
   const isRollback = isPastVersion && version.deployedAt && app.allowRollback;
 
   const isSecondaryBtn = isPastVersion || needsConfiguration || isRedeploy && !isRollback;
@@ -81,7 +81,7 @@ function renderVersionAction(version, nothingToCommitDiff, app, history, deployV
       {showActions &&
         <button
           className={classNames("btn", { "secondary dark": isRollback, "secondary blue": isSecondaryBtn, "primary blue": isPrimaryButton })}
-          disabled={isCurrentVersion && version.status !== "failed" || version.status === "deploying"}
+          disabled={version.status === "deploying"}
           onClick={() => needsConfiguration ? history.push(`/app/${app.slug}/config/${version.sequence}`) : deployVersion(version)}
         >
           {deployButtonStatus(downstream, version, app)}
@@ -250,7 +250,7 @@ export default function AppVersionHistoryRow(props) {
       </div>
       <div className={`${nothingToCommit && selectedDiffReleases && "u-opacity--half"} flex-column flex1 alignItems--flexEnd`}>
         <div>
-          {version.status === "failed" ?
+          {version.status === "failed" || version.status === "deployed" ?
             renderVersionAction(version, nothingToCommit && selectedDiffReleases, props.app, props.history, props.redeployVersion) :
             renderVersionAction(version, nothingToCommit && selectedDiffReleases, props.app, props.history, props.deployVersion)
           }
