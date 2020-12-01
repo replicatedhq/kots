@@ -16,7 +16,7 @@ type Config struct {
 		Roles    []rbactypes.Role   `json:"roles,omitempty" yaml:"roles,omitempty"`
 		Policies []rbactypes.Policy `json:"policies,omitempty" yaml:"policies,omitempty"`
 	} `json:"rbac,omitempty" yaml:"rbac,omitempty"`
-	IngressConfig          ingresstypes.Config  `json:"ingressConfig" yaml:"ingressConfig"`
+	IngressConfig          ingresstypes.Config  `json:"ingressConfig,omitempty" yaml:"ingressConfig,omitempty"`
 	AdminConsoleAddress    string               `json:"adminConsoleAddress,omitempty" yaml:"adminConsoleAddress,omitempty"`
 	IdentityServiceAddress string               `json:"identityServiceAddress,omitempty" yaml:"identityServiceAddress,omitempty"`
 	DexConnectors          []dextypes.Connector `json:"dexConnectors,omitempty" yaml:"dexConnectors,omitempty"`
