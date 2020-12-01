@@ -13,15 +13,7 @@ func Test_getIngressConfigAddress(t *testing.T) {
 		want          string
 	}{
 		{
-			name: "address",
-			ingressConfig: types.IngressConfig{
-				Address: "http://somebigbank.com",
-				Path:    "/test",
-			},
-			want: "http://somebigbank.com",
-		},
-		{
-			name: "no address",
+			name: "no tls",
 			ingressConfig: types.IngressConfig{
 				Host: "somebigbank.com",
 				Path: "/test",
@@ -29,7 +21,7 @@ func Test_getIngressConfigAddress(t *testing.T) {
 			want: "http://somebigbank.com/test",
 		},
 		{
-			name: "no address tls",
+			name: "with tls",
 			ingressConfig: types.IngressConfig{
 				Host:          "somebigbank.com",
 				Path:          "/test",

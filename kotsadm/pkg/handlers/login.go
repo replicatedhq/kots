@@ -302,5 +302,10 @@ func OIDCLoginCallback(w http.ResponseWriter, r *http.Request) {
 	}
 	http.SetCookie(w, &cookie)
 
-	http.Redirect(w, r, ingress.GetAddress(*ingressConfig), http.StatusSeeOther)
+	redirectURL := identityConfig.AdminConsoleAddress
+	if redirectURL == "" && ingressConfig.Enabled {
+		redirectURL = ingress.GetAddress(*ingressConfig)
+	}
+
+	http.Redirect(w, r, redirectURL, http.StatusSeeOther)
 }

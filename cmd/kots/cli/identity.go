@@ -299,7 +299,7 @@ func IdentityServiceOIDCCallbackURLCmd() *cobra.Command {
 				return errors.Wrap(err, "failed to get identity config")
 			}
 
-			fmt.Fprintln(cmd.OutOrStdout(), identity.DexCallbackURL(identityConfig.IngressConfig))
+			fmt.Fprintln(cmd.OutOrStdout(), identity.DexCallbackURL(*identityConfig))
 
 			return nil
 		},

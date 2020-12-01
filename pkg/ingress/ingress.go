@@ -13,20 +13,13 @@ func GetAddress(config types.Config) string {
 		return getIngressConfigAddress(*config.Ingress)
 
 	case config.NodePort != nil:
-		return strings.TrimRight(config.NodePort.Address, "/")
-
-	case config.External != nil:
-		return strings.TrimRight(config.External.Address, "/")
+		return "" // TODO
 	}
 
 	return ""
 }
 
 func getIngressConfigAddress(ingressConfig types.IngressConfig) string {
-	if ingressConfig.Address != "" {
-		return strings.TrimRight(ingressConfig.Address, "/")
-	}
-
 	var u url.URL
 	if ingressConfig.TLSSecretName != "" {
 		u.Scheme = "https"
