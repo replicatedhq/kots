@@ -53,10 +53,10 @@ func init() {
 	}
 }
 
-func CheckAccess(ctx context.Context, action, resource, appSlug string, roles []string) (bool, error) {
+func CheckAccess(ctx context.Context, action, resource string, roles []string, appSlugs []string) (bool, error) {
 	allowRolePolicies := DefaultAllowRolePolicies
 	denyRolePolicies := DefaultDenyRolePolicies
-	if appSlug != "" {
+	for _, appSlug := range appSlugs {
 		appAdminRole := GetAppAdminRole(appSlug)
 		allowRolePolicies[appAdminRole.ID] = appAdminRole.Allow
 		denyRolePolicies[appAdminRole.ID] = appAdminRole.Deny

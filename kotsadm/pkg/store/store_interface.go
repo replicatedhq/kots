@@ -109,6 +109,7 @@ type AppStore interface {
 	AddAppToAllDownstreams(appID string) error
 	SetAppInstallState(appID string, state string) error
 	ListInstalledApps() ([]*apptypes.App, error)
+	ListInstalledAppSlugs() ([]string, error)
 	GetAppIDFromSlug(slug string) (appID string, err error)
 	GetApp(appID string) (*apptypes.App, error)
 	GetAppFromSlug(slug string) (*apptypes.App, error)

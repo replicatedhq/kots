@@ -4,8 +4,10 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
 	"github.com/replicatedhq/kots/kotsadm/pkg/session/types"
+	"github.com/replicatedhq/kots/kotsadm/pkg/store"
 	"github.com/replicatedhq/kots/pkg/rbac"
 )
 
@@ -32,7 +34,7 @@ func (e RBACError) Abort(w http.ResponseWriter) error {
 	return err
 }
 
-func CheckAccessOrAbort(w http.ResponseWriter, r *http.Request, action, resource, appSlug string) error {
+func CheckAccessOrAbort(w http.ResponseWriter, r *http.Request, action, resource string) error {
 	rbacErr := NewRBACError(resource)
 
 	val := r.Context().Value(sessionKey{})
@@ -45,7 +47,15 @@ func CheckAccessOrAbort(w http.ResponseWriter, r *http.Request, action, resource
 		return nil
 	}
 
-	allow, err := rbac.CheckAccess(r.Context(), action, resource, appSlug, sess.Roles)
+	// this is not very efficient to list all app slugs on each request
+	appSlugs, err := store.GetStore().ListInstalledAppSlugs()
+	if err != nil {
+		err = errors.Wrap(err, "failed to list installed app slugs")
+		w.WriteHeader(http.StatusInternalServerError)
+		return err
+	}
+
+	allow, err := rbac.CheckAccess(r.Context(), action, resource, sess.Roles, appSlugs)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		return err
