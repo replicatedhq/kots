@@ -116,7 +116,7 @@ func createNewVersion(a *apptypes.App, archiveDir string, registrySettings *regi
 		return errors.Wrap(err, "failed to render new version")
 	}
 
-	newSequence, err := version.CreateVersion(a.ID, archiveDir, "License Change", a.CurrentSequence)
+	newSequence, err := version.CreateVersion(a.ID, archiveDir, "License Change", a.CurrentSequence, false)
 	if err != nil {
 		return errors.Wrap(err, "failed to create new version")
 	}

@@ -23,7 +23,7 @@ import (
 	"go.uber.org/zap"
 )
 
-func CreateAppFromOnline(pendingApp *types.PendingApp, upstreamURI string, isAutomated bool) (_ *kotsutil.KotsKinds, finalError error) {
+func CreateAppFromOnline(pendingApp *types.PendingApp, upstreamURI string, isAutomated bool, skipPreflights bool) (_ *kotsutil.KotsKinds, finalError error) {
 	logger.Debug("creating app from online",
 		zap.String("upstreamURI", upstreamURI))
 
@@ -152,7 +152,7 @@ func CreateAppFromOnline(pendingApp *types.PendingApp, upstreamURI string, isAut
 		return nil, errors.Wrap(err, "failed to set app is not airgap")
 	}
 
-	newSequence, err := version.CreateFirstVersion(pendingApp.ID, tmpRoot, "Online Install")
+	newSequence, err := version.CreateFirstVersion(pendingApp.ID, tmpRoot, "Online Install", skipPreflights)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create new version")
 	}
@@ -196,15 +196,23 @@ func CreateAppFromOnline(pendingApp *types.PendingApp, upstreamURI string, isAut
 		}
 
 		if !needsConfig {
-			err := downstream.SetDownstreamVersionPendingPreflight(pendingApp.ID, newSequence)
-			if err != nil {
-				return nil, errors.Wrap(err, "failed to set downstream version status to 'pending preflight'")
+			if skipPreflights {
+				if err := version.DeployVersion(pendingApp.ID, newSequence); err != nil {
+					return nil, errors.Wrap(err, "failed to deploy version")
+				}
+			} else {
+				err := downstream.SetDownstreamVersionPendingPreflight(pendingApp.ID, newSequence)
+				if err != nil {
+					return nil, errors.Wrap(err, "failed to set downstream version status to 'pending preflight'")
+				}
 			}
 		}
 	}
 
-	if err := preflight.Run(pendingApp.ID, newSequence, false, tmpRoot); err != nil {
-		return nil, errors.Wrap(err, "failed to start preflights")
+	if !skipPreflights {
+		if err := preflight.Run(pendingApp.ID, newSequence, false, tmpRoot); err != nil {
+			return nil, errors.Wrap(err, "failed to start preflights")
+		}
 	}
 
 	return kotsKinds, nil

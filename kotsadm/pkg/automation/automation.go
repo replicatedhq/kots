@@ -101,7 +101,7 @@ LICENSE_LOOP:
 			continue
 		}
 
-		skipImagePush, err := kotsutil.IsImagesPushedSet(kotsadmtypes.KotsadmConfigMap)
+		instParams, err := kotsutil.GetInstallationParams(kotsadmtypes.KotsadmConfigMap)
 		if err != nil {
 			logger.Error(errors.Wrap(err, "failed to get existing kotsadm config map"))
 			continue
@@ -110,7 +110,7 @@ LICENSE_LOOP:
 		desiredAppName := strings.Replace(verifiedLicense.Spec.AppSlug, "-", " ", 0)
 		upstreamURI := fmt.Sprintf("replicated://%s", verifiedLicense.Spec.AppSlug)
 
-		a, err := store.GetStore().CreateApp(desiredAppName, upstreamURI, string(license), verifiedLicense.Spec.IsAirgapSupported, skipImagePush)
+		a, err := store.GetStore().CreateApp(desiredAppName, upstreamURI, string(license), verifiedLicense.Spec.IsAirgapSupported, instParams.SkipImagePush)
 		if err != nil {
 			logger.Error(errors.Wrap(err, "failed to create app record"))
 			continue
@@ -123,7 +123,7 @@ LICENSE_LOOP:
 			continue
 		}
 
-		if skipImagePush && airgapData != nil {
+		if instParams.SkipImagePush && airgapData != nil {
 			// Images have been pushed and there is airgap app data available, so this is an airgap install.
 			airgapFilesDir, err := ioutil.TempDir("", "headless-airgap")
 			if err != nil {
@@ -158,7 +158,7 @@ LICENSE_LOOP:
 				LicenseData: string(license),
 			}
 
-			err = airgap.CreateAppFromAirgap(&pendingApp, airgapFilesDir, registryHost, namespace, username, password, true)
+			err = airgap.CreateAppFromAirgap(&pendingApp, airgapFilesDir, registryHost, namespace, username, password, true, instParams.SkipPreflights)
 			if err != nil {
 				logger.Error(errors.Wrap(err, "failed to create airgap app"))
 				continue
@@ -172,7 +172,7 @@ LICENSE_LOOP:
 				LicenseData: string(license),
 			}
 
-			_, err := online.CreateAppFromOnline(&pendingApp, upstreamURI, true)
+			_, err := online.CreateAppFromOnline(&pendingApp, upstreamURI, true, instParams.SkipPreflights)
 			if err != nil {
 				logger.Error(errors.Wrap(err, "failed to create online app"))
 				continue
@@ -251,7 +251,7 @@ func AirgapInstall(appSlug string, additionalFiles map[string][]byte) error {
 		return errors.Errorf("license is expired for app %s", verifiedLicense.Spec.AppSlug)
 	}
 
-	skipImagePush, err := kotsutil.IsImagesPushedSet(kotsadmtypes.KotsadmConfigMap)
+	instParams, err := kotsutil.GetInstallationParams(kotsadmtypes.KotsadmConfigMap)
 	if err != nil {
 		return errors.Wrap(err, "failed to get existing kotsadm config map")
 	}
@@ -259,7 +259,7 @@ func AirgapInstall(appSlug string, additionalFiles map[string][]byte) error {
 	desiredAppName := strings.Replace(verifiedLicense.Spec.AppSlug, "-", " ", 0)
 	upstreamURI := fmt.Sprintf("replicated://%s", verifiedLicense.Spec.AppSlug)
 
-	a, err := store.GetStore().CreateApp(desiredAppName, upstreamURI, string(license), verifiedLicense.Spec.IsAirgapSupported, skipImagePush)
+	a, err := store.GetStore().CreateApp(desiredAppName, upstreamURI, string(license), verifiedLicense.Spec.IsAirgapSupported, instParams.SkipImagePush)
 	if err != nil {
 		return errors.Wrap(err, "failed to create app record")
 	}
@@ -309,7 +309,7 @@ func AirgapInstall(appSlug string, additionalFiles map[string][]byte) error {
 		LicenseData: string(license),
 	}
 
-	err = airgap.CreateAppFromAirgap(&pendingApp, airgapFilesDir, registryHost, namespace, username, password, true)
+	err = airgap.CreateAppFromAirgap(&pendingApp, airgapFilesDir, registryHost, namespace, username, password, true, instParams.SkipPreflights)
 	if err != nil {
 		return errors.Wrap(err, "failed to create airgap app")
 	}

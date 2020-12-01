@@ -135,7 +135,7 @@ func UploadExistingApp(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	newSequence, err := version.CreateVersion(a.ID, archiveDir, "KOTS Upload", a.CurrentSequence)
+	newSequence, err := version.CreateVersion(a.ID, archiveDir, "KOTS Upload", a.CurrentSequence, false)
 	if err != nil {
 		logger.Error(err)
 		w.WriteHeader(500)
