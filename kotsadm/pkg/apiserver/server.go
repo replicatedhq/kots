@@ -129,7 +129,7 @@ func Start() {
 	sessionAuthRouter.Path("/api/v1/troubleshoot/supportbundle/{bundleId}/download").Methods("GET").
 		HandlerFunc(policy.AppSupportbundleRead.Enforce(handlers.DownloadSupportBundle)) // TODO: appSlug
 	sessionAuthRouter.Path("/api/v1/troubleshoot/supportbundle/app/{appId}/cluster/{clusterId}/collect").Methods("POST").
-		HandlerFunc(policy.AppSupportbundleWrite.Enforce(handlers.CollectSupportBundle)) // TODO: appSlug
+		HandlerFunc(policy.AppSupportbundleWrite.Enforce(handlers.CollectSupportBundle))
 
 	// redactor routes
 	sessionAuthRouter.Path("/api/v1/redact/set").Methods("PUT").
@@ -183,7 +183,7 @@ func Start() {
 	sessionAuthRouter.Path("/api/v1/app/{appSlug}/sequence/{sequence}/preflightcommand").Methods("POST").
 		HandlerFunc(policy.AppRead.Enforce(handlers.GetPreflightCommand)) // this is intentionally policy.AppRead
 	sessionAuthRouter.Path("/api/v1/preflight/result").Methods("GET").
-		HandlerFunc(policy.AppDownstreamPreflightRead.Enforce(handlers.GetLatestPreflightResultsForSequenceZero)) // TODO!!!!
+		HandlerFunc(policy.AppDownstreamPreflightRead.Enforce(handlers.GetLatestPreflightResultsForSequenceZero)) // TODO: this needs the app id
 
 	sessionAuthRouter.Path("/api/v1/app/{appSlug}/sequence/{sequence}/deploy").Methods("POST").
 		HandlerFunc(policy.AppDownstreamWrite.Enforce(handlers.DeployAppVersion))
