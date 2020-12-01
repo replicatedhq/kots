@@ -70,7 +70,7 @@ class AppVersionHistory extends Component {
   }
 
   componentWillMount() {
-    const { app } = this.props.app;
+    const { app } = this.props;
     if (app.isAirgap) {
       this.airgapUploader = new AirgapUploader(true, app.slug, this.onDropBundle);
     }
