@@ -178,12 +178,12 @@ func Start() {
 		HandlerFunc(policy.AppDownstreamPreflightWrite.Enforce(handlers.IgnorePreflightRBACErrors))
 	sessionAuthRouter.Path("/api/v1/app/{appSlug}/sequence/{sequence}/preflight/run").Methods("POST").
 		HandlerFunc(policy.AppDownstreamPreflightWrite.Enforce(handlers.StartPreflightChecks))
+	sessionAuthRouter.Path("/api/v1/app/{appSlug}/preflight/result").Methods("GET").
+		HandlerFunc(policy.AppDownstreamPreflightRead.Enforce(handlers.GetLatestPreflightResultsForSequenceZero))
 	sessionAuthRouter.Path("/api/v1/app/{appSlug}/sequence/{sequence}/preflight/result").Methods("GET").
 		HandlerFunc(policy.AppDownstreamPreflightRead.Enforce(handlers.GetPreflightResult))
 	sessionAuthRouter.Path("/api/v1/app/{appSlug}/sequence/{sequence}/preflightcommand").Methods("POST").
 		HandlerFunc(policy.AppRead.Enforce(handlers.GetPreflightCommand)) // this is intentionally policy.AppRead
-	sessionAuthRouter.Path("/api/v1/preflight/result").Methods("GET").
-		HandlerFunc(policy.AppDownstreamPreflightRead.Enforce(handlers.GetLatestPreflightResultsForSequenceZero)) // TODO: this needs the app id
 
 	sessionAuthRouter.Path("/api/v1/app/{appSlug}/sequence/{sequence}/deploy").Methods("POST").
 		HandlerFunc(policy.AppDownstreamWrite.Enforce(handlers.DeployAppVersion))

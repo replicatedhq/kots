@@ -345,13 +345,13 @@ func deploymentResource(deploymentName, serviceAccountName, configChecksum, name
 			Replicas: &replicas,
 			Selector: &metav1.LabelSelector{
 				MatchLabels: map[string]string{
-					"app": "dex",
+					"app": "kotsadm-dex",
 				},
 			},
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
 					Labels: map[string]string{
-						"app": "dex",
+						"app": "kotsadm-dex",
 					},
 					Annotations: map[string]string{
 						"kots.io/dex-secret-checksum": configChecksum,
@@ -505,7 +505,7 @@ func serviceResource(serviceName string, nodePortConfig *ingresstypes.NodePortCo
 		Spec: corev1.ServiceSpec{
 			Type: serviceType,
 			Selector: map[string]string{
-				"app": "dex",
+				"app": "kotsadm-dex",
 			},
 			Ports: []corev1.ServicePort{
 				port,

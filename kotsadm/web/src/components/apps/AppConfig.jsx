@@ -169,7 +169,7 @@ class AppConfig extends Component {
         if (fromLicenseFlow) {
           const hasPreflight = this.state.app?.hasPreflight;
           if (hasPreflight) {
-            history.replace("/preflight");
+            history.replace(`/${slug}/preflight`);
           } else {
             if (this.props.refetchAppsList) {
               await this.props.refetchAppsList();

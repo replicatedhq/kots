@@ -260,7 +260,7 @@ class UploadAirgapBundle extends React.Component {
           if (isConfigurable) {
             this.props.history.replace(`/${slug}/config`);
           } else if (hasPreflight) {
-            this.props.history.replace("/preflight");
+            this.props.history.replace(`/${slug}/preflight`);
           } else {
             this.props.history.replace(`/app/${slug}`);
           }
@@ -326,7 +326,7 @@ class UploadAirgapBundle extends React.Component {
     if (app?.isConfigurable) {
       this.props.history.replace(`/${app.slug}/config`);
     } else if (app?.hasPreflight) {
-      this.props.history.replace(`/preflight`);
+      this.props.history.replace(`/${app.slug}/preflight`);
     } else {
       this.props.history.replace(`/app/${app.slug}`);
     }
