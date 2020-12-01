@@ -205,9 +205,8 @@ func Start() {
 		HandlerFunc(policy.AppCreate.Enforce(handlers.ExchangePlatformLicense))
 	sessionAuthRouter.Path("/api/v1/license/resume").Methods("PUT").
 		HandlerFunc(policy.AppCreate.Enforce(handlers.ResumeInstallOnline))
-
 	sessionAuthRouter.Path("/api/v1/app/online/status").Methods("GET").
-		HandlerFunc(policy.AppRead.Enforce(handlers.GetOnlineInstallStatus))
+		HandlerFunc(policy.AppCreate.Enforce(handlers.GetOnlineInstallStatus))
 
 	sessionAuthRouter.Path("/api/v1/registry").Methods("GET").
 		HandlerFunc(policy.RegistryRead.Enforce(handlers.GetKotsadmRegistry))
