@@ -13,6 +13,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/docker/registry"
 	"github.com/replicatedhq/kots/pkg/identity"
 	"github.com/replicatedhq/kots/pkg/ingress"
+	ingresstypes "github.com/replicatedhq/kots/pkg/ingress/types"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/kotsadm/types"
 	"github.com/replicatedhq/kots/pkg/logger"
@@ -440,7 +441,11 @@ func ensureKotsadm(deployOptions types.DeployOptions, clientset *kubernetes.Clie
 			log.ChildActionWithSpinner("Deploying the Identity Service")
 
 			deployOptions.IdentityConfig.DisablePasswordAuth = true
-			deployOptions.IdentityConfig.IngressConfig.Enabled = true
+			if deployOptions.IdentityConfig.IngressConfig == (ingresstypes.Config{}) {
+				deployOptions.IdentityConfig.IngressConfig.Enabled = false
+			} else {
+				deployOptions.IdentityConfig.IngressConfig.Enabled = true
+			}
 
 			if err := identity.SetConfig(ctx, deployOptions.Namespace, deployOptions.IdentityConfig); err != nil {
 				return errors.Wrap(err, "failed to set identity config")

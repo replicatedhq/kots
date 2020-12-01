@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"strings"
 	"time"
 
 	oidc "github.com/coreos/go-oidc"
@@ -292,7 +293,11 @@ func OIDCLoginCallback(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// TODO: support tls?
+	redirectURL := identityConfig.AdminConsoleAddress
+	if redirectURL == "" && ingressConfig.Enabled {
+		redirectURL = ingress.GetAddress(*ingressConfig)
+	}
+
 	expire := time.Now().Add(30 * time.Minute)
 	cookie := http.Cookie{
 		Name:    "token",
@@ -300,7 +305,11 @@ func OIDCLoginCallback(w http.ResponseWriter, r *http.Request) {
 		Expires: expire,
 		Path:    "/",
 	}
-	http.SetCookie(w, &cookie)
 
-	http.Redirect(w, r, ingress.GetAddress(*ingressConfig), http.StatusSeeOther)
+	if strings.HasPrefix(redirectURL, "https") {
+		cookie.Secure = true
+	}
+
+	http.SetCookie(w, &cookie)
+	http.Redirect(w, r, redirectURL, http.StatusSeeOther)
 }

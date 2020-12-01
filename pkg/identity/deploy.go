@@ -43,6 +43,10 @@ var (
 )
 
 func Deploy(ctx context.Context, clientset kubernetes.Interface, namespace string, identityConfig identitytypes.Config, ingressConfig ingresstypes.Config, registryOptions *kotsadmtypes.KotsadmOptions) error {
+	if err := identityConfig.Validate(ingressConfig); err != nil {
+		return errors.Wrap(err, "invalid identity config")
+	}
+
 	if err := ensureServiceAccount(ctx, clientset, namespace); err != nil {
 		return errors.Wrap(err, "failed to ensure service account")
 	}
@@ -73,6 +77,9 @@ func Deploy(ctx context.Context, clientset kubernetes.Interface, namespace strin
 }
 
 func Configure(ctx context.Context, clientset kubernetes.Interface, namespace string, identityConfig identitytypes.Config, ingressConfig ingresstypes.Config) error {
+	if err := identityConfig.Validate(ingressConfig); err != nil {
+		return errors.Wrap(err, "invalid identity config")
+	}
 	marshalledDexConfig, err := getDexConfig(ctx, clientset, namespace, identityConfig, ingressConfig)
 	if err != nil {
 		return errors.Wrap(err, "failed to marshal dex config")
@@ -155,13 +162,18 @@ func getDexConfig(ctx context.Context, clientset kubernetes.Interface, namespace
 		return nil, errors.Wrap(err, "failed to get dex postgres password")
 	}
 
+	kotsadmAddress := identityConfig.AdminConsoleAddress
+	if kotsadmAddress == "" && ingressConfig.Enabled {
+		kotsadmAddress = ingress.GetAddress(ingressConfig)
+	}
+
 	staticClients := existingConfig.StaticClients
 	kotsadmClient := dexstorage.Client{
 		ID:     "kotsadm",
 		Name:   "kotsadm",
 		Secret: ksuid.New().String(),
 		RedirectURIs: []string{
-			fmt.Sprintf("%s/api/v1/oidc/login/callback", ingress.GetAddress(ingressConfig)),
+			fmt.Sprintf("%s/api/v1/oidc/login/callback", kotsadmAddress),
 		},
 	}
 	foundKotsClient := false
@@ -180,7 +192,7 @@ func getDexConfig(ctx context.Context, clientset kubernetes.Interface, namespace
 			Level:  "debug",
 			Format: "text",
 		},
-		Issuer: DexIssuerURL(identityConfig.IngressConfig),
+		Issuer: DexIssuerURL(identityConfig),
 		Storage: dextypes.Storage{
 			Type: "postgres",
 			Config: dextypes.Postgres{
@@ -221,7 +233,7 @@ func getDexConfig(ctx context.Context, clientset kubernetes.Interface, namespace
 
 	buf := bytes.NewBuffer(nil)
 	t, err := template.New("kotsadm-dex").Funcs(template.FuncMap{
-		"OIDCIdentityCallbackURL": func() string { return DexCallbackURL(identityConfig.IngressConfig) },
+		"OIDCIdentityCallbackURL": func() string { return DexCallbackURL(identityConfig) },
 	}).Parse(string(marshalledConfig))
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to parse dex config for templating")

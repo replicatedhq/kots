@@ -9,6 +9,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/identity"
 	identitytypes "github.com/replicatedhq/kots/pkg/identity/types"
 	ingress "github.com/replicatedhq/kots/pkg/ingress"
+	ingresstypes "github.com/replicatedhq/kots/pkg/ingress/types"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/spf13/cobra"
@@ -83,7 +84,12 @@ func IdentityServiceInstallCmd() *cobra.Command {
 
 			identityConfig.Enabled = true
 			identityConfig.DisablePasswordAuth = true
-			identityConfig.IngressConfig.Enabled = true
+
+			if identityConfig.IngressConfig == (ingresstypes.Config{}) {
+				identityConfig.IngressConfig.Enabled = false
+			} else {
+				identityConfig.IngressConfig.Enabled = true
+			}
 
 			if err := identity.SetConfig(cmd.Context(), namespace, identityConfig); err != nil {
 				return errors.Wrap(err, "failed to set identity config")
@@ -158,7 +164,12 @@ func IdentityServiceConfigureCmd() *cobra.Command {
 
 			identityConfig.Enabled = true
 			identityConfig.DisablePasswordAuth = true
-			identityConfig.IngressConfig.Enabled = true
+
+			if identityConfig.IngressConfig == (ingresstypes.Config{}) {
+				identityConfig.IngressConfig.Enabled = false
+			} else {
+				identityConfig.IngressConfig.Enabled = true
+			}
 
 			if err := identity.SetConfig(cmd.Context(), namespace, identityConfig); err != nil {
 				return errors.Wrap(err, "failed to set identity config")
@@ -299,7 +310,7 @@ func IdentityServiceOIDCCallbackURLCmd() *cobra.Command {
 				return errors.Wrap(err, "failed to get identity config")
 			}
 
-			fmt.Fprintln(cmd.OutOrStdout(), identity.DexCallbackURL(identityConfig.IngressConfig))
+			fmt.Fprintln(cmd.OutOrStdout(), identity.DexCallbackURL(*identityConfig))
 
 			return nil
 		},
