@@ -43,6 +43,10 @@ var (
 )
 
 func Deploy(ctx context.Context, clientset kubernetes.Interface, namespace string, identityConfig identitytypes.Config, ingressConfig ingresstypes.Config, registryOptions *kotsadmtypes.KotsadmOptions) error {
+	if err := identityConfig.Validate(ingressConfig); err != nil {
+		return errors.Wrap(err, "invalid identity config")
+	}
+
 	if err := ensureServiceAccount(ctx, clientset, namespace); err != nil {
 		return errors.Wrap(err, "failed to ensure service account")
 	}
@@ -73,6 +77,9 @@ func Deploy(ctx context.Context, clientset kubernetes.Interface, namespace strin
 }
 
 func Configure(ctx context.Context, clientset kubernetes.Interface, namespace string, identityConfig identitytypes.Config, ingressConfig ingresstypes.Config) error {
+	if err := identityConfig.Validate(ingressConfig); err != nil {
+		return errors.Wrap(err, "invalid identity config")
+	}
 	marshalledDexConfig, err := getDexConfig(ctx, clientset, namespace, identityConfig, ingressConfig)
 	if err != nil {
 		return errors.Wrap(err, "failed to marshal dex config")
