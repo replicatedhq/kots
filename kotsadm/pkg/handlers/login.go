@@ -257,17 +257,17 @@ func OIDCLoginCallback(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	roles := []string{}
-	if identityConfig.EnableAdvancedRBAC {
-		roles = session.GetSessionRolesFromRBAC(claims.Groups, identityConfig.RBAC.Groups)
-	} else {
-		groups := rbac.DefaultGroups
-		if len(identityConfig.RestrictedGroups) > 0 {
-			groups = identity.RestrictedGroupsToRBACGroups(identityConfig.RestrictedGroups)
+	groups := rbac.DefaultGroups
+	if len(identityConfig.Groups) > 0 {
+		groups = identityConfig.Groups
+	}
+	roles := session.GetSessionRolesFromRBAC(claims.Groups, groups)
 
-			// TODO: login should fail here if user is not a member of a restricted group
-		}
-		roles = session.GetSessionRolesFromRBAC(claims.Groups, groups)
+	if len(roles) == 0 {
+		loginResponse := LoginResponse{}
+		loginResponse.Error = "user must be a part of at least 1 group with roles"
+		JSON(w, http.StatusUnauthorized, loginResponse)
+		return
 	}
 
 	createdSession, err := store.GetStore().CreateSession(user, &idToken.Expiry, roles)

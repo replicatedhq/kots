@@ -53,13 +53,23 @@ func init() {
 	}
 }
 
-func CheckAccess(ctx context.Context, action, resource string, roles []string) (bool, error) {
+func CheckAccess(ctx context.Context, action, resource, appSlug string, roles []string) (bool, error) {
+	allowRolePolicies := DefaultAllowRolePolicies
+	denyRolePolicies := DefaultDenyRolePolicies
+	if appSlug != "" {
+		appAdminRole := GetAppAdminRole(appSlug)
+		allowRolePolicies[appAdminRole.ID] = appAdminRole.Allow
+		denyRolePolicies[appAdminRole.ID] = appAdminRole.Deny
+		appReadonlyRole := GetAppReadonlyRole(appSlug)
+		allowRolePolicies[appReadonlyRole.ID] = appReadonlyRole.Allow
+		denyRolePolicies[appReadonlyRole.ID] = appReadonlyRole.Deny
+	}
 	i := map[string]interface{}{
 		"action":            action,
 		"resource":          resource,
 		"roles":             roles,
-		"allowRolePolicies": DefaultAllowRolePolicies,
-		"denyRolePolicies":  DefaultDenyRolePolicies,
+		"allowRolePolicies": allowRolePolicies,
+		"denyRolePolicies":  denyRolePolicies,
 	}
 	return regoEval(ctx, i)
 }

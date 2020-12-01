@@ -108,6 +108,22 @@ func Test_regoEval(t *testing.T) {
 			want: true,
 		},
 		{
+			name: "app supportbundle",
+			args: args{
+				action:   "write",
+				resource: "app.myapp.supportbundle.my-bundle",
+				roles:    []string{"myapp.support"},
+				allowRolePolicies: map[string][]types.Policy{
+					"myapp.support": {
+						{Action: "**", Resource: "supportbundle.*"},
+						{Action: "**", Resource: "**.supportbundle.*"},
+					},
+					ClusterAdminRole.ID: ClusterAdminRole.Allow,
+				},
+			},
+			want: true,
+		},
+		{
 			name: "not supportbundle",
 			args: args{
 				action:   "write",

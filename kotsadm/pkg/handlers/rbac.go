@@ -32,7 +32,7 @@ func (e RBACError) Abort(w http.ResponseWriter) error {
 	return err
 }
 
-func CheckAccessOrAbort(w http.ResponseWriter, r *http.Request, action, resource string) error {
+func CheckAccessOrAbort(w http.ResponseWriter, r *http.Request, action, resource, appSlug string) error {
 	rbacErr := NewRBACError(resource)
 
 	val := r.Context().Value(sessionKey{})
@@ -45,7 +45,7 @@ func CheckAccessOrAbort(w http.ResponseWriter, r *http.Request, action, resource
 		return nil
 	}
 
-	allow, err := rbac.CheckAccess(r.Context(), action, resource, sess.Roles)
+	allow, err := rbac.CheckAccess(r.Context(), action, resource, appSlug, sess.Roles)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		return err

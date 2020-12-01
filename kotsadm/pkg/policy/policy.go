@@ -35,13 +35,13 @@ func Must(p *Policy, err error) *Policy {
 
 func (p *Policy) Enforce(handler http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		action, resource, err := p.execute(r)
+		action, resource, appSlug, err := p.execute(r)
 		if err != nil {
 			logger.Error(errors.Wrapf(err, "failed to execute policy template %q", p.resource))
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
-		if err := handlers.CheckAccessOrAbort(w, r, action, resource); err != nil {
+		if err := handlers.CheckAccessOrAbort(w, r, action, resource, appSlug); err != nil {
 			logger.Error(err)
 			return
 		}
@@ -49,12 +49,12 @@ func (p *Policy) Enforce(handler http.HandlerFunc) http.HandlerFunc {
 	}
 }
 
-func (p *Policy) execute(r *http.Request) (action, resource string, err error) {
+func (p *Policy) execute(r *http.Request) (action, resource, appSlug string, err error) {
 	vars := mux.Vars(r)
 	for _, fn := range p.varsGetterFns {
 		additionalVars, err := fn(vars)
 		if err != nil {
-			return action, resource, err
+			return action, resource, "", err
 		}
 		for key, val := range additionalVars {
 			vars[key] = val
@@ -62,5 +62,6 @@ func (p *Policy) execute(r *http.Request) (action, resource string, err error) {
 	}
 	var buf bytes.Buffer
 	err = p.resourceTemplate.Execute(&buf, vars)
-	return p.action, buf.String(), err
+	appSlug, _ = vars["appSlug"]
+	return p.action, buf.String(), appSlug, err
 }

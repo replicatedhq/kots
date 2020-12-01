@@ -77,6 +77,8 @@ type ResponseCluster struct {
 }
 
 func ListApps(w http.ResponseWriter, r *http.Request) {
+	// TODO: rbac for individual apps
+
 	apps, err := store.GetStore().ListInstalledApps()
 	if err != nil {
 		logger.Error(err)
