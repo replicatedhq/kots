@@ -20,6 +20,14 @@ func IngressFromConfig(ingressConfig types.IngressConfig, name string, serviceNa
 		}
 		ingressTLS = append(ingressTLS, tls)
 	}
+
+	annotations := map[string]string{
+		"nginx.ingress.kubernetes.io/proxy-body-size": "100m",
+	}
+	for k, v := range ingressConfig.Annotations {
+		annotations[k] = v
+	}
+
 	return &extensionsv1beta1.Ingress{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "v1beta1",
@@ -28,7 +36,7 @@ func IngressFromConfig(ingressConfig types.IngressConfig, name string, serviceNa
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        name,
 			Labels:      kotsadmtypes.GetKotsadmLabels(additionalLabels),
-			Annotations: ingressConfig.Annotations,
+			Annotations: annotations,
 		},
 		Spec: extensionsv1beta1.IngressSpec{
 			Rules: []extensionsv1beta1.IngressRule{

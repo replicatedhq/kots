@@ -162,6 +162,8 @@ func Start() {
 		HandlerFunc(policy.AppDownstreamWrite.Enforce(handlers.AirgapBundleProgress))
 	sessionAuthRouter.Path("/api/v1/app/{appSlug}/airgap/bundleexists/{identifier}/{totalChunks}").Methods("GET").
 		HandlerFunc(policy.AppDownstreamWrite.Enforce(handlers.AirgapBundleExists))
+	sessionAuthRouter.Path("/api/v1/app/{appSlug}/airgap/processbundle/{identifier}/{totalChunks}").Methods("POST").
+		HandlerFunc(policy.AppDownstreamWrite.Enforce(handlers.CreateAppFromAirgap))
 	sessionAuthRouter.Path("/api/v1/app/{appSlug}/airgap/processbundle/{identifier}/{totalChunks}").Methods("PUT").
 		HandlerFunc(policy.AppDownstreamWrite.Enforce(handlers.UpdateAppFromAirgap))
 	sessionAuthRouter.Path("/api/v1/app/{appSlug}/airgap/chunk").Methods("GET").
