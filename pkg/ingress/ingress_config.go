@@ -1,7 +1,7 @@
 package ingress
 
 import (
-	"github.com/replicatedhq/kots/pkg/ingress/types"
+	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	kotsadmtypes "github.com/replicatedhq/kots/pkg/kotsadm/types"
 	extensions "k8s.io/api/extensions/v1beta1"
 	extensionsv1beta1 "k8s.io/api/extensions/v1beta1"
@@ -9,7 +9,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
-func IngressFromConfig(ingressConfig types.IngressConfig, name string, serviceName string, servicePort int, additionalLabels map[string]string) *extensionsv1beta1.Ingress {
+func IngressFromConfig(ingressConfig kotsv1beta1.IngressConfig, name string, serviceName string, servicePort int, additionalLabels map[string]string) *extensionsv1beta1.Ingress {
 	ingressTLS := []extensions.IngressTLS{}
 	if ingressConfig.TLSSecretName != "" {
 		tls := extensions.IngressTLS{

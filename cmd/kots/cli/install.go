@@ -14,13 +14,12 @@ import (
 	"time"
 
 	cursor "github.com/ahmetalpbalkan/go-cursor"
-	ghodssyaml "github.com/ghodss/yaml"
 	"github.com/manifoldco/promptui"
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	"github.com/replicatedhq/kots/pkg/auth"
-	identitytypes "github.com/replicatedhq/kots/pkg/identity/types"
-	ingresstypes "github.com/replicatedhq/kots/pkg/ingress/types"
+	"github.com/replicatedhq/kots/pkg/identity"
+	ingress "github.com/replicatedhq/kots/pkg/ingress"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/kotsadm"
 	"github.com/replicatedhq/kots/pkg/kotsadm/types"
@@ -135,18 +134,20 @@ func InstallCmd() *cobra.Command {
 				return errors.Wrap(err, "failed to get registry config")
 			}
 
-			ingressConfig, err := getIngressConfig(v)
+			ingressResource, err := getIngressResource(v)
 			if err != nil {
-				return errors.Wrap(err, "failed to get ingress config")
+				return errors.Wrap(err, "failed to get ingress spec")
 			}
 
-			identityConfig, err := getIdentityConfig(v)
+			identityResource, err := getIdentityResource(v)
 			if err != nil {
-				return errors.Wrap(err, "failed to get identity config")
+				return errors.Wrap(err, "failed to get identity spec")
 			}
 
-			if identityConfig.Enabled && !ingressConfig.Enabled {
-				return errors.New("KOTS identity service requires ingress to be enabled")
+			if identityResource.Spec.Enabled {
+				if err := identity.ConfigValidate(identityResource.Spec, ingressResource.Spec); err != nil {
+					return errors.Wrap(err, "failed to validate identity config")
+				}
 			}
 
 			deployOptions := kotsadmtypes.DeployOptions{
@@ -154,8 +155,6 @@ func InstallCmd() *cobra.Command {
 				KubernetesConfigFlags:     kubernetesConfigFlags,
 				Context:                   v.GetString("context"),
 				SharedPassword:            sharedPassword,
-				ServiceType:               v.GetString("service-type"),
-				NodePort:                  v.GetInt32("node-port"),
 				ApplicationMetadata:       applicationMetadata,
 				License:                   license,
 				ConfigValues:              configValues,
@@ -172,8 +171,8 @@ func InstallCmd() *cobra.Command {
 
 				KotsadmOptions: *registryConfig,
 
-				IdentityConfig: *identityConfig,
-				IngressConfig:  *ingressConfig,
+				IdentityConfig: *identityResource,
+				IngressConfig:  *ingressResource,
 			}
 
 			timeout, err := time.ParseDuration(v.GetString("wait-duration"))
@@ -335,8 +334,6 @@ func InstallCmd() *cobra.Command {
 	}
 
 	cmd.Flags().String("shared-password", "", "shared password to apply")
-	cmd.Flags().String("service-type", "ClusterIP", "the service type to create")
-	cmd.Flags().Int32("node-port", 0, "the nodeport to assign to the service, when service-type is set to NodePort")
 	cmd.Flags().String("name", "", "name of the application to use in the Admin Console")
 	cmd.Flags().String("local-path", "", "specify a local-path to test the behavior of rendering a replicated app locally (only supported on replicated app types currently)")
 	cmd.Flags().String("license-file", "", "path to a license file to use when download a replicated app")
@@ -364,10 +361,6 @@ func InstallCmd() *cobra.Command {
 	cmd.Flags().MarkHidden("image-namespace")
 	cmd.Flags().MarkHidden("registry-endpoint")
 
-	// flags that are not fully supported or generally available yet
-	cmd.Flags().MarkHidden("service-type")
-	cmd.Flags().MarkHidden("node-port")
-
 	// options for the alpha feature of using a reg instead of s3 for storage
 	cmd.Flags().String("storage-base-uri", "", "an s3 or oci-registry uri to use for kots persistent storage in the cluster")
 	cmd.Flags().Bool("with-minio", true, "when set, kots install will deploy a local minio instance for storage")
@@ -376,13 +369,13 @@ func InstallCmd() *cobra.Command {
 
 	cmd.Flags().Bool("enable-identity-service", false, "when set, the KOTS identity service will be enabled")
 	cmd.Flags().MarkHidden("enable-identity-service")
-	cmd.Flags().String("identity-config", "", "path to a yaml file containing the KOTS identity service configuration")
-	cmd.Flags().MarkHidden("identity-config")
+	cmd.Flags().String("identity-spec", "", "path to a kots.Identity resource file")
+	cmd.Flags().MarkHidden("identity-spec")
 
 	cmd.Flags().Bool("enable-ingress", false, "when set, ingress will be enabled for the KOTS Admin Console")
 	cmd.Flags().MarkHidden("enable-ingress")
-	cmd.Flags().String("ingress-config", "", "path to a yaml file containing the KOTS Admin Console ingress configuration")
-	cmd.Flags().MarkHidden("ingress-config")
+	cmd.Flags().String("ingress-spec", "", "path to a kots.Ingress resource file")
+	cmd.Flags().MarkHidden("ingress-spec")
 
 	return cmd
 }
@@ -477,52 +470,58 @@ func uploadAirgapArchive(deployOptions kotsadmtypes.DeployOptions, clientset *ku
 	return false, nil
 }
 
-func getIngressConfig(v *viper.Viper) (*ingresstypes.Config, error) {
-	ingressConfigPath := v.GetString("ingress-config")
-	enableIngress := v.GetBool("enable-ingress") || ingressConfigPath != ""
-
-	ingressConfig := ingresstypes.Config{}
+func getIngressResource(v *viper.Viper) (*kotsv1beta1.Ingress, error) {
+	ingressSpecPath := v.GetString("ingress-spec")
+	enableIngress := v.GetBool("enable-ingress") || ingressSpecPath != ""
 
 	if !enableIngress {
-		return &ingressConfig, nil
+		return &kotsv1beta1.Ingress{}, nil
 	}
 
-	ingressConfig.Enabled = true
-
-	if ingressConfigPath != "" {
-		content, err := ioutil.ReadFile(ingressConfigPath)
+	ingressResource := kotsv1beta1.Ingress{}
+	if ingressSpecPath != "" {
+		content, err := ioutil.ReadFile(ingressSpecPath)
 		if err != nil {
-			return nil, errors.Wrap(err, "failed to read ingress config file")
+			return nil, errors.Wrap(err, "failed to read ingress service spec file")
 		}
-		if err := ghodssyaml.Unmarshal(content, &ingressConfig); err != nil {
-			return nil, errors.Wrap(err, "failed to unmarshal ingress config yaml")
+
+		s, err := ingress.DecodeSpec(content)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to decoce ingress service spec")
 		}
+		ingressResource = *s
 	}
-	return &ingressConfig, nil
+
+	ingressResource.Spec.Enabled = true
+
+	return &ingressResource, nil
 }
 
-func getIdentityConfig(v *viper.Viper) (*identitytypes.Config, error) {
-	identityConfigPath := v.GetString("identity-config")
-	enableIdentityService := v.GetBool("enable-identity-service") || identityConfigPath != ""
-
-	identityConfig := identitytypes.Config{}
+func getIdentityResource(v *viper.Viper) (*kotsv1beta1.Identity, error) {
+	identitySpecPath := v.GetString("identity-spec")
+	enableIdentityService := v.GetBool("enable-identity-service") || identitySpecPath != ""
 
 	if !enableIdentityService {
-		return &identityConfig, nil
+		return &kotsv1beta1.Identity{}, nil
 	}
 
-	identityConfig.Enabled = true
-
-	if identityConfigPath != "" {
-		content, err := ioutil.ReadFile(identityConfigPath)
+	identityResource := kotsv1beta1.Identity{}
+	if identitySpecPath != "" {
+		content, err := ioutil.ReadFile(identitySpecPath)
 		if err != nil {
-			return nil, errors.Wrap(err, "failed to read identity service config file")
+			return nil, errors.Wrap(err, "failed to read identity service spec file")
 		}
-		if err := ghodssyaml.Unmarshal(content, &identityConfig); err != nil {
-			return nil, errors.Wrap(err, "failed to unmarshal identity service config yaml")
+
+		s, err := identity.DecodeSpec(content)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to decoce identity service spec")
 		}
+		identityResource = *s
 	}
-	return &identityConfig, nil
+
+	identityResource.Spec.Enabled = true
+
+	return &identityResource, nil
 }
 
 func registryFlags(flagset *pflag.FlagSet) {

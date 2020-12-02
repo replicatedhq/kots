@@ -11,8 +11,8 @@ import (
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/kotsadm/pkg/session/types"
 	"github.com/replicatedhq/kots/kotsadm/pkg/store"
-	"github.com/replicatedhq/kots/pkg/rbac"
-	rbactypes "github.com/replicatedhq/kots/pkg/rbac/types"
+	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
+	"github.com/replicatedhq/kots/pkg/identity"
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
@@ -66,7 +66,7 @@ func Parse(signedToken string) (*types.Session, error) {
 			CreatedAt: time.Now(),
 			ExpiresAt: time.Now().Add(time.Minute),
 			// TODO: super user permissions
-			Roles:   GetSessionRolesFromRBAC(nil, rbac.DefaultGroups),
+			Roles:   GetSessionRolesFromRBAC(nil, identity.DefaultGroups),
 			HasRBAC: true,
 		}
 
@@ -105,10 +105,10 @@ func SignJWT(s *types.Session) (string, error) {
 	return signedToken, nil
 }
 
-func GetSessionRolesFromRBAC(sessionGroupIDs []string, groups []rbactypes.Group) []string {
+func GetSessionRolesFromRBAC(sessionGroupIDs []string, groups []kotsv1beta1.IdentityGroup) []string {
 	var sessionRolesIDs []string
 	for _, group := range groups {
-		if group.ID == rbac.WildcardGroupID {
+		if group.ID == identity.WildcardGroupID {
 			sessionRolesIDs = append(sessionRolesIDs, group.RoleIDs...)
 			continue
 		}

@@ -1,9 +1,5 @@
 package types
 
-type Group struct {
-	ID      string   `json:"id" yaml:"id"`
-	RoleIDs []string `json:"roleIds" yaml:"roleIds"`
-}
 type Role struct {
 	ID          string   `json:"id" yaml:"id"`
 	Name        string   `json:"name,omitempty" yaml:"name,omitempty"`

@@ -3,11 +3,10 @@ package cli
 import (
 	"io/ioutil"
 
-	ghodssyaml "github.com/ghodss/yaml"
 	"github.com/pkg/errors"
+	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	"github.com/replicatedhq/kots/pkg/identity"
 	"github.com/replicatedhq/kots/pkg/ingress"
-	ingresstypes "github.com/replicatedhq/kots/pkg/ingress/types"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/kotsadm"
 	"github.com/replicatedhq/kots/pkg/logger"
@@ -52,41 +51,50 @@ func IngressInstallCmd() *cobra.Command {
 				return err
 			}
 
-			ingressConfig := ingresstypes.Config{}
-			if ingressConfigPath := v.GetString("ingress-config"); ingressConfigPath != "" {
-				content, err := ioutil.ReadFile(ingressConfigPath)
+			ingressResource := kotsv1beta1.Ingress{}
+			if ingressSpecPath := v.GetString("ingress-spec"); ingressSpecPath != "" {
+				content, err := ioutil.ReadFile(ingressSpecPath)
 				if err != nil {
-					return errors.Wrap(err, "failed to read ingress config file")
+					return errors.Wrap(err, "failed to read ingress service spec file")
 				}
-				if err := ghodssyaml.Unmarshal(content, &ingressConfig); err != nil {
-					return errors.Wrap(err, "failed to unmarshal ingress config yaml")
+
+				s, err := ingress.DecodeSpec(content)
+				if err != nil {
+					return errors.Wrap(err, "failed to decoce ingress service spec")
 				}
+				ingressResource = *s
 			}
 
 			log.ChildActionWithSpinner("Enabling ingress for the Admin Console")
 
-			ingressConfig.Enabled = true
+			ingressResource.Spec.Enabled = true
 
-			if err := ingress.SetConfig(cmd.Context(), namespace, ingressConfig); err != nil {
+			identityResource, err := identity.GetConfig(cmd.Context(), namespace)
+			if err != nil {
+				return errors.Wrap(err, "failed to get identity config")
+			}
+
+			if identityResource.Spec.Enabled {
+				if err := identity.ConfigValidate(identityResource.Spec, ingressResource.Spec); err != nil {
+					return errors.Wrap(err, "failed to validate identity config")
+				}
+			}
+
+			if err := ingress.SetConfig(cmd.Context(), namespace, ingressResource); err != nil {
 				return errors.Wrap(err, "failed to set identity config")
 			}
 
-			if err := kotsadm.EnsureIngress(cmd.Context(), namespace, clientset, ingressConfig); err != nil {
+			if err := kotsadm.EnsureIngress(cmd.Context(), namespace, clientset, ingressResource.Spec); err != nil {
 				return errors.Wrap(err, "failed to ensure ingress")
 			}
 
 			log.FinishSpinner()
 
-			identityConfig, err := identity.GetConfig(cmd.Context(), namespace)
-			if err != nil {
-				return errors.Wrap(err, "failed to get identity config")
-			}
-
-			if identityConfig.Enabled {
+			if identityResource.Spec.Enabled {
 				log.ChildActionWithSpinner("Configuring the Identity Service")
 
 				// we have to update the dex secret if kotsadm ingress is changing because it relies on the redirect uri
-				if err := identity.Configure(cmd.Context(), clientset, namespace, *identityConfig, ingressConfig); err != nil {
+				if err := identity.Configure(cmd.Context(), clientset, namespace, *identityResource, ingressResource); err != nil {
 					return errors.Wrap(err, "failed to patch identity service")
 				}
 
@@ -97,7 +105,7 @@ func IngressInstallCmd() *cobra.Command {
 		},
 	}
 
-	cmd.Flags().String("ingress-config", "", "path to a yaml file containing the KOTS ingress configuration")
+	cmd.Flags().String("ingress-spec", "", "path to a kots.Ingress resource file")
 
 	return cmd
 }
@@ -126,25 +134,25 @@ func IngressUninstallCmd() *cobra.Command {
 				return err
 			}
 
-			identityConfig, err := identity.GetConfig(cmd.Context(), namespace)
-			if err != nil {
-				return errors.Wrap(err, "failed to get identity config")
-			}
-
-			if identityConfig.Enabled {
-				return errors.New("identity service is enabled")
-			}
-
 			log.ChildActionWithSpinner("Updating the Admin Console ingress configuration")
 
-			ingressConfig, err := ingress.GetConfig(cmd.Context(), namespace)
+			ingressResource, err := ingress.GetConfig(cmd.Context(), namespace)
 			if err != nil {
 				return errors.Wrap(err, "failed to get ingress config")
 			}
 
-			ingressConfig.Enabled = false
+			ingressResource.Spec.Enabled = false
 
-			if err := ingress.SetConfig(cmd.Context(), namespace, *ingressConfig); err != nil {
+			identityResource, err := identity.GetConfig(cmd.Context(), namespace)
+			if err != nil {
+				return errors.Wrap(err, "failed to get identity config")
+			}
+
+			if err := identity.ConfigValidate(identityResource.Spec, ingressResource.Spec); err != nil {
+				return errors.Wrap(err, "failed to validate identity config")
+			}
+
+			if err := ingress.SetConfig(cmd.Context(), namespace, *ingressResource); err != nil {
 				return errors.Wrap(err, "failed to set ingress config")
 			}
 
@@ -162,7 +170,7 @@ func IngressUninstallCmd() *cobra.Command {
 		},
 	}
 
-	cmd.Flags().String("ingress-config", "", "path to a yaml file containing the KOTS ingress configuration")
+	cmd.Flags().String("ingress-spec", "", "path to a kots.Ingress resource file")
 
 	return cmd
 }

@@ -4,9 +4,8 @@ import (
 	"context"
 
 	"github.com/pkg/errors"
-	"github.com/replicatedhq/kots/pkg/ingress/types"
+	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	kotsadmtypes "github.com/replicatedhq/kots/pkg/kotsadm/types"
-	"gopkg.in/yaml.v2"
 	corev1 "k8s.io/api/core/v1"
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -18,7 +17,7 @@ var (
 	ConfigMapName = "kotsadm-ingress-config"
 )
 
-func GetConfig(ctx context.Context, namespace string) (*types.Config, error) {
+func GetConfig(ctx context.Context, namespace string) (*kotsv1beta1.Ingress, error) {
 	cfg, err := k8sconfig.GetConfig()
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get kubernetes config")
@@ -29,25 +28,23 @@ func GetConfig(ctx context.Context, namespace string) (*types.Config, error) {
 		return nil, errors.Wrap(err, "failed to get client set")
 	}
 
-	config := &types.Config{}
-
 	configMap, err := clientset.CoreV1().ConfigMaps(namespace).Get(ctx, ConfigMapName, metav1.GetOptions{})
 	if err != nil {
 		if kuberneteserrors.IsNotFound(err) {
-			return config, nil
+			return &kotsv1beta1.Ingress{}, nil
 		}
 		return nil, errors.Wrap(err, "failed to get config map")
 	}
 
-	err = yaml.Unmarshal([]byte(configMap.Data["config.yaml"]), &config)
+	spec, err := DecodeSpec([]byte(configMap.Data["ingress.yaml"]))
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to unmarshal config")
+		return nil, errors.Wrap(err, "failed to decode spec")
 	}
 
-	return config, err
+	return spec, err
 }
 
-func SetConfig(ctx context.Context, namespace string, config types.Config) error {
+func SetConfig(ctx context.Context, namespace string, spec kotsv1beta1.Ingress) error {
 	cfg, err := k8sconfig.GetConfig()
 	if err != nil {
 		return errors.Wrap(err, "failed to get kubernetes config")
@@ -58,7 +55,7 @@ func SetConfig(ctx context.Context, namespace string, config types.Config) error
 		return errors.Wrap(err, "failed to get client set")
 	}
 
-	configMap, err := ingressConfigResource(config)
+	configMap, err := ingressConfigResource(spec)
 	if err != nil {
 		return err
 	}
@@ -87,10 +84,10 @@ func SetConfig(ctx context.Context, namespace string, config types.Config) error
 	return nil
 }
 
-func ingressConfigResource(config types.Config) (*corev1.ConfigMap, error) {
-	data, err := yaml.Marshal(config)
+func ingressConfigResource(spec kotsv1beta1.Ingress) (*corev1.ConfigMap, error) {
+	data, err := EncodeSpec(spec)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to marshal config")
+		return nil, errors.Wrap(err, "failed to encode spec")
 	}
 	return &corev1.ConfigMap{
 		TypeMeta: metav1.TypeMeta{
@@ -102,7 +99,7 @@ func ingressConfigResource(config types.Config) (*corev1.ConfigMap, error) {
 			Labels: kotsadmtypes.GetKotsadmLabels(),
 		},
 		Data: map[string]string{
-			"config.yaml": string(data),
+			"ingress.yaml": string(data),
 		},
 	}, nil
 }

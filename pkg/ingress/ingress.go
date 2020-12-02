@@ -1,25 +1,55 @@
 package ingress
 
 import (
+	"bytes"
 	"net/url"
 	"strings"
 
-	"github.com/replicatedhq/kots/pkg/ingress/types"
+	"github.com/pkg/errors"
+	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
+	kotsscheme "github.com/replicatedhq/kots/kotskinds/client/kotsclientset/scheme"
+	serializer "k8s.io/apimachinery/pkg/runtime/serializer/json"
+	"k8s.io/client-go/kubernetes/scheme"
 )
 
-func GetAddress(config types.Config) string {
-	switch {
-	case config.Ingress != nil:
-		return getIngressConfigAddress(*config.Ingress)
+func init() {
+	kotsscheme.AddToScheme(scheme.Scheme)
+}
 
-	case config.NodePort != nil:
+func EncodeSpec(spec kotsv1beta1.Ingress) ([]byte, error) {
+	buf := bytes.NewBuffer(nil)
+	s := serializer.NewYAMLSerializer(serializer.DefaultMetaFactory, scheme.Scheme, scheme.Scheme)
+	err := s.Encode(&spec, buf)
+	return buf.Bytes(), err
+}
+
+func DecodeSpec(data []byte) (*kotsv1beta1.Ingress, error) {
+	decode := scheme.Codecs.UniversalDeserializer().Decode
+	decoded, _, err := decode(data, nil, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	spec, ok := decoded.(*kotsv1beta1.Ingress)
+	if !ok {
+		return nil, errors.Errorf("wrong type %T", spec)
+	}
+	return spec, nil
+}
+
+func GetAddress(ingressSpec kotsv1beta1.IngressSpec) string {
+	switch {
+	case ingressSpec.Ingress != nil:
+		return getIngressConfigAddress(*ingressSpec.Ingress)
+
+	case ingressSpec.NodePort != nil:
 		return "" // TODO
 	}
 
 	return ""
 }
 
-func getIngressConfigAddress(ingressConfig types.IngressConfig) string {
+func getIngressConfigAddress(ingressConfig kotsv1beta1.IngressConfig) string {
 	var u url.URL
 	if ingressConfig.TLSSecretName != "" {
 		u.Scheme = "https"

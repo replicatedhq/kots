@@ -4,18 +4,18 @@ import (
 	"context"
 
 	"github.com/pkg/errors"
+	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	"github.com/replicatedhq/kots/pkg/ingress"
-	ingresstypes "github.com/replicatedhq/kots/pkg/ingress/types"
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 )
 
-func EnsureIngress(ctx context.Context, namespace string, clientset *kubernetes.Clientset, ingressConfig ingresstypes.Config) error {
-	if ingressConfig.Ingress == nil {
+func EnsureIngress(ctx context.Context, namespace string, clientset *kubernetes.Clientset, ingressSpec kotsv1beta1.IngressSpec) error {
+	if !ingressSpec.Enabled || ingressSpec.Ingress == nil {
 		return DeleteIngress(ctx, namespace, clientset)
 	}
-	kotsadmIngress := kotsadmIngress(namespace, *ingressConfig.Ingress)
+	kotsadmIngress := kotsadmIngress(namespace, *ingressSpec.Ingress)
 	return ingress.EnsureIngress(ctx, clientset, namespace, kotsadmIngress)
 }
 
