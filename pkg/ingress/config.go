@@ -6,6 +6,7 @@ import (
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	kotsadmtypes "github.com/replicatedhq/kots/pkg/kotsadm/types"
+	"github.com/replicatedhq/kots/pkg/kotsutil"
 	corev1 "k8s.io/api/core/v1"
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -36,7 +37,7 @@ func GetConfig(ctx context.Context, namespace string) (*kotsv1beta1.IngressConfi
 		return nil, errors.Wrap(err, "failed to get config map")
 	}
 
-	ingressConfig, err := DecodeSpec([]byte(configMap.Data["ingress.yaml"]))
+	ingressConfig, err := kotsutil.LoadIngressConfigFromContents([]byte(configMap.Data["ingress.yaml"]))
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to decode ingress config")
 	}
@@ -85,7 +86,7 @@ func SetConfig(ctx context.Context, namespace string, ingressConfig kotsv1beta1.
 }
 
 func ingressConfigResource(ingressConfig kotsv1beta1.IngressConfig) (*corev1.ConfigMap, error) {
-	data, err := EncodeSpec(ingressConfig)
+	data, err := kotsutil.EncodeIngressConfig(ingressConfig)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to encode ingress config")
 	}

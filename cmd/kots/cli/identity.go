@@ -11,6 +11,7 @@ import (
 	ingress "github.com/replicatedhq/kots/pkg/ingress"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	kotsadmtypes "github.com/replicatedhq/kots/pkg/kotsadm/types"
+	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -69,7 +70,7 @@ func IdentityServiceInstallCmd() *cobra.Command {
 					return errors.Wrap(err, "failed to read identity service config file")
 				}
 
-				s, err := identity.DecodeSpec(content)
+				s, err := kotsutil.LoadIdentityConfigFromContents(content)
 				if err != nil {
 					return errors.Wrap(err, "failed to decoce identity service config")
 				}
@@ -133,7 +134,7 @@ func IdentityServiceConfigureCmd() *cobra.Command {
 					return errors.Wrap(err, "failed to read identity service config file")
 				}
 
-				s, err := identity.DecodeSpec(content)
+				s, err := kotsutil.LoadIdentityConfigFromContents(content)
 				if err != nil {
 					return errors.Wrap(err, "failed to decoce identity service config")
 				}

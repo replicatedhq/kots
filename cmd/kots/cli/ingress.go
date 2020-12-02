@@ -9,6 +9,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/ingress"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/kotsadm"
+	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -58,7 +59,7 @@ func IngressInstallCmd() *cobra.Command {
 					return errors.Wrap(err, "failed to read ingress service config file")
 				}
 
-				s, err := ingress.DecodeSpec(content)
+				s, err := kotsutil.LoadIngressConfigFromContents(content)
 				if err != nil {
 					return errors.Wrap(err, "failed to decoce ingress service config")
 				}

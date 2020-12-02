@@ -19,7 +19,6 @@ import (
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	"github.com/replicatedhq/kots/pkg/auth"
 	"github.com/replicatedhq/kots/pkg/identity"
-	ingress "github.com/replicatedhq/kots/pkg/ingress"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/kotsadm"
 	"github.com/replicatedhq/kots/pkg/kotsadm/types"
@@ -485,7 +484,7 @@ func getIngressConfig(v *viper.Viper) (*kotsv1beta1.IngressConfig, error) {
 			return nil, errors.Wrap(err, "failed to read ingress service config file")
 		}
 
-		s, err := ingress.DecodeSpec(content)
+		s, err := kotsutil.LoadIngressConfigFromContents(content)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to decoce ingress service config")
 		}
@@ -512,7 +511,7 @@ func getIdentityConfig(v *viper.Viper) (*kotsv1beta1.IdentityConfig, error) {
 			return nil, errors.Wrap(err, "failed to read identity service config file")
 		}
 
-		s, err := identity.DecodeSpec(content)
+		s, err := kotsutil.LoadIdentityConfigFromContents(content)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to decoce identity service config")
 		}

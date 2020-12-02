@@ -1,7 +1,6 @@
 package identity
 
 import (
-	"bytes"
 	"fmt"
 
 	"github.com/pkg/errors"
@@ -9,7 +8,6 @@ import (
 	kotsscheme "github.com/replicatedhq/kots/kotskinds/client/kotsclientset/scheme"
 	"github.com/replicatedhq/kots/pkg/ingress"
 	"github.com/replicatedhq/kots/pkg/rbac"
-	serializer "k8s.io/apimachinery/pkg/runtime/serializer/json"
 	"k8s.io/client-go/kubernetes/scheme"
 )
 
@@ -41,27 +39,6 @@ func DexIssuerURL(identitySpec kotsv1beta1.IdentityConfigSpec) string {
 
 func DexCallbackURL(identitySpec kotsv1beta1.IdentityConfigSpec) string {
 	return fmt.Sprintf("%s/callback", DexIssuerURL(identitySpec))
-}
-
-func EncodeSpec(spec kotsv1beta1.IdentityConfig) ([]byte, error) {
-	buf := bytes.NewBuffer(nil)
-	s := serializer.NewYAMLSerializer(serializer.DefaultMetaFactory, scheme.Scheme, scheme.Scheme)
-	err := s.Encode(&spec, buf)
-	return buf.Bytes(), err
-}
-
-func DecodeSpec(data []byte) (*kotsv1beta1.IdentityConfig, error) {
-	decode := scheme.Codecs.UniversalDeserializer().Decode
-	decoded, _, err := decode(data, nil, nil)
-	if err != nil {
-		return nil, err
-	}
-
-	spec, ok := decoded.(*kotsv1beta1.IdentityConfig)
-	if !ok {
-		return nil, errors.Errorf("wrong type %T", spec)
-	}
-	return spec, nil
 }
 
 func ConfigValidate(identitySpec kotsv1beta1.IdentityConfigSpec, ingressSpec kotsv1beta1.IngressConfigSpec) error {

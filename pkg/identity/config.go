@@ -7,6 +7,7 @@ import (
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	kotsadmtypes "github.com/replicatedhq/kots/pkg/kotsadm/types"
+	"github.com/replicatedhq/kots/pkg/kotsutil"
 	corev1 "k8s.io/api/core/v1"
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -39,7 +40,7 @@ func GetConfig(ctx context.Context, namespace string) (*kotsv1beta1.IdentityConf
 		return nil, errors.Wrap(err, "failed to get config map")
 	}
 
-	identityConfig, err := DecodeSpec([]byte(configMap.Data["identity.yaml"]))
+	identityConfig, err := kotsutil.LoadIdentityConfigFromContents([]byte(configMap.Data["identity.yaml"]))
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to decode identity config")
 	}
@@ -129,7 +130,7 @@ func identityConfigMapResource(identityConfig kotsv1beta1.IdentityConfig) (*core
 		},
 	}
 
-	data, err := EncodeSpec(identityConfig)
+	data, err := kotsutil.EncodeIdentityConfig(identityConfig)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to encode identity config")
 	}
