@@ -47,6 +47,14 @@ func (c *FakeKotsV1beta1) HelmCharts(namespace string) v1beta1.HelmChartInterfac
 	return &FakeHelmCharts{c, namespace}
 }
 
+func (c *FakeKotsV1beta1) IdentityConfigs(namespace string) v1beta1.IdentityConfigInterface {
+	return &FakeIdentityConfigs{c, namespace}
+}
+
+func (c *FakeKotsV1beta1) IngressConfigs(namespace string) v1beta1.IngressConfigInterface {
+	return &FakeIngressConfigs{c, namespace}
+}
+
 func (c *FakeKotsV1beta1) Installations(namespace string) v1beta1.InstallationInterface {
 	return &FakeInstallations{c, namespace}
 }

@@ -3,11 +3,12 @@ import { Utilities } from "./utilities";
 import fetch from "./fetchWithTimeout";
 
 export class AirgapUploader {
-  constructor(isUpdate, onFileAdded) {
+  constructor(isUpdate, appSlug, onFileAdded) {
     this.isUpdate = isUpdate;
+    this.appSlug = appSlug;
 
     this.resumableUploader = new Resumable({
-      target: `${window.env.API_ENDPOINT}/app/airgap/chunk`,
+      target: `${window.env.API_ENDPOINT}/app/${this.appSlug}/airgap/chunk`,
       headers: {
         "Authorization": Utilities.getToken(),
       },
@@ -18,7 +19,7 @@ export class AirgapUploader {
       xhrTimeout: 10000,
     });
   
-    this.resumableUploader.on('fileAdded', (resumableFile) => {
+    this.resumableUploader.on("fileAdded", (resumableFile) => {
       this.attemptedFileUpload = false;
       this.resumableFile = resumableFile;
       this.resumableIdentifier = resumableFile.uniqueIdentifier;
@@ -88,7 +89,7 @@ export class AirgapUploader {
       }
 
       if (!this.hasListeners) {
-        this.resumableUploader.on('fileProgress', () => {
+        this.resumableUploader.on("fileProgress", () => {
           if (this.onProgress) {
             // the resumablejs library returns progress as 1 in both cases of "error" and "success"
             // we don't wanna show the progress as 100% while reconnecting in case of an error (upload is not complete)
@@ -108,7 +109,7 @@ export class AirgapUploader {
           }
         });
   
-        this.resumableUploader.on('fileError', async (_, message) => {
+        this.resumableUploader.on("fileError", async (_, message) => {
           // an error occured while uploading one of the chunks due to internet connectivity issues or the api pod restarting.
           // try reconnecting to the api. if reconnected successfully, get the actual current progress from the api and retry uploading the file.
           // this also handles an issue where the api pod loses all data related to the bundle when restarted.
@@ -124,7 +125,7 @@ export class AirgapUploader {
           }
         });
 
-        this.resumableUploader.on('fileSuccess', async () => {
+        this.resumableUploader.on("fileSuccess", async () => {
           await this.processAirgapBundle();
           if (this.onComplete) {
             this.onComplete();
@@ -146,7 +147,7 @@ export class AirgapUploader {
   }
 
   getApiCurrentProgress = async () => {
-    const res = await fetch(`${window.env.API_ENDPOINT}/app/airgap/bundleprogress/${this.resumableIdentifier}/${this.resumableTotalChunks}`, {
+    const res = await fetch(`${window.env.API_ENDPOINT}/app/${this.appSlug}/airgap/bundleprogress/${this.resumableIdentifier}/${this.resumableTotalChunks}`, {
       headers: {
         "Authorization": Utilities.getToken(),
       },
@@ -164,7 +165,7 @@ export class AirgapUploader {
   }
 
   airgapBundleExists = async () => {
-    const res = await fetch(`${window.env.API_ENDPOINT}/app/airgap/bundleexists/${this.resumableIdentifier}/${this.resumableTotalChunks}`, {
+    const res = await fetch(`${window.env.API_ENDPOINT}/app/${this.appSlug}/airgap/bundleexists/${this.resumableIdentifier}/${this.resumableTotalChunks}`, {
       headers: {
         "Authorization": Utilities.getToken(),
       },
@@ -182,7 +183,7 @@ export class AirgapUploader {
   }
 
   processAirgapBundle = async () => {
-    const res = await fetch(`${window.env.API_ENDPOINT}/app/airgap/processbundle/${this.resumableIdentifier}/${this.resumableTotalChunks}`, {
+    const res = await fetch(`${window.env.API_ENDPOINT}/app/${this.appSlug}/airgap/processbundle/${this.resumableIdentifier}/${this.resumableTotalChunks}`, {
       headers: {
         "Authorization": Utilities.getToken(),
       },

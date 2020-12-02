@@ -94,7 +94,17 @@ class AppLicense extends Component {
       },
       body: JSON.stringify(payload)
     })
-      .then(res => res.json())
+      .then(async response => {
+        if (!response.ok) {
+          if (response.status == 401) {
+            Utilities.logoutUser();
+            return;
+          }
+          const res = await response.json();
+          throw new Error(res?.error);
+        }
+        return response.json();
+      })
       .then(async (latestLicense) => {
         const currentLicense = this.state.appLicense;
 
@@ -198,7 +208,7 @@ class AppLicense extends Component {
                   {appLicense?.isGitOpsSupported ? <span className="flex alignItems--center u-fontWeight--medium u-fontSize--small u-lineHeight--normal u-color--tundora u-marginRight--10"><span className="icon licenseGithubIcon" /> GitOps enabled </span> : null}
                 </div>
               </div>
-              <div className="flex-column flex-auto alignItems--center justifyContent--center">
+              <div className="flex-column flex-auto alignItems--flexEnd justifyContent--center">
                 {app.isAirgap ?
                   <Dropzone
                     className="Dropzone-wrapper"

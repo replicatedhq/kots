@@ -42,6 +42,7 @@ class Dashboard extends Component {
     showConfigureGraphs: false,
     promValue: "",
     savingPromValue: false,
+    savingPromError: "",
     activeChart: null,
     crosshairValues: [],
     updateChecker: new Repeater(),
@@ -69,7 +70,7 @@ class Dashboard extends Component {
   }
 
   updatePromValue = () => {
-    this.setState({ savingPromValue: true });
+    this.setState({ savingPromValue: true, savingPromError: "" });
 
     fetch(`${window.env.API_ENDPOINT}/prometheus`, {
       headers: {
@@ -81,13 +82,29 @@ class Dashboard extends Component {
       }),
       method: "POST",
     })
-      .then(async () => {
+      .then(async (res) => {
+        if (!res.ok) {
+          if (res.status === 401) {
+            Utilities.logoutUser();
+            return;
+          }
+          try {
+            const response = await res.json();
+            if (response?.error) {
+              throw new Error(response?.error);
+            }
+          } catch(_) {
+            // ignore
+          }
+          throw new Error(`Unexpected status code ${res.status}`);
+        }
         await this.getAppDashboard();
-        this.setState({ savingPromValue: false });
+        this.toggleConfigureGraphs();
+        this.setState({ savingPromValue: false, savingPromError: "" });
       })
       .catch((err) => {
         console.log(err);
-        this.setState({ savingPromValue: false });
+        this.setState({ savingPromValue: false, savingPromError: err?.message });
       });
   }
 
@@ -140,9 +157,11 @@ class Dashboard extends Component {
   }
 
   componentWillMount() {
-    if (this.props.app?.isAirgap) {
-      this.airgapUploader = new AirgapUploader(true, this.onDropBundle);
+    const { app } = this.props;
+    if (!app?.isAirgap) {
+      return
     }
+    this.airgapUploader = new AirgapUploader(true, app.slug, this.onDropBundle);
   }
 
   componentDidMount() {
@@ -229,8 +248,10 @@ class Dashboard extends Component {
   }
 
   updateStatus = () => {
+    const { app } = this.props;
+
     return new Promise((resolve, reject) => {
-      fetch(`${window.env.API_ENDPOINT}/task/updatedownload`, {
+      fetch(`${window.env.API_ENDPOINT}/app/${app?.slug}/task/updatedownload`, {
         headers: {
           "Authorization": Utilities.getToken(),
           "Content-Type": "application/json",
@@ -508,6 +529,7 @@ class Dashboard extends Component {
       showConfigureGraphs,
       promValue,
       savingPromValue,
+      savingPromError,
     } = this.state;
 
     const { app, isBundleUploading, isVeleroInstalled } = this.props;
@@ -663,6 +685,7 @@ class Dashboard extends Component {
           updatePromValue={this.updatePromValue}
           promValue={promValue}
           savingPromValue={savingPromValue}
+          savingPromError={savingPromError}
           onPromValueChange={this.onPromValueChange}
         />
         {this.state.viewAirgapUploadError &&

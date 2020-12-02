@@ -6,6 +6,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
+	sessiontypes "github.com/replicatedhq/kots/kotsadm/pkg/session/types"
 	"github.com/replicatedhq/kots/kotsadm/pkg/store"
 )
 
@@ -30,7 +31,7 @@ func RequireValidSessionMiddleware(next http.Handler) http.Handler {
 			return
 		}
 
-		r = r.WithContext(context.WithValue(r.Context(), sessionKey{}, sess))
+		r = SetSession(r, sess)
 		next.ServeHTTP(w, r)
 	})
 }
@@ -42,7 +43,17 @@ func RequireValidSessionQuietMiddleware(next http.Handler) http.Handler {
 			return
 		}
 
-		r = r.WithContext(context.WithValue(r.Context(), sessionKey{}, sess))
+		r = SetSession(r, sess)
 		next.ServeHTTP(w, r)
 	})
+}
+
+func SetSession(r *http.Request, sess *sessiontypes.Session) *http.Request {
+	return r.WithContext(context.WithValue(r.Context(), sessionKey{}, sess))
+}
+
+func GetSession(r *http.Request) *sessiontypes.Session {
+	val := r.Context().Value(sessionKey{})
+	sess, _ := val.(*sessiontypes.Session)
+	return sess
 }

@@ -4,16 +4,18 @@ import (
 	"bytes"
 	"context"
 	"crypto/md5"
+	"encoding/json"
 	"fmt"
+	"os"
 	"text/template"
 
+	"github.com/dexidp/dex/server"
 	dexstorage "github.com/dexidp/dex/storage"
 	"github.com/ghodss/yaml"
 	"github.com/pkg/errors"
-	identitytypes "github.com/replicatedhq/kots/pkg/identity/types"
+	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	dextypes "github.com/replicatedhq/kots/pkg/identity/types/dex"
 	"github.com/replicatedhq/kots/pkg/ingress"
-	ingresstypes "github.com/replicatedhq/kots/pkg/ingress/types"
 	kotsadmtypes "github.com/replicatedhq/kots/pkg/kotsadm/types"
 	kotsadmversion "github.com/replicatedhq/kots/pkg/kotsadm/version"
 	"github.com/segmentio/ksuid"
@@ -42,8 +44,8 @@ var (
 	}
 )
 
-func Deploy(ctx context.Context, clientset kubernetes.Interface, namespace string, identityConfig identitytypes.Config, ingressConfig ingresstypes.Config, registryOptions *kotsadmtypes.KotsadmOptions) error {
-	if err := identityConfig.Validate(ingressConfig); err != nil {
+func Deploy(ctx context.Context, clientset kubernetes.Interface, namespace string, identityConfig kotsv1beta1.IdentityConfig, ingressConfig kotsv1beta1.IngressConfig, registryOptions *kotsadmtypes.KotsadmOptions) error {
+	if err := ConfigValidate(identityConfig.Spec, ingressConfig.Spec); err != nil {
 		return errors.Wrap(err, "invalid identity config")
 	}
 
@@ -57,7 +59,7 @@ func Deploy(ctx context.Context, clientset kubernetes.Interface, namespace strin
 		return errors.Wrap(err, "failed to ensure role binding")
 	}
 
-	marshalledDexConfig, err := getDexConfig(ctx, clientset, namespace, identityConfig, ingressConfig)
+	marshalledDexConfig, err := getDexConfig(ctx, clientset, namespace, identityConfig.Spec, ingressConfig.Spec)
 	if err != nil {
 		return errors.Wrap(err, "failed to marshal dex config")
 	}
@@ -67,20 +69,21 @@ func Deploy(ctx context.Context, clientset kubernetes.Interface, namespace strin
 	if err := ensureDeployment(ctx, clientset, namespace, marshalledDexConfig, registryOptions); err != nil {
 		return errors.Wrap(err, "failed to ensure deployment")
 	}
-	if err := ensureService(ctx, clientset, namespace, identityConfig.IngressConfig.NodePort); err != nil {
+	if err := ensureService(ctx, clientset, namespace, identityConfig.Spec.IngressConfig); err != nil {
 		return errors.Wrap(err, "failed to ensure service")
 	}
-	if err := ensureIngress(ctx, clientset, namespace, identityConfig.IngressConfig); err != nil {
+	if err := ensureIngress(ctx, clientset, namespace, identityConfig.Spec.IngressConfig); err != nil {
 		return errors.Wrap(err, "failed to ensure ingress")
 	}
 	return nil
 }
 
-func Configure(ctx context.Context, clientset kubernetes.Interface, namespace string, identityConfig identitytypes.Config, ingressConfig ingresstypes.Config) error {
-	if err := identityConfig.Validate(ingressConfig); err != nil {
+func Configure(ctx context.Context, clientset kubernetes.Interface, namespace string, identityConfig kotsv1beta1.IdentityConfig, ingressConfig kotsv1beta1.IngressConfig) error {
+	if err := ConfigValidate(identityConfig.Spec, ingressConfig.Spec); err != nil {
 		return errors.Wrap(err, "invalid identity config")
 	}
-	marshalledDexConfig, err := getDexConfig(ctx, clientset, namespace, identityConfig, ingressConfig)
+
+	marshalledDexConfig, err := getDexConfig(ctx, clientset, namespace, identityConfig.Spec, ingressConfig.Spec)
 	if err != nil {
 		return errors.Wrap(err, "failed to marshal dex config")
 	}
@@ -151,7 +154,7 @@ func getDexPostgresPassword(ctx context.Context, clientset kubernetes.Interface,
 	return string(secret.Data["password"]), nil
 }
 
-func getDexConfig(ctx context.Context, clientset kubernetes.Interface, namespace string, identityConfig identitytypes.Config, ingressConfig ingresstypes.Config) ([]byte, error) {
+func getDexConfig(ctx context.Context, clientset kubernetes.Interface, namespace string, identitySpec kotsv1beta1.IdentityConfigSpec, ingressSpec kotsv1beta1.IngressConfigSpec) ([]byte, error) {
 	existingConfig, err := getExistingDexConfig(ctx, clientset, namespace)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get existing dex config")
@@ -162,9 +165,9 @@ func getDexConfig(ctx context.Context, clientset kubernetes.Interface, namespace
 		return nil, errors.Wrap(err, "failed to get dex postgres password")
 	}
 
-	kotsadmAddress := identityConfig.AdminConsoleAddress
-	if kotsadmAddress == "" && ingressConfig.Enabled {
-		kotsadmAddress = ingress.GetAddress(ingressConfig)
+	kotsadmAddress := identitySpec.AdminConsoleAddress
+	if kotsadmAddress == "" && ingressSpec.Enabled {
+		kotsadmAddress = ingress.GetAddress(ingressSpec)
 	}
 
 	staticClients := existingConfig.StaticClients
@@ -192,7 +195,7 @@ func getDexConfig(ctx context.Context, clientset kubernetes.Interface, namespace
 			Level:  "debug",
 			Format: "text",
 		},
-		Issuer: DexIssuerURL(identityConfig),
+		Issuer: DexIssuerURL(identitySpec),
 		Storage: dextypes.Storage{
 			Type: "postgres",
 			Config: dextypes.Postgres{
@@ -218,8 +221,12 @@ func getDexConfig(ctx context.Context, clientset kubernetes.Interface, namespace
 		EnablePasswordDB: false,
 	}
 
-	if len(identityConfig.DexConnectors) > 0 {
-		config.StaticConnectors = identityConfig.DexConnectors
+	if len(identitySpec.DexConnectors.Value) > 0 {
+		dexConnectors, err := identityDexConnectorsToDexTypeConnectors(identitySpec.DexConnectors.Value)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to unmarshal dex connectors")
+		}
+		config.StaticConnectors = dexConnectors
 	}
 
 	if err := config.Validate(); err != nil {
@@ -233,7 +240,7 @@ func getDexConfig(ctx context.Context, clientset kubernetes.Interface, namespace
 
 	buf := bytes.NewBuffer(nil)
 	t, err := template.New("kotsadm-dex").Funcs(template.FuncMap{
-		"OIDCIdentityCallbackURL": func() string { return DexCallbackURL(identityConfig) },
+		"OIDCIdentityCallbackURL": func() string { return DexCallbackURL(identitySpec) },
 	}).Parse(string(marshalledConfig))
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to parse dex config for templating")
@@ -345,13 +352,13 @@ func deploymentResource(deploymentName, serviceAccountName, configChecksum, name
 			Replicas: &replicas,
 			Selector: &metav1.LabelSelector{
 				MatchLabels: map[string]string{
-					"app": "dex",
+					"app": "kotsadm-dex",
 				},
 			},
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
 					Labels: map[string]string{
-						"app": "dex",
+						"app": "kotsadm-dex",
 					},
 					Annotations: map[string]string{
 						"kots.io/dex-secret-checksum": configChecksum,
@@ -455,8 +462,8 @@ func updateDeploymentConfigSecretVolume(existingDeployment *appsv1.Deployment, d
 	return existingDeployment
 }
 
-func ensureService(ctx context.Context, clientset kubernetes.Interface, namespace string, nodePortConfig *ingresstypes.NodePortConfig) error {
-	service := serviceResource(DexServiceName, nodePortConfig)
+func ensureService(ctx context.Context, clientset kubernetes.Interface, namespace string, ingressSpec kotsv1beta1.IngressConfigSpec) error {
+	service := serviceResource(DexServiceName, ingressSpec)
 
 	existingService, err := clientset.CoreV1().Services(namespace).Get(ctx, DexServiceName, metav1.GetOptions{})
 	if err != nil {
@@ -482,15 +489,15 @@ func ensureService(ctx context.Context, clientset kubernetes.Interface, namespac
 	return nil
 }
 
-func serviceResource(serviceName string, nodePortConfig *ingresstypes.NodePortConfig) *corev1.Service {
+func serviceResource(serviceName string, ingressSpec kotsv1beta1.IngressConfigSpec) *corev1.Service {
 	serviceType := corev1.ServiceTypeClusterIP
 	port := corev1.ServicePort{
 		Name:       "http",
 		Port:       5556,
 		TargetPort: intstr.IntOrString{Type: intstr.Int, IntVal: 5556},
 	}
-	if nodePortConfig != nil && nodePortConfig.Port != 0 {
-		port.NodePort = int32(nodePortConfig.Port)
+	if ingressSpec.Enabled && ingressSpec.NodePort != nil && ingressSpec.NodePort.Port != 0 {
+		port.NodePort = int32(ingressSpec.NodePort.Port)
 		serviceType = corev1.ServiceTypeNodePort
 	}
 	return &corev1.Service{
@@ -505,7 +512,7 @@ func serviceResource(serviceName string, nodePortConfig *ingresstypes.NodePortCo
 		Spec: corev1.ServiceSpec{
 			Type: serviceType,
 			Selector: map[string]string{
-				"app": "dex",
+				"app": "kotsadm-dex",
 			},
 			Ports: []corev1.ServicePort{
 				port,
@@ -685,14 +692,40 @@ func postgresSecretResource(secretName string) *corev1.Secret {
 	}
 }
 
-func ensureIngress(ctx context.Context, clientset kubernetes.Interface, namespace string, ingressConfig ingresstypes.Config) error {
-	if ingressConfig.Ingress == nil {
+func ensureIngress(ctx context.Context, clientset kubernetes.Interface, namespace string, ingressSpec kotsv1beta1.IngressConfigSpec) error {
+	if !ingressSpec.Enabled || ingressSpec.Ingress == nil {
 		return deleteIngress(ctx, clientset, namespace)
 	}
-	dexIngress := ingressResource(namespace, ingressConfig)
+	dexIngress := ingressResource(namespace, *ingressSpec.Ingress)
 	return ingress.EnsureIngress(ctx, clientset, namespace, dexIngress)
 }
 
-func ingressResource(namespace string, ingressConfig ingresstypes.Config) *extensionsv1beta1.Ingress {
-	return ingress.IngressFromConfig(*ingressConfig.Ingress, DexIngressName, DexServiceName, 5556, AdditionalLabels)
+func ingressResource(namespace string, ingressConfig kotsv1beta1.IngressResourceConfig) *extensionsv1beta1.Ingress {
+	return ingress.IngressFromConfig(ingressConfig, DexIngressName, DexServiceName, 5556, AdditionalLabels)
+}
+
+func identityDexConnectorsToDexTypeConnectors(conns []kotsv1beta1.DexConnector) ([]dextypes.Connector, error) {
+	dexConnectors := []dextypes.Connector{}
+	for _, conn := range conns {
+		f, ok := server.ConnectorsConfig[conn.Type]
+		if !ok {
+			return nil, errors.Errorf("unknown connector type %q", conn.Type)
+		}
+
+		connConfig := f()
+		if len(conn.Config.Raw) != 0 {
+			data := []byte(os.ExpandEnv(string(conn.Config.Raw)))
+			if err := json.Unmarshal(data, connConfig); err != nil {
+				return nil, errors.Wrap(err, "failed to unmarshal connector config")
+			}
+		}
+
+		dexConnectors = append(dexConnectors, dextypes.Connector{
+			Type:   conn.Type,
+			Name:   conn.Name,
+			ID:     conn.ID,
+			Config: connConfig,
+		})
+	}
+	return dexConnectors, nil
 }

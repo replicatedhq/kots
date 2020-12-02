@@ -36,6 +36,7 @@ class PreflightResultPage extends Component {
     this.setState({ errorMessage: "" });
     try {
       const { history, match } = this.props;
+      const { slug } = match.params;
       const { preflightResultData } = this.state;
 
       const preflightResults = JSON.parse(preflightResultData?.result);
@@ -46,10 +47,10 @@ class PreflightResultPage extends Component {
           return;
         }
         const sequence = match.params.sequence ? parseInt(match.params.sequence, 10) : 0;
-        await this.deployKotsVersion(preflightResultData.appSlug, sequence);
+        await this.deployKotsVersion(slug, sequence);
       }
 
-      history.push(`/app/${preflightResultData.appSlug}`);
+      history.push(`/app/${slug}`);
     } catch (err) {
       console.log(err);
       this.setState({
@@ -102,11 +103,11 @@ class PreflightResultPage extends Component {
 
   ignorePermissionErrors = () => {
     this.setState({ errorMessage: "" });
-    const { preflightResultData } = this.state;
+
+    const { slug } = this.props.match.params;
     const sequence = this.props.match.params.sequence ? parseInt(this.props.match.params.sequence, 10) : 0;
 
-    const appSlug = preflightResultData.appSlug;
-    fetch(`${window.env.API_ENDPOINT}/app/${appSlug}/sequence/${sequence}/preflight/ignore-rbac`, {
+    fetch(`${window.env.API_ENDPOINT}/app/${slug}/sequence/${sequence}/preflight/ignore-rbac`, {
       headers: {
         "Content-Type": "application/json",
         "Accept": "application/json",
@@ -129,12 +130,12 @@ class PreflightResultPage extends Component {
   }
 
   rerunPreflights = () => {
+    const { slug } = this.props.match.params;
+
     this.setState({ errorMessage: "" });
-    const { preflightResultData } = this.state;
     const sequence = this.props.match.params.sequence ? parseInt(this.props.match.params.sequence, 10) : 0;
 
-    const appSlug = preflightResultData.appSlug;
-    fetch(`${window.env.API_ENDPOINT}/app/${appSlug}/sequence/${sequence}/preflight/run`, {
+    fetch(`${window.env.API_ENDPOINT}/app/${slug}/sequence/${sequence}/preflight/run`, {
       headers: {
         "Content-Type": "application/json",
         "Accept": "application/json",
@@ -223,8 +224,10 @@ class PreflightResultPage extends Component {
   }
 
   getLatestKotsPreflightResult = async () => {
+    const { slug } = this.props.match.params;
+
     try {
-      const res = await fetch(`${window.env.API_ENDPOINT}/preflight/result`, {
+      const res = await fetch(`${window.env.API_ENDPOINT}/app/${slug}/preflight/result`, {
         method: "GET",
         headers: {
           "Authorization": Utilities.getToken(),
@@ -253,6 +256,7 @@ class PreflightResultPage extends Component {
   }
 
   render() {
+    const { slug } = this.props.match.params;
     const { showSkipModal, showWarningModal, preflightResultData, errorMessage } = this.state;
 
     const stopPolling = !!preflightResultData?.result;
@@ -281,7 +285,7 @@ class PreflightResultPage extends Component {
             </div>}
             <div className="u-minWidth--full u-marginTop--20 flex-column flex1 u-position--relative">
               {errorMessage && errorMessage.length > 0 ?
-                <div className="ErrorWrapper flex-auto flex alignItems--center">
+                <div className="ErrorWrapper flex-auto flex alignItems--center u-marginBottom--20">
                   <div className="icon redWarningIcon u-marginRight--10" />
                   <div>
                     <p className="title">Encountered an error</p>
@@ -317,7 +321,7 @@ class PreflightResultPage extends Component {
           <div className="flex-auto flex justifyContent--flexEnd u-marginBottom--15">
             {stopPolling && hasResult && preflightState !== "pass" &&
               <div className="flex">
-                <Link to={`/app/${preflightResultData?.appSlug}`}>
+                <Link to={`/app/${slug}`}>
                   <button type="button" className="btn secondary u-marginRight--10">Cancel</button>
                 </Link>
                 <button type="button" className="btn secondary blue u-marginRight--10" onClick={this.rerunPreflights}>Re-run</button>
@@ -348,10 +352,10 @@ class PreflightResultPage extends Component {
           className="Modal"
         >
           <div className="Modal-body">
-            <p className="u-fontSize--normal u-color--dustyGray u-lineHeight--normal u-marginBottom--20">Skipping preflight checks will not cancel them. They will continue to run in the background. Do you want to continue to the {preflightResultData?.appSlug} dashboard? </p>
+            <p className="u-fontSize--normal u-color--dustyGray u-lineHeight--normal u-marginBottom--20">Skipping preflight checks will not cancel them. They will continue to run in the background. Do you want to continue to the {slug} dashboard? </p>
             <div className="u-marginTop--10 flex justifyContent--flexEnd">
               <button type="button" className="btn secondary" onClick={this.hideSkipModal}>Close</button>
-              <Link to={`/app/${preflightResultData?.appSlug}`}>
+              <Link to={`/app/${slug}`}>
                 <button type="button" className="btn blue primary u-marginLeft--10">Go to Dashboard</button>
               </Link>
             </div>
