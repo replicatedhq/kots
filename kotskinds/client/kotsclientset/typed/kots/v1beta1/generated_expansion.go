@@ -27,9 +27,9 @@ type ConfigValuesExpansion interface{}
 
 type HelmChartExpansion interface{}
 
-type IdentityExpansion interface{}
+type IdentityConfigExpansion interface{}
 
-type IngressExpansion interface{}
+type IngressConfigExpansion interface{}
 
 type InstallationExpansion interface{}
 

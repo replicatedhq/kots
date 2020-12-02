@@ -43,8 +43,8 @@ type DeployOptions struct {
 	ExcludeAdminConsole       bool
 	EnsureKotsadmConfig       bool
 
-	IdentityConfig kotsv1beta1.Identity
-	IngressConfig  kotsv1beta1.Ingress
+	IdentityConfig kotsv1beta1.IdentityConfig
+	IngressConfig  kotsv1beta1.IngressConfig
 
 	KotsadmOptions KotsadmOptions
 }

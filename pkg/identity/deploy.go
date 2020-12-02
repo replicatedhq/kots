@@ -44,7 +44,7 @@ var (
 	}
 )
 
-func Deploy(ctx context.Context, clientset kubernetes.Interface, namespace string, identityConfig kotsv1beta1.Identity, ingressConfig kotsv1beta1.Ingress, registryOptions *kotsadmtypes.KotsadmOptions) error {
+func Deploy(ctx context.Context, clientset kubernetes.Interface, namespace string, identityConfig kotsv1beta1.IdentityConfig, ingressConfig kotsv1beta1.IngressConfig, registryOptions *kotsadmtypes.KotsadmOptions) error {
 	if err := ConfigValidate(identityConfig.Spec, ingressConfig.Spec); err != nil {
 		return errors.Wrap(err, "invalid identity config")
 	}
@@ -78,7 +78,7 @@ func Deploy(ctx context.Context, clientset kubernetes.Interface, namespace strin
 	return nil
 }
 
-func Configure(ctx context.Context, clientset kubernetes.Interface, namespace string, identityConfig kotsv1beta1.Identity, ingressConfig kotsv1beta1.Ingress) error {
+func Configure(ctx context.Context, clientset kubernetes.Interface, namespace string, identityConfig kotsv1beta1.IdentityConfig, ingressConfig kotsv1beta1.IngressConfig) error {
 	if err := ConfigValidate(identityConfig.Spec, ingressConfig.Spec); err != nil {
 		return errors.Wrap(err, "invalid identity config")
 	}
@@ -154,7 +154,7 @@ func getDexPostgresPassword(ctx context.Context, clientset kubernetes.Interface,
 	return string(secret.Data["password"]), nil
 }
 
-func getDexConfig(ctx context.Context, clientset kubernetes.Interface, namespace string, identitySpec kotsv1beta1.IdentitySpec, ingressSpec kotsv1beta1.IngressSpec) ([]byte, error) {
+func getDexConfig(ctx context.Context, clientset kubernetes.Interface, namespace string, identitySpec kotsv1beta1.IdentityConfigSpec, ingressSpec kotsv1beta1.IngressConfigSpec) ([]byte, error) {
 	existingConfig, err := getExistingDexConfig(ctx, clientset, namespace)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get existing dex config")
@@ -462,7 +462,7 @@ func updateDeploymentConfigSecretVolume(existingDeployment *appsv1.Deployment, d
 	return existingDeployment
 }
 
-func ensureService(ctx context.Context, clientset kubernetes.Interface, namespace string, ingressSpec kotsv1beta1.IngressSpec) error {
+func ensureService(ctx context.Context, clientset kubernetes.Interface, namespace string, ingressSpec kotsv1beta1.IngressConfigSpec) error {
 	service := serviceResource(DexServiceName, ingressSpec)
 
 	existingService, err := clientset.CoreV1().Services(namespace).Get(ctx, DexServiceName, metav1.GetOptions{})
@@ -489,7 +489,7 @@ func ensureService(ctx context.Context, clientset kubernetes.Interface, namespac
 	return nil
 }
 
-func serviceResource(serviceName string, ingressSpec kotsv1beta1.IngressSpec) *corev1.Service {
+func serviceResource(serviceName string, ingressSpec kotsv1beta1.IngressConfigSpec) *corev1.Service {
 	serviceType := corev1.ServiceTypeClusterIP
 	port := corev1.ServicePort{
 		Name:       "http",
@@ -692,7 +692,7 @@ func postgresSecretResource(secretName string) *corev1.Secret {
 	}
 }
 
-func ensureIngress(ctx context.Context, clientset kubernetes.Interface, namespace string, ingressSpec kotsv1beta1.IngressSpec) error {
+func ensureIngress(ctx context.Context, clientset kubernetes.Interface, namespace string, ingressSpec kotsv1beta1.IngressConfigSpec) error {
 	if !ingressSpec.Enabled || ingressSpec.Ingress == nil {
 		return deleteIngress(ctx, clientset, namespace)
 	}
@@ -700,7 +700,7 @@ func ensureIngress(ctx context.Context, clientset kubernetes.Interface, namespac
 	return ingress.EnsureIngress(ctx, clientset, namespace, dexIngress)
 }
 
-func ingressResource(namespace string, ingressConfig kotsv1beta1.IngressConfig) *extensionsv1beta1.Ingress {
+func ingressResource(namespace string, ingressConfig kotsv1beta1.IngressResourceConfig) *extensionsv1beta1.Ingress {
 	return ingress.IngressFromConfig(ingressConfig, DexIngressName, DexServiceName, 5556, AdditionalLabels)
 }
 

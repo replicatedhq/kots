@@ -62,7 +62,7 @@ func IdentityServiceInstallCmd() *cobra.Command {
 				return errors.Wrap(err, "failed to get ingress config")
 			}
 
-			identityConfig := kotsv1beta1.Identity{}
+			identityConfig := kotsv1beta1.IdentityConfig{}
 			if identityConfigPath := v.GetString("identity-config"); identityConfigPath != "" {
 				content, err := ioutil.ReadFile(identityConfigPath)
 				if err != nil {
@@ -126,7 +126,7 @@ func IdentityServiceConfigureCmd() *cobra.Command {
 				return errors.Wrap(err, "failed to get ingress config")
 			}
 
-			identityConfig := kotsv1beta1.Identity{}
+			identityConfig := kotsv1beta1.IdentityConfig{}
 			if identityConfigPath := v.GetString("identity-config"); identityConfigPath != "" {
 				content, err := ioutil.ReadFile(identityConfigPath)
 				if err != nil {
@@ -278,13 +278,13 @@ func IdentityServiceOIDCCallbackURLCmd() *cobra.Command {
 	return cmd
 }
 
-func identityServiceDeploy(ctx context.Context, log *logger.Logger, clientset kubernetes.Interface, namespace string, identityConfig kotsv1beta1.Identity, ingressConfig kotsv1beta1.Ingress, registryConfig *kotsadmtypes.KotsadmOptions) error {
+func identityServiceDeploy(ctx context.Context, log *logger.Logger, clientset kubernetes.Interface, namespace string, identityConfig kotsv1beta1.IdentityConfig, ingressConfig kotsv1beta1.IngressConfig, registryConfig *kotsadmtypes.KotsadmOptions) error {
 	log.ChildActionWithSpinner("Deploying the Identity Service")
 
 	identityConfig.Spec.Enabled = true
 	identityConfig.Spec.DisablePasswordAuth = true
 
-	if identityConfig.Spec.IngressConfig == (kotsv1beta1.IngressSpec{}) {
+	if identityConfig.Spec.IngressConfig == (kotsv1beta1.IngressConfigSpec{}) {
 		identityConfig.Spec.IngressConfig.Enabled = false
 	} else {
 		identityConfig.Spec.IngressConfig.Enabled = true
@@ -307,13 +307,13 @@ func identityServiceDeploy(ctx context.Context, log *logger.Logger, clientset ku
 	return nil
 }
 
-func identityServiceConfigure(ctx context.Context, log *logger.Logger, clientset kubernetes.Interface, namespace string, identityConfig kotsv1beta1.Identity, ingressConfig kotsv1beta1.Ingress) error {
+func identityServiceConfigure(ctx context.Context, log *logger.Logger, clientset kubernetes.Interface, namespace string, identityConfig kotsv1beta1.IdentityConfig, ingressConfig kotsv1beta1.IngressConfig) error {
 	log.ChildActionWithSpinner("Configuring the Identity Service")
 
 	identityConfig.Spec.Enabled = true
 	identityConfig.Spec.DisablePasswordAuth = true
 
-	if identityConfig.Spec.IngressConfig == (kotsv1beta1.IngressSpec{}) {
+	if identityConfig.Spec.IngressConfig == (kotsv1beta1.IngressConfigSpec{}) {
 		identityConfig.Spec.IngressConfig.Enabled = false
 	} else {
 		identityConfig.Spec.IngressConfig.Enabled = true

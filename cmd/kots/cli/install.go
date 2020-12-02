@@ -470,15 +470,15 @@ func uploadAirgapArchive(deployOptions kotsadmtypes.DeployOptions, clientset *ku
 	return false, nil
 }
 
-func getIngressConfig(v *viper.Viper) (*kotsv1beta1.Ingress, error) {
+func getIngressConfig(v *viper.Viper) (*kotsv1beta1.IngressConfig, error) {
 	ingressConfigPath := v.GetString("ingress-config")
 	enableIngress := v.GetBool("enable-ingress") || ingressConfigPath != ""
 
 	if !enableIngress {
-		return &kotsv1beta1.Ingress{}, nil
+		return &kotsv1beta1.IngressConfig{}, nil
 	}
 
-	ingressConfig := kotsv1beta1.Ingress{}
+	ingressConfig := kotsv1beta1.IngressConfig{}
 	if ingressConfigPath != "" {
 		content, err := ioutil.ReadFile(ingressConfigPath)
 		if err != nil {
@@ -497,15 +497,15 @@ func getIngressConfig(v *viper.Viper) (*kotsv1beta1.Ingress, error) {
 	return &ingressConfig, nil
 }
 
-func getIdentityConfig(v *viper.Viper) (*kotsv1beta1.Identity, error) {
+func getIdentityConfig(v *viper.Viper) (*kotsv1beta1.IdentityConfig, error) {
 	identityConfigPath := v.GetString("identity-config")
 	enableIdentityService := v.GetBool("enable-identity-service") || identityConfigPath != ""
 
 	if !enableIdentityService {
-		return &kotsv1beta1.Identity{}, nil
+		return &kotsv1beta1.IdentityConfig{}, nil
 	}
 
-	identityConfig := kotsv1beta1.Identity{}
+	identityConfig := kotsv1beta1.IdentityConfig{}
 	if identityConfigPath != "" {
 		content, err := ioutil.ReadFile(identityConfigPath)
 		if err != nil {

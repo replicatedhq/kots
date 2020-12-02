@@ -448,7 +448,7 @@ func ensureKotsadm(deployOptions types.DeployOptions, clientset *kubernetes.Clie
 
 		identityConfig.Spec.DisablePasswordAuth = true
 
-		if identityConfig.Spec.IngressConfig == (kotsv1beta1.IngressSpec{}) {
+		if identityConfig.Spec.IngressConfig == (kotsv1beta1.IngressConfigSpec{}) {
 			identityConfig.Spec.IngressConfig.Enabled = false
 		} else {
 			identityConfig.Spec.IngressConfig.Enabled = true

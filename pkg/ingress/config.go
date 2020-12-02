@@ -17,7 +17,7 @@ var (
 	ConfigMapName = "kotsadm-ingress-config"
 )
 
-func GetConfig(ctx context.Context, namespace string) (*kotsv1beta1.Ingress, error) {
+func GetConfig(ctx context.Context, namespace string) (*kotsv1beta1.IngressConfig, error) {
 	cfg, err := k8sconfig.GetConfig()
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get kubernetes config")
@@ -31,20 +31,20 @@ func GetConfig(ctx context.Context, namespace string) (*kotsv1beta1.Ingress, err
 	configMap, err := clientset.CoreV1().ConfigMaps(namespace).Get(ctx, ConfigMapName, metav1.GetOptions{})
 	if err != nil {
 		if kuberneteserrors.IsNotFound(err) {
-			return &kotsv1beta1.Ingress{}, nil
+			return &kotsv1beta1.IngressConfig{}, nil
 		}
 		return nil, errors.Wrap(err, "failed to get config map")
 	}
 
-	spec, err := DecodeSpec([]byte(configMap.Data["ingress.yaml"]))
+	ingressConfig, err := DecodeSpec([]byte(configMap.Data["ingress.yaml"]))
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to decode spec")
+		return nil, errors.Wrap(err, "failed to decode ingress config")
 	}
 
-	return spec, err
+	return ingressConfig, err
 }
 
-func SetConfig(ctx context.Context, namespace string, spec kotsv1beta1.Ingress) error {
+func SetConfig(ctx context.Context, namespace string, ingressConfig kotsv1beta1.IngressConfig) error {
 	cfg, err := k8sconfig.GetConfig()
 	if err != nil {
 		return errors.Wrap(err, "failed to get kubernetes config")
@@ -55,7 +55,7 @@ func SetConfig(ctx context.Context, namespace string, spec kotsv1beta1.Ingress) 
 		return errors.Wrap(err, "failed to get client set")
 	}
 
-	configMap, err := ingressConfigResource(spec)
+	configMap, err := ingressConfigResource(ingressConfig)
 	if err != nil {
 		return err
 	}
@@ -84,10 +84,10 @@ func SetConfig(ctx context.Context, namespace string, spec kotsv1beta1.Ingress) 
 	return nil
 }
 
-func ingressConfigResource(spec kotsv1beta1.Ingress) (*corev1.ConfigMap, error) {
-	data, err := EncodeSpec(spec)
+func ingressConfigResource(ingressConfig kotsv1beta1.IngressConfig) (*corev1.ConfigMap, error) {
+	data, err := EncodeSpec(ingressConfig)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to encode spec")
+		return nil, errors.Wrap(err, "failed to encode ingress config")
 	}
 	return &corev1.ConfigMap{
 		TypeMeta: metav1.TypeMeta{

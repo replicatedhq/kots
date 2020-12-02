@@ -20,13 +20,13 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-type IngressSpec struct {
+type IngressConfigSpec struct {
 	Enabled  bool                   `json:"enabled" yaml:"enabled"`
-	Ingress  *IngressConfig         `json:"ingress,omitempty" yaml:"ingress,omitempty"`
+	Ingress  *IngressResourceConfig `json:"ingress,omitempty" yaml:"ingress,omitempty"`
 	NodePort *IngressNodePortConfig `json:"nodePort,omitempty" yaml:"nodePort,omitempty"`
 }
 
-type IngressConfig struct {
+type IngressResourceConfig struct {
 	Path          string            `json:"path" yaml:"path"`
 	Host          string            `json:"host" yaml:"host"`
 	TLSSecretName string            `json:"tlsSecretName,omitempty" yaml:"tlsSecretName,omitempty"`
@@ -37,32 +37,32 @@ type IngressNodePortConfig struct {
 	Port int `json:"port" yaml:"port"`
 }
 
-// IngressStatus defines the observed state of Ingress
-type IngressStatus struct {
+// IngressConfigStatus defines the observed state of Ingress
+type IngressConfigStatus struct {
 }
 
 // +genclient
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
-// Ingress is the Schema for the ingress document
+// IngressConfig is the Schema for the ingress config document
 // +k8s:openapi-gen=true
 // +kubebuilder:subresource:status
-type Ingress struct {
+type IngressConfig struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   IngressSpec   `json:"spec,omitempty"`
-	Status IngressStatus `json:"status,omitempty"`
+	Spec   IngressConfigSpec   `json:"spec,omitempty"`
+	Status IngressConfigStatus `json:"status,omitempty"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
-// IngressList contains a list of Identities
-type IngressList struct {
+// IngressConfigList contains a list of Identities
+type IngressConfigList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []Ingress `json:"items"`
+	Items           []IngressConfig `json:"items"`
 }
 
 func init() {
-	SchemeBuilder.Register(&Ingress{}, &IngressList{})
+	SchemeBuilder.Register(&IngressConfig{}, &IngressConfigList{})
 }

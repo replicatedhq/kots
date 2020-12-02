@@ -11,7 +11,7 @@ import (
 	"k8s.io/client-go/kubernetes"
 )
 
-func EnsureIngress(ctx context.Context, namespace string, clientset *kubernetes.Clientset, ingressSpec kotsv1beta1.IngressSpec) error {
+func EnsureIngress(ctx context.Context, namespace string, clientset *kubernetes.Clientset, ingressSpec kotsv1beta1.IngressConfigSpec) error {
 	if !ingressSpec.Enabled || ingressSpec.Ingress == nil {
 		return DeleteIngress(ctx, namespace, clientset)
 	}

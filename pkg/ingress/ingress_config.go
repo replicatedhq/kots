@@ -9,7 +9,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
-func IngressFromConfig(ingressConfig kotsv1beta1.IngressConfig, name string, serviceName string, servicePort int, additionalLabels map[string]string) *extensionsv1beta1.Ingress {
+func IngressFromConfig(ingressConfig kotsv1beta1.IngressResourceConfig, name string, serviceName string, servicePort int, additionalLabels map[string]string) *extensionsv1beta1.Ingress {
 	ingressTLS := []extensions.IngressTLS{}
 	if ingressConfig.TLSSecretName != "" {
 		tls := extensions.IngressTLS{

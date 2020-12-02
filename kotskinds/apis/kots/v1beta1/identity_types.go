@@ -22,14 +22,14 @@ import (
 	runtime "k8s.io/apimachinery/pkg/runtime"
 )
 
-type IdentitySpec struct {
-	Enabled                bool            `json:"enabled" yaml:"enabled"`
-	DisablePasswordAuth    bool            `json:"disablePasswordAuth,omitempty" yaml:"disablePasswordAuth,omitempty"`
-	Groups                 []IdentityGroup `json:"groups,omitempty" yaml:"groups,omitempty"`
-	IngressConfig          IngressSpec     `json:"ingressConfig,omitempty" yaml:"ingressConfig,omitempty"`
-	AdminConsoleAddress    string          `json:"adminConsoleAddress,omitempty" yaml:"adminConsoleAddress,omitempty"`
-	IdentityServiceAddress string          `json:"identityServiceAddress,omitempty" yaml:"identityServiceAddress,omitempty"`
-	DexConnectors          DexConnectors   `json:"dexConnectors,omitempty" yaml:"dexConnectors,omitempty"`
+type IdentityConfigSpec struct {
+	Enabled                bool              `json:"enabled" yaml:"enabled"`
+	DisablePasswordAuth    bool              `json:"disablePasswordAuth,omitempty" yaml:"disablePasswordAuth,omitempty"`
+	Groups                 []IdentityGroup   `json:"groups,omitempty" yaml:"groups,omitempty"`
+	IngressConfig          IngressConfigSpec `json:"ingressConfig,omitempty" yaml:"ingressConfig,omitempty"`
+	AdminConsoleAddress    string            `json:"adminConsoleAddress,omitempty" yaml:"adminConsoleAddress,omitempty"`
+	IdentityServiceAddress string            `json:"identityServiceAddress,omitempty" yaml:"identityServiceAddress,omitempty"`
+	DexConnectors          DexConnectors     `json:"dexConnectors,omitempty" yaml:"dexConnectors,omitempty"`
 }
 
 type IdentityGroup struct {
@@ -54,32 +54,32 @@ type DexConnector struct {
 	Config runtime.RawExtension `json:"config"`
 }
 
-// IdentityStatus defines the observed state of Identity
-type IdentityStatus struct {
+// IdentityConfigStatus defines the observed state of Identity
+type IdentityConfigStatus struct {
 }
 
 // +genclient
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
-// Identity is the Schema for the identity document
+// IdentityConfig is the Schema for the identity config document
 // +k8s:openapi-gen=true
 // +kubebuilder:subresource:status
-type Identity struct {
+type IdentityConfig struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   IdentitySpec   `json:"spec,omitempty"`
-	Status IdentityStatus `json:"status,omitempty"`
+	Spec   IdentityConfigSpec   `json:"spec,omitempty"`
+	Status IdentityConfigStatus `json:"status,omitempty"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
-// IdentityList contains a list of Identities
-type IdentityList struct {
+// IdentityConfigList contains a list of IdentityConfigs
+type IdentityConfigList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []Identity `json:"items"`
+	Items           []IdentityConfig `json:"items"`
 }
 
 func init() {
-	SchemeBuilder.Register(&Identity{}, &IdentityList{})
+	SchemeBuilder.Register(&IdentityConfig{}, &IdentityConfigList{})
 }

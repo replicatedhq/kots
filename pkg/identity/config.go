@@ -20,7 +20,7 @@ var (
 	ConfigSecretKeyName = "dexConnectors"
 )
 
-func GetConfig(ctx context.Context, namespace string) (*kotsv1beta1.Identity, error) {
+func GetConfig(ctx context.Context, namespace string) (*kotsv1beta1.IdentityConfig, error) {
 	cfg, err := k8sconfig.GetConfig()
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get kubernetes config")
@@ -34,37 +34,37 @@ func GetConfig(ctx context.Context, namespace string) (*kotsv1beta1.Identity, er
 	configMap, err := clientset.CoreV1().ConfigMaps(namespace).Get(ctx, ConfigConfigMapName, metav1.GetOptions{})
 	if err != nil {
 		if kuberneteserrors.IsNotFound(err) {
-			return &kotsv1beta1.Identity{}, nil
+			return &kotsv1beta1.IdentityConfig{}, nil
 		}
 		return nil, errors.Wrap(err, "failed to get config map")
 	}
 
-	spec, err := DecodeSpec([]byte(configMap.Data["identity.yaml"]))
+	identityConfig, err := DecodeSpec([]byte(configMap.Data["identity.yaml"]))
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to decode spec")
+		return nil, errors.Wrap(err, "failed to decode identity config")
 	}
 
-	if spec.Spec.DexConnectors.ValueFrom != nil && spec.Spec.DexConnectors.ValueFrom.SecretKeyRef != nil {
-		secretKeyRef := spec.Spec.DexConnectors.ValueFrom.SecretKeyRef
+	if identityConfig.Spec.DexConnectors.ValueFrom != nil && identityConfig.Spec.DexConnectors.ValueFrom.SecretKeyRef != nil {
+		secretKeyRef := identityConfig.Spec.DexConnectors.ValueFrom.SecretKeyRef
 
 		secret, err := clientset.CoreV1().Secrets(namespace).Get(ctx, secretKeyRef.Name, metav1.GetOptions{})
 		if err != nil {
 			if kuberneteserrors.IsNotFound(err) {
-				return spec, nil
+				return identityConfig, nil
 			}
 			return nil, errors.Wrap(err, "failed to get secret")
 		}
 
-		err = ghodssyaml.Unmarshal(secret.Data[secretKeyRef.Key], &spec.Spec.DexConnectors.Value)
+		err = ghodssyaml.Unmarshal(secret.Data[secretKeyRef.Key], &identityConfig.Spec.DexConnectors.Value)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to unmarshal dex connectors")
 		}
 	}
 
-	return spec, err
+	return identityConfig, err
 }
 
-func SetConfig(ctx context.Context, namespace string, spec kotsv1beta1.Identity) error {
+func SetConfig(ctx context.Context, namespace string, identityConfig kotsv1beta1.IdentityConfig) error {
 	cfg, err := k8sconfig.GetConfig()
 	if err != nil {
 		return errors.Wrap(err, "failed to get kubernetes config")
@@ -75,12 +75,12 @@ func SetConfig(ctx context.Context, namespace string, spec kotsv1beta1.Identity)
 		return errors.Wrap(err, "failed to get client set")
 	}
 
-	err = ensureConfigSecret(ctx, clientset, namespace, spec)
+	err = ensureConfigSecret(ctx, clientset, namespace, identityConfig)
 	if err != nil {
 		return errors.Wrap(err, "failed to ensure secret")
 	}
 
-	err = ensureConfigConfigMap(ctx, clientset, namespace, spec)
+	err = ensureConfigConfigMap(ctx, clientset, namespace, identityConfig)
 	if err != nil {
 		return errors.Wrap(err, "failed to ensure config map")
 	}
@@ -88,8 +88,8 @@ func SetConfig(ctx context.Context, namespace string, spec kotsv1beta1.Identity)
 	return nil
 }
 
-func ensureConfigConfigMap(ctx context.Context, clientset kubernetes.Interface, namespace string, spec kotsv1beta1.Identity) error {
-	configMap, err := identityConfigMapResource(spec)
+func ensureConfigConfigMap(ctx context.Context, clientset kubernetes.Interface, namespace string, identityConfig kotsv1beta1.IdentityConfig) error {
+	configMap, err := identityConfigMapResource(identityConfig)
 	if err != nil {
 		return err
 	}
@@ -118,9 +118,9 @@ func ensureConfigConfigMap(ctx context.Context, clientset kubernetes.Interface, 
 	return nil
 }
 
-func identityConfigMapResource(spec kotsv1beta1.Identity) (*corev1.ConfigMap, error) {
-	spec.Spec.DexConnectors.Value = nil
-	spec.Spec.DexConnectors.ValueFrom = &kotsv1beta1.DexConnectorsSource{
+func identityConfigMapResource(identityConfig kotsv1beta1.IdentityConfig) (*corev1.ConfigMap, error) {
+	identityConfig.Spec.DexConnectors.Value = nil
+	identityConfig.Spec.DexConnectors.ValueFrom = &kotsv1beta1.DexConnectorsSource{
 		SecretKeyRef: &corev1.SecretKeySelector{
 			LocalObjectReference: corev1.LocalObjectReference{
 				Name: ConfigSecretName,
@@ -129,9 +129,9 @@ func identityConfigMapResource(spec kotsv1beta1.Identity) (*corev1.ConfigMap, er
 		},
 	}
 
-	data, err := EncodeSpec(spec)
+	data, err := EncodeSpec(identityConfig)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to encode spec")
+		return nil, errors.Wrap(err, "failed to encode identity config")
 	}
 	return &corev1.ConfigMap{
 		TypeMeta: metav1.TypeMeta{
@@ -150,8 +150,8 @@ func identityConfigMapResource(spec kotsv1beta1.Identity) (*corev1.ConfigMap, er
 	}, nil
 }
 
-func ensureConfigSecret(ctx context.Context, clientset kubernetes.Interface, namespace string, spec kotsv1beta1.Identity) error {
-	secret, err := identitySecretResource(spec)
+func ensureConfigSecret(ctx context.Context, clientset kubernetes.Interface, namespace string, identityConfig kotsv1beta1.IdentityConfig) error {
+	secret, err := identitySecretResource(identityConfig)
 	if err != nil {
 		return err
 	}
@@ -180,8 +180,8 @@ func ensureConfigSecret(ctx context.Context, clientset kubernetes.Interface, nam
 	return nil
 }
 
-func identitySecretResource(spec kotsv1beta1.Identity) (*corev1.Secret, error) {
-	data, err := ghodssyaml.Marshal(spec.Spec.DexConnectors.Value)
+func identitySecretResource(identityConfig kotsv1beta1.IdentityConfig) (*corev1.Secret, error) {
+	data, err := ghodssyaml.Marshal(identityConfig.Spec.DexConnectors.Value)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to marshal dex connectors")
 	}

@@ -51,7 +51,7 @@ func IngressInstallCmd() *cobra.Command {
 				return err
 			}
 
-			ingressConfig := kotsv1beta1.Ingress{}
+			ingressConfig := kotsv1beta1.IngressConfig{}
 			if ingressConfigPath := v.GetString("ingress-config"); ingressConfigPath != "" {
 				content, err := ioutil.ReadFile(ingressConfigPath)
 				if err != nil {

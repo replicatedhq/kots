@@ -9,12 +9,12 @@ import (
 func Test_getIngressConfigAddress(t *testing.T) {
 	tests := []struct {
 		name          string
-		ingressConfig kotsv1beta1.IngressConfig
+		ingressConfig kotsv1beta1.IngressResourceConfig
 		want          string
 	}{
 		{
 			name: "no tls",
-			ingressConfig: kotsv1beta1.IngressConfig{
+			ingressConfig: kotsv1beta1.IngressResourceConfig{
 				Host: "somebigbank.com",
 				Path: "/test",
 			},
@@ -22,7 +22,7 @@ func Test_getIngressConfigAddress(t *testing.T) {
 		},
 		{
 			name: "with tls",
-			ingressConfig: kotsv1beta1.IngressConfig{
+			ingressConfig: kotsv1beta1.IngressResourceConfig{
 				Host:          "somebigbank.com",
 				Path:          "/test",
 				TLSSecretName: "kotsadm-tls",

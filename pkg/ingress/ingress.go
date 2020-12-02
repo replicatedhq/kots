@@ -16,28 +16,28 @@ func init() {
 	kotsscheme.AddToScheme(scheme.Scheme)
 }
 
-func EncodeSpec(spec kotsv1beta1.Ingress) ([]byte, error) {
+func EncodeSpec(ingressConfig kotsv1beta1.IngressConfig) ([]byte, error) {
 	buf := bytes.NewBuffer(nil)
 	s := serializer.NewYAMLSerializer(serializer.DefaultMetaFactory, scheme.Scheme, scheme.Scheme)
-	err := s.Encode(&spec, buf)
+	err := s.Encode(&ingressConfig, buf)
 	return buf.Bytes(), err
 }
 
-func DecodeSpec(data []byte) (*kotsv1beta1.Ingress, error) {
+func DecodeSpec(data []byte) (*kotsv1beta1.IngressConfig, error) {
 	decode := scheme.Codecs.UniversalDeserializer().Decode
 	decoded, _, err := decode(data, nil, nil)
 	if err != nil {
 		return nil, err
 	}
 
-	spec, ok := decoded.(*kotsv1beta1.Ingress)
+	ingressConfig, ok := decoded.(*kotsv1beta1.IngressConfig)
 	if !ok {
-		return nil, errors.Errorf("wrong type %T", spec)
+		return nil, errors.Errorf("wrong type %T", ingressConfig)
 	}
-	return spec, nil
+	return ingressConfig, nil
 }
 
-func GetAddress(ingressSpec kotsv1beta1.IngressSpec) string {
+func GetAddress(ingressSpec kotsv1beta1.IngressConfigSpec) string {
 	switch {
 	case ingressSpec.Ingress != nil:
 		return getIngressConfigAddress(*ingressSpec.Ingress)
@@ -49,7 +49,7 @@ func GetAddress(ingressSpec kotsv1beta1.IngressSpec) string {
 	return ""
 }
 
-func getIngressConfigAddress(ingressConfig kotsv1beta1.IngressConfig) string {
+func getIngressConfigAddress(ingressConfig kotsv1beta1.IngressResourceConfig) string {
 	var u url.URL
 	if ingressConfig.TLSSecretName != "" {
 		u.Scheme = "https"

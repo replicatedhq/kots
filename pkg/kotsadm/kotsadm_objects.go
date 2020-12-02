@@ -615,6 +615,6 @@ func kotsadmService(namespace string, nodePort int32) *corev1.Service {
 	return service
 }
 
-func kotsadmIngress(namespace string, ingressConfig kotsv1beta1.IngressConfig) *extensionsv1beta1.Ingress {
+func kotsadmIngress(namespace string, ingressConfig kotsv1beta1.IngressResourceConfig) *extensionsv1beta1.Ingress {
 	return ingress.IngressFromConfig(ingressConfig, "kotsadm", "kotsadm", 3000, nil)
 }
