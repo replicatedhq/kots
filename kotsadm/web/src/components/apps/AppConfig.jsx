@@ -26,7 +26,7 @@ class AppConfig extends Component {
       savingConfig: false,
       changed: false,
       showNextStepModal: false,
-      savingConfigError: "",
+      configError: "",
       app: null,
     };
 
@@ -129,7 +129,7 @@ class AppConfig extends Component {
   }
 
   handleSave = async () => {
-    this.setState({ savingConfig: true, savingConfigError: "" });
+    this.setState({ savingConfig: true, configError: "" });
 
     const { fromLicenseFlow, history, match } = this.props;
     const sequence = this.getSequence();
@@ -157,7 +157,7 @@ class AppConfig extends Component {
             this.markRequiredItems(result.requiredItems);
           }
           if (result.error) {
-            this.setState({ savingConfigError: result.error });
+            this.setState({ configError: result.error });
           }
           return;
         }
@@ -181,7 +181,7 @@ class AppConfig extends Component {
         }
       })
       .catch((err) => {
-        this.setState({ savingConfig: false, savingConfigError: err ? err.message : "Something went wrong, please try again." });
+        this.setState({ savingConfig: false, configError: err ? err.message : "Something went wrong, please try again." });
       });
   }
 
@@ -234,7 +234,17 @@ class AppConfig extends Component {
       method: "POST",
       body: JSON.stringify({"configGroups":groups, "sequence": sequence}),
     }).then(async (response) => {
-      const data = await response.json()
+      if (!response.ok) {
+        if (response.status == 401) {
+          Utilities.logoutUser();
+          return;
+        }
+        const res = await response.json();
+        this.setState({ configError: res?.error });
+        return;
+      }
+
+      const data = await response.json();
       const oldGroups = this.state.configGroups;
       const newGroups = data.configGroups;
       map(newGroups, group => {
@@ -252,6 +262,7 @@ class AppConfig extends Component {
     }).catch((error) => {
       if (error.name !== 'AbortError') {
         console.log(error);
+        this.setState({ configError: error?.message });
       }
     });
   }
@@ -261,7 +272,7 @@ class AppConfig extends Component {
   }
 
   render() {
-    const { configGroups, savingConfig, changed, showNextStepModal, savingConfigError } = this.state;
+    const { configGroups, savingConfig, changed, showNextStepModal, configError } = this.state;
     const { fromLicenseFlow, match } = this.props;
 
     const app = this.props.app || this.state.app;
@@ -296,7 +307,7 @@ class AppConfig extends Component {
           </div>
           :
           <div className="ConfigError--wrapper flex-column u-marginTop--20 u-marginBottom--auto alignItems--center">
-            {savingConfigError && <span className="u-color--chestnut u-marginBottom--20 u-fontWeight--bold">{savingConfigError}</span>}
+            {configError && <span className="u-color--chestnut u-marginBottom--20 u-fontWeight--bold">{configError}</span>}
             <button className="btn secondary blue" disabled={!changed && !fromLicenseFlow} onClick={this.handleSave}>{fromLicenseFlow ? "Continue" : "Save config"}</button>
           </div>
         }

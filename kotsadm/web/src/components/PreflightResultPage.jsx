@@ -285,7 +285,7 @@ class PreflightResultPage extends Component {
             </div>}
             <div className="u-minWidth--full u-marginTop--20 flex-column flex1 u-position--relative">
               {errorMessage && errorMessage.length > 0 ?
-                <div className="ErrorWrapper flex-auto flex alignItems--center">
+                <div className="ErrorWrapper flex-auto flex alignItems--center u-marginBottom--20">
                   <div className="icon redWarningIcon u-marginRight--10" />
                   <div>
                     <p className="title">Encountered an error</p>
