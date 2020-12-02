@@ -1,0 +1,57 @@
+.Identity--wrapper {
+  padding: 20px;
+  background: #FFFFFF;
+  box-shadow: 0px 0px 4px rgba(0, 0, 0, 0.2);
+  border-radius: 6px;
+  width: 490px;
+
+  .FileUpload-wrapper {
+    cursor: default;
+    border: 1px dashed #DFDFDF;
+    box-sizing: border-box;
+    border-radius: 4px;
+    padding: 10px;
+    margin-bottom: 10px;
+
+    &.has-file {
+      border: 1px solid #44bb66;
+      color: #44bb66;
+      padding: 12px;
+
+      &.has-error {
+       border: 1px solid #BC4752;
+       background-color: #FFF9F9;
+       color: #BC4752;
+      }
+    }
+  }
+} 
+
+.identityProviderBtn {
+  background: #FFFFFF;
+  border: 1px solid #DFDFDF;
+  box-sizing: border-box;
+  border-radius: 4px;
+  padding: 15px 25px;
+  height: 55px;
+
+  &:hover {
+    background-color: #F5F8FC;
+  }
+
+  &.is-active {
+    background: #F5F8FC;
+    border: 1px solid #326DE6;
+  }
+}
+
+.IdentityProviderWarning--wrapper {
+  background: #FBE9D7;
+  border-radius: 4px;
+  padding: 12px;
+  font-weight: normal;
+  font-size: 14px;
+  line-height: 22px;
+  color: #EC8F39;
+  width: 490px;
+}

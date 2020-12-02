@@ -25,6 +25,7 @@ import UploadLicenseFile from "./components/UploadLicenseFile";
 import BackupRestore from "./components/BackupRestore";
 import UploadAirgapBundle from "./components/UploadAirgapBundle";
 import RestoreCompleted from "./components/RestoreCompleted";
+import Access from "./components/identity/Access";
 
 import Footer from "./components/shared/Footer";
 import NavBar from "./components/shared/NavBar";
@@ -329,6 +330,7 @@ class Root extends Component {
                   <ProtectedRoute exact path="/snapshots" render={(props) => <Snapshots {...props} appName={this.state.selectedAppName} isKurlEnabled={this.state.isKurlEnabled} appsList={appsList}/>} />
                   <ProtectedRoute exact path="/snapshots/settings" render={(props) => <SnapshotSettings {...props} appName={this.state.selectedAppName} isKurlEnabled={this.state.isKurlEnabled} />} />
                   <ProtectedRoute exact path="/snapshots/details/:id" render={(props) => <SnapshotDetails {...props} appName={this.state.selectedAppName} />} />
+                  <ProtectedRoute path="/access/:tab?" render={(props) => <Access {...props} appName={this.state.selectedAppName} />} />
                   {/* <ProtectedRoute exact path="/redactors" render={(props) => <Redactors {...props} appName={this.state.selectedAppName} />} />
                   <ProtectedRoute exact path="/redactors/new" render={(props) => <EditRedactor {...props} appName={this.state.selectedAppName} isNew={true} />} />
                   <ProtectedRoute exact path="/redactors/:slug" render={(props) => <EditRedactor {...props} appName={this.state.selectedAppName} />} /> */}

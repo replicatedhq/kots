@@ -13,6 +13,12 @@
   transition: border .2s;
   height: 38px;
 
+  &.darker {
+    border: 1px solid #C4C7CA;
+    padding: 6px 10px 7px;
+    height: 30px;
+  }
+
   &.width-auto {
     width: auto;
   }

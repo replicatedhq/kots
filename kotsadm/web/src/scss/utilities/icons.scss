@@ -763,6 +763,16 @@
   width: 12px;
   height: 7px;
 }
+.icon.down-arrow-icon-blue {
+  background-position: -275px -95px;
+  width: 12px;
+  height: 7px;
+}
+.icon.up-arrow-icon-blue {
+  background-position: -275px -85px;
+  width: 12px;
+  height: 7px;
+}
 .icon.invalid-yaml-icon {
   background-position: -207px -553px;
   width: 30px;
@@ -773,9 +783,9 @@
   width: 40px;
   height: 36px;
 }
-.icon.snapshot-warning-icon {
+.icon.small-warning-icon {
   background-position: -208px -590px;
-  width: 22px;
+  width: 40px;
   height: 20px;
 }
 .icon.dev-icon {
@@ -819,5 +829,26 @@
   width: 22px;
   height: 20px;
   margin-right: 4px;
+}
+.icon.openID {
+  background-position: -217px -1px;
+  width: 82px;
+  height: 25px;
+}
+.icon.geoaxis {
+  background-position: -164px -317px;
+  width: 110px;
+  height: 15px;
+}
+.icon.drag-file {
+  background-position: -250px -32px;
+  width: 38px;
+  height: 48px;
+  margin-right: 15px;
+}
+.icon.gray-trash {
+  background-position: -250px -83px;
+  width: 20px;
+  height: 21px;
 }
 
