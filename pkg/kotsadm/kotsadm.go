@@ -47,8 +47,8 @@ func getKotsadmYAML(deployOptions types.DeployOptions) (map[string][]byte, error
 	docs["kotsadm-deployment.yaml"] = deployment.Bytes()
 
 	var nodePort int32
-	if deployOptions.IngressConfig.Enabled && deployOptions.IngressConfig.NodePort != nil {
-		nodePort = int32(deployOptions.IngressConfig.NodePort.Port)
+	if deployOptions.IngressConfig.Spec.Enabled && deployOptions.IngressConfig.Spec.NodePort != nil {
+		nodePort = int32(deployOptions.IngressConfig.Spec.NodePort.Port)
 	}
 
 	var service bytes.Buffer
@@ -151,8 +151,8 @@ func ensureKotsadmComponent(deployOptions *types.DeployOptions, clientset *kuber
 	}
 
 	var nodePort int32
-	if deployOptions.IngressConfig.Enabled && deployOptions.IngressConfig.NodePort != nil {
-		nodePort = int32(deployOptions.IngressConfig.NodePort.Port)
+	if deployOptions.IngressConfig.Spec.Enabled && deployOptions.IngressConfig.Spec.NodePort != nil {
+		nodePort = int32(deployOptions.IngressConfig.Spec.NodePort.Port)
 	}
 
 	if err := ensureKotsadmService(deployOptions.Namespace, clientset, nodePort); err != nil {

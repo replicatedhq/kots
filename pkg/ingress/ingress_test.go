@@ -3,18 +3,18 @@ package ingress
 import (
 	"testing"
 
-	"github.com/replicatedhq/kots/pkg/ingress/types"
+	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 )
 
 func Test_getIngressConfigAddress(t *testing.T) {
 	tests := []struct {
 		name          string
-		ingressConfig types.IngressConfig
+		ingressConfig kotsv1beta1.IngressResourceConfig
 		want          string
 	}{
 		{
 			name: "no tls",
-			ingressConfig: types.IngressConfig{
+			ingressConfig: kotsv1beta1.IngressResourceConfig{
 				Host: "somebigbank.com",
 				Path: "/test",
 			},
@@ -22,7 +22,7 @@ func Test_getIngressConfigAddress(t *testing.T) {
 		},
 		{
 			name: "with tls",
-			ingressConfig: types.IngressConfig{
+			ingressConfig: kotsv1beta1.IngressResourceConfig{
 				Host:          "somebigbank.com",
 				Path:          "/test",
 				TLSSecretName: "kotsadm-tls",

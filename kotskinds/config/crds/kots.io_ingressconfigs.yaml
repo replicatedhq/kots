@@ -6,20 +6,20 @@ metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.3.0
   creationTimestamp: null
-  name: installations.kots.io
+  name: ingressconfigs.kots.io
 spec:
   group: kots.io
   names:
-    kind: Installation
-    listKind: InstallationList
-    plural: installations
-    singular: installation
+    kind: IngressConfig
+    listKind: IngressConfigList
+    plural: ingressconfigs
+    singular: ingressconfig
   scope: Namespaced
   subresources:
     status: {}
   validation:
     openAPIV3Schema:
-      description: Installation is the Schema for the installation API
+      description: IngressConfig is the Schema for the ingress config document
       properties:
         apiVersion:
           description: 'APIVersion defines the versioned schema of this representation
@@ -34,46 +34,37 @@ spec:
         metadata:
           type: object
         spec:
-          description: InstallationSpec defines the desired state of InstallationSpec
           properties:
-            channelID:
-              type: string
-            channelName:
-              type: string
-            encryptionKey:
-              type: string
-            knownImages:
-              items:
-                properties:
-                  image:
+            enabled:
+              type: boolean
+            ingress:
+              properties:
+                annotations:
+                  additionalProperties:
                     type: string
-                  isPrivate:
-                    type: boolean
-                type: object
-              type: array
-            releaseNotes:
-              type: string
-            releasedAt:
-              format: date-time
-              type: string
-            updateCursor:
-              type: string
-            versionLabel:
-              type: string
-            yamlErrors:
-              items:
-                properties:
-                  error:
-                    type: string
-                  path:
-                    type: string
-                required:
-                - path
-                type: object
-              type: array
+                  type: object
+                host:
+                  type: string
+                path:
+                  type: string
+                tlsSecretName:
+                  type: string
+              required:
+              - host
+              - path
+              type: object
+            nodePort:
+              properties:
+                port:
+                  type: integer
+              required:
+              - port
+              type: object
+          required:
+          - enabled
           type: object
         status:
-          description: InstallationStatus defines the observed state of Installation
+          description: IngressConfigStatus defines the observed state of Ingress
           type: object
       type: object
   version: v1beta1

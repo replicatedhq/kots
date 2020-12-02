@@ -18,7 +18,6 @@ import (
 	usertypes "github.com/replicatedhq/kots/kotsadm/pkg/user/types"
 	"github.com/replicatedhq/kots/pkg/identity"
 	ingress "github.com/replicatedhq/kots/pkg/ingress"
-	"github.com/replicatedhq/kots/pkg/rbac"
 	"github.com/segmentio/ksuid"
 	"golang.org/x/oauth2"
 )
@@ -40,13 +39,13 @@ const (
 )
 
 func Login(w http.ResponseWriter, r *http.Request) {
-	identityConfig, err := identity.GetConfig(r.Context(), os.Getenv("POD_NAMESPACE"))
+	ingressConfig, err := identity.GetConfig(r.Context(), os.Getenv("POD_NAMESPACE"))
 	if err != nil {
 		logger.Error(err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-	if identityConfig.Enabled && identityConfig.DisablePasswordAuth {
+	if ingressConfig.Spec.Enabled && ingressConfig.Spec.DisablePasswordAuth {
 		err := errors.New("password authentication disabled")
 		JSON(w, http.StatusForbidden, NewErrorResponse(err))
 		return
@@ -77,7 +76,7 @@ func Login(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// TODO: super user permissions
-	roles := session.GetSessionRolesFromRBAC(nil, rbac.DefaultGroups)
+	roles := session.GetSessionRolesFromRBAC(nil, identity.DefaultGroups)
 
 	createdSession, err := store.GetStore().CreateSession(foundUser, nil, roles)
 	if err != nil {
@@ -257,9 +256,9 @@ func OIDCLoginCallback(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	groups := rbac.DefaultGroups
-	if len(identityConfig.Groups) > 0 {
-		groups = identityConfig.Groups
+	groups := identity.DefaultGroups
+	if len(identityConfig.Spec.Groups) > 0 {
+		groups = identityConfig.Spec.Groups
 	}
 	roles := session.GetSessionRolesFromRBAC(claims.Groups, groups)
 
@@ -292,9 +291,9 @@ func OIDCLoginCallback(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	redirectURL := identityConfig.AdminConsoleAddress
-	if redirectURL == "" && ingressConfig.Enabled {
-		redirectURL = ingress.GetAddress(*ingressConfig)
+	redirectURL := identityConfig.Spec.AdminConsoleAddress
+	if redirectURL == "" && ingressConfig.Spec.Enabled {
+		redirectURL = ingress.GetAddress(ingressConfig.Spec)
 	}
 
 	expire := time.Now().Add(30 * time.Minute)

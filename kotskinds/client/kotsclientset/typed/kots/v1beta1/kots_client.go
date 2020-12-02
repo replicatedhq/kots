@@ -30,6 +30,8 @@ type KotsV1beta1Interface interface {
 	ConfigsGetter
 	ConfigValuesesGetter
 	HelmChartsGetter
+	IdentityConfigsGetter
+	IngressConfigsGetter
 	InstallationsGetter
 	LicensesGetter
 }
@@ -57,6 +59,14 @@ func (c *KotsV1beta1Client) ConfigValueses(namespace string) ConfigValuesInterfa
 
 func (c *KotsV1beta1Client) HelmCharts(namespace string) HelmChartInterface {
 	return newHelmCharts(c, namespace)
+}
+
+func (c *KotsV1beta1Client) IdentityConfigs(namespace string) IdentityConfigInterface {
+	return newIdentityConfigs(c, namespace)
+}
+
+func (c *KotsV1beta1Client) IngressConfigs(namespace string) IngressConfigInterface {
+	return newIngressConfigs(c, namespace)
 }
 
 func (c *KotsV1beta1Client) Installations(namespace string) InstallationInterface {

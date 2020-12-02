@@ -7,13 +7,10 @@ import (
 )
 
 const (
-	WildcardGroupID    = "*"
 	ClusterAdminRoleID = "cluster-admin"
 )
 
 var (
-	DefaultGroups = []types.Group{DefaultGroup}
-
 	DefaultAllowRolePolicies = map[string][]types.Policy{
 		ClusterAdminRole.ID: ClusterAdminRole.Allow,
 		ReadonlyRole.ID:     ReadonlyRole.Allow,
@@ -23,11 +20,6 @@ var (
 		ClusterAdminRole.ID: ClusterAdminRole.Deny,
 		ReadonlyRole.ID:     ReadonlyRole.Deny,
 		SupportRole.ID:      SupportRole.Deny,
-	}
-
-	DefaultGroup = types.Group{
-		ID:      WildcardGroupID,
-		RoleIDs: []string{ClusterAdminRole.ID},
 	}
 
 	ClusterAdminRole = types.Role{
