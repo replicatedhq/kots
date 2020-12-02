@@ -57,23 +57,23 @@ func IdentityServiceInstallCmd() *cobra.Command {
 				return err
 			}
 
-			ingressResource, err := ingress.GetConfig(cmd.Context(), namespace)
+			ingressConfig, err := ingress.GetConfig(cmd.Context(), namespace)
 			if err != nil {
 				return errors.Wrap(err, "failed to get ingress config")
 			}
 
-			identityResource := kotsv1beta1.Identity{}
-			if identitySpecPath := v.GetString("identity-spec"); identitySpecPath != "" {
-				content, err := ioutil.ReadFile(identitySpecPath)
+			identityConfig := kotsv1beta1.Identity{}
+			if identityConfigPath := v.GetString("identity-config"); identityConfigPath != "" {
+				content, err := ioutil.ReadFile(identityConfigPath)
 				if err != nil {
-					return errors.Wrap(err, "failed to read identity service spec file")
+					return errors.Wrap(err, "failed to read identity service config file")
 				}
 
 				s, err := identity.DecodeSpec(content)
 				if err != nil {
-					return errors.Wrap(err, "failed to decoce identity service spec")
+					return errors.Wrap(err, "failed to decoce identity service config")
 				}
-				identityResource = *s
+				identityConfig = *s
 			}
 
 			registryConfig, err := getRegistryConfig(v)
@@ -81,11 +81,11 @@ func IdentityServiceInstallCmd() *cobra.Command {
 				return errors.Wrap(err, "failed to get registry config")
 			}
 
-			return identityServiceDeploy(cmd.Context(), log, clientset, namespace, identityResource, *ingressResource, registryConfig)
+			return identityServiceDeploy(cmd.Context(), log, clientset, namespace, identityConfig, *ingressConfig, registryConfig)
 		},
 	}
 
-	cmd.Flags().String("identity-spec", "", "path to a kots.Identity resource file")
+	cmd.Flags().String("identity-config", "", "path to a kots.Identity resource file")
 
 	// random other registry flags
 	cmd.Flags().String("license-file", "", "path to a license file to use when download a replicated app")
@@ -121,26 +121,26 @@ func IdentityServiceConfigureCmd() *cobra.Command {
 				return err
 			}
 
-			ingressResource, err := ingress.GetConfig(cmd.Context(), namespace)
+			ingressConfig, err := ingress.GetConfig(cmd.Context(), namespace)
 			if err != nil {
 				return errors.Wrap(err, "failed to get ingress config")
 			}
 
-			identityResource := kotsv1beta1.Identity{}
-			if identitySpecPath := v.GetString("identity-spec"); identitySpecPath != "" {
-				content, err := ioutil.ReadFile(identitySpecPath)
+			identityConfig := kotsv1beta1.Identity{}
+			if identityConfigPath := v.GetString("identity-config"); identityConfigPath != "" {
+				content, err := ioutil.ReadFile(identityConfigPath)
 				if err != nil {
-					return errors.Wrap(err, "failed to read identity service spec file")
+					return errors.Wrap(err, "failed to read identity service config file")
 				}
 
 				s, err := identity.DecodeSpec(content)
 				if err != nil {
-					return errors.Wrap(err, "failed to decoce identity service spec")
+					return errors.Wrap(err, "failed to decoce identity service config")
 				}
-				identityResource = *s
+				identityConfig = *s
 			}
 
-			return identityServiceConfigure(cmd.Context(), log, clientset, namespace, identityResource, *ingressResource)
+			return identityServiceConfigure(cmd.Context(), log, clientset, namespace, identityConfig, *ingressConfig)
 		},
 	}
 
@@ -176,15 +176,15 @@ func IdentityServiceUninstallCmd() *cobra.Command {
 
 			log.ChildActionWithSpinner("Updating the Identity Service configuration")
 
-			identityResource, err := identity.GetConfig(cmd.Context(), namespace)
+			identityConfig, err := identity.GetConfig(cmd.Context(), namespace)
 			if err != nil {
 				return errors.Wrap(err, "failed to get identity config")
 			}
 
-			identityResource.Spec.Enabled = false
-			identityResource.Spec.DisablePasswordAuth = false
+			identityConfig.Spec.Enabled = false
+			identityConfig.Spec.DisablePasswordAuth = false
 
-			if err := identity.SetConfig(cmd.Context(), namespace, *identityResource); err != nil {
+			if err := identity.SetConfig(cmd.Context(), namespace, *identityConfig); err != nil {
 				return errors.Wrap(err, "failed to set identity config")
 			}
 
@@ -227,14 +227,14 @@ func IdentityServiceEnableSharedPasswordCmd() *cobra.Command {
 
 			log.ChildActionWithSpinner("Updating the Identity Service configuration")
 
-			identityResource, err := identity.GetConfig(cmd.Context(), namespace)
+			identityConfig, err := identity.GetConfig(cmd.Context(), namespace)
 			if err != nil {
 				return errors.Wrap(err, "failed to get identity config")
 			}
 
-			identityResource.Spec.DisablePasswordAuth = false
+			identityConfig.Spec.DisablePasswordAuth = false
 
-			if err := identity.SetConfig(cmd.Context(), namespace, *identityResource); err != nil {
+			if err := identity.SetConfig(cmd.Context(), namespace, *identityConfig); err != nil {
 				return errors.Wrap(err, "failed to set identity config")
 			}
 
@@ -264,12 +264,12 @@ func IdentityServiceOIDCCallbackURLCmd() *cobra.Command {
 				return err
 			}
 
-			identityResource, err := identity.GetConfig(cmd.Context(), namespace)
+			identityConfig, err := identity.GetConfig(cmd.Context(), namespace)
 			if err != nil {
 				return errors.Wrap(err, "failed to get identity config")
 			}
 
-			fmt.Fprintln(cmd.OutOrStdout(), identity.DexCallbackURL(identityResource.Spec))
+			fmt.Fprintln(cmd.OutOrStdout(), identity.DexCallbackURL(identityConfig.Spec))
 
 			return nil
 		},
@@ -278,27 +278,27 @@ func IdentityServiceOIDCCallbackURLCmd() *cobra.Command {
 	return cmd
 }
 
-func identityServiceDeploy(ctx context.Context, log *logger.Logger, clientset kubernetes.Interface, namespace string, identityResource kotsv1beta1.Identity, ingressResource kotsv1beta1.Ingress, registryConfig *kotsadmtypes.KotsadmOptions) error {
+func identityServiceDeploy(ctx context.Context, log *logger.Logger, clientset kubernetes.Interface, namespace string, identityConfig kotsv1beta1.Identity, ingressConfig kotsv1beta1.Ingress, registryConfig *kotsadmtypes.KotsadmOptions) error {
 	log.ChildActionWithSpinner("Deploying the Identity Service")
 
-	identityResource.Spec.Enabled = true
-	identityResource.Spec.DisablePasswordAuth = true
+	identityConfig.Spec.Enabled = true
+	identityConfig.Spec.DisablePasswordAuth = true
 
-	if identityResource.Spec.IngressConfig == (kotsv1beta1.IngressSpec{}) {
-		identityResource.Spec.IngressConfig.Enabled = false
+	if identityConfig.Spec.IngressConfig == (kotsv1beta1.IngressSpec{}) {
+		identityConfig.Spec.IngressConfig.Enabled = false
 	} else {
-		identityResource.Spec.IngressConfig.Enabled = true
+		identityConfig.Spec.IngressConfig.Enabled = true
 	}
 
-	if err := identity.ConfigValidate(identityResource.Spec, ingressResource.Spec); err != nil {
+	if err := identity.ConfigValidate(identityConfig.Spec, ingressConfig.Spec); err != nil {
 		return errors.Wrap(err, "failed to validate identity config")
 	}
 
-	if err := identity.SetConfig(ctx, namespace, identityResource); err != nil {
+	if err := identity.SetConfig(ctx, namespace, identityConfig); err != nil {
 		return errors.Wrap(err, "failed to set identity config")
 	}
 
-	if err := identity.Deploy(ctx, clientset, namespace, identityResource, ingressResource, registryConfig); err != nil {
+	if err := identity.Deploy(ctx, clientset, namespace, identityConfig, ingressConfig, registryConfig); err != nil {
 		return errors.Wrap(err, "failed to deploy the identity service")
 	}
 
@@ -307,27 +307,27 @@ func identityServiceDeploy(ctx context.Context, log *logger.Logger, clientset ku
 	return nil
 }
 
-func identityServiceConfigure(ctx context.Context, log *logger.Logger, clientset kubernetes.Interface, namespace string, identityResource kotsv1beta1.Identity, ingressResource kotsv1beta1.Ingress) error {
+func identityServiceConfigure(ctx context.Context, log *logger.Logger, clientset kubernetes.Interface, namespace string, identityConfig kotsv1beta1.Identity, ingressConfig kotsv1beta1.Ingress) error {
 	log.ChildActionWithSpinner("Configuring the Identity Service")
 
-	identityResource.Spec.Enabled = true
-	identityResource.Spec.DisablePasswordAuth = true
+	identityConfig.Spec.Enabled = true
+	identityConfig.Spec.DisablePasswordAuth = true
 
-	if identityResource.Spec.IngressConfig == (kotsv1beta1.IngressSpec{}) {
-		identityResource.Spec.IngressConfig.Enabled = false
+	if identityConfig.Spec.IngressConfig == (kotsv1beta1.IngressSpec{}) {
+		identityConfig.Spec.IngressConfig.Enabled = false
 	} else {
-		identityResource.Spec.IngressConfig.Enabled = true
+		identityConfig.Spec.IngressConfig.Enabled = true
 	}
 
-	if err := identity.ConfigValidate(identityResource.Spec, ingressResource.Spec); err != nil {
+	if err := identity.ConfigValidate(identityConfig.Spec, ingressConfig.Spec); err != nil {
 		return errors.Wrap(err, "failed to validate identity config")
 	}
 
-	if err := identity.SetConfig(ctx, namespace, identityResource); err != nil {
+	if err := identity.SetConfig(ctx, namespace, identityConfig); err != nil {
 		return errors.Wrap(err, "failed to set identity config")
 	}
 
-	if err := identity.Configure(ctx, clientset, namespace, identityResource, ingressResource); err != nil {
+	if err := identity.Configure(ctx, clientset, namespace, identityConfig, ingressConfig); err != nil {
 		return errors.Wrap(err, "failed to configure identity service")
 	}
 

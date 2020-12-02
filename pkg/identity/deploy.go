@@ -44,8 +44,8 @@ var (
 	}
 )
 
-func Deploy(ctx context.Context, clientset kubernetes.Interface, namespace string, identityResource kotsv1beta1.Identity, ingressResource kotsv1beta1.Ingress, registryOptions *kotsadmtypes.KotsadmOptions) error {
-	if err := ConfigValidate(identityResource.Spec, ingressResource.Spec); err != nil {
+func Deploy(ctx context.Context, clientset kubernetes.Interface, namespace string, identityConfig kotsv1beta1.Identity, ingressConfig kotsv1beta1.Ingress, registryOptions *kotsadmtypes.KotsadmOptions) error {
+	if err := ConfigValidate(identityConfig.Spec, ingressConfig.Spec); err != nil {
 		return errors.Wrap(err, "invalid identity config")
 	}
 
@@ -59,7 +59,7 @@ func Deploy(ctx context.Context, clientset kubernetes.Interface, namespace strin
 		return errors.Wrap(err, "failed to ensure role binding")
 	}
 
-	marshalledDexConfig, err := getDexConfig(ctx, clientset, namespace, identityResource.Spec, ingressResource.Spec)
+	marshalledDexConfig, err := getDexConfig(ctx, clientset, namespace, identityConfig.Spec, ingressConfig.Spec)
 	if err != nil {
 		return errors.Wrap(err, "failed to marshal dex config")
 	}
@@ -69,21 +69,21 @@ func Deploy(ctx context.Context, clientset kubernetes.Interface, namespace strin
 	if err := ensureDeployment(ctx, clientset, namespace, marshalledDexConfig, registryOptions); err != nil {
 		return errors.Wrap(err, "failed to ensure deployment")
 	}
-	if err := ensureService(ctx, clientset, namespace, identityResource.Spec.IngressConfig); err != nil {
+	if err := ensureService(ctx, clientset, namespace, identityConfig.Spec.IngressConfig); err != nil {
 		return errors.Wrap(err, "failed to ensure service")
 	}
-	if err := ensureIngress(ctx, clientset, namespace, identityResource.Spec.IngressConfig); err != nil {
+	if err := ensureIngress(ctx, clientset, namespace, identityConfig.Spec.IngressConfig); err != nil {
 		return errors.Wrap(err, "failed to ensure ingress")
 	}
 	return nil
 }
 
-func Configure(ctx context.Context, clientset kubernetes.Interface, namespace string, identitySpec kotsv1beta1.Identity, ingressSpec kotsv1beta1.Ingress) error {
-	if err := ConfigValidate(identitySpec.Spec, ingressSpec.Spec); err != nil {
+func Configure(ctx context.Context, clientset kubernetes.Interface, namespace string, identityConfig kotsv1beta1.Identity, ingressConfig kotsv1beta1.Ingress) error {
+	if err := ConfigValidate(identityConfig.Spec, ingressConfig.Spec); err != nil {
 		return errors.Wrap(err, "invalid identity config")
 	}
 
-	marshalledDexConfig, err := getDexConfig(ctx, clientset, namespace, identitySpec.Spec, ingressSpec.Spec)
+	marshalledDexConfig, err := getDexConfig(ctx, clientset, namespace, identityConfig.Spec, ingressConfig.Spec)
 	if err != nil {
 		return errors.Wrap(err, "failed to marshal dex config")
 	}

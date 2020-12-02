@@ -39,13 +39,13 @@ const (
 )
 
 func Login(w http.ResponseWriter, r *http.Request) {
-	ingressResource, err := identity.GetConfig(r.Context(), os.Getenv("POD_NAMESPACE"))
+	ingressConfig, err := identity.GetConfig(r.Context(), os.Getenv("POD_NAMESPACE"))
 	if err != nil {
 		logger.Error(err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-	if ingressResource.Spec.Enabled && ingressResource.Spec.DisablePasswordAuth {
+	if ingressConfig.Spec.Enabled && ingressConfig.Spec.DisablePasswordAuth {
 		err := errors.New("password authentication disabled")
 		JSON(w, http.StatusForbidden, NewErrorResponse(err))
 		return
@@ -249,7 +249,7 @@ func OIDCLoginCallback(w http.ResponseWriter, r *http.Request) {
 		ID: claims.Email,
 	}
 
-	identityResource, err := identity.GetConfig(r.Context(), os.Getenv("POD_NAMESPACE"))
+	identityConfig, err := identity.GetConfig(r.Context(), os.Getenv("POD_NAMESPACE"))
 	if err != nil {
 		logger.Error(errors.Wrap(err, "failed to get identity config"))
 		w.WriteHeader(http.StatusInternalServerError)
@@ -257,8 +257,8 @@ func OIDCLoginCallback(w http.ResponseWriter, r *http.Request) {
 	}
 
 	groups := identity.DefaultGroups
-	if len(identityResource.Spec.Groups) > 0 {
-		groups = identityResource.Spec.Groups
+	if len(identityConfig.Spec.Groups) > 0 {
+		groups = identityConfig.Spec.Groups
 	}
 	roles := session.GetSessionRolesFromRBAC(claims.Groups, groups)
 
@@ -284,16 +284,16 @@ func OIDCLoginCallback(w http.ResponseWriter, r *http.Request) {
 	}
 	responseToken := fmt.Sprintf("Bearer %s", signedJWT)
 
-	ingressResource, err := ingress.GetConfig(r.Context(), os.Getenv("POD_NAMESPACE"))
+	ingressConfig, err := ingress.GetConfig(r.Context(), os.Getenv("POD_NAMESPACE"))
 	if err != nil {
 		logger.Error(errors.Wrap(err, "failed to get ingress config"))
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
-	redirectURL := identityResource.Spec.AdminConsoleAddress
-	if redirectURL == "" && ingressResource.Spec.Enabled {
-		redirectURL = ingress.GetAddress(ingressResource.Spec)
+	redirectURL := identityConfig.Spec.AdminConsoleAddress
+	if redirectURL == "" && ingressConfig.Spec.Enabled {
+		redirectURL = ingress.GetAddress(ingressConfig.Spec)
 	}
 
 	expire := time.Now().Add(30 * time.Minute)

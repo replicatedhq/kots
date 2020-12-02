@@ -328,11 +328,11 @@ func ensureStorage(deployOptions types.DeployOptions, clientset *kubernetes.Clie
 func ensureKotsadm(deployOptions types.DeployOptions, clientset *kubernetes.Clientset, log *logger.Logger) error {
 	restartKotsadmAPI := false
 
-	ingressResource := deployOptions.IngressConfig
-	identityResource := deployOptions.IdentityConfig
+	ingressConfig := deployOptions.IngressConfig
+	identityConfig := deployOptions.IdentityConfig
 
-	if ingressResource.Spec.Enabled {
-		if err := identity.ConfigValidate(identityResource.Spec, ingressResource.Spec); err != nil {
+	if ingressConfig.Spec.Enabled {
+		if err := identity.ConfigValidate(identityConfig.Spec, ingressConfig.Spec); err != nil {
 			return errors.Wrap(err, "failed to validate identity config")
 		}
 	}
@@ -429,36 +429,36 @@ func ensureKotsadm(deployOptions types.DeployOptions, clientset *kubernetes.Clie
 
 	ctx := context.TODO()
 
-	if ingressResource.Spec.Enabled {
+	if ingressConfig.Spec.Enabled {
 		log.ChildActionWithSpinner("Enabling ingress for the Admin Console")
 
-		if err := ingress.SetConfig(ctx, deployOptions.Namespace, ingressResource); err != nil {
+		if err := ingress.SetConfig(ctx, deployOptions.Namespace, ingressConfig); err != nil {
 			return errors.Wrap(err, "failed to set identity config")
 		}
 
-		if err := EnsureIngress(ctx, deployOptions.Namespace, clientset, ingressResource.Spec); err != nil {
+		if err := EnsureIngress(ctx, deployOptions.Namespace, clientset, ingressConfig.Spec); err != nil {
 			return errors.Wrap(err, "failed to ensure ingress")
 		}
 
 		log.FinishSpinner()
 	}
 
-	if identityResource.Spec.Enabled {
+	if identityConfig.Spec.Enabled {
 		log.ChildActionWithSpinner("Deploying the Identity Service")
 
-		identityResource.Spec.DisablePasswordAuth = true
+		identityConfig.Spec.DisablePasswordAuth = true
 
-		if identityResource.Spec.IngressConfig == (kotsv1beta1.IngressSpec{}) {
-			identityResource.Spec.IngressConfig.Enabled = false
+		if identityConfig.Spec.IngressConfig == (kotsv1beta1.IngressSpec{}) {
+			identityConfig.Spec.IngressConfig.Enabled = false
 		} else {
-			identityResource.Spec.IngressConfig.Enabled = true
+			identityConfig.Spec.IngressConfig.Enabled = true
 		}
 
-		if err := identity.SetConfig(ctx, deployOptions.Namespace, identityResource); err != nil {
+		if err := identity.SetConfig(ctx, deployOptions.Namespace, identityConfig); err != nil {
 			return errors.Wrap(err, "failed to set identity config")
 		}
 
-		if err := identity.Deploy(ctx, clientset, deployOptions.Namespace, identityResource, ingressResource, &deployOptions.KotsadmOptions); err != nil {
+		if err := identity.Deploy(ctx, clientset, deployOptions.Namespace, identityConfig, ingressConfig, &deployOptions.KotsadmOptions); err != nil {
 			return errors.Wrap(err, "failed to deploy the identity service")
 		}
 
