@@ -627,28 +627,21 @@ func CreateGitOpsCommit(gitOpsConfig *GitOpsConfig, appSlug string, appName stri
 		return "", err
 	}
 
-	dirPath := filepath.Join(workDir, gitOpsConfig.Path)
-	_, err = os.Stat(dirPath)
-	if os.IsNotExist(err) {
-		// create subdirectory if not exist
-		err := os.MkdirAll(dirPath, 0755)
-		if err != nil {
-			return "", errors.Wrap(err, "failed to mkdir")
-		}
-	} // ignore error here and let the stat of the file below handle any errors
-
-	filePath := filepath.Join(dirPath, fmt.Sprintf("%s.yaml", appSlug))
+	filePath := filepath.Join(workDir, gitOpsConfig.Path, fmt.Sprintf("%s.yaml", appSlug))
 	_, err = os.Stat(filePath)
 	if err == nil { // if the file has not changed, end now
 		currentRevision, err := ioutil.ReadFile(filePath)
 		if err != nil {
-			return "", errors.Wrap(err, "failed to read current app yaml")
+			return "", errors.Wrap(err, "failed to read current file")
 		}
 		if string(currentRevision) == string(out) {
 			return "", nil
 		}
-	} else if !os.IsNotExist(err) {
-		return "", errors.Wrap(err, "failed to stat current app yaml")
+	} else if os.IsNotExist(err) { // create subdirectory if not exist
+		err := os.MkdirAll(filepath.Join(workDir, gitOpsConfig.Path), 0644)
+		if err != nil {
+			return "", errors.Wrap(err, "failed to mkdir for file")
+		}
 	}
 
 	err = ioutil.WriteFile(filePath, out, 0644)
