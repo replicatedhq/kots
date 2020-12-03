@@ -63,21 +63,11 @@ spec:
               value: /etc/kurl-proxy/ca/tls.crt
       initContainers:
         - name: init-dex-db
-          command:
-          - "psql"
-          args:
-          - "-h"
-          - "kotsadm-postgres"
-          - "-U"
-          - "kotsadm"
-          - "-c"
-          - "CREATE DATABASE dex;"
-          - "-c"
-          - "CREATE USER dex;"
-          - "-c"
-          - "ALTER USER dex WITH PASSWORD '$(DEX_PGPASSWORD)';"
-          - "-c"
-          - "GRANT ALL PRIVILEGES ON DATABASE dex TO dex;"
+          volumeMounts:
+            - name: init-dex-db
+              readOnly: true
+              mountPath: /etc/dex/init
+          command: ["bash", "/etc/dex/init/init.sh"]
           env:
           - name: PGPASSWORD
             valueFrom:
@@ -103,6 +93,9 @@ spec:
         - name: kurl-proxy-kotsadm-tls-cert
           secret:
             secretName: kotsadm-tls
+        - name: init-dex-db
+          configMap:
+            name: init-dex-db
       hostAliases:
         - ip: 172.17.0.1
           hostnames:
