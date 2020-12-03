@@ -1,5 +1,13 @@
 package policy
 
+/*
+A Policy includes both an Action and a Resource.
+An Action must be one of "read" or "write".
+The Resource must use dot separators.
+Permissions defined by Roles will define rules for both Action and Resource and may use glob
+pattern matching.
+*/
+
 var (
 	ActionRead  = "read"
 	ActionWrite = "write"
