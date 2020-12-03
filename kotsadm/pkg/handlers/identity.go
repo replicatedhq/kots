@@ -210,7 +210,7 @@ func GetIdentityServiceConfig(w http.ResponseWriter, r *http.Request) {
 			// unmarshal connector config
 			var connectorConfig oidc.Config
 			data := []byte(os.ExpandEnv(string(conn.Config.Raw)))
-			err = json.Unmarshal(data, &connectorConfig)
+			err := json.Unmarshal(data, &connectorConfig)
 			if err != nil {
 				logger.Error(err)
 				w.WriteHeader(http.StatusInternalServerError)
