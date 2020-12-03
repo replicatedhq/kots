@@ -18,6 +18,10 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
 )
 
+const (
+	RedactionMask = "--- REDACTED ---"
+)
+
 type ConfigureIdentityServiceRequest struct {
 	AdminConsoleAddress    string `json:"adminConsoleAddress"`
 	IdentityServiceAddress string `json:"identityServiceAddress"`
@@ -194,7 +198,7 @@ func getDexConnectorInfo(request ConfigureIdentityServiceRequest, idpConfigs []I
 		}
 
 		// un-redact
-		if c.ClientSecret == "" {
+		if c.ClientSecret == RedactionMask {
 			for _, idpConfig := range idpConfigs {
 				if idpConfig.OIDCConfig != nil {
 					c.ClientSecret = idpConfig.OIDCConfig.ClientSecret
@@ -249,7 +253,7 @@ func getDexConnectorInfo(request ConfigureIdentityServiceRequest, idpConfigs []I
 		}
 
 		// un-redact
-		if c.ClientSecret == "" {
+		if c.ClientSecret == RedactionMask {
 			for _, idpConfig := range idpConfigs {
 				if idpConfig.GEOAxISConfig != nil {
 					c.ClientSecret = idpConfig.GEOAxISConfig.ClientSecret
@@ -332,10 +336,10 @@ func GetIdentityServiceConfig(w http.ResponseWriter, r *http.Request) {
 	for _, idpConfig := range idpConfigs {
 		// redact
 		if idpConfig.OIDCConfig != nil {
-			idpConfig.OIDCConfig.ClientSecret = ""
+			idpConfig.OIDCConfig.ClientSecret = RedactionMask
 		}
 		if idpConfig.GEOAxISConfig != nil {
-			idpConfig.GEOAxISConfig.ClientSecret = ""
+			idpConfig.GEOAxISConfig.ClientSecret = RedactionMask
 		}
 
 		response.IDPConfig = idpConfig
