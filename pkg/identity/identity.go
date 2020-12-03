@@ -32,7 +32,7 @@ func init() {
 
 func DexIssuerURL(identitySpec kotsv1beta1.IdentityConfigSpec) string {
 	if identitySpec.IdentityServiceAddress != "" {
-		return fmt.Sprintf("%s/dex", identitySpec.IdentityServiceAddress)
+		return identitySpec.IdentityServiceAddress
 	}
 	return fmt.Sprintf("%s/dex", ingress.GetAddress(identitySpec.IngressConfig))
 }

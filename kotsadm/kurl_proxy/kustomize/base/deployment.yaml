@@ -20,7 +20,9 @@ spec:
         - name: NODE_PORT
           value: "30880"
         - name: UPSTREAM_ORIGIN
-          value: http://127.0.0.1:8800
+          value: http://kotsadm:3000
+        - name: DEX_UPSTREAM_ORIGIN
+          value: http://kotsadm-dex:5556
         - name: TLS_SECRET_NAME
           value: kotsadm-tls
         - name: NAMESPACE

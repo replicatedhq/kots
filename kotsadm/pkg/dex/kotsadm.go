@@ -2,8 +2,6 @@ package dex
 
 import (
 	"context"
-	"net/http"
-	"os"
 	"sync"
 	"time"
 
@@ -27,13 +25,13 @@ const (
 
 var stateMtx sync.Mutex
 
-func GetKotsadmDexConfig() (*dextypes.Config, error) {
+func GetKotsadmDexConfig(ctx context.Context, namespace string) (*dextypes.Config, error) {
 	clientset, err := k8s.Clientset()
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get k8s client set")
 	}
 
-	secret, err := clientset.CoreV1().Secrets(os.Getenv("POD_NAMESPACE")).Get(context.TODO(), identity.DexSecretName, metav1.GetOptions{})
+	secret, err := clientset.CoreV1().Secrets(namespace).Get(ctx, identity.DexSecretName, metav1.GetOptions{})
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get kotsadm-dex secret")
 	}
@@ -47,14 +45,19 @@ func GetKotsadmDexConfig() (*dextypes.Config, error) {
 	return &config, nil
 }
 
-func GetKotsadmOIDCProvider() (*oidc.Provider, error) {
-	dexConfig, err := GetKotsadmDexConfig()
+func GetKotsadmOIDCProvider(ctx context.Context, namespace string) (*oidc.Provider, error) {
+	dexConfig, err := GetKotsadmDexConfig(ctx, namespace)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get kotsadm dex config")
 	}
 
-	ctx := oidc.ClientContext(context.Background(), http.DefaultClient)
-	provider, err := oidc.NewProvider(ctx, dexConfig.Issuer)
+	httpClient, err := identity.HTTPClient(ctx, namespace)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to init http client")
+	}
+
+	oidcClientCtx := oidc.ClientContext(ctx, httpClient)
+	provider, err := oidc.NewProvider(oidcClientCtx, dexConfig.Issuer)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to query provider %q", dexConfig.Issuer)
 	}
@@ -62,13 +65,13 @@ func GetKotsadmOIDCProvider() (*oidc.Provider, error) {
 	return provider, nil
 }
 
-func GetKotsadmOAuth2Config() (*oauth2.Config, error) {
-	dexConfig, err := GetKotsadmDexConfig()
+func GetKotsadmOAuth2Config(ctx context.Context, namespace string) (*oauth2.Config, error) {
+	dexConfig, err := GetKotsadmDexConfig(ctx, namespace)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get kotsadm dex config")
 	}
 
-	provider, err := GetKotsadmOIDCProvider()
+	provider, err := GetKotsadmOIDCProvider(ctx, namespace)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get kotsadm oidc provider")
 	}
@@ -100,7 +103,7 @@ func getScopes() []string {
 	return []string{"openid", "profile", "email", "groups"}
 }
 
-func SetDexState(state string) error {
+func SetDexState(ctx context.Context, namespace string, state string) error {
 	stateMtx.Lock()
 	defer stateMtx.Unlock()
 
@@ -111,13 +114,13 @@ func SetDexState(state string) error {
 		return errors.Wrap(err, "failed to get k8s client set")
 	}
 
-	existingSecret, err := clientset.CoreV1().Secrets(os.Getenv("POD_NAMESPACE")).Get(context.TODO(), DexStateSecretName, metav1.GetOptions{})
+	existingSecret, err := clientset.CoreV1().Secrets(namespace).Get(ctx, DexStateSecretName, metav1.GetOptions{})
 	if err != nil {
 		if !kuberneteserrors.IsNotFound(err) {
 			return errors.Wrap(err, "failed to get existing dex state secret")
 		}
 
-		_, err = clientset.CoreV1().Secrets(os.Getenv("POD_NAMESPACE")).Create(context.TODO(), secret, metav1.CreateOptions{})
+		_, err = clientset.CoreV1().Secrets(namespace).Create(ctx, secret, metav1.CreateOptions{})
 		if err != nil {
 			return errors.Wrap(err, "failed to create dex state secret")
 		}
@@ -127,7 +130,7 @@ func SetDexState(state string) error {
 
 	existingSecret = updateStateSecret(existingSecret, secret)
 
-	_, err = clientset.CoreV1().Secrets(os.Getenv("POD_NAMESPACE")).Update(context.TODO(), existingSecret, metav1.UpdateOptions{})
+	_, err = clientset.CoreV1().Secrets(namespace).Update(ctx, existingSecret, metav1.UpdateOptions{})
 	if err != nil {
 		return errors.Wrap(err, "failed to update dex state secret")
 	}
@@ -135,13 +138,13 @@ func SetDexState(state string) error {
 	return nil
 }
 
-func GetDexState(state string) (string, error) {
+func GetDexState(ctx context.Context, namespace string, state string) (string, error) {
 	clientset, err := k8s.Clientset()
 	if err != nil {
 		return "", errors.Wrap(err, "failed to get k8s client set")
 	}
 
-	secret, err := clientset.CoreV1().Secrets(os.Getenv("POD_NAMESPACE")).Get(context.TODO(), DexStateSecretName, metav1.GetOptions{})
+	secret, err := clientset.CoreV1().Secrets(namespace).Get(ctx, DexStateSecretName, metav1.GetOptions{})
 	if err != nil {
 		return "", errors.Wrap(err, "failed to get dex state secret")
 	}
@@ -149,7 +152,7 @@ func GetDexState(state string) (string, error) {
 	return string(secret.Data[state]), nil
 }
 
-func ResetDexState(state string) error {
+func ResetDexState(ctx context.Context, namespace string, state string) error {
 	stateMtx.Lock()
 	defer stateMtx.Unlock()
 
@@ -158,14 +161,14 @@ func ResetDexState(state string) error {
 		return errors.Wrap(err, "failed to get k8s client set")
 	}
 
-	secret, err := clientset.CoreV1().Secrets(os.Getenv("POD_NAMESPACE")).Get(context.TODO(), DexStateSecretName, metav1.GetOptions{})
+	secret, err := clientset.CoreV1().Secrets(namespace).Get(ctx, DexStateSecretName, metav1.GetOptions{})
 	if err != nil {
 		return errors.Wrap(err, "failed to get dex state secret")
 	}
 
 	delete(secret.Data, state)
 
-	_, err = clientset.CoreV1().Secrets(os.Getenv("POD_NAMESPACE")).Update(context.TODO(), secret, metav1.UpdateOptions{})
+	_, err = clientset.CoreV1().Secrets(namespace).Update(ctx, secret, metav1.UpdateOptions{})
 	if err != nil {
 		return errors.Wrap(err, "failed to update dex state secret")
 	}

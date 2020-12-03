@@ -29,6 +29,8 @@ type IdentityConfigSpec struct {
 	IngressConfig          IngressConfigSpec `json:"ingressConfig,omitempty" yaml:"ingressConfig,omitempty"`
 	AdminConsoleAddress    string            `json:"adminConsoleAddress,omitempty" yaml:"adminConsoleAddress,omitempty"`
 	IdentityServiceAddress string            `json:"identityServiceAddress,omitempty" yaml:"identityServiceAddress,omitempty"`
+	CACertPemBase64        string            `json:"caCertPemBase64,omitempty" yaml:"caCertPemBase64,omitempty"`
+	InsecureSkipTLSVerify  bool              `json:"insecureSkipTLSVerify,omitempty" yaml:"insecureSkipTLSVerify,omitempty"`
 	DexConnectors          DexConnectors     `json:"dexConnectors,omitempty" yaml:"dexConnectors,omitempty"`
 }
 

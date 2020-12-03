@@ -20,6 +20,9 @@ spec:
               name: backup
             - name: kubelet-client-cert
               mountPath: /etc/kubernetes/pki/kubelet
+            - name: kurl-proxy-kotsadm-tls-cert
+              readOnly: true
+              mountPath: /etc/kurl-proxy/ca
           env:
             - name: KOTSADM_LOG_LEVEL
               value: "debug"
@@ -56,6 +59,8 @@ spec:
               value: "1"
             # - name: DISABLE_OUTBOUND_CONNECTIONS  
             #   value: "true"
+            - name: KURL_PROXY_TLS_CERT_PATH
+              value: /etc/kurl-proxy/ca/tls.crt
       initContainers:
         - name: init-dex-db
           command:
@@ -95,6 +100,9 @@ spec:
           secret:
             secretName: kubelet-client-cert
             optional: true
+        - name: kurl-proxy-kotsadm-tls-cert
+          secret:
+            secretName: kotsadm-tls
       hostAliases:
         - ip: 172.17.0.1
           hostnames:

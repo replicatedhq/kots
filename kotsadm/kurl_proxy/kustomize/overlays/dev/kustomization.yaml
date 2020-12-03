@@ -6,5 +6,4 @@ resources:
   - ./configmap.yaml
 
 patchesStrategicMerge:
-  - ./deployment.yaml
   - ./service.yaml
