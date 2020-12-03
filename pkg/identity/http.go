@@ -14,18 +14,21 @@ import (
 
 	"github.com/hashicorp/go-cleanhttp"
 	"github.com/pkg/errors"
+	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 )
 
 var (
-	httpClient       *http.Client
-	httpClientMu     sync.RWMutex
-	kurlProxyTLSCert []byte
+	httpClient                              *http.Client
+	httpClientMu                            sync.RWMutex
+	kurlProxyTLSCert                        []byte
+	identityConfigSpecCACert                string
+	identityConfigSpecInsecureSkipTLSVerify bool
 )
 
 func HTTPClient(ctx context.Context, namespace string) (*http.Client, error) {
 	// NOTE: it may be possible to mount both the secret and the identity spec and watch for changes
 
-	identityConfig, err := GetConfig(ctx, namespace) // TODO
+	identityConfig, err := GetConfig(ctx, namespace)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get identity config")
 	}
@@ -38,7 +41,7 @@ func HTTPClient(ctx context.Context, namespace string) (*http.Client, error) {
 		return nil, errors.Wrap(err, "failed to get kurl proxy tls cert")
 	}
 
-	if httpClient != nil && bytes.Equal(pemCert, kurlProxyTLSCert) { // TODO: identity config spec
+	if httpClient != nil && !hasTLSConfigChanged(pemCert, identityConfig.Spec) {
 		return httpClient, nil
 	}
 
@@ -52,6 +55,8 @@ func HTTPClient(ctx context.Context, namespace string) (*http.Client, error) {
 	}
 
 	kurlProxyTLSCert = pemCert
+	identityConfigSpecCACert = identityConfig.Spec.CACertPemBase64
+	identityConfigSpecInsecureSkipTLSVerify = identityConfig.Spec.InsecureSkipTLSVerify
 
 	if kurlProxyTLSCert != nil {
 		if !rootCAs.AppendCertsFromPEM(kurlProxyTLSCert) {
@@ -82,6 +87,12 @@ func HTTPClient(ctx context.Context, namespace string) (*http.Client, error) {
 	}
 
 	return httpClient, nil
+}
+
+func hasTLSConfigChanged(pemCert []byte, identitySpec kotsv1beta1.IdentityConfigSpec) bool {
+	return !bytes.Equal(kurlProxyTLSCert, pemCert) ||
+		identityConfigSpecCACert != identitySpec.CACertPemBase64 ||
+		identityConfigSpecInsecureSkipTLSVerify != identitySpec.InsecureSkipTLSVerify
 }
 
 func getKurlProxyTLSCert() ([]byte, error) {
