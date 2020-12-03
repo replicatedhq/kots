@@ -104,7 +104,6 @@ func ListApps(w http.ResponseWriter, r *http.Request) {
 			logger.Error(errors.Wrapf(err, "failed to check access for app %s", a.Slug))
 			w.WriteHeader(http.StatusInternalServerError)
 			return
-			return
 		} else if !allow {
 			continue
 		}

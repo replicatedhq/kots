@@ -271,7 +271,7 @@ func copyOneImage(srcRegistry, destRegistry registry.RegistryOptions, image stri
 		return nil, errors.Wrap(err, "failed to create policy")
 	}
 
-	sourceCtx := &types.SystemContext{}
+	sourceCtx := &types.SystemContext{DockerDisableV1Ping: true}
 
 	// allow pulling images from http/invalid https docker repos
 	// intended for development only, _THIS MAKES THINGS INSECURE_
@@ -322,6 +322,7 @@ func copyOneImage(srcRegistry, destRegistry registry.RegistryOptions, image stri
 
 	destCtx := &types.SystemContext{
 		DockerInsecureSkipTLSVerify: types.OptionalBoolTrue,
+		DockerDisableV1Ping:         true,
 	}
 
 	if destRegistry.Username != "" && destRegistry.Password != "" {
@@ -481,6 +482,7 @@ func CopyFromFileToRegistry(path string, name string, tag string, digest string,
 
 	destCtx := &types.SystemContext{
 		DockerInsecureSkipTLSVerify: types.OptionalBoolTrue,
+		DockerDisableV1Ping: true,
 	}
 
 	if auth.Username != "" && auth.Password != "" {
@@ -524,7 +526,7 @@ func IsPrivateImage(image string) (bool, error) {
 		return false, errors.Wrapf(err, "failed to parse image ref %q", image)
 	}
 
-	sysCtx := types.SystemContext{}
+	sysCtx := types.SystemContext{DockerDisableV1Ping: true}
 
 	// allow pulling images from http/invalid https docker repos
 	// intended for development only, _THIS MAKES THINGS INSECURE_
