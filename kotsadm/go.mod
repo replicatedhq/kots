@@ -13,7 +13,7 @@ require (
 	github.com/containers/image/v5 v5.5.2
 	github.com/coreos/go-oidc v2.2.1+incompatible
 	github.com/deislabs/oras v0.8.1
-	github.com/dexidp/dex v2.13.0+incompatible
+	github.com/dexidp/dex v0.0.0-20201105145354-71bbbee07527
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/docker/distribution v2.7.1+incompatible
 	github.com/docker/go-units v0.4.0
@@ -22,12 +22,10 @@ require (
 	github.com/go-git/go-git/v5 v5.2.0
 	github.com/go-logfmt/logfmt v0.4.0
 	github.com/go-openapi/spec v0.19.5 // indirect
-	github.com/golang/gddo v0.0.0-20200831202555-721e228c7686
 	github.com/golang/groupcache v0.0.0-20191027212112-611e8accdfc9 // indirect
 	github.com/gorilla/mux v1.8.0
 	github.com/gorilla/websocket v1.4.0
 	github.com/gosimple/slug v1.9.0
-	github.com/gtank/cryptopasta v0.0.0-20170601214702-1f550f6f2f69 // indirect
 	github.com/hashicorp/go-version v1.2.0 // indirect
 	github.com/lib/pq v1.3.0
 	github.com/marccampbell/yaml-toolbox v0.0.0-20200805160637-950ceb36c770

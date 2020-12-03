@@ -109,7 +109,7 @@ func OIDCLogin(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		logger.Error(errors.Wrap(err, "failed to get kotsadm oauth2 config"))
 		oidcLoginResponse.Error = "failed to get kotsadm oauth2 config"
-		w.WriteHeader(http.StatusInternalServerError)
+		JSON(w, http.StatusInternalServerError, oidcLoginResponse)
 		return
 	}
 
@@ -119,7 +119,7 @@ func OIDCLogin(w http.ResponseWriter, r *http.Request) {
 	// save the generated state to compare on callback
 	if err := kotsadmdex.SetDexState(state); err != nil {
 		oidcLoginResponse.Error = "failed to set dex state"
-		w.WriteHeader(http.StatusInternalServerError)
+		JSON(w, http.StatusInternalServerError, oidcLoginResponse)
 		return
 	}
 
@@ -310,4 +310,30 @@ func OIDCLoginCallback(w http.ResponseWriter, r *http.Request) {
 
 	http.SetCookie(w, &cookie)
 	http.Redirect(w, r, redirectURL, http.StatusSeeOther)
+}
+
+type GetLoginInfoResponse struct {
+	Method LoginMethod `json:"method"`
+	Error  string      `json:"error,omitempty"`
+}
+
+func GetLoginInfo(w http.ResponseWriter, r *http.Request) {
+	getLoginInfoResponse := GetLoginInfoResponse{}
+
+	identityConfig, err := identity.GetConfig(r.Context(), os.Getenv("POD_NAMESPACE"))
+	if err != nil {
+		logger.Error(err)
+		getLoginInfoResponse.Error = "failed to get identity config"
+		JSON(w, http.StatusInternalServerError, getLoginInfoResponse)
+		return
+	}
+	if !identityConfig.Spec.Enabled {
+		getLoginInfoResponse.Method = PasswordAuth
+		JSON(w, http.StatusOK, getLoginInfoResponse)
+		return
+	}
+
+	getLoginInfoResponse.Method = IdentityService
+
+	JSON(w, http.StatusOK, getLoginInfoResponse)
 }

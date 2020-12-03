@@ -222,7 +222,7 @@ func getDexConfig(ctx context.Context, clientset kubernetes.Interface, namespace
 	}
 
 	if len(identitySpec.DexConnectors.Value) > 0 {
-		dexConnectors, err := identityDexConnectorsToDexTypeConnectors(identitySpec.DexConnectors.Value)
+		dexConnectors, err := IdentityDexConnectorsToDexTypeConnectors(identitySpec.DexConnectors.Value)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to unmarshal dex connectors")
 		}
@@ -704,7 +704,7 @@ func ingressResource(namespace string, ingressConfig kotsv1beta1.IngressResource
 	return ingress.IngressFromConfig(ingressConfig, DexIngressName, DexServiceName, 5556, AdditionalLabels)
 }
 
-func identityDexConnectorsToDexTypeConnectors(conns []kotsv1beta1.DexConnector) ([]dextypes.Connector, error) {
+func IdentityDexConnectorsToDexTypeConnectors(conns []kotsv1beta1.DexConnector) ([]dextypes.Connector, error) {
 	dexConnectors := []dextypes.Connector{}
 	for _, conn := range conns {
 		f, ok := server.ConnectorsConfig[conn.Type]
