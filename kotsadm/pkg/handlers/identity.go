@@ -19,24 +19,16 @@ import (
 )
 
 type ConfigureIdentityServiceRequest struct {
-	AdminConsoleAddress    string         `json:"adminConsoleAddress"`
-	IdentityServiceAddress string         `json:"identityServiceAddress"`
-	OIDCConfig             *OIDCConfig    `json:"oidcConfig"`
-	GEOAxISConfig          *GEOAxISConfig `json:"geoAxisConfig"`
+	AdminConsoleAddress    string      `json:"adminConsoleAddress"`
+	IdentityServiceAddress string      `json:"identityServiceAddress"`
+	OIDCConfig             *OIDCConfig `json:"oidcConfig"`
+	GEOAxISConfig          *OIDCConfig `json:"geoAxisConfig"`
 }
 
 type OIDCConfig struct {
+	ConnectorID               string   `json:"connectorId"`
+	ConnectorName             string   `json:"connectorName"`
 	Issuer                    string   `json:"issuer"`
-	ClientID                  string   `json:"clientId"`
-	ClientSecret              string   `json:"clientSecret"`
-	GetUserInfo               *bool    `json:"getUserInfo"`
-	UserNameKey               string   `json:"userNameKey"`
-	InsecureSkipEmailVerified *bool    `json:"insecureSkipEmailVerified"`
-	InsecureEnableGroups      *bool    `json:"insecureEnableGroups"`
-	Scopes                    []string `json:"scopes"`
-}
-
-type GEOAxISConfig struct {
 	ClientID                  string   `json:"clientId"`
 	ClientSecret              string   `json:"clientSecret"`
 	GetUserInfo               *bool    `json:"getUserInfo"`
@@ -197,11 +189,18 @@ func getDexConnectorInfo(request ConfigureIdentityServiceRequest) (*DexConnector
 		if len(request.OIDCConfig.Scopes) > 0 {
 			c.Scopes = append(c.Scopes, request.OIDCConfig.Scopes...)
 		}
+		connectorConfig = c
 
 		dexConnectorInfo.Type = "oidc"
 		dexConnectorInfo.ID = "openid"
 		dexConnectorInfo.Name = "OpenID"
-		connectorConfig = c
+
+		if request.OIDCConfig.ConnectorID != "" {
+			dexConnectorInfo.ID = request.OIDCConfig.ConnectorID
+		}
+		if request.OIDCConfig.ConnectorName != "" {
+			dexConnectorInfo.Name = request.OIDCConfig.ConnectorName
+		}
 	} else if request.GEOAxISConfig != nil {
 		c := oidc.Config{
 			Issuer:                    "https://oauth.geoaxis.gxaws.com",
@@ -223,6 +222,9 @@ func getDexConnectorInfo(request ConfigureIdentityServiceRequest) (*DexConnector
 
 		c.ClaimMapping.GroupsKey = "group"
 
+		if request.GEOAxISConfig.Issuer != "" {
+			c.Issuer = request.GEOAxISConfig.Issuer
+		}
 		if request.GEOAxISConfig.GetUserInfo != nil {
 			c.GetUserInfo = *request.GEOAxISConfig.GetUserInfo
 		}
@@ -238,11 +240,11 @@ func getDexConnectorInfo(request ConfigureIdentityServiceRequest) (*DexConnector
 		if len(request.GEOAxISConfig.Scopes) > 0 {
 			c.Scopes = append(c.Scopes, request.GEOAxISConfig.Scopes...)
 		}
+		connectorConfig = c
 
 		dexConnectorInfo.Type = "oidc"
 		dexConnectorInfo.ID = "geoaxis"
 		dexConnectorInfo.Name = "GEOAxIS"
-		connectorConfig = c
 	} else {
 		return nil, errors.New("provider not found")
 	}
@@ -258,11 +260,11 @@ func getDexConnectorInfo(request ConfigureIdentityServiceRequest) (*DexConnector
 }
 
 type GetIdentityServiceConfigResponse struct {
-	Enabled                bool   `json:"enabled"`
-	AdminConsoleAddress    string `json:"adminConsoleAddress"`
-	IdentityServiceAddress string `json:"identityServiceAddress"`
-	IdentityProvider       string `json:"identityProvider"`
-	Issuer                 string `json:"issuer"`
+	Enabled                bool        `json:"enabled"`
+	AdminConsoleAddress    string      `json:"adminConsoleAddress"`
+	IdentityServiceAddress string      `json:"identityServiceAddress"`
+	OIDCConfig             *OIDCConfig `json:"oidcConfig"`
+	GEOAxISConfig          *OIDCConfig `json:"geoAxisConfig"`
 }
 
 func GetIdentityServiceConfig(w http.ResponseWriter, r *http.Request) {
@@ -275,9 +277,6 @@ func GetIdentityServiceConfig(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// TODO: support types other than oidc
-	// maybe redact the config and return it?
-
 	// TODO: return ingress config
 
 	response := GetIdentityServiceConfigResponse{
@@ -288,19 +287,39 @@ func GetIdentityServiceConfig(w http.ResponseWriter, r *http.Request) {
 
 	if len(identityConfig.Spec.DexConnectors.Value) > 0 {
 		conn := identityConfig.Spec.DexConnectors.Value[0]
-		response.IdentityProvider = conn.Name
 
 		if len(conn.Config.Raw) != 0 {
-			// unmarshal connector config
-			var connectorConfig oidc.Config
 			data := []byte(os.ExpandEnv(string(conn.Config.Raw)))
-			err := json.Unmarshal(data, &connectorConfig)
-			if err != nil {
-				logger.Error(err)
-				w.WriteHeader(http.StatusInternalServerError)
-				return
+
+			switch conn.Type {
+			case "oidc":
+				var c oidc.Config
+				if err := json.Unmarshal(data, &c); err != nil {
+					logger.Error(err)
+					w.WriteHeader(http.StatusInternalServerError)
+					return
+				}
+
+				oidcConfig := OIDCConfig{
+					ConnectorID:               conn.ID,
+					ConnectorName:             conn.Name,
+					Issuer:                    c.Issuer,
+					ClientID:                  "--- REDACTED ---",
+					ClientSecret:              "--- REDACTED ---",
+					GetUserInfo:               &c.GetUserInfo,
+					UserNameKey:               c.UserNameKey,
+					InsecureSkipEmailVerified: &c.InsecureSkipEmailVerified,
+					InsecureEnableGroups:      &c.InsecureEnableGroups,
+					Scopes:                    c.Scopes,
+				}
+
+				if conn.ID == "geoaxis" {
+					response.GEOAxISConfig = &oidcConfig
+				} else {
+					response.OIDCConfig = &oidcConfig
+				}
+				break
 			}
-			response.Issuer = connectorConfig.Issuer
 		}
 	}
 
