@@ -103,9 +103,11 @@ type OIDCLoginResponse struct {
 }
 
 func OIDCLogin(w http.ResponseWriter, r *http.Request) {
+	namespace := os.Getenv("POD_NAMESPACE")
+
 	oidcLoginResponse := OIDCLoginResponse{}
 
-	oauth2Config, err := kotsadmdex.GetKotsadmOAuth2Config()
+	oauth2Config, err := kotsadmdex.GetKotsadmOAuth2Config(r.Context(), namespace)
 	if err != nil {
 		logger.Error(errors.Wrap(err, "failed to get kotsadm oauth2 config"))
 		oidcLoginResponse.Error = "failed to get kotsadm oauth2 config"
@@ -117,7 +119,7 @@ func OIDCLogin(w http.ResponseWriter, r *http.Request) {
 	state := ksuid.New().String()
 
 	// save the generated state to compare on callback
-	if err := kotsadmdex.SetDexState(state); err != nil {
+	if err := kotsadmdex.SetDexState(r.Context(), namespace, state); err != nil {
 		oidcLoginResponse.Error = "failed to set dex state"
 		JSON(w, http.StatusInternalServerError, oidcLoginResponse)
 		return
@@ -132,14 +134,16 @@ func OIDCLogin(w http.ResponseWriter, r *http.Request) {
 }
 
 func OIDCLoginCallback(w http.ResponseWriter, r *http.Request) {
-	oauth2Config, err := kotsadmdex.GetKotsadmOAuth2Config()
+	namespace := os.Getenv("POD_NAMESPACE")
+
+	oauth2Config, err := kotsadmdex.GetKotsadmOAuth2Config(r.Context(), namespace)
 	if err != nil {
 		logger.Error(errors.Wrap(err, "failed to get kotsadm oauth2 config"))
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
-	provider, err := kotsadmdex.GetKotsadmOIDCProvider()
+	provider, err := kotsadmdex.GetKotsadmOIDCProvider(r.Context(), namespace)
 	if err != nil {
 		logger.Error(errors.Wrap(err, "failed to get kotsadm oidc provider"))
 		w.WriteHeader(http.StatusInternalServerError)
@@ -165,7 +169,7 @@ func OIDCLoginCallback(w http.ResponseWriter, r *http.Request) {
 		}
 
 		state := r.FormValue("state")
-		foundState, err := kotsadmdex.GetDexState(state)
+		foundState, err := kotsadmdex.GetDexState(r.Context(), namespace, state)
 		if err != nil {
 			logger.Error(errors.Wrap(err, "failed to get saved dex state"))
 			w.WriteHeader(http.StatusInternalServerError)
@@ -178,13 +182,13 @@ func OIDCLoginCallback(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		if err := kotsadmdex.ResetDexState(state); err != nil {
+		if err := kotsadmdex.ResetDexState(r.Context(), namespace, state); err != nil {
 			logger.Error(errors.Wrap(err, "failed to reset dex state"))
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
 
-		httpClient, err := identity.HTTPClient(r.Context(), os.Getenv("POD_NAMESPACE"))
+		httpClient, err := identity.HTTPClient(r.Context(), namespace)
 		if err != nil {
 			err = errors.Wrap(err, "failed to get identity http client")
 			logger.Error(err)
@@ -208,7 +212,7 @@ func OIDCLoginCallback(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		httpClient, err := identity.HTTPClient(r.Context(), os.Getenv("POD_NAMESPACE"))
+		httpClient, err := identity.HTTPClient(r.Context(), namespace)
 		if err != nil {
 			err = errors.Wrap(err, "failed to get identity http client")
 			logger.Error(err)
@@ -265,7 +269,7 @@ func OIDCLoginCallback(w http.ResponseWriter, r *http.Request) {
 		ID: claims.Email,
 	}
 
-	identityConfig, err := identity.GetConfig(r.Context(), os.Getenv("POD_NAMESPACE"))
+	identityConfig, err := identity.GetConfig(r.Context(), namespace)
 	if err != nil {
 		logger.Error(errors.Wrap(err, "failed to get identity config"))
 		w.WriteHeader(http.StatusInternalServerError)
@@ -300,7 +304,7 @@ func OIDCLoginCallback(w http.ResponseWriter, r *http.Request) {
 	}
 	responseToken := fmt.Sprintf("Bearer %s", signedJWT)
 
-	ingressConfig, err := ingress.GetConfig(r.Context(), os.Getenv("POD_NAMESPACE"))
+	ingressConfig, err := ingress.GetConfig(r.Context(), namespace)
 	if err != nil {
 		logger.Error(errors.Wrap(err, "failed to get ingress config"))
 		w.WriteHeader(http.StatusInternalServerError)
