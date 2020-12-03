@@ -7,11 +7,11 @@ import (
 
 func appSlugFromAppIDGetter(vars map[string]string) (map[string]string, error) {
 	if appSlug, _ := vars["appSlug"]; appSlug != "" {
-		return nil, nil
+		return map[string]string{}, nil
 	}
 	appID, _ := vars["appId"]
 	if appID == "" {
-		return nil, nil
+		return map[string]string{}, nil
 	}
 	app, err := store.GetStore().GetApp(appID)
 	if err != nil {
