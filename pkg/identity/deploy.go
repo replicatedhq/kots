@@ -4,104 +4,95 @@ import (
 	"bytes"
 	"context"
 	"crypto/md5"
+	"encoding/json"
 	"fmt"
+	"os"
 	"text/template"
 
+	"github.com/dexidp/dex/server"
 	dexstorage "github.com/dexidp/dex/storage"
-	dexk8sstorage "github.com/dexidp/dex/storage/kubernetes"
 	"github.com/ghodss/yaml"
 	"github.com/pkg/errors"
-	identitytypes "github.com/replicatedhq/kots/pkg/identity/types"
+	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	dextypes "github.com/replicatedhq/kots/pkg/identity/types/dex"
 	"github.com/replicatedhq/kots/pkg/ingress"
-	ingresstypes "github.com/replicatedhq/kots/pkg/ingress/types"
 	kotsadmtypes "github.com/replicatedhq/kots/pkg/kotsadm/types"
-	"github.com/replicatedhq/kots/pkg/logger"
+	kotsadmversion "github.com/replicatedhq/kots/pkg/kotsadm/version"
 	"github.com/segmentio/ksuid"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	extensionsv1beta1 "k8s.io/api/extensions/v1beta1"
 	rbacv1 "k8s.io/api/rbac/v1"
-	apiextensionsv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
-	apiextensionsclientset "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	k8stypes "k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/client-go/kubernetes"
-	"sigs.k8s.io/controller-runtime/pkg/client/config"
 )
 
 const (
 	DexDeploymentName, DexServiceName, DexIngressName      = "kotsadm-dex", "kotsadm-dex", "kotsadm-dex"
 	DexServiceAccountName, DexRoleName, DexRoleBindingName = "kotsadm-dex", "kotsadm-dex", "kotsadm-dex"
 	DexSecretName                                          = "kotsadm-dex"
+	DexPostgresSecretName                                  = "kotsadm-dex-postgres"
 )
 
 var (
-	DexAdditionalLabels = map[string]string{
+	AdditionalLabels = map[string]string{
 		KotsIdentityLabelKey: KotsIdentityLabelValue,
 	}
 )
 
-func Deploy(ctx context.Context, logger *logger.Logger, clientset kubernetes.Interface, namespace string, identityConfig identitytypes.Config, ingressConfig ingresstypes.Config) error {
-	if err := DeployCRDs(ctx, logger, clientset); err != nil {
-		// Dex will deploy this if it has permissions
-		logger.Error(errors.Wrap(err, "failed to deploy crds"))
+func Deploy(ctx context.Context, clientset kubernetes.Interface, namespace string, identityConfig kotsv1beta1.IdentityConfig, ingressConfig kotsv1beta1.IngressConfig, registryOptions *kotsadmtypes.KotsadmOptions) error {
+	if err := ConfigValidate(identityConfig.Spec, ingressConfig.Spec); err != nil {
+		return errors.Wrap(err, "invalid identity config")
 	}
-	if err := DeployServiceAccount(ctx, logger, clientset, namespace); err != nil {
-		return errors.Wrap(err, "failed to deploy service account")
+
+	if err := ensureServiceAccount(ctx, clientset, namespace); err != nil {
+		return errors.Wrap(err, "failed to ensure service account")
 	}
-	marshalledDexConfig, err := getDexConfig(ctx, clientset, namespace, identityConfig, ingressConfig)
+	if err := ensureRole(ctx, clientset, namespace); err != nil {
+		return errors.Wrap(err, "failed to ensure role")
+	}
+	if err := ensureRoleBinding(ctx, clientset, namespace); err != nil {
+		return errors.Wrap(err, "failed to ensure role binding")
+	}
+
+	marshalledDexConfig, err := getDexConfig(ctx, clientset, namespace, identityConfig.Spec, ingressConfig.Spec)
 	if err != nil {
 		return errors.Wrap(err, "failed to marshal dex config")
 	}
 	if err := ensureSecret(ctx, clientset, namespace, marshalledDexConfig); err != nil {
 		return errors.Wrap(err, "failed to ensure secret")
 	}
-	if err := ensureDeployment(ctx, clientset, namespace, marshalledDexConfig); err != nil {
+	if err := ensureDeployment(ctx, clientset, namespace, marshalledDexConfig, registryOptions); err != nil {
 		return errors.Wrap(err, "failed to ensure deployment")
 	}
-	if err := ensureService(ctx, clientset, namespace, identityConfig.IngressConfig.NodePort); err != nil {
+	if err := ensureService(ctx, clientset, namespace, identityConfig.Spec.IngressConfig); err != nil {
 		return errors.Wrap(err, "failed to ensure service")
 	}
-	if err := ensureIngress(ctx, clientset, namespace, identityConfig.IngressConfig); err != nil {
+	if err := ensureIngress(ctx, clientset, namespace, identityConfig.Spec.IngressConfig); err != nil {
 		return errors.Wrap(err, "failed to ensure ingress")
 	}
 	return nil
 }
 
-func DeployServiceAccount(ctx context.Context, logger *logger.Logger, clientset kubernetes.Interface, namespace string) error {
-	if err := ensureServiceAccount(ctx, clientset, namespace); err != nil {
-		return err
+func Configure(ctx context.Context, clientset kubernetes.Interface, namespace string, identityConfig kotsv1beta1.IdentityConfig, ingressConfig kotsv1beta1.IngressConfig) error {
+	if err := ConfigValidate(identityConfig.Spec, ingressConfig.Spec); err != nil {
+		return errors.Wrap(err, "invalid identity config")
 	}
-	if err := ensureRole(ctx, clientset, namespace); err != nil {
-		return err
-	}
-	if err := ensureRoleBinding(ctx, clientset, namespace); err != nil {
-		return err
-	}
-	return nil
-}
 
-func DeployCRDs(ctx context.Context, logger *logger.Logger, clientset kubernetes.Interface) error {
-	cfg, err := config.GetConfig()
+	marshalledDexConfig, err := getDexConfig(ctx, clientset, namespace, identityConfig.Spec, ingressConfig.Spec)
 	if err != nil {
-		return errors.Wrap(err, "failed to get cluster config")
+		return errors.Wrap(err, "failed to marshal dex config")
 	}
-
-	apiextensionsclientset, err := apiextensionsclientset.NewForConfig(cfg)
-	if err != nil {
-		return errors.Wrap(err, "failed to create apiextensions clientset")
+	if err := ensureSecret(ctx, clientset, namespace, marshalledDexConfig); err != nil {
+		return errors.Wrap(err, "failed to ensure secret")
 	}
-
-	for _, crd := range DexCustomResourceDefinitions {
-		if err := ensureCRD(ctx, apiextensionsclientset, crd); err != nil {
-			return err
-		}
+	if err := patchDeploymentSecret(ctx, clientset, namespace, marshalledDexConfig); err != nil {
+		return errors.Wrap(err, "failed to patch deployment secret")
 	}
-
-	// Dex will automatically wait for crds
 	return nil
 }
 
@@ -154,10 +145,29 @@ func getExistingDexConfig(ctx context.Context, clientset kubernetes.Interface, n
 	return &dexConfig, nil
 }
 
-func getDexConfig(ctx context.Context, clientset kubernetes.Interface, namespace string, identityConfig identitytypes.Config, ingressConfig ingresstypes.Config) ([]byte, error) {
+func getDexPostgresPassword(ctx context.Context, clientset kubernetes.Interface, namespace string) (string, error) {
+	secret, err := clientset.CoreV1().Secrets(namespace).Get(ctx, DexPostgresSecretName, metav1.GetOptions{})
+	if err != nil {
+		return "", errors.Wrap(err, "failed to get postgress secret")
+	}
+
+	return string(secret.Data["password"]), nil
+}
+
+func getDexConfig(ctx context.Context, clientset kubernetes.Interface, namespace string, identitySpec kotsv1beta1.IdentityConfigSpec, ingressSpec kotsv1beta1.IngressConfigSpec) ([]byte, error) {
 	existingConfig, err := getExistingDexConfig(ctx, clientset, namespace)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get existing dex config")
+	}
+
+	postgresPassword, err := getDexPostgresPassword(ctx, clientset, namespace)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get dex postgres password")
+	}
+
+	kotsadmAddress := identitySpec.AdminConsoleAddress
+	if kotsadmAddress == "" && ingressSpec.Enabled {
+		kotsadmAddress = ingress.GetAddress(ingressSpec)
 	}
 
 	staticClients := existingConfig.StaticClients
@@ -166,7 +176,7 @@ func getDexConfig(ctx context.Context, clientset kubernetes.Interface, namespace
 		Name:   "kotsadm",
 		Secret: ksuid.New().String(),
 		RedirectURIs: []string{
-			fmt.Sprintf("%s/api/v1/oidc/login/callback", ingress.GetAddress(ingressConfig)),
+			fmt.Sprintf("%s/api/v1/oidc/login/callback", kotsadmAddress),
 		},
 	}
 	foundKotsClient := false
@@ -185,25 +195,38 @@ func getDexConfig(ctx context.Context, clientset kubernetes.Interface, namespace
 			Level:  "debug",
 			Format: "text",
 		},
-		Issuer: DexIssuerURL(identityConfig.IngressConfig),
+		Issuer: DexIssuerURL(identitySpec),
 		Storage: dextypes.Storage{
-			Type: "kubernetes",
-			Config: dexk8sstorage.Config{
-				InCluster: true,
+			Type: "postgres",
+			Config: dextypes.Postgres{
+				NetworkDB: dextypes.NetworkDB{
+					Database: "dex",
+					User:     "dex",
+					Host:     "kotsadm-postgres",
+					Password: postgresPassword,
+				},
+				SSL: dextypes.SSL{
+					Mode: "disable", // TODO ssl
+				},
 			},
 		},
 		Web: dextypes.Web{
 			HTTP: "0.0.0.0:5556",
 		},
 		OAuth2: dextypes.OAuth2{
-			SkipApprovalScreen: true,
+			SkipApprovalScreen:    true,
+			AlwaysShowLoginScreen: true,
 		},
 		StaticClients:    staticClients,
 		EnablePasswordDB: false,
 	}
 
-	if len(identityConfig.DexConnectors) > 0 {
-		config.StaticConnectors = identityConfig.DexConnectors
+	if len(identitySpec.DexConnectors.Value) > 0 {
+		dexConnectors, err := identityDexConnectorsToDexTypeConnectors(identitySpec.DexConnectors.Value)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to unmarshal dex connectors")
+		}
+		config.StaticConnectors = dexConnectors
 	}
 
 	if err := config.Validate(); err != nil {
@@ -217,7 +240,7 @@ func getDexConfig(ctx context.Context, clientset kubernetes.Interface, namespace
 
 	buf := bytes.NewBuffer(nil)
 	t, err := template.New("kotsadm-dex").Funcs(template.FuncMap{
-		"OIDCIdentityCallbackURL": func() string { return DexCallbackURL(identityConfig.IngressConfig) },
+		"OIDCIdentityCallbackURL": func() string { return DexCallbackURL(identitySpec) },
 	}).Parse(string(marshalledConfig))
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to parse dex config for templating")
@@ -237,7 +260,7 @@ func secretResource(secretName string, marshalledConfig []byte) (*corev1.Secret,
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:   secretName,
-			Labels: kotsadmtypes.GetKotsadmLabels(DexAdditionalLabels),
+			Labels: kotsadmtypes.GetKotsadmLabels(AdditionalLabels),
 		},
 		Data: map[string][]byte{
 			"dexConfig.yaml": marshalledConfig,
@@ -250,10 +273,10 @@ func updateSecret(existingSecret, desiredSecret *corev1.Secret) *corev1.Secret {
 	return existingSecret
 }
 
-func ensureDeployment(ctx context.Context, clientset kubernetes.Interface, namespace string, marshalledDexConfig []byte) error {
+func ensureDeployment(ctx context.Context, clientset kubernetes.Interface, namespace string, marshalledDexConfig []byte, registryOptions *kotsadmtypes.KotsadmOptions) error {
 	configChecksum := fmt.Sprintf("%x", md5.Sum(marshalledDexConfig))
 
-	deployment := deploymentResource(DexDeploymentName, DexServiceAccountName, configChecksum)
+	deployment := deploymentResource(DexDeploymentName, DexServiceAccountName, configChecksum, namespace, registryOptions)
 
 	existingDeployment, err := clientset.AppsV1().Deployments(namespace).Get(ctx, DexDeploymentName, metav1.GetOptions{})
 	if err != nil {
@@ -279,14 +302,43 @@ func ensureDeployment(ctx context.Context, clientset kubernetes.Interface, names
 	return nil
 }
 
+func patchDeploymentSecret(ctx context.Context, clientset kubernetes.Interface, namespace string, marshalledDexConfig []byte) error {
+	configChecksum := fmt.Sprintf("%x", md5.Sum(marshalledDexConfig))
+
+	deployment := deploymentResource(DexDeploymentName, DexServiceAccountName, configChecksum, namespace, nil)
+
+	patch := fmt.Sprintf(`{"spec":{"template":{"metadata":{"annotations":{"kots.io/dex-secret-checksum":"%s"}}}}}`, deployment.Spec.Template.ObjectMeta.Annotations["kots.io/dex-secret-checksum"])
+
+	_, err := clientset.AppsV1().Deployments(namespace).Patch(ctx, deployment.Name, k8stypes.StrategicMergePatchType, []byte(patch), metav1.PatchOptions{})
+	if err != nil {
+		return errors.Wrap(err, "failed to patch deployment")
+	}
+
+	return nil
+}
+
 var (
 	dexCPUResource    = resource.MustParse("100m")
 	dexMemoryResource = resource.MustParse("50Mi")
 )
 
-func deploymentResource(deploymentName, serviceAccountName string, configChecksum string) *appsv1.Deployment {
+func deploymentResource(deploymentName, serviceAccountName, configChecksum, namespace string, registryOptions *kotsadmtypes.KotsadmOptions) *appsv1.Deployment {
 	replicas := int32(2)
 	volume := configSecretVolume()
+
+	image := "quay.io/dexidp/dex:v2.26.0"
+	imagePullSecrets := []corev1.LocalObjectReference{}
+	if registryOptions != nil {
+		if s := kotsadmversion.KotsadmPullSecret(namespace, *registryOptions); s != nil {
+			image = fmt.Sprintf("%s/dex:%s", kotsadmversion.KotsadmRegistry(*registryOptions), kotsadmversion.KotsadmTag(*registryOptions))
+			imagePullSecrets = []corev1.LocalObjectReference{
+				{
+					Name: s.ObjectMeta.Name,
+				},
+			}
+		}
+	}
+
 	return &appsv1.Deployment{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "apps/v1",
@@ -294,19 +346,19 @@ func deploymentResource(deploymentName, serviceAccountName string, configChecksu
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:   deploymentName,
-			Labels: kotsadmtypes.GetKotsadmLabels(DexAdditionalLabels),
+			Labels: kotsadmtypes.GetKotsadmLabels(AdditionalLabels),
 		},
 		Spec: appsv1.DeploymentSpec{
 			Replicas: &replicas,
 			Selector: &metav1.LabelSelector{
 				MatchLabels: map[string]string{
-					"app": "dex",
+					"app": "kotsadm-dex",
 				},
 			},
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
 					Labels: map[string]string{
-						"app": "dex",
+						"app": "kotsadm-dex",
 					},
 					Annotations: map[string]string{
 						"kots.io/dex-secret-checksum": configChecksum,
@@ -314,11 +366,10 @@ func deploymentResource(deploymentName, serviceAccountName string, configChecksu
 				},
 				Spec: corev1.PodSpec{
 					ServiceAccountName: serviceAccountName,
+					ImagePullSecrets:   imagePullSecrets,
 					Containers: []corev1.Container{
 						{
-							// TODO: airgap registry
-							// fmt.Sprintf("%s/kotsadm:%s", kotsadmRegistry(deployOptions.KotsadmOptions), kotsadmTag(deployOptions.KotsadmOptions)),
-							Image:           "quay.io/dexidp/dex:v2.26.0",
+							Image:           image,
 							ImagePullPolicy: corev1.PullIfNotPresent,
 							Name:            "dex",
 							Command:         []string{"/usr/local/bin/dex", "serve", "/etc/dex/cfg/dexConfig.yaml"},
@@ -329,10 +380,10 @@ func deploymentResource(deploymentName, serviceAccountName string, configChecksu
 								{Name: volume.Name, MountPath: "/etc/dex/cfg"},
 							},
 							Resources: corev1.ResourceRequirements{
-								Limits: corev1.ResourceList{
-									"cpu":    dexCPUResource,
-									"memory": dexMemoryResource,
-								},
+								// Limits: corev1.ResourceList{
+								// 	"cpu":    dexCPUResource,
+								// 	"memory": dexMemoryResource,
+								// },
 								Requests: corev1.ResourceList{
 									"cpu":    dexCPUResource,
 									"memory": dexMemoryResource,
@@ -367,9 +418,9 @@ func updateDeployment(existingDeployment, desiredDeployment *appsv1.Deployment) 
 	}
 
 	if existingDeployment.Spec.Template.Annotations == nil {
-		existingDeployment.Spec.Template.Annotations = map[string]string{}
+		existingDeployment.Spec.Template.ObjectMeta.Annotations = map[string]string{}
 	}
-	existingDeployment.Spec.Template.Annotations["kots.io/dex-secret-checksum"] = desiredDeployment.Spec.Template.Annotations["kots.io/dex-secret-checksum"]
+	existingDeployment.Spec.Template.ObjectMeta.Annotations["kots.io/dex-secret-checksum"] = desiredDeployment.Spec.Template.ObjectMeta.Annotations["kots.io/dex-secret-checksum"]
 
 	existingDeployment.Spec.Template.Spec.Containers[0].Image = desiredDeployment.Spec.Template.Spec.Containers[0].Image
 
@@ -411,8 +462,8 @@ func updateDeploymentConfigSecretVolume(existingDeployment *appsv1.Deployment, d
 	return existingDeployment
 }
 
-func ensureService(ctx context.Context, clientset kubernetes.Interface, namespace string, nodePortConfig *ingresstypes.NodePortConfig) error {
-	service := serviceResource(DexServiceName, nodePortConfig)
+func ensureService(ctx context.Context, clientset kubernetes.Interface, namespace string, ingressSpec kotsv1beta1.IngressConfigSpec) error {
+	service := serviceResource(DexServiceName, ingressSpec)
 
 	existingService, err := clientset.CoreV1().Services(namespace).Get(ctx, DexServiceName, metav1.GetOptions{})
 	if err != nil {
@@ -438,15 +489,15 @@ func ensureService(ctx context.Context, clientset kubernetes.Interface, namespac
 	return nil
 }
 
-func serviceResource(serviceName string, nodePortConfig *ingresstypes.NodePortConfig) *corev1.Service {
+func serviceResource(serviceName string, ingressSpec kotsv1beta1.IngressConfigSpec) *corev1.Service {
 	serviceType := corev1.ServiceTypeClusterIP
 	port := corev1.ServicePort{
 		Name:       "http",
 		Port:       5556,
 		TargetPort: intstr.IntOrString{Type: intstr.Int, IntVal: 5556},
 	}
-	if nodePortConfig != nil && nodePortConfig.Port != 0 {
-		port.NodePort = int32(nodePortConfig.Port)
+	if ingressSpec.Enabled && ingressSpec.NodePort != nil && ingressSpec.NodePort.Port != 0 {
+		port.NodePort = int32(ingressSpec.NodePort.Port)
 		serviceType = corev1.ServiceTypeNodePort
 	}
 	return &corev1.Service{
@@ -456,12 +507,12 @@ func serviceResource(serviceName string, nodePortConfig *ingresstypes.NodePortCo
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:   serviceName,
-			Labels: kotsadmtypes.GetKotsadmLabels(DexAdditionalLabels),
+			Labels: kotsadmtypes.GetKotsadmLabels(AdditionalLabels),
 		},
 		Spec: corev1.ServiceSpec{
 			Type: serviceType,
 			Selector: map[string]string{
-				"app": "dex",
+				"app": "kotsadm-dex",
 			},
 			Ports: []corev1.ServicePort{
 				port,
@@ -504,7 +555,7 @@ func serviceAccountResource(serviceAccountName string) *corev1.ServiceAccount {
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:   serviceAccountName,
-			Labels: kotsadmtypes.GetKotsadmLabels(DexAdditionalLabels),
+			Labels: kotsadmtypes.GetKotsadmLabels(AdditionalLabels),
 		},
 	}
 }
@@ -537,7 +588,7 @@ func roleResource(roleName string) *rbacv1.Role {
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:   roleName,
-			Labels: kotsadmtypes.GetKotsadmLabels(DexAdditionalLabels),
+			Labels: kotsadmtypes.GetKotsadmLabels(AdditionalLabels),
 		},
 		Rules: []rbacv1.PolicyRule{
 			{
@@ -584,7 +635,7 @@ func roleBindingResource(roleBindingName, roleName, serviceAccountName, serviceA
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:   roleBindingName,
-			Labels: kotsadmtypes.GetKotsadmLabels(DexAdditionalLabels),
+			Labels: kotsadmtypes.GetKotsadmLabels(AdditionalLabels),
 		},
 		RoleRef: rbacv1.RoleRef{
 			APIGroup: "rbac.authorization.k8s.io",
@@ -601,34 +652,80 @@ func roleBindingResource(roleBindingName, roleName, serviceAccountName, serviceA
 	}
 }
 
-func ensureCRD(ctx context.Context, clientset apiextensionsclientset.Interface, crd apiextensionsv1beta1.CustomResourceDefinition) error {
-	_, err := clientset.ApiextensionsV1beta1().CustomResourceDefinitions().Get(ctx, crd.Name, metav1.GetOptions{})
+func EnsurePostgresSecret(ctx context.Context, clientset kubernetes.Interface, namespace string) error {
+	secret := postgresSecretResource(DexPostgresSecretName)
+
+	_, err := clientset.CoreV1().Secrets(namespace).Get(ctx, DexPostgresSecretName, metav1.GetOptions{})
 	if err != nil {
 		if !kuberneteserrors.IsNotFound(err) {
-			return errors.Wrapf(err, "failed to get existing crd %s", crd.Spec.Names.Plural)
+			return errors.Wrap(err, "failed to get existing secret")
 		}
 
-		_, err = clientset.ApiextensionsV1beta1().CustomResourceDefinitions().Create(ctx, &crd, metav1.CreateOptions{})
+		_, err = clientset.CoreV1().Secrets(namespace).Create(ctx, secret, metav1.CreateOptions{})
 		if err != nil {
-			return errors.Wrapf(err, "failed to create crd %s", crd.Spec.Names.Plural)
+			return errors.Wrap(err, "failed to create secret")
 		}
 
 		return nil
 	}
 
-	// no patch necessary
+	// no patch needed
 
 	return nil
 }
 
-func ensureIngress(ctx context.Context, clientset kubernetes.Interface, namespace string, ingressConfig ingresstypes.Config) error {
-	if ingressConfig.Ingress == nil {
+func postgresSecretResource(secretName string) *corev1.Secret {
+	generatedPassword := ksuid.New().String()
+
+	return &corev1.Secret{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: "v1",
+			Kind:       "Secret",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:   secretName,
+			Labels: kotsadmtypes.GetKotsadmLabels(AdditionalLabels),
+		},
+		Data: map[string][]byte{
+			"password": []byte(generatedPassword),
+		},
+	}
+}
+
+func ensureIngress(ctx context.Context, clientset kubernetes.Interface, namespace string, ingressSpec kotsv1beta1.IngressConfigSpec) error {
+	if !ingressSpec.Enabled || ingressSpec.Ingress == nil {
 		return deleteIngress(ctx, clientset, namespace)
 	}
-	dexIngress := ingressResource(namespace, ingressConfig)
+	dexIngress := ingressResource(namespace, *ingressSpec.Ingress)
 	return ingress.EnsureIngress(ctx, clientset, namespace, dexIngress)
 }
 
-func ingressResource(namespace string, ingressConfig ingresstypes.Config) *extensionsv1beta1.Ingress {
-	return ingress.IngressFromConfig(*ingressConfig.Ingress, DexIngressName, DexServiceName, 5556, DexAdditionalLabels)
+func ingressResource(namespace string, ingressConfig kotsv1beta1.IngressResourceConfig) *extensionsv1beta1.Ingress {
+	return ingress.IngressFromConfig(ingressConfig, DexIngressName, DexServiceName, 5556, AdditionalLabels)
+}
+
+func identityDexConnectorsToDexTypeConnectors(conns []kotsv1beta1.DexConnector) ([]dextypes.Connector, error) {
+	dexConnectors := []dextypes.Connector{}
+	for _, conn := range conns {
+		f, ok := server.ConnectorsConfig[conn.Type]
+		if !ok {
+			return nil, errors.Errorf("unknown connector type %q", conn.Type)
+		}
+
+		connConfig := f()
+		if len(conn.Config.Raw) != 0 {
+			data := []byte(os.ExpandEnv(string(conn.Config.Raw)))
+			if err := json.Unmarshal(data, connConfig); err != nil {
+				return nil, errors.Wrap(err, "failed to unmarshal connector config")
+			}
+		}
+
+		dexConnectors = append(dexConnectors, dextypes.Connector{
+			Type:   conn.Type,
+			Name:   conn.Name,
+			ID:     conn.ID,
+			Config: connConfig,
+		})
+	}
+	return dexConnectors, nil
 }

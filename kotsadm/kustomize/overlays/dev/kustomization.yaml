@@ -1,6 +1,9 @@
 bases:
   - ../../base
 
+resources:
+  - ./dex-postgres-secret.yaml
+
 patches:
   - ./deployment.yaml
   - ./service.yaml

@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/replicatedhq/kots/pkg/kotsadm/types"
+	kotsadmversion "github.com/replicatedhq/kots/pkg/kotsadm/version"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -13,8 +14,8 @@ func kotsadmConfigMap(deployOptions types.DeployOptions) *corev1.ConfigMap {
 		"initial-app-images-pushed": fmt.Sprintf("%v", deployOptions.AppImagesPushed),
 		"skip-preflights":           fmt.Sprintf("%v", deployOptions.SkipPreflights),
 	}
-	if kotsadmPullSecret(deployOptions.Namespace, deployOptions.KotsadmOptions) != nil {
-		data["kotsadm-registry"] = kotsadmRegistry(deployOptions.KotsadmOptions)
+	if kotsadmversion.KotsadmPullSecret(deployOptions.Namespace, deployOptions.KotsadmOptions) != nil {
+		data["kotsadm-registry"] = kotsadmversion.KotsadmRegistry(deployOptions.KotsadmOptions)
 	}
 
 	configMap := &corev1.ConfigMap{

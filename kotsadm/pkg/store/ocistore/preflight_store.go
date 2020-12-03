@@ -12,7 +12,7 @@ func (s OCIStore) GetPreflightResults(appID string, sequence int64) (*preflightt
 	return nil, ErrNotImplemented
 }
 
-func (s OCIStore) GetLatestPreflightResults() (*preflighttypes.PreflightResult, error) {
+func (s OCIStore) GetLatestPreflightResultsForSequenceZero() (*preflighttypes.PreflightResult, error) {
 	return nil, ErrNotImplemented
 }
 

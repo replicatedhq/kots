@@ -19,7 +19,7 @@ spec:
           valueFrom:
             secretKeyRef:
               key: uri
-              name: ship-postgres
+              name: kotsadm-postgres
         - name: SCHEMAHERO_OUT
           value: /migrations/plan.yaml              
         image: kotsadm-migrations
@@ -39,7 +39,7 @@ spec:
           valueFrom:
             secretKeyRef:
               key: uri
-              name: ship-postgres
+              name: kotsadm-postgres
         image: kotsadm-migrations
         name: kotsadm-migrations
         args: ["apply"]

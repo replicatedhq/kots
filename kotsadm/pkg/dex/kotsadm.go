@@ -181,7 +181,7 @@ func stateSecretResource(secretName, state string) *corev1.Secret {
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:   secretName,
-			Labels: kotsadmtypes.GetKotsadmLabels(identity.DexAdditionalLabels),
+			Labels: kotsadmtypes.GetKotsadmLabels(identity.AdditionalLabels),
 		},
 		Data: map[string][]byte{
 			state: []byte(time.Now().UTC().Format(time.RFC3339)),

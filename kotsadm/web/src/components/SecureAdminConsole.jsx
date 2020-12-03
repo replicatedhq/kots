@@ -147,27 +147,6 @@ class SecureAdminConsole extends React.Component {
     this.loginText.current.style.fontSize = newFontSize;
   }
 
-  getLoginInfo = async () => {
-    try {
-      const response = await fetch(`${window.env.API_ENDPOINT}/login/info`, {
-        headers: {
-          "Content-Type": "application/json",
-        },
-        method: "GET",
-      });
-  
-      if (!response.ok) {
-        console.log(`Unexpected status code ${response.status}`)
-        return;
-      }
-
-      const res = await response.json();
-      this.setState({ loginInfo: res });
-    } catch(err) {
-      console.log(err);
-    }
-  }
-
   componentDidUpdate(lastProps) {
     const { appName } = this.props;
     if (appName && appName !== lastProps.appName) {
@@ -192,7 +171,7 @@ class SecureAdminConsole extends React.Component {
       return;
     }
 
-    await this.getLoginInfo();
+    await this.loginWithIdentityProvider();
   }
 
   componentDidMount() {

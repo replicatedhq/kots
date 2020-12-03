@@ -5,6 +5,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/replicatedhq/kots/pkg/kotsadm/types"
+	kotsadmversion "github.com/replicatedhq/kots/pkg/kotsadm/version"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -132,5 +133,5 @@ func apiClusterTokenSecret(deployOptions types.DeployOptions) *corev1.Secret {
 }
 
 func privateKotsadmRegistrySecret(deployOptions types.DeployOptions) *corev1.Secret {
-	return kotsadmPullSecret(deployOptions.Namespace, deployOptions.KotsadmOptions)
+	return kotsadmversion.KotsadmPullSecret(deployOptions.Namespace, deployOptions.KotsadmOptions)
 }

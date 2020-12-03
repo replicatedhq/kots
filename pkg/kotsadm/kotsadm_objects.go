@@ -6,9 +6,11 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
+	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
+	"github.com/replicatedhq/kots/pkg/identity"
 	"github.com/replicatedhq/kots/pkg/ingress"
-	ingresstypes "github.com/replicatedhq/kots/pkg/ingress/types"
 	"github.com/replicatedhq/kots/pkg/kotsadm/types"
+	kotsadmversion "github.com/replicatedhq/kots/pkg/kotsadm/version"
 	"github.com/replicatedhq/kots/pkg/util"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -52,27 +54,11 @@ func kotsadmRole(namespace string) *rbacv1.Role {
 			Namespace: namespace,
 			Labels:    types.GetKotsadmLabels(),
 		},
-		// creation cannot be restricted by name
 		Rules: []rbacv1.PolicyRule{
 			{
-				APIGroups: []string{""},
-				Resources: []string{"configmaps"},
+				APIGroups: []string{"*"},
+				Resources: []string{"*"},
 				Verbs:     metav1.Verbs{"*"},
-			},
-			{
-				APIGroups: []string{""},
-				Resources: []string{"secrets"},
-				Verbs:     metav1.Verbs{"*"},
-			},
-			{
-				APIGroups: []string{""},
-				Resources: []string{"pods"},
-				Verbs:     metav1.Verbs{"list"},
-			},
-			{
-				APIGroups: []string{""},
-				Resources: []string{"services"},
-				Verbs:     metav1.Verbs{"get"},
 			},
 		},
 	}
@@ -166,7 +152,7 @@ func updateKotsadmDeployment(deployment *appsv1.Deployment, deployOptions types.
 	}
 
 	// image
-	deployment.Spec.Template.Spec.Containers[containerIdx].Image = fmt.Sprintf("%s/kotsadm:%s", kotsadmRegistry(deployOptions.KotsadmOptions), kotsadmTag(deployOptions.KotsadmOptions))
+	deployment.Spec.Template.Spec.Containers[containerIdx].Image = fmt.Sprintf("%s/kotsadm:%s", kotsadmversion.KotsadmRegistry(deployOptions.KotsadmOptions), kotsadmversion.KotsadmTag(deployOptions.KotsadmOptions))
 
 	// copy the env vars from the desired to existing. this could undo a change that the user had.
 	// we don't know which env vars we set and which are user edited. this method avoids deleting
@@ -201,7 +187,7 @@ func kotsadmDeployment(deployOptions types.DeployOptions) *appsv1.Deployment {
 	}
 
 	var pullSecrets []corev1.LocalObjectReference
-	if s := kotsadmPullSecret(deployOptions.Namespace, deployOptions.KotsadmOptions); s != nil {
+	if s := kotsadmversion.KotsadmPullSecret(deployOptions.Namespace, deployOptions.KotsadmOptions); s != nil {
 		pullSecrets = []corev1.LocalObjectReference{
 			{
 				Name: s.ObjectMeta.Name,
@@ -399,7 +385,53 @@ func kotsadmDeployment(deployOptions types.DeployOptions) *appsv1.Deployment {
 					ImagePullSecrets:   pullSecrets,
 					InitContainers: []corev1.Container{
 						{
-							Image:           fmt.Sprintf("%s/kotsadm:%s", kotsadmRegistry(deployOptions.KotsadmOptions), kotsadmTag(deployOptions.KotsadmOptions)),
+							Image:           fmt.Sprintf("%s/kotsadm:%s", kotsadmversion.KotsadmRegistry(deployOptions.KotsadmOptions), kotsadmversion.KotsadmTag(deployOptions.KotsadmOptions)),
+							ImagePullPolicy: corev1.PullIfNotPresent,
+							Name:            "init-dex-db",
+							Command: []string{
+								"psql",
+							},
+							Args: []string{
+								"-h",
+								"kotsadm-postgres",
+								"-U",
+								"kotsadm",
+								"-c",
+								"CREATE DATABASE dex;",
+								"-c",
+								"CREATE USER dex;",
+								"-c",
+								"ALTER USER dex WITH PASSWORD '$(DEX_PGPASSWORD)';",
+								"-c",
+								"GRANT ALL PRIVILEGES ON DATABASE dex TO dex;",
+							},
+							Env: []corev1.EnvVar{
+								{
+									Name: "PGPASSWORD",
+									ValueFrom: &corev1.EnvVarSource{
+										SecretKeyRef: &corev1.SecretKeySelector{
+											LocalObjectReference: corev1.LocalObjectReference{
+												Name: "kotsadm-postgres",
+											},
+											Key: "password",
+										},
+									},
+								},
+								{
+									Name: "DEX_PGPASSWORD",
+									ValueFrom: &corev1.EnvVarSource{
+										SecretKeyRef: &corev1.SecretKeySelector{
+											LocalObjectReference: corev1.LocalObjectReference{
+												Name: identity.DexPostgresSecretName,
+											},
+											Key: "password",
+										},
+									},
+								},
+							},
+						},
+						{
+							Image:           fmt.Sprintf("%s/kotsadm:%s", kotsadmversion.KotsadmRegistry(deployOptions.KotsadmOptions), kotsadmversion.KotsadmTag(deployOptions.KotsadmOptions)),
 							ImagePullPolicy: corev1.PullIfNotPresent,
 							Name:            "restore-db",
 							Command: []string{
@@ -436,7 +468,7 @@ func kotsadmDeployment(deployOptions types.DeployOptions) *appsv1.Deployment {
 							},
 						},
 						{
-							Image:           fmt.Sprintf("%s/kotsadm:%s", kotsadmRegistry(deployOptions.KotsadmOptions), kotsadmTag(deployOptions.KotsadmOptions)),
+							Image:           fmt.Sprintf("%s/kotsadm:%s", kotsadmversion.KotsadmRegistry(deployOptions.KotsadmOptions), kotsadmversion.KotsadmTag(deployOptions.KotsadmOptions)),
 							ImagePullPolicy: corev1.PullIfNotPresent,
 							Name:            "restore-s3",
 							Command: []string{
@@ -498,7 +530,7 @@ func kotsadmDeployment(deployOptions types.DeployOptions) *appsv1.Deployment {
 					},
 					Containers: []corev1.Container{
 						{
-							Image:           fmt.Sprintf("%s/kotsadm:%s", kotsadmRegistry(deployOptions.KotsadmOptions), kotsadmTag(deployOptions.KotsadmOptions)),
+							Image:           fmt.Sprintf("%s/kotsadm:%s", kotsadmversion.KotsadmRegistry(deployOptions.KotsadmOptions), kotsadmversion.KotsadmTag(deployOptions.KotsadmOptions)),
 							ImagePullPolicy: corev1.PullIfNotPresent,
 							Name:            "kotsadm",
 							Ports: []corev1.ContainerPort{
@@ -583,6 +615,6 @@ func kotsadmService(namespace string, nodePort int32) *corev1.Service {
 	return service
 }
 
-func kotsadmIngress(namespace string, ingressConfig ingresstypes.IngressConfig) *extensionsv1beta1.Ingress {
+func kotsadmIngress(namespace string, ingressConfig kotsv1beta1.IngressResourceConfig) *extensionsv1beta1.Ingress {
 	return ingress.IngressFromConfig(ingressConfig, "kotsadm", "kotsadm", 3000, nil)
 }

@@ -10,7 +10,7 @@ import (
 	"k8s.io/client-go/kubernetes"
 )
 
-func Undeploy(ctx context.Context, logger *logger.Logger, clientset kubernetes.Interface, namespace string) error {
+func Undeploy(ctx context.Context, log *logger.Logger, clientset kubernetes.Interface, namespace string) error {
 	if err := deleteIngress(ctx, clientset, namespace); err != nil {
 		return errors.Wrap(err, "failed to delete ingress")
 	}

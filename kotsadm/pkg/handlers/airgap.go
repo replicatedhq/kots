@@ -263,16 +263,7 @@ func AirgapBundleExists(w http.ResponseWriter, r *http.Request) {
 	JSON(w, http.StatusOK, airgapBundleExistsResponse)
 }
 
-func ProcessAirgapBundle(w http.ResponseWriter, r *http.Request) {
-	if r.Method == "POST" {
-		createAppFromAirgap(w, r)
-		return
-	}
-
-	updateAppFromAirgap(w, r)
-}
-
-func updateAppFromAirgap(w http.ResponseWriter, r *http.Request) {
+func UpdateAppFromAirgap(w http.ResponseWriter, r *http.Request) {
 	updateAppFromAirgapRequest := UpdateAppFromAirgapRequest{}
 	if err := json.NewDecoder(r.Body).Decode(&updateAppFromAirgapRequest); err != nil {
 		logger.Error(err)
@@ -321,7 +312,7 @@ func updateAppFromAirgap(w http.ResponseWriter, r *http.Request) {
 	JSON(w, http.StatusAccepted, updateAppFromAirgapResponse)
 }
 
-func createAppFromAirgap(w http.ResponseWriter, r *http.Request) {
+func CreateAppFromAirgap(w http.ResponseWriter, r *http.Request) {
 	createAppFromAirgapRequest := CreateAppFromAirgapRequest{}
 	if err := json.NewDecoder(r.Body).Decode(&createAppFromAirgapRequest); err != nil {
 		logger.Error(err)

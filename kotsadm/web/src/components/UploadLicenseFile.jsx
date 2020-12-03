@@ -119,7 +119,7 @@ class UploadLicenseFile extends React.Component {
             }
 
             if (data.hasPreflight) {
-              history.replace("/preflight");
+              history.replace(`/${data.slug}/preflight`);
               return;
             }
 

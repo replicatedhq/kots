@@ -119,13 +119,13 @@ class AppDetailPage extends Component {
         this.refetchData();
       } else {
         this.setState({
-          makingCurrentReleaseErrMsg: `Unable to deploy release ${version.title}, sequence ${version.sequence}: Unexpected status code: ${res.status}`,
+          makingCurrentReleaseErrMsg: `Unable to deploy release ${version.versionLabel}, sequence ${version.sequence}: Unexpected status code: ${res.status}`,
         });
       }
     } catch (err) {
       console.log(err)
       this.setState({
-        makingCurrentReleaseErrMsg: err ? `Unable to deploy release ${version.title}, sequence ${version.sequence}: ${err.message}` : "Something went wrong, please try again.",
+        makingCurrentReleaseErrMsg: err ? `Unable to deploy release ${version.versionLabel}, sequence ${version.sequence}: ${err.message}` : "Something went wrong, please try again.",
       });
     }
   }
@@ -146,13 +146,13 @@ class AppDetailPage extends Component {
         this.refetchData();
       } else {
         this.setState({
-          redeployVersionErrMsg: `Unable to redeploy release ${version.title}, sequence ${version.sequence}: Unexpected status code: ${res.status}`
+          redeployVersionErrMsg: `Unable to redeploy release ${version.versionLabel}, sequence ${version.sequence}: Unexpected status code: ${res.status}`
         });
       }
     } catch (err) {
       console.log(err)
       this.setState({
-        redeployVersionErrMsg: err ? `Unable to deploy release ${version.title}, sequence ${version.sequence}: ${err.message}` : "Something went wrong, please try again."
+        redeployVersionErrMsg: err ? `Unable to deploy release ${version.versionLabel}, sequence ${version.sequence}: ${err.message}` : "Something went wrong, please try again."
       });
     }
   }
@@ -218,7 +218,7 @@ class AppDetailPage extends Component {
     try {
       this.setState({ loadingApp: true });
 
-      const res = await fetch(`${window.env.API_ENDPOINT}/apps/app/${slug}`, {
+      const res = await fetch(`${window.env.API_ENDPOINT}/app/${slug}`, {
         headers: {
           "Authorization": Utilities.getToken(),
           "Content-Type": "application/json",

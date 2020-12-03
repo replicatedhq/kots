@@ -11,6 +11,7 @@ class ConfigureGraphsModal extends React.Component {
       updatePromValue,
       promValue,
       savingPromValue,
+      savingPromError,
       onPromValueChange
     } = this.props;
 
@@ -27,7 +28,7 @@ class ConfigureGraphsModal extends React.Component {
             <h2 className="u-fontSize--largest u-fontWeight--bold u-color--tuna u-marginBottom--10">Configure graphs</h2>
             <p className="u-fontSize--normal u-color--dustyGray u-lineHeight--normal u-marginBottom--20">To see graphs and metrics, provide the address of your Prometheus installation.<br />This must be resolvable from the Admin Console installation.</p>
             <h3 className="u-fontSize--normal u-fontWeight--bold u-color--tuna u-marginBottom--10">Prometheus endpoint</h3>
-            <form className="EditWatchForm flex-column" onSubmit={updatePromValue}>
+            <div className="EditWatchForm flex-column">
               <input
                 type="text"
                 className="Input u-marginBottom--20"
@@ -35,16 +36,17 @@ class ConfigureGraphsModal extends React.Component {
                 value={promValue}
                 onChange={onPromValueChange}
               />
-              <div className="flex justifyContent--flexEnd u-marginTop--20">
+              <div className="flex justifyContent--flexEnd alignItems--center u-marginTop--20">
+                {savingPromError && <span className="u-color--chestnut u-fontSize--normal u-marginRight--10 u-fontWeight--bold">{savingPromError}</span>}
                 <button
                   type="button"
                   onClick={toggleConfigureGraphs}
                   className="btn secondary force-gray u-marginRight--20">
                   Cancel
-              </button>
+                </button>
                 <button
-                  type="submit"
                   disabled={savingPromValue}
+                  onClick={updatePromValue}
                   className="btn primary lightBlue">
                   {
                     savingPromValue
@@ -53,7 +55,7 @@ class ConfigureGraphsModal extends React.Component {
                   }
                 </button>
               </div>
-            </form>
+            </div>
           </div>
         </Modal>
     );

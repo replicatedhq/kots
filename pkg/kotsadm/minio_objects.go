@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"github.com/replicatedhq/kots/pkg/kotsadm/types"
+	kotsadmversion "github.com/replicatedhq/kots/pkg/kotsadm/version"
 	"github.com/replicatedhq/kots/pkg/util"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -51,7 +52,7 @@ func minioStatefulset(deployOptions types.DeployOptions) *appsv1.StatefulSet {
 	}
 
 	var pullSecrets []corev1.LocalObjectReference
-	if s := kotsadmPullSecret(deployOptions.Namespace, deployOptions.KotsadmOptions); s != nil {
+	if s := kotsadmversion.KotsadmPullSecret(deployOptions.Namespace, deployOptions.KotsadmOptions); s != nil {
 		pullSecrets = []corev1.LocalObjectReference{
 			{
 				Name: s.ObjectMeta.Name,
@@ -126,7 +127,7 @@ func minioStatefulset(deployOptions types.DeployOptions) *appsv1.StatefulSet {
 					},
 					Containers: []corev1.Container{
 						{
-							Image:           fmt.Sprintf("%s/minio:%s", kotsadmRegistry(deployOptions.KotsadmOptions), kotsadmTag(deployOptions.KotsadmOptions)),
+							Image:           fmt.Sprintf("%s/minio:%s", kotsadmversion.KotsadmRegistry(deployOptions.KotsadmOptions), kotsadmversion.KotsadmTag(deployOptions.KotsadmOptions)),
 							ImagePullPolicy: corev1.PullIfNotPresent,
 							Name:            "kotsadm-minio",
 							Command: []string{

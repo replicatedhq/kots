@@ -5,8 +5,6 @@ import (
 	"time"
 
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
-	identitytypes "github.com/replicatedhq/kots/pkg/identity/types"
-	ingresstypes "github.com/replicatedhq/kots/pkg/ingress/types"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 )
@@ -46,8 +44,8 @@ type DeployOptions struct {
 	EnsureKotsadmConfig       bool
 	SkipPreflights            bool
 
-	IdentityConfig identitytypes.Config
-	IngressConfig  ingresstypes.Config
+	IdentityConfig kotsv1beta1.IdentityConfig
+	IngressConfig  kotsv1beta1.IngressConfig
 
 	KotsadmOptions KotsadmOptions
 }

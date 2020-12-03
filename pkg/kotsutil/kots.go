@@ -575,3 +575,47 @@ func GetInstallationParams(configMapName string) (InstallationParams, error) {
 
 	return autoConfig, nil
 }
+
+func LoadIngressConfigFromContents(content []byte) (*kotsv1beta1.IngressConfig, error) {
+	decode := scheme.Codecs.UniversalDeserializer().Decode
+
+	obj, gvk, err := decode(content, nil, nil)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to decode content")
+	}
+
+	if gvk.Group == "kots.io" && gvk.Version == "v1beta1" && gvk.Kind == "IngressConfig" {
+		return obj.(*kotsv1beta1.IngressConfig), nil
+	}
+
+	return nil, errors.Errorf("unexpected gvk: %s", gvk.String())
+}
+
+func LoadIdentityConfigFromContents(content []byte) (*kotsv1beta1.IdentityConfig, error) {
+	decode := scheme.Codecs.UniversalDeserializer().Decode
+
+	obj, gvk, err := decode(content, nil, nil)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to decode content")
+	}
+
+	if gvk.Group == "kots.io" && gvk.Version == "v1beta1" && gvk.Kind == "IdentityConfig" {
+		return obj.(*kotsv1beta1.IdentityConfig), nil
+	}
+
+	return nil, errors.Errorf("unexpected gvk: %s", gvk.String())
+}
+
+func EncodeIngressConfig(ingressConfig kotsv1beta1.IngressConfig) ([]byte, error) {
+	buf := bytes.NewBuffer(nil)
+	s := serializer.NewYAMLSerializer(serializer.DefaultMetaFactory, scheme.Scheme, scheme.Scheme)
+	err := s.Encode(&ingressConfig, buf)
+	return buf.Bytes(), err
+}
+
+func EncodeIdentityConfig(spec kotsv1beta1.IdentityConfig) ([]byte, error) {
+	buf := bytes.NewBuffer(nil)
+	s := serializer.NewYAMLSerializer(serializer.DefaultMetaFactory, scheme.Scheme, scheme.Scheme)
+	err := s.Encode(&spec, buf)
+	return buf.Bytes(), err
+}

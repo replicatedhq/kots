@@ -118,6 +118,22 @@ func generateSchemas(v *viper.Viper) error {
 		return errors.Wrap(err, "failed to write license schema")
 	}
 
+	ingressConfigContents, err := ioutil.ReadFile(filepath.Join(workdir, "config", "crds", "kots.io_ingressconfigs.yaml"))
+	if err != nil {
+		return errors.Wrap(err, "failed to read ingressconfigs crd")
+	}
+	if err := generateSchemaFromCRD(ingressConfigContents, filepath.Join(workdir, v.GetString("output-dir"), "ingressconfigs-kots-v1beta1.json")); err != nil {
+		return errors.Wrap(err, "failed to write ingressconfigs schema")
+	}
+
+	identityConfigContents, err := ioutil.ReadFile(filepath.Join(workdir, "config", "crds", "kots.io_identityconfigs.yaml"))
+	if err != nil {
+		return errors.Wrap(err, "failed to read identityconfigs crd")
+	}
+	if err := generateSchemaFromCRD(identityConfigContents, filepath.Join(workdir, v.GetString("output-dir"), "identityconfigs-kots-v1beta1.json")); err != nil {
+		return errors.Wrap(err, "failed to write identityconfigs schema")
+	}
+
 	return nil
 }
 

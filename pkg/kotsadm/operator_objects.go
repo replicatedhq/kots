@@ -5,6 +5,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/kotsadm/types"
+	kotsadmversion "github.com/replicatedhq/kots/pkg/kotsadm/version"
 	"github.com/replicatedhq/kots/pkg/util"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -163,7 +164,7 @@ func updateOperatorDeployment(deployment *appsv1.Deployment, deployOptions types
 	}
 
 	// image
-	deployment.Spec.Template.Spec.Containers[containerIdx].Image = fmt.Sprintf("%s/kotsadm-operator:%s", kotsadmRegistry(deployOptions.KotsadmOptions), kotsadmTag(deployOptions.KotsadmOptions))
+	deployment.Spec.Template.Spec.Containers[containerIdx].Image = fmt.Sprintf("%s/kotsadm-operator:%s", kotsadmversion.KotsadmRegistry(deployOptions.KotsadmOptions), kotsadmversion.KotsadmTag(deployOptions.KotsadmOptions))
 
 	// copy the env vars from the desired to existing. this could undo a change that the user had.
 	// we don't know which env vars we set and which are user edited. this method avoids deleting
@@ -198,7 +199,7 @@ func operatorDeployment(deployOptions types.DeployOptions) *appsv1.Deployment {
 	}
 
 	var pullSecrets []corev1.LocalObjectReference
-	if s := kotsadmPullSecret(deployOptions.Namespace, deployOptions.KotsadmOptions); s != nil {
+	if s := kotsadmversion.KotsadmPullSecret(deployOptions.Namespace, deployOptions.KotsadmOptions); s != nil {
 		pullSecrets = []corev1.LocalObjectReference{
 			{
 				Name: s.ObjectMeta.Name,
@@ -238,7 +239,7 @@ func operatorDeployment(deployOptions types.DeployOptions) *appsv1.Deployment {
 					ImagePullSecrets:   pullSecrets,
 					Containers: []corev1.Container{
 						{
-							Image:           fmt.Sprintf("%s/kotsadm-operator:%s", kotsadmRegistry(deployOptions.KotsadmOptions), kotsadmTag(deployOptions.KotsadmOptions)),
+							Image:           fmt.Sprintf("%s/kotsadm-operator:%s", kotsadmversion.KotsadmRegistry(deployOptions.KotsadmOptions), kotsadmversion.KotsadmTag(deployOptions.KotsadmOptions)),
 							ImagePullPolicy: corev1.PullIfNotPresent,
 							Name:            "kotsadm-operator",
 							Env: []corev1.EnvVar{

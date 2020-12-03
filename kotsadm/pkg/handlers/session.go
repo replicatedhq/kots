@@ -3,7 +3,6 @@ package handlers
 import (
 	"context"
 	"encoding/base64"
-	"fmt"
 	"net/http"
 	"os"
 	"strings"
@@ -45,9 +44,9 @@ func parseClusterAuthorization(authHeader string) (authorization, error) {
 	}, nil
 }
 
-func requireValidSession(w http.ResponseWriter, r *http.Request) error {
+func requireValidSession(w http.ResponseWriter, r *http.Request) (*types.Session, error) {
 	if r.Method == "OPTIONS" {
-		return nil
+		return nil, nil
 	}
 
 	auth := r.Header.Get("authorization")
@@ -56,14 +55,14 @@ func requireValidSession(w http.ResponseWriter, r *http.Request) error {
 		err := errors.New("authorization header empty")
 		response := ErrorResponse{Error: err.Error()}
 		JSON(w, http.StatusUnauthorized, response)
-		return err
+		return nil, err
 	}
 
 	sess, err := session.Parse(auth)
 	if err != nil {
 		response := ErrorResponse{Error: "failed to parse authorization header"}
 		JSON(w, http.StatusUnauthorized, response)
-		return errors.Wrap(err, "invalid session")
+		return nil, errors.Wrap(err, "invalid session")
 	}
 
 	// we don't currently have roles, all valid tokens are valid sessions
@@ -71,34 +70,10 @@ func requireValidSession(w http.ResponseWriter, r *http.Request) error {
 		err := errors.New("no session in auth header")
 		response := ErrorResponse{Error: err.Error()}
 		JSON(w, http.StatusUnauthorized, response)
-		return err
+		return nil, err
 	}
 
-	if sess.HasRBAC { // handle pre-rbac sessions
-		resource := strings.TrimPrefix(r.URL.Path, "/api/v1")
-		if !sessionAuthorize(resource, sess.Roles) {
-			err := fmt.Errorf("access denied to resource %s", resource)
-			response := ErrorResponse{Error: err.Error()}
-			JSON(w, http.StatusForbidden, response)
-			return err
-		}
-	}
-
-	return nil
-}
-
-func sessionAuthorize(resource string, roles []types.SessionRole) bool {
-	// TODO
-	for _, role := range roles {
-		for _, policies := range role.Policies {
-			for _, allowed := range policies.Allowed {
-				if allowed == "**/*" {
-					return true
-				}
-			}
-		}
-	}
-	return false
+	return sess, nil
 }
 
 func requireValidKOTSToken(w http.ResponseWriter, r *http.Request) error {

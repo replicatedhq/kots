@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"strings"
 	"time"
 
 	oidc "github.com/coreos/go-oidc"
@@ -12,13 +13,11 @@ import (
 	kotsadmdex "github.com/replicatedhq/kots/kotsadm/pkg/dex"
 	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
 	"github.com/replicatedhq/kots/kotsadm/pkg/session"
-	sessiontypes "github.com/replicatedhq/kots/kotsadm/pkg/session/types"
 	"github.com/replicatedhq/kots/kotsadm/pkg/store"
 	"github.com/replicatedhq/kots/kotsadm/pkg/user"
 	usertypes "github.com/replicatedhq/kots/kotsadm/pkg/user/types"
 	"github.com/replicatedhq/kots/pkg/identity"
 	ingress "github.com/replicatedhq/kots/pkg/ingress"
-	"github.com/replicatedhq/kots/pkg/rbac"
 	"github.com/segmentio/ksuid"
 	"golang.org/x/oauth2"
 )
@@ -40,13 +39,13 @@ const (
 )
 
 func Login(w http.ResponseWriter, r *http.Request) {
-	identityConfig, err := identity.GetConfig(r.Context(), os.Getenv("POD_NAMESPACE"))
+	ingressConfig, err := identity.GetConfig(r.Context(), os.Getenv("POD_NAMESPACE"))
 	if err != nil {
 		logger.Error(err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-	if identityConfig.Enabled && identityConfig.DisablePasswordAuth {
+	if ingressConfig.Spec.Enabled && ingressConfig.Spec.DisablePasswordAuth {
 		err := errors.New("password authentication disabled")
 		JSON(w, http.StatusForbidden, NewErrorResponse(err))
 		return
@@ -77,7 +76,7 @@ func Login(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// TODO: super user permissions
-	roles := session.GetSessionRolesFromRBAC(nil, rbac.DefaultGroups, rbac.DefaultRoles, rbac.DefaultPolicies)
+	roles := session.GetSessionRolesFromRBAC(nil, identity.DefaultGroups)
 
 	createdSession, err := store.GetStore().CreateSession(foundUser, nil, roles)
 	if err != nil {
@@ -257,15 +256,17 @@ func OIDCLoginCallback(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	roles := []sessiontypes.SessionRole{}
-	if identityConfig.EnableAdvancedRBAC {
-		roles = session.GetSessionRolesFromRBAC(claims.Groups, identityConfig.RBAC.Groups, identityConfig.RBAC.Roles, identityConfig.RBAC.Policies)
-	} else {
-		groups := rbac.DefaultGroups
-		if len(identityConfig.RestrictedGroups) > 0 {
-			groups = identity.RestrictedGroupsToRBACGroups(identityConfig.RestrictedGroups)
-		}
-		roles = session.GetSessionRolesFromRBAC(claims.Groups, groups, rbac.DefaultRoles, rbac.DefaultPolicies)
+	groups := identity.DefaultGroups
+	if len(identityConfig.Spec.Groups) > 0 {
+		groups = identityConfig.Spec.Groups
+	}
+	roles := session.GetSessionRolesFromRBAC(claims.Groups, groups)
+
+	if len(roles) == 0 {
+		loginResponse := LoginResponse{}
+		loginResponse.Error = "user must be a part of at least 1 group with roles"
+		JSON(w, http.StatusUnauthorized, loginResponse)
+		return
 	}
 
 	createdSession, err := store.GetStore().CreateSession(user, &idToken.Expiry, roles)
@@ -290,7 +291,11 @@ func OIDCLoginCallback(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// TODO: support tls?
+	redirectURL := identityConfig.Spec.AdminConsoleAddress
+	if redirectURL == "" && ingressConfig.Spec.Enabled {
+		redirectURL = ingress.GetAddress(ingressConfig.Spec)
+	}
+
 	expire := time.Now().Add(30 * time.Minute)
 	cookie := http.Cookie{
 		Name:    "token",
@@ -298,38 +303,11 @@ func OIDCLoginCallback(w http.ResponseWriter, r *http.Request) {
 		Expires: expire,
 		Path:    "/",
 	}
+
+	if strings.HasPrefix(redirectURL, "https") {
+		cookie.Secure = true
+	}
+
 	http.SetCookie(w, &cookie)
-
-	http.Redirect(w, r, ingress.GetAddress(*ingressConfig), http.StatusSeeOther)
-}
-
-type GetLoginInfoResponse struct {
-	Method            LoginMethod `json:"method"`
-	IdentityConnector string      `json:"identityConnector,omitempty"` // TODO: support multiple connectors
-	Error             string      `json:"error,omitempty"`
-}
-
-func GetLoginInfo(w http.ResponseWriter, r *http.Request) {
-	getLoginInfoResponse := GetLoginInfoResponse{}
-
-	identityConfig, err := identity.GetConfig(r.Context(), os.Getenv("POD_NAMESPACE"))
-	if err != nil {
-		logger.Error(err)
-		getLoginInfoResponse.Error = "failed to get identity config"
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-	if !identityConfig.Enabled {
-		getLoginInfoResponse.Method = PasswordAuth
-		JSON(w, http.StatusOK, getLoginInfoResponse)
-		return
-	}
-
-	getLoginInfoResponse.Method = IdentityService
-
-	if len(identityConfig.DexConnectors) > 0 {
-		getLoginInfoResponse.IdentityConnector = identityConfig.DexConnectors[0].Name
-	}
-
-	JSON(w, http.StatusOK, getLoginInfoResponse)
+	http.Redirect(w, r, redirectURL, http.StatusSeeOther)
 }

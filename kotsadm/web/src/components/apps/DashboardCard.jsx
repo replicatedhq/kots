@@ -248,6 +248,7 @@ export default class DashboardCard extends React.Component {
     } else if (this.props.uploadingAirgapFile) {
       updateText = (
         <AirgapUploadProgress
+          appSlug={app.slug}
           total={this.props.uploadSize}
           progress={this.props.uploadProgress}
           resuming={this.props.uploadResuming}
@@ -258,6 +259,7 @@ export default class DashboardCard extends React.Component {
     } else if (isBundleUploading) {
       updateText = (
         <AirgapUploadProgress
+          appSlug={app.slug}
           unkownProgress={true}
           onProgressError={this.onProgressError}
           smallSize={true}

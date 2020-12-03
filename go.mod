@@ -38,12 +38,15 @@ require (
 	github.com/marccampbell/yaml-toolbox v0.0.0-20200805160637-950ceb36c770
 	github.com/mattn/go-isatty v0.0.12
 	github.com/mholt/archiver v3.1.1+incompatible
+	github.com/mitchellh/hashstructure v1.1.0 // indirect
 	github.com/niemeyer/pretty v0.0.0-20200227124842-a10e7caefd8e // indirect
 	github.com/nwaples/rardecode v1.0.0 // indirect
+	github.com/open-policy-agent/opa v0.24.0
 	github.com/otiai10/copy v1.0.2
 	github.com/phayes/freeport v0.0.0-20180830031419-95f893ade6f2
 	github.com/pierrec/lz4 v2.2.6+incompatible // indirect
 	github.com/pkg/errors v0.9.1
+	github.com/replicatedhq/kots/kotsadm/operator v0.0.0-20201124184048-1a3cebed333c // indirect
 	github.com/replicatedhq/kurl/kurlkinds v0.0.0-20200617224429-55f493a72baf
 	github.com/replicatedhq/troubleshoot v0.9.52
 	github.com/replicatedhq/yaml/v3 v3.0.0-beta5-replicatedhq
@@ -51,6 +54,7 @@ require (
 	github.com/segmentio/ksuid v1.0.3
 	github.com/sergi/go-diff v1.1.0
 	github.com/spf13/cobra v1.0.0
+	github.com/spf13/pflag v1.0.5
 	github.com/spf13/viper v1.6.2
 	github.com/stevvooe/resumable v0.0.0-20180830230917-22b14a53ba50 // indirect
 	github.com/stretchr/testify v1.6.1
@@ -60,7 +64,7 @@ require (
 	github.com/yvasiyarov/go-metrics v0.0.0-20150112132944-c25f46c4b940 // indirect
 	github.com/yvasiyarov/gorelic v0.0.7 // indirect
 	github.com/yvasiyarov/newrelic_platform_go v0.0.0-20160601141957-9c099fbc30e9 // indirect
-	golang.org/x/crypto v0.0.0-20200423211502-4bdfaf469ed5
+	golang.org/x/crypto v0.0.0-20200622213623-75b288015ac9
 	gopkg.in/check.v1 v1.0.0-20200227125254-8fa46927fb4f // indirect
 	gopkg.in/go-playground/assert.v1 v1.2.1
 	gopkg.in/yaml.v2 v2.3.0

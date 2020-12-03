@@ -26,7 +26,7 @@ const (
 	SessionSecretName = "kotsadm-sessions"
 )
 
-func (s OCIStore) CreateSession(forUser *usertypes.User, expiresAt *time.Time, roles []sessiontypes.SessionRole) (*sessiontypes.Session, error) {
+func (s OCIStore) CreateSession(forUser *usertypes.User, expiresAt *time.Time, roles []string) (*sessiontypes.Session, error) {
 	logger.Debug("creating session")
 
 	randomID, err := ksuid.NewRandom()

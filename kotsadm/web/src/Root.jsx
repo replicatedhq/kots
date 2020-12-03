@@ -316,7 +316,7 @@ class Root extends Component {
                     return <Crashz />;
 
                   }} />
-                  <ProtectedRoute path="/preflight" render={props => <PreflightResultPage {...props} logo={this.state.appLogo} appName={this.state.selectedAppName} fromLicenseFlow={true} refetchAppsList={this.getAppsList} />} />
+                  <ProtectedRoute path="/:slug/preflight" render={props => <PreflightResultPage {...props} logo={this.state.appLogo} appName={this.state.selectedAppName} fromLicenseFlow={true} refetchAppsList={this.getAppsList} />} />
                   <ProtectedRoute exact path="/:slug/config" render={props => <AppConfig {...props} fromLicenseFlow={true} refetchAppsList={this.getAppsList} />} />
                   <Route exact path="/secure-console" render={props => <SecureAdminConsole {...props} logo={this.state.appLogo} appName={this.state.selectedAppName} onLoginSuccess={this.getAppsList} fetchingMetadata={this.state.fetchingMetadata} />} />
                   <ProtectedRoute exact path="/upload-license" render={props => <UploadLicenseFile {...props} logo={this.state.appLogo} appsListLength={appsList?.length} appName={this.state.selectedAppName} fetchingMetadata={this.state.fetchingMetadata} onUploadSuccess={this.getAppsList} />} />

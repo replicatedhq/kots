@@ -4,29 +4,22 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/replicatedhq/kots/pkg/ingress/types"
+	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 )
 
-func GetAddress(config types.Config) string {
+func GetAddress(ingressSpec kotsv1beta1.IngressConfigSpec) string {
 	switch {
-	case config.Ingress != nil:
-		return getIngressConfigAddress(*config.Ingress)
+	case ingressSpec.Ingress != nil:
+		return getIngressConfigAddress(*ingressSpec.Ingress)
 
-	case config.NodePort != nil:
-		return strings.TrimRight(config.NodePort.Address, "/")
-
-	case config.External != nil:
-		return strings.TrimRight(config.External.Address, "/")
+	case ingressSpec.NodePort != nil:
+		return "" // TODO
 	}
 
 	return ""
 }
 
-func getIngressConfigAddress(ingressConfig types.IngressConfig) string {
-	if ingressConfig.Address != "" {
-		return strings.TrimRight(ingressConfig.Address, "/")
-	}
-
+func getIngressConfigAddress(ingressConfig kotsv1beta1.IngressResourceConfig) string {
 	var u url.URL
 	if ingressConfig.TLSSecretName != "" {
 		u.Scheme = "https"
