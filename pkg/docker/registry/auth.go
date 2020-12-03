@@ -29,7 +29,7 @@ var (
 )
 
 func LoadAuthForRegistry(endpoint string) (string, string, error) {
-	sys := &types.SystemContext{}
+	sys := &types.SystemContext{DockerDisableV1Ping: true}
 	username, password, err := config.GetAuthentication(sys, endpoint)
 	if err != nil {
 		return "", "", errors.Wrapf(err, "error loading username and password")

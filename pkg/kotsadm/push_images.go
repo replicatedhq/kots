@@ -179,6 +179,7 @@ func pushOneImage(rootDir string, format string, imageName string, tag string, o
 
 	destCtx := &containerstypes.SystemContext{
 		DockerInsecureSkipTLSVerify: containerstypes.OptionalBoolTrue,
+		DockerDisableV1Ping:         true,
 	}
 	if options.Registry.Username != "" && options.Registry.Password != "" {
 		destCtx.DockerAuthConfig = &containerstypes.DockerAuthConfig{
