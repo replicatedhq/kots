@@ -54,18 +54,6 @@ var (
 		Action:   "read",
 		Resource: "**",
 	}
-
-	PolicyAllowAll = types.Policy{
-		Name:     "Allow All",
-		Action:   "**",
-		Resource: "**",
-	}
-
-	PolicyReadonly = types.Policy{
-		Name:     "Read Only",
-		Action:   "read",
-		Resource: "**",
-	}
 )
 
 func GetAppAdminRole(appSlug string) types.Role {
