@@ -2,7 +2,6 @@ package dex
 
 import (
 	"context"
-	"net/http"
 	"os"
 	"sync"
 	"time"
@@ -53,7 +52,12 @@ func GetKotsadmOIDCProvider() (*oidc.Provider, error) {
 		return nil, errors.Wrap(err, "failed to get kotsadm dex config")
 	}
 
-	ctx := oidc.ClientContext(context.Background(), http.DefaultClient)
+	httpClient, err := identity.HTTPClient(context.TODO(), os.Getenv("POD_NAMESPACE"))
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to init http client")
+	}
+
+	ctx := oidc.ClientContext(context.Background(), httpClient)
 	provider, err := oidc.NewProvider(ctx, dexConfig.Issuer)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to query provider %q", dexConfig.Issuer)

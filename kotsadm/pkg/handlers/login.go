@@ -184,7 +184,15 @@ func OIDCLoginCallback(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		ctx := oidc.ClientContext(r.Context(), http.DefaultClient)
+		httpClient, err := identity.HTTPClient(r.Context(), os.Getenv("POD_NAMESPACE"))
+		if err != nil {
+			err = errors.Wrap(err, "failed to get identity http client")
+			logger.Error(err)
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
+
+		ctx := oidc.ClientContext(r.Context(), httpClient)
 		token, err = oauth2Config.Exchange(ctx, code)
 		if err != nil {
 			logger.Error(errors.Wrap(err, "failed to exchange token"))
@@ -200,7 +208,15 @@ func OIDCLoginCallback(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		ctx := oidc.ClientContext(r.Context(), http.DefaultClient)
+		httpClient, err := identity.HTTPClient(r.Context(), os.Getenv("POD_NAMESPACE"))
+		if err != nil {
+			err = errors.Wrap(err, "failed to get identity http client")
+			logger.Error(err)
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
+
+		ctx := oidc.ClientContext(r.Context(), httpClient)
 		t := &oauth2.Token{
 			RefreshToken: refresh,
 			Expiry:       time.Now().Add(-time.Hour),

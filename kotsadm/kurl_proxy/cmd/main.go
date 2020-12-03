@@ -45,6 +45,7 @@ func main() {
 	rand.Seed(time.Now().UnixNano())
 
 	upstreamOrigin := os.Getenv("UPSTREAM_ORIGIN")
+	dexUpstreamOrigin := os.Getenv("DEX_UPSTREAM_ORIGIN")
 	tlsSecretName := os.Getenv("TLS_SECRET_NAME")
 	namespace := os.Getenv("NAMESPACE")
 	nodePort := os.Getenv("NODE_PORT")
@@ -57,6 +58,14 @@ func main() {
 	upstream, err := url.Parse(upstreamOrigin)
 	if err != nil {
 		log.Panic(err)
+	}
+	var dexUpstream *url.URL
+	if dexUpstreamOrigin != "" {
+		u, err := url.Parse(dexUpstreamOrigin)
+		if err != nil {
+			log.Panic(err)
+		}
+		dexUpstream = u
 	}
 	config, err := rest.InClusterConfig()
 	if err != nil {
@@ -97,7 +106,7 @@ func main() {
 
 		m := cmux.New(listener)
 
-		httpsServer = getHttpsServer(upstream, tlsSecretName, secrets, cert.acceptAnonymousUploads)
+		httpsServer = getHttpsServer(upstream, dexUpstream, tlsSecretName, secrets, cert.acceptAnonymousUploads)
 		tlsConfig := tlsconfig.ServerDefault()
 		tlsConfig.Certificates = []tls.Certificate{cert.tlsCert}
 		go httpsServer.Serve(tls.NewListener(m.Match(cmux.TLS()), tlsConfig))
@@ -107,6 +116,9 @@ func main() {
 
 		log.Printf("Kurl Proxy listening on :%s\n", nodePort)
 		log.Printf("\tupstream: %s\n", upstreamOrigin)
+		if dexUpstream != nil {
+			log.Printf("\tdex upstream: %s\n", dexUpstreamOrigin)
+		}
 		log.Printf("\tcert: %s\n", cert.fingerprint)
 		log.Printf("\tanonymous uploads enabled: %t\n", cert.acceptAnonymousUploads)
 
@@ -232,7 +244,7 @@ func getHttpServer(fingerprint string, acceptAnonymousUploads bool) *http.Server
 	}
 }
 
-func getHttpsServer(upstream *url.URL, tlsSecretName string, secrets corev1.SecretInterface, acceptAnonymousUploads bool) *http.Server {
+func getHttpsServer(upstream, dexUpstream *url.URL, tlsSecretName string, secrets corev1.SecretInterface, acceptAnonymousUploads bool) *http.Server {
 	mux := http.NewServeMux()
 
 	r := gin.Default()
@@ -387,6 +399,11 @@ func getHttpsServer(upstream *url.URL, tlsSecretName string, secrets corev1.Secr
 	// 	http.Error(w, "Not found", http.StatusNotFound)
 	// }))
 
+	if dexUpstream != nil {
+		dexReverseProxy := httputil.NewSingleHostReverseProxy(dexUpstream)
+		mux.Handle("/dex", dexReverseProxy)
+		mux.Handle("/dex/", dexReverseProxy)
+	}
 	mux.Handle("/", httputil.NewSingleHostReverseProxy(upstream))
 
 	return &http.Server{

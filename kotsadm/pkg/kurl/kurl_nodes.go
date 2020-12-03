@@ -143,6 +143,7 @@ func getNodeMetrics(nodeIP string) (*statsv1alpha1.Summary, error) {
 			return nil, errors.Wrap(err, "get client keypair")
 		}
 
+		// this will leak memory
 		client.Transport = &http.Transport{
 			TLSClientConfig: &tls.Config{
 				Certificates:       []tls.Certificate{cert},
