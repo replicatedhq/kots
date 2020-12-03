@@ -379,7 +379,7 @@ class SnapshotSchedule extends Component {
           loading={loadingConfig}
         />
         {!isAppConfig && isKurlEnabled &&
-          <GettingStartedSnapshots isKurlEnabled={isKurlEnabled} isSettingsPage={true} />
+          <GettingStartedSnapshots isSettingsPage={true} />
         }
       </div>
     );

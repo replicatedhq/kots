@@ -312,6 +312,7 @@ class Snapshots extends Component {
       )
     }
 
+    const isInternalStore = snapshotSettings?.store?.internal;
     const isVeleroCorrectVersion = snapshotSettings?.isVeleroRunning && snapshotSettings?.veleroVersion.includes("v1.5");
     const snapshotApp = this.props.appsList?.find(app => app.allowSnapshots);
 
@@ -338,6 +339,11 @@ class Snapshots extends Component {
               <p className="u-fontSize--small u-fontWeight--normal u-lineHeight--normal u-color--doveGray u-marginTop--5">
                 If you only need a partial backup of just application volumes and manifests for rollbacks, <Link to={`/app/${snapshotApp?.slug}/snapshots`} className="replicated-link u-fontSize--small">use Application Snapshots</Link>.
               </p>
+              {isInternalStore && isKurlEnabled ?
+                <p className="u-fontSize--normal u-fontWeight--medium u-lineHeight--normal u-color--jaffa u-marginTop--20"> Instance snapshots with internal storage may result in data loss.  Please configure external storage. </p>
+                :
+                null
+              }
             </div>
           </div>
           <div className="AppSnapshots--wrapper flex1 flex-column u-width--full">
@@ -375,7 +381,7 @@ class Snapshots extends Component {
                 <div className="flex flex-column u-position--relative">
                   {[0, 1, 2, 3, 4, 5].map((el) => (<DummySnapshotRow key={el} />
                   ))}
-                  <GettingStartedSnapshots isVeleroInstalled={snapshotSettings?.veleroVersion !== ""} history={this.props.history} startInstanceSnapshot={this.startInstanceSnapshot} isKurlEnabled={isKurlEnabled} />
+                  <GettingStartedSnapshots isVeleroInstalled={snapshotSettings?.veleroVersion !== ""} history={this.props.history} startInstanceSnapshot={this.startInstanceSnapshot} />
                 </div> : null}
           </div>
           {this.state.deleteSnapshotModal &&

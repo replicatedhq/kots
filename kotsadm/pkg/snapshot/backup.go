@@ -16,6 +16,7 @@ import (
 	"github.com/replicatedhq/kots/kotsadm/pkg/downstream"
 	downstreamtypes "github.com/replicatedhq/kots/kotsadm/pkg/downstream/types"
 	"github.com/replicatedhq/kots/kotsadm/pkg/k8s"
+	"github.com/replicatedhq/kots/kotsadm/pkg/kurl"
 	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
 	"github.com/replicatedhq/kots/kotsadm/pkg/render/helper"
 	"github.com/replicatedhq/kots/kotsadm/pkg/snapshot/types"
@@ -232,6 +233,11 @@ func CreateInstanceBackup(ctx context.Context, cluster *downstreamtypes.Downstre
 		includedNamespaces = append(includedNamespaces, kotsKinds.KotsApplication.Spec.AdditionalNamespaces...)
 	}
 
+	isKurl := kurl.IsKurl()
+	if isKurl {
+		includedNamespaces = append(includedNamespaces, "kurl")
+	}
+
 	kotsadmVeleroBackendStorageLocation, err := FindBackupStoreLocation()
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to find backupstoragelocations")
@@ -273,6 +279,14 @@ func CreateInstanceBackup(ctx context.Context, cluster *downstreamtypes.Downstre
 			IncludedNamespaces: includedNamespaces,
 			LabelSelector:      &labelSelector,
 		},
+	}
+
+	if isKurl {
+		registryHost, _, _, err := kotsutil.GetKurlRegistryCreds()
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to get kurl registry host")
+		}
+		veleroBackup.ObjectMeta.Annotations["kots.io/kurl-registry"] = registryHost
 	}
 
 	if cluster.SnapshotTTL != "" {
