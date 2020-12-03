@@ -148,8 +148,10 @@ func Start() {
 		HandlerFunc(policy.RedactorWrite.Enforce(handlers.SetRedactEnabled))
 
 	// Identity Service
-	sessionAuthRouter.Path("/api/v1/identity/configure").Methods("POST").
+	sessionAuthRouter.Path("/api/v1/identity/config").Methods("POST").
 		HandlerFunc(policy.IdentityServiceWrite.Enforce(handlers.ConfigureIdentityService))
+	sessionAuthRouter.Path("/api/v1/identity/config").Methods("GET").
+		HandlerFunc(policy.IdentityServiceRead.Enforce(handlers.GetIdentityServiceConfig))
 
 	// Apps
 	sessionAuthRouter.Path("/api/v1/apps").Methods("GET").

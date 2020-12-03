@@ -94,6 +94,7 @@ func ConfigureIdentityService(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// TODO: handle ingress config
 	identityConfig := kotsv1beta1.IdentityConfig{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "kots.io/v1beta1",
@@ -168,6 +169,56 @@ func ConfigureIdentityService(w http.ResponseWriter, r *http.Request) {
 	}
 
 	response.Success = true
+
+	JSON(w, http.StatusOK, response)
+}
+
+type GetIdentityServiceConfigResponse struct {
+	Enabled                bool   `json:"enabled"`
+	AdminConsoleAddress    string `json:"adminConsoleAddress"`
+	IdentityServiceAddress string `json:"identityServiceAddress"`
+	IdentityProvider       string `json:"identityProvider"`
+	Issuer                 string `json:"issuer"`
+}
+
+func GetIdentityServiceConfig(w http.ResponseWriter, r *http.Request) {
+	namespace := os.Getenv("POD_NAMESPACE")
+
+	identityConfig, err := identity.GetConfig(r.Context(), namespace)
+	if err != nil {
+		logger.Error(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	// TODO: support types other than oidc
+	// maybe redact the config and return it?
+
+	// TODO: return ingress config
+
+	response := GetIdentityServiceConfigResponse{
+		Enabled:                identityConfig.Spec.Enabled,
+		AdminConsoleAddress:    identityConfig.Spec.AdminConsoleAddress,
+		IdentityServiceAddress: identityConfig.Spec.IdentityServiceAddress,
+	}
+
+	if len(identityConfig.Spec.DexConnectors.Value) > 0 {
+		conn := identityConfig.Spec.DexConnectors.Value[0]
+		response.IdentityProvider = conn.Name
+
+		if len(conn.Config.Raw) != 0 {
+			// unmarshal connector config
+			var connectorConfig oidc.Config
+			data := []byte(os.ExpandEnv(string(conn.Config.Raw)))
+			err = json.Unmarshal(data, &connectorConfig)
+			if err != nil {
+				logger.Error(err)
+				w.WriteHeader(http.StatusInternalServerError)
+				return
+			}
+			response.Issuer = connectorConfig.Issuer
+		}
+	}
 
 	JSON(w, http.StatusOK, response)
 }
