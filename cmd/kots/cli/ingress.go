@@ -70,17 +70,6 @@ func IngressInstallCmd() *cobra.Command {
 
 			ingressConfig.Spec.Enabled = true
 
-			identityConfig, err := identity.GetConfig(cmd.Context(), namespace)
-			if err != nil {
-				return errors.Wrap(err, "failed to get identity config")
-			}
-
-			if identityConfig.Spec.Enabled {
-				if err := identity.ConfigValidate(identityConfig.Spec, ingressConfig.Spec); err != nil {
-					return errors.Wrap(err, "failed to validate identity config")
-				}
-			}
-
 			if err := ingress.SetConfig(cmd.Context(), namespace, ingressConfig); err != nil {
 				return errors.Wrap(err, "failed to set identity config")
 			}
@@ -91,8 +80,17 @@ func IngressInstallCmd() *cobra.Command {
 
 			log.FinishSpinner()
 
+			identityConfig, err := identity.GetConfig(cmd.Context(), namespace)
+			if err != nil {
+				return errors.Wrap(err, "failed to get identity config")
+			}
+
 			if identityConfig.Spec.Enabled {
 				log.ChildActionWithSpinner("Configuring the Identity Service")
+
+				if err := identity.ConfigValidate(identityConfig.Spec, ingressConfig.Spec); err != nil {
+					return errors.Wrap(err, "failed to validate identity config")
+				}
 
 				// we have to update the dex secret if kotsadm ingress is changing because it relies on the redirect uri
 				if err := identity.Configure(cmd.Context(), clientset, namespace, *identityConfig, ingressConfig); err != nil {
