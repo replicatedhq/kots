@@ -66,8 +66,8 @@ spec:
           volumeMounts:
             - name: init-dex-db
               readOnly: true
-              mountPath: /etc/kurl-proxy/init
-          command: ["bash", "/etc/kurl-proxy/init/init.sh"]
+              mountPath: /etc/dex/init
+          command: ["bash", "/etc/dex/init/init.sh"]
           env:
           - name: PGPASSWORD
             valueFrom:
