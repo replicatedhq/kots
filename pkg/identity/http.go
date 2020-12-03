@@ -5,6 +5,7 @@ import (
 	"context"
 	"crypto/tls"
 	"crypto/x509"
+	"encoding/base64"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -24,7 +25,7 @@ var (
 func HTTPClient(ctx context.Context, namespace string) (*http.Client, error) {
 	// NOTE: it may be possible to mount both the secret and the identity spec and watch for changes
 
-	_, err := GetConfig(ctx, namespace) // TODO
+	identityConfig, err := GetConfig(ctx, namespace) // TODO
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get identity config")
 	}
@@ -54,17 +55,30 @@ func HTTPClient(ctx context.Context, namespace string) (*http.Client, error) {
 
 	if kurlProxyTLSCert != nil {
 		if !rootCAs.AppendCertsFromPEM(kurlProxyTLSCert) {
-			log.Println(errors.New("no certificate blocks found in kurl tls proxy ca cert"))
+			// TODO: how can I log here?
+			log.Println(errors.New("no certificate blocks found in kurl tls proxy ca certificate"))
 		}
 	}
 
-	httpClient = cleanhttp.DefaultClient()
-	httpClient.Transport = &http.Transport{
-		TLSClientConfig: &tls.Config{
-			// TODO: options from kotsv1beta1.IdentityConfigSpec
-			// InsecureSkipVerify: true,
-			RootCAs: rootCAs,
-		},
+	if identityConfig.Spec.CACertPemBase64 != "" {
+		caCert, err := base64.StdEncoding.DecodeString(identityConfig.Spec.CACertPemBase64)
+		if err != nil {
+			log.Println(errors.Wrap(err, "failed to base64 decode provided ca certificate"))
+		} else if caCert != nil {
+			if !rootCAs.AppendCertsFromPEM(caCert) {
+				log.Println(errors.New("no certificate blocks found in provided ca certificate"))
+			}
+		}
+	}
+
+	transport := cleanhttp.DefaultTransport()
+	transport.TLSClientConfig = &tls.Config{
+		RootCAs:            rootCAs,
+		InsecureSkipVerify: identityConfig.Spec.InsecureSkipTLSVerify,
+	}
+
+	httpClient = &http.Client{
+		Transport: transport,
 	}
 
 	return httpClient, nil

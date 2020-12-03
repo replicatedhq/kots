@@ -37,6 +37,8 @@ spec:
           properties:
             adminConsoleAddress:
               type: string
+            caCert:
+              type: boolean
             dexConnectors:
               properties:
                 value:
@@ -129,6 +131,8 @@ spec:
               required:
               - enabled
               type: object
+            insecureSkipTLSVerify:
+              type: boolean
           required:
           - enabled
           type: object

@@ -22,6 +22,9 @@
         "adminConsoleAddress": {
           "type": "string"
         },
+        "caCert": {
+          "type": "boolean"
+        },
         "dexConnectors": {
           "type": "object",
           "properties": {
@@ -154,6 +157,9 @@
               }
             }
           }
+        },
+        "insecureSkipTLSVerify": {
+          "type": "boolean"
         }
       }
     },
