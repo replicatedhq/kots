@@ -65,6 +65,11 @@ build:
       docker:
         dockerfile: ./Dockerfile.skaffold
 
+    - image: kurl-proxy
+      context: "./kurl_proxy"
+      docker:
+        dockerfile: ./Dockerfile.skaffold
+
 deploy:
   statusCheckDeadlineSeconds: 240
   kustomize:
