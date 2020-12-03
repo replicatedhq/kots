@@ -25,6 +25,11 @@ type ConfigureIdentityServiceRequest struct {
 	IDPConfig `json:",inline"`
 }
 
+type IDPConfig struct {
+	OIDCConfig    *OIDCConfig `json:"oidcConfig"`
+	GEOAxISConfig *OIDCConfig `json:"geoAxisConfig"`
+}
+
 type OIDCConfig struct {
 	ConnectorID               string   `json:"connectorId"`
 	ConnectorName             string   `json:"connectorName"`
@@ -297,11 +302,6 @@ type GetIdentityServiceConfigResponse struct {
 	IdentityServiceAddress string `json:"identityServiceAddress"`
 
 	IDPConfig `json:",inline"`
-}
-
-type IDPConfig struct {
-	OIDCConfig    *OIDCConfig `json:"oidcConfig"`
-	GEOAxISConfig *OIDCConfig `json:"geoAxisConfig"`
 }
 
 func GetIdentityServiceConfig(w http.ResponseWriter, r *http.Request) {
