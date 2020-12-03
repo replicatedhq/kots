@@ -18,11 +18,20 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
 )
 
+const (
+	RedactionMask = "--- REDACTED ---"
+)
+
 type ConfigureIdentityServiceRequest struct {
-	AdminConsoleAddress    string      `json:"adminConsoleAddress"`
-	IdentityServiceAddress string      `json:"identityServiceAddress"`
-	OIDCConfig             *OIDCConfig `json:"oidcConfig"`
-	GEOAxISConfig          *OIDCConfig `json:"geoAxisConfig"`
+	AdminConsoleAddress    string `json:"adminConsoleAddress"`
+	IdentityServiceAddress string `json:"identityServiceAddress"`
+
+	IDPConfig `json:",inline"`
+}
+
+type IDPConfig struct {
+	OIDCConfig    *OIDCConfig `json:"oidcConfig"`
+	GEOAxISConfig *OIDCConfig `json:"geoAxisConfig"`
 }
 
 type OIDCConfig struct {
@@ -47,7 +56,23 @@ func ConfigureIdentityService(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	connectorInfo, err := getDexConnectorInfo(request)
+	namespace := os.Getenv("POD_NAMESPACE")
+
+	previousConfig, err := identity.GetConfig(r.Context(), namespace)
+	if err != nil {
+		logger.Error(errors.Wrap(err, "failed to get identity config"))
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	idpConfigs, err := dexConnectorsToIDPConfigs(previousConfig.Spec.DexConnectors.Value)
+	if err != nil {
+		logger.Error(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	connectorInfo, err := getDexConnectorInfo(request, idpConfigs)
 	if err != nil {
 		logger.Error(err)
 		response := ErrorResponse{Error: "failed to get dex connector info"}
@@ -83,8 +108,6 @@ func ConfigureIdentityService(w http.ResponseWriter, r *http.Request) {
 			},
 		},
 	}
-
-	namespace := os.Getenv("POD_NAMESPACE")
 
 	ingressConfig, err := ingress.GetConfig(r.Context(), namespace)
 	if err != nil {
@@ -153,7 +176,7 @@ type DexConnectorInfo struct {
 	Config []byte
 }
 
-func getDexConnectorInfo(request ConfigureIdentityServiceRequest) (*DexConnectorInfo, error) {
+func getDexConnectorInfo(request ConfigureIdentityServiceRequest, idpConfigs []IDPConfig) (*DexConnectorInfo, error) {
 	var connectorConfig interface{}
 	dexConnectorInfo := DexConnectorInfo{}
 
@@ -172,6 +195,15 @@ func getDexConnectorInfo(request ConfigureIdentityServiceRequest) (*DexConnector
 				"email",
 				"groups",
 			},
+		}
+
+		// un-redact
+		if c.ClientSecret == RedactionMask {
+			for _, idpConfig := range idpConfigs {
+				if idpConfig.OIDCConfig != nil {
+					c.ClientSecret = idpConfig.OIDCConfig.ClientSecret
+				}
+			}
 		}
 
 		if request.OIDCConfig.GetUserInfo != nil {
@@ -220,6 +252,15 @@ func getDexConnectorInfo(request ConfigureIdentityServiceRequest) (*DexConnector
 			},
 		}
 
+		// un-redact
+		if c.ClientSecret == RedactionMask {
+			for _, idpConfig := range idpConfigs {
+				if idpConfig.GEOAxISConfig != nil {
+					c.ClientSecret = idpConfig.GEOAxISConfig.ClientSecret
+				}
+			}
+		}
+
 		c.ClaimMapping.GroupsKey = "group"
 
 		if request.GEOAxISConfig.Issuer != "" {
@@ -260,11 +301,11 @@ func getDexConnectorInfo(request ConfigureIdentityServiceRequest) (*DexConnector
 }
 
 type GetIdentityServiceConfigResponse struct {
-	Enabled                bool        `json:"enabled"`
-	AdminConsoleAddress    string      `json:"adminConsoleAddress"`
-	IdentityServiceAddress string      `json:"identityServiceAddress"`
-	OIDCConfig             *OIDCConfig `json:"oidcConfig"`
-	GEOAxISConfig          *OIDCConfig `json:"geoAxisConfig"`
+	Enabled                bool   `json:"enabled"`
+	AdminConsoleAddress    string `json:"adminConsoleAddress"`
+	IdentityServiceAddress string `json:"identityServiceAddress"`
+
+	IDPConfig `json:",inline"`
 }
 
 func GetIdentityServiceConfig(w http.ResponseWriter, r *http.Request) {
@@ -285,43 +326,61 @@ func GetIdentityServiceConfig(w http.ResponseWriter, r *http.Request) {
 		IdentityServiceAddress: identityConfig.Spec.IdentityServiceAddress,
 	}
 
-	if len(identityConfig.Spec.DexConnectors.Value) > 0 {
-		conn := identityConfig.Spec.DexConnectors.Value[0]
+	idpConfigs, err := dexConnectorsToIDPConfigs(identityConfig.Spec.DexConnectors.Value)
+	if err != nil {
+		logger.Error(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
 
-		if len(conn.Config.Raw) != 0 {
-			data := []byte(os.ExpandEnv(string(conn.Config.Raw)))
-
-			switch conn.Type {
-			case "oidc":
-				var c oidc.Config
-				if err := json.Unmarshal(data, &c); err != nil {
-					logger.Error(err)
-					w.WriteHeader(http.StatusInternalServerError)
-					return
-				}
-
-				oidcConfig := OIDCConfig{
-					ConnectorID:               conn.ID,
-					ConnectorName:             conn.Name,
-					Issuer:                    c.Issuer,
-					ClientID:                  "--- REDACTED ---",
-					ClientSecret:              "--- REDACTED ---",
-					GetUserInfo:               &c.GetUserInfo,
-					UserNameKey:               c.UserNameKey,
-					InsecureSkipEmailVerified: &c.InsecureSkipEmailVerified,
-					InsecureEnableGroups:      &c.InsecureEnableGroups,
-					Scopes:                    c.Scopes,
-				}
-
-				if conn.ID == "geoaxis" {
-					response.GEOAxISConfig = &oidcConfig
-				} else {
-					response.OIDCConfig = &oidcConfig
-				}
-				break
-			}
+	for _, idpConfig := range idpConfigs {
+		// redact
+		if idpConfig.OIDCConfig != nil {
+			idpConfig.OIDCConfig.ClientSecret = RedactionMask
 		}
+		if idpConfig.GEOAxISConfig != nil {
+			idpConfig.GEOAxISConfig.ClientSecret = RedactionMask
+		}
+
+		response.IDPConfig = idpConfig
+		// TODO: support for multiple connectors
+		break
 	}
 
 	JSON(w, http.StatusOK, response)
+}
+
+func dexConnectorsToIDPConfigs(dexConnectors []kotsv1beta1.DexConnector) ([]IDPConfig, error) {
+	conns, err := identity.IdentityDexConnectorsToDexTypeConnectors(dexConnectors)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to unmarshal dex connectors")
+	}
+
+	idpConfigs := []IDPConfig{}
+	for _, conn := range conns {
+		switch c := conn.Config.(type) {
+		case *oidc.Config:
+			oidcConfig := &OIDCConfig{
+				ConnectorID:               conn.ID,
+				ConnectorName:             conn.Name,
+				Issuer:                    c.Issuer,
+				ClientID:                  c.ClientID,
+				ClientSecret:              c.ClientSecret,
+				GetUserInfo:               &c.GetUserInfo,
+				UserNameKey:               c.UserNameKey,
+				InsecureSkipEmailVerified: &c.InsecureSkipEmailVerified,
+				InsecureEnableGroups:      &c.InsecureEnableGroups,
+				Scopes:                    c.Scopes,
+			}
+
+			idpConfig := IDPConfig{}
+			if conn.ID == "geoaxis" {
+				idpConfig.GEOAxISConfig = oidcConfig
+			} else {
+				idpConfig.OIDCConfig = oidcConfig
+			}
+			idpConfigs = append(idpConfigs, idpConfig)
+		}
+	}
+	return idpConfigs, nil
 }
