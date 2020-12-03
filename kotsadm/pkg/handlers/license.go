@@ -288,7 +288,7 @@ func UploadNewLicense(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	skipImagePush, err := kotsutil.IsImagesPushedSet(kotsadmtypes.KotsadmConfigMap)
+	installationParams, err := kotsutil.GetInstallationParams(kotsadmtypes.KotsadmConfigMap)
 	if err != nil {
 		logger.Error(err)
 		uploadLicenseResponse.Error = err.Error()
@@ -299,7 +299,7 @@ func UploadNewLicense(w http.ResponseWriter, r *http.Request) {
 	desiredAppName := strings.Replace(verifiedLicense.Spec.AppSlug, "-", " ", 0)
 	upstreamURI := fmt.Sprintf("replicated://%s", verifiedLicense.Spec.AppSlug)
 
-	a, err := store.GetStore().CreateApp(desiredAppName, upstreamURI, uploadLicenseRequest.LicenseData, verifiedLicense.Spec.IsAirgapSupported, skipImagePush)
+	a, err := store.GetStore().CreateApp(desiredAppName, upstreamURI, uploadLicenseRequest.LicenseData, verifiedLicense.Spec.IsAirgapSupported, installationParams.SkipImagePush)
 	if err != nil {
 		logger.Error(err)
 		uploadLicenseResponse.Error = err.Error()
@@ -315,7 +315,7 @@ func UploadNewLicense(w http.ResponseWriter, r *http.Request) {
 			Name:        a.Name,
 			LicenseData: uploadLicenseRequest.LicenseData,
 		}
-		kotsKinds, err := online.CreateAppFromOnline(&pendingApp, upstreamURI, false)
+		kotsKinds, err := online.CreateAppFromOnline(&pendingApp, upstreamURI, false, false)
 		if err != nil {
 			logger.Error(err)
 			uploadLicenseResponse.Error = err.Error()
@@ -402,7 +402,7 @@ func ResumeInstallOnline(w http.ResponseWriter, r *http.Request) {
 
 	pendingApp.LicenseData = string(b.Bytes())
 
-	kotsKinds, err := online.CreateAppFromOnline(&pendingApp, fmt.Sprintf("replicated://%s", kotsLicense.Spec.AppSlug), false)
+	kotsKinds, err := online.CreateAppFromOnline(&pendingApp, fmt.Sprintf("replicated://%s", kotsLicense.Spec.AppSlug), false, false)
 	if err != nil {
 		logger.Error(err)
 		resumeInstallOnlineResponse.Error = err.Error()

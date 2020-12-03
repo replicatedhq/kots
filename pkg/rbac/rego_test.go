@@ -183,6 +183,42 @@ func Test_regoEval(t *testing.T) {
 			},
 			want: false,
 		},
+		{
+			name: "multiple roles allow",
+			args: args{
+				action:   "read",
+				resource: "app.my-app.filetree.",
+				roles:    []string{SupportRole.ID, "yesfiletree"},
+				allowRolePolicies: map[string][]types.Policy{
+					SupportRole.ID: SupportRole.Allow,
+					"yesfiletree": {
+						{Action: "**", Resource: "app.*.filetree."},
+					},
+				},
+				denyRolePolicies: map[string][]types.Policy{
+					SupportRole.ID: SupportRole.Deny,
+				},
+			},
+			want: true,
+		},
+		{
+			name: "multiple roles deny",
+			args: args{
+				action:   "read",
+				resource: "app.my-app.filetree.",
+				roles:    []string{ClusterAdminRole.ID, "nofiletree"},
+				allowRolePolicies: map[string][]types.Policy{
+					ClusterAdminRole.ID: ClusterAdminRole.Allow,
+				},
+				denyRolePolicies: map[string][]types.Policy{
+					ClusterAdminRole.ID: ClusterAdminRole.Deny,
+					"nofiletree": {
+						{Action: "**", Resource: "app.*.filetree."},
+					},
+				},
+			},
+			want: false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

@@ -20,7 +20,7 @@ import (
 	kotspull "github.com/replicatedhq/kots/pkg/pull"
 )
 
-func DownloadUpdate(appID string, archiveDir string, toCursor string) (sequence int64, finalError error) {
+func DownloadUpdate(appID string, archiveDir string, toCursor string, skipPreflights bool) (sequence int64, finalError error) {
 	if err := store.GetStore().SetTaskStatus("update-download", "Fetching update...", "running"); err != nil {
 		return 0, errors.Wrap(err, "failed to set task status")
 	}
@@ -151,13 +151,15 @@ func DownloadUpdate(appID string, archiveDir string, toCursor string) (sequence 
 		return 0, nil // ?
 	}
 
-	newSequence, err := version.CreateVersion(appID, archiveDir, "Upstream Update", a.CurrentSequence)
+	newSequence, err := version.CreateVersion(appID, archiveDir, "Upstream Update", a.CurrentSequence, skipPreflights)
 	if err != nil {
 		return 0, errors.Wrap(err, "failed to create version")
 	}
 
-	if err := preflight.Run(appID, newSequence, a.IsAirgap, archiveDir); err != nil {
-		return 0, errors.Wrap(err, "failed to run preflights")
+	if !skipPreflights {
+		if err := preflight.Run(appID, newSequence, a.IsAirgap, archiveDir); err != nil {
+			return 0, errors.Wrap(err, "failed to run preflights")
+		}
 	}
 
 	return newSequence, nil

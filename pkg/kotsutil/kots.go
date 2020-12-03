@@ -543,28 +543,81 @@ func SupportBundleToAnalyzer(sb *troubleshootv1beta2.SupportBundle) *troubleshoo
 	}
 }
 
-func IsImagesPushedSet(configMapName string) (bool, error) {
+type InstallationParams struct {
+	SkipImagePush  bool
+	SkipPreflights bool
+}
+
+func GetInstallationParams(configMapName string) (InstallationParams, error) {
+	autoConfig := InstallationParams{}
+
 	cfg, err := config.GetConfig()
 	if err != nil {
-		return false, errors.Wrap(err, "failed to get cluster config")
+		return autoConfig, errors.Wrap(err, "failed to get cluster config")
 	}
 
 	clientset, err := kubernetes.NewForConfig(cfg)
 	if err != nil {
-		return false, errors.Wrap(err, "failed to create kubernetes clientset")
+		return autoConfig, errors.Wrap(err, "failed to create kubernetes clientset")
 	}
 
-	skipImagePush := false
 	kotsadmConfigMap, err := clientset.CoreV1().ConfigMaps(os.Getenv("POD_NAMESPACE")).Get(context.TODO(), configMapName, metav1.GetOptions{})
+
 	if err != nil {
-		if !kuberneteserrors.IsNotFound(err) {
-			return false, errors.Wrap(err, "failed to get existing kotsadm config map")
+		if kuberneteserrors.IsNotFound(err) {
+			return autoConfig, nil
 		}
-	} else if err == nil {
-		skipImagePush, _ = strconv.ParseBool(kotsadmConfigMap.Data["initial-app-images-pushed"])
+		return autoConfig, errors.Wrap(err, "failed to get existing kotsadm config map")
 	}
 
-	return skipImagePush, nil
+	autoConfig.SkipImagePush, _ = strconv.ParseBool(kotsadmConfigMap.Data["initial-app-images-pushed"])
+	autoConfig.SkipPreflights, _ = strconv.ParseBool(kotsadmConfigMap.Data["skip-preflights"])
+
+	return autoConfig, nil
+}
+
+func LoadIngressConfigFromContents(content []byte) (*kotsv1beta1.IngressConfig, error) {
+	decode := scheme.Codecs.UniversalDeserializer().Decode
+
+	obj, gvk, err := decode(content, nil, nil)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to decode content")
+	}
+
+	if gvk.Group == "kots.io" && gvk.Version == "v1beta1" && gvk.Kind == "IngressConfig" {
+		return obj.(*kotsv1beta1.IngressConfig), nil
+	}
+
+	return nil, errors.Errorf("unexpected gvk: %s", gvk.String())
+}
+
+func LoadIdentityConfigFromContents(content []byte) (*kotsv1beta1.IdentityConfig, error) {
+	decode := scheme.Codecs.UniversalDeserializer().Decode
+
+	obj, gvk, err := decode(content, nil, nil)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to decode content")
+	}
+
+	if gvk.Group == "kots.io" && gvk.Version == "v1beta1" && gvk.Kind == "IdentityConfig" {
+		return obj.(*kotsv1beta1.IdentityConfig), nil
+	}
+
+	return nil, errors.Errorf("unexpected gvk: %s", gvk.String())
+}
+
+func EncodeIngressConfig(ingressConfig kotsv1beta1.IngressConfig) ([]byte, error) {
+	buf := bytes.NewBuffer(nil)
+	s := serializer.NewYAMLSerializer(serializer.DefaultMetaFactory, scheme.Scheme, scheme.Scheme)
+	err := s.Encode(&ingressConfig, buf)
+	return buf.Bytes(), err
+}
+
+func EncodeIdentityConfig(spec kotsv1beta1.IdentityConfig) ([]byte, error) {
+	buf := bytes.NewBuffer(nil)
+	s := serializer.NewYAMLSerializer(serializer.DefaultMetaFactory, scheme.Scheme, scheme.Scheme)
+	err := s.Encode(&spec, buf)
+	return buf.Bytes(), err
 }
 
 func LoadIngressConfigFromContents(content []byte) (*kotsv1beta1.IngressConfig, error) {

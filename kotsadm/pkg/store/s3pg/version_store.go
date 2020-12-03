@@ -272,7 +272,7 @@ func (s S3PGStore) GetAppVersionArchive(appID string, sequence int64, dstPath st
 	return nil
 }
 
-func (s S3PGStore) CreateAppVersion(appID string, currentSequence *int64, appName string, appIcon string, kotsKinds *kotsutil.KotsKinds, filesInDir string, gitops gitopstypes.DownstreamGitOps, source string) (int64, error) {
+func (s S3PGStore) CreateAppVersion(appID string, currentSequence *int64, appName string, appIcon string, kotsKinds *kotsutil.KotsKinds, filesInDir string, gitops gitopstypes.DownstreamGitOps, source string, skipPreflights bool) (int64, error) {
 	db := persistence.MustGetPGSession()
 
 	tx, err := db.Begin()
@@ -318,49 +318,44 @@ func (s S3PGStore) CreateAppVersion(appID string, currentSequence *int64, appNam
 	}
 
 	for _, d := range downstreams {
-		downstreamStatus := "pending"
-		if currentSequence == nil && kotsKinds.Config != nil {
-			downstreamStatus = "pending_config"
-		} else if kotsKinds.Preflight != nil {
-			downstreamStatus = "pending_preflight"
+		// there's a small chance this is not optimal, but no current code path
+		// will support multiple downstreams, so this is cleaner here for now
+		licenseSpec, err := kotsKinds.Marshal("kots.io", "v1beta1", "License")
+		if err != nil {
+			return int64(0), errors.Wrap(err, "failed to marshal license spec")
+		}
+		configSpec, err := kotsKinds.Marshal("kots.io", "v1beta1", "Config")
+		if err != nil {
+			return int64(0), errors.Wrap(err, "failed to marshal config spec")
+		}
+		configValuesSpec, err := kotsKinds.Marshal("kots.io", "v1beta1", "ConfigValues")
+		if err != nil {
+			return int64(0), errors.Wrap(err, "failed to marshal configvalues spec")
 		}
 
-		if currentSequence != nil {
-			// there's a small chance this is not optimal, but no current code path
-			// will support multiple downstreams, so this is cleaner here for now
-			licenseSpec, err := kotsKinds.Marshal("kots.io", "v1beta1", "License")
-			if err != nil {
-				return int64(0), errors.Wrap(err, "failed to marshal license spec")
-			}
-			configSpec, err := kotsKinds.Marshal("kots.io", "v1beta1", "Config")
-			if err != nil {
-				return int64(0), errors.Wrap(err, "failed to marshal config spec")
-			}
-			configValuesSpec, err := kotsKinds.Marshal("kots.io", "v1beta1", "ConfigValues")
-			if err != nil {
-				return int64(0), errors.Wrap(err, "failed to marshal configvalues spec")
-			}
+		configOpts := kotsconfig.ConfigOptions{
+			ConfigSpec:       configSpec,
+			ConfigValuesSpec: configValuesSpec,
+			LicenseSpec:      licenseSpec,
+		}
+		if registryInfo != nil {
+			configOpts.RegistryHost = registryInfo.Hostname
+			configOpts.RegistryNamespace = registryInfo.Namespace
+			configOpts.RegistryUser = registryInfo.Username
+			configOpts.RegistryPassword = registryInfo.Password
+		}
 
-			configOpts := kotsconfig.ConfigOptions{
-				ConfigSpec:       configSpec,
-				ConfigValuesSpec: configValuesSpec,
-				LicenseSpec:      licenseSpec,
-			}
-			if registryInfo != nil {
-				configOpts.RegistryHost = registryInfo.Hostname
-				configOpts.RegistryNamespace = registryInfo.Namespace
-				configOpts.RegistryUser = registryInfo.Username
-				configOpts.RegistryPassword = registryInfo.Password
-			}
+		// check if version needs additional configuration
+		needsConfig, err := kotsconfig.NeedsConfiguration(configOpts)
+		if err != nil {
+			return int64(0), errors.Wrap(err, "failed to check if version needs configuration")
+		}
 
-			// check if version needs additional configuration
-			t, err := kotsconfig.NeedsConfiguration(configOpts)
-			if err != nil {
-				return int64(0), errors.Wrap(err, "failed to check if version needs configuration")
-			}
-			if t {
-				downstreamStatus = "pending_config"
-			}
+		downstreamStatus := "pending"
+		if needsConfig {
+			downstreamStatus = "pending_config"
+		} else if kotsKinds.Preflight != nil && !skipPreflights {
+			downstreamStatus = "pending_preflight"
 		}
 
 		diffSummary, diffSummaryError := "", ""

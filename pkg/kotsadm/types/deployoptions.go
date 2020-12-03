@@ -42,6 +42,7 @@ type DeployOptions struct {
 	NoProxyEnvValue           string
 	ExcludeAdminConsole       bool
 	EnsureKotsadmConfig       bool
+	SkipPreflights            bool
 
 	IdentityConfig kotsv1beta1.IdentityConfig
 	IngressConfig  kotsv1beta1.IngressConfig

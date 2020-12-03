@@ -89,7 +89,7 @@ export default function AppVersionHistoryHeader(props) {
                     {pendingVersions?.length > 0 ?
                       <div className="flex flex-column">
                         <p className="u-fontSize--small u-lineHeight--normal u-color--chateauGreen u-fontWeight--bold">New version available</p>
-                        <div className="flex flex-column u-marginTop--5">
+                        <div className="flex flex-column u-marginTop--5 new-version-wrapper">
                           <div className="flex flex1 alignItems--center">
                             <span className="u-fontSize--larger u-lineHeight--medium u-fontWeight--bold u-color--tundora">{pendingVersions[0]?.versionLabel}</span>
                             <span className="u-fontSize--small u-lineHeight--normal u-fontWeight--medium u-color--tundora u-marginLeft--5"> Sequence {pendingVersions[0]?.sequence}</span>
@@ -98,14 +98,14 @@ export default function AppVersionHistoryHeader(props) {
                             {pendingVersions[0]?.createdOn || pendingVersions[0].upstreamReleasedAt ?
                               <p className="u-fontSize--small u-lineHeight--normal u-fontWeight--medium u-color--dustyGray">Released <span className="u-fontWeight--bold">{pendingVersions[0].upstreamReleasedAt ? dayjs(pendingVersions[0]?.upstreamReleasedAt).format("MMMM D, YYYY") : dayjs(pendingVersions[0]?.createdOn).format("MMMM D, YYYY")}</span></p>
                               : null}
-                            {pendingVersions[0]?.releaseNotes ? <span className="release-notes-link u-fontSize--small u-fontWeight--medium u-marginLeft--5 flex alignItems--center" onClick={() => showDownstreamReleaseNotes(pendingVersions[0]?.releaseNotes)}><span className="icon releaseNotes-small--icon u-marginRight--5" />Release notes</span> : null}
+                            {pendingVersions[0]?.releaseNotes ? <span className="release-notes-link u-fontWeight--medium u-fontSize--small u-fontWeight--medium u-marginLeft--10 flex alignItems--center" onClick={() => showDownstreamReleaseNotes(pendingVersions[0]?.releaseNotes)}><span className="icon releaseNotes-small--icon clickable u-marginRight--5" />Release notes</span> : null}
                           </div>
                         </div>
                       </div>
                       : <p className="u-fontSize--small u-fontWeight--medium u-lineHeight--normal" style={{ color: "#C4C8CA" }}> No new version available </p>}
                     <div className="flex alignItems--center u-marginTop--10">
                       <button className="btn primary blue" onClick={onCheckForUpdates}>Check for update</button>
-                      <span className="icon settings-small-icon u-marginLeft--5 u-cursor--pointer" onClick={showUpdateCheckerModal} data-tip="Configure automatic update checks"></span>
+                      <span className="icon settings-small-icon u-marginLeft--10 u-cursor--pointer" onClick={showUpdateCheckerModal} data-tip="Configure automatic update checks"></span>
                       <ReactTooltip effect="solid" className="replicated-tooltip" />
                     </div>
                     {updateText}

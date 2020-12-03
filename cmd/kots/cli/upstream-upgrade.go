@@ -8,6 +8,7 @@ import (
 	"io/ioutil"
 	"mime/multipart"
 	"net/http"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
@@ -173,11 +174,16 @@ func UpstreamUpgradeCmd() *cobra.Command {
 				requestBody = buffer
 			}
 
-			appSlug := args[0]
-			updateCheckURI := fmt.Sprintf("http://localhost:%d/api/v1/app/%s/updatecheck", localPort, appSlug)
+			urlVals := url.Values{}
 			if viper.GetBool("deploy") {
-				updateCheckURI = fmt.Sprintf("%s?deploy=true", updateCheckURI)
+				urlVals.Set("deploy", "true")
 			}
+			if viper.GetBool("skip-preflights") {
+				urlVals.Set("skipPreflights", "true")
+			}
+
+			appSlug := args[0]
+			updateCheckURI := fmt.Sprintf("http://localhost:%d/api/v1/app/%s/updatecheck?%s", localPort, appSlug, urlVals.Encode())
 
 			authSlug, err := auth.GetOrCreateAuthSlug(kubernetesConfigFlags, v.GetString("namespace"))
 			if err != nil {
@@ -273,6 +279,7 @@ func UpstreamUpgradeCmd() *cobra.Command {
 	}
 
 	cmd.Flags().Bool("deploy", false, "when set, automatically deploy the latest version")
+	cmd.Flags().Bool("skip-preflights", false, "set to true to skip preflight checks")
 
 	cmd.Flags().String("airgap-bundle", "", "path to the application airgap bundle where application images and metadata will be loaded from")
 	cmd.Flags().String("kotsadm-registry", "", "registry endpoint where application images will be pushed")

@@ -8,6 +8,18 @@ import (
 	"github.com/pkg/errors"
 )
 
+/*
+The RBAC module defined in this rego document is deny by default.
+Deny will always take precedence over allow.
+Policies are defined with glob matching patterns with dots as separators.
+Multiple roles can be used as input.
+
+Logic is as follows:
+1. if deny, stop and deny
+2. if allow, stop and allow
+3. deny
+*/
+
 var regoModule string = `
 package rbac
 

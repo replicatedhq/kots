@@ -80,7 +80,7 @@ class UploadSupportBundleModal extends React.Component {
   }
 
   openReplicatedSupportBundleLink = () => {
-    let page = window.open("https://help.replicated.com/docs/native/packaging-an-application/support-bundle/", "_blank");
+    let page = window.open("https://kots.io/reference/v1beta1/support-bundle/", "_blank");
     page.focus();
     return false;
   }

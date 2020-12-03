@@ -32,7 +32,7 @@ import (
 // This function assumes that there's an app in the database that doesn't have a version
 // After execution, there will be a sequence 0 of the app, and all clusters in the database
 // will also have a version
-func CreateAppFromAirgap(pendingApp *types.PendingApp, airgapPath string, registryHost string, namespace string, username string, password string, isAutomated bool) (finalError error) {
+func CreateAppFromAirgap(pendingApp *types.PendingApp, airgapPath string, registryHost string, namespace string, username string, password string, isAutomated bool, skipPreflights bool) (finalError error) {
 	if err := store.GetStore().SetTaskStatus("airgap-install", "Processing package...", "running"); err != nil {
 		return errors.Wrap(err, "failed to set task status")
 	}
@@ -220,7 +220,7 @@ func CreateAppFromAirgap(pendingApp *types.PendingApp, airgapPath string, regist
 		return errors.Wrap(err, "failed to set app is airgap the second time")
 	}
 
-	newSequence, err := version.CreateFirstVersion(a.ID, tmpRoot, "Airgap Upload")
+	newSequence, err := version.CreateFirstVersion(a.ID, tmpRoot, "Airgap Upload", skipPreflights)
 	if err != nil {
 		return errors.Wrap(err, "failed to create new version")
 	}
@@ -268,15 +268,23 @@ func CreateAppFromAirgap(pendingApp *types.PendingApp, airgapPath string, regist
 		}
 
 		if !needsConfig {
-			err := downstream.SetDownstreamVersionPendingPreflight(pendingApp.ID, newSequence)
-			if err != nil {
-				return errors.Wrap(err, "failed to set downstream version status to 'pending preflight'")
+			if skipPreflights {
+				if err := version.DeployVersion(pendingApp.ID, newSequence); err != nil {
+					return errors.Wrap(err, "failed to deploy version")
+				}
+			} else {
+				err := downstream.SetDownstreamVersionPendingPreflight(pendingApp.ID, newSequence)
+				if err != nil {
+					return errors.Wrap(err, "failed to set downstream version status to 'pending preflight'")
+				}
 			}
 		}
 	}
 
-	if err := preflight.Run(pendingApp.ID, newSequence, true, tmpRoot); err != nil {
-		return errors.Wrap(err, "failed to start preflights")
+	if !skipPreflights {
+		if err := preflight.Run(pendingApp.ID, newSequence, true, tmpRoot); err != nil {
+			return errors.Wrap(err, "failed to start preflights")
+		}
 	}
 
 	return nil

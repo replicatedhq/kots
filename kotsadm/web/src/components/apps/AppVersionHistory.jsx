@@ -620,7 +620,7 @@ class AppVersionHistory extends Component {
         </div>
         :
         <div className="flex-auto flex alignItems--center" onClick={this.onSelectReleasesToDiff}>
-          <span className="icon diffReleasesIcon"></span>
+          <span className="icon clickable diffReleasesIcon"></span>
           <span className="u-fontSize--small u-fontWeight--medium u-color--royalBlue u-cursor--pointer u-marginLeft--5">Diff versions</span>
         </div>
     );

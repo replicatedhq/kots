@@ -13,12 +13,10 @@ const (
 var (
 	DefaultAllowRolePolicies = map[string][]types.Policy{
 		ClusterAdminRole.ID: ClusterAdminRole.Allow,
-		ReadonlyRole.ID:     ReadonlyRole.Allow,
 		SupportRole.ID:      SupportRole.Allow,
 	}
 	DefaultDenyRolePolicies = map[string][]types.Policy{
 		ClusterAdminRole.ID: ClusterAdminRole.Deny,
-		ReadonlyRole.ID:     ReadonlyRole.Deny,
 		SupportRole.ID:      SupportRole.Deny,
 	}
 
@@ -29,26 +27,32 @@ var (
 		Allow:       []types.Policy{PolicyAllowAll},
 	}
 
-	ReadonlyRole = types.Role{
-		ID:          "readonly",
-		Name:        "Read-only",
-		Description: "Read-only access to all resources",
-		Allow:       []types.Policy{PolicyReadonly},
-	}
-
 	SupportRole = types.Role{
 		ID:          "support",
 		Name:        "Support",
 		Description: "Role for support personnel",
 		Allow: []types.Policy{
 			PolicyReadonly,
-			{Action: "**", Resource: "redactor.*"},
-			{Action: "**", Resource: "**.redactor.*"},
 			{Action: "**", Resource: "preflight.*"},
 			{Action: "**", Resource: "**.preflight.*"},
 			{Action: "**", Resource: "supportbundle.*"},
 			{Action: "**", Resource: "**.supportbundle.*"},
 		},
+		Deny: []types.Policy{
+			{Action: "**", Resource: "app.*.downstream.filetree."},
+		},
+	}
+
+	PolicyAllowAll = types.Policy{
+		Name:     "Allow All",
+		Action:   "**",
+		Resource: "**",
+	}
+
+	PolicyReadonly = types.Policy{
+		Name:     "Read Only",
+		Action:   "read",
+		Resource: "**",
 	}
 
 	PolicyAllowAll = types.Policy{

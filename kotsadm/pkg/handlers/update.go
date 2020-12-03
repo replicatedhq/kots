@@ -34,17 +34,14 @@ func AppUpdateCheck(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	deploy := false
-	d := r.URL.Query().Get("deploy")
-	if d != "" {
-		deploy, _ = strconv.ParseBool(d)
-	}
+	deploy, _ := strconv.ParseBool(r.URL.Query().Get("deploy"))
+	skipPreflights, _ := strconv.ParseBool(r.URL.Query().Get("skipPreflights"))
 
 	contentType := strings.Split(r.Header.Get("Content-Type"), ";")[0]
 	contentType = strings.TrimSpace(contentType)
 
 	if contentType == "application/json" {
-		availableUpdates, err := updatechecker.CheckForUpdates(foundApp.ID, deploy)
+		availableUpdates, err := updatechecker.CheckForUpdates(foundApp.ID, deploy, skipPreflights)
 		if err != nil {
 			logger.Error(err)
 			w.WriteHeader(500)
@@ -118,7 +115,7 @@ func AppUpdateCheck(w http.ResponseWriter, r *http.Request) {
 			file.Close()
 		}
 
-		err = airgap.UpdateAppFromPath(foundApp, rootDir, deploy)
+		err = airgap.UpdateAppFromPath(foundApp, rootDir, deploy, skipPreflights)
 		if err != nil {
 			logger.Error(errors.Wrap(err, "failed to upgrde app"))
 			w.WriteHeader(http.StatusInternalServerError)
