@@ -331,8 +331,8 @@ func ensureKotsadm(deployOptions types.DeployOptions, clientset *kubernetes.Clie
 	ingressConfig := deployOptions.IngressConfig
 	identityConfig := deployOptions.IdentityConfig
 
-	if ingressConfig.Spec.Enabled {
-		if err := identity.ConfigValidate(context.TODO(), deployOptions.Namespace, identityConfig, ingressConfig); err != nil {
+	if identityConfig.Spec.Enabled {
+		if err := identity.ConfigValidate(context.TODO(), deployOptions.Namespace, identityConfig, ingressConfig, false); err != nil {
 			return errors.Wrap(err, "failed to validate identity config")
 		}
 	}

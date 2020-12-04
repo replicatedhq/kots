@@ -12,6 +12,7 @@ import (
 	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	"github.com/replicatedhq/kots/pkg/identity"
+	dextypes "github.com/replicatedhq/kots/pkg/identity/types/dex"
 	"github.com/replicatedhq/kots/pkg/ingress"
 	"github.com/replicatedhq/kots/pkg/kotsadm"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -136,7 +137,7 @@ func ConfigureIdentityService(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := identity.ConfigValidate(r.Context(), namespace, identityConfig, *ingressConfig); err != nil {
+	if err := identity.ConfigValidate(r.Context(), namespace, identityConfig, *ingressConfig, true); err != nil {
 		if _, ok := errors.Cause(err).(*identity.ErrorConfigValidation); ok {
 			err = errors.Wrap(err, "invalid identity config")
 			logger.Error(err)
@@ -206,66 +207,8 @@ func getDexConnectorInfo(request ConfigureIdentityServiceRequest, idpConfigs []I
 	dexConnectorInfo := DexConnectorInfo{}
 
 	if request.OIDCConfig != nil {
-		c := oidc.Config{
-			Issuer:                    request.OIDCConfig.Issuer,
-			ClientID:                  request.OIDCConfig.ClientID,
-			ClientSecret:              request.OIDCConfig.ClientSecret,
-			RedirectURI:               "{{OIDCIdentityCallbackURL}}",
-			GetUserInfo:               true,
-			UserNameKey:               "email",
-			InsecureSkipEmailVerified: false,
-			InsecureEnableGroups:      true,
-			Scopes: []string{
-				"openid",
-				"email",
-				"groups",
-			},
-		}
-
-		// un-redact
-		if c.ClientSecret == RedactionMask {
-			for _, idpConfig := range idpConfigs {
-				if idpConfig.OIDCConfig != nil {
-					c.ClientSecret = idpConfig.OIDCConfig.ClientSecret
-				}
-			}
-		}
-
-		// overrides and advanced options
-		if request.OIDCConfig.GetUserInfo != nil {
-			c.GetUserInfo = *request.OIDCConfig.GetUserInfo
-		}
-		if request.OIDCConfig.UserNameKey != "" {
-			c.UserNameKey = request.OIDCConfig.UserNameKey
-		}
-		if request.OIDCConfig.UserIDKey != "" {
-			c.UserIDKey = request.OIDCConfig.UserIDKey
-		}
-		if request.OIDCConfig.PromptType != "" {
-			c.PromptType = request.OIDCConfig.PromptType
-		}
-		if request.OIDCConfig.InsecureSkipEmailVerified != nil {
-			c.InsecureSkipEmailVerified = *request.OIDCConfig.InsecureSkipEmailVerified
-		}
-		if request.OIDCConfig.InsecureEnableGroups != nil {
-			c.InsecureEnableGroups = *request.OIDCConfig.InsecureEnableGroups
-		}
-		if len(request.OIDCConfig.Scopes) > 0 {
-			c.Scopes = append(c.Scopes, request.OIDCConfig.Scopes...)
-		}
-		if len(request.OIDCConfig.HostedDomains) > 0 {
-			c.HostedDomains = request.OIDCConfig.HostedDomains
-		}
-		if request.OIDCConfig.ClaimMapping.PreferredUsernameKey != "" {
-			c.ClaimMapping.PreferredUsernameKey = request.OIDCConfig.ClaimMapping.PreferredUsernameKey
-		}
-		if request.OIDCConfig.ClaimMapping.EmailKey != "" {
-			c.ClaimMapping.EmailKey = request.OIDCConfig.ClaimMapping.EmailKey
-		}
-		if request.OIDCConfig.ClaimMapping.GroupsKey != "" {
-			c.ClaimMapping.GroupsKey = request.OIDCConfig.ClaimMapping.GroupsKey
-		}
-		connectorConfig = c
+		c := identityOIDCToOIDCConfig(request.OIDCConfig, idpConfigs, false)
+		connectorConfig = *c
 
 		dexConnectorInfo.Type = "oidc"
 		dexConnectorInfo.ID = "openid"
@@ -278,73 +221,8 @@ func getDexConnectorInfo(request ConfigureIdentityServiceRequest, idpConfigs []I
 			dexConnectorInfo.Name = request.OIDCConfig.ConnectorName
 		}
 	} else if request.GEOAxISConfig != nil {
-		c := oidc.Config{
-			Issuer:                    "https://oauth.geoaxis.gxaws.com",
-			ClientID:                  request.GEOAxISConfig.ClientID,
-			ClientSecret:              request.GEOAxISConfig.ClientSecret,
-			RedirectURI:               "{{OIDCIdentityCallbackURL}}",
-			GetUserInfo:               true,
-			UserNameKey:               "email",
-			InsecureSkipEmailVerified: false,
-			InsecureEnableGroups:      true,
-			Scopes: []string{
-				"openid",
-				"email",
-				"groups",
-				"uiasenterprise",
-				"eiasenterprise",
-			},
-		}
-
-		// un-redact
-		if c.ClientSecret == RedactionMask {
-			for _, idpConfig := range idpConfigs {
-				if idpConfig.GEOAxISConfig != nil {
-					c.ClientSecret = idpConfig.GEOAxISConfig.ClientSecret
-				}
-			}
-		}
-
-		c.ClaimMapping.GroupsKey = "group"
-
-		// overrides and advanced options
-		if request.GEOAxISConfig.Issuer != "" {
-			c.Issuer = request.GEOAxISConfig.Issuer
-		}
-		if request.GEOAxISConfig.GetUserInfo != nil {
-			c.GetUserInfo = *request.GEOAxISConfig.GetUserInfo
-		}
-		if request.GEOAxISConfig.UserNameKey != "" {
-			c.UserNameKey = request.GEOAxISConfig.UserNameKey
-		}
-		if request.GEOAxISConfig.UserIDKey != "" {
-			c.UserIDKey = request.GEOAxISConfig.UserIDKey
-		}
-		if request.GEOAxISConfig.PromptType != "" {
-			c.PromptType = request.GEOAxISConfig.PromptType
-		}
-		if request.GEOAxISConfig.InsecureSkipEmailVerified != nil {
-			c.InsecureSkipEmailVerified = *request.GEOAxISConfig.InsecureSkipEmailVerified
-		}
-		if request.GEOAxISConfig.InsecureEnableGroups != nil {
-			c.InsecureEnableGroups = *request.GEOAxISConfig.InsecureEnableGroups
-		}
-		if len(request.GEOAxISConfig.Scopes) > 0 {
-			c.Scopes = append(c.Scopes, request.GEOAxISConfig.Scopes...)
-		}
-		if len(request.GEOAxISConfig.HostedDomains) > 0 {
-			c.HostedDomains = request.GEOAxISConfig.HostedDomains
-		}
-		if request.GEOAxISConfig.ClaimMapping.PreferredUsernameKey != "" {
-			c.ClaimMapping.PreferredUsernameKey = request.GEOAxISConfig.ClaimMapping.PreferredUsernameKey
-		}
-		if request.GEOAxISConfig.ClaimMapping.EmailKey != "" {
-			c.ClaimMapping.EmailKey = request.GEOAxISConfig.ClaimMapping.EmailKey
-		}
-		if request.GEOAxISConfig.ClaimMapping.GroupsKey != "" {
-			c.ClaimMapping.GroupsKey = request.GEOAxISConfig.ClaimMapping.GroupsKey
-		}
-		connectorConfig = c
+		c := identityOIDCToOIDCConfig(request.GEOAxISConfig, idpConfigs, true)
+		connectorConfig = *c
 
 		dexConnectorInfo.Type = "oidc"
 		dexConnectorInfo.ID = "geoaxis"
@@ -375,6 +253,9 @@ func validateConfigureIdentityRequest(request ConfigureIdentityServiceRequest) e
 	}
 
 	if request.OIDCConfig != nil {
+		if request.OIDCConfig.ConnectorName == "" {
+			missingFields = append(missingFields, "connectorName")
+		}
 		if request.OIDCConfig.Issuer == "" {
 			missingFields = append(missingFields, "issuer")
 		}
@@ -428,6 +309,13 @@ func GetIdentityServiceConfig(w http.ResponseWriter, r *http.Request) {
 		IdentityServiceAddress: identityConfig.Spec.IdentityServiceAddress,
 	}
 
+	if len(identityConfig.Spec.DexConnectors.Value) == 0 {
+		// no connectors, return default values
+		response.IDPConfig = getDefaultIDPConfig()
+		JSON(w, http.StatusOK, response)
+		return
+	}
+
 	idpConfigs, err := dexConnectorsToIDPConfigs(identityConfig.Spec.DexConnectors.Value)
 	if err != nil {
 		logger.Error(err)
@@ -462,28 +350,7 @@ func dexConnectorsToIDPConfigs(dexConnectors []kotsv1beta1.DexConnector) ([]IDPC
 	for _, conn := range conns {
 		switch c := conn.Config.(type) {
 		case *oidc.Config:
-			claimMapping := OIDCClaimMapping{
-				PreferredUsernameKey: c.ClaimMapping.PreferredUsernameKey,
-				EmailKey:             c.ClaimMapping.EmailKey,
-				GroupsKey:            c.ClaimMapping.GroupsKey,
-			}
-
-			oidcConfig := &OIDCConfig{
-				ConnectorID:               conn.ID,
-				ConnectorName:             conn.Name,
-				Issuer:                    c.Issuer,
-				ClientID:                  c.ClientID,
-				ClientSecret:              c.ClientSecret,
-				GetUserInfo:               &c.GetUserInfo,
-				UserNameKey:               c.UserNameKey,
-				UserIDKey:                 c.UserIDKey,
-				PromptType:                c.PromptType,
-				InsecureSkipEmailVerified: &c.InsecureSkipEmailVerified,
-				InsecureEnableGroups:      &c.InsecureEnableGroups,
-				Scopes:                    c.Scopes,
-				ClaimMapping:              claimMapping,
-			}
-
+			oidcConfig := oidcConfigToIdentityOIDC(c, &conn)
 			idpConfig := IDPConfig{}
 			if conn.ID == "geoaxis" {
 				idpConfig.GEOAxISConfig = oidcConfig
@@ -494,4 +361,120 @@ func dexConnectorsToIDPConfigs(dexConnectors []kotsv1beta1.DexConnector) ([]IDPC
 		}
 	}
 	return idpConfigs, nil
+}
+
+func getDefaultIDPConfig() IDPConfig {
+	idpConfig := IDPConfig{}
+	idpConfig.OIDCConfig = oidcConfigToIdentityOIDC(getDefaultOIDCConfig(false), nil)
+	idpConfig.GEOAxISConfig = oidcConfigToIdentityOIDC(getDefaultOIDCConfig(true), nil)
+	return idpConfig
+}
+
+func getDefaultOIDCConfig(isGeoAxis bool) *oidc.Config {
+	c := oidc.Config{
+		RedirectURI:               "{{OIDCIdentityCallbackURL}}",
+		GetUserInfo:               true,
+		UserNameKey:               "email",
+		InsecureSkipEmailVerified: false,
+		InsecureEnableGroups:      true,
+		Scopes: []string{
+			"openid",
+			"email",
+			"groups",
+		},
+	}
+
+	if isGeoAxis {
+		c.Issuer = "https://oauth.geoaxis.gxaws.com"
+		c.Scopes = append(c.Scopes, "uiasenterprise")
+		c.Scopes = append(c.Scopes, "eiasenterprise")
+		c.ClaimMapping.GroupsKey = "group"
+	}
+
+	return &c
+}
+
+func identityOIDCToOIDCConfig(identityOIDC *OIDCConfig, idpConfigs []IDPConfig, isGeoAxis bool) *oidc.Config {
+	c := getDefaultOIDCConfig(isGeoAxis)
+
+	if identityOIDC.Issuer != "" {
+		c.Issuer = identityOIDC.Issuer
+	}
+	c.ClientID = identityOIDC.ClientID
+	c.ClientSecret = identityOIDC.ClientSecret
+
+	// un-redact
+	if c.ClientSecret == RedactionMask {
+		for _, idpConfig := range idpConfigs {
+			if idpConfig.OIDCConfig != nil {
+				c.ClientSecret = idpConfig.OIDCConfig.ClientSecret
+			}
+		}
+	}
+
+	// overrides and advanced options
+	if identityOIDC.GetUserInfo != nil {
+		c.GetUserInfo = *identityOIDC.GetUserInfo
+	}
+	if identityOIDC.UserNameKey != "" {
+		c.UserNameKey = identityOIDC.UserNameKey
+	}
+	if identityOIDC.UserIDKey != "" {
+		c.UserIDKey = identityOIDC.UserIDKey
+	}
+	if identityOIDC.PromptType != "" {
+		c.PromptType = identityOIDC.PromptType
+	}
+	if identityOIDC.InsecureSkipEmailVerified != nil {
+		c.InsecureSkipEmailVerified = *identityOIDC.InsecureSkipEmailVerified
+	}
+	if identityOIDC.InsecureEnableGroups != nil {
+		c.InsecureEnableGroups = *identityOIDC.InsecureEnableGroups
+	}
+	if len(identityOIDC.Scopes) > 0 {
+		c.Scopes = identityOIDC.Scopes
+	}
+	if len(identityOIDC.HostedDomains) > 0 {
+		c.HostedDomains = identityOIDC.HostedDomains
+	}
+	if identityOIDC.ClaimMapping.PreferredUsernameKey != "" {
+		c.ClaimMapping.PreferredUsernameKey = identityOIDC.ClaimMapping.PreferredUsernameKey
+	}
+	if identityOIDC.ClaimMapping.EmailKey != "" {
+		c.ClaimMapping.EmailKey = identityOIDC.ClaimMapping.EmailKey
+	}
+	if identityOIDC.ClaimMapping.GroupsKey != "" {
+		c.ClaimMapping.GroupsKey = identityOIDC.ClaimMapping.GroupsKey
+	}
+
+	return c
+}
+
+func oidcConfigToIdentityOIDC(c *oidc.Config, conn *dextypes.Connector) *OIDCConfig {
+	claimMapping := OIDCClaimMapping{
+		PreferredUsernameKey: c.ClaimMapping.PreferredUsernameKey,
+		EmailKey:             c.ClaimMapping.EmailKey,
+		GroupsKey:            c.ClaimMapping.GroupsKey,
+	}
+
+	oidcConfig := OIDCConfig{
+		Issuer:                    c.Issuer,
+		ClientID:                  c.ClientID,
+		ClientSecret:              c.ClientSecret,
+		GetUserInfo:               &c.GetUserInfo,
+		UserNameKey:               c.UserNameKey,
+		UserIDKey:                 c.UserIDKey,
+		PromptType:                c.PromptType,
+		InsecureSkipEmailVerified: &c.InsecureSkipEmailVerified,
+		InsecureEnableGroups:      &c.InsecureEnableGroups,
+		Scopes:                    c.Scopes,
+		ClaimMapping:              claimMapping,
+	}
+
+	if conn != nil {
+		oidcConfig.ConnectorID = conn.ID
+		oidcConfig.ConnectorName = conn.Name
+	}
+
+	return &oidcConfig
 }
