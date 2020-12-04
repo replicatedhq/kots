@@ -25,13 +25,8 @@ var (
 	identityConfigSpecInsecureSkipTLSVerify bool
 )
 
-func HTTPClient(ctx context.Context, namespace string) (*http.Client, error) {
+func HTTPClient(ctx context.Context, namespace string, identityConfig kotsv1beta1.IdentityConfig) (*http.Client, error) {
 	// NOTE: it may be possible to mount both the secret and the identity spec and watch for changes
-
-	identityConfig, err := GetConfig(ctx, namespace)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to get identity config")
-	}
 
 	httpClientMu.Lock()
 	defer httpClientMu.Unlock()

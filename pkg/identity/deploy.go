@@ -45,7 +45,7 @@ var (
 )
 
 func Deploy(ctx context.Context, clientset kubernetes.Interface, namespace string, identityConfig kotsv1beta1.IdentityConfig, ingressConfig kotsv1beta1.IngressConfig, registryOptions *kotsadmtypes.KotsadmOptions) error {
-	if err := ConfigValidate(ctx, namespace, identityConfig.Spec, ingressConfig.Spec); err != nil {
+	if err := ConfigValidate(ctx, namespace, identityConfig, ingressConfig); err != nil {
 		return errors.Wrap(err, "invalid identity config")
 	}
 
@@ -79,7 +79,7 @@ func Deploy(ctx context.Context, clientset kubernetes.Interface, namespace strin
 }
 
 func Configure(ctx context.Context, clientset kubernetes.Interface, namespace string, identityConfig kotsv1beta1.IdentityConfig, ingressConfig kotsv1beta1.IngressConfig) error {
-	if err := ConfigValidate(ctx, namespace, identityConfig.Spec, ingressConfig.Spec); err != nil {
+	if err := ConfigValidate(ctx, namespace, identityConfig, ingressConfig); err != nil {
 		return errors.Wrap(err, "invalid identity config")
 	}
 

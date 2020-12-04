@@ -136,7 +136,7 @@ func ConfigureIdentityService(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := identity.ConfigValidate(r.Context(), namespace, identityConfig.Spec, ingressConfig.Spec); err != nil {
+	if err := identity.ConfigValidate(r.Context(), namespace, identityConfig, *ingressConfig); err != nil {
 		if _, ok := errors.Cause(err).(*identity.ErrorConfigValidation); ok {
 			err = errors.Wrap(err, "invalid identity config")
 			logger.Error(err)
