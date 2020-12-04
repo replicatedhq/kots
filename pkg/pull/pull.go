@@ -549,8 +549,12 @@ func ParseLicenseFromFile(filename string) (*kotsv1beta1.License, error) {
 		return nil, errors.Wrap(err, "failed to read license file")
 	}
 
+	return ParseLicenseFromBytes(contents)
+}
+
+func ParseLicenseFromBytes(licenseData []byte) (*kotsv1beta1.License, error) {
 	decode := scheme.Codecs.UniversalDeserializer().Decode
-	decoded, gvk, err := decode(contents, nil, nil)
+	decoded, gvk, err := decode(licenseData, nil, nil)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to decode license file")
 	}
