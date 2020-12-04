@@ -280,6 +280,17 @@ and `background-position: [value]`
   cursor: pointer;
 }
 
+.required-label {
+  background-color: #FFF1D9;
+  border-radius: 2px;
+  color: #EBB55C;
+  font-size: 10px;
+  line-height: 10px;  
+  font-weight: 500;
+  padding: 2px 4px 3px 4px;
+  margin-left: 8px;
+}
+
 /* Media Queries */
 
 /* ≥ 568px */

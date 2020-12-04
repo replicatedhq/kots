@@ -83,6 +83,8 @@ export class NavBar extends PureComponent {
       selectedTab = "dashboard"
     } else if (pathname.startsWith("/snapshots")) {
       selectedTab = "snapshots";
+    } else if (pathname.startsWith("/access")) {
+      selectedTab = "access";
     }
     this.setState({ selectedTab });
   }
@@ -109,6 +111,10 @@ export class NavBar extends PureComponent {
     } else {
       this.props.history.push("/snapshots/settings");
     }
+  }
+
+  handleGoToAccess = () => {
+    this.props.history.push("/access");
   }
 
   redirectToDashboard = () => {
@@ -187,7 +193,16 @@ export class NavBar extends PureComponent {
                       <div className={classNames("NavItem u-position--relative flex", { "is-active": selectedTab === "snapshots" })}>
                         <span className="HeaderLink flex flex1 u-cursor--pointer" onClick={this.handleGoToSnapshots}>
                           <div className="flex flex1 alignItems--center">
-                          <span className="text u-fontSize--normal u-fontWeight--medium flex"> Snapshots </span>
+                            <span className="text u-fontSize--normal u-fontWeight--medium flex"> Snapshots </span>
+                          </div>
+                        </span>
+                      </div>
+                    }
+                    {isKurlEnabled &&
+                      <div className={classNames("NavItem u-position--relative flex", { "is-active": selectedTab === "access" })}>
+                        <span className="HeaderLink flex flex1 u-cursor--pointer" onClick={this.handleGoToAccess}>
+                          <div className="flex flex1 alignItems--center">
+                            <span className="text u-fontSize--normal u-fontWeight--medium flex"> Access </span>
                           </div>
                         </span>
                       </div>

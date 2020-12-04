@@ -323,7 +323,7 @@ class Snapshots extends Component {
         </Helmet>
         {!isVeleroCorrectVersion ?
           <div className="VeleroWarningBlock">
-            <span className="icon snapshot-warning-icon" />
+            <span className="icon small-warning-icon" />
             <p> To use snapshots reliably you have to install velero version 1.5.1 </p>
           </div>
           : null}
