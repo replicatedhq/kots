@@ -2,12 +2,14 @@ package identity
 
 import (
 	"context"
+	"net/http"
 
 	"github.com/coreos/go-oidc"
 	dexoidc "github.com/dexidp/dex/connector/oidc"
 	ghodssyaml "github.com/ghodss/yaml"
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
+	"github.com/replicatedhq/kots/pkg/ingress"
 	kotsadmtypes "github.com/replicatedhq/kots/pkg/kotsadm/types"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	corev1 "k8s.io/api/core/v1"
@@ -235,34 +237,55 @@ func identitySecretResource(identityConfig kotsv1beta1.IdentityConfig) (*corev1.
 	}, nil
 }
 
-func ConfigValidate(ctx context.Context, namespace string, identitySpec kotsv1beta1.IdentityConfigSpec, ingressSpec kotsv1beta1.IngressConfigSpec) error {
-	if identitySpec.AdminConsoleAddress == "" && (!ingressSpec.Enabled || ingressSpec.Ingress == nil) {
+func ConfigValidate(ctx context.Context, namespace string, identityConfig kotsv1beta1.IdentityConfig, ingressConfig kotsv1beta1.IngressConfig) error {
+	if identityConfig.Spec.AdminConsoleAddress == "" && (!ingressConfig.Spec.Enabled || ingressConfig.Spec.Ingress == nil) {
 		return &ErrorConfigValidation{Message: "adminConsoleAddress required or KOTS Admin Console ingress must be enabled"}
 	}
 
-	if identitySpec.IdentityServiceAddress == "" && (!identitySpec.IngressConfig.Enabled || identitySpec.IngressConfig.Ingress == nil) {
+	if identityConfig.Spec.IdentityServiceAddress == "" && (!identityConfig.Spec.IngressConfig.Enabled || identityConfig.Spec.IngressConfig.Ingress == nil) {
 		return &ErrorConfigValidation{Message: "identityServiceAddress required or ingressConfig.ingress must be enabled"}
 	}
 
-	if err := evaluateDexConnectorsValue(ctx, namespace, &identitySpec.DexConnectors); err != nil {
-		return errors.Wrap(err, "failed to evaluate dex connectors value")
+	// validate kotsadm address
+	if identityConfig.Spec.AdminConsoleAddress != "" {
+		err := pingURL(identityConfig.Spec.AdminConsoleAddress)
+		if err != nil {
+			err = errors.Wrap(err, "failed to ping admin console address")
+			return &ErrorConfigValidation{Message: err.Error()}
+		}
+	} else if ingressConfig.Spec.Enabled {
+		err := pingURL(ingress.GetAddress(ingressConfig.Spec))
+		if err != nil {
+			err = errors.Wrap(err, "failed to ping admin console ingress")
+			return &ErrorConfigValidation{Message: err.Error()}
+		}
 	}
 
-	// validate issuers
-	conns, err := IdentityDexConnectorsToDexTypeConnectors(identitySpec.DexConnectors.Value)
+	// validate dex issuer
+	dexIssuer := DexIssuerURL(identityConfig.Spec)
+	httpClient, err := HTTPClient(ctx, namespace, identityConfig)
+	if err != nil {
+		return errors.Wrap(err, "failed to init http client")
+	}
+	dexClientCtx := oidc.ClientContext(ctx, httpClient)
+	_, err = oidc.NewProvider(dexClientCtx, dexIssuer)
+	if err != nil {
+		err = errors.Wrapf(err, "failed to query dex provider %q", dexIssuer)
+		return &ErrorConfigValidation{Message: err.Error()}
+	}
+
+	// validate connectors issuers
+	if err := evaluateDexConnectorsValue(ctx, namespace, &identityConfig.Spec.DexConnectors); err != nil {
+		return errors.Wrap(err, "failed to evaluate dex connectors value")
+	}
+	conns, err := IdentityDexConnectorsToDexTypeConnectors(identityConfig.Spec.DexConnectors.Value)
 	if err != nil {
 		return errors.Wrap(err, "failed to map identity dex connectors to dex type connectors")
 	}
 	for _, conn := range conns {
 		switch c := conn.Config.(type) {
 		case *dexoidc.Config:
-			httpClient, err := HTTPClient(ctx, namespace)
-			if err != nil {
-				return errors.Wrap(err, "failed to init http client")
-			}
-
-			oidcClientCtx := oidc.ClientContext(ctx, httpClient)
-			_, err = oidc.NewProvider(oidcClientCtx, c.Issuer)
+			_, err = oidc.NewProvider(ctx, c.Issuer)
 			if err != nil {
 				err = errors.Wrapf(err, "failed to query provider %q", c.Issuer)
 				return &ErrorConfigValidation{Message: err.Error()}
@@ -270,5 +293,13 @@ func ConfigValidate(ctx context.Context, namespace string, identitySpec kotsv1be
 		}
 	}
 
+	return nil
+}
+
+func pingURL(url string) error {
+	_, err := http.Get(url)
+	if err != nil {
+		return err
+	}
 	return nil
 }

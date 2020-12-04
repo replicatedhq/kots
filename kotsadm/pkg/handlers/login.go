@@ -151,6 +151,13 @@ func OIDCLoginCallback(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	identityConfig, err := identity.GetConfig(r.Context(), namespace)
+	if err != nil {
+		logger.Error(errors.Wrap(err, "failed to get identity config"))
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
 	var token *oauth2.Token
 
 	switch r.Method {
@@ -189,7 +196,7 @@ func OIDCLoginCallback(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		httpClient, err := identity.HTTPClient(r.Context(), namespace)
+		httpClient, err := identity.HTTPClient(r.Context(), namespace, *identityConfig)
 		if err != nil {
 			err = errors.Wrap(err, "failed to get identity http client")
 			logger.Error(err)
@@ -213,7 +220,7 @@ func OIDCLoginCallback(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		httpClient, err := identity.HTTPClient(r.Context(), namespace)
+		httpClient, err := identity.HTTPClient(r.Context(), namespace, *identityConfig)
 		if err != nil {
 			err = errors.Wrap(err, "failed to get identity http client")
 			logger.Error(err)
@@ -268,13 +275,6 @@ func OIDCLoginCallback(w http.ResponseWriter, r *http.Request) {
 
 	user := &usertypes.User{
 		ID: claims.Email,
-	}
-
-	identityConfig, err := identity.GetConfig(r.Context(), namespace)
-	if err != nil {
-		logger.Error(errors.Wrap(err, "failed to get identity config"))
-		w.WriteHeader(http.StatusInternalServerError)
-		return
 	}
 
 	groups := identity.DefaultGroups

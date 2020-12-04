@@ -51,7 +51,12 @@ func GetKotsadmOIDCProvider(ctx context.Context, namespace string) (*oidc.Provid
 		return nil, errors.Wrap(err, "failed to get kotsadm dex config")
 	}
 
-	httpClient, err := identity.HTTPClient(ctx, namespace)
+	identityConfig, err := identity.GetConfig(ctx, namespace)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get identity config")
+	}
+
+	httpClient, err := identity.HTTPClient(ctx, namespace, *identityConfig)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to init http client")
 	}
