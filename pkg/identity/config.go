@@ -3,6 +3,8 @@ package identity
 import (
 	"context"
 
+	"github.com/coreos/go-oidc"
+	dexoidc "github.com/dexidp/dex/connector/oidc"
 	ghodssyaml "github.com/ghodss/yaml"
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
@@ -20,6 +22,14 @@ var (
 	ConfigSecretName    = "kotsadm-identity-secret"
 	ConfigSecretKeyName = "dexConnectors"
 )
+
+type ErrorConfigValidation struct {
+	Message string
+}
+
+func (e *ErrorConfigValidation) Error() string {
+	return e.Message
+}
 
 func GetConfig(ctx context.Context, namespace string) (*kotsv1beta1.IdentityConfig, error) {
 	cfg, err := k8sconfig.GetConfig()
@@ -45,24 +55,45 @@ func GetConfig(ctx context.Context, namespace string) (*kotsv1beta1.IdentityConf
 		return nil, errors.Wrap(err, "failed to decode identity config")
 	}
 
-	if identityConfig.Spec.DexConnectors.ValueFrom != nil && identityConfig.Spec.DexConnectors.ValueFrom.SecretKeyRef != nil {
-		secretKeyRef := identityConfig.Spec.DexConnectors.ValueFrom.SecretKeyRef
-
-		secret, err := clientset.CoreV1().Secrets(namespace).Get(ctx, secretKeyRef.Name, metav1.GetOptions{})
-		if err != nil {
-			if kuberneteserrors.IsNotFound(err) {
-				return identityConfig, nil
-			}
-			return nil, errors.Wrap(err, "failed to get secret")
-		}
-
-		err = ghodssyaml.Unmarshal(secret.Data[secretKeyRef.Key], &identityConfig.Spec.DexConnectors.Value)
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to unmarshal dex connectors")
-		}
+	if err := evaluateDexConnectorsValue(ctx, namespace, &identityConfig.Spec.DexConnectors); err != nil {
+		return nil, errors.Wrap(err, "failed to evaluate dex connectors value")
 	}
 
 	return identityConfig, err
+}
+
+func evaluateDexConnectorsValue(ctx context.Context, namespace string, dexConnectors *kotsv1beta1.DexConnectors) error {
+	if len(dexConnectors.Value) > 0 {
+		return nil
+	}
+
+	if dexConnectors.ValueFrom != nil && dexConnectors.ValueFrom.SecretKeyRef != nil {
+		cfg, err := k8sconfig.GetConfig()
+		if err != nil {
+			return errors.Wrap(err, "failed to get kubernetes config")
+		}
+
+		clientset, err := kubernetes.NewForConfig(cfg)
+		if err != nil {
+			return errors.Wrap(err, "failed to get client set")
+		}
+
+		secretKeyRef := dexConnectors.ValueFrom.SecretKeyRef
+		secret, err := clientset.CoreV1().Secrets(namespace).Get(ctx, secretKeyRef.Name, metav1.GetOptions{})
+		if err != nil {
+			if kuberneteserrors.IsNotFound(err) {
+				return nil
+			}
+			return errors.Wrap(err, "failed to get secret")
+		}
+
+		err = ghodssyaml.Unmarshal(secret.Data[secretKeyRef.Key], &dexConnectors.Value)
+		if err != nil {
+			return errors.Wrap(err, "failed to unmarshal dex connectors")
+		}
+	}
+
+	return nil
 }
 
 func SetConfig(ctx context.Context, namespace string, identityConfig kotsv1beta1.IdentityConfig) error {
@@ -202,4 +233,42 @@ func identitySecretResource(identityConfig kotsv1beta1.IdentityConfig) (*corev1.
 			ConfigSecretKeyName: data,
 		},
 	}, nil
+}
+
+func ConfigValidate(ctx context.Context, namespace string, identitySpec kotsv1beta1.IdentityConfigSpec, ingressSpec kotsv1beta1.IngressConfigSpec) error {
+	if identitySpec.AdminConsoleAddress == "" && (!ingressSpec.Enabled || ingressSpec.Ingress == nil) {
+		return &ErrorConfigValidation{Message: "adminConsoleAddress required or KOTS Admin Console ingress must be enabled"}
+	}
+
+	if identitySpec.IdentityServiceAddress == "" && (!identitySpec.IngressConfig.Enabled || identitySpec.IngressConfig.Ingress == nil) {
+		return &ErrorConfigValidation{Message: "identityServiceAddress required or ingressConfig.ingress must be enabled"}
+	}
+
+	if err := evaluateDexConnectorsValue(ctx, namespace, &identitySpec.DexConnectors); err != nil {
+		return errors.Wrap(err, "failed to evaluate dex connectors value")
+	}
+
+	// validate issuers
+	conns, err := IdentityDexConnectorsToDexTypeConnectors(identitySpec.DexConnectors.Value)
+	if err != nil {
+		return errors.Wrap(err, "failed to map identity dex connectors to dex type connectors")
+	}
+	for _, conn := range conns {
+		switch c := conn.Config.(type) {
+		case *dexoidc.Config:
+			httpClient, err := HTTPClient(ctx, namespace)
+			if err != nil {
+				return errors.Wrap(err, "failed to init http client")
+			}
+
+			oidcClientCtx := oidc.ClientContext(ctx, httpClient)
+			_, err = oidc.NewProvider(oidcClientCtx, c.Issuer)
+			if err != nil {
+				err = errors.Wrapf(err, "failed to query provider %q", c.Issuer)
+				return &ErrorConfigValidation{Message: err.Error()}
+			}
+		}
+	}
+
+	return nil
 }
