@@ -1065,6 +1065,8 @@ github.com/replicatedhq/kurl/kurlkinds v0.0.0-20200617224429-55f493a72baf/go.mod
 github.com/replicatedhq/termui/v3 v3.1.1-0.20200811145416-f40076d26851/go.mod h1:JDxG6+uubnk9/BZ2yUsyAJJwlptjrnmB2MPF5d2Xe/8=
 github.com/replicatedhq/troubleshoot v0.9.52 h1:e+3PtQY5lqDtH79vOXiLZCqX2GdbiBTETkJl6rdPEy8=
 github.com/replicatedhq/troubleshoot v0.9.52/go.mod h1:5nWpBzGFtgu/U3TxrWEYZQiSOkjzR04HpDMAIq6dCjE=
+github.com/replicatedhq/troubleshoot v0.9.53 h1:mRebmpBBImLknN0BVxkmDeYFWW+VuujbF43lAtKhr78=
+github.com/replicatedhq/troubleshoot v0.9.53/go.mod h1:5nWpBzGFtgu/U3TxrWEYZQiSOkjzR04HpDMAIq6dCjE=
 github.com/replicatedhq/yaml/v3 v3.0.0-beta5-replicatedhq h1:PwPggruelq2336c1Ayg5STFqgbn/QB1tWLQwrVlU7ZQ=
 github.com/replicatedhq/yaml/v3 v3.0.0-beta5-replicatedhq/go.mod h1:Txa7LopbYCU8aRgmNe0n+y/EPMz50NbCPcVVJBquwag=
 github.com/robfig/cron v1.1.0 h1:jk4/Hud3TTdcrJgUOBgsqrZBarcxl6ADIjSC2iniwLY=
