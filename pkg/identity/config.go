@@ -237,13 +237,17 @@ func identitySecretResource(identityConfig kotsv1beta1.IdentityConfig) (*corev1.
 	}, nil
 }
 
-func ConfigValidate(ctx context.Context, namespace string, identityConfig kotsv1beta1.IdentityConfig, ingressConfig kotsv1beta1.IngressConfig) error {
+func ConfigValidate(ctx context.Context, namespace string, identityConfig kotsv1beta1.IdentityConfig, ingressConfig kotsv1beta1.IngressConfig, validateConnectivity bool) error {
 	if identityConfig.Spec.AdminConsoleAddress == "" && (!ingressConfig.Spec.Enabled || ingressConfig.Spec.Ingress == nil) {
 		return &ErrorConfigValidation{Message: "adminConsoleAddress required or KOTS Admin Console ingress must be enabled"}
 	}
 
 	if identityConfig.Spec.IdentityServiceAddress == "" && (!identityConfig.Spec.IngressConfig.Enabled || identityConfig.Spec.IngressConfig.Ingress == nil) {
 		return &ErrorConfigValidation{Message: "identityServiceAddress required or ingressConfig.ingress must be enabled"}
+	}
+
+	if !validateConnectivity {
+		return nil
 	}
 
 	// validate kotsadm address

@@ -144,7 +144,7 @@ func InstallCmd() *cobra.Command {
 			}
 
 			if identityConfig.Spec.Enabled {
-				if err := identity.ConfigValidate(cmd.Context(), namespace, *identityConfig, *ingressConfig); err != nil {
+				if err := identity.ConfigValidate(cmd.Context(), namespace, *identityConfig, *ingressConfig, false); err != nil {
 					return errors.Wrap(err, "failed to validate identity config")
 				}
 			}
