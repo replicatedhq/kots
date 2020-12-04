@@ -41,20 +41,20 @@ type OIDCConfig struct {
 	Issuer                    string           `json:"issuer"`
 	ClientID                  string           `json:"clientId"`
 	ClientSecret              string           `json:"clientSecret"`
-	GetUserInfo               *bool            `json:"getUserInfo"`
-	UserNameKey               string           `json:"userNameKey"`
-	UserIDKey                 string           `json:"userIDKey"`
-	PromptType                string           `json:"promptType"`
-	InsecureSkipEmailVerified *bool            `json:"insecureSkipEmailVerified"`
-	InsecureEnableGroups      *bool            `json:"insecureEnableGroups"`
-	Scopes                    []string         `json:"scopes"`
-	HostedDomains             []string         `json:"hostedDomains"`
-	ClaimMapping              OIDCClaimMapping `json:"claimMapping"`
+	GetUserInfo               *bool            `json:"getUserInfo,omitempty"`
+	UserNameKey               string           `json:"userNameKey,omitempty"`
+	UserIDKey                 string           `json:"userIDKey,omitempty"`
+	PromptType                string           `json:"promptType,omitempty"`
+	InsecureSkipEmailVerified *bool            `json:"insecureSkipEmailVerified,omitempty"`
+	InsecureEnableGroups      *bool            `json:"insecureEnableGroups,omitempty"`
+	Scopes                    []string         `json:"scopes,omitempty"`
+	HostedDomains             []string         `json:"hostedDomains,omitempty"`
+	ClaimMapping              OIDCClaimMapping `json:"claimMapping,omitempty"`
 }
 type OIDCClaimMapping struct {
-	PreferredUsernameKey string `json:"preferredUsername"`
-	EmailKey             string `json:"email"`
-	GroupsKey            string `json:"groups"`
+	PreferredUsernameKey string `json:"preferredUsername,omitempty"`
+	EmailKey             string `json:"email,omitempty"`
+	GroupsKey            string `json:"groups,omitempty"`
 }
 
 func ConfigureIdentityService(w http.ResponseWriter, r *http.Request) {
@@ -79,7 +79,7 @@ func ConfigureIdentityService(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		err = errors.Wrap(err, "failed to get identity config")
 		logger.Error(err)
-		JSON(w, http.StatusInternalServerError, NewErrorResponse(err))
+		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
@@ -87,7 +87,7 @@ func ConfigureIdentityService(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		err = errors.Wrap(err, "failed to get idp configs from dex connectors")
 		logger.Error(err)
-		JSON(w, http.StatusInternalServerError, NewErrorResponse(err))
+		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
@@ -95,7 +95,7 @@ func ConfigureIdentityService(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		err = errors.Wrap(err, "failed to get dex connector info")
 		logger.Error(err)
-		JSON(w, http.StatusInternalServerError, NewErrorResponse(err))
+		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
@@ -132,7 +132,7 @@ func ConfigureIdentityService(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		err = errors.Wrap(err, "failed to get ingress config")
 		logger.Error(err)
-		JSON(w, http.StatusInternalServerError, NewErrorResponse(err))
+		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
@@ -146,7 +146,7 @@ func ConfigureIdentityService(w http.ResponseWriter, r *http.Request) {
 	if err := identity.SetConfig(r.Context(), namespace, identityConfig); err != nil {
 		err = errors.Wrap(err, "failed to set identity config")
 		logger.Error(err)
-		JSON(w, http.StatusInternalServerError, NewErrorResponse(err))
+		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
@@ -154,7 +154,7 @@ func ConfigureIdentityService(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		err = errors.Wrap(err, "failed to get cluster config")
 		logger.Error(err)
-		JSON(w, http.StatusInternalServerError, NewErrorResponse(err))
+		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
@@ -162,7 +162,7 @@ func ConfigureIdentityService(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		err = errors.Wrap(err, "failed to create kubernetes clientset")
 		logger.Error(err)
-		JSON(w, http.StatusInternalServerError, NewErrorResponse(err))
+		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
@@ -170,14 +170,14 @@ func ConfigureIdentityService(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		err = errors.Wrap(err, "failed to get kotsadm options from cluster")
 		logger.Error(err)
-		JSON(w, http.StatusInternalServerError, NewErrorResponse(err))
+		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
 	if err := identity.Deploy(r.Context(), clientset, namespace, identityConfig, *ingressConfig, &registryOptions); err != nil {
 		err = errors.Wrap(err, "failed to deploy the identity service")
 		logger.Error(err)
-		JSON(w, http.StatusInternalServerError, NewErrorResponse(err))
+		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
