@@ -4,9 +4,12 @@ import (
 	"context"
 	"net/http"
 
+	"crypto/tls"
+
 	"github.com/coreos/go-oidc"
 	dexoidc "github.com/dexidp/dex/connector/oidc"
 	ghodssyaml "github.com/ghodss/yaml"
+	"github.com/hashicorp/go-cleanhttp"
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	"github.com/replicatedhq/kots/pkg/ingress"
@@ -25,11 +28,11 @@ var (
 	ConfigSecretKeyName = "dexConnectors"
 )
 
-type ErrorConfigValidation struct {
+type ErrorConnection struct {
 	Message string
 }
 
-func (e *ErrorConfigValidation) Error() string {
+func (e *ErrorConnection) Error() string {
 	return e.Message
 }
 
@@ -237,46 +240,49 @@ func identitySecretResource(identityConfig kotsv1beta1.IdentityConfig) (*corev1.
 	}, nil
 }
 
-func ConfigValidate(ctx context.Context, namespace string, identityConfig kotsv1beta1.IdentityConfig, ingressConfig kotsv1beta1.IngressConfig, validateConnectivity bool) error {
+func ValidateConfig(ctx context.Context, namespace string, identityConfig kotsv1beta1.IdentityConfig, ingressConfig kotsv1beta1.IngressConfig) error {
 	if identityConfig.Spec.AdminConsoleAddress == "" && (!ingressConfig.Spec.Enabled || ingressConfig.Spec.Ingress == nil) {
-		return &ErrorConfigValidation{Message: "adminConsoleAddress required or KOTS Admin Console ingress must be enabled"}
+		return errors.New("adminConsoleAddress required or KOTS Admin Console ingress must be enabled")
 	}
 
 	if identityConfig.Spec.IdentityServiceAddress == "" && (!identityConfig.Spec.IngressConfig.Enabled || identityConfig.Spec.IngressConfig.Ingress == nil) {
-		return &ErrorConfigValidation{Message: "identityServiceAddress required or ingressConfig.ingress must be enabled"}
+		return errors.New("identityServiceAddress required or ingressConfig.ingress must be enabled")
 	}
 
-	if !validateConnectivity {
-		return nil
-	}
+	return nil
+}
 
+func ValidateConnection(ctx context.Context, namespace string, identityConfig kotsv1beta1.IdentityConfig, ingressConfig kotsv1beta1.IngressConfig) error {
 	// validate kotsadm address
 	if identityConfig.Spec.AdminConsoleAddress != "" {
 		err := pingURL(identityConfig.Spec.AdminConsoleAddress)
 		if err != nil {
 			err = errors.Wrap(err, "failed to ping admin console address")
-			return &ErrorConfigValidation{Message: err.Error()}
+			return &ErrorConnection{Message: err.Error()}
 		}
 	} else if ingressConfig.Spec.Enabled {
 		err := pingURL(ingress.GetAddress(ingressConfig.Spec))
 		if err != nil {
 			err = errors.Wrap(err, "failed to ping admin console ingress")
-			return &ErrorConfigValidation{Message: err.Error()}
+			return &ErrorConnection{Message: err.Error()}
 		}
 	}
 
+	// TODO: make this work, the challenge is waiting for the dex pods to become ready/be deployed before validating
 	// validate dex issuer
-	dexIssuer := DexIssuerURL(identityConfig.Spec)
-	httpClient, err := HTTPClient(ctx, namespace, identityConfig)
-	if err != nil {
-		return errors.Wrap(err, "failed to init http client")
-	}
-	dexClientCtx := oidc.ClientContext(ctx, httpClient)
-	_, err = oidc.NewProvider(dexClientCtx, dexIssuer)
-	if err != nil {
-		err = errors.Wrapf(err, "failed to query dex provider %q", dexIssuer)
-		return &ErrorConfigValidation{Message: err.Error()}
-	}
+	/**
+		dexIssuer := DexIssuerURL(identityConfig.Spec)
+		httpClient, err := HTTPClient(ctx, namespace, identityConfig)
+		if err != nil {
+			return errors.Wrap(err, "failed to init http client")
+		}
+		dexClientCtx := oidc.ClientContext(ctx, httpClient)
+		_, err = oidc.NewProvider(dexClientCtx, dexIssuer)
+		if err != nil {
+			err = errors.Wrapf(err, "failed to query dex provider %q", dexIssuer)
+			return &ErrorConnection{Message: err.Error()}
+		}
+	**/
 
 	// validate connectors issuers
 	if err := evaluateDexConnectorsValue(ctx, namespace, &identityConfig.Spec.DexConnectors); err != nil {
@@ -292,7 +298,7 @@ func ConfigValidate(ctx context.Context, namespace string, identityConfig kotsv1
 			_, err = oidc.NewProvider(ctx, c.Issuer)
 			if err != nil {
 				err = errors.Wrapf(err, "failed to query provider %q", c.Issuer)
-				return &ErrorConfigValidation{Message: err.Error()}
+				return &ErrorConnection{Message: err.Error()}
 			}
 		}
 	}
@@ -301,7 +307,14 @@ func ConfigValidate(ctx context.Context, namespace string, identityConfig kotsv1
 }
 
 func pingURL(url string) error {
-	_, err := http.Get(url)
+	transport := cleanhttp.DefaultTransport()
+	transport.TLSClientConfig = &tls.Config{
+		InsecureSkipVerify: true,
+	}
+	httpClient := &http.Client{
+		Transport: transport,
+	}
+	_, err := httpClient.Get(url)
 	if err != nil {
 		return err
 	}

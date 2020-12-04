@@ -137,14 +137,22 @@ func ConfigureIdentityService(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := identity.ConfigValidate(r.Context(), namespace, identityConfig, *ingressConfig, true); err != nil {
-		if _, ok := errors.Cause(err).(*identity.ErrorConfigValidation); ok {
-			err = errors.Wrap(err, "invalid identity config")
+	if err := identity.ValidateConfig(r.Context(), namespace, identityConfig, *ingressConfig); err != nil {
+		err = errors.Wrap(err, "invalid identity config")
+		logger.Error(err)
+		JSON(w, http.StatusBadRequest, NewErrorResponse(err))
+		return
+	}
+
+	// TODO: validate dex issuer
+	if err := identity.ValidateConnection(r.Context(), namespace, identityConfig, *ingressConfig); err != nil {
+		if _, ok := errors.Cause(err).(*identity.ErrorConnection); ok {
+			err = errors.Wrap(err, "invalid connection")
 			logger.Error(err)
 			JSON(w, http.StatusBadRequest, NewErrorResponse(err))
 			return
 		}
-		err = errors.Wrap(err, "failed to validate identity config")
+		err = errors.Wrap(err, "failed to validate identity connection")
 		logger.Error(err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
