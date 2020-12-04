@@ -27,7 +27,7 @@ func Test_regoEval(t *testing.T) {
 				action:            "read",
 				resource:          "app.my-app",
 				roles:             []string{"cluster-admin"},
-				allowRolePolicies: DefaultAllowRolePolicies(),
+				allowRolePolicies: roleToAllowRolePolicies(ClusterAdminRole),
 			},
 			want: true,
 		},
@@ -145,7 +145,7 @@ func Test_regoEval(t *testing.T) {
 				action:            "read",
 				resource:          "app.my-app",
 				roles:             []string{"undefined"},
-				allowRolePolicies: DefaultAllowRolePolicies(),
+				allowRolePolicies: roleToAllowRolePolicies(ClusterAdminRole),
 			},
 			want: false,
 		},
@@ -160,7 +160,7 @@ func Test_regoEval(t *testing.T) {
 				},
 				denyRolePolicies: map[string][]types.Policy{
 					"admin": {
-						{Action: "**", Resource: "app.*.filetree."},
+						{Action: "**", Resource: "app.*.downstream.filetree."},
 					},
 				},
 			},
@@ -170,14 +170,14 @@ func Test_regoEval(t *testing.T) {
 			name: "deny app filetree",
 			args: args{
 				action:   "read",
-				resource: "app.my-app.filetree.",
+				resource: "app.my-app.downstream.filetree.",
 				roles:    []string{"admin"},
 				allowRolePolicies: map[string][]types.Policy{
 					"admin": ClusterAdminRole.Allow,
 				},
 				denyRolePolicies: map[string][]types.Policy{
 					"admin": {
-						{Action: "**", Resource: "app.*.filetree."},
+						{Action: "**", Resource: "app.*.downstream.filetree."},
 					},
 				},
 			},
@@ -187,12 +187,12 @@ func Test_regoEval(t *testing.T) {
 			name: "multiple roles allow",
 			args: args{
 				action:   "read",
-				resource: "app.my-app.filetree.",
-				roles:    []string{SupportRole.ID, "yesfiletree"},
+				resource: "app.my-app.downstream.logs.",
+				roles:    []string{SupportRole.ID, "yeslogs"},
 				allowRolePolicies: map[string][]types.Policy{
 					SupportRole.ID: SupportRole.Allow,
-					"yesfiletree": {
-						{Action: "**", Resource: "app.*.filetree."},
+					"yeslogs": {
+						{Action: "**", Resource: "app.*.downstream.logs."},
 					},
 				},
 				denyRolePolicies: map[string][]types.Policy{
@@ -205,15 +205,15 @@ func Test_regoEval(t *testing.T) {
 			name: "multiple roles deny",
 			args: args{
 				action:   "read",
-				resource: "app.my-app.filetree.",
-				roles:    []string{ClusterAdminRole.ID, "nofiletree"},
+				resource: "app.my-app.downstream.logs.",
+				roles:    []string{ClusterAdminRole.ID, "nologs"},
 				allowRolePolicies: map[string][]types.Policy{
 					ClusterAdminRole.ID: ClusterAdminRole.Allow,
 				},
 				denyRolePolicies: map[string][]types.Policy{
 					ClusterAdminRole.ID: ClusterAdminRole.Deny,
-					"nofiletree": {
-						{Action: "**", Resource: "app.*.filetree."},
+					"nologs": {
+						{Action: "**", Resource: "app.*.downstream.logs."},
 					},
 				},
 			},
@@ -236,6 +236,61 @@ func Test_regoEval(t *testing.T) {
 			}
 			if got != tt.want {
 				t.Errorf("regoEval() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestCheckAccess(t *testing.T) {
+	type args struct {
+		action       string
+		resource     string
+		sessionRoles []string
+		appSlugs     []string
+	}
+	tests := []struct {
+		name    string
+		args    args
+		want    bool
+		wantErr bool
+	}{
+		{
+			name: "single role allow",
+			args: args{
+				action:       "read",
+				resource:     "app.my-app.downstream.filetree.",
+				sessionRoles: []string{ClusterAdminRole.ID},
+			},
+			want: true,
+		},
+		{
+			name: "single role deny",
+			args: args{
+				action:       "read",
+				resource:     "app.my-app.downstream.filetree.",
+				sessionRoles: []string{SupportRole.ID},
+			},
+			want: false,
+		},
+		{
+			name: "multiple roles allow",
+			args: args{
+				action:       "read",
+				resource:     "app.my-app.downstream.filetree.",
+				sessionRoles: []string{SupportRole.ID, ClusterAdminRole.ID},
+			},
+			want: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := CheckAccess(context.Background(), tt.args.action, tt.args.resource, tt.args.sessionRoles, tt.args.appSlugs)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("CheckAccess() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if got != tt.want {
+				t.Errorf("CheckAccess() = %v, want %v", got, tt.want)
 			}
 		})
 	}

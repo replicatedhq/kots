@@ -6,6 +6,7 @@ import (
 	"github.com/open-policy-agent/opa/ast"
 	"github.com/open-policy-agent/opa/rego"
 	"github.com/pkg/errors"
+	"github.com/replicatedhq/kots/pkg/rbac/types"
 )
 
 /*
@@ -65,25 +66,39 @@ func init() {
 	}
 }
 
-func CheckAccess(ctx context.Context, action, resource string, roles []string, appSlugs []string) (bool, error) {
-	allowRolePolicies := DefaultAllowRolePolicies()
-	denyRolePolicies := DefaultDenyRolePolicies()
+func CheckAccess(ctx context.Context, action, resource string, sessionRoles []string, appSlugs []string) (bool, error) {
+	roles := DefaultRoles()
 	for _, appSlug := range appSlugs {
-		appAdminRole := GetAppAdminRole(appSlug)
-		allowRolePolicies[appAdminRole.ID] = appAdminRole.Allow
-		denyRolePolicies[appAdminRole.ID] = appAdminRole.Deny
-		appReadonlyRole := GetAppReadonlyRole(appSlug)
-		allowRolePolicies[appReadonlyRole.ID] = appReadonlyRole.Allow
-		denyRolePolicies[appReadonlyRole.ID] = appReadonlyRole.Deny
+		roles = append(roles, GetAppAdminRole(appSlug))
 	}
-	i := map[string]interface{}{
-		"action":            action,
-		"resource":          resource,
-		"roles":             roles,
-		"allowRolePolicies": allowRolePolicies,
-		"denyRolePolicies":  denyRolePolicies,
+	for _, role := range roles {
+		i := map[string]interface{}{
+			"action":            action,
+			"resource":          resource,
+			"roles":             sessionRoles,
+			"allowRolePolicies": roleToAllowRolePolicies(role),
+			"denyRolePolicies":  roleToDenyRolePolicies(role),
+		}
+		allow, err := regoEval(ctx, i)
+		if err != nil {
+			return false, errors.Wrapf(err, "failed to evaluate role %s", role.ID)
+		} else if allow {
+			return true, nil
+		}
 	}
-	return regoEval(ctx, i)
+	return false, nil
+}
+
+func roleToAllowRolePolicies(role types.Role) map[string][]types.Policy {
+	return map[string][]types.Policy{
+		role.ID: role.Allow,
+	}
+}
+
+func roleToDenyRolePolicies(role types.Role) map[string][]types.Policy {
+	return map[string][]types.Policy{
+		role.ID: role.Deny,
+	}
 }
 
 func regoEval(ctx context.Context, input map[string]interface{}) (bool, error) {
