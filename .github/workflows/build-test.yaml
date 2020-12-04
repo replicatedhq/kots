@@ -32,7 +32,7 @@ jobs:
       - run: make -C kotsadm/kurl_proxy build
       - env:
           GIT_COMMIT: ${{ github.sha }}
-        run: make -C kotsadm/web deps build-kotsadm
+        run: make -C kotsadm/web build-kotsadm
 
       - name: build and push migrations for e2e
         uses: docker/build-push-action@v2.2.2

@@ -42,7 +42,7 @@ serve: deps
 		--host 0.0.0.0
 
 .PHONY: build-local
-build-local:
+build-local: deps
 	node \
 		--max_old_space_size=6144 \
 		./node_modules/webpack/bin/webpack.js \
@@ -53,7 +53,7 @@ build-local:
 
 .PHONY: build-kotsadm
 build-kotsadm: KOTSADM_BUILD_VERSION = $(if ${GIT_TAG},${GIT_TAG},$(shell echo ${GIT_COMMIT} | cut -c1-7))
-build-kotsadm:
+build-kotsadm: deps
 	KOTSADM_BUILD_VERSION=$(KOTSADM_BUILD_VERSION) \
 	node \
 		--max_old_space_size=6144 \
