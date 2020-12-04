@@ -14,5 +14,5 @@ data:
     psql -h kotsadm-postgres -Ukotsadm \
       -c "CREATE DATABASE dex;" \
       -c "CREATE USER dex;" \
-      -c "ALTER USER dex WITH PASSWORD '$(DEX_PGPASSWORD)';" \
+      -c "ALTER USER dex WITH PASSWORD '$DEX_PGPASSWORD';" \
       -c "GRANT ALL PRIVILEGES ON DATABASE dex TO dex;"

@@ -11,15 +11,6 @@ const (
 )
 
 var (
-	DefaultAllowRolePolicies = map[string][]types.Policy{
-		ClusterAdminRole.ID: ClusterAdminRole.Allow,
-		SupportRole.ID:      SupportRole.Allow,
-	}
-	DefaultDenyRolePolicies = map[string][]types.Policy{
-		ClusterAdminRole.ID: ClusterAdminRole.Deny,
-		SupportRole.ID:      SupportRole.Deny,
-	}
-
 	ClusterAdminRole = types.Role{
 		ID:          "cluster-admin",
 		Name:        "Cluster Admin",
@@ -55,6 +46,20 @@ var (
 		Resource: "**",
 	}
 )
+
+func DefaultAllowRolePolicies() map[string][]types.Policy {
+	return map[string][]types.Policy{
+		ClusterAdminRole.ID: ClusterAdminRole.Allow,
+		SupportRole.ID:      SupportRole.Allow,
+	}
+}
+
+func DefaultDenyRolePolicies() map[string][]types.Policy {
+	return map[string][]types.Policy{
+		ClusterAdminRole.ID: ClusterAdminRole.Deny,
+		SupportRole.ID:      SupportRole.Deny,
+	}
+}
 
 func GetAppAdminRole(appSlug string) types.Role {
 	return types.Role{

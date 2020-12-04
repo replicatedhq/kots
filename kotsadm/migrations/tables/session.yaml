@@ -25,6 +25,8 @@ spec:
         type: text
         constraints:
           notNull: true
+      - name: issued_at
+        type: timestamp without time zone
       - name: expire_at
         type: timestamp without time zone
         constraints:

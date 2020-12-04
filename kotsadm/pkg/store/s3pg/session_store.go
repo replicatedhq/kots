@@ -1,6 +1,7 @@
 package s3pg
 
 import (
+	"database/sql"
 	"encoding/json"
 	"time"
 
@@ -16,7 +17,7 @@ type SessionMetadata struct {
 	Roles []string
 }
 
-func (s S3PGStore) CreateSession(forUser *usertypes.User, expiresAt *time.Time, roles []string) (*sessiontypes.Session, error) {
+func (s S3PGStore) CreateSession(forUser *usertypes.User, issuedAt time.Time, expiresAt time.Time, roles []string) (*sessiontypes.Session, error) {
 	logger.Debug("creating session")
 
 	randomID, err := ksuid.NewRandom()
@@ -31,14 +32,9 @@ func (s S3PGStore) CreateSession(forUser *usertypes.User, expiresAt *time.Time, 
 		return nil, errors.Wrap(err, "failed to marshal session metadata")
 	}
 
-	if expiresAt == nil {
-		e := time.Now().AddDate(0, 0, 14)
-		expiresAt = &e
-	}
-
 	db := persistence.MustGetPGSession()
-	query := `insert into session (id, user_id, metadata, expire_at) values ($1, $2, $3, $4)`
-	_, err = db.Exec(query, id, forUser.ID, string(metadata), *expiresAt)
+	query := `insert into session (id, user_id, metadata, issued_at, expire_at) values ($1, $2, $3, $4, $5)`
+	_, err = db.Exec(query, id, forUser.ID, string(metadata), issuedAt, expiresAt)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create session")
 	}
@@ -52,13 +48,14 @@ func (s S3PGStore) GetSession(id string) (*sessiontypes.Session, error) {
 	// 	zap.String("id", id))
 
 	db := persistence.MustGetPGSession()
-	query := `select id, metadata, expire_at from session where id = $1`
+	query := `select id, metadata, issued_at, expire_at from session where id = $1`
 	row := db.QueryRow(query, id)
 	session := sessiontypes.Session{}
 
+	var issuedAt sql.NullTime
 	var expiresAt time.Time
 	var metadataStr string
-	if err := row.Scan(&session.ID, &metadataStr, &expiresAt); err != nil {
+	if err := row.Scan(&session.ID, &metadataStr, &issuedAt, &expiresAt); err != nil {
 		return nil, errors.Wrap(err, "failed to get session")
 	}
 
@@ -69,6 +66,13 @@ func (s S3PGStore) GetSession(id string) (*sessiontypes.Session, error) {
 		}
 		session.HasRBAC = true
 		session.Roles = metadata.Roles
+	}
+
+	// sessions created before this change will not have IssuedAt
+	if issuedAt.Valid {
+		session.IssuedAt = issuedAt.Time
+	} else {
+		session.IssuedAt = session.ExpiresAt.AddDate(0, 0, -14)
 	}
 
 	session.ExpiresAt = expiresAt
