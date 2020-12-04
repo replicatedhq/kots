@@ -482,7 +482,7 @@ func CopyFromFileToRegistry(path string, name string, tag string, digest string,
 
 	destCtx := &types.SystemContext{
 		DockerInsecureSkipTLSVerify: types.OptionalBoolTrue,
-		DockerDisableV1Ping: true,
+		DockerDisableV1Ping:         true,
 	}
 
 	if auth.Username != "" && auth.Password != "" {

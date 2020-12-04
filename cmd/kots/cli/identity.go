@@ -291,7 +291,7 @@ func identityServiceDeploy(ctx context.Context, log *logger.Logger, clientset ku
 		identityConfig.Spec.IngressConfig.Enabled = true
 	}
 
-	if err := identity.ConfigValidate(identityConfig.Spec, ingressConfig.Spec); err != nil {
+	if err := identity.ConfigValidate(ctx, namespace, identityConfig.Spec, ingressConfig.Spec); err != nil {
 		return errors.Wrap(err, "failed to validate identity config")
 	}
 
@@ -320,7 +320,7 @@ func identityServiceConfigure(ctx context.Context, log *logger.Logger, clientset
 		identityConfig.Spec.IngressConfig.Enabled = true
 	}
 
-	if err := identity.ConfigValidate(identityConfig.Spec, ingressConfig.Spec); err != nil {
+	if err := identity.ConfigValidate(ctx, namespace, identityConfig.Spec, ingressConfig.Spec); err != nil {
 		return errors.Wrap(err, "failed to validate identity config")
 	}
 
