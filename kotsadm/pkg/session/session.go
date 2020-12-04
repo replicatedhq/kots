@@ -63,7 +63,7 @@ func Parse(signedToken string) (*types.Session, error) {
 
 		s := types.Session{
 			ID:        "kots-cli",
-			CreatedAt: time.Now(),
+			IssuedAt:  time.Now(),
 			ExpiresAt: time.Now().Add(time.Minute),
 			// TODO: super user permissions
 			Roles:   GetSessionRolesFromRBAC(nil, identity.DefaultGroups),

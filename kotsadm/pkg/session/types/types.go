@@ -4,7 +4,7 @@ import "time"
 
 type Session struct {
 	ID        string
-	CreatedAt time.Time
+	IssuedAt  time.Time
 	ExpiresAt time.Time
 	Roles     []string
 	HasRBAC   bool

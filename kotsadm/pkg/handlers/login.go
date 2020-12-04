@@ -78,7 +78,8 @@ func Login(w http.ResponseWriter, r *http.Request) {
 	// TODO: super user permissions
 	roles := session.GetSessionRolesFromRBAC(nil, identity.DefaultGroups)
 
-	createdSession, err := store.GetStore().CreateSession(foundUser, nil, roles)
+	issuedAt, expiresAt := time.Now(), time.Now().AddDate(0, 0, 14)
+	createdSession, err := store.GetStore().CreateSession(foundUser, issuedAt, expiresAt, roles)
 	if err != nil {
 		logger.Error(err)
 		JSON(w, http.StatusInternalServerError, loginResponse)
@@ -289,7 +290,8 @@ func OIDCLoginCallback(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	createdSession, err := store.GetStore().CreateSession(user, &idToken.Expiry, roles)
+	issuedAt, expiresAt := time.Now(), time.Now().AddDate(0, 0, 14)
+	createdSession, err := store.GetStore().CreateSession(user, issuedAt, expiresAt, roles) // idToken.IssuedAt, idToken.Expiry
 	if err != nil {
 		logger.Error(errors.Wrap(err, "failed to create session"))
 		w.WriteHeader(http.StatusInternalServerError)

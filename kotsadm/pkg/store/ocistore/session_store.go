@@ -26,7 +26,7 @@ const (
 	SessionSecretName = "kotsadm-sessions"
 )
 
-func (s OCIStore) CreateSession(forUser *usertypes.User, expiresAt *time.Time, roles []string) (*sessiontypes.Session, error) {
+func (s OCIStore) CreateSession(forUser *usertypes.User, issuedAt time.Time, expiresAt time.Time, roles []string) (*sessiontypes.Session, error) {
 	logger.Debug("creating session")
 
 	randomID, err := ksuid.NewRandom()
@@ -43,15 +43,10 @@ func (s OCIStore) CreateSession(forUser *usertypes.User, expiresAt *time.Time, r
 
 	session := sessiontypes.Session{
 		ID:        id,
-		CreatedAt: time.Now(),
+		IssuedAt:  issuedAt,
+		ExpiresAt: expiresAt,
 		Roles:     roles,
 		HasRBAC:   true,
-	}
-
-	if expiresAt != nil {
-		session.ExpiresAt = *expiresAt
-	} else {
-		session.ExpiresAt = time.Now().AddDate(0, 0, 14)
 	}
 
 	b, err := json.Marshal(session)
@@ -86,6 +81,11 @@ func (s OCIStore) GetSession(id string) (*sessiontypes.Session, error) {
 	session := sessiontypes.Session{}
 	if err := json.Unmarshal(data, &session); err != nil {
 		return nil, errors.Wrap(err, "failed to unmarshal session")
+	}
+
+	// sessions created before this change will not have IssuedAt
+	if session.IssuedAt.IsZero() {
+		session.IssuedAt = session.ExpiresAt.AddDate(0, 0, -14)
 	}
 
 	return &session, nil
