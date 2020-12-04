@@ -16,7 +16,7 @@ Required Software:
 Build Kotsadm go binary:
 
 ```
-make kotsadm
+GOOS=linux make kotsadm
 ```
 
 Next, you can build and run all server components in the Kubernetes cluster with:
