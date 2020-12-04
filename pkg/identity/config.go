@@ -3,6 +3,8 @@ package identity
 import (
 	"context"
 
+	"github.com/coreos/go-oidc"
+	dexoidc "github.com/dexidp/dex/connector/oidc"
 	ghodssyaml "github.com/ghodss/yaml"
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
@@ -20,6 +22,14 @@ var (
 	ConfigSecretName    = "kotsadm-identity-secret"
 	ConfigSecretKeyName = "dexConnectors"
 )
+
+type ErrorConfigValidation struct {
+	Message string
+}
+
+func (e *ErrorConfigValidation) Error() string {
+	return e.Message
+}
 
 func GetConfig(ctx context.Context, namespace string) (*kotsv1beta1.IdentityConfig, error) {
 	cfg, err := k8sconfig.GetConfig()
@@ -223,4 +233,42 @@ func identitySecretResource(identityConfig kotsv1beta1.IdentityConfig) (*corev1.
 			ConfigSecretKeyName: data,
 		},
 	}, nil
+}
+
+func ConfigValidate(ctx context.Context, namespace string, identitySpec kotsv1beta1.IdentityConfigSpec, ingressSpec kotsv1beta1.IngressConfigSpec) error {
+	if identitySpec.AdminConsoleAddress == "" && (!ingressSpec.Enabled || ingressSpec.Ingress == nil) {
+		return &ErrorConfigValidation{Message: "adminConsoleAddress required or KOTS Admin Console ingress must be enabled"}
+	}
+
+	if identitySpec.IdentityServiceAddress == "" && (!identitySpec.IngressConfig.Enabled || identitySpec.IngressConfig.Ingress == nil) {
+		return &ErrorConfigValidation{Message: "identityServiceAddress required or ingressConfig.ingress must be enabled"}
+	}
+
+	if err := evaluateDexConnectorsValue(ctx, namespace, &identitySpec.DexConnectors); err != nil {
+		return errors.Wrap(err, "failed to evaluate dex connectors value")
+	}
+
+	// validate issuers
+	conns, err := IdentityDexConnectorsToDexTypeConnectors(identitySpec.DexConnectors.Value)
+	if err != nil {
+		return errors.Wrap(err, "failed to map identity dex connectors to dex type connectors")
+	}
+	for _, conn := range conns {
+		switch c := conn.Config.(type) {
+		case *dexoidc.Config:
+			httpClient, err := HTTPClient(ctx, namespace)
+			if err != nil {
+				return errors.Wrap(err, "failed to init http client")
+			}
+
+			oidcClientCtx := oidc.ClientContext(ctx, httpClient)
+			_, err = oidc.NewProvider(oidcClientCtx, c.Issuer)
+			if err != nil {
+				err = errors.Wrapf(err, "failed to query provider %q", c.Issuer)
+				return &ErrorConfigValidation{Message: err.Error()}
+			}
+		}
+	}
+
+	return nil
 }
