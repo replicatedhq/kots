@@ -246,39 +246,35 @@ func ConfigValidate(ctx context.Context, namespace string, identityConfig kotsv1
 		return &ErrorConfigValidation{Message: "identityServiceAddress required or ingressConfig.ingress must be enabled"}
 	}
 
-	// validate addresses
-	httpClient, err := HTTPClient(ctx, namespace, identityConfig)
-	if err != nil {
-		return errors.Wrap(err, "failed to init http client")
-	}
+	// validate kotsadm address
 	if identityConfig.Spec.AdminConsoleAddress != "" {
-		err = pingURL(identityConfig.Spec.AdminConsoleAddress, httpClient)
+		err := pingURL(identityConfig.Spec.AdminConsoleAddress)
 		if err != nil {
 			err = errors.Wrap(err, "failed to ping admin console address")
 			return &ErrorConfigValidation{Message: err.Error()}
 		}
 	} else if ingressConfig.Spec.Enabled {
-		err = pingURL(ingress.GetAddress(ingressConfig.Spec), httpClient)
+		err := pingURL(ingress.GetAddress(ingressConfig.Spec))
 		if err != nil {
 			err = errors.Wrap(err, "failed to ping admin console ingress")
 			return &ErrorConfigValidation{Message: err.Error()}
 		}
 	}
-	if identityConfig.Spec.IdentityServiceAddress != "" {
-		err = pingURL(identityConfig.Spec.IdentityServiceAddress, httpClient)
-		if err != nil {
-			err = errors.Wrap(err, "failed to ping identity service address")
-			return &ErrorConfigValidation{Message: err.Error()}
-		}
-	} else if identityConfig.Spec.IngressConfig.Enabled {
-		err = pingURL(ingress.GetAddress(identityConfig.Spec.IngressConfig), httpClient)
-		if err != nil {
-			err = errors.Wrap(err, "failed to ping identity service ingress")
-			return &ErrorConfigValidation{Message: err.Error()}
-		}
+
+	// validate dex issuer
+	dexIssuer := DexIssuerURL(identityConfig.Spec)
+	httpClient, err := HTTPClient(ctx, namespace, identityConfig)
+	if err != nil {
+		return errors.Wrap(err, "failed to init http client")
+	}
+	dexClientCtx := oidc.ClientContext(ctx, httpClient)
+	_, err = oidc.NewProvider(dexClientCtx, dexIssuer)
+	if err != nil {
+		err = errors.Wrapf(err, "failed to query dex provider %q", dexIssuer)
+		return &ErrorConfigValidation{Message: err.Error()}
 	}
 
-	// validate issuers
+	// validate connectors issuers
 	if err := evaluateDexConnectorsValue(ctx, namespace, &identityConfig.Spec.DexConnectors); err != nil {
 		return errors.Wrap(err, "failed to evaluate dex connectors value")
 	}
@@ -289,8 +285,7 @@ func ConfigValidate(ctx context.Context, namespace string, identityConfig kotsv1
 	for _, conn := range conns {
 		switch c := conn.Config.(type) {
 		case *dexoidc.Config:
-			oidcClientCtx := oidc.ClientContext(ctx, httpClient)
-			_, err = oidc.NewProvider(oidcClientCtx, c.Issuer)
+			_, err = oidc.NewProvider(ctx, c.Issuer)
 			if err != nil {
 				err = errors.Wrapf(err, "failed to query provider %q", c.Issuer)
 				return &ErrorConfigValidation{Message: err.Error()}
@@ -301,8 +296,8 @@ func ConfigValidate(ctx context.Context, namespace string, identityConfig kotsv1
 	return nil
 }
 
-func pingURL(url string, httpClient *http.Client) error {
-	_, err := httpClient.Get(url)
+func pingURL(url string) error {
+	_, err := http.Get(url)
 	if err != nil {
 		return err
 	}
