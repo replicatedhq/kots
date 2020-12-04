@@ -16,7 +16,7 @@ deps:
 .PHONY: publish-pact
 publish-pact:
 	yarn run publish:pact
-	
+
 .PHONY: clean
 clean:
 	rm -rf node_modules
@@ -42,7 +42,6 @@ serve: deps
 		--host 0.0.0.0
 
 .PHONY: build-local
-build-local: webpack_build_local
 build-local:
 	node \
 		--max_old_space_size=6144 \
