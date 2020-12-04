@@ -138,8 +138,14 @@ func UpdateAppFromPath(a *apptypes.App, airgapRoot string, deploy bool, skipPref
 		pipeReader.CloseWithError(scanner.Err())
 	}()
 
+	// Using license from db instead of upstream bundle because the one in db has not been re-marshalled
+	license, err := pull.ParseLicenseFromBytes([]byte(a.License))
+	if err != nil {
+		return errors.Wrap(err, "failed parse license")
+	}
+
 	pullOptions := pull.PullOptions{
-		LicenseFile:         filepath.Join(currentArchivePath, "upstream", "userdata", "license.yaml"),
+		LicenseObj:          license,
 		Namespace:           appNamespace,
 		ConfigFile:          filepath.Join(currentArchivePath, "upstream", "userdata", "config.yaml"),
 		AirgapRoot:          airgapRoot,
