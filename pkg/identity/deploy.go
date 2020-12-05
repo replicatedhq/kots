@@ -45,7 +45,7 @@ var (
 )
 
 func Deploy(ctx context.Context, clientset kubernetes.Interface, namespace string, identityConfig kotsv1beta1.IdentityConfig, ingressConfig kotsv1beta1.IngressConfig, registryOptions *kotsadmtypes.KotsadmOptions) error {
-	if err := ConfigValidate(ctx, namespace, identityConfig, ingressConfig, false); err != nil {
+	if err := ValidateConfig(ctx, namespace, identityConfig, ingressConfig); err != nil {
 		return errors.Wrap(err, "invalid identity config")
 	}
 
@@ -79,7 +79,7 @@ func Deploy(ctx context.Context, clientset kubernetes.Interface, namespace strin
 }
 
 func Configure(ctx context.Context, clientset kubernetes.Interface, namespace string, identityConfig kotsv1beta1.IdentityConfig, ingressConfig kotsv1beta1.IngressConfig) error {
-	if err := ConfigValidate(ctx, namespace, identityConfig, ingressConfig, false); err != nil {
+	if err := ValidateConfig(ctx, namespace, identityConfig, ingressConfig); err != nil {
 		return errors.Wrap(err, "invalid identity config")
 	}
 
@@ -212,6 +212,9 @@ func getDexConfig(ctx context.Context, clientset kubernetes.Interface, namespace
 		},
 		Web: dextypes.Web{
 			HTTP: "0.0.0.0:5556",
+		},
+		Frontend: server.WebConfig{
+			Issuer: "KOTS",
 		},
 		OAuth2: dextypes.OAuth2{
 			SkipApprovalScreen:    true,
