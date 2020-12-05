@@ -28,6 +28,18 @@ var (
 	ConfigSecretKeyName = "dexConnectors"
 )
 
+var insecureClient *http.Client
+
+func init() {
+	transport := cleanhttp.DefaultTransport()
+	transport.TLSClientConfig = &tls.Config{
+		InsecureSkipVerify: true,
+	}
+	insecureClient = &http.Client{
+		Transport: transport,
+	}
+}
+
 type ErrorConnection struct {
 	Message string
 }
@@ -307,14 +319,7 @@ func ValidateConnection(ctx context.Context, namespace string, identityConfig ko
 }
 
 func pingURL(url string) error {
-	transport := cleanhttp.DefaultTransport()
-	transport.TLSClientConfig = &tls.Config{
-		InsecureSkipVerify: true,
-	}
-	httpClient := &http.Client{
-		Transport: transport,
-	}
-	_, err := httpClient.Get(url)
+	_, err := insecureClient.Get(url)
 	if err != nil {
 		return err
 	}
