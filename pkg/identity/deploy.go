@@ -218,7 +218,7 @@ func getDexConfig(ctx context.Context, clientset kubernetes.Interface, namespace
 		},
 		OAuth2: dextypes.OAuth2{
 			SkipApprovalScreen:    true,
-			AlwaysShowLoginScreen: true,
+			AlwaysShowLoginScreen: false, // possibly make this configurable
 		},
 		StaticClients:    staticClients,
 		EnablePasswordDB: false,
