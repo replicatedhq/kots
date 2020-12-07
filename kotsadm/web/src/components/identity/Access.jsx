@@ -44,12 +44,12 @@ class Access extends Component {
                 <ConfigureIngress />
               } />
               <Route exact path="/access/identity-providers" render={() =>
-                <IdentityProviders />
+                <IdentityProviders isKurlEnabled={this.props.isKurlEnabled} />
               } />
               <Route component={NotFound} />
             </Switch>
           </Fragment> */}
-          <IdentityProviders />
+          <IdentityProviders isKurlEnabled={this.props.isKurlEnabled} />
         </div>
       </div>
     );
