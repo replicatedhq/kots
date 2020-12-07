@@ -40,11 +40,12 @@ type ResponseApp struct {
 	IsConfigurable    bool       `json:"isConfigurable"`
 	UpdateCheckerSpec string     `json:"updateCheckerSpec"`
 
-	IsGitOpsSupported bool                     `json:"isGitOpsSupported"`
-	AllowRollback     bool                     `json:"allowRollback"`
-	AllowSnapshots    bool                     `json:"allowSnapshots"`
-	LicenseType       string                   `json:"licenseType"`
-	CurrentVersion    *versiontypes.AppVersion `json:"currentVersion"`
+	IsGitOpsSupported          bool                     `json:"isGitOpsSupported"`
+	IsIdentityServiceSupported bool                     `json:"isIdentityServiceSupported"`
+	AllowRollback              bool                     `json:"allowRollback"`
+	AllowSnapshots             bool                     `json:"allowSnapshots"`
+	LicenseType                string                   `json:"licenseType"`
+	CurrentVersion             *versiontypes.AppVersion `json:"currentVersion"`
 
 	Downstreams []ResponseDownstream `json:"downstreams"`
 }
@@ -149,6 +150,11 @@ func responseAppFromApp(a *apptypes.App) (*ResponseApp, error) {
 		return nil, errors.Wrap(err, "failed to check if gitops is supported")
 	}
 
+	isIdentityServiceSupported, err := store.GetStore().IsIdentityServiceSupportedForVersion(a.ID, a.CurrentSequence)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to check if identity service is supported")
+	}
+
 	allowRollback, err := store.GetStore().IsRollbackSupportedForVersion(a.ID, a.CurrentSequence)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to check if rollback is supported")
@@ -250,26 +256,27 @@ func responseAppFromApp(a *apptypes.App) (*ResponseApp, error) {
 	}
 
 	responseApp := ResponseApp{
-		ID:                a.ID,
-		Slug:              a.Slug,
-		Name:              a.Name,
-		IsAirgap:          a.IsAirgap,
-		CurrentSequence:   a.CurrentSequence,
-		UpstreamURI:       a.UpstreamURI,
-		IconURI:           a.IconURI,
-		CreatedAt:         a.CreatedAt,
-		UpdatedAt:         a.UpdatedAt,
-		LastUpdateCheckAt: a.LastUpdateCheckAt,
-		BundleCommand:     supportbundle.GetBundleCommand(a.Slug),
-		HasPreflight:      a.HasPreflight,
-		IsConfigurable:    a.IsConfigurable,
-		UpdateCheckerSpec: a.UpdateCheckerSpec,
-		IsGitOpsSupported: isGitOpsSupported,
-		AllowRollback:     allowRollback,
-		AllowSnapshots:    allowSnapshots,
-		LicenseType:       license.Spec.LicenseType,
-		CurrentVersion:    currentVersion,
-		Downstreams:       responseDownstreams,
+		ID:                         a.ID,
+		Slug:                       a.Slug,
+		Name:                       a.Name,
+		IsAirgap:                   a.IsAirgap,
+		CurrentSequence:            a.CurrentSequence,
+		UpstreamURI:                a.UpstreamURI,
+		IconURI:                    a.IconURI,
+		CreatedAt:                  a.CreatedAt,
+		UpdatedAt:                  a.UpdatedAt,
+		LastUpdateCheckAt:          a.LastUpdateCheckAt,
+		BundleCommand:              supportbundle.GetBundleCommand(a.Slug),
+		HasPreflight:               a.HasPreflight,
+		IsConfigurable:             a.IsConfigurable,
+		UpdateCheckerSpec:          a.UpdateCheckerSpec,
+		IsGitOpsSupported:          isGitOpsSupported,
+		IsIdentityServiceSupported: isIdentityServiceSupported,
+		AllowRollback:              allowRollback,
+		AllowSnapshots:             allowSnapshots,
+		LicenseType:                license.Spec.LicenseType,
+		CurrentVersion:             currentVersion,
+		Downstreams:                responseDownstreams,
 	}
 
 	return &responseApp, nil

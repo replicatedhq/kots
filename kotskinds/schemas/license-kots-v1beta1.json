@@ -66,6 +66,9 @@
         "isGitOpsSupported": {
           "type": "boolean"
         },
+        "isIdentityServiceSupported": {
+          "type": "boolean"
+        },
         "isSnapshotSupported": {
           "type": "boolean"
         },
