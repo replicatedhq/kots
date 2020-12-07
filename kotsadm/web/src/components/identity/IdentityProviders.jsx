@@ -326,10 +326,10 @@ class IdentityProviders extends Component {
               <span className="required-label"> Required </span>
               {requiredErrors?.adminConsoleAddress && <span className="u-color--chestnut u-fontSize--small u-fontWeight--medium u-lineHeight--normal u-marginLeft--5"> Admin Console URL is a required field </span>}
             </div>
-            <p className="u-fontSize--normal u-lineHeight--medium u-fontWeight--medium u-color--dustyGray u-marginTop--12"> This URL must be accessible from both the browser as well as the KOTS service. </p>
+            <p className="u-fontSize--normal u-lineHeight--medium u-fontWeight--medium u-color--dustyGray u-marginTop--12"> The URL for accessing the KOTS Admin Console. This URL must be accessible from both the browser as well as the KOTS service. </p>
             <input type="text"
               className="Input u-marginTop--12"
-              placeholder="kots.somebigbankadmin.com"
+              placeholder="https://kots.somebigbankadmin.com"
               value={this.state.adminConsoleAddress}
               onChange={(e) => { this.handleFormChange("adminConsoleAddress", e) }} />
           </div>
@@ -341,9 +341,13 @@ class IdentityProviders extends Component {
               <span className="required-label"> Required </span>
               {requiredErrors?.identityServiceAddress && <span className="u-color--chestnut u-fontSize--small u-fontWeight--medium u-lineHeight--normal u-marginLeft--5"> ID address is a required field </span>}
             </div>
+            <p className="u-fontSize--normal u-lineHeight--medium u-fontWeight--medium u-color--dustyGray u-marginTop--12">
+              The address of the Dex identity service, often `&lt;Admin Console URL&gt;/dex`.
+              This URL must be accessible from both the browser as well as the KOTS service.
+            </p>
             <input type="text"
               className="Input u-marginTop--12"
-              placeholder="kots.somebigbankadmin.com"
+              placeholder="https://kots.somebigbankadmin.com/dex"
               value={this.state.identityServiceAddress}
               onChange={(e) => { this.handleFormChange("identityServiceAddress", e) }} />
           </div>
@@ -382,7 +386,7 @@ class IdentityProviders extends Component {
               </div>
               <input type="text"
                 className="Input u-marginTop--12"
-                placeholder="connector name"
+                placeholder="OpenID"
                 value={this.state.oidcConfig?.connectorName}
                 onChange={(e) => { this.handleFormChange("connectorName", e) }} />
             </div>}
@@ -390,12 +394,14 @@ class IdentityProviders extends Component {
           <div className="u-marginTop--30">
             <div className="flex flex1 alignItems--center">
               <p className="u-fontSize--large u-lineHeight--default u-fontWeight--bold u-color--tuna"> Issuer </p>
+              <span className="icon grayOutlineQuestionMark--icon u-marginLeft--10 u-cursor--pointer"
+                data-tip="Canonical URL of the provider, also used for configuration discovery. This value MUST match the value returned in the provider config discovery." />
+              <ReactTooltip effect="solid" className="replicated-tooltip" />
               <span className="required-label"> Required </span>
               {requiredErrors?.issuer && <span className="u-color--chestnut u-fontSize--small u-fontWeight--medium u-lineHeight--normal u-marginLeft--5"> Issuer is a required field </span>}
             </div>
             <input type="text"
               className="Input u-marginTop--12"
-              placeholder="kots.somebigbankadmin.com"
               value={this.getRequiredValue("issuer")}
               onChange={(e) => { this.handleFormChange("issuer", e) }} />
           </div>
@@ -408,20 +414,18 @@ class IdentityProviders extends Component {
             </div>
             <input type="text"
               className="Input u-marginTop--12"
-              placeholder="client ID"
               value={this.getRequiredValue("clientId")}
               onChange={(e) => { this.handleFormChange("clientId", e) }} />
           </div>
 
           <div className="u-marginTop--30">
             <div className="flex flex1 alignItems--center">
-              <p className="u-fontSize--large u-lineHeight--default u-fontWeight--bold u-color--tuna"> Client Secret </p>
+              <p className="u-fontSize--large u-lineHeight--default u-fontWeight--bold u-color--tuna"> Client secret </p>
               <span className="required-label"> Required </span>
               {requiredErrors?.clientSecret && <span className="u-color--chestnut u-fontSize--small u-fontWeight--medium u-lineHeight--normal u-marginLeft--5"> Client Secret is a required field </span>}
             </div>
             <input type="password"
               className="Input u-marginTop--12"
-              placeholder="client secret"
               value={this.getRequiredValue("clientSecret")}
               onChange={(e) => { this.handleFormChange("clientSecret", e) }} />
           </div>
@@ -441,7 +445,7 @@ class IdentityProviders extends Component {
                       onChange={(e) => { this.handleFormChange("getUserInfo", e) }}
                     />
                     <label htmlFor="getUserInfo" className="flex1 flex u-width--full u-position--relative u-cursor--pointer u-userSelect--none alignItems--center" style={{ marginLeft: "2px" }}>
-                      <p className="u-color--tuna u-fontSize--normal u-fontWeight--medium">Get User Info</p>
+                      <p className="u-color--tuna u-fontSize--normal u-fontWeight--medium">Get user info</p>
                       <span className="icon grayOutlineQuestionMark--icon u-marginLeft--10 u-cursor--pointer"
                         data-tip="When enabled, the OpenID Connector will query the UserInfo endpoint for additional claims. UserInfo claims
                       take priority over claims returned by the IDToken. This option should be used when the IDToken doesn't contain all the claims requested." />
@@ -476,7 +480,7 @@ class IdentityProviders extends Component {
                       onChange={(e) => { this.handleFormChange("insecureSkipEmailVerified", e) }}
                     />
                     <label htmlFor="insecureSkipEmailVerified" className="flex1 flex u-width--full u-position--relative u-cursor--pointer u-userSelect--none alignItems--center" style={{ marginLeft: "2px" }}>
-                      <p className="u-color--tuna u-fontSize--normal u-fontWeight--medium">Skip insecure email verification</p>
+                      <p className="u-color--tuna u-fontSize--normal u-fontWeight--medium">Skip email verification</p>
                       <span className="icon grayOutlineQuestionMark--icon u-marginLeft--10 u-cursor--pointer"
                         data-tip='Some providers return claims without "email_verified", when they had no usage of emails verification in enrollment process
                       or if they are acting as a proxy for another IDP etc AWS Cognito with an upstream SAML IDP' />
@@ -486,18 +490,28 @@ class IdentityProviders extends Component {
                   <div className="u-marginTop--20">
                     <div className="flex flex1 alignItems--center">
                       <div className="flex flex-column u-marginRight--30">
-                        <p className="u-fontSize--large u-lineHeight--default u-fontWeight--bold u-color--tuna"> User ID key </p>
+                        <div className="flex flex1 alignItems--center">
+                          <p className="u-fontSize--large u-lineHeight--default u-fontWeight--bold u-color--tuna"> User ID key </p>
+                          <span className="icon grayOutlineQuestionMark--icon u-marginLeft--10 u-cursor--pointer"
+                            data-tip="The set claim is used as user id." />
+                          <ReactTooltip effect="solid" className="replicated-tooltip" />
+                        </div>
                         <input type="text"
                           className="Input u-marginTop--12"
-                          placeholder="user id"
+                          placeholder="sub"
                           value={this.state.oidcConfig?.userIDKey}
                           onChange={(e) => { this.handleFormChange("userIDKey", e) }} />
                       </div>
                       <div className="flex flex-column">
-                        <p className="u-fontSize--large u-lineHeight--default u-fontWeight--bold u-color--tuna"> User name key </p>
+                        <div className="flex flex1 alignItems--center">
+                          <p className="u-fontSize--large u-lineHeight--default u-fontWeight--bold u-color--tuna"> User name key </p>
+                          <span className="icon grayOutlineQuestionMark--icon u-marginLeft--10 u-cursor--pointer"
+                            data-tip="The set claim is used as user name." />
+                          <ReactTooltip effect="solid" className="replicated-tooltip" />
+                        </div>
                         <input type="text"
                           className="Input u-marginTop--12"
-                          placeholder="user name"
+                          placeholder="name"
                           value={this.state.oidcConfig?.userNameKey}
                           onChange={(e) => { this.handleFormChange("userNameKey", e) }} />
                       </div>
@@ -508,12 +522,12 @@ class IdentityProviders extends Component {
                       <p className="u-fontSize--large u-lineHeight--default u-fontWeight--bold u-color--tuna"> Prompt type </p>
                       <span className="icon grayOutlineQuestionMark--icon u-marginLeft--10 u-cursor--pointer"
                         data-tip='For offline_access, the prompt parameter is set by default to "prompt=consent". 
-                        However this is not supported by all OIDC providers, some of them support different value for prompt, like "prompt=login" or "prompt=none"' />
+                      However this is not supported by all OIDC providers, some of them support different value for prompt, like "prompt=login" or "prompt=none"' />
                       <ReactTooltip effect="solid" className="replicated-tooltip" />
                     </div>
                     <input type="text"
                       className="Input u-marginTop--12"
-                      placeholder="prompt type"
+                      placeholder="consent"
                       value={this.state.oidcConfig?.promptType}
                       onChange={(e) => { this.handleFormChange("promptType", e) }} />
                   </div>
@@ -521,12 +535,11 @@ class IdentityProviders extends Component {
                     <div className="flex flex1 alignItems--center">
                       <p className="u-fontSize--large u-lineHeight--default u-fontWeight--bold u-color--tuna"> Hosted domains </p>
                       <span className="icon grayOutlineQuestionMark--icon u-marginLeft--10 u-cursor--pointer"
-                        data-tip="Google supports whitelisting allowed domains when using G Suite (Google Apps). The following field can be set to a list of domains that can log in" />
+                        data-tip="Google supports whitelisting allowed domains when using G Suite (Google Apps). The following field can be set to a comma-separated list of domains that can log in" />
                       <ReactTooltip effect="solid" className="replicated-tooltip" />
                     </div>
                     <input type="text"
                       className="Input u-marginTop--12"
-                      placeholder="example.com,anotherexample.com..."
                       value={this.state.oidcConfig?.hostedDomains}
                       onChange={(e) => { this.handleFormChange("hostedDomains", e) }} />
                   </div>
@@ -534,7 +547,7 @@ class IdentityProviders extends Component {
                     <div className="flex flex1 alignItems--center">
                       <p className="u-fontSize--large u-lineHeight--default u-fontWeight--bold u-color--tuna"> Scopes </p>
                       <span className="icon grayOutlineQuestionMark--icon u-marginLeft--10 u-cursor--pointer"
-                        data-tip="List of additional scopes to request in token response. Default is profile and email" />
+                        data-tip="Comma-separated list of additional scopes to request in token response. Default is profile and email" />
                       <ReactTooltip effect="solid" className="replicated-tooltip" />
                     </div>
                     <input type="text"
