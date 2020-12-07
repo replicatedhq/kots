@@ -334,7 +334,7 @@ class IdentityProviders extends Component {
               onChange={(e) => { this.handleFormChange("adminConsoleAddress", e) }} />
           </div>
 
-          { isKurlEnabled ? null : (
+          {!isKurlEnabled && (
           <div className="u-marginTop--30">
             <div className="flex flex1 alignItems--center">
               <p className="u-fontSize--large u-lineHeight--default u-fontWeight--bold u-color--tuna"> ID Address </p>
