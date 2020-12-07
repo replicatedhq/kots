@@ -98,11 +98,11 @@ class IdentityProviders extends Component {
 
   setFields = () => {
     const { configSettings } = this.state;
-    if (!configSettings) return;
+    if (!configSettings) { return; }
 
     return this.setState({
-      adminConsoleAddress: configSettings?.adminConsoleAddress,
-      identityServiceAddress: configSettings?.identityServiceAddress,
+      adminConsoleAddress: configSettings?.adminConsoleAddress ? configSettings?.adminConsoleAddress : window.location.origin,
+      identityServiceAddress: configSettings?.identityServiceAddress ? configSettings?.identityServiceAddress : `${window.location.origin}/dex`,
       selectedProvider: configSettings?.oidcConfig !== null ? "oidcConfig" : "geoAxisConfig",
       oidcConfig: configSettings?.oidcConfig,
       geoAxisConfig: configSettings?.geoAxisConfig
@@ -120,8 +120,15 @@ class IdentityProviders extends Component {
   }
 
   handleFormChange = (field, e) => {
+    const { isKurlEnabled } = this.props;
     let nextState = {};
-    if (field === "adminConsoleAddress" || field === "identityServiceAddress") {
+    if (field === "adminConsoleAddress") {
+      nextState[field] = e.target.value;
+      if (isKurlEnabled) {
+        nextState["identityServiceAddress"] = `${e.target.value.replace(/\/$/, "")}/dex`;
+      }
+      this.setState(nextState);
+    } else if (field === "identityServiceAddress") {
       nextState[field] = e.target.value;
       this.setState(nextState);
     } else {
@@ -274,6 +281,7 @@ class IdentityProviders extends Component {
 
   render() {
     const { configSettingsErrMsg, isLoadingConfigSettings, requiredErrors, selectedProvider } = this.state;
+    const { isKurlEnabled } = this.props;
 
     if (isLoadingConfigSettings) {
       return (
@@ -318,6 +326,7 @@ class IdentityProviders extends Component {
               <span className="required-label"> Required </span>
               {requiredErrors?.adminConsoleAddress && <span className="u-color--chestnut u-fontSize--small u-fontWeight--medium u-lineHeight--normal u-marginLeft--5"> Admin Console URL is a required field </span>}
             </div>
+            <p className="u-fontSize--normal u-lineHeight--medium u-fontWeight--medium u-color--dustyGray u-marginTop--12"> This URL must be accessible from both the browser as well as the KOTS service. </p>
             <input type="text"
               className="Input u-marginTop--12"
               placeholder="kots.somebigbankadmin.com"
@@ -325,6 +334,7 @@ class IdentityProviders extends Component {
               onChange={(e) => { this.handleFormChange("adminConsoleAddress", e) }} />
           </div>
 
+          {!isKurlEnabled && (
           <div className="u-marginTop--30">
             <div className="flex flex1 alignItems--center">
               <p className="u-fontSize--large u-lineHeight--default u-fontWeight--bold u-color--tuna"> ID Address </p>
@@ -337,6 +347,7 @@ class IdentityProviders extends Component {
               value={this.state.identityServiceAddress}
               onChange={(e) => { this.handleFormChange("identityServiceAddress", e) }} />
           </div>
+          ) }
 
           <div className="u-marginTop--30">
             <p className="u-fontSize--large u-lineHeight--default u-fontWeight--bold u-color--tuna"> Select an Identity Provider </p>
