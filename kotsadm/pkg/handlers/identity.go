@@ -382,7 +382,6 @@ func getDefaultOIDCConfig(isGeoAxis bool) *oidc.Config {
 	c := oidc.Config{
 		RedirectURI:               "{{OIDCIdentityCallbackURL}}",
 		GetUserInfo:               true,
-		UserNameKey:               "email",
 		InsecureSkipEmailVerified: false,
 		InsecureEnableGroups:      true,
 		Scopes: []string{
@@ -394,6 +393,7 @@ func getDefaultOIDCConfig(isGeoAxis bool) *oidc.Config {
 
 	if isGeoAxis {
 		c.Issuer = "https://oauth.geoaxis.gxaws.com"
+		c.UserNameKey = "email"
 		c.Scopes = append(c.Scopes, "uiasenterprise")
 		c.Scopes = append(c.Scopes, "eiasenterprise")
 		c.ClaimMapping.GroupsKey = "group"
