@@ -138,6 +138,7 @@ type SnapshotStore interface {
 
 type VersionStore interface {
 	IsGitOpsSupportedForVersion(appID string, sequence int64) (bool, error)
+	IsIdentityServiceSupportedForVersion(appID string, sequence int64) (bool, error)
 	IsRollbackSupportedForVersion(appID string, sequence int64) (bool, error)
 	IsSnapshotsSupportedForVersion(a *apptypes.App, sequence int64) (bool, error)
 	GetAppVersionArchive(appID string, sequence int64, dstPath string) error

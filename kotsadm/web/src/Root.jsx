@@ -257,6 +257,11 @@ class Root extends Component {
     return !!find(apps, app => app.isGitOpsSupported);
   }
 
+  isIdentityServiceSupported = () => {
+    const apps = this.state.appsList;
+    return !!find(apps, app => app.isIdentityServiceSupported);
+  }
+
   isSnapshotsSupported = () => {
     const apps = this.state.appsList;
     return !!find(apps, app => app.allowSnapshots);
@@ -301,6 +306,7 @@ class Root extends Component {
                 fetchingMetadata={this.state.fetchingMetadata}
                 isKurlEnabled={this.state.isKurlEnabled}
                 isGitOpsSupported={this.isGitOpsSupported()}
+                isIdentityServiceSupported={this.isIdentityServiceSupported()}
                 appsList={appsList}
                 onLogoutError={this.onLogoutError}
                 isSnapshotsSupported={this.isSnapshotsSupported()}

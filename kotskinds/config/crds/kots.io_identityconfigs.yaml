@@ -37,8 +37,8 @@ spec:
           properties:
             adminConsoleAddress:
               type: string
-            caCert:
-              type: boolean
+            caCertPemBase64:
+              type: string
             dexConnectors:
               properties:
                 value:

@@ -106,6 +106,16 @@ func TestLicenseCtx_licenseFieldValue(t *testing.T) {
 			want:      "true",
 		},
 		{
+			name: "built-in isIdentityServiceSupported",
+			License: &kotsv1beta1.License{
+				Spec: kotsv1beta1.LicenseSpec{
+					IsIdentityServiceSupported: true,
+				},
+			},
+			fieldName: "isIdentityServiceSupported",
+			want:      "true",
+		},
+		{
 			name: "built-in isAirgapSupported",
 			License: &kotsv1beta1.License{
 				Spec: kotsv1beta1.LicenseSpec{

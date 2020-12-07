@@ -22,8 +22,8 @@
         "adminConsoleAddress": {
           "type": "string"
         },
-        "caCert": {
-          "type": "boolean"
+        "caCertPemBase64": {
+          "type": "string"
         },
         "dexConnectors": {
           "type": "object",

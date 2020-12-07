@@ -204,6 +204,7 @@ class AppLicense extends Component {
                   </div>}
                 <div className="flexWrap--wrap flex alignItems--center u-marginTop--10">
                   {appLicense?.isAirgapSupported ? <span className="flex alignItems--center u-fontWeight--medium u-fontSize--small u-lineHeight--normal u-color--tundora u-marginRight--10"><span className="icon licenseAirgapIcon" /> Airgap enabled </span> : null}
+                  {/* TODO: icon */}{/* {appLicense?.isIdentityServiceSupported ? <span className="flex alignItems--center u-fontWeight--medium u-fontSize--small u-lineHeight--normal u-color--tundora u-marginLeft--5 u-marginRight--10"><span className="icon licenseVeleroIcon" /> Identity Service enabled </span> : null} */}
                   {appLicense?.isSnapshotSupported ? <span className="flex alignItems--center u-fontWeight--medium u-fontSize--small u-lineHeight--normal u-color--tundora u-marginLeft--5 u-marginRight--10"><span className="icon licenseVeleroIcon" /> Snapshots enabled </span> : null}
                   {appLicense?.isGitOpsSupported ? <span className="flex alignItems--center u-fontWeight--medium u-fontSize--small u-lineHeight--normal u-color--tundora u-marginLeft--5 u-marginRight--10"><span className="icon licenseGithubIcon" /> GitOps enabled </span> : null}
                 </div>
