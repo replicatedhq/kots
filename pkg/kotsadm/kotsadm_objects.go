@@ -374,9 +374,7 @@ func kotsadmDeployment(deployOptions types.DeployOptions) *appsv1.Deployment {
 						{
 							Name: "backup",
 							VolumeSource: corev1.VolumeSource{
-								EmptyDir: &corev1.EmptyDirVolumeSource{
-									Medium: corev1.StorageMediumMemory,
-								},
+								EmptyDir: &corev1.EmptyDirVolumeSource{},
 							},
 						},
 					},
