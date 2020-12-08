@@ -72,6 +72,6 @@ ADD pkg ./pkg
 RUN make build
 
 # COPY ./preflight /root/.krew/bin/kubectl-preflight
-COPY ./support-bundle /root/.krew/bin/kubectl-support_bundle
+# COPY ./support-bundle /root/.krew/bin/kubectl-support_bundle
 
 ENTRYPOINT ["./bin/kotsadm-operator"]
