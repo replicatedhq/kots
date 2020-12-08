@@ -26,8 +26,6 @@ require (
 	github.com/gorilla/mux v1.8.0
 	github.com/gorilla/websocket v1.4.0
 	github.com/gosimple/slug v1.9.0
-	github.com/gtank/cryptopasta v0.0.0-20170601214702-1f550f6f2f69 // indirect
-	github.com/hashicorp/go-cleanhttp v0.5.0
 	github.com/hashicorp/go-version v1.2.0 // indirect
 	github.com/lib/pq v1.3.0
 	github.com/marccampbell/yaml-toolbox v0.0.0-20200805160637-950ceb36c770
@@ -35,7 +33,7 @@ require (
 	github.com/opencontainers/image-spec v1.0.2-0.20190823105129-775207bd45b6
 	github.com/pkg/errors v0.9.1
 	github.com/replicatedhq/kots v0.0.0-00010101000000-000000000000
-	github.com/replicatedhq/troubleshoot v0.9.53
+	github.com/replicatedhq/troubleshoot v0.9.54
 	github.com/replicatedhq/yaml/v3 v3.0.0-beta5-replicatedhq
 	github.com/robfig/cron v1.1.0
 	github.com/robfig/cron/v3 v3.0.0
