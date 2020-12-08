@@ -441,6 +441,7 @@ func makeKotsadmCollectors() []*troubleshootv1beta2.Collect {
 		"kotsadm",
 		"kotsadm-operator",
 		"kurl-proxy-kotsadm",
+		"kotsadm-dex",
 	}
 	kotsadmCollectors := []*troubleshootv1beta2.Collect{}
 	for _, name := range names {
