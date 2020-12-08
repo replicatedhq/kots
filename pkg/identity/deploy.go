@@ -342,6 +342,13 @@ func deploymentResource(deploymentName, serviceAccountName, configChecksum, name
 		}
 	}
 
+	env := []corev1.EnvVar{}
+	for _, name := range []string{"HTTP_PROXY", "HTTPS_PROXY", "NO_PROXY", "http_proxy", "https_proxy", "no_proxy"} {
+		if val := os.Getenv(name); val != "" {
+			env = append(env, corev1.EnvVar{Name: name, Value: val})
+		}
+	}
+
 	return &appsv1.Deployment{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "apps/v1",
@@ -379,6 +386,7 @@ func deploymentResource(deploymentName, serviceAccountName, configChecksum, name
 							Ports: []corev1.ContainerPort{
 								{Name: "http", ContainerPort: 5556},
 							},
+							Env: env,
 							VolumeMounts: []corev1.VolumeMount{
 								{Name: volume.Name, MountPath: "/etc/dex/cfg"},
 							},
