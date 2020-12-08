@@ -27,7 +27,7 @@ func FindKotsadm(clientset *kubernetes.Clientset, namespace string) (string, err
 	return "", errors.New("unable to find kotsadm pod")
 }
 
-func DeleteKotsadm(clientset *kubernetes.Clientset, namespace string) error {
+func DeleteKotsadm(clientset *kubernetes.Clientset, namespace string, isKurl bool) error {
 	selectorLabels := map[string]string{
 		types.KotsadmKey: types.KotsadmLabelValue,
 	}
@@ -147,6 +147,27 @@ func DeleteKotsadm(clientset *kubernetes.Clientset, namespace string) error {
 	}
 	if err := waitForDeleteServiceAccounts(clientset, namespace, listOptions); err != nil {
 		return errors.Wrap(err, "failed to wait for delete serviceaccounts")
+	}
+
+	if !isKurl {
+		return nil
+	}
+
+	// kURL registry
+	registryNS := "kurl"
+	err = clientset.AppsV1().Deployments(registryNS).DeleteCollection(context.TODO(), metav1.DeleteOptions{}, listOptions)
+	if err != nil {
+		return errors.Wrap(err, "failed to delete registry deployments")
+	}
+	if err := waitForDeleteDeployments(clientset, registryNS, listOptions); err != nil {
+		return errors.Wrap(err, "failed to wait for delete registry deployments")
+	}
+	err = clientset.CoreV1().Secrets(registryNS).DeleteCollection(context.TODO(), metav1.DeleteOptions{}, listOptions)
+	if err != nil {
+		return errors.Wrap(err, "failed to delete kotsadm secrets")
+	}
+	if err := waitForDeleteSecrets(clientset, registryNS, listOptions); err != nil {
+		return errors.Wrap(err, "failed to wait for delete secrets")
 	}
 
 	return nil

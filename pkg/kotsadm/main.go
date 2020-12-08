@@ -239,9 +239,7 @@ func IsKurl(k8sConfigFlags *genericclioptions.ConfigFlags) (bool, error) {
 		return false, errors.Wrap(err, "failed to get clientset")
 	}
 
-	log := logger.NewLogger()
-
-	return isKurl(clientset, log), nil
+	return isKurl(clientset), nil
 }
 
 func canUpgrade(upgradeOptions types.UpgradeOptions, clientset *kubernetes.Clientset, log *logger.Logger) error {
@@ -260,29 +258,20 @@ func canUpgrade(upgradeOptions types.UpgradeOptions, clientset *kubernetes.Clien
 		return nil
 	}
 
-	if isKurl(clientset, log) {
+	if isKurl(clientset) {
 		return errors.New("upgrading kURL clusters is not supported")
 	}
 
 	return nil
 }
 
-func isKurl(clientset *kubernetes.Clientset, log *logger.Logger) bool {
-	nodes, err := clientset.CoreV1().Nodes().List(context.TODO(), metav1.ListOptions{})
+func isKurl(clientset *kubernetes.Clientset) bool {
+	_, err := clientset.CoreV1().ConfigMaps("kube-system").Get(context.TODO(), "kurl-config", metav1.GetOptions{})
 	if err != nil {
-		log.Error(errors.Wrap(err, "failed to list nodes"))
 		return false
 	}
 
-	for _, node := range nodes.Items {
-		for k, v := range node.Labels {
-			if k == "kurl.sh/cluster" && v == "true" {
-				return true
-			}
-		}
-	}
-
-	return false
+	return true
 }
 
 func removeUnusedKotsadmComponents(deployOptions types.DeployOptions, clientset *kubernetes.Clientset, log *logger.Logger) error {

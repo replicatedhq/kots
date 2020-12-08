@@ -88,13 +88,19 @@ func RestoreInstanceBackup(options RestoreInstanceBackupOptions) (*velerov1.Rest
 	log := logger.NewLogger()
 	log.ActionWithSpinner("Deleting Admin Console")
 
+	isKurl, err := kotsadm.IsKurl(options.KubernetesConfigFlags)
+	if err != nil {
+		log.FinishSpinnerWithError()
+		return nil, errors.Wrap(err, "failed to check kurl")
+	}
+
 	// delete all kotsadm objects before creating the restore
 	clientset, err := k8sutil.GetClientset(options.KubernetesConfigFlags)
 	if err != nil {
 		log.FinishSpinnerWithError()
 		return nil, errors.Wrap(err, "failed to get k8s clientset")
 	}
-	err = k8sutil.DeleteKotsadm(clientset, kotsadmNamespace)
+	err = k8sutil.DeleteKotsadm(clientset, kotsadmNamespace, isKurl)
 	if err != nil {
 		log.FinishSpinnerWithError()
 		return nil, errors.Wrap(err, "failed to delete kotsadm objects")
