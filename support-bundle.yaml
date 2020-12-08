@@ -23,7 +23,7 @@ spec:
         collectorName: kotsadm-postgres-db
         name: kots/admin_console
         selector:
-          - app=kotsadm-postgres 
+          - app=kotsadm-postgres
     - logs:
         collectorName: kotsadm-api
         name: kots/admin_console
@@ -44,6 +44,11 @@ spec:
         name: kots/admin_console
         selector:
           - app=kurl-proxy-kotsadm
+    - logs:
+        collectorName: kotsadm-dex
+        name: kots/admin_console
+        selector:
+          - app=kotsadm-dex
     - secret:
         collectorName: kotsadm-replicated-registry
         includeValue: false
