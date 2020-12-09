@@ -11,6 +11,7 @@ import (
 	"path"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/containers/image/v5/copy"
 	imagedocker "github.com/containers/image/v5/docker"
@@ -520,37 +521,48 @@ func CopyFromFileToRegistry(path string, name string, tag string, digest string,
 }
 
 func IsPrivateImage(image string) (bool, error) {
-	// ParseReference requires the // prefix
-	ref, err := imagedocker.ParseReference(fmt.Sprintf("//%s", image))
-	if err != nil {
-		return false, errors.Wrapf(err, "failed to parse image ref %q", image)
+	var lastErr error
+	for i := 0; i < 3; i++ {
+		// ParseReference requires the // prefix
+		ref, err := imagedocker.ParseReference(fmt.Sprintf("//%s", image))
+		if err != nil {
+			return false, errors.Wrapf(err, "failed to parse image ref %q", image)
+		}
+
+		sysCtx := types.SystemContext{DockerDisableV1Ping: true}
+
+		// allow pulling images from http/invalid https docker repos
+		// intended for development only, _THIS MAKES THINGS INSECURE_
+		if os.Getenv("KOTSADM_INSECURE_SRCREGISTRY") == "true" {
+			sysCtx.DockerInsecureSkipTLSVerify = types.OptionalBoolTrue
+		}
+
+		remoteImage, err := ref.NewImage(context.Background(), &sysCtx)
+		if err == nil {
+			remoteImage.Close()
+			return false, nil
+		}
+
+		// manifest was downloaded, but no matching architecture found in manifest.
+		// still, not a private image
+		if strings.Contains(err.Error(), "no image found in manifest list for architecture") {
+			return false, nil
+		}
+
+		if strings.Contains(err.Error(), "EOF") {
+			lastErr = err
+			time.Sleep(1 * time.Second)
+			continue
+		}
+
+		if !isUnauthorized(err) {
+			return false, errors.Wrapf(err, "failed to create image from ref:%s", image)
+		}
+
+		return true, nil
 	}
 
-	sysCtx := types.SystemContext{DockerDisableV1Ping: true}
-
-	// allow pulling images from http/invalid https docker repos
-	// intended for development only, _THIS MAKES THINGS INSECURE_
-	if os.Getenv("KOTSADM_INSECURE_SRCREGISTRY") == "true" {
-		sysCtx.DockerInsecureSkipTLSVerify = types.OptionalBoolTrue
-	}
-
-	remoteImage, err := ref.NewImage(context.Background(), &sysCtx)
-	if err == nil {
-		remoteImage.Close()
-		return false, nil
-	}
-
-	// manifest was downloaded, but no matching architecture found in manifest.
-	// still, not a private image
-	if strings.Contains(err.Error(), "no image found in manifest list for architecture") {
-		return false, nil
-	}
-
-	if !isUnauthorized(err) {
-		return false, errors.Wrapf(err, "failed to create image from ref:%s", image)
-	}
-
-	return true, nil
+	return false, errors.Wrap(lastErr, "failed to retry")
 }
 
 func RewritePrivateImage(srcRegistry registry.RegistryOptions, image string, appSlug string) (string, error) {
