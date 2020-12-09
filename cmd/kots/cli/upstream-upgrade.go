@@ -46,6 +46,11 @@ func UpstreamUpgradeCmd() *cobra.Command {
 
 			var images []kustomizetypes.Image
 
+			isKurl, err := kotsadm.IsKurl(kubernetesConfigFlags)
+			if err != nil {
+				return errors.Wrap(err, "failed to check kURL")
+			}
+
 			airgapPath := ""
 			if v.GetString("airgap-bundle") != "" {
 				airgapRootDir, err := ioutil.TempDir("", "kotsadm-airgap")
@@ -58,10 +63,6 @@ func UpstreamUpgradeCmd() *cobra.Command {
 				registryNamespace := v.GetString("kotsadm-namespace")
 				registryUsername := v.GetString("registry-username")
 				registryPassword := v.GetString("registry-password")
-				isKurl, err := kotsadm.IsKurl(kubernetesConfigFlags)
-				if err != nil {
-					return errors.Wrap(err, "failed to check kURL")
-				}
 
 				if registryNamespace == "" {
 					return errors.New("--kotsadm-namespace is required")
@@ -271,8 +272,10 @@ func UpstreamUpgradeCmd() *cobra.Command {
 				}
 			}
 
-			log.ActionWithoutSpinner("To access the Admin Console, run kubectl kots admin-console --namespace %s", v.GetString("namespace"))
-			log.ActionWithoutSpinner("")
+			if !isKurl {
+				log.ActionWithoutSpinner("To access the Admin Console, run kubectl kots admin-console --namespace %s", v.GetString("namespace"))
+				log.ActionWithoutSpinner("")
+			}
 
 			return nil
 		},
