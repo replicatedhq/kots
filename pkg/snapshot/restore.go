@@ -66,13 +66,9 @@ func RestoreInstanceBackup(options RestoreInstanceBackupOptions) (*velerov1.Rest
 		return nil, errors.Wrap(err, "failed to find kotsadm image annotation")
 	}
 
-	kotsadmNamespace, ok := backup.Annotations["kots.io/kotsadm-deploy-namespace"]
-	if !ok {
+	kotsadmNamespace, _ := backup.Annotations["kots.io/kotsadm-deploy-namespace"]
+	if kotsadmNamespace == "" {
 		return nil, errors.Wrap(err, "failed to find kotsadm deploy namespace annotation")
-	}
-
-	if err := canRestoreKotsadm(kotsadmNamespace, options.KubernetesConfigFlags); err != nil {
-		return nil, err
 	}
 
 	// make sure backup is restorable/complete
@@ -422,24 +418,4 @@ func waitForKotsadmApplicationsRestore(backupName string, kotsadmNamespace strin
 
 		time.Sleep(time.Second * 2)
 	}
-}
-
-func canRestoreKotsadm(kotsadmNamespace string, kubernetesConfigFlags *genericclioptions.ConfigFlags) error {
-	if kotsadmNamespace == "" {
-		return errors.New("kotsadm namespace is not set")
-	}
-
-	if kotsadmNamespace != "default" {
-		return nil
-	}
-
-	isKurl, err := kotsadm.IsKurl(kubernetesConfigFlags)
-	if err != nil {
-		return errors.Wrap(err, "failed to check kURL")
-	}
-	if isKurl {
-		return errors.New("restoring kURL clusters is not supported")
-	}
-
-	return nil
 }
