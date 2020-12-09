@@ -59,7 +59,8 @@ spec:
 			builder := template.Builder{}
 			builder.AddCtx(template.StaticCtx{})
 
-			helmCharts := findAllKotsHelmCharts(upstreamFiles, builder, nil)
+			helmCharts, err := findAllKotsHelmCharts(upstreamFiles, builder, nil)
+			req.NoError(err)
 			assert.Len(t, helmCharts, 1)
 
 			helmValues, err := helmCharts[0].Spec.GetHelmValues(helmCharts[0].Spec.Values)

@@ -21,6 +21,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/upstream/types"
 	upstreamtypes "github.com/replicatedhq/kots/pkg/upstream/types"
 	"github.com/replicatedhq/kots/pkg/util"
+	stdyaml "gopkg.in/yaml.v2"
 	"helm.sh/helm/v3/pkg/chart"
 	"k8s.io/client-go/kubernetes/scheme"
 	"sigs.k8s.io/yaml"
@@ -136,7 +137,11 @@ func renderReplicated(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (
 
 	// render helm charts that were specified
 	// we just inject them into u.Files
-	kotsHelmCharts := findAllKotsHelmCharts(u.Files, builder, renderOptions.Log)
+	kotsHelmCharts, err := findAllKotsHelmCharts(u.Files, builder, renderOptions.Log)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to find helm charts")
+	}
+
 	for _, kotsHelmChart := range kotsHelmCharts {
 		if !kotsHelmChart.Spec.Exclude.IsEmpty() {
 			boolVal, err := kotsHelmChart.Spec.Exclude.Boolean()
@@ -269,11 +274,10 @@ func upstreamFileToBaseFile(upstreamFile types.UpstreamFile, builder template.Bu
 	}, nil
 }
 
-func findAllKotsHelmCharts(upstreamFiles []upstreamtypes.UpstreamFile, builder template.Builder, log *logger.Logger) []*kotsv1beta1.HelmChart {
+func findAllKotsHelmCharts(upstreamFiles []upstreamtypes.UpstreamFile, builder template.Builder, log *logger.Logger) ([]*kotsv1beta1.HelmChart, error) {
 	kotsHelmCharts := []*kotsv1beta1.HelmChart{}
 	for _, upstreamFile := range upstreamFiles {
-		helmChart := tryParsingAsHelmChartGVK(upstreamFile.Content)
-		if helmChart == nil {
+		if !isHelmChartKind(upstreamFile.Content) {
 			continue
 		}
 
@@ -282,15 +286,15 @@ func findAllKotsHelmCharts(upstreamFiles []upstreamtypes.UpstreamFile, builder t
 			continue
 		}
 
-		helmChart = tryParsingAsHelmChartGVK(baseFile.Content)
-		if helmChart == nil {
-			continue
+		helmChart, err := parseHelmChart(baseFile.Content)
+		if err != nil {
+			return nil, errors.Wrapf(err, "failed to parse rendered HelmChart %s", baseFile.Path)
 		}
 
 		kotsHelmCharts = append(kotsHelmCharts, helmChart)
 	}
 
-	return kotsHelmCharts
+	return kotsHelmCharts, nil
 }
 
 func UnmarshalLicenseContent(content []byte, log *logger.Logger) *kotsv1beta1.License {
@@ -332,22 +336,35 @@ func UnmarshalConfigValuesContent(content []byte) (map[string]template.ItemValue
 	return ctx, nil
 }
 
-func tryParsingAsHelmChartGVK(content []byte) *kotsv1beta1.HelmChart {
+func parseHelmChart(content []byte) (*kotsv1beta1.HelmChart, error) {
 	decode := scheme.Codecs.UniversalDeserializer().Decode
 	obj, gvk, err := decode(content, nil, nil)
 	if err != nil {
-		return nil
+		return nil, errors.Wrap(err, "failed to decode chart")
 	}
 
 	if gvk.Group == "kots.io" {
 		if gvk.Version == "v1beta1" {
 			if gvk.Kind == "HelmChart" {
-				return obj.(*kotsv1beta1.HelmChart)
+				return obj.(*kotsv1beta1.HelmChart), nil
 			}
 		}
 	}
 
-	return nil
+	return nil, errors.Errorf("not a HelmChart GVK: %s", gvk.String())
+}
+
+func isHelmChartKind(content []byte) bool {
+	gvk := OverlySimpleGVK{}
+
+	if err := stdyaml.Unmarshal(content, &gvk); err != nil {
+		return false
+	}
+
+	if gvk.APIVersion == "kots.io/v1beta1" && gvk.Kind == "HelmChart" {
+		return true
+	}
+	return false
 }
 
 func tryGetConfigFromFileContent(content []byte, log *logger.Logger) *kotsv1beta1.Config {
