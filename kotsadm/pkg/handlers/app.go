@@ -100,13 +100,15 @@ func ListApps(w http.ResponseWriter, r *http.Request) {
 
 	responseApps := []ResponseApp{}
 	for _, a := range apps {
-		allow, err := rbac.CheckAccess(r.Context(), "read", fmt.Sprintf("app.%s", a.Slug), sess.Roles, appSlugs)
-		if err != nil {
-			logger.Error(errors.Wrapf(err, "failed to check access for app %s", a.Slug))
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		} else if !allow {
-			continue
+		if sess.HasRBAC { // handle pre-rbac sessions
+			allow, err := rbac.CheckAccess(r.Context(), "read", fmt.Sprintf("app.%s", a.Slug), sess.Roles, appSlugs)
+			if err != nil {
+				logger.Error(errors.Wrapf(err, "failed to check access for app %s", a.Slug))
+				w.WriteHeader(http.StatusInternalServerError)
+				return
+			} else if !allow {
+				continue
+			}
 		}
 
 		responseApp, err := responseAppFromApp(a)
