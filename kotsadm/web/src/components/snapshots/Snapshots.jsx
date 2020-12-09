@@ -356,7 +356,7 @@ class Snapshots extends Component {
                 : null}
               <div className="flex u-marginBottom--15">
                 <Link to={`/snapshots/settings`} className="replicated-link u-fontSize--small u-fontWeight--bold u-marginRight--20 flex alignItems--center"><span className="icon snapshotSettingsIcon u-marginRight--5" />Settings</Link>
-                {snapshotSettings?.veleroVersion !== "" && !isKurlEnabled &&
+                {snapshotSettings?.veleroVersion !== "" &&
                   <span data-for="startSnapshotBtn" data-tip="startSnapshotBtn" data-tip-disable={false}>
                     <button className="btn primary blue" disabled={startingSnapshot || (inProgressSnapshotExist && !startSnapshotErr)} onClick={this.startInstanceSnapshot}>{startingSnapshot ? "Starting a snapshot..." : "Start a snapshot"}</button>
                   </span>}
@@ -366,7 +366,7 @@ class Snapshots extends Component {
                   </ReactTooltip>}
               </div>
             </div>
-            {snapshots?.length > 0 && snapshotSettings?.veleroVersion !== "" && !isKurlEnabled ?
+            {snapshots?.length > 0 && snapshotSettings?.veleroVersion !== "" ?
               <div className="flex flex-column">
                 {snapshots?.map((snapshot) => (
                   <SnapshotRow
