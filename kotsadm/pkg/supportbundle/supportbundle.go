@@ -103,7 +103,7 @@ func GetFilesContents(bundleID string, filenames []string) (map[string][]byte, e
 	for _, filename := range filenames {
 		content, err := ioutil.ReadFile(filepath.Join(tmpDir, filename))
 		if err != nil {
-			return nil, errors.Wrap(err, "failed to read  file")
+			return nil, errors.Wrap(err, "failed to read file")
 		}
 
 		files[filename] = content
