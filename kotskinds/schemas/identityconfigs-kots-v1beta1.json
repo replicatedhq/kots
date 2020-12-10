@@ -164,7 +164,7 @@
       }
     },
     "status": {
-      "description": "IdentityConfigStatus defines the observed state of Identity",
+      "description": "IdentityConfigStatus defines the observed state of IdentityConfig",
       "type": "object"
     }
   }

@@ -134,6 +134,14 @@ func generateSchemas(v *viper.Viper) error {
 		return errors.Wrap(err, "failed to write identityconfigs schema")
 	}
 
+	identityContents, err := ioutil.ReadFile(filepath.Join(workdir, "config", "crds", "kots.io_identities.yaml"))
+	if err != nil {
+		return errors.Wrap(err, "failed to read identity crd")
+	}
+	if err := generateSchemaFromCRD(identityContents, filepath.Join(workdir, v.GetString("output-dir"), "identity-kots-v1beta1.json")); err != nil {
+		return errors.Wrap(err, "failed to write identity schema")
+	}
+
 	return nil
 }
 
