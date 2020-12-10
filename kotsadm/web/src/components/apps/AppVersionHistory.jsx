@@ -67,6 +67,8 @@ class AppVersionHistory extends Component {
     errorTitle: "",
     errorMsg: "",
     displayErrorModal: false,
+    displayConfirmDeploymentModal: false,
+    confirmType: "",
   }
 
   componentWillMount() {
@@ -276,8 +278,8 @@ class AppVersionHistory extends Component {
     );
   }
 
-  deployVersion = async (version, force = false) => {
-    const { match, app } = this.props;
+  deployVersion = (version, force = false) => {
+    const { app } = this.props;
     const clusterSlug = app.downstreams?.length && app.downstreams[0].cluster?.slug;
     if (!clusterSlug) {
       return;
@@ -314,28 +316,64 @@ class AppVersionHistory extends Component {
           return;
         }
       }
-    }
-    await this.props.makeCurrentVersion(match.params.slug, version);
-    await this.fetchKotsDownstreamHistory();
-    this.setState({ versionToDeploy: null });
-
-    if (this.props.updateCallback) {
-      this.props.updateCallback();
+      // prompt to make sure user wants to deploy
+      this.setState({
+        displayConfirmDeploymentModal: true,
+        versionToDeploy: version,
+        confirmType: "deploy"
+      });
+      return;
+    } else { // force deploy is set to true so finalize the deployment
+      this.finalizeDeployment();
     }
   }
 
-  redeployVersion = async (version) => {
-    const { match, app } = this.props;
+  finalizeDeployment = async () => {
+    const { match, updateCallback } = this.props;
+    const { versionToDeploy } = this.state;
+    this.setState({ displayConfirmDeploymentModal: false, confirmType: "" });
+    await this.props.makeCurrentVersion(match.params.slug, versionToDeploy);
+    await this.fetchKotsDownstreamHistory();
+    this.setState({ versionToDeploy: null });
+
+    if (updateCallback && typeof updateCallback === "function") {
+      updateCallback();
+    }
+  }
+
+  redeployVersion = (version, isRollback = false) => {
+    const { app } = this.props;
     const clusterSlug = app.downstreams?.length && app.downstreams[0].cluster?.slug;
     if (!clusterSlug) {
       return;
     }
 
-    await this.props.redeployVersion(match.params.slug, version);
-    await this.fetchKotsDownstreamHistory();
+    // prompt to make sure user wants to redeploy
+    if (isRollback) {
+      this.setState({
+        displayConfirmDeploymentModal: true,
+        confirmType: "rollback",
+        versionToDeploy: version,
+      });
+    } else {
+      this.setState({
+        displayConfirmDeploymentModal: true,
+        confirmType: "redeploy",
+        versionToDeploy: version,
+      });
+    }
+  }
 
-    if (this.props.updateCallback) {
-      this.props.updateCallback();
+  finalizeRedeployment = async () => {
+    const { match, updateCallback } = this.props;
+    const { versionToDeploy } = this.state;
+    this.setState({ displayConfirmDeploymentModal: false, confirmType: "", });
+    await this.props.redeployVersion(match.params.slug, versionToDeploy);
+    await this.fetchKotsDownstreamHistory();
+    this.setState({ versionToDeploy: null });
+
+    if (updateCallback && typeof updateCallback === "function") {
+      updateCallback();
     }
   }
 
@@ -1040,6 +1078,24 @@ class AppVersionHistory extends Component {
             </div>
           </div>
         </Modal>
+
+        {this.state.displayConfirmDeploymentModal && 
+          <Modal
+            isOpen={true}
+            onRequestClose={() => this.setState({ displayConfirmDeploymentModal: false, confirmType: "", versionToDeploy: null })}
+            contentLabel="Confirm deployment"
+            ariaHideApp={false}
+            className="Modal DefaultSize"
+          >
+            <div className="Modal-body">
+              <p className="u-fontSize--largest u-fontWeight--bold u-color--tuna u-lineHeight--normal u-marginBottom--10">Are you sure you want to {this.state.confirmType === "rollback" ? "rollback to" : this.state.confirmType === "redeploy" ? "redeploy" : "deploy"} {this.state.versionToDeploy?.versionLabel} (Sequence {this.state.versionToDeploy?.sequence})</p>
+              <div className="flex u-paddingTop--10">
+                <button className="btn secondary blue" onClick={() => this.setState({ displayConfirmDeploymentModal: false, confirmType: "", versionToDeploy: null })}>Cancel</button>
+                <button className="u-marginLeft--10 btn primary" onClick={this.state.confirmIsRedeploy ? this.finalizeRedeployment : this.finalizeDeployment}>Yes, {this.state.confirmType === "rollback" ? "rollback" : this.state.confirmType === "redeploy" ? "redeploy" : "deploy"}</button>
+              </div>
+            </div>
+          </Modal>
+        }
 
         {showUpdateCheckerModal &&
           <UpdateCheckerModal
