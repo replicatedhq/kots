@@ -68,8 +68,7 @@ class AppVersionHistory extends Component {
     errorMsg: "",
     displayErrorModal: false,
     displayConfirmDeploymentModal: false,
-    confirmIsRedeploy: false,
-    confirmIsRollback: false,
+    confirmType: "",
   }
 
   componentWillMount() {
@@ -321,8 +320,7 @@ class AppVersionHistory extends Component {
       this.setState({
         displayConfirmDeploymentModal: true,
         versionToDeploy: version,
-        confirmIsRedeploy: false,
-        confirmIsRollback: false,
+        confirmType: "deploy"
       });
       return;
     } else { // force deploy is set to true so finalize the deployment
@@ -333,7 +331,7 @@ class AppVersionHistory extends Component {
   finalizeDeployment = async () => {
     const { match, updateCallback } = this.props;
     const { versionToDeploy } = this.state;
-    this.setState({ displayConfirmDeploymentModal: false });
+    this.setState({ displayConfirmDeploymentModal: false, confirmType: "" });
     await this.props.makeCurrentVersion(match.params.slug, versionToDeploy);
     await this.fetchKotsDownstreamHistory();
     this.setState({ versionToDeploy: null });
@@ -354,14 +352,13 @@ class AppVersionHistory extends Component {
     if (isRollback) {
       this.setState({
         displayConfirmDeploymentModal: true,
-        confirmIsRedeploy: false,
-        confirmIsRollback: true,
+        confirmType: "rollback",
         versionToDeploy: version,
       });
     } else {
       this.setState({
         displayConfirmDeploymentModal: true,
-        confirmIsRedeploy: true,
+        confirmType: "redeploy",
         versionToDeploy: version,
       });
     }
@@ -370,7 +367,7 @@ class AppVersionHistory extends Component {
   finalizeRedeployment = async () => {
     const { match, updateCallback } = this.props;
     const { versionToDeploy } = this.state;
-    this.setState({ displayConfirmDeploymentModal: false, confirmIsRedeploy: false, confirmIsRollback: false, });
+    this.setState({ displayConfirmDeploymentModal: false, confirmType: "", });
     await this.props.redeployVersion(match.params.slug, versionToDeploy);
     await this.fetchKotsDownstreamHistory();
     this.setState({ versionToDeploy: null });
@@ -1085,16 +1082,16 @@ class AppVersionHistory extends Component {
         {this.state.displayConfirmDeploymentModal && 
           <Modal
             isOpen={true}
-            onRequestClose={() => this.setState({ displayConfirmDeploymentModal: false, confirmIsRedeploy: false, confirmIsRollback: false, versionToDeploy: null })}
+            onRequestClose={() => this.setState({ displayConfirmDeploymentModal: false, confirmType: "", versionToDeploy: null })}
             contentLabel="Confirm deployment"
             ariaHideApp={false}
             className="Modal DefaultSize"
           >
             <div className="Modal-body">
-              <p className="u-fontSize--largest u-fontWeight--bold u-color--tuna u-lineHeight--normal u-marginBottom--10">Are you sure you want to {this.state.confirmIsRollback ? "rollback to" : this.state.confirmIsRedeploy ? "redeploy" : "deploy"} {this.state.versionToDeploy?.versionLabel} (Sequence {this.state.versionToDeploy?.sequence})</p>
+              <p className="u-fontSize--largest u-fontWeight--bold u-color--tuna u-lineHeight--normal u-marginBottom--10">Are you sure you want to {this.state.confirmType === "rollback" ? "rollback to" : this.state.confirmType === "redeploy" ? "redeploy" : "deploy"} {this.state.versionToDeploy?.versionLabel} (Sequence {this.state.versionToDeploy?.sequence})</p>
               <div className="flex u-paddingTop--10">
-                <button className="btn secondary blue" onClick={() => this.setState({ displayConfirmDeploymentModal: false, confirmIsRedeploy: false, confirmIsRollback: false, versionToDeploy: null })}>Cancel</button>
-                <button className="u-marginLeft--10 btn primary" onClick={this.state.confirmIsRedeploy ? this.finalizeRedeployment : this.finalizeDeployment}>Yes, {this.state.confirmIsRollback ? "rollback" : this.state.confirmIsRedeploy ? "redeploy" : "deploy"}</button>
+                <button className="btn secondary blue" onClick={() => this.setState({ displayConfirmDeploymentModal: false, confirmType: "", versionToDeploy: null })}>Cancel</button>
+                <button className="u-marginLeft--10 btn primary" onClick={this.state.confirmIsRedeploy ? this.finalizeRedeployment : this.finalizeDeployment}>Yes, {this.state.confirmType === "rollback" ? "rollback" : this.state.confirmType === "redeploy" ? "redeploy" : "deploy"}</button>
               </div>
             </div>
           </Modal>
