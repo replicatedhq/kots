@@ -1,7 +1,6 @@
 package s3pg
 
 import (
-	"context"
 	"database/sql"
 	"encoding/json"
 	"fmt"
@@ -27,10 +26,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/kustomize"
 	velerov1 "github.com/vmware-tanzu/velero/pkg/apis/velero/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/scheme"
-	"sigs.k8s.io/controller-runtime/pkg/client/config"
 )
 
 func (s S3PGStore) IsRollbackSupportedForVersion(appID string, sequence int64) (bool, error) {
