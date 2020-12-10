@@ -17,71 +17,45 @@ limitations under the License.
 package v1beta1
 
 import (
-	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	runtime "k8s.io/apimachinery/pkg/runtime"
 )
 
-type IdentityConfigSpec struct {
-	Enabled                bool              `json:"enabled" yaml:"enabled"`
-	DisablePasswordAuth    bool              `json:"disablePasswordAuth,omitempty" yaml:"disablePasswordAuth,omitempty"`
-	Groups                 []IdentityGroup   `json:"groups,omitempty" yaml:"groups,omitempty"`
-	IngressConfig          IngressConfigSpec `json:"ingressConfig,omitempty" yaml:"ingressConfig,omitempty"`
-	AdminConsoleAddress    string            `json:"adminConsoleAddress,omitempty" yaml:"adminConsoleAddress,omitempty"`
-	IdentityServiceAddress string            `json:"identityServiceAddress,omitempty" yaml:"identityServiceAddress,omitempty"`
-	CACertPemBase64        string            `json:"caCertPemBase64,omitempty" yaml:"caCertPemBase64,omitempty"`
-	InsecureSkipTLSVerify  bool              `json:"insecureSkipTLSVerify,omitempty" yaml:"insecureSkipTLSVerify,omitempty"`
-	DexConnectors          DexConnectors     `json:"dexConnectors,omitempty" yaml:"dexConnectors,omitempty"`
+type IdentitySpec struct {
+	OIDCRedirectURLs            []string `json:"oidcRedirectURLs" yaml:"oidcRedirectURLs"`
+	OAUTH2AlwaysShowLoginScreen bool     `json:"oauth2AlwaysShowLoginScreen,omitempty" yaml:"oauth2AlwaysShowLoginScreen,omitempty"`
+	SigningKeysExpiration       string   `json:"signingKeysExpiration,omitempty" yaml:"signingKeysExpiration,omitempty"`
+	IDTokensExpiration          string   `json:"idTokensExpiration,omitempty" yaml:"idTokensExpiration,omitempty"`
+	SupportedProviders          []string `json:"supportedProviders,omitempty" yaml:"supportedProviders,omitempty"`
+	EnableRestrictedGroups      bool     `json:"enableRestrictedGroups,omitempty" yaml:"enableRestrictedGroups,omitempty"`
+	Roles                       []string `json:"roles,omitempty" yaml:"roles,omitempty"`
 }
 
-type IdentityGroup struct {
-	ID      string   `json:"id" yaml:"id"`
-	RoleIDs []string `json:"roleIds" yaml:"roleIds"`
-}
-
-type DexConnectors struct {
-	Value     []DexConnector       `json:"value,omitempty" yaml:"value,omitempty"`
-	ValueFrom *DexConnectorsSource `json:"valueFrom,omitempty" yaml:"valueFrom,omitempty"`
-}
-
-type DexConnectorsSource struct {
-	SecretKeyRef *corev1.SecretKeySelector `json:"secretKeyRef,omitempty" yaml:"secretKeyRef,omitempty"`
-}
-
-type DexConnector struct {
-	Type string `json:"type"`
-	Name string `json:"name"`
-	ID   string `json:"id"`
-
-	Config runtime.RawExtension `json:"config"`
-}
-
-// IdentityConfigStatus defines the observed state of Identity
-type IdentityConfigStatus struct {
+// IdentityStatus defines the observed state of Identity
+type IdentityStatus struct {
 }
 
 // +genclient
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
-// IdentityConfig is the Schema for the identity config document
+// Identity is the Schema for the identity document
 // +k8s:openapi-gen=true
 // +kubebuilder:subresource:status
-type IdentityConfig struct {
+type Identity struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   IdentityConfigSpec   `json:"spec,omitempty"`
-	Status IdentityConfigStatus `json:"status,omitempty"`
+	Spec   IdentitySpec   `json:"spec,omitempty"`
+	Status IdentityStatus `json:"status,omitempty"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
-// IdentityConfigList contains a list of IdentityConfigs
-type IdentityConfigList struct {
+// IdentityList contains a list of Identities
+type IdentityList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []IdentityConfig `json:"items"`
+	Items           []Identity `json:"items"`
 }
 
 func init() {
-	SchemeBuilder.Register(&IdentityConfig{}, &IdentityConfigList{})
+	SchemeBuilder.Register(&Identity{}, &IdentityList{})
 }

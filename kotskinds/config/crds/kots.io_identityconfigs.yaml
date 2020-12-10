@@ -137,7 +137,7 @@ spec:
           - enabled
           type: object
         status:
-          description: IdentityConfigStatus defines the observed state of Identity
+          description: IdentityConfigStatus defines the observed state of IdentityConfig
           type: object
       type: object
   version: v1beta1

@@ -444,9 +444,14 @@ func (s S3PGStore) createAppVersion(tx *sql.Tx, appID string, currentSequence *i
 	if err != nil {
 		return int64(0), errors.Wrap(err, "failed to marshal kots installation spec")
 	}
+
 	backupSpec, err := kotsKinds.Marshal("velero.io", "v1", "Backup")
 	if err != nil {
 		return int64(0), errors.Wrap(err, "failed to marshal backup spec")
+	}
+	identitySpec, err := kotsKinds.Marshal("kots.io", "v1beta1", "Identity")
+	if err != nil {
+		return int64(0), errors.Wrap(err, "failed to marshal identity spec")
 	}
 
 	licenseSpec, err := kotsKinds.Marshal("kots.io", "v1beta1", "License")
@@ -476,8 +481,8 @@ func (s S3PGStore) createAppVersion(tx *sql.Tx, appID string, currentSequence *i
 		releasedAt = &kotsKinds.Installation.Spec.ReleasedAt.Time
 	}
 	query := `insert into app_version (app_id, sequence, created_at, version_label, release_notes, update_cursor, channel_id, channel_name, upstream_released_at, encryption_key,
-		supportbundle_spec, analyzer_spec, preflight_spec, app_spec, kots_app_spec, kots_installation_spec, kots_license, config_spec, config_values, backup_spec)
-		values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20)
+		supportbundle_spec, analyzer_spec, preflight_spec, app_spec, kots_app_spec, kots_installation_spec, kots_license, config_spec, config_values, backup_spec, identity_spec)
+		values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21)
 		ON CONFLICT(app_id, sequence) DO UPDATE SET
 		created_at = EXCLUDED.created_at,
 		version_label = EXCLUDED.version_label,
@@ -496,7 +501,8 @@ func (s S3PGStore) createAppVersion(tx *sql.Tx, appID string, currentSequence *i
 		kots_license = EXCLUDED.kots_license,
 		config_spec = EXCLUDED.config_spec,
 		config_values = EXCLUDED.config_values,
-		backup_spec = EXCLUDED.backup_spec`
+		backup_spec = EXCLUDED.backup_spec,
+		identity_spec = EXCLUDED.identity_spec`
 	_, err = tx.Exec(query, appID, newSequence, time.Now(),
 		kotsKinds.Installation.Spec.VersionLabel,
 		kotsKinds.Installation.Spec.ReleaseNotes,
@@ -514,7 +520,8 @@ func (s S3PGStore) createAppVersion(tx *sql.Tx, appID string, currentSequence *i
 		licenseSpec,
 		configSpec,
 		configValuesSpec,
-		backupSpec)
+		backupSpec,
+		identitySpec)
 	if err != nil {
 		return int64(0), errors.Wrap(err, "failed to insert app version")
 	}

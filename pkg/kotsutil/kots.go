@@ -54,6 +54,8 @@ type KotsKinds struct {
 	Installation kotsv1beta1.Installation
 	License      *kotsv1beta1.License
 
+	Identity *kotsv1beta1.Identity
+
 	Backup *velerov1.Backup
 }
 
@@ -198,6 +200,15 @@ func (o KotsKinds) Marshal(g string, v string, k string) (string, error) {
 				var b bytes.Buffer
 				if err := s.Encode(o.ConfigValues, &b); err != nil {
 					return "", errors.Wrap(err, "failed to encode configvalues")
+				}
+				return string(b.Bytes()), nil
+			case "Identity":
+				if o.Identity == nil {
+					return "", nil
+				}
+				var b bytes.Buffer
+				if err := s.Encode(o.Identity, &b); err != nil {
+					return "", errors.Wrap(err, "failed to encode identity")
 				}
 				return string(b.Bytes()), nil
 			}
@@ -355,6 +366,8 @@ func LoadKotsKindsFromPath(fromDir string) (*KotsKinds, error) {
 				kotsKinds.KotsApplication = *decoded.(*kotsv1beta1.Application)
 			case "kots.io/v1beta1, Kind=License":
 				kotsKinds.License = decoded.(*kotsv1beta1.License)
+			case "kots.io/v1beta1, Kind=Identity":
+				kotsKinds.Identity = decoded.(*kotsv1beta1.Identity)
 			case "kots.io/v1beta1, Kind=Installation":
 				kotsKinds.Installation = *decoded.(*kotsv1beta1.Installation)
 			case "troubleshoot.sh/v1beta2, Kind=Collector":
@@ -586,6 +599,21 @@ func LoadIngressConfigFromContents(content []byte) (*kotsv1beta1.IngressConfig, 
 
 	if gvk.Group == "kots.io" && gvk.Version == "v1beta1" && gvk.Kind == "IngressConfig" {
 		return obj.(*kotsv1beta1.IngressConfig), nil
+	}
+
+	return nil, errors.Errorf("unexpected gvk: %s", gvk.String())
+}
+
+func LoadIdentityFromContents(content []byte) (*kotsv1beta1.Identity, error) {
+	decode := scheme.Codecs.UniversalDeserializer().Decode
+
+	obj, gvk, err := decode(content, nil, nil)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to decode content")
+	}
+
+	if gvk.Group == "kots.io" && gvk.Version == "v1beta1" && gvk.Kind == "Identity" {
+		return obj.(*kotsv1beta1.Identity), nil
 	}
 
 	return nil, errors.Errorf("unexpected gvk: %s", gvk.String())

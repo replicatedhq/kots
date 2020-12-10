@@ -15,8 +15,8 @@ const (
 )
 
 var (
-	DefaultGroups = []kotsv1beta1.IdentityGroup{DefaultGroup}
-	DefaultGroup  = kotsv1beta1.IdentityGroup{
+	DefaultGroups = []kotsv1beta1.IdentityConfigGroup{DefaultGroup}
+	DefaultGroup  = kotsv1beta1.IdentityConfigGroup{
 		ID:      WildcardGroupID,
 		RoleIDs: []string{rbac.ClusterAdminRole.ID},
 	}
