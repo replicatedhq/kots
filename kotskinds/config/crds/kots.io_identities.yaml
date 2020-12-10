@@ -41,7 +41,7 @@ spec:
               type: string
             oauth2AlwaysShowLoginScreen:
               type: boolean
-            oidcRedirectURLS:
+            oidcRedirectURLs:
               items:
                 type: string
               type: array
@@ -55,6 +55,8 @@ spec:
               items:
                 type: string
               type: array
+          required:
+          - oidcRedirectURLs
           type: object
         status:
           description: IdentityStatus defines the observed state of Identity
