@@ -23,7 +23,7 @@ import (
 	"k8s.io/client-go/kubernetes/scheme"
 )
 
-func Sync(a *apptypes.App, licenseData string, failOnVersionCreate bool) (*kotsv1beta1.License, error) {
+func Sync(a *apptypes.App, licenseString string, failOnVersionCreate bool) (*kotsv1beta1.License, error) {
 	archiveDir, err := ioutil.TempDir("", "kotsadm")
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create temp dir")
@@ -45,9 +45,9 @@ func Sync(a *apptypes.App, licenseData string, failOnVersionCreate bool) (*kotsv
 	}
 
 	latestLicense := kotsKinds.License
-	if licenseData != "" {
+	if licenseString != "" {
 		decode := scheme.Codecs.UniversalDeserializer().Decode
-		obj, _, err := decode([]byte(licenseData), nil, nil)
+		obj, _, err := decode([]byte(licenseString), nil, nil)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to parse license")
 		}
@@ -61,11 +61,12 @@ func Sync(a *apptypes.App, licenseData string, failOnVersionCreate bool) (*kotsv
 		latestLicense = verifiedLicense
 	} else {
 		// get from the api
-		updatedLicense, err := kotslicense.GetLatestLicense(kotsKinds.License)
+		licenseData, err := kotslicense.GetLatestLicense(kotsKinds.License)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to get latest license")
 		}
-		latestLicense = updatedLicense
+		latestLicense = licenseData.License
+		licenseString = string(licenseData.LicenseBytes)
 	}
 
 	// Save and make a new version if the sequence has changed
@@ -80,7 +81,8 @@ func Sync(a *apptypes.App, licenseData string, failOnVersionCreate bool) (*kotsv
 			return nil, errors.Wrap(err, "failed to write new license")
 		}
 
-		if err := updateAppLicense(a, string(encodedLicense)); err != nil {
+		//  app has the original license data received from the server
+		if err := updateAppLicense(a, licenseString); err != nil {
 			return nil, errors.Wrap(err, "update app license")
 		}
 

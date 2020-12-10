@@ -149,7 +149,6 @@ type VersionStore interface {
 }
 
 type LicenseStore interface {
-	GetInitialLicenseForApp(appID string) (*kotsv1beta1.License, error)
 	GetLatestLicenseForApp(appID string) (*kotsv1beta1.License, error)
 	GetLicenseForAppVersion(appID string, sequence int64) (*kotsv1beta1.License, error)
 	GetAllAppLicenses() ([]*kotsv1beta1.License, error)
