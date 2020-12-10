@@ -219,8 +219,10 @@ func UploadNewLicense(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	licenseString := uploadLicenseRequest.LicenseData
+
 	// validate the license
-	unverifiedLicense, err := kotsutil.LoadLicenseFromBytes([]byte(uploadLicenseRequest.LicenseData))
+	unverifiedLicense, err := kotsutil.LoadLicenseFromBytes([]byte(licenseString))
 	if err != nil {
 		logger.Error(err)
 		w.WriteHeader(400)
@@ -244,14 +246,15 @@ func UploadNewLicense(w http.ResponseWriter, r *http.Request) {
 	if !disableOutboundConnections {
 		// sync license
 		logger.Info("syncing license with server to retrieve latest version")
-		latestLicense, err := kotslicense.GetLatestLicense(verifiedLicense)
+		licenseData, err := kotslicense.GetLatestLicense(verifiedLicense)
 		if err != nil {
 			logger.Error(err)
 			uploadLicenseResponse.Error = err.Error()
 			JSON(w, 500, uploadLicenseResponse)
 			return
 		}
-		verifiedLicense = latestLicense
+		verifiedLicense = licenseData.License
+		licenseString = string(licenseData.LicenseBytes)
 	}
 
 	// check license expiration
@@ -303,7 +306,7 @@ func UploadNewLicense(w http.ResponseWriter, r *http.Request) {
 	desiredAppName := strings.Replace(verifiedLicense.Spec.AppSlug, "-", " ", 0)
 	upstreamURI := fmt.Sprintf("replicated://%s", verifiedLicense.Spec.AppSlug)
 
-	a, err := store.GetStore().CreateApp(desiredAppName, upstreamURI, uploadLicenseRequest.LicenseData, verifiedLicense.Spec.IsAirgapSupported, installationParams.SkipImagePush)
+	a, err := store.GetStore().CreateApp(desiredAppName, upstreamURI, licenseString, verifiedLicense.Spec.IsAirgapSupported, installationParams.SkipImagePush)
 	if err != nil {
 		logger.Error(err)
 		uploadLicenseResponse.Error = err.Error()
@@ -386,7 +389,7 @@ func ResumeInstallOnline(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// the license data is left in the table
-	kotsLicense, err := store.GetStore().GetInitialLicenseForApp(a.ID)
+	kotsLicense, err := store.GetStore().GetLatestLicenseForApp(a.ID)
 	if err != nil {
 		logger.Error(err)
 		resumeInstallOnlineResponse.Error = err.Error()

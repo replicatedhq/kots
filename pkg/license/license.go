@@ -12,7 +12,12 @@ import (
 	"github.com/replicatedhq/kots/pkg/version"
 )
 
-func GetLatestLicense(license *kotsv1beta1.License) (*kotsv1beta1.License, error) {
+type LicenseData struct {
+	LicenseBytes []byte
+	License      *kotsv1beta1.License
+}
+
+func GetLatestLicense(license *kotsv1beta1.License) (*LicenseData, error) {
 	url := fmt.Sprintf("%s/license/%s", license.Spec.Endpoint, license.Spec.AppSlug)
 
 	req, err := http.NewRequest("GET", url, nil)
@@ -42,7 +47,10 @@ func GetLatestLicense(license *kotsv1beta1.License) (*kotsv1beta1.License, error
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to decode latest license data")
 	}
-	latestLicense := obj.(*kotsv1beta1.License)
 
-	return latestLicense, nil
+	data := &LicenseData{
+		LicenseBytes: body,
+		License:      obj.(*kotsv1beta1.License),
+	}
+	return data, nil
 }
