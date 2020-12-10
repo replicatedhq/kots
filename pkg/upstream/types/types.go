@@ -44,8 +44,9 @@ type WriteOptions struct {
 	// When true, the channel name in Installation yaml will not be changed.
 	PreserveInstallation bool
 	// Set to true on initial installation when an unencrypted config file is provided
-	EncryptConfig  bool
-	SharedPassword string
+	EncryptConfig         bool
+	EncryptIdentityConfig bool
+	SharedPassword        string
 }
 
 type FetchOptions struct {
@@ -57,6 +58,7 @@ type FetchOptions struct {
 	LocalPath           string
 	License             *kotsv1beta1.License
 	ConfigValues        *kotsv1beta1.ConfigValues
+	IdentityConfig      *kotsv1beta1.IdentityConfig
 	Airgap              *kotsv1beta1.Airgap
 	EncryptionKey       string
 	CurrentCursor       string

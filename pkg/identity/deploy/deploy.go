@@ -10,7 +10,6 @@ import (
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	"github.com/replicatedhq/kots/pkg/ingress"
 	kotsadmtypes "github.com/replicatedhq/kots/pkg/kotsadm/types"
-	kotsadmversion "github.com/replicatedhq/kots/pkg/kotsadm/version"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	extensionsv1beta1 "k8s.io/api/extensions/v1beta1"
@@ -26,11 +25,13 @@ var (
 	KotsIdentityLabelKey = "kots.io/identity"
 )
 
-func Deploy(ctx context.Context, clientset kubernetes.Interface, namespace string, namePrefix string, dexConfig []byte, ingressSpec kotsv1beta1.IngressConfigSpec, registryOptions *kotsadmtypes.KotsadmOptions) error {
+type ImageRewriteFunc func(upstreamImage, path, tag string) (image string, imagePullSecrets []corev1.LocalObjectReference)
+
+func Deploy(ctx context.Context, clientset kubernetes.Interface, namespace string, namePrefix string, dexConfig []byte, ingressSpec kotsv1beta1.IngressConfigSpec, imageRewriteFn ImageRewriteFunc) error {
 	if err := ensureSecret(ctx, clientset, namespace, namePrefix, dexConfig); err != nil {
 		return errors.Wrap(err, "failed to ensure secret")
 	}
-	if err := ensureDeployment(ctx, clientset, namespace, namePrefix, dexConfig, registryOptions); err != nil {
+	if err := ensureDeployment(ctx, clientset, namespace, namePrefix, dexConfig, imageRewriteFn); err != nil {
 		return errors.Wrap(err, "failed to ensure deployment")
 	}
 	if err := ensureService(ctx, clientset, namespace, namePrefix, ingressSpec); err != nil {
@@ -106,12 +107,12 @@ func updateSecret(existingSecret, desiredSecret *corev1.Secret) *corev1.Secret {
 	return existingSecret
 }
 
-func ensureDeployment(ctx context.Context, clientset kubernetes.Interface, namespace string, namePrefix string, marshalledDexConfig []byte, registryOptions *kotsadmtypes.KotsadmOptions) error {
+func ensureDeployment(ctx context.Context, clientset kubernetes.Interface, namespace string, namePrefix string, marshalledDexConfig []byte, imageRewriteFn ImageRewriteFunc) error {
 	deploymentName := prefixName(namePrefix, "dex")
 
 	configChecksum := fmt.Sprintf("%x", md5.Sum(marshalledDexConfig))
 
-	deployment := deploymentResource(deploymentName, configChecksum, namespace, registryOptions)
+	deployment := deploymentResource(deploymentName, configChecksum, imageRewriteFn)
 
 	existingDeployment, err := clientset.AppsV1().Deployments(namespace).Get(ctx, deploymentName, metav1.GetOptions{})
 	if err != nil {
@@ -140,7 +141,7 @@ func ensureDeployment(ctx context.Context, clientset kubernetes.Interface, names
 func patchDeploymentSecret(ctx context.Context, clientset kubernetes.Interface, namespace string, namePrefix string, marshalledDexConfig []byte) error {
 	configChecksum := fmt.Sprintf("%x", md5.Sum(marshalledDexConfig))
 
-	deployment := deploymentResource(prefixName(namePrefix, "dex"), configChecksum, namespace, nil)
+	deployment := deploymentResource(prefixName(namePrefix, "dex"), configChecksum, nil)
 
 	patch := fmt.Sprintf(`{"spec":{"template":{"metadata":{"annotations":{"kots.io/dex-secret-checksum":"%s"}}}}}`, deployment.Spec.Template.ObjectMeta.Annotations["kots.io/dex-secret-checksum"])
 
@@ -157,21 +158,14 @@ var (
 	dexMemoryResource = resource.MustParse("50Mi")
 )
 
-func deploymentResource(namePrefix, configChecksum, namespace string, registryOptions *kotsadmtypes.KotsadmOptions) *appsv1.Deployment {
+func deploymentResource(namePrefix, configChecksum string, imageRewriteFn ImageRewriteFunc) *appsv1.Deployment {
 	replicas := int32(2)
 	volume := configSecretVolume(namePrefix)
 
 	image := "quay.io/dexidp/dex:v2.26.0"
 	imagePullSecrets := []corev1.LocalObjectReference{}
-	if registryOptions != nil {
-		if s := kotsadmversion.KotsadmPullSecret(namespace, *registryOptions); s != nil {
-			image = fmt.Sprintf("%s/dex:%s", kotsadmversion.KotsadmRegistry(*registryOptions), kotsadmversion.KotsadmTag(*registryOptions))
-			imagePullSecrets = []corev1.LocalObjectReference{
-				{
-					Name: s.ObjectMeta.Name,
-				},
-			}
-		}
+	if imageRewriteFn != nil {
+		image, imagePullSecrets = imageRewriteFn(image, "dex", "v2.26.0")
 	}
 
 	env := []corev1.EnvVar{}
@@ -373,11 +367,11 @@ func ensureIngress(ctx context.Context, clientset kubernetes.Interface, namespac
 	if !ingressSpec.Enabled || ingressSpec.Ingress == nil {
 		return deleteIngress(ctx, clientset, namespace, namePrefix)
 	}
-	dexIngress := ingressResource(namespace, namePrefix, *ingressSpec.Ingress)
+	dexIngress := ingressResource(namePrefix, *ingressSpec.Ingress)
 	return ingress.EnsureIngress(ctx, clientset, namespace, dexIngress)
 }
 
-func ingressResource(namespace string, namePrefix string, ingressConfig kotsv1beta1.IngressResourceConfig) *extensionsv1beta1.Ingress {
+func ingressResource(namePrefix string, ingressConfig kotsv1beta1.IngressResourceConfig) *extensionsv1beta1.Ingress {
 	return ingress.IngressFromConfig(ingressConfig, prefixName(namePrefix, "dex"), prefixName(namePrefix, "dex"), 5556, AdditionalLabels(namePrefix))
 }
 

@@ -131,6 +131,7 @@ func CreateAppFromOnline(pendingApp *types.PendingApp, upstreamURI string, isAut
 		ExcludeAdminConsole: true,
 		CreateAppDir:        false,
 		ConfigFile:          configFile,
+		IdentityConfigFile:  "", // TODO (ethan)
 		ReportWriter:        pipeWriter,
 		AppSlug:             pendingApp.Slug,
 		AppSequence:         0,

@@ -169,6 +169,7 @@ func CreateAppFromAirgap(pendingApp *types.PendingApp, airgapPath string, regist
 		Namespace:           appNamespace,
 		LicenseFile:         licenseFile.Name(),
 		ConfigFile:          configFile,
+		IdentityConfigFile:  "", // TODO (ethan)
 		AirgapRoot:          archiveDir,
 		Silent:              true,
 		ExcludeKotsKinds:    true,

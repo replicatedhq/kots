@@ -16,6 +16,7 @@ import (
 	"github.com/replicatedhq/kots/kotsadm/pkg/user"
 	usertypes "github.com/replicatedhq/kots/kotsadm/pkg/user/types"
 	"github.com/replicatedhq/kots/pkg/identity"
+	identityclient "github.com/replicatedhq/kots/pkg/identity/client"
 	ingress "github.com/replicatedhq/kots/pkg/ingress"
 	"github.com/segmentio/ksuid"
 	"golang.org/x/oauth2"
@@ -119,7 +120,7 @@ func OIDCLogin(w http.ResponseWriter, r *http.Request) {
 	state := ksuid.New().String()
 
 	// save the generated state to compare on callback
-	if err := identity.SetOIDCState(r.Context(), namespace, state); err != nil {
+	if err := identityclient.SetOIDCState(r.Context(), namespace, state); err != nil {
 		oidcLoginResponse.Error = "failed to set oidc state"
 		JSON(w, http.StatusInternalServerError, oidcLoginResponse)
 		return
@@ -176,7 +177,7 @@ func OIDCLoginCallback(w http.ResponseWriter, r *http.Request) {
 		}
 
 		state := r.FormValue("state")
-		foundState, err := identity.GetOIDCState(r.Context(), namespace, state)
+		foundState, err := identityclient.GetOIDCState(r.Context(), namespace, state)
 		if err != nil {
 			logger.Error(errors.Wrap(err, "failed to get saved oidc state"))
 			w.WriteHeader(http.StatusInternalServerError)
@@ -189,13 +190,13 @@ func OIDCLoginCallback(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		if err := identity.ResetOIDCState(r.Context(), namespace, state); err != nil {
+		if err := identityclient.ResetOIDCState(r.Context(), namespace, state); err != nil {
 			logger.Error(errors.Wrap(err, "failed to reset oidc state"))
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
 
-		httpClient, err := identity.HTTPClient(r.Context(), namespace, *identityConfig)
+		httpClient, err := identityclient.HTTPClient(r.Context(), namespace, *identityConfig)
 		if err != nil {
 			err = errors.Wrap(err, "failed to get identity http client")
 			logger.Error(err)
@@ -219,7 +220,7 @@ func OIDCLoginCallback(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		httpClient, err := identity.HTTPClient(r.Context(), namespace, *identityConfig)
+		httpClient, err := identityclient.HTTPClient(r.Context(), namespace, *identityConfig)
 		if err != nil {
 			err = errors.Wrap(err, "failed to get identity http client")
 			logger.Error(err)

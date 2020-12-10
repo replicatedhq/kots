@@ -90,6 +90,10 @@ func WriteUpstream(u *types.Upstream, options types.WriteOptions) error {
 			}
 		}
 
+		if options.EncryptIdentityConfig {
+			// TODO (ethan): how do we securely store connectors?
+		}
+
 		if err := ioutil.WriteFile(fileRenderPath, file.Content, 0644); err != nil {
 			return errors.Wrap(err, "failed to write upstream file")
 		}

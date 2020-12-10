@@ -157,6 +157,13 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 	var images []kustomizetypes.Image
 	var objects []k8sdoc.K8sDoc
 
+	identityConfig, err := upstream.LoadIdentityConfig(u.GetUpstreamDir(writeUpstreamOptions))
+	if err != nil {
+		return errors.Wrap(err, "failed to load identity config")
+	}
+
+	// TODO (ethan): rewrite dex image?
+
 	if rewriteOptions.CopyImages || rewriteOptions.RegistryEndpoint != "" {
 		// When CopyImages is set, we copy images, rewrite all images, and use registry
 		// settings to create secrets for all objects that have images.
@@ -295,7 +302,7 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 	log.ActionWithSpinner("Creating midstream")
 	io.WriteString(rewriteOptions.ReportWriter, "Creating midstream\n")
 
-	m, err := midstream.CreateMidstream(b, images, objects, pullSecret)
+	m, err := midstream.CreateMidstream(b, images, objects, pullSecret, identityConfig)
 	if err != nil {
 		return errors.Wrap(err, "failed to create midstream")
 	}

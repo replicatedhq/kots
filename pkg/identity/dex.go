@@ -31,10 +31,6 @@ func getDexConfig(ctx context.Context, clientset kubernetes.Interface, namespace
 	}
 
 	config := dextypes.Config{
-		Logger: dextypes.Logger{
-			Level:  "debug",
-			Format: "text",
-		},
 		Issuer: DexIssuerURL(identitySpec),
 		Storage: dextypes.Storage{
 			Type: "postgres",
