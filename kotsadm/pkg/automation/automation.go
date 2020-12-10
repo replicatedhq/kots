@@ -82,12 +82,13 @@ LICENSE_LOOP:
 		// ignore the error, default to false
 		disableOutboundConnections, _ = strconv.ParseBool(os.Getenv("DISABLE_OUTBOUND_CONNECTIONS"))
 		if !disableOutboundConnections {
-			latestLicense, err := kotslicense.GetLatestLicense(verifiedLicense)
+			licenseData, err := kotslicense.GetLatestLicense(verifiedLicense)
 			if err != nil {
 				logger.Error(errors.Wrap(err, "failed to get latest lincense"))
 				continue
 			}
-			verifiedLicense = latestLicense
+			verifiedLicense = licenseData.License
+			license = licenseData.LicenseBytes
 		}
 
 		// check license expiration

@@ -164,10 +164,11 @@ func downloadReplicated(
 			return nil, errors.Wrap(err, "failed to download replicated app")
 		}
 
-		license, err = kotslicense.GetLatestLicense(license)
+		licenseData, err := kotslicense.GetLatestLicense(license)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to get latest license")
 		}
+		license = licenseData.License
 
 		release = downloadedRelease
 	}
