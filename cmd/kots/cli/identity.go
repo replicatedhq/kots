@@ -193,7 +193,7 @@ func IdentityServiceUninstallCmd() *cobra.Command {
 
 			log.ChildActionWithSpinner("Uninstalling the Identity Service")
 
-			if err := identity.Undeploy(cmd.Context(), log, clientset, namespace); err != nil {
+			if err := identity.Undeploy(cmd.Context(), clientset, namespace); err != nil {
 				return errors.Wrap(err, "failed to uninstall the identity service")
 			}
 

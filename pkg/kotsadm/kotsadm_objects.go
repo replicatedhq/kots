@@ -420,7 +420,7 @@ func kotsadmDeployment(deployOptions types.DeployOptions) *appsv1.Deployment {
 									ValueFrom: &corev1.EnvVarSource{
 										SecretKeyRef: &corev1.SecretKeySelector{
 											LocalObjectReference: corev1.LocalObjectReference{
-												Name: identity.DexPostgresSecretName,
+												Name: identity.PostgresSecretName,
 											},
 											Key: "password",
 										},

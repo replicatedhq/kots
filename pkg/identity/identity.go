@@ -15,9 +15,6 @@ const (
 )
 
 var (
-	KotsIdentityLabelKey   = "kots.io/identity"
-	KotsIdentityLabelValue = "true"
-
 	DefaultGroups = []kotsv1beta1.IdentityGroup{DefaultGroup}
 	DefaultGroup  = kotsv1beta1.IdentityGroup{
 		ID:      WildcardGroupID,
