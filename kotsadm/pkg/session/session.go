@@ -105,7 +105,7 @@ func SignJWT(s *types.Session) (string, error) {
 	return signedToken, nil
 }
 
-func GetSessionRolesFromRBAC(sessionGroupIDs []string, groups []kotsv1beta1.IdentityGroup) []string {
+func GetSessionRolesFromRBAC(sessionGroupIDs []string, groups []kotsv1beta1.IdentityConfigGroup) []string {
 	var sessionRolesIDs []string
 	for _, group := range groups {
 		if group.ID == identity.WildcardGroupID {
