@@ -157,6 +157,11 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 	var images []kustomizetypes.Image
 	var objects []k8sdoc.K8sDoc
 
+	identitySpec, err := upstream.LoadIdentity(u.GetUpstreamDir(writeUpstreamOptions))
+	if err != nil {
+		return errors.Wrap(err, "failed to load identity")
+	}
+
 	identityConfig, err := upstream.LoadIdentityConfig(u.GetUpstreamDir(writeUpstreamOptions))
 	if err != nil {
 		return errors.Wrap(err, "failed to load identity config")
@@ -302,7 +307,7 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 	log.ActionWithSpinner("Creating midstream")
 	io.WriteString(rewriteOptions.ReportWriter, "Creating midstream\n")
 
-	m, err := midstream.CreateMidstream(b, images, objects, pullSecret, identityConfig)
+	m, err := midstream.CreateMidstream(b, images, objects, pullSecret, identitySpec, identityConfig)
 	if err != nil {
 		return errors.Wrap(err, "failed to create midstream")
 	}

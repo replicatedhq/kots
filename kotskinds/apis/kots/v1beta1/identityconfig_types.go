@@ -27,7 +27,7 @@ type IdentityConfigSpec struct {
 	DisablePasswordAuth    bool                  `json:"disablePasswordAuth,omitempty" yaml:"disablePasswordAuth,omitempty"`
 	Groups                 []IdentityConfigGroup `json:"groups,omitempty" yaml:"groups,omitempty"`
 	IngressConfig          IngressConfigSpec     `json:"ingressConfig,omitempty" yaml:"ingressConfig,omitempty"`
-	AdminConsoleAddress    string                `json:"adminConsoleAddress,omitempty" yaml:"adminConsoleAddress,omitempty"`
+	AdminConsoleAddress    string                `json:"adminConsoleAddress,omitempty" yaml:"adminConsoleAddress,omitempty"` // TODO (ethan): this does not belong here
 	IdentityServiceAddress string                `json:"identityServiceAddress,omitempty" yaml:"identityServiceAddress,omitempty"`
 	CACertPemBase64        string                `json:"caCertPemBase64,omitempty" yaml:"caCertPemBase64,omitempty"`
 	InsecureSkipTLSVerify  bool                  `json:"insecureSkipTLSVerify,omitempty" yaml:"insecureSkipTLSVerify,omitempty"`

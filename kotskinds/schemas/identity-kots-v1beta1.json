@@ -16,7 +16,7 @@
     "spec": {
       "type": "object",
       "required": [
-        "oidcRedirectURLs"
+        "oidcRedirectUris"
       ],
       "properties": {
         "enableRestrictedGroups": {
@@ -28,7 +28,7 @@
         "oauth2AlwaysShowLoginScreen": {
           "type": "boolean"
         },
-        "oidcRedirectURLs": {
+        "oidcRedirectUris": {
           "type": "array",
           "items": {
             "type": "string"

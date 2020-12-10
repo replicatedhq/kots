@@ -514,10 +514,15 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 		objects = findResult.Docs
 	}
 
+	identitySpec, err := upstream.LoadIdentity(u.GetUpstreamDir(writeUpstreamOptions))
+	if err != nil {
+		return "", errors.Wrap(err, "failed to load identity")
+	}
+
 	log.ActionWithSpinner("Creating midstream")
 	io.WriteString(pullOptions.ReportWriter, "Creating midstream\n")
 
-	m, err := midstream.CreateMidstream(b, images, objects, pullSecret, identityConfig)
+	m, err := midstream.CreateMidstream(b, images, objects, pullSecret, identitySpec, identityConfig)
 	if err != nil {
 		return "", errors.Wrap(err, "failed to create midstream")
 	}

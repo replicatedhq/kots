@@ -23,11 +23,11 @@ import (
 )
 
 func (m *Midstream) writeIdentityService(ctx context.Context, options WriteOptions) (string, error) {
-	if m.IdentityConfig == nil {
+	if m.IdentitySpec == nil || m.IdentityConfig == nil {
 		return "", nil
 	}
 
-	dexConfig, err := getDexConfig(ctx, m.IdentityConfig.Spec)
+	dexConfig, err := getDexConfig(ctx, m.IdentitySpec.Spec, m.IdentityConfig.Spec)
 	if err != nil {
 		return "", errors.Wrap(err, "failed to get dex config")
 	}
@@ -68,13 +68,13 @@ func (m *Midstream) writeIdentityService(ctx context.Context, options WriteOptio
 	return base, nil
 }
 
-func getDexConfig(ctx context.Context, identityConfigSpec kotsv1beta1.IdentityConfigSpec) ([]byte, error) {
+func getDexConfig(ctx context.Context, identitySpec kotsv1beta1.IdentitySpec, identityConfigSpec kotsv1beta1.IdentityConfigSpec) ([]byte, error) {
 	postgresPassword, err := getDexPostgresPassword(ctx)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get dex postgres password")
 	}
 
-	staticClient, err := getOIDCClient(ctx, identityConfigSpec)
+	staticClient, err := getOIDCClient(ctx, identitySpec)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get oidc client")
 	}
@@ -83,6 +83,7 @@ func getDexConfig(ctx context.Context, identityConfigSpec kotsv1beta1.IdentityCo
 		Issuer: dexIssuerURL(identityConfigSpec),
 		Storage: dextypes.Storage{
 			Type: "postgres",
+			// TODO (ethan): this will not work
 			Config: dextypes.Postgres{
 				NetworkDB: dextypes.NetworkDB{
 					Database: "dex",
@@ -103,7 +104,11 @@ func getDexConfig(ctx context.Context, identityConfigSpec kotsv1beta1.IdentityCo
 		},
 		OAuth2: dextypes.OAuth2{
 			SkipApprovalScreen:    true,
-			AlwaysShowLoginScreen: false, // possibly make this configurable
+			AlwaysShowLoginScreen: identitySpec.OAUTH2AlwaysShowLoginScreen,
+		},
+		Expiry: dextypes.Expiry{
+			IDTokens:    identitySpec.IDTokensExpiration,
+			SigningKeys: identitySpec.SigningKeysExpiration,
 		},
 		StaticClients:    []dexstorage.Client{staticClient},
 		EnablePasswordDB: false,
@@ -115,6 +120,8 @@ func getDexConfig(ctx context.Context, identityConfigSpec kotsv1beta1.IdentityCo
 			return nil, errors.Wrap(err, "failed to unmarshal dex connectors")
 		}
 		config.StaticConnectors = dexConnectors
+
+		// TODO (ethan): identitySpec.SupportedProviders
 	}
 
 	if err := config.Validate(); err != nil {
@@ -151,7 +158,7 @@ func dexCallbackURL(identityConfigSpec kotsv1beta1.IdentityConfigSpec) string {
 	return fmt.Sprintf("%s/callback", dexIssuerURL(identityConfigSpec))
 }
 
-func getOIDCClient(ctx context.Context, identityConfigSpec kotsv1beta1.IdentityConfigSpec) (dexstorage.Client, error) {
+func getOIDCClient(ctx context.Context, identitySpec kotsv1beta1.IdentitySpec) (dexstorage.Client, error) {
 	clientSecret := ksuid.New().String()
 
 	// TODO (ethan): find existing secret from idk where
@@ -161,9 +168,7 @@ func getOIDCClient(ctx context.Context, identityConfigSpec kotsv1beta1.IdentityC
 		ID:           "kotsadm",
 		Name:         "kotsadm",
 		Secret:       clientSecret,
-		RedirectURIs: []string{
-			// TODO: pass identity spec through to here
-		},
+		RedirectURIs: identitySpec.OIDCRedirectURIs,
 	}, nil
 }
 
