@@ -32,6 +32,7 @@ func (m *Midstream) writeIdentityService(ctx context.Context, options WriteOptio
 		return "", errors.Wrap(err, "failed to get dex config")
 	}
 
+	// TODO (ethan): customize labels (dont use kustomize)
 	resources, err := identitydeploy.Render(ctx, options.AppSlug, dexConfig, m.IdentityConfig.Spec.IngressConfig, nil)
 	if err != nil {
 		return "", errors.Wrap(err, "failed to render identity service")
@@ -41,9 +42,6 @@ func (m *Midstream) writeIdentityService(ctx context.Context, options WriteOptio
 		TypeMeta: kustomizetypes.TypeMeta{
 			APIVersion: "kustomize.config.k8s.io/v1beta1",
 			Kind:       "Kustomization",
-		},
-		CommonLabels: map[string]string{
-			// TODO (ethan)
 		},
 	}
 
