@@ -12,6 +12,7 @@ import (
 	"github.com/hashicorp/go-cleanhttp"
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
+	identitydeploy "github.com/replicatedhq/kots/pkg/identity/deploy"
 	"github.com/replicatedhq/kots/pkg/ingress"
 	kotsadmtypes "github.com/replicatedhq/kots/pkg/kotsadm/types"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
@@ -188,10 +189,8 @@ func identityConfigMapResource(identityConfig kotsv1beta1.IdentityConfig) (*core
 			Kind:       "ConfigMap",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name: ConfigConfigMapName,
-			Labels: kotsadmtypes.GetKotsadmLabels(map[string]string{
-				KotsIdentityLabelKey: KotsIdentityLabelValue,
-			}),
+			Name:   ConfigConfigMapName,
+			Labels: kotsadmtypes.GetKotsadmLabels(identitydeploy.AdditionalLabels("kotsadm")),
 		},
 		Data: map[string]string{
 			"identity.yaml": string(data),
@@ -241,10 +240,8 @@ func identitySecretResource(identityConfig kotsv1beta1.IdentityConfig) (*corev1.
 			Kind:       "Secret",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name: ConfigSecretName,
-			Labels: kotsadmtypes.GetKotsadmLabels(map[string]string{
-				KotsIdentityLabelKey: KotsIdentityLabelValue,
-			}),
+			Name:   ConfigSecretName,
+			Labels: kotsadmtypes.GetKotsadmLabels(identitydeploy.AdditionalLabels("kotsadm")),
 		},
 		Data: map[string][]byte{
 			ConfigSecretKeyName: data,
@@ -300,7 +297,7 @@ func ValidateConnection(ctx context.Context, namespace string, identityConfig ko
 	if err := evaluateDexConnectorsValue(ctx, namespace, &identityConfig.Spec.DexConnectors); err != nil {
 		return errors.Wrap(err, "failed to evaluate dex connectors value")
 	}
-	conns, err := IdentityDexConnectorsToDexTypeConnectors(identityConfig.Spec.DexConnectors.Value)
+	conns, err := identitydeploy.DexConnectorsToDexTypeConnectors(identityConfig.Spec.DexConnectors.Value)
 	if err != nil {
 		return errors.Wrap(err, "failed to map identity dex connectors to dex type connectors")
 	}

@@ -12,6 +12,7 @@ import (
 	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	"github.com/replicatedhq/kots/pkg/identity"
+	identitydeploy "github.com/replicatedhq/kots/pkg/identity/deploy"
 	dextypes "github.com/replicatedhq/kots/pkg/identity/types/dex"
 	"github.com/replicatedhq/kots/pkg/ingress"
 	"github.com/replicatedhq/kots/pkg/kotsadm"
@@ -349,7 +350,7 @@ func GetIdentityServiceConfig(w http.ResponseWriter, r *http.Request) {
 }
 
 func dexConnectorsToIDPConfigs(dexConnectors []kotsv1beta1.DexConnector) ([]IDPConfig, error) {
-	conns, err := identity.IdentityDexConnectorsToDexTypeConnectors(dexConnectors)
+	conns, err := identitydeploy.DexConnectorsToDexTypeConnectors(dexConnectors)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to map identity dex connectors to dex type connectors")
 	}
