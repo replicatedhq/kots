@@ -37,6 +37,7 @@ type IDPConfig struct {
 	OIDCConfig    *OIDCConfig `json:"oidcConfig"`
 	GEOAxISConfig *OIDCConfig `json:"geoAxisConfig"`
 }
+
 type OIDCConfig struct {
 	ConnectorID               string           `json:"connectorId"`
 	ConnectorName             string           `json:"connectorName"`
@@ -53,6 +54,7 @@ type OIDCConfig struct {
 	HostedDomains             []string         `json:"hostedDomains,omitempty"`
 	ClaimMapping              OIDCClaimMapping `json:"claimMapping,omitempty"`
 }
+
 type OIDCClaimMapping struct {
 	PreferredUsernameKey string `json:"preferredUsername,omitempty"`
 	EmailKey             string `json:"email,omitempty"`

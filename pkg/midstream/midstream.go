@@ -13,10 +13,11 @@ type Midstream struct {
 	Base           *base.Base
 	DocForPatches  []k8sdoc.K8sDoc
 	PullSecret     *corev1.Secret
+	IdentitySpec   *kotsv1beta1.Identity
 	IdentityConfig *kotsv1beta1.IdentityConfig
 }
 
-func CreateMidstream(b *base.Base, images []kustomizetypes.Image, objects []k8sdoc.K8sDoc, pullSecret *corev1.Secret, identityConfig *kotsv1beta1.IdentityConfig) (*Midstream, error) {
+func CreateMidstream(b *base.Base, images []kustomizetypes.Image, objects []k8sdoc.K8sDoc, pullSecret *corev1.Secret, identitySpec *kotsv1beta1.Identity, identityConfig *kotsv1beta1.IdentityConfig) (*Midstream, error) {
 	kustomization := kustomizetypes.Kustomization{
 		TypeMeta: kustomizetypes.TypeMeta{
 			APIVersion: "kustomize.config.k8s.io/v1beta1",
@@ -34,6 +35,7 @@ func CreateMidstream(b *base.Base, images []kustomizetypes.Image, objects []k8sd
 		Base:           b,
 		DocForPatches:  objects,
 		PullSecret:     pullSecret,
+		IdentitySpec:   identitySpec,
 		IdentityConfig: identityConfig,
 	}
 

@@ -2,12 +2,49 @@ package upstream
 
 import (
 	"io/ioutil"
+	"os"
 	"path/filepath"
 
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	"k8s.io/client-go/kubernetes/scheme"
 )
+
+func LoadIdentity(upstreamDir string) (*kotsv1beta1.Identity, error) {
+	var identitySpec *kotsv1beta1.Identity
+
+	err := filepath.Walk(upstreamDir, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+
+		if info.IsDir() {
+			return nil
+		}
+
+		content, err := ioutil.ReadFile(path)
+		if err != nil {
+			return err
+		}
+
+		decode := scheme.Codecs.UniversalDeserializer().Decode
+		obj, gvk, err := decode(content, nil, nil)
+		if err != nil {
+			return nil
+		}
+
+		if gvk.Group == "kots.io" && gvk.Version == "v1beta1" && gvk.Kind == "Identity" {
+			identitySpec = obj.(*kotsv1beta1.Identity)
+		}
+
+		return nil
+	})
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to walk archive dir")
+	}
+
+	return identitySpec, nil
+}
 
 func LoadIdentityConfig(upstreamDir string) (*kotsv1beta1.IdentityConfig, error) {
 	content, err := ioutil.ReadFile(filepath.Join(upstreamDir, "userdata", "identityconfig.yaml"))
