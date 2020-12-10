@@ -33,68 +33,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
 )
 
-func (s S3PGStore) IsGitOpsSupportedForVersion(appID string, sequence int64) (bool, error) {
-	cfg, err := config.GetConfig()
-	if err != nil {
-		return false, errors.Wrap(err, "failed to get cluster config")
-	}
-
-	clientset, err := kubernetes.NewForConfig(cfg)
-	if err != nil {
-		return false, errors.Wrap(err, "failed to create kubernetes clientset")
-	}
-
-	_, err = clientset.CoreV1().Secrets(os.Getenv("POD_NAMESPACE")).Get(context.TODO(), "kotsadm-gitops", metav1.GetOptions{})
-	if err == nil {
-		// gitops secret exists -> gitops is supported
-		return true, nil
-	}
-
-	db := persistence.MustGetPGSession()
-	query := `select kots_license from app_version where app_id = $1 and sequence = $2`
-	row := db.QueryRow(query, appID, sequence)
-
-	var licenseStr sql.NullString
-	if err := row.Scan(&licenseStr); err != nil {
-		if err == sql.ErrNoRows {
-			return false, nil
-		}
-		return false, errors.Wrap(err, "failed to scan")
-	}
-
-	decode := scheme.Codecs.UniversalDeserializer().Decode
-	obj, _, err := decode([]byte(licenseStr.String), nil, nil)
-	if err != nil {
-		return false, errors.Wrap(err, "failed to decode license yaml")
-	}
-	license := obj.(*kotsv1beta1.License)
-
-	return license.Spec.IsGitOpsSupported, nil
-}
-
-func (s S3PGStore) IsIdentityServiceSupportedForVersion(appID string, sequence int64) (bool, error) {
-	db := persistence.MustGetPGSession()
-	query := `select kots_license from app_version where app_id = $1 and sequence = $2`
-	row := db.QueryRow(query, appID, sequence)
-
-	var licenseStr sql.NullString
-	if err := row.Scan(&licenseStr); err != nil {
-		if err == sql.ErrNoRows {
-			return false, nil
-		}
-		return false, errors.Wrap(err, "failed to scan")
-	}
-
-	decode := scheme.Codecs.UniversalDeserializer().Decode
-	obj, _, err := decode([]byte(licenseStr.String), nil, nil)
-	if err != nil {
-		return false, errors.Wrap(err, "failed to decode license yaml")
-	}
-	license := obj.(*kotsv1beta1.License)
-
-	return license.Spec.IsIdentityServiceSupported, nil
-}
-
 func (s S3PGStore) IsRollbackSupportedForVersion(appID string, sequence int64) (bool, error) {
 	db := persistence.MustGetPGSession()
 	query := `select kots_app_spec from app_version where app_id = $1 and sequence = $2`
