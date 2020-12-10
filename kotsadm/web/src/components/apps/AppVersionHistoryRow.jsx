@@ -82,7 +82,7 @@ function renderVersionAction(version, nothingToCommitDiff, app, history, deployV
         <button
           className={classNames("btn", { "secondary dark": isRollback, "secondary blue": isSecondaryBtn, "primary blue": isPrimaryButton })}
           disabled={version.status === "deploying"}
-          onClick={() => needsConfiguration ? history.push(`/app/${app.slug}/config/${version.sequence}`) : deployVersion(version)}
+          onClick={() => needsConfiguration ? history.push(`/app/${app.slug}/config/${version.sequence}`) : isRollback ? deployVersion(version, true) : deployVersion(version)}
         >
           {deployButtonStatus(downstream, version, app)}
         </button>
