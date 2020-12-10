@@ -102,8 +102,8 @@ func InstallCmd() *cobra.Command {
 			}
 
 			var configValues *kotsv1beta1.ConfigValues
-			if v.GetString("config-values") != "" {
-				parsedConfigValues, err := pull.ParseConfigValuesFromFile(ExpandDir(v.GetString("config-values")))
+			if filepath := v.GetString("config-values"); filepath != "" {
+				parsedConfigValues, err := pull.ParseConfigValuesFromFile(ExpandDir(filepath))
 				if err != nil {
 					return errors.Wrap(err, "failed to parse config values")
 				}
@@ -370,7 +370,7 @@ func InstallCmd() *cobra.Command {
 
 	cmd.Flags().Bool("enable-identity-service", false, "when set, the KOTS identity service will be enabled")
 	cmd.Flags().MarkHidden("enable-identity-service")
-	cmd.Flags().String("identity-config", "", "path to a kots.Identity resource file")
+	cmd.Flags().String("identity-config", "", "path to a manifest containing the KOTS identity service configuration (must be apiVersion: kots.io/v1beta1, kind: IdentityConfig)")
 	cmd.Flags().MarkHidden("identity-config")
 
 	cmd.Flags().Bool("enable-ingress", false, "when set, ingress will be enabled for the KOTS Admin Console")

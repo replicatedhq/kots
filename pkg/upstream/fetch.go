@@ -47,6 +47,7 @@ func downloadUpstream(upstreamURI string, fetchOptions *types.FetchOptions) (*ty
 			fetchOptions.UseAppDir,
 			fetchOptions.License,
 			fetchOptions.ConfigValues,
+			fetchOptions.IdentityConfig,
 			pickCursor(fetchOptions),
 			pickVersionLabel(fetchOptions),
 			cipher,

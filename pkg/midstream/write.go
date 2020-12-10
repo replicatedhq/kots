@@ -1,6 +1,7 @@
 package midstream
 
 import (
+	"context"
 	"io/ioutil"
 	"os"
 	"path"
@@ -54,6 +55,15 @@ func (m *Midstream) WriteMidstream(options WriteOptions) error {
 
 	if secretFilename != "" {
 		m.Kustomization.Resources = append(m.Kustomization.Resources, secretFilename)
+	}
+
+	identityBase, err := m.writeIdentityService(context.TODO(), options)
+	if err != nil {
+		return errors.Wrap(err, "failed to write identity service")
+	}
+
+	if identityBase != "" {
+		m.Kustomization.Bases = append(m.Kustomization.Bases, identityBase)
 	}
 
 	if err := m.writeObjectsWithPullSecret(options); err != nil {

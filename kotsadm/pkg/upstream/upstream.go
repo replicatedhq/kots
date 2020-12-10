@@ -94,6 +94,7 @@ func DownloadUpdate(appID string, archiveDir string, toCursor string, skipPrefli
 		LicenseObj:          latestLicense,
 		Namespace:           appNamespace,
 		ConfigFile:          filepath.Join(archiveDir, "upstream", "userdata", "config.yaml"),
+		IdentityConfigFile:  filepath.Join(archiveDir, "upstream", "userdata", "identityconfig.yaml"),
 		InstallationFile:    filepath.Join(archiveDir, "upstream", "userdata", "installation.yaml"),
 		UpdateCursor:        toCursor,
 		RootDir:             archiveDir,

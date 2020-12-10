@@ -6,6 +6,7 @@ import (
 	oidc "github.com/coreos/go-oidc"
 	dexstorage "github.com/dexidp/dex/storage"
 	"github.com/pkg/errors"
+	"github.com/replicatedhq/kots/pkg/identity/client"
 	"golang.org/x/oauth2"
 	"k8s.io/client-go/kubernetes"
 	k8sconfig "sigs.k8s.io/controller-runtime/pkg/client/config"
@@ -32,7 +33,7 @@ func GetKotsadmOIDCProvider(ctx context.Context, namespace string) (*oidc.Provid
 		return nil, errors.Wrap(err, "failed to get identity config")
 	}
 
-	httpClient, err := HTTPClient(ctx, namespace, *identityConfig)
+	httpClient, err := client.HTTPClient(ctx, namespace, *identityConfig)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to init http client")
 	}

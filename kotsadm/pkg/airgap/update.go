@@ -148,6 +148,7 @@ func UpdateAppFromPath(a *apptypes.App, airgapRoot string, deploy bool, skipPref
 		LicenseObj:          license,
 		Namespace:           appNamespace,
 		ConfigFile:          filepath.Join(currentArchivePath, "upstream", "userdata", "config.yaml"),
+		IdentityConfigFile:  filepath.Join(currentArchivePath, "upstream", "userdata", "identityconfig.yaml"),
 		AirgapRoot:          airgapRoot,
 		InstallationFile:    filepath.Join(currentArchivePath, "upstream", "userdata", "installation.yaml"),
 		UpdateCursor:        beforeKotsKinds.Installation.Spec.UpdateCursor,

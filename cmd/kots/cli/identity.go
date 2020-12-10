@@ -86,7 +86,7 @@ func IdentityServiceInstallCmd() *cobra.Command {
 		},
 	}
 
-	cmd.Flags().String("identity-config", "", "path to a kots.Identity resource file")
+	cmd.Flags().String("identity-config", "", "path to a manifest containing the KOTS identity service configuration (must be apiVersion: kots.io/v1beta1, kind: IdentityConfig)")
 
 	// random other registry flags
 	cmd.Flags().String("license-file", "", "path to a license file to use when download a replicated app")
@@ -145,7 +145,7 @@ func IdentityServiceConfigureCmd() *cobra.Command {
 		},
 	}
 
-	cmd.Flags().String("identity-config", "", "path to a yaml file containing the KOTS identity service configuration")
+	cmd.Flags().String("identity-config", "", "path to a manifest containing the KOTS identity service configuration (must be apiVersion: kots.io/v1beta1, kind: IdentityConfig)")
 
 	return cmd
 }
