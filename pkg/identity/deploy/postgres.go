@@ -96,7 +96,7 @@ func postgresSecretResource(namePrefix string, config PostgresConfig) *corev1.Se
 func updatePostgresSecret(existingSecret, desiredSecret *corev1.Secret) *corev1.Secret {
 	if len(existingSecret.Data["PGHOST"]) == 0 {
 		existingSecret.Data["PGHOST"] = desiredSecret.Data["PGHOST"]
-		if len(existingSecret.Data["PGPORT"]) == 0 {
+		if len(existingSecret.Data["PGPORT"]) == 0 && len(desiredSecret.Data["PGPORT"]) > 0 {
 			existingSecret.Data["PGPORT"] = desiredSecret.Data["PGPORT"]
 		}
 	}
