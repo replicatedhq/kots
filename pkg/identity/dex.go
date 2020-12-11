@@ -20,11 +20,6 @@ import (
 )
 
 func getDexConfig(ctx context.Context, clientset kubernetes.Interface, namespace string, identitySpec kotsv1beta1.IdentityConfigSpec, ingressSpec kotsv1beta1.IngressConfigSpec) ([]byte, error) {
-	postgresPassword, err := getDexPostgresPassword(ctx, clientset, namespace)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to get dex postgres password")
-	}
-
 	staticClient, err := getOIDCClient(ctx, clientset, namespace, identitySpec, ingressSpec)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get oidc client")
@@ -35,12 +30,6 @@ func getDexConfig(ctx context.Context, clientset kubernetes.Interface, namespace
 		Storage: dextypes.Storage{
 			Type: "postgres",
 			Config: dextypes.Postgres{
-				NetworkDB: dextypes.NetworkDB{
-					Database: "dex",
-					User:     "dex",
-					Host:     "kotsadm-postgres",
-					Password: postgresPassword,
-				},
 				SSL: dextypes.SSL{
 					Mode: "disable", // TODO ssl
 				},
@@ -133,13 +122,4 @@ func getKotsadmDexConfig(ctx context.Context, clientset kubernetes.Interface, na
 	}
 
 	return &config, nil
-}
-
-func getDexPostgresPassword(ctx context.Context, clientset kubernetes.Interface, namespace string) (string, error) {
-	secret, err := clientset.CoreV1().Secrets(namespace).Get(ctx, PostgresSecretName, metav1.GetOptions{})
-	if err != nil {
-		return "", errors.Wrap(err, "failed to get postgress secret")
-	}
-
-	return string(secret.Data["password"]), nil
 }

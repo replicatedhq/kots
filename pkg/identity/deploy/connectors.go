@@ -2,7 +2,6 @@ package deploy
 
 import (
 	"encoding/json"
-	"os"
 
 	"github.com/dexidp/dex/server"
 	"github.com/pkg/errors"
@@ -20,8 +19,7 @@ func DexConnectorsToDexTypeConnectors(conns []kotsv1beta1.DexConnector) ([]dexty
 
 		connConfig := f()
 		if len(conn.Config.Raw) != 0 {
-			data := []byte(os.ExpandEnv(string(conn.Config.Raw)))
-			if err := json.Unmarshal(data, connConfig); err != nil {
+			if err := json.Unmarshal(conn.Config.Raw, connConfig); err != nil {
 				return nil, errors.Wrap(err, "failed to unmarshal connector config")
 			}
 		}

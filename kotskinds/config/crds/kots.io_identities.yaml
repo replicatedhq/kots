@@ -51,6 +51,32 @@ spec:
               type: array
             signingKeysExpiration:
               type: string
+            storageConfig:
+              properties:
+                value:
+                  $ref: '#/definitions/github.com~1replicatedhq~1kots~1pkg~1identity~1types~1dex~0Storage'
+                valueFrom:
+                  properties:
+                    secretKeyRef:
+                      description: SecretKeySelector selects a key of a Secret.
+                      properties:
+                        key:
+                          description: The key of the secret to select from.  Must
+                            be a valid secret key.
+                          type: string
+                        name:
+                          description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                            TODO: Add other useful fields. apiVersion, kind, uid?'
+                          type: string
+                        optional:
+                          description: Specify whether the Secret or its key must
+                            be defined
+                          type: boolean
+                      required:
+                      - key
+                      type: object
+                  type: object
+              type: object
             supportedProviders:
               items:
                 type: string
