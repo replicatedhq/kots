@@ -30,7 +30,7 @@ func IngressFromConfig(ingressConfig kotsv1beta1.IngressResourceConfig, name str
 
 	return &extensionsv1beta1.Ingress{
 		TypeMeta: metav1.TypeMeta{
-			APIVersion: "v1beta1",
+			APIVersion: "extensions/v1beta1",
 			Kind:       "Ingress",
 		},
 		ObjectMeta: metav1.ObjectMeta{
