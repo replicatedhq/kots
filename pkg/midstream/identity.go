@@ -27,7 +27,7 @@ func (m *Midstream) writeIdentityService(ctx context.Context, options WriteOptio
 		return "", nil
 	}
 
-	dexConfig, err := getDexConfig(ctx, m.IdentitySpec.Spec, m.IdentityConfig.Spec)
+	dexConfig, err := getDexConfig(ctx, options.AppSlug, m.IdentitySpec.Spec, m.IdentityConfig.Spec)
 	if err != nil {
 		return "", errors.Wrap(err, "failed to get dex config")
 	}
@@ -66,12 +66,7 @@ func (m *Midstream) writeIdentityService(ctx context.Context, options WriteOptio
 	return base, nil
 }
 
-func getDexConfig(ctx context.Context, identitySpec kotsv1beta1.IdentitySpec, identityConfigSpec kotsv1beta1.IdentityConfigSpec) ([]byte, error) {
-	postgresPassword, err := getDexPostgresPassword(ctx)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to get dex postgres password")
-	}
-
+func getDexConfig(ctx context.Context, appSlug string, identitySpec kotsv1beta1.IdentitySpec, identityConfigSpec kotsv1beta1.IdentityConfigSpec) ([]byte, error) {
 	staticClient, err := getOIDCClient(ctx, identitySpec)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get oidc client")
@@ -83,12 +78,6 @@ func getDexConfig(ctx context.Context, identitySpec kotsv1beta1.IdentitySpec, id
 			Type: "postgres",
 			// TODO (ethan): this will not work
 			Config: dextypes.Postgres{
-				NetworkDB: dextypes.NetworkDB{
-					Database: "dex",
-					User:     "dex",
-					Host:     "kotsadm-postgres",
-					Password: postgresPassword,
-				},
 				SSL: dextypes.SSL{
 					Mode: "disable", // TODO ssl
 				},
@@ -168,11 +157,4 @@ func getOIDCClient(ctx context.Context, identitySpec kotsv1beta1.IdentitySpec) (
 		Secret:       clientSecret,
 		RedirectURIs: identitySpec.OIDCRedirectURIs,
 	}, nil
-}
-
-func getDexPostgresPassword(ctx context.Context) (string, error) {
-	// TODO (ethan): this probably has to be passed in as a secret or something
-	// do not assume we have access to the clustr
-
-	return "TODO", nil
 }

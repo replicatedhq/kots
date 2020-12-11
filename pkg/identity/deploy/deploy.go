@@ -211,6 +211,13 @@ func deploymentResource(namePrefix, configChecksum string, imageRewriteFn ImageR
 							Ports: []corev1.ContainerPort{
 								{Name: "http", ContainerPort: 5556},
 							},
+							EnvFrom: []corev1.EnvFromSource{
+								{SecretRef: &corev1.SecretEnvSource{
+									LocalObjectReference: corev1.LocalObjectReference{
+										Name: prefixName(namePrefix, "dex-postgres"),
+									},
+								}},
+							},
 							Env: env,
 							VolumeMounts: []corev1.VolumeMount{
 								{Name: volume.Name, MountPath: "/etc/dex/cfg"},

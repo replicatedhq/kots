@@ -197,8 +197,7 @@ func (c *Connector) UnmarshalJSON(b []byte) error {
 
 	connConfig := f()
 	if len(conn.Config) != 0 {
-		data := []byte(os.ExpandEnv(string(conn.Config)))
-		if err := json.Unmarshal(data, connConfig); err != nil {
+		if err := json.Unmarshal(conn.Config, connConfig); err != nil {
 			return fmt.Errorf("parse connector config: %v", err)
 		}
 	}
