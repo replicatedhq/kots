@@ -9,11 +9,11 @@ import (
 
 	"github.com/dexidp/dex/server"
 	dexstorage "github.com/dexidp/dex/storage"
+	ghodssyaml "github.com/ghodss/yaml"
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	dextypes "github.com/replicatedhq/kots/pkg/identity/types/dex"
 	"github.com/replicatedhq/kots/pkg/ingress"
-	yaml "gopkg.in/yaml.v2"
 )
 
 func getDexConfig(ctx context.Context, identitySpec kotsv1beta1.IdentitySpec, identityConfigSpec kotsv1beta1.IdentityConfigSpec) ([]byte, error) {
@@ -75,7 +75,7 @@ func getDexConfig(ctx context.Context, identitySpec kotsv1beta1.IdentitySpec, id
 		return nil, errors.Wrap(err, "failed to validate dex config")
 	}
 
-	marshalledConfig, err := yaml.Marshal(config)
+	marshalledConfig, err := ghodssyaml.Marshal(config)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to marshal dex config")
 	}

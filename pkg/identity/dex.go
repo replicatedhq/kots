@@ -5,10 +5,10 @@ import (
 	"strings"
 
 	dexstorage "github.com/dexidp/dex/storage"
+	ghodssyaml "github.com/ghodss/yaml"
 	"github.com/pkg/errors"
 	identitydeploy "github.com/replicatedhq/kots/pkg/identity/deploy"
 	dextypes "github.com/replicatedhq/kots/pkg/identity/types/dex"
-	"gopkg.in/yaml.v2"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 )
@@ -56,7 +56,7 @@ func getKotsadmDexConfig(ctx context.Context, clientset kubernetes.Interface, na
 
 	marshalledConfig := secret.Data["dexConfig.yaml"]
 	config := dextypes.Config{}
-	if err := yaml.Unmarshal(marshalledConfig, &config); err != nil {
+	if err := ghodssyaml.Unmarshal(marshalledConfig, &config); err != nil {
 		return nil, errors.Wrap(err, "failed to unmarshal kotsadm dex config")
 	}
 
