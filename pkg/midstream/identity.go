@@ -37,9 +37,15 @@ func (m *Midstream) writeIdentityService(ctx context.Context, options WriteOptio
 		return "", errors.Wrap(err, "failed to render identity service")
 	}
 
+	// support for the dev environment where app is in "test" namespace
+	host := "kotsadm-postgres"
+	if kotsadmNamespace := os.Getenv("POD_NAMESPACE"); kotsadmNamespace != "" {
+		host = fmt.Sprintf("%s.%s", host, kotsadmNamespace)
+	}
+
 	if _, err = os.Stat(filepath.Join(absDir, "postgressecret.yaml")); os.IsNotExist(err) {
 		postgresConfig := identitydeploy.PostgresConfig{
-			Host:     "kotsadm-postgres",
+			Host:     host,
 			Database: fmt.Sprintf("%s-dex", options.AppSlug),
 			User:     fmt.Sprintf("%s-dex", options.AppSlug),
 		}
