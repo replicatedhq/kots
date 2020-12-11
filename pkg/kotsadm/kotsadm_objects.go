@@ -421,7 +421,7 @@ func kotsadmDeployment(deployOptions types.DeployOptions) *appsv1.Deployment {
 											LocalObjectReference: corev1.LocalObjectReference{
 												Name: "kotsadm-dex-postgres",
 											},
-											Key: "PGPASS",
+											Key: "PGPASSWORD",
 										},
 									},
 								},

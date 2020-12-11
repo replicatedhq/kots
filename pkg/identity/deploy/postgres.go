@@ -74,7 +74,7 @@ func postgresSecretResource(namePrefix string, config PostgresConfig) *corev1.Se
 		"PGHOST":     []byte(config.Host),
 		"PGDATABASE": []byte(config.Database),
 		"PGUSER":     []byte(config.User),
-		"PGPASS":     []byte(config.Password),
+		"PGPASSWORD": []byte(config.Password),
 	}
 	if config.Port != "" {
 		data["PGPORT"] = []byte(config.Port)
@@ -106,11 +106,11 @@ func updatePostgresSecret(existingSecret, desiredSecret *corev1.Secret) *corev1.
 	if len(existingSecret.Data["PGUSER"]) == 0 {
 		existingSecret.Data["PGUSER"] = desiredSecret.Data["PGUSER"]
 	}
-	if len(existingSecret.Data["password"]) > 0 { // migrate to PGPASS
-		existingSecret.Data["PGPASS"] = existingSecret.Data["password"]
+	if len(existingSecret.Data["password"]) > 0 { // migrate to PGPASSWORD
+		existingSecret.Data["PGPASSWORD"] = existingSecret.Data["password"]
 		delete(existingSecret.Data, "password")
-	} else if len(existingSecret.Data["PGPASS"]) == 0 {
-		existingSecret.Data["PGPASS"] = desiredSecret.Data["PGPASS"]
+	} else if len(existingSecret.Data["PGPASSWORD"]) == 0 {
+		existingSecret.Data["PGPASSWORD"] = desiredSecret.Data["PGPASSWORD"]
 	}
 
 	return existingSecret
