@@ -27,27 +27,42 @@ var (
 
 type ImageRewriteFunc func(upstreamImage, path, tag string) (image string, imagePullSecrets []corev1.LocalObjectReference)
 
-func Deploy(ctx context.Context, clientset kubernetes.Interface, namespace string, namePrefix string, dexConfig []byte, ingressSpec kotsv1beta1.IngressConfigSpec, imageRewriteFn ImageRewriteFunc) error {
-	if err := ensureSecret(ctx, clientset, namespace, namePrefix, dexConfig); err != nil {
+type Options struct {
+	NamePrefix         string
+	IdentitySpec       kotsv1beta1.IdentitySpec
+	IdentityConfigSpec kotsv1beta1.IdentityConfigSpec
+	ImageRewriteFn     ImageRewriteFunc
+}
+
+func Deploy(ctx context.Context, clientset kubernetes.Interface, namespace string, options Options) error {
+	dexConfig, err := getDexConfig(ctx, options.IdentitySpec, options.IdentityConfigSpec)
+	if err != nil {
+		return errors.Wrap(err, "failed to get dex config")
+	}
+	if err := ensureSecret(ctx, clientset, namespace, options.NamePrefix, dexConfig); err != nil {
 		return errors.Wrap(err, "failed to ensure secret")
 	}
-	if err := ensureDeployment(ctx, clientset, namespace, namePrefix, dexConfig, imageRewriteFn); err != nil {
+	if err := ensureDeployment(ctx, clientset, namespace, options.NamePrefix, dexConfig, options.ImageRewriteFn); err != nil {
 		return errors.Wrap(err, "failed to ensure deployment")
 	}
-	if err := ensureService(ctx, clientset, namespace, namePrefix, ingressSpec); err != nil {
+	if err := ensureService(ctx, clientset, namespace, options.NamePrefix, options.IdentityConfigSpec.IngressConfig); err != nil {
 		return errors.Wrap(err, "failed to ensure service")
 	}
-	if err := ensureIngress(ctx, clientset, namespace, namePrefix, ingressSpec); err != nil {
+	if err := ensureIngress(ctx, clientset, namespace, options.NamePrefix, options.IdentityConfigSpec.IngressConfig); err != nil {
 		return errors.Wrap(err, "failed to ensure ingress")
 	}
 	return nil
 }
 
-func Configure(ctx context.Context, clientset kubernetes.Interface, namespace string, namePrefix string, dexConfig []byte) error {
-	if err := ensureSecret(ctx, clientset, namespace, namePrefix, dexConfig); err != nil {
+func Configure(ctx context.Context, clientset kubernetes.Interface, namespace string, options Options) error {
+	dexConfig, err := getDexConfig(ctx, options.IdentitySpec, options.IdentityConfigSpec)
+	if err != nil {
+		return errors.Wrap(err, "failed to get dex config")
+	}
+	if err := ensureSecret(ctx, clientset, namespace, options.NamePrefix, dexConfig); err != nil {
 		return errors.Wrap(err, "failed to ensure secret")
 	}
-	if err := patchDeploymentSecret(ctx, clientset, namespace, namePrefix, dexConfig); err != nil {
+	if err := patchDeploymentSecret(ctx, clientset, namespace, options.NamePrefix, dexConfig); err != nil {
 		return errors.Wrap(err, "failed to patch deployment secret")
 	}
 	return nil
@@ -168,7 +183,9 @@ func deploymentResource(namePrefix, configChecksum string, imageRewriteFn ImageR
 		image, imagePullSecrets = imageRewriteFn(image, "dex", "v2.26.0")
 	}
 
-	env := []corev1.EnvVar{}
+	env := []corev1.EnvVar{clientSecretEnvVar(namePrefix)}
+
+	// TODO (ethan): this will not really work when kotsadm is not rendering this
 	for _, name := range []string{"HTTP_PROXY", "HTTPS_PROXY", "NO_PROXY", "http_proxy", "https_proxy", "no_proxy"} {
 		if val := os.Getenv(name); val != "" {
 			env = append(env, corev1.EnvVar{Name: name, Value: val})
@@ -211,14 +228,8 @@ func deploymentResource(namePrefix, configChecksum string, imageRewriteFn ImageR
 							Ports: []corev1.ContainerPort{
 								{Name: "http", ContainerPort: 5556},
 							},
-							EnvFrom: []corev1.EnvFromSource{
-								{SecretRef: &corev1.SecretEnvSource{
-									LocalObjectReference: corev1.LocalObjectReference{
-										Name: prefixName(namePrefix, "dex-postgres"),
-									},
-								}},
-							},
-							Env: env,
+							EnvFrom: []corev1.EnvFromSource{postgresSecretEnvFromSource(namePrefix)},
+							Env:     env,
 							VolumeMounts: []corev1.VolumeMount{
 								{Name: volume.Name, MountPath: "/etc/dex/cfg"},
 							},
@@ -254,6 +265,30 @@ func configSecretVolume(namePrefix string) corev1.Volume {
 	}
 }
 
+func clientSecretEnvVar(namePrefix string) corev1.EnvVar {
+	return corev1.EnvVar{
+		Name: "DEX_CLIENT_SECRET",
+		ValueFrom: &corev1.EnvVarSource{
+			SecretKeyRef: &corev1.SecretKeySelector{
+				LocalObjectReference: corev1.LocalObjectReference{
+					Name: prefixName(namePrefix, "dex-client"),
+				},
+				Key: "DEX_CLIENT_SECRET",
+			},
+		},
+	}
+}
+
+func postgresSecretEnvFromSource(namePrefix string) corev1.EnvFromSource {
+	return corev1.EnvFromSource{
+		SecretRef: &corev1.SecretEnvSource{
+			LocalObjectReference: corev1.LocalObjectReference{
+				Name: prefixName(namePrefix, "dex-postgres"),
+			},
+		},
+	}
+}
+
 func updateDeployment(namePrefix string, existingDeployment, desiredDeployment *appsv1.Deployment) *appsv1.Deployment {
 	if len(existingDeployment.Spec.Template.Spec.Containers) == 0 {
 		// wtf
@@ -268,6 +303,10 @@ func updateDeployment(namePrefix string, existingDeployment, desiredDeployment *
 	existingDeployment.Spec.Template.Spec.Containers[0].Image = desiredDeployment.Spec.Template.Spec.Containers[0].Image
 
 	existingDeployment = updateDeploymentConfigSecretVolume(namePrefix, existingDeployment, desiredDeployment)
+
+	existingDeployment = updateDeploymentClientSecretEnvVar(namePrefix, existingDeployment, desiredDeployment)
+
+	existingDeployment = updateDeploymentPostgresSecretEnvFromSource(namePrefix, existingDeployment, desiredDeployment)
 
 	return existingDeployment
 }
@@ -301,6 +340,45 @@ func updateDeploymentConfigSecretVolume(namePrefix string, existingDeployment *a
 		append(existingDeployment.Spec.Template.Spec.Containers[0].VolumeMounts, newConfigSecretVolumeMount)
 	existingDeployment.Spec.Template.Spec.Volumes =
 		append(existingDeployment.Spec.Template.Spec.Volumes, newConfigSecretVolume)
+
+	return existingDeployment
+}
+
+func updateDeploymentClientSecretEnvVar(namePrefix string, existingDeployment *appsv1.Deployment, desiredDeployment *appsv1.Deployment) *appsv1.Deployment {
+	if len(existingDeployment.Spec.Template.Spec.Containers) == 0 {
+		return desiredDeployment
+	}
+
+	newClientSecretEnvVar := clientSecretEnvVar(namePrefix)
+
+	for i, envVar := range existingDeployment.Spec.Template.Spec.Containers[0].Env {
+		if envVar.Name == "DEX_CLIENT_SECRET" {
+			existingDeployment.Spec.Template.Spec.Containers[0].Env[i] = newClientSecretEnvVar
+			return existingDeployment
+		}
+	}
+
+	existingDeployment.Spec.Template.Spec.Containers[0].Env =
+		append(existingDeployment.Spec.Template.Spec.Containers[0].Env, newClientSecretEnvVar)
+
+	return existingDeployment
+}
+
+func updateDeploymentPostgresSecretEnvFromSource(namePrefix string, existingDeployment *appsv1.Deployment, desiredDeployment *appsv1.Deployment) *appsv1.Deployment {
+	if len(existingDeployment.Spec.Template.Spec.Containers) == 0 {
+		return desiredDeployment
+	}
+
+	newPostgresSecretEnvFromSource := postgresSecretEnvFromSource(namePrefix)
+
+	for _, envFrom := range existingDeployment.Spec.Template.Spec.Containers[0].EnvFrom {
+		if envFrom.SecretRef.Name == newPostgresSecretEnvFromSource.SecretRef.Name {
+			return existingDeployment
+		}
+	}
+
+	existingDeployment.Spec.Template.Spec.Containers[0].EnvFrom =
+		append(existingDeployment.Spec.Template.Spec.Containers[0].EnvFrom, newPostgresSecretEnvFromSource)
 
 	return existingDeployment
 }
