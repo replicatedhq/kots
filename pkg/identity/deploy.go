@@ -127,10 +127,10 @@ func renderPostgresSecret(ctx context.Context, clientset kubernetes.Interface, n
 	}
 	if postgresSecret != nil {
 		var password []byte
-		if len(postgresSecret.Data["password"]) > 0 { // migrate to PGPASS
+		if len(postgresSecret.Data["password"]) > 0 { // migrate to PGPASSWORD
 			password = postgresSecret.Data["password"]
 		} else {
-			password = postgresSecret.Data["PGPASS"]
+			password = postgresSecret.Data["PGPASSWORD"]
 		}
 		if len(password) > 0 {
 			p, err := base64.StdEncoding.DecodeString(string(password))
