@@ -30,7 +30,10 @@ func Render(ctx context.Context, options Options) (map[string][]byte, error) {
 	}
 	resources["secret.yaml"] = buf.Bytes()
 
-	deployment := deploymentResource(options.NamePrefix, configChecksum, options.ImageRewriteFn)
+	deployment, err := deploymentResource(options.NamePrefix, dexIssuerURL(options.IdentityConfigSpec), configChecksum, options.ImageRewriteFn)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get deployment resource")
+	}
 	buf = bytes.NewBuffer(nil)
 	if err := s.Encode(deployment, buf); err != nil {
 		return nil, errors.Wrap(err, "failed to encode deployment")
