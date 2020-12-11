@@ -47,7 +47,14 @@ func LoadIdentity(upstreamDir string) (*kotsv1beta1.Identity, error) {
 }
 
 func LoadIdentityConfig(upstreamDir string) (*kotsv1beta1.IdentityConfig, error) {
-	content, err := ioutil.ReadFile(filepath.Join(upstreamDir, "userdata", "identityconfig.yaml"))
+	filename := filepath.Join(upstreamDir, "userdata", "identityconfig.yaml")
+	if _, err := os.Stat(filename); os.IsNotExist(err) {
+		return nil, nil
+	} else if err != nil {
+		return nil, errors.Wrap(err, "failed to stat identity Config")
+	}
+
+	content, err := ioutil.ReadFile(filename)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to read existing identity Config")
 	}
