@@ -117,7 +117,7 @@ func imageRewriteKotsadmRegistry(namespace string, registryOptions *kotsadmtypes
 func renderPostgresSecret(ctx context.Context, clientset kubernetes.Interface, namespace string) ([]byte, error) {
 	postgresSecret, err := identitydeploy.GetPostgresSecret(ctx, clientset, namespace, KotsadmNamePrefix)
 	if err != nil && !kuberneteserrors.IsNotFound(errors.Cause(err)) {
-		return nil, errors.Wrap(err, "failed to get secret")
+		return nil, errors.Wrap(err, "failed to get postgres secret")
 	}
 
 	postgresConfig := identitydeploy.PostgresConfig{
@@ -135,23 +135,23 @@ func renderPostgresSecret(ctx context.Context, clientset kubernetes.Interface, n
 		if len(password) > 0 {
 			p, err := base64.StdEncoding.DecodeString(string(password))
 			if err != nil {
-				return nil, errors.Wrap(err, "failed to decode password")
+				return nil, errors.Wrap(err, "failed to decode postgres password")
 			}
 			postgresConfig.Password = string(p)
 		}
 	}
 	resource, err := identitydeploy.RenderPostgresSecret(ctx, KotsadmNamePrefix, postgresConfig)
-	return resource, errors.Wrap(err, "failed to render secret")
+	return resource, errors.Wrap(err, "failed to render postgres secret")
 }
 
 func renderClientSecret(ctx context.Context, clientset kubernetes.Interface, namespace string) ([]byte, error) {
 	clientSecret, err := identitydeploy.GetClientSecret(ctx, clientset, namespace, KotsadmNamePrefix)
 	if err != nil && !kuberneteserrors.IsNotFound(errors.Cause(err)) {
-		return nil, errors.Wrap(err, "failed to get secret")
+		return nil, errors.Wrap(err, "failed to get client secret")
 	}
 
 	resource, err := identitydeploy.RenderClientSecret(ctx, KotsadmNamePrefix, clientSecret)
-	return resource, errors.Wrap(err, "failed to render secret")
+	return resource, errors.Wrap(err, "failed to render client secret")
 }
 
 func getIdentitySpec(identityConfigSpec kotsv1beta1.IdentityConfigSpec, ingressConfigSpec kotsv1beta1.IngressConfigSpec) kotsv1beta1.IdentitySpec {
