@@ -4,7 +4,9 @@ import (
 	"context"
 	"crypto/md5"
 	"fmt"
+	"net/url"
 	"os"
+	"path"
 
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
@@ -42,7 +44,7 @@ func Deploy(ctx context.Context, clientset kubernetes.Interface, namespace strin
 	if err := ensureSecret(ctx, clientset, namespace, options.NamePrefix, dexConfig); err != nil {
 		return errors.Wrap(err, "failed to ensure secret")
 	}
-	if err := ensureDeployment(ctx, clientset, namespace, options.NamePrefix, dexConfig, options.ImageRewriteFn); err != nil {
+	if err := ensureDeployment(ctx, clientset, namespace, options.NamePrefix, dexIssuerURL(options.IdentityConfigSpec), dexConfig, options.ImageRewriteFn); err != nil {
 		return errors.Wrap(err, "failed to ensure deployment")
 	}
 	if err := ensureService(ctx, clientset, namespace, options.NamePrefix, options.IdentityConfigSpec.IngressConfig); err != nil {
@@ -62,7 +64,7 @@ func Configure(ctx context.Context, clientset kubernetes.Interface, namespace st
 	if err := ensureSecret(ctx, clientset, namespace, options.NamePrefix, dexConfig); err != nil {
 		return errors.Wrap(err, "failed to ensure secret")
 	}
-	if err := patchDeploymentSecret(ctx, clientset, namespace, options.NamePrefix, dexConfig); err != nil {
+	if err := patchDeploymentSecret(ctx, clientset, namespace, options.NamePrefix, dexIssuerURL(options.IdentityConfigSpec), dexConfig); err != nil {
 		return errors.Wrap(err, "failed to patch deployment secret")
 	}
 	return nil
@@ -122,10 +124,13 @@ func updateSecret(existingSecret, desiredSecret *corev1.Secret) *corev1.Secret {
 	return existingSecret
 }
 
-func ensureDeployment(ctx context.Context, clientset kubernetes.Interface, namespace string, namePrefix string, marshalledDexConfig []byte, imageRewriteFn ImageRewriteFunc) error {
+func ensureDeployment(ctx context.Context, clientset kubernetes.Interface, namespace string, namePrefix string, issuerURL string, marshalledDexConfig []byte, imageRewriteFn ImageRewriteFunc) error {
 	configChecksum := fmt.Sprintf("%x", md5.Sum(marshalledDexConfig))
 
-	deployment := deploymentResource(namePrefix, configChecksum, imageRewriteFn)
+	deployment, err := deploymentResource(namePrefix, issuerURL, configChecksum, imageRewriteFn)
+	if err != nil {
+		return errors.Wrap(err, "failed to get deployment resource")
+	}
 
 	existingDeployment, err := clientset.AppsV1().Deployments(namespace).Get(ctx, deployment.Name, metav1.GetOptions{})
 	if err != nil {
@@ -151,14 +156,19 @@ func ensureDeployment(ctx context.Context, clientset kubernetes.Interface, names
 	return nil
 }
 
-func patchDeploymentSecret(ctx context.Context, clientset kubernetes.Interface, namespace string, namePrefix string, marshalledDexConfig []byte) error {
+func patchDeploymentSecret(ctx context.Context, clientset kubernetes.Interface, namespace string, namePrefix string, issuerURL string, marshalledDexConfig []byte) error {
 	configChecksum := fmt.Sprintf("%x", md5.Sum(marshalledDexConfig))
 
-	deployment := deploymentResource(prefixName(namePrefix, "dex"), configChecksum, nil)
+	deployment, err := deploymentResource(prefixName(namePrefix, "dex"), issuerURL, configChecksum, nil)
+	if err != nil {
+		return errors.Wrap(err, "failed to get deployment resource")
+	}
 
 	patch := fmt.Sprintf(`{"spec":{"template":{"metadata":{"annotations":{"kots.io/dex-secret-checksum":"%s"}}}}}`, deployment.Spec.Template.ObjectMeta.Annotations["kots.io/dex-secret-checksum"])
 
-	_, err := clientset.AppsV1().Deployments(namespace).Patch(ctx, deployment.Name, k8stypes.StrategicMergePatchType, []byte(patch), metav1.PatchOptions{})
+	// TODO (ethan): patch readiness and liveness checks if issuer url changes
+
+	_, err = clientset.AppsV1().Deployments(namespace).Patch(ctx, deployment.Name, k8stypes.StrategicMergePatchType, []byte(patch), metav1.PatchOptions{})
 	if err != nil {
 		return errors.Wrap(err, "failed to patch deployment")
 	}
@@ -171,7 +181,7 @@ var (
 	dexMemoryResource = resource.MustParse("50Mi")
 )
 
-func deploymentResource(namePrefix, configChecksum string, imageRewriteFn ImageRewriteFunc) *appsv1.Deployment {
+func deploymentResource(namePrefix, issuerURL, configChecksum string, imageRewriteFn ImageRewriteFunc) (*appsv1.Deployment, error) {
 	replicas := int32(2)
 	volume := configSecretVolume(namePrefix)
 
@@ -179,6 +189,11 @@ func deploymentResource(namePrefix, configChecksum string, imageRewriteFn ImageR
 	imagePullSecrets := []corev1.LocalObjectReference{}
 	if imageRewriteFn != nil {
 		image, imagePullSecrets = imageRewriteFn(image, "dex", "v2.26.0")
+	}
+
+	u, err := url.Parse(issuerURL)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to parse issuer url")
 	}
 
 	env := []corev1.EnvVar{clientSecretEnvVar(namePrefix)}
@@ -244,7 +259,7 @@ func deploymentResource(namePrefix, configChecksum string, imageRewriteFn ImageR
 							LivenessProbe: &corev1.Probe{
 								Handler: corev1.Handler{
 									HTTPGet: &corev1.HTTPGetAction{
-										Path: "/healthz",
+										Path: path.Join(u.Path, "healthz"),
 										Port: intstr.FromInt(5556),
 									},
 								},
@@ -252,7 +267,7 @@ func deploymentResource(namePrefix, configChecksum string, imageRewriteFn ImageR
 							ReadinessProbe: &corev1.Probe{
 								Handler: corev1.Handler{
 									HTTPGet: &corev1.HTTPGetAction{
-										Path: "/healthz",
+										Path: path.Join(u.Path, "healthz"),
 										Port: intstr.FromInt(5556),
 									},
 								},
@@ -267,7 +282,7 @@ func deploymentResource(namePrefix, configChecksum string, imageRewriteFn ImageR
 				},
 			},
 		},
-	}
+	}, nil
 }
 
 func configSecretVolume(namePrefix string) corev1.Volume {

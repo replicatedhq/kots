@@ -75,6 +75,10 @@ func getDexConfig(ctx context.Context, identitySpec kotsv1beta1.IdentitySpec, id
 		return nil, errors.Wrap(err, "failed to validate dex config")
 	}
 
+	return marshalDexConfig(config, identityConfigSpec)
+}
+
+func marshalDexConfig(config dextypes.Config, identityConfigSpec kotsv1beta1.IdentityConfigSpec) ([]byte, error) {
 	marshalledConfig, err := ghodssyaml.Marshal(config)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to marshal dex config")
