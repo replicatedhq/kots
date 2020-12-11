@@ -51,6 +51,7 @@ func downloadUpstream(upstreamURI string, fetchOptions *types.FetchOptions) (*ty
 			pickCursor(fetchOptions),
 			pickVersionLabel(fetchOptions),
 			cipher,
+			fetchOptions.AppSlug,
 			fetchOptions.AppSequence,
 			fetchOptions.Airgap != nil,
 			fetchOptions.LocalRegistry,

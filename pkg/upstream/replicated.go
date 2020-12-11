@@ -26,6 +26,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/upstream/types"
 	"github.com/replicatedhq/kots/pkg/util"
 	"github.com/replicatedhq/kots/pkg/version"
+	"github.com/segmentio/ksuid"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	serializer "k8s.io/apimachinery/pkg/runtime/serializer/json"
 	"k8s.io/client-go/kubernetes/scheme"
@@ -130,6 +131,7 @@ func downloadReplicated(
 	updateCursor ReplicatedCursor,
 	versionLabel string,
 	cipher *crypto.AESCipher,
+	appSlug string,
 	appSequence int64,
 	isAirgap bool,
 	registry types.LocalRegistry,
@@ -250,7 +252,7 @@ func downloadReplicated(
 	}
 
 	if existingIdentityConfig != nil {
-		identityConfig, err := createIdentityConfig(existingIdentityConfig) // TODO (ethan): what to do here?
+		identityConfig, err := createIdentityConfig(appSlug, existingIdentityConfig, cipher)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to create identity config values")
 		}
@@ -716,10 +718,34 @@ func mustMarshalIdentityConfig(identityConfig *kotsv1beta1.IdentityConfig) []byt
 	return b.Bytes()
 }
 
-func createIdentityConfig(existingIdentityConfig *kotsv1beta1.IdentityConfig) (*kotsv1beta1.IdentityConfig, error) {
-	// TODO (ethan):
-	//   - is this doc templated?
-	//   - do we need to somehow encrypt the connector config as it is a secret?
+func createIdentityConfig(appSlug string, existingIdentityConfig *kotsv1beta1.IdentityConfig, _ *crypto.AESCipher) (*kotsv1beta1.IdentityConfig, error) {
+	if existingIdentityConfig.Spec.ClientID == "" {
+		existingIdentityConfig.Spec.ClientID = appSlug
+	}
+
+	if existingIdentityConfig.Spec.ClientSecret == "" {
+		// TODO: (salah) encryption
+		// clientSecret := ksuid.New().String()
+		// encryptedClientSecret := cipher.Encrypt([]byte(clientSecret))
+		existingIdentityConfig.Spec.ClientSecret = ksuid.New().String()
+	}
+
+	if existingIdentityConfig.Spec.PostgresConfig == nil {
+		// TODO: (salah) encryption
+		// pgPassword := ksuid.New().String()
+		// encryptedPGPassword := cipher.Encrypt([]byte(pgPassword))
+
+		postgresConfig := kotsv1beta1.IdentityPostgresConfig{
+			Host:     "kotsadm-postgres",
+			Database: fmt.Sprintf("%s-dex", appSlug),
+			User:     fmt.Sprintf("%s-dex", appSlug),
+			Password: ksuid.New().String(),
+		}
+		existingIdentityConfig.Spec.PostgresConfig = &postgresConfig
+	}
+
+	// TODO: (salah) encrypt connectors?
+
 	return existingIdentityConfig, nil
 }
 
