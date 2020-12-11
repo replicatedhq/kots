@@ -131,7 +131,7 @@ func renderPostgresSecret(ctx context.Context, clientset kubernetes.Interface, n
 			postgresConfig.Password = string(postgresSecret.Data["PGPASS"])
 		}
 	}
-	resource, err := identitydeploy.RenderPostgresSecret(ctx, clientset, namespace, KotsadmNamePrefix, postgresConfig)
+	resource, err := identitydeploy.RenderPostgresSecret(ctx, KotsadmNamePrefix, postgresConfig)
 	return resource, errors.Wrap(err, "failed to render postgres secret")
 }
 
@@ -141,7 +141,7 @@ func renderClientSecret(ctx context.Context, clientset kubernetes.Interface, nam
 		return nil, errors.Wrap(err, "failed to get client secret")
 	}
 
-	resource, err := identitydeploy.RenderClientSecret(ctx, clientset, namespace, KotsadmNamePrefix, clientSecret)
+	resource, err := identitydeploy.RenderClientSecret(ctx, KotsadmNamePrefix, clientSecret)
 	return resource, errors.Wrap(err, "failed to render client secret")
 }
 

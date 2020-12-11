@@ -37,7 +37,7 @@ func EnsureClientSecret(ctx context.Context, clientset kubernetes.Interface, nam
 	return nil
 }
 
-func RenderClientSecret(ctx context.Context, clientset kubernetes.Interface, namespace, namePrefix, existingClientSecret string) ([]byte, error) {
+func RenderClientSecret(ctx context.Context, namePrefix, existingClientSecret string) ([]byte, error) {
 	s := serializer.NewYAMLSerializer(serializer.DefaultMetaFactory, scheme.Scheme, scheme.Scheme)
 
 	secret := ClientSecretResource(namePrefix, existingClientSecret)

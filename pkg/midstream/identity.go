@@ -2,6 +2,7 @@ package midstream
 
 import (
 	"context"
+	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -17,8 +18,12 @@ func (m *Midstream) writeIdentityService(ctx context.Context, options WriteOptio
 		return "", nil
 	}
 
-	// TODO (ethan): postgres secret
-	// TODO (ethan): dex client secret DEX_CLIENT_SECRET
+	base := "identity-service"
+
+	absDir := filepath.Join(options.MidstreamDir, base)
+	if err := os.MkdirAll(absDir, 0744); err != nil {
+		return "", errors.Wrap(err, "failed to mkdir")
+	}
 
 	// TODO (ethan): customize labels (dont use kustomize)
 	deployOptions := identitydeploy.Options{
@@ -32,18 +37,36 @@ func (m *Midstream) writeIdentityService(ctx context.Context, options WriteOptio
 		return "", errors.Wrap(err, "failed to render identity service")
 	}
 
+	if _, err = os.Stat(filepath.Join(absDir, "postgressecret.yaml")); os.IsNotExist(err) {
+		postgresConfig := identitydeploy.PostgresConfig{
+			Host:     "kotsadm-postgres",
+			Database: fmt.Sprintf("%s-dex", options.AppSlug),
+			User:     fmt.Sprintf("%s-dex", options.AppSlug),
+		}
+		postgresSecret, err := identitydeploy.RenderPostgresSecret(ctx, options.AppSlug, postgresConfig)
+		if err != nil {
+			return "", errors.Wrap(err, "failed to render postgres secret")
+		}
+		resources["postgressecret.yaml"] = postgresSecret
+	} else if err != nil {
+		return "", errors.Wrap(err, "failed to stat postgres secret")
+	}
+
+	if _, err = os.Stat(filepath.Join(absDir, "clientsecret.yaml")); os.IsNotExist(err) {
+		clientSecret, err := identitydeploy.RenderClientSecret(ctx, options.AppSlug, "")
+		if err != nil {
+			return "", errors.Wrap(err, "failed to render client secret")
+		}
+		resources["clientsecret.yaml"] = clientSecret
+	} else if err != nil {
+		return "", errors.Wrap(err, "failed to stat client secret")
+	}
+
 	kustomization := kustomizetypes.Kustomization{
 		TypeMeta: kustomizetypes.TypeMeta{
 			APIVersion: "kustomize.config.k8s.io/v1beta1",
 			Kind:       "Kustomization",
 		},
-	}
-
-	base := "identity-service"
-
-	absDir := filepath.Join(options.MidstreamDir, base)
-	if err := os.MkdirAll(absDir, 0744); err != nil {
-		return "", errors.Wrap(err, "failed to mkdir")
 	}
 
 	for filename, resource := range resources {
