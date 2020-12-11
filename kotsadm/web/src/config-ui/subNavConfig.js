@@ -90,5 +90,13 @@ export default [
     displayRule: (watch, isVeleroInstalled) => {
       return watch.allowSnapshots && isVeleroInstalled;
     }
+  },
+  {
+    tabName: "settings",
+    displayName: "Settings",
+    to: (slug) => `/app/${slug}/settings`,
+    displayRule: (watch, isVeleroInstalled, isIdentityServiceSupported) => {
+      return isIdentityServiceSupported;
+    }
   }
 ];
