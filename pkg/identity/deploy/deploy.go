@@ -123,13 +123,11 @@ func updateSecret(existingSecret, desiredSecret *corev1.Secret) *corev1.Secret {
 }
 
 func ensureDeployment(ctx context.Context, clientset kubernetes.Interface, namespace string, namePrefix string, marshalledDexConfig []byte, imageRewriteFn ImageRewriteFunc) error {
-	deploymentName := prefixName(namePrefix, "dex")
-
 	configChecksum := fmt.Sprintf("%x", md5.Sum(marshalledDexConfig))
 
-	deployment := deploymentResource(deploymentName, configChecksum, imageRewriteFn)
+	deployment := deploymentResource(namePrefix, configChecksum, imageRewriteFn)
 
-	existingDeployment, err := clientset.AppsV1().Deployments(namespace).Get(ctx, deploymentName, metav1.GetOptions{})
+	existingDeployment, err := clientset.AppsV1().Deployments(namespace).Get(ctx, deployment.Name, metav1.GetOptions{})
 	if err != nil {
 		if !kuberneteserrors.IsNotFound(err) {
 			return errors.Wrap(err, "failed to get existing deployment")
