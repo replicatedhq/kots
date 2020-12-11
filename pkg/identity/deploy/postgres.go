@@ -5,6 +5,7 @@ import (
 	"context"
 
 	"github.com/pkg/errors"
+	kotsv1beta "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	kotsadmtypes "github.com/replicatedhq/kots/pkg/kotsadm/types"
 	"github.com/segmentio/ksuid"
 	corev1 "k8s.io/api/core/v1"
@@ -15,15 +16,7 @@ import (
 	"k8s.io/client-go/kubernetes/scheme"
 )
 
-type PostgresConfig struct {
-	Host     string
-	Port     string
-	Database string
-	User     string
-	Password string
-}
-
-func EnsurePostgresSecret(ctx context.Context, clientset kubernetes.Interface, namespace, namePrefix string, config PostgresConfig) error {
+func EnsurePostgresSecret(ctx context.Context, clientset kubernetes.Interface, namespace, namePrefix string, config kotsv1beta.IdentityPostgresConfig) error {
 	secret := postgresSecretResource(namePrefix, config)
 
 	existingSecret, err := GetPostgresSecret(ctx, clientset, namespace, namePrefix)
@@ -50,7 +43,7 @@ func EnsurePostgresSecret(ctx context.Context, clientset kubernetes.Interface, n
 	return nil
 }
 
-func RenderPostgresSecret(ctx context.Context, namePrefix string, config PostgresConfig) ([]byte, error) {
+func RenderPostgresSecret(ctx context.Context, namePrefix string, config kotsv1beta.IdentityPostgresConfig) ([]byte, error) {
 	s := serializer.NewYAMLSerializer(serializer.DefaultMetaFactory, scheme.Scheme, scheme.Scheme)
 
 	secret := postgresSecretResource(namePrefix, config)
@@ -66,7 +59,7 @@ func GetPostgresSecret(ctx context.Context, clientset kubernetes.Interface, name
 	return clientset.CoreV1().Secrets(namespace).Get(ctx, prefixName(namePrefix, "dex-postgres"), metav1.GetOptions{})
 }
 
-func postgresSecretResource(namePrefix string, config PostgresConfig) *corev1.Secret {
+func postgresSecretResource(namePrefix string, config kotsv1beta.IdentityPostgresConfig) *corev1.Secret {
 	if config.Password == "" {
 		config.Password = ksuid.New().String()
 	}

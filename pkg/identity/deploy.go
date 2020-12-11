@@ -23,6 +23,8 @@ const (
 )
 
 func Deploy(ctx context.Context, clientset kubernetes.Interface, namespace string, identityConfig kotsv1beta1.IdentityConfig, ingressConfig kotsv1beta1.IngressConfig, registryOptions *kotsadmtypes.KotsadmOptions) error {
+	identityConfig.Spec.ClientID = "kotsadm"
+
 	options := identitydeploy.Options{
 		NamePrefix:         KotsadmNamePrefix,
 		IdentitySpec:       getIdentitySpec(identityConfig.Spec, ingressConfig.Spec),
@@ -34,7 +36,7 @@ func Deploy(ctx context.Context, clientset kubernetes.Interface, namespace strin
 		return errors.Wrap(err, "failed to migrate client secret")
 	}
 
-	postgresConfig := identitydeploy.PostgresConfig{
+	postgresConfig := kotsv1beta1.IdentityPostgresConfig{
 		Host:     "kotsadm-postgres",
 		Database: "dex",
 		User:     "dex",
@@ -51,6 +53,8 @@ func Deploy(ctx context.Context, clientset kubernetes.Interface, namespace strin
 }
 
 func Configure(ctx context.Context, clientset kubernetes.Interface, namespace string, identityConfig kotsv1beta1.IdentityConfig, ingressConfig kotsv1beta1.IngressConfig) error {
+	identityConfig.Spec.ClientID = "kotsadm"
+
 	options := identitydeploy.Options{
 		NamePrefix:         KotsadmNamePrefix,
 		IdentitySpec:       getIdentitySpec(identityConfig.Spec, ingressConfig.Spec),
@@ -61,6 +65,8 @@ func Configure(ctx context.Context, clientset kubernetes.Interface, namespace st
 }
 
 func Render(ctx context.Context, clientset kubernetes.Interface, namespace string, identityConfig kotsv1beta1.IdentityConfig, ingressConfig kotsv1beta1.IngressConfig, registryOptions *kotsadmtypes.KotsadmOptions) (map[string][]byte, error) {
+	identityConfig.Spec.ClientID = "kotsadm"
+
 	options := identitydeploy.Options{
 		NamePrefix:         KotsadmNamePrefix,
 		IdentitySpec:       getIdentitySpec(identityConfig.Spec, ingressConfig.Spec),
@@ -120,7 +126,7 @@ func renderPostgresSecret(ctx context.Context, clientset kubernetes.Interface, n
 		return nil, errors.Wrap(err, "failed to get postgres secret")
 	}
 
-	postgresConfig := identitydeploy.PostgresConfig{
+	postgresConfig := kotsv1beta1.IdentityPostgresConfig{
 		Host:     "kotsadm-postgres",
 		Database: "dex",
 		User:     "dex",

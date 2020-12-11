@@ -42,8 +42,8 @@ func getDexConfig(ctx context.Context, identitySpec kotsv1beta1.IdentitySpec, id
 		},
 		StaticClients: []dexstorage.Client{
 			{
-				ID:           "kotsadm",
-				Name:         "kotsadm",
+				ID:           identityConfigSpec.ClientID,
+				Name:         identityConfigSpec.ClientID,
 				SecretEnv:    "DEX_CLIENT_SECRET",
 				RedirectURIs: identitySpec.OIDCRedirectURIs,
 			},
