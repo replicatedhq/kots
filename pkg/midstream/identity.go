@@ -37,7 +37,7 @@ func (m *Midstream) writeIdentityService(ctx context.Context, options WriteOptio
 	}
 
 	if _, err = os.Stat(filepath.Join(absDir, "postgressecret.yaml")); os.IsNotExist(err) {
-		postgresSecret, err := identitydeploy.RenderPostgresSecret(ctx, options.AppSlug, *m.IdentityConfig.Spec.PostgresConfig)
+		postgresSecret, err := identitydeploy.RenderPostgresSecret(ctx, options.AppSlug, m.IdentityConfig.Spec.Storage.PostgresConfig)
 		if err != nil {
 			return "", errors.Wrap(err, "failed to render postgres secret")
 		}

@@ -730,18 +730,26 @@ func createIdentityConfig(appSlug string, existingIdentityConfig *kotsv1beta1.Id
 		existingIdentityConfig.Spec.ClientSecret = ksuid.New().String()
 	}
 
-	if existingIdentityConfig.Spec.PostgresConfig == nil {
+	if existingIdentityConfig.Spec.Storage == nil {
 		// TODO: (salah) encryption
 		// pgPassword := ksuid.New().String()
 		// encryptedPGPassword := cipher.Encrypt([]byte(pgPassword))
 
-		postgresConfig := kotsv1beta1.IdentityPostgresConfig{
-			Host:     "kotsadm-postgres",
-			Database: fmt.Sprintf("%s-dex", appSlug),
-			User:     fmt.Sprintf("%s-dex", appSlug),
-			Password: ksuid.New().String(),
+		// support for the dev environment where app is in "test" namespace
+		host := "kotsadm-postgres"
+		if kotsadmNamespace := os.Getenv("POD_NAMESPACE"); kotsadmNamespace != "" {
+			host = fmt.Sprintf("%s.%s", host, kotsadmNamespace)
 		}
-		existingIdentityConfig.Spec.PostgresConfig = &postgresConfig
+
+		storage := kotsv1beta1.Storage{
+			PostgresConfig: kotsv1beta1.IdentityPostgresConfig{
+				Host:     "kotsadm-postgres",
+				Database: fmt.Sprintf("%s-dex", appSlug),
+				User:     fmt.Sprintf("%s-dex", appSlug),
+				Password: ksuid.New().String(),
+			},
+		}
+		existingIdentityConfig.Spec.Storage = &storage
 	}
 
 	// TODO: (salah) encrypt connectors?

@@ -23,18 +23,22 @@ import (
 )
 
 type IdentityConfigSpec struct {
-	Enabled                bool                    `json:"enabled" yaml:"enabled"`
-	DisablePasswordAuth    bool                    `json:"disablePasswordAuth,omitempty" yaml:"disablePasswordAuth,omitempty"`
-	Groups                 []IdentityConfigGroup   `json:"groups,omitempty" yaml:"groups,omitempty"`
-	IngressConfig          IngressConfigSpec       `json:"ingressConfig,omitempty" yaml:"ingressConfig,omitempty"`
-	AdminConsoleAddress    string                  `json:"adminConsoleAddress,omitempty" yaml:"adminConsoleAddress,omitempty"` // TODO (ethan): this does not belong here
-	IdentityServiceAddress string                  `json:"identityServiceAddress,omitempty" yaml:"identityServiceAddress,omitempty"`
-	CACertPemBase64        string                  `json:"caCertPemBase64,omitempty" yaml:"caCertPemBase64,omitempty"`
-	InsecureSkipTLSVerify  bool                    `json:"insecureSkipTLSVerify,omitempty" yaml:"insecureSkipTLSVerify,omitempty"`
-	PostgresConfig         *IdentityPostgresConfig `json:"postgresConfig,omitempty" yaml:"postgresConfig,omitempty"`
-	ClientID               string                  `json:"clientID,omitempty" yaml:"clientID,omitempty"`
-	ClientSecret           string                  `json:"clientSecret,omitempty" yaml:"clientSecret,omitempty"`
-	DexConnectors          DexConnectors           `json:"dexConnectors,omitempty" yaml:"dexConnectors,omitempty"`
+	Enabled                bool                  `json:"enabled" yaml:"enabled"`
+	DisablePasswordAuth    bool                  `json:"disablePasswordAuth,omitempty" yaml:"disablePasswordAuth,omitempty"`
+	Groups                 []IdentityConfigGroup `json:"groups,omitempty" yaml:"groups,omitempty"`
+	IngressConfig          IngressConfigSpec     `json:"ingressConfig,omitempty" yaml:"ingressConfig,omitempty"`
+	AdminConsoleAddress    string                `json:"adminConsoleAddress,omitempty" yaml:"adminConsoleAddress,omitempty"` // TODO (ethan): this does not belong here
+	IdentityServiceAddress string                `json:"identityServiceAddress,omitempty" yaml:"identityServiceAddress,omitempty"`
+	CACertPemBase64        string                `json:"caCertPemBase64,omitempty" yaml:"caCertPemBase64,omitempty"`
+	InsecureSkipTLSVerify  bool                  `json:"insecureSkipTLSVerify,omitempty" yaml:"insecureSkipTLSVerify,omitempty"`
+	Storage                *Storage              `json:"storage,omitempty" yaml:"storage,omitempty"`
+	ClientID               string                `json:"clientID,omitempty" yaml:"clientID,omitempty"`
+	ClientSecret           string                `json:"clientSecret,omitempty" yaml:"clientSecret,omitempty"`
+	DexConnectors          DexConnectors         `json:"dexConnectors,omitempty" yaml:"dexConnectors,omitempty"`
+}
+
+type Storage struct {
+	PostgresConfig IdentityPostgresConfig `json:"postgresConfig,omitempty" yaml:"postgresConfig,omitempty"`
 }
 
 type IdentityPostgresConfig struct {
