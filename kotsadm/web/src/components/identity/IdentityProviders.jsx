@@ -341,7 +341,7 @@ class IdentityProviders extends Component {
               <label htmlFor="syncAppWithGlobal" className="flex1 flex u-width--full u-position--relative u-cursor--pointer u-userSelect--none" style={{ marginTop: "2px" }}>
                 <div className="flex flex-column u-marginLeft--5 justifyContent--center">
                   <p className="u-color--tuna u-fontSize--normal u-fontWeight--medium">Use Admin Console settings</p>
-                  <p className="u-fontSize--normal u-lineHeight--normal u-fontWeight--normal u-marginTop--5"> Keeps these settings in sync with how you configured the Admin console.</p>
+                  <p className="u-fontSize--normal u-lineHeight--normal u-fontWeight--normal u-marginTop--5"> Use the settings that you configured for the Admin console.</p>
                 </div>
               </label>
             </div>
@@ -350,7 +350,7 @@ class IdentityProviders extends Component {
 
           <div className="u-marginTop--30">
             <div className="flex flex1 alignItems--center">
-              <p className="u-fontSize--large u-lineHeight--default u-fontWeight--bold u-color--tuna"> Admin Console URL </p>
+              <p className="u-fontSize--large u-lineHeight--default u-fontWeight--bold u-color--tuna"> {isApplicationSettings ? "App" : "Admin Console"} URL </p>
               <span className="required-label"> Required </span>
               {requiredErrors?.adminConsoleAddress && <span className="u-color--chestnut u-fontSize--small u-fontWeight--medium u-lineHeight--normal u-marginLeft--5"> Admin Console URL is a required field </span>}
             </div>
