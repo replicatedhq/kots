@@ -77,7 +77,7 @@ spec:
           - name: DEX_PGPASSWORD
             valueFrom:
               secretKeyRef:
-                key: password
+                key: PGPASSWORD
                 name: kotsadm-dex-postgres
           image: kotsadm
           imagePullPolicy: IfNotPresent
