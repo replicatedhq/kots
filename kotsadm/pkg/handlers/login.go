@@ -10,6 +10,7 @@ import (
 
 	oidc "github.com/coreos/go-oidc"
 	"github.com/pkg/errors"
+	"github.com/replicatedhq/kots/kotsadm/pkg/k8s"
 	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
 	"github.com/replicatedhq/kots/kotsadm/pkg/session"
 	"github.com/replicatedhq/kots/kotsadm/pkg/store"
@@ -108,11 +109,24 @@ func OIDCLogin(w http.ResponseWriter, r *http.Request) {
 
 	oidcLoginResponse := OIDCLoginResponse{}
 
-	oauth2Config, err := identity.GetKotsadmOAuth2Config(r.Context(), namespace)
+	clientset, err := k8s.Clientset()
+	if err != nil {
+		logger.Error(errors.Wrap(err, "failed to get k8s client"))
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	provider, err := identity.GetKotsadmOIDCProvider(r.Context(), clientset, namespace)
+	if err != nil {
+		logger.Error(errors.Wrap(err, "failed to get kotsadm oidc provider"))
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	oauth2Config, err := identity.GetKotsadmOAuth2Config(r.Context(), clientset, namespace, *provider)
 	if err != nil {
 		logger.Error(errors.Wrap(err, "failed to get kotsadm oauth2 config"))
-		oidcLoginResponse.Error = "failed to get kotsadm oauth2 config"
-		JSON(w, http.StatusInternalServerError, oidcLoginResponse)
+		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
@@ -121,8 +135,8 @@ func OIDCLogin(w http.ResponseWriter, r *http.Request) {
 
 	// save the generated state to compare on callback
 	if err := identityclient.SetOIDCState(r.Context(), namespace, state); err != nil {
-		oidcLoginResponse.Error = "failed to set oidc state"
-		JSON(w, http.StatusInternalServerError, oidcLoginResponse)
+		logger.Error(errors.Wrap(err, "failed to set oidc state"))
+		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
@@ -137,16 +151,23 @@ func OIDCLogin(w http.ResponseWriter, r *http.Request) {
 func OIDCLoginCallback(w http.ResponseWriter, r *http.Request) {
 	namespace := os.Getenv("POD_NAMESPACE")
 
-	oauth2Config, err := identity.GetKotsadmOAuth2Config(r.Context(), namespace)
+	clientset, err := k8s.Clientset()
 	if err != nil {
-		logger.Error(errors.Wrap(err, "failed to get kotsadm oauth2 config"))
+		logger.Error(errors.Wrap(err, "failed to get k8s client"))
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
-	provider, err := identity.GetKotsadmOIDCProvider(r.Context(), namespace)
+	provider, err := identity.GetKotsadmOIDCProvider(r.Context(), clientset, namespace)
 	if err != nil {
 		logger.Error(errors.Wrap(err, "failed to get kotsadm oidc provider"))
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	oauth2Config, err := identity.GetKotsadmOAuth2Config(r.Context(), clientset, namespace, *provider)
+	if err != nil {
+		logger.Error(errors.Wrap(err, "failed to get kotsadm oauth2 config"))
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
@@ -344,9 +365,8 @@ func GetLoginInfo(w http.ResponseWriter, r *http.Request) {
 
 	identityConfig, err := identity.GetConfig(r.Context(), os.Getenv("POD_NAMESPACE"))
 	if err != nil {
-		logger.Error(err)
-		getLoginInfoResponse.Error = "failed to get identity config"
-		JSON(w, http.StatusInternalServerError, getLoginInfoResponse)
+		logger.Error(errors.Wrap(err, "failed to get identity config"))
+		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 	if !identityConfig.Spec.Enabled {

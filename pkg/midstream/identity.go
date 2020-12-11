@@ -1,24 +1,14 @@
 package midstream
 
 import (
-	"bytes"
 	"context"
-	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
-	"text/template"
 
-	"github.com/dexidp/dex/server"
-	dexstorage "github.com/dexidp/dex/storage"
 	"github.com/pkg/errors"
-	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	identitydeploy "github.com/replicatedhq/kots/pkg/identity/deploy"
-	dextypes "github.com/replicatedhq/kots/pkg/identity/types/dex"
-	"github.com/replicatedhq/kots/pkg/ingress"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
-	"github.com/segmentio/ksuid"
-	yaml "gopkg.in/yaml.v2"
 	kustomizetypes "sigs.k8s.io/kustomize/api/types"
 )
 
@@ -27,13 +17,17 @@ func (m *Midstream) writeIdentityService(ctx context.Context, options WriteOptio
 		return "", nil
 	}
 
-	dexConfig, err := getDexConfig(ctx, options.AppSlug, m.IdentitySpec.Spec, m.IdentityConfig.Spec)
-	if err != nil {
-		return "", errors.Wrap(err, "failed to get dex config")
-	}
+	// TODO (ethan): postgres secret
+	// TODO (ethan): dex client secret DEX_CLIENT_SECRET
 
 	// TODO (ethan): customize labels (dont use kustomize)
-	resources, err := identitydeploy.Render(ctx, options.AppSlug, dexConfig, m.IdentityConfig.Spec.IngressConfig, nil)
+	deployOptions := identitydeploy.Options{
+		NamePrefix:         options.AppSlug,
+		IdentitySpec:       m.IdentitySpec.Spec,
+		IdentityConfigSpec: m.IdentityConfig.Spec,
+		ImageRewriteFn:     nil, // TODO (ethan): do we rewrite in kustomization.images?
+	}
+	resources, err := identitydeploy.Render(ctx, deployOptions)
 	if err != nil {
 		return "", errors.Wrap(err, "failed to render identity service")
 	}
@@ -64,97 +58,4 @@ func (m *Midstream) writeIdentityService(ctx context.Context, options WriteOptio
 	}
 
 	return base, nil
-}
-
-func getDexConfig(ctx context.Context, appSlug string, identitySpec kotsv1beta1.IdentitySpec, identityConfigSpec kotsv1beta1.IdentityConfigSpec) ([]byte, error) {
-	staticClient, err := getOIDCClient(ctx, identitySpec)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to get oidc client")
-	}
-
-	config := dextypes.Config{
-		Issuer: dexIssuerURL(identityConfigSpec),
-		Storage: dextypes.Storage{
-			Type: "postgres",
-			// TODO (ethan): this will not work
-			Config: dextypes.Postgres{
-				SSL: dextypes.SSL{
-					Mode: "disable", // TODO ssl
-				},
-			},
-		},
-		Web: dextypes.Web{
-			HTTP: "0.0.0.0:5556",
-		},
-		Frontend: server.WebConfig{
-			Issuer: "KOTS",
-		},
-		OAuth2: dextypes.OAuth2{
-			SkipApprovalScreen:    true,
-			AlwaysShowLoginScreen: identitySpec.OAUTH2AlwaysShowLoginScreen,
-		},
-		Expiry: dextypes.Expiry{
-			IDTokens:    identitySpec.IDTokensExpiration,
-			SigningKeys: identitySpec.SigningKeysExpiration,
-		},
-		StaticClients:    []dexstorage.Client{staticClient},
-		EnablePasswordDB: false,
-	}
-
-	if len(identityConfigSpec.DexConnectors.Value) > 0 {
-		dexConnectors, err := identitydeploy.DexConnectorsToDexTypeConnectors(identityConfigSpec.DexConnectors.Value)
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to unmarshal dex connectors")
-		}
-		config.StaticConnectors = dexConnectors
-
-		// TODO (ethan): identitySpec.SupportedProviders
-	}
-
-	if err := config.Validate(); err != nil {
-		return nil, errors.Wrap(err, "failed to validate dex config")
-	}
-
-	marshalledConfig, err := yaml.Marshal(config)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to marshal dex config")
-	}
-
-	buf := bytes.NewBuffer(nil)
-	t, err := template.New("dex-config").Funcs(template.FuncMap{
-		"OIDCIdentityCallbackURL": func() string { return dexCallbackURL(identityConfigSpec) },
-	}).Parse(string(marshalledConfig))
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to parse dex config for templating")
-	}
-	if err := t.Execute(buf, nil); err != nil {
-		return nil, errors.Wrap(err, "failed to execute template")
-	}
-
-	return buf.Bytes(), nil
-}
-
-func dexIssuerURL(identityConfigSpec kotsv1beta1.IdentityConfigSpec) string {
-	if identityConfigSpec.IdentityServiceAddress != "" {
-		return identityConfigSpec.IdentityServiceAddress
-	}
-	return fmt.Sprintf("%s/dex", ingress.GetAddress(identityConfigSpec.IngressConfig))
-}
-
-func dexCallbackURL(identityConfigSpec kotsv1beta1.IdentityConfigSpec) string {
-	return fmt.Sprintf("%s/callback", dexIssuerURL(identityConfigSpec))
-}
-
-func getOIDCClient(ctx context.Context, identitySpec kotsv1beta1.IdentitySpec) (dexstorage.Client, error) {
-	clientSecret := ksuid.New().String()
-
-	// TODO (ethan): find existing secret from idk where
-	// do not assume we have access to the clustr
-
-	return dexstorage.Client{
-		ID:           "kotsadm",
-		Name:         "kotsadm",
-		Secret:       clientSecret,
-		RedirectURIs: identitySpec.OIDCRedirectURIs,
-	}, nil
 }
