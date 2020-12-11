@@ -1,22 +1,26 @@
 import React, { Component } from "react";
+import { withRouter } from "react-router-dom"
 import Helmet from "react-helmet";
-import AirgapRegistrySettings from "../shared/AirgapRegistrySettings";
+import IdentityProviders from "@src/components/identity/IdentityProviders";
 
-export default class AppSettings extends Component {
+import "@src/scss/components/identity/IdentityManagement.scss";
+
+class AppSettings extends Component {
 
   render() {
-    const { app, updateCallback } = this.props;
+    const { app } = this.props;
 
     return (
-      <div className="flex justifyContent--center">
+      <div className="WatchDetailPage--wrapper flex-column flex1 u-overflow--auto">
         <Helmet>
-          <title>{`${app.name} Airgap settings`}</title>
+        <title>{`${app.name} Airgap settings`}</title>
         </Helmet>
-        <div className="AirgapSettings--wrapper u-textAlign--left u-paddingRight--20 u-paddingLeft--20">
-          <p className="u-fontWeight--bold u-color--tuna u-fontSize--larger u-marginTop--30 u-marginBottom--20 u-paddingBottom--5 u-lineHeight--normal">Registry settings</p>
-          <AirgapRegistrySettings app={app} updateCallback={updateCallback} />
+        <div className="flex-column flex1 u-width--full u-height--full u-overflow--auto">
+          <IdentityProviders isKurlEnabled={this.props.isKurlEnabled} isApplicationSettings={true} appName={app.name} />
         </div>
       </div>
     );
   }
 }
+
+export default withRouter(AppSettings);

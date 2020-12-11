@@ -46,7 +46,8 @@ class IdentityProviders extends Component {
     saveConfirm: false,
     savingProviderErrMsg: "",
     showAdvancedOptions: false,
-    displayErrorModal: false
+    displayErrorModal: false,
+    syncAppWithGlobal: false
   };
 
   fetchConfigSettings = async () => {
@@ -266,6 +267,12 @@ class IdentityProviders extends Component {
     }
   }
 
+  onSubmitApplicationSettings = async (e) => {
+    e.preventDefault();
+    // TODO: Implement saving application specific settings
+    console.log("not yet implemented");
+  }
+
   toggleAdvancedOptions = () => {
     this.setState({ showAdvancedOptions: !this.state.showAdvancedOptions });
   }
@@ -281,7 +288,7 @@ class IdentityProviders extends Component {
 
   render() {
     const { configSettingsErrMsg, isLoadingConfigSettings, requiredErrors, selectedProvider } = this.state;
-    const { isKurlEnabled, isGeoaxisSupported } = this.props;
+    const { isKurlEnabled, isApplicationSettings, app, isGeoaxisSupported } = this.props;
 
     if (isLoadingConfigSettings) {
       return (
@@ -318,8 +325,28 @@ class IdentityProviders extends Component {
           </p>
         </div> */}
         <form className="flex flex-column Identity--wrapper u-marginTop--30">
-          <p className="u-fontSize--largest u-lineHeight--default u-fontWeight--bold u-color--tuna"> Configure Identity Provider </p>
+          <p className="u-fontSize--largest u-lineHeight--default u-fontWeight--bold u-color--tuna"> Configure Identity Provider {isApplicationSettings && `for ${app?.name}`}</p>
           <p className="u-fontSize--normal u-lineHeight--medium u-fontWeight--medium u-color--dustyGray u-marginTop--12"> Configure additional ODIC providers to authenticate in to the Admin Console. </p>
+
+          {isApplicationSettings &&
+            <div className="BoxedCheckbox-wrapper flex1 u-textAlign--left u-marginTop--20">
+            <div className={`flex-auto flex ${this.state.syncAppWithGlobal ? "is-active" : ""}`}>
+              <input
+                type="checkbox"
+                className="u-cursor--pointer"
+                id="syncAppWithGlobal"
+                checked={this.state.syncAppWithGlobal}
+                onChange={(e) => { this.handleFormChange("syncAppWithGlobal", e) }}
+              />
+              <label htmlFor="syncAppWithGlobal" className="flex1 flex u-width--full u-position--relative u-cursor--pointer u-userSelect--none" style={{ marginTop: "2px" }}>
+                <div className="flex flex-column u-marginLeft--5 justifyContent--center">
+                  <p className="u-color--tuna u-fontSize--normal u-fontWeight--medium">Use Admin Console settings</p>
+                  <p className="u-fontSize--normal u-lineHeight--normal u-fontWeight--normal u-marginTop--5"> Keeps these settings in sync with how you configured the Admin console.</p>
+                </div>
+              </label>
+            </div>
+          </div>
+          }
 
           <div className="u-marginTop--30">
             <div className="flex flex1 alignItems--center">
@@ -604,7 +631,7 @@ class IdentityProviders extends Component {
                 <span className="u-fontSize--small u-fontWeight--medium u-color--chestnut">{this.state.savingProviderErrMsg}</span>
               </div>}
             <div className="flex flex1">
-              <button className="btn primary blue" disabled={this.state.savingProviderSettings} onClick={this.onSubmit}>{this.state.savingProviderSettings ? "Saving" : "Save provider settings"}</button>
+              <button className="btn primary blue" disabled={this.state.savingProviderSettings} onClick={isApplicationSettings ? this.onSubmitApplicationSettings : this.onSubmit}>{this.state.savingProviderSettings ? "Saving" : "Save provider settings"}</button>
               {this.state.saveConfirm &&
                 <div className="u-marginLeft--10 flex alignItems--center">
                   <span className="icon checkmark-icon" />
