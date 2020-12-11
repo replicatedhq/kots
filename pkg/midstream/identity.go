@@ -2,7 +2,6 @@ package midstream
 
 import (
 	"context"
-	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -44,12 +43,7 @@ func (m *Midstream) writeIdentityService(ctx context.Context, options WriteOptio
 	}
 
 	if _, err = os.Stat(filepath.Join(absDir, "postgressecret.yaml")); os.IsNotExist(err) {
-		postgresConfig := identitydeploy.PostgresConfig{
-			Host:     host,
-			Database: fmt.Sprintf("%s-dex", options.AppSlug),
-			User:     fmt.Sprintf("%s-dex", options.AppSlug),
-		}
-		postgresSecret, err := identitydeploy.RenderPostgresSecret(ctx, options.AppSlug, postgresConfig)
+		postgresSecret, err := identitydeploy.RenderPostgresSecret(ctx, options.AppSlug, m.IdentityConfig.Spec.Storage.PostgresConfig)
 		if err != nil {
 			return "", errors.Wrap(err, "failed to render postgres secret")
 		}
@@ -59,7 +53,7 @@ func (m *Midstream) writeIdentityService(ctx context.Context, options WriteOptio
 	}
 
 	if _, err = os.Stat(filepath.Join(absDir, "clientsecret.yaml")); os.IsNotExist(err) {
-		clientSecret, err := identitydeploy.RenderClientSecret(ctx, options.AppSlug, "")
+		clientSecret, err := identitydeploy.RenderClientSecret(ctx, options.AppSlug, m.IdentityConfig.Spec.ClientSecret)
 		if err != nil {
 			return "", errors.Wrap(err, "failed to render client secret")
 		}

@@ -31,7 +31,22 @@ type IdentityConfigSpec struct {
 	IdentityServiceAddress string                `json:"identityServiceAddress,omitempty" yaml:"identityServiceAddress,omitempty"`
 	CACertPemBase64        string                `json:"caCertPemBase64,omitempty" yaml:"caCertPemBase64,omitempty"`
 	InsecureSkipTLSVerify  bool                  `json:"insecureSkipTLSVerify,omitempty" yaml:"insecureSkipTLSVerify,omitempty"`
+	Storage                *Storage              `json:"storage,omitempty" yaml:"storage,omitempty"`
+	ClientID               string                `json:"clientID,omitempty" yaml:"clientID,omitempty"`
+	ClientSecret           string                `json:"clientSecret,omitempty" yaml:"clientSecret,omitempty"`
 	DexConnectors          DexConnectors         `json:"dexConnectors,omitempty" yaml:"dexConnectors,omitempty"`
+}
+
+type Storage struct {
+	PostgresConfig IdentityPostgresConfig `json:"postgresConfig,omitempty" yaml:"postgresConfig,omitempty"`
+}
+
+type IdentityPostgresConfig struct {
+	Host     string `json:"host" yaml:"host"`
+	Port     string `json:"port" yaml:"port"`
+	Database string `json:"database" yaml:"database"`
+	User     string `json:"user" yaml:"user"`
+	Password string `json:"password" yaml:"password"`
 }
 
 type IdentityConfigGroup struct {
