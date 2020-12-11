@@ -383,7 +383,6 @@ func getDefaultIDPConfig() IDPConfig {
 
 func getDefaultOIDCConfig(isGeoAxis bool) *oidc.Config {
 	c := oidc.Config{
-		RedirectURI:               "{{OIDCIdentityCallbackURL}}",
 		GetUserInfo:               true,
 		InsecureSkipEmailVerified: false,
 		InsecureEnableGroups:      true,

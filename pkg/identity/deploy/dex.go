@@ -1,12 +1,11 @@
 package deploy
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
-	"text/template"
 
+	"github.com/dexidp/dex/connector/oidc"
 	"github.com/dexidp/dex/server"
 	dexstorage "github.com/dexidp/dex/storage"
 	ghodssyaml "github.com/ghodss/yaml"
@@ -68,34 +67,31 @@ func getDexConfig(ctx context.Context, identitySpec kotsv1beta1.IdentitySpec, id
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to unmarshal dex connectors")
 		}
-		config.StaticConnectors = dexConnectors
+		config.StaticConnectors = dexConfigReplaceDynamicValues(dexConnectors, identityConfigSpec)
 	}
 
 	if err := config.Validate(); err != nil {
 		return nil, errors.Wrap(err, "failed to validate dex config")
 	}
 
-	return marshalDexConfig(config, identityConfigSpec)
-}
-
-func marshalDexConfig(config dextypes.Config, identityConfigSpec kotsv1beta1.IdentityConfigSpec) ([]byte, error) {
 	marshalledConfig, err := ghodssyaml.Marshal(config)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to marshal dex config")
 	}
 
-	buf := bytes.NewBuffer(nil)
-	t, err := template.New("dex-config").Funcs(template.FuncMap{
-		"OIDCIdentityCallbackURL": func() string { return dexCallbackURL(identityConfigSpec) },
-	}).Parse(string(marshalledConfig))
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to parse dex config for templating")
-	}
-	if err := t.Execute(buf, nil); err != nil {
-		return nil, errors.Wrap(err, "failed to execute template")
-	}
+	return marshalledConfig, nil
+}
 
-	return buf.Bytes(), nil
+func dexConfigReplaceDynamicValues(connectors []dextypes.Connector, identityConfigSpec kotsv1beta1.IdentityConfigSpec) []dextypes.Connector {
+	next := make([]dextypes.Connector, len(connectors))
+	for i, connector := range connectors {
+		switch c := connector.Config.(type) {
+		case *oidc.Config:
+			c.RedirectURI = dexCallbackURL(identityConfigSpec)
+		}
+		next[i] = connector
+	}
+	return next
 }
 
 func DexConnectorsToDexTypeConnectors(conns []kotsv1beta1.DexConnector) ([]dextypes.Connector, error) {

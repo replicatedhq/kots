@@ -63,7 +63,7 @@ func (m *Midstream) WriteMidstream(options WriteOptions) error {
 	}
 
 	if identityBase != "" {
-		m.Kustomization.Bases = append(m.Kustomization.Bases, identityBase)
+		m.Kustomization.Resources = append(m.Kustomization.Resources, identityBase)
 	}
 
 	if err := m.writeObjectsWithPullSecret(options); err != nil {
