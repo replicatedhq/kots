@@ -241,6 +241,24 @@ func deploymentResource(namePrefix, configChecksum string, imageRewriteFn ImageR
 									"memory": dexMemoryResource,
 								},
 							},
+							LivenessProbe: &corev1.Probe{
+								Handler: corev1.Handler{
+									HTTPGet: &corev1.HTTPGetAction{
+										Path: "/healthz",
+										Port: intstr.FromInt(5556),
+									},
+								},
+							},
+							ReadinessProbe: &corev1.Probe{
+								Handler: corev1.Handler{
+									HTTPGet: &corev1.HTTPGetAction{
+										Path: "/healthz",
+										Port: intstr.FromInt(5556),
+									},
+								},
+								InitialDelaySeconds: 5,
+								TimeoutSeconds:      1,
+							},
 						},
 					},
 					Volumes: []corev1.Volume{
