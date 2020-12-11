@@ -774,7 +774,7 @@ func findTemplateContextDataInRelease(release *Release) (*kotsv1beta1.Config, *k
 				} else if gvk.Kind == "Installation" {
 					installation = obj.(*kotsv1beta1.Installation)
 				} else if gvk.Kind == "IdentityConfig" {
-					installation = obj.(*kotsv1beta1.IdentityConfig)
+					identityConfig = obj.(*kotsv1beta1.IdentityConfig)
 				}
 			}
 		}
