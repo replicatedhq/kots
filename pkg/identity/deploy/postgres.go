@@ -50,7 +50,7 @@ func EnsurePostgresSecret(ctx context.Context, clientset kubernetes.Interface, n
 	return nil
 }
 
-func RenderPostgresSecret(ctx context.Context, clientset kubernetes.Interface, namespace, namePrefix string, config PostgresConfig) ([]byte, error) {
+func RenderPostgresSecret(ctx context.Context, namePrefix string, config PostgresConfig) ([]byte, error) {
 	s := serializer.NewYAMLSerializer(serializer.DefaultMetaFactory, scheme.Scheme, scheme.Scheme)
 
 	secret := postgresSecretResource(namePrefix, config)
