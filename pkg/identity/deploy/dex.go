@@ -13,9 +13,15 @@ import (
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	dextypes "github.com/replicatedhq/kots/pkg/identity/types/dex"
 	"github.com/replicatedhq/kots/pkg/ingress"
+	"github.com/replicatedhq/kots/pkg/template"
 )
 
-func getDexConfig(ctx context.Context, identitySpec kotsv1beta1.IdentitySpec, identityConfigSpec kotsv1beta1.IdentityConfigSpec) ([]byte, error) {
+func getDexConfig(ctx context.Context, identitySpec kotsv1beta1.IdentitySpec, identityConfigSpec kotsv1beta1.IdentityConfigSpec, builder *template.Builder) ([]byte, error) {
+	redirectURIs, err := buildIdentitySpecOIDCRedirectURIs(identitySpec.OIDCRedirectURIs, builder)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to build identity spec oicd redirect uris")
+	}
+
 	config := dextypes.Config{
 		Issuer: dexIssuerURL(identityConfigSpec),
 		Storage: dextypes.Storage{
@@ -45,7 +51,7 @@ func getDexConfig(ctx context.Context, identitySpec kotsv1beta1.IdentitySpec, id
 				ID:           identityConfigSpec.ClientID,
 				Name:         identityConfigSpec.ClientID,
 				SecretEnv:    "DEX_CLIENT_SECRET",
-				RedirectURIs: identitySpec.OIDCRedirectURIs,
+				RedirectURIs: redirectURIs,
 			},
 		},
 		EnablePasswordDB: false,
@@ -128,6 +134,24 @@ func dexIssuerURL(identityConfigSpec kotsv1beta1.IdentityConfigSpec) string {
 
 func dexCallbackURL(identityConfigSpec kotsv1beta1.IdentityConfigSpec) string {
 	return fmt.Sprintf("%s/callback", dexIssuerURL(identityConfigSpec))
+}
+
+func buildIdentitySpecOIDCRedirectURIs(uris []string, builder *template.Builder) ([]string, error) {
+	if builder == nil {
+		return uris, nil
+	}
+
+	next := []string{}
+	for _, uri := range uris {
+		rendered, err := builder.String(uri)
+		if err != nil {
+			return nil, errors.Wrapf(err, "build %q", uri)
+		}
+		if rendered != "" {
+			next = append(next, rendered)
+		}
+	}
+	return next, nil
 }
 
 func stringInSlice(a string, list []string) bool {

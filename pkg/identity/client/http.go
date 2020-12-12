@@ -84,10 +84,10 @@ func HTTPClient(ctx context.Context, namespace string, identityConfig kotsv1beta
 	return httpClient, nil
 }
 
-func hasTLSConfigChanged(pemCert []byte, identitySpec kotsv1beta1.IdentityConfigSpec) bool {
+func hasTLSConfigChanged(pemCert []byte, identityConfigSpec kotsv1beta1.IdentityConfigSpec) bool {
 	return !bytes.Equal(kurlProxyTLSCert, pemCert) ||
-		identityConfigSpecCACert != identitySpec.CACertPemBase64 ||
-		identityConfigSpecInsecureSkipTLSVerify != identitySpec.InsecureSkipTLSVerify
+		identityConfigSpecCACert != identityConfigSpec.CACertPemBase64 ||
+		identityConfigSpecInsecureSkipTLSVerify != identityConfigSpec.InsecureSkipTLSVerify
 }
 
 func getKurlProxyTLSCert() ([]byte, error) {

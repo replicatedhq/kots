@@ -26,13 +26,13 @@ func init() {
 	kotsscheme.AddToScheme(scheme.Scheme)
 }
 
-func DexIssuerURL(identitySpec kotsv1beta1.IdentityConfigSpec) string {
-	if identitySpec.IdentityServiceAddress != "" {
-		return identitySpec.IdentityServiceAddress
+func DexIssuerURL(identityConfigSpec kotsv1beta1.IdentityConfigSpec) string {
+	if identityConfigSpec.IdentityServiceAddress != "" {
+		return identityConfigSpec.IdentityServiceAddress
 	}
-	return fmt.Sprintf("%s/dex", ingress.GetAddress(identitySpec.IngressConfig))
+	return fmt.Sprintf("%s/dex", ingress.GetAddress(identityConfigSpec.IngressConfig))
 }
 
-func DexCallbackURL(identitySpec kotsv1beta1.IdentityConfigSpec) string {
-	return fmt.Sprintf("%s/callback", DexIssuerURL(identitySpec))
+func DexCallbackURL(identityConfigSpec kotsv1beta1.IdentityConfigSpec) string {
+	return fmt.Sprintf("%s/callback", DexIssuerURL(identityConfigSpec))
 }

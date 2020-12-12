@@ -12,6 +12,7 @@ import (
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	"github.com/replicatedhq/kots/pkg/ingress"
 	kotsadmtypes "github.com/replicatedhq/kots/pkg/kotsadm/types"
+	"github.com/replicatedhq/kots/pkg/template"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	extensionsv1beta1 "k8s.io/api/extensions/v1beta1"
@@ -34,10 +35,11 @@ type Options struct {
 	IdentitySpec       kotsv1beta1.IdentitySpec
 	IdentityConfigSpec kotsv1beta1.IdentityConfigSpec
 	ImageRewriteFn     ImageRewriteFunc
+	Builder            *template.Builder
 }
 
 func Deploy(ctx context.Context, clientset kubernetes.Interface, namespace string, options Options) error {
-	dexConfig, err := getDexConfig(ctx, options.IdentitySpec, options.IdentityConfigSpec)
+	dexConfig, err := getDexConfig(ctx, options.IdentitySpec, options.IdentityConfigSpec, options.Builder)
 	if err != nil {
 		return errors.Wrap(err, "failed to get dex config")
 	}
@@ -57,7 +59,7 @@ func Deploy(ctx context.Context, clientset kubernetes.Interface, namespace strin
 }
 
 func Configure(ctx context.Context, clientset kubernetes.Interface, namespace string, options Options) error {
-	dexConfig, err := getDexConfig(ctx, options.IdentitySpec, options.IdentityConfigSpec)
+	dexConfig, err := getDexConfig(ctx, options.IdentitySpec, options.IdentityConfigSpec, options.Builder)
 	if err != nil {
 		return errors.Wrap(err, "failed to get dex config")
 	}

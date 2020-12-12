@@ -529,11 +529,17 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 	}
 	log.FinishSpinner()
 
+	builder, err := base.NewConfigContextTemplateBuidler(u, &renderOptions)
+	if err != nil {
+		return "", errors.Wrap(err, "failed to create new config context template builder")
+	}
+
 	writeMidstreamOptions := midstream.WriteOptions{
 		MidstreamDir: filepath.Join(b.GetOverlaysDir(writeBaseOptions), "midstream"),
 		BaseDir:      u.GetBaseDir(writeUpstreamOptions),
 		AppSlug:      pullOptions.AppSlug,
 		IsGitOps:     pullOptions.IsGitOps,
+		Builder:      *builder,
 	}
 	if err := m.WriteMidstream(writeMidstreamOptions); err != nil {
 		return "", errors.Wrap(err, "failed to write midstream")
