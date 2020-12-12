@@ -30,6 +30,7 @@ func (m *Midstream) writeIdentityService(ctx context.Context, options WriteOptio
 		IdentitySpec:       m.IdentitySpec.Spec,
 		IdentityConfigSpec: m.IdentityConfig.Spec,
 		ImageRewriteFn:     nil, // TODO (ethan): do we rewrite in kustomization.images?
+		Builder:            &options.Builder,
 	}
 	resources, err := identitydeploy.Render(ctx, deployOptions)
 	if err != nil {

@@ -12,7 +12,7 @@ import (
 )
 
 func Render(ctx context.Context, options Options) (map[string][]byte, error) {
-	dexConfig, err := getDexConfig(ctx, options.IdentitySpec, options.IdentityConfigSpec)
+	dexConfig, err := getDexConfig(ctx, options.IdentitySpec, options.IdentityConfigSpec, options.Builder)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get dex config")
 	}

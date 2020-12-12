@@ -10,6 +10,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/disasterrecovery"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
+	"github.com/replicatedhq/kots/pkg/template"
 	yaml "gopkg.in/yaml.v2"
 	kustomizetypes "sigs.k8s.io/kustomize/api/types"
 	k8syaml "sigs.k8s.io/yaml"
@@ -26,6 +27,7 @@ type WriteOptions struct {
 	BaseDir      string
 	AppSlug      string
 	IsGitOps     bool
+	Builder      template.Builder
 }
 
 func (m *Midstream) KustomizationFilename(options WriteOptions) string {
