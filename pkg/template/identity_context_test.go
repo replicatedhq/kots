@@ -7,7 +7,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestVersionContext(t *testing.T) {
+func TestIdentityContext(t *testing.T) {
 	req := require.New(t)
 
 	// a properly populated identityCtx - should return the appropriate values
