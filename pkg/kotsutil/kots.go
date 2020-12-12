@@ -212,6 +212,15 @@ func (o KotsKinds) Marshal(g string, v string, k string) (string, error) {
 					return "", errors.Wrap(err, "failed to encode identity")
 				}
 				return string(b.Bytes()), nil
+			case "IdentityConfig":
+				if o.IdentityConfig == nil {
+					return "", nil
+				}
+				var b bytes.Buffer
+				if err := s.Encode(o.IdentityConfig, &b); err != nil {
+					return "", errors.Wrap(err, "failed to encode identityconfig")
+				}
+				return string(b.Bytes()), nil
 			}
 		}
 	}

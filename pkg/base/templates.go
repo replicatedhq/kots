@@ -9,7 +9,7 @@ import (
 )
 
 func NewConfigContextTemplateBuidler(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (*template.Builder, error) {
-	config, configValues, license, err := findConfigAndLicense(u, renderOptions.Log)
+	config, configValues, identityConfig, license, err := findConfigAndLicense(u, renderOptions.Log)
 	if err != nil {
 		return nil, err
 	}

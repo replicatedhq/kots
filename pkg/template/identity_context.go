@@ -4,7 +4,7 @@ import (
 	"text/template"
 
 	"github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
-	"github.com/replicatedhq/kots/pkg/identity"
+	// "github.com/replicatedhq/kots/pkg/identity"
 )
 
 type identityCtx struct {
@@ -40,7 +40,7 @@ func (ctx identityCtx) identityServiceIssuerURL() string {
 	if ctx.identityConfig == nil {
 		return ""
 	}
-	return identity.DexIssuerURL(ctx.identityConfig.Spec)
+	return "" // TODO: (salah) resolve import cycle identity.DexIssuerURL(ctx.identityConfig.Spec)
 }
 
 func (ctx identityCtx) identityServiceClientID() string {
