@@ -100,14 +100,17 @@ func templateConfig(log *logger.Logger, configSpecData string, configValuesData 
 		templateContext = map[string]template.ItemValue{}
 	}
 
-	obj, gvk, err = decode([]byte(identityConfigData), nil, nil)
-	if err != nil {
-		return "", errors.Wrap(err, "failed to decode config data")
+	var identityConfig *kotsv1beta1.IdentityConfig
+	if identityConfigData != "" {
+		obj, gvk, err = decode([]byte(identityConfigData), nil, nil)
+		if err != nil {
+			return "", errors.Wrap(err, "failed to decode config data")
+		}
+		if gvk.Group != "kots.io" || gvk.Version != "v1beta1" || gvk.Kind != "IdentityConfig" {
+			return "", errors.Errorf("expected IdentityConfig, but found %s/%s/%s", gvk.Group, gvk.Version, gvk.Kind)
+		}
+		identityConfig = obj.(*kotsv1beta1.IdentityConfig)
 	}
-	if gvk.Group != "kots.io" || gvk.Version != "v1beta1" || gvk.Kind != "IdentityConfig" {
-		return "", errors.Errorf("expected IdentityConfig, but found %s/%s/%s", gvk.Group, gvk.Version, gvk.Kind)
-	}
-	identityConfig := obj.(*kotsv1beta1.IdentityConfig)
 
 	return templateConfigObjects(config, templateContext, license, localRegistry, &template.VersionInfo{}, identityConfig, marshalFunc)
 }
