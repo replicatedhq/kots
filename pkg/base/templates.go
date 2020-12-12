@@ -58,6 +58,15 @@ func NewConfigContextTemplateBuidler(u *upstreamtypes.Upstream, renderOptions *R
 		IsAirgap:     renderOptions.IsAirgap,
 	}
 
-	builder, _, err := template.NewBuilder(configGroups, templateContext, localRegistry, cipher, license, &versionInfo)
+	builderOptions := template.BuilderOptions{
+		ConfigGroups:   configGroups,
+		ExistingValues: templateContext,
+		LocalRegistry:  localRegistry,
+		Cipher:         cipher,
+		License:        license,
+		VersionInfo:    &versionInfo,
+		IdentityConfig: identityConfig,
+	}
+	builder, _, err := template.NewBuilder(builderOptions)
 	return &builder, errors.Wrap(err, "failed to create config context")
 }

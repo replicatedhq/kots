@@ -228,7 +228,7 @@ func LiveAppConfig(w http.ResponseWriter, r *http.Request) {
 	}
 
 	versionInfo := template.VersionInfoFromInstallation(liveAppConfigRequest.Sequence+1, foundApp.IsAirgap, kotsKinds.Installation.Spec) // sequence +1 because the sequence will be incremented on save (and we want the preview to be accurate)
-	renderedConfig, err := kotsconfig.TemplateConfigObjects(kotsKinds.Config, configValues, appLicense, localRegistry, &versionInfo)
+	renderedConfig, err := kotsconfig.TemplateConfigObjects(kotsKinds.Config, configValues, appLicense, localRegistry, &versionInfo, kotsKinds.IdentityConfig)
 	if err != nil {
 		logger.Error(err)
 		liveAppConfigResponse.Error = "failed to render templates"
@@ -321,7 +321,7 @@ func CurrentAppConfig(w http.ResponseWriter, r *http.Request) {
 	}
 
 	versionInfo := template.VersionInfoFromInstallation(int64(sequence)+1, foundApp.IsAirgap, kotsKinds.Installation.Spec) // sequence +1 because the sequence will be incremented on save (and we want the preview to be accurate)
-	renderedConfig, err := kotsconfig.TemplateConfigObjects(kotsKinds.Config, configValues, appLicense, localRegistry, &versionInfo)
+	renderedConfig, err := kotsconfig.TemplateConfigObjects(kotsKinds.Config, configValues, appLicense, localRegistry, &versionInfo, kotsKinds.IdentityConfig)
 	if err != nil {
 		logger.Error(err)
 		currentAppConfigResponse.Error = "failed to render templates"

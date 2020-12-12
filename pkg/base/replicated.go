@@ -332,9 +332,10 @@ func tryGetConfigFromFileContent(content []byte, log *logger.Logger) *kotsv1beta
 	return nil
 }
 
-func findConfigAndLicense(u *upstreamtypes.Upstream, log *logger.Logger) (*kotsv1beta1.Config, *kotsv1beta1.ConfigValues, *kotsv1beta1.License, error) {
+func findConfigAndLicense(u *upstreamtypes.Upstream, log *logger.Logger) (*kotsv1beta1.Config, *kotsv1beta1.ConfigValues, *kotsv1beta1.IdentityConfig, *kotsv1beta1.License, error) {
 	var config *kotsv1beta1.Config
 	var values *kotsv1beta1.ConfigValues
+	var identityConfig *kotsv1beta1.IdentityConfig
 	var license *kotsv1beta1.License
 
 	for _, file := range u.Files {
@@ -348,7 +349,7 @@ func findConfigAndLicense(u *upstreamtypes.Upstream, log *logger.Logger) (*kotsv
 		if err != nil {
 			if document.APIVersion == "kots.io/v1beta1" && (document.Kind == "Config" || document.Kind == "License") {
 				errMessage := fmt.Sprintf("Failed to decode %s", file.Path)
-				return nil, nil, nil, errors.Wrap(err, errMessage)
+				return nil, nil, nil, nil, errors.Wrap(err, errMessage)
 			}
 			continue
 		}
@@ -357,12 +358,14 @@ func findConfigAndLicense(u *upstreamtypes.Upstream, log *logger.Logger) (*kotsv
 			config = obj.(*kotsv1beta1.Config)
 		} else if gvk.Group == "kots.io" && gvk.Version == "v1beta1" && gvk.Kind == "ConfigValues" {
 			values = obj.(*kotsv1beta1.ConfigValues)
+		} else if gvk.Group == "kots.io" && gvk.Version == "v1beta1" && gvk.Kind == "IdentityConfig" {
+			identityConfig = obj.(*kotsv1beta1.IdentityConfig)
 		} else if gvk.Group == "kots.io" && gvk.Version == "v1beta1" && gvk.Kind == "License" {
 			license = obj.(*kotsv1beta1.License)
 		}
 	}
 
-	return config, values, license, nil
+	return config, values, identityConfig, license, nil
 }
 
 // findHelmChartArchiveInRelease iterates through all files in the release (upstreamFiles), looking for a helm chart archive
