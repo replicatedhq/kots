@@ -99,12 +99,11 @@ func getUpdatesReplicated(u *url.URL, localPath string, currentCursor Replicated
 		return nil, errors.Wrap(err, "failed to parse replicated upstream")
 	}
 
-	remoteLicense, err := getSuccessfulHeadResponse(replicatedUpstream, license)
-	if err != nil {
+	if err := getSuccessfulHeadResponse(replicatedUpstream, license); err != nil {
 		return nil, errors.Wrap(err, "failed to get successful head response")
 	}
 
-	pendingReleases, err := listPendingChannelReleases(replicatedUpstream, remoteLicense, currentCursor, reportingInfo)
+	pendingReleases, err := listPendingChannelReleases(replicatedUpstream, license, currentCursor, reportingInfo)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to list replicated app releases")
 	}
@@ -154,12 +153,11 @@ func downloadReplicated(
 			return nil, errors.Wrap(err, "failed to parse replicated upstream")
 		}
 
-		remoteLicense, err := getSuccessfulHeadResponse(replicatedUpstream, license)
-		if err != nil {
+		if err := getSuccessfulHeadResponse(replicatedUpstream, license); err != nil {
 			return nil, errors.Wrap(err, "failed to get successful head response")
 		}
 
-		downloadedRelease, err := downloadReplicatedApp(replicatedUpstream, remoteLicense, updateCursor, reportingInfo)
+		downloadedRelease, err := downloadReplicatedApp(replicatedUpstream, license, updateCursor, reportingInfo)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to download replicated app")
 		}
@@ -315,30 +313,30 @@ func parseReplicatedURL(u *url.URL) (*ReplicatedUpstream, error) {
 	return &replicatedUpstream, nil
 }
 
-func getSuccessfulHeadResponse(replicatedUpstream *ReplicatedUpstream, license *kotsv1beta1.License) (*kotsv1beta1.License, error) {
+func getSuccessfulHeadResponse(replicatedUpstream *ReplicatedUpstream, license *kotsv1beta1.License) error {
 	headReq, err := replicatedUpstream.getRequest("HEAD", license, ReplicatedCursor{})
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to create http request")
+		return errors.Wrap(err, "failed to create http request")
 	}
 	headResp, err := http.DefaultClient.Do(headReq)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to execute head request")
+		return errors.Wrap(err, "failed to execute head request")
 	}
 	defer headResp.Body.Close()
 
 	if headResp.StatusCode == 401 {
-		return nil, errors.New("license was not accepted")
+		return errors.New("license was not accepted")
 	}
 
 	if headResp.StatusCode == 403 {
-		return nil, util.ActionableError{Message: "License is expired"}
+		return util.ActionableError{Message: "License is expired"}
 	}
 
 	if headResp.StatusCode >= 400 {
-		return nil, errors.Errorf("unexpected result from head request: %d", headResp.StatusCode)
+		return errors.Errorf("unexpected result from head request: %d", headResp.StatusCode)
 	}
 
-	return license, nil
+	return nil
 }
 
 func readReplicatedAppFromLocalPath(localPath string, localCursor ReplicatedCursor, versionLabel string) (*Release, error) {
