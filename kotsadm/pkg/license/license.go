@@ -16,7 +16,6 @@ import (
 	"github.com/replicatedhq/kots/kotsadm/pkg/store"
 	"github.com/replicatedhq/kots/kotsadm/pkg/version"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
-	"github.com/replicatedhq/kots/pkg/kotsutil"
 	kotslicense "github.com/replicatedhq/kots/pkg/license"
 	kotspull "github.com/replicatedhq/kots/pkg/pull"
 	serializer "k8s.io/apimachinery/pkg/runtime/serializer/json"
@@ -35,16 +34,12 @@ func Sync(a *apptypes.App, licenseString string, failOnVersionCreate bool) (*kot
 		return nil, errors.Wrap(err, "failed to get latest app version")
 	}
 
-	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(archiveDir)
+	currentLicense, err := store.GetStore().GetLatestLicenseForApp(a.ID)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to load kots kinds from archive")
+		return nil, errors.Wrap(err, "failed to get current license")
 	}
 
-	if kotsKinds.License == nil {
-		return nil, errors.New("app does not contain a license")
-	}
-
-	latestLicense := kotsKinds.License
+	var updatedLicense *kotsv1beta1.License
 	if licenseString != "" {
 		decode := scheme.Codecs.UniversalDeserializer().Decode
 		obj, _, err := decode([]byte(licenseString), nil, nil)
@@ -58,22 +53,22 @@ func Sync(a *apptypes.App, licenseString string, failOnVersionCreate bool) (*kot
 			return nil, errors.Wrap(err, "failed to verify license")
 		}
 
-		latestLicense = verifiedLicense
+		updatedLicense = verifiedLicense
 	} else {
 		// get from the api
-		licenseData, err := kotslicense.GetLatestLicense(kotsKinds.License)
+		licenseData, err := kotslicense.GetLatestLicense(currentLicense)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to get latest license")
 		}
-		latestLicense = licenseData.License
+		updatedLicense = licenseData.License
 		licenseString = string(licenseData.LicenseBytes)
 	}
 
 	// Save and make a new version if the sequence has changed
-	if latestLicense.Spec.LicenseSequence != kotsKinds.License.Spec.LicenseSequence {
+	if updatedLicense.Spec.LicenseSequence != currentLicense.Spec.LicenseSequence {
 		s := serializer.NewYAMLSerializer(serializer.DefaultMetaFactory, scheme.Scheme, scheme.Scheme)
 		var b bytes.Buffer
-		if err := s.Encode(latestLicense, &b); err != nil {
+		if err := s.Encode(updatedLicense, &b); err != nil {
 			return nil, errors.Wrap(err, "failed to encode license")
 		}
 		encodedLicense := b.Bytes()
@@ -101,7 +96,7 @@ func Sync(a *apptypes.App, licenseString string, failOnVersionCreate bool) (*kot
 		}
 	}
 
-	return latestLicense, nil
+	return updatedLicense, nil
 }
 
 func createNewVersion(a *apptypes.App, archiveDir string, registrySettings *registrytypes.RegistrySettings) error {
