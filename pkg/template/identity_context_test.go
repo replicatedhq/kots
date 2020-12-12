@@ -10,7 +10,7 @@ import (
 func TestVersionContext(t *testing.T) {
 	req := require.New(t)
 
-	// a properly populated versionCtx - should return the appropriate values
+	// a properly populated identityCtx - should return the appropriate values
 	ctx := identityCtx{
 		identityConfig: &kotsv1beta1.IdentityConfig{
 			Spec: kotsv1beta1.IdentityConfigSpec{
