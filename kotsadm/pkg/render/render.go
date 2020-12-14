@@ -77,7 +77,17 @@ func RenderContent(kotsKinds *kotsutil.KotsKinds, registrySettings *registrytype
 	}
 
 	versionInfo := template.VersionInfoFromInstallation(sequence, isAirgap, kotsKinds.Installation.Spec)
-	builder, _, err := template.NewBuilder(configGroups, templateContextValues, localRegistry, appCipher, kotsKinds.License, &versionInfo)
+
+	builderOptions := template.BuilderOptions{
+		ConfigGroups:   configGroups,
+		ExistingValues: templateContextValues,
+		LocalRegistry:  localRegistry,
+		Cipher:         appCipher,
+		License:        kotsKinds.License,
+		VersionInfo:    &versionInfo,
+		IdentityConfig: kotsKinds.IdentityConfig,
+	}
+	builder, _, err := template.NewBuilder(builderOptions)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create builder")
 	}

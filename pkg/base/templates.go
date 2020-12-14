@@ -9,7 +9,7 @@ import (
 )
 
 func NewConfigContextTemplateBuidler(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (*template.Builder, error) {
-	config, configValues, license, err := findConfigAndLicense(u, renderOptions.Log)
+	config, configValues, identityConfig, license, err := findConfigAndLicense(u, renderOptions.Log)
 	if err != nil {
 		return nil, err
 	}
@@ -58,6 +58,15 @@ func NewConfigContextTemplateBuidler(u *upstreamtypes.Upstream, renderOptions *R
 		IsAirgap:     renderOptions.IsAirgap,
 	}
 
-	builder, _, err := template.NewBuilder(configGroups, templateContext, localRegistry, cipher, license, &versionInfo)
+	builderOptions := template.BuilderOptions{
+		ConfigGroups:   configGroups,
+		ExistingValues: templateContext,
+		LocalRegistry:  localRegistry,
+		Cipher:         cipher,
+		License:        license,
+		VersionInfo:    &versionInfo,
+		IdentityConfig: identityConfig,
+	}
+	builder, _, err := template.NewBuilder(builderOptions)
 	return &builder, errors.Wrap(err, "failed to create config context")
 }

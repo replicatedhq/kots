@@ -250,7 +250,7 @@ status: {}
 			req.NoError(err)
 
 			localRegistry := template.LocalRegistry{}
-			got, err := templateConfig(log, tt.configSpecData, tt.configValuesData, licenseData, localRegistry, MarshalConfig)
+			got, err := templateConfig(log, tt.configSpecData, tt.configValuesData, licenseData, "", localRegistry, MarshalConfig)
 			req.NoError(err)
 
 			gotObj, _, err := decode([]byte(got), nil, nil)
@@ -259,7 +259,7 @@ status: {}
 			req.Equal(wantObj, gotObj)
 
 			// compare with oldMarshalConfig results
-			got, err = templateConfig(log, tt.configSpecData, tt.configValuesData, licenseData, localRegistry, oldMarshalConfig)
+			got, err = templateConfig(log, tt.configSpecData, tt.configValuesData, licenseData, "", localRegistry, oldMarshalConfig)
 			if !tt.expectOldFail {
 				req.NoError(err)
 

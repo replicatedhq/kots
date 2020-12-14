@@ -54,7 +54,8 @@ type KotsKinds struct {
 	Installation kotsv1beta1.Installation
 	License      *kotsv1beta1.License
 
-	Identity *kotsv1beta1.Identity
+	Identity       *kotsv1beta1.Identity
+	IdentityConfig *kotsv1beta1.IdentityConfig
 
 	Backup *velerov1.Backup
 }
@@ -209,6 +210,15 @@ func (o KotsKinds) Marshal(g string, v string, k string) (string, error) {
 				var b bytes.Buffer
 				if err := s.Encode(o.Identity, &b); err != nil {
 					return "", errors.Wrap(err, "failed to encode identity")
+				}
+				return string(b.Bytes()), nil
+			case "IdentityConfig":
+				if o.IdentityConfig == nil {
+					return "", nil
+				}
+				var b bytes.Buffer
+				if err := s.Encode(o.IdentityConfig, &b); err != nil {
+					return "", errors.Wrap(err, "failed to encode identityconfig")
 				}
 				return string(b.Bytes()), nil
 			}
@@ -368,6 +378,8 @@ func LoadKotsKindsFromPath(fromDir string) (*KotsKinds, error) {
 				kotsKinds.License = decoded.(*kotsv1beta1.License)
 			case "kots.io/v1beta1, Kind=Identity":
 				kotsKinds.Identity = decoded.(*kotsv1beta1.Identity)
+			case "kots.io/v1beta1, Kind=IdentityConfig":
+				kotsKinds.IdentityConfig = decoded.(*kotsv1beta1.IdentityConfig)
 			case "kots.io/v1beta1, Kind=Installation":
 				kotsKinds.Installation = *decoded.(*kotsv1beta1.Installation)
 			case "troubleshoot.sh/v1beta2, Kind=Collector":
