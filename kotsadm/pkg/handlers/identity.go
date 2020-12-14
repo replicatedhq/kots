@@ -27,7 +27,6 @@ import (
 	"github.com/replicatedhq/kots/pkg/ingress"
 	"github.com/replicatedhq/kots/pkg/kotsadm"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
-	"gopkg.in/yaml.v2"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes"
@@ -292,13 +291,14 @@ func ConfigureAppIdentityService(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var identityConfig kotsv1beta1.IdentityConfig
-	if err := yaml.Unmarshal(b, &identityConfig); err != nil {
-		err = errors.Wrap(err, "failed to unmarshal identityconfig yaml file")
+	s, err := kotsutil.LoadIdentityConfigFromContents(b)
+	if err != nil {
+		err = errors.Wrap(err, "failed to decode identity service config")
 		logger.Error(err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
+	identityConfig := *s
 
 	idpConfigs, err := dexConnectorsToIDPConfigs(identityConfig.Spec.DexConnectors.Value)
 	if err != nil {
@@ -620,13 +620,14 @@ func GetAppIdentityServiceConfig(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var identityConfig kotsv1beta1.IdentityConfig
-	if err := yaml.Unmarshal(b, &identityConfig); err != nil {
-		err = errors.Wrap(err, "failed to unmarshal identityconfig yaml file")
+	s, err := kotsutil.LoadIdentityConfigFromContents(b)
+	if err != nil {
+		err = errors.Wrap(err, "failed to decode identity service config")
 		logger.Error(err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
+	identityConfig := *s
 
 	// TODO: return ingress config
 
