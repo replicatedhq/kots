@@ -148,11 +148,17 @@ func Start() {
 	sessionAuthRouter.Path("/api/v1/redact/enabled/{slug}").Methods("POST").
 		HandlerFunc(policy.RedactorWrite.Enforce(handlers.SetRedactEnabled))
 
-	// Identity Service
+	// Kotsadm Identity Service
 	sessionAuthRouter.Path("/api/v1/identity/config").Methods("POST").
 		HandlerFunc(policy.IdentityServiceWrite.Enforce(handlers.ConfigureIdentityService))
 	sessionAuthRouter.Path("/api/v1/identity/config").Methods("GET").
 		HandlerFunc(policy.IdentityServiceRead.Enforce(handlers.GetIdentityServiceConfig))
+
+	// App Identity Service
+	sessionAuthRouter.Path("/api/v1/app/{appSlug}/identity/config").Methods("POST").
+		HandlerFunc(policy.AppIdentityServiceWrite.Enforce(handlers.ConfigureAppIdentityService))
+	sessionAuthRouter.Path("/api/v1/app/{appSlug}/identity/config").Methods("GET").
+		HandlerFunc(policy.AppIdentityServiceRead.Enforce(handlers.GetAppIdentityServiceConfig))
 
 	// Apps
 	sessionAuthRouter.Path("/api/v1/apps").Methods("GET").

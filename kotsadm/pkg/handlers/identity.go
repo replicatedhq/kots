@@ -3,19 +3,31 @@ package handlers
 import (
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/dexidp/dex/connector/oidc"
+	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
+	"github.com/replicatedhq/kots/kotsadm/pkg/downstream"
+	kotsadmidentity "github.com/replicatedhq/kots/kotsadm/pkg/identity"
 	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
+	"github.com/replicatedhq/kots/kotsadm/pkg/preflight"
+	"github.com/replicatedhq/kots/kotsadm/pkg/render"
+	"github.com/replicatedhq/kots/kotsadm/pkg/reporting"
+	"github.com/replicatedhq/kots/kotsadm/pkg/store"
+	"github.com/replicatedhq/kots/kotsadm/pkg/version"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	"github.com/replicatedhq/kots/pkg/identity"
 	identitydeploy "github.com/replicatedhq/kots/pkg/identity/deploy"
 	dextypes "github.com/replicatedhq/kots/pkg/identity/types/dex"
 	"github.com/replicatedhq/kots/pkg/ingress"
 	"github.com/replicatedhq/kots/pkg/kotsadm"
+	"github.com/replicatedhq/kots/pkg/kotsutil"
+	"gopkg.in/yaml.v2"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes"
@@ -206,6 +218,217 @@ func ConfigureIdentityService(w http.ResponseWriter, r *http.Request) {
 	JSON(w, http.StatusOK, response)
 }
 
+func ConfigureAppIdentityService(w http.ResponseWriter, r *http.Request) {
+	request := ConfigureIdentityServiceRequest{}
+	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
+		err = errors.Wrap(err, "failed to decode request body")
+		logger.Error(err)
+		JSON(w, http.StatusBadRequest, NewErrorResponse(err))
+		return
+	}
+
+	if err := validateConfigureIdentityRequest(request); err != nil {
+		err = errors.Wrap(err, "failed to validate request")
+		logger.Error(err)
+		JSON(w, http.StatusBadRequest, NewErrorResponse(err))
+		return
+	}
+
+	a, err := store.GetStore().GetAppFromSlug(mux.Vars(r)["appSlug"])
+	if err != nil {
+		logger.Error(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	archiveDir, err := ioutil.TempDir("", "kotsadm")
+	if err != nil {
+		err = errors.Wrap(err, "failed to create temp dir")
+		logger.Error(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	defer os.RemoveAll(archiveDir)
+
+	err = store.GetStore().GetAppVersionArchive(a.ID, a.CurrentSequence, archiveDir)
+	if err != nil {
+		err = errors.Wrap(err, "failed to get current app version archive")
+		logger.Error(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(archiveDir)
+	if err != nil {
+		err = errors.Wrap(err, "failed to load kots kinds from path")
+		logger.Error(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	identityConfigFile := filepath.Join(archiveDir, "upstream", "userdata", "identityconfig.yaml")
+	if _, err := os.Stat(identityConfigFile); os.IsNotExist(err) {
+		f, err := kotsadmidentity.InitAppIdentityConfig(a.Slug)
+		if err != nil {
+			err = errors.Wrap(err, "failed to init identity config")
+			logger.Error(err)
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		defer os.RemoveAll(f)
+		identityConfigFile = f
+	} else if err != nil {
+		err = errors.Wrap(err, "failed to stat identity config file")
+		logger.Error(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	b, err := ioutil.ReadFile(identityConfigFile)
+	if err != nil {
+		err = errors.Wrap(err, "failed to read identityconfig file")
+		logger.Error(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	var identityConfig kotsv1beta1.IdentityConfig
+	if err := yaml.Unmarshal(b, &identityConfig); err != nil {
+		err = errors.Wrap(err, "failed to unmarshal identityconfig yaml file")
+		logger.Error(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	idpConfigs, err := dexConnectorsToIDPConfigs(identityConfig.Spec.DexConnectors.Value)
+	if err != nil {
+		err = errors.Wrap(err, "failed to get idp configs from dex connectors")
+		logger.Error(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	connectorInfo, err := getDexConnectorInfo(request, idpConfigs)
+	if err != nil {
+		err = errors.Wrap(err, "failed to get dex connector info")
+		logger.Error(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	// TODO: handle ingress config
+	identityConfig.Spec.Enabled = true
+	identityConfig.Spec.DisablePasswordAuth = true
+	identityConfig.Spec.AdminConsoleAddress = request.AdminConsoleAddress
+	identityConfig.Spec.IdentityServiceAddress = request.IdentityServiceAddress
+	identityConfig.Spec.DexConnectors = kotsv1beta1.DexConnectors{
+		Value: []kotsv1beta1.DexConnector{
+			{
+				Type: connectorInfo.Type,
+				Name: connectorInfo.Name,
+				ID:   connectorInfo.ID,
+				Config: runtime.RawExtension{
+					Raw: connectorInfo.Config,
+				},
+			},
+		},
+	}
+
+	namespace := os.Getenv("POD_NAMESPACE")
+
+	// TODO: handle configuring ingress for the app
+	ingressConfig := kotsv1beta1.IngressConfig{}
+	if err := identity.ValidateConfig(r.Context(), namespace, identityConfig, ingressConfig); err != nil {
+		err = errors.Wrap(err, "invalid identity config")
+		logger.Error(err)
+		JSON(w, http.StatusBadRequest, NewErrorResponse(err))
+		return
+	}
+
+	// TODO: validate dex issuer
+	if err := identity.ValidateConnection(r.Context(), namespace, identityConfig, ingressConfig); err != nil {
+		if _, ok := errors.Cause(err).(*identity.ErrorConnection); ok {
+			err = errors.Wrap(err, "invalid connection")
+			logger.Error(err)
+			JSON(w, http.StatusBadRequest, NewErrorResponse(err))
+			return
+		}
+		err = errors.Wrap(err, "failed to validate identity connection")
+		logger.Error(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	kotsKinds.IdentityConfig = &identityConfig
+
+	identityConfigSpec, err := kotsKinds.Marshal("kots.io", "v1beta1", "IdentityConfig")
+	if err != nil {
+		err = errors.Wrap(err, "failed to marshal config values spec")
+		logger.Error(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	if err := ioutil.WriteFile(filepath.Join(archiveDir, "upstream", "userdata", "identityconfig.yaml"), []byte(identityConfigSpec), 0644); err != nil {
+		err = errors.Wrap(err, "failed to write identityconfig.yaml to upstream/userdata")
+		logger.Error(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	registrySettings, err := store.GetStore().GetRegistryDetailsForApp(a.ID)
+	if err != nil {
+		err = errors.Wrap(err, "failed to get registry settings")
+		logger.Error(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	downstreams, err := store.GetStore().ListDownstreamsForApp(a.ID)
+	if err != nil {
+		err = errors.Wrap(err, "failed to list downstreams for app")
+		logger.Error(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	err = render.RenderDir(archiveDir, a, downstreams, registrySettings, reporting.GetReportingInfo(a.ID))
+	if err != nil {
+		err = errors.Wrap(err, "failed to render archive directory")
+		logger.Error(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	newSequence, err := version.CreateVersion(a.ID, archiveDir, "Config Change", a.CurrentSequence, false)
+	if err != nil {
+		err = errors.Wrap(err, "failed to create an app version")
+		logger.Error(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	if err := downstream.SetDownstreamVersionPendingPreflight(a.ID, newSequence); err != nil {
+		err = errors.Wrap(err, "failed to set downstream status to 'pending preflight'")
+		logger.Error(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	if err := preflight.Run(a.ID, newSequence, a.IsAirgap, archiveDir); err != nil {
+		err = errors.Wrap(err, "failed to run preflights")
+		logger.Error(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	response := ErrorResponse{
+		Success: true,
+	}
+
+	JSON(w, http.StatusOK, response)
+}
+
 type DexConnectorInfo struct {
 	Type   string
 	ID     string
@@ -307,6 +530,99 @@ func GetIdentityServiceConfig(w http.ResponseWriter, r *http.Request) {
 
 	identityConfig, err := identity.GetConfig(r.Context(), namespace)
 	if err != nil {
+		logger.Error(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	// TODO: return ingress config
+
+	response := GetIdentityServiceConfigResponse{
+		Enabled:                identityConfig.Spec.Enabled,
+		AdminConsoleAddress:    identityConfig.Spec.AdminConsoleAddress,
+		IdentityServiceAddress: identityConfig.Spec.IdentityServiceAddress,
+	}
+
+	if len(identityConfig.Spec.DexConnectors.Value) == 0 {
+		// no connectors, return default values
+		response.IDPConfig = getDefaultIDPConfig()
+		JSON(w, http.StatusOK, response)
+		return
+	}
+
+	idpConfigs, err := dexConnectorsToIDPConfigs(identityConfig.Spec.DexConnectors.Value)
+	if err != nil {
+		logger.Error(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	for _, idpConfig := range idpConfigs {
+		// redact
+		if idpConfig.OIDCConfig != nil {
+			idpConfig.OIDCConfig.ClientSecret = RedactionMask
+		}
+		if idpConfig.GEOAxISConfig != nil {
+			idpConfig.GEOAxISConfig.ClientSecret = RedactionMask
+		}
+
+		response.IDPConfig = idpConfig
+		// TODO: support for multiple connectors
+		break
+	}
+
+	JSON(w, http.StatusOK, response)
+}
+
+func GetAppIdentityServiceConfig(w http.ResponseWriter, r *http.Request) {
+	a, err := store.GetStore().GetAppFromSlug(mux.Vars(r)["appSlug"])
+	if err != nil {
+		logger.Error(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	archiveDir, err := ioutil.TempDir("", "kotsadm")
+	if err != nil {
+		err = errors.Wrap(err, "failed to create temp dir")
+		logger.Error(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	defer os.RemoveAll(archiveDir)
+
+	err = store.GetStore().GetAppVersionArchive(a.ID, a.CurrentSequence, archiveDir)
+	if err != nil {
+		err = errors.Wrap(err, "failed to get current app version archive")
+		logger.Error(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	identityConfigFile := filepath.Join(archiveDir, "upstream", "userdata", "identityconfig.yaml")
+	if _, err := os.Stat(identityConfigFile); os.IsNotExist(err) {
+		// identity service not configured yet
+		response := GetIdentityServiceConfigResponse{}
+		JSON(w, http.StatusOK, response)
+		return
+	} else if err != nil {
+		err = errors.Wrap(err, "failed to stat identity config file")
+		logger.Error(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	b, err := ioutil.ReadFile(identityConfigFile)
+	if err != nil {
+		err = errors.Wrap(err, "failed to read identityconfig file")
+		logger.Error(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	var identityConfig kotsv1beta1.IdentityConfig
+	if err := yaml.Unmarshal(b, &identityConfig); err != nil {
+		err = errors.Wrap(err, "failed to unmarshal identityconfig yaml file")
 		logger.Error(err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
