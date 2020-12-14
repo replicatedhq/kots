@@ -604,6 +604,7 @@ func GetAppIdentityServiceConfig(w http.ResponseWriter, r *http.Request) {
 		// identity service not configured yet
 		response := GetIdentityServiceConfigResponse{}
 		JSON(w, http.StatusOK, response)
+		return
 	} else if err != nil {
 		err = errors.Wrap(err, "failed to stat identity config file")
 		logger.Error(err)
