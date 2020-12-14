@@ -44,7 +44,7 @@ func createDexPostgresDatabase(database, user, password string) error {
 	}
 
 	query = fmt.Sprintf(
-		`ALTER USER %s WITH PASSWORD '%s';
+		`ALTER USER %s WITH PASSWORD %s;
 		GRANT ALL PRIVILEGES ON DATABASE %s TO %s;`,
 		userQ, passwordQ, databaseQ, userQ,
 	)
