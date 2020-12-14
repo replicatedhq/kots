@@ -22,7 +22,7 @@ import SidebarLayout from "../layout/SidebarLayout/SidebarLayout";
 import SideBar from "../shared/SideBar";
 import Loader from "../shared/Loader";
 import AppRegistrySettings from "./AppRegistrySettings";
-import AppSettings from "./AppSettings";
+import AppIdentityServiceSettings from "./AppIdentityServiceSettings";
 import AppGitops from "./AppGitops";
 import AppSnapshots from "./AppSnapshots";
 import SnapshotSchedule from "../snapshots/SnapshotSchedule";
@@ -426,7 +426,7 @@ class AppDetailPage extends Component {
                     } />
                     {isIdentityServiceSupported &&
                       <Route exact path="/app/:slug/settings" render={() =>
-                        <AppSettings
+                        <AppIdentityServiceSettings
                           app={app}
                           refetch={this.getApp}
                         />
