@@ -39,12 +39,6 @@ func (m *Midstream) writeIdentityService(ctx context.Context, options WriteOptio
 		return "", errors.Wrap(err, "failed to render identity service resources")
 	}
 
-	job, err := identitydeploy.RenderPostgresInitJob(deployOptions)
-	if err != nil {
-		return "", errors.Wrap(err, "failed to render postgres init job")
-	}
-	resources["postgresjob.yaml"] = job
-
 	if _, err = os.Stat(filepath.Join(absDir, "postgressecret.yaml")); os.IsNotExist(err) {
 		postgresSecret, err := identitydeploy.RenderPostgresSecret(ctx, options.AppSlug, m.IdentityConfig.Spec.Storage.PostgresConfig)
 		if err != nil {
