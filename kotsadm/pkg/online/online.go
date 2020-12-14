@@ -10,6 +10,7 @@ import (
 	"github.com/pkg/errors"
 	kotsadmconfig "github.com/replicatedhq/kots/kotsadm/pkg/config"
 	"github.com/replicatedhq/kots/kotsadm/pkg/downstream"
+	"github.com/replicatedhq/kots/kotsadm/pkg/identity"
 	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
 	"github.com/replicatedhq/kots/kotsadm/pkg/online/types"
 	"github.com/replicatedhq/kots/kotsadm/pkg/preflight"
@@ -118,6 +119,12 @@ func CreateAppFromOnline(pendingApp *types.PendingApp, upstreamURI string, isAut
 		configFile = tmpFile.Name()
 	}
 
+	identityConfigFile, err := identity.InitAppIdentityConfig(pendingApp.Slug)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to init identity config")
+	}
+	defer os.Remove(identityConfigFile)
+
 	// kots install --config-values (and other documented automation workflows) support
 	// a writing a config values file as a secret...
 	// if this secret exists, we automatically (blindly) use it as the config values
@@ -131,7 +138,7 @@ func CreateAppFromOnline(pendingApp *types.PendingApp, upstreamURI string, isAut
 		ExcludeAdminConsole: true,
 		CreateAppDir:        false,
 		ConfigFile:          configFile,
-		IdentityConfigFile:  "", // TODO (ethan)
+		IdentityConfigFile:  identityConfigFile,
 		ReportWriter:        pipeWriter,
 		AppSlug:             pendingApp.Slug,
 		AppSequence:         0,

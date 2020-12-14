@@ -26,7 +26,6 @@ import (
 	"github.com/replicatedhq/kots/pkg/upstream/types"
 	"github.com/replicatedhq/kots/pkg/util"
 	"github.com/replicatedhq/kots/pkg/version"
-	"github.com/segmentio/ksuid"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	serializer "k8s.io/apimachinery/pkg/runtime/serializer/json"
 	"k8s.io/client-go/kubernetes/scheme"
@@ -206,15 +205,8 @@ func downloadReplicated(
 		}
 	}
 
-	var identityConfig *kotsv1beta1.IdentityConfig
 	if existingIdentityConfig != nil {
-		i, err := createIdentityConfig(appSlug, existingIdentityConfig, cipher)
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to create identity config values")
-		}
-		identityConfig = i
-
-		release.Manifests["userdata/identityconfig.yaml"] = mustMarshalIdentityConfig(identityConfig)
+		release.Manifests["userdata/identityconfig.yaml"] = mustMarshalIdentityConfig(existingIdentityConfig)
 	}
 
 	if existingConfigValues == nil {
@@ -254,7 +246,7 @@ func downloadReplicated(
 
 		// If config existed and was removed from the app,
 		// values will be carried over to the new version anyway.
-		configValues, err := createConfigValues(application.Name, config, existingConfigValues, cipher, license, &versionInfo, localRegistry, identityConfig)
+		configValues, err := createConfigValues(application.Name, config, existingConfigValues, cipher, license, &versionInfo, localRegistry, existingIdentityConfig)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to create empty config values")
 		}
@@ -727,45 +719,6 @@ func mustMarshalIdentityConfig(identityConfig *kotsv1beta1.IdentityConfig) []byt
 	}
 
 	return b.Bytes()
-}
-
-func createIdentityConfig(appSlug string, existingIdentityConfig *kotsv1beta1.IdentityConfig, _ *crypto.AESCipher) (*kotsv1beta1.IdentityConfig, error) {
-	if existingIdentityConfig.Spec.ClientID == "" {
-		existingIdentityConfig.Spec.ClientID = appSlug
-	}
-
-	if existingIdentityConfig.Spec.ClientSecret == "" {
-		// TODO: (salah) encryption
-		// clientSecret := ksuid.New().String()
-		// encryptedClientSecret := cipher.Encrypt([]byte(clientSecret))
-		existingIdentityConfig.Spec.ClientSecret = ksuid.New().String()
-	}
-
-	if existingIdentityConfig.Spec.Storage == nil {
-		// TODO: (salah) encryption
-		// pgPassword := ksuid.New().String()
-		// encryptedPGPassword := cipher.Encrypt([]byte(pgPassword))
-
-		// support for the dev environment where app is in "test" namespace
-		host := "kotsadm-postgres"
-		if kotsadmNamespace := os.Getenv("POD_NAMESPACE"); kotsadmNamespace != "" {
-			host = fmt.Sprintf("%s.%s", host, kotsadmNamespace)
-		}
-
-		storage := kotsv1beta1.Storage{
-			PostgresConfig: kotsv1beta1.IdentityPostgresConfig{
-				Host:     "kotsadm-postgres",
-				Database: fmt.Sprintf("%s-dex", appSlug),
-				User:     fmt.Sprintf("%s-dex", appSlug),
-				Password: ksuid.New().String(),
-			},
-		}
-		existingIdentityConfig.Spec.Storage = &storage
-	}
-
-	// TODO: (salah) encrypt connectors?
-
-	return existingIdentityConfig, nil
 }
 
 func findIdentityConfigInFile(filename string) (*kotsv1beta1.IdentityConfig, error) {

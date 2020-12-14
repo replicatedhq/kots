@@ -107,14 +107,14 @@ func Undeploy(ctx context.Context, clientset kubernetes.Interface, namespace str
 }
 
 func imageRewriteKotsadmRegistry(namespace string, registryOptions *kotsadmtypes.KotsadmOptions) identitydeploy.ImageRewriteFunc {
-	if registryOptions == nil {
-		return nil
-	}
-
 	secret := kotsadmversion.KotsadmPullSecret(namespace, *registryOptions)
 
 	return func(upstreamImage string, alwaysRewrite bool) (image string, imagePullSecrets []corev1.LocalObjectReference, err error) {
 		image = upstreamImage
+
+		if registryOptions == nil {
+			return image, imagePullSecrets, err
+		}
 
 		if !alwaysRewrite && secret == nil {
 			return image, imagePullSecrets, err

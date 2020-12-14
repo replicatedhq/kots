@@ -14,6 +14,7 @@ import (
 	"github.com/replicatedhq/kots/kotsadm/pkg/airgap/types"
 	kotsadmconfig "github.com/replicatedhq/kots/kotsadm/pkg/config"
 	"github.com/replicatedhq/kots/kotsadm/pkg/downstream"
+	"github.com/replicatedhq/kots/kotsadm/pkg/identity"
 	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
 	"github.com/replicatedhq/kots/kotsadm/pkg/preflight"
 	"github.com/replicatedhq/kots/kotsadm/pkg/registry"
@@ -163,13 +164,19 @@ func CreateAppFromAirgap(pendingApp *types.PendingApp, airgapPath string, regist
 		configFile = tmpFile.Name()
 	}
 
+	identityConfigFile, err := identity.InitAppIdentityConfig(pendingApp.Slug)
+	if err != nil {
+		return errors.Wrap(err, "failed to init identity config")
+	}
+	defer os.Remove(identityConfigFile)
+
 	pullOptions := pull.PullOptions{
 		Downstreams:         []string{"this-cluster"},
 		LocalPath:           releaseDir,
 		Namespace:           appNamespace,
 		LicenseFile:         licenseFile.Name(),
 		ConfigFile:          configFile,
-		IdentityConfigFile:  "", // TODO (ethan)
+		IdentityConfigFile:  identityConfigFile,
 		AirgapRoot:          archiveDir,
 		Silent:              true,
 		ExcludeKotsKinds:    true,
