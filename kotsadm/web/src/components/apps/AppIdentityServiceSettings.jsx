@@ -5,7 +5,7 @@ import IdentityProviders from "@src/components/identity/IdentityProviders";
 
 import "@src/scss/components/identity/IdentityManagement.scss";
 
-class AppSettings extends Component {
+class AppIdentityServiceSettings extends Component {
 
   render() {
     const { app } = this.props;
@@ -23,4 +23,4 @@ class AppSettings extends Component {
   }
 }
 
-export default withRouter(AppSettings);
+export default withRouter(AppIdentityServiceSettings);
