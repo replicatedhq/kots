@@ -12,6 +12,7 @@ import (
 
 	"github.com/pkg/errors"
 	apptypes "github.com/replicatedhq/kots/kotsadm/pkg/app/types"
+	"github.com/replicatedhq/kots/kotsadm/pkg/identity"
 	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
 	"github.com/replicatedhq/kots/kotsadm/pkg/preflight"
 	"github.com/replicatedhq/kots/kotsadm/pkg/store"
@@ -144,11 +145,22 @@ func UpdateAppFromPath(a *apptypes.App, airgapRoot string, deploy bool, skipPref
 		return errors.Wrap(err, "failed parse license")
 	}
 
+	identityConfigFile := filepath.Join(currentArchivePath, "upstream", "userdata", "identityconfig.yaml")
+	if _, err := os.Stat(identityConfigFile); os.IsNotExist(err) {
+		file, err := identity.InitAppIdentityConfig(a.Slug)
+		if err != nil {
+			return errors.Wrap(err, "failed to init identity config")
+		}
+		identityConfigFile = file
+	} else if err != nil {
+		return errors.Wrap(err, "failed to get stat identity config file")
+	}
+
 	pullOptions := pull.PullOptions{
 		LicenseObj:          license,
 		Namespace:           appNamespace,
 		ConfigFile:          filepath.Join(currentArchivePath, "upstream", "userdata", "config.yaml"),
-		IdentityConfigFile:  filepath.Join(currentArchivePath, "upstream", "userdata", "identityconfig.yaml"),
+		IdentityConfigFile:  identityConfigFile,
 		AirgapRoot:          airgapRoot,
 		InstallationFile:    filepath.Join(currentArchivePath, "upstream", "userdata", "installation.yaml"),
 		UpdateCursor:        beforeKotsKinds.Installation.Spec.UpdateCursor,

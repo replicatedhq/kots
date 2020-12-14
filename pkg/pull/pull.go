@@ -31,35 +31,36 @@ import (
 )
 
 type PullOptions struct {
-	HelmRepoURI         string
-	RootDir             string
-	Namespace           string
-	Downstreams         []string
-	LocalPath           string
-	LicenseObj          *kotsv1beta1.License
-	LicenseFile         string
-	InstallationFile    string
-	AirgapRoot          string
-	ConfigFile          string
-	IdentityConfigFile  string
-	UpdateCursor        string
-	ExcludeKotsKinds    bool
-	ExcludeAdminConsole bool
-	SharedPassword      string
-	CreateAppDir        bool
-	Silent              bool
-	RewriteImages       bool
-	RewriteImageOptions RewriteImageOptions
-	HelmVersion         string
-	HelmOptions         []string
-	ReportWriter        io.Writer
-	AppSlug             string
-	AppSequence         int64
-	IsGitOps            bool
-	HTTPProxyEnvValue   string
-	HTTPSProxyEnvValue  string
-	NoProxyEnvValue     string
-	ReportingInfo       *upstreamtypes.ReportingInfo
+	HelmRepoURI            string
+	RootDir                string
+	Namespace              string
+	Downstreams            []string
+	LocalPath              string
+	LicenseObj             *kotsv1beta1.License
+	LicenseFile            string
+	InstallationFile       string
+	AirgapRoot             string
+	ConfigFile             string
+	IdentityConfigFile     string
+	UpdateCursor           string
+	ExcludeKotsKinds       bool
+	ExcludeAdminConsole    bool
+	SharedPassword         string
+	CreateAppDir           bool
+	Silent                 bool
+	RewriteImages          bool
+	RewriteImageOptions    RewriteImageOptions
+	HelmVersion            string
+	HelmOptions            []string
+	ReportWriter           io.Writer
+	AppSlug                string
+	AppSequence            int64
+	IsGitOps               bool
+	HTTPProxyEnvValue      string
+	HTTPSProxyEnvValue     string
+	NoProxyEnvValue        string
+	ReportingInfo          *upstreamtypes.ReportingInfo
+	IdentityPostgresConfig *kotsv1beta1.IdentityPostgresConfig
 }
 
 type RewriteImageOptions struct {

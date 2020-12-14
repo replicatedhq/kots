@@ -50,25 +50,26 @@ type WriteOptions struct {
 }
 
 type FetchOptions struct {
-	RootDir             string
-	UseAppDir           bool
-	HelmRepoName        string
-	HelmRepoURI         string
-	HelmOptions         []string
-	LocalPath           string
-	License             *kotsv1beta1.License
-	ConfigValues        *kotsv1beta1.ConfigValues
-	IdentityConfig      *kotsv1beta1.IdentityConfig
-	Airgap              *kotsv1beta1.Airgap
-	EncryptionKey       string
-	CurrentCursor       string
-	CurrentChannelID    string
-	CurrentChannelName  string
-	CurrentVersionLabel string
-	AppSlug             string
-	AppSequence         int64
-	LocalRegistry       LocalRegistry
-	ReportingInfo       *ReportingInfo
+	RootDir                string
+	UseAppDir              bool
+	HelmRepoName           string
+	HelmRepoURI            string
+	HelmOptions            []string
+	LocalPath              string
+	License                *kotsv1beta1.License
+	ConfigValues           *kotsv1beta1.ConfigValues
+	IdentityConfig         *kotsv1beta1.IdentityConfig
+	Airgap                 *kotsv1beta1.Airgap
+	EncryptionKey          string
+	CurrentCursor          string
+	CurrentChannelID       string
+	CurrentChannelName     string
+	CurrentVersionLabel    string
+	AppSlug                string
+	AppSequence            int64
+	LocalRegistry          LocalRegistry
+	ReportingInfo          *ReportingInfo
+	IdentityPostgresConfig *kotsv1beta1.IdentityPostgresConfig
 }
 
 type LocalRegistry struct {
