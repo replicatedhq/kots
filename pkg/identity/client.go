@@ -16,7 +16,7 @@ func GetKotsadmOIDCProvider(ctx context.Context, clientset kubernetes.Interface,
 		return nil, errors.Wrap(err, "failed to get kotsadm dex config")
 	}
 	if dexConfig == nil {
-		return nil, errors.Wrap(err, "dex config not found")
+		return nil, errors.New("dex config not found")
 	}
 
 	identityConfig, err := GetConfig(ctx, namespace)
