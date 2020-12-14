@@ -3,17 +3,22 @@ package deploy
 import (
 	"bytes"
 	"context"
+	"fmt"
 
 	"github.com/pkg/errors"
 	kotsv1beta "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	kotsadmtypes "github.com/replicatedhq/kots/pkg/kotsadm/types"
+	kotsadmversion "github.com/replicatedhq/kots/pkg/kotsadm/version"
+	"github.com/replicatedhq/kots/pkg/version"
 	"github.com/segmentio/ksuid"
+	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	serializer "k8s.io/apimachinery/pkg/runtime/serializer/json"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/scheme"
+	"k8s.io/utils/pointer"
 )
 
 func EnsurePostgresSecret(ctx context.Context, clientset kubernetes.Interface, namespace, namePrefix string, config kotsv1beta.IdentityPostgresConfig) error {
@@ -107,4 +112,108 @@ func updatePostgresSecret(existingSecret, desiredSecret *corev1.Secret) *corev1.
 	}
 
 	return existingSecret
+}
+
+func EnsurePostgresInitJob(ctx context.Context, clientset kubernetes.Interface, namespace string, options Options) error {
+	job, err := postgresInitJobResource(options)
+	if err != nil {
+		return errors.Wrap(err, "failed to get postgres init job resource")
+	}
+
+	_, err = clientset.BatchV1().Jobs(namespace).Get(ctx, job.Name, metav1.GetOptions{})
+	if err != nil {
+		if !kuberneteserrors.IsNotFound(err) {
+			return errors.Wrap(err, "failed to get existing job")
+		}
+
+		_, err = clientset.BatchV1().Jobs(namespace).Create(ctx, job, metav1.CreateOptions{})
+		if err != nil {
+			return errors.Wrap(err, "failed to create job")
+		}
+
+		return nil
+	}
+
+	// no patch needed
+
+	return nil
+}
+
+func RenderPostgresInitJob(options Options) ([]byte, error) {
+	job, err := postgresInitJobResource(options)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get postgres init job resource")
+	}
+
+	s := serializer.NewYAMLSerializer(serializer.DefaultMetaFactory, scheme.Scheme, scheme.Scheme)
+
+	buf := bytes.NewBuffer(nil)
+	if err := s.Encode(job, buf); err != nil {
+		return nil, errors.Wrap(err, "failed to encode job")
+	}
+
+	return buf.Bytes(), nil
+}
+
+func postgresInitJobResource(options Options) (*batchv1.Job, error) {
+	image := fmt.Sprintf("kotsadm/kotsadm:%s", kotsadmversion.KotsadmTagForVersionString(version.Version()))
+	imagePullSecrets := []corev1.LocalObjectReference{}
+	if options.ImageRewriteFn != nil {
+		var err error
+		image, imagePullSecrets, err = options.ImageRewriteFn(image, true)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to rewrite image")
+		}
+	}
+
+	var securityContext corev1.PodSecurityContext
+	if !options.IsOpenShift {
+		securityContext = corev1.PodSecurityContext{
+			RunAsUser: pointer.Int64Ptr(1001),
+		}
+	}
+
+	return &batchv1.Job{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: "batch/v1",
+			Kind:       "Job",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:   prefixName(options.NamePrefix, "dex-postgres"),
+			Labels: kotsadmtypes.GetKotsadmLabels(AdditionalLabels(options.NamePrefix)),
+		},
+		Spec: batchv1.JobSpec{
+			Template: corev1.PodTemplateSpec{
+				Spec: corev1.PodSpec{
+					SecurityContext:  &securityContext,
+					ImagePullSecrets: imagePullSecrets,
+					RestartPolicy:    corev1.RestartPolicyOnFailure,
+					Containers: []corev1.Container{
+						{
+							Name:  "dex-postgres-init",
+							Image: image,
+							Command: []string{
+								"psql",
+							},
+							Args: []string{
+								"-h",
+								"$PGHOST:${PGPORT:-5432}",
+								"-U",
+								"kotsadm",
+								"-c",
+								"CREATE DATABASE $PGDATABASE;",
+								"-c",
+								"CREATE USER $PGUSER;",
+								"-c",
+								"ALTER USER dex WITH PASSWORD '$PGPASSWORD';",
+								"-c",
+								"GRANT ALL PRIVILEGES ON DATABASE $PGDATABASE TO $PGUSER;",
+							},
+							EnvFrom: []corev1.EnvFromSource{postgresSecretEnvFromSource(options.NamePrefix)},
+						},
+					},
+				},
+			},
+		},
+	}, nil
 }

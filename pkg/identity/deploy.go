@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/docker/distribution/reference"
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	identitydeploy "github.com/replicatedhq/kots/pkg/identity/deploy"
@@ -29,7 +30,9 @@ func Deploy(ctx context.Context, clientset kubernetes.Interface, namespace strin
 		NamePrefix:         KotsadmNamePrefix,
 		IdentitySpec:       getIdentitySpec(identityConfig.Spec, ingressConfig.Spec),
 		IdentityConfigSpec: identityConfig.Spec,
+		IsOpenShift:        false, // TODO (ethan): openshift support
 		ImageRewriteFn:     imageRewriteKotsadmRegistry(namespace, registryOptions),
+		Builder:            nil,
 	}
 
 	if err := migrateClientSecret(ctx, clientset, namespace); err != nil {
@@ -59,6 +62,9 @@ func Configure(ctx context.Context, clientset kubernetes.Interface, namespace st
 		NamePrefix:         KotsadmNamePrefix,
 		IdentitySpec:       getIdentitySpec(identityConfig.Spec, ingressConfig.Spec),
 		IdentityConfigSpec: identityConfig.Spec,
+		IsOpenShift:        false,
+		ImageRewriteFn:     nil,
+		Builder:            nil,
 	}
 
 	return identitydeploy.Configure(ctx, clientset, namespace, options)
@@ -71,7 +77,9 @@ func Render(ctx context.Context, clientset kubernetes.Interface, namespace strin
 		NamePrefix:         KotsadmNamePrefix,
 		IdentitySpec:       getIdentitySpec(identityConfig.Spec, ingressConfig.Spec),
 		IdentityConfigSpec: identityConfig.Spec,
+		IsOpenShift:        false, // TODO (ethan): openshift support
 		ImageRewriteFn:     imageRewriteKotsadmRegistry(namespace, registryOptions),
+		Builder:            nil,
 	}
 
 	resources, err := identitydeploy.Render(ctx, options)
@@ -104,19 +112,29 @@ func imageRewriteKotsadmRegistry(namespace string, registryOptions *kotsadmtypes
 	}
 
 	secret := kotsadmversion.KotsadmPullSecret(namespace, *registryOptions)
-	if secret == nil {
-		return nil
-	}
 
-	return func(upstreamImage, path, tag string) (string, []corev1.LocalObjectReference) {
-		parts := strings.Split(path, "/")
-		imageName := parts[len(parts)-1] // why not include the whole path here?
+	return func(upstreamImage string, alwaysRewrite bool) (image string, imagePullSecrets []corev1.LocalObjectReference, err error) {
+		image = upstreamImage
 
-		image := fmt.Sprintf("%s/%s:%s", kotsadmversion.KotsadmRegistry(*registryOptions), imageName, kotsadmversion.KotsadmTag(*registryOptions))
-		imagePullSecrets := []corev1.LocalObjectReference{
-			{Name: secret.ObjectMeta.Name},
+		if !alwaysRewrite && secret == nil {
+			return image, imagePullSecrets, err
 		}
-		return image, imagePullSecrets
+
+		named, err := reference.ParseNormalizedNamed(upstreamImage)
+		if err != nil {
+			return image, imagePullSecrets, err
+		}
+
+		parts := strings.Split(reference.Path(named), "/")
+		imageName := parts[len(parts)-1] // why not include the namespace here?
+		image = fmt.Sprintf("%s/%s:%s", kotsadmversion.KotsadmRegistry(*registryOptions), imageName, kotsadmversion.KotsadmTag(*registryOptions))
+
+		if secret != nil {
+			imagePullSecrets = []corev1.LocalObjectReference{
+				{Name: secret.ObjectMeta.Name},
+			}
+		}
+		return image, imagePullSecrets, err
 	}
 }
 

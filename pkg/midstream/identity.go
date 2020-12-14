@@ -29,13 +29,21 @@ func (m *Midstream) writeIdentityService(ctx context.Context, options WriteOptio
 		NamePrefix:         options.AppSlug,
 		IdentitySpec:       m.IdentitySpec.Spec,
 		IdentityConfigSpec: m.IdentityConfig.Spec,
-		ImageRewriteFn:     nil, // TODO (ethan): do we rewrite in kustomization.images?
+		IsOpenShift:        false, // TODO (ethan): openshift support
+		ImageRewriteFn:     nil,   // TODO (ethan): do we rewrite in kustomization.images?
 		Builder:            &options.Builder,
 	}
+
 	resources, err := identitydeploy.Render(ctx, deployOptions)
 	if err != nil {
-		return "", errors.Wrap(err, "failed to render identity service")
+		return "", errors.Wrap(err, "failed to render identity service resources")
 	}
+
+	job, err := identitydeploy.RenderPostgresInitJob(deployOptions)
+	if err != nil {
+		return "", errors.Wrap(err, "failed to render postgres init job")
+	}
+	resources["postgresjob.yaml"] = job
 
 	if _, err = os.Stat(filepath.Join(absDir, "postgressecret.yaml")); os.IsNotExist(err) {
 		postgresSecret, err := identitydeploy.RenderPostgresSecret(ctx, options.AppSlug, m.IdentityConfig.Spec.Storage.PostgresConfig)
