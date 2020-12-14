@@ -17,31 +17,17 @@ limitations under the License.
 package v1beta1
 
 import (
-	dextypes "github.com/replicatedhq/kots/pkg/identity/types/dex"
-	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 type IdentitySpec struct {
-	OIDCRedirectURIs            []string            `json:"oidcRedirectUris" yaml:"oidcRedirectUris"`
-	OAUTH2AlwaysShowLoginScreen bool                `json:"oauth2AlwaysShowLoginScreen,omitempty" yaml:"oauth2AlwaysShowLoginScreen,omitempty"`
-	SigningKeysExpiration       string              `json:"signingKeysExpiration,omitempty" yaml:"signingKeysExpiration,omitempty"`
-	IDTokensExpiration          string              `json:"idTokensExpiration,omitempty" yaml:"idTokensExpiration,omitempty"`
-	SupportedProviders          []string            `json:"supportedProviders,omitempty" yaml:"supportedProviders,omitempty"`
-	EnableRestrictedGroups      bool                `json:"enableRestrictedGroups,omitempty" yaml:"enableRestrictedGroups,omitempty"`
-	Roles                       []string            `json:"roles,omitempty" yaml:"roles,omitempty"`
-	Storage                     *StorageConfigValue `json:"storageConfig,omitempty" yaml:"storageConfig,omitempty"`
-}
-
-type StorageConfigValue struct {
-	Value     *StorageConfig       `json:"value,omitempty" yaml:"value,omitempty"`
-	ValueFrom *StorageConfigSource `json:"valueFrom,omitempty" yaml:"valueFrom,omitempty"`
-}
-
-type StorageConfig dextypes.Storage
-
-type StorageConfigSource struct {
-	SecretKeyRef *corev1.SecretKeySelector `json:"secretKeyRef,omitempty" yaml:"secretKeyRef,omitempty"`
+	OIDCRedirectURIs            []string `json:"oidcRedirectUris" yaml:"oidcRedirectUris"`
+	OAUTH2AlwaysShowLoginScreen bool     `json:"oauth2AlwaysShowLoginScreen,omitempty" yaml:"oauth2AlwaysShowLoginScreen,omitempty"`
+	SigningKeysExpiration       string   `json:"signingKeysExpiration,omitempty" yaml:"signingKeysExpiration,omitempty"`
+	IDTokensExpiration          string   `json:"idTokensExpiration,omitempty" yaml:"idTokensExpiration,omitempty"`
+	SupportedProviders          []string `json:"supportedProviders,omitempty" yaml:"supportedProviders,omitempty"`
+	EnableRestrictedGroups      bool     `json:"enableRestrictedGroups,omitempty" yaml:"enableRestrictedGroups,omitempty"`
+	Roles                       []string `json:"roles,omitempty" yaml:"roles,omitempty"`
 }
 
 // IdentityStatus defines the observed state of Identity
