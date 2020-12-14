@@ -40,7 +40,7 @@ func (m *Midstream) writeIdentityService(ctx context.Context, options WriteOptio
 	}
 
 	if m.IdentityConfig.Spec.Storage.PostgresConfig != nil {
-		postgresSecret, err := identitydeploy.RenderPostgresSecret(ctx, options.AppSlug, m.IdentityConfig.Spec.Storage.PostgresConfig)
+		postgresSecret, err := identitydeploy.RenderPostgresSecret(ctx, options.AppSlug, *m.IdentityConfig.Spec.Storage.PostgresConfig)
 		if err != nil {
 			return "", errors.Wrap(err, "failed to render postgres secret")
 		}
