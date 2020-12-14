@@ -33,9 +33,8 @@ func TestIdentityContext(t *testing.T) {
 	req.Equal(true, ctx.identityServiceEnabled())
 	req.Equal(false, nilCtx.identityServiceEnabled())
 
-	// TODO: (salah)
-	// req.Equal("", ctx.identityServiceIssuerURL())
-	// req.Equal("", nilCtx.identityServiceIssuerURL())
+	req.Equal("https://dex.kotsadmdevenv.com", ctx.identityServiceIssuerURL())
+	req.Equal("", nilCtx.identityServiceIssuerURL())
 
 	req.Equal("client-id", ctx.identityServiceClientID())
 	req.Equal("", nilCtx.identityServiceClientID())

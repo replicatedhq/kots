@@ -179,7 +179,7 @@ func migrateClientSecret(ctx context.Context, clientset kubernetes.Interface, na
 	if err != nil {
 		return errors.Wrap(err, "failed to get existing oidc client from dex config")
 	}
-	if client.Secret == "" {
+	if client == nil || client.Secret == "" {
 		return nil
 	}
 
