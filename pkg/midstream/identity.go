@@ -47,14 +47,12 @@ func (m *Midstream) writeIdentityService(ctx context.Context, options WriteOptio
 		resources["postgressecret.yaml"] = postgresSecret
 	}
 
-	if _, err = os.Stat(filepath.Join(absDir, "clientsecret.yaml")); os.IsNotExist(err) {
-		clientSecret, err := identitydeploy.RenderClientSecret(ctx, options.AppSlug, m.IdentityConfig.Spec.ClientSecret)
+	if m.IdentityConfig.Spec.ClientID != "" {
+		clientSecret, err := identitydeploy.RenderClientSecret(ctx, m.IdentityConfig.Spec.ClientID, m.IdentityConfig.Spec.ClientSecret)
 		if err != nil {
 			return "", errors.Wrap(err, "failed to render client secret")
 		}
 		resources["clientsecret.yaml"] = clientSecret
-	} else if err != nil {
-		return "", errors.Wrap(err, "failed to stat client secret")
 	}
 
 	kustomization := kustomizetypes.Kustomization{
