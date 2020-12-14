@@ -47,13 +47,15 @@ func Render(ctx context.Context, options Options) (map[string][]byte, error) {
 	}
 	resources["service.yaml"] = buf.Bytes()
 
-	if ingressConfig := options.IdentityConfigSpec.IngressConfig.Ingress; ingressConfig != nil {
-		ingress := ingressResource(options.NamePrefix, *ingressConfig)
-		buf = bytes.NewBuffer(nil)
-		if err := s.Encode(ingress, buf); err != nil {
-			return nil, errors.Wrap(err, "failed to encode ingress")
+	if options.IdentityConfigSpec.IngressConfig.Enabled {
+		if ingressConfig := options.IdentityConfigSpec.IngressConfig.Ingress; ingressConfig != nil {
+			ingress := ingressResource(options.NamePrefix, *ingressConfig)
+			buf = bytes.NewBuffer(nil)
+			if err := s.Encode(ingress, buf); err != nil {
+				return nil, errors.Wrap(err, "failed to encode ingress")
+			}
+			resources["ingress.yaml"] = buf.Bytes()
 		}
-		resources["ingress.yaml"] = buf.Bytes()
 	}
 
 	return resources, nil
