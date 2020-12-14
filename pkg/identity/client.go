@@ -15,6 +15,9 @@ func GetKotsadmOIDCProvider(ctx context.Context, clientset kubernetes.Interface,
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get kotsadm dex config")
 	}
+	if dexConfig == nil {
+		return nil, errors.Wrap(err, "dex config not found")
+	}
 
 	identityConfig, err := GetConfig(ctx, namespace)
 	if err != nil {
@@ -39,6 +42,9 @@ func GetKotsadmOAuth2Config(ctx context.Context, clientset kubernetes.Interface,
 	client, err := getOIDCClient(ctx, clientset, namespace)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get oidc client secret")
+	}
+	if client == nil {
+		return nil, errors.Wrap(err, "oidc client not found")
 	}
 
 	oauth2Config := oauth2.Config{

@@ -185,10 +185,16 @@ func CreateAppFromOnline(pendingApp *types.PendingApp, upstreamURI string, isAut
 			return nil, errors.Wrap(err, "failed to marshal configvalues spec")
 		}
 
+		identityConfigSpec, err := kotsKinds.Marshal("kots.io", "v1beta1", "IdentityConfig")
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to marshal identityconfig spec")
+		}
+
 		configOptions := kotsadmconfig.ConfigOptions{
-			ConfigSpec:       configSpec,
-			ConfigValuesSpec: configValuesSpec,
-			LicenseSpec:      licenseSpec,
+			ConfigSpec:         configSpec,
+			ConfigValuesSpec:   configValuesSpec,
+			LicenseSpec:        licenseSpec,
+			IdentityConfigSpec: identityConfigSpec,
 			// TODO: are there ever registry settings here?
 		}
 		needsConfig, err := kotsadmconfig.NeedsConfiguration(configOptions)

@@ -373,11 +373,16 @@ func (s OCIStore) CreateAppVersion(appID string, currentSequence *int64, appName
 		if err != nil {
 			return int64(0), errors.Wrap(err, "failed to marshal configvalues spec")
 		}
+		identityConfigSpec, err := kotsKinds.Marshal("kots.io", "v1beta1", "IdentityConfig")
+		if err != nil {
+			return int64(0), errors.Wrap(err, "failed to marshal identityconfig spec")
+		}
 
 		configOpts := kotsconfig.ConfigOptions{
-			ConfigSpec:       configSpec,
-			ConfigValuesSpec: configValuesSpec,
-			LicenseSpec:      licenseSpec,
+			ConfigSpec:         configSpec,
+			ConfigValuesSpec:   configValuesSpec,
+			LicenseSpec:        licenseSpec,
+			IdentityConfigSpec: identityConfigSpec,
 		}
 		if registryInfo != nil {
 			configOpts.RegistryHost = registryInfo.Hostname

@@ -9,6 +9,7 @@ import (
 	"github.com/pkg/errors"
 	identitydeploy "github.com/replicatedhq/kots/pkg/identity/deploy"
 	dextypes "github.com/replicatedhq/kots/pkg/identity/types/dex"
+	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 )
@@ -18,6 +19,11 @@ func getOIDCClient(ctx context.Context, clientset kubernetes.Interface, namespac
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get existing oidc client from dex config")
 	}
+
+	if client == nil {
+		return nil, nil
+	}
+
 	if client.Secret != "" {
 		return client, nil
 	}
@@ -37,11 +43,13 @@ func getKotsadmOIDCClientFromDexConfig(ctx context.Context, clientset kubernetes
 		return nil, errors.Wrap(err, "failed to get existing dex config")
 	}
 
-	if existingConfig != nil {
-		for _, client := range existingConfig.StaticClients {
-			if client.ID == "kotsadm" && !strings.HasPrefix(client.Secret, "$") {
-				return &client, nil
-			}
+	if existingConfig == nil {
+		return nil, nil
+	}
+
+	for _, client := range existingConfig.StaticClients {
+		if client.ID == "kotsadm" && !strings.HasPrefix(client.Secret, "$") {
+			return &client, nil
 		}
 	}
 
@@ -51,6 +59,9 @@ func getKotsadmOIDCClientFromDexConfig(ctx context.Context, clientset kubernetes
 func getKotsadmDexConfig(ctx context.Context, clientset kubernetes.Interface, namespace string) (*dextypes.Config, error) {
 	secret, err := clientset.CoreV1().Secrets(namespace).Get(ctx, "kotsadm-dex", metav1.GetOptions{})
 	if err != nil {
+		if kuberneteserrors.IsNotFound(err) {
+			return nil, nil
+		}
 		return nil, errors.Wrap(err, "failed to get kotsadm-dex secret")
 	}
 
