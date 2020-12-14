@@ -57,11 +57,17 @@ var (
 	PrometheussettingsWrite = Must(NewPolicy(ActionWrite, "prometheussettings."))
 )
 
-// Identity Service
+// Kotsadm Identity Service
 
 var (
 	IdentityServiceWrite = Must(NewPolicy(ActionWrite, "identityservice."))
 	IdentityServiceRead  = Must(NewPolicy(ActionRead, "identityservice."))
+)
+
+// App Identity Service
+var (
+	AppIdentityServiceWrite = Must(NewPolicy(ActionWrite, "app.{{.appSlug}}.identityservice."))
+	AppIdentityServiceRead  = Must(NewPolicy(ActionRead, "app.{{.appSlug}}.identityservice."))
 )
 
 // App
