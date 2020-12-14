@@ -13,7 +13,7 @@ import (
 )
 
 func (m *Midstream) writeIdentityService(ctx context.Context, options WriteOptions) (string, error) {
-	if m.IdentitySpec == nil || m.IdentityConfig == nil {
+	if m.IdentitySpec == nil || m.IdentityConfig == nil || !m.IdentityConfig.Spec.Enabled {
 		return "", nil
 	}
 
