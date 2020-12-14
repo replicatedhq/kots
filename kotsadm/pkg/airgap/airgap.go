@@ -168,6 +168,7 @@ func CreateAppFromAirgap(pendingApp *types.PendingApp, airgapPath string, regist
 	if err != nil {
 		return errors.Wrap(err, "failed to init identity config")
 	}
+	defer os.Remove(identityConfigFile)
 
 	pullOptions := pull.PullOptions{
 		Downstreams:         []string{"this-cluster"},

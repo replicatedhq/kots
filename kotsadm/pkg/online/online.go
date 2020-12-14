@@ -123,6 +123,7 @@ func CreateAppFromOnline(pendingApp *types.PendingApp, upstreamURI string, isAut
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to init identity config")
 	}
+	defer os.Remove(identityConfigFile)
 
 	// kots install --config-values (and other documented automation workflows) support
 	// a writing a config values file as a secret...

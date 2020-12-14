@@ -98,6 +98,7 @@ func DownloadUpdate(appID string, archiveDir string, toCursor string, skipPrefli
 			return 0, errors.Wrap(err, "failed to init identity config")
 		}
 		identityConfigFile = file
+		defer os.Remove(identityConfigFile)
 	} else if err != nil {
 		return 0, errors.Wrap(err, "failed to get stat identity config file")
 	}

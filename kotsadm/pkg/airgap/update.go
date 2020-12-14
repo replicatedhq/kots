@@ -152,6 +152,7 @@ func UpdateAppFromPath(a *apptypes.App, airgapRoot string, deploy bool, skipPref
 			return errors.Wrap(err, "failed to init identity config")
 		}
 		identityConfigFile = file
+		defer os.Remove(identityConfigFile)
 	} else if err != nil {
 		return errors.Wrap(err, "failed to get stat identity config file")
 	}

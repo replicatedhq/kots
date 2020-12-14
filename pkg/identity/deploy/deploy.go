@@ -251,22 +251,25 @@ func deploymentResource(issuerURL, configChecksum string, options Options) (*app
 				Spec: corev1.PodSpec{
 					Affinity: &corev1.Affinity{
 						PodAntiAffinity: &corev1.PodAntiAffinity{
-							RequiredDuringSchedulingIgnoredDuringExecution: []corev1.PodAffinityTerm{{
-								LabelSelector: &metav1.LabelSelector{
-									MatchExpressions: []metav1.LabelSelectorRequirement{{
-										Key:      "app",
-										Operator: metav1.LabelSelectorOpIn,
-										Values: []string{
-											prefixName(options.NamePrefix, "dex"),
-										},
-									}},
+							PreferredDuringSchedulingIgnoredDuringExecution: []corev1.WeightedPodAffinityTerm{{
+								Weight: 2,
+								PodAffinityTerm: corev1.PodAffinityTerm{
+									LabelSelector: &metav1.LabelSelector{
+										MatchExpressions: []metav1.LabelSelectorRequirement{{
+											Key:      "app",
+											Operator: metav1.LabelSelectorOpIn,
+											Values: []string{
+												prefixName(options.NamePrefix, "dex"),
+											},
+										}},
+									},
+									TopologyKey: corev1.LabelHostname,
 								},
 							},
 							}},
 					},
-					SecurityContext:    &securityContext,
-					ServiceAccountName: "kotsadm",
-					ImagePullSecrets:   imagePullSecrets,
+					SecurityContext:  &securityContext,
+					ImagePullSecrets: imagePullSecrets,
 					Containers: []corev1.Container{
 						{
 							Image:           image,

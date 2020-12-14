@@ -205,7 +205,6 @@ func downloadReplicated(
 		}
 	}
 
-	var identityConfig *kotsv1beta1.IdentityConfig
 	if existingIdentityConfig != nil {
 		release.Manifests["userdata/identityconfig.yaml"] = mustMarshalIdentityConfig(existingIdentityConfig)
 	}
@@ -247,7 +246,7 @@ func downloadReplicated(
 
 		// If config existed and was removed from the app,
 		// values will be carried over to the new version anyway.
-		configValues, err := createConfigValues(application.Name, config, existingConfigValues, cipher, license, &versionInfo, localRegistry, identityConfig)
+		configValues, err := createConfigValues(application.Name, config, existingConfigValues, cipher, license, &versionInfo, localRegistry, existingIdentityConfig)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to create empty config values")
 		}
