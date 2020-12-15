@@ -94,8 +94,10 @@ func IngressInstallCmd() *cobra.Command {
 			if identityConfig.Spec.Enabled {
 				log.ChildActionWithSpinner("Configuring the Identity Service")
 
+				proxyEnv := getHttpProxyEnv(v)
+
 				// we have to update the dex secret if kotsadm ingress is changing because it relies on the redirect uri
-				if err := identity.Configure(cmd.Context(), clientset, namespace, *identityConfig, ingressConfig); err != nil {
+				if err := identity.Configure(cmd.Context(), clientset, namespace, *identityConfig, ingressConfig, proxyEnv); err != nil {
 					return errors.Wrap(err, "failed to patch identity service")
 				}
 
@@ -107,6 +109,10 @@ func IngressInstallCmd() *cobra.Command {
 	}
 
 	cmd.Flags().String("ingress-config", "", "path to a kots.Ingress resource file")
+	cmd.Flags().String("http-proxy", "", "sets HTTP_PROXY environment variable in KOTS Identity Service components")
+	cmd.Flags().String("https-proxy", "", "sets HTTPS_PROXY environment variable in KOTS Identity Service components")
+	cmd.Flags().String("no-proxy", "", "sets NO_PROXY environment variable in KOTS Identity Service components")
+	cmd.Flags().Bool("copy-proxy-env", false, "copy proxy environment variables from current environment into KOTS Identity Service components")
 
 	return cmd
 }
