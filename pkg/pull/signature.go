@@ -136,6 +136,9 @@ func verifyLicenseData(outerLicense *kotsv1beta1.License, innerLicense *kotsv1be
 	if outerLicense.Spec.IsIdentityServiceSupported != innerLicense.Spec.IsIdentityServiceSupported {
 		return errors.New("\"IsIdentityServiceSupported\" field has changed")
 	}
+	if outerLicense.Spec.IsGeoaxisSupported != innerLicense.Spec.IsGeoaxisSupported {
+		return errors.New("\"IsGeoaxisSupported\" field has changed")
+	}
 	if outerLicense.Spec.IsSnapshotSupported != innerLicense.Spec.IsSnapshotSupported {
 		return errors.New("\"IsSnapshotSupported\" field has changed")
 	}

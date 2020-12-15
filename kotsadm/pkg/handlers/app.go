@@ -42,6 +42,7 @@ type ResponseApp struct {
 
 	IsGitOpsSupported          bool                     `json:"isGitOpsSupported"`
 	IsIdentityServiceSupported bool                     `json:"isIdentityServiceSupported"`
+	IsGeoaxisSupported         bool                     `json:"isGeoaxisSupported"`
 	AllowRollback              bool                     `json:"allowRollback"`
 	AllowSnapshots             bool                     `json:"allowSnapshots"`
 	LicenseType                string                   `json:"licenseType"`
@@ -264,6 +265,7 @@ func responseAppFromApp(a *apptypes.App) (*ResponseApp, error) {
 		UpdateCheckerSpec:          a.UpdateCheckerSpec,
 		IsGitOpsSupported:          license.Spec.IsGitOpsSupported,
 		IsIdentityServiceSupported: license.Spec.IsIdentityServiceSupported,
+		IsGeoaxisSupported:         license.Spec.IsGeoaxisSupported,
 		AllowRollback:              allowRollback,
 		AllowSnapshots:             allowSnapshots,
 		LicenseType:                license.Spec.LicenseType,

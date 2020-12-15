@@ -281,7 +281,7 @@ class IdentityProviders extends Component {
 
   render() {
     const { configSettingsErrMsg, isLoadingConfigSettings, requiredErrors, selectedProvider } = this.state;
-    const { isKurlEnabled } = this.props;
+    const { isKurlEnabled, isGeoaxisSupported } = this.props;
 
     if (isLoadingConfigSettings) {
       return (
@@ -303,6 +303,7 @@ class IdentityProviders extends Component {
         />
       )
     }
+
 
     return (
       <div className="flex-column flex1 u-position--relative u-overflow--auto u-padding--20 alignItems--center">
@@ -335,23 +336,23 @@ class IdentityProviders extends Component {
           </div>
 
           {!isKurlEnabled && (
-          <div className="u-marginTop--30">
-            <div className="flex flex1 alignItems--center">
-              <p className="u-fontSize--large u-lineHeight--default u-fontWeight--bold u-color--tuna"> ID Address </p>
-              <span className="required-label"> Required </span>
-              {requiredErrors?.identityServiceAddress && <span className="u-color--chestnut u-fontSize--small u-fontWeight--medium u-lineHeight--normal u-marginLeft--5"> ID address is a required field </span>}
-            </div>
-            <p className="u-fontSize--normal u-lineHeight--medium u-fontWeight--medium u-color--dustyGray u-marginTop--12">
-              The address of the Dex identity service, often `&lt;Admin Console URL&gt;/dex`.
-              This URL must be accessible from both the browser as well as the KOTS service.
+            <div className="u-marginTop--30">
+              <div className="flex flex1 alignItems--center">
+                <p className="u-fontSize--large u-lineHeight--default u-fontWeight--bold u-color--tuna"> ID Address </p>
+                <span className="required-label"> Required </span>
+                {requiredErrors?.identityServiceAddress && <span className="u-color--chestnut u-fontSize--small u-fontWeight--medium u-lineHeight--normal u-marginLeft--5"> ID address is a required field </span>}
+              </div>
+              <p className="u-fontSize--normal u-lineHeight--medium u-fontWeight--medium u-color--dustyGray u-marginTop--12">
+                The address of the Dex identity service, often `&lt;Admin Console URL&gt;/dex`.
+                This URL must be accessible from both the browser as well as the KOTS service.
             </p>
-            <input type="text"
-              className="Input u-marginTop--12"
-              placeholder="https://kots.somebigbankadmin.com/dex"
-              value={this.state.identityServiceAddress}
-              onChange={(e) => { this.handleFormChange("identityServiceAddress", e) }} />
-          </div>
-          ) }
+              <input type="text"
+                className="Input u-marginTop--12"
+                placeholder="https://kots.somebigbankadmin.com/dex"
+                value={this.state.identityServiceAddress}
+                onChange={(e) => { this.handleFormChange("identityServiceAddress", e) }} />
+            </div>
+          )}
 
           <div className="u-marginTop--30">
             <p className="u-fontSize--large u-lineHeight--default u-fontWeight--bold u-color--tuna"> Select an Identity Provider </p>
@@ -365,15 +366,16 @@ class IdentityProviders extends Component {
                   onChange={(e) => { this.handleOnChangeProvider("oidcConfig", e) }} />
                 <span className="icon openID u-cursor--pointer" />
               </label>
-              <label htmlFor="geoAxisConfig" className={`identityProviderBtn flex alignItems--center u-cursor--pointer u-userSelect--none ${this.state.selectedProvider === "geoAxisConfig" ? "is-active" : ""}`} style={{ marginLeft: "15px" }}>
-                <input
-                  type="radio"
-                  id="geoAxisConfig"
-                  style={{ display: "none" }}
-                  checked={selectedProvider === "geoAxisConfig"}
-                  onChange={(e) => { this.handleOnChangeProvider("geoAxisConfig", e) }} />
-                <span className="icon geoaxis u-cursor--pointer" />
-              </label>
+              {isGeoaxisSupported &&
+                <label htmlFor="geoAxisConfig" className={`identityProviderBtn flex alignItems--center u-cursor--pointer u-userSelect--none ${this.state.selectedProvider === "geoAxisConfig" ? "is-active" : ""}`} style={{ marginLeft: "15px" }}>
+                  <input
+                    type="radio"
+                    id="geoAxisConfig"
+                    style={{ display: "none" }}
+                    checked={selectedProvider === "geoAxisConfig"}
+                    onChange={(e) => { this.handleOnChangeProvider("geoAxisConfig", e) }} />
+                  <span className="icon geoaxis u-cursor--pointer" />
+                </label>}
             </div>
           </div>
 
