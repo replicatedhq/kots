@@ -2,9 +2,11 @@ package template
 
 import (
 	"fmt"
+	"strconv"
 	"text/template"
 
 	"github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
+	identitytypes "github.com/replicatedhq/kots/pkg/identity/types"
 	"github.com/replicatedhq/kots/pkg/ingress"
 )
 
@@ -81,12 +83,12 @@ func (ctx identityCtx) identityServiceName() string {
 	if ctx.appInfo == nil {
 		return ""
 	}
-	return fmt.Sprintf("%s-dex", ctx.appInfo.Slug)
+	return identitytypes.ServiceName(ctx.appInfo.Slug)
 }
 
 func (ctx identityCtx) identityServicePort() string {
 	if ctx.appInfo == nil {
 		return ""
 	}
-	return "5556"
+	return strconv.Itoa(int(identitytypes.ServicePort()))
 }
