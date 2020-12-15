@@ -219,7 +219,7 @@ func UpdateAppFromPath(a *apptypes.App, airgapRoot string, deploy bool, skipPref
 	}
 
 	if !skipPreflights {
-		if err := preflight.Run(a.ID, newSequence, true, currentArchivePath); err != nil {
+		if err := preflight.Run(a.ID, a.Slug, newSequence, true, currentArchivePath); err != nil {
 			return errors.Wrap(err, "failed to start preflights")
 		}
 	}

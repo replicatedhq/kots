@@ -228,6 +228,10 @@ func downloadReplicated(
 		return nil, errors.Wrap(err, "failed to find config in release")
 	}
 	if config != nil || existingConfigValues != nil {
+		appInfo := template.ApplicationInfo{
+			Slug: appSlug,
+		}
+
 		versionInfo := template.VersionInfo{
 			Sequence:     appSequence,
 			Cursor:       updateCursor.Cursor,
@@ -246,7 +250,7 @@ func downloadReplicated(
 
 		// If config existed and was removed from the app,
 		// values will be carried over to the new version anyway.
-		configValues, err := createConfigValues(application.Name, config, existingConfigValues, cipher, license, &versionInfo, localRegistry, existingIdentityConfig)
+		configValues, err := createConfigValues(application.Name, config, existingConfigValues, cipher, license, &appInfo, &versionInfo, localRegistry, existingIdentityConfig)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to create empty config values")
 		}
@@ -585,7 +589,7 @@ func mustMarshalConfigValues(configValues *kotsv1beta1.ConfigValues) []byte {
 	return b.Bytes()
 }
 
-func createConfigValues(applicationName string, config *kotsv1beta1.Config, existingConfigValues *kotsv1beta1.ConfigValues, cipher *crypto.AESCipher, license *kotsv1beta1.License, versionInfo *template.VersionInfo, localRegistry template.LocalRegistry, identityConfig *kotsv1beta1.IdentityConfig) (*kotsv1beta1.ConfigValues, error) {
+func createConfigValues(applicationName string, config *kotsv1beta1.Config, existingConfigValues *kotsv1beta1.ConfigValues, cipher *crypto.AESCipher, license *kotsv1beta1.License, appInfo *template.ApplicationInfo, versionInfo *template.VersionInfo, localRegistry template.LocalRegistry, identityConfig *kotsv1beta1.IdentityConfig) (*kotsv1beta1.ConfigValues, error) {
 	templateContextValues := make(map[string]template.ItemValue)
 
 	var newValues kotsv1beta1.ConfigValuesSpec
@@ -623,13 +627,14 @@ func createConfigValues(applicationName string, config *kotsv1beta1.Config, exis
 	}
 
 	builderOptions := template.BuilderOptions{
-		ConfigGroups:   config.Spec.Groups,
-		ExistingValues: templateContextValues,
-		LocalRegistry:  localRegistry,
-		Cipher:         cipher,
-		License:        license,
-		VersionInfo:    versionInfo,
-		IdentityConfig: identityConfig,
+		ConfigGroups:    config.Spec.Groups,
+		ExistingValues:  templateContextValues,
+		LocalRegistry:   localRegistry,
+		Cipher:          cipher,
+		License:         license,
+		ApplicationInfo: appInfo,
+		VersionInfo:     versionInfo,
+		IdentityConfig:  identityConfig,
 	}
 	builder, _, err := template.NewBuilder(builderOptions)
 	if err != nil {
