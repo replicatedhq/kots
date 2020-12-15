@@ -89,10 +89,6 @@ func IdentityServiceInstallCmd() *cobra.Command {
 	}
 
 	cmd.Flags().String("identity-config", "", "path to a manifest containing the KOTS identity service configuration (must be apiVersion: kots.io/v1beta1, kind: IdentityConfig)")
-
-	// random other registry flags
-	cmd.Flags().String("license-file", "", "path to a license file to use when download a replicated app")
-	cmd.Flags().String("airgap-bundle", "", "path to the application airgap bundle where application metadata will be loaded from")
 	cmd.Flags().Bool("airgap", false, "set to true to run install in airgapped mode. setting --airgap-bundle implies --airgap=true.")
 	cmd.Flags().String("http-proxy", "", "sets HTTP_PROXY environment variable in KOTS Identity Service components")
 	cmd.Flags().String("https-proxy", "", "sets HTTPS_PROXY environment variable in KOTS Identity Service components")
