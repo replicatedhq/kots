@@ -21,13 +21,18 @@ import (
 )
 
 type IdentitySpec struct {
-	OIDCRedirectURIs            []string `json:"oidcRedirectUris" yaml:"oidcRedirectUris"`
-	OAUTH2AlwaysShowLoginScreen bool     `json:"oauth2AlwaysShowLoginScreen,omitempty" yaml:"oauth2AlwaysShowLoginScreen,omitempty"`
-	SigningKeysExpiration       string   `json:"signingKeysExpiration,omitempty" yaml:"signingKeysExpiration,omitempty"`
-	IDTokensExpiration          string   `json:"idTokensExpiration,omitempty" yaml:"idTokensExpiration,omitempty"`
-	SupportedProviders          []string `json:"supportedProviders,omitempty" yaml:"supportedProviders,omitempty"`
-	EnableRestrictedGroups      bool     `json:"enableRestrictedGroups,omitempty" yaml:"enableRestrictedGroups,omitempty"`
-	Roles                       []string `json:"roles,omitempty" yaml:"roles,omitempty"`
+	OIDCRedirectURIs            []string       `json:"oidcRedirectUris" yaml:"oidcRedirectUris"`
+	OAUTH2AlwaysShowLoginScreen bool           `json:"oauth2AlwaysShowLoginScreen,omitempty" yaml:"oauth2AlwaysShowLoginScreen,omitempty"`
+	SigningKeysExpiration       string         `json:"signingKeysExpiration,omitempty" yaml:"signingKeysExpiration,omitempty"`
+	IDTokensExpiration          string         `json:"idTokensExpiration,omitempty" yaml:"idTokensExpiration,omitempty"`
+	SupportedProviders          []string       `json:"supportedProviders,omitempty" yaml:"supportedProviders,omitempty"`
+	Roles                       []IdentityRole `json:"roles,omitempty" yaml:"roles,omitempty"`
+}
+
+type IdentityRole struct {
+	ID          string `json:"id" yaml:"id"`
+	Name        string `json:"name" yaml:"name"`
+	Description string `json:"description" yaml:"description"`
 }
 
 // IdentityStatus defines the observed state of Identity

@@ -35,8 +35,6 @@ spec:
           type: object
         spec:
           properties:
-            enableRestrictedGroups:
-              type: boolean
             idTokensExpiration:
               type: string
             oauth2AlwaysShowLoginScreen:
@@ -47,7 +45,18 @@ spec:
               type: array
             roles:
               items:
-                type: string
+                properties:
+                  description:
+                    type: string
+                  id:
+                    type: string
+                  name:
+                    type: string
+                required:
+                - description
+                - id
+                - name
+                type: object
               type: array
             signingKeysExpiration:
               type: string

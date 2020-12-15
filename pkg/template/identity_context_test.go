@@ -52,9 +52,6 @@ func TestIdentityContext(t *testing.T) {
 	req.Equal("client-secret", ctx.identityServiceClientSecret())
 	req.Equal("", nilCtx.identityServiceClientSecret())
 
-	req.Equal([]string{"KOTS Test Admin", "KOTS Test Support"}, ctx.identityServiceRestrictedGroups())
-	req.Equal([]string{}, nilCtx.identityServiceRestrictedGroups())
-
 	req.Equal(map[string][]string{
 		"KOTS Test Admin":   {"cluster-admin", "read-only"},
 		"KOTS Test Support": {"support"},
