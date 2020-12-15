@@ -78,5 +78,11 @@ func (ctx identityCtx) identityServiceRoles() map[string][]string {
 	if ctx.identityConfig == nil {
 		return map[string][]string{}
 	}
-	return map[string][]string{} // TODO (salah)
+
+	m := map[string][]string{}
+	for _, g := range ctx.identityConfig.Spec.Groups {
+		m[g.ID] = g.RoleIDs
+	}
+
+	return m
 }
