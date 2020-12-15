@@ -314,7 +314,7 @@ func processDeploySocketForApp(clusterSocket *ClusterSocket, a *apptypes.App) er
 		// render status informers
 		renderedInformers := []string{}
 		for _, informer := range kotsKinds.KotsApplication.Spec.StatusInformers {
-			renderedInformer, err := render.RenderContent(kotsKinds, registrySettings, deployedVersion.Sequence, a.IsAirgap, []byte(informer))
+			renderedInformer, err := render.RenderContent(kotsKinds, registrySettings, a.Slug, deployedVersion.Sequence, a.IsAirgap, []byte(informer))
 			if err != nil {
 				logger.Error(errors.Wrap(err, "failed to render status informer"))
 				continue

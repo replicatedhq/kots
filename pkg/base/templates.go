@@ -49,6 +49,10 @@ func NewConfigContextTemplateBuidler(u *upstreamtypes.Upstream, renderOptions *R
 		Password:  renderOptions.LocalRegistryPassword,
 	}
 
+	appInfo := template.ApplicationInfo{
+		Slug: renderOptions.AppSlug,
+	}
+
 	versionInfo := template.VersionInfo{
 		Sequence:     renderOptions.Sequence,
 		Cursor:       u.UpdateCursor,
@@ -59,13 +63,14 @@ func NewConfigContextTemplateBuidler(u *upstreamtypes.Upstream, renderOptions *R
 	}
 
 	builderOptions := template.BuilderOptions{
-		ConfigGroups:   configGroups,
-		ExistingValues: templateContext,
-		LocalRegistry:  localRegistry,
-		Cipher:         cipher,
-		License:        license,
-		VersionInfo:    &versionInfo,
-		IdentityConfig: identityConfig,
+		ConfigGroups:    configGroups,
+		ExistingValues:  templateContext,
+		LocalRegistry:   localRegistry,
+		Cipher:          cipher,
+		License:         license,
+		VersionInfo:     &versionInfo,
+		ApplicationInfo: &appInfo,
+		IdentityConfig:  identityConfig,
 	}
 	builder, _, err := template.NewBuilder(builderOptions)
 	return &builder, errors.Wrap(err, "failed to create config context")

@@ -35,6 +35,9 @@ func TestIdentityContext(t *testing.T) {
 				ClientSecret:           "client-secret",
 			},
 		},
+		appInfo: &ApplicationInfo{
+			Slug: "my-app",
+		},
 	}
 
 	// an unpopulated identityCtx - should not error/panic
@@ -60,4 +63,10 @@ func TestIdentityContext(t *testing.T) {
 		"KOTS Test Support": {"support"},
 	}, ctx.identityServiceRoles())
 	req.Equal(map[string][]string{}, nilCtx.identityServiceRoles())
+
+	req.Equal("my-app-dex", ctx.identityServiceName())
+	req.Equal("", nilCtx.identityServiceName())
+
+	req.Equal("5556", ctx.identityServicePort())
+	req.Equal("", nilCtx.identityServicePort())
 }

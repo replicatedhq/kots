@@ -21,13 +21,14 @@ type Builder struct {
 }
 
 type BuilderOptions struct {
-	ConfigGroups   []kotsv1beta1.ConfigGroup
-	ExistingValues map[string]ItemValue
-	LocalRegistry  LocalRegistry
-	Cipher         *crypto.AESCipher
-	License        *kotsv1beta1.License
-	VersionInfo    *VersionInfo
-	IdentityConfig *kotsv1beta1.IdentityConfig
+	ConfigGroups    []kotsv1beta1.ConfigGroup
+	ExistingValues  map[string]ItemValue
+	LocalRegistry   LocalRegistry
+	Cipher          *crypto.AESCipher
+	License         *kotsv1beta1.License
+	ApplicationInfo *ApplicationInfo
+	VersionInfo     *VersionInfo
+	IdentityConfig  *kotsv1beta1.IdentityConfig
 }
 
 // NewBuilder creates a builder with all available contexts.
@@ -43,7 +44,7 @@ func NewBuilder(opts BuilderOptions) (Builder, map[string]ItemValue, error) {
 		licenseCtx{License: opts.License},
 		newKurlContext("base", "default"), // can be hardcoded because kurl always deploys to the default namespace
 		newVersionCtx(opts.VersionInfo),
-		newIdentityCtx(opts.IdentityConfig),
+		newIdentityCtx(opts.IdentityConfig, opts.ApplicationInfo),
 		configCtx,
 	}
 	return b, configCtx.ItemValues, nil

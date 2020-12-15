@@ -117,7 +117,7 @@ func IgnorePreflightRBACErrors(w http.ResponseWriter, r *http.Request) {
 	removeArchiveDir = false
 	go func() {
 		defer os.RemoveAll(archiveDir)
-		if err := preflight.Run(foundApp.ID, int64(sequence), foundApp.IsAirgap, archiveDir); err != nil {
+		if err := preflight.Run(foundApp.ID, foundApp.Slug, int64(sequence), foundApp.IsAirgap, archiveDir); err != nil {
 			logger.Error(err)
 			return
 		}
@@ -172,7 +172,7 @@ func StartPreflightChecks(w http.ResponseWriter, r *http.Request) {
 	removeArchiveDir = false
 	go func() {
 		defer os.RemoveAll(archiveDir)
-		if err := preflight.Run(foundApp.ID, int64(sequence), foundApp.IsAirgap, archiveDir); err != nil {
+		if err := preflight.Run(foundApp.ID, foundApp.Slug, int64(sequence), foundApp.IsAirgap, archiveDir); err != nil {
 			logger.Error(err)
 			return
 		}

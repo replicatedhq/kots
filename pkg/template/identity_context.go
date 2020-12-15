@@ -10,11 +10,13 @@ import (
 
 type identityCtx struct {
 	identityConfig *v1beta1.IdentityConfig
+	appInfo        *ApplicationInfo
 }
 
-func newIdentityCtx(identityConfig *v1beta1.IdentityConfig) identityCtx {
+func newIdentityCtx(identityConfig *v1beta1.IdentityConfig, appInfo *ApplicationInfo) identityCtx {
 	return identityCtx{
 		identityConfig: identityConfig,
+		appInfo:        appInfo,
 	}
 }
 
@@ -27,6 +29,8 @@ func (ctx identityCtx) FuncMap() template.FuncMap {
 		"IdentityServiceClientSecret":     ctx.identityServiceClientSecret,
 		"IdentityServiceRestrictedGroups": ctx.identityServiceRestrictedGroups,
 		"IdentityServiceRoles":            ctx.identityServiceRoles,
+		"IdentityServiceName":             ctx.identityServiceName,
+		"IdentityServicePort":             ctx.identityServicePort,
 	}
 }
 
@@ -85,4 +89,18 @@ func (ctx identityCtx) identityServiceRoles() map[string][]string {
 	}
 
 	return m
+}
+
+func (ctx identityCtx) identityServiceName() string {
+	if ctx.appInfo == nil {
+		return ""
+	}
+	return fmt.Sprintf("%s-dex", ctx.appInfo.Slug)
+}
+
+func (ctx identityCtx) identityServicePort() string {
+	if ctx.appInfo == nil {
+		return ""
+	}
+	return "5556"
 }

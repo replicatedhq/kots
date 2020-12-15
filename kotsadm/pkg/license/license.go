@@ -118,7 +118,7 @@ func createNewVersion(a *apptypes.App, archiveDir string, registrySettings *regi
 		return errors.Wrap(err, "failed to create new version")
 	}
 
-	if err := preflight.Run(a.ID, newSequence, a.IsAirgap, archiveDir); err != nil {
+	if err := preflight.Run(a.ID, a.Slug, newSequence, a.IsAirgap, archiveDir); err != nil {
 		return errors.Wrap(err, "failed to run preflights")
 	}
 

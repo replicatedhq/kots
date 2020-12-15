@@ -224,7 +224,7 @@ func CreateAppFromOnline(pendingApp *types.PendingApp, upstreamURI string, isAut
 	}
 
 	if !skipPreflights {
-		if err := preflight.Run(pendingApp.ID, newSequence, false, tmpRoot); err != nil {
+		if err := preflight.Run(pendingApp.ID, pendingApp.Slug, newSequence, false, tmpRoot); err != nil {
 			return nil, errors.Wrap(err, "failed to start preflights")
 		}
 	}

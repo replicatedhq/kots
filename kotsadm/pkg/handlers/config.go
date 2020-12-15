@@ -482,7 +482,7 @@ func updateAppConfig(updateApp *apptypes.App, sequence int64, req UpdateAppConfi
 		return updateAppConfigResponse, err
 	}
 
-	if err := preflight.Run(updateApp.ID, int64(sequence), updateApp.IsAirgap, archiveDir); err != nil {
+	if err := preflight.Run(updateApp.ID, updateApp.Slug, int64(sequence), updateApp.IsAirgap, archiveDir); err != nil {
 		updateAppConfigResponse.Error = errors.Cause(err).Error()
 		return updateAppConfigResponse, err
 	}
