@@ -590,3 +590,23 @@ func getLicense(v *viper.Viper) (*kotsv1beta1.License, error) {
 
 	return license, nil
 }
+
+func getHttpProxyEnv(v *viper.Viper) map[string]string {
+	env := make(map[string]string)
+
+	if v.GetBool("copy-proxy-env") {
+		env["HTTP_PROXY"] = os.Getenv("HTTP_PROXY")
+		env["http_proxy"] = os.Getenv("http_proxy")
+		env["HTTPS_PROXY"] = os.Getenv("HTTPS_PROXY")
+		env["https_proxy"] = os.Getenv("https_proxy")
+		env["NO_PROXY"] = os.Getenv("NO_PROXY")
+		env["no_proxy"] = os.Getenv("no_proxy")
+		return env
+	}
+
+	env["HTTP_PROXY"] = v.GetString("http-proxy")
+	env["HTTPS_PROXY"] = v.GetString("https-proxy")
+	env["NO_PROXY"] = v.GetString("no-proxy")
+	return env
+
+}

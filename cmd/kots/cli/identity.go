@@ -82,7 +82,9 @@ func IdentityServiceInstallCmd() *cobra.Command {
 				return errors.Wrap(err, "failed to get registry config")
 			}
 
-			return identityServiceDeploy(cmd.Context(), log, clientset, namespace, identityConfig, *ingressConfig, registryConfig)
+			proxyEnv := getHttpProxyEnv(v)
+
+			return identityServiceDeploy(cmd.Context(), log, clientset, namespace, identityConfig, *ingressConfig, registryConfig, proxyEnv)
 		},
 	}
 
@@ -92,6 +94,10 @@ func IdentityServiceInstallCmd() *cobra.Command {
 	cmd.Flags().String("license-file", "", "path to a license file to use when download a replicated app")
 	cmd.Flags().String("airgap-bundle", "", "path to the application airgap bundle where application metadata will be loaded from")
 	cmd.Flags().Bool("airgap", false, "set to true to run install in airgapped mode. setting --airgap-bundle implies --airgap=true.")
+	cmd.Flags().String("http-proxy", "", "sets HTTP_PROXY environment variable in KOTS Identity Service components")
+	cmd.Flags().String("https-proxy", "", "sets HTTPS_PROXY environment variable in KOTS Identity Service components")
+	cmd.Flags().String("no-proxy", "", "sets NO_PROXY environment variable in KOTS Identity Service components")
+	cmd.Flags().Bool("copy-proxy-env", false, "copy proxy environment variables from current environment into KOTS Identity Service components")
 
 	registryFlags(cmd.Flags())
 
@@ -141,11 +147,16 @@ func IdentityServiceConfigureCmd() *cobra.Command {
 				identityConfig = *s
 			}
 
-			return identityServiceConfigure(cmd.Context(), log, clientset, namespace, identityConfig, *ingressConfig)
+			proxyEnv := getHttpProxyEnv(v)
+			return identityServiceConfigure(cmd.Context(), log, clientset, namespace, identityConfig, *ingressConfig, proxyEnv)
 		},
 	}
 
 	cmd.Flags().String("identity-config", "", "path to a manifest containing the KOTS identity service configuration (must be apiVersion: kots.io/v1beta1, kind: IdentityConfig)")
+	cmd.Flags().String("http-proxy", "", "sets HTTP_PROXY environment variable in KOTS Identity Service components")
+	cmd.Flags().String("https-proxy", "", "sets HTTPS_PROXY environment variable in KOTS Identity Service components")
+	cmd.Flags().String("no-proxy", "", "sets NO_PROXY environment variable in KOTS Identity Service components")
+	cmd.Flags().Bool("copy-proxy-env", false, "copy proxy environment variables from current environment into KOTS Identity Service components")
 
 	return cmd
 }
@@ -279,7 +290,7 @@ func IdentityServiceOIDCCallbackURLCmd() *cobra.Command {
 	return cmd
 }
 
-func identityServiceDeploy(ctx context.Context, log *logger.Logger, clientset kubernetes.Interface, namespace string, identityConfig kotsv1beta1.IdentityConfig, ingressConfig kotsv1beta1.IngressConfig, registryConfig *kotsadmtypes.KotsadmOptions) error {
+func identityServiceDeploy(ctx context.Context, log *logger.Logger, clientset kubernetes.Interface, namespace string, identityConfig kotsv1beta1.IdentityConfig, ingressConfig kotsv1beta1.IngressConfig, registryConfig *kotsadmtypes.KotsadmOptions, proxyEnv map[string]string) error {
 	log.ChildActionWithSpinner("Deploying the Identity Service")
 
 	identityConfig.Spec.Enabled = true
@@ -299,7 +310,7 @@ func identityServiceDeploy(ctx context.Context, log *logger.Logger, clientset ku
 		return errors.Wrap(err, "failed to set identity config")
 	}
 
-	if err := identity.Deploy(ctx, clientset, namespace, identityConfig, ingressConfig, registryConfig); err != nil {
+	if err := identity.Deploy(ctx, clientset, namespace, identityConfig, ingressConfig, registryConfig, proxyEnv); err != nil {
 		return errors.Wrap(err, "failed to deploy the identity service")
 	}
 
@@ -308,7 +319,7 @@ func identityServiceDeploy(ctx context.Context, log *logger.Logger, clientset ku
 	return nil
 }
 
-func identityServiceConfigure(ctx context.Context, log *logger.Logger, clientset kubernetes.Interface, namespace string, identityConfig kotsv1beta1.IdentityConfig, ingressConfig kotsv1beta1.IngressConfig) error {
+func identityServiceConfigure(ctx context.Context, log *logger.Logger, clientset kubernetes.Interface, namespace string, identityConfig kotsv1beta1.IdentityConfig, ingressConfig kotsv1beta1.IngressConfig, proxyEnv map[string]string) error {
 	log.ChildActionWithSpinner("Configuring the Identity Service")
 
 	identityConfig.Spec.Enabled = true
@@ -328,7 +339,7 @@ func identityServiceConfigure(ctx context.Context, log *logger.Logger, clientset
 		return errors.Wrap(err, "failed to set identity config")
 	}
 
-	if err := identity.Configure(ctx, clientset, namespace, identityConfig, ingressConfig); err != nil {
+	if err := identity.Configure(ctx, clientset, namespace, identityConfig, ingressConfig, proxyEnv); err != nil {
 		return errors.Wrap(err, "failed to configure identity service")
 	}
 

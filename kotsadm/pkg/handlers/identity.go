@@ -203,7 +203,12 @@ func ConfigureIdentityService(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := identity.Deploy(r.Context(), clientset, namespace, identityConfig, *ingressConfig, &registryOptions); err != nil {
+	proxyEnv := map[string]string{
+		"HTTP_PROXY":  os.Getenv("HTTP_PROXY"),
+		"HTTPS_PROXY": os.Getenv("HTTPS_PROXY"),
+		"NO_PROXY":    os.Getenv("NO_PROXY"),
+	}
+	if err := identity.Deploy(r.Context(), clientset, namespace, identityConfig, *ingressConfig, &registryOptions, proxyEnv); err != nil {
 		err = errors.Wrap(err, "failed to deploy the identity service")
 		logger.Error(err)
 		w.WriteHeader(http.StatusInternalServerError)
