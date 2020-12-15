@@ -27,7 +27,6 @@ func (ctx identityCtx) FuncMap() template.FuncMap {
 		"IdentityServiceIssuerURL":        ctx.identityServiceIssuerURL,
 		"IdentityServiceClientID":         ctx.identityServiceClientID,
 		"IdentityServiceClientSecret":     ctx.identityServiceClientSecret,
-		"IdentityServiceRestrictedGroups": ctx.identityServiceRestrictedGroups,
 		"IdentityServiceRoles":            ctx.identityServiceRoles,
 		"IdentityServiceName":             ctx.identityServiceName,
 		"IdentityServicePort":             ctx.identityServicePort,
@@ -63,19 +62,6 @@ func (ctx identityCtx) identityServiceClientSecret() string {
 		return ""
 	}
 	return ctx.identityConfig.Spec.ClientSecret
-}
-
-func (ctx identityCtx) identityServiceRestrictedGroups() []string {
-	if ctx.identityConfig == nil {
-		return []string{}
-	}
-
-	groups := []string{}
-	for _, g := range ctx.identityConfig.Spec.Groups {
-		groups = append(groups, g.ID)
-	}
-
-	return groups
 }
 
 func (ctx identityCtx) identityServiceRoles() map[string][]string {

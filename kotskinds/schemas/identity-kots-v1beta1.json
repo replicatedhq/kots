@@ -19,9 +19,6 @@
         "oidcRedirectUris"
       ],
       "properties": {
-        "enableRestrictedGroups": {
-          "type": "boolean"
-        },
         "idTokensExpiration": {
           "type": "string"
         },
@@ -37,7 +34,21 @@
         "roles": {
           "type": "array",
           "items": {
-            "type": "string"
+            "type": "object",
+            "required": [
+              "id"
+            ],
+            "properties": {
+              "description": {
+                "type": "string"
+              },
+              "id": {
+                "type": "string"
+              },
+              "name": {
+                "type": "string"
+              }
+            }
           }
         },
         "signingKeysExpiration": {

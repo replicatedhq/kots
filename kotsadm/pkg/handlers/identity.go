@@ -38,8 +38,9 @@ const (
 )
 
 type ConfigureIdentityServiceRequest struct {
-	AdminConsoleAddress    string `json:"adminConsoleAddress"`
-	IdentityServiceAddress string `json:"identityServiceAddress"`
+	AdminConsoleAddress    string                            `json:"adminConsoleAddress"`
+	IdentityServiceAddress string                            `json:"identityServiceAddress"`
+	Groups                 []kotsv1beta1.IdentityConfigGroup `json:"groups,omitempty"`
 
 	IDPConfig `json:",inline"`
 }
@@ -324,6 +325,7 @@ func ConfigureAppIdentityService(w http.ResponseWriter, r *http.Request) {
 	// TODO: handle ingress config
 	identityConfig.Spec.Enabled = true
 	identityConfig.Spec.DisablePasswordAuth = true
+	identityConfig.Spec.Groups = request.Groups
 	identityConfig.Spec.AdminConsoleAddress = request.AdminConsoleAddress
 	identityConfig.Spec.IdentityServiceAddress = request.IdentityServiceAddress
 	identityConfig.Spec.DexConnectors = kotsv1beta1.DexConnectors{
