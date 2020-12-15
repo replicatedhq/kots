@@ -67,6 +67,8 @@ spec:
               type: boolean
             isIdentityServiceSupported:
               type: boolean
+            isGeoaxisSupported:
+              type: boolean
             isSnapshotSupported:
               type: boolean
             licenseID:

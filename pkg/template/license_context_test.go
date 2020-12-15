@@ -116,6 +116,16 @@ func TestLicenseCtx_licenseFieldValue(t *testing.T) {
 			want:      "true",
 		},
 		{
+			name: "built-in isGeoaxisSupported",
+			License: &kotsv1beta1.License{
+				Spec: kotsv1beta1.LicenseSpec{
+					IsGeoaxisSupported: true,
+				},
+			},
+			fieldName: "isGeoaxisSupported",
+			want:      "true",
+		},
+		{
 			name: "built-in isAirgapSupported",
 			License: &kotsv1beta1.License{
 				Spec: kotsv1beta1.LicenseSpec{
