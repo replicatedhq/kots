@@ -25,13 +25,13 @@ func newIdentityCtx(identityConfig *v1beta1.IdentityConfig, appInfo *Application
 // FuncMap represents the available functions in the identityCtx.
 func (ctx identityCtx) FuncMap() template.FuncMap {
 	return template.FuncMap{
-		"IdentityServiceEnabled":          ctx.identityServiceEnabled,
-		"IdentityServiceIssuerURL":        ctx.identityServiceIssuerURL,
-		"IdentityServiceClientID":         ctx.identityServiceClientID,
-		"IdentityServiceClientSecret":     ctx.identityServiceClientSecret,
-		"IdentityServiceRoles":            ctx.identityServiceRoles,
-		"IdentityServiceName":             ctx.identityServiceName,
-		"IdentityServicePort":             ctx.identityServicePort,
+		"IdentityServiceEnabled":      ctx.identityServiceEnabled,
+		"IdentityServiceIssuerURL":    ctx.identityServiceIssuerURL,
+		"IdentityServiceClientID":     ctx.identityServiceClientID,
+		"IdentityServiceClientSecret": ctx.identityServiceClientSecret,
+		"IdentityServiceRoles":        ctx.identityServiceRoles,
+		"IdentityServiceName":         ctx.identityServiceName,
+		"IdentityServicePort":         ctx.identityServicePort,
 	}
 }
 
@@ -66,14 +66,13 @@ func (ctx identityCtx) identityServiceClientSecret() string {
 	return ctx.identityConfig.Spec.ClientSecret
 }
 
-func (ctx identityCtx) identityServiceRoles() map[string][]string {
-	if ctx.identityConfig == nil {
-		return map[string][]string{}
-	}
+func (ctx identityCtx) identityServiceRoles() map[string]interface{} {
+	m := map[string]interface{}{}
 
-	m := map[string][]string{}
-	for _, g := range ctx.identityConfig.Spec.Groups {
-		m[g.ID] = g.RoleIDs
+	if ctx.identityConfig != nil {
+		for _, g := range ctx.identityConfig.Spec.Groups {
+			m[g.ID] = g.RoleIDs
+		}
 	}
 
 	return m
