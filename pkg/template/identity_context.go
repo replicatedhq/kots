@@ -10,22 +10,26 @@ import (
 
 type identityCtx struct {
 	identityConfig *v1beta1.IdentityConfig
+	appInfo        *ApplicationInfo
 }
 
-func newIdentityCtx(identityConfig *v1beta1.IdentityConfig) identityCtx {
+func newIdentityCtx(identityConfig *v1beta1.IdentityConfig, appInfo *ApplicationInfo) identityCtx {
 	return identityCtx{
 		identityConfig: identityConfig,
+		appInfo:        appInfo,
 	}
 }
 
 // FuncMap represents the available functions in the identityCtx.
 func (ctx identityCtx) FuncMap() template.FuncMap {
 	return template.FuncMap{
-		"IdentityServiceEnabled":      ctx.identityServiceEnabled,
-		"IdentityServiceIssuerURL":    ctx.identityServiceIssuerURL,
-		"IdentityServiceClientID":     ctx.identityServiceClientID,
-		"IdentityServiceClientSecret": ctx.identityServiceClientSecret,
-		"IdentityServiceRoles":        ctx.identityServiceRoles,
+		"IdentityServiceEnabled":          ctx.identityServiceEnabled,
+		"IdentityServiceIssuerURL":        ctx.identityServiceIssuerURL,
+		"IdentityServiceClientID":         ctx.identityServiceClientID,
+		"IdentityServiceClientSecret":     ctx.identityServiceClientSecret,
+		"IdentityServiceRoles":            ctx.identityServiceRoles,
+		"IdentityServiceName":             ctx.identityServiceName,
+		"IdentityServicePort":             ctx.identityServicePort,
 	}
 }
 
@@ -71,4 +75,18 @@ func (ctx identityCtx) identityServiceRoles() map[string][]string {
 	}
 
 	return m
+}
+
+func (ctx identityCtx) identityServiceName() string {
+	if ctx.appInfo == nil {
+		return ""
+	}
+	return fmt.Sprintf("%s-dex", ctx.appInfo.Slug)
+}
+
+func (ctx identityCtx) identityServicePort() string {
+	if ctx.appInfo == nil {
+		return ""
+	}
+	return "5556"
 }

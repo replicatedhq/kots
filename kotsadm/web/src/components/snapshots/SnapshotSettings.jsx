@@ -75,7 +75,7 @@ class SnapshotSettings extends Component {
   componentDidUpdate(lastProps, lastState) {
     if (this.state.snapshotSettings !== lastState.snapshotSettings && this.state.snapshotSettings) {
       if (this.state.snapshotSettings?.veleroVersion === "") {
-        this.props.history.push("/snapshots/settings?configure=true");
+        this.props.history.replace("/snapshots/settings?configure=true");
         this.setState({ configureSnapshotsModal: true });
       }
     }
@@ -139,11 +139,11 @@ class SnapshotSettings extends Component {
   toggleConfigureModal = () => {
     if (this.state.configureSnapshotsModal) {
       this.setState({ configureSnapshotsModal: false }, () => {
-        this.props.history.push("/snapshots/settings");
+        this.props.history.replace("/snapshots/settings");
       });
     } else {
       this.setState({ configureSnapshotsModal: true }, () => {
-        this.props.history.push("/snapshots/settings?configure=true");
+        this.props.history.replace("/snapshots/settings?configure=true");
       });
     }
   };

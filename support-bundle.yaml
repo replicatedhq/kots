@@ -19,6 +19,28 @@ spec:
         selector:
           - app=kotsadm-postgres
         timeout: 10s
+    - exec:
+        args:
+          - "http://localhost:3030/goroutines"
+        collectorName: kotsadm-goroutines
+        command:
+          - curl
+        containerName: kotsadm
+        name: kots/admin-console
+        selector:
+          - app=kotsadm
+        timeout: 10s
+    - exec:
+        args:
+          - "http://localhost:3030/goroutines"
+        collectorName: kotsadm-operator-goroutines
+        command:
+          - curl
+        containerName: kotsadm-operator
+        name: kots/admin-console
+        selector:
+          - app=kotsadm-operator
+        timeout: 10s
     - logs:
         collectorName: kotsadm-postgres-db
         name: kots/admin_console

@@ -17,6 +17,7 @@ type RenderOptions struct {
 	LocalRegistryUsername  string
 	LocalRegistryPassword  string
 	ExcludeKotsKinds       bool
+	AppSlug                string
 	Sequence               int64
 	IsAirgap               bool
 	Log                    *logger.Logger

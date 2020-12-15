@@ -174,7 +174,7 @@ func UpdateAppRegistry(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		if err := preflight.Run(foundApp.ID, newSequence, foundApp.IsAirgap, appDir); err != nil {
+		if err := preflight.Run(foundApp.ID, foundApp.Slug, newSequence, foundApp.IsAirgap, appDir); err != nil {
 			logger.Error(err)
 			updateAppRegistryResponse.Error = err.Error()
 			JSON(w, http.StatusInternalServerError, updateAppRegistryResponse)

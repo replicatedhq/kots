@@ -5,7 +5,6 @@ import (
 	"crypto/md5"
 	"fmt"
 	"net/url"
-	"os"
 	"path"
 
 	"github.com/pkg/errors"
@@ -37,6 +36,7 @@ type Options struct {
 	IdentityConfigSpec kotsv1beta1.IdentityConfigSpec
 	IsOpenShift        bool
 	ImageRewriteFn     ImageRewriteFunc
+	ProxyEnv           map[string]string
 	Builder            *template.Builder
 }
 
@@ -217,10 +217,8 @@ func deploymentResource(issuerURL, configChecksum string, options Options) (*app
 	env := []corev1.EnvVar{clientSecretEnvVar(options.NamePrefix)}
 
 	// TODO (ethan): this will not really work when kotsadm is not rendering this
-	for _, name := range []string{"HTTP_PROXY", "HTTPS_PROXY", "NO_PROXY", "http_proxy", "https_proxy", "no_proxy"} {
-		if val := os.Getenv(name); val != "" {
-			env = append(env, corev1.EnvVar{Name: name, Value: val})
-		}
+	for name, val := range options.ProxyEnv {
+		env = append(env, corev1.EnvVar{Name: name, Value: val})
 	}
 
 	return &appsv1.Deployment{
@@ -373,6 +371,7 @@ func updateDeployment(namePrefix string, existingDeployment, desiredDeployment *
 
 	existingDeployment.Spec.Template.Spec.Containers[0].LivenessProbe = desiredDeployment.Spec.Template.Spec.Containers[0].LivenessProbe
 	existingDeployment.Spec.Template.Spec.Containers[0].ReadinessProbe = desiredDeployment.Spec.Template.Spec.Containers[0].ReadinessProbe
+	existingDeployment.Spec.Template.Spec.Containers[0].Env = desiredDeployment.Spec.Template.Spec.Containers[0].Env
 
 	existingDeployment = updateDeploymentConfigSecretVolume(namePrefix, existingDeployment, desiredDeployment)
 

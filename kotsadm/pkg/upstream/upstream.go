@@ -171,7 +171,7 @@ func DownloadUpdate(appID string, archiveDir string, toCursor string, skipPrefli
 	}
 
 	if !skipPreflights {
-		if err := preflight.Run(appID, newSequence, a.IsAirgap, archiveDir); err != nil {
+		if err := preflight.Run(appID, a.Slug, newSequence, a.IsAirgap, archiveDir); err != nil {
 			return 0, errors.Wrap(err, "failed to run preflights")
 		}
 	}

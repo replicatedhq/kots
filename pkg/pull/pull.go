@@ -271,6 +271,7 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 		LocalRegistryPassword:  pullOptions.RewriteImageOptions.Password,
 		ExcludeKotsKinds:       pullOptions.ExcludeKotsKinds,
 		Log:                    log,
+		AppSlug:                pullOptions.AppSlug,
 		Sequence:               pullOptions.AppSequence,
 		IsAirgap:               pullOptions.AirgapRoot != "",
 	}
