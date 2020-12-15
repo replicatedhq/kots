@@ -20,18 +20,18 @@ import (
 
 // RenderFile renders a single file
 // this is useful for upstream/kotskinds files that are not rendered in the dir
-func RenderFile(kotsKinds *kotsutil.KotsKinds, registrySettings *registrytypes.RegistrySettings, sequence int64, isAirgap bool, inputContent []byte) ([]byte, error) {
+func RenderFile(kotsKinds *kotsutil.KotsKinds, registrySettings *registrytypes.RegistrySettings, appSlug string, sequence int64, isAirgap bool, inputContent []byte) ([]byte, error) {
 	fixedUpContent, err := kotsutil.FixUpYAML(inputContent)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to fix up yaml")
 	}
 
-	return RenderContent(kotsKinds, registrySettings, sequence, isAirgap, fixedUpContent)
+	return RenderContent(kotsKinds, registrySettings, appSlug, sequence, isAirgap, fixedUpContent)
 }
 
 // RenderContent renders any string/content
 // this is useful for rendering single values, like a status informer
-func RenderContent(kotsKinds *kotsutil.KotsKinds, registrySettings *registrytypes.RegistrySettings, sequence int64, isAirgap bool, inputContent []byte) ([]byte, error) {
+func RenderContent(kotsKinds *kotsutil.KotsKinds, registrySettings *registrytypes.RegistrySettings, appSlug string, sequence int64, isAirgap bool, inputContent []byte) ([]byte, error) {
 	apiCipher, err := crypto.AESCipherFromString(os.Getenv("API_ENCRYPTION_KEY"))
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to load apiCipher")
@@ -76,16 +76,21 @@ func RenderContent(kotsKinds *kotsutil.KotsKinds, registrySettings *registrytype
 		configGroups = kotsKinds.Config.Spec.Groups
 	}
 
+	appInfo := template.ApplicationInfo{
+		Slug: appSlug,
+	}
+
 	versionInfo := template.VersionInfoFromInstallation(sequence, isAirgap, kotsKinds.Installation.Spec)
 
 	builderOptions := template.BuilderOptions{
-		ConfigGroups:   configGroups,
-		ExistingValues: templateContextValues,
-		LocalRegistry:  localRegistry,
-		Cipher:         appCipher,
-		License:        kotsKinds.License,
-		VersionInfo:    &versionInfo,
-		IdentityConfig: kotsKinds.IdentityConfig,
+		ConfigGroups:    configGroups,
+		ExistingValues:  templateContextValues,
+		LocalRegistry:   localRegistry,
+		Cipher:          appCipher,
+		License:         kotsKinds.License,
+		ApplicationInfo: &appInfo,
+		VersionInfo:     &versionInfo,
+		IdentityConfig:  kotsKinds.IdentityConfig,
 	}
 	builder, _, err := template.NewBuilder(builderOptions)
 	if err != nil {

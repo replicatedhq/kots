@@ -104,13 +104,7 @@ export class NavBar extends PureComponent {
   }
 
   handleGoToSnapshots = () => {
-    const { isKurlEnabled } = this.props;
-
-    if (!isKurlEnabled) {
-      this.props.history.push("/snapshots");
-    } else {
-      this.props.history.push("/snapshots/settings");
-    }
+    this.props.history.push("/snapshots");
   }
 
   handleGoToAccess = () => {

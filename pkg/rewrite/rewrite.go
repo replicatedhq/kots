@@ -109,6 +109,7 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 		LocalRegistryPassword:  rewriteOptions.RegistryPassword,
 		ExcludeKotsKinds:       rewriteOptions.ExcludeKotsKinds,
 		Log:                    log,
+		AppSlug:                rewriteOptions.AppSlug,
 		Sequence:               rewriteOptions.AppSequence,
 		IsAirgap:               rewriteOptions.IsAirgap,
 	}

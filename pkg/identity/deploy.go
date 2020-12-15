@@ -23,7 +23,7 @@ const (
 	KotsadmNamePrefix = "kotsadm"
 )
 
-func Deploy(ctx context.Context, clientset kubernetes.Interface, namespace string, identityConfig kotsv1beta1.IdentityConfig, ingressConfig kotsv1beta1.IngressConfig, registryOptions *kotsadmtypes.KotsadmOptions) error {
+func Deploy(ctx context.Context, clientset kubernetes.Interface, namespace string, identityConfig kotsv1beta1.IdentityConfig, ingressConfig kotsv1beta1.IngressConfig, registryOptions *kotsadmtypes.KotsadmOptions, proxyEnv map[string]string) error {
 	identityConfig.Spec.ClientID = "kotsadm"
 
 	options := identitydeploy.Options{
@@ -32,6 +32,7 @@ func Deploy(ctx context.Context, clientset kubernetes.Interface, namespace strin
 		IdentityConfigSpec: identityConfig.Spec,
 		IsOpenShift:        false, // TODO (ethan): openshift support
 		ImageRewriteFn:     imageRewriteKotsadmRegistry(namespace, registryOptions),
+		ProxyEnv:           proxyEnv,
 		Builder:            nil,
 	}
 
@@ -55,7 +56,7 @@ func Deploy(ctx context.Context, clientset kubernetes.Interface, namespace strin
 	return identitydeploy.Deploy(ctx, clientset, namespace, options)
 }
 
-func Configure(ctx context.Context, clientset kubernetes.Interface, namespace string, identityConfig kotsv1beta1.IdentityConfig, ingressConfig kotsv1beta1.IngressConfig) error {
+func Configure(ctx context.Context, clientset kubernetes.Interface, namespace string, identityConfig kotsv1beta1.IdentityConfig, ingressConfig kotsv1beta1.IngressConfig, proxyEnv map[string]string) error {
 	identityConfig.Spec.ClientID = "kotsadm"
 
 	options := identitydeploy.Options{
@@ -64,6 +65,7 @@ func Configure(ctx context.Context, clientset kubernetes.Interface, namespace st
 		IdentityConfigSpec: identityConfig.Spec,
 		IsOpenShift:        false,
 		ImageRewriteFn:     nil,
+		ProxyEnv:           proxyEnv,
 		Builder:            nil,
 	}
 

@@ -147,24 +147,14 @@ func GetApp(w http.ResponseWriter, r *http.Request) {
 }
 
 func responseAppFromApp(a *apptypes.App) (*ResponseApp, error) {
-	isGitOpsSupported, err := store.GetStore().IsGitOpsSupportedForVersion(a.ID, a.CurrentSequence)
+	license, err := store.GetStore().GetLatestLicenseForApp(a.ID)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to check if gitops is supported")
-	}
-
-	isIdentityServiceSupported, err := store.GetStore().IsIdentityServiceSupportedForVersion(a.ID, a.CurrentSequence)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to check if identity service is supported")
+		return nil, errors.Wrap(err, "failed to get license")
 	}
 
 	allowRollback, err := store.GetStore().IsRollbackSupportedForVersion(a.ID, a.CurrentSequence)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to check if rollback is supported")
-	}
-
-	license, err := store.GetStore().GetLicenseForAppVersion(a.ID, a.CurrentSequence)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to get license")
 	}
 
 	currentVersion, err := store.GetStore().GetAppVersion(a.ID, a.CurrentSequence)
@@ -272,8 +262,8 @@ func responseAppFromApp(a *apptypes.App) (*ResponseApp, error) {
 		HasPreflight:               a.HasPreflight,
 		IsConfigurable:             a.IsConfigurable,
 		UpdateCheckerSpec:          a.UpdateCheckerSpec,
-		IsGitOpsSupported:          isGitOpsSupported,
-		IsIdentityServiceSupported: isIdentityServiceSupported,
+		IsGitOpsSupported:          license.Spec.IsGitOpsSupported,
+		IsIdentityServiceSupported: license.Spec.IsIdentityServiceSupported,
 		AllowRollback:              allowRollback,
 		AllowSnapshots:             allowSnapshots,
 		LicenseType:                license.Spec.LicenseType,

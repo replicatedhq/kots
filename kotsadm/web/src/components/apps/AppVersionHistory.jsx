@@ -1088,7 +1088,7 @@ class AppVersionHistory extends Component {
             className="Modal DefaultSize"
           >
             <div className="Modal-body">
-              <p className="u-fontSize--largest u-fontWeight--bold u-color--tuna u-lineHeight--normal u-marginBottom--10">Are you sure you want to {this.state.confirmType === "rollback" ? "rollback to" : this.state.confirmType === "redeploy" ? "redeploy" : "deploy"} {this.state.versionToDeploy?.versionLabel} (Sequence {this.state.versionToDeploy?.sequence})</p>
+              <p className="u-fontSize--largest u-fontWeight--bold u-color--tuna u-lineHeight--normal u-marginBottom--10">{this.state.confirmType === "rollback" ? "Rollback to" : this.state.confirmType === "redeploy" ? "Redeploy" : "Deploy"} {this.state.versionToDeploy?.versionLabel} (Sequence {this.state.versionToDeploy?.sequence})?</p>
               <div className="flex u-paddingTop--10">
                 <button className="btn secondary blue" onClick={() => this.setState({ displayConfirmDeploymentModal: false, confirmType: "", versionToDeploy: null })}>Cancel</button>
                 <button className="u-marginLeft--10 btn primary" onClick={this.state.confirmIsRedeploy ? this.finalizeRedeployment : this.finalizeDeployment}>Yes, {this.state.confirmType === "rollback" ? "rollback" : this.state.confirmType === "redeploy" ? "redeploy" : "deploy"}</button>

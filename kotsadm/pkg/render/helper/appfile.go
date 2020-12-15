@@ -21,5 +21,5 @@ func RenderAppFile(a *types.App, overrideSequence *int64, inputContent []byte, k
 		return nil, errors.Wrap(err, "failed to load registry settings")
 	}
 
-	return render.RenderFile(kotsKinds, registrySettings, sequence, a.IsAirgap, inputContent)
+	return render.RenderFile(kotsKinds, registrySettings, a.Slug, sequence, a.IsAirgap, inputContent)
 }

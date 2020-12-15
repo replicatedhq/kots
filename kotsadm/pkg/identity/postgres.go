@@ -14,7 +14,6 @@ func createDexPostgresDatabase(database, user, password string) error {
 
 	databaseQ := pq.QuoteIdentifier(database)
 	userQ := pq.QuoteIdentifier(user)
-	passwordQ := pq.QuoteIdentifier(password)
 
 	query := "SELECT 1 FROM pg_database WHERE datname = $1"
 	row := db.QueryRow(query, database)
@@ -44,13 +43,13 @@ func createDexPostgresDatabase(database, user, password string) error {
 	}
 
 	query = fmt.Sprintf(
-		`ALTER USER %s WITH PASSWORD %s;
+		`ALTER USER %s WITH PASSWORD '%s';
 		GRANT ALL PRIVILEGES ON DATABASE %s TO %s;`,
-		userQ, passwordQ, databaseQ, userQ,
+		userQ, password, databaseQ, userQ,
 	)
 	_, err = db.Exec(query)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "failed to grant user privileges")
 	}
 
 	return nil
