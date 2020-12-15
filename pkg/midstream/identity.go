@@ -13,7 +13,7 @@ import (
 )
 
 func (m *Midstream) writeIdentityService(ctx context.Context, options WriteOptions) (string, error) {
-	if identitydeploy.IsEnabled(m.IdentitySpec, m.IdentityConfig) {
+	if !identitydeploy.IsEnabled(m.IdentitySpec, m.IdentityConfig) {
 		return "", nil
 	}
 
