@@ -32,6 +32,20 @@ func RenderFile(kotsKinds *kotsutil.KotsKinds, registrySettings *registrytypes.R
 // RenderContent renders any string/content
 // this is useful for rendering single values, like a status informer
 func RenderContent(kotsKinds *kotsutil.KotsKinds, registrySettings *registrytypes.RegistrySettings, appSlug string, sequence int64, isAirgap bool, inputContent []byte) ([]byte, error) {
+	builder, err := NewBuilder(kotsKinds, registrySettings, appSlug, sequence, isAirgap)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to create builder")
+	}
+
+	rendered, err := builder.RenderTemplate(string(inputContent), string(inputContent))
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to render")
+	}
+
+	return []byte(rendered), nil
+}
+
+func NewBuilder(kotsKinds *kotsutil.KotsKinds, registrySettings *registrytypes.RegistrySettings, appSlug string, sequence int64, isAirgap bool) (*template.Builder, error) {
 	apiCipher, err := crypto.AESCipherFromString(os.Getenv("API_ENCRYPTION_KEY"))
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to load apiCipher")
@@ -93,16 +107,7 @@ func RenderContent(kotsKinds *kotsutil.KotsKinds, registrySettings *registrytype
 		IdentityConfig:  kotsKinds.IdentityConfig,
 	}
 	builder, _, err := template.NewBuilder(builderOptions)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to create builder")
-	}
-
-	rendered, err := builder.RenderTemplate(string(inputContent), string(inputContent))
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to render")
-	}
-
-	return []byte(rendered), nil
+	return &builder, errors.Wrap(err, "failed to create builder")
 }
 
 // RenderDir renders an app archive dir

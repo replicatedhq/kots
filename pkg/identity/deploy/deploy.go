@@ -9,6 +9,7 @@ import (
 
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
+	"github.com/replicatedhq/kots/pkg/identity/types"
 	"github.com/replicatedhq/kots/pkg/ingress"
 	kotsadmtypes "github.com/replicatedhq/kots/pkg/kotsadm/types"
 	"github.com/replicatedhq/kots/pkg/template"
@@ -227,7 +228,7 @@ func deploymentResource(issuerURL, configChecksum string, options Options) (*app
 			Kind:       "Deployment",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:   prefixName(options.NamePrefix, "dex"),
+			Name:   types.DeploymentName(options.NamePrefix),
 			Labels: kotsadmtypes.GetKotsadmLabels(AdditionalLabels(options.NamePrefix)),
 		},
 		Spec: appsv1.DeploymentSpec{
@@ -485,8 +486,8 @@ func serviceResource(namePrefix string, ingressSpec kotsv1beta1.IngressConfigSpe
 	serviceType := corev1.ServiceTypeClusterIP
 	port := corev1.ServicePort{
 		Name:       "http",
-		Port:       5556,
-		TargetPort: intstr.IntOrString{Type: intstr.Int, IntVal: 5556},
+		Port:       types.ServicePort(),
+		TargetPort: intstr.FromInt(int(types.ServicePort())),
 	}
 	if ingressSpec.Enabled && ingressSpec.NodePort != nil && ingressSpec.NodePort.Port != 0 {
 		port.NodePort = int32(ingressSpec.NodePort.Port)
@@ -498,7 +499,7 @@ func serviceResource(namePrefix string, ingressSpec kotsv1beta1.IngressConfigSpe
 			Kind:       "Service",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:   prefixName(namePrefix, "dex"),
+			Name:   types.ServiceName(namePrefix),
 			Labels: kotsadmtypes.GetKotsadmLabels(AdditionalLabels(namePrefix)),
 		},
 		Spec: corev1.ServiceSpec{

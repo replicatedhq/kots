@@ -41,8 +41,8 @@ func InitAppIdentityConfig(appSlug string) (string, error) {
 			Storage: kotsv1beta1.Storage{
 				PostgresConfig: &kotsv1beta1.IdentityPostgresConfig{
 					Host:     host,
-					Database: fmt.Sprintf("%s-dex", appSlug),
-					User:     fmt.Sprintf("%s-dex", appSlug),
+					Database: database,
+					User:     user,
 					Password: postgresPassword,
 				},
 			},
