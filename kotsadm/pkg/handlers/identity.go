@@ -271,6 +271,13 @@ func ConfigureAppIdentityService(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if kotsKinds.Identity == nil {
+		err := errors.New("identity spec not found")
+		logger.Error(err)
+		JSON(w, http.StatusBadRequest, NewErrorResponse(err))
+		return
+	}
+
 	identityConfigFile := filepath.Join(archiveDir, "upstream", "userdata", "identityconfig.yaml")
 	if _, err := os.Stat(identityConfigFile); os.IsNotExist(err) {
 		f, err := kotsadmidentity.InitAppIdentityConfig(a.Slug)
@@ -525,9 +532,11 @@ func validateConfigureIdentityRequest(request ConfigureIdentityServiceRequest) e
 }
 
 type GetIdentityServiceConfigResponse struct {
-	Enabled                bool   `json:"enabled"`
-	AdminConsoleAddress    string `json:"adminConsoleAddress"`
-	IdentityServiceAddress string `json:"identityServiceAddress"`
+	Enabled                bool                              `json:"enabled"`
+	AdminConsoleAddress    string                            `json:"adminConsoleAddress"`
+	IdentityServiceAddress string                            `json:"identityServiceAddress"`
+	Groups                 []kotsv1beta1.IdentityConfigGroup `json:"groups,omitempty"`
+	Roles                  []kotsv1beta1.IdentityRole        `json:"roles,omitempty"`
 
 	IDPConfig `json:",inline"`
 }
@@ -606,52 +615,45 @@ func GetAppIdentityServiceConfig(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	identityConfigFile := filepath.Join(archiveDir, "upstream", "userdata", "identityconfig.yaml")
-	if _, err := os.Stat(identityConfigFile); os.IsNotExist(err) {
-		// identity service not configured yet
-		response := GetIdentityServiceConfigResponse{}
-		JSON(w, http.StatusOK, response)
-		return
-	} else if err != nil {
-		err = errors.Wrap(err, "failed to stat identity config file")
-		logger.Error(err)
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-
-	b, err := ioutil.ReadFile(identityConfigFile)
+	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(archiveDir)
 	if err != nil {
-		err = errors.Wrap(err, "failed to read identityconfig file")
+		err = errors.Wrap(err, "failed to load kotskinds from path")
 		logger.Error(err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
-	s, err := kotsutil.LoadIdentityConfigFromContents(b)
-	if err != nil {
-		err = errors.Wrap(err, "failed to decode identity service config")
+	if kotsKinds.Identity == nil {
+		err := errors.New("identity spec not found")
 		logger.Error(err)
-		w.WriteHeader(http.StatusInternalServerError)
+		JSON(w, http.StatusBadRequest, NewErrorResponse(err))
 		return
 	}
-	identityConfig := *s
-
-	// TODO: return ingress config
 
 	response := GetIdentityServiceConfigResponse{
-		Enabled:                identityConfig.Spec.Enabled,
-		AdminConsoleAddress:    identityConfig.Spec.AdminConsoleAddress,
-		IdentityServiceAddress: identityConfig.Spec.IdentityServiceAddress,
+		Roles: kotsKinds.Identity.Spec.Roles,
 	}
 
-	if len(identityConfig.Spec.DexConnectors.Value) == 0 {
+	if kotsKinds.IdentityConfig == nil {
+		// identity service not configured yet
+		JSON(w, http.StatusOK, response)
+		return
+	}
+
+	// TODO: return ingress config
+	response.Enabled = kotsKinds.IdentityConfig.Spec.Enabled
+	response.Groups = kotsKinds.IdentityConfig.Spec.Groups
+	response.AdminConsoleAddress = kotsKinds.IdentityConfig.Spec.AdminConsoleAddress
+	response.IdentityServiceAddress = kotsKinds.IdentityConfig.Spec.IdentityServiceAddress
+
+	if len(kotsKinds.IdentityConfig.Spec.DexConnectors.Value) == 0 {
 		// no connectors, return default values
 		response.IDPConfig = getDefaultIDPConfig()
 		JSON(w, http.StatusOK, response)
 		return
 	}
 
-	idpConfigs, err := dexConnectorsToIDPConfigs(identityConfig.Spec.DexConnectors.Value)
+	idpConfigs, err := dexConnectorsToIDPConfigs(kotsKinds.IdentityConfig.Spec.DexConnectors.Value)
 	if err != nil {
 		logger.Error(err)
 		w.WriteHeader(http.StatusInternalServerError)
