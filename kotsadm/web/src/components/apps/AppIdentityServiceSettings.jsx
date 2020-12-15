@@ -16,7 +16,7 @@ class AppIdentityServiceSettings extends Component {
         <title>{`${app.name} Airgap settings`}</title>
         </Helmet>
         <div className="flex-column flex1 u-width--full u-height--full u-overflow--auto">
-          <IdentityProviders isKurlEnabled={this.props.isKurlEnabled} isApplicationSettings={true} appName={app.name} />
+          <IdentityProviders isKurlEnabled={this.props.isKurlEnabled} isApplicationSettings={true} app={app} />
         </div>
       </div>
     );
