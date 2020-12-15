@@ -641,13 +641,10 @@ func GetAppIdentityServiceConfig(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// TODO: return ingress config
-
-	response := GetIdentityServiceConfigResponse{
-		Enabled:                kotsKinds.IdentityConfig.Spec.Enabled,
-		Groups:                 kotsKinds.IdentityConfig.Spec.Groups,
-		AdminConsoleAddress:    kotsKinds.IdentityConfig.Spec.AdminConsoleAddress,
-		IdentityServiceAddress: kotsKinds.IdentityConfig.Spec.IdentityServiceAddress,
-	}
+	response.Enabled = kotsKinds.IdentityConfig.Spec.Enabled
+	response.Groups = kotsKinds.IdentityConfig.Spec.Groups
+	response.AdminConsoleAddress = kotsKinds.IdentityConfig.Spec.AdminConsoleAddress
+	response.IdentityServiceAddress = kotsKinds.IdentityConfig.Spec.IdentityServiceAddress
 
 	if len(kotsKinds.IdentityConfig.Spec.DexConnectors.Value) == 0 {
 		// no connectors, return default values
