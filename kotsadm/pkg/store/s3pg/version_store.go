@@ -157,7 +157,7 @@ func (s S3PGStore) IsSnapshotsSupportedForVersion(a *apptypes.App, sequence int6
 	}
 
 	// as far as I can tell, this is the only place within kotsadm/pkg/store that uses templating
-	rendered, err := render.RenderFile(kotsKinds, registrySettings, sequence, a.IsAirgap, []byte(backupSpecStr.String))
+	rendered, err := render.RenderFile(kotsKinds, registrySettings, a.Slug, sequence, a.IsAirgap, []byte(backupSpecStr.String))
 	if err != nil {
 		return false, errors.Wrap(err, "failed to render backup spec")
 	}

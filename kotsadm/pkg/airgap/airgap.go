@@ -296,7 +296,7 @@ func CreateAppFromAirgap(pendingApp *types.PendingApp, airgapPath string, regist
 	}
 
 	if !skipPreflights {
-		if err := preflight.Run(pendingApp.ID, newSequence, true, tmpRoot); err != nil {
+		if err := preflight.Run(pendingApp.ID, pendingApp.Slug, newSequence, true, tmpRoot); err != nil {
 			return errors.Wrap(err, "failed to start preflights")
 		}
 	}
