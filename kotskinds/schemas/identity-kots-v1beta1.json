@@ -36,9 +36,7 @@
           "items": {
             "type": "object",
             "required": [
-              "description",
-              "id",
-              "name"
+              "id"
             ],
             "properties": {
               "description": {

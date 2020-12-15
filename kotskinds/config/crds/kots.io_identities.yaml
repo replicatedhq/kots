@@ -53,9 +53,7 @@ spec:
                   name:
                     type: string
                 required:
-                - description
                 - id
-                - name
                 type: object
               type: array
             signingKeysExpiration:

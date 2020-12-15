@@ -31,8 +31,8 @@ type IdentitySpec struct {
 
 type IdentityRole struct {
 	ID          string `json:"id" yaml:"id"`
-	Name        string `json:"name" yaml:"name"`
-	Description string `json:"description" yaml:"description"`
+	Name        string `json:"name,omitempty" yaml:"name,omitempty"`
+	Description string `json:"description,omitempty" yaml:"description,omitempty"`
 }
 
 // IdentityStatus defines the observed state of Identity
