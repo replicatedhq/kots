@@ -17,7 +17,17 @@ func TestIdentityContext(t *testing.T) {
 				Enabled: true,
 				Groups: []kotsv1beta1.IdentityConfigGroup{
 					{
-						ID: "cluster-admin",
+						ID: "KOTS Test Admin",
+						RoleIDs: []string{
+							"cluster-admin",
+							"read-only",
+						},
+					},
+					{
+						ID: "KOTS Test Support",
+						RoleIDs: []string{
+							"support",
+						},
 					},
 				},
 				IdentityServiceAddress: "https://dex.kotsadmdevenv.com",
@@ -42,10 +52,12 @@ func TestIdentityContext(t *testing.T) {
 	req.Equal("client-secret", ctx.identityServiceClientSecret())
 	req.Equal("", nilCtx.identityServiceClientSecret())
 
-	req.Equal([]string{"cluster-admin"}, ctx.identityServiceRestrictedGroups())
+	req.Equal([]string{"KOTS Test Admin", "KOTS Test Support"}, ctx.identityServiceRestrictedGroups())
 	req.Equal([]string{}, nilCtx.identityServiceRestrictedGroups())
 
-	// TODO: (salah)
-	// req.Equal("", ctx.identityServiceRoles())
-	// req.Equal("", nilCtx.identityServiceRoles())
+	req.Equal(map[string][]string{
+		"KOTS Test Admin":   {"cluster-admin", "read-only"},
+		"KOTS Test Support": {"support"},
+	}, ctx.identityServiceRoles())
+	req.Equal(map[string][]string{}, nilCtx.identityServiceRoles())
 }
