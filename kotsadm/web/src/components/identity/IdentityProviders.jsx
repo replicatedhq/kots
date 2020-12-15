@@ -46,17 +46,24 @@ class IdentityProviders extends Component {
     saveConfirm: false,
     savingProviderErrMsg: "",
     showAdvancedOptions: false,
-    displayErrorModal: false
+    displayErrorModal: false,
+    syncAppWithGlobal: false
   };
 
-  fetchConfigSettings = async () => {
+  fetchConfigSettings = async (app) => {
     this.setState({
       isLoadingConfigSettings: true,
       configSettingsErrMsg: "",
       displayErrorModal: false
     });
+    let url;
+    if (app && !this.state.syncAppWithGlobal) {
+      url = `${window.env.API_ENDPOINT}/app/${app?.slug}/identity/config`;
+    } else {
+      url = `${window.env.API_ENDPOINT}/identity/config`;
+    }
     try {
-      const res = await fetch(`${window.env.API_ENDPOINT}/identity/config`, {
+      const res = await fetch(url, {
         method: "GET",
         headers: {
           "Authorization": Utilities.getToken(),
@@ -110,12 +117,15 @@ class IdentityProviders extends Component {
   }
 
   componentDidMount() {
-    this.fetchConfigSettings();
+    this.fetchConfigSettings(this.props.app);
   }
 
   componentDidUpdate(lastProps, lastState) {
     if (this.state.configSettings !== lastState.configSettings && this.state.configSettings) {
       this.setFields();
+    }
+    if (this.state.syncAppWithGlobal !== lastState.syncAppWithGlobal) {
+      this.fetchConfigSettings(this.props.app);
     }
   }
 
@@ -130,6 +140,9 @@ class IdentityProviders extends Component {
       this.setState(nextState);
     } else if (field === "identityServiceAddress") {
       nextState[field] = e.target.value;
+      this.setState(nextState);
+    } else if (field === "syncAppWithGlobal") {
+      nextState[field] = e.target.checked;
       this.setState(nextState);
     } else {
       if (this.state.selectedProvider === "oidcConfig") {
@@ -185,6 +198,7 @@ class IdentityProviders extends Component {
 
   onSubmit = async (e) => {
     e.preventDefault();
+    const { app } = this.props;
 
     const oidcConfigPayload = {
       "oidcConfig": {
@@ -222,7 +236,14 @@ class IdentityProviders extends Component {
     if (isEmpty(errors)) {
       this.setState({ savingProviderSettings: true });
 
-      fetch(`${window.env.API_ENDPOINT}/identity/config`, {
+      let url;
+      if (app) {
+        url = `${window.env.API_ENDPOINT}/app/${app?.slug}/identity/config`;
+      } else {
+        url = `${window.env.API_ENDPOINT}/identity/config`;
+      }
+
+      fetch(url, {
         method: "POST",
         headers: {
           "Authorization": Utilities.getToken(),
@@ -280,8 +301,8 @@ class IdentityProviders extends Component {
 
 
   render() {
-    const { configSettingsErrMsg, isLoadingConfigSettings, requiredErrors, selectedProvider } = this.state;
-    const { isKurlEnabled, isGeoaxisSupported } = this.props;
+    const { configSettingsErrMsg, isLoadingConfigSettings, requiredErrors, selectedProvider, syncAppWithGlobal} = this.state;
+    const { isKurlEnabled, isApplicationSettings, app, isGeoaxisSupported } = this.props;
 
     if (isLoadingConfigSettings) {
       return (
@@ -318,12 +339,32 @@ class IdentityProviders extends Component {
           </p>
         </div> */}
         <form className="flex flex-column Identity--wrapper u-marginTop--30">
-          <p className="u-fontSize--largest u-lineHeight--default u-fontWeight--bold u-color--tuna"> Configure Identity Provider </p>
+          <p className="u-fontSize--largest u-lineHeight--default u-fontWeight--bold u-color--tuna"> Configure Identity Provider {isApplicationSettings && `for ${app?.name}`}</p>
           <p className="u-fontSize--normal u-lineHeight--medium u-fontWeight--medium u-color--dustyGray u-marginTop--12"> Configure additional ODIC providers to authenticate in to the Admin Console. </p>
+
+          {isApplicationSettings &&
+            <div className="BoxedCheckbox-wrapper flex1 u-textAlign--left u-marginTop--20">
+              <div className={`flex-auto flex ${syncAppWithGlobal ? "is-active" : ""}`}>
+                <input
+                  type="checkbox"
+                  className="u-cursor--pointer"
+                  id="syncAppWithGlobal"
+                  checked={syncAppWithGlobal}
+                  onChange={(e) => { this.handleFormChange("syncAppWithGlobal", e) }}
+                />
+                <label htmlFor="syncAppWithGlobal" className="flex1 flex u-width--full u-position--relative u-cursor--pointer u-userSelect--none" style={{ marginTop: "2px" }}>
+                  <div className="flex flex-column u-marginLeft--5 justifyContent--center">
+                    <p className="u-color--tuna u-fontSize--normal u-fontWeight--medium">Use Admin Console settings</p>
+                    <p className="u-fontSize--normal u-lineHeight--normal u-fontWeight--normal u-marginTop--5"> Use the settings that you configured for the Admin console.</p>
+                  </div>
+                </label>
+              </div>
+            </div>
+          }
 
           <div className="u-marginTop--30">
             <div className="flex flex1 alignItems--center">
-              <p className="u-fontSize--large u-lineHeight--default u-fontWeight--bold u-color--tuna"> Admin Console URL </p>
+              <p className="u-fontSize--large u-lineHeight--default u-fontWeight--bold u-color--tuna"> {isApplicationSettings ? "App" : "Admin Console"} URL </p>
               <span className="required-label"> Required </span>
               {requiredErrors?.adminConsoleAddress && <span className="u-color--chestnut u-fontSize--small u-fontWeight--medium u-lineHeight--normal u-marginLeft--5"> Admin Console URL is a required field </span>}
             </div>
@@ -332,6 +373,7 @@ class IdentityProviders extends Component {
               className="Input u-marginTop--12"
               placeholder="https://kots.somebigbankadmin.com"
               value={this.state.adminConsoleAddress}
+              disabled={syncAppWithGlobal}
               onChange={(e) => { this.handleFormChange("adminConsoleAddress", e) }} />
           </div>
 
@@ -350,6 +392,7 @@ class IdentityProviders extends Component {
                 className="Input u-marginTop--12"
                 placeholder="https://kots.somebigbankadmin.com/dex"
                 value={this.state.identityServiceAddress}
+                disabled={syncAppWithGlobal}
                 onChange={(e) => { this.handleFormChange("identityServiceAddress", e) }} />
             </div>
           )}
@@ -363,16 +406,18 @@ class IdentityProviders extends Component {
                   id="oidcConfig"
                   style={{ display: "none" }}
                   checked={selectedProvider === "oidcConfig"}
+                  disabled={syncAppWithGlobal}
                   onChange={(e) => { this.handleOnChangeProvider("oidcConfig", e) }} />
                 <span className="icon openID u-cursor--pointer" />
               </label>
-              {isGeoaxisSupported &&
+              {isGeoaxisSupported || app?.isGeoaxisSupported &&
                 <label htmlFor="geoAxisConfig" className={`identityProviderBtn flex alignItems--center u-cursor--pointer u-userSelect--none ${this.state.selectedProvider === "geoAxisConfig" ? "is-active" : ""}`} style={{ marginLeft: "15px" }}>
                   <input
                     type="radio"
                     id="geoAxisConfig"
                     style={{ display: "none" }}
                     checked={selectedProvider === "geoAxisConfig"}
+                    disabled={syncAppWithGlobal}
                     onChange={(e) => { this.handleOnChangeProvider("geoAxisConfig", e) }} />
                   <span className="icon geoaxis u-cursor--pointer" />
                 </label>}
@@ -389,6 +434,7 @@ class IdentityProviders extends Component {
               <input type="text"
                 className="Input u-marginTop--12"
                 placeholder="OpenID"
+                disabled={syncAppWithGlobal}
                 value={this.state.oidcConfig?.connectorName}
                 onChange={(e) => { this.handleFormChange("connectorName", e) }} />
             </div>}
@@ -405,6 +451,7 @@ class IdentityProviders extends Component {
             <input type="text"
               className="Input u-marginTop--12"
               value={this.getRequiredValue("issuer")}
+              disabled={syncAppWithGlobal}
               onChange={(e) => { this.handleFormChange("issuer", e) }} />
           </div>
 
@@ -417,6 +464,7 @@ class IdentityProviders extends Component {
             <input type="text"
               className="Input u-marginTop--12"
               value={this.getRequiredValue("clientId")}
+              disabled={syncAppWithGlobal}
               onChange={(e) => { this.handleFormChange("clientId", e) }} />
           </div>
 
@@ -429,6 +477,7 @@ class IdentityProviders extends Component {
             <input type="password"
               className="Input u-marginTop--12"
               value={this.getRequiredValue("clientSecret")}
+              disabled={syncAppWithGlobal}
               onChange={(e) => { this.handleFormChange("clientSecret", e) }} />
           </div>
 
@@ -443,6 +492,7 @@ class IdentityProviders extends Component {
                       type="checkbox"
                       className="u-cursor--pointer"
                       id="getUserInfo"
+                      disabled={syncAppWithGlobal}
                       checked={this.state.oidcConfig?.getUserInfo}
                       onChange={(e) => { this.handleFormChange("getUserInfo", e) }}
                     />
@@ -459,6 +509,7 @@ class IdentityProviders extends Component {
                       type="checkbox"
                       className="u-cursor--pointer"
                       id="insecureEnableGroups"
+                      disabled={syncAppWithGlobal}
                       checked={this.state.oidcConfig?.insecureEnableGroups}
                       onChange={(e) => { this.handleFormChange("insecureEnableGroups", e) }}
                     />
@@ -478,6 +529,7 @@ class IdentityProviders extends Component {
                       type="checkbox"
                       className="u-cursor--pointer"
                       id="insecureSkipEmailVerified"
+                      disabled={syncAppWithGlobal}
                       checked={this.state.oidcConfig?.insecureSkipEmailVerified}
                       onChange={(e) => { this.handleFormChange("insecureSkipEmailVerified", e) }}
                     />
@@ -501,6 +553,7 @@ class IdentityProviders extends Component {
                         <input type="text"
                           className="Input u-marginTop--12"
                           placeholder="sub"
+                          disabled={syncAppWithGlobal}
                           value={this.state.oidcConfig?.userIDKey}
                           onChange={(e) => { this.handleFormChange("userIDKey", e) }} />
                       </div>
@@ -515,6 +568,7 @@ class IdentityProviders extends Component {
                           className="Input u-marginTop--12"
                           placeholder="name"
                           value={this.state.oidcConfig?.userNameKey}
+                          disabled={syncAppWithGlobal}
                           onChange={(e) => { this.handleFormChange("userNameKey", e) }} />
                       </div>
                     </div>
@@ -531,6 +585,7 @@ class IdentityProviders extends Component {
                       className="Input u-marginTop--12"
                       placeholder="consent"
                       value={this.state.oidcConfig?.promptType}
+                      disabled={syncAppWithGlobal}
                       onChange={(e) => { this.handleFormChange("promptType", e) }} />
                   </div>
                   <div className="u-marginTop--30">
@@ -543,6 +598,7 @@ class IdentityProviders extends Component {
                     <input type="text"
                       className="Input u-marginTop--12"
                       value={this.state.oidcConfig?.hostedDomains}
+                      disabled={syncAppWithGlobal}
                       onChange={(e) => { this.handleFormChange("hostedDomains", e) }} />
                   </div>
                   <div className="u-marginTop--30">
@@ -556,6 +612,7 @@ class IdentityProviders extends Component {
                       className="Input u-marginTop--12"
                       placeholder="profile,email,groups..."
                       value={this.state.oidcConfig?.scopes}
+                      disabled={syncAppWithGlobal}
                       onChange={(e) => { this.handleFormChange("scopes", e) }} />
                   </div>
 
@@ -574,6 +631,7 @@ class IdentityProviders extends Component {
                           className="Input u-marginTop--12"
                           placeholder="preferred_username"
                           value={this.state.oidcConfig?.claimMapping?.preferredUsername}
+                          disabled={syncAppWithGlobal}
                           onChange={(e) => { this.handleFormChange("preferredUsername", e) }} />
                       </div>
                       <div className="flex flex-column u-marginRight--30 u-marginTop--20">
@@ -582,6 +640,7 @@ class IdentityProviders extends Component {
                           className="Input u-marginTop--12"
                           placeholder="email"
                           value={this.state.oidcConfig?.claimMapping?.email}
+                          disabled={syncAppWithGlobal}
                           onChange={(e) => { this.handleFormChange("email", e) }} />
                       </div>
                       <div className="flex flex-column u-marginTop--20">
@@ -590,6 +649,7 @@ class IdentityProviders extends Component {
                           className="Input u-marginTop--12"
                           placeholder="groups"
                           value={this.state.oidcConfig?.claimMapping?.groups}
+                          disabled={syncAppWithGlobal}
                           onChange={(e) => { this.handleFormChange("groups", e) }} />
                       </div>
                     </div>

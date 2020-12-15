@@ -7,7 +7,7 @@ import { isHelmChart } from "@src/utilities/utilities";
 import subNavConfig from "@src/config-ui/subNavConfig";
 
 export default function SubNavBar(props) {
-  const { className, activeTab, watch, isVeleroInstalled, isAccess } = props;
+  const { className, activeTab, watch, isVeleroInstalled, isAccess, isIdentityServiceSupported } = props;
   let { slug } = watch;
 
   if (isHelmChart(watch)) {
@@ -64,7 +64,7 @@ export default function SubNavBar(props) {
               </li>
             );
             if (link.displayRule) {
-              return link.displayRule(watch || {}, isVeleroInstalled) && generatedMenuItem;
+              return link.displayRule(watch || {}, isVeleroInstalled, isIdentityServiceSupported) && generatedMenuItem;
             }
             return generatedMenuItem;
           }).filter(Boolean)}

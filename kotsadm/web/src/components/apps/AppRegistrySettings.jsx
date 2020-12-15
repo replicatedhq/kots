@@ -2,7 +2,7 @@ import React, { Component } from "react";
 import Helmet from "react-helmet";
 import AirgapRegistrySettings from "../shared/AirgapRegistrySettings";
 
-export default class AppSettings extends Component {
+export default class AppRegistrySettings extends Component {
 
   render() {
     const { app, updateCallback } = this.props;
