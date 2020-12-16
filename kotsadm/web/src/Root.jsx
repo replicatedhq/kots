@@ -355,7 +355,6 @@ class Root extends Component {
                           appsList={appsList}
                           refetchAppsList={this.getAppsList}
                           onActiveInitSession={this.handleActiveInitSession}
-                          isIdentityServiceSupported={this.isIdentityServiceSupported()}
                           appNameSpace={this.state.appNameSpace}
                           appName={this.state.selectedAppName}
                           snapshotInProgressApps={this.state.snapshotInProgressApps}
