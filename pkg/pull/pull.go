@@ -15,6 +15,7 @@ import (
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	"github.com/replicatedhq/kots/pkg/archives"
 	"github.com/replicatedhq/kots/pkg/base"
+	"github.com/replicatedhq/kots/pkg/crypto"
 	"github.com/replicatedhq/kots/pkg/docker/registry"
 	"github.com/replicatedhq/kots/pkg/downstream"
 	"github.com/replicatedhq/kots/pkg/k8sdoc"
@@ -168,13 +169,11 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 	}
 
 	var identityConfig *kotsv1beta1.IdentityConfig
-	encryptIdentityConfig := false
 	if pullOptions.IdentityConfigFile != "" {
 		identityConfig, err = ParseIdentityConfigFromFile(pullOptions.IdentityConfigFile)
 		if err != nil {
 			return "", errors.Wrap(err, "failed to parse identity config from file")
 		}
-		encryptIdentityConfig = true
 	} else {
 		identityConfig = localIdentityConfig
 	}
@@ -242,15 +241,14 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 	includeAdminConsole := uri.Scheme == "replicated" && !pullOptions.ExcludeAdminConsole
 
 	writeUpstreamOptions := upstreamtypes.WriteOptions{
-		RootDir:               pullOptions.RootDir,
-		CreateAppDir:          pullOptions.CreateAppDir,
-		IncludeAdminConsole:   includeAdminConsole,
-		SharedPassword:        pullOptions.SharedPassword,
-		EncryptConfig:         encryptConfig,
-		EncryptIdentityConfig: encryptIdentityConfig,
-		HTTPProxyEnvValue:     pullOptions.HTTPProxyEnvValue,
-		HTTPSProxyEnvValue:    pullOptions.HTTPSProxyEnvValue,
-		NoProxyEnvValue:       pullOptions.NoProxyEnvValue,
+		RootDir:             pullOptions.RootDir,
+		CreateAppDir:        pullOptions.CreateAppDir,
+		IncludeAdminConsole: includeAdminConsole,
+		SharedPassword:      pullOptions.SharedPassword,
+		EncryptConfig:       encryptConfig,
+		HTTPProxyEnvValue:   pullOptions.HTTPProxyEnvValue,
+		HTTPSProxyEnvValue:  pullOptions.HTTPSProxyEnvValue,
+		NoProxyEnvValue:     pullOptions.NoProxyEnvValue,
 	}
 	if err := upstream.WriteUpstream(u, writeUpstreamOptions); err != nil {
 		log.FinishSpinnerWithError()
@@ -536,11 +534,22 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 		return "", errors.Wrap(err, "failed to create new config context template builder")
 	}
 
+	newInstallation, err := upstream.LoadInstallation(u.GetUpstreamDir(writeUpstreamOptions))
+	if err != nil {
+		return "", errors.Wrap(err, "failed to load installation")
+	}
+
+	cipher, err := crypto.AESCipherFromString(newInstallation.Spec.EncryptionKey)
+	if err != nil {
+		return "", errors.Wrap(err, "failed to load encryption cipher")
+	}
+
 	writeMidstreamOptions := midstream.WriteOptions{
 		MidstreamDir: filepath.Join(b.GetOverlaysDir(writeBaseOptions), "midstream"),
 		BaseDir:      u.GetBaseDir(writeUpstreamOptions),
 		AppSlug:      pullOptions.AppSlug,
 		IsGitOps:     pullOptions.IsGitOps,
+		Cipher:       *cipher,
 		Builder:      *builder,
 	}
 	if err := m.WriteMidstream(writeMidstreamOptions); err != nil {

@@ -6,6 +6,7 @@ import (
 	"text/template"
 
 	"github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
+	"github.com/replicatedhq/kots/pkg/crypto"
 	identitytypes "github.com/replicatedhq/kots/pkg/identity/types"
 	"github.com/replicatedhq/kots/pkg/ingress"
 )
@@ -13,12 +14,14 @@ import (
 type identityCtx struct {
 	identityConfig *v1beta1.IdentityConfig
 	appInfo        *ApplicationInfo
+	cipher         *crypto.AESCipher
 }
 
-func newIdentityCtx(identityConfig *v1beta1.IdentityConfig, appInfo *ApplicationInfo) identityCtx {
+func newIdentityCtx(identityConfig *v1beta1.IdentityConfig, appInfo *ApplicationInfo, cipher *crypto.AESCipher) identityCtx {
 	return identityCtx{
 		identityConfig: identityConfig,
 		appInfo:        appInfo,
+		cipher:         cipher,
 	}
 }
 
@@ -59,11 +62,11 @@ func (ctx identityCtx) identityServiceClientID() string {
 	return ctx.identityConfig.Spec.ClientID
 }
 
-func (ctx identityCtx) identityServiceClientSecret() string {
-	if ctx.identityConfig == nil {
-		return ""
+func (ctx identityCtx) identityServiceClientSecret() (string, error) {
+	if ctx.identityConfig == nil || ctx.cipher == nil {
+		return "", nil
 	}
-	return ctx.identityConfig.Spec.ClientSecret
+	return ctx.identityConfig.Spec.ClientSecret.GetValue(*ctx.cipher)
 }
 
 func (ctx identityCtx) identityServiceRoles() map[string]interface{} {

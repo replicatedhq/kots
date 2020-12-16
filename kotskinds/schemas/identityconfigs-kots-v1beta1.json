@@ -29,7 +29,15 @@
           "type": "string"
         },
         "clientSecret": {
-          "type": "string"
+          "type": "object",
+          "properties": {
+            "value": {
+              "type": "string"
+            },
+            "valueEncrypted": {
+              "type": "string"
+            }
+          }
         },
         "dexConnectors": {
           "type": "object",
@@ -59,6 +67,9 @@
                   }
                 }
               }
+            },
+            "valueEncrypted": {
+              "type": "string"
             },
             "valueFrom": {
               "type": "object",
@@ -176,7 +187,6 @@
                 "database",
                 "host",
                 "password",
-                "port",
                 "user"
               ],
               "properties": {
@@ -187,7 +197,15 @@
                   "type": "string"
                 },
                 "password": {
-                  "type": "string"
+                  "type": "object",
+                  "properties": {
+                    "value": {
+                      "type": "string"
+                    },
+                    "valueEncrypted": {
+                      "type": "string"
+                    }
+                  }
                 },
                 "port": {
                   "type": "string"

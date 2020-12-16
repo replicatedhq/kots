@@ -83,15 +83,21 @@ func WriteUpstream(u *types.Upstream, options types.WriteOptions) error {
 			if configValues != nil {
 				content, err := encryptConfigValues(configValues, encryptionKey)
 				if err != nil {
-					return errors.Wrap(err, "encrypt config values")
+					return errors.Wrap(err, "failed to encrypt config values")
 				}
 				file.Content = content
 				u.Files[i] = file
 			}
 		}
 
-		if options.EncryptIdentityConfig {
-			// TODO (ethan): how do we securely store connectors?
+		identityConfig := contentToIdentityConfig(file.Content)
+		if identityConfig != nil {
+			content, err := maybeEncryptIdentityConfig(identityConfig, encryptionKey)
+			if err != nil {
+				return errors.Wrap(err, "failed to encrypt identity config")
+			}
+			file.Content = content
+			u.Files[i] = file
 		}
 
 		if err := ioutil.WriteFile(fileRenderPath, file.Content, 0644); err != nil {
@@ -171,7 +177,7 @@ func mustMarshalInstallation(installation *kotsv1beta1.Installation) []byte {
 func encryptConfigValues(configValues *kotsv1beta1.ConfigValues, encryptionKey string) ([]byte, error) {
 	cipher, err := crypto.AESCipherFromString(encryptionKey)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to craete cipher")
+		return nil, errors.Wrap(err, "failed to load encryption cipher")
 	}
 	for k, v := range configValues.Spec.Values {
 		if v.ValuePlaintext == "" {
@@ -189,6 +195,30 @@ func encryptConfigValues(configValues *kotsv1beta1.ConfigValues, encryptionKey s
 	var b bytes.Buffer
 	if err := s.Encode(configValues, &b); err != nil {
 		return nil, errors.Wrap(err, "failed to encode config values")
+	}
+
+	return b.Bytes(), nil
+}
+
+func maybeEncryptIdentityConfig(identityConfig *kotsv1beta1.IdentityConfig, encryptionKey string) ([]byte, error) {
+	cipher, err := crypto.AESCipherFromString(encryptionKey)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to load encryption cipher")
+	}
+
+	identityConfig.Spec.ClientSecret.EncryptValue(*cipher)
+
+	if identityConfig.Spec.Storage.PostgresConfig != nil {
+		identityConfig.Spec.Storage.PostgresConfig.Password.EncryptValue(*cipher)
+	}
+
+	identityConfig.Spec.DexConnectors.EncryptValue(*cipher)
+
+	s := serializer.NewYAMLSerializer(serializer.DefaultMetaFactory, scheme.Scheme, scheme.Scheme)
+
+	var b bytes.Buffer
+	if err := s.Encode(identityConfig, &b); err != nil {
+		return nil, errors.Wrap(err, "failed to encode identity config")
 	}
 
 	return b.Bytes(), nil

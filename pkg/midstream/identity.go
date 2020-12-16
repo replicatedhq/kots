@@ -31,6 +31,7 @@ func (m *Midstream) writeIdentityService(ctx context.Context, options WriteOptio
 		IdentityConfigSpec: m.IdentityConfig.Spec,
 		IsOpenShift:        false, // TODO (ethan): openshift support
 		ImageRewriteFn:     nil,   // TODO (ethan): do we rewrite in kustomization.images?
+		Cipher:             &options.Cipher,
 		Builder:            &options.Builder,
 	}
 
@@ -40,19 +41,24 @@ func (m *Midstream) writeIdentityService(ctx context.Context, options WriteOptio
 	}
 
 	if m.IdentityConfig.Spec.Storage.PostgresConfig != nil {
-		postgresSecret, err := identitydeploy.RenderPostgresSecret(ctx, options.AppSlug, *m.IdentityConfig.Spec.Storage.PostgresConfig)
+		postgresSecretResource, err := identitydeploy.RenderPostgresSecret(ctx, options.AppSlug, &options.Cipher, *m.IdentityConfig.Spec.Storage.PostgresConfig)
 		if err != nil {
 			return "", errors.Wrap(err, "failed to render postgres secret")
 		}
-		resources["postgressecret.yaml"] = postgresSecret
+		resources["postgressecret.yaml"] = postgresSecretResource
 	}
 
 	if m.IdentityConfig.Spec.ClientID != "" {
-		clientSecret, err := identitydeploy.RenderClientSecret(ctx, m.IdentityConfig.Spec.ClientID, m.IdentityConfig.Spec.ClientSecret)
+		clientSecret, err := m.IdentityConfig.Spec.ClientSecret.GetValue(options.Cipher)
+		if err != nil {
+			return "", errors.Wrap(err, "failed to decrypt client secret")
+		}
+
+		clientSecretResource, err := identitydeploy.RenderClientSecret(ctx, m.IdentityConfig.Spec.ClientID, clientSecret)
 		if err != nil {
 			return "", errors.Wrap(err, "failed to render client secret")
 		}
-		resources["clientsecret.yaml"] = clientSecret
+		resources["clientsecret.yaml"] = clientSecretResource
 	}
 
 	kustomization := kustomizetypes.Kustomization{

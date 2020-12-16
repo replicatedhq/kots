@@ -44,7 +44,7 @@ func NewBuilder(opts BuilderOptions) (Builder, map[string]ItemValue, error) {
 		licenseCtx{License: opts.License},
 		newKurlContext("base", "default"), // can be hardcoded because kurl always deploys to the default namespace
 		newVersionCtx(opts.VersionInfo),
-		newIdentityCtx(opts.IdentityConfig, opts.ApplicationInfo),
+		newIdentityCtx(opts.IdentityConfig, opts.ApplicationInfo, opts.Cipher),
 		configCtx,
 	}
 	return b, configCtx.ItemValues, nil

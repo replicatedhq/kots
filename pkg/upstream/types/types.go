@@ -44,9 +44,8 @@ type WriteOptions struct {
 	// When true, the channel name in Installation yaml will not be changed.
 	PreserveInstallation bool
 	// Set to true on initial installation when an unencrypted config file is provided
-	EncryptConfig         bool
-	EncryptIdentityConfig bool
-	SharedPassword        string
+	EncryptConfig  bool
+	SharedPassword string
 }
 
 type FetchOptions struct {
