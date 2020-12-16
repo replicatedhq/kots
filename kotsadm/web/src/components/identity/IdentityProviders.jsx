@@ -111,7 +111,7 @@ class IdentityProviders extends Component {
     return this.setState({
       adminConsoleAddress: configSettings?.adminConsoleAddress ? configSettings?.adminConsoleAddress : window.location.origin,
       identityServiceAddress: configSettings?.identityServiceAddress ? configSettings?.identityServiceAddress : `${window.location.origin}/dex`,
-      selectedProvider: configSettings?.oidcConfig !== null ? "oidcConfig" : "geoAxisConfig",
+      selectedProvider: configSettings?.oidcConfig !== null ? "oidcConfig" : configSettings?.geoAxisConfig !== null ? "geoAxisConfig" : null,
       oidcConfig: configSettings?.oidcConfig,
       geoAxisConfig: configSettings?.geoAxisConfig
     });
@@ -199,7 +199,7 @@ class IdentityProviders extends Component {
 
   onSubmit = async (e) => {
     e.preventDefault();
-    const { app } = this.props;
+    const { app, isApplicationSettings } = this.props;
 
     const oidcConfigPayload = {
       "oidcConfig": {
@@ -224,11 +224,19 @@ class IdentityProviders extends Component {
       }
     }
 
-    const payload = {
-      adminConsoleAddress: this.state.adminConsoleAddress,
-      identityServiceAddress: this.state.identityServiceAddress,
-      "oidcConfig": this.state.selectedProvider === "oidcConfig" ? oidcConfigPayload.oidcConfig : null,
-      "geoAxisConfig": this.state.selectedProvider === "geoAxisConfig" ? this.state.geoAxisConfig : null
+    let payload;
+    if (isApplicationSettings) {
+      payload = {
+        "oidcConfig": this.state.selectedProvider === "oidcConfig" ? oidcConfigPayload.oidcConfig : null,
+        "geoAxisConfig": this.state.selectedProvider === "geoAxisConfig" ? this.state.geoAxisConfig : null
+      }
+    } else {
+      payload = {
+        adminConsoleAddress: this.state.adminConsoleAddress,
+        identityServiceAddress: this.state.identityServiceAddress,
+        "oidcConfig": this.state.selectedProvider === "oidcConfig" ? oidcConfigPayload.oidcConfig : null,
+        "geoAxisConfig": this.state.selectedProvider === "geoAxisConfig" ? this.state.geoAxisConfig : null
+      }
     }
 
     this.setState({ savingProviderErrMsg: "" });
@@ -303,7 +311,7 @@ class IdentityProviders extends Component {
 
 
   render() {
-    const { configSettingsErrMsg, isLoadingConfigSettings, requiredErrors, selectedProvider, syncAppWithGlobal} = this.state;
+    const { configSettingsErrMsg, isLoadingConfigSettings, requiredErrors, selectedProvider, syncAppWithGlobal } = this.state;
     const { isKurlEnabled, isApplicationSettings, app, isGeoaxisSupported } = this.props;
 
     if (isLoadingConfigSettings) {
@@ -364,40 +372,44 @@ class IdentityProviders extends Component {
             </div>
           }
 
-          <div className="u-marginTop--30">
-            <div className="flex flex1 alignItems--center">
-              <p className="u-fontSize--large u-lineHeight--default u-fontWeight--bold u-color--tuna"> {isApplicationSettings ? "App" : "Admin Console"} URL </p>
-              <span className="required-label"> Required </span>
-              {requiredErrors?.adminConsoleAddress && <span className="u-color--chestnut u-fontSize--small u-fontWeight--medium u-lineHeight--normal u-marginLeft--5"> Admin Console URL is a required field </span>}
-            </div>
-            <p className="u-fontSize--normal u-lineHeight--medium u-fontWeight--medium u-color--dustyGray u-marginTop--12"> The URL for accessing the KOTS Admin Console. This URL must be accessible from both the browser as well as the KOTS service. </p>
-            <input type="text"
-              className="Input u-marginTop--12"
-              placeholder="https://kots.somebigbankadmin.com"
-              value={this.state.adminConsoleAddress}
-              disabled={syncAppWithGlobal}
-              onChange={(e) => { this.handleFormChange("adminConsoleAddress", e) }} />
-          </div>
-
-          {!isKurlEnabled && (
-            <div className="u-marginTop--30">
-              <div className="flex flex1 alignItems--center">
-                <p className="u-fontSize--large u-lineHeight--default u-fontWeight--bold u-color--tuna"> ID Address </p>
-                <span className="required-label"> Required </span>
-                {requiredErrors?.identityServiceAddress && <span className="u-color--chestnut u-fontSize--small u-fontWeight--medium u-lineHeight--normal u-marginLeft--5"> ID address is a required field </span>}
+          {!isApplicationSettings &&
+            <div className="flex flex-column">
+              <div className="u-marginTop--30">
+                <div className="flex flex1 alignItems--center">
+                  <p className="u-fontSize--large u-lineHeight--default u-fontWeight--bold u-color--tuna"> {isApplicationSettings ? "App" : "Admin Console"} URL </p>
+                  <span className="required-label"> Required </span>
+                  {requiredErrors?.adminConsoleAddress && <span className="u-color--chestnut u-fontSize--small u-fontWeight--medium u-lineHeight--normal u-marginLeft--5"> Admin Console URL is a required field </span>}
+                </div>
+                <p className="u-fontSize--normal u-lineHeight--medium u-fontWeight--medium u-color--dustyGray u-marginTop--12"> The URL for accessing the KOTS Admin Console. This URL must be accessible from both the browser as well as the KOTS service. </p>
+                <input type="text"
+                  className="Input u-marginTop--12"
+                  placeholder="https://kots.somebigbankadmin.com"
+                  value={this.state.adminConsoleAddress}
+                  disabled={syncAppWithGlobal}
+                  onChange={(e) => { this.handleFormChange("adminConsoleAddress", e) }} />
               </div>
-              <p className="u-fontSize--normal u-lineHeight--medium u-fontWeight--medium u-color--dustyGray u-marginTop--12">
-                The address of the Dex identity service, often `&lt;Admin Console URL&gt;/dex`.
-                This URL must be accessible from both the browser as well as the KOTS service.
+
+              {!isKurlEnabled && (
+                <div className="u-marginTop--30">
+                  <div className="flex flex1 alignItems--center">
+                    <p className="u-fontSize--large u-lineHeight--default u-fontWeight--bold u-color--tuna"> ID Address </p>
+                    <span className="required-label"> Required </span>
+                    {requiredErrors?.identityServiceAddress && <span className="u-color--chestnut u-fontSize--small u-fontWeight--medium u-lineHeight--normal u-marginLeft--5"> ID address is a required field </span>}
+                  </div>
+                  <p className="u-fontSize--normal u-lineHeight--medium u-fontWeight--medium u-color--dustyGray u-marginTop--12">
+                    The address of the Dex identity service, often `&lt;Admin Console URL&gt;/dex`.
+                    This URL must be accessible from both the browser as well as the KOTS service.
             </p>
-              <input type="text"
-                className="Input u-marginTop--12"
-                placeholder="https://kots.somebigbankadmin.com/dex"
-                value={this.state.identityServiceAddress}
-                disabled={syncAppWithGlobal}
-                onChange={(e) => { this.handleFormChange("identityServiceAddress", e) }} />
+                  <input type="text"
+                    className="Input u-marginTop--12"
+                    placeholder="https://kots.somebigbankadmin.com/dex"
+                    value={this.state.identityServiceAddress}
+                    disabled={syncAppWithGlobal}
+                    onChange={(e) => { this.handleFormChange("identityServiceAddress", e) }} />
+                </div>
+              )}
             </div>
-          )}
+          }
 
           <div className="u-marginTop--30">
             <p className="u-fontSize--large u-lineHeight--default u-fontWeight--bold u-color--tuna"> Select an Identity Provider </p>
