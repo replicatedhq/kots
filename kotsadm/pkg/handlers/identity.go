@@ -39,8 +39,8 @@ const (
 )
 
 type ConfigureIdentityServiceRequest struct {
-	AdminConsoleAddress    string                            `json:"adminConsoleAddress"`
-	IdentityServiceAddress string                            `json:"identityServiceAddress"`
+	AdminConsoleAddress    string                            `json:"adminConsoleAddress,omitempty"`
+	IdentityServiceAddress string                            `json:"identityServiceAddress,omitempty"`
 	Groups                 []kotsv1beta1.IdentityConfigGroup `json:"groups,omitempty"`
 
 	IDPConfig `json:",inline"`
@@ -83,7 +83,7 @@ func ConfigureIdentityService(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := validateConfigureIdentityRequest(request); err != nil {
+	if err := validateConfigureIdentityRequest(request, false); err != nil {
 		err = errors.Wrap(err, "failed to validate request")
 		logger.Error(err)
 		JSON(w, http.StatusBadRequest, NewErrorResponse(err))
@@ -235,7 +235,7 @@ func ConfigureAppIdentityService(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := validateConfigureIdentityRequest(request); err != nil {
+	if err := validateConfigureIdentityRequest(request, true); err != nil {
 		err = errors.Wrap(err, "failed to validate request")
 		logger.Error(err)
 		JSON(w, http.StatusBadRequest, NewErrorResponse(err))
@@ -352,8 +352,6 @@ func ConfigureAppIdentityService(w http.ResponseWriter, r *http.Request) {
 	identityConfig.Spec.Enabled = true
 	identityConfig.Spec.DisablePasswordAuth = true
 	identityConfig.Spec.Groups = request.Groups
-	identityConfig.Spec.AdminConsoleAddress = request.AdminConsoleAddress
-	identityConfig.Spec.IdentityServiceAddress = request.IdentityServiceAddress
 	identityConfig.Spec.DexConnectors = kotsv1beta1.DexConnectors{
 		Value: []kotsv1beta1.DexConnector{
 			{
@@ -369,16 +367,9 @@ func ConfigureAppIdentityService(w http.ResponseWriter, r *http.Request) {
 
 	namespace := os.Getenv("POD_NAMESPACE")
 
-	// TODO: handle configuring ingress for the app
-	ingressConfig := kotsv1beta1.IngressConfig{}
-	if err := identity.ValidateConfig(r.Context(), namespace, identityConfig, ingressConfig); err != nil {
-		err = errors.Wrap(err, "invalid identity config")
-		logger.Error(err)
-		JSON(w, http.StatusBadRequest, NewErrorResponse(err))
-		return
-	}
-
+	// TODO: handle configuring ingress for the app?
 	// TODO: validate dex issuer
+	ingressConfig := kotsv1beta1.IngressConfig{}
 	if err := identity.ValidateConnection(r.Context(), namespace, identityConfig, ingressConfig); err != nil {
 		if _, ok := errors.Cause(err).(*identity.ErrorConnection); ok {
 			err = errors.Wrap(err, "invalid connection")
@@ -508,14 +499,14 @@ func getDexConnectorInfo(request ConfigureIdentityServiceRequest, idpConfigs []I
 	return &dexConnectorInfo, nil
 }
 
-func validateConfigureIdentityRequest(request ConfigureIdentityServiceRequest) error {
+func validateConfigureIdentityRequest(request ConfigureIdentityServiceRequest, isAppConfig bool) error {
 	missingFields := []string{}
 
-	if request.AdminConsoleAddress == "" {
+	if !isAppConfig && request.AdminConsoleAddress == "" {
 		missingFields = append(missingFields, "adminConsoleAddress")
 	}
 
-	if request.IdentityServiceAddress == "" {
+	if !isAppConfig && request.IdentityServiceAddress == "" {
 		missingFields = append(missingFields, "identityServiceAddress")
 	}
 
@@ -552,8 +543,8 @@ func validateConfigureIdentityRequest(request ConfigureIdentityServiceRequest) e
 
 type GetIdentityServiceConfigResponse struct {
 	Enabled                bool                              `json:"enabled"`
-	AdminConsoleAddress    string                            `json:"adminConsoleAddress"`
-	IdentityServiceAddress string                            `json:"identityServiceAddress"`
+	AdminConsoleAddress    string                            `json:"adminConsoleAddress,omitempty"`
+	IdentityServiceAddress string                            `json:"identityServiceAddress,omitempty"`
 	Groups                 []kotsv1beta1.IdentityConfigGroup `json:"groups,omitempty"`
 	Roles                  []kotsv1beta1.IdentityRole        `json:"roles,omitempty"`
 
@@ -664,8 +655,6 @@ func GetAppIdentityServiceConfig(w http.ResponseWriter, r *http.Request) {
 	// TODO: return ingress config
 	response.Enabled = kotsKinds.IdentityConfig.Spec.Enabled
 	response.Groups = kotsKinds.IdentityConfig.Spec.Groups
-	response.AdminConsoleAddress = kotsKinds.IdentityConfig.Spec.AdminConsoleAddress
-	response.IdentityServiceAddress = kotsKinds.IdentityConfig.Spec.IdentityServiceAddress
 
 	cipher, err := crypto.AESCipherFromString(kotsKinds.Installation.Spec.EncryptionKey)
 	if err != nil {
