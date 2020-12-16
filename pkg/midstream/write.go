@@ -28,6 +28,7 @@ type WriteOptions struct {
 	BaseDir      string
 	AppSlug      string
 	IsGitOps     bool
+	IsOpenShift  bool
 	Cipher       crypto.AESCipher
 	Builder      template.Builder
 }

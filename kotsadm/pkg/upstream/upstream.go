@@ -17,8 +17,11 @@ import (
 	"github.com/replicatedhq/kots/kotsadm/pkg/store"
 	"github.com/replicatedhq/kots/kotsadm/pkg/version"
 	"github.com/replicatedhq/kots/pkg/crypto"
+	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	kotspull "github.com/replicatedhq/kots/pkg/pull"
+	"k8s.io/client-go/kubernetes"
+	"sigs.k8s.io/controller-runtime/pkg/client/config"
 )
 
 func DownloadUpdate(appID string, archiveDir string, toCursor string, skipPreflights bool) (sequence int64, finalError error) {
@@ -52,6 +55,16 @@ func DownloadUpdate(appID string, archiveDir string, toCursor string, skipPrefli
 			}
 		}
 	}()
+
+	cfg, err := config.GetConfig()
+	if err != nil {
+		return 0, errors.Wrap(err, "failed to get cluster config")
+	}
+
+	clientset, err := kubernetes.NewForConfig(cfg)
+	if err != nil {
+		return 0, errors.Wrap(err, "failed to create kubernetes clientset")
+	}
 
 	beforeKotsKinds, err := kotsutil.LoadKotsKindsFromPath(archiveDir)
 	if err != nil {
@@ -118,6 +131,7 @@ func DownloadUpdate(appID string, archiveDir string, toCursor string, skipPrefli
 		AppSlug:             a.Slug,
 		AppSequence:         appSequence,
 		IsGitOps:            a.IsGitOps,
+		IsOpenShift:         k8sutil.IsOpenShift(clientset),
 		ReportingInfo:       reporting.GetReportingInfo(a.ID),
 	}
 

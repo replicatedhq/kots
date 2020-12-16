@@ -197,7 +197,7 @@ func Deploy(deployOptions types.DeployOptions) error {
 		deployOptions.LimitRange = limitRange
 	}
 
-	deployOptions.IsOpenShift = k8sutil.IsOpenshift(clientset)
+	deployOptions.IsOpenShift = k8sutil.IsOpenShift(clientset)
 
 	if airgapPath != "" {
 		deployOptions.AppImagesPushed = true

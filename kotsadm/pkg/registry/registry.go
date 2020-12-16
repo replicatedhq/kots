@@ -17,6 +17,7 @@ import (
 	"github.com/replicatedhq/kots/kotsadm/pkg/reporting"
 	"github.com/replicatedhq/kots/kotsadm/pkg/store"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
+	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/kotsadm"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/rewrite"
@@ -64,8 +65,18 @@ func RewriteImages(appID string, sequence int64, hostname string, username strin
 		}
 	}()
 
+	cfg, err := config.GetConfig()
+	if err != nil {
+		return "", errors.Wrap(err, "failed to get config")
+	}
+
+	clientset, err := kubernetes.NewForConfig(cfg)
+	if err != nil {
+		return "", errors.Wrap(err, "failed to create clientset")
+	}
+
 	// get the archive and store it in a temporary location
-	appDir, err := ioutil.TempDir("", "kotsadm")
+	appDir, err = ioutil.TempDir("", "kotsadm")
 	if err != nil {
 		return "", errors.Wrap(err, "failed to create temp dir")
 	}
@@ -148,6 +159,7 @@ func RewriteImages(appID string, sequence int64, hostname string, username strin
 		RegistryNamespace: namespace,
 		AppSlug:           a.Slug,
 		IsGitOps:          a.IsGitOps,
+		IsOpenShift:       k8sutil.IsOpenShift(clientset),
 		AppSequence:       a.CurrentSequence + 1, // sequence +1 because this is the current latest sequence, not the sequence that the rendered version will be saved as
 		ReportingInfo:     reporting.GetReportingInfo(a.ID),
 	}

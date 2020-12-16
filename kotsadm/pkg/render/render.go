@@ -12,10 +12,13 @@ import (
 	registrytypes "github.com/replicatedhq/kots/kotsadm/pkg/registry/types"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	"github.com/replicatedhq/kots/pkg/crypto"
+	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/rewrite"
 	"github.com/replicatedhq/kots/pkg/template"
 	upstreamtypes "github.com/replicatedhq/kots/pkg/upstream/types"
+	"k8s.io/client-go/kubernetes"
+	"sigs.k8s.io/controller-runtime/pkg/client/config"
 )
 
 // RenderFile renders a single file
@@ -113,6 +116,16 @@ func NewBuilder(kotsKinds *kotsutil.KotsKinds, registrySettings *registrytypes.R
 // RenderDir renders an app archive dir
 // this is useful for when the license/config have updated, and template functions need to be evaluated again
 func RenderDir(archiveDir string, a *apptypes.App, downstreams []downstreamtypes.Downstream, registrySettings *registrytypes.RegistrySettings, reportingInfo *upstreamtypes.ReportingInfo) error {
+	cfg, err := config.GetConfig()
+	if err != nil {
+		return errors.Wrap(err, "failed to get config")
+	}
+
+	clientset, err := kubernetes.NewForConfig(cfg)
+	if err != nil {
+		return errors.Wrap(err, "failed to create clientset")
+	}
+
 	installation, err := kotsutil.LoadInstallationFromPath(filepath.Join(archiveDir, "upstream", "userdata", "installation.yaml"))
 	if err != nil {
 		return errors.Wrap(err, "failed to load installation from path")
@@ -154,6 +167,7 @@ func RenderDir(archiveDir string, a *apptypes.App, downstreams []downstreamtypes
 		IsAirgap:         a.IsAirgap,
 		AppSlug:          a.Slug,
 		IsGitOps:         a.IsGitOps,
+		IsOpenShift:      k8sutil.IsOpenShift(clientset),
 		AppSequence:      a.CurrentSequence + 1, // sequence +1 because this is the current latest sequence, not the sequence that the rendered version will be saved as
 		ReportingInfo:    reportingInfo,
 	}

@@ -42,6 +42,7 @@ type RewriteOptions struct {
 	RegistryNamespace string
 	AppSlug           string
 	IsGitOps          bool
+	IsOpenShift       bool
 	AppSequence       int64
 	ReportingInfo     *upstreamtypes.ReportingInfo
 }
@@ -332,6 +333,7 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 		BaseDir:      u.GetBaseDir(writeUpstreamOptions),
 		AppSlug:      rewriteOptions.AppSlug,
 		IsGitOps:     rewriteOptions.IsGitOps,
+		IsOpenShift:  rewriteOptions.IsOpenShift,
 		Cipher:       *cipher,
 		Builder:      *builder,
 	}

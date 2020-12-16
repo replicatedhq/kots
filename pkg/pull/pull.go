@@ -57,6 +57,7 @@ type PullOptions struct {
 	AppSlug                string
 	AppSequence            int64
 	IsGitOps               bool
+	IsOpenShift            bool
 	HTTPProxyEnvValue      string
 	HTTPSProxyEnvValue     string
 	NoProxyEnvValue        string
@@ -549,6 +550,7 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 		BaseDir:      u.GetBaseDir(writeUpstreamOptions),
 		AppSlug:      pullOptions.AppSlug,
 		IsGitOps:     pullOptions.IsGitOps,
+		IsOpenShift:  pullOptions.IsOpenShift,
 		Cipher:       *cipher,
 		Builder:      *builder,
 	}
