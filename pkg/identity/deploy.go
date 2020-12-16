@@ -43,11 +43,11 @@ func Deploy(ctx context.Context, clientset kubernetes.Interface, namespace strin
 		Database: "dex",
 		User:     "dex",
 	}
-	if err := identitydeploy.EnsurePostgresSecret(context.TODO(), clientset, namespace, KotsadmNamePrefix, nil, postgresConfig); err != nil {
+	if err := identitydeploy.EnsurePostgresSecret(context.TODO(), clientset, namespace, KotsadmNamePrefix, nil, postgresConfig, nil); err != nil {
 		return errors.Wrap(err, "failed to ensure postgres secret")
 	}
 
-	if err := identitydeploy.EnsureClientSecret(ctx, clientset, namespace, KotsadmNamePrefix); err != nil {
+	if err := identitydeploy.EnsureClientSecret(ctx, clientset, namespace, KotsadmNamePrefix, nil); err != nil {
 		return errors.Wrap(err, "failed to ensure client secret")
 	}
 
@@ -130,7 +130,7 @@ func migrateClientSecret(ctx context.Context, clientset kubernetes.Interface, na
 		return nil
 	}
 
-	secret := identitydeploy.ClientSecretResource(KotsadmNamePrefix, client.Secret)
+	secret := identitydeploy.ClientSecretResource(KotsadmNamePrefix, client.Secret, nil)
 	_, err = clientset.CoreV1().Secrets(namespace).Create(ctx, secret, metav1.CreateOptions{})
 	return errors.Wrap(err, "failed to create secret")
 }

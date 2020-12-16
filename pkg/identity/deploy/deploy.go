@@ -39,6 +39,7 @@ type Options struct {
 	IsOpenShift        bool
 	ImageRewriteFn     ImageRewriteFunc
 	ProxyEnv           map[string]string
+	AdditionalLabels   map[string]string
 	Cipher             *crypto.AESCipher
 	Builder            *template.Builder
 }
@@ -52,16 +53,16 @@ func Deploy(ctx context.Context, clientset kubernetes.Interface, namespace strin
 	if err != nil {
 		return errors.Wrap(err, "failed to get dex config")
 	}
-	if err := ensureSecret(ctx, clientset, namespace, options.NamePrefix, dexConfig); err != nil {
+	if err := ensureSecret(ctx, clientset, namespace, dexConfig, options); err != nil {
 		return errors.Wrap(err, "failed to ensure secret")
 	}
 	if err := ensureDeployment(ctx, clientset, namespace, issuerURL, dexConfig, options); err != nil {
 		return errors.Wrap(err, "failed to ensure deployment")
 	}
-	if err := ensureService(ctx, clientset, namespace, options.NamePrefix, options.IdentityConfigSpec.IngressConfig); err != nil {
+	if err := ensureService(ctx, clientset, namespace, options); err != nil {
 		return errors.Wrap(err, "failed to ensure service")
 	}
-	if err := ensureIngress(ctx, clientset, namespace, options.NamePrefix, options.IdentityConfigSpec.IngressConfig); err != nil {
+	if err := ensureIngress(ctx, clientset, namespace, options); err != nil {
 		return errors.Wrap(err, "failed to ensure ingress")
 	}
 	return nil
@@ -76,7 +77,7 @@ func Configure(ctx context.Context, clientset kubernetes.Interface, namespace st
 	if err != nil {
 		return errors.Wrap(err, "failed to get dex config")
 	}
-	if err := ensureSecret(ctx, clientset, namespace, options.NamePrefix, dexConfig); err != nil {
+	if err := ensureSecret(ctx, clientset, namespace, dexConfig, options); err != nil {
 		return errors.Wrap(err, "failed to ensure secret")
 	}
 	if err := patchDeploymentSecret(ctx, clientset, namespace, issuerURL, dexConfig, options); err != nil {
@@ -85,14 +86,18 @@ func Configure(ctx context.Context, clientset kubernetes.Interface, namespace st
 	return nil
 }
 
-func AdditionalLabels(namePrefix string) map[string]string {
-	return map[string]string{
+func AdditionalLabels(namePrefix string, additionalLabels map[string]string) map[string]string {
+	next := map[string]string{
 		KotsIdentityLabelKey: namePrefix,
 	}
+	for key, value := range additionalLabels {
+		next[key] = value
+	}
+	return next
 }
 
-func ensureSecret(ctx context.Context, clientset kubernetes.Interface, namespace string, namePrefix string, dexConfig []byte) error {
-	secret := secretResource(namePrefix, dexConfig)
+func ensureSecret(ctx context.Context, clientset kubernetes.Interface, namespace string, dexConfig []byte, options Options) error {
+	secret := secretResource(dexConfig, options)
 
 	existingSecret, err := clientset.CoreV1().Secrets(namespace).Get(ctx, secret.Name, metav1.GetOptions{})
 	if err != nil {
@@ -118,15 +123,15 @@ func ensureSecret(ctx context.Context, clientset kubernetes.Interface, namespace
 	return nil
 }
 
-func secretResource(namePrefix string, dexConfig []byte) *corev1.Secret {
+func secretResource(dexConfig []byte, options Options) *corev1.Secret {
 	return &corev1.Secret{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "v1",
 			Kind:       "Secret",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:   prefixName(namePrefix, "dex"),
-			Labels: kotsadmtypes.GetKotsadmLabels(AdditionalLabels(namePrefix)),
+			Name:   prefixName(options.NamePrefix, "dex"),
+			Labels: kotsadmtypes.GetKotsadmLabels(AdditionalLabels(options.NamePrefix, options.AdditionalLabels)),
 		},
 		Data: map[string][]byte{
 			"dexConfig.yaml": dexConfig,
@@ -235,7 +240,7 @@ func deploymentResource(issuerURL, configChecksum string, options Options) (*app
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:   types.DeploymentName(options.NamePrefix),
-			Labels: kotsadmtypes.GetKotsadmLabels(AdditionalLabels(options.NamePrefix)),
+			Labels: kotsadmtypes.GetKotsadmLabels(AdditionalLabels(options.NamePrefix, options.AdditionalLabels)),
 		},
 		Spec: appsv1.DeploymentSpec{
 			Replicas: pointer.Int32Ptr(2),
@@ -461,8 +466,8 @@ func updateDeploymentPostgresSecretEnvFromSource(namePrefix string, existingDepl
 	return existingDeployment
 }
 
-func ensureService(ctx context.Context, clientset kubernetes.Interface, namespace string, namePrefix string, ingressSpec kotsv1beta1.IngressConfigSpec) error {
-	service := serviceResource(namePrefix, ingressSpec)
+func ensureService(ctx context.Context, clientset kubernetes.Interface, namespace string, options Options) error {
+	service := serviceResource(options)
 
 	existingService, err := clientset.CoreV1().Services(namespace).Get(ctx, service.Name, metav1.GetOptions{})
 	if err != nil {
@@ -488,7 +493,8 @@ func ensureService(ctx context.Context, clientset kubernetes.Interface, namespac
 	return nil
 }
 
-func serviceResource(namePrefix string, ingressSpec kotsv1beta1.IngressConfigSpec) *corev1.Service {
+func serviceResource(options Options) *corev1.Service {
+	ingressSpec := options.IdentityConfigSpec.IngressConfig
 	serviceType := corev1.ServiceTypeClusterIP
 	port := corev1.ServicePort{
 		Name:       "http",
@@ -505,13 +511,13 @@ func serviceResource(namePrefix string, ingressSpec kotsv1beta1.IngressConfigSpe
 			Kind:       "Service",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:   types.ServiceName(namePrefix),
-			Labels: kotsadmtypes.GetKotsadmLabels(AdditionalLabels(namePrefix)),
+			Name:   types.ServiceName(options.NamePrefix),
+			Labels: kotsadmtypes.GetKotsadmLabels(AdditionalLabels(options.NamePrefix, options.AdditionalLabels)),
 		},
 		Spec: corev1.ServiceSpec{
 			Type: serviceType,
 			Selector: map[string]string{
-				"app": prefixName(namePrefix, "dex"),
+				"app": prefixName(options.NamePrefix, "dex"),
 			},
 			Ports: []corev1.ServicePort{
 				port,
@@ -526,16 +532,27 @@ func updateService(existingService, desiredService *corev1.Service) *corev1.Serv
 	return existingService
 }
 
-func ensureIngress(ctx context.Context, clientset kubernetes.Interface, namespace string, namePrefix string, ingressSpec kotsv1beta1.IngressConfigSpec) error {
+func ensureIngress(ctx context.Context, clientset kubernetes.Interface, namespace string, options Options) error {
+	ingressSpec := options.IdentityConfigSpec.IngressConfig
 	if !ingressSpec.Enabled || ingressSpec.Ingress == nil {
-		return deleteIngress(ctx, clientset, namespace, namePrefix)
+		return deleteIngress(ctx, clientset, namespace, options.NamePrefix)
 	}
-	dexIngress := ingressResource(namePrefix, *ingressSpec.Ingress)
+	dexIngress := ingressResource(options)
 	return ingress.EnsureIngress(ctx, clientset, namespace, dexIngress)
 }
 
-func ingressResource(namePrefix string, ingressConfig kotsv1beta1.IngressResourceConfig) *extensionsv1beta1.Ingress {
-	return ingress.IngressFromConfig(ingressConfig, prefixName(namePrefix, "dex"), prefixName(namePrefix, "dex"), 5556, AdditionalLabels(namePrefix))
+func ingressResource(options Options) *extensionsv1beta1.Ingress {
+	ingressSpec := options.IdentityConfigSpec.IngressConfig
+	if ingressSpec.Ingress == nil {
+		return nil
+	}
+	return ingress.IngressFromConfig(
+		*ingressSpec.Ingress,
+		prefixName(options.NamePrefix, "dex"),
+		types.ServiceName(options.NamePrefix),
+		int(types.ServicePort()),
+		AdditionalLabels(options.NamePrefix, options.AdditionalLabels),
+	)
 }
 
 func prefixName(prefix, name string) string {
