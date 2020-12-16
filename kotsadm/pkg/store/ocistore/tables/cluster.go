@@ -60,9 +60,6 @@ func Cluster() schemasv1alpha4.TableSpec {
 					{
 						Name: "updated_at",
 						Type: "text",
-						Constraints: &schemasv1alpha4.SqliteTableColumnConstraints{
-							NotNull: &trueValue,
-						},
 					},
 					{
 						Name: "token",

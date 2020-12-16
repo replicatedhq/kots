@@ -979,8 +979,12 @@ github.com/nwaples/rardecode v1.0.0 h1:r7vGuS5akxOnR4JQSkko62RJ1ReCMXxQRPtxsiFMB
 github.com/nwaples/rardecode v1.0.0/go.mod h1:5DzqNKiOdpKKBH87u8VlvAnPZMXcGRhxWkRpHbbfGS0=
 github.com/nxadm/tail v1.4.4 h1:DQuhQpB1tVlglWS2hLQ5OV6B5r8aGxSrPc5Qo6uTN78=
 github.com/nxadm/tail v1.4.4/go.mod h1:kenIhsEOeOJmVchQTgglprH7qJGnHDVpk1VPCcaMI8A=
-github.com/ocidb/ocidb v0.0.0-20201206152354-613063128535 h1:Lsd6bPeTtMStcEEizEYkkIEyCVDIyRBdp449JsGUKno=
-github.com/ocidb/ocidb v0.0.0-20201206152354-613063128535/go.mod h1:ge6U0rvNOJCNij4lkJwHqwsE32znquPYIzRJQoI1A9U=
+github.com/ocidb/ocidb v0.0.0-20201208201655-7d55cfdfb5b9 h1:jsJhpY7BJfyl5IBd9PJp+9JDQfYiffeCy35rdWbkVD0=
+github.com/ocidb/ocidb v0.0.0-20201208201655-7d55cfdfb5b9/go.mod h1:ge6U0rvNOJCNij4lkJwHqwsE32znquPYIzRJQoI1A9U=
+github.com/ocidb/ocidb v0.0.0-20201208202011-e2fe9d5c7683 h1:1P+lwQSyraKCYKmN/tJE8K6KmhIAsxw6pCUOn+gUCYo=
+github.com/ocidb/ocidb v0.0.0-20201208202011-e2fe9d5c7683/go.mod h1:ge6U0rvNOJCNij4lkJwHqwsE32znquPYIzRJQoI1A9U=
+github.com/ocidb/ocidb v0.0.0-20201208225931-21f4e861e0f5 h1:MEXbE3XLf1R5qq0svRcM9dv4pL01FmChzqEZ9xYUv7Y=
+github.com/ocidb/ocidb v0.0.0-20201208225931-21f4e861e0f5/go.mod h1:ge6U0rvNOJCNij4lkJwHqwsE32znquPYIzRJQoI1A9U=
 github.com/oklog/run v1.0.0 h1:Ru7dDtJNOyC66gQ5dQmaCa0qIsAUFY3sFpK1Xk8igrw=
 github.com/oklog/run v1.0.0/go.mod h1:dlhp/R75TPv97u0XWUtDeV/lRKWPKSdTuV0TZvrmrQA=
 github.com/oklog/ulid v1.3.1/go.mod h1:CirwcVhetQ6Lv90oh/F+FBtV6XMibvdAFo93nm5qn4U=

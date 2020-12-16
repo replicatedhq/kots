@@ -2,6 +2,7 @@ package ocistore
 
 import (
 	"context"
+	"database/sql"
 	"os"
 
 	"github.com/ocidb/ocidb/pkg/ocidb"
@@ -48,18 +49,22 @@ func (s OCIStore) WaitForReady(ctx context.Context) error {
 }
 
 func (s OCIStore) IsNotFound(err error) bool {
-	if err == nil {
-		return false
+	if errors.Cause(err) == sql.ErrNoRows {
+		return true
 	}
-	return errors.Cause(err) == ErrNotFound
+	if errors.Cause(err) == ErrNotFound {
+		return true
+	}
+	return false
 }
 
 func StoreFromEnv() OCIStore {
 	connectOpts := ocidbtypes.ConnectOpts{
 		Host:      "kotsadm-storage-registry",
 		Port:      5000,
+		PlainHTTP: true,
 		Namespace: "",
-		Username:  "",
+		Username:  "kots",
 		Password:  "",
 		Database:  "kots",
 		Tables:    getSQLiteTables(),

@@ -1,6 +1,7 @@
 include ../Makefile.build
 CURRENT_USER := $(shell id -u -n)
 BUILDTAGS = netgo containers_image_ostree_stub exclude_graphdriver_devicemapper exclude_graphdriver_btrfs containers_image_openpgp
+CGO_ENABLED = 1
 
 .PHONY: kotsadm
 kotsadm:
