@@ -22,14 +22,18 @@ export class ClusterNodes extends Component {
     selectedNodeType: "worker", // Change when master node script is enabled
     generateCommandErrMsg: "",
     kurl: null,
-    getNodeStatus: new Repeater(),
+    getNodeStatusJob: new Repeater(),
     deletNodeError: "",
     confirmDeleteNode: ""
   }
 
   componentDidMount() {
     this.getNodeStatus();
-    this.state.getNodeStatus.start(this.getNodeStatus, 1000);
+    this.state.getNodeStatusJob.start(this.getNodeStatus, 1000);
+  }
+
+  componentWillUnmount() {
+    this.state.getNodeStatusJob.stop();
   }
 
   getNodeStatus = async () => {
