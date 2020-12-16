@@ -42,7 +42,12 @@ spec:
             clientID:
               type: string
             clientSecret:
-              type: string
+              properties:
+                value:
+                  type: string
+                valueEncrypted:
+                  type: string
+              type: object
             dexConnectors:
               properties:
                 value:
@@ -63,6 +68,8 @@ spec:
                     - type
                     type: object
                   type: array
+                valueEncrypted:
+                  type: string
                 valueFrom:
                   properties:
                     secretKeyRef:
@@ -146,7 +153,12 @@ spec:
                     host:
                       type: string
                     password:
-                      type: string
+                      properties:
+                        value:
+                          type: string
+                        valueEncrypted:
+                          type: string
+                      type: object
                     port:
                       type: string
                     user:
@@ -155,7 +167,6 @@ spec:
                   - database
                   - host
                   - password
-                  - port
                   - user
                   type: object
               type: object

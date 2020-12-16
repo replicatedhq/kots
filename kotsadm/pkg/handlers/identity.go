@@ -21,6 +21,7 @@ import (
 	"github.com/replicatedhq/kots/kotsadm/pkg/store"
 	"github.com/replicatedhq/kots/kotsadm/pkg/version"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
+	"github.com/replicatedhq/kots/pkg/crypto"
 	"github.com/replicatedhq/kots/pkg/identity"
 	identitydeploy "github.com/replicatedhq/kots/pkg/identity/deploy"
 	dextypes "github.com/replicatedhq/kots/pkg/identity/types/dex"
@@ -98,6 +99,8 @@ func ConfigureIdentityService(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
+
+	// NOTE: we do not encrypt kotsadm config
 
 	idpConfigs, err := dexConnectorsToIDPConfigs(previousConfig.Spec.DexConnectors.Value)
 	if err != nil {
@@ -313,7 +316,23 @@ func ConfigureAppIdentityService(w http.ResponseWriter, r *http.Request) {
 	}
 	identityConfig := *s
 
-	idpConfigs, err := dexConnectorsToIDPConfigs(identityConfig.Spec.DexConnectors.Value)
+	cipher, err := crypto.AESCipherFromString(kotsKinds.Installation.Spec.EncryptionKey)
+	if err != nil {
+		err = errors.Wrap(err, "failed to load encryption cipher")
+		logger.Error(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	dexConnectors, err := identityConfig.Spec.DexConnectors.GetValue(*cipher)
+	if err != nil {
+		err = errors.Wrap(err, "failed to decrypt dex connectors")
+		logger.Error(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	idpConfigs, err := dexConnectorsToIDPConfigs(dexConnectors)
 	if err != nil {
 		err = errors.Wrap(err, "failed to get idp configs from dex connectors")
 		logger.Error(err)
@@ -559,6 +578,8 @@ func GetIdentityServiceConfig(w http.ResponseWriter, r *http.Request) {
 		IdentityServiceAddress: identityConfig.Spec.IdentityServiceAddress,
 	}
 
+	// NOTE: we do not encrypt kotsadm config
+
 	if len(identityConfig.Spec.DexConnectors.Value) == 0 {
 		// no connectors, return default values
 		response.IDPConfig = getDefaultIDPConfig()
@@ -646,14 +667,30 @@ func GetAppIdentityServiceConfig(w http.ResponseWriter, r *http.Request) {
 	response.AdminConsoleAddress = kotsKinds.IdentityConfig.Spec.AdminConsoleAddress
 	response.IdentityServiceAddress = kotsKinds.IdentityConfig.Spec.IdentityServiceAddress
 
-	if len(kotsKinds.IdentityConfig.Spec.DexConnectors.Value) == 0 {
+	cipher, err := crypto.AESCipherFromString(kotsKinds.Installation.Spec.EncryptionKey)
+	if err != nil {
+		err = errors.Wrap(err, "failed to load encryption cipher")
+		logger.Error(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	dexConnectors, err := kotsKinds.IdentityConfig.Spec.DexConnectors.GetValue(*cipher)
+	if err != nil {
+		err = errors.Wrap(err, "failed to decrypt dex connectors")
+		logger.Error(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	if len(dexConnectors) == 0 {
 		// no connectors, return default values
 		response.IDPConfig = getDefaultIDPConfig()
 		JSON(w, http.StatusOK, response)
 		return
 	}
 
-	idpConfigs, err := dexConnectorsToIDPConfigs(kotsKinds.IdentityConfig.Spec.DexConnectors.Value)
+	idpConfigs, err := dexConnectorsToIDPConfigs(dexConnectors)
 	if err != nil {
 		logger.Error(err)
 		w.WriteHeader(http.StatusInternalServerError)

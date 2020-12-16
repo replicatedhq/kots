@@ -16,7 +16,12 @@ import (
 	"github.com/replicatedhq/kots/pkg/template"
 )
 
-func getDexConfig(ctx context.Context, identitySpec kotsv1beta1.IdentitySpec, identityConfigSpec kotsv1beta1.IdentityConfigSpec, builder *template.Builder) ([]byte, error) {
+func getDexConfig(ctx context.Context, options Options) ([]byte, error) {
+	identitySpec := options.IdentitySpec
+	identityConfigSpec := options.IdentityConfigSpec
+	builder := options.Builder
+	cipher := options.Cipher
+
 	redirectURIs, err := buildIdentitySpecOIDCRedirectURIs(identitySpec.OIDCRedirectURIs, builder)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to build identity spec oicd redirect uris")
@@ -57,8 +62,21 @@ func getDexConfig(ctx context.Context, identitySpec kotsv1beta1.IdentitySpec, id
 		EnablePasswordDB: false,
 	}
 
+	dexConnectors := []kotsv1beta1.DexConnector{}
+	if cipher != nil {
+		dexConnectors, err = identityConfigSpec.DexConnectors.GetValue(*cipher)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to decrypt dex connectors")
+		}
+	} else if identityConfigSpec.DexConnectors.ValueEncrypted != "" {
+		return nil, errors.Wrap(err, "cipher required")
+	} else {
+		// NOTE: we do not encrypt kotsadm config
+		dexConnectors = identityConfigSpec.DexConnectors.Value
+	}
+
 	connectors := []kotsv1beta1.DexConnector{}
-	for _, connector := range identityConfigSpec.DexConnectors.Value {
+	for _, connector := range dexConnectors {
 		if len(identitySpec.SupportedProviders) == 0 || stringInSlice(connector.Type, identitySpec.SupportedProviders) {
 			connectors = append(connectors, connector)
 		}

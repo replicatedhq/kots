@@ -17,24 +17,56 @@ limitations under the License.
 package v1beta1
 
 import (
+	"encoding/base64"
+	"encoding/json"
+
+	"github.com/replicatedhq/kots/pkg/crypto"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 )
 
 type IdentityConfigSpec struct {
-	Enabled                bool                  `json:"enabled" yaml:"enabled"`
-	DisablePasswordAuth    bool                  `json:"disablePasswordAuth,omitempty" yaml:"disablePasswordAuth,omitempty"`
-	Groups                 []IdentityConfigGroup `json:"groups,omitempty" yaml:"groups,omitempty"`
-	IngressConfig          IngressConfigSpec     `json:"ingressConfig,omitempty" yaml:"ingressConfig,omitempty"`
-	AdminConsoleAddress    string                `json:"adminConsoleAddress,omitempty" yaml:"adminConsoleAddress,omitempty"` // TODO (ethan): this does not belong here
-	IdentityServiceAddress string                `json:"identityServiceAddress,omitempty" yaml:"identityServiceAddress,omitempty"`
-	CACertPemBase64        string                `json:"caCertPemBase64,omitempty" yaml:"caCertPemBase64,omitempty"`
-	InsecureSkipTLSVerify  bool                  `json:"insecureSkipTLSVerify,omitempty" yaml:"insecureSkipTLSVerify,omitempty"`
-	Storage                Storage               `json:"storage,omitempty" yaml:"storage,omitempty"`
-	ClientID               string                `json:"clientID,omitempty" yaml:"clientID,omitempty"`
-	ClientSecret           string                `json:"clientSecret,omitempty" yaml:"clientSecret,omitempty"`
-	DexConnectors          DexConnectors         `json:"dexConnectors,omitempty" yaml:"dexConnectors,omitempty"`
+	Enabled                bool                    `json:"enabled" yaml:"enabled"`
+	DisablePasswordAuth    bool                    `json:"disablePasswordAuth,omitempty" yaml:"disablePasswordAuth,omitempty"`
+	Groups                 []IdentityConfigGroup   `json:"groups,omitempty" yaml:"groups,omitempty"`
+	IngressConfig          IngressConfigSpec       `json:"ingressConfig,omitempty" yaml:"ingressConfig,omitempty"`
+	AdminConsoleAddress    string                  `json:"adminConsoleAddress,omitempty" yaml:"adminConsoleAddress,omitempty"` // TODO (ethan): this does not belong here
+	IdentityServiceAddress string                  `json:"identityServiceAddress,omitempty" yaml:"identityServiceAddress,omitempty"`
+	CACertPemBase64        string                  `json:"caCertPemBase64,omitempty" yaml:"caCertPemBase64,omitempty"`
+	InsecureSkipTLSVerify  bool                    `json:"insecureSkipTLSVerify,omitempty" yaml:"insecureSkipTLSVerify,omitempty"`
+	Storage                Storage                 `json:"storage,omitempty" yaml:"storage,omitempty"`
+	ClientID               string                  `json:"clientID,omitempty" yaml:"clientID,omitempty"`
+	ClientSecret           *StringValueOrEncrypted `json:"clientSecret,omitempty" yaml:"clientSecret,omitempty"`
+	DexConnectors          DexConnectors           `json:"dexConnectors,omitempty" yaml:"dexConnectors,omitempty"`
+}
+
+type StringValueOrEncrypted struct {
+	Value          string `json:"value,omitempty" yaml:"value,omitempty"`
+	ValueEncrypted string `json:"valueEncrypted,omitempty" yaml:"valueEncrypted,omitempty"`
+}
+
+func NewStringValueOrEncrypted(value string, cipher crypto.AESCipher) *StringValueOrEncrypted {
+	v := &StringValueOrEncrypted{Value: value}
+	v.EncryptValue(cipher)
+	return v
+}
+
+func (v *StringValueOrEncrypted) GetValue(cipher crypto.AESCipher) (string, error) {
+	if v.ValueEncrypted != "" {
+		b, err := base64.StdEncoding.DecodeString(v.ValueEncrypted)
+		if err != nil {
+			return "", err
+		}
+		result, err := cipher.Decrypt(b)
+		return string(result), err
+	}
+	return v.Value, nil
+}
+
+func (v *StringValueOrEncrypted) EncryptValue(cipher crypto.AESCipher) {
+	v.ValueEncrypted = base64.StdEncoding.EncodeToString(cipher.Encrypt([]byte(v.Value)))
+	v.Value = ""
 }
 
 type Storage struct {
@@ -42,11 +74,11 @@ type Storage struct {
 }
 
 type IdentityPostgresConfig struct {
-	Host     string `json:"host" yaml:"host"`
-	Port     string `json:"port" yaml:"port"`
-	Database string `json:"database" yaml:"database"`
-	User     string `json:"user" yaml:"user"`
-	Password string `json:"password" yaml:"password"`
+	Host     string                  `json:"host" yaml:"host"`
+	Port     string                  `json:"port,omitempty" yaml:"port,omitempty"`
+	Database string                  `json:"database" yaml:"database"`
+	User     string                  `json:"user" yaml:"user"`
+	Password *StringValueOrEncrypted `json:"password" yaml:"password"`
 }
 
 type IdentityConfigGroup struct {
@@ -55,8 +87,35 @@ type IdentityConfigGroup struct {
 }
 
 type DexConnectors struct {
-	Value     []DexConnector       `json:"value,omitempty" yaml:"value,omitempty"`
-	ValueFrom *DexConnectorsSource `json:"valueFrom,omitempty" yaml:"valueFrom,omitempty"`
+	Value          []DexConnector       `json:"value,omitempty" yaml:"value,omitempty"`
+	ValueEncrypted string               `json:"valueEncrypted,omitempty" yaml:"valueEncrypted,omitempty"`
+	ValueFrom      *DexConnectorsSource `json:"valueFrom,omitempty" yaml:"valueFrom,omitempty"`
+}
+
+func (v *DexConnectors) GetValue(cipher crypto.AESCipher) ([]DexConnector, error) {
+	if v.ValueEncrypted != "" {
+		result, err := cipher.Decrypt([]byte(v.ValueEncrypted))
+		if err != nil {
+			return nil, err
+		}
+		b, err := base64.StdEncoding.DecodeString(string(result))
+		if err != nil {
+			return nil, err
+		}
+		err = json.Unmarshal(b, &v.Value)
+		return v.Value, err
+	}
+	return v.Value, nil
+}
+
+func (v *DexConnectors) EncryptValue(cipher crypto.AESCipher) error {
+	b, err := json.Marshal(v.Value)
+	if err != nil {
+		return err
+	}
+	v.ValueEncrypted = base64.StdEncoding.EncodeToString(cipher.Encrypt(b))
+	v.Value = nil
+	return nil
 }
 
 type DexConnectorsSource struct {

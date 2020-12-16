@@ -75,7 +75,7 @@ func UpdateAppFromPath(a *apptypes.App, airgapRoot string, deploy bool, skipPref
 	if err != nil {
 		return errors.Wrap(err, "failed to get app registry settings")
 	}
-	cipher, err := crypto.AESCipherFromString(os.Getenv("API_ENCRYPTION_KEY"))
+	apiCipher, err := crypto.AESCipherFromString(os.Getenv("API_ENCRYPTION_KEY"))
 	if err != nil {
 		return errors.Wrap(err, "failed to create aes cipher")
 	}
@@ -85,7 +85,7 @@ func UpdateAppFromPath(a *apptypes.App, airgapRoot string, deploy bool, skipPref
 		return errors.Wrap(err, "failed to decode")
 	}
 
-	decryptedPassword, err := cipher.Decrypt([]byte(decodedPassword))
+	decryptedPassword, err := apiCipher.Decrypt([]byte(decodedPassword))
 	if err != nil {
 		return errors.Wrap(err, "failed to decrypt")
 	}

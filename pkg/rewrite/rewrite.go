@@ -9,6 +9,7 @@ import (
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	"github.com/replicatedhq/kots/pkg/base"
+	"github.com/replicatedhq/kots/pkg/crypto"
 	"github.com/replicatedhq/kots/pkg/docker/registry"
 	"github.com/replicatedhq/kots/pkg/downstream"
 	"github.com/replicatedhq/kots/pkg/k8sdoc"
@@ -321,11 +322,17 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 		return errors.Wrap(err, "failed to create new config context template builder")
 	}
 
+	cipher, err := crypto.AESCipherFromString(rewriteOptions.Installation.Spec.EncryptionKey)
+	if err != nil {
+		return errors.Wrap(err, "failed to create cipher from installation spec")
+	}
+
 	writeMidstreamOptions := midstream.WriteOptions{
 		MidstreamDir: filepath.Join(b.GetOverlaysDir(writeBaseOptions), "midstream"),
 		BaseDir:      u.GetBaseDir(writeUpstreamOptions),
 		AppSlug:      rewriteOptions.AppSlug,
 		IsGitOps:     rewriteOptions.IsGitOps,
+		Cipher:       *cipher,
 		Builder:      *builder,
 	}
 	if err := m.WriteMidstream(writeMidstreamOptions); err != nil {

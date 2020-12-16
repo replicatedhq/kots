@@ -43,11 +43,11 @@ func InitAppIdentityConfig(appSlug string) (string, error) {
 					Host:     host,
 					Database: database,
 					User:     user,
-					Password: postgresPassword,
+					Password: &kotsv1beta1.StringValueOrEncrypted{Value: postgresPassword},
 				},
 			},
 			ClientID:     appSlug,
-			ClientSecret: ksuid.New().String(),
+			ClientSecret: &kotsv1beta1.StringValueOrEncrypted{Value: ksuid.New().String()},
 		},
 	}
 

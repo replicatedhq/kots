@@ -9,6 +9,7 @@ import (
 
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
+	"github.com/replicatedhq/kots/pkg/crypto"
 	"github.com/replicatedhq/kots/pkg/identity/types"
 	"github.com/replicatedhq/kots/pkg/ingress"
 	kotsadmtypes "github.com/replicatedhq/kots/pkg/kotsadm/types"
@@ -38,11 +39,12 @@ type Options struct {
 	IsOpenShift        bool
 	ImageRewriteFn     ImageRewriteFunc
 	ProxyEnv           map[string]string
+	Cipher             *crypto.AESCipher
 	Builder            *template.Builder
 }
 
 func Deploy(ctx context.Context, clientset kubernetes.Interface, namespace string, options Options) error {
-	dexConfig, err := getDexConfig(ctx, options.IdentitySpec, options.IdentityConfigSpec, options.Builder)
+	dexConfig, err := getDexConfig(ctx, options)
 	if err != nil {
 		return errors.Wrap(err, "failed to get dex config")
 	}
@@ -62,7 +64,7 @@ func Deploy(ctx context.Context, clientset kubernetes.Interface, namespace strin
 }
 
 func Configure(ctx context.Context, clientset kubernetes.Interface, namespace string, options Options) error {
-	dexConfig, err := getDexConfig(ctx, options.IdentitySpec, options.IdentityConfigSpec, options.Builder)
+	dexConfig, err := getDexConfig(ctx, options)
 	if err != nil {
 		return errors.Wrap(err, "failed to get dex config")
 	}

@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 
 	"github.com/pkg/errors"
+	"github.com/replicatedhq/kots/pkg/crypto"
 	"github.com/replicatedhq/kots/pkg/disasterrecovery"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/template"
@@ -27,6 +28,7 @@ type WriteOptions struct {
 	BaseDir      string
 	AppSlug      string
 	IsGitOps     bool
+	Cipher       crypto.AESCipher
 	Builder      template.Builder
 }
 

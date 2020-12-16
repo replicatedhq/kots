@@ -82,7 +82,7 @@ func NewBuilder(kotsKinds *kotsutil.KotsKinds, registrySettings *registrytypes.R
 
 	appCipher, err := crypto.AESCipherFromString(kotsKinds.Installation.Spec.EncryptionKey)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to load appCipher")
+		return nil, errors.Wrap(err, "failed to load encryption cipher")
 	}
 
 	configGroups := []kotsv1beta1.ConfigGroup{}
