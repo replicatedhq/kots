@@ -52,6 +52,22 @@ func (s S3PGStore) IsRollbackSupportedForVersion(appID string, sequence int64) (
 	return kotsAppSpec.Spec.AllowRollback, nil
 }
 
+func (s S3PGStore) IsIdentityServiceSupportedForVersion(appID string, sequence int64) (bool, error) {
+	db := persistence.MustGetPGSession()
+	query := `select identity_spec from app_version where app_id = $1 and sequence = $2`
+	row := db.QueryRow(query, appID, sequence)
+
+	var identitySpecStr sql.NullString
+	if err := row.Scan(&identitySpecStr); err != nil {
+		if err == sql.ErrNoRows {
+			return false, nil
+		}
+		return false, errors.Wrap(err, "failed to scan")
+	}
+
+	return identitySpecStr.String != "", nil
+}
+
 func (s S3PGStore) IsSnapshotsSupportedForVersion(a *apptypes.App, sequence int64) (bool, error) {
 	db := persistence.MustGetPGSession()
 	query := `select backup_spec from app_version where app_id = $1 and sequence = $2`

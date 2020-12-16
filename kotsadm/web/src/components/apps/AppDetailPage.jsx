@@ -265,7 +265,6 @@ class AppDetailPage extends Component {
       appsList,
       rootDidInitialAppFetch,
       appName,
-      isIdentityServiceSupported
     } = this.props;
 
     const {
@@ -338,8 +337,7 @@ class AppDetailPage extends Component {
                   <SubNavBar
                     className="flex"
                     activeTab={match.params.tab || "app"}
-                    watch={app}
-                    isIdentityServiceSupported={isIdentityServiceSupported}
+                    app={app}
                     isVeleroInstalled={isVeleroInstalled}
                   />
                   <Switch>
@@ -424,7 +422,7 @@ class AppDetailPage extends Component {
                     <Route exact path="/app/:slug/snapshots/:id/restore" render={() =>
                       <AppSnapshotRestore app={app} />
                     } />
-                    {isIdentityServiceSupported &&
+                    {app.isAppIdentityServiceSupported &&
                       <Route exact path="/app/:slug/settings" render={() =>
                         <AppIdentityServiceSettings
                           app={app}

@@ -40,13 +40,14 @@ type ResponseApp struct {
 	IsConfigurable    bool       `json:"isConfigurable"`
 	UpdateCheckerSpec string     `json:"updateCheckerSpec"`
 
-	IsGitOpsSupported          bool                     `json:"isGitOpsSupported"`
-	IsIdentityServiceSupported bool                     `json:"isIdentityServiceSupported"`
-	IsGeoaxisSupported         bool                     `json:"isGeoaxisSupported"`
-	AllowRollback              bool                     `json:"allowRollback"`
-	AllowSnapshots             bool                     `json:"allowSnapshots"`
-	LicenseType                string                   `json:"licenseType"`
-	CurrentVersion             *versiontypes.AppVersion `json:"currentVersion"`
+	IsGitOpsSupported             bool                     `json:"isGitOpsSupported"`
+	IsIdentityServiceSupported    bool                     `json:"isIdentityServiceSupported"`
+	IsAppIdentityServiceSupported bool                     `json:"isAppIdentityServiceSupported"`
+	IsGeoaxisSupported            bool                     `json:"isGeoaxisSupported"`
+	AllowRollback                 bool                     `json:"allowRollback"`
+	AllowSnapshots                bool                     `json:"allowSnapshots"`
+	LicenseType                   string                   `json:"licenseType"`
+	CurrentVersion                *versiontypes.AppVersion `json:"currentVersion"`
 
 	Downstreams []ResponseDownstream `json:"downstreams"`
 }
@@ -153,6 +154,11 @@ func responseAppFromApp(a *apptypes.App) (*ResponseApp, error) {
 		return nil, errors.Wrap(err, "failed to get license")
 	}
 
+	isAppIdentityServiceSupported, err := store.GetStore().IsIdentityServiceSupportedForVersion(a.ID, a.CurrentSequence)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to check if identity service is supported for version %d", a.CurrentSequence)
+	}
+
 	allowRollback, err := store.GetStore().IsRollbackSupportedForVersion(a.ID, a.CurrentSequence)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to check if rollback is supported")
@@ -249,28 +255,29 @@ func responseAppFromApp(a *apptypes.App) (*ResponseApp, error) {
 	}
 
 	responseApp := ResponseApp{
-		ID:                         a.ID,
-		Slug:                       a.Slug,
-		Name:                       a.Name,
-		IsAirgap:                   a.IsAirgap,
-		CurrentSequence:            a.CurrentSequence,
-		UpstreamURI:                a.UpstreamURI,
-		IconURI:                    a.IconURI,
-		CreatedAt:                  a.CreatedAt,
-		UpdatedAt:                  a.UpdatedAt,
-		LastUpdateCheckAt:          a.LastUpdateCheckAt,
-		BundleCommand:              supportbundle.GetBundleCommand(a.Slug),
-		HasPreflight:               a.HasPreflight,
-		IsConfigurable:             a.IsConfigurable,
-		UpdateCheckerSpec:          a.UpdateCheckerSpec,
-		IsGitOpsSupported:          license.Spec.IsGitOpsSupported,
-		IsIdentityServiceSupported: license.Spec.IsIdentityServiceSupported,
-		IsGeoaxisSupported:         license.Spec.IsGeoaxisSupported,
-		AllowRollback:              allowRollback,
-		AllowSnapshots:             allowSnapshots,
-		LicenseType:                license.Spec.LicenseType,
-		CurrentVersion:             currentVersion,
-		Downstreams:                responseDownstreams,
+		ID:                            a.ID,
+		Slug:                          a.Slug,
+		Name:                          a.Name,
+		IsAirgap:                      a.IsAirgap,
+		CurrentSequence:               a.CurrentSequence,
+		UpstreamURI:                   a.UpstreamURI,
+		IconURI:                       a.IconURI,
+		CreatedAt:                     a.CreatedAt,
+		UpdatedAt:                     a.UpdatedAt,
+		LastUpdateCheckAt:             a.LastUpdateCheckAt,
+		BundleCommand:                 supportbundle.GetBundleCommand(a.Slug),
+		HasPreflight:                  a.HasPreflight,
+		IsConfigurable:                a.IsConfigurable,
+		UpdateCheckerSpec:             a.UpdateCheckerSpec,
+		IsGitOpsSupported:             license.Spec.IsGitOpsSupported,
+		IsIdentityServiceSupported:    license.Spec.IsIdentityServiceSupported,
+		IsAppIdentityServiceSupported: isAppIdentityServiceSupported,
+		IsGeoaxisSupported:            license.Spec.IsGeoaxisSupported,
+		AllowRollback:                 allowRollback,
+		AllowSnapshots:                allowSnapshots,
+		LicenseType:                   license.Spec.LicenseType,
+		CurrentVersion:                currentVersion,
+		Downstreams:                   responseDownstreams,
 	}
 
 	return &responseApp, nil
