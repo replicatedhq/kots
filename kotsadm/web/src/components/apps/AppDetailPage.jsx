@@ -21,7 +21,8 @@ import SubNavBar from "@src/components/shared/SubNavBar";
 import SidebarLayout from "../layout/SidebarLayout/SidebarLayout";
 import SideBar from "../shared/SideBar";
 import Loader from "../shared/Loader";
-import AppSettings from "./AppSettings";
+import AppRegistrySettings from "./AppRegistrySettings";
+import AppIdentityServiceSettings from "./AppIdentityServiceSettings";
 import AppGitops from "./AppGitops";
 import AppSnapshots from "./AppSnapshots";
 import SnapshotSchedule from "../snapshots/SnapshotSchedule";
@@ -263,7 +264,8 @@ class AppDetailPage extends Component {
       match,
       appsList,
       rootDidInitialAppFetch,
-      appName
+      appName,
+      isIdentityServiceSupported
     } = this.props;
 
     const {
@@ -290,7 +292,6 @@ class AppDetailPage extends Component {
     } else {
       this.state.getAppJob.stop();
     }
-
 
     return (
       <div className="WatchDetailPage--wrapper flex-column flex1 u-overflow--auto">
@@ -338,6 +339,7 @@ class AppDetailPage extends Component {
                     className="flex"
                     activeTab={match.params.tab || "app"}
                     watch={app}
+                    isIdentityServiceSupported={isIdentityServiceSupported}
                     isVeleroInstalled={isVeleroInstalled}
                   />
                   <Switch>
@@ -395,7 +397,7 @@ class AppDetailPage extends Component {
                       />
                     } />
                     <Route exact path="/app/:slug/registry-settings" render={() =>
-                      <AppSettings
+                      <AppRegistrySettings
                         app={app}
                         updateCallback={this.refetchData}
                       />
@@ -422,6 +424,14 @@ class AppDetailPage extends Component {
                     <Route exact path="/app/:slug/snapshots/:id/restore" render={() =>
                       <AppSnapshotRestore app={app} />
                     } />
+                    {isIdentityServiceSupported &&
+                      <Route exact path="/app/:slug/settings" render={() =>
+                        <AppIdentityServiceSettings
+                          app={app}
+                          refetch={this.getApp}
+                        />
+                      } />
+                    }
                     <Route component={NotFound} />
                   </Switch>
                 </Fragment>
