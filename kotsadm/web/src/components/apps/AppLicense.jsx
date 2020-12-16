@@ -208,7 +208,7 @@ class AppLicense extends Component {
                   {appLicense?.isGitOpsSupported ? <span className="flex alignItems--center u-fontWeight--medium u-fontSize--small u-lineHeight--normal u-color--tundora u-marginLeft--5 u-marginRight--10"><span className="icon licenseGithubIcon" /> GitOps enabled </span> : null}
                   {/* TODO missing icon */}
                   {appLicense?.isIdentityServiceSupported ? <span className="flex alignItems--center u-fontWeight--medium u-fontSize--small u-lineHeight--normal u-color--tundora u-marginLeft--5 u-marginRight--10"><span className="icon licenseIdentityIcon" /> Identity Service enabled </span> : null}
-                  {appLicense?.isGeoaxisSupported ? <span className="flex alignItems--center u-fontWeight--medium u-fontSize--small u-lineHeight--normal u-color--tundora u-marginLeft--5 u-marginRight--10"> Geoaxis Provider enabled </span> : null}
+                  {appLicense?.isGeoaxisSupported ? <span className="flex alignItems--center u-fontWeight--medium u-fontSize--small u-lineHeight--normal u-color--tundora u-marginLeft--5 u-marginRight--10"><span className="icon licenseGeoaxisIcon" /> Geoaxis Provider enabled </span> : null}
                 </div>
               </div>
               <div className="flex-column flex-auto alignItems--flexEnd justifyContent--center">
