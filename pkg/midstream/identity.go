@@ -31,6 +31,7 @@ func (m *Midstream) writeIdentityService(ctx context.Context, options WriteOptio
 		IdentityConfigSpec: m.IdentityConfig.Spec,
 		IsOpenShift:        false, // TODO (ethan): openshift support
 		ImageRewriteFn:     nil,   // TODO (ethan): do we rewrite in kustomization.images?
+		Cipher:             &options.Cipher,
 		Builder:            &options.Builder,
 	}
 

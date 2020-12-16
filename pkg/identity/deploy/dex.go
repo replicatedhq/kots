@@ -69,7 +69,7 @@ func getDexConfig(ctx context.Context, options Options) ([]byte, error) {
 			return nil, errors.Wrap(err, "failed to decrypt dex connectors")
 		}
 	} else if identityConfigSpec.DexConnectors.ValueEncrypted != "" {
-		return nil, errors.Wrap(err, "cipher required")
+		return nil, errors.New("cipher required")
 	} else {
 		// NOTE: we do not encrypt kotsadm config
 		dexConnectors = identityConfigSpec.DexConnectors.Value

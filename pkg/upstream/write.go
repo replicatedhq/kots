@@ -90,16 +90,14 @@ func WriteUpstream(u *types.Upstream, options types.WriteOptions) error {
 			}
 		}
 
-		if options.EncryptIdentityConfig {
-			identityConfig := contentToIdentityConfig(file.Content)
-			if identityConfig != nil {
-				content, err := encryptIdentityConfig(identityConfig, encryptionKey)
-				if err != nil {
-					return errors.Wrap(err, "failed to encrypt identity config")
-				}
-				file.Content = content
-				u.Files[i] = file
+		identityConfig := contentToIdentityConfig(file.Content)
+		if identityConfig != nil {
+			content, err := maybeEncryptIdentityConfig(identityConfig, encryptionKey)
+			if err != nil {
+				return errors.Wrap(err, "failed to encrypt identity config")
 			}
+			file.Content = content
+			u.Files[i] = file
 		}
 
 		if err := ioutil.WriteFile(fileRenderPath, file.Content, 0644); err != nil {
@@ -202,7 +200,7 @@ func encryptConfigValues(configValues *kotsv1beta1.ConfigValues, encryptionKey s
 	return b.Bytes(), nil
 }
 
-func encryptIdentityConfig(identityConfig *kotsv1beta1.IdentityConfig, encryptionKey string) ([]byte, error) {
+func maybeEncryptIdentityConfig(identityConfig *kotsv1beta1.IdentityConfig, encryptionKey string) ([]byte, error) {
 	cipher, err := crypto.AESCipherFromString(encryptionKey)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to load encryption cipher")

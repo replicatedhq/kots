@@ -68,14 +68,18 @@ func GetPostgresSecret(ctx context.Context, clientset kubernetes.Interface, name
 }
 
 func postgresSecretResource(namePrefix string, cipher *crypto.AESCipher, config kotsv1beta.IdentityPostgresConfig) (*corev1.Secret, error) {
-	// NOTE: we do not encrypt kotsadm config
-	if cipher == nil && config.Password.ValueEncrypted != "" {
-		return nil, errors.New("cannot decrypt password without cipher")
-	}
+	password := ""
+	if config.Password != nil {
+		// NOTE: we do not encrypt kotsadm config
+		if cipher == nil && config.Password.ValueEncrypted != "" {
+			return nil, errors.New("cannot decrypt password without cipher")
+		}
 
-	password, err := config.Password.GetValue(*cipher)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to decrypt password")
+		p, err := config.Password.GetValue(*cipher)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to decrypt password")
+		}
+		password = p
 	}
 	if password == "" {
 		password = ksuid.New().String()

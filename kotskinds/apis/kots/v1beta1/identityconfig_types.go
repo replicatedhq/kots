@@ -20,6 +20,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 
+	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/crypto"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -53,18 +54,24 @@ func NewStringValueOrEncrypted(value string, cipher crypto.AESCipher) *StringVal
 }
 
 func (v *StringValueOrEncrypted) GetValue(cipher crypto.AESCipher) (string, error) {
+	if v == nil {
+		return "", nil
+	}
 	if v.ValueEncrypted != "" {
 		b, err := base64.StdEncoding.DecodeString(v.ValueEncrypted)
 		if err != nil {
-			return "", err
+			return "", errors.Wrap(err, "failed to base64 decode")
 		}
 		result, err := cipher.Decrypt(b)
-		return string(result), err
+		return string(result), errors.Wrap(err, "failed to decrypt")
 	}
 	return v.Value, nil
 }
 
 func (v *StringValueOrEncrypted) EncryptValue(cipher crypto.AESCipher) {
+	if v.ValueEncrypted != "" && v.Value == "" {
+		return
+	}
 	v.ValueEncrypted = base64.StdEncoding.EncodeToString(cipher.Encrypt([]byte(v.Value)))
 	v.Value = ""
 }
@@ -94,21 +101,28 @@ type DexConnectors struct {
 
 func (v *DexConnectors) GetValue(cipher crypto.AESCipher) ([]DexConnector, error) {
 	if v.ValueEncrypted != "" {
-		result, err := cipher.Decrypt([]byte(v.ValueEncrypted))
+		b, err := base64.StdEncoding.DecodeString(v.ValueEncrypted)
 		if err != nil {
-			return nil, err
+			return nil, errors.Wrap(err, "failed to base64 decode")
 		}
-		b, err := base64.StdEncoding.DecodeString(string(result))
+		result, err := cipher.Decrypt(b)
 		if err != nil {
-			return nil, err
+			return nil, errors.Wrap(err, "failed to decrypt")
 		}
-		err = json.Unmarshal(b, &v.Value)
-		return v.Value, err
+		if len(result) == 0 {
+			return nil, nil
+		}
+		err = json.Unmarshal(result, &v.Value)
+		return v.Value, errors.Wrap(err, "failed to json unmarshal")
 	}
 	return v.Value, nil
 }
 
 func (v *DexConnectors) EncryptValue(cipher crypto.AESCipher) error {
+	if v.ValueEncrypted != "" && len(v.Value) == 0 {
+		return nil
+	}
+
 	b, err := json.Marshal(v.Value)
 	if err != nil {
 		return err

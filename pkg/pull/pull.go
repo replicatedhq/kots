@@ -169,13 +169,11 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 	}
 
 	var identityConfig *kotsv1beta1.IdentityConfig
-	encryptIdentityConfig := false
 	if pullOptions.IdentityConfigFile != "" {
 		identityConfig, err = ParseIdentityConfigFromFile(pullOptions.IdentityConfigFile)
 		if err != nil {
 			return "", errors.Wrap(err, "failed to parse identity config from file")
 		}
-		encryptIdentityConfig = true
 	} else {
 		identityConfig = localIdentityConfig
 	}
@@ -243,15 +241,14 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 	includeAdminConsole := uri.Scheme == "replicated" && !pullOptions.ExcludeAdminConsole
 
 	writeUpstreamOptions := upstreamtypes.WriteOptions{
-		RootDir:               pullOptions.RootDir,
-		CreateAppDir:          pullOptions.CreateAppDir,
-		IncludeAdminConsole:   includeAdminConsole,
-		SharedPassword:        pullOptions.SharedPassword,
-		EncryptConfig:         encryptConfig,
-		EncryptIdentityConfig: encryptIdentityConfig,
-		HTTPProxyEnvValue:     pullOptions.HTTPProxyEnvValue,
-		HTTPSProxyEnvValue:    pullOptions.HTTPSProxyEnvValue,
-		NoProxyEnvValue:       pullOptions.NoProxyEnvValue,
+		RootDir:             pullOptions.RootDir,
+		CreateAppDir:        pullOptions.CreateAppDir,
+		IncludeAdminConsole: includeAdminConsole,
+		SharedPassword:      pullOptions.SharedPassword,
+		EncryptConfig:       encryptConfig,
+		HTTPProxyEnvValue:   pullOptions.HTTPProxyEnvValue,
+		HTTPSProxyEnvValue:  pullOptions.HTTPSProxyEnvValue,
+		NoProxyEnvValue:     pullOptions.NoProxyEnvValue,
 	}
 	if err := upstream.WriteUpstream(u, writeUpstreamOptions); err != nil {
 		log.FinishSpinnerWithError()
