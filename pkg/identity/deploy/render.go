@@ -23,7 +23,7 @@ func Render(ctx context.Context, options Options) (map[string][]byte, error) {
 
 	resources := map[string][]byte{}
 
-	secret := secretResource(options.NamePrefix, dexConfig)
+	secret := secretResource(dexConfig, options)
 	buf := bytes.NewBuffer(nil)
 	if err := s.Encode(secret, buf); err != nil {
 		return nil, errors.Wrap(err, "failed to encode secret")
@@ -40,7 +40,7 @@ func Render(ctx context.Context, options Options) (map[string][]byte, error) {
 	}
 	resources["deployment.yaml"] = buf.Bytes()
 
-	service := serviceResource(options.NamePrefix, options.IdentityConfigSpec.IngressConfig)
+	service := serviceResource(options)
 	buf = bytes.NewBuffer(nil)
 	if err := s.Encode(service, buf); err != nil {
 		return nil, errors.Wrap(err, "failed to encode service")
@@ -49,7 +49,7 @@ func Render(ctx context.Context, options Options) (map[string][]byte, error) {
 
 	if options.IdentityConfigSpec.IngressConfig.Enabled {
 		if ingressConfig := options.IdentityConfigSpec.IngressConfig.Ingress; ingressConfig != nil {
-			ingress := ingressResource(options.NamePrefix, *ingressConfig)
+			ingress := ingressResource(options)
 			buf = bytes.NewBuffer(nil)
 			if err := s.Encode(ingress, buf); err != nil {
 				return nil, errors.Wrap(err, "failed to encode ingress")
