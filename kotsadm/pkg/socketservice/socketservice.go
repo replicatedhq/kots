@@ -28,6 +28,7 @@ import (
 	"github.com/replicatedhq/kots/kotsadm/pkg/supportbundle"
 	supportbundletypes "github.com/replicatedhq/kots/kotsadm/pkg/supportbundle/types"
 	"github.com/replicatedhq/kots/kotsadm/pkg/version"
+	"github.com/replicatedhq/kots/kotskinds/multitype"
 	identitydeploy "github.com/replicatedhq/kots/pkg/identity/deploy"
 	identitytypes "github.com/replicatedhq/kots/pkg/identity/types"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
@@ -207,6 +208,32 @@ func processDeploySocketForApp(clusterSocket *ClusterSocket, a *apptypes.App) er
 		return deployError
 	}
 
+	registrySettings, err := store.GetStore().GetRegistryDetailsForApp(a.ID)
+	if err != nil {
+		return errors.Wrap(err, "failed to get registry settings for app")
+	}
+
+	builder, err := render.NewBuilder(kotsKinds, registrySettings, a.Slug, deployedVersion.Sequence, a.IsAirgap)
+	if err != nil {
+		return errors.Wrap(err, "failed to get template builder")
+	}
+
+	requireIdentityProvider := false
+	if kotsKinds.Identity.Spec.RequireIdentityProvider.Type == multitype.String {
+		requireIdentityProvider, err = builder.Bool(kotsKinds.Identity.Spec.RequireIdentityProvider.StrVal, false)
+		if err != nil {
+			deployError = errors.Wrap(err, "failed to build kotsv1beta1.Identity.spec.requireIdentityProvider")
+			return deployError
+		}
+	} else {
+		requireIdentityProvider = kotsKinds.Identity.Spec.RequireIdentityProvider.BoolVal
+	}
+
+	if requireIdentityProvider && !identitydeploy.IsEnabled(kotsKinds.Identity, kotsKinds.IdentityConfig) {
+		deployError = errors.New("identity service is required but is not enabled")
+		return deployError
+	}
+
 	cmd := exec.Command(fmt.Sprintf("kustomize%s", kotsKinds.KustomizeVersion()), "build", filepath.Join(deployedVersionArchive, "overlays", "downstreams", d.Name))
 	renderedManifests, err := cmd.Output()
 	if err != nil {
@@ -309,16 +336,6 @@ func processDeploySocketForApp(clusterSocket *ClusterSocket, a *apptypes.App) er
 
 	// deploy status informers
 	if len(kotsKinds.KotsApplication.Spec.StatusInformers) > 0 {
-		registrySettings, err := store.GetStore().GetRegistryDetailsForApp(a.ID)
-		if err != nil {
-			return errors.Wrap(err, "failed to get registry settings for app")
-		}
-
-		builder, err := render.NewBuilder(kotsKinds, registrySettings, a.Slug, deployedVersion.Sequence, a.IsAirgap)
-		if err != nil {
-			return errors.Wrap(err, "failed to get template builder")
-		}
-
 		// render status informers
 		for _, informer := range kotsKinds.KotsApplication.Spec.StatusInformers {
 			renderedInformer, err := builder.String(informer)

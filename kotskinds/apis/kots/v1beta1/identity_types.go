@@ -17,16 +17,18 @@ limitations under the License.
 package v1beta1
 
 import (
+	"github.com/replicatedhq/kots/kotskinds/multitype"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 type IdentitySpec struct {
-	OIDCRedirectURIs            []string       `json:"oidcRedirectUris" yaml:"oidcRedirectUris"`
-	OAUTH2AlwaysShowLoginScreen bool           `json:"oauth2AlwaysShowLoginScreen,omitempty" yaml:"oauth2AlwaysShowLoginScreen,omitempty"`
-	SigningKeysExpiration       string         `json:"signingKeysExpiration,omitempty" yaml:"signingKeysExpiration,omitempty"`
-	IDTokensExpiration          string         `json:"idTokensExpiration,omitempty" yaml:"idTokensExpiration,omitempty"`
-	SupportedProviders          []string       `json:"supportedProviders,omitempty" yaml:"supportedProviders,omitempty"`
-	Roles                       []IdentityRole `json:"roles,omitempty" yaml:"roles,omitempty"`
+	OIDCRedirectURIs            []string               `json:"oidcRedirectUris" yaml:"oidcRedirectUris"`
+	OAUTH2AlwaysShowLoginScreen bool                   `json:"oauth2AlwaysShowLoginScreen,omitempty" yaml:"oauth2AlwaysShowLoginScreen,omitempty"`
+	SigningKeysExpiration       string                 `json:"signingKeysExpiration,omitempty" yaml:"signingKeysExpiration,omitempty"`
+	IDTokensExpiration          string                 `json:"idTokensExpiration,omitempty" yaml:"idTokensExpiration,omitempty"`
+	SupportedProviders          []string               `json:"supportedProviders,omitempty" yaml:"supportedProviders,omitempty"`
+	RequireIdentityProvider     multitype.BoolOrString `json:"requireIdentityProvider" yaml:"requireIdentityProvider"`
+	Roles                       []IdentityRole         `json:"roles,omitempty" yaml:"roles,omitempty"`
 }
 
 type IdentityRole struct {
