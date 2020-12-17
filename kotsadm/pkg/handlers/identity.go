@@ -37,10 +37,12 @@ const (
 	RedactionMask = "--- REDACTED ---"
 )
 
+// TODO: separate request types for kotsadm and the app?
 type ConfigureIdentityServiceRequest struct {
-	AdminConsoleAddress    string                            `json:"adminConsoleAddress,omitempty"`
-	IdentityServiceAddress string                            `json:"identityServiceAddress,omitempty"`
-	Groups                 []kotsv1beta1.IdentityConfigGroup `json:"groups,omitempty"`
+	AdminConsoleAddress     string                            `json:"adminConsoleAddress,omitempty"`
+	IdentityServiceAddress  string                            `json:"identityServiceAddress,omitempty"`
+	UseAdminConsoleSettings bool                              `json:"useAdminConsoleSettings,omitempty"`
+	Groups                  []kotsv1beta1.IdentityConfigGroup `json:"groups,omitempty"`
 
 	IDPConfig `json:",inline"`
 }
@@ -337,6 +339,32 @@ func ConfigureAppIdentityService(w http.ResponseWriter, r *http.Request) {
 		logger.Error(err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
+	}
+
+	if request.UseAdminConsoleSettings {
+		// existing idpConfigs are used for secret un-redaction
+		// if secrets in the request are not redacted, this won't have any effect
+		// the user has the option to use kotsadm identity config
+		// in that case, secrets should be retrieved from kotsadm identity config not the app identity config
+		namespace := os.Getenv("POD_NAMESPACE")
+
+		kotsadmIdentityConfig, err := identity.GetConfig(r.Context(), namespace)
+		if err != nil {
+			err = errors.Wrap(err, "failed to get kots identity config")
+			logger.Error(err)
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+
+		// NOTE: we do not encrypt kotsadm config
+
+		idpConfigs, err = dexConnectorsToIDPConfigs(kotsadmIdentityConfig.Spec.DexConnectors.Value)
+		if err != nil {
+			err = errors.Wrap(err, "failed to get kotsadm idp configs from dex connectors")
+			logger.Error(err)
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
 	}
 
 	connectorInfo, err := getDexConnectorInfo(request, idpConfigs)
@@ -762,6 +790,8 @@ func identityOIDCToOIDCConfig(identityOIDC *OIDCConfig, idpConfigs []IDPConfig, 
 		for _, idpConfig := range idpConfigs {
 			if idpConfig.OIDCConfig != nil {
 				c.ClientSecret = idpConfig.OIDCConfig.ClientSecret
+			} else if idpConfig.GEOAxISConfig != nil {
+				c.ClientSecret = idpConfig.GEOAxISConfig.ClientSecret
 			}
 		}
 	}

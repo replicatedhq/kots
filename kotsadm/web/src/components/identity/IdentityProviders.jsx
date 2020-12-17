@@ -168,6 +168,10 @@ class IdentityProviders extends Component {
     let requiredErrors = {};
 
     for (const field in payloadFields) {
+      if (field === "useAdminConsoleSettings") {
+        continue
+      }
+
       if (field !== "oidcConfig" && field !== "geoAxisConfig") {
         if (isEmpty(payloadFields[field])) {
           requiredErrors = { ...requiredErrors, [field]: true }
@@ -228,7 +232,8 @@ class IdentityProviders extends Component {
     if (isApplicationSettings) {
       payload = {
         "oidcConfig": this.state.selectedProvider === "oidcConfig" ? oidcConfigPayload.oidcConfig : null,
-        "geoAxisConfig": this.state.selectedProvider === "geoAxisConfig" ? this.state.geoAxisConfig : null
+        "geoAxisConfig": this.state.selectedProvider === "geoAxisConfig" ? this.state.geoAxisConfig : null,
+        useAdminConsoleSettings: this.state.syncAppWithGlobal,
       }
     } else {
       payload = {
