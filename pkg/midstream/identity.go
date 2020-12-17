@@ -32,9 +32,9 @@ func (m *Midstream) writeIdentityService(ctx context.Context, options WriteOptio
 		NamePrefix:         options.AppSlug,
 		IdentitySpec:       m.IdentitySpec.Spec,
 		IdentityConfigSpec: m.IdentityConfig.Spec,
-		IsOpenShift:        false, // TODO (ethan): openshift support
-		ImageRewriteFn:     nil,   // TODO (ethan): do we rewrite in kustomization.images?
-		ProxyEnv:           nil,   // TODO (ethan): do we need to configure proxy here?
+		IsOpenShift:        options.IsOpenShift,
+		ImageRewriteFn:     nil, // TODO (ethan): do we rewrite in kustomization.images?
+		ProxyEnv:           nil, // TODO (ethan): do we need to configure proxy here?
 		AdditionalLabels:   additionalLabels,
 		Cipher:             &options.Cipher,
 		Builder:            &options.Builder,

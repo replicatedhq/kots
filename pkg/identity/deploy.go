@@ -10,6 +10,7 @@ import (
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	identitydeploy "github.com/replicatedhq/kots/pkg/identity/deploy"
 	"github.com/replicatedhq/kots/pkg/ingress"
+	"github.com/replicatedhq/kots/pkg/k8sutil"
 	kotsadmtypes "github.com/replicatedhq/kots/pkg/kotsadm/types"
 	kotsadmversion "github.com/replicatedhq/kots/pkg/kotsadm/version"
 	corev1 "k8s.io/api/core/v1"
@@ -28,7 +29,7 @@ func Deploy(ctx context.Context, clientset kubernetes.Interface, namespace strin
 		NamePrefix:         KotsadmNamePrefix,
 		IdentitySpec:       getIdentitySpec(identityConfig.Spec, ingressConfig.Spec),
 		IdentityConfigSpec: identityConfig.Spec,
-		IsOpenShift:        false, // TODO (ethan): openshift support
+		IsOpenShift:        k8sutil.IsOpenShift(clientset),
 		ImageRewriteFn:     imageRewriteKotsadmRegistry(namespace, registryOptions),
 		ProxyEnv:           proxyEnv,
 		Builder:            nil,
@@ -61,7 +62,7 @@ func Configure(ctx context.Context, clientset kubernetes.Interface, namespace st
 		NamePrefix:         KotsadmNamePrefix,
 		IdentitySpec:       getIdentitySpec(identityConfig.Spec, ingressConfig.Spec),
 		IdentityConfigSpec: identityConfig.Spec,
-		IsOpenShift:        false,
+		IsOpenShift:        k8sutil.IsOpenShift(clientset),
 		ImageRewriteFn:     nil,
 		ProxyEnv:           proxyEnv,
 		Builder:            nil,
