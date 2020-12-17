@@ -68,6 +68,28 @@
           "items": {
             "type": "string"
           }
+        },
+        "webConfig": {
+          "type": "object",
+          "properties": {
+            "theme": {
+              "type": "object",
+              "properties": {
+                "faviconBase64": {
+                  "type": "string"
+                },
+                "logoBase64": {
+                  "type": "string"
+                },
+                "styleCssBase64": {
+                  "type": "string"
+                }
+              }
+            },
+            "title": {
+              "type": "string"
+            }
+          }
         }
       }
     },

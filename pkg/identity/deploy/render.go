@@ -35,6 +35,18 @@ func Render(ctx context.Context, options Options) (map[string][]byte, error) {
 	}
 	resources["secret.yaml"] = buf.Bytes()
 
+	if options.IdentitySpec.WebConfig != nil && options.IdentitySpec.WebConfig.Theme != nil {
+		configMap, err := dexThemeConfigMapResource(options)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to get dex theme config map resource")
+		}
+		buf = bytes.NewBuffer(nil)
+		if err := s.Encode(configMap, buf); err != nil {
+			return nil, errors.Wrap(err, "failed to encode dex theme config map resource")
+		}
+		resources["dexthemeconfigmap.yaml"] = buf.Bytes()
+	}
+
 	deployment, err := deploymentResource(issuerURL, configChecksum, options)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get deployment resource")
