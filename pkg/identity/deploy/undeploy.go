@@ -19,6 +19,9 @@ func Undeploy(ctx context.Context, clientset kubernetes.Interface, namespace, na
 	if err := deleteDeployment(ctx, clientset, namespace, namePrefix); err != nil {
 		return errors.Wrap(err, "failed to delete deployment")
 	}
+	if err := deleteDexThemeConfigMap(ctx, clientset, namespace, namePrefix); err != nil {
+		return errors.Wrap(err, "failed to delete dex theme config map")
+	}
 	if err := deleteSecret(ctx, clientset, namespace, namePrefix); err != nil {
 		return errors.Wrap(err, "failed to delete secret")
 	}
@@ -28,31 +31,31 @@ func Undeploy(ctx context.Context, clientset kubernetes.Interface, namespace, na
 func deleteIngress(ctx context.Context, clientset kubernetes.Interface, namespace, namePrefix string) error {
 	err := clientset.ExtensionsV1beta1().Ingresses(namespace).Delete(ctx, prefixName(namePrefix, "dex"), metav1.DeleteOptions{})
 	if kuberneteserrors.IsNotFound(err) {
-		err = nil
+		return nil
 	}
-	return errors.Wrap(err, "failed to delete ingress")
+	return err
 }
 
 func deleteService(ctx context.Context, clientset kubernetes.Interface, namespace, namePrefix string) error {
 	err := clientset.CoreV1().Services(namespace).Delete(ctx, prefixName(namePrefix, "dex"), metav1.DeleteOptions{})
 	if kuberneteserrors.IsNotFound(err) {
-		err = nil
+		return nil
 	}
-	return errors.Wrap(err, "failed to delete service")
+	return err
 }
 
 func deleteDeployment(ctx context.Context, clientset kubernetes.Interface, namespace, namePrefix string) error {
 	err := clientset.AppsV1().Deployments(namespace).Delete(ctx, prefixName(namePrefix, "dex"), metav1.DeleteOptions{})
 	if kuberneteserrors.IsNotFound(err) {
-		err = nil
+		return nil
 	}
-	return errors.Wrap(err, "failed to delete deployment")
+	return err
 }
 
 func deleteSecret(ctx context.Context, clientset kubernetes.Interface, namespace, namePrefix string) error {
 	err := clientset.CoreV1().Secrets(namespace).Delete(ctx, prefixName(namePrefix, "dex"), metav1.DeleteOptions{})
 	if kuberneteserrors.IsNotFound(err) {
-		err = nil
+		return nil
 	}
-	return errors.Wrap(err, "failed to delete secret")
+	return err
 }
