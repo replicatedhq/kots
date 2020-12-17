@@ -228,7 +228,7 @@ func LiveAppConfig(w http.ResponseWriter, r *http.Request) {
 	}
 
 	versionInfo := template.VersionInfoFromInstallation(liveAppConfigRequest.Sequence+1, foundApp.IsAirgap, kotsKinds.Installation.Spec) // sequence +1 because the sequence will be incremented on save (and we want the preview to be accurate)
-	renderedConfig, err := kotsconfig.TemplateConfigObjects(kotsKinds.Config, configValues, appLicense, localRegistry, &versionInfo)
+	renderedConfig, err := kotsconfig.TemplateConfigObjects(kotsKinds.Config, configValues, appLicense, localRegistry, &versionInfo, kotsKinds.IdentityConfig)
 	if err != nil {
 		logger.Error(err)
 		liveAppConfigResponse.Error = "failed to render templates"
@@ -321,7 +321,7 @@ func CurrentAppConfig(w http.ResponseWriter, r *http.Request) {
 	}
 
 	versionInfo := template.VersionInfoFromInstallation(int64(sequence)+1, foundApp.IsAirgap, kotsKinds.Installation.Spec) // sequence +1 because the sequence will be incremented on save (and we want the preview to be accurate)
-	renderedConfig, err := kotsconfig.TemplateConfigObjects(kotsKinds.Config, configValues, appLicense, localRegistry, &versionInfo)
+	renderedConfig, err := kotsconfig.TemplateConfigObjects(kotsKinds.Config, configValues, appLicense, localRegistry, &versionInfo, kotsKinds.IdentityConfig)
 	if err != nil {
 		logger.Error(err)
 		currentAppConfigResponse.Error = "failed to render templates"
@@ -400,7 +400,7 @@ func updateAppConfig(updateApp *apptypes.App, sequence int64, req UpdateAppConfi
 					// encrypt using the key
 					cipher, err := crypto.AESCipherFromString(kotsKinds.Installation.Spec.EncryptionKey)
 					if err != nil {
-						updateAppConfigResponse.Error = "failed to get encryption cipher"
+						updateAppConfigResponse.Error = "failed to load encryption cipher"
 						return updateAppConfigResponse, err
 					}
 
@@ -482,7 +482,7 @@ func updateAppConfig(updateApp *apptypes.App, sequence int64, req UpdateAppConfi
 		return updateAppConfigResponse, err
 	}
 
-	if err := preflight.Run(updateApp.ID, int64(sequence), updateApp.IsAirgap, archiveDir); err != nil {
+	if err := preflight.Run(updateApp.ID, updateApp.Slug, int64(sequence), updateApp.IsAirgap, archiveDir); err != nil {
 		updateAppConfigResponse.Error = errors.Cause(err).Error()
 		return updateAppConfigResponse, err
 	}

@@ -12,10 +12,12 @@ import (
 
 	"github.com/pkg/errors"
 	apptypes "github.com/replicatedhq/kots/kotsadm/pkg/app/types"
+	"github.com/replicatedhq/kots/kotsadm/pkg/identity"
 	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
 	"github.com/replicatedhq/kots/kotsadm/pkg/preflight"
 	"github.com/replicatedhq/kots/kotsadm/pkg/store"
 	"github.com/replicatedhq/kots/kotsadm/pkg/version"
+	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	"github.com/replicatedhq/kots/pkg/crypto"
 	"github.com/replicatedhq/kots/pkg/cursor"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
@@ -74,7 +76,7 @@ func UpdateAppFromPath(a *apptypes.App, airgapRoot string, deploy bool, skipPref
 	if err != nil {
 		return errors.Wrap(err, "failed to get app registry settings")
 	}
-	cipher, err := crypto.AESCipherFromString(os.Getenv("API_ENCRYPTION_KEY"))
+	apiCipher, err := crypto.AESCipherFromString(os.Getenv("API_ENCRYPTION_KEY"))
 	if err != nil {
 		return errors.Wrap(err, "failed to create aes cipher")
 	}
@@ -84,7 +86,7 @@ func UpdateAppFromPath(a *apptypes.App, airgapRoot string, deploy bool, skipPref
 		return errors.Wrap(err, "failed to decode")
 	}
 
-	decryptedPassword, err := cipher.Decrypt([]byte(decodedPassword))
+	decryptedPassword, err := apiCipher.Decrypt([]byte(decodedPassword))
 	if err != nil {
 		return errors.Wrap(err, "failed to decrypt")
 	}
@@ -144,10 +146,23 @@ func UpdateAppFromPath(a *apptypes.App, airgapRoot string, deploy bool, skipPref
 		return errors.Wrap(err, "failed parse license")
 	}
 
+	identityConfigFile := filepath.Join(currentArchivePath, "upstream", "userdata", "identityconfig.yaml")
+	if _, err := os.Stat(identityConfigFile); os.IsNotExist(err) {
+		file, err := identity.InitAppIdentityConfig(a.Slug, kotsv1beta1.Storage{}, crypto.AESCipher{})
+		if err != nil {
+			return errors.Wrap(err, "failed to init identity config")
+		}
+		identityConfigFile = file
+		defer os.Remove(identityConfigFile)
+	} else if err != nil {
+		return errors.Wrap(err, "failed to get stat identity config file")
+	}
+
 	pullOptions := pull.PullOptions{
 		LicenseObj:          license,
 		Namespace:           appNamespace,
 		ConfigFile:          filepath.Join(currentArchivePath, "upstream", "userdata", "config.yaml"),
+		IdentityConfigFile:  identityConfigFile,
 		AirgapRoot:          airgapRoot,
 		InstallationFile:    filepath.Join(currentArchivePath, "upstream", "userdata", "installation.yaml"),
 		UpdateCursor:        beforeKotsKinds.Installation.Spec.UpdateCursor,
@@ -205,7 +220,7 @@ func UpdateAppFromPath(a *apptypes.App, airgapRoot string, deploy bool, skipPref
 	}
 
 	if !skipPreflights {
-		if err := preflight.Run(a.ID, newSequence, true, currentArchivePath); err != nil {
+		if err := preflight.Run(a.ID, a.Slug, newSequence, true, currentArchivePath); err != nil {
 			return errors.Wrap(err, "failed to start preflights")
 		}
 	}

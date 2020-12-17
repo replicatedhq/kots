@@ -15,9 +15,11 @@ import (
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	"github.com/replicatedhq/kots/pkg/archives"
 	"github.com/replicatedhq/kots/pkg/base"
+	"github.com/replicatedhq/kots/pkg/crypto"
 	"github.com/replicatedhq/kots/pkg/docker/registry"
 	"github.com/replicatedhq/kots/pkg/downstream"
 	"github.com/replicatedhq/kots/pkg/k8sdoc"
+	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/midstream"
@@ -26,39 +28,43 @@ import (
 	"github.com/replicatedhq/kots/pkg/util"
 	corev1 "k8s.io/api/core/v1"
 	k8sjson "k8s.io/apimachinery/pkg/runtime/serializer/json"
+	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/scheme"
+	"sigs.k8s.io/controller-runtime/pkg/client/config"
 	kustomizetypes "sigs.k8s.io/kustomize/api/types"
 )
 
 type PullOptions struct {
-	HelmRepoURI         string
-	RootDir             string
-	Namespace           string
-	Downstreams         []string
-	LocalPath           string
-	LicenseObj          *kotsv1beta1.License
-	LicenseFile         string
-	InstallationFile    string
-	AirgapRoot          string
-	ConfigFile          string
-	UpdateCursor        string
-	ExcludeKotsKinds    bool
-	ExcludeAdminConsole bool
-	SharedPassword      string
-	CreateAppDir        bool
-	Silent              bool
-	RewriteImages       bool
-	RewriteImageOptions RewriteImageOptions
-	HelmVersion         string
-	HelmOptions         []string
-	ReportWriter        io.Writer
-	AppSlug             string
-	AppSequence         int64
-	IsGitOps            bool
-	HTTPProxyEnvValue   string
-	HTTPSProxyEnvValue  string
-	NoProxyEnvValue     string
-	ReportingInfo       *upstreamtypes.ReportingInfo
+	HelmRepoURI            string
+	RootDir                string
+	Namespace              string
+	Downstreams            []string
+	LocalPath              string
+	LicenseObj             *kotsv1beta1.License
+	LicenseFile            string
+	InstallationFile       string
+	AirgapRoot             string
+	ConfigFile             string
+	IdentityConfigFile     string
+	UpdateCursor           string
+	ExcludeKotsKinds       bool
+	ExcludeAdminConsole    bool
+	SharedPassword         string
+	CreateAppDir           bool
+	Silent                 bool
+	RewriteImages          bool
+	RewriteImageOptions    RewriteImageOptions
+	HelmVersion            string
+	HelmOptions            []string
+	ReportWriter           io.Writer
+	AppSlug                string
+	AppSequence            int64
+	IsGitOps               bool
+	HTTPProxyEnvValue      string
+	HTTPSProxyEnvValue     string
+	NoProxyEnvValue        string
+	ReportingInfo          *upstreamtypes.ReportingInfo
+	IdentityPostgresConfig *kotsv1beta1.IdentityPostgresConfig
 }
 
 type RewriteImageOptions struct {
@@ -105,6 +111,16 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 		pullOptions.ReportWriter = ioutil.Discard
 	}
 
+	cfg, err := config.GetConfig()
+	if err != nil {
+		return "", errors.Wrap(err, "failed to get config")
+	}
+
+	clientset, err := kubernetes.NewForConfig(cfg)
+	if err != nil {
+		return "", errors.Wrap(err, "failed to create clientset")
+	}
+
 	uri, err := url.ParseRequestURI(upstreamURI)
 	if err != nil {
 		return "", errors.Wrap(err, "failed to parse uri")
@@ -116,6 +132,7 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 		UseAppDir:     pullOptions.CreateAppDir,
 		LocalPath:     pullOptions.LocalPath,
 		CurrentCursor: pullOptions.UpdateCursor,
+		AppSlug:       pullOptions.AppSlug,
 		AppSequence:   pullOptions.AppSequence,
 		LocalRegistry: upstreamtypes.LocalRegistry{
 			Host:      pullOptions.RewriteImageOptions.Host,
@@ -128,7 +145,7 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 
 	var installation *kotsv1beta1.Installation
 
-	_, localConfigValues, localLicense, localInstallation, err := findConfig(pullOptions.LocalPath)
+	_, localConfigValues, localLicense, localInstallation, localIdentityConfig, err := findConfig(pullOptions.LocalPath)
 	if err != nil {
 		return "", errors.Wrap(err, "failed to find config files in local path")
 	}
@@ -163,6 +180,17 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 	} else {
 		fetchOptions.ConfigValues = localConfigValues
 	}
+
+	var identityConfig *kotsv1beta1.IdentityConfig
+	if pullOptions.IdentityConfigFile != "" {
+		identityConfig, err = ParseIdentityConfigFromFile(pullOptions.IdentityConfigFile)
+		if err != nil {
+			return "", errors.Wrap(err, "failed to parse identity config from file")
+		}
+	} else {
+		identityConfig = localIdentityConfig
+	}
+	fetchOptions.IdentityConfig = identityConfig
 
 	if pullOptions.InstallationFile != "" {
 		i, err := parseInstallationFromFile(pullOptions.InstallationFile)
@@ -254,6 +282,7 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 		LocalRegistryPassword:  pullOptions.RewriteImageOptions.Password,
 		ExcludeKotsKinds:       pullOptions.ExcludeKotsKinds,
 		Log:                    log,
+		AppSlug:                pullOptions.AppSlug,
 		Sequence:               pullOptions.AppSequence,
 		IsAirgap:               pullOptions.AirgapRoot != "",
 	}
@@ -308,6 +337,8 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 
 		log.ActionWithSpinner("Copying private images")
 		io.WriteString(pullOptions.ReportWriter, "Copying private images\n")
+
+		// TODO (ethan): rewrite dex image?
 
 		// Rewrite all images
 		if pullOptions.RewriteImageOptions.ImageFiles == "" {
@@ -478,6 +509,8 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 			return "", errors.Wrap(err, "failed to save installation")
 		}
 
+		// TODO (ethan): proxy dex image
+
 		// Note that there maybe no rewritten images if only replicated private images are being used.
 		// We still need to create the secret in that case.
 		if len(findResult.Docs) > 0 {
@@ -495,20 +528,46 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 		objects = findResult.Docs
 	}
 
+	identitySpec, err := upstream.LoadIdentity(u.GetUpstreamDir(writeUpstreamOptions))
+	if err != nil {
+		return "", errors.Wrap(err, "failed to load identity")
+	}
+
 	log.ActionWithSpinner("Creating midstream")
 	io.WriteString(pullOptions.ReportWriter, "Creating midstream\n")
 
-	m, err := midstream.CreateMidstream(b, images, objects, pullSecret)
+	m, err := midstream.CreateMidstream(b, images, objects, pullSecret, identitySpec, identityConfig)
 	if err != nil {
 		return "", errors.Wrap(err, "failed to create midstream")
 	}
 	log.FinishSpinner()
 
+	builder, err := base.NewConfigContextTemplateBuidler(u, &renderOptions)
+	if err != nil {
+		return "", errors.Wrap(err, "failed to create new config context template builder")
+	}
+
+	newInstallation, err := upstream.LoadInstallation(u.GetUpstreamDir(writeUpstreamOptions))
+	if err != nil {
+		return "", errors.Wrap(err, "failed to load installation")
+	}
+
+	cipher, err := crypto.AESCipherFromString(newInstallation.Spec.EncryptionKey)
+	if err != nil {
+		return "", errors.Wrap(err, "failed to load encryption cipher")
+	}
+
 	writeMidstreamOptions := midstream.WriteOptions{
-		MidstreamDir: filepath.Join(b.GetOverlaysDir(writeBaseOptions), "midstream"),
-		BaseDir:      u.GetBaseDir(writeUpstreamOptions),
-		AppSlug:      pullOptions.AppSlug,
-		IsGitOps:     pullOptions.IsGitOps,
+		MidstreamDir:       filepath.Join(b.GetOverlaysDir(writeBaseOptions), "midstream"),
+		BaseDir:            u.GetBaseDir(writeUpstreamOptions),
+		AppSlug:            pullOptions.AppSlug,
+		IsGitOps:           pullOptions.IsGitOps,
+		IsOpenShift:        k8sutil.IsOpenShift(clientset),
+		Cipher:             *cipher,
+		Builder:            *builder,
+		HTTPProxyEnvValue:  pullOptions.HTTPProxyEnvValue,
+		HTTPSProxyEnvValue: pullOptions.HTTPSProxyEnvValue,
+		NoProxyEnvValue:    pullOptions.NoProxyEnvValue,
 	}
 	if err := m.WriteMidstream(writeMidstreamOptions); err != nil {
 		return "", errors.Wrap(err, "failed to write midstream")
@@ -594,6 +653,30 @@ func ParseConfigValuesFromFile(filename string) (*kotsv1beta1.ConfigValues, erro
 	config := decoded.(*kotsv1beta1.ConfigValues)
 
 	return config, nil
+}
+
+func ParseIdentityConfigFromFile(filename string) (*kotsv1beta1.IdentityConfig, error) {
+	contents, err := ioutil.ReadFile(filename)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return nil, nil
+		}
+		return nil, errors.Wrap(err, "failed to read identity config file")
+	}
+
+	decode := scheme.Codecs.UniversalDeserializer().Decode
+	decoded, gvk, err := decode(contents, nil, nil)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to decode identity config file")
+	}
+
+	if gvk.Group != "kots.io" || gvk.Version != "v1beta1" || gvk.Kind != "IdentityConfig" {
+		return nil, errors.New("not identity config")
+	}
+
+	identityConfig := decoded.(*kotsv1beta1.IdentityConfig)
+
+	return identityConfig, nil
 }
 
 func GetAppMetadataFromAirgap(airgapArchive string) ([]byte, error) {
@@ -743,15 +826,16 @@ func LicenseIsExpired(license *kotsv1beta1.License) (bool, error) {
 	return partsed.Before(time.Now()), nil
 }
 
-func findConfig(localPath string) (*kotsv1beta1.Config, *kotsv1beta1.ConfigValues, *kotsv1beta1.License, *kotsv1beta1.Installation, error) {
+func findConfig(localPath string) (*kotsv1beta1.Config, *kotsv1beta1.ConfigValues, *kotsv1beta1.License, *kotsv1beta1.Installation, *kotsv1beta1.IdentityConfig, error) {
 	if localPath == "" {
-		return nil, nil, nil, nil, nil
+		return nil, nil, nil, nil, nil, nil
 	}
 
 	var config *kotsv1beta1.Config
 	var values *kotsv1beta1.ConfigValues
 	var license *kotsv1beta1.License
 	var installation *kotsv1beta1.Installation
+	var identityConfig *kotsv1beta1.IdentityConfig
 
 	err := filepath.Walk(localPath,
 		func(path string, info os.FileInfo, err error) error {
@@ -782,14 +866,16 @@ func findConfig(localPath string) (*kotsv1beta1.Config, *kotsv1beta1.ConfigValue
 				license = obj.(*kotsv1beta1.License)
 			} else if gvk.Group == "kots.io" && gvk.Version == "v1beta1" && gvk.Kind == "Installation" {
 				installation = obj.(*kotsv1beta1.Installation)
+			} else if gvk.Group == "kots.io" && gvk.Version == "v1beta1" && gvk.Kind == "IdentityConfig" {
+				identityConfig = obj.(*kotsv1beta1.IdentityConfig)
 			}
 
 			return nil
 		})
 
 	if err != nil {
-		return nil, nil, nil, nil, errors.Wrap(err, "failed to walk local dir")
+		return nil, nil, nil, nil, nil, errors.Wrap(err, "failed to walk local dir")
 	}
 
-	return config, values, license, installation, nil
+	return config, values, license, installation, identityConfig, nil
 }

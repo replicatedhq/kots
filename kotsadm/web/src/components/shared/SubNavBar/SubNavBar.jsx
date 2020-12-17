@@ -7,13 +7,13 @@ import { isHelmChart } from "@src/utilities/utilities";
 import subNavConfig from "@src/config-ui/subNavConfig";
 
 export default function SubNavBar(props) {
-  const { className, activeTab, watch, isVeleroInstalled, isAccess } = props;
-  let { slug } = watch;
+  const { className, activeTab, app, isVeleroInstalled, isAccess, isAppIdentityServiceSupported } = props;
+  let { slug } = app;
 
-  if (isHelmChart(watch)) {
-    slug = `helm/${watch.id}`;
+  if (isHelmChart(app)) {
+    slug = `helm/${app.id}`;
   }
-  const kotsSequence = watch.currentSequence;
+  const kotsSequence = app.currentSequence;
 
   const accessConfig = [
     {
@@ -50,7 +50,7 @@ export default function SubNavBar(props) {
           subNavConfig.map((link, idx) => {
             let hasBadge = false;
             if (link.hasBadge) {
-              hasBadge = link.hasBadge(watch || {});
+              hasBadge = link.hasBadge(app || {});
             }
             const generatedMenuItem = (
               <li
@@ -64,7 +64,7 @@ export default function SubNavBar(props) {
               </li>
             );
             if (link.displayRule) {
-              return link.displayRule(watch || {}, isVeleroInstalled) && generatedMenuItem;
+              return link.displayRule(app || {}, isVeleroInstalled, app.isAppIdentityServiceSupported) && generatedMenuItem;
             }
             return generatedMenuItem;
           }).filter(Boolean)}
@@ -74,12 +74,12 @@ export default function SubNavBar(props) {
 }
 
 SubNavBar.defaultProps = {
-  watch: {}
+  app: {}
 };
 
 SubNavBar.propTypes = {
   className: PropTypes.string,
   activeTab: PropTypes.string,
   slug: PropTypes.string,
-  watch: PropTypes.object
+  app: PropTypes.object
 };

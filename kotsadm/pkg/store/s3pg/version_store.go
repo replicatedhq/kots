@@ -52,6 +52,22 @@ func (s S3PGStore) IsRollbackSupportedForVersion(appID string, sequence int64) (
 	return kotsAppSpec.Spec.AllowRollback, nil
 }
 
+func (s S3PGStore) IsIdentityServiceSupportedForVersion(appID string, sequence int64) (bool, error) {
+	db := persistence.MustGetPGSession()
+	query := `select identity_spec from app_version where app_id = $1 and sequence = $2`
+	row := db.QueryRow(query, appID, sequence)
+
+	var identitySpecStr sql.NullString
+	if err := row.Scan(&identitySpecStr); err != nil {
+		if err == sql.ErrNoRows {
+			return false, nil
+		}
+		return false, errors.Wrap(err, "failed to scan")
+	}
+
+	return identitySpecStr.String != "", nil
+}
+
 func (s S3PGStore) IsSnapshotsSupportedForVersion(a *apptypes.App, sequence int64) (bool, error) {
 	db := persistence.MustGetPGSession()
 	query := `select backup_spec from app_version where app_id = $1 and sequence = $2`
@@ -91,7 +107,7 @@ func (s S3PGStore) IsSnapshotsSupportedForVersion(a *apptypes.App, sequence int6
 	}
 
 	// as far as I can tell, this is the only place within kotsadm/pkg/store that uses templating
-	rendered, err := render.RenderFile(kotsKinds, registrySettings, sequence, a.IsAirgap, []byte(backupSpecStr.String))
+	rendered, err := render.RenderFile(kotsKinds, registrySettings, a.Slug, sequence, a.IsAirgap, []byte(backupSpecStr.String))
 	if err != nil {
 		return false, errors.Wrap(err, "failed to render backup spec")
 	}
@@ -289,11 +305,16 @@ func (s S3PGStore) CreateAppVersion(appID string, currentSequence *int64, appNam
 		if err != nil {
 			return int64(0), errors.Wrap(err, "failed to marshal configvalues spec")
 		}
+		identityConfigSpec, err := kotsKinds.Marshal("kots.io", "v1beta1", "IdentityConfig")
+		if err != nil {
+			return int64(0), errors.Wrap(err, "failed to marshal identityconfig spec")
+		}
 
 		configOpts := kotsconfig.ConfigOptions{
-			ConfigSpec:       configSpec,
-			ConfigValuesSpec: configValuesSpec,
-			LicenseSpec:      licenseSpec,
+			ConfigSpec:         configSpec,
+			ConfigValuesSpec:   configValuesSpec,
+			LicenseSpec:        licenseSpec,
+			IdentityConfigSpec: identityConfigSpec,
 		}
 		if registryInfo != nil {
 			configOpts.RegistryHost = registryInfo.Hostname

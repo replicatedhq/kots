@@ -79,6 +79,34 @@ func (s OCIStore) getLatestAppVersion(appID string) (*versiontypes.AppVersion, e
 	return &appVersion, nil
 }
 
+func (s OCIStore) IsIdentityServiceSupportedForVersion(appID string, sequence int64) (bool, error) {
+	configMapName, err := s.appVersionConfigMapNameForApp(appID)
+	if err != nil {
+		return false, errors.Wrap(err, "failed to get appversion config map name")
+	}
+
+	configMap, err := s.getConfigmap(configMapName)
+	if err != nil {
+		return false, errors.Wrap(err, "failed to get app version config map")
+	}
+
+	if configMap.Data == nil {
+		configMap.Data = map[string]string{}
+	}
+
+	sequenceData, ok := configMap.Data[strconv.FormatInt(sequence, 10)]
+	if !ok {
+		return false, nil // copied from s3pg store, this isn't an error?
+	}
+
+	appVersion := versiontypes.AppVersion{}
+	if err := json.Unmarshal([]byte(sequenceData), &appVersion); err != nil {
+		return false, errors.Wrap(err, "failed to unmarshal app version data")
+	}
+
+	return appVersion.KOTSKinds.Identity != nil, nil
+}
+
 func (s OCIStore) IsRollbackSupportedForVersion(appID string, sequence int64) (bool, error) {
 	configMapName, err := s.appVersionConfigMapNameForApp(appID)
 	if err != nil {
@@ -317,11 +345,16 @@ func (s OCIStore) CreateAppVersion(appID string, currentSequence *int64, appName
 		if err != nil {
 			return int64(0), errors.Wrap(err, "failed to marshal configvalues spec")
 		}
+		identityConfigSpec, err := kotsKinds.Marshal("kots.io", "v1beta1", "IdentityConfig")
+		if err != nil {
+			return int64(0), errors.Wrap(err, "failed to marshal identityconfig spec")
+		}
 
 		configOpts := kotsconfig.ConfigOptions{
-			ConfigSpec:       configSpec,
-			ConfigValuesSpec: configValuesSpec,
-			LicenseSpec:      licenseSpec,
+			ConfigSpec:         configSpec,
+			ConfigValuesSpec:   configValuesSpec,
+			LicenseSpec:        licenseSpec,
+			IdentityConfigSpec: identityConfigSpec,
 		}
 		if registryInfo != nil {
 			configOpts.RegistryHost = registryInfo.Hostname

@@ -63,6 +63,9 @@
         "isAirgapSupported": {
           "type": "boolean"
         },
+        "isGeoaxisSupported": {
+          "type": "boolean"
+        },
         "isGitOpsSupported": {
           "type": "boolean"
         },

@@ -10,11 +10,13 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	"github.com/replicatedhq/kots/kotsadm/pkg/identity"
 	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
 	"github.com/replicatedhq/kots/kotsadm/pkg/preflight"
 	"github.com/replicatedhq/kots/kotsadm/pkg/reporting"
 	"github.com/replicatedhq/kots/kotsadm/pkg/store"
 	"github.com/replicatedhq/kots/kotsadm/pkg/version"
+	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	"github.com/replicatedhq/kots/pkg/crypto"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	kotspull "github.com/replicatedhq/kots/pkg/pull"
@@ -90,10 +92,23 @@ func DownloadUpdate(appID string, archiveDir string, toCursor string, skipPrefli
 		return 0, errors.Wrap(err, "failed to get latest license")
 	}
 
+	identityConfigFile := filepath.Join(archiveDir, "upstream", "userdata", "identityconfig.yaml")
+	if _, err := os.Stat(identityConfigFile); os.IsNotExist(err) {
+		file, err := identity.InitAppIdentityConfig(a.Slug, kotsv1beta1.Storage{}, crypto.AESCipher{})
+		if err != nil {
+			return 0, errors.Wrap(err, "failed to init identity config")
+		}
+		identityConfigFile = file
+		defer os.Remove(identityConfigFile)
+	} else if err != nil {
+		return 0, errors.Wrap(err, "failed to get stat identity config file")
+	}
+
 	pullOptions := kotspull.PullOptions{
 		LicenseObj:          latestLicense,
 		Namespace:           appNamespace,
 		ConfigFile:          filepath.Join(archiveDir, "upstream", "userdata", "config.yaml"),
+		IdentityConfigFile:  identityConfigFile,
 		InstallationFile:    filepath.Join(archiveDir, "upstream", "userdata", "installation.yaml"),
 		UpdateCursor:        toCursor,
 		RootDir:             archiveDir,
@@ -157,7 +172,7 @@ func DownloadUpdate(appID string, archiveDir string, toCursor string, skipPrefli
 	}
 
 	if !skipPreflights {
-		if err := preflight.Run(appID, newSequence, a.IsAirgap, archiveDir); err != nil {
+		if err := preflight.Run(appID, a.Slug, newSequence, a.IsAirgap, archiveDir); err != nil {
 			return 0, errors.Wrap(err, "failed to run preflights")
 		}
 	}

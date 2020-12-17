@@ -10,12 +10,14 @@ import (
 
 	oidc "github.com/coreos/go-oidc"
 	"github.com/pkg/errors"
+	"github.com/replicatedhq/kots/kotsadm/pkg/k8s"
 	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
 	"github.com/replicatedhq/kots/kotsadm/pkg/session"
 	"github.com/replicatedhq/kots/kotsadm/pkg/store"
 	"github.com/replicatedhq/kots/kotsadm/pkg/user"
 	usertypes "github.com/replicatedhq/kots/kotsadm/pkg/user/types"
 	"github.com/replicatedhq/kots/pkg/identity"
+	identityclient "github.com/replicatedhq/kots/pkg/identity/client"
 	ingress "github.com/replicatedhq/kots/pkg/ingress"
 	"github.com/segmentio/ksuid"
 	"golang.org/x/oauth2"
@@ -38,13 +40,13 @@ const (
 )
 
 func Login(w http.ResponseWriter, r *http.Request) {
-	ingressConfig, err := identity.GetConfig(r.Context(), os.Getenv("POD_NAMESPACE"))
+	identityConfig, err := identity.GetConfig(r.Context(), os.Getenv("POD_NAMESPACE"))
 	if err != nil {
 		logger.Error(err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-	if ingressConfig.Spec.Enabled && ingressConfig.Spec.DisablePasswordAuth {
+	if identityConfig.Spec.Enabled && identityConfig.Spec.DisablePasswordAuth {
 		err := errors.New("password authentication disabled")
 		JSON(w, http.StatusForbidden, NewErrorResponse(err))
 		return
@@ -107,11 +109,24 @@ func OIDCLogin(w http.ResponseWriter, r *http.Request) {
 
 	oidcLoginResponse := OIDCLoginResponse{}
 
-	oauth2Config, err := identity.GetKotsadmOAuth2Config(r.Context(), namespace)
+	clientset, err := k8s.Clientset()
+	if err != nil {
+		logger.Error(errors.Wrap(err, "failed to get k8s client"))
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	provider, err := identity.GetKotsadmOIDCProvider(r.Context(), clientset, namespace)
+	if err != nil {
+		logger.Error(errors.Wrap(err, "failed to get kotsadm oidc provider"))
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	oauth2Config, err := identity.GetKotsadmOAuth2Config(r.Context(), clientset, namespace, *provider)
 	if err != nil {
 		logger.Error(errors.Wrap(err, "failed to get kotsadm oauth2 config"))
-		oidcLoginResponse.Error = "failed to get kotsadm oauth2 config"
-		JSON(w, http.StatusInternalServerError, oidcLoginResponse)
+		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
@@ -119,9 +134,9 @@ func OIDCLogin(w http.ResponseWriter, r *http.Request) {
 	state := ksuid.New().String()
 
 	// save the generated state to compare on callback
-	if err := identity.SetOIDCState(r.Context(), namespace, state); err != nil {
-		oidcLoginResponse.Error = "failed to set oidc state"
-		JSON(w, http.StatusInternalServerError, oidcLoginResponse)
+	if err := identityclient.SetOIDCState(r.Context(), namespace, state); err != nil {
+		logger.Error(errors.Wrap(err, "failed to set oidc state"))
+		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
@@ -136,16 +151,23 @@ func OIDCLogin(w http.ResponseWriter, r *http.Request) {
 func OIDCLoginCallback(w http.ResponseWriter, r *http.Request) {
 	namespace := os.Getenv("POD_NAMESPACE")
 
-	oauth2Config, err := identity.GetKotsadmOAuth2Config(r.Context(), namespace)
+	clientset, err := k8s.Clientset()
 	if err != nil {
-		logger.Error(errors.Wrap(err, "failed to get kotsadm oauth2 config"))
+		logger.Error(errors.Wrap(err, "failed to get k8s client"))
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
-	provider, err := identity.GetKotsadmOIDCProvider(r.Context(), namespace)
+	provider, err := identity.GetKotsadmOIDCProvider(r.Context(), clientset, namespace)
 	if err != nil {
 		logger.Error(errors.Wrap(err, "failed to get kotsadm oidc provider"))
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	oauth2Config, err := identity.GetKotsadmOAuth2Config(r.Context(), clientset, namespace, *provider)
+	if err != nil {
+		logger.Error(errors.Wrap(err, "failed to get kotsadm oauth2 config"))
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
@@ -176,7 +198,7 @@ func OIDCLoginCallback(w http.ResponseWriter, r *http.Request) {
 		}
 
 		state := r.FormValue("state")
-		foundState, err := identity.GetOIDCState(r.Context(), namespace, state)
+		foundState, err := identityclient.GetOIDCState(r.Context(), namespace, state)
 		if err != nil {
 			logger.Error(errors.Wrap(err, "failed to get saved oidc state"))
 			w.WriteHeader(http.StatusInternalServerError)
@@ -189,13 +211,13 @@ func OIDCLoginCallback(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		if err := identity.ResetOIDCState(r.Context(), namespace, state); err != nil {
+		if err := identityclient.ResetOIDCState(r.Context(), namespace, state); err != nil {
 			logger.Error(errors.Wrap(err, "failed to reset oidc state"))
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
 
-		httpClient, err := identity.HTTPClient(r.Context(), namespace, *identityConfig)
+		httpClient, err := identityclient.HTTPClient(r.Context(), namespace, *identityConfig)
 		if err != nil {
 			err = errors.Wrap(err, "failed to get identity http client")
 			logger.Error(err)
@@ -219,7 +241,7 @@ func OIDCLoginCallback(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		httpClient, err := identity.HTTPClient(r.Context(), namespace, *identityConfig)
+		httpClient, err := identityclient.HTTPClient(r.Context(), namespace, *identityConfig)
 		if err != nil {
 			err = errors.Wrap(err, "failed to get identity http client")
 			logger.Error(err)
@@ -343,12 +365,11 @@ func GetLoginInfo(w http.ResponseWriter, r *http.Request) {
 
 	identityConfig, err := identity.GetConfig(r.Context(), os.Getenv("POD_NAMESPACE"))
 	if err != nil {
-		logger.Error(err)
-		getLoginInfoResponse.Error = "failed to get identity config"
-		JSON(w, http.StatusInternalServerError, getLoginInfoResponse)
+		logger.Error(errors.Wrap(err, "failed to get identity config"))
+		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-	if !identityConfig.Spec.Enabled {
+	if !identityConfig.Spec.Enabled || !identityConfig.Spec.DisablePasswordAuth {
 		getLoginInfoResponse.Method = PasswordAuth
 		JSON(w, http.StatusOK, getLoginInfoResponse)
 		return

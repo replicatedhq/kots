@@ -125,9 +125,11 @@ func downloadReplicated(
 	useAppDir bool,
 	license *kotsv1beta1.License,
 	existingConfigValues *kotsv1beta1.ConfigValues,
+	existingIdentityConfig *kotsv1beta1.IdentityConfig,
 	updateCursor ReplicatedCursor,
 	versionLabel string,
 	cipher *crypto.AESCipher,
+	appSlug string,
 	appSequence int64,
 	isAirgap bool,
 	registry types.LocalRegistry,
@@ -187,6 +189,24 @@ func downloadReplicated(
 		channelName = license.Spec.ChannelName
 	}
 
+	if existingIdentityConfig == nil {
+		var prevIdentityConfigFile string
+		if useAppDir {
+			prevIdentityConfigFile = filepath.Join(rootDir, application.Name, "upstream", "userdata", "identityconfig.yaml")
+		} else {
+			prevIdentityConfigFile = filepath.Join(rootDir, "upstream", "userdata", "identityconfig.yaml")
+		}
+		var err error
+		existingIdentityConfig, err = findIdentityConfigInFile(prevIdentityConfigFile)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to load existing identity config")
+		}
+	}
+
+	if existingIdentityConfig != nil {
+		release.Manifests["userdata/identityconfig.yaml"] = mustMarshalIdentityConfig(existingIdentityConfig)
+	}
+
 	if existingConfigValues == nil {
 		var prevConfigFile string
 		if useAppDir {
@@ -201,11 +221,15 @@ func downloadReplicated(
 		}
 	}
 
-	config, _, _, _, err := findTemplateContextDataInRelease(release)
+	config, _, _, _, _, err := findTemplateContextDataInRelease(release)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to find config in release")
 	}
 	if config != nil || existingConfigValues != nil {
+		appInfo := template.ApplicationInfo{
+			Slug: appSlug,
+		}
+
 		versionInfo := template.VersionInfo{
 			Sequence:     appSequence,
 			Cursor:       updateCursor.Cursor,
@@ -224,7 +248,7 @@ func downloadReplicated(
 
 		// If config existed and was removed from the app,
 		// values will be carried over to the new version anyway.
-		configValues, err := createConfigValues(application.Name, config, existingConfigValues, cipher, license, &versionInfo, localRegistry)
+		configValues, err := createConfigValues(application.Name, config, existingConfigValues, cipher, license, &appInfo, &versionInfo, localRegistry, existingIdentityConfig)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to create empty config values")
 		}
@@ -563,7 +587,7 @@ func mustMarshalConfigValues(configValues *kotsv1beta1.ConfigValues) []byte {
 	return b.Bytes()
 }
 
-func createConfigValues(applicationName string, config *kotsv1beta1.Config, existingConfigValues *kotsv1beta1.ConfigValues, cipher *crypto.AESCipher, license *kotsv1beta1.License, versionInfo *template.VersionInfo, localRegistry template.LocalRegistry) (*kotsv1beta1.ConfigValues, error) {
+func createConfigValues(applicationName string, config *kotsv1beta1.Config, existingConfigValues *kotsv1beta1.ConfigValues, cipher *crypto.AESCipher, license *kotsv1beta1.License, appInfo *template.ApplicationInfo, versionInfo *template.VersionInfo, localRegistry template.LocalRegistry, identityConfig *kotsv1beta1.IdentityConfig) (*kotsv1beta1.ConfigValues, error) {
 	templateContextValues := make(map[string]template.ItemValue)
 
 	var newValues kotsv1beta1.ConfigValuesSpec
@@ -600,7 +624,17 @@ func createConfigValues(applicationName string, config *kotsv1beta1.Config, exis
 		}, nil
 	}
 
-	builder, _, err := template.NewBuilder(config.Spec.Groups, templateContextValues, localRegistry, cipher, license, versionInfo)
+	builderOptions := template.BuilderOptions{
+		ConfigGroups:    config.Spec.Groups,
+		ExistingValues:  templateContextValues,
+		LocalRegistry:   localRegistry,
+		Cipher:          cipher,
+		License:         license,
+		ApplicationInfo: appInfo,
+		VersionInfo:     versionInfo,
+		IdentityConfig:  identityConfig,
+	}
+	builder, _, err := template.NewBuilder(builderOptions)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create config context")
 	}
@@ -679,11 +713,49 @@ func contentToConfigValues(content []byte) *kotsv1beta1.ConfigValues {
 	return nil
 }
 
-func findTemplateContextDataInRelease(release *Release) (*kotsv1beta1.Config, *kotsv1beta1.ConfigValues, *kotsv1beta1.License, *kotsv1beta1.Installation, error) {
+func mustMarshalIdentityConfig(identityConfig *kotsv1beta1.IdentityConfig) []byte {
+	s := serializer.NewYAMLSerializer(serializer.DefaultMetaFactory, scheme.Scheme, scheme.Scheme)
+
+	var b bytes.Buffer
+	if err := s.Encode(identityConfig, &b); err != nil {
+		panic(err)
+	}
+
+	return b.Bytes()
+}
+
+func findIdentityConfigInFile(filename string) (*kotsv1beta1.IdentityConfig, error) {
+	content, err := ioutil.ReadFile(filename)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return nil, nil
+		}
+		return nil, errors.Wrap(err, "failed to open file")
+	}
+
+	return contentToIdentityConfig(content), nil
+}
+
+func contentToIdentityConfig(content []byte) *kotsv1beta1.IdentityConfig {
+	decode := scheme.Codecs.UniversalDeserializer().Decode
+	obj, gvk, err := decode(content, nil, nil)
+	if err != nil {
+		return nil
+	}
+
+	if gvk.Group == "kots.io" && gvk.Version == "v1beta1" && gvk.Kind == "IdentityConfig" {
+		return obj.(*kotsv1beta1.IdentityConfig)
+	}
+
+	return nil
+}
+
+func findTemplateContextDataInRelease(release *Release) (*kotsv1beta1.Config, *kotsv1beta1.ConfigValues, *kotsv1beta1.License, *kotsv1beta1.Installation, *kotsv1beta1.IdentityConfig, error) {
 	var config *kotsv1beta1.Config
 	var values *kotsv1beta1.ConfigValues
 	var license *kotsv1beta1.License
 	var installation *kotsv1beta1.Installation
+	var identityConfig *kotsv1beta1.IdentityConfig
 
 	for _, content := range release.Manifests {
 		decode := scheme.Codecs.UniversalDeserializer().Decode
@@ -702,12 +774,14 @@ func findTemplateContextDataInRelease(release *Release) (*kotsv1beta1.Config, *k
 					license = obj.(*kotsv1beta1.License)
 				} else if gvk.Kind == "Installation" {
 					installation = obj.(*kotsv1beta1.Installation)
+				} else if gvk.Kind == "IdentityConfig" {
+					identityConfig = obj.(*kotsv1beta1.IdentityConfig)
 				}
 			}
 		}
 	}
 
-	return config, values, license, installation, nil
+	return config, values, license, installation, identityConfig, nil
 }
 
 func findAppInRelease(release *Release) *kotsv1beta1.Application {

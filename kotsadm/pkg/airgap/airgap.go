@@ -14,6 +14,7 @@ import (
 	"github.com/replicatedhq/kots/kotsadm/pkg/airgap/types"
 	kotsadmconfig "github.com/replicatedhq/kots/kotsadm/pkg/config"
 	"github.com/replicatedhq/kots/kotsadm/pkg/downstream"
+	"github.com/replicatedhq/kots/kotsadm/pkg/identity"
 	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
 	"github.com/replicatedhq/kots/kotsadm/pkg/preflight"
 	"github.com/replicatedhq/kots/kotsadm/pkg/registry"
@@ -23,6 +24,7 @@ import (
 	"github.com/replicatedhq/kots/kotsadm/pkg/version"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	"github.com/replicatedhq/kots/pkg/archives"
+	"github.com/replicatedhq/kots/pkg/crypto"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/pull"
 	"k8s.io/client-go/kubernetes/scheme"
@@ -163,12 +165,19 @@ func CreateAppFromAirgap(pendingApp *types.PendingApp, airgapPath string, regist
 		configFile = tmpFile.Name()
 	}
 
+	identityConfigFile, err := identity.InitAppIdentityConfig(pendingApp.Slug, kotsv1beta1.Storage{}, crypto.AESCipher{})
+	if err != nil {
+		return errors.Wrap(err, "failed to init identity config")
+	}
+	defer os.Remove(identityConfigFile)
+
 	pullOptions := pull.PullOptions{
 		Downstreams:         []string{"this-cluster"},
 		LocalPath:           releaseDir,
 		Namespace:           appNamespace,
 		LicenseFile:         licenseFile.Name(),
 		ConfigFile:          configFile,
+		IdentityConfigFile:  identityConfigFile,
 		AirgapRoot:          archiveDir,
 		Silent:              true,
 		ExcludeKotsKinds:    true,
@@ -252,14 +261,20 @@ func CreateAppFromAirgap(pendingApp *types.PendingApp, airgapPath string, regist
 			return errors.Wrap(err, "failed to marshal configvalues spec")
 		}
 
+		identityConfigSpec, err := kotsKinds.Marshal("kots.io", "v1beta1", "IdentityConfig")
+		if err != nil {
+			return errors.Wrap(err, "failed to marshal identityconfig spec")
+		}
+
 		configOpts := kotsadmconfig.ConfigOptions{
-			ConfigSpec:        configSpec,
-			ConfigValuesSpec:  configValuesSpec,
-			LicenseSpec:       licenseSpec,
-			RegistryHost:      registryHost,
-			RegistryNamespace: namespace,
-			RegistryUser:      username,
-			RegistryPassword:  password,
+			ConfigSpec:         configSpec,
+			ConfigValuesSpec:   configValuesSpec,
+			LicenseSpec:        licenseSpec,
+			IdentityConfigSpec: identityConfigSpec,
+			RegistryHost:       registryHost,
+			RegistryNamespace:  namespace,
+			RegistryUser:       username,
+			RegistryPassword:   password,
 		}
 
 		needsConfig, err := kotsadmconfig.NeedsConfiguration(configOpts)
@@ -282,7 +297,7 @@ func CreateAppFromAirgap(pendingApp *types.PendingApp, airgapPath string, regist
 	}
 
 	if !skipPreflights {
-		if err := preflight.Run(pendingApp.ID, newSequence, true, tmpRoot); err != nil {
+		if err := preflight.Run(pendingApp.ID, pendingApp.Slug, newSequence, true, tmpRoot); err != nil {
 			return errors.Wrap(err, "failed to start preflights")
 		}
 	}

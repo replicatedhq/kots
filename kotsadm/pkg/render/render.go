@@ -20,18 +20,32 @@ import (
 
 // RenderFile renders a single file
 // this is useful for upstream/kotskinds files that are not rendered in the dir
-func RenderFile(kotsKinds *kotsutil.KotsKinds, registrySettings *registrytypes.RegistrySettings, sequence int64, isAirgap bool, inputContent []byte) ([]byte, error) {
+func RenderFile(kotsKinds *kotsutil.KotsKinds, registrySettings *registrytypes.RegistrySettings, appSlug string, sequence int64, isAirgap bool, inputContent []byte) ([]byte, error) {
 	fixedUpContent, err := kotsutil.FixUpYAML(inputContent)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to fix up yaml")
 	}
 
-	return RenderContent(kotsKinds, registrySettings, sequence, isAirgap, fixedUpContent)
+	return RenderContent(kotsKinds, registrySettings, appSlug, sequence, isAirgap, fixedUpContent)
 }
 
 // RenderContent renders any string/content
 // this is useful for rendering single values, like a status informer
-func RenderContent(kotsKinds *kotsutil.KotsKinds, registrySettings *registrytypes.RegistrySettings, sequence int64, isAirgap bool, inputContent []byte) ([]byte, error) {
+func RenderContent(kotsKinds *kotsutil.KotsKinds, registrySettings *registrytypes.RegistrySettings, appSlug string, sequence int64, isAirgap bool, inputContent []byte) ([]byte, error) {
+	builder, err := NewBuilder(kotsKinds, registrySettings, appSlug, sequence, isAirgap)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to create builder")
+	}
+
+	rendered, err := builder.RenderTemplate(string(inputContent), string(inputContent))
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to render")
+	}
+
+	return []byte(rendered), nil
+}
+
+func NewBuilder(kotsKinds *kotsutil.KotsKinds, registrySettings *registrytypes.RegistrySettings, appSlug string, sequence int64, isAirgap bool) (*template.Builder, error) {
 	apiCipher, err := crypto.AESCipherFromString(os.Getenv("API_ENCRYPTION_KEY"))
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to load apiCipher")
@@ -68,7 +82,7 @@ func RenderContent(kotsKinds *kotsutil.KotsKinds, registrySettings *registrytype
 
 	appCipher, err := crypto.AESCipherFromString(kotsKinds.Installation.Spec.EncryptionKey)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to load appCipher")
+		return nil, errors.Wrap(err, "failed to load encryption cipher")
 	}
 
 	configGroups := []kotsv1beta1.ConfigGroup{}
@@ -76,18 +90,24 @@ func RenderContent(kotsKinds *kotsutil.KotsKinds, registrySettings *registrytype
 		configGroups = kotsKinds.Config.Spec.Groups
 	}
 
+	appInfo := template.ApplicationInfo{
+		Slug: appSlug,
+	}
+
 	versionInfo := template.VersionInfoFromInstallation(sequence, isAirgap, kotsKinds.Installation.Spec)
-	builder, _, err := template.NewBuilder(configGroups, templateContextValues, localRegistry, appCipher, kotsKinds.License, &versionInfo)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to create builder")
-	}
 
-	rendered, err := builder.RenderTemplate(string(inputContent), string(inputContent))
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to render")
+	builderOptions := template.BuilderOptions{
+		ConfigGroups:    configGroups,
+		ExistingValues:  templateContextValues,
+		LocalRegistry:   localRegistry,
+		Cipher:          appCipher,
+		License:         kotsKinds.License,
+		ApplicationInfo: &appInfo,
+		VersionInfo:     &versionInfo,
+		IdentityConfig:  kotsKinds.IdentityConfig,
 	}
-
-	return []byte(rendered), nil
+	builder, _, err := template.NewBuilder(builderOptions)
+	return &builder, errors.Wrap(err, "failed to create builder")
 }
 
 // RenderDir renders an app archive dir
@@ -136,6 +156,11 @@ func RenderDir(archiveDir string, a *apptypes.App, downstreams []downstreamtypes
 		IsGitOps:         a.IsGitOps,
 		AppSequence:      a.CurrentSequence + 1, // sequence +1 because this is the current latest sequence, not the sequence that the rendered version will be saved as
 		ReportingInfo:    reportingInfo,
+
+		// TODO: pass in as arguments if this is ever called from CLI
+		HTTPProxyEnvValue:  os.Getenv("HTTP_PROXY"),
+		HTTPSProxyEnvValue: os.Getenv("HTTPS_PROXY"),
+		NoProxyEnvValue:    os.Getenv("NO_PROXY"),
 	}
 
 	if registrySettings != nil {

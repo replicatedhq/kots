@@ -1,14 +1,17 @@
 package midstream
 
 import (
+	"context"
 	"io/ioutil"
 	"os"
 	"path"
 	"path/filepath"
 
 	"github.com/pkg/errors"
+	"github.com/replicatedhq/kots/pkg/crypto"
 	"github.com/replicatedhq/kots/pkg/disasterrecovery"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
+	"github.com/replicatedhq/kots/pkg/template"
 	yaml "gopkg.in/yaml.v2"
 	kustomizetypes "sigs.k8s.io/kustomize/api/types"
 	k8syaml "sigs.k8s.io/yaml"
@@ -21,10 +24,16 @@ const (
 )
 
 type WriteOptions struct {
-	MidstreamDir string
-	BaseDir      string
-	AppSlug      string
-	IsGitOps     bool
+	MidstreamDir       string
+	BaseDir            string
+	AppSlug            string
+	IsGitOps           bool
+	IsOpenShift        bool
+	Cipher             crypto.AESCipher
+	Builder            template.Builder
+	HTTPProxyEnvValue  string
+	HTTPSProxyEnvValue string
+	NoProxyEnvValue    string
 }
 
 func (m *Midstream) KustomizationFilename(options WriteOptions) string {
@@ -54,6 +63,15 @@ func (m *Midstream) WriteMidstream(options WriteOptions) error {
 
 	if secretFilename != "" {
 		m.Kustomization.Resources = append(m.Kustomization.Resources, secretFilename)
+	}
+
+	identityBase, err := m.writeIdentityService(context.TODO(), options)
+	if err != nil {
+		return errors.Wrap(err, "failed to write identity service")
+	}
+
+	if identityBase != "" {
+		m.Kustomization.Resources = append(m.Kustomization.Resources, identityBase)
 	}
 
 	if err := m.writeObjectsWithPullSecret(options); err != nil {

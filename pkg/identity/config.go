@@ -169,6 +169,8 @@ func ensureConfigConfigMap(ctx context.Context, clientset kubernetes.Interface, 
 }
 
 func identityConfigMapResource(identityConfig kotsv1beta1.IdentityConfig) (*corev1.ConfigMap, error) {
+	// NOTE: we do not encrypt kotsadm config
+
 	identityConfig.Spec.DexConnectors.Value = nil
 	identityConfig.Spec.DexConnectors.ValueFrom = &kotsv1beta1.DexConnectorsSource{
 		SecretKeyRef: &corev1.SecretKeySelector{
@@ -190,7 +192,7 @@ func identityConfigMapResource(identityConfig kotsv1beta1.IdentityConfig) (*core
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:   ConfigConfigMapName,
-			Labels: kotsadmtypes.GetKotsadmLabels(identitydeploy.AdditionalLabels("kotsadm")),
+			Labels: kotsadmtypes.GetKotsadmLabels(identitydeploy.AdditionalLabels("kotsadm", nil)),
 		},
 		Data: map[string]string{
 			"identity.yaml": string(data),
@@ -229,6 +231,8 @@ func ensureConfigSecret(ctx context.Context, clientset kubernetes.Interface, nam
 }
 
 func identitySecretResource(identityConfig kotsv1beta1.IdentityConfig) (*corev1.Secret, error) {
+	// NOTE: we do not encrypt kotsadm config
+
 	data, err := ghodssyaml.Marshal(identityConfig.Spec.DexConnectors.Value)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to marshal dex connectors")
@@ -241,7 +245,7 @@ func identitySecretResource(identityConfig kotsv1beta1.IdentityConfig) (*corev1.
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:   ConfigSecretName,
-			Labels: kotsadmtypes.GetKotsadmLabels(identitydeploy.AdditionalLabels("kotsadm")),
+			Labels: kotsadmtypes.GetKotsadmLabels(identitydeploy.AdditionalLabels("kotsadm", nil)),
 		},
 		Data: map[string][]byte{
 			ConfigSecretKeyName: data,
@@ -292,6 +296,8 @@ func ValidateConnection(ctx context.Context, namespace string, identityConfig ko
 			return &ErrorConnection{Message: err.Error()}
 		}
 	**/
+
+	// NOTE: we do not encrypt kotsadm config
 
 	// validate connectors issuers
 	if err := evaluateDexConnectorsValue(ctx, namespace, &identityConfig.Spec.DexConnectors); err != nil {

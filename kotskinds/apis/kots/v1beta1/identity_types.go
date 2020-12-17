@@ -17,17 +17,25 @@ limitations under the License.
 package v1beta1
 
 import (
+	"github.com/replicatedhq/kots/kotskinds/multitype"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 type IdentitySpec struct {
-	OIDCRedirectURLs            []string `json:"oidcRedirectURLs" yaml:"oidcRedirectURLs"`
-	OAUTH2AlwaysShowLoginScreen bool     `json:"oauth2AlwaysShowLoginScreen,omitempty" yaml:"oauth2AlwaysShowLoginScreen,omitempty"`
-	SigningKeysExpiration       string   `json:"signingKeysExpiration,omitempty" yaml:"signingKeysExpiration,omitempty"`
-	IDTokensExpiration          string   `json:"idTokensExpiration,omitempty" yaml:"idTokensExpiration,omitempty"`
-	SupportedProviders          []string `json:"supportedProviders,omitempty" yaml:"supportedProviders,omitempty"`
-	EnableRestrictedGroups      bool     `json:"enableRestrictedGroups,omitempty" yaml:"enableRestrictedGroups,omitempty"`
-	Roles                       []string `json:"roles,omitempty" yaml:"roles,omitempty"`
+	IdentityIssuerURL           string                 `json:"identityIssuerURL" yaml:"identityIssuerURL"`
+	OIDCRedirectURIs            []string               `json:"oidcRedirectUris" yaml:"oidcRedirectUris"`
+	OAUTH2AlwaysShowLoginScreen bool                   `json:"oauth2AlwaysShowLoginScreen,omitempty" yaml:"oauth2AlwaysShowLoginScreen,omitempty"`
+	SigningKeysExpiration       string                 `json:"signingKeysExpiration,omitempty" yaml:"signingKeysExpiration,omitempty"`
+	IDTokensExpiration          string                 `json:"idTokensExpiration,omitempty" yaml:"idTokensExpiration,omitempty"`
+	SupportedProviders          []string               `json:"supportedProviders,omitempty" yaml:"supportedProviders,omitempty"`
+	RequireIdentityProvider     multitype.BoolOrString `json:"requireIdentityProvider" yaml:"requireIdentityProvider"`
+	Roles                       []IdentityRole         `json:"roles,omitempty" yaml:"roles,omitempty"`
+}
+
+type IdentityRole struct {
+	ID          string `json:"id" yaml:"id"`
+	Name        string `json:"name,omitempty" yaml:"name,omitempty"`
+	Description string `json:"description,omitempty" yaml:"description,omitempty"`
 }
 
 // IdentityStatus defines the observed state of Identity

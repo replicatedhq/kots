@@ -3,19 +3,30 @@ package handlers
 import (
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/dexidp/dex/connector/oidc"
+	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
+	kotsadmidentity "github.com/replicatedhq/kots/kotsadm/pkg/identity"
 	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
+	"github.com/replicatedhq/kots/kotsadm/pkg/preflight"
+	"github.com/replicatedhq/kots/kotsadm/pkg/render"
+	"github.com/replicatedhq/kots/kotsadm/pkg/reporting"
+	"github.com/replicatedhq/kots/kotsadm/pkg/store"
+	"github.com/replicatedhq/kots/kotsadm/pkg/version"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
+	"github.com/replicatedhq/kots/pkg/crypto"
 	"github.com/replicatedhq/kots/pkg/identity"
 	identitydeploy "github.com/replicatedhq/kots/pkg/identity/deploy"
 	dextypes "github.com/replicatedhq/kots/pkg/identity/types/dex"
 	"github.com/replicatedhq/kots/pkg/ingress"
 	"github.com/replicatedhq/kots/pkg/kotsadm"
+	"github.com/replicatedhq/kots/pkg/kotsutil"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes"
@@ -26,9 +37,12 @@ const (
 	RedactionMask = "--- REDACTED ---"
 )
 
+// TODO: separate request types for kotsadm and the app?
 type ConfigureIdentityServiceRequest struct {
-	AdminConsoleAddress    string `json:"adminConsoleAddress"`
-	IdentityServiceAddress string `json:"identityServiceAddress"`
+	AdminConsoleAddress     string                            `json:"adminConsoleAddress,omitempty"`
+	IdentityServiceAddress  string                            `json:"identityServiceAddress,omitempty"`
+	UseAdminConsoleSettings bool                              `json:"useAdminConsoleSettings,omitempty"`
+	Groups                  []kotsv1beta1.IdentityConfigGroup `json:"groups,omitempty"`
 
 	IDPConfig `json:",inline"`
 }
@@ -37,6 +51,7 @@ type IDPConfig struct {
 	OIDCConfig    *OIDCConfig `json:"oidcConfig"`
 	GEOAxISConfig *OIDCConfig `json:"geoAxisConfig"`
 }
+
 type OIDCConfig struct {
 	ConnectorID               string           `json:"connectorId"`
 	ConnectorName             string           `json:"connectorName"`
@@ -53,6 +68,7 @@ type OIDCConfig struct {
 	HostedDomains             []string         `json:"hostedDomains,omitempty"`
 	ClaimMapping              OIDCClaimMapping `json:"claimMapping,omitempty"`
 }
+
 type OIDCClaimMapping struct {
 	PreferredUsernameKey string `json:"preferredUsername,omitempty"`
 	EmailKey             string `json:"email,omitempty"`
@@ -68,7 +84,7 @@ func ConfigureIdentityService(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := validateConfigureIdentityRequest(request); err != nil {
+	if err := validateConfigureIdentityRequest(request, false); err != nil {
 		err = errors.Wrap(err, "failed to validate request")
 		logger.Error(err)
 		JSON(w, http.StatusBadRequest, NewErrorResponse(err))
@@ -84,6 +100,8 @@ func ConfigureIdentityService(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
+
+	// NOTE: we do not encrypt kotsadm config
 
 	idpConfigs, err := dexConnectorsToIDPConfigs(previousConfig.Spec.DexConnectors.Value)
 	if err != nil {
@@ -190,8 +208,259 @@ func ConfigureIdentityService(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := identity.Deploy(r.Context(), clientset, namespace, identityConfig, *ingressConfig, &registryOptions); err != nil {
+	proxyEnv := map[string]string{
+		"HTTP_PROXY":  os.Getenv("HTTP_PROXY"),
+		"HTTPS_PROXY": os.Getenv("HTTPS_PROXY"),
+		"NO_PROXY":    os.Getenv("NO_PROXY"),
+	}
+	if err := identity.Deploy(r.Context(), clientset, namespace, identityConfig, *ingressConfig, &registryOptions, proxyEnv); err != nil {
 		err = errors.Wrap(err, "failed to deploy the identity service")
+		logger.Error(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	response := ErrorResponse{
+		Success: true,
+	}
+
+	JSON(w, http.StatusOK, response)
+}
+
+func ConfigureAppIdentityService(w http.ResponseWriter, r *http.Request) {
+	request := ConfigureIdentityServiceRequest{}
+	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
+		err = errors.Wrap(err, "failed to decode request body")
+		logger.Error(err)
+		JSON(w, http.StatusBadRequest, NewErrorResponse(err))
+		return
+	}
+
+	if err := validateConfigureIdentityRequest(request, true); err != nil {
+		err = errors.Wrap(err, "failed to validate request")
+		logger.Error(err)
+		JSON(w, http.StatusBadRequest, NewErrorResponse(err))
+		return
+	}
+
+	a, err := store.GetStore().GetAppFromSlug(mux.Vars(r)["appSlug"])
+	if err != nil {
+		logger.Error(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	archiveDir, err := ioutil.TempDir("", "kotsadm")
+	if err != nil {
+		err = errors.Wrap(err, "failed to create temp dir")
+		logger.Error(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	defer os.RemoveAll(archiveDir)
+
+	err = store.GetStore().GetAppVersionArchive(a.ID, a.CurrentSequence, archiveDir)
+	if err != nil {
+		err = errors.Wrap(err, "failed to get current app version archive")
+		logger.Error(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(archiveDir)
+	if err != nil {
+		err = errors.Wrap(err, "failed to load kots kinds from path")
+		logger.Error(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	if kotsKinds.Identity == nil {
+		err := errors.New("identity spec not found")
+		logger.Error(err)
+		JSON(w, http.StatusBadRequest, NewErrorResponse(err))
+		return
+	}
+
+	identityConfigFile := filepath.Join(archiveDir, "upstream", "userdata", "identityconfig.yaml")
+	if _, err := os.Stat(identityConfigFile); os.IsNotExist(err) {
+		f, err := kotsadmidentity.InitAppIdentityConfig(a.Slug, kotsv1beta1.Storage{}, crypto.AESCipher{})
+		if err != nil {
+			err = errors.Wrap(err, "failed to init identity config")
+			logger.Error(err)
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		defer os.RemoveAll(f)
+		identityConfigFile = f
+	} else if err != nil {
+		err = errors.Wrap(err, "failed to stat identity config file")
+		logger.Error(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	b, err := ioutil.ReadFile(identityConfigFile)
+	if err != nil {
+		err = errors.Wrap(err, "failed to read identityconfig file")
+		logger.Error(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	s, err := kotsutil.LoadIdentityConfigFromContents(b)
+	if err != nil {
+		err = errors.Wrap(err, "failed to decode identity service config")
+		logger.Error(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	identityConfig := *s
+
+	cipher, err := crypto.AESCipherFromString(kotsKinds.Installation.Spec.EncryptionKey)
+	if err != nil {
+		err = errors.Wrap(err, "failed to load encryption cipher")
+		logger.Error(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	dexConnectors, err := identityConfig.Spec.DexConnectors.GetValue(*cipher)
+	if err != nil {
+		err = errors.Wrap(err, "failed to decrypt dex connectors")
+		logger.Error(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	idpConfigs, err := dexConnectorsToIDPConfigs(dexConnectors)
+	if err != nil {
+		err = errors.Wrap(err, "failed to get idp configs from dex connectors")
+		logger.Error(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	if request.UseAdminConsoleSettings {
+		// existing idpConfigs are used for secret un-redaction
+		// if secrets in the request are not redacted, this won't have any effect
+		// the user has the option to use kotsadm identity config
+		// in that case, secrets should be retrieved from kotsadm identity config not the app identity config
+		namespace := os.Getenv("POD_NAMESPACE")
+
+		kotsadmIdentityConfig, err := identity.GetConfig(r.Context(), namespace)
+		if err != nil {
+			err = errors.Wrap(err, "failed to get kots identity config")
+			logger.Error(err)
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+
+		// NOTE: we do not encrypt kotsadm config
+
+		idpConfigs, err = dexConnectorsToIDPConfigs(kotsadmIdentityConfig.Spec.DexConnectors.Value)
+		if err != nil {
+			err = errors.Wrap(err, "failed to get kotsadm idp configs from dex connectors")
+			logger.Error(err)
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+	}
+
+	connectorInfo, err := getDexConnectorInfo(request, idpConfigs)
+	if err != nil {
+		err = errors.Wrap(err, "failed to get dex connector info")
+		logger.Error(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	// TODO: handle ingress config
+	identityConfig.Spec.Enabled = true
+	identityConfig.Spec.DisablePasswordAuth = true
+	identityConfig.Spec.Groups = request.Groups
+	identityConfig.Spec.DexConnectors = kotsv1beta1.DexConnectors{
+		Value: []kotsv1beta1.DexConnector{
+			{
+				Type: connectorInfo.Type,
+				Name: connectorInfo.Name,
+				ID:   connectorInfo.ID,
+				Config: runtime.RawExtension{
+					Raw: connectorInfo.Config,
+				},
+			},
+		},
+	}
+
+	namespace := os.Getenv("POD_NAMESPACE")
+
+	// TODO: handle configuring ingress for the app?
+	// TODO: validate dex issuer
+	ingressConfig := kotsv1beta1.IngressConfig{}
+	if err := identity.ValidateConnection(r.Context(), namespace, identityConfig, ingressConfig); err != nil {
+		if _, ok := errors.Cause(err).(*identity.ErrorConnection); ok {
+			err = errors.Wrap(err, "invalid connection")
+			logger.Error(err)
+			JSON(w, http.StatusBadRequest, NewErrorResponse(err))
+			return
+		}
+		err = errors.Wrap(err, "failed to validate identity connection")
+		logger.Error(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	kotsKinds.IdentityConfig = &identityConfig
+
+	identityConfigSpec, err := kotsKinds.Marshal("kots.io", "v1beta1", "IdentityConfig")
+	if err != nil {
+		err = errors.Wrap(err, "failed to marshal config values spec")
+		logger.Error(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	if err := ioutil.WriteFile(filepath.Join(archiveDir, "upstream", "userdata", "identityconfig.yaml"), []byte(identityConfigSpec), 0644); err != nil {
+		err = errors.Wrap(err, "failed to write identityconfig.yaml to upstream/userdata")
+		logger.Error(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	registrySettings, err := store.GetStore().GetRegistryDetailsForApp(a.ID)
+	if err != nil {
+		err = errors.Wrap(err, "failed to get registry settings")
+		logger.Error(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	downstreams, err := store.GetStore().ListDownstreamsForApp(a.ID)
+	if err != nil {
+		err = errors.Wrap(err, "failed to list downstreams for app")
+		logger.Error(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	err = render.RenderDir(archiveDir, a, downstreams, registrySettings, reporting.GetReportingInfo(a.ID))
+	if err != nil {
+		err = errors.Wrap(err, "failed to render archive directory")
+		logger.Error(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	newSequence, err := version.CreateVersion(a.ID, archiveDir, "Identity Service", a.CurrentSequence, false)
+	if err != nil {
+		err = errors.Wrap(err, "failed to create an app version")
+		logger.Error(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	if err := preflight.Run(a.ID, a.Slug, newSequence, a.IsAirgap, archiveDir); err != nil {
+		err = errors.Wrap(err, "failed to run preflights")
 		logger.Error(err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
@@ -250,14 +519,14 @@ func getDexConnectorInfo(request ConfigureIdentityServiceRequest, idpConfigs []I
 	return &dexConnectorInfo, nil
 }
 
-func validateConfigureIdentityRequest(request ConfigureIdentityServiceRequest) error {
+func validateConfigureIdentityRequest(request ConfigureIdentityServiceRequest, isAppConfig bool) error {
 	missingFields := []string{}
 
-	if request.AdminConsoleAddress == "" {
+	if !isAppConfig && request.AdminConsoleAddress == "" {
 		missingFields = append(missingFields, "adminConsoleAddress")
 	}
 
-	if request.IdentityServiceAddress == "" {
+	if !isAppConfig && request.IdentityServiceAddress == "" {
 		missingFields = append(missingFields, "identityServiceAddress")
 	}
 
@@ -293,9 +562,11 @@ func validateConfigureIdentityRequest(request ConfigureIdentityServiceRequest) e
 }
 
 type GetIdentityServiceConfigResponse struct {
-	Enabled                bool   `json:"enabled"`
-	AdminConsoleAddress    string `json:"adminConsoleAddress"`
-	IdentityServiceAddress string `json:"identityServiceAddress"`
+	Enabled                bool                              `json:"enabled"`
+	AdminConsoleAddress    string                            `json:"adminConsoleAddress,omitempty"`
+	IdentityServiceAddress string                            `json:"identityServiceAddress,omitempty"`
+	Groups                 []kotsv1beta1.IdentityConfigGroup `json:"groups,omitempty"`
+	Roles                  []kotsv1beta1.IdentityRole        `json:"roles,omitempty"`
 
 	IDPConfig `json:",inline"`
 }
@@ -318,6 +589,8 @@ func GetIdentityServiceConfig(w http.ResponseWriter, r *http.Request) {
 		IdentityServiceAddress: identityConfig.Spec.IdentityServiceAddress,
 	}
 
+	// NOTE: we do not encrypt kotsadm config
+
 	if len(identityConfig.Spec.DexConnectors.Value) == 0 {
 		// no connectors, return default values
 		response.IDPConfig = getDefaultIDPConfig()
@@ -326,6 +599,107 @@ func GetIdentityServiceConfig(w http.ResponseWriter, r *http.Request) {
 	}
 
 	idpConfigs, err := dexConnectorsToIDPConfigs(identityConfig.Spec.DexConnectors.Value)
+	if err != nil {
+		logger.Error(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	for _, idpConfig := range idpConfigs {
+		// redact
+		if idpConfig.OIDCConfig != nil {
+			idpConfig.OIDCConfig.ClientSecret = RedactionMask
+		}
+		if idpConfig.GEOAxISConfig != nil {
+			idpConfig.GEOAxISConfig.ClientSecret = RedactionMask
+		}
+
+		response.IDPConfig = idpConfig
+		// TODO: support for multiple connectors
+		break
+	}
+
+	JSON(w, http.StatusOK, response)
+}
+
+func GetAppIdentityServiceConfig(w http.ResponseWriter, r *http.Request) {
+	a, err := store.GetStore().GetAppFromSlug(mux.Vars(r)["appSlug"])
+	if err != nil {
+		logger.Error(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	archiveDir, err := ioutil.TempDir("", "kotsadm")
+	if err != nil {
+		err = errors.Wrap(err, "failed to create temp dir")
+		logger.Error(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	defer os.RemoveAll(archiveDir)
+
+	err = store.GetStore().GetAppVersionArchive(a.ID, a.CurrentSequence, archiveDir)
+	if err != nil {
+		err = errors.Wrap(err, "failed to get current app version archive")
+		logger.Error(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(archiveDir)
+	if err != nil {
+		err = errors.Wrap(err, "failed to load kotskinds from path")
+		logger.Error(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	if kotsKinds.Identity == nil {
+		err := errors.New("identity spec not found")
+		logger.Error(err)
+		JSON(w, http.StatusBadRequest, NewErrorResponse(err))
+		return
+	}
+
+	response := GetIdentityServiceConfigResponse{
+		Roles: kotsKinds.Identity.Spec.Roles,
+	}
+
+	if kotsKinds.IdentityConfig == nil {
+		// identity service not configured yet
+		JSON(w, http.StatusOK, response)
+		return
+	}
+
+	// TODO: return ingress config
+	response.Enabled = kotsKinds.IdentityConfig.Spec.Enabled
+	response.Groups = kotsKinds.IdentityConfig.Spec.Groups
+
+	cipher, err := crypto.AESCipherFromString(kotsKinds.Installation.Spec.EncryptionKey)
+	if err != nil {
+		err = errors.Wrap(err, "failed to load encryption cipher")
+		logger.Error(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	dexConnectors, err := kotsKinds.IdentityConfig.Spec.DexConnectors.GetValue(*cipher)
+	if err != nil {
+		err = errors.Wrap(err, "failed to decrypt dex connectors")
+		logger.Error(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	if len(dexConnectors) == 0 {
+		// no connectors, return default values
+		response.IDPConfig = getDefaultIDPConfig()
+		JSON(w, http.StatusOK, response)
+		return
+	}
+
+	idpConfigs, err := dexConnectorsToIDPConfigs(dexConnectors)
 	if err != nil {
 		logger.Error(err)
 		w.WriteHeader(http.StatusInternalServerError)
@@ -381,7 +755,6 @@ func getDefaultIDPConfig() IDPConfig {
 
 func getDefaultOIDCConfig(isGeoAxis bool) *oidc.Config {
 	c := oidc.Config{
-		RedirectURI:               "{{OIDCIdentityCallbackURL}}",
 		GetUserInfo:               true,
 		InsecureSkipEmailVerified: false,
 		InsecureEnableGroups:      true,
@@ -417,6 +790,8 @@ func identityOIDCToOIDCConfig(identityOIDC *OIDCConfig, idpConfigs []IDPConfig, 
 		for _, idpConfig := range idpConfigs {
 			if idpConfig.OIDCConfig != nil {
 				c.ClientSecret = idpConfig.OIDCConfig.ClientSecret
+			} else if idpConfig.GEOAxISConfig != nil {
+				c.ClientSecret = idpConfig.GEOAxISConfig.ClientSecret
 			}
 		}
 	}

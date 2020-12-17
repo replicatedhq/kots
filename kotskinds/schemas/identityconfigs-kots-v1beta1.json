@@ -25,6 +25,20 @@
         "caCertPemBase64": {
           "type": "string"
         },
+        "clientID": {
+          "type": "string"
+        },
+        "clientSecret": {
+          "type": "object",
+          "properties": {
+            "value": {
+              "type": "string"
+            },
+            "valueEncrypted": {
+              "type": "string"
+            }
+          }
+        },
         "dexConnectors": {
           "type": "object",
           "properties": {
@@ -53,6 +67,9 @@
                   }
                 }
               }
+            },
+            "valueEncrypted": {
+              "type": "string"
             },
             "valueFrom": {
               "type": "object",
@@ -160,6 +177,45 @@
         },
         "insecureSkipTLSVerify": {
           "type": "boolean"
+        },
+        "storage": {
+          "type": "object",
+          "properties": {
+            "postgresConfig": {
+              "type": "object",
+              "required": [
+                "database",
+                "host",
+                "password",
+                "user"
+              ],
+              "properties": {
+                "database": {
+                  "type": "string"
+                },
+                "host": {
+                  "type": "string"
+                },
+                "password": {
+                  "type": "object",
+                  "properties": {
+                    "value": {
+                      "type": "string"
+                    },
+                    "valueEncrypted": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "port": {
+                  "type": "string"
+                },
+                "user": {
+                  "type": "string"
+                }
+              }
+            }
+          }
         }
       }
     },

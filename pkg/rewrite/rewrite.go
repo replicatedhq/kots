@@ -9,40 +9,47 @@ import (
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	"github.com/replicatedhq/kots/pkg/base"
+	"github.com/replicatedhq/kots/pkg/crypto"
 	"github.com/replicatedhq/kots/pkg/docker/registry"
 	"github.com/replicatedhq/kots/pkg/downstream"
 	"github.com/replicatedhq/kots/pkg/k8sdoc"
+	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/midstream"
 	"github.com/replicatedhq/kots/pkg/upstream"
 	upstreamtypes "github.com/replicatedhq/kots/pkg/upstream/types"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/client-go/kubernetes"
+	"sigs.k8s.io/controller-runtime/pkg/client/config"
 	kustomizetypes "sigs.k8s.io/kustomize/api/types"
 )
 
 type RewriteOptions struct {
-	RootDir           string
-	UpstreamURI       string
-	UpstreamPath      string
-	Downstreams       []string
-	K8sNamespace      string
-	Silent            bool
-	CreateAppDir      bool
-	ExcludeKotsKinds  bool
-	Installation      *kotsv1beta1.Installation
-	License           *kotsv1beta1.License
-	ConfigValues      *kotsv1beta1.ConfigValues
-	ReportWriter      io.Writer
-	CopyImages        bool
-	IsAirgap          bool
-	RegistryEndpoint  string
-	RegistryUsername  string
-	RegistryPassword  string
-	RegistryNamespace string
-	AppSlug           string
-	IsGitOps          bool
-	AppSequence       int64
-	ReportingInfo     *upstreamtypes.ReportingInfo
+	RootDir            string
+	UpstreamURI        string
+	UpstreamPath       string
+	Downstreams        []string
+	K8sNamespace       string
+	Silent             bool
+	CreateAppDir       bool
+	ExcludeKotsKinds   bool
+	Installation       *kotsv1beta1.Installation
+	License            *kotsv1beta1.License
+	ConfigValues       *kotsv1beta1.ConfigValues
+	ReportWriter       io.Writer
+	CopyImages         bool
+	IsAirgap           bool
+	RegistryEndpoint   string
+	RegistryUsername   string
+	RegistryPassword   string
+	RegistryNamespace  string
+	AppSlug            string
+	IsGitOps           bool
+	AppSequence        int64
+	ReportingInfo      *upstreamtypes.ReportingInfo
+	HTTPProxyEnvValue  string
+	HTTPSProxyEnvValue string
+	NoProxyEnvValue    string
 }
 
 func Rewrite(rewriteOptions RewriteOptions) error {
@@ -58,6 +65,16 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 		rewriteOptions.ReportWriter = ioutil.Discard
 	}
 
+	cfg, err := config.GetConfig()
+	if err != nil {
+		return errors.Wrap(err, "failed to get config")
+	}
+
+	clientset, err := kubernetes.NewForConfig(cfg)
+	if err != nil {
+		return errors.Wrap(err, "failed to create clientset")
+	}
+
 	fetchOptions := &upstreamtypes.FetchOptions{
 		RootDir:             rewriteOptions.RootDir,
 		LocalPath:           rewriteOptions.UpstreamPath,
@@ -65,6 +82,8 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 		CurrentVersionLabel: rewriteOptions.Installation.Spec.VersionLabel,
 		EncryptionKey:       rewriteOptions.Installation.Spec.EncryptionKey,
 		License:             rewriteOptions.License,
+		AppSequence:         rewriteOptions.AppSequence,
+		AppSlug:             rewriteOptions.AppSlug,
 		LocalRegistry: upstreamtypes.LocalRegistry{
 			Host:      rewriteOptions.RegistryEndpoint,
 			Namespace: rewriteOptions.RegistryNamespace,
@@ -107,6 +126,7 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 		LocalRegistryPassword:  rewriteOptions.RegistryPassword,
 		ExcludeKotsKinds:       rewriteOptions.ExcludeKotsKinds,
 		Log:                    log,
+		AppSlug:                rewriteOptions.AppSlug,
 		Sequence:               rewriteOptions.AppSequence,
 		IsAirgap:               rewriteOptions.IsAirgap,
 	}
@@ -156,6 +176,18 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 	var pullSecret *corev1.Secret
 	var images []kustomizetypes.Image
 	var objects []k8sdoc.K8sDoc
+
+	identitySpec, err := upstream.LoadIdentity(u.GetUpstreamDir(writeUpstreamOptions))
+	if err != nil {
+		return errors.Wrap(err, "failed to load identity")
+	}
+
+	identityConfig, err := upstream.LoadIdentityConfig(u.GetUpstreamDir(writeUpstreamOptions))
+	if err != nil {
+		return errors.Wrap(err, "failed to load identity config")
+	}
+
+	// TODO (ethan): rewrite dex image?
 
 	if rewriteOptions.CopyImages || rewriteOptions.RegistryEndpoint != "" {
 		// When CopyImages is set, we copy images, rewrite all images, and use registry
@@ -295,17 +327,33 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 	log.ActionWithSpinner("Creating midstream")
 	io.WriteString(rewriteOptions.ReportWriter, "Creating midstream\n")
 
-	m, err := midstream.CreateMidstream(b, images, objects, pullSecret)
+	m, err := midstream.CreateMidstream(b, images, objects, pullSecret, identitySpec, identityConfig)
 	if err != nil {
 		return errors.Wrap(err, "failed to create midstream")
 	}
 	log.FinishSpinner()
 
+	builder, err := base.NewConfigContextTemplateBuidler(u, &renderOptions)
+	if err != nil {
+		return errors.Wrap(err, "failed to create new config context template builder")
+	}
+
+	cipher, err := crypto.AESCipherFromString(rewriteOptions.Installation.Spec.EncryptionKey)
+	if err != nil {
+		return errors.Wrap(err, "failed to create cipher from installation spec")
+	}
+
 	writeMidstreamOptions := midstream.WriteOptions{
-		MidstreamDir: filepath.Join(b.GetOverlaysDir(writeBaseOptions), "midstream"),
-		BaseDir:      u.GetBaseDir(writeUpstreamOptions),
-		AppSlug:      rewriteOptions.AppSlug,
-		IsGitOps:     rewriteOptions.IsGitOps,
+		MidstreamDir:       filepath.Join(b.GetOverlaysDir(writeBaseOptions), "midstream"),
+		BaseDir:            u.GetBaseDir(writeUpstreamOptions),
+		AppSlug:            rewriteOptions.AppSlug,
+		IsGitOps:           rewriteOptions.IsGitOps,
+		IsOpenShift:        k8sutil.IsOpenShift(clientset),
+		Cipher:             *cipher,
+		Builder:            *builder,
+		HTTPProxyEnvValue:  rewriteOptions.HTTPProxyEnvValue,
+		HTTPSProxyEnvValue: rewriteOptions.HTTPSProxyEnvValue,
+		NoProxyEnvValue:    rewriteOptions.NoProxyEnvValue,
 	}
 	if err := m.WriteMidstream(writeMidstreamOptions); err != nil {
 		return errors.Wrap(err, "failed to write midstream")

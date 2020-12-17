@@ -7,7 +7,6 @@ import (
 
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
-	"github.com/replicatedhq/kots/pkg/identity"
 	"github.com/replicatedhq/kots/pkg/ingress"
 	"github.com/replicatedhq/kots/pkg/kotsadm/types"
 	kotsadmversion "github.com/replicatedhq/kots/pkg/kotsadm/version"
@@ -420,9 +419,9 @@ func kotsadmDeployment(deployOptions types.DeployOptions) *appsv1.Deployment {
 									ValueFrom: &corev1.EnvVarSource{
 										SecretKeyRef: &corev1.SecretKeySelector{
 											LocalObjectReference: corev1.LocalObjectReference{
-												Name: identity.PostgresSecretName,
+												Name: "kotsadm-dex-postgres",
 											},
-											Key: "password",
+											Key: "PGPASSWORD",
 										},
 									},
 								},

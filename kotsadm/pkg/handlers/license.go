@@ -42,6 +42,7 @@ type SyncLicenseResponse struct {
 	IsAirgapSupported          bool                  `json:"isAirgapSupported"`
 	IsGitOpsSupported          bool                  `json:"isGitOpsSupported"`
 	IsIdentityServiceSupported bool                  `json:"isIdentityServiceSupported"`
+	IsGeoaxisSupported         bool                  `json:"isGeoaxisSupported"`
 	IsSnapshotSupported        bool                  `json:"isSnapshotSupported"`
 }
 
@@ -56,6 +57,7 @@ type GetLicenseResponse struct {
 	IsAirgapSupported          bool                  `json:"isAirgapSupported"`
 	IsGitOpsSupported          bool                  `json:"isGitOpsSupported"`
 	IsIdentityServiceSupported bool                  `json:"isIdentityServiceSupported"`
+	IsGeoaxisSupported         bool                  `json:"isGeoaxisSupported"`
 	IsSnapshotSupported        bool                  `json:"isSnapshotSupported"`
 }
 
@@ -135,6 +137,7 @@ func SyncLicense(w http.ResponseWriter, r *http.Request) {
 		IsAirgapSupported:          latestLicense.Spec.IsAirgapSupported,
 		IsGitOpsSupported:          latestLicense.Spec.IsGitOpsSupported,
 		IsIdentityServiceSupported: latestLicense.Spec.IsIdentityServiceSupported,
+		IsGeoaxisSupported:         latestLicense.Spec.IsGeoaxisSupported,
 		IsSnapshotSupported:        latestLicense.Spec.IsSnapshotSupported,
 	}
 
@@ -175,6 +178,7 @@ func GetLicense(w http.ResponseWriter, r *http.Request) {
 		IsAirgapSupported:          license.Spec.IsAirgapSupported,
 		IsGitOpsSupported:          license.Spec.IsGitOpsSupported,
 		IsIdentityServiceSupported: license.Spec.IsIdentityServiceSupported,
+		IsGeoaxisSupported:         license.Spec.IsGeoaxisSupported,
 		IsSnapshotSupported:        license.Spec.IsSnapshotSupported,
 	}
 

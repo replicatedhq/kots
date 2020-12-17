@@ -15,7 +15,6 @@ import (
 
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
-	"github.com/replicatedhq/kots/pkg/crypto"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/template"
 	"github.com/replicatedhq/kots/pkg/upstream/types"
@@ -33,63 +32,14 @@ type Document struct {
 }
 
 func renderReplicated(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (*Base, error) {
-	config, configValues, license, err := findConfigAndLicense(u, renderOptions.Log)
-	if err != nil {
-		return nil, err
-	}
-
-	var templateContext map[string]template.ItemValue
-	if configValues != nil {
-		ctx := map[string]template.ItemValue{}
-		for k, v := range configValues.Spec.Values {
-			ctx[k] = template.ItemValue{
-				Value:   v.Value,
-				Default: v.Default,
-			}
-		}
-		templateContext = ctx
-	} else {
-		templateContext = map[string]template.ItemValue{}
-	}
-
-	var cipher *crypto.AESCipher
-	if u.EncryptionKey != "" {
-		c, err := crypto.AESCipherFromString(u.EncryptionKey)
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to create cipher")
-		}
-		cipher = c
-	}
-
 	base := Base{
 		Files: []BaseFile{},
 		Bases: []Base{},
 	}
 
-	configGroups := []kotsv1beta1.ConfigGroup{}
-	if config != nil {
-		configGroups = config.Spec.Groups
-	}
-
-	localRegistry := template.LocalRegistry{
-		Host:      renderOptions.LocalRegistryHost,
-		Namespace: renderOptions.LocalRegistryNamespace,
-		Username:  renderOptions.LocalRegistryUsername,
-		Password:  renderOptions.LocalRegistryPassword,
-	}
-
-	versionInfo := template.VersionInfo{
-		Sequence:     renderOptions.Sequence,
-		Cursor:       u.UpdateCursor,
-		ChannelName:  u.ChannelName,
-		VersionLabel: u.VersionLabel,
-		ReleaseNotes: u.ReleaseNotes,
-		IsAirgap:     renderOptions.IsAirgap,
-	}
-
-	builder, _, err := template.NewBuilder(configGroups, templateContext, localRegistry, cipher, license, &versionInfo)
+	builder, err := NewConfigContextTemplateBuidler(u, renderOptions)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to create config context")
+		return nil, errors.Wrap(err, "failed to create new config context template builder")
 	}
 
 	for _, upstreamFile := range u.Files {
@@ -113,7 +63,7 @@ func renderReplicated(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (
 			upstreamFile.Content = bytes.Join(newContent, []byte("\n---\n"))
 		}
 
-		baseFile, err := upstreamFileToBaseFile(upstreamFile, builder, renderOptions.Log)
+		baseFile, err := upstreamFileToBaseFile(upstreamFile, *builder, renderOptions.Log)
 		if err != nil {
 			return nil, errors.Wrapf(err, "failed to convert upstream file %s to base", upstreamFile.Path)
 		}
@@ -137,7 +87,7 @@ func renderReplicated(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (
 
 	// render helm charts that were specified
 	// we just inject them into u.Files
-	kotsHelmCharts, err := findAllKotsHelmCharts(u.Files, builder, renderOptions.Log)
+	kotsHelmCharts, err := findAllKotsHelmCharts(u.Files, *builder, renderOptions.Log)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to find helm charts")
 	}
@@ -225,7 +175,7 @@ func renderReplicated(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (
 			}
 			u.Files = append(u.Files, upstreamFile)
 
-			baseFile, err := upstreamFileToBaseFile(upstreamFile, builder, renderOptions.Log)
+			baseFile, err := upstreamFileToBaseFile(upstreamFile, *builder, renderOptions.Log)
 			if err != nil {
 				return nil, errors.Wrapf(err, "failed to convert upstream file %s to base", filePath)
 			}
@@ -382,9 +332,10 @@ func tryGetConfigFromFileContent(content []byte, log *logger.Logger) *kotsv1beta
 	return nil
 }
 
-func findConfigAndLicense(u *upstreamtypes.Upstream, log *logger.Logger) (*kotsv1beta1.Config, *kotsv1beta1.ConfigValues, *kotsv1beta1.License, error) {
+func findConfigAndLicense(u *upstreamtypes.Upstream, log *logger.Logger) (*kotsv1beta1.Config, *kotsv1beta1.ConfigValues, *kotsv1beta1.IdentityConfig, *kotsv1beta1.License, error) {
 	var config *kotsv1beta1.Config
 	var values *kotsv1beta1.ConfigValues
+	var identityConfig *kotsv1beta1.IdentityConfig
 	var license *kotsv1beta1.License
 
 	for _, file := range u.Files {
@@ -398,7 +349,7 @@ func findConfigAndLicense(u *upstreamtypes.Upstream, log *logger.Logger) (*kotsv
 		if err != nil {
 			if document.APIVersion == "kots.io/v1beta1" && (document.Kind == "Config" || document.Kind == "License") {
 				errMessage := fmt.Sprintf("Failed to decode %s", file.Path)
-				return nil, nil, nil, errors.Wrap(err, errMessage)
+				return nil, nil, nil, nil, errors.Wrap(err, errMessage)
 			}
 			continue
 		}
@@ -407,12 +358,14 @@ func findConfigAndLicense(u *upstreamtypes.Upstream, log *logger.Logger) (*kotsv
 			config = obj.(*kotsv1beta1.Config)
 		} else if gvk.Group == "kots.io" && gvk.Version == "v1beta1" && gvk.Kind == "ConfigValues" {
 			values = obj.(*kotsv1beta1.ConfigValues)
+		} else if gvk.Group == "kots.io" && gvk.Version == "v1beta1" && gvk.Kind == "IdentityConfig" {
+			identityConfig = obj.(*kotsv1beta1.IdentityConfig)
 		} else if gvk.Group == "kots.io" && gvk.Version == "v1beta1" && gvk.Kind == "License" {
 			license = obj.(*kotsv1beta1.License)
 		}
 	}
 
-	return config, values, license, nil
+	return config, values, identityConfig, license, nil
 }
 
 // findHelmChartArchiveInRelease iterates through all files in the release (upstreamFiles), looking for a helm chart archive

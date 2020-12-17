@@ -18,13 +18,14 @@ import (
 )
 
 type ConfigOptions struct {
-	ConfigSpec        string
-	ConfigValuesSpec  string
-	LicenseSpec       string
-	RegistryHost      string
-	RegistryNamespace string
-	RegistryUser      string
-	RegistryPassword  string
+	ConfigSpec         string
+	ConfigValuesSpec   string
+	LicenseSpec        string
+	IdentityConfigSpec string
+	RegistryHost       string
+	RegistryNamespace  string
+	RegistryUser       string
+	RegistryPassword   string
 }
 
 func IsRequiredItem(item kotsv1beta1.ConfigItem) bool {
@@ -59,7 +60,7 @@ func NeedsConfiguration(opts ConfigOptions) (bool, error) {
 		Password:  opts.RegistryPassword,
 	}
 
-	rendered, err := kotsconfig.TemplateConfig(logger.NewLogger(), opts.ConfigSpec, opts.ConfigValuesSpec, opts.LicenseSpec, localRegistry)
+	rendered, err := kotsconfig.TemplateConfig(logger.NewLogger(), opts.ConfigSpec, opts.ConfigValuesSpec, opts.LicenseSpec, opts.IdentityConfigSpec, localRegistry)
 	if err != nil {
 		return false, errors.Wrap(err, "failed to template config")
 	}

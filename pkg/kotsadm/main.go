@@ -197,7 +197,7 @@ func Deploy(deployOptions types.DeployOptions) error {
 		deployOptions.LimitRange = limitRange
 	}
 
-	deployOptions.IsOpenShift = isOpenshift(clientset)
+	deployOptions.IsOpenShift = k8sutil.IsOpenShift(clientset)
 
 	if airgapPath != "" {
 		deployOptions.AppImagesPushed = true
@@ -447,7 +447,12 @@ func ensureKotsadm(deployOptions types.DeployOptions, clientset *kubernetes.Clie
 			return errors.Wrap(err, "failed to set identity config")
 		}
 
-		if err := identity.Deploy(ctx, clientset, deployOptions.Namespace, identityConfig, ingressConfig, &deployOptions.KotsadmOptions); err != nil {
+		proxyEnv := map[string]string{
+			"HTTP_PROXY":  deployOptions.HTTPProxyEnvValue,
+			"HTTPS_PROXY": deployOptions.HTTPSProxyEnvValue,
+			"NO_PROXY":    deployOptions.NoProxyEnvValue,
+		}
+		if err := identity.Deploy(ctx, clientset, deployOptions.Namespace, identityConfig, ingressConfig, &deployOptions.KotsadmOptions, proxyEnv); err != nil {
 			return errors.Wrap(err, "failed to deploy the identity service")
 		}
 

@@ -112,6 +112,7 @@ type LicenseSpec struct {
 	IsAirgapSupported          bool                        `json:"isAirgapSupported,omitempty"`
 	IsGitOpsSupported          bool                        `json:"isGitOpsSupported,omitempty"`
 	IsIdentityServiceSupported bool                        `json:"isIdentityServiceSupported,omitempty"`
+	IsGeoaxisSupported         bool                        `json:"isGeoaxisSupported,omitempty"`
 	IsSnapshotSupported        bool                        `json:"isSnapshotSupported,omitempty"`
 	Entitlements               map[string]EntitlementField `json:"entitlements,omitempty"`
 }

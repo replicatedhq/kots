@@ -28,9 +28,11 @@ import (
 	"github.com/replicatedhq/kots/kotsadm/pkg/supportbundle"
 	supportbundletypes "github.com/replicatedhq/kots/kotsadm/pkg/supportbundle/types"
 	"github.com/replicatedhq/kots/kotsadm/pkg/version"
+	"github.com/replicatedhq/kots/kotskinds/multitype"
+	identitydeploy "github.com/replicatedhq/kots/pkg/identity/deploy"
+	identitytypes "github.com/replicatedhq/kots/pkg/identity/types"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/midstream"
-
 	velerov1 "github.com/vmware-tanzu/velero/pkg/apis/velero/v1"
 )
 
@@ -206,6 +208,34 @@ func processDeploySocketForApp(clusterSocket *ClusterSocket, a *apptypes.App) er
 		return deployError
 	}
 
+	registrySettings, err := store.GetStore().GetRegistryDetailsForApp(a.ID)
+	if err != nil {
+		return errors.Wrap(err, "failed to get registry settings for app")
+	}
+
+	builder, err := render.NewBuilder(kotsKinds, registrySettings, a.Slug, deployedVersion.Sequence, a.IsAirgap)
+	if err != nil {
+		return errors.Wrap(err, "failed to get template builder")
+	}
+
+	requireIdentityProvider := false
+	if kotsKinds.Identity != nil {
+		if kotsKinds.Identity.Spec.RequireIdentityProvider.Type == multitype.String {
+			requireIdentityProvider, err = builder.Bool(kotsKinds.Identity.Spec.RequireIdentityProvider.StrVal, false)
+			if err != nil {
+				deployError = errors.Wrap(err, "failed to build kotsv1beta1.Identity.spec.requireIdentityProvider")
+				return deployError
+			}
+		} else {
+			requireIdentityProvider = kotsKinds.Identity.Spec.RequireIdentityProvider.BoolVal
+		}
+	}
+
+	if requireIdentityProvider && !identitydeploy.IsEnabled(kotsKinds.Identity, kotsKinds.IdentityConfig) {
+		deployError = errors.New("identity service is required but is not enabled")
+		return deployError
+	}
+
 	cmd := exec.Command(fmt.Sprintf("kustomize%s", kotsKinds.KustomizeVersion()), "build", filepath.Join(deployedVersionArchive, "overlays", "downstreams", d.Name))
 	renderedManifests, err := cmd.Output()
 	if err != nil {
@@ -304,27 +334,29 @@ func processDeploySocketForApp(clusterSocket *ClusterSocket, a *apptypes.App) er
 	clusterSocket.LastDeployedSequences[a.ID] = deployedVersion.ParentSequence
 	socketMtx.Unlock()
 
+	renderedInformers := []string{}
+
 	// deploy status informers
 	if len(kotsKinds.KotsApplication.Spec.StatusInformers) > 0 {
-		registrySettings, err := store.GetStore().GetRegistryDetailsForApp(a.ID)
-		if err != nil {
-			return errors.Wrap(err, "failed to get registry settings for app")
-		}
-
 		// render status informers
-		renderedInformers := []string{}
 		for _, informer := range kotsKinds.KotsApplication.Spec.StatusInformers {
-			renderedInformer, err := render.RenderContent(kotsKinds, registrySettings, deployedVersion.Sequence, a.IsAirgap, []byte(informer))
+			renderedInformer, err := builder.String(informer)
 			if err != nil {
 				logger.Error(errors.Wrap(err, "failed to render status informer"))
 				continue
 			}
-			if len(renderedInformer) == 0 {
+			if renderedInformer == "" {
 				continue
 			}
-			renderedInformers = append(renderedInformers, string(renderedInformer))
+			renderedInformers = append(renderedInformers, renderedInformer)
 		}
+	}
 
+	if identitydeploy.IsEnabled(kotsKinds.Identity, kotsKinds.IdentityConfig) {
+		renderedInformers = append(renderedInformers, fmt.Sprintf("deployment/%s", identitytypes.DeploymentName(a.Slug)))
+	}
+
+	if len(renderedInformers) > 0 {
 		// send to kots operator
 		appInformersArgs := AppInformersArgs{
 			AppID:     a.ID,

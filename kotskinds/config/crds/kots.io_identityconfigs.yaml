@@ -39,6 +39,15 @@ spec:
               type: string
             caCertPemBase64:
               type: string
+            clientID:
+              type: string
+            clientSecret:
+              properties:
+                value:
+                  type: string
+                valueEncrypted:
+                  type: string
+              type: object
             dexConnectors:
               properties:
                 value:
@@ -59,6 +68,8 @@ spec:
                     - type
                     type: object
                   type: array
+                valueEncrypted:
+                  type: string
                 valueFrom:
                   properties:
                     secretKeyRef:
@@ -133,6 +144,32 @@ spec:
               type: object
             insecureSkipTLSVerify:
               type: boolean
+            storage:
+              properties:
+                postgresConfig:
+                  properties:
+                    database:
+                      type: string
+                    host:
+                      type: string
+                    password:
+                      properties:
+                        value:
+                          type: string
+                        valueEncrypted:
+                          type: string
+                      type: object
+                    port:
+                      type: string
+                    user:
+                      type: string
+                  required:
+                  - database
+                  - host
+                  - password
+                  - user
+                  type: object
+              type: object
           required:
           - enabled
           type: object

@@ -9,5 +9,5 @@ data:
     metadata:
       name: app-slug
     spec:
-      title: ""
+      title: "My App"
       icon: https://github.com/cncf/artwork/raw/master/projects/kubernetes/icon/color/kubernetes-icon-color.png

@@ -35,19 +35,34 @@ spec:
           type: object
         spec:
           properties:
-            enableRestrictedGroups:
-              type: boolean
             idTokensExpiration:
+              type: string
+            identityIssuerURL:
               type: string
             oauth2AlwaysShowLoginScreen:
               type: boolean
-            oidcRedirectURLs:
+            oidcRedirectUris:
               items:
                 type: string
               type: array
+            requireIdentityProvider:
+              description: BoolOrString is a type that can hold an bool or a string.  When
+                used in JSON or YAML marshalling and unmarshalling, it produces or
+                consumes the inner type.  This allows you to have, for example, a
+                JSON field that can accept a booolean string or raw bool.
+              type: BoolString
             roles:
               items:
-                type: string
+                properties:
+                  description:
+                    type: string
+                  id:
+                    type: string
+                  name:
+                    type: string
+                required:
+                - id
+                type: object
               type: array
             signingKeysExpiration:
               type: string
@@ -56,7 +71,9 @@ spec:
                 type: string
               type: array
           required:
-          - oidcRedirectURLs
+          - identityIssuerURL
+          - oidcRedirectUris
+          - requireIdentityProvider
           type: object
         status:
           description: IdentityStatus defines the observed state of Identity
