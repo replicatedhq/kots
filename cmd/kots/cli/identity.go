@@ -306,7 +306,8 @@ func identityServiceDeploy(ctx context.Context, log *logger.Logger, clientset ku
 		return errors.Wrap(err, "failed to set identity config")
 	}
 
-	if err := identity.Deploy(ctx, clientset, namespace, identityConfig, ingressConfig, registryConfig, proxyEnv); err != nil {
+	isSingleApp := true // TODO (ethan): make this a flag
+	if err := identity.Deploy(ctx, clientset, namespace, identityConfig, ingressConfig, registryConfig, proxyEnv, isSingleApp); err != nil {
 		return errors.Wrap(err, "failed to deploy the identity service")
 	}
 
@@ -335,7 +336,8 @@ func identityServiceConfigure(ctx context.Context, log *logger.Logger, clientset
 		return errors.Wrap(err, "failed to set identity config")
 	}
 
-	if err := identity.Configure(ctx, clientset, namespace, identityConfig, ingressConfig, proxyEnv); err != nil {
+	isSingleApp := true // TODO (ethan): make this a flag
+	if err := identity.Configure(ctx, clientset, namespace, identityConfig, ingressConfig, proxyEnv, isSingleApp); err != nil {
 		return errors.Wrap(err, "failed to configure identity service")
 	}
 

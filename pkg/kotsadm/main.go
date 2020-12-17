@@ -456,7 +456,10 @@ func ensureKotsadm(deployOptions types.DeployOptions, clientset *kubernetes.Clie
 			"HTTPS_PROXY": deployOptions.HTTPSProxyEnvValue,
 			"NO_PROXY":    deployOptions.NoProxyEnvValue,
 		}
-		if err := identity.Deploy(ctx, clientset, deployOptions.Namespace, identityConfig, ingressConfig, &deployOptions.KotsadmOptions, proxyEnv); err != nil {
+
+		isSingleApp := true // TODO (ethan)
+
+		if err := identity.Deploy(ctx, clientset, deployOptions.Namespace, identityConfig, ingressConfig, &deployOptions.KotsadmOptions, proxyEnv, isSingleApp); err != nil {
 			return errors.Wrap(err, "failed to deploy the identity service")
 		}
 

@@ -96,8 +96,9 @@ func IngressInstallCmd() *cobra.Command {
 
 				proxyEnv := getHttpProxyEnv(v)
 
+				isSingleApp := true // TODO (ethan): make this a flag
 				// we have to update the dex secret if kotsadm ingress is changing because it relies on the redirect uri
-				if err := identity.Configure(cmd.Context(), clientset, namespace, *identityConfig, ingressConfig, proxyEnv); err != nil {
+				if err := identity.Configure(cmd.Context(), clientset, namespace, *identityConfig, ingressConfig, proxyEnv, isSingleApp); err != nil {
 					return errors.Wrap(err, "failed to patch identity service")
 				}
 

@@ -46,6 +46,7 @@ type IdentityWebConfig struct {
 
 type IdentityWebConfigTheme struct {
 	StyleCSSBase64 string `json:"styleCssBase64,omitempty" yaml:"styleCssBase64,omitempty"`
+	LogoURL        string `json:"logoUrl,omitempty" yaml:"logoUrl,omitempty"`
 	LogoBase64     string `json:"logoBase64,omitempty" yaml:"logoBase64,omitempty"`
 	FaviconBase64  string `json:"faviconBase64,omitempty" yaml:"faviconBase64,omitempty"`
 }

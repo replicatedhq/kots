@@ -78,6 +78,8 @@ spec:
                       type: string
                     logoBase64:
                       type: string
+                    logoUrl:
+                      type: string
                     styleCssBase64:
                       type: string
                   type: object
