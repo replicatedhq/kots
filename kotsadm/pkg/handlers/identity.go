@@ -214,14 +214,14 @@ func ConfigureIdentityService(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-	isSingleApp := len(apps) == 1
+	applyAppBranding := len(apps) == 1
 
 	proxyEnv := map[string]string{
 		"HTTP_PROXY":  os.Getenv("HTTP_PROXY"),
 		"HTTPS_PROXY": os.Getenv("HTTPS_PROXY"),
 		"NO_PROXY":    os.Getenv("NO_PROXY"),
 	}
-	if err := identity.Deploy(r.Context(), clientset, namespace, identityConfig, *ingressConfig, &registryOptions, proxyEnv, isSingleApp); err != nil {
+	if err := identity.Deploy(r.Context(), clientset, namespace, identityConfig, *ingressConfig, &registryOptions, proxyEnv, applyAppBranding); err != nil {
 		err = errors.Wrap(err, "failed to deploy the identity service")
 		logger.Error(err)
 		w.WriteHeader(http.StatusInternalServerError)

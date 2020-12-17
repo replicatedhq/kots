@@ -23,12 +23,12 @@ const (
 	KotsadmNamePrefix = "kotsadm"
 )
 
-func Deploy(ctx context.Context, clientset kubernetes.Interface, namespace string, identityConfig kotsv1beta1.IdentityConfig, ingressConfig kotsv1beta1.IngressConfig, registryOptions *kotsadmtypes.KotsadmOptions, proxyEnv map[string]string, isSingleApp bool) error {
+func Deploy(ctx context.Context, clientset kubernetes.Interface, namespace string, identityConfig kotsv1beta1.IdentityConfig, ingressConfig kotsv1beta1.IngressConfig, registryOptions *kotsadmtypes.KotsadmOptions, proxyEnv map[string]string, applyAppBranding bool) error {
 	identityConfig.Spec.ClientID = "kotsadm"
 
 	options := identitydeploy.Options{
 		NamePrefix:         KotsadmNamePrefix,
-		IdentitySpec:       getIdentitySpec(ctx, clientset, namespace, identityConfig.Spec, ingressConfig.Spec, isSingleApp),
+		IdentitySpec:       getIdentitySpec(ctx, clientset, namespace, identityConfig.Spec, ingressConfig.Spec, applyAppBranding),
 		IdentityConfigSpec: identityConfig.Spec,
 		IsOpenShift:        k8sutil.IsOpenShift(clientset),
 		ImageRewriteFn:     imageRewriteKotsadmRegistry(namespace, registryOptions),
@@ -56,12 +56,12 @@ func Deploy(ctx context.Context, clientset kubernetes.Interface, namespace strin
 	return identitydeploy.Deploy(ctx, clientset, namespace, options)
 }
 
-func Configure(ctx context.Context, clientset kubernetes.Interface, namespace string, identityConfig kotsv1beta1.IdentityConfig, ingressConfig kotsv1beta1.IngressConfig, proxyEnv map[string]string, isSingleApp bool) error {
+func Configure(ctx context.Context, clientset kubernetes.Interface, namespace string, identityConfig kotsv1beta1.IdentityConfig, ingressConfig kotsv1beta1.IngressConfig, proxyEnv map[string]string, applyAppBranding bool) error {
 	identityConfig.Spec.ClientID = "kotsadm"
 
 	options := identitydeploy.Options{
 		NamePrefix:         KotsadmNamePrefix,
-		IdentitySpec:       getIdentitySpec(ctx, clientset, namespace, identityConfig.Spec, ingressConfig.Spec, isSingleApp),
+		IdentitySpec:       getIdentitySpec(ctx, clientset, namespace, identityConfig.Spec, ingressConfig.Spec, applyAppBranding),
 		IdentityConfigSpec: identityConfig.Spec,
 		IsOpenShift:        k8sutil.IsOpenShift(clientset),
 		ImageRewriteFn:     nil,
@@ -108,9 +108,9 @@ func imageRewriteKotsadmRegistry(namespace string, registryOptions *kotsadmtypes
 	}
 }
 
-func getIdentitySpec(ctx context.Context, clientset kubernetes.Interface, namespace string, identityConfigSpec kotsv1beta1.IdentityConfigSpec, ingressConfigSpec kotsv1beta1.IngressConfigSpec, isSingleApp bool) kotsv1beta1.IdentitySpec {
+func getIdentitySpec(ctx context.Context, clientset kubernetes.Interface, namespace string, identityConfigSpec kotsv1beta1.IdentityConfigSpec, ingressConfigSpec kotsv1beta1.IngressConfigSpec, applyAppBranding bool) kotsv1beta1.IdentitySpec {
 	// NOTE: when the user adds a second app the branding won't change
-	webConfig, err := getWebConfig(ctx, clientset, namespace, isSingleApp)
+	webConfig, err := getWebConfig(ctx, clientset, namespace, applyAppBranding)
 	if err != nil {
 		log.Printf("Failed to get branding: %v", err)
 	}
