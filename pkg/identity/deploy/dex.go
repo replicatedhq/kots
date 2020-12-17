@@ -35,8 +35,11 @@ func getDexConfig(ctx context.Context, issuerURL string, options Options) ([]byt
 	frontend := dexserver.WebConfig{
 		Issuer: webConfigIssuer,
 	}
-	if identitySpec.WebConfig != nil && identitySpec.WebConfig.Theme != nil {
+	if identitySpec.WebConfig != nil {
 		frontend.Theme = "kots"
+		if identitySpec.WebConfig.Theme != nil {
+			frontend.LogoURL = identitySpec.WebConfig.Theme.LogoURL
+		}
 	}
 
 	config := dextypes.Config{
