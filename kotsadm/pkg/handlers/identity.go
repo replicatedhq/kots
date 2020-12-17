@@ -342,7 +342,7 @@ func ConfigureAppIdentityService(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if request.UseAdminConsoleSettings {
-		// existing idpConfigs are used secret un-redaction
+		// existing idpConfigs are used for secret un-redaction
 		// if secrets in the request are not redacted, this won't have any effect
 		// the user has the option to use kotsadm identity config
 		// in that case, secrets should be retrieved from kotsadm identity config not the app identity config
