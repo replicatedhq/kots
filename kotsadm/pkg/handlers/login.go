@@ -40,13 +40,13 @@ const (
 )
 
 func Login(w http.ResponseWriter, r *http.Request) {
-	ingressConfig, err := identity.GetConfig(r.Context(), os.Getenv("POD_NAMESPACE"))
+	identityConfig, err := identity.GetConfig(r.Context(), os.Getenv("POD_NAMESPACE"))
 	if err != nil {
 		logger.Error(err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-	if ingressConfig.Spec.Enabled && ingressConfig.Spec.DisablePasswordAuth {
+	if identityConfig.Spec.Enabled && identityConfig.Spec.DisablePasswordAuth {
 		err := errors.New("password authentication disabled")
 		JSON(w, http.StatusForbidden, NewErrorResponse(err))
 		return
@@ -369,7 +369,7 @@ func GetLoginInfo(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-	if !identityConfig.Spec.Enabled {
+	if !identityConfig.Spec.Enabled || !identityConfig.Spec.DisablePasswordAuth {
 		getLoginInfoResponse.Method = PasswordAuth
 		JSON(w, http.StatusOK, getLoginInfoResponse)
 		return
