@@ -2,7 +2,6 @@ package identity
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
@@ -50,8 +49,12 @@ func getWebConfig(ctx context.Context, clientset kubernetes.Interface, namespace
 	}
 
 	application := obj.(*kotsv1beta1.Application)
-	webConfig.Theme.LogoURL = application.Spec.Icon
-	webConfig.Title = fmt.Sprintf("%s Admin Console", application.Spec.Title)
+	if application.Spec.Icon != "" {
+		webConfig.Theme.LogoURL = application.Spec.Icon
+	}
+	if application.Spec.Title != "" {
+		webConfig.Title = application.Spec.Title
+	}
 	// TODO: we don't really support base64 here for favicon
 
 	return webConfig, nil
