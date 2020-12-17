@@ -84,7 +84,7 @@ func IdentityServiceInstallCmd() *cobra.Command {
 
 			proxyEnv := getHttpProxyEnv(v)
 
-			return identityServiceDeploy(cmd.Context(), log, clientset, namespace, identityConfig, *ingressConfig, registryConfig, proxyEnv)
+			return identityServiceDeploy(cmd.Context(), log, clientset, namespace, identityConfig, *ingressConfig, registryConfig, proxyEnv, v.GetBool("apply-app-branding"))
 		},
 	}
 
@@ -94,6 +94,7 @@ func IdentityServiceInstallCmd() *cobra.Command {
 	cmd.Flags().String("https-proxy", "", "sets HTTPS_PROXY environment variable in KOTS Identity Service components")
 	cmd.Flags().String("no-proxy", "", "sets NO_PROXY environment variable in KOTS Identity Service components")
 	cmd.Flags().Bool("copy-proxy-env", false, "copy proxy environment variables from current environment into KOTS Identity Service components")
+	cmd.Flags().Bool("apply-app-branding", false, "apply app branding to the identity login screen")
 
 	registryFlags(cmd.Flags())
 
@@ -144,7 +145,7 @@ func IdentityServiceConfigureCmd() *cobra.Command {
 			}
 
 			proxyEnv := getHttpProxyEnv(v)
-			return identityServiceConfigure(cmd.Context(), log, clientset, namespace, identityConfig, *ingressConfig, proxyEnv)
+			return identityServiceConfigure(cmd.Context(), log, clientset, namespace, identityConfig, *ingressConfig, proxyEnv, v.GetBool("apply-app-branding"))
 		},
 	}
 
@@ -153,6 +154,7 @@ func IdentityServiceConfigureCmd() *cobra.Command {
 	cmd.Flags().String("https-proxy", "", "sets HTTPS_PROXY environment variable in KOTS Identity Service components")
 	cmd.Flags().String("no-proxy", "", "sets NO_PROXY environment variable in KOTS Identity Service components")
 	cmd.Flags().Bool("copy-proxy-env", false, "copy proxy environment variables from current environment into KOTS Identity Service components")
+	cmd.Flags().Bool("apply-app-branding", false, "apply app branding to the identity login screen")
 
 	return cmd
 }
@@ -286,7 +288,7 @@ func IdentityServiceOIDCCallbackURLCmd() *cobra.Command {
 	return cmd
 }
 
-func identityServiceDeploy(ctx context.Context, log *logger.Logger, clientset kubernetes.Interface, namespace string, identityConfig kotsv1beta1.IdentityConfig, ingressConfig kotsv1beta1.IngressConfig, registryConfig *kotsadmtypes.KotsadmOptions, proxyEnv map[string]string) error {
+func identityServiceDeploy(ctx context.Context, log *logger.Logger, clientset kubernetes.Interface, namespace string, identityConfig kotsv1beta1.IdentityConfig, ingressConfig kotsv1beta1.IngressConfig, registryConfig *kotsadmtypes.KotsadmOptions, proxyEnv map[string]string, applyAppBranding bool) error {
 	log.ChildActionWithSpinner("Deploying the Identity Service")
 
 	identityConfig.Spec.Enabled = true
@@ -306,7 +308,7 @@ func identityServiceDeploy(ctx context.Context, log *logger.Logger, clientset ku
 		return errors.Wrap(err, "failed to set identity config")
 	}
 
-	if err := identity.Deploy(ctx, clientset, namespace, identityConfig, ingressConfig, registryConfig, proxyEnv); err != nil {
+	if err := identity.Deploy(ctx, clientset, namespace, identityConfig, ingressConfig, registryConfig, proxyEnv, applyAppBranding); err != nil {
 		return errors.Wrap(err, "failed to deploy the identity service")
 	}
 
@@ -315,7 +317,7 @@ func identityServiceDeploy(ctx context.Context, log *logger.Logger, clientset ku
 	return nil
 }
 
-func identityServiceConfigure(ctx context.Context, log *logger.Logger, clientset kubernetes.Interface, namespace string, identityConfig kotsv1beta1.IdentityConfig, ingressConfig kotsv1beta1.IngressConfig, proxyEnv map[string]string) error {
+func identityServiceConfigure(ctx context.Context, log *logger.Logger, clientset kubernetes.Interface, namespace string, identityConfig kotsv1beta1.IdentityConfig, ingressConfig kotsv1beta1.IngressConfig, proxyEnv map[string]string, applyAppBranding bool) error {
 	log.ChildActionWithSpinner("Configuring the Identity Service")
 
 	identityConfig.Spec.Enabled = true
@@ -335,7 +337,7 @@ func identityServiceConfigure(ctx context.Context, log *logger.Logger, clientset
 		return errors.Wrap(err, "failed to set identity config")
 	}
 
-	if err := identity.Configure(ctx, clientset, namespace, identityConfig, ingressConfig, proxyEnv); err != nil {
+	if err := identity.Configure(ctx, clientset, namespace, identityConfig, ingressConfig, proxyEnv, applyAppBranding); err != nil {
 		return errors.Wrap(err, "failed to configure identity service")
 	}
 

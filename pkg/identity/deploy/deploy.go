@@ -56,6 +56,9 @@ func Deploy(ctx context.Context, clientset kubernetes.Interface, namespace strin
 	if err := ensureSecret(ctx, clientset, namespace, dexConfig, options); err != nil {
 		return errors.Wrap(err, "failed to ensure secret")
 	}
+	if err := ensureDexThemeConfigMap(ctx, clientset, namespace, options); err != nil {
+		return errors.Wrap(err, "failed to ensure dex theme config map")
+	}
 	if err := ensureDeployment(ctx, clientset, namespace, issuerURL, dexConfig, options); err != nil {
 		return errors.Wrap(err, "failed to ensure deployment")
 	}
@@ -202,8 +205,6 @@ var (
 )
 
 func deploymentResource(issuerURL, configChecksum string, options Options) (*appsv1.Deployment, error) {
-	volume := configSecretVolume(options.NamePrefix)
-
 	image := "quay.io/dexidp/dex:v2.26.0"
 	imagePullSecrets := []corev1.LocalObjectReference{}
 	if options.ImageRewriteFn != nil {
@@ -232,6 +233,9 @@ func deploymentResource(issuerURL, configChecksum string, options Options) (*app
 	for name, val := range options.ProxyEnv {
 		env = append(env, corev1.EnvVar{Name: name, Value: val})
 	}
+
+	secretVolume := configSecretVolume(options.NamePrefix)
+	themeVolume := dexThemeVolume(options.NamePrefix)
 
 	return &appsv1.Deployment{
 		TypeMeta: metav1.TypeMeta{
@@ -292,7 +296,8 @@ func deploymentResource(issuerURL, configChecksum string, options Options) (*app
 							EnvFrom: []corev1.EnvFromSource{postgresSecretEnvFromSource(options.NamePrefix)},
 							Env:     env,
 							VolumeMounts: []corev1.VolumeMount{
-								{Name: volume.Name, MountPath: "/etc/dex/cfg"},
+								{Name: secretVolume.Name, MountPath: "/etc/dex/cfg"},
+								{Name: themeVolume.Name, MountPath: "/web/themes/kots"},
 							},
 							Resources: corev1.ResourceRequirements{
 								// Limits: corev1.ResourceList{
@@ -325,7 +330,8 @@ func deploymentResource(issuerURL, configChecksum string, options Options) (*app
 						},
 					},
 					Volumes: []corev1.Volume{
-						volume,
+						secretVolume,
+						themeVolume,
 					},
 				},
 			},
@@ -339,6 +345,19 @@ func configSecretVolume(namePrefix string) corev1.Volume {
 		VolumeSource: corev1.VolumeSource{
 			Secret: &corev1.SecretVolumeSource{
 				SecretName: prefixName(namePrefix, "dex"),
+			},
+		},
+	}
+}
+
+func dexThemeVolume(namePrefix string) corev1.Volume {
+	return corev1.Volume{
+		Name: "theme",
+		VolumeSource: corev1.VolumeSource{
+			ConfigMap: &corev1.ConfigMapVolumeSource{
+				LocalObjectReference: corev1.LocalObjectReference{
+					Name: prefixName(namePrefix, "dex-theme"),
+				},
 			},
 		},
 	}
