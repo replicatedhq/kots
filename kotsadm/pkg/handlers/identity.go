@@ -424,7 +424,7 @@ func ConfigureAppIdentityService(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	newSequence, err := version.CreateVersion(a.ID, archiveDir, "Config Change", a.CurrentSequence, false)
+	newSequence, err := version.CreateVersion(a.ID, archiveDir, "Identity Service", a.CurrentSequence, false)
 	if err != nil {
 		err = errors.Wrap(err, "failed to create an app version")
 		logger.Error(err)
