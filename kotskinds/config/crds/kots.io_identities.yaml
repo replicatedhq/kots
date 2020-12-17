@@ -37,6 +37,8 @@ spec:
           properties:
             idTokensExpiration:
               type: string
+            identityIssuerURL:
+              type: string
             oauth2AlwaysShowLoginScreen:
               type: boolean
             oidcRedirectUris:
@@ -69,6 +71,7 @@ spec:
                 type: string
               type: array
           required:
+          - identityIssuerURL
           - oidcRedirectUris
           - requireIdentityProvider
           type: object

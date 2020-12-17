@@ -16,11 +16,15 @@
     "spec": {
       "type": "object",
       "required": [
+        "identityIssuerURL",
         "oidcRedirectUris",
         "requireIdentityProvider"
       ],
       "properties": {
         "idTokensExpiration": {
+          "type": "string"
+        },
+        "identityIssuerURL": {
           "type": "string"
         },
         "oauth2AlwaysShowLoginScreen": {

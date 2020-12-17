@@ -1,14 +1,12 @@
 package template
 
 import (
-	"fmt"
 	"strconv"
 	"text/template"
 
 	"github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	"github.com/replicatedhq/kots/pkg/crypto"
 	identitytypes "github.com/replicatedhq/kots/pkg/identity/types"
-	"github.com/replicatedhq/kots/pkg/ingress"
 )
 
 type identityCtx struct {
@@ -29,7 +27,6 @@ func newIdentityCtx(identityConfig *v1beta1.IdentityConfig, appInfo *Application
 func (ctx identityCtx) FuncMap() template.FuncMap {
 	return template.FuncMap{
 		"IdentityServiceEnabled":      ctx.identityServiceEnabled,
-		"IdentityServiceIssuerURL":    ctx.identityServiceIssuerURL,
 		"IdentityServiceClientID":     ctx.identityServiceClientID,
 		"IdentityServiceClientSecret": ctx.identityServiceClientSecret,
 		"IdentityServiceRoles":        ctx.identityServiceRoles,
@@ -43,16 +40,6 @@ func (ctx identityCtx) identityServiceEnabled() bool {
 		return false
 	}
 	return ctx.identityConfig.Spec.Enabled
-}
-
-func (ctx identityCtx) identityServiceIssuerURL() string {
-	if ctx.identityConfig == nil {
-		return ""
-	}
-	if ctx.identityConfig.Spec.IdentityServiceAddress != "" {
-		return ctx.identityConfig.Spec.IdentityServiceAddress
-	}
-	return fmt.Sprintf("%s/dex", ingress.GetAddress(ctx.identityConfig.Spec.IngressConfig))
 }
 
 func (ctx identityCtx) identityServiceClientID() string {

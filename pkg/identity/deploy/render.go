@@ -12,7 +12,12 @@ import (
 )
 
 func Render(ctx context.Context, options Options) (map[string][]byte, error) {
-	dexConfig, err := getDexConfig(ctx, options)
+	issuerURL, err := dexIssuerURL(options.IdentitySpec, options.Builder)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get dex issuer url")
+	}
+
+	dexConfig, err := getDexConfig(ctx, issuerURL, options)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get dex config")
 	}
@@ -30,7 +35,7 @@ func Render(ctx context.Context, options Options) (map[string][]byte, error) {
 	}
 	resources["secret.yaml"] = buf.Bytes()
 
-	deployment, err := deploymentResource(dexIssuerURL(options.IdentityConfigSpec), configChecksum, options)
+	deployment, err := deploymentResource(issuerURL, configChecksum, options)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get deployment resource")
 	}
