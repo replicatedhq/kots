@@ -12,7 +12,6 @@ import (
 	"github.com/dexidp/dex/connector/oidc"
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
-	"github.com/replicatedhq/kots/kotsadm/pkg/downstream"
 	kotsadmidentity "github.com/replicatedhq/kots/kotsadm/pkg/identity"
 	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
 	"github.com/replicatedhq/kots/kotsadm/pkg/preflight"
@@ -427,13 +426,6 @@ func ConfigureAppIdentityService(w http.ResponseWriter, r *http.Request) {
 	newSequence, err := version.CreateVersion(a.ID, archiveDir, "Identity Service", a.CurrentSequence, false)
 	if err != nil {
 		err = errors.Wrap(err, "failed to create an app version")
-		logger.Error(err)
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-
-	if err := downstream.SetDownstreamVersionPendingPreflight(a.ID, newSequence); err != nil {
-		err = errors.Wrap(err, "failed to set downstream status to 'pending preflight'")
 		logger.Error(err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
