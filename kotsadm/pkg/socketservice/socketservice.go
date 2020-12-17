@@ -219,14 +219,16 @@ func processDeploySocketForApp(clusterSocket *ClusterSocket, a *apptypes.App) er
 	}
 
 	requireIdentityProvider := false
-	if kotsKinds.Identity.Spec.RequireIdentityProvider.Type == multitype.String {
-		requireIdentityProvider, err = builder.Bool(kotsKinds.Identity.Spec.RequireIdentityProvider.StrVal, false)
-		if err != nil {
-			deployError = errors.Wrap(err, "failed to build kotsv1beta1.Identity.spec.requireIdentityProvider")
-			return deployError
+	if kotsKinds.Identity != nil {
+		if kotsKinds.Identity.Spec.RequireIdentityProvider.Type == multitype.String {
+			requireIdentityProvider, err = builder.Bool(kotsKinds.Identity.Spec.RequireIdentityProvider.StrVal, false)
+			if err != nil {
+				deployError = errors.Wrap(err, "failed to build kotsv1beta1.Identity.spec.requireIdentityProvider")
+				return deployError
+			}
+		} else {
+			requireIdentityProvider = kotsKinds.Identity.Spec.RequireIdentityProvider.BoolVal
 		}
-	} else {
-		requireIdentityProvider = kotsKinds.Identity.Spec.RequireIdentityProvider.BoolVal
 	}
 
 	if requireIdentityProvider && !identitydeploy.IsEnabled(kotsKinds.Identity, kotsKinds.IdentityConfig) {
