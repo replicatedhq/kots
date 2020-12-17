@@ -7,6 +7,7 @@ import (
 
 	"github.com/dexidp/dex/connector/oidc"
 	"github.com/dexidp/dex/server"
+	dexserver "github.com/dexidp/dex/server"
 	dexstorage "github.com/dexidp/dex/storage"
 	ghodssyaml "github.com/ghodss/yaml"
 	"github.com/pkg/errors"
@@ -26,6 +27,18 @@ func getDexConfig(ctx context.Context, issuerURL string, options Options) ([]byt
 		return nil, errors.Wrap(err, "failed to build identity spec oicd redirect uris")
 	}
 
+	webConfigIssuer := options.NamePrefix
+	if identitySpec.WebConfig != nil && identitySpec.WebConfig.Title != "" {
+		webConfigIssuer = identitySpec.WebConfig.Title
+	}
+
+	frontend := dexserver.WebConfig{
+		Issuer: webConfigIssuer,
+	}
+	if identitySpec.WebConfig != nil && identitySpec.WebConfig.Theme != nil {
+		frontend.Theme = "kots"
+	}
+
 	config := dextypes.Config{
 		Issuer: issuerURL,
 		Storage: dextypes.Storage{
@@ -39,9 +52,7 @@ func getDexConfig(ctx context.Context, issuerURL string, options Options) ([]byt
 		Web: dextypes.Web{
 			HTTP: "0.0.0.0:5556",
 		},
-		Frontend: server.WebConfig{
-			Issuer: "KOTS",
-		},
+		Frontend: frontend,
 		OAuth2: dextypes.OAuth2{
 			SkipApprovalScreen:    true,
 			AlwaysShowLoginScreen: identitySpec.OAUTH2AlwaysShowLoginScreen,
