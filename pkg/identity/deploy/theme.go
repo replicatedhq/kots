@@ -99,3 +99,11 @@ func updateDexThemeConfigMap(existingConfigMap, desiredConfigMap *corev1.ConfigM
 
 	return existingConfigMap
 }
+
+func deleteDexThemeConfigMap(ctx context.Context, clientset kubernetes.Interface, namespace, namePrefix string) error {
+	err := clientset.CoreV1().ConfigMaps(namespace).Delete(ctx, prefixName(namePrefix, "dex-theme"), metav1.DeleteOptions{})
+	if kuberneteserrors.IsNotFound(err) {
+		return nil
+	}
+	return err
+}
