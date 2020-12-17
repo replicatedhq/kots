@@ -17,8 +17,8 @@ import (
 	"k8s.io/client-go/kubernetes/scheme"
 )
 
-func EnsurePostgresSecret(ctx context.Context, clientset kubernetes.Interface, namespace, namePrefix string, cipher *crypto.AESCipher, config kotsv1beta.IdentityPostgresConfig) error {
-	secret, err := postgresSecretResource(namePrefix, cipher, config)
+func EnsurePostgresSecret(ctx context.Context, clientset kubernetes.Interface, namespace, namePrefix string, cipher *crypto.AESCipher, config kotsv1beta.IdentityPostgresConfig, additionalLabels map[string]string) error {
+	secret, err := postgresSecretResource(namePrefix, cipher, config, additionalLabels)
 	if err != nil {
 		return err
 	}
@@ -47,10 +47,10 @@ func EnsurePostgresSecret(ctx context.Context, clientset kubernetes.Interface, n
 	return nil
 }
 
-func RenderPostgresSecret(ctx context.Context, namePrefix string, cipher *crypto.AESCipher, config kotsv1beta.IdentityPostgresConfig) ([]byte, error) {
+func RenderPostgresSecret(ctx context.Context, namePrefix string, cipher *crypto.AESCipher, config kotsv1beta.IdentityPostgresConfig, additionalLabels map[string]string) ([]byte, error) {
 	s := serializer.NewYAMLSerializer(serializer.DefaultMetaFactory, scheme.Scheme, scheme.Scheme)
 
-	secret, err := postgresSecretResource(namePrefix, cipher, config)
+	secret, err := postgresSecretResource(namePrefix, cipher, config, additionalLabels)
 	if err != nil {
 		return nil, err
 	}
@@ -67,7 +67,7 @@ func GetPostgresSecret(ctx context.Context, clientset kubernetes.Interface, name
 	return clientset.CoreV1().Secrets(namespace).Get(ctx, prefixName(namePrefix, "dex-postgres"), metav1.GetOptions{})
 }
 
-func postgresSecretResource(namePrefix string, cipher *crypto.AESCipher, config kotsv1beta.IdentityPostgresConfig) (*corev1.Secret, error) {
+func postgresSecretResource(namePrefix string, cipher *crypto.AESCipher, config kotsv1beta.IdentityPostgresConfig, additionalLabels map[string]string) (*corev1.Secret, error) {
 	password := ""
 	if config.Password != nil {
 		// NOTE: we do not encrypt kotsadm config
@@ -102,7 +102,7 @@ func postgresSecretResource(namePrefix string, cipher *crypto.AESCipher, config 
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:   prefixName(namePrefix, "dex-postgres"),
-			Labels: kotsadmtypes.GetKotsadmLabels(AdditionalLabels(namePrefix)),
+			Labels: kotsadmtypes.GetKotsadmLabels(AdditionalLabels(namePrefix, additionalLabels)),
 		},
 		Data: data,
 	}, nil
