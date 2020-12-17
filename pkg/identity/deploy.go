@@ -108,7 +108,8 @@ func imageRewriteKotsadmRegistry(namespace string, registryOptions *kotsadmtypes
 
 func getIdentitySpec(identityConfigSpec kotsv1beta1.IdentityConfigSpec, ingressConfigSpec kotsv1beta1.IngressConfigSpec) kotsv1beta1.IdentitySpec {
 	return kotsv1beta1.IdentitySpec{
-		OIDCRedirectURIs: []string{getRedirectURI(identityConfigSpec, ingressConfigSpec)},
+		IdentityIssuerURL: DexIssuerURL(identityConfigSpec),
+		OIDCRedirectURIs:  []string{getRedirectURI(identityConfigSpec, ingressConfigSpec)},
 	}
 }
 

@@ -22,6 +22,7 @@ import (
 )
 
 type IdentitySpec struct {
+	IdentityIssuerURL           string                 `json:"identityIssuerURL" yaml:"identityIssuerURL"`
 	OIDCRedirectURIs            []string               `json:"oidcRedirectUris" yaml:"oidcRedirectUris"`
 	OAUTH2AlwaysShowLoginScreen bool                   `json:"oauth2AlwaysShowLoginScreen,omitempty" yaml:"oauth2AlwaysShowLoginScreen,omitempty"`
 	SigningKeysExpiration       string                 `json:"signingKeysExpiration,omitempty" yaml:"signingKeysExpiration,omitempty"`

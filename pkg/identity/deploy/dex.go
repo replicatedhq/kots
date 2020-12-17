@@ -12,11 +12,10 @@ import (
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	dextypes "github.com/replicatedhq/kots/pkg/identity/types/dex"
-	"github.com/replicatedhq/kots/pkg/ingress"
 	"github.com/replicatedhq/kots/pkg/template"
 )
 
-func getDexConfig(ctx context.Context, options Options) ([]byte, error) {
+func getDexConfig(ctx context.Context, issuerURL string, options Options) ([]byte, error) {
 	identitySpec := options.IdentitySpec
 	identityConfigSpec := options.IdentityConfigSpec
 	builder := options.Builder
@@ -28,7 +27,7 @@ func getDexConfig(ctx context.Context, options Options) ([]byte, error) {
 	}
 
 	config := dextypes.Config{
-		Issuer: dexIssuerURL(identityConfigSpec),
+		Issuer: issuerURL,
 		Storage: dextypes.Storage{
 			Type: "postgres",
 			Config: dextypes.Postgres{
@@ -91,7 +90,7 @@ func getDexConfig(ctx context.Context, options Options) ([]byte, error) {
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to unmarshal dex connectors")
 		}
-		config.StaticConnectors = dexConfigReplaceDynamicValues(dexConnectors, identityConfigSpec)
+		config.StaticConnectors = dexConfigReplaceDynamicValues(issuerURL, dexConnectors)
 	}
 
 	if err := config.Validate(); err != nil {
@@ -106,12 +105,12 @@ func getDexConfig(ctx context.Context, options Options) ([]byte, error) {
 	return marshalledConfig, nil
 }
 
-func dexConfigReplaceDynamicValues(connectors []dextypes.Connector, identityConfigSpec kotsv1beta1.IdentityConfigSpec) []dextypes.Connector {
+func dexConfigReplaceDynamicValues(issuerURL string, connectors []dextypes.Connector) []dextypes.Connector {
 	next := make([]dextypes.Connector, len(connectors))
 	for i, connector := range connectors {
 		switch c := connector.Config.(type) {
 		case *oidc.Config:
-			c.RedirectURI = dexCallbackURL(identityConfigSpec)
+			c.RedirectURI = dexCallbackURL(issuerURL)
 		}
 		next[i] = connector
 	}
@@ -143,15 +142,16 @@ func DexConnectorsToDexTypeConnectors(conns []kotsv1beta1.DexConnector) ([]dexty
 	return dexConnectors, nil
 }
 
-func dexIssuerURL(identityConfigSpec kotsv1beta1.IdentityConfigSpec) string {
-	if identityConfigSpec.IdentityServiceAddress != "" {
-		return identityConfigSpec.IdentityServiceAddress
+func dexIssuerURL(identitySpec kotsv1beta1.IdentitySpec, builder *template.Builder) (string, error) {
+	// TODO: ingress
+	if builder == nil {
+		return identitySpec.IdentityIssuerURL, nil
 	}
-	return fmt.Sprintf("%s/dex", ingress.GetAddress(identityConfigSpec.IngressConfig))
+	return builder.String(identitySpec.IdentityIssuerURL)
 }
 
-func dexCallbackURL(identityConfigSpec kotsv1beta1.IdentityConfigSpec) string {
-	return fmt.Sprintf("%s/callback", dexIssuerURL(identityConfigSpec))
+func dexCallbackURL(issuerURL string) string {
+	return fmt.Sprintf("%s/callback", issuerURL)
 }
 
 func buildIdentitySpecOIDCRedirectURIs(uris []string, builder *template.Builder) ([]string, error) {

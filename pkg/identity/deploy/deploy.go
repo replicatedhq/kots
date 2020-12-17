@@ -44,14 +44,18 @@ type Options struct {
 }
 
 func Deploy(ctx context.Context, clientset kubernetes.Interface, namespace string, options Options) error {
-	dexConfig, err := getDexConfig(ctx, options)
+	issuerURL, err := dexIssuerURL(options.IdentitySpec, options.Builder)
+	if err != nil {
+		return errors.Wrap(err, "failed to get dex issuer url")
+	}
+	dexConfig, err := getDexConfig(ctx, issuerURL, options)
 	if err != nil {
 		return errors.Wrap(err, "failed to get dex config")
 	}
 	if err := ensureSecret(ctx, clientset, namespace, options.NamePrefix, dexConfig); err != nil {
 		return errors.Wrap(err, "failed to ensure secret")
 	}
-	if err := ensureDeployment(ctx, clientset, namespace, dexConfig, options); err != nil {
+	if err := ensureDeployment(ctx, clientset, namespace, issuerURL, dexConfig, options); err != nil {
 		return errors.Wrap(err, "failed to ensure deployment")
 	}
 	if err := ensureService(ctx, clientset, namespace, options.NamePrefix, options.IdentityConfigSpec.IngressConfig); err != nil {
@@ -64,14 +68,18 @@ func Deploy(ctx context.Context, clientset kubernetes.Interface, namespace strin
 }
 
 func Configure(ctx context.Context, clientset kubernetes.Interface, namespace string, options Options) error {
-	dexConfig, err := getDexConfig(ctx, options)
+	issuerURL, err := dexIssuerURL(options.IdentitySpec, options.Builder)
+	if err != nil {
+		return errors.Wrap(err, "failed to get dex issuer url")
+	}
+	dexConfig, err := getDexConfig(ctx, issuerURL, options)
 	if err != nil {
 		return errors.Wrap(err, "failed to get dex config")
 	}
 	if err := ensureSecret(ctx, clientset, namespace, options.NamePrefix, dexConfig); err != nil {
 		return errors.Wrap(err, "failed to ensure secret")
 	}
-	if err := patchDeploymentSecret(ctx, clientset, namespace, dexConfig, options); err != nil {
+	if err := patchDeploymentSecret(ctx, clientset, namespace, issuerURL, dexConfig, options); err != nil {
 		return errors.Wrap(err, "failed to patch deployment secret")
 	}
 	return nil
@@ -131,10 +139,8 @@ func updateSecret(existingSecret, desiredSecret *corev1.Secret) *corev1.Secret {
 	return existingSecret
 }
 
-func ensureDeployment(ctx context.Context, clientset kubernetes.Interface, namespace string, marshalledDexConfig []byte, options Options) error {
+func ensureDeployment(ctx context.Context, clientset kubernetes.Interface, namespace string, issuerURL string, marshalledDexConfig []byte, options Options) error {
 	configChecksum := fmt.Sprintf("%x", md5.Sum(marshalledDexConfig))
-
-	issuerURL := dexIssuerURL(options.IdentityConfigSpec)
 
 	deployment, err := deploymentResource(issuerURL, configChecksum, options)
 	if err != nil {
@@ -165,10 +171,8 @@ func ensureDeployment(ctx context.Context, clientset kubernetes.Interface, names
 	return nil
 }
 
-func patchDeploymentSecret(ctx context.Context, clientset kubernetes.Interface, namespace string, marshalledDexConfig []byte, options Options) error {
+func patchDeploymentSecret(ctx context.Context, clientset kubernetes.Interface, namespace string, issuerURL string, marshalledDexConfig []byte, options Options) error {
 	configChecksum := fmt.Sprintf("%x", md5.Sum(marshalledDexConfig))
-
-	issuerURL := dexIssuerURL(options.IdentityConfigSpec)
 
 	deployment, err := deploymentResource(issuerURL, configChecksum, options)
 	if err != nil {
