@@ -19,12 +19,9 @@ import (
 	"github.com/replicatedhq/kots/kotsadm/pkg/supportbundle"
 	"github.com/replicatedhq/kots/kotsadm/pkg/updatechecker"
 	"github.com/replicatedhq/kots/kotsadm/pkg/version"
-	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/pull"
 	"go.uber.org/zap"
-	"k8s.io/client-go/kubernetes"
-	"sigs.k8s.io/controller-runtime/pkg/client/config"
 )
 
 func CreateAppFromOnline(pendingApp *types.PendingApp, upstreamURI string, isAutomated bool, skipPreflights bool) (_ *kotsutil.KotsKinds, finalError error) {
@@ -70,16 +67,6 @@ func CreateAppFromOnline(pendingApp *types.PendingApp, upstreamURI string, isAut
 			}
 		}
 	}()
-
-	cfg, err := config.GetConfig()
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to get config")
-	}
-
-	clientset, err := kubernetes.NewForConfig(cfg)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to create clientset")
-	}
 
 	pipeReader, pipeWriter := io.Pipe()
 	go func() {
@@ -156,7 +143,6 @@ func CreateAppFromOnline(pendingApp *types.PendingApp, upstreamURI string, isAut
 		AppSlug:             pendingApp.Slug,
 		AppSequence:         0,
 		ReportingInfo:       reporting.GetReportingInfo(pendingApp.ID),
-		IsOpenShift:         k8sutil.IsOpenShift(clientset),
 	}
 
 	if _, err := pull.Pull(upstreamURI, pullOptions); err != nil {

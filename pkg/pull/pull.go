@@ -19,6 +19,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/docker/registry"
 	"github.com/replicatedhq/kots/pkg/downstream"
 	"github.com/replicatedhq/kots/pkg/k8sdoc"
+	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/midstream"
@@ -27,7 +28,9 @@ import (
 	"github.com/replicatedhq/kots/pkg/util"
 	corev1 "k8s.io/api/core/v1"
 	k8sjson "k8s.io/apimachinery/pkg/runtime/serializer/json"
+	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/scheme"
+	"sigs.k8s.io/controller-runtime/pkg/client/config"
 	kustomizetypes "sigs.k8s.io/kustomize/api/types"
 )
 
@@ -57,7 +60,6 @@ type PullOptions struct {
 	AppSlug                string
 	AppSequence            int64
 	IsGitOps               bool
-	IsOpenShift            bool
 	HTTPProxyEnvValue      string
 	HTTPSProxyEnvValue     string
 	NoProxyEnvValue        string
@@ -107,6 +109,16 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 
 	if pullOptions.ReportWriter == nil {
 		pullOptions.ReportWriter = ioutil.Discard
+	}
+
+	cfg, err := config.GetConfig()
+	if err != nil {
+		return "", errors.Wrap(err, "failed to get config")
+	}
+
+	clientset, err := kubernetes.NewForConfig(cfg)
+	if err != nil {
+		return "", errors.Wrap(err, "failed to create clientset")
 	}
 
 	uri, err := url.ParseRequestURI(upstreamURI)
@@ -550,7 +562,7 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 		BaseDir:      u.GetBaseDir(writeUpstreamOptions),
 		AppSlug:      pullOptions.AppSlug,
 		IsGitOps:     pullOptions.IsGitOps,
-		IsOpenShift:  pullOptions.IsOpenShift,
+		IsOpenShift:  k8sutil.IsOpenShift(clientset),
 		Cipher:       *cipher,
 		Builder:      *builder,
 	}

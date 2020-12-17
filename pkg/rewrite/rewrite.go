@@ -13,11 +13,14 @@ import (
 	"github.com/replicatedhq/kots/pkg/docker/registry"
 	"github.com/replicatedhq/kots/pkg/downstream"
 	"github.com/replicatedhq/kots/pkg/k8sdoc"
+	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/midstream"
 	"github.com/replicatedhq/kots/pkg/upstream"
 	upstreamtypes "github.com/replicatedhq/kots/pkg/upstream/types"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/client-go/kubernetes"
+	"sigs.k8s.io/controller-runtime/pkg/client/config"
 	kustomizetypes "sigs.k8s.io/kustomize/api/types"
 )
 
@@ -42,7 +45,6 @@ type RewriteOptions struct {
 	RegistryNamespace string
 	AppSlug           string
 	IsGitOps          bool
-	IsOpenShift       bool
 	AppSequence       int64
 	ReportingInfo     *upstreamtypes.ReportingInfo
 }
@@ -58,6 +60,16 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 
 	if rewriteOptions.ReportWriter == nil {
 		rewriteOptions.ReportWriter = ioutil.Discard
+	}
+
+	cfg, err := config.GetConfig()
+	if err != nil {
+		return errors.Wrap(err, "failed to get config")
+	}
+
+	clientset, err := kubernetes.NewForConfig(cfg)
+	if err != nil {
+		return errors.Wrap(err, "failed to create clientset")
 	}
 
 	fetchOptions := &upstreamtypes.FetchOptions{
@@ -333,7 +345,7 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 		BaseDir:      u.GetBaseDir(writeUpstreamOptions),
 		AppSlug:      rewriteOptions.AppSlug,
 		IsGitOps:     rewriteOptions.IsGitOps,
-		IsOpenShift:  rewriteOptions.IsOpenShift,
+		IsOpenShift:  k8sutil.IsOpenShift(clientset),
 		Cipher:       *cipher,
 		Builder:      *builder,
 	}

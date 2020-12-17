@@ -19,12 +19,9 @@ import (
 	"github.com/replicatedhq/kots/kotsadm/pkg/version"
 	"github.com/replicatedhq/kots/pkg/crypto"
 	"github.com/replicatedhq/kots/pkg/cursor"
-	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/pull"
 	"github.com/replicatedhq/kots/pkg/util"
-	"k8s.io/client-go/kubernetes"
-	"sigs.k8s.io/controller-runtime/pkg/client/config"
 )
 
 func UpdateAppFromAirgap(a *apptypes.App, airgapBundlePath string, deploy bool, skipPreflights bool) (finalError error) {
@@ -72,16 +69,6 @@ func UpdateAppFromAirgap(a *apptypes.App, airgapBundlePath string, deploy bool, 
 func UpdateAppFromPath(a *apptypes.App, airgapRoot string, deploy bool, skipPreflights bool) error {
 	if err := store.GetStore().SetTaskStatus("update-download", "Processing package...", "running"); err != nil {
 		return errors.Wrap(err, "failed to set tasks status")
-	}
-
-	cfg, err := config.GetConfig()
-	if err != nil {
-		return errors.Wrap(err, "failed to get config")
-	}
-
-	clientset, err := kubernetes.NewForConfig(cfg)
-	if err != nil {
-		return errors.Wrap(err, "failed to create clientset")
 	}
 
 	registrySettings, err := store.GetStore().GetRegistryDetailsForApp(a.ID)
@@ -194,7 +181,6 @@ func UpdateAppFromPath(a *apptypes.App, airgapRoot string, deploy bool, skipPref
 		},
 		AppSlug:     a.Slug,
 		AppSequence: appSequence,
-		IsOpenShift: k8sutil.IsOpenShift(clientset),
 	}
 
 	if _, err := pull.Pull(fmt.Sprintf("replicated://%s", beforeKotsKinds.License.Spec.AppSlug), pullOptions); err != nil {
