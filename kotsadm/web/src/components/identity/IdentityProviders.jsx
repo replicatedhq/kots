@@ -424,7 +424,7 @@ class IdentityProviders extends Component {
                   onChange={(e) => { this.handleOnChangeProvider("oidcConfig", e) }} />
                 <span className="icon openID u-cursor--pointer" />
               </label>
-              {isGeoaxisSupported || app?.isGeoaxisSupported &&
+              {(isGeoaxisSupported || app?.isGeoaxisSupported) &&
                 <label htmlFor="geoAxisConfig" className={`identityProviderBtn flex alignItems--center u-cursor--pointer u-userSelect--none ${this.state.selectedProvider === "geoAxisConfig" ? "is-active" : ""}`} style={{ marginLeft: "15px" }}>
                   <input
                     type="radio"
