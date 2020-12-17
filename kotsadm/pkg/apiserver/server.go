@@ -38,6 +38,11 @@ func Start() {
 
 	store.GetStore().RunMigrations()
 
+	err := bootstrapIdentity()
+	if err != nil {
+		panic(err)
+	}
+
 	supportbundle.StartServer()
 
 	if err := informers.Start(); err != nil {
