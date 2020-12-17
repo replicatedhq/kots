@@ -558,13 +558,16 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 	}
 
 	writeMidstreamOptions := midstream.WriteOptions{
-		MidstreamDir: filepath.Join(b.GetOverlaysDir(writeBaseOptions), "midstream"),
-		BaseDir:      u.GetBaseDir(writeUpstreamOptions),
-		AppSlug:      pullOptions.AppSlug,
-		IsGitOps:     pullOptions.IsGitOps,
-		IsOpenShift:  k8sutil.IsOpenShift(clientset),
-		Cipher:       *cipher,
-		Builder:      *builder,
+		MidstreamDir:       filepath.Join(b.GetOverlaysDir(writeBaseOptions), "midstream"),
+		BaseDir:            u.GetBaseDir(writeUpstreamOptions),
+		AppSlug:            pullOptions.AppSlug,
+		IsGitOps:           pullOptions.IsGitOps,
+		IsOpenShift:        k8sutil.IsOpenShift(clientset),
+		Cipher:             *cipher,
+		Builder:            *builder,
+		HTTPProxyEnvValue:  pullOptions.HTTPProxyEnvValue,
+		HTTPSProxyEnvValue: pullOptions.HTTPSProxyEnvValue,
+		NoProxyEnvValue:    pullOptions.NoProxyEnvValue,
 	}
 	if err := m.WriteMidstream(writeMidstreamOptions); err != nil {
 		return "", errors.Wrap(err, "failed to write midstream")

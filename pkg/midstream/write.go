@@ -24,13 +24,16 @@ const (
 )
 
 type WriteOptions struct {
-	MidstreamDir string
-	BaseDir      string
-	AppSlug      string
-	IsGitOps     bool
-	IsOpenShift  bool
-	Cipher       crypto.AESCipher
-	Builder      template.Builder
+	MidstreamDir       string
+	BaseDir            string
+	AppSlug            string
+	IsGitOps           bool
+	IsOpenShift        bool
+	Cipher             crypto.AESCipher
+	Builder            template.Builder
+	HTTPProxyEnvValue  string
+	HTTPSProxyEnvValue string
+	NoProxyEnvValue    string
 }
 
 func (m *Midstream) KustomizationFilename(options WriteOptions) string {
