@@ -19,6 +19,8 @@ import (
 	"github.com/replicatedhq/kots/kotsadm/pkg/supportbundle"
 	"github.com/replicatedhq/kots/kotsadm/pkg/updatechecker"
 	"github.com/replicatedhq/kots/kotsadm/pkg/version"
+	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
+	"github.com/replicatedhq/kots/pkg/crypto"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/pull"
 	"go.uber.org/zap"
@@ -119,7 +121,7 @@ func CreateAppFromOnline(pendingApp *types.PendingApp, upstreamURI string, isAut
 		configFile = tmpFile.Name()
 	}
 
-	identityConfigFile, err := identity.InitAppIdentityConfig(pendingApp.Slug)
+	identityConfigFile, err := identity.InitAppIdentityConfig(pendingApp.Slug, kotsv1beta1.Storage{}, crypto.AESCipher{})
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to init identity config")
 	}

@@ -192,7 +192,7 @@ func identityConfigMapResource(identityConfig kotsv1beta1.IdentityConfig) (*core
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:   ConfigConfigMapName,
-			Labels: kotsadmtypes.GetKotsadmLabels(identitydeploy.AdditionalLabels("kotsadm")),
+			Labels: kotsadmtypes.GetKotsadmLabels(identitydeploy.AdditionalLabels("kotsadm", nil)),
 		},
 		Data: map[string]string{
 			"identity.yaml": string(data),
@@ -245,7 +245,7 @@ func identitySecretResource(identityConfig kotsv1beta1.IdentityConfig) (*corev1.
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:   ConfigSecretName,
-			Labels: kotsadmtypes.GetKotsadmLabels(identitydeploy.AdditionalLabels("kotsadm")),
+			Labels: kotsadmtypes.GetKotsadmLabels(identitydeploy.AdditionalLabels("kotsadm", nil)),
 		},
 		Data: map[string][]byte{
 			ConfigSecretKeyName: data,

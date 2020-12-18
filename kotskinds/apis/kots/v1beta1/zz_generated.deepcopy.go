@@ -979,6 +979,7 @@ func (in *IdentitySpec) DeepCopyInto(out *IdentitySpec) {
 		*out = make([]string, len(*in))
 		copy(*out, *in)
 	}
+	out.RequireIdentityProvider = in.RequireIdentityProvider
 	if in.Roles != nil {
 		in, out := &in.Roles, &out.Roles
 		*out = make([]IdentityRole, len(*in))

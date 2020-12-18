@@ -156,6 +156,11 @@ func RenderDir(archiveDir string, a *apptypes.App, downstreams []downstreamtypes
 		IsGitOps:         a.IsGitOps,
 		AppSequence:      a.CurrentSequence + 1, // sequence +1 because this is the current latest sequence, not the sequence that the rendered version will be saved as
 		ReportingInfo:    reportingInfo,
+
+		// TODO: pass in as arguments if this is ever called from CLI
+		HTTPProxyEnvValue:  os.Getenv("HTTP_PROXY"),
+		HTTPSProxyEnvValue: os.Getenv("HTTPS_PROXY"),
+		NoProxyEnvValue:    os.Getenv("NO_PROXY"),
 	}
 
 	if registrySettings != nil {

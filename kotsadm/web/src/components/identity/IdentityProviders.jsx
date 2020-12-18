@@ -52,9 +52,7 @@ class IdentityProviders extends Component {
     savingProviderErrMsg: "",
     showAdvancedOptions: false,
     displayErrorModal: false,
-    syncAppWithGlobal: false,
-    roles: [],
-    rbacGroupRows: []
+    syncAppWithGlobal: false
   };
 
   fetchConfigSettings = async (app) => {
@@ -207,6 +205,10 @@ class IdentityProviders extends Component {
     let requiredErrors = {};
 
     for (const field in payloadFields) {
+      if (field === "useAdminConsoleSettings") {
+        continue
+      }
+
       if (field !== "oidcConfig" && field !== "geoAxisConfig") {
         if (isEmpty(payloadFields[field])) {
           requiredErrors = { ...requiredErrors, [field]: true }
@@ -251,8 +253,6 @@ class IdentityProviders extends Component {
     e.preventDefault();
     const { app, isApplicationSettings } = this.props;
 
-    const groups = this.buildGroupsPayload();
-
     const oidcConfigPayload = {
       "oidcConfig": {
         issuer: this.state.oidcConfig?.issuer,
@@ -278,17 +278,10 @@ class IdentityProviders extends Component {
 
     let payload;
     if (isApplicationSettings) {
-      if (size(this.state.roles) > 0) {
-        payload = {
-          "oidcConfig": this.state.selectedProvider === "oidcConfig" ? oidcConfigPayload.oidcConfig : null,
-          "geoAxisConfig": this.state.selectedProvider === "geoAxisConfig" ? this.state.geoAxisConfig : null,
-          groups: groups
-        }
-      } else {
-        payload = {
-          "oidcConfig": this.state.selectedProvider === "oidcConfig" ? oidcConfigPayload.oidcConfig : null,
-          "geoAxisConfig": this.state.selectedProvider === "geoAxisConfig" ? this.state.geoAxisConfig : null
-        }
+      payload = {
+        "oidcConfig": this.state.selectedProvider === "oidcConfig" ? oidcConfigPayload.oidcConfig : null,
+        "geoAxisConfig": this.state.selectedProvider === "geoAxisConfig" ? this.state.geoAxisConfig : null,
+        useAdminConsoleSettings: this.state.syncAppWithGlobal,
       }
     } else {
       payload = {
@@ -427,7 +420,6 @@ class IdentityProviders extends Component {
     const { configSettingsErrMsg, isLoadingConfigSettings, requiredErrors, selectedProvider, syncAppWithGlobal } = this.state;
     const { isKurlEnabled, isApplicationSettings, app, isGeoaxisSupported } = this.props;
 
-
     if (isLoadingConfigSettings) {
       return (
         <div className="flex-column flex1 alignItems--center justifyContent--center">
@@ -538,7 +530,7 @@ class IdentityProviders extends Component {
                   onChange={(e) => { this.handleOnChangeProvider("oidcConfig", e) }} />
                 <span className="icon openID u-cursor--pointer" />
               </label>
-              {isGeoaxisSupported || app?.isGeoaxisSupported &&
+              {(isGeoaxisSupported || app?.isGeoaxisSupported) &&
                 <label htmlFor="geoAxisConfig" className={`identityProviderBtn flex alignItems--center u-cursor--pointer u-userSelect--none ${this.state.selectedProvider === "geoAxisConfig" ? "is-active" : ""}`} style={{ marginLeft: "15px" }}>
                   <input
                     type="radio"
@@ -579,10 +571,27 @@ class IdentityProviders extends Component {
               </div>
               <input type="text"
                 className="Input u-marginTop--12"
+                placeholder="OpenID"
                 disabled={syncAppWithGlobal}
-                value={this.getRequiredValue("issuer")}
-                onChange={(e) => { this.handleFormChange("issuer", e) }} />
+                value={this.state.oidcConfig?.connectorName}
+                onChange={(e) => { this.handleFormChange("connectorName", e) }} />
+            </div>}
+
+          <div className="u-marginTop--30">
+            <div className="flex flex1 alignItems--center">
+              <p className="u-fontSize--large u-lineHeight--default u-fontWeight--bold u-color--tuna"> Issuer </p>
+              <span className="icon grayOutlineQuestionMark--icon u-marginLeft--10 u-cursor--pointer"
+                data-tip="Canonical URL of the provider, also used for configuration discovery. This value MUST match the value returned in the provider config discovery." />
+              <ReactTooltip effect="solid" className="replicated-tooltip" />
+              <span className="required-label"> Required </span>
+              {requiredErrors?.issuer && <span className="u-color--chestnut u-fontSize--small u-fontWeight--medium u-lineHeight--normal u-marginLeft--5"> Issuer is a required field </span>}
             </div>
+            <input type="text"
+              className="Input u-marginTop--12"
+              value={this.getRequiredValue("issuer")}
+              disabled={syncAppWithGlobal}
+              onChange={(e) => { this.handleFormChange("issuer", e) }} />
+          </div>
 
             <div className="u-marginTop--30 u-marginRight--30">
               <div className="flex flex1 alignItems--center">
@@ -596,6 +605,12 @@ class IdentityProviders extends Component {
                 disabled={syncAppWithGlobal}
                 onChange={(e) => { this.handleFormChange("clientId", e) }} />
             </div>
+            <input type="text"
+              className="Input u-marginTop--12"
+              value={this.getRequiredValue("clientId")}
+              disabled={syncAppWithGlobal}
+              onChange={(e) => { this.handleFormChange("clientId", e) }} />
+          </div>
 
             <div className="u-marginTop--30">
               <div className="flex flex1 alignItems--center">
@@ -609,6 +624,11 @@ class IdentityProviders extends Component {
                 disabled={syncAppWithGlobal}
                 onChange={(e) => { this.handleFormChange("clientSecret", e) }} />
             </div>
+            <input type="password"
+              className="Input u-marginTop--12"
+              value={this.getRequiredValue("clientSecret")}
+              disabled={syncAppWithGlobal}
+              onChange={(e) => { this.handleFormChange("clientSecret", e) }} />
           </div>
 
           {isApplicationSettings && size(this.state.roles) > 0 &&
@@ -654,38 +674,36 @@ class IdentityProviders extends Component {
               <span className={`icon ${this.state.showAdvancedOptions ? "up" : "down"}-arrow-icon-blue u-marginLeft--5 u-cursor--pointer`} /> </p>
               {this.state.showAdvancedOptions &&
                 <div className="flex flex-column u-marginTop--12">
-                  <div className="flex flex1 justifyContent--spaceBetween">
-                    <div className="flex flex-column justifyContent--flexStart">
-                      <div className={`flex-auto flex alignItems--center ${this.state.oidcConfig?.getUserInfo ? "is-active" : ""}`}>
-                        <input
-                          type="checkbox"
-                          className="u-cursor--pointer"
-                          id="getUserInfo"
-                          disabled={syncAppWithGlobal}
-                          checked={this.state.oidcConfig?.getUserInfo}
-                          onChange={(e) => { this.handleFormChange("getUserInfo", e) }}
-                        />
-                        <label htmlFor="getUserInfo" className="flex1 flex u-width--full u-position--relative u-cursor--pointer u-userSelect--none alignItems--center" style={{ marginLeft: "2px" }}>
-                          <p className="u-color--tuna u-fontSize--normal u-fontWeight--medium">Get user info</p>
-                          <span className="icon grayOutlineQuestionMark--icon u-marginLeft--10 u-cursor--pointer"
-                            data-tip="When enabled, the OpenID Connector will query the UserInfo endpoint for additional claims. UserInfo claims
+                  <div className={`flex-auto flex alignItems--center ${this.state.oidcConfig?.getUserInfo ? "is-active" : ""}`}>
+                    <input
+                      type="checkbox"
+                      className="u-cursor--pointer"
+                      id="getUserInfo"
+                      disabled={syncAppWithGlobal}
+                      checked={this.state.oidcConfig?.getUserInfo}
+                      onChange={(e) => { this.handleFormChange("getUserInfo", e) }}
+                    />
+                    <label htmlFor="getUserInfo" className="flex1 flex u-width--full u-position--relative u-cursor--pointer u-userSelect--none alignItems--center" style={{ marginLeft: "2px" }}>
+                      <p className="u-color--tuna u-fontSize--normal u-fontWeight--medium">Get user info</p>
+                      <span className="icon grayOutlineQuestionMark--icon u-marginLeft--10 u-cursor--pointer"
+                        data-tip="When enabled, the OpenID Connector will query the UserInfo endpoint for additional claims. UserInfo claims
                       take priority over claims returned by the IDToken. This option should be used when the IDToken doesn't contain all the claims requested." />
-                          <ReactTooltip effect="solid" className="replicated-tooltip" />
-                        </label>
-                      </div>
-                      <div className={`flex-auto flex alignItems--center u-marginTop--20 ${this.state.oidcConfig?.insecureEnableGroups ? "is-active" : ""}`}>
-                        <input
-                          type="checkbox"
-                          className="u-cursor--pointer"
-                          id="insecureEnableGroups"
-                          disabled={syncAppWithGlobal}
-                          checked={this.state.oidcConfig?.insecureEnableGroups}
-                          onChange={(e) => { this.handleFormChange("insecureEnableGroups", e) }}
-                        />
-                        <label htmlFor="insecureEnableGroups" className="flex1 flex u-width--full u-position--relative u-cursor--pointer u-userSelect--none alignItems--center" style={{ marginLeft: "2px" }}>
-                          <p className="u-color--tuna u-fontSize--normal u-fontWeight--medium">Enable insecure groups</p>
-                          <span className="icon grayOutlineQuestionMark--icon u-marginLeft--10 u-cursor--pointer"
-                            data-tip="Groups claims (like the rest of oidc claims through dex) only refresh when the id token is refreshed
+                      <ReactTooltip effect="solid" className="replicated-tooltip" />
+                    </label>
+                  </div>
+                  <div className={`flex-auto flex alignItems--center u-marginTop--5 ${this.state.oidcConfig?.insecureEnableGroups ? "is-active" : ""}`}>
+                    <input
+                      type="checkbox"
+                      className="u-cursor--pointer"
+                      id="insecureEnableGroups"
+                      disabled={syncAppWithGlobal}
+                      checked={this.state.oidcConfig?.insecureEnableGroups}
+                      onChange={(e) => { this.handleFormChange("insecureEnableGroups", e) }}
+                    />
+                    <label htmlFor="insecureEnableGroups" className="flex1 flex u-width--full u-position--relative u-cursor--pointer u-userSelect--none alignItems--center" style={{ marginLeft: "2px" }}>
+                      <p className="u-color--tuna u-fontSize--normal u-fontWeight--medium">Enable insecure groups</p>
+                      <span className="icon grayOutlineQuestionMark--icon u-marginLeft--10 u-cursor--pointer"
+                        data-tip="Groups claims (like the rest of oidc claims through dex) only refresh when the id token is refreshed
                       meaning the regular refresh flow doesn't update the groups claim. As such by default the oidc connector
                       doesn't allow groups claims. If you are okay with having potentially stale group claims you can use
                       this option to enable groups claims through the oidc connector on a per-connector basis." />
@@ -693,19 +711,19 @@ class IdentityProviders extends Component {
                         </label>
                       </div>
 
-                      <div className={`flex-auto flex alignItems--center u-marginTop--20  ${this.state.oidcConfig?.insecureSkipEmailVerified ? "is-active" : ""}`}>
-                        <input
-                          type="checkbox"
-                          className="u-cursor--pointer"
-                          id="insecureSkipEmailVerified"
-                          disabled={syncAppWithGlobal}
-                          checked={this.state.oidcConfig?.insecureSkipEmailVerified}
-                          onChange={(e) => { this.handleFormChange("insecureSkipEmailVerified", e) }}
-                        />
-                        <label htmlFor="insecureSkipEmailVerified" className="flex1 flex u-width--full u-position--relative u-cursor--pointer u-userSelect--none alignItems--center" style={{ marginLeft: "2px" }}>
-                          <p className="u-color--tuna u-fontSize--normal u-fontWeight--medium">Skip email verification</p>
-                          <span className="icon grayOutlineQuestionMark--icon u-marginLeft--10 u-cursor--pointer"
-                            data-tip='Some providers return claims without "email_verified", when they had no usage of emails verification in enrollment process
+                  <div className={`flex-auto flex alignItems--center u-marginTop--5  ${this.state.oidcConfig?.insecureSkipEmailVerified ? "is-active" : ""}`}>
+                    <input
+                      type="checkbox"
+                      className="u-cursor--pointer"
+                      id="insecureSkipEmailVerified"
+                      disabled={syncAppWithGlobal}
+                      checked={this.state.oidcConfig?.insecureSkipEmailVerified}
+                      onChange={(e) => { this.handleFormChange("insecureSkipEmailVerified", e) }}
+                    />
+                    <label htmlFor="insecureSkipEmailVerified" className="flex1 flex u-width--full u-position--relative u-cursor--pointer u-userSelect--none alignItems--center" style={{ marginLeft: "2px" }}>
+                      <p className="u-color--tuna u-fontSize--normal u-fontWeight--medium">Skip email verification</p>
+                      <span className="icon grayOutlineQuestionMark--icon u-marginLeft--10 u-cursor--pointer"
+                        data-tip='Some providers return claims without "email_verified", when they had no usage of emails verification in enrollment process
                       or if they are acting as a proxy for another IDP etc AWS Cognito with an upstream SAML IDP' />
                           <ReactTooltip effect="solid" className="replicated-tooltip" />
                         </label>
@@ -759,33 +777,39 @@ class IdentityProviders extends Component {
                         disabled={syncAppWithGlobal}
                         onChange={(e) => { this.handleFormChange("promptType", e) }} />
                     </div>
-                    <div className="u-marginTop--30 u-marginRight--30">
-                      <div className="flex flex1 alignItems--center">
-                        <p className="u-fontSize--large u-lineHeight--default u-fontWeight--bold u-color--tuna"> Hosted domains </p>
-                        <span className="icon grayOutlineQuestionMark--icon u-marginLeft--10 u-cursor--pointer"
-                          data-tip="Google supports whitelisting allowed domains when using G Suite (Google Apps). The following field can be set to a comma-separated list of domains that can log in" />
-                        <ReactTooltip effect="solid" className="replicated-tooltip" />
-                      </div>
-                      <input type="text"
-                        className="Input u-marginTop--12"
-                        value={this.state.oidcConfig?.hostedDomains}
-                        disabled={syncAppWithGlobal}
-                        onChange={(e) => { this.handleFormChange("hostedDomains", e) }} />
+                    <input type="text"
+                      className="Input u-marginTop--12"
+                      placeholder="consent"
+                      value={this.state.oidcConfig?.promptType}
+                      disabled={syncAppWithGlobal}
+                      onChange={(e) => { this.handleFormChange("promptType", e) }} />
+                  </div>
+                  <div className="u-marginTop--30">
+                    <div className="flex flex1 alignItems--center">
+                      <p className="u-fontSize--large u-lineHeight--default u-fontWeight--bold u-color--tuna"> Hosted domains </p>
+                      <span className="icon grayOutlineQuestionMark--icon u-marginLeft--10 u-cursor--pointer"
+                        data-tip="Google supports whitelisting allowed domains when using G Suite (Google Apps). The following field can be set to a comma-separated list of domains that can log in" />
+                      <ReactTooltip effect="solid" className="replicated-tooltip" />
                     </div>
-                    <div className="u-marginTop--30">
-                      <div className="flex flex1 alignItems--center">
-                        <p className="u-fontSize--large u-lineHeight--default u-fontWeight--bold u-color--tuna"> Scopes </p>
-                        <span className="icon grayOutlineQuestionMark--icon u-marginLeft--10 u-cursor--pointer"
-                          data-tip="Comma-separated list of additional scopes to request in token response. Default is profile and email" />
-                        <ReactTooltip effect="solid" className="replicated-tooltip" />
-                      </div>
-                      <input type="text"
-                        className="Input u-marginTop--12"
-                        placeholder="profile,email,groups..."
-                        value={this.state.oidcConfig?.scopes}
-                        disabled={syncAppWithGlobal}
-                        onChange={(e) => { this.handleFormChange("scopes", e) }} />
+                    <input type="text"
+                      className="Input u-marginTop--12"
+                      value={this.state.oidcConfig?.hostedDomains}
+                      disabled={syncAppWithGlobal}
+                      onChange={(e) => { this.handleFormChange("hostedDomains", e) }} />
+                  </div>
+                  <div className="u-marginTop--30">
+                    <div className="flex flex1 alignItems--center">
+                      <p className="u-fontSize--large u-lineHeight--default u-fontWeight--bold u-color--tuna"> Scopes </p>
+                      <span className="icon grayOutlineQuestionMark--icon u-marginLeft--10 u-cursor--pointer"
+                        data-tip="Comma-separated list of additional scopes to request in token response. Default is profile and email" />
+                      <ReactTooltip effect="solid" className="replicated-tooltip" />
                     </div>
+                    <input type="text"
+                      className="Input u-marginTop--12"
+                      placeholder="profile,email,groups..."
+                      value={this.state.oidcConfig?.scopes}
+                      disabled={syncAppWithGlobal}
+                      onChange={(e) => { this.handleFormChange("scopes", e) }} />
                   </div>
 
                   <div className="u-marginTop--30">

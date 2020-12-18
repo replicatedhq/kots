@@ -17,6 +17,7 @@ import (
 	"github.com/replicatedhq/kots/kotsadm/pkg/preflight"
 	"github.com/replicatedhq/kots/kotsadm/pkg/store"
 	"github.com/replicatedhq/kots/kotsadm/pkg/version"
+	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	"github.com/replicatedhq/kots/pkg/crypto"
 	"github.com/replicatedhq/kots/pkg/cursor"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
@@ -147,7 +148,7 @@ func UpdateAppFromPath(a *apptypes.App, airgapRoot string, deploy bool, skipPref
 
 	identityConfigFile := filepath.Join(currentArchivePath, "upstream", "userdata", "identityconfig.yaml")
 	if _, err := os.Stat(identityConfigFile); os.IsNotExist(err) {
-		file, err := identity.InitAppIdentityConfig(a.Slug)
+		file, err := identity.InitAppIdentityConfig(a.Slug, kotsv1beta1.Storage{}, crypto.AESCipher{})
 		if err != nil {
 			return errors.Wrap(err, "failed to init identity config")
 		}

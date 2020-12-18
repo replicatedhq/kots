@@ -165,8 +165,12 @@ jobs:
           kubectl -n legacy get pods
           echo "------kotsadm logs"
           kubectl -n legacy logs deployment/kotsadm
+          echo "------previous kotsadm logs"
+          kubectl -n legacy logs -p deployment/kotsadm
           echo "------kotsadm-operator logs"
           kubectl -n legacy logs deployment/kotsadm-operator
+          echo "------previous kotsadm-operator logs"
+          kubectl -n legacy logs -p deployment/kotsadm-operator
           kill $ADMIN_CONSOLE_PID
           exit $EXIT_CODE
 
@@ -208,7 +212,11 @@ jobs:
           kubectl -n minimal-rbac get pods
           echo "------kotsadm logs"
           kubectl -n minimal-rbac logs deployment/kotsadm
+          echo "------previous kotsadm logs"
+          kubectl -n minimal-rbac logs -p deployment/kotsadm
           echo "------kotsadm-operator logs"
           kubectl -n minimal-rbac logs deployment/kotsadm-operator
+          echo "------previos kotsadm-operator logs"
+          kubectl -n minimal-rbac logs -p deployment/kotsadm-operator
           kill $ADMIN_CONSOLE_PID
           exit $EXIT_CODE

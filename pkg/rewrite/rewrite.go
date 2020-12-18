@@ -13,37 +13,43 @@ import (
 	"github.com/replicatedhq/kots/pkg/docker/registry"
 	"github.com/replicatedhq/kots/pkg/downstream"
 	"github.com/replicatedhq/kots/pkg/k8sdoc"
+	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/midstream"
 	"github.com/replicatedhq/kots/pkg/upstream"
 	upstreamtypes "github.com/replicatedhq/kots/pkg/upstream/types"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/client-go/kubernetes"
+	"sigs.k8s.io/controller-runtime/pkg/client/config"
 	kustomizetypes "sigs.k8s.io/kustomize/api/types"
 )
 
 type RewriteOptions struct {
-	RootDir           string
-	UpstreamURI       string
-	UpstreamPath      string
-	Downstreams       []string
-	K8sNamespace      string
-	Silent            bool
-	CreateAppDir      bool
-	ExcludeKotsKinds  bool
-	Installation      *kotsv1beta1.Installation
-	License           *kotsv1beta1.License
-	ConfigValues      *kotsv1beta1.ConfigValues
-	ReportWriter      io.Writer
-	CopyImages        bool
-	IsAirgap          bool
-	RegistryEndpoint  string
-	RegistryUsername  string
-	RegistryPassword  string
-	RegistryNamespace string
-	AppSlug           string
-	IsGitOps          bool
-	AppSequence       int64
-	ReportingInfo     *upstreamtypes.ReportingInfo
+	RootDir            string
+	UpstreamURI        string
+	UpstreamPath       string
+	Downstreams        []string
+	K8sNamespace       string
+	Silent             bool
+	CreateAppDir       bool
+	ExcludeKotsKinds   bool
+	Installation       *kotsv1beta1.Installation
+	License            *kotsv1beta1.License
+	ConfigValues       *kotsv1beta1.ConfigValues
+	ReportWriter       io.Writer
+	CopyImages         bool
+	IsAirgap           bool
+	RegistryEndpoint   string
+	RegistryUsername   string
+	RegistryPassword   string
+	RegistryNamespace  string
+	AppSlug            string
+	IsGitOps           bool
+	AppSequence        int64
+	ReportingInfo      *upstreamtypes.ReportingInfo
+	HTTPProxyEnvValue  string
+	HTTPSProxyEnvValue string
+	NoProxyEnvValue    string
 }
 
 func Rewrite(rewriteOptions RewriteOptions) error {
@@ -57,6 +63,16 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 
 	if rewriteOptions.ReportWriter == nil {
 		rewriteOptions.ReportWriter = ioutil.Discard
+	}
+
+	cfg, err := config.GetConfig()
+	if err != nil {
+		return errors.Wrap(err, "failed to get config")
+	}
+
+	clientset, err := kubernetes.NewForConfig(cfg)
+	if err != nil {
+		return errors.Wrap(err, "failed to create clientset")
 	}
 
 	fetchOptions := &upstreamtypes.FetchOptions{
@@ -328,12 +344,16 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 	}
 
 	writeMidstreamOptions := midstream.WriteOptions{
-		MidstreamDir: filepath.Join(b.GetOverlaysDir(writeBaseOptions), "midstream"),
-		BaseDir:      u.GetBaseDir(writeUpstreamOptions),
-		AppSlug:      rewriteOptions.AppSlug,
-		IsGitOps:     rewriteOptions.IsGitOps,
-		Cipher:       *cipher,
-		Builder:      *builder,
+		MidstreamDir:       filepath.Join(b.GetOverlaysDir(writeBaseOptions), "midstream"),
+		BaseDir:            u.GetBaseDir(writeUpstreamOptions),
+		AppSlug:            rewriteOptions.AppSlug,
+		IsGitOps:           rewriteOptions.IsGitOps,
+		IsOpenShift:        k8sutil.IsOpenShift(clientset),
+		Cipher:             *cipher,
+		Builder:            *builder,
+		HTTPProxyEnvValue:  rewriteOptions.HTTPProxyEnvValue,
+		HTTPSProxyEnvValue: rewriteOptions.HTTPSProxyEnvValue,
+		NoProxyEnvValue:    rewriteOptions.NoProxyEnvValue,
 	}
 	if err := m.WriteMidstream(writeMidstreamOptions); err != nil {
 		return errors.Wrap(err, "failed to write midstream")
