@@ -121,6 +121,16 @@ func Start() {
 	sessionAuthRouter := r.PathPrefix("").Subrouter()
 	sessionAuthRouter.Use(handlers.RequireValidSessionMiddleware)
 
+	// Installation
+	sessionAuthRouter.Path("/api/v1/license").Methods("POST").
+		HandlerFunc(policy.AppCreate.Enforce(handlers.UploadNewLicense))
+	sessionAuthRouter.Path("/api/v1/license/platform").Methods("POST").
+		HandlerFunc(policy.AppCreate.Enforce(handlers.ExchangePlatformLicense))
+	sessionAuthRouter.Path("/api/v1/license/resume").Methods("PUT").
+		HandlerFunc(policy.AppCreate.Enforce(handlers.ResumeInstallOnline))
+	sessionAuthRouter.Path("/api/v1/app/online/status").Methods("GET").
+		HandlerFunc(policy.AppCreate.Enforce(handlers.GetOnlineInstallStatus))
+
 	// Support Bundles
 	sessionAuthRouter.Path("/api/v1/troubleshoot/supportbundle/{bundleSlug}").Methods("GET").
 		HandlerFunc(policy.AppSupportbundleRead.Enforce(handlers.GetSupportBundle)) // TODO: appSlug
@@ -219,16 +229,6 @@ func Start() {
 		HandlerFunc(policy.AppRead.Enforce(handlers.GetAppDashboard))
 	sessionAuthRouter.Path("/api/v1/app/{appSlug}/cluster/{clusterId}/sequence/{sequence}/downstreamoutput").Methods("GET").
 		HandlerFunc(policy.AppDownstreamLogsRead.Enforce(handlers.GetDownstreamOutput))
-
-	// Installation
-	sessionAuthRouter.Path("/api/v1/license").Methods("POST").
-		HandlerFunc(policy.AppCreate.Enforce(handlers.UploadNewLicense))
-	sessionAuthRouter.Path("/api/v1/license/platform").Methods("POST").
-		HandlerFunc(policy.AppCreate.Enforce(handlers.ExchangePlatformLicense))
-	sessionAuthRouter.Path("/api/v1/license/resume").Methods("PUT").
-		HandlerFunc(policy.AppCreate.Enforce(handlers.ResumeInstallOnline))
-	sessionAuthRouter.Path("/api/v1/app/online/status").Methods("GET").
-		HandlerFunc(policy.AppCreate.Enforce(handlers.GetOnlineInstallStatus))
 
 	sessionAuthRouter.Path("/api/v1/registry").Methods("GET").
 		HandlerFunc(policy.RegistryRead.Enforce(handlers.GetKotsadmRegistry))
