@@ -159,6 +159,8 @@ func Start() {
 		HandlerFunc(policy.AppList.Enforce(handlers.ListApps))
 	sessionAuthRouter.Path("/api/v1/app/{appSlug}").Methods("GET").
 		HandlerFunc(policy.AppRead.Enforce(handlers.GetApp))
+	sessionAuthRouter.Path("/api/v1/app/{appSlug}/status").Methods("GET").
+		HandlerFunc(policy.AppStatusRead.Enforce(handlers.GetAppStatus))
 	sessionAuthRouter.Path("/api/v1/app/{appSlug}/versions").Methods("GET").
 		HandlerFunc(policy.AppDownstreamRead.Enforce(handlers.GetAppVersionHistory))
 	sessionAuthRouter.Path("/api/v1/app/{appSlug}/task/updatedownload").Methods("GET").
