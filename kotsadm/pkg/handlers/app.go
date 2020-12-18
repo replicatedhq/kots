@@ -9,6 +9,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
 	apptypes "github.com/replicatedhq/kots/kotsadm/pkg/app/types"
+	appstatustypes "github.com/replicatedhq/kots/kotsadm/pkg/appstatus/types"
 	"github.com/replicatedhq/kots/kotsadm/pkg/downstream"
 	downstreamtypes "github.com/replicatedhq/kots/kotsadm/pkg/downstream/types"
 	"github.com/replicatedhq/kots/kotsadm/pkg/gitops"
@@ -22,6 +23,10 @@ import (
 
 type ListAppsResponse struct {
 	Apps []ResponseApp `json:"apps"`
+}
+
+type AppStatusResponse struct {
+	AppStatus *appstatustypes.AppStatus `json:"appstatus"`
 }
 
 type ResponseApp struct {
@@ -127,6 +132,28 @@ func ListApps(w http.ResponseWriter, r *http.Request) {
 	}
 
 	JSON(w, http.StatusOK, listAppsResponse)
+}
+
+func GetAppStatus(w http.ResponseWriter, r *http.Request) {
+	appSlug := mux.Vars(r)["appSlug"]
+	a, err := store.GetStore().GetAppFromSlug(appSlug)
+	if err != nil {
+		logger.Error(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	appStatus, err := store.GetStore().GetAppStatus(a.ID)
+	if err != nil {
+		logger.Error(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	appStatusResponse := AppStatusResponse{
+		AppStatus: appStatus,
+	}
+	JSON(w, http.StatusOK, appStatusResponse)
 }
 
 func GetApp(w http.ResponseWriter, r *http.Request) {
