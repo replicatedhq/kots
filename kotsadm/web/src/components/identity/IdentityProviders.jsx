@@ -114,7 +114,7 @@ class IdentityProviders extends Component {
     return groups.map(g => {
       return {
         id: g.id,
-        roles: g.roleIds?.map((r) => ({ id: r, isChecked: true}))
+        role: {id: g.roleIds[0]}
       }
     });
   }
@@ -184,17 +184,16 @@ class IdentityProviders extends Component {
     }
   }
 
-  handleFormRoleChange = (field, rowIndex, roleIndex, e) => {
+  handleFormRoleChange = (field, rowIndex, e) => {
     let rbacGroupRows = [...this.state.rbacGroupRows];
     if (field === "groupName") {
       let row = { ...rbacGroupRows[rowIndex] };
       row.id = e.target.value;
       rbacGroupRows[rowIndex] = row;
     } else {
-      let row = { ...rbacGroupRows[rowIndex].roles[roleIndex] };
-      row.id = e.target.id;
-      row.isChecked = e.target.checked;
-      rbacGroupRows[rowIndex].roles[roleIndex] = row;
+      let row = { ...rbacGroupRows[rowIndex] };
+      row.role.id = e.target.id;
+      rbacGroupRows[rowIndex] = row;
     }
     this.setState({ rbacGroupRows })
   }
@@ -246,7 +245,7 @@ class IdentityProviders extends Component {
     return rbacGroupRows.map(g => {
       return {
         id: g.id,
-        roleIds: g.roles?.filter(r => r.isChecked).map((r) => (r.id)).filter(r => r !== null)
+        roleIds: !isEmpty(g.role) ? [g.role.id] : []
       }
     });
   }
@@ -377,7 +376,7 @@ class IdentityProviders extends Component {
     const { rbacGroupRows } = this.state;
     rbacGroupRows.push({
       id: "",
-      roles: [],
+      role: {},
       isEditing: true,
       showRoleDetails: true
     });
@@ -559,11 +558,11 @@ class IdentityProviders extends Component {
           <div className="IdentityProvider--info flexWrap--wrap flex">
             {selectedProvider === "oidcConfig" &&
               <div className="u-marginTop--30 u-marginRight--30">
-                <div className="flex flex1 alignItems--center">
+                <div className="flex flex1 alignItems--center u-marginBottom--5">
                   <p className="u-fontSize--large u-lineHeight--default u-fontWeight--bold u-color--tuna"> Connector  name </p>
                   <span className="required-label"> Required </span>
-                  {requiredErrors?.connectorName && <span className="u-color--chestnut u-fontSize--small u-fontWeight--medium u-lineHeight--normal u-marginLeft--5"> Connector name is a required field</span>}
                 </div>
+                {requiredErrors?.connectorName && <span className="u-color--chestnut u-fontSize--small u-fontWeight--medium u-lineHeight--normal"> Connector name is a required field</span>}
                 <input type="text"
                   className="Input u-marginTop--12"
                   placeholder="OpenID"
@@ -573,14 +572,14 @@ class IdentityProviders extends Component {
               </div>}
 
             <div className="u-marginTop--30">
-              <div className="flex flex1 alignItems--center">
+              <div className="flex flex1 alignItems--center u-marginBottom--5">
                 <p className="u-fontSize--large u-lineHeight--default u-fontWeight--bold u-color--tuna"> Issuer </p>
                 <span className="icon grayOutlineQuestionMark--icon u-marginLeft--10 u-cursor--pointer"
                   data-tip="Canonical URL of the provider, also used for configuration discovery. This value MUST match the value returned in the provider config discovery." />
                 <ReactTooltip effect="solid" className="replicated-tooltip" />
                 <span className="required-label"> Required </span>
-                {requiredErrors?.issuer && <span className="u-color--chestnut u-fontSize--small u-fontWeight--medium u-lineHeight--normal u-marginLeft--5"> Issuer is a required field </span>}
               </div>
+              {requiredErrors?.issuer && <span className="u-color--chestnut u-fontSize--small u-fontWeight--medium u-lineHeight--normal"> Issuer is a required field </span>}
               <input type="text"
                 className="Input u-marginTop--12"
                 disabled={syncAppWithGlobal}
@@ -589,11 +588,11 @@ class IdentityProviders extends Component {
             </div>
 
             <div className="u-marginTop--30 u-marginRight--30">
-              <div className="flex flex1 alignItems--center">
+              <div className="flex flex1 alignItems--center u-marginBottom--5">
                 <p className="u-fontSize--large u-lineHeight--default u-fontWeight--bold u-color--tuna"> Client ID </p>
                 <span className="required-label"> Required </span>
-                {requiredErrors?.clientId && <span className="u-color--chestnut u-fontSize--small u-fontWeight--medium u-lineHeight--normal u-marginLeft--5"> Client ID is a required field </span>}
               </div>
+              {requiredErrors?.clientId && <span className="u-color--chestnut u-fontSize--small u-fontWeight--medium u-lineHeight--normal"> Client ID is a required field </span>}
               <input type="text"
                 className="Input u-marginTop--12"
                 value={this.getRequiredValue("clientId")}
@@ -602,11 +601,11 @@ class IdentityProviders extends Component {
             </div>
 
             <div className="u-marginTop--30">
-              <div className="flex flex1 alignItems--center">
+              <div className="flex flex1 alignItems--center u-marginBottom--5">
                 <p className="u-fontSize--large u-lineHeight--default u-fontWeight--bold u-color--tuna"> Client secret </p>
                 <span className="required-label"> Required </span>
-                {requiredErrors?.clientSecret && <span className="u-color--chestnut u-fontSize--small u-fontWeight--medium u-lineHeight--normal u-marginLeft--5"> Client Secret is a required field </span>}
               </div>
+              {requiredErrors?.clientSecret && <span className="u-color--chestnut u-fontSize--small u-fontWeight--medium u-lineHeight--normal"> Client Secret is a required field </span>}
               <input type="password"
                 className="Input u-marginTop--12"
                 value={this.getRequiredValue("clientSecret")}
@@ -629,8 +628,7 @@ class IdentityProviders extends Component {
                       key={i}
                       groupName={g.id}
                       roles={this.state.roles}
-                      checkedRoles={this.state.rbacGroupRows[i]?.roles?.filter(r => r.isChecked)}
-                      groupRoles={g.roles}
+                      groupRole={g.role}
                       isEditing={g.isEditing}
                       onAddGroupRow={this.onAddGroupRow}
                       onAddGroup={this.onAddGroup}

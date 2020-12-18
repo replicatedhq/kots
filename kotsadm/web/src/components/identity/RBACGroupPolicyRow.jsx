@@ -2,7 +2,7 @@ import React, { Component } from "react";
 
 export default class RBACGroupPolicyRow extends Component {
   render() {
-    const { groupName, index, handleFormChange, onRemoveGroupRow, roles, groupRoles, onAddGroup, onEdit, checkedRoles, showRoleDetails, onShowRoleDetails, onHideRoleDetails } = this.props;
+    const { groupName, index, handleFormChange, onRemoveGroupRow, roles, groupRole, onAddGroup, onEdit, showRoleDetails, onShowRoleDetails, onHideRoleDetails } = this.props;
 
     return (
       <div className="flex flex-column u-borderBottom--gray darker" style={{ padding: "8px 10px" }} key={index}>
@@ -15,26 +15,23 @@ export default class RBACGroupPolicyRow extends Component {
                   className="Input darker"
                   placeholder="Group name"
                   value={groupName}
-                  onChange={(e) => { handleFormChange("groupName", index, 0, e) }} />}
+                  onChange={(e) => { handleFormChange("groupName", index, e) }} />}
               <div className="u-marginLeft--10 flex alignItems--center">
-                <span className="RoleNum--wrapper"> {`${checkedRoles?.length === 1 ? "1 role" : `${checkedRoles?.length} roles`}`}</span>
                 <span className="replicated-link u-fontSize--small u-marginLeft--5" onClick={() => showRoleDetails ? onHideRoleDetails(index) : onShowRoleDetails(index)}> {showRoleDetails ? "Hide" : "Show"} </span>
               </div>
             </div>
             {showRoleDetails &&
               <div className="Roles--wrapper flex flex1 u-marginTop--7">
                 {roles?.map((role, i) => {
-                  const gRole = groupRoles?.find(r => r?.id === role?.id);
                   return (
-                    <div className="flex u-marginRight--20 alignItems--center" key={`${role.id}-${i}`}>
+                    <div className="flex u-marginRight--20 alignItems--center" key={`${role.id}-${index}-${i}`}>
                       <input
-                        type="checkbox"
-                        name={role.name}
+                        type="radio"
                         id={role.id}
-                        checked={gRole ? gRole.isChecked : false}
-                        onChange={(e) => { handleFormChange("roleName", index, i, e) }}
+                        checked={groupRole?.id === role?.id}
+                        onChange={(e) => { handleFormChange(`${role.id}-${index}-${i}`, index, e) }}
                       />
-                      <label htmlFor={role.id} className="flex1 flex u-width--full u-position--relative u-cursor--pointer u-userSelect--none">
+                      <label htmlFor={role.id} className="flex1 flex u-width--full u-position--relative u-cursor--pointer u-userSelect--none" style={{marginTop: "3px"}}>
                         <p className="u-color--doveGray u-fontSize--small u-fontWeight--medium">{role.name}</p>
                       </label>
                     </div>
