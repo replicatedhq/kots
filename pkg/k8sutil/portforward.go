@@ -27,8 +27,9 @@ import (
 )
 
 func IsPortAvailable(port int) bool {
-	host := ":" + strconv.Itoa(port)
-	server, err := net.Listen("tcp", host)
+	// portforward explicitly listens on localhost
+	host := net.JoinHostPort("127.0.0.1", strconv.Itoa(port))
+	server, err := net.Listen("tcp4", host)
 	if err != nil {
 		return false
 	}
@@ -68,7 +69,7 @@ func PortForward(kubernetesConfigFlags *genericclioptions.ConfigFlags, localPort
 
 	roundTripper, upgrader, err := spdy.RoundTripperFor(cfg)
 	if err != nil {
-		return 0, nil, err
+		return 0, nil, errors.Wrap(err, "failed to create roundtriper")
 	}
 	path := fmt.Sprintf("/api/v1/namespaces/%s/pods/%s/portforward", namespace, podName)
 	scheme := ""
@@ -76,7 +77,7 @@ func PortForward(kubernetesConfigFlags *genericclioptions.ConfigFlags, localPort
 
 	u, err := url.Parse(cfg.Host)
 	if err != nil {
-		return 0, nil, err
+		return 0, nil, errors.Wrap(err, "failed to parse host")
 	}
 
 	if u.Scheme == "http" || u.Scheme == "https" {
@@ -92,7 +93,7 @@ func PortForward(kubernetesConfigFlags *genericclioptions.ConfigFlags, localPort
 
 	forwarder, err := portforward.New(dialer, []string{fmt.Sprintf("%d:%d", localPort, remotePort)}, stopChan, readyChan, out, errOut)
 	if err != nil {
-		return 0, nil, err
+		return 0, nil, errors.Wrap(err, "failed to create new portforward")
 	}
 
 	errChan := make(chan error, 2) // 2 go routines are writing to this channel
@@ -137,7 +138,7 @@ func PortForward(kubernetesConfigFlags *genericclioptions.ConfigFlags, localPort
 			if err == nil {
 				err = errors.Errorf("service responded with status %s", response.Status)
 			}
-			return 0, nil, err
+			return 0, nil, errors.Wrap(err, "failed to query healthz")
 		}
 
 		time.Sleep(time.Millisecond * 100)
@@ -167,7 +168,7 @@ func PortForward(kubernetesConfigFlags *genericclioptions.ConfigFlags, localPort
 		// https://github.com/kubernetes/client-go/issues/803
 		clientset, err := GetClientset(kubernetesConfigFlags)
 		if err != nil {
-			return 0, nil, err
+			return 0, nil, errors.Wrap(err, "failed to get clientset")
 		}
 
 		sleepTime := time.Second
