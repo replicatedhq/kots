@@ -79,6 +79,12 @@ var (
 	AppUpdate = Must(NewPolicy(ActionWrite, "app.{{.appSlug}}", appSlugFromAppIDGetter))
 )
 
+// App status
+
+var (
+	AppStatusRead = Must(NewPolicy(ActionRead, "app.{{.appSlug}}.status."))
+)
+
 // App supportbundle
 
 var (
