@@ -4,9 +4,9 @@ go 1.14
 
 require (
 	github.com/Masterminds/semver v1.4.2
-	github.com/Masterminds/semver/v3 v3.1.0
+	github.com/Masterminds/semver/v3 v3.1.1
 	github.com/Masterminds/sprig v2.22.0+incompatible // indirect
-	github.com/Masterminds/sprig/v3 v3.1.0
+	github.com/Masterminds/sprig/v3 v3.2.0
 	github.com/Nvveen/Gotty v0.0.0-20120604004816-cd527374f1e5 // indirect
 	github.com/ahmetalpbalkan/go-cursor v0.0.0-20131010032410-8136607ea412
 	github.com/aws/aws-sdk-go v1.28.2
@@ -27,7 +27,6 @@ require (
 	github.com/frankban/quicktest v1.7.2 // indirect
 	github.com/garyburd/redigo v1.6.0 // indirect
 	github.com/ghodss/yaml v1.0.0
-	github.com/gin-gonic/gin v1.6.3 // indirect
 	github.com/gofrs/uuid v3.3.0+incompatible // indirect
 	github.com/golang/snappy v0.0.1 // indirect
 	github.com/google/gofuzz v1.1.0
@@ -41,7 +40,6 @@ require (
 	github.com/marccampbell/yaml-toolbox v0.0.0-20200805160637-950ceb36c770
 	github.com/mattn/go-isatty v0.0.12
 	github.com/mholt/archiver v3.1.1+incompatible
-	github.com/mitchellh/hashstructure v1.1.0 // indirect
 	github.com/niemeyer/pretty v0.0.0-20200227124842-a10e7caefd8e // indirect
 	github.com/nwaples/rardecode v1.0.0 // indirect
 	github.com/open-policy-agent/opa v0.24.0
