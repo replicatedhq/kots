@@ -21,7 +21,7 @@ type DownstreamLogs struct {
 	RenderError  string `json:"renderError"`
 }
 
-func GetDownstreamOutput(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) GetDownstreamOutput(w http.ResponseWriter, r *http.Request) {
 	appSlug := mux.Vars(r)["appSlug"]
 	clusterID := mux.Vars(r)["clusterId"]
 	sequence, err := strconv.Atoi(mux.Vars(r)["sequence"])

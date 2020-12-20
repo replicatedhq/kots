@@ -37,7 +37,7 @@ type UpdateUndeployResultRequest struct {
 	IsError bool   `json:"isError"`
 }
 
-func DeployAppVersion(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) DeployAppVersion(w http.ResponseWriter, r *http.Request) {
 	appSlug := mux.Vars(r)["appSlug"]
 	sequence, err := strconv.Atoi(mux.Vars(r)["sequence"])
 	if err != nil {
@@ -82,7 +82,7 @@ func DeployAppVersion(w http.ResponseWriter, r *http.Request) {
 }
 
 // NOTE: this uses special cluster authorization
-func UpdateDeployResult(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) UpdateDeployResult(w http.ResponseWriter, r *http.Request) {
 	auth, err := parseClusterAuthorization(r.Header.Get("Authorization"))
 	if err != nil {
 		logger.Error(err)
@@ -174,7 +174,7 @@ func createSupportBundle(appID string, sequence int64, origin string, inCluster 
 }
 
 // NOTE: this uses special cluster authorization
-func UpdateUndeployResult(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) UpdateUndeployResult(w http.ResponseWriter, r *http.Request) {
 	auth, err := parseClusterAuthorization(r.Header.Get("Authorization"))
 	if err != nil {
 		logger.Error(err)

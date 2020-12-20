@@ -5,7 +5,7 @@ import (
 	"github.com/replicatedhq/kots/kotsadm/pkg/store"
 )
 
-func appSlugFromAppIDGetter(vars map[string]string) (map[string]string, error) {
+func appSlugFromAppIDGetter(kotsStore store.KOTSStore, vars map[string]string) (map[string]string, error) {
 	if appSlug, _ := vars["appSlug"]; appSlug != "" {
 		return map[string]string{}, nil
 	}
@@ -13,7 +13,7 @@ func appSlugFromAppIDGetter(vars map[string]string) (map[string]string, error) {
 	if appID == "" {
 		return map[string]string{}, nil
 	}
-	app, err := store.GetStore().GetApp(appID)
+	app, err := kotsStore.GetApp(appID)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get app")
 	}
@@ -22,19 +22,19 @@ func appSlugFromAppIDGetter(vars map[string]string) (map[string]string, error) {
 	}, nil
 }
 
-func appSlugFromSupportbundleGetter(vars map[string]string) (map[string]string, error) {
+func appSlugFromSupportbundleGetter(kotsStore store.KOTSStore, vars map[string]string) (map[string]string, error) {
 	if appSlug, _ := vars["appSlug"]; appSlug != "" {
 		return nil, nil
 	}
 	appID := ""
 	if bundleID, _ := vars["bundleId"]; bundleID != "" {
-		supportbundle, err := store.GetStore().GetSupportBundle(bundleID)
+		supportbundle, err := kotsStore.GetSupportBundle(bundleID)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to get support bundle from id")
 		}
 		appID = supportbundle.AppID
 	} else if bundleSlug, _ := vars["bundleSlug"]; bundleSlug != "" {
-		supportbundle, err := store.GetStore().GetSupportBundleFromSlug(bundleSlug)
+		supportbundle, err := kotsStore.GetSupportBundleFromSlug(bundleSlug)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to get support bundle from slug")
 		}
@@ -42,7 +42,7 @@ func appSlugFromSupportbundleGetter(vars map[string]string) (map[string]string, 
 	} else {
 		return nil, nil
 	}
-	app, err := store.GetStore().GetApp(appID)
+	app, err := kotsStore.GetApp(appID)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get app")
 	}

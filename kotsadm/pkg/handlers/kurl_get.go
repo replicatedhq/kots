@@ -8,7 +8,7 @@ import (
 	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
 )
 
-func GetKurlNodes(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) GetKurlNodes(w http.ResponseWriter, r *http.Request) {
 	client, err := k8s.Clientset()
 	if err != nil {
 		logger.Error(err)

@@ -65,7 +65,7 @@ type ValidateAppRegistryResponse struct {
 	Error   string `json:"error,omitempty"`
 }
 
-func UpdateAppRegistry(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) UpdateAppRegistry(w http.ResponseWriter, r *http.Request) {
 	updateAppRegistryResponse := UpdateAppRegistryResponse{
 		Success: false,
 	}
@@ -192,7 +192,7 @@ func UpdateAppRegistry(w http.ResponseWriter, r *http.Request) {
 	JSON(w, 200, updateAppRegistryResponse)
 }
 
-func GetAppRegistry(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) GetAppRegistry(w http.ResponseWriter, r *http.Request) {
 	getAppRegistryResponse := GetAppRegistryResponse{
 		Success: false,
 	}
@@ -225,7 +225,7 @@ func GetAppRegistry(w http.ResponseWriter, r *http.Request) {
 	JSON(w, 200, getAppRegistryResponse)
 }
 
-func GetKotsadmRegistry(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) GetKotsadmRegistry(w http.ResponseWriter, r *http.Request) {
 	getKotsadmRegistryResponse := GetKotsadmRegistryResponse{
 		Success: false,
 	}
@@ -249,7 +249,7 @@ func GetKotsadmRegistry(w http.ResponseWriter, r *http.Request) {
 	JSON(w, 200, getKotsadmRegistryResponse)
 }
 
-func ValidateAppRegistry(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) ValidateAppRegistry(w http.ResponseWriter, r *http.Request) {
 	validateAppRegistryResponse := ValidateAppRegistryResponse{
 		Success: false,
 	}

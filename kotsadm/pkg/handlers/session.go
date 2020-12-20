@@ -10,6 +10,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/kotsadm/pkg/session"
 	"github.com/replicatedhq/kots/kotsadm/pkg/session/types"
+	"github.com/replicatedhq/kots/kotsadm/pkg/store"
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
@@ -44,7 +45,7 @@ func parseClusterAuthorization(authHeader string) (authorization, error) {
 	}, nil
 }
 
-func requireValidSession(w http.ResponseWriter, r *http.Request) (*types.Session, error) {
+func requireValidSession(kotsStore store.KOTSStore, w http.ResponseWriter, r *http.Request) (*types.Session, error) {
 	if r.Method == "OPTIONS" {
 		return nil, nil
 	}
@@ -58,7 +59,7 @@ func requireValidSession(w http.ResponseWriter, r *http.Request) (*types.Session
 		return nil, err
 	}
 
-	sess, err := session.Parse(auth)
+	sess, err := session.Parse(kotsStore, auth)
 	if err != nil {
 		response := ErrorResponse{Error: "failed to parse authorization header"}
 		JSON(w, http.StatusUnauthorized, response)

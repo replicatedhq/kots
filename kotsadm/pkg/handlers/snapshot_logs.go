@@ -11,7 +11,7 @@ import (
 	velerov1 "github.com/vmware-tanzu/velero/pkg/apis/velero/v1"
 )
 
-func DownloadSnapshotLogs(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) DownloadSnapshotLogs(w http.ResponseWriter, r *http.Request) {
 	backupName := mux.Vars(r)["backup"]
 
 	bsl, err := snapshot.FindBackupStoreLocation()

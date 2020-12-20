@@ -12,7 +12,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func DrainNode(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) DrainNode(w http.ResponseWriter, r *http.Request) {
 	client, err := k8s.Clientset()
 	if err != nil {
 		logger.Error(err)

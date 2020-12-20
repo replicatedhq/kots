@@ -19,7 +19,7 @@ type GetAppDashboardResponse struct {
 	PrometheusAddress string                    `json:"prometheusAddress"`
 }
 
-func GetAppDashboard(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) GetAppDashboard(w http.ResponseWriter, r *http.Request) {
 	appSlug := mux.Vars(r)["appSlug"]
 	clusterID := mux.Vars(r)["clusterId"]
 

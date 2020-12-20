@@ -6,12 +6,10 @@ import (
 	"text/template"
 
 	"github.com/gorilla/mux"
-	"github.com/pkg/errors"
-	"github.com/replicatedhq/kots/kotsadm/pkg/handlers"
-	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
+	"github.com/replicatedhq/kots/kotsadm/pkg/store"
 )
 
-type VarsGetter func(vars map[string]string) (map[string]string, error)
+type VarsGetter func(kotsStore store.KOTSStore, vars map[string]string) (map[string]string, error)
 
 type Policy struct {
 	action           string
@@ -33,26 +31,10 @@ func Must(p *Policy, err error) *Policy {
 	return p
 }
 
-func (p *Policy) Enforce(handler http.HandlerFunc) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		action, resource, err := p.execute(r)
-		if err != nil {
-			logger.Error(errors.Wrapf(err, "failed to execute policy template %q", p.resource))
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
-		if err := handlers.CheckAccessOrAbort(w, r, action, resource); err != nil {
-			logger.Error(err)
-			return
-		}
-		handler(w, r)
-	}
-}
-
-func (p *Policy) execute(r *http.Request) (action, resource string, err error) {
+func (p *Policy) execute(r *http.Request, kotsStore store.KOTSStore) (action, resource string, err error) {
 	vars := mux.Vars(r)
 	for _, fn := range p.varsGetterFns {
-		additionalVars, err := fn(vars)
+		additionalVars, err := fn(kotsStore, vars)
 		if err != nil {
 			return action, resource, err
 		}

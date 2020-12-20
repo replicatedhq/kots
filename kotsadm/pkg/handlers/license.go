@@ -97,7 +97,7 @@ type GetOnlineInstallStatusErrorResponse struct {
 	Error string `json:"error"`
 }
 
-func SyncLicense(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) SyncLicense(w http.ResponseWriter, r *http.Request) {
 	syncLicenseRequest := SyncLicenseRequest{}
 	if err := json.NewDecoder(r.Body).Decode(&syncLicenseRequest); err != nil {
 		logger.Error(err)
@@ -144,7 +144,7 @@ func SyncLicense(w http.ResponseWriter, r *http.Request) {
 	JSON(w, 200, syncLicenseResponse)
 }
 
-func GetLicense(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) GetLicense(w http.ResponseWriter, r *http.Request) {
 	appSlug := mux.Vars(r)["appSlug"]
 	foundApp, err := store.GetStore().GetAppFromSlug(appSlug)
 	if err != nil {
@@ -215,7 +215,7 @@ func getLicenseEntitlements(license *kotsv1beta1.License) ([]EntitlementResponse
 	return entitlements, expiresAt, nil
 }
 
-func UploadNewLicense(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) UploadNewLicense(w http.ResponseWriter, r *http.Request) {
 	uploadLicenseRequest := UploadLicenseRequest{}
 	if err := json.NewDecoder(r.Body).Decode(&uploadLicenseRequest); err != nil {
 		logger.Error(err)
@@ -365,7 +365,7 @@ func UploadNewLicense(w http.ResponseWriter, r *http.Request) {
 	JSON(w, 200, uploadLicenseResponse)
 }
 
-func ResumeInstallOnline(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) ResumeInstallOnline(w http.ResponseWriter, r *http.Request) {
 	resumeInstallOnlineResponse := ResumeInstallOnlineResponse{
 		Success: false,
 	}
@@ -429,7 +429,7 @@ func ResumeInstallOnline(w http.ResponseWriter, r *http.Request) {
 	JSON(w, 200, resumeInstallOnlineResponse)
 }
 
-func GetOnlineInstallStatus(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) GetOnlineInstallStatus(w http.ResponseWriter, r *http.Request) {
 	status, err := store.GetStore().GetPendingInstallationStatus()
 	if err != nil {
 		logger.Error(err)
@@ -446,7 +446,7 @@ func GetOnlineInstallStatus(w http.ResponseWriter, r *http.Request) {
 // Authentication must be added here which will break backwards compatibility.
 // This route exists for backwards compatibility with platform License API and should be called by
 // the application only.
-func GetPlatformLicenseCompatibility(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) GetPlatformLicenseCompatibility(w http.ResponseWriter, r *http.Request) {
 	apps, err := store.GetStore().ListInstalledApps()
 	if err != nil {
 		if store.GetStore().IsNotFound(err) {

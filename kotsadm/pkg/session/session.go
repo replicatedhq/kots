@@ -19,7 +19,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
 )
 
-func Parse(signedToken string) (*types.Session, error) {
+func Parse(kotsStore store.KOTSStore, signedToken string) (*types.Session, error) {
 	if signedToken == "" {
 		return nil, errors.New("missing token")
 	}
@@ -87,10 +87,10 @@ func Parse(signedToken string) (*types.Session, error) {
 	}
 
 	if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
-		return store.GetStore().GetSession(claims["sessionId"].(string))
+		return kotsStore.GetSession(claims["sessionId"].(string))
 	}
 
-	return nil, errors.New("not a valid jwttoken")
+	return nil, errors.New("not a valid jwt token")
 }
 
 func SignJWT(s *types.Session) (string, error) {

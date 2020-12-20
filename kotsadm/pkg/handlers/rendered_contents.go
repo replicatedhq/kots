@@ -24,7 +24,7 @@ type GetAppRenderedContentsErrorResponse struct {
 	Error string `json:"error"`
 }
 
-func GetAppRenderedContents(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) GetAppRenderedContents(w http.ResponseWriter, r *http.Request) {
 	appSlug := mux.Vars(r)["appSlug"]
 	sequence, err := strconv.Atoi(mux.Vars(r)["sequence"])
 	if err != nil {

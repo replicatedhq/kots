@@ -20,7 +20,7 @@ type CreateApplicationBackupResponse struct {
 	Error   string `json:"error,omitempty"`
 }
 
-func CreateApplicationBackup(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) CreateApplicationBackup(w http.ResponseWriter, r *http.Request) {
 	createApplicationBackupResponse := CreateApplicationBackupResponse{
 		Success: false,
 	}
@@ -51,7 +51,7 @@ type ListBackupsResponse struct {
 	Backups []*snapshottypes.Backup `json:"backups"`
 }
 
-func ListBackups(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) ListBackups(w http.ResponseWriter, r *http.Request) {
 	listBackupsResponse := ListBackupsResponse{}
 
 	foundApp, err := store.GetStore().GetAppFromSlug(mux.Vars(r)["appSlug"])
@@ -92,7 +92,7 @@ type ListInstanceBackupsResponse struct {
 	Backups []*snapshottypes.Backup `json:"backups"`
 }
 
-func ListInstanceBackups(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) ListInstanceBackups(w http.ResponseWriter, r *http.Request) {
 	listBackupsResponse := ListInstanceBackupsResponse{}
 
 	backups, err := snapshot.ListInstanceBackups()
@@ -113,7 +113,7 @@ type GetBackupResponse struct {
 	Error        string                      `json:"error,omitempty"`
 }
 
-func GetBackup(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) GetBackup(w http.ResponseWriter, r *http.Request) {
 	getBackupResponse := GetBackupResponse{}
 
 	backup, err := snapshot.GetBackupDetail(context.TODO(), mux.Vars(r)["snapshotName"])
@@ -135,7 +135,7 @@ type DeleteBackupResponse struct {
 	Error   string `json:"error,omitempty"`
 }
 
-func DeleteBackup(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) DeleteBackup(w http.ResponseWriter, r *http.Request) {
 	deleteBackupResponse := DeleteBackupResponse{}
 
 	if err := snapshot.DeleteBackup(mux.Vars(r)["snapshotName"]); err != nil {
@@ -159,7 +159,7 @@ type CreateInstanceBackupResponse struct {
 	Error      string `json:"error,omitempty"`
 }
 
-func CreateInstanceBackup(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) CreateInstanceBackup(w http.ResponseWriter, r *http.Request) {
 	createInstanceBackupResponse := CreateInstanceBackupResponse{
 		Success: false,
 	}

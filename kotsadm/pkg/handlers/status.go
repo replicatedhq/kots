@@ -12,7 +12,7 @@ type GetUpdateDownloadStatusResponse struct {
 	Status         string `json:"status"`
 }
 
-func GetUpdateDownloadStatus(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) GetUpdateDownloadStatus(w http.ResponseWriter, r *http.Request) {
 	status, message, err := store.GetStore().GetTaskStatus("update-download")
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
