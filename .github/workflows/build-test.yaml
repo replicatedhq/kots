@@ -162,7 +162,7 @@ jobs:
           ADMIN_CONSOLE_PID=$!
           REF=${{ github.ref }}
           REF=${REF:-master}
-          BRANCH=${REF#"/refs/heads/"}
+          BRANCH=${REF#"refs/heads/"}
           echo "BRANCH IS $BRANCH"
           testim --token ${{ secrets.TESTIM_ACCESS_TOKEN }} --project ${{ secrets.TESTIM_PROJECT_ID }} --grid "Testim-grid" --report-file testim-report.xml --branch "$BRANCH" --suite legacy --tunnel --tunnel-port 8800
           EXIT_CODE=$?
