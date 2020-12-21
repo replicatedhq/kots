@@ -27,13 +27,14 @@ function deployButtonStatus(downstream, version, app) {
   const isPastVersion = find(downstream.pastVersions, { sequence: version.sequence });
   const needsConfiguration = version.status === "pending_config";
   const isRollback = isPastVersion && version.deployedAt && app.allowRollback;
+  const isPastVersionRedeploy = isPastVersion && version.deployedAt && !app.allowRollback;
   const isRedeploy = isCurrentVersion && (version.status === "failed" || version.status === "deployed");
 
   if (needsConfiguration) {
     return "Configure";
   } else if (downstream?.currentVersion?.sequence == undefined) {
     return "Deploy";
-  } else if (isRedeploy) {
+  } else if (isRedeploy || isPastVersionRedeploy) {
     return "Redeploy";
   } else if (isRollback) {
     return "Rollback";
@@ -69,7 +70,6 @@ function renderVersionAction(version, nothingToCommitDiff, app, history, deployV
   const isCurrentVersion = version.sequence === downstream.currentVersion?.sequence;
   const isPastVersion = find(downstream.pastVersions, { sequence: version.sequence });
   const needsConfiguration = version.status === "pending_config";
-  const showActions = !isPastVersion || app.allowRollback;
   const isRedeploy = isCurrentVersion && (version.status === "failed" || version.status === "deployed");
   const isRollback = isPastVersion && version.deployedAt && app.allowRollback;
 
@@ -78,15 +78,13 @@ function renderVersionAction(version, nothingToCommitDiff, app, history, deployV
 
   return (
     <div className="flex flex1 justifyContent--flexEnd">
-      {showActions &&
-        <button
-          className={classNames("btn", { "secondary dark": isRollback, "secondary blue": isSecondaryBtn, "primary blue": isPrimaryButton })}
-          disabled={version.status === "deploying"}
-          onClick={() => needsConfiguration ? history.push(`/app/${app.slug}/config/${version.sequence}`) : isRollback ? deployVersion(version, true) : deployVersion(version)}
-        >
-          {deployButtonStatus(downstream, version, app)}
-        </button>
-      }
+      <button
+        className={classNames("btn", { "secondary dark": isRollback, "secondary blue": isSecondaryBtn, "primary blue": isPrimaryButton })}
+        disabled={version.status === "deploying"}
+        onClick={() => needsConfiguration ? history.push(`/app/${app.slug}/config/${version.sequence}`) : isRollback ? deployVersion(version, true) : deployVersion(version)}
+      >
+        {deployButtonStatus(downstream, version, app)}
+      </button>
     </div>
   );
 }
