@@ -160,7 +160,11 @@ jobs:
           set +e
           ./bin/kots admin-console -n legacy &
           ADMIN_CONSOLE_PID=$!
-          testim --token ${{ secrets.TESTIM_ACCESS_TOKEN }} --project ${{ secrets.TESTIM_PROJECT_ID }} --grid "Testim-grid" --report-file testim-report.xml --suite legacy --tunnel --tunnel-port 8800
+          REF=${{ github.ref }}
+          REF=${REF:-master}
+          BRANCH=${REF#"/refs/heads/"}
+          echo "BRANCH IS $BRANCH"
+          testim --token ${{ secrets.TESTIM_ACCESS_TOKEN }} --project ${{ secrets.TESTIM_PROJECT_ID }} --grid "Testim-grid" --report-file testim-report.xml --branch "$BRANCH" --suite legacy --tunnel --tunnel-port 8800
           EXIT_CODE=$?
           echo "------pods:"
           kubectl -n legacy get pods
