@@ -14,7 +14,7 @@ type GenerateNodeJoinCommandResponse struct {
 	Expiry  string   `json:"expiry"`
 }
 
-func GenerateNodeJoinCommandWorker(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) GenerateNodeJoinCommandWorker(w http.ResponseWriter, r *http.Request) {
 	client, err := k8s.Clientset()
 	if err != nil {
 		logger.Error(err)
@@ -34,7 +34,7 @@ func GenerateNodeJoinCommandWorker(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-func GenerateNodeJoinCommandMaster(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) GenerateNodeJoinCommandMaster(w http.ResponseWriter, r *http.Request) {
 	client, err := k8s.Clientset()
 	if err != nil {
 		logger.Error(err)

@@ -54,7 +54,7 @@ type VeleroStatus struct {
 	IsVeleroInstalled bool `json:"isVeleroInstalled"`
 }
 
-func UpdateGlobalSnapshotSettings(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) UpdateGlobalSnapshotSettings(w http.ResponseWriter, r *http.Request) {
 	globalSnapshotSettingsResponse := GlobalSnapshotSettingsResponse{
 		Success: false,
 	}
@@ -339,7 +339,7 @@ func UpdateGlobalSnapshotSettings(w http.ResponseWriter, r *http.Request) {
 	JSON(w, 200, globalSnapshotSettingsResponse)
 }
 
-func GetGlobalSnapshotSettings(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) GetGlobalSnapshotSettings(w http.ResponseWriter, r *http.Request) {
 	globalSnapshotSettingsResponse := GlobalSnapshotSettingsResponse{
 		Success: false,
 	}
@@ -384,7 +384,7 @@ func GetGlobalSnapshotSettings(w http.ResponseWriter, r *http.Request) {
 	JSON(w, 200, globalSnapshotSettingsResponse)
 }
 
-func GetSnapshotConfig(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) GetSnapshotConfig(w http.ResponseWriter, r *http.Request) {
 	appSlug := mux.Vars(r)["appSlug"]
 	foundApp, err := store.GetStore().GetAppFromSlug(appSlug)
 	if err != nil {
@@ -426,7 +426,7 @@ func GetSnapshotConfig(w http.ResponseWriter, r *http.Request) {
 	JSON(w, http.StatusOK, getSnapshotConfigResponse)
 }
 
-func GetVeleroStatus(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) GetVeleroStatus(w http.ResponseWriter, r *http.Request) {
 	getVeleroStatusResponse := VeleroStatus{}
 
 	detectVelero, err := snapshot.DetectVelero()
@@ -460,7 +460,7 @@ type SaveSnapshotConfigResponse struct {
 	Error   string `json:"error,omitempty"`
 }
 
-func SaveSnapshotConfig(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) SaveSnapshotConfig(w http.ResponseWriter, r *http.Request) {
 	responseBody := SaveSnapshotConfigResponse{}
 	requestBody := SaveSnapshotConfigRequest{}
 	if err := json.NewDecoder(r.Body).Decode(&requestBody); err != nil {
@@ -555,7 +555,7 @@ type InstanceSnapshotConfig struct {
 	TTl          *snapshottypes.SnapshotTTL      `json:"ttl"`
 }
 
-func GetInstanceSnapshotConfig(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) GetInstanceSnapshotConfig(w http.ResponseWriter, r *http.Request) {
 	clusters, err := store.GetStore().ListClusters()
 	if err != nil {
 		logger.Error(err)
@@ -614,7 +614,7 @@ type SaveInstanceSnapshotConfigResponse struct {
 	Error   string `json:"error,omitempty"`
 }
 
-func SaveInstanceSnapshotConfig(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) SaveInstanceSnapshotConfig(w http.ResponseWriter, r *http.Request) {
 	responseBody := SaveInstanceSnapshotConfigResponse{}
 	requestBody := SaveInstanceSnapshotConfigRequest{}
 	if err := json.NewDecoder(r.Body).Decode(&requestBody); err != nil {

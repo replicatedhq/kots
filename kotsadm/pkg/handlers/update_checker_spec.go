@@ -20,7 +20,7 @@ type UpdateCheckerSpecResponse struct {
 	Error string `json:"error"`
 }
 
-func UpdateCheckerSpec(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) UpdateCheckerSpec(w http.ResponseWriter, r *http.Request) {
 	updateCheckerSpecResponse := &UpdateCheckerSpecResponse{}
 
 	updateCheckerSpecRequest := UpdateCheckerSpecRequest{}

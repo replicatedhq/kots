@@ -61,7 +61,7 @@ type CurrentAppConfigResponse struct {
 	ConfigGroups []kotsv1beta1.ConfigGroup `json:"configGroups"`
 }
 
-func UpdateAppConfig(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) UpdateAppConfig(w http.ResponseWriter, r *http.Request) {
 	updateAppConfigResponse := UpdateAppConfigResponse{
 		Success: false,
 	}
@@ -137,7 +137,7 @@ func UpdateAppConfig(w http.ResponseWriter, r *http.Request) {
 	JSON(w, http.StatusOK, UpdateAppConfigResponse{Success: true})
 }
 
-func LiveAppConfig(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) LiveAppConfig(w http.ResponseWriter, r *http.Request) {
 	liveAppConfigResponse := LiveAppConfigResponse{
 		Success: false,
 	}
@@ -239,7 +239,7 @@ func LiveAppConfig(w http.ResponseWriter, r *http.Request) {
 	JSON(w, http.StatusOK, LiveAppConfigResponse{Success: true, ConfigGroups: renderedConfig.Spec.Groups})
 }
 
-func CurrentAppConfig(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) CurrentAppConfig(w http.ResponseWriter, r *http.Request) {
 	currentAppConfigResponse := CurrentAppConfigResponse{
 		Success: false,
 	}

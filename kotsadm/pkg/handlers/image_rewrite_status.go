@@ -12,7 +12,7 @@ type GetImageRewriteStatusResponse struct {
 	CurrentMessage string `json:"currentMessage"`
 }
 
-func GetImageRewriteStatus(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) GetImageRewriteStatus(w http.ResponseWriter, r *http.Request) {
 	status, message, err := store.GetStore().GetTaskStatus("image-rewrite")
 	if err != nil {
 		logger.Error(err)

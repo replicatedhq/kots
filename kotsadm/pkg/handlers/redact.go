@@ -54,7 +54,7 @@ type PostRedactorEnabledMetadata struct {
 	Enabled bool `json:"enabled"`
 }
 
-func UpdateRedact(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) UpdateRedact(w http.ResponseWriter, r *http.Request) {
 	updateRedactResponse := UpdateRedactResponse{
 		Success: false,
 	}
@@ -123,7 +123,7 @@ func UpdateRedact(w http.ResponseWriter, r *http.Request) {
 	JSON(w, 200, updateRedactResponse)
 }
 
-func GetRedact(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) GetRedact(w http.ResponseWriter, r *http.Request) {
 	getRedactResponse := GetRedactResponse{
 		Success: false,
 	}
@@ -140,7 +140,7 @@ func GetRedact(w http.ResponseWriter, r *http.Request) {
 	JSON(w, 200, getRedactResponse)
 }
 
-func GetRedactMetadataAndYaml(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) GetRedactMetadataAndYaml(w http.ResponseWriter, r *http.Request) {
 	getRedactorResponse := GetRedactorResponse{
 		Success: false,
 	}
@@ -162,7 +162,7 @@ func GetRedactMetadataAndYaml(w http.ResponseWriter, r *http.Request) {
 	return
 }
 
-func ListRedactors(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) ListRedactors(w http.ResponseWriter, r *http.Request) {
 	listRedactorsResponse := ListRedactorsResponse{
 		Success: false,
 	}
@@ -181,7 +181,7 @@ func ListRedactors(w http.ResponseWriter, r *http.Request) {
 	return
 }
 
-func SetRedactMetadataAndYaml(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) SetRedactMetadataAndYaml(w http.ResponseWriter, r *http.Request) {
 	metadataResponse := GetRedactorResponse{
 		Success: false,
 	}
@@ -211,7 +211,7 @@ func SetRedactMetadataAndYaml(w http.ResponseWriter, r *http.Request) {
 	return
 }
 
-func DeleteRedact(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) DeleteRedact(w http.ResponseWriter, r *http.Request) {
 	redactorSlug := mux.Vars(r)["slug"]
 	err := redact.DeleteRedact(redactorSlug)
 	if err != nil {
@@ -223,7 +223,7 @@ func DeleteRedact(w http.ResponseWriter, r *http.Request) {
 	return
 }
 
-func SetRedactEnabled(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) SetRedactEnabled(w http.ResponseWriter, r *http.Request) {
 	metadataResponse := GetRedactorResponse{
 		Success: false,
 	}

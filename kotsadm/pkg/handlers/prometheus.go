@@ -12,7 +12,7 @@ type SetPrometheusAddressRequest struct {
 	Value string `json:"value"`
 }
 
-func SetPrometheusAddress(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) SetPrometheusAddress(w http.ResponseWriter, r *http.Request) {
 	setPrometheusAddressRequest := SetPrometheusAddressRequest{}
 	if err := json.NewDecoder(r.Body).Decode(&setPrometheusAddressRequest); err != nil {
 		logger.Error(err)

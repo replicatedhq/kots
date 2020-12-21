@@ -75,7 +75,7 @@ type OIDCClaimMapping struct {
 	GroupsKey            string `json:"groups,omitempty"`
 }
 
-func ConfigureIdentityService(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) ConfigureIdentityService(w http.ResponseWriter, r *http.Request) {
 	request := ConfigureIdentityServiceRequest{}
 	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
 		err = errors.Wrap(err, "failed to decode request body")
@@ -227,7 +227,7 @@ func ConfigureIdentityService(w http.ResponseWriter, r *http.Request) {
 	JSON(w, http.StatusOK, response)
 }
 
-func ConfigureAppIdentityService(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) ConfigureAppIdentityService(w http.ResponseWriter, r *http.Request) {
 	request := ConfigureIdentityServiceRequest{}
 	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
 		err = errors.Wrap(err, "failed to decode request body")
@@ -571,7 +571,7 @@ type GetIdentityServiceConfigResponse struct {
 	IDPConfig `json:",inline"`
 }
 
-func GetIdentityServiceConfig(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) GetIdentityServiceConfig(w http.ResponseWriter, r *http.Request) {
 	namespace := os.Getenv("POD_NAMESPACE")
 
 	identityConfig, err := identity.GetConfig(r.Context(), namespace)
@@ -622,7 +622,7 @@ func GetIdentityServiceConfig(w http.ResponseWriter, r *http.Request) {
 	JSON(w, http.StatusOK, response)
 }
 
-func GetAppIdentityServiceConfig(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) GetAppIdentityServiceConfig(w http.ResponseWriter, r *http.Request) {
 	a, err := store.GetStore().GetAppFromSlug(mux.Vars(r)["appSlug"])
 	if err != nil {
 		logger.Error(err)

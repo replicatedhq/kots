@@ -35,7 +35,7 @@ type CreateGitOpsInput struct {
 	Hostname string `json:"hostname"`
 }
 
-func UpdateAppGitOps(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) UpdateAppGitOps(w http.ResponseWriter, r *http.Request) {
 	updateAppGitOpsRequest := UpdateAppGitOpsRequest{}
 	if err := json.NewDecoder(r.Body).Decode(&updateAppGitOpsRequest); err != nil {
 		logger.Error(err)
@@ -63,7 +63,7 @@ func UpdateAppGitOps(w http.ResponseWriter, r *http.Request) {
 	JSON(w, http.StatusNoContent, "")
 }
 
-func DisableAppGitOps(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) DisableAppGitOps(w http.ResponseWriter, r *http.Request) {
 	appID := mux.Vars(r)["appId"]
 	clusterID := mux.Vars(r)["clusterId"]
 
@@ -93,7 +93,7 @@ func DisableAppGitOps(w http.ResponseWriter, r *http.Request) {
 	JSON(w, http.StatusNoContent, "")
 }
 
-func InitGitOpsConnection(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) InitGitOpsConnection(w http.ResponseWriter, r *http.Request) {
 	currentStatus, _, err := store.GetStore().GetTaskStatus("gitops-init")
 	if err != nil {
 		logger.Error(err)
@@ -259,7 +259,7 @@ func InitGitOpsConnection(w http.ResponseWriter, r *http.Request) {
 	JSON(w, http.StatusNoContent, "")
 }
 
-func ResetGitOps(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) ResetGitOps(w http.ResponseWriter, r *http.Request) {
 	if err := gitops.ResetGitOps(); err != nil {
 		logger.Error(err)
 		w.WriteHeader(http.StatusInternalServerError)
@@ -269,7 +269,7 @@ func ResetGitOps(w http.ResponseWriter, r *http.Request) {
 	JSON(w, http.StatusNoContent, "")
 }
 
-func GetGitOpsRepo(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) GetGitOpsRepo(w http.ResponseWriter, r *http.Request) {
 	gitOpsConfig, err := gitops.GetGitOps()
 	if err != nil {
 		logger.Error(err)
@@ -280,7 +280,7 @@ func GetGitOpsRepo(w http.ResponseWriter, r *http.Request) {
 	JSON(w, http.StatusOK, gitOpsConfig)
 }
 
-func CreateGitOps(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) CreateGitOps(w http.ResponseWriter, r *http.Request) {
 	createGitOpsRequest := CreateGitOpsRequest{}
 	if err := json.NewDecoder(r.Body).Decode(&createGitOpsRequest); err != nil {
 		logger.Error(err)

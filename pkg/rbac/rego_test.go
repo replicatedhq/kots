@@ -284,7 +284,7 @@ func TestCheckAccess(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := CheckAccess(context.Background(), tt.args.action, tt.args.resource, tt.args.sessionRoles, tt.args.appSlugs)
+			got, err := CheckAccess(context.Background(), DefaultRoles(), tt.args.action, tt.args.resource, tt.args.sessionRoles)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("CheckAccess() error = %v, wantErr %v", err, tt.wantErr)
 				return

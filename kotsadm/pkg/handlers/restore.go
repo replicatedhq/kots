@@ -30,7 +30,7 @@ type GetRestoreStatusResponse struct {
 	Error       string `json:"error,omitempty"`
 }
 
-func CreateApplicationRestore(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) CreateApplicationRestore(w http.ResponseWriter, r *http.Request) {
 	createRestoreResponse := CreateApplicationRestoreResponse{
 		Success: false,
 	}
@@ -120,7 +120,7 @@ type RestoreAppsResponse struct {
 	Error   string `json:"error,omitempty"`
 }
 
-func RestoreApps(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) RestoreApps(w http.ResponseWriter, r *http.Request) {
 	restoreResponse := RestoreAppsResponse{
 		Success: false,
 	}
@@ -189,7 +189,7 @@ type AppRestoreStatus struct {
 	Status  velerov1.RestoreStatus `json:"status,omitempty"`
 }
 
-func GetRestoreAppsStatus(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) GetRestoreAppsStatus(w http.ResponseWriter, r *http.Request) {
 	response := GetRestoreAppsStatusResponse{
 		Statuses: []AppRestoreStatus{},
 	}
@@ -250,7 +250,7 @@ func GetRestoreAppsStatus(w http.ResponseWriter, r *http.Request) {
 	JSON(w, http.StatusOK, response)
 }
 
-func GetRestoreStatus(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) GetRestoreStatus(w http.ResponseWriter, r *http.Request) {
 	response := GetRestoreStatusResponse{
 		Status: "",
 	}
@@ -271,7 +271,7 @@ func GetRestoreStatus(w http.ResponseWriter, r *http.Request) {
 	JSON(w, http.StatusOK, response)
 }
 
-func CancelRestore(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) CancelRestore(w http.ResponseWriter, r *http.Request) {
 	appSlug := mux.Vars(r)["appSlug"]
 
 	foundApp, err := store.GetStore().GetAppFromSlug(appSlug)
@@ -297,7 +297,7 @@ type GetRestoreDetailsResponse struct {
 	IsActive      bool                         `json:"active"`
 }
 
-func GetRestoreDetails(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) GetRestoreDetails(w http.ResponseWriter, r *http.Request) {
 	appSlug := mux.Vars(r)["appSlug"]
 	restoreName := mux.Vars(r)["restoreName"]
 

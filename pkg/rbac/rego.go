@@ -66,11 +66,7 @@ func init() {
 	}
 }
 
-func CheckAccess(ctx context.Context, action, resource string, sessionRoles []string, appSlugs []string) (bool, error) {
-	roles := DefaultRoles()
-	for _, appSlug := range appSlugs {
-		roles = append(roles, GetAppAdminRole(appSlug))
-	}
+func CheckAccess(ctx context.Context, roles []types.Role, action, resource string, sessionRoles []string) (bool, error) {
 	for _, role := range roles {
 		i := map[string]interface{}{
 			"action":            action,

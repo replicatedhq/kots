@@ -47,7 +47,7 @@ var uploadedAirgapBundleChunks = map[string]struct{}{}
 var chunkLock sync.Mutex
 var fileLock sync.Mutex
 
-func GetAirgapInstallStatus(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) GetAirgapInstallStatus(w http.ResponseWriter, r *http.Request) {
 	status, err := store.GetStore().GetAirgapInstallStatus()
 	if err != nil {
 		logger.Error(err)
@@ -58,7 +58,7 @@ func GetAirgapInstallStatus(w http.ResponseWriter, r *http.Request) {
 	JSON(w, 200, status)
 }
 
-func ResetAirgapInstallStatus(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) ResetAirgapInstallStatus(w http.ResponseWriter, r *http.Request) {
 	appID, err := store.GetStore().GetAppIDFromSlug(mux.Vars(r)["appSlug"])
 	if err != nil {
 		logger.Error(err)
@@ -76,7 +76,7 @@ func ResetAirgapInstallStatus(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
-func CheckAirgapBundleChunk(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) CheckAirgapBundleChunk(w http.ResponseWriter, r *http.Request) {
 	resumableIdentifier := r.FormValue("resumableIdentifier")
 	resumableChunkNumber := r.FormValue("resumableChunkNumber")
 	resumableTotalChunks := r.FormValue("resumableTotalChunks")
@@ -114,7 +114,7 @@ func CheckAirgapBundleChunk(w http.ResponseWriter, r *http.Request) {
 	JSON(w, http.StatusOK, "")
 }
 
-func UploadAirgapBundleChunk(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) UploadAirgapBundleChunk(w http.ResponseWriter, r *http.Request) {
 	resumableIdentifier := r.FormValue("resumableIdentifier")
 	resumableTotalChunks := r.FormValue("resumableTotalChunks")
 	resumableTotalSize := r.FormValue("resumableTotalSize")
@@ -223,7 +223,7 @@ func UploadAirgapBundleChunk(w http.ResponseWriter, r *http.Request) {
 	JSON(w, http.StatusOK, "")
 }
 
-func AirgapBundleProgress(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) AirgapBundleProgress(w http.ResponseWriter, r *http.Request) {
 	identifier := mux.Vars(r)["identifier"]
 	totalChunksStr := mux.Vars(r)["totalChunks"]
 
@@ -243,7 +243,7 @@ func AirgapBundleProgress(w http.ResponseWriter, r *http.Request) {
 	JSON(w, http.StatusOK, airgapBundleProgressResponse)
 }
 
-func AirgapBundleExists(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) AirgapBundleExists(w http.ResponseWriter, r *http.Request) {
 	identifier := mux.Vars(r)["identifier"]
 	totalChunksStr := mux.Vars(r)["totalChunks"]
 
@@ -263,7 +263,7 @@ func AirgapBundleExists(w http.ResponseWriter, r *http.Request) {
 	JSON(w, http.StatusOK, airgapBundleExistsResponse)
 }
 
-func UpdateAppFromAirgap(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) UpdateAppFromAirgap(w http.ResponseWriter, r *http.Request) {
 	updateAppFromAirgapRequest := UpdateAppFromAirgapRequest{}
 	if err := json.NewDecoder(r.Body).Decode(&updateAppFromAirgapRequest); err != nil {
 		logger.Error(err)
@@ -312,7 +312,7 @@ func UpdateAppFromAirgap(w http.ResponseWriter, r *http.Request) {
 	JSON(w, http.StatusAccepted, updateAppFromAirgapResponse)
 }
 
-func CreateAppFromAirgap(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) CreateAppFromAirgap(w http.ResponseWriter, r *http.Request) {
 	createAppFromAirgapRequest := CreateAppFromAirgapRequest{}
 	if err := json.NewDecoder(r.Body).Decode(&createAppFromAirgapRequest); err != nil {
 		logger.Error(err)
@@ -445,7 +445,7 @@ func cleanUp(uploadedFileIdentifier string, totalChunks int64) error {
 	return nil
 }
 
-func UploadInitialAirgapApp(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) UploadInitialAirgapApp(w http.ResponseWriter, r *http.Request) {
 	if err := requireValidKOTSToken(w, r); err != nil {
 		logger.Error(errors.Wrap(err, "failed to validate token"))
 		return
@@ -481,7 +481,7 @@ func UploadInitialAirgapApp(w http.ResponseWriter, r *http.Request) {
 }
 
 // Backwards compatibility airgap upload handler
-func UploadAirgapBundle(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) UploadAirgapBundle(w http.ResponseWriter, r *http.Request) {
 	if r.Method == "POST" {
 		bc_createAppFromAirgap(w, r)
 		return

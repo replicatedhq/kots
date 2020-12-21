@@ -26,7 +26,7 @@ type AppUpdateCheckResponse struct {
 	CurrentAppSequence int64 `json:"currentAppSequence"`
 }
 
-func AppUpdateCheck(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) AppUpdateCheck(w http.ResponseWriter, r *http.Request) {
 	foundApp, err := store.GetStore().GetAppFromSlug(mux.Vars(r)["appSlug"])
 	if err != nil {
 		logger.Error(err)

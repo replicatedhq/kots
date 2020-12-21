@@ -12,7 +12,7 @@ import (
 )
 
 // NOTE: this uses special cluster authorization
-func SetAppStatus(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) SetAppStatus(w http.ResponseWriter, r *http.Request) {
 	auth, err := parseClusterAuthorization(r.Header.Get("Authorization"))
 	if err != nil {
 		logger.Error(err)

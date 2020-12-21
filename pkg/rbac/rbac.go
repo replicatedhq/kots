@@ -1,8 +1,6 @@
 package rbac
 
 import (
-	"fmt"
-
 	"github.com/replicatedhq/kots/pkg/rbac/types"
 )
 
@@ -51,18 +49,5 @@ func DefaultRoles() []types.Role {
 	return []types.Role{
 		ClusterAdminRole,
 		SupportRole,
-	}
-}
-
-func GetAppAdminRole(appSlug string) types.Role {
-	return types.Role{
-		ID:          fmt.Sprintf("app-%s-admin", appSlug),
-		Name:        fmt.Sprintf("App %s admin", appSlug),
-		Description: fmt.Sprintf("Read/write access to all resources for app %s", appSlug),
-		Allow: []types.Policy{
-			{Action: "read", Resource: "app."},
-			{Action: "**", Resource: fmt.Sprintf("app.%s", appSlug)},
-			{Action: "**", Resource: fmt.Sprintf("app.%s.**", appSlug)},
-		},
 	}
 }

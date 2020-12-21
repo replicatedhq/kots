@@ -39,7 +39,7 @@ const (
 	IdentityService LoginMethod = "identity-service"
 )
 
-func Login(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 	identityConfig, err := identity.GetConfig(r.Context(), os.Getenv("POD_NAMESPACE"))
 	if err != nil {
 		logger.Error(err)
@@ -104,7 +104,7 @@ type OIDCLoginResponse struct {
 	Error       string `json:"error,omitempty"`
 }
 
-func OIDCLogin(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) OIDCLogin(w http.ResponseWriter, r *http.Request) {
 	namespace := os.Getenv("POD_NAMESPACE")
 
 	oidcLoginResponse := OIDCLoginResponse{}
@@ -148,7 +148,7 @@ func OIDCLogin(w http.ResponseWriter, r *http.Request) {
 	JSON(w, http.StatusOK, oidcLoginResponse)
 }
 
-func OIDCLoginCallback(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) OIDCLoginCallback(w http.ResponseWriter, r *http.Request) {
 	namespace := os.Getenv("POD_NAMESPACE")
 
 	clientset, err := k8s.Clientset()
@@ -360,7 +360,7 @@ type GetLoginInfoResponse struct {
 	Error  string      `json:"error,omitempty"`
 }
 
-func GetLoginInfo(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) GetLoginInfo(w http.ResponseWriter, r *http.Request) {
 	getLoginInfoResponse := GetLoginInfoResponse{}
 
 	identityConfig, err := identity.GetConfig(r.Context(), os.Getenv("POD_NAMESPACE"))
