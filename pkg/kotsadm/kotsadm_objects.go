@@ -153,6 +153,25 @@ func updateKotsadmDeployment(deployment *appsv1.Deployment, deployOptions types.
 	// image
 	deployment.Spec.Template.Spec.Containers[containerIdx].Image = fmt.Sprintf("%s/kotsadm:%s", kotsadmversion.KotsadmRegistry(deployOptions.KotsadmOptions), kotsadmversion.KotsadmTag(deployOptions.KotsadmOptions))
 
+	additionalInitContainers := []corev1.Container{}
+	for _, desiredContainer := range desiredDeployment.Spec.Template.Spec.InitContainers {
+		found := false
+		for i, existingContainer := range deployment.Spec.Template.Spec.InitContainers {
+			if existingContainer.Name != desiredContainer.Name {
+				continue
+			}
+
+			deployment.Spec.Template.Spec.InitContainers[i] = *desiredContainer.DeepCopy()
+			found = true
+			break
+		}
+
+		if !found {
+			additionalInitContainers = append(additionalInitContainers, *desiredContainer.DeepCopy())
+		}
+	}
+	deployment.Spec.Template.Spec.InitContainers = append(deployment.Spec.Template.Spec.InitContainers, additionalInitContainers...)
+
 	// copy the env vars from the desired to existing. this could undo a change that the user had.
 	// we don't know which env vars we set and which are user edited. this method avoids deleting
 	// env vars that the user added, but doesn't handle edited vars
@@ -381,52 +400,6 @@ func kotsadmDeployment(deployOptions types.DeployOptions) *appsv1.Deployment {
 					RestartPolicy:      corev1.RestartPolicyAlways,
 					ImagePullSecrets:   pullSecrets,
 					InitContainers: []corev1.Container{
-						{
-							Image:           fmt.Sprintf("%s/kotsadm:%s", kotsadmversion.KotsadmRegistry(deployOptions.KotsadmOptions), kotsadmversion.KotsadmTag(deployOptions.KotsadmOptions)),
-							ImagePullPolicy: corev1.PullIfNotPresent,
-							Name:            "init-dex-db",
-							Command: []string{
-								"psql",
-							},
-							Args: []string{
-								"-h",
-								"kotsadm-postgres",
-								"-U",
-								"kotsadm",
-								"-c",
-								"CREATE DATABASE dex;",
-								"-c",
-								"CREATE USER dex;",
-								"-c",
-								"ALTER USER dex WITH PASSWORD '$(DEX_PGPASSWORD)';",
-								"-c",
-								"GRANT ALL PRIVILEGES ON DATABASE dex TO dex;",
-							},
-							Env: []corev1.EnvVar{
-								{
-									Name: "PGPASSWORD",
-									ValueFrom: &corev1.EnvVarSource{
-										SecretKeyRef: &corev1.SecretKeySelector{
-											LocalObjectReference: corev1.LocalObjectReference{
-												Name: "kotsadm-postgres",
-											},
-											Key: "password",
-										},
-									},
-								},
-								{
-									Name: "DEX_PGPASSWORD",
-									ValueFrom: &corev1.EnvVarSource{
-										SecretKeyRef: &corev1.SecretKeySelector{
-											LocalObjectReference: corev1.LocalObjectReference{
-												Name: "kotsadm-dex-postgres",
-											},
-											Key: "PGPASSWORD",
-										},
-									},
-								},
-							},
-						},
 						{
 							Image:           fmt.Sprintf("%s/kotsadm:%s", kotsadmversion.KotsadmRegistry(deployOptions.KotsadmOptions), kotsadmversion.KotsadmTag(deployOptions.KotsadmOptions)),
 							ImagePullPolicy: corev1.PullIfNotPresent,

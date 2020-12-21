@@ -26,7 +26,7 @@ func postgresUserExists(user string) (bool, error) {
 	return true, nil
 }
 
-func createDexPostgresDatabase(database, user, password string) error {
+func CreateDexPostgresDatabase(database, user, password string) error {
 	db := persistence.MustGetPGSession()
 
 	databaseQ := pq.QuoteIdentifier(database)

@@ -47,11 +47,16 @@ func bootstrapClusterToken() error {
 	return nil
 }
 
-// After snapshot restore, we need to create dex db for each app.
-// But the password has to match the one in the app's secret.
-// The secret is restored after kotsadm comes up, but we can get it from
-// the app's archive files.
 func bootstrapIdentity() error {
+	err := identity.CreateDexPostgresDatabase("dex", "dex", os.Getenv("DEX_PGPASSWORD"))
+	if err != nil {
+		return errors.Wrap(err, "failed to create identity db")
+	}
+
+	// After snapshot restore, we need to create dex db for each app.
+	// But the password has to match the one in the app's secret.
+	// The secret is restored after kotsadm comes up, but we can get it from
+	// the app's archive files.
 	apps, err := store.GetStore().ListInstalledApps()
 	if err != nil {
 		return errors.Wrap(err, "failed to list apps")
