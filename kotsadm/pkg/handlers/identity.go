@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 
 	"github.com/dexidp/dex/connector/oidc"
@@ -163,18 +164,24 @@ func (h *Handler) ConfigureIdentityService(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	// TODO: validate dex issuer
-	if err := identity.ValidateConnection(r.Context(), namespace, identityConfig, *ingressConfig); err != nil {
-		if _, ok := errors.Cause(err).(*identity.ErrorConnection); ok {
-			err = errors.Wrap(err, "invalid connection")
+	disableOutboundConnections := false
+	// ignore the error, default to false
+	disableOutboundConnections, _ = strconv.ParseBool(os.Getenv("DISABLE_OUTBOUND_CONNECTIONS"))
+	if !disableOutboundConnections {
+		// TODO: validate dex issuer
+		err := identity.ValidateConnection(r.Context(), namespace, identityConfig, *ingressConfig)
+		if err != nil {
+			if _, ok := errors.Cause(err).(*identity.ErrorConnection); ok {
+				err = errors.Wrap(err, "invalid connection")
+				logger.Error(err)
+				JSON(w, http.StatusBadRequest, NewErrorResponse(err))
+				return
+			}
+			err = errors.Wrap(err, "failed to validate identity connection")
 			logger.Error(err)
-			JSON(w, http.StatusBadRequest, NewErrorResponse(err))
+			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
-		err = errors.Wrap(err, "failed to validate identity connection")
-		logger.Error(err)
-		w.WriteHeader(http.StatusInternalServerError)
-		return
 	}
 
 	if err := identity.SetConfig(r.Context(), namespace, identityConfig); err != nil {
@@ -394,20 +401,22 @@ func (h *Handler) ConfigureAppIdentityService(w http.ResponseWriter, r *http.Req
 
 	namespace := os.Getenv("POD_NAMESPACE")
 
-	// TODO: handle configuring ingress for the app?
-	// TODO: validate dex issuer
-	ingressConfig := kotsv1beta1.IngressConfig{}
-	if err := identity.ValidateConnection(r.Context(), namespace, identityConfig, ingressConfig); err != nil {
-		if _, ok := errors.Cause(err).(*identity.ErrorConnection); ok {
-			err = errors.Wrap(err, "invalid connection")
+	if !a.IsAirgap {
+		// TODO: handle configuring ingress for the app?
+		// TODO: validate dex issuer
+		ingressConfig := kotsv1beta1.IngressConfig{}
+		if err := identity.ValidateConnection(r.Context(), namespace, identityConfig, ingressConfig); err != nil {
+			if _, ok := errors.Cause(err).(*identity.ErrorConnection); ok {
+				err = errors.Wrap(err, "invalid connection")
+				logger.Error(err)
+				JSON(w, http.StatusBadRequest, NewErrorResponse(err))
+				return
+			}
+			err = errors.Wrap(err, "failed to validate identity connection")
 			logger.Error(err)
-			JSON(w, http.StatusBadRequest, NewErrorResponse(err))
+			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
-		err = errors.Wrap(err, "failed to validate identity connection")
-		logger.Error(err)
-		w.WriteHeader(http.StatusInternalServerError)
-		return
 	}
 
 	kotsKinds.IdentityConfig = &identityConfig
