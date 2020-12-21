@@ -154,12 +154,14 @@ jobs:
           --kotsadm-registry ttl.sh \
           --kotsadm-namespace automated-${{ github.run_id }} \
           --kotsadm-tag 2h
+
       - name: execute legacy tests
         run: |
           set +e
           ./bin/kots admin-console -n legacy &
           ADMIN_CONSOLE_PID=$!
-          testim --token ${{ secrets.TESTIM_ACCESS_TOKEN }} --project ${{ secrets.TESTIM_PROJECT_ID }} --grid "Testim-grid" --report-file testim-report.xml --suite legacy --tunnel --tunnel-port 8800
+          curl -X POST "https://api.testim.io/branches" -H  "accept: application/json" -H  "Content-Type: application/json" -d "{\"sourceBranch\":\"master\",\"newBranch\":\"${{ github.ref }}-${{ github.run_id }}\"}" -H 'Authorization: Bearer ${{ secrets.TESTIM_API_KEY }}'
+          curl -X DELETE "https://api.testim.io/branches/${{ github.ref }}-${{ github.run_id }}" -H  "accept: application/json" -H 'Authorization: Bearer ${{ secrets.TESTIM_API_KEY }}'
           EXIT_CODE=$?
           echo "------pods:"
           kubectl -n legacy get pods
