@@ -21,7 +21,7 @@ type ExchangePlatformLicenseResponse struct {
 	LicenseData string `json:"licenseData"`
 }
 
-func ExchangePlatformLicense(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) ExchangePlatformLicense(w http.ResponseWriter, r *http.Request) {
 	request := ExchangePlatformLicenseRequest{}
 	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
 		logger.Error(err)

@@ -84,7 +84,7 @@ type PutSupportBundleRedactions struct {
 	Redactions redact2.RedactionList `json:"redactions"`
 }
 
-func GetSupportBundle(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) GetSupportBundle(w http.ResponseWriter, r *http.Request) {
 	bundleSlug := mux.Vars(r)["bundleSlug"]
 
 	bundle, err := store.GetStore().GetSupportBundleFromSlug(bundleSlug)
@@ -116,7 +116,7 @@ func GetSupportBundle(w http.ResponseWriter, r *http.Request) {
 	JSON(w, http.StatusOK, getSupportBundleResponse)
 }
 
-func GetSupportBundleFiles(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) GetSupportBundleFiles(w http.ResponseWriter, r *http.Request) {
 	getSupportBundleFilesResponse := GetSupportBundleFilesResponse{
 		Success: false,
 	}
@@ -138,7 +138,7 @@ func GetSupportBundleFiles(w http.ResponseWriter, r *http.Request) {
 	JSON(w, http.StatusOK, getSupportBundleFilesResponse)
 }
 
-func ListSupportBundles(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) ListSupportBundles(w http.ResponseWriter, r *http.Request) {
 	appSlug := mux.Vars(r)["appSlug"]
 
 	a, err := store.GetStore().GetAppFromSlug(appSlug)
@@ -185,7 +185,7 @@ func ListSupportBundles(w http.ResponseWriter, r *http.Request) {
 	JSON(w, http.StatusOK, listSupportBundlesResponse)
 }
 
-func GetSupportBundleCommand(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) GetSupportBundleCommand(w http.ResponseWriter, r *http.Request) {
 	appSlug := mux.Vars(r)["appSlug"]
 
 	// in case of an error, return a generic command
@@ -241,7 +241,7 @@ func GetSupportBundleCommand(w http.ResponseWriter, r *http.Request) {
 	JSON(w, http.StatusOK, response)
 }
 
-func DownloadSupportBundle(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) DownloadSupportBundle(w http.ResponseWriter, r *http.Request) {
 	bundleID := mux.Vars(r)["bundleId"]
 
 	bundle, err := store.GetStore().GetSupportBundle(bundleID)
@@ -275,7 +275,7 @@ func DownloadSupportBundle(w http.ResponseWriter, r *http.Request) {
 	io.Copy(w, f)
 }
 
-func CollectSupportBundle(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) CollectSupportBundle(w http.ResponseWriter, r *http.Request) {
 	a, err := store.GetStore().GetApp(mux.Vars(r)["appId"])
 	if err != nil {
 		logger.Error(err)
@@ -294,7 +294,7 @@ func CollectSupportBundle(w http.ResponseWriter, r *http.Request) {
 
 // UploadSupportBundle route is UNAUTHENTICATED
 // This request comes from the `kubectl support-bundle` command.
-func UploadSupportBundle(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) UploadSupportBundle(w http.ResponseWriter, r *http.Request) {
 	bundleContents, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		logger.Error(errors.Wrap(err, "failed to read request body"))
@@ -420,7 +420,7 @@ func UploadSupportBundle(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
-func GetSupportBundleRedactions(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) GetSupportBundleRedactions(w http.ResponseWriter, r *http.Request) {
 	getSupportBundleRedactionsResponse := GetSupportBundleRedactionsResponse{
 		Success: false,
 	}
@@ -442,7 +442,7 @@ func GetSupportBundleRedactions(w http.ResponseWriter, r *http.Request) {
 
 // SetSupportBundleRedactions route is UNAUTHENTICATED
 // This request comes from the `kubectl support-bundle` command.
-func SetSupportBundleRedactions(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) SetSupportBundleRedactions(w http.ResponseWriter, r *http.Request) {
 	redactionsBody, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		logger.Error(err)

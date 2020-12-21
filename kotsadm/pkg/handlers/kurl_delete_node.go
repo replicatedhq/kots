@@ -14,7 +14,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
 )
 
-func DeleteNode(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) DeleteNode(w http.ResponseWriter, r *http.Request) {
 	client, err := k8s.Clientset()
 	if err != nil {
 		logger.Error(err)

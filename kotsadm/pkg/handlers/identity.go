@@ -12,7 +12,6 @@ import (
 	"github.com/dexidp/dex/connector/oidc"
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
-	"github.com/replicatedhq/kots/kotsadm/pkg/downstream"
 	kotsadmidentity "github.com/replicatedhq/kots/kotsadm/pkg/identity"
 	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
 	"github.com/replicatedhq/kots/kotsadm/pkg/preflight"
@@ -38,10 +37,12 @@ const (
 	RedactionMask = "--- REDACTED ---"
 )
 
+// TODO: separate request types for kotsadm and the app?
 type ConfigureIdentityServiceRequest struct {
-	AdminConsoleAddress    string                            `json:"adminConsoleAddress,omitempty"`
-	IdentityServiceAddress string                            `json:"identityServiceAddress,omitempty"`
-	Groups                 []kotsv1beta1.IdentityConfigGroup `json:"groups,omitempty"`
+	AdminConsoleAddress     string                            `json:"adminConsoleAddress,omitempty"`
+	IdentityServiceAddress  string                            `json:"identityServiceAddress,omitempty"`
+	UseAdminConsoleSettings bool                              `json:"useAdminConsoleSettings,omitempty"`
+	Groups                  []kotsv1beta1.IdentityConfigGroup `json:"groups,omitempty"`
 
 	IDPConfig `json:",inline"`
 }
@@ -74,7 +75,7 @@ type OIDCClaimMapping struct {
 	GroupsKey            string `json:"groups,omitempty"`
 }
 
-func ConfigureIdentityService(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) ConfigureIdentityService(w http.ResponseWriter, r *http.Request) {
 	request := ConfigureIdentityServiceRequest{}
 	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
 		err = errors.Wrap(err, "failed to decode request body")
@@ -235,7 +236,7 @@ func ConfigureIdentityService(w http.ResponseWriter, r *http.Request) {
 	JSON(w, http.StatusOK, response)
 }
 
-func ConfigureAppIdentityService(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) ConfigureAppIdentityService(w http.ResponseWriter, r *http.Request) {
 	request := ConfigureIdentityServiceRequest{}
 	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
 		err = errors.Wrap(err, "failed to decode request body")
@@ -292,7 +293,7 @@ func ConfigureAppIdentityService(w http.ResponseWriter, r *http.Request) {
 
 	identityConfigFile := filepath.Join(archiveDir, "upstream", "userdata", "identityconfig.yaml")
 	if _, err := os.Stat(identityConfigFile); os.IsNotExist(err) {
-		f, err := kotsadmidentity.InitAppIdentityConfig(a.Slug)
+		f, err := kotsadmidentity.InitAppIdentityConfig(a.Slug, kotsv1beta1.Storage{}, crypto.AESCipher{})
 		if err != nil {
 			err = errors.Wrap(err, "failed to init identity config")
 			logger.Error(err)
@@ -347,6 +348,32 @@ func ConfigureAppIdentityService(w http.ResponseWriter, r *http.Request) {
 		logger.Error(err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
+	}
+
+	if request.UseAdminConsoleSettings {
+		// existing idpConfigs are used for secret un-redaction
+		// if secrets in the request are not redacted, this won't have any effect
+		// the user has the option to use kotsadm identity config
+		// in that case, secrets should be retrieved from kotsadm identity config not the app identity config
+		namespace := os.Getenv("POD_NAMESPACE")
+
+		kotsadmIdentityConfig, err := identity.GetConfig(r.Context(), namespace)
+		if err != nil {
+			err = errors.Wrap(err, "failed to get kots identity config")
+			logger.Error(err)
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+
+		// NOTE: we do not encrypt kotsadm config
+
+		idpConfigs, err = dexConnectorsToIDPConfigs(kotsadmIdentityConfig.Spec.DexConnectors.Value)
+		if err != nil {
+			err = errors.Wrap(err, "failed to get kotsadm idp configs from dex connectors")
+			logger.Error(err)
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
 	}
 
 	connectorInfo, err := getDexConnectorInfo(request, idpConfigs)
@@ -436,13 +463,6 @@ func ConfigureAppIdentityService(w http.ResponseWriter, r *http.Request) {
 	newSequence, err := version.CreateVersion(a.ID, archiveDir, "Identity Service", a.CurrentSequence, false)
 	if err != nil {
 		err = errors.Wrap(err, "failed to create an app version")
-		logger.Error(err)
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-
-	if err := downstream.SetDownstreamVersionPendingPreflight(a.ID, newSequence); err != nil {
-		err = errors.Wrap(err, "failed to set downstream status to 'pending preflight'")
 		logger.Error(err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
@@ -560,7 +580,7 @@ type GetIdentityServiceConfigResponse struct {
 	IDPConfig `json:",inline"`
 }
 
-func GetIdentityServiceConfig(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) GetIdentityServiceConfig(w http.ResponseWriter, r *http.Request) {
 	namespace := os.Getenv("POD_NAMESPACE")
 
 	identityConfig, err := identity.GetConfig(r.Context(), namespace)
@@ -611,7 +631,7 @@ func GetIdentityServiceConfig(w http.ResponseWriter, r *http.Request) {
 	JSON(w, http.StatusOK, response)
 }
 
-func GetAppIdentityServiceConfig(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) GetAppIdentityServiceConfig(w http.ResponseWriter, r *http.Request) {
 	a, err := store.GetStore().GetAppFromSlug(mux.Vars(r)["appSlug"])
 	if err != nil {
 		logger.Error(err)
@@ -779,6 +799,8 @@ func identityOIDCToOIDCConfig(identityOIDC *OIDCConfig, idpConfigs []IDPConfig, 
 		for _, idpConfig := range idpConfigs {
 			if idpConfig.OIDCConfig != nil {
 				c.ClientSecret = idpConfig.OIDCConfig.ClientSecret
+			} else if idpConfig.GEOAxISConfig != nil {
+				c.ClientSecret = idpConfig.GEOAxISConfig.ClientSecret
 			}
 		}
 	}

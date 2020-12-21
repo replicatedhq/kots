@@ -24,7 +24,7 @@ type StorageResponse struct {
 }
 
 // Healthz route is UNAUTHENTICATED
-func Healthz(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) Healthz(w http.ResponseWriter, r *http.Request) {
 	// TODO
 	isDatabaseConnected := true
 	isStorageAvailable := true

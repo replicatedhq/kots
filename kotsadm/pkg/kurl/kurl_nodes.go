@@ -57,11 +57,11 @@ func GetNodes(client kubernetes.Interface) (*types.KurlNodes, error) {
 		}
 
 		if nodeIP == "" {
-			logger.Infof("did not find address for node %s, %+v", node.Name, node.Status.Addresses)
+			logger.Infof("Did not find address for node %s, %+v", node.Name, node.Status.Addresses)
 		} else {
 			nodeMetrics, err := getNodeMetrics(nodeIP)
 			if err != nil {
-				logger.Infof("got error %s retrieving stats for node %s", err.Error(), node.Name)
+				logger.Infof("Got error retrieving stats for node %q: %v", node.Name, err)
 			} else {
 				if nodeMetrics.Node.Memory != nil && nodeMetrics.Node.Memory.AvailableBytes != nil {
 					memoryCapacity.Available = float64(*nodeMetrics.Node.Memory.AvailableBytes) / math.Pow(2, 30)

@@ -28,7 +28,7 @@ type GetPreflightCommandResponse struct {
 	Command []string `json:"command"`
 }
 
-func GetPreflightResult(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) GetPreflightResult(w http.ResponseWriter, r *http.Request) {
 	appSlug := mux.Vars(r)["appSlug"]
 	sequence, err := strconv.ParseInt(mux.Vars(r)["sequence"], 10, 64)
 	if err != nil {
@@ -57,7 +57,7 @@ func GetPreflightResult(w http.ResponseWriter, r *http.Request) {
 	JSON(w, 200, response)
 }
 
-func GetLatestPreflightResultsForSequenceZero(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) GetLatestPreflightResultsForSequenceZero(w http.ResponseWriter, r *http.Request) {
 	result, err := store.GetStore().GetLatestPreflightResultsForSequenceZero()
 	if err != nil {
 		logger.Error(err)
@@ -71,7 +71,7 @@ func GetLatestPreflightResultsForSequenceZero(w http.ResponseWriter, r *http.Req
 	JSON(w, 200, response)
 }
 
-func IgnorePreflightRBACErrors(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) IgnorePreflightRBACErrors(w http.ResponseWriter, r *http.Request) {
 	appSlug := mux.Vars(r)["appSlug"]
 	sequence, err := strconv.Atoi(mux.Vars(r)["sequence"])
 	if err != nil {
@@ -126,7 +126,7 @@ func IgnorePreflightRBACErrors(w http.ResponseWriter, r *http.Request) {
 	JSON(w, 200, struct{}{})
 }
 
-func StartPreflightChecks(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) StartPreflightChecks(w http.ResponseWriter, r *http.Request) {
 	appSlug := mux.Vars(r)["appSlug"]
 	sequence, err := strconv.Atoi(mux.Vars(r)["sequence"])
 	if err != nil {
@@ -181,7 +181,7 @@ func StartPreflightChecks(w http.ResponseWriter, r *http.Request) {
 	JSON(w, 200, struct{}{})
 }
 
-func GetPreflightCommand(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) GetPreflightCommand(w http.ResponseWriter, r *http.Request) {
 	appSlug := mux.Vars(r)["appSlug"]
 	sequence, err := strconv.ParseInt(mux.Vars(r)["sequence"], 10, 64)
 	if err != nil {
@@ -244,7 +244,7 @@ func GetPreflightCommand(w http.ResponseWriter, r *http.Request) {
 
 // PostPreflightStatus route is UNAUTHENTICATED
 // This request comes from the `kubectl preflight` command.
-func PostPreflightStatus(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) PostPreflightStatus(w http.ResponseWriter, r *http.Request) {
 	appSlug := mux.Vars(r)["appSlug"]
 	sequence, err := strconv.ParseInt(mux.Vars(r)["sequence"], 10, 64)
 	if err != nil {

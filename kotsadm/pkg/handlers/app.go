@@ -9,10 +9,12 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
 	apptypes "github.com/replicatedhq/kots/kotsadm/pkg/app/types"
+	appstatustypes "github.com/replicatedhq/kots/kotsadm/pkg/appstatus/types"
 	"github.com/replicatedhq/kots/kotsadm/pkg/downstream"
 	downstreamtypes "github.com/replicatedhq/kots/kotsadm/pkg/downstream/types"
 	"github.com/replicatedhq/kots/kotsadm/pkg/gitops"
 	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
+	"github.com/replicatedhq/kots/kotsadm/pkg/session"
 	"github.com/replicatedhq/kots/kotsadm/pkg/store"
 	"github.com/replicatedhq/kots/kotsadm/pkg/supportbundle"
 	"github.com/replicatedhq/kots/kotsadm/pkg/version"
@@ -22,6 +24,10 @@ import (
 
 type ListAppsResponse struct {
 	Apps []ResponseApp `json:"apps"`
+}
+
+type AppStatusResponse struct {
+	AppStatus *appstatustypes.AppStatus `json:"appstatus"`
 }
 
 type ResponseApp struct {
@@ -80,8 +86,8 @@ type ResponseCluster struct {
 	Slug string `json:"slug"`
 }
 
-func ListApps(w http.ResponseWriter, r *http.Request) {
-	sess := GetSession(r)
+func (h *Handler) ListApps(w http.ResponseWriter, r *http.Request) {
+	sess := session.ContextGetSession(r)
 	if sess == nil {
 		logger.Error(errors.New("invalid session"))
 		w.WriteHeader(http.StatusInternalServerError)
@@ -95,15 +101,12 @@ func ListApps(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	appSlugs := []string{}
-	for _, a := range apps {
-		appSlugs = append(appSlugs, a.Slug)
-	}
+	defaultRoles := rbac.DefaultRoles() // TODO (ethan): this should be set in the handler
 
 	responseApps := []ResponseApp{}
 	for _, a := range apps {
 		if sess.HasRBAC { // handle pre-rbac sessions
-			allow, err := rbac.CheckAccess(r.Context(), "read", fmt.Sprintf("app.%s", a.Slug), sess.Roles, appSlugs)
+			allow, err := rbac.CheckAccess(r.Context(), defaultRoles, "read", fmt.Sprintf("app.%s", a.Slug), sess.Roles)
 			if err != nil {
 				logger.Error(errors.Wrapf(err, "failed to check access for app %s", a.Slug))
 				w.WriteHeader(http.StatusInternalServerError)
@@ -129,7 +132,29 @@ func ListApps(w http.ResponseWriter, r *http.Request) {
 	JSON(w, http.StatusOK, listAppsResponse)
 }
 
-func GetApp(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) GetAppStatus(w http.ResponseWriter, r *http.Request) {
+	appSlug := mux.Vars(r)["appSlug"]
+	a, err := store.GetStore().GetAppFromSlug(appSlug)
+	if err != nil {
+		logger.Error(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	appStatus, err := store.GetStore().GetAppStatus(a.ID)
+	if err != nil {
+		logger.Error(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	appStatusResponse := AppStatusResponse{
+		AppStatus: appStatus,
+	}
+	JSON(w, http.StatusOK, appStatusResponse)
+}
+
+func (h *Handler) GetApp(w http.ResponseWriter, r *http.Request) {
 	appSlug := mux.Vars(r)["appSlug"]
 	a, err := store.GetStore().GetAppFromSlug(appSlug)
 	if err != nil {
@@ -287,7 +312,7 @@ type GetAppVersionsResponse struct {
 	VersionHistory []downstreamtypes.DownstreamVersion `json:"versionHistory"`
 }
 
-func GetAppVersionHistory(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) GetAppVersionHistory(w http.ResponseWriter, r *http.Request) {
 	appSlug := mux.Vars(r)["appSlug"]
 
 	foundApp, err := store.GetStore().GetAppFromSlug(appSlug)
@@ -357,7 +382,7 @@ type RemoveAppResponse struct {
 	Error string `json:"error,omitempty"`
 }
 
-func RemoveApp(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) RemoveApp(w http.ResponseWriter, r *http.Request) {
 	appSlug := mux.Vars(r)["appSlug"]
 
 	response := RemoveAppResponse{}

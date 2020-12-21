@@ -17,7 +17,7 @@ type GetAppContentsResponse struct {
 	Files map[string][]byte `json:"files"`
 }
 
-func GetAppContents(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) GetAppContents(w http.ResponseWriter, r *http.Request) {
 	appSlug := mux.Vars(r)["appSlug"]
 	sequence, err := strconv.Atoi(mux.Vars(r)["sequence"])
 	if err != nil {

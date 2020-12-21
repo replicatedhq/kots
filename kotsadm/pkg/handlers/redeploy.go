@@ -12,7 +12,7 @@ import (
 	"github.com/replicatedhq/kots/kotsadm/pkg/store"
 )
 
-func RedeployAppVersion(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) RedeployAppVersion(w http.ResponseWriter, r *http.Request) {
 	appSlug := mux.Vars(r)["appSlug"]
 	sequence, err := strconv.Atoi(mux.Vars(r)["sequence"])
 	if err != nil {

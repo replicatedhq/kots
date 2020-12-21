@@ -15,7 +15,7 @@ type PingResponse struct {
 	SnapshotInProgressApps []string `json:"snapshotInProgressApps"`
 }
 
-func Ping(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) Ping(w http.ResponseWriter, r *http.Request) {
 	pingResponse := PingResponse{}
 
 	pingResponse.Ping = "pong"

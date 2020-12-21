@@ -7,6 +7,7 @@ require (
 	github.com/Azure/azure-sdk-for-go v42.0.0+incompatible
 	github.com/Azure/go-autorest/autorest v0.9.6
 	github.com/Azure/go-autorest/autorest/adal v0.8.2
+	github.com/Masterminds/sprig/v3 v3.2.0 // indirect
 	github.com/aws/aws-sdk-go v1.28.2
 	github.com/bitnami-labs/sealed-secrets v0.12.5
 	github.com/containerd/containerd v1.3.2
@@ -18,11 +19,11 @@ require (
 	github.com/docker/distribution v2.7.1+incompatible
 	github.com/docker/go-units v0.4.0
 	github.com/emicklei/go-restful v2.10.0+incompatible // indirect
-	github.com/ghodss/yaml v1.0.0
 	github.com/go-git/go-git/v5 v5.2.0
 	github.com/go-logfmt/logfmt v0.4.0
 	github.com/go-openapi/spec v0.19.5 // indirect
 	github.com/golang/groupcache v0.0.0-20191027212112-611e8accdfc9 // indirect
+	github.com/golang/mock v1.4.4
 	github.com/gorilla/mux v1.8.0
 	github.com/gorilla/websocket v1.4.0
 	github.com/gosimple/slug v1.9.0

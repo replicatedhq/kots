@@ -8,13 +8,13 @@ import (
 	"github.com/replicatedhq/kots/kotsadm/pkg/store"
 )
 
-func Logout(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) Logout(w http.ResponseWriter, r *http.Request) {
 	if r.Header.Get("Authorization") == "" {
 		w.WriteHeader(http.StatusNoContent)
 		return
 	}
 
-	sess, err := session.Parse(r.Header.Get("Authorization"))
+	sess, err := session.Parse(store.GetStore(), r.Header.Get("Authorization"))
 	if err != nil {
 		if store.GetStore().IsNotFound(err) {
 			w.WriteHeader(http.StatusNoContent)

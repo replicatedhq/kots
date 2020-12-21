@@ -9,6 +9,23 @@ import (
 	"github.com/replicatedhq/kots/kotsadm/pkg/persistence"
 )
 
+func postgresUserExists(user string) (bool, error) {
+	db := persistence.MustGetPGSession()
+
+	query := "SELECT 1 FROM pg_catalog.pg_roles WHERE rolname = $1"
+	row := db.QueryRow(query, user)
+
+	var exists bool
+	err := row.Scan(&exists)
+	if err == sql.ErrNoRows {
+		return false, nil
+	} else if err != nil {
+		return false, errors.Wrap(err, "failed to query user")
+	}
+
+	return true, nil
+}
+
 func createDexPostgresDatabase(database, user, password string) error {
 	db := persistence.MustGetPGSession()
 
@@ -29,17 +46,17 @@ func createDexPostgresDatabase(database, user, password string) error {
 		return errors.Wrap(err, "failed to query database")
 	}
 
-	query = "SELECT 1 FROM pg_catalog.pg_roles WHERE rolname = $1"
-	row = db.QueryRow(query, user)
-	err = row.Scan(&exists)
-	if err == sql.ErrNoRows {
+	exists, err = postgresUserExists(user)
+	if err != nil {
+		return errors.Wrap(err, "failed to query user")
+	}
+
+	if !exists {
 		query := fmt.Sprintf("CREATE USER %s", userQ)
 		_, err := db.Exec(query)
 		if err != nil {
 			return errors.Wrap(err, "failed to create user")
 		}
-	} else if err != nil {
-		return errors.Wrap(err, "failed to query user")
 	}
 
 	query = fmt.Sprintf(
