@@ -143,6 +143,7 @@ jobs:
         shell: bash
 
       ## testim tests
+      ## branch test
 
       - name: prepare legacy tests
         run: |
