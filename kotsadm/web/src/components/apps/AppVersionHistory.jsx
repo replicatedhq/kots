@@ -920,6 +920,7 @@ class AppVersionHistory extends Component {
                         match={this.props.match}
                         history={this.props.history}
                         version={version}
+                        latestVersion={versionHistory[0]}
                         selectedDiffReleases={selectedDiffReleases}
                         nothingToCommit={nothingToCommit}
                         isChecked={isChecked}

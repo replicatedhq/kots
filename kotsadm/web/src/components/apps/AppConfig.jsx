@@ -5,6 +5,7 @@ import PropTypes from "prop-types";
 import classNames from "classnames";
 import Helmet from "react-helmet";
 import debounce from "lodash/debounce";
+import size from "lodash/size";
 import map from "lodash/map";
 import Modal from "react-modal";
 import Loader from "../shared/Loader";
@@ -73,7 +74,7 @@ class AppConfig extends Component {
         const app = await res.json();
         this.setState({ app });
       }
-    } catch(err) {
+    } catch (err) {
       console.log(err);
     }
   }
@@ -131,10 +132,10 @@ class AppConfig extends Component {
   handleSave = async () => {
     this.setState({ savingConfig: true, configError: "" });
 
-    const { fromLicenseFlow, history, match } = this.props;
+    const { fromLicenseFlow, history } = this.props;
     const sequence = this.getSequence();
     const slug = this.getSlug();
-    const createNewVersion = !fromLicenseFlow && match.params.sequence == undefined;
+    const createNewVersion = !fromLicenseFlow;
 
     fetch(`${window.env.API_ENDPOINT}/app/${slug}/config`, {
       method: "PUT",
@@ -232,7 +233,7 @@ class AppConfig extends Component {
         "Accept": "application/json",
       },
       method: "POST",
-      body: JSON.stringify({"configGroups":groups, "sequence": sequence}),
+      body: JSON.stringify({ "configGroups": groups, "sequence": sequence }),
     }).then(async (response) => {
       if (!response.ok) {
         if (response.status == 401) {
@@ -271,6 +272,57 @@ class AppConfig extends Component {
     this.setState({ showNextStepModal: false });
   }
 
+  renderConfigInfo = (app) => {
+    const { match } = this.props;
+    if (!match.params.sequence) return null;
+    const sequence = parseInt(match.params.sequence);
+    const currentSequence = app?.downstreams[0]?.currentVersion?.parentSequence;
+    const pendingVersions = app?.downstreams[0]?.pendingVersions;
+
+    if (currentSequence > sequence) {
+      return (
+        <div className="ConfigInfo older u-marginBottom--20">
+          <p className="flex alignItems--center u-marginRight--5"> <span className="icon info-warning-icon flex u-marginRight--5" /> This config is {currentSequence - sequence} version{currentSequence - sequence === 1 ? "" : "s"} older than the currently deployed config. </p>
+          <Link to={`/app/${app?.slug}/config/${currentSequence}`} className="replicated-link"> View the currently deployed config </Link>
+        </div>
+      )
+    } else if (currentSequence < sequence) {
+      return (
+        <div className="ConfigInfo newer u-marginBottom--20">
+          <p className="flex alignItems--center u-marginRight--5"> <span className="icon info-icon flex u-marginRight--5" /> This config is {sequence - currentSequence} version{sequence - currentSequence === 1 ? "" : "s"} newer than the currently deployed config. </p>
+          <Link to={`/app/${app?.slug}/config/${currentSequence}`} className="replicated-link"> View the currently deployed config </Link>
+        </div>)
+    } else if (size(pendingVersions) > 0 && (currentSequence === sequence)) {
+      return (
+        <div className="ConfigInfo current u-marginBottom--20">
+          <p className="flex alignItems--center u-marginRight--5"> <span className="icon info-icon-green flex u-marginRight--5" /> This is the currently deployed config. There {size(pendingVersions) === 1 ? "is" : "are"} {size(pendingVersions)} newer version{size(pendingVersions) === 1 ? "" : "s"} since this one. </p>
+          <Link to={`/app/${app?.slug}/config/${pendingVersions[0].parentSequence}`} className="replicated-link"> Edit the latest config </Link>
+        </div>
+      )
+    } else {
+      return null;
+    }
+  }
+
+  checkIsCurrentOrPastVersion = (app) => {
+    const { match } = this.props;
+    if (!match.params.sequence) return false;
+    const sequence = parseInt(match.params.sequence);
+    let latestSequence;
+    if (app?.downstreams[0]?.pendingVersions) {
+      latestSequence = app?.downstreams[0]?.pendingVersions[0]?.parentSequence;
+    } else {
+      latestSequence = app?.downstreams[0]?.currentVersion?.parentSequence;
+    }
+
+    if (sequence < latestSequence) {
+      return true;
+    } else {
+      return false;
+    }
+  }
+
+
   render() {
     const { configGroups, savingConfig, changed, showNextStepModal, configError } = this.state;
     const { fromLicenseFlow, match } = this.props;
@@ -293,11 +345,13 @@ class AppConfig extends Component {
         <Helmet>
           <title>{`${app.name} Config`}</title>
         </Helmet>
-        
+
+        {this.renderConfigInfo(app)}
+
         {fromLicenseFlow && app && <span className="u-fontSize--larger u-color--tuna u-fontWeight--bold u-marginTop--auto">Configure {app.name}</span>}
         <div className={classNames("ConfigOuterWrapper u-padding--15", { "u-marginTop--20": fromLicenseFlow })}>
           <div className="ConfigInnerWrapper u-padding--15">
-            <AppConfigRenderer groups={configGroups} getData={this.handleConfigChange} />
+            <AppConfigRenderer groups={configGroups} getData={this.handleConfigChange} readonly={this.checkIsCurrentOrPastVersion(app)} />
           </div>
         </div>
 
@@ -308,7 +362,7 @@ class AppConfig extends Component {
           :
           <div className="ConfigError--wrapper flex-column u-marginTop--20 u-marginBottom--auto alignItems--center">
             {configError && <span className="u-color--chestnut u-marginBottom--20 u-fontWeight--bold">{configError}</span>}
-            <button className="btn secondary blue" disabled={!changed && !fromLicenseFlow} onClick={this.handleSave}>{fromLicenseFlow ? "Continue" : "Save config"}</button>
+            <button className="btn secondary blue" disabled={!changed && !fromLicenseFlow || this.checkIsCurrentOrPastVersion(app)} onClick={this.handleSave}>{fromLicenseFlow ? "Continue" : "Save config"}</button>
           </div>
         }
 
