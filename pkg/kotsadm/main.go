@@ -164,6 +164,10 @@ func Deploy(deployOptions types.DeployOptions) error {
 	}
 
 	log := logger.NewLogger()
+	if deployOptions.AirgapRootDir != "" && deployOptions.KotsadmOptions.OverrideRegistry == "" {
+		log.Info("not pushing airgapped app images as no registry was provided")
+	}
+
 	if !deployOptions.ExcludeAdminConsole {
 		namespace := &corev1.Namespace{
 			TypeMeta: metav1.TypeMeta{
