@@ -50,7 +50,7 @@ func InitAppIdentityConfig(appSlug string, storage kotsv1beta1.Storage, cipher c
 
 	database := fmt.Sprintf("%s-dex", appSlug)
 	user := fmt.Sprintf("%s-dex", appSlug)
-	err := createDexPostgresDatabase(database, user, postgresPassword)
+	err := CreateDexPostgresDatabase(database, user, postgresPassword)
 	if err != nil {
 		return "", errors.Wrap(err, "failed to create dex postgres database")
 	}
