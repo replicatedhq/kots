@@ -38,7 +38,7 @@ func Deploy(ctx context.Context, clientset kubernetes.Interface, namespace strin
 	if err != nil {
 		return errors.Wrap(err, "failed to check if embedded cluster")
 	}
-	if !isKurl {
+	if !isKurl && namespace == metav1.NamespaceDefault {
 		options.ImageRewriteFn = imageRewriteKotsadmRegistry(namespace, registryOptions)
 	}
 
