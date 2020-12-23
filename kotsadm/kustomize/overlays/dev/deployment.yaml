@@ -24,6 +24,11 @@ spec:
               readOnly: true
               mountPath: /etc/kurl-proxy/ca
           env:
+            - name: DEX_PGPASSWORD
+              valueFrom:
+                secretKeyRef:
+                  key: PGPASSWORD
+                  name: kotsadm-dex-postgres
             - name: KOTSADM_LOG_LEVEL
               value: "debug"
             - name: DISABLE_SPA_SERVING
@@ -61,26 +66,6 @@ spec:
             #   value: "true"
             - name: KURL_PROXY_TLS_CERT_PATH
               value: /etc/kurl-proxy/ca/tls.crt
-      initContainers:
-        - name: init-dex-db
-          volumeMounts:
-            - name: init-dex-db
-              readOnly: true
-              mountPath: /etc/dex/init
-          command: ["bash", "/etc/dex/init/init.sh"]
-          env:
-          - name: PGPASSWORD
-            valueFrom:
-              secretKeyRef:
-                key: password
-                name: kotsadm-postgres
-          - name: DEX_PGPASSWORD
-            valueFrom:
-              secretKeyRef:
-                key: PGPASSWORD
-                name: kotsadm-dex-postgres
-          image: kotsadm
-          imagePullPolicy: IfNotPresent
       volumes:
         - emptyDir:
             medium: Memory
