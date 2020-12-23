@@ -25,7 +25,7 @@ func renderHelmV3(chartName string, chartPath string, vals map[string]interface{
 	client.ReleaseName = chartName
 	client.Replace = true
 	client.ClientOnly = true
-	// client.IncludeCRDs = includeCrds
+	client.IncludeCRDs = true
 	client.Namespace = renderOptions.Namespace
 
 	chartRequested, err := loader.Load(chartPath)
