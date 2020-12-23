@@ -30,10 +30,6 @@ export default class FileTree extends React.Component {
 
   componentDidMount() {
     this.scrollToActiveFile("active-file");
-
-    if (this.props.files?.length && this.props.autoExpand) {
-      this.handleCheckboxChange(this.props.files[0].path, true);
-    }
   }
 
   scrollToActiveFile = (id) => {
@@ -46,6 +42,8 @@ export default class FileTree extends React.Component {
 
   render() {
     const { files, selectedFile, handleFileSelect, isRoot } = this.props;
+
+    console.log(this.state.selected)
 
     return (
       <ul className={`${isRoot ? "FileTree-wrapper" : "u-marginLeft--10"}`}>
