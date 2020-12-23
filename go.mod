@@ -33,7 +33,6 @@ require (
 	github.com/google/uuid v1.1.1
 	github.com/gorilla/handlers v1.5.1 // indirect
 	github.com/gotestyourself/gotestyourself v2.2.0+incompatible // indirect
-	github.com/hashicorp/go-cleanhttp v0.5.0
 	github.com/kardianos/osext v0.0.0-20190222173326-2bc1f35cddc0 // indirect
 	github.com/kr/text v0.2.0 // indirect
 	github.com/manifoldco/promptui v0.3.2
