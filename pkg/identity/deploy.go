@@ -30,9 +30,16 @@ func Deploy(ctx context.Context, clientset kubernetes.Interface, namespace strin
 		IdentitySpec:       getIdentitySpec(identityConfig.Spec, ingressConfig.Spec),
 		IdentityConfigSpec: identityConfig.Spec,
 		IsOpenShift:        k8sutil.IsOpenShift(clientset),
-		ImageRewriteFn:     imageRewriteKotsadmRegistry(namespace, registryOptions),
 		ProxyEnv:           proxyEnv,
 		Builder:            nil,
+	}
+
+	isKurl, err := isKurl(clientset)
+	if err != nil {
+		return errors.Wrap(err, "failed to check if embedded cluster")
+	}
+	if !isKurl {
+		options.ImageRewriteFn = imageRewriteKotsadmRegistry(namespace, registryOptions)
 	}
 
 	if err := migrateClientSecret(ctx, clientset, namespace); err != nil {
@@ -134,4 +141,13 @@ func migrateClientSecret(ctx context.Context, clientset kubernetes.Interface, na
 	secret := identitydeploy.ClientSecretResource(KotsadmNamePrefix, client.Secret, nil)
 	_, err = clientset.CoreV1().Secrets(namespace).Create(ctx, secret, metav1.CreateOptions{})
 	return errors.Wrap(err, "failed to create secret")
+}
+
+func isKurl(clientset kubernetes.Interface) (bool, error) {
+	_, err := clientset.CoreV1().ConfigMaps("kube-system").Get(context.TODO(), "kurl-config", metav1.GetOptions{})
+	if err != nil {
+		return false, nil
+	}
+
+	return true, nil
 }
