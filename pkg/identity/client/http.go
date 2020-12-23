@@ -12,6 +12,7 @@ import (
 	"os"
 	"sync"
 
+	"github.com/hashicorp/go-cleanhttp"
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 )
@@ -70,13 +71,14 @@ func HTTPClient(ctx context.Context, namespace string, identityConfig kotsv1beta
 		}
 	}
 
+	transport := cleanhttp.DefaultTransport()
+	transport.TLSClientConfig = &tls.Config{
+		RootCAs:            rootCAs,
+		InsecureSkipVerify: identityConfig.Spec.InsecureSkipTLSVerify,
+	}
+
 	httpClient = &http.Client{
-		Transport: &http.Transport{
-			TLSClientConfig: &tls.Config{
-				RootCAs:            rootCAs,
-				InsecureSkipVerify: identityConfig.Spec.InsecureSkipTLSVerify,
-			},
-		},
+		Transport: transport,
 	}
 
 	return httpClient, nil

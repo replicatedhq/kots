@@ -9,6 +9,7 @@ import (
 	"github.com/coreos/go-oidc"
 	dexoidc "github.com/dexidp/dex/connector/oidc"
 	ghodssyaml "github.com/ghodss/yaml"
+	"github.com/hashicorp/go-cleanhttp"
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	identitydeploy "github.com/replicatedhq/kots/pkg/identity/deploy"
@@ -28,15 +29,17 @@ var (
 	ConfigSecretKeyName = "dexConnectors"
 )
 
-var (
-	insecureClient = &http.Client{
-		Transport: &http.Transport{
-			TLSClientConfig: &tls.Config{
-				InsecureSkipVerify: true,
-			},
-		},
+var insecureClient *http.Client
+
+func init() {
+	transport := cleanhttp.DefaultTransport()
+	transport.TLSClientConfig = &tls.Config{
+		InsecureSkipVerify: true,
 	}
-)
+	insecureClient = &http.Client{
+		Transport: transport,
+	}
+}
 
 type ErrorConnection struct {
 	Message string
