@@ -179,10 +179,11 @@ func responseAppFromApp(a *apptypes.App) (*ResponseApp, error) {
 		return nil, errors.Wrap(err, "failed to get license")
 	}
 
-	isAppIdentityServiceSupported, err := store.GetStore().IsIdentityServiceSupportedForVersion(a.ID, a.CurrentSequence)
+	isIdentityServiceSupportedForVersion, err := store.GetStore().IsIdentityServiceSupportedForVersion(a.ID, a.CurrentSequence)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to check if identity service is supported for version %d", a.CurrentSequence)
 	}
+	isAppIdentityServiceSupported := isIdentityServiceSupportedForVersion && license.Spec.IsIdentityServiceSupported
 
 	allowRollback, err := store.GetStore().IsRollbackSupportedForVersion(a.ID, a.CurrentSequence)
 	if err != nil {
@@ -276,7 +277,7 @@ func responseAppFromApp(a *apptypes.App) (*ResponseApp, error) {
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to check if snapshots is allowed")
 		}
-		allowSnapshots = s
+		allowSnapshots = s && license.Spec.IsSnapshotSupported
 	}
 
 	responseApp := ResponseApp{
