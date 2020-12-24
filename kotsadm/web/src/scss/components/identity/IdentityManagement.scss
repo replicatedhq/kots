@@ -3,7 +3,12 @@
   background: #FFFFFF;
   box-shadow: 0px 0px 4px rgba(0, 0, 0, 0.2);
   border-radius: 6px;
-  width: 490px;
+
+  .IdentityProvider--info > div {
+    width: 47%;
+    align-items: center;
+    padding: 0;
+  }
 
   .FileUpload-wrapper {
     cursor: default;
@@ -24,6 +29,12 @@
        color: #BC4752;
       }
     }
+  }
+
+  .IdentityProviderAdvanced--info > div {
+    width: 30%;
+    align-items: center;
+    padding: 0;
   }
 } 
 
@@ -54,4 +65,61 @@
   line-height: 22px;
   color: #EC8F39;
   width: 490px;
+}
+
+.DummyRbacRow--wrapper {
+  background: #F8F8F8;
+  border-radius: 4px;
+  margin-bottom: 15px; 
+  height: 30px;
+  padding: 12px;
+
+  .EmptyRow {
+    background: #EAEAEA;
+    border-radius: 2px;
+
+    &.name {
+      width: 300px;
+      height: 14px;
+    }
+    &.role {
+      width: 54px;
+      height: 14px;
+    }
+  }
+
+  .EmptyCircle {
+    background: #EAEAEA;
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+  }
+}
+
+.AddRoleGroup--wrapper {
+  position: absolute;
+  top: calc(100% - 242px);
+  left: calc(100% - 670px);
+  background: #FFFFFF;
+  box-shadow: 0px 0px 4px rgba(0, 0, 0, 0.2);
+  border-radius: 8px;
+  width: 580px;
+  padding: 15px;
+  text-align: center;
+}
+
+.Roles--wrapper {
+  background: #F8F8F8;
+  border-radius: 4px;
+  padding: 10px;
+}
+
+.RoleNum--wrapper {
+  background: #EAF0FC;
+  border-radius: 3px;
+  padding: 4px 8px;
+  font-size: 12px;
+  line-height: 12px;
+  font-weight: 500;
+  color: #556F8F;
 }
