@@ -17,7 +17,7 @@ export default class RBACGroupPolicyRow extends Component {
                   value={groupName}
                   onChange={(e) => { handleFormChange("groupName", index, e) }} />}
               <div className="u-marginLeft--10 flex alignItems--center">
-                <span className="replicated-link u-fontSize--small u-marginLeft--5" onClick={() => showRoleDetails ? onHideRoleDetails(index) : onShowRoleDetails(index)}> {showRoleDetails ? "Hide" : "Show"} </span>
+                <span className="replicated-link u-fontSize--small u-marginLeft--5" onClick={() => showRoleDetails ? onHideRoleDetails(index) : onShowRoleDetails(index)}> {showRoleDetails ? "Hide Roles" : "Show Roles"} </span>
               </div>
             </div>
             {showRoleDetails &&

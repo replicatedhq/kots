@@ -27,6 +27,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/ingress"
 	"github.com/replicatedhq/kots/pkg/kotsadm"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
+	"github.com/replicatedhq/kots/pkg/rbac"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes"
@@ -146,6 +147,10 @@ func (h *Handler) ConfigureIdentityService(w http.ResponseWriter, r *http.Reques
 				},
 			},
 		},
+	}
+
+	if len(request.Groups) > 0 {
+		identityConfig.Spec.Groups = request.Groups
 	}
 
 	ingressConfig, err := ingress.GetConfig(r.Context(), namespace)
@@ -587,7 +592,20 @@ func (h *Handler) GetIdentityServiceConfig(w http.ResponseWriter, r *http.Reques
 		Enabled:                identityConfig.Spec.Enabled,
 		AdminConsoleAddress:    identityConfig.Spec.AdminConsoleAddress,
 		IdentityServiceAddress: identityConfig.Spec.IdentityServiceAddress,
+		Groups:                 identityConfig.Spec.Groups,
 	}
+
+	roles := []kotsv1beta1.IdentityRole{}
+	defaultRoles := rbac.DefaultRoles()
+	for _, defaultRole := range defaultRoles {
+		role := kotsv1beta1.IdentityRole{
+			ID:          defaultRole.ID,
+			Name:        defaultRole.Name,
+			Description: defaultRole.Description,
+		}
+		roles = append(roles, role)
+	}
+	response.Roles = roles
 
 	// NOTE: we do not encrypt kotsadm config
 
