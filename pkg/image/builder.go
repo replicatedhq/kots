@@ -346,7 +346,7 @@ func copyOneImage(srcRegistry, destRegistry registry.RegistryOptions, image stri
 	}
 
 	if dryRun {
-		return buildImageAlts(destRegistry, image)
+		return kustomizeImage(destRegistry, image)
 	}
 
 	_, err = copy.Image(context.Background(), policyContext, destRef, srcRef, &copy.Options{
@@ -404,7 +404,7 @@ func copyOneImage(srcRegistry, destRegistry registry.RegistryOptions, image stri
 		}
 	}
 
-	return buildImageAlts(destRegistry, image)
+	return kustomizeImage(destRegistry, image)
 }
 
 func RefFromImage(image string) (*ImageRef, error) {
