@@ -106,6 +106,10 @@
   width: 580px;
   padding: 15px;
   text-align: center;
+
+  &.bigger {
+    left: 20%;
+  }
 }
 
 .Roles--wrapper {
