@@ -19,21 +19,18 @@ export default class FileTree extends React.Component {
   }
 
   getLevel = () => {
-    return this.props.level || 0
+    const initialLevel = this.props.initialLevel || 0;
+    return this.props.level || initialLevel;
   }
 
   arePathsSame = (path1, path2) => {
     const newPath1 = rootPath(path1);
     const newPath2 = rootPath(path2);
-    return newPath1.split(/\//).slice(1, 2 + this.getLevel()).join("/") === newPath2.split(/\//).slice(1, 2 + this.getLevel()).join("/")
+    return newPath1.split(/\//).slice(1, 2 + this.getLevel()).join("/") === newPath2.split(/\//).slice(1, 2 + this.getLevel()).join("/");
   }
 
   componentDidMount() {
     this.scrollToActiveFile("active-file");
-
-    if (this.props.files?.length && this.props.autoExpand) {
-      this.handleCheckboxChange(this.props.files[0].path, true);
-    }
   }
 
   scrollToActiveFile = (id) => {

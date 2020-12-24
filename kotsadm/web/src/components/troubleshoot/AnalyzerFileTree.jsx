@@ -101,7 +101,7 @@ class AnalyzerFileTree extends React.Component {
       dir.children ? dir.children.length : []
     });
     sortedTree.reverse(); // If something has a directory, render those first, all top level files should be at that bottom
-    this.setState({ files: sortedTree });
+    this.setState({ files: sortedTree[0].children });
   }
 
   setRedactorMarkersFromHash = () => {
@@ -228,7 +228,7 @@ class AnalyzerFileTree extends React.Component {
                   isRoot={true}
                   handleFileSelect={(path) => this.setSelectedFile(path)}
                   selectedFile={this.state.selectedFile}
-                  autoExpand={files?.length === 1 && files[0].children?.length > 0}
+                  initialLevel={1}
                 />
               </div>
             </div>
