@@ -3,6 +3,7 @@ package identity
 import (
 	"context"
 	"fmt"
+	"log"
 	"strings"
 
 	"github.com/docker/distribution/reference"
@@ -22,12 +23,12 @@ const (
 	KotsadmNamePrefix = "kotsadm"
 )
 
-func Deploy(ctx context.Context, clientset kubernetes.Interface, namespace string, identityConfig kotsv1beta1.IdentityConfig, ingressConfig kotsv1beta1.IngressConfig, registryOptions *kotsadmtypes.KotsadmOptions, proxyEnv map[string]string) error {
+func Deploy(ctx context.Context, clientset kubernetes.Interface, namespace string, identityConfig kotsv1beta1.IdentityConfig, ingressConfig kotsv1beta1.IngressConfig, registryOptions *kotsadmtypes.KotsadmOptions, proxyEnv map[string]string, applyAppBranding bool) error {
 	identityConfig.Spec.ClientID = "kotsadm"
 
 	options := identitydeploy.Options{
 		NamePrefix:         KotsadmNamePrefix,
-		IdentitySpec:       getIdentitySpec(identityConfig.Spec, ingressConfig.Spec),
+		IdentitySpec:       getIdentitySpec(ctx, clientset, namespace, identityConfig.Spec, ingressConfig.Spec, applyAppBranding),
 		IdentityConfigSpec: identityConfig.Spec,
 		IsOpenShift:        k8sutil.IsOpenShift(clientset),
 		ProxyEnv:           proxyEnv,
@@ -62,12 +63,12 @@ func Deploy(ctx context.Context, clientset kubernetes.Interface, namespace strin
 	return identitydeploy.Deploy(ctx, clientset, namespace, options)
 }
 
-func Configure(ctx context.Context, clientset kubernetes.Interface, namespace string, identityConfig kotsv1beta1.IdentityConfig, ingressConfig kotsv1beta1.IngressConfig, proxyEnv map[string]string) error {
+func Configure(ctx context.Context, clientset kubernetes.Interface, namespace string, identityConfig kotsv1beta1.IdentityConfig, ingressConfig kotsv1beta1.IngressConfig, proxyEnv map[string]string, applyAppBranding bool) error {
 	identityConfig.Spec.ClientID = "kotsadm"
 
 	options := identitydeploy.Options{
 		NamePrefix:         KotsadmNamePrefix,
-		IdentitySpec:       getIdentitySpec(identityConfig.Spec, ingressConfig.Spec),
+		IdentitySpec:       getIdentitySpec(ctx, clientset, namespace, identityConfig.Spec, ingressConfig.Spec, applyAppBranding),
 		IdentityConfigSpec: identityConfig.Spec,
 		IsOpenShift:        k8sutil.IsOpenShift(clientset),
 		ImageRewriteFn:     nil,
@@ -114,10 +115,17 @@ func imageRewriteKotsadmRegistry(namespace string, registryOptions *kotsadmtypes
 	}
 }
 
-func getIdentitySpec(identityConfigSpec kotsv1beta1.IdentityConfigSpec, ingressConfigSpec kotsv1beta1.IngressConfigSpec) kotsv1beta1.IdentitySpec {
+func getIdentitySpec(ctx context.Context, clientset kubernetes.Interface, namespace string, identityConfigSpec kotsv1beta1.IdentityConfigSpec, ingressConfigSpec kotsv1beta1.IngressConfigSpec, applyAppBranding bool) kotsv1beta1.IdentitySpec {
+	// NOTE: when the user adds a second app the branding won't change
+	webConfig, err := getWebConfig(ctx, clientset, namespace, applyAppBranding)
+	if err != nil {
+		log.Printf("Failed to get branding: %v", err)
+	}
 	return kotsv1beta1.IdentitySpec{
-		IdentityIssuerURL: DexIssuerURL(identityConfigSpec),
-		OIDCRedirectURIs:  []string{getRedirectURI(identityConfigSpec, ingressConfigSpec)},
+		IdentityIssuerURL:           DexIssuerURL(identityConfigSpec),
+		OIDCRedirectURIs:            []string{getRedirectURI(identityConfigSpec, ingressConfigSpec)},
+		OAUTH2AlwaysShowLoginScreen: true,
+		WebConfig:                   webConfig,
 	}
 }
 

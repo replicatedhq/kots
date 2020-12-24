@@ -208,12 +208,21 @@ func (h *Handler) ConfigureIdentityService(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
+	apps, err := store.GetStore().ListInstalledAppSlugs()
+	if err != nil {
+		err = errors.Wrap(err, "failed to list installed apps")
+		logger.Error(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	applyAppBranding := len(apps) == 1
+
 	proxyEnv := map[string]string{
 		"HTTP_PROXY":  os.Getenv("HTTP_PROXY"),
 		"HTTPS_PROXY": os.Getenv("HTTPS_PROXY"),
 		"NO_PROXY":    os.Getenv("NO_PROXY"),
 	}
-	if err := identity.Deploy(r.Context(), clientset, namespace, identityConfig, *ingressConfig, &registryOptions, proxyEnv); err != nil {
+	if err := identity.Deploy(r.Context(), clientset, namespace, identityConfig, *ingressConfig, &registryOptions, proxyEnv, applyAppBranding); err != nil {
 		err = errors.Wrap(err, "failed to deploy the identity service")
 		logger.Error(err)
 		w.WriteHeader(http.StatusInternalServerError)
