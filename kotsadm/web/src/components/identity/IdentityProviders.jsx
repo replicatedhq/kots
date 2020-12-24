@@ -114,7 +114,8 @@ class IdentityProviders extends Component {
     return groups.map(g => {
       return {
         id: g.id,
-        role: {id: g.roleIds[0]}
+        roles: this.props.isApplicationSettings ? g.roleIds?.map((r) => ({ id: r, isChecked: true })) : g.roleIds?.map((r) => ({ id: r })),
+        isAdded: true
       }
     });
   }
@@ -191,10 +192,21 @@ class IdentityProviders extends Component {
       row.id = e.target.value;
       rbacGroupRows[rowIndex] = row;
     } else {
-      let row = { ...rbacGroupRows[rowIndex] };
-      row.role.id = e.target.id;
-      rbacGroupRows[rowIndex] = row;
+      let row = { ...rbacGroupRows[rowIndex].roles[0] };
+      const idStartPosition = e.target.id.indexOf("=") + 1;
+      row.id = e.target.id.slice(idStartPosition);
+      rbacGroupRows[rowIndex].roles[0] = row;
     }
+    this.setState({ rbacGroupRows })
+  }
+
+  handleRoleCheckboxChange = (rowIndex, roleIndex, e) => {
+    let rbacGroupRows = [...this.state.rbacGroupRows];
+    let row = { ...rbacGroupRows[rowIndex].roles[roleIndex] };
+    const idStartPosition = e.target.id.indexOf("=") +1;
+    row.id = e.target.id.slice(idStartPosition);
+    row.isChecked = e.target.checked;
+    rbacGroupRows[rowIndex].roles[roleIndex] = row;
     this.setState({ rbacGroupRows })
   }
 
@@ -206,33 +218,40 @@ class IdentityProviders extends Component {
     let requiredErrors = {};
 
     for (const field in payloadFields) {
+      if (field === "oidcConfig") {
+        continue;
+      }
+      if (field === "geoAxisConfig") {
+        continue;
+      }
       if (field === "useAdminConsoleSettings") {
-        continue
+        continue;
+      }
+      if (field === "groups") {
+        continue;
       }
 
-      if (field !== "oidcConfig" && field !== "geoAxisConfig") {
-        if (isEmpty(payloadFields[field])) {
-          requiredErrors = { ...requiredErrors, [field]: true }
-        }
+      if (isEmpty(payloadFields[field])) {
+        requiredErrors = { ...requiredErrors, [field]: true }
+      }
 
-        const sharedFields = ["issuer", "clientId", "clientSecret"];
-        sharedFields.forEach(f => {
-          if (payloadFields?.oidcConfig) {
-            if (isEmpty(payloadFields?.oidcConfig?.connectorName)) {
-              if (!payloadFields?.oidcConfig?.connectorName || isEmpty(payloadFields?.oidcConfig?.connectorName)) {
-                requiredErrors = { ...requiredErrors, connectorName: true }
-              }
-            }
-            if (isEmpty(payloadFields?.oidcConfig?.[f])) {
-              requiredErrors = { ...requiredErrors, [f]: true }
-            }
-          } else {
-            if (!payloadFields?.geoAxisConfig?.[f] || isEmpty(payloadFields?.geoAxisConfig?.[f])) {
-              requiredErrors = { ...requiredErrors, [f]: true }
+      const sharedFields = ["issuer", "clientId", "clientSecret"];
+      sharedFields.forEach(f => {
+        if (payloadFields?.oidcConfig) {
+          if (isEmpty(payloadFields?.oidcConfig?.connectorName)) {
+            if (!payloadFields?.oidcConfig?.connectorName || isEmpty(payloadFields?.oidcConfig?.connectorName)) {
+              requiredErrors = { ...requiredErrors, connectorName: true }
             }
           }
-        })
-      }
+          if (isEmpty(payloadFields?.oidcConfig?.[f])) {
+            requiredErrors = { ...requiredErrors, [f]: true }
+          }
+        } else {
+          if (!payloadFields?.geoAxisConfig?.[f] || isEmpty(payloadFields?.geoAxisConfig?.[f])) {
+            requiredErrors = { ...requiredErrors, [f]: true }
+          }
+        }
+      })
     }
 
     this.setState({ requiredErrors });
@@ -241,11 +260,12 @@ class IdentityProviders extends Component {
 
   buildGroupsPayload = () => {
     const { rbacGroupRows } = this.state;
+    const { isApplicationSettings } = this.props;
 
     return rbacGroupRows.map(g => {
       return {
         id: g.id,
-        roleIds: !isEmpty(g.role) ? [g.role.id] : []
+        roleIds: isApplicationSettings ? g.roles?.filter(r => r.isChecked).map(r => r.id).filter(r => r !== null) : !isEmpty(g.roles) ? g.roles?.map(r => r.id).filter(r => r !== null) : []
       }
     });
   }
@@ -281,24 +301,18 @@ class IdentityProviders extends Component {
 
     let payload;
     if (isApplicationSettings) {
-      if (size(this.state.roles) > 0) {
-        payload = {
-          "oidcConfig": this.state.selectedProvider === "oidcConfig" ? oidcConfigPayload.oidcConfig : null,
-          "geoAxisConfig": this.state.selectedProvider === "geoAxisConfig" ? this.state.geoAxisConfig : null,
-          groups: groups
-        }
-      } else {
-        payload = {
-          "oidcConfig": this.state.selectedProvider === "oidcConfig" ? oidcConfigPayload.oidcConfig : null,
-          "geoAxisConfig": this.state.selectedProvider === "geoAxisConfig" ? this.state.geoAxisConfig : null
-        }
+      payload = {
+        "oidcConfig": this.state.selectedProvider === "oidcConfig" ? oidcConfigPayload.oidcConfig : null,
+        "geoAxisConfig": this.state.selectedProvider === "geoAxisConfig" ? this.state.geoAxisConfig : null,
+        groups: groups
       }
     } else {
       payload = {
         adminConsoleAddress: this.state.adminConsoleAddress,
         identityServiceAddress: this.state.identityServiceAddress,
         "oidcConfig": this.state.selectedProvider === "oidcConfig" ? oidcConfigPayload.oidcConfig : null,
-        "geoAxisConfig": this.state.selectedProvider === "geoAxisConfig" ? this.state.geoAxisConfig : null
+        "geoAxisConfig": this.state.selectedProvider === "geoAxisConfig" ? this.state.geoAxisConfig : null,
+        groups: groups
       }
     }
 
@@ -374,12 +388,14 @@ class IdentityProviders extends Component {
 
   onAddGroupRow = () => {
     const { rbacGroupRows } = this.state;
+
     rbacGroupRows.push({
       id: "",
-      role: {},
+      roles: [],
       isEditing: true,
       showRoleDetails: true
     });
+
     this.setState({ rbacGroupRows });
   }
 
@@ -389,10 +405,23 @@ class IdentityProviders extends Component {
     this.setState({ rbacGroupRows });
   }
 
+  onCancelGroupRow = (rowIndex) => {
+    let rbacGroupRows = [...this.state.rbacGroupRows];
+    let row = { ...rbacGroupRows[rowIndex] };
+    row.isEditing = false;
+    if (!row.isAdded) {
+      rbacGroupRows.splice(rowIndex, 1);
+    } else {
+      rbacGroupRows[rowIndex] = row;
+    }
+    this.setState({ rbacGroupRows })
+  }
+
   onAddGroup = (rowIndex) => {
     let rbacGroupRows = [...this.state.rbacGroupRows];
     let row = { ...rbacGroupRows[rowIndex] };
     row.isEditing = false;
+    row.isAdded = true;
     rbacGroupRows[rowIndex] = row;
 
     this.setState({ rbacGroupRows })
@@ -614,7 +643,7 @@ class IdentityProviders extends Component {
             </div>
           </div>
 
-          {isApplicationSettings && size(this.state.roles) > 0 &&
+          {size(this.state.roles) > 0 &&
             <div className="RbacPolicy--wrapper flex flex-column">
               <div className={`u-marginTop--30 ${size(this.state.rbacGroupRows) > 0 && "u-borderBottom--gray darker"}`}>
                 <p className="u-fontSize--large u-lineHeight--default u-fontWeight--bold u-color--tuna"> Role Based Access Control Group Policy </p>
@@ -628,7 +657,8 @@ class IdentityProviders extends Component {
                       key={i}
                       groupName={g.id}
                       roles={this.state.roles}
-                      groupRole={g.role}
+                      checkedRoles={g.roles?.filter(r => r.isChecked)}
+                      groupRoles={g.roles}
                       isEditing={g.isEditing}
                       onAddGroupRow={this.onAddGroupRow}
                       onAddGroup={this.onAddGroup}
@@ -638,6 +668,9 @@ class IdentityProviders extends Component {
                       showRoleDetails={g.showRoleDetails}
                       onShowRoleDetails={this.showRoleDetails}
                       onHideRoleDetails={this.hideRoleDetails}
+                      isApplicationSettings={isApplicationSettings}
+                      handleRoleCheckboxChange={this.handleRoleCheckboxChange}
+                      onCancelGroupRow={this.onCancelGroupRow}
                     />
                   ))}
                   <p className="u-fontSize--small u-fontWeight--medium u-lineHeight--normal u-color--royalBlue u-cursor--pointer u-marginTop--15" onClick={this.onAddGroupRow}> + Add a group </p>
@@ -645,7 +678,7 @@ class IdentityProviders extends Component {
                 <div className="flex flex-column u-position--relative">
                   {[0, 1, 2, 3].map((el) => (<DummyRbacRow key={el} />
                   ))}
-                  <AddRoleGroup addGroup={this.onAddGroupRow} />
+                  <AddRoleGroup addGroup={this.onAddGroupRow} isApplicationSettings={isApplicationSettings} />
                 </div>
               }
             </div>}
