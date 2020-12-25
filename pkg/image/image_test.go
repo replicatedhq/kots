@@ -102,7 +102,7 @@ func Test_ImageNameFromNameParts(t *testing.T) {
 	}
 }
 
-func TestDestRef(t *testing.T) {
+func Test_DestRef(t *testing.T) {
 	registryOps := registry.RegistryOptions{
 		Endpoint:  "localhost:5000",
 		Namespace: "somebigbank",
@@ -161,7 +161,117 @@ func TestDestRef(t *testing.T) {
 	}
 }
 
-func Test_buildImageAlts(t *testing.T) {
+func Test_BuildImageAltNames(t *testing.T) {
+	tests := []struct {
+		name           string
+		rewrittenImage kustomizetypes.Image
+		want           []kustomizetypes.Image
+	}{
+		{
+			name: "no rewriting",
+			rewrittenImage: kustomizetypes.Image{
+				Name:    "myregistry.com/repo/image:tag",
+				NewName: "unchanged",
+				NewTag:  "unchanged",
+				Digest:  "unchanged",
+			},
+			want: []kustomizetypes.Image{
+				{
+					Name:    "myregistry.com/repo/image:tag",
+					NewName: "unchanged",
+					NewTag:  "unchanged",
+					Digest:  "unchanged",
+				},
+			},
+		},
+		{
+			name: "library latest",
+			rewrittenImage: kustomizetypes.Image{
+				Name:    "docker.io/library/image:latest",
+				NewName: "unchanged",
+				NewTag:  "unchanged",
+				Digest:  "unchanged",
+			},
+			want: []kustomizetypes.Image{
+				{
+					Name:    "docker.io/library/image:latest",
+					NewName: "unchanged",
+					NewTag:  "unchanged",
+					Digest:  "unchanged",
+				},
+				{
+					Name:    "library/image:latest",
+					NewName: "unchanged",
+					NewTag:  "unchanged",
+					Digest:  "unchanged",
+				},
+				{
+					Name:    "image:latest",
+					NewName: "unchanged",
+					NewTag:  "unchanged",
+					Digest:  "unchanged",
+				},
+			},
+		},
+		{
+			name: "docker.io, not library or latest",
+			rewrittenImage: kustomizetypes.Image{
+				Name:    "docker.io/myrepo/image:tag",
+				NewName: "unchanged",
+				NewTag:  "unchanged",
+				Digest:  "unchanged",
+			},
+			want: []kustomizetypes.Image{
+				{
+					Name:    "docker.io/myrepo/image:tag",
+					NewName: "unchanged",
+					NewTag:  "unchanged",
+					Digest:  "unchanged",
+				},
+				{
+					Name:    "myrepo/image:tag",
+					NewName: "unchanged",
+					NewTag:  "unchanged",
+					Digest:  "unchanged",
+				},
+			},
+		},
+		{
+			name: "no docker.io, not library or latest",
+			rewrittenImage: kustomizetypes.Image{
+				Name:    "myrepo/image:tag",
+				NewName: "unchanged",
+				NewTag:  "unchanged",
+				Digest:  "unchanged",
+			},
+			want: []kustomizetypes.Image{
+				{
+					Name:    "myrepo/image:tag",
+					NewName: "unchanged",
+					NewTag:  "unchanged",
+					Digest:  "unchanged",
+				},
+				{
+					Name:    "docker.io/myrepo/image:tag",
+					NewName: "unchanged",
+					NewTag:  "unchanged",
+					Digest:  "unchanged",
+				},
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			req := require.New(t)
+
+			got := BuildImageAltNames(tt.rewrittenImage)
+
+			req.Equal(tt.want, got)
+		})
+	}
+}
+
+func Test_kustomizeImage(t *testing.T) {
 	tests := []struct {
 		name         string
 		destRegistry registry.RegistryOptions
@@ -182,6 +292,18 @@ func Test_buildImageAlts(t *testing.T) {
 					NewTag:  "latest",
 					Digest:  "",
 				},
+				{
+					Name:    "docker.io/library/redis",
+					NewName: "localhost:5000/somebigbank/redis",
+					NewTag:  "latest",
+					Digest:  "",
+				},
+				{
+					Name:    "library/redis",
+					NewName: "localhost:5000/somebigbank/redis",
+					NewTag:  "latest",
+					Digest:  "",
+				},
 			},
 		},
 		{
@@ -194,6 +316,18 @@ func Test_buildImageAlts(t *testing.T) {
 			want: []kustomizetypes.Image{
 				{
 					Name:    "redis",
+					NewName: "localhost:5000/somebigbank/redis",
+					NewTag:  "v1",
+					Digest:  "",
+				},
+				{
+					Name:    "docker.io/library/redis",
+					NewName: "localhost:5000/somebigbank/redis",
+					NewTag:  "v1",
+					Digest:  "",
+				},
+				{
+					Name:    "library/redis",
 					NewName: "localhost:5000/somebigbank/redis",
 					NewTag:  "v1",
 					Digest:  "",
@@ -214,6 +348,18 @@ func Test_buildImageAlts(t *testing.T) {
 					NewTag:  "",
 					Digest:  "mytestdigest",
 				},
+				{
+					Name:    "docker.io/library/redis",
+					NewName: "localhost:5000/somesmallcorp/redis",
+					NewTag:  "",
+					Digest:  "mytestdigest",
+				},
+				{
+					Name:    "library/redis",
+					NewName: "localhost:5000/somesmallcorp/redis",
+					NewTag:  "",
+					Digest:  "mytestdigest",
+				},
 			},
 		},
 		{
@@ -226,6 +372,18 @@ func Test_buildImageAlts(t *testing.T) {
 			want: []kustomizetypes.Image{
 				{
 					Name:    "library/redis",
+					NewName: "localhost:5000/somebigbank/redis",
+					NewTag:  "v1",
+					Digest:  "",
+				},
+				{
+					Name:    "redis",
+					NewName: "localhost:5000/somebigbank/redis",
+					NewTag:  "v1",
+					Digest:  "",
+				},
+				{
+					Name:    "docker.io/library/redis",
 					NewName: "localhost:5000/somebigbank/redis",
 					NewTag:  "v1",
 					Digest:  "",
@@ -294,6 +452,12 @@ func Test_buildImageAlts(t *testing.T) {
 					NewTag:  "v1.7",
 					Digest:  "",
 				},
+				{
+					Name:    "docker.io/fluent/fluentd",
+					NewName: "localhost:5000/somebigbank/fluentd",
+					NewTag:  "v1.7",
+					Digest:  "",
+				},
 			},
 		},
 		{
@@ -309,13 +473,25 @@ func Test_buildImageAlts(t *testing.T) {
 					NewTag:  "v1",
 					Digest:  "",
 				},
+				{
+					Name:    "redis",
+					NewName: "localhost:5000/redis",
+					NewTag:  "v1",
+					Digest:  "",
+				},
+				{
+					Name:    "docker.io/library/redis",
+					NewName: "localhost:5000/redis",
+					NewTag:  "v1",
+					Digest:  "",
+				},
 			},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			req := require.New(t)
-			got, err := buildImageAlts(tt.destRegistry, tt.image)
+			got, err := kustomizeImage(tt.destRegistry, tt.image)
 			req.NoError(err)
 			req.Equal(tt.want, got)
 		})

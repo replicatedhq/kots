@@ -7,17 +7,17 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/docker/registry"
-	kustomizeimage "sigs.k8s.io/kustomize/api/types"
+	kustomizetypes "sigs.k8s.io/kustomize/api/types"
 )
 
-func ImageInfoFromFile(registry registry.RegistryOptions, nameParts []string) (kustomizeimage.Image, error) {
+func ImageInfoFromFile(registry registry.RegistryOptions, nameParts []string) (kustomizetypes.Image, error) {
 	// imageNameParts looks like this:
 	// ["quay.io", "someorg", "imagename", "imagetag"]
 	// or
 	// ["quay.io", "someorg", "imagename", "sha256", "<sha>"]
 	// we want to discard everything upto "imagename" and replace that with local host and namespace
 
-	image := kustomizeimage.Image{}
+	image := kustomizetypes.Image{}
 
 	if len(nameParts) < 3 {
 		return image, errors.Errorf("not enough parts in image name: %v", nameParts)
@@ -59,6 +59,78 @@ func DestRef(registry registry.RegistryOptions, srcImage string) string {
 	return fmt.Sprintf("%s/%s/%s", registry.Endpoint, registry.Namespace, lastPart)
 }
 
+func BuildImageAltNames(rewrittenImage kustomizetypes.Image) []kustomizetypes.Image {
+	// kustomize does string based comparison, so all of these are treated as different images:
+	// docker.io/library/redis:latest
+	// redis:latest
+	// redis
+	// As a workaround we add all 3 to the list
+
+	// similarly, docker.io/notlibrary/image:tag needs to be rewritten
+	// as notlibrary/image:tag
+
+	images := []kustomizetypes.Image{rewrittenImage}
+	if strings.HasPrefix(rewrittenImage.Name, "docker.io/library/") {
+		images = append(images, kustomizetypes.Image{
+			Name:    strings.TrimPrefix(rewrittenImage.Name, "docker.io/"),
+			NewName: rewrittenImage.NewName,
+			NewTag:  rewrittenImage.NewTag,
+			Digest:  rewrittenImage.Digest,
+		})
+		images = append(images, kustomizetypes.Image{
+			Name:    strings.TrimPrefix(rewrittenImage.Name, "docker.io/library/"),
+			NewName: rewrittenImage.NewName,
+			NewTag:  rewrittenImage.NewTag,
+			Digest:  rewrittenImage.Digest,
+		})
+	} else if strings.HasPrefix(rewrittenImage.Name, "docker.io/") {
+		images = append(images, kustomizetypes.Image{
+			Name:    strings.TrimPrefix(rewrittenImage.Name, "docker.io/"),
+			NewName: rewrittenImage.NewName,
+			NewTag:  rewrittenImage.NewTag,
+			Digest:  rewrittenImage.Digest,
+		})
+	} else if strings.HasPrefix(rewrittenImage.Name, "library/") {
+		images = append(images, kustomizetypes.Image{
+			Name:    strings.TrimPrefix(rewrittenImage.Name, "library/"),
+			NewName: rewrittenImage.NewName,
+			NewTag:  rewrittenImage.NewTag,
+			Digest:  rewrittenImage.Digest,
+		})
+		images = append(images, kustomizetypes.Image{
+			Name:    strings.Join([]string{"docker.io", rewrittenImage.Name}, "/"),
+			NewName: rewrittenImage.NewName,
+			NewTag:  rewrittenImage.NewTag,
+			Digest:  rewrittenImage.Digest,
+		})
+	} else {
+		nameParts := strings.Split(rewrittenImage.Name, "/")
+		if len(nameParts) == 1 {
+			images = append(images, kustomizetypes.Image{
+				Name:    strings.Join([]string{"docker.io", "library", rewrittenImage.Name}, "/"),
+				NewName: rewrittenImage.NewName,
+				NewTag:  rewrittenImage.NewTag,
+				Digest:  rewrittenImage.Digest,
+			})
+			images = append(images, kustomizetypes.Image{
+				Name:    strings.Join([]string{"library", rewrittenImage.Name}, "/"),
+				NewName: rewrittenImage.NewName,
+				NewTag:  rewrittenImage.NewTag,
+				Digest:  rewrittenImage.Digest,
+			})
+		} else if len(nameParts) == 2 {
+			images = append(images, kustomizetypes.Image{
+				Name:    strings.Join([]string{"docker.io", rewrittenImage.Name}, "/"),
+				NewName: rewrittenImage.NewName,
+				NewTag:  rewrittenImage.NewTag,
+				Digest:  rewrittenImage.Digest,
+			})
+		}
+	}
+
+	return images
+}
+
 // stripImageTag removes the tag or digest from an image
 func stripImageTag(image string) string {
 	// grab last section of image name
@@ -87,7 +159,7 @@ func destImageName(registry registry.RegistryOptions, srcImage string) string {
 	return fmt.Sprintf("%s/%s/%s", registry.Endpoint, registry.Namespace, lastPart)
 }
 
-func buildImageAlts(destRegistry registry.RegistryOptions, image string) ([]kustomizeimage.Image, error) {
+func kustomizeImage(destRegistry registry.RegistryOptions, image string) ([]kustomizetypes.Image, error) {
 	imgParts := strings.Split(image, "/")
 	if len(imgParts) == 1 {
 		// this means the image is something like "redis", which refers to "docker.io/library/redis"
@@ -114,14 +186,11 @@ func buildImageAlts(destRegistry registry.RegistryOptions, image string) ([]kust
 	newName := destImageName(destRegistry, image)
 	imageWithoutTag := stripImageTag(image)
 
-	var newImages []kustomizeimage.Image
-	firstImage := kustomizeimage.Image{
+	kustomizedImage := kustomizetypes.Image{
 		Name:    imageWithoutTag,
 		NewName: newName,
 		NewTag:  imageInfo.NewTag,
 		Digest:  imageInfo.Digest,
 	}
-	newImages = append(newImages, firstImage)
-
-	return newImages, nil
+	return BuildImageAltNames(kustomizedImage), nil
 }

@@ -2,11 +2,11 @@ package upstream
 
 import (
 	"io"
-	"strings"
 	"time"
 
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/docker/registry"
+	"github.com/replicatedhq/kots/pkg/image"
 	"github.com/replicatedhq/kots/pkg/kotsadm"
 	kotsadmtypes "github.com/replicatedhq/kots/pkg/kotsadm/types"
 	"github.com/replicatedhq/kots/pkg/logger"
@@ -47,55 +47,10 @@ func ProcessUpstreamImages(u *types.Upstream, options ProcessUpstreamImagesOptio
 
 	withAltNames := make([]kustomizetypes.Image, 0)
 	for _, i := range foundImages {
-		withAltNames = append(withAltNames, buildImageAltNames(i)...)
+		withAltNames = append(withAltNames, image.BuildImageAltNames(i)...)
 	}
 
 	return withAltNames, nil
-}
-
-func buildImageAltNames(rewrittenImage kustomizetypes.Image) []kustomizetypes.Image {
-	// kustomize does string based comparison, so all of these are treated as different images:
-	// docker.io/library/redis:latest
-	// redis:latest
-	// redis
-	// As a workaround we add all 3 to the list
-
-	// similarly, docker.io/notlibrary/image:tag needs to be rewritten
-	// as notlibrary/image:tag (and the same handling for 'latest')
-
-	images := []kustomizetypes.Image{rewrittenImage}
-
-	rewrittenName := rewrittenImage.Name
-	if strings.HasPrefix(rewrittenName, "docker.io/library/") {
-		rewrittenName = strings.TrimPrefix(rewrittenName, "docker.io/library/")
-		images = append(images, kustomizetypes.Image{
-			Name:    rewrittenName,
-			NewName: rewrittenImage.NewName,
-			NewTag:  rewrittenImage.NewTag,
-			Digest:  rewrittenImage.Digest,
-		})
-	} else if strings.HasPrefix(rewrittenName, "docker.io/") {
-		rewrittenName = strings.TrimPrefix(rewrittenName, "docker.io/")
-		images = append(images, kustomizetypes.Image{
-			Name:    rewrittenName,
-			NewName: rewrittenImage.NewName,
-			NewTag:  rewrittenImage.NewTag,
-			Digest:  rewrittenImage.Digest,
-		})
-
-	}
-
-	if strings.HasSuffix(rewrittenName, ":latest") {
-		rewrittenName = strings.TrimSuffix(rewrittenName, ":latest")
-		images = append(images, kustomizetypes.Image{
-			Name:    rewrittenName,
-			NewName: rewrittenImage.NewName,
-			NewTag:  rewrittenImage.NewTag,
-			Digest:  rewrittenImage.Digest,
-		})
-	}
-
-	return images
 }
 
 type ProgressReport struct {
