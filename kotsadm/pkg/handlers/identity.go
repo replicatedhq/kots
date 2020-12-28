@@ -798,6 +798,7 @@ func getDefaultOIDCConfig(isGeoAxis bool) *oidc.Config {
 		c.Scopes = append(c.Scopes, "uiasenterprise")
 		c.Scopes = append(c.Scopes, "eiasenterprise")
 		c.ClaimMapping.GroupsKey = "group"
+		c.InsecureSkipEmailVerified = true
 	}
 
 	return &c
