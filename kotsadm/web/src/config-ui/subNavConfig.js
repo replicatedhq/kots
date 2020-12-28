@@ -1,7 +1,10 @@
 import {
   getApplicationType,
-  isHelmChart
+  isHelmChart,
+  Utilities,
 } from "@src/utilities/utilities";
+
+import { rbacRoles } from "@src/constants/rbac";
 
 export default [
   {
@@ -64,7 +67,7 @@ export default [
     displayName: "View files",
     to: (slug, sequence) => `/app/${slug}/tree/${sequence}`,
     displayRule: watch => {
-      return Boolean(watch.name);
+      return Boolean(watch.name) && Utilities.sessionRolesHasOneOf([rbacRoles.CLUSTER_ADMIN]);
     }
   },
   {

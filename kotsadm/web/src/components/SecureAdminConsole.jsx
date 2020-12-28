@@ -29,6 +29,10 @@ class SecureAdminConsole extends React.Component {
         window.localStorage.setItem("token", token);
         loggedIn = true;
 
+        if (data.sessionRoles) {
+          window.localStorage.setItem("session_roles", data.sessionRoles);
+        }
+
         const apps = await this.props.onLoginSuccess();
         this.setState({ authLoading: false });
         if (apps.length > 0) {
@@ -192,10 +196,12 @@ class SecureAdminConsole extends React.Component {
       // strip quotes from token (golang adds them when the cookie value has spaces, commas, etc..)
       const loginData = {
         token: token.replace(/"/g, ""),
+        sessionRoles: Utilities.getCookie("session_roles"),
       };
       const loggedIn = await this.completeLogin(loginData);
       if (loggedIn) {
         Utilities.removeCookie("token");
+        Utilities.removeCookie("roles");
       }
       return;
     }

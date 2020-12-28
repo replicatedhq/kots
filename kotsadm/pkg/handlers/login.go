@@ -340,18 +340,31 @@ func (h *Handler) OIDCLoginCallback(w http.ResponseWriter, r *http.Request) {
 	}
 
 	expire := time.Now().Add(30 * time.Minute)
-	cookie := http.Cookie{
+
+	// token cookie
+	tokenCookie := http.Cookie{
 		Name:    "token",
 		Value:   responseToken,
 		Expires: expire,
 		Path:    "/",
 	}
-
 	if strings.HasPrefix(redirectURL, "https") {
-		cookie.Secure = true
+		tokenCookie.Secure = true
 	}
+	http.SetCookie(w, &tokenCookie)
 
-	http.SetCookie(w, &cookie)
+	// session roles cookie
+	sessionRolesCookie := http.Cookie{
+		Name:    "session_roles",
+		Value:   strings.Join(createdSession.Roles, ","),
+		Expires: expire,
+		Path:    "/",
+	}
+	if strings.HasPrefix(redirectURL, "https") {
+		sessionRolesCookie.Secure = true
+	}
+	http.SetCookie(w, &sessionRolesCookie)
+
 	http.Redirect(w, r, redirectURL, http.StatusSeeOther)
 }
 
