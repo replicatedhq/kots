@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"net/url"
 	"os"
 	"strings"
 	"time"
@@ -339,19 +340,39 @@ func (h *Handler) OIDCLoginCallback(w http.ResponseWriter, r *http.Request) {
 		redirectURL = ingress.GetAddress(ingressConfig.Spec)
 	}
 
+	u, err := url.Parse(redirectURL)
+	if err != nil {
+		logger.Error(errors.Wrap(err, "failed to parse redirect url"))
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
 	expire := time.Now().Add(30 * time.Minute)
-	cookie := http.Cookie{
+
+	// token cookie
+	tokenCookie := http.Cookie{
 		Name:    "token",
 		Value:   responseToken,
 		Expires: expire,
 		Path:    "/",
 	}
-
-	if strings.HasPrefix(redirectURL, "https") {
-		cookie.Secure = true
+	if u.Scheme == "https" {
+		tokenCookie.Secure = true
 	}
+	http.SetCookie(w, &tokenCookie)
 
-	http.SetCookie(w, &cookie)
+	// session roles cookie
+	sessionRolesCookie := http.Cookie{
+		Name:    "session_roles",
+		Value:   strings.Join(createdSession.Roles, ","),
+		Expires: expire,
+		Path:    "/",
+	}
+	if u.Scheme == "https" {
+		sessionRolesCookie.Secure = true
+	}
+	http.SetCookie(w, &sessionRolesCookie)
+
 	http.Redirect(w, r, redirectURL, http.StatusSeeOther)
 }
 

@@ -1,7 +1,8 @@
 import React from "react";
 import classNames from "classnames";
 
-import { getPercentageStatus } from '../../utilities/utilities';
+import { rbacRoles } from "../../constants/rbac";
+import { getPercentageStatus, Utilities } from '../../utilities/utilities';
 
 export default function NodeRow(props) {
   const { node } = props;
@@ -85,7 +86,7 @@ export default function NodeRow(props) {
         </div>
       </div>
       {
-        props.drainNode ?
+        props.drainNode && Utilities.sessionRolesHasOneOf([rbacRoles.CLUSTER_ADMIN]) ?
         <div className="flex-auto flex-column justifyContent--center">
           <button onClick={() => node?.isConnected ? props.drainNode(node?.name) : props.deleteNode(node?.name) } className="btn secondary red">{node?.isConnected ? "Drain node" : "Delete node"}</button>
         </div>

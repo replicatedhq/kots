@@ -131,15 +131,20 @@ class IdentityProviders extends Component {
       rbacGroups = [];
     }
 
-    return this.setState({
+    const nextState = {
       adminConsoleAddress: configSettings?.adminConsoleAddress ? configSettings?.adminConsoleAddress : window.location.origin,
       identityServiceAddress: configSettings?.identityServiceAddress ? configSettings?.identityServiceAddress : `${window.location.origin}/dex`,
       selectedProvider: configSettings?.oidcConfig !== null ? "oidcConfig" : configSettings?.geoAxisConfig !== null ? "geoAxisConfig" : null,
       oidcConfig: configSettings?.oidcConfig,
       geoAxisConfig: configSettings?.geoAxisConfig,
-      roles: configSettings?.roles,
-      rbacGroupRows: rbacGroups
-    });
+    };
+
+    if (!this.state.syncAppWithGlobal) {
+      nextState.roles = configSettings?.roles;
+      nextState.rbacGroupRows = rbacGroups;
+    }
+
+    return this.setState(nextState);
   }
 
   componentDidMount() {
@@ -586,7 +591,7 @@ class IdentityProviders extends Component {
 
           <div className="IdentityProvider--info flexWrap--wrap flex">
             {selectedProvider === "oidcConfig" &&
-              <div className="u-marginTop--30 u-marginRight--30">
+              <div className="u-marginTop--30 u-marginRight--20">
                 <div className="flex flex1 alignItems--center u-marginBottom--5">
                   <p className="u-fontSize--large u-lineHeight--default u-fontWeight--bold u-color--tuna"> Connector  name </p>
                   <span className="required-label"> Required </span>
@@ -600,7 +605,7 @@ class IdentityProviders extends Component {
                   onChange={(e) => { this.handleFormChange("connectorName", e) }} />
               </div>}
 
-            <div className="u-marginTop--30">
+            <div className="u-marginTop--30 u-marginRight--20">
               <div className="flex flex1 alignItems--center u-marginBottom--5">
                 <p className="u-fontSize--large u-lineHeight--default u-fontWeight--bold u-color--tuna"> Issuer </p>
                 <span className="icon grayOutlineQuestionMark--icon u-marginLeft--10 u-cursor--pointer"
@@ -616,7 +621,7 @@ class IdentityProviders extends Component {
                 onChange={(e) => { this.handleFormChange("issuer", e) }} />
             </div>
 
-            <div className="u-marginTop--30 u-marginRight--30">
+            <div className="u-marginTop--30 u-marginRight--20">
               <div className="flex flex1 alignItems--center u-marginBottom--5">
                 <p className="u-fontSize--large u-lineHeight--default u-fontWeight--bold u-color--tuna"> Client ID </p>
                 <span className="required-label"> Required </span>
@@ -629,7 +634,7 @@ class IdentityProviders extends Component {
                 onChange={(e) => { this.handleFormChange("clientId", e) }} />
             </div>
 
-            <div className="u-marginTop--30">
+            <div className="u-marginTop--30 u-marginRight--20">
               <div className="flex flex1 alignItems--center u-marginBottom--5">
                 <p className="u-fontSize--large u-lineHeight--default u-fontWeight--bold u-color--tuna"> Client secret </p>
                 <span className="required-label"> Required </span>

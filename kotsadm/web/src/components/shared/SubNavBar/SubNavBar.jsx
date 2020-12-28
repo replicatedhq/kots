@@ -7,7 +7,7 @@ import { isHelmChart } from "@src/utilities/utilities";
 import subNavConfig from "@src/config-ui/subNavConfig";
 
 export default function SubNavBar(props) {
-  const { className, activeTab, app, isVeleroInstalled, isAccess, isAppIdentityServiceSupported } = props;
+  const { className, activeTab, app, isVeleroInstalled, isAccess } = props;
   let { slug } = app;
 
   if (isHelmChart(app)) {

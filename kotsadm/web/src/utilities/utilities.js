@@ -377,6 +377,28 @@ export const Utilities = {
     }
   },
 
+  getSessionRoles() {
+    if (this.localStorageEnabled()) {
+      return window.localStorage.getItem("session_roles");
+    } else {
+      return null;
+    }
+  },
+
+  sessionRolesHasOneOf(rolesSet) {
+    const sessionRoles = this.getSessionRoles();
+    if (!sessionRoles) {
+      // rbac is not enabled
+      return true;
+    }
+    for (const r of rolesSet) {
+      if (sessionRoles.includes(r)) {
+        return true;
+      }
+    }
+    return false;
+  },
+
   localStorageEnabled() {
     var test = "test";
     try {
@@ -463,6 +485,11 @@ export const Utilities = {
     if (token) {
       if (client) { client.resetStore(); }
       window.localStorage.removeItem("token");
+    }
+
+    const sessionRoles = this.getSessionRoles();
+    if (sessionRoles) {
+      window.localStorage.removeItem("session_roles");
     }
 
     if (window.location.pathname !== "/secure-console") {

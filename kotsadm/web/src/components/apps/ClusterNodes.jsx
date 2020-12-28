@@ -6,6 +6,7 @@ import { Helmet } from "react-helmet";
 import CodeSnippet from "../shared/CodeSnippet";
 import NodeRow from "./NodeRow";
 import Loader from "../shared/Loader";
+import { rbacRoles } from "../../constants/rbac";
 import { Utilities } from "../../utilities/utilities";
 import { Repeater } from "../../utilities/repeater";
 import ErrorModal from "../modals/ErrorModal";
@@ -228,7 +229,7 @@ export class ClusterNodes extends Component {
                 ))}
               </div>
             </div>
-            {kurl?.isKurlEnabled ?
+            {kurl?.isKurlEnabled && Utilities.sessionRolesHasOneOf([rbacRoles.CLUSTER_ADMIN]) ?
               !displayAddNode
                 ? (
                   <div className="flex justifyContent--center alignItems--center">
@@ -297,7 +298,7 @@ export class ClusterNodes extends Component {
                         <Loader size={60} />
                       </div>
                     )}
-                    {!this.state.generating && this.state.command.length > 0
+                    {!this.state.generating && this.state.command?.length > 0
                       ? (
                         <Fragment>
                           <p className="u-fontSize--normal u-color--dustyGray u-fontWeight--medium u-lineHeight--normal u-marginBottom--5 u-marginTop--15">
