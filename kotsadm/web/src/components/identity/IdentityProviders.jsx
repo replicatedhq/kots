@@ -131,15 +131,20 @@ class IdentityProviders extends Component {
       rbacGroups = [];
     }
 
-    return this.setState({
+    const nextState = {
       adminConsoleAddress: configSettings?.adminConsoleAddress ? configSettings?.adminConsoleAddress : window.location.origin,
       identityServiceAddress: configSettings?.identityServiceAddress ? configSettings?.identityServiceAddress : `${window.location.origin}/dex`,
       selectedProvider: configSettings?.oidcConfig !== null ? "oidcConfig" : configSettings?.geoAxisConfig !== null ? "geoAxisConfig" : null,
       oidcConfig: configSettings?.oidcConfig,
       geoAxisConfig: configSettings?.geoAxisConfig,
-      roles: configSettings?.roles,
-      rbacGroupRows: rbacGroups
-    });
+    };
+
+    if (!this.state.syncAppWithGlobal) {
+      nextState.roles = configSettings?.roles;
+      nextState.rbacGroupRows = rbacGroups;
+    }
+
+    return this.setState(nextState);
   }
 
   componentDidMount() {
