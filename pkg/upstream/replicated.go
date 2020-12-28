@@ -669,6 +669,10 @@ func createConfigValues(applicationName string, config *kotsv1beta1.Config, exis
 					Value:   renderedValue,
 					Default: renderedDefault,
 				}
+				builderOptions.ExistingValues[item.Name] = template.ItemValue{
+					Value:   renderedValue,
+					Default: renderedDefault,
+				}
 			}
 		}
 	}
