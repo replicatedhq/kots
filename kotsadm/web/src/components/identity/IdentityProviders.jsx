@@ -309,6 +309,7 @@ class IdentityProviders extends Component {
       payload = {
         "oidcConfig": this.state.selectedProvider === "oidcConfig" ? oidcConfigPayload.oidcConfig : null,
         "geoAxisConfig": this.state.selectedProvider === "geoAxisConfig" ? this.state.geoAxisConfig : null,
+        useAdminConsoleSettings: this.state.syncAppWithGlobal,
         groups: groups
       }
     } else {
