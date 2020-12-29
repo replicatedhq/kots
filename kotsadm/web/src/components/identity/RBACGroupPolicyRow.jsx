@@ -6,12 +6,12 @@ export default class RBACGroupPolicyRow extends Component {
       isApplicationSettings, checkedRoles, handleRoleCheckboxChange, onCancelGroupRow } = this.props;
 
     return (
-      <div className="flex flex-column u-borderBottom--gray darker" style={{ padding: "8px 10px" }} key={index}>
+      <div className="flex1 flex-column u-borderBottom--gray darker" style={{ padding: "8px 10px" }} key={index}>
         <div className="flex flex1 alignItems--center justifyContent--spaceBetween">
-          <div className="flex flex-column justifyContent--flexStart">
+          <div className="flex1 flex-column justifyContent--flexStart u-paddingRight--10">
             <div className="flex alignItems--center">
               {!this.props.isEditing ?
-                <span className="u-fontSize--normal u-lineHeight--normal u-color--tundora" style={{ width: "140px" }}> {groupName} </span> :
+                <span className="u-fontSize--normal u-lineHeight--normal u-color--tundora" style={{ maxWidth: "690px" }}> {groupName} </span> :
                 <input type="text"
                   className="Input darker"
                   placeholder="Group name"
