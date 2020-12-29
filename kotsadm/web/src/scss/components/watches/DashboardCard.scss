@@ -169,16 +169,12 @@
 
 @media screen and (min-width: 1040px) {
   &.emptyGraph {
-    min-width: 455px;
     min-height: 255px;
-    max-width: 455px;
     max-height: 255px;
     height: 255px;
 
     &:nth-child(2n) {
       margin-right: 0;
-      min-width: 463px;
-      max-width: 463px;
     }
   }
 }

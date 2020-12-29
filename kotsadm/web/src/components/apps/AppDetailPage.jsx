@@ -423,7 +423,7 @@ class AppDetailPage extends Component {
                       <AppSnapshotRestore app={app} />
                     } />
                     {app.isAppIdentityServiceSupported &&
-                      <Route exact path="/app/:slug/settings" render={() =>
+                      <Route exact path="/app/:slug/access" render={() =>
                         <AppIdentityServiceSettings
                           app={app}
                           refetch={this.getApp}

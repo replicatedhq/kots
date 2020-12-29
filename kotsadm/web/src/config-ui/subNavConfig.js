@@ -95,9 +95,9 @@ export default [
     }
   },
   {
-    tabName: "settings",
-    displayName: "Settings",
-    to: (slug) => `/app/${slug}/settings`,
+    tabName: "access",
+    displayName: "Access",
+    to: (slug) => `/app/${slug}/access`,
     displayRule: (watch, isVeleroInstalled, isIdentityServiceSupported) => {
       return isIdentityServiceSupported;
     }
