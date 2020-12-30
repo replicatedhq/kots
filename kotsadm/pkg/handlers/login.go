@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -39,6 +40,17 @@ const (
 	PasswordAuth    LoginMethod = "shared-password"
 	IdentityService LoginMethod = "identity-service"
 )
+
+func getRedirectOnErrorURL(redirectURL string, errorMsg string) string {
+	msg := map[string]string{
+		"error": errorMsg,
+	}
+	msgJson, _ := json.Marshal(msg)
+
+	v := url.Values{}
+	v.Set("message", base64.StdEncoding.EncodeToString(msgJson))
+	return fmt.Sprintf("%s/secure-console?%s", redirectURL, v.Encode())
+}
 
 func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 	identityConfig, err := identity.GetConfig(r.Context(), os.Getenv("POD_NAMESPACE"))
@@ -180,6 +192,18 @@ func (h *Handler) OIDCLoginCallback(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	ingressConfig, err := ingress.GetConfig(r.Context(), namespace)
+	if err != nil {
+		logger.Error(errors.Wrap(err, "failed to get ingress config"))
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	redirectURL := identityConfig.Spec.AdminConsoleAddress
+	if redirectURL == "" && ingressConfig.Spec.Enabled {
+		redirectURL = ingress.GetAddress(ingressConfig.Spec)
+	}
+
 	var token *oauth2.Token
 
 	switch r.Method {
@@ -306,9 +330,8 @@ func (h *Handler) OIDCLoginCallback(w http.ResponseWriter, r *http.Request) {
 	roles := session.GetSessionRolesFromRBAC(claims.Groups, groups)
 
 	if len(roles) == 0 {
-		loginResponse := LoginResponse{}
-		loginResponse.Error = "user must be a part of at least 1 group with roles"
-		JSON(w, http.StatusUnauthorized, loginResponse)
+		redirectURL = getRedirectOnErrorURL(redirectURL, "user must be a part of at least 1 group with roles")
+		http.Redirect(w, r, redirectURL, http.StatusSeeOther)
 		return
 	}
 
@@ -327,18 +350,6 @@ func (h *Handler) OIDCLoginCallback(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	responseToken := fmt.Sprintf("Bearer %s", signedJWT)
-
-	ingressConfig, err := ingress.GetConfig(r.Context(), namespace)
-	if err != nil {
-		logger.Error(errors.Wrap(err, "failed to get ingress config"))
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-
-	redirectURL := identityConfig.Spec.AdminConsoleAddress
-	if redirectURL == "" && ingressConfig.Spec.Enabled {
-		redirectURL = ingress.GetAddress(ingressConfig.Spec)
-	}
 
 	u, err := url.Parse(redirectURL)
 	if err != nil {
