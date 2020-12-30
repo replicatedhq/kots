@@ -170,7 +170,7 @@ class SecureAdminConsole extends React.Component {
       }
 
       const loginInfo = await response.json();
-      this.setState({ loginInfo });
+      this.setState({ loginInfo, loginErr: false, loginErrMessage: "" });
 
       return loginInfo;
     } catch(err) {
@@ -206,6 +206,24 @@ class SecureAdminConsole extends React.Component {
       return;
     }
 
+    const urlParams = new URLSearchParams(window.location.search);
+    const encodedMessage = urlParams.get("message");
+    if (encodedMessage) {
+      try {
+        const message = JSON.parse(atob(encodedMessage))
+        if (message.error) {
+          this.setState({loginErr: true, loginErrMessage: message.error});
+          return;
+        }
+      } catch (err) {
+        console.log("failed to decode message:", err);
+      }
+    }
+
+    await this.redirectLoginIfNeeded();
+  }
+
+  redirectLoginIfNeeded = async () => {
     const loginInfo = await this.getLoginInfo();
     if (loginInfo?.method === "identity-service") {
       await this.loginWithIdentityProvider();
@@ -235,6 +253,21 @@ class SecureAdminConsole extends React.Component {
     } = this.state;
 
     if (fetchingMetadata || !loginInfo) {
+      // secure-console url can receive an error message as url parameter.
+      // When this happens, the spinner clause will always evaluate to true,
+      // so we show this special error here with the "try again" option.
+      // Right now this is how OIDC redirects pass errors back to the user.
+      if (loginErr && loginErrMessage) {
+        return (
+          <ErrorModal
+            errorModal={true}
+            errMsg={loginErrMessage}
+            err="Failed to attempt login"
+            tryAgain={this.redirectLoginIfNeeded}
+          />
+        );
+      }
+
       return (
         <div className="flex-column flex1 alignItems--center justifyContent--center">
           <Loader size="60" />
