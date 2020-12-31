@@ -6,8 +6,8 @@ import (
 
 	"github.com/gosimple/slug"
 	"github.com/pkg/errors"
-	downstreamtypes "github.com/replicatedhq/kots/kotsadm/pkg/downstream/types"
 	"github.com/replicatedhq/kots/kotsadm/pkg/rand"
+	downstreamtypes "github.com/replicatedhq/kots/pkg/api/downstream/types"
 )
 
 const (

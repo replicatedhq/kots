@@ -8,9 +8,9 @@ import (
 
 	"github.com/pkg/errors"
 	apptypes "github.com/replicatedhq/kots/kotsadm/pkg/app/types"
-	downstreamtypes "github.com/replicatedhq/kots/kotsadm/pkg/downstream/types"
 	registrytypes "github.com/replicatedhq/kots/kotsadm/pkg/registry/types"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
+	downstreamtypes "github.com/replicatedhq/kots/pkg/api/downstream/types"
 	"github.com/replicatedhq/kots/pkg/crypto"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/rewrite"

@@ -9,7 +9,7 @@ import (
 	"github.com/gosimple/slug"
 	"github.com/pkg/errors"
 	apptypes "github.com/replicatedhq/kots/kotsadm/pkg/app/types"
-	downstreamtypes "github.com/replicatedhq/kots/kotsadm/pkg/downstream/types"
+	downstreamtypes "github.com/replicatedhq/kots/pkg/api/downstream/types"
 	"github.com/segmentio/ksuid"
 )
 
