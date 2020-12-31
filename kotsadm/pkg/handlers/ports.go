@@ -6,7 +6,7 @@ import (
 	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
 	"github.com/replicatedhq/kots/kotsadm/pkg/store"
 	"github.com/replicatedhq/kots/kotsadm/pkg/version"
-	versiontypes "github.com/replicatedhq/kots/kotsadm/pkg/version/types"
+	versiontypes "github.com/replicatedhq/kots/pkg/api/version/types"
 )
 
 type GetApplicationPortsResponse struct {

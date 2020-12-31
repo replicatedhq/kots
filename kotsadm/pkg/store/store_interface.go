@@ -6,8 +6,6 @@ import (
 
 	airgaptypes "github.com/replicatedhq/kots/kotsadm/pkg/airgap/types"
 	apptypes "github.com/replicatedhq/kots/kotsadm/pkg/app/types"
-	appstatustypes "github.com/replicatedhq/kots/kotsadm/pkg/appstatus/types"
-	downstreamtypes "github.com/replicatedhq/kots/kotsadm/pkg/downstream/types"
 	gitopstypes "github.com/replicatedhq/kots/kotsadm/pkg/gitops/types"
 	installationtypes "github.com/replicatedhq/kots/kotsadm/pkg/online/types"
 	preflighttypes "github.com/replicatedhq/kots/kotsadm/pkg/preflight/types"
@@ -16,8 +14,10 @@ import (
 	snapshottypes "github.com/replicatedhq/kots/kotsadm/pkg/snapshot/types"
 	supportbundletypes "github.com/replicatedhq/kots/kotsadm/pkg/supportbundle/types"
 	usertypes "github.com/replicatedhq/kots/kotsadm/pkg/user/types"
-	versiontypes "github.com/replicatedhq/kots/kotsadm/pkg/version/types"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
+	appstatustypes "github.com/replicatedhq/kots/pkg/api/appstatus/types"
+	downstreamtypes "github.com/replicatedhq/kots/pkg/api/downstream/types"
+	versiontypes "github.com/replicatedhq/kots/pkg/api/version/types"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	troubleshootredact "github.com/replicatedhq/troubleshoot/pkg/redact"
 )

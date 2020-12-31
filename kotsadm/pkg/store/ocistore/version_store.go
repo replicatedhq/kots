@@ -22,7 +22,7 @@ import (
 	kotsconfig "github.com/replicatedhq/kots/kotsadm/pkg/config"
 	gitopstypes "github.com/replicatedhq/kots/kotsadm/pkg/gitops/types"
 	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
-	versiontypes "github.com/replicatedhq/kots/kotsadm/pkg/version/types"
+	versiontypes "github.com/replicatedhq/kots/pkg/api/version/types"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/kustomize"
 	"go.uber.org/zap"

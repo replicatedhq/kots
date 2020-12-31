@@ -6,11 +6,12 @@ package mock_store
 
 import (
 	context "context"
+	reflect "reflect"
+	time "time"
+
 	gomock "github.com/golang/mock/gomock"
 	types "github.com/replicatedhq/kots/kotsadm/pkg/airgap/types"
 	types0 "github.com/replicatedhq/kots/kotsadm/pkg/app/types"
-	types1 "github.com/replicatedhq/kots/kotsadm/pkg/appstatus/types"
-	types2 "github.com/replicatedhq/kots/kotsadm/pkg/downstream/types"
 	types3 "github.com/replicatedhq/kots/kotsadm/pkg/gitops/types"
 	types4 "github.com/replicatedhq/kots/kotsadm/pkg/online/types"
 	types5 "github.com/replicatedhq/kots/kotsadm/pkg/preflight/types"
@@ -19,12 +20,12 @@ import (
 	types8 "github.com/replicatedhq/kots/kotsadm/pkg/snapshot/types"
 	types9 "github.com/replicatedhq/kots/kotsadm/pkg/supportbundle/types"
 	types10 "github.com/replicatedhq/kots/kotsadm/pkg/user/types"
-	types11 "github.com/replicatedhq/kots/kotsadm/pkg/version/types"
 	v1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
+	types1 "github.com/replicatedhq/kots/pkg/api/appstatus/types"
+	types2 "github.com/replicatedhq/kots/pkg/api/downstream/types"
+	types11 "github.com/replicatedhq/kots/pkg/api/version/types"
 	kotsutil "github.com/replicatedhq/kots/pkg/kotsutil"
 	redact "github.com/replicatedhq/troubleshoot/pkg/redact"
-	reflect "reflect"
-	time "time"
 )
 
 // MockKOTSStore is a mock of KOTSStore interface

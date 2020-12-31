@@ -7,8 +7,8 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/kotsadm/pkg/appstatus"
-	appstatustypes "github.com/replicatedhq/kots/kotsadm/pkg/appstatus/types"
 	"github.com/replicatedhq/kots/kotsadm/pkg/persistence"
+	appstatustypes "github.com/replicatedhq/kots/pkg/api/appstatus/types"
 )
 
 func (s S3PGStore) GetAppStatus(appID string) (*appstatustypes.AppStatus, error) {
