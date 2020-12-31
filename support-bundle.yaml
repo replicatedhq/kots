@@ -124,3 +124,53 @@ spec:
           - app=rook-discover
         namespace: rook-ceph
         name: kots/rook
+    - exec:
+        collectorName: weave-status
+        command:
+        - /home/weave/weave
+        args:
+        - --local
+        - status
+        containerName: weave
+        exclude: ""
+        name: kots/kurl/weave
+        namespace: kube-system
+        selector:
+        - name=weave-net
+        timeout: 10s
+    - exec:
+        collectorName: weave-report
+        command:
+        - /home/weave/weave
+        args:
+        - --local
+        - report
+        containerName: weave
+        exclude: ""
+        name: kots/kurl/weave
+        namespace: kube-system
+        selector:
+        - name=weave-net
+        timeout: 10s
+
+  analyzers:
+    - textAnalyze:
+        checkName: Weave Status
+        exclude: ""
+        fileName: kots/kurl/weave/kube-system/weave-net-*/weave-status-stdout.txt
+        outcomes:
+        - fail:
+            message: Weave is not ready
+        - pass:
+            message: Weave is ready
+        regex: 'Status: ready'
+    - textAnalyze:
+        checkName: Weave Report
+        exclude: ""
+        fileName: kots/kurl/weave/kube-system/weave-net-*/weave-report-stdout.txt
+        outcomes:
+        - fail:
+            message: Weave is not ready
+        - pass:
+            message: Weave is ready
+        regex: '"Ready": true'
