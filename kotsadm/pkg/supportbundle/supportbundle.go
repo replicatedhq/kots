@@ -341,6 +341,9 @@ func addDefaultTroubleshoot(supportBundle *troubleshootv1beta2.SupportBundle, ap
 	if supportBundle.Spec.Collectors == nil {
 		supportBundle.Spec.Collectors = make([]*troubleshootv1beta2.Collect, 0)
 	}
+	if supportBundle.Spec.Analyzers == nil {
+		supportBundle.Spec.Analyzers = make([]*troubleshootv1beta2.Analyze, 0)
+	}
 
 	licenseData, err := license.GetCurrentLicenseString(app)
 	if err != nil {
@@ -377,6 +380,9 @@ func addDefaultTroubleshoot(supportBundle *troubleshootv1beta2.SupportBundle, ap
 	supportBundle.Spec.Collectors = append(supportBundle.Spec.Collectors, makeRookCollectors()...)
 	supportBundle.Spec.Collectors = append(supportBundle.Spec.Collectors, makeKurlCollectors()...)
 	supportBundle.Spec.Collectors = append(supportBundle.Spec.Collectors, makeVeleroCollectors()...)
+
+	supportBundle.Spec.Collectors = append(supportBundle.Spec.Collectors, makeWeaveCollectors()...)
+	supportBundle.Spec.Analyzers = append(supportBundle.Spec.Analyzers, makeWeaveAnalyzers()...)
 
 	apps := []*apptypes.App{}
 	if app != nil {
@@ -520,9 +526,9 @@ func makeKurlCollectors() []*troubleshootv1beta2.Collect {
 	names := []string{
 		"registry",
 	}
-	rookCollectors := []*troubleshootv1beta2.Collect{}
+	collectors := []*troubleshootv1beta2.Collect{}
 	for _, name := range names {
-		rookCollectors = append(rookCollectors, &troubleshootv1beta2.Collect{
+		collectors = append(collectors, &troubleshootv1beta2.Collect{
 			Logs: &troubleshootv1beta2.Logs{
 				CollectorMeta: troubleshootv1beta2.CollectorMeta{
 					CollectorName: name,
@@ -533,7 +539,95 @@ func makeKurlCollectors() []*troubleshootv1beta2.Collect {
 			},
 		})
 	}
-	return rookCollectors
+
+	return collectors
+}
+
+func makeWeaveCollectors() []*troubleshootv1beta2.Collect {
+	collectors := []*troubleshootv1beta2.Collect{}
+
+	collectors = append(collectors, &troubleshootv1beta2.Collect{
+		Exec: &troubleshootv1beta2.Exec{
+			CollectorMeta: troubleshootv1beta2.CollectorMeta{
+				CollectorName: "weave-status",
+			},
+			Name:          "kots/kurl/weave",
+			Selector:      []string{"name=weave-net"},
+			Namespace:     "kube-system",
+			ContainerName: "weave",
+			Command:       []string{"/home/weave/weave"},
+			Args:          []string{"--local", "status"},
+			Timeout:       "10s",
+		},
+	})
+
+	collectors = append(collectors, &troubleshootv1beta2.Collect{
+		Exec: &troubleshootv1beta2.Exec{
+			CollectorMeta: troubleshootv1beta2.CollectorMeta{
+				CollectorName: "weave-report",
+			},
+			Name:          "kots/kurl/weave",
+			Selector:      []string{"name=weave-net"},
+			Namespace:     "kube-system",
+			ContainerName: "weave",
+			Command:       []string{"/home/weave/weave"},
+			Args:          []string{"--local", "report"},
+			Timeout:       "10s",
+		},
+	})
+
+	return collectors
+}
+
+func makeWeaveAnalyzers() []*troubleshootv1beta2.Analyze {
+	analyzers := []*troubleshootv1beta2.Analyze{}
+
+	analyzers = append(analyzers, &troubleshootv1beta2.Analyze{
+		TextAnalyze: &troubleshootv1beta2.TextAnalyze{
+			AnalyzeMeta: troubleshootv1beta2.AnalyzeMeta{
+				CheckName: "Weave Status",
+			},
+			FileName:     "kots/kurl/weave/kube-system/weave-net-*/weave-status-stdout.txt",
+			RegexPattern: `Status: ready`,
+			Outcomes: []*troubleshootv1beta2.Outcome{
+				{
+					Fail: &troubleshootv1beta2.SingleOutcome{
+						Message: "Weave is not ready",
+					},
+				},
+				{
+					Pass: &troubleshootv1beta2.SingleOutcome{
+						Message: "Weave is ready",
+					},
+				},
+			},
+		},
+	})
+
+	analyzers = append(analyzers, &troubleshootv1beta2.Analyze{
+		TextAnalyze: &troubleshootv1beta2.TextAnalyze{
+
+			AnalyzeMeta: troubleshootv1beta2.AnalyzeMeta{
+				CheckName: "Weave Report",
+			},
+			FileName:     "kots/kurl/weave/kube-system/weave-net-*/weave-report-stdout.txt",
+			RegexPattern: `"Ready": true`,
+			Outcomes: []*troubleshootv1beta2.Outcome{
+				{
+					Fail: &troubleshootv1beta2.SingleOutcome{
+						Message: "Weave is not ready",
+					},
+				},
+				{
+					Pass: &troubleshootv1beta2.SingleOutcome{
+						Message: "Weave is ready",
+					},
+				},
+			},
+		},
+	})
+
+	return analyzers
 }
 
 func makeVeleroCollectors() []*troubleshootv1beta2.Collect {
