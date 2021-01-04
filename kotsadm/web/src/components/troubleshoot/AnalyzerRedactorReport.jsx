@@ -80,7 +80,7 @@ export class AnalyzerRedactorReport extends Component {
 
     return (
       <div className="flex flex-column">
-        <p className="u-fontSize--normal u-color--dustyGray u-fontWeight--medium u-lineHeight--normal u-marginTop--small u-marginBottom--20">Below is a list of default redactors that were applied when collecting this support bundle. You can see how many files each redactor affected and how many values were redacted.</p>
+        <p className="u-fontSize--normal u-color--dustyGray u-fontWeight--medium u-lineHeight--normal u-marginTop--10 u-marginBottom--20">Below is a list of default redactors that were applied when collecting this support bundle. You can see how many files each redactor affected and how many values were redacted.</p>
         {!isEmpty(redactions) && Object.keys(redactions?.byRedactor).map((redactor) => (
           <AnalyzerRedactorReportRow
             key={`redactor-${redactor}`}
