@@ -1,5 +1,5 @@
 import React, { Component } from "react";
-import { ShipConfigRenderer } from "../ShipConfigRenderer";
+import { AppConfigRenderer } from "../AppConfigRenderer";
 import { withRouter, Link } from "react-router-dom";
 import PropTypes from "prop-types";
 import classNames from "classnames";
@@ -297,7 +297,7 @@ class AppConfig extends Component {
         {fromLicenseFlow && app && <span className="u-fontSize--larger u-color--tuna u-fontWeight--bold u-marginTop--auto">Configure {app.name}</span>}
         <div className={classNames("ConfigOuterWrapper u-padding--15", { "u-marginTop--20": fromLicenseFlow })}>
           <div className="ConfigInnerWrapper u-padding--15">
-            <ShipConfigRenderer groups={configGroups} getData={this.handleConfigChange} />
+            <AppConfigRenderer groups={configGroups} getData={this.handleConfigChange} />
           </div>
         </div>
 

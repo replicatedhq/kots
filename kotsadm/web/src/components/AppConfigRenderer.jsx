@@ -5,7 +5,7 @@ import map from "lodash/map";
 import sortBy from "lodash/sortBy";
 import keyBy from "lodash/keyBy";
 
-export class ShipConfigRenderer extends React.Component {
+export class AppConfigRenderer extends React.Component {
   static propTypes = {
     groups: PropTypes.array.isRequired, // Config groups items to render
     handleChange: PropTypes.func,
