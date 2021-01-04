@@ -1,0 +1,153 @@
+#config-render-component {
+  .icon.clickable {
+    cursor: pointer;
+  }
+  
+  .hidden {
+    display: none;
+  }
+  
+  .actions-wrapper {
+    padding-top: 12px;
+    padding-bottom: 12px;
+    background: #fff;
+    border-top: solid 1px #DFDFDF;
+    z-index: 10;
+  }
+  
+  a {
+    text-decoration: none;
+    outline: none;
+    font-weight: 500;
+    color: #326DE6;
+  
+    &:hover {
+      cursor: pointer;
+      text-decoration: underline;
+    }
+  }
+  
+  .field-section-header {
+    font-size: 16px;
+    line-height: 20px;
+    font-weight: 600;
+  }
+  .field-section-sub-header {
+    font-size: 14px;
+    line-height: 18px;
+    font-weight: 500;
+    white-space: pre-line;
+  }
+  .field-section-help-text {
+    font-size: 14px;
+    line-height: 1.5;
+    font-weight: 500;
+    color: #9B9B9B;
+  }
+  .field.hidden {
+    display: none;
+  }
+  .header-color {
+    color: #323232;
+  }
+  .sub-header-color {
+    color: #323232;
+  }
+  
+  .container {
+    padding-right: 20px;
+    padding-left: 20px;
+    margin: 0 auto;
+    width: 100%;
+    box-sizing: border-box;
+  }
+  
+  /* don't let that chrome autofill yellow ruin the aesthetic of your site */
+  input:-webkit-autofill {
+    background-color: #ffffff;
+  }
+  
+  .layout-footer-actions {
+    box-shadow: 0 -1px 3px rgba(0,0,0,0.16);
+    padding: 12px 30px 11px;
+    background-color: #ffffff;
+    z-index: 110;
+  
+    &.less-padding {
+      padding: 12px 20px 11px;
+    }
+  }
+  
+  .spinningLoaderPath {
+    fill: #323232;
+  }
+  
+  .AceEditor--wrapper {
+    position: relative;
+    box-sizing: border-box;
+    
+    .error-highlight {
+      background:#FBEDEB;
+      position: absolute;
+    }
+  
+    .disabled-ace-editor {
+      opacity: .5;
+    }
+  
+    .ace_search {
+      left: 0;
+      right: auto;
+    }
+  }
+
+  .config-errblock {
+    display: none;
+    font-size: 14px;
+    color: #BC4752;
+    font-weight: 500;
+    line-height: 20px;
+  
+    &.visible {
+      display: inline-block;
+    }
+  }
+  
+  .field-label {
+    font-size: 12px;
+    line-height: 12px;
+    padding: 2px 4px 3px;
+    border-radius: 2px;
+  
+    &.required {
+      background-color: #FFEFD4;
+      color: #DB9016;
+    }
+    &.recommended {
+      background-color: #EAFFF0;
+      color: #44BB66;
+    }
+  }
+  
+  input[type="file"] {
+    display: none;
+  }
+  
+  .custom-file-upload {
+    border: 1px dashed #C4C7CA;
+    display: inline-block;
+    padding: 15px 17px;
+    cursor: pointer;
+    border-radius: 4px;
+  }
+  
+  .file-uploaded {
+    border: 1px solid #9B9B9B;
+    display: inline-block;
+    padding: 15px 17px;
+    cursor: pointer;
+    border-radius: 4px;
+    color: #323232;
+  }
+  
+}

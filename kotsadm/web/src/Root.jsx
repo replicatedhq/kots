@@ -30,8 +30,6 @@ import Access from "./components/identity/Access";
 import Footer from "./components/shared/Footer";
 import NavBar from "./components/shared/NavBar";
 
-// Import Ship Init component CSS first
-import "@replicatedhq/ship-init/dist/styles.css";
 import "./scss/index.scss";
 import connectHistory from "./services/matomo";
 

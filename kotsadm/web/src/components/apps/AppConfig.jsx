@@ -1,5 +1,5 @@
 import React, { Component } from "react";
-import { ShipConfigRenderer } from "@replicatedhq/ship-init";
+import { ShipConfigRenderer } from "../ShipConfigRenderer";
 import { withRouter, Link } from "react-router-dom";
 import PropTypes from "prop-types";
 import classNames from "classnames";
