@@ -63,7 +63,7 @@ export default class FileInput extends React.Component {
     return (
       <div>
         <div className={`${this.props.readonly ? "readonly" : ""} ${this.props.disabled ? "disabled" : ""}`}>
-          <p className="sub-header-color field-section-sub-header u-marginTop--15 u-marginBottom--small u-marginTop--20">{label}</p>
+          <p className="sub-header-color field-section-sub-header u-marginTop--15 u-marginBottom--small">{label}</p>
           <div className="flex flex-row">
             <div className={`${this.state.fileAdded || this.props.value ? "file-uploaded" : "custom-file-upload"}`}>
               <input
@@ -78,7 +78,7 @@ export default class FileInput extends React.Component {
                 disabled={this.props.disabled}
               />
               <label htmlFor={`${this.props.name} selector`} className="u-position--relative">
-                <span className={`icon clickable ${this.state.fileAdded || this.props.value ? "u-smallCheckGreen" : "u-ovalIcon"} u-marginRight--normal u-top--3`}></span>
+                <span className={`icon ${this.state.fileAdded || this.props.value ? "u-smallCheckGreen" : "u-ovalIcon clickable"} u-marginRight--10 u-top--3`}></span>
                 {this.state.fileAdded || this.props.value ? this.props.multiple ? this.state.fileNames.join(",") : this.state.fileName : `Browse files for ${this.props.title}`}
                 {this.state.fileAdded || this.props.value ? 
                   <p className="u-color--astral u-textDecoration--underlineOnHover u-fontSize--small u-marginLeft--30 u-marginTop--5">Select a different file</p>

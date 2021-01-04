@@ -37,7 +37,7 @@ export default class ConfigTextarea extends React.Component {
     var hidden = this.props.hidden || this.props.when === "false";
 
     return (
-      <div className={`field field-type-text u-marginTop--20 ${hidden ? "hidden" : ""}`}>
+      <div className={`field field-type-text u-marginTop--15 ${hidden ? "hidden" : ""}`}>
         {this.props.title !== "" ?
           <ConfigItemTitle
             title={this.props.title}
@@ -58,7 +58,7 @@ export default class ConfigTextarea extends React.Component {
             </Markdown>
           </div>
          : null}
-        <div className="field-input-wrapper u-marginTop--15">
+        <div className="field-input-wrapper u-marginTop--10">
           <textarea
             ref={this.textareaRef}
             {...this.props.props}

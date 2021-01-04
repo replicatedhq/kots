@@ -22,7 +22,7 @@ export default class ConfigCheckbox extends React.Component {
     var hidden = this.props.hidden || this.props.when === "false";
 
     return (
-      <div className={`field field-checkbox-wrapper u-marginTop--20 flex ${hidden ? "hidden" : ""}`}>
+      <div className={`field field-checkbox-wrapper u-marginTop--15 flex ${hidden ? "hidden" : ""}`}>
         <span className="u-marginTop--10 config-errblock" id={`${this.props.name}-errblock`}></span>
         <div className="flex1 flex u-marginRight--20">
           <input
@@ -46,7 +46,7 @@ export default class ConfigCheckbox extends React.Component {
                     null}
             </label>
             {this.props.help_text !== "" ? 
-              <div className="field-section-help-text u-marginTop--20">
+              <div className="field-section-help-text u-marginTop--10">
                 <Markdown
                   options={{
                     linkTarget: "_blank",

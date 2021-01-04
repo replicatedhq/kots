@@ -91,11 +91,15 @@
 .u-marginTop--60 { margin-top: 60px; }
 .u-marginTop--auto { margin-top: auto; }
 
+.u-top--0 { top: 0 };
+.u-top--3 { top: 3px };
+
 /* Display utilities */
 
 .u-display--block { display: block; }
 .u-display--inlineBlock { display: inline-block; }
 .u-display--none { display: none; }
+.u-verticalAlign--top { vertical-align: top; }
 
 /* Visibility classes */
 
