@@ -98,18 +98,15 @@
 
 .AddRoleGroup--wrapper {
   position: absolute;
-  top: calc(100% - 242px);
-  left: calc(100% - 670px);
+	top: 50%;
+	left: 50%;
+	transform: translate(-50%, -50%);
   background: #FFFFFF;
   box-shadow: 0px 0px 4px rgba(0, 0, 0, 0.2);
   border-radius: 8px;
   width: 580px;
   padding: 15px;
   text-align: center;
-
-  &.bigger {
-    left: 20%;
-  }
 }
 
 .Roles--wrapper {
