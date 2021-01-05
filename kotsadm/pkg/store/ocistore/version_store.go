@@ -363,14 +363,8 @@ func (s OCIStore) CreateAppVersion(appID string, currentSequence *int64, appName
 			configOpts.RegistryPassword = registryInfo.Password
 		}
 
-		// check if version needs additional configuration
-		needsConfig, err := kotsconfig.NeedsConfiguration(configOpts)
-		if err != nil {
-			return int64(0), errors.Wrap(err, "failed to check if version needs configuration")
-		}
-
 		downstreamStatus := "pending"
-		if needsConfig {
+		if kotsKinds.Config != nil {
 			downstreamStatus = "pending_config"
 		} else if kotsKinds.Preflight != nil && !skipPreflights {
 			downstreamStatus = "pending_preflight"
