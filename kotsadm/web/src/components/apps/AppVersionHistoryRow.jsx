@@ -6,6 +6,7 @@ import find from "lodash/find";
 import classNames from "classnames";
 import isSameOrAfter from "dayjs/plugin/isSameOrAfter";
 dayjs.extend(isSameOrAfter);
+import ReactTooltip from "react-tooltip";
 
 import Loader from "../shared/Loader";
 
@@ -46,7 +47,15 @@ function deployButtonStatus(downstream, version, app) {
   }
 }
 
-function renderVersionAction(version, nothingToCommitDiff, app, history, deployVersion) {
+function isVersionEditable(latestVersion, version) {
+  if (latestVersion?.sequence <= version?.parentSequence) {
+    return true;
+  } else {
+    return false;
+  }
+}
+
+function renderVersionAction(version, latestVersion, nothingToCommitDiff, app, history, deployVersion) {
   const downstream = app.downstreams[0];
 
   if (downstream.gitops?.enabled) {
@@ -75,12 +84,22 @@ function renderVersionAction(version, nothingToCommitDiff, app, history, deployV
 
   const isSecondaryBtn = isPastVersion || needsConfiguration || isRedeploy && !isRollback;
   const isPrimaryButton = !isSecondaryBtn && !isRedeploy && !isRollback;
+  let tooltipTip;
+  if (isVersionEditable(latestVersion, version)) {
+    tooltipTip = "Edit config";
+  } else {
+    tooltipTip= "View config"
+  }
 
   return (
     <div className="flex flex1 justifyContent--flexEnd">
+      <div className="flex alignItems--center">
+        <Link to={`/app/${app.slug}/config/${version.sequence}`} className="icon config--icon u-cursor--pointer" data-tip={tooltipTip} />
+        <ReactTooltip effect="solid" className="replicated-tooltip" />
+      </div>
       {showActions &&
         <button
-          className={classNames("btn", { "secondary dark": isRollback, "secondary blue": isSecondaryBtn, "primary blue": isPrimaryButton })}
+          className={classNames("btn u-marginLeft--10", { "secondary dark": isRollback, "secondary blue": isSecondaryBtn, "primary blue": isPrimaryButton })}
           disabled={version.status === "deploying"}
           onClick={() => needsConfiguration ? history.push(`/app/${app.slug}/config/${version.sequence}`) : isRollback ? deployVersion(version, true) : deployVersion(version)}
         >
@@ -217,7 +236,8 @@ function renderVersionStatus(version, app, match, viewLogs) {
 export default function AppVersionHistoryRow(props) {
   const { version, selectedDiffReleases, nothingToCommit,
     isChecked, isNew, showDownstreamReleaseNotes, renderSourceAndDiff, handleSelectReleasesToDiff,
-    yamlErrorsDetails, gitopsEnabled, toggleShowDetailsModal } = props;
+    yamlErrorsDetails, gitopsEnabled, toggleShowDetailsModal, latestVersion } = props;
+
 
   return (
     <div
@@ -251,8 +271,8 @@ export default function AppVersionHistoryRow(props) {
       <div className={`${nothingToCommit && selectedDiffReleases && "u-opacity--half"} flex-column flex1 alignItems--flexEnd`}>
         <div>
           {version.status === "failed" || version.status === "deployed" ?
-            renderVersionAction(version, nothingToCommit && selectedDiffReleases, props.app, props.history, props.redeployVersion) :
-            renderVersionAction(version, nothingToCommit && selectedDiffReleases, props.app, props.history, props.deployVersion)
+            renderVersionAction(version, latestVersion, nothingToCommit && selectedDiffReleases, props.app, props.history, props.redeployVersion) :
+            renderVersionAction(version, latestVersion, nothingToCommit && selectedDiffReleases, props.app, props.history, props.deployVersion)
           }
         </div>
         <p className="u-fontSize--small u-lineHeight--normal u-color--dustyGray u-fontWeight--medium u-marginTop--15">Deployed: <span className="u-fontWeight--bold">{version.deployedAt ? dayjs(version.deployedAt).format("MMMM D, YYYY @ hh:mm a") : "N/A"}</span></p>

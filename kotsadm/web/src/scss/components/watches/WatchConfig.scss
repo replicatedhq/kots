@@ -23,3 +23,27 @@
   font-weight: 500;
   text-decoration: underline;
 }
+
+.ConfigInfo {
+  display: flex;
+  align-items: center;
+  font-size: 14px;
+  line-height: 22px;
+  border-radius: 4px;
+  padding: 13px 80px 10px;
+
+  &.newer {
+    background: #F5F8FC;
+    color: #9B9B9B;
+  }
+
+  &.older {
+    background: #FBE9D7;
+    color: #EC8F39;
+  }
+
+  &.current {
+    background: #E3F5E8;
+    color: #44BB66
+  }
+}
