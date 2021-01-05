@@ -10,6 +10,7 @@ import (
 	"github.com/replicatedhq/kots/kotsadm/pkg/store"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	"github.com/replicatedhq/kots/pkg/crypto"
+	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"k8s.io/client-go/kubernetes/scheme"
 )
 
@@ -62,11 +63,6 @@ func bootstrapIdentity() error {
 		return errors.Wrap(err, "failed to list apps")
 	}
 
-	apiCipher, err := crypto.AESCipherFromString(os.Getenv("API_ENCRYPTION_KEY"))
-	if err != nil {
-		return errors.Wrap(err, "failed to create aes cipher")
-	}
-
 	for _, app := range apps {
 		needsBootstrap, err := identity.AppIdentityNeedsBootstrap(app.Slug)
 		if err != nil {
@@ -88,6 +84,8 @@ func bootstrapIdentity() error {
 			return errors.Wrap(err, "failed to get current archive")
 		}
 
+		decode := scheme.Codecs.UniversalDeserializer().Decode
+
 		identityConfigFile := filepath.Join(currentArchivePath, "upstream", "userdata", "identityconfig.yaml")
 		identityConfigData, err := ioutil.ReadFile(identityConfigFile)
 		if os.IsNotExist(err) {
@@ -96,7 +94,6 @@ func bootstrapIdentity() error {
 			return errors.Wrapf(err, "failed to get stat identity config file for app %s", app.Slug)
 		}
 
-		decode := scheme.Codecs.UniversalDeserializer().Decode
 		obj, gvk, err := decode([]byte(identityConfigData), nil, nil)
 		if err != nil {
 			return errors.Wrap(err, "failed to decode config data")
@@ -105,6 +102,16 @@ func bootstrapIdentity() error {
 			return errors.Errorf("expected IdentityConfig, but found %s/%s/%s", gvk.Group, gvk.Version, gvk.Kind)
 		}
 		identityConfig := obj.(*kotsv1beta1.IdentityConfig)
+
+		installation, err := kotsutil.LoadInstallationFromPath(filepath.Join(currentArchivePath, "upstream", "userdata", "installation.yaml"))
+		if err != nil {
+			return errors.Wrap(err, "failed to load installation from path")
+		}
+
+		apiCipher, err := crypto.AESCipherFromString(installation.Spec.EncryptionKey)
+		if err != nil {
+			return errors.Wrap(err, "failed to create aes cipher")
+		}
 
 		identityConfigFile, err = identity.InitAppIdentityConfig(app.Slug, identityConfig.Spec.Storage, *apiCipher)
 		if err != nil {
