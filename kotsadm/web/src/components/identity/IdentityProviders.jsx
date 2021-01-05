@@ -208,7 +208,7 @@ class IdentityProviders extends Component {
   handleRoleCheckboxChange = (rowIndex, roleIndex, e) => {
     let rbacGroupRows = [...this.state.rbacGroupRows];
     let row = { ...rbacGroupRows[rowIndex].roles[roleIndex] };
-    const idStartPosition = e.target.id.indexOf("=") +1;
+    const idStartPosition = e.target.id.indexOf("=") + 1;
     row.id = e.target.id.slice(idStartPosition);
     row.isChecked = e.target.checked;
     rbacGroupRows[rowIndex].roles[roleIndex] = row;
@@ -502,7 +502,7 @@ class IdentityProviders extends Component {
         </div> */}
         <form className="flex flex-column Identity--wrapper u-marginTop--30">
           <p className="u-fontSize--largest u-lineHeight--default u-fontWeight--bold u-color--tuna"> Configure Identity Provider {isApplicationSettings && `for ${app?.name}`}</p>
-          <p className="u-fontSize--normal u-lineHeight--medium u-fontWeight--medium u-color--dustyGray u-marginTop--12"> Configure additional ODIC providers to authenticate in to the Admin Console. </p>
+          <p className="u-fontSize--normal u-lineHeight--medium u-fontWeight--medium u-color--dustyGray u-marginTop--12"> Configure additional OIDC providers to authenticate in to the Admin Console. </p>
 
           {isApplicationSettings &&
             <div className="BoxedCheckbox-wrapper flex1 u-textAlign--left u-marginTop--20">
@@ -590,62 +590,66 @@ class IdentityProviders extends Component {
             </div>
           </div>
 
-          <div className="IdentityProvider--info flexWrap--wrap flex">
-            {selectedProvider === "oidcConfig" &&
-              <div className="u-marginTop--30 u-marginRight--20">
+          <div className="IdentityProvider--info u-marginTop--30 flexWrap--wrap flex flex-column">
+            <div className="flex flex1">
+              {selectedProvider === "oidcConfig" &&
+                <div className="flex1 flex-column u-marginRight--20">
+                  <div className="flex flex1 alignItems--center u-marginBottom--5">
+                    <p className="u-fontSize--large u-lineHeight--default u-fontWeight--bold u-color--tuna"> Connector  name </p>
+                    <span className="required-label"> Required </span>
+                  </div>
+                  {requiredErrors?.connectorName && <span className="u-color--chestnut u-fontSize--small u-fontWeight--medium u-lineHeight--normal"> Connector name is a required field</span>}
+                  <input type="text"
+                    className="Input u-marginTop--12"
+                    placeholder="OpenID"
+                    disabled={syncAppWithGlobal}
+                    value={this.state.oidcConfig?.connectorName}
+                    onChange={(e) => { this.handleFormChange("connectorName", e) }} />
+                </div>}
+
+              <div className="flex1 flex-column">
                 <div className="flex flex1 alignItems--center u-marginBottom--5">
-                  <p className="u-fontSize--large u-lineHeight--default u-fontWeight--bold u-color--tuna"> Connector  name </p>
+                  <p className="u-fontSize--large u-lineHeight--default u-fontWeight--bold u-color--tuna"> Issuer </p>
+                  <span className="icon grayOutlineQuestionMark--icon u-marginLeft--10 u-cursor--pointer"
+                    data-tip="Canonical URL of the provider, also used for configuration discovery. This value MUST match the value returned in the provider config discovery." />
+                  <ReactTooltip effect="solid" className="replicated-tooltip" />
                   <span className="required-label"> Required </span>
                 </div>
-                {requiredErrors?.connectorName && <span className="u-color--chestnut u-fontSize--small u-fontWeight--medium u-lineHeight--normal"> Connector name is a required field</span>}
+                {requiredErrors?.issuer && <span className="u-color--chestnut u-fontSize--small u-fontWeight--medium u-lineHeight--normal"> Issuer is a required field </span>}
                 <input type="text"
                   className="Input u-marginTop--12"
-                  placeholder="OpenID"
                   disabled={syncAppWithGlobal}
-                  value={this.state.oidcConfig?.connectorName}
-                  onChange={(e) => { this.handleFormChange("connectorName", e) }} />
-              </div>}
-
-            <div className="u-marginTop--30 u-marginRight--20">
-              <div className="flex flex1 alignItems--center u-marginBottom--5">
-                <p className="u-fontSize--large u-lineHeight--default u-fontWeight--bold u-color--tuna"> Issuer </p>
-                <span className="icon grayOutlineQuestionMark--icon u-marginLeft--10 u-cursor--pointer"
-                  data-tip="Canonical URL of the provider, also used for configuration discovery. This value MUST match the value returned in the provider config discovery." />
-                <ReactTooltip effect="solid" className="replicated-tooltip" />
-                <span className="required-label"> Required </span>
+                  value={this.getRequiredValue("issuer")}
+                  onChange={(e) => { this.handleFormChange("issuer", e) }} />
               </div>
-              {requiredErrors?.issuer && <span className="u-color--chestnut u-fontSize--small u-fontWeight--medium u-lineHeight--normal"> Issuer is a required field </span>}
-              <input type="text"
-                className="Input u-marginTop--12"
-                disabled={syncAppWithGlobal}
-                value={this.getRequiredValue("issuer")}
-                onChange={(e) => { this.handleFormChange("issuer", e) }} />
             </div>
 
-            <div className="u-marginTop--30 u-marginRight--20">
-              <div className="flex flex1 alignItems--center u-marginBottom--5">
-                <p className="u-fontSize--large u-lineHeight--default u-fontWeight--bold u-color--tuna"> Client ID </p>
-                <span className="required-label"> Required </span>
+            <div className="flex flex1 u-marginTop--30">
+              <div className="flex1 flex-column u-marginRight--20">
+                <div className="flex flex1 alignItems--center u-marginBottom--5">
+                  <p className="u-fontSize--large u-lineHeight--default u-fontWeight--bold u-color--tuna"> Client ID </p>
+                  <span className="required-label"> Required </span>
+                </div>
+                {requiredErrors?.clientId && <span className="u-color--chestnut u-fontSize--small u-fontWeight--medium u-lineHeight--normal"> Client ID is a required field </span>}
+                <input type="text"
+                  className="Input u-marginTop--12"
+                  value={this.getRequiredValue("clientId")}
+                  disabled={syncAppWithGlobal}
+                  onChange={(e) => { this.handleFormChange("clientId", e) }} />
               </div>
-              {requiredErrors?.clientId && <span className="u-color--chestnut u-fontSize--small u-fontWeight--medium u-lineHeight--normal"> Client ID is a required field </span>}
-              <input type="text"
-                className="Input u-marginTop--12"
-                value={this.getRequiredValue("clientId")}
-                disabled={syncAppWithGlobal}
-                onChange={(e) => { this.handleFormChange("clientId", e) }} />
-            </div>
 
-            <div className="u-marginTop--30 u-marginRight--20">
-              <div className="flex flex1 alignItems--center u-marginBottom--5">
-                <p className="u-fontSize--large u-lineHeight--default u-fontWeight--bold u-color--tuna"> Client secret </p>
-                <span className="required-label"> Required </span>
+              <div className="flex1 flex-column">
+                <div className="flex flex1 alignItems--center u-marginBottom--5">
+                  <p className="u-fontSize--large u-lineHeight--default u-fontWeight--bold u-color--tuna"> Client secret </p>
+                  <span className="required-label"> Required </span>
+                </div>
+                {requiredErrors?.clientSecret && <span className="u-color--chestnut u-fontSize--small u-fontWeight--medium u-lineHeight--normal"> Client Secret is a required field </span>}
+                <input type="password"
+                  className="Input u-marginTop--12"
+                  value={this.getRequiredValue("clientSecret")}
+                  disabled={syncAppWithGlobal}
+                  onChange={(e) => { this.handleFormChange("clientSecret", e) }} />
               </div>
-              {requiredErrors?.clientSecret && <span className="u-color--chestnut u-fontSize--small u-fontWeight--medium u-lineHeight--normal"> Client Secret is a required field </span>}
-              <input type="password"
-                className="Input u-marginTop--12"
-                value={this.getRequiredValue("clientSecret")}
-                disabled={syncAppWithGlobal}
-                onChange={(e) => { this.handleFormChange("clientSecret", e) }} />
             </div>
           </div>
 
@@ -696,7 +700,7 @@ class IdentityProviders extends Component {
               {this.state.showAdvancedOptions &&
                 <div className="flex flex-column u-marginTop--12">
                   <div className="flex flex1 justifyContent--spaceBetween">
-                    <div className="flex flex-column justifyContent--flexStart">
+                    <div className="flex flex-column justifyContent--flexStart" style={{ marginRight: "40px"}}>
                       <div className={`flex-auto flex alignItems--center ${this.state.oidcConfig?.getUserInfo ? "is-active" : ""}`}>
                         <input
                           type="checkbox"
@@ -753,7 +757,7 @@ class IdentityProviders extends Component {
                       </div>
                     </div>
                     <div className="IdentityProviderAdvanced--info flex flex1 alignItems--center justifyContent--center">
-                      <div className="u-marginRight--30">
+                      <div className="flex1 flex-column u-marginRight--30">
                         <div className="flex flex1">
                           <p className="u-fontSize--large u-lineHeight--default u-fontWeight--bold u-color--tuna"> User ID key </p>
                           <span className="icon grayOutlineQuestionMark--icon u-marginLeft--10 u-cursor--pointer"
@@ -768,7 +772,7 @@ class IdentityProviders extends Component {
                           onChange={(e) => { this.handleFormChange("userIDKey", e) }} />
                       </div>
 
-                      <div className="u-marginRight--30">
+                      <div className="flex1 flex-column">
                         <div className="flex flex1">
                           <p className="u-fontSize--large u-lineHeight--default u-fontWeight--bold u-color--tuna"> User name key </p>
                           <span className="icon grayOutlineQuestionMark--icon u-marginLeft--10 u-cursor--pointer"
@@ -785,7 +789,7 @@ class IdentityProviders extends Component {
                     </div>
                   </div>
                   <div className="IdentityProviderAdvanced--info flexWrap--wrap flex">
-                    <div className="u-marginTop--30 u-marginRight--30">
+                    <div className="flex1 flex-column u-marginTop--30 u-marginRight--30">
                       <div className="flex flex1 alignItems--center">
                         <p className="u-fontSize--large u-lineHeight--default u-fontWeight--bold u-color--tuna"> Prompt type </p>
                         <span className="icon grayOutlineQuestionMark--icon u-marginLeft--10 u-cursor--pointer"
@@ -800,7 +804,7 @@ class IdentityProviders extends Component {
                         disabled={syncAppWithGlobal}
                         onChange={(e) => { this.handleFormChange("promptType", e) }} />
                     </div>
-                    <div className="u-marginTop--30 u-marginRight--30">
+                    <div className="flex1 flex-column u-marginTop--30 u-marginRight--30">
                       <div className="flex flex1 alignItems--center">
                         <p className="u-fontSize--large u-lineHeight--default u-fontWeight--bold u-color--tuna"> Hosted domains </p>
                         <span className="icon grayOutlineQuestionMark--icon u-marginLeft--10 u-cursor--pointer"
@@ -813,7 +817,7 @@ class IdentityProviders extends Component {
                         disabled={syncAppWithGlobal}
                         onChange={(e) => { this.handleFormChange("hostedDomains", e) }} />
                     </div>
-                    <div className="u-marginTop--30">
+                    <div className="flex1 flex-column u-marginTop--30">
                       <div className="flex flex1 alignItems--center">
                         <p className="u-fontSize--large u-lineHeight--default u-fontWeight--bold u-color--tuna"> Scopes </p>
                         <span className="icon grayOutlineQuestionMark--icon u-marginLeft--10 u-cursor--pointer"
@@ -829,7 +833,7 @@ class IdentityProviders extends Component {
                     </div>
                   </div>
 
-                  <div className="u-marginTop--30">
+                  <div className="flex1 flex-column u-marginTop--30">
                     <div className="flex flex1 alignItems--center">
                       <p className="u-fontSize--large u-lineHeight--default u-fontWeight--bold u-color--tuna"> Claim mapping </p>
                       <span className="icon grayOutlineQuestionMark--icon u-marginLeft--10 u-cursor--pointer"
@@ -838,7 +842,7 @@ class IdentityProviders extends Component {
                     </div>
                     <p className="u-fontSize--normal u-lineHeight--normal u-fontWeight--normal u-marginTop--5"> claimMapping can only map a non-standard claim to a standard one if it's not returned in the id_token </p>
                     <div className="IdentityProviderAdvanced--info flexWrap--wrap flex">
-                      <div className="u-marginRight--30 u-marginTop--20">
+                      <div className="flex1 flex-column u-marginRight--30 u-marginTop--20">
                         <p className="u-fontSize--large u-lineHeight--default u-fontWeight--bold u-color--tuna"> Preferred username key </p>
                         <input type="text"
                           className="Input u-marginTop--12"
@@ -847,7 +851,7 @@ class IdentityProviders extends Component {
                           disabled={syncAppWithGlobal}
                           onChange={(e) => { this.handleFormChange("preferredUsername", e) }} />
                       </div>
-                      <div className="u-marginRight--30 u-marginTop--20">
+                      <div className="flex1 flex-column u-marginRight--30 u-marginTop--20">
                         <p className="u-fontSize--large u-lineHeight--default u-fontWeight--bold u-color--tuna"> Email key </p>
                         <input type="text"
                           className="Input u-marginTop--12"
@@ -856,7 +860,7 @@ class IdentityProviders extends Component {
                           disabled={syncAppWithGlobal}
                           onChange={(e) => { this.handleFormChange("email", e) }} />
                       </div>
-                      <div className="u-marginTop--20">
+                      <div className="flex1 flex-column u-marginTop--20">
                         <p className="u-fontSize--large u-lineHeight--default u-fontWeight--bold u-color--tuna"> Group keys </p>
                         <input type="text"
                           className="Input u-marginTop--12"
