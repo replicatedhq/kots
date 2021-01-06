@@ -210,7 +210,6 @@ class AppLicense extends Component {
                   <div className="flexWrap--wrap flex-auto flex1 u-marginTop--12">
                     {appLicense.entitlements?.map((entitlement, i) => {
                       const currEntitlement = this.state.entitlementsToShow.find(f => f === entitlement.title);
-                      console.log(entitlement, currEntitlement)
                       if (entitlement.value.length > 30 && (currEntitlement !== entitlement.title)) {
                         return (
                           <span key={entitlement.label} className={`u-fontSize--small u-lineHeight--normal u-color--doveGray u-fontWeight--medium u-marginRight--10 ${i !== 0 ? "u-marginLeft--5" : ""}`}> {entitlement.title}: <span className="u-fontWeight--bold"> {entitlement.value.slice(0, 30) + "..."} </span>
