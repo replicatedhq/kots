@@ -21,7 +21,8 @@ class AppLicense extends Component {
       loading: false,
       message: "",
       messageType: "info",
-      showNextStepModal: false
+      showNextStepModal: false,
+      entitlementsToShow: []
     }
   }
 
@@ -144,6 +145,17 @@ class AppLicense extends Component {
     this.setState({ showNextStepModal: false });
   }
 
+  toggleShowDetails = (entitlement) => {
+    this.setState({ entitlementsToShow: [...this.state.entitlementsToShow, entitlement] })
+  }
+
+  toggleHideDetails = (entitlement) => {
+    let entitlementsToShow = [...this.state.entitlementsToShow];
+    const index = this.state.entitlementsToShow.indexOf(entitlement);
+    entitlementsToShow.splice(index, 1);
+    this.setState({ entitlementsToShow })
+  }
+
   render() {
     const { appLicense, loading, message, messageType, showNextStepModal } = this.state;
 
@@ -195,11 +207,27 @@ class AppLicense extends Component {
                   </p>
                 </div>
                 {size(appLicense?.entitlements) > 0 &&
-                  <div className="flexWrap--wrap flex alignItems--center u-marginTop--12">
+                  <div className="flexWrap--wrap flex-auto flex1 u-marginTop--12">
                     {appLicense.entitlements?.map((entitlement, i) => {
-                      return (
-                        <span key={entitlement.label} className={`u-fontSize--small u-lineHeight--normal u-color--doveGray u-fontWeight--medium u-marginRight--10 ${i !== 0 ? "u-marginLeft--5" : ""}`}> {entitlement.title}: <span className="u-fontWeight--bold"> {entitlement.value} </span></span>
-                      );
+                      const currEntitlement = this.state.entitlementsToShow.find(f => f === entitlement.title);
+                      console.log(entitlement, currEntitlement)
+                      if (entitlement.value.length > 30 && (currEntitlement !== entitlement.title)) {
+                        return (
+                          <span key={entitlement.label} className={`u-fontSize--small u-lineHeight--normal u-color--doveGray u-fontWeight--medium u-marginRight--10 ${i !== 0 ? "u-marginLeft--5" : ""}`}> {entitlement.title}: <span className="u-fontWeight--bold"> {entitlement.value.slice(0, 30) + "..."} </span>
+                            <span className="icon clickable down-arrow-icon" onClick={() => this.toggleShowDetails(entitlement.title)} />
+                          </span>
+                        )
+                      } else if (entitlement.value.length > 30 && (currEntitlement === entitlement.title)) {
+                        return (
+                          <span key={entitlement.label} className={`flex u-fontSize--small u-lineHeight--normal u-color--doveGray u-fontWeight--medium u-marginRight--10 ${i !== 0 ? "u-marginLeft--5" : ""}`}> {entitlement.title}: <span className="u-fontWeight--bold" style={{whiteSpace: "pre"}}> {entitlement.value} </span>
+                            <span className="icon clickable up-arrow-icon u-marginTop--5" onClick={() => this.toggleHideDetails(entitlement.title)} />
+                          </span>
+                        )
+                      } else {
+                        return (
+                          <span key={entitlement.label} className={`u-fontSize--small u-lineHeight--normal u-color--doveGray u-fontWeight--medium u-marginRight--10 ${i !== 0 ? "u-marginLeft--5" : ""}`}> {entitlement.title}: <span className="u-fontWeight--bold"> {entitlement.value} </span></span>
+                        );
+                      }
                     })}
                   </div>}
                 <div className="flexWrap--wrap flex alignItems--center u-marginTop--10">
