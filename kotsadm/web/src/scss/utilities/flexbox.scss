@@ -5,27 +5,88 @@
 */
 
 .flex {
+	display: -webkit-box;
+	display: -webkit-flex;
+	display: -moz-flex;
+	display: -ms-flexbox;
 	display: flex;
+	-webkit-flex-direction: row;
+	-moz-flex-direction: row;
+	-ms-flex-direction: row;
 	flex-direction: row;
 }
 .flex-column {
+	display: -webkit-box;
+	display: -webkit-flex;
+	display: -moz-flex;
+	display: -ms-flexbox;
 	display: flex;
-  flex-direction: column;
+	-webkit-flex-direction: column;
+	-moz-flex-direction: column;
+	-ms-flex-direction: column;
+	flex-direction: column;
 }
 .inline-flex { display: inline-flex; }
-.flex-auto { flex: 0 0 auto; }
-.flex-1-auto { flex: 1 1 auto; }
-.flex0 { flex: 0; }
+.flex-auto { 
+  -webkit-flex: 0 0 auto;
+  -moz-flex: 0 0 auto;
+  -ms-flex: 0 0 auto;
+  flex: 0 0 auto;
+}
+.flex-1-auto { 
+	-webkit-flex: 1 1 auto;
+	-moz-flex: 1 1 auto;
+	-ms-flex: 1 1 auto;
+	flex: 1 1 auto;
+}
+.flex0 { 
+	-webkit-flex: 0;
+	-moz-flex: 0;
+	-ms-flex: 0;
+	flex: 0;
+ }
 .flex1 {
+	-webkit-flex: 1;
+	-moz-flex: 1;
+	-ms-flex: 1;
 	flex: 1;
 	min-height: 0;
 }
-.flex1-0 { flex: 1 1 0; }
-.flex2 { flex: 2; }
-.flex3 { flex: 3; }
-.flex4 { flex: 4; }
-.flex5 { flex: 5; }
-.flexWrap--wrap { flex-wrap: wrap; }
+.flex1-0 { 
+	-webkit-flex: 1 1 0;
+	-moz-flex: 1 1 0;
+	-ms-flex: 1 1 0;
+	flex: 1 1 0;
+}
+.flex2 {
+	-webkit-flex: 2;
+	-moz-flex: 2;
+	-ms-flex: 2;
+	flex: 2;
+ }
+.flex3 { 
+	-webkit-flex: 3;
+	-moz-flex: 3;
+	-ms-flex: 3;
+	flex: 3;
+ }
+.flex4 { 
+	-webkit-flex: 4;
+	-moz-flex: 4;
+	-ms-flex: 4;
+	flex: 4;
+}
+.flex5 { 
+	-webkit-flex: 5;
+	-moz-flex: 5;
+	-ms-flex: 5;
+	flex: 5;
+ }
+.flexWrap--wrap {
+	display: -webkit-flex;
+	-webkit-flex-wrap: wrap;
+	flex-wrap: wrap; 
+}
 
 /* use .flex-verticalCenter on the element you want to center */
 .flex-verticalCenter::before,
@@ -60,6 +121,10 @@
 .u-flexMobileReflow,
 .u-flexTabletReflow,
 .u-flexDesktopReflow {
+	display: -webkit-box;
+	display: -webkit-flex;
+	display: -moz-flex;
+	display: -ms-flexbox;
 	display: flex;
 	flex-direction: column;
 }

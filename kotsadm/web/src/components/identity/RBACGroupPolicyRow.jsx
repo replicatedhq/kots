@@ -6,7 +6,7 @@ export default class RBACGroupPolicyRow extends Component {
       isApplicationSettings, checkedRoles, handleRoleCheckboxChange, onCancelGroupRow } = this.props;
 
     return (
-      <div className="flex1 flex-column u-borderBottom--gray darker" style={{ padding: "8px 10px" }} key={index}>
+      <div className="flex-1-auto u-borderBottom--gray darker" style={{ padding: "8px 10px" }} key={index}>
         <div className="flex flex1 alignItems--center justifyContent--spaceBetween">
           <div className="flex1 flex-column justifyContent--flexStart u-paddingRight--10">
             <div className="flex alignItems--center">
