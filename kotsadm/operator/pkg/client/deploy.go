@@ -476,7 +476,7 @@ func deletePVCs(namespace string, pvcs []string) error {
 		}
 		log.Printf("deleting pvc: %s", pvc)
 		err := clientset.CoreV1().PersistentVolumeClaims(namespace).Delete(context.TODO(), pvc, opts)
-		if err != nil {
+		if err != nil && !kuberneteserrors.IsNotFound(err) {
 			return errors.Wrapf(err, "failed to delete pvc %s", pvc)
 		}
 	}
