@@ -19,7 +19,7 @@ For more information on installing Kotsadm locally see https://kots.io/kotsadm/i
 
 ## Contributing
 
-For docs on setting up a dev environment to build and run kotsadm locally, read the [CONTRIBUTING](https://github.com/replicatedhq/kots/kotsadm/blob/master/CONTRIBUTING.md) guide.
+For docs on setting up a dev environment to build and run kotsadm locally, read the [CONTRIBUTING](https://github.com/replicatedhq/kots/blob/master/kotsadm/CONTRIBUTING.md) guide.
 
 # Community
 
