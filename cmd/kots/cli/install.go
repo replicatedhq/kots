@@ -367,6 +367,10 @@ func InstallCmd() *cobra.Command {
 	cmd.Flags().Bool("with-minio", true, "when set, kots install will deploy a local minio instance for storage")
 	cmd.Flags().Bool("with-dockerdistribution", false, "when set, kots install will deploy a local instance of docker distribution for storage")
 	cmd.Flags().Bool("storage-base-uri-plainhttp", false, "when set, use plain http (not https) connecting to the local oci storage")
+	cmd.Flags().MarkHidden("storage-base-uri")
+	cmd.Flags().MarkHidden("with-minio")
+	cmd.Flags().MarkHidden("with-dockerdistribution")
+	cmd.Flags().MarkHidden("storage-base-uri-plainhttp")
 
 	cmd.Flags().Bool("enable-identity-service", false, "when set, the KOTS identity service will be enabled")
 	cmd.Flags().MarkHidden("enable-identity-service")
