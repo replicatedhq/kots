@@ -7,7 +7,6 @@ require (
 	github.com/Azure/azure-sdk-for-go v42.0.0+incompatible
 	github.com/Azure/go-autorest/autorest v0.9.6
 	github.com/Azure/go-autorest/autorest/adal v0.8.2
-	github.com/Masterminds/sprig/v3 v3.2.0 // indirect
 	github.com/aws/aws-sdk-go v1.28.2
 	github.com/bitnami-labs/sealed-secrets v0.12.5
 	github.com/containerd/containerd v1.3.2
@@ -34,7 +33,7 @@ require (
 	github.com/opencontainers/image-spec v1.0.2-0.20190823105129-775207bd45b6
 	github.com/pkg/errors v0.9.1
 	github.com/replicatedhq/kots v0.0.0-00010101000000-000000000000
-	github.com/replicatedhq/troubleshoot v0.9.54
+	github.com/replicatedhq/troubleshoot v0.9.55
 	github.com/replicatedhq/yaml/v3 v3.0.0-beta5-replicatedhq
 	github.com/robfig/cron v1.1.0
 	github.com/robfig/cron/v3 v3.0.0
