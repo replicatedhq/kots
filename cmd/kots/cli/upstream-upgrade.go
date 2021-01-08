@@ -184,7 +184,7 @@ func UpstreamUpgradeCmd() *cobra.Command {
 			}
 
 			appSlug := args[0]
-			updateCheckURI := fmt.Sprintf("http://localhost:%d/api/v1/app/%s/updatecheck?%s", localPort, appSlug, urlVals.Encode())
+			updateCheckURI := fmt.Sprintf("http://localhost:%d/api/v1/app/%s/updatecheck?%s", localPort, url.PathEscape(appSlug), urlVals.Encode())
 
 			authSlug, err := auth.GetOrCreateAuthSlug(kubernetesConfigFlags, v.GetString("namespace"))
 			if err != nil {
