@@ -324,7 +324,7 @@ func (s S3PGStore) CreateAppVersion(appID string, currentSequence *int64, appNam
 		}
 
 		downstreamStatus := "pending"
-		if kotsKinds.Config != nil {
+		if currentSequence == nil && kotsKinds.Config != nil {
 			downstreamStatus = "pending_config"
 		} else if kotsKinds.Preflight != nil && !skipPreflights {
 			downstreamStatus = "pending_preflight"
