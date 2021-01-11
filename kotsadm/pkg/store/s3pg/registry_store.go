@@ -38,6 +38,23 @@ func (s S3PGStore) GetRegistryDetailsForApp(appID string) (*registrytypes.Regist
 		Namespace:   registryNamespace.String,
 	}
 
+	apiCipher, err := crypto.AESCipherFromString(os.Getenv("API_ENCRYPTION_KEY"))
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to load apiCipher")
+	}
+
+	decodedPassword, err := base64.StdEncoding.DecodeString(registrySettings.PasswordEnc)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to decode")
+	}
+
+	decryptedPassword, err := apiCipher.Decrypt([]byte(decodedPassword))
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to decrypt")
+	}
+
+	registrySettings.Password = string(decryptedPassword)
+
 	return &registrySettings, nil
 }
 
