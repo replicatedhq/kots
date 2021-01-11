@@ -62,9 +62,10 @@ type GetLicenseResponse struct {
 }
 
 type EntitlementResponse struct {
-	Title string      `json:"title"`
-	Value interface{} `json:"value"`
-	Label string      `json:"label"`
+	Title     string      `json:"title"`
+	Value     interface{} `json:"value"`
+	Label     string      `json:"label"`
+	ValueType string      `json:"valueType"`
 }
 
 type UploadLicenseRequest struct {
@@ -205,9 +206,10 @@ func getLicenseEntitlements(license *kotsv1beta1.License) ([]EntitlementResponse
 		} else if !entititlement.IsHidden {
 			entitlements = append(entitlements,
 				EntitlementResponse{
-					Title: entititlement.Title,
-					Label: key,
-					Value: entititlement.Value.Value(),
+					Title:     entititlement.Title,
+					Label:     key,
+					Value:     entititlement.Value.Value(),
+					ValueType: entititlement.ValueType,
 				})
 		}
 	}

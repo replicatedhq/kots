@@ -210,21 +210,22 @@ class AppLicense extends Component {
                   <div className="flexWrap--wrap flex-auto flex1 u-marginTop--12">
                     {appLicense.entitlements?.map((entitlement, i) => {
                       const currEntitlement = this.state.entitlementsToShow.find(f => f === entitlement.title);
+                      const isTextField = entitlement.valueType === "Text";
                       if (entitlement.value.length > 30 && (currEntitlement !== entitlement.title)) {
                         return (
-                          <span key={entitlement.label} className={`u-fontSize--small u-lineHeight--normal u-color--doveGray u-fontWeight--medium u-marginRight--10 ${i !== 0 ? "u-marginLeft--5" : ""}`}> {entitlement.title}: <span className="u-fontWeight--bold"> {entitlement.value.slice(0, 30) + "..."} </span>
+                          <span key={entitlement.label} className={`u-fontSize--small u-lineHeight--normal u-color--doveGray u-fontWeight--medium u-marginRight--10 ${i !== 0 ? "u-marginLeft--5" : ""}`}> {entitlement.title}: <span className={`u-fontWeight--bold ${isTextField && "u-fontFamily--monospace"}`}> {entitlement.value.slice(0, 30) + "..."} </span>
                             <span className="icon clickable down-arrow-icon" onClick={() => this.toggleShowDetails(entitlement.title)} />
                           </span>
                         )
                       } else if (entitlement.value.length > 30 && (currEntitlement === entitlement.title)) {
                         return (
-                          <span key={entitlement.label} className={`flex u-fontSize--small u-lineHeight--normal u-color--doveGray u-fontWeight--medium u-marginRight--10 ${i !== 0 ? "u-marginLeft--5" : ""}`}> {entitlement.title}: <span className="u-fontWeight--bold" style={{whiteSpace: "pre"}}> {entitlement.value} </span>
-                            <span className="icon clickable up-arrow-icon u-marginTop--5" onClick={() => this.toggleHideDetails(entitlement.title)} />
+                          <span key={entitlement.label} className={`flex u-fontSize--small u-lineHeight--normal u-color--doveGray u-fontWeight--medium u-marginRight--10 ${i !== 0 ? "u-marginLeft--5" : ""}`}> {entitlement.title}: <span className={`u-fontWeight--bold ${isTextField && "u-fontFamily--monospace"}`} style={{whiteSpace: "pre"}}> {entitlement.value} </span>
+                            <span className="icon clickable up-arrow-icon u-marginTop--5 u-marginLeft--5" onClick={() => this.toggleHideDetails(entitlement.title)} />
                           </span>
                         )
                       } else {
                         return (
-                          <span key={entitlement.label} className={`u-fontSize--small u-lineHeight--normal u-color--doveGray u-fontWeight--medium u-marginRight--10 ${i !== 0 ? "u-marginLeft--5" : ""}`}> {entitlement.title}: <span className="u-fontWeight--bold"> {entitlement.value} </span></span>
+                          <span key={entitlement.label} className={`u-fontSize--small u-lineHeight--normal u-color--doveGray u-fontWeight--medium u-marginRight--10 ${i !== 0 ? "u-marginLeft--5" : ""}`}> {entitlement.title}: <span className={`u-fontWeight--bold ${isTextField && "u-fontFamily--monospace"}`}> {entitlement.value} </span></span>
                         );
                       }
                     })}
