@@ -372,17 +372,19 @@ class SnapshotDetails extends Component {
 
 
   calculateTimeInterval = (data) => {
-    const startedTimes = data.map((d) => moment(d.startedAt).format("MM/DD/YY @ hh:mm a"));
-    const finishedTimes = data.map((d) => moment(d.finishedAt).format("MM/DD/YY @ hh:mm a"));
-    const minStarted = startedTimes?.length ? startedTimes.reduce((a, b) => { return a <= b ? a : b; }) : "";
-    const maxFinished = finishedTimes?.length ? finishedTimes.reduce((a, b) => { return a <= b ? b : a; }) : "";
-    const duration = moment.duration(moment(maxFinished).diff(moment(minStarted)));
+    const startedTimes = data.map((d) => moment(d.startedAt));
+    const finishedTimes = data.map((d) => moment(d.finishedAt));
+    const minStarted = startedTimes?.length ? moment.min(startedTimes) : "";
+    const maxFinished = finishedTimes?.length ? moment.max(finishedTimes) : "";
+
+    const duration = moment.duration(maxFinished.diff(minStarted));
     const diffHours = parseInt(duration.asHours());
     const diffMinutes = parseInt(duration.asMinutes()) % 60;
 
+
     return {
-      "minStarted": minStarted,
-      "maxFinished": maxFinished,
+      "minStarted": minStarted.format("MM/DD/YY @ hh:mm a"),
+      "maxFinished": maxFinished.format("MM/DD/YY @ hh:mm a"),
       "maxHourDifference": diffHours,
       "maxMinDifference": diffMinutes
     }
