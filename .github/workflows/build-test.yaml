@@ -220,3 +220,42 @@ jobs:
           kubectl -n minimal-rbac logs -p deployment/kotsadm-operator
           kill $ADMIN_CONSOLE_PID
           exit $EXIT_CODE
+
+      - name: prepare no-required-config online install
+        env:
+          APP_NAME: no-required-config
+        run: |
+          ./bin/kots \
+          install $APP_NAME/automated \
+          --port-forward=false \
+          --namespace $APP_NAME \
+          --shared-password password \
+          --kotsadm-registry ttl.sh \
+          --kotsadm-namespace automated-${{ github.run_id }} \
+          --kotsadm-tag 2h
+
+      - name: execute suite no-required-config
+        env:
+          APP_NAME: no-required-config
+        run: |
+          set +e
+          ./bin/kots admin-console -n $APP_NAME &
+          ADMIN_CONSOLE_PID=$!
+
+          sleep 5
+          echo "KOTSADM_API_TOKEN=`kubectl -n $APP_NAME get secret kotsadm-authstring -o json | jq -r '.data."kotsadm-authstring"' | base64 -d`" > .env
+
+          testim --token ${{ secrets.TESTIM_ACCESS_TOKEN }} --project ${{ secrets.TESTIM_PROJECT_ID }} --grid "Testim-grid" --report-file testim-report.xml --suite $APP_NAME --tunnel --tunnel-port 8800
+          EXIT_CODE=$?
+          echo "------pods:"
+          kubectl -n no-config get pods
+          echo "------kotsadm logs"
+          kubectl -n minimal-rbac logs deployment/kotsadm
+          echo "------previous kotsadm logs"
+          kubectl -n minimal-rbac logs -p deployment/kotsadm
+          echo "------kotsadm-operator logs"
+          kubectl -n minimal-rbac logs deployment/kotsadm-operator
+          echo "------previos kotsadm-operator logs"
+          kubectl -n minimal-rbac logs -p deployment/kotsadm-operator
+          kill $ADMIN_CONSOLE_PID
+          exit $EXIT_CODE
