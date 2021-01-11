@@ -707,12 +707,12 @@ class SnapshotStorageDestination extends Component {
                 </div>
               }
             </form>
-            <div className="Info--wrapper flex flex1 u-marginTop--15">
+            <div className="Info--wrapper flex flex-auto u-marginTop--15">
               <span className="icon info-icon flex u-marginTop--5" />
               <div className="flex flex-column u-marginLeft--5">
                 <p className="u-fontSize--normal u-fontWeight--bold u-lineHeight--normal u-color--tuna"> Deduplication </p>
                 <span className="u-fontSize--small u-fontWeight--normal u-lineHeight--normal u-color--dustyGray"> All data in your snapshots will be deduplicated. To learn more about how,
-                <a href="" target="_blank" rel="noopener noreferrer" className="replicated-link"> check out our docs</a>. </span>
+                <a href="https://kots.io/kotsadm/snapshots/deduplication/" target="_blank" rel="noopener noreferrer" className="replicated-link"> check out the Restic docs</a>. </span>
               </div>
             </div>
           </div>
