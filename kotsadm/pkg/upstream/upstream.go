@@ -2,7 +2,6 @@ package upstream
 
 import (
 	"bufio"
-	"encoding/base64"
 	"fmt"
 	"io"
 	"os"
@@ -130,26 +129,11 @@ func DownloadUpdate(appID string, archiveDir string, toCursor string, skipPrefli
 	if registrySettings != nil {
 		pullOptions.RewriteImages = true
 
-		cipher, err := crypto.AESCipherFromString(os.Getenv("API_ENCRYPTION_KEY"))
-		if err != nil {
-			return 0, errors.Wrap(err, "failed to create aes cipher")
-		}
-
-		decodedPassword, err := base64.StdEncoding.DecodeString(registrySettings.PasswordEnc)
-		if err != nil {
-			return 0, errors.Wrap(err, "failed to decode")
-		}
-
-		decryptedPassword, err := cipher.Decrypt([]byte(decodedPassword))
-		if err != nil {
-			return 0, errors.Wrap(err, "failed to decrypt")
-		}
-
 		pullOptions.RewriteImageOptions = kotspull.RewriteImageOptions{
 			Host:      registrySettings.Hostname,
 			Namespace: registrySettings.Namespace,
 			Username:  registrySettings.Username,
-			Password:  string(decryptedPassword),
+			Password:  registrySettings.Password,
 		}
 	}
 

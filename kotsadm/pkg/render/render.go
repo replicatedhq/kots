@@ -1,7 +1,6 @@
 package render
 
 import (
-	"encoding/base64"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -46,28 +45,13 @@ func RenderContent(kotsKinds *kotsutil.KotsKinds, registrySettings *registrytype
 }
 
 func NewBuilder(kotsKinds *kotsutil.KotsKinds, registrySettings *registrytypes.RegistrySettings, appSlug string, sequence int64, isAirgap bool) (*template.Builder, error) {
-	apiCipher, err := crypto.AESCipherFromString(os.Getenv("API_ENCRYPTION_KEY"))
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to load apiCipher")
-	}
-
 	localRegistry := template.LocalRegistry{}
 
 	if registrySettings != nil {
-		decodedPassword, err := base64.StdEncoding.DecodeString(registrySettings.PasswordEnc)
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to decode")
-		}
-
-		decryptedPassword, err := apiCipher.Decrypt([]byte(decodedPassword))
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to decrypt")
-		}
-
 		localRegistry.Host = registrySettings.Hostname
 		localRegistry.Namespace = registrySettings.Namespace
 		localRegistry.Username = registrySettings.Username
-		localRegistry.Password = string(decryptedPassword)
+		localRegistry.Password = registrySettings.Password
 	}
 
 	templateContextValues := make(map[string]template.ItemValue)
@@ -164,25 +148,10 @@ func RenderDir(archiveDir string, a *apptypes.App, downstreams []downstreamtypes
 	}
 
 	if registrySettings != nil {
-		cipher, err := crypto.AESCipherFromString(os.Getenv("API_ENCRYPTION_KEY"))
-		if err != nil {
-			return errors.Wrap(err, "failed to create aes cipher")
-		}
-
-		decodedPassword, err := base64.StdEncoding.DecodeString(registrySettings.PasswordEnc)
-		if err != nil {
-			return errors.Wrap(err, "failed to decode")
-		}
-
-		decryptedPassword, err := cipher.Decrypt([]byte(decodedPassword))
-		if err != nil {
-			return errors.Wrap(err, "failed to decrypt")
-		}
-
 		reOptions.RegistryEndpoint = registrySettings.Hostname
 		reOptions.RegistryNamespace = registrySettings.Namespace
 		reOptions.RegistryUsername = registrySettings.Username
-		reOptions.RegistryPassword = string(decryptedPassword)
+		reOptions.RegistryPassword = registrySettings.Password
 	}
 
 	err = rewrite.Rewrite(reOptions)

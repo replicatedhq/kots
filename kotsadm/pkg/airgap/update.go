@@ -2,7 +2,6 @@ package airgap
 
 import (
 	"bufio"
-	"encoding/base64"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -75,20 +74,6 @@ func UpdateAppFromPath(a *apptypes.App, airgapRoot string, deploy bool, skipPref
 	registrySettings, err := store.GetStore().GetRegistryDetailsForApp(a.ID)
 	if err != nil {
 		return errors.Wrap(err, "failed to get app registry settings")
-	}
-	apiCipher, err := crypto.AESCipherFromString(os.Getenv("API_ENCRYPTION_KEY"))
-	if err != nil {
-		return errors.Wrap(err, "failed to create aes cipher")
-	}
-
-	decodedPassword, err := base64.StdEncoding.DecodeString(registrySettings.PasswordEnc)
-	if err != nil {
-		return errors.Wrap(err, "failed to decode")
-	}
-
-	decryptedPassword, err := apiCipher.Decrypt([]byte(decodedPassword))
-	if err != nil {
-		return errors.Wrap(err, "failed to decrypt")
 	}
 
 	currentArchivePath, err := ioutil.TempDir("", "kotsadm")
@@ -178,7 +163,7 @@ func UpdateAppFromPath(a *apptypes.App, airgapRoot string, deploy bool, skipPref
 			Host:       registrySettings.Hostname,
 			Namespace:  registrySettings.Namespace,
 			Username:   registrySettings.Username,
-			Password:   string(decryptedPassword),
+			Password:   registrySettings.Password,
 		},
 		AppSlug:     a.Slug,
 		AppSequence: appSequence,
