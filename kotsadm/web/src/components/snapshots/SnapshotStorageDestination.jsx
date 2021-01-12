@@ -667,7 +667,7 @@ class SnapshotStorageDestination extends Component {
                   <span className="replicated-link u-fontSize--normal flex justifyContent--flexEnd u-cursor--pointer" onClick={() => this.props.toggleConfigureModal(this.props.history)}> + Add a new storage destination </span>
                 </div>
                 {!snapshotSettings?.isVeleroRunning &&
-                  <div className="flex u-fontWeight--bold u-fontSize--small u-color--red u-marginBottom--10"> Please fix Velero so that the deployment is running. <a href="https://kots.io/kotsadm/snapshots/troubleshooting/" target="_blank" rel="noopener noreferrer" className="replicated-link u-marginLeft--5">View docs</a>  </div>}
+                  <div className="flex u-fontWeight--bold u-fontSize--small u-color--red u-marginBottom--10"> Please fix Velero so that the deployment is running. <a href="https://kots.io/kotsadm/snapshots/velero-troubleshooting/" target="_blank" rel="noopener noreferrer" className="replicated-link u-marginLeft--5">View docs</a>  </div>}
                 <div className="flex1">
                   {availableDestinations.length > 1 ?
                     <Select
@@ -712,7 +712,7 @@ class SnapshotStorageDestination extends Component {
               <div className="flex flex-column u-marginLeft--5">
                 <p className="u-fontSize--normal u-fontWeight--bold u-lineHeight--normal u-color--tuna"> Deduplication </p>
                 <span className="u-fontSize--small u-fontWeight--normal u-lineHeight--normal u-color--dustyGray"> All data in your snapshots will be deduplicated. To learn more about how,
-                <a href="https://kots.io/kotsadm/snapshots/deduplication/" target="_blank" rel="noopener noreferrer" className="replicated-link"> check out the Restic docs</a>. </span>
+                <a href="https://kots.io/kotsadm/snapshots/restic-deduplication/" target="_blank" rel="noopener noreferrer" className="replicated-link"> check out the Restic docs</a>. </span>
               </div>
             </div>
           </div>

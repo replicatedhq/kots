@@ -15,7 +15,7 @@ export default function GettingStartedSnapshots(props) {
       {isVeleroInstalled ?
         <p className="u-marginTop--10 u-fontSize--normal u-lineHeight--more u-fontWeight--medium u-color--dustyGray">Now that Velero is configured, you can start making snapshots. You can <Link to="/snapshots/settings" className="replicated-link u-fontSize--normal">create a schedule </Link>for automatic snapshots or you can trigger one manually whenever you’d like.</p>
         :
-        <p className="u-marginTop--10 u-fontSize--normal u-lineHeight--more u-fontWeight--medium u-color--dustyGray">To start backing up your data and applications, you need have <a href="https://kots.io/kotsadm/snapshots/" target="_blank" rel="noopener noreferrer" className="replicated-link u-fontSize--normal">Velero</a> installed in the cluster and configured to connect with the cloud provider you want to send your backups to</p>
+        <p className="u-marginTop--10 u-fontSize--normal u-lineHeight--more u-fontWeight--medium u-color--dustyGray">To start backing up your data and applications, you need have <a href="https://kots.io/kotsadm/snapshots/velero" target="_blank" rel="noopener noreferrer" className="replicated-link u-fontSize--normal">Velero</a> installed in the cluster and configured to connect with the cloud provider you want to send your backups to</p>
       }
       <div className="flex justifyContent--cenyer u-marginTop--20">
         <button className="btn primary blue" onClick={isVeleroInstalled ? startInstanceSnapshot : () => navigateToConfiguration(props)}> {isVeleroInstalled ? "Start a snapshot" : "Configure snapshot settings"}</button>
