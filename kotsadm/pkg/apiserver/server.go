@@ -126,6 +126,9 @@ func Start() {
 
 	handlers.RegisterSessionAuthRoutes(r.PathPrefix("").Subrouter(), kotsStore, handler, policyMiddleware)
 
+	// Prevent API requests that don't match anything in this router from returning UI content
+	r.PathPrefix("/api").Handler(handlers.StatusNotFoundHandler{})
+
 	/**********************************************************************
 	* Static routes
 	**********************************************************************/
