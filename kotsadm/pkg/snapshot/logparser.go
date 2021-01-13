@@ -1,13 +1,12 @@
 package snapshot
 
 import (
-	"bufio"
 	"fmt"
 	"io"
 	"regexp"
 	"time"
 
-	// "github.com/go-logfmt/logfmt"
+	"github.com/go-logfmt/logfmt"
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
 	"github.com/replicatedhq/kots/kotsadm/pkg/snapshot/types"
@@ -24,26 +23,12 @@ func parseLogs(reader io.Reader) ([]types.SnapshotError, []types.SnapshotError, 
 	execs := []types.SnapshotHook{}
 	openExecs := map[string]types.SnapshotHook{}
 
-	var maxCapacity = 1024 * 1024
-	buf := make([]byte, maxCapacity)
-	newReader := bufio.NewReaderSize(reader, maxCapacity)
-	d := bufio.NewScanner(newReader)
-	d.Buffer(buf, maxCapacity)
-	for d.Scan() {
+	d := logfmt.NewDecoder(reader)
+	for d.ScanRecord() {
 		line := map[string]string{}
-		fmt.Println("-----", d.Text())
-
-		// for d.ScanKeyval() {
-		// 	line[string(d.Key())] = string(d.Value())
-		// }
-
-		// d := logfmt.NewDecoder(reader)
-		// for d.ScanRecord() {
-		// 	line := map[string]string{}
-		// 	for d.ScanKeyval() {
-		// 		fmt.Println("___+++++++______", "keeeey", string(d.Key()), "value", string(d.Value()))
-		// 		line[string(d.Key())] = string(d.Value())
-		// 	}
+		for d.ScanKeyval() {
+			line[string(d.Key())] = string(d.Value())
+		}
 
 		if isExecBegin(line) {
 			key := execKey(line)
