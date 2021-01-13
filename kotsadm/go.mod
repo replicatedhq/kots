@@ -19,7 +19,7 @@ require (
 	github.com/docker/go-units v0.4.0
 	github.com/emicklei/go-restful v2.10.0+incompatible // indirect
 	github.com/go-git/go-git/v5 v5.2.0
-	github.com/go-logfmt/logfmt v0.4.0
+	github.com/go-logfmt/logfmt v0.5.0
 	github.com/go-openapi/spec v0.19.5 // indirect
 	github.com/golang/groupcache v0.0.0-20191027212112-611e8accdfc9 // indirect
 	github.com/golang/mock v1.4.4
@@ -61,7 +61,6 @@ require (
 )
 
 replace (
-	github.com/go-logfmt/logfmt => github.com/replicatedhq/logfmt v0.4.0
 	github.com/docker/distribution => github.com/docker/distribution v0.0.0-20170817175659-5f6282db7d65
 	github.com/docker/docker => github.com/docker/docker v0.0.0-20180522102801-da99009bbb11
 	github.com/nicksnyder/go-i18n => github.com/nicksnyder/go-i18n v1.10.1
@@ -98,3 +97,5 @@ replace (
 	k8s.io/sample-controller => k8s.io/sample-controller v0.18.4
 	k8s.io/utils => k8s.io/utils v0.0.0-20200603063816-c1c6865ac451
 )
+
+replace github.com/go-logfmt/logfmt => github.com/replicatedhq/logfmt v0.5.1-0.20210113221748-2e5e36c00c9d
