@@ -61,6 +61,7 @@ require (
 )
 
 replace (
+	github.com/go-logfmt/logfmt => github.com/replicatedhq/logfmt v0.4.0
 	github.com/docker/distribution => github.com/docker/distribution v0.0.0-20170817175659-5f6282db7d65
 	github.com/docker/docker => github.com/docker/docker v0.0.0-20180522102801-da99009bbb11
 	github.com/nicksnyder/go-i18n => github.com/nicksnyder/go-i18n v1.10.1
