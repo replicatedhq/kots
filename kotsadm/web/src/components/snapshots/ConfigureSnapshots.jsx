@@ -17,7 +17,7 @@ export default function ConfigureSnapshots(props) {
       <div className="Modal-body">
         <p className="u-fontSize--largest u-fontWeight--bold u-color--tundora u-marginBottom--10 u-marginTop--12">Add a new destination</p>
         <p className="u-fontSize--normal u-fontWeight--medium u-color--dustyGray u-lineHeight--normal">
-          In order to configure and use Snapshots (backup and restore), please install <a href="https://kots.io/kotsadm/snapshots/" target="_blank" rel="noopener noreferrer" className="replicated-link">Velero</a> in the cluster. Once Velero is installed, click the button below and the Admin Console will verify the installation and begin configuring Snapshots.
+          In order to configure and use Snapshots (backup and restore), please install <a href="https://kots.io/kotsadm/snapshots/velero" target="_blank" rel="noopener noreferrer" className="replicated-link">Velero</a> in the cluster. Once Velero is installed, click the button below and the Admin Console will verify the installation and begin configuring Snapshots.
           </p>
         <div className="flex flex-column u-marginTop--40">
           <div className="InstallVelero--wrapper flex flex-column">
