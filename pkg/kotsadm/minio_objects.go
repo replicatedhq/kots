@@ -15,7 +15,7 @@ import (
 )
 
 func minioStatefulset(deployOptions types.DeployOptions) *appsv1.StatefulSet {
-	size := resource.MustParse("4Gi")
+	size := resource.MustParse("10Gi")
 
 	if deployOptions.LimitRange != nil {
 		var allowedMax *resource.Quantity
