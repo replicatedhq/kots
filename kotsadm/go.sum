@@ -395,9 +395,6 @@ github.com/go-git/go-git/v5 v5.2.0/go.mod h1:kh02eMX+wdqqxgNMEyq8YgwlIOsDOa9homk
 github.com/go-kit/kit v0.8.0/go.mod h1:xBxKIO96dXMWWy0MnWVtmwkA9/13aqxPnvrjFYMA2as=
 github.com/go-kit/kit v0.9.0/go.mod h1:xBxKIO96dXMWWy0MnWVtmwkA9/13aqxPnvrjFYMA2as=
 github.com/go-lintpack/lintpack v0.5.2/go.mod h1:NwZuYi2nUHho8XEIZ6SIxihrnPoqBTDqfpXvXAN0sXM=
-github.com/go-logfmt/logfmt v0.3.0/go.mod h1:Qt1PoO58o5twSAckw1HlFXLmHsOX5/0LbT9GBnD5lWE=
-github.com/go-logfmt/logfmt v0.4.0 h1:MP4Eh7ZCb31lleYCFuwm0oe4/YGak+5l1vA2NOE80nA=
-github.com/go-logfmt/logfmt v0.4.0/go.mod h1:3RMwSq7FuexP4Kalkev3ejPJsZTpXXBr9+V4qmtdjCk=
 github.com/go-logr/logr v0.1.0 h1:M1Tv3VzNlEHg6uyACnRdtrploV2P7wZqH8BoQMtz0cg=
 github.com/go-logr/logr v0.1.0/go.mod h1:ixOQHD9gLJUVQQ2ZOR7zLEifBX6tGkNJF4QyIY7sIas=
 github.com/go-logr/zapr v0.1.0 h1:h+WVe9j6HAA01niTJPA/kKH0i7e0rLZBCwauQFcRE54=
@@ -1058,8 +1055,8 @@ github.com/rcrowley/go-metrics v0.0.0-20181016184325-3113b8401b8a/go.mod h1:bCqn
 github.com/remyoudompheng/bigfft v0.0.0-20170806203942-52369c62f446/go.mod h1:uYEyJGbgTkfkS4+E/PavXkNJcbFIpEtjt2B0KDQ5+9M=
 github.com/replicatedhq/kurl/kurlkinds v0.0.0-20200617224429-55f493a72baf h1:QPJidrFEmB3ej7ugwss3iYnVM+k6uyL1AJ85xdcpDgg=
 github.com/replicatedhq/kurl/kurlkinds v0.0.0-20200617224429-55f493a72baf/go.mod h1:ZSyX/rt3a2f6r6TgCARPUlbZ1IUAxNIUrUxR9vzEUKQ=
-github.com/replicatedhq/logfmt v0.4.0 h1:znNANoQf40FKdPjgmKnH9UPn9ngLKXjfiCI9Um8JymY=
-github.com/replicatedhq/logfmt v0.4.0/go.mod h1:3RMwSq7FuexP4Kalkev3ejPJsZTpXXBr9+V4qmtdjCk=
+github.com/replicatedhq/logfmt v0.5.1-0.20210113221748-2e5e36c00c9d h1:i8lXjtVqyZCbxJ1ZlAPBYQtKQM6t4V2jzi4ky360Dq8=
+github.com/replicatedhq/logfmt v0.5.1-0.20210113221748-2e5e36c00c9d/go.mod h1:wCYkCAKZfumFQihp8CzCvQ3paCTfi41vtzG1KdI/P7A=
 github.com/replicatedhq/termui/v3 v3.1.1-0.20200811145416-f40076d26851/go.mod h1:JDxG6+uubnk9/BZ2yUsyAJJwlptjrnmB2MPF5d2Xe/8=
 github.com/replicatedhq/troubleshoot v0.9.55 h1:FCpCjeLtIZi9mMq0O5s9LcoJudxVTI5Lt99dXmZFi2s=
 github.com/replicatedhq/troubleshoot v0.9.55/go.mod h1:5nWpBzGFtgu/U3TxrWEYZQiSOkjzR04HpDMAIq6dCjE=
