@@ -188,10 +188,6 @@ func postgresStatefulset(deployOptions types.DeployOptions) *appsv1.StatefulSet 
 								},
 							},
 							Resources: corev1.ResourceRequirements{
-								Limits: corev1.ResourceList{
-									"cpu":    resource.MustParse("200m"),
-									"memory": resource.MustParse("200Mi"),
-								},
 								Requests: corev1.ResourceList{
 									"cpu":    resource.MustParse("100m"),
 									"memory": resource.MustParse("100Mi"),
