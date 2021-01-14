@@ -74,7 +74,7 @@ LICENSE_LOOP:
 
 		verifiedLicense, err := kotspull.VerifySignature(unverifiedLicense)
 		if err != nil {
-			logger.Error(errors.Wrap(err, "failed to verify lincense signature"))
+			logger.Error(errors.Wrap(err, "failed to verify license signature"))
 			continue
 		}
 
@@ -84,7 +84,7 @@ LICENSE_LOOP:
 		if !disableOutboundConnections {
 			licenseData, err := kotslicense.GetLatestLicense(verifiedLicense)
 			if err != nil {
-				logger.Error(errors.Wrap(err, "failed to get latest lincense"))
+				logger.Error(errors.Wrap(err, "failed to get latest license"))
 				continue
 			}
 			verifiedLicense = licenseData.License
@@ -94,7 +94,7 @@ LICENSE_LOOP:
 		// check license expiration
 		expired, err := kotspull.LicenseIsExpired(verifiedLicense)
 		if err != nil {
-			logger.Error(errors.Wrap(err, "failed to check is lincense is expired"))
+			logger.Error(errors.Wrap(err, "failed to check is license is expired"))
 			continue
 		}
 		if expired {
@@ -240,13 +240,13 @@ func AirgapInstall(appSlug string, additionalFiles map[string][]byte) error {
 
 	verifiedLicense, err := kotspull.VerifySignature(unverifiedLicense)
 	if err != nil {
-		return errors.Wrap(err, "failed to verify lincense signature")
+		return errors.Wrap(err, "failed to verify license signature")
 	}
 
 	// check license expiration
 	expired, err := kotspull.LicenseIsExpired(verifiedLicense)
 	if err != nil {
-		return errors.Wrap(err, "failed to check is lincense is expired")
+		return errors.Wrap(err, "failed to check is license is expired")
 	}
 	if expired {
 		return errors.Errorf("license is expired for app %s", verifiedLicense.Spec.AppSlug)
