@@ -75,8 +75,9 @@ type Client struct {
 	imagePullSecret   string
 
 	appStateMonitor   *appstate.Monitor
-	hookStopChans     []chan struct{}
+	HookStopChans     []chan struct{}
 	namespaceStopChan chan struct{}
+	ExistingInformers map[string]bool // namespaces map to invoke the Informer once during deploy
 }
 
 // Run is the main entrypoint of the operator when running in standard, normal operations
@@ -85,9 +86,16 @@ func (c *Client) Run() error {
 
 	supportbundle.StartServer()
 
-	c.runHooksInformer()
-	defer c.shutdownHooksInformer()
+	if _, ok := c.ExistingInformers[c.TargetNamespace]; !ok {
+		c.ExistingInformers[c.TargetNamespace] = true
+		if err := c.runHooksInformer(c.TargetNamespace); err != nil {
+			// we don't fail here...
+			log.Printf("error registering cleanup hooks for TargetNamespace: %s: %s",
+				c.TargetNamespace, err.Error())
+		}
+	}
 
+	defer c.shutdownHooksInformer()
 	defer c.shutdownNamespacesInformer()
 
 	for {
@@ -222,7 +230,7 @@ func (c *Client) registerHandlers(socketClient *socket.Client) error {
 	if err != nil {
 		return errors.Wrap(err, "failed to add preflight handler")
 	}
-
+	// Deploy Event is received
 	err = socketClient.On("deploy", func(h *socket.Channel, args ApplicationManifests) {
 		log.Println("received a deploy request")
 
@@ -267,6 +275,14 @@ func (c *Client) registerHandlers(socketClient *socket.Client) error {
 			if deployError = c.ensureNamespacePresent(additionalNamespace); deployError != nil {
 				// we don't fail here...
 				log.Printf("error creating namespace: %s", deployError.Error())
+			}
+			if _, ok := c.ExistingInformers[additionalNamespace]; !ok {
+				c.ExistingInformers[additionalNamespace] = true
+				if deployError = c.runHooksInformer(additionalNamespace); deployError != nil {
+					// we don't fail here...
+					log.Printf("error registering cleanup hooks for additionalNamespace: %s: %s",
+						additionalNamespace, deployError.Error())
+				}
 			}
 		}
 		c.imagePullSecret = args.ImagePullSecret

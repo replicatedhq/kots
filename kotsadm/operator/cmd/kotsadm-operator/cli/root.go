@@ -28,7 +28,8 @@ of a gitops pipeline without setting up a full end-to-end gitops delivery proces
 				Token:           v.GetString("token"),
 				TargetNamespace: v.GetString("target-namespace"),
 			}
-
+			c.ExistingInformers = map[string]bool{}
+			c.HookStopChans = []chan struct{}{}
 			return c.Run()
 		},
 	}

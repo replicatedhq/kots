@@ -328,6 +328,7 @@ func processDeploySocketForApp(clusterSocket *ClusterSocket, a *apptypes.App) er
 	if err != nil {
 		return errors.Wrap(err, "failed to get socket channel from server")
 	}
+	// Event is sent here
 	c.Emit("deploy", deployArgs)
 
 	socketMtx.Lock()
