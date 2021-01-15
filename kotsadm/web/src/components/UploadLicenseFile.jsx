@@ -365,7 +365,7 @@ class UploadLicenseFile extends React.Component {
                     canCopy={true}
                     onCopyText={<span className="u-color--chateauGreen">Command has been copied to your clipboard</span>}
                   >
-                    {`kubectl kots remove ${licenseExistErrData?.slug} -n default --force`}
+                    {licenseExistErrData?.deleteAppCommand}
                   </CodeSnippet>
                 </div>
               }

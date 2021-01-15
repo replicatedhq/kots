@@ -73,13 +73,14 @@ type UploadLicenseRequest struct {
 }
 
 type UploadLicenseResponse struct {
-	Success        bool   `json:"success"`
-	Error          string `json:"error,omitempty"`
-	HasPreflight   bool   `json:"hasPreflight"`
-	Slug           string `json:"slug"`
-	IsAirgap       bool   `json:"isAirgap"`
-	NeedsRegistry  bool   `json:"needsRegistry"`
-	IsConfigurable bool   `json:"isConfigurable"`
+	Success          bool   `json:"success"`
+	Error            string `json:"error,omitempty"`
+	DeleteAppCommand string `json:"deleteAppCommand,omitempty"`
+	HasPreflight     bool   `json:"hasPreflight"`
+	Slug             string `json:"slug"`
+	IsAirgap         bool   `json:"isAirgap"`
+	NeedsRegistry    bool   `json:"needsRegistry"`
+	IsConfigurable   bool   `json:"isConfigurable"`
 }
 
 type ResumeInstallOnlineRequest struct {
@@ -296,7 +297,7 @@ func (h *Handler) UploadNewLicense(w http.ResponseWriter, r *http.Request) {
 
 	if existingLicense != nil {
 		uploadLicenseResponse.Error = "License already exists"
-		uploadLicenseResponse.Slug = existingLicense.Spec.AppSlug
+		uploadLicenseResponse.DeleteAppCommand = fmt.Sprintf("kubectl kots remove %s -n %s --force", existingLicense.Spec.AppSlug, os.Getenv("POD_NAMESPACE"))
 		JSON(w, 400, uploadLicenseResponse)
 		return
 	}
