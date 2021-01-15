@@ -437,11 +437,13 @@ func getPVCs(targetNamespace string, obj k8sruntime.Object, gvk *k8sschema.Group
 		o := obj.(*corev1.Pod)
 		pod, err := findPodByName(o.Name, ns(o.Namespace))
 		if err != nil {
-			if !kuberneteserrors.IsNotFound(err) {
+			if !kuberneteserrors.IsNotFound(errors.Cause(err)) {
 				return nil, errors.Wrapf(err, "failed to find pod %s", o.Name)
 			}
 		}
-		pods = []*corev1.Pod{pod}
+		if pod != nil {
+			pods = []*corev1.Pod{pod}
+		}
 	}
 
 	pvcs := make([]string, 0)

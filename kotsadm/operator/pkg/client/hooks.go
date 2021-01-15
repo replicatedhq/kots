@@ -16,7 +16,7 @@ import (
 )
 
 // runHooksInformer will create goroutines to start various informers for kots objects
-func (c *Client) runHooksInformer() error {
+func (c *Client) runHooksInformer(namespace string) error {
 	restconfig, err := rest.InClusterConfig()
 	if err != nil {
 		return errors.Wrap(err, "failed to get in cluster config")
@@ -25,19 +25,17 @@ func (c *Client) runHooksInformer() error {
 	if err != nil {
 		return errors.Wrap(err, "failed to get new kubernetes client")
 	}
-
 	restClient := clientset.BatchV1().RESTClient()
-
-	c.hookStopChans = []chan struct{}{}
 
 	// Watch jobs
 	go func() {
-		jobWatchList := cache.NewListWatchFromClient(restClient, "jobs", c.TargetNamespace, fields.Everything())
+		jobWatchList := cache.NewListWatchFromClient(restClient, "jobs", namespace, fields.Everything())
 		resyncPeriod := 30 * time.Second
 
 		_, controller := cache.NewInformer(jobWatchList, &batchv1.Job{}, resyncPeriod,
 			cache.ResourceEventHandlerFuncs{
 				UpdateFunc: func(oldObj interface{}, newObj interface{}) {
+
 					job, ok := newObj.(*batchv1.Job)
 					if !ok {
 						fmt.Println("error getting new job")
@@ -47,7 +45,6 @@ func (c *Client) runHooksInformer() error {
 					// if the job doesn't contain our annotation, ignore it
 					hookValue, ok := job.Annotations["kots.io/hook-delete-policy"]
 					if !ok {
-						// fmt.Println("no annotation found on job, not going to handle any cleanup")
 						return
 					}
 
@@ -85,7 +82,7 @@ func (c *Client) runHooksInformer() error {
 			},
 		)
 		stopChan := make(chan struct{})
-		c.hookStopChans = append(c.hookStopChans, stopChan)
+		c.HookStopChans = append(c.HookStopChans, stopChan)
 		controller.Run(stopChan)
 	}()
 
@@ -93,7 +90,7 @@ func (c *Client) runHooksInformer() error {
 }
 
 func (c *Client) shutdownHooksInformer() {
-	for _, stopChan := range c.hookStopChans {
+	for _, stopChan := range c.HookStopChans {
 		stopChan <- struct{}{}
 	}
 }
