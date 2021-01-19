@@ -274,8 +274,12 @@ class AppConfig extends Component {
 
   renderConfigInfo = (app) => {
     const { match } = this.props;
-    if (!match.params.sequence) return null;
-    const sequence = parseInt(match.params.sequence);
+    let sequence;
+    if (!match.params.sequence) {
+      sequence = app?.currentSequence;
+    } else {
+      sequence = parseInt(match.params.sequence);
+    }
     const currentSequence = app?.downstreams[0]?.currentVersion?.parentSequence;
     const pendingVersions = app?.downstreams[0]?.pendingVersions;
 
