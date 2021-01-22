@@ -9,7 +9,9 @@
   "private": true,
   "scripts": {
     "test:unit": "jest",
-    "start": "VENDOR_WEB_ENV=dev webpack-dev-server --env dev"
+    "start": "VENDOR_WEB_ENV=dev webpack-dev-server --env dev",
+    "storybook": "start-storybook -p 6006",
+    "build-storybook": "build-storybook"
   },
   "jest": {
     "setupFilesAfterEnv": [
@@ -32,6 +34,11 @@
     "@babel/preset-react": "7.10.4",
     "@pact-foundation/pact": "^8.2.4",
     "@pact-foundation/pact-node": "^8.3.2",
+    "@storybook/addon-actions": "^6.1.15",
+    "@storybook/addon-essentials": "^6.1.15",
+    "@storybook/addon-links": "^6.1.15",
+    "@storybook/preset-scss": "^1.0.3",
+    "@storybook/react": "^6.1.15",
     "autoprefixer": "9.8.5",
     "babel-cli": "^6.26.0",
     "babel-core": "7.0.0-bridge.0",

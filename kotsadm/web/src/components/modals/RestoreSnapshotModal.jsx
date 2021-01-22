@@ -35,7 +35,9 @@ export default function RestoreSnapshotModal(props) {
             <p className="u-fontSize--normal u-fontWeight--normal u-color--dustyGray u-lineHeight--normal"> Restoring to this version will remove data and replace it with data from the restored version. During the restoration, your application will not be available and you will not be able to use the admin console. This action cannot be reversed. </p>
           </div>
           <div className="flex flex-column u-marginTop--20">
-            <p className="u-fontSize--normal u-fontWeight--bold u-color--tuna u-lineHeight--normal"> Type your application slug to continue </p>
+            <p className="u-fontSize--normal u-fontWeight--bold u-color--tuna u-lineHeight--normal"> Type your application slug to continue</p>
+
+            <p className="u-fontSize--normal u-fontWeight--normal u-color--dustyGray u-lineHeight--normal">We require you enter a matching app slug name as an additional confirmation you wish to proceed.</p>
             {appSlugMismatch ?
               <p className="u-color--chestnut u-fontSize--small u-fontWeight--medium u-lineHeight--normal">The app slug you entered does not match the current app slug</p>
               : null}
