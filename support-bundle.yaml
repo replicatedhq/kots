@@ -26,7 +26,7 @@ spec:
         command:
           - curl
         containerName: kotsadm
-        name: kots/admin-console
+        name: kots/admin_console
         selector:
           - app=kotsadm
         timeout: 10s
@@ -37,7 +37,7 @@ spec:
         command:
           - curl
         containerName: kotsadm-operator
-        name: kots/admin-console
+        name: kots/admin_console
         selector:
           - app=kotsadm-operator
         timeout: 10s
