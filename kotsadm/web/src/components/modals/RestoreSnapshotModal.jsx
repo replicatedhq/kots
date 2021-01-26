@@ -37,7 +37,7 @@ export default function RestoreSnapshotModal(props) {
           <div className="flex flex-column u-marginTop--20">
             <p className="u-fontSize--normal u-fontWeight--bold u-color--tuna u-lineHeight--normal"> Type your application slug to continue</p>
 
-            <p className="u-fontSize--normal u-fontWeight--normal u-color--dustyGray u-lineHeight--normal">We require you enter a matching app slug name as an additional confirmation you wish to proceed.</p>
+            <p className="u-fontSize--normal u-fontWeight--normal u-color--dustyGray u-lineHeight--normal">To confirm that you want to restore this snapshot, please type it's slug in the input as it appears below.</p>
             {appSlugMismatch ?
               <p className="u-color--chestnut u-fontSize--small u-fontWeight--medium u-lineHeight--normal">The app slug you entered does not match the current app slug</p>
               : null}
