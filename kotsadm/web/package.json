@@ -9,9 +9,7 @@
   "private": true,
   "scripts": {
     "test:unit": "jest",
-    "start": "VENDOR_WEB_ENV=dev webpack-dev-server --env dev",
-    "storybook": "start-storybook -p 6006",
-    "build-storybook": "build-storybook"
+    "start": "VENDOR_WEB_ENV=dev webpack-dev-server --env dev"
   },
   "jest": {
     "setupFilesAfterEnv": [
