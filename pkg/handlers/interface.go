@@ -103,6 +103,7 @@ type KOTSHandler interface {
 	SaveInstanceSnapshotConfig(w http.ResponseWriter, r *http.Request)
 	GetGlobalSnapshotSettings(w http.ResponseWriter, r *http.Request)
 	UpdateGlobalSnapshotSettings(w http.ResponseWriter, r *http.Request)
+	ConfigureFileSystemSnapshotProvider(w http.ResponseWriter, r *http.Request)
 	GetBackup(w http.ResponseWriter, r *http.Request)
 	DeleteBackup(w http.ResponseWriter, r *http.Request)
 	RestoreApps(w http.ResponseWriter, r *http.Request)

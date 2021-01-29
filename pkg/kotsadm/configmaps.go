@@ -32,7 +32,7 @@ func getConfigMapsYAML(deployOptions types.DeployOptions) (map[string][]byte, er
 }
 
 func ensureKotsadmConfig(deployOptions types.DeployOptions, clientset *kubernetes.Clientset) error {
-	if err := ensurePrivateKotsadmRegistrySecret(deployOptions, clientset); err != nil {
+	if err := EnsurePrivateKotsadmRegistrySecret(deployOptions.Namespace, deployOptions.KotsadmOptions, clientset); err != nil {
 		return errors.Wrap(err, "failed to ensure private kotsadm registry secret")
 	}
 

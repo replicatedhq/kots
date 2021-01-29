@@ -1,13 +1,28 @@
 package print
 
 import (
+	"encoding/json"
 	"fmt"
 	"time"
 
 	velerov1 "github.com/vmware-tanzu/velero/pkg/apis/velero/v1"
 )
 
-func Backups(backups []velerov1.Backup) {
+func Backups(backups []velerov1.Backup, format string) {
+	switch format {
+	case "json":
+		printBackupsJSON(backups)
+	default:
+		printBackupsTable(backups)
+	}
+}
+
+func printBackupsJSON(backups []velerov1.Backup) {
+	str, _ := json.MarshalIndent(backups, "", "    ")
+	fmt.Println(string(str))
+}
+
+func printBackupsTable(backups []velerov1.Backup) {
 	w := NewTabWriter()
 	defer w.Flush()
 

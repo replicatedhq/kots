@@ -27,7 +27,6 @@ import SnapshotsWrapper from "./components/snapshots/SnapshotsWrapper";
 
 import Footer from "./components/shared/Footer";
 import NavBar from "./components/shared/NavBar";
-import CodeSnippet from "./components/shared/CodeSnippet";
 
 import "./scss/index.scss";
 import connectHistory from "./services/matomo";
@@ -216,18 +215,6 @@ class Root extends Component {
     });
   }
 
-  toggleSnapshotsRBACModal = (state = "") => {
-    if (state === "show") {
-      this.setState({ showSnapshotsRBACModal: true });
-      return;
-    }
-    if (state === "hide") {
-      this.setState({ showSnapshotsRBACModal: false });
-      return;
-    }
-    this.setState({ showSnapshotsRBACModal: !this.state.showSnapshotsRBACModal });
-  }
-
   onRootMounted = () => {
     this.fetchKotsAppMetadata();
     this.ping();
@@ -343,7 +330,7 @@ class Root extends Component {
                   <ProtectedRoute exact path="/:slug/config" render={props => <AppConfig {...props} fromLicenseFlow={true} refetchAppsList={this.getAppsList} />} />
                   <Route exact path="/secure-console" render={props => <SecureAdminConsole {...props} logo={this.state.appLogo} appName={this.state.selectedAppName} onLoginSuccess={this.getAppsList} fetchingMetadata={this.state.fetchingMetadata} />} />
                   <ProtectedRoute exact path="/upload-license" render={props => <UploadLicenseFile {...props} logo={this.state.appLogo} appsListLength={appsList?.length} appName={this.state.selectedAppName} fetchingMetadata={this.state.fetchingMetadata} onUploadSuccess={this.getAppsList} />} />
-                  <ProtectedRoute exact path="/restore" render={props => <BackupRestore {...props} logo={this.state.appLogo} appName={this.state.selectedAppName} appsListLength={appsList?.length} fetchingMetadata={this.state.fetchingMetadata} toggleSnapshotsRBACModal={this.toggleSnapshotsRBACModal}/>} />
+                  <ProtectedRoute exact path="/restore" render={props => <BackupRestore {...props} logo={this.state.appLogo} appName={this.state.selectedAppName} appsListLength={appsList?.length} fetchingMetadata={this.state.fetchingMetadata}/>} />
                   <ProtectedRoute exact path="/:slug/airgap" render={props => <UploadAirgapBundle {...props} showRegistry={true} logo={this.state.appLogo} appsListLength={appsList?.length} appName={this.state.selectedAppName} onUploadSuccess={this.getAppsList} fetchingMetadata={this.state.fetchingMetadata} />} />
                   <ProtectedRoute exact path="/:slug/airgap-bundle" render={props => <UploadAirgapBundle {...props} showRegistry={false} logo={this.state.appLogo} appsListLength={appsList?.length} appName={this.state.selectedAppName} onUploadSuccess={this.getAppsList} fetchingMetadata={this.state.fetchingMetadata} />} />
                   <Route path="/unsupported" component={UnsupportedBrowser} />
@@ -359,7 +346,6 @@ class Root extends Component {
                           appName={this.state.selectedAppName} 
                           isKurlEnabled={this.state.isKurlEnabled} 
                           appsList={appsList}
-                          toggleSnapshotsRBACModal={this.toggleSnapshotsRBACModal}
                         />
                       )
                     }
@@ -380,7 +366,6 @@ class Root extends Component {
                           appNameSpace={this.state.appNameSpace}
                           appName={this.state.selectedAppName}
                           snapshotInProgressApps={this.state.snapshotInProgressApps}
-                          toggleSnapshotsRBACModal={this.toggleSnapshotsRBACModal}
                           ping={this.ping}
                         />
                       )
@@ -396,33 +381,6 @@ class Root extends Component {
             </div>
           </Router>
         </ThemeContext.Provider>
-
-        {showSnapshotsRBACModal &&
-          <Modal
-            isOpen={showSnapshotsRBACModal}
-            onRequestClose={this.toggleSnapshotsRBACModal}
-            shouldReturnFocusAfterClose={false}
-            contentLabel="Snapshots RBAC Modal"
-            ariaHideApp={false}
-            className="Modal MediumSize"
-          >
-            <div className="Modal-body">
-              <p className="u-fontSize--largest u-fontWeight--bold u-color--tundora u-marginBottom--10">Velero Namespace Access Required</p>
-              <p className="u-fontSize--normal u-fontWeight--normal u-color--dustyGray u-lineHeight--normal u-marginBottom--10"> We’ve detected that the Admin Console is running with minimal role-based-access-control (RBAC) privileges, meaning that the Admin Console is limited to a single namespace. To use the snapshots functionality, the Admin Console requires access to the namespace Velero is installed in. Please make sure Velero is installed, then use the following command to provide the Admin Console with the necessary permissions to access it: </p>
-              <CodeSnippet
-                language="bash"
-                canCopy={true}
-                onCopyText={<span className="u-color--chateauGreen">Command has been copied to your clipboard</span>}
-              >
-                {`kubectl kots velero ensure-permissions --namespace ${this.state.appNameSpace} --velero-namespace <velero-namespace>`}
-              </CodeSnippet>
-              <p className="u-fontSize--normal u-fontWeight--normal u-color--dustyGray u-lineHeight--normal u-marginTop--20"> <span className="u-fontWeight--bold u-color--tundora">Note:</span> Please replace {`"<velero-namespace>"`} with the actual namespace Velero is installed in, which is {`'velero'`} by default. </p>
-              <div className="u-marginTop--20 flex justifyContent--flexStart">
-                <button type="button" className="btn blue primary" onClick={this.toggleSnapshotsRBACModal}>Ok, got it!</button>
-              </div>
-            </div>
-          </Modal>
-        }
 
         {connectionTerminated &&
           <Modal

@@ -36,7 +36,7 @@ func RestoreCmd() *cobra.Command {
 				WaitForApps:           v.GetBool("wait-for-apps"),
 				VeleroNamespace:       v.GetString("velero-namespace"),
 			}
-			_, err := snapshot.RestoreInstanceBackup(options)
+			_, err := snapshot.RestoreInstanceBackup(cmd.Context(), options)
 			if err != nil {
 				return errors.Wrap(err, "failed to restore instance backup")
 			}
@@ -68,14 +68,15 @@ func RestoreListCmd() *cobra.Command {
 			v := viper.GetViper()
 
 			options := snapshot.ListInstanceRestoresOptions{
-				Namespace: v.GetString("namespace"),
+				Namespace:             v.GetString("namespace"),
+				KubernetesConfigFlags: kubernetesConfigFlags,
 			}
-			restores, err := snapshot.ListInstanceRestores(options)
+			restores, err := snapshot.ListInstanceRestores(cmd.Context(), options)
 			if err != nil {
 				return errors.Wrap(err, "failed to list instance restores")
 			}
 
-			print.Restores(restores)
+			print.Restores(restores, "")
 
 			return nil
 		},

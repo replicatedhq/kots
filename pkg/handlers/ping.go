@@ -1,11 +1,14 @@
 package handlers
 
 import (
+	"context"
 	"net/http"
+	"os"
 	"strings"
 
 	snapshot "github.com/replicatedhq/kots/pkg/kotsadmsnapshot"
 	"github.com/replicatedhq/kots/pkg/logger"
+	kotssnapshot "github.com/replicatedhq/kots/pkg/snapshot"
 	"github.com/replicatedhq/kots/pkg/store"
 )
 
@@ -25,14 +28,16 @@ func (h *Handler) Ping(w http.ResponseWriter, r *http.Request) {
 
 	if slugs != "" {
 		slugsArray := strings.Split(slugs, ",")
-		snapshotProgress(slugsArray, &pingResponse)
+		snapshotProgress(r.Context(), slugsArray, &pingResponse)
 	}
 
 	JSON(w, 200, pingResponse)
 }
 
-func snapshotProgress(slugs []string, pingResponse *PingResponse) {
-	veleroStatus, err := snapshot.DetectVelero()
+func snapshotProgress(ctx context.Context, slugs []string, pingResponse *PingResponse) {
+	kotsadmNamespace := os.Getenv("POD_NAMESPACE")
+
+	veleroStatus, err := kotssnapshot.DetectVelero(ctx, kotsadmNamespace)
 	if err != nil {
 		logger.Error(err)
 		pingResponse.Error = "failed to detect velero"
@@ -50,7 +55,7 @@ func snapshotProgress(slugs []string, pingResponse *PingResponse) {
 			return
 		}
 
-		backups, err := snapshot.ListBackupsForApp(currentApp.ID)
+		backups, err := snapshot.ListBackupsForApp(ctx, kotsadmNamespace, currentApp.ID)
 		if err != nil {
 			logger.Error(err)
 			pingResponse.Error = "failed to list backups"

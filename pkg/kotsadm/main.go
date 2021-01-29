@@ -16,6 +16,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/ingress"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/kotsadm/types"
+	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/store/kotsstore"
 	corev1 "k8s.io/api/core/v1"
@@ -245,7 +246,7 @@ func IsKurl(k8sConfigFlags *genericclioptions.ConfigFlags) (bool, error) {
 		return false, errors.Wrap(err, "failed to get clientset")
 	}
 
-	return isKurl(clientset), nil
+	return kotsutil.IsKurl(clientset), nil
 }
 
 func canUpgrade(upgradeOptions types.UpgradeOptions, clientset *kubernetes.Clientset, log *logger.CLILogger) error {
@@ -264,20 +265,11 @@ func canUpgrade(upgradeOptions types.UpgradeOptions, clientset *kubernetes.Clien
 		return nil
 	}
 
-	if isKurl(clientset) {
+	if kotsutil.IsKurl(clientset) {
 		return errors.New("upgrading kURL clusters is not supported")
 	}
 
 	return nil
-}
-
-func isKurl(clientset *kubernetes.Clientset) bool {
-	_, err := clientset.CoreV1().ConfigMaps("kube-system").Get(context.TODO(), "kurl-config", metav1.GetOptions{})
-	if err != nil {
-		return false
-	}
-
-	return true
 }
 
 func removeUnusedKotsadmComponents(deployOptions types.DeployOptions, clientset *kubernetes.Clientset, log *logger.CLILogger) error {
@@ -330,11 +322,6 @@ func ensureKotsadm(deployOptions types.DeployOptions, clientset *kubernetes.Clie
 		if err := identity.ValidateConfig(context.TODO(), deployOptions.Namespace, identityConfig, ingressConfig); err != nil {
 			return errors.Wrap(err, "failed to validate identity config")
 		}
-	}
-
-	existingDeployment, err := clientset.AppsV1().Deployments(deployOptions.Namespace).Get(context.TODO(), "kotsadm", metav1.GetOptions{})
-	if err != nil && !kuberneteserrors.IsNotFound(err) {
-		return errors.Wrap(err, "failed to get existing deployment")
 	}
 
 	// check additional namespaces early in case there are rbac issues we don't
@@ -470,7 +457,7 @@ func ensureKotsadm(deployOptions types.DeployOptions, clientset *kubernetes.Clie
 
 	if !deployOptions.ExcludeAdminConsole {
 		log.ChildActionWithSpinner("Waiting for Admin Console to be ready")
-		if err := waitForKotsadm(&deployOptions, existingDeployment, clientset); err != nil {
+		if err := k8sutil.WaitForDeploymentReady(ctx, clientset, deployOptions.Namespace, "kotsadm", deployOptions.Timeout); err != nil {
 			return errors.Wrap(err, "failed to wait for web")
 		}
 		log.FinishSpinner()
@@ -482,7 +469,7 @@ func ensureKotsadm(deployOptions types.DeployOptions, clientset *kubernetes.Clie
 			return errors.Wrap(err, "failed to wait for web")
 		}
 
-		if err := waitForKotsadm(&deployOptions, existingDeployment, clientset); err != nil {
+		if err := k8sutil.WaitForDeploymentReady(ctx, clientset, deployOptions.Namespace, "kotsadm", deployOptions.Timeout); err != nil {
 			return errors.Wrap(err, "failed to wait for web")
 		}
 		log.FinishSpinner()
@@ -909,7 +896,7 @@ func readDeployOptionsFromCluster(namespace string, kubernetesConfigFlags *gener
 	return &deployOptions, nil
 }
 
-func GetKotsadmOptionsFromCluster(namespace string, clientset *kubernetes.Clientset) (types.KotsadmOptions, error) {
+func GetKotsadmOptionsFromCluster(namespace string, clientset kubernetes.Interface) (types.KotsadmOptions, error) {
 	kotsadmOptions := types.KotsadmOptions{}
 
 	configMap, err := clientset.CoreV1().ConfigMaps(namespace).Get(context.TODO(), types.KotsadmConfigMap, metav1.GetOptions{})

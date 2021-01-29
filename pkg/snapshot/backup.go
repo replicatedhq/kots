@@ -16,6 +16,7 @@ import (
 	veleroclientv1 "github.com/vmware-tanzu/velero/pkg/generated/clientset/versioned/typed/velero/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
+	"k8s.io/client-go/kubernetes"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
 )
 
@@ -26,16 +27,18 @@ type CreateInstanceBackupOptions struct {
 }
 
 type ListInstanceBackupsOptions struct {
-	Namespace string
+	Namespace             string
+	KubernetesConfigFlags *genericclioptions.ConfigFlags
 }
 
 type VeleroRBACResponse struct {
 	Success                     bool   `json:"success"`
 	Error                       string `json:"error,omitempty"`
+	KotsadmNamespace            string `json:"kotsadmNamespace,omitempty"`
 	KotsadmRequiresVeleroAccess bool   `json:"kotsadmRequiresVeleroAccess,omitempty"`
 }
 
-func CreateInstanceBackup(options CreateInstanceBackupOptions) error {
+func CreateInstanceBackup(ctx context.Context, options CreateInstanceBackupOptions) error {
 	log := logger.NewCLILogger()
 	log.ActionWithSpinner("Connecting to cluster")
 
@@ -111,7 +114,7 @@ func CreateInstanceBackup(options CreateInstanceBackupOptions) error {
 			if veleroRBACResponse.KotsadmRequiresVeleroAccess {
 				log.ActionWithoutSpinner("Velero Namespace Access Required")
 				log.ActionWithoutSpinner("We’ve detected that the Admin Console is running with minimal role-based-access-control (RBAC) privileges, meaning that the Admin Console is limited to a single namespace. To use the snapshots functionality, the Admin Console requires access to the namespace Velero is installed in. Please make sure Velero is installed, then use the following command to provide the Admin Console with the necessary permissions to access it:\n")
-				log.Info("kubectl kots velero ensure-permissions --namespace %s --velero-namespace <velero-namespace>", options.Namespace)
+				log.Info("kubectl kots velero ensure-permissions --namespace %s --velero-namespace <velero-namespace>", veleroRBACResponse.KotsadmNamespace)
 				log.Info("* Note: Please replace `<velero-namespace>` with the actual namespace Velero is installed in, which is 'velero' by default.\n")
 				return nil
 			}
@@ -137,7 +140,7 @@ func CreateInstanceBackup(options CreateInstanceBackupOptions) error {
 
 	if options.Wait {
 		// wait for backup to complete
-		backup, err := waitForVeleroBackupCompleted(backupResponse.BackupName)
+		backup, err := waitForVeleroBackupCompleted(ctx, clientset, backupResponse.BackupName, options.Namespace)
 		if err != nil {
 			if backup != nil {
 				errMsg := fmt.Sprintf("backup failed with %d errors and %d warnings.", backup.Status.Errors, backup.Status.Warnings)
@@ -159,8 +162,12 @@ func CreateInstanceBackup(options CreateInstanceBackupOptions) error {
 	return nil
 }
 
-func ListInstanceBackups(options ListInstanceBackupsOptions) ([]velerov1.Backup, error) {
-	veleroNamespace, err := DetectVeleroNamespace()
+func ListInstanceBackups(ctx context.Context, options ListInstanceBackupsOptions) ([]velerov1.Backup, error) {
+	clientset, err := k8sutil.GetClientset(options.KubernetesConfigFlags)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get k8s clientset")
+	}
+	veleroNamespace, err := DetectVeleroNamespace(ctx, clientset, options.Namespace)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to detect velero namespace")
 	}
@@ -178,7 +185,7 @@ func ListInstanceBackups(options ListInstanceBackupsOptions) ([]velerov1.Backup,
 		return nil, errors.Wrap(err, "failed to create clientset")
 	}
 
-	b, err := veleroClient.Backups(veleroNamespace).List(context.TODO(), metav1.ListOptions{})
+	b, err := veleroClient.Backups(veleroNamespace).List(ctx, metav1.ListOptions{})
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to list backups")
 	}
@@ -200,8 +207,8 @@ func ListInstanceBackups(options ListInstanceBackupsOptions) ([]velerov1.Backup,
 	return backups, nil
 }
 
-func waitForVeleroBackupCompleted(backupName string) (*velerov1.Backup, error) {
-	veleroNamespace, err := DetectVeleroNamespace()
+func waitForVeleroBackupCompleted(ctx context.Context, clientset kubernetes.Interface, backupName string, namespace string) (*velerov1.Backup, error) {
+	veleroNamespace, err := DetectVeleroNamespace(ctx, clientset, namespace)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to detect velero namespace")
 	}
@@ -220,7 +227,7 @@ func waitForVeleroBackupCompleted(backupName string) (*velerov1.Backup, error) {
 	}
 
 	for {
-		backup, err := veleroClient.Backups(veleroNamespace).Get(context.TODO(), backupName, metav1.GetOptions{})
+		backup, err := veleroClient.Backups(veleroNamespace).Get(ctx, backupName, metav1.GetOptions{})
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to get backup")
 		}

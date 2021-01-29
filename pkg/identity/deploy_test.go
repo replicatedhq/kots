@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	kotsadmtypes "github.com/replicatedhq/kots/pkg/kotsadm/types"
+	kotsadmversion "github.com/replicatedhq/kots/pkg/kotsadm/version"
 	corev1 "k8s.io/api/core/v1"
 )
 
@@ -65,7 +66,7 @@ func Test_imageRewriteKotsadmRegistry(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			fn := imageRewriteKotsadmRegistry(tt.args.namespace, &tt.args.registryOptions)
+			fn := kotsadmversion.ImageRewriteKotsadmRegistry(tt.args.namespace, &tt.args.registryOptions)
 			gotImage, gotImagePullSecrets, err := fn(tt.args.upstreamImage, tt.args.alwaysRewrite)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("ImageRewriteFunc() error = %v, wantErr %v", err, tt.wantErr)

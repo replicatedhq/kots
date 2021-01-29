@@ -1,19 +1,19 @@
 package handlers
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"os"
 	"strconv"
 
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
-	snapshottypes "github.com/replicatedhq/kots/pkg/api/snapshot/types"
 	"github.com/replicatedhq/kots/pkg/app"
 	apptypes "github.com/replicatedhq/kots/pkg/app/types"
 	downstream "github.com/replicatedhq/kots/pkg/kotsadmdownstream"
 	snapshot "github.com/replicatedhq/kots/pkg/kotsadmsnapshot"
+	snapshottypes "github.com/replicatedhq/kots/pkg/kotsadmsnapshot/types"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/store"
 	velerov1 "github.com/vmware-tanzu/velero/pkg/apis/velero/v1"
@@ -38,8 +38,9 @@ func (h *Handler) CreateApplicationRestore(w http.ResponseWriter, r *http.Reques
 
 	appSlug := mux.Vars(r)["appSlug"]
 	snapshotName := mux.Vars(r)["snapshotName"]
+	kotsadmNamespace := os.Getenv("POD_NAMESPACE")
 
-	backup, err := snapshot.GetBackup(snapshotName)
+	backup, err := snapshot.GetBackup(r.Context(), kotsadmNamespace, snapshotName)
 	if err != nil {
 		logger.Error(err)
 		createRestoreResponse.Error = "failed to find backup"
@@ -96,7 +97,7 @@ func (h *Handler) CreateApplicationRestore(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	if err := snapshot.DeleteRestore(snapshotName); err != nil {
+	if err := snapshot.DeleteRestore(r.Context(), kotsadmNamespace, snapshotName); err != nil {
 		logger.Error(err)
 		createRestoreResponse.Error = "failed to delete restore"
 		JSON(w, http.StatusInternalServerError, createRestoreResponse)
@@ -139,8 +140,9 @@ func (h *Handler) RestoreApps(w http.ResponseWriter, r *http.Request) {
 	}
 
 	snapshotName := mux.Vars(r)["snapshotName"]
+	kotsadmNamespace := os.Getenv("POD_NAMESPACE")
 
-	backup, err := snapshot.GetBackup(snapshotName)
+	backup, err := snapshot.GetBackup(r.Context(), kotsadmNamespace, snapshotName)
 	if err != nil {
 		logger.Error(err)
 		restoreResponse.Error = "failed to find backup"
@@ -187,7 +189,7 @@ func (h *Handler) RestoreApps(w http.ResponseWriter, r *http.Request) {
 		}
 
 		restoreName := fmt.Sprintf("%s.%s", snapshotName, a.Slug)
-		if err := snapshot.DeleteRestore(restoreName); err != nil {
+		if err := snapshot.DeleteRestore(r.Context(), kotsadmNamespace, restoreName); err != nil {
 			logger.Error(err)
 			restoreResponse.Error = fmt.Sprintf("failed to delete restore for app %s", a.Slug)
 			JSON(w, http.StatusInternalServerError, restoreResponse)
@@ -225,8 +227,6 @@ func (h *Handler) GetRestoreAppsStatus(w http.ResponseWriter, r *http.Request) {
 		Statuses: []AppRestoreStatus{},
 	}
 
-	snapshotName := mux.Vars(r)["snapshotName"]
-
 	restoreAppStatusRequest := GetRestoreAppsStatusRequest{}
 	if err := json.NewDecoder(r.Body).Decode(&restoreAppStatusRequest); err != nil {
 		logger.Error(err)
@@ -234,7 +234,10 @@ func (h *Handler) GetRestoreAppsStatus(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	backup, err := snapshot.GetBackup(snapshotName)
+	snapshotName := mux.Vars(r)["snapshotName"]
+	kotsadmNamespace := os.Getenv("POD_NAMESPACE")
+
+	backup, err := snapshot.GetBackup(r.Context(), kotsadmNamespace, snapshotName)
 	if err != nil {
 		logger.Error(err)
 		response.Error = "failed to find backup"
@@ -275,8 +278,7 @@ func (h *Handler) GetRestoreAppsStatus(w http.ResponseWriter, r *http.Request) {
 		}
 
 		restoreName := fmt.Sprintf("%s.%s", snapshotName, a.Slug)
-		// restore, err := snapshot.GetRestore(restoreName)
-		restoreDetail, err := snapshot.GetRestoreDetails(context.TODO(), restoreName)
+		restoreDetail, err := snapshot.GetRestoreDetails(r.Context(), kotsadmNamespace, restoreName)
 		if err != nil {
 			if !kuberneteserrors.IsNotFound(errors.Cause(err)) {
 				logger.Error(err)
@@ -369,7 +371,7 @@ func (h *Handler) GetRestoreDetails(w http.ResponseWriter, r *http.Request) {
 		IsActive: foundApp.RestoreInProgressName == restoreName,
 	}
 
-	restoreDetail, err := snapshot.GetRestoreDetails(context.TODO(), restoreName)
+	restoreDetail, err := snapshot.GetRestoreDetails(r.Context(), os.Getenv("POD_NAMESPACE"), restoreName)
 	if kuberneteserrors.IsNotFound(errors.Cause(err)) {
 		if foundApp.RestoreUndeployStatus == apptypes.UndeployFailed {
 			// HACK: once the user has see the error, clear it out.

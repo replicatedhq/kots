@@ -1,13 +1,28 @@
 package print
 
 import (
+	"encoding/json"
 	"fmt"
 	"time"
 
 	velerov1 "github.com/vmware-tanzu/velero/pkg/apis/velero/v1"
 )
 
-func Restores(restores []velerov1.Restore) {
+func Restores(restores []velerov1.Restore, format string) {
+	switch format {
+	case "json":
+		printRestoresJSON(restores)
+	default:
+		printRestoresTable(restores)
+	}
+}
+
+func printRestoresJSON(restores []velerov1.Restore) {
+	str, _ := json.MarshalIndent(restores, "", "    ")
+	fmt.Println(string(str))
+}
+
+func printRestoresTable(restores []velerov1.Restore) {
 	w := NewTabWriter()
 	defer w.Flush()
 

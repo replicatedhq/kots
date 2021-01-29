@@ -66,14 +66,15 @@ func getBackupsCmd(cmd *cobra.Command, args []string) error {
 	v := viper.GetViper()
 
 	options := snapshot.ListInstanceBackupsOptions{
-		Namespace: v.GetString("namespace"),
+		Namespace:             v.GetString("namespace"),
+		KubernetesConfigFlags: kubernetesConfigFlags,
 	}
-	backups, err := snapshot.ListInstanceBackups(options)
+	backups, err := snapshot.ListInstanceBackups(cmd.Context(), options)
 	if err != nil {
 		return errors.Wrap(err, "failed to list instance backups")
 	}
 
-	print.Backups(backups)
+	print.Backups(backups, v.GetString("output"))
 
 	return nil
 }
@@ -82,14 +83,15 @@ func getRestoresCmd(cmd *cobra.Command, args []string) error {
 	v := viper.GetViper()
 
 	options := snapshot.ListInstanceRestoresOptions{
-		Namespace: v.GetString("namespace"),
+		Namespace:             v.GetString("namespace"),
+		KubernetesConfigFlags: kubernetesConfigFlags,
 	}
-	restores, err := snapshot.ListInstanceRestores(options)
+	restores, err := snapshot.ListInstanceRestores(cmd.Context(), options)
 	if err != nil {
 		return errors.Wrap(err, "failed to list instance restores")
 	}
 
-	print.Restores(restores)
+	print.Restores(restores, v.GetString("output"))
 
 	return nil
 }

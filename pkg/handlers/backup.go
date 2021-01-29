@@ -3,12 +3,14 @@ package handlers
 import (
 	"context"
 	"net/http"
+	"os"
 
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
-	snapshottypes "github.com/replicatedhq/kots/pkg/api/snapshot/types"
 	snapshot "github.com/replicatedhq/kots/pkg/kotsadmsnapshot"
+	snapshottypes "github.com/replicatedhq/kots/pkg/kotsadmsnapshot/types"
 	"github.com/replicatedhq/kots/pkg/logger"
+	kotssnapshot "github.com/replicatedhq/kots/pkg/snapshot"
 	"github.com/replicatedhq/kots/pkg/store"
 )
 
@@ -23,6 +25,7 @@ type CreateApplicationBackupResponse struct {
 type VeleroRBACResponse struct {
 	Success                     bool   `json:"success"`
 	Error                       string `json:"error,omitempty"`
+	KotsadmNamespace            string `json:"kotsadmNamespace,omitempty"`
 	KotsadmRequiresVeleroAccess bool   `json:"kotsadmRequiresVeleroAccess,omitempty"`
 }
 
@@ -69,33 +72,35 @@ func (h *Handler) ListBackups(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		logger.Error(err)
 		listBackupsResponse.Error = "failed to get app from app slug"
-		JSON(w, 500, listBackupsResponse)
+		JSON(w, http.StatusInternalServerError, listBackupsResponse)
 		return
 	}
 
-	veleroStatus, err := snapshot.DetectVelero()
+	kotsadmNamespace := os.Getenv("POD_NAMESPACE")
+
+	veleroStatus, err := kotssnapshot.DetectVelero(r.Context(), kotsadmNamespace)
 	if err != nil {
 		logger.Error(err)
 		listBackupsResponse.Error = "failed to detect velero"
-		JSON(w, 500, listBackupsResponse)
+		JSON(w, http.StatusInternalServerError, listBackupsResponse)
 		return
 	}
 
 	if veleroStatus == nil {
-		JSON(w, 200, listBackupsResponse)
+		JSON(w, http.StatusOK, listBackupsResponse)
 		return
 	}
 
-	backups, err := snapshot.ListBackupsForApp(foundApp.ID)
+	backups, err := snapshot.ListBackupsForApp(r.Context(), kotsadmNamespace, foundApp.ID)
 	if err != nil {
 		logger.Error(err)
 		listBackupsResponse.Error = "failed to list backups"
-		JSON(w, 500, listBackupsResponse)
+		JSON(w, http.StatusInternalServerError, listBackupsResponse)
 		return
 	}
 	listBackupsResponse.Backups = backups
 
-	JSON(w, 200, listBackupsResponse)
+	JSON(w, http.StatusOK, listBackupsResponse)
 }
 
 type ListInstanceBackupsResponse struct {
@@ -106,16 +111,16 @@ type ListInstanceBackupsResponse struct {
 func (h *Handler) ListInstanceBackups(w http.ResponseWriter, r *http.Request) {
 	listBackupsResponse := ListInstanceBackupsResponse{}
 
-	backups, err := snapshot.ListInstanceBackups()
+	backups, err := snapshot.ListInstanceBackups(r.Context(), os.Getenv("POD_NAMESPACE"))
 	if err != nil {
 		logger.Error(err)
 		listBackupsResponse.Error = "failed to list instance backups"
-		JSON(w, 500, listBackupsResponse)
+		JSON(w, http.StatusInternalServerError, listBackupsResponse)
 		return
 	}
 	listBackupsResponse.Backups = backups
 
-	JSON(w, 200, listBackupsResponse)
+	JSON(w, http.StatusOK, listBackupsResponse)
 }
 
 type GetBackupResponse struct {
@@ -127,7 +132,7 @@ type GetBackupResponse struct {
 func (h *Handler) GetBackup(w http.ResponseWriter, r *http.Request) {
 	getBackupResponse := GetBackupResponse{}
 
-	backup, err := snapshot.GetBackupDetail(context.TODO(), mux.Vars(r)["snapshotName"])
+	backup, err := snapshot.GetBackupDetail(r.Context(), os.Getenv("POD_NAMESPACE"), mux.Vars(r)["snapshotName"])
 	if err != nil {
 		logger.Error(err)
 		getBackupResponse.Error = "failed to get backup detail"
@@ -138,7 +143,7 @@ func (h *Handler) GetBackup(w http.ResponseWriter, r *http.Request) {
 
 	getBackupResponse.Success = true
 
-	JSON(w, 200, getBackupResponse)
+	JSON(w, http.StatusOK, getBackupResponse)
 }
 
 type DeleteBackupResponse struct {
@@ -149,7 +154,7 @@ type DeleteBackupResponse struct {
 func (h *Handler) DeleteBackup(w http.ResponseWriter, r *http.Request) {
 	deleteBackupResponse := DeleteBackupResponse{}
 
-	if err := snapshot.DeleteBackup(mux.Vars(r)["snapshotName"]); err != nil {
+	if err := snapshot.DeleteBackup(r.Context(), os.Getenv("POD_NAMESPACE"), mux.Vars(r)["snapshotName"]); err != nil {
 		logger.Error(err)
 		deleteBackupResponse.Error = "failed to delete backup"
 		JSON(w, http.StatusInternalServerError, deleteBackupResponse)

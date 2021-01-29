@@ -46,7 +46,6 @@ class SnapshotsWrapper extends Component {
                     <Snapshots
                       isKurlEnabled={this.props.isKurlEnabled}
                       appsList={snapshotsApps}
-                      toggleSnapshotsRBACModal={this.props.toggleSnapshotsRBACModal}
                     />
                   } />
                   <Route exact path="/snapshots/settings" render={(props) =>
@@ -54,7 +53,6 @@ class SnapshotsWrapper extends Component {
                       {...props}
                       isKurlEnabled={this.props.isKurlEnabled}
                       apps={snapshotsApps}
-                      toggleSnapshotsRBACModal={this.props.toggleSnapshotsRBACModal}
                     />}
                   />
                   <Route exact path="/snapshots/details/:id" render={(props) =>
@@ -73,7 +71,6 @@ class SnapshotsWrapper extends Component {
                       appsList={snapshotsApps}
                       app={snapshotsApps[0]}
                       appName={snapshotsApps.name}
-                      toggleSnapshotsRBACModal={this.props.toggleSnapshotsRBACModal}
                     />
                   } />
                   <Route exact path="/snapshots/partial/:slug/:id" render={(props) =>

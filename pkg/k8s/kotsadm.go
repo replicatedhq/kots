@@ -41,10 +41,25 @@ func FindKotsadmImage(namespace string) (string, error) {
 	return kotsadmImage, nil
 }
 
-func IsKotsadmClusterScoped(ctx context.Context, clientset kubernetes.Interface) bool {
-	_, err := clientset.RbacV1().ClusterRoles().Get(ctx, "kotsadm-role", metav1.GetOptions{})
+// IsKotsadmClusterScoped will check if kotsadm has cluster scope access or not
+func IsKotsadmClusterScoped(ctx context.Context, clientset kubernetes.Interface, namespace string) bool {
+	rb, err := clientset.RbacV1().ClusterRoleBindings().Get(ctx, "kotsadm-rolebinding", metav1.GetOptions{})
 	if err != nil {
 		return false
 	}
-	return true
+	for _, s := range rb.Subjects {
+		if s.Kind != "ServiceAccount" {
+			continue
+		}
+		if s.Name != "kotsadm" {
+			continue
+		}
+		if s.Namespace != "" && s.Namespace == namespace {
+			return true
+		}
+		if s.Namespace == "" && namespace == metav1.NamespaceDefault {
+			return true
+		}
+	}
+	return false
 }

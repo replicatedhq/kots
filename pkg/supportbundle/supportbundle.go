@@ -18,6 +18,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/kotskinds/client/kotsclientset/scheme"
 	apptypes "github.com/replicatedhq/kots/pkg/app/types"
+	"github.com/replicatedhq/kots/pkg/k8s"
 	kotstypes "github.com/replicatedhq/kots/pkg/kotsadm/types"
 	license "github.com/replicatedhq/kots/pkg/kotsadmlicense"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
@@ -443,6 +444,8 @@ func makeKotsadmCollectors() []*troubleshootv1beta2.Collect {
 		"kotsadm-operator",
 		"kurl-proxy-kotsadm",
 		"kotsadm-dex",
+		"kotsadm-fs-minio",
+		"kotsadm-s3-ops",
 	}
 	kotsadmCollectors := []*troubleshootv1beta2.Collect{}
 	for _, name := range names {
@@ -628,7 +631,13 @@ func makeWeaveAnalyzers() []*troubleshootv1beta2.Analyze {
 func makeVeleroCollectors() []*troubleshootv1beta2.Collect {
 	collectors := []*troubleshootv1beta2.Collect{}
 
-	veleroNamespace, err := snapshot.DetectVeleroNamespace()
+	clientset, err := k8s.Clientset()
+	if err != nil {
+		logger.Error(err)
+		return collectors
+	}
+
+	veleroNamespace, err := snapshot.DetectVeleroNamespace(context.TODO(), clientset, os.Getenv("POD_NAMESPACE"))
 	if err != nil {
 		logger.Error(err)
 		return collectors

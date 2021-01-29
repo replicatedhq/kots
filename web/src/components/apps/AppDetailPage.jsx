@@ -353,7 +353,6 @@ class AppDetailPage extends Component {
                         isVeleroInstalled={isVeleroInstalled}
                         refreshAppData={this.getApp}
                         snapshotInProgressApps={this.props.snapshotInProgressApps}
-                        toggleSnapshotsRBACModal={this.props.toggleSnapshotsRBACModal}
                         ping={this.props.ping}
                       />}
                     />
