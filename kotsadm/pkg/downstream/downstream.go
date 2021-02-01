@@ -82,6 +82,7 @@ func GetPreviouslyDeployedSequence(appID string, clusterID string) (int64, error
 	if err != nil {
 		return -1, errors.Wrap(err, "failed to query")
 	}
+	defer rows.Close()
 
 	for rowNumber := 1; rows.Next(); rowNumber++ {
 		if rowNumber != 2 {
