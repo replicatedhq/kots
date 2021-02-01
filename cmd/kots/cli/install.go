@@ -33,6 +33,7 @@ import (
 	"k8s.io/client-go/kubernetes"
 )
 
+// InstallCmd installs the kots app
 func InstallCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:           "install [upstream uri]",
@@ -224,31 +225,48 @@ func InstallCmd() *cobra.Command {
 			}
 
 			log.ActionWithoutSpinner("Deploying Admin Console")
+			// Initialize kots metrics before Deploy to monitor its success/failure
+			// Enable sampling only in non-airgap mode
+			var cause string
+			im, _ := InitMetrics(&deployOptions, isAirgap)
+			CollectStartInstallMetrics(im)
 			if err := kotsadm.Deploy(deployOptions); err != nil {
 				if _, ok := errors.Cause(err).(*types.ErrorTimeout); ok {
+					cause = "kotsadm failed"
+					CollectFailInstallMetrics(im, cause)
 					return errors.Errorf("Failed to deploy: %s. Use the --wait-duration flag to increase timeout.", err)
 				}
-				return errors.Wrap(err, "failed to deploy")
+				// Update Metrics with failed status
+				cause = "failed to deploy"
+				CollectFailInstallMetrics(im, cause)
+				return errors.Wrap(err, cause)
 			}
 
 			if deployOptions.ExcludeAdminConsole && sharedPassword != "" {
 				if err := setKotsadmPassword(sharedPassword, namespace); err != nil {
-					return errors.Wrap(err, "failed to set new password")
+					cause = "failed to set new password"
+					CollectFailInstallMetrics(im, cause)
+					return errors.Wrap(err, cause)
 				}
 			}
 
 			// port forward
 			clientset, err := k8sutil.GetClientset(kubernetesConfigFlags)
 			if err != nil {
-				return errors.Wrap(err, "failed to get clientset")
+				cause = "failed to get clientset"
+				CollectFailInstallMetrics(im, cause)
+				return errors.Wrap(err, cause)
 			}
 
 			podName, err := k8sutil.WaitForKotsadm(clientset, namespace, timeout)
 			if err != nil {
 				if _, ok := errors.Cause(err).(*types.ErrorTimeout); ok {
+					CollectFailInstallMetrics(im, "kotsadm failed to start within timeout")
 					return errors.Errorf("kotsadm failed to start: %s. Use the --wait-duration flag to increase timeout.", err)
 				}
-				return errors.Wrap(err, "failed to wait for web")
+				cause = "failed to wait for web"
+				CollectFailInstallMetrics(im, cause)
+				return errors.Wrap(err, cause)
 			}
 
 			stopCh := make(chan struct{})
@@ -256,7 +274,9 @@ func InstallCmd() *cobra.Command {
 
 			adminConsolePort, errChan, err := k8sutil.PortForward(kubernetesConfigFlags, 8800, 3000, namespace, podName, true, stopCh, log)
 			if err != nil {
-				return errors.Wrap(err, "failed to forward port")
+				cause = "failed to forward port"
+				CollectFailInstallMetrics(im, cause)
+				return errors.Wrap(err, cause)
 			}
 
 			if deployOptions.AirgapRootDir != "" {
@@ -279,12 +299,16 @@ func InstallCmd() *cobra.Command {
 					}
 
 					if err != nil {
-						return errors.Wrap(err, "failed to upload app.tar.gz")
+						cause = "failed to upload app.tar.gz"
+						CollectFailInstallMetrics(im, cause)
+						return errors.Wrap(err, cause)
 					}
 				}
 
 				if tryAgain {
-					return errors.Wrap(err, "giving up uploading app.tar.gz")
+					cause = "giving up uploading app.tar.gz"
+					CollectFailInstallMetrics(im, cause)
+					return errors.Wrap(err, cause)
 				}
 
 				// remove here in case CLI is killed and defer doesn't run
@@ -303,6 +327,9 @@ func InstallCmd() *cobra.Command {
 			}()
 
 			if v.GetBool("port-forward") && !deployOptions.ExcludeAdminConsole {
+
+				go pollApplicationStatus(im, namespace)
+
 				log.ActionWithoutSpinner("")
 
 				if adminConsolePort != 8800 {
@@ -612,5 +639,68 @@ func getHttpProxyEnv(v *viper.Viper) map[string]string {
 	env["HTTPS_PROXY"] = v.GetString("https-proxy")
 	env["NO_PROXY"] = v.GetString("no-proxy")
 	return env
+
+}
+
+func isAppReady(namespace string, authSlug string, localPort int) string {
+
+	url := fmt.Sprintf("http://localhost:%d/api/v1/apps", localPort)
+	apps, err := getApps(url, authSlug)
+	if err != nil {
+		return ""
+	}
+	for _, app := range apps.Apps {
+		url := fmt.Sprintf("http://localhost:%d/api/v1/app/%s/status", localPort, app.Slug)
+		appStatus, err := getAppStatus(url, authSlug)
+		if err != nil {
+			return ""
+		}
+		return string(appStatus.AppStatus.State)
+	}
+	return ""
+}
+
+func pollApplicationStatus(im KotsMetricsInterface, namespace string) {
+
+	stopCh := make(chan struct{})
+	defer close(stopCh)
+
+	clientset, err := k8sutil.GetClientset(kubernetesConfigFlags)
+	if err != nil {
+		return
+	}
+	podName, err := k8sutil.FindKotsadm(clientset, namespace)
+	if err != nil {
+		return
+	}
+
+	localPort, errChan, err := k8sutil.PortForward(kubernetesConfigFlags, 0, 3000, namespace, podName, false, stopCh, nil)
+	if err != nil {
+		return
+	}
+
+	go func() {
+		select {
+		case <-errChan:
+		case <-stopCh:
+		}
+	}()
+
+	// copied from another function app-get.go
+	authSlug, _ := auth.GetOrCreateAuthSlug(kubernetesConfigFlags, namespace)
+
+	numRetries := 200
+	var state string
+	for i := 0; i < numRetries; i++ {
+		state = isAppReady(namespace, authSlug, localPort)
+		if state == "ready" {
+			//TODO support multiple apps
+			CollectFinishInstallMetrics(im)
+			return
+		}
+		time.Sleep(3 * time.Second)
+	}
+	// this is failure
+	CollectFailInstallMetrics(im, state)
 
 }
