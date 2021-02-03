@@ -18,6 +18,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/online/types"
 	"github.com/replicatedhq/kots/pkg/preflight"
 	"github.com/replicatedhq/kots/pkg/pull"
+	"github.com/replicatedhq/kots/pkg/reporting"
 	"github.com/replicatedhq/kots/pkg/store"
 	"github.com/replicatedhq/kots/pkg/supportbundle"
 	"github.com/replicatedhq/kots/pkg/updatechecker"
@@ -229,6 +230,13 @@ func CreateAppFromOnline(pendingApp *types.PendingApp, upstreamURI string, isAut
 			return nil, errors.Wrap(err, "failed to start preflights")
 		}
 	}
+
+	go func() {
+		isUpdate := false
+		if err := reporting.SendPreflightInfo(pendingApp.ID, int(newSequence), skipPreflights, isUpdate); err != nil {
+			logger.Debugf("failed to send preflights data to replicated app: %v", err)
+		}
+	}()
 
 	return kotsKinds, nil
 }
