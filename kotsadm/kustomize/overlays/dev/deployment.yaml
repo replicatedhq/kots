@@ -53,7 +53,7 @@ spec:
             - name: API_ENCRYPTION_KEY
               value: IvWItkB8+ezMisPjSMBknT1PdKjBx7Xc/txZqOP8Y2Oe7+Jy
             - name: REPLICATED_API_ENDPOINT
-              value: http://replicated-app:3000
+              value: http://replicated-app.default.svc.cluster.local:3000
             - name: API_ENDPOINT
               value: http://kotsadm.default.svc.cluster.local:3000
             - name: API_ADVERTISE_ENDPOINT
