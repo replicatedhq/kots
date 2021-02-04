@@ -57,6 +57,10 @@ func Start() error {
 				}
 
 				if backup.Status.Phase == velerov1.BackupPhaseFailed || backup.Status.Phase == velerov1.BackupPhasePartiallyFailed {
+					if backup.Annotations == nil {
+						backup.Annotations = map[string]string{}
+					}
+
 					_, ok := backup.Annotations["kots.io/support-bundle-requested"]
 					if !ok {
 						// here.  finally..   request a support bundle for this
