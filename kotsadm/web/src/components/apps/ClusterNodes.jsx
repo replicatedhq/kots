@@ -25,7 +25,9 @@ export class ClusterNodes extends Component {
     kurl: null,
     getNodeStatusJob: new Repeater(),
     deletNodeError: "",
-    confirmDeleteNode: ""
+    confirmDeleteNode: "",
+    drainingNode: false,
+    drainNodeSuccessful: false
   }
 
   componentDidMount() {
@@ -136,6 +138,7 @@ export class ClusterNodes extends Component {
   }
 
   drainNode = async (name) => {
+    this.setState({ drainingNode: true });
     fetch(`${window.env.API_ENDPOINT}/kurl/nodes/${name}/drain`, {
       headers: {
         "Authorization": Utilities.getToken(),
@@ -144,9 +147,21 @@ export class ClusterNodes extends Component {
       },
       method: "POST",
     })
-      .then(async (res) => {})
+      .then(async (res) => {
+        this.setState({
+          drainingNode: false,
+          drainNodeSuccessful: true
+        });
+        setTimeout(() => {
+          this.setState({ drainNodeSuccessful: false });
+        }, 3000);
+      })
       .catch((err) => {
         console.log(err);
+        this.setState({
+          drainingNode: false,
+          drainNodeSuccessful: false
+        });
       })
   }
 
@@ -224,6 +239,8 @@ export class ClusterNodes extends Component {
                   <NodeRow
                     key={i}
                     node={node}
+                    drainingNode={this.state.drainingNode}
+                    drainNodeSuccessful={this.state.drainNodeSuccessful}
                     drainNode={kurl?.isKurlEnabled ? this.drainNode : null}
                     deleteNode={kurl?.isKurlEnabled ? this.deleteNode : null} />
                 ))}
