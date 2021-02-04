@@ -71,6 +71,10 @@ func GenerateAddNodeCommand(client kubernetes.Interface, master bool) ([]string,
 		)
 	}
 
+	if value := data["kurl_install_directory"]; value != "" {
+		command = append(command, fmt.Sprintf("kurl-install-directory=%s", value))
+	}
+
 	return command, &bootstrapTokenExpiration, nil
 }
 
