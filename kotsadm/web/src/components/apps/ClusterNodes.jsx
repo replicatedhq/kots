@@ -26,6 +26,8 @@ export class ClusterNodes extends Component {
     getNodeStatusJob: new Repeater(),
     deletNodeError: "",
     confirmDeleteNode: "",
+    showConfirmDrainModal: false,
+    nodeNameToDrain: "",
     drainingNode: false,
     drainNodeSuccessful: false
   }
@@ -137,8 +139,15 @@ export class ClusterNodes extends Component {
       });
   }
 
+  onDrainNodeClick = (name) => {
+    this.setState({
+      showConfirmDrainModal: true,
+      nodeNameToDrain: name
+    });
+  }
+
   drainNode = async (name) => {
-    this.setState({ drainingNode: true });
+    this.setState({ showConfirmDrainModal: false, drainingNode: true });
     fetch(`${window.env.API_ENDPOINT}/kurl/nodes/${name}/drain`, {
       headers: {
         "Authorization": Utilities.getToken(),
@@ -241,7 +250,7 @@ export class ClusterNodes extends Component {
                     node={node}
                     drainingNode={this.state.drainingNode}
                     drainNodeSuccessful={this.state.drainNodeSuccessful}
-                    drainNode={kurl?.isKurlEnabled ? this.drainNode : null}
+                    drainNode={kurl?.isKurlEnabled ? this.onDrainNodeClick : null}
                     deleteNode={kurl?.isKurlEnabled ? this.deleteNode : null} />
                 ))}
               </div>
@@ -374,7 +383,7 @@ export class ClusterNodes extends Component {
               <button
                 onClick={this.reallyDeleteNode}
                 type="button"
-                className="btn blue primary"
+                className="btn red primary"
               >
                 Delete {this.state.confirmDeleteNode}
               </button>
@@ -388,6 +397,41 @@ export class ClusterNodes extends Component {
             </div>
           </div>
         </Modal>
+        {this.state.showConfirmDrainModal &&
+          <Modal
+            isOpen={true}
+            onRequestClose={() => this.setState({ showConfirmDrainModal: false, nodeNameToDrain: "" })}
+            shouldReturnFocusAfterClose={false}
+            contentLabel="Confirm Drain Node"
+            ariaHideApp={false}
+            className="Modal"
+          >
+            <div className="Modal-body">
+              <p className="u-fontSize--larger u-color--tuna u-fontWeight--bold u-lineHeight--normal">
+                Are you sure you want to drain this node?
+              </p>
+              <p className="u-fontSize--normal u-color--dustyGray u-lineHeight--normal u-marginBottom--20">
+                Draining this node may cause data loss. Are you sure you want to proceed?
+              </p>
+              <div className="u-marginTop--10 flex">
+                <button
+                  onClick={() => this.drainNode(this.state.nodeNameToDrain)}
+                  type="button"
+                  className="btn red primary"
+                >
+                  Drain {this.state.nodeNameToDrain}
+                </button>
+                <button
+                  onClick={() => this.setState({ showConfirmDrainModal: false, nodeNameToDrain: "" })}
+                  type="button"
+                  className="btn secondary u-marginLeft--20"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </Modal>
+        }
       </div>
     );
   }
