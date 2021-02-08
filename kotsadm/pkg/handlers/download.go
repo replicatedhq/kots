@@ -136,10 +136,6 @@ func (h *Handler) DownloadApp(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Header().Set("Content-Disposition", "attachment; filename=archive.tar.gz")
-	w.Header().Set("Content-Type", "application/gzip")
-	w.Header().Set("Content-Length", strconv.FormatInt(fi.Size(), 10))
-
 	f, err := os.Open(fileToSend)
 	if err != nil {
 		logger.Error(err)
@@ -147,6 +143,13 @@ func (h *Handler) DownloadApp(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	io.Copy(w, f)
+	w.Header().Set("Content-Disposition", "attachment; filename=archive.tar.gz")
+	w.Header().Set("Content-Type", "application/gzip")
+	w.Header().Set("Content-Length", strconv.FormatInt(fi.Size(), 10))
 	w.WriteHeader(200)
+
+	_, err = io.Copy(w, f)
+	if err != nil {
+		logger.Error(err)
+	}
 }
