@@ -213,7 +213,7 @@ func (s S3PGStore) GetSupportBundleArchive(bundleID string) (string, error) {
 			Key:    key,
 		})
 	if err != nil {
-		return "", errors.Wrap(err, "failed to download file")
+		return "", errors.Wrapf(err, "failed to download support bundle archive %q from bucket %q", *key, *bucket)
 	}
 
 	return filepath.Join(tmpDir, "supportbundle.tar.gz"), nil

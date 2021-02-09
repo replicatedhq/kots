@@ -230,7 +230,7 @@ func (s S3PGStore) GetAppVersionArchive(appID string, sequence int64, dstPath st
 			Key:    key,
 		})
 	if err != nil {
-		return errors.Wrapf(err, "failed to download file %q from bucket %q", *key, *bucket)
+		return errors.Wrapf(err, "failed to download app version archive %q from bucket %q", *key, *bucket)
 	}
 
 	tarGz := archiver.TarGz{
