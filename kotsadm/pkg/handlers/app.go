@@ -11,6 +11,7 @@ import (
 	"github.com/replicatedhq/kots/kotsadm/pkg/downstream"
 	"github.com/replicatedhq/kots/kotsadm/pkg/gitops"
 	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
+	"github.com/replicatedhq/kots/kotsadm/pkg/render"
 	"github.com/replicatedhq/kots/kotsadm/pkg/session"
 	"github.com/replicatedhq/kots/kotsadm/pkg/store"
 	"github.com/replicatedhq/kots/kotsadm/pkg/supportbundle"
@@ -207,7 +208,7 @@ func responseAppFromApp(a *apptypes.App) (*types.ResponseApp, error) {
 			return nil, errors.Wrap(err, "failed to get current parent sequence for downstream")
 		}
 
-		s, err := store.GetStore().IsSnapshotsSupportedForVersion(a, parentSequence)
+		s, err := store.GetStore().IsSnapshotsSupportedForVersion(a, parentSequence, &render.Renderer{})
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to check if snapshots is allowed")
 		}

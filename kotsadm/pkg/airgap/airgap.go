@@ -229,7 +229,7 @@ func CreateAppFromAirgap(pendingApp *types.PendingApp, airgapPath string, regist
 		return errors.Wrap(err, "failed to set app is airgap the second time")
 	}
 
-	newSequence, err := version.CreateFirstVersion(a.ID, tmpRoot, "Airgap Upload", skipPreflights)
+	newSequence, err := store.GetStore().CreateAppVersion(a.ID, nil, tmpRoot, "Airgap Upload", skipPreflights, &version.DownstreamGitOps{})
 	if err != nil {
 		return errors.Wrap(err, "failed to create new version")
 	}

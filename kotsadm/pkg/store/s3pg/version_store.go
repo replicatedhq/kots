@@ -19,8 +19,9 @@ import (
 	kotsconfig "github.com/replicatedhq/kots/kotsadm/pkg/config"
 	gitopstypes "github.com/replicatedhq/kots/kotsadm/pkg/gitops/types"
 	"github.com/replicatedhq/kots/kotsadm/pkg/persistence"
-	"github.com/replicatedhq/kots/kotsadm/pkg/render"
+	rendertypes "github.com/replicatedhq/kots/kotsadm/pkg/render/types"
 	kotss3 "github.com/replicatedhq/kots/kotsadm/pkg/s3"
+	"github.com/replicatedhq/kots/kotsadm/pkg/secrets"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	versiontypes "github.com/replicatedhq/kots/pkg/api/version/types"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
@@ -68,7 +69,7 @@ func (s S3PGStore) IsIdentityServiceSupportedForVersion(appID string, sequence i
 	return identitySpecStr.String != "", nil
 }
 
-func (s S3PGStore) IsSnapshotsSupportedForVersion(a *apptypes.App, sequence int64) (bool, error) {
+func (s S3PGStore) IsSnapshotsSupportedForVersion(a *apptypes.App, sequence int64, renderer rendertypes.Renderer) (bool, error) {
 	db := persistence.MustGetPGSession()
 	query := `select backup_spec from app_version where app_id = $1 and sequence = $2`
 	row := db.QueryRow(query, a.ID, sequence)
@@ -107,7 +108,7 @@ func (s S3PGStore) IsSnapshotsSupportedForVersion(a *apptypes.App, sequence int6
 	}
 
 	// as far as I can tell, this is the only place within kotsadm/pkg/store that uses templating
-	rendered, err := render.RenderFile(kotsKinds, registrySettings, a.Slug, sequence, a.IsAirgap, []byte(backupSpecStr.String))
+	rendered, err := renderer.RenderFile(kotsKinds, registrySettings, a.Slug, sequence, a.IsAirgap, []byte(backupSpecStr.String))
 	if err != nil {
 		return false, errors.Wrap(err, "failed to render backup spec")
 	}
@@ -245,16 +246,50 @@ func (s S3PGStore) GetAppVersionArchive(appID string, sequence int64, dstPath st
 	return nil
 }
 
-func (s S3PGStore) CreateAppVersion(appID string, currentSequence *int64, appName string, appIcon string, kotsKinds *kotsutil.KotsKinds, filesInDir string, gitops gitopstypes.DownstreamGitOps, source string, skipPreflights bool) (int64, error) {
+func (s S3PGStore) CreateAppVersion(appID string, currentSequence *int64, filesInDir string, source string, skipPreflights bool, gitops gitopstypes.DownstreamGitOps) (int64, error) {
 	db := persistence.MustGetPGSession()
 
 	tx, err := db.Begin()
 	if err != nil {
-		return int64(0), errors.Wrap(err, "failed to begin")
+		return 0, errors.Wrap(err, "failed to begin")
 	}
 	defer tx.Rollback()
 
-	newSequence, err := s.createAppVersion(tx, appID, currentSequence, appName, appIcon, kotsKinds)
+	newSequence, err := s.createAppVersion(tx, appID, currentSequence, filesInDir, source, skipPreflights, gitops)
+	if err != nil {
+		return 0, err
+	}
+
+	if err := tx.Commit(); err != nil {
+		return 0, errors.Wrap(err, "failed to commit")
+	}
+
+	return newSequence, nil
+}
+
+func (s S3PGStore) createAppVersion(tx *sql.Tx, appID string, currentSequence *int64, filesInDir string, source string, skipPreflights bool, gitops gitopstypes.DownstreamGitOps) (int64, error) {
+	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(filesInDir)
+	if err != nil {
+		return int64(0), errors.Wrap(err, "failed to read kots kinds")
+	}
+
+	appName := kotsKinds.KotsApplication.Spec.Title
+	if appName == "" {
+		a, err := s.GetApp(appID)
+		if err != nil {
+			return int64(0), errors.Wrap(err, "failed to get app")
+		}
+
+		appName = a.Name
+	}
+
+	appIcon := kotsKinds.KotsApplication.Spec.Icon
+
+	if err := secrets.ReplaceSecretsInPath(filesInDir); err != nil {
+		return int64(0), errors.Wrap(err, "failed to replace secrets")
+	}
+
+	newSequence, err := s.createAppVersionRecord(tx, appID, currentSequence, appName, appIcon, kotsKinds)
 	if err != nil {
 		return int64(0), errors.Wrap(err, "failed to create app version")
 	}
@@ -358,14 +393,10 @@ func (s S3PGStore) CreateAppVersion(appID string, currentSequence *int64, appNam
 		}
 	}
 
-	if err := tx.Commit(); err != nil {
-		return int64(0), errors.Wrap(err, "failed to commit transaction")
-	}
-
 	return newSequence, nil
 }
 
-func (s S3PGStore) createAppVersion(tx *sql.Tx, appID string, currentSequence *int64, appName string, appIcon string, kotsKinds *kotsutil.KotsKinds) (int64, error) {
+func (s S3PGStore) createAppVersionRecord(tx *sql.Tx, appID string, currentSequence *int64, appName string, appIcon string, kotsKinds *kotsutil.KotsKinds) (int64, error) {
 	// we marshal these here because it's a decision of the store to cache them in the app version table
 	// not all stores will do this
 	supportBundleSpec, err := kotsKinds.Marshal("troubleshoot.replicated.com", "v1beta1", "Collector")

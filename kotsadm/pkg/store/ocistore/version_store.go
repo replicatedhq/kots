@@ -22,6 +22,8 @@ import (
 	kotsconfig "github.com/replicatedhq/kots/kotsadm/pkg/config"
 	gitopstypes "github.com/replicatedhq/kots/kotsadm/pkg/gitops/types"
 	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
+	rendertypes "github.com/replicatedhq/kots/kotsadm/pkg/render/types"
+	"github.com/replicatedhq/kots/kotsadm/pkg/secrets"
 	versiontypes "github.com/replicatedhq/kots/pkg/api/version/types"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/kustomize"
@@ -135,7 +137,7 @@ func (s OCIStore) IsRollbackSupportedForVersion(appID string, sequence int64) (b
 	return appVersion.KOTSKinds.KotsApplication.Spec.AllowRollback, nil
 }
 
-func (s OCIStore) IsSnapshotsSupportedForVersion(a *apptypes.App, sequence int64) (bool, error) {
+func (s OCIStore) IsSnapshotsSupportedForVersion(a *apptypes.App, sequence int64, renderer rendertypes.Renderer) (bool, error) {
 	return false, ErrNotImplemented
 }
 
@@ -293,7 +295,28 @@ func (s OCIStore) GetAppVersionArchive(appID string, sequence int64, dstPath str
 	return nil
 }
 
-func (s OCIStore) CreateAppVersion(appID string, currentSequence *int64, appName string, appIcon string, kotsKinds *kotsutil.KotsKinds, filesInDir string, gitops gitopstypes.DownstreamGitOps, source string, skipPreflights bool) (int64, error) {
+func (s OCIStore) CreateAppVersion(appID string, currentSequence *int64, filesInDir string, source string, skipPreflights bool, gitops gitopstypes.DownstreamGitOps) (int64, error) {
+	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(filesInDir)
+	if err != nil {
+		return int64(0), errors.Wrap(err, "failed to read kots kinds")
+	}
+
+	appName := kotsKinds.KotsApplication.Spec.Title
+	if appName == "" {
+		a, err := s.GetApp(appID)
+		if err != nil {
+			return int64(0), errors.Wrap(err, "failed to get app")
+		}
+
+		appName = a.Name
+	}
+
+	appIcon := kotsKinds.KotsApplication.Spec.Icon
+
+	if err := secrets.ReplaceSecretsInPath(filesInDir); err != nil {
+		return int64(0), errors.Wrap(err, "failed to replace secrets")
+	}
+
 	newSequence, err := s.createAppVersion(appID, currentSequence, appName, appIcon, kotsKinds)
 	if err != nil {
 		return int64(0), errors.Wrap(err, "failed to create app version")

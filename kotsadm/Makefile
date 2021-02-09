@@ -2,6 +2,11 @@ include ../Makefile.build
 CURRENT_USER := $(shell id -u -n)
 BUILDTAGS = netgo containers_image_ostree_stub exclude_graphdriver_devicemapper exclude_graphdriver_btrfs containers_image_openpgp
 
+.PHONY: mock
+mock:
+	go get github.com/golang/mock/mockgen@v1.4.4
+	mockgen -source=pkg/store/store_interface.go -destination=pkg/store/mock/mock.go
+
 .PHONY: kotsadm
 kotsadm:
 	go build ${LDFLAGS} -tags "$(BUILDTAGS)" -o bin/kotsadm ./cmd/kotsadm

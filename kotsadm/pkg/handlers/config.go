@@ -20,7 +20,6 @@ import (
 	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
 	"github.com/replicatedhq/kots/kotsadm/pkg/preflight"
 	"github.com/replicatedhq/kots/kotsadm/pkg/render"
-	"github.com/replicatedhq/kots/kotsadm/pkg/reporting"
 	"github.com/replicatedhq/kots/kotsadm/pkg/store"
 	"github.com/replicatedhq/kots/kotsadm/pkg/version"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
@@ -452,14 +451,14 @@ func updateAppConfig(updateApp *apptypes.App, sequence int64, req UpdateAppConfi
 		return updateAppConfigResponse, err
 	}
 
-	err = render.RenderDir(archiveDir, app, downstreams, registrySettings, reporting.GetReportingInfo(updateApp.ID))
+	err = render.RenderDir(archiveDir, app, downstreams, registrySettings)
 	if err != nil {
 		updateAppConfigResponse.Error = "failed to render archive directory"
 		return updateAppConfigResponse, err
 	}
 
 	if req.CreateNewVersion {
-		newSequence, err := version.CreateVersion(updateApp.ID, archiveDir, "Config Change", updateApp.CurrentSequence, false)
+		newSequence, err := store.GetStore().CreateAppVersion(updateApp.ID, &updateApp.CurrentSequence, archiveDir, "Config Change", false, &version.DownstreamGitOps{})
 		if err != nil {
 			updateAppConfigResponse.Error = "failed to create an app version"
 			return updateAppConfigResponse, err

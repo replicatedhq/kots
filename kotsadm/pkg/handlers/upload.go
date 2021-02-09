@@ -12,7 +12,6 @@ import (
 	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
 	"github.com/replicatedhq/kots/kotsadm/pkg/preflight"
 	"github.com/replicatedhq/kots/kotsadm/pkg/render"
-	"github.com/replicatedhq/kots/kotsadm/pkg/reporting"
 	"github.com/replicatedhq/kots/kotsadm/pkg/store"
 	"github.com/replicatedhq/kots/kotsadm/pkg/version"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
@@ -128,14 +127,14 @@ func (h *Handler) UploadExistingApp(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = render.RenderDir(archiveDir, app, downstreams, registrySettings, reporting.GetReportingInfo(a.ID))
+	err = render.RenderDir(archiveDir, app, downstreams, registrySettings)
 	if err != nil {
 		logger.Error(err)
 		w.WriteHeader(500)
 		return
 	}
 
-	newSequence, err := version.CreateVersion(a.ID, archiveDir, "KOTS Upload", a.CurrentSequence, false)
+	newSequence, err := store.GetStore().CreateAppVersion(a.ID, &a.CurrentSequence, archiveDir, "KOTS Upload", false, &version.DownstreamGitOps{})
 	if err != nil {
 		logger.Error(err)
 		w.WriteHeader(500)

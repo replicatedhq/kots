@@ -14,7 +14,6 @@ import (
 	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
 	"github.com/replicatedhq/kots/kotsadm/pkg/online/types"
 	"github.com/replicatedhq/kots/kotsadm/pkg/preflight"
-	"github.com/replicatedhq/kots/kotsadm/pkg/reporting"
 	"github.com/replicatedhq/kots/kotsadm/pkg/store"
 	"github.com/replicatedhq/kots/kotsadm/pkg/supportbundle"
 	"github.com/replicatedhq/kots/kotsadm/pkg/updatechecker"
@@ -144,7 +143,7 @@ func CreateAppFromOnline(pendingApp *types.PendingApp, upstreamURI string, isAut
 		ReportWriter:        pipeWriter,
 		AppSlug:             pendingApp.Slug,
 		AppSequence:         0,
-		ReportingInfo:       reporting.GetReportingInfo(pendingApp.ID),
+		ReportingInfo:       store.GetStore().GetReportingInfo(pendingApp.ID),
 	}
 
 	if _, err := pull.Pull(upstreamURI, pullOptions); err != nil {
@@ -162,7 +161,7 @@ func CreateAppFromOnline(pendingApp *types.PendingApp, upstreamURI string, isAut
 		return nil, errors.Wrap(err, "failed to set app is not airgap")
 	}
 
-	newSequence, err := version.CreateFirstVersion(pendingApp.ID, tmpRoot, "Online Install", skipPreflights)
+	newSequence, err := store.GetStore().CreateAppVersion(pendingApp.ID, nil, tmpRoot, "Online Install", skipPreflights, &version.DownstreamGitOps{})
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create new version")
 	}

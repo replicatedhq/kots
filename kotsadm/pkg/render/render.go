@@ -8,17 +8,24 @@ import (
 	"github.com/pkg/errors"
 	apptypes "github.com/replicatedhq/kots/kotsadm/pkg/app/types"
 	registrytypes "github.com/replicatedhq/kots/kotsadm/pkg/registry/types"
+	"github.com/replicatedhq/kots/kotsadm/pkg/store"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	downstreamtypes "github.com/replicatedhq/kots/pkg/api/downstream/types"
 	"github.com/replicatedhq/kots/pkg/crypto"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/rewrite"
 	"github.com/replicatedhq/kots/pkg/template"
-	upstreamtypes "github.com/replicatedhq/kots/pkg/upstream/types"
 )
+
+type Renderer struct {
+}
 
 // RenderFile renders a single file
 // this is useful for upstream/kotskinds files that are not rendered in the dir
+func (r Renderer) RenderFile(kotsKinds *kotsutil.KotsKinds, registrySettings *registrytypes.RegistrySettings, appSlug string, sequence int64, isAirgap bool, inputContent []byte) ([]byte, error) {
+	return RenderFile(kotsKinds, registrySettings, appSlug, sequence, isAirgap, inputContent)
+}
+
 func RenderFile(kotsKinds *kotsutil.KotsKinds, registrySettings *registrytypes.RegistrySettings, appSlug string, sequence int64, isAirgap bool, inputContent []byte) ([]byte, error) {
 	fixedUpContent, err := kotsutil.FixUpYAML(inputContent)
 	if err != nil {
@@ -96,7 +103,11 @@ func NewBuilder(kotsKinds *kotsutil.KotsKinds, registrySettings *registrytypes.R
 
 // RenderDir renders an app archive dir
 // this is useful for when the license/config have updated, and template functions need to be evaluated again
-func RenderDir(archiveDir string, a *apptypes.App, downstreams []downstreamtypes.Downstream, registrySettings *registrytypes.RegistrySettings, reportingInfo *upstreamtypes.ReportingInfo) error {
+func (r Renderer) RenderDir(archiveDir string, a *apptypes.App, downstreams []downstreamtypes.Downstream, registrySettings *registrytypes.RegistrySettings) error {
+	return RenderDir(archiveDir, a, downstreams, registrySettings)
+}
+
+func RenderDir(archiveDir string, a *apptypes.App, downstreams []downstreamtypes.Downstream, registrySettings *registrytypes.RegistrySettings) error {
 	installation, err := kotsutil.LoadInstallationFromPath(filepath.Join(archiveDir, "upstream", "userdata", "installation.yaml"))
 	if err != nil {
 		return errors.Wrap(err, "failed to load installation from path")
@@ -139,7 +150,7 @@ func RenderDir(archiveDir string, a *apptypes.App, downstreams []downstreamtypes
 		AppSlug:          a.Slug,
 		IsGitOps:         a.IsGitOps,
 		AppSequence:      a.CurrentSequence + 1, // sequence +1 because this is the current latest sequence, not the sequence that the rendered version will be saved as
-		ReportingInfo:    reportingInfo,
+		ReportingInfo:    store.GetStore().GetReportingInfo(a.ID),
 
 		// TODO: pass in as arguments if this is ever called from CLI
 		HTTPProxyEnvValue:  os.Getenv("HTTP_PROXY"),

@@ -199,7 +199,7 @@ func UpdateAppFromPath(a *apptypes.App, airgapRoot string, deploy bool, skipPref
 	}
 
 	// Create the app in the db
-	newSequence, err := version.CreateVersion(a.ID, currentArchivePath, "Airgap Upload", a.CurrentSequence, skipPreflights)
+	newSequence, err := store.GetStore().CreateAppVersion(a.ID, &a.CurrentSequence, currentArchivePath, "Airgap Upload", skipPreflights, &version.DownstreamGitOps{})
 	if err != nil {
 		return errors.Wrap(err, "failed to create new version")
 	}
