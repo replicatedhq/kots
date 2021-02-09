@@ -110,7 +110,7 @@ func createVersion(appID string, filesInDir string, source string, currentSequen
 // return the list of versions available for an app
 func GetVersions(appID string) ([]types.AppVersion, error) {
 	db := persistence.MustGetPGSession()
-	query := `select sequence from app_version where app_id = $1 order by update_cursor asc, sequence asc`
+	query := `select sequence from app_version where app_id = $1 order by sequence asc`
 	rows, err := db.Query(query, appID)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to query app_version table")
