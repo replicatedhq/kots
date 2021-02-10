@@ -146,6 +146,7 @@ jobs:
 
       - name: prepare legacy tests
         run: |
+          set +e
           ./bin/kots \
           install qakots/github-actions \
           --port-forward=false \
@@ -154,6 +155,20 @@ jobs:
           --kotsadm-registry ttl.sh \
           --kotsadm-namespace automated-${{ github.run_id }} \
           --kotsadm-tag 2h
+          EXIT_CODE=$?
+          if [ $EXIT_CODE -ne 0 ]; then
+            echo "------pods:"
+            kubectl -n legacy get pods
+            echo "------kotsadm logs"
+            kubectl -n legacy logs deployment/kotsadm
+            echo "------previous kotsadm logs"
+            kubectl -n legacy logs -p deployment/kotsadm
+            echo "------kotsadm-operator logs"
+            kubectl -n legacy logs deployment/kotsadm-operator
+            echo "------previous kotsadm-operator logs"
+            kubectl -n legacy logs -p deployment/kotsadm-operator
+          fi
+          exit $EXIT_CODE
       - name: execute legacy tests
         run: |
           set +e
@@ -161,16 +176,18 @@ jobs:
           ADMIN_CONSOLE_PID=$!
           testim --token ${{ secrets.TESTIM_ACCESS_TOKEN }} --project ${{ secrets.TESTIM_PROJECT_ID }} --grid "Testim-grid" --report-file testim-report.xml --suite legacy --tunnel --tunnel-port 8800
           EXIT_CODE=$?
-          echo "------pods:"
-          kubectl -n legacy get pods
-          echo "------kotsadm logs"
-          kubectl -n legacy logs deployment/kotsadm
-          echo "------previous kotsadm logs"
-          kubectl -n legacy logs -p deployment/kotsadm
-          echo "------kotsadm-operator logs"
-          kubectl -n legacy logs deployment/kotsadm-operator
-          echo "------previous kotsadm-operator logs"
-          kubectl -n legacy logs -p deployment/kotsadm-operator
+          if [ $EXIT_CODE -ne 0 ]; then
+            echo "------pods:"
+            kubectl -n legacy get pods
+            echo "------kotsadm logs"
+            kubectl -n legacy logs deployment/kotsadm
+            echo "------previous kotsadm logs"
+            kubectl -n legacy logs -p deployment/kotsadm
+            echo "------kotsadm-operator logs"
+            kubectl -n legacy logs deployment/kotsadm-operator
+            echo "------previous kotsadm-operator logs"
+            kubectl -n legacy logs -p deployment/kotsadm-operator
+          fi
           kill $ADMIN_CONSOLE_PID
           exit $EXIT_CODE
 
