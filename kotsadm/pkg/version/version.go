@@ -12,11 +12,9 @@ import (
 	"github.com/replicatedhq/kots/kotsadm/pkg/k8s"
 	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
 	"github.com/replicatedhq/kots/kotsadm/pkg/persistence"
-	"github.com/replicatedhq/kots/kotsadm/pkg/secrets"
 	"github.com/replicatedhq/kots/kotsadm/pkg/store"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	"github.com/replicatedhq/kots/pkg/api/version/types"
-	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"go.uber.org/zap"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -40,21 +38,10 @@ func GetNextAppSequence(appID string, currentSequence *int64) (int64, error) {
 	return int64(newSequence), nil
 }
 
-// CreateFirstVersion works much likst CreateVersion except that it assumes version 0
-// and never attempts to calculate a diff, or look at previous versions
-func CreateFirstVersion(appID string, filesInDir string, source string, skipPreflights bool) (int64, error) {
-	return createVersion(appID, filesInDir, source, nil, skipPreflights)
+type DownstreamGitOps struct {
 }
 
-// CreateVersion creates a new version of the app
-func CreateVersion(appID string, filesInDir string, source string, currentSequence int64, skipPreflights bool) (int64, error) {
-	return createVersion(appID, filesInDir, source, &currentSequence, skipPreflights)
-}
-
-type downstreamGitOps struct {
-}
-
-func (d *downstreamGitOps) CreateGitOpsDownstreamCommit(appID string, clusterID string, newSequence int, filesInDir string, downstreamName string) (string, error) {
+func (d *DownstreamGitOps) CreateGitOpsDownstreamCommit(appID string, clusterID string, newSequence int, filesInDir string, downstreamName string) (string, error) {
 	downstreamGitOps, err := gitops.GetDownstreamGitOps(appID, clusterID)
 	if err != nil {
 		return "", errors.Wrap(err, "failed to get downstream gitops")
@@ -73,38 +60,6 @@ func (d *downstreamGitOps) CreateGitOpsDownstreamCommit(appID string, clusterID 
 	}
 
 	return createdCommitURL, nil
-}
-
-// this is the common, internal function to create an app version, used in both
-// new and updates to apps
-func createVersion(appID string, filesInDir string, source string, currentSequence *int64, skipPreflights bool) (int64, error) {
-	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(filesInDir)
-	if err != nil {
-		return int64(0), errors.Wrap(err, "failed to read kots kinds")
-	}
-
-	appName := kotsKinds.KotsApplication.Spec.Title
-	if appName == "" {
-		a, err := store.GetStore().GetApp(appID)
-		if err != nil {
-			return int64(0), errors.Wrap(err, "failed to get app")
-		}
-
-		appName = a.Name
-	}
-
-	appIcon := kotsKinds.KotsApplication.Spec.Icon
-
-	if err := secrets.ReplaceSecretsInPath(filesInDir); err != nil {
-		return int64(0), errors.Wrap(err, "failed to replace secrets")
-	}
-
-	newSequence, err := store.GetStore().CreateAppVersion(appID, currentSequence, appName, appIcon, kotsKinds, filesInDir, &downstreamGitOps{}, source, skipPreflights)
-	if err != nil {
-		return int64(0), errors.Wrap(err, "failed to create app version")
-	}
-
-	return int64(newSequence), nil
 }
 
 // return the list of versions available for an app

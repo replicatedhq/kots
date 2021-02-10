@@ -12,7 +12,6 @@ import (
 	"github.com/replicatedhq/kots/kotsadm/pkg/downstream"
 	"github.com/replicatedhq/kots/kotsadm/pkg/license"
 	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
-	"github.com/replicatedhq/kots/kotsadm/pkg/reporting"
 	"github.com/replicatedhq/kots/kotsadm/pkg/store"
 	"github.com/replicatedhq/kots/kotsadm/pkg/upstream"
 	"github.com/replicatedhq/kots/kotsadm/pkg/version"
@@ -210,7 +209,7 @@ func CheckForUpdates(appID string, deploy bool, skipPreflights bool) (int64, err
 		CurrentChannelName:  kotsKinds.Installation.Spec.ChannelName,
 		CurrentVersionLabel: kotsKinds.Installation.Spec.VersionLabel,
 		Silent:              false,
-		ReportingInfo:       reporting.GetReportingInfo(a.ID),
+		ReportingInfo:       store.GetStore().GetReportingInfo(a.ID),
 	}
 
 	// get updates

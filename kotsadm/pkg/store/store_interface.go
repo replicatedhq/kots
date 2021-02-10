@@ -10,6 +10,7 @@ import (
 	installationtypes "github.com/replicatedhq/kots/kotsadm/pkg/online/types"
 	preflighttypes "github.com/replicatedhq/kots/kotsadm/pkg/preflight/types"
 	registrytypes "github.com/replicatedhq/kots/kotsadm/pkg/registry/types"
+	rendertypes "github.com/replicatedhq/kots/kotsadm/pkg/render/types"
 	sessiontypes "github.com/replicatedhq/kots/kotsadm/pkg/session/types"
 	snapshottypes "github.com/replicatedhq/kots/kotsadm/pkg/snapshot/types"
 	supportbundletypes "github.com/replicatedhq/kots/kotsadm/pkg/supportbundle/types"
@@ -18,7 +19,7 @@ import (
 	appstatustypes "github.com/replicatedhq/kots/pkg/api/appstatus/types"
 	downstreamtypes "github.com/replicatedhq/kots/pkg/api/downstream/types"
 	versiontypes "github.com/replicatedhq/kots/pkg/api/version/types"
-	"github.com/replicatedhq/kots/pkg/kotsutil"
+	upstreamtypes "github.com/replicatedhq/kots/pkg/upstream/types"
 	troubleshootredact "github.com/replicatedhq/troubleshoot/pkg/redact"
 )
 
@@ -38,6 +39,7 @@ type KOTSStore interface {
 	ClusterStore
 	SnapshotStore
 	InstallationStore
+	ReportingStore
 
 	Init() error // this may need options
 	WaitForReady(ctx context.Context) error
@@ -139,10 +141,10 @@ type SnapshotStore interface {
 type VersionStore interface {
 	IsIdentityServiceSupportedForVersion(appID string, sequence int64) (bool, error)
 	IsRollbackSupportedForVersion(appID string, sequence int64) (bool, error)
-	IsSnapshotsSupportedForVersion(a *apptypes.App, sequence int64) (bool, error)
+	IsSnapshotsSupportedForVersion(a *apptypes.App, sequence int64, renderer rendertypes.Renderer) (bool, error)
 	GetAppVersionArchive(appID string, sequence int64, dstPath string) error
 	CreateAppVersionArchive(appID string, sequence int64, archivePath string) error
-	CreateAppVersion(appID string, currentSequence *int64, appName string, appIcon string, kotsKinds *kotsutil.KotsKinds, filesInDir string, gitops gitopstypes.DownstreamGitOps, source string, skipPreflights bool) (int64, error)
+	CreateAppVersion(appID string, currentSequence *int64, filesInDir string, source string, skipPreflights bool, gitops gitopstypes.DownstreamGitOps) (int64, error)
 	GetAppVersion(string, int64) (*versiontypes.AppVersion, error)
 	GetAppVersionsAfter(string, int64) ([]*versiontypes.AppVersion, error)
 }
@@ -151,6 +153,9 @@ type LicenseStore interface {
 	GetLatestLicenseForApp(appID string) (*kotsv1beta1.License, error)
 	GetLicenseForAppVersion(appID string, sequence int64) (*kotsv1beta1.License, error)
 	GetAllAppLicenses() ([]*kotsv1beta1.License, error)
+
+	// originalLicenseData is the data received from the replicated API that was never marshalled locally so all fields are intact
+	UpdateAppLicense(appID string, sequence int64, archiveDir string, newLicense *kotsv1beta1.License, originalLicenseData string, failOnVersionCreate bool, gitops gitopstypes.DownstreamGitOps, renderer rendertypes.Renderer) (int64, error)
 }
 
 type ClusterStore interface {
@@ -164,4 +169,8 @@ type ClusterStore interface {
 
 type InstallationStore interface {
 	GetPendingInstallationStatus() (*installationtypes.InstallStatus, error)
+}
+
+type ReportingStore interface {
+	GetReportingInfo(appID string) *upstreamtypes.ReportingInfo
 }

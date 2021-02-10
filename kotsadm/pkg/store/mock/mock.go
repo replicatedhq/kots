@@ -6,26 +6,26 @@ package mock_store
 
 import (
 	context "context"
-	reflect "reflect"
-	time "time"
-
 	gomock "github.com/golang/mock/gomock"
 	types "github.com/replicatedhq/kots/kotsadm/pkg/airgap/types"
 	types0 "github.com/replicatedhq/kots/kotsadm/pkg/app/types"
-	types3 "github.com/replicatedhq/kots/kotsadm/pkg/gitops/types"
-	types4 "github.com/replicatedhq/kots/kotsadm/pkg/online/types"
-	types5 "github.com/replicatedhq/kots/kotsadm/pkg/preflight/types"
-	types6 "github.com/replicatedhq/kots/kotsadm/pkg/registry/types"
-	types7 "github.com/replicatedhq/kots/kotsadm/pkg/session/types"
-	types8 "github.com/replicatedhq/kots/kotsadm/pkg/snapshot/types"
-	types9 "github.com/replicatedhq/kots/kotsadm/pkg/supportbundle/types"
-	types10 "github.com/replicatedhq/kots/kotsadm/pkg/user/types"
+	types1 "github.com/replicatedhq/kots/kotsadm/pkg/gitops/types"
+	types2 "github.com/replicatedhq/kots/kotsadm/pkg/online/types"
+	types3 "github.com/replicatedhq/kots/kotsadm/pkg/preflight/types"
+	types4 "github.com/replicatedhq/kots/kotsadm/pkg/registry/types"
+	types5 "github.com/replicatedhq/kots/kotsadm/pkg/render/types"
+	types6 "github.com/replicatedhq/kots/kotsadm/pkg/session/types"
+	types7 "github.com/replicatedhq/kots/kotsadm/pkg/snapshot/types"
+	types8 "github.com/replicatedhq/kots/kotsadm/pkg/supportbundle/types"
+	types9 "github.com/replicatedhq/kots/kotsadm/pkg/user/types"
 	v1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
-	types1 "github.com/replicatedhq/kots/pkg/api/appstatus/types"
-	types2 "github.com/replicatedhq/kots/pkg/api/downstream/types"
-	types11 "github.com/replicatedhq/kots/pkg/api/version/types"
-	kotsutil "github.com/replicatedhq/kots/pkg/kotsutil"
+	types10 "github.com/replicatedhq/kots/pkg/api/appstatus/types"
+	types11 "github.com/replicatedhq/kots/pkg/api/downstream/types"
+	types12 "github.com/replicatedhq/kots/pkg/api/version/types"
+	types13 "github.com/replicatedhq/kots/pkg/upstream/types"
 	redact "github.com/replicatedhq/troubleshoot/pkg/redact"
+	reflect "reflect"
+	time "time"
 )
 
 // MockKOTSStore is a mock of KOTSStore interface
@@ -64,10 +64,10 @@ func (mr *MockKOTSStoreMockRecorder) RunMigrations() *gomock.Call {
 }
 
 // GetRegistryDetailsForApp mocks base method
-func (m *MockKOTSStore) GetRegistryDetailsForApp(appID string) (*types6.RegistrySettings, error) {
+func (m *MockKOTSStore) GetRegistryDetailsForApp(appID string) (*types4.RegistrySettings, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetRegistryDetailsForApp", appID)
-	ret0, _ := ret[0].(*types6.RegistrySettings)
+	ret0, _ := ret[0].(*types4.RegistrySettings)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -93,10 +93,10 @@ func (mr *MockKOTSStoreMockRecorder) UpdateRegistry(appID, hostname, username, p
 }
 
 // ListSupportBundles mocks base method
-func (m *MockKOTSStore) ListSupportBundles(appID string) ([]*types9.SupportBundle, error) {
+func (m *MockKOTSStore) ListSupportBundles(appID string) ([]*types8.SupportBundle, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ListSupportBundles", appID)
-	ret0, _ := ret[0].([]*types9.SupportBundle)
+	ret0, _ := ret[0].([]*types8.SupportBundle)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -108,10 +108,10 @@ func (mr *MockKOTSStoreMockRecorder) ListSupportBundles(appID interface{}) *gomo
 }
 
 // ListPendingSupportBundlesForApp mocks base method
-func (m *MockKOTSStore) ListPendingSupportBundlesForApp(appID string) ([]*types9.PendingSupportBundle, error) {
+func (m *MockKOTSStore) ListPendingSupportBundlesForApp(appID string) ([]*types8.PendingSupportBundle, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ListPendingSupportBundlesForApp", appID)
-	ret0, _ := ret[0].([]*types9.PendingSupportBundle)
+	ret0, _ := ret[0].([]*types8.PendingSupportBundle)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -123,10 +123,10 @@ func (mr *MockKOTSStoreMockRecorder) ListPendingSupportBundlesForApp(appID inter
 }
 
 // GetSupportBundleFromSlug mocks base method
-func (m *MockKOTSStore) GetSupportBundleFromSlug(slug string) (*types9.SupportBundle, error) {
+func (m *MockKOTSStore) GetSupportBundleFromSlug(slug string) (*types8.SupportBundle, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetSupportBundleFromSlug", slug)
-	ret0, _ := ret[0].(*types9.SupportBundle)
+	ret0, _ := ret[0].(*types8.SupportBundle)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -138,10 +138,10 @@ func (mr *MockKOTSStoreMockRecorder) GetSupportBundleFromSlug(slug interface{}) 
 }
 
 // GetSupportBundle mocks base method
-func (m *MockKOTSStore) GetSupportBundle(bundleID string) (*types9.SupportBundle, error) {
+func (m *MockKOTSStore) GetSupportBundle(bundleID string) (*types8.SupportBundle, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetSupportBundle", bundleID)
-	ret0, _ := ret[0].(*types9.SupportBundle)
+	ret0, _ := ret[0].(*types8.SupportBundle)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -167,10 +167,10 @@ func (mr *MockKOTSStoreMockRecorder) CreatePendingSupportBundle(bundleID, appID,
 }
 
 // CreateSupportBundle mocks base method
-func (m *MockKOTSStore) CreateSupportBundle(bundleID, appID, archivePath string, marshalledTree []byte) (*types9.SupportBundle, error) {
+func (m *MockKOTSStore) CreateSupportBundle(bundleID, appID, archivePath string, marshalledTree []byte) (*types8.SupportBundle, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CreateSupportBundle", bundleID, appID, archivePath, marshalledTree)
-	ret0, _ := ret[0].(*types9.SupportBundle)
+	ret0, _ := ret[0].(*types8.SupportBundle)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -197,10 +197,10 @@ func (mr *MockKOTSStoreMockRecorder) GetSupportBundleArchive(bundleID interface{
 }
 
 // GetSupportBundleAnalysis mocks base method
-func (m *MockKOTSStore) GetSupportBundleAnalysis(bundleID string) (*types9.SupportBundleAnalysis, error) {
+func (m *MockKOTSStore) GetSupportBundleAnalysis(bundleID string) (*types8.SupportBundleAnalysis, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetSupportBundleAnalysis", bundleID)
-	ret0, _ := ret[0].(*types9.SupportBundleAnalysis)
+	ret0, _ := ret[0].(*types8.SupportBundleAnalysis)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -284,10 +284,10 @@ func (mr *MockKOTSStoreMockRecorder) SetPreflightResults(appID, sequence, result
 }
 
 // GetPreflightResults mocks base method
-func (m *MockKOTSStore) GetPreflightResults(appID string, sequence int64) (*types5.PreflightResult, error) {
+func (m *MockKOTSStore) GetPreflightResults(appID string, sequence int64) (*types3.PreflightResult, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetPreflightResults", appID, sequence)
-	ret0, _ := ret[0].(*types5.PreflightResult)
+	ret0, _ := ret[0].(*types3.PreflightResult)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -299,10 +299,10 @@ func (mr *MockKOTSStoreMockRecorder) GetPreflightResults(appID, sequence interfa
 }
 
 // GetLatestPreflightResultsForSequenceZero mocks base method
-func (m *MockKOTSStore) GetLatestPreflightResultsForSequenceZero() (*types5.PreflightResult, error) {
+func (m *MockKOTSStore) GetLatestPreflightResultsForSequenceZero() (*types3.PreflightResult, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetLatestPreflightResultsForSequenceZero")
-	ret0, _ := ret[0].(*types5.PreflightResult)
+	ret0, _ := ret[0].(*types3.PreflightResult)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -487,10 +487,10 @@ func (mr *MockKOTSStoreMockRecorder) GetTaskStatus(taskID interface{}) *gomock.C
 }
 
 // CreateSession mocks base method
-func (m *MockKOTSStore) CreateSession(user *types10.User, issuedAt, expiresAt time.Time, roles []string) (*types7.Session, error) {
+func (m *MockKOTSStore) CreateSession(user *types9.User, issuedAt, expiresAt time.Time, roles []string) (*types6.Session, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CreateSession", user, issuedAt, expiresAt, roles)
-	ret0, _ := ret[0].(*types7.Session)
+	ret0, _ := ret[0].(*types6.Session)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -516,10 +516,10 @@ func (mr *MockKOTSStoreMockRecorder) DeleteSession(sessionID interface{}) *gomoc
 }
 
 // GetSession mocks base method
-func (m *MockKOTSStore) GetSession(sessionID string) (*types7.Session, error) {
+func (m *MockKOTSStore) GetSession(sessionID string) (*types6.Session, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetSession", sessionID)
-	ret0, _ := ret[0].(*types7.Session)
+	ret0, _ := ret[0].(*types6.Session)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -531,10 +531,10 @@ func (mr *MockKOTSStoreMockRecorder) GetSession(sessionID interface{}) *gomock.C
 }
 
 // GetAppStatus mocks base method
-func (m *MockKOTSStore) GetAppStatus(appID string) (*types1.AppStatus, error) {
+func (m *MockKOTSStore) GetAppStatus(appID string) (*types10.AppStatus, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetAppStatus", appID)
-	ret0, _ := ret[0].(*types1.AppStatus)
+	ret0, _ := ret[0].(*types10.AppStatus)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -664,10 +664,10 @@ func (mr *MockKOTSStoreMockRecorder) CreateApp(name, upstreamURI, licenseData, i
 }
 
 // ListDownstreamsForApp mocks base method
-func (m *MockKOTSStore) ListDownstreamsForApp(appID string) ([]types2.Downstream, error) {
+func (m *MockKOTSStore) ListDownstreamsForApp(appID string) ([]types11.Downstream, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ListDownstreamsForApp", appID)
-	ret0, _ := ret[0].([]types2.Downstream)
+	ret0, _ := ret[0].([]types11.Downstream)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -694,10 +694,10 @@ func (mr *MockKOTSStoreMockRecorder) ListAppsForDownstream(clusterID interface{}
 }
 
 // GetDownstream mocks base method
-func (m *MockKOTSStore) GetDownstream(clusterID string) (*types2.Downstream, error) {
+func (m *MockKOTSStore) GetDownstream(clusterID string) (*types11.Downstream, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetDownstream", clusterID)
-	ret0, _ := ret[0].(*types2.Downstream)
+	ret0, _ := ret[0].(*types11.Downstream)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -810,18 +810,18 @@ func (mr *MockKOTSStoreMockRecorder) IsRollbackSupportedForVersion(appID, sequen
 }
 
 // IsSnapshotsSupportedForVersion mocks base method
-func (m *MockKOTSStore) IsSnapshotsSupportedForVersion(a *types0.App, sequence int64) (bool, error) {
+func (m *MockKOTSStore) IsSnapshotsSupportedForVersion(a *types0.App, sequence int64, renderer types5.Renderer) (bool, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "IsSnapshotsSupportedForVersion", a, sequence)
+	ret := m.ctrl.Call(m, "IsSnapshotsSupportedForVersion", a, sequence, renderer)
 	ret0, _ := ret[0].(bool)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // IsSnapshotsSupportedForVersion indicates an expected call of IsSnapshotsSupportedForVersion
-func (mr *MockKOTSStoreMockRecorder) IsSnapshotsSupportedForVersion(a, sequence interface{}) *gomock.Call {
+func (mr *MockKOTSStoreMockRecorder) IsSnapshotsSupportedForVersion(a, sequence, renderer interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsSnapshotsSupportedForVersion", reflect.TypeOf((*MockKOTSStore)(nil).IsSnapshotsSupportedForVersion), a, sequence)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsSnapshotsSupportedForVersion", reflect.TypeOf((*MockKOTSStore)(nil).IsSnapshotsSupportedForVersion), a, sequence, renderer)
 }
 
 // GetAppVersionArchive mocks base method
@@ -853,25 +853,25 @@ func (mr *MockKOTSStoreMockRecorder) CreateAppVersionArchive(appID, sequence, ar
 }
 
 // CreateAppVersion mocks base method
-func (m *MockKOTSStore) CreateAppVersion(appID string, currentSequence *int64, appName, appIcon string, kotsKinds *kotsutil.KotsKinds, filesInDir string, gitops types3.DownstreamGitOps, source string, skipPreflights bool) (int64, error) {
+func (m *MockKOTSStore) CreateAppVersion(appID string, currentSequence *int64, filesInDir, source string, skipPreflights bool, gitops types1.DownstreamGitOps) (int64, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CreateAppVersion", appID, currentSequence, appName, appIcon, kotsKinds, filesInDir, gitops, source, skipPreflights)
+	ret := m.ctrl.Call(m, "CreateAppVersion", appID, currentSequence, filesInDir, source, skipPreflights, gitops)
 	ret0, _ := ret[0].(int64)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // CreateAppVersion indicates an expected call of CreateAppVersion
-func (mr *MockKOTSStoreMockRecorder) CreateAppVersion(appID, currentSequence, appName, appIcon, kotsKinds, filesInDir, gitops, source, skipPreflights interface{}) *gomock.Call {
+func (mr *MockKOTSStoreMockRecorder) CreateAppVersion(appID, currentSequence, filesInDir, source, skipPreflights, gitops interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateAppVersion", reflect.TypeOf((*MockKOTSStore)(nil).CreateAppVersion), appID, currentSequence, appName, appIcon, kotsKinds, filesInDir, gitops, source, skipPreflights)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateAppVersion", reflect.TypeOf((*MockKOTSStore)(nil).CreateAppVersion), appID, currentSequence, filesInDir, source, skipPreflights, gitops)
 }
 
 // GetAppVersion mocks base method
-func (m *MockKOTSStore) GetAppVersion(arg0 string, arg1 int64) (*types11.AppVersion, error) {
+func (m *MockKOTSStore) GetAppVersion(arg0 string, arg1 int64) (*types12.AppVersion, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetAppVersion", arg0, arg1)
-	ret0, _ := ret[0].(*types11.AppVersion)
+	ret0, _ := ret[0].(*types12.AppVersion)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -883,10 +883,10 @@ func (mr *MockKOTSStoreMockRecorder) GetAppVersion(arg0, arg1 interface{}) *gomo
 }
 
 // GetAppVersionsAfter mocks base method
-func (m *MockKOTSStore) GetAppVersionsAfter(arg0 string, arg1 int64) ([]*types11.AppVersion, error) {
+func (m *MockKOTSStore) GetAppVersionsAfter(arg0 string, arg1 int64) ([]*types12.AppVersion, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetAppVersionsAfter", arg0, arg1)
-	ret0, _ := ret[0].([]*types11.AppVersion)
+	ret0, _ := ret[0].([]*types12.AppVersion)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -942,11 +942,26 @@ func (mr *MockKOTSStoreMockRecorder) GetAllAppLicenses() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllAppLicenses", reflect.TypeOf((*MockKOTSStore)(nil).GetAllAppLicenses))
 }
 
+// UpdateAppLicense mocks base method
+func (m *MockKOTSStore) UpdateAppLicense(appID string, sequence int64, archiveDir string, newLicense *v1beta1.License, originalLicenseData string, failOnVersionCreate bool, gitops types1.DownstreamGitOps, renderer types5.Renderer) (int64, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateAppLicense", appID, sequence, archiveDir, newLicense, originalLicenseData, failOnVersionCreate, gitops, renderer)
+	ret0, _ := ret[0].(int64)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// UpdateAppLicense indicates an expected call of UpdateAppLicense
+func (mr *MockKOTSStoreMockRecorder) UpdateAppLicense(appID, sequence, archiveDir, newLicense, originalLicenseData, failOnVersionCreate, gitops, renderer interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateAppLicense", reflect.TypeOf((*MockKOTSStore)(nil).UpdateAppLicense), appID, sequence, archiveDir, newLicense, originalLicenseData, failOnVersionCreate, gitops, renderer)
+}
+
 // ListClusters mocks base method
-func (m *MockKOTSStore) ListClusters() ([]*types2.Downstream, error) {
+func (m *MockKOTSStore) ListClusters() ([]*types11.Downstream, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ListClusters")
-	ret0, _ := ret[0].([]*types2.Downstream)
+	ret0, _ := ret[0].([]*types11.Downstream)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -1031,10 +1046,10 @@ func (mr *MockKOTSStoreMockRecorder) SetInstanceSnapshotSchedule(clusterID, snap
 }
 
 // ListPendingScheduledSnapshots mocks base method
-func (m *MockKOTSStore) ListPendingScheduledSnapshots(appID string) ([]types8.ScheduledSnapshot, error) {
+func (m *MockKOTSStore) ListPendingScheduledSnapshots(appID string) ([]types7.ScheduledSnapshot, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ListPendingScheduledSnapshots", appID)
-	ret0, _ := ret[0].([]types8.ScheduledSnapshot)
+	ret0, _ := ret[0].([]types7.ScheduledSnapshot)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -1088,10 +1103,10 @@ func (mr *MockKOTSStoreMockRecorder) CreateScheduledSnapshot(snapshotID, appID, 
 }
 
 // ListPendingScheduledInstanceSnapshots mocks base method
-func (m *MockKOTSStore) ListPendingScheduledInstanceSnapshots(clusterID string) ([]types8.ScheduledInstanceSnapshot, error) {
+func (m *MockKOTSStore) ListPendingScheduledInstanceSnapshots(clusterID string) ([]types7.ScheduledInstanceSnapshot, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ListPendingScheduledInstanceSnapshots", clusterID)
-	ret0, _ := ret[0].([]types8.ScheduledInstanceSnapshot)
+	ret0, _ := ret[0].([]types7.ScheduledInstanceSnapshot)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -1145,10 +1160,10 @@ func (mr *MockKOTSStoreMockRecorder) CreateScheduledInstanceSnapshot(snapshotID,
 }
 
 // GetPendingInstallationStatus mocks base method
-func (m *MockKOTSStore) GetPendingInstallationStatus() (*types4.InstallStatus, error) {
+func (m *MockKOTSStore) GetPendingInstallationStatus() (*types2.InstallStatus, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetPendingInstallationStatus")
-	ret0, _ := ret[0].(*types4.InstallStatus)
+	ret0, _ := ret[0].(*types2.InstallStatus)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -1157,6 +1172,20 @@ func (m *MockKOTSStore) GetPendingInstallationStatus() (*types4.InstallStatus, e
 func (mr *MockKOTSStoreMockRecorder) GetPendingInstallationStatus() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPendingInstallationStatus", reflect.TypeOf((*MockKOTSStore)(nil).GetPendingInstallationStatus))
+}
+
+// GetReportingInfo mocks base method
+func (m *MockKOTSStore) GetReportingInfo(appID string) *types13.ReportingInfo {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetReportingInfo", appID)
+	ret0, _ := ret[0].(*types13.ReportingInfo)
+	return ret0
+}
+
+// GetReportingInfo indicates an expected call of GetReportingInfo
+func (mr *MockKOTSStoreMockRecorder) GetReportingInfo(appID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetReportingInfo", reflect.TypeOf((*MockKOTSStore)(nil).GetReportingInfo), appID)
 }
 
 // Init mocks base method
@@ -1260,10 +1289,10 @@ func (m *MockRegistryStore) EXPECT() *MockRegistryStoreMockRecorder {
 }
 
 // GetRegistryDetailsForApp mocks base method
-func (m *MockRegistryStore) GetRegistryDetailsForApp(appID string) (*types6.RegistrySettings, error) {
+func (m *MockRegistryStore) GetRegistryDetailsForApp(appID string) (*types4.RegistrySettings, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetRegistryDetailsForApp", appID)
-	ret0, _ := ret[0].(*types6.RegistrySettings)
+	ret0, _ := ret[0].(*types4.RegistrySettings)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -1312,10 +1341,10 @@ func (m *MockSupportBundleStore) EXPECT() *MockSupportBundleStoreMockRecorder {
 }
 
 // ListSupportBundles mocks base method
-func (m *MockSupportBundleStore) ListSupportBundles(appID string) ([]*types9.SupportBundle, error) {
+func (m *MockSupportBundleStore) ListSupportBundles(appID string) ([]*types8.SupportBundle, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ListSupportBundles", appID)
-	ret0, _ := ret[0].([]*types9.SupportBundle)
+	ret0, _ := ret[0].([]*types8.SupportBundle)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -1327,10 +1356,10 @@ func (mr *MockSupportBundleStoreMockRecorder) ListSupportBundles(appID interface
 }
 
 // ListPendingSupportBundlesForApp mocks base method
-func (m *MockSupportBundleStore) ListPendingSupportBundlesForApp(appID string) ([]*types9.PendingSupportBundle, error) {
+func (m *MockSupportBundleStore) ListPendingSupportBundlesForApp(appID string) ([]*types8.PendingSupportBundle, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ListPendingSupportBundlesForApp", appID)
-	ret0, _ := ret[0].([]*types9.PendingSupportBundle)
+	ret0, _ := ret[0].([]*types8.PendingSupportBundle)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -1342,10 +1371,10 @@ func (mr *MockSupportBundleStoreMockRecorder) ListPendingSupportBundlesForApp(ap
 }
 
 // GetSupportBundleFromSlug mocks base method
-func (m *MockSupportBundleStore) GetSupportBundleFromSlug(slug string) (*types9.SupportBundle, error) {
+func (m *MockSupportBundleStore) GetSupportBundleFromSlug(slug string) (*types8.SupportBundle, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetSupportBundleFromSlug", slug)
-	ret0, _ := ret[0].(*types9.SupportBundle)
+	ret0, _ := ret[0].(*types8.SupportBundle)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -1357,10 +1386,10 @@ func (mr *MockSupportBundleStoreMockRecorder) GetSupportBundleFromSlug(slug inte
 }
 
 // GetSupportBundle mocks base method
-func (m *MockSupportBundleStore) GetSupportBundle(bundleID string) (*types9.SupportBundle, error) {
+func (m *MockSupportBundleStore) GetSupportBundle(bundleID string) (*types8.SupportBundle, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetSupportBundle", bundleID)
-	ret0, _ := ret[0].(*types9.SupportBundle)
+	ret0, _ := ret[0].(*types8.SupportBundle)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -1386,10 +1415,10 @@ func (mr *MockSupportBundleStoreMockRecorder) CreatePendingSupportBundle(bundleI
 }
 
 // CreateSupportBundle mocks base method
-func (m *MockSupportBundleStore) CreateSupportBundle(bundleID, appID, archivePath string, marshalledTree []byte) (*types9.SupportBundle, error) {
+func (m *MockSupportBundleStore) CreateSupportBundle(bundleID, appID, archivePath string, marshalledTree []byte) (*types8.SupportBundle, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CreateSupportBundle", bundleID, appID, archivePath, marshalledTree)
-	ret0, _ := ret[0].(*types9.SupportBundle)
+	ret0, _ := ret[0].(*types8.SupportBundle)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -1416,10 +1445,10 @@ func (mr *MockSupportBundleStoreMockRecorder) GetSupportBundleArchive(bundleID i
 }
 
 // GetSupportBundleAnalysis mocks base method
-func (m *MockSupportBundleStore) GetSupportBundleAnalysis(bundleID string) (*types9.SupportBundleAnalysis, error) {
+func (m *MockSupportBundleStore) GetSupportBundleAnalysis(bundleID string) (*types8.SupportBundleAnalysis, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetSupportBundleAnalysis", bundleID)
-	ret0, _ := ret[0].(*types9.SupportBundleAnalysis)
+	ret0, _ := ret[0].(*types8.SupportBundleAnalysis)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -1526,10 +1555,10 @@ func (mr *MockPreflightStoreMockRecorder) SetPreflightResults(appID, sequence, r
 }
 
 // GetPreflightResults mocks base method
-func (m *MockPreflightStore) GetPreflightResults(appID string, sequence int64) (*types5.PreflightResult, error) {
+func (m *MockPreflightStore) GetPreflightResults(appID string, sequence int64) (*types3.PreflightResult, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetPreflightResults", appID, sequence)
-	ret0, _ := ret[0].(*types5.PreflightResult)
+	ret0, _ := ret[0].(*types3.PreflightResult)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -1541,10 +1570,10 @@ func (mr *MockPreflightStoreMockRecorder) GetPreflightResults(appID, sequence in
 }
 
 // GetLatestPreflightResultsForSequenceZero mocks base method
-func (m *MockPreflightStore) GetLatestPreflightResultsForSequenceZero() (*types5.PreflightResult, error) {
+func (m *MockPreflightStore) GetLatestPreflightResultsForSequenceZero() (*types3.PreflightResult, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetLatestPreflightResultsForSequenceZero")
-	ret0, _ := ret[0].(*types5.PreflightResult)
+	ret0, _ := ret[0].(*types3.PreflightResult)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -1821,10 +1850,10 @@ func (m *MockSessionStore) EXPECT() *MockSessionStoreMockRecorder {
 }
 
 // CreateSession mocks base method
-func (m *MockSessionStore) CreateSession(user *types10.User, issuedAt, expiresAt time.Time, roles []string) (*types7.Session, error) {
+func (m *MockSessionStore) CreateSession(user *types9.User, issuedAt, expiresAt time.Time, roles []string) (*types6.Session, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CreateSession", user, issuedAt, expiresAt, roles)
-	ret0, _ := ret[0].(*types7.Session)
+	ret0, _ := ret[0].(*types6.Session)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -1850,10 +1879,10 @@ func (mr *MockSessionStoreMockRecorder) DeleteSession(sessionID interface{}) *go
 }
 
 // GetSession mocks base method
-func (m *MockSessionStore) GetSession(sessionID string) (*types7.Session, error) {
+func (m *MockSessionStore) GetSession(sessionID string) (*types6.Session, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetSession", sessionID)
-	ret0, _ := ret[0].(*types7.Session)
+	ret0, _ := ret[0].(*types6.Session)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -1888,10 +1917,10 @@ func (m *MockAppStatusStore) EXPECT() *MockAppStatusStoreMockRecorder {
 }
 
 // GetAppStatus mocks base method
-func (m *MockAppStatusStore) GetAppStatus(appID string) (*types1.AppStatus, error) {
+func (m *MockAppStatusStore) GetAppStatus(appID string) (*types10.AppStatus, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetAppStatus", appID)
-	ret0, _ := ret[0].(*types1.AppStatus)
+	ret0, _ := ret[0].(*types10.AppStatus)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -2044,10 +2073,10 @@ func (mr *MockAppStoreMockRecorder) CreateApp(name, upstreamURI, licenseData, is
 }
 
 // ListDownstreamsForApp mocks base method
-func (m *MockAppStore) ListDownstreamsForApp(appID string) ([]types2.Downstream, error) {
+func (m *MockAppStore) ListDownstreamsForApp(appID string) ([]types11.Downstream, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ListDownstreamsForApp", appID)
-	ret0, _ := ret[0].([]types2.Downstream)
+	ret0, _ := ret[0].([]types11.Downstream)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -2074,10 +2103,10 @@ func (mr *MockAppStoreMockRecorder) ListAppsForDownstream(clusterID interface{})
 }
 
 // GetDownstream mocks base method
-func (m *MockAppStore) GetDownstream(clusterID string) (*types2.Downstream, error) {
+func (m *MockAppStore) GetDownstream(clusterID string) (*types11.Downstream, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetDownstream", clusterID)
-	ret0, _ := ret[0].(*types2.Downstream)
+	ret0, _ := ret[0].(*types11.Downstream)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -2183,10 +2212,10 @@ func (m *MockSnapshotStore) EXPECT() *MockSnapshotStoreMockRecorder {
 }
 
 // ListPendingScheduledSnapshots mocks base method
-func (m *MockSnapshotStore) ListPendingScheduledSnapshots(appID string) ([]types8.ScheduledSnapshot, error) {
+func (m *MockSnapshotStore) ListPendingScheduledSnapshots(appID string) ([]types7.ScheduledSnapshot, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ListPendingScheduledSnapshots", appID)
-	ret0, _ := ret[0].([]types8.ScheduledSnapshot)
+	ret0, _ := ret[0].([]types7.ScheduledSnapshot)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -2240,10 +2269,10 @@ func (mr *MockSnapshotStoreMockRecorder) CreateScheduledSnapshot(snapshotID, app
 }
 
 // ListPendingScheduledInstanceSnapshots mocks base method
-func (m *MockSnapshotStore) ListPendingScheduledInstanceSnapshots(clusterID string) ([]types8.ScheduledInstanceSnapshot, error) {
+func (m *MockSnapshotStore) ListPendingScheduledInstanceSnapshots(clusterID string) ([]types7.ScheduledInstanceSnapshot, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ListPendingScheduledInstanceSnapshots", clusterID)
-	ret0, _ := ret[0].([]types8.ScheduledInstanceSnapshot)
+	ret0, _ := ret[0].([]types7.ScheduledInstanceSnapshot)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -2350,18 +2379,18 @@ func (mr *MockVersionStoreMockRecorder) IsRollbackSupportedForVersion(appID, seq
 }
 
 // IsSnapshotsSupportedForVersion mocks base method
-func (m *MockVersionStore) IsSnapshotsSupportedForVersion(a *types0.App, sequence int64) (bool, error) {
+func (m *MockVersionStore) IsSnapshotsSupportedForVersion(a *types0.App, sequence int64, renderer types5.Renderer) (bool, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "IsSnapshotsSupportedForVersion", a, sequence)
+	ret := m.ctrl.Call(m, "IsSnapshotsSupportedForVersion", a, sequence, renderer)
 	ret0, _ := ret[0].(bool)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // IsSnapshotsSupportedForVersion indicates an expected call of IsSnapshotsSupportedForVersion
-func (mr *MockVersionStoreMockRecorder) IsSnapshotsSupportedForVersion(a, sequence interface{}) *gomock.Call {
+func (mr *MockVersionStoreMockRecorder) IsSnapshotsSupportedForVersion(a, sequence, renderer interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsSnapshotsSupportedForVersion", reflect.TypeOf((*MockVersionStore)(nil).IsSnapshotsSupportedForVersion), a, sequence)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsSnapshotsSupportedForVersion", reflect.TypeOf((*MockVersionStore)(nil).IsSnapshotsSupportedForVersion), a, sequence, renderer)
 }
 
 // GetAppVersionArchive mocks base method
@@ -2393,25 +2422,25 @@ func (mr *MockVersionStoreMockRecorder) CreateAppVersionArchive(appID, sequence,
 }
 
 // CreateAppVersion mocks base method
-func (m *MockVersionStore) CreateAppVersion(appID string, currentSequence *int64, appName, appIcon string, kotsKinds *kotsutil.KotsKinds, filesInDir string, gitops types3.DownstreamGitOps, source string, skipPreflights bool) (int64, error) {
+func (m *MockVersionStore) CreateAppVersion(appID string, currentSequence *int64, filesInDir, source string, skipPreflights bool, gitops types1.DownstreamGitOps) (int64, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CreateAppVersion", appID, currentSequence, appName, appIcon, kotsKinds, filesInDir, gitops, source, skipPreflights)
+	ret := m.ctrl.Call(m, "CreateAppVersion", appID, currentSequence, filesInDir, source, skipPreflights, gitops)
 	ret0, _ := ret[0].(int64)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // CreateAppVersion indicates an expected call of CreateAppVersion
-func (mr *MockVersionStoreMockRecorder) CreateAppVersion(appID, currentSequence, appName, appIcon, kotsKinds, filesInDir, gitops, source, skipPreflights interface{}) *gomock.Call {
+func (mr *MockVersionStoreMockRecorder) CreateAppVersion(appID, currentSequence, filesInDir, source, skipPreflights, gitops interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateAppVersion", reflect.TypeOf((*MockVersionStore)(nil).CreateAppVersion), appID, currentSequence, appName, appIcon, kotsKinds, filesInDir, gitops, source, skipPreflights)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateAppVersion", reflect.TypeOf((*MockVersionStore)(nil).CreateAppVersion), appID, currentSequence, filesInDir, source, skipPreflights, gitops)
 }
 
 // GetAppVersion mocks base method
-func (m *MockVersionStore) GetAppVersion(arg0 string, arg1 int64) (*types11.AppVersion, error) {
+func (m *MockVersionStore) GetAppVersion(arg0 string, arg1 int64) (*types12.AppVersion, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetAppVersion", arg0, arg1)
-	ret0, _ := ret[0].(*types11.AppVersion)
+	ret0, _ := ret[0].(*types12.AppVersion)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -2423,10 +2452,10 @@ func (mr *MockVersionStoreMockRecorder) GetAppVersion(arg0, arg1 interface{}) *g
 }
 
 // GetAppVersionsAfter mocks base method
-func (m *MockVersionStore) GetAppVersionsAfter(arg0 string, arg1 int64) ([]*types11.AppVersion, error) {
+func (m *MockVersionStore) GetAppVersionsAfter(arg0 string, arg1 int64) ([]*types12.AppVersion, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetAppVersionsAfter", arg0, arg1)
-	ret0, _ := ret[0].([]*types11.AppVersion)
+	ret0, _ := ret[0].([]*types12.AppVersion)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -2505,6 +2534,21 @@ func (mr *MockLicenseStoreMockRecorder) GetAllAppLicenses() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllAppLicenses", reflect.TypeOf((*MockLicenseStore)(nil).GetAllAppLicenses))
 }
 
+// UpdateAppLicense mocks base method
+func (m *MockLicenseStore) UpdateAppLicense(appID string, sequence int64, archiveDir string, newLicense *v1beta1.License, originalLicenseData string, failOnVersionCreate bool, gitops types1.DownstreamGitOps, renderer types5.Renderer) (int64, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateAppLicense", appID, sequence, archiveDir, newLicense, originalLicenseData, failOnVersionCreate, gitops, renderer)
+	ret0, _ := ret[0].(int64)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// UpdateAppLicense indicates an expected call of UpdateAppLicense
+func (mr *MockLicenseStoreMockRecorder) UpdateAppLicense(appID, sequence, archiveDir, newLicense, originalLicenseData, failOnVersionCreate, gitops, renderer interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateAppLicense", reflect.TypeOf((*MockLicenseStore)(nil).UpdateAppLicense), appID, sequence, archiveDir, newLicense, originalLicenseData, failOnVersionCreate, gitops, renderer)
+}
+
 // MockClusterStore is a mock of ClusterStore interface
 type MockClusterStore struct {
 	ctrl     *gomock.Controller
@@ -2529,10 +2573,10 @@ func (m *MockClusterStore) EXPECT() *MockClusterStoreMockRecorder {
 }
 
 // ListClusters mocks base method
-func (m *MockClusterStore) ListClusters() ([]*types2.Downstream, error) {
+func (m *MockClusterStore) ListClusters() ([]*types11.Downstream, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ListClusters")
-	ret0, _ := ret[0].([]*types2.Downstream)
+	ret0, _ := ret[0].([]*types11.Downstream)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -2640,10 +2684,10 @@ func (m *MockInstallationStore) EXPECT() *MockInstallationStoreMockRecorder {
 }
 
 // GetPendingInstallationStatus mocks base method
-func (m *MockInstallationStore) GetPendingInstallationStatus() (*types4.InstallStatus, error) {
+func (m *MockInstallationStore) GetPendingInstallationStatus() (*types2.InstallStatus, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetPendingInstallationStatus")
-	ret0, _ := ret[0].(*types4.InstallStatus)
+	ret0, _ := ret[0].(*types2.InstallStatus)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -2652,4 +2696,41 @@ func (m *MockInstallationStore) GetPendingInstallationStatus() (*types4.InstallS
 func (mr *MockInstallationStoreMockRecorder) GetPendingInstallationStatus() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPendingInstallationStatus", reflect.TypeOf((*MockInstallationStore)(nil).GetPendingInstallationStatus))
+}
+
+// MockReportingStore is a mock of ReportingStore interface
+type MockReportingStore struct {
+	ctrl     *gomock.Controller
+	recorder *MockReportingStoreMockRecorder
+}
+
+// MockReportingStoreMockRecorder is the mock recorder for MockReportingStore
+type MockReportingStoreMockRecorder struct {
+	mock *MockReportingStore
+}
+
+// NewMockReportingStore creates a new mock instance
+func NewMockReportingStore(ctrl *gomock.Controller) *MockReportingStore {
+	mock := &MockReportingStore{ctrl: ctrl}
+	mock.recorder = &MockReportingStoreMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use
+func (m *MockReportingStore) EXPECT() *MockReportingStoreMockRecorder {
+	return m.recorder
+}
+
+// GetReportingInfo mocks base method
+func (m *MockReportingStore) GetReportingInfo(appID string) *types13.ReportingInfo {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetReportingInfo", appID)
+	ret0, _ := ret[0].(*types13.ReportingInfo)
+	return ret0
+}
+
+// GetReportingInfo indicates an expected call of GetReportingInfo
+func (mr *MockReportingStoreMockRecorder) GetReportingInfo(appID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetReportingInfo", reflect.TypeOf((*MockReportingStore)(nil).GetReportingInfo), appID)
 }

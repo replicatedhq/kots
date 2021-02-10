@@ -12,7 +12,6 @@ import (
 	"github.com/replicatedhq/kots/kotsadm/pkg/identity"
 	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
 	"github.com/replicatedhq/kots/kotsadm/pkg/preflight"
-	"github.com/replicatedhq/kots/kotsadm/pkg/reporting"
 	"github.com/replicatedhq/kots/kotsadm/pkg/store"
 	"github.com/replicatedhq/kots/kotsadm/pkg/version"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
@@ -118,7 +117,7 @@ func DownloadUpdate(appID string, archiveDir string, toCursor string, skipPrefli
 		AppSlug:             a.Slug,
 		AppSequence:         appSequence,
 		IsGitOps:            a.IsGitOps,
-		ReportingInfo:       reporting.GetReportingInfo(a.ID),
+		ReportingInfo:       store.GetStore().GetReportingInfo(a.ID),
 	}
 
 	registrySettings, err := store.GetStore().GetRegistryDetailsForApp(appID)
@@ -150,7 +149,7 @@ func DownloadUpdate(appID string, archiveDir string, toCursor string, skipPrefli
 		return 0, nil // ?
 	}
 
-	newSequence, err := version.CreateVersion(appID, archiveDir, "Upstream Update", a.CurrentSequence, skipPreflights)
+	newSequence, err := store.GetStore().CreateAppVersion(a.ID, &a.CurrentSequence, archiveDir, "Upstream Update", skipPreflights, &version.DownstreamGitOps{})
 	if err != nil {
 		return 0, errors.Wrap(err, "failed to create version")
 	}

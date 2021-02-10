@@ -1,12 +1,19 @@
 package s3pg
 
 import (
+	"bytes"
 	"database/sql"
+	"io/ioutil"
+	"path/filepath"
 
 	"github.com/pkg/errors"
+	gitopstypes "github.com/replicatedhq/kots/kotsadm/pkg/gitops/types"
+	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
 	"github.com/replicatedhq/kots/kotsadm/pkg/persistence"
+	rendertypes "github.com/replicatedhq/kots/kotsadm/pkg/render/types"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	"github.com/replicatedhq/kots/kotskinds/client/kotsclientset/scheme"
+	serializer "k8s.io/apimachinery/pkg/runtime/serializer/json"
 )
 
 func (s S3PGStore) GetLatestLicenseForApp(appID string) (*kotsv1beta1.License, error) {
@@ -78,4 +85,75 @@ func (s S3PGStore) GetAllAppLicenses() ([]*kotsv1beta1.License, error) {
 	}
 
 	return licenses, nil
+}
+
+func (s S3PGStore) UpdateAppLicense(appID string, sequence int64, archiveDir string, newLicense *kotsv1beta1.License, originalLicenseData string, failOnVersionCreate bool, gitops gitopstypes.DownstreamGitOps, renderer rendertypes.Renderer) (int64, error) {
+	db := persistence.MustGetPGSession()
+
+	tx, err := db.Begin()
+	if err != nil {
+		return int64(0), errors.Wrap(err, "failed to begin")
+	}
+	defer tx.Rollback()
+
+	ser := serializer.NewYAMLSerializer(serializer.DefaultMetaFactory, scheme.Scheme, scheme.Scheme)
+	var b bytes.Buffer
+	if err := ser.Encode(newLicense, &b); err != nil {
+		return int64(0), errors.Wrap(err, "failed to encode license")
+	}
+	encodedLicense := b.Bytes()
+	if err := ioutil.WriteFile(filepath.Join(archiveDir, "upstream", "userdata", "license.yaml"), encodedLicense, 0644); err != nil {
+		return int64(0), errors.Wrap(err, "failed to write new license")
+	}
+
+	//  app has the original license data received from the server
+	updateQuery := `update app set license=$1 where id = $2`
+	_, err = tx.Exec(updateQuery, originalLicenseData, appID)
+	if err != nil {
+		return int64(0), errors.Wrapf(err, "update app %q license", appID)
+	}
+
+	newSeq, err := s.createNewVersionForLicenseChange(tx, appID, sequence, archiveDir, gitops, renderer)
+	if err != nil {
+		// ignore error here to prevent a failure to render the current version
+		// preventing the end-user from updating the application
+		if failOnVersionCreate {
+			return int64(0), errors.Wrap(err, "failed to create new version")
+		}
+		logger.Errorf("Failed to create new version from license sync: %v", err)
+	}
+
+	if err := tx.Commit(); err != nil {
+		return int64(0), errors.Wrap(err, "failed to commit transaction")
+	}
+
+	return newSeq, nil
+}
+
+func (s S3PGStore) createNewVersionForLicenseChange(tx *sql.Tx, appID string, sequence int64, archiveDir string, gitops gitopstypes.DownstreamGitOps, renderer rendertypes.Renderer) (int64, error) {
+	registrySettings, err := s.GetRegistryDetailsForApp(appID)
+	if err != nil {
+		return int64(0), errors.Wrap(err, "failed to get registry settings for app")
+	}
+
+	app, err := s.GetApp(appID)
+	if err != nil {
+		return int64(0), errors.Wrap(err, "failed to get app")
+	}
+
+	downstreams, err := s.ListDownstreamsForApp(appID)
+	if err != nil {
+		return int64(0), errors.Wrap(err, "failed to list downstreams")
+	}
+
+	if err := renderer.RenderDir(archiveDir, app, downstreams, registrySettings); err != nil {
+		return int64(0), errors.Wrap(err, "failed to render new version")
+	}
+
+	newSequence, err := s.createAppVersion(tx, appID, &sequence, archiveDir, "License Change", false, gitops)
+	if err != nil {
+		return int64(0), errors.Wrap(err, "failed to create new version")
+	}
+
+	return newSequence, nil
 }
