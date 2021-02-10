@@ -9,6 +9,10 @@ updates:
     directory: "/kotsadm"
     schedule:
       interval: "weekly"
+  - package-ecosystem: "gomod"
+    directory: "/kotsadm/operator"
+    schedule:
+      interval: "weekly"
 
   - package-ecosystem: "github-actions"
     directory: "/"
