@@ -408,7 +408,8 @@ class AppDetailPage extends Component {
                         refetch={this.getApp}
                       />
                     } />
-                    <Route exact path="/app/:slug/snapshots" render={() =>
+                    {/*TODO delete */}
+                    {/* <Route exact path="/app/:slug/snapshots" render={() =>
                       <AppSnapshots
                         app={app}
                         refetch={this.getApp}
@@ -423,7 +424,7 @@ class AppDetailPage extends Component {
                     } />
                     <Route exact path="/app/:slug/snapshots/:id/restore" render={() =>
                       <AppSnapshotRestore app={app} />
-                    } />
+                    } /> */}
                     {app.isAppIdentityServiceSupported &&
                       <Route exact path="/app/:slug/access" render={() =>
                         <AppIdentityServiceSettings

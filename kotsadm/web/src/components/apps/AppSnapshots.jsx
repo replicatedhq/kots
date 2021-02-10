@@ -51,6 +51,8 @@ class AppSnapshots extends Component {
   };
 
   componentDidMount = async () => {
+    this.props.history.replace(`/snapshots/partial/${this.props.app.slug}`);
+
     await this.fetchSnapshotSettings();
 
     this.checkRestoreInProgress();
@@ -80,7 +82,7 @@ class AppSnapshots extends Component {
     }
   }
 
-  checkRestoreInProgress() {
+  checkRestoreInProgress(appSlug) {
     const { app } = this.props;
     fetch(`${window.env.API_ENDPOINT}/app/${app.slug}/snapshot/restore/status`, {
       method: "GET",
