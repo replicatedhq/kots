@@ -6,10 +6,22 @@ import (
 	"github.com/spf13/viper"
 )
 
-func BackupCreateRBACPermissionsCmd() *cobra.Command {
+func VeleroCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:           "create-rbac-permissions",
-		Short:         "Creates the necessary minimal RBAC permissions that enables the Admin Console to access Velero.",
+		Use:    "velero",
+		Short:  "KOTS Velero interface",
+		Hidden: true,
+	}
+
+	cmd.AddCommand(EnsurePermissionsCmd())
+
+	return cmd
+}
+
+func EnsurePermissionsCmd() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:           "ensure-permissions",
+		Short:         "Ensures the necessary permissions that enables the Admin Console to access Velero.",
 		Long:          ``,
 		SilenceUsage:  true,
 		SilenceErrors: false,
@@ -24,7 +36,7 @@ func BackupCreateRBACPermissionsCmd() *cobra.Command {
 				return err
 			}
 
-			if err := snapshot.CreateRBACPermissions(namespace); err != nil {
+			if err := snapshot.EnsureVeleroPermissions(namespace); err != nil {
 				return err
 			}
 

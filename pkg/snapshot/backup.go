@@ -112,7 +112,7 @@ func CreateInstanceBackup(options CreateInstanceBackupOptions) error {
 			if veleroRBACResponse.KotsadmRequiresVeleroAccess {
 				log.ActionWithoutSpinner("Velero Namespace Access Required")
 				log.ActionWithoutSpinner(fmt.Sprintf("We’ve detected that the Admin Console is running with minimal role-based-access-control (RBAC) privileges, meaning that the Admin Console is limited to a single namespace. To use the snapshots functionality, the Admin Console requires access to the %s namespace. Please run the following command to provide the Admin Console with the necessary permissions to access velero:\n", veleroRBACResponse.VeleroNamespace))
-				log.Info("kubectl kots backup create-rbac-permissions --namespace %s", options.Namespace)
+				log.Info("kubectl kots velero ensure-permissions --namespace %s", options.Namespace)
 				return nil
 			}
 		}

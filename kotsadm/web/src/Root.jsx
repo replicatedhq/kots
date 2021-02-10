@@ -399,7 +399,7 @@ class Root extends Component {
                 canCopy={true}
                 onCopyText={<span className="u-color--chateauGreen">Command has been copied to your clipboard</span>}
               >
-                {`kubectl kots backup create-rbac-permissions --namespace ${this.state.appNameSpace}`}
+                {`kubectl kots velero ensure-permissions --namespace ${this.state.appNameSpace}`}
               </CodeSnippet>
               <div className="u-marginTop--20 flex justifyContent--flexStart">
                 <button type="button" className="btn blue primary" onClick={this.toggleSnapshotsRBACModal}>Ok, got it!</button>

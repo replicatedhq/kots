@@ -13,7 +13,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
 )
 
-func CreateRBACPermissions(kotsadmNamespace string) error {
+func EnsureVeleroPermissions(kotsadmNamespace string) error {
 	veleroNamespace, err := DetectVeleroNamespace()
 	if err != nil {
 		return errors.Wrap(err, "failed to detect velero namespace")
