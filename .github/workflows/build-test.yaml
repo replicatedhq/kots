@@ -22,7 +22,7 @@ jobs:
       - uses: actions/checkout@v2
 
       - run: make ci-test kots
-      - uses: actions/upload-artifact@v2.1.4
+      - uses: actions/upload-artifact@v2.2.2
         with:
           name: kots
           path: bin/kots
@@ -35,14 +35,14 @@ jobs:
         run: make -C kotsadm/web deps build-kotsadm
 
       - name: build and push migrations for e2e
-        uses: docker/build-push-action@v1
+        uses: docker/build-push-action@v2.2.2
         with:
           repository: ttl.sh/automated-${{ github.run_id }}/kotsadm-migrations
           tags: 2h
           path: ./kotsadm/migrations
           dockerfile: ./kotsadm/migrations/deploy/Dockerfile
       - name: Scan migrations for vulnerabilities
-        uses: aquasecurity/trivy-action@master
+        uses: aquasecurity/trivy-action@0.0.8
         with:
           image-ref: ttl.sh/automated-${{ github.run_id }}/kotsadm-migrations:2h
           format: 'table'
@@ -51,14 +51,14 @@ jobs:
           severity: 'CRITICAL,HIGH'
 
       - name: build and push kotsadm for e2e
-        uses: docker/build-push-action@v1
+        uses: docker/build-push-action@v2.2.2
         with:
           repository: ttl.sh/automated-${{ github.run_id }}/kotsadm
           tags: 2h
           path: ./kotsadm
           dockerfile: ./kotsadm/deploy/Dockerfile          
       - name: Scan kotsadm for vulnerabilities
-        uses: aquasecurity/trivy-action@master
+        uses: aquasecurity/trivy-action@0.0.8
         with:
           image-ref: ttl.sh/automated-${{ github.run_id }}/kotsadm:2h
           format: 'table'
@@ -67,14 +67,14 @@ jobs:
           severity: 'CRITICAL,HIGH'
 
       - name: build and push operator for e2e
-        uses: docker/build-push-action@v1
+        uses: docker/build-push-action@v2.2.2
         with:
           repository: ttl.sh/automated-${{ github.run_id }}/kotsadm-operator
           tags: 2h
           path: ./kotsadm/operator
           dockerfile: ./kotsadm/operator/deploy/Dockerfile          
       - name: Scan operator for vulnerabilities
-        uses: aquasecurity/trivy-action@master
+        uses: aquasecurity/trivy-action@0.0.8
         with:
           image-ref: ttl.sh/automated-${{ github.run_id }}/kotsadm-operator:2h
           format: 'table'
@@ -83,14 +83,14 @@ jobs:
           severity: 'CRITICAL,HIGH'
 
       - name: build and push kurl_proxy for e2e
-        uses: docker/build-push-action@v1
+        uses: docker/build-push-action@v2.2.2
         with:
           repository: ttl.sh/automated-${{ github.run_id }}/kurl-proxy
           tags: 2h
           path: ./kotsadm/kurl_proxy
           dockerfile: ./kotsadm/kurl_proxy/deploy/Dockerfile
       - name: Scan kurl_proxy for vulnerabilities
-        uses: aquasecurity/trivy-action@master
+        uses: aquasecurity/trivy-action@0.0.8
         with:
           image-ref: ttl.sh/automated-${{ github.run_id }}/kurl-proxy:2h
           format: 'table'
@@ -99,14 +99,14 @@ jobs:
           severity: 'CRITICAL,HIGH'
 
       - name: build and push minio for e2e
-        uses: docker/build-push-action@v1
+        uses: docker/build-push-action@v2.2.2
         with:
           repository: ttl.sh/automated-${{ github.run_id }}/minio
           tags: 2h
           path: ./kotsadm/minio
           dockerfile: ./kotsadm/minio/Dockerfile
       - name: Scan minio for vulnerabilities
-        uses: aquasecurity/trivy-action@master
+        uses: aquasecurity/trivy-action@0.0.8
         with:
           image-ref: ttl.sh/automated-${{ github.run_id }}/minio:2h
           format: 'table'
@@ -127,14 +127,14 @@ jobs:
           version: ${{ matrix.k8s_version }}
 
       - name: download kots binary
-        uses: actions/download-artifact@v2.0.5
+        uses: actions/download-artifact@v2.0.8
         with:
           name: kots
           path: bin/
 
       - run: chmod +x bin/kots
 
-      - uses: actions/setup-node@v2.1.2
+      - uses: actions/setup-node@v2.1.4
         with:
           node-version: '10.x'
 
