@@ -35,7 +35,7 @@ jobs:
         run: make -C kotsadm/web deps build-kotsadm
 
       - name: build and push migrations for e2e
-        uses: docker/build-push-action@v1
+        uses: docker/build-push-action@v2.2.2
         with:
           repository: ttl.sh/automated-${{ github.run_id }}/kotsadm-migrations
           tags: 2h
@@ -51,7 +51,7 @@ jobs:
           severity: 'CRITICAL,HIGH'
 
       - name: build and push kotsadm for e2e
-        uses: docker/build-push-action@v1
+        uses: docker/build-push-action@v2.2.2
         with:
           repository: ttl.sh/automated-${{ github.run_id }}/kotsadm
           tags: 2h
@@ -67,7 +67,7 @@ jobs:
           severity: 'CRITICAL,HIGH'
 
       - name: build and push operator for e2e
-        uses: docker/build-push-action@v1
+        uses: docker/build-push-action@v2.2.2
         with:
           repository: ttl.sh/automated-${{ github.run_id }}/kotsadm-operator
           tags: 2h
@@ -83,7 +83,7 @@ jobs:
           severity: 'CRITICAL,HIGH'
 
       - name: build and push kurl_proxy for e2e
-        uses: docker/build-push-action@v1
+        uses: docker/build-push-action@v2.2.2
         with:
           repository: ttl.sh/automated-${{ github.run_id }}/kurl-proxy
           tags: 2h
@@ -99,7 +99,7 @@ jobs:
           severity: 'CRITICAL,HIGH'
 
       - name: build and push minio for e2e
-        uses: docker/build-push-action@v1
+        uses: docker/build-push-action@v2.2.2
         with:
           repository: ttl.sh/automated-${{ github.run_id }}/minio
           tags: 2h
