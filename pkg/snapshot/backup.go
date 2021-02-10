@@ -29,6 +29,13 @@ type ListInstanceBackupsOptions struct {
 	Namespace string
 }
 
+type VeleroRBACResponse struct {
+	Success                     bool   `json:"success"`
+	Error                       string `json:"error,omitempty"`
+	KotsadmRequiresVeleroAccess bool   `json:"kotsadmRequiresVeleroAccess,omitempty"`
+	VeleroNamespace             string `json:"veleroNamespace,omitempty"`
+}
+
 func CreateInstanceBackup(options CreateInstanceBackupOptions) error {
 	log := logger.NewLogger()
 	log.ActionWithSpinner("Connecting to cluster")
@@ -89,15 +96,26 @@ func CreateInstanceBackup(options CreateInstanceBackupOptions) error {
 	}
 	defer resp.Body.Close()
 
-	if resp.StatusCode != http.StatusOK {
-		log.FinishSpinnerWithError()
-		return errors.Errorf("unexpected status code from %s: %s", url, resp.Status)
-	}
-
 	respBody, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		log.FinishSpinnerWithError()
 		return errors.Wrap(err, "failed to read server response")
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		log.FinishSpinnerWithError()
+		if resp.StatusCode == http.StatusConflict {
+			veleroRBACResponse := VeleroRBACResponse{}
+			if err := json.Unmarshal(respBody, &veleroRBACResponse); err != nil {
+				return errors.Wrap(err, "failed to unmarshal velero rbac response")
+			}
+			if veleroRBACResponse.KotsadmRequiresVeleroAccess {
+				log.ActionWithoutSpinner(fmt.Sprintf("We've detected that the Admin Console is running with minimal RBAC privileges. To use the snapshots functionality, the Admin Console requires access to the %s namespace. Please run the following command to provide the Admin Console with those permissions:\n", veleroRBACResponse.VeleroNamespace))
+				log.Info("kubectl kots backup create-rbac-permissions --namespace %s", options.Namespace)
+				return nil
+			}
+		}
+		return errors.Errorf("unexpected status code from %s: %s", url, resp.Status)
 	}
 
 	type BackupResponse struct {
@@ -141,12 +159,13 @@ func CreateInstanceBackup(options CreateInstanceBackupOptions) error {
 }
 
 func ListInstanceBackups(options ListInstanceBackupsOptions) ([]velerov1.Backup, error) {
-	bsl, err := findBackupStoreLocation()
+	veleroNamespace, err := DetectVeleroNamespace()
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to get velero namespace")
+		return nil, errors.Wrap(err, "failed to detect velero namespace")
 	}
-
-	veleroNamespace := bsl.Namespace
+	if veleroNamespace == "" {
+		return nil, errors.New("velero not found")
+	}
 
 	cfg, err := config.GetConfig()
 	if err != nil {
@@ -181,12 +200,13 @@ func ListInstanceBackups(options ListInstanceBackupsOptions) ([]velerov1.Backup,
 }
 
 func waitForVeleroBackupCompleted(backupName string) (*velerov1.Backup, error) {
-	bsl, err := findBackupStoreLocation()
+	veleroNamespace, err := DetectVeleroNamespace()
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to get velero namespace")
+		return nil, errors.Wrap(err, "failed to detect velero namespace")
 	}
-
-	veleroNamespace := bsl.Namespace
+	if veleroNamespace == "" {
+		return nil, errors.New("velero not found")
+	}
 
 	cfg, err := config.GetConfig()
 	if err != nil {

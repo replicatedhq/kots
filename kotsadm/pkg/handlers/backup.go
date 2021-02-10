@@ -20,30 +20,42 @@ type CreateApplicationBackupResponse struct {
 	Error   string `json:"error,omitempty"`
 }
 
+type VeleroRBACResponse struct {
+	Success                     bool   `json:"success"`
+	Error                       string `json:"error,omitempty"`
+	KotsadmRequiresVeleroAccess bool   `json:"kotsadmRequiresVeleroAccess,omitempty"`
+	VeleroNamespace             string `json:"veleroNamespace,omitempty"`
+}
+
 func (h *Handler) CreateApplicationBackup(w http.ResponseWriter, r *http.Request) {
 	createApplicationBackupResponse := CreateApplicationBackupResponse{
 		Success: false,
+	}
+
+	// check minimal rbac
+	if err := requiresKotsadmVeleroAccess(w, r); err != nil {
+		return
 	}
 
 	foundApp, err := store.GetStore().GetAppFromSlug(mux.Vars(r)["appSlug"])
 	if err != nil {
 		logger.Error(err)
 		createApplicationBackupResponse.Error = "failed to get app from app slug"
-		JSON(w, 500, createApplicationBackupResponse)
+		JSON(w, http.StatusInternalServerError, createApplicationBackupResponse)
 		return
 	}
 
-	_, err = snapshot.CreateApplicationBackup(context.TODO(), foundApp, false)
+	_, err = snapshot.CreateApplicationBackup(r.Context(), foundApp, false)
 	if err != nil {
 		logger.Error(err)
 		createApplicationBackupResponse.Error = "failed to create backup"
-		JSON(w, 500, createApplicationBackupResponse)
+		JSON(w, http.StatusInternalServerError, createApplicationBackupResponse)
 		return
 	}
 
 	createApplicationBackupResponse.Success = true
 
-	JSON(w, 200, createApplicationBackupResponse)
+	JSON(w, http.StatusOK, createApplicationBackupResponse)
 }
 
 type ListBackupsResponse struct {
@@ -162,6 +174,11 @@ type CreateInstanceBackupResponse struct {
 func (h *Handler) CreateInstanceBackup(w http.ResponseWriter, r *http.Request) {
 	createInstanceBackupResponse := CreateInstanceBackupResponse{
 		Success: false,
+	}
+
+	// check minimal rbac
+	if err := requiresKotsadmVeleroAccess(w, r); err != nil {
+		return
 	}
 
 	clusters, err := store.GetStore().ListClusters()
