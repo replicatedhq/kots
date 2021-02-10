@@ -96,6 +96,10 @@ func CreateApplicationBackup(ctx context.Context, a *apptypes.App, isScheduled b
 	includedNamespaces := []string{appNamespace}
 	includedNamespaces = append(includedNamespaces, kotsKinds.KotsApplication.Spec.AdditionalNamespaces...)
 
+	if os.Getenv("KOTSADM_ENV") == "dev" {
+		includedNamespaces = append(includedNamespaces, os.Getenv("POD_NAMESPACE"))
+	}
+
 	snapshotTrigger := "manual"
 	if isScheduled {
 		snapshotTrigger = "schedule"
@@ -236,6 +240,10 @@ func CreateInstanceBackup(ctx context.Context, cluster *downstreamtypes.Downstre
 	isKurl := kurl.IsKurl()
 	if isKurl {
 		includedNamespaces = append(includedNamespaces, "kurl")
+	}
+
+	if os.Getenv("KOTSADM_ENV") == "dev" {
+		includedNamespaces = append(includedNamespaces, os.Getenv("POD_NAMESPACE"))
 	}
 
 	kotsadmVeleroBackendStorageLocation, err := FindBackupStoreLocation()
