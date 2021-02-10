@@ -33,13 +33,13 @@ func GetLatestLicense(license *kotsv1beta1.License) (*LicenseData, error) {
 	}
 	defer resp.Body.Close()
 
-	if resp.StatusCode >= 400 {
-		return nil, errors.Wrap(err, "unexpected result from get request")
-	}
-
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to load response")
+	}
+
+	if resp.StatusCode >= 400 {
+		return nil, errors.Errorf("unexpected result from get request: %d, data: %s", resp.StatusCode, body)
 	}
 
 	decode := scheme.Codecs.UniversalDeserializer().Decode
