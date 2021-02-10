@@ -392,8 +392,8 @@ class Root extends Component {
             className="Modal MediumSize"
           >
             <div className="Modal-body">
-              <p className="u-fontSize--largest u-fontWeight--bold u-color--tundora u-marginBottom--10">Minimal RBAC</p>
-              <p className="u-fontSize--normal u-fontWeight--normal u-color--dustyGray u-lineHeight--normal u-marginBottom--10"> We've detected that the Admin Console is running with minimal RBAC privileges. To use the snapshots functionality, the Admin Console requires access to the {veleroNamespace} namespace. Please run the following command to provide the Admin Console with those permissions:</p>
+              <p className="u-fontSize--largest u-fontWeight--bold u-color--tundora u-marginBottom--10">Velero Namespace Access Required</p>
+              <p className="u-fontSize--normal u-fontWeight--normal u-color--dustyGray u-lineHeight--normal u-marginBottom--10"> We’ve detected that the Admin Console is running with minimal role-based-access-control (RBAC) privileges, meaning that the Admin Console is limited to a single namespace. To use the snapshots functionality, the Admin Console requires access to the {veleroNamespace} namespace. Please run the following command to provide the Admin Console with the necessary permissions to access velero: </p>
               <CodeSnippet
                 language="bash"
                 canCopy={true}
