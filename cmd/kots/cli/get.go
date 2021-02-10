@@ -29,7 +29,6 @@ kubectl kots get apps`,
 
 		SilenceUsage:  true,
 		SilenceErrors: false,
-		Hidden:        true,
 		PreRun: func(cmd *cobra.Command, args []string) {
 			viper.BindPFlags(cmd.Flags())
 		},

@@ -8,9 +8,8 @@ import (
 
 func VeleroCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:    "velero",
-		Short:  "KOTS Velero interface",
-		Hidden: true,
+		Use:   "velero",
+		Short: "KOTS Velero interface",
 	}
 
 	cmd.AddCommand(EnsurePermissionsCmd())
@@ -44,7 +43,7 @@ func EnsurePermissionsCmd() *cobra.Command {
 		},
 	}
 
-	cmd.Flags().String("namespace", "n", "namespace in which kots/kotsadm is installed")
+	cmd.Flags().StringP("namespace", "n", "", "namespace in which kots/kotsadm is installed")
 
 	return cmd
 }

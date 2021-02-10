@@ -280,19 +280,35 @@ func updateKotsadmRole(existing, desiredRole *rbacv1.Role) *rbacv1.Role {
 }
 
 func EnsureKotsadmRoleBinding(roleBindingNamespace string, kotsadmNamespace string, clientset *kubernetes.Clientset) error {
-	_, err := clientset.RbacV1().RoleBindings(roleBindingNamespace).Get(context.TODO(), "kotsadm-rolebinding", metav1.GetOptions{})
+	roleBinding := kotsadmRoleBinding(roleBindingNamespace, kotsadmNamespace)
+
+	currentRoleBinding, err := clientset.RbacV1().RoleBindings(roleBindingNamespace).Get(context.TODO(), "kotsadm-rolebinding", metav1.GetOptions{})
 	if err != nil {
 		if !kuberneteserrors.IsNotFound(err) {
 			return errors.Wrap(err, "failed to get rolebinding")
 		}
 
-		_, err := clientset.RbacV1().RoleBindings(roleBindingNamespace).Create(context.TODO(), kotsadmRoleBinding(roleBindingNamespace, kotsadmNamespace), metav1.CreateOptions{})
+		_, err := clientset.RbacV1().RoleBindings(roleBindingNamespace).Create(context.TODO(), roleBinding, metav1.CreateOptions{})
 		if err != nil {
 			return errors.Wrap(err, "failed to create rolebinding")
 		}
 	}
 
+	currentRoleBinding = updateKotsadmRoleBinding(currentRoleBinding, roleBinding)
+
+	// we have now changed the rolebinding, so an upgrade is required
+	_, err = clientset.RbacV1().RoleBindings(roleBindingNamespace).Update(context.TODO(), currentRoleBinding, metav1.UpdateOptions{})
+	if err != nil {
+		return errors.Wrap(err, "failed to update rolebinding")
+	}
+
 	return nil
+}
+
+func updateKotsadmRoleBinding(existing, desiredRoleBinding *rbacv1.RoleBinding) *rbacv1.RoleBinding {
+	existing.Subjects = desiredRoleBinding.Subjects
+
+	return existing
 }
 
 func ensureKotsadmServiceAccount(namespace string, clientset *kubernetes.Clientset) error {
