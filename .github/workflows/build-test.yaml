@@ -134,7 +134,7 @@ jobs:
 
       - run: chmod +x bin/kots
 
-      - uses: actions/setup-node@v2.1.2
+      - uses: actions/setup-node@v2.1.4
         with:
           node-version: '10.x'
 
