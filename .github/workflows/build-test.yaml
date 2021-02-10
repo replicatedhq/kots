@@ -40,6 +40,7 @@ jobs:
           tags: ttl.sh/automated-${{ github.run_id }}/kotsadm-migrations:2h
           context: ./kotsadm/migrations
           file: ./kotsadm/migrations/deploy/Dockerfile
+          push: true
       - name: Scan migrations for vulnerabilities
         uses: aquasecurity/trivy-action@master
         with:
@@ -54,7 +55,8 @@ jobs:
         with:
           tags: ttl.sh/automated-${{ github.run_id }}/kotsadm:2h
           context: ./kotsadm
-          file: ./kotsadm/deploy/Dockerfile          
+          file: ./kotsadm/deploy/Dockerfile       
+          push: true   
       - name: Scan kotsadm for vulnerabilities
         uses: aquasecurity/trivy-action@master
         with:
@@ -69,7 +71,8 @@ jobs:
         with:
           tags: ttl.sh/automated-${{ github.run_id }}/kotsadm-operator:2h
           context: ./kotsadm/operator
-          file: ./kotsadm/operator/deploy/Dockerfile          
+          file: ./kotsadm/operator/deploy/Dockerfile  
+          push: true        
       - name: Scan operator for vulnerabilities
         uses: aquasecurity/trivy-action@master
         with:
@@ -85,6 +88,7 @@ jobs:
           tags: ttl.sh/automated-${{ github.run_id }}/kurl-proxy:2h
           context: ./kotsadm/kurl_proxy
           file: ./kotsadm/kurl_proxy/deploy/Dockerfile
+          push: true
       - name: Scan kurl_proxy for vulnerabilities
         uses: aquasecurity/trivy-action@master
         with:
@@ -100,6 +104,7 @@ jobs:
           tags: ttl.sh/automated-${{ github.run_id }}/minio:2h
           context: ./kotsadm/minio
           file: ./kotsadm/minio/Dockerfile
+          push: true
       - name: Scan minio for vulnerabilities
         uses: aquasecurity/trivy-action@master
         with:
