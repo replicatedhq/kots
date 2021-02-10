@@ -373,7 +373,7 @@ class SnapshotDetails extends Component {
 
   calculateTimeInterval = (data) => {
     const startedTimes = data.map((d) => moment(d.startedAt));
-    const finishedTimes = data.map((d) => moment(d.finishedAt));
+    const finishedTimes = data.filter(d => d.finishedAt).map((d) => moment(d.finishedAt));
     const minStarted = startedTimes?.length ? moment.min(startedTimes) : "";
     const maxFinished = finishedTimes?.length ? moment.max(finishedTimes) : "";
 
@@ -381,13 +381,14 @@ class SnapshotDetails extends Component {
     const diffHours = parseInt(duration.asHours());
     const diffMinutes = parseInt(duration.asMinutes()) % 60;
 
-
-    return {
+    const timeObj = {
       "minStarted": minStarted.format("MM/DD/YY @ hh:mm a"),
       "maxFinished": maxFinished.format("MM/DD/YY @ hh:mm a"),
       "maxHourDifference": diffHours,
       "maxMinDifference": diffMinutes
-    }
+    };
+
+    return timeObj
   }
 
   assignColorToPath = (podName) => {

@@ -2,6 +2,7 @@ package k8s
 
 import (
 	"context"
+	"os"
 
 	"github.com/pkg/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -11,6 +12,10 @@ func FindKotsadmImage(namespace string) (string, error) {
 	client, err := Clientset()
 	if err != nil {
 		return "", errors.Wrap(err, "failed to get k8s client set")
+	}
+
+	if os.Getenv("KOTSADM_ENV") == "dev" {
+		namespace = os.Getenv("POD_NAMESPACE")
 	}
 
 	kotsadmDeployment, err := client.AppsV1().Deployments(namespace).Get(context.TODO(), "kotsadm", metav1.GetOptions{})
