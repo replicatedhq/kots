@@ -28,7 +28,7 @@ export default function NodeRow(props) {
     } else {
       drainDeleteNode = (
         <div className="flex-auto flex-column justifyContent--center">
-          <button onClick={() => node?.isConnected ? props.drainNode(node?.name) : props.deleteNode(node?.name) } className="btn secondary red">{node?.isConnected ? "Drain node" : "Delete node"}</button>
+          <button onClick={() => node?.canDelete ? props.deleteNode(node?.name) : props.drainNode(node?.name)} className="btn secondary red">{node?.canDelete ? "Delete node" : "Drain node"}</button>
         </div>
       );
     }
@@ -129,7 +129,7 @@ export default function NodeRow(props) {
           </div>
         </div>
         <div className="u-marginTop--15">
-          <p className="u-color--dustyGray u-fontSize--small u-fontWeight--normal">For more details run <span className="inline-code">kubectl describe node {node?.hostname}</span></p>
+          <p className="u-color--dustyGray u-fontSize--small u-fontWeight--normal">For more details run <span className="inline-code">kubectl describe node {node?.name}</span></p>
         </div>
       </div>
       {drainDeleteNode}

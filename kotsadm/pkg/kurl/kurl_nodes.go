@@ -78,7 +78,7 @@ func GetNodes(client kubernetes.Interface) (*types.KurlNodes, error) {
 		toReturn.Nodes = append(toReturn.Nodes, types.Node{
 			Name:           node.Name,
 			IsConnected:    isConnected(node),
-			CanDelete:      node.Spec.Unschedulable,
+			CanDelete:      node.Spec.Unschedulable && !isConnected(node),
 			KubeletVersion: node.Status.NodeInfo.KubeletVersion,
 			CPU:            cpuCapacity,
 			Memory:         memoryCapacity,
