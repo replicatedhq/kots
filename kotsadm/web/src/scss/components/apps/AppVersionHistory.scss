@@ -111,6 +111,16 @@ $cell-width: 140px;
   &.is-deleting {
     background-color: #F8F8F8;
   }
+
+  .nodeTag {
+    background-color: #F5F8FC;
+    font-size: 12px;
+    line-height: 12px;
+    color: #73A3CD;
+    justify-content: center;
+    border-radius: 3px;
+    padding: 2px 4px 2px 4px;
+  }
 }
 
 .NodeRow--items p {
