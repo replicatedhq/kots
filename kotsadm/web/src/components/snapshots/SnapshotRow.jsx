@@ -24,7 +24,7 @@ class SnapshotRow extends React.Component {
     const isExpired = dayjs(new Date()).isSameOrAfter(snapshot?.expiresAt);
 
     return (
-      <div className={`flex flex-auto SnapshotRow--wrapper alignItems--center ${snapshot?.status === "Deleting" && "is-deleting"} ${isExpired && "is-expired"}`}>
+      <div className={`flex flex-auto SnapshotRow--wrapper alignItems--center u-marginTop--10 ${snapshot?.status === "Deleting" && "is-deleting"} ${isExpired && "is-expired"}`}>
         <div className="flex-column flex1" style={{ maxWidth: "700px" }}>
           <p className={`u-fontSize--largest ${isExpired || snapshot?.status === "Deleting" ? "u-color--dustyGray" : "u-color--tuna"} u-lineHeight--normal u-fontWeight--bold u-marginRight--10`}>{snapshot?.name}</p>
           <div className="flex flex1 alignItems--center u-marginTop--10">
@@ -57,7 +57,7 @@ class SnapshotRow extends React.Component {
             {snapshot?.status !== "InProgress" &&
               <span className="icon snapshot-trash-icon u-marginLeft--20 u-cursor--pointer" onClick={() => this.handleDeleteClick(snapshot)} />}
             {!isExpired && snapshot?.status !== "Deleting" &&
-              <Link to={`/snapshots/details/${snapshot?.name}`} className="icon snapshot-details-icon u-marginLeft--20 u-cursor--pointer" />
+              <Link to={`/snapshots/full/details/${snapshot?.name}`} className="icon snapshot-details-icon u-marginLeft--20 u-cursor--pointer" />
             }
           </div>
         }
