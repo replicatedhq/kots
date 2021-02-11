@@ -1,20 +1,23 @@
 package cli
 
 import (
+	"os"
+
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net/http"
-	"os"
 
 	"github.com/pkg/errors"
+	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
+
 	handlertypes "github.com/replicatedhq/kots/pkg/api/handlers/types"
 	"github.com/replicatedhq/kots/pkg/auth"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/print"
-	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
+	"github.com/replicatedhq/kots/pkg/snapshot"
 )
 
 func GetCmd() *cobra.Command {
@@ -26,7 +29,6 @@ kubectl kots get apps`,
 
 		SilenceUsage:  true,
 		SilenceErrors: false,
-		Hidden:        true,
 		PreRun: func(cmd *cobra.Command, args []string) {
 			viper.BindPFlags(cmd.Flags())
 		},
@@ -37,6 +39,12 @@ kubectl kots get apps`,
 			}
 
 			switch args[0] {
+			case "backup", "backups":
+				err := getBackupsCmd(cmd, args)
+				return errors.Wrap(err, "failed to get backups")
+			case "restore", "restores":
+				err := getRestoresCmd(cmd, args)
+				return errors.Wrap(err, "failed to get restores")
 			case "app", "apps":
 				err := getAppsCmd(cmd, args)
 				return errors.Wrap(err, "failed to get apps")
@@ -52,6 +60,38 @@ kubectl kots get apps`,
 	cmd.Flags().StringP("output", "o", "", "Output format. Supported values: json")
 
 	return cmd
+}
+
+func getBackupsCmd(cmd *cobra.Command, args []string) error {
+	v := viper.GetViper()
+
+	options := snapshot.ListInstanceBackupsOptions{
+		Namespace: v.GetString("namespace"),
+	}
+	backups, err := snapshot.ListInstanceBackups(options)
+	if err != nil {
+		return errors.Wrap(err, "failed to list instance backups")
+	}
+
+	print.Backups(backups)
+
+	return nil
+}
+
+func getRestoresCmd(cmd *cobra.Command, args []string) error {
+	v := viper.GetViper()
+
+	options := snapshot.ListInstanceRestoresOptions{
+		Namespace: v.GetString("namespace"),
+	}
+	restores, err := snapshot.ListInstanceRestores(options)
+	if err != nil {
+		return errors.Wrap(err, "failed to list instance restores")
+	}
+
+	print.Restores(restores)
+
+	return nil
 }
 
 func getAppsCmd(cmd *cobra.Command, args []string) error {

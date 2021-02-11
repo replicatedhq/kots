@@ -92,7 +92,7 @@ func kotsadmClusterRoleBinding(serviceAccountNamespace string) *rbacv1.ClusterRo
 	return clusterRoleBinding
 }
 
-func kotsadmRoleBinding(namespace string) *rbacv1.RoleBinding {
+func kotsadmRoleBinding(roleBindingNamespace string, kotsadmNamespace string) *rbacv1.RoleBinding {
 	roleBinding := &rbacv1.RoleBinding{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "rbac.authorization.k8s.io/v1",
@@ -100,14 +100,14 @@ func kotsadmRoleBinding(namespace string) *rbacv1.RoleBinding {
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "kotsadm-rolebinding",
-			Namespace: namespace,
+			Namespace: roleBindingNamespace,
 			Labels:    types.GetKotsadmLabels(),
 		},
 		Subjects: []rbacv1.Subject{
 			{
 				Kind:      "ServiceAccount",
 				Name:      "kotsadm",
-				Namespace: namespace,
+				Namespace: kotsadmNamespace,
 			},
 		},
 		RoleRef: rbacv1.RoleRef{

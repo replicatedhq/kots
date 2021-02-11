@@ -59,6 +59,11 @@ func (h *Handler) UpdateGlobalSnapshotSettings(w http.ResponseWriter, r *http.Re
 		Success: false,
 	}
 
+	// check minimal rbac
+	if err := requiresKotsadmVeleroAccess(w, r); err != nil {
+		return
+	}
+
 	updateGlobalSnapshotSettingsRequest := UpdateGlobalSnapshotSettingsRequest{}
 	if err := json.NewDecoder(r.Body).Decode(&updateGlobalSnapshotSettingsRequest); err != nil {
 		logger.Error(err)
@@ -462,6 +467,12 @@ type SaveSnapshotConfigResponse struct {
 
 func (h *Handler) SaveSnapshotConfig(w http.ResponseWriter, r *http.Request) {
 	responseBody := SaveSnapshotConfigResponse{}
+
+	// check minimal rbac
+	if err := requiresKotsadmVeleroAccess(w, r); err != nil {
+		return
+	}
+
 	requestBody := SaveSnapshotConfigRequest{}
 	if err := json.NewDecoder(r.Body).Decode(&requestBody); err != nil {
 		logger.Error(err)
@@ -616,6 +627,12 @@ type SaveInstanceSnapshotConfigResponse struct {
 
 func (h *Handler) SaveInstanceSnapshotConfig(w http.ResponseWriter, r *http.Request) {
 	responseBody := SaveInstanceSnapshotConfigResponse{}
+
+	// check minimal rbac
+	if err := requiresKotsadmVeleroAccess(w, r); err != nil {
+		return
+	}
+
 	requestBody := SaveInstanceSnapshotConfigRequest{}
 	if err := json.NewDecoder(r.Body).Decode(&requestBody); err != nil {
 		logger.Error(err)
@@ -709,4 +726,27 @@ func (h *Handler) SaveInstanceSnapshotConfig(w http.ResponseWriter, r *http.Requ
 
 	responseBody.Success = true
 	JSON(w, http.StatusOK, responseBody)
+}
+
+func requiresKotsadmVeleroAccess(w http.ResponseWriter, r *http.Request) error {
+	requiresVeleroAccess, veleroNamespace, err := snapshot.CheckKotsadmVeleroAccess()
+	if err != nil {
+		errMsg := "failed to check if kotsadm requires access to velero"
+		logger.Error(errors.Wrap(err, errMsg))
+		response := ErrorResponse{Error: errMsg}
+		JSON(w, http.StatusInternalServerError, response)
+		return errors.New(errMsg)
+	}
+	if requiresVeleroAccess {
+		errMsg := "kotsadm does not have access to velero"
+		response := VeleroRBACResponse{
+			Success:                     false,
+			Error:                       errMsg,
+			KotsadmRequiresVeleroAccess: true,
+			VeleroNamespace:             veleroNamespace,
+		}
+		JSON(w, http.StatusConflict, response)
+		return errors.New(errMsg)
+	}
+	return nil
 }

@@ -354,6 +354,17 @@ class AppSnapshots extends Component {
       }
     })
       .then(async (result) => {
+        if (!result.ok && result.status === 409) {
+          const res = await result.json();
+          if (res.kotsadmRequiresVeleroAccess) {
+            this.props.toggleSnapshotsRBACModal(res.veleroNamespace);
+            this.setState({
+              startingSnapshot: false
+            });
+            return;
+          }
+        }
+
         if (result.ok) {
           this.setState({
             startingSnapshot: false

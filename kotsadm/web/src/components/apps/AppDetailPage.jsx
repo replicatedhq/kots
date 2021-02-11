@@ -352,6 +352,7 @@ class AppDetailPage extends Component {
                         isVeleroInstalled={isVeleroInstalled}
                         refreshAppData={this.getApp}
                         snapshotInProgressApps={this.props.snapshotInProgressApps}
+                        toggleSnapshotsRBACModal={this.props.toggleSnapshotsRBACModal}
                         ping={this.props.ping}
                       />}
                     />
@@ -411,10 +412,11 @@ class AppDetailPage extends Component {
                       <AppSnapshots
                         app={app}
                         refetch={this.getApp}
+                        toggleSnapshotsRBACModal={this.props.toggleSnapshotsRBACModal}
                       />
                     } />
                     <Route exact path="/app/:slug/snapshots/schedule" render={() =>
-                      <SnapshotSchedule app={app} />
+                      <SnapshotSchedule app={app} toggleSnapshotsRBACModal={this.props.toggleSnapshotsRBACModal} />
                     } />
                     <Route exact path="/app/:slug/snapshots/:id" render={() =>
                       <SnapshotDetails app={app} />

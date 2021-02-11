@@ -97,6 +97,16 @@ class SnapshotSettings extends Component {
       body: JSON.stringify(payload)
     })
       .then(async (res) => {
+        if (!res.ok && res.status === 409) {
+          const settingsResponse = await res.json();
+          if (settingsResponse.kotsadmRequiresVeleroAccess) {
+            this.props.toggleSnapshotsRBACModal(settingsResponse.veleroNamespace);
+            this.setState({
+              updatingSettings: false,
+            });
+            return;
+          }
+        }
 
         const settingsResponse = await res.json();
         if (!res.ok) {
@@ -183,6 +193,7 @@ class SnapshotSettings extends Component {
             updatingSettings={updatingSettings}
             updateErrorMsg={updateErrorMsg}
             renderNotVeleroMessage={this.renderNotVeleroMessage}
+            toggleSnapshotsRBACModal={this.props.toggleSnapshotsRBACModal}
             toggleSnapshotView={this.toggleSnapshotView}
             isEmptyView={isEmptyView}
             hideCheckVeleroButton={hideCheckVeleroButton}

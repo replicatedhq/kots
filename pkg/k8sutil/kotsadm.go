@@ -27,6 +27,14 @@ func FindKotsadm(clientset *kubernetes.Clientset, namespace string) (string, err
 	return "", errors.New("unable to find kotsadm pod")
 }
 
+func IsKotsadmClusterScoped(ctx context.Context, clientset kubernetes.Interface) bool {
+	_, err := clientset.RbacV1().ClusterRoles().Get(ctx, "kotsadm-role", metav1.GetOptions{})
+	if err != nil {
+		return false
+	}
+	return true
+}
+
 func DeleteKotsadm(clientset *kubernetes.Clientset, namespace string, isKurl bool) error {
 	selectorLabels := map[string]string{
 		types.KotsadmKey: types.KotsadmLabelValue,

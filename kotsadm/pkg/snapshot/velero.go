@@ -5,6 +5,8 @@ import (
 	"regexp"
 
 	"github.com/pkg/errors"
+	"github.com/replicatedhq/kots/kotsadm/pkg/k8s"
+	"github.com/replicatedhq/kots/pkg/k8sutil"
 	veleroclientv1 "github.com/vmware-tanzu/velero/pkg/generated/clientset/versioned/typed/velero/v1"
 	v1 "k8s.io/api/apps/v1"
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
@@ -25,6 +27,42 @@ type VeleroStatus struct {
 
 	ResticVersion string
 	ResticStatus  string
+}
+
+func CheckKotsadmVeleroAccess() (requiresAccess bool, veleroNamespace string, finalErr error) {
+	clientset, err := k8s.Clientset()
+	if err != nil {
+		finalErr = errors.Wrap(err, "failed to get k8s clientset")
+		return
+	}
+
+	veleroNamespace, err = DetectVeleroNamespace()
+	if err != nil {
+		finalErr = errors.Wrap(err, "failed to detect velero namespace")
+		return
+	}
+	if veleroNamespace == "" {
+		return
+	}
+
+	if k8sutil.IsKotsadmClusterScoped(context.TODO(), clientset) {
+		return
+	}
+
+	_, err = clientset.RbacV1().Roles(veleroNamespace).Get(context.TODO(), "kotsadm-role", metav1.GetOptions{})
+	if err != nil {
+		requiresAccess = true
+		return
+	}
+
+	_, err = clientset.RbacV1().RoleBindings(veleroNamespace).Get(context.TODO(), "kotsadm-rolebinding", metav1.GetOptions{})
+	if err != nil {
+		requiresAccess = true
+		return
+	}
+
+	requiresAccess = false
+	return
 }
 
 func DetectVeleroNamespace() (string, error) {

@@ -33,6 +33,7 @@ func RootCmd() *cobra.Command {
 	cmd.AddCommand(AdminConsoleCmd())
 	cmd.AddCommand(ResetPasswordCmd())
 	cmd.AddCommand(VersionCmd())
+	cmd.AddCommand(VeleroCmd())
 	cmd.AddCommand(BackupCmd())
 	cmd.AddCommand(RestoreCmd())
 	cmd.AddCommand(IngressCmd())

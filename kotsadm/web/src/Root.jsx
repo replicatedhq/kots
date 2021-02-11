@@ -29,6 +29,7 @@ import Access from "./components/identity/Access";
 
 import Footer from "./components/shared/Footer";
 import NavBar from "./components/shared/NavBar";
+import CodeSnippet from "./components/shared/CodeSnippet";
 
 import "./scss/index.scss";
 import connectHistory from "./services/matomo";
@@ -78,6 +79,8 @@ class Root extends Component {
     rootDidInitialWatchFetch: false,
     connectionTerminated: false,
     snapshotInProgressApps: [],
+    showSnapshotsRBACModal: false,
+    veleroNamespace: "",
     errLoggingOut: ""
   };
   /**
@@ -216,6 +219,10 @@ class Root extends Component {
     });
   }
 
+  toggleSnapshotsRBACModal = (veleroNamespace = "") => {
+    this.setState({ showSnapshotsRBACModal: !this.state.showSnapshotsRBACModal, veleroNamespace });
+  }
+
   onRootMounted = () => {
     this.fetchKotsAppMetadata();
     this.ping();
@@ -283,6 +290,8 @@ class Root extends Component {
       appsList,
       rootDidInitialWatchFetch,
       connectionTerminated,
+      showSnapshotsRBACModal,
+      veleroNamespace,
       errLoggingOut
     } = this.state;
 
@@ -336,8 +345,8 @@ class Root extends Component {
                   <Route path="/unsupported" component={UnsupportedBrowser} />
                   <ProtectedRoute path="/cluster/manage" render={(props) => <ClusterNodes {...props} appName={this.state.selectedAppName} />} />
                   <ProtectedRoute path="/gitops" render={(props) => <GitOps {...props} appName={this.state.selectedAppName} />} />
-                  <ProtectedRoute exact path="/snapshots" render={(props) => <Snapshots {...props} appName={this.state.selectedAppName} isKurlEnabled={this.state.isKurlEnabled} appsList={appsList}/>} />
-                  <ProtectedRoute exact path="/snapshots/settings" render={(props) => <SnapshotSettings {...props} appName={this.state.selectedAppName} isKurlEnabled={this.state.isKurlEnabled} />} />
+                  <ProtectedRoute exact path="/snapshots" render={(props) => <Snapshots {...props} appName={this.state.selectedAppName} isKurlEnabled={this.state.isKurlEnabled} appsList={appsList} toggleSnapshotsRBACModal={this.toggleSnapshotsRBACModal}/>} />
+                  <ProtectedRoute exact path="/snapshots/settings" render={(props) => <SnapshotSettings {...props} appName={this.state.selectedAppName} isKurlEnabled={this.state.isKurlEnabled} toggleSnapshotsRBACModal={this.toggleSnapshotsRBACModal}/>} />
                   <ProtectedRoute exact path="/snapshots/details/:id" render={(props) => <SnapshotDetails {...props} appName={this.state.selectedAppName} />} />
                   <ProtectedRoute path="/access/:tab?" render={(props) => <Access {...props} appName={this.state.selectedAppName} isKurlEnabled={this.state.isKurlEnabled} isGeoaxisSupported={this.isGeoaxisSupported()} />} />
                   {/* <ProtectedRoute exact path="/redactors" render={(props) => <Redactors {...props} appName={this.state.selectedAppName} />} />
@@ -356,6 +365,7 @@ class Root extends Component {
                           appNameSpace={this.state.appNameSpace}
                           appName={this.state.selectedAppName}
                           snapshotInProgressApps={this.state.snapshotInProgressApps}
+                          toggleSnapshotsRBACModal={this.toggleSnapshotsRBACModal}
                           ping={this.ping}
                         />
                       )
@@ -371,6 +381,33 @@ class Root extends Component {
             </div>
           </Router>
         </ThemeContext.Provider>
+
+        {showSnapshotsRBACModal &&
+          <Modal
+            isOpen={showSnapshotsRBACModal}
+            onRequestClose={this.toggleSnapshotsRBACModal}
+            shouldReturnFocusAfterClose={false}
+            contentLabel="Snapshots RBAC Modal"
+            ariaHideApp={false}
+            className="Modal MediumSize"
+          >
+            <div className="Modal-body">
+              <p className="u-fontSize--largest u-fontWeight--bold u-color--tundora u-marginBottom--10">Velero Namespace Access Required</p>
+              <p className="u-fontSize--normal u-fontWeight--normal u-color--dustyGray u-lineHeight--normal u-marginBottom--10"> We’ve detected that the Admin Console is running with minimal role-based-access-control (RBAC) privileges, meaning that the Admin Console is limited to a single namespace. To use the snapshots functionality, the Admin Console requires access to the {veleroNamespace} namespace. Please run the following command to provide the Admin Console with the necessary permissions to access velero: </p>
+              <CodeSnippet
+                language="bash"
+                canCopy={true}
+                onCopyText={<span className="u-color--chateauGreen">Command has been copied to your clipboard</span>}
+              >
+                {`kubectl kots velero ensure-permissions --namespace ${this.state.appNameSpace}`}
+              </CodeSnippet>
+              <div className="u-marginTop--20 flex justifyContent--flexStart">
+                <button type="button" className="btn blue primary" onClick={this.toggleSnapshotsRBACModal}>Ok, got it!</button>
+              </div>
+            </div>
+          </Modal>
+        }
+
         {connectionTerminated &&
           <Modal
             isOpen={connectionTerminated}
