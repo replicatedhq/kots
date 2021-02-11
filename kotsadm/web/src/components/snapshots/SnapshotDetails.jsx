@@ -373,7 +373,7 @@ class SnapshotDetails extends Component {
 
   calculateTimeInterval = (data) => {
     const startedTimes = data.map((d) => moment(d.startedAt));
-    const finishedTimes = data.filter(d => d.finishedAt).map((d) => moment(d.finishedAt));
+    const finishedTimes = data.map((d) => moment(d.finishedAt));
     const minStarted = startedTimes?.length ? moment.min(startedTimes) : "";
     const maxFinished = finishedTimes?.length ? moment.max(finishedTimes) : "";
 

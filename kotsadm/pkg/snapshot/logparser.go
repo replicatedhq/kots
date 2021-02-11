@@ -17,11 +17,11 @@ var (
 	stderrPrefix = regexp.MustCompile(`^stderr: `)
 )
 
-func parseLogs(reader io.Reader) ([]types.SnapshotError, []types.SnapshotError, []types.SnapshotHook, error) {
+func parseLogs(reader io.Reader) ([]types.SnapshotError, []types.SnapshotError, []*types.SnapshotHook, error) {
 	errs := []types.SnapshotError{}
 	warnings := []types.SnapshotError{}
-	execs := []types.SnapshotHook{}
-	openExecs := map[string]types.SnapshotHook{}
+	execs := []*types.SnapshotHook{}
+	openExecs := map[string]*types.SnapshotHook{}
 
 	d := logfmt.NewDecoder(reader)
 	for d.ScanRecord() {
@@ -53,7 +53,7 @@ func parseLogs(reader io.Reader) ([]types.SnapshotError, []types.SnapshotError, 
 				logger.Error(errors.Wrap(err, "failed to parse time"))
 			}
 
-			openExecs[key] = open
+			openExecs[key] = &open
 			continue
 		}
 
