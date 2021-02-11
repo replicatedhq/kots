@@ -120,6 +120,7 @@ func Upgrade(upgradeOptions types.UpgradeOptions) error {
 	// these options are not stored in cluster (yet)
 	deployOptions.Timeout = upgradeOptions.Timeout
 	deployOptions.KotsadmOptions = upgradeOptions.KotsadmOptions
+	deployOptions.EnsureRBAC = upgradeOptions.EnsureRBAC
 
 	if err := ensureKotsadm(*deployOptions, clientset, log); err != nil {
 		return errors.Wrap(err, "failed to upgrade admin console")

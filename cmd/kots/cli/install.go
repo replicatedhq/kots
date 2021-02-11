@@ -169,6 +169,7 @@ func InstallCmd() *cobra.Command {
 				HTTPSProxyEnvValue:        v.GetString("https-proxy"),
 				NoProxyEnvValue:           v.GetString("no-proxy"),
 				SkipPreflights:            v.GetBool("skip-preflights"),
+				EnsureRBAC:                v.GetBool("ensure-rbac"),
 
 				KotsadmOptions: *registryConfig,
 
@@ -398,6 +399,9 @@ func InstallCmd() *cobra.Command {
 	cmd.Flags().MarkHidden("with-minio")
 	cmd.Flags().MarkHidden("with-dockerdistribution")
 	cmd.Flags().MarkHidden("storage-base-uri-plainhttp")
+
+	cmd.Flags().Bool("ensure-rbac", true, "when set, kots will create the roles and rolebindings necessary to manage applications")
+	cmd.Flags().MarkHidden("ensure-rbac")
 
 	cmd.Flags().Bool("enable-identity-service", false, "when set, the KOTS identity service will be enabled")
 	cmd.Flags().MarkHidden("enable-identity-service")
