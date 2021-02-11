@@ -380,12 +380,14 @@ class SnapshotDetails extends Component {
     const duration = moment.duration(maxFinished.diff(minStarted));
     const diffHours = parseInt(duration.asHours());
     const diffMinutes = parseInt(duration.asMinutes()) % 60;
+    const diffDays = parseInt(duration.asDays());
 
     const timeObj = {
       "minStarted": minStarted.format("MM/DD/YY @ hh:mm a"),
       "maxFinished": maxFinished.format("MM/DD/YY @ hh:mm a"),
       "maxHourDifference": diffHours,
-      "maxMinDifference": diffMinutes
+      "maxMinDifference": diffMinutes,
+      "maxDaysDifference": diffDays
     };
 
     return timeObj
@@ -453,10 +455,17 @@ class SnapshotDetails extends Component {
               Total capture time: <span className="u-fontWeight--bold u-color--doveGray">less than a minute</span>
             </p>
             :
-            <p className="u-fontSize--small u-fontWeight--normal u-color--dustyGray">
-              Total capture time: <span className="u-fontWeight--bold u-color--doveGray">{`${this.calculateTimeInterval(data).maxHourDifference} hr `}</span>
-              <span className="u-fontWeight--bold u-color--doveGray">{`${this.calculateTimeInterval(data).maxMinDifference} min `}</span>
-            </p>
+            this.calculateTimeInterval(data).maxDaysDifference > 0 ?
+              <p className="u-fontSize--small u-fontWeight--normal u-color--dustyGray">
+                Total capture time: <span className="u-fontWeight--bold u-color--doveGray">{`${this.calculateTimeInterval(data).maxDaysDifference} days `}</span>
+                <span className="u-fontWeight--bold u-color--doveGray">{`${this.calculateTimeInterval(data).maxHourDifference} hr `}</span>
+                <span className="u-fontWeight--bold u-color--doveGray">{`${this.calculateTimeInterval(data).maxMinDifference} min `}</span>
+              </p>
+              :
+              <p className="u-fontSize--small u-fontWeight--normal u-color--dustyGray">
+                Total capture time: <span className="u-fontWeight--bold u-color--doveGray">{`${this.calculateTimeInterval(data).maxHourDifference} hr `}</span>
+                <span className="u-fontWeight--bold u-color--doveGray">{`${this.calculateTimeInterval(data).maxMinDifference} min `}</span>
+              </p>
           }
         </div>
         <div className="flex flex1 justifyContent--flexEnd">

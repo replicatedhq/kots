@@ -24,10 +24,6 @@ import Loader from "../shared/Loader";
 import AppRegistrySettings from "./AppRegistrySettings";
 import AppIdentityServiceSettings from "./AppIdentityServiceSettings";
 import AppGitops from "./AppGitops";
-import AppSnapshots from "./AppSnapshots";
-import SnapshotSchedule from "../snapshots/SnapshotSchedule";
-import SnapshotDetails from "../snapshots/SnapshotDetails";
-import AppSnapshotRestore from "./AppSnapshotRestore";
 import TroubleshootContainer from "../troubleshoot/TroubleshootContainer";
 import ErrorModal from "../modals/ErrorModal";
 
@@ -408,23 +404,6 @@ class AppDetailPage extends Component {
                         refetch={this.getApp}
                       />
                     } />
-                    {/*TODO delete */}
-                    {/* <Route exact path="/app/:slug/snapshots" render={() =>
-                      <AppSnapshots
-                        app={app}
-                        refetch={this.getApp}
-                        toggleSnapshotsRBACModal={this.props.toggleSnapshotsRBACModal}
-                      />
-                    } />
-                    <Route exact path="/app/:slug/snapshots/schedule" render={() =>
-                      <SnapshotSchedule app={app} toggleSnapshotsRBACModal={this.props.toggleSnapshotsRBACModal} />
-                    } />
-                    <Route exact path="/app/:slug/snapshots/:id" render={() =>
-                      <SnapshotDetails app={app} />
-                    } />
-                    <Route exact path="/app/:slug/snapshots/:id/restore" render={() =>
-                      <AppSnapshotRestore app={app} />
-                    } /> */}
                     {app.isAppIdentityServiceSupported &&
                       <Route exact path="/app/:slug/access" render={() =>
                         <AppIdentityServiceSettings

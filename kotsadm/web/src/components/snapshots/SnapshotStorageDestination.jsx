@@ -648,72 +648,72 @@ class SnapshotStorageDestination extends Component {
 
 
     return (
-      <div className="flex1 flex-column">
-        <p className="u-marginBottom--20 u-fontSize--small u-color--tundora u-fontWeight--medium">
-          <span className="replicated-link" onClick={() => this.props.history.goBack()}>Snapshots</span>
-          <span className="u-color--dustyGray"> &gt; </span>
-            Settings
-          </p>
+      <div className="flex1 flex-column u-marginTop--40">
         <p className="u-fontSize--normal u-marginBottom--15 u-fontWeight--bold u-color--tundora">Snapshot settings</p>
         <div className="flex">
-          <div className="flex flex-column u-marginRight--50">
-            <form className="flex flex-column snapshot-form-wrapper">
-              <p className="u-fontSize--normal u-marginBottom--20 u-fontWeight--bold u-color--tundora">Storage</p>
-              {updateErrorMsg &&
-                <div className="flex u-fontWeight--bold u-fontSize--small u-color--red u-marginBottom--10">{updateErrorMsg}</div>}
-              <div className="flex flex-column u-marginBottom--20">
-                <div className="flex flex1 justifyContent--spaceBetween alignItems--center">
-                  <p className="u-fontSize--normal u-color--tuna u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">Destination</p>
-                  <span className="replicated-link u-fontSize--normal flex justifyContent--flexEnd u-cursor--pointer" onClick={() => this.props.toggleConfigureModal(this.props.history)}> + Add a new storage destination </span>
-                </div>
-                {!snapshotSettings?.isVeleroRunning &&
-                  <div className="flex u-fontWeight--bold u-fontSize--small u-color--red u-marginBottom--10"> Please fix Velero so that the deployment is running. <a href="https://kots.io/kotsadm/snapshots/velero-troubleshooting/" target="_blank" rel="noopener noreferrer" className="replicated-link u-marginLeft--5">View docs</a>  </div>}
-                <div className="flex1">
-                  {availableDestinations.length > 1 ?
-                    <Select
-                      className="replicated-select-container"
-                      classNamePrefix="replicated-select"
-                      placeholder="Select unit"
-                      options={availableDestinations}
-                      isSearchable={false}
-                      getOptionLabel={(destination) => this.getDestinationLabel(destination, destination.label)}
-                      getOptionValue={(destination) => destination.label}
-                      value={selectedDestination}
-                      onChange={this.handleDestinationChange}
-                      isOptionSelected={(option) => { option.value === selectedDestination }}
-                    />
-                    :
-                    availableDestinations.length === 1 ?
-                      <div className="u-color--tuna u-fontWeight--medium flex alignItems--center">
-                        {this.getDestinationLabel(availableDestinations[0], availableDestinations[0].label)}
-                      </div>
-                      :
-                      null
-                  }
-                </div>
+          <div className="flex flex-column">
+            <div className="Info--wrapper flex flex-auto u-marginBottom--15">
+              <span className="icon info-icon flex-auto u-marginTop--5" />
+              <div className="flex flex-column u-marginLeft--5">
+                <p className="u-fontSize--normal u-fontWeight--bold u-lineHeight--normal u-color--tuna"> Configuration is shared </p>
+                <span className="u-fontSize--small u-fontWeight--normal u-lineHeight--normal u-color--dustyGray">
+                  Full (Instance) and Partial (Application) snapshots share Velero configuration. Your storage destination will be used for both.
+            </span>
               </div>
-              {!this.state.determiningDestination &&
-                <div>
-                  {this.renderDestinationFields()}
-                  <div className="flex">
-                    <button className="btn primary blue" disabled={updatingSettings} onClick={this.onSubmit}>{updatingSettings ? "Updating" : "Update storage settings"}</button>
-                    {updateConfirm &&
-                      <div className="u-marginLeft--10 flex alignItems--center">
-                        <span className="icon checkmark-icon" />
-                        <span className="u-marginLeft--5 u-fontSize--small u-fontWeight--medium u-color--chateauGreen">Settings updated</span>
-                      </div>
+            </div>
+            <div className="flex flex-column u-marginRight--50">
+              <form className="flex flex-column snapshot-form-wrapper">
+                <p className="u-fontSize--normal u-marginBottom--20 u-fontWeight--bold u-color--tundora">Storage</p>
+                {updateErrorMsg &&
+                  <div className="flex u-fontWeight--bold u-fontSize--small u-color--red u-marginBottom--10">{updateErrorMsg}</div>}
+                <div className="flex flex-column u-marginBottom--20">
+                  <div className="flex flex1 justifyContent--spaceBetween alignItems--center">
+                    <p className="u-fontSize--normal u-color--tuna u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">Destination</p>
+                    <span className="replicated-link u-fontSize--normal flex justifyContent--flexEnd u-cursor--pointer" onClick={() => this.props.toggleConfigureModal(this.props.history)}> + Add a new storage destination </span>
+                  </div>
+                  {!snapshotSettings?.isVeleroRunning &&
+                    <div className="flex u-fontWeight--bold u-fontSize--small u-color--red u-marginBottom--10"> Please fix Velero so that the deployment is running. <a href="https://kots.io/kotsadm/snapshots/velero-troubleshooting/" target="_blank" rel="noopener noreferrer" className="replicated-link u-marginLeft--5">View docs</a>  </div>}
+                  <div className="flex1">
+                    {availableDestinations.length > 1 ?
+                      <Select
+                        className="replicated-select-container"
+                        classNamePrefix="replicated-select"
+                        placeholder="Select unit"
+                        options={availableDestinations}
+                        isSearchable={false}
+                        getOptionLabel={(destination) => this.getDestinationLabel(destination, destination.label)}
+                        getOptionValue={(destination) => destination.label}
+                        value={selectedDestination}
+                        onChange={this.handleDestinationChange}
+                        isOptionSelected={(option) => { option.value === selectedDestination }}
+                      />
+                      :
+                      availableDestinations.length === 1 ?
+                        <div className="u-color--tuna u-fontWeight--medium flex alignItems--center">
+                          {this.getDestinationLabel(availableDestinations[0], availableDestinations[0].label)}
+                        </div>
+                        :
+                        null
                     }
                   </div>
                 </div>
-              }
-            </form>
-            <div className="Info--wrapper flex flex-auto u-marginTop--15">
-              <span className="icon info-icon flex u-marginTop--5" />
-              <div className="flex flex-column u-marginLeft--5">
-                <p className="u-fontSize--normal u-fontWeight--bold u-lineHeight--normal u-color--tuna"> Deduplication </p>
-                <span className="u-fontSize--small u-fontWeight--normal u-lineHeight--normal u-color--dustyGray"> All data in your snapshots will be deduplicated. To learn more about how,
+                {!this.state.determiningDestination &&
+                  <div>
+                    {this.renderDestinationFields()}
+                    <div className="flex">
+                      <button className="btn primary blue" disabled={updatingSettings} onClick={this.onSubmit}>{updatingSettings ? "Updating" : "Update storage settings"}</button>
+                      {updateConfirm &&
+                        <div className="u-marginLeft--10 flex alignItems--center">
+                          <span className="icon checkmark-icon" />
+                          <span className="u-marginLeft--5 u-fontSize--small u-fontWeight--medium u-color--chateauGreen">Settings updated</span>
+                        </div>
+                      }
+                    </div>
+                  </div>
+                }
+                <span className="u-fontSize--small u-fontWeight--normal u-lineHeight--normal u-color--dustyGray u-marginTop--15"> All data in your snapshots will be deduplicated. To learn more about how,
                 <a href="https://kots.io/kotsadm/snapshots/restic-deduplication/" target="_blank" rel="noopener noreferrer" className="replicated-link"> check out the Restic docs</a>. </span>
-              </div>
+              </form>
             </div>
           </div>
           <SnapshotSchedule isVeleroRunning={snapshotSettings?.isVeleroRunning} isKurlEnabled={this.props.isKurlEnabled} toggleSnapshotsRBACModal={this.props.toggleSnapshotsRBACModal} />
