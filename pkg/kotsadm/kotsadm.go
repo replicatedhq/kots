@@ -292,6 +292,7 @@ func EnsureKotsadmRoleBinding(roleBindingNamespace string, kotsadmNamespace stri
 		if err != nil {
 			return errors.Wrap(err, "failed to create rolebinding")
 		}
+		return nil
 	}
 
 	currentRoleBinding = updateKotsadmRoleBinding(currentRoleBinding, roleBinding)
