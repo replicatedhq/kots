@@ -39,6 +39,11 @@ export default function SubNavBar(props) {
       displayName: "Partial Snapshots (Application)",
       to: (slug) => `/snapshots/partial/${slug}`,
     },
+    {
+      tabName: "settings-schedule",
+      displayName: "Settings & Schedule",
+      to: () => `/snapshots/settings-schedule`,
+    },
   ]
 
   return (

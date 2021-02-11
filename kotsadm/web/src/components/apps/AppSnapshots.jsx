@@ -82,7 +82,7 @@ class AppSnapshots extends Component {
     }
   }
 
-  checkRestoreInProgress(appSlug) {
+  checkRestoreInProgress() {
     const { app } = this.props;
     fetch(`${window.env.API_ENDPOINT}/app/${app.slug}/snapshot/restore/status`, {
       method: "GET",

@@ -323,10 +323,7 @@ class Snapshots extends Component {
       )
     }
 
-    const isInternalStore = snapshotSettings?.store?.internal;
     const isVeleroCorrectVersion = snapshotSettings?.isVeleroRunning && snapshotSettings?.veleroVersion.includes("v1.5");
-    const snapshotApp = this.props.appsList?.find(app => app.allowSnapshots);
-
 
     return (
       <div className="flex1 flex-column u-overflow--auto">
@@ -340,32 +337,19 @@ class Snapshots extends Component {
           </div>
           : null}
         <div className="container flex-column flex1 u-paddingTop--30 u-paddingBottom--20 alignItems--center">
-          <div className="InfoSnapshots--wrapper flex flex-auto u-marginBottom--20">
-            <span className="icon snapshot-getstarted-icon flex-auto u-marginRight--20 u-marginTop--5" />
-            <div className="flex-column">
-              <p className="u-fontSize--large u-fontWeight--bold u-lineHeight--normal u-color--tundora flex alignItems--center"> Instance Snapshots <span className="beta-tag u-marginLeft--5"> beta </span> </p>
-              <p className="u-fontSize--small u-fontWeight--normal u-lineHeight--normal u-color--doveGray u-marginTop--5">
-                Instance snapshots back up the Admin Console and all application data. They can be used for full Disaster Recovery; by restoring over top of this instance, or into a new cluster.
-              </p>
-              <p className="u-fontSize--small u-fontWeight--normal u-lineHeight--normal u-color--doveGray u-marginTop--5">
-                If you only need a partial backup of just application volumes and manifests for rollbacks, <Link to={`/app/${snapshotApp?.slug}/snapshots`} className="replicated-link u-fontSize--small">use Application Snapshots</Link>.
-              </p>
-              {isInternalStore && isKurlEnabled ?
-                <p className="u-fontSize--normal u-fontWeight--medium u-lineHeight--normal u-color--jaffa u-marginTop--20"> Instance snapshots with internal storage may result in data loss.  Please configure external storage. </p>
-                :
-                null
-              }
-            </div>
-          </div>
-          <div className="AppSnapshots--wrapper flex1 flex-column u-width--full">
-            <div className={`flex flex-auto alignItems--center justifyContent--spaceBetween ${(snapshots?.length > 0 && snapshotSettings?.veleroVersion !== "") && "u-borderBottom--gray darker"}`}>
-              <p className="u-fontWeight--bold u-color--tuna u-fontSize--larger u-lineHeight--normal u-marginBottom--15">Snapshots</p>
+          <div className="AppSnapshots--wrapper flex1 flex-column u-width--full u-marginTop--20">
+            <div className="flex flex-auto u-marginBottom--15 alignItems--center justifyContent--spaceBetween">
+              <div className="flex1 flex-column" style={{marginRight: "60px"}}>
+              <p className="u-fontWeight--bold u-color--tuna u-fontSize--larger u-lineHeight--normal">Full Snapshots (Instance) </p>
+              <p className="u-marginTop--10 u-fontSize--normal u-lineHeight--more u-fontWeight--medium u-color--dustyGray"> Full snapshots (Instance) back up the Admin Console and all application data. They can be used for full Disaster Recovery; by restoring over top of this instance, or into a new cluster. 
+              For more information about what is included <a href="https://kots.io/kotsadm/snapshots/"  target="_blank" rel="noopener noreferrer" className="replicated-link">check out our documentation</a>.</p>
+              </div>
               {startSnapshotErr ?
                 <div className="flex flex1 alignItems--center alignSelf--center justifyContent--center u-marginBottom--10">
                   <p className="u-color--chestnut u-fontSize--small u-fontWeight--medium u-lineHeight--normal">{startSnapshotErrorMsg}</p>
                 </div>
                 : null}
-              <div className="flex u-marginBottom--15">
+              <div className="flex alignSelf--flexEnd">
                 <Link to={`/snapshots/settings`} className="replicated-link u-fontSize--small u-fontWeight--bold u-marginRight--20 flex alignItems--center"><span className="icon snapshotSettingsIcon u-marginRight--5" />Settings</Link>
                 {snapshotSettings?.veleroVersion !== "" &&
                   <span data-for="startSnapshotBtn" data-tip="startSnapshotBtn" data-tip-disable={false}>
