@@ -156,6 +156,7 @@ func (h *Handler) UploadAirgapBundleChunk(w http.ResponseWriter, r *http.Request
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
+	defer airgapBundleChunk.Close()
 
 	airgapBundlePath := getAirgapBundlePath(resumableIdentifier)
 
