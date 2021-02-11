@@ -18,6 +18,7 @@ func ExtractTGZArchiveFromFile(tgzFile string, destDir string) error {
 	if err != nil {
 		return errors.Wrap(err, "failed to open tgz file")
 	}
+	defer fileReader.Close()
 
 	err = ExtractTGZArchiveFromReader(fileReader, destDir)
 	if err != nil {
