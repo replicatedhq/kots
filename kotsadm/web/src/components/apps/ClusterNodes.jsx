@@ -28,7 +28,7 @@ export class ClusterNodes extends Component {
     confirmDeleteNode: "",
     showConfirmDrainModal: false,
     nodeNameToDrain: "",
-    drainingNode: false,
+    drainingNodeName: null,
     drainNodeSuccessful: false
   }
 
@@ -147,7 +147,7 @@ export class ClusterNodes extends Component {
   }
 
   drainNode = async (name) => {
-    this.setState({ showConfirmDrainModal: false, drainingNode: true });
+    this.setState({ showConfirmDrainModal: false, drainingNodeName: name });
     fetch(`${window.env.API_ENDPOINT}/kurl/nodes/${name}/drain`, {
       headers: {
         "Authorization": Utilities.getToken(),
@@ -158,7 +158,7 @@ export class ClusterNodes extends Component {
     })
       .then(async (res) => {
         this.setState({
-          drainingNode: false,
+          drainingNodeName: null,
           drainNodeSuccessful: true
         });
         setTimeout(() => {
@@ -168,7 +168,7 @@ export class ClusterNodes extends Component {
       .catch((err) => {
         console.log(err);
         this.setState({
-          drainingNode: false,
+          drainingNodeName: null,
           drainNodeSuccessful: false
         });
       })
@@ -248,7 +248,7 @@ export class ClusterNodes extends Component {
                   <NodeRow
                     key={i}
                     node={node}
-                    drainingNode={this.state.drainingNode}
+                    drainingNodeName={this.state.drainingNodeName}
                     drainNodeSuccessful={this.state.drainNodeSuccessful}
                     drainNode={kurl?.isKurlEnabled ? this.onDrainNodeClick : null}
                     deleteNode={kurl?.isKurlEnabled ? this.deleteNode : null} />

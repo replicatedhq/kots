@@ -9,7 +9,7 @@ export default function NodeRow(props) {
 
   let drainDeleteNode;
   if (props.drainNode && Utilities.sessionRolesHasOneOf([rbacRoles.CLUSTER_ADMIN])) {
-    if (props.drainingNode) {
+    if (props.drainingNodeName && props.drainingNodeName === node?.name) {
       drainDeleteNode = (
         <div className="flex flex-auto alignItems--center">
           <span className="u-marginRight--5">
@@ -28,7 +28,7 @@ export default function NodeRow(props) {
     } else {
       drainDeleteNode = (
         <div className="flex-auto flex-column justifyContent--center">
-          <button onClick={() => node?.isConnected ? props.drainNode(node?.name) : props.deleteNode(node?.name) } className="btn secondary red">{node?.isConnected ? "Drain node" : "Delete node"}</button>
+          <button onClick={() => node?.canDelete ? props.deleteNode(node?.name) : props.drainNode(node?.name)} className="btn secondary red">{node?.canDelete ? "Delete node" : "Drain node"}</button>
         </div>
       );
     }
@@ -87,7 +87,7 @@ export default function NodeRow(props) {
               {
                 node?.memory?.available === -1 ?
                 `${node?.memory?.capacity?.toFixed(1)} GB` :
-                `${node?.memory?.available?.toFixed(1)} used`
+                `${node?.memory?.available?.toFixed(1)} GB used`
               }
             </p>
             {node?.pods?.available !== -1 && <p className="u-marginTop--5 u-color--silverSand u-fontSize--small u-fontWeight--medium">of {node?.memory?.capacity?.toFixed(1)} GB available</p>}
@@ -112,24 +112,24 @@ export default function NodeRow(props) {
           <div className="flex-column flex1 u-marginRight--10">
             <p className="flex1 u-fontSize--small u-fontWeight--medium u-color--tuna">
               <span className={classNames("icon", {
-                "checkmark-icon": !node?.conditions?.memoryPressure,
-                "exclamationMark--icon": node?.conditions?.memoryPressure,
-              })} />
-              {node?.conditions?.memoryPressure ? "No Space on Memory" : "No Memory Pressure"}
-            </p>
-          </div>
-          <div className="flex-column flex1 u-marginRight--10">
-            <p className="flex1 u-fontSize--small u-fontWeight--medium u-color--tuna">
-              <span className={classNames("icon", {
                 "checkmark-icon": !node?.conditions?.pidPressure,
                 "exclamationMark--icon": node?.conditions?.pidPressure,
               })} />
               {node?.conditions?.pidPressure ? "Pressure on CPU" : "No CPU Pressure"}
             </p>
           </div>
+          <div className="flex-column flex1 u-marginRight--10">
+            <p className="flex1 u-fontSize--small u-fontWeight--medium u-color--tuna">
+              <span className={classNames("icon", {
+                "checkmark-icon": !node?.conditions?.memoryPressure,
+                "exclamationMark--icon": node?.conditions?.memoryPressure,
+              })} />
+              {node?.conditions?.memoryPressure ? "No Space on Memory" : "No Memory Pressure"}
+            </p>
+          </div>
         </div>
         <div className="u-marginTop--15">
-          <p className="u-color--dustyGray u-fontSize--small u-fontWeight--normal">For more details run <span className="inline-code">kubectl describe node {node?.hostname}</span></p>
+          <p className="u-color--dustyGray u-fontSize--small u-fontWeight--normal">For more details run <span className="inline-code">kubectl describe node {node?.name}</span></p>
         </div>
       </div>
       {drainDeleteNode}
