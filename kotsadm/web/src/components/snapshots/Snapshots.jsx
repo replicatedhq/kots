@@ -312,7 +312,6 @@ class Snapshots extends Component {
 
   render() {
     const { isLoadingSnapshotSettings, snapshotSettings, hasSnapshotsLoaded, startingSnapshot, startSnapshotErr, startSnapshotErrorMsg, snapshots, isStartButtonClicked } = this.state;
-    const { isKurlEnabled } = this.props;
     const inProgressSnapshotExist = snapshots?.find(snapshot => snapshot.status === "InProgress");
 
     if (isLoadingSnapshotSettings && !hasSnapshotsLoaded) {
@@ -351,7 +350,7 @@ class Snapshots extends Component {
                 : null}
               <div className="flex alignSelf--flexEnd">
                 <Link to={`/snapshots/settings`} className="replicated-link u-fontSize--small u-fontWeight--bold u-marginRight--20 flex alignItems--center"><span className="icon snapshotSettingsIcon u-marginRight--5" />Settings</Link>
-                {snapshotSettings?.veleroVersion !== "" &&
+                {snapshots?.length > 0 && snapshotSettings?.veleroVersion !== "" &&
                   <span data-for="startSnapshotBtn" data-tip="startSnapshotBtn" data-tip-disable={false}>
                     <button className="btn primary blue" disabled={startingSnapshot || (inProgressSnapshotExist && !startSnapshotErr)} onClick={this.startInstanceSnapshot}>{startingSnapshot ? "Starting a snapshot..." : "Start a snapshot"}</button>
                   </span>}
