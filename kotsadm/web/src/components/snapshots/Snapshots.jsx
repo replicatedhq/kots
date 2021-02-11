@@ -343,11 +343,6 @@ class Snapshots extends Component {
               <p className="u-marginTop--10 u-fontSize--normal u-lineHeight--more u-fontWeight--medium u-color--dustyGray"> Full snapshots (Instance) back up the Admin Console and all application data. They can be used for full Disaster Recovery; by restoring over top of this instance, or into a new cluster. 
               For more information about what is included <a href="https://kots.io/kotsadm/snapshots/"  target="_blank" rel="noopener noreferrer" className="replicated-link">check out our documentation</a>.</p>
               </div>
-              {startSnapshotErr ?
-                <div className="flex flex1 alignItems--center alignSelf--center justifyContent--center u-marginBottom--10">
-                  <p className="u-color--chestnut u-fontSize--small u-fontWeight--medium u-lineHeight--normal">{startSnapshotErrorMsg}</p>
-                </div>
-                : null}
               <div className="flex alignSelf--flexEnd">
                 <Link to={`/snapshots/settings`} className="replicated-link u-fontSize--small u-fontWeight--bold u-marginRight--20 flex alignItems--center"><span className="icon snapshotSettingsIcon u-marginRight--5" />Settings</Link>
                 {snapshots?.length > 0 && snapshotSettings?.veleroVersion !== "" &&
@@ -360,6 +355,11 @@ class Snapshots extends Component {
                   </ReactTooltip>}
               </div>
             </div>
+            {startSnapshotErr ?
+                <div className="flex alignItems--center alignSelf--center justifyContent--center u-marginBottom--10">
+                  <p className="u-color--chestnut u-fontSize--small u-fontWeight--medium u-lineHeight--normal">{startSnapshotErrorMsg}</p>
+                </div>
+                : null}
             {snapshots?.length > 0 && snapshotSettings?.veleroVersion !== "" ?
               <div className="flex flex-column">
                 {snapshots?.map((snapshot) => (
