@@ -11,6 +11,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 
 	"github.com/manifoldco/promptui"
@@ -33,6 +34,8 @@ type UploadOptions struct {
 	RegistryOptions       registry.RegistryOptions
 	Endpoint              string
 	Silent                bool
+	Deploy                bool
+	SkipPreflights        bool
 	updateCursor          string
 	license               *string
 	versionLabel          string
@@ -166,10 +169,12 @@ func createUploadRequest(path string, uploadOptions UploadOptions, uri string) (
 	method := ""
 	if uploadOptions.ExistingAppSlug != "" {
 		method = "PUT"
-		metadata := map[string]string{
-			"slug":         uploadOptions.ExistingAppSlug,
-			"versionLabel": uploadOptions.versionLabel,
-			"updateCursor": uploadOptions.updateCursor,
+		metadata := map[string]interface{}{
+			"slug":           uploadOptions.ExistingAppSlug,
+			"versionLabel":   uploadOptions.versionLabel,
+			"updateCursor":   uploadOptions.updateCursor,
+			"deploy":         uploadOptions.Deploy,
+			"skipPreflights": uploadOptions.SkipPreflights,
 			// Intentionally not including registry info here.  Updating settings should be its own thing.
 		}
 		b, err := json.Marshal(metadata)
@@ -195,6 +200,8 @@ func createUploadRequest(path string, uploadOptions UploadOptions, uri string) (
 			"registryUsername":  uploadOptions.RegistryOptions.Username,
 			"registryPassword":  uploadOptions.RegistryOptions.Password,
 			"registryNamespace": uploadOptions.RegistryOptions.Namespace,
+			"deploy":            strconv.FormatBool(uploadOptions.Deploy),
+			"skipPreflights":    strconv.FormatBool(uploadOptions.SkipPreflights),
 		}
 
 		if uploadOptions.license != nil {

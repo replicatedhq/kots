@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/preflight"
@@ -18,9 +19,11 @@ import (
 )
 
 type UploadExistingAppRequest struct {
-	Slug         string `json:"slug"`
-	VersionLabel string `json:"versionLabel,omitempty"`
-	UpdateCursor string `json:"updateCursor,omitempty"`
+	Slug           string `json:"slug"`
+	VersionLabel   string `json:"versionLabel,omitempty"`
+	UpdateCursor   string `json:"updateCursor,omitempty"`
+	Deploy         bool   `json:"deploy"`
+	SkipPreflights bool   `json:"skipPreflights"`
 }
 
 type UploadResponse struct {
@@ -141,10 +144,20 @@ func (h *Handler) UploadExistingApp(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := preflight.Run(a.ID, a.Slug, newSequence, a.IsAirgap, archiveDir); err != nil {
-		logger.Error(err)
-		w.WriteHeader(500)
-		return
+	if !uploadExistingAppRequest.SkipPreflights {
+		if err := preflight.Run(a.ID, a.Slug, newSequence, a.IsAirgap, archiveDir); err != nil {
+			logger.Error(err)
+			w.WriteHeader(500)
+			return
+		}
+	}
+
+	if uploadExistingAppRequest.Deploy {
+		if err := version.DeployVersion(a.ID, newSequence); err != nil {
+			logger.Error(errors.Wrap(err, "failed to deploy latest version"))
+			w.WriteHeader(500)
+			return
+		}
 	}
 
 	uploadResponse := UploadResponse{
