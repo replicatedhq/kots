@@ -61,7 +61,7 @@ COPY --chown=kotsadm-operator:kotsadm-operator ./bin/kotsadm-operator /kotsadm-o
 
 # Install our plugins
 USER root
-ENV TROUBLESHOOT_VERSION=0.9.55
+ENV TROUBLESHOOT_VERSION=0.10.2
 RUN curl -L "https://github.com/replicatedhq/troubleshoot/releases/download/v${TROUBLESHOOT_VERSION}/preflight_linux_amd64.tar.gz" > /tmp/preflight.tar.gz && \
   cd /tmp && tar xzvf preflight.tar.gz && \
   mv /tmp/preflight /usr/local/bin/kubectl-preflight
