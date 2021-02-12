@@ -134,6 +134,7 @@ func generateNewAdminConsoleFiles(settings *UpstreamSettings) ([]types.UpstreamF
 		HTTPProxyEnvValue:      settings.HTTPProxyEnvValue,
 		HTTPSProxyEnvValue:     settings.HTTPSProxyEnvValue,
 		NoProxyEnvValue:        settings.NoProxyEnvValue,
+		EnsureRBAC:             true,
 	}
 
 	if deployOptions.SharedPasswordBcrypt == "" && deployOptions.SharedPassword == "" {

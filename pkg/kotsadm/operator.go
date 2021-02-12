@@ -47,8 +47,10 @@ func getOperatorYAML(deployOptions types.DeployOptions) (map[string][]byte, erro
 }
 
 func ensureOperator(deployOptions types.DeployOptions, clientset *kubernetes.Clientset) error {
-	if err := ensureOperatorRBAC(deployOptions, clientset); err != nil {
-		return errors.Wrap(err, "failed to ensure operator rbac")
+	if deployOptions.EnsureRBAC {
+		if err := ensureOperatorRBAC(deployOptions, clientset); err != nil {
+			return errors.Wrap(err, "failed to ensure operator rbac")
+		}
 	}
 
 	if err := ensureOperatorDeployment(deployOptions, clientset); err != nil {

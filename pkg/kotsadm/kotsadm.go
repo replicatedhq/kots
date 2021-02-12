@@ -139,8 +139,10 @@ func restartKotsadm(deployOptions *types.DeployOptions, clientset *kubernetes.Cl
 }
 
 func ensureKotsadmComponent(deployOptions *types.DeployOptions, clientset *kubernetes.Clientset) error {
-	if err := ensureKotsadmRBAC(*deployOptions, clientset); err != nil {
-		return errors.Wrap(err, "failed to ensure kotsadm rbac")
+	if deployOptions.EnsureRBAC {
+		if err := ensureKotsadmRBAC(*deployOptions, clientset); err != nil {
+			return errors.Wrap(err, "failed to ensure kotsadm rbac")
+		}
 	}
 
 	if err := ensureApplicationMetadata(*deployOptions, clientset); err != nil {

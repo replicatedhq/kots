@@ -43,6 +43,7 @@ type DeployOptions struct {
 	ExcludeAdminConsole       bool
 	EnsureKotsadmConfig       bool
 	SkipPreflights            bool
+	EnsureRBAC                bool
 
 	IdentityConfig kotsv1beta1.IdentityConfig
 	IngressConfig  kotsv1beta1.IngressConfig
