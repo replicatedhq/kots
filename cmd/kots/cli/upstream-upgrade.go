@@ -16,11 +16,11 @@ import (
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/auth"
 	"github.com/replicatedhq/kots/pkg/docker/registry"
-	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/kotsadm"
 	kotsadmtypes "github.com/replicatedhq/kots/pkg/kotsadm/types"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/logger"
+	"github.com/replicatedhq/kots/pkg/upload"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	kustomizetypes "sigs.k8s.io/kustomize/api/types"
@@ -113,23 +113,10 @@ func UpstreamUpgradeCmd() *cobra.Command {
 
 			stopCh := make(chan struct{})
 			defer close(stopCh)
-
-			clientset, err := k8sutil.GetClientset(kubernetesConfigFlags)
+			localPort, errChan, err := upload.StartPortForward(v.GetString("namespace"), kubernetesConfigFlags, stopCh, log)
 			if err != nil {
 				log.FinishSpinnerWithError()
-				return errors.Wrap(err, "failed to get clientset")
-			}
-
-			podName, err := k8sutil.FindKotsadm(clientset, v.GetString("namespace"))
-			if err != nil {
-				log.FinishSpinnerWithError()
-				return errors.Wrap(err, "failed to find kotsadm pod")
-			}
-
-			localPort, errChan, err := k8sutil.PortForward(kubernetesConfigFlags, 0, 3000, v.GetString("namespace"), podName, false, stopCh, log)
-			if err != nil {
-				log.FinishSpinnerWithError()
-				return errors.Wrap(err, "failed to start port forwarding")
+				return err
 			}
 
 			go func() {
