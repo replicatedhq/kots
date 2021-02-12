@@ -1,6 +1,6 @@
 import React, { Component, Fragment } from "react";
 import classNames from "classnames";
-import { withRouter, Switch, Route } from "react-router-dom";
+import { withRouter, Switch, Route, Redirect } from "react-router-dom";
 import { Helmet } from "react-helmet";
 import Modal from "react-modal";
 
@@ -412,6 +412,12 @@ class AppDetailPage extends Component {
                         />
                       } />
                     }
+                    {/* snapshots redirects */}
+                    <Redirect exact from="/app/:slug/snapshots" to="/snapshots/partial/:slug" />
+                    <Redirect exact from="/app/:slug/snapshots/schedule" to="/snapshots/settings?:slug" />
+                    <Redirect exact from="/app/:slug/snapshots/:id" to="/snapshots/partial/:slug/:id" />
+                    <Redirect exact from="/app/:slug/snapshots/:id/restore" to="/snapshots/partial/:slug/:id/restore" />
+
                     <Route component={NotFound} />
                   </Switch>
                 </Fragment>

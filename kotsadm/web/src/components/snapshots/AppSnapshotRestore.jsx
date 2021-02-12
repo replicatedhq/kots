@@ -99,7 +99,7 @@ class AppSnapshotRestore extends Component {
     this.setState({ cancelingRestore: true, cancelRestoreErr: false, cancelRestoreErrorMsg: "" });
     try {
       await this.fetchCancelRestore();
-      this.props.history.push(`/app/${this.props.app?.slug}/snapshots`);
+      this.props.history.push(`/snapshots/partial/${this.props.app?.slug}`);
     } catch (err) {
       this.setState({
         cancelRestoreErr: true,

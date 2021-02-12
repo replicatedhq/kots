@@ -128,15 +128,13 @@
   min-width: 260px;
   max-height: 214px;
   width: 260px;
-  height: 214px;
   margin-right: 30px;
 }
 
 .small-dashboard-card {
   min-width: 260px;
-  max-height: 85px;
+  max-height: 100px;
   width: 260px;
-  height: 85px;
   box-shadow: 0 0 4px rgba(0, 0, 0, 0.16);
   transition: box-shadow .2s;
   border: 1px solid rgba(0, 0, 0, 0);
@@ -145,6 +143,11 @@
 
   &:first-child {
     margin-bottom: 20px;
+    height: 100px;
+  }
+
+  &:nth-child(2) {
+    height: 70px;
   }
 }
 

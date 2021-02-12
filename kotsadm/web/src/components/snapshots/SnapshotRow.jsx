@@ -57,7 +57,7 @@ class SnapshotRow extends React.Component {
             {snapshot?.status !== "InProgress" &&
               <span className="icon snapshot-trash-icon u-marginLeft--20 u-cursor--pointer" onClick={() => this.handleDeleteClick(snapshot)} />}
             {!isExpired && snapshot?.status !== "Deleting" &&
-              <Link to={app ? `/snapshots/partial/${this.props.app.slug}/${snapshot?.name}` : `/snapshots/full/details/${snapshot?.name}`} className="icon snapshot-details-icon u-marginLeft--20 u-cursor--pointer" />
+              <Link to={app ? `/snapshots/partial/${this.props.app.slug}/${snapshot?.name}` : `/snapshots/details/${snapshot?.name}`} className="icon snapshot-details-icon u-marginLeft--20 u-cursor--pointer" />
             }
           </div>
         }

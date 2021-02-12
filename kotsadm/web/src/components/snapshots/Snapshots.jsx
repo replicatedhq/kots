@@ -3,6 +3,7 @@ import { Link, withRouter } from "react-router-dom";
 import Helmet from "react-helmet";
 import ReactTooltip from "react-tooltip";
 import moment from "moment";
+import isEmpty from "lodash/isEmpty";
 
 import Loader from "../shared/Loader";
 import SnapshotRow from "./SnapshotRow";
@@ -40,11 +41,23 @@ class Snapshots extends Component {
     isStartButtonClicked: false,
     listSnapshotsJob: new Repeater(),
     networkErr: false,
-    displayErrorModal: false
+    displayErrorModal: false,
+
+    selectedRestore: "full",
+    selectedRestoreApp: {},
+    appSnapshots: [],
+    appSlugToRestore: "",
+    appSlugMismatch: false,
+    restoringSnapshot: false
   };
 
   componentDidMount() {
     this.fetchSnapshotSettings();
+    if (this.state.selectedRestore !== "full" && !isEmpty(this.props.appsList)) {
+      this.setState({ selectedRestoreApp: this.props.appsList[0] }, () => {
+        this.fetchAppSnapshots(this.props.appsList[0])
+      });
+    }
   }
 
   componentWillUnmount() {
@@ -52,7 +65,7 @@ class Snapshots extends Component {
   }
 
   componentDidUpdate(lastProps, lastState) {
-    const { snapshots, networkErr } = this.state;
+    const { snapshots, networkErr, selectedRestore } = this.state;
 
     if (snapshots?.length !== lastState.snapshots?.length && snapshots) {
       if (snapshots?.length === 0 && lastState.snapshots?.length > 0) {
@@ -67,6 +80,51 @@ class Snapshots extends Component {
         this.state.listSnapshotsJob.start(this.listSnapshots, 2000);
         return;
       }
+    }
+
+    if (selectedRestore !== lastState.selectedRestore && selectedRestore) {
+      if (!isEmpty(this.props.appsList)) {
+        this.setState({ selectedRestoreApp: this.props.appsList[0] }, () => {
+          this.fetchAppSnapshots(this.props.appsList[0])
+        });
+      }
+    }
+  }
+
+  fetchAppSnapshots = async (app) => {
+    this.setState({
+      snapshotsListErr: false,
+      snapshotsListErrMsg: "",
+    })
+    try {
+      const res = await fetch(`${window.env.API_ENDPOINT}/app/${app?.slug}/snapshots`, {
+        method: "GET",
+        headers: {
+          "Authorization": Utilities.getToken(),
+          "Content-Type": "application/json",
+        }
+      })
+      if (!res.ok) {
+        if (res.status === 401) {
+          Utilities.logoutUser();
+          return;
+        }
+        this.setState({
+          snapshotsListErr: true,
+          snapshotsListErrMsg: `Unexpected status code: ${res.status}`,
+        });
+        return;
+      }
+      const response = await res.json();
+
+      this.setState({
+        appSnapshots: response.backups?.sort((a, b) => b.startedAt ? new Date(b.startedAt) - new Date(a.startedAt) : -99999999),
+      });
+    } catch (err) {
+      this.setState({
+        snapshotsListErr: true,
+        snapshotsListErrMsg: err.message ? err.message : "There was an error while showing the snapshots. Please try again",
+      })
     }
   }
 
@@ -309,12 +367,52 @@ class Snapshots extends Component {
     this.setState({ displayErrorModal: !this.state.displayErrorModal });
   }
 
+  onChangeRestoreOption = (selectedRestore) => {
+    this.setState({ selectedRestore });
+  }
+
+  onChangeRestoreApp = (selectedRestoreApp) => {
+    this.setState({ selectedRestoreApp }, () => {
+      this.fetchAppSnapshots(selectedRestoreApp)
+    });
+  }
+
+  getLabel = ({ iconUri, name }) => {
+    return (
+      <div style={{ alignItems: "center", display: "flex" }}>
+        <span className="app-icon" style={{ fontSize: 18, marginRight: "0.5em", backgroundImage: `url(${iconUri})`}}></span>
+        <span style={{ fontSize: 14 }}>{name}</span>
+      </div>
+    );
+  }
+
+
+  handleApplicationSlugChange = (e) => {
+    if (this.state.appSlugMismatch) {
+      this.setState({ appSlugMismatch: false });
+    }
+    this.setState({ appSlugToRestore: e.target.value });
+  }
+
+  handlePartialRestoreSnapshot = snapshot => {
+    const { selectedApp } = this.state;
+
+    if (this.state.appSlugToRestore !== selectedApp?.slug) {
+      this.setState({ appSlugMismatch: true });
+      return;
+    }
+
+    console.log(snapshot)
+
+  //TODO
+
+  }
 
   render() {
     const { isLoadingSnapshotSettings, snapshotSettings, hasSnapshotsLoaded, startingSnapshot, startSnapshotErr, startSnapshotErrorMsg, snapshots, isStartButtonClicked } = this.state;
     const inProgressSnapshotExist = snapshots?.find(snapshot => snapshot.status === "InProgress");
 
-    if (isLoadingSnapshotSettings && !hasSnapshotsLoaded) {
+    if (isLoadingSnapshotSettings || !hasSnapshotsLoaded || (isStartButtonClicked && snapshots?.length === 0) || startingSnapshot) {
       return (
         <div className="flex-column flex1 alignItems--center justifyContent--center">
           <Loader size="60" />
@@ -393,6 +491,17 @@ class Snapshots extends Component {
               restoreSnapshotModal={this.state.restoreSnapshotModal}
               toggleRestoreModal={this.toggleRestoreModal}
               snapshotToRestore={this.state.snapshotToRestore}
+              apps={this.props.appsList}
+              selectedRestore={this.state.selectedRestore}
+              onChangeRestoreOption={this.onChangeRestoreOption}
+              selectedRestoreApp={this.state.selectedRestoreApp}
+              onChangeRestoreApp={this.onChangeRestoreApp}
+              getLabel={this.getLabel}
+              handleApplicationSlugChange={this.handleApplicationSlugChange}
+              appSlugToRestore={this.state.appSlugToRestore}
+              appSlugMismatch={this.state.appSlugMismatch}
+              handlePartialRestoreSnapshot={this.handlePartialRestoreSnapshot}
+              appSnapshot={this.state.appSnapshots[0]}
             />}
           {this.state.displayErrorModal &&
             <ErrorModal

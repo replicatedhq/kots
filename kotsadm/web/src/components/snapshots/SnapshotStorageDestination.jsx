@@ -716,7 +716,11 @@ class SnapshotStorageDestination extends Component {
               </form>
             </div>
           </div>
-          <SnapshotSchedule isVeleroRunning={snapshotSettings?.isVeleroRunning} isKurlEnabled={this.props.isKurlEnabled} toggleSnapshotsRBACModal={this.props.toggleSnapshotsRBACModal} />
+          <SnapshotSchedule 
+            isVeleroRunning={snapshotSettings?.isVeleroRunning} 
+            isKurlEnabled={this.props.isKurlEnabled} 
+            toggleSnapshotsRBACModal={this.props.toggleSnapshotsRBACModal}
+            apps={this.props.apps} />
         </div>
         {this.props.configureSnapshotsModal &&
           <ConfigureSnapshots
