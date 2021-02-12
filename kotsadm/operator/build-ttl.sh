@@ -1,6 +1,8 @@
 #!/bin/bash
 set -e
 
+export CURRENT_USER=`id -u -n`
+
 make build build-ttl.sh
 
 GREEN='\033[0;32m'
