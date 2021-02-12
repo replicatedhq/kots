@@ -506,7 +506,7 @@ time="2020-08-24T15:41:27Z" level=info msg="Skipping resource because it's clust
 					Stdout:        "",
 					Stderr:        "",
 					StartedAt:     mustParseTime(t, time.RFC3339, "2020-08-24T15:41:18Z"),
-					FinishedAt:    mustParseTime(t, time.RFC3339, "2020-08-24T15:41:18Z"),
+					FinishedAt:    mustParseTime(t, time.RFC3339, "2020-08-24T15:41:19Z"),
 					Errors:        nil,
 					Warnings:      nil,
 				},
