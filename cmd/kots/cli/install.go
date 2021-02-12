@@ -540,7 +540,7 @@ func registryFlags(flagset *pflag.FlagSet) {
 
 	// the following group of flags are useful for testing, but we don't want to pollute the help screen with them
 	flagset.String("kotsadm-tag", "", "set to override the tag of kotsadm. this may create an incompatible deployment because the version of kots and kotsadm are designed to work together")
-	flagset.String("kotsadm-namespace", "", "set to override the namespace of kotsadm image. used for airgapped installations.")
+	flagset.String("kotsadm-namespace", "", "set to override the namespace of kotsadm images. used for airgapped installations.")
 	flagset.MarkHidden("kotsadm-tag")
 }
 
