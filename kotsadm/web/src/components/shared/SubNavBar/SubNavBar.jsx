@@ -30,9 +30,9 @@ export default function SubNavBar(props) {
 
   const snapshotsConfig = [
     {
-      tabName: "full",
+      tabName: "snapshots",
       displayName: "Full Snapshots (Instance)",
-      to: () => `/snapshots/full`,
+      to: () => `/snapshots`,
     },
     {
       tabName: "partial",
@@ -73,7 +73,7 @@ export default function SubNavBar(props) {
                   className={classNames({
                     "is-active": activeTab === link.tabName
                   })}>
-                  <Link to={link.to()}>
+                  <Link to={link.to(slug)}>
                     {link.displayName}
                   </Link>
                 </li>

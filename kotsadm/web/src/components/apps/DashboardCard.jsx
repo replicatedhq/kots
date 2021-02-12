@@ -337,8 +337,20 @@ export default class DashboardCard extends React.Component {
   }
 
   render() {
-    const { cardName, cardIcon, application, versionHistory, url, app, appLicense, license, isSnapshotAllowed, startManualSnapshot, startSnapshotErr, startSnapshotErrorMsg, snapshotInProgressApps, getingAppLicenseErrMsg } = this.props;
+    const { cardName, cardIcon, application, versionHistory, url, app, appLicense, license,
+      isSnapshotAllowed, startSnapshotErr, startSnapshotErrorMsg,
+      snapshotInProgressApps, getingAppLicenseErrMsg, startSnapshotOptions,
+      selectedSnapshotOption, onSnapshotOptionChange, onSnapshotOptionClick } = this.props;
+
     const isSnapshotInProgress = !!snapshotInProgressApps?.find(a => a === app?.slug);
+
+    const customStyles = {
+      control: base => ({
+        ...base,
+        height: 30,
+        minHeight: 30
+      })
+    };
 
     return (
       <div className={`${isSnapshotAllowed ? "small-dashboard-card" : appLicense?.licenseType === "community" ? "community-dashboard-card" : appLicense && size(appLicense) === 0 ? "grayed-dashboard-card" : "dashboard-card"} flex flex1`}>
@@ -375,7 +387,20 @@ export default class DashboardCard extends React.Component {
                         <div className="flex flex-column">
                           {startSnapshotErr &&
                             <p className="u-color--chestnut u-fontSize--small u-fontWeight--medium u-lineHeight--normal flex">{startSnapshotErrorMsg}</p>}
-                          <span className="card-link flex" onClick={startManualSnapshot}> Start a snapshot </span>
+                          <div className="flex u-position--relative">
+                            <Select
+                              className="replicated-select-container snapshot"
+                              classNamePrefix="replicated-select"
+                              options={startSnapshotOptions}
+                              getOptionLabel={(option) => option.name}
+                              getOptionValue={(option) => option.name}
+                              value={selectedSnapshotOption}
+                              onChange={onSnapshotOptionChange}
+                              isOptionSelected={(option) => { option.name === selectedSnapshotOption.name }}
+                              styles={customStyles}
+                            />
+                            <button className="StartSnapshotButton" onClick={onSnapshotOptionClick}> {selectedSnapshotOption.name} </button>
+                          </div>
                         </div>
                         : null
                 }

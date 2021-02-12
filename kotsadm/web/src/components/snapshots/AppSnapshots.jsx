@@ -7,9 +7,9 @@ import moment from "moment";
 import Select from "react-select";
 import isEmpty from "lodash/isEmpty";
 
-import SnapshotRow from "../snapshots/SnapshotRow";
-import DummySnapshotRow from "../snapshots/DummySnapshotRow";
-import GettingStartedSnapshots from "../snapshots/GettingStartedSnapshots";
+import SnapshotRow from "./SnapshotRow";
+import DummySnapshotRow from "./DummySnapshotRow";
+import GettingStartedSnapshots from "./GettingStartedSnapshots";
 import ScheduleSnapshotForm from "../shared/ScheduleSnapshotForm";
 import Loader from "../shared/Loader";
 import DeleteSnapshotModal from "../modals/DeleteSnapshotModal";
@@ -58,7 +58,6 @@ class AppSnapshots extends Component {
   componentDidMount = async () => {
     if (!isEmpty(this.props.app)) {
       this.setState({ selectedApp: this.props.app });
-      this.props.history.replace(`/snapshots/partial/${this.props.app.slug}`)
     }
 
     await this.fetchSnapshotSettings();
@@ -315,7 +314,7 @@ class AppSnapshots extends Component {
             restoreErrorMsg: "",
           });
 
-          this.props.history.replace(`/snapshots/${selectedApp.slug}/${snapshot.name}/restore`);
+          this.props.history.replace(`/snapshots/partial/${selectedApp.slug}/${snapshot.name}/restore`);
         } else {
           const body = await result.json();
           this.setState({
@@ -503,8 +502,8 @@ class AppSnapshots extends Component {
         <div className="container flex-column flex1 u-paddingTop--30 u-paddingBottom--20 alignItems--center">
           <div className="InfoSnapshots--wrapper flex flex-auto u-marginBottom--20">
             <span className="icon info-icon flex-auto u-marginRight--5" />
-            <p className="u-fontSize--small u-fontWeight--normal u-lineHeight--normal u-color--doveGray u-marginTop--5">
-              It’s recommend that you use <Link to="/snapshots/full" className="replicated-link u-fontSize--small">
+            <p className="u-fontSize--small u-fontWeight--normal u-lineHeight--normal u-color--doveGray">
+              It’s recommend that you use <Link to="/snapshots" className="replicated-link u-fontSize--small">
                 Full snapshots (Instance) </Link> in lieu of Partial snapshots (Application),
                 given Full snapshots offers the same restoration capabilities.
                 <a href="https://kots.io/kotsadm/snapshots/" target="_blank" rel="noopener noreferrer"
@@ -611,6 +610,7 @@ class AppSnapshots extends Component {
               appSlugToRestore={this.state.appSlugToRestore}
               appSlugMismatch={this.state.appSlugMismatch}
               handleApplicationSlugChange={this.handleApplicationSlugChange}
+              apps={this.props.appsList}
             />
           }
         </div>

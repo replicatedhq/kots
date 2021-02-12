@@ -85,7 +85,7 @@ export default [
     displayRule: () => {
       return true;
     }
-  },,
+  },
   {
     tabName: "access",
     displayName: "Access",

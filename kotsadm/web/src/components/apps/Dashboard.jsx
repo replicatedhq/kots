@@ -59,7 +59,13 @@ class Dashboard extends Component {
       prometheusAddress: "",
     },
     getAppDashboardJob: new Repeater(),
-    gettingAppLicenseErrMsg: ""
+    gettingAppLicenseErrMsg: "",
+    startSnapshotOptions: [
+      {option: "partial", name: "Start a Partial snapshot" },
+      {option: "full", name: "Start a Full snapshot" },
+      {option: "learn", name: "Learn about the difference"}
+    ],
+    selectedSnapshotOption: {option: "full", name: "Start a Full snapshot" },
   }
 
   toggleConfigureGraphs = () => {
@@ -474,15 +480,19 @@ class Dashboard extends Component {
     );
   }
 
-  startManualSnapshot = () => {
+  startASnapshot = (isFull) => {
     const { app } = this.props;
     this.setState({
       startingSnapshot: true,
       startSnapshotErr: false,
       startSnapshotErrorMsg: "",
     });
+    
+    let url = isFull ? 
+    `${window.env.API_ENDPOINT}/snapshot/backup` 
+    : `${window.env.API_ENDPOINT}/app/${app.slug}/snapshot/backup`;
 
-    fetch(`${window.env.API_ENDPOINT}/app/${app.slug}/snapshot/backup`, {
+    fetch(url, {
       method: "POST",
       headers: {
         "Authorization": Utilities.getToken(),
@@ -506,7 +516,9 @@ class Dashboard extends Component {
           startingSnapshot: false
         });
         this.props.ping();
-        this.props.history.push(`/app/${app.slug}/snapshots`)
+        isFull ? 
+        this.props.history.push("/snapshots") 
+        :this.props.history.push(`/snapshots/partial/${app.slug}`)
       } else {
         const body = await result.json();
         this.setState({
@@ -522,6 +534,22 @@ class Dashboard extends Component {
         startSnapshotErrorMsg: err ? err.message : "Something went wrong, please try again."
       });
     })
+  }
+
+  onSnapshotOptionChange = (selectedSnapshotOption) => {
+    this.setState({ selectedSnapshotOption });
+  }
+
+  onSnapshotOptionClick = () => {
+    const { selectedSnapshotOption } = this.state;
+
+    if (selectedSnapshotOption.option === "full") {
+      this.startASnapshot(true);
+    } else if (selectedSnapshotOption.option === "partial") {
+      this.startASnapshot(false);
+    } else {
+      window.open("https://kots.io/vendor/snapshots/overview/", "_blank"); 
+    }
   }
 
   render() {
@@ -634,10 +662,14 @@ class Dashboard extends Component {
                     app={app}
                     isSnapshotAllowed={app.allowSnapshots && isVeleroInstalled}
                     isVeleroInstalled={isVeleroInstalled}
-                    startManualSnapshot={this.startManualSnapshot}
+                    startASnapshot={this.startASnapshot}
+                    startSnapshotOptions={this.state.startSnapshotOptions}
                     startSnapshotErr={this.state.startSnapshotErr}
                     startSnapshotErrorMsg={this.state.startSnapshotErrorMsg}
                     snapshotInProgressApps={this.props.snapshotInProgressApps}
+                    selectedSnapshotOption={this.state.selectedSnapshotOption}
+                    onSnapshotOptionChange={this.onSnapshotOptionChange}
+                    onSnapshotOptionClick={this.onSnapshotOptionClick}
                   />
                   <DashboardCard
                     cardName="License"
