@@ -78,7 +78,7 @@ func GetNodes(client kubernetes.Interface) (*types.KurlNodes, error) {
 		toReturn.Nodes = append(toReturn.Nodes, types.Node{
 			Name:           node.Name,
 			IsConnected:    isConnected(node),
-			IsMasterNode:   isMaster(node),
+			IsPrimaryNode:  isPrimary(node),
 			CanDelete:      node.Spec.Unschedulable && !isConnected(node),
 			KubeletVersion: node.Status.NodeInfo.KubeletVersion,
 			CPU:            cpuCapacity,
@@ -184,7 +184,7 @@ func isConnected(node corev1.Node) bool {
 	return true
 }
 
-func isMaster(node corev1.Node) bool {
+func isPrimary(node corev1.Node) bool {
 	for label := range node.ObjectMeta.Labels {
 		if label == "node-role.kubernetes.io/master" {
 			return true
