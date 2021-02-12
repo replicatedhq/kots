@@ -91,10 +91,10 @@ func AdminConsoleUpgradeCmd() *cobra.Command {
 
 	cmd.Flags().Bool("force-upgrade-kurl", false, "set to force upgrade even if this is a kurl cluster")
 	cmd.Flags().String("kotsadm-tag", "", "set to override the tag of kotsadm. this may create an incompatible deployment because the version of kots and kotsadm are designed to work together")
-	cmd.Flags().String("kotsadm-registry", "", "set to override the registry of kotsadm image. this may create an incompatible deployment because the version of kots and kotsadm are designed to work together")
+	cmd.Flags().String("kotsadm-registry", "", "set to override the registry of kotsadm images. this may create an incompatible deployment because the version of kots and kotsadm are designed to work together")
 	cmd.Flags().String("registry-username", "", "user name to use to authenticate with the registry")
 	cmd.Flags().String("registry-password", "", "password to use to authenticate with the registry")
-	cmd.Flags().String("kotsadm-namespace", "", "set to override the namespace of kotsadm image. this may create an incompatible deployment because the version of kots and kotsadm are designed to work together")
+	cmd.Flags().String("kotsadm-namespace", "", "set to override the namespace of kotsadm images. this may create an incompatible deployment because the version of kots and kotsadm are designed to work together")
 	cmd.Flags().String("wait-duration", "2m", "timeout out to be used while waiting for individual components to be ready.  must be in Go duration format (eg: 10s, 2m)")
 	cmd.Flags().MarkHidden("force-upgrade-kurl")
 	cmd.Flags().MarkHidden("kotsadm-tag")
