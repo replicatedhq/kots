@@ -23,9 +23,8 @@ spec:
         - name: SCHEMAHERO_OUT
           value: /migrations/plan.yaml              
         image: kotsadm-migrations
-        name: kotsadm-migrations
-        args: ["plan"]
         name: migrations-plan
+        args: ["plan"]
         volumeMounts:
           - name: migrations
             mountPath: /migrations        
