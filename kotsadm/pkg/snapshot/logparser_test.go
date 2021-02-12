@@ -16,7 +16,7 @@ func Test_parseLogs(t *testing.T) {
 		logs         string
 		wantErrors   []types.SnapshotError
 		wantWarnings []types.SnapshotError
-		wantHooks    []types.SnapshotHook
+		wantHooks    []*types.SnapshotHook
 		wantErr      bool
 	}{
 		{
@@ -495,7 +495,7 @@ time="2020-08-24T15:41:27Z" level=info msg="Skipping resource because it's clust
 					Title: "Volume dummydata in pod test/example-nginx-5758b958bf-fhsgs is a hostPath volume which is not supported for restic backup, skipping",
 				},
 			},
-			wantHooks: []types.SnapshotHook{
+			wantHooks: []*types.SnapshotHook{
 				{
 					Name:          "<from-annotation>",
 					Namespace:     "test",
@@ -506,6 +506,7 @@ time="2020-08-24T15:41:27Z" level=info msg="Skipping resource because it's clust
 					Stdout:        "",
 					Stderr:        "",
 					StartedAt:     mustParseTime(t, time.RFC3339, "2020-08-24T15:41:18Z"),
+					FinishedAt:    mustParseTime(t, time.RFC3339, "2020-08-24T15:41:19Z"),
 					Errors:        nil,
 					Warnings:      nil,
 				},

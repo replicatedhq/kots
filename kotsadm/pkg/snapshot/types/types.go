@@ -72,7 +72,7 @@ type BackupDetail struct {
 	Status          string           `json:"status"`
 	VolumeSizeHuman string           `json:"volumeSizeHuman"`
 	Namespaces      []string         `json:"namespaces"`
-	Hooks           []SnapshotHook   `json:"hooks"`
+	Hooks           []*SnapshotHook  `json:"hooks"`
 	Volumes         []SnapshotVolume `json:"volumes"`
 	Errors          []SnapshotError  `json:"errors"`
 	Warnings        []SnapshotError  `json:"warnings"`
