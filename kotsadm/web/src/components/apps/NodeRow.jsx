@@ -41,6 +41,7 @@ export default function NodeRow(props) {
           <p className="u-fontSize--normal u-fontWeight--bold u-color--tuna">
             {node?.name}
           </p>
+          {node?.isMasterNode && <span className="nodeTag flex-auto alignItems--center u-fontWeight--medium u-marginLeft--10">Master node</span>}
         </div>
         <div className="flex flex1 alignItems--center u-marginTop--10 NodeRow--items">
           <div className="flex-column flex1 u-marginRight--10">
