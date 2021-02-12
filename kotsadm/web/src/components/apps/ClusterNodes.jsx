@@ -404,14 +404,14 @@ export class ClusterNodes extends Component {
             shouldReturnFocusAfterClose={false}
             contentLabel="Confirm Drain Node"
             ariaHideApp={false}
-            className="Modal"
+            className="Modal MediumSize"
           >
             <div className="Modal-body">
               <p className="u-fontSize--larger u-color--tuna u-fontWeight--bold u-lineHeight--normal">
-                Are you sure you want to drain this node?
+                Are you sure you want to drain {this.state.nodeNameToDrain}?
               </p>
               <p className="u-fontSize--normal u-color--dustyGray u-lineHeight--normal u-marginBottom--20">
-                Draining this node may cause data loss. Are you sure you want to proceed?
+                Draining this node may cause data loss. If you want to delete {this.state.nodeNameToDrain} you must disconnect it after it has been drained.
               </p>
               <div className="u-marginTop--10 flex">
                 <button
