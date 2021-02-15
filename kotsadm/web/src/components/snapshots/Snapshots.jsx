@@ -352,6 +352,8 @@ class Snapshots extends Component {
       })
       if (result?.veleroVersion) {
         this.state.listSnapshotsJob.start(this.listInstanceSnapshots, 2000);
+      } else {
+        this.props.history.push("/snapshots/settings?configure=true")
       }
     } catch (err) {
       this.setState({
