@@ -183,8 +183,15 @@ func GetRestoreDetails(ctx context.Context, restoreName string) (*types.RestoreD
 			logger.Error(errors.Wrap(err, "failed to download restore results"))
 		}
 
-		result.Warnings = warnings
 		result.Errors = errs
+
+		filtered, err := filterWarnings(restore, warnings, &filterGetter{})
+		if err != nil {
+			logger.Infof("failed to filter warnings: %v", err)
+			result.Warnings = warnings
+		} else {
+			result.Warnings = filtered
+		}
 	}
 
 	return result, nil
