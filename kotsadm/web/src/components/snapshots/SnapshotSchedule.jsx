@@ -358,7 +358,7 @@ class SnapshotSchedule extends Component {
                   getOptionValue={(app) => app.name}
                   value={this.state.selectedApp}
                   onChange={this.onAppChange}
-                  isOptionSelected={(app) => { app.name === this.state.selectedApp.name }}
+                  isOptionSelected={(app) => { app.name === this.state.selectedApp?.name }}
                 />
               </div>
             </div>
