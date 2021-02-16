@@ -157,12 +157,12 @@ export class ClusterNodes extends Component {
       method: "POST",
     })
       .then(async (res) => {
-        this.setState({
-          drainingNodeName: null,
-          drainNodeSuccessful: true
-        });
+        this.setState({ drainNodeSuccessful: true });
         setTimeout(() => {
-          this.setState({ drainNodeSuccessful: false });
+          this.setState({
+            drainingNodeName: null,
+            drainNodeSuccessful: false
+          });
         }, 3000);
       })
       .catch((err) => {

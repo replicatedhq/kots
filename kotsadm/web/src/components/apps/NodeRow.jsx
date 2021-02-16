@@ -9,7 +9,7 @@ export default function NodeRow(props) {
 
   let drainDeleteNode;
   if (props.drainNode && Utilities.sessionRolesHasOneOf([rbacRoles.CLUSTER_ADMIN])) {
-    if (props.drainingNodeName && props.drainingNodeName === node?.name) {
+    if (!props.drainNodeSuccessful && props.drainingNodeName && props.drainingNodeName === node?.name) {
       drainDeleteNode = (
         <div className="flex flex-auto alignItems--center">
           <span className="u-marginRight--5">
@@ -18,7 +18,7 @@ export default function NodeRow(props) {
           <span className="u-fontSize--normal u-color--tundora u-fontWeight--medium">Draining Node</span>
         </div>
       );
-    } else if (props.drainNodeSuccessful) {
+    } else if (props.drainNodeSuccessful && props.drainingNodeName === node?.name) {
       drainDeleteNode = (
         <div className="flex flex-auto alignItems--center">
           <span className="u-marginRight--5 icon checkmark-icon" />
