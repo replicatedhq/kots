@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
-	"github.com/replicatedhq/kots/kotsadm/pkg/snapshot/types"
+	"github.com/replicatedhq/kots/pkg/api/snapshot/types"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	velerov1 "github.com/vmware-tanzu/velero/pkg/apis/velero/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
