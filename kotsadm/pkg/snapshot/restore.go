@@ -10,7 +10,7 @@ import (
 	units "github.com/docker/go-units"
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
-	"github.com/replicatedhq/kots/kotsadm/pkg/snapshot/types"
+	"github.com/replicatedhq/kots/pkg/api/snapshot/types"
 	velerov1 "github.com/vmware-tanzu/velero/pkg/apis/velero/v1"
 	veleroclientv1 "github.com/vmware-tanzu/velero/pkg/generated/clientset/versioned/typed/velero/v1"
 	velerolabel "github.com/vmware-tanzu/velero/pkg/label"
@@ -170,7 +170,7 @@ func GetRestoreDetails(ctx context.Context, restoreName string) (*types.RestoreD
 
 	result := &types.RestoreDetail{
 		Name:     restore.Name,
-		Phase:    string(restore.Status.Phase),
+		Phase:    restore.Status.Phase,
 		Volumes:  listRestoreVolumes(restoreVolumes.Items),
 		Errors:   make([]types.SnapshotError, 0),
 		Warnings: make([]types.SnapshotError, 0),

@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	snapshottypes "github.com/replicatedhq/kots/pkg/api/snapshot/types"
 	"github.com/replicatedhq/kots/pkg/auth"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/kotsadm"
@@ -392,8 +393,8 @@ func waitForKotsadmApplicationsRestore(backupName string, kotsadmNamespace strin
 		}
 
 		type AppRestoreStatus struct {
-			AppSlug string                 `json:"appSlug"`
-			Status  velerov1.RestoreStatus `json:"status,omitempty"`
+			AppSlug       string                      `json:"appSlug"`
+			RestoreDetail snapshottypes.RestoreDetail `json:"restoreDetail"`
 		}
 		type AppsRestoreStatusResponse struct {
 			Statuses []AppRestoreStatus `json:"statuses"`
@@ -412,11 +413,11 @@ func waitForKotsadmApplicationsRestore(backupName string, kotsadmNamespace strin
 		errs := []string{}
 
 		for _, s := range appsRestoreStatusResponse.Statuses {
-			switch s.Status.Phase {
+			switch s.RestoreDetail.Phase {
 			case velerov1.RestorePhaseCompleted:
 				break
 			case velerov1.RestorePhaseFailed, velerov1.RestorePhasePartiallyFailed:
-				errMsg := fmt.Sprintf("restore failed for app %s with %d errors and %d warnings", s.AppSlug, s.Status.Errors, s.Status.Warnings)
+				errMsg := fmt.Sprintf("restore failed for app %s with %d errors and %d warnings", s.AppSlug, len(s.RestoreDetail.Errors), len(s.RestoreDetail.Warnings))
 				errs = append(errs, errMsg)
 				break
 			default:

@@ -6,7 +6,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
 	"github.com/replicatedhq/kots/kotsadm/pkg/persistence"
-	snapshottypes "github.com/replicatedhq/kots/kotsadm/pkg/snapshot/types"
+	snapshottypes "github.com/replicatedhq/kots/pkg/api/snapshot/types"
 	"go.uber.org/zap"
 )
 

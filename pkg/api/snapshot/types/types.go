@@ -1,6 +1,10 @@
 package types
 
-import "time"
+import (
+	"time"
+
+	velerov1 "github.com/vmware-tanzu/velero/pkg/apis/velero/v1"
+)
 
 type StoreAWS struct {
 	Region          string `json:"region"`
@@ -87,11 +91,11 @@ type BackupDetail struct {
 }
 
 type RestoreDetail struct {
-	Name     string          `json:"name"`
-	Phase    string          `json:"phase"`
-	Volumes  []RestoreVolume `json:"volumes"`
-	Errors   []SnapshotError `json:"errors"`
-	Warnings []SnapshotError `json:"warnings"`
+	Name     string                `json:"name"`
+	Phase    velerov1.RestorePhase `json:"phase"`
+	Volumes  []RestoreVolume       `json:"volumes"`
+	Errors   []SnapshotError       `json:"errors"`
+	Warnings []SnapshotError       `json:"warnings"`
 }
 
 type SnapshotHook struct {
