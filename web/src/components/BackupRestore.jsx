@@ -85,15 +85,27 @@ class BackupRestore extends React.Component {
         "Content-Type": "application/json",
       }
     })
-      .then(res => res.json())
-      .then(result => {
+      .then(async res => {
+        if (!res.ok && res.status === 409) {
+          const result = await res.json();
+          if (result.kotsadmRequiresVeleroAccess) {
+            this.props.toggleSnapshotsRBACModal("show");
+            this.setState({
+              isLoadingSnapshotSettings: false
+            });
+            return;
+          }
+        }
+
+        const result = await res.json();
+
         this.setState({
           snapshotSettings: result,
           isLoadingSnapshotSettings: false,
           snapshotSettingsErr: false,
           snapshotSettingsErrMsg: "",
-        })
-        if (result.veleroVersion === "") {
+        });
+        if (!result.veleroVersion) {
           setTimeout(() => {
             this.setState({ hideCheckVeleroButton: false });
           }, 5000);

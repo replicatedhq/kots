@@ -6,6 +6,7 @@ import (
 
 	"github.com/pkg/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes"
 )
 
 func FindKotsadmImage(namespace string) (string, error) {
@@ -38,4 +39,12 @@ func FindKotsadmImage(namespace string) (string, error) {
 	kotsadmImage := kotsadmDeployment.Spec.Template.Spec.Containers[apiContainerIndex].Image
 
 	return kotsadmImage, nil
+}
+
+func IsKotsadmClusterScoped(ctx context.Context, clientset kubernetes.Interface) bool {
+	_, err := clientset.RbacV1().ClusterRoles().Get(ctx, "kotsadm-role", metav1.GetOptions{})
+	if err != nil {
+		return false
+	}
+	return true
 }

@@ -186,14 +186,27 @@ class AppSnapshots extends Component {
         "Content-Type": "application/json",
       }
     })
-      .then(res => res.json())
-      .then(result => {
+      .then(async res => {
+        if (!res.ok && res.status === 409) {
+          const result = await res.json();
+          if (result.kotsadmRequiresVeleroAccess) {
+            this.props.toggleSnapshotsRBACModal("show");
+            this.setState({
+              isLoadingSnapshotSettings: false
+            });
+            this.props.history.push("/snapshots/settings");
+            return;
+          }
+        }
+
+        const result = await res.json();
+
         this.setState({
           snapshotSettings: result,
           isLoadingSnapshotSettings: false,
           snapshotSettingsErr: false,
           snapshotSettingsErrMsg: "",
-        })
+        });
       })
       .catch(err => {
         this.setState({
@@ -201,7 +214,7 @@ class AppSnapshots extends Component {
           snapshotSettingsErr: true,
           snapshotSettingsErrMsg: err,
         })
-      })
+      });
   }
 
   toggleScheduleSnapshotModal = () => {
@@ -370,7 +383,7 @@ class AppSnapshots extends Component {
         if (!result.ok && result.status === 409) {
           const res = await result.json();
           if (res.kotsadmRequiresVeleroAccess) {
-            this.props.toggleSnapshotsRBACModal(res.veleroNamespace);
+            this.props.toggleSnapshotsRBACModal("show");
             this.setState({
               startingSnapshot: false
             });
@@ -397,7 +410,7 @@ class AppSnapshots extends Component {
           startSnapshotErr: true,
           startSnapshotErrorMsg: err,
         })
-      })
+      });
   }
 
   handleApplicationSlugChange = (e) => {

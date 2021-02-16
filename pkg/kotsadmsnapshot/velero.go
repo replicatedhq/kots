@@ -2,11 +2,13 @@ package snapshot
 
 import (
 	"context"
+	"fmt"
+	"os"
 	"regexp"
 
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/k8s"
-	"github.com/replicatedhq/kots/pkg/k8sutil"
+	"github.com/replicatedhq/kots/pkg/logger"
 	veleroclientv1 "github.com/vmware-tanzu/velero/pkg/generated/clientset/versioned/typed/velero/v1"
 	v1 "k8s.io/api/apps/v1"
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
@@ -21,41 +23,84 @@ var (
 )
 
 type VeleroStatus struct {
-	Version string
-	Plugins []string
-	Status  string
+	Version   string
+	Plugins   []string
+	Status    string
+	Namespace string
 
 	ResticVersion string
 	ResticStatus  string
 }
 
-func CheckKotsadmVeleroAccess() (requiresAccess bool, veleroNamespace string, finalErr error) {
-	clientset, err := k8s.Clientset()
+func CheckKotsadmVeleroAccess() (requiresAccess bool, finalErr error) {
+	cfg, err := config.GetConfig()
 	if err != nil {
-		finalErr = errors.Wrap(err, "failed to get k8s clientset")
+		finalErr = errors.Wrap(err, "failed to get cluster config")
 		return
 	}
 
-	veleroNamespace, err = DetectVeleroNamespace()
+	clientset, err := kubernetes.NewForConfig(cfg)
 	if err != nil {
-		finalErr = errors.Wrap(err, "failed to detect velero namespace")
-		return
-	}
-	if veleroNamespace == "" {
+		finalErr = errors.Wrap(err, "failed to create clientset")
 		return
 	}
 
-	if k8sutil.IsKotsadmClusterScoped(context.TODO(), clientset) {
+	if k8s.IsKotsadmClusterScoped(context.TODO(), clientset) {
 		return
 	}
 
-	_, err = clientset.RbacV1().Roles(veleroNamespace).Get(context.TODO(), "kotsadm-role", metav1.GetOptions{})
+	veleroConfigMap, err := clientset.CoreV1().ConfigMaps(os.Getenv("POD_NAMESPACE")).Get(context.TODO(), "kotsadm-velero-namespace", metav1.GetOptions{})
+	if err != nil {
+		if !kuberneteserrors.IsNotFound(err) {
+			finalErr = errors.Wrap(err, "failed to lookup velero configmap")
+			return
+		}
+		// since this is a minimal rbac installation, kotsadm requires this configmap to know which namespace velero is installed in.
+		// so if it's not found, then the user probably hasn't yet run the command that gives kotsadm access to the namespace velero is installed in,
+		// which will also (re)generate this configmap
+		requiresAccess = true
+		return
+	}
+
+	veleroNamespace := veleroConfigMap.Data["veleroNamespace"]
+
+	veleroClient, err := veleroclientv1.NewForConfig(cfg)
+	if err != nil {
+		finalErr = errors.Wrap(err, "failed to create velero clientset")
+		return
+	}
+
+	backupStorageLocations, err := veleroClient.BackupStorageLocations(veleroNamespace).List(context.TODO(), metav1.ListOptions{})
+	if kuberneteserrors.IsForbidden(err) {
+		requiresAccess = true
+		return
+	}
+	if err != nil {
+		finalErr = errors.Wrap(err, "failed to list backup storage locations")
+		return
+	}
+
+	verifiedVeleroNamespace := ""
+	for _, backupStorageLocation := range backupStorageLocations.Items {
+		if backupStorageLocation.Name == "default" {
+			verifiedVeleroNamespace = backupStorageLocation.Namespace
+			break
+		}
+	}
+
+	if verifiedVeleroNamespace == "" {
+		logger.Error(errors.New(fmt.Sprintf("could not detect velero in '%s' namespace", veleroNamespace)))
+		requiresAccess = true
+		return
+	}
+
+	_, err = clientset.RbacV1().Roles(verifiedVeleroNamespace).Get(context.TODO(), "kotsadm-role", metav1.GetOptions{})
 	if err != nil {
 		requiresAccess = true
 		return
 	}
 
-	_, err = clientset.RbacV1().RoleBindings(veleroNamespace).Get(context.TODO(), "kotsadm-rolebinding", metav1.GetOptions{})
+	_, err = clientset.RbacV1().RoleBindings(verifiedVeleroNamespace).Get(context.TODO(), "kotsadm-rolebinding", metav1.GetOptions{})
 	if err != nil {
 		requiresAccess = true
 		return
@@ -65,10 +110,35 @@ func CheckKotsadmVeleroAccess() (requiresAccess bool, veleroNamespace string, fi
 	return
 }
 
+func getMinimalRBACVeleroNamespace(clientset kubernetes.Interface) (string, error) {
+	// a configmap which includes the namespace in which Velero is installed should already be created in minimal rbac mode
+	c, err := clientset.CoreV1().ConfigMaps(os.Getenv("POD_NAMESPACE")).Get(context.TODO(), "kotsadm-velero-namespace", metav1.GetOptions{})
+	if err != nil {
+		if kuberneteserrors.IsNotFound(err) {
+			return "", nil
+		}
+		return "", errors.Wrap(err, "failed to get velero configmap")
+	}
+	return c.Data["veleroNamespace"], nil
+}
+
 func DetectVeleroNamespace() (string, error) {
 	cfg, err := config.GetConfig()
 	if err != nil {
 		return "", errors.Wrap(err, "failed to get cluster config")
+	}
+
+	clientset, err := kubernetes.NewForConfig(cfg)
+	if err != nil {
+		return "", errors.Wrap(err, "failed to create clientset")
+	}
+
+	veleroNamespace := ""
+	if !k8s.IsKotsadmClusterScoped(context.TODO(), clientset) {
+		veleroNamespace, err = getMinimalRBACVeleroNamespace(clientset)
+		if err != nil {
+			return "", nil
+		}
 	}
 
 	veleroClient, err := veleroclientv1.NewForConfig(cfg)
@@ -76,7 +146,7 @@ func DetectVeleroNamespace() (string, error) {
 		return "", errors.Wrap(err, "failed to create velero clientset")
 	}
 
-	backupStorageLocations, err := veleroClient.BackupStorageLocations("").List(context.TODO(), metav1.ListOptions{})
+	backupStorageLocations, err := veleroClient.BackupStorageLocations(veleroNamespace).List(context.TODO(), metav1.ListOptions{})
 	if kuberneteserrors.IsNotFound(err) {
 		return "", nil
 	}
@@ -116,7 +186,8 @@ func DetectVelero() (*VeleroStatus, error) {
 	}
 
 	veleroStatus := VeleroStatus{
-		Plugins: []string{},
+		Plugins:   []string{},
+		Namespace: veleroNamespace,
 	}
 
 	possibleDeployments, err := listPossibleVeleroDeployments(clientset, veleroNamespace)

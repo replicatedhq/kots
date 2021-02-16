@@ -100,10 +100,6 @@ func CreateApplicationBackup(ctx context.Context, a *apptypes.App, isScheduled b
 	includedNamespaces := []string{appNamespace}
 	includedNamespaces = append(includedNamespaces, kotsKinds.KotsApplication.Spec.AdditionalNamespaces...)
 
-	if os.Getenv("KOTSADM_ENV") == "dev" {
-		includedNamespaces = append(includedNamespaces, os.Getenv("POD_NAMESPACE"))
-	}
-
 	snapshotTrigger := "manual"
 	if isScheduled {
 		snapshotTrigger = "schedule"
@@ -259,6 +255,18 @@ func CreateInstanceBackup(ctx context.Context, cluster *downstreamtypes.Downstre
 		return nil, errors.Wrap(err, "failed to find backupstoragelocations")
 	}
 
+	clientset, err := k8s.Clientset()
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to create k8s clientset")
+	}
+
+	isKotsadmClusterScoped := k8s.IsKotsadmClusterScoped(ctx, clientset)
+	if !isKotsadmClusterScoped {
+		// in minimal rbac, a kotsadm role and rolebinding will exist in the velero namespace to give kotsadm access to velero.
+		// we backup and restore those so that restoring to a new cluster won't require that the user provide those permissions again.
+		includedNamespaces = append(includedNamespaces, kotsadmVeleroBackendStorageLocation.Namespace)
+	}
+
 	kotsadmImage, err := k8s.FindKotsadmImage(kotsadmNamespace)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to find kotsadm image")
@@ -322,7 +330,7 @@ func CreateInstanceBackup(ctx context.Context, cluster *downstreamtypes.Downstre
 
 	veleroClient, err := veleroclientv1.NewForConfig(cfg)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to create clientset")
+		return nil, errors.Wrap(err, "failed to create velero clientset")
 	}
 
 	backup, err := veleroClient.Backups(kotsadmVeleroBackendStorageLocation.Namespace).Create(ctx, veleroBackup, metav1.CreateOptions{})

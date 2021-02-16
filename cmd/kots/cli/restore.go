@@ -34,6 +34,7 @@ func RestoreCmd() *cobra.Command {
 				BackupName:            backupName,
 				KubernetesConfigFlags: kubernetesConfigFlags,
 				WaitForApps:           v.GetBool("wait-for-apps"),
+				VeleroNamespace:       v.GetString("velero-namespace"),
 			}
 			_, err := snapshot.RestoreInstanceBackup(options)
 			if err != nil {
@@ -45,6 +46,7 @@ func RestoreCmd() *cobra.Command {
 	}
 
 	cmd.Flags().String("from-backup", "", "the name of the backup to restore from")
+	cmd.Flags().String("velero-namespace", "", "namespace in which velero is installed")
 	cmd.Flags().Bool("wait-for-apps", true, "wait for all applications to be restored")
 
 	cmd.AddCommand(RestoreListCmd())

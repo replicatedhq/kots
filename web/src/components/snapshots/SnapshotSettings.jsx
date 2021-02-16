@@ -39,15 +39,27 @@ class SnapshotSettings extends Component {
         "Content-Type": "application/json",
       }
     })
-      .then(res => res.json())
-      .then(result => {
+      .then(async res => {
+        if (!res.ok && res.status === 409) {
+          const result = await res.json();
+          if (result.kotsadmRequiresVeleroAccess) {
+            this.props.toggleSnapshotsRBACModal("show");
+            this.setState({
+              isLoadingSnapshotSettings: false
+            });
+            return;
+          }
+        }
+
+        const result = await res.json();
+
         this.setState({
           snapshotSettings: result,
           isLoadingSnapshotSettings: false,
           snapshotSettingsErr: false,
           snapshotSettingsErrMsg: "",
-        })
-        if (result.veleroVersion === "") {
+        });
+        if (!result.veleroVersion) {
           setTimeout(() => {
             this.setState({ hideCheckVeleroButton: false });
           }, 5000);
@@ -76,7 +88,7 @@ class SnapshotSettings extends Component {
 
   componentDidUpdate(lastProps, lastState) {
     if (this.state.snapshotSettings !== lastState.snapshotSettings && this.state.snapshotSettings) {
-      if (this.state.snapshotSettings?.veleroVersion === "") {
+      if (!this.state.snapshotSettings?.veleroVersion) {
         this.props.history.replace("/snapshots/settings?configure=true");
         this.setState({ configureSnapshotsModal: true });
       }
@@ -102,7 +114,7 @@ class SnapshotSettings extends Component {
         if (!res.ok && res.status === 409) {
           const settingsResponse = await res.json();
           if (settingsResponse.kotsadmRequiresVeleroAccess) {
-            this.props.toggleSnapshotsRBACModal(settingsResponse.veleroNamespace);
+            this.props.toggleSnapshotsRBACModal("show");
             this.setState({
               updatingSettings: false,
             });

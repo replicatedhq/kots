@@ -159,7 +159,7 @@ class Snapshots extends Component {
           if (!result.ok && result.status === 409) {
             const res = await result.json();
             if (res.kotsadmRequiresVeleroAccess) {
-              this.props.toggleSnapshotsRBACModal(res.veleroNamespace);
+              this.props.toggleSnapshotsRBACModal("show");
               this.setState({
                 startingSnapshot: false
               });
@@ -275,11 +275,22 @@ class Snapshots extends Component {
           "Authorization": Utilities.getToken(),
           "Content-Type": "application/json",
         }
-      })
+      });
       if (!res.ok) {
         if (res.status === 401) {
           Utilities.logoutUser();
           return;
+        }
+        if (res.status === 409) {
+          const response = await res.json();
+          if (response.kotsadmRequiresVeleroAccess) {
+            this.props.toggleSnapshotsRBACModal("show");
+            this.setState({
+              isLoadingSnapshotSettings: false
+            });
+            this.props.history.push("/snapshots/settings");
+            return;
+          }
         }
         const err = await res.json();
         this.setState({
@@ -438,7 +449,7 @@ class Snapshots extends Component {
               </div>
               <div className="flex alignSelf--flexEnd">
                 <Link to={`/snapshots/settings`} className="replicated-link u-fontSize--small u-fontWeight--bold u-marginRight--20 flex alignItems--center"><span className="icon snapshotSettingsIcon u-marginRight--5" />Settings</Link>
-                {snapshots?.length > 0 && snapshotSettings?.veleroVersion !== "" &&
+                {snapshots?.length > 0 && snapshotSettings?.veleroVersion &&
                   <span data-for="startSnapshotBtn" data-tip="startSnapshotBtn" data-tip-disable={false}>
                     <button className="btn primary blue" disabled={startingSnapshot || (inProgressSnapshotExist && !startSnapshotErr)} onClick={this.startInstanceSnapshot}>{startingSnapshot ? "Starting a snapshot..." : "Start a snapshot"}</button>
                   </span>}
@@ -453,7 +464,7 @@ class Snapshots extends Component {
                 <p className="u-color--chestnut u-fontSize--small u-fontWeight--medium u-lineHeight--normal">{startSnapshotErrorMsg}</p>
               </div>
               : null}
-            {snapshots?.length > 0 && snapshotSettings?.veleroVersion !== "" ?
+            {snapshots?.length > 0 && snapshotSettings?.veleroVersion ?
               <div className="flex flex-column">
                 {snapshots?.map((snapshot) => (
                   <SnapshotRow
@@ -468,7 +479,7 @@ class Snapshots extends Component {
                 <div className="flex flex-column u-position--relative">
                   {[0, 1, 2, 3, 4, 5].map((el) => (<DummySnapshotRow key={el} />
                   ))}
-                  <GettingStartedSnapshots isVeleroInstalled={snapshotSettings?.veleroVersion !== ""} history={this.props.history} startInstanceSnapshot={this.startInstanceSnapshot} />
+                  <GettingStartedSnapshots isVeleroInstalled={!!snapshotSettings?.veleroVersion} history={this.props.history} startInstanceSnapshot={this.startInstanceSnapshot} />
                 </div> : null}
           </div>
           {this.state.deleteSnapshotModal &&
@@ -483,6 +494,8 @@ class Snapshots extends Component {
           }
           {this.state.restoreSnapshotModal &&
             <BackupRestoreModal
+              veleroNamespace={snapshotSettings?.veleroNamespace}
+              isMinimalRBACEnabled={snapshotSettings?.isMinimalRBACEnabled}
               restoreSnapshotModal={this.state.restoreSnapshotModal}
               toggleRestoreModal={this.toggleRestoreModal}
               snapshotToRestore={this.state.snapshotToRestore}

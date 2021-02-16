@@ -720,6 +720,7 @@ class SnapshotStorageDestination extends Component {
             isVeleroRunning={snapshotSettings?.isVeleroRunning} 
             isKurlEnabled={this.props.isKurlEnabled} 
             toggleSnapshotsRBACModal={this.props.toggleSnapshotsRBACModal}
+            isVeleroInstalled={!!snapshotSettings?.veleroVersion}
             apps={this.props.apps} />
         </div>
         {this.props.configureSnapshotsModal &&
