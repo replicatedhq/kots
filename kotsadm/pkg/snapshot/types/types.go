@@ -52,8 +52,10 @@ type Store struct {
 }
 
 type App struct {
-	Slug     string `json:"slug"`
-	Sequence int64  `json:"sequence"`
+	Slug       string `json:"slug"`
+	Sequence   int64  `json:"sequence"`
+	Name       string `json:"name"`
+	AppIconURI string `json:"iconUri"`
 }
 
 type Backup struct {
