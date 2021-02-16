@@ -35,7 +35,7 @@ There will be two modes of operation:
 The following command will be added to CLI:
 
 ```
-kubectl kots config <app-slug> [parameters]
+kubectl kots config <app-slug> set [parameters]
 ```
 
 The following flags will be supported, in addition to all higher level flags:
