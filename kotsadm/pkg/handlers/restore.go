@@ -207,6 +207,10 @@ func (h *Handler) RestoreApps(w http.ResponseWriter, r *http.Request) {
 	JSON(w, http.StatusOK, restoreResponse)
 }
 
+type GetRestoreAppsStatusRequest struct {
+	CheckAll bool     `json:"checkAll"`
+	AppSlugs []string `json:"appSlugs"`
+}
 type GetRestoreAppsStatusResponse struct {
 	Statuses []AppRestoreStatus `json:"statuses"`
 	Error    string             `json:"error,omitempty"`
@@ -222,6 +226,13 @@ func (h *Handler) GetRestoreAppsStatus(w http.ResponseWriter, r *http.Request) {
 	}
 
 	snapshotName := mux.Vars(r)["snapshotName"]
+
+	restoreAppStatusRequest := GetRestoreAppsStatusRequest{}
+	if err := json.NewDecoder(r.Body).Decode(&restoreAppStatusRequest); err != nil {
+		logger.Error(err)
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
 
 	backup, err := snapshot.GetBackup(snapshotName)
 	if err != nil {
@@ -250,6 +261,19 @@ func (h *Handler) GetRestoreAppsStatus(w http.ResponseWriter, r *http.Request) {
 	statuses := []AppRestoreStatus{}
 
 	for _, a := range apps {
+		checkThisApp := false
+		if !restoreAppStatusRequest.CheckAll {
+			for _, slug := range restoreAppStatusRequest.AppSlugs {
+				if slug == a.Slug {
+					checkThisApp = true
+					break
+				}
+			}
+		}
+		if !checkThisApp && !restoreAppStatusRequest.CheckAll {
+			continue
+		}
+
 		restoreName := fmt.Sprintf("%s.%s", snapshotName, a.Slug)
 		restore, err := snapshot.GetRestore(restoreName)
 		if err != nil {
