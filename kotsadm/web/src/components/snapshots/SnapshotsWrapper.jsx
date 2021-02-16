@@ -9,6 +9,7 @@ import SubNavBar from "@src/components/shared/SubNavBar";
 import Snapshots from "@src/components/snapshots/Snapshots";
 import AppSnapshots from "@src/components/snapshots/AppSnapshots";
 import SnapshotSettings from "@src/components/snapshots/SnapshotSettings";
+import SnapshotRestore from "@src/components/snapshots/SnapshotRestore";
 import SnapshotDetails from "@src/components/snapshots/SnapshotDetails";
 import AppSnapshotRestore from "@src/components/snapshots/AppSnapshotRestore";
 
@@ -62,6 +63,9 @@ class SnapshotsWrapper extends Component {
                       appsList={snapshotsApps}
                     />}
                   />
+                  <Route exact path="/snapshots/:slug/:id/restore" render={() =>
+                    <SnapshotRestore />
+                  } />
                   <Route exact path="/snapshots/partial/:slug" render={(props) =>
                     <AppSnapshots
                       {...props}
