@@ -209,7 +209,7 @@ func RegisterSessionAuthRoutes(r *mux.Router, kotsStore store.KOTSStore, handler
 		HandlerFunc(middleware.EnforceAccess(policy.BackupWrite, handler.DeleteBackup))
 	r.Name("RestoreApps").Path("/api/v1/snapshot/{snapshotName}/restore-apps").Methods("POST").
 		HandlerFunc(middleware.EnforceAccess(policy.RestoreWrite, handler.RestoreApps))
-	r.Name("GetRestoreAppsStatus").Path("/api/v1/snapshot/{snapshotName}/apps-restore-status").Methods("GET").
+	r.Name("GetRestoreAppsStatus").Path("/api/v1/snapshot/{snapshotName}/apps-restore-status").Methods("POST").
 		HandlerFunc(middleware.EnforceAccess(policy.RestoreWrite, handler.GetRestoreAppsStatus))
 	r.Name("DownloadSnapshotLogs").Path("/api/v1/snapshot/{backup}/logs").Methods("GET").
 		HandlerFunc(middleware.EnforceAccess(policy.BackupRead, handler.DownloadSnapshotLogs))

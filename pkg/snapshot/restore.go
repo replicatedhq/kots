@@ -1,6 +1,7 @@
 package snapshot
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -309,7 +310,7 @@ func initiateKotsadmApplicationsRestore(backupName string, kotsadmNamespace stri
 	url := fmt.Sprintf("http://localhost:%d/api/v1/snapshot/%s/restore-apps", localPort, backupName)
 
 	requestPayload := map[string]interface{}{
-		"restoreAll": true
+		"restoreAll": true,
 	}
 	requestBody, err := json.Marshal(requestPayload)
 	if err != nil {
@@ -362,7 +363,14 @@ func waitForKotsadmApplicationsRestore(backupName string, kotsadmNamespace strin
 	url := fmt.Sprintf("http://localhost:%d/api/v1/snapshot/%s/apps-restore-status", localPort, backupName)
 
 	for {
-		newRequest, err := http.NewRequest("GET", url, nil)
+		requestPayload := map[string]interface{}{
+			"checkAll": true,
+		}
+		requestBody, err := json.Marshal(requestPayload)
+		if err != nil {
+			return errors.Wrap(err, "failed to marshal request json")
+		}
+		newRequest, err := http.NewRequest("POST", url, bytes.NewBuffer(requestBody))
 		if err != nil {
 			return errors.Wrap(err, "failed to create request")
 		}
