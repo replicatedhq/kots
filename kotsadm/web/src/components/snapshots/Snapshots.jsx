@@ -356,7 +356,7 @@ class Snapshots extends Component {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        appSlugs: [selectedRestoreApp.slug]
+        appSlugs: [selectedRestoreApp?.slug]
       }),
     })
       .then(async (result) => {
@@ -368,7 +368,7 @@ class Snapshots extends Component {
             restoreErrorMsg: "",
           });
 
-          this.props.history.replace(`/snapshots/${selectedRestoreApp.slug}/${snapshot.name}/restore`);
+          this.props.history.replace(`/snapshots/${selectedRestoreApp?.slug}/${snapshot.name}/restore`);
         } else {
           const body = await result.json();
           this.setState({
@@ -386,6 +386,21 @@ class Snapshots extends Component {
         })
       })
   }
+
+  getLabel = ({ iconUri, name, sequence }) => {
+    return (
+      <div style={{ alignItems: "center", display: "flex", flex: 1 }}>
+        <div style={{ display: "flex", flex: 1 }}>
+          <span className="app-icon" style={{ fontSize: 18, marginRight: "0.5em", backgroundImage: `url(${iconUri})` }}></span>
+          <span style={{ fontSize: 14 }}>{name}</span>
+        </div>
+        <div style={{ display: "flex" }}>
+          <span style={{ fontSize: 14, color: "#9B9B9B", marginLeft: "10px" }}>Sequence {sequence}</span>
+        </div>
+      </div>
+    );
+  }
+
 
   render() {
     const { isLoadingSnapshotSettings, snapshotSettings, hasSnapshotsLoaded, startingSnapshot, startSnapshotErr, startSnapshotErrorMsg, snapshots, isStartButtonClicked } = this.state;
@@ -415,10 +430,10 @@ class Snapshots extends Component {
         <div className="container flex-column flex1 u-paddingTop--30 u-paddingBottom--20 alignItems--center">
           <div className="AppSnapshots--wrapper flex1 flex-column u-width--full u-marginTop--20">
             <div className="flex flex-auto u-marginBottom--15 alignItems--center justifyContent--spaceBetween">
-              <div className="flex1 flex-column" style={{marginRight: "60px"}}>
-              <p className="u-fontWeight--bold u-color--tuna u-fontSize--larger u-lineHeight--normal">Full Snapshots (Instance) </p>
-              <p className="u-marginTop--10 u-fontSize--normal u-lineHeight--more u-fontWeight--medium u-color--dustyGray"> Full snapshots (Instance) back up the Admin Console and all application data. They can be used for full Disaster Recovery; by restoring over top of this instance, or into a new cluster. 
-              For more information about what is included <a href="https://kots.io/kotsadm/snapshots/"  target="_blank" rel="noopener noreferrer" className="replicated-link">check out our documentation</a>.</p>
+              <div className="flex1 flex-column" style={{ marginRight: "60px" }}>
+                <p className="u-fontWeight--bold u-color--tuna u-fontSize--larger u-lineHeight--normal">Full Snapshots (Instance) </p>
+                <p className="u-marginTop--10 u-fontSize--normal u-lineHeight--more u-fontWeight--medium u-color--dustyGray"> Full snapshots (Instance) back up the Admin Console and all application data. They can be used for full Disaster Recovery; by restoring over top of this instance, or into a new cluster.
+              For more information about what is included <a href="https://kots.io/kotsadm/snapshots/" target="_blank" rel="noopener noreferrer" className="replicated-link">check out our documentation</a>.</p>
               </div>
               <div className="flex alignSelf--flexEnd">
                 <Link to={`/snapshots/settings`} className="replicated-link u-fontSize--small u-fontWeight--bold u-marginRight--20 flex alignItems--center"><span className="icon snapshotSettingsIcon u-marginRight--5" />Settings</Link>
@@ -433,10 +448,10 @@ class Snapshots extends Component {
               </div>
             </div>
             {startSnapshotErr ?
-                <div className="flex alignItems--center alignSelf--center justifyContent--center u-marginBottom--10">
-                  <p className="u-color--chestnut u-fontSize--small u-fontWeight--medium u-lineHeight--normal">{startSnapshotErrorMsg}</p>
-                </div>
-                : null}
+              <div className="flex alignItems--center alignSelf--center justifyContent--center u-marginBottom--10">
+                <p className="u-color--chestnut u-fontSize--small u-fontWeight--medium u-lineHeight--normal">{startSnapshotErrorMsg}</p>
+              </div>
+              : null}
             {snapshots?.length > 0 && snapshotSettings?.veleroVersion !== "" ?
               <div className="flex flex-column">
                 {snapshots?.map((snapshot) => (

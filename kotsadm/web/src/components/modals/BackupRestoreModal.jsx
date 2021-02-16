@@ -20,8 +20,9 @@ export default function BackupRestoreModal(props) {
     appSlugToRestore,
     appSlugMismatch,
     handlePartialRestoreSnapshot,
-    restoringSnapshot
-   } = props;
+    restoringSnapshot,
+    getLabel
+  } = props;
 
   return (
     <Modal
@@ -87,8 +88,12 @@ export default function BackupRestoreModal(props) {
             : includedApps?.length === 1 ?
               <div className="flex flex-column u-marginTop--20">
                 <div className="flex flex1 justifyContent--spaceBetween SnapshotRow--wrapper">
-                  <div className="flex flex-column">
-                    <p className="u-fontSize--normal u-fontWeight--bold u-color--tuna u-lineHeight--normal">{includedApps[0]?.slug}</p>
+                  <div className="flex flex1 alignItems--center">
+                  <span className="app-icon" style={{ marginRight: "0.5em", backgroundImage: `url(${selectedRestoreApp?.iconUri})`}}></span>
+                    <p className="u-fontSize--normal u-fontWeight--bold u-color--tuna u-lineHeight--normal">{selectedRestoreApp?.name}</p>
+                  </div>
+                  <div className="flex flex1 justifyContent--flexEnd">
+                    <p className="u-fontSize--normal u-color--dustyGray u-fontWeight--medium u-lineHeight--normal justifyContent--center"> Sequence {selectedRestoreApp?.sequence} </p>
                   </div>
                 </div>
                 {appSlugMismatch ?
@@ -108,8 +113,8 @@ export default function BackupRestoreModal(props) {
                     className="replicated-select-container app-100"
                     classNamePrefix="replicated-select"
                     options={includedApps}
-                    getOptionLabel={(app) => app.slug}
-                    getOptionValue={(app) => app.slug}
+                    getOptionLabel={getLabel}
+                    getOptionValue={(app) => app.name}
                     value={selectedRestoreApp}
                     onChange={onChangeRestoreApp}
                     isOptionSelected={(app) => { app.slug === selectedRestoreApp.slug }}

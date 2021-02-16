@@ -537,9 +537,16 @@ func ListInstanceBackups() ([]*types.Backup, error) {
 				return nil, errors.Wrap(err, "failed to unmarshal apps sequences")
 			}
 			for slug, sequence := range apps {
+				a, err := store.GetStore().GetAppFromSlug(slug)
+				if err != nil {
+					return nil, errors.Wrap(err, "failed to get app from slug")
+				}
+
 				backup.IncludedApps = append(backup.IncludedApps, types.App{
-					Slug:     slug,
-					Sequence: sequence,
+					Slug:       slug,
+					Sequence:   sequence,
+					Name:       a.Name,
+					AppIconURI: a.IconURI,
 				})
 			}
 		}
