@@ -328,6 +328,10 @@ func InstallCmd() *cobra.Command {
 				log.ActionWithoutSpinner("")
 				log.ActionWithoutSpinner("To access the Admin Console, run kubectl kots admin-console --namespace %s", namespace)
 				log.ActionWithoutSpinner("")
+			} else {
+				log.ActionWithoutSpinner("")
+				log.ActionWithoutSpinner("Done")
+				log.ActionWithoutSpinner("")
 			}
 
 			return nil

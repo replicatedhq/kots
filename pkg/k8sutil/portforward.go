@@ -171,6 +171,14 @@ func PortForward(kubernetesConfigFlags *genericclioptions.ConfigFlags, localPort
 			return 0, nil, errors.Wrap(err, "failed to get clientset")
 		}
 
+		consecutiveErrorsLogged := struct {
+			read      int
+			unmarshal int
+		}{
+			read:      0,
+			unmarshal: 0,
+		}
+
 		sleepTime := time.Second
 		go func() {
 			for keepPolling {
@@ -193,24 +201,38 @@ func PortForward(kubernetesConfigFlags *genericclioptions.ConfigFlags, localPort
 
 				resp, err := http.DefaultClient.Do(req)
 				if err != nil {
-					log.Error(errors.Wrap(err, "failed to get ports"))
+					log.Info("failed execute http request while listing additional ports: %v", err)
+					continue
+				}
+
+				if resp.StatusCode != http.StatusOK {
+					// Don't log server side errors.  This will happen when app has not been installed yet,
+					// for example, and relevant logs should be in the kotsadm pod.
 					continue
 				}
 
 				defer resp.Body.Close()
 				b, err := ioutil.ReadAll(resp.Body)
 				if err != nil {
-					log.Error(errors.Wrap(err, "failed to parse response"))
+					if consecutiveErrorsLogged.read == 0 {
+						log.Info("failed to read response body while listing additional ports: %v", err)
+						consecutiveErrorsLogged.read++
+					}
 					continue
 				}
+				consecutiveErrorsLogged.read = 0
 
 				response := struct {
 					DesiredAdditionalPorts []AdditionalPort `json:"ports"`
 				}{}
 				if err := json.Unmarshal(b, &response); err != nil {
-					log.Error(errors.Wrap(err, "failed to decode response"))
+					if consecutiveErrorsLogged.unmarshal == 0 {
+						log.Info("failed to decode response while listing additional ports: %s", b)
+						consecutiveErrorsLogged.unmarshal++
+					}
 					continue
 				}
+				consecutiveErrorsLogged.unmarshal = 0
 
 				for _, desiredAdditionalPort := range response.DesiredAdditionalPorts {
 					alreadyForwarded := false
