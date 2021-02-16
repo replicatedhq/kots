@@ -45,7 +45,6 @@ class Snapshots extends Component {
 
     selectedRestore: "full",
     selectedRestoreApp: {},
-    appSnapshots: [],
     appSlugToRestore: "",
     appSlugMismatch: false,
     restoringSnapshot: false
@@ -53,11 +52,6 @@ class Snapshots extends Component {
 
   componentDidMount() {
     this.fetchSnapshotSettings();
-    if (this.state.selectedRestore !== "full" && !isEmpty(this.props.appsList)) {
-      this.setState({ selectedRestoreApp: this.props.appsList[0] }, () => {
-        this.fetchAppSnapshots(this.props.appsList[0])
-      });
-    }
   }
 
   componentWillUnmount() {
@@ -65,7 +59,7 @@ class Snapshots extends Component {
   }
 
   componentDidUpdate(lastProps, lastState) {
-    const { snapshots, networkErr, selectedRestore } = this.state;
+    const { snapshots, networkErr } = this.state;
 
     if (snapshots?.length !== lastState.snapshots?.length && snapshots) {
       if (snapshots?.length === 0 && lastState.snapshots?.length > 0) {
@@ -80,51 +74,6 @@ class Snapshots extends Component {
         this.state.listSnapshotsJob.start(this.listSnapshots, 2000);
         return;
       }
-    }
-
-    if (selectedRestore !== lastState.selectedRestore && selectedRestore) {
-      if (!isEmpty(this.props.appsList)) {
-        this.setState({ selectedRestoreApp: this.props.appsList[0] }, () => {
-          this.fetchAppSnapshots(this.props.appsList[0])
-        });
-      }
-    }
-  }
-
-  fetchAppSnapshots = async (app) => {
-    this.setState({
-      snapshotsListErr: false,
-      snapshotsListErrMsg: "",
-    })
-    try {
-      const res = await fetch(`${window.env.API_ENDPOINT}/app/${app?.slug}/snapshots`, {
-        method: "GET",
-        headers: {
-          "Authorization": Utilities.getToken(),
-          "Content-Type": "application/json",
-        }
-      })
-      if (!res.ok) {
-        if (res.status === 401) {
-          Utilities.logoutUser();
-          return;
-        }
-        this.setState({
-          snapshotsListErr: true,
-          snapshotsListErrMsg: `Unexpected status code: ${res.status}`,
-        });
-        return;
-      }
-      const response = await res.json();
-
-      this.setState({
-        appSnapshots: response.backups?.sort((a, b) => b.startedAt ? new Date(b.startedAt) - new Date(a.startedAt) : -99999999),
-      });
-    } catch (err) {
-      this.setState({
-        snapshotsListErr: true,
-        snapshotsListErrMsg: err.message ? err.message : "There was an error while showing the snapshots. Please try again",
-      })
     }
   }
 
@@ -306,9 +255,9 @@ class Snapshots extends Component {
 
   toggleRestoreModal = snapshot => {
     if (this.state.restoreSnapshotModal) {
-      this.setState({ restoreSnapshotModal: false, snapshotToRestore: "" });
+      this.setState({ restoreSnapshotModal: false, snapshotToRestore: "", selectedRestoreApp: {} });
     } else {
-      this.setState({ restoreSnapshotModal: true, snapshotToRestore: snapshot });
+      this.setState({ restoreSnapshotModal: true, snapshotToRestore: snapshot, selectedRestoreApp: snapshot.includedApps[0] });
     }
   };
 
@@ -374,20 +323,8 @@ class Snapshots extends Component {
   }
 
   onChangeRestoreApp = (selectedRestoreApp) => {
-    this.setState({ selectedRestoreApp }, () => {
-      this.fetchAppSnapshots(selectedRestoreApp)
-    });
+    this.setState({ selectedRestoreApp });
   }
-
-  getLabel = ({ iconUri, name }) => {
-    return (
-      <div style={{ alignItems: "center", display: "flex" }}>
-        <span className="app-icon" style={{ fontSize: 18, marginRight: "0.5em", backgroundImage: `url(${iconUri})`}}></span>
-        <span style={{ fontSize: 14 }}>{name}</span>
-      </div>
-    );
-  }
-
 
   handleApplicationSlugChange = (e) => {
     if (this.state.appSlugMismatch) {
@@ -396,18 +333,58 @@ class Snapshots extends Component {
     this.setState({ appSlugToRestore: e.target.value });
   }
 
-  handlePartialRestoreSnapshot = snapshot => {
-    const { selectedApp } = this.state;
+  handlePartialRestoreSnapshot = (snapshot, isOneApp) => {
+    const { selectedRestoreApp } = this.state;
 
-    if (this.state.appSlugToRestore !== selectedApp?.slug) {
-      this.setState({ appSlugMismatch: true });
-      return;
+    if (isOneApp) {
+      if (this.state.appSlugToRestore !== selectedRestoreApp?.slug) {
+        this.setState({ appSlugMismatch: true });
+        return;
+      }
     }
 
-    console.log(snapshot)
+    this.setState({
+      restoringSnapshot: true,
+      restoreErr: false,
+      restoreErrorMsg: "",
+    });
 
-  //TODO
+    fetch(`${window.env.API_ENDPOINT}/snapshot/${snapshot.name}/restore-apps`, {
+      method: "POST",
+      headers: {
+        "Authorization": Utilities.getToken(),
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        appSlugs: [selectedRestoreApp.slug]
+      }),
+    })
+      .then(async (result) => {
+        if (result.ok) {
+          this.setState({
+            restoringSnapshot: true,
+            restoreSnapshotModal: false,
+            restoreErr: false,
+            restoreErrorMsg: "",
+          });
 
+          this.props.history.replace(`/snapshots/partial/${selectedRestoreApp.slug}/${snapshot.name}/restore`);
+        } else {
+          const body = await result.json();
+          this.setState({
+            restoringSnapshot: false,
+            restoreErr: true,
+            restoreErrorMsg: body.error,
+          });
+        }
+      })
+      .catch(err => {
+        this.setState({
+          restoringSnapshot: false,
+          restoreErr: true,
+          restoreErrorMsg: err,
+        })
+      })
   }
 
   render() {
@@ -493,7 +470,7 @@ class Snapshots extends Component {
               restoreSnapshotModal={this.state.restoreSnapshotModal}
               toggleRestoreModal={this.toggleRestoreModal}
               snapshotToRestore={this.state.snapshotToRestore}
-              apps={this.props.appsList}
+              includedApps={this.state.snapshotToRestore?.includedApps}
               selectedRestore={this.state.selectedRestore}
               onChangeRestoreOption={this.onChangeRestoreOption}
               selectedRestoreApp={this.state.selectedRestoreApp}
@@ -503,7 +480,6 @@ class Snapshots extends Component {
               appSlugToRestore={this.state.appSlugToRestore}
               appSlugMismatch={this.state.appSlugMismatch}
               handlePartialRestoreSnapshot={this.handlePartialRestoreSnapshot}
-              appSnapshot={this.state.appSnapshots[0]}
             />}
           {this.state.displayErrorModal &&
             <ErrorModal

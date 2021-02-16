@@ -11,7 +11,7 @@ export default function BackupRestoreModal(props) {
     restoreSnapshotModal,
     toggleRestoreModal,
     snapshotToRestore,
-    apps,
+    includedApps,
     selectedRestore,
     onChangeRestoreOption,
     selectedRestoreApp,
@@ -20,9 +20,8 @@ export default function BackupRestoreModal(props) {
     appSlugToRestore,
     appSlugMismatch,
     handlePartialRestoreSnapshot,
-    restoringSnapshot,
-    appSnapshot,
-    getLabel } = props;
+    restoringSnapshot
+   } = props;
 
   return (
     <Modal
@@ -49,7 +48,7 @@ export default function BackupRestoreModal(props) {
             <div className="flex flex1 justifyContent--flexEnd">
               <p className="u-fontSize--normal u-color--dustyGray u-fontWeight--bold u-lineHeight--normal u-marginRight--30 justifyContent--center flex alignItems--center"><span className="icon snapshot-volume-size-icon" /> {snapshotToRestore?.volumeSizeHuman} </p>
               <p className="u-fontSize--normal u-color--dustyGray u-fontWeight--bold u-lineHeight--normal justifyContent--center flex alignItems--center u-marginRight--30"><span className="icon snapshot-volume-icon" /> {snapshotToRestore?.volumeSuccessCount}/{snapshotToRestore?.volumeCount}</p>
-              <p className="u-fontSize--normal u-color--dustyGray u-fontWeight--bold u-lineHeight--normal justifyContent--center flex alignItems--center"><span className="icon snapshot-app-icon" /> {apps?.length} application{apps?.length > 1 && "s"}</p>
+              <p className="u-fontSize--normal u-color--dustyGray u-fontWeight--bold u-lineHeight--normal justifyContent--center flex alignItems--center"><span className="icon snapshot-app-icon" /> {includedApps?.length} application{includedApps?.length > 1 && "s"}</p>
             </div>
           </div>
           <p className="u-fontSize--large u-fontWeight--bold u-color--tuna u-lineHeight--normal u-marginBottom--more u-marginTop--30"> Will this be a full or partial restore? </p>
@@ -85,16 +84,11 @@ export default function BackupRestoreModal(props) {
                 {`kubectl kots restore --from-backup ${snapshotToRestore?.name}`}
               </CodeSnippet>
             </div>
-            : apps?.length === 1 ?
+            : includedApps?.length === 1 ?
               <div className="flex flex-column u-marginTop--20">
                 <div className="flex flex1 justifyContent--spaceBetween SnapshotRow--wrapper">
                   <div className="flex flex-column">
-                    <p className="u-fontSize--normal u-fontWeight--bold u-color--tuna u-lineHeight--normal">{appSnapshot?.name}</p>
-                    <p className="u-fontSize--normal u-color--dustyGray u-fontWeight--medium u-lineHeight--normal u-marginRight--20">{Utilities.dateFormat(appSnapshot?.startedAt, "MMM D YYYY @ hh:mm a")}</p>
-                  </div>
-                  <div className="flex flex1 justifyContent--flexEnd">
-                    <p className="u-fontSize--normal u-color--dustyGray u-fontWeight--bold u-lineHeight--normal u-marginRight--30 justifyContent--center flex alignItems--center"><span className="icon snapshot-volume-size-icon" /> {appSnapshot?.volumeSizeHuman} </p>
-                    <p className="u-fontSize--normal u-color--dustyGray u-fontWeight--bold u-lineHeight--normal justifyContent--center flex alignItems--center"><span className="icon snapshot-volume-icon" /> {appSnapshot?.volumeSuccessCount}/{appSnapshot?.volumeCount}</p>
+                    <p className="u-fontSize--normal u-fontWeight--bold u-color--tuna u-lineHeight--normal">{includedApps[0]?.slug}</p>
                   </div>
                 </div>
                 {appSlugMismatch ?
@@ -113,12 +107,12 @@ export default function BackupRestoreModal(props) {
                   <Select
                     className="replicated-select-container app-100"
                     classNamePrefix="replicated-select"
-                    options={apps}
-                    getOptionLabel={getLabel}
-                    getOptionValue={(app) => app.name}
+                    options={includedApps}
+                    getOptionLabel={(app) => app.slug}
+                    getOptionValue={(app) => app.slug}
                     value={selectedRestoreApp}
                     onChange={onChangeRestoreApp}
-                    isOptionSelected={(app) => { app.name === selectedRestoreApp.name }}
+                    isOptionSelected={(app) => { app.slug === selectedRestoreApp.slug }}
                   />
                 </div>
               </div>
@@ -138,7 +132,7 @@ export default function BackupRestoreModal(props) {
       </button>
             <button
               className="btn primary blue"
-              onClick={() => { handlePartialRestoreSnapshot(snapshotToRestore) }}
+              onClick={() => { handlePartialRestoreSnapshot(snapshotToRestore, includedApps?.length === 1) }}
               disabled={restoringSnapshot}
             >
               {restoringSnapshot ? "Restoring..." : "Confirm and restore"}
