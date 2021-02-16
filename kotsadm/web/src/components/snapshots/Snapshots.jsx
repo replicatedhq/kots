@@ -368,7 +368,7 @@ class Snapshots extends Component {
             restoreErrorMsg: "",
           });
 
-          this.props.history.replace(`/snapshots/partial/${selectedRestoreApp.slug}/${snapshot.name}/restore`);
+          this.props.history.replace(`/snapshots/${selectedRestoreApp.slug}/${snapshot.name}/restore`);
         } else {
           const body = await result.json();
           this.setState({
