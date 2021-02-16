@@ -17,6 +17,7 @@ However, this does not allow to easily patch the config without knowing the curr
 License updates and upstream updates will still create their own versions with existing config.
 - Covering every add/delete/modify config key cases in convenience commands, though the CLI can be extended later.
 - Interractive editing in terminal.
+- Adding the ability to make config changes to a deployed application without having to also take the latest downloaded upstream app version. 
 
 ## Background
 
