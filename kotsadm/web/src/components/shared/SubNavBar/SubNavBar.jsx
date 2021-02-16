@@ -30,7 +30,7 @@ export default function SubNavBar(props) {
 
   const snapshotsConfig = [
     {
-      tabName: "snapshots",
+      tabName: activeTab === slug ? slug : "snapshots",
       displayName: "Full Snapshots (Instance)",
       to: () => `/snapshots`,
     },

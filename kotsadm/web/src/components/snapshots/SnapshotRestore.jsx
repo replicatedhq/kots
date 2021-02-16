@@ -195,7 +195,7 @@ class SnapshotRestore extends Component {
           <div className="flex flex-column alignItems--center">
             <span className="icon u-superWarning--large"></span>
             <p className="u-fontWeight--bold u-color--tuna u-fontSize--larger u-lineHeight--normal u-marginTop--15 u-marginBottom--10">
-              Application failed to restore </p>
+              Your partial restore failed </p>
             <p className="u-fontSize--normal u-fontWeight--medium u-color--dustyGray u-lineHeight--normal">
               Your application failed to restore to  <span className="u-fontWeight--bold u-color--dustyGray"> {this.props.match.params.id} </span>
             </p>
@@ -214,7 +214,7 @@ class SnapshotRestore extends Component {
         <div className="flex flex-column alignItems--center">
           <span className="icon yellowWarningIcon"></span>
           <p className="u-fontWeight--bold u-color--tuna u-fontSize--larger u-lineHeight--normal u-marginTop--15 u-marginBottom--10">
-            Application restored with warnings </p>
+            Partial restored restored with warnings </p>
           <p className="u-fontSize--normal u-fontWeight--medium u-color--dustyGray u-lineHeight--normal">
             Your application restored  to <span className="u-fontWeight--bold u-color--dustyGray"> {this.props.match.params.id} </span> but there were warnings that my affect the application. During the restore there were
           <span className="u-fontWeight--bold  u-color--tundora"> {warnings?.length} warnings </span>.</p>
@@ -236,7 +236,7 @@ class SnapshotRestore extends Component {
 
     const currentAppDetails = restoreDetail.find(a => a.appSlug === appSlug);
 
-    const hasNoErrorsOrWarnings = currentAppDetails?.restoreDetail?.warnings?.length === 0 && restoreDetail?.errors?.length === 0;
+    const hasNoErrorsOrWarnings = currentAppDetails?.restoreDetail?.warnings?.length === 0 && currentAppDetails?.restoreDetail?.errors?.length === 0;
     const restoreCompleted = currentAppDetails?.restoreDetail?.phase === "Completed";
     const restoreFailing = currentAppDetails?.restoreDetail?.phase === "PartiallyFailed" || restoreDetail?.phase === "Failed";
     const restoreLoading = !currentAppDetails?.restoreDetail?.warnings && !currentAppDetails?.restoreDetail?.errors;
@@ -261,7 +261,7 @@ class SnapshotRestore extends Component {
         </Helmet>
         {!restoreCompleted && !restoreFailing ?
           <div className="flex1 flex-column alignItems--center">
-            <p className="u-fontWeight--bold u-color--tuna u-fontSize--larger u-lineHeight--normal u-marginBottom--10"> Application restore in progress </p>
+            <p className="u-fontWeight--bold u-color--tuna u-fontSize--larger u-lineHeight--normal u-marginBottom--10"> Partial restore in progress </p>
             <p className="u-fontSize--normal u-fontWeight--medium u-color--dustyGray u-lineHeight--normal"> After all volumes have been restored you will need to log back in to the admin console. </p>
             <div className="flex flex-column  u-marginTop--40">
               {restoreLoading &&
