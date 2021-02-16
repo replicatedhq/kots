@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/replicatedhq/kots/kotsadm/pkg/snapshot/types"
+	"github.com/replicatedhq/kots/pkg/api/snapshot/types"
 	"github.com/stretchr/testify/require"
 	velerov1 "github.com/vmware-tanzu/velero/pkg/apis/velero/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
