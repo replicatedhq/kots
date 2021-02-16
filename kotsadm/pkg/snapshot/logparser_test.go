@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/replicatedhq/kots/kotsadm/pkg/snapshot/types"
+	"github.com/replicatedhq/kots/pkg/api/snapshot/types"
 )
 
 func Test_parseLogs(t *testing.T) {
