@@ -403,10 +403,11 @@ class Snapshots extends Component {
 
 
   render() {
-    const { isLoadingSnapshotSettings, snapshotSettings, hasSnapshotsLoaded, startingSnapshot, startSnapshotErr, startSnapshotErrorMsg, snapshots, isStartButtonClicked } = this.state;
+    const { isLoadingSnapshotSettings, snapshotSettings, hasSnapshotsLoaded, startingSnapshot, startSnapshotErr, startSnapshotErrorMsg, snapshots, isStartButtonClicked, displayErrorModal } = this.state;
     const inProgressSnapshotExist = snapshots?.find(snapshot => snapshot.status === "InProgress");
 
-    if (isLoadingSnapshotSettings || !hasSnapshotsLoaded || (isStartButtonClicked && snapshots?.length === 0) || startingSnapshot) {
+
+    if (isLoadingSnapshotSettings || (!hasSnapshotsLoaded && !displayErrorModal) || (isStartButtonClicked && snapshots?.length === 0) || startingSnapshot) {
       return (
         <div className="flex-column flex1 alignItems--center justifyContent--center">
           <Loader size="60" />
@@ -496,9 +497,9 @@ class Snapshots extends Component {
               appSlugMismatch={this.state.appSlugMismatch}
               handlePartialRestoreSnapshot={this.handlePartialRestoreSnapshot}
             />}
-          {this.state.displayErrorModal &&
+          {displayErrorModal &&
             <ErrorModal
-              errorModal={this.state.displayErrorModal}
+              errorModal={displayErrorModal}
               toggleErrorModal={this.toggleErrorModal}
               errMsg={this.state.errorMsg}
               err={this.state.errorTitle}

@@ -11,7 +11,7 @@ class SnapshotRestore extends Component {
   state = {
     fetchRestoreDetailJob: new Repeater(),
     loadingRestoreDetail: true,
-    restoreDetail: {},
+    restoreDetail: [],
     errorMessage: "",
     errorTitle: "",
 
@@ -26,10 +26,12 @@ class SnapshotRestore extends Component {
 
   componentDidUpdate(lastProps) {
     const { match } = this.props;
+    const appSlug = match.params.slug;
     if (match.params.id !== lastProps.match.params.id) {
       this.state.fetchRestoreDetailJob.start(this.fetchRestoreDetail, 2000);
     } else {
-      const phase = this.state.restoreDetail?.phase;
+      const currentAppDetails = this.state.restoreDetail?.find(a => a.appSlug === appSlug);
+      const phase = currentAppDetails?.restoreDetail?.phase;
       if (phase && phase !== "New" && phase !== "InProgress") {
         this.state.fetchRestoreDetailJob.stop();
       }
@@ -228,12 +230,16 @@ class SnapshotRestore extends Component {
   }
 
   render() {
+    const { match } = this.props;
     const { cancelingRestore, restoreDetail, loadingRestoreDetail } = this.state;
+    const appSlug = match.params.slug;
 
-    const hasNoErrorsOrWarnings = restoreDetail?.warnings?.length === 0 && restoreDetail?.errors?.length === 0;
-    const restoreCompleted = restoreDetail?.phase === "Completed";
-    const restoreFailing = restoreDetail?.phase === "PartiallyFailed" || restoreDetail?.phase === "Failed";
-    const restoreLoading = !restoreDetail?.warnings && !restoreDetail?.errors;
+    const currentAppDetails = restoreDetail.find(a => a.appSlug === appSlug);
+
+    const hasNoErrorsOrWarnings = currentAppDetails?.restoreDetail?.warnings?.length === 0 && restoreDetail?.errors?.length === 0;
+    const restoreCompleted = currentAppDetails?.restoreDetail?.phase === "Completed";
+    const restoreFailing = currentAppDetails?.restoreDetail?.phase === "PartiallyFailed" || restoreDetail?.phase === "Failed";
+    const restoreLoading = !currentAppDetails?.restoreDetail?.warnings && !currentAppDetails?.restoreDetail?.errors;
 
     if (loadingRestoreDetail) {
       return (
@@ -263,7 +269,7 @@ class SnapshotRestore extends Component {
                   <Loader size="60" />
                 </div>
               }
-              {restoreDetail?.volumes?.map((volume, i) => {
+              {currentAppDetails?.restoreDetail?.volumes?.map((volume, i) => {
                 const strokeColor = volume.completionPercent === 100 ? "#44BB66" : "#326DE6";
                 const minutes = Math.floor(volume.timeRemainingSeconds / 60);
                 const remainingTime = volume.timeRemainingSeconds < 60 ? `${volume.timeRemainingSeconds} seconds remaining` : `${minutes} minutes remaining`;
@@ -299,7 +305,7 @@ class SnapshotRestore extends Component {
           </div>
           :
           !hasNoErrorsOrWarnings || restoreFailing ?
-            this.renderFailedRestoreView(restoreDetail)
+            this.renderFailedRestoreView(currentAppDetails?.restoreDetail)
             : null
         }
       </div>
