@@ -40,6 +40,7 @@ type KOTSStore interface {
 	SnapshotStore
 	InstallationStore
 	ReportingStore
+	KotsAdminParamsStore
 
 	Init() error // this may need options
 	WaitForReady(ctx context.Context) error
@@ -173,4 +174,9 @@ type InstallationStore interface {
 
 type ReportingStore interface {
 	GetReportingInfo(appID string) *upstreamtypes.ReportingInfo
+}
+
+type KotsAdminParamsStore interface {
+	GetKotsAdmEventStatus() (bool, error)
+	SetKotsAdmEventStatus() error
 }

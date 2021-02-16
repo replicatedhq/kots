@@ -1188,6 +1188,35 @@ func (mr *MockKOTSStoreMockRecorder) GetReportingInfo(appID interface{}) *gomock
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetReportingInfo", reflect.TypeOf((*MockKOTSStore)(nil).GetReportingInfo), appID)
 }
 
+// GetKotsAdmEventStatus mocks base method
+func (m *MockKOTSStore) GetKotsAdmEventStatus() (bool, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetKotsAdmEventStatus")
+	ret0, _ := ret[0].(bool)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetKotsAdmEventStatus indicates an expected call of GetKotsAdmEventStatus
+func (mr *MockKOTSStoreMockRecorder) GetKotsAdmEventStatus() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetKotsAdmEventStatus", reflect.TypeOf((*MockKOTSStore)(nil).GetKotsAdmEventStatus))
+}
+
+// SetKotsAdmEventStatus mocks base method
+func (m *MockKOTSStore) SetKotsAdmEventStatus() error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SetKotsAdmEventStatus")
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// SetKotsAdmEventStatus indicates an expected call of SetKotsAdmEventStatus
+func (mr *MockKOTSStoreMockRecorder) SetKotsAdmEventStatus() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetKotsAdmEventStatus", reflect.TypeOf((*MockKOTSStore)(nil).SetKotsAdmEventStatus))
+}
+
 // Init mocks base method
 func (m *MockKOTSStore) Init() error {
 	m.ctrl.T.Helper()
@@ -2733,4 +2762,56 @@ func (m *MockReportingStore) GetReportingInfo(appID string) *types13.ReportingIn
 func (mr *MockReportingStoreMockRecorder) GetReportingInfo(appID interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetReportingInfo", reflect.TypeOf((*MockReportingStore)(nil).GetReportingInfo), appID)
+}
+
+// MockKotsAdminParamsStore is a mock of KotsAdminParamsStore interface
+type MockKotsAdminParamsStore struct {
+	ctrl     *gomock.Controller
+	recorder *MockKotsAdminParamsStoreMockRecorder
+}
+
+// MockKotsAdminParamsStoreMockRecorder is the mock recorder for MockKotsAdminParamsStore
+type MockKotsAdminParamsStoreMockRecorder struct {
+	mock *MockKotsAdminParamsStore
+}
+
+// NewMockKotsAdminParamsStore creates a new mock instance
+func NewMockKotsAdminParamsStore(ctrl *gomock.Controller) *MockKotsAdminParamsStore {
+	mock := &MockKotsAdminParamsStore{ctrl: ctrl}
+	mock.recorder = &MockKotsAdminParamsStoreMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use
+func (m *MockKotsAdminParamsStore) EXPECT() *MockKotsAdminParamsStoreMockRecorder {
+	return m.recorder
+}
+
+// GetKotsAdmEventStatus mocks base method
+func (m *MockKotsAdminParamsStore) GetKotsAdmEventStatus() (bool, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetKotsAdmEventStatus")
+	ret0, _ := ret[0].(bool)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetKotsAdmEventStatus indicates an expected call of GetKotsAdmEventStatus
+func (mr *MockKotsAdminParamsStoreMockRecorder) GetKotsAdmEventStatus() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetKotsAdmEventStatus", reflect.TypeOf((*MockKotsAdminParamsStore)(nil).GetKotsAdmEventStatus))
+}
+
+// SetKotsAdmEventStatus mocks base method
+func (m *MockKotsAdminParamsStore) SetKotsAdmEventStatus() error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SetKotsAdmEventStatus")
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// SetKotsAdmEventStatus indicates an expected call of SetKotsAdmEventStatus
+func (mr *MockKotsAdminParamsStoreMockRecorder) SetKotsAdmEventStatus() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetKotsAdmEventStatus", reflect.TypeOf((*MockKotsAdminParamsStore)(nil).SetKotsAdmEventStatus))
 }
