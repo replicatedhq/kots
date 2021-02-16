@@ -51,12 +51,17 @@ type Store struct {
 	Internal *StoreInternal `json:"internal,omitempty"`
 }
 
+type App struct {
+	Slug     string `json:"slug"`
+	Sequence int64  `json:"sequence"`
+}
+
 type Backup struct {
 	Name               string     `json:"name"`
 	Status             string     `json:"status"`
 	Trigger            string     `json:"trigger"`
-	AppID              string     `json:"appID"`
-	Sequence           int64      `json:"sequence"`
+	AppID              string     `json:"appID"`    // TODO: remove with app backups
+	Sequence           int64      `json:"sequence"` // TODO: remove with app backups
 	StartedAt          *time.Time `json:"startedAt,omitempty"`
 	FinishedAt         *time.Time `json:"finishedAt,omitempty"`
 	ExpiresAt          *time.Time `json:"expiresAt,omitempty"`
@@ -65,6 +70,7 @@ type Backup struct {
 	VolumeBytes        int64      `json:"volumeBytes"`
 	VolumeSizeHuman    string     `json:"volumeSizeHuman"`
 	SupportBundleID    string     `json:"supportBundleId,omitempty"`
+	IncludedApps       []App      `json:"includedApps,omitempty"`
 }
 
 type BackupDetail struct {

@@ -479,9 +479,9 @@ func ListInstanceBackups() ([]*types.Backup, error) {
 		}
 
 		backup := types.Backup{
-			Name:   veleroBackup.Name,
-			Status: string(veleroBackup.Status.Phase),
-			AppID:  "",
+			Name:         veleroBackup.Name,
+			Status:       string(veleroBackup.Status.Phase),
+			IncludedApps: make([]types.App, 0),
 		}
 
 		if veleroBackup.Status.StartTimestamp != nil {
@@ -528,6 +528,20 @@ func ListInstanceBackups() ([]*types.Backup, error) {
 			}
 			backup.VolumeBytes = i
 			backup.VolumeSizeHuman = units.HumanSize(float64(i))
+		}
+
+		appAnnotationStr, _ := veleroBackup.Annotations["kots.io/apps-sequences"]
+		if len(appAnnotationStr) > 0 {
+			var apps map[string]int64
+			if err := json.Unmarshal([]byte(appAnnotationStr), &apps); err != nil {
+				return nil, errors.Wrap(err, "failed to unmarshal apps sequences")
+			}
+			for slug, sequence := range apps {
+				backup.IncludedApps = append(backup.IncludedApps, types.App{
+					Slug:     slug,
+					Sequence: sequence,
+				})
+			}
 		}
 
 		if backup.Status != "New" && backup.Status != "InProgress" {

@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -115,6 +116,11 @@ func (h *Handler) CreateApplicationRestore(w http.ResponseWriter, r *http.Reques
 	JSON(w, http.StatusOK, createRestoreResponse)
 }
 
+type RestoreAppsRequest struct {
+	RestoreAll bool     `json:"restoreAll"`
+	AppSlugs   []string `json:"appSlugs"`
+}
+
 type RestoreAppsResponse struct {
 	Success bool   `json:"success"`
 	Error   string `json:"error,omitempty"`
@@ -123,6 +129,13 @@ type RestoreAppsResponse struct {
 func (h *Handler) RestoreApps(w http.ResponseWriter, r *http.Request) {
 	restoreResponse := RestoreAppsResponse{
 		Success: false,
+	}
+
+	restoreAppsRequest := RestoreAppsRequest{}
+	if err := json.NewDecoder(r.Body).Decode(&restoreAppsRequest); err != nil {
+		logger.Error(err)
+		w.WriteHeader(http.StatusBadRequest)
+		return
 	}
 
 	snapshotName := mux.Vars(r)["snapshotName"]
@@ -152,6 +165,20 @@ func (h *Handler) RestoreApps(w http.ResponseWriter, r *http.Request) {
 	}
 
 	for _, a := range apps {
+		restoreThisApp := false
+		if !restoreAppsRequest.RestoreAll {
+			for _, slug := range restoreAppsRequest.AppSlugs {
+				if slug == a.Slug {
+					restoreThisApp = true
+					break
+				}
+			}
+		}
+
+		if !restoreThisApp && !restoreAppsRequest.RestoreAll {
+			continue
+		}
+
 		if err := app.ResetRestore(a.ID); err != nil {
 			logger.Error(err)
 			restoreResponse.Error = fmt.Sprintf("failed to reset restore for app %s", a.Slug)
