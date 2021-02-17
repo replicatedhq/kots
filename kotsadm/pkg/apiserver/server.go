@@ -9,8 +9,6 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
-	"reflect"
-	"runtime/debug"
 	"time"
 
 	"github.com/gorilla/mux"
@@ -23,15 +21,11 @@ import (
 	"github.com/replicatedhq/kots/kotsadm/pkg/snapshotscheduler"
 	"github.com/replicatedhq/kots/kotsadm/pkg/socketservice"
 	"github.com/replicatedhq/kots/kotsadm/pkg/store"
+	"github.com/replicatedhq/kots/kotsadm/pkg/store/s3pg"
 	"github.com/replicatedhq/kots/kotsadm/pkg/supportbundle"
 	"github.com/replicatedhq/kots/kotsadm/pkg/updatechecker"
 	"github.com/replicatedhq/kots/pkg/rbac"
 	"github.com/segmentio/ksuid"
-	corev1 "k8s.io/api/core/v1"
-	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/kubernetes"
-	k8sconfig "sigs.k8s.io/controller-runtime/pkg/client/config"
 )
 
 func Start() {
@@ -174,13 +168,10 @@ func Start() {
 	log.Fatal(srv.ListenAndServe())
 }
 
-/*
- * Detects the InstanceID of kodsadm pod across restores
- */
+// Detects the InstanceID of kodsadm pod across restores
 func detectInstanceID() {
 
-	debug.PrintStack()
-	fmt.Println("Detecting Instance")
+	log.Println("Detecting Instance")
 
 	// Retrieve the ClusterID from store
 	clusters, err := store.GetStore().ListClusters()
@@ -193,8 +184,6 @@ func detectInstanceID() {
 		return
 	}
 	clusterID := clusters[0].ClusterID
-	// ID to get into configmap
-	fmt.Println(clusters[0].ClusterID)
 
 	// Write a Query to set/get an Event from the Store
 	keyExists, err := store.GetStore().GetKotsAdmEventStatus()
@@ -204,13 +193,10 @@ func detectInstanceID() {
 		return
 	}
 
-	// if the key does not exist, likely a Restore scenario
-	var (
-		configMapName = "kotsadm-id"
-	)
+	// if the key does not exist, likely a Restore or pod restart
 	if keyExists == true {
-		fmt.Println("Key exists")
-		exists, err := isConfigMapPresent(configMapName)
+		log.Println("Key exists")
+		exists, err := s3pg.IsAdminIDConfigMapPresent()
 		if err != nil {
 			logger.Errorf("Config map check error %v", err)
 			return
@@ -222,7 +208,7 @@ func detectInstanceID() {
 		}
 		//generate guid and use that as clusterId to identify that as a different install
 		clusterID = ksuid.New().String()
-		_, err = createConfigMap(configMapName, clusterID)
+		_, err = s3pg.CreateAdminIDConfigMap(clusterID)
 		if err != nil {
 			logger.Errorf("Failed to to create config map %v", err)
 			return
@@ -231,77 +217,18 @@ func detectInstanceID() {
 
 	// if the key exists, likely a fresh Install
 	if keyExists == false {
-		fmt.Println("-------- Key does not exist --------")
-		_, err := createConfigMap(configMapName, clusterID)
+		log.Println("Key does not exist")
+		_, err := s3pg.CreateAdminIDConfigMap(clusterID)
 		if err != nil {
 			logger.Errorf("Failed to scan %v", err)
 			return
 		}
+		// write to the db at the very if configmap creation succeeds and no other failures
 		err = store.GetStore().SetKotsAdmEventStatus()
 		if err != nil {
 			logger.Errorf("Failed to scan %v", err)
 			return
 		}
 	}
-
-}
-
-func isConfigMapPresent(configMapName string) (bool, error) {
-
-	cfg, err := k8sconfig.GetConfig()
-	if err != nil {
-		return false, errors.Wrap(err, "failed to get kubernetes config")
-	}
-	clientset, err := kubernetes.NewForConfig(cfg)
-	if err != nil {
-		return false, errors.Wrap(err, "failed to get clientset")
-	}
-	namespace := os.Getenv("POD_NAMESPACE")
-	existingConfigmap, err := clientset.CoreV1().ConfigMaps(namespace).Get(context.TODO(), configMapName, metav1.GetOptions{})
-	if err != nil && !kuberneteserrors.IsNotFound(err) {
-		return false, errors.Wrap(err, "failed to get configmap")
-	} else if kuberneteserrors.IsNotFound(err) {
-		return false, nil
-	}
-	if existingConfigmap != nil {
-		fmt.Println("-------------Existing config map ------", existingConfigmap.Data["id"], "REFLECT:", reflect.TypeOf(existingConfigmap))
-		return true, nil
-	}
-	return false, nil
-
-}
-
-func createConfigMap(configMapName string, clusterID string) (*corev1.ConfigMap, error) {
-
-	cfg, err := k8sconfig.GetConfig()
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to get kubernetes config")
-	}
-	clientset, err := kubernetes.NewForConfig(cfg)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to get clientset")
-	}
-	configmap := corev1.ConfigMap{
-		TypeMeta: metav1.TypeMeta{
-			APIVersion: "v1",
-			Kind:       "ConfigMap",
-		},
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      configMapName,
-			Namespace: os.Getenv("POD_NAMESPACE"),
-			Labels: map[string]string{
-				"kots.io/kotsadm": "true",
-			},
-		},
-		Data: map[string]string{"id": clusterID},
-	}
-
-	createdConfigmap, err := clientset.CoreV1().ConfigMaps(os.Getenv("POD_NAMESPACE")).Create(context.TODO(), &configmap, metav1.CreateOptions{})
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to create configmap")
-	}
-	fmt.Println("------- CreatedConfig map----", createdConfigmap)
-
-	return createdConfigmap, nil
 
 }

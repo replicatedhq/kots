@@ -2,8 +2,8 @@ package s3pg
 
 import (
 	"context"
-	"fmt"
 	"io/ioutil"
+	"log"
 	"os"
 
 	"github.com/pkg/errors"
@@ -27,6 +27,10 @@ type downstreamInfo struct {
 	downstreamChannelName string
 }
 
+var (
+	configMapName = "kotsadm-id"
+)
+
 func (s S3PGStore) GetReportingInfo(appID string) *upstreamtypes.ReportingInfo {
 	r := upstreamtypes.ReportingInfo{
 		InstanceID: appID,
@@ -37,18 +41,14 @@ func (s S3PGStore) GetReportingInfo(appID string) *upstreamtypes.ReportingInfo {
 		logger.Error(errors.Wrap(err, "failed to get cluster id"))
 	}
 	r.ClusterID = clusterID
-	var (
-		configMapName = "kotsadm-id"
-	)
-	configMap, err := isConfigMapPresent(configMapName)
+	configMap, err := getAdminIDConfigMap()
 	if err == nil && configMap != nil {
 		r.ClusterID = configMap.Data["id"]
 	} else if err == nil && configMap == nil {
 		//generate guid and use that as clusterId to identify that as a different install
-		//TODO, ksuid generation of UID is ok?
 		clusterID = ksuid.New().String()
 		r.ClusterID = clusterID
-		_, err = createConfigMap(configMapName, clusterID)
+		_, err = CreateAdminIDConfigMap(clusterID)
 		if err != nil {
 			logger.Errorf("Failed to to create config map %v", err)
 		}
@@ -153,7 +153,7 @@ func (s S3PGStore) getK8sVersion() (string, error) {
 	return k8sVersion.GitVersion, nil
 }
 
-func isConfigMapPresent(configMapName string) (*corev1.ConfigMap, error) {
+func getAdminIDConfigMap() (*corev1.ConfigMap, error) {
 
 	cfg, err := k8sconfig.GetConfig()
 	if err != nil {
@@ -171,15 +171,15 @@ func isConfigMapPresent(configMapName string) (*corev1.ConfigMap, error) {
 		return nil, nil
 	}
 	if existingConfigmap != nil {
-		fmt.Println("FOUND CONFIG MAP...", existingConfigmap)
+		log.Println("Existing config map", existingConfigmap.Data["id"])
 		return existingConfigmap, nil
 	}
 	return nil, nil
 
 }
 
-func createConfigMap(configMapName string, clusterID string) (*corev1.ConfigMap, error) {
-
+// CreateAdminIDConfigMap creates an id for an kotsadm instance and stores in configmap
+func CreateAdminIDConfigMap(clusterID string) (*corev1.ConfigMap, error) {
 	cfg, err := k8sconfig.GetConfig()
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get kubernetes config")
@@ -208,6 +208,33 @@ func createConfigMap(configMapName string, clusterID string) (*corev1.ConfigMap,
 		return nil, errors.Wrap(err, "failed to create configmap")
 	}
 
+	log.Println("Created Admin config map", createdConfigmap.Data["id"])
 	return createdConfigmap, nil
+
+}
+
+// IsAdminIDConfigMapPresent checks if the configmap for kotsadm-id exists
+func IsAdminIDConfigMapPresent() (bool, error) {
+
+	cfg, err := k8sconfig.GetConfig()
+	if err != nil {
+		return false, errors.Wrap(err, "failed to get kubernetes config")
+	}
+	clientset, err := kubernetes.NewForConfig(cfg)
+	if err != nil {
+		return false, errors.Wrap(err, "failed to get clientset")
+	}
+	namespace := os.Getenv("POD_NAMESPACE")
+	existingConfigmap, err := clientset.CoreV1().ConfigMaps(namespace).Get(context.TODO(), configMapName, metav1.GetOptions{})
+	if err != nil && !kuberneteserrors.IsNotFound(err) {
+		return false, errors.Wrap(err, "failed to get configmap")
+	} else if kuberneteserrors.IsNotFound(err) {
+		return false, nil
+	}
+	if existingConfigmap != nil {
+		log.Println("Existing config map", existingConfigmap.Data["id"])
+		return true, nil
+	}
+	return false, nil
 
 }
