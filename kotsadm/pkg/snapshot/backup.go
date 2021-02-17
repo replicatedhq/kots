@@ -79,6 +79,10 @@ func CreateApplicationBackup(ctx context.Context, a *apptypes.App, isScheduled b
 		return nil, errors.Wrap(err, "failed to get backup spec from kotskinds")
 	}
 
+	if backupSpec == "" {
+		return nil, errors.Errorf("application %s does not have a backup spec", a.Slug)
+	}
+
 	renderedBackup, err := helper.RenderAppFile(a, nil, []byte(backupSpec), kotsKinds)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to render backup")
@@ -219,6 +223,10 @@ func CreateInstanceBackup(ctx context.Context, cluster *downstreamtypes.Downstre
 		backupSpec, err := kotsKinds.Marshal("velero.io", "v1", "Backup")
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to get backup spec from kotskinds")
+		}
+
+		if backupSpec == "" {
+			continue
 		}
 
 		renderedBackup, err := helper.RenderAppFile(a, nil, []byte(backupSpec), kotsKinds)
