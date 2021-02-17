@@ -53,10 +53,10 @@ func Upload(path string, uploadOptions UploadOptions) error {
 
 	updateCursor, err := findUpdateCursor(path)
 	if err != nil {
-		return errors.Wrapf(err, "failed to find update cursor in %s. Please double check the path provided.", path)
+		return errors.Wrapf(err, "failed to find update cursor in %q. Please double check the path provided.", path)
 	}
 	if updateCursor == "" {
-		return errors.Errorf("no update cursor found in %s. Please double check the path provided.", path)
+		return errors.Errorf("no update cursor found in %q. Please double check the path provided.", path)
 	}
 	uploadOptions.updateCursor = updateCursor
 
