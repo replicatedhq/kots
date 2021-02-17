@@ -6,12 +6,12 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	apptypes "github.com/replicatedhq/kots/kotsadm/pkg/app/types"
-	"github.com/replicatedhq/kots/kotsadm/pkg/snapshot"
-	"github.com/replicatedhq/kots/kotsadm/pkg/store"
 	downstreamtypes "github.com/replicatedhq/kots/pkg/api/downstream/types"
 	snapshottypes "github.com/replicatedhq/kots/pkg/api/snapshot/types"
+	apptypes "github.com/replicatedhq/kots/pkg/app/types"
 	"github.com/replicatedhq/kots/pkg/logger"
+	"github.com/replicatedhq/kots/pkg/store"
+	"github.com/replicatedhq/kots/kotsadm/pkg/snapshot"
 	"k8s.io/apimachinery/pkg/util/rand"
 
 	cron "github.com/robfig/cron/v3"

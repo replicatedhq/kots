@@ -2,7 +2,7 @@ package policy
 
 import (
 	"github.com/pkg/errors"
-	"github.com/replicatedhq/kots/kotsadm/pkg/store"
+	"github.com/replicatedhq/kots/pkg/store"
 )
 
 func appSlugFromAppIDGetter(kotsStore store.KOTSStore, vars map[string]string) (map[string]string, error) {

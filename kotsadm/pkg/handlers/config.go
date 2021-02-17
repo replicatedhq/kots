@@ -14,21 +14,21 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
-	apptypes "github.com/replicatedhq/kots/kotsadm/pkg/app/types"
-	kotsadmconfig "github.com/replicatedhq/kots/kotsadm/pkg/config"
-	"github.com/replicatedhq/kots/kotsadm/pkg/downstream"
-	"github.com/replicatedhq/kots/kotsadm/pkg/preflight"
-	"github.com/replicatedhq/kots/kotsadm/pkg/render"
-	"github.com/replicatedhq/kots/kotsadm/pkg/store"
-	"github.com/replicatedhq/kots/kotsadm/pkg/version"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	"github.com/replicatedhq/kots/kotskinds/multitype"
 	versiontypes "github.com/replicatedhq/kots/pkg/api/version/types"
+	apptypes "github.com/replicatedhq/kots/pkg/app/types"
 	kotsconfig "github.com/replicatedhq/kots/pkg/config"
 	"github.com/replicatedhq/kots/pkg/crypto"
+	kotsadmconfig "github.com/replicatedhq/kots/pkg/kotsadmconfig"
+	downstream "github.com/replicatedhq/kots/pkg/kotsadmdownstream"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/logger"
+	"github.com/replicatedhq/kots/pkg/preflight"
+	"github.com/replicatedhq/kots/pkg/render"
+	"github.com/replicatedhq/kots/pkg/store"
 	"github.com/replicatedhq/kots/pkg/template"
+	"github.com/replicatedhq/kots/pkg/version"
 )
 
 type UpdateAppConfigRequest struct {

@@ -8,7 +8,7 @@ require (
 	github.com/Azure/go-autorest/autorest v0.9.6
 	github.com/Azure/go-autorest/autorest/adal v0.8.2
 	github.com/aws/aws-sdk-go v1.28.2
-	github.com/bitnami-labs/sealed-secrets v0.12.5
+	github.com/bitnami-labs/sealed-secrets v0.14.1
 	github.com/containerd/containerd v1.3.2
 	github.com/containers/image/v5 v5.5.2
 	github.com/coreos/go-oidc v2.2.1+incompatible
@@ -36,7 +36,7 @@ require (
 	github.com/replicatedhq/troubleshoot v0.9.55
 	github.com/replicatedhq/yaml/v3 v3.0.0-beta5-replicatedhq
 	github.com/robfig/cron v1.1.0
-	github.com/robfig/cron/v3 v3.0.0
+	github.com/robfig/cron/v3 v3.0.1
 	github.com/segmentio/ksuid v1.0.3
 	github.com/spf13/cobra v1.0.0
 	github.com/spf13/viper v1.6.2

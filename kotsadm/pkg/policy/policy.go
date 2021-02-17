@@ -6,7 +6,7 @@ import (
 	"text/template"
 
 	"github.com/gorilla/mux"
-	"github.com/replicatedhq/kots/kotsadm/pkg/store"
+	"github.com/replicatedhq/kots/pkg/store"
 )
 
 type VarsGetter func(kotsStore store.KOTSStore, vars map[string]string) (map[string]string, error)

@@ -6,11 +6,11 @@ import (
 	"net/http"
 
 	"github.com/pkg/errors"
-	"github.com/replicatedhq/kots/kotsadm/pkg/session"
-	"github.com/replicatedhq/kots/kotsadm/pkg/store"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/rbac"
 	rbactypes "github.com/replicatedhq/kots/pkg/rbac/types"
+	"github.com/replicatedhq/kots/pkg/session"
+	"github.com/replicatedhq/kots/pkg/store"
 )
 
 type RBACError struct {
