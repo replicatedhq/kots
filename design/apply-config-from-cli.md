@@ -35,29 +35,46 @@ There will be two modes of operation:
 The following command will be added to CLI:
 
 ```
-kubectl kots config <app-slug> set [parameters]
+kubectl kots set config <app-slug> [parameters]
 ```
 
 The following flags will be supported, in addition to all higher level flags:
 
 ```
- --config-values <path to config file>
+ --key
+ --value
+ --from-file <path to config file>
  --merge
- --config-key
- --config-value
- --config-value-from-file
  --deploy
+ --skip-preflights
  ```
 
  | Flag | Description |
 | :---- | ----------- |
-| `--config-values` | This is a path to a config file compiant with KOT's `kind: ConfigValues` format.  By default, the contents of this file will be used to replace existing app config in its entirety.  This property can be used to delete config items that are no longer used. |
-| `--merge` | When this parameter is specified, only the keys included in the `--config-values` file will be replaced and all other values will be preserved.  This can be used to avoid creating multiple app versions when setting one value at a time when more than one config value needs to be changed. |
-| `--config-key` | This is the name of the config key whose value will be replaced.  Either `--config-value` or `--config-value-from-file` is required with this parameter.  `--config-values` cannot be used in conjunction with this parameter. |
-| `--config-value` | This is the new value of the config option named by the `--config-key` parameter. In case of a secret, this is the clear text value. |
-| `--config-value-from-file` | This is the file name from which the new value of the config option named by the `--config-key` parameter will be loaded. In case of a secret, the file contains clear text value. |
+| `--key` | This is the name of the config key whose value will be replaced.  Either `--value` or `--from-file` is required with this parameter. |
+| `--value` | This is the new value of the config option named by the `--key` parameter. In case of a secret, this is the clear text value. |
+| `--from-file` | With `--key`, this is a path to a text file that contains the value for the specified key.  Without `--key`, this is a path to a config file compiant with KOT's `kind: ConfigValues` format.  By default, the contents of this file will be used to replace existing app config in its entirety.  This property can be used to delete config items that are no longer used. |
+| `--merge` | When this parameter is specified, only the keys included in the `--from-file` file will be replaced and all other values will be preserved.  This can be used to avoid creating multiple app versions when setting one value at a time when more than one config value needs to be changed. |
 | `--deploy` | By default the new app version will be created but not deployed.  This parameter has the same function as the one in `kots upstream upgrade` command. |
 | `--skip-preflights` | By default preflight checks will run on config update. This parameter has the same function as the one in `kots upstream upgrade` command. |
+
+### Examples
+
+```
+kubectl kots set config myapp --from-file /path/to/local/config.yaml
+```
+
+```
+kubectl kots set config myapp --key config-item-name --from-file /path/to/config/file/value.txt
+```
+
+```
+kubectl kots set config myapp config-item-name="config item value"
+```
+
+```
+kubectl kots set config myapp --key config-item-name --value "config item value"
+```
 
 ## Alternatives Considered
 
