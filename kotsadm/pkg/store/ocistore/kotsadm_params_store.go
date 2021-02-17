@@ -1,6 +1,6 @@
 package ocistore
 
-func (s OCIStore) GetKotsAdmEventStatus() (bool, error) {
+func (s OCIStore) IsKotsadmIDGenerated() (bool, error) {
 	return false, ErrNotImplemented
 }
 

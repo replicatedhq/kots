@@ -3,7 +3,6 @@ package s3pg
 import (
 	"context"
 	"io/ioutil"
-	"log"
 	"os"
 
 	"github.com/pkg/errors"
@@ -171,7 +170,7 @@ func getAdminIDConfigMap() (*corev1.ConfigMap, error) {
 		return nil, nil
 	}
 	if existingConfigmap != nil {
-		log.Println("Existing config map", existingConfigmap.Data["id"])
+		logger.Infof("Existing config map %v", existingConfigmap.Data["id"])
 		return existingConfigmap, nil
 	}
 	return nil, nil
@@ -208,7 +207,7 @@ func CreateAdminIDConfigMap(clusterID string) (*corev1.ConfigMap, error) {
 		return nil, errors.Wrap(err, "failed to create configmap")
 	}
 
-	log.Println("Created Admin config map", createdConfigmap.Data["id"])
+	logger.Infof("Created Admin config map %v", createdConfigmap.Data["id"])
 	return createdConfigmap, nil
 
 }
@@ -232,7 +231,7 @@ func IsAdminIDConfigMapPresent() (bool, error) {
 		return false, nil
 	}
 	if existingConfigmap != nil {
-		log.Println("Existing config map", existingConfigmap.Data["id"])
+		logger.Infof("Existing config map %v", existingConfigmap.Data["id"])
 		return true, nil
 	}
 	return false, nil

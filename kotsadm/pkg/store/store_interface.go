@@ -177,6 +177,6 @@ type ReportingStore interface {
 }
 
 type KotsAdminParamsStore interface {
-	GetKotsAdmEventStatus() (bool, error)
+	IsKotsadmIDGenerated() (bool, error)
 	SetKotsAdmEventStatus() error
 }

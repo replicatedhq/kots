@@ -1188,19 +1188,19 @@ func (mr *MockKOTSStoreMockRecorder) GetReportingInfo(appID interface{}) *gomock
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetReportingInfo", reflect.TypeOf((*MockKOTSStore)(nil).GetReportingInfo), appID)
 }
 
-// GetKotsAdmEventStatus mocks base method
-func (m *MockKOTSStore) GetKotsAdmEventStatus() (bool, error) {
+// IsKotsadmIDGenerated mocks base method
+func (m *MockKOTSStore) IsKotsadmIDGenerated() (bool, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetKotsAdmEventStatus")
+	ret := m.ctrl.Call(m, "IsKotsadmIDGenerated")
 	ret0, _ := ret[0].(bool)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// GetKotsAdmEventStatus indicates an expected call of GetKotsAdmEventStatus
-func (mr *MockKOTSStoreMockRecorder) GetKotsAdmEventStatus() *gomock.Call {
+// IsKotsadmIDGenerated indicates an expected call of IsKotsadmIDGenerated
+func (mr *MockKOTSStoreMockRecorder) IsKotsadmIDGenerated() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetKotsAdmEventStatus", reflect.TypeOf((*MockKOTSStore)(nil).GetKotsAdmEventStatus))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsKotsadmIDGenerated", reflect.TypeOf((*MockKOTSStore)(nil).IsKotsadmIDGenerated))
 }
 
 // SetKotsAdmEventStatus mocks base method
@@ -2787,19 +2787,19 @@ func (m *MockKotsAdminParamsStore) EXPECT() *MockKotsAdminParamsStoreMockRecorde
 	return m.recorder
 }
 
-// GetKotsAdmEventStatus mocks base method
-func (m *MockKotsAdminParamsStore) GetKotsAdmEventStatus() (bool, error) {
+// IsKotsadmIDGenerated mocks base method
+func (m *MockKotsAdminParamsStore) IsKotsadmIDGenerated() (bool, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetKotsAdmEventStatus")
+	ret := m.ctrl.Call(m, "IsKotsadmIDGenerated")
 	ret0, _ := ret[0].(bool)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// GetKotsAdmEventStatus indicates an expected call of GetKotsAdmEventStatus
-func (mr *MockKotsAdminParamsStoreMockRecorder) GetKotsAdmEventStatus() *gomock.Call {
+// IsKotsadmIDGenerated indicates an expected call of IsKotsadmIDGenerated
+func (mr *MockKotsAdminParamsStoreMockRecorder) IsKotsadmIDGenerated() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetKotsAdmEventStatus", reflect.TypeOf((*MockKotsAdminParamsStore)(nil).GetKotsAdmEventStatus))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsKotsadmIDGenerated", reflect.TypeOf((*MockKotsAdminParamsStore)(nil).IsKotsadmIDGenerated))
 }
 
 // SetKotsAdmEventStatus mocks base method

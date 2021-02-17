@@ -7,20 +7,20 @@ import (
 	"github.com/replicatedhq/kots/kotsadm/pkg/persistence"
 )
 
-// GetKotsAdmEventStatus retrieves the id of kotsadm if the pod is already
-func (s S3PGStore) GetKotsAdmEventStatus() (bool, error) {
+// IsKotsadmIDGenerated retrieves the id of kotsadm if the pod is already
+func (s S3PGStore) IsKotsadmIDGenerated() (bool, error) {
 	db := persistence.MustGetPGSession()
 	query := `select value from kotsadm_params where key = 'IS_KOTSADM_ID_GENERATED'`
 	row := db.QueryRow(query)
 
-	var value bool
+	var value string
 	if err := row.Scan(&value); err != nil {
 		if err == sql.ErrNoRows {
 			return false, nil
 		}
 		return false, errors.Wrap(err, "failed to scan")
 	}
-	return value, nil
+	return true, nil
 }
 
 // SetKotsAdmEventStatus sets the status to true if the pod is starting for the first time
@@ -34,6 +34,5 @@ func (s S3PGStore) SetKotsAdmEventStatus() error {
 	if err != nil {
 		return errors.Wrap(err, "failed to exec")
 	}
-
 	return nil
 }
