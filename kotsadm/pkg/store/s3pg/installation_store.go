@@ -5,7 +5,7 @@ import (
 
 	"github.com/pkg/errors"
 	installationtypes "github.com/replicatedhq/kots/kotsadm/pkg/online/types"
-	"github.com/replicatedhq/kots/kotsadm/pkg/persistence"
+	"github.com/replicatedhq/kots/pkg/persistence"
 )
 
 func (s S3PGStore) GetPendingInstallationStatus() (*installationtypes.InstallStatus, error) {

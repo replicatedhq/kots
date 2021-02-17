@@ -6,10 +6,10 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	"github.com/replicatedhq/kots/kotsadm/pkg/persistence"
 	sessiontypes "github.com/replicatedhq/kots/kotsadm/pkg/session/types"
 	usertypes "github.com/replicatedhq/kots/kotsadm/pkg/user/types"
 	"github.com/replicatedhq/kots/pkg/logger"
+	"github.com/replicatedhq/kots/pkg/persistence"
 	"github.com/segmentio/ksuid"
 )
 

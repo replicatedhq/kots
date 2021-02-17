@@ -5,8 +5,8 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	"github.com/replicatedhq/kots/kotsadm/pkg/persistence"
 	"github.com/replicatedhq/kots/pkg/api/appstatus/types"
+	"github.com/replicatedhq/kots/pkg/persistence"
 )
 
 func GetState(resourceStates []types.ResourceState) types.State {

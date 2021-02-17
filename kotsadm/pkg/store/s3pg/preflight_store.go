@@ -5,8 +5,8 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	"github.com/replicatedhq/kots/kotsadm/pkg/persistence"
 	preflighttypes "github.com/replicatedhq/kots/kotsadm/pkg/preflight/types"
+	"github.com/replicatedhq/kots/pkg/persistence"
 )
 
 func (c S3PGStore) SetPreflightResults(appID string, sequence int64, results []byte) error {

@@ -4,7 +4,7 @@ import (
 	"database/sql"
 
 	"github.com/pkg/errors"
-	"github.com/replicatedhq/kots/kotsadm/pkg/persistence"
+	"github.com/replicatedhq/kots/pkg/persistence"
 )
 
 func (s S3PGStore) GetPrometheusAddress() (string, error) {

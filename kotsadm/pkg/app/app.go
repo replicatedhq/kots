@@ -5,7 +5,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/kotsadm/pkg/app/types"
-	"github.com/replicatedhq/kots/kotsadm/pkg/persistence"
+	"github.com/replicatedhq/kots/pkg/persistence"
 )
 
 // LastUpdateAtTime sets the time that the client last checked for an update to now

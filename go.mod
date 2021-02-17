@@ -37,6 +37,7 @@ require (
 	github.com/hashicorp/go-version v1.1.0
 	github.com/kardianos/osext v0.0.0-20190222173326-2bc1f35cddc0 // indirect
 	github.com/kr/text v0.2.0 // indirect
+	github.com/lib/pq v1.3.0
 	github.com/manifoldco/promptui v0.3.2
 	github.com/marccampbell/yaml-toolbox v0.0.0-20200805160637-950ceb36c770
 	github.com/mattn/go-isatty v0.0.12
@@ -77,7 +78,9 @@ require (
 	k8s.io/apimachinery v0.18.4
 	k8s.io/cli-runtime v0.18.4
 	k8s.io/client-go v0.18.4
+	k8s.io/cluster-bootstrap v0.17.8
 	k8s.io/helm v2.14.3+incompatible
+	k8s.io/kubernetes v1.18.0
 	k8s.io/utils v0.0.0-20200619165400-6e3d28b6ed19
 	rsc.io/letsencrypt v0.0.3 // indirect
 	sigs.k8s.io/application v0.8.2

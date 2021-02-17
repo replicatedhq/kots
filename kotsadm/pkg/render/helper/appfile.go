@@ -9,7 +9,7 @@ import (
 )
 
 // RenderAppFile renders a single file using the current sequence of the provided app, or the overrideSequence (if provided)
-// it's here for now to avoid an import cycle between kotsadm/pkg/render and kotsadm/pkg/store
+// it's here for now to avoid an import cycle between kotsadm/pkg/render and pkg/store
 func RenderAppFile(a *types.App, overrideSequence *int64, inputContent []byte, kotsKinds *kotsutil.KotsKinds) ([]byte, error) {
 	sequence := a.CurrentSequence
 	if overrideSequence != nil {

@@ -4,8 +4,8 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/replicatedhq/kots/kotsadm/pkg/k8s"
 	"github.com/replicatedhq/kots/kotsadm/pkg/kurl"
+	"github.com/replicatedhq/kots/pkg/k8s"
 	"github.com/replicatedhq/kots/pkg/logger"
 )
 

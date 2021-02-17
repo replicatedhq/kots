@@ -1617,6 +1617,7 @@ k8s.io/cli-runtime v0.18.4/go.mod h1:9/hS/Cuf7NVzWR5F/5tyS6xsnclxoPLVtwhnkJG1Y4g
 k8s.io/client-go v0.18.4 h1:un55V1Q/B3JO3A76eS0kUSywgGK/WR3BQ8fHQjNa6Zc=
 k8s.io/client-go v0.18.4/go.mod h1:f5sXwL4yAZRkAtzOxRWUhA/N8XzGCb+nPZI8PfobZ9g=
 k8s.io/cloud-provider v0.18.4/go.mod h1:JdI6cuSFPSPANEciv0v5qfwztkeyFCVc1S3krLYrw0E=
+k8s.io/cluster-bootstrap v0.18.4 h1:TlH1HzHdANqE4d4Gw/9eENtGkEmAQVq8e4VGYPRupfc=
 k8s.io/cluster-bootstrap v0.18.4/go.mod h1:hNG705ec9SMN2BGlJ81R2CnyJjNKfROtAxvI9JXZdiM=
 k8s.io/code-generator v0.18.4/go.mod h1:TgNEVx9hCyPGpdtCWA34olQYLkh3ok9ar7XfSsr8b6c=
 k8s.io/component-base v0.18.4 h1:Kr53Fp1iCGNsl9Uv4VcRvLy7YyIqi9oaJOQ7SXtKI98=
@@ -1642,12 +1643,15 @@ k8s.io/kube-openapi v0.0.0-20200121204235-bf4fb3bd569c h1:/KUFqjjqAcY4Us6luF5RDN
 k8s.io/kube-openapi v0.0.0-20200121204235-bf4fb3bd569c/go.mod h1:GRQhZsXIAJ1xR0C9bd8UpWHZ5plfAS9fzPjJuQ6JL3E=
 k8s.io/kube-openapi v0.0.0-20200410145947-61e04a5be9a6 h1:Oh3Mzx5pJ+yIumsAD0MOECPVeXsVot0UkiaCGVyfGQY=
 k8s.io/kube-openapi v0.0.0-20200410145947-61e04a5be9a6/go.mod h1:GRQhZsXIAJ1xR0C9bd8UpWHZ5plfAS9fzPjJuQ6JL3E=
+k8s.io/kube-proxy v0.18.4 h1:3weU8cTsjQol0Xxc81IP7+r+NQhRtm79uYdeJqDPPYE=
 k8s.io/kube-proxy v0.18.4/go.mod h1:h2c+ckQC1XpybDs53mWhLCvvM6txduWVLPQwwvGqR9M=
 k8s.io/kube-scheduler v0.18.4/go.mod h1:vRFb/8Yi7hh670beaPrXttMpjt7H8EooDkgwFm8ts4k=
 k8s.io/kubectl v0.18.4 h1:l9DUYPTEMs1+qNtoqPpTyaJOosvj7l7tQqphCO1K52s=
 k8s.io/kubectl v0.18.4/go.mod h1:EzB+nfeUWk6fm6giXQ8P4Fayw3dsN+M7Wjy23mTRtB0=
+k8s.io/kubelet v0.18.4 h1:PsaKg5sr54SYgeeFJAaGdowPumg2VTLHITLvlZZ3wa4=
 k8s.io/kubelet v0.18.4/go.mod h1:D0V9JYaTJRF+ry+9JfnM4uyg3ySRLQ02XjfQ5f2u4CM=
 k8s.io/kubernetes v1.13.0/go.mod h1:ocZa8+6APFNC2tX1DZASIbocyYT5jHzqFVsY5aoB7Jk=
+k8s.io/kubernetes v1.18.0 h1:rVe+edi5GwutPQJ4KIZq1Nk506nmnfyz/KOZVCLv7Yo=
 k8s.io/kubernetes v1.18.0/go.mod h1:z8xjOOO1Ljz+TaHpOxVGC7cxtF32TesIamoQ+BZrVS0=
 k8s.io/legacy-cloud-providers v0.18.4/go.mod h1:Mnxtra7DxVrODfGZHPsrkLi22lwmZOlWkjyyO3vW+WM=
 k8s.io/metrics v0.18.4/go.mod h1:luze4fyI9JG4eLDZy0kFdYEebqNfi0QrG4xNEbPkHOs=

@@ -18,7 +18,6 @@ import (
 	apptypes "github.com/replicatedhq/kots/kotsadm/pkg/app/types"
 	kotsconfig "github.com/replicatedhq/kots/kotsadm/pkg/config"
 	gitopstypes "github.com/replicatedhq/kots/kotsadm/pkg/gitops/types"
-	"github.com/replicatedhq/kots/kotsadm/pkg/persistence"
 	rendertypes "github.com/replicatedhq/kots/kotsadm/pkg/render/types"
 	kotss3 "github.com/replicatedhq/kots/kotsadm/pkg/s3"
 	"github.com/replicatedhq/kots/kotsadm/pkg/secrets"
@@ -26,6 +25,7 @@ import (
 	versiontypes "github.com/replicatedhq/kots/pkg/api/version/types"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/kustomize"
+	"github.com/replicatedhq/kots/pkg/persistence"
 	velerov1 "github.com/vmware-tanzu/velero/pkg/apis/velero/v1"
 	"k8s.io/client-go/kubernetes/scheme"
 )
@@ -107,7 +107,7 @@ func (s S3PGStore) IsSnapshotsSupportedForVersion(a *apptypes.App, sequence int6
 		return false, errors.Wrap(err, "failed to get registry settings for app")
 	}
 
-	// as far as I can tell, this is the only place within kotsadm/pkg/store that uses templating
+	// as far as I can tell, this is the only place within pkg/store that uses templating
 	rendered, err := renderer.RenderFile(kotsKinds, registrySettings, a.Slug, sequence, a.IsAirgap, []byte(backupSpecStr.String))
 	if err != nil {
 		return false, errors.Wrap(err, "failed to render backup spec")

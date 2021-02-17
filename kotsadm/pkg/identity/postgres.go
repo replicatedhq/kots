@@ -6,7 +6,7 @@ import (
 
 	"github.com/lib/pq"
 	"github.com/pkg/errors"
-	"github.com/replicatedhq/kots/kotsadm/pkg/persistence"
+	"github.com/replicatedhq/kots/pkg/persistence"
 )
 
 func postgresUserExists(user string) (bool, error) {
