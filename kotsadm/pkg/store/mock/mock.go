@@ -1203,18 +1203,18 @@ func (mr *MockKOTSStoreMockRecorder) IsKotsadmIDGenerated() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsKotsadmIDGenerated", reflect.TypeOf((*MockKOTSStore)(nil).IsKotsadmIDGenerated))
 }
 
-// SetKotsAdmEventStatus mocks base method
-func (m *MockKOTSStore) SetKotsAdmEventStatus() error {
+// SetIsKotsadmIDGenerated mocks base method
+func (m *MockKOTSStore) SetIsKotsadmIDGenerated() error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SetKotsAdmEventStatus")
+	ret := m.ctrl.Call(m, "SetIsKotsadmIDGenerated")
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// SetKotsAdmEventStatus indicates an expected call of SetKotsAdmEventStatus
-func (mr *MockKOTSStoreMockRecorder) SetKotsAdmEventStatus() *gomock.Call {
+// SetIsKotsadmIDGenerated indicates an expected call of SetIsKotsadmIDGenerated
+func (mr *MockKOTSStoreMockRecorder) SetIsKotsadmIDGenerated() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetKotsAdmEventStatus", reflect.TypeOf((*MockKOTSStore)(nil).SetKotsAdmEventStatus))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetIsKotsadmIDGenerated", reflect.TypeOf((*MockKOTSStore)(nil).SetIsKotsadmIDGenerated))
 }
 
 // Init mocks base method
@@ -2764,31 +2764,31 @@ func (mr *MockReportingStoreMockRecorder) GetReportingInfo(appID interface{}) *g
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetReportingInfo", reflect.TypeOf((*MockReportingStore)(nil).GetReportingInfo), appID)
 }
 
-// MockKotsAdminParamsStore is a mock of KotsAdminParamsStore interface
-type MockKotsAdminParamsStore struct {
+// MockKotsadmParamsStore is a mock of KotsadmParamsStore interface
+type MockKotsadmParamsStore struct {
 	ctrl     *gomock.Controller
-	recorder *MockKotsAdminParamsStoreMockRecorder
+	recorder *MockKotsadmParamsStoreMockRecorder
 }
 
-// MockKotsAdminParamsStoreMockRecorder is the mock recorder for MockKotsAdminParamsStore
-type MockKotsAdminParamsStoreMockRecorder struct {
-	mock *MockKotsAdminParamsStore
+// MockKotsadmParamsStoreMockRecorder is the mock recorder for MockKotsadmParamsStore
+type MockKotsadmParamsStoreMockRecorder struct {
+	mock *MockKotsadmParamsStore
 }
 
-// NewMockKotsAdminParamsStore creates a new mock instance
-func NewMockKotsAdminParamsStore(ctrl *gomock.Controller) *MockKotsAdminParamsStore {
-	mock := &MockKotsAdminParamsStore{ctrl: ctrl}
-	mock.recorder = &MockKotsAdminParamsStoreMockRecorder{mock}
+// NewMockKotsadmParamsStore creates a new mock instance
+func NewMockKotsadmParamsStore(ctrl *gomock.Controller) *MockKotsadmParamsStore {
+	mock := &MockKotsadmParamsStore{ctrl: ctrl}
+	mock.recorder = &MockKotsadmParamsStoreMockRecorder{mock}
 	return mock
 }
 
 // EXPECT returns an object that allows the caller to indicate expected use
-func (m *MockKotsAdminParamsStore) EXPECT() *MockKotsAdminParamsStoreMockRecorder {
+func (m *MockKotsadmParamsStore) EXPECT() *MockKotsadmParamsStoreMockRecorder {
 	return m.recorder
 }
 
 // IsKotsadmIDGenerated mocks base method
-func (m *MockKotsAdminParamsStore) IsKotsadmIDGenerated() (bool, error) {
+func (m *MockKotsadmParamsStore) IsKotsadmIDGenerated() (bool, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "IsKotsadmIDGenerated")
 	ret0, _ := ret[0].(bool)
@@ -2797,21 +2797,21 @@ func (m *MockKotsAdminParamsStore) IsKotsadmIDGenerated() (bool, error) {
 }
 
 // IsKotsadmIDGenerated indicates an expected call of IsKotsadmIDGenerated
-func (mr *MockKotsAdminParamsStoreMockRecorder) IsKotsadmIDGenerated() *gomock.Call {
+func (mr *MockKotsadmParamsStoreMockRecorder) IsKotsadmIDGenerated() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsKotsadmIDGenerated", reflect.TypeOf((*MockKotsAdminParamsStore)(nil).IsKotsadmIDGenerated))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsKotsadmIDGenerated", reflect.TypeOf((*MockKotsadmParamsStore)(nil).IsKotsadmIDGenerated))
 }
 
-// SetKotsAdmEventStatus mocks base method
-func (m *MockKotsAdminParamsStore) SetKotsAdmEventStatus() error {
+// SetIsKotsadmIDGenerated mocks base method
+func (m *MockKotsadmParamsStore) SetIsKotsadmIDGenerated() error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SetKotsAdmEventStatus")
+	ret := m.ctrl.Call(m, "SetIsKotsadmIDGenerated")
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// SetKotsAdmEventStatus indicates an expected call of SetKotsAdmEventStatus
-func (mr *MockKotsAdminParamsStoreMockRecorder) SetKotsAdmEventStatus() *gomock.Call {
+// SetIsKotsadmIDGenerated indicates an expected call of SetIsKotsadmIDGenerated
+func (mr *MockKotsadmParamsStoreMockRecorder) SetIsKotsadmIDGenerated() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetKotsAdmEventStatus", reflect.TypeOf((*MockKotsAdminParamsStore)(nil).SetKotsAdmEventStatus))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetIsKotsadmIDGenerated", reflect.TypeOf((*MockKotsadmParamsStore)(nil).SetIsKotsadmIDGenerated))
 }

@@ -12,10 +12,11 @@ import (
 	"time"
 
 	"github.com/gorilla/mux"
+	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/kotsadm/pkg/automation"
 	"github.com/replicatedhq/kots/kotsadm/pkg/handlers"
 	"github.com/replicatedhq/kots/kotsadm/pkg/informers"
-	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
+	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/kotsadm/pkg/policy"
 	"github.com/replicatedhq/kots/kotsadm/pkg/snapshotscheduler"
 	"github.com/replicatedhq/kots/kotsadm/pkg/socketservice"
@@ -48,7 +49,7 @@ func Start() {
 	}
 
 	if err := generateKotsadmID(); err != nil {
-		logger.Infof("Failed to generate kots admin id", err)
+		logger.Infof("failed to generate kots admin id", err)
 	}
 
 	supportbundle.StartServer()
@@ -171,39 +172,31 @@ func Start() {
 
 // Detects the InstanceID of kodsadm pod across restores
 func generateKotsadmID() error {
-
 	logger.Info("Generate Kotsadm Instance ID")
 
 	// Retrieve the ClusterID from store
 	clusters, err := store.GetStore().ListClusters()
 	if err != nil {
-		logger.Errorf("Failed to list clusters %v", err)
-		return err
+		return errors.Wrap(err, "failed to list clusters")
 	}
 	if len(clusters) == 0 {
-		logger.Info("No clusters found")
 		return nil
 	}
 	clusterID := clusters[0].ClusterID
 
 	// Write a Query to set/get an Event from the Store
-	keyExists, err := store.GetStore().IsKotsadmIDGenerated()
-	// failed to scan
+	isKotsadmIDGenerated, err := store.GetStore().IsKotsadmIDGenerated()
 	if err != nil {
-		logger.Errorf("Failed to check kotsadm id generation %v", err)
-		return err
+		return errors.Wrap(err, "Failed to check kotsadm id generation")
 	}
 
-	// if the key does not exist, likely a Restore or pod restart
-	if keyExists == true {
-		logger.Info("Key exists")
-		exists, err := s3pg.IsAdminIDConfigMapPresent()
+	// if the key exists, likely a fresh Install
+	if isKotsadmIDGenerated {
+		exists, err := s3pg.IsKotsadmIDConfigMapPresent()
 		if err != nil {
-			logger.Errorf("Config map check error %v", err)
-			return err
-
+			return errors.Wrap(err, "config map check error")
 		}
-		if exists == true {
+		if exists {
 			// do nothing
 			return nil
 		}
@@ -211,26 +204,21 @@ func generateKotsadmID() error {
 		clusterID = ksuid.New().String()
 		_, err = s3pg.CreateAdminIDConfigMap(clusterID)
 		if err != nil {
-			logger.Errorf("Failed to to create config map %v", err)
-			return err
+			return errors.Wrap(err, "failed to to create config map")
 		}
 	}
 
-	// if the key exists, likely a fresh Install
-	if keyExists == false {
-		logger.Info("Key does not exist")
+	// if the key does not exist, likely a Restore or pod restart
+	if !isKotsadmIDGenerated {
 		_, err := s3pg.CreateAdminIDConfigMap(clusterID)
 		if err != nil {
-			logger.Errorf("Failed to create admin id%v", err)
-			return err
+			return errors.Wrap(err, "failed to create admin id")
 		}
 		// write to the db at the very if configmap creation succeeds and no other failures
-		err = store.GetStore().SetKotsAdmEventStatus()
+		err = store.GetStore().SetIsKotsadmIDGenerated()
 		if err != nil {
-			logger.Errorf("Failed to set admin event status %v", err)
-			return err
+			return errors.Wrap(err, "failed to set admin event status")
 		}
 	}
 	return nil
-
 }

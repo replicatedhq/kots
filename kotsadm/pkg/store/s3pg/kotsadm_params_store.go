@@ -23,13 +23,11 @@ func (s S3PGStore) IsKotsadmIDGenerated() (bool, error) {
 	return true, nil
 }
 
-// SetKotsAdmEventStatus sets the status to true if the pod is starting for the first time
-func (s S3PGStore) SetKotsAdmEventStatus() error {
+// SetIsKotsadmIDGenerated sets the status to true if the pod is starting for the first time
+func (s S3PGStore) SetIsKotsadmIDGenerated() error {
 	db := persistence.MustGetPGSession()
 
-	//TODO double check if this insert query is correct - when $2 will conflict?
 	query := `insert into kotsadm_params (key, value) values ($1, $2) on conflict (key) do update set value = $2`
-
 	_, err := db.Exec(query, "IS_KOTSADM_ID_GENERATED", true)
 	if err != nil {
 		return errors.Wrap(err, "failed to exec")

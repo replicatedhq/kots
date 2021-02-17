@@ -4,6 +4,6 @@ func (s OCIStore) IsKotsadmIDGenerated() (bool, error) {
 	return false, ErrNotImplemented
 }
 
-func (s OCIStore) SetKotsAdmEventStatus() error {
+func (s OCIStore) SetIsKotsadmIDGenerated() error {
 	return ErrNotImplemented
 }

@@ -9,6 +9,7 @@ import (
 	"github.com/replicatedhq/kots/kotsadm/pkg/downstream"
 	"github.com/replicatedhq/kots/kotsadm/pkg/k8s"
 	"github.com/replicatedhq/kots/kotsadm/pkg/kurl"
+	"github.com/replicatedhq/kots/pkg/kotsadm/types"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/logger"
 	upstreamtypes "github.com/replicatedhq/kots/pkg/upstream/types"
@@ -16,8 +17,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/kubernetes"
-	k8sconfig "sigs.k8s.io/controller-runtime/pkg/client/config"
 )
 
 type downstreamInfo struct {
@@ -40,7 +39,7 @@ func (s S3PGStore) GetReportingInfo(appID string) *upstreamtypes.ReportingInfo {
 		logger.Error(errors.Wrap(err, "failed to get cluster id"))
 	}
 	r.ClusterID = clusterID
-	configMap, err := getAdminIDConfigMap()
+	configMap, err := getKotsadmIDConfigMap()
 	if err == nil && configMap != nil {
 		r.ClusterID = configMap.Data["id"]
 	} else if err == nil && configMap == nil {
@@ -152,13 +151,8 @@ func (s S3PGStore) getK8sVersion() (string, error) {
 	return k8sVersion.GitVersion, nil
 }
 
-func getAdminIDConfigMap() (*corev1.ConfigMap, error) {
-
-	cfg, err := k8sconfig.GetConfig()
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to get kubernetes config")
-	}
-	clientset, err := kubernetes.NewForConfig(cfg)
+func getKotsadmIDConfigMap() (*corev1.ConfigMap, error) {
+	clientset, err := k8s.Clientset()
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get clientset")
 	}
@@ -170,20 +164,14 @@ func getAdminIDConfigMap() (*corev1.ConfigMap, error) {
 		return nil, nil
 	}
 	if existingConfigmap != nil {
-		logger.Infof("Existing config map %v", existingConfigmap.Data["id"])
 		return existingConfigmap, nil
 	}
 	return nil, nil
-
 }
 
 // CreateAdminIDConfigMap creates an id for an kotsadm instance and stores in configmap
 func CreateAdminIDConfigMap(clusterID string) (*corev1.ConfigMap, error) {
-	cfg, err := k8sconfig.GetConfig()
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to get kubernetes config")
-	}
-	clientset, err := kubernetes.NewForConfig(cfg)
+	clientset, err := k8s.Clientset()
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get clientset")
 	}
@@ -196,7 +184,7 @@ func CreateAdminIDConfigMap(clusterID string) (*corev1.ConfigMap, error) {
 			Name:      configMapName,
 			Namespace: os.Getenv("POD_NAMESPACE"),
 			Labels: map[string]string{
-				"kots.io/kotsadm": "true",
+				types.KotsadmKey: types.KotsadmLabelValue,
 			},
 		},
 		Data: map[string]string{"id": clusterID},
@@ -206,20 +194,13 @@ func CreateAdminIDConfigMap(clusterID string) (*corev1.ConfigMap, error) {
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create configmap")
 	}
-
-	logger.Infof("Created Admin config map %v", createdConfigmap.Data["id"])
+	logger.Infof("Created kotsadm-id config map with id: %v", createdConfigmap.Data["id"])
 	return createdConfigmap, nil
-
 }
 
-// IsAdminIDConfigMapPresent checks if the configmap for kotsadm-id exists
-func IsAdminIDConfigMapPresent() (bool, error) {
-
-	cfg, err := k8sconfig.GetConfig()
-	if err != nil {
-		return false, errors.Wrap(err, "failed to get kubernetes config")
-	}
-	clientset, err := kubernetes.NewForConfig(cfg)
+// IsKotsadmIDConfigMapPresent checks if the configmap for kotsadm-id exists
+func IsKotsadmIDConfigMapPresent() (bool, error) {
+	clientset, err := k8s.Clientset()
 	if err != nil {
 		return false, errors.Wrap(err, "failed to get clientset")
 	}
@@ -235,5 +216,4 @@ func IsAdminIDConfigMapPresent() (bool, error) {
 		return true, nil
 	}
 	return false, nil
-
 }
