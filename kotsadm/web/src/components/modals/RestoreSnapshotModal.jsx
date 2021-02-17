@@ -36,7 +36,7 @@ export default function RestoreSnapshotModal(props) {
             </div>
           </div>
           <div className="flex flex1 u-marginTop--20">
-            <p className="u-fontSize--normal u-fontWeight--normal u-color--dustyGray u-lineHeight--normal"> Restoring to this version will remove data and eplace it with data from the restored version. During the restoration, your application will not be available and you will not be able to use the admin console. This action cannot be reversed. </p>
+            <p className="u-fontSize--normal u-fontWeight--normal u-color--dustyGray u-lineHeight--normal"> Restoring to this version will remove data and replace it with data from the restored version. During the restoration, your application will not be available and you will not be able to use the admin console. This action cannot be reversed. </p>
           </div>
           <div className="flex flex-column u-marginTop--20">
             <p className="u-fontSize--normal u-fontWeight--bold u-color--tuna u-lineHeight--normal"> Type your application slug to continue</p>

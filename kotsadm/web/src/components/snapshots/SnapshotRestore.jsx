@@ -214,7 +214,7 @@ class SnapshotRestore extends Component {
         <div className="flex flex-column alignItems--center">
           <span className="icon yellowWarningIcon"></span>
           <p className="u-fontWeight--bold u-color--tuna u-fontSize--larger u-lineHeight--normal u-marginTop--15 u-marginBottom--10">
-            Partial restored restored with warnings </p>
+            Partial restore was restored with warnings </p>
           <p className="u-fontSize--normal u-fontWeight--medium u-color--dustyGray u-lineHeight--normal">
             Your application restored  to <span className="u-fontWeight--bold u-color--dustyGray"> {this.props.match.params.id} </span> but there were warnings that my affect the application. During the restore there were
           <span className="u-fontWeight--bold  u-color--tundora"> {warnings?.length} warnings </span>.</p>

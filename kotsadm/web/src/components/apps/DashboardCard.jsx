@@ -398,6 +398,7 @@ export default class DashboardCard extends React.Component {
                               onChange={onSnapshotOptionChange}
                               isOptionSelected={(option) => { option.name === selectedSnapshotOption.name }}
                               styles={customStyles}
+                              isSearchable={false}
                             />
                             <button className="StartSnapshotButton" onClick={onSnapshotOptionClick}> {selectedSnapshotOption.name} </button>
                           </div>
