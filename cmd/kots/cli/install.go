@@ -54,7 +54,7 @@ func InstallCmd() *cobra.Command {
 			fmt.Print(cursor.Hide())
 			defer fmt.Print(cursor.Show())
 
-			log := logger.NewLogger()
+			log := logger.NewCLILogger()
 
 			rootDir, err := ioutil.TempDir("", "kotsadm")
 			if err != nil {

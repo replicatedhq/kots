@@ -7,7 +7,7 @@ import (
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 )
 
-func StartPortForward(namespace string, kubernetesConfigFlags *genericclioptions.ConfigFlags, stopCh <-chan struct{}, log *logger.Logger) (int, <-chan error, error) {
+func StartPortForward(namespace string, kubernetesConfigFlags *genericclioptions.ConfigFlags, stopCh <-chan struct{}, log *logger.CLILogger) (int, <-chan error, error) {
 	clientset, err := k8sutil.GetClientset(kubernetesConfigFlags)
 	if err != nil {
 		return 0, nil, errors.Wrap(err, "failed to get clientset")

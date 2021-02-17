@@ -37,7 +37,7 @@ type VeleroRBACResponse struct {
 }
 
 func CreateInstanceBackup(options CreateInstanceBackupOptions) error {
-	log := logger.NewLogger()
+	log := logger.NewCLILogger()
 	log.ActionWithSpinner("Connecting to cluster")
 
 	clientset, err := k8sutil.GetClientset(options.KubernetesConfigFlags)

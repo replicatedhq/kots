@@ -1,4 +1,4 @@
-package version
+package buildversion
 
 import (
 	"io/ioutil"

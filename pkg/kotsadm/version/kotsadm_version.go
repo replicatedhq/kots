@@ -5,9 +5,9 @@ import (
 	"strings"
 
 	"github.com/Masterminds/semver"
+	"github.com/replicatedhq/kots/pkg/buildversion"
 	"github.com/replicatedhq/kots/pkg/docker/registry"
 	"github.com/replicatedhq/kots/pkg/kotsadm/types"
-	"github.com/replicatedhq/kots/pkg/version"
 	corev1 "k8s.io/api/core/v1"
 )
 
@@ -18,7 +18,7 @@ func KotsadmTag(options types.KotsadmOptions) string {
 		return options.OverrideVersion
 	}
 
-	return KotsadmTagForVersionString(version.Version())
+	return KotsadmTagForVersionString(buildversion.Version())
 }
 
 func KotsadmTagForVersionString(kotsVersion string) string {

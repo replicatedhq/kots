@@ -6,9 +6,9 @@ import (
 	"net/http"
 
 	"github.com/replicatedhq/kots/kotsadm/pkg/appstatus"
-	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
 	"github.com/replicatedhq/kots/kotsadm/pkg/store"
 	"github.com/replicatedhq/kots/pkg/api/appstatus/types"
+	"github.com/replicatedhq/kots/pkg/logger"
 )
 
 // NOTE: this uses special cluster authorization

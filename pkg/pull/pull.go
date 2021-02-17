@@ -99,7 +99,7 @@ func PullApplicationMetadata(upstreamURI string) ([]byte, error) {
 // Pull will download the application specified in upstreamURI using the options
 // specified in pullOptions. It returns the directory that the app was pulled to
 func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
-	log := logger.NewLogger()
+	log := logger.NewCLILogger()
 
 	if pullOptions.Silent {
 		log.Silence()

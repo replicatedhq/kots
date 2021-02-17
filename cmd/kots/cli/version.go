@@ -3,9 +3,8 @@ package cli
 import (
 	"fmt"
 
+	"github.com/marccampbell/yaml-toolbox/pkg/version"
 	"github.com/spf13/cobra"
-
-	"github.com/replicatedhq/kots/pkg/version"
 )
 
 func VersionCmd() *cobra.Command {

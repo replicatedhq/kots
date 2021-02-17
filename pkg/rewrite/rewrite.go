@@ -53,7 +53,7 @@ type RewriteOptions struct {
 }
 
 func Rewrite(rewriteOptions RewriteOptions) error {
-	log := logger.NewLogger()
+	log := logger.NewCLILogger()
 
 	if rewriteOptions.Silent {
 		log.Silence()

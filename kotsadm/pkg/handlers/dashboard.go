@@ -7,10 +7,10 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/kotsadm/pkg/downstream"
-	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
 	"github.com/replicatedhq/kots/kotsadm/pkg/store"
 	"github.com/replicatedhq/kots/kotsadm/pkg/version"
 	appstatustypes "github.com/replicatedhq/kots/pkg/api/appstatus/types"
+	"github.com/replicatedhq/kots/pkg/logger"
 )
 
 type GetAppDashboardResponse struct {

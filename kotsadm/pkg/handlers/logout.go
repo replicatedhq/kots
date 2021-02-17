@@ -3,9 +3,9 @@ package handlers
 import (
 	"net/http"
 
-	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
 	"github.com/replicatedhq/kots/kotsadm/pkg/session"
 	"github.com/replicatedhq/kots/kotsadm/pkg/store"
+	"github.com/replicatedhq/kots/pkg/logger"
 )
 
 func (h *Handler) Logout(w http.ResponseWriter, r *http.Request) {

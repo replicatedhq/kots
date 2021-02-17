@@ -60,7 +60,7 @@ func NeedsConfiguration(opts ConfigOptions) (bool, error) {
 		Password:  opts.RegistryPassword,
 	}
 
-	rendered, err := kotsconfig.TemplateConfig(logger.NewLogger(), opts.ConfigSpec, opts.ConfigValuesSpec, opts.LicenseSpec, opts.IdentityConfigSpec, localRegistry)
+	rendered, err := kotsconfig.TemplateConfig(logger.NewCLILogger(), opts.ConfigSpec, opts.ConfigValuesSpec, opts.LicenseSpec, opts.IdentityConfigSpec, localRegistry)
 	if err != nil {
 		return false, errors.Wrap(err, "failed to template config")
 	}
@@ -113,7 +113,7 @@ func UpdateConfigValuesInDB(filesInDir string, appID string, sequence int64) err
 }
 
 func ReadConfigValuesFromInClusterSecret() (string, error) {
-	log := logger.NewLogger()
+	log := logger.NewCLILogger()
 
 	cfg, err := config.GetConfig()
 	if err != nil {

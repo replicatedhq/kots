@@ -7,9 +7,9 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
 	sessiontypes "github.com/replicatedhq/kots/kotsadm/pkg/session/types"
 	usertypes "github.com/replicatedhq/kots/kotsadm/pkg/user/types"
+	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/segmentio/ksuid"
 	corev1 "k8s.io/api/core/v1"
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"

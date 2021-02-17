@@ -84,7 +84,7 @@ func RestoreInstanceBackup(options RestoreInstanceBackupOptions) (*velerov1.Rest
 		return nil, errors.Wrap(err, "backup is still in progress")
 	}
 
-	log := logger.NewLogger()
+	log := logger.NewCLILogger()
 	log.ActionWithSpinner("Deleting Admin Console")
 
 	isKurl, err := kotsadm.IsKurl(options.KubernetesConfigFlags)
@@ -284,7 +284,7 @@ func waitForVeleroRestoreCompleted(restoreName string) (*velerov1.Restore, error
 	}
 }
 
-func initiateKotsadmApplicationsRestore(backupName string, kotsadmNamespace string, kotsadmPodName string, kubernetesConfigFlags *genericclioptions.ConfigFlags, log *logger.Logger) error {
+func initiateKotsadmApplicationsRestore(backupName string, kotsadmNamespace string, kotsadmPodName string, kubernetesConfigFlags *genericclioptions.ConfigFlags, log *logger.CLILogger) error {
 	stopCh := make(chan struct{})
 	defer close(stopCh)
 
@@ -337,7 +337,7 @@ func initiateKotsadmApplicationsRestore(backupName string, kotsadmNamespace stri
 	return nil
 }
 
-func waitForKotsadmApplicationsRestore(backupName string, kotsadmNamespace string, kotsadmPodName string, kubernetesConfigFlags *genericclioptions.ConfigFlags, log *logger.Logger) error {
+func waitForKotsadmApplicationsRestore(backupName string, kotsadmNamespace string, kotsadmPodName string, kubernetesConfigFlags *genericclioptions.ConfigFlags, log *logger.CLILogger) error {
 	stopCh := make(chan struct{})
 	defer close(stopCh)
 

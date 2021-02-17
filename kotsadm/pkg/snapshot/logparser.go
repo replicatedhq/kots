@@ -8,8 +8,8 @@ import (
 
 	"github.com/go-logfmt/logfmt"
 	"github.com/pkg/errors"
-	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/api/snapshot/types"
+	"github.com/replicatedhq/kots/pkg/logger"
 )
 
 var (

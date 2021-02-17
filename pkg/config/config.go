@@ -15,7 +15,7 @@ import (
 	"k8s.io/client-go/kubernetes/scheme"
 )
 
-func TemplateConfig(log *logger.Logger, configSpecData string, configValuesData string, licenseData string, identityConfigData string, localRegistry template.LocalRegistry) (string, error) {
+func TemplateConfig(log *logger.CLILogger, configSpecData string, configValuesData string, licenseData string, identityConfigData string, localRegistry template.LocalRegistry) (string, error) {
 	return templateConfig(log, configSpecData, configValuesData, licenseData, identityConfigData, localRegistry, MarshalConfig)
 }
 
@@ -66,7 +66,7 @@ func templateConfigObjects(configSpec *kotsv1beta1.Config, configValues map[stri
 	return rendered, nil
 }
 
-func templateConfig(log *logger.Logger, configSpecData string, configValuesData string, licenseData string, identityConfigData string, localRegistry template.LocalRegistry, marshalFunc func(config *kotsv1beta1.Config) (string, error)) (string, error) {
+func templateConfig(log *logger.CLILogger, configSpecData string, configValuesData string, licenseData string, identityConfigData string, localRegistry template.LocalRegistry, marshalFunc func(config *kotsv1beta1.Config) (string, error)) (string, error) {
 	// This function will
 	// 1. unmarshal config
 	// 2. replace all item values with values that already exist

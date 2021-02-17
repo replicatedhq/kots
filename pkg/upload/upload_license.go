@@ -38,7 +38,7 @@ func UploadLicense(path string, uploadLicenseOptions UploadLicenseOptions) error
 	}
 
 	// Find the kotadm-api pod
-	log := logger.NewLogger()
+	log := logger.NewCLILogger()
 	log.ActionWithSpinner("Uploading license to Admin Console")
 
 	clientset, err := k8sutil.GetClientset(uploadLicenseOptions.KubernetesConfigFlags)

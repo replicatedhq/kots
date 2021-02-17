@@ -20,7 +20,7 @@ type RenderOptions struct {
 	AppSlug                string
 	Sequence               int64
 	IsAirgap               bool
-	Log                    *logger.Logger
+	Log                    *logger.CLILogger
 }
 
 // RenderUpstream is responsible for any conversions or transpilation steps are required

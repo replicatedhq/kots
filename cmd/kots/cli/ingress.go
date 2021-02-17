@@ -40,7 +40,7 @@ func IngressInstallCmd() *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			v := viper.GetViper()
 
-			log := logger.NewLogger()
+			log := logger.NewCLILogger()
 
 			clientset, err := k8sutil.GetClientset(kubernetesConfigFlags)
 			if err != nil {
@@ -130,7 +130,7 @@ func IngressUninstallCmd() *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			v := viper.GetViper()
 
-			log := logger.NewLogger()
+			log := logger.NewCLILogger()
 
 			clientset, err := k8sutil.GetClientset(kubernetesConfigFlags)
 			if err != nil {

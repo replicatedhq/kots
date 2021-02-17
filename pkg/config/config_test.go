@@ -25,7 +25,7 @@ func oldMarshalConfig(config *kotsv1beta1.Config) (string, error) {
 }
 
 func TestTemplateConfig(t *testing.T) {
-	log := logger.NewLogger()
+	log := logger.NewCLILogger()
 	log.Silence()
 
 	licenseData := `
