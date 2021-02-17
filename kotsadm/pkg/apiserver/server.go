@@ -172,7 +172,7 @@ func Start() {
 // Detects the InstanceID of kodsadm pod across restores
 func generateKotsadmID() error {
 
-	logger.Info("Detecting Instance")
+	logger.Info("Generate Kotsadm Instance ID")
 
 	// Retrieve the ClusterID from store
 	clusters, err := store.GetStore().ListClusters()
