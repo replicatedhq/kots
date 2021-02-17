@@ -87,14 +87,6 @@ export default [
     }
   },
   {
-    tabName: "snapshots",
-    displayName: "Snapshots",
-    to: (slug) => `/app/${slug}/snapshots`,
-    displayRule: (watch, isVeleroInstalled) => {
-      return watch.allowSnapshots && isVeleroInstalled;
-    }
-  },
-  {
     tabName: "access",
     displayName: "Access",
     to: (slug) => `/app/${slug}/access`,

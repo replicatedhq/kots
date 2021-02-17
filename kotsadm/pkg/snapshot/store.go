@@ -24,7 +24,7 @@ import (
 	"github.com/replicatedhq/kots/kotsadm/pkg/kurl"
 	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
 	"github.com/replicatedhq/kots/kotsadm/pkg/snapshot/providers"
-	"github.com/replicatedhq/kots/kotsadm/pkg/snapshot/types"
+	"github.com/replicatedhq/kots/pkg/api/snapshot/types"
 	velerov1 "github.com/vmware-tanzu/velero/pkg/apis/velero/v1"
 	veleroclientv1 "github.com/vmware-tanzu/velero/pkg/generated/clientset/versioned/typed/velero/v1"
 	"go.uber.org/zap"

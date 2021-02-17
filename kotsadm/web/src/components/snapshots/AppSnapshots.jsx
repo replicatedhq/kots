@@ -4,8 +4,12 @@ import Helmet from "react-helmet";
 import Modal from "react-modal";
 import ReactTooltip from "react-tooltip"
 import moment from "moment";
+import Select from "react-select";
+import isEmpty from "lodash/isEmpty";
 
-import AppSnapshotRow from "./AppSnapshotRow";
+import SnapshotRow from "./SnapshotRow";
+import DummySnapshotRow from "./DummySnapshotRow";
+import GettingStartedSnapshots from "./GettingStartedSnapshots";
 import ScheduleSnapshotForm from "../shared/ScheduleSnapshotForm";
 import Loader from "../shared/Loader";
 import DeleteSnapshotModal from "../modals/DeleteSnapshotModal";
@@ -47,10 +51,15 @@ class AppSnapshots extends Component {
     appSlugMismatch: false,
     listSnapshotsJob: new Repeater(),
     networkErr: false,
-    displayErrorModal: false
+    displayErrorModal: false,
+    selectedApp: {}
   };
 
   componentDidMount = async () => {
+    if (!isEmpty(this.props.app)) {
+      this.setState({ selectedApp: this.props.app });
+    }
+
     await this.fetchSnapshotSettings();
 
     this.checkRestoreInProgress();
@@ -62,7 +71,7 @@ class AppSnapshots extends Component {
   }
 
   componentDidUpdate(lastProps, lastState) {
-    const { snapshots, networkErr } = this.state;
+    const { snapshots, networkErr, selectedApp } = this.state;
 
     if (snapshots?.length !== lastState.snapshots?.length && snapshots) {
       if (snapshots?.length === 0 && lastState.snapshots?.length > 0) {
@@ -78,11 +87,15 @@ class AppSnapshots extends Component {
         return;
       }
     }
+
+    if (selectedApp !== lastState.selectedApp && selectedApp) {
+      this.props.history.replace(`/snapshots/partial/${selectedApp.slug}`)
+    }
   }
 
   checkRestoreInProgress() {
-    const { app } = this.props;
-    fetch(`${window.env.API_ENDPOINT}/app/${app.slug}/snapshot/restore/status`, {
+    const { selectedApp } = this.state;
+    fetch(`${window.env.API_ENDPOINT}/app/${selectedApp.slug}/snapshot/restore/status`, {
       method: "GET",
       headers: {
         "Authorization": Utilities.getToken(),
@@ -97,7 +110,7 @@ class AppSnapshots extends Component {
             restoreInProgressMsg: body.error
           });
         } else if (body.status == "running") {
-          this.props.history.replace(`/app/${this.props.app.slug}/snapshots/${body.restore_name}/restore`);
+          this.props.history.replace(`/snapshots/partial/${selectedApp.slug}/${body.restore_name}/restore`);
         } else {
           this.state.listSnapshotsJob.start(this.listSnapshots, 2000);
         }
@@ -111,7 +124,7 @@ class AppSnapshots extends Component {
   }
 
   listSnapshots = async () => {
-    const { app } = this.props;
+    const { selectedApp } = this.state;
     this.setState({
       snapshotsListErr: false,
       snapshotsListErrMsg: "",
@@ -119,7 +132,7 @@ class AppSnapshots extends Component {
       displayErrorModal: false
     })
     try {
-      const res = await fetch(`${window.env.API_ENDPOINT}/app/${app.slug}/snapshots`, {
+      const res = await fetch(`${window.env.API_ENDPOINT}/app/${selectedApp.slug}/snapshots`, {
         method: "GET",
         headers: {
           "Authorization": Utilities.getToken(),
@@ -220,7 +233,7 @@ class AppSnapshots extends Component {
       name: "Preparing for snapshot deletion",
       status: "Deleting",
       trigger: "manual",
-      appID: this.props.app.id,
+      appID: this.state.selectedApp.id,
       sequence: snapshot.sequence,
       startedAt: Utilities.dateFormat(snapshot.startedAt, "MM/DD/YY @ hh:mm a"),
       finishedAt: Utilities.dateFormat(snapshot.finishedAt, "MM/DD/YY @ hh:mm a"),
@@ -272,9 +285,9 @@ class AppSnapshots extends Component {
   };
 
   handleRestoreSnapshot = snapshot => {
-    const { app } = this.props;
+    const { selectedApp } = this.state;
 
-    if (this.state.appSlugToRestore !== app?.slug) {
+    if (this.state.appSlugToRestore !== selectedApp?.slug) {
       this.setState({ appSlugMismatch: true });
       return;
     }
@@ -285,7 +298,7 @@ class AppSnapshots extends Component {
       restoreErrorMsg: "",
     });
 
-    fetch(`${window.env.API_ENDPOINT}/app/${app?.slug}/snapshot/restore/${snapshot.name}`, {
+    fetch(`${window.env.API_ENDPOINT}/app/${selectedApp?.slug}/snapshot/restore/${snapshot.name}`, {
       method: "POST",
       headers: {
         "Authorization": Utilities.getToken(),
@@ -301,7 +314,7 @@ class AppSnapshots extends Component {
             restoreErrorMsg: "",
           });
 
-          this.props.history.replace(`/app/${this.props.app.slug}/snapshots/${snapshot.name}/restore`);
+          this.props.history.replace(`/snapshots/partial/${selectedApp.slug}/${snapshot.name}/restore`);
         } else {
           const body = await result.json();
           this.setState({
@@ -321,13 +334,13 @@ class AppSnapshots extends Component {
   }
 
   startManualSnapshot = () => {
-    const { app } = this.props;
+    const { selectedApp } = this.state;
 
     const fakeProgressSnapshot = {
       name: "Preparing snapshot",
       status: "InProgress",
       trigger: "manual",
-      appID: app.id,
+      appID: selectedApp.id,
       sequence: "",
       startedAt: moment().format("MM/DD/YY @ hh:mm a"),
       finishedAt: "",
@@ -346,7 +359,7 @@ class AppSnapshots extends Component {
       snapshots: [...this.state.snapshots, fakeProgressSnapshot].sort((a, b) => new Date(b.startedAt) - new Date(a.startedAt))
     });
 
-    fetch(`${window.env.API_ENDPOINT}/app/${app.slug}/snapshot/backup`, {
+    fetch(`${window.env.API_ENDPOINT}/app/${selectedApp.slug}/snapshot/backup`, {
       method: "POST",
       headers: {
         "Authorization": Utilities.getToken(),
@@ -394,6 +407,19 @@ class AppSnapshots extends Component {
     this.setState({ appSlugToRestore: e.target.value });
   }
 
+  onAppChange = (selectedApp) => {
+    this.setState({ selectedApp });
+  }
+
+  getLabel = ({ iconUri, name }) => {
+    return (
+      <div style={{ alignItems: "center", display: "flex" }}>
+        <span className="app-icon" style={{ fontSize: 18, marginRight: "0.5em", backgroundImage: `url(${iconUri})`}}></span>
+        <span style={{ fontSize: 14 }}>{name}</span>
+      </div>
+    );
+  }
+
 
   render() {
     const {
@@ -419,9 +445,10 @@ class AppSnapshots extends Component {
       snapshotsListErr,
       snapshotsListErrMsg,
       restoreInProgressErr,
-      restoreInProgressErrMsg
+      restoreInProgressErrMsg,
+      selectedApp
     } = this.state;
-    const { app } = this.props;
+    const { app, appsList } = this.props;
     const appTitle = app?.name;
     const inProgressSnapshotExist = snapshots?.find(snapshot => snapshot.status === "InProgress");
 
@@ -459,27 +486,7 @@ class AppSnapshots extends Component {
       )
     }
 
-    if (hasSnapshotsLoaded && !isStartButtonClicked && snapshots?.length === 0) {
-      return (
-        <div className="container flex-column flex1 u-overflow--auto u-paddingTop--30 u-paddingBottom--20 justifyContent--center alignItems--center">
-          <div className="flex-column u-textAlign--center AppSnapshotsEmptyState--wrapper">
-            <p className="u-fontSize--largest u-fontWeight--bold u-color--tundora u-marginBottom--10">No snapshots have been made</p>
-            <p className="u-fontSize--normal u-fontWeight--normal u-color--dustyGray u-lineHeight--normal u-marginBottom--30">There have been no snapshots made for {appTitle || "your application"} yet. You can manually trigger snapshots or you can set up automatic snapshots to be made on a custom schedule.</p>
-            <div className="flex justifyContent--center">
-              <div className="flex-auto u-marginRight--20">
-                <button className="btn secondary blue" disabled={startingSnapshot} onClick={this.startManualSnapshot}>{startingSnapshot ? "Starting a snapshot..." : "Start a snapshot"}</button>
-              </div>
-              <div className="flex-auto">
-                <Link to={`/app/${app.slug}/snapshots/schedule`} className="btn primary blue">Schedule snapshots</Link>
-              </div>
-            </div>
-          </div>
-        </div>
-      )
-    }
-
     const isVeleroCorrectVersion = snapshotSettings?.isVeleroRunning && snapshotSettings?.veleroVersion.includes("v1.5");
-
 
     return (
       <div className="flex1 flex-column u-overflow--auto">
@@ -494,46 +501,70 @@ class AppSnapshots extends Component {
           : null}
         <div className="container flex-column flex1 u-paddingTop--30 u-paddingBottom--20 alignItems--center">
           <div className="InfoSnapshots--wrapper flex flex-auto u-marginBottom--20">
-            <span className="icon snapshot-getstarted-icon flex-auto u-marginRight--20 u-marginTop--5" />
-            <div className="flex-column">
-              <p className="u-fontSize--large u-fontWeight--bold u-lineHeight--normal u-color--tundora"> Application Snapshots </p>
-              <p className="u-fontSize--small u-fontWeight--normal u-lineHeight--normal u-color--doveGray u-marginTop--5">
-                Application snapshots only back up applications volumes and application manifests; they <span className="u-fontWeight--bold">do not</span> back up the Admin Console or the metadata about an application.
-                  They are great for capturing information before deploying a new release, in case you need to roll back, but they are not suitable for full disaster recovery.
-                  For backups that give you the ability to do full Disaster Recovery, <Link to="/snapshots" className="replicated-link u-fontSize--small">use Instance Snapshots</Link>.
+            <span className="icon info-icon flex-auto u-marginRight--5" />
+            <p className="u-fontSize--small u-fontWeight--normal u-lineHeight--normal u-color--doveGray">
+              It’s recommend that you use <Link to="/snapshots" className="replicated-link u-fontSize--small">
+                Full snapshots (Instance) </Link> in lieu of Partial snapshots (Application),
+                given Full snapshots offers the same restoration capabilities.
+                <a href="https://kots.io/kotsadm/snapshots/" target="_blank" rel="noopener noreferrer"
+                className="replicated-link">Learn more</a>.
               </p>
-            </div>
           </div>
-          <div className="AppSnapshots--wrapper flex1 flex-column u-width--full">
-            <div className="flex flex-auto alignItems--flexStart justifyContent--spaceBetween">
-              <p className="u-fontWeight--bold u-color--tuna u-fontSize--larger u-lineHeight--normal u-marginBottom--10">Snapshots</p>
-              {startSnapshotErr ?
-                <div className="flex flex1 u-marginLeft--10 alignItems--center alignSelf--center u-marginBottom--10">
-                  <p className="u-color--chestnut u-fontSize--small u-fontWeight--medium u-lineHeight--normal">{startSnapshotErrorMsg}</p>
-                </div>
-                : null}
-              <div className="flex">
-                <Link to={`/snapshots/settings`} className="replicated-link u-fontSize--small u-fontWeight--bold u-marginRight--20 flex alignItems--center"><span className="icon snapshotSettingsIcon u-marginRight--5" />Settings</Link>
-                <Link to={`/app/${app.slug}/snapshots/schedule`} className="replicated-link u-fontSize--small u-fontWeight--bold u-marginRight--20 flex alignItems--center"><span className="icon snapshotScheduleIcon u-marginRight--5" />Schedule</Link>
-                <span data-for="startSnapshotBtn" data-tip="startSnapshotBtn" data-tip-disable={false}>
-                  <button className="btn primary blue" disabled={startingSnapshot || inProgressSnapshotExist} onClick={this.startManualSnapshot}>{startingSnapshot ? "Starting a snapshot..." : "Start a snapshot"}</button>
-                </span>
+          <div className="AppSnapshots--wrapper flex1 flex-column u-width--full u-marginTop--20">
+              <div className="flex flex-column u-marginBottom--15">
+                <p className="u-fontWeight--bold u-color--tuna u-fontSize--larger u-lineHeight--normal"> Partial snapshots (Application) </p>
+                <p className="u-marginTop--10 u-fontSize--normal u-lineHeight--more u-fontWeight--medium u-color--dustyGray"> Partial snapshots (Application) only back up application volumes and application manifests; they do not back up the Admin Console or the metadata about an application. </p>
+              </div>
+            <div className="flex flex-auto u-marginBottom--15 alignItems--flexStart justifyContent--spaceBetween">
+            <div className="flex">
+                <Select
+                  className="replicated-select-container app"
+                  classNamePrefix="replicated-select"
+                  options={appsList}
+                  getOptionLabel={this.getLabel}
+                  getOptionValue={(app) => app.name}
+                  value={selectedApp}
+                  onChange={this.onAppChange}
+                  isOptionSelected={(app) => { app.name === selectedApp.name }}
+                />
+              </div>
+              <div className="flex alignSelf--center">
+                <Link to={`/snapshots/settings?${selectedApp.slug}`} className="replicated-link u-fontSize--small u-fontWeight--bold u-marginRight--20 flex alignItems--center"><span className="icon snapshotSettingsIcon u-marginRight--5" />Settings</Link>
+                {snapshots?.length > 0 && snapshotSettings?.veleroVersion !== "" &&
+                  <span data-for="startSnapshotBtn" data-tip="startSnapshotBtn" data-tip-disable={false}>
+                    <button className="btn primary blue" disabled={startingSnapshot || inProgressSnapshotExist} onClick={this.startManualSnapshot}>{startingSnapshot ? "Starting a snapshot..." : "Start a snapshot"}</button>
+                  </span>}
                 {inProgressSnapshotExist &&
                   <ReactTooltip id="startSnapshotBtn" effect="solid" className="replicated-tooltip">
                     <span>You can't start a snapshot while another one is In Progress</span>
                   </ReactTooltip>}
-              </div>
             </div>
-            {snapshots?.map((snapshot) => (
-              <AppSnapshotRow
-                key={`snapshot-${snapshot.name}-${snapshot.started}`}
-                snapshot={snapshot}
-                appSlug={app.slug}
-                toggleConfirmDeleteModal={this.toggleConfirmDeleteModal}
-                toggleRestoreModal={this.toggleRestoreModal}
-              />
-            ))
-            }
+
+            </div>
+            {startSnapshotErr ?
+              <div className="flex alignItems--center alignSelf--center u-marginBottom--10">
+                <p className="u-color--chestnut u-fontSize--small u-fontWeight--medium u-lineHeight--normal">{startSnapshotErrorMsg}</p>
+              </div>
+              : null}
+            {snapshots?.length > 0 && snapshotSettings?.veleroVersion !== "" ?
+              <div className="flex flex-column">
+                {snapshots?.map((snapshot) => (
+                  <SnapshotRow
+                    key={`snapshot-${snapshot.name}-${snapshot.started}`}
+                    snapshot={snapshot}
+                    appSlug={selectedApp.slug}
+                    toggleConfirmDeleteModal={this.toggleConfirmDeleteModal}
+                    toggleRestoreModal={this.toggleRestoreModal}
+                    app={selectedApp}
+                  />
+                ))}
+              </div> :
+              !isStartButtonClicked ?
+                <div className="flex flex-column u-position--relative">
+                  {[0, 1, 2, 3, 4, 5].map((el) => (<DummySnapshotRow key={el} />
+                  ))}
+                  <GettingStartedSnapshots isApp={true} appTitle={appTitle} isVeleroInstalled={snapshotSettings?.veleroVersion !== ""} history={this.props.history} startManualSnapshot={this.startManualSnapshot} />
+                </div> : null}
           </div>
           {displayScheduleSnapshotModal &&
             <Modal
@@ -575,10 +606,11 @@ class AppSnapshots extends Component {
               restoringSnapshot={restoringSnapshot}
               restoreErr={restoreErr}
               restoreErrorMsg={restoreErrorMsg}
-              app={this.props.app}
+              app={selectedApp}
               appSlugToRestore={this.state.appSlugToRestore}
               appSlugMismatch={this.state.appSlugMismatch}
               handleApplicationSlugChange={this.handleApplicationSlugChange}
+              apps={this.props.appsList}
             />
           }
         </div>

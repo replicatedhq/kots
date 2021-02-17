@@ -106,4 +106,27 @@
       color: #4A4A4A;
     }
   }
+
+  &.app {
+    width: 300px;
+  }
+
+  &.app-100 {
+    width: 100%;
+  }
+
+  &.snapshot {
+    width: 200px;
+    .css-dvua67-singleValue {
+      top: 40%
+    }
+    .css-bgvzuu-indicatorSeparator {
+      margin-bottom: 2px;
+      margin-top: 4px;
+      height: 20px;
+    }
+    .css-16pqwjk-indicatorContainer {
+      padding: 0 6px 0 6px;
+    }
+  }
 }

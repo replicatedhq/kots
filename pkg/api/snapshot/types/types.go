@@ -1,6 +1,10 @@
 package types
 
-import "time"
+import (
+	"time"
+
+	velerov1 "github.com/vmware-tanzu/velero/pkg/apis/velero/v1"
+)
 
 type StoreAWS struct {
 	Region          string `json:"region"`
@@ -51,12 +55,19 @@ type Store struct {
 	Internal *StoreInternal `json:"internal,omitempty"`
 }
 
+type App struct {
+	Slug       string `json:"slug"`
+	Sequence   int64  `json:"sequence"`
+	Name       string `json:"name"`
+	AppIconURI string `json:"iconUri"`
+}
+
 type Backup struct {
 	Name               string     `json:"name"`
 	Status             string     `json:"status"`
 	Trigger            string     `json:"trigger"`
-	AppID              string     `json:"appID"`
-	Sequence           int64      `json:"sequence"`
+	AppID              string     `json:"appID"`    // TODO: remove with app backups
+	Sequence           int64      `json:"sequence"` // TODO: remove with app backups
 	StartedAt          *time.Time `json:"startedAt,omitempty"`
 	FinishedAt         *time.Time `json:"finishedAt,omitempty"`
 	ExpiresAt          *time.Time `json:"expiresAt,omitempty"`
@@ -65,6 +76,7 @@ type Backup struct {
 	VolumeBytes        int64      `json:"volumeBytes"`
 	VolumeSizeHuman    string     `json:"volumeSizeHuman"`
 	SupportBundleID    string     `json:"supportBundleId,omitempty"`
+	IncludedApps       []App      `json:"includedApps,omitempty"`
 }
 
 type BackupDetail struct {
@@ -79,11 +91,11 @@ type BackupDetail struct {
 }
 
 type RestoreDetail struct {
-	Name     string          `json:"name"`
-	Phase    string          `json:"phase"`
-	Volumes  []RestoreVolume `json:"volumes"`
-	Errors   []SnapshotError `json:"errors"`
-	Warnings []SnapshotError `json:"warnings"`
+	Name     string                `json:"name"`
+	Phase    velerov1.RestorePhase `json:"phase"`
+	Volumes  []RestoreVolume       `json:"volumes"`
+	Errors   []SnapshotError       `json:"errors"`
+	Warnings []SnapshotError       `json:"warnings"`
 }
 
 type SnapshotHook struct {

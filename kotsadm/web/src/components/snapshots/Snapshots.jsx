@@ -3,6 +3,7 @@ import { Link, withRouter } from "react-router-dom";
 import Helmet from "react-helmet";
 import ReactTooltip from "react-tooltip";
 import moment from "moment";
+import isEmpty from "lodash/isEmpty";
 
 import Loader from "../shared/Loader";
 import SnapshotRow from "./SnapshotRow";
@@ -40,7 +41,13 @@ class Snapshots extends Component {
     isStartButtonClicked: false,
     listSnapshotsJob: new Repeater(),
     networkErr: false,
-    displayErrorModal: false
+    displayErrorModal: false,
+
+    selectedRestore: "full",
+    selectedRestoreApp: {},
+    appSlugToRestore: "",
+    appSlugMismatch: false,
+    restoringSnapshot: false
   };
 
   componentDidMount() {
@@ -248,9 +255,9 @@ class Snapshots extends Component {
 
   toggleRestoreModal = snapshot => {
     if (this.state.restoreSnapshotModal) {
-      this.setState({ restoreSnapshotModal: false, snapshotToRestore: "" });
+      this.setState({ restoreSnapshotModal: false, snapshotToRestore: "", selectedRestoreApp: {} });
     } else {
-      this.setState({ restoreSnapshotModal: true, snapshotToRestore: snapshot });
+      this.setState({ restoreSnapshotModal: true, snapshotToRestore: snapshot, selectedRestoreApp: snapshot.includedApps[0] });
     }
   };
 
@@ -294,6 +301,8 @@ class Snapshots extends Component {
       })
       if (result?.veleroVersion) {
         this.state.listSnapshotsJob.start(this.listInstanceSnapshots, 2000);
+      } else {
+        this.props.history.push("/snapshots/settings?configure=true")
       }
     } catch (err) {
       this.setState({
@@ -309,13 +318,96 @@ class Snapshots extends Component {
     this.setState({ displayErrorModal: !this.state.displayErrorModal });
   }
 
+  onChangeRestoreOption = (selectedRestore) => {
+    this.setState({ selectedRestore });
+  }
+
+  onChangeRestoreApp = (selectedRestoreApp) => {
+    this.setState({ selectedRestoreApp });
+  }
+
+  handleApplicationSlugChange = (e) => {
+    if (this.state.appSlugMismatch) {
+      this.setState({ appSlugMismatch: false });
+    }
+    this.setState({ appSlugToRestore: e.target.value });
+  }
+
+  handlePartialRestoreSnapshot = (snapshot, isOneApp) => {
+    const { selectedRestoreApp } = this.state;
+
+    if (isOneApp) {
+      if (this.state.appSlugToRestore !== selectedRestoreApp?.slug) {
+        this.setState({ appSlugMismatch: true });
+        return;
+      }
+    }
+
+    this.setState({
+      restoringSnapshot: true,
+      restoreErr: false,
+      restoreErrorMsg: "",
+    });
+
+    fetch(`${window.env.API_ENDPOINT}/snapshot/${snapshot.name}/restore-apps`, {
+      method: "POST",
+      headers: {
+        "Authorization": Utilities.getToken(),
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        appSlugs: [selectedRestoreApp?.slug]
+      }),
+    })
+      .then(async (result) => {
+        if (result.ok) {
+          this.setState({
+            restoringSnapshot: true,
+            restoreSnapshotModal: false,
+            restoreErr: false,
+            restoreErrorMsg: "",
+          });
+
+          this.props.history.replace(`/snapshots/${selectedRestoreApp?.slug}/${snapshot.name}/restore`);
+        } else {
+          const body = await result.json();
+          this.setState({
+            restoringSnapshot: false,
+            restoreErr: true,
+            restoreErrorMsg: body.error,
+          });
+        }
+      })
+      .catch(err => {
+        this.setState({
+          restoringSnapshot: false,
+          restoreErr: true,
+          restoreErrorMsg: err,
+        })
+      })
+  }
+
+  getLabel = ({ iconUri, name, sequence }) => {
+    return (
+      <div style={{ alignItems: "center", display: "flex", flex: 1 }}>
+        <div style={{ display: "flex", flex: 1 }}>
+          <span className="app-icon" style={{ fontSize: 18, marginRight: "0.5em", backgroundImage: `url(${iconUri})` }}></span>
+          <span style={{ fontSize: 14 }}>{name}</span>
+        </div>
+        <div style={{ display: "flex" }}>
+          <span style={{ fontSize: 14, color: "#9B9B9B", marginLeft: "10px" }}>Sequence {sequence}</span>
+        </div>
+      </div>
+    );
+  }
+
 
   render() {
-    const { isLoadingSnapshotSettings, snapshotSettings, hasSnapshotsLoaded, startingSnapshot, startSnapshotErr, startSnapshotErrorMsg, snapshots, isStartButtonClicked } = this.state;
-    const { isKurlEnabled } = this.props;
+    const { isLoadingSnapshotSettings, snapshotSettings, hasSnapshotsLoaded, startingSnapshot, startSnapshotErr, startSnapshotErrorMsg, snapshots, isStartButtonClicked, displayErrorModal } = this.state;
     const inProgressSnapshotExist = snapshots?.find(snapshot => snapshot.status === "InProgress");
 
-    if (isLoadingSnapshotSettings && !hasSnapshotsLoaded) {
+
+    if (isLoadingSnapshotSettings || (!hasSnapshotsLoaded && !displayErrorModal) || (isStartButtonClicked && snapshots?.length === 0) || startingSnapshot) {
       return (
         <div className="flex-column flex1 alignItems--center justifyContent--center">
           <Loader size="60" />
@@ -323,10 +415,7 @@ class Snapshots extends Component {
       )
     }
 
-    const isInternalStore = snapshotSettings?.store?.internal;
     const isVeleroCorrectVersion = snapshotSettings?.isVeleroRunning && snapshotSettings?.veleroVersion.includes("v1.5");
-    const snapshotApp = this.props.appsList?.find(app => app.allowSnapshots);
-
 
     return (
       <div className="flex1 flex-column u-overflow--auto">
@@ -340,34 +429,16 @@ class Snapshots extends Component {
           </div>
           : null}
         <div className="container flex-column flex1 u-paddingTop--30 u-paddingBottom--20 alignItems--center">
-          <div className="InfoSnapshots--wrapper flex flex-auto u-marginBottom--20">
-            <span className="icon snapshot-getstarted-icon flex-auto u-marginRight--20 u-marginTop--5" />
-            <div className="flex-column">
-              <p className="u-fontSize--large u-fontWeight--bold u-lineHeight--normal u-color--tundora flex alignItems--center"> Instance Snapshots <span className="beta-tag u-marginLeft--5"> beta </span> </p>
-              <p className="u-fontSize--small u-fontWeight--normal u-lineHeight--normal u-color--doveGray u-marginTop--5">
-                Instance snapshots back up the Admin Console and all application data. They can be used for full Disaster Recovery; by restoring over top of this instance, or into a new cluster.
-              </p>
-              <p className="u-fontSize--small u-fontWeight--normal u-lineHeight--normal u-color--doveGray u-marginTop--5">
-                If you only need a partial backup of just application volumes and manifests for rollbacks, <Link to={`/app/${snapshotApp?.slug}/snapshots`} className="replicated-link u-fontSize--small">use Application Snapshots</Link>.
-              </p>
-              {isInternalStore && isKurlEnabled ?
-                <p className="u-fontSize--normal u-fontWeight--medium u-lineHeight--normal u-color--jaffa u-marginTop--20"> Instance snapshots with internal storage may result in data loss.  Please configure external storage. </p>
-                :
-                null
-              }
-            </div>
-          </div>
-          <div className="AppSnapshots--wrapper flex1 flex-column u-width--full">
-            <div className={`flex flex-auto alignItems--center justifyContent--spaceBetween ${(snapshots?.length > 0 && snapshotSettings?.veleroVersion !== "") && "u-borderBottom--gray darker"}`}>
-              <p className="u-fontWeight--bold u-color--tuna u-fontSize--larger u-lineHeight--normal u-marginBottom--15">Snapshots</p>
-              {startSnapshotErr ?
-                <div className="flex flex1 alignItems--center alignSelf--center justifyContent--center u-marginBottom--10">
-                  <p className="u-color--chestnut u-fontSize--small u-fontWeight--medium u-lineHeight--normal">{startSnapshotErrorMsg}</p>
-                </div>
-                : null}
-              <div className="flex u-marginBottom--15">
+          <div className="AppSnapshots--wrapper flex1 flex-column u-width--full u-marginTop--20">
+            <div className="flex flex-auto u-marginBottom--15 alignItems--center justifyContent--spaceBetween">
+              <div className="flex1 flex-column" style={{ marginRight: "60px" }}>
+                <p className="u-fontWeight--bold u-color--tuna u-fontSize--larger u-lineHeight--normal">Full Snapshots (Instance) </p>
+                <p className="u-marginTop--10 u-fontSize--normal u-lineHeight--more u-fontWeight--medium u-color--dustyGray"> Full snapshots (Instance) back up the Admin Console and all application data. They can be used for full Disaster Recovery; by restoring over top of this instance, or into a new cluster.
+              For more information about what is included <a href="https://kots.io/kotsadm/snapshots/" target="_blank" rel="noopener noreferrer" className="replicated-link">check out our documentation</a>.</p>
+              </div>
+              <div className="flex alignSelf--flexEnd">
                 <Link to={`/snapshots/settings`} className="replicated-link u-fontSize--small u-fontWeight--bold u-marginRight--20 flex alignItems--center"><span className="icon snapshotSettingsIcon u-marginRight--5" />Settings</Link>
-                {snapshotSettings?.veleroVersion !== "" &&
+                {snapshots?.length > 0 && snapshotSettings?.veleroVersion !== "" &&
                   <span data-for="startSnapshotBtn" data-tip="startSnapshotBtn" data-tip-disable={false}>
                     <button className="btn primary blue" disabled={startingSnapshot || (inProgressSnapshotExist && !startSnapshotErr)} onClick={this.startInstanceSnapshot}>{startingSnapshot ? "Starting a snapshot..." : "Start a snapshot"}</button>
                   </span>}
@@ -377,6 +448,11 @@ class Snapshots extends Component {
                   </ReactTooltip>}
               </div>
             </div>
+            {startSnapshotErr ?
+              <div className="flex alignItems--center alignSelf--center justifyContent--center u-marginBottom--10">
+                <p className="u-color--chestnut u-fontSize--small u-fontWeight--medium u-lineHeight--normal">{startSnapshotErrorMsg}</p>
+              </div>
+              : null}
             {snapshots?.length > 0 && snapshotSettings?.veleroVersion !== "" ?
               <div className="flex flex-column">
                 {snapshots?.map((snapshot) => (
@@ -410,10 +486,20 @@ class Snapshots extends Component {
               restoreSnapshotModal={this.state.restoreSnapshotModal}
               toggleRestoreModal={this.toggleRestoreModal}
               snapshotToRestore={this.state.snapshotToRestore}
+              includedApps={this.state.snapshotToRestore?.includedApps}
+              selectedRestore={this.state.selectedRestore}
+              onChangeRestoreOption={this.onChangeRestoreOption}
+              selectedRestoreApp={this.state.selectedRestoreApp}
+              onChangeRestoreApp={this.onChangeRestoreApp}
+              getLabel={this.getLabel}
+              handleApplicationSlugChange={this.handleApplicationSlugChange}
+              appSlugToRestore={this.state.appSlugToRestore}
+              appSlugMismatch={this.state.appSlugMismatch}
+              handlePartialRestoreSnapshot={this.handlePartialRestoreSnapshot}
             />}
-          {this.state.displayErrorModal &&
+          {displayErrorModal &&
             <ErrorModal
-              errorModal={this.state.displayErrorModal}
+              errorModal={displayErrorModal}
               toggleErrorModal={this.toggleErrorModal}
               errMsg={this.state.errorMsg}
               err={this.state.errorTitle}

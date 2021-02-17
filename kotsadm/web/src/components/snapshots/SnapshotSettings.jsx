@@ -68,7 +68,9 @@ class SnapshotSettings extends Component {
     this.fetchSnapshotSettings();
 
     if (!isEmpty(this.props.location.search)) {
-      this.setState({ configureSnapshotsModal: true });
+      if (this.props.location.search === "?configure=true") {
+        this.setState({ configureSnapshotsModal: true });
+      }
     }
   }
 
@@ -200,7 +202,9 @@ class SnapshotSettings extends Component {
             isLicenseUpload={isLicenseUpload}
             configureSnapshotsModal={this.state.configureSnapshotsModal}
             toggleConfigureModal={this.toggleConfigureModal}
-            isKurlEnabled={this.props.isKurlEnabled} />
+            isKurlEnabled={this.props.isKurlEnabled}
+            apps={this.props.apps}
+          />
         </div>
       </div>
     );

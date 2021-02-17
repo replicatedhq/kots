@@ -1,6 +1,6 @@
 import React, { Component } from "react";
 import Select from "react-select";
-import { Link, withRouter } from "react-router-dom"
+import { withRouter } from "react-router-dom"
 import { Utilities, getCronFrequency, getCronInterval, getReadableCronDescriptor } from "../../utilities/utilities";
 import ErrorModal from "../modals/ErrorModal";
 import Loader from "../shared/Loader";
@@ -49,19 +49,24 @@ const RETENTION_UNITS = [
 ];
 
 class SnapshotSchedule extends Component {
-  state = {
-    retentionInput: "",
-    autoEnabled: false,
-    selectedSchedule: {},
-    selectedRetentionUnit: {},
-    frequency: "",
-    updatingSchedule: false,
-    updateConfirm: false,
-    displayErrorModal: false,
-    gettingConfigErrMsg: "",
-    snapshotConfig: {},
-    updateScheduleErrMsg: ""
-  };
+  constructor(props) {
+    super()
+    this.state = {
+      retentionInput: "",
+      autoEnabled: false,
+      selectedSchedule: {},
+      selectedRetentionUnit: {},
+      frequency: "",
+      updatingSchedule: false,
+      updateConfirm: false,
+      displayErrorModal: false,
+      gettingConfigErrMsg: "",
+      snapshotConfig: {},
+      updateScheduleErrMsg: "",
+      selectedApp: {},
+      activeTab: !isEmpty(props.location.search) ? "partial" : "full"
+    };
+  }
 
   setFields = () => {
     const { snapshotConfig } = this.state;
@@ -124,11 +129,9 @@ class SnapshotSchedule extends Component {
     this.setState({ selectedRetentionUnit: retentionUnit });
   }
 
-  getSnapshotConfig = async () => {
-    const isAppConfig = this.checkIsAppConfig();
-
+  getSnapshotConfig = async (currentApp) => {
     this.setState({ loadingConfig: true, gettingConfigErrMsg: "", displayErrorModal: false });
-    const url = isAppConfig ? `${window.env.API_ENDPOINT}/app/${this.props.app.slug}/snapshot/config` : `${window.env.API_ENDPOINT}/snapshot/config`;
+    const url = currentApp ? `${window.env.API_ENDPOINT}/app/${currentApp.slug}/snapshot/config` : `${window.env.API_ENDPOINT}/snapshot/config`;
     try {
       const res = await fetch(url, {
         method: "GET",
@@ -153,27 +156,59 @@ class SnapshotSchedule extends Component {
     }
   }
 
-  componentDidUpdate = (lastProps, lastState) => {
-    if (this.state.snapshotConfig && this.state.snapshotConfig !== lastState.snapshotConfig) {
-      this.setFields();
-    }
-  }
-
   checkIsAppConfig = () => {
-    if (!isEmpty(this.props.match.params)) {
+    if (!isEmpty(this.props.location.search)) {
       return true;
     } else {
       return false;
     }
   }
 
-  componentDidMount = () => {
-    if (!isEmpty(this.state.snapshotConfig)) {
-      this.setFields();
-    } else {
-      this.getSnapshotConfig();
-    }
+  settingSnapshotConfig = (currentApp) => {
+    this.getSnapshotConfig(currentApp);
     this.getReadableCronExpression();
+  }
+
+  componentDidMount = () => {
+    if (!isEmpty(this.props.apps) && this.props.location.search) {
+      const currentApp = this.props.apps.find(app => app.slug === this.props.location.search.slice(1));
+      this.setState({ selectedApp: currentApp }, () => {
+        this.settingSnapshotConfig(currentApp);
+      })
+    } else {
+      this.settingSnapshotConfig();
+    }
+  }
+
+  componentDidUpdate = (lastProps, lastState) => {
+    if (this.state.snapshotConfig && this.state.snapshotConfig !== lastState.snapshotConfig) {
+      this.setFields();
+    }
+
+    if (this.state.activeTab !== lastState.activeTab && this.state.activeTab) {
+      if (this.state.activeTab === "full") {
+        this.settingSnapshotConfig();
+        this.props.history.replace("/snapshots/settings");
+      } else {
+        if (!isEmpty(this.props.apps) && this.props.location.search) {
+          const currentApp = this.props.apps.find(app => app.slug === this.props.location.search.slice(1));
+          this.setState({ selectedApp: currentApp }, () => {
+            this.settingSnapshotConfig(currentApp);
+          });
+          this.props.history.replace(`/snapshots/settings?${currentApp.slug}`);
+        } else if (!isEmpty(this.props.apps)) {
+          this.setState({ selectedApp: this.props.apps[0] }, () => {
+            this.settingSnapshotConfig(this.props.apps[0]);
+          });
+          this.props.history.replace(`/snapshots/settings?${this.props.apps[0].slug}`);
+        }
+      }
+    }
+
+    if (this.state.selectedApp !== lastState.selectedApp && this.state.selectedApp) {
+      this.settingSnapshotConfig(this.state.selectedApp);
+      this.props.history.replace(`/snapshots/settings?${this.state.selectedApp.slug}`);
+    }
   }
 
   saveSnapshotConfig = () => {
@@ -184,13 +219,13 @@ class SnapshotSchedule extends Component {
     let url;
     if (isAppConfig) {
       body = {
-        appId: this.props.app.id,
+        appId: this.state.selectedApp.id,
         inputValue: this.state.retentionInput,
         inputTimeUnit: this.state.selectedRetentionUnit?.value,
         schedule: this.state.frequency,
         autoEnabled: this.state.autoEnabled,
       };
-      url = `${window.env.API_ENDPOINT}/app/${this.props.app.slug}/snapshot/config`
+      url = `${window.env.API_ENDPOINT}/app/${this.state.selectedApp.slug}/snapshot/config`
     } else {
       body = {
         inputValue: this.state.retentionInput,
@@ -249,8 +284,30 @@ class SnapshotSchedule extends Component {
       })
   }
 
+  toggleErrorModal = () => {
+    this.setState({ displayErrorModal: !this.state.displayErrorModal });
+  }
+
+  toggleScheduleAction = (active) => {
+    this.setState({
+      activeTab: active,
+    });
+  }
+
+  onAppChange = (selectedApp) => {
+    this.setState({ selectedApp });
+  }
+
+  getLabel = ({ iconUri, name }) => {
+    return (
+      <div style={{ alignItems: "center", display: "flex" }}>
+        <span className="app-icon" style={{ fontSize: 18, marginRight: "0.5em", backgroundImage: `url(${iconUri})`}}></span>
+        <span style={{ fontSize: 14 }}>{name}</span>
+      </div>
+    );
+  }
+
   render() {
-    const { app } = this.props;
     const { hasValidCron, updatingSchedule, updateConfirm, loadingConfig, updateScheduleErrMsg } = this.state;
     const selectedRetentionUnit = RETENTION_UNITS.find((ru) => {
       return ru.value === this.state.selectedRetentionUnit?.value;
@@ -268,27 +325,45 @@ class SnapshotSchedule extends Component {
       )
     }
 
-    const isSettingsPage = window.location.pathname.includes("/snapshots/settings")
+    const isSettingsPage = window.location.pathname.includes("/snapshots/settings");
 
     return (
-      <div className={`${isAppConfig ? "container flex-column flex1 u-overflow--auto u-paddingTop--30 u-paddingBottom--20 alignItems--center" : "flex-auto"}`}>
+      <div className="flex-auto">
         <div className="flex flex-column">
           {!isAppConfig && !this.props.isVeleroRunning &&
             <div className="Info--wrapper flex flex1 u-marginBottom--15">
-              <span className="icon info-icon flex u-marginTop--5" />
+              <span className="icon info-icon flex-auto u-marginTop--5" />
               <div className="flex flex-column u-marginLeft--5">
                 <p className="u-fontSize--normal u-fontWeight--bold u-lineHeight--normal u-color--tuna"> Scheduling not active </p>
                 <span className="u-fontSize--small u-fontWeight--normal u-lineHeight--normal u-color--dustyGray"> Schedules will not take affect until Velero is running and a storage destination has been configured.</span>
               </div>
             </div>}
-          {isAppConfig &&
-            <p className="u-marginBottom--30 u-fontSize--small u-color--tundora u-fontWeight--medium">
-              <Link to={`/app/${app?.slug}/snapshots`} className="replicated-link">Snapshots</Link>
-              <span className="u-color--dustyGray"> &gt; </span>
-            Schedule
-          </p>}
-          <form className={`flex flex-column snapshot-form-wrapper`}>
-            {!isAppConfig && <p className="u-fontSize--normal u-color--tundora u-fontWeight--bold"> Scheduling</p>}
+          <div className="SnapshotScheduleTabs--wrapper flex1 flex-column">
+            <div className="tab-items flex justifyContent--spaceBetween">
+              <span className={`${this.state.activeTab === "full" ? "is-active" : ""} tab-item blue`} onClick={() => this.toggleScheduleAction("full")}>Full snapshots (Instance)</span>
+              <span className={`${this.state.activeTab === "partial" ? "is-active" : ""} tab-item blue`} onClick={() => this.toggleScheduleAction("partial")}>Partial snapshots (Application)</span>
+            </div>
+          </div>
+          {this.state.activeTab === "full" ?
+            <p className="u-fontSize--small u-fontWeight--normal u-lineHeight--normal u-color--dustyGray u-marginTop--12 schedule"> Set up a custom schedule with a retention policy to take automatic snapshots of the admin console and all application data. </p>
+            :
+            <div className="flex flex-column schedule">
+              <p className="u-fontSize--small u-fontWeight--normal u-lineHeight--normal u-color--dustyGray u-marginTop--12"> Set up a custom schedule with a retention policy to take automatic snapshots of your application and its data. </p>
+              <div className="flex u-marginTop--12">
+                <Select
+                  className="replicated-select-container app"
+                  classNamePrefix="replicated-select"
+                  options={this.props.apps}
+                  getOptionLabel={this.getLabel}
+                  getOptionValue={(app) => app.name}
+                  value={this.state.selectedApp}
+                  onChange={this.onAppChange}
+                  isOptionSelected={(app) => { app.name === this.state.selectedApp?.name }}
+                />
+              </div>
+            </div>
+          }
+          <form className="flex flex-column snapshot-form-wrapper u-marginTop--20">
             <div className={`flex-column ${!isAppConfig ? "u-marginTop--12" : "u-marginBottom--20"}`}>
               <div className="flex1 u-marginBottom--20">
                 <p className="u-fontSize--normal u-color--tuna u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">Automatic snapshots</p>

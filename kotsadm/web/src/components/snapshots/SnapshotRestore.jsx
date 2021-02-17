@@ -7,11 +7,11 @@ import { Utilities } from "@src/utilities/utilities";
 import { Repeater } from "@src/utilities/repeater";
 import "../../scss/components/snapshots/AppSnapshots.scss";
 
-class AppSnapshotRestore extends Component {
+class SnapshotRestore extends Component {
   state = {
     fetchRestoreDetailJob: new Repeater(),
     loadingRestoreDetail: true,
-    restoreDetail: {},
+    restoreDetail: [],
     errorMessage: "",
     errorTitle: "",
 
@@ -26,10 +26,12 @@ class AppSnapshotRestore extends Component {
 
   componentDidUpdate(lastProps) {
     const { match } = this.props;
+    const appSlug = match.params.slug;
     if (match.params.id !== lastProps.match.params.id) {
       this.state.fetchRestoreDetailJob.start(this.fetchRestoreDetail, 2000);
     } else {
-      const phase = this.state.restoreDetail?.phase;
+      const currentAppDetails = this.state.restoreDetail?.find(a => a.appSlug === appSlug);
+      const phase = currentAppDetails?.restoreDetail?.phase;
       if (phase && phase !== "New" && phase !== "InProgress") {
         this.state.fetchRestoreDetailJob.stop();
       }
@@ -43,6 +45,7 @@ class AppSnapshotRestore extends Component {
   fetchRestoreDetail = async () => {
     const { match } = this.props;
     const restoreName = match.params.id;
+    const appSlug = match.params.slug;
 
     this.setState({
       errorMessage: "",
@@ -50,11 +53,14 @@ class AppSnapshotRestore extends Component {
     });
 
     try {
-      const res = await fetch(`${window.env.API_ENDPOINT}/app/${this.props.app?.slug}/snapshot/restore/${restoreName}`, {
-        method: "GET",
+      const res = await fetch(`${window.env.API_ENDPOINT}/snapshot/${restoreName}/apps-restore-status`, {
+        method: "POST",
         headers: {
           "Authorization": Utilities.getToken(),
-        }
+        },
+        body: JSON.stringify({
+          appSlugs: [appSlug]
+        })
       });
       if (!res.ok) {
         if (res.status === 401) {
@@ -70,7 +76,7 @@ class AppSnapshotRestore extends Component {
       }
       const response = await res.json();
 
-      const restoreDetail = response.restoreDetail;
+      const restoreDetail = response.statuses;
 
       this.setState({
         loadingRestoreDetail: false,
@@ -99,7 +105,7 @@ class AppSnapshotRestore extends Component {
     this.setState({ cancelingRestore: true, cancelRestoreErr: false, cancelRestoreErrorMsg: "" });
     try {
       await this.fetchCancelRestore();
-      this.props.history.push(`/app/${this.props.app?.slug}/snapshots`);
+      this.props.history.push("/snapshots");
     } catch (err) {
       this.setState({
         cancelRestoreErr: true,
@@ -110,8 +116,9 @@ class AppSnapshotRestore extends Component {
   }
 
   fetchCancelRestore = async () => {
-    const { app } = this.props;
-    const res = await fetch(`${window.env.API_ENDPOINT}/app/${app.slug}/snapshot/restore`, {
+    const { match } = this.props;
+    const appSlug = match.params.slug;
+    const res = await fetch(`${window.env.API_ENDPOINT}/app/${appSlug}/snapshot/restore`, {
       method: "DELETE",
       headers: {
         "Authorization": Utilities.getToken(),
@@ -188,7 +195,7 @@ class AppSnapshotRestore extends Component {
           <div className="flex flex-column alignItems--center">
             <span className="icon u-superWarning--large"></span>
             <p className="u-fontWeight--bold u-color--tuna u-fontSize--larger u-lineHeight--normal u-marginTop--15 u-marginBottom--10">
-              Application failed to restore </p>
+              Your partial restore failed </p>
             <p className="u-fontSize--normal u-fontWeight--medium u-color--dustyGray u-lineHeight--normal">
               Your application failed to restore to  <span className="u-fontWeight--bold u-color--dustyGray"> {this.props.match.params.id} </span>
             </p>
@@ -207,7 +214,7 @@ class AppSnapshotRestore extends Component {
         <div className="flex flex-column alignItems--center">
           <span className="icon yellowWarningIcon"></span>
           <p className="u-fontWeight--bold u-color--tuna u-fontSize--larger u-lineHeight--normal u-marginTop--15 u-marginBottom--10">
-            Application restored with warnings </p>
+            Partial restore was restored with warnings </p>
           <p className="u-fontSize--normal u-fontWeight--medium u-color--dustyGray u-lineHeight--normal">
             Your application restored  to <span className="u-fontWeight--bold u-color--dustyGray"> {this.props.match.params.id} </span> but there were warnings that my affect the application. During the restore there were
           <span className="u-fontWeight--bold  u-color--tundora"> {warnings?.length} warnings </span>.</p>
@@ -223,12 +230,16 @@ class AppSnapshotRestore extends Component {
   }
 
   render() {
+    const { match } = this.props;
     const { cancelingRestore, restoreDetail, loadingRestoreDetail } = this.state;
+    const appSlug = match.params.slug;
 
-    const hasNoErrorsOrWarnings = restoreDetail?.warnings?.length === 0 && restoreDetail?.errors?.length === 0;
-    const restoreCompleted = restoreDetail?.phase === "Completed";
-    const restoreFailing = restoreDetail?.phase === "PartiallyFailed" || restoreDetail?.phase === "Failed";
-    const restoreLoading = !restoreDetail?.warnings && !restoreDetail?.errors;
+    const currentAppDetails = restoreDetail.find(a => a.appSlug === appSlug);
+
+    const hasNoErrorsOrWarnings = currentAppDetails?.restoreDetail?.warnings?.length === 0 && currentAppDetails?.restoreDetail?.errors?.length === 0;
+    const restoreCompleted = currentAppDetails?.restoreDetail?.phase === "Completed";
+    const restoreFailing = currentAppDetails?.restoreDetail?.phase === "PartiallyFailed" || restoreDetail?.phase === "Failed";
+    const restoreLoading = !currentAppDetails?.restoreDetail?.warnings && !currentAppDetails?.restoreDetail?.errors;
 
     if (loadingRestoreDetail) {
       return (
@@ -246,11 +257,11 @@ class AppSnapshotRestore extends Component {
     return (
       <div className="container flex-column flex1 u-overflow--auto u-paddingTop--30 u-paddingBottom--20 alignItems--center">
         <Helmet>
-          <title>{`${this.props.app.name} Snapshots Restore`}</title>
+          <title>{`${this.props.match.params.slug} Snapshots Restore`}</title>
         </Helmet>
         {!restoreCompleted && !restoreFailing ?
           <div className="flex1 flex-column alignItems--center">
-            <p className="u-fontWeight--bold u-color--tuna u-fontSize--larger u-lineHeight--normal u-marginBottom--10"> Application restore in progress </p>
+            <p className="u-fontWeight--bold u-color--tuna u-fontSize--larger u-lineHeight--normal u-marginBottom--10"> Partial restore in progress </p>
             <p className="u-fontSize--normal u-fontWeight--medium u-color--dustyGray u-lineHeight--normal"> After all volumes have been restored you will need to log back in to the admin console. </p>
             <div className="flex flex-column  u-marginTop--40">
               {restoreLoading &&
@@ -258,7 +269,7 @@ class AppSnapshotRestore extends Component {
                   <Loader size="60" />
                 </div>
               }
-              {restoreDetail?.volumes?.map((volume, i) => {
+              {currentAppDetails?.restoreDetail?.volumes?.map((volume, i) => {
                 const strokeColor = volume.completionPercent === 100 ? "#44BB66" : "#326DE6";
                 const minutes = Math.floor(volume.timeRemainingSeconds / 60);
                 const remainingTime = volume.timeRemainingSeconds < 60 ? `${volume.timeRemainingSeconds} seconds remaining` : `${minutes} minutes remaining`;
@@ -294,7 +305,7 @@ class AppSnapshotRestore extends Component {
           </div>
           :
           !hasNoErrorsOrWarnings || restoreFailing ?
-            this.renderFailedRestoreView(restoreDetail)
+            this.renderFailedRestoreView(currentAppDetails?.restoreDetail)
             : null
         }
       </div>
@@ -302,4 +313,4 @@ class AppSnapshotRestore extends Component {
   }
 }
 
-export default withRouter(AppSnapshotRestore);
+export default withRouter(SnapshotRestore);

@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -13,8 +14,8 @@ import (
 	"github.com/replicatedhq/kots/kotsadm/pkg/downstream"
 	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
 	"github.com/replicatedhq/kots/kotsadm/pkg/snapshot"
-	snapshottypes "github.com/replicatedhq/kots/kotsadm/pkg/snapshot/types"
 	"github.com/replicatedhq/kots/kotsadm/pkg/store"
+	snapshottypes "github.com/replicatedhq/kots/pkg/api/snapshot/types"
 	velerov1 "github.com/vmware-tanzu/velero/pkg/apis/velero/v1"
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
 )
@@ -115,6 +116,11 @@ func (h *Handler) CreateApplicationRestore(w http.ResponseWriter, r *http.Reques
 	JSON(w, http.StatusOK, createRestoreResponse)
 }
 
+type RestoreAppsRequest struct {
+	RestoreAll bool     `json:"restoreAll"`
+	AppSlugs   []string `json:"appSlugs"`
+}
+
 type RestoreAppsResponse struct {
 	Success bool   `json:"success"`
 	Error   string `json:"error,omitempty"`
@@ -123,6 +129,13 @@ type RestoreAppsResponse struct {
 func (h *Handler) RestoreApps(w http.ResponseWriter, r *http.Request) {
 	restoreResponse := RestoreAppsResponse{
 		Success: false,
+	}
+
+	restoreAppsRequest := RestoreAppsRequest{}
+	if err := json.NewDecoder(r.Body).Decode(&restoreAppsRequest); err != nil {
+		logger.Error(err)
+		w.WriteHeader(http.StatusBadRequest)
+		return
 	}
 
 	snapshotName := mux.Vars(r)["snapshotName"]
@@ -152,6 +165,20 @@ func (h *Handler) RestoreApps(w http.ResponseWriter, r *http.Request) {
 	}
 
 	for _, a := range apps {
+		restoreThisApp := false
+		if !restoreAppsRequest.RestoreAll {
+			for _, slug := range restoreAppsRequest.AppSlugs {
+				if slug == a.Slug {
+					restoreThisApp = true
+					break
+				}
+			}
+		}
+
+		if !restoreThisApp && !restoreAppsRequest.RestoreAll {
+			continue
+		}
+
 		if err := app.ResetRestore(a.ID); err != nil {
 			logger.Error(err)
 			restoreResponse.Error = fmt.Sprintf("failed to reset restore for app %s", a.Slug)
@@ -180,13 +207,17 @@ func (h *Handler) RestoreApps(w http.ResponseWriter, r *http.Request) {
 	JSON(w, http.StatusOK, restoreResponse)
 }
 
+type GetRestoreAppsStatusRequest struct {
+	CheckAll bool     `json:"checkAll"`
+	AppSlugs []string `json:"appSlugs"`
+}
 type GetRestoreAppsStatusResponse struct {
 	Statuses []AppRestoreStatus `json:"statuses"`
 	Error    string             `json:"error,omitempty"`
 }
 type AppRestoreStatus struct {
-	AppSlug string                 `json:"appSlug"`
-	Status  velerov1.RestoreStatus `json:"status,omitempty"`
+	AppSlug       string                      `json:"appSlug"`
+	RestoreDetail snapshottypes.RestoreDetail `json:"restoreDetail"`
 }
 
 func (h *Handler) GetRestoreAppsStatus(w http.ResponseWriter, r *http.Request) {
@@ -195,6 +226,13 @@ func (h *Handler) GetRestoreAppsStatus(w http.ResponseWriter, r *http.Request) {
 	}
 
 	snapshotName := mux.Vars(r)["snapshotName"]
+
+	restoreAppStatusRequest := GetRestoreAppsStatusRequest{}
+	if err := json.NewDecoder(r.Body).Decode(&restoreAppStatusRequest); err != nil {
+		logger.Error(err)
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
 
 	backup, err := snapshot.GetBackup(snapshotName)
 	if err != nil {
@@ -223,25 +261,43 @@ func (h *Handler) GetRestoreAppsStatus(w http.ResponseWriter, r *http.Request) {
 	statuses := []AppRestoreStatus{}
 
 	for _, a := range apps {
-		restoreName := fmt.Sprintf("%s.%s", snapshotName, a.Slug)
-		restore, err := snapshot.GetRestore(restoreName)
-		if err != nil {
-			logger.Error(err)
-			response.Error = fmt.Sprintf("failed to get restore for app %s", a.Slug)
-			JSON(w, http.StatusInternalServerError, response)
-			return
+		checkThisApp := false
+		if !restoreAppStatusRequest.CheckAll {
+			for _, slug := range restoreAppStatusRequest.AppSlugs {
+				if slug == a.Slug {
+					checkThisApp = true
+					break
+				}
+			}
 		}
-
-		appRestoreStatus := AppRestoreStatus{
-			AppSlug: a.Slug,
-		}
-
-		if restore == nil {
-			statuses = append(statuses, appRestoreStatus)
+		if !checkThisApp && !restoreAppStatusRequest.CheckAll {
 			continue
 		}
 
-		appRestoreStatus.Status = restore.Status
+		restoreName := fmt.Sprintf("%s.%s", snapshotName, a.Slug)
+		// restore, err := snapshot.GetRestore(restoreName)
+		restoreDetail, err := snapshot.GetRestoreDetails(context.TODO(), restoreName)
+		if err != nil {
+			if !kuberneteserrors.IsNotFound(errors.Cause(err)) {
+				logger.Error(err)
+				response.Error = fmt.Sprintf("failed to get restore for app %s", a.Slug)
+				JSON(w, http.StatusInternalServerError, response)
+				return
+			}
+		}
+
+		if restoreDetail == nil {
+			restoreDetail = &snapshottypes.RestoreDetail{
+				Name:  restoreName,
+				Phase: velerov1.RestorePhaseNew,
+			}
+		}
+
+		appRestoreStatus := AppRestoreStatus{
+			AppSlug:       a.Slug,
+			RestoreDetail: *restoreDetail,
+		}
+
 		statuses = append(statuses, appRestoreStatus)
 	}
 
@@ -326,7 +382,7 @@ func (h *Handler) GetRestoreDetails(w http.ResponseWriter, r *http.Request) {
 			}
 			restoreDetail = &snapshottypes.RestoreDetail{
 				Name:  restoreName,
-				Phase: string(velerov1.RestorePhaseFailed),
+				Phase: velerov1.RestorePhaseFailed,
 				Errors: []snapshottypes.SnapshotError{{
 					Title:   "Restore has failed",
 					Message: "Please check logs for errors.",
@@ -335,7 +391,7 @@ func (h *Handler) GetRestoreDetails(w http.ResponseWriter, r *http.Request) {
 		} else {
 			restoreDetail = &snapshottypes.RestoreDetail{
 				Name:  restoreName,
-				Phase: string(velerov1.RestorePhaseNew),
+				Phase: velerov1.RestorePhaseNew,
 			}
 		}
 	} else if err != nil {

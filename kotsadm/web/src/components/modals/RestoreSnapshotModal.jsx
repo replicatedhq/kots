@@ -12,23 +12,27 @@ export default function RestoreSnapshotModal(props) {
       onRequestClose={() => { toggleRestoreModal({}); }}
       ariaHideApp={false}
       contentLabel="Modal"
-      className="Modal MediumSize"
+      className="Modal ConfigureSnapshots"
     >
       <div className="Modal-body">
         <div className="flex flex-column">
           <p className="u-fontSize--largest u-fontWeight--bold u-color--tuna u-lineHeight--normal u-marginBottom--more">
-            Restore from snapshot
+            Restore from Partial backup (Application)
+          </p>
+          <p className="u-fontSize--normal u-fontWeight--normal u-color--dustyGray u-lineHeight--normal">
+          This will be a partial restore of your application and its metadata.
       </p>
           {restoreErr ?
             <p className="u-color--chestnut u-fontSize--small u-fontWeight--medium u-lineHeight--normal">{restoreErrorMsg}</p>
             : null}
-          <p className="u-fontSize--normal u-fontWeight--normal u-color--dustyGray u-lineHeight--normal">
-            Are you sure you want to restore {app?.name} to the following version?
-      </p>
-          <div className="flex flex1 justifyContent--spaceBetween u-marginTop--20">
+          <div className="flex flex1 justifyContent--spaceBetween u-marginTop--20 SnapshotRow--wrapper">
             <div className="flex flex-column">
               <p className="u-fontSize--normal u-fontWeight--bold u-color--tuna u-lineHeight--normal">{snapshotToRestore?.name}</p>
-              <p className="u-fontSize--normal u-color--doveGray u-fontWeight--bold u-lineHeight--normal u-marginRight--20"><span className="u-fontWeight--normal u-color--dustyGray">Captured on:</span> {Utilities.dateFormat(snapshotToRestore?.startedAt, "MM/DD/YY @ hh:mm a")}</p>
+              <p className="u-fontSize--normal u-color--dustyGray u-fontWeight--medium u-lineHeight--normal u-marginRight--20">{Utilities.dateFormat(snapshotToRestore?.startedAt, "MMM D YYYY @ hh:mm a")}</p>
+            </div>
+            <div className="flex flex1 justifyContent--flexEnd">
+              <p className="u-fontSize--normal u-color--dustyGray u-fontWeight--bold u-lineHeight--normal u-marginRight--30 justifyContent--center flex alignItems--center"><span className="icon snapshot-volume-size-icon" /> {snapshotToRestore?.volumeSizeHuman} </p>
+              <p className="u-fontSize--normal u-color--dustyGray u-fontWeight--bold u-lineHeight--normal justifyContent--center flex alignItems--center"><span className="icon snapshot-volume-icon" /> {snapshotToRestore?.volumeSuccessCount}/{snapshotToRestore?.volumeCount}</p>
             </div>
           </div>
           <div className="flex flex1 u-marginTop--20">
@@ -43,10 +47,10 @@ export default function RestoreSnapshotModal(props) {
               : null}
             <div className="u-marginTop--12 flex flex1">
               <span className="slugArrow flex justifyContent--center alignItems--center"> {app?.slug} </span>
-              <input type="text" className="Input u-position--relative" style={{ textIndent: "200px", width: "70%"}} placeholder="type your slug" value={appSlugToRestore} onChange={(e) => { handleApplicationSlugChange(e) }} />
+              <input type="text" className="Input u-position--relative" style={{ textIndent: "200px" }} placeholder="type your slug" value={appSlugToRestore} onChange={(e) => { handleApplicationSlugChange(e) }} />
             </div>
           </div>
-          <div className="flex justifyContent--flexStart u-marginTop--20">
+          <div className="flex justifyContent--flexStart u-marginTop--30">
             <button
               className="btn secondary blue u-marginRight--10"
               onClick={() => { toggleRestoreModal({}); }}
@@ -58,7 +62,7 @@ export default function RestoreSnapshotModal(props) {
               onClick={() => { handleRestoreSnapshot(snapshotToRestore) }}
               disabled={restoringSnapshot}
             >
-              {restoringSnapshot ? "Restoring from snapshot" : "Restore from snapshot"}
+              {restoringSnapshot ? "Restoring..." : "Confirm and restore"}
             </button>
           </div>
         </div>

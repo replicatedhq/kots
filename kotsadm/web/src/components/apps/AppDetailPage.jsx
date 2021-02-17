@@ -1,6 +1,6 @@
 import React, { Component, Fragment } from "react";
 import classNames from "classnames";
-import { withRouter, Switch, Route } from "react-router-dom";
+import { withRouter, Switch, Route, Redirect } from "react-router-dom";
 import { Helmet } from "react-helmet";
 import Modal from "react-modal";
 
@@ -24,10 +24,6 @@ import Loader from "../shared/Loader";
 import AppRegistrySettings from "./AppRegistrySettings";
 import AppIdentityServiceSettings from "./AppIdentityServiceSettings";
 import AppGitops from "./AppGitops";
-import AppSnapshots from "./AppSnapshots";
-import SnapshotSchedule from "../snapshots/SnapshotSchedule";
-import SnapshotDetails from "../snapshots/SnapshotDetails";
-import AppSnapshotRestore from "./AppSnapshotRestore";
 import TroubleshootContainer from "../troubleshoot/TroubleshootContainer";
 import ErrorModal from "../modals/ErrorModal";
 
@@ -408,22 +404,6 @@ class AppDetailPage extends Component {
                         refetch={this.getApp}
                       />
                     } />
-                    <Route exact path="/app/:slug/snapshots" render={() =>
-                      <AppSnapshots
-                        app={app}
-                        refetch={this.getApp}
-                        toggleSnapshotsRBACModal={this.props.toggleSnapshotsRBACModal}
-                      />
-                    } />
-                    <Route exact path="/app/:slug/snapshots/schedule" render={() =>
-                      <SnapshotSchedule app={app} toggleSnapshotsRBACModal={this.props.toggleSnapshotsRBACModal} />
-                    } />
-                    <Route exact path="/app/:slug/snapshots/:id" render={() =>
-                      <SnapshotDetails app={app} />
-                    } />
-                    <Route exact path="/app/:slug/snapshots/:id/restore" render={() =>
-                      <AppSnapshotRestore app={app} />
-                    } />
                     {app.isAppIdentityServiceSupported &&
                       <Route exact path="/app/:slug/access" render={() =>
                         <AppIdentityServiceSettings
@@ -432,6 +412,12 @@ class AppDetailPage extends Component {
                         />
                       } />
                     }
+                    {/* snapshots redirects */}
+                    <Redirect exact from="/app/:slug/snapshots" to="/snapshots/partial/:slug" />
+                    <Redirect exact from="/app/:slug/snapshots/schedule" to="/snapshots/settings?:slug" />
+                    <Redirect exact from="/app/:slug/snapshots/:id" to="/snapshots/partial/:slug/:id" />
+                    <Redirect exact from="/app/:slug/snapshots/:id/restore" to="/snapshots/partial/:slug/:id/restore" />
+
                     <Route component={NotFound} />
                   </Switch>
                 </Fragment>

@@ -1,6 +1,7 @@
 package snapshot
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -10,6 +11,7 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	snapshottypes "github.com/replicatedhq/kots/pkg/api/snapshot/types"
 	"github.com/replicatedhq/kots/pkg/auth"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/kotsadm"
@@ -308,7 +310,15 @@ func initiateKotsadmApplicationsRestore(backupName string, kotsadmNamespace stri
 
 	url := fmt.Sprintf("http://localhost:%d/api/v1/snapshot/%s/restore-apps", localPort, backupName)
 
-	newRequest, err := http.NewRequest("POST", url, nil)
+	requestPayload := map[string]interface{}{
+		"restoreAll": true,
+	}
+	requestBody, err := json.Marshal(requestPayload)
+	if err != nil {
+		return errors.Wrap(err, "failed to marshal request json")
+	}
+
+	newRequest, err := http.NewRequest("POST", url, bytes.NewBuffer(requestBody))
 	if err != nil {
 		return errors.Wrap(err, "failed to create request")
 	}
@@ -354,7 +364,14 @@ func waitForKotsadmApplicationsRestore(backupName string, kotsadmNamespace strin
 	url := fmt.Sprintf("http://localhost:%d/api/v1/snapshot/%s/apps-restore-status", localPort, backupName)
 
 	for {
-		newRequest, err := http.NewRequest("GET", url, nil)
+		requestPayload := map[string]interface{}{
+			"checkAll": true,
+		}
+		requestBody, err := json.Marshal(requestPayload)
+		if err != nil {
+			return errors.Wrap(err, "failed to marshal request json")
+		}
+		newRequest, err := http.NewRequest("POST", url, bytes.NewBuffer(requestBody))
 		if err != nil {
 			return errors.Wrap(err, "failed to create request")
 		}
@@ -376,8 +393,8 @@ func waitForKotsadmApplicationsRestore(backupName string, kotsadmNamespace strin
 		}
 
 		type AppRestoreStatus struct {
-			AppSlug string                 `json:"appSlug"`
-			Status  velerov1.RestoreStatus `json:"status,omitempty"`
+			AppSlug       string                      `json:"appSlug"`
+			RestoreDetail snapshottypes.RestoreDetail `json:"restoreDetail"`
 		}
 		type AppsRestoreStatusResponse struct {
 			Statuses []AppRestoreStatus `json:"statuses"`
@@ -396,11 +413,11 @@ func waitForKotsadmApplicationsRestore(backupName string, kotsadmNamespace strin
 		errs := []string{}
 
 		for _, s := range appsRestoreStatusResponse.Statuses {
-			switch s.Status.Phase {
+			switch s.RestoreDetail.Phase {
 			case velerov1.RestorePhaseCompleted:
 				break
 			case velerov1.RestorePhaseFailed, velerov1.RestorePhasePartiallyFailed:
-				errMsg := fmt.Sprintf("restore failed for app %s with %d errors and %d warnings", s.AppSlug, s.Status.Errors, s.Status.Warnings)
+				errMsg := fmt.Sprintf("restore failed for app %s with %d errors and %d warnings", s.AppSlug, len(s.RestoreDetail.Errors), len(s.RestoreDetail.Warnings))
 				errs = append(errs, errMsg)
 				break
 			default:

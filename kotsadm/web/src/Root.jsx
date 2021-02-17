@@ -7,9 +7,6 @@ import Modal from "react-modal";
 import find from "lodash/find";
 import ConnectionTerminated from "./ConnectionTerminated";
 import GitOps from "././components/clusters/GitOps";
-import Snapshots from "./components/snapshots/Snapshots";
-import SnapshotSettings from "./components/snapshots/SnapshotSettings";
-import SnapshotDetails from "./components/snapshots/SnapshotDetails";
 import PreflightResultPage from "./components/PreflightResultPage";
 // import Redactors from "./components/redactors/Redactors";
 // import EditRedactor from "./components/redactors/EditRedactor";
@@ -26,6 +23,7 @@ import BackupRestore from "./components/BackupRestore";
 import UploadAirgapBundle from "./components/UploadAirgapBundle";
 import RestoreCompleted from "./components/RestoreCompleted";
 import Access from "./components/identity/Access";
+import SnapshotsWrapper from "./components/snapshots/SnapshotsWrapper";
 
 import Footer from "./components/shared/Footer";
 import NavBar from "./components/shared/NavBar";
@@ -345,10 +343,21 @@ class Root extends Component {
                   <Route path="/unsupported" component={UnsupportedBrowser} />
                   <ProtectedRoute path="/cluster/manage" render={(props) => <ClusterNodes {...props} appName={this.state.selectedAppName} />} />
                   <ProtectedRoute path="/gitops" render={(props) => <GitOps {...props} appName={this.state.selectedAppName} />} />
-                  <ProtectedRoute exact path="/snapshots" render={(props) => <Snapshots {...props} appName={this.state.selectedAppName} isKurlEnabled={this.state.isKurlEnabled} appsList={appsList} toggleSnapshotsRBACModal={this.toggleSnapshotsRBACModal}/>} />
-                  <ProtectedRoute exact path="/snapshots/settings" render={(props) => <SnapshotSettings {...props} appName={this.state.selectedAppName} isKurlEnabled={this.state.isKurlEnabled} toggleSnapshotsRBACModal={this.toggleSnapshotsRBACModal}/>} />
-                  <ProtectedRoute exact path="/snapshots/details/:id" render={(props) => <SnapshotDetails {...props} appName={this.state.selectedAppName} />} />
                   <ProtectedRoute path="/access/:tab?" render={(props) => <Access {...props} appName={this.state.selectedAppName} isKurlEnabled={this.state.isKurlEnabled} isGeoaxisSupported={this.isGeoaxisSupported()} />} />
+                  <ProtectedRoute
+                    path={["/snapshots/:tab?"]}
+                    render={
+                      props => (
+                        <SnapshotsWrapper
+                          {...props} 
+                          appName={this.state.selectedAppName} 
+                          isKurlEnabled={this.state.isKurlEnabled} 
+                          appsList={appsList}
+                          toggleSnapshotsRBACModal={this.toggleSnapshotsRBACModal}
+                        />
+                      )
+                    }
+                  />
                   {/* <ProtectedRoute exact path="/redactors" render={(props) => <Redactors {...props} appName={this.state.selectedAppName} />} />
                   <ProtectedRoute exact path="/redactors/new" render={(props) => <EditRedactor {...props} appName={this.state.selectedAppName} isNew={true} />} />
                   <ProtectedRoute exact path="/redactors/:slug" render={(props) => <EditRedactor {...props} appName={this.state.selectedAppName} />} /> */}

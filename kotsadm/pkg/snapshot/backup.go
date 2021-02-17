@@ -18,9 +18,9 @@ import (
 	"github.com/replicatedhq/kots/kotsadm/pkg/kurl"
 	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
 	"github.com/replicatedhq/kots/kotsadm/pkg/render/helper"
-	"github.com/replicatedhq/kots/kotsadm/pkg/snapshot/types"
 	"github.com/replicatedhq/kots/kotsadm/pkg/store"
 	downstreamtypes "github.com/replicatedhq/kots/pkg/api/downstream/types"
+	"github.com/replicatedhq/kots/pkg/api/snapshot/types"
 	kotsadmtypes "github.com/replicatedhq/kots/pkg/kotsadm/types"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	velerov1 "github.com/vmware-tanzu/velero/pkg/apis/velero/v1"
@@ -487,9 +487,9 @@ func ListInstanceBackups() ([]*types.Backup, error) {
 		}
 
 		backup := types.Backup{
-			Name:   veleroBackup.Name,
-			Status: string(veleroBackup.Status.Phase),
-			AppID:  "",
+			Name:         veleroBackup.Name,
+			Status:       string(veleroBackup.Status.Phase),
+			IncludedApps: make([]types.App, 0),
 		}
 
 		if veleroBackup.Status.StartTimestamp != nil {
@@ -536,6 +536,27 @@ func ListInstanceBackups() ([]*types.Backup, error) {
 			}
 			backup.VolumeBytes = i
 			backup.VolumeSizeHuman = units.HumanSize(float64(i))
+		}
+
+		appAnnotationStr, _ := veleroBackup.Annotations["kots.io/apps-sequences"]
+		if len(appAnnotationStr) > 0 {
+			var apps map[string]int64
+			if err := json.Unmarshal([]byte(appAnnotationStr), &apps); err != nil {
+				return nil, errors.Wrap(err, "failed to unmarshal apps sequences")
+			}
+			for slug, sequence := range apps {
+				a, err := store.GetStore().GetAppFromSlug(slug)
+				if err != nil {
+					return nil, errors.Wrap(err, "failed to get app from slug")
+				}
+
+				backup.IncludedApps = append(backup.IncludedApps, types.App{
+					Slug:       slug,
+					Sequence:   sequence,
+					Name:       a.Name,
+					AppIconURI: a.IconURI,
+				})
+			}
 		}
 
 		if backup.Status != "New" && backup.Status != "InProgress" {

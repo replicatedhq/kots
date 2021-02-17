@@ -59,7 +59,13 @@ class Dashboard extends Component {
       prometheusAddress: "",
     },
     getAppDashboardJob: new Repeater(),
-    gettingAppLicenseErrMsg: ""
+    gettingAppLicenseErrMsg: "",
+    startSnapshotOptions: [
+      { option: "partial", name: "Start a Partial snapshot" },
+      { option: "full", name: "Start a Full snapshot" },
+      { option: "learn", name: "Learn about the difference" }
+    ],
+    selectedSnapshotOption: { option: "full", name: "Start a Full snapshot" },
   }
 
   toggleConfigureGraphs = () => {
@@ -93,7 +99,7 @@ class Dashboard extends Component {
             if (response?.error) {
               throw new Error(response?.error);
             }
-          } catch(_) {
+          } catch (_) {
             // ignore
           }
           throw new Error(`Unexpected status code ${res.status}`);
@@ -152,7 +158,7 @@ class Dashboard extends Component {
       }
     }).catch((err) => {
       console.log(err)
-      this.setState({ gettingAppLicenseErrMsg: err ? `Error while getting the license: ${err.message}` : "Something went wrong, please try again."})
+      this.setState({ gettingAppLicenseErrMsg: err ? `Error while getting the license: ${err.message}` : "Something went wrong, please try again." })
     });
   }
 
@@ -258,32 +264,32 @@ class Dashboard extends Component {
         },
         method: "GET",
       })
-      .then(async (res) => {
-        const response = await res.json();
+        .then(async (res) => {
+          const response = await res.json();
 
-        if (response.status !== "running" && !this.props.isBundleUploading) {
-          this.state.updateChecker.stop();
+          if (response.status !== "running" && !this.props.isBundleUploading) {
+            this.state.updateChecker.stop();
 
-          this.setState({
-            checkingForUpdates: false,
-            checkingUpdateMessage: response.currentMessage,
-            checkingForUpdateError: response.status === "failed"
-          });
+            this.setState({
+              checkingForUpdates: false,
+              checkingUpdateMessage: response.currentMessage,
+              checkingForUpdateError: response.status === "failed"
+            });
 
-          if (this.props.updateCallback) {
-            this.props.updateCallback();
+            if (this.props.updateCallback) {
+              this.props.updateCallback();
+            }
+          } else {
+            this.setState({
+              checkingForUpdates: true,
+              checkingUpdateMessage: response.currentMessage,
+            });
           }
-        } else {
-          this.setState({
-            checkingForUpdates: true,
-            checkingUpdateMessage: response.currentMessage,
-          });
-        }
-        resolve();
-      }).catch((err) => {
-        console.log("failed to get rewrite status", err);
-        reject();
-      });
+          resolve();
+        }).catch((err) => {
+          console.log("failed to get rewrite status", err);
+          reject();
+        });
     });
   }
 
@@ -439,10 +445,10 @@ class Dashboard extends Component {
 
     return (
       <div className="dashboard-card graph flex-column flex1 flex u-marginTop--20" key={chart.title}>
-        <XYPlot width={460} height={180} onMouseLeave={() => this.setState({ crosshairValues: [] })} margin={{left: 60}}>
+        <XYPlot width={460} height={180} onMouseLeave={() => this.setState({ crosshairValues: [] })} margin={{ left: 60 }}>
           <VerticalGridLines />
           <HorizontalGridLines />
-          <XAxis tickFormat={v => `${moment.unix(v).format("H:mm")}`} style={axisStyle}/>
+          <XAxis tickFormat={v => `${moment.unix(v).format("H:mm")}`} style={axisStyle} />
           <YAxis width={60} tickFormat={yAxisTickFormat} style={axisStyle} />
           {series}
           {this.state.crosshairValues?.length > 0 && this.state.activeChart === chart &&
@@ -474,7 +480,7 @@ class Dashboard extends Component {
     );
   }
 
-  startManualSnapshot = () => {
+  startASnapshot = (option) => {
     const { app } = this.props;
     this.setState({
       startingSnapshot: true,
@@ -482,46 +488,66 @@ class Dashboard extends Component {
       startSnapshotErrorMsg: "",
     });
 
-    fetch(`${window.env.API_ENDPOINT}/app/${app.slug}/snapshot/backup`, {
+    let url = option === "full" ?
+      `${window.env.API_ENDPOINT}/snapshot/backup`
+      : `${window.env.API_ENDPOINT}/app/${app.slug}/snapshot/backup`;
+
+    fetch(url, {
       method: "POST",
       headers: {
         "Authorization": Utilities.getToken(),
         "Content-Type": "application/json",
       }
     })
-    .then(async (result) => {
-      if (!result.ok && result.status === 409) {
-        const res = await result.json();
-        if (res.kotsadmRequiresVeleroAccess) {
-          this.props.toggleSnapshotsRBACModal(res.veleroNamespace);
+      .then(async (result) => {
+        if (!result.ok && result.status === 409) {
+          const res = await result.json();
+          if (res.kotsadmRequiresVeleroAccess) {
+            this.props.toggleSnapshotsRBACModal(res.veleroNamespace);
+            this.setState({
+              startingSnapshot: false
+            });
+            return;
+          }
+        }
+
+        if (result.ok) {
           this.setState({
             startingSnapshot: false
           });
-          return;
+          this.props.ping();
+          option === "full" ?
+            this.props.history.push("/snapshots")
+            : this.props.history.push(`/snapshots/partial/${app.slug}`)
+        } else {
+          const body = await result.json();
+          this.setState({
+            startingSnapshot: false,
+            startSnapshotErr: true,
+            startSnapshotErrorMsg: body.error,
+          });
         }
-      }
+      })
+      .catch(err => {
+        console.log(err);
+        this.setState({
+          startSnapshotErrorMsg: err ? err.message : "Something went wrong, please try again."
+        });
+      })
+  }
 
-      if (result.ok) {
-        this.setState({
-          startingSnapshot: false
-        });
-        this.props.ping();
-        this.props.history.push(`/app/${app.slug}/snapshots`)
-      } else {
-        const body = await result.json();
-        this.setState({
-          startingSnapshot: false,
-          startSnapshotErr: true,
-          startSnapshotErrorMsg: body.error,
-        });
-      }
-    })
-    .catch(err => {
-      console.log(err);
-      this.setState({
-        startSnapshotErrorMsg: err ? err.message : "Something went wrong, please try again."
-      });
-    })
+  onSnapshotOptionChange = (selectedSnapshotOption) => {
+    this.setState({ selectedSnapshotOption });
+  }
+
+  onSnapshotOptionClick = () => {
+    const { selectedSnapshotOption } = this.state;
+
+    if (selectedSnapshotOption.option === "learn") {
+      window.open("https://kots.io/vendor/snapshots/overview/", "_blank");
+    } else {
+      this.startASnapshot(selectedSnapshotOption.option);
+    }
   }
 
   render() {
@@ -634,10 +660,14 @@ class Dashboard extends Component {
                     app={app}
                     isSnapshotAllowed={app.allowSnapshots && isVeleroInstalled}
                     isVeleroInstalled={isVeleroInstalled}
-                    startManualSnapshot={this.startManualSnapshot}
+                    startASnapshot={this.startASnapshot}
+                    startSnapshotOptions={this.state.startSnapshotOptions}
                     startSnapshotErr={this.state.startSnapshotErr}
                     startSnapshotErrorMsg={this.state.startSnapshotErrorMsg}
                     snapshotInProgressApps={this.props.snapshotInProgressApps}
+                    selectedSnapshotOption={this.state.selectedSnapshotOption}
+                    onSnapshotOptionChange={this.onSnapshotOptionChange}
+                    onSnapshotOptionClick={this.onSnapshotOptionClick}
                   />
                   <DashboardCard
                     cardName="License"
