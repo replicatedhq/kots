@@ -105,7 +105,7 @@ func Upgrade(upgradeOptions types.UpgradeOptions) error {
 		return errors.Wrap(err, "failed to get clientset")
 	}
 
-	log := logger.NewLogger()
+	log := logger.NewCLILogger()
 
 	if err := canUpgrade(upgradeOptions, clientset, log); err != nil {
 		log.Error(err)
@@ -164,7 +164,7 @@ func Deploy(deployOptions types.DeployOptions) error {
 		return errors.Wrap(err, "failed to get clientset")
 	}
 
-	log := logger.NewLogger()
+	log := logger.NewCLILogger()
 	if deployOptions.AirgapRootDir != "" && deployOptions.KotsadmOptions.OverrideRegistry == "" {
 		log.Info("not pushing airgapped app images as no registry was provided")
 	}
@@ -247,7 +247,7 @@ func IsKurl(k8sConfigFlags *genericclioptions.ConfigFlags) (bool, error) {
 	return isKurl(clientset), nil
 }
 
-func canUpgrade(upgradeOptions types.UpgradeOptions, clientset *kubernetes.Clientset, log *logger.Logger) error {
+func canUpgrade(upgradeOptions types.UpgradeOptions, clientset *kubernetes.Clientset, log *logger.CLILogger) error {
 	_, err := clientset.CoreV1().Namespaces().Get(context.TODO(), upgradeOptions.Namespace, metav1.GetOptions{})
 	if kuberneteserrors.IsNotFound(err) {
 		err := errors.New("The namespace cannot be found or accessed")
@@ -279,7 +279,7 @@ func isKurl(clientset *kubernetes.Clientset) bool {
 	return true
 }
 
-func removeUnusedKotsadmComponents(deployOptions types.DeployOptions, clientset *kubernetes.Clientset, log *logger.Logger) error {
+func removeUnusedKotsadmComponents(deployOptions types.DeployOptions, clientset *kubernetes.Clientset, log *logger.CLILogger) error {
 	// if there's a kotsadm web deployment, rmove (pre 1.11.0)
 	_, err := clientset.AppsV1().Deployments(deployOptions.Namespace).Get(context.TODO(), "kotsadm-web", metav1.GetOptions{})
 	if err == nil {
@@ -299,7 +299,7 @@ func removeUnusedKotsadmComponents(deployOptions types.DeployOptions, clientset 
 	return nil
 }
 
-func ensureStorage(deployOptions types.DeployOptions, clientset *kubernetes.Clientset, log *logger.Logger) error {
+func ensureStorage(deployOptions types.DeployOptions, clientset *kubernetes.Clientset, log *logger.CLILogger) error {
 	if deployOptions.ExcludeAdminConsole {
 		return nil
 	}
@@ -319,7 +319,7 @@ func ensureStorage(deployOptions types.DeployOptions, clientset *kubernetes.Clie
 	return nil
 }
 
-func ensureKotsadm(deployOptions types.DeployOptions, clientset *kubernetes.Clientset, log *logger.Logger) error {
+func ensureKotsadm(deployOptions types.DeployOptions, clientset *kubernetes.Clientset, log *logger.CLILogger) error {
 	restartKotsadmAPI := false
 
 	ingressConfig := deployOptions.IngressConfig

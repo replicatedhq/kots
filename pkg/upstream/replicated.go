@@ -20,12 +20,12 @@ import (
 
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
+	"github.com/replicatedhq/kots/pkg/buildversion"
 	"github.com/replicatedhq/kots/pkg/crypto"
 	kotslicense "github.com/replicatedhq/kots/pkg/license"
 	"github.com/replicatedhq/kots/pkg/template"
 	"github.com/replicatedhq/kots/pkg/upstream/types"
 	"github.com/replicatedhq/kots/pkg/util"
-	"github.com/replicatedhq/kots/pkg/version"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	serializer "k8s.io/apimachinery/pkg/runtime/serializer/json"
 	"k8s.io/client-go/kubernetes/scheme"
@@ -309,7 +309,7 @@ func (r *ReplicatedUpstream) getRequest(method string, license *kotsv1beta1.Lice
 		return nil, errors.Wrap(err, "failed to call newrequest")
 	}
 
-	req.Header.Add("User-Agent", fmt.Sprintf("KOTS/%s", version.Version()))
+	req.Header.Add("User-Agent", fmt.Sprintf("KOTS/%s", buildversion.Version()))
 	req.Header.Set("Authorization", fmt.Sprintf("Basic %s", base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", license.Spec.LicenseID, license.Spec.LicenseID)))))
 
 	return req, nil
@@ -513,7 +513,7 @@ func listPendingChannelReleases(replicatedUpstream *ReplicatedUpstream, license 
 
 	injectReportingInfo(req, reportingInfo)
 
-	req.Header.Add("User-Agent", fmt.Sprintf("KOTS/%s", version.Version()))
+	req.Header.Add("User-Agent", fmt.Sprintf("KOTS/%s", buildversion.Version()))
 	req.Header.Set("Authorization", fmt.Sprintf("Basic %s", base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", license.Spec.LicenseID, license.Spec.LicenseID)))))
 
 	resp, err := http.DefaultClient.Do(req)
@@ -914,7 +914,7 @@ func getApplicationMetadataFromHost(host string, upstream *url.URL) ([]byte, err
 		return nil, errors.Wrap(err, "failed to call newrequest")
 	}
 
-	getReq.Header.Add("User-Agent", fmt.Sprintf("KOTS/%s", version.Version()))
+	getReq.Header.Add("User-Agent", fmt.Sprintf("KOTS/%s", buildversion.Version()))
 
 	getResp, err := http.DefaultClient.Do(getReq)
 	if err != nil {

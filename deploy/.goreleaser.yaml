@@ -17,9 +17,9 @@ builds:
       - GO111MODULE=on
     main: cmd/kots/main.go
     ldflags: -s -w
-      -X github.com/replicatedhq/kots/pkg/version.version={{.Version}}
-      -X github.com/replicatedhq/kots/pkg/version.gitSHA={{.FullCommit}}
-      -X github.com/replicatedhq/kots/pkg/version.buildTime={{.Date}}
+      -X github.com/replicatedhq/kots/pkg/buildversion.version={{.Version}}
+      -X github.com/replicatedhq/kots/pkg/buildversion.gitSHA={{.FullCommit}}
+      -X github.com/replicatedhq/kots/pkg/buildversion.buildTime={{.Date}}
     flags: -tags netgo -tags containers_image_ostree_stub -tags exclude_graphdriver_devicemapper -tags exclude_graphdriver_btrfs -tags containers_image_openpgp -installsuffix netgo
     binary: kots
     hooks: {}

@@ -13,8 +13,8 @@ import (
 	"github.com/containers/image/v5/types"
 	"github.com/docker/distribution/registry/client/auth/challenge"
 	"github.com/pkg/errors"
+	"github.com/replicatedhq/kots/pkg/buildversion"
 	"github.com/replicatedhq/kots/pkg/logger"
-	"github.com/replicatedhq/kots/pkg/version"
 )
 
 var (
@@ -98,7 +98,7 @@ func TestPushAccess(endpoint, username, password, org string) error {
 		return errors.Wrap(err, "failed to create auth request")
 	}
 
-	req.Header.Add("User-Agent", fmt.Sprintf("KOTS/%s", version.Version()))
+	req.Header.Add("User-Agent", fmt.Sprintf("KOTS/%s", buildversion.Version()))
 	req.Header.Set("Authorization", fmt.Sprintf("Basic %s", basicAuthToken))
 
 	resp, err = insecureClient.Do(req)
@@ -119,21 +119,21 @@ func TestPushAccess(endpoint, username, password, org string) error {
 	bearerToken, err := newBearerTokenFromJSONBlob(authBody)
 	if err != nil {
 		// not a fatal error - some registries don't return JWTs
-		logger.NewLogger().Info("failed to parse registry auth bearer token, continuing anyways: %s", err.Error())
+		logger.NewCLILogger().Info("failed to parse registry auth bearer token, continuing anyways: %s", err.Error())
 		return nil
 	}
 
 	jwtToken, err := bearerToken.getJwtToken()
 	if err != nil {
 		// not a fatal error - some registries don't return JWTs
-		logger.NewLogger().Info("failed to parse registry auth jwt, continuing anyways: %s", err.Error())
+		logger.NewCLILogger().Info("failed to parse registry auth jwt, continuing anyways: %s", err.Error())
 		return nil
 	}
 
 	claims, err := getJwtTokenClaims(jwtToken)
 	if err != nil {
 		// not a fatal error - some registries don't return JWTs
-		logger.NewLogger().Info("failed to find registry auth claims in jwt, continuing anyways: %s", err.Error())
+		logger.NewCLILogger().Info("failed to find registry auth claims in jwt, continuing anyways: %s", err.Error())
 		return nil
 	}
 

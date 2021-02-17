@@ -211,7 +211,7 @@ func renderReplicated(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (
 	return &base, nil
 }
 
-func upstreamFileToBaseFile(upstreamFile types.UpstreamFile, builder template.Builder, log *logger.Logger) (BaseFile, error) {
+func upstreamFileToBaseFile(upstreamFile types.UpstreamFile, builder template.Builder, log *logger.CLILogger) (BaseFile, error) {
 	rendered, err := builder.RenderTemplate(upstreamFile.Path, string(upstreamFile.Content))
 	if err != nil {
 		log.Error(errors.Errorf("Failed to render file %s. Contents are %s", upstreamFile.Path, upstreamFile.Content))
@@ -224,7 +224,7 @@ func upstreamFileToBaseFile(upstreamFile types.UpstreamFile, builder template.Bu
 	}, nil
 }
 
-func findAllKotsHelmCharts(upstreamFiles []upstreamtypes.UpstreamFile, builder template.Builder, log *logger.Logger) ([]*kotsv1beta1.HelmChart, error) {
+func findAllKotsHelmCharts(upstreamFiles []upstreamtypes.UpstreamFile, builder template.Builder, log *logger.CLILogger) ([]*kotsv1beta1.HelmChart, error) {
 	kotsHelmCharts := []*kotsv1beta1.HelmChart{}
 	for _, upstreamFile := range upstreamFiles {
 		if !isHelmChartKind(upstreamFile.Content) {
@@ -247,7 +247,7 @@ func findAllKotsHelmCharts(upstreamFiles []upstreamtypes.UpstreamFile, builder t
 	return kotsHelmCharts, nil
 }
 
-func UnmarshalLicenseContent(content []byte, log *logger.Logger) *kotsv1beta1.License {
+func UnmarshalLicenseContent(content []byte, log *logger.CLILogger) *kotsv1beta1.License {
 	decode := scheme.Codecs.UniversalDeserializer().Decode
 	obj, gvk, err := decode(content, nil, nil)
 	if err != nil {
@@ -317,7 +317,7 @@ func isHelmChartKind(content []byte) bool {
 	return false
 }
 
-func tryGetConfigFromFileContent(content []byte, log *logger.Logger) *kotsv1beta1.Config {
+func tryGetConfigFromFileContent(content []byte, log *logger.CLILogger) *kotsv1beta1.Config {
 	decode := scheme.Codecs.UniversalDeserializer().Decode
 	obj, gvk, err := decode(content, nil, nil)
 	if err != nil {
@@ -332,7 +332,7 @@ func tryGetConfigFromFileContent(content []byte, log *logger.Logger) *kotsv1beta
 	return nil
 }
 
-func findConfigAndLicense(u *upstreamtypes.Upstream, log *logger.Logger) (*kotsv1beta1.Config, *kotsv1beta1.ConfigValues, *kotsv1beta1.IdentityConfig, *kotsv1beta1.License, error) {
+func findConfigAndLicense(u *upstreamtypes.Upstream, log *logger.CLILogger) (*kotsv1beta1.Config, *kotsv1beta1.ConfigValues, *kotsv1beta1.IdentityConfig, *kotsv1beta1.License, error) {
 	var config *kotsv1beta1.Config
 	var values *kotsv1beta1.ConfigValues
 	var identityConfig *kotsv1beta1.IdentityConfig

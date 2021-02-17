@@ -99,7 +99,7 @@ func UpstreamUpgradeCmd() *cobra.Command {
 				}
 			}
 
-			log := logger.NewLogger()
+			log := logger.NewCLILogger()
 			if airgapPath == "" {
 				log.ActionWithSpinner("Checking for application updates")
 			} else {

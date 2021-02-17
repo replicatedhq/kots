@@ -9,8 +9,8 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
 	usertypes "github.com/replicatedhq/kots/kotsadm/pkg/user/types"
+	"github.com/replicatedhq/kots/pkg/logger"
 	"golang.org/x/crypto/bcrypt"
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"

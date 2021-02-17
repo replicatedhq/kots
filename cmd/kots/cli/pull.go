@@ -79,7 +79,7 @@ func PullCmd() *cobra.Command {
 				return err
 			}
 
-			log := logger.NewLogger()
+			log := logger.NewCLILogger()
 			log.Initialize()
 			log.Info("Kubernetes application files created in %s", renderDir)
 			if len(v.GetStringSlice("downstream")) == 0 {

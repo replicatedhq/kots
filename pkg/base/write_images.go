@@ -18,7 +18,7 @@ type WriteUpstreamImageOptions struct {
 	DestRegistry   registry.RegistryOptions
 	DryRun         bool
 	IsAirgap       bool
-	Log            *logger.Logger
+	Log            *logger.CLILogger
 	ReportWriter   io.Writer
 	Installation   *kotsv1beta1.Installation
 	Application    *kotsv1beta1.Application

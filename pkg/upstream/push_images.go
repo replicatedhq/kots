@@ -20,7 +20,7 @@ type ProcessUpstreamImagesOptions struct {
 	CreateAppDir        bool
 	SkipImagePush       bool
 	KnownImages         []kustomizetypes.Image
-	Log                 *logger.Logger
+	Log                 *logger.CLILogger
 	ReplicatedRegistry  registry.RegistryOptions
 	ReportWriter        io.Writer
 	DestinationRegistry registry.RegistryOptions

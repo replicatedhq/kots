@@ -8,11 +8,11 @@ import (
 
 	"github.com/pkg/errors"
 	gitopstypes "github.com/replicatedhq/kots/kotsadm/pkg/gitops/types"
-	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
 	"github.com/replicatedhq/kots/kotsadm/pkg/persistence"
 	rendertypes "github.com/replicatedhq/kots/kotsadm/pkg/render/types"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	"github.com/replicatedhq/kots/kotskinds/client/kotsclientset/scheme"
+	"github.com/replicatedhq/kots/pkg/logger"
 	serializer "k8s.io/apimachinery/pkg/runtime/serializer/json"
 )
 

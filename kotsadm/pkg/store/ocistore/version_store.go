@@ -21,12 +21,12 @@ import (
 	apptypes "github.com/replicatedhq/kots/kotsadm/pkg/app/types"
 	kotsconfig "github.com/replicatedhq/kots/kotsadm/pkg/config"
 	gitopstypes "github.com/replicatedhq/kots/kotsadm/pkg/gitops/types"
-	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
 	rendertypes "github.com/replicatedhq/kots/kotsadm/pkg/render/types"
 	"github.com/replicatedhq/kots/kotsadm/pkg/secrets"
 	versiontypes "github.com/replicatedhq/kots/pkg/api/version/types"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/kustomize"
+	"github.com/replicatedhq/kots/pkg/logger"
 	"go.uber.org/zap"
 )
 

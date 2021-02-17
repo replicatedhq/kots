@@ -46,7 +46,7 @@ func IdentityServiceInstallCmd() *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			v := viper.GetViper()
 
-			log := logger.NewLogger()
+			log := logger.NewCLILogger()
 
 			clientset, err := k8sutil.GetClientset(kubernetesConfigFlags)
 			if err != nil {
@@ -113,7 +113,7 @@ func IdentityServiceConfigureCmd() *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			v := viper.GetViper()
 
-			log := logger.NewLogger()
+			log := logger.NewCLILogger()
 
 			clientset, err := k8sutil.GetClientset(kubernetesConfigFlags)
 			if err != nil {
@@ -172,7 +172,7 @@ func IdentityServiceUninstallCmd() *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			v := viper.GetViper()
 
-			log := logger.NewLogger()
+			log := logger.NewCLILogger()
 
 			clientset, err := k8sutil.GetClientset(kubernetesConfigFlags)
 			if err != nil {
@@ -228,7 +228,7 @@ func IdentityServiceEnableSharedPasswordCmd() *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			v := viper.GetViper()
 
-			log := logger.NewLogger()
+			log := logger.NewCLILogger()
 
 			namespace := v.GetString("namespace")
 			if err := validateNamespace(namespace); err != nil {
@@ -288,7 +288,7 @@ func IdentityServiceOIDCCallbackURLCmd() *cobra.Command {
 	return cmd
 }
 
-func identityServiceDeploy(ctx context.Context, log *logger.Logger, clientset kubernetes.Interface, namespace string, identityConfig kotsv1beta1.IdentityConfig, ingressConfig kotsv1beta1.IngressConfig, registryConfig *kotsadmtypes.KotsadmOptions, proxyEnv map[string]string, applyAppBranding bool) error {
+func identityServiceDeploy(ctx context.Context, log *logger.CLILogger, clientset kubernetes.Interface, namespace string, identityConfig kotsv1beta1.IdentityConfig, ingressConfig kotsv1beta1.IngressConfig, registryConfig *kotsadmtypes.KotsadmOptions, proxyEnv map[string]string, applyAppBranding bool) error {
 	log.ChildActionWithSpinner("Deploying the Identity Service")
 
 	identityConfig.Spec.Enabled = true
@@ -317,7 +317,7 @@ func identityServiceDeploy(ctx context.Context, log *logger.Logger, clientset ku
 	return nil
 }
 
-func identityServiceConfigure(ctx context.Context, log *logger.Logger, clientset kubernetes.Interface, namespace string, identityConfig kotsv1beta1.IdentityConfig, ingressConfig kotsv1beta1.IngressConfig, proxyEnv map[string]string, applyAppBranding bool) error {
+func identityServiceConfigure(ctx context.Context, log *logger.CLILogger, clientset kubernetes.Interface, namespace string, identityConfig kotsv1beta1.IdentityConfig, ingressConfig kotsv1beta1.IngressConfig, proxyEnv map[string]string, applyAppBranding bool) error {
 	log.ChildActionWithSpinner("Configuring the Identity Service")
 
 	identityConfig.Spec.Enabled = true

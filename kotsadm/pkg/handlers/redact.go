@@ -6,9 +6,9 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
-	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
 	"github.com/replicatedhq/kots/kotsadm/pkg/redact"
 	redacttypes "github.com/replicatedhq/kots/kotsadm/pkg/redact/types"
+	"github.com/replicatedhq/kots/pkg/logger"
 )
 
 type UpdateRedactRequest struct {

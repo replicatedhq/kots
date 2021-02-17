@@ -4,9 +4,9 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
 	"github.com/replicatedhq/kots/kotsadm/pkg/snapshot"
 	"github.com/replicatedhq/kots/kotsadm/pkg/store"
+	"github.com/replicatedhq/kots/pkg/logger"
 )
 
 type PingResponse struct {

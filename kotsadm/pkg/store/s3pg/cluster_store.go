@@ -7,10 +7,10 @@ import (
 
 	"github.com/gosimple/slug"
 	"github.com/pkg/errors"
-	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
 	"github.com/replicatedhq/kots/kotsadm/pkg/persistence"
 	"github.com/replicatedhq/kots/kotsadm/pkg/rand"
 	downstreamtypes "github.com/replicatedhq/kots/pkg/api/downstream/types"
+	"github.com/replicatedhq/kots/pkg/logger"
 	"go.uber.org/zap"
 )
 

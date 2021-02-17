@@ -46,7 +46,7 @@ func DownloadCmd() *cobra.Command {
 				return errors.Cause(err)
 			}
 
-			log := logger.NewLogger()
+			log := logger.NewCLILogger()
 			log.ActionWithoutSpinner("")
 			log.Info("The application manifests have been downloaded and saved in %s\n\nAfter editing these files, you can upload a new version using", downloadPath)
 			log.Info("  kubectl kots upload --namespace %s --slug %s %s", v.GetString("namespace"), appSlug, downloadPath)

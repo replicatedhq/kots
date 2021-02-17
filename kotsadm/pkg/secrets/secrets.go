@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 
 	"github.com/pkg/errors"
-	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
+	"github.com/replicatedhq/kots/pkg/logger"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/scheme"

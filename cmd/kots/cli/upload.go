@@ -29,7 +29,7 @@ func UploadCmd() *cobra.Command {
 				os.Exit(1)
 			}
 
-			log := logger.NewLogger()
+			log := logger.NewCLILogger()
 
 			sourceDir := homeDir()
 			if len(args) > 0 {

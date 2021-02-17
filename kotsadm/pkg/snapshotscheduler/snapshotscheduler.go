@@ -7,11 +7,11 @@ import (
 
 	"github.com/pkg/errors"
 	apptypes "github.com/replicatedhq/kots/kotsadm/pkg/app/types"
-	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
 	"github.com/replicatedhq/kots/kotsadm/pkg/snapshot"
 	"github.com/replicatedhq/kots/kotsadm/pkg/store"
 	downstreamtypes "github.com/replicatedhq/kots/pkg/api/downstream/types"
 	snapshottypes "github.com/replicatedhq/kots/pkg/api/snapshot/types"
+	"github.com/replicatedhq/kots/pkg/logger"
 	"k8s.io/apimachinery/pkg/util/rand"
 
 	cron "github.com/robfig/cron/v3"

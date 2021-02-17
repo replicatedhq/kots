@@ -1,4 +1,4 @@
-package version
+package buildversion
 
 // NOTE: these variables are injected at build time
 

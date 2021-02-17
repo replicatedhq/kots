@@ -11,7 +11,6 @@ import (
 	kotsadmconfig "github.com/replicatedhq/kots/kotsadm/pkg/config"
 	"github.com/replicatedhq/kots/kotsadm/pkg/downstream"
 	"github.com/replicatedhq/kots/kotsadm/pkg/identity"
-	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
 	"github.com/replicatedhq/kots/kotsadm/pkg/online/types"
 	"github.com/replicatedhq/kots/kotsadm/pkg/preflight"
 	"github.com/replicatedhq/kots/kotsadm/pkg/store"
@@ -21,6 +20,7 @@ import (
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	"github.com/replicatedhq/kots/pkg/crypto"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
+	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/pull"
 	"go.uber.org/zap"
 )

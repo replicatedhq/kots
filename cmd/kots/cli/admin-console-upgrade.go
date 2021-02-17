@@ -70,7 +70,7 @@ func AdminConsoleUpgradeCmd() *cobra.Command {
 
 			upgradeOptions.Timeout = timeout
 
-			log := logger.NewLogger()
+			log := logger.NewCLILogger()
 
 			if upgradeOptions.Namespace != "default" {
 				log.ActionWithoutSpinner("Upgrading Admin Console")

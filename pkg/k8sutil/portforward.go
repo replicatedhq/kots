@@ -42,7 +42,7 @@ func IsPortAvailable(port int) bool {
 // if localport is set, it will attempt to use that port locally.
 // always check the port number returned though, because a port conflict
 // could cause a different port to be used
-func PortForward(kubernetesConfigFlags *genericclioptions.ConfigFlags, localPort int, remotePort int, namespace string, podName string, pollForAdditionalPorts bool, stopCh <-chan struct{}, log *logger.Logger) (int, <-chan error, error) {
+func PortForward(kubernetesConfigFlags *genericclioptions.ConfigFlags, localPort int, remotePort int, namespace string, podName string, pollForAdditionalPorts bool, stopCh <-chan struct{}, log *logger.CLILogger) (int, <-chan error, error) {
 	if localPort == 0 {
 		freePort, err := freeport.GetFreePort()
 		if err != nil {

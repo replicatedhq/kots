@@ -3,8 +3,8 @@ package handlers
 import (
 	"net/http"
 
-	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
 	"github.com/replicatedhq/kots/kotsadm/pkg/store"
+	"github.com/replicatedhq/kots/pkg/logger"
 )
 
 type GetUpdateDownloadStatusResponse struct {

@@ -3,10 +3,10 @@ package handlers
 import (
 	"net/http"
 
-	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
 	"github.com/replicatedhq/kots/kotsadm/pkg/store"
 	"github.com/replicatedhq/kots/kotsadm/pkg/version"
 	versiontypes "github.com/replicatedhq/kots/pkg/api/version/types"
+	"github.com/replicatedhq/kots/pkg/logger"
 )
 
 type GetApplicationPortsResponse struct {

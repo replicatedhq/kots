@@ -6,7 +6,7 @@ import (
 	"os"
 
 	"github.com/replicatedhq/kots/kotsadm/pkg/license"
-	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
+	"github.com/replicatedhq/kots/pkg/logger"
 )
 
 const (

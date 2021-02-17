@@ -7,7 +7,7 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
-	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
+	"github.com/replicatedhq/kots/pkg/logger"
 )
 
 func StartServer() {

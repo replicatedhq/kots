@@ -9,8 +9,8 @@ import (
 
 	units "github.com/docker/go-units"
 	"github.com/pkg/errors"
-	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/api/snapshot/types"
+	"github.com/replicatedhq/kots/pkg/logger"
 	velerov1 "github.com/vmware-tanzu/velero/pkg/apis/velero/v1"
 	veleroclientv1 "github.com/vmware-tanzu/velero/pkg/generated/clientset/versioned/typed/velero/v1"
 	velerolabel "github.com/vmware-tanzu/velero/pkg/label"

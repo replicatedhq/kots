@@ -5,7 +5,7 @@ import (
 
 	"github.com/replicatedhq/kots/kotsadm/pkg/k8s"
 	"github.com/replicatedhq/kots/kotsadm/pkg/kurl"
-	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
+	"github.com/replicatedhq/kots/pkg/logger"
 )
 
 func (h *Handler) GetKurlNodes(w http.ResponseWriter, r *http.Request) {

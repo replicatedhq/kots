@@ -10,7 +10,7 @@ import (
 
 type PushImagesOptions struct {
 	Registry       registry.RegistryOptions
-	Log            *logger.Logger
+	Log            *logger.CLILogger
 	ProgressWriter io.Writer
 	LogForUI       bool
 }

@@ -40,7 +40,7 @@ func RemoveCmd() *cobra.Command {
 			fmt.Print(cursor.Hide())
 			defer fmt.Print(cursor.Show())
 
-			log := logger.NewLogger()
+			log := logger.NewCLILogger()
 			appSlug := args[0]
 			namespace := v.GetString("namespace")
 

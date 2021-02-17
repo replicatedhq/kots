@@ -27,7 +27,7 @@ import (
 	sprig "github.com/Masterminds/sprig/v3"
 	units "github.com/docker/go-units"
 	"github.com/pkg/errors"
-	"github.com/replicatedhq/kots/pkg/version"
+	"github.com/replicatedhq/kots/pkg/buildversion"
 	analyze "github.com/replicatedhq/troubleshoot/pkg/analyze"
 	"gopkg.in/yaml.v2"
 	corev1 "k8s.io/api/core/v1"
@@ -596,5 +596,5 @@ func (ctx StaticCtx) noProxy() string {
 }
 
 func (ctx StaticCtx) kotsVersion() string {
-	return strings.TrimPrefix(version.Version(), "v")
+	return strings.TrimPrefix(buildversion.Version(), "v")
 }

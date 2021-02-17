@@ -1,229 +1,67 @@
 package logger
 
 import (
-	"fmt"
 	"os"
-	"time"
 
-	"github.com/fatih/color"
-	"github.com/mattn/go-isatty"
-	"github.com/tj/go-spin"
+	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 )
 
-type Logger struct {
-	spinnerStopCh chan bool
-	spinnerMsg    string
-	spinnerArgs   []interface{}
-	isSilent      bool
-	isVerbose     bool
+var log *zap.Logger
+var atom zap.AtomicLevel
+
+func init() {
+	atom = zap.NewAtomicLevel()
+	atom.SetLevel(zapcore.InfoLevel)
+
+	encoderCfg := zap.NewProductionEncoderConfig()
+
+	l := zap.New(zapcore.NewCore(
+		zapcore.NewJSONEncoder(encoderCfg),
+		zapcore.Lock(os.Stdout),
+		atom,
+	))
+	defer l.Sync()
+
+	log = l
 }
 
-func NewLogger() *Logger {
-	return &Logger{}
+func SetDebug() {
+	atom.SetLevel(zapcore.DebugLevel)
 }
 
-func (l *Logger) Silence() {
-	if l == nil {
-		return
-	}
-	l.isSilent = true
+func Error(err error) {
+	defer log.Sync()
+	sugar := log.Sugar()
+	sugar.Error(err)
 }
 
-func (l *Logger) Verbose() {
-	if l == nil {
-		return
-	}
-	l.isVerbose = true
+func Errorf(template string, args ...interface{}) {
+	defer log.Sync()
+	sugar := log.Sugar()
+	sugar.Errorf(template, args...)
 }
 
-func (l *Logger) Initialize() {
-	if l == nil || l.isSilent {
-		return
-	}
-
-	fmt.Println("")
+func Info(msg string, fields ...zap.Field) {
+	defer log.Sync()
+	sugar := log.Sugar()
+	sugar.Info(msg, fields)
 }
 
-func (l *Logger) Finish() {
-	if l == nil || l.isSilent {
-		return
-	}
-
-	fmt.Println("")
+func Infof(template string, args ...interface{}) {
+	defer log.Sync()
+	sugar := log.Sugar()
+	sugar.Infof(template, args...)
 }
 
-func (l *Logger) Debug(msg string, args ...interface{}) {
-	if l == nil || l.isSilent || !l.isVerbose {
-		return
-	}
-
-	fmt.Printf("    ")
-	fmt.Println(fmt.Sprintf(msg, args...))
-	fmt.Println("")
+func Debug(msg string, fields ...zap.Field) {
+	defer log.Sync()
+	sugar := log.Sugar()
+	sugar.Debug(msg, fields)
 }
 
-func (l *Logger) Info(msg string, args ...interface{}) {
-	if l == nil || l.isSilent {
-		return
-	}
-
-	fmt.Printf("    ")
-	fmt.Println(fmt.Sprintf(msg, args...))
-	fmt.Println("")
-}
-
-func (l *Logger) ActionWithoutSpinner(msg string, args ...interface{}) {
-	if l == nil || l.isSilent {
-		return
-	}
-
-	if msg == "" {
-		fmt.Println("")
-		return
-	}
-
-	fmt.Printf("  • ")
-	fmt.Println(fmt.Sprintf(msg, args...))
-}
-
-func (l *Logger) ChildActionWithoutSpinner(msg string, args ...interface{}) {
-	if l == nil || l.isSilent {
-		return
-	}
-
-	fmt.Printf("    • ")
-	fmt.Println(fmt.Sprintf(msg, args...))
-}
-
-func (l *Logger) ActionWithSpinner(msg string, args ...interface{}) {
-	if l == nil || l.isSilent {
-		return
-	}
-
-	fmt.Printf("  • ")
-	fmt.Printf(msg, args...)
-
-	if isatty.IsTerminal(os.Stdout.Fd()) {
-		s := spin.New()
-
-		fmt.Printf(" %s", s.Next())
-
-		l.spinnerStopCh = make(chan bool)
-		l.spinnerMsg = msg
-		l.spinnerArgs = args
-
-		go func() {
-			for {
-				select {
-				case <-l.spinnerStopCh:
-					return
-				case <-time.After(time.Millisecond * 100):
-					fmt.Printf("\r")
-					fmt.Printf("  • ")
-					fmt.Printf(msg, args...)
-					fmt.Printf(" %s", s.Next())
-				}
-			}
-		}()
-	}
-}
-
-func (l *Logger) ChildActionWithSpinner(msg string, args ...interface{}) {
-	if l == nil || l.isSilent {
-		return
-	}
-
-	fmt.Printf("    • ")
-	fmt.Printf(msg, args...)
-
-	if isatty.IsTerminal(os.Stdout.Fd()) {
-		s := spin.New()
-
-		fmt.Printf(" %s", s.Next())
-
-		l.spinnerStopCh = make(chan bool)
-		l.spinnerMsg = msg
-		l.spinnerArgs = args
-
-		go func() {
-			for {
-				select {
-				case <-l.spinnerStopCh:
-					return
-				case <-time.After(time.Millisecond * 100):
-					fmt.Printf("\r")
-					fmt.Printf("    • ")
-					fmt.Printf(msg, args...)
-					fmt.Printf(" %s", s.Next())
-				}
-			}
-		}()
-	}
-}
-
-func (l *Logger) FinishChildSpinner() {
-	if l == nil || l.isSilent {
-		return
-	}
-
-	green := color.New(color.FgHiGreen)
-
-	fmt.Printf("\r")
-	fmt.Printf("    • ")
-	fmt.Printf(l.spinnerMsg, l.spinnerArgs...)
-	green.Printf(" ✓")
-	fmt.Printf("  \n")
-
-	if isatty.IsTerminal(os.Stdout.Fd()) {
-		l.spinnerStopCh <- true
-		close(l.spinnerStopCh)
-	}
-}
-
-func (l *Logger) FinishSpinner() {
-	if l == nil || l.isSilent {
-		return
-	}
-
-	green := color.New(color.FgHiGreen)
-
-	fmt.Printf("\r")
-	fmt.Printf("  • ")
-	fmt.Printf(l.spinnerMsg, l.spinnerArgs...)
-	green.Printf(" ✓")
-	fmt.Printf("  \n")
-
-	if isatty.IsTerminal(os.Stdout.Fd()) {
-		l.spinnerStopCh <- true
-		close(l.spinnerStopCh)
-	}
-}
-
-func (l *Logger) FinishSpinnerWithError() {
-	if l == nil || l.isSilent {
-		return
-	}
-
-	red := color.New(color.FgHiRed)
-
-	fmt.Printf("\r")
-	fmt.Printf("  • ")
-	fmt.Printf(l.spinnerMsg, l.spinnerArgs...)
-	red.Printf(" ✗")
-	fmt.Printf("  \n")
-
-	if isatty.IsTerminal(os.Stdout.Fd()) {
-		l.spinnerStopCh <- true
-		close(l.spinnerStopCh)
-	}
-}
-
-func (l *Logger) Error(err error) {
-	if l == nil || l.isSilent {
-		return
-	}
-
-	c := color.New(color.FgHiRed)
-	c.Printf("  • ")
-	c.Println(fmt.Sprintf("%#v", err))
+func Debugf(template string, args ...interface{}) {
+	defer log.Sync()
+	sugar := log.Sugar()
+	sugar.Debugf(template, args...)
 }

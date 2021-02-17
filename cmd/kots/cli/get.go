@@ -97,7 +97,7 @@ func getRestoresCmd(cmd *cobra.Command, args []string) error {
 func getAppsCmd(cmd *cobra.Command, args []string) error {
 	v := viper.GetViper()
 
-	log := logger.NewLogger()
+	log := logger.NewCLILogger()
 
 	stopCh := make(chan struct{})
 	defer close(stopCh)

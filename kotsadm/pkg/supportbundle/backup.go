@@ -9,9 +9,9 @@ import (
 
 	"github.com/mholt/archiver"
 	"github.com/pkg/errors"
-	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
 	"github.com/replicatedhq/kots/kotsadm/pkg/redact"
 	"github.com/replicatedhq/kots/kotsadm/pkg/store"
+	"github.com/replicatedhq/kots/pkg/logger"
 	troubleshootanalyze "github.com/replicatedhq/troubleshoot/pkg/analyze"
 	troubleshootv1beta2 "github.com/replicatedhq/troubleshoot/pkg/apis/troubleshoot/v1beta2"
 	troubleshootcollect "github.com/replicatedhq/troubleshoot/pkg/collect"

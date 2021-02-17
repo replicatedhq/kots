@@ -14,8 +14,8 @@ import (
 	"github.com/deislabs/oras/pkg/oras"
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/pkg/errors"
-	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
 	supportbundletypes "github.com/replicatedhq/kots/kotsadm/pkg/supportbundle/types"
+	"github.com/replicatedhq/kots/pkg/logger"
 	troubleshootredact "github.com/replicatedhq/troubleshoot/pkg/redact"
 	"go.uber.org/zap"
 )

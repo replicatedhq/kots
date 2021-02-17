@@ -13,7 +13,6 @@ import (
 	oidc "github.com/coreos/go-oidc"
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/kotsadm/pkg/k8s"
-	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
 	"github.com/replicatedhq/kots/kotsadm/pkg/session"
 	"github.com/replicatedhq/kots/kotsadm/pkg/store"
 	"github.com/replicatedhq/kots/kotsadm/pkg/user"
@@ -21,6 +20,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/identity"
 	identityclient "github.com/replicatedhq/kots/pkg/identity/client"
 	ingress "github.com/replicatedhq/kots/pkg/ingress"
+	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/segmentio/ksuid"
 	"golang.org/x/oauth2"
 )

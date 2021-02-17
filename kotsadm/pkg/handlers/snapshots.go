@@ -11,10 +11,10 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/kotsadm/pkg/kurl"
-	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
 	"github.com/replicatedhq/kots/kotsadm/pkg/snapshot"
 	"github.com/replicatedhq/kots/kotsadm/pkg/store"
 	snapshottypes "github.com/replicatedhq/kots/pkg/api/snapshot/types"
+	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/robfig/cron"
 	"k8s.io/apimachinery/pkg/util/rand"
 )

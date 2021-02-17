@@ -6,8 +6,8 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
-	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
 	"github.com/replicatedhq/kots/kotsadm/pkg/snapshot"
+	"github.com/replicatedhq/kots/pkg/logger"
 	velerov1 "github.com/vmware-tanzu/velero/pkg/apis/velero/v1"
 )
 

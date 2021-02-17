@@ -11,13 +11,13 @@ import (
 	"github.com/docker/distribution/registry/api/errcode"
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
-	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
 	"github.com/replicatedhq/kots/kotsadm/pkg/preflight"
 	"github.com/replicatedhq/kots/kotsadm/pkg/registry"
 	registrytypes "github.com/replicatedhq/kots/kotsadm/pkg/registry/types"
 	"github.com/replicatedhq/kots/kotsadm/pkg/store"
 	"github.com/replicatedhq/kots/kotsadm/pkg/version"
 	dockerregistry "github.com/replicatedhq/kots/pkg/docker/registry"
+	"github.com/replicatedhq/kots/pkg/logger"
 )
 
 type UpdateAppRegistryRequest struct {

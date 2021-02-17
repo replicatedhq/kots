@@ -48,7 +48,7 @@ type ImageInfo struct {
 	IsPrivate bool
 }
 
-func CopyImages(srcRegistry, destRegistry registry.RegistryOptions, appSlug string, log *logger.Logger, reportWriter io.Writer, upstreamDir string, additionalImages []string, dryRun, allImagesPrivate bool, checkedImages map[string]ImageInfo) ([]kustomizeimage.Image, error) {
+func CopyImages(srcRegistry, destRegistry registry.RegistryOptions, appSlug string, log *logger.CLILogger, reportWriter io.Writer, upstreamDir string, additionalImages []string, dryRun, allImagesPrivate bool, checkedImages map[string]ImageInfo) ([]kustomizeimage.Image, error) {
 	newImages := []kustomizeimage.Image{}
 
 	err := filepath.Walk(upstreamDir,
@@ -197,7 +197,7 @@ func GetObjectsWithImages(upstreamDir string) ([]k8sdoc.K8sDoc, error) {
 	return objects, nil
 }
 
-func copyImageBetweenRegistries(srcRegistry, destRegistry registry.RegistryOptions, appSlug string, log *logger.Logger, reportWriter io.Writer, imageName string, dryRun, allImagesPrivate bool, checkedImages map[string]ImageInfo) ([]kustomizeimage.Image, error) {
+func copyImageBetweenRegistries(srcRegistry, destRegistry registry.RegistryOptions, appSlug string, log *logger.CLILogger, reportWriter io.Writer, imageName string, dryRun, allImagesPrivate bool, checkedImages map[string]ImageInfo) ([]kustomizeimage.Image, error) {
 	newImage, err := copyOneImage(srcRegistry, destRegistry, imageName, appSlug, reportWriter, log, dryRun, allImagesPrivate, checkedImages)
 	if err != nil {
 		log.FinishChildSpinner()
@@ -207,7 +207,7 @@ func copyImageBetweenRegistries(srcRegistry, destRegistry registry.RegistryOptio
 	return newImage, nil
 }
 
-func copyImagesInFileBetweenRegistries(srcRegistry, destRegistry registry.RegistryOptions, appSlug string, log *logger.Logger, reportWriter io.Writer, fileData []byte, dryRun, allImagesPrivate bool, checkedImages map[string]ImageInfo, alreadyPushedImagesFromOtherFiles []kustomizeimage.Image) ([]kustomizeimage.Image, error) {
+func copyImagesInFileBetweenRegistries(srcRegistry, destRegistry registry.RegistryOptions, appSlug string, log *logger.CLILogger, reportWriter io.Writer, fileData []byte, dryRun, allImagesPrivate bool, checkedImages map[string]ImageInfo, alreadyPushedImagesFromOtherFiles []kustomizeimage.Image) ([]kustomizeimage.Image, error) {
 	savedImages := make(map[string]bool)
 	newImages := []kustomizeimage.Image{}
 
@@ -262,7 +262,7 @@ func listImagesInFile(contents []byte, handler processImagesFunc) error {
 	return nil
 }
 
-func copyOneImage(srcRegistry, destRegistry registry.RegistryOptions, image string, appSlug string, reportWriter io.Writer, log *logger.Logger, dryRun, allImagesPrivate bool, checkedImages map[string]ImageInfo) ([]kustomizeimage.Image, error) {
+func copyOneImage(srcRegistry, destRegistry registry.RegistryOptions, image string, appSlug string, reportWriter io.Writer, log *logger.CLILogger, dryRun, allImagesPrivate bool, checkedImages map[string]ImageInfo) ([]kustomizeimage.Image, error) {
 	policy, err := signature.NewPolicyFromBytes(imagePolicy)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to read default policy")

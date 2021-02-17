@@ -11,9 +11,9 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/marccampbell/yaml-toolbox/pkg/splitter"
-	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
 	"github.com/replicatedhq/kots/kotsadm/pkg/store"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
+	"github.com/replicatedhq/kots/pkg/logger"
 )
 
 type GetAppRenderedContentsResponse struct {

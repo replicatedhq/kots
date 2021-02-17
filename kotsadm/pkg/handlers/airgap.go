@@ -15,9 +15,9 @@ import (
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/kotsadm/pkg/airgap"
 	"github.com/replicatedhq/kots/kotsadm/pkg/automation"
-	"github.com/replicatedhq/kots/kotsadm/pkg/logger"
 	"github.com/replicatedhq/kots/kotsadm/pkg/store"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
+	"github.com/replicatedhq/kots/pkg/logger"
 )
 
 type CreateAppFromAirgapRequest struct {
