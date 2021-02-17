@@ -39,7 +39,7 @@ func (h *Handler) CreateApplicationBackup(w http.ResponseWriter, r *http.Request
 
 	foundApp, err := store.GetStore().GetAppFromSlug(mux.Vars(r)["appSlug"])
 	if err != nil {
-		logger.Error(err)
+		logger.Error(errors.Wrap(err, "failed to get app from slug"))
 		createApplicationBackupResponse.Error = "failed to get app from app slug"
 		JSON(w, http.StatusInternalServerError, createApplicationBackupResponse)
 		return
@@ -47,7 +47,7 @@ func (h *Handler) CreateApplicationBackup(w http.ResponseWriter, r *http.Request
 
 	_, err = snapshot.CreateApplicationBackup(r.Context(), foundApp, false)
 	if err != nil {
-		logger.Error(err)
+		logger.Error(errors.Wrap(err, "failed to create application snapshot"))
 		createApplicationBackupResponse.Error = "failed to create backup"
 		JSON(w, http.StatusInternalServerError, createApplicationBackupResponse)
 		return
@@ -183,7 +183,7 @@ func (h *Handler) CreateInstanceBackup(w http.ResponseWriter, r *http.Request) {
 
 	clusters, err := store.GetStore().ListClusters()
 	if err != nil {
-		logger.Error(err)
+		logger.Error(errors.Wrap(err, "failed to list clusters"))
 		createInstanceBackupResponse.Error = "failed to list clusters"
 		JSON(w, http.StatusInternalServerError, createInstanceBackupResponse)
 		return
@@ -198,7 +198,7 @@ func (h *Handler) CreateInstanceBackup(w http.ResponseWriter, r *http.Request) {
 
 	backup, err := snapshot.CreateInstanceBackup(context.TODO(), c, false)
 	if err != nil {
-		logger.Error(err)
+		logger.Error(errors.Wrap(err, "failed to create instance snapshot"))
 		createInstanceBackupResponse.Error = "failed to create instance backup"
 		JSON(w, http.StatusInternalServerError, createInstanceBackupResponse)
 		return
