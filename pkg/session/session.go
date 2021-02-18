@@ -19,7 +19,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
 )
 
-func Parse(kotsStore store.KOTSStore, signedToken string) (*types.Session, error) {
+func Parse(kotsStore store.Store, signedToken string) (*types.Session, error) {
 	if signedToken == "" {
 		return nil, errors.New("missing token")
 	}

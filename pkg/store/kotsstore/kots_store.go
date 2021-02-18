@@ -1,4 +1,4 @@
-package s3pg
+package kotsstore
 
 import (
 	"context"
@@ -19,14 +19,16 @@ import (
 	kotss3 "github.com/replicatedhq/kots/pkg/s3"
 	troubleshootscheme "github.com/replicatedhq/troubleshoot/pkg/client/troubleshootclientset/scheme"
 	veleroscheme "github.com/vmware-tanzu/velero/pkg/generated/clientset/versioned/scheme"
+	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/scheme"
+	"sigs.k8s.io/controller-runtime/pkg/client/config"
 )
 
 var (
 	ErrNotFound = errors.New("not found")
 )
 
-type S3PGStore struct {
+type KOTSStore struct {
 }
 
 func init() {
@@ -35,7 +37,7 @@ func init() {
 	troubleshootscheme.AddToScheme(scheme.Scheme)
 }
 
-func (s S3PGStore) Init() error {
+func (s KOTSStore) Init() error {
 	if strings.HasPrefix(os.Getenv("STORAGE_BASEURI"), "docker://") {
 		return nil
 	}
@@ -71,7 +73,7 @@ func (s S3PGStore) Init() error {
 	return nil
 }
 
-func (s S3PGStore) WaitForReady(ctx context.Context) error {
+func (s KOTSStore) WaitForReady(ctx context.Context) error {
 	errCh := make(chan error, 2)
 
 	go func() {
@@ -169,7 +171,7 @@ func waitForS3(ctx context.Context) error {
 	}
 }
 
-func (s S3PGStore) IsNotFound(err error) bool {
+func (s KOTSStore) IsNotFound(err error) bool {
 	if errors.Cause(err) == sql.ErrNoRows {
 		return true
 	}
@@ -177,4 +179,18 @@ func (s S3PGStore) IsNotFound(err error) bool {
 		return true
 	}
 	return false
+}
+
+func (c KOTSStore) GetClientset() (*kubernetes.Clientset, error) {
+	cfg, err := config.GetConfig()
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get cluster config")
+	}
+
+	clientset, err := kubernetes.NewForConfig(cfg)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to create kubernetes clientset")
+	}
+
+	return clientset, nil
 }

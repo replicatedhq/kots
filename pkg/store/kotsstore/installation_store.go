@@ -1,4 +1,4 @@
-package s3pg
+package kotsstore
 
 import (
 	"database/sql"
@@ -8,7 +8,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/persistence"
 )
 
-func (s S3PGStore) GetPendingInstallationStatus() (*installationtypes.InstallStatus, error) {
+func (s KOTSStore) GetPendingInstallationStatus() (*installationtypes.InstallStatus, error) {
 	db := persistence.MustGetPGSession()
 	query := `SELECT install_state from app ORDER BY created_at DESC LIMIT 1`
 	row := db.QueryRow(query)

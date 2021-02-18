@@ -9,7 +9,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/store"
 )
 
-type VarsGetter func(kotsStore store.KOTSStore, vars map[string]string) (map[string]string, error)
+type VarsGetter func(kotsStore store.Store, vars map[string]string) (map[string]string, error)
 
 type Policy struct {
 	action           string
@@ -31,7 +31,7 @@ func Must(p *Policy, err error) *Policy {
 	return p
 }
 
-func (p *Policy) execute(r *http.Request, kotsStore store.KOTSStore) (action, resource string, err error) {
+func (p *Policy) execute(r *http.Request, kotsStore store.Store) (action, resource string, err error) {
 	vars := mux.Vars(r)
 	for _, fn := range p.varsGetterFns {
 		additionalVars, err := fn(kotsStore, vars)

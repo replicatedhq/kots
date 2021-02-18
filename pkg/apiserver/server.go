@@ -22,7 +22,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/snapshotscheduler"
 	"github.com/replicatedhq/kots/pkg/socketservice"
 	"github.com/replicatedhq/kots/pkg/store"
-	"github.com/replicatedhq/kots/pkg/store/s3pg"
+	"github.com/replicatedhq/kots/pkg/store/kotsstore"
 	"github.com/replicatedhq/kots/pkg/supportbundle"
 	"github.com/replicatedhq/kots/pkg/updatechecker"
 	"github.com/segmentio/ksuid"
@@ -192,7 +192,7 @@ func generateKotsadmID() error {
 
 	// if the key exists, likely a fresh Install
 	if isKotsadmIDGenerated {
-		exists, err := s3pg.IsKotsadmIDConfigMapPresent()
+		exists, err := kotsstore.IsKotsadmIDConfigMapPresent()
 		if err != nil {
 			return errors.Wrap(err, "config map check error")
 		}
@@ -202,7 +202,7 @@ func generateKotsadmID() error {
 		}
 		//generate guid and use that as clusterId to identify that as a different install
 		clusterID = ksuid.New().String()
-		_, err = s3pg.CreateAdminIDConfigMap(clusterID)
+		_, err = kotsstore.CreateAdminIDConfigMap(clusterID)
 		if err != nil {
 			return errors.Wrap(err, "failed to to create config map")
 		}
@@ -210,7 +210,7 @@ func generateKotsadmID() error {
 
 	// if the key does not exist, likely a Restore or pod restart
 	if !isKotsadmIDGenerated {
-		_, err := s3pg.CreateAdminIDConfigMap(clusterID)
+		_, err := kotsstore.CreateAdminIDConfigMap(clusterID)
 		if err != nil {
 			return errors.Wrap(err, "failed to create admin id")
 		}

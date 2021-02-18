@@ -1,4 +1,4 @@
-package s3pg
+package kotsstore
 
 import (
 	"database/sql"
@@ -17,7 +17,7 @@ import (
 	"go.uber.org/zap"
 )
 
-func (s S3PGStore) AddAppToAllDownstreams(appID string) error {
+func (s KOTSStore) AddAppToAllDownstreams(appID string) error {
 	db := persistence.MustGetPGSession()
 
 	clusters, err := s.ListClusters()
@@ -35,7 +35,7 @@ func (s S3PGStore) AddAppToAllDownstreams(appID string) error {
 	return nil
 }
 
-func (s S3PGStore) SetAppInstallState(appID string, state string) error {
+func (s KOTSStore) SetAppInstallState(appID string, state string) error {
 	db := persistence.MustGetPGSession()
 
 	query := `update app set install_state = $2 where id = $1`
@@ -47,7 +47,7 @@ func (s S3PGStore) SetAppInstallState(appID string, state string) error {
 	return nil
 }
 
-func (s S3PGStore) ListInstalledApps() ([]*apptypes.App, error) {
+func (s KOTSStore) ListInstalledApps() ([]*apptypes.App, error) {
 	db := persistence.MustGetPGSession()
 	query := `select id from app where install_state = 'installed'`
 	rows, err := db.Query(query)
@@ -72,7 +72,7 @@ func (s S3PGStore) ListInstalledApps() ([]*apptypes.App, error) {
 	return apps, nil
 }
 
-func (s S3PGStore) ListInstalledAppSlugs() ([]string, error) {
+func (s KOTSStore) ListInstalledAppSlugs() ([]string, error) {
 	db := persistence.MustGetPGSession()
 	query := `select slug from app where install_state = 'installed'`
 	rows, err := db.Query(query)
@@ -92,7 +92,7 @@ func (s S3PGStore) ListInstalledAppSlugs() ([]string, error) {
 	return appSlugs, nil
 }
 
-func (s S3PGStore) GetAppIDFromSlug(slug string) (string, error) {
+func (s KOTSStore) GetAppIDFromSlug(slug string) (string, error) {
 	db := persistence.MustGetPGSession()
 	query := `select id from app where slug = $1`
 	row := db.QueryRow(query, slug)
@@ -106,7 +106,7 @@ func (s S3PGStore) GetAppIDFromSlug(slug string) (string, error) {
 	return id, nil
 }
 
-func (s S3PGStore) GetApp(id string) (*apptypes.App, error) {
+func (s KOTSStore) GetApp(id string) (*apptypes.App, error) {
 	// too noisy
 	// logger.Debug("getting app from id",
 	// 	zap.String("id", id))
@@ -181,7 +181,7 @@ func (s S3PGStore) GetApp(id string) (*apptypes.App, error) {
 	return &app, nil
 }
 
-func (s S3PGStore) GetAppFromSlug(slug string) (*apptypes.App, error) {
+func (s KOTSStore) GetAppFromSlug(slug string) (*apptypes.App, error) {
 	id, err := s.GetAppIDFromSlug(slug)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get id from slug")
@@ -190,7 +190,7 @@ func (s S3PGStore) GetAppFromSlug(slug string) (*apptypes.App, error) {
 	return s.GetApp(id)
 }
 
-func (s S3PGStore) CreateApp(name string, upstreamURI string, licenseData string, isAirgapEnabled bool, skipImagePush bool) (*apptypes.App, error) {
+func (s KOTSStore) CreateApp(name string, upstreamURI string, licenseData string, isAirgapEnabled bool, skipImagePush bool) (*apptypes.App, error) {
 	logger.Debug("creating app",
 		zap.String("name", name),
 		zap.String("upstreamURI", upstreamURI))
@@ -257,7 +257,7 @@ values ($1, $2, $3, $4, $5, $6, $7, $8, $9)`
 	return s.GetApp(id)
 }
 
-func (s S3PGStore) ListDownstreamsForApp(appID string) ([]downstreamtypes.Downstream, error) {
+func (s KOTSStore) ListDownstreamsForApp(appID string) ([]downstreamtypes.Downstream, error) {
 	db := persistence.MustGetPGSession()
 	query := `select c.id from app_downstream d inner join cluster c on d.cluster_id = c.id where app_id = $1`
 	rows, err := db.Query(query, appID)
@@ -284,7 +284,7 @@ func (s S3PGStore) ListDownstreamsForApp(appID string) ([]downstreamtypes.Downst
 	return downstreams, nil
 }
 
-func (s S3PGStore) ListAppsForDownstream(clusterID string) ([]*apptypes.App, error) {
+func (s KOTSStore) ListAppsForDownstream(clusterID string) ([]*apptypes.App, error) {
 	db := persistence.MustGetPGSession()
 	query := `select ad.app_id from app_downstream ad inner join app a on ad.app_id = a.id where ad.cluster_id = $1 and a.install_state = 'installed'`
 	rows, err := db.Query(query, clusterID)
@@ -309,7 +309,7 @@ func (s S3PGStore) ListAppsForDownstream(clusterID string) ([]*apptypes.App, err
 	return apps, nil
 }
 
-func (s S3PGStore) GetDownstream(clusterID string) (*downstreamtypes.Downstream, error) {
+func (s KOTSStore) GetDownstream(clusterID string) (*downstreamtypes.Downstream, error) {
 	db := persistence.MustGetPGSession()
 	query := `select c.id, c.slug, d.downstream_name, d.current_sequence from app_downstream d inner join cluster c on d.cluster_id = c.id where c.id = $1`
 	row := db.QueryRow(query, clusterID)
@@ -331,7 +331,7 @@ func (s S3PGStore) GetDownstream(clusterID string) (*downstreamtypes.Downstream,
 	return &downstream, nil
 }
 
-func (s S3PGStore) IsGitOpsEnabledForApp(appID string) (bool, error) {
+func (s KOTSStore) IsGitOpsEnabledForApp(appID string) (bool, error) {
 	downstreams, err := s.ListDownstreamsForApp(appID)
 	if err != nil {
 		return false, errors.Wrap(err, "failed to list downstreams")
@@ -350,7 +350,7 @@ func (s S3PGStore) IsGitOpsEnabledForApp(appID string) (bool, error) {
 	return false, nil
 }
 
-func (s S3PGStore) SetUpdateCheckerSpec(appID string, updateCheckerSpec string) error {
+func (s KOTSStore) SetUpdateCheckerSpec(appID string, updateCheckerSpec string) error {
 	logger.Debug("setting update checker spec",
 		zap.String("appID", appID))
 
@@ -364,7 +364,7 @@ func (s S3PGStore) SetUpdateCheckerSpec(appID string, updateCheckerSpec string) 
 	return nil
 }
 
-func (c S3PGStore) SetSnapshotTTL(appID string, snapshotTTL string) error {
+func (s KOTSStore) SetSnapshotTTL(appID string, snapshotTTL string) error {
 	logger.Debug("Setting snapshot TTL",
 		zap.String("appID", appID))
 	db := persistence.MustGetPGSession()
@@ -377,7 +377,7 @@ func (c S3PGStore) SetSnapshotTTL(appID string, snapshotTTL string) error {
 	return nil
 }
 
-func (c S3PGStore) SetSnapshotSchedule(appID string, snapshotSchedule string) error {
+func (s KOTSStore) SetSnapshotSchedule(appID string, snapshotSchedule string) error {
 	logger.Debug("Setting snapshot Schedule",
 		zap.String("appID", appID))
 	db := persistence.MustGetPGSession()
@@ -390,7 +390,7 @@ func (c S3PGStore) SetSnapshotSchedule(appID string, snapshotSchedule string) er
 	return nil
 }
 
-func (c S3PGStore) RemoveApp(appID string) error {
+func (s KOTSStore) RemoveApp(appID string) error {
 	logger.Debug("Removing app",
 		zap.String("appID", appID))
 

@@ -1,4 +1,4 @@
-package s3pg
+package kotsstore
 
 import (
 	"database/sql"
@@ -8,7 +8,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/persistence"
 )
 
-func (s S3PGStore) SetTaskStatus(id string, message string, status string) error {
+func (s KOTSStore) SetTaskStatus(id string, message string, status string) error {
 	db := persistence.MustGetPGSession()
 	query := `insert into api_task_status (id, updated_at, current_message, status) values ($1, $2, $3, $4)
 on conflict(id) do update set current_message = EXCLUDED.current_message, status = EXCLUDED.status`
@@ -21,7 +21,7 @@ on conflict(id) do update set current_message = EXCLUDED.current_message, status
 	return nil
 }
 
-func (s S3PGStore) UpdateTaskStatusTimestamp(id string) error {
+func (s KOTSStore) UpdateTaskStatusTimestamp(id string) error {
 	db := persistence.MustGetPGSession()
 	query := `update api_task_status set updated_at = $1 where id = $2`
 
@@ -33,7 +33,7 @@ func (s S3PGStore) UpdateTaskStatusTimestamp(id string) error {
 	return nil
 }
 
-func (s S3PGStore) ClearTaskStatus(id string) error {
+func (s KOTSStore) ClearTaskStatus(id string) error {
 	db := persistence.MustGetPGSession()
 	query := `delete from api_task_status where id = $1`
 
@@ -45,7 +45,7 @@ func (s S3PGStore) ClearTaskStatus(id string) error {
 	return nil
 }
 
-func (s S3PGStore) GetTaskStatus(id string) (string, string, error) {
+func (s KOTSStore) GetTaskStatus(id string) (string, string, error) {
 	db := persistence.MustGetPGSession()
 	query := `select status, current_message from api_task_status where id = $1 AND updated_at > ($2::timestamp - '10 seconds'::interval)`
 	row := db.QueryRow(query, id, time.Now())

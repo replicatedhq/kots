@@ -1,4 +1,4 @@
-package s3pg
+package kotsstore
 
 import (
 	"database/sql"
@@ -25,7 +25,7 @@ import (
 	"go.uber.org/zap"
 )
 
-func (s S3PGStore) ListSupportBundles(appID string) ([]*supportbundletypes.SupportBundle, error) {
+func (s KOTSStore) ListSupportBundles(appID string) ([]*supportbundletypes.SupportBundle, error) {
 	db := persistence.MustGetPGSession()
 	// DANGER ZONE: changing sort order here affects what support bundle is shown in the analysis view.
 	query := `select id, slug, watch_id, name, size, status, created_at, uploaded_at, is_archived from supportbundle where watch_id = $1 order by created_at desc`
@@ -63,7 +63,7 @@ func (s S3PGStore) ListSupportBundles(appID string) ([]*supportbundletypes.Suppo
 	return supportBundles, nil
 }
 
-func (s S3PGStore) ListPendingSupportBundlesForApp(appID string) ([]*supportbundletypes.PendingSupportBundle, error) {
+func (s KOTSStore) ListPendingSupportBundlesForApp(appID string) ([]*supportbundletypes.PendingSupportBundle, error) {
 	db := persistence.MustGetPGSession()
 	query := `select id, app_id, cluster_id from pending_supportbundle where app_id = $1`
 
@@ -87,7 +87,7 @@ func (s S3PGStore) ListPendingSupportBundlesForApp(appID string) ([]*supportbund
 	return pendingSupportBundles, nil
 }
 
-func (s S3PGStore) GetSupportBundleFromSlug(slug string) (*supportbundletypes.SupportBundle, error) {
+func (s KOTSStore) GetSupportBundleFromSlug(slug string) (*supportbundletypes.SupportBundle, error) {
 	db := persistence.MustGetPGSession()
 	query := `select id from supportbundle where slug = $1`
 	row := db.QueryRow(query, slug)
@@ -103,7 +103,7 @@ func (s S3PGStore) GetSupportBundleFromSlug(slug string) (*supportbundletypes.Su
 	return s.GetSupportBundle(id)
 }
 
-func (s S3PGStore) GetSupportBundle(id string) (*supportbundletypes.SupportBundle, error) {
+func (s KOTSStore) GetSupportBundle(id string) (*supportbundletypes.SupportBundle, error) {
 	db := persistence.MustGetPGSession()
 	query := `select id, slug, watch_id, name, size, status, tree_index, created_at, uploaded_at, is_archived from supportbundle where slug = $1`
 	row := db.QueryRow(query, id)
@@ -131,7 +131,7 @@ func (s S3PGStore) GetSupportBundle(id string) (*supportbundletypes.SupportBundl
 	return supportbundle, nil
 }
 
-func (s S3PGStore) CreatePendingSupportBundle(id string, appID string, clusterID string) error {
+func (s KOTSStore) CreatePendingSupportBundle(id string, appID string, clusterID string) error {
 	db := persistence.MustGetPGSession()
 	query := `insert into pending_supportbundle (id, app_id, cluster_id, created_at) values ($1, $2, $3, $4)`
 
@@ -143,7 +143,7 @@ func (s S3PGStore) CreatePendingSupportBundle(id string, appID string, clusterID
 	return nil
 }
 
-func (s S3PGStore) CreateSupportBundle(id string, appID string, archivePath string, marshalledTree []byte) (*supportbundletypes.SupportBundle, error) {
+func (s KOTSStore) CreateSupportBundle(id string, appID string, archivePath string, marshalledTree []byte) (*supportbundletypes.SupportBundle, error) {
 	fi, err := os.Stat(archivePath)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to read archive")
@@ -186,7 +186,7 @@ func (s S3PGStore) CreateSupportBundle(id string, appID string, archivePath stri
 
 // GetSupportBundle will fetch the bundle archive and return a path to where it
 // is stored. The caller is responsible for deleting.
-func (s S3PGStore) GetSupportBundleArchive(bundleID string) (string, error) {
+func (s KOTSStore) GetSupportBundleArchive(bundleID string) (string, error) {
 	logger.Debug("getting support bundle",
 		zap.String("bundleID", bundleID))
 
@@ -219,7 +219,7 @@ func (s S3PGStore) GetSupportBundleArchive(bundleID string) (string, error) {
 	return filepath.Join(tmpDir, "supportbundle.tar.gz"), nil
 }
 
-func (s S3PGStore) GetSupportBundleAnalysis(id string) (*supportbundletypes.SupportBundleAnalysis, error) {
+func (s KOTSStore) GetSupportBundleAnalysis(id string) (*supportbundletypes.SupportBundleAnalysis, error) {
 	db := persistence.MustGetPGSession()
 	query := `SELECT id, error, max_severity, insights, created_at FROM supportbundle_analysis where supportbundle_id = $1`
 	row := db.QueryRow(query, id)
@@ -283,7 +283,7 @@ func (s S3PGStore) GetSupportBundleAnalysis(id string) (*supportbundletypes.Supp
 	return a, nil
 }
 
-func (s S3PGStore) SetSupportBundleAnalysis(id string, insights []byte) error {
+func (s KOTSStore) SetSupportBundleAnalysis(id string, insights []byte) error {
 	db := persistence.MustGetPGSession()
 	query := `update supportbundle set status = $1 where id = $2`
 
@@ -301,7 +301,7 @@ func (s S3PGStore) SetSupportBundleAnalysis(id string, insights []byte) error {
 	return nil
 }
 
-func (s S3PGStore) GetRedactions(bundleID string) (troubleshootredact.RedactionList, error) {
+func (s KOTSStore) GetRedactions(bundleID string) (troubleshootredact.RedactionList, error) {
 	db := persistence.MustGetPGSession()
 	q := `select redact_report from supportbundle where id = $1`
 
@@ -325,7 +325,7 @@ func (s S3PGStore) GetRedactions(bundleID string) (troubleshootredact.RedactionL
 	return redacts, nil
 }
 
-func (s S3PGStore) SetRedactions(bundleID string, redacts troubleshootredact.RedactionList) error {
+func (s KOTSStore) SetRedactions(bundleID string, redacts troubleshootredact.RedactionList) error {
 	db := persistence.MustGetPGSession()
 
 	redactBytes, err := json.Marshal(redacts)
@@ -341,7 +341,7 @@ func (s S3PGStore) SetRedactions(bundleID string, redacts troubleshootredact.Red
 	return nil
 }
 
-func (s S3PGStore) GetSupportBundleSpecForApp(id string) (string, error) {
+func (s KOTSStore) GetSupportBundleSpecForApp(id string) (string, error) {
 	q := `select supportbundle_spec from app_version
 	inner join app on app_version.app_id = app.id and app_version.sequence = app.current_sequence
 	where app.id = $1`

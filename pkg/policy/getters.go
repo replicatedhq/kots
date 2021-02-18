@@ -5,7 +5,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/store"
 )
 
-func appSlugFromAppIDGetter(kotsStore store.KOTSStore, vars map[string]string) (map[string]string, error) {
+func appSlugFromAppIDGetter(kotsStore store.Store, vars map[string]string) (map[string]string, error) {
 	if appSlug, _ := vars["appSlug"]; appSlug != "" {
 		return map[string]string{}, nil
 	}
@@ -22,7 +22,7 @@ func appSlugFromAppIDGetter(kotsStore store.KOTSStore, vars map[string]string) (
 	}, nil
 }
 
-func appSlugFromSupportbundleGetter(kotsStore store.KOTSStore, vars map[string]string) (map[string]string, error) {
+func appSlugFromSupportbundleGetter(kotsStore store.Store, vars map[string]string) (map[string]string, error) {
 	if appSlug, _ := vars["appSlug"]; appSlug != "" {
 		return nil, nil
 	}

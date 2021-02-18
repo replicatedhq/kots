@@ -27,7 +27,7 @@ func init() {
 	veleroscheme.AddToScheme(scheme.Scheme)
 }
 
-func RegisterSessionAuthRoutes(r *mux.Router, kotsStore store.KOTSStore, handler KOTSHandler, middleware *policy.Middleware) {
+func RegisterSessionAuthRoutes(r *mux.Router, kotsStore store.Store, handler KOTSHandler, middleware *policy.Middleware) {
 	r.Use(RequireValidSessionMiddleware(kotsStore))
 
 	// Installation
