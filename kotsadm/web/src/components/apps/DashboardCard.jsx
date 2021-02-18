@@ -400,7 +400,7 @@ export default class DashboardCard extends React.Component {
                               styles={customStyles}
                               isSearchable={false}
                             />
-                            <button className="StartSnapshotButton" onClick={onSnapshotOptionClick}> {selectedSnapshotOption.name} </button>
+                            <button className="StartSnapshotButton" onClick={onSnapshotOptionClick}> Start a Full snapshot </button>
                           </div>
                         </div>
                         : null
