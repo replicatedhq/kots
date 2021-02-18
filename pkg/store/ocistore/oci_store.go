@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"github.com/pkg/errors"
+	kotsadmobjects "github.com/replicatedhq/kots/pkg/kotsadm/objects"
 	corev1 "k8s.io/api/core/v1"
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -155,4 +156,27 @@ func (s OCIStore) updateConfigmap(configmap *corev1.ConfigMap) error {
 	}
 
 	return nil
+}
+
+func (s OCIStore) ensureApplicationMetadata(applicationMetadata string, namespace string) (*corev1.ConfigMap, error) {
+	clientset, err := s.GetClientset()
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get clientset")
+	}
+
+	existingConfigmap, err := clientset.CoreV1().ConfigMaps(namespace).Get(context.TODO(), "kotsadm-application-metadata", metav1.GetOptions{})
+	if err != nil {
+		if !kuberneteserrors.IsNotFound(err) {
+			return nil, errors.Wrap(err, "failed to get existing metadata config map")
+		}
+
+		metadata := []byte(applicationMetadata)
+		createdConfigmap, err := clientset.CoreV1().ConfigMaps(namespace).Create(context.TODO(), kotsadmobjects.ApplicationMetadataConfig(metadata, namespace), metav1.CreateOptions{})
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to create metadata config map")
+		}
+		return createdConfigmap, nil
+	}
+
+	return existingConfigmap, nil
 }

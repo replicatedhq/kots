@@ -11,6 +11,7 @@ import (
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	"github.com/replicatedhq/kots/pkg/crypto"
 	identitydeploy "github.com/replicatedhq/kots/pkg/identity/deploy"
+	kotsadmobjects "github.com/replicatedhq/kots/pkg/kotsadm/objects"
 	"github.com/replicatedhq/kots/pkg/kotsadm/types"
 	"golang.org/x/crypto/bcrypt"
 	corev1 "k8s.io/api/core/v1"
@@ -26,13 +27,13 @@ func getSecretsYAML(deployOptions *types.DeployOptions) (map[string][]byte, erro
 	s := json.NewYAMLSerializer(json.DefaultMetaFactory, scheme.Scheme, scheme.Scheme)
 
 	var jwt bytes.Buffer
-	if err := s.Encode(jwtSecret(deployOptions.Namespace, deployOptions.JWT), &jwt); err != nil {
+	if err := s.Encode(kotsadmobjects.JwtSecret(deployOptions.Namespace, deployOptions.JWT), &jwt); err != nil {
 		return nil, errors.Wrap(err, "failed to marshal jwt secret")
 	}
 	docs["secret-jwt.yaml"] = jwt.Bytes()
 
 	var pg bytes.Buffer
-	if err := s.Encode(pgSecret(deployOptions.Namespace, deployOptions.PostgresPassword), &pg); err != nil {
+	if err := s.Encode(kotsadmobjects.PgSecret(deployOptions.Namespace, deployOptions.PostgresPassword), &pg); err != nil {
 		return nil, errors.Wrap(err, "failed to marshal pg secret")
 	}
 	docs["secret-pg.yaml"] = pg.Bytes()
@@ -45,7 +46,7 @@ func getSecretsYAML(deployOptions *types.DeployOptions) (map[string][]byte, erro
 		deployOptions.SharedPasswordBcrypt = string(bcryptPassword)
 	}
 	var sharedPassword bytes.Buffer
-	if err := s.Encode(sharedPasswordSecret(deployOptions.Namespace, deployOptions.SharedPasswordBcrypt), &sharedPassword); err != nil {
+	if err := s.Encode(kotsadmobjects.SharedPasswordSecret(deployOptions.Namespace, deployOptions.SharedPasswordBcrypt), &sharedPassword); err != nil {
 		return nil, errors.Wrap(err, "failed to marshal shared password secret")
 	}
 	docs["secret-shared-password.yaml"] = sharedPassword.Bytes()
@@ -58,7 +59,7 @@ func getSecretsYAML(deployOptions *types.DeployOptions) (map[string][]byte, erro
 		deployOptions.APIEncryptionKey = cipher.ToString()
 	}
 	var apiEncryptionBuffer bytes.Buffer
-	if err := s.Encode(apiEncryptionKeySecret(deployOptions.Namespace, deployOptions.APIEncryptionKey), &apiEncryptionBuffer); err != nil {
+	if err := s.Encode(kotsadmobjects.ApiEncryptionKeySecret(deployOptions.Namespace, deployOptions.APIEncryptionKey), &apiEncryptionBuffer); err != nil {
 		return nil, errors.Wrap(err, "failed to marshal shared password secret")
 	}
 	docs["secret-api-encryption.yaml"] = apiEncryptionBuffer.Bytes()
@@ -70,19 +71,19 @@ func getSecretsYAML(deployOptions *types.DeployOptions) (map[string][]byte, erro
 	if deployOptions.S3AccessKey == "" {
 		deployOptions.S3AccessKey = uuid.New().String()
 	}
-	if err := s.Encode(s3Secret(deployOptions.Namespace, deployOptions.S3AccessKey, deployOptions.S3SecretKey), &s3); err != nil {
+	if err := s.Encode(kotsadmobjects.S3Secret(deployOptions.Namespace, deployOptions.S3AccessKey, deployOptions.S3SecretKey), &s3); err != nil {
 		return nil, errors.Wrap(err, "failed to marshal s3 secret")
 	}
 	docs["secret-s3.yaml"] = s3.Bytes()
 
 	var tokenSecret bytes.Buffer
-	if err := s.Encode(apiClusterTokenSecret(*deployOptions), &tokenSecret); err != nil {
+	if err := s.Encode(kotsadmobjects.ApiClusterTokenSecret(*deployOptions), &tokenSecret); err != nil {
 		return nil, errors.Wrap(err, "failed to marshal api cluster token secret")
 	}
 	docs["secret-api-cluster-token.yaml"] = tokenSecret.Bytes()
 
 	// this secret is optional
-	if secret := privateKotsadmRegistrySecret(*deployOptions); secret != nil {
+	if secret := kotsadmobjects.PrivateKotsadmRegistrySecret(*deployOptions); secret != nil {
 		var registrySecret bytes.Buffer
 		if err := s.Encode(secret, &registrySecret); err != nil {
 			return nil, errors.Wrap(err, "failed to marshal private kotsadm registry secret")
@@ -153,7 +154,7 @@ func ensureS3Secret(namespace string, clientset *kubernetes.Clientset) error {
 	}
 
 	if existingS3Secret == nil {
-		_, err := clientset.CoreV1().Secrets(namespace).Create(context.TODO(), s3Secret(namespace, uuid.New().String(), uuid.New().String()), metav1.CreateOptions{})
+		_, err := clientset.CoreV1().Secrets(namespace).Create(context.TODO(), kotsadmobjects.S3Secret(namespace, uuid.New().String(), uuid.New().String()), metav1.CreateOptions{})
 		if err != nil {
 			return errors.Wrap(err, "failed to create s3 secret")
 		}
@@ -182,7 +183,7 @@ func ensureJWTSessionSecret(namespace string, clientset *kubernetes.Clientset) e
 	}
 
 	if existingJWTSessionSecret == nil {
-		_, err := clientset.CoreV1().Secrets(namespace).Create(context.TODO(), jwtSecret(namespace, uuid.New().String()), metav1.CreateOptions{})
+		_, err := clientset.CoreV1().Secrets(namespace).Create(context.TODO(), kotsadmobjects.JwtSecret(namespace, uuid.New().String()), metav1.CreateOptions{})
 		if err != nil {
 			return errors.Wrap(err, "failed to create jwt session secret")
 		}
@@ -211,7 +212,7 @@ func ensurePostgresSecret(deployOptions types.DeployOptions, clientset *kubernet
 	}
 
 	if existingPgSecret == nil {
-		_, err := clientset.CoreV1().Secrets(deployOptions.Namespace).Create(context.TODO(), pgSecret(deployOptions.Namespace, deployOptions.PostgresPassword), metav1.CreateOptions{})
+		_, err := clientset.CoreV1().Secrets(deployOptions.Namespace).Create(context.TODO(), kotsadmobjects.PgSecret(deployOptions.Namespace, deployOptions.PostgresPassword), metav1.CreateOptions{})
 		if err != nil {
 			return errors.Wrap(err, "failed to create postgres secret")
 		}
@@ -253,7 +254,7 @@ func ensureSharedPasswordSecret(deployOptions *types.DeployOptions, clientset *k
 		return errors.Wrap(err, "failed to check for existing password secret")
 	}
 	if existingSharedPasswordSecret == nil {
-		_, err := clientset.CoreV1().Secrets(deployOptions.Namespace).Create(context.TODO(), sharedPasswordSecret(deployOptions.Namespace, string(bcryptPassword)), metav1.CreateOptions{})
+		_, err := clientset.CoreV1().Secrets(deployOptions.Namespace).Create(context.TODO(), kotsadmobjects.SharedPasswordSecret(deployOptions.Namespace, string(bcryptPassword)), metav1.CreateOptions{})
 		if err != nil {
 			return errors.Wrap(err, "failed to create password secret")
 		}
@@ -319,7 +320,7 @@ func ensureAPIEncryptionSecret(deployOptions *types.DeployOptions, clientset *ku
 		deployOptions.APIEncryptionKey = cipher.ToString()
 	}
 
-	_, err = clientset.CoreV1().Secrets(deployOptions.Namespace).Create(context.TODO(), apiEncryptionKeySecret(deployOptions.Namespace, deployOptions.APIEncryptionKey), metav1.CreateOptions{})
+	_, err = clientset.CoreV1().Secrets(deployOptions.Namespace).Create(context.TODO(), kotsadmobjects.ApiEncryptionKeySecret(deployOptions.Namespace, deployOptions.APIEncryptionKey), metav1.CreateOptions{})
 	if err != nil {
 		return errors.Wrap(err, "failed to create API encryption secret")
 	}
@@ -347,7 +348,7 @@ func ensureAPIClusterTokenSecret(deployOptions types.DeployOptions, clientset *k
 			return errors.Wrap(err, "failed to get existing cluster token secret")
 		}
 
-		_, err := clientset.CoreV1().Secrets(deployOptions.Namespace).Create(context.TODO(), apiClusterTokenSecret(deployOptions), metav1.CreateOptions{})
+		_, err := clientset.CoreV1().Secrets(deployOptions.Namespace).Create(context.TODO(), kotsadmobjects.ApiClusterTokenSecret(deployOptions), metav1.CreateOptions{})
 		if err != nil {
 			return errors.Wrap(err, "failed to create cluster token secret")
 		}
@@ -383,7 +384,7 @@ func ensurePrivateKotsadmRegistrySecret(deployOptions types.DeployOptions, clien
 			return errors.Wrap(err, "failed to get existing private kotsadm registry secret")
 		}
 
-		secret := privateKotsadmRegistrySecret(deployOptions)
+		secret := kotsadmobjects.PrivateKotsadmRegistrySecret(deployOptions)
 		if secret == nil {
 			return nil
 		}

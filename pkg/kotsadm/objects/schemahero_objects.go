@@ -12,7 +12,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func migrationsPod(deployOptions types.DeployOptions) *corev1.Pod {
+func MigrationsPod(deployOptions types.DeployOptions) *corev1.Pod {
 	name := fmt.Sprintf("kotsadm-migrations-%d", time.Now().Unix())
 
 	var securityContext corev1.PodSecurityContext

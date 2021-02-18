@@ -14,7 +14,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
-func minioStatefulset(deployOptions types.DeployOptions) *appsv1.StatefulSet {
+func MinioStatefulset(deployOptions types.DeployOptions) *appsv1.StatefulSet {
 	size := resource.MustParse("4Gi")
 
 	if deployOptions.LimitRange != nil {
@@ -35,7 +35,7 @@ func minioStatefulset(deployOptions types.DeployOptions) *appsv1.StatefulSet {
 			}
 		}
 
-		newSize := promptForSizeIfNotBetween("minio", &size, allowedMin, allowedMax)
+		newSize := PromptForSizeIfNotBetween("minio", &size, allowedMin, allowedMax)
 		if newSize == nil {
 			os.Exit(-1)
 		}
@@ -231,7 +231,7 @@ func minioStatefulset(deployOptions types.DeployOptions) *appsv1.StatefulSet {
 	return statefulset
 }
 
-func minioService(namespace string) *corev1.Service {
+func MinioService(namespace string) *corev1.Service {
 	service := &corev1.Service{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "v1",

@@ -14,7 +14,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func operatorClusterRole() *rbacv1.ClusterRole {
+func OperatorClusterRole() *rbacv1.ClusterRole {
 	clusterRole := &rbacv1.ClusterRole{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "rbac.authorization.k8s.io/v1",
@@ -36,7 +36,7 @@ func operatorClusterRole() *rbacv1.ClusterRole {
 	return clusterRole
 }
 
-func operatorClusterRoleBinding(serviceAccountNamespace string) *rbacv1.ClusterRoleBinding {
+func OperatorClusterRoleBinding(serviceAccountNamespace string) *rbacv1.ClusterRoleBinding {
 	clusterRoleBinding := &rbacv1.ClusterRoleBinding{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "rbac.authorization.k8s.io/v1",
@@ -63,7 +63,7 @@ func operatorClusterRoleBinding(serviceAccountNamespace string) *rbacv1.ClusterR
 	return clusterRoleBinding
 }
 
-func operatorRole(namespace string) *rbacv1.Role {
+func OperatorRole(namespace string) *rbacv1.Role {
 	role := &rbacv1.Role{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "rbac.authorization.k8s.io/v1",
@@ -86,7 +86,7 @@ func operatorRole(namespace string) *rbacv1.Role {
 	return role
 }
 
-func operatorRoleBinding(namespace string, subjectNamespace string) *rbacv1.RoleBinding {
+func OperatorRoleBinding(namespace string, subjectNamespace string) *rbacv1.RoleBinding {
 	roleBinding := &rbacv1.RoleBinding{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "rbac.authorization.k8s.io/v1",
@@ -114,7 +114,7 @@ func operatorRoleBinding(namespace string, subjectNamespace string) *rbacv1.Role
 	return roleBinding
 }
 
-func operatorServiceAccount(namespace string) *corev1.ServiceAccount {
+func OperatorServiceAccount(namespace string) *corev1.ServiceAccount {
 	serviceAccount := &corev1.ServiceAccount{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "v1",
@@ -130,7 +130,7 @@ func operatorServiceAccount(namespace string) *corev1.ServiceAccount {
 	return serviceAccount
 }
 
-func updateOperatorDeployment(deployment *appsv1.Deployment, deployOptions types.DeployOptions) error {
+func UpdateOperatorDeployment(deployment *appsv1.Deployment, deployOptions types.DeployOptions) error {
 	var securityContext corev1.PodSecurityContext
 	if !deployOptions.IsOpenShift {
 		securityContext = corev1.PodSecurityContext{
@@ -138,7 +138,7 @@ func updateOperatorDeployment(deployment *appsv1.Deployment, deployOptions types
 		}
 	}
 
-	desiredDeployment := operatorDeployment(deployOptions)
+	desiredDeployment := OperatorDeployment(deployOptions)
 
 	// ensure the non-optional kots labels are present (added in 1.11.0)
 	if deployment.ObjectMeta.Labels == nil {
@@ -190,7 +190,7 @@ func updateOperatorDeployment(deployment *appsv1.Deployment, deployOptions types
 	return nil
 }
 
-func operatorDeployment(deployOptions types.DeployOptions) *appsv1.Deployment {
+func OperatorDeployment(deployOptions types.DeployOptions) *appsv1.Deployment {
 	var securityContext corev1.PodSecurityContext
 	if !deployOptions.IsOpenShift {
 		securityContext = corev1.PodSecurityContext{

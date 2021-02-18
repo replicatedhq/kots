@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 
 	"github.com/pkg/errors"
+	kotsadmobjects "github.com/replicatedhq/kots/pkg/kotsadm/objects"
 	"github.com/replicatedhq/kots/pkg/kotsadm/types"
 	corev1 "k8s.io/api/core/v1"
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
@@ -22,7 +23,7 @@ func getConfigMapsYAML(deployOptions types.DeployOptions) (map[string][]byte, er
 	s := json.NewYAMLSerializer(json.DefaultMetaFactory, scheme.Scheme, scheme.Scheme)
 
 	var configMap bytes.Buffer
-	if err := s.Encode(kotsadmConfigMap(deployOptions), &configMap); err != nil {
+	if err := s.Encode(kotsadmobjects.KotsadmConfigMap(deployOptions), &configMap); err != nil {
 		return nil, errors.Wrap(err, "failed to marshal minio config map")
 	}
 	docs["kotsadm-config.yaml"] = configMap.Bytes()
@@ -49,7 +50,7 @@ func ensureConfigMaps(deployOptions types.DeployOptions, clientset *kubernetes.C
 			return errors.Wrap(err, "failed to get existing kotsadm config map")
 		}
 
-		_, err := clientset.CoreV1().ConfigMaps(deployOptions.Namespace).Create(context.TODO(), kotsadmConfigMap(deployOptions), metav1.CreateOptions{})
+		_, err := clientset.CoreV1().ConfigMaps(deployOptions.Namespace).Create(context.TODO(), kotsadmobjects.KotsadmConfigMap(deployOptions), metav1.CreateOptions{})
 		if err != nil {
 			return errors.Wrap(err, "failed to create kotsadm config map")
 		}

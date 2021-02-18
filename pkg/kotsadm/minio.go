@@ -5,6 +5,7 @@ import (
 	"context"
 
 	"github.com/pkg/errors"
+	kotsadmobjects "github.com/replicatedhq/kots/pkg/kotsadm/objects"
 	"github.com/replicatedhq/kots/pkg/kotsadm/types"
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -18,13 +19,13 @@ func getMinioYAML(deployOptions types.DeployOptions) (map[string][]byte, error) 
 	s := json.NewYAMLSerializer(json.DefaultMetaFactory, scheme.Scheme, scheme.Scheme)
 
 	var statefulset bytes.Buffer
-	if err := s.Encode(minioStatefulset(deployOptions), &statefulset); err != nil {
+	if err := s.Encode(kotsadmobjects.MinioStatefulset(deployOptions), &statefulset); err != nil {
 		return nil, errors.Wrap(err, "failed to marshal minio statefulset")
 	}
 	docs["minio-statefulset.yaml"] = statefulset.Bytes()
 
 	var service bytes.Buffer
-	if err := s.Encode(minioService(deployOptions.Namespace), &service); err != nil {
+	if err := s.Encode(kotsadmobjects.MinioService(deployOptions.Namespace), &service); err != nil {
 		return nil, errors.Wrap(err, "failed to marshal minio service")
 	}
 	docs["minio-service.yaml"] = service.Bytes()
@@ -55,7 +56,7 @@ func ensureMinioStatefulset(deployOptions types.DeployOptions, clientset *kubern
 			return errors.Wrap(err, "failed to get existing statefulset")
 		}
 
-		_, err := clientset.AppsV1().StatefulSets(deployOptions.Namespace).Create(context.TODO(), minioStatefulset(deployOptions), metav1.CreateOptions{})
+		_, err := clientset.AppsV1().StatefulSets(deployOptions.Namespace).Create(context.TODO(), kotsadmobjects.MinioStatefulset(deployOptions), metav1.CreateOptions{})
 		if err != nil {
 			return errors.Wrap(err, "failed to create minio statefulset")
 		}
@@ -71,7 +72,7 @@ func ensureMinioService(namespace string, clientset *kubernetes.Clientset) error
 			return errors.Wrap(err, "failed to get existing service")
 		}
 
-		_, err := clientset.CoreV1().Services(namespace).Create(context.TODO(), minioService(namespace), metav1.CreateOptions{})
+		_, err := clientset.CoreV1().Services(namespace).Create(context.TODO(), kotsadmobjects.MinioService(namespace), metav1.CreateOptions{})
 		if err != nil {
 			return errors.Wrap(err, "failed to create service")
 		}
