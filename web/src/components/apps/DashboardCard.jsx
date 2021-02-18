@@ -372,7 +372,10 @@ export default class DashboardCard extends React.Component {
                     isSnapshotInProgress ?
                       <Loader size="16" />
                       :
-                      !getingAppLicenseErrMsg && <span className="status-indicator completed"> Enabled </span>
+                      !getingAppLicenseErrMsg &&
+                      <div className="flex-auto alignItems--center">
+                        <span className="status-indicator completed"> Enabled </span>
+                      </div>
                     : null
             }
             <div className={`${isSnapshotAllowed || versionHistory ? "flex-auto flex-column u-marginTop--8" : "u-marginTop--15"}`}>
@@ -400,7 +403,7 @@ export default class DashboardCard extends React.Component {
                               styles={customStyles}
                               isSearchable={false}
                             />
-                            <button className="StartSnapshotButton" onClick={onSnapshotOptionClick}> {selectedSnapshotOption.name} </button>
+                            <button className="StartSnapshotButton" onClick={onSnapshotOptionClick}> Start a Full snapshot </button>
                           </div>
                         </div>
                         : null
