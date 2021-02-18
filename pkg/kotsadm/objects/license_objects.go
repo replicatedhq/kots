@@ -6,21 +6,22 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func configValuesSecret(namespace string, configValues string) *corev1.Secret {
+func LicenseSecret(namespace string, appSlug string, license string) *corev1.Secret {
 	secret := &corev1.Secret{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "v1",
 			Kind:       "Secret",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "kotsadm-default-configvalues",
+			Name:      "kotsadm-default-license",
 			Namespace: namespace,
 			Labels: types.GetKotsadmLabels(map[string]string{
-				"kots.io/automation": "configvalues",
+				"kots.io/automation": "license",
+				"kots.io/app":        appSlug,
 			}),
 		},
 		Data: map[string][]byte{
-			"configvalues": []byte(configValues),
+			"license": []byte(license),
 		},
 	}
 

@@ -1,8 +1,10 @@
 package kotsadm
 
 import (
+	"fmt"
 	"os"
 
+	"github.com/manifoldco/promptui"
 	"github.com/replicatedhq/kots/pkg/kotsadm/types"
 	"github.com/replicatedhq/kots/pkg/util"
 	appsv1 "k8s.io/api/apps/v1"
@@ -12,7 +14,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
-func distributionConfigMap(deployOptions types.DeployOptions) *corev1.ConfigMap {
+func DistributionConfigMap(deployOptions types.DeployOptions) *corev1.ConfigMap {
 	labels := types.GetKotsadmLabels()
 	labels["kotsadm"] = "application"
 
@@ -51,7 +53,7 @@ version: 0.1`),
 	return configMap
 }
 
-func distributionService(deployOptions types.DeployOptions) *corev1.Service {
+func DistributionService(deployOptions types.DeployOptions) *corev1.Service {
 	service := &corev1.Service{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "v1",
@@ -80,7 +82,7 @@ func distributionService(deployOptions types.DeployOptions) *corev1.Service {
 	return service
 }
 
-func distributionStatefulset(deployOptions types.DeployOptions) *appsv1.StatefulSet {
+func DistributionStatefulset(deployOptions types.DeployOptions) *appsv1.StatefulSet {
 	size := resource.MustParse("4Gi")
 
 	if deployOptions.LimitRange != nil {
@@ -101,7 +103,7 @@ func distributionStatefulset(deployOptions types.DeployOptions) *appsv1.Stateful
 			}
 		}
 
-		newSize := promptForSizeIfNotBetween("registry", &size, allowedMin, allowedMax)
+		newSize := PromptForSizeIfNotBetween("registry", &size, allowedMin, allowedMax)
 		if newSize == nil {
 			os.Exit(-1)
 		}
@@ -242,4 +244,42 @@ func distributionStatefulset(deployOptions types.DeployOptions) *appsv1.Stateful
 	}
 
 	return statefulset
+}
+
+func PromptForSizeIfNotBetween(label string, desired *resource.Quantity, min *resource.Quantity, max *resource.Quantity) *resource.Quantity {
+	actualSize := desired
+
+	if max != nil {
+		if max.Cmp(*desired) == -1 {
+			/// desired is too big
+			actualSize = max
+		}
+	}
+	if min != nil {
+		if min.Cmp(*desired) == 1 {
+			/// desired is too small, yeap, you read that right
+			actualSize = min
+		}
+	}
+
+	if actualSize.Cmp(*desired) == 0 {
+		return desired
+	}
+
+	prompt := promptui.Prompt{
+		Label:     fmt.Sprintf("The storage request for %s is not acceptable for the current namespace. KOTS recommends a size of %s, but will attempt to proceed with %s to meet the namespace limits. Do you want to continue", label, desired.String(), actualSize.String()),
+		IsConfirm: true,
+	}
+
+	for {
+		_, err := prompt.Run()
+		if err != nil {
+			if err == promptui.ErrInterrupt {
+				os.Exit(-1)
+			}
+			continue
+		}
+
+		return actualSize
+	}
 }

@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	kotsadmobjects "github.com/replicatedhq/kots/pkg/kotsadm/objects"
 	"github.com/replicatedhq/kots/pkg/kotsadm/types"
 	"github.com/replicatedhq/kots/pkg/logger"
 	corev1 "k8s.io/api/core/v1"
@@ -20,7 +21,7 @@ func getMigrationsYAML(deployOptions types.DeployOptions) (map[string][]byte, er
 	s := json.NewYAMLSerializer(json.DefaultMetaFactory, scheme.Scheme, scheme.Scheme)
 
 	var pod bytes.Buffer
-	if err := s.Encode(migrationsPod(deployOptions), &pod); err != nil {
+	if err := s.Encode(kotsadmobjects.MigrationsPod(deployOptions), &pod); err != nil {
 		return nil, errors.Wrap(err, "failed to marshal migrations pod")
 	}
 	docs["migrations.yaml"] = pod.Bytes()
@@ -74,7 +75,7 @@ func waitForHealthyPostgres(namespace string, clientset *kubernetes.Clientset, t
 }
 
 func createSchemaHeroPod(deployOptions types.DeployOptions, clientset *kubernetes.Clientset) error {
-	_, err := clientset.CoreV1().Pods(deployOptions.Namespace).Create(context.TODO(), migrationsPod(deployOptions), metav1.CreateOptions{})
+	_, err := clientset.CoreV1().Pods(deployOptions.Namespace).Create(context.TODO(), kotsadmobjects.MigrationsPod(deployOptions), metav1.CreateOptions{})
 	if err != nil {
 		return errors.Wrap(err, "failed to create pod")
 	}

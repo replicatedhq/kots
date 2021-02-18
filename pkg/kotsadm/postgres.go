@@ -6,6 +6,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
+	kotsadmobjects "github.com/replicatedhq/kots/pkg/kotsadm/objects"
 	"github.com/replicatedhq/kots/pkg/kotsadm/types"
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -22,13 +23,13 @@ func getPostgresYAML(deployOptions types.DeployOptions) (map[string][]byte, erro
 	if deployOptions.PostgresPassword == "" {
 		deployOptions.PostgresPassword = uuid.New().String()
 	}
-	if err := s.Encode(postgresStatefulset(deployOptions), &statefulset); err != nil {
+	if err := s.Encode(kotsadmobjects.PostgresStatefulset(deployOptions), &statefulset); err != nil {
 		return nil, errors.Wrap(err, "failed to marshal postgres statefulset")
 	}
 	docs["postgres-statefulset.yaml"] = statefulset.Bytes()
 
 	var service bytes.Buffer
-	if err := s.Encode(postgresService(deployOptions.Namespace), &service); err != nil {
+	if err := s.Encode(kotsadmobjects.PostgresService(deployOptions.Namespace), &service); err != nil {
 		return nil, errors.Wrap(err, "failed to marshal postgres service")
 	}
 	docs["postgres-service.yaml"] = service.Bytes()
@@ -59,7 +60,7 @@ func ensurePostgresStatefulset(deployOptions types.DeployOptions, clientset *kub
 			return errors.Wrap(err, "failed to get existing statefulset")
 		}
 
-		_, err := clientset.AppsV1().StatefulSets(deployOptions.Namespace).Create(context.TODO(), postgresStatefulset(deployOptions), metav1.CreateOptions{})
+		_, err := clientset.AppsV1().StatefulSets(deployOptions.Namespace).Create(context.TODO(), kotsadmobjects.PostgresStatefulset(deployOptions), metav1.CreateOptions{})
 		if err != nil {
 			return errors.Wrap(err, "failed to create postgres statefulset")
 		}
@@ -75,7 +76,7 @@ func ensurePostgresService(namespace string, clientset *kubernetes.Clientset) er
 			return errors.Wrap(err, "failed to get existing service")
 		}
 
-		_, err := clientset.CoreV1().Services(namespace).Create(context.TODO(), postgresService(namespace), metav1.CreateOptions{})
+		_, err := clientset.CoreV1().Services(namespace).Create(context.TODO(), kotsadmobjects.PostgresService(namespace), metav1.CreateOptions{})
 		if err != nil {
 			return errors.Wrap(err, "Failed to create service")
 		}

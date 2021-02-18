@@ -5,7 +5,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
-func getProxyEnv(deployOptions types.DeployOptions) []corev1.EnvVar {
+func GetProxyEnv(deployOptions types.DeployOptions) []corev1.EnvVar {
 	result := []corev1.EnvVar{
 		{
 			Name:  "HTTP_PROXY",

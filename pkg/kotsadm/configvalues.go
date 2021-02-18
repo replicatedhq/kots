@@ -5,6 +5,7 @@ import (
 	"context"
 
 	"github.com/pkg/errors"
+	kotsadmobjects "github.com/replicatedhq/kots/pkg/kotsadm/objects"
 	"github.com/replicatedhq/kots/pkg/kotsadm/types"
 	corev1 "k8s.io/api/core/v1"
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
@@ -30,7 +31,7 @@ func ensureConfigValuesSecret(deployOptions *types.DeployOptions, clientset *kub
 		return false, errors.Wrap(err, "failed to encode config values")
 	}
 
-	_, err = clientset.CoreV1().Secrets(deployOptions.Namespace).Create(context.TODO(), configValuesSecret(deployOptions.Namespace, b.String()), metav1.CreateOptions{})
+	_, err = clientset.CoreV1().Secrets(deployOptions.Namespace).Create(context.TODO(), kotsadmobjects.ConfigValuesSecret(deployOptions.Namespace, b.String()), metav1.CreateOptions{})
 	if err != nil {
 		return false, errors.Wrap(err, "failed to create config values secret")
 	}

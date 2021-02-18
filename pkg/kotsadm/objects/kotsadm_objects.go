@@ -20,7 +20,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
-func kotsadmClusterRole() *rbacv1.ClusterRole {
+func KotsadmClusterRole() *rbacv1.ClusterRole {
 	clusterRole := &rbacv1.ClusterRole{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "rbac.authorization.k8s.io/v1",
@@ -42,7 +42,7 @@ func kotsadmClusterRole() *rbacv1.ClusterRole {
 	return clusterRole
 }
 
-func kotsadmRole(namespace string) *rbacv1.Role {
+func KotsadmRole(namespace string) *rbacv1.Role {
 	role := &rbacv1.Role{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "rbac.authorization.k8s.io/v1",
@@ -65,7 +65,7 @@ func kotsadmRole(namespace string) *rbacv1.Role {
 	return role
 }
 
-func kotsadmClusterRoleBinding(serviceAccountNamespace string) *rbacv1.ClusterRoleBinding {
+func KotsadmClusterRoleBinding(serviceAccountNamespace string) *rbacv1.ClusterRoleBinding {
 	clusterRoleBinding := &rbacv1.ClusterRoleBinding{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "rbac.authorization.k8s.io/v1",
@@ -92,7 +92,7 @@ func kotsadmClusterRoleBinding(serviceAccountNamespace string) *rbacv1.ClusterRo
 	return clusterRoleBinding
 }
 
-func kotsadmRoleBinding(roleBindingNamespace string, kotsadmNamespace string) *rbacv1.RoleBinding {
+func KotsadmRoleBinding(roleBindingNamespace string, kotsadmNamespace string) *rbacv1.RoleBinding {
 	roleBinding := &rbacv1.RoleBinding{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "rbac.authorization.k8s.io/v1",
@@ -120,7 +120,7 @@ func kotsadmRoleBinding(roleBindingNamespace string, kotsadmNamespace string) *r
 	return roleBinding
 }
 
-func kotsadmServiceAccount(namespace string) *corev1.ServiceAccount {
+func KotsadmServiceAccount(namespace string) *corev1.ServiceAccount {
 	serviceAccount := &corev1.ServiceAccount{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "v1",
@@ -136,8 +136,8 @@ func kotsadmServiceAccount(namespace string) *corev1.ServiceAccount {
 	return serviceAccount
 }
 
-func updateKotsadmDeployment(deployment *appsv1.Deployment, deployOptions types.DeployOptions) error {
-	desiredDeployment := kotsadmDeployment(deployOptions)
+func UpdateKotsadmDeployment(deployment *appsv1.Deployment, deployOptions types.DeployOptions) error {
+	desiredDeployment := KotsadmDeployment(deployOptions)
 
 	containerIdx := -1
 	for idx, c := range deployment.Spec.Template.Spec.Containers {
@@ -196,7 +196,7 @@ func updateKotsadmDeployment(deployment *appsv1.Deployment, deployOptions types.
 	return nil
 }
 
-func kotsadmDeployment(deployOptions types.DeployOptions) *appsv1.Deployment {
+func KotsadmDeployment(deployOptions types.DeployOptions) *appsv1.Deployment {
 	var securityContext corev1.PodSecurityContext
 	if !deployOptions.IsOpenShift {
 		securityContext = corev1.PodSecurityContext{
@@ -347,7 +347,7 @@ func kotsadmDeployment(deployOptions types.DeployOptions) *appsv1.Deployment {
 		env = append(env, s3env...)
 	}
 
-	env = append(env, getProxyEnv(deployOptions)...)
+	env = append(env, GetProxyEnv(deployOptions)...)
 
 	if deployOptions.KotsadmOptions.OverrideRegistry != "" || deployOptions.Airgap {
 		env = append(env, corev1.EnvVar{
@@ -548,7 +548,7 @@ func kotsadmDeployment(deployOptions types.DeployOptions) *appsv1.Deployment {
 	return deployment
 }
 
-func kotsadmService(namespace string, nodePort int32) *corev1.Service {
+func KotsadmService(namespace string, nodePort int32) *corev1.Service {
 	port := corev1.ServicePort{
 		Name:       "http",
 		Port:       3000,
@@ -585,6 +585,6 @@ func kotsadmService(namespace string, nodePort int32) *corev1.Service {
 	return service
 }
 
-func kotsadmIngress(namespace string, ingressConfig kotsv1beta1.IngressResourceConfig) *extensionsv1beta1.Ingress {
+func KotsadmIngress(namespace string, ingressConfig kotsv1beta1.IngressResourceConfig) *extensionsv1beta1.Ingress {
 	return ingress.IngressFromConfig(ingressConfig, "kotsadm", "kotsadm", 3000, nil)
 }

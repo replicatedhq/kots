@@ -7,6 +7,7 @@ import (
 
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
+	kotsadmobjects "github.com/replicatedhq/kots/pkg/kotsadm/objects"
 	"github.com/replicatedhq/kots/pkg/kotsadm/types"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -23,25 +24,25 @@ func getKotsadmYAML(deployOptions types.DeployOptions) (map[string][]byte, error
 	s := json.NewYAMLSerializer(json.DefaultMetaFactory, scheme.Scheme, scheme.Scheme)
 
 	var role bytes.Buffer
-	if err := s.Encode(kotsadmClusterRole(), &role); err != nil {
+	if err := s.Encode(kotsadmobjects.KotsadmClusterRole(), &role); err != nil {
 		return nil, errors.Wrap(err, "failed to marshal kotsadm role")
 	}
 	docs["kotsadm-role.yaml"] = role.Bytes()
 
 	var roleBinding bytes.Buffer
-	if err := s.Encode(kotsadmClusterRoleBinding(deployOptions.Namespace), &roleBinding); err != nil {
+	if err := s.Encode(kotsadmobjects.KotsadmClusterRoleBinding(deployOptions.Namespace), &roleBinding); err != nil {
 		return nil, errors.Wrap(err, "failed to marshal kotsadm role binding")
 	}
 	docs["kotsadm-rolebinding.yaml"] = roleBinding.Bytes()
 
 	var serviceAccount bytes.Buffer
-	if err := s.Encode(kotsadmServiceAccount(deployOptions.Namespace), &serviceAccount); err != nil {
+	if err := s.Encode(kotsadmobjects.KotsadmServiceAccount(deployOptions.Namespace), &serviceAccount); err != nil {
 		return nil, errors.Wrap(err, "failed to marshal kotsadm service account")
 	}
 	docs["kotsadm-serviceaccount.yaml"] = serviceAccount.Bytes()
 
 	var deployment bytes.Buffer
-	if err := s.Encode(kotsadmDeployment(deployOptions), &deployment); err != nil {
+	if err := s.Encode(kotsadmobjects.KotsadmDeployment(deployOptions), &deployment); err != nil {
 		return nil, errors.Wrap(err, "failed to marshal kotsadm deployment")
 	}
 	docs["kotsadm-deployment.yaml"] = deployment.Bytes()
@@ -52,7 +53,7 @@ func getKotsadmYAML(deployOptions types.DeployOptions) (map[string][]byte, error
 	}
 
 	var service bytes.Buffer
-	if err := s.Encode(kotsadmService(deployOptions.Namespace, nodePort), &service); err != nil {
+	if err := s.Encode(kotsadmobjects.KotsadmService(deployOptions.Namespace, nodePort), &service); err != nil {
 		return nil, errors.Wrap(err, "failed to marshal kotsadm service")
 	}
 	docs["kotsadm-service.yaml"] = service.Bytes()
@@ -208,7 +209,7 @@ func ensureKotsadmClusterRBAC(deployOptions types.DeployOptions, clientset *kube
 }
 
 func ensureKotsadmClusterRole(clientset *kubernetes.Clientset) error {
-	_, err := clientset.RbacV1().ClusterRoles().Create(context.TODO(), kotsadmClusterRole(), metav1.CreateOptions{})
+	_, err := clientset.RbacV1().ClusterRoles().Create(context.TODO(), kotsadmobjects.KotsadmClusterRole(), metav1.CreateOptions{})
 	if err == nil || kuberneteserrors.IsAlreadyExists(err) {
 		return nil
 	}
@@ -219,7 +220,7 @@ func ensureKotsadmClusterRole(clientset *kubernetes.Clientset) error {
 func ensureKotsadmClusterRoleBinding(serviceAccountNamespace string, clientset *kubernetes.Clientset) error {
 	clusterRoleBinding, err := clientset.RbacV1().ClusterRoleBindings().Get(context.TODO(), "kotsadm-rolebinding", metav1.GetOptions{})
 	if kuberneteserrors.IsNotFound(err) {
-		_, err := clientset.RbacV1().ClusterRoleBindings().Create(context.TODO(), kotsadmClusterRoleBinding(serviceAccountNamespace), metav1.CreateOptions{})
+		_, err := clientset.RbacV1().ClusterRoleBindings().Create(context.TODO(), kotsadmobjects.KotsadmClusterRoleBinding(serviceAccountNamespace), metav1.CreateOptions{})
 		if err != nil {
 			return errors.Wrap(err, "failed to create cluster rolebinding")
 		}
@@ -249,7 +250,7 @@ func ensureKotsadmClusterRoleBinding(serviceAccountNamespace string, clientset *
 }
 
 func EnsureKotsadmRole(namespace string, clientset *kubernetes.Clientset) error {
-	role := kotsadmRole(namespace)
+	role := kotsadmobjects.KotsadmRole(namespace)
 
 	currentRole, err := clientset.RbacV1().Roles(namespace).Get(context.TODO(), "kotsadm-role", metav1.GetOptions{})
 	if err != nil {
@@ -282,7 +283,7 @@ func updateKotsadmRole(existing, desiredRole *rbacv1.Role) *rbacv1.Role {
 }
 
 func EnsureKotsadmRoleBinding(roleBindingNamespace string, kotsadmNamespace string, clientset *kubernetes.Clientset) error {
-	roleBinding := kotsadmRoleBinding(roleBindingNamespace, kotsadmNamespace)
+	roleBinding := kotsadmobjects.KotsadmRoleBinding(roleBindingNamespace, kotsadmNamespace)
 
 	currentRoleBinding, err := clientset.RbacV1().RoleBindings(roleBindingNamespace).Get(context.TODO(), "kotsadm-rolebinding", metav1.GetOptions{})
 	if err != nil {
@@ -321,7 +322,7 @@ func ensureKotsadmServiceAccount(namespace string, clientset *kubernetes.Clients
 			return errors.Wrap(err, "failed to get serviceaccouont")
 		}
 
-		_, err := clientset.CoreV1().ServiceAccounts(namespace).Create(context.TODO(), kotsadmServiceAccount(namespace), metav1.CreateOptions{})
+		_, err := clientset.CoreV1().ServiceAccounts(namespace).Create(context.TODO(), kotsadmobjects.KotsadmServiceAccount(namespace), metav1.CreateOptions{})
 		if err != nil {
 			return errors.Wrap(err, "failed to create serviceaccount")
 		}
@@ -337,14 +338,14 @@ func ensureKotsadmDeployment(deployOptions types.DeployOptions, clientset *kuber
 			return errors.Wrap(err, "failed to get existing deployment")
 		}
 
-		_, err := clientset.AppsV1().Deployments(deployOptions.Namespace).Create(context.TODO(), kotsadmDeployment(deployOptions), metav1.CreateOptions{})
+		_, err := clientset.AppsV1().Deployments(deployOptions.Namespace).Create(context.TODO(), kotsadmobjects.KotsadmDeployment(deployOptions), metav1.CreateOptions{})
 		if err != nil {
 			return errors.Wrap(err, "failed to create deployment")
 		}
 		return nil
 	}
 
-	if err = updateKotsadmDeployment(existingDeployment, deployOptions); err != nil {
+	if err = kotsadmobjects.UpdateKotsadmDeployment(existingDeployment, deployOptions); err != nil {
 		return errors.Wrap(err, "failed to merge deployments")
 	}
 
@@ -357,7 +358,7 @@ func ensureKotsadmDeployment(deployOptions types.DeployOptions, clientset *kuber
 }
 
 func ensureKotsadmService(namespace string, clientset *kubernetes.Clientset, nodePort int32) error {
-	service := kotsadmService(namespace, nodePort)
+	service := kotsadmobjects.KotsadmService(namespace, nodePort)
 
 	existing, err := clientset.CoreV1().Services(namespace).Get(context.TODO(), "kotsadm", metav1.GetOptions{})
 	if err != nil {

@@ -10,7 +10,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func jwtSecret(namespace string, jwt string) *corev1.Secret {
+func JwtSecret(namespace string, jwt string) *corev1.Secret {
 	if jwt == "" {
 		jwt = uuid.New().String()
 	}
@@ -33,7 +33,7 @@ func jwtSecret(namespace string, jwt string) *corev1.Secret {
 	return secret
 }
 
-func pgSecret(namespace string, password string) *corev1.Secret {
+func PgSecret(namespace string, password string) *corev1.Secret {
 	if password == "" {
 		password = uuid.New().String()
 	}
@@ -57,7 +57,7 @@ func pgSecret(namespace string, password string) *corev1.Secret {
 	return secret
 }
 
-func sharedPasswordSecret(namespace string, bcryptPassword string) *corev1.Secret {
+func SharedPasswordSecret(namespace string, bcryptPassword string) *corev1.Secret {
 	secret := &corev1.Secret{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "v1",
@@ -76,7 +76,7 @@ func sharedPasswordSecret(namespace string, bcryptPassword string) *corev1.Secre
 	return secret
 }
 
-func s3Secret(namespace string, accessKey string, secretKey string) *corev1.Secret {
+func S3Secret(namespace string, accessKey string, secretKey string) *corev1.Secret {
 	secret := &corev1.Secret{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "v1",
@@ -96,7 +96,7 @@ func s3Secret(namespace string, accessKey string, secretKey string) *corev1.Secr
 	return secret
 }
 
-func apiEncryptionKeySecret(namespace string, key string) *corev1.Secret {
+func ApiEncryptionKeySecret(namespace string, key string) *corev1.Secret {
 	secret := &corev1.Secret{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "v1",
@@ -115,7 +115,7 @@ func apiEncryptionKeySecret(namespace string, key string) *corev1.Secret {
 	return secret
 }
 
-func apiClusterTokenSecret(deployOptions types.DeployOptions) *corev1.Secret {
+func ApiClusterTokenSecret(deployOptions types.DeployOptions) *corev1.Secret {
 	return &corev1.Secret{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Secret",
@@ -132,6 +132,6 @@ func apiClusterTokenSecret(deployOptions types.DeployOptions) *corev1.Secret {
 	}
 }
 
-func privateKotsadmRegistrySecret(deployOptions types.DeployOptions) *corev1.Secret {
+func PrivateKotsadmRegistrySecret(deployOptions types.DeployOptions) *corev1.Secret {
 	return kotsadmversion.KotsadmPullSecret(deployOptions.Namespace, deployOptions.KotsadmOptions)
 }

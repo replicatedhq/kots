@@ -14,7 +14,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
-func postgresStatefulset(deployOptions types.DeployOptions) *appsv1.StatefulSet {
+func PostgresStatefulset(deployOptions types.DeployOptions) *appsv1.StatefulSet {
 	size := resource.MustParse("1Gi")
 
 	image := "postgres:10.7"
@@ -46,7 +46,7 @@ func postgresStatefulset(deployOptions types.DeployOptions) *appsv1.StatefulSet 
 			}
 		}
 
-		newSize := promptForSizeIfNotBetween("postgres", &size, allowedMin, allowedMax)
+		newSize := PromptForSizeIfNotBetween("postgres", &size, allowedMin, allowedMax)
 		if newSize == nil {
 			os.Exit(-1)
 		}
@@ -207,7 +207,7 @@ func postgresStatefulset(deployOptions types.DeployOptions) *appsv1.StatefulSet 
 	return statefulset
 }
 
-func postgresService(namespace string) *corev1.Service {
+func PostgresService(namespace string) *corev1.Service {
 	service := &corev1.Service{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "v1",

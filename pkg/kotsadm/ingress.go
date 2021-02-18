@@ -6,6 +6,7 @@ import (
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	"github.com/replicatedhq/kots/pkg/ingress"
+	kotsadmobjects "github.com/replicatedhq/kots/pkg/kotsadm/objects"
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
@@ -15,7 +16,7 @@ func EnsureIngress(ctx context.Context, namespace string, clientset *kubernetes.
 	if !ingressSpec.Enabled || ingressSpec.Ingress == nil {
 		return DeleteIngress(ctx, namespace, clientset)
 	}
-	kotsadmIngress := kotsadmIngress(namespace, *ingressSpec.Ingress)
+	kotsadmIngress := kotsadmobjects.KotsadmIngress(namespace, *ingressSpec.Ingress)
 	return ingress.EnsureIngress(ctx, clientset, namespace, kotsadmIngress)
 }
 

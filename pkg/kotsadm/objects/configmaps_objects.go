@@ -9,7 +9,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func kotsadmConfigMap(deployOptions types.DeployOptions) *corev1.ConfigMap {
+func KotsadmConfigMap(deployOptions types.DeployOptions) *corev1.ConfigMap {
 	data := map[string]string{
 		"initial-app-images-pushed": fmt.Sprintf("%v", deployOptions.AppImagesPushed),
 		"skip-preflights":           fmt.Sprintf("%v", deployOptions.SkipPreflights),
