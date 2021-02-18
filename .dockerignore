@@ -5,5 +5,5 @@ dev
 docs
 kustomize
 migrations
-minio
+deploy/minio
 operator

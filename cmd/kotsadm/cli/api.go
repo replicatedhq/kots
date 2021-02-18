@@ -3,7 +3,7 @@ package cli
 import (
 	"strings"
 
-	"github.com/replicatedhq/kots/kotsadm/pkg/apiserver"
+	"github.com/replicatedhq/kots/pkg/apiserver"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"

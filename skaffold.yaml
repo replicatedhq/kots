@@ -61,12 +61,12 @@ build:
         dockerfile: ./Dockerfile.skaffold
 
     - image: kotsadm-migrations
-      context: "./kotsadm/migrations"
+      context: "./migrations"
       docker:
         dockerfile: ./Dockerfile.skaffold
 
     - image: kurl-proxy
-      context: "./kotsadm/kurl_proxy"
+      context: "./kurl_proxy"
       docker:
         dockerfile: ./Dockerfile.skaffold
 

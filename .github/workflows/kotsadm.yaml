@@ -20,15 +20,15 @@ jobs:
       - name: Generate fixtures
         run: |
           /schemahero fixtures \
-            --input-dir ./kotsadm/migrations/tables \
-            --output-dir ./kotsadm/migrations/fixtures/schema \
+            --input-dir ./migrations/tables \
+            --output-dir ./migrations/fixtures/schema \
             --dbname ship-cloud --driver postgres
 
       - name: Upload schema artifact
         uses: actions/upload-artifact@v2.2.2
         with:
           name: schema
-          path: ./kotsadm/migrations/fixtures/schema/fixtures.sql
+          path: ./migrations/fixtures/schema/fixtures.sql
 
 
   generate-fixtures:
@@ -45,16 +45,16 @@ jobs:
       uses: actions/download-artifact@v2.0.8
       with:
         name: schema
-        path: ./kotsadm/migrations/fixtures/schema
+        path: ./migrations/fixtures/schema
 
     - name: Build fixtures
-      run: make -C kotsadm/migrations/fixtures deps build run
+      run: make -C migrations/fixtures deps build run
 
     - name: Upload fixtures artifact
       uses: actions/upload-artifact@v2.2.2
       with:
         name: fixtures
-        path: ./kotsadm/migrations/fixtures/fixtures.sql
+        path: ./migrations/fixtures/fixtures.sql
 
 
   publish-fixtures:
@@ -73,12 +73,12 @@ jobs:
       uses: actions/download-artifact@v2.0.8
       with:
         name: fixtures
-        path: ./kotsadm/migrations/fixtures
+        path: ./migrations/fixtures
 
     - name: Publish fixtures
       if: ${{ github.ref == 'refs/heads/master' }}
       run: |
-        make -C kotsadm/migrations/fixtures publish
+        make -C migrations/fixtures publish
 
 
   build-schema-migrations:
@@ -90,7 +90,7 @@ jobs:
 
     - uses: azure/docker-login@v1
       env:
-        DOCKER_CONFIG: ./kotsadm/migrations/.docker
+        DOCKER_CONFIG: ./migrations/.docker
       with:
         username: ${{ secrets.DOCKERHUB_USER }}
         password: ${{ secrets.DOCKERHUB_PASSWORD }}
@@ -106,7 +106,7 @@ jobs:
       env:
         DOCKER_CONFIG: ./.docker
       run: |
-        make -C kotsadm/migrations schema-alpha
+        make C migrations schema-alpha
 
     - name: "Release schema migrations on tag"
       if: ${{ steps.get_tag.outputs.GIT_TAG != '' }}
@@ -115,14 +115,14 @@ jobs:
         DOCKER_CONFIG: ./.docker
       uses: ./actions/containers
       with:
-        command: "make -C kotsadm/migrations schema-release"
+        command: "make -C migrations schema-release"
 
     - name: Upload airgap image
       if: ${{ steps.get_tag.outputs.GIT_TAG != '' }}
       uses: actions/upload-artifact@v2.2.2
       with:
         name: migrations-image
-        path: ./kotsadm/migrations/bin/docker-archive
+        path: ./migrations/bin/docker-archive
 
 
   test_web:
@@ -256,13 +256,13 @@ jobs:
         GIT_COMMIT: ${{ github.sha }}
         GIT_TAG: ${{ steps.get_tag.outputs.GIT_TAG }}
         SCOPE_DSN_PUBLIC: ""
-      run: SCOPE_DSN=$SCOPE_DSN_PUBLIC make -C kotsadm/kurl_proxy test build
+      run: make -C kurl_proxy test build
 
     - name: Upload kurl_proxy artifact
       uses: actions/upload-artifact@v2.2.2
       with:
         name: kurl_proxy
-        path: ./kotsadm/kurl_proxy/bin
+        path: ./kurl_proxy/bin
 
 
   build_go_api:
@@ -514,16 +514,16 @@ jobs:
       uses: actions/download-artifact@v2.0.8
       with:
         name: kurl_proxy
-        path: ./kotsadm/kurl_proxy/bin
+        path: ./kurl_proxy/bin
 
     - name: Add executable permissions
-      run: chmod a+x ./kotsadm/kurl_proxy/bin/kurl_proxy
+      run: chmod a+x ./kurl_proxy/bin/kurl_proxy
 
     - name: Build alpha release
       env:
         GIT_COMMIT: ${{ github.sha }}
       run: |
-        make -C kotsadm/kurl_proxy build-alpha
+        make -C kurl_proxy build-alpha
 
 
   build_kurl_proxy_tagged:
@@ -554,18 +554,18 @@ jobs:
       uses: actions/download-artifact@v2.0.8
       with:
         name: kurl_proxy
-        path: ./kotsadm/kurl_proxy/bin
+        path: ./kurl_proxy/bin
 
     - name: Add executable permissions
       if: ${{ steps.get_tag.outputs.GIT_TAG != '' }}
-      run: chmod a+x ./kotsadm/kurl_proxy/bin/kurl_proxy
+      run: chmod a+x ./kurl_proxy/bin/kurl_proxy
 
     - name: Build tagged release
       if: ${{ steps.get_tag.outputs.GIT_TAG != '' }}
       env:
         GIT_TAG: ${{ steps.get_tag.outputs.GIT_TAG }}
       run: |
-        make -C kotsadm/kurl_proxy build-release
+        make -C kurl_proxy build-release
 
 
   build_minio_alpha:
@@ -584,7 +584,7 @@ jobs:
       env:
         GIT_COMMIT: ${{ github.sha }}
       run: |
-        make -C kotsadm/minio publish-latest
+        make -C deploy/minio publish-latest
 
 
   build_minio_tagged:
@@ -595,7 +595,7 @@ jobs:
 
     - uses: azure/docker-login@v1
       env:
-        DOCKER_CONFIG: ./kotsadm/minio/.docker
+        DOCKER_CONFIG: ./deploy/minio/.docker
       with:
         username: ${{ secrets.DOCKERHUB_USER }}
         password: ${{ secrets.DOCKERHUB_PASSWORD }}
@@ -613,14 +613,14 @@ jobs:
         DOCKER_CONFIG: ./.docker
       uses: ./actions/containers
       with:
-        command: "make -C kotsadm/minio publish-release"
+        command: "make -C deploy/minio publish-release"
 
     - name: Upload airgap image
       if: ${{ steps.get_tag.outputs.GIT_TAG != '' }}
       uses: actions/upload-artifact@v2.2.2
       with:
         name: kotsadm-minio-image
-        path: ./kotsadm/minio/bin/docker-archive
+        path: ./deploy/minio/bin/docker-archive
 
 
   build_airgap:
