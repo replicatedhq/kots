@@ -43,7 +43,8 @@ The following flags will be supported, in addition to all higher level flags:
 ```
  --key
  --value
- --from-file <path to config file>
+ --value-from-file <path to value file>
+ --config-file <path to config file>
  --merge
  --deploy
  --skip-preflights
