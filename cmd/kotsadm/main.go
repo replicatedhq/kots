@@ -4,7 +4,7 @@ import (
 	"math/rand"
 	"time"
 
-	"github.com/replicatedhq/kots/kotsadm/cmd/kotsadm/cli"
+	"github.com/replicatedhq/kots/cmd/kotsadm/cli"
 )
 
 func main() {

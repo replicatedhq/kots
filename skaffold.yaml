@@ -53,20 +53,20 @@ build:
     - image: kotsadm
       context: "./"
       docker:
-        dockerfile: ./dev/Dockerfile
+        dockerfile: ./hack/dev/Dockerfile
 
     - image: kotsadm-operator
-      context: "./operator"
+      context: "./kotsadm/operator"
       docker:
         dockerfile: ./Dockerfile.skaffold
 
     - image: kotsadm-migrations
-      context: "./migrations"
+      context: "./kotsadm/migrations"
       docker:
         dockerfile: ./Dockerfile.skaffold
 
     - image: kurl-proxy
-      context: "./kurl_proxy"
+      context: "./kotsadm/kurl_proxy"
       docker:
         dockerfile: ./Dockerfile.skaffold
 

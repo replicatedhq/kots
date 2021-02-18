@@ -16,8 +16,8 @@ vendor
 .idea/
 .vscode/
 
-# scope test logs
-scope-go-*.log
-
 # goreleaser
 dist/
+
+
+supportbundle.tar.gz

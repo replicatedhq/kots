@@ -3,6 +3,10 @@ module github.com/replicatedhq/kots
 go 1.14
 
 require (
+	cloud.google.com/go v0.46.2
+	github.com/Azure/azure-sdk-for-go v42.0.0+incompatible
+	github.com/Azure/go-autorest/autorest v0.9.6
+	github.com/Azure/go-autorest/autorest/adal v0.8.2
 	github.com/Masterminds/semver v1.4.2
 	github.com/Masterminds/semver/v3 v3.1.1
 	github.com/Masterminds/sprig v2.22.0+incompatible // indirect
@@ -31,6 +35,7 @@ require (
 	github.com/garyburd/redigo v1.6.0 // indirect
 	github.com/ghodss/yaml v1.0.0
 	github.com/go-git/go-git/v5 v5.2.0
+	github.com/go-logfmt/logfmt v0.5.0
 	github.com/gofrs/uuid v3.3.0+incompatible // indirect
 	github.com/golang/mock v1.4.3
 	github.com/golang/snappy v0.0.1 // indirect
@@ -38,6 +43,7 @@ require (
 	github.com/google/uuid v1.1.1
 	github.com/gorilla/handlers v1.5.1 // indirect
 	github.com/gorilla/mux v1.7.4
+	github.com/gorilla/websocket v1.4.0
 	github.com/gosimple/slug v1.9.0
 	github.com/gotestyourself/gotestyourself v2.2.0+incompatible // indirect
 	github.com/hashicorp/go-cleanhttp v0.5.1
@@ -60,6 +66,7 @@ require (
 	github.com/replicatedhq/kurl/kurlkinds v0.0.0-20200617224429-55f493a72baf
 	github.com/replicatedhq/troubleshoot v0.9.55
 	github.com/replicatedhq/yaml/v3 v3.0.0-beta5-replicatedhq
+	github.com/robfig/cron v1.1.0
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/russellhaering/goxmldsig v1.1.0 // indirect
 	github.com/segmentio/ksuid v1.0.3
@@ -79,8 +86,10 @@ require (
 	go.uber.org/zap v1.13.0
 	golang.org/x/crypto v0.0.0-20200622213623-75b288015ac9
 	golang.org/x/oauth2 v0.0.0-20200107190931-bf48bf16ab8d
+	google.golang.org/api v0.15.0
 	gopkg.in/check.v1 v1.0.0-20200227125254-8fa46927fb4f // indirect
 	gopkg.in/go-playground/assert.v1 v1.2.1
+	gopkg.in/ini.v1 v1.51.0
 	gopkg.in/yaml.v2 v2.3.0
 	helm.sh/helm/v3 v3.2.4
 	k8s.io/api v0.18.4

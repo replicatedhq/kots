@@ -1,7 +1,7 @@
 bases:
   - ../dev
   - ./minio
-  - ../../../migrations/kustomize/overlays/dev
+  - ../../../kotsadm/migrations/kustomize/overlays/dev
 
 patches:
   - ./deployment.yaml
