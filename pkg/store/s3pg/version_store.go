@@ -1,6 +1,7 @@
 package s3pg
 
 import (
+	"context"
 	"database/sql"
 	"encoding/json"
 	"fmt"
@@ -19,6 +20,7 @@ import (
 	versiontypes "github.com/replicatedhq/kots/pkg/api/version/types"
 	apptypes "github.com/replicatedhq/kots/pkg/app/types"
 	gitopstypes "github.com/replicatedhq/kots/pkg/gitops/types"
+	kotsadmobjects "github.com/replicatedhq/kots/pkg/kotsadm/objects"
 	kotsconfig "github.com/replicatedhq/kots/pkg/kotsadmconfig"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/kustomize"
@@ -27,8 +29,64 @@ import (
 	kotss3 "github.com/replicatedhq/kots/pkg/s3"
 	"github.com/replicatedhq/kots/pkg/secrets"
 	velerov1 "github.com/vmware-tanzu/velero/pkg/apis/velero/v1"
+	corev1 "k8s.io/api/core/v1"
+	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/scheme"
+	"sigs.k8s.io/controller-runtime/pkg/client/config"
 )
+
+func (s S3PGStore) GetClientset() (*kubernetes.Clientset, error) {
+	cfg, err := config.GetConfig()
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get cluster config")
+	}
+
+	clientset, err := kubernetes.NewForConfig(cfg)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to create kubernetes clientset")
+	}
+
+	return clientset, nil
+}
+
+func (s S3PGStore) ensureApplicationMetadata(applicationMetadata string, namespace string) (*corev1.ConfigMap, error) {
+	clientset, err := s.GetClientset()
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get clientset")
+	}
+
+	existingConfigmap, err := clientset.CoreV1().ConfigMaps(namespace).Get(context.TODO(), "kotsadm-application-metadata", metav1.GetOptions{})
+	if err != nil {
+		if !kuberneteserrors.IsNotFound(err) {
+			return nil, errors.Wrap(err, "failed to get existing metadata config map")
+		}
+
+		metadata := []byte(applicationMetadata)
+		createdConfigmap, err := clientset.CoreV1().ConfigMaps(namespace).Create(context.TODO(), kotsadmobjects.ApplicationMetadataConfig(metadata, namespace), metav1.CreateOptions{})
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to create metadata config map")
+		}
+		return createdConfigmap, nil
+	}
+
+	return existingConfigmap, nil
+}
+
+func (s S3PGStore) updateConfigmap(configmap *corev1.ConfigMap) error {
+	clientset, err := s.GetClientset()
+	if err != nil {
+		return errors.Wrap(err, "failed to get clientset")
+	}
+
+	_, err = clientset.CoreV1().ConfigMaps(os.Getenv("POD_NAMESPACE")).Update(context.Background(), configmap, metav1.UpdateOptions{})
+	if err != nil {
+		return errors.Wrap(err, "failed to update config map")
+	}
+
+	return nil
+}
 
 func (s S3PGStore) IsRollbackSupportedForVersion(appID string, sequence int64) (bool, error) {
 	db := persistence.MustGetPGSession()
@@ -390,6 +448,27 @@ func (s S3PGStore) createAppVersion(tx *sql.Tx, appID string, currentSequence *i
 			diffSummary, diffSummaryError, commitURL, commitURL != "")
 		if err != nil {
 			return int64(0), errors.Wrap(err, "failed to create downstream version")
+		}
+
+		// update metadata configmap
+		applicationSpec, err := kotsKinds.Marshal("kots.io", "v1beta1", "Application")
+		if err != nil {
+			return int64(0), errors.Wrap(err, "failed to marshal application spec")
+		}
+
+		metadataConfigMap, err := s.ensureApplicationMetadata(applicationSpec, os.Getenv("POD_NAMESPACE"))
+		if err != nil {
+			return int64(0), errors.Wrap(err, "failed to get metadata config map")
+		}
+
+		if metadataConfigMap.Data == nil {
+			metadataConfigMap.Data = map[string]string{}
+		}
+
+		metadataConfigMap.Data["application.yaml"] = applicationSpec
+
+		if err := s.updateConfigmap(metadataConfigMap); err != nil {
+			return int64(0), errors.Wrap(err, "failed to update metadata configmap")
 		}
 	}
 

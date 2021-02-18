@@ -419,6 +419,27 @@ func (s OCIStore) CreateAppVersion(appID string, currentSequence *int64, filesIn
 		if err != nil {
 			return int64(0), errors.Wrap(err, "failed to create downstream version")
 		}
+
+		// update metadata configmap
+		applicationSpec, err := kotsKinds.Marshal("kots.io", "v1beta1", "Application")
+		if err != nil {
+			return int64(0), errors.Wrap(err, "failed to marshal application spec")
+		}
+
+		metadataConfigMap, err := s.ensureApplicationMetadata(applicationSpec, os.Getenv("POD_NAMESPACE"))
+		if err != nil {
+			return int64(0), errors.Wrap(err, "failed to get metadata config map")
+		}
+
+		if metadataConfigMap.Data == nil {
+			metadataConfigMap.Data = map[string]string{}
+		}
+
+		metadataConfigMap.Data["application.yaml"] = applicationSpec
+
+		if err := s.updateConfigmap(metadataConfigMap); err != nil {
+			return int64(0), errors.Wrap(err, "failed to update metadata configmap")
+		}
 	}
 
 	return newSequence, nil
