@@ -388,7 +388,7 @@ jobs:
         DOCKER_CONFIG: ./.docker
       uses: ./actions/containers
       with:
-        command: "make -C kotsadm build-release"
+        command: "make build-release"
 
     - name: Upload airgap image
       if: ${{ steps.get_tag.outputs.GIT_TAG != '' }}
