@@ -6,10 +6,6 @@ updates:
     schedule:
       interval: "weekly"
   - package-ecosystem: "gomod"
-    directory: "/kotsadm"
-    schedule:
-      interval: "weekly"
-  - package-ecosystem: "gomod"
     directory: "/kotsadm/operator"
     schedule:
       interval: "weekly"
