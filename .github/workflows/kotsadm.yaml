@@ -106,7 +106,7 @@ jobs:
       env:
         DOCKER_CONFIG: ./.docker
       run: |
-        make C migrations schema-alpha
+        make -C migrations schema-alpha
 
     - name: "Release schema migrations on tag"
       if: ${{ steps.get_tag.outputs.GIT_TAG != '' }}
