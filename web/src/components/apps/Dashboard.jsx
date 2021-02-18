@@ -537,17 +537,18 @@ class Dashboard extends Component {
   }
 
   onSnapshotOptionChange = (selectedSnapshotOption) => {
-    this.setState({ selectedSnapshotOption });
+    this.setState({ selectedSnapshotOption }, () => {
+      if (selectedSnapshotOption.option === "learn") {
+        window.open("https://kots.io/vendor/snapshots/overview/", "_blank");
+      } else {
+        this.startASnapshot(selectedSnapshotOption.option);
+      }
+    });
   }
 
   onSnapshotOptionClick = () => {
     const { selectedSnapshotOption } = this.state;
-
-    if (selectedSnapshotOption.option === "learn") {
-      window.open("https://kots.io/vendor/snapshots/overview/", "_blank");
-    } else {
-      this.startASnapshot(selectedSnapshotOption.option);
-    }
+    this.startASnapshot(selectedSnapshotOption.option);
   }
 
   render() {
