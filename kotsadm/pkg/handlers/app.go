@@ -7,18 +7,18 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
-	apptypes "github.com/replicatedhq/kots/kotsadm/pkg/app/types"
-	"github.com/replicatedhq/kots/kotsadm/pkg/downstream"
-	"github.com/replicatedhq/kots/kotsadm/pkg/gitops"
-	"github.com/replicatedhq/kots/kotsadm/pkg/render"
-	"github.com/replicatedhq/kots/kotsadm/pkg/session"
-	"github.com/replicatedhq/kots/kotsadm/pkg/store"
-	"github.com/replicatedhq/kots/kotsadm/pkg/supportbundle"
-	"github.com/replicatedhq/kots/kotsadm/pkg/version"
 	downstreamtypes "github.com/replicatedhq/kots/pkg/api/downstream/types"
 	"github.com/replicatedhq/kots/pkg/api/handlers/types"
+	apptypes "github.com/replicatedhq/kots/pkg/app/types"
+	"github.com/replicatedhq/kots/pkg/gitops"
+	downstream "github.com/replicatedhq/kots/pkg/kotsadmdownstream"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/rbac"
+	"github.com/replicatedhq/kots/pkg/render"
+	"github.com/replicatedhq/kots/pkg/session"
+	"github.com/replicatedhq/kots/pkg/store"
+	"github.com/replicatedhq/kots/pkg/supportbundle"
+	"github.com/replicatedhq/kots/pkg/version"
 )
 
 func (h *Handler) ListApps(w http.ResponseWriter, r *http.Request) {

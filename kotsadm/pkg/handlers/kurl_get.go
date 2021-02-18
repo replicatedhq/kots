@@ -3,8 +3,8 @@ package handlers
 import (
 	"net/http"
 
-	"github.com/replicatedhq/kots/kotsadm/pkg/k8s"
-	"github.com/replicatedhq/kots/kotsadm/pkg/kurl"
+	"github.com/replicatedhq/kots/pkg/k8s"
+	"github.com/replicatedhq/kots/pkg/kurl"
 	"github.com/replicatedhq/kots/pkg/logger"
 )
 

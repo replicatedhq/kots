@@ -6,10 +6,10 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
-	"github.com/replicatedhq/kots/kotsadm/pkg/downstream"
 	"github.com/replicatedhq/kots/kotsadm/pkg/socketservice"
-	"github.com/replicatedhq/kots/kotsadm/pkg/store"
+	downstream "github.com/replicatedhq/kots/pkg/kotsadmdownstream"
 	"github.com/replicatedhq/kots/pkg/logger"
+	"github.com/replicatedhq/kots/pkg/store"
 )
 
 func (h *Handler) RedeployAppVersion(w http.ResponseWriter, r *http.Request) {

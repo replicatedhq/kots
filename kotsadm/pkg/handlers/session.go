@@ -8,9 +8,9 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
-	"github.com/replicatedhq/kots/kotsadm/pkg/session"
-	"github.com/replicatedhq/kots/kotsadm/pkg/session/types"
-	"github.com/replicatedhq/kots/kotsadm/pkg/store"
+	"github.com/replicatedhq/kots/pkg/session"
+	"github.com/replicatedhq/kots/pkg/session/types"
+	"github.com/replicatedhq/kots/pkg/store"
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"

@@ -1,0 +1,77 @@
+apiVersion: skaffold/v2beta2
+kind: Config
+
+profiles:
+  - name: microk8s
+    activation:
+      - kubeContext: microk8s
+    deploy:
+      kustomize:
+        paths:
+          - "./kustomize/overlays/microk8s"
+        flags:
+          apply:
+            - --validate=false ## Skaffold turns CRDs into invalid yaml (https://github.com/GoogleContainerTools/skaffold/issues/1737)
+  - name: ocistore
+    activation:
+      - env: KOTSSTORE=oci
+    deploy:
+      kustomize:
+        paths:
+          - "./kustomize/overlays/ocistore"
+  - name: s3pgstore
+    activation: 
+      - env: KOTSSTORE=
+    deploy:
+      kustomize:
+        paths: 
+          - "./kustomize/overlays/s3pgstore"
+
+build:
+  local:
+    concurrency: 0
+    useBuildkit: true
+
+  artifacts:
+    - image: kotsadm-web
+      context: "./web"
+      sync:
+        manual:
+          - src: "src/**/*.jsx"
+            dest: "./"
+          - src: "src/**/*.js"
+            dest: "./"
+          - src: "src/**/*.png"
+            dest: "./"
+          - src: "src/**/*.scss"
+            dest: "./"
+          - src: "src/**/*.css"
+            dest: "./"
+      docker:
+        dockerfile: ./Dockerfile.skaffold
+
+    - image: kotsadm
+      context: "./"
+      docker:
+        dockerfile: ./hack/dev/Dockerfile
+
+    - image: kotsadm-operator
+      context: "./kotsadm/operator"
+      docker:
+        dockerfile: ./Dockerfile.skaffold
+
+    - image: kotsadm-migrations
+      context: "./kotsadm/migrations"
+      docker:
+        dockerfile: ./Dockerfile.skaffold
+
+    - image: kurl-proxy
+      context: "./kotsadm/kurl_proxy"
+      docker:
+        dockerfile: ./Dockerfile.skaffold
+
+deploy:
+  statusCheckDeadlineSeconds: 240
+  kustomize:
+    paths:
+      - "./kustomize/overlays/dev"

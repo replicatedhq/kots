@@ -1,0 +1,13 @@
+bases:
+  - ../../base
+  - ../../../web/kustomize/overlays/dev
+  - ../../../kotsadm/operator/kustomize/overlays/dev
+  - ../../../kotsadm/kurl_proxy/kustomize/overlays/dev
+
+resources:
+  - ./dex-postgres-secret.yaml
+  - ./configmap-init-dex-db.yaml
+
+patches:
+  - ./deployment.yaml
+  - ./service.yaml

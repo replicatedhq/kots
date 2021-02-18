@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/replicatedhq/kots/kotsadm/pkg/license"
+	"github.com/replicatedhq/kots/pkg/kotsadmlicense"
 	"github.com/replicatedhq/kots/pkg/logger"
 )
 

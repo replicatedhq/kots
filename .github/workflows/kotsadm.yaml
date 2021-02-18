@@ -184,7 +184,7 @@ jobs:
       env:
         GIT_COMMIT: ${{ github.sha }}
         GIT_TAG: ${{ steps.get_tag.outputs.GIT_TAG }}
-      run: make -C kotsadm/web deps build-kotsadm
+      run: make -C web deps build-kotsadm
       ## TODO: retry logic
       # retry:
       #   automatic:
@@ -295,7 +295,7 @@ jobs:
       uses: actions/upload-artifact@v2.2.2
       with:
         name: go_api
-        path: ./kotsadm/bin
+        path: ./bin
 
 
   release_go_api_alpha:
@@ -320,16 +320,16 @@ jobs:
       uses: actions/download-artifact@v2.0.8
       with:
         name: go_api
-        path: ./kotsadm/bin
+        path: ./bin
 
     - name: Add executable permissions
-      run: chmod a+x ./kotsadm/bin/kotsadm
+      run: chmod a+x ./bin/kotsadm
 
     - name: Download web artifact
       uses: actions/download-artifact@v2.0.8
       with:
         name: web
-        path: ./kotsadm/web/dist
+        path: ./web/dist
 
     - name: Build alpha release
       env:
@@ -347,7 +347,7 @@ jobs:
 
     - uses: azure/docker-login@v1
       env:
-        DOCKER_CONFIG: ./kotsadm/.docker
+        DOCKER_CONFIG: ./.docker
       with:
         username: ${{ secrets.DOCKERHUB_USER }}
         password: ${{ secrets.DOCKERHUB_PASSWORD }}
@@ -368,18 +368,18 @@ jobs:
       uses: actions/download-artifact@v2.0.8
       with:
         name: go_api
-        path: ./kotsadm/bin
+        path: ./bin
 
     - name: Add executable permissions
       if: ${{ steps.get_tag.outputs.GIT_TAG != '' }}
-      run: chmod a+x ./kotsadm/bin/kotsadm
+      run: chmod a+x ./bin/kotsadm
 
     - name: Download web artifact
       if: ${{ steps.get_tag.outputs.GIT_TAG != '' }}
       uses: actions/download-artifact@v2.0.8
       with:
         name: web
-        path: ./kotsadm/web/dist
+        path: ./web/dist
 
     - name: Build tagged release
       if: ${{ steps.get_tag.outputs.GIT_TAG != '' }}
@@ -395,7 +395,7 @@ jobs:
       uses: actions/upload-artifact@v2.2.2
       with:
         name: kotsadm-image
-        path: ./kotsadm/bin/docker-archive
+        path: ./bin/docker-archive
 
 
   release_operator_alpha:

@@ -9,11 +9,11 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
-	"github.com/replicatedhq/kots/kotsadm/pkg/preflight"
-	preflighttypes "github.com/replicatedhq/kots/kotsadm/pkg/preflight/types"
-	"github.com/replicatedhq/kots/kotsadm/pkg/store"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/logger"
+	"github.com/replicatedhq/kots/pkg/preflight"
+	preflighttypes "github.com/replicatedhq/kots/pkg/preflight/types"
+	"github.com/replicatedhq/kots/pkg/store"
 )
 
 type GetPreflightResultResponse struct {

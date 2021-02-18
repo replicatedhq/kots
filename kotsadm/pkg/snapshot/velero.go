@@ -5,7 +5,7 @@ import (
 	"regexp"
 
 	"github.com/pkg/errors"
-	"github.com/replicatedhq/kots/kotsadm/pkg/k8s"
+	"github.com/replicatedhq/kots/pkg/k8s"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	veleroclientv1 "github.com/vmware-tanzu/velero/pkg/generated/clientset/versioned/typed/velero/v1"
 	v1 "k8s.io/api/apps/v1"
