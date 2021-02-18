@@ -54,8 +54,8 @@ jobs:
         uses: docker/build-push-action@v2.2.2
         with:
           tags: ttl.sh/automated-${{ github.run_id }}/kotsadm:2h
-          context: ./kotsadm
-          file: ./kotsadm/deploy/Dockerfile       
+          context: ./
+          file: ./deploy/Dockerfile       
           push: true   
       - name: Scan kotsadm for vulnerabilities
         uses: aquasecurity/trivy-action@master
@@ -102,8 +102,8 @@ jobs:
         uses: docker/build-push-action@v2.2.2
         with:
           tags: ttl.sh/automated-${{ github.run_id }}/minio:2h
-          context: ./kotsadm/minio
-          file: ./kotsadm/minio/Dockerfile
+          context: ./deploy/minio
+          file: ./deploy/minio/Dockerfile
           push: true
       - name: Scan minio for vulnerabilities
         uses: aquasecurity/trivy-action@master

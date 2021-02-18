@@ -196,7 +196,7 @@ jobs:
       uses: actions/upload-artifact@v2.2.2
       with:
         name: web
-        path: ./kotsadm/web/dist
+        path: ./web/dist
 
 
   build_operator:
