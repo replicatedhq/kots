@@ -78,6 +78,6 @@ RUN kubectl krew install support-bundle
 # ADD cmd $PROJECTPATH/cmd
 # ADD pkg $PROJECTPATH/pkg
 # ADD web/dist $PROJECTPATH/web/dist
-ADD ./bin/kotsadm ./bin/kotsadm
+ADD ./bin ./bin
 
-ENTRYPOINT ["./bin/kotsadm", "api"]
+ENTRYPOINT ["./bin", "api"]
