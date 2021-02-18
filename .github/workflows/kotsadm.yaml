@@ -335,7 +335,7 @@ jobs:
       env:
         GIT_COMMIT: ${{ github.sha }}
       run: |
-        make -C kotsadm build-alpha
+        make build-alpha
 
 
   release_go_api_tagged:
