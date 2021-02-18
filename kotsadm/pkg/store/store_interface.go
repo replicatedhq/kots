@@ -40,6 +40,7 @@ type KOTSStore interface {
 	SnapshotStore
 	InstallationStore
 	ReportingStore
+	KotsadmParamsStore
 
 	Init() error // this may need options
 	WaitForReady(ctx context.Context) error
@@ -173,4 +174,9 @@ type InstallationStore interface {
 
 type ReportingStore interface {
 	GetReportingInfo(appID string) *upstreamtypes.ReportingInfo
+}
+
+type KotsadmParamsStore interface {
+	IsKotsadmIDGenerated() (bool, error)
+	SetIsKotsadmIDGenerated() error
 }

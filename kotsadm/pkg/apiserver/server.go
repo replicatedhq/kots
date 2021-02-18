@@ -12,16 +12,20 @@ import (
 	"time"
 
 	"github.com/gorilla/mux"
+	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/kotsadm/pkg/automation"
 	"github.com/replicatedhq/kots/kotsadm/pkg/handlers"
 	"github.com/replicatedhq/kots/kotsadm/pkg/informers"
+	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/kotsadm/pkg/policy"
 	"github.com/replicatedhq/kots/kotsadm/pkg/snapshotscheduler"
 	"github.com/replicatedhq/kots/kotsadm/pkg/socketservice"
 	"github.com/replicatedhq/kots/kotsadm/pkg/store"
+	"github.com/replicatedhq/kots/kotsadm/pkg/store/s3pg"
 	"github.com/replicatedhq/kots/kotsadm/pkg/supportbundle"
 	"github.com/replicatedhq/kots/kotsadm/pkg/updatechecker"
 	"github.com/replicatedhq/kots/pkg/rbac"
+	"github.com/segmentio/ksuid"
 )
 
 func Start() {
@@ -42,6 +46,10 @@ func Start() {
 	err := bootstrapIdentity()
 	if err != nil {
 		panic(err)
+	}
+
+	if err := generateKotsadmID(); err != nil {
+		logger.Infof("failed to generate kots admin id", err)
 	}
 
 	supportbundle.StartServer()
@@ -160,4 +168,57 @@ func Start() {
 	fmt.Printf("Starting kotsadm API on port %d...\n", 3000)
 
 	log.Fatal(srv.ListenAndServe())
+}
+
+// Detects the InstanceID of kodsadm pod across restores
+func generateKotsadmID() error {
+	logger.Info("Generate Kotsadm Instance ID")
+
+	// Retrieve the ClusterID from store
+	clusters, err := store.GetStore().ListClusters()
+	if err != nil {
+		return errors.Wrap(err, "failed to list clusters")
+	}
+	if len(clusters) == 0 {
+		return nil
+	}
+	clusterID := clusters[0].ClusterID
+
+	// Write a Query to set/get an Event from the Store
+	isKotsadmIDGenerated, err := store.GetStore().IsKotsadmIDGenerated()
+	if err != nil {
+		return errors.Wrap(err, "Failed to check kotsadm id generation")
+	}
+
+	// if the key exists, likely a fresh Install
+	if isKotsadmIDGenerated {
+		exists, err := s3pg.IsKotsadmIDConfigMapPresent()
+		if err != nil {
+			return errors.Wrap(err, "config map check error")
+		}
+		if exists {
+			// do nothing
+			return nil
+		}
+		//generate guid and use that as clusterId to identify that as a different install
+		clusterID = ksuid.New().String()
+		_, err = s3pg.CreateAdminIDConfigMap(clusterID)
+		if err != nil {
+			return errors.Wrap(err, "failed to to create config map")
+		}
+	}
+
+	// if the key does not exist, likely a Restore or pod restart
+	if !isKotsadmIDGenerated {
+		_, err := s3pg.CreateAdminIDConfigMap(clusterID)
+		if err != nil {
+			return errors.Wrap(err, "failed to create admin id")
+		}
+		// write to the db at the very if configmap creation succeeds and no other failures
+		err = store.GetStore().SetIsKotsadmIDGenerated()
+		if err != nil {
+			return errors.Wrap(err, "failed to set admin event status")
+		}
+	}
+	return nil
 }
