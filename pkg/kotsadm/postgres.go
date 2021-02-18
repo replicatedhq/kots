@@ -9,6 +9,7 @@ import (
 	kotsadmobjects "github.com/replicatedhq/kots/pkg/kotsadm/objects"
 	"github.com/replicatedhq/kots/pkg/kotsadm/types"
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/serializer/json"
 	"k8s.io/client-go/kubernetes"
@@ -23,7 +24,13 @@ func getPostgresYAML(deployOptions types.DeployOptions) (map[string][]byte, erro
 	if deployOptions.PostgresPassword == "" {
 		deployOptions.PostgresPassword = uuid.New().String()
 	}
-	if err := s.Encode(kotsadmobjects.PostgresStatefulset(deployOptions), &statefulset); err != nil {
+
+	size, err := getSize(deployOptions, "postgres", resource.MustParse("1Gi"))
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get size")
+	}
+
+	if err := s.Encode(kotsadmobjects.PostgresStatefulset(deployOptions, size), &statefulset); err != nil {
 		return nil, errors.Wrap(err, "failed to marshal postgres statefulset")
 	}
 	docs["postgres-statefulset.yaml"] = statefulset.Bytes()
@@ -42,7 +49,12 @@ func ensurePostgres(deployOptions types.DeployOptions, clientset *kubernetes.Cli
 		return errors.Wrap(err, "failed to ensure postgres secret")
 	}
 
-	if err := ensurePostgresStatefulset(deployOptions, clientset); err != nil {
+	size, err := getSize(deployOptions, "postgres", resource.MustParse("1Gi"))
+	if err != nil {
+		return errors.Wrap(err, "failed to get size")
+	}
+
+	if err := ensurePostgresStatefulset(deployOptions, clientset, size); err != nil {
 		return errors.Wrap(err, "failed to ensure postgres statefulset")
 	}
 
@@ -53,14 +65,14 @@ func ensurePostgres(deployOptions types.DeployOptions, clientset *kubernetes.Cli
 	return nil
 }
 
-func ensurePostgresStatefulset(deployOptions types.DeployOptions, clientset *kubernetes.Clientset) error {
+func ensurePostgresStatefulset(deployOptions types.DeployOptions, clientset *kubernetes.Clientset, size resource.Quantity) error {
 	_, err := clientset.AppsV1().StatefulSets(deployOptions.Namespace).Get(context.TODO(), "kotsadm-postgres", metav1.GetOptions{})
 	if err != nil {
 		if !kuberneteserrors.IsNotFound(err) {
 			return errors.Wrap(err, "failed to get existing statefulset")
 		}
 
-		_, err := clientset.AppsV1().StatefulSets(deployOptions.Namespace).Create(context.TODO(), kotsadmobjects.PostgresStatefulset(deployOptions), metav1.CreateOptions{})
+		_, err := clientset.AppsV1().StatefulSets(deployOptions.Namespace).Create(context.TODO(), kotsadmobjects.PostgresStatefulset(deployOptions, size), metav1.CreateOptions{})
 		if err != nil {
 			return errors.Wrap(err, "failed to create postgres statefulset")
 		}

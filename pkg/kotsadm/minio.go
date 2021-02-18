@@ -8,6 +8,7 @@ import (
 	kotsadmobjects "github.com/replicatedhq/kots/pkg/kotsadm/objects"
 	"github.com/replicatedhq/kots/pkg/kotsadm/types"
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/serializer/json"
 	"k8s.io/client-go/kubernetes"
@@ -18,8 +19,13 @@ func getMinioYAML(deployOptions types.DeployOptions) (map[string][]byte, error) 
 	docs := map[string][]byte{}
 	s := json.NewYAMLSerializer(json.DefaultMetaFactory, scheme.Scheme, scheme.Scheme)
 
+	size, err := getSize(deployOptions, "minio", resource.MustParse("4Gi"))
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get size")
+	}
+
 	var statefulset bytes.Buffer
-	if err := s.Encode(kotsadmobjects.MinioStatefulset(deployOptions), &statefulset); err != nil {
+	if err := s.Encode(kotsadmobjects.MinioStatefulset(deployOptions, size), &statefulset); err != nil {
 		return nil, errors.Wrap(err, "failed to marshal minio statefulset")
 	}
 	docs["minio-statefulset.yaml"] = statefulset.Bytes()
@@ -34,11 +40,16 @@ func getMinioYAML(deployOptions types.DeployOptions) (map[string][]byte, error) 
 }
 
 func ensureMinio(deployOptions types.DeployOptions, clientset *kubernetes.Clientset) error {
+	size, err := getSize(deployOptions, "minio", resource.MustParse("4Gi"))
+	if err != nil {
+		return errors.Wrap(err, "failed to get size")
+	}
+
 	if err := ensureS3Secret(deployOptions.Namespace, clientset); err != nil {
 		return errors.Wrap(err, "failed to ensure minio secret")
 	}
 
-	if err := ensureMinioStatefulset(deployOptions, clientset); err != nil {
+	if err := ensureMinioStatefulset(deployOptions, clientset, size); err != nil {
 		return errors.Wrap(err, "failed to ensure minio statefulset")
 	}
 
@@ -49,14 +60,14 @@ func ensureMinio(deployOptions types.DeployOptions, clientset *kubernetes.Client
 	return nil
 }
 
-func ensureMinioStatefulset(deployOptions types.DeployOptions, clientset *kubernetes.Clientset) error {
+func ensureMinioStatefulset(deployOptions types.DeployOptions, clientset *kubernetes.Clientset, size resource.Quantity) error {
 	_, err := clientset.AppsV1().StatefulSets(deployOptions.Namespace).Get(context.TODO(), "kotsadm-minio", metav1.GetOptions{})
 	if err != nil {
 		if !kuberneteserrors.IsNotFound(err) {
 			return errors.Wrap(err, "failed to get existing statefulset")
 		}
 
-		_, err := clientset.AppsV1().StatefulSets(deployOptions.Namespace).Create(context.TODO(), kotsadmobjects.MinioStatefulset(deployOptions), metav1.CreateOptions{})
+		_, err := clientset.AppsV1().StatefulSets(deployOptions.Namespace).Create(context.TODO(), kotsadmobjects.MinioStatefulset(deployOptions, size), metav1.CreateOptions{})
 		if err != nil {
 			return errors.Wrap(err, "failed to create minio statefulset")
 		}

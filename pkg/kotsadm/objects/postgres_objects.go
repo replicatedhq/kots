@@ -2,7 +2,6 @@ package kotsadm
 
 import (
 	"fmt"
-	"os"
 
 	"github.com/replicatedhq/kots/pkg/kotsadm/types"
 	kotsadmversion "github.com/replicatedhq/kots/pkg/kotsadm/version"
@@ -14,9 +13,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
-func PostgresStatefulset(deployOptions types.DeployOptions) *appsv1.StatefulSet {
-	size := resource.MustParse("1Gi")
-
+func PostgresStatefulset(deployOptions types.DeployOptions, size resource.Quantity) *appsv1.StatefulSet {
 	image := "postgres:10.7"
 	var pullSecrets []corev1.LocalObjectReference
 	if s := kotsadmversion.KotsadmPullSecret(deployOptions.Namespace, deployOptions.KotsadmOptions); s != nil {
@@ -26,32 +23,6 @@ func PostgresStatefulset(deployOptions types.DeployOptions) *appsv1.StatefulSet 
 				Name: s.ObjectMeta.Name,
 			},
 		}
-	}
-
-	if deployOptions.LimitRange != nil {
-		var allowedMax *resource.Quantity
-		var allowedMin *resource.Quantity
-
-		for _, limit := range deployOptions.LimitRange.Spec.Limits {
-			if limit.Type == corev1.LimitTypePersistentVolumeClaim {
-				max, ok := limit.Max["storage"]
-				if ok {
-					allowedMax = &max
-				}
-
-				min, ok := limit.Min["storage"]
-				if ok {
-					allowedMin = &min
-				}
-			}
-		}
-
-		newSize := PromptForSizeIfNotBetween("postgres", &size, allowedMin, allowedMax)
-		if newSize == nil {
-			os.Exit(-1)
-		}
-
-		size = *newSize
 	}
 
 	var securityContext corev1.PodSecurityContext
