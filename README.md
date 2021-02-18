@@ -1,4 +1,4 @@
-[![go.dev reference](https://img.shields.io/badge/go.dev-reference-007d9c?logo=go&logoColor=white&style=flat-square)](https://pkg.go.dev/github.com/replicatedhq/kots) [![Scope](https://app.scope.dev/api/badge/90e6e263-0a67-4230-bb6c-d72d70a5413c/default)](https://app.scope.dev/external/v1/explore/28825e16-0dc1-4819-bea4-5ba2f04575ab/90e6e263-0a67-4230-bb6c-d72d70a5413c/default?branch=master)
+[![go.dev reference](https://img.shields.io/badge/go.dev-reference-007d9c?logo=go&logoColor=white&style=flat-square)](https://pkg.go.dev/github.com/replicatedhq/kots)
 
 
 # Kubernetes Off-The-Shelf (KOTS) Software
