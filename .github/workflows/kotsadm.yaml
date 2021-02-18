@@ -289,7 +289,7 @@ jobs:
         # GITHUB_REPOSITORY:
         # GITHUB_WORKSPACE:
         SCOPE_DSN_PUBLIC: ""
-      run: SCOPE_DSN=$SCOPE_DSN_PUBLIC make -C kotsadm test kotsadm
+      run: make test kotsadm
 
     - name: Upload Go API artifact
       uses: actions/upload-artifact@v2.2.2
