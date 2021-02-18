@@ -35,6 +35,11 @@ func (s KOTSStore) RunMigrations() {
 	if err := s.migrateAppSpec(); err != nil {
 		logger.Error(errors.Wrap(err, "failed to migrate app_spec"))
 	}
+
+	// migrate sessions from postgres into a secret
+	if err := s.migrateSessionsFromPostgres(); err != nil {
+		logger.Error(errors.Wrap(err, "failed to migrate sessions"))
+	}
 }
 
 func (s KOTSStore) migrateKotsAppSpec() error {

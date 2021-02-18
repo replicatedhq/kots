@@ -80,12 +80,21 @@ func (s KOTSStore) migrateSessionsFromPostgres() error {
 			return errors.Wrap(err, "failed to encoded session")
 		}
 
+		if sessionSecret.Data == nil {
+			sessionSecret.Data = map[string][]byte{}
+		}
+
 		sessionSecret.Data[session.ID] = b
 	}
 
 	err = s.updateSessionSecret(sessionSecret)
 	if err != nil {
 		return errors.Wrap(err, "failed to update session secre")
+	}
+
+	query = `delete from session`
+	if _, err := db.Exec(query); err != nil {
+		return errors.Wrap(err, "failed to delete sessions from pg")
 	}
 
 	return nil
