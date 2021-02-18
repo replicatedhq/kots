@@ -4,7 +4,7 @@ import (
 	"database/sql"
 
 	"github.com/pkg/errors"
-	"github.com/replicatedhq/kots/kotsadm/pkg/persistence"
+	"github.com/replicatedhq/kots/pkg/persistence"
 )
 
 // IsKotsadmIDGenerated retrieves the id of kotsadm if the pod is already
