@@ -51,27 +51,46 @@ func (s S3PGStore) GetClientset() (*kubernetes.Clientset, error) {
 	return clientset, nil
 }
 
-func (s S3PGStore) ensureApplicationMetadata(applicationMetadata string, namespace string) (*corev1.ConfigMap, error) {
+func (s S3PGStore) ensureApplicationMetadata(applicationMetadata string, namespace string) error {
 	clientset, err := s.GetClientset()
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to get clientset")
+		return errors.Wrap(err, "failed to get clientset")
 	}
 
-	existingConfigmap, err := clientset.CoreV1().ConfigMaps(namespace).Get(context.TODO(), "kotsadm-application-metadata", metav1.GetOptions{})
+	existingConfigMap, err := clientset.CoreV1().ConfigMaps(namespace).Get(context.TODO(), "kotsadm-application-metadata", metav1.GetOptions{})
 	if err != nil {
 		if !kuberneteserrors.IsNotFound(err) {
-			return nil, errors.Wrap(err, "failed to get existing metadata config map")
+			return errors.Wrap(err, "failed to get existing metadata config map")
 		}
 
 		metadata := []byte(applicationMetadata)
-		createdConfigmap, err := clientset.CoreV1().ConfigMaps(namespace).Create(context.TODO(), kotsadmobjects.ApplicationMetadataConfig(metadata, namespace), metav1.CreateOptions{})
+		createdConfigMap, err := clientset.CoreV1().ConfigMaps(namespace).Create(context.TODO(), kotsadmobjects.ApplicationMetadataConfig(metadata, namespace), metav1.CreateOptions{})
 		if err != nil {
-			return nil, errors.Wrap(err, "failed to create metadata config map")
+			return errors.Wrap(err, "failed to create metadata config map")
 		}
-		return createdConfigmap, nil
+
+		if createdConfigMap.Data == nil {
+			createdConfigMap.Data = map[string]string{}
+		}
+
+		createdConfigMap.Data["application.yaml"] = applicationMetadata
+
+		if err := s.updateConfigmap(createdConfigMap); err != nil {
+			return errors.Wrap(err, "failed to update metadata configmap")
+		}
 	}
 
-	return existingConfigmap, nil
+	if existingConfigMap.Data == nil {
+		existingConfigMap.Data = map[string]string{}
+	}
+
+	existingConfigMap.Data["application.yaml"] = applicationMetadata
+
+	if err := s.updateConfigmap(existingConfigMap); err != nil {
+		return errors.Wrap(err, "failed to update metadata configmap")
+	}
+
+	return nil
 }
 
 func (s S3PGStore) updateConfigmap(configmap *corev1.ConfigMap) error {
@@ -456,19 +475,8 @@ func (s S3PGStore) createAppVersion(tx *sql.Tx, appID string, currentSequence *i
 			return int64(0), errors.Wrap(err, "failed to marshal application spec")
 		}
 
-		metadataConfigMap, err := s.ensureApplicationMetadata(applicationSpec, os.Getenv("POD_NAMESPACE"))
-		if err != nil {
+		if err := s.ensureApplicationMetadata(applicationSpec, os.Getenv("POD_NAMESPACE")); err != nil {
 			return int64(0), errors.Wrap(err, "failed to get metadata config map")
-		}
-
-		if metadataConfigMap.Data == nil {
-			metadataConfigMap.Data = map[string]string{}
-		}
-
-		metadataConfigMap.Data["application.yaml"] = applicationSpec
-
-		if err := s.updateConfigmap(metadataConfigMap); err != nil {
-			return int64(0), errors.Wrap(err, "failed to update metadata configmap")
 		}
 	}
 

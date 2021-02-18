@@ -426,19 +426,8 @@ func (s OCIStore) CreateAppVersion(appID string, currentSequence *int64, filesIn
 			return int64(0), errors.Wrap(err, "failed to marshal application spec")
 		}
 
-		metadataConfigMap, err := s.ensureApplicationMetadata(applicationSpec, os.Getenv("POD_NAMESPACE"))
-		if err != nil {
+		if err := s.ensureApplicationMetadata(applicationSpec, os.Getenv("POD_NAMESPACE")); err != nil {
 			return int64(0), errors.Wrap(err, "failed to get metadata config map")
-		}
-
-		if metadataConfigMap.Data == nil {
-			metadataConfigMap.Data = map[string]string{}
-		}
-
-		metadataConfigMap.Data["application.yaml"] = applicationSpec
-
-		if err := s.updateConfigmap(metadataConfigMap); err != nil {
-			return int64(0), errors.Wrap(err, "failed to update metadata configmap")
 		}
 	}
 
