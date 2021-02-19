@@ -117,6 +117,29 @@
 
   &.snapshot {
     width: 200px;
+    .css-1eyizxz-control {
+      border: 0;
+      cursor: pointer;
+      outline: none;
+      position: relative;
+      background-color: #326DE6;
+      color: #ffffff;
+  
+      &:not(:disabled):hover {
+        background-color: #265BC7;
+      }
+    }
+    .css-f8ooy8-control {
+      cursor: pointer;
+      outline: none;
+      position: relative;
+      background-color: #326DE6;
+      color: #ffffff;
+  
+      &:not(:disabled):hover {
+        background-color: #265BC7;
+      }
+    }
     .css-dvua67-singleValue {
       top: 40%
     }
@@ -124,6 +147,15 @@
       margin-bottom: 2px;
       margin-top: 4px;
       height: 20px;
+    }
+    .css-1wy0on6 {
+      background-color: #326DE6;
+      color: #ffffff;
+      border-radius: 4px;
+  
+      &:not(:disabled):hover {
+        background-color: #265BC7;
+      }
     }
     .css-16pqwjk-indicatorContainer {
       padding: 0 6px 0 6px;

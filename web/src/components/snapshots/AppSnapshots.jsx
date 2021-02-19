@@ -52,7 +52,8 @@ class AppSnapshots extends Component {
     listSnapshotsJob: new Repeater(),
     networkErr: false,
     displayErrorModal: false,
-    selectedApp: {}
+    selectedApp: {},
+    switchingApps: false
   };
 
   componentDidMount = async () => {
@@ -89,7 +90,14 @@ class AppSnapshots extends Component {
     }
 
     if (selectedApp !== lastState.selectedApp && selectedApp) {
-      this.props.history.replace(`/snapshots/partial/${selectedApp.slug}`)
+      this.setState({ switchingApps: true });
+      setTimeout(() => {
+        this.setState({
+          switchingApps: false
+        });
+      }, 3000);
+      this.checkRestoreInProgress();
+      this.props.history.replace(`/snapshots/partial/${selectedApp.slug}`);
     }
   }
 
@@ -446,13 +454,14 @@ class AppSnapshots extends Component {
       snapshotsListErrMsg,
       restoreInProgressErr,
       restoreInProgressErrMsg,
-      selectedApp
+      selectedApp,
+      switchingApps
     } = this.state;
     const { app, appsList } = this.props;
     const appTitle = app?.name;
     const inProgressSnapshotExist = snapshots?.find(snapshot => snapshot.status === "InProgress");
 
-    if (isLoadingSnapshotSettings || !hasSnapshotsLoaded || (isStartButtonClicked && snapshots?.length === 0) || startingSnapshot) {
+    if (isLoadingSnapshotSettings || !hasSnapshotsLoaded || (isStartButtonClicked && snapshots?.length === 0) || startingSnapshot || switchingApps) {
       return (
         <div className="flex-column flex1 alignItems--center justifyContent--center">
           <Loader size="60" />
@@ -563,7 +572,7 @@ class AppSnapshots extends Component {
                 <div className="flex flex-column u-position--relative">
                   {[0, 1, 2, 3, 4, 5].map((el) => (<DummySnapshotRow key={el} />
                   ))}
-                  <GettingStartedSnapshots isApp={true} appTitle={appTitle} isVeleroInstalled={snapshotSettings?.veleroVersion !== ""} history={this.props.history} startManualSnapshot={this.startManualSnapshot} />
+                  <GettingStartedSnapshots isApp={true} app={selectedApp} isVeleroInstalled={snapshotSettings?.veleroVersion !== ""} history={this.props.history} startManualSnapshot={this.startManualSnapshot} />
                 </div> : null}
           </div>
           {displayScheduleSnapshotModal &&
