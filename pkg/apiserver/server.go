@@ -49,7 +49,7 @@ func Start() {
 	}
 
 	if err := generateKotsadmID(); err != nil {
-		logger.Infof("failed to generate kots admin id", err)
+		logger.Infof("failed to generate kotsadm id:", err)
 	}
 
 	supportbundle.StartServer()
@@ -172,8 +172,7 @@ func Start() {
 
 // Detects the InstanceID of kodsadm pod across restores
 func generateKotsadmID() error {
-	logger.Info("Generate Kotsadm Instance ID")
-
+	var err error = nil
 	// Retrieve the ClusterID from store
 	clusters, err := store.GetStore().ListClusters()
 	if err != nil {
@@ -183,42 +182,26 @@ func generateKotsadmID() error {
 		return nil
 	}
 	clusterID := clusters[0].ClusterID
-
-	// Write a Query to set/get an Event from the Store
 	isKotsadmIDGenerated, err := store.GetStore().IsKotsadmIDGenerated()
 	if err != nil {
-		return errors.Wrap(err, "Failed to check kotsadm id generation")
+		return errors.Wrap(err, "failed to generate id")
 	}
-
-	// if the key exists, likely a fresh Install
-	if isKotsadmIDGenerated {
-		exists, err := kotsstore.IsKotsadmIDConfigMapPresent()
-		if err != nil {
-			return errors.Wrap(err, "config map check error")
-		}
-		if exists {
-			// do nothing
-			return nil
-		}
-		//generate guid and use that as clusterId to identify that as a different install
-		clusterID = ksuid.New().String()
-		_, err = kotsstore.CreateAdminIDConfigMap(clusterID)
-		if err != nil {
-			return errors.Wrap(err, "failed to to create config map")
-		}
+	cmpExists, err := kotsstore.IsKotsadmIDConfigMapPresent()
+	if err != nil {
+		return errors.Wrap(err, "failed to check configmap")
 	}
-
-	// if the key does not exist, likely a Restore or pod restart
-	if !isKotsadmIDGenerated {
-		_, err := kotsstore.CreateAdminIDConfigMap(clusterID)
-		if err != nil {
-			return errors.Wrap(err, "failed to create admin id")
-		}
-		// write to the db at the very if configmap creation succeeds and no other failures
+	if isKotsadmIDGenerated && !cmpExists {
+		kotsadmID := ksuid.New().String()
+		err = kotsstore.CreateKotsadmIDConfigMap(kotsadmID)
+	} else if !isKotsadmIDGenerated && !cmpExists {
+		err = kotsstore.CreateKotsadmIDConfigMap(clusterID)
+	} else if !isKotsadmIDGenerated && cmpExists {
+		err = kotsstore.UpdateKotsadmIDConfigMap(clusterID)
+	} else {
+		// id exists and so as configmap, noop
+	}
+	if err == nil {
 		err = store.GetStore().SetIsKotsadmIDGenerated()
-		if err != nil {
-			return errors.Wrap(err, "failed to set admin event status")
-		}
 	}
-	return nil
+	return err
 }

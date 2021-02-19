@@ -33,25 +33,15 @@ func (s KOTSStore) GetReportingInfo(appID string) *upstreamtypes.ReportingInfo {
 	r := upstreamtypes.ReportingInfo{
 		InstanceID: appID,
 	}
-
-	clusterID, err := s.getClusterID()
-	if err != nil {
-		logger.Error(errors.Wrap(err, "failed to get cluster id"))
-	}
-	r.ClusterID = clusterID
 	configMap, err := getKotsadmIDConfigMap()
 	if err == nil && configMap != nil {
 		r.ClusterID = configMap.Data["id"]
 	} else if err == nil && configMap == nil {
 		//generate guid and use that as clusterId to identify that as a different install
-		clusterID = ksuid.New().String()
-		r.ClusterID = clusterID
-		_, err = CreateAdminIDConfigMap(clusterID)
-		if err != nil {
-			logger.Errorf("Failed to to create config map %v", err)
-		}
+		r.ClusterID = ksuid.New().String()
+		CreateKotsadmIDConfigMap(r.ClusterID)
 	} else {
-		logger.Errorf("Config map check error %v", err)
+		r.ClusterID = ksuid.New().String()
 	}
 
 	di, err := s.getDownstreamInfo(appID)
@@ -163,17 +153,15 @@ func getKotsadmIDConfigMap() (*corev1.ConfigMap, error) {
 	} else if kuberneteserrors.IsNotFound(err) {
 		return nil, nil
 	}
-	if existingConfigmap != nil {
-		return existingConfigmap, nil
-	}
-	return nil, nil
+	return existingConfigmap, nil
 }
 
-// CreateAdminIDConfigMap creates an id for an kotsadm instance and stores in configmap
-func CreateAdminIDConfigMap(clusterID string) (*corev1.ConfigMap, error) {
+// CreateKotsadmIDConfigMap creates an id for an kotsadm instance and stores in configmap
+func CreateKotsadmIDConfigMap(kotsadmID string) error {
+	var err error = nil
 	clientset, err := k8s.Clientset()
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to get clientset")
+		return err
 	}
 	configmap := corev1.ConfigMap{
 		TypeMeta: metav1.TypeMeta{
@@ -187,15 +175,10 @@ func CreateAdminIDConfigMap(clusterID string) (*corev1.ConfigMap, error) {
 				types.KotsadmKey: types.KotsadmLabelValue,
 			},
 		},
-		Data: map[string]string{"id": clusterID},
+		Data: map[string]string{"id": kotsadmID},
 	}
-
-	createdConfigmap, err := clientset.CoreV1().ConfigMaps(os.Getenv("POD_NAMESPACE")).Create(context.TODO(), &configmap, metav1.CreateOptions{})
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to create configmap")
-	}
-	logger.Infof("Created kotsadm-id config map with id: %v", createdConfigmap.Data["id"])
-	return createdConfigmap, nil
+	_, err = clientset.CoreV1().ConfigMaps(os.Getenv("POD_NAMESPACE")).Create(context.TODO(), &configmap, metav1.CreateOptions{})
+	return err
 }
 
 // IsKotsadmIDConfigMapPresent checks if the configmap for kotsadm-id exists
@@ -205,15 +188,30 @@ func IsKotsadmIDConfigMapPresent() (bool, error) {
 		return false, errors.Wrap(err, "failed to get clientset")
 	}
 	namespace := os.Getenv("POD_NAMESPACE")
-	existingConfigmap, err := clientset.CoreV1().ConfigMaps(namespace).Get(context.TODO(), configMapName, metav1.GetOptions{})
+	_, err = clientset.CoreV1().ConfigMaps(namespace).Get(context.TODO(), configMapName, metav1.GetOptions{})
 	if err != nil && !kuberneteserrors.IsNotFound(err) {
 		return false, errors.Wrap(err, "failed to get configmap")
 	} else if kuberneteserrors.IsNotFound(err) {
 		return false, nil
 	}
-	if existingConfigmap != nil {
-		logger.Infof("Existing config map %v", existingConfigmap.Data["id"])
-		return true, nil
+	return true, nil
+}
+
+// UpdateKotsadmIDConfigMap creates an id for an kotsadm instance and stores in configmap
+func UpdateKotsadmIDConfigMap(kotsadmID string) error {
+	clientset, err := k8s.Clientset()
+	if err != nil {
+		return errors.Wrap(err, "failed to get clientset")
 	}
-	return false, nil
+	namespace := os.Getenv("POD_NAMESPACE")
+	existingConfigmap, err := clientset.CoreV1().ConfigMaps(namespace).Get(context.TODO(), configMapName, metav1.GetOptions{})
+	if err != nil && !kuberneteserrors.IsNotFound(err) {
+		return errors.Wrap(err, "failed to get configmap")
+	} else if kuberneteserrors.IsNotFound(err) {
+		return nil
+	}
+	if existingConfigmap != nil {
+		existingConfigmap.Data["id"] = kotsadmID
+	}
+	return nil
 }
