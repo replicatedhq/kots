@@ -206,7 +206,6 @@ func (s KOTSStore) CreateAppVersionArchive(appID string, sequence int64, archive
 
 	storageBaseURI := os.Getenv("STORAGE_BASEURI")
 	if storageBaseURI == "" {
-		// KOTS 1.15 and earlier only supported s3 and there was no configuration
 		storageBaseURI = fmt.Sprintf("s3://%s/%s", os.Getenv("S3_ENDPOINT"), os.Getenv("S3_BUCKET_NAME"))
 	}
 
@@ -244,7 +243,6 @@ func (s KOTSStore) GetAppVersionArchive(appID string, sequence int64, dstPath st
 
 	storageBaseURI := os.Getenv("STORAGE_BASEURI")
 	if storageBaseURI == "" {
-		// KOTS 1.15 and earlier only supported s3 and there was no configuration
 		storageBaseURI = fmt.Sprintf("s3://%s/%s", os.Getenv("S3_ENDPOINT"), os.Getenv("S3_BUCKET_NAME"))
 	}
 
