@@ -36,7 +36,7 @@ export default class ConfigSelectOne extends React.Component {
     var hidden = this.props.hidden || this.props.when === "false";
 
     return (
-      <div className={`field field-type-select-one ${hidden ? "hidden" : "u-marginTop--15"}`}>
+      <div id={this.props.name} className={`field field-type-select-one ${hidden ? "hidden" : "u-marginTop--15"}`}>
         {this.props.title !== "" ?
           <ConfigItemTitle
             title={this.props.title}

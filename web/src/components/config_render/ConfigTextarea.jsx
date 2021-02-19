@@ -37,7 +37,7 @@ export default class ConfigTextarea extends React.Component {
     var hidden = this.props.hidden || this.props.when === "false";
 
     return (
-      <div className={`field field-type-text u-marginTop--15 ${hidden ? "hidden" : ""}`}>
+      <div id={this.props.name} className={`field field-type-text u-marginTop--15 ${hidden ? "hidden" : ""}`}>
         {this.props.title !== "" ?
           <ConfigItemTitle
             title={this.props.title}

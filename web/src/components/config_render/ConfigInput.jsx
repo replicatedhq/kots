@@ -49,7 +49,7 @@ export default class ConfigInput extends React.Component {
     var placeholder = this.props.inputType === "password" ? this.maskValue(this.props.default) : this.props.default;
 
     return (
-      <div className={`field field-type-text ${hidden ? "hidden" : "u-marginTop--15"}`}>
+      <div id={this.props.name} className={`field field-type-text ${hidden ? "hidden" : "u-marginTop--15"}`}>
         {this.props.title !== "" || this.props.required ?
           <ConfigItemTitle
             title={this.props.title}

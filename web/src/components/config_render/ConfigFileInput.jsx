@@ -33,7 +33,7 @@ export default class ConfigFileInput extends React.Component {
     var hidden = this.props.hidden || this.props.when === "false";
     
     return (
-      <div className={`field field-type-file u-marginTop--15 ${hidden ? "hidden" : ""}`}>
+      <div id={this.props.name} className={`field field-type-file u-marginTop--15 ${hidden ? "hidden" : ""}`}>
         {this.props.title !== "" ?
           <ConfigItemTitle
             title={this.props.title}

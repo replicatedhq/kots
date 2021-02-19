@@ -1462,6 +1462,7 @@
 </g>
 <path id="Vector 3 (Stroke)" fill-rule="evenodd" clip-rule="evenodd" d="M280.99 86.5361L285.905 91.7987C286.157 92.0693 286.565 92.0667 286.814 91.7929C287.064 91.5191 287.062 91.0777 286.809 90.8071L281.668 85.3019C281.292 84.8988 280.686 84.8994 280.31 85.3033L275.19 90.808C274.938 91.0792 274.936 91.5206 275.187 91.7939C275.437 92.0672 275.844 92.0689 276.096 91.7978L280.99 86.5361Z" fill="#326DE6"/>
 <path id="Vector 3 (Stroke)_2" fill-rule="evenodd" clip-rule="evenodd" d="M281.01 100.464L276.095 95.2013C275.843 94.9307 275.435 94.9333 275.186 95.2071C274.936 95.4809 274.938 95.9223 275.191 96.1929L280.332 101.698C280.708 102.101 281.314 102.101 281.69 101.697L286.81 96.192C287.062 95.9208 287.064 95.4794 286.813 95.2061C286.563 94.9328 286.156 94.9311 285.904 95.2022L281.01 100.464Z" fill="#326DE6"/>
+<path id="Vector 3 (Stroke)_3" fill-rule="evenodd" clip-rule="evenodd" d="M281.01 110.464L276.095 105.201C275.843 104.931 275.435 104.933 275.186 105.207C274.936 105.481 274.938 105.922 275.191 106.193L280.332 111.698C280.708 112.101 281.314 112.101 281.69 111.697L286.81 106.192C287.062 105.921 287.064 105.479 286.813 105.206C286.563 104.933 286.156 104.931 285.904 105.202L281.01 110.464Z" fill="#4A4A4A"/>
 <g id="Group 18_2">
 <g id="Group 204">
 <path id="Vector_31" d="M254.877 847.515C254.877 847.306 254.708 847.136 254.5 847.136C254.291 847.136 254.122 847.306 254.122 847.515C254.122 851.359 251.376 854.581 247.594 855.178C247.388 855.211 247.247 855.403 247.28 855.611C247.309 855.797 247.469 855.931 247.652 855.931C247.671 855.931 247.691 855.928 247.711 855.925C251.864 855.27 254.877 851.734 254.877 847.515Z" fill="#556F8F"/>
@@ -2461,7 +2462,7 @@
 </g>
 </g>
 </g>
-<path id="Rectangle 6 Copy_2" d="M264 351.521H295.05V351.521C295.05 352.338 294.387 353 293.57 353H265.479C264.662 353 264 352.338 264 351.521V351.521Z" fill="#C4C7CA"/>
+<path id="Rectangle 6 Copy_2" d="M264 351.521H295.05C295.05 352.338 294.387 353 293.57 353H265.479C264.662 353 264 352.338 264 351.521Z" fill="#C4C7CA"/>
 </g>
 <g id="Group 25_2">
 <path id="Rectangle 11_4" d="M294.044 346.336V362.645C294.044 363.084 293.704 363.441 293.285 363.441H278.115C277.697 363.441 277.357 363.084 277.357 362.645V343.153C277.357 342.714 277.697 342.358 278.115 342.358H290.251" fill="white"/>
@@ -2545,7 +2546,7 @@
 <path id="Line 12_79" d="M271.53 381.718H280.917" stroke="#A8ACB6" stroke-opacity="0.75" stroke-width="0.705053" stroke-linecap="round"/>
 <path id="Line 12_80" d="M271.53 383.509H273.237" stroke="#44BB66" stroke-opacity="0.75" stroke-width="0.705053" stroke-linecap="round"/>
 <g id="Line 12_81">
-<path d="M274.218 383.509H279.171Z" fill="#497ADD"/>
+<path d="M274.218 383.509H279.171H274.218Z" fill="#497ADD"/>
 <path d="M274.218 383.509H279.171" stroke="#497ADD" stroke-width="0.705053" stroke-linecap="round"/>
 </g>
 <path id="Line 12_82" d="M272.228 385.299H276.03" stroke="#44BB66" stroke-opacity="0.75" stroke-width="0.705053" stroke-linecap="round"/>
@@ -2556,7 +2557,7 @@
 <path id="Line 12_87" d="M274.982 388.879H280.568" stroke="#7A9DBD" stroke-opacity="0.5" stroke-width="0.705053" stroke-linecap="round"/>
 <path id="Line 12_88" d="M272.926 390.67H278.047" stroke="#44BB66" stroke-opacity="0.75" stroke-width="0.705053" stroke-linecap="round"/>
 <g id="Line 12_89">
-<path d="M279.171 390.67H281.615Z" fill="#497ADD"/>
+<path d="M279.171 390.67H281.615H279.171Z" fill="#497ADD"/>
 <path d="M279.171 390.67H281.615" stroke="#497ADD" stroke-width="0.705053" stroke-linecap="round"/>
 </g>
 <path id="Line 12_90" d="M273.625 392.46H276.03" stroke="#44BB66" stroke-opacity="0.75" stroke-width="0.705053" stroke-linecap="round"/>
@@ -2587,7 +2588,7 @@
 <path id="Line 12_102" d="M277.53 386.718H286.917" stroke="#A8ACB6" stroke-opacity="0.75" stroke-width="0.705053" stroke-linecap="round"/>
 <path id="Line 12_103" d="M277.53 388.509H279.237" stroke="#44BB66" stroke-opacity="0.75" stroke-width="0.705053" stroke-linecap="round"/>
 <g id="Line 12_104">
-<path d="M280.218 388.509H285.171Z" fill="#497ADD"/>
+<path d="M280.218 388.509H285.171H280.218Z" fill="#497ADD"/>
 <path d="M280.218 388.509H285.171" stroke="#497ADD" stroke-width="0.705053" stroke-linecap="round"/>
 </g>
 <path id="Line 12_105" d="M278.228 390.299H282.03" stroke="#44BB66" stroke-opacity="0.75" stroke-width="0.705053" stroke-linecap="round"/>
@@ -2598,7 +2599,7 @@
 <path id="Line 12_110" d="M280.982 393.879H286.568" stroke="#7A9DBD" stroke-opacity="0.5" stroke-width="0.705053" stroke-linecap="round"/>
 <path id="Line 12_111" d="M278.926 395.67H284.047" stroke="#44BB66" stroke-opacity="0.75" stroke-width="0.705053" stroke-linecap="round"/>
 <g id="Line 12_112">
-<path d="M285.171 395.67H287.615Z" fill="#497ADD"/>
+<path d="M285.171 395.67H287.615H285.171Z" fill="#497ADD"/>
 <path d="M285.171 395.67H287.615" stroke="#497ADD" stroke-width="0.705053" stroke-linecap="round"/>
 </g>
 <path id="Line 12_113" d="M279.625 397.46H282.03" stroke="#44BB66" stroke-opacity="0.75" stroke-width="0.705053" stroke-linecap="round"/>

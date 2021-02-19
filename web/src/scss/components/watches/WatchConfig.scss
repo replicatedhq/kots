@@ -1,14 +1,73 @@
-.ConfigOuterWrapper {
-  background: #F8F8F8; 
-  width: 80%;
-  max-width: 783px;
+.ConfigArea--wrapper {
+  transform: translateX(80px);
 }
 
-.ConfigInnerWrapper {
-  border-width: 1px;
-  border-radius: 3px;
-  background: white;
-  box-shadow: 0 0 2px rgba(0,0,0,.16);
+.AppConfigSidenav--wrapper {
+  position: fixed;
+  top: 185px;
+  transform: translateX(-170px);
+  background: #F8F8F8;
+  max-width: 200px;
+  width: 100%;
+  padding: 10px;
+  border-radius: 4px;
+
+  .AppConfigSidenav--group a,
+  .AppConfigSidenav--items a {
+    display: block;
+    margin-top: 10px;
+    margin-bottom: 10px;
+    color: #9b9b9b;
+    cursor: pointer;
+    font-weight: 400;
+
+    &.active-item {
+      font-weight: 500;
+      color: #4a4a4a;
+    }
+
+    &:hover {
+      color: #4a4a4a;
+    }
+
+    &:last-child {
+      margin-bottom: 0;
+    }
+  }
+
+  .AppConfigSidenav--group {
+    a.group-title {
+      margin-bottom: 0;
+      color: #4a4a4a;
+      &:hover {
+        color: #323232;
+      }
+    }
+    .icon.u-darkDropdownArrow {
+      margin-left: 6px;
+      top: 6px;
+      transition: transform .1s ease-in-out;
+    }
+    .AppConfigSidenav--items {
+      display: none;
+    }
+    &.group-open {
+      a.group-title {
+        font-weight: 700;
+      }
+      .icon.u-darkDropdownArrow {
+        transform: rotate(180deg);
+      }
+      .AppConfigSidenav--items {
+        display: block;
+      }
+    }
+  }
+
+}
+
+.AppConfigSidenav--items {
+  padding-left: 20px;
 }
 
 .ConfigError--wrapper {
@@ -45,5 +104,26 @@
   &.current {
     background: #E3F5E8;
     color: #44BB66
+  }
+}
+
+/* ≥ 1024px */
+@media screen and (min-width: 64em) {
+  .AppConfigSidenav--wrapper {
+    transform: translateX(-200px);
+    max-width: 250px;
+  }
+  .ConfigArea--wrapper {
+    transform: translateX(100px);
+  }
+}
+
+/* ≥ 1280px */
+@media screen and (min-width: 80em) {
+  .AppConfigSidenav--wrapper {
+    transform: translateX(-150px);
+  }
+  .ConfigArea--wrapper {
+    transform: translateX(150px);
   }
 }

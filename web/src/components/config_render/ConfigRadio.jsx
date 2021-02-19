@@ -19,7 +19,7 @@ export default class ConfigRadio extends React.Component {
     const checked = val === this.props.name;
 
     return (
-      <div className="flex alignItems--center u-marginRight--20 u-marginTop--15">
+      <div id={this.props.name} className="flex alignItems--center u-marginRight--20 u-marginTop--15">
         <input
           type="radio"
           name={this.props.group}
