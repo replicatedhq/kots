@@ -171,19 +171,9 @@ func (s OCIStore) ensureApplicationMetadata(applicationMetadata string, namespac
 		}
 
 		metadata := []byte(applicationMetadata)
-		createdConfigMap, err := clientset.CoreV1().ConfigMaps(namespace).Create(context.TODO(), kotsadmobjects.ApplicationMetadataConfig(metadata, namespace), metav1.CreateOptions{})
+		_, err := clientset.CoreV1().ConfigMaps(namespace).Create(context.TODO(), kotsadmobjects.ApplicationMetadataConfig(metadata, namespace), metav1.CreateOptions{})
 		if err != nil {
 			return errors.Wrap(err, "failed to create metadata config map")
-		}
-
-		if createdConfigMap.Data == nil {
-			createdConfigMap.Data = map[string]string{}
-		}
-
-		createdConfigMap.Data["application.yaml"] = applicationMetadata
-
-		if err := s.updateConfigmap(createdConfigMap); err != nil {
-			return errors.Wrap(err, "failed to update metadata configmap")
 		}
 	}
 
@@ -193,8 +183,9 @@ func (s OCIStore) ensureApplicationMetadata(applicationMetadata string, namespac
 
 	existingConfigMap.Data["application.yaml"] = applicationMetadata
 
-	if err := s.updateConfigmap(existingConfigMap); err != nil {
-		return errors.Wrap(err, "failed to update metadata configmap")
+	_, err = clientset.CoreV1().ConfigMaps(os.Getenv("POD_NAMESPACE")).Update(context.Background(), existingConfigMap, metav1.UpdateOptions{})
+	if err != nil {
+		return errors.Wrap(err, "failed to update config map")
 	}
 
 	return nil

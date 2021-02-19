@@ -29,7 +29,6 @@ import (
 	kotss3 "github.com/replicatedhq/kots/pkg/s3"
 	"github.com/replicatedhq/kots/pkg/secrets"
 	velerov1 "github.com/vmware-tanzu/velero/pkg/apis/velero/v1"
-	corev1 "k8s.io/api/core/v1"
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
@@ -64,19 +63,9 @@ func (s S3PGStore) ensureApplicationMetadata(applicationMetadata string, namespa
 		}
 
 		metadata := []byte(applicationMetadata)
-		createdConfigMap, err := clientset.CoreV1().ConfigMaps(namespace).Create(context.TODO(), kotsadmobjects.ApplicationMetadataConfig(metadata, namespace), metav1.CreateOptions{})
+		_, err := clientset.CoreV1().ConfigMaps(namespace).Create(context.TODO(), kotsadmobjects.ApplicationMetadataConfig(metadata, namespace), metav1.CreateOptions{})
 		if err != nil {
 			return errors.Wrap(err, "failed to create metadata config map")
-		}
-
-		if createdConfigMap.Data == nil {
-			createdConfigMap.Data = map[string]string{}
-		}
-
-		createdConfigMap.Data["application.yaml"] = applicationMetadata
-
-		if err := s.updateConfigmap(createdConfigMap); err != nil {
-			return errors.Wrap(err, "failed to update metadata configmap")
 		}
 	}
 
@@ -86,20 +75,7 @@ func (s S3PGStore) ensureApplicationMetadata(applicationMetadata string, namespa
 
 	existingConfigMap.Data["application.yaml"] = applicationMetadata
 
-	if err := s.updateConfigmap(existingConfigMap); err != nil {
-		return errors.Wrap(err, "failed to update metadata configmap")
-	}
-
-	return nil
-}
-
-func (s S3PGStore) updateConfigmap(configmap *corev1.ConfigMap) error {
-	clientset, err := s.GetClientset()
-	if err != nil {
-		return errors.Wrap(err, "failed to get clientset")
-	}
-
-	_, err = clientset.CoreV1().ConfigMaps(os.Getenv("POD_NAMESPACE")).Update(context.Background(), configmap, metav1.UpdateOptions{})
+	_, err = clientset.CoreV1().ConfigMaps(os.Getenv("POD_NAMESPACE")).Update(context.Background(), existingConfigMap, metav1.UpdateOptions{})
 	if err != nil {
 		return errors.Wrap(err, "failed to update config map")
 	}
