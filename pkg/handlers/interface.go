@@ -76,6 +76,7 @@ type KOTSHandler interface {
 	UpdateAppConfig(w http.ResponseWriter, r *http.Request)
 	CurrentAppConfig(w http.ResponseWriter, r *http.Request)
 	LiveAppConfig(w http.ResponseWriter, r *http.Request)
+	SetAppConfigValues(w http.ResponseWriter, r *http.Request)
 
 	SyncLicense(w http.ResponseWriter, r *http.Request)
 	GetLicense(w http.ResponseWriter, r *http.Request)

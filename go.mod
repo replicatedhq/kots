@@ -37,7 +37,7 @@ require (
 	github.com/go-git/go-git/v5 v5.2.0
 	github.com/go-logfmt/logfmt v0.5.0
 	github.com/gofrs/uuid v3.3.0+incompatible // indirect
-	github.com/golang/mock v1.4.3
+	github.com/golang/mock v1.4.4
 	github.com/golang/snappy v0.0.1 // indirect
 	github.com/google/gofuzz v1.1.0
 	github.com/google/uuid v1.1.1

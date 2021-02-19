@@ -693,6 +693,18 @@ func (mr *MockKOTSHandlerMockRecorder) LiveAppConfig(w, r interface{}) *gomock.C
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "LiveAppConfig", reflect.TypeOf((*MockKOTSHandler)(nil).LiveAppConfig), w, r)
 }
 
+// SetAppConfigValues mocks base method
+func (m *MockKOTSHandler) SetAppConfigValues(w http.ResponseWriter, r *http.Request) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "SetAppConfigValues", w, r)
+}
+
+// SetAppConfigValues indicates an expected call of SetAppConfigValues
+func (mr *MockKOTSHandlerMockRecorder) SetAppConfigValues(w, r interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetAppConfigValues", reflect.TypeOf((*MockKOTSHandler)(nil).SetAppConfigValues), w, r)
+}
+
 // SyncLicense mocks base method
 func (m *MockKOTSHandler) SyncLicense(w http.ResponseWriter, r *http.Request) {
 	m.ctrl.T.Helper()

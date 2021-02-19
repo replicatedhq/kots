@@ -29,12 +29,14 @@ import (
 	"github.com/replicatedhq/kots/pkg/store"
 	"github.com/replicatedhq/kots/pkg/template"
 	"github.com/replicatedhq/kots/pkg/version"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes/scheme"
 )
 
 type UpdateAppConfigRequest struct {
-	Sequence         int64                      `json:"sequence"`
-	CreateNewVersion bool                       `json:"createNewVersion"`
-	ConfigGroups     []*kotsv1beta1.ConfigGroup `json:"configGroups"`
+	Sequence         int64                     `json:"sequence"`
+	CreateNewVersion bool                      `json:"createNewVersion"`
+	ConfigGroups     []kotsv1beta1.ConfigGroup `json:"configGroups"`
 }
 
 type LiveAppConfigRequest struct {
@@ -84,7 +86,10 @@ func (h *Handler) UpdateAppConfig(w http.ResponseWriter, r *http.Request) {
 	if !updateAppConfigRequest.CreateNewVersion {
 		// special case handling for "do not create new version"
 		// no need to update versions after this/search for latest sequence that has the same upstream version/etc
-		resp, err := updateAppConfig(foundApp, updateAppConfigRequest.Sequence, updateAppConfigRequest, true)
+		isPrimaryVersion := true
+		skipPrefligths := false
+		deploy := false
+		resp, err := updateAppConfig(foundApp, updateAppConfigRequest.Sequence, updateAppConfigRequest.ConfigGroups, updateAppConfigRequest.CreateNewVersion, isPrimaryVersion, skipPrefligths, deploy)
 		if err != nil {
 			logger.Error(err)
 			JSON(w, http.StatusInternalServerError, resp)
@@ -113,7 +118,10 @@ func (h *Handler) UpdateAppConfig(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// attempt to apply the config to the app version specified in the request
-	resp, err := updateAppConfig(foundApp, latestSequenceMatchingUpdateCursor, updateAppConfigRequest, true)
+	isPrimaryVersion := true
+	skipPrefligths := false
+	deploy := false
+	resp, err := updateAppConfig(foundApp, latestSequenceMatchingUpdateCursor, updateAppConfigRequest.ConfigGroups, updateAppConfigRequest.CreateNewVersion, isPrimaryVersion, skipPrefligths, deploy)
 	if err != nil {
 		logger.Error(err)
 		JSON(w, http.StatusInternalServerError, resp)
@@ -127,7 +135,10 @@ func (h *Handler) UpdateAppConfig(w http.ResponseWriter, r *http.Request) {
 
 	// if there were no errors applying the config for the desired version, do the same for any later versions too
 	for _, version := range laterVersions {
-		_, err := updateAppConfig(foundApp, version.Sequence, updateAppConfigRequest, false)
+		isPrimaryVersion := false
+		skipPrefligths := false
+		deploy := false
+		_, err := updateAppConfig(foundApp, version.Sequence, updateAppConfigRequest.ConfigGroups, updateAppConfigRequest.CreateNewVersion, isPrimaryVersion, skipPrefligths, deploy)
 		if err != nil {
 			logger.Error(errors.Wrapf(err, "error creating app with new config based on sequence %d for upstream %q", version.Sequence, version.KOTSKinds.Installation.Spec.VersionLabel))
 		}
@@ -333,7 +344,7 @@ func (h *Handler) CurrentAppConfig(w http.ResponseWriter, r *http.Request) {
 
 // if isPrimaryVersion is false, missing a required config field will not cause a failure, and instead will create
 // the app version with status needs_config
-func updateAppConfig(updateApp *apptypes.App, sequence int64, req UpdateAppConfigRequest, isPrimaryVersion bool) (UpdateAppConfigResponse, error) {
+func updateAppConfig(updateApp *apptypes.App, sequence int64, configGroups []kotsv1beta1.ConfigGroup, createNewVersion bool, isPrimaryVersion bool, skipPreflights bool, deploy bool) (UpdateAppConfigResponse, error) {
 	updateAppConfigResponse := UpdateAppConfigResponse{
 		Success: false,
 	}
@@ -360,7 +371,7 @@ func updateAppConfig(updateApp *apptypes.App, sequence int64, req UpdateAppConfi
 	// check for unset required items
 	requiredItems := make([]string, 0, 0)
 	requiredItemsTitles := make([]string, 0, 0)
-	for _, group := range req.ConfigGroups {
+	for _, group := range configGroups {
 		if group.When == "false" {
 			continue
 		}
@@ -386,7 +397,7 @@ func updateAppConfig(updateApp *apptypes.App, sequence int64, req UpdateAppConfi
 	// we don't merge, this is a wholesale replacement of the config values
 	// so we don't need the complex logic in kots, we can just write
 	values := kotsKinds.ConfigValues.Spec.Values
-	for _, group := range req.ConfigGroups {
+	for _, group := range configGroups {
 		for _, item := range group.Items {
 			if item.Value.Type == multitype.Bool {
 				updatedValue := item.Value.BoolVal
@@ -457,7 +468,7 @@ func updateAppConfig(updateApp *apptypes.App, sequence int64, req UpdateAppConfi
 		return updateAppConfigResponse, err
 	}
 
-	if req.CreateNewVersion {
+	if createNewVersion {
 		newSequence, err := store.GetStore().CreateAppVersion(updateApp.ID, &updateApp.CurrentSequence, archiveDir, "Config Change", false, &version.DownstreamGitOps{})
 		if err != nil {
 			updateAppConfigResponse.Error = "failed to create an app version"
@@ -481,9 +492,19 @@ func updateAppConfig(updateApp *apptypes.App, sequence int64, req UpdateAppConfi
 		return updateAppConfigResponse, err
 	}
 
-	if err := preflight.Run(updateApp.ID, updateApp.Slug, int64(sequence), updateApp.IsAirgap, archiveDir); err != nil {
-		updateAppConfigResponse.Error = errors.Cause(err).Error()
-		return updateAppConfigResponse, err
+	if !skipPreflights {
+		if err := preflight.Run(updateApp.ID, updateApp.Slug, int64(sequence), updateApp.IsAirgap, archiveDir); err != nil {
+			updateAppConfigResponse.Error = errors.Cause(err).Error()
+			return updateAppConfigResponse, err
+		}
+	}
+
+	if deploy {
+		err := version.DeployVersion(updateApp.ID, sequence)
+		if err != nil {
+			updateAppConfigResponse.Error = "failed to deploy"
+			return updateAppConfigResponse, err
+		}
 	}
 
 	updateAppConfigResponse.Success = true
@@ -557,4 +578,231 @@ func getLaterVersions(versionedApp *apptypes.App, startSequence int64) (int64, [
 	}
 
 	return latestSequenceWithThisUpdateCursor, sortedVersions, nil
+}
+
+type SetAppConfigValuesRequest struct {
+	ConfigValues   []byte `json:"configValues"`
+	Merge          bool   `json:"merge"`
+	Deploy         bool   `json:"deploy"`
+	SkipPreflights bool   `json:"skipPreflights"`
+}
+
+type SetAppConfigValuesResponse struct {
+	Success bool   `json:"success"`
+	Error   string `json:"error,omitempty"`
+}
+
+func (h *Handler) SetAppConfigValues(w http.ResponseWriter, r *http.Request) {
+	setAppConfigValuesResponse := SetAppConfigValuesResponse{
+		Success: false,
+	}
+
+	setAppConfigValuesRequest := SetAppConfigValuesRequest{}
+	if err := json.NewDecoder(r.Body).Decode(&setAppConfigValuesRequest); err != nil {
+		setAppConfigValuesResponse.Error = "failed to decode request body"
+		logger.Error(errors.Wrap(err, setAppConfigValuesResponse.Error))
+		JSON(w, http.StatusBadRequest, setAppConfigValuesResponse)
+		return
+	}
+
+	decode := scheme.Codecs.UniversalDeserializer().Decode
+	decoded, gvk, err := decode(setAppConfigValuesRequest.ConfigValues, nil, nil)
+	if err != nil {
+		setAppConfigValuesResponse.Error = "failed to decode config values"
+		logger.Error(errors.Wrap(err, setAppConfigValuesResponse.Error))
+		JSON(w, http.StatusBadRequest, setAppConfigValuesResponse)
+		return
+	}
+
+	if gvk.String() != "kots.io/v1beta1, Kind=ConfigValues" {
+		setAppConfigValuesResponse.Error = fmt.Sprintf("%q is not a valid ConfigValues GVK", gvk.String())
+		logger.Errorf(setAppConfigValuesResponse.Error)
+		JSON(w, http.StatusInternalServerError, setAppConfigValuesResponse)
+		return
+	}
+	newConfigValues := decoded.(*kotsv1beta1.ConfigValues)
+
+	foundApp, err := store.GetStore().GetAppFromSlug(mux.Vars(r)["appSlug"])
+	if err != nil {
+		setAppConfigValuesResponse.Error = "failed to get app from app slug"
+		logger.Error(errors.Wrap(err, setAppConfigValuesResponse.Error))
+		JSON(w, http.StatusInternalServerError, setAppConfigValuesResponse)
+		return
+	}
+
+	archiveDir, err := ioutil.TempDir("", "kotsadm")
+	if err != nil {
+		setAppConfigValuesResponse.Error = "failed to create temp dir"
+		logger.Error(errors.Wrap(err, setAppConfigValuesResponse.Error))
+		JSON(w, http.StatusInternalServerError, setAppConfigValuesResponse)
+		return
+	}
+	defer os.RemoveAll(archiveDir)
+
+	err = store.GetStore().GetAppVersionArchive(foundApp.ID, foundApp.CurrentSequence, archiveDir)
+	if err != nil {
+		setAppConfigValuesResponse.Error = "failed to get app version archive"
+		logger.Error(errors.Wrap(err, setAppConfigValuesResponse.Error))
+		JSON(w, http.StatusInternalServerError, setAppConfigValuesResponse)
+		return
+	}
+
+	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(archiveDir)
+	if err != nil {
+		setAppConfigValuesResponse.Error = "failed to load kots kinds from path"
+		logger.Error(errors.Wrap(err, setAppConfigValuesResponse.Error))
+		JSON(w, http.StatusInternalServerError, setAppConfigValuesResponse)
+		return
+	}
+
+	if kotsKinds.Config == nil {
+		setAppConfigValuesResponse.Error = fmt.Sprintf("app %s does not have a config", foundApp.Slug)
+		logger.Errorf(setAppConfigValuesResponse.Error)
+		JSON(w, http.StatusInternalServerError, setAppConfigValuesResponse)
+		return
+	}
+
+	if setAppConfigValuesRequest.Merge {
+		if err := kotsKinds.DecryptConfigValues(); err != nil {
+			setAppConfigValuesResponse.Error = "failed to decrypt existing values"
+			logger.Error(errors.Wrap(err, setAppConfigValuesResponse.Error))
+			JSON(w, http.StatusInternalServerError, setAppConfigValuesResponse)
+			return
+		}
+
+		newConfigValues, err = mergeConfigValues(kotsKinds.Config, kotsKinds.ConfigValues, newConfigValues)
+		if err != nil {
+			setAppConfigValuesResponse.Error = "failed to create new config"
+			logger.Error(errors.Wrap(err, setAppConfigValuesResponse.Error))
+			JSON(w, http.StatusInternalServerError, setAppConfigValuesResponse)
+			return
+		}
+	}
+
+	newConfig, err := updateConfigObject(kotsKinds.Config, newConfigValues, setAppConfigValuesRequest.Merge)
+	if err != nil {
+		setAppConfigValuesResponse.Error = "failed to create new config object"
+		logger.Error(errors.Wrap(err, setAppConfigValuesResponse.Error))
+		JSON(w, http.StatusInternalServerError, setAppConfigValuesResponse)
+		return
+	}
+
+	createNewVersion := true
+	isPrimaryVersion := true // see comment in updateAppConfig
+	resp, err := updateAppConfig(foundApp, foundApp.CurrentSequence, newConfig.Spec.Groups, createNewVersion, isPrimaryVersion, setAppConfigValuesRequest.SkipPreflights, setAppConfigValuesRequest.Deploy)
+	if err != nil {
+		logger.Error(errors.Wrap(err, "failed to create new version"))
+		JSON(w, http.StatusInternalServerError, resp)
+		return
+	}
+
+	if len(resp.RequiredItems) > 0 {
+		logger.Error(errors.Wrap(err, "failed to set all required items"))
+		JSON(w, http.StatusBadRequest, resp)
+		return
+	}
+
+	setAppConfigValuesResponse.Success = true
+	JSON(w, http.StatusOK, setAppConfigValuesResponse)
+}
+
+func mergeConfigValues(config *kotsv1beta1.Config, existingValues *kotsv1beta1.ConfigValues, newValues *kotsv1beta1.ConfigValues) (*kotsv1beta1.ConfigValues, error) {
+	unknownKeys := map[string]struct{}{}
+	for k := range newValues.Spec.Values {
+		unknownKeys[k] = struct{}{}
+	}
+
+	mergedValues := map[string]kotsv1beta1.ConfigValue{}
+	for _, group := range config.Spec.Groups {
+		for _, item := range group.Items {
+			newValue, newOK := newValues.Spec.Values[item.Name]
+			existingValue, existingOK := existingValues.Spec.Values[item.Name]
+			if !newOK && !existingOK {
+				continue
+			}
+
+			if existingOK {
+				delete(unknownKeys, item.Name)
+			}
+
+			if !newOK {
+				mergedValues[item.Name] = existingValue
+				continue
+			}
+
+			if item.Type == "password" && newValue.ValuePlaintext == "" {
+				newValue.ValuePlaintext = newValue.Value
+				newValue.Value = ""
+			}
+
+			mergedValues[item.Name] = newValue
+		}
+	}
+
+	if len(unknownKeys) > 0 {
+		return nil, errors.Errorf("new values contain unknown keys: %v", unknownKeys)
+	}
+
+	merged := &kotsv1beta1.ConfigValues{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: "kots.io/v1beta1",
+			Kind:       "ConfigValues",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name: existingValues.ObjectMeta.Name,
+		},
+		Spec: kotsv1beta1.ConfigValuesSpec{
+			Values: mergedValues,
+		},
+	}
+
+	return merged, nil
+}
+
+func updateConfigObject(config *kotsv1beta1.Config, configValues *kotsv1beta1.ConfigValues, merge bool) (*kotsv1beta1.Config, error) {
+	newConfig := config.DeepCopy()
+
+	for i, group := range newConfig.Spec.Groups {
+		newItems := make([]kotsv1beta1.ConfigItem, 0)
+		for _, item := range group.Items {
+			newValue, ok := configValues.Spec.Values[item.Name]
+			if !ok {
+				if !merge {
+					// this clears out values
+					item.Value = multitype.BoolOrString{Type: item.Value.Type}
+					item.Default = multitype.BoolOrString{Type: item.Value.Type}
+				}
+				newItems = append(newItems, item)
+				continue
+			}
+
+			if newValue.Value != "" {
+				newVal, err := item.Value.NewWithSameType(newValue.Value)
+				if err != nil {
+					return nil, errors.Wrap(err, "failed to update from Value")
+				}
+				item.Value = newVal
+				item.Default = multitype.BoolOrString{Type: item.Value.Type}
+			} else if newValue.ValuePlaintext != "" {
+				newVal, err := item.Value.NewWithSameType(newValue.ValuePlaintext)
+				if err != nil {
+					return nil, errors.Wrap(err, "failed to update from ValuePlaintext")
+				}
+				item.Value = newVal
+				item.Default = multitype.BoolOrString{Type: item.Value.Type}
+			} else if newValue.Default != "" {
+				newVal, err := item.Value.NewWithSameType(newValue.Default)
+				if err != nil {
+					return nil, errors.Wrap(err, "failed to update from Default")
+				}
+				item.Value = multitype.BoolOrString{Type: item.Value.Type}
+				item.Default = newVal
+			}
+			newItems = append(newItems, item)
+		}
+
+		newConfig.Spec.Groups[i].Items = newItems
+	}
+
+	return newConfig, nil
 }
