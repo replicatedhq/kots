@@ -2,7 +2,7 @@ import React, { Component } from "react";
 
 export default class SnapshotInstallationBox extends Component {
   renderVeleroErrors = (snapshotSettings) => {
-    if (!snapshotSettings?.isVeleroRunning && snapshotSettings?.veleroVersion !== "") {
+    if (!snapshotSettings?.isVeleroRunning && snapshotSettings?.veleroVersion) {
       return (
         <div className="flex u-marginTop--20">
           <div className="flex u-marginRight--20">
@@ -21,7 +21,7 @@ export default class SnapshotInstallationBox extends Component {
   }
 
     renderResticErrors = (snapshotSettings) => {
-      if (snapshotSettings?.veleroVersion !== "" && snapshotSettings?.resticVersion === "") {
+      if (snapshotSettings?.veleroVersion && !snapshotSettings?.resticVersion) {
         return (
           <div className="flex u-marginTop--20">
             <div className="flex u-marginRight--20">
@@ -36,7 +36,7 @@ export default class SnapshotInstallationBox extends Component {
             </div>
           </div>
         )
-      } else if (snapshotSettings?.veleroVersion !== "" && snapshotSettings?.resticVersion !== "" && !snapshotSettings?.isResticRunning) {
+      } else if (snapshotSettings?.veleroVersion && snapshotSettings?.resticVersion && !snapshotSettings?.isResticRunning) {
         return (
           <div className="flex u-marginTop--20">
             <div className="flex u-marginRight--20">
@@ -68,7 +68,7 @@ export default class SnapshotInstallationBox extends Component {
               </div>
               : renderNotVeleroMessage()
             }
-            {snapshotSettings?.veleroVersion !== "" ?
+            {snapshotSettings?.veleroVersion ?
               <span className="flex alignItems--center u-marginTop--10 u-fontSize--small u-fontWeight--medium u-color--tuna"><span className="icon checkmark-icon u-marginRight--5" />Velero is installed on your cluster</span> : null}
           </div>
           {this.renderVeleroErrors(snapshotSettings)}

@@ -11,6 +11,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
 	snapshottypes "github.com/replicatedhq/kots/pkg/api/snapshot/types"
+	"github.com/replicatedhq/kots/pkg/k8s"
 	snapshot "github.com/replicatedhq/kots/pkg/kotsadmsnapshot"
 	"github.com/replicatedhq/kots/pkg/kurl"
 	"github.com/replicatedhq/kots/pkg/logger"
@@ -20,12 +21,14 @@ import (
 )
 
 type GlobalSnapshotSettingsResponse struct {
-	VeleroVersion   string   `json:"veleroVersion"`
-	VeleroPlugins   []string `json:"veleroPlugins"`
-	IsVeleroRunning bool     `json:"isVeleroRunning"`
-	ResticVersion   string   `json:"resticVersion"`
-	IsResticRunning bool     `json:"isResticRunning"`
-	IsKurl          bool     `json:"isKurl"`
+	VeleroVersion        string   `json:"veleroVersion"`
+	VeleroPlugins        []string `json:"veleroPlugins"`
+	VeleroNamespace      string   `json:"veleroNamespace"`
+	IsVeleroRunning      bool     `json:"isVeleroRunning"`
+	ResticVersion        string   `json:"resticVersion"`
+	IsResticRunning      bool     `json:"isResticRunning"`
+	IsKurl               bool     `json:"isKurl"`
+	IsMinimalRBACEnabled bool     `json:"isMinimalRBACEnabled"`
 
 	Store   *snapshottypes.Store `json:"store,omitempty"`
 	Success bool                 `json:"success"`
@@ -84,12 +87,22 @@ func (h *Handler) UpdateGlobalSnapshotSettings(w http.ResponseWriter, r *http.Re
 		return
 	}
 
+	clientset, err := k8s.Clientset()
+	if err != nil {
+		logger.Error(err)
+		globalSnapshotSettingsResponse.Error = "failed to create k8s clientset"
+		JSON(w, 500, globalSnapshotSettingsResponse)
+		return
+	}
+
 	globalSnapshotSettingsResponse.VeleroVersion = veleroStatus.Version
 	globalSnapshotSettingsResponse.VeleroPlugins = veleroStatus.Plugins
+	globalSnapshotSettingsResponse.VeleroNamespace = veleroStatus.Namespace
 	globalSnapshotSettingsResponse.IsVeleroRunning = veleroStatus.Status == "Ready"
 	globalSnapshotSettingsResponse.ResticVersion = veleroStatus.ResticVersion
 	globalSnapshotSettingsResponse.IsResticRunning = veleroStatus.ResticStatus == "Ready"
 	globalSnapshotSettingsResponse.IsKurl = kurl.IsKurl()
+	globalSnapshotSettingsResponse.IsMinimalRBACEnabled = !k8s.IsKotsadmClusterScoped(r.Context(), clientset)
 
 	store, err := snapshot.GetGlobalStore(nil)
 	if err != nil {
@@ -349,44 +362,59 @@ func (h *Handler) GetGlobalSnapshotSettings(w http.ResponseWriter, r *http.Reque
 		Success: false,
 	}
 
+	// check minimal rbac
+	if err := requiresKotsadmVeleroAccess(w, r); err != nil {
+		return
+	}
+
 	veleroStatus, err := snapshot.DetectVelero()
 	if err != nil {
 		logger.Error(err)
 		globalSnapshotSettingsResponse.Error = "failed to detect velero"
-		JSON(w, 500, globalSnapshotSettingsResponse)
+		JSON(w, http.StatusInternalServerError, globalSnapshotSettingsResponse)
 		return
 	}
 	if veleroStatus == nil {
-		JSON(w, 200, globalSnapshotSettingsResponse)
+		JSON(w, http.StatusOK, globalSnapshotSettingsResponse)
+		return
+	}
+
+	clientset, err := k8s.Clientset()
+	if err != nil {
+		logger.Error(err)
+		globalSnapshotSettingsResponse.Error = "failed to create k8s clientset"
+		JSON(w, http.StatusInternalServerError, globalSnapshotSettingsResponse)
 		return
 	}
 
 	globalSnapshotSettingsResponse.VeleroVersion = veleroStatus.Version
 	globalSnapshotSettingsResponse.VeleroPlugins = veleroStatus.Plugins
+	globalSnapshotSettingsResponse.VeleroNamespace = veleroStatus.Namespace
 	globalSnapshotSettingsResponse.IsVeleroRunning = veleroStatus.Status == "Ready"
 	globalSnapshotSettingsResponse.ResticVersion = veleroStatus.ResticVersion
 	globalSnapshotSettingsResponse.IsResticRunning = veleroStatus.ResticStatus == "Ready"
 	globalSnapshotSettingsResponse.IsKurl = kurl.IsKurl()
+	globalSnapshotSettingsResponse.IsMinimalRBACEnabled = !k8s.IsKotsadmClusterScoped(r.Context(), clientset)
 
 	store, err := snapshot.GetGlobalStore(nil)
 	if err != nil {
 		logger.Error(err)
 		globalSnapshotSettingsResponse.Error = "failed to get store"
-		JSON(w, 500, globalSnapshotSettingsResponse)
+		JSON(w, http.StatusInternalServerError, globalSnapshotSettingsResponse)
 		return
 	}
 
 	if err := snapshot.Redact(store); err != nil {
 		logger.Error(err)
 		globalSnapshotSettingsResponse.Error = "failed to redact"
-		JSON(w, 500, globalSnapshotSettingsResponse)
+		JSON(w, http.StatusInternalServerError, globalSnapshotSettingsResponse)
 		return
 	}
 
 	globalSnapshotSettingsResponse.Store = store
 	globalSnapshotSettingsResponse.Success = true
 
-	JSON(w, 200, globalSnapshotSettingsResponse)
+	JSON(w, http.StatusOK, globalSnapshotSettingsResponse)
 }
 
 func (h *Handler) GetSnapshotConfig(w http.ResponseWriter, r *http.Request) {
@@ -729,7 +757,7 @@ func (h *Handler) SaveInstanceSnapshotConfig(w http.ResponseWriter, r *http.Requ
 }
 
 func requiresKotsadmVeleroAccess(w http.ResponseWriter, r *http.Request) error {
-	requiresVeleroAccess, veleroNamespace, err := snapshot.CheckKotsadmVeleroAccess()
+	requiresVeleroAccess, err := snapshot.CheckKotsadmVeleroAccess()
 	if err != nil {
 		errMsg := "failed to check if kotsadm requires access to velero"
 		logger.Error(errors.Wrap(err, errMsg))
@@ -743,7 +771,6 @@ func requiresKotsadmVeleroAccess(w http.ResponseWriter, r *http.Request) error {
 			Success:                     false,
 			Error:                       errMsg,
 			KotsadmRequiresVeleroAccess: true,
-			VeleroNamespace:             veleroNamespace,
 		}
 		JSON(w, http.StatusConflict, response)
 		return errors.New(errMsg)

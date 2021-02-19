@@ -24,7 +24,6 @@ type VeleroRBACResponse struct {
 	Success                     bool   `json:"success"`
 	Error                       string `json:"error,omitempty"`
 	KotsadmRequiresVeleroAccess bool   `json:"kotsadmRequiresVeleroAccess,omitempty"`
-	VeleroNamespace             string `json:"veleroNamespace,omitempty"`
 }
 
 func (h *Handler) CreateApplicationBackup(w http.ResponseWriter, r *http.Request) {

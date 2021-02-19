@@ -503,7 +503,7 @@ class Dashboard extends Component {
         if (!result.ok && result.status === 409) {
           const res = await result.json();
           if (res.kotsadmRequiresVeleroAccess) {
-            this.props.toggleSnapshotsRBACModal(res.veleroNamespace);
+            this.props.toggleSnapshotsRBACModal("show");
             this.setState({
               startingSnapshot: false
             });

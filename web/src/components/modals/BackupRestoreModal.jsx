@@ -8,6 +8,8 @@ import { Utilities } from "../../utilities/utilities";
 
 export default function BackupRestoreModal(props) {
   const {
+    veleroNamespace,
+    isMinimalRBACEnabled,
     restoreSnapshotModal,
     toggleRestoreModal,
     snapshotToRestore,
@@ -82,7 +84,10 @@ export default function BackupRestoreModal(props) {
                 canCopy={true}
                 onCopyText={<span className="u-color--chateauGreen">Command has been copied to your clipboard</span>}
               >
-                {`kubectl kots restore --from-backup ${snapshotToRestore?.name}`}
+                {!isMinimalRBACEnabled
+                  ? `kubectl kots restore --from-backup ${snapshotToRestore?.name}`
+                  : `kubectl kots restore --from-backup ${snapshotToRestore?.name} --velero-namespace ${veleroNamespace}`
+                }
               </CodeSnippet>
             </div>
             : includedApps?.length === 1 ?

@@ -248,7 +248,7 @@ class SnapshotSchedule extends Component {
         if (!res.ok && res.status === 409) {
           const response = await res.json();
           if (response.kotsadmRequiresVeleroAccess) {
-            this.props.toggleSnapshotsRBACModal(response.veleroNamespace);
+            this.props.toggleSnapshotsRBACModal("show");
             this.setState({
               updatingSchedule: false,
             });
@@ -308,6 +308,7 @@ class SnapshotSchedule extends Component {
   }
 
   render() {
+    const { isVeleroInstalled } = this.props;
     const { hasValidCron, updatingSchedule, updateConfirm, loadingConfig, updateScheduleErrMsg } = this.state;
     const selectedRetentionUnit = RETENTION_UNITS.find((ru) => {
       return ru.value === this.state.selectedRetentionUnit?.value;
@@ -463,7 +464,7 @@ class SnapshotSchedule extends Component {
           loading={loadingConfig}
         />
         {!isAppConfig && !isSettingsPage &&
-          <GettingStartedSnapshots isVeleroInstalled={true} />
+          <GettingStartedSnapshots isVeleroInstalled={isVeleroInstalled} />
         }
       </div>
     );

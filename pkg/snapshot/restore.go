@@ -28,6 +28,7 @@ type RestoreInstanceBackupOptions struct {
 	BackupName            string
 	KubernetesConfigFlags *genericclioptions.ConfigFlags
 	WaitForApps           bool
+	VeleroNamespace       string
 }
 
 type ListInstanceRestoresOptions struct {
@@ -35,12 +36,16 @@ type ListInstanceRestoresOptions struct {
 }
 
 func RestoreInstanceBackup(options RestoreInstanceBackupOptions) (*velerov1.Restore, error) {
-	veleroNamespace, err := DetectVeleroNamespace()
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to detect velero namespace")
-	}
+	veleroNamespace := options.VeleroNamespace
 	if veleroNamespace == "" {
-		return nil, errors.New("velero not found")
+		var err error
+		veleroNamespace, err = DetectVeleroNamespace()
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to detect velero namespace")
+		}
+		if veleroNamespace == "" {
+			return nil, errors.New("velero not found")
+		}
 	}
 
 	// get the backup
