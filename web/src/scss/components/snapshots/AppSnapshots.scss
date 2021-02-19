@@ -291,9 +291,16 @@
 }
 
 .StartSnapshotButton {
-  background: #FFFFFF;
+  cursor: pointer;
+  outline: none;
+  position: relative;
+  background-color: #326DE6;
+  color: #ffffff;
   border: none;
-  box-sizing: border-box;
+
+  &:not(:disabled):hover {
+    background-color: #265BC7;
+  }
   border-radius: 3px;
   height: 28px;
   width: 163px;
@@ -305,5 +312,4 @@
   font-weight: bold;
   font-size: 12px;
   line-height: 12px;
-  color: #6D7278;
 }

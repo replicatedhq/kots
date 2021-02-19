@@ -236,7 +236,8 @@ class SnapshotRestore extends Component {
 
     const currentAppDetails = restoreDetail.find(a => a.appSlug === appSlug);
 
-    const hasNoErrorsOrWarnings = currentAppDetails?.restoreDetail?.warnings?.length === 0 && currentAppDetails?.restoreDetail?.errors?.length === 0;
+    const hasNoErrorsOrWarnings = (!currentAppDetails?.restoreDetail?.warning && !currentAppDetails?.restoreDetail?.errors) ||
+      (currentAppDetails?.restoreDetail?.warnings?.length === 0 && currentAppDetails?.restoreDetail?.errors?.length === 0);
     const restoreCompleted = currentAppDetails?.restoreDetail?.phase === "Completed";
     const restoreFailing = currentAppDetails?.restoreDetail?.phase === "PartiallyFailed" || restoreDetail?.phase === "Failed";
     const restoreLoading = !currentAppDetails?.restoreDetail?.warnings && !currentAppDetails?.restoreDetail?.errors;

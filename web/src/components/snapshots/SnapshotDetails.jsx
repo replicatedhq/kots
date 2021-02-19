@@ -421,10 +421,10 @@ class SnapshotDetails extends Component {
       }
 
       return {
-        x: d.name ? `${d.name}` : `${d.hookName} (${d.podName})-${i}`,
+        x: d.containerName ? `${d.name} (${d.podName})-${i}` : `${d.name}`,
         y: [new Date(d.startedAt).getTime(), finishedTime],
-        z: d.name ? "Volume" : `${d.phase}-snapshot-script`,
-        fillColor: d.name ? this.assignColorToPath(d.name) : this.assignColorToPath(d.podName)
+        z: d.containerName ? `${d.phase}-snapshot-script` : "Volume",
+        fillColor: d.containerName ? this.assignColorToPath(d.name) : this.assignColorToPath(d.name)
       }
     });
     series[0].data = data;

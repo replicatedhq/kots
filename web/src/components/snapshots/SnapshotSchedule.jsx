@@ -351,7 +351,7 @@ class SnapshotSchedule extends Component {
               <p className="u-fontSize--small u-fontWeight--normal u-lineHeight--normal u-color--dustyGray u-marginTop--12"> Set up a custom schedule with a retention policy to take automatic snapshots of your application and its data. </p>
               <div className="flex u-marginTop--12">
                 <Select
-                  className="replicated-select-container app"
+                  className="replicated-select-container u-width--full"
                   classNamePrefix="replicated-select"
                   options={this.props.apps}
                   getOptionLabel={this.getLabel}
