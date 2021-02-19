@@ -198,7 +198,6 @@ func CreateInstanceBackup(ctx context.Context, cluster *downstreamtypes.Downstre
 			// no version is deployed for this app yet
 			continue
 		}
-		appsSequences[a.Slug] = parentSequence
 
 		archiveDir, err := ioutil.TempDir("", "kotsadm")
 		if err != nil {
@@ -224,6 +223,8 @@ func CreateInstanceBackup(ctx context.Context, cluster *downstreamtypes.Downstre
 		if backupSpec == "" {
 			continue
 		}
+
+		appsSequences[a.Slug] = parentSequence
 
 		renderedBackup, err := helper.RenderAppFile(a, nil, []byte(backupSpec), kotsKinds)
 		if err != nil {
