@@ -158,25 +158,35 @@ func (s OCIStore) updateConfigmap(configmap *corev1.ConfigMap) error {
 	return nil
 }
 
-func (s OCIStore) ensureApplicationMetadata(applicationMetadata string, namespace string) (*corev1.ConfigMap, error) {
+func (s OCIStore) ensureApplicationMetadata(applicationMetadata string, namespace string) error {
 	clientset, err := s.GetClientset()
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to get clientset")
+		return errors.Wrap(err, "failed to get clientset")
 	}
 
-	existingConfigmap, err := clientset.CoreV1().ConfigMaps(namespace).Get(context.TODO(), "kotsadm-application-metadata", metav1.GetOptions{})
+	existingConfigMap, err := clientset.CoreV1().ConfigMaps(namespace).Get(context.TODO(), "kotsadm-application-metadata", metav1.GetOptions{})
 	if err != nil {
 		if !kuberneteserrors.IsNotFound(err) {
-			return nil, errors.Wrap(err, "failed to get existing metadata config map")
+			return errors.Wrap(err, "failed to get existing metadata config map")
 		}
 
 		metadata := []byte(applicationMetadata)
-		createdConfigmap, err := clientset.CoreV1().ConfigMaps(namespace).Create(context.TODO(), kotsadmobjects.ApplicationMetadataConfig(metadata, namespace), metav1.CreateOptions{})
+		_, err := clientset.CoreV1().ConfigMaps(namespace).Create(context.TODO(), kotsadmobjects.ApplicationMetadataConfig(metadata, namespace), metav1.CreateOptions{})
 		if err != nil {
-			return nil, errors.Wrap(err, "failed to create metadata config map")
+			return errors.Wrap(err, "failed to create metadata config map")
 		}
-		return createdConfigmap, nil
 	}
 
-	return existingConfigmap, nil
+	if existingConfigMap.Data == nil {
+		existingConfigMap.Data = map[string]string{}
+	}
+
+	existingConfigMap.Data["application.yaml"] = applicationMetadata
+
+	_, err = clientset.CoreV1().ConfigMaps(os.Getenv("POD_NAMESPACE")).Update(context.Background(), existingConfigMap, metav1.UpdateOptions{})
+	if err != nil {
+		return errors.Wrap(err, "failed to update config map")
+	}
+
+	return nil
 }

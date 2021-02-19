@@ -2,7 +2,6 @@ package kotsadm
 
 import (
 	"fmt"
-	"os"
 
 	"github.com/replicatedhq/kots/pkg/kotsadm/types"
 	kotsadmversion "github.com/replicatedhq/kots/pkg/kotsadm/version"
@@ -14,35 +13,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
-func MinioStatefulset(deployOptions types.DeployOptions) *appsv1.StatefulSet {
-	size := resource.MustParse("4Gi")
-
-	if deployOptions.LimitRange != nil {
-		var allowedMax *resource.Quantity
-		var allowedMin *resource.Quantity
-
-		for _, limit := range deployOptions.LimitRange.Spec.Limits {
-			if limit.Type == corev1.LimitTypePersistentVolumeClaim {
-				max, ok := limit.Max["storage"]
-				if ok {
-					allowedMax = &max
-				}
-
-				min, ok := limit.Min["storage"]
-				if ok {
-					allowedMin = &min
-				}
-			}
-		}
-
-		newSize := PromptForSizeIfNotBetween("minio", &size, allowedMin, allowedMax)
-		if newSize == nil {
-			os.Exit(-1)
-		}
-
-		size = *newSize
-	}
-
+func MinioStatefulset(deployOptions types.DeployOptions, size resource.Quantity) *appsv1.StatefulSet {
 	var securityContext corev1.PodSecurityContext
 	if !deployOptions.IsOpenShift {
 		securityContext = corev1.PodSecurityContext{
