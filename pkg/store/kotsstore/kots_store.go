@@ -14,6 +14,7 @@ import (
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/pkg/errors"
 	kotsscheme "github.com/replicatedhq/kots/kotskinds/client/kotsclientset/scheme"
+	kotsadmtypes "github.com/replicatedhq/kots/pkg/kotsadm/types"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/persistence"
 	kotss3 "github.com/replicatedhq/kots/pkg/s3"
@@ -216,9 +217,7 @@ func (s KOTSStore) getConfigmap(name string) (*corev1.ConfigMap, error) {
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      name,
 				Namespace: os.Getenv("POD_NAMESPACE"),
-				Labels: map[string]string{
-					"owner": "kotsadm",
-				},
+				Labels:    kotsadmtypes.GetKotsadmLabels(),
 			},
 			Data: map[string]string{},
 		}
