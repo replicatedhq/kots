@@ -45,7 +45,7 @@ func parseClusterAuthorization(authHeader string) (authorization, error) {
 	}, nil
 }
 
-func requireValidSession(kotsStore store.KOTSStore, w http.ResponseWriter, r *http.Request) (*types.Session, error) {
+func requireValidSession(kotsStore store.Store, w http.ResponseWriter, r *http.Request) (*types.Session, error) {
 	if r.Method == "OPTIONS" {
 		return nil, nil
 	}

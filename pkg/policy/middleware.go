@@ -29,11 +29,11 @@ func (e RBACError) Abort(w http.ResponseWriter) error {
 }
 
 type Middleware struct {
-	KOTSStore store.KOTSStore
+	KOTSStore store.Store
 	Roles     []rbactypes.Role
 }
 
-func NewMiddleware(kotsStore store.KOTSStore, roles []rbactypes.Role) *Middleware {
+func NewMiddleware(kotsStore store.Store, roles []rbactypes.Role) *Middleware {
 	return &Middleware{
 		KOTSStore: kotsStore,
 		Roles:     roles,

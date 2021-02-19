@@ -1,4 +1,4 @@
-package s3pg
+package kotsstore
 
 import (
 	"context"
@@ -29,7 +29,7 @@ var (
 	configMapName = "kotsadm-id"
 )
 
-func (s S3PGStore) GetReportingInfo(appID string) *upstreamtypes.ReportingInfo {
+func (s KOTSStore) GetReportingInfo(appID string) *upstreamtypes.ReportingInfo {
 	r := upstreamtypes.ReportingInfo{
 		InstanceID: appID,
 	}
@@ -86,7 +86,7 @@ func (s S3PGStore) GetReportingInfo(appID string) *upstreamtypes.ReportingInfo {
 	return &r
 }
 
-func (s S3PGStore) getClusterID() (string, error) {
+func (s KOTSStore) getClusterID() (string, error) {
 	clusters, err := s.ListClusters()
 	if err != nil {
 		return "", errors.Wrap(err, "failed to list clusters")
@@ -97,7 +97,7 @@ func (s S3PGStore) getClusterID() (string, error) {
 	return clusters[0].ClusterID, nil
 }
 
-func (s S3PGStore) getDownstreamInfo(appID string) (*downstreamInfo, error) {
+func (s KOTSStore) getDownstreamInfo(appID string) (*downstreamInfo, error) {
 	di := downstreamInfo{}
 
 	downstreams, err := s.ListDownstreamsForApp(appID)
@@ -139,7 +139,7 @@ func (s S3PGStore) getDownstreamInfo(appID string) (*downstreamInfo, error) {
 	return &di, nil
 }
 
-func (s S3PGStore) getK8sVersion() (string, error) {
+func (s KOTSStore) getK8sVersion() (string, error) {
 	clientset, err := k8s.Clientset()
 	if err != nil {
 		return "", errors.Wrap(err, "failed to create kubernetes clientset")

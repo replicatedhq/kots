@@ -1,4 +1,4 @@
-package s3pg
+package kotsstore
 
 type scannable interface {
 	Scan(dest ...interface{}) error

@@ -12,20 +12,13 @@ profiles:
         flags:
           apply:
             - --validate=false ## Skaffold turns CRDs into invalid yaml (https://github.com/GoogleContainerTools/skaffold/issues/1737)
-  - name: ocistore
-    activation:
-      - env: KOTSSTORE=oci
-    deploy:
-      kustomize:
-        paths:
-          - "./kustomize/overlays/ocistore"
-  - name: s3pgstore
+  - name: kotsstore
     activation: 
       - env: KOTSSTORE=
     deploy:
       kustomize:
         paths: 
-          - "./kustomize/overlays/s3pgstore"
+          - "./kustomize/overlays/kotsstore"
 
 build:
   local:

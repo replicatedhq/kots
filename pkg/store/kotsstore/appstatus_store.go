@@ -1,4 +1,4 @@
-package s3pg
+package kotsstore
 
 import (
 	"database/sql"
@@ -11,7 +11,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/persistence"
 )
 
-func (s S3PGStore) GetAppStatus(appID string) (*appstatustypes.AppStatus, error) {
+func (s KOTSStore) GetAppStatus(appID string) (*appstatustypes.AppStatus, error) {
 	db := persistence.MustGetPGSession()
 	query := `select resource_states, updated_at from app_status where app_id = $1`
 	row := db.QueryRow(query, appID)

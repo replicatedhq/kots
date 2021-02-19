@@ -23,7 +23,7 @@ import (
 	troubleshootredact "github.com/replicatedhq/troubleshoot/pkg/redact"
 )
 
-type KOTSStore interface {
+type Store interface {
 	Migrations
 	RegistryStore
 	SupportBundleStore

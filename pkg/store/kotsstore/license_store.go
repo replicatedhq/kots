@@ -1,4 +1,4 @@
-package s3pg
+package kotsstore
 
 import (
 	"bytes"
@@ -16,7 +16,7 @@ import (
 	serializer "k8s.io/apimachinery/pkg/runtime/serializer/json"
 )
 
-func (s S3PGStore) GetLatestLicenseForApp(appID string) (*kotsv1beta1.License, error) {
+func (s KOTSStore) GetLatestLicenseForApp(appID string) (*kotsv1beta1.License, error) {
 	db := persistence.MustGetPGSession()
 	query := `select license from app where id = $1`
 	row := db.QueryRow(query, appID)
@@ -35,7 +35,7 @@ func (s S3PGStore) GetLatestLicenseForApp(appID string) (*kotsv1beta1.License, e
 	return license, nil
 }
 
-func (s S3PGStore) GetLicenseForAppVersion(appID string, sequence int64) (*kotsv1beta1.License, error) {
+func (s KOTSStore) GetLicenseForAppVersion(appID string, sequence int64) (*kotsv1beta1.License, error) {
 	db := persistence.MustGetPGSession()
 	query := `select kots_license from app_version where app_id = $1 and sequence = $2`
 	row := db.QueryRow(query, appID, sequence)
@@ -58,7 +58,7 @@ func (s S3PGStore) GetLicenseForAppVersion(appID string, sequence int64) (*kotsv
 	return nil, nil
 }
 
-func (s S3PGStore) GetAllAppLicenses() ([]*kotsv1beta1.License, error) {
+func (s KOTSStore) GetAllAppLicenses() ([]*kotsv1beta1.License, error) {
 	db := persistence.MustGetPGSession()
 	query := `select license from app`
 	rows, err := db.Query(query)
@@ -87,7 +87,7 @@ func (s S3PGStore) GetAllAppLicenses() ([]*kotsv1beta1.License, error) {
 	return licenses, nil
 }
 
-func (s S3PGStore) UpdateAppLicense(appID string, sequence int64, archiveDir string, newLicense *kotsv1beta1.License, originalLicenseData string, failOnVersionCreate bool, gitops gitopstypes.DownstreamGitOps, renderer rendertypes.Renderer) (int64, error) {
+func (s KOTSStore) UpdateAppLicense(appID string, sequence int64, archiveDir string, newLicense *kotsv1beta1.License, originalLicenseData string, failOnVersionCreate bool, gitops gitopstypes.DownstreamGitOps, renderer rendertypes.Renderer) (int64, error) {
 	db := persistence.MustGetPGSession()
 
 	tx, err := db.Begin()
@@ -130,7 +130,7 @@ func (s S3PGStore) UpdateAppLicense(appID string, sequence int64, archiveDir str
 	return newSeq, nil
 }
 
-func (s S3PGStore) createNewVersionForLicenseChange(tx *sql.Tx, appID string, sequence int64, archiveDir string, gitops gitopstypes.DownstreamGitOps, renderer rendertypes.Renderer) (int64, error) {
+func (s KOTSStore) createNewVersionForLicenseChange(tx *sql.Tx, appID string, sequence int64, archiveDir string, gitops gitopstypes.DownstreamGitOps, renderer rendertypes.Renderer) (int64, error) {
 	registrySettings, err := s.GetRegistryDetailsForApp(appID)
 	if err != nil {
 		return int64(0), errors.Wrap(err, "failed to get registry settings for app")

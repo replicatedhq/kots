@@ -19,7 +19,7 @@ func CorsMiddleware(next http.Handler) http.Handler {
 	})
 }
 
-func RequireValidSessionMiddleware(kotsStore store.KOTSStore) mux.MiddlewareFunc {
+func RequireValidSessionMiddleware(kotsStore store.Store) mux.MiddlewareFunc {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			sess, err := requireValidSession(kotsStore, w, r)
@@ -36,7 +36,7 @@ func RequireValidSessionMiddleware(kotsStore store.KOTSStore) mux.MiddlewareFunc
 	}
 }
 
-func RequireValidSessionQuietMiddleware(kotsStore store.KOTSStore) mux.MiddlewareFunc {
+func RequireValidSessionQuietMiddleware(kotsStore store.Store) mux.MiddlewareFunc {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			sess, err := requireValidSession(kotsStore, w, r)
