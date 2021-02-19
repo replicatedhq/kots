@@ -34,6 +34,9 @@ func KotsadmTagForVersionString(kotsVersion string) string {
 	if !strings.HasPrefix(kotsVersion, "v") {
 		kotsVersion = fmt.Sprintf("v%s", kotsVersion)
 	}
+	if kotsVersion == "v0.0.0-unknown" {
+		return "alpha"
+	}
 
 	return kotsVersion
 }
