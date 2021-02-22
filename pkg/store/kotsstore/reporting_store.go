@@ -204,14 +204,20 @@ func UpdateKotsadmIDConfigMap(kotsadmID string) error {
 		return errors.Wrap(err, "failed to get clientset")
 	}
 	namespace := os.Getenv("POD_NAMESPACE")
-	existingConfigmap, err := clientset.CoreV1().ConfigMaps(namespace).Get(context.TODO(), configMapName, metav1.GetOptions{})
+	existingConfigMap, err := clientset.CoreV1().ConfigMaps(namespace).Get(context.TODO(), configMapName, metav1.GetOptions{})
 	if err != nil && !kuberneteserrors.IsNotFound(err) {
 		return errors.Wrap(err, "failed to get configmap")
 	} else if kuberneteserrors.IsNotFound(err) {
 		return nil
 	}
-	if existingConfigmap != nil {
-		existingConfigmap.Data["id"] = kotsadmID
+	if existingConfigMap.Data == nil {
+		existingConfigMap.Data = map[string]string{}
+	}
+	existingConfigMap.Data["id"] = kotsadmID
+
+	_, err = clientset.CoreV1().ConfigMaps(os.Getenv("POD_NAMESPACE")).Update(context.Background(), existingConfigMap, metav1.UpdateOptions{})
+	if err != nil {
+		return errors.Wrap(err, "failed to update config map")
 	}
 	return nil
 }
