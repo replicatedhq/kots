@@ -26,7 +26,7 @@ type downstreamInfo struct {
 }
 
 var (
-	KotsadmIDConfigMap = "kotsadm-id"
+	kotsadmIDConfigMapName = "kotsadm-id"
 )
 
 func (s KOTSStore) GetReportingInfo(appID string) *upstreamtypes.ReportingInfo {
@@ -147,7 +147,7 @@ func getKotsadmIDConfigMap() (*corev1.ConfigMap, error) {
 		return nil, errors.Wrap(err, "failed to get clientset")
 	}
 	namespace := os.Getenv("POD_NAMESPACE")
-	existingConfigmap, err := clientset.CoreV1().ConfigMaps(namespace).Get(context.TODO(), KotsadmIDConfigMap, metav1.GetOptions{})
+	existingConfigmap, err := clientset.CoreV1().ConfigMaps(namespace).Get(context.TODO(), kotsadmIDConfigMapName, metav1.GetOptions{})
 	if err != nil && !kuberneteserrors.IsNotFound(err) {
 		return nil, errors.Wrap(err, "failed to get configmap")
 	} else if kuberneteserrors.IsNotFound(err) {
@@ -169,7 +169,7 @@ func CreateKotsadmIDConfigMap(kotsadmID string) error {
 			Kind:       "ConfigMap",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      KotsadmIDConfigMap,
+			Name:      kotsadmIDConfigMapName,
 			Namespace: os.Getenv("POD_NAMESPACE"),
 			Labels: map[string]string{
 				types.KotsadmKey: types.KotsadmLabelValue,
@@ -189,7 +189,7 @@ func IsKotsadmIDConfigMapPresent() (bool, error) {
 		return false, errors.Wrap(err, "failed to get clientset")
 	}
 	namespace := os.Getenv("POD_NAMESPACE")
-	_, err = clientset.CoreV1().ConfigMaps(namespace).Get(context.TODO(), KotsadmIDConfigMap, metav1.GetOptions{})
+	_, err = clientset.CoreV1().ConfigMaps(namespace).Get(context.TODO(), kotsadmIDConfigMapName, metav1.GetOptions{})
 	if err != nil && !kuberneteserrors.IsNotFound(err) {
 		return false, errors.Wrap(err, "failed to get configmap")
 	} else if kuberneteserrors.IsNotFound(err) {
@@ -205,7 +205,7 @@ func UpdateKotsadmIDConfigMap(kotsadmID string) error {
 		return errors.Wrap(err, "failed to get clientset")
 	}
 	namespace := os.Getenv("POD_NAMESPACE")
-	existingConfigMap, err := clientset.CoreV1().ConfigMaps(namespace).Get(context.TODO(), KotsadmIDConfigMap, metav1.GetOptions{})
+	existingConfigMap, err := clientset.CoreV1().ConfigMaps(namespace).Get(context.TODO(), kotsadmIDConfigMapName, metav1.GetOptions{})
 	if err != nil && !kuberneteserrors.IsNotFound(err) {
 		return errors.Wrap(err, "failed to get configmap")
 	} else if kuberneteserrors.IsNotFound(err) {
