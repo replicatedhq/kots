@@ -723,7 +723,7 @@ func ensureDisasterRecoveryLabels(deployOptions *types.DeployOptions, clientset 
 	}
 	for _, configMap := range configMaps.Items {
 		if configMap.ObjectMeta.Name == kotsstore.KotsadmIDConfigMapName {
-			// don't back up the kotsadm-id configmap so that it doesn't get duplicated on restores to other clusters
+			// don't back up the kotsadm-id configmap so that we don't end up with 2 kotsadm instances with the same id after restoring to other clusters
 			continue
 		}
 		if _, ok := configMap.ObjectMeta.Labels[types.BackupLabel]; !ok {
