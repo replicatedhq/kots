@@ -28,6 +28,7 @@ class AppConfig extends Component {
       savingConfig: false,
       changed: false,
       showNextStepModal: false,
+      activeGroups: [],
       configError: "",
       app: null,
     };
@@ -41,6 +42,11 @@ class AppConfig extends Component {
       // app not configurable - redirect
       history.replace(`/app/${app.slug}`);
     }
+    window.addEventListener("resize", this.determineSidebarHeight);
+  }
+
+  componentWillUnmount() {
+    window.removeEventListener("resize", this.determineSidebarHeight);
   }
 
   componentDidMount() {
@@ -50,17 +56,23 @@ class AppConfig extends Component {
     this.getConfig(this.props.match.params.sequence);
   }
 
-  componentDidUpdate(lastProps) {
-    const { match } = this.props;
-
+  componentDidUpdate(lastProps, lastState) {
     if (this.state.app && !this.state.app.isConfigurable) {
       // app not configurable - redirect
       this.props.history.replace(`/app/${this.state.app.slug}`);
     }
-
     if (match.params.sequence !== lastProps.match.params.sequence && match.params.sequence) {
       this.getConfig(match.params.sequence);
     }
+    if (this.state.configGroups && this.state.configGroups !== lastState.configGroups) {
+      this.determineSidebarHeight();
+    }
+  }
+
+  determineSidebarHeight = () => {
+    const windowHeight = window.innerHeight;
+    const sidebarEl = this.sidebarWrapper;
+    sidebarEl.style.maxHeight = `${windowHeight - 270}px`;
   }
 
   navigateToCurrentHash = () => {
@@ -68,11 +80,11 @@ class AppConfig extends Component {
     let activeGroupName = null;
     this.state.configGroups.map((group) => {
       // if the hash is the top level group and return
-      if (hash === group.name) {
-        this.setState({ activeGroup: group.name });
-        document.getElementById(hash).scrollIntoView();
-        return;
-      }
+      // if (hash === group.name) {
+      //   this.setState({ activeGroups: [group.name] });
+      //   document.getElementById(hash).scrollIntoView();
+      //   return;
+      // }
 
       // hash is a nested item inside a group so find and set it as the active item
       const itemIWant = find(group.items, ["name", hash]);
@@ -82,7 +94,7 @@ class AppConfig extends Component {
     });
 
     if (activeGroupName) {
-      this.setState({ activeGroup: activeGroupName });
+      this.setState({ activeGroups: [activeGroupName] });
       document.getElementById(hash).scrollIntoView();
     }
   }
@@ -129,7 +141,7 @@ class AppConfig extends Component {
       if (this.props.location.hash.length > 0) {
         this.navigateToCurrentHash();
       } else {
-        this.setState({ activeGroup: data.configGroups[0].name });
+        this.setState({ activeGroups: [data.configGroups[0].name] });
       }
     }).catch((error) => {
       console.log(error);
@@ -365,8 +377,15 @@ class AppConfig extends Component {
     }
   }
 
-  toggleActiveGroup = (name) => {
-    this.setState({ activeGroup: name });
+  toggleActiveGroups = (name) => {
+    let groupsArr = this.state.activeGroups;
+    if (groupsArr.includes(name)) {
+      let updatedGroupsArr = groupsArr.filter(n => n !== name);
+      this.setState({ activeGroups: updatedGroupsArr });
+    } else {
+      groupsArr.push(name);
+      this.setState({ activeGroups: groupsArr });
+    }
   }
 
 
@@ -397,13 +416,14 @@ class AppConfig extends Component {
 
         {fromLicenseFlow && app && <span className="u-fontSize--larger u-color--tuna u-fontWeight--bold u-marginTop--auto">Configure {app.name}</span>}
         <div className="flex-column">
-          <div className="AppConfigSidenav--wrapper">
+          <div id="configSidebarWrapper" className="AppConfigSidenav--wrapper" ref={(wrapper) => this.sidebarWrapper = wrapper}>
             {configGroups?.map((group, i) => {
+              if (group.title === "" || group.title.length === 0) return;
               return (
-                <div key={`${i}-${group.name}-${group.title}`} className={`AppConfigSidenav--group ${this.state.activeGroup === group.name ? "group-open" : ""}`}>
-                  <div className="flex alignItems--center" onClick={() => this.toggleActiveGroup(group.name)}>
-                    <a href={`#${group.name}`} className="group-title u-fontSize--large u-lineHeight--normal">{group.title}</a>
-                    <span className="icon u-darkDropdownArrow clickable"/>
+                <div key={`${i}-${group.name}-${group.title}`} className={`AppConfigSidenav--group ${this.state.activeGroups.includes(group.name) ? "group-open" : ""}`}>
+                  <div className="flex alignItems--center AppConfigSidenav--groupWrapper" onClick={() => this.toggleActiveGroups(group.name)}>
+                    <a className="group-title u-fontSize--large u-lineHeight--normal">{group.title}</a>
+                    <span className="icon u-darkDropdownArrow clickable flex-auto"/>
                   </div>
                   {group.items ? 
                     <div className="AppConfigSidenav--items">

@@ -1,5 +1,7 @@
 .ConfigArea--wrapper {
   transform: translateX(80px);
+  width: 100%;
+  max-width: 750px;
 }
 
 .AppConfigSidenav--wrapper {
@@ -11,6 +13,7 @@
   width: 100%;
   padding: 10px;
   border-radius: 4px;
+  overflow: auto;
 
   .AppConfigSidenav--group a,
   .AppConfigSidenav--items a {
@@ -39,6 +42,9 @@
     a.group-title {
       margin-bottom: 0;
       color: #4a4a4a;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
       &:hover {
         color: #323232;
       }
@@ -67,7 +73,7 @@
 }
 
 .AppConfigSidenav--items {
-  padding-left: 20px;
+  padding-left: 15px;
 }
 
 .ConfigError--wrapper {
