@@ -225,7 +225,8 @@ class AppSnapshotRestore extends Component {
   render() {
     const { cancelingRestore, restoreDetail, loadingRestoreDetail } = this.state;
 
-    const hasNoErrorsOrWarnings = restoreDetail?.warnings?.length === 0 && restoreDetail?.errors?.length === 0;
+    const hasNoErrorsOrWarnings = (!restoreDetail?.warnings && !restoreDetail?.errors) || 
+    (restoreDetail?.warnings?.length === 0 && restoreDetail?.errors?.length === 0);
     const restoreCompleted = restoreDetail?.phase === "Completed";
     const restoreFailing = restoreDetail?.phase === "PartiallyFailed" || restoreDetail?.phase === "Failed";
     const restoreLoading = !restoreDetail?.warnings && !restoreDetail?.errors;
