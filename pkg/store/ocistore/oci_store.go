@@ -175,6 +175,8 @@ func (s OCIStore) ensureApplicationMetadata(applicationMetadata string, namespac
 		if err != nil {
 			return errors.Wrap(err, "failed to create metadata config map")
 		}
+
+		return nil
 	}
 
 	if existingConfigMap.Data == nil {
