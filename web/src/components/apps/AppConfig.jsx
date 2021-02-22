@@ -80,14 +80,6 @@ class AppConfig extends Component {
     const hash = this.props.location.hash.slice(1);
     let activeGroupName = null;
     this.state.configGroups.map((group) => {
-      // if the hash is the top level group and return
-      // if (hash === group.name) {
-      //   this.setState({ activeGroups: [group.name] });
-      //   document.getElementById(hash).scrollIntoView();
-      //   return;
-      // }
-
-      // hash is a nested item inside a group so find and set it as the active item
       const itemIWant = find(group.items, ["name", hash]);
       if (itemIWant) {
         activeGroupName = group.name
