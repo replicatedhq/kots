@@ -34,6 +34,7 @@ class AppConfig extends Component {
     };
 
     this.handleConfigChange = debounce(this.handleConfigChange, 250);
+    this.determineSidebarHeight = debounce(this.determineSidebarHeight, 250);
   }
 
   componentWillMount() {
