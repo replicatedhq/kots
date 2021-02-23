@@ -78,9 +78,12 @@ class AppConfig extends Component {
 
   navigateToCurrentHash = () => {
     const hash = this.props.location.hash.slice(1);
+    // slice `-group` off the end of the hash
+    const slicedHash = hash.slice(0, -6);
+    console.log(slicedHash)
     let activeGroupName = null;
     this.state.configGroups.map((group) => {
-      const itemIWant = find(group.items, ["name", hash]);
+      const itemIWant = find(group.items, ["name", slicedHash]);
       if (itemIWant) {
         activeGroupName = group.name
       }
@@ -424,7 +427,7 @@ class AppConfig extends Component {
                         const hash = this.props.location.hash.slice(1);
                         if (item.hidden || item.when === "false") return;
                         return (
-                          <a className={`u-fontSize--normal u-lineHeight--normal ${hash === item.name ? "active-item" : ""}`} href={`#${item.name}`} key={`${i}-${item.name}-${item.title}`}>{item.title}</a>
+                          <a className={`u-fontSize--normal u-lineHeight--normal ${hash === `${item.name}-group` ? "active-item" : ""}`} href={`#${item.name}-group`} key={`${i}-${item.name}-${item.title}`}>{item.title}</a>
                         )
                       })}
                     </div>
