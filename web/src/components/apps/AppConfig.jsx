@@ -58,6 +58,7 @@ class AppConfig extends Component {
   }
 
   componentDidUpdate(lastProps, lastState) {
+    const { match } = this.props;
     if (this.state.app && !this.state.app.isConfigurable) {
       // app not configurable - redirect
       this.props.history.replace(`/app/${this.state.app.slug}`);
