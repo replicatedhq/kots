@@ -46,13 +46,19 @@ class AppConfig extends Component {
     if (!this.props.app) {
       this.getApp();
     }
-    this.getConfig();
+    this.getConfig(this.props.match.params.sequence);
   }
 
-  componentDidUpdate() {
+  componentDidUpdate(lastProps) {
+    const { match } = this.props;
+
     if (this.state.app && !this.state.app.isConfigurable) {
       // app not configurable - redirect
       this.props.history.replace(`/app/${this.state.app.slug}`);
+    }
+
+    if (match.params.sequence !== lastProps.match.params.sequence && match.params.sequence) {
+      this.getConfig(match.params.sequence);
     }
   }
 
@@ -79,8 +85,8 @@ class AppConfig extends Component {
     }
   }
 
-  getConfig = async () => {
-    const sequence = this.getSequence();
+  getConfig = async (seq) => {
+    const sequence = this.getSequence(seq);
     const slug = this.getSlug();
 
     fetch(`${window.env.API_ENDPOINT}/app/${slug}/config/${sequence}`, {
@@ -97,13 +103,13 @@ class AppConfig extends Component {
     });
   }
 
-  getSequence = () => {
-    const { match, app, fromLicenseFlow } = this.props;
+  getSequence = (sequence) => {
+    const { app, fromLicenseFlow } = this.props;
     if (fromLicenseFlow) {
       return 0;
     }
-    if (match.params.sequence != undefined) {
-      return parseInt(match.params.sequence);
+    if (sequence != undefined) {
+      return parseInt(sequence);
     }
     return app.currentSequence;
   }
@@ -313,7 +319,7 @@ class AppConfig extends Component {
     if (!match.params.sequence) return false;
     const sequence = parseInt(match.params.sequence);
     let latestSequence;
-    if (app?.downstreams[0]?.pendingVersions) {
+    if (app?.downstreams[0]?.pendingVersions.length > 0) {
       latestSequence = app?.downstreams[0]?.pendingVersions[0]?.parentSequence;
     } else {
       latestSequence = app?.downstreams[0]?.currentVersion?.parentSequence;
