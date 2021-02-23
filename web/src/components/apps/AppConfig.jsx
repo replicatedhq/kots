@@ -81,11 +81,10 @@ class AppConfig extends Component {
     const hash = this.props.location.hash.slice(1);
     // slice `-group` off the end of the hash
     const slicedHash = hash.slice(0, -6);
-    console.log(slicedHash)
     let activeGroupName = null;
     this.state.configGroups.map((group) => {
-      const itemIWant = find(group.items, ["name", slicedHash]);
-      if (itemIWant) {
+      const activeItem = find(group.items, ["name", slicedHash]);
+      if (activeItem) {
         activeGroupName = group.name
       }
     });
