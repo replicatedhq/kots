@@ -393,7 +393,7 @@ func updateKotsadmService(existing, desiredService *corev1.Service) *corev1.Serv
 // isKotsadmClusterScoped determines if the kotsadm pod should be running
 // with cluster-wide permissions or not
 func isKotsadmClusterScoped(applicationMetadata []byte) (bool, error) {
-	if applicationMetadata == nil {
+	if len(applicationMetadata) == 0 {
 		return true, nil
 	}
 
