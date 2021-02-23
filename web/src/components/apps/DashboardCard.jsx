@@ -361,7 +361,7 @@ export default class DashboardCard extends React.Component {
               <p ref={this.cardTitleText} style={{ fontSize: "20px" }} className={`flex1 u-fontWeight--bold u-fontSize--largest u-paddingRight--5 u-marginBottom--5 ${appLicense && size(appLicense) === 0 ? "u-color--doveGray" : "u-color--tundora"}`}>{cardName}</p>
             </div>
             {application ?
-              app.isConfigurable && <Link to={`${url}/config`} className="card-link"> Configure </Link>
+              app.isConfigurable && <Link to={`${url}/config/${app?.downstreams[0]?.currentVersion?.parentSequence}`} className="card-link"> {`${Utilities.checkIsDeployedConfigLatest(app) ? "Edit" : "View"}`} deployed config </Link>
               :
               versionHistory ?
                 <Link to={`${url}/version-history`} className="card-link"> Version history </Link>

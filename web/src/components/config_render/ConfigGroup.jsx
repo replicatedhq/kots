@@ -27,6 +27,7 @@ export default class ConfigGroup extends React.Component {
   renderConfigItems = (items, readonly) => {
     if (!items) return null;
     return items.map((item, i) => {
+      const isReadOnly = readonly || item.readonly;
       switch (item.type) {
       case "text":
         return (
@@ -37,7 +38,8 @@ export default class ConfigGroup extends React.Component {
             hidden={item.hidden}
             when={item.when}
             {...item}
-            readonly={readonly}
+            readonly={isReadOnly}
+
           />
         );
       case "textarea":
@@ -48,7 +50,7 @@ export default class ConfigGroup extends React.Component {
             hidden={item.hidden}
             when={item.when}
             {...item}
-            readonly={readonly}
+            readonly={isReadOnly}
           />
         );
       case "bool":
@@ -59,7 +61,7 @@ export default class ConfigGroup extends React.Component {
             hidden={item.hidden}
             when={item.when}
             {...item}
-            readonly={readonly}
+            readonly={isReadOnly}
           />
         );
       case "label":
@@ -73,7 +75,7 @@ export default class ConfigGroup extends React.Component {
               when={item.when}
               name={item.name}
               error={item.error}
-              readonly={readonly}
+              readonly={isReadOnly}
             />
           </div>
         );
@@ -88,7 +90,7 @@ export default class ConfigGroup extends React.Component {
               handleChange={this.handleItemChange}
               hidden={item.hidden}
               when={item.when}
-              readonly={readonly}
+              readonly={isReadOnly}
             />
           </div>
         );
@@ -100,7 +102,7 @@ export default class ConfigGroup extends React.Component {
             hidden={item.hidden}
             when={item.when}
             {...item}
-            readonly={readonly}
+            readonly={isReadOnly}
           />
         );
       case "heading":
@@ -118,7 +120,7 @@ export default class ConfigGroup extends React.Component {
             when={item.when}
             inputType="password"
             {...item}
-            readonly={readonly}
+            readonly={isReadOnly}
           />
         );
       default:
