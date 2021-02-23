@@ -6,6 +6,7 @@ import classNames from "classnames";
 import Helmet from "react-helmet";
 import debounce from "lodash/debounce";
 import size from "lodash/size";
+import find from "lodash/find";
 import map from "lodash/map";
 import Modal from "react-modal";
 import Loader from "../shared/Loader";
@@ -27,11 +28,13 @@ class AppConfig extends Component {
       savingConfig: false,
       changed: false,
       showNextStepModal: false,
+      activeGroups: [],
       configError: "",
       app: null,
     };
 
     this.handleConfigChange = debounce(this.handleConfigChange, 250);
+    this.determineSidebarHeight = debounce(this.determineSidebarHeight, 250);
   }
 
   componentWillMount() {
@@ -40,6 +43,11 @@ class AppConfig extends Component {
       // app not configurable - redirect
       history.replace(`/app/${app.slug}`);
     }
+    window.addEventListener("resize", this.determineSidebarHeight);
+  }
+
+  componentWillUnmount() {
+    window.removeEventListener("resize", this.determineSidebarHeight);
   }
 
   componentDidMount() {
@@ -49,16 +57,41 @@ class AppConfig extends Component {
     this.getConfig(this.props.match.params.sequence);
   }
 
-  componentDidUpdate(lastProps) {
+  componentDidUpdate(lastProps, lastState) {
     const { match } = this.props;
-
     if (this.state.app && !this.state.app.isConfigurable) {
       // app not configurable - redirect
       this.props.history.replace(`/app/${this.state.app.slug}`);
     }
-
     if (match.params.sequence !== lastProps.match.params.sequence && match.params.sequence) {
       this.getConfig(match.params.sequence);
+    }
+    if (this.state.configGroups && this.state.configGroups !== lastState.configGroups) {
+      this.determineSidebarHeight();
+    }
+  }
+
+  determineSidebarHeight = () => {
+    const windowHeight = window.innerHeight;
+    const sidebarEl = this.sidebarWrapper;
+    sidebarEl.style.maxHeight = `${windowHeight - 270}px`;
+  }
+
+  navigateToCurrentHash = () => {
+    const hash = this.props.location.hash.slice(1);
+    // slice `-group` off the end of the hash
+    const slicedHash = hash.slice(0, -6);
+    let activeGroupName = null;
+    this.state.configGroups.map((group) => {
+      const activeItem = find(group.items, ["name", slicedHash]);
+      if (activeItem) {
+        activeGroupName = group.name
+      }
+    });
+
+    if (activeGroupName) {
+      this.setState({ activeGroups: [activeGroupName] });
+      document.getElementById(hash).scrollIntoView();
     }
   }
 
@@ -97,7 +130,15 @@ class AppConfig extends Component {
       }
     }).then(async (response) => {
       const data = await response.json()
-      this.setState({ configGroups: data.configGroups, changed: false });
+      this.setState({
+        configGroups: data.configGroups,
+        changed: false
+      });
+      if (this.props.location.hash.length > 0) {
+        this.navigateToCurrentHash();
+      } else {
+        this.setState({ activeGroups: [data.configGroups[0].name] });
+      }
     }).catch((error) => {
       console.log(error);
     });
@@ -291,20 +332,20 @@ class AppConfig extends Component {
 
     if (currentSequence > sequence) {
       return (
-        <div className="ConfigInfo older u-marginBottom--20">
+        <div className="ConfigInfo older">
           <p className="flex alignItems--center u-marginRight--5"> <span className="icon info-warning-icon flex u-marginRight--5" /> This config is {currentSequence - sequence} version{currentSequence - sequence === 1 ? "" : "s"} older than the currently deployed config. </p>
           <Link to={`/app/${app?.slug}/config/${currentSequence}`} className="replicated-link"> View the currently deployed config </Link>
         </div>
       )
     } else if (currentSequence < sequence) {
       return (
-        <div className="ConfigInfo newer u-marginBottom--20">
+        <div className="ConfigInfo newer">
           <p className="flex alignItems--center u-marginRight--5"> <span className="icon info-icon flex u-marginRight--5" /> This config is {sequence - currentSequence} version{sequence - currentSequence === 1 ? "" : "s"} newer than the currently deployed config. </p>
           <Link to={`/app/${app?.slug}/config/${currentSequence}`} className="replicated-link"> View the currently deployed config </Link>
         </div>)
     } else if (size(pendingVersions) > 0 && (currentSequence === sequence)) {
       return (
-        <div className="ConfigInfo current u-marginBottom--20">
+        <div className="ConfigInfo current">
           <p className="flex alignItems--center u-marginRight--5"> <span className="icon info-icon-green flex u-marginRight--5" /> This is the currently deployed config. There {size(pendingVersions) === 1 ? "is" : "are"} {size(pendingVersions)} newer version{size(pendingVersions) === 1 ? "" : "s"} since this one. </p>
           <Link to={`/app/${app?.slug}/config/${pendingVersions[0].parentSequence}`} className="replicated-link"> Edit the latest config </Link>
         </div>
@@ -332,6 +373,17 @@ class AppConfig extends Component {
     }
   }
 
+  toggleActiveGroups = (name) => {
+    let groupsArr = this.state.activeGroups;
+    if (groupsArr.includes(name)) {
+      let updatedGroupsArr = groupsArr.filter(n => n !== name);
+      this.setState({ activeGroups: updatedGroupsArr });
+    } else {
+      groupsArr.push(name);
+      this.setState({ activeGroups: groupsArr });
+    }
+  }
+
 
   render() {
     const { configGroups, savingConfig, changed, showNextStepModal, configError } = this.state;
@@ -351,7 +403,7 @@ class AppConfig extends Component {
     const isNewVersion = !fromLicenseFlow && match.params.sequence == undefined;
 
     return (
-      <div className={classNames("flex1 flex-column u-padding--20 alignItems--center u-overflow--auto")}>
+      <div className={classNames("flex1 flex-column u-padding--20 alignItems--center")}>
         <Helmet>
           <title>{`${app.name} Config`}</title>
         </Helmet>
@@ -359,22 +411,50 @@ class AppConfig extends Component {
         {this.renderConfigInfo(app)}
 
         {fromLicenseFlow && app && <span className="u-fontSize--larger u-color--tuna u-fontWeight--bold u-marginTop--auto">Configure {app.name}</span>}
-        <div className={classNames("ConfigOuterWrapper u-padding--15", { "u-marginTop--20": fromLicenseFlow })}>
-          <div className="ConfigInnerWrapper u-padding--15">
-            <AppConfigRenderer groups={configGroups} getData={this.handleConfigChange} readonly={this.checkIsCurrentOrPastVersion(app)} />
+        <div className="flex-column">
+          <div id="configSidebarWrapper" className="AppConfigSidenav--wrapper" ref={(wrapper) => this.sidebarWrapper = wrapper}>
+            {configGroups?.map((group, i) => {
+              if (group.title === "" || group.title.length === 0) return;
+              return (
+                <div key={`${i}-${group.name}-${group.title}`} className={`AppConfigSidenav--group ${this.state.activeGroups.includes(group.name) ? "group-open" : ""}`}>
+                  <div className="flex alignItems--center AppConfigSidenav--groupWrapper" onClick={() => this.toggleActiveGroups(group.name)}>
+                    <a className="group-title u-fontSize--large u-lineHeight--normal">{group.title}</a>
+                    <span className="icon u-darkDropdownArrow clickable flex-auto"/>
+                  </div>
+                  {group.items ? 
+                    <div className="AppConfigSidenav--items">
+                      {group.items?.map((item, i) => {
+                        const hash = this.props.location.hash.slice(1);
+                        if (item.hidden || item.when === "false") return;
+                        return (
+                          <a className={`u-fontSize--normal u-lineHeight--normal ${hash === `${item.name}-group` ? "active-item" : ""}`} href={`#${item.name}-group`} key={`${i}-${item.name}-${item.title}`}>{item.title}</a>
+                        )
+                      })}
+                    </div>
+                  : null}
+                </div>
+              )
+            })}
+          </div>
+          <div className="ConfigArea--wrapper">
+            <div className={classNames("ConfigOuterWrapper u-paddingTop--30", { "u-marginTop--20": fromLicenseFlow })}>
+              <div className="ConfigInnerWrapper">
+                <AppConfigRenderer groups={configGroups} getData={this.handleConfigChange} readonly={this.checkIsCurrentOrPastVersion(app)} />
+              </div>
+            </div>
+            {savingConfig ?
+              <div className="u-paddingBottom--30">
+                <Loader size="30" />
+              </div>
+              :
+              <div className="ConfigError--wrapper flex-column u-paddingBottom--30 alignItems--flexStart">
+                {configError && <span className="u-color--chestnut u-marginBottom--20 u-fontWeight--bold">{configError}</span>}
+                <button className="btn primary blue" disabled={!changed && !fromLicenseFlow || this.checkIsCurrentOrPastVersion(app)} onClick={this.handleSave}>{fromLicenseFlow ? "Continue" : "Save config"}</button>
+              </div>
+            }
           </div>
         </div>
 
-        {savingConfig ?
-          <div className="u-marginTop--20 u-marginBottom--auto">
-            <Loader size="30" />
-          </div>
-          :
-          <div className="ConfigError--wrapper flex-column u-marginTop--20 u-marginBottom--auto alignItems--center">
-            {configError && <span className="u-color--chestnut u-marginBottom--20 u-fontWeight--bold">{configError}</span>}
-            <button className="btn secondary blue" disabled={!changed && !fromLicenseFlow || this.checkIsCurrentOrPastVersion(app)} onClick={this.handleSave}>{fromLicenseFlow ? "Continue" : "Save config"}</button>
-          </div>
-        }
 
         <Modal
           isOpen={showNextStepModal}
