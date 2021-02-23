@@ -10,6 +10,7 @@ import MountAware from "../shared/MountAware";
 import Loader from "../shared/Loader";
 import { Utilities } from "../../utilities/utilities";
 
+
 function getCurrentVersionStatus(version, viewLogs) {
   if (version?.status === "deployed" || version?.status === "merged" || version?.status === "pending") {
     return <span className="u-fontSize--small u-lineHeight--normal u-color--dustyGray u-fontWeight--medium flex alignItems--center u-marginTop--8"> <span className="icon checkmark-icon u-marginRight--5" /> {Utilities.toTitleCase(version?.status).replace("_", " ")} </span>
@@ -66,7 +67,7 @@ export default function AppVersionHistoryHeader(props) {
                 </div>
                 {app.isConfigurable &&
                   <div>
-                    <Link to={`/app/${slug}/config`} className="icon config--icon u-cursor--pointer" data-tip="Edit config" />
+                    <Link to={`/app/${slug}/config/${app?.downstreams[0]?.currentVersion?.parentSequence}`} className="icon config--icon u-cursor--pointer" data-tip={`${Utilities.checkIsDeployedConfigLatest(app) ? "Edit config" : "View config"}`} />
                     <ReactTooltip effect="solid" className="replicated-tooltip" />
                   </div>}
               </div> : null}
