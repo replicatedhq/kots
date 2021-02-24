@@ -90,7 +90,7 @@ class AppConfig extends Component {
   determineSidebarHeight = () => {
     const windowHeight = window.innerHeight;
     const sidebarEl = this.sidebarWrapper;
-    sidebarEl.style.maxHeight = `${windowHeight - 270}px`;
+    sidebarEl.style.maxHeight = `${windowHeight - 225}px`;
   }
 
   navigateToCurrentHash = () => {
