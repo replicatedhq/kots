@@ -207,7 +207,7 @@ func pushOneImage(rootDir string, format string, imageName string, tag string, o
 
 	writeProgressLine(options.ProgressWriter, fmt.Sprintf("Pushing %s", destStr))
 
-	_, err = copy.Image(context.Background(), policyContext, destRef, localRef, &copy.Options{
+	_, err = image.CopyImageWithGC(context.Background(), policyContext, destRef, localRef, &copy.Options{
 		RemoveSignatures:      true,
 		SignBy:                "",
 		ReportWriter:          options.ProgressWriter,
