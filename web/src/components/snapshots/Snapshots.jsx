@@ -3,7 +3,6 @@ import { Link, withRouter } from "react-router-dom";
 import Helmet from "react-helmet";
 import ReactTooltip from "react-tooltip";
 import moment from "moment";
-import isEmpty from "lodash/isEmpty";
 
 import Loader from "../shared/Loader";
 import SnapshotRow from "./SnapshotRow";
@@ -12,6 +11,7 @@ import DeleteSnapshotModal from "../modals/DeleteSnapshotModal";
 import DummySnapshotRow from "./DummySnapshotRow";
 import GettingStartedSnapshots from "./GettingStartedSnapshots";
 import ErrorModal from "../modals/ErrorModal";
+import SnapshotDifferencesModal from "../modals/SnapshotDifferencesModal";
 
 import "../../scss/components/snapshots/AppSnapshots.scss";
 import { Utilities } from "../../utilities/utilities";
@@ -47,7 +47,8 @@ class Snapshots extends Component {
     selectedRestoreApp: {},
     appSlugToRestore: "",
     appSlugMismatch: false,
-    restoringSnapshot: false
+    restoringSnapshot: false,
+    snapshotDifferencesModal: false
   };
 
   componentDidMount() {
@@ -412,6 +413,10 @@ class Snapshots extends Component {
     );
   }
 
+  toggleSnaphotDifferencesModal = () => {
+    this.setState({ snapshotDifferencesModal: !this.state.snapshotDifferencesModal });
+  }
+
 
   render() {
     const { isLoadingSnapshotSettings, snapshotSettings, hasSnapshotsLoaded, startingSnapshot, startSnapshotErr, startSnapshotErrorMsg, snapshots, isStartButtonClicked, displayErrorModal } = this.state;
@@ -445,7 +450,7 @@ class Snapshots extends Component {
               <div className="flex1 flex-column" style={{ marginRight: "60px" }}>
                 <p className="u-fontWeight--bold u-color--tuna u-fontSize--larger u-lineHeight--normal">Full Snapshots (Instance) </p>
                 <p className="u-marginTop--10 u-fontSize--normal u-lineHeight--more u-fontWeight--medium u-color--dustyGray"> Full snapshots (Instance) back up the Admin Console and all application data. They can be used for full Disaster Recovery; by restoring over top of this instance, or into a new cluster.
-              For more information about what is included <a href="https://kots.io/kotsadm/snapshots/" target="_blank" rel="noopener noreferrer" className="replicated-link">check out our documentation</a>.</p>
+                <span className="replicated-link" onClick={this.toggleSnaphotDifferencesModal}> Learn more</span>.</p>
               </div>
               <div className="flex alignSelf--flexEnd">
                 <Link to={`/snapshots/settings`} className="replicated-link u-fontSize--small u-fontWeight--bold u-marginRight--20 flex alignItems--center"><span className="icon snapshotSettingsIcon u-marginRight--5" />Settings</Link>
@@ -518,6 +523,11 @@ class Snapshots extends Component {
               err={this.state.errorTitle}
               tryAgain={this.fetchSnapshotSettings}
               loading={isLoadingSnapshotSettings}
+            />}
+          {this.state.snapshotDifferencesModal &&
+            <SnapshotDifferencesModal
+              snapshotDifferencesModal={this.state.snapshotDifferencesModal}
+              toggleSnapshotDifferencesModal={this.toggleSnaphotDifferencesModal}
             />}
         </div>
       </div>
