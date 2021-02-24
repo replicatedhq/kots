@@ -30,7 +30,7 @@ class AppConfig extends Component {
       showNextStepModal: false,
       activeGroups: [],
       configError: "",
-      app: null,
+      app: null
     };
 
     this.handleConfigChange = debounce(this.handleConfigChange, 250);
@@ -54,20 +54,28 @@ class AppConfig extends Component {
     if (!this.props.app) {
       this.getApp();
     }
-    this.getConfig(this.props.match.params.sequence);
+    this.getConfig();
   }
 
   componentDidUpdate(lastProps, lastState) {
-    const { match } = this.props;
+    const { match, location } = this.props;
+
     if (this.state.app && !this.state.app.isConfigurable) {
       // app not configurable - redirect
       this.props.history.replace(`/app/${this.state.app.slug}`);
     }
-    if (match.params.sequence !== lastProps.match.params.sequence && match.params.sequence) {
-      this.getConfig(match.params.sequence);
+    if (match.params.sequence !== lastProps.match.params.sequence) {
+      this.getConfig();
     }
     if (this.state.configGroups && this.state.configGroups !== lastState.configGroups) {
       this.determineSidebarHeight();
+    }
+    if (location.hash !== lastProps.location.hash && location.hash) {
+      // navigate to error if there is one
+      if (this.state.configError) {
+        const hash = location.hash.slice(1);
+        document.getElementById(hash).scrollIntoView();
+      }
     }
   }
 
@@ -118,8 +126,8 @@ class AppConfig extends Component {
     }
   }
 
-  getConfig = async (seq) => {
-    const sequence = this.getSequence(seq);
+  getConfig = async () => {
+    const sequence = this.getSequence();
     const slug = this.getSlug();
 
     fetch(`${window.env.API_ENDPOINT}/app/${slug}/config/${sequence}`, {
@@ -144,15 +152,15 @@ class AppConfig extends Component {
     });
   }
 
-  getSequence = (sequence) => {
-    const { app, fromLicenseFlow } = this.props;
+  getSequence = () => {
+    const { match, app, fromLicenseFlow } = this.props;
     if (fromLicenseFlow) {
       return 0;
     }
-    if (sequence != undefined) {
-      return parseInt(sequence);
+    if (match.params.sequence != undefined) {
+      return parseInt(match.params.sequence);
     }
-    return app.currentSequence;
+    return app?.currentSequence;
   }
 
   getSlug = () => {
@@ -160,7 +168,20 @@ class AppConfig extends Component {
     if (fromLicenseFlow) {
       return match.params.slug;
     }
-    return app.slug;
+    return app?.slug;
+  }
+
+  updateUrlWithErrorId = (requiredItems) => {
+    const { match, fromLicenseFlow } = this.props;
+    const slug = this.getSlug();
+
+    if (fromLicenseFlow) {
+      this.props.history.push(`/${slug}/config#${requiredItems[0]}-group`);
+    } else if (match.params.sequence) {
+      this.props.history.push(`/app/${slug}/config/${match.params.sequence}#${requiredItems[0]}-group`);
+    } else {
+      this.props.history.push(`/app/${slug}/config#${requiredItems[0]}-group`);
+    }    
   }
 
   markRequiredItems = requiredItems => {
@@ -173,7 +194,9 @@ class AppConfig extends Component {
         }
       });
     });
-    this.setState({ configGroups });
+    this.setState({ configGroups, configError: true }, () => {
+      this.updateUrlWithErrorId(requiredItems);
+    });
   }
 
   handleSave = async () => {
@@ -332,20 +355,20 @@ class AppConfig extends Component {
 
     if (currentSequence > sequence) {
       return (
-        <div className="ConfigInfo older">
+        <div className="ConfigInfo older justifyContent--center">
           <p className="flex alignItems--center u-marginRight--5"> <span className="icon info-warning-icon flex u-marginRight--5" /> This config is {currentSequence - sequence} version{currentSequence - sequence === 1 ? "" : "s"} older than the currently deployed config. </p>
           <Link to={`/app/${app?.slug}/config/${currentSequence}`} className="replicated-link"> View the currently deployed config </Link>
         </div>
       )
     } else if (currentSequence < sequence) {
       return (
-        <div className="ConfigInfo newer">
+        <div className="ConfigInfo newer justifyContent--center">
           <p className="flex alignItems--center u-marginRight--5"> <span className="icon info-icon flex u-marginRight--5" /> This config is {sequence - currentSequence} version{sequence - currentSequence === 1 ? "" : "s"} newer than the currently deployed config. </p>
           <Link to={`/app/${app?.slug}/config/${currentSequence}`} className="replicated-link"> View the currently deployed config </Link>
         </div>)
     } else if (size(pendingVersions) > 0 && (currentSequence === sequence)) {
       return (
-        <div className="ConfigInfo current">
+        <div className="ConfigInfo current justifyContent--center">
           <p className="flex alignItems--center u-marginRight--5"> <span className="icon info-icon-green flex u-marginRight--5" /> This is the currently deployed config. There {size(pendingVersions) === 1 ? "is" : "are"} {size(pendingVersions)} newer version{size(pendingVersions) === 1 ? "" : "s"} since this one. </p>
           <Link to={`/app/${app?.slug}/config/${pendingVersions[0].parentSequence}`} className="replicated-link"> Edit the latest config </Link>
         </div>
@@ -408,7 +431,6 @@ class AppConfig extends Component {
           <title>{`${app.name} Config`}</title>
         </Helmet>
 
-        {this.renderConfigInfo(app)}
 
         {fromLicenseFlow && app && <span className="u-fontSize--larger u-color--tuna u-fontWeight--bold u-marginTop--auto">Configure {app.name}</span>}
         <div className="flex-column">
@@ -419,9 +441,9 @@ class AppConfig extends Component {
                 <div key={`${i}-${group.name}-${group.title}`} className={`AppConfigSidenav--group ${this.state.activeGroups.includes(group.name) ? "group-open" : ""}`}>
                   <div className="flex alignItems--center AppConfigSidenav--groupWrapper" onClick={() => this.toggleActiveGroups(group.name)}>
                     <a className="group-title u-fontSize--large u-lineHeight--normal">{group.title}</a>
-                    <span className="icon u-darkDropdownArrow clickable flex-auto"/>
+                    <span className="icon u-darkDropdownArrow clickable flex-auto" />
                   </div>
-                  {group.items ? 
+                  {group.items ?
                     <div className="AppConfigSidenav--items">
                       {group.items?.map((item, i) => {
                         const hash = this.props.location.hash.slice(1);
@@ -431,12 +453,13 @@ class AppConfig extends Component {
                         )
                       })}
                     </div>
-                  : null}
+                    : null}
                 </div>
               )
             })}
           </div>
           <div className="ConfigArea--wrapper">
+            {this.renderConfigInfo(app)}
             <div className={classNames("ConfigOuterWrapper u-paddingTop--30", { "u-marginTop--20": fromLicenseFlow })}>
               <div className="ConfigInnerWrapper">
                 <AppConfigRenderer groups={configGroups} getData={this.handleConfigChange} readonly={this.checkIsCurrentOrPastVersion(app)} />
@@ -454,7 +477,6 @@ class AppConfig extends Component {
             }
           </div>
         </div>
-
 
         <Modal
           isOpen={showNextStepModal}
