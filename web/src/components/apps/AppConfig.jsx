@@ -10,6 +10,7 @@ import find from "lodash/find";
 import map from "lodash/map";
 import Modal from "react-modal";
 import Loader from "../shared/Loader";
+import ErrorModal from "../modals/ErrorModal";
 
 import "../../scss/components/watches/WatchConfig.scss";
 import { Utilities } from "../../utilities/utilities";
@@ -23,6 +24,9 @@ class AppConfig extends Component {
     super(props);
 
     this.state = {
+      configLoading: false,
+      gettingConfigErrMsg: "",
+      errorTitle: "",
       initialConfigGroups: [],
       configGroups: [],
       savingConfig: false,
@@ -31,6 +35,7 @@ class AppConfig extends Component {
       activeGroups: [],
       configError: "",
       app: null,
+      displayErrorModal: false,
     };
 
     this.handleConfigChange = debounce(this.handleConfigChange, 250);
@@ -54,20 +59,28 @@ class AppConfig extends Component {
     if (!this.props.app) {
       this.getApp();
     }
-    this.getConfig(this.props.match.params.sequence);
+    this.getConfig();
   }
 
   componentDidUpdate(lastProps, lastState) {
-    const { match } = this.props;
+    const { match, location } = this.props;
+
     if (this.state.app && !this.state.app.isConfigurable) {
       // app not configurable - redirect
       this.props.history.replace(`/app/${this.state.app.slug}`);
     }
-    if (match.params.sequence !== lastProps.match.params.sequence && match.params.sequence) {
-      this.getConfig(match.params.sequence);
+    if (match.params.sequence !== lastProps.match.params.sequence) {
+      this.getConfig();
     }
     if (this.state.configGroups && this.state.configGroups !== lastState.configGroups) {
       this.determineSidebarHeight();
+    }
+    if (location.hash !== lastProps.location.hash && location.hash) {
+      // navigate to error if there is one
+      if (this.state.configError) {
+        const hash = location.hash.slice(1);
+        document.getElementById(hash).scrollIntoView();
+      }
     }
   }
 
@@ -90,7 +103,7 @@ class AppConfig extends Component {
     });
 
     if (activeGroupName) {
-      this.setState({ activeGroups: [activeGroupName] });
+      this.setState({ activeGroups: [activeGroupName], configLoading: false });
       document.getElementById(hash).scrollIntoView();
     }
   }
@@ -118,9 +131,11 @@ class AppConfig extends Component {
     }
   }
 
-  getConfig = async (seq) => {
-    const sequence = this.getSequence(seq);
+  getConfig = async () => {
+    const sequence = this.getSequence();
     const slug = this.getSlug();
+
+    this.setState({ configLoading: true, gettingConfigErrMsg: "" });
 
     fetch(`${window.env.API_ENDPOINT}/app/${slug}/config/${sequence}`, {
       method: "GET",
@@ -132,27 +147,33 @@ class AppConfig extends Component {
       const data = await response.json()
       this.setState({
         configGroups: data.configGroups,
-        changed: false
+        changed: false,
+        configLoading: false
       });
       if (this.props.location.hash.length > 0) {
         this.navigateToCurrentHash();
       } else {
-        this.setState({ activeGroups: [data.configGroups[0].name] });
+        this.setState({ activeGroups: [data.configGroups[0].name], configLoading: false, gettingConfigErrMsg: "" });
       }
-    }).catch((error) => {
-      console.log(error);
+    }).catch((err) => {
+      this.setState({
+        configLoading: false,
+        errorTitle: `Failed to get config data`,
+        displayErrorModal: true,
+        gettingConfigErrMsg: err ? err.message : "Something went wrong, please try again."
+      })
     });
   }
 
-  getSequence = (sequence) => {
-    const { app, fromLicenseFlow } = this.props;
+  getSequence = () => {
+    const { match, app, fromLicenseFlow } = this.props;
     if (fromLicenseFlow) {
       return 0;
     }
-    if (sequence != undefined) {
-      return parseInt(sequence);
+    if (match.params.sequence != undefined) {
+      return parseInt(match.params.sequence);
     }
-    return app.currentSequence;
+    return app?.currentSequence;
   }
 
   getSlug = () => {
@@ -160,7 +181,20 @@ class AppConfig extends Component {
     if (fromLicenseFlow) {
       return match.params.slug;
     }
-    return app.slug;
+    return app?.slug;
+  }
+
+  updateUrlWithErrorId = (requiredItems) => {
+    const { match, fromLicenseFlow } = this.props;
+    const slug = this.getSlug();
+
+    if (fromLicenseFlow) {
+      this.props.history.push(`/${slug}/config#${requiredItems[0]}-group`);
+    } else if (match.params.sequence) {
+      this.props.history.push(`/app/${slug}/config/${match.params.sequence}#${requiredItems[0]}-group`);
+    } else {
+      this.props.history.push(`/app/${slug}/config#${requiredItems[0]}-group`);
+    }
   }
 
   markRequiredItems = requiredItems => {
@@ -173,7 +207,9 @@ class AppConfig extends Component {
         }
       });
     });
-    this.setState({ configGroups });
+    this.setState({ configGroups, configError: true }, () => {
+      this.updateUrlWithErrorId(requiredItems);
+    });
   }
 
   handleSave = async () => {
@@ -332,20 +368,20 @@ class AppConfig extends Component {
 
     if (currentSequence > sequence) {
       return (
-        <div className="ConfigInfo older">
+        <div className="ConfigInfo older justifyContent--center">
           <p className="flex alignItems--center u-marginRight--5"> <span className="icon info-warning-icon flex u-marginRight--5" /> This config is {currentSequence - sequence} version{currentSequence - sequence === 1 ? "" : "s"} older than the currently deployed config. </p>
           <Link to={`/app/${app?.slug}/config/${currentSequence}`} className="replicated-link"> View the currently deployed config </Link>
         </div>
       )
     } else if (currentSequence < sequence) {
       return (
-        <div className="ConfigInfo newer">
+        <div className="ConfigInfo newer justifyContent--center">
           <p className="flex alignItems--center u-marginRight--5"> <span className="icon info-icon flex u-marginRight--5" /> This config is {sequence - currentSequence} version{sequence - currentSequence === 1 ? "" : "s"} newer than the currently deployed config. </p>
           <Link to={`/app/${app?.slug}/config/${currentSequence}`} className="replicated-link"> View the currently deployed config </Link>
         </div>)
     } else if (size(pendingVersions) > 0 && (currentSequence === sequence)) {
       return (
-        <div className="ConfigInfo current">
+        <div className="ConfigInfo current justifyContent--center">
           <p className="flex alignItems--center u-marginRight--5"> <span className="icon info-icon-green flex u-marginRight--5" /> This is the currently deployed config. There {size(pendingVersions) === 1 ? "is" : "are"} {size(pendingVersions)} newer version{size(pendingVersions) === 1 ? "" : "s"} since this one. </p>
           <Link to={`/app/${app?.slug}/config/${pendingVersions[0].parentSequence}`} className="replicated-link"> Edit the latest config </Link>
         </div>
@@ -384,14 +420,27 @@ class AppConfig extends Component {
     }
   }
 
+  toggleErrorModal = () => {
+    this.setState({ displayErrorModal: !this.state.displayErrorModal });
+  }
+
 
   render() {
-    const { configGroups, savingConfig, changed, showNextStepModal, configError } = this.state;
+    const {
+      configGroups,
+      savingConfig,
+      changed,
+      showNextStepModal,
+      configError,
+      configLoading,
+      gettingConfigErrMsg,
+      displayErrorModal,
+      errorTitle } = this.state;
     const { fromLicenseFlow, match } = this.props;
 
     const app = this.props.app || this.state.app;
 
-    if (!configGroups.length || !app) {
+    if (configLoading || !app) {
       return (
         <div className="flex-column flex1 alignItems--center justifyContent--center">
           <Loader size="60" />
@@ -408,7 +457,6 @@ class AppConfig extends Component {
           <title>{`${app.name} Config`}</title>
         </Helmet>
 
-        {this.renderConfigInfo(app)}
 
         {fromLicenseFlow && app && <span className="u-fontSize--larger u-color--tuna u-fontWeight--bold u-marginTop--auto">Configure {app.name}</span>}
         <div className="flex-column">
@@ -419,9 +467,9 @@ class AppConfig extends Component {
                 <div key={`${i}-${group.name}-${group.title}`} className={`AppConfigSidenav--group ${this.state.activeGroups.includes(group.name) ? "group-open" : ""}`}>
                   <div className="flex alignItems--center AppConfigSidenav--groupWrapper" onClick={() => this.toggleActiveGroups(group.name)}>
                     <a className="group-title u-fontSize--large u-lineHeight--normal">{group.title}</a>
-                    <span className="icon u-darkDropdownArrow clickable flex-auto"/>
+                    <span className="icon u-darkDropdownArrow clickable flex-auto" />
                   </div>
-                  {group.items ? 
+                  {group.items ?
                     <div className="AppConfigSidenav--items">
                       {group.items?.map((item, i) => {
                         const hash = this.props.location.hash.slice(1);
@@ -431,12 +479,13 @@ class AppConfig extends Component {
                         )
                       })}
                     </div>
-                  : null}
+                    : null}
                 </div>
               )
             })}
           </div>
           <div className="ConfigArea--wrapper">
+            {this.renderConfigInfo(app)}
             <div className={classNames("ConfigOuterWrapper u-paddingTop--30", { "u-marginTop--20": fromLicenseFlow })}>
               <div className="ConfigInnerWrapper">
                 <AppConfigRenderer groups={configGroups} getData={this.handleConfigChange} readonly={this.checkIsCurrentOrPastVersion(app)} />
@@ -454,7 +503,6 @@ class AppConfig extends Component {
             }
           </div>
         </div>
-
 
         <Modal
           isOpen={showNextStepModal}
@@ -493,6 +541,14 @@ class AppConfig extends Component {
             </div>
           }
         </Modal>
+        {gettingConfigErrMsg &&
+          <ErrorModal
+            errorModal={displayErrorModal}
+            toggleErrorModal={this.toggleErrorModal}
+            err={errorTitle}
+            errMsg={gettingConfigErrMsg}
+            tryAgain={this.getConfig}
+          />}
       </div>
     )
   }

@@ -377,6 +377,7 @@ class AppDetailPage extends Component {
                       <AppConfig
                         app={app}
                         refreshAppData={this.getApp}
+                        fromLicenseFlow={false}
                       />
                     } />
                     <Route path="/app/:slug/troubleshoot" render={() =>
