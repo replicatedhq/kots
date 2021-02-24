@@ -531,7 +531,7 @@ func KotsadmDeployment(deployOptions types.DeployOptions) *appsv1.Deployment {
 							Resources: corev1.ResourceRequirements{
 								Limits: corev1.ResourceList{
 									"cpu":    resource.MustParse("500m"),
-									"memory": resource.MustParse("500Mi"),
+									"memory": resource.MustParse("2Gi"),
 								},
 								Requests: corev1.ResourceList{
 									"cpu":    resource.MustParse("100m"),
