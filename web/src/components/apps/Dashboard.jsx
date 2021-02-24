@@ -578,10 +578,6 @@ class Dashboard extends Component {
 
     const { app, isBundleUploading, isVeleroInstalled } = this.props;
 
-    const latestPendingVersion = downstream?.pendingVersions?.find(version => Math.max(version.sequence));
-    const latestSequence = latestPendingVersion ? latestPendingVersion.sequence : 0;
-    const currentSequence = currentVersion ? currentVersion.sequence : 0;
-
     let checkingUpdateText = checkingUpdateMessage;
     try {
       const jsonMessage = JSON.parse(checkingUpdateText);

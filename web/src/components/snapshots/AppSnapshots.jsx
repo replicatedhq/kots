@@ -14,6 +14,7 @@ import ScheduleSnapshotForm from "../shared/ScheduleSnapshotForm";
 import Loader from "../shared/Loader";
 import DeleteSnapshotModal from "../modals/DeleteSnapshotModal";
 import RestoreSnapshotModal from "../modals/RestoreSnapshotModal";
+import SnapshotDifferencesModal from "../modals/SnapshotDifferencesModal";
 import ErrorModal from "../modals/ErrorModal";
 
 import "../../scss/components/snapshots/AppSnapshots.scss";
@@ -53,7 +54,8 @@ class AppSnapshots extends Component {
     networkErr: false,
     displayErrorModal: false,
     selectedApp: {},
-    switchingApps: false
+    switchingApps: false,
+    snapshotDifferencesModal: false
   };
 
   componentDidMount = async () => {
@@ -435,10 +437,14 @@ class AppSnapshots extends Component {
   getLabel = ({ iconUri, name }) => {
     return (
       <div style={{ alignItems: "center", display: "flex" }}>
-        <span className="app-icon" style={{ fontSize: 18, marginRight: "0.5em", backgroundImage: `url(${iconUri})`}}></span>
+        <span className="app-icon" style={{ fontSize: 18, marginRight: "0.5em", backgroundImage: `url(${iconUri})` }}></span>
         <span style={{ fontSize: 14 }}>{name}</span>
       </div>
     );
+  }
+
+  toggleSnaphotDifferencesModal = () => {
+    this.setState({ snapshotDifferencesModal: !this.state.snapshotDifferencesModal });
   }
 
 
@@ -528,17 +534,16 @@ class AppSnapshots extends Component {
               It’s recommend that you use <Link to="/snapshots" className="replicated-link u-fontSize--small">
                 Full snapshots (Instance) </Link> in lieu of Partial snapshots (Application),
                 given Full snapshots offers the same restoration capabilities.
-                <a href="https://kots.io/kotsadm/snapshots/" target="_blank" rel="noopener noreferrer"
-                className="replicated-link">Learn more</a>.
+                <span className="replicated-link" onClick={this.toggleSnaphotDifferencesModal}>Learn more</span>.
               </p>
           </div>
           <div className="AppSnapshots--wrapper flex1 flex-column u-width--full u-marginTop--20">
-              <div className="flex flex-column u-marginBottom--15">
-                <p className="u-fontWeight--bold u-color--tuna u-fontSize--larger u-lineHeight--normal"> Partial snapshots (Application) </p>
-                <p className="u-marginTop--10 u-fontSize--normal u-lineHeight--more u-fontWeight--medium u-color--dustyGray"> Partial snapshots (Application) only back up application volumes and application manifests; they do not back up the Admin Console or the metadata about an application. </p>
-              </div>
+            <div className="flex flex-column u-marginBottom--15">
+              <p className="u-fontWeight--bold u-color--tuna u-fontSize--larger u-lineHeight--normal"> Partial snapshots (Application) </p>
+              <p className="u-marginTop--10 u-fontSize--normal u-lineHeight--more u-fontWeight--medium u-color--dustyGray"> Partial snapshots (Application) only back up application volumes and application manifests; they do not back up the Admin Console or the metadata about an application. </p>
+            </div>
             <div className="flex flex-auto u-marginBottom--15 alignItems--flexStart justifyContent--spaceBetween">
-            <div className="flex">
+              <div className="flex">
                 <Select
                   className="replicated-select-container app"
                   classNamePrefix="replicated-select"
@@ -560,7 +565,7 @@ class AppSnapshots extends Component {
                   <ReactTooltip id="startSnapshotBtn" effect="solid" className="replicated-tooltip">
                     <span>You can't start a snapshot while another one is In Progress</span>
                   </ReactTooltip>}
-            </div>
+              </div>
 
             </div>
             {startSnapshotErr ?
@@ -635,6 +640,11 @@ class AppSnapshots extends Component {
               apps={this.props.appsList}
             />
           }
+          {this.state.snapshotDifferencesModal &&
+            <SnapshotDifferencesModal
+              snapshotDifferencesModal={this.state.snapshotDifferencesModal}
+              toggleSnapshotDifferencesModal={this.toggleSnaphotDifferencesModal}
+            />}
         </div>
       </div>
     );
