@@ -79,7 +79,10 @@ class AppConfig extends Component {
       // navigate to error if there is one
       if (this.state.configError) {
         const hash = location.hash.slice(1);
-        document.getElementById(hash).scrollIntoView();
+        const element = document.getElementById(hash);
+        if (element) {
+          element.scrollIntoView();
+        }
       }
     }
   }
@@ -135,7 +138,7 @@ class AppConfig extends Component {
     const sequence = this.getSequence();
     const slug = this.getSlug();
 
-    this.setState({ configLoading: true, gettingConfigErrMsg: "" });
+    this.setState({ configLoading: true, gettingConfigErrMsg: "", configError: false });
 
     fetch(`${window.env.API_ENDPOINT}/app/${slug}/config/${sequence}`, {
       method: "GET",
