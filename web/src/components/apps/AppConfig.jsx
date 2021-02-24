@@ -10,6 +10,7 @@ import find from "lodash/find";
 import map from "lodash/map";
 import Modal from "react-modal";
 import Loader from "../shared/Loader";
+import ErrorModal from "../modals/ErrorModal";
 
 import "../../scss/components/watches/WatchConfig.scss";
 import { Utilities } from "../../utilities/utilities";
@@ -23,6 +24,9 @@ class AppConfig extends Component {
     super(props);
 
     this.state = {
+      configLoading: false,
+      gettingConfigErrMsg: "",
+      errorTitle: "",
       initialConfigGroups: [],
       configGroups: [],
       savingConfig: false,
@@ -30,7 +34,8 @@ class AppConfig extends Component {
       showNextStepModal: false,
       activeGroups: [],
       configError: "",
-      app: null
+      app: null,
+      displayErrorModal: false,
     };
 
     this.handleConfigChange = debounce(this.handleConfigChange, 250);
@@ -98,7 +103,7 @@ class AppConfig extends Component {
     });
 
     if (activeGroupName) {
-      this.setState({ activeGroups: [activeGroupName] });
+      this.setState({ activeGroups: [activeGroupName], configLoading: false });
       document.getElementById(hash).scrollIntoView();
     }
   }
@@ -130,6 +135,8 @@ class AppConfig extends Component {
     const sequence = this.getSequence();
     const slug = this.getSlug();
 
+    this.setState({ configLoading: true, gettingConfigErrMsg: "" });
+
     fetch(`${window.env.API_ENDPOINT}/app/${slug}/config/${sequence}`, {
       method: "GET",
       headers: {
@@ -140,15 +147,21 @@ class AppConfig extends Component {
       const data = await response.json()
       this.setState({
         configGroups: data.configGroups,
-        changed: false
+        changed: false,
+        configLoading: false
       });
       if (this.props.location.hash.length > 0) {
         this.navigateToCurrentHash();
       } else {
-        this.setState({ activeGroups: [data.configGroups[0].name] });
+        this.setState({ activeGroups: [data.configGroups[0].name], configLoading: false, gettingConfigErrMsg: "" });
       }
-    }).catch((error) => {
-      console.log(error);
+    }).catch((err) => {
+      this.setState({
+        configLoading: false,
+        errorTitle: `Failed to get config data`,
+        displayErrorModal: true,
+        gettingConfigErrMsg: err ? err.message : "Something went wrong, please try again."
+      })
     });
   }
 
@@ -181,7 +194,7 @@ class AppConfig extends Component {
       this.props.history.push(`/app/${slug}/config/${match.params.sequence}#${requiredItems[0]}-group`);
     } else {
       this.props.history.push(`/app/${slug}/config#${requiredItems[0]}-group`);
-    }    
+    }
   }
 
   markRequiredItems = requiredItems => {
@@ -407,14 +420,27 @@ class AppConfig extends Component {
     }
   }
 
+  toggleErrorModal = () => {
+    this.setState({ displayErrorModal: !this.state.displayErrorModal });
+  }
+
 
   render() {
-    const { configGroups, savingConfig, changed, showNextStepModal, configError } = this.state;
+    const {
+      configGroups,
+      savingConfig,
+      changed,
+      showNextStepModal,
+      configError,
+      configLoading,
+      gettingConfigErrMsg,
+      displayErrorModal,
+      errorTitle } = this.state;
     const { fromLicenseFlow, match } = this.props;
 
     const app = this.props.app || this.state.app;
 
-    if (!configGroups.length || !app) {
+    if (configLoading || !app) {
       return (
         <div className="flex-column flex1 alignItems--center justifyContent--center">
           <Loader size="60" />
@@ -515,6 +541,14 @@ class AppConfig extends Component {
             </div>
           }
         </Modal>
+        {gettingConfigErrMsg &&
+          <ErrorModal
+            errorModal={displayErrorModal}
+            toggleErrorModal={this.toggleErrorModal}
+            err={errorTitle}
+            errMsg={gettingConfigErrMsg}
+            tryAgain={this.getConfig}
+          />}
       </div>
     )
   }
