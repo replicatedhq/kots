@@ -461,7 +461,7 @@ class AppConfig extends Component {
         </Helmet>
 
 
-        {fromLicenseFlow && app && <span className="u-fontSize--larger u-color--tuna u-fontWeight--bold u-marginTop--auto">Configure {app.name}</span>}
+        {fromLicenseFlow && app && <span className="u-fontSize--larger u-color--tuna u-fontWeight--bold u-marginTop--30">Configure {app.name}</span>}
         <div className="flex-column">
           <div id="configSidebarWrapper" className="AppConfigSidenav--wrapper" ref={(wrapper) => this.sidebarWrapper = wrapper}>
             {configGroups?.map((group, i) => {
