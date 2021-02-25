@@ -193,9 +193,15 @@ func UpdateAppFromPath(a *apptypes.App, airgapRoot string, deploy bool, skipPref
 	}
 
 	if bc.Equal(ac) {
-		return util.ActionableError{Message: fmt.Sprintf("Version %s (%s) cannot be installed again because it is already the current version", afterKotsKinds.Installation.Spec.VersionLabel, afterKotsKinds.Installation.Spec.UpdateCursor)}
+		return util.ActionableError{
+			NoRetry: true,
+			Message: fmt.Sprintf("Version %s (%s) cannot be installed again because it is already the current version", afterKotsKinds.Installation.Spec.VersionLabel, afterKotsKinds.Installation.Spec.UpdateCursor),
+		}
 	} else if bc.After(ac) {
-		return util.ActionableError{Message: fmt.Sprintf("Version %s (%s) cannot be installed because version %s (%s) is newer", afterKotsKinds.Installation.Spec.VersionLabel, afterKotsKinds.Installation.Spec.UpdateCursor, beforeKotsKinds.Installation.Spec.VersionLabel, beforeKotsKinds.Installation.Spec.UpdateCursor)}
+		return util.ActionableError{
+			NoRetry: true,
+			Message: fmt.Sprintf("Version %s (%s) cannot be installed because version %s (%s) is newer", afterKotsKinds.Installation.Spec.VersionLabel, afterKotsKinds.Installation.Spec.UpdateCursor, beforeKotsKinds.Installation.Spec.VersionLabel, beforeKotsKinds.Installation.Spec.UpdateCursor),
+		}
 	}
 
 	// Create the app in the db

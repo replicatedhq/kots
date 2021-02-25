@@ -798,9 +798,15 @@ func publicKeysMatch(license *kotsv1beta1.License, airgap *kotsv1beta1.Airgap) e
 
 	if err := verify([]byte(license.Spec.AppSlug), []byte(airgap.Spec.Signature), publicKey); err != nil {
 		if airgap.Spec.AppSlug != "" {
-			return util.ActionableError{Message: fmt.Sprintf("Failed to verify bundle signature - license is for app %q, airgap package for app %q", license.Spec.AppSlug, airgap.Spec.AppSlug)}
+			return util.ActionableError{
+				NoRetry: true,
+				Message: fmt.Sprintf("Failed to verify bundle signature - license is for app %q, airgap package for app %q", license.Spec.AppSlug, airgap.Spec.AppSlug),
+			}
 		} else {
-			return util.ActionableError{Message: fmt.Sprintf("Failed to verify bundle signature - airgap package does not match license app %q", license.Spec.AppSlug)}
+			return util.ActionableError{
+				NoRetry: true,
+				Message: fmt.Sprintf("Failed to verify bundle signature - airgap package does not match license app %q", license.Spec.AppSlug),
+			}
 		}
 	}
 
