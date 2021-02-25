@@ -43,6 +43,9 @@ func (s KOTSStore) RunMigrations() {
 	if err := s.migrateSupportBundlesFromPostgres(); err != nil {
 		logger.Error(errors.Wrap(err, "failed to migrate support bundles"))
 	}
+	if err := s.migrationTasksFromPostgres(); err != nil {
+		logger.Error(errors.Wrap(err, "failed to migrate tasks"))
+	}
 }
 
 func (s KOTSStore) migrateKotsAppSpec() error {
