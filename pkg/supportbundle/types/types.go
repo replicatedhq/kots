@@ -4,6 +4,12 @@ import (
 	"time"
 )
 
+type ByCreated []*SupportBundle
+
+func (a ByCreated) Len() int           { return len(a) }
+func (a ByCreated) Less(i, j int) bool { return a[i].CreatedAt.Before(a[j].CreatedAt) }
+func (a ByCreated) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
+
 type SupportBundle struct {
 	ID         string     `json:"id"`
 	Slug       string     `json:"slug"`
