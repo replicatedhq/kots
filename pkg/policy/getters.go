@@ -34,7 +34,7 @@ func appSlugFromSupportbundleGetter(kotsStore store.Store, vars map[string]strin
 		}
 		appID = supportbundle.AppID
 	} else if bundleSlug, _ := vars["bundleSlug"]; bundleSlug != "" {
-		supportbundle, err := kotsStore.GetSupportBundleFromSlug(bundleSlug)
+		supportbundle, err := kotsStore.GetSupportBundle(bundleSlug)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to get support bundle from slug")
 		}
