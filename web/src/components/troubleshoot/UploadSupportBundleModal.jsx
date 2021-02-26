@@ -79,11 +79,6 @@ class UploadSupportBundleModal extends React.Component {
     this.instantiateCopyAction();
   }
 
-  openReplicatedSupportBundleLink = () => {
-    let page = window.open("https://kots.io/reference/v1beta1/support-bundle/", "_blank");
-    page.focus();
-    return false;
-  }
 
   render() {
     const { supportBundle, fileUploading } = this.state;
@@ -115,9 +110,6 @@ class UploadSupportBundleModal extends React.Component {
                       <div className="u-textAlign--center">
                         <span className="icon u-TarFileIcon u-marginBottom--20"></span>
                         <p className="u-fontSize--normal u-color--dustyGray u-fontWeight--medium u-lineHeight--normal">Drag your bundle here or <span className="u-color--astral u-fontWeight--medium u-textDecoration--underlineOnHover">choose a file to upload</span></p>
-                        <p className="u-fontSize--normal u-color--dustyGray u-fontWeight--normal u-lineHeight--normal u-marginTop--10">This file can be any
-                              <span className="u-fontWeight--medium u-color--astral u-textDecoration--underlineOnHover" onClick={this.openReplicatedSupportBundleLink}> Replicated Support Bundle </span>
-                        </p>
                       </div>
                     }
                   </Dropzone>

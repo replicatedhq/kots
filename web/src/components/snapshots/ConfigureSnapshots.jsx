@@ -3,7 +3,7 @@ import Modal from "react-modal";
 import SnapshotInstallationBox from "./SnapshotInstallationBox";
 
 export default function ConfigureSnapshots(props) {
-  const { configureSnapshotsModal, toggleConfigureModal, snapshotSettings, hideCheckVeleroButton, fetchSnapshotSettings, renderNotVeleroMessage } = props;
+  const { configureSnapshotsModal, toggleConfigureModal, snapshotSettings, hideCheckVeleroButton, fetchSnapshotSettings, renderNotVeleroMessage, isKurlEnabled } = props;
 
   return (
     <Modal
@@ -17,13 +17,17 @@ export default function ConfigureSnapshots(props) {
       <div className="Modal-body">
         <p className="u-fontSize--largest u-fontWeight--bold u-color--tundora u-marginBottom--10 u-marginTop--12">Add a new destination</p>
         <p className="u-fontSize--normal u-fontWeight--medium u-color--dustyGray u-lineHeight--normal">
-          In order to configure and use Snapshots (backup and restore), please install <a href="https://kots.io/kotsadm/snapshots/velero" target="_blank" rel="noopener noreferrer" className="replicated-link">Velero</a> in the cluster. Once Velero is installed, click the button below and the Admin Console will verify the installation and begin configuring Snapshots.
+          In order to configure and use Snapshots (backup and restore), please install Velero in the cluster. Once Velero is installed, click the button below and the Admin Console will verify the installation and begin configuring Snapshots.
           </p>
         <div className="flex flex-column u-marginTop--40">
           <div className="InstallVelero--wrapper flex flex-column">
             <p className="u-color--tundora u-fontSize--large u-fontWeight--bold">To install Velero</p>
             <div className="flex1 flex-column u-marginBottom--30">
-              <p className="u-fontSize--small flex alignItems--center u-fontWeight--medium u-color--dustyGray u-marginTop--20"><span className="circleNumberGray u-marginRight--10"> 1 </span>Install the CLI on your machine by <a href="https://kots.io/kotsadm/snapshots/basic-install/" target="_blank" rel="noopener noreferrer" className="replicated-link u-marginLeft--5">following these instructions</a> </p>
+              {isKurlEnabled ?
+                <p className="u-fontSize--small flex-auto alignItems--center u-fontWeight--medium u-color--dustyGray u-marginTop--20"><span className="circleNumberGray u-marginRight--10"> 1 </span>Install the CLI on your machine by following the Velero installation instructions at: <a href="https://velero.io/docs/v1.5/basic-install/" target="_blank" rel="noopener noreferrer" className="replicated-link u-marginLeft--5">https://velero.io/docs/v1.5/basic-install/</a> </p>
+                :
+                <p className="u-fontSize--small flex-auto alignItems--center u-fontWeight--medium u-color--dustyGray u-marginTop--20"><span className="circleNumberGray u-marginRight--10"> 1 </span>Install the CLI on your machine by following the <a href="https://velero.io/docs/v1.5/basic-install/" target="_blank" rel="noopener noreferrer" className="replicated-link u-marginLeft--5">Velero installation instructions</a> </p>
+              }
               <div className="flex flex1 u-marginTop--20">
                 <div className="flex">
                   <span className="circleNumberGray u-marginRight--10"> 2 </span>
@@ -40,7 +44,7 @@ export default function ConfigureSnapshots(props) {
                     <a href="https://github.com/vmware-tanzu/velero-plugin-for-gcp#setup" target="_blank" rel="noopener noreferrer" className="snapshotOptions">
                       <span style={{ width: "130px" }}>  <span className="icon googleCloudIcon u-cursor--pointer u-marginRight--5" />Google Cloud </span>
                       <span className="icon external-link-icon u-cursor--pointer u-marginLeft--30" /></a>
-                    <a href="https://kots.io/kotsadm/snapshots/supported-providers/" target="_blank" rel="noopener noreferrer" className="snapshotOptions">
+                    <a href="https://velero.io/docs/v1.5/supported-providers/" target="_blank" rel="noopener noreferrer" className="snapshotOptions">
                       <span style={{ width: "130px" }}>  <span className="icon cloudIcon u-cursor--pointer u-marginRight--5" /> Other provider  </span>
                       <span className="icon external-link-icon u-cursor--pointer u-marginLeft--30" /></a>
                   </div>
