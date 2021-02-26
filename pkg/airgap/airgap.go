@@ -35,7 +35,8 @@ import (
 // After execution, there will be a sequence 0 of the app, and all clusters in the database
 // will also have a version
 func CreateAppFromAirgap(pendingApp *types.PendingApp, airgapPath string, registryHost string, namespace string, username string, password string, isAutomated bool, skipPreflights bool) (finalError error) {
-	if err := store.GetStore().SetTaskStatus("airgap-install", "Processing package...", "running"); err != nil {
+	taskID := fmt.Sprintf("airgap-install-slug-%s", pendingApp.Slug)
+	if err := store.GetStore().SetTaskStatus(taskID, "Processing package...", "running"); err != nil {
 		return errors.Wrap(err, "failed to set task status")
 	}
 
@@ -45,7 +46,7 @@ func CreateAppFromAirgap(pendingApp *types.PendingApp, airgapPath string, regist
 		for {
 			select {
 			case <-time.After(time.Second):
-				if err := store.GetStore().UpdateTaskStatusTimestamp("airgap-install"); err != nil {
+				if err := store.GetStore().UpdateTaskStatusTimestamp(taskID); err != nil {
 					logger.Error(err)
 				}
 			case <-finishedCh:
@@ -56,14 +57,14 @@ func CreateAppFromAirgap(pendingApp *types.PendingApp, airgapPath string, regist
 
 	defer func() {
 		if finalError == nil {
-			if err := store.GetStore().ClearTaskStatus("airgap-install"); err != nil {
+			if err := store.GetStore().ClearTaskStatus(taskID); err != nil {
 				logger.Error(errors.Wrap(err, "failed to clear install task status"))
 			}
 			if err := store.GetStore().SetAppInstallState(pendingApp.ID, "installed"); err != nil {
 				logger.Error(errors.Wrap(err, "failed to set app status to installed"))
 			}
 		} else {
-			if err := store.GetStore().SetTaskStatus("airgap-install", finalError.Error(), "failed"); err != nil {
+			if err := store.GetStore().SetTaskStatus(taskID, finalError.Error(), "failed"); err != nil {
 				logger.Error(errors.Wrap(err, "failed to set error on install task status"))
 			}
 			if err := store.GetStore().SetAppInstallState(pendingApp.ID, "airgap_upload_error"); err != nil {
@@ -77,7 +78,7 @@ func CreateAppFromAirgap(pendingApp *types.PendingApp, airgapPath string, regist
 	}
 
 	// Extract it
-	if err := store.GetStore().SetTaskStatus("airgap-install", "Extracting files...", "running"); err != nil {
+	if err := store.GetStore().SetTaskStatus(taskID, "Extracting files...", "running"); err != nil {
 		return errors.Wrap(err, "failed to set task status")
 	}
 
@@ -111,7 +112,7 @@ func CreateAppFromAirgap(pendingApp *types.PendingApp, airgapPath string, regist
 	}
 	defer os.RemoveAll(tmpRoot)
 
-	if err := store.GetStore().SetTaskStatus("airgap-install", "Reading license data...", "running"); err != nil {
+	if err := store.GetStore().SetTaskStatus(taskID, "Reading license data...", "running"); err != nil {
 		return errors.Wrap(err, "failed to set task status")
 	}
 
@@ -135,7 +136,7 @@ func CreateAppFromAirgap(pendingApp *types.PendingApp, airgapPath string, regist
 	go func() {
 		scanner := bufio.NewScanner(pipeReader)
 		for scanner.Scan() {
-			if err := store.GetStore().SetTaskStatus("airgap-install", scanner.Text(), "running"); err != nil {
+			if err := store.GetStore().SetTaskStatus(taskID, scanner.Text(), "running"); err != nil {
 				logger.Error(err)
 			}
 		}

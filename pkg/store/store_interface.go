@@ -86,7 +86,7 @@ type PrometheusStore interface {
 
 type AirgapStore interface {
 	GetPendingAirgapUploadApp() (*airgaptypes.PendingApp, error)
-	GetAirgapInstallStatus() (*airgaptypes.InstallStatus, error)
+	GetAirgapInstallStatus(appID string) (*airgaptypes.InstallStatus, error)
 	ResetAirgapInstallInProgress(appID string) error
 	SetAppIsAirgap(appID string, isAirgap bool) error
 }
@@ -114,6 +114,7 @@ type AppStore interface {
 	ListInstalledApps() ([]*apptypes.App, error)
 	ListInstalledAppSlugs() ([]string, error)
 	GetAppIDFromSlug(slug string) (appID string, err error)
+	GetAppSlugFromID(appID string) (string, error)
 	GetApp(appID string) (*apptypes.App, error)
 	GetAppFromSlug(slug string) (*apptypes.App, error)
 	CreateApp(name string, upstreamURI string, licenseData string, isAirgapEnabled bool, skipImagePush bool) (*apptypes.App, error)

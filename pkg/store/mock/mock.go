@@ -385,18 +385,18 @@ func (mr *MockStoreMockRecorder) GetPendingAirgapUploadApp() *gomock.Call {
 }
 
 // GetAirgapInstallStatus mocks base method
-func (m *MockStore) GetAirgapInstallStatus() (*types.InstallStatus, error) {
+func (m *MockStore) GetAirgapInstallStatus(appID string) (*types.InstallStatus, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetAirgapInstallStatus")
+	ret := m.ctrl.Call(m, "GetAirgapInstallStatus", appID)
 	ret0, _ := ret[0].(*types.InstallStatus)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetAirgapInstallStatus indicates an expected call of GetAirgapInstallStatus
-func (mr *MockStoreMockRecorder) GetAirgapInstallStatus() *gomock.Call {
+func (mr *MockStoreMockRecorder) GetAirgapInstallStatus(appID interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAirgapInstallStatus", reflect.TypeOf((*MockStore)(nil).GetAirgapInstallStatus))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAirgapInstallStatus", reflect.TypeOf((*MockStore)(nil).GetAirgapInstallStatus), appID)
 }
 
 // ResetAirgapInstallInProgress mocks base method
@@ -615,6 +615,21 @@ func (m *MockStore) GetAppIDFromSlug(slug string) (string, error) {
 func (mr *MockStoreMockRecorder) GetAppIDFromSlug(slug interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAppIDFromSlug", reflect.TypeOf((*MockStore)(nil).GetAppIDFromSlug), slug)
+}
+
+// GetAppSlugFromID mocks base method
+func (m *MockStore) GetAppSlugFromID(appID string) (string, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetAppSlugFromID", appID)
+	ret0, _ := ret[0].(string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetAppSlugFromID indicates an expected call of GetAppSlugFromID
+func (mr *MockStoreMockRecorder) GetAppSlugFromID(appID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAppSlugFromID", reflect.TypeOf((*MockStore)(nil).GetAppSlugFromID), appID)
 }
 
 // GetApp mocks base method
@@ -1730,18 +1745,18 @@ func (mr *MockAirgapStoreMockRecorder) GetPendingAirgapUploadApp() *gomock.Call 
 }
 
 // GetAirgapInstallStatus mocks base method
-func (m *MockAirgapStore) GetAirgapInstallStatus() (*types.InstallStatus, error) {
+func (m *MockAirgapStore) GetAirgapInstallStatus(appID string) (*types.InstallStatus, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetAirgapInstallStatus")
+	ret := m.ctrl.Call(m, "GetAirgapInstallStatus", appID)
 	ret0, _ := ret[0].(*types.InstallStatus)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetAirgapInstallStatus indicates an expected call of GetAirgapInstallStatus
-func (mr *MockAirgapStoreMockRecorder) GetAirgapInstallStatus() *gomock.Call {
+func (mr *MockAirgapStoreMockRecorder) GetAirgapInstallStatus(appID interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAirgapInstallStatus", reflect.TypeOf((*MockAirgapStore)(nil).GetAirgapInstallStatus))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAirgapInstallStatus", reflect.TypeOf((*MockAirgapStore)(nil).GetAirgapInstallStatus), appID)
 }
 
 // ResetAirgapInstallInProgress mocks base method
@@ -2052,6 +2067,21 @@ func (m *MockAppStore) GetAppIDFromSlug(slug string) (string, error) {
 func (mr *MockAppStoreMockRecorder) GetAppIDFromSlug(slug interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAppIDFromSlug", reflect.TypeOf((*MockAppStore)(nil).GetAppIDFromSlug), slug)
+}
+
+// GetAppSlugFromID mocks base method
+func (m *MockAppStore) GetAppSlugFromID(appID string) (string, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetAppSlugFromID", appID)
+	ret0, _ := ret[0].(string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetAppSlugFromID indicates an expected call of GetAppSlugFromID
+func (mr *MockAppStoreMockRecorder) GetAppSlugFromID(appID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAppSlugFromID", reflect.TypeOf((*MockAppStore)(nil).GetAppSlugFromID), appID)
 }
 
 // GetApp mocks base method

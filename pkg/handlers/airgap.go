@@ -49,9 +49,16 @@ var chunkLock sync.Mutex
 var fileLock sync.Mutex
 
 func (h *Handler) GetAirgapInstallStatus(w http.ResponseWriter, r *http.Request) {
-	status, err := store.GetStore().GetAirgapInstallStatus()
+	appID, err := store.GetStore().GetAppIDFromSlug(mux.Vars(r)["appSlug"])
 	if err != nil {
-		logger.Error(err)
+		logger.Error(errors.Wrapf(err, "failed to app for slug %s", mux.Vars(r)["appSlug"]))
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	status, err := store.GetStore().GetAirgapInstallStatus(appID)
+	if err != nil {
+		logger.Error(errors.Wrapf(err, "failed to get install status for app %s", mux.Vars(r)["appSlug"]))
 		w.WriteHeader(500)
 		return
 	}
