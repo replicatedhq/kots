@@ -53,11 +53,16 @@ func execute(appID string, sequence int64, preflightSpec *troubleshootv1beta2.Pr
 		return nil, errors.Wrap(err, "failed to collect")
 	}
 
+	clusterCollectResult, ok := collectResults.(troubleshootpreflight.ClusterCollectResult)
+	if !ok {
+		return nil, errors.Errorf("unexpected result type: %T", collectResults)
+	}
+
 	uploadPreflightResults := &troubleshootpreflight.UploadPreflightResults{}
 	if isPermissionsError(err) {
 		logger.Debug("skipping analyze due to RBAC errors")
 		rbacErrors := []*troubleshootpreflight.UploadPreflightError{}
-		for _, collector := range collectResults.Collectors {
+		for _, collector := range clusterCollectResult.Collectors {
 			for _, e := range collector.RBACErrors {
 				rbacErrors = append(rbacErrors, &preflight.UploadPreflightError{
 					Error: e.Error(),
