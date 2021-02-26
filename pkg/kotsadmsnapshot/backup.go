@@ -556,7 +556,8 @@ func ListInstanceBackups() ([]*types.Backup, error) {
 			for slug, sequence := range apps {
 				a, err := store.GetStore().GetAppFromSlug(slug)
 				if err != nil {
-					return nil, errors.Wrap(err, "failed to get app from slug")
+					// app might not exist in current installation
+					continue
 				}
 
 				backup.IncludedApps = append(backup.IncludedApps, types.App{
