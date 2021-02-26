@@ -405,7 +405,7 @@ class AppGitops extends Component {
                     <span className="success-checkmark-icon icon u-marginBottom--10" />
                   </div>
                   <p className="title">GitOps has been enabled. You're almost ready to deploy</p>
-                  <p className="sub">In order for application updates to be pushed to your GitOps deployment pipeline we need to be able to access to the repository. To&nbsp;do this, copy the key below and add it to your repository settings page. If you need further assistance, you can <a href="https://kots.io/kotsadm/gitops/single-app-workflows/" target="_blank" rel="noopener noreferrer" className="replicated-link">check out our documentation</a>.</p>
+                  <p className="sub">In order for application updates to be pushed to your GitOps deployment pipeline we need to be able to access to the repository. To&nbsp;do this, copy the key below and add it to your repository settings page.</p>
                   <p className="sub u-marginTop--10">If you have already added this key to your repository and are seeing this message, check to make sure that the key has "Write access" for the repository and click "Try again".</p>
                 </div>
 

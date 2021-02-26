@@ -604,7 +604,7 @@ class SnapshotStorageDestination extends Component {
   }
 
   render() {
-    const { snapshotSettings, updatingSettings, updateConfirm, updateErrorMsg } = this.props;
+    const { snapshotSettings, updatingSettings, updateConfirm, updateErrorMsg, isKurlEnabled } = this.props;
 
     const availableDestinations = [];
     if (snapshotSettings?.veleroPlugins) {
@@ -665,14 +665,19 @@ class SnapshotStorageDestination extends Component {
               <form className="flex flex-column snapshot-form-wrapper">
                 <p className="u-fontSize--normal u-marginBottom--20 u-fontWeight--bold u-color--tundora">Storage</p>
                 {updateErrorMsg &&
-                  <div className="flex u-fontWeight--bold u-fontSize--small u-color--red u-marginBottom--10">{updateErrorMsg}</div>}
+                  <div className="flex-auto u-fontWeight--bold u-fontSize--small u-color--red u-marginBottom--10">{updateErrorMsg}</div>}
                 <div className="flex flex-column u-marginBottom--20">
                   <div className="flex flex1 justifyContent--spaceBetween alignItems--center">
                     <p className="u-fontSize--normal u-color--tuna u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">Destination</p>
                     <span className="replicated-link u-fontSize--normal flex justifyContent--flexEnd u-cursor--pointer" onClick={() => this.props.toggleConfigureModal(this.props.history)}> + Add a new storage destination </span>
                   </div>
-                  {!snapshotSettings?.isVeleroRunning &&
-                    <div className="flex u-fontWeight--bold u-fontSize--small u-color--red u-marginBottom--10"> Please fix Velero so that the deployment is running. <a href="https://kots.io/kotsadm/snapshots/velero-troubleshooting/" target="_blank" rel="noopener noreferrer" className="replicated-link u-marginLeft--5">View docs</a>  </div>}
+                  {!snapshotSettings?.isVeleroRunning ?
+                    isKurlEnabled ?
+                    <div className="flex-auto u-fontWeight--bold u-fontSize--small u-color--red u-marginBottom--10"> Please fix Velero so that the deployment is running. For help troubleshooting this issue visit
+                    <a href="https://velero.io/docs/main/troubleshooting/" target="_blank" rel="noopener noreferrer" className="replicated-link u-marginLeft--5">https://velero.io/docs/main/troubleshooting/</a></div>
+                    :
+                    <div className="flex-auto u-fontWeight--bold u-fontSize--small u-color--red u-marginBottom--10"> Please fix Velero so that the deployment is running. For help troubleshooting this issue visit
+                    <a href="https://velero.io/docs/main/troubleshooting/" target="_blank" rel="noopener noreferrer" className="replicated-link u-marginLeft--5">Velero documentation</a></div> : null}
                   <div className="flex1">
                     {availableDestinations.length > 1 ?
                       <Select
@@ -711,14 +716,14 @@ class SnapshotStorageDestination extends Component {
                     </div>
                   </div>
                 }
-                <span className="u-fontSize--small u-fontWeight--normal u-lineHeight--normal u-color--dustyGray u-marginTop--15"> All data in your snapshots will be deduplicated. To learn more about how,
-                <a href="https://kots.io/kotsadm/snapshots/restic-deduplication/" target="_blank" rel="noopener noreferrer" className="replicated-link"> check out the Restic docs</a>. </span>
+                <span className="u-fontSize--small u-fontWeight--normal u-lineHeight--normal u-color--dustyGray u-marginTop--15">
+                All data in your snapshots will be deduplicated. Snapshots makes use of Restic, a fast and secure backup technology with native deduplication. </span>
               </form>
             </div>
           </div>
-          <SnapshotSchedule 
-            isVeleroRunning={snapshotSettings?.isVeleroRunning} 
-            isKurlEnabled={this.props.isKurlEnabled} 
+          <SnapshotSchedule
+            isVeleroRunning={snapshotSettings?.isVeleroRunning}
+            isKurlEnabled={this.props.isKurlEnabled}
             toggleSnapshotsRBACModal={this.props.toggleSnapshotsRBACModal}
             isVeleroInstalled={!!snapshotSettings?.veleroVersion}
             apps={this.props.apps} />
@@ -731,6 +736,7 @@ class SnapshotStorageDestination extends Component {
             hideCheckVeleroButton={this.props.hideCheckVeleroButton}
             configureSnapshotsModal={this.props.configureSnapshotsModal}
             toggleConfigureModal={this.props.toggleConfigureModal}
+            isKurlEnabled={isKurlEnabled}
           />}
       </div>
     );
