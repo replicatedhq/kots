@@ -8,7 +8,6 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
-	"sort"
 	"strconv"
 	"time"
 
@@ -25,7 +24,6 @@ import (
 	troubleshootredact "github.com/replicatedhq/troubleshoot/pkg/redact"
 	"go.uber.org/zap"
 	corev1 "k8s.io/api/core/v1"
-	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 )
@@ -147,9 +145,6 @@ func (s KOTSStore) migrateSupportBundlesFromPostgres() error {
 
 		_, err = clientset.CoreV1().Secrets(os.Getenv("POD_NAMESPACE")).Create(context.TODO(), &secret, metav1.CreateOptions{})
 		if err != nil {
-			if kuberneteserrors.IsAlreadyExists(err) {
-				continue
-			}
 			return errors.Wrap(err, "failed to create support bundle secret")
 		}
 	}
@@ -197,9 +192,6 @@ func (s KOTSStore) ListSupportBundles(appID string) ([]*types.SupportBundle, err
 		supportBundles = append(supportBundles, &supportBundle)
 	}
 
-	// sort the bundles here by date, since we don't have a sort order otherwise
-	sort.Sort(types.ByCreated(supportBundles))
-
 	return supportBundles, nil
 }
 
@@ -210,9 +202,6 @@ func (s KOTSStore) DeletePendingSupportBundle(id string) error {
 	}
 
 	if err := clientset.CoreV1().Secrets(os.Getenv("POD_NAMESPACE")).Delete(context.TODO(), fmt.Sprintf("pendingsupportbundle-%s", id), metav1.DeleteOptions{}); err != nil {
-		if kuberneteserrors.IsNotFound(err) {
-			return nil
-		}
 		return errors.Wrap(err, "failed to delete")
 	}
 
