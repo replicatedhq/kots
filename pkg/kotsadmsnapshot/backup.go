@@ -558,6 +558,7 @@ func ListInstanceBackups() ([]*types.Backup, error) {
 				a, err := store.GetStore().GetAppFromSlug(slug)
 				if err != nil {
 					if errors.Cause(err) == sql.ErrNoRows {
+						// app might not exist in current installation
 						continue
 					}
 					return nil, errors.Wrap(err, "failed to get app from slug")
