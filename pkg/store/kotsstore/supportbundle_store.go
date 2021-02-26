@@ -110,18 +110,6 @@ func (s KOTSStore) migrateSupportBundlesFromPostgres() error {
 			analysisMarshaled = b
 		}
 
-		redactionsMarshaled := []byte{}
-
-		query = `select redact_report from supportbundle where id = $1`
-		var redactString sql.NullString
-		row = db.QueryRow(query, supportBundle.ID)
-		if err := row.Scan(&redactString); err != nil {
-			return errors.Wrap(err, "failed to scan")
-		}
-		if redactString.Valid && redactString.String != "" {
-			redactionsMarshaled = []byte(redactString.String)
-		}
-
 		labels := kotsadmtypes.GetKotsadmLabels()
 		labels["kots.io/kind"] = "supportbundle"
 		labels["kots.io/appid"] = supportBundle.AppID
@@ -137,9 +125,8 @@ func (s KOTSStore) migrateSupportBundlesFromPostgres() error {
 				Labels:    labels,
 			},
 			Data: map[string][]byte{
-				"bundle":     bundleMarshaled,
-				"analysis":   analysisMarshaled,
-				"redactions": redactionsMarshaled,
+				"bundle":   bundleMarshaled,
+				"analysis": analysisMarshaled,
 			},
 		}
 
@@ -471,60 +458,43 @@ func (s KOTSStore) SetSupportBundleAnalysis(id string, results []byte) error {
 	return nil
 }
 
-func (s KOTSStore) GetRedactions(id string) (troubleshootredact.RedactionList, error) {
-	clientset, err := s.GetClientset()
+func (s KOTSStore) GetRedactions(bundleID string) (troubleshootredact.RedactionList, error) {
+	db := persistence.MustGetPGSession()
+	q := `select redact_report from supportbundle where id = $1`
+
+	var redactString sql.NullString
+	row := db.QueryRow(q, bundleID)
+	err := row.Scan(&redactString)
 	if err != nil {
-		return troubleshootredact.RedactionList{}, errors.Wrap(err, "failed to get clientset")
+		return troubleshootredact.RedactionList{}, errors.Wrap(err, "select redact_report")
 	}
 
-	secret, err := clientset.CoreV1().Secrets(os.Getenv("POD_NAMESPACE")).Get(context.TODO(), fmt.Sprintf("supportbundle-%s", id), metav1.GetOptions{})
-	if err != nil {
-		return troubleshootredact.RedactionList{}, errors.Wrap(err, "failed to get secret")
-	}
-
-	emptyRedactions := troubleshootredact.RedactionList{
-		ByRedactor: map[string][]troubleshootredact.Redaction{},
-		ByFile:     map[string][]troubleshootredact.Redaction{},
-	}
-
-	if _, ok := secret.Data["redactions"]; !ok {
-		return emptyRedactions, nil
-	}
-	if len(secret.Data["redactions"]) == 0 {
-		return emptyRedactions, nil
+	if !redactString.Valid || redactString.String == "" {
+		return troubleshootredact.RedactionList{}, fmt.Errorf("unable to find redactions for bundle %s", bundleID)
 	}
 
 	redacts := troubleshootredact.RedactionList{}
-	err = json.Unmarshal(secret.Data["redactions"], &redacts)
+	err = json.Unmarshal([]byte(redactString.String), &redacts)
 	if err != nil {
-		return troubleshootredact.RedactionList{}, errors.Wrap(err, "failed to unmarshal redact report")
+		return troubleshootredact.RedactionList{}, errors.Wrap(err, "unmarshal redact report")
 	}
 
 	return redacts, nil
 }
 
-func (s KOTSStore) SetRedactions(id string, redacts troubleshootredact.RedactionList) error {
+func (s KOTSStore) SetRedactions(bundleID string, redacts troubleshootredact.RedactionList) error {
+	db := persistence.MustGetPGSession()
+
 	redactBytes, err := json.Marshal(redacts)
 	if err != nil {
-		return errors.Wrap(err, "failed to marshal redactionlist")
+		return errors.Wrap(err, "marshal redactionlist")
 	}
 
-	clientset, err := s.GetClientset()
+	query := `update supportbundle set redact_report = $1 where id = $2`
+	_, err = db.Exec(query, string(redactBytes), bundleID)
 	if err != nil {
-		return errors.Wrap(err, "failed to get clientset")
+		return errors.Wrap(err, "failed to set support bundle redact report")
 	}
-
-	secret, err := clientset.CoreV1().Secrets(os.Getenv("POD_NAMESPACE")).Get(context.TODO(), fmt.Sprintf("supportbundle-%s", id), metav1.GetOptions{})
-	if err != nil {
-		return errors.Wrap(err, "failed to get secret")
-	}
-
-	secret.Data["redactions"] = redactBytes
-
-	if _, err := clientset.CoreV1().Secrets(os.Getenv("POD_NAMESPACE")).Update(context.TODO(), secret, metav1.UpdateOptions{}); err != nil {
-		return errors.Wrap(err, "failed to update")
-	}
-
 	return nil
 }
 
