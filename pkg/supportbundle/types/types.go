@@ -24,8 +24,11 @@ type PendingSupportBundle struct {
 }
 
 type SupportBundleAnalysis struct {
-	Insights  []SupportBundleInsight `json:"insights"`
-	CreatedAt time.Time              `json:"createdAt"`
+	ID          string                 `json:"id"`
+	Error       string                 `json:"error"`
+	MaxSeverity string                 `json:"maxSeverity"`
+	Insights    []SupportBundleInsight `json:"insights"`
+	CreatedAt   time.Time              `json:"createdAt"`
 }
 
 type SupportBundleInsight struct {

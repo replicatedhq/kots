@@ -36,13 +36,11 @@ func (s KOTSStore) RunMigrations() {
 		logger.Error(errors.Wrap(err, "failed to migrate app_spec"))
 	}
 
-	// migrate postgrtes data from postgres
+	// migrate sessions from postgres into a secret
 	if err := s.migrateSessionsFromPostgres(); err != nil {
 		logger.Error(errors.Wrap(err, "failed to migrate sessions"))
 	}
-	if err := s.migrateSupportBundlesFromPostgres(); err != nil {
-		logger.Error(errors.Wrap(err, "failed to migrate support bundles"))
-	}
+
 	if err := s.migrationTasksFromPostgres(); err != nil {
 		logger.Error(errors.Wrap(err, "failed to migrate tasks"))
 	}
