@@ -87,7 +87,7 @@ type PutSupportBundleRedactions struct {
 func (h *Handler) GetSupportBundle(w http.ResponseWriter, r *http.Request) {
 	bundleSlug := mux.Vars(r)["bundleSlug"]
 
-	bundle, err := store.GetStore().GetSupportBundle(bundleSlug)
+	bundle, err := store.GetStore().GetSupportBundleFromSlug(bundleSlug)
 	if err != nil {
 		logger.Error(err)
 		w.WriteHeader(http.StatusInternalServerError)

@@ -19,10 +19,11 @@ import (
 	"github.com/replicatedhq/kots/kotskinds/client/kotsclientset/scheme"
 	apptypes "github.com/replicatedhq/kots/pkg/app/types"
 	kotstypes "github.com/replicatedhq/kots/pkg/kotsadm/types"
-	license "github.com/replicatedhq/kots/pkg/kotsadmlicense"
+	"github.com/replicatedhq/kots/pkg/kotsadmlicense"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/kurl"
 	"github.com/replicatedhq/kots/pkg/logger"
+	"github.com/replicatedhq/kots/pkg/persistence"
 	"github.com/replicatedhq/kots/pkg/registry"
 	"github.com/replicatedhq/kots/pkg/render/helper"
 	"github.com/replicatedhq/kots/pkg/snapshot"
@@ -48,7 +49,7 @@ const (
 
 // Collect will queue collection of a new support bundle
 func Collect(appID string, clusterID string) error {
-	id := strings.ToLower(ksuid.New().String())
+	id := ksuid.New().String()
 
 	return store.GetStore().CreatePendingSupportBundle(id, appID, clusterID)
 }
@@ -112,8 +113,12 @@ func GetFilesContents(bundleID string, filenames []string) (map[string][]byte, e
 }
 
 func ClearPending(id string) error {
-	if err := store.GetStore().DeletePendingSupportBundle(id); err != nil {
-		return errors.Wrap(err, "failed to delete pernding support bundle")
+	db := persistence.MustGetPGSession()
+	query := `delete from pending_supportbundle where id = $1`
+
+	_, err := db.Exec(query, id)
+	if err != nil {
+		return errors.Wrap(err, "failed to exec")
 	}
 
 	return nil

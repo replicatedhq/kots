@@ -20,15 +20,15 @@ import (
 	"go.uber.org/zap"
 )
 
-func (s OCIStore) DeletePendingSupportBundle(id string) error {
-	return ErrNotImplemented
-}
-
 func (s OCIStore) ListSupportBundles(appID string) ([]*supportbundletypes.SupportBundle, error) {
 	return nil, ErrNotImplemented
 }
 
 func (s OCIStore) ListPendingSupportBundlesForApp(appID string) ([]*supportbundletypes.PendingSupportBundle, error) {
+	return nil, ErrNotImplemented
+}
+
+func (s OCIStore) GetSupportBundleFromSlug(slug string) (*supportbundletypes.SupportBundle, error) {
 	return nil, ErrNotImplemented
 }
 

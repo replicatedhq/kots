@@ -1,14 +1,12 @@
 package kotsstore
 
 import (
-	"context"
 	"database/sql"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
-	"sort"
 	"strconv"
 	"time"
 
@@ -17,52 +15,43 @@ import (
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/aws/aws-sdk-go/service/s3/s3manager"
 	"github.com/pkg/errors"
-	kotsadmtypes "github.com/replicatedhq/kots/pkg/kotsadm/types"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/persistence"
 	kotss3 "github.com/replicatedhq/kots/pkg/s3"
 	"github.com/replicatedhq/kots/pkg/supportbundle/types"
+	supportbundletypes "github.com/replicatedhq/kots/pkg/supportbundle/types"
 	troubleshootredact "github.com/replicatedhq/troubleshoot/pkg/redact"
+	"github.com/segmentio/ksuid"
 	"go.uber.org/zap"
-	corev1 "k8s.io/api/core/v1"
-	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/labels"
 )
 
-func (s KOTSStore) migrateSupportBundlesFromPostgres() error {
-	logger.Debug("migrating support bundles from postgres")
-
+func (s KOTSStore) ListSupportBundles(appID string) ([]*supportbundletypes.SupportBundle, error) {
 	db := persistence.MustGetPGSession()
-	query := `select id, watch_id, name, size, status, tree_index, created_at, uploaded_at, is_archived from supportbundle order by created_at desc`
-	rows, err := db.Query(query)
+	// DANGER ZONE: changing sort order here affects what support bundle is shown in the analysis view.
+	query := `select id, slug, watch_id, name, size, status, created_at, uploaded_at, is_archived from supportbundle where watch_id = $1 order by created_at desc`
+
+	rows, err := db.Query(query, appID)
 	if err != nil {
-		return errors.Wrap(err, "failed to query rows")
+		return nil, errors.Wrap(err, "failed to query")
 	}
 	defer rows.Close()
 
-	clientset, err := s.GetClientset()
-	if err != nil {
-		return errors.Wrap(err, "failed to get clientset")
-	}
+	supportBundles := []*types.SupportBundle{}
 
-	supportBundles := []types.SupportBundle{}
 	for rows.Next() {
 		var name sql.NullString
 		var size sql.NullFloat64
-		var treeIndex sql.NullString
 		var uploadedAt sql.NullTime
 		var isArchived sql.NullBool
 
-		s := types.SupportBundle{}
-		if err := rows.Scan(&s.ID, &s.AppID, &name, &size, &s.Status, &treeIndex, &s.CreatedAt, &uploadedAt, &isArchived); err != nil {
-			return errors.Wrap(err, "failed to scan")
+		s := &types.SupportBundle{}
+		if err := rows.Scan(&s.ID, &s.Slug, &s.AppID, &name, &size, &s.Status, &s.CreatedAt, &uploadedAt, &isArchived); err != nil {
+			return nil, errors.Wrap(err, "failed to scan")
 		}
 
 		s.Name = name.String
 		s.Size = size.Float64
 		s.IsArchived = isArchived.Bool
-		s.TreeIndex = treeIndex.String
 
 		if uploadedAt.Valid {
 			s.UploadedAt = &uploadedAt.Time
@@ -71,177 +60,25 @@ func (s KOTSStore) migrateSupportBundlesFromPostgres() error {
 		supportBundles = append(supportBundles, s)
 	}
 
-	for _, supportBundle := range supportBundles {
-		bundleMarshaled, err := json.Marshal(supportBundle)
-		if err != nil {
-			return errors.Wrap(err, "failed to marshal bundle")
-		}
-
-		analysisMarshaled := []byte{}
-
-		// NOTE we are dropping ID, error and max_severity from the data because it's not used and has unknown validity
-		query = `SELECT insights, created_at FROM supportbundle_analysis where supportbundle_id = $1`
-		row := db.QueryRow(query, supportBundle.ID)
-		var insightsStr sql.NullString
-
-		a := &types.SupportBundleAnalysis{}
-		hasAnalysis := true
-		if err := row.Scan(&insightsStr, &a.CreatedAt); err != nil {
-			if err != sql.ErrNoRows {
-				return errors.Wrap(err, "failed to scan")
-			}
-
-			hasAnalysis = false
-		}
-
-		if hasAnalysis {
-			if insightsStr.Valid {
-				insights, err := insightsFromResults([]byte(insightsStr.String))
-				if err != nil {
-					return errors.Wrap(err, "failed to get insights from results")
-				}
-
-				a.Insights = insights
-			}
-
-			b, err := json.Marshal(a)
-			if err != nil {
-				return errors.Wrap(err, "failed to marshal analysis")
-			}
-
-			analysisMarshaled = b
-		}
-
-		redactionsMarshaled := []byte{}
-
-		query = `select redact_report from supportbundle where id = $1`
-		var redactString sql.NullString
-		row = db.QueryRow(query, supportBundle.ID)
-		if err := row.Scan(&redactString); err != nil {
-			return errors.Wrap(err, "failed to scan")
-		}
-		if redactString.Valid && redactString.String != "" {
-			redactionsMarshaled = []byte(redactString.String)
-		}
-
-		labels := kotsadmtypes.GetKotsadmLabels()
-		labels["kots.io/kind"] = "supportbundle"
-		labels["kots.io/appid"] = supportBundle.AppID
-
-		secret := corev1.Secret{
-			TypeMeta: metav1.TypeMeta{
-				APIVersion: "v1",
-				Kind:       "Secret",
-			},
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      fmt.Sprintf("supportbundle-%s", supportBundle.ID),
-				Namespace: os.Getenv("POD_NAMESPACE"),
-				Labels:    labels,
-			},
-			Data: map[string][]byte{
-				"bundle":     bundleMarshaled,
-				"analysis":   analysisMarshaled,
-				"redactions": redactionsMarshaled,
-			},
-		}
-
-		_, err = clientset.CoreV1().Secrets(os.Getenv("POD_NAMESPACE")).Create(context.TODO(), &secret, metav1.CreateOptions{})
-		if err != nil {
-			if kuberneteserrors.IsAlreadyExists(err) {
-				continue
-			}
-			return errors.Wrap(err, "failed to create support bundle secret")
-		}
-	}
-
-	query = `delete from supportbundle`
-	if _, err = db.Exec(query); err != nil {
-		return errors.Wrap(err, "failed to delete support bundles from pg")
-	}
-	query = `delete from supportbundle_analysis`
-	if _, err = db.Exec(query); err != nil {
-		return errors.Wrap(err, "faild to delete support bundle analysises from pg")
-	}
-
-	return nil
-}
-
-func (s KOTSStore) ListSupportBundles(appID string) ([]*types.SupportBundle, error) {
-	clientset, err := s.GetClientset()
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to get clientset")
-	}
-
-	labelSelector := metav1.LabelSelector{
-		MatchLabels: map[string]string{
-			"kots.io/kind":  "supportbundle",
-			"kots.io/appid": appID,
-		},
-	}
-
-	supportBundles := []*types.SupportBundle{}
-
-	secrets, err := clientset.CoreV1().Secrets(os.Getenv("POD_NAMESPACE")).List(context.TODO(), metav1.ListOptions{
-		LabelSelector: labels.Set(labelSelector.MatchLabels).String(),
-	})
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to list support bundles")
-	}
-
-	for _, secret := range secrets.Items {
-		supportBundle := types.SupportBundle{}
-		if err := json.Unmarshal(secret.Data["bundle"], &supportBundle); err != nil {
-			return nil, errors.Wrap(err, "failed to unmarshal support bundle")
-		}
-
-		supportBundles = append(supportBundles, &supportBundle)
-	}
-
-	// sort the bundles here by date, since we don't have a sort order otherwise
-	sort.Sort(types.ByCreated(supportBundles))
-
 	return supportBundles, nil
 }
 
-func (s KOTSStore) DeletePendingSupportBundle(id string) error {
-	clientset, err := s.GetClientset()
+func (s KOTSStore) ListPendingSupportBundlesForApp(appID string) ([]*supportbundletypes.PendingSupportBundle, error) {
+	db := persistence.MustGetPGSession()
+	query := `select id, app_id, cluster_id from pending_supportbundle where app_id = $1`
+
+	rows, err := db.Query(query, appID)
 	if err != nil {
-		return errors.Wrap(err, "failed to get clientset")
+		return nil, errors.Wrap(err, "failed to query")
 	}
+	defer rows.Close()
 
-	if err := clientset.CoreV1().Secrets(os.Getenv("POD_NAMESPACE")).Delete(context.TODO(), fmt.Sprintf("pendingsupportbundle-%s", id), metav1.DeleteOptions{}); err != nil {
-		if kuberneteserrors.IsNotFound(err) {
-			return nil
-		}
-		return errors.Wrap(err, "failed to delete")
-	}
+	pendingSupportBundles := []*supportbundletypes.PendingSupportBundle{}
 
-	return nil
-}
-
-func (s KOTSStore) ListPendingSupportBundlesForApp(appID string) ([]*types.PendingSupportBundle, error) {
-	clientset, err := s.GetClientset()
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to get clientset")
-	}
-
-	labelSelector := metav1.LabelSelector{
-		MatchLabels: map[string]string{
-			"kots.io/kind":  "pendingsupportbundle",
-			"kots.io/appid": appID,
-		},
-	}
-	secrets, err := clientset.CoreV1().Secrets(os.Getenv("POD_NAMESPACE")).List(context.TODO(), metav1.ListOptions{
-		LabelSelector: labels.Set(labelSelector.MatchLabels).String(),
-	})
-
-	pendingSupportBundles := []*types.PendingSupportBundle{}
-
-	for _, secret := range secrets.Items {
-		s := types.PendingSupportBundle{}
-
-		if err := json.Unmarshal(secret.Data["data"], &s); err != nil {
-			return nil, errors.Wrap(err, "failed to unmarshal")
+	for rows.Next() {
+		s := supportbundletypes.PendingSupportBundle{}
+		if err := rows.Scan(&s.ID, &s.AppID, &s.ClusterID); err != nil {
+			return nil, errors.Wrap(err, "failed to scan")
 		}
 
 		pendingSupportBundles = append(pendingSupportBundles, &s)
@@ -250,68 +87,63 @@ func (s KOTSStore) ListPendingSupportBundlesForApp(appID string) ([]*types.Pendi
 	return pendingSupportBundles, nil
 }
 
-func (s KOTSStore) GetSupportBundle(id string) (*types.SupportBundle, error) {
-	clientset, err := s.GetClientset()
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to get clientset")
+func (s KOTSStore) GetSupportBundleFromSlug(slug string) (*supportbundletypes.SupportBundle, error) {
+	db := persistence.MustGetPGSession()
+	query := `select id from supportbundle where slug = $1`
+	row := db.QueryRow(query, slug)
+
+	id := ""
+	if err := row.Scan(&id); err != nil {
+		if err == sql.ErrNoRows {
+			return nil, nil
+		}
+		return nil, errors.Wrap(err, "failed to scan id")
 	}
 
-	secret, err := clientset.CoreV1().Secrets(os.Getenv("POD_NAMESPACE")).Get(context.TODO(), fmt.Sprintf("supportbundle-%s", id), metav1.GetOptions{})
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to get secret")
+	return s.GetSupportBundle(id)
+}
+
+func (s KOTSStore) GetSupportBundle(id string) (*supportbundletypes.SupportBundle, error) {
+	db := persistence.MustGetPGSession()
+	query := `select id, slug, watch_id, name, size, status, tree_index, created_at, uploaded_at, is_archived from supportbundle where slug = $1`
+	row := db.QueryRow(query, id)
+
+	var name sql.NullString
+	var size sql.NullFloat64
+	var treeIndex sql.NullString
+	var uploadedAt sql.NullTime
+	var isArchived sql.NullBool
+
+	supportbundle := &supportbundletypes.SupportBundle{}
+	if err := row.Scan(&supportbundle.ID, &supportbundle.Slug, &supportbundle.AppID, &name, &size, &supportbundle.Status, &treeIndex, &supportbundle.CreatedAt, &uploadedAt, &isArchived); err != nil {
+		return nil, errors.Wrap(err, "failed to scan")
 	}
 
-	supportBundle := types.SupportBundle{}
-	if err := json.Unmarshal(secret.Data["bundle"], &supportBundle); err != nil {
-		return nil, errors.Wrap(err, "failed to unmarshal")
+	supportbundle.Name = name.String
+	supportbundle.Size = size.Float64
+	supportbundle.TreeIndex = treeIndex.String
+	supportbundle.IsArchived = isArchived.Bool
+
+	if uploadedAt.Valid {
+		supportbundle.UploadedAt = &uploadedAt.Time
 	}
 
-	return &supportBundle, nil
+	return supportbundle, nil
 }
 
 func (s KOTSStore) CreatePendingSupportBundle(id string, appID string, clusterID string) error {
-	pendingSupportBundle := types.PendingSupportBundle{
-		ID:        id,
-		AppID:     appID,
-		ClusterID: clusterID,
-	}
-	b, err := json.Marshal(pendingSupportBundle)
+	db := persistence.MustGetPGSession()
+	query := `insert into pending_supportbundle (id, app_id, cluster_id, created_at) values ($1, $2, $3, $4)`
+
+	_, err := db.Exec(query, id, appID, clusterID, time.Now())
 	if err != nil {
-		return errors.Wrap(err, "failed to marshal")
-	}
-
-	clientset, err := s.GetClientset()
-	if err != nil {
-		return errors.Wrap(err, "failed to get clientset")
-	}
-
-	labels := kotsadmtypes.GetKotsadmLabels()
-	labels["kots.io/kind"] = "pendingsupportbundle"
-	labels["kots.io/appid"] = appID
-
-	secret := corev1.Secret{
-		TypeMeta: metav1.TypeMeta{
-			APIVersion: "v1",
-			Kind:       "Secret",
-		},
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      fmt.Sprintf("pendingsupportbundle-%s", id),
-			Namespace: os.Getenv("POD_NAMESPACE"),
-			Labels:    labels,
-		},
-		Data: map[string][]byte{
-			"data": b,
-		},
-	}
-
-	if _, err := clientset.CoreV1().Secrets(os.Getenv("POD_NAMESPACE")).Create(context.TODO(), &secret, metav1.CreateOptions{}); err != nil {
-		return errors.Wrap(err, "failed to create secret")
+		return errors.Wrap(err, "failed to insert support bundle")
 	}
 
 	return nil
 }
 
-func (s KOTSStore) CreateSupportBundle(id string, appID string, archivePath string, marshalledTree []byte) (*types.SupportBundle, error) {
+func (s KOTSStore) CreateSupportBundle(id string, appID string, archivePath string, marshalledTree []byte) (*supportbundletypes.SupportBundle, error) {
 	fi, err := os.Stat(archivePath)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to read archive")
@@ -339,50 +171,17 @@ func (s KOTSStore) CreateSupportBundle(id string, appID string, archivePath stri
 		return nil, errors.Wrap(err, "failed to upload to s3")
 	}
 
-	supportBundle := types.SupportBundle{
-		ID:        id,
-		Slug:      id,
-		AppID:     appID,
-		Size:      float64(fi.Size()),
-		Status:    "uploaded",
-		CreatedAt: time.Now(),
-		TreeIndex: string(marshalledTree),
-	}
-	bundleMarshaled, err := json.Marshal(supportBundle)
+	db := persistence.MustGetPGSession()
+	query := `insert into supportbundle (id, slug, watch_id, size, status, created_at, tree_index) values ($1, $2, $3, $4, $5, $6, $7)`
+
+	_, err = db.Exec(query, id, id, appID, fi.Size(), "uploaded", time.Now(), marshalledTree)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to marshal support bundle")
+		return nil, errors.Wrap(err, "failed to insert support bundle")
 	}
 
-	labels := kotsadmtypes.GetKotsadmLabels()
-	labels["kots.io/kind"] = "supportbundle"
-	labels["kots.io/appid"] = appID
-
-	secret := corev1.Secret{
-		TypeMeta: metav1.TypeMeta{
-			APIVersion: "v1",
-			Kind:       "Secret",
-		},
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      fmt.Sprintf("supportbundle-%s", id),
-			Namespace: os.Getenv("POD_NAMESPACE"),
-			Labels:    labels,
-		},
-		Data: map[string][]byte{
-			"bundle":   bundleMarshaled,
-			"analysis": nil,
-		},
-	}
-
-	clientset, err := s.GetClientset()
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to get clientset")
-	}
-
-	if _, err := clientset.CoreV1().Secrets(os.Getenv("POD_NAMESPACE")).Create(context.TODO(), &secret, metav1.CreateOptions{}); err != nil {
-		return nil, errors.Wrap(err, "failed to create secret")
-	}
-
-	return &supportBundle, nil
+	return &types.SupportBundle{
+		ID: id,
+	}, nil
 }
 
 // GetSupportBundle will fetch the bundle archive and return a path to where it
@@ -420,122 +219,125 @@ func (s KOTSStore) GetSupportBundleArchive(bundleID string) (string, error) {
 	return filepath.Join(tmpDir, "supportbundle.tar.gz"), nil
 }
 
-func (s KOTSStore) GetSupportBundleAnalysis(id string) (*types.SupportBundleAnalysis, error) {
-	clientset, err := s.GetClientset()
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to get clientset")
-	}
+func (s KOTSStore) GetSupportBundleAnalysis(id string) (*supportbundletypes.SupportBundleAnalysis, error) {
+	db := persistence.MustGetPGSession()
+	query := `SELECT id, error, max_severity, insights, created_at FROM supportbundle_analysis where supportbundle_id = $1`
+	row := db.QueryRow(query, id)
 
-	secret, err := clientset.CoreV1().Secrets(os.Getenv("POD_NAMESPACE")).Get(context.TODO(), fmt.Sprintf("supportbundle-%s", id), metav1.GetOptions{})
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to get secret")
-	}
-
-	if _, ok := secret.Data["analysis"]; !ok {
-		return nil, errors.New("no analysis")
-	}
-
-	if secret.Data["analysis"] == nil || len(secret.Data["analysis"]) == 0 {
-		return nil, nil
-	}
+	var _error sql.NullString
+	var maxSeverity sql.NullString
+	var insightsStr sql.NullString
 
 	a := &types.SupportBundleAnalysis{}
-	if err := json.Unmarshal(secret.Data["analysis"], &a); err != nil {
-		return nil, errors.Wrap(err, "failed to unmarshal analysis")
+	if err := row.Scan(&a.ID, &_error, &maxSeverity, &insightsStr, &a.CreatedAt); err != nil {
+		if err == sql.ErrNoRows {
+			return nil, nil
+		}
+		return nil, errors.Wrap(err, "failed to scan")
+	}
+
+	a.Error = _error.String
+	a.MaxSeverity = maxSeverity.String
+
+	if insightsStr.Valid {
+		type Insight struct {
+			Primary string `json:"primary"`
+			Detail  string `json:"detail"`
+		}
+		type Labels struct {
+			IconUri         string `json:"iconUri"`
+			IconKey         string `json:"iconKey"`
+			DesiredPosition string `json:"desiredPosition"`
+		}
+		type DBInsight struct {
+			Name     string  `json:"name"`
+			Severity string  `json:"severity"`
+			Insight  Insight `json:"insight"`
+			Labels   Labels  `json:"labels"`
+		}
+
+		dbInsights := []DBInsight{}
+		if err := json.Unmarshal([]byte(insightsStr.String), &dbInsights); err != nil {
+			logger.Error(errors.Wrap(err, "failed to unmarshal db insights"))
+			dbInsights = []DBInsight{}
+		}
+
+		insights := []types.SupportBundleInsight{}
+		for _, dbInsight := range dbInsights {
+			desiredPosition, _ := strconv.ParseFloat(dbInsight.Labels.DesiredPosition, 64)
+			insight := types.SupportBundleInsight{
+				Key:             dbInsight.Name,
+				Severity:        dbInsight.Severity,
+				Primary:         dbInsight.Insight.Primary,
+				Detail:          dbInsight.Insight.Detail,
+				Icon:            dbInsight.Labels.IconUri,
+				IconKey:         dbInsight.Labels.IconKey,
+				DesiredPosition: desiredPosition,
+			}
+			insights = append(insights, insight)
+		}
+
+		a.Insights = insights
 	}
 
 	return a, nil
 }
 
-func (s KOTSStore) SetSupportBundleAnalysis(id string, results []byte) error {
-	insights, err := insightsFromResults(results)
+func (s KOTSStore) SetSupportBundleAnalysis(id string, insights []byte) error {
+	db := persistence.MustGetPGSession()
+	query := `update supportbundle set status = $1 where id = $2`
+
+	_, err := db.Exec(query, "analyzed", id)
 	if err != nil {
-		return errors.Wrap(err, "failed to convert results to insights")
+		return errors.Wrap(err, "failed to insert support bundle")
 	}
 
-	a := types.SupportBundleAnalysis{
-		CreatedAt: time.Now(),
-		Insights:  insights,
-	}
-
-	clientset, err := s.GetClientset()
+	query = `insert into supportbundle_analysis (id, supportbundle_id, error, max_severity, insights, created_at) values ($1, $2, null, null, $3, $4)`
+	_, err = db.Exec(query, ksuid.New().String(), id, insights, time.Now())
 	if err != nil {
-		return errors.Wrap(err, "failed to get clientset")
-	}
-
-	secret, err := clientset.CoreV1().Secrets(os.Getenv("POD_NAMESPACE")).Get(context.TODO(), fmt.Sprintf("supportbundle-%s", id), metav1.GetOptions{})
-	if err != nil {
-		return errors.Wrap(err, "failed to list support bundle")
-	}
-
-	b, err := json.Marshal(a)
-	if err != nil {
-		return errors.Wrap(err, "failed to marshal analysis")
-	}
-
-	secret.Data["analysis"] = b
-
-	if _, err = clientset.CoreV1().Secrets(os.Getenv("POD_NAMESPACE")).Update(context.TODO(), secret, metav1.UpdateOptions{}); err != nil {
-		return errors.Wrap(err, "failed to update secret")
+		return errors.Wrap(err, "failed to insert insights")
 	}
 
 	return nil
 }
 
-func (s KOTSStore) GetRedactions(id string) (troubleshootredact.RedactionList, error) {
-	clientset, err := s.GetClientset()
+func (s KOTSStore) GetRedactions(bundleID string) (troubleshootredact.RedactionList, error) {
+	db := persistence.MustGetPGSession()
+	q := `select redact_report from supportbundle where id = $1`
+
+	var redactString sql.NullString
+	row := db.QueryRow(q, bundleID)
+	err := row.Scan(&redactString)
 	if err != nil {
-		return troubleshootredact.RedactionList{}, errors.Wrap(err, "failed to get clientset")
+		return troubleshootredact.RedactionList{}, errors.Wrap(err, "select redact_report")
 	}
 
-	secret, err := clientset.CoreV1().Secrets(os.Getenv("POD_NAMESPACE")).Get(context.TODO(), fmt.Sprintf("supportbundle-%s", id), metav1.GetOptions{})
-	if err != nil {
-		return troubleshootredact.RedactionList{}, errors.Wrap(err, "failed to get secret")
-	}
-
-	emptyRedactions := troubleshootredact.RedactionList{
-		ByRedactor: map[string][]troubleshootredact.Redaction{},
-		ByFile:     map[string][]troubleshootredact.Redaction{},
-	}
-
-	if _, ok := secret.Data["redactions"]; !ok {
-		return emptyRedactions, nil
-	}
-	if len(secret.Data["redactions"]) == 0 {
-		return emptyRedactions, nil
+	if !redactString.Valid || redactString.String == "" {
+		return troubleshootredact.RedactionList{}, fmt.Errorf("unable to find redactions for bundle %s", bundleID)
 	}
 
 	redacts := troubleshootredact.RedactionList{}
-	err = json.Unmarshal(secret.Data["redactions"], &redacts)
+	err = json.Unmarshal([]byte(redactString.String), &redacts)
 	if err != nil {
-		return troubleshootredact.RedactionList{}, errors.Wrap(err, "failed to unmarshal redact report")
+		return troubleshootredact.RedactionList{}, errors.Wrap(err, "unmarshal redact report")
 	}
 
 	return redacts, nil
 }
 
-func (s KOTSStore) SetRedactions(id string, redacts troubleshootredact.RedactionList) error {
+func (s KOTSStore) SetRedactions(bundleID string, redacts troubleshootredact.RedactionList) error {
+	db := persistence.MustGetPGSession()
+
 	redactBytes, err := json.Marshal(redacts)
 	if err != nil {
-		return errors.Wrap(err, "failed to marshal redactionlist")
+		return errors.Wrap(err, "marshal redactionlist")
 	}
 
-	clientset, err := s.GetClientset()
+	query := `update supportbundle set redact_report = $1 where id = $2`
+	_, err = db.Exec(query, string(redactBytes), bundleID)
 	if err != nil {
-		return errors.Wrap(err, "failed to get clientset")
+		return errors.Wrap(err, "failed to set support bundle redact report")
 	}
-
-	secret, err := clientset.CoreV1().Secrets(os.Getenv("POD_NAMESPACE")).Get(context.TODO(), fmt.Sprintf("supportbundle-%s", id), metav1.GetOptions{})
-	if err != nil {
-		return errors.Wrap(err, "failed to get secret")
-	}
-
-	secret.Data["redactions"] = redactBytes
-
-	if _, err := clientset.CoreV1().Secrets(os.Getenv("POD_NAMESPACE")).Update(context.TODO(), secret, metav1.UpdateOptions{}); err != nil {
-		return errors.Wrap(err, "failed to update")
-	}
-
 	return nil
 }
 
@@ -553,45 +355,4 @@ func (s KOTSStore) GetSupportBundleSpecForApp(id string) (string, error) {
 		return "", err
 	}
 	return spec, nil
-}
-
-func insightsFromResults(results []byte) ([]types.SupportBundleInsight, error) {
-	type Insight struct {
-		Primary string `json:"primary"`
-		Detail  string `json:"detail"`
-	}
-	type Labels struct {
-		IconUri         string `json:"iconUri"`
-		IconKey         string `json:"iconKey"`
-		DesiredPosition string `json:"desiredPosition"`
-	}
-	type DBInsight struct {
-		Name     string  `json:"name"`
-		Severity string  `json:"severity"`
-		Insight  Insight `json:"insight"`
-		Labels   Labels  `json:"labels"`
-	}
-
-	dbInsights := []DBInsight{}
-	if err := json.Unmarshal(results, &dbInsights); err != nil {
-		logger.Error(errors.Wrap(err, "failed to unmarshal db insights"))
-		dbInsights = []DBInsight{}
-	}
-
-	insights := []types.SupportBundleInsight{}
-	for _, dbInsight := range dbInsights {
-		desiredPosition, _ := strconv.ParseFloat(dbInsight.Labels.DesiredPosition, 64)
-		insight := types.SupportBundleInsight{
-			Key:             dbInsight.Name,
-			Severity:        dbInsight.Severity,
-			Primary:         dbInsight.Insight.Primary,
-			Detail:          dbInsight.Insight.Detail,
-			Icon:            dbInsight.Labels.IconUri,
-			IconKey:         dbInsight.Labels.IconKey,
-			DesiredPosition: desiredPosition,
-		}
-		insights = append(insights, insight)
-	}
-
-	return insights, nil
 }

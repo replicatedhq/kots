@@ -74,7 +74,7 @@ var HandlerPolicyTests = map[string][]HandlerPolicyTest{
 			Roles:        []rbactypes.Role{rbac.ClusterAdminRole},
 			SessionRoles: []string{rbac.ClusterAdminRoleID},
 			Calls: func(storeRecorder *mock_store.MockStoreMockRecorder, handlerRecorder *mock_handlers.MockKOTSHandlerMockRecorder) {
-				storeRecorder.GetSupportBundle("bundle-slug").Return(&supportbundletypes.SupportBundle{AppID: "123"}, nil)
+				storeRecorder.GetSupportBundleFromSlug("bundle-slug").Return(&supportbundletypes.SupportBundle{AppID: "123"}, nil)
 				storeRecorder.GetApp("123").Return(&apptypes.App{Slug: "my-app"}, nil)
 				handlerRecorder.GetSupportBundle(gomock.Any(), gomock.Any())
 			},
