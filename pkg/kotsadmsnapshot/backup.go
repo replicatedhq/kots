@@ -2,6 +2,7 @@ package snapshot
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -556,8 +557,10 @@ func ListInstanceBackups() ([]*types.Backup, error) {
 			for slug, sequence := range apps {
 				a, err := store.GetStore().GetAppFromSlug(slug)
 				if err != nil {
-					// app might not exist in current installation
-					continue
+					if errors.Cause(err) == sql.ErrNoRows {
+						continue
+					}
+					return nil, errors.Wrap(err, "failed to get app from slug")
 				}
 
 				backup.IncludedApps = append(backup.IncludedApps, types.App{
