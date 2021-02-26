@@ -226,7 +226,7 @@ func writeProgressLine(progressWriter io.Writer, line string) {
 	fmt.Fprint(progressWriter, fmt.Sprintf("%s\n", line))
 }
 
-func TagAndPushAppImages(imagesDir string, options types.PushImagesOptions) ([]kustomizetypes.Image, error) {
+func TagAndPushAppImagesFromPath(imagesDir string, options types.PushImagesOptions) ([]kustomizetypes.Image, error) {
 	formatDirs, err := ioutil.ReadDir(imagesDir)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to read images dir")
@@ -313,7 +313,9 @@ func TagAndPushAppImages(imagesDir string, options types.PushImagesOptions) ([]k
 				}
 			}
 			if err != nil {
-				reportWriter.Write([]byte(fmt.Sprintf("+file.error:%s\n", err)))
+				if options.LogForUI {
+					reportWriter.Write([]byte(fmt.Sprintf("+file.error:%s\n", err)))
+				}
 				options.Log.FinishChildSpinner()
 				return nil, errors.Wrap(err, "failed to push image")
 			}
@@ -332,14 +334,219 @@ func TagAndPushAppImages(imagesDir string, options types.PushImagesOptions) ([]k
 	return images, nil
 }
 
+func TagAndPushAppImagesFromBundle(airgapBundle string, options types.PushImagesOptions) ([]kustomizetypes.Image, error) {
+	if options.LogForUI {
+		writeProgressLine(options.ProgressWriter, "Reading image information from bundle...")
+	}
+
+	imageFiles, err := getImageListFromBundle(airgapBundle, options.LogForUI)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get layer info from bundle")
+	}
+
+	fileReader, err := os.Open(airgapBundle)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to open file")
+	}
+	defer fileReader.Close()
+
+	gzipReader, err := gzip.NewReader(fileReader)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get new gzip reader")
+	}
+	defer gzipReader.Close()
+
+	reportWriter := options.ProgressWriter
+	if options.LogForUI {
+		wc := reportWriterWithProgress(imageFiles, options.ProgressWriter)
+		reportWriter = wc.(io.Writer)
+		defer wc.Write([]byte(fmt.Sprintf("+status.flush:\n")))
+		defer wc.Close()
+	}
+
+	images := []kustomizetypes.Image{}
+
+	tarReader := tar.NewReader(gzipReader)
+	for {
+		header, err := tarReader.Next()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to get read archive")
+		}
+
+		if header.Typeflag != tar.TypeReg {
+			continue
+		}
+
+		imageFile, ok := imageFiles[header.Name]
+		if !ok {
+			continue
+		}
+
+		err = func() error {
+			pathParts := strings.Split(imageFile.FilePath, string(os.PathSeparator))
+			if len(pathParts) < 3 {
+				return errors.Errorf("not enough path parts in %q", imageFile.FilePath)
+			}
+
+			rewrittenImage, err := image.ImageInfoFromFile(options.Registry, pathParts[2:])
+			if err != nil {
+				return errors.Wrap(err, "failed to decode image from path")
+			}
+
+			if options.LogForUI {
+				writeProgressLine(reportWriter, fmt.Sprintf("Extracting image %s:%s", rewrittenImage.NewName, rewrittenImage.NewTag))
+			}
+
+			tmpFile, err := ioutil.TempFile("", "kotsadm-app-image-")
+			if err != nil {
+				return errors.Wrap(err, "failed to create temp file")
+			}
+			defer tmpFile.Close()
+			defer os.Remove(tmpFile.Name())
+
+			_, err = io.Copy(tmpFile, tarReader)
+			if err != nil {
+				return errors.Wrapf(err, "failed to write file %q", header.Name)
+			}
+
+			// Close file to flush all data before pushing to registry
+			if err := tmpFile.Close(); err != nil {
+				return errors.Wrap(err, "failed to close tmp file")
+			}
+
+			if options.LogForUI {
+				// still log in console for future reference
+				fmt.Printf("Pushing image %s:%s\n", rewrittenImage.NewName, rewrittenImage.NewTag)
+			} else {
+				writeProgressLine(reportWriter, fmt.Sprintf("Pushing image %s:%s", rewrittenImage.NewName, rewrittenImage.NewTag))
+			}
+
+			registryAuth := image.RegistryAuth{
+				Username: options.Registry.Username,
+				Password: options.Registry.Password,
+			}
+
+			imageFile.UploadStart = time.Now()
+			if options.LogForUI {
+				reportWriter.Write([]byte(fmt.Sprintf("+file.begin:%s\n", imageFile.FilePath)))
+			}
+			for i := 0; i < 5; i++ {
+				err = image.CopyFromFileToRegistry(tmpFile.Name(), rewrittenImage.NewName, rewrittenImage.NewTag, rewrittenImage.Digest, registryAuth, reportWriter)
+				if err == nil {
+					break // image copy succeeded, exit the retry loop
+				} else {
+					options.Log.ChildActionWithoutSpinner("encountered error (#%d) copying image, waiting 10s before trying again: %s", i+1, err.Error())
+					time.Sleep(time.Second * 10)
+				}
+			}
+			if err != nil {
+				if options.LogForUI {
+					reportWriter.Write([]byte(fmt.Sprintf("+file.error:%s\n", err)))
+				}
+				options.Log.FinishChildSpinner()
+				return errors.Wrap(err, "failed to push image")
+			}
+
+			options.Log.FinishChildSpinner()
+
+			imageFile.UploadEnd = time.Now()
+			if options.LogForUI {
+				reportWriter.Write([]byte(fmt.Sprintf("+file.end:%s\n", imageFile.FilePath)))
+			}
+
+			images = append(images, rewrittenImage)
+
+			return nil
+		}()
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return images, nil
+}
+
+func getImageListFromBundle(airgapBundle string, getLayerInfo bool) (map[string]*types.ImageFile, error) {
+	fileReader, err := os.Open(airgapBundle)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to open file")
+	}
+	defer fileReader.Close()
+
+	gzipReader, err := gzip.NewReader(fileReader)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get new gzip reader")
+	}
+	defer gzipReader.Close()
+
+	imageFiles := make(map[string]*types.ImageFile)
+
+	tarReader := tar.NewReader(gzipReader)
+	foundImagesFolder := false
+	for {
+		header, err := tarReader.Next()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to get read archive")
+		}
+
+		// Airgap bundle will have some small files in the beginning.
+		// The rest of it will be images in folders.
+		if !foundImagesFolder {
+			if header.Name == "." {
+				continue
+			}
+			if header.Typeflag == tar.TypeReg {
+				continue
+			}
+			foundImagesFolder = true
+			continue
+		}
+
+		if header.Typeflag != tar.TypeReg {
+			continue
+		}
+
+		layers := make(map[string]*types.LayerInfo)
+		if getLayerInfo {
+			layers, err = getLayerInfoFromReader(tarReader)
+			if err != nil {
+				return nil, errors.Wrap(err, "failed to get layer info")
+			}
+		}
+
+		pathParts := strings.Split(header.Name, string(os.PathSeparator))
+		if len(pathParts) < 3 {
+			return nil, errors.Errorf("not enough parts in image path: %q", header.Name)
+		}
+
+		imageFiles[header.Name] = &types.ImageFile{
+			Format:   pathParts[1], // path is like "images/<format>/image/name/tag"
+			FilePath: header.Name,
+			Layers:   layers,
+			FileSize: header.Size,
+			Status:   "queued",
+		}
+	}
+	return imageFiles, nil
+}
+
 func getLayerInfo(path string) (map[string]*types.LayerInfo, error) {
 	f, err := os.Open(path)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to open image archive")
 	}
 	defer f.Close()
+	return getLayerInfoFromReader(f)
+}
 
-	tarReader := tar.NewReader(f)
+func getLayerInfoFromReader(reader io.Reader) (map[string]*types.LayerInfo, error) {
+	tarReader := tar.NewReader(reader)
 
 	var manifestItems []tarfile.ManifestItem
 	files := make(map[string]*tar.Header)
@@ -375,24 +582,25 @@ func getLayerInfo(path string) (map[string]*types.LayerInfo, error) {
 		if len(manifestItems) != 1 {
 			return nil, errors.Errorf("manifest.json: expected 1 item, got %d", len(manifestItems))
 		}
+
+		layers := make(map[string]*types.LayerInfo)
+		for _, l := range manifestItems[0].Layers {
+			fileInfo, found := files[l]
+			if !found {
+				return nil, errors.Errorf("layer %s not found in tar archive", l)
+			}
+
+			id := strings.TrimSuffix(l, ".tar")
+			layer := &types.LayerInfo{
+				ID:   id,
+				Size: fileInfo.Size,
+			}
+			layers[id] = layer
+		}
+		return layers, nil
 	}
 
-	layers := make(map[string]*types.LayerInfo)
-	for _, l := range manifestItems[0].Layers {
-		fileInfo, found := files[l]
-		if !found {
-			return nil, errors.Errorf("layer %s not found in tar archive %s", l, path)
-		}
-
-		id := strings.TrimSuffix(l, ".tar")
-		layer := &types.LayerInfo{
-			ID:   id,
-			Size: fileInfo.Size,
-		}
-		layers[id] = layer
-	}
-
-	return layers, nil
+	return nil, errors.New("manifest.json not found")
 }
 
 func reportWriterWithProgress(files map[string]*types.ImageFile, reportWriter io.Writer) io.WriteCloser {

@@ -17,6 +17,7 @@ import (
 type ProcessUpstreamImagesOptions struct {
 	RootDir             string
 	ImagesDir           string
+	AirgapBundle        string
 	CreateAppDir        bool
 	SkipImagePush       bool
 	KnownImages         []kustomizetypes.Image
@@ -36,11 +37,19 @@ func ProcessUpstreamImages(u *types.Upstream, options ProcessUpstreamImagesOptio
 
 	var foundImages []kustomizetypes.Image
 	if !options.SkipImagePush {
-		images, err := kotsadm.TagAndPushAppImages(options.ImagesDir, pushOpts)
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to push images")
+		if options.AirgapBundle != "" {
+			images, err := kotsadm.TagAndPushAppImagesFromBundle(options.AirgapBundle, pushOpts)
+			if err != nil {
+				return nil, errors.Wrap(err, "failed to push images")
+			}
+			foundImages = images
+		} else {
+			images, err := kotsadm.TagAndPushAppImagesFromPath(options.ImagesDir, pushOpts)
+			if err != nil {
+				return nil, errors.Wrap(err, "failed to push images")
+			}
+			foundImages = images
 		}
-		foundImages = images
 	} else {
 		foundImages = options.KnownImages
 	}
