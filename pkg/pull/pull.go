@@ -44,6 +44,7 @@ type PullOptions struct {
 	LicenseFile            string
 	InstallationFile       string
 	AirgapRoot             string
+	AirgapBundle           string
 	ConfigFile             string
 	IdentityConfigFile     string
 	UpdateCursor           string
@@ -397,6 +398,7 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 			processUpstreamImageOptions := upstream.ProcessUpstreamImagesOptions{
 				RootDir:      pullOptions.RootDir,
 				ImagesDir:    imagesDirFromOptions(u, pullOptions),
+				AirgapBundle: pullOptions.AirgapBundle,
 				CreateAppDir: pullOptions.CreateAppDir,
 				Log:          log,
 				ReplicatedRegistry: registry.RegistryOptions{

@@ -93,7 +93,7 @@ func UpstreamUpgradeCmd() *cobra.Command {
 				}
 
 				imagesRootDir := filepath.Join(airgapRootDir, "images")
-				images, err = kotsadm.TagAndPushAppImages(imagesRootDir, pushOptions)
+				images, err = kotsadm.TagAndPushAppImagesFromPath(imagesRootDir, pushOptions)
 				if err != nil {
 					return errors.Wrap(err, "failed to list image formats")
 				}

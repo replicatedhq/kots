@@ -56,17 +56,17 @@ func UpdateAppFromAirgap(a *apptypes.App, airgapBundlePath string, deploy bool, 
 		return errors.Wrap(err, "failed to set task status")
 	}
 
-	airgapRoot, err := version.ExtractArchiveToTempDirectory(airgapBundlePath)
+	airgapRoot, err := extractAppMetaFromAirgapBundle(airgapBundlePath)
 	if err != nil {
 		return errors.Wrap(err, "failed to extract archive")
 	}
 	defer os.RemoveAll(airgapRoot)
 
-	err = UpdateAppFromPath(a, airgapRoot, deploy, skipPreflights)
+	err = UpdateAppFromPath(a, airgapRoot, airgapBundlePath, deploy, skipPreflights)
 	return errors.Wrap(err, "failed to update app")
 }
 
-func UpdateAppFromPath(a *apptypes.App, airgapRoot string, deploy bool, skipPreflights bool) error {
+func UpdateAppFromPath(a *apptypes.App, airgapRoot string, airgapBundlePath string, deploy bool, skipPreflights bool) error {
 	if err := store.GetStore().SetTaskStatus("update-download", "Processing package...", "running"); err != nil {
 		return errors.Wrap(err, "failed to set tasks status")
 	}
@@ -149,6 +149,7 @@ func UpdateAppFromPath(a *apptypes.App, airgapRoot string, deploy bool, skipPref
 		ConfigFile:          filepath.Join(currentArchivePath, "upstream", "userdata", "config.yaml"),
 		IdentityConfigFile:  identityConfigFile,
 		AirgapRoot:          airgapRoot,
+		AirgapBundle:        airgapBundlePath,
 		InstallationFile:    filepath.Join(currentArchivePath, "upstream", "userdata", "installation.yaml"),
 		UpdateCursor:        beforeKotsKinds.Installation.Spec.UpdateCursor,
 		RootDir:             currentArchivePath,

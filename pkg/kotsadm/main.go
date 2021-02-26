@@ -152,7 +152,7 @@ func Deploy(deployOptions types.DeployOptions) error {
 
 		var err error
 		imagesRootDir := filepath.Join(deployOptions.AirgapRootDir, "images")
-		images, err = TagAndPushAppImages(imagesRootDir, pushOptions)
+		images, err = TagAndPushAppImagesFromPath(imagesRootDir, pushOptions)
 		if err != nil {
 			return errors.Wrap(err, "failed to list image formats")
 		}

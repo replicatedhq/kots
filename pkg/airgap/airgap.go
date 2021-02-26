@@ -1,7 +1,9 @@
 package airgap
 
 import (
+	"archive/tar"
 	"bufio"
+	"compress/gzip"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -81,15 +83,17 @@ func CreateAppFromAirgap(pendingApp *types.PendingApp, airgapPath string, regist
 		return errors.Wrap(err, "failed to set task status")
 	}
 
+	airgapBundle := ""
 	archiveDir := airgapPath
 	if strings.ToLower(filepath.Ext(airgapPath)) == ".airgap" {
 		// on the api side, headless intalls don't have the airgap file
-		dir, err := version.ExtractArchiveToTempDirectory(airgapPath)
+		dir, err := extractAppMetaFromAirgapBundle(airgapPath)
 		if err != nil {
 			return errors.Wrap(err, "failed to extract archive")
 		}
 		defer os.RemoveAll(dir)
 
+		airgapBundle = airgapPath
 		archiveDir = dir
 	}
 
@@ -179,6 +183,7 @@ func CreateAppFromAirgap(pendingApp *types.PendingApp, airgapPath string, regist
 		ConfigFile:          configFile,
 		IdentityConfigFile:  identityConfigFile,
 		AirgapRoot:          archiveDir,
+		AirgapBundle:        airgapBundle,
 		Silent:              true,
 		ExcludeKotsKinds:    true,
 		RootDir:             tmpRoot,
@@ -331,6 +336,68 @@ func extractAppRelease(workspace string, airgapDir string) (string, error) {
 
 	if numExtracted == 0 {
 		return "", errors.New("no release found in airgap archive")
+	}
+
+	return destDir, nil
+}
+
+func extractAppMetaFromAirgapBundle(airgapBundle string) (string, error) {
+	destDir, err := ioutil.TempDir("", "kotsadm-airgap-meta-")
+	if err != nil {
+		return "", errors.Wrap(err, "failed to create temp dir")
+	}
+
+	fileReader, err := os.Open(airgapBundle)
+	if err != nil {
+		return "", errors.Wrap(err, "failed to open file")
+	}
+	defer fileReader.Close()
+
+	gzipReader, err := gzip.NewReader(fileReader)
+	if err != nil {
+		return "", errors.Wrap(err, "failed to get new gzip reader")
+	}
+	defer gzipReader.Close()
+
+	tarReader := tar.NewReader(gzipReader)
+	for {
+		header, err := tarReader.Next()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return "", errors.Wrap(err, "failed to get read archive")
+		}
+
+		// First items in airgap archive are metadata files.
+		// As soon as we see the first directory, we are hitting images.
+		if header.Name == "." {
+			continue
+		}
+		if header.Typeflag != tar.TypeReg {
+			break
+		}
+
+		err = func() error {
+			fileName := filepath.Join(destDir, header.Name)
+
+			fileWriter, err := os.Create(fileName)
+			if err != nil {
+				return errors.Wrapf(err, "failed to create file %q", header.Name)
+			}
+
+			defer fileWriter.Close()
+
+			_, err = io.Copy(fileWriter, tarReader)
+			if err != nil {
+				return errors.Wrapf(err, "failed to write file %q", header.Name)
+			}
+
+			return nil
+		}()
+		if err != nil {
+			return "", err
+		}
 	}
 
 	return destDir, nil
