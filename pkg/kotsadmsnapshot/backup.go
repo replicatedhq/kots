@@ -2,7 +2,6 @@ package snapshot
 
 import (
 	"context"
-	"database/sql"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -557,7 +556,7 @@ func ListInstanceBackups() ([]*types.Backup, error) {
 			for slug, sequence := range apps {
 				a, err := store.GetStore().GetAppFromSlug(slug)
 				if err != nil {
-					if errors.Cause(err) == sql.ErrNoRows {
+					if store.GetStore().IsNotFound(err) {
 						// app might not exist in current installation
 						continue
 					}
