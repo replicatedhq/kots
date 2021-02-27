@@ -115,8 +115,15 @@ func (h *Handler) AppUpdateCheck(w http.ResponseWriter, r *http.Request) {
 			file.Close()
 		}
 
+		finishedChan := make(chan error)
+		defer close(finishedChan)
+
+		airgap.StartUpdateTaskMonitor(finishedChan)
+
 		err = airgap.UpdateAppFromPath(foundApp, rootDir, "", deploy, skipPreflights)
 		if err != nil {
+			finishedChan <- err
+
 			logger.Error(errors.Wrap(err, "failed to upgrde app"))
 			w.WriteHeader(http.StatusInternalServerError)
 
