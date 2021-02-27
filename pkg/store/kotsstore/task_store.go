@@ -3,7 +3,6 @@ package kotsstore
 import (
 	"database/sql"
 	"encoding/json"
-	"sync"
 	"time"
 
 	"github.com/pkg/errors"
@@ -12,10 +11,6 @@ import (
 
 const (
 	TaskStatusConfigMapName = `kotsadm-tasks`
-)
-
-var (
-	taskStatusLock = sync.Mutex{}
 )
 
 type taskStatus struct {
@@ -80,9 +75,6 @@ func (s KOTSStore) migrationTasksFromPostgres() error {
 }
 
 func (s KOTSStore) SetTaskStatus(id string, message string, status string) error {
-	taskStatusLock.Lock()
-	defer taskStatusLock.Unlock()
-
 	configmap, err := s.getConfigmap(TaskStatusConfigMapName)
 	if err != nil {
 		return errors.Wrap(err, "failed to get task status configmap")
@@ -119,9 +111,6 @@ func (s KOTSStore) SetTaskStatus(id string, message string, status string) error
 }
 
 func (s KOTSStore) UpdateTaskStatusTimestamp(id string) error {
-	taskStatusLock.Lock()
-	defer taskStatusLock.Unlock()
-
 	configmap, err := s.getConfigmap(TaskStatusConfigMapName)
 	if err != nil {
 		return errors.Wrap(err, "failed to get task status configmap")
@@ -158,9 +147,6 @@ func (s KOTSStore) UpdateTaskStatusTimestamp(id string) error {
 }
 
 func (s KOTSStore) ClearTaskStatus(id string) error {
-	taskStatusLock.Lock()
-	defer taskStatusLock.Unlock()
-
 	configmap, err := s.getConfigmap(TaskStatusConfigMapName)
 	if err != nil {
 		return errors.Wrap(err, "failed to get task status configmap")
