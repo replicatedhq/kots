@@ -21,7 +21,7 @@ func renderHelmV3(chartName string, chartPath string, vals map[string]interface{
 	}
 	client := action.NewInstall(cfg)
 	client.DryRun = true
-	client.ReleaseName = "RELEASE-NAME"
+	client.ReleaseName = chartName
 	client.Replace = true
 	client.ClientOnly = true
 	client.IncludeCRDs = true
