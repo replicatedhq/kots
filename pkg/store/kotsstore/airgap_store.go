@@ -62,22 +62,12 @@ func (s KOTSStore) GetAirgapInstallStatus(appID string) (*airgaptypes.InstallSta
 }
 
 func (s KOTSStore) ResetAirgapInstallInProgress(appID string) error {
-	slug, err := s.GetAppSlugFromID(appID)
-	if err != nil {
-		return errors.Wrap(err, "failed to get app slug")
-	}
-
 	db := persistence.MustGetPGSession()
 
 	query := `update app set install_state = 'airgap_upload_in_progress' where id = $1`
-	_, err = db.Exec(query, appID)
+	_, err := db.Exec(query, appID)
 	if err != nil {
 		return errors.Wrap(err, "failed to set update airgap install status")
-	}
-
-	err = s.ClearTaskStatus(fmt.Sprintf("airgap-install-slug-%s", slug))
-	if err != nil {
-		return errors.Wrap(err, "failed to clear out task status")
 	}
 
 	return nil

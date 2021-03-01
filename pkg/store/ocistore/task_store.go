@@ -120,7 +120,7 @@ func (s OCIStore) GetTaskStatus(id string) (string, string, error) {
 	}
 
 	if configmap.Data == nil {
-		configmap.Data = map[string]string{}
+		return "", "", nil
 	}
 
 	marshalled, ok := configmap.Data[id]
@@ -131,6 +131,10 @@ func (s OCIStore) GetTaskStatus(id string) (string, string, error) {
 	ts := taskStatus{}
 	if err := json.Unmarshal([]byte(marshalled), &ts); err != nil {
 		return "", "", errors.Wrap(err, "error unmarshalling task status")
+	}
+
+	if ts.UpdatedAt.Before(time.Now().Add(-10 * time.Second)) {
+		return "", "", nil
 	}
 
 	return ts.Status, ts.Message, nil
