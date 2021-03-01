@@ -618,21 +618,6 @@ func (mr *MockStoreMockRecorder) GetAppIDFromSlug(slug interface{}) *gomock.Call
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAppIDFromSlug", reflect.TypeOf((*MockStore)(nil).GetAppIDFromSlug), slug)
 }
 
-// GetAppSlugFromID mocks base method
-func (m *MockStore) GetAppSlugFromID(appID string) (string, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetAppSlugFromID", appID)
-	ret0, _ := ret[0].(string)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetAppSlugFromID indicates an expected call of GetAppSlugFromID
-func (mr *MockStoreMockRecorder) GetAppSlugFromID(appID interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAppSlugFromID", reflect.TypeOf((*MockStore)(nil).GetAppSlugFromID), appID)
-}
-
 // GetApp mocks base method
 func (m *MockStore) GetApp(appID string) (*types4.App, error) {
 	m.ctrl.T.Helper()
@@ -2069,21 +2054,6 @@ func (m *MockAppStore) GetAppIDFromSlug(slug string) (string, error) {
 func (mr *MockAppStoreMockRecorder) GetAppIDFromSlug(slug interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAppIDFromSlug", reflect.TypeOf((*MockAppStore)(nil).GetAppIDFromSlug), slug)
-}
-
-// GetAppSlugFromID mocks base method
-func (m *MockAppStore) GetAppSlugFromID(appID string) (string, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetAppSlugFromID", appID)
-	ret0, _ := ret[0].(string)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetAppSlugFromID indicates an expected call of GetAppSlugFromID
-func (mr *MockAppStoreMockRecorder) GetAppSlugFromID(appID interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAppSlugFromID", reflect.TypeOf((*MockAppStore)(nil).GetAppSlugFromID), appID)
 }
 
 // GetApp mocks base method

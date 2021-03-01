@@ -24,32 +24,42 @@ import (
 	"github.com/replicatedhq/kots/pkg/version"
 )
 
-func UpdateAppFromAirgap(a *apptypes.App, airgapBundlePath string, deploy bool, skipPreflights bool) (finalError error) {
-	finishedCh := make(chan struct{})
-	defer close(finishedCh)
+func StartUpdateTaskMonitor(finishedChan <-chan error) {
 	go func() {
+		var finalError error
+		defer func() {
+			if finalError == nil {
+				if err := store.GetStore().ClearTaskStatus("update-download"); err != nil {
+					logger.Error(errors.Wrap(err, "failed to clear update-download task status"))
+				}
+			} else {
+				if err := store.GetStore().SetTaskStatus("update-download", finalError.Error(), "failed"); err != nil {
+					logger.Error(errors.Wrap(err, "failed to set error on update-download task status"))
+				}
+			}
+		}()
+
 		for {
 			select {
 			case <-time.After(time.Second):
 				if err := store.GetStore().UpdateTaskStatusTimestamp("update-download"); err != nil {
 					logger.Error(err)
 				}
-			case <-finishedCh:
+			case err := <-finishedChan:
+				finalError = err
 				return
 			}
 		}
 	}()
+}
 
+func UpdateAppFromAirgap(a *apptypes.App, airgapBundlePath string, deploy bool, skipPreflights bool) (finalError error) {
+	finishedChan := make(chan error)
+	defer close(finishedChan)
+
+	StartUpdateTaskMonitor(finishedChan)
 	defer func() {
-		if finalError == nil {
-			if err := store.GetStore().ClearTaskStatus("update-download"); err != nil {
-				logger.Error(errors.Wrap(err, "failed to clear update-download task status"))
-			}
-		} else {
-			if err := store.GetStore().SetTaskStatus("update-download", finalError.Error(), "failed"); err != nil {
-				logger.Error(errors.Wrap(err, "failed to set error on update-download task status"))
-			}
-		}
+		finishedChan <- finalError
 	}()
 
 	if err := store.GetStore().SetTaskStatus("update-download", "Extracting files...", "running"); err != nil {

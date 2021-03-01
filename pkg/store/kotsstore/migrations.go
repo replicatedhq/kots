@@ -40,6 +40,10 @@ func (s KOTSStore) RunMigrations() {
 	if err := s.migrateSessionsFromPostgres(); err != nil {
 		logger.Error(errors.Wrap(err, "failed to migrate sessions"))
 	}
+
+	if err := s.migrationTasksFromPostgres(); err != nil {
+		logger.Error(errors.Wrap(err, "failed to migrate tasks"))
+	}
 }
 
 func (s KOTSStore) migrateKotsAppSpec() error {
