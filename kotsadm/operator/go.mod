@@ -6,7 +6,7 @@ require (
 	github.com/blang/semver v3.5.1+incompatible
 	github.com/google/martian v2.1.0+incompatible
 	github.com/gorilla/mux v1.8.0
-	github.com/gorilla/websocket v1.4.0
+	github.com/gorilla/websocket v1.4.2
 	github.com/hashicorp/logutils v1.0.0 // indirect
 	github.com/mitchellh/hashstructure v1.0.0
 	github.com/pact-foundation/pact-go v1.0.0-beta.5
