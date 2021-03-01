@@ -9,11 +9,10 @@ import (
 	"github.com/pkg/errors"
 	"helm.sh/helm/v3/pkg/action"
 	"helm.sh/helm/v3/pkg/chart/loader"
-	"helm.sh/helm/v3/pkg/releaseutil"
 )
 
 var (
-	HelmV3ManifestNameRegex = regexp.MustCompile("^# Source: [^/]+/(.+)\n")
+	HelmV3ManifestNameRegex = regexp.MustCompile("^# Source: (.+)")
 )
 
 func renderHelmV3(chartName string, chartPath string, vals map[string]interface{}, renderOptions *RenderOptions) (map[string]string, error) {
@@ -52,14 +51,22 @@ func renderHelmV3(chartName string, chartPath string, vals map[string]interface{
 
 	resources := map[string][]string{}
 
-	splitManifests := releaseutil.SplitManifests(manifests.String())
+	splitManifests := splitManifests(manifests.String())
+	manifestName := ""
 	for _, manifest := range splitManifests {
 		submatch := HelmV3ManifestNameRegex.FindStringSubmatch(manifest)
-		if len(submatch) == 0 {
+		if len(submatch) > 0 {
+			// multi-doc manifests will not have the Source comment so use the previous name
+			manifestName = strings.TrimPrefix(submatch[1], fmt.Sprintf("%s/", chartName))
+		}
+		if manifestName == "" {
+			// if the manifest name is empty im not sure what to do with the doc
+			continue
+		} else if strings.TrimSpace(manifest) == "" {
+			// filter out empty docs
 			continue
 		}
-		manifestName := submatch[1]
-		resources[manifestName] = append(resources[manifestName], HelmV3ManifestNameRegex.ReplaceAllString(manifest, ""))
+		resources[manifestName] = append(resources[manifestName], manifest)
 	}
 
 	multidocResources := map[string]string{}
@@ -67,4 +74,18 @@ func renderHelmV3(chartName string, chartPath string, vals map[string]interface{
 		multidocResources[manifestName] = strings.Join(manifests, "\n---\n")
 	}
 	return multidocResources, nil
+}
+
+var sep = regexp.MustCompile("(?:^|\\s*\n)---\\s*")
+
+func splitManifests(bigFile string) []string {
+	res := []string{}
+	// Making sure that any extra whitespace in YAML stream doesn't interfere in splitting documents correctly.
+	bigFileTmp := strings.TrimSpace(bigFile)
+	docs := sep.Split(bigFileTmp, -1)
+	for _, d := range docs {
+		d = strings.TrimSpace(d)
+		res = append(res, d)
+	}
+	return res
 }
