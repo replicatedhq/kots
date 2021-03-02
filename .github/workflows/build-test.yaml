@@ -162,6 +162,7 @@ jobs:
           --backup-location-config region=us-east-1 \
           --snapshot-location-config region=us-east-1 \
           --secret-file ./aws-credentials \
+          --prefix /automated-${{ github.run_id }} \
           --use-restic
       
       - name: prepare legacy tests
@@ -214,6 +215,8 @@ jobs:
             kubectl -n legacy logs deployment/kotsadm-operator
             echo "------previous kotsadm-operator logs"
             kubectl -n legacy logs -p deployment/kotsadm-operator
+            echo "------velero logs"
+            kubectl -n velero logs deployment/velero
           fi
           kill $ADMIN_CONSOLE_PID
           exit $EXIT_CODE
