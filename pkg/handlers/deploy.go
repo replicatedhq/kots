@@ -41,6 +41,7 @@ type UpdateUndeployResultRequest struct {
 type DeployAppVersionRequest struct {
 	IsSkipPreflights             bool `json:"isSkipPreflights"`
 	ContinueWithFailedPreflights bool `json:"continueWithFailedPreflights"`
+	IsAirgap                     bool `json:"isAirgap"`
 }
 
 func (h *Handler) DeployAppVersion(w http.ResponseWriter, r *http.Request) {
@@ -81,25 +82,27 @@ func (h *Handler) DeployAppVersion(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// preflights reports
-	go func() {
-		if request.IsSkipPreflights {
-			isUpdate := false
-			if err := reporting.SendPreflightInfo(a.ID, int(sequence), request.IsSkipPreflights, isUpdate); err != nil {
-				logger.Debugf("failed to send preflights data to replicated app: %v", err)
-				return
+	if !request.IsAirgap {
+		go func() {
+			if request.IsSkipPreflights {
+				isUpdate := false
+				if err := reporting.SendPreflightInfo(a.ID, int(sequence), request.IsSkipPreflights, isUpdate); err != nil {
+					logger.Debugf("failed to send preflights data to replicated app: %v", err)
+					return
+				}
 			}
-		}
-	}()
+		}()
 
-	go func() {
-		if request.ContinueWithFailedPreflights && !request.IsSkipPreflights {
-			isUpdate := true
-			if err := reporting.SendPreflightInfo(a.ID, int(sequence), request.IsSkipPreflights, isUpdate); err != nil {
-				logger.Debugf("failed to send preflights data to replicated app: %v", err)
-				return
+		go func() {
+			if request.ContinueWithFailedPreflights && !request.IsSkipPreflights {
+				isUpdate := true
+				if err := reporting.SendPreflightInfo(a.ID, int(sequence), request.IsSkipPreflights, isUpdate); err != nil {
+					logger.Debugf("failed to send preflights data to replicated app: %v", err)
+					return
+				}
 			}
-		}
-	}()
+		}()
+	}
 
 	if err := downstream.DeleteDownstreamDeployStatus(a.ID, downstreams[0].ClusterID, int64(sequence)); err != nil {
 		logger.Error(err)

@@ -259,18 +259,24 @@ class PreflightResultPage extends Component {
     }
   }
 
-  sendPreflightsReport = async () => {
+  sendPreflightsReport = async (appsList) => {
     const { slug } = this.props.match.params;
 
-    fetch(`${window.env.API_ENDPOINT}/app/${slug}/preflight/report`, {
-      headers: {
-        "Content-Type": "application/json",
-        "Accept": "application/json",
-        "Authorization": Utilities.getToken(),
-      },
-      method: "POST",
-    })
-      this.props.history.push(`/app/${slug}`)
+    if (appsList?.length > 0) {
+      const currentApp = appsList?.find(a => a.slug === slug);
+
+      if (!currentApp.isAirgap) {
+        fetch(`${window.env.API_ENDPOINT}/app/${slug}/preflight/report`, {
+          headers: {
+            "Content-Type": "application/json",
+            "Accept": "application/json",
+            "Authorization": Utilities.getToken(),
+          },
+          method: "POST",
+        })
+      }
+    }
+    this.props.history.push(`/app/${slug}`)
   }
 
   render() {
@@ -373,7 +379,7 @@ class PreflightResultPage extends Component {
             <p className="u-fontSize--normal u-color--dustyGray u-lineHeight--normal u-marginBottom--20">Skipping preflight checks will not cancel them. They will continue to run in the background. Do you want to continue to the {slug} dashboard? </p>
             <div className="u-marginTop--10 flex justifyContent--flexEnd">
               <button type="button" className="btn secondary" onClick={this.hideSkipModal}>Close</button>
-              <button type="button" className="btn blue primary u-marginLeft--10" onClick={this.sendPreflightsReport}>Go to Dashboard</button>
+              <button type="button" className="btn blue primary u-marginLeft--10" onClick={() => this.sendPreflightsReport(this.props.appsList)}>Go to Dashboard</button>
             </div>
           </div>
         </Modal>

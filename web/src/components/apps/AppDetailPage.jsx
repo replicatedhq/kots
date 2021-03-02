@@ -112,7 +112,8 @@ class AppDetailPage extends Component {
         method: "POST",
         body: JSON.stringify({ 
           isSkipPreflights: isSkipPreflights ,
-          continueWithFailedPreflights: continueWithFailedPreflights
+          continueWithFailedPreflights: continueWithFailedPreflights,
+          isAirgap: this.state.app?.isAirgap
         }),
       });
       if (res.ok && res.status === 204) {
