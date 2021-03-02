@@ -62,6 +62,7 @@ func (s KOTSStore) migrateSupportBundlesFromPostgres() error {
 			return errors.Wrap(err, "failed to scan")
 		}
 
+		s.Slug = s.ID
 		s.Name = name.String
 		s.Size = size.Float64
 		s.IsArchived = isArchived.Bool
@@ -589,7 +590,6 @@ func (s KOTSStore) getSupportBundleMetafile(id string, filename string) ([]byte,
 	bucket := aws.String(os.Getenv("S3_BUCKET_NAME"))
 	key := aws.String(filepath.Join("supportbundles", id, fmt.Sprintf("%s.gz", filename)))
 
-	// gzipBuffer := new(bytes.Buffer)
 	// Using a temp file here because Download uses WriterAt type, which bytes.Buffer does not implement.
 	gzipFile, err := ioutil.TempFile("", filename)
 	if err != nil {
