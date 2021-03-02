@@ -176,12 +176,22 @@ func waitForS3(ctx context.Context) error {
 }
 
 func (s KOTSStore) IsNotFound(err error) bool {
+	if err == nil {
+		return false
+	}
+
 	if errors.Cause(err) == sql.ErrNoRows {
 		return true
 	}
+
 	if errors.Cause(err) == ErrNotFound {
 		return true
 	}
+
+	if aerr, ok := err.(awserr.Error); ok && aerr.Code() == "NotFound" {
+		return true
+	}
+
 	return false
 }
 

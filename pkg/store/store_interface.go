@@ -59,7 +59,6 @@ type RegistryStore interface {
 type SupportBundleStore interface {
 	ListSupportBundles(appID string) ([]*supportbundletypes.SupportBundle, error)
 	ListPendingSupportBundlesForApp(appID string) ([]*supportbundletypes.PendingSupportBundle, error)
-	GetSupportBundleFromSlug(slug string) (*supportbundletypes.SupportBundle, error)
 	GetSupportBundle(bundleID string) (*supportbundletypes.SupportBundle, error)
 	CreatePendingSupportBundle(bundleID string, appID string, clusterID string) error
 	CreateSupportBundle(bundleID string, appID string, archivePath string, marshalledTree []byte) (*supportbundletypes.SupportBundle, error)
@@ -69,6 +68,7 @@ type SupportBundleStore interface {
 	GetRedactions(bundleID string) (troubleshootredact.RedactionList, error)
 	SetRedactions(bundleID string, redacts troubleshootredact.RedactionList) error
 	GetSupportBundleSpecForApp(id string) (spec string, err error)
+	DeletePendingSupportBundle(id string) error
 }
 
 type PreflightStore interface {
