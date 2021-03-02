@@ -144,11 +144,31 @@ jobs:
 
       ## testim tests
 
+      - name: aws credentials setup
+        run: | 
+          cat > aws-credentials << EOL
+          [default]
+          aws_access_key_id=${{ secrets.TESTIM_AWS_ACCESS_KEY_ID }}
+          aws_secret_access_key=${{ secrets.TESTIM_AWS_SECRET_ACCESS_KEY }}
+          EOL
+
+      - name: velero install
+        run: |
+          curl -LO https://github.com/vmware-tanzu/velero/releases/download/v1.5.2/velero-v1.5.2-linux-amd64.tar.gz && tar zxvf velero-v1.5.2-linux-amd64.tar.gz && \
+          ./velero-v1.5.2-linux-amd64/velero install \
+          --provider aws \
+          --plugins velero/velero-plugin-for-aws:v1.1.0 \
+          --bucket kots-testim-snapshots \
+          --backup-location-config region=us-east-1 \
+          --snapshot-location-config region=us-east-1 \
+          --secret-file ./aws-credentials \
+          --use-restic
+      
       - name: prepare legacy tests
         run: |
           set +e
           ./bin/kots \
-          install qakots/github-actions \
+          install qakotstestim/github-actions-qa \
           --port-forward=false \
           --namespace legacy \
           --shared-password password \
@@ -169,12 +189,19 @@ jobs:
             kubectl -n legacy logs -p deployment/kotsadm-operator
           fi
           exit $EXIT_CODE
+      
+      - name: get branch
+        if: startsWith(github.ref, 'refs/heads/')
+        id: get_branch
+        shell: bash
+        run: BRANCH=${GITHUB_REF/refs\/heads\//} && echo ::set-output name=GIT_BRANCH::${BRANCH:-master}
+
       - name: execute legacy tests
         run: |
           set +e
           ./bin/kots admin-console -n legacy &
           ADMIN_CONSOLE_PID=$!
-          testim --token ${{ secrets.TESTIM_ACCESS_TOKEN }} --project ${{ secrets.TESTIM_PROJECT_ID }} --grid "Testim-grid" --report-file testim-report.xml --suite legacy --tunnel --tunnel-port 8800
+          testim --token ${{ secrets.TESTIM_ACCESS_TOKEN }} --project ${{ secrets.TESTIM_PROJECT_ID }} --grid "Testim-grid" --branch ${{ steps.get_branch.outputs.GIT_BRANCH }} --report-file testim-report.xml --suite legacy --tunnel --tunnel-port 8800
           EXIT_CODE=$?
           if [ $EXIT_CODE -ne 0 ]; then
             echo "------pods:"
@@ -207,6 +234,9 @@ jobs:
       #     ADMIN_CONSOLE_PID=$!
       #     testim --token ${{ secrets.TESTIM_ACCESS_TOKEN }} --project ${{ secrets.TESTIM_PROJECT_ID }} --grid "Testim-grid" --report-file testim-report.xml --suite alpha --tunnel --tunnel-port 8800
       #     kill $ADMIN_CONSOLE_PID
+
+      - name: delete velero namespace
+        run: kubectl delete namespace velero
 
       - name: prepare minimal-rbac online install
         run: |
