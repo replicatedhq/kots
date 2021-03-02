@@ -1,10 +1,13 @@
 package kotsstore
 
 import (
+	"bytes"
+	"compress/gzip"
 	"context"
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -72,11 +75,6 @@ func (s KOTSStore) migrateSupportBundlesFromPostgres() error {
 	}
 
 	for _, supportBundle := range supportBundles {
-		bundleMarshaled, err := json.Marshal(supportBundle)
-		if err != nil {
-			return errors.Wrap(err, "failed to marshal bundle")
-		}
-
 		analysisMarshaled := []byte{}
 
 		// NOTE we are dropping ID, error and max_severity from the data because it's not used and has unknown validity
@@ -112,8 +110,6 @@ func (s KOTSStore) migrateSupportBundlesFromPostgres() error {
 			analysisMarshaled = b
 		}
 
-		redactionsMarshaled := []byte{}
-
 		query = `select redact_report from supportbundle where id = $1`
 		var redactString sql.NullString
 		row = db.QueryRow(query, supportBundle.ID)
@@ -121,7 +117,19 @@ func (s KOTSStore) migrateSupportBundlesFromPostgres() error {
 			return errors.Wrap(err, "failed to scan")
 		}
 		if redactString.Valid && redactString.String != "" {
-			redactionsMarshaled = []byte(redactString.String)
+			if err := s.saveSupportBundleMetafile(supportBundle.ID, "redactions", []byte(redactString.String)); err != nil {
+				return errors.Wrap(err, "faile to save redactions")
+			}
+		}
+
+		if err := s.saveSupportBundleMetafile(supportBundle.ID, "treeindex", []byte(supportBundle.TreeIndex)); err != nil {
+			return errors.Wrap(err, "faile to save treeindex")
+		}
+		supportBundle.TreeIndex = ""
+
+		bundleMarshaled, err := json.Marshal(supportBundle)
+		if err != nil {
+			return errors.Wrap(err, "failed to marshal bundle")
 		}
 
 		labels := kotsadmtypes.GetKotsadmLabels()
@@ -139,9 +147,8 @@ func (s KOTSStore) migrateSupportBundlesFromPostgres() error {
 				Labels:    labels,
 			},
 			Data: map[string][]byte{
-				"bundle":     bundleMarshaled,
-				"analysis":   analysisMarshaled,
-				"redactions": redactionsMarshaled,
+				"bundle":   bundleMarshaled,
+				"analysis": analysisMarshaled,
 			},
 		}
 
@@ -266,6 +273,15 @@ func (s KOTSStore) GetSupportBundle(id string) (*types.SupportBundle, error) {
 		return nil, errors.Wrap(err, "failed to unmarshal")
 	}
 
+	treeindex, err := s.getSupportBundleMetafile(id, "treeindex")
+	if err != nil {
+		if !s.IsNotFound(err) {
+			return nil, errors.Wrap(err, "failed to get treeindex from s3")
+		}
+	}
+
+	supportBundle.TreeIndex = string(treeindex)
+
 	return &supportBundle, nil
 }
 
@@ -317,6 +333,10 @@ func (s KOTSStore) CreateSupportBundle(id string, appID string, archivePath stri
 		return nil, errors.Wrap(err, "failed to read archive")
 	}
 
+	if err := s.saveSupportBundleMetafile(id, "treeindex", marshalledTree); err != nil {
+		return nil, errors.Wrap(err, "faile to save treeindex")
+	}
+
 	// upload the bundle to s3
 	bucket := aws.String(os.Getenv("S3_BUCKET_NAME"))
 	key := aws.String(filepath.Join("supportbundles", id, "supportbundle.tar.gz"))
@@ -346,7 +366,6 @@ func (s KOTSStore) CreateSupportBundle(id string, appID string, archivePath stri
 		Size:      float64(fi.Size()),
 		Status:    "uploaded",
 		CreatedAt: time.Now(),
-		TreeIndex: string(marshalledTree),
 	}
 	bundleMarshaled, err := json.Marshal(supportBundle)
 	if err != nil {
@@ -483,30 +502,22 @@ func (s KOTSStore) SetSupportBundleAnalysis(id string, results []byte) error {
 }
 
 func (s KOTSStore) GetRedactions(id string) (troubleshootredact.RedactionList, error) {
-	clientset, err := s.GetClientset()
-	if err != nil {
-		return troubleshootredact.RedactionList{}, errors.Wrap(err, "failed to get clientset")
-	}
-
-	secret, err := clientset.CoreV1().Secrets(os.Getenv("POD_NAMESPACE")).Get(context.TODO(), fmt.Sprintf("supportbundle-%s", id), metav1.GetOptions{})
-	if err != nil {
-		return troubleshootredact.RedactionList{}, errors.Wrap(err, "failed to get secret")
-	}
-
 	emptyRedactions := troubleshootredact.RedactionList{
 		ByRedactor: map[string][]troubleshootredact.Redaction{},
 		ByFile:     map[string][]troubleshootredact.Redaction{},
 	}
 
-	if _, ok := secret.Data["redactions"]; !ok {
-		return emptyRedactions, nil
+	redactions, err := s.getSupportBundleMetafile(id, "redactions")
+	if err != nil {
+		return troubleshootredact.RedactionList{}, errors.Wrap(err, "failed to get redactions from s3")
 	}
-	if len(secret.Data["redactions"]) == 0 {
+
+	if len(redactions) == 0 {
 		return emptyRedactions, nil
 	}
 
 	redacts := troubleshootredact.RedactionList{}
-	err = json.Unmarshal(secret.Data["redactions"], &redacts)
+	err = json.Unmarshal(redactions, &redacts)
 	if err != nil {
 		return troubleshootredact.RedactionList{}, errors.Wrap(err, "failed to unmarshal redact report")
 	}
@@ -520,20 +531,8 @@ func (s KOTSStore) SetRedactions(id string, redacts troubleshootredact.Redaction
 		return errors.Wrap(err, "failed to marshal redactionlist")
 	}
 
-	clientset, err := s.GetClientset()
-	if err != nil {
-		return errors.Wrap(err, "failed to get clientset")
-	}
-
-	secret, err := clientset.CoreV1().Secrets(os.Getenv("POD_NAMESPACE")).Get(context.TODO(), fmt.Sprintf("supportbundle-%s", id), metav1.GetOptions{})
-	if err != nil {
-		return errors.Wrap(err, "failed to get secret")
-	}
-
-	secret.Data["redactions"] = redactBytes
-
-	if _, err := clientset.CoreV1().Secrets(os.Getenv("POD_NAMESPACE")).Update(context.TODO(), secret, metav1.UpdateOptions{}); err != nil {
-		return errors.Wrap(err, "failed to update")
+	if err := s.saveSupportBundleMetafile(id, "redactions", redactBytes); err != nil {
+		return errors.Wrap(err, "faile to save redactions to s3")
 	}
 
 	return nil
@@ -553,6 +552,83 @@ func (s KOTSStore) GetSupportBundleSpecForApp(id string) (string, error) {
 		return "", err
 	}
 	return spec, nil
+}
+
+func (s KOTSStore) saveSupportBundleMetafile(id string, filename string, data []byte) error {
+	var gzipped bytes.Buffer
+	gzipWriter := gzip.NewWriter(&gzipped)
+	defer gzipWriter.Close()
+
+	if _, err := gzipWriter.Write(data); err != nil {
+		return errors.Wrap(err, "failed to write temp file")
+	}
+	gzipWriter.Close()
+
+	bucket := aws.String(os.Getenv("S3_BUCKET_NAME"))
+	key := aws.String(filepath.Join("supportbundles", id, fmt.Sprintf("%s.gz", filename)))
+
+	newSession := awssession.New(kotss3.GetConfig())
+
+	s3Client := s3.New(newSession)
+
+	_, err := s3Client.PutObject(&s3.PutObjectInput{
+		Body:   bytes.NewReader(gzipped.Bytes()),
+		Bucket: bucket,
+		Key:    key,
+	})
+	if err != nil {
+		return errors.Wrap(err, "failed to upload to s3")
+	}
+
+	return nil
+}
+
+func (s KOTSStore) getSupportBundleMetafile(id string, filename string) ([]byte, error) {
+	newSession := awssession.New(kotss3.GetConfig())
+
+	bucket := aws.String(os.Getenv("S3_BUCKET_NAME"))
+	key := aws.String(filepath.Join("supportbundles", id, fmt.Sprintf("%s.gz", filename)))
+
+	// gzipBuffer := new(bytes.Buffer)
+	// Using a temp file here because Download uses WriterAt type, which bytes.Buffer does not implement.
+	gzipFile, err := ioutil.TempFile("", filename)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to create tmp file")
+	}
+	defer gzipFile.Close()
+	defer os.Remove(gzipFile.Name())
+
+	downloader := s3manager.NewDownloader(newSession)
+	_, err = downloader.Download(gzipFile,
+		&s3.GetObjectInput{
+			Bucket: bucket,
+			Key:    key,
+		})
+	if err != nil {
+		if s.IsNotFound(err) {
+			return nil, nil
+		}
+		return nil, errors.Wrap(err, "failed to download from s3")
+	}
+
+	_, err = gzipFile.Seek(0, 0)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to seek temp file back to 0")
+	}
+
+	gzipReader, err := gzip.NewReader(gzipFile)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to read gzip data")
+	}
+	defer gzipReader.Close()
+
+	dataBuffer := new(bytes.Buffer)
+	_, err = io.Copy(dataBuffer, gzipReader)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to read gzip data")
+	}
+
+	return dataBuffer.Bytes(), nil
 }
 
 func insightsFromResults(results []byte) ([]types.SupportBundleInsight, error) {

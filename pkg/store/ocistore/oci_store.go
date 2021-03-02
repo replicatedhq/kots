@@ -4,6 +4,7 @@ import (
 	"context"
 	"os"
 
+	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/pkg/errors"
 	kotsadmobjects "github.com/replicatedhq/kots/pkg/kotsadm/objects"
 	corev1 "k8s.io/api/core/v1"
@@ -47,6 +48,9 @@ func (s OCIStore) WaitForReady(ctx context.Context) error {
 func (s OCIStore) IsNotFound(err error) bool {
 	if err == nil {
 		return false
+	}
+	if aerr, ok := err.(awserr.Error); ok && aerr.Code() == "NotFound" {
+		return true
 	}
 	return errors.Cause(err) == ErrNotFound
 }
