@@ -229,7 +229,7 @@ func Deploy(deployOptions types.DeployOptions) error {
 	}
 
 	if err := ensureStorage(deployOptions, clientset, log); err != nil {
-		return errors.Wrap(err, "failed to deplioyt backing storage")
+		return errors.Wrap(err, "failed to deploy to backing storage") // originally 'failed to deplioyt backing storage'
 	}
 
 	if err := ensureKotsadm(deployOptions, clientset, log); err != nil {
