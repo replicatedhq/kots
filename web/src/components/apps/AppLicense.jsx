@@ -211,6 +211,7 @@ class AppLicense extends Component {
                     {appLicense.entitlements?.map((entitlement, i) => {
                       const currEntitlement = this.state.entitlementsToShow.find(f => f === entitlement.title);
                       const isTextField = entitlement.valueType === "Text";
+                      const isBooleanField = entitlement.valueType === "Boolean";
                       if (entitlement.value.length > 30 && (currEntitlement !== entitlement.title)) {
                         return (
                           <span key={entitlement.label} className={`u-fontSize--small u-lineHeight--normal u-color--doveGray u-fontWeight--medium u-marginRight--10 ${i !== 0 ? "u-marginLeft--5" : ""}`}> {entitlement.title}: <span className={`u-fontWeight--bold ${isTextField && "u-fontFamily--monospace"}`}> {entitlement.value.slice(0, 30) + "..."} </span>
@@ -225,18 +226,17 @@ class AppLicense extends Component {
                         )
                       } else {
                         return (
-                          <span key={entitlement.label} className={`u-fontSize--small u-lineHeight--normal u-color--doveGray u-fontWeight--medium u-marginRight--10 ${i !== 0 ? "u-marginLeft--5" : ""}`}> {entitlement.title}: <span className={`u-fontWeight--bold ${isTextField && "u-fontFamily--monospace"}`}> {entitlement.value} </span></span>
+                          <span key={entitlement.label} className={`u-fontSize--small u-lineHeight--normal u-color--doveGray u-fontWeight--medium u-marginRight--10 ${i !== 0 ? "u-marginLeft--5" : ""}`}> {entitlement.title}: <span className={`u-fontWeight--bold ${isTextField && "u-fontFamily--monospace"}`}> {isBooleanField ? entitlement.value.toString() : entitlement.value} </span></span>
                         );
                       }
                     })}
                   </div>}
-                <div className="flexWrap--wrap flex alignItems--center u-marginTop--10">
-                  {appLicense?.isAirgapSupported ? <span className="flex alignItems--center u-fontWeight--medium u-fontSize--small u-lineHeight--normal u-color--tundora u-marginRight--10"><span className="icon licenseAirgapIcon" /> Airgap enabled </span> : null}
-                  {appLicense?.isSnapshotSupported ? <span className="flex alignItems--center u-fontWeight--medium u-fontSize--small u-lineHeight--normal u-color--tundora u-marginLeft--5 u-marginRight--10"><span className="icon licenseVeleroIcon" /> Snapshots enabled </span> : null}
-                  {appLicense?.isGitOpsSupported ? <span className="flex alignItems--center u-fontWeight--medium u-fontSize--small u-lineHeight--normal u-color--tundora u-marginLeft--5 u-marginRight--10"><span className="icon licenseGithubIcon" /> GitOps enabled </span> : null}
-                  {/* TODO missing icon */}
-                  {appLicense?.isIdentityServiceSupported ? <span className="flex alignItems--center u-fontWeight--medium u-fontSize--small u-lineHeight--normal u-color--tundora u-marginLeft--5 u-marginRight--10"><span className="icon licenseIdentityIcon" /> Identity Service enabled </span> : null}
-                  {appLicense?.isGeoaxisSupported ? <span className="flex alignItems--center u-fontWeight--medium u-fontSize--small u-lineHeight--normal u-color--tundora u-marginLeft--5 u-marginRight--10"><span className="icon licenseGeoaxisIcon" /> GEOAxIS Provider enabled </span> : null}
+                <div className="flexWrap--wrap flex alignItems--center">
+                  {appLicense?.isAirgapSupported ? <span className="flex alignItems--center u-fontWeight--medium u-fontSize--small u-lineHeight--normal u-color--tundora u-marginRight--10 u-marginTop--10"><span className="icon licenseAirgapIcon" /> Airgap enabled </span> : null}
+                  {appLicense?.isSnapshotSupported ? <span className="flex alignItems--center u-fontWeight--medium u-fontSize--small u-lineHeight--normal u-color--tundora u-marginLeft--5 u-marginRight--10 u-marginTop--10"><span className="icon licenseVeleroIcon" /> Snapshots enabled </span> : null}
+                  {appLicense?.isGitOpsSupported ? <span className="flex alignItems--center u-fontWeight--medium u-fontSize--small u-lineHeight--normal u-color--tundora u-marginLeft--5 u-marginRight--10 u-marginTop--10"><span className="icon licenseGithubIcon" /> GitOps enabled </span> : null}
+                  {appLicense?.isIdentityServiceSupported ? <span className="flex alignItems--center u-fontWeight--medium u-fontSize--small u-lineHeight--normal u-color--tundora u-marginLeft--5 u-marginRight--10 u-marginTop--10"><span className="icon licenseIdentityIcon" /> Identity Service enabled </span> : null}
+                  {appLicense?.isGeoaxisSupported ? <span className="flex alignItems--center u-fontWeight--medium u-fontSize--small u-lineHeight--normal u-color--tundora u-marginLeft--5 u-marginRight--10 u-marginTop--10"><span className="icon licenseGeoaxisIcon" /> GEOAxIS Provider enabled </span> : null}
                 </div>
               </div>
               <div className="flex-column flex-auto alignItems--flexEnd justifyContent--center">
