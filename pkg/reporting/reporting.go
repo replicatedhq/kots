@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"os"
 	"time"
 
 	"github.com/pkg/errors"
@@ -14,7 +15,19 @@ import (
 	"github.com/replicatedhq/kots/pkg/store"
 )
 
+func isDevEnvironment() bool {
+	if os.Getenv("KOTSADM_TARGET_NAMESPACE") != "" {
+		return true
+	}
+	return false
+}
+
 func SendPreflightsReportToReplicatedApp(license *kotsv1beta1.License, appID string, clusterID string, sequence int, skipPreflights bool, installStatus string) error {
+
+	if isDevEnvironment() {
+		return nil
+	}
+
 	urlValues := url.Values{}
 
 	sequenceToStr := fmt.Sprintf("%d", sequence)

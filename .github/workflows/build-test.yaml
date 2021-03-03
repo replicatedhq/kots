@@ -162,7 +162,7 @@ jobs:
           --backup-location-config region=us-east-1 \
           --snapshot-location-config region=us-east-1 \
           --secret-file ./aws-credentials \
-          --prefix /automated-${{ github.run_id }} \
+          --prefix /automated-${{ github.run_id }}-${{ matrix.k8s_version }} \
           --use-restic
       
       - name: prepare legacy tests
