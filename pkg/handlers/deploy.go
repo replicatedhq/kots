@@ -16,6 +16,7 @@ import (
 	downstream "github.com/replicatedhq/kots/pkg/kotsadmdownstream"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/logger"
+	"github.com/replicatedhq/kots/pkg/reporting"
 	"github.com/replicatedhq/kots/pkg/store"
 	"github.com/replicatedhq/kots/pkg/supportbundle"
 	"github.com/replicatedhq/kots/pkg/version"
@@ -37,8 +38,22 @@ type UpdateUndeployResultRequest struct {
 	IsError bool   `json:"isError"`
 }
 
+type DeployAppVersionRequest struct {
+	IsSkipPreflights             bool `json:"isSkipPreflights"`
+	ContinueWithFailedPreflights bool `json:"continueWithFailedPreflights"`
+	IsAirgap                     bool `json:"isAirgap"`
+}
+
 func (h *Handler) DeployAppVersion(w http.ResponseWriter, r *http.Request) {
 	appSlug := mux.Vars(r)["appSlug"]
+
+	request := DeployAppVersionRequest{}
+	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
+		logger.Error(err)
+		w.WriteHeader(400)
+		return
+	}
+
 	sequence, err := strconv.Atoi(mux.Vars(r)["sequence"])
 	if err != nil {
 		logger.Error(err)
@@ -64,6 +79,29 @@ func (h *Handler) DeployAppVersion(w http.ResponseWriter, r *http.Request) {
 		logger.Error(err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
+	}
+
+	// preflights reports
+	if !request.IsAirgap {
+		go func() {
+			if request.IsSkipPreflights {
+				isUpdate := false
+				if err := reporting.SendPreflightInfo(a.ID, int(sequence), request.IsSkipPreflights, isUpdate); err != nil {
+					logger.Debugf("failed to send preflights data to replicated app: %v", err)
+					return
+				}
+			}
+		}()
+
+		go func() {
+			if request.ContinueWithFailedPreflights && !request.IsSkipPreflights {
+				isUpdate := true
+				if err := reporting.SendPreflightInfo(a.ID, int(sequence), request.IsSkipPreflights, isUpdate); err != nil {
+					logger.Debugf("failed to send preflights data to replicated app: %v", err)
+					return
+				}
+			}
+		}()
 	}
 
 	if err := downstream.DeleteDownstreamDeployStatus(a.ID, downstreams[0].ClusterID, int64(sequence)); err != nil {

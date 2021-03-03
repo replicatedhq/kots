@@ -15,13 +15,15 @@ import ShowDetailsModal from "@src/components/modals/ShowDetailsModal";
 import ShowLogsModal from "@src/components/modals/ShowLogsModal";
 import ErrorModal from "../modals/ErrorModal";
 import AppVersionHistoryRow from "@src/components/apps/AppVersionHistoryRow";
+import AppVersionHistoryHeader from "./AppVersionHistoryHeader";
+import DeployModal from "../shared/modals/DeployModal";
+import DeployWarningModal from "../shared/modals/DeployWarningModal";
 import { Utilities, isAwaitingResults, secondsAgo, getPreflightResultState, getGitProviderDiffUrl, getCommitHashFromUrl } from "../../utilities/utilities";
 import { Repeater } from "../../utilities/repeater";
 import { AirgapUploader } from "../../utilities/airgapUploader";
 import get from "lodash/get";
 
 import "@src/scss/components/apps/AppVersionHistory.scss";
-import AppVersionHistoryHeader from "./AppVersionHistoryHeader";
 dayjs.extend(relativeTime);
 
 const COMMON_ERRORS = {
@@ -69,6 +71,7 @@ class AppVersionHistory extends Component {
     displayErrorModal: false,
     displayConfirmDeploymentModal: false,
     confirmType: "",
+    isSkipPreflights: false
   }
 
   componentWillMount() {
@@ -278,7 +281,7 @@ class AppVersionHistory extends Component {
     );
   }
 
-  deployVersion = (version, force = false) => {
+  deployVersion = (version, force = false, continueWithFailedPreflights = false) => {
     const { app } = this.props;
     const clusterSlug = app.downstreams?.length && app.downstreams[0].cluster?.slug;
     if (!clusterSlug) {
@@ -301,7 +304,8 @@ class AppVersionHistory extends Component {
       if (version.status === "pending_preflight") {
         this.setState({
           showSkipModal: true,
-          versionToDeploy: version
+          versionToDeploy: version,
+          isSkipPreflights: true
         });
         return;
       }
@@ -324,15 +328,15 @@ class AppVersionHistory extends Component {
       });
       return;
     } else { // force deploy is set to true so finalize the deployment
-      this.finalizeDeployment();
+      this.finalizeDeployment(continueWithFailedPreflights);
     }
   }
 
-  finalizeDeployment = async () => {
+  finalizeDeployment = async (continueWithFailedPreflights) => {
     const { match, updateCallback } = this.props;
-    const { versionToDeploy } = this.state;
+    const { versionToDeploy, isSkipPreflights } = this.state;
     this.setState({ displayConfirmDeploymentModal: false, confirmType: "" });
-    await this.props.makeCurrentVersion(match.params.slug, versionToDeploy);
+    await this.props.makeCurrentVersion(match.params.slug, versionToDeploy, isSkipPreflights, continueWithFailedPreflights);
     await this.fetchKotsDownstreamHistory();
     this.setState({ versionToDeploy: null });
 
@@ -377,10 +381,10 @@ class AppVersionHistory extends Component {
     }
   }
 
-  onForceDeployClick = () => {
+  onForceDeployClick = (continueWithFailedPreflights = false) => {
     this.setState({ showSkipModal: false, showDeployWarningModal: false, displayShowDetailsModal: false });
     const versionToDeploy = this.state.versionToDeploy;
-    this.deployVersion(versionToDeploy, true);
+    this.deployVersion(versionToDeploy, true, continueWithFailedPreflights);
   }
 
   hideLogsModal = () => {
@@ -989,60 +993,20 @@ class AppVersionHistory extends Component {
             renderLogsTabs={this.renderLogsTabs()}
           />}
 
-        <Modal
-          isOpen={showDeployWarningModal}
-          onRequestClose={this.hideDeployWarningModal}
-          shouldReturnFocusAfterClose={false}
-          contentLabel="Skip preflight checks"
-          ariaHideApp={false}
-          className="Modal"
-        >
-          <div className="Modal-body">
-            <p className="u-fontSize--normal u-color--dustyGray u-lineHeight--normal u-marginBottom--20">
-              Preflight checks for this version are currently failing. Are you sure you want to make this the current version?
-            </p>
-            <div className="u-marginTop--10 flex">
-              <button
-                onClick={this.onForceDeployClick}
-                type="button"
-                className="btn blue primary"
-              >
-                Deploy this version
-              </button>
-              <button
-                onClick={this.hideDeployWarningModal}
-                type="button"
-                className="btn secondary u-marginLeft--20"
-              >
-                Cancel
-              </button>
-            </div>
-          </div>
-        </Modal>
+        {showDeployWarningModal &&
+          <DeployWarningModal
+            showDeployWarningModal={showDeployWarningModal}
+            hideDeployWarningModal={this.hideDeployWarningModal}
+            onForceDeployClick={this.onForceDeployClick}
+          />}
 
-        <Modal
-          isOpen={showSkipModal}
-          onRequestClose={this.hideSkipModal}
-          shouldReturnFocusAfterClose={false}
-          contentLabel="Skip preflight checks"
-          ariaHideApp={false}
-          className="Modal SkipModal"
-        >
-          <div className="Modal-body">
-            <p className="u-fontSize--normal u-color--dustyGray u-lineHeight--normal u-marginBottom--20">
-              Preflight checks have not finished yet. Are you sure you want to deploy this version?
-            </p>
-            <div className="u-marginTop--10 flex">
-              <button
-                onClick={this.onForceDeployClick}
-                type="button"
-                className="btn blue primary">
-                Deploy this version
-              </button>
-              <button type="button" onClick={this.hideSkipModal} className="btn secondary u-marginLeft--20">Cancel</button>
-            </div>
-          </div>
-        </Modal>
+        {showSkipModal &&
+          <DeployModal
+            showSkipModal={showSkipModal}
+            hideSkipModal={this.hideSkipModal}
+            onForceDeployClick={this.onForceDeployClick} 
+            />
+            }
 
         <Modal
           isOpen={!!downstreamReleaseNotes}
@@ -1080,7 +1044,7 @@ class AppVersionHistory extends Component {
           </div>
         </Modal>
 
-        {this.state.displayConfirmDeploymentModal && 
+        {this.state.displayConfirmDeploymentModal &&
           <Modal
             isOpen={true}
             onRequestClose={() => this.setState({ displayConfirmDeploymentModal: false, confirmType: "", versionToDeploy: null })}
@@ -1092,7 +1056,7 @@ class AppVersionHistory extends Component {
               <p className="u-fontSize--largest u-fontWeight--bold u-color--tuna u-lineHeight--normal u-marginBottom--10">{this.state.confirmType === "rollback" ? "Rollback to" : this.state.confirmType === "redeploy" ? "Redeploy" : "Deploy"} {this.state.versionToDeploy?.versionLabel} (Sequence {this.state.versionToDeploy?.sequence})?</p>
               <div className="flex u-paddingTop--10">
                 <button className="btn secondary blue" onClick={() => this.setState({ displayConfirmDeploymentModal: false, confirmType: "", versionToDeploy: null })}>Cancel</button>
-                <button className="u-marginLeft--10 btn primary" onClick={this.state.confirmType === "redeploy" ? this.finalizeRedeployment : this.finalizeDeployment}>Yes, {this.state.confirmType === "rollback" ? "rollback" : this.state.confirmType === "redeploy" ? "redeploy" : "deploy"}</button>
+                <button className="u-marginLeft--10 btn primary" onClick={this.state.confirmType === "redeploy" ? this.finalizeRedeployment : () => this.finalizeDeployment(false)}>Yes, {this.state.confirmType === "rollback" ? "rollback" : this.state.confirmType === "redeploy" ? "redeploy" : "deploy"}</button>
               </div>
             </div>
           </Modal>

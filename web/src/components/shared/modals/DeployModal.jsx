@@ -25,7 +25,7 @@ class DeployModal extends React.Component {
         </p>
         <div className="u-marginTop--10 flex">
           <button
-            onClick={onForceDeployClick}
+            onClick={() => onForceDeployClick(false)}
             type="button"
             className="btn blue primary">
             Deploy this version
