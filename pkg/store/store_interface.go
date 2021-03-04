@@ -114,6 +114,7 @@ type AppStore interface {
 	ListInstalledApps() ([]*apptypes.App, error)
 	ListInstalledAppSlugs() ([]string, error)
 	GetAppIDFromSlug(slug string) (appID string, err error)
+	GetAppSlugFromID(appID string) (slug string, err error)
 	GetApp(appID string) (*apptypes.App, error)
 	GetAppFromSlug(slug string) (*apptypes.App, error)
 	CreateApp(name string, upstreamURI string, licenseData string, isAirgapEnabled bool, skipImagePush bool) (*apptypes.App, error)

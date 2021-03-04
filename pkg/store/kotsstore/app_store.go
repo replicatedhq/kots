@@ -106,6 +106,17 @@ func (s KOTSStore) GetAppIDFromSlug(slug string) (string, error) {
 	return id, nil
 }
 
+func (s KOTSStore) GetAppSlugFromID(appID string) (string, error) {
+	db := persistence.MustGetPGSession()
+	query := `select slug from app where id = $1`
+	row := db.QueryRow(query, appID)
+	slug := ""
+	if err := row.Scan(&slug); err != nil {
+		return "", errors.Wrap(err, "failed to scan slug")
+	}
+	return slug, nil
+}
+
 func (s KOTSStore) GetApp(id string) (*apptypes.App, error) {
 	// too noisy
 	// logger.Debug("getting app from id",

@@ -6,6 +6,9 @@ package mock_store
 
 import (
 	context "context"
+	reflect "reflect"
+	time "time"
+
 	gomock "github.com/golang/mock/gomock"
 	v1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	types "github.com/replicatedhq/kots/pkg/airgap/types"
@@ -24,8 +27,6 @@ import (
 	types12 "github.com/replicatedhq/kots/pkg/upstream/types"
 	types13 "github.com/replicatedhq/kots/pkg/user/types"
 	redact "github.com/replicatedhq/troubleshoot/pkg/redact"
-	reflect "reflect"
-	time "time"
 )
 
 // MockStore is a mock of Store interface
@@ -615,6 +616,21 @@ func (m *MockStore) GetAppIDFromSlug(slug string) (string, error) {
 func (mr *MockStoreMockRecorder) GetAppIDFromSlug(slug interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAppIDFromSlug", reflect.TypeOf((*MockStore)(nil).GetAppIDFromSlug), slug)
+}
+
+// GetAppSlugFromID mocks base method
+func (m *MockStore) GetAppSlugFromID(appID string) (string, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetAppSlugFromID", appID)
+	ret0, _ := ret[0].(string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetAppSlugFromID indicates an expected call of GetAppSlugFromID
+func (mr *MockStoreMockRecorder) GetAppSlugFromID(appID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAppSlugFromID", reflect.TypeOf((*MockStore)(nil).GetAppSlugFromID), appID)
 }
 
 // GetApp mocks base method

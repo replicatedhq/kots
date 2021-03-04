@@ -22,11 +22,25 @@ func isDevEnvironment() bool {
 	return false
 }
 
-func SendPreflightsReportToReplicatedApp(license *kotsv1beta1.License, appID string, clusterID string, sequence int, skipPreflights bool, installStatus string) error {
+func isTestimApp(appID string) bool {
+	appSlug, err := store.GetStore().GetAppSlugFromID(appID)
+	if err != nil {
+		return false
+	}
 
+	if appSlug == "qakotstestim" {
+		return true
+	}
+	return false
+}
+
+func SendPreflightsReportToReplicatedApp(license *kotsv1beta1.License, appID string, clusterID string, sequence int, skipPreflights bool, installStatus string) error {
 	if isDevEnvironment() {
 		return nil
 	}
+
+	disableReporting := isTestimApp(appID)
+	disableReportingToStr := fmt.Sprintf("%t", disableReporting)
 
 	urlValues := url.Values{}
 
@@ -36,6 +50,7 @@ func SendPreflightsReportToReplicatedApp(license *kotsv1beta1.License, appID str
 	urlValues.Set("sequence", sequenceToStr)
 	urlValues.Set("skipPreflights", skipPreflightsToStr)
 	urlValues.Set("installStatus", installStatus)
+	urlValues.Set("disableReporting", disableReportingToStr)
 
 	url := fmt.Sprintf("%s/kots_metrics/preflights/%s/%s?%s", license.Spec.Endpoint, appID, clusterID, urlValues.Encode())
 

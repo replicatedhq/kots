@@ -125,6 +125,23 @@ func (s OCIStore) GetAppIDFromSlug(slug string) (string, error) {
 	return "", ErrNotFound
 }
 
+func (s OCIStore) GetAppSlugFromID(appID string) (string, error) {
+	appListConfigmap, err := s.getConfigmap(AppListConfigmapName)
+	if err != nil {
+		return "", errors.Wrap(err, "failed to get app list configmap")
+	}
+	for _, appData := range appListConfigmap.Data {
+		app := apptypes.App{}
+		if err := json.Unmarshal([]byte(appData), &app); err != nil {
+			return "", errors.Wrap(err, "failed to unmarshal app data")
+		}
+		if app.ID == appID {
+			return app.Slug, nil
+		}
+	}
+	return "", ErrNotFound
+}
+
 func (s OCIStore) GetApp(id string) (*apptypes.App, error) {
 	appListConfigmap, err := s.getConfigmap(AppListConfigmapName)
 	if err != nil {
