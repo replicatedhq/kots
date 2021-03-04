@@ -453,7 +453,7 @@ class AppConfig extends Component {
 
     const gitops = app?.downstreams?.length && app.downstreams[0]?.gitops;
     const isNewVersion = !fromLicenseFlow && match.params.sequence == undefined;
-
+    
     return (
       <div className={classNames("flex1 flex-column u-padding--20 alignItems--center")}>
         <Helmet>
@@ -465,7 +465,7 @@ class AppConfig extends Component {
         <div className="flex-column">
           <div id="configSidebarWrapper" className="AppConfigSidenav--wrapper" ref={(wrapper) => this.sidebarWrapper = wrapper}>
             {configGroups?.map((group, i) => {
-              if (group.title === "" || group.title.length === 0) return;
+              if (group.title === "" || group.title.length === 0 || group.hidden || group.when === "false") return;
               return (
                 <div key={`${i}-${group.name}-${group.title}`} className={`AppConfigSidenav--group ${this.state.activeGroups.includes(group.name) ? "group-open" : ""}`}>
                   <div className="flex alignItems--center AppConfigSidenav--groupWrapper" onClick={() => this.toggleActiveGroups(group.name)}>
