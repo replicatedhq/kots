@@ -133,7 +133,7 @@ func VeleroConfigureNFSCmd() *cobra.Command {
 	cmd.Flags().String("nfs-server", "", "the hostname or IP address of the NFS server")
 	cmd.Flags().StringP("namespace", "n", "", "the namespace in which kots/kotsadm is installed")
 	cmd.Flags().Bool("skip-validation", false, "skip the validation of the store configuration")
-	cmd.Flags().StringP("output", "o", "", "Output format. Supported values: json")
+	cmd.Flags().StringP("output", "o", "", "output format. supported values: json")
 
 	registryFlags(cmd.Flags())
 
@@ -182,7 +182,7 @@ func VeleroConfigureHostPathCmd() *cobra.Command {
 	cmd.Flags().String("hostpath", "", "a local host path on the node")
 	cmd.Flags().StringP("namespace", "n", "", "the namespace in which kots/kotsadm is installed")
 	cmd.Flags().Bool("skip-validation", false, "skip the validation of the store configuration")
-	cmd.Flags().StringP("output", "o", "", "Output format. Supported values: json")
+	cmd.Flags().StringP("output", "o", "", "output format. supported values: json")
 
 	registryFlags(cmd.Flags())
 
@@ -312,7 +312,7 @@ func VeleroPrintFileSystemInstructionsCmd() *cobra.Command {
 	}
 
 	cmd.Flags().StringP("namespace", "n", "", "the namespace in which kots/kotsadm is installed")
-	cmd.Flags().StringP("output", "o", "", "Output format. Supported values: json")
+	cmd.Flags().StringP("output", "o", "", "output format. supported values: json")
 
 	return cmd
 }

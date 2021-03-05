@@ -57,7 +57,7 @@ kubectl kots get apps`,
 		},
 	}
 
-	cmd.Flags().StringP("output", "o", "", "Output format. Supported values: json")
+	cmd.Flags().StringP("output", "o", "", "output format. supported values: json")
 
 	return cmd
 }
