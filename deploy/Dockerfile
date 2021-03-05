@@ -24,6 +24,14 @@ ENV HOME /home/kotsadm
 COPY --chown=kotsadm:kotsadm ./deploy/backup.sh /backup.sh
 COPY --chown=kotsadm:kotsadm ./deploy/restore-db.sh /restore-db.sh
 COPY --chown=kotsadm:kotsadm ./deploy/restore-s3.sh /restore-s3.sh
+
+COPY --chown=kotsadm:kotsadm ./deploy/fs-minio-check.sh /fs-minio-check.sh
+COPY --chown=kotsadm:kotsadm ./deploy/fs-minio-reset.sh /fs-minio-reset.sh
+COPY --chown=kotsadm:kotsadm ./deploy/fs-minio-keys-sha.sh /fs-minio-keys-sha.sh
+
+COPY --chown=kotsadm:kotsadm ./deploy/s3-bucket-create.sh /s3-bucket-create.sh
+COPY --chown=kotsadm:kotsadm ./deploy/s3-bucket-head.sh /s3-bucket-head.sh
+
 COPY --chown=kotsadm:kotsadm ./bin/kotsadm /kotsadm
 COPY --chown=kotsadm:kotsadm ./web/dist /web/dist
 

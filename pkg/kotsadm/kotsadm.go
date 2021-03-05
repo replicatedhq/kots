@@ -9,7 +9,6 @@ import (
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	kotsadmobjects "github.com/replicatedhq/kots/pkg/kotsadm/objects"
 	"github.com/replicatedhq/kots/pkg/kotsadm/types"
-	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
@@ -62,34 +61,6 @@ func getKotsadmYAML(deployOptions types.DeployOptions) (map[string][]byte, error
 	// TODO (ethan): identity-service
 
 	return docs, nil
-}
-
-func waitForKotsadm(deployOptions *types.DeployOptions, previousDeployment *appsv1.Deployment, clientset *kubernetes.Clientset) error {
-	start := time.Now()
-
-	prevVersion := ""
-	if previousDeployment != nil {
-		prevVersion = previousDeployment.ObjectMeta.ResourceVersion
-	}
-
-	for {
-		newDeployment, err := clientset.AppsV1().Deployments(deployOptions.Namespace).Get(context.TODO(), "kotsadm", metav1.GetOptions{})
-		if err != nil {
-			return errors.Wrap(err, "failed to get new deployment")
-		}
-
-		if newDeployment.ObjectMeta.ResourceVersion != prevVersion {
-			if newDeployment.Status.AvailableReplicas == newDeployment.Status.Replicas && newDeployment.Status.UnavailableReplicas == 0 {
-				return nil
-			}
-		}
-
-		time.Sleep(time.Second)
-
-		if time.Now().Sub(start) > deployOptions.Timeout {
-			return &types.ErrorTimeout{Message: "timeout waiting for kotsadm pod"}
-		}
-	}
 }
 
 func restartKotsadm(deployOptions *types.DeployOptions, clientset *kubernetes.Clientset) error {
@@ -249,7 +220,7 @@ func ensureKotsadmClusterRoleBinding(serviceAccountNamespace string, clientset *
 	return nil
 }
 
-func EnsureKotsadmRole(namespace string, clientset *kubernetes.Clientset) error {
+func EnsureKotsadmRole(namespace string, clientset kubernetes.Interface) error {
 	role := kotsadmobjects.KotsadmRole(namespace)
 
 	currentRole, err := clientset.RbacV1().Roles(namespace).Get(context.TODO(), "kotsadm-role", metav1.GetOptions{})
@@ -282,7 +253,7 @@ func updateKotsadmRole(existing, desiredRole *rbacv1.Role) *rbacv1.Role {
 	return existing
 }
 
-func EnsureKotsadmRoleBinding(roleBindingNamespace string, kotsadmNamespace string, clientset *kubernetes.Clientset) error {
+func EnsureKotsadmRoleBinding(roleBindingNamespace string, kotsadmNamespace string, clientset kubernetes.Interface) error {
 	roleBinding := kotsadmobjects.KotsadmRoleBinding(roleBindingNamespace, kotsadmNamespace)
 
 	currentRoleBinding, err := clientset.RbacV1().RoleBindings(roleBindingNamespace).Get(context.TODO(), "kotsadm-rolebinding", metav1.GetOptions{})

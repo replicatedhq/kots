@@ -7,7 +7,7 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
-	snapshottypes "github.com/replicatedhq/kots/pkg/api/snapshot/types"
+	snapshottypes "github.com/replicatedhq/kots/pkg/kotsadmsnapshot/types"
 )
 
 var ttlMatch = regexp.MustCompile(`^\d+(s|m|h)$`)

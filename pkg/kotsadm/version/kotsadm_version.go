@@ -5,11 +5,14 @@ import (
 	"strings"
 
 	"github.com/Masterminds/semver"
+	"github.com/docker/distribution/reference"
 	"github.com/replicatedhq/kots/pkg/buildversion"
 	"github.com/replicatedhq/kots/pkg/docker/registry"
 	"github.com/replicatedhq/kots/pkg/kotsadm/types"
 	corev1 "k8s.io/api/core/v1"
 )
+
+type ImageRewriteFunc func(upstreamImage string, alwaysRewrite bool) (image string, imagePullSecrets []corev1.LocalObjectReference, err error)
 
 // return "alpha" for all invalid versions of kots,
 // kotsadm tag that matches this version for others
@@ -79,4 +82,36 @@ func KotsadmPullSecret(namespace string, options types.KotsadmOptions) *corev1.S
 	secret.ObjectMeta.Labels = types.GetKotsadmLabels()
 
 	return secret
+}
+
+func ImageRewriteKotsadmRegistry(namespace string, registryOptions *types.KotsadmOptions) ImageRewriteFunc {
+	secret := KotsadmPullSecret(namespace, *registryOptions)
+
+	return func(upstreamImage string, alwaysRewrite bool) (image string, imagePullSecrets []corev1.LocalObjectReference, err error) {
+		image = upstreamImage
+
+		if registryOptions == nil {
+			return image, imagePullSecrets, err
+		}
+
+		if !alwaysRewrite && secret == nil {
+			return image, imagePullSecrets, err
+		}
+
+		named, err := reference.ParseNormalizedNamed(upstreamImage)
+		if err != nil {
+			return image, imagePullSecrets, err
+		}
+
+		parts := strings.Split(reference.Path(named), "/")
+		imageName := parts[len(parts)-1] // why not include the namespace here?
+		image = fmt.Sprintf("%s/%s:%s", KotsadmRegistry(*registryOptions), imageName, KotsadmTag(*registryOptions))
+
+		if secret != nil {
+			imagePullSecrets = []corev1.LocalObjectReference{
+				{Name: secret.ObjectMeta.Name},
+			}
+		}
+		return image, imagePullSecrets, err
+	}
 }

@@ -44,15 +44,34 @@ type StoreInternal struct {
 	ObjectStoreClusterIP string `json:"objectStoreClusterIP"`
 }
 
+type StoreFileSystem struct {
+	Region               string `json:"region"`
+	AccessKeyID          string `json:"accessKeyID"`
+	SecretAccessKey      string `json:"secretAccessKey"` // added for unmarshaling, redacted on marshaling
+	Endpoint             string `json:"endpoint"`
+	ObjectStoreClusterIP string `json:"objectStoreClusterIP"`
+}
+
 type Store struct {
-	Provider string         `json:"provider"`
-	Bucket   string         `json:"bucket"`
-	Path     string         `json:"path"`
-	AWS      *StoreAWS      `json:"aws,omitempty"`
-	Azure    *StoreAzure    `json:"azure,omitempty"`
-	Google   *StoreGoogle   `json:"gcp,omitempty"`
-	Other    *StoreOther    `json:"other,omitempty"`
-	Internal *StoreInternal `json:"internal,omitempty"`
+	Provider   string           `json:"provider"`
+	Bucket     string           `json:"bucket"`
+	Path       string           `json:"path"`
+	AWS        *StoreAWS        `json:"aws,omitempty"`
+	Azure      *StoreAzure      `json:"azure,omitempty"`
+	Google     *StoreGoogle     `json:"gcp,omitempty"`
+	Other      *StoreOther      `json:"other,omitempty"`
+	Internal   *StoreInternal   `json:"internal,omitempty"`
+	FileSystem *StoreFileSystem `json:"fileSystem,omitempty"`
+}
+
+type FileSystemConfig struct {
+	NFS      *NFSConfig `json:"nfs,omitempty"`
+	HostPath *string    `json:"hostPath,omitempty"`
+}
+
+type NFSConfig struct {
+	Path   string `json:"path,omitempty"`
+	Server string `json:"server,omitempty"`
 }
 
 type App struct {

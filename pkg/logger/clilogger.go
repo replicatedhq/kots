@@ -218,6 +218,28 @@ func (l *CLILogger) FinishSpinnerWithError() {
 	}
 }
 
+// FinishSpinnerWithWarning if no color is provided, color.FgYellow will be used
+func (l *CLILogger) FinishSpinnerWithWarning(c *color.Color) {
+	if l == nil || l.isSilent {
+		return
+	}
+
+	if c == nil {
+		c = color.New(color.FgYellow)
+	}
+
+	fmt.Printf("\r")
+	fmt.Printf("  • ")
+	fmt.Printf(l.spinnerMsg, l.spinnerArgs...)
+	c.Printf(" !")
+	fmt.Printf("  \n")
+
+	if isatty.IsTerminal(os.Stdout.Fd()) {
+		l.spinnerStopCh <- true
+		close(l.spinnerStopCh)
+	}
+}
+
 func (l *CLILogger) Error(err error) {
 	if l == nil || l.isSilent {
 		return

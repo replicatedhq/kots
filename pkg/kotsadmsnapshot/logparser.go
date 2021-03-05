@@ -8,7 +8,7 @@ import (
 
 	"github.com/go-logfmt/logfmt"
 	"github.com/pkg/errors"
-	"github.com/replicatedhq/kots/pkg/api/snapshot/types"
+	"github.com/replicatedhq/kots/pkg/kotsadmsnapshot/types"
 	"github.com/replicatedhq/kots/pkg/logger"
 )
 

@@ -160,10 +160,10 @@ class Snapshots extends Component {
           if (!result.ok && result.status === 409) {
             const res = await result.json();
             if (res.kotsadmRequiresVeleroAccess) {
-              this.props.toggleSnapshotsRBACModal("show");
               this.setState({
                 startingSnapshot: false
               });
+              this.props.history.replace("/snapshots/settings");
               return;
             }
           }
@@ -285,11 +285,10 @@ class Snapshots extends Component {
         if (res.status === 409) {
           const response = await res.json();
           if (response.kotsadmRequiresVeleroAccess) {
-            this.props.toggleSnapshotsRBACModal("show");
             this.setState({
               isLoadingSnapshotSettings: false
             });
-            this.props.history.push("/snapshots/settings");
+            this.props.history.replace("/snapshots/settings");
             return;
           }
         }
