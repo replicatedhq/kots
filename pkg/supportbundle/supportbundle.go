@@ -197,7 +197,7 @@ func CreateRenderedSpec(appID string, sequence int64, origin string, inCluster b
 		return errors.Wrap(err, "failed to update collectors")
 	}
 	supportBundle.Spec.Collectors = collectors
-
+	b.Reset()
 	if err := s.Encode(supportBundle, &b); err != nil {
 		return errors.Wrap(err, "failed to encode support bundle")
 	}
