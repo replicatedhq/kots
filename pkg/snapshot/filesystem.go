@@ -1,8 +1,6 @@
 package snapshot
 
 import (
-	"bufio"
-	"bytes"
 	"context"
 	"crypto/md5"
 	"crypto/sha256"
@@ -228,7 +226,10 @@ func ensureFileSystemMinioDeployment(ctx context.Context, clientset kubernetes.I
 		return nil
 	}
 
-	existingDeployment = updateFileSystemMinioDeployment(existingDeployment, deployment)
+	existingDeployment, err = updateFileSystemMinioDeployment(existingDeployment, deployment)
+	if err != nil {
+		return errors.Wrap(err, "failed to modify deployment fields")
+	}
 
 	_, err = clientset.AppsV1().Deployments(deployOptions.Namespace).Update(ctx, existingDeployment, metav1.UpdateOptions{})
 	if err != nil {
@@ -368,10 +369,10 @@ func fileSystemMinioDeploymentResource(clientset kubernetes.Interface, secretChe
 	}, nil
 }
 
-func updateFileSystemMinioDeployment(existingDeployment, desiredDeployment *appsv1.Deployment) *appsv1.Deployment {
+func updateFileSystemMinioDeployment(existingDeployment, desiredDeployment *appsv1.Deployment) (*appsv1.Deployment, error) {
 	if len(existingDeployment.Spec.Template.Spec.Containers) == 0 {
 		// hmm
-		return desiredDeployment
+		return desiredDeployment, nil
 	}
 
 	existingDeployment.Spec.Replicas = desiredDeployment.Spec.Replicas
@@ -381,14 +382,24 @@ func updateFileSystemMinioDeployment(existingDeployment, desiredDeployment *apps
 	}
 	existingDeployment.Spec.Template.ObjectMeta.Annotations["kots.io/fs-minio-creds-secret-checksum"] = desiredDeployment.Spec.Template.ObjectMeta.Annotations["kots.io/fs-minio-creds-secret-checksum"]
 
-	existingDeployment.Spec.Template.Spec.Containers[0].Image = desiredDeployment.Spec.Template.Spec.Containers[0].Image
-	existingDeployment.Spec.Template.Spec.Containers[0].LivenessProbe = desiredDeployment.Spec.Template.Spec.Containers[0].LivenessProbe
-	existingDeployment.Spec.Template.Spec.Containers[0].ReadinessProbe = desiredDeployment.Spec.Template.Spec.Containers[0].ReadinessProbe
-	existingDeployment.Spec.Template.Spec.Containers[0].Env = desiredDeployment.Spec.Template.Spec.Containers[0].Env
+	containerIdx := -1
+	for idx, c := range existingDeployment.Spec.Template.Spec.Containers {
+		if c.Name == "minio" {
+			containerIdx = idx
+		}
+	}
+	if containerIdx == -1 {
+		return nil, errors.New("failed to find minio container in deployment")
+	}
+
+	existingDeployment.Spec.Template.Spec.Containers[containerIdx].Image = desiredDeployment.Spec.Template.Spec.Containers[containerIdx].Image
+	existingDeployment.Spec.Template.Spec.Containers[containerIdx].LivenessProbe = desiredDeployment.Spec.Template.Spec.Containers[containerIdx].LivenessProbe
+	existingDeployment.Spec.Template.Spec.Containers[containerIdx].ReadinessProbe = desiredDeployment.Spec.Template.Spec.Containers[containerIdx].ReadinessProbe
+	existingDeployment.Spec.Template.Spec.Containers[containerIdx].Env = desiredDeployment.Spec.Template.Spec.Containers[containerIdx].Env
 
 	existingDeployment.Spec.Template.Spec.Volumes = desiredDeployment.Spec.Template.Spec.Volumes
 
-	return existingDeployment
+	return existingDeployment, nil
 }
 
 func volumeSourceFromFileSystemConfig(fileSystemConfig types.FileSystemConfig) corev1.VolumeSource {
@@ -471,13 +482,12 @@ func shouldResetFileSystemMount(ctx context.Context, clientset kubernetes.Interf
 		return
 	}
 
-	if err := k8sutil.WaitForPodCompleted(ctx, clientset, deployOptions.Namespace, checkPod.Name, time.Minute*2); err != nil {
+	if err := k8sutil.WaitForPod(ctx, clientset, deployOptions.Namespace, checkPod.Name, time.Minute*2); err != nil {
 		finalErr = errors.Wrap(err, "failed to wait for file system minio check pod to complete")
 		return
 	}
-	defer clientset.CoreV1().Pods(deployOptions.Namespace).Delete(ctx, checkPod.Name, metav1.DeleteOptions{})
 
-	logs, err := k8sutil.GetPodLogs(ctx, clientset, checkPod)
+	logs, err := k8sutil.GetPodLogs(ctx, clientset, checkPod, true, nil)
 	if err != nil {
 		finalErr = errors.Wrap(err, "failed to get file system minio check pod logs")
 		return
@@ -493,17 +503,13 @@ func shouldResetFileSystemMount(ctx context.Context, clientset kubernetes.Interf
 	}
 
 	checkPodOutput := FileSystemMinioCheckPodOutput{}
-
-	scanner := bufio.NewScanner(bytes.NewReader(logs))
-	for scanner.Scan() {
-		line := scanner.Text()
-
-		if err := json.Unmarshal([]byte(line), &checkPodOutput); err != nil {
-			continue
-		}
-
-		break
+	if err := json.Unmarshal(logs, &checkPodOutput); err != nil {
+		finalErr = errors.Wrapf(err, "failed to unmarshal %s pod logs", checkPod.Name)
+		return
 	}
+
+	// only delete pod if we know we have an actionable output
+	clientset.CoreV1().Pods(deployOptions.Namespace).Delete(ctx, checkPod.Name, metav1.DeleteOptions{})
 
 	if !checkPodOutput.HasMinioConfig {
 		shouldReset = false
@@ -546,10 +552,32 @@ func resetFileSystemMount(ctx context.Context, clientset kubernetes.Interface, d
 		return errors.Wrap(err, "failed to create file system minio reset pod")
 	}
 
-	if err := k8sutil.WaitForPodCompleted(ctx, clientset, deployOptions.Namespace, resetPod.Name, time.Minute*2); err != nil {
-		return errors.Wrap(err, "failed to wait for file system minio reset pod to complete")
+	if err := k8sutil.WaitForPod(ctx, clientset, deployOptions.Namespace, resetPod.Name, time.Minute*2); err != nil {
+		return errors.Wrap(err, "failed to wait for file system minio reset pod")
 	}
 
+	logs, err := k8sutil.GetPodLogs(ctx, clientset, resetPod, true, nil)
+	if err != nil {
+		return errors.Wrap(err, "failed to get file system minio reset pod logs")
+	}
+	if len(logs) == 0 {
+		return errors.New("no logs found")
+	}
+
+	type FileSystemMinioResetPodOutput struct {
+		Success bool `json:"success"`
+	}
+
+	resetPodOutput := FileSystemMinioResetPodOutput{}
+	if err := json.Unmarshal(logs, &resetPodOutput); err != nil {
+		return errors.Wrapf(err, "failed to unmarshal %s pod logs", resetPod.Name)
+	}
+
+	if !resetPodOutput.Success {
+		return errors.Wrapf(err, "failed to reset, please check %s pod logs for more details", resetPod.Name)
+	}
+
+	// only delete the pod on success
 	clientset.CoreV1().Pods(deployOptions.Namespace).Delete(ctx, resetPod.Name, metav1.DeleteOptions{})
 
 	return nil
@@ -563,10 +591,32 @@ func writeMinioKeysSHAFile(ctx context.Context, clientset kubernetes.Interface, 
 		return errors.Wrap(err, "failed to create file system minio keysSHA pod")
 	}
 
-	if err := k8sutil.WaitForPodCompleted(ctx, clientset, deployOptions.Namespace, keysSHAPod.Name, time.Minute*2); err != nil {
+	if err := k8sutil.WaitForPod(ctx, clientset, deployOptions.Namespace, keysSHAPod.Name, time.Minute*2); err != nil {
 		return errors.Wrap(err, "failed to wait for file system minio keysSHA pod to complete")
 	}
 
+	logs, err := k8sutil.GetPodLogs(ctx, clientset, keysSHAPod, true, nil)
+	if err != nil {
+		return errors.Wrap(err, "failed to get file system minio keysSHA pod logs")
+	}
+	if len(logs) == 0 {
+		return errors.New("no logs found")
+	}
+
+	type FileSystemMinioKeysSHAPodOutput struct {
+		Success bool `json:"success"`
+	}
+
+	keysSHAPodOutput := FileSystemMinioKeysSHAPodOutput{}
+	if err := json.Unmarshal(logs, &keysSHAPodOutput); err != nil {
+		return errors.Wrapf(err, "failed to unmarshal %s pod logs", keysSHAPod.Name)
+	}
+
+	if !keysSHAPodOutput.Success {
+		return errors.Wrapf(err, "failed to write keys sha, please check %s pod logs for more details", keysSHAPod.Name)
+	}
+
+	// only delete the pod on success
 	clientset.CoreV1().Pods(deployOptions.Namespace).Delete(ctx, keysSHAPod.Name, metav1.DeleteOptions{})
 
 	return nil

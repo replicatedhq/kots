@@ -80,6 +80,9 @@ func ConfigureStore(ctx context.Context, options ConfigureStoreOptions) (*types.
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get store")
 	}
+	if store == nil {
+		return nil, errors.New("store not found")
+	}
 
 	store.Provider = options.Provider
 	store.Bucket = options.Bucket
@@ -316,6 +319,10 @@ func ConfigureStore(ctx context.Context, options ConfigureStoreOptions) (*types.
 	updatedStore, err := GetGlobalStore(ctx, options.KotsadmNamespace, updatedBackupStorageLocation)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to update store")
+	}
+	if updatedStore == nil {
+		// wtf
+		return nil, errors.New("store not found")
 	}
 
 	if err := Redact(updatedStore); err != nil {

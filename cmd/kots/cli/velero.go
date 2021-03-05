@@ -125,15 +125,25 @@ func VeleroConfigureNFSCmd() *cobra.Command {
 
 			log := logger.NewCLILogger()
 
-			return veleroConfigureFileSystem(cmd.Context(), namespace, log, fileSystemConfig, registryOptions, v.GetBool("skip-validation"), v.GetString("output"))
+			opts := VeleroConfigureFileSystemOptions{
+				Namespace:        namespace,
+				RegistryOptions:  registryOptions,
+				FileSystemConfig: fileSystemConfig,
+				Output:           v.GetString("output"),
+				ForceReset:       v.GetBool("force-reset"),
+				SkipValidation:   v.GetBool("skip-validation"),
+			}
+			return veleroConfigureFileSystem(cmd.Context(), log, opts)
 		},
 	}
 
 	cmd.Flags().String("nfs-path", "", "the path that is exported by the NFS server")
 	cmd.Flags().String("nfs-server", "", "the hostname or IP address of the NFS server")
 	cmd.Flags().StringP("namespace", "n", "", "the namespace in which kots/kotsadm is installed")
-	cmd.Flags().Bool("skip-validation", false, "skip the validation of the store configuration")
 	cmd.Flags().StringP("output", "o", "", "output format. supported values: json")
+	cmd.Flags().Bool("force-reset", false, "bypass the reset prompt and force resetting the nfs path")
+	cmd.Flags().Bool("skip-validation", false, "skip the validation of the backup store endpoint/bucket")
+	cmd.Flags().MarkHidden("skip-validation")
 
 	registryFlags(cmd.Flags())
 
@@ -175,21 +185,40 @@ func VeleroConfigureHostPathCmd() *cobra.Command {
 
 			log := logger.NewCLILogger()
 
-			return veleroConfigureFileSystem(cmd.Context(), namespace, log, fileSystemConfig, registryOptions, v.GetBool("skip-validation"), v.GetString("output"))
+			opts := VeleroConfigureFileSystemOptions{
+				Namespace:        namespace,
+				RegistryOptions:  registryOptions,
+				FileSystemConfig: fileSystemConfig,
+				Output:           v.GetString("output"),
+				ForceReset:       v.GetBool("force-reset"),
+				SkipValidation:   v.GetBool("skip-validation"),
+			}
+			return veleroConfigureFileSystem(cmd.Context(), log, opts)
 		},
 	}
 
 	cmd.Flags().String("hostpath", "", "a local host path on the node")
 	cmd.Flags().StringP("namespace", "n", "", "the namespace in which kots/kotsadm is installed")
-	cmd.Flags().Bool("skip-validation", false, "skip the validation of the store configuration")
 	cmd.Flags().StringP("output", "o", "", "output format. supported values: json")
+	cmd.Flags().Bool("force-reset", false, "bypass the reset prompt and force resetting the host path directory")
+	cmd.Flags().Bool("skip-validation", false, "skip the validation of the backup store endpoint/bucket")
+	cmd.Flags().MarkHidden("skip-validation")
 
 	registryFlags(cmd.Flags())
 
 	return cmd
 }
 
-func veleroConfigureFileSystem(ctx context.Context, namespace string, log *logger.CLILogger, fileSystemConfig snapshottypes.FileSystemConfig, registryOptions *kotsadmtypes.KotsadmOptions, skipValidation bool, outputFormat string) error {
+type VeleroConfigureFileSystemOptions struct {
+	Namespace        string
+	RegistryOptions  *kotsadmtypes.KotsadmOptions
+	FileSystemConfig snapshottypes.FileSystemConfig
+	Output           string
+	ForceReset       bool
+	SkipValidation   bool
+}
+
+func veleroConfigureFileSystem(ctx context.Context, log *logger.CLILogger, opts VeleroConfigureFileSystemOptions) error {
 	log.ActionWithSpinner("Setting up File System Minio")
 
 	clientset, err := k8sutil.GetClientset(kubernetesConfigFlags)
@@ -198,18 +227,19 @@ func veleroConfigureFileSystem(ctx context.Context, namespace string, log *logge
 	}
 
 	deployOptions := snapshot.FileSystemDeployOptions{
-		Namespace:        namespace,
+		Namespace:        opts.Namespace,
 		IsOpenShift:      k8sutil.IsOpenShift(clientset),
-		FileSystemConfig: fileSystemConfig,
+		FileSystemConfig: opts.FileSystemConfig,
+		ForceReset:       opts.ForceReset,
 	}
-	if err := snapshot.DeployFileSystemMinio(ctx, clientset, deployOptions, *registryOptions); err != nil {
+	if err := snapshot.DeployFileSystemMinio(ctx, clientset, deployOptions, *opts.RegistryOptions); err != nil {
 		if _, ok := errors.Cause(err).(*snapshot.ResetFileSystemError); ok {
 			log.FinishSpinnerWithWarning(color.New(color.FgHiRed))
 			forceReset := promptForFileSystemReset(log, err.Error())
 			if forceReset {
 				log.ActionWithSpinner("Re-configuring File System Minio")
 				deployOptions.ForceReset = true
-				if err := snapshot.DeployFileSystemMinio(ctx, clientset, deployOptions, *registryOptions); err != nil {
+				if err := snapshot.DeployFileSystemMinio(ctx, clientset, deployOptions, *opts.RegistryOptions); err != nil {
 					log.FinishSpinnerWithError()
 					return errors.Wrap(err, "failed to force deploy file system minio")
 				}
@@ -223,7 +253,7 @@ func veleroConfigureFileSystem(ctx context.Context, namespace string, log *logge
 	log.FinishSpinner()
 	log.ActionWithSpinner("Waiting for File System Minio to be ready")
 
-	err = k8sutil.WaitForDeploymentReady(ctx, clientset, namespace, snapshot.FileSystemMinioDeploymentName, time.Minute*2)
+	err = k8sutil.WaitForDeploymentReady(ctx, clientset, opts.Namespace, snapshot.FileSystemMinioDeploymentName, time.Minute*2)
 	if err != nil {
 		log.FinishSpinnerWithError()
 		return errors.Wrap(err, "failed to wait for file system minio")
@@ -232,7 +262,7 @@ func veleroConfigureFileSystem(ctx context.Context, namespace string, log *logge
 	log.FinishSpinner()
 	log.ActionWithSpinner("Creating Default Bucket")
 
-	err = snapshot.CreateFileSystemMinioBucket(ctx, clientset, namespace, *registryOptions)
+	err = snapshot.CreateFileSystemMinioBucket(ctx, clientset, opts.Namespace, *opts.RegistryOptions)
 	if err != nil {
 		log.FinishSpinnerWithError()
 		return errors.Wrap(err, "failed to create default bucket")
@@ -240,19 +270,19 @@ func veleroConfigureFileSystem(ctx context.Context, namespace string, log *logge
 
 	log.FinishSpinner()
 
-	veleroNamespace, err := snapshot.DetectVeleroNamespace(ctx, clientset, namespace)
+	veleroNamespace, err := snapshot.DetectVeleroNamespace(ctx, clientset, opts.Namespace)
 	if err != nil {
 		return errors.Wrap(err, "failed to detect velero namespace")
 	}
 	if veleroNamespace == "" {
-		c, err := buildPrintableFileSystemVeleroConfig(ctx, clientset, namespace)
+		c, err := buildPrintableFileSystemVeleroConfig(ctx, clientset, opts.Namespace)
 		if err != nil {
 			return errors.Wrap(err, "failed to get printable file system velero config")
 		}
-		if outputFormat != "json" {
+		if opts.Output != "json" {
 			log.ActionWithoutSpinner("file system configuration for the Admin Console is successful, but no Velero installation has been detected.")
 		}
-		print.FileSystemMinioVeleroInfo(c, outputFormat, log)
+		print.FileSystemMinioVeleroInfo(c, opts.Output, log)
 		return nil
 	}
 
@@ -260,9 +290,9 @@ func veleroConfigureFileSystem(ctx context.Context, namespace string, log *logge
 
 	configureStoreOptions := snapshot.ConfigureStoreOptions{
 		FileSystem:        true,
-		KotsadmNamespace:  namespace,
-		RegistryOptions:   registryOptions,
-		SkipValidation:    skipValidation,
+		KotsadmNamespace:  opts.Namespace,
+		RegistryOptions:   opts.RegistryOptions,
+		SkipValidation:    opts.SkipValidation,
 		ValidateUsingAPod: true,
 	}
 	_, err = snapshot.ConfigureStore(ctx, configureStoreOptions)

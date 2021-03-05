@@ -254,6 +254,13 @@ func (h *Handler) GetGlobalSnapshotSettings(w http.ResponseWriter, r *http.Reque
 		JSON(w, http.StatusInternalServerError, globalSnapshotSettingsResponse)
 		return
 	}
+	if store == nil {
+		err = errors.New("store not found")
+		logger.Error(err)
+		globalSnapshotSettingsResponse.Error = "store not found"
+		JSON(w, http.StatusInternalServerError, globalSnapshotSettingsResponse)
+		return
+	}
 
 	if err := kotssnapshot.Redact(store); err != nil {
 		logger.Error(err)

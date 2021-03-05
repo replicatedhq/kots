@@ -6,8 +6,6 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"
 
-	"bufio"
-	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -71,12 +69,11 @@ func CreateS3BucketUsingAPod(ctx context.Context, clientset kubernetes.Interface
 		return errors.Wrap(err, "failed to create pod")
 	}
 
-	if err := k8sutil.WaitForPodCompleted(ctx, clientset, podOptions.Namespace, createBucketPod.Name, time.Minute*2); err != nil {
-		return errors.Wrap(err, "failed to wait for create bucket pod to complete")
+	if err := k8sutil.WaitForPod(ctx, clientset, podOptions.Namespace, createBucketPod.Name, time.Minute*2); err != nil {
+		return errors.Wrap(err, "failed to wait for pod")
 	}
-	defer clientset.CoreV1().Pods(podOptions.Namespace).Delete(ctx, createBucketPod.Name, metav1.DeleteOptions{})
 
-	logs, err := k8sutil.GetPodLogs(ctx, clientset, createBucketPod)
+	logs, err := k8sutil.GetPodLogs(ctx, clientset, createBucketPod, true, nil)
 	if err != nil {
 		return errors.Wrap(err, "failed to get pod logs")
 	}
@@ -89,21 +86,16 @@ func CreateS3BucketUsingAPod(ctx context.Context, clientset kubernetes.Interface
 	}
 
 	createBucketPodOutput := CreateBucketPodOutput{}
-
-	scanner := bufio.NewScanner(bytes.NewReader(logs))
-	for scanner.Scan() {
-		line := scanner.Text()
-
-		if err := json.Unmarshal([]byte(line), &createBucketPodOutput); err != nil {
-			continue
-		}
-
-		break
+	if err := json.Unmarshal(logs, &createBucketPodOutput); err != nil {
+		return errors.Wrapf(err, "failed to unmarshal %s pod logs", createBucketPod.Name)
 	}
 
 	if !createBucketPodOutput.Success {
 		return errors.Wrapf(err, "failed to create bucket, please check %s pod logs for more details", createBucketPod.Name)
 	}
+
+	// only delete the pod on success
+	clientset.CoreV1().Pods(podOptions.Namespace).Delete(ctx, createBucketPod.Name, metav1.DeleteOptions{})
 
 	return nil
 }
@@ -121,12 +113,11 @@ func HeadS3BucketUsingAPod(ctx context.Context, clientset kubernetes.Interface, 
 		return errors.Wrap(err, "failed to create pod")
 	}
 
-	if err := k8sutil.WaitForPodCompleted(ctx, clientset, podOptions.Namespace, headBucketPod.Name, time.Minute*2); err != nil {
-		return errors.Wrap(err, "failed to wait for head bucket pod to complete")
+	if err := k8sutil.WaitForPod(ctx, clientset, podOptions.Namespace, headBucketPod.Name, time.Minute*2); err != nil {
+		return errors.Wrap(err, "failed to wait for pod")
 	}
-	defer clientset.CoreV1().Pods(podOptions.Namespace).Delete(ctx, headBucketPod.Name, metav1.DeleteOptions{})
 
-	logs, err := k8sutil.GetPodLogs(ctx, clientset, headBucketPod)
+	logs, err := k8sutil.GetPodLogs(ctx, clientset, headBucketPod, true, nil)
 	if err != nil {
 		return errors.Wrap(err, "failed to get pod logs")
 	}
@@ -139,21 +130,16 @@ func HeadS3BucketUsingAPod(ctx context.Context, clientset kubernetes.Interface, 
 	}
 
 	headBucketPodOutput := HeadBucketPodOutput{}
-
-	scanner := bufio.NewScanner(bytes.NewReader(logs))
-	for scanner.Scan() {
-		line := scanner.Text()
-
-		if err := json.Unmarshal([]byte(line), &headBucketPodOutput); err != nil {
-			continue
-		}
-
-		break
+	if err := json.Unmarshal(logs, &headBucketPodOutput); err != nil {
+		return errors.Wrapf(err, "failed to unmarshal %s pod logs", headBucketPod.Name)
 	}
 
 	if !headBucketPodOutput.Success {
 		return errors.Wrapf(err, "failed to head bucket, please check %s pod logs for more details", headBucketPod.Name)
 	}
+
+	// only delete the pod on success
+	clientset.CoreV1().Pods(podOptions.Namespace).Delete(ctx, headBucketPod.Name, metav1.DeleteOptions{})
 
 	return nil
 }

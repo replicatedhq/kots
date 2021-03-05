@@ -12,9 +12,17 @@ import (
 	"k8s.io/client-go/kubernetes"
 )
 
-func GetPodLogs(ctx context.Context, clientset kubernetes.Interface, pod *corev1.Pod) ([]byte, error) {
+func GetPodLogs(ctx context.Context, clientset kubernetes.Interface, pod *corev1.Pod, follow bool, maxLines *int64) ([]byte, error) {
+	defaultMaxLines := int64(10000)
+
 	podLogOpts := corev1.PodLogOptions{
 		Container: pod.Spec.Containers[0].Name,
+		Follow:    follow,
+		TailLines: &defaultMaxLines,
+	}
+
+	if maxLines != nil {
+		podLogOpts.TailLines = maxLines
 	}
 
 	req := clientset.CoreV1().Pods(pod.Namespace).GetLogs(pod.Name, &podLogOpts)
@@ -43,23 +51,32 @@ func GetPodLogs(ctx context.Context, clientset kubernetes.Interface, pod *corev1
 	}
 }
 
-func WaitForPodCompleted(ctx context.Context, clientset kubernetes.Interface, namespace string, podName string, timeoutWaitingForPod time.Duration) error {
+func WaitForPod(ctx context.Context, clientset kubernetes.Interface, namespace string, podName string, timeoutWaitingForPod time.Duration) error {
 	start := time.Now()
 
 	for {
 		pod, err := clientset.CoreV1().Pods(namespace).Get(ctx, podName, metav1.GetOptions{})
 		if err != nil {
-			return errors.Wrap(err, "failed to list pods")
+			return errors.Wrap(err, "failed to get pod")
 		}
 
-		if pod.Status.Phase == corev1.PodSucceeded {
+		if pod.Status.Phase == corev1.PodRunning ||
+			pod.Status.Phase == corev1.PodFailed ||
+			pod.Status.Phase == corev1.PodSucceeded {
 			return nil
+		}
+		if pod.Status.Phase == corev1.PodPending {
+			for _, v := range pod.Status.ContainerStatuses {
+				if v.State.Waiting != nil && v.State.Waiting.Reason == "ImagePullBackOff" {
+					return errors.New("wait for pod aborted after getting pod status 'ImagePullBackOff'")
+				}
+			}
 		}
 
 		time.Sleep(time.Second)
 
 		if time.Now().Sub(start) > timeoutWaitingForPod {
-			return errors.New("timeout waiting for pod to complete")
+			return errors.New("timeout waiting for pod")
 		}
 	}
 }
