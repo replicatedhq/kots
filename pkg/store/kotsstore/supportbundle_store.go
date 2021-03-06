@@ -206,7 +206,7 @@ func (s KOTSStore) ListSupportBundles(appID string) ([]*types.SupportBundle, err
 	}
 
 	// sort the bundles here by date, since we don't have a sort order otherwise
-	sort.Sort(types.ByCreated(supportBundles))
+	sort.Sort(sort.Reverse(types.ByCreated(supportBundles)))
 
 	return supportBundles, nil
 }
