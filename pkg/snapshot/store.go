@@ -798,10 +798,7 @@ func mapAWSBackupStorageLocationToStore(kotsadmVeleroBackendStorageLocation *vel
 
 	// check if using kurl internal store
 	s3Secret, err := kotsutil.GetKurlS3Secret()
-	if err != nil {
-		return errors.Wrap(err, "failed to get s3 secret")
-	}
-	if s3Secret != nil && string(s3Secret.Data["endpoint"]) == endpoint {
+	if err == nil && s3Secret != nil && string(s3Secret.Data["endpoint"]) == endpoint {
 		store.Internal = &types.StoreInternal{
 			Region:               kotsadmVeleroBackendStorageLocation.Spec.Config["region"],
 			Endpoint:             endpoint,

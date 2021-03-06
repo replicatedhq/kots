@@ -44,7 +44,7 @@ func printFileSystemVeleroInstructions(c *FileSystemVeleroConfig, log *logger.CL
 	--provider aws \
 	--plugins velero/velero-plugin-for-aws:v1.1.0 \
 	--bucket %s \
-	--backup-location-config region=%s,s3ForcePathStyle=\"true\",s3Url=%s,publicUrl=%s \
+	--backup-location-config region=%s,s3ForcePathStyle="true",s3Url=%s,publicUrl=%s \
 	--snapshot-location-config region=%s \
 	--use-restic`, red("<path/to/credentials-file>"), c.Bucket, c.BackupLocationConfig["region"], c.BackupLocationConfig["s3Url"], c.BackupLocationConfig["publicUrl"], c.SnapshotLocationConfig["region"])
 
@@ -54,7 +54,7 @@ func printFileSystemVeleroInstructions(c *FileSystemVeleroConfig, log *logger.CL
 	--image %s/velero:%s \
 	--plugins %s/velero-plugin-for-aws:%s \
 	--bucket %s \
-	--backup-location-config region=%s,s3ForcePathStyle=\"true\",s3Url=%s,publicUrl=%s \
+	--backup-location-config region=%s,s3ForcePathStyle="true",s3Url=%s,publicUrl=%s \
 	--snapshot-location-config region=%s \
 	--use-restic`, red("<path/to/credentials-file>"), red("<private.registry.host>"), red("<velero-version>"), red("<private.registry.host>"), red("<plugin-version>"), c.Bucket, c.BackupLocationConfig["region"], c.BackupLocationConfig["s3Url"], c.BackupLocationConfig["publicUrl"], c.SnapshotLocationConfig["region"])
 
