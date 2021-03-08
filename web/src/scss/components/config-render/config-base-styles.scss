@@ -40,6 +40,15 @@
     font-weight: 500;
     color: #9B9B9B;
   }
+  .default-value-section {
+    font-size: 12px;
+    line-height: 12px;
+    color: #9B9B9B;
+    font-weight: 500;
+    .value {
+      color: #073551;
+    }
+  }
   .field.hidden {
     display: none;
   }
