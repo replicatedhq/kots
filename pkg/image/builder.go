@@ -2,7 +2,6 @@ package image
 
 import (
 	"bytes"
-	"compress/gzip"
 	"context"
 	"fmt"
 	"io"
@@ -15,25 +14,24 @@ import (
 	"strings"
 	"time"
 
+	"github.com/containers/image/v5/copy"
 	imagedocker "github.com/containers/image/v5/docker"
 	dockerref "github.com/containers/image/v5/docker/reference"
+	"github.com/containers/image/v5/signature"
 	"github.com/containers/image/v5/transports/alltransports"
 	"github.com/containers/image/v5/types"
 	"github.com/docker/distribution/reference"
 	"github.com/docker/distribution/registry/api/errcode"
-	"github.com/google/go-containerregistry/pkg/authn"
-	"github.com/google/go-containerregistry/pkg/crane"
-	"github.com/google/go-containerregistry/pkg/name"
-	containerregistryv1 "github.com/google/go-containerregistry/pkg/v1"
-	"github.com/google/go-containerregistry/pkg/v1/remote"
-	cranetarball "github.com/google/go-containerregistry/pkg/v1/tarball"
-	containerregistrytypes "github.com/google/go-containerregistry/pkg/v1/types"
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/docker/registry"
 	"github.com/replicatedhq/kots/pkg/k8sdoc"
 	"github.com/replicatedhq/kots/pkg/logger"
 	kustomizeimage "sigs.k8s.io/kustomize/api/types"
 )
+
+var imagePolicy = []byte(`{
+  "default": [{"type": "insecureAcceptAnything"}]
+}`)
 
 type ImageRef struct {
 	Domain string
@@ -265,31 +263,23 @@ func listImagesInFile(contents []byte, handler processImagesFunc) error {
 	return nil
 }
 
-type Options struct {
-	SrcRemoteOpts []remote.Option
-	DstRemoteOpts []remote.Option
-}
-
-func DefaultRemoteOpts() *Options {
-	platform := containerregistryv1.Platform{
-		Architecture: runtime.GOARCH,
-		OS:           runtime.GOOS,
-	}
-
-	opts := &Options{
-		SrcRemoteOpts: []remote.Option{
-			remote.WithPlatform(platform),
-		},
-		DstRemoteOpts: []remote.Option{},
-	}
-
-	return opts
-}
-
 func copyOneImage(srcRegistry, destRegistry registry.RegistryOptions, image string, appSlug string, reportWriter io.Writer, log *logger.CLILogger, dryRun, allImagesPrivate bool, checkedImages map[string]ImageInfo) ([]kustomizeimage.Image, error) {
+	policy, err := signature.NewPolicyFromBytes(imagePolicy)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to read default policy")
+	}
+	policyContext, err := signature.NewPolicyContext(policy)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to create policy")
+	}
+
 	sourceCtx := &types.SystemContext{DockerDisableV1Ping: true}
 
-	opts := DefaultRemoteOpts()
+	// allow pulling images from http/invalid https docker repos
+	// intended for development only, _THIS MAKES THINGS INSECURE_
+	if os.Getenv("KOTSADM_INSECURE_SRCREGISTRY") == "true" {
+		sourceCtx.DockerInsecureSkipTLSVerify = types.OptionalBoolTrue
+	}
 
 	isPrivate := allImagesPrivate // rewrite all images with airgap
 	if i, ok := checkedImages[image]; ok {
@@ -319,20 +309,22 @@ func copyOneImage(srcRegistry, destRegistry registry.RegistryOptions, image stri
 			return nil, errors.Wrap(err, "failed to rewrite private image")
 		}
 
-		authConfig := authn.AuthConfig{
-			Username: srcRegistry.Username,
-			Password: srcRegistry.Password,
-		}
-		opts.SrcRemoteOpts = append(opts.SrcRemoteOpts, remote.WithAuth(authn.FromConfig(authConfig)))
-
 		sourceImage = rewritten
 	}
+	srcRef, err := alltransports.ParseImageName(fmt.Sprintf("docker://%s", sourceImage))
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to parse source image name %s", sourceImage)
+	}
 
-	destImage := DestRef(destRegistry, image)
-	destStr := fmt.Sprintf("docker://%s", destImage)
+	destStr := fmt.Sprintf("docker://%s", DestRef(destRegistry, image))
 	destRef, err := alltransports.ParseImageName(destStr)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to parse dest image name %s", destStr)
+	}
+
+	destCtx := &types.SystemContext{
+		DockerInsecureSkipTLSVerify: types.OptionalBoolTrue,
+		DockerDisableV1Ping:         true,
 	}
 
 	if destRegistry.Username != "" && destRegistry.Password != "" {
@@ -348,20 +340,69 @@ func copyOneImage(srcRegistry, destRegistry registry.RegistryOptions, image stri
 			password = login.Password
 		}
 
-		authConfig := authn.AuthConfig{
+		destCtx.DockerAuthConfig = &types.DockerAuthConfig{
 			Username: username,
 			Password: password,
 		}
-		opts.DstRemoteOpts = append(opts.DstRemoteOpts, remote.WithAuth(authn.FromConfig(authConfig)))
 	}
 
 	if dryRun {
 		return kustomizeImage(destRegistry, image)
 	}
 
-	err = CopyImageWithGC(sourceImage, destImage, opts)
+	_, err = CopyImageWithGC(context.Background(), policyContext, destRef, srcRef, &copy.Options{
+		RemoveSignatures:      true,
+		SignBy:                "",
+		ReportWriter:          reportWriter,
+		SourceCtx:             sourceCtx,
+		DestinationCtx:        destCtx,
+		ForceManifestMIMEType: "",
+	})
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to copy image")
+		log.Info("failed to copy image directly with error %q, attempting fallback transfer method", err.Error())
+		// direct image copy failed
+		// attempt to download image to a temp directory, and then upload it from there
+		// this implicitly causes an image format conversion
+
+		// make a temp directory
+		tempDir, err := ioutil.TempDir("", "temp-image-pull")
+		if err != nil {
+			return nil, errors.Wrapf(err, "temp directory %s not created", tempDir)
+		}
+		defer os.RemoveAll(tempDir)
+
+		destPath := path.Join(tempDir, "temp-archive-image")
+		destStr := fmt.Sprintf("docker-archive:%s", destPath)
+		localRef, err := alltransports.ParseImageName(destStr)
+		if err != nil {
+			return nil, errors.Wrapf(err, "failed to parse local image name: %s", destStr)
+		}
+
+		// copy image from remote to local
+		_, err = CopyImageWithGC(context.Background(), policyContext, localRef, srcRef, &copy.Options{
+			RemoveSignatures:      true,
+			SignBy:                "",
+			ReportWriter:          reportWriter,
+			SourceCtx:             sourceCtx,
+			DestinationCtx:        nil,
+			ForceManifestMIMEType: "",
+		})
+		if err != nil {
+			return nil, errors.Wrapf(err, "failed to download image")
+		}
+
+		// copy image from local to remote
+		_, err = CopyImageWithGC(context.Background(), policyContext, destRef, localRef, &copy.Options{
+			RemoveSignatures:      true,
+			SignBy:                "",
+			ReportWriter:          reportWriter,
+			SourceCtx:             nil,
+			DestinationCtx:        destCtx,
+			ForceManifestMIMEType: "",
+		})
+		if err != nil {
+			return nil, errors.Wrapf(err, "failed to push image")
+		}
 	}
 
 	return kustomizeImage(destRegistry, image)
@@ -421,14 +462,29 @@ func (ref *ImageRef) String() string {
 }
 
 func CopyFromFileToRegistry(path string, name string, tag string, digest string, auth RegistryAuth, reportWriter io.Writer) error {
+	policy, err := signature.NewPolicyFromBytes(imagePolicy)
+	if err != nil {
+		return errors.Wrap(err, "failed to read default policy")
+	}
+	policyContext, err := signature.NewPolicyContext(policy)
+	if err != nil {
+		return errors.Wrap(err, "failed to create policy")
+	}
+
+	srcRef, err := alltransports.ParseImageName(fmt.Sprintf("docker-archive:%s", path))
+	if err != nil {
+		return errors.Wrap(err, "failed to parse src image name")
+	}
+
 	destStr := fmt.Sprintf("docker://%s:%s", name, tag)
 	destRef, err := alltransports.ParseImageName(destStr)
 	if err != nil {
 		return errors.Wrapf(err, "failed to parse dest image name %s", destStr)
 	}
 
-	craneOptions := []crane.Option{
-		crane.Insecure,
+	destCtx := &types.SystemContext{
+		DockerInsecureSkipTLSVerify: types.OptionalBoolTrue,
+		DockerDisableV1Ping:         true,
 	}
 
 	if auth.Username != "" && auth.Password != "" {
@@ -444,23 +500,24 @@ func CopyFromFileToRegistry(path string, name string, tag string, digest string,
 			password = login.Password
 		}
 
-		authConfig := authn.AuthConfig{
+		destCtx.DockerAuthConfig = &types.DockerAuthConfig{
 			Username: username,
 			Password: password,
 		}
-		craneOptions = append(craneOptions, crane.WithAuth(authn.FromConfig(authConfig)))
 	}
 
-	imageReader, err := RegistryImageFromReader(path)
-	if err != nil {
-		return errors.Wrap(err, "failed to create image reader 2")
-	}
-
-	dstImage := fmt.Sprintf("%s:%s", name, tag)
-	err = PushImageFromStream(imageReader, dstImage, craneOptions)
+	_, err = CopyImageWithGC(context.Background(), policyContext, destRef, srcRef, &copy.Options{
+		RemoveSignatures:      true,
+		SignBy:                "",
+		ReportWriter:          reportWriter,
+		SourceCtx:             nil,
+		DestinationCtx:        destCtx,
+		ForceManifestMIMEType: "",
+	})
 	if err != nil {
 		return errors.Wrap(err, "failed to copy image")
 	}
+
 	return nil
 }
 
@@ -559,102 +616,11 @@ func isUnauthorized(err error) bool {
 	return isUnauthorized(cause)
 }
 
-func CopyImageWithGC(src string, dst string, opts *Options) error {
-	srcRef, err := name.ParseReference(src)
-	if err != nil {
-		return fmt.Errorf("parsing reference %q: %v", src, err)
-	}
-
-	dstRef, err := name.ParseReference(dst)
-	if err != nil {
-		return fmt.Errorf("parsing reference for %q: %v", dst, err)
-	}
-
-	desc, err := remote.Get(srcRef, opts.SrcRemoteOpts...)
-	if err != nil {
-		return fmt.Errorf("fetching %q: %v", src, err)
-	}
-
-	// copying an image increases allocated memory, which can push the pod to cross the memory limit when copying multiple images in a row.
-	runGC := false
-	defer func() {
-		if runGC {
-			runtime.GC()
-		}
-	}()
-
-	if desc.MediaType == containerregistrytypes.DockerManifestSchema1 || desc.MediaType == containerregistrytypes.DockerManifestSchema1Signed {
-		// TODO: "legacy" is an internal package and we can't import it
-		// err = legacy.CopySchema1(desc, srcRef, dstRef, srcAuth, dstAuth)
-		return errors.Errorf("unsupported media type: %s", desc.MediaType)
-	}
-
-	img, err := desc.Image()
-	if err != nil {
-		return errors.Wrap(err, "failed to read image")
-	}
-
-	err = remote.Write(dstRef, img, opts.DstRemoteOpts...)
-	if err != nil {
-		return errors.Wrap(err, "failed to write image")
-	}
-
-	runGC = true
-	return nil
-}
-
-type airgapImageOpener struct {
-	fileReader io.ReadCloser
-	gzipReader io.ReadCloser
-}
-
-func (r airgapImageOpener) Read(p []byte) (int, error) {
-	if r.gzipReader != nil {
-		return r.gzipReader.Read(p)
-	}
-	return r.fileReader.Read(p)
-}
-
-func (r airgapImageOpener) Close() error {
-	if r.gzipReader != nil {
-		r.gzipReader.Close()
-	}
-	return r.fileReader.Close()
-}
-
-func RegistryImageFromReader(path string) (containerregistryv1.Image, error) {
-	openerFunc := func() (io.ReadCloser, error) {
-		fileReader, err := os.Open(path)
-		if err != nil {
-			return nil, errors.Wrap(err, "faile to open gzip file")
-		}
-
-		r := &airgapImageOpener{
-			fileReader: fileReader,
-		}
-
-		gzipReader, err := gzip.NewReader(fileReader)
-		if err == nil {
-			r.gzipReader = gzipReader
-			return r, nil
-		}
-
-		_, err = fileReader.Seek(0, 0)
-		if err != nil {
-			fileReader.Close()
-			return nil, errors.Wrap(err, "failed to seek file")
-		}
-
-		return r, nil
-	}
-	return cranetarball.Image(openerFunc, nil)
-}
-
-func PushImageFromStream(image containerregistryv1.Image, dst string, opt []crane.Option) error {
-	err := crane.Push(image, dst, opt...)
+func CopyImageWithGC(ctx context.Context, policyContext *signature.PolicyContext, destRef, srcRef types.ImageReference, options *copy.Options) ([]byte, error) {
+	manifest, err := copy.Image(ctx, policyContext, destRef, srcRef, options)
 
 	// copying an image increases allocated memory, which can push the pod to cross the memory limit when copying multiple images in a row.
 	runtime.GC()
 
-	return err
+	return manifest, err
 }
