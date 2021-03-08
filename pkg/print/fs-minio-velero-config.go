@@ -66,7 +66,7 @@ func printFileSystemVeleroInstructions(c *FileSystemVeleroConfig, log *logger.CL
 	log.Info("- For %s, follow these steps:", bold("airgapped installations"))
 	log.Info("	* Prepare velero images: %s", blue("https://velero.io/docs/v1.5/on-premises/#air-gapped-deployments"))
 	log.Info("	* Install velero (replace with actual values): \n\n%s", veleroAirgapCommand)
-	log.Info("	* Configure restic to use the prepared image: %s", blue("https://velero.io/docs/v1.5/restic/#customize-restore-helper-container"))
+	log.Info("	* Configure restic restore helper to use the prepared image: %s", blue("https://velero.io/docs/v1.5/restic/#customize-restore-helper-container"))
 	log.Info("[4] If you're using RancherOS, OpenShift, Microsoft Azure, or VMware Tanzu Kubernetes Grid Integrated Edition (formerly VMware Enterprise PKS), please refer to the following Velero doc to complete restic configuration: %s", blue("https://velero.io/docs/v1.5/restic/#configure-restic-daemonset-spec"))
 	log.ActionWithoutSpinner("")
 }
