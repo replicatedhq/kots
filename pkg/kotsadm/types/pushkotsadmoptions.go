@@ -16,19 +16,19 @@ type PushImagesOptions struct {
 }
 
 type ImageFile struct {
-	Format         string
-	Status         string
-	Error          string
-	FilePath       string
-	Layers         map[string]*LayerInfo
-	FileSize       int64
-	UploadStart    time.Time
-	UploadEnd      time.Time
-	LayersUploaded int64
+	Format      string
+	Status      string
+	Error       string
+	FilePath    string
+	Layers      map[string]*LayerInfo
+	FileSize    int64
+	UploadStart time.Time
+	UploadEnd   time.Time
 }
 
 type LayerInfo struct {
-	ID        string
-	Size      int64
-	UploadEnd time.Time
+	ID          string
+	Size        int64
+	UploadStart time.Time
+	UploadEnd   time.Time
 }

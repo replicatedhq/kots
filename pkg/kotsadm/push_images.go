@@ -5,21 +5,22 @@ import (
 	"bufio"
 	"bytes"
 	"compress/gzip"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
 	"io/ioutil"
-	"log"
 	"os"
 	"path"
 	"path/filepath"
 	"strings"
 	"time"
 
+	"github.com/containers/image/v5/copy"
 	"github.com/containers/image/v5/docker/tarfile"
-	"github.com/google/go-containerregistry/pkg/authn"
-	"github.com/google/go-containerregistry/pkg/crane"
-	imageslogs "github.com/google/go-containerregistry/pkg/logs"
+	"github.com/containers/image/v5/signature"
+	"github.com/containers/image/v5/transports/alltransports"
+	containerstypes "github.com/containers/image/v5/types"
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/image"
 	"github.com/replicatedhq/kots/pkg/kotsadm/types"
@@ -163,37 +164,57 @@ func processImageTags(rootDir string, format string, imageName string, options t
 }
 
 func pushOneImage(rootDir string, format string, imageName string, tag string, options types.PushImagesOptions) error {
-	prevProgress := imageslogs.Progress
-	defer func() {
-		imageslogs.Progress = prevProgress
-	}()
+	var imagePolicy = []byte(`{
+		"default": [{"type": "insecureAcceptAnything"}]
+	  }`)
 
-	if options.ProgressWriter != nil {
-		imageslogs.Progress = log.New(options.ProgressWriter, "", log.LstdFlags)
+	policy, err := signature.NewPolicyFromBytes(imagePolicy)
+	if err != nil {
+		return errors.Wrap(err, "failed to read default policy")
+	}
+	policyContext, err := signature.NewPolicyContext(policy)
+	if err != nil {
+		return errors.Wrap(err, "failed to create policy")
 	}
 
-	craneOptions := []crane.Option{
-		crane.Insecure,
+	destCtx := &containerstypes.SystemContext{
+		DockerInsecureSkipTLSVerify: containerstypes.OptionalBoolTrue,
+		DockerDisableV1Ping:         true,
 	}
-
 	if options.Registry.Username != "" && options.Registry.Password != "" {
-		authConfig := authn.AuthConfig{
+		destCtx.DockerAuthConfig = &containerstypes.DockerAuthConfig{
 			Username: options.Registry.Username,
 			Password: options.Registry.Password,
 		}
-		craneOptions = append(craneOptions, crane.WithAuth(authn.FromConfig(authConfig)))
+	}
+	if os.Getenv("KOTSADM_INSECURE_SRCREGISTRY") == "true" {
+		// allow pulling images from http/invalid https docker repos
+		// intended for development only, _THIS MAKES THINGS INSECURE_
+		destCtx.DockerInsecureSkipTLSVerify = containerstypes.OptionalBoolTrue
 	}
 
 	destStr := fmt.Sprintf("%s/%s:%s", options.Registry.Endpoint, imageName, tag)
-	writeProgressLine(options.ProgressWriter, fmt.Sprintf("Pushing %s", destStr))
-
-	imageFile := filepath.Join(rootDir, format, imageName, tag)
-	imageReader, err := image.RegistryImageFromReader(imageFile)
+	destRef, err := alltransports.ParseImageName(fmt.Sprintf("docker://%s", destStr))
 	if err != nil {
-		return errors.Wrap(err, "failed to create image reader 1")
+		return errors.Wrapf(err, "failed to parse dest image name %s", destStr)
 	}
 
-	err = image.PushImageFromStream(imageReader, destStr, craneOptions)
+	imageFile := filepath.Join(rootDir, format, imageName, tag)
+	localRef, err := alltransports.ParseImageName(fmt.Sprintf("%s:%s", format, imageFile))
+	if err != nil {
+		return errors.Wrapf(err, "failed to parse local image name: %s:%s", format, imageFile)
+	}
+
+	writeProgressLine(options.ProgressWriter, fmt.Sprintf("Pushing %s", destStr))
+
+	_, err = image.CopyImageWithGC(context.Background(), policyContext, destRef, localRef, &copy.Options{
+		RemoveSignatures:      true,
+		SignBy:                "",
+		ReportWriter:          options.ProgressWriter,
+		SourceCtx:             nil,
+		DestinationCtx:        destCtx,
+		ForceManifestMIMEType: "",
+	})
 	if err != nil {
 		return errors.Wrapf(err, "failed to push image")
 	}
@@ -251,7 +272,6 @@ func TagAndPushAppImagesFromPath(imagesDir string, options types.PushImagesOptio
 		}
 
 		reportWriter := options.ProgressWriter
-		imageslogs.Progress = log.New(reportWriter, "", log.LstdFlags)
 		if options.LogForUI {
 			wc := reportWriterWithProgress(imageFiles, options.ProgressWriter)
 			reportWriter = wc.(io.Writer)
@@ -297,7 +317,7 @@ func TagAndPushAppImagesFromPath(imagesDir string, options types.PushImagesOptio
 					reportWriter.Write([]byte(fmt.Sprintf("+file.error:%s\n", err)))
 				}
 				options.Log.FinishChildSpinner()
-				return nil, errors.Wrap(err, "failed to copy file to registry")
+				return nil, errors.Wrap(err, "failed to push image")
 			}
 
 			options.Log.FinishChildSpinner()
@@ -337,7 +357,6 @@ func TagAndPushAppImagesFromBundle(airgapBundle string, options types.PushImages
 	defer gzipReader.Close()
 
 	reportWriter := options.ProgressWriter
-	imageslogs.Progress = log.New(reportWriter, "", log.LstdFlags)
 	if options.LogForUI {
 		wc := reportWriterWithProgress(imageFiles, options.ProgressWriter)
 		reportWriter = wc.(io.Writer)
@@ -367,10 +386,6 @@ func TagAndPushAppImagesFromBundle(airgapBundle string, options types.PushImages
 		}
 
 		err = func() error {
-			if options.LogForUI {
-				reportWriter.Write([]byte(fmt.Sprintf("+file.begin:%s\n", imageFile.FilePath)))
-			}
-
 			pathParts := strings.Split(imageFile.FilePath, string(os.PathSeparator))
 			if len(pathParts) < 3 {
 				return errors.Errorf("not enough path parts in %q", imageFile.FilePath)
@@ -392,16 +407,12 @@ func TagAndPushAppImagesFromBundle(airgapBundle string, options types.PushImages
 			defer tmpFile.Close()
 			defer os.Remove(tmpFile.Name())
 
-			gzipWriter := gzip.NewWriter(tmpFile)
-			_, err = io.Copy(gzipWriter, tarReader)
+			_, err = io.Copy(tmpFile, tarReader)
 			if err != nil {
 				return errors.Wrapf(err, "failed to write file %q", header.Name)
 			}
 
 			// Close file to flush all data before pushing to registry
-			if err := gzipWriter.Close(); err != nil {
-				return errors.Wrap(err, "failed to close gzip writer")
-			}
 			if err := tmpFile.Close(); err != nil {
 				return errors.Wrap(err, "failed to close tmp file")
 			}
@@ -419,6 +430,9 @@ func TagAndPushAppImagesFromBundle(airgapBundle string, options types.PushImages
 			}
 
 			imageFile.UploadStart = time.Now()
+			if options.LogForUI {
+				reportWriter.Write([]byte(fmt.Sprintf("+file.begin:%s\n", imageFile.FilePath)))
+			}
 			for i := 0; i < 5; i++ {
 				err = image.CopyFromFileToRegistry(tmpFile.Name(), rewrittenImage.NewName, rewrittenImage.NewTag, rewrittenImage.Digest, registryAuth, reportWriter)
 				if err == nil {
@@ -433,7 +447,7 @@ func TagAndPushAppImagesFromBundle(airgapBundle string, options types.PushImages
 					reportWriter.Write([]byte(fmt.Sprintf("+file.error:%s\n", err)))
 				}
 				options.Log.FinishChildSpinner()
-				return errors.Wrap(err, "failed to copy file from bundle to registry")
+				return errors.Wrap(err, "failed to push image")
 			}
 
 			options.Log.FinishChildSpinner()
@@ -592,6 +606,7 @@ func getLayerInfoFromReader(reader io.Reader) (map[string]*types.LayerInfo, erro
 func reportWriterWithProgress(files map[string]*types.ImageFile, reportWriter io.Writer) io.WriteCloser {
 	pipeReader, pipeWriter := io.Pipe()
 	go func() {
+		currentLayerID := ""
 		currentFilePath := ""
 		currentLine := ""
 
@@ -599,53 +614,47 @@ func reportWriterWithProgress(files map[string]*types.ImageFile, reportWriter io
 		for scanner.Scan() {
 			line := scanner.Text()
 			// Example sequence of messages we get per image
+			//
+			// Copying blob sha256:67cddc63a0c4a6dd25d2c7789f7b7cdd9ce1a5d05a0607303c0ef625d0b76d08
+			// Copying blob sha256:5dacd731af1b0386ead06c8b1feff9f65d9e0bdfec032d2cd0bc03690698feda
+			// Copying blob sha256:b66a10934ed6942a31f8d0e96b1646fe0cbc7a9e0dd58eb686585d3e2d2edd1b
+			// Copying blob sha256:0e401eb4a60a193c933bf80ebeab0ac35ac2592bc7c048d6843efb6b1d2f593a
+			// Copying config sha256:043316b7542bc66eb4dad30afb998086714862c863f0f267467385fada943681
+			// Writing manifest to image destination
+			// Storing signatures
 
-			// 2021/03/03 20:47:26 Copying from nginx to ttl.sh/ns/nginx:latest
-			// 2021/03/03 20:47:29 existing blob: sha256:35c43ace9216212c0f0e546a65eec93fa9fc8e96b25880ee222b7ed2ca1d2151
-			// 2021/03/03 20:47:31 pushed blob: sha256:f5a38c5f8d4e817a6d0fdc705abc21677c15ad68ab177500e4e34b70e02a201b
-			// 2021/03/03 20:47:32 pushed blob: sha256:ec3bd7de90d781b1d3e3a55fc40b1ec332b591360fb62dd10b8f28799c2297c1
-			// 2021/03/03 20:47:32 pushed blob: sha256:19e2441aeeab2ac2e850795573c62b9aad2c302e126a34ed370ad46ab91e6218
-			// 2021/03/03 20:47:32 pushed blob: sha256:83500d85111837bbc4a04125fd930f68067e4de851a56d89bd2e03cc3bf7e8ca
-			// 2021/03/03 20:47:35 pushed blob: sha256:8acc495f1d914a74439c21bf43c4319672e0f4ba51f9cfafa042a1051ef52671
-			// 2021/03/03 20:47:35 pushed blob: sha256:45b42c59be334ecda0daaa139b2f7d310e45c564c5f12263b1b8e68ec9e810ed
-			// 2021/03/03 20:47:36 ttl.sh/ns/nginx@sha256:b08ecc9f7997452ef24358f3e43b9c66888fadb31f3e5de22fec922975caa75a: digest: sha256:b08ecc9f7997452ef24358f3e43b9c66888fadb31f3e5de22fec922975caa75a size: 1570
-
-			timePrefixLen := len("YYYY/MM/MM HH:MM:SS")
-			timePrefix := line[:timePrefixLen]
-			if _, err := time.Parse("2006/01/02 15:04:05", timePrefix); err == nil {
-				line = line[timePrefixLen+1:]
-			}
-
-			if strings.HasPrefix(line, "existing blob:") {
+			if strings.HasPrefix(line, "Copying blob sha256:") {
 				currentLine = line
-				progressLayerEnded(currentFilePath, files)
-				writeCurrentProgress(currentLine, currentFilePath, files, reportWriter)
+				progressLayerEnded(currentFilePath, currentLayerID, files)
+				currentLayerID = strings.TrimSuffix(strings.TrimPrefix(line, "Copying blob sha256:"), ".tar")
+				progressLayerStarted(currentFilePath, currentLayerID, files)
+				writeCurrentProgress(currentLine, currentFilePath, currentLayerID, files, reportWriter)
 				continue
-			} else if strings.HasPrefix(line, "pushed blob:") {
+			} else if strings.HasPrefix(line, "Copying config sha256:") {
 				currentLine = line
-				progressLayerEnded(currentFilePath, files)
-				writeCurrentProgress(currentLine, currentFilePath, files, reportWriter)
+				progressLayerEnded(currentFilePath, currentLayerID, files)
+				writeCurrentProgress(currentLine, currentFilePath, currentLayerID, files, reportWriter)
 				continue
 			} else if strings.HasPrefix(line, "+file.begin:") {
 				currentFilePath = strings.TrimPrefix(line, "+file.begin:")
-				progressFileStarted(currentFilePath, files)
-				writeCurrentProgress(currentLine, currentFilePath, files, reportWriter)
+				progressFileStarted(currentFilePath, currentLayerID, files)
+				writeCurrentProgress(currentLine, currentFilePath, currentLayerID, files, reportWriter)
 				continue
 			} else if strings.HasPrefix(line, "+file.end:") {
-				progressFileEnded(currentFilePath, files)
-				writeCurrentProgress(currentLine, currentFilePath, files, reportWriter)
+				progressFileEnded(currentFilePath, currentLayerID, files)
+				writeCurrentProgress(currentLine, currentFilePath, currentLayerID, files, reportWriter)
 				continue
 			} else if strings.HasPrefix(line, "+file.error:") {
 				errorStr := strings.TrimPrefix(line, "+file.error:")
-				progressFileFailed(currentFilePath, files, errorStr)
-				writeCurrentProgress(currentLine, currentFilePath, files, reportWriter)
+				progressFileFailed(currentFilePath, currentLayerID, files, errorStr)
+				writeCurrentProgress(currentLine, currentFilePath, currentLayerID, files, reportWriter)
 				continue
 			} else if strings.HasPrefix(line, "+status.flush:") {
-				writeCurrentProgress(currentLine, currentFilePath, files, reportWriter)
+				writeCurrentProgress(currentLine, currentFilePath, currentLayerID, files, reportWriter)
 				continue
 			} else {
 				currentLine = line
-				writeCurrentProgress(currentLine, currentFilePath, files, reportWriter)
+				writeCurrentProgress(currentLine, currentFilePath, currentLayerID, files, reportWriter)
 				continue
 			}
 		}
@@ -680,26 +689,39 @@ type ProgressImage struct {
 	EndTime time.Time `json:"endTime"`
 }
 
-func progressLayerEnded(filePath string, files map[string]*types.ImageFile) {
+func progressLayerEnded(filePath, layerID string, files map[string]*types.ImageFile) {
 	file := files[filePath]
 	if file == nil {
 		return
 	}
 
 	file.Status = "uploading"
-	file.LayersUploaded++
+
+	layer := file.Layers[layerID]
+	if layer == nil {
+		return
+	}
+
+	layer.UploadEnd = time.Now()
 }
 
-func progressLayerStarted(filePath string, files map[string]*types.ImageFile) {
+func progressLayerStarted(filePath, layerID string, files map[string]*types.ImageFile) {
 	file := files[filePath]
 	if file == nil {
 		return
 	}
 
 	file.Status = "uploading"
+
+	layer := file.Layers[layerID]
+	if layer == nil {
+		return
+	}
+
+	layer.UploadStart = time.Now()
 }
 
-func progressFileStarted(filePath string, files map[string]*types.ImageFile) {
+func progressFileStarted(filePath, layerID string, files map[string]*types.ImageFile) {
 	file := files[filePath]
 	if file == nil {
 		return
@@ -709,7 +731,7 @@ func progressFileStarted(filePath string, files map[string]*types.ImageFile) {
 	file.UploadStart = time.Now()
 }
 
-func progressFileEnded(filePath string, files map[string]*types.ImageFile) {
+func progressFileEnded(filePath, layerID string, files map[string]*types.ImageFile) {
 	file := files[filePath]
 	if file == nil {
 		return
@@ -719,7 +741,7 @@ func progressFileEnded(filePath string, files map[string]*types.ImageFile) {
 	file.UploadEnd = time.Now()
 }
 
-func progressFileFailed(filePath string, files map[string]*types.ImageFile, errorStr string) {
+func progressFileFailed(filePath, layerID string, files map[string]*types.ImageFile, errorStr string) {
 	file := files[filePath]
 	if file == nil {
 		return
@@ -730,7 +752,7 @@ func progressFileFailed(filePath string, files map[string]*types.ImageFile, erro
 	file.UploadEnd = time.Now()
 }
 
-func writeCurrentProgress(line string, filePath string, files map[string]*types.ImageFile, reportWriter io.Writer) {
+func writeCurrentProgress(line, filePath, layerID string, files map[string]*types.ImageFile, reportWriter io.Writer) {
 	report := ProgressReport{
 		Type:                 "progressReport",
 		CompatibilityMessage: line,
@@ -742,17 +764,11 @@ func writeCurrentProgress(line string, filePath string, files map[string]*types.
 			DisplayName: pathToDisplayName(path),
 			Status:      file.Status,
 			Error:       file.Error,
-			Current:     file.LayersUploaded,
-			Total:       int64(len(file.Layers)) + 1, // crane.Push reports 1 extra blob than the number of layers in the manifest
+			Current:     countLayersUploaded(file),
+			Total:       int64(len(file.Layers)),
 			StartTime:   file.UploadStart,
 			EndTime:     file.UploadEnd,
 		}
-
-		// Just in case, since crane can report extra blobs
-		if progressImage.Current > progressImage.Total {
-			progressImage.Current = progressImage.Total
-		}
-
 		images = append(images, progressImage)
 	}
 	report.Images = images
@@ -764,4 +780,14 @@ func pathToDisplayName(path string) string {
 	tag := filepath.Base(path)
 	image := filepath.Base(filepath.Dir(path))
 	return image + ":" + tag // TODO: support for SHAs
+}
+
+func countLayersUploaded(image *types.ImageFile) int64 {
+	count := int64(0)
+	for _, layer := range image.Layers {
+		if !layer.UploadEnd.IsZero() {
+			count += 1
+		}
+	}
+	return count
 }
