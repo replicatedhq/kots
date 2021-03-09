@@ -888,7 +888,7 @@ class SnapshotStorageDestination extends Component {
             }
             availableDestinations.push({
               value: "nfs",
-              label: "Network File System - NFS",
+              label: "Network File System (NFS)",
             });
             availableDestinations.push({
               value: "hostpath",
