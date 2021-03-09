@@ -88,15 +88,16 @@ function renderVersionAction(version, latestVersion, nothingToCommitDiff, app, h
   if (isVersionEditable(latestVersion, version)) {
     tooltipTip = "Edit config";
   } else {
-    tooltipTip= "View config"
+    tooltipTip = "View config"
   }
 
   return (
     <div className="flex flex1 justifyContent--flexEnd">
-      <div className="flex alignItems--center">
-        <Link to={`/app/${app.slug}/config/${version.sequence}`} className="icon config--icon u-cursor--pointer" data-tip={tooltipTip} />
-        <ReactTooltip effect="solid" className="replicated-tooltip" />
-      </div>
+      {app.isConfigurable &&
+        <div className="flex alignItems--center">
+          <Link to={`/app/${app.slug}/config/${version.sequence}`} className="icon config--icon u-cursor--pointer" data-tip={tooltipTip} />
+          <ReactTooltip effect="solid" className="replicated-tooltip" />
+        </div>}
       {showActions &&
         <button
           className={classNames("btn u-marginLeft--10", { "secondary dark": isRollback, "secondary blue": isSecondaryBtn, "primary blue": isPrimaryButton })}
