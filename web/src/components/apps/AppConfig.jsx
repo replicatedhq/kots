@@ -276,6 +276,9 @@ class AppConfig extends Component {
     const { initialConfigGroups } = this.state;
     for (let g = 0; g < newGroups.length; g++) {
       const group = newGroups[g];
+      if (!group.items) {
+        continue;
+      }
       for (let i = 0; i < group.items.length; i++) {
         const newItem = group.items[i];
         const oldItem = this.getItemInConfigGroups(initialConfigGroups, newItem.name);
@@ -335,6 +338,9 @@ class AppConfig extends Component {
       const oldGroups = this.state.configGroups;
       const newGroups = data.configGroups;
       map(newGroups, group => {
+        if (!group.items) {
+          return
+        }
         group.items.forEach(newItem => {
           if (newItem.type === "password") {
             const oldItem = this.getItemInConfigGroups(oldGroups, newItem.name);
