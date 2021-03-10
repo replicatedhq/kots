@@ -1093,6 +1093,7 @@ class AppVersionHistory extends Component {
             toggleErrorModal={this.toggleErrorModal}
             err={errorTitle}
             errMsg={errorMsg}
+            appSlug={this.props.match.params.slug}
           />}
       </div>
     );

@@ -224,6 +224,7 @@ export class SupportBundleAnalysis extends React.Component {
             tryAgain={this.getSupportBundle}
             err="Failed to get bundle"
             loading={this.state.loading}
+            appSlug={this.props.match.params.slug}
           />}
       </div>
     );

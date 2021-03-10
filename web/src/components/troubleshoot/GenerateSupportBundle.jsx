@@ -336,6 +336,7 @@ class GenerateSupportBundle extends React.Component {
             tryAgain={this.listSupportBundles}
             err="Failed to get bundles"
             loading={this.state.loadingSupportBundles}
+            appSlug={this.props.match.params.slug}
           />}
       </div >
     );

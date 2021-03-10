@@ -183,6 +183,7 @@ class PreflightResultPage extends Component {
         ignorePermissionErrors={this.ignorePermissionErrors}
         logo={this.props.logo}
         preflightResultData={preflightResultData}
+        appSlug={this.props.match.params.slug}
       />
     );
   }
