@@ -91,7 +91,7 @@ class UploadSupportBundleModal extends React.Component {
             <p className="u-fontSize--largest u-fontWeight--bold u-lineHeight--default u-color--tuna u-marginBottom--small">
               Upload a support bundle
               </p>
-            <p className="u-fontSize--normal u-fontWeight--medium u-lineHeight--normal u-color--dustyGray">
+            <p className="u-fontSize--normal u-fontWeight--medium u-lineHeight--normal u-color--dustyGray u-marginTop--10">
               Upload a support bundle from your environment to visually analyze the server and receive insights about the server, the network and your application.
               </p>
             {this.state.uploadBundleErrMsg && <p className="u-color--chestnut u-fontSize--normal u-fontWeight--medium u-lineHeight--normal u-marginTop--10 u-marginBottom--10">{this.state.uploadBundleErrMsg}</p>}

@@ -509,6 +509,7 @@ class AppSnapshots extends Component {
           tryAgain={this.listSnapshots}
           err="Failed to get snapshots"
           loading={false}
+          appSlug={app?.slug}
         />
       )
     }

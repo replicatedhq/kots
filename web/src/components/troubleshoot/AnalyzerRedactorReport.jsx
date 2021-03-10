@@ -98,6 +98,7 @@ export class AnalyzerRedactorReport extends Component {
             tryAgain={this.getSupportBundleRedactions}
             err="Failed to get redactors"
             loading={this.state.isLoadingRedactions}
+            appSlug={this.props.match.params.slug}
           />}
       </div>
     );

@@ -151,6 +151,7 @@ class PreflightResultErrors extends Component {
             toggleErrorModal={this.toggleErrorModal}
             err={errorTitle}
             errMsg={errorMsg}
+            appSlug={this.props.appSlug}
           />}
       </div>
     );
