@@ -51,7 +51,7 @@ class AppLicense extends Component {
 
   onDrop = async (files) => {
     const content = await getFileContent(files[0]);
-    const contentStr = String.fromCharCode.apply(null, new Uint8Array(content));
+    const contentStr = (new TextDecoder("utf-8")).decode(content)
     const airgapLicense = await yaml.safeLoad(contentStr);
     const { appLicense } = this.state;
 
