@@ -21,3 +21,5 @@ dist/
 
 
 supportbundle.tar.gz
+
+.envrc

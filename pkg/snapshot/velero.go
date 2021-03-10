@@ -37,6 +37,15 @@ type VeleroStatus struct {
 	ResticStatus  string
 }
 
+func (s *VeleroStatus) ContainsPlugin(plugin string) bool {
+	for _, x := range s.Plugins {
+		if x == plugin {
+			return true
+		}
+	}
+	return false
+}
+
 func CheckKotsadmVeleroAccess(ctx context.Context, kotsadmNamespace string) (requiresAccess bool, finalErr error) {
 	if kotsadmNamespace == "" {
 		finalErr = errors.New("kotsadmNamepsace param is required")
