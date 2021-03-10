@@ -203,15 +203,21 @@ func UpdateAppFromPath(a *apptypes.App, airgapRoot string, airgapBundlePath stri
 		return errors.Errorf("cannot compare %q and %q", beforeKotsKinds.Installation.Spec.UpdateCursor, afterKotsKinds.Installation.Spec.UpdateCursor)
 	}
 
-	if bc.Equal(ac) {
-		return util.ActionableError{
-			NoRetry: true,
-			Message: fmt.Sprintf("Version %s (%s) cannot be installed again because it is already the current version", afterKotsKinds.Installation.Spec.VersionLabel, afterKotsKinds.Installation.Spec.UpdateCursor),
-		}
-	} else if bc.After(ac) {
-		return util.ActionableError{
-			NoRetry: true,
-			Message: fmt.Sprintf("Version %s (%s) cannot be installed because version %s (%s) is newer", afterKotsKinds.Installation.Spec.VersionLabel, afterKotsKinds.Installation.Spec.UpdateCursor, beforeKotsKinds.Installation.Spec.VersionLabel, beforeKotsKinds.Installation.Spec.UpdateCursor),
+	installChannelID := beforeKotsKinds.Installation.Spec.ChannelID
+	licenseChannelID := beforeKotsKinds.License.Spec.ChannelID
+	installChannelName := beforeKotsKinds.Installation.Spec.ChannelName
+	licenseChannelName := beforeKotsKinds.License.Spec.ChannelName
+	if (installChannelID != "" && licenseChannelID != "" && installChannelID == licenseChannelID) || (installChannelName == licenseChannelName) {
+		if bc.Equal(ac) {
+			return util.ActionableError{
+				NoRetry: true,
+				Message: fmt.Sprintf("Version %s (%s) cannot be installed again because it is already the current version", afterKotsKinds.Installation.Spec.VersionLabel, afterKotsKinds.Installation.Spec.UpdateCursor),
+			}
+		} else if bc.After(ac) {
+			return util.ActionableError{
+				NoRetry: true,
+				Message: fmt.Sprintf("Version %s (%s) cannot be installed because version %s (%s) is newer", afterKotsKinds.Installation.Spec.VersionLabel, afterKotsKinds.Installation.Spec.UpdateCursor, beforeKotsKinds.Installation.Spec.VersionLabel, beforeKotsKinds.Installation.Spec.UpdateCursor),
+			}
 		}
 	}
 
