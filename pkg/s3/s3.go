@@ -1,6 +1,8 @@
 package s3
 
 import (
+	"bufio"
+	"bytes"
 	"os"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -86,8 +88,16 @@ func CreateS3BucketUsingAPod(ctx context.Context, clientset kubernetes.Interface
 	}
 
 	createBucketPodOutput := CreateBucketPodOutput{}
-	if err := json.Unmarshal(logs, &createBucketPodOutput); err != nil {
-		return errors.Wrapf(err, "failed to unmarshal %s pod logs", createBucketPod.Name)
+
+	scanner := bufio.NewScanner(bytes.NewReader(logs))
+	for scanner.Scan() {
+		line := scanner.Text()
+
+		if err := json.Unmarshal([]byte(line), &createBucketPodOutput); err != nil {
+			continue
+		}
+
+		break
 	}
 
 	if !createBucketPodOutput.Success {
@@ -130,8 +140,16 @@ func HeadS3BucketUsingAPod(ctx context.Context, clientset kubernetes.Interface, 
 	}
 
 	headBucketPodOutput := HeadBucketPodOutput{}
-	if err := json.Unmarshal(logs, &headBucketPodOutput); err != nil {
-		return errors.Wrapf(err, "failed to unmarshal %s pod logs", headBucketPod.Name)
+
+	scanner := bufio.NewScanner(bytes.NewReader(logs))
+	for scanner.Scan() {
+		line := scanner.Text()
+
+		if err := json.Unmarshal([]byte(line), &headBucketPodOutput); err != nil {
+			continue
+		}
+
+		break
 	}
 
 	if !headBucketPodOutput.Success {

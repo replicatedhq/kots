@@ -1,6 +1,8 @@
 package snapshot
 
 import (
+	"bufio"
+	"bytes"
 	"context"
 	"crypto/md5"
 	"crypto/sha256"
@@ -503,9 +505,16 @@ func shouldResetFileSystemMount(ctx context.Context, clientset kubernetes.Interf
 	}
 
 	checkPodOutput := FileSystemMinioCheckPodOutput{}
-	if err := json.Unmarshal(logs, &checkPodOutput); err != nil {
-		finalErr = errors.Wrapf(err, "failed to unmarshal %s pod logs", checkPod.Name)
-		return
+
+	scanner := bufio.NewScanner(bytes.NewReader(logs))
+	for scanner.Scan() {
+		line := scanner.Text()
+
+		if err := json.Unmarshal([]byte(line), &checkPodOutput); err != nil {
+			continue
+		}
+
+		break
 	}
 
 	// only delete pod if we know we have an actionable output
@@ -569,8 +578,16 @@ func resetFileSystemMount(ctx context.Context, clientset kubernetes.Interface, d
 	}
 
 	resetPodOutput := FileSystemMinioResetPodOutput{}
-	if err := json.Unmarshal(logs, &resetPodOutput); err != nil {
-		return errors.Wrapf(err, "failed to unmarshal %s pod logs", resetPod.Name)
+
+	scanner := bufio.NewScanner(bytes.NewReader(logs))
+	for scanner.Scan() {
+		line := scanner.Text()
+
+		if err := json.Unmarshal([]byte(line), &resetPodOutput); err != nil {
+			continue
+		}
+
+		break
 	}
 
 	if !resetPodOutput.Success {
@@ -608,8 +625,16 @@ func writeMinioKeysSHAFile(ctx context.Context, clientset kubernetes.Interface, 
 	}
 
 	keysSHAPodOutput := FileSystemMinioKeysSHAPodOutput{}
-	if err := json.Unmarshal(logs, &keysSHAPodOutput); err != nil {
-		return errors.Wrapf(err, "failed to unmarshal %s pod logs", keysSHAPod.Name)
+
+	scanner := bufio.NewScanner(bytes.NewReader(logs))
+	for scanner.Scan() {
+		line := scanner.Text()
+
+		if err := json.Unmarshal([]byte(line), &keysSHAPodOutput); err != nil {
+			continue
+		}
+
+		break
 	}
 
 	if !keysSHAPodOutput.Success {
