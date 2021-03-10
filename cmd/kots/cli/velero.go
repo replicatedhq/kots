@@ -3,6 +3,7 @@ package cli
 import (
 	"context"
 	"fmt"
+	"io/ioutil"
 	"os"
 	"strings"
 	"time"
@@ -13,13 +14,16 @@ import (
 	"github.com/fatih/color"
 	"github.com/manifoldco/promptui"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
+	"github.com/replicatedhq/kots/pkg/kotsadm"
 	kotsadmtypes "github.com/replicatedhq/kots/pkg/kotsadm/types"
+	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/print"
 	"github.com/replicatedhq/kots/pkg/snapshot"
 	snapshottypes "github.com/replicatedhq/kots/pkg/snapshot/types"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 )
 
@@ -30,6 +34,10 @@ func VeleroCmd() *cobra.Command {
 	}
 
 	cmd.AddCommand(VeleroEnsurePermissionsCmd())
+	cmd.AddCommand(VeleroConfigureInternalCmd())
+	cmd.AddCommand(VeleroConfigureAmazonS3Cmd())
+	cmd.AddCommand(VeleroConfigureOtherS3Cmd())
+	cmd.AddCommand(VeleroConfigureGCPCmd())
 	cmd.AddCommand(VeleroConfigureNFSCmd())
 	cmd.AddCommand(VeleroConfigureHostPathCmd())
 	cmd.AddCommand(VeleroPrintFileSystemInstructionsCmd())
@@ -79,6 +87,335 @@ func VeleroEnsurePermissionsCmd() *cobra.Command {
 
 	cmd.Flags().StringP("namespace", "n", "", "namespace in which kots/kotsadm is installed")
 	cmd.Flags().String("velero-namespace", "", "namespace in which velero is installed")
+
+	return cmd
+}
+
+func VeleroConfigureInternalCmd() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:           "configure-internal",
+		Short:         "Configure snapshots to use the default object store provided in embedded clusters as storage",
+		Long:          ``,
+		SilenceUsage:  true,
+		SilenceErrors: false,
+		PreRun: func(cmd *cobra.Command, args []string) {
+			viper.BindPFlags(cmd.Flags())
+		},
+		RunE: func(cmd *cobra.Command, args []string) error {
+			v := viper.GetViper()
+
+			clientset, err := k8sutil.GetClientset(kubernetesConfigFlags)
+			if err != nil {
+				return errors.Wrap(err, "failed to get clientset")
+			}
+
+			if !kotsutil.IsKurl(clientset) {
+				return errors.New("configuring snapshots to use the internal store is only supported for embedded clusters")
+			}
+
+			veleroNamespace, err := snapshot.DetectVeleroNamespace(cmd.Context(), clientset, "")
+			if err != nil {
+				return errors.Wrap(err, "failed to detect velero namespace")
+			}
+			if veleroNamespace == "" {
+				return errors.New("velero not found")
+			}
+
+			namespace := metav1.NamespaceDefault
+
+			registryOptions, err := kotsadm.GetKotsadmOptionsFromCluster(namespace, clientset)
+			if err != nil {
+				return errors.Wrap(err, "failed to get registry options from cluster")
+			}
+
+			configureStoreOptions := snapshot.ConfigureStoreOptions{
+				Internal:          true,
+				KotsadmNamespace:  namespace,
+				RegistryOptions:   &registryOptions,
+				SkipValidation:    v.GetBool("skip-validation"),
+				ValidateUsingAPod: true,
+			}
+			_, err = snapshot.ConfigureStore(cmd.Context(), configureStoreOptions)
+			if err != nil {
+				return errors.Wrap(err, "failed to configure store")
+			}
+
+			log := logger.NewCLILogger()
+			log.Info("\nStore Configured Successfully")
+
+			return nil
+		},
+	}
+
+	cmd.Flags().Bool("skip-validation", false, "skip the validation of the internal store endpoint/bucket")
+
+	return cmd
+}
+
+func VeleroConfigureAmazonS3Cmd() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:           "configure-aws-s3",
+		Short:         "Configure snapshots to use an AWS s3 bucket as storage",
+		Long:          ``,
+		SilenceUsage:  true,
+		SilenceErrors: false,
+		PreRun: func(cmd *cobra.Command, args []string) {
+			viper.BindPFlags(cmd.Flags())
+		},
+		RunE: func(cmd *cobra.Command, args []string) error {
+			v := viper.GetViper()
+
+			namespace := v.GetString("namespace")
+			if err := validateNamespace(namespace); err != nil {
+				return err
+			}
+
+			clientset, err := k8sutil.GetClientset(kubernetesConfigFlags)
+			if err != nil {
+				return errors.Wrap(err, "failed to get clientset")
+			}
+
+			veleroNamespace, err := snapshot.DetectVeleroNamespace(cmd.Context(), clientset, "")
+			if err != nil {
+				return errors.Wrap(err, "failed to detect velero namespace")
+			}
+			if veleroNamespace == "" {
+				return errors.New("velero not found")
+			}
+
+			if v.GetString("bucket") == "" {
+				return errors.New("--bucket flag is required")
+			}
+			if v.GetString("region") == "" {
+				return errors.New("--region flag is required")
+			}
+			if !v.GetBool("use-instance-role") {
+				if v.GetString("access-key-id") == "" || v.GetString("secret-access-key") == "" {
+					return errors.New("either --access-key-id/--secret-access-key or --use-instance-role flags are required")
+				}
+			}
+
+			registryOptions, err := kotsadm.GetKotsadmOptionsFromCluster(namespace, clientset)
+			if err != nil {
+				return errors.Wrap(err, "failed to get registry options from cluster")
+			}
+
+			configureStoreOptions := snapshot.ConfigureStoreOptions{
+				Provider: "aws",
+				Bucket:   v.GetString("bucket"),
+				Path:     v.GetString("path"),
+				AWS: &snapshottypes.StoreAWS{
+					Region:          v.GetString("region"),
+					AccessKeyID:     v.GetString("access-key-id"),
+					SecretAccessKey: v.GetString("secret-access-key"),
+					UseInstanceRole: v.GetBool("use-instance-role"),
+				},
+				KotsadmNamespace: namespace,
+				RegistryOptions:  &registryOptions,
+				SkipValidation:   v.GetBool("skip-validation"),
+			}
+			_, err = snapshot.ConfigureStore(cmd.Context(), configureStoreOptions)
+			if err != nil {
+				return errors.Wrap(err, "failed to configure store")
+			}
+
+			log := logger.NewCLILogger()
+			log.Info("\nStore Configured Successfully")
+
+			return nil
+		},
+	}
+
+	cmd.Flags().StringP("namespace", "n", "default", "namespace in which kots/kotsadm is installed")
+	cmd.Flags().String("bucket", "", "name of the object storage bucket where backups should be stored")
+	cmd.Flags().String("path", "", "path to a subdirectory in the object store bucket")
+	cmd.Flags().String("region", "", "the region where the bucket exists")
+	cmd.Flags().String("access-key-id", "", "the aws access key id to use for accessing the bucket")
+	cmd.Flags().String("secret-access-key", "", "the aws secret access key to use for accessing the bucket")
+	cmd.Flags().Bool("use-instance-role", false, "use aws instance role instead of an access key id/secret access key")
+	cmd.Flags().Bool("skip-validation", false, "skip the validation of the aws s3 endpoint/bucket")
+
+	return cmd
+}
+
+func VeleroConfigureOtherS3Cmd() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:           "configure-other-s3",
+		Short:         "Configure snapshots to use an external s3 compatible storage",
+		Long:          ``,
+		SilenceUsage:  true,
+		SilenceErrors: false,
+		PreRun: func(cmd *cobra.Command, args []string) {
+			viper.BindPFlags(cmd.Flags())
+		},
+		RunE: func(cmd *cobra.Command, args []string) error {
+			v := viper.GetViper()
+
+			namespace := v.GetString("namespace")
+			if err := validateNamespace(namespace); err != nil {
+				return err
+			}
+
+			clientset, err := k8sutil.GetClientset(kubernetesConfigFlags)
+			if err != nil {
+				return errors.Wrap(err, "failed to get clientset")
+			}
+
+			veleroNamespace, err := snapshot.DetectVeleroNamespace(cmd.Context(), clientset, "")
+			if err != nil {
+				return errors.Wrap(err, "failed to detect velero namespace")
+			}
+			if veleroNamespace == "" {
+				return errors.New("velero not found")
+			}
+
+			if v.GetString("bucket") == "" {
+				return errors.New("--bucket flag is required")
+			}
+			if v.GetString("region") == "" {
+				return errors.New("--region flag is required")
+			}
+			if v.GetString("access-key-id") == "" {
+				return errors.New("--access-key-id flag is required")
+			}
+			if v.GetString("secret-access-key") == "" {
+				return errors.New("--secret-access-key flag is required")
+			}
+			if v.GetString("endpoint") == "" {
+				return errors.New("--endpoint flag is required")
+			}
+
+			registryOptions, err := kotsadm.GetKotsadmOptionsFromCluster(namespace, clientset)
+			if err != nil {
+				return errors.Wrap(err, "failed to get registry options from cluster")
+			}
+
+			configureStoreOptions := snapshot.ConfigureStoreOptions{
+				Provider: "aws",
+				Bucket:   v.GetString("bucket"),
+				Path:     v.GetString("path"),
+				Other: &snapshottypes.StoreOther{
+					Region:          v.GetString("region"),
+					AccessKeyID:     v.GetString("access-key-id"),
+					SecretAccessKey: v.GetString("secret-access-key"),
+					Endpoint:        v.GetString("endpoint"),
+				},
+				KotsadmNamespace:  namespace,
+				RegistryOptions:   &registryOptions,
+				SkipValidation:    v.GetBool("skip-validation"),
+				ValidateUsingAPod: true,
+			}
+			_, err = snapshot.ConfigureStore(cmd.Context(), configureStoreOptions)
+			if err != nil {
+				return errors.Wrap(err, "failed to configure store")
+			}
+
+			log := logger.NewCLILogger()
+			log.Info("\nStore Configured Successfully")
+
+			return nil
+		},
+	}
+
+	cmd.Flags().StringP("namespace", "n", "default", "namespace in which kots/kotsadm is installed")
+	cmd.Flags().String("bucket", "", "name of the object storage bucket where backups should be stored")
+	cmd.Flags().String("path", "", "path to a subdirectory in the object store bucket")
+	cmd.Flags().String("region", "", "the region where the bucket exists")
+	cmd.Flags().String("access-key-id", "", "the access key id to use for accessing the bucket")
+	cmd.Flags().String("secret-access-key", "", "the secret access key to use for accessing the bucket")
+	cmd.Flags().String("endpoint", "", "the s3 endpoint. (e.g. http://some-other-s3-endpoint)")
+	cmd.Flags().Bool("skip-validation", false, "skip the validation of the s3 endpoint/bucket")
+
+	return cmd
+}
+
+func VeleroConfigureGCPCmd() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:           "configure-gcp",
+		Short:         "Configure snapshots to use Google Cloud Storage",
+		Long:          ``,
+		SilenceUsage:  true,
+		SilenceErrors: false,
+		PreRun: func(cmd *cobra.Command, args []string) {
+			viper.BindPFlags(cmd.Flags())
+		},
+		RunE: func(cmd *cobra.Command, args []string) error {
+			v := viper.GetViper()
+
+			namespace := v.GetString("namespace")
+			if err := validateNamespace(namespace); err != nil {
+				return err
+			}
+
+			clientset, err := k8sutil.GetClientset(kubernetesConfigFlags)
+			if err != nil {
+				return errors.Wrap(err, "failed to get clientset")
+			}
+
+			veleroNamespace, err := snapshot.DetectVeleroNamespace(cmd.Context(), clientset, "")
+			if err != nil {
+				return errors.Wrap(err, "failed to detect velero namespace")
+			}
+			if veleroNamespace == "" {
+				return errors.New("velero not found")
+			}
+
+			if v.GetBool("use-instance-role") {
+				if v.GetString("service-account") == "" {
+					return errors.New("--service-account is required when using --use-instance-role")
+				}
+			} else {
+				if v.GetString("json-file") == "" {
+					return errors.New("either --json-file or --use-instance-role flag is required")
+				}
+			}
+
+			jsonFile := ""
+			if jsonFilePath := v.GetString("json-file"); jsonFilePath != "" {
+				content, err := ioutil.ReadFile(jsonFilePath)
+				if err != nil {
+					return errors.Wrap(err, "failed to read json file")
+				}
+				jsonFile = string(content)
+			}
+
+			registryOptions, err := kotsadm.GetKotsadmOptionsFromCluster(namespace, clientset)
+			if err != nil {
+				return errors.Wrap(err, "failed to get registry options from cluster")
+			}
+
+			configureStoreOptions := snapshot.ConfigureStoreOptions{
+				Provider: "gcp",
+				Bucket:   v.GetString("bucket"),
+				Path:     v.GetString("path"),
+				Google: &snapshottypes.StoreGoogle{
+					JSONFile:        jsonFile,
+					ServiceAccount:  v.GetString("service-account"),
+					UseInstanceRole: v.GetBool("use-instance-role"),
+				},
+				KotsadmNamespace: namespace,
+				RegistryOptions:  &registryOptions,
+				SkipValidation:   v.GetBool("skip-validation"),
+			}
+			_, err = snapshot.ConfigureStore(cmd.Context(), configureStoreOptions)
+			if err != nil {
+				return errors.Wrap(err, "failed to configure store")
+			}
+
+			log := logger.NewCLILogger()
+			log.Info("\nStore Configured Successfully")
+
+			return nil
+		},
+	}
+
+	cmd.Flags().StringP("namespace", "n", "default", "namespace in which kots/kotsadm is installed")
+	cmd.Flags().String("bucket", "", "name of the object storage bucket where backups should be stored")
+	cmd.Flags().String("path", "", "path to a subdirectory in the object store bucket")
+	cmd.Flags().Bool("use-instance-role", false, "use Google Cloud instance role")
+	cmd.Flags().String("service-account", "", "the service account to use if using Google Cloud instance role")
+	cmd.Flags().String("json-file", "", "path to JSON file if not using an instance role")
+	cmd.Flags().Bool("skip-validation", false, "skip the validation of the bucket")
 
 	return cmd
 }
