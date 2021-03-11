@@ -27,6 +27,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/midstream"
+	"github.com/replicatedhq/kots/pkg/redact"
 	"github.com/replicatedhq/kots/pkg/render"
 	"github.com/replicatedhq/kots/pkg/socket"
 	"github.com/replicatedhq/kots/pkg/socket/transport"
@@ -66,7 +67,8 @@ type AppInformersArgs struct {
 }
 
 type SupportBundleArgs struct {
-	URI string `json:"uri"`
+	URI       string `json:"uri"`
+	RedactURI string `json:"redactURI"`
 }
 
 var server *socket.Server
@@ -452,8 +454,14 @@ func processSupportBundle(clusterSocket *ClusterSocket, pendingSupportBundle sup
 		return errors.Wrap(err, "failed to create rendered support bundle spec")
 	}
 
+	err = redact.WriteRedactSpecConfigMap()
+	if err != nil {
+		return errors.Wrap(err, "failed to write redact spec configmap")
+	}
+
 	supportBundleArgs := SupportBundleArgs{
-		URI: supportbundle.GetSpecURI(a.Slug),
+		URI:       supportbundle.GetSpecURI(a.Slug),
+		RedactURI: redact.GetRedactSpecURI(),
 	}
 	c.Emit("supportbundle", supportBundleArgs)
 
