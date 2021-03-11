@@ -12,7 +12,7 @@ require (
 	github.com/pact-foundation/pact-go v1.0.0-beta.5
 	github.com/pkg/errors v0.9.1
 	github.com/replicatedhq/troubleshoot v0.10.10
-	github.com/spf13/cobra v0.0.5
+	github.com/spf13/cobra v0.0.7
 	github.com/spf13/viper v1.4.0
 	gopkg.in/yaml.v2 v2.3.0
 	k8s.io/api v0.18.4
