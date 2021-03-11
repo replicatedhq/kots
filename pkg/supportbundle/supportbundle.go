@@ -84,29 +84,71 @@ func GetFilesContents(bundleID string, filenames []string) (map[string][]byte, e
 	}
 	defer os.RemoveAll(bundleArchive)
 
-	tmpDir, err := ioutil.TempDir("", "kots")
+	bundleDir, err := ioutil.TempDir("", "kots")
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create tmp dir")
 	}
-	defer os.RemoveAll(tmpDir)
+	defer os.RemoveAll(bundleDir)
 
 	tarGz := archiver.TarGz{
 		Tar: &archiver.Tar{
 			ImplicitTopLevelFolder: false,
 		},
 	}
-	if err := tarGz.Unarchive(bundleArchive, tmpDir); err != nil {
+	if err := tarGz.Unarchive(bundleArchive, bundleDir); err != nil {
 		return nil, errors.Wrap(err, "failed to unarchive")
 	}
 
 	files := map[string][]byte{}
-	for _, filename := range filenames {
-		content, err := ioutil.ReadFile(filepath.Join(tmpDir, filename))
+	err = filepath.Walk(bundleDir, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
-			return nil, errors.Wrap(err, "failed to read file")
+			return err
 		}
 
-		files[filename] = content
+		if len(path) <= len(bundleDir) {
+			return nil
+		}
+
+		if info.IsDir() {
+			return nil
+		}
+
+		// the following tries to find the actual file path of the desired files in the support bundle
+		// this is needed to handle old and new support bundle formats
+		// where old support bundles don't include a top level subdirectory and the new ones do
+		// this basically compares file paths after trimming the subdirectory path from both (if exists)
+		relPath, err := filepath.Rel(bundleDir, path)
+		if err != nil {
+			return errors.Wrap(err, "failed to get relative path")
+		}
+
+		trimmedRelPath := SupportBundleNameRegex.ReplaceAllString(relPath, "")
+		trimmedRelPath = strings.TrimPrefix(trimmedRelPath, string(os.PathSeparator))
+		if trimmedRelPath == "" {
+			return nil
+		}
+
+		for _, filename := range filenames {
+			trimmedFileName := SupportBundleNameRegex.ReplaceAllString(filename, "")
+			trimmedFileName = strings.TrimPrefix(trimmedFileName, string(os.PathSeparator))
+			if trimmedFileName == "" {
+				continue
+			}
+			if trimmedRelPath == trimmedFileName {
+				content, err := ioutil.ReadFile(path)
+				if err != nil {
+					return errors.Wrap(err, "failed to read file")
+				}
+
+				files[filename] = content
+				return nil
+			}
+		}
+
+		return nil
+	})
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to walk")
 	}
 
 	return files, nil
