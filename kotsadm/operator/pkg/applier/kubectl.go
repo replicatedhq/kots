@@ -56,11 +56,12 @@ func (c *Kubectl) connectArgs() []string {
 	return args
 }
 
-func (c *Kubectl) SupportBundle(collectorURI string) error {
-	log.Printf("running kubectl supportBundle %s", collectorURI)
+func (c *Kubectl) SupportBundle(collectorURI string, redactURI string) error {
+	log.Printf("running kubectl support-bundle %s --redactors=%s", collectorURI, redactURI)
 	args := []string{
-		"--collect-without-permissions",
 		collectorURI,
+		"--collect-without-permissions",
+		fmt.Sprintf("--redactors=%s", redactURI),
 	}
 
 	cmd := c.supportBundleCommand(args...)
