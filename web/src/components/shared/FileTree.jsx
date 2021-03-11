@@ -19,8 +19,7 @@ export default class FileTree extends React.Component {
   }
 
   getLevel = () => {
-    const initialLevel = this.props.initialLevel || 0;
-    return this.props.level || initialLevel;
+    return this.props.level || 0;
   }
 
   arePathsSame = (path1, path2) => {
@@ -38,8 +37,7 @@ export default class FileTree extends React.Component {
     if (!!e && e.scrollIntoView) {
         e.scrollIntoView();
     }
- }
-
+  }
 
   render() {
     const { files, selectedFile, handleFileSelect, isRoot } = this.props;
