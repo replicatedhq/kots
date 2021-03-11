@@ -98,9 +98,8 @@ class AnalyzerFileTree extends React.Component {
     if (!this.state.fileTree) { return; }
     const parsedTree = JSON.parse(this.state.fileTree);
     let sortedTree = sortBy(parsedTree, (dir) => {
-      dir.children ? dir.children.length : []
+      return dir.children ? dir.children.length : [];
     });
-    sortedTree.reverse(); // If something has a directory, render those first, all top level files should be at that bottom
     this.setState({ files: sortedTree });
   }
 
