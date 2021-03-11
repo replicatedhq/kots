@@ -145,7 +145,7 @@ func GetRedactInfo() ([]types.RedactorList, error) {
 
 	if combinedYaml, ok := configmap.Data["kotsadm-redact"]; ok {
 		// this is the key used for the combined redact list, so run the migration
-		newMap, err := splitRedactors(combinedYaml, configmap.Data)
+		newMap, err := splitRedactors(combinedYaml)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to split combined redactors")
 		}
@@ -211,7 +211,7 @@ func SetRedactSpec(spec string) (string, error) {
 		return errMsg, errors.Wrap(err, "get redactors configmap")
 	}
 
-	newMap, err := splitRedactors(spec, configMap.Data)
+	newMap, err := splitRedactors(spec)
 	if err != nil {
 		return "failed to split redactors", errors.Wrap(err, "failed to split redactors")
 	}
@@ -497,12 +497,8 @@ func buildFullRedact(config *v1.ConfigMap) (*troubleshootv1beta2.Redactor, error
 	return full, nil
 }
 
-func splitRedactors(spec string, existingMap map[string]string) (map[string]string, error) {
-	fmt.Printf("running migration from combined kotsadm-redact doc")
-
-	if existingMap == nil {
-		existingMap = make(map[string]string, 0)
-	}
+func splitRedactors(spec string) (map[string]string, error) {
+	newMap := make(map[string]string, 0)
 
 	redactor, err := parseRedact([]byte(spec))
 	if err != nil {
@@ -551,11 +547,10 @@ func splitRedactors(spec string, existingMap map[string]string) (map[string]stri
 			return nil, errors.Wrapf(err, "unable to marshal redactor %s", redactorName)
 		}
 
-		existingMap[newRedactor.Metadata.Slug] = string(jsonBytes)
+		newMap[newRedactor.Metadata.Slug] = string(jsonBytes)
 	}
-	delete(existingMap, "kotsadm-redact")
 
-	return existingMap, nil
+	return newMap, nil
 }
 
 func parseRedact(spec []byte) (*troubleshootv1beta2.Redactor, error) {

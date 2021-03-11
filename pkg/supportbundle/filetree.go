@@ -4,11 +4,16 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 
 	"github.com/mholt/archiver"
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/supportbundle/types"
+)
+
+var (
+	SupportBundleNameRegex = regexp.MustCompile(`^\/?support-bundle-(\d{4})-(\d{2})-(\d{2})T(\d{2})_(\d{2})_(\d{2})\/?`)
 )
 
 func archiveToFileTree(archivePath string) (*types.FileTree, error) {
@@ -40,12 +45,23 @@ func archiveToFileTree(archivePath string) (*types.FileTree, error) {
 			return nil
 		}
 
-		if info.IsDir() {
-			directories = append(directories, path[len(workDir)+1:])
+		relPath, err := filepath.Rel(workDir, path)
+		if err != nil {
+			return errors.Wrap(err, "failed to get relative path")
+		}
+
+		// don't include the top level subdirectory in the file tree
+		trimmedRelPath := SupportBundleNameRegex.ReplaceAllString(relPath, "")
+		if trimmedRelPath == "" {
 			return nil
 		}
 
-		files = append(files, path[len(workDir)+1:])
+		if info.IsDir() {
+			directories = append(directories, trimmedRelPath)
+			return nil
+		}
+
+		files = append(files, trimmedRelPath)
 		return nil
 	})
 	if err != nil {
