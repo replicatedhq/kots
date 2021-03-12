@@ -54,17 +54,38 @@ func (c *Client) diffAndRemovePreviousManifests(applicationManifests Application
 	}
 
 	// we need to find the gvk+names that are present in the previous, but not in the current and then remove them
+	// namespaces that were remoed from YAML and added to additionalNamespaces should not be removed
 	decodedPreviousStrings := strings.Split(string(decodedPrevious), "\n---\n")
-	decodedPreviousMap := map[string]string{}
+
+	type previousObject struct {
+		spec   string
+		delete bool
+	}
+	decodedPreviousMap := map[string]previousObject{}
 	for _, decodedPreviousString := range decodedPreviousStrings {
-		decodedPreviousMap[GetGVKWithNameAndNs([]byte(decodedPreviousString), targetNamespace)] = decodedPreviousString
+		k, o := GetGVKWithNameAndNs([]byte(decodedPreviousString), targetNamespace)
+
+		delete := true
+		if o.APIVersion == "v1" && o.Kind == "Namespace" {
+			for _, n := range applicationManifests.AdditionalNamespaces {
+				if o.Metadata.Name == n {
+					delete = false
+					break
+				}
+			}
+		}
+		decodedPreviousMap[k] = previousObject{
+			spec:   decodedPreviousString,
+			delete: delete,
+		}
 	}
 
 	// now get the current names
 	decodedCurrentStrings := strings.Split(string(decodedCurrent), "\n---\n")
 	decodedCurrentMap := map[string]string{}
 	for _, decodedCurrentString := range decodedCurrentStrings {
-		decodedCurrentMap[GetGVKWithNameAndNs([]byte(decodedCurrentString), targetNamespace)] = decodedCurrentString
+		k, _ := GetGVKWithNameAndNs([]byte(decodedCurrentString), targetNamespace)
+		decodedCurrentMap[k] = decodedCurrentString
 	}
 
 	// now remove anything that's in previous but not in current
@@ -82,12 +103,15 @@ func (c *Client) diffAndRemovePreviousManifests(applicationManifests Application
 	kubernetesApplier := applier.NewKubectl(kubectl, "", "", config)
 
 	allPVCs := make([]string, 0)
-	for k, oldContents := range decodedPreviousMap {
+	for k, previous := range decodedPreviousMap {
 		if _, ok := decodedCurrentMap[k]; ok {
 			continue
 		}
+		if !previous.delete {
+			continue
+		}
 
-		obj, gvk, err := parseK8sYaml([]byte(oldContents))
+		obj, gvk, err := parseK8sYaml([]byte(previous.spec))
 		if err != nil {
 			log.Printf("deleting unidentified manifest. unable to parse error: %s", err.Error())
 		}
@@ -123,7 +147,7 @@ func (c *Client) diffAndRemovePreviousManifests(applicationManifests Application
 			wait = false
 		}
 
-		stdout, stderr, err := kubernetesApplier.Remove(namespace, []byte(oldContents), wait)
+		stdout, stderr, err := kubernetesApplier.Remove(namespace, []byte(previous.spec), wait)
 		if err != nil {
 			log.Printf("stdout (delete) = %s", stdout)
 			log.Printf("stderr (delete) = %s", stderr)
