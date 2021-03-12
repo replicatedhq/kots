@@ -815,7 +815,7 @@ func findAppInRelease(release *Release) *kotsv1beta1.Application {
 			Name: "replicated-kots-app",
 		},
 		Spec: kotsv1beta1.ApplicationSpec{
-			Title: "Replicated Kots App",
+			Title: "Replicated KOTS App",
 			Icon:  "",
 		},
 	}

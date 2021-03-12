@@ -14,7 +14,7 @@ func VersionCmd() *cobra.Command {
 		Long:  `Print the current version and exit`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			// print basic version info
-			fmt.Printf("Replicated Kots %s\n", buildversion.Version())
+			fmt.Printf("Replicated KOTS %s\n", buildversion.Version())
 
 			// check if this is the latest release, and display possible upgrade instructions
 			isLatest, latestVer, err := buildversion.IsLatestRelease()
