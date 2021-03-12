@@ -43,6 +43,8 @@ func UploadCmd() *cobra.Command {
 				NewAppName:            v.GetString("name"),
 				UpstreamURI:           v.GetString("upstream-uri"),
 				Endpoint:              "http://localhost:3000",
+				Deploy:                v.GetBool("deploy"),
+				SkipPreflights:        v.GetBool("skip-preflights"),
 			}
 
 			stopCh := make(chan struct{})
@@ -76,6 +78,9 @@ func UploadCmd() *cobra.Command {
 	cmd.Flags().String("slug", "", "the application slug to use. if not present, a new one will be created")
 	cmd.Flags().String("name", "", "the name of the kotsadm application to create")
 	cmd.Flags().String("upstream-uri", "", "the upstream uri that can be used to check for updates")
+
+	cmd.Flags().Bool("deploy", false, "when set, automatically deploy the uploaded version")
+	cmd.Flags().Bool("skip-preflights", false, "set to true to skip preflight checks")
 
 	return cmd
 }
