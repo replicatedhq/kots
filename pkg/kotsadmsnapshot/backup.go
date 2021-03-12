@@ -181,7 +181,10 @@ func CreateInstanceBackup(ctx context.Context, cluster *downstreamtypes.Downstre
 	backupHooks := velerov1.BackupHooks{
 		Resources: []velerov1.BackupResourceHookSpec{},
 	}
-	// non-supported fields:
+	// non-supported fields that are intentionally left out cuz they might break full snapshots:
+	// - includedResources
+	// - excludedResources
+	// - labelSelector
 
 	appNamespace := kotsadmNamespace
 	if os.Getenv("KOTSADM_TARGET_NAMESPACE") != "" {
