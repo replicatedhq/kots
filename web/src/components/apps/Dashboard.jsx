@@ -8,6 +8,7 @@ import Loader from "../shared/Loader";
 import DashboardCard from "./DashboardCard";
 import ConfigureGraphsModal from "../shared/modals/ConfigureGraphsModal";
 import UpdateCheckerModal from "@src/components/modals/UpdateCheckerModal";
+import SnapshotDifferencesModal from "@src/components/modals/SnapshotDifferencesModal";
 import Modal from "react-modal";
 import { Repeater } from "../../utilities/repeater";
 import { Utilities } from "../../utilities/utilities";
@@ -66,6 +67,7 @@ class Dashboard extends Component {
       { option: "learn", name: "Learn about the difference" }
     ],
     selectedSnapshotOption: { option: "full", name: "Start a Full snapshot" },
+    snapshotDifferencesModal: false
   }
 
   toggleConfigureGraphs = () => {
@@ -503,10 +505,10 @@ class Dashboard extends Component {
         if (!result.ok && result.status === 409) {
           const res = await result.json();
           if (res.kotsadmRequiresVeleroAccess) {
-            this.props.toggleSnapshotsRBACModal("show");
             this.setState({
               startingSnapshot: false
             });
+            this.props.history.replace("/snapshots/settings");
             return;
           }
         }
@@ -539,11 +541,15 @@ class Dashboard extends Component {
   onSnapshotOptionChange = (selectedSnapshotOption) => {
     this.setState({ selectedSnapshotOption }, () => {
       if (selectedSnapshotOption.option === "learn") {
-        window.open("https://kots.io/vendor/snapshots/overview/", "_blank");
+        this.setState({ snapshotDifferencesModal: true });
       } else {
         this.startASnapshot(selectedSnapshotOption.option);
       }
     });
+  }
+
+  toggleSnaphotDifferencesModal = () => {
+    this.setState({ snapshotDifferencesModal: !this.state.snapshotDifferencesModal });
   }
 
   onSnapshotOptionClick = () => {
@@ -571,10 +577,6 @@ class Dashboard extends Component {
     } = this.state;
 
     const { app, isBundleUploading, isVeleroInstalled } = this.props;
-
-    const latestPendingVersion = downstream?.pendingVersions?.find(version => Math.max(version.sequence));
-    const latestSequence = latestPendingVersion ? latestPendingVersion.sequence : 0;
-    const currentSequence = currentVersion ? currentVersion.sequence : 0;
 
     let checkingUpdateText = checkingUpdateMessage;
     try {
@@ -778,6 +780,11 @@ class Dashboard extends Component {
             }}
           />
         }
+        {this.state.snapshotDifferencesModal &&
+          <SnapshotDifferencesModal
+            snapshotDifferencesModal={this.state.snapshotDifferencesModal}
+            toggleSnapshotDifferencesModal={this.toggleSnaphotDifferencesModal}
+          />}
       </div>
     );
   }

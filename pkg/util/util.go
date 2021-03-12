@@ -122,6 +122,7 @@ func CompareStringArrays(arr1, arr2 []string) bool {
 }
 
 type ActionableError struct {
+	NoRetry bool
 	Message string
 }
 

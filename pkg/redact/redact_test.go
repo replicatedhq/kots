@@ -159,13 +159,12 @@ spec:
 
 func Test_splitRedactors(t *testing.T) {
 	tests := []struct {
-		name        string
-		spec        string
-		existingMap map[string]string
-		want        map[string]RedactorMetadata
+		name string
+		spec string
+		want map[string]RedactorMetadata
 	}{
 		{
-			name: "no existing map",
+			name: "basic",
 			spec: `kind: Redactor
 apiVersion: troubleshoot.sh/v1beta2
 metadata:
@@ -232,34 +231,12 @@ spec:
 				},
 			},
 		},
-		{
-			name: "no additions, remove old key",
-			spec: `kind: Redactor
-apiVersion: troubleshoot.sh/v1beta2
-metadata:
-  name: kotsadm-redact`,
-			existingMap: map[string]string{
-				"kotsadm-redact": "should be removed",
-				"other-key":      `{"metadata":{"name":"other key","slug":"other-key","createdAt":"2020-06-15T14:26:10.721619-04:00","updatedAt":"2020-06-15T14:26:10.721619-04:00","enabled":false,"description":""},"redact":"should be unchanged"}`,
-			},
-			want: map[string]RedactorMetadata{
-				"other-key": {
-					Metadata: types.RedactorList{
-						Name:        "other key",
-						Slug:        "other-key",
-						Enabled:     false,
-						Description: "",
-					},
-					Redact: "should be unchanged",
-				},
-			},
-		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			req := require.New(t)
 
-			got, err := splitRedactors(tt.spec, tt.existingMap)
+			got, err := splitRedactors(tt.spec)
 			req.NoError(err)
 			req.Len(got, len(tt.want))
 			for idx, val := range tt.want {

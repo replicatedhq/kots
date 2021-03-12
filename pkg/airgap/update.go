@@ -24,49 +24,59 @@ import (
 	"github.com/replicatedhq/kots/pkg/version"
 )
 
-func UpdateAppFromAirgap(a *apptypes.App, airgapBundlePath string, deploy bool, skipPreflights bool) (finalError error) {
-	finishedCh := make(chan struct{})
-	defer close(finishedCh)
+func StartUpdateTaskMonitor(finishedChan <-chan error) {
 	go func() {
+		var finalError error
+		defer func() {
+			if finalError == nil {
+				if err := store.GetStore().ClearTaskStatus("update-download"); err != nil {
+					logger.Error(errors.Wrap(err, "failed to clear update-download task status"))
+				}
+			} else {
+				if err := store.GetStore().SetTaskStatus("update-download", finalError.Error(), "failed"); err != nil {
+					logger.Error(errors.Wrap(err, "failed to set error on update-download task status"))
+				}
+			}
+		}()
+
 		for {
 			select {
 			case <-time.After(time.Second):
 				if err := store.GetStore().UpdateTaskStatusTimestamp("update-download"); err != nil {
 					logger.Error(err)
 				}
-			case <-finishedCh:
+			case err := <-finishedChan:
+				finalError = err
 				return
 			}
 		}
 	}()
+}
 
+func UpdateAppFromAirgap(a *apptypes.App, airgapBundlePath string, deploy bool, skipPreflights bool) (finalError error) {
+	finishedChan := make(chan error)
+	defer close(finishedChan)
+
+	StartUpdateTaskMonitor(finishedChan)
 	defer func() {
-		if finalError == nil {
-			if err := store.GetStore().ClearTaskStatus("update-download"); err != nil {
-				logger.Error(errors.Wrap(err, "failed to clear update-download task status"))
-			}
-		} else {
-			if err := store.GetStore().SetTaskStatus("update-download", finalError.Error(), "failed"); err != nil {
-				logger.Error(errors.Wrap(err, "failed to set error on update-download task status"))
-			}
-		}
+		finishedChan <- finalError
 	}()
 
 	if err := store.GetStore().SetTaskStatus("update-download", "Extracting files...", "running"); err != nil {
 		return errors.Wrap(err, "failed to set task status")
 	}
 
-	airgapRoot, err := version.ExtractArchiveToTempDirectory(airgapBundlePath)
+	airgapRoot, err := extractAppMetaFromAirgapBundle(airgapBundlePath)
 	if err != nil {
 		return errors.Wrap(err, "failed to extract archive")
 	}
 	defer os.RemoveAll(airgapRoot)
 
-	err = UpdateAppFromPath(a, airgapRoot, deploy, skipPreflights)
+	err = UpdateAppFromPath(a, airgapRoot, airgapBundlePath, deploy, skipPreflights)
 	return errors.Wrap(err, "failed to update app")
 }
 
-func UpdateAppFromPath(a *apptypes.App, airgapRoot string, deploy bool, skipPreflights bool) error {
+func UpdateAppFromPath(a *apptypes.App, airgapRoot string, airgapBundlePath string, deploy bool, skipPreflights bool) error {
 	if err := store.GetStore().SetTaskStatus("update-download", "Processing package...", "running"); err != nil {
 		return errors.Wrap(err, "failed to set tasks status")
 	}
@@ -149,6 +159,7 @@ func UpdateAppFromPath(a *apptypes.App, airgapRoot string, deploy bool, skipPref
 		ConfigFile:          filepath.Join(currentArchivePath, "upstream", "userdata", "config.yaml"),
 		IdentityConfigFile:  identityConfigFile,
 		AirgapRoot:          airgapRoot,
+		AirgapBundle:        airgapBundlePath,
 		InstallationFile:    filepath.Join(currentArchivePath, "upstream", "userdata", "installation.yaml"),
 		UpdateCursor:        beforeKotsKinds.Installation.Spec.UpdateCursor,
 		RootDir:             currentArchivePath,
@@ -193,9 +204,15 @@ func UpdateAppFromPath(a *apptypes.App, airgapRoot string, deploy bool, skipPref
 	}
 
 	if bc.Equal(ac) {
-		return util.ActionableError{Message: fmt.Sprintf("Version %s (%s) cannot be installed again because it is already the current version", afterKotsKinds.Installation.Spec.VersionLabel, afterKotsKinds.Installation.Spec.UpdateCursor)}
+		return util.ActionableError{
+			NoRetry: true,
+			Message: fmt.Sprintf("Version %s (%s) cannot be installed again because it is already the current version", afterKotsKinds.Installation.Spec.VersionLabel, afterKotsKinds.Installation.Spec.UpdateCursor),
+		}
 	} else if bc.After(ac) {
-		return util.ActionableError{Message: fmt.Sprintf("Version %s (%s) cannot be installed because version %s (%s) is newer", afterKotsKinds.Installation.Spec.VersionLabel, afterKotsKinds.Installation.Spec.UpdateCursor, beforeKotsKinds.Installation.Spec.VersionLabel, beforeKotsKinds.Installation.Spec.UpdateCursor)}
+		return util.ActionableError{
+			NoRetry: true,
+			Message: fmt.Sprintf("Version %s (%s) cannot be installed because version %s (%s) is newer", afterKotsKinds.Installation.Spec.VersionLabel, afterKotsKinds.Installation.Spec.UpdateCursor, beforeKotsKinds.Installation.Spec.VersionLabel, beforeKotsKinds.Installation.Spec.UpdateCursor),
+		}
 	}
 
 	// Create the app in the db

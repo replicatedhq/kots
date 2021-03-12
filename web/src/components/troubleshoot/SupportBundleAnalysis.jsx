@@ -178,9 +178,6 @@ export class SupportBundleAnalysis extends React.Component {
                       <p className="u-color--emperor u-fontSize--large u-fontWeight--bold u-lineHeight--medium u-marginBottom--5"> This bundle was uploaded by a customer under a Community license type. </p>
                       <p className="u-color--silverChalice u-fontSize--normal u-lineHeight--medium"> Customers with Community licenses are using the free, Community-Supported version of Nomad Enterprise. </p>
                     </div>
-                    <div className="flex justifyContent--flexEnd">
-                      <a href="https://kots.io/vendor/entitlements/community-licenses/" target="_blank" rel="noopener noreferrer" className="btn secondary lightBlue"> Learn more about Community Licenses </a>
-                    </div>
                   </div>
                 </div>}
               <div className="flex-column flex1">
@@ -227,6 +224,7 @@ export class SupportBundleAnalysis extends React.Component {
             tryAgain={this.getSupportBundle}
             err="Failed to get bundle"
             loading={this.state.loading}
+            appSlug={this.props.match.params.slug}
           />}
       </div>
     );

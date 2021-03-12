@@ -40,6 +40,7 @@ func RootCmd() *cobra.Command {
 	cmd.AddCommand(IdentityServiceCmd())
 	cmd.AddCommand(AppStatusCmd())
 	cmd.AddCommand(GetCmd())
+	cmd.AddCommand(SetCmd())
 
 	viper.BindPFlags(cmd.Flags())
 

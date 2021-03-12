@@ -11,11 +11,11 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	snapshottypes "github.com/replicatedhq/kots/pkg/api/snapshot/types"
 	"github.com/replicatedhq/kots/pkg/auth"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
-	"github.com/replicatedhq/kots/pkg/kotsadm"
 	kotsadmtypes "github.com/replicatedhq/kots/pkg/kotsadm/types"
+	snapshottypes "github.com/replicatedhq/kots/pkg/kotsadmsnapshot/types"
+	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/logger"
 	velerov1 "github.com/vmware-tanzu/velero/pkg/apis/velero/v1"
 	veleroclientv1 "github.com/vmware-tanzu/velero/pkg/generated/clientset/versioned/typed/velero/v1"
@@ -32,14 +32,20 @@ type RestoreInstanceBackupOptions struct {
 }
 
 type ListInstanceRestoresOptions struct {
-	Namespace string
+	Namespace             string
+	KubernetesConfigFlags *genericclioptions.ConfigFlags
 }
 
-func RestoreInstanceBackup(options RestoreInstanceBackupOptions) (*velerov1.Restore, error) {
+func RestoreInstanceBackup(ctx context.Context, options RestoreInstanceBackupOptions) (*velerov1.Restore, error) {
+	clientset, err := k8sutil.GetClientset(options.KubernetesConfigFlags)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get k8s clientset")
+	}
+
 	veleroNamespace := options.VeleroNamespace
 	if veleroNamespace == "" {
 		var err error
-		veleroNamespace, err = DetectVeleroNamespace()
+		veleroNamespace, err = DetectVeleroNamespace(ctx, clientset, "")
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to detect velero namespace")
 		}
@@ -59,7 +65,7 @@ func RestoreInstanceBackup(options RestoreInstanceBackupOptions) (*velerov1.Rest
 		return nil, errors.Wrap(err, "failed to create velero clientset")
 	}
 
-	backup, err := veleroClient.Backups(veleroNamespace).Get(context.TODO(), options.BackupName, metav1.GetOptions{})
+	backup, err := veleroClient.Backups(veleroNamespace).Get(ctx, options.BackupName, metav1.GetOptions{})
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to find backup")
 	}
@@ -92,19 +98,8 @@ func RestoreInstanceBackup(options RestoreInstanceBackupOptions) (*velerov1.Rest
 	log := logger.NewCLILogger()
 	log.ActionWithSpinner("Deleting Admin Console")
 
-	isKurl, err := kotsadm.IsKurl(options.KubernetesConfigFlags)
-	if err != nil {
-		log.FinishSpinnerWithError()
-		return nil, errors.Wrap(err, "failed to check kurl")
-	}
-
 	// delete all kotsadm objects before creating the restore
-	clientset, err := k8sutil.GetClientset(options.KubernetesConfigFlags)
-	if err != nil {
-		log.FinishSpinnerWithError()
-		return nil, errors.Wrap(err, "failed to get k8s clientset")
-	}
-	err = k8sutil.DeleteKotsadm(clientset, kotsadmNamespace, isKurl)
+	err = k8sutil.DeleteKotsadm(ctx, clientset, kotsadmNamespace, kotsutil.IsKurl(clientset))
 	if err != nil {
 		log.FinishSpinnerWithError()
 		return nil, errors.Wrap(err, "failed to delete kotsadm objects")
@@ -129,7 +124,7 @@ func RestoreInstanceBackup(options RestoreInstanceBackupOptions) (*velerov1.Rest
 			BackupName: options.BackupName,
 			LabelSelector: &metav1.LabelSelector{
 				MatchLabels: map[string]string{
-					kotsadmtypes.KotsadmKey: kotsadmtypes.KotsadmLabelValue, // application restores are in a separate step
+					kotsadmtypes.KotsadmKey: kotsadmtypes.KotsadmLabelValue, // restoring applications is in a separate step after kotsadm spins up
 				},
 			},
 			RestorePVs:              &trueVal,
@@ -138,21 +133,21 @@ func RestoreInstanceBackup(options RestoreInstanceBackupOptions) (*velerov1.Rest
 	}
 
 	// delete existing restore object (if exists)
-	err = veleroClient.Restores(veleroNamespace).Delete(context.TODO(), restore.ObjectMeta.Name, metav1.DeleteOptions{})
+	err = veleroClient.Restores(veleroNamespace).Delete(ctx, restore.ObjectMeta.Name, metav1.DeleteOptions{})
 	if err != nil && !strings.Contains(err.Error(), "not found") {
 		log.FinishSpinnerWithError()
 		return nil, errors.Wrapf(err, "failed to delete restore %s", restore.ObjectMeta.Name)
 	}
 
 	// create new restore object
-	restore, err = veleroClient.Restores(veleroNamespace).Create(context.TODO(), restore, metav1.CreateOptions{})
+	restore, err = veleroClient.Restores(veleroNamespace).Create(ctx, restore, metav1.CreateOptions{})
 	if err != nil {
 		log.FinishSpinnerWithError()
 		return nil, errors.Wrap(err, "failed to create restore")
 	}
 
 	// wait for restore to complete
-	restore, err = waitForVeleroRestoreCompleted(restore.ObjectMeta.Name)
+	restore, err = waitForVeleroRestoreCompleted(ctx, veleroNamespace, restore.ObjectMeta.Name)
 	if err != nil {
 		if restore != nil {
 			errMsg := fmt.Sprintf("Admin Console restore failed with %d errors and %d warnings.", restore.Status.Errors, restore.Status.Warnings)
@@ -208,8 +203,12 @@ func RestoreInstanceBackup(options RestoreInstanceBackupOptions) (*velerov1.Rest
 	return restore, nil
 }
 
-func ListInstanceRestores(options ListInstanceRestoresOptions) ([]velerov1.Restore, error) {
-	veleroNamespace, err := DetectVeleroNamespace()
+func ListInstanceRestores(ctx context.Context, options ListInstanceRestoresOptions) ([]velerov1.Restore, error) {
+	clientset, err := k8sutil.GetClientset(options.KubernetesConfigFlags)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get k8s clientset")
+	}
+	veleroNamespace, err := DetectVeleroNamespace(ctx, clientset, options.Namespace)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to detect velero namespace")
 	}
@@ -227,7 +226,7 @@ func ListInstanceRestores(options ListInstanceRestoresOptions) ([]velerov1.Resto
 		return nil, errors.Wrap(err, "failed to create clientset")
 	}
 
-	r, err := veleroClient.Restores(veleroNamespace).List(context.TODO(), metav1.ListOptions{})
+	r, err := veleroClient.Restores(veleroNamespace).List(ctx, metav1.ListOptions{})
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to list restores")
 	}
@@ -249,15 +248,7 @@ func ListInstanceRestores(options ListInstanceRestoresOptions) ([]velerov1.Resto
 	return restores, nil
 }
 
-func waitForVeleroRestoreCompleted(restoreName string) (*velerov1.Restore, error) {
-	veleroNamespace, err := DetectVeleroNamespace()
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to detect velero namespace")
-	}
-	if veleroNamespace == "" {
-		return nil, errors.New("velero not found")
-	}
-
+func waitForVeleroRestoreCompleted(ctx context.Context, veleroNamespace string, restoreName string) (*velerov1.Restore, error) {
 	cfg, err := config.GetConfig()
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get cluster config")
@@ -269,7 +260,7 @@ func waitForVeleroRestoreCompleted(restoreName string) (*velerov1.Restore, error
 	}
 
 	for {
-		restore, err := veleroClient.Restores(veleroNamespace).Get(context.TODO(), restoreName, metav1.GetOptions{})
+		restore, err := veleroClient.Restores(veleroNamespace).Get(ctx, restoreName, metav1.GetOptions{})
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to get restore")
 		}

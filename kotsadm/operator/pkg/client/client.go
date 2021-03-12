@@ -58,7 +58,8 @@ type PreflightRequest struct {
 }
 
 type SupportBundleRequest struct {
-	URI string `json:"uri"`
+	URI       string `json:"uri"`
+	RedactURI string `json:"redactURI"`
 }
 
 type InformRequest struct {
@@ -308,7 +309,7 @@ func (c *Client) registerHandlers(socketClient *socket.Client) error {
 			startTime := time.Now()
 			// This is in a goroutine because if we disconnect and reconnect to the
 			// websocket, we will want to report that it's completed...
-			err := runSupportBundle(args.URI)
+			err := runSupportBundle(args.URI, args.RedactURI)
 			log.Printf("support bundle run completed in %s", time.Since(startTime).String())
 			if err != nil {
 				log.Printf("error running support bundle: %s", err.Error())
@@ -375,7 +376,7 @@ func (c *Client) sendResult(applicationManifests ApplicationManifests, isError b
 	return nil
 }
 
-func runSupportBundle(collectorURI string) error {
+func runSupportBundle(collectorURI string, redactURI string) error {
 	kubectl, err := exec.LookPath("kubectl")
 	if err != nil {
 		return errors.Wrap(err, "failed to find kubectl")
@@ -400,7 +401,7 @@ func runSupportBundle(collectorURI string) error {
 
 	kubernetesApplier := applier.NewKubectl(kubectl, preflight, supportBundle, config)
 
-	return kubernetesApplier.SupportBundle(collectorURI)
+	return kubernetesApplier.SupportBundle(collectorURI, redactURI)
 }
 
 func runPreflight(preflightURI string, ignorePermissions bool) error {

@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	"github.com/replicatedhq/kots/pkg/api/snapshot/types"
+	"github.com/replicatedhq/kots/pkg/kotsadmsnapshot/types"
 	v1 "github.com/vmware-tanzu/velero/pkg/apis/velero/v1"
 	veleroapiv1 "github.com/vmware-tanzu/velero/pkg/apis/velero/v1"
 	velerov1 "github.com/vmware-tanzu/velero/pkg/apis/velero/v1"

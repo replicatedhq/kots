@@ -890,7 +890,7 @@ func GetApplicationMetadata(upstream *url.URL) ([]byte, error) {
 		return nil, errors.Wrap(err, "failed to get metadata from replicated.app")
 	}
 
-	if metadata == nil {
+	if len(metadata) == 0 {
 		metadata = []byte(DefaultMetadata)
 	}
 

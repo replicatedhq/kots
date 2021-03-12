@@ -27,7 +27,7 @@ func FindKotsadm(clientset *kubernetes.Clientset, namespace string) (string, err
 	return "", errors.New("unable to find kotsadm pod")
 }
 
-func DeleteKotsadm(clientset *kubernetes.Clientset, namespace string, isKurl bool) error {
+func DeleteKotsadm(ctx context.Context, clientset *kubernetes.Clientset, namespace string, isKurl bool) error {
 	selectorLabels := map[string]string{
 		types.KotsadmKey: types.KotsadmLabelValue,
 	}
@@ -36,116 +36,116 @@ func DeleteKotsadm(clientset *kubernetes.Clientset, namespace string, isKurl boo
 	}
 
 	// services (does not have a DeleteCollection method)
-	services, err := clientset.CoreV1().Services(namespace).List(context.TODO(), listOptions)
+	services, err := clientset.CoreV1().Services(namespace).List(ctx, listOptions)
 	if err != nil {
 		return errors.Wrap(err, "failed to list services")
 	}
 	for _, service := range services.Items {
-		err := clientset.CoreV1().Services(namespace).Delete(context.TODO(), service.ObjectMeta.Name, metav1.DeleteOptions{})
+		err := clientset.CoreV1().Services(namespace).Delete(ctx, service.ObjectMeta.Name, metav1.DeleteOptions{})
 		if err != nil {
 			return errors.Wrapf(err, "failed to delete service %s in namespace %s", service.ObjectMeta.Name, service.ObjectMeta.Namespace)
 		}
 	}
-	if err := waitForDeleteServices(clientset, namespace, listOptions); err != nil {
+	if err := waitForDeleteServices(ctx, clientset, namespace, listOptions); err != nil {
 		return errors.Wrap(err, "failed to wait for delete services")
 	}
 
 	// deployments
-	err = clientset.AppsV1().Deployments(namespace).DeleteCollection(context.TODO(), metav1.DeleteOptions{}, listOptions)
+	err = clientset.AppsV1().Deployments(namespace).DeleteCollection(ctx, metav1.DeleteOptions{}, listOptions)
 	if err != nil {
 		return errors.Wrap(err, "failed to delete kotsadm deployments")
 	}
-	if err := waitForDeleteDeployments(clientset, namespace, listOptions); err != nil {
+	if err := waitForDeleteDeployments(ctx, clientset, namespace, listOptions); err != nil {
 		return errors.Wrap(err, "failed to wait for delete deployments")
 	}
 
 	// statefulsets
-	err = clientset.AppsV1().StatefulSets(namespace).DeleteCollection(context.TODO(), metav1.DeleteOptions{}, listOptions)
+	err = clientset.AppsV1().StatefulSets(namespace).DeleteCollection(ctx, metav1.DeleteOptions{}, listOptions)
 	if err != nil {
 		return errors.Wrap(err, "failed to delete kotsadm statefulsets")
 	}
-	if err := waitForDeleteStatefulSets(clientset, namespace, listOptions); err != nil {
+	if err := waitForDeleteStatefulSets(ctx, clientset, namespace, listOptions); err != nil {
 		return errors.Wrap(err, "failed to wait for delete statefulsets")
 	}
 
 	// pods
-	err = clientset.CoreV1().Pods(namespace).DeleteCollection(context.TODO(), metav1.DeleteOptions{}, listOptions)
+	err = clientset.CoreV1().Pods(namespace).DeleteCollection(ctx, metav1.DeleteOptions{}, listOptions)
 	if err != nil {
 		return errors.Wrap(err, "failed to delete kotsadm pods")
 	}
-	if err := waitForDeletePods(clientset, namespace, listOptions); err != nil {
+	if err := waitForDeletePods(ctx, clientset, namespace, listOptions); err != nil {
 		return errors.Wrap(err, "failed to wait for delete pods")
 	}
 
 	// PVCs
-	err = clientset.CoreV1().PersistentVolumeClaims(namespace).DeleteCollection(context.TODO(), metav1.DeleteOptions{}, listOptions)
+	err = clientset.CoreV1().PersistentVolumeClaims(namespace).DeleteCollection(ctx, metav1.DeleteOptions{}, listOptions)
 	if err != nil {
 		return errors.Wrap(err, "failed to delete kotsadm PVCs")
 	}
-	if err := waitForDeletePVCs(clientset, namespace, listOptions); err != nil {
+	if err := waitForDeletePVCs(ctx, clientset, namespace, listOptions); err != nil {
 		return errors.Wrap(err, "failed to wait for delete PVCs")
 	}
 
 	// secrets
-	err = clientset.CoreV1().Secrets(namespace).DeleteCollection(context.TODO(), metav1.DeleteOptions{}, listOptions)
+	err = clientset.CoreV1().Secrets(namespace).DeleteCollection(ctx, metav1.DeleteOptions{}, listOptions)
 	if err != nil {
 		return errors.Wrap(err, "failed to delete kotsadm secrets")
 	}
-	if err := waitForDeleteSecrets(clientset, namespace, listOptions); err != nil {
+	if err := waitForDeleteSecrets(ctx, clientset, namespace, listOptions); err != nil {
 		return errors.Wrap(err, "failed to wait for delete secrets")
 	}
 
 	// configmaps
-	err = clientset.CoreV1().ConfigMaps(namespace).DeleteCollection(context.TODO(), metav1.DeleteOptions{}, listOptions)
+	err = clientset.CoreV1().ConfigMaps(namespace).DeleteCollection(ctx, metav1.DeleteOptions{}, listOptions)
 	if err != nil {
 		return errors.Wrap(err, "failed to delete kotsadm configmaps")
 	}
-	if err := waitForDeleteConfigmaps(clientset, namespace, listOptions); err != nil {
+	if err := waitForDeleteConfigmaps(ctx, clientset, namespace, listOptions); err != nil {
 		return errors.Wrap(err, "failed to wait for delete configmaps")
 	}
 
 	// cluster role bindings
-	err = clientset.RbacV1().ClusterRoleBindings().DeleteCollection(context.TODO(), metav1.DeleteOptions{}, listOptions)
+	err = clientset.RbacV1().ClusterRoleBindings().DeleteCollection(ctx, metav1.DeleteOptions{}, listOptions)
 	if err != nil {
 		return errors.Wrap(err, "failed to delete kotsadm clusterrolebindings")
 	}
-	if err := waitForDeleteClusterRoleBindings(clientset, listOptions); err != nil {
+	if err := waitForDeleteClusterRoleBindings(ctx, clientset, listOptions); err != nil {
 		return errors.Wrap(err, "failed to wait for delete clusterrolebindings")
 	}
 
 	// role bindings
-	err = clientset.RbacV1().RoleBindings(namespace).DeleteCollection(context.TODO(), metav1.DeleteOptions{}, listOptions)
+	err = clientset.RbacV1().RoleBindings(namespace).DeleteCollection(ctx, metav1.DeleteOptions{}, listOptions)
 	if err != nil {
 		return errors.Wrap(err, "failed to delete kotsadm rolebindings")
 	}
-	if err := waitForDeleteRoleBindings(clientset, namespace, listOptions); err != nil {
+	if err := waitForDeleteRoleBindings(ctx, clientset, namespace, listOptions); err != nil {
 		return errors.Wrap(err, "failed to wait for delete rolebindings")
 	}
 
 	// cluster roles
-	err = clientset.RbacV1().ClusterRoles().DeleteCollection(context.TODO(), metav1.DeleteOptions{}, listOptions)
+	err = clientset.RbacV1().ClusterRoles().DeleteCollection(ctx, metav1.DeleteOptions{}, listOptions)
 	if err != nil {
 		return errors.Wrap(err, "failed to delete kotsadm clusterroles")
 	}
-	if err := waitForDeleteClusterRoles(clientset, listOptions); err != nil {
+	if err := waitForDeleteClusterRoles(ctx, clientset, listOptions); err != nil {
 		return errors.Wrap(err, "failed to wait for delete clusterroles")
 	}
 
 	// roles
-	err = clientset.RbacV1().Roles(namespace).DeleteCollection(context.TODO(), metav1.DeleteOptions{}, listOptions)
+	err = clientset.RbacV1().Roles(namespace).DeleteCollection(ctx, metav1.DeleteOptions{}, listOptions)
 	if err != nil {
 		return errors.Wrap(err, "failed to delete kotsadm roles")
 	}
-	if err := waitForDeleteRoles(clientset, namespace, listOptions); err != nil {
+	if err := waitForDeleteRoles(ctx, clientset, namespace, listOptions); err != nil {
 		return errors.Wrap(err, "failed to wait for delete roles")
 	}
 
 	// service accounts
-	err = clientset.CoreV1().ServiceAccounts(namespace).DeleteCollection(context.TODO(), metav1.DeleteOptions{}, listOptions)
+	err = clientset.CoreV1().ServiceAccounts(namespace).DeleteCollection(ctx, metav1.DeleteOptions{}, listOptions)
 	if err != nil {
 		return errors.Wrap(err, "failed to delete kotsadm serviceaccounts")
 	}
-	if err := waitForDeleteServiceAccounts(clientset, namespace, listOptions); err != nil {
+	if err := waitForDeleteServiceAccounts(ctx, clientset, namespace, listOptions); err != nil {
 		return errors.Wrap(err, "failed to wait for delete serviceaccounts")
 	}
 
@@ -155,27 +155,27 @@ func DeleteKotsadm(clientset *kubernetes.Clientset, namespace string, isKurl boo
 
 	// kURL registry
 	registryNS := "kurl"
-	err = clientset.AppsV1().Deployments(registryNS).DeleteCollection(context.TODO(), metav1.DeleteOptions{}, listOptions)
+	err = clientset.AppsV1().Deployments(registryNS).DeleteCollection(ctx, metav1.DeleteOptions{}, listOptions)
 	if err != nil {
 		return errors.Wrap(err, "failed to delete registry deployments")
 	}
-	if err := waitForDeleteDeployments(clientset, registryNS, listOptions); err != nil {
+	if err := waitForDeleteDeployments(ctx, clientset, registryNS, listOptions); err != nil {
 		return errors.Wrap(err, "failed to wait for delete registry deployments")
 	}
-	err = clientset.CoreV1().Secrets(registryNS).DeleteCollection(context.TODO(), metav1.DeleteOptions{}, listOptions)
+	err = clientset.CoreV1().Secrets(registryNS).DeleteCollection(ctx, metav1.DeleteOptions{}, listOptions)
 	if err != nil {
 		return errors.Wrap(err, "failed to delete kotsadm secrets")
 	}
-	if err := waitForDeleteSecrets(clientset, registryNS, listOptions); err != nil {
+	if err := waitForDeleteSecrets(ctx, clientset, registryNS, listOptions); err != nil {
 		return errors.Wrap(err, "failed to wait for delete secrets")
 	}
 
 	return nil
 }
 
-func waitForDeleteServices(clientset *kubernetes.Clientset, namespace string, listOptions metav1.ListOptions) error {
+func waitForDeleteServices(ctx context.Context, clientset *kubernetes.Clientset, namespace string, listOptions metav1.ListOptions) error {
 	for {
-		services, err := clientset.CoreV1().Services(namespace).List(context.TODO(), listOptions)
+		services, err := clientset.CoreV1().Services(namespace).List(ctx, listOptions)
 		if err != nil {
 			return errors.Wrap(err, "failed to list services")
 		}
@@ -186,7 +186,7 @@ func waitForDeleteServices(clientset *kubernetes.Clientset, namespace string, li
 	}
 }
 
-func waitForDeleteDeployments(clientset *kubernetes.Clientset, namespace string, listOptions metav1.ListOptions) error {
+func waitForDeleteDeployments(ctx context.Context, clientset *kubernetes.Clientset, namespace string, listOptions metav1.ListOptions) error {
 	for {
 		deployments, err := clientset.AppsV1().Deployments(namespace).List(context.TODO(), listOptions)
 		if err != nil {
@@ -199,7 +199,7 @@ func waitForDeleteDeployments(clientset *kubernetes.Clientset, namespace string,
 	}
 }
 
-func waitForDeleteStatefulSets(clientset *kubernetes.Clientset, namespace string, listOptions metav1.ListOptions) error {
+func waitForDeleteStatefulSets(ctx context.Context, clientset *kubernetes.Clientset, namespace string, listOptions metav1.ListOptions) error {
 	for {
 		statefulsets, err := clientset.AppsV1().StatefulSets(namespace).List(context.TODO(), listOptions)
 		if err != nil {
@@ -212,7 +212,7 @@ func waitForDeleteStatefulSets(clientset *kubernetes.Clientset, namespace string
 	}
 }
 
-func waitForDeletePods(clientset *kubernetes.Clientset, namespace string, listOptions metav1.ListOptions) error {
+func waitForDeletePods(ctx context.Context, clientset *kubernetes.Clientset, namespace string, listOptions metav1.ListOptions) error {
 	for {
 		pods, err := clientset.CoreV1().Pods(namespace).List(context.TODO(), listOptions)
 		if err != nil {
@@ -225,7 +225,7 @@ func waitForDeletePods(clientset *kubernetes.Clientset, namespace string, listOp
 	}
 }
 
-func waitForDeletePVCs(clientset *kubernetes.Clientset, namespace string, listOptions metav1.ListOptions) error {
+func waitForDeletePVCs(ctx context.Context, clientset *kubernetes.Clientset, namespace string, listOptions metav1.ListOptions) error {
 	for {
 		pvcs, err := clientset.CoreV1().PersistentVolumeClaims(namespace).List(context.TODO(), listOptions)
 		if err != nil {
@@ -238,7 +238,7 @@ func waitForDeletePVCs(clientset *kubernetes.Clientset, namespace string, listOp
 	}
 }
 
-func waitForDeleteSecrets(clientset *kubernetes.Clientset, namespace string, listOptions metav1.ListOptions) error {
+func waitForDeleteSecrets(ctx context.Context, clientset *kubernetes.Clientset, namespace string, listOptions metav1.ListOptions) error {
 	for {
 		secrets, err := clientset.CoreV1().Secrets(namespace).List(context.TODO(), listOptions)
 		if err != nil {
@@ -251,7 +251,7 @@ func waitForDeleteSecrets(clientset *kubernetes.Clientset, namespace string, lis
 	}
 }
 
-func waitForDeleteConfigmaps(clientset *kubernetes.Clientset, namespace string, listOptions metav1.ListOptions) error {
+func waitForDeleteConfigmaps(ctx context.Context, clientset *kubernetes.Clientset, namespace string, listOptions metav1.ListOptions) error {
 	for {
 		configmaps, err := clientset.CoreV1().ConfigMaps(namespace).List(context.TODO(), listOptions)
 		if err != nil {
@@ -264,7 +264,7 @@ func waitForDeleteConfigmaps(clientset *kubernetes.Clientset, namespace string, 
 	}
 }
 
-func waitForDeleteClusterRoleBindings(clientset *kubernetes.Clientset, listOptions metav1.ListOptions) error {
+func waitForDeleteClusterRoleBindings(ctx context.Context, clientset *kubernetes.Clientset, listOptions metav1.ListOptions) error {
 	for {
 		crbs, err := clientset.RbacV1().ClusterRoleBindings().List(context.TODO(), listOptions)
 		if err != nil {
@@ -277,7 +277,7 @@ func waitForDeleteClusterRoleBindings(clientset *kubernetes.Clientset, listOptio
 	}
 }
 
-func waitForDeleteRoleBindings(clientset *kubernetes.Clientset, namespace string, listOptions metav1.ListOptions) error {
+func waitForDeleteRoleBindings(ctx context.Context, clientset *kubernetes.Clientset, namespace string, listOptions metav1.ListOptions) error {
 	for {
 		rbs, err := clientset.RbacV1().RoleBindings(namespace).List(context.TODO(), listOptions)
 		if err != nil {
@@ -290,7 +290,7 @@ func waitForDeleteRoleBindings(clientset *kubernetes.Clientset, namespace string
 	}
 }
 
-func waitForDeleteClusterRoles(clientset *kubernetes.Clientset, listOptions metav1.ListOptions) error {
+func waitForDeleteClusterRoles(ctx context.Context, clientset *kubernetes.Clientset, listOptions metav1.ListOptions) error {
 	for {
 		crs, err := clientset.RbacV1().ClusterRoles().List(context.TODO(), listOptions)
 		if err != nil {
@@ -303,7 +303,7 @@ func waitForDeleteClusterRoles(clientset *kubernetes.Clientset, listOptions meta
 	}
 }
 
-func waitForDeleteRoles(clientset *kubernetes.Clientset, namespace string, listOptions metav1.ListOptions) error {
+func waitForDeleteRoles(ctx context.Context, clientset *kubernetes.Clientset, namespace string, listOptions metav1.ListOptions) error {
 	for {
 		roles, err := clientset.RbacV1().Roles(namespace).List(context.TODO(), listOptions)
 		if err != nil {
@@ -316,7 +316,7 @@ func waitForDeleteRoles(clientset *kubernetes.Clientset, namespace string, listO
 	}
 }
 
-func waitForDeleteServiceAccounts(clientset *kubernetes.Clientset, namespace string, listOptions metav1.ListOptions) error {
+func waitForDeleteServiceAccounts(ctx context.Context, clientset *kubernetes.Clientset, namespace string, listOptions metav1.ListOptions) error {
 	for {
 		serviceAccounts, err := clientset.CoreV1().ServiceAccounts(namespace).List(context.TODO(), listOptions)
 		if err != nil {

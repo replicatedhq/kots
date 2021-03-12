@@ -100,7 +100,7 @@ class AppDetailPage extends Component {
     this.state.getAppJob.stop();
   }
 
-  makeCurrentRelease = async (upstreamSlug, version) => {
+  makeCurrentRelease = async (upstreamSlug, version, isSkipPreflights, continueWithFailedPreflights = false) => {
     try {
       this.setState({ makingCurrentReleaseErrMsg: "" });
 
@@ -110,6 +110,11 @@ class AppDetailPage extends Component {
           "Content-Type": "application/json",
         },
         method: "POST",
+        body: JSON.stringify({ 
+          isSkipPreflights: isSkipPreflights ,
+          continueWithFailedPreflights: continueWithFailedPreflights,
+          isAirgap: this.state.app?.isAirgap
+        }),
       });
       if (res.ok && res.status === 204) {
         this.setState({ makingCurrentReleaseErrMsg: "" });
@@ -348,7 +353,6 @@ class AppDetailPage extends Component {
                         isVeleroInstalled={isVeleroInstalled}
                         refreshAppData={this.getApp}
                         snapshotInProgressApps={this.props.snapshotInProgressApps}
-                        toggleSnapshotsRBACModal={this.props.toggleSnapshotsRBACModal}
                         ping={this.props.ping}
                       />}
                     />
@@ -377,6 +381,7 @@ class AppDetailPage extends Component {
                       <AppConfig
                         app={app}
                         refreshAppData={this.getApp}
+                        fromLicenseFlow={false}
                       />
                     } />
                     <Route path="/app/:slug/troubleshoot" render={() =>

@@ -10,10 +10,13 @@ import (
 
 	"github.com/gosimple/slug"
 	"github.com/pkg/errors"
+	"github.com/replicatedhq/kots/pkg/k8s"
+	kotsadmtypes "github.com/replicatedhq/kots/pkg/kotsadm/types"
 	"github.com/replicatedhq/kots/pkg/redact/types"
 	"github.com/replicatedhq/kots/pkg/util"
 	troubleshootv1beta2 "github.com/replicatedhq/troubleshoot/pkg/apis/troubleshoot/v1beta2"
 	troubleshootscheme "github.com/replicatedhq/troubleshoot/pkg/client/troubleshootclientset/scheme"
+	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/api/core/v1"
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -32,9 +35,73 @@ type RedactorMetadata struct {
 	Redact string `json:"redact"`
 }
 
+const (
+	redactConfigMapName     = "kotsadm-redact"
+	redactSpecConfigMapName = "kotsadm-redact-spec"
+	redactSpecDataKey       = "redact-spec"
+)
+
+func GetRedactSpecURI() string {
+	return fmt.Sprintf("configmap/%s/%s/%s", os.Getenv("POD_NAMESPACE"), redactSpecConfigMapName, redactSpecDataKey)
+}
+
+// WriteRedactSpecConfigMap creates a configmap that contains the redaction yaml spec
+// auto-generated from "kotsadm-redact" configmap when collecting support bundles. contains the full redact spec type that is supported by troubleshoot.
+func WriteRedactSpecConfigMap() error {
+	spec, _, err := GetRedactSpec()
+	if err != nil {
+		return errors.Wrap(err, "failed to get redact spec")
+	}
+
+	clientset, err := k8s.Clientset()
+	if err != nil {
+		return errors.Wrap(err, "failed to create k8s clientset")
+	}
+
+	existingConfigMap, err := clientset.CoreV1().ConfigMaps(os.Getenv("POD_NAMESPACE")).Get(context.TODO(), redactSpecConfigMapName, metav1.GetOptions{})
+	if err != nil && !kuberneteserrors.IsNotFound(err) {
+		return errors.Wrap(err, "failed to read redact spec configmap")
+	} else if kuberneteserrors.IsNotFound(err) {
+		configmap := &corev1.ConfigMap{
+			TypeMeta: metav1.TypeMeta{
+				APIVersion: "v1",
+				Kind:       "ConfigMap",
+			},
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      redactSpecConfigMapName,
+				Namespace: os.Getenv("POD_NAMESPACE"),
+				Labels:    kotsadmtypes.GetKotsadmLabels(),
+			},
+			Data: map[string]string{
+				redactSpecDataKey: spec,
+			},
+		}
+
+		_, err = clientset.CoreV1().ConfigMaps(os.Getenv("POD_NAMESPACE")).Create(context.TODO(), configmap, metav1.CreateOptions{})
+		if err != nil {
+			return errors.Wrap(err, "failed to create redactor spec configmap")
+		}
+
+		return nil
+	}
+
+	if existingConfigMap.Data == nil {
+		existingConfigMap.Data = map[string]string{}
+	}
+	existingConfigMap.Data[redactSpecDataKey] = spec
+	existingConfigMap.ObjectMeta.Labels = kotsadmtypes.GetKotsadmLabels()
+
+	_, err = clientset.CoreV1().ConfigMaps(os.Getenv("POD_NAMESPACE")).Update(context.TODO(), existingConfigMap, metav1.UpdateOptions{})
+	if err != nil {
+		return errors.Wrap(err, "failed to update redactor spec secret")
+	}
+
+	return nil
+}
+
 // GetRedactSpec returns the redaction yaml spec, a pretty error string, and the underlying error
 func GetRedactSpec() (string, string, error) {
-	configMap, errstr, err := getConfigmap()
+	configMap, errstr, err := getRedactConfigmap()
 	if err != nil || configMap == nil {
 		return "", errstr, errors.Wrap(err, "get redactors configmap")
 	}
@@ -56,7 +123,7 @@ func getRedactSpec(configMap *v1.ConfigMap) (string, string, error) {
 }
 
 func GetRedact() (*troubleshootv1beta2.Redactor, error) {
-	configmap, _, err := getConfigmap()
+	configmap, _, err := getRedactConfigmap()
 	if err != nil {
 		return nil, errors.Wrap(err, "get redactors configmap")
 	}
@@ -68,7 +135,7 @@ func GetRedact() (*troubleshootv1beta2.Redactor, error) {
 }
 
 func GetRedactInfo() ([]types.RedactorList, error) {
-	configmap, _, err := getConfigmap()
+	configmap, _, err := getRedactConfigmap()
 	if err != nil {
 		return nil, errors.Wrap(err, "get redactors configmap")
 	}
@@ -78,14 +145,14 @@ func GetRedactInfo() ([]types.RedactorList, error) {
 
 	if combinedYaml, ok := configmap.Data["kotsadm-redact"]; ok {
 		// this is the key used for the combined redact list, so run the migration
-		newMap, err := splitRedactors(combinedYaml, configmap.Data)
+		newMap, err := splitRedactors(combinedYaml)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to split combined redactors")
 		}
 		configmap.Data = newMap
 
 		// now that the redactors have been split, save the configmap
-		configmap, err = writeConfigmap(configmap)
+		configmap, err = writeRedactConfigmap(configmap)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to update configmap")
 		}
@@ -105,7 +172,7 @@ func GetRedactInfo() ([]types.RedactorList, error) {
 }
 
 func GetRedactBySlug(slug string) (*RedactorMetadata, error) {
-	configmap, _, err := getConfigmap()
+	configmap, _, err := getRedactConfigmap()
 	if err != nil {
 		return nil, err
 	}
@@ -139,12 +206,12 @@ func SetRedactSpec(spec string) (string, error) {
 		return "failed to create kubernetes clientset", errors.Wrap(err, "failed to create kubernetes clientset")
 	}
 
-	configMap, errMsg, err := getConfigmap()
+	configMap, errMsg, err := getRedactConfigmap()
 	if err != nil {
 		return errMsg, errors.Wrap(err, "get redactors configmap")
 	}
 
-	newMap, err := splitRedactors(spec, configMap.Data)
+	newMap, err := splitRedactors(spec)
 	if err != nil {
 		return "failed to split redactors", errors.Wrap(err, "failed to split redactors")
 	}
@@ -159,7 +226,7 @@ func SetRedactSpec(spec string) (string, error) {
 
 // updates/creates an individual redact with the provided metadata and yaml
 func SetRedactYaml(slug, description string, enabled, newRedact bool, yamlBytes []byte) (*RedactorMetadata, error) {
-	configMap, _, err := getConfigmap()
+	configMap, _, err := getRedactConfigmap()
 	if err != nil {
 		return nil, errors.Wrap(err, "get redactors configmap")
 	}
@@ -171,7 +238,7 @@ func SetRedactYaml(slug, description string, enabled, newRedact bool, yamlBytes 
 
 	configMap.Data = newData
 
-	_, err = writeConfigmap(configMap)
+	_, err = writeRedactConfigmap(configMap)
 	if err != nil {
 		return nil, errors.Wrapf(err, "write configMap with updated redact")
 	}
@@ -180,7 +247,7 @@ func SetRedactYaml(slug, description string, enabled, newRedact bool, yamlBytes 
 
 // sets whether an individual redactor is enabled
 func SetRedactEnabled(slug string, enabled bool) (*RedactorMetadata, error) {
-	configMap, _, err := getConfigmap()
+	configMap, _, err := getRedactConfigmap()
 	if err != nil {
 		return nil, errors.Wrap(err, "get redactors configmap")
 	}
@@ -192,7 +259,7 @@ func SetRedactEnabled(slug string, enabled bool) (*RedactorMetadata, error) {
 
 	configMap.Data = newData
 
-	_, err = writeConfigmap(configMap)
+	_, err = writeRedactConfigmap(configMap)
 	if err != nil {
 		return nil, errors.Wrapf(err, "write configMap with updated redact")
 	}
@@ -301,21 +368,21 @@ func setRedactYaml(slug, description string, enabled, newRedact bool, currentTim
 }
 
 func DeleteRedact(slug string) error {
-	configMap, _, err := getConfigmap()
+	configMap, _, err := getRedactConfigmap()
 	if err != nil {
 		return errors.Wrap(err, "get redactors configmap")
 	}
 
 	delete(configMap.Data, slug)
 
-	_, err = writeConfigmap(configMap)
+	_, err = writeRedactConfigmap(configMap)
 	if err != nil {
 		return errors.Wrapf(err, "write configMap with updated redact")
 	}
 	return nil
 }
 
-func getConfigmap() (*v1.ConfigMap, string, error) {
+func getRedactConfigmap() (*v1.ConfigMap, string, error) {
 	cfg, err := config.GetConfig()
 	if err != nil {
 		return nil, "failed to get cluster config", errors.Wrap(err, "failed to get cluster config")
@@ -326,7 +393,7 @@ func getConfigmap() (*v1.ConfigMap, string, error) {
 		return nil, "failed to create kubernetes clientset", errors.Wrap(err, "failed to create kubernetes clientset")
 	}
 
-	configMap, err := clientset.CoreV1().ConfigMaps(os.Getenv("POD_NAMESPACE")).Get(context.TODO(), "kotsadm-redact", metav1.GetOptions{})
+	configMap, err := clientset.CoreV1().ConfigMaps(os.Getenv("POD_NAMESPACE")).Get(context.TODO(), redactConfigMapName, metav1.GetOptions{})
 	if err != nil {
 		if !kuberneteserrors.IsNotFound(err) {
 			// not a not found error, so a real error
@@ -339,7 +406,7 @@ func getConfigmap() (*v1.ConfigMap, string, error) {
 					APIVersion: "v1",
 				},
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      "kotsadm-redact",
+					Name:      redactConfigMapName,
 					Namespace: os.Getenv("POD_NAMESPACE"),
 					Labels: map[string]string{
 						"kots.io/kotsadm": "true",
@@ -358,7 +425,8 @@ func getConfigmap() (*v1.ConfigMap, string, error) {
 	return configMap, "", nil
 }
 
-func writeConfigmap(configMap *v1.ConfigMap) (*v1.ConfigMap, error) {
+// writeRedactConfigmap creates a configmap which contains kotsadm formatted redactors that include some additional metadata (e.g. if a redactor is enabled or not)
+func writeRedactConfigmap(configMap *v1.ConfigMap) (*v1.ConfigMap, error) {
 	cfg, err := config.GetConfig()
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get cluster config")
@@ -429,12 +497,8 @@ func buildFullRedact(config *v1.ConfigMap) (*troubleshootv1beta2.Redactor, error
 	return full, nil
 }
 
-func splitRedactors(spec string, existingMap map[string]string) (map[string]string, error) {
-	fmt.Printf("running migration from combined kotsadm-redact doc")
-
-	if existingMap == nil {
-		existingMap = make(map[string]string, 0)
-	}
+func splitRedactors(spec string) (map[string]string, error) {
+	newMap := make(map[string]string, 0)
 
 	redactor, err := parseRedact([]byte(spec))
 	if err != nil {
@@ -483,11 +547,10 @@ func splitRedactors(spec string, existingMap map[string]string) (map[string]stri
 			return nil, errors.Wrapf(err, "unable to marshal redactor %s", redactorName)
 		}
 
-		existingMap[newRedactor.Metadata.Slug] = string(jsonBytes)
+		newMap[newRedactor.Metadata.Slug] = string(jsonBytes)
 	}
-	delete(existingMap, "kotsadm-redact")
 
-	return existingMap, nil
+	return newMap, nil
 }
 
 func parseRedact(spec []byte) (*troubleshootv1beta2.Redactor, error) {

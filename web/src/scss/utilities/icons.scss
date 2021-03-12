@@ -630,6 +630,16 @@
   width: 16px;
   height: 16px;
 }
+.icon.snapshotDestination--nfs {
+  background-position: -225px -297px;
+  width: 16px;
+  height: 16px;
+}
+.icon.snapshotDestination--hostpath {
+  background-position: -168px -297px;
+  width: 16px;
+  height: 14px;
+}
 .icon.awsIcon {
   background-position: -185px -725px;
   width: 27px;
@@ -648,6 +658,16 @@
 .icon.cloudIcon {
   background-position: -130px -725px;
   width: 25px;
+  height: 16px;
+}
+.icon.nfsIcon {
+  background-position: -241px -743px;
+  width: 16px;
+  height: 16px;
+}
+.icon.hostpathIcon {
+  background-position: -241px -725px;
+  width: 20px;
   height: 16px;
 }
 .icon.blueWarningIcon {
@@ -903,4 +923,14 @@
   background-position: -227px -916px;
   width: 18px;
   height: 18px;
+}
+.icon.u-darkDropdownArrow {
+  background-position: -275px -105px;
+  width: 12px;
+  height: 7px;
+}
+.icon.u-TarFileIcon {
+  background-position: -241px -126px;
+  width: 47px;
+  height: 57px;
 }

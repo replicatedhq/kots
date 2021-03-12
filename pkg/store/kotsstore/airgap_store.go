@@ -2,6 +2,7 @@ package kotsstore
 
 import (
 	"database/sql"
+	"fmt"
 
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/airgap/types"
@@ -30,13 +31,14 @@ func (s KOTSStore) GetPendingAirgapUploadApp() (*airgaptypes.PendingApp, error) 
 	return &pendingApp, nil
 }
 
-func (s KOTSStore) GetAirgapInstallStatus() (*airgaptypes.InstallStatus, error) {
+func (s KOTSStore) GetAirgapInstallStatus(appID string) (*airgaptypes.InstallStatus, error) {
 	db := persistence.MustGetPGSession()
-	query := `SELECT install_state from app ORDER BY created_at DESC LIMIT 1`
-	row := db.QueryRow(query)
+	query := `SELECT slug, install_state FROM app WHERE id = $1`
+	row := db.QueryRow(query, appID)
 
+	var slug string
 	var installState sql.NullString
-	if err := row.Scan(&installState); err != nil {
+	if err := row.Scan(&slug, &installState); err != nil {
 		if err == sql.ErrNoRows {
 			return &types.InstallStatus{
 				InstallStatus:  "not_installed",
@@ -46,7 +48,7 @@ func (s KOTSStore) GetAirgapInstallStatus() (*airgaptypes.InstallStatus, error) 
 		return nil, errors.Wrap(err, "failed to scan")
 	}
 
-	_, message, err := s.GetTaskStatus("airgap-install")
+	_, message, err := s.GetTaskStatus(fmt.Sprintf("airgap-install-slug-%s", slug))
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get task status")
 	}

@@ -165,6 +165,7 @@ class SupportBundleList extends React.Component {
             tryAgain={this.listSupportBundles}
             err="Failed to get bundles"
             loading={this.state.loading}
+            appSlug={this.props.match.params.slug}
           />}
       </div>
     );

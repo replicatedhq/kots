@@ -18,12 +18,12 @@ import (
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/kotskinds/client/kotsclientset/scheme"
 	apptypes "github.com/replicatedhq/kots/pkg/app/types"
+	"github.com/replicatedhq/kots/pkg/k8s"
 	kotstypes "github.com/replicatedhq/kots/pkg/kotsadm/types"
-	"github.com/replicatedhq/kots/pkg/kotsadmlicense"
+	license "github.com/replicatedhq/kots/pkg/kotsadmlicense"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/kurl"
 	"github.com/replicatedhq/kots/pkg/logger"
-	"github.com/replicatedhq/kots/pkg/persistence"
 	"github.com/replicatedhq/kots/pkg/registry"
 	"github.com/replicatedhq/kots/pkg/render/helper"
 	"github.com/replicatedhq/kots/pkg/snapshot"
@@ -49,7 +49,7 @@ const (
 
 // Collect will queue collection of a new support bundle
 func Collect(appID string, clusterID string) error {
-	id := ksuid.New().String()
+	id := strings.ToLower(ksuid.New().String())
 
 	return store.GetStore().CreatePendingSupportBundle(id, appID, clusterID)
 }
@@ -84,41 +84,79 @@ func GetFilesContents(bundleID string, filenames []string) (map[string][]byte, e
 	}
 	defer os.RemoveAll(bundleArchive)
 
-	tmpDir, err := ioutil.TempDir("", "kots")
+	bundleDir, err := ioutil.TempDir("", "kots")
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create tmp dir")
 	}
-	defer os.RemoveAll(tmpDir)
+	defer os.RemoveAll(bundleDir)
 
 	tarGz := archiver.TarGz{
 		Tar: &archiver.Tar{
 			ImplicitTopLevelFolder: false,
 		},
 	}
-	if err := tarGz.Unarchive(bundleArchive, tmpDir); err != nil {
+	if err := tarGz.Unarchive(bundleArchive, bundleDir); err != nil {
 		return nil, errors.Wrap(err, "failed to unarchive")
 	}
 
 	files := map[string][]byte{}
-	for _, filename := range filenames {
-		content, err := ioutil.ReadFile(filepath.Join(tmpDir, filename))
+	err = filepath.Walk(bundleDir, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
-			return nil, errors.Wrap(err, "failed to read file")
+			return err
 		}
 
-		files[filename] = content
+		if len(path) <= len(bundleDir) {
+			return nil
+		}
+
+		if info.IsDir() {
+			return nil
+		}
+
+		// the following tries to find the actual file path of the desired files in the support bundle
+		// this is needed to handle old and new support bundle formats
+		// where old support bundles don't include a top level subdirectory and the new ones do
+		// this basically compares file paths after trimming the subdirectory path from both (if exists)
+		relPath, err := filepath.Rel(bundleDir, path)
+		if err != nil {
+			return errors.Wrap(err, "failed to get relative path")
+		}
+
+		trimmedRelPath := SupportBundleNameRegex.ReplaceAllString(relPath, "")
+		trimmedRelPath = strings.TrimPrefix(trimmedRelPath, string(os.PathSeparator))
+		if trimmedRelPath == "" {
+			return nil
+		}
+
+		for _, filename := range filenames {
+			trimmedFileName := SupportBundleNameRegex.ReplaceAllString(filename, "")
+			trimmedFileName = strings.TrimPrefix(trimmedFileName, string(os.PathSeparator))
+			if trimmedFileName == "" {
+				continue
+			}
+			if trimmedRelPath == trimmedFileName {
+				content, err := ioutil.ReadFile(path)
+				if err != nil {
+					return errors.Wrap(err, "failed to read file")
+				}
+
+				files[filename] = content
+				return nil
+			}
+		}
+
+		return nil
+	})
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to walk")
 	}
 
 	return files, nil
 }
 
 func ClearPending(id string) error {
-	db := persistence.MustGetPGSession()
-	query := `delete from pending_supportbundle where id = $1`
-
-	_, err := db.Exec(query, id)
-	if err != nil {
-		return errors.Wrap(err, "failed to exec")
+	if err := store.GetStore().DeletePendingSupportBundle(id); err != nil {
+		return errors.Wrap(err, "failed to delete pernding support bundle")
 	}
 
 	return nil
@@ -202,7 +240,7 @@ func CreateRenderedSpec(appID string, sequence int64, origin string, inCluster b
 		return errors.Wrap(err, "failed to update collectors")
 	}
 	supportBundle.Spec.Collectors = collectors
-
+	b.Reset()
 	if err := s.Encode(supportBundle, &b); err != nil {
 		return errors.Wrap(err, "failed to encode support bundle")
 	}
@@ -448,6 +486,8 @@ func makeKotsadmCollectors() []*troubleshootv1beta2.Collect {
 		"kotsadm-operator",
 		"kurl-proxy-kotsadm",
 		"kotsadm-dex",
+		"kotsadm-fs-minio",
+		"kotsadm-s3-ops",
 	}
 	kotsadmCollectors := []*troubleshootv1beta2.Collect{}
 	for _, name := range names {
@@ -633,7 +673,13 @@ func makeWeaveAnalyzers() []*troubleshootv1beta2.Analyze {
 func makeVeleroCollectors() []*troubleshootv1beta2.Collect {
 	collectors := []*troubleshootv1beta2.Collect{}
 
-	veleroNamespace, err := snapshot.DetectVeleroNamespace()
+	clientset, err := k8s.Clientset()
+	if err != nil {
+		logger.Error(err)
+		return collectors
+	}
+
+	veleroNamespace, err := snapshot.DetectVeleroNamespace(context.TODO(), clientset, os.Getenv("POD_NAMESPACE"))
 	if err != nil {
 		logger.Error(err)
 		return collectors

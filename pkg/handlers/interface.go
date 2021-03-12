@@ -59,6 +59,7 @@ type KOTSHandler interface {
 	GetLatestPreflightResultsForSequenceZero(w http.ResponseWriter, r *http.Request)
 	GetPreflightResult(w http.ResponseWriter, r *http.Request)
 	GetPreflightCommand(w http.ResponseWriter, r *http.Request) // this is intentionally policy.AppRead
+	PreflightsReports(w http.ResponseWriter, r *http.Request)
 
 	DeployAppVersion(w http.ResponseWriter, r *http.Request)
 	RedeployAppVersion(w http.ResponseWriter, r *http.Request)
@@ -76,6 +77,7 @@ type KOTSHandler interface {
 	UpdateAppConfig(w http.ResponseWriter, r *http.Request)
 	CurrentAppConfig(w http.ResponseWriter, r *http.Request)
 	LiveAppConfig(w http.ResponseWriter, r *http.Request)
+	SetAppConfigValues(w http.ResponseWriter, r *http.Request)
 
 	SyncLicense(w http.ResponseWriter, r *http.Request)
 	GetLicense(w http.ResponseWriter, r *http.Request)
@@ -101,6 +103,7 @@ type KOTSHandler interface {
 	SaveInstanceSnapshotConfig(w http.ResponseWriter, r *http.Request)
 	GetGlobalSnapshotSettings(w http.ResponseWriter, r *http.Request)
 	UpdateGlobalSnapshotSettings(w http.ResponseWriter, r *http.Request)
+	ConfigureFileSystemSnapshotProvider(w http.ResponseWriter, r *http.Request)
 	GetBackup(w http.ResponseWriter, r *http.Request)
 	DeleteBackup(w http.ResponseWriter, r *http.Request)
 	RestoreApps(w http.ResponseWriter, r *http.Request)

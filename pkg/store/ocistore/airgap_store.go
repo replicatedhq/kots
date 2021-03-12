@@ -9,7 +9,7 @@ func (s OCIStore) GetPendingAirgapUploadApp() (*airgaptypes.PendingApp, error) {
 	return nil, ErrNotImplemented
 }
 
-func (s OCIStore) GetAirgapInstallStatus() (*airgaptypes.InstallStatus, error) {
+func (s OCIStore) GetAirgapInstallStatus(appID string) (*airgaptypes.InstallStatus, error) {
 	return nil, ErrNotImplemented
 }
 

@@ -86,17 +86,6 @@ class BackupRestore extends React.Component {
       }
     })
       .then(async res => {
-        if (!res.ok && res.status === 409) {
-          const result = await res.json();
-          if (result.kotsadmRequiresVeleroAccess) {
-            this.props.toggleSnapshotsRBACModal("show");
-            this.setState({
-              isLoadingSnapshotSettings: false
-            });
-            return;
-          }
-        }
-
         const result = await res.json();
 
         this.setState({

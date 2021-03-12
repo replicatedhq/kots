@@ -591,5 +591,16 @@ export const Utilities = {
     } else {
       return false;
     }
+  },
+
+  checkIsDeployedConfigLatest(app) {
+    let latestSequence = app?.currentSequence;
+    let deployedSequence = app?.downstreams[0]?.currentVersion?.parentSequence;
+  
+    if (deployedSequence === latestSequence) {
+      return true;
+    } else {
+      return false;
+    }
   }
 };

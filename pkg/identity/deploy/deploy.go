@@ -13,6 +13,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/identity/types"
 	"github.com/replicatedhq/kots/pkg/ingress"
 	kotsadmtypes "github.com/replicatedhq/kots/pkg/kotsadm/types"
+	kotsadmversion "github.com/replicatedhq/kots/pkg/kotsadm/version"
 	"github.com/replicatedhq/kots/pkg/template"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -30,14 +31,12 @@ var (
 	KotsIdentityLabelKey = "kots.io/identity"
 )
 
-type ImageRewriteFunc func(upstreamImage string, alwaysRewrite bool) (image string, imagePullSecrets []corev1.LocalObjectReference, err error)
-
 type Options struct {
 	NamePrefix         string
 	IdentitySpec       kotsv1beta1.IdentitySpec
 	IdentityConfigSpec kotsv1beta1.IdentityConfigSpec
 	IsOpenShift        bool
-	ImageRewriteFn     ImageRewriteFunc
+	ImageRewriteFn     kotsadmversion.ImageRewriteFunc
 	ProxyEnv           map[string]string
 	AdditionalLabels   map[string]string
 	Cipher             *crypto.AESCipher

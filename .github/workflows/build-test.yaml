@@ -35,7 +35,7 @@ jobs:
         run: make -C web build-kotsadm
 
       - name: build and push migrations for e2e
-        uses: docker/build-push-action@v2.2.2
+        uses: docker/build-push-action@v2.3.0
         with:
           tags: ttl.sh/automated-${{ github.run_id }}/kotsadm-migrations:2h
           context: ./migrations
@@ -51,7 +51,7 @@ jobs:
           severity: 'CRITICAL,HIGH'
 
       - name: build and push kotsadm for e2e
-        uses: docker/build-push-action@v2.2.2
+        uses: docker/build-push-action@v2.3.0
         with:
           tags: ttl.sh/automated-${{ github.run_id }}/kotsadm:2h
           context: ./
@@ -67,7 +67,7 @@ jobs:
           severity: 'CRITICAL,HIGH'
 
       - name: build and push operator for e2e
-        uses: docker/build-push-action@v2.2.2
+        uses: docker/build-push-action@v2.3.0
         with:
           tags: ttl.sh/automated-${{ github.run_id }}/kotsadm-operator:2h
           context: ./kotsadm/operator
@@ -83,7 +83,7 @@ jobs:
           severity: 'CRITICAL,HIGH'
 
       - name: build and push kurl_proxy for e2e
-        uses: docker/build-push-action@v2.2.2
+        uses: docker/build-push-action@v2.3.0
         with:
           tags: ttl.sh/automated-${{ github.run_id }}/kurl-proxy:2h
           context: ./kurl_proxy
@@ -99,7 +99,7 @@ jobs:
           severity: 'CRITICAL,HIGH'
 
       - name: build and push minio for e2e
-        uses: docker/build-push-action@v2.2.2
+        uses: docker/build-push-action@v2.3.0
         with:
           tags: ttl.sh/automated-${{ github.run_id }}/minio:2h
           context: ./deploy/minio
@@ -134,7 +134,7 @@ jobs:
 
       - run: chmod +x bin/kots
 
-      - uses: actions/setup-node@v2.1.4
+      - uses: actions/setup-node@v2.1.5
         with:
           node-version: '10.x'
 
@@ -144,11 +144,32 @@ jobs:
 
       ## testim tests
 
+      - name: aws credentials setup
+        run: | 
+          cat > aws-credentials << EOL
+          [default]
+          aws_access_key_id=${{ secrets.TESTIM_AWS_ACCESS_KEY_ID }}
+          aws_secret_access_key=${{ secrets.TESTIM_AWS_SECRET_ACCESS_KEY }}
+          EOL
+
+      - name: velero install
+        run: |
+          curl -LO https://github.com/vmware-tanzu/velero/releases/download/v1.5.2/velero-v1.5.2-linux-amd64.tar.gz && tar zxvf velero-v1.5.2-linux-amd64.tar.gz && \
+          ./velero-v1.5.2-linux-amd64/velero install \
+          --provider aws \
+          --plugins velero/velero-plugin-for-aws:v1.1.0 \
+          --bucket kots-testim-snapshots \
+          --backup-location-config region=us-east-1 \
+          --snapshot-location-config region=us-east-1 \
+          --secret-file ./aws-credentials \
+          --prefix /automated-${{ github.run_id }}-${{ matrix.k8s_version }} \
+          --use-restic
+      
       - name: prepare legacy tests
         run: |
           set +e
           ./bin/kots \
-          install qakots/github-actions \
+          install qakotstestim/github-actions-qa \
           --port-forward=false \
           --namespace legacy \
           --shared-password password \
@@ -169,12 +190,19 @@ jobs:
             kubectl -n legacy logs -p deployment/kotsadm-operator
           fi
           exit $EXIT_CODE
+      
+      - name: get branch
+        if: startsWith(github.ref, 'refs/heads/')
+        id: get_branch
+        shell: bash
+        run: BRANCH=${GITHUB_REF/refs\/heads\//} && echo ::set-output name=GIT_BRANCH::${BRANCH:-master}
+
       - name: execute legacy tests
         run: |
           set +e
           ./bin/kots admin-console -n legacy &
           ADMIN_CONSOLE_PID=$!
-          testim --token ${{ secrets.TESTIM_ACCESS_TOKEN }} --project ${{ secrets.TESTIM_PROJECT_ID }} --grid "Testim-grid" --report-file testim-report.xml --suite legacy --tunnel --tunnel-port 8800
+          testim --token ${{ secrets.TESTIM_ACCESS_TOKEN }} --project ${{ secrets.TESTIM_PROJECT_ID }} --grid "Testim-grid" --branch ${{ steps.get_branch.outputs.GIT_BRANCH }} --report-file testim-report.xml --suite legacy --tunnel --tunnel-port 8800
           EXIT_CODE=$?
           if [ $EXIT_CODE -ne 0 ]; then
             echo "------pods:"
@@ -187,6 +215,8 @@ jobs:
             kubectl -n legacy logs deployment/kotsadm-operator
             echo "------previous kotsadm-operator logs"
             kubectl -n legacy logs -p deployment/kotsadm-operator
+            echo "------velero logs"
+            kubectl -n velero logs deployment/velero
           fi
           kill $ADMIN_CONSOLE_PID
           exit $EXIT_CODE
@@ -207,6 +237,9 @@ jobs:
       #     ADMIN_CONSOLE_PID=$!
       #     testim --token ${{ secrets.TESTIM_ACCESS_TOKEN }} --project ${{ secrets.TESTIM_PROJECT_ID }} --grid "Testim-grid" --report-file testim-report.xml --suite alpha --tunnel --tunnel-port 8800
       #     kill $ADMIN_CONSOLE_PID
+
+      - name: delete velero namespace
+        run: kubectl delete namespace velero
 
       - name: prepare minimal-rbac online install
         run: |

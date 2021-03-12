@@ -3,8 +3,12 @@ import Select from "react-select";
 import { withRouter } from "react-router-dom"
 import MonacoEditor from "react-monaco-editor";
 import find from "lodash/find";
+import Modal from "react-modal";
 
 import ConfigureSnapshots from "./ConfigureSnapshots";
+import CodeSnippet from "../shared/CodeSnippet";
+import Loader from "../shared/Loader";
+import { Utilities } from "../../utilities/utilities";
 
 import "../../scss/components/shared/SnapshotForm.scss";
 
@@ -30,6 +34,14 @@ const DESTINATIONS = [
   {
     value: "internal",
     label: "Internal Storage (Default)",
+  },
+  {
+    value: "nfs",
+    label: "Network File System (NFS)",
+  },
+  {
+    value: "hostpath",
+    label: "Host Path",
   }
 ];
 
@@ -51,6 +63,9 @@ const AZURE_CLOUD_NAMES = [
     label: "German",
   }
 ];
+
+export const FILE_SYSTEM_NFS_TYPE = "nfs";
+export const FILE_SYSTEM_HOSTPATH_TYPE = "hostpath";
 
 class SnapshotStorageDestination extends Component {
   state = {
@@ -88,6 +103,24 @@ class SnapshotStorageDestination extends Component {
     s3CompatibleKeySecret: "",
     s3CompatibleEndpoint: "",
     s3CompatibleRegion: "",
+
+    configuringFileSystemProvider: false,
+    configureFileSystemProviderErrorMsg: "",
+    configureFileSystemProviderNamespace: "",
+    showConfigureFileSystemProviderNextStepsModal: false,
+    showConfigureFileSystemProviderModal: false,
+    showResetFileSystemWarningModal: false,
+    resetFileSystemWarningMessage: "",
+
+    fileSystemType: "",
+    fileSystemNFSPath: "",
+    fileSystemNFSServer: "",
+    fileSystemHostPath: "",
+
+    tmpFileSystemType: "",
+    tmpFileSystemNFSPath: "",
+    tmpFileSystemNFSServer: "",
+    tmpFileSystemHostPath: "",
   };
 
   componentDidMount() {
@@ -204,7 +237,6 @@ class SnapshotStorageDestination extends Component {
     if (!snapshotSettings) return;
     const { store } = snapshotSettings;
 
-
     if (store?.aws) {
       return this.setState({
         determiningDestination: false,
@@ -266,6 +298,18 @@ class SnapshotStorageDestination extends Component {
       });
     }
 
+    if (store?.fileSystem) {
+      const { fileSystemConfig } = snapshotSettings;
+      return this.setState({
+        determiningDestination: false,
+        selectedDestination: fileSystemConfig?.hostPath ? find(DESTINATIONS, ["value", "hostpath"]) : find(DESTINATIONS, ["value", "nfs"]),
+        fileSystemType: fileSystemConfig?.hostPath ? FILE_SYSTEM_HOSTPATH_TYPE : FILE_SYSTEM_NFS_TYPE,
+        fileSystemNFSPath: fileSystemConfig?.nfs?.path,
+        fileSystemNFSServer: fileSystemConfig?.nfs?.server,
+        fileSystemHostPath: fileSystemConfig?.hostPath,
+      });
+    }
+
     // if nothing exists yet, we've determined default state is good
     this.setState({
       determiningDestination: false,
@@ -283,8 +327,9 @@ class SnapshotStorageDestination extends Component {
     this.setState(nextState);
   }
 
-  handleDestinationChange = (retentionUnit) => {
-    this.setState({ selectedDestination: retentionUnit });
+  handleDestinationChange = (destination) => {
+    const fileSystemType = destination?.value === "hostpath" ? FILE_SYSTEM_HOSTPATH_TYPE : destination?.value === "nfs" ? FILE_SYSTEM_NFS_TYPE : "";
+    this.setState({ selectedDestination: destination, fileSystemType: fileSystemType });
   }
 
   handleAzureCloudNameChange = (azureCloudName) => {
@@ -312,6 +357,10 @@ class SnapshotStorageDestination extends Component {
         break;
       case "internal":
         await this.snapshotProviderInternal();
+        break;
+      case "nfs":
+      case "hostpath":
+        await this.snapshotProviderFileSystem(false);
         break;
     }
   }
@@ -347,6 +396,124 @@ class SnapshotStorageDestination extends Component {
   snapshotProviderInternal = async () => {
     const payload = { internal: true };
     this.props.updateSettings(payload);
+  }
+
+  snapshotProviderFileSystem = async (forceReset = false) => {
+    if (forceReset) {
+      this.hideResetFileSystemWarningModal();
+    }
+
+    const type = this.state.fileSystemType;
+    const path = this.state.fileSystemNFSPath;
+    const server = this.state.fileSystemNFSServer;
+    const hostPath = this.state.fileSystemHostPath;
+
+    const payload = {
+      fileSystem: this.buildFileSystemOptions(type, path, server, hostPath, forceReset),
+    };
+    this.props.updateSettings(payload);
+  }
+
+  buildFileSystemOptions = (type, path, server, hostPath, forceReset) => {
+    const options = {
+      forceReset: forceReset,
+    }
+    if (type === FILE_SYSTEM_HOSTPATH_TYPE) {
+      options.hostPath = hostPath;
+    } else if (type === FILE_SYSTEM_NFS_TYPE) {
+      options.nfs = {
+        path: path,
+        server: server,
+      }
+    }
+    return options;
+  }
+
+  openConfigureFileSystemProviderModal = (fileSystemType) => {
+    this.setState({ showConfigureFileSystemProviderModal: !this.state.showConfigureFileSystemProviderModal, tmpFileSystemType: fileSystemType });
+  };
+
+  hideConfigureFileSystemProviderModal = () => {
+    this.setState({ showConfigureFileSystemProviderModal: false });
+  };
+
+  hideConfigureFileSystemProviderNextStepsModal = () => {
+    this.setState({ showConfigureFileSystemProviderNextStepsModal: false });
+  };
+
+  hideResetFileSystemWarningModal = () => {
+    this.setState({ showResetFileSystemWarningModal: false });
+    if (this.props.hideResetFileSystemWarningModal) {
+      this.props.hideResetFileSystemWarningModal();
+    }
+  };
+
+  configureFileSystemProvider = (forceReset = false) => {
+    if (forceReset) {
+      this.hideResetFileSystemWarningModal();
+    }
+
+    const type = this.state.tmpFileSystemType;
+    const path = this.state.tmpFileSystemNFSPath;
+    const server = this.state.tmpFileSystemNFSServer;
+    const hostPath = this.state.tmpFileSystemHostPath;
+    const fileSystemOptions = this.buildFileSystemOptions(type, path, server, hostPath, forceReset);
+
+    this.setState({ configuringFileSystemProvider: true, configureFileSystemProviderErrorMsg: "" });
+
+    fetch(`${window.env.API_ENDPOINT}/snapshots/filesystem`, {
+      method: "PUT",
+      headers: {
+        "Authorization": Utilities.getToken(),
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        fileSystemOptions: fileSystemOptions,
+      })
+    })
+      .then(async (res) => {
+        if (res.status === 409) {
+          const response = await res.json();
+          this.setState({
+            configuringFileSystemProvider: false,
+            showResetFileSystemWarningModal: true,
+            resetFileSystemWarningMessage: response.error,
+          })
+          return;
+        }
+
+        const response = await res.json();
+        if (!res.ok) {
+          this.setState({
+            configuringFileSystemProvider: false,
+            configureFileSystemProviderErrorMsg: response.error
+          });
+          return;
+        }
+
+        if (response.success) {
+          this.setState({
+            configuringFileSystemProvider: false,
+            showConfigureFileSystemProviderModal: false,
+            showConfigureFileSystemProviderNextStepsModal: true,
+            configureFileSystemProviderErrorMsg: "",
+            configureFileSystemProviderNamespace: response.namespace,
+          });
+          return;
+        }
+
+        this.setState({
+          configuringFileSystemProvider: false,
+          configureFileSystemProviderErrorMsg: response.error
+        });
+      })
+      .catch((err) => {
+        console.error(err);
+        this.setState({
+          configuringFileSystemProvider: false,
+          configureFileSystemProviderErrorMsg: "Something went wrong, please try again."
+        });
+      });
   }
 
   renderIcons = (destination) => {
@@ -596,6 +763,30 @@ class SnapshotStorageDestination extends Component {
           null
         )
 
+      case "nfs":
+        return (
+          <div className="flex u-marginBottom--30">
+            <div className="flex1 u-paddingRight--5">
+              <p className="u-fontSize--normal u-color--tuna u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">Server</p>
+              <input key="filesystem-nfs-server" type="text" className="Input" placeholder="NFS server hostname/IP" value={this.state.fileSystemNFSServer} onChange={(e) => { this.handleFormChange("fileSystemNFSServer", e) }} />
+            </div>
+            <div className="flex1 u-paddingLeft--5">
+              <p className="u-fontSize--normal u-color--tuna u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">Path</p>
+              <input key="filesystem-nfs-path" type="text" className="Input" placeholder="/path/to/nfs-directory" value={this.state.fileSystemNFSPath} onChange={(e) => { this.handleFormChange("fileSystemNFSPath", e) }} />
+            </div>
+          </div>
+        )
+
+      case "hostpath":
+        return (
+          <div className="flex u-marginBottom--30">
+            <div className="flex1 u-paddingRight--5">
+              <p className="u-fontSize--normal u-color--tuna u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">Host Path</p>
+              <input key="filesystem-hostpath" type="text" className="Input" placeholder="/path/to/host-directory" value={this.state.fileSystemHostPath} onChange={(e) => { this.handleFormChange("fileSystemHostPath", e) }} />
+            </div>
+          </div>
+        )
+
       default:
         return (
           <div>No snapshot destination is selected</div>
@@ -603,8 +794,72 @@ class SnapshotStorageDestination extends Component {
     }
   }
 
+  renderConfigureFileSystemProviderModalContent = () => {
+    if (this.state.tmpFileSystemType === FILE_SYSTEM_HOSTPATH_TYPE) {
+      return (
+        <div className="Modal-body">
+          <p className="u-fontSize--largest u-fontWeight--bold u-color--tundora u-marginBottom--10">Configure Host Path</p>
+          <p className="u-fontSize--normal u-fontWeight--medium u-color--dustyGray u-lineHeight--normal u-marginBottom--10">Enter the host path for the directory in which you would like to store the snapshots.</p>
+          <div className="flex u-marginBottom--30">
+            <div className="flex1 u-paddingRight--5">
+              <p className="u-fontSize--normal u-color--tuna u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">Host Path</p>
+              <input type="text" className="Input" placeholder="/path/to/host-directory" value={this.state.tmpFileSystemHostPath} onChange={(e) => this.setState({ tmpFileSystemHostPath: e.target.value })} />
+            </div>
+          </div>
+          <div className="flex justifyContent--flexStart alignItems-center">
+            {this.state.configuringFileSystemProvider && <Loader className="u-marginRight--5" size="32" />}
+            <button
+              type="button"
+              className="btn blue primary u-marginRight--10"
+              onClick={() => this.configureFileSystemProvider(false)}
+              disabled={!this.state.tmpFileSystemHostPath || this.state.configuringFileSystemProvider}
+            >
+              {this.state.configuringFileSystemProvider ? "Configuring" : "Configure"}
+            </button>
+            <button type="button" className="btn secondary" onClick={this.hideConfigureFileSystemProviderModal}>Cancel</button>
+          </div>
+          {this.state.configureFileSystemProviderErrorMsg && <div className="flex u-fontWeight--bold u-fontSize--small u-color--red u-marginBottom--10 u-marginTop--10">{this.state.configureFileSystemProviderErrorMsg}</div>}
+        </div>
+      )
+    }
+
+    if (this.state.tmpFileSystemType === FILE_SYSTEM_NFS_TYPE) {
+      return (
+        <div className="Modal-body">
+          <p className="u-fontSize--largest u-fontWeight--bold u-color--tundora u-marginBottom--10">Configure NFS</p>
+          <p className="u-fontSize--normal u-fontWeight--medium u-color--dustyGray u-lineHeight--normal u-marginBottom--10">Enter the NFS server hostname or IP address, and the exported directory path in which you would like to store the snapshots.</p>
+          <div className="flex u-marginBottom--30">
+            <div className="flex1 u-paddingRight--5">
+              <p className="u-fontSize--normal u-color--tuna u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">Server</p>
+              <input type="text" className="Input" placeholder="NFS server hostname/IP" value={this.state.tmpFileSystemNFSServer} onChange={(e) => this.setState({ tmpFileSystemNFSServer: e.target.value })} />
+            </div>
+            <div className="flex1 u-paddingLeft--5">
+              <p className="u-fontSize--normal u-color--tuna u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">Path</p>
+              <input type="text" className="Input" placeholder="/path/to/nfs-directory" value={this.state.tmpFileSystemNFSPath} onChange={(e) => this.setState({ tmpFileSystemNFSPath: e.target.value })} />
+            </div>
+          </div>
+          <div className="flex justifyContent--flexStart alignItems-center">
+            {this.state.configuringFileSystemProvider && <Loader className="u-marginRight--5" size="32" />}
+            <button
+              type="button"
+              className="btn blue primary u-marginRight--10"
+              disabled={!this.state.tmpFileSystemNFSServer || !this.state.tmpFileSystemNFSPath || this.state.configuringFileSystemProvider}
+              onClick={() => this.configureFileSystemProvider(false)}
+            >
+              {this.state.configuringFileSystemProvider ? "Configuring" : "Configure"}
+            </button>
+            <button type="button" className="btn secondary" onClick={this.hideConfigureFileSystemProviderModal}>Cancel</button>
+          </div>
+          {this.state.configureFileSystemProviderErrorMsg && <div className="flex u-fontWeight--bold u-fontSize--small u-color--red u-marginBottom--10 u-marginTop--10">{this.state.configureFileSystemProviderErrorMsg}</div>}
+        </div>
+      );
+    }
+
+    return null;
+  }
+
   render() {
-    const { snapshotSettings, updatingSettings, updateConfirm, updateErrorMsg } = this.props;
+    const { snapshotSettings, updatingSettings, updateConfirm, updateErrorMsg, isKurlEnabled } = this.props;
 
     const availableDestinations = [];
     if (snapshotSettings?.veleroPlugins) {
@@ -631,6 +886,14 @@ class SnapshotStorageDestination extends Component {
                 label: "Internal Storage (Default)",
               });
             }
+            availableDestinations.push({
+              value: "nfs",
+              label: "Network File System (NFS)",
+            });
+            availableDestinations.push({
+              value: "hostpath",
+              label: "Host Path",
+            });
             break;
           case "velero-plugin-for-azure":
             availableDestinations.push({
@@ -645,6 +908,9 @@ class SnapshotStorageDestination extends Component {
     const selectedDestination = availableDestinations.find((d) => {
       return d.value === this.state.selectedDestination.value;
     });
+
+    const showResetFileSystemWarningModal = this.state.showResetFileSystemWarningModal || this.props.showResetFileSystemWarningModal;
+    const resetFileSystemWarningMessage = this.state.resetFileSystemWarningMessage || this.props.resetFileSystemWarningMessage;
 
 
     return (
@@ -665,14 +931,19 @@ class SnapshotStorageDestination extends Component {
               <form className="flex flex-column snapshot-form-wrapper">
                 <p className="u-fontSize--normal u-marginBottom--20 u-fontWeight--bold u-color--tundora">Storage</p>
                 {updateErrorMsg &&
-                  <div className="flex u-fontWeight--bold u-fontSize--small u-color--red u-marginBottom--10">{updateErrorMsg}</div>}
+                  <div className="flex-auto u-fontWeight--bold u-fontSize--small u-color--red u-marginBottom--10">{updateErrorMsg}</div>}
                 <div className="flex flex-column u-marginBottom--20">
                   <div className="flex flex1 justifyContent--spaceBetween alignItems--center">
                     <p className="u-fontSize--normal u-color--tuna u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">Destination</p>
-                    <span className="replicated-link u-fontSize--normal flex justifyContent--flexEnd u-cursor--pointer" onClick={() => this.props.toggleConfigureModal(this.props.history)}> + Add a new storage destination </span>
+                    <span className="replicated-link u-fontSize--normal flex justifyContent--flexEnd u-cursor--pointer" onClick={this.props.toggleConfigureSnapshotsModal}> + Add a new storage destination </span>
                   </div>
-                  {!snapshotSettings?.isVeleroRunning &&
-                    <div className="flex u-fontWeight--bold u-fontSize--small u-color--red u-marginBottom--10"> Please fix Velero so that the deployment is running. <a href="https://kots.io/kotsadm/snapshots/velero-troubleshooting/" target="_blank" rel="noopener noreferrer" className="replicated-link u-marginLeft--5">View docs</a>  </div>}
+                  {!snapshotSettings?.isVeleroRunning ?
+                    isKurlEnabled ?
+                    <div className="flex-auto u-fontWeight--bold u-fontSize--small u-color--red u-marginBottom--10"> Please fix Velero so that the deployment is running. For help troubleshooting this issue visit
+                    <a href="https://velero.io/docs/main/troubleshooting/" target="_blank" rel="noopener noreferrer" className="replicated-link u-marginLeft--5">https://velero.io/docs/main/troubleshooting/</a></div>
+                    :
+                    <div className="flex-auto u-fontWeight--bold u-fontSize--small u-color--red u-marginBottom--10"> Please fix Velero so that the deployment is running. For help troubleshooting this issue visit
+                    <a href="https://velero.io/docs/main/troubleshooting/" target="_blank" rel="noopener noreferrer" className="replicated-link u-marginLeft--5">Velero documentation</a></div> : null}
                   <div className="flex1">
                     {availableDestinations.length > 1 ?
                       <Select
@@ -702,6 +973,7 @@ class SnapshotStorageDestination extends Component {
                     {this.renderDestinationFields()}
                     <div className="flex">
                       <button className="btn primary blue" disabled={updatingSettings} onClick={this.onSubmit}>{updatingSettings ? "Updating" : "Update storage settings"}</button>
+                      {updatingSettings && <Loader className="u-marginLeft--10" size="32" />}
                       {updateConfirm &&
                         <div className="u-marginLeft--10 flex alignItems--center">
                           <span className="icon checkmark-icon" />
@@ -711,27 +983,91 @@ class SnapshotStorageDestination extends Component {
                     </div>
                   </div>
                 }
-                <span className="u-fontSize--small u-fontWeight--normal u-lineHeight--normal u-color--dustyGray u-marginTop--15"> All data in your snapshots will be deduplicated. To learn more about how,
-                <a href="https://kots.io/kotsadm/snapshots/restic-deduplication/" target="_blank" rel="noopener noreferrer" className="replicated-link"> check out the Restic docs</a>. </span>
+                <span className="u-fontSize--small u-fontWeight--normal u-lineHeight--normal u-color--dustyGray u-marginTop--15">
+                All data in your snapshots will be deduplicated. Snapshots makes use of Restic, a fast and secure backup technology with native deduplication. </span>
               </form>
             </div>
           </div>
           <SnapshotSchedule 
+            apps={this.props.apps}
+            isKurlEnabled={this.props.isKurlEnabled}
             isVeleroRunning={snapshotSettings?.isVeleroRunning} 
-            isKurlEnabled={this.props.isKurlEnabled} 
-            toggleSnapshotsRBACModal={this.props.toggleSnapshotsRBACModal}
             isVeleroInstalled={!!snapshotSettings?.veleroVersion}
-            apps={this.props.apps} />
+            openConfigureSnapshotsMinimalRBACModal={this.props.openConfigureSnapshotsMinimalRBACModal}
+          />
         </div>
-        {this.props.configureSnapshotsModal &&
+
+        {this.props.showConfigureSnapshotsModal &&
           <ConfigureSnapshots
             snapshotSettings={this.props.snapshotSettings}
             fetchSnapshotSettings={this.props.fetchSnapshotSettings}
             renderNotVeleroMessage={this.props.renderNotVeleroMessage}
             hideCheckVeleroButton={this.props.hideCheckVeleroButton}
-            configureSnapshotsModal={this.props.configureSnapshotsModal}
-            toggleConfigureModal={this.props.toggleConfigureModal}
+            showConfigureSnapshotsModal={this.props.showConfigureSnapshotsModal}
+            toggleConfigureSnapshotsModal={this.props.toggleConfigureSnapshotsModal}
+            kotsadmRequiresVeleroAccess={this.props.kotsadmRequiresVeleroAccess}
+            minimalRBACKotsadmNamespace={this.props.minimalRBACKotsadmNamespace}
+            openConfigureFileSystemProviderModal={this.openConfigureFileSystemProviderModal}
+            isKurlEnabled={isKurlEnabled}
           />}
+
+        {this.state.showConfigureFileSystemProviderModal &&
+          <Modal
+            isOpen={this.state.showConfigureFileSystemProviderModal}
+            onRequestClose={this.hideConfigureFileSystemProviderModal}
+            shouldReturnFocusAfterClose={false}
+            contentLabel="Configure File System backend"
+            ariaHideApp={false}
+            className="Modal SmallSize"
+          >
+            {this.renderConfigureFileSystemProviderModalContent()}
+          </Modal>
+        }
+
+        {this.state.showConfigureFileSystemProviderNextStepsModal &&
+          <Modal
+            isOpen={this.state.showConfigureFileSystemProviderNextStepsModal}
+            onRequestClose={this.hideConfigureFileSystemProviderNextStepsModal}
+            shouldReturnFocusAfterClose={false}
+            contentLabel="File system next steps"
+            ariaHideApp={false}
+            className="Modal SmallSize"
+          >
+            <div className="Modal-body">
+              <p className="u-fontSize--largest u-fontWeight--bold u-color--tundora u-marginBottom--10">Next steps</p>
+              <p className="u-fontSize--normal u-fontWeight--normal u-color--dustyGray u-lineHeight--normal"> Run the following command for instructions on how to set up Velero: </p>
+              <CodeSnippet
+                language="bash"
+                canCopy={true}
+                onCopyText={<span className="u-color--chateauGreen">Command has been copied to your clipboard</span>}
+              >
+                {`kubectl kots velero print-fs-instructions --namespace ${this.state.configureFileSystemProviderNamespace}`}
+              </CodeSnippet>
+              <div className="u-marginTop--10 flex justifyContent--flexStart">
+                <button type="button" className="btn blue primary" onClick={this.hideConfigureFileSystemProviderNextStepsModal}>Ok, got it!</button>
+              </div>
+            </div>
+          </Modal>
+        }
+
+        {showResetFileSystemWarningModal &&
+          <Modal
+            isOpen={showResetFileSystemWarningModal}
+            onRequestClose={this.hideResetFileSystemWarningModal}
+            shouldReturnFocusAfterClose={false}
+            contentLabel="Reset file system config"
+            ariaHideApp={false}
+            className="Modal MediumSize"
+          >
+            <div className="Modal-body">
+              <p className="u-fontSize--large u-color--chestnut u-marginBottom--20">{resetFileSystemWarningMessage} Would you like to continue?</p>
+              <div className="u-marginTop--10 flex justifyContent--flexStart">
+                <button type="button" className="btn blue primary u-marginRight--10" onClick={this.state.showConfigureFileSystemProviderModal ? () => this.configureFileSystemProvider(true) : () => this.snapshotProviderFileSystem(true)}>Yes</button>
+                <button type="button" className="btn secondary" onClick={this.hideResetFileSystemWarningModal}>No</button>
+              </div>
+            </div>
+          </Modal>
+        }
       </div>
     );
   }

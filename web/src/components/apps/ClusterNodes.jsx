@@ -237,7 +237,7 @@ export class ClusterNodes extends Component {
     return (
       <div className="ClusterNodes--wrapper container flex-column flex1 u-overflow--auto u-paddingTop--50">
         <Helmet>
-          <title>{`${this.props.appName ? `${this.props.appName} Admin Console` : "Admin Console"}`}</title>
+          <title>{`${this.props.appName ? `${this.props.appName} Cluster Management` : "Cluster Management"}`}</title>
         </Helmet>
         <div className="flex-column flex1 alignItems--center">
           <div className="flex1 flex-column centered-container">

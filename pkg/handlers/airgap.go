@@ -18,6 +18,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/store"
+	"github.com/replicatedhq/kots/pkg/util"
 )
 
 type CreateAppFromAirgapRequest struct {
@@ -48,9 +49,16 @@ var chunkLock sync.Mutex
 var fileLock sync.Mutex
 
 func (h *Handler) GetAirgapInstallStatus(w http.ResponseWriter, r *http.Request) {
-	status, err := store.GetStore().GetAirgapInstallStatus()
+	appID, err := store.GetStore().GetAppIDFromSlug(mux.Vars(r)["appSlug"])
 	if err != nil {
-		logger.Error(err)
+		logger.Error(errors.Wrapf(err, "failed to app for slug %s", mux.Vars(r)["appSlug"]))
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	status, err := store.GetStore().GetAirgapInstallStatus(appID)
+	if err != nil {
+		logger.Error(errors.Wrapf(err, "failed to get install status for app %s", mux.Vars(r)["appSlug"]))
 		w.WriteHeader(500)
 		return
 	}
@@ -167,6 +175,10 @@ func (h *Handler) UploadAirgapBundleChunk(w http.ResponseWriter, r *http.Request
 
 		_, err = os.Stat(airgapBundlePath)
 		if os.IsNotExist(err) {
+
+			// this is a new upload.  assume only one upload can happen at a time and free up some ephemeral storage.
+			cleanupTempAirgapBundles()
+
 			f, err := os.Create(airgapBundlePath)
 			if err != nil {
 				logger.Error(err)
@@ -300,9 +312,14 @@ func (h *Handler) UpdateAppFromAirgap(w http.ResponseWriter, r *http.Request) {
 	go func() {
 		if err := airgap.UpdateAppFromAirgap(a, airgapBundlePath, false, false); err != nil {
 			logger.Error(errors.Wrap(err, "failed to update app from airgap bundle"))
-			return
+
+			// if NoRetry is set, we stll want to clean up immediately
+			cause := errors.Cause(err)
+			if err, ok := cause.(util.ActionableError); !ok || !err.NoRetry {
+				return
+			}
 		}
-		// app updated successfully, we can remove the airgap bundle
+
 		if err := cleanUp(identifier, totalChunks); err != nil {
 			logger.Error(errors.Wrap(err, "failed to clean up"))
 		}
@@ -360,9 +377,14 @@ func (h *Handler) CreateAppFromAirgap(w http.ResponseWriter, r *http.Request) {
 	go func() {
 		if err := airgap.CreateAppFromAirgap(pendingApp, airgapBundlePath, registryHost, namespace, username, password, false, false); err != nil {
 			logger.Error(errors.Wrap(err, "failed to create app from airgap bundle"))
-			return
+
+			// if NoRetry is set, we stll want to clean up immediately
+			cause := errors.Cause(err)
+			if err, ok := cause.(util.ActionableError); !ok || !err.NoRetry {
+				return
+			}
 		}
-		// app created successfully, we can remove the airgap bundle
+
 		if err := cleanUp(identifier, totalChunks); err != nil {
 			logger.Error(errors.Wrap(err, "failed to clean up"))
 		}
@@ -378,7 +400,23 @@ func getChunkKey(uploadedFileIdentifier string, chunkNumber int64) string {
 }
 
 func getAirgapBundlePath(uploadedFileIdentifier string) string {
-	return filepath.Join(os.TempDir(), fmt.Sprintf("%s.%s", uploadedFileIdentifier, "airgap"))
+	return filepath.Join(os.TempDir(), fmt.Sprintf("%s.chunks.airgap", uploadedFileIdentifier))
+}
+
+func cleanupTempAirgapBundles() {
+	glob := filepath.Join(os.TempDir(), "*.chunks.airgap")
+	files, err := filepath.Glob(glob)
+	if err != nil {
+		logger.Error(errors.Wrap(err, "failed to list temp airgap bundles"))
+		return
+	}
+
+	for _, file := range files {
+		err := os.Remove(file)
+		if err != nil {
+			logger.Error(errors.Wrap(err, "failed to delete temp airgap bundle"))
+		}
+	}
 }
 
 func addUploadedChank(chunkKey string) {

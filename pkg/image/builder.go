@@ -10,6 +10,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"time"
 
@@ -349,7 +350,7 @@ func copyOneImage(srcRegistry, destRegistry registry.RegistryOptions, image stri
 		return kustomizeImage(destRegistry, image)
 	}
 
-	_, err = copy.Image(context.Background(), policyContext, destRef, srcRef, &copy.Options{
+	_, err = CopyImageWithGC(context.Background(), policyContext, destRef, srcRef, &copy.Options{
 		RemoveSignatures:      true,
 		SignBy:                "",
 		ReportWriter:          reportWriter,
@@ -378,7 +379,7 @@ func copyOneImage(srcRegistry, destRegistry registry.RegistryOptions, image stri
 		}
 
 		// copy image from remote to local
-		_, err = copy.Image(context.Background(), policyContext, localRef, srcRef, &copy.Options{
+		_, err = CopyImageWithGC(context.Background(), policyContext, localRef, srcRef, &copy.Options{
 			RemoveSignatures:      true,
 			SignBy:                "",
 			ReportWriter:          reportWriter,
@@ -391,7 +392,7 @@ func copyOneImage(srcRegistry, destRegistry registry.RegistryOptions, image stri
 		}
 
 		// copy image from local to remote
-		_, err = copy.Image(context.Background(), policyContext, destRef, localRef, &copy.Options{
+		_, err = CopyImageWithGC(context.Background(), policyContext, destRef, localRef, &copy.Options{
 			RemoveSignatures:      true,
 			SignBy:                "",
 			ReportWriter:          reportWriter,
@@ -505,7 +506,7 @@ func CopyFromFileToRegistry(path string, name string, tag string, digest string,
 		}
 	}
 
-	_, err = copy.Image(context.Background(), policyContext, destRef, srcRef, &copy.Options{
+	_, err = CopyImageWithGC(context.Background(), policyContext, destRef, srcRef, &copy.Options{
 		RemoveSignatures:      true,
 		SignBy:                "",
 		ReportWriter:          reportWriter,
@@ -613,4 +614,13 @@ func isUnauthorized(err error) bool {
 	}
 
 	return isUnauthorized(cause)
+}
+
+func CopyImageWithGC(ctx context.Context, policyContext *signature.PolicyContext, destRef, srcRef types.ImageReference, options *copy.Options) ([]byte, error) {
+	manifest, err := copy.Image(ctx, policyContext, destRef, srcRef, options)
+
+	// copying an image increases allocated memory, which can push the pod to cross the memory limit when copying multiple images in a row.
+	runtime.GC()
+
+	return manifest, err
 }

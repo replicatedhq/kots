@@ -1,6 +1,7 @@
 package socketservice
 
 import (
+	"context"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
@@ -26,6 +27,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/midstream"
+	"github.com/replicatedhq/kots/pkg/redact"
 	"github.com/replicatedhq/kots/pkg/render"
 	"github.com/replicatedhq/kots/pkg/socket"
 	"github.com/replicatedhq/kots/pkg/socket/transport"
@@ -65,7 +67,8 @@ type AppInformersArgs struct {
 }
 
 type SupportBundleArgs struct {
-	URI string `json:"uri"`
+	URI       string `json:"uri"`
+	RedactURI string `json:"redactURI"`
 }
 
 var server *socket.Server
@@ -451,8 +454,14 @@ func processSupportBundle(clusterSocket *ClusterSocket, pendingSupportBundle sup
 		return errors.Wrap(err, "failed to create rendered support bundle spec")
 	}
 
+	err = redact.WriteRedactSpecConfigMap()
+	if err != nil {
+		return errors.Wrap(err, "failed to write redact spec configmap")
+	}
+
 	supportBundleArgs := SupportBundleArgs{
-		URI: supportbundle.GetSpecURI(a.Slug),
+		URI:       supportbundle.GetSpecURI(a.Slug),
+		RedactURI: redact.GetRedactSpecURI(),
 	}
 	c.Emit("supportbundle", supportBundleArgs)
 
@@ -519,7 +528,7 @@ func handleUndeployCompleted(clusterSocket *ClusterSocket, a *apptypes.App) erro
 	snapshotName := a.RestoreInProgressName
 	restoreName := a.RestoreInProgressName
 
-	backup, err := snapshot.GetBackup(snapshotName)
+	backup, err := snapshot.GetBackup(context.Background(), os.Getenv("POD_NAMESPACE"), snapshotName)
 	if err != nil {
 		return errors.Wrap(err, "failed to get backup")
 	}
@@ -527,7 +536,7 @@ func handleUndeployCompleted(clusterSocket *ClusterSocket, a *apptypes.App) erro
 		restoreName = fmt.Sprintf("%s.%s", snapshotName, a.Slug)
 	}
 
-	restore, err := snapshot.GetRestore(restoreName)
+	restore, err := snapshot.GetRestore(context.Background(), os.Getenv("POD_NAMESPACE"), restoreName)
 	if err != nil {
 		return errors.Wrap(err, "failed to get restore")
 	}
@@ -542,7 +551,7 @@ func handleUndeployCompleted(clusterSocket *ClusterSocket, a *apptypes.App) erro
 func startVeleroRestore(snapshotName string, appSlug string) error {
 	logger.Info(fmt.Sprintf("creating velero restore object from snapshot %s", snapshotName))
 
-	if err := snapshot.CreateApplicationRestore(snapshotName, appSlug); err != nil {
+	if err := snapshot.CreateApplicationRestore(context.Background(), os.Getenv("POD_NAMESPACE"), snapshotName, appSlug); err != nil {
 		return errors.Wrap(err, "failed to create restore")
 	}
 
@@ -552,7 +561,7 @@ func startVeleroRestore(snapshotName string, appSlug string) error {
 func checkRestoreComplete(clusterSocket *ClusterSocket, a *apptypes.App, restore *velerov1.Restore) error {
 	switch restore.Status.Phase {
 	case velerov1.RestorePhaseCompleted:
-		backup, err := snapshot.GetBackup(restore.Spec.BackupName)
+		backup, err := snapshot.GetBackup(context.Background(), os.Getenv("POD_NAMESPACE"), restore.Spec.BackupName)
 		if err != nil {
 			return errors.Wrap(err, "failed to get backup")
 		}
@@ -681,7 +690,7 @@ func undeployApp(a *apptypes.App, d *downstreamtypes.Downstream, clusterSocket *
 	}
 	base64EncodedManifests := base64.StdEncoding.EncodeToString(renderedManifests)
 
-	backup, err := snapshot.GetBackup(a.RestoreInProgressName)
+	backup, err := snapshot.GetBackup(context.Background(), os.Getenv("POD_NAMESPACE"), a.RestoreInProgressName)
 	if err != nil {
 		return errors.Wrap(err, "failed to get backup")
 	}

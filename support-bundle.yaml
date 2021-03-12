@@ -71,6 +71,16 @@ spec:
         name: kots/admin_console
         selector:
           - app=kotsadm-dex
+    - logs:
+        collectorName: kotsadm-fs-minio
+        name: kots/admin_console
+        selector:
+          - app=kotsadm-fs-minio
+    - logs:
+        collectorName: kotsadm-s3-ops
+        name: kots/admin_console
+        selector:
+          - app=kotsadm-s3-ops
     - secret:
         collectorName: kotsadm-replicated-registry
         includeValue: false

@@ -44,6 +44,7 @@ func UpstreamUpgradeCmd() *cobra.Command {
 				os.Exit(1)
 			}
 
+			appSlug := args[0]
 			var images []kustomizetypes.Image
 
 			isKurl, err := kotsadm.IsKurl(kubernetesConfigFlags)
@@ -65,7 +66,11 @@ func UpstreamUpgradeCmd() *cobra.Command {
 				registryPassword := v.GetString("registry-password")
 
 				if registryNamespace == "" {
-					return errors.New("--kotsadm-namespace is required")
+					if isKurl {
+						registryNamespace = appSlug
+					} else {
+						return errors.New("--kotsadm-namespace is required")
+					}
 				}
 
 				if registryEndpoint == "" && isKurl {
@@ -93,7 +98,7 @@ func UpstreamUpgradeCmd() *cobra.Command {
 				}
 
 				imagesRootDir := filepath.Join(airgapRootDir, "images")
-				images, err = kotsadm.TagAndPushAppImages(imagesRootDir, pushOptions)
+				images, err = kotsadm.TagAndPushAppImagesFromPath(imagesRootDir, pushOptions)
 				if err != nil {
 					return errors.Wrap(err, "failed to list image formats")
 				}
@@ -183,7 +188,6 @@ func UpstreamUpgradeCmd() *cobra.Command {
 				urlVals.Set("skipPreflights", "true")
 			}
 
-			appSlug := args[0]
 			updateCheckURI := fmt.Sprintf("http://localhost:%d/api/v1/app/%s/updatecheck?%s", localPort, url.PathEscape(appSlug), urlVals.Encode())
 
 			authSlug, err := auth.GetOrCreateAuthSlug(kubernetesConfigFlags, v.GetString("namespace"))

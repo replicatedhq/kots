@@ -83,7 +83,7 @@ func getSecretsYAML(deployOptions *types.DeployOptions) (map[string][]byte, erro
 	docs["secret-api-cluster-token.yaml"] = tokenSecret.Bytes()
 
 	// this secret is optional
-	if secret := kotsadmobjects.PrivateKotsadmRegistrySecret(*deployOptions); secret != nil {
+	if secret := kotsadmobjects.PrivateKotsadmRegistrySecret(deployOptions.Namespace, deployOptions.KotsadmOptions); secret != nil {
 		var registrySecret bytes.Buffer
 		if err := s.Encode(secret, &registrySecret); err != nil {
 			return nil, errors.Wrap(err, "failed to marshal private kotsadm registry secret")
@@ -377,19 +377,19 @@ func getAPIClusterToken(namespace string, clientset *kubernetes.Clientset) (stri
 	return string(tokenBytes), nil
 }
 
-func ensurePrivateKotsadmRegistrySecret(deployOptions types.DeployOptions, clientset *kubernetes.Clientset) error {
-	_, err := clientset.CoreV1().Secrets(deployOptions.Namespace).Get(context.TODO(), types.PrivateKotsadmRegistrySecret, metav1.GetOptions{})
+func EnsurePrivateKotsadmRegistrySecret(namespace string, kotsadmOptions types.KotsadmOptions, clientset kubernetes.Interface) error {
+	_, err := clientset.CoreV1().Secrets(namespace).Get(context.TODO(), types.PrivateKotsadmRegistrySecret, metav1.GetOptions{})
 	if err != nil {
 		if !kuberneteserrors.IsNotFound(err) {
 			return errors.Wrap(err, "failed to get existing private kotsadm registry secret")
 		}
 
-		secret := kotsadmobjects.PrivateKotsadmRegistrySecret(deployOptions)
+		secret := kotsadmobjects.PrivateKotsadmRegistrySecret(namespace, kotsadmOptions)
 		if secret == nil {
 			return nil
 		}
 
-		_, err := clientset.CoreV1().Secrets(deployOptions.Namespace).Create(context.TODO(), secret, metav1.CreateOptions{})
+		_, err := clientset.CoreV1().Secrets(namespace).Create(context.TODO(), secret, metav1.CreateOptions{})
 		if err != nil {
 			return errors.Wrap(err, "failed to create private kotsadm registry secret")
 		}

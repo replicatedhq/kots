@@ -25,7 +25,7 @@ func (s KOTSStore) AddAppToAllDownstreams(appID string) error {
 		return errors.Wrap(err, "failed to list clusters")
 	}
 	for _, cluster := range clusters {
-		query := `insert into app_downstream (app_id, cluster_id, downstream_name) values ($1, $2, $3)`
+		query := `insert into app_downstream (app_id, cluster_id, downstream_name) values ($1, $2, $3) ON CONFLICT DO NOTHING`
 		_, err = db.Exec(query, appID, cluster.ClusterID, cluster.Name)
 		if err != nil {
 			return errors.Wrap(err, "failed to create app downstream")

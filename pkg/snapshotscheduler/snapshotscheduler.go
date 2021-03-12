@@ -2,14 +2,15 @@ package snapshotscheduler
 
 import (
 	"context"
+	"os"
 	"strings"
 	"time"
 
 	"github.com/pkg/errors"
 	downstreamtypes "github.com/replicatedhq/kots/pkg/api/downstream/types"
-	snapshottypes "github.com/replicatedhq/kots/pkg/api/snapshot/types"
 	apptypes "github.com/replicatedhq/kots/pkg/app/types"
 	snapshot "github.com/replicatedhq/kots/pkg/kotsadmsnapshot"
+	snapshottypes "github.com/replicatedhq/kots/pkg/kotsadmsnapshot/types"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/store"
 	"k8s.io/apimachinery/pkg/util/rand"
@@ -110,7 +111,7 @@ func handleApp(a *apptypes.App) error {
 		return nil
 	}
 
-	hasUnfinished, err := snapshot.HasUnfinishedApplicationBackup(a.ID)
+	hasUnfinished, err := snapshot.HasUnfinishedApplicationBackup(context.Background(), os.Getenv("POD_NAMESPACE"), a.ID)
 	if err != nil {
 		return errors.Wrap(err, "failed to to check if app has unfinished backups")
 	}
@@ -119,7 +120,7 @@ func handleApp(a *apptypes.App) error {
 		return nil
 	}
 
-	backup, err := snapshot.CreateApplicationBackup(context.TODO(), a, true)
+	backup, err := snapshot.CreateApplicationBackup(context.Background(), a, true)
 	if err != nil {
 		return errors.Wrap(err, "failed to create backup")
 	}
@@ -193,7 +194,7 @@ func handleCluster(c *downstreamtypes.Downstream) error {
 		return nil
 	}
 
-	hasUnfinished, err := snapshot.HasUnfinishedInstanceBackup()
+	hasUnfinished, err := snapshot.HasUnfinishedInstanceBackup(context.Background(), os.Getenv("POD_NAMESPACE"))
 	if err != nil {
 		return errors.Wrap(err, "failed to to check if cluster has unfinished backups")
 	}
@@ -202,7 +203,7 @@ func handleCluster(c *downstreamtypes.Downstream) error {
 		return nil
 	}
 
-	backup, err := snapshot.CreateInstanceBackup(context.TODO(), c, true)
+	backup, err := snapshot.CreateInstanceBackup(context.Background(), c, true)
 	if err != nil {
 		return errors.Wrap(err, "failed to create instance backup")
 	}

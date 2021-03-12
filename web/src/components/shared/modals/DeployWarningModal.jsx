@@ -25,7 +25,7 @@ class DeployWarningModal extends React.Component {
         </p>
         <div className="u-marginTop--10 flex">
           <button
-            onClick={onForceDeployClick}
+            onClick={() => onForceDeployClick(true)}
             type="button"
             className="btn blue primary"
           >

@@ -21,7 +21,11 @@ class SnapshotSettings extends Component {
     updateConfirm: false,
     updatingSettings: false,
     updateErrorMsg: "",
-    configureSnapshotsModal: false
+    showConfigureSnapshotsModal: false,
+    kotsadmRequiresVeleroAccess: false,
+    minimalRBACKotsadmNamespace: "",
+    showResetFileSystemWarningModal: false,
+    resetFileSystemWarningMessage: "",
   };
 
   fetchSnapshotSettings = (isCheckForVelero) => {
@@ -29,7 +33,8 @@ class SnapshotSettings extends Component {
       isLoadingSnapshotSettings: true,
       snapshotSettingsErr: false,
       snapshotSettingsErrMsg: "",
-      hideCheckVeleroButton: isCheckForVelero ? true : false
+      hideCheckVeleroButton: isCheckForVelero ? true : false,
+      minimalRBACKotsadmNamespace: "",
     });
 
     fetch(`${window.env.API_ENDPOINT}/snapshots/settings`, {
@@ -43,10 +48,13 @@ class SnapshotSettings extends Component {
         if (!res.ok && res.status === 409) {
           const result = await res.json();
           if (result.kotsadmRequiresVeleroAccess) {
-            this.props.toggleSnapshotsRBACModal("show");
             this.setState({
-              isLoadingSnapshotSettings: false
+              isLoadingSnapshotSettings: false,
             });
+            setTimeout(() => {
+              this.setState({ hideCheckVeleroButton: false });
+            }, 5000);
+            this.openConfigureSnapshotsMinimalRBACModal(result.kotsadmRequiresVeleroAccess, result.kotsadmNamespace);
             return;
           }
         }
@@ -55,6 +63,7 @@ class SnapshotSettings extends Component {
 
         this.setState({
           snapshotSettings: result,
+          kotsadmRequiresVeleroAccess: false,
           isLoadingSnapshotSettings: false,
           snapshotSettingsErr: false,
           snapshotSettingsErrMsg: "",
@@ -81,16 +90,16 @@ class SnapshotSettings extends Component {
 
     if (!isEmpty(this.props.location.search)) {
       if (this.props.location.search === "?configure=true") {
-        this.setState({ configureSnapshotsModal: true });
+        this.setState({ showConfigureSnapshotsModal: true });
       }
     }
   }
 
-  componentDidUpdate(lastProps, lastState) {
+  componentDidUpdate(_, lastState) {
     if (this.state.snapshotSettings !== lastState.snapshotSettings && this.state.snapshotSettings) {
       if (!this.state.snapshotSettings?.veleroVersion) {
         this.props.history.replace("/snapshots/settings?configure=true");
-        this.setState({ configureSnapshotsModal: true });
+        this.setState({ showConfigureSnapshotsModal: true });
       }
     }
   }
@@ -112,14 +121,20 @@ class SnapshotSettings extends Component {
     })
       .then(async (res) => {
         if (!res.ok && res.status === 409) {
-          const settingsResponse = await res.json();
-          if (settingsResponse.kotsadmRequiresVeleroAccess) {
-            this.props.toggleSnapshotsRBACModal("show");
+          const result = await res.json();
+          if (result.kotsadmRequiresVeleroAccess) {
             this.setState({
               updatingSettings: false,
             });
+            this.openConfigureSnapshotsMinimalRBACModal(result.kotsadmRequiresVeleroAccess, result.kotsadmNamespace);
             return;
           }
+          this.setState({
+            updatingSettings: false,
+            showResetFileSystemWarningModal: true,
+            resetFileSystemWarningMessage: result.error,
+          })
+          return;
         }
 
         const settingsResponse = await res.json();
@@ -151,7 +166,8 @@ class SnapshotSettings extends Component {
       .catch((err) => {
         console.error(err);
         this.setState({
-          updatingSettings: false
+          updatingSettings: false,
+          updateErrorMsg: "Something went wrong, please try again."
         });
       });
   }
@@ -160,18 +176,27 @@ class SnapshotSettings extends Component {
     return <p className="u-color--chestnut u-fontSize--small u-fontWeight--medium u-lineHeight--normal u-marginTop--12">Not able to find Velero</p>
   }
 
-  toggleConfigureModal = () => {
-    if (this.state.configureSnapshotsModal) {
-      this.setState({ configureSnapshotsModal: false }, () => {
+  openConfigureSnapshotsMinimalRBACModal = (kotsadmRequiresVeleroAccess, minimalRBACKotsadmNamespace) => {
+    this.setState({ showConfigureSnapshotsModal: true, kotsadmRequiresVeleroAccess, minimalRBACKotsadmNamespace }, () => {
+      this.props.history.replace("/snapshots/settings?configure=true");
+    });
+  }
+
+  toggleConfigureSnapshotsModal = () => {
+    if (this.state.showConfigureSnapshotsModal) {
+      this.setState({ showConfigureSnapshotsModal: false }, () => {
         this.props.history.replace("/snapshots/settings");
       });
     } else {
-      this.setState({ configureSnapshotsModal: true }, () => {
+      this.setState({ showConfigureSnapshotsModal: true }, () => {
         this.props.history.replace("/snapshots/settings?configure=true");
       });
     }
   };
 
+  hideResetFileSystemWarningModal = () => {
+    this.setState({ showResetFileSystemWarningModal: false });
+  }
 
   render() {
     const { isLoadingSnapshotSettings, snapshotSettings, hideCheckVeleroButton, updateConfirm, updatingSettings, updateErrorMsg, isEmptyView } = this.state;
@@ -207,13 +232,18 @@ class SnapshotSettings extends Component {
             updatingSettings={updatingSettings}
             updateErrorMsg={updateErrorMsg}
             renderNotVeleroMessage={this.renderNotVeleroMessage}
-            toggleSnapshotsRBACModal={this.props.toggleSnapshotsRBACModal}
             toggleSnapshotView={this.toggleSnapshotView}
             isEmptyView={isEmptyView}
             hideCheckVeleroButton={hideCheckVeleroButton}
             isLicenseUpload={isLicenseUpload}
-            configureSnapshotsModal={this.state.configureSnapshotsModal}
-            toggleConfigureModal={this.toggleConfigureModal}
+            showConfigureSnapshotsModal={this.state.showConfigureSnapshotsModal}
+            toggleConfigureSnapshotsModal={this.toggleConfigureSnapshotsModal}
+            openConfigureSnapshotsMinimalRBACModal={this.openConfigureSnapshotsMinimalRBACModal}
+            kotsadmRequiresVeleroAccess={this.state.kotsadmRequiresVeleroAccess}
+            minimalRBACKotsadmNamespace={this.state.minimalRBACKotsadmNamespace}
+            showResetFileSystemWarningModal={this.state.showResetFileSystemWarningModal}
+            resetFileSystemWarningMessage={this.state.resetFileSystemWarningMessage}
+            hideResetFileSystemWarningModal={this.hideResetFileSystemWarningModal}
             isKurlEnabled={this.props.isKurlEnabled}
             apps={this.props.apps}
           />

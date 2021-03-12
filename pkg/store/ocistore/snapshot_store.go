@@ -3,7 +3,7 @@ package ocistore
 import (
 	"time"
 
-	snapshottypes "github.com/replicatedhq/kots/pkg/api/snapshot/types"
+	snapshottypes "github.com/replicatedhq/kots/pkg/kotsadmsnapshot/types"
 )
 
 func (c OCIStore) ListPendingScheduledSnapshots(appID string) ([]snapshottypes.ScheduledSnapshot, error) {

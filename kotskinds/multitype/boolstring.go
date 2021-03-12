@@ -8,6 +8,7 @@ import (
 	"strconv"
 
 	fuzz "github.com/google/gofuzz"
+	"github.com/pkg/errors"
 )
 
 // BoolOrString is a type that can hold an bool or a string.  When used in
@@ -44,8 +45,31 @@ func FromString(val string) BoolOrString {
 }
 
 // Parse the given string
-func Parse(val string) BoolOrString {
-	return FromString(val)
+// func Parse(val string) BoolOrString {
+// 	// TODO: remove? this doesn't actually do any parsing
+// 	return FromString(val)
+// }
+
+// Convert a string value into a BoolOrString with the same type as v
+func (v BoolOrString) NewWithSameType(newValue string) (BoolOrString, error) {
+	if v.Type == String {
+		return FromString(newValue), nil
+	}
+
+	if newValue == "0" {
+		return FromBool(false), nil
+	}
+
+	if newValue == "1" {
+		return FromBool(true), nil
+	}
+
+	parsed, err := strconv.ParseBool(newValue)
+	if err != nil {
+		return BoolOrString{}, errors.Wrap(err, "failed to parse value")
+	}
+
+	return FromBool(parsed), nil
 }
 
 // UnmarshalJSON implements the json.Unmarshaller boolerface.

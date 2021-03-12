@@ -39,17 +39,17 @@ export default class ConfigInput extends React.Component {
     }
     return value.replace(/./g, '•');
   }
-  
+
   // p1-2019-06-27
   // Fields that are required sometimes don't have a title associated with them.
   // Use title -OR- required prop to render <ConfigItemTitle> to make sure error
   // elements are rendered.
   render() {
     var hidden = this.props.hidden || this.props.when === "false";
-    var placeholder = this.props.inputType === "password" ? this.maskValue(this.props.default) : this.props.default;
+    var placeholder = this.props.inputType === "password" ? this.maskValue(this.props.default) : "";
 
     return (
-      <div className={`field field-type-text ${hidden ? "hidden" : "u-marginTop--15"}`}>
+      <div id={`${this.props.name}-group`} className={`field field-type-text ${hidden ? "hidden" : "u-marginTop--15"}`}>
         {this.props.title !== "" || this.props.required ?
           <ConfigItemTitle
             title={this.props.title}
@@ -59,7 +59,7 @@ export default class ConfigInput extends React.Component {
             error={this.props.error}
           />
           : null}
-        {this.props.help_text !== "" ? 
+        {this.props.help_text !== "" ?
           <div className="field-section-help-text u-marginTop--10">
             <Markdown
               options={{
@@ -69,7 +69,7 @@ export default class ConfigInput extends React.Component {
               {this.props.help_text}
             </Markdown>
           </div>
-        : null}
+          : null}
         <div className="field-input-wrapper u-marginTop--15">
           <input
             ref={this.inputRef}
@@ -84,6 +84,11 @@ export default class ConfigInput extends React.Component {
             onBlur={() => this.setState({ focused: false })}
             className={`${this.props.className || ""} Input ${this.props.readonly ? "readonly" : ""}`} />
         </div>
+        {this.props.default ?
+          <div className="default-value-section u-marginTop--8">
+            Default value: <span className="value"> {this.props.default} </span>
+          </div>
+          : null}
       </div>
     );
   }

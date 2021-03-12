@@ -79,11 +79,6 @@ class UploadSupportBundleModal extends React.Component {
     this.instantiateCopyAction();
   }
 
-  openReplicatedSupportBundleLink = () => {
-    let page = window.open("https://kots.io/reference/v1beta1/support-bundle/", "_blank");
-    page.focus();
-    return false;
-  }
 
   render() {
     const { supportBundle, fileUploading } = this.state;
@@ -96,7 +91,7 @@ class UploadSupportBundleModal extends React.Component {
             <p className="u-fontSize--largest u-fontWeight--bold u-lineHeight--default u-color--tuna u-marginBottom--small">
               Upload a support bundle
               </p>
-            <p className="u-fontSize--normal u-fontWeight--medium u-lineHeight--normal u-color--dustyGray">
+            <p className="u-fontSize--normal u-fontWeight--medium u-lineHeight--normal u-color--dustyGray u-marginTop--10">
               Upload a support bundle from your environment to visually analyze the server and receive insights about the server, the network and your application.
               </p>
             {this.state.uploadBundleErrMsg && <p className="u-color--chestnut u-fontSize--normal u-fontWeight--medium u-lineHeight--normal u-marginTop--10 u-marginBottom--10">{this.state.uploadBundleErrMsg}</p>}
@@ -115,9 +110,6 @@ class UploadSupportBundleModal extends React.Component {
                       <div className="u-textAlign--center">
                         <span className="icon u-TarFileIcon u-marginBottom--20"></span>
                         <p className="u-fontSize--normal u-color--dustyGray u-fontWeight--medium u-lineHeight--normal">Drag your bundle here or <span className="u-color--astral u-fontWeight--medium u-textDecoration--underlineOnHover">choose a file to upload</span></p>
-                        <p className="u-fontSize--normal u-color--dustyGray u-fontWeight--normal u-lineHeight--normal u-marginTop--10">This file can be any
-                              <span className="u-fontWeight--medium u-color--astral u-textDecoration--underlineOnHover" onClick={this.openReplicatedSupportBundleLink}> Replicated Support Bundle </span>
-                        </p>
                       </div>
                     }
                   </Dropzone>

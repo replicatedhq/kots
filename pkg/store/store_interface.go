@@ -8,10 +8,10 @@ import (
 	airgaptypes "github.com/replicatedhq/kots/pkg/airgap/types"
 	appstatustypes "github.com/replicatedhq/kots/pkg/api/appstatus/types"
 	downstreamtypes "github.com/replicatedhq/kots/pkg/api/downstream/types"
-	snapshottypes "github.com/replicatedhq/kots/pkg/api/snapshot/types"
 	versiontypes "github.com/replicatedhq/kots/pkg/api/version/types"
 	apptypes "github.com/replicatedhq/kots/pkg/app/types"
 	gitopstypes "github.com/replicatedhq/kots/pkg/gitops/types"
+	snapshottypes "github.com/replicatedhq/kots/pkg/kotsadmsnapshot/types"
 	installationtypes "github.com/replicatedhq/kots/pkg/online/types"
 	preflighttypes "github.com/replicatedhq/kots/pkg/preflight/types"
 	registrytypes "github.com/replicatedhq/kots/pkg/registry/types"
@@ -59,7 +59,6 @@ type RegistryStore interface {
 type SupportBundleStore interface {
 	ListSupportBundles(appID string) ([]*supportbundletypes.SupportBundle, error)
 	ListPendingSupportBundlesForApp(appID string) ([]*supportbundletypes.PendingSupportBundle, error)
-	GetSupportBundleFromSlug(slug string) (*supportbundletypes.SupportBundle, error)
 	GetSupportBundle(bundleID string) (*supportbundletypes.SupportBundle, error)
 	CreatePendingSupportBundle(bundleID string, appID string, clusterID string) error
 	CreateSupportBundle(bundleID string, appID string, archivePath string, marshalledTree []byte) (*supportbundletypes.SupportBundle, error)
@@ -69,6 +68,7 @@ type SupportBundleStore interface {
 	GetRedactions(bundleID string) (troubleshootredact.RedactionList, error)
 	SetRedactions(bundleID string, redacts troubleshootredact.RedactionList) error
 	GetSupportBundleSpecForApp(id string) (spec string, err error)
+	DeletePendingSupportBundle(id string) error
 }
 
 type PreflightStore interface {
@@ -86,7 +86,7 @@ type PrometheusStore interface {
 
 type AirgapStore interface {
 	GetPendingAirgapUploadApp() (*airgaptypes.PendingApp, error)
-	GetAirgapInstallStatus() (*airgaptypes.InstallStatus, error)
+	GetAirgapInstallStatus(appID string) (*airgaptypes.InstallStatus, error)
 	ResetAirgapInstallInProgress(appID string) error
 	SetAppIsAirgap(appID string, isAirgap bool) error
 }

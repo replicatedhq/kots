@@ -5,9 +5,10 @@
 package mock_handlers
 
 import (
-	gomock "github.com/golang/mock/gomock"
 	http "net/http"
 	reflect "reflect"
+
+	gomock "github.com/golang/mock/gomock"
 )
 
 // MockKOTSHandler is a mock of KOTSHandler interface
@@ -525,6 +526,18 @@ func (mr *MockKOTSHandlerMockRecorder) GetPreflightCommand(w, r interface{}) *go
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPreflightCommand", reflect.TypeOf((*MockKOTSHandler)(nil).GetPreflightCommand), w, r)
 }
 
+// PreflightsReports mocks base method
+func (m *MockKOTSHandler) PreflightsReports(w http.ResponseWriter, r *http.Request) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "PreflightsReports", w, r)
+}
+
+// PreflightsReports indicates an expected call of PreflightsReports
+func (mr *MockKOTSHandlerMockRecorder) PreflightsReports(w, r interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PreflightsReports", reflect.TypeOf((*MockKOTSHandler)(nil).PreflightsReports), w, r)
+}
+
 // DeployAppVersion mocks base method
 func (m *MockKOTSHandler) DeployAppVersion(w http.ResponseWriter, r *http.Request) {
 	m.ctrl.T.Helper()
@@ -691,6 +704,18 @@ func (m *MockKOTSHandler) LiveAppConfig(w http.ResponseWriter, r *http.Request) 
 func (mr *MockKOTSHandlerMockRecorder) LiveAppConfig(w, r interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "LiveAppConfig", reflect.TypeOf((*MockKOTSHandler)(nil).LiveAppConfig), w, r)
+}
+
+// SetAppConfigValues mocks base method
+func (m *MockKOTSHandler) SetAppConfigValues(w http.ResponseWriter, r *http.Request) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "SetAppConfigValues", w, r)
+}
+
+// SetAppConfigValues indicates an expected call of SetAppConfigValues
+func (mr *MockKOTSHandlerMockRecorder) SetAppConfigValues(w, r interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetAppConfigValues", reflect.TypeOf((*MockKOTSHandler)(nil).SetAppConfigValues), w, r)
 }
 
 // SyncLicense mocks base method
@@ -919,6 +944,18 @@ func (m *MockKOTSHandler) UpdateGlobalSnapshotSettings(w http.ResponseWriter, r 
 func (mr *MockKOTSHandlerMockRecorder) UpdateGlobalSnapshotSettings(w, r interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateGlobalSnapshotSettings", reflect.TypeOf((*MockKOTSHandler)(nil).UpdateGlobalSnapshotSettings), w, r)
+}
+
+// ConfigureFileSystemSnapshotProvider mocks base method
+func (m *MockKOTSHandler) ConfigureFileSystemSnapshotProvider(w http.ResponseWriter, r *http.Request) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "ConfigureFileSystemSnapshotProvider", w, r)
+}
+
+// ConfigureFileSystemSnapshotProvider indicates an expected call of ConfigureFileSystemSnapshotProvider
+func (mr *MockKOTSHandlerMockRecorder) ConfigureFileSystemSnapshotProvider(w, r interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ConfigureFileSystemSnapshotProvider", reflect.TypeOf((*MockKOTSHandler)(nil).ConfigureFileSystemSnapshotProvider), w, r)
 }
 
 // GetBackup mocks base method
