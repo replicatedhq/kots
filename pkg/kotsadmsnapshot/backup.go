@@ -99,8 +99,11 @@ func CreateApplicationBackup(ctx context.Context, a *apptypes.App, isScheduled b
 		appNamespace = os.Getenv("KOTSADM_TARGET_NAMESPACE")
 	}
 
-	includedNamespaces := []string{appNamespace}
-	includedNamespaces = append(includedNamespaces, kotsKinds.KotsApplication.Spec.AdditionalNamespaces...)
+	if veleroBackup.Spec.IncludedNamespaces == nil {
+		veleroBackup.Spec.IncludedNamespaces = []string{}
+	}
+	veleroBackup.Spec.IncludedNamespaces = append(veleroBackup.Spec.IncludedNamespaces, appNamespace)
+	veleroBackup.Spec.IncludedNamespaces = append(veleroBackup.Spec.IncludedNamespaces, kotsKinds.KotsApplication.Spec.AdditionalNamespaces...)
 
 	snapshotTrigger := "manual"
 	if isScheduled {
@@ -111,12 +114,14 @@ func CreateApplicationBackup(ctx context.Context, a *apptypes.App, isScheduled b
 	veleroBackup.GenerateName = a.Slug + "-"
 
 	veleroBackup.Namespace = kotsadmVeleroBackendStorageLocation.Namespace
-	veleroBackup.Annotations = map[string]string{
-		"kots.io/snapshot-trigger":   snapshotTrigger,
-		"kots.io/app-id":             a.ID,
-		"kots.io/app-sequence":       strconv.FormatInt(parentSequence, 10),
-		"kots.io/snapshot-requested": time.Now().UTC().Format(time.RFC3339),
+
+	if veleroBackup.Annotations == nil {
+		veleroBackup.Annotations = make(map[string]string, 0)
 	}
+	veleroBackup.Annotations["kots.io/snapshot-trigger"] = snapshotTrigger
+	veleroBackup.Annotations["kots.io/app-id"] = a.ID
+	veleroBackup.Annotations["kots.io/app-sequence"] = strconv.FormatInt(parentSequence, 10)
+	veleroBackup.Annotations["kots.io/snapshot-requested"] = time.Now().UTC().Format(time.RFC3339)
 
 	labelSelector := metav1.LabelSelector{
 		MatchLabels: map[string]string{
@@ -128,7 +133,11 @@ func CreateApplicationBackup(ctx context.Context, a *apptypes.App, isScheduled b
 	}
 	veleroBackup.Spec.LabelSelector = &labelSelector
 
-	veleroBackup.Spec.IncludedNamespaces = includedNamespaces
+	includeClusterResources := true
+	if veleroBackup.Spec.IncludeClusterResources != nil {
+		includeClusterResources = *veleroBackup.Spec.IncludeClusterResources
+	}
+	veleroBackup.Spec.IncludeClusterResources = &includeClusterResources
 
 	veleroBackup.Spec.StorageLocation = "default"
 
@@ -166,11 +175,13 @@ func CreateInstanceBackup(ctx context.Context, cluster *downstreamtypes.Downstre
 	kotsadmNamespace := os.Getenv("POD_NAMESPACE")
 	appsSequences := map[string]int64{}
 	includedNamespaces := []string{kotsadmNamespace}
-	labelSelector := metav1.LabelSelector{
-		MatchLabels: map[string]string{
-			kotsadmtypes.BackupLabel: kotsadmtypes.BackupLabelValue,
-		},
+	excludedNamespaces := []string{}
+	backupAnnotations := map[string]string{}
+	backupTTL := metav1.Duration{}
+	backupHooks := velerov1.BackupHooks{
+		Resources: []velerov1.BackupResourceHookSpec{},
 	}
+	// non-supported fields:
 
 	appNamespace := kotsadmNamespace
 	if os.Getenv("KOTSADM_TARGET_NAMESPACE") != "" {
@@ -241,11 +252,25 @@ func CreateInstanceBackup(ctx context.Context, cluster *downstreamtypes.Downstre
 			return nil, errors.Wrap(err, "failed to load backup from contents")
 		}
 
-		if veleroBackup.Spec.LabelSelector != nil {
-			labelSelector = mergeLabelSelector(labelSelector, *veleroBackup.Spec.LabelSelector)
+		// ** merge app backup info ** //
+
+		// included namespaces
+		includedNamespaces = append(includedNamespaces, veleroBackup.Spec.IncludedNamespaces...)
+		includedNamespaces = append(includedNamespaces, kotsKinds.KotsApplication.Spec.AdditionalNamespaces...)
+
+		// excluded namespaces
+		excludedNamespaces = append(excludedNamespaces, veleroBackup.Spec.ExcludedNamespaces...)
+
+		// annotations
+		for k, v := range veleroBackup.Annotations {
+			backupAnnotations[k] = v
 		}
 
-		includedNamespaces = append(includedNamespaces, kotsKinds.KotsApplication.Spec.AdditionalNamespaces...)
+		// ttl (TODO: which ttl to pick in case of multi app)
+		backupTTL = veleroBackup.Spec.TTL
+
+		// backup hooks
+		backupHooks.Resources = append(backupHooks.Resources, veleroBackup.Spec.Hooks.Resources...)
 	}
 
 	isKurl := kurl.IsKurl()
@@ -287,24 +312,35 @@ func CreateInstanceBackup(ctx context.Context, cluster *downstreamtypes.Downstre
 	}
 	marshalledAppsSequences := string(b)
 
+	// add kots annotations
+	backupAnnotations["kots.io/snapshot-trigger"] = snapshotTrigger
+	backupAnnotations["kots.io/snapshot-requested"] = time.Now().UTC().Format(time.RFC3339)
+	backupAnnotations["kots.io/instance"] = "true"
+	backupAnnotations["kots.io/kotsadm-image"] = kotsadmImage
+	backupAnnotations["kots.io/kotsadm-deploy-namespace"] = kotsadmNamespace
+	backupAnnotations["kots.io/apps-sequences"] = marshalledAppsSequences
+
+	includeClusterResources := true
 	veleroBackup := &velerov1.Backup{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:         "",
 			GenerateName: "instance-",
 			Namespace:    kotsadmVeleroBackendStorageLocation.Namespace,
-			Annotations: map[string]string{
-				"kots.io/snapshot-trigger":         snapshotTrigger,
-				"kots.io/snapshot-requested":       time.Now().UTC().Format(time.RFC3339),
-				"kots.io/instance":                 "true",
-				"kots.io/kotsadm-image":            kotsadmImage,
-				"kots.io/kotsadm-deploy-namespace": kotsadmNamespace,
-				"kots.io/apps-sequences":           marshalledAppsSequences,
-			},
+			Annotations:  backupAnnotations,
 		},
 		Spec: velerov1.BackupSpec{
-			StorageLocation:    "default",
-			IncludedNamespaces: includedNamespaces,
-			LabelSelector:      &labelSelector,
+			StorageLocation:         "default",
+			IncludedNamespaces:      includedNamespaces,
+			ExcludedNamespaces:      excludedNamespaces,
+			IncludeClusterResources: &includeClusterResources,
+			LabelSelector: &metav1.LabelSelector{
+				// app label selectors are not supported and we can't merge them since that might exclude kotsadm components
+				MatchLabels: map[string]string{
+					kotsadmtypes.BackupLabel: kotsadmtypes.BackupLabelValue,
+				},
+			},
+			TTL:   backupTTL,
+			Hooks: backupHooks,
 		},
 	}
 
