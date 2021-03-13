@@ -108,24 +108,3 @@ func WriteAppRedactSpecConfigMap(appID string, sequence int64, kotsKinds *kotsut
 
 	return nil
 }
-
-func DeleteAppRedactSpecConfigMap(appID string) error {
-	app, err := store.GetStore().GetApp(appID)
-	if err != nil {
-		return errors.Wrap(err, "failed to get app")
-	}
-
-	clientset, err := k8s.Clientset()
-	if err != nil {
-		return errors.Wrap(err, "failed to create clientset")
-	}
-
-	configMapName := GetAppRedactSpecConfigMapName(app.Slug)
-
-	err = clientset.CoreV1().ConfigMaps(os.Getenv("POD_NAMESPACE")).Delete(context.TODO(), configMapName, metav1.DeleteOptions{})
-	if err != nil && !kuberneteserrors.IsNotFound(err) {
-		return errors.Wrap(err, "failed to delete redactor configmap")
-	}
-
-	return nil
-}
