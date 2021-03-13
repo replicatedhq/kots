@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 
 	"github.com/pkg/errors"
 	rest "k8s.io/client-go/rest"
@@ -56,12 +57,15 @@ func (c *Kubectl) connectArgs() []string {
 	return args
 }
 
-func (c *Kubectl) SupportBundle(collectorURI string, redactURI string) error {
-	log.Printf("running kubectl support-bundle %s --redactors=%s", collectorURI, redactURI)
+func (c *Kubectl) SupportBundle(collectorURI string, redactURIs []string) error {
+	redactors := strings.Join(redactURIs, ",")
+
+	log.Printf("running kubectl support-bundle %s --redactors=%s", collectorURI, redactors)
+
 	args := []string{
 		collectorURI,
 		"--collect-without-permissions",
-		fmt.Sprintf("--redactors=%s", redactURI),
+		fmt.Sprintf("--redactors=%s", redactors),
 	}
 
 	cmd := c.supportBundleCommand(args...)

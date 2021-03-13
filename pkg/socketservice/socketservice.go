@@ -67,8 +67,8 @@ type AppInformersArgs struct {
 }
 
 type SupportBundleArgs struct {
-	URI       string `json:"uri"`
-	RedactURI string `json:"redactURI"`
+	URI        string   `json:"uri"`
+	RedactURIs []string `json:"redactURIs"`
 }
 
 var server *socket.Server
@@ -454,14 +454,21 @@ func processSupportBundle(clusterSocket *ClusterSocket, pendingSupportBundle sup
 		return errors.Wrap(err, "failed to create rendered support bundle spec")
 	}
 
-	err = redact.WriteRedactSpecConfigMap()
+	err = redact.WriteKotsadmRedactSpecConfigMap()
 	if err != nil {
-		return errors.Wrap(err, "failed to write redact spec configmap")
+		return errors.Wrap(err, "failed to write kotsadm redact spec configmap")
 	}
+	redactURIs := []string{redact.GetKotsadmRedactSpecURI()}
+
+	err = redact.WriteAppRedactSpecConfigMap(a.ID, sequence, kotsKinds)
+	if err != nil {
+		return errors.Wrap(err, "failed to write app redact spec configmap")
+	}
+	redactURIs = append(redactURIs, redact.GetAppRedactSpecURI(a.Slug))
 
 	supportBundleArgs := SupportBundleArgs{
-		URI:       supportbundle.GetSpecURI(a.Slug),
-		RedactURI: redact.GetRedactSpecURI(),
+		URI:        supportbundle.GetSpecURI(a.Slug),
+		RedactURIs: redactURIs,
 	}
 	c.Emit("supportbundle", supportBundleArgs)
 
