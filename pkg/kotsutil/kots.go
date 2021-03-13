@@ -47,6 +47,7 @@ type KotsKinds struct {
 	Preflight     *troubleshootv1beta2.Preflight
 	Analyzer      *troubleshootv1beta2.Analyzer
 	SupportBundle *troubleshootv1beta2.SupportBundle
+	Redactor      *troubleshootv1beta2.Redactor
 
 	Config       *kotsv1beta1.Config
 	ConfigValues *kotsv1beta1.ConfigValues
@@ -274,6 +275,15 @@ func (o KotsKinds) Marshal(g string, v string, k string) (string, error) {
 					return "", errors.Wrap(err, "failed to encode support bundle")
 				}
 				return string(b.Bytes()), nil
+			case "Redactor":
+				if o.Redactor == nil {
+					return "", nil
+				}
+				var b bytes.Buffer
+				if err := s.Encode(o.Redactor, &b); err != nil {
+					return "", errors.Wrap(err, "failed to encode redactor")
+				}
+				return string(b.Bytes()), nil
 			}
 		}
 	}
@@ -388,6 +398,8 @@ func LoadKotsKindsFromPath(fromDir string) (*KotsKinds, error) {
 				kotsKinds.Analyzer = decoded.(*troubleshootv1beta2.Analyzer)
 			case "troubleshoot.sh/v1beta2, Kind=SupportBundle":
 				kotsKinds.SupportBundle = decoded.(*troubleshootv1beta2.SupportBundle)
+			case "troubleshoot.sh/v1beta2, Kind=Redactor":
+				kotsKinds.Redactor = decoded.(*troubleshootv1beta2.Redactor)
 			case "troubleshoot.sh/v1beta2, Kind=Preflight":
 				kotsKinds.Preflight = decoded.(*troubleshootv1beta2.Preflight)
 			case "velero.io/v1, Kind=Backup":
