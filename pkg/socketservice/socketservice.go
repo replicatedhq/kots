@@ -460,18 +460,11 @@ func processSupportBundle(clusterSocket *ClusterSocket, pendingSupportBundle sup
 	}
 	redactURIs := []string{redact.GetKotsadmRedactSpecURI()}
 
-	if kotsKinds.Redactor != nil {
-		err := redact.WriteAppRedactSpecConfigMap(a.ID, sequence, kotsKinds)
-		if err != nil {
-			return errors.Wrap(err, "failed to write app redact spec configmap")
-		}
-		redactURIs = append(redactURIs, redact.GetAppRedactSpecURI(a.Slug))
-	} else {
-		err := redact.DeleteAppRedactSpecConfigMap(a.ID)
-		if err != nil {
-			return errors.Wrap(err, "failed to delete app redact spec configmap")
-		}
+	err = redact.WriteAppRedactSpecConfigMap(a.ID, sequence, kotsKinds)
+	if err != nil {
+		return errors.Wrap(err, "failed to write app redact spec configmap")
 	}
+	redactURIs = append(redactURIs, redact.GetAppRedactSpecURI(a.Slug))
 
 	supportBundleArgs := SupportBundleArgs{
 		URI:        supportbundle.GetSpecURI(a.Slug),
