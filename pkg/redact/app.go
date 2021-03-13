@@ -41,10 +41,6 @@ func WriteAppRedactSpecConfigMap(appID string, sequence int64, kotsKinds *kotsut
 				Name: "default-redactor",
 			},
 		}
-
-		if kotsKinds.Redactor != nil {
-			builtRedactor.Spec.Redactors = kotsKinds.Redactor.DeepCopy().Spec.Redactors
-		}
 	}
 
 	app, err := store.GetStore().GetApp(appID)
