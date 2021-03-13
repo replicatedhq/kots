@@ -458,8 +458,8 @@ func processSupportBundle(clusterSocket *ClusterSocket, pendingSupportBundle sup
 	if err != nil {
 		return errors.Wrap(err, "failed to write kotsadm redact spec configmap")
 	}
-
 	redactURIs := []string{redact.GetKotsadmRedactSpecURI()}
+
 	if kotsKinds.Redactor != nil {
 		err := redact.WriteAppRedactSpecConfigMap(a.ID, sequence, kotsKinds)
 		if err != nil {
