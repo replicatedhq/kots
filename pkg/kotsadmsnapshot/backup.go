@@ -177,7 +177,7 @@ func CreateInstanceBackup(ctx context.Context, cluster *downstreamtypes.Downstre
 	includedNamespaces := []string{kotsadmNamespace}
 	excludedNamespaces := []string{}
 	backupAnnotations := map[string]string{}
-	backupTTL := metav1.Duration{}
+	backupOrderedResources := map[string]string{}
 	backupHooks := velerov1.BackupHooks{
 		Resources: []velerov1.BackupResourceHookSpec{},
 	}
@@ -269,8 +269,10 @@ func CreateInstanceBackup(ctx context.Context, cluster *downstreamtypes.Downstre
 			backupAnnotations[k] = v
 		}
 
-		// ttl (TODO: which ttl to pick in case of multi app)
-		backupTTL = veleroBackup.Spec.TTL
+		// ordered resources
+		for k, v := range veleroBackup.Spec.OrderedResources {
+			backupOrderedResources[k] = v
+		}
 
 		// backup hooks
 		backupHooks.Resources = append(backupHooks.Resources, veleroBackup.Spec.Hooks.Resources...)
@@ -342,8 +344,8 @@ func CreateInstanceBackup(ctx context.Context, cluster *downstreamtypes.Downstre
 					kotsadmtypes.BackupLabel: kotsadmtypes.BackupLabelValue,
 				},
 			},
-			TTL:   backupTTL,
-			Hooks: backupHooks,
+			OrderedResources: backupOrderedResources,
+			Hooks:            backupHooks,
 		},
 	}
 
