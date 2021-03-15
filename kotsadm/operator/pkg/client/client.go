@@ -26,7 +26,7 @@ import (
 )
 
 var (
-	PollInterval = time.Second * 10
+	socketDeployMtxs = map[string]*sync.Mutex{} // key is app id
 )
 
 type ApplicationManifests struct {
@@ -231,9 +231,17 @@ func (c *Client) registerHandlers(socketClient *socket.Client) error {
 	if err != nil {
 		return errors.Wrap(err, "failed to add preflight handler")
 	}
-	// Deploy Event is received
+
 	err = socketClient.On("deploy", func(h *socket.Channel, args ApplicationManifests) {
-		log.Println("received a deploy request")
+		// this mutex is mainly to prevent the app from being deployed and undeployed at the same time
+		// or to prevent two app versions from being deployed at the same time
+		if _, ok := socketDeployMtxs[args.AppID]; !ok {
+			socketDeployMtxs[args.AppID] = &sync.Mutex{}
+		}
+		socketDeployMtxs[args.AppID].Lock()
+		defer socketDeployMtxs[args.AppID].Unlock()
+
+		log.Println("received a deploy request for", args.AppSlug)
 
 		var result *applyResult
 		var deployError error
