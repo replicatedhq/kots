@@ -8,7 +8,7 @@ import (
 	yaml "github.com/replicatedhq/yaml/v3"
 )
 
-// FixUpYAML is a general purpose function that will ensure that YAML is copmatible with KOTS
+// FixUpYAML is a general purpose function that will ensure that YAML is compatible with KOTS
 // This ensures that lines aren't wrapped at 80 chars which breaks template functions
 func FixUpYAML(inputContent []byte) ([]byte, error) {
 	docs := bytes.Split(inputContent, []byte("\n---\n"))
