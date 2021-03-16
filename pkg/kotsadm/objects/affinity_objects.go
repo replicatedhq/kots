@@ -17,10 +17,6 @@ func defaultKotsNodeAffinity() *corev1.NodeAffinity {
 								"linux",
 							},
 						},
-					},
-				},
-				{
-					MatchExpressions: []corev1.NodeSelectorRequirement{
 						{
 							Key:      "kubernetes.io/arch",
 							Operator: corev1.NodeSelectorOpNotIn,
