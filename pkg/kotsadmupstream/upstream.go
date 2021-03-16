@@ -103,6 +103,11 @@ func DownloadUpdate(appID string, archiveDir string, toCursor string, skipPrefli
 		return 0, errors.Wrap(err, "failed to get stat identity config file")
 	}
 
+	registrySettings, err := store.GetStore().GetRegistryDetailsForApp(appID)
+	if err != nil {
+		return 0, errors.Wrap(err, "failed to get registry settings")
+	}
+
 	pullOptions := kotspull.PullOptions{
 		LicenseObj:          latestLicense,
 		Namespace:           appNamespace,
@@ -119,22 +124,14 @@ func DownloadUpdate(appID string, archiveDir string, toCursor string, skipPrefli
 		AppSequence:         appSequence,
 		IsGitOps:            a.IsGitOps,
 		ReportingInfo:       reporting.GetReportingInfo(a.ID),
-	}
-
-	registrySettings, err := store.GetStore().GetRegistryDetailsForApp(appID)
-	if err != nil {
-		return 0, errors.Wrap(err, "failed to get registry settings")
-	}
-
-	if registrySettings != nil {
-		pullOptions.RewriteImages = true
-
-		pullOptions.RewriteImageOptions = kotspull.RewriteImageOptions{
-			Host:      registrySettings.Hostname,
-			Namespace: registrySettings.Namespace,
-			Username:  registrySettings.Username,
-			Password:  registrySettings.Password,
-		}
+		RewriteImages:       registrySettings.IsValid(),
+		RewriteImageOptions: kotspull.RewriteImageOptions{
+			Host:       registrySettings.Hostname,
+			Namespace:  registrySettings.Namespace,
+			Username:   registrySettings.Username,
+			Password:   registrySettings.Password,
+			IsReadOnly: registrySettings.IsReadOnly,
+		},
 	}
 
 	if _, err := kotspull.Pull(fmt.Sprintf("replicated://%s", beforeKotsKinds.License.Spec.AppSlug), pullOptions); err != nil {

@@ -28,6 +28,7 @@ type DeployOptions struct {
 	ConfigValues              *kotsv1beta1.ConfigValues
 	Airgap                    bool
 	AirgapRootDir             string
+	AirgapBundle              string
 	AppImagesPushed           bool
 	ProgressWriter            io.Writer
 	StorageBaseURI            string
@@ -44,6 +45,7 @@ type DeployOptions struct {
 	EnsureRBAC                bool
 	InstallID                 string
 	SimultaneousUploads       int
+	DisableImagePush          bool
 
 	IdentityConfig kotsv1beta1.IdentityConfig
 	IngressConfig  kotsv1beta1.IngressConfig

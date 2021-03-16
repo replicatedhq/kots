@@ -36,12 +36,13 @@ type RewriteOptions struct {
 	License            *kotsv1beta1.License
 	ConfigValues       *kotsv1beta1.ConfigValues
 	ReportWriter       io.Writer
-	CopyImages         bool
+	CopyImages         bool // can be false even if registry is not read-only
 	IsAirgap           bool
 	RegistryEndpoint   string
 	RegistryUsername   string
 	RegistryPassword   string
 	RegistryNamespace  string
+	RegistryIsReadOnly bool
 	AppSlug            string
 	IsGitOps           bool
 	AppSequence        int64
@@ -83,6 +84,7 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 			Namespace: rewriteOptions.RegistryNamespace,
 			Username:  rewriteOptions.RegistryUsername,
 			Password:  rewriteOptions.RegistryPassword,
+			ReadOnly:  rewriteOptions.RegistryIsReadOnly,
 		},
 		ReportingInfo: rewriteOptions.ReportingInfo,
 	}
@@ -112,17 +114,18 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 	replicatedRegistryInfo := registry.ProxyEndpointFromLicense(rewriteOptions.License)
 
 	renderOptions := base.RenderOptions{
-		SplitMultiDocYAML:      true,
-		Namespace:              rewriteOptions.K8sNamespace,
-		LocalRegistryHost:      rewriteOptions.RegistryEndpoint,
-		LocalRegistryNamespace: rewriteOptions.RegistryNamespace,
-		LocalRegistryUsername:  rewriteOptions.RegistryUsername,
-		LocalRegistryPassword:  rewriteOptions.RegistryPassword,
-		ExcludeKotsKinds:       rewriteOptions.ExcludeKotsKinds,
-		Log:                    log,
-		AppSlug:                rewriteOptions.AppSlug,
-		Sequence:               rewriteOptions.AppSequence,
-		IsAirgap:               rewriteOptions.IsAirgap,
+		SplitMultiDocYAML:       true,
+		Namespace:               rewriteOptions.K8sNamespace,
+		LocalRegistryHost:       rewriteOptions.RegistryEndpoint,
+		LocalRegistryNamespace:  rewriteOptions.RegistryNamespace,
+		LocalRegistryUsername:   rewriteOptions.RegistryUsername,
+		LocalRegistryPassword:   rewriteOptions.RegistryPassword,
+		LocalRegistryIsReadOnly: rewriteOptions.RegistryIsReadOnly,
+		ExcludeKotsKinds:        rewriteOptions.ExcludeKotsKinds,
+		Log:                     log,
+		AppSlug:                 rewriteOptions.AppSlug,
+		Sequence:                rewriteOptions.AppSequence,
+		IsAirgap:                rewriteOptions.IsAirgap,
 	}
 	log.ActionWithSpinner("Creating base")
 	io.WriteString(rewriteOptions.ReportWriter, "Creating base\n")
@@ -214,16 +217,17 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 			},
 			Installation: newInstallation,
 			Application:  application,
-			DryRun:       !rewriteOptions.CopyImages,
 			IsAirgap:     rewriteOptions.IsAirgap,
+			CopyImages:   rewriteOptions.CopyImages,
 		}
+
 		if fetchOptions.License != nil {
 			writeUpstreamImageOptions.AppSlug = fetchOptions.License.Spec.AppSlug
 			writeUpstreamImageOptions.SourceRegistry.Username = fetchOptions.License.Spec.LicenseID
 			writeUpstreamImageOptions.SourceRegistry.Password = fetchOptions.License.Spec.LicenseID
 		}
 
-		copyResult, err := base.CopyUpstreamImages(writeUpstreamImageOptions)
+		copyResult, err := base.ProcessUpstreamImages(writeUpstreamImageOptions)
 		if err != nil {
 			return errors.Wrap(err, "failed to write upstream images")
 		}

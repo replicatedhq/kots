@@ -21,10 +21,11 @@ import (
 )
 
 type UpdateAppRegistryRequest struct {
-	Hostname  string `json:"hostname"`
-	Username  string `json:"username"`
-	Password  string `json:"password"`
-	Namespace string `json:"namespace"`
+	Hostname   string `json:"hostname"`
+	Username   string `json:"username"`
+	Password   string `json:"password"`
+	Namespace  string `json:"namespace"`
+	IsReadOnly bool   `json:"isReadOnly"`
 }
 
 type UpdateAppRegistryResponse struct {
@@ -36,21 +37,23 @@ type UpdateAppRegistryResponse struct {
 }
 
 type GetAppRegistryResponse struct {
-	Success   bool   `json:"success"`
-	Error     string `json:"error,omitempty"`
-	Hostname  string `json:"hostname"`
-	Namespace string `json:"namespace"`
-	Username  string `json:"username"`
-	Password  string `json:"password"`
+	Success    bool   `json:"success"`
+	Error      string `json:"error,omitempty"`
+	Hostname   string `json:"hostname"`
+	Namespace  string `json:"namespace"`
+	Username   string `json:"username"`
+	Password   string `json:"password"`
+	IsReadOnly bool   `json:"isReadOnly"`
 }
 
 type GetKotsadmRegistryResponse struct {
-	Success   bool   `json:"success"`
-	Error     string `json:"error,omitempty"`
-	Hostname  string `json:"hostname"`
-	Namespace string `json:"namespace"`
-	Username  string `json:"username"`
-	Password  string `json:"password"`
+	Success    bool   `json:"success"`
+	Error      string `json:"error,omitempty"`
+	Hostname   string `json:"hostname"`
+	Namespace  string `json:"namespace"`
+	Username   string `json:"username"`
+	Password   string `json:"password"`
+	IsReadOnly bool   `json:"isReadOnly"`
 }
 
 type ValidateAppRegistryRequest struct {
@@ -122,32 +125,29 @@ func (h *Handler) UpdateAppRegistry(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if registrySettings != nil {
-		if registrySettings.Hostname == updateAppRegistryRequest.Hostname {
-			if registrySettings.Namespace == updateAppRegistryRequest.Namespace {
-
-				err := store.GetStore().UpdateRegistry(foundApp.ID, updateAppRegistryRequest.Hostname, updateAppRegistryRequest.Username, updateAppRegistryRequest.Password, updateAppRegistryRequest.Namespace)
-				if err != nil {
-					logger.Error(err)
-					updateAppRegistryResponse.Error = err.Error()
-					JSON(w, http.StatusInternalServerError, updateAppRegistryResponse)
-					return
-				}
-
-				updateAppRegistryResponse.Success = true
-				JSON(w, http.StatusOK, updateAppRegistryResponse)
-				return
-			}
-		}
+	if !registrySettingsChanged(updateAppRegistryRequest, registrySettings) {
+		updateAppRegistryResponse.Success = true
+		JSON(w, http.StatusOK, updateAppRegistryResponse)
+		return
 	}
 
 	// in a goroutine, start pushing the images to the remote registry
 	// we will let this function return while this happens
 	go func() {
+		skipImagePush := updateAppRegistryRequest.IsReadOnly
+		if foundApp.IsAirgap {
+			// TODO: pushing images not yet supported in airgapped instances.
+			skipImagePush = true
+		}
+		registryPassword := updateAppRegistryRequest.Password
+		if registryPassword == registrytypes.PasswordMask {
+			registryPassword = registrySettings.Password
+		}
+
 		appDir, err := registry.RewriteImages(
 			foundApp.ID, foundApp.CurrentSequence, updateAppRegistryRequest.Hostname,
-			updateAppRegistryRequest.Username, updateAppRegistryRequest.Password,
-			updateAppRegistryRequest.Namespace, nil)
+			updateAppRegistryRequest.Username, registryPassword,
+			updateAppRegistryRequest.Namespace, skipImagePush, nil)
 		if err != nil {
 			// log credential errors at info level
 			causeErr := errors.Cause(err)
@@ -181,7 +181,7 @@ func (h *Handler) UpdateAppRegistry(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		err = store.GetStore().UpdateRegistry(foundApp.ID, updateAppRegistryRequest.Hostname, updateAppRegistryRequest.Username, updateAppRegistryRequest.Password, updateAppRegistryRequest.Namespace)
+		err = store.GetStore().UpdateRegistry(foundApp.ID, updateAppRegistryRequest.Hostname, updateAppRegistryRequest.Username, updateAppRegistryRequest.Password, updateAppRegistryRequest.Namespace, updateAppRegistryRequest.IsReadOnly)
 		if err != nil {
 			logger.Error(err)
 			return
@@ -190,6 +190,25 @@ func (h *Handler) UpdateAppRegistry(w http.ResponseWriter, r *http.Request) {
 
 	updateAppRegistryResponse.Success = true
 	JSON(w, 200, updateAppRegistryResponse)
+}
+
+func registrySettingsChanged(new UpdateAppRegistryRequest, current registrytypes.RegistrySettings) bool {
+	if new.Hostname != current.Hostname {
+		return true
+	}
+	if new.Namespace != current.Namespace {
+		return true
+	}
+	if new.Username != current.Username {
+		return true
+	}
+	if new.Password != registrytypes.PasswordMask && new.Password != current.Password {
+		return true
+	}
+	if new.IsReadOnly != current.IsReadOnly {
+		return true
+	}
+	return false
 }
 
 func (h *Handler) GetAppRegistry(w http.ResponseWriter, r *http.Request) {
@@ -213,10 +232,12 @@ func (h *Handler) GetAppRegistry(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if settings != nil {
-		getAppRegistryResponse.Hostname = settings.Hostname
-		getAppRegistryResponse.Namespace = settings.Namespace
-		getAppRegistryResponse.Username = settings.Username
+	getAppRegistryResponse.Hostname = settings.Hostname
+	getAppRegistryResponse.Namespace = settings.Namespace
+	getAppRegistryResponse.Username = settings.Username
+	getAppRegistryResponse.IsReadOnly = settings.IsReadOnly
+
+	if settings.Password != "" {
 		getAppRegistryResponse.Password = registrytypes.PasswordMask
 	}
 
@@ -242,6 +263,7 @@ func (h *Handler) GetKotsadmRegistry(w http.ResponseWriter, r *http.Request) {
 	getKotsadmRegistryResponse.Hostname = settings.Hostname
 	getKotsadmRegistryResponse.Namespace = settings.Namespace
 	getKotsadmRegistryResponse.Username = settings.Username
+	getKotsadmRegistryResponse.IsReadOnly = settings.IsReadOnly
 	if settings.Hostname != "" && settings.Username != "" {
 		getKotsadmRegistryResponse.Password = registrytypes.PasswordMask
 	}
@@ -280,7 +302,7 @@ func (h *Handler) ValidateAppRegistry(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		if appSettings != nil && appSettings.Password != "" {
+		if appSettings.Password != "" {
 			password = appSettings.Password
 
 		} else {

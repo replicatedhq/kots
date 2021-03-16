@@ -56,6 +56,7 @@ class AirgapRegistrySettings extends Component {
       username,
       password,
       namespace,
+      isReadOnly,
     } = this.state;
     const { slug } = this.props.match.params;
 
@@ -70,6 +71,7 @@ class AirgapRegistrySettings extends Component {
         username,
         password,
         namespace,
+        isReadOnly,
       })
     })
       .then(async (res) => {
@@ -112,6 +114,7 @@ class AirgapRegistrySettings extends Component {
           namespace: this.state.namespace,
           username: this.state.username,
           password: this.state.password,
+          isReadOnly: this.state.isReadOnly,
         }),
       });
     } catch (err) {
@@ -145,10 +148,17 @@ class AirgapRegistrySettings extends Component {
   handleFormChange = (field, val) => {
     let nextState = {};
     nextState[field] = val;
+
+    if (this.props.app?.isAirgap && field === "isReadOnly" && !val) {
+      // Pushing images in airgap mode is not yet supported, so registry name cannot be changed.
+      nextState["hostname"] = this.state.originalRegistry.hostname;
+      nextState["namespace"] = this.state.originalRegistry.namespace;
+    }
+
     this.setState(nextState, () => {
       if (this.props.gatherDetails) {
-        const { hostname, username, password, namespace } = this.state;
-        this.props.gatherDetails({ hostname, username, password, namespace });
+        const { hostname, username, password, namespace, isReadOnly } = this.state;
+        this.props.gatherDetails({ hostname, username, password, namespace, isReadOnly });
       }
     });
   }
@@ -183,18 +193,20 @@ class AirgapRegistrySettings extends Component {
       .then(result => {
         if (result.success) {
           this.setState({
+            originalRegistry: result,
             hostname: result.hostname,
             username: result.username,
             password: result.password,
             namespace: result.namespace,
+            isReadOnly: result.isReadOnly,
             loading: false,
             fetchRegistryErrMsg: "",
             displayErrorModal: false
           });
 
           if (this.props.gatherDetails) {
-            const { hostname, username, password, namespace } = result;
-            this.props.gatherDetails({ hostname, username, password, namespace });
+            const { hostname, username, password, namespace, isReadOnly } = result;
+            this.props.gatherDetails({ hostname, username, password, namespace, isReadOnly });
           }
 
         } else {
@@ -279,7 +291,7 @@ class AirgapRegistrySettings extends Component {
 
   render() {
     const { app, hideTestConnection, hideCta, namespaceDescription, showHostnameAsRequired } = this.props;
-    const { hostname, password, username, namespace, lastSync, testInProgress, testFailed, testMessage } = this.state;
+    const { hostname, password, username, namespace, isReadOnly, lastSync, testInProgress, testFailed, testMessage } = this.state;
     const { rewriteMessage, rewriteStatus } = this.state;
 
     let statusText = rewriteMessage;
@@ -303,6 +315,12 @@ class AirgapRegistrySettings extends Component {
     }
 
     const namespaceSubtext = namespaceDescription || "Changing the namespace will rewrite all of your airgap images and push them to your registry."
+    const imagePushSubtext = `Selecting this option will disable writing images to the associated registry.
+    Images will still be read from this registry when the application is deployed.
+    This option should only be selected in environments where an external process is fully responsible for pushing needed images into the associated repository.`
+
+    // Pushing images in airgap mode is not supported yet
+    const disableRegistryFields = app?.isAirgap && !isReadOnly;
 
     let testStatusText = "";
     if (testInProgress) {
@@ -325,7 +343,7 @@ class AirgapRegistrySettings extends Component {
             <div className="flex1">
               <p className="u-fontSize--normal u-color--tuna u-fontWeight--bold u-lineHeight--normal u-marginBottom--5">Hostname {showHostnameAsRequired && <span className="u-color--chestnut">(Required)</span>}</p>
               <p className="u-lineHeight--normal u-fontSize--small u-color--dustyGray u-fontWeight--medium u-marginBottom--10">Ensure this domain supports the Docker V2 protocol.</p>
-              <input type="text" className={`Input ${app?.isAirgap && "is-disabled"}`} disabled={app?.isAirgap} placeholder="artifactory.some-big-bank.com" value={hostname || ""} autoComplete="" onChange={(e) => { this.handleFormChange("hostname", e.target.value) }} />
+              <input type="text" className={`Input ${disableRegistryFields && "is-disabled"}`} disabled={disableRegistryFields} placeholder="artifactory.some-big-bank.com" value={hostname || ""} autoComplete="" onChange={(e) => { this.handleFormChange("hostname", e.target.value) }} />
             </div>
           </div>
           <div className="flex u-marginBottom--20">
@@ -361,7 +379,14 @@ class AirgapRegistrySettings extends Component {
             <div className="flex1">
               <p className="u-fontSize--normal u-color--tuna u-fontWeight--bold u-lineHeight--normal u-marginBottom--5">Registry Namespace</p>
               <p className="u-lineHeight--normal u-fontSize--small u-color--dustyGray u-fontWeight--medium u-marginBottom--10">{namespaceSubtext}</p>
-              <input type="text" className={`Input ${app?.isAirgap && "is-disabled"}`} placeholder="namespace" disabled={app?.isAirgap} value={namespace || ""} autoComplete="" onChange={(e) => { this.handleFormChange("namespace", e.target.value) }} />
+              <input type="text" className={`Input ${disableRegistryFields && "is-disabled"}`} placeholder="namespace" disabled={disableRegistryFields} value={namespace || ""} autoComplete="" onChange={(e) => { this.handleFormChange("namespace", e.target.value) }} />
+            </div>
+          </div>
+          <div className="flex u-marginBottom--5">
+            <div className="flex1">
+              <p className="u-fontSize--normal u-color--tuna u-fontWeight--bold u-lineHeight--normal u-marginBottom--5">Disable Pushing Images to Registry</p>
+              <p className="u-lineHeight--normal u-fontSize--small u-color--dustyGray u-fontWeight--medium u-marginBottom--10">{imagePushSubtext}</p>
+              <input type="checkbox" className="u-cursor--pointer" checked={isReadOnly} onChange={(e) => { this.handleFormChange("isReadOnly", e.target.checked) }} />
             </div>
           </div>
         </form>

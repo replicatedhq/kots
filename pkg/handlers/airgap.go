@@ -26,6 +26,7 @@ type CreateAppFromAirgapRequest struct {
 	Namespace    string `json:"namespace"`
 	Username     string `json:"username"`
 	Password     string `json:"password"`
+	IsReadOnly   bool   `json:"isReadOnly"`
 }
 type CreateAppFromAirgapResponse struct {
 }
@@ -363,6 +364,7 @@ func (h *Handler) CreateAppFromAirgap(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var registryHost, namespace, username, password string
+	var isReadOnly bool
 	registryHost, username, password, err = kotsutil.GetKurlRegistryCreds()
 	if err != nil {
 		logger.Error(err)
@@ -378,6 +380,7 @@ func (h *Handler) CreateAppFromAirgap(w http.ResponseWriter, r *http.Request) {
 		namespace = createAppFromAirgapRequest.Namespace
 		username = createAppFromAirgapRequest.Username
 		password = createAppFromAirgapRequest.Password
+		isReadOnly = createAppFromAirgapRequest.IsReadOnly
 	}
 
 	identifier := mux.Vars(r)["identifier"]
@@ -392,7 +395,18 @@ func (h *Handler) CreateAppFromAirgap(w http.ResponseWriter, r *http.Request) {
 	}
 
 	go func() {
-		if err := airgap.CreateAppFromAirgap(pendingApp, airgapBundlePath, registryHost, namespace, username, password, false, false); err != nil {
+		createAppOpts := airgap.CreateAirgapAppOpts{
+			PendingApp:         pendingApp,
+			AirgapPath:         airgapBundlePath,
+			RegistryHost:       registryHost,
+			RegistryNamespace:  namespace,
+			RegistryUsername:   username,
+			RegistryPassword:   password,
+			RegistryIsReadOnly: isReadOnly,
+			IsAutomated:        false,
+			SkipPreflights:     false,
+		}
+		if err := airgap.CreateAppFromAirgap(createAppOpts); err != nil {
 			logger.Error(errors.Wrap(err, "failed to create app from airgap bundle"))
 
 			// if NoRetry is set, we stll want to clean up immediately

@@ -24,6 +24,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/image"
 	"github.com/replicatedhq/kots/pkg/kotsadm/types"
+	"k8s.io/client-go/kubernetes/scheme"
 	kustomizetypes "sigs.k8s.io/kustomize/api/types"
 )
 
@@ -34,20 +35,27 @@ func PushImages(airgapArchive string, options types.PushImagesOptions) error {
 	}
 	defer os.RemoveAll(imagesRootDir)
 
-	err = ExtractAirgapImages(airgapArchive, imagesRootDir, options.ProgressWriter)
+	err = ExtractAppAirgapArchive(airgapArchive, imagesRootDir, false, options.ProgressWriter)
 	if err != nil {
 		return errors.Wrap(err, "failed to extract images")
 	}
 
-	err = pushKotsadmImagesFromPath(imagesRootDir, options)
-	if err != nil {
-		return errors.Wrap(err, "failed to list image formats")
+	if isAppArchive(imagesRootDir) {
+		_, err := TagAndPushAppImagesFromPath(filepath.Join(imagesRootDir, "images"), options)
+		if err != nil {
+			return errors.Wrap(err, "failed to push app images")
+		}
+	} else {
+		err = pushKotsadmImagesFromPath(imagesRootDir, options)
+		if err != nil {
+			return errors.Wrap(err, "failed to push kotsadm images")
+		}
 	}
 
 	return nil
 }
 
-func ExtractAirgapImages(archive string, destDir string, progressWriter io.Writer) error {
+func ExtractAppAirgapArchive(archive string, destDir string, excludeImages bool, progressWriter io.Writer) error {
 	reader, err := os.Open(archive)
 	if err != nil {
 		return errors.Wrap(err, "failed to open airgap archive")
@@ -67,8 +75,17 @@ func ExtractAirgapImages(archive string, destDir string, progressWriter io.Write
 			break
 		}
 
+		if header.Name == "." {
+			continue
+		}
+
 		if err != nil {
 			return errors.Wrap(err, "failed to read tar header")
+		}
+
+		if excludeImages && header.Typeflag == tar.TypeDir {
+			// Once we hit a directory, the rest of the archive is images.
+			break
 		}
 
 		if header.Typeflag != tar.TypeReg {
@@ -193,7 +210,12 @@ func pushOneImage(rootDir string, format string, imageName string, tag string, o
 		destCtx.DockerInsecureSkipTLSVerify = containerstypes.OptionalBoolTrue
 	}
 
-	destStr := fmt.Sprintf("%s/%s:%s", options.Registry.Endpoint, imageName, tag)
+	dstTag := tag
+	if options.KotsadmTag != "" {
+		dstTag = options.KotsadmTag
+	}
+
+	destStr := fmt.Sprintf("%s/%s:%s", options.Registry.Endpoint, imageName, dstTag)
 	destRef, err := alltransports.ParseImageName(fmt.Sprintf("docker://%s", destStr))
 	if err != nil {
 		return errors.Wrapf(err, "failed to parse dest image name %s", destStr)
@@ -464,6 +486,34 @@ func TagAndPushAppImagesFromBundle(airgapBundle string, options types.PushImages
 		if err != nil {
 			return nil, err
 		}
+	}
+
+	return images, nil
+}
+
+func GetImagesFromBundle(airgapBundle string, options types.PushImagesOptions) ([]kustomizetypes.Image, error) {
+	if options.LogForUI {
+		writeProgressLine(options.ProgressWriter, "Reading image information from bundle...")
+	}
+
+	imageFiles, err := getImageListFromBundle(airgapBundle, options.LogForUI)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get layer info from bundle")
+	}
+
+	images := []kustomizetypes.Image{}
+	for _, imageFile := range imageFiles {
+		pathParts := strings.Split(imageFile.FilePath, string(os.PathSeparator))
+		if len(pathParts) < 3 {
+			return nil, errors.Errorf("not enough path parts in %q", imageFile.FilePath)
+		}
+
+		rewrittenImage, err := image.ImageInfoFromFile(options.Registry, pathParts[2:])
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to decode image from path")
+		}
+
+		images = append(images, rewrittenImage)
 	}
 
 	return images, nil
@@ -790,4 +840,34 @@ func countLayersUploaded(image *types.ImageFile) int64 {
 		}
 	}
 	return count
+}
+
+func isAppArchive(rootDir string) bool {
+	fileInfos, err := ioutil.ReadDir(rootDir)
+	if err != nil {
+		return false
+	}
+
+	for _, info := range fileInfos {
+		if info.IsDir() || filepath.Ext(info.Name()) != ".yaml" {
+			continue
+		}
+
+		contents, err := ioutil.ReadFile(filepath.Join(rootDir, info.Name()))
+		if err != nil {
+			continue
+		}
+
+		decode := scheme.Codecs.UniversalDeserializer().Decode
+		_, gvk, err := decode(contents, nil, nil)
+		if err != nil {
+			continue
+		}
+
+		if gvk.Group == "kots.io" && gvk.Version == "v1beta1" && gvk.Kind == "Airgap" {
+			return true
+		}
+	}
+
+	return false
 }

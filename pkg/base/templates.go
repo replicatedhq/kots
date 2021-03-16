@@ -47,6 +47,7 @@ func NewConfigContextTemplateBuidler(u *upstreamtypes.Upstream, renderOptions *R
 		Namespace: renderOptions.LocalRegistryNamespace,
 		Username:  renderOptions.LocalRegistryUsername,
 		Password:  renderOptions.LocalRegistryPassword,
+		ReadOnly:  renderOptions.LocalRegistryIsReadOnly,
 	}
 
 	appInfo := template.ApplicationInfo{

@@ -10,6 +10,7 @@ import (
 
 type PushImagesOptions struct {
 	Registry       registry.RegistryOptions
+	KotsadmTag     string
 	Log            *logger.CLILogger
 	ProgressWriter io.Writer
 	LogForUI       bool

@@ -50,8 +50,8 @@ type Migrations interface {
 }
 
 type RegistryStore interface {
-	GetRegistryDetailsForApp(appID string) (*registrytypes.RegistrySettings, error)
-	UpdateRegistry(appID string, hostname string, username string, password string, namespace string) error
+	GetRegistryDetailsForApp(appID string) (registrytypes.RegistrySettings, error)
+	UpdateRegistry(appID string, hostname string, username string, password string, namespace string, isReadOnly bool) error
 }
 
 type SupportBundleStore interface {
@@ -116,7 +116,7 @@ type AppStore interface {
 	GetAppIDFromSlug(slug string) (appID string, err error)
 	GetApp(appID string) (*apptypes.App, error)
 	GetAppFromSlug(slug string) (*apptypes.App, error)
-	CreateApp(name string, upstreamURI string, licenseData string, isAirgapEnabled bool, skipImagePush bool) (*apptypes.App, error)
+	CreateApp(name string, upstreamURI string, licenseData string, isAirgapEnabled bool, skipImagePush bool, registryIsReadOnly bool) (*apptypes.App, error)
 	ListDownstreamsForApp(appID string) ([]downstreamtypes.Downstream, error)
 	ListAppsForDownstream(clusterID string) ([]*apptypes.App, error)
 	GetDownstream(clusterID string) (*downstreamtypes.Downstream, error)

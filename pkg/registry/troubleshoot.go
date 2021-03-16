@@ -17,12 +17,12 @@ import (
 // will be updated and replaced in the spec.  any required image pull secret will be automatically
 // inserted into the spec
 // an error is returned if anything failed, but the collectors param can always be used after calling (assuming no error)
-func UpdateCollectorSpecsWithRegistryData(collectors []*troubleshootv1beta2.Collect, localRegistryInfo *types.RegistrySettings, knownImages []kotsv1beta1.InstallationImage, license *kotsv1beta1.License) ([]*troubleshootv1beta2.Collect, error) {
+func UpdateCollectorSpecsWithRegistryData(collectors []*troubleshootv1beta2.Collect, localRegistryInfo types.RegistrySettings, knownImages []kotsv1beta1.InstallationImage, license *kotsv1beta1.License) ([]*troubleshootv1beta2.Collect, error) {
 	// if there's a local registry, always attach that image pull secret for all, and
 	// always rewrite
 	updatedCollectors := make([]*troubleshootv1beta2.Collect, len(collectors))
 
-	if localRegistryInfo != nil {
+	if localRegistryInfo.IsValid() {
 		for idx, collect := range collectors {
 			// only the run collector supports an image currently
 			// this is written as in if statement to support additional collectors that include images
