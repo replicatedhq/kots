@@ -16,8 +16,8 @@ import ShowLogsModal from "@src/components/modals/ShowLogsModal";
 import ErrorModal from "../modals/ErrorModal";
 import AppVersionHistoryRow from "@src/components/apps/AppVersionHistoryRow";
 import AppVersionHistoryHeader from "./AppVersionHistoryHeader";
-import DeployModal from "../shared/modals/DeployModal";
 import DeployWarningModal from "../shared/modals/DeployWarningModal";
+import SkipPreflightsModal from "../shared/modals/SkipPreflightsModal";
 import { Utilities, isAwaitingResults, secondsAgo, getPreflightResultState, getGitProviderDiffUrl, getCommitHashFromUrl } from "../../utilities/utilities";
 import { Repeater } from "../../utilities/repeater";
 import { AirgapUploader } from "../../utilities/airgapUploader";
@@ -1001,7 +1001,7 @@ class AppVersionHistory extends Component {
           />}
 
         {showSkipModal &&
-          <DeployModal
+          <SkipPreflightsModal
             showSkipModal={showSkipModal}
             hideSkipModal={this.hideSkipModal}
             onForceDeployClick={this.onForceDeployClick} 
