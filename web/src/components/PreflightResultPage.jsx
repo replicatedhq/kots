@@ -3,13 +3,17 @@ import { Link } from "react-router-dom";
 import { Helmet } from "react-helmet";
 import { withRouter } from "react-router-dom";
 import Modal from "react-modal";
+import size from "lodash/size";
+
 import Loader from "./shared/Loader";
 import PreflightRenderer from "./PreflightRenderer";
-import { Repeater } from "../utilities/repeater";
-import { getPreflightResultState, Utilities } from "../utilities/utilities";
-import "../scss/components/PreflightCheckPage.scss";
 import PreflightResultErrors from "./PreflightResultErrors";
-import size from "lodash/size";
+import SkipPreflightsModal from "./shared/modals/SkipPreflightsModal";
+
+import { getPreflightResultState, Utilities } from "../utilities/utilities";
+import { Repeater } from "../utilities/repeater";
+import "../scss/components/PreflightCheckPage.scss";
+
 
 class PreflightResultPage extends Component {
   state = {
@@ -352,13 +356,19 @@ class PreflightResultPage extends Component {
                 <button type="button" className="btn secondary blue u-marginRight--10" onClick={this.rerunPreflights}>Re-run</button>
               </div>
             }
-            <button
-              type="button"
-              className="btn primary blue"
-              onClick={stopPolling ? () => this.deployKotsDownstream(false) : this.showSkipModal}
-            >
-              {stopPolling ? "Continue" : "Skip"}
-            </button>
+
+            {stopPolling ?
+              <button
+                type="button"
+                className="btn primary blue"
+                onClick={() => this.deployKotsDownstream(false)}
+              >
+                Continue
+              </button> :
+              <div className="flex flex1 justifyContent--center alignItems--center">
+                <span className="u-fontSize--normal u-fontWeight--medium u-textDecoration--underline u-color--dustyGray u-marginTop--15 u-cursor--pointer" onClick={this.showSkipModal}>
+                  Skip Preflights </span>
+              </div>}
           </div>
           : stopPolling ?
             <div className="flex-auto flex justifyContent--flexEnd u-marginBottom--15">
@@ -368,22 +378,14 @@ class PreflightResultPage extends Component {
             null
         }
 
-        <Modal
-          isOpen={showSkipModal}
-          onRequestClose={this.hideSkipModal}
-          shouldReturnFocusAfterClose={false}
-          contentLabel="Skip preflight checks"
-          ariaHideApp={false}
-          className="Modal"
-        >
-          <div className="Modal-body">
-            <p className="u-fontSize--normal u-color--dustyGray u-lineHeight--normal u-marginBottom--20">Skipping preflight checks will not cancel them. They will continue to run in the background. Do you want to continue to the {slug} dashboard? </p>
-            <div className="u-marginTop--10 flex justifyContent--flexEnd">
-              <button type="button" className="btn secondary" onClick={this.hideSkipModal}>Close</button>
-              <button type="button" className="btn blue primary u-marginLeft--10" onClick={() => this.sendPreflightsReport(this.props.appsList)}>Go to Dashboard</button>
-            </div>
-          </div>
-        </Modal>
+        {showSkipModal &&
+          <SkipPreflightsModal
+            showSkipModal={showSkipModal}
+            hideSkipModal={this.hideSkipModal}
+            sendPreflightsReport={this.sendPreflightsReport}
+            appsList={this.props.appsList}
+          />
+        }
 
         <Modal
           isOpen={showWarningModal}
@@ -403,7 +405,7 @@ class PreflightResultPage extends Component {
             </div>
           </div>
         </Modal>
-      </div>
+      </div >
     );
   }
 }
