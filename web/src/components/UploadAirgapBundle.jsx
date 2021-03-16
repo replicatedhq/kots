@@ -135,7 +135,8 @@ class UploadAirgapBundle extends React.Component {
             hostname: this.state.registryDetails.hostname,
             namespace: this.state.registryDetails.namespace,
             username: this.state.registryDetails.username,
-            password: this.state.registryDetails.password,          
+            password: this.state.registryDetails.password,
+            isReadOnly: this.state.registryDetails.isReadOnly,
           }),
         });
       } catch(err) {
@@ -171,6 +172,7 @@ class UploadAirgapBundle extends React.Component {
       namespace: this.state.registryDetails.namespace,
       username: this.state.registryDetails.username,
       password: this.state.registryDetails.password,
+      isReadOnly: this.state.registryDetails.isReadOnly,
       simultaneousUploads: this.state.simultaneousUploads,
     };
     this.state.airgapUploader.upload(params, this.onUploadProgress, this.onUploadError);
@@ -201,7 +203,8 @@ class UploadAirgapBundle extends React.Component {
         hostname: fields.hostname,
         username: fields.username,
         password: fields.password,
-        namespace: fields.namespace
+        namespace: fields.namespace,
+        isReadOnly: fields.isReadOnly,
       }
     });
   }

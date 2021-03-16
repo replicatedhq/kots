@@ -190,7 +190,7 @@ func (s *KOTSStore) GetAppFromSlug(slug string) (*apptypes.App, error) {
 	return s.GetApp(id)
 }
 
-func (s *KOTSStore) CreateApp(name string, upstreamURI string, licenseData string, isAirgapEnabled bool, skipImagePush bool) (*apptypes.App, error) {
+func (s *KOTSStore) CreateApp(name string, upstreamURI string, licenseData string, isAirgapEnabled bool, skipImagePush bool, registryIsReadOnly bool) (*apptypes.App, error) {
 	logger.Debug("creating app",
 		zap.String("name", name),
 		zap.String("upstreamURI", upstreamURI))
@@ -243,9 +243,9 @@ func (s *KOTSStore) CreateApp(name string, upstreamURI string, licenseData strin
 
 	id := ksuid.New().String()
 
-	query := `insert into app (id, name, icon_uri, created_at, slug, upstream_uri, license, is_all_users, install_state)
-values ($1, $2, $3, $4, $5, $6, $7, $8, $9)`
-	_, err = tx.Exec(query, id, name, "", time.Now(), slugProposal, upstreamURI, licenseData, true, installState)
+	query := `insert into app (id, name, icon_uri, created_at, slug, upstream_uri, license, is_all_users, install_state, registry_is_readonly)
+values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`
+	_, err = tx.Exec(query, id, name, "", time.Now(), slugProposal, upstreamURI, licenseData, true, installState, registryIsReadOnly)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to insert app")
 	}

@@ -73,6 +73,7 @@ type RewriteImageOptions struct {
 	Namespace  string
 	Username   string
 	Password   string
+	IsReadOnly bool
 }
 
 // PullApplicationMetadata will return the application metadata yaml, if one is
@@ -134,6 +135,7 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 			Namespace: pullOptions.RewriteImageOptions.Namespace,
 			Username:  pullOptions.RewriteImageOptions.Username,
 			Password:  pullOptions.RewriteImageOptions.Password,
+			ReadOnly:  pullOptions.RewriteImageOptions.IsReadOnly,
 		},
 		ReportingInfo: pullOptions.ReportingInfo,
 	}
@@ -267,19 +269,20 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 	replicatedRegistryInfo := registry.ProxyEndpointFromLicense(fetchOptions.License)
 
 	renderOptions := base.RenderOptions{
-		SplitMultiDocYAML:      true,
-		Namespace:              pullOptions.Namespace,
-		HelmVersion:            pullOptions.HelmVersion,
-		HelmOptions:            pullOptions.HelmOptions,
-		LocalRegistryHost:      pullOptions.RewriteImageOptions.Host,
-		LocalRegistryNamespace: pullOptions.RewriteImageOptions.Namespace,
-		LocalRegistryUsername:  pullOptions.RewriteImageOptions.Username,
-		LocalRegistryPassword:  pullOptions.RewriteImageOptions.Password,
-		ExcludeKotsKinds:       pullOptions.ExcludeKotsKinds,
-		Log:                    log,
-		AppSlug:                pullOptions.AppSlug,
-		Sequence:               pullOptions.AppSequence,
-		IsAirgap:               pullOptions.AirgapRoot != "",
+		SplitMultiDocYAML:       true,
+		Namespace:               pullOptions.Namespace,
+		HelmVersion:             pullOptions.HelmVersion,
+		HelmOptions:             pullOptions.HelmOptions,
+		LocalRegistryHost:       pullOptions.RewriteImageOptions.Host,
+		LocalRegistryNamespace:  pullOptions.RewriteImageOptions.Namespace,
+		LocalRegistryUsername:   pullOptions.RewriteImageOptions.Username,
+		LocalRegistryPassword:   pullOptions.RewriteImageOptions.Password,
+		LocalRegistryIsReadOnly: pullOptions.RewriteImageOptions.IsReadOnly,
+		ExcludeKotsKinds:        pullOptions.ExcludeKotsKinds,
+		Log:                     log,
+		AppSlug:                 pullOptions.AppSlug,
+		Sequence:                pullOptions.AppSequence,
+		IsAirgap:                pullOptions.AirgapRoot != "",
 	}
 	log.ActionWithSpinner("Creating base")
 	io.WriteString(pullOptions.ReportWriter, "Creating base\n")
@@ -330,8 +333,13 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 	var objects []k8sdoc.K8sDoc
 	if pullOptions.RewriteImages {
 
-		log.ActionWithSpinner("Copying private images")
-		io.WriteString(pullOptions.ReportWriter, "Copying private images\n")
+		if pullOptions.RewriteImageOptions.IsReadOnly {
+			log.ActionWithSpinner("Rewriting private images")
+			io.WriteString(pullOptions.ReportWriter, "Rewriting private images\n")
+		} else {
+			log.ActionWithSpinner("Copying private images")
+			io.WriteString(pullOptions.ReportWriter, "Copying private images\n")
+		}
 
 		// TODO (ethan): rewrite dex image?
 
@@ -356,6 +364,7 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 				ReportWriter: pullOptions.ReportWriter,
 				Installation: newInstallation,
 				Application:  newApplication,
+				CopyImages:   !pullOptions.RewriteImageOptions.IsReadOnly,
 			}
 			if fetchOptions.License != nil {
 				writeUpstreamImageOptions.AppSlug = fetchOptions.License.Spec.AppSlug
@@ -372,7 +381,7 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 				}
 			}
 
-			copyResult, err := base.CopyUpstreamImages(writeUpstreamImageOptions)
+			copyResult, err := base.ProcessUpstreamImages(writeUpstreamImageOptions)
 			if err != nil {
 				return "", errors.Wrap(err, "failed to write upstream images")
 			}
@@ -390,11 +399,12 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 		// push the images
 		if pullOptions.RewriteImageOptions.Host != "" {
 			processUpstreamImageOptions := upstream.ProcessUpstreamImagesOptions{
-				RootDir:      pullOptions.RootDir,
-				ImagesDir:    imagesDirFromOptions(u, pullOptions),
-				AirgapBundle: pullOptions.AirgapBundle,
-				CreateAppDir: pullOptions.CreateAppDir,
-				Log:          log,
+				RootDir:            pullOptions.RootDir,
+				ImagesDir:          imagesDirFromOptions(u, pullOptions),
+				AirgapBundle:       pullOptions.AirgapBundle,
+				CreateAppDir:       pullOptions.CreateAppDir,
+				RegistryIsReadOnly: pullOptions.RewriteImageOptions.IsReadOnly,
+				Log:                log,
 				ReplicatedRegistry: registry.RegistryOptions{
 					Endpoint:      replicatedRegistryInfo.Registry,
 					ProxyEndpoint: replicatedRegistryInfo.Proxy,
@@ -424,7 +434,7 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 					if err != nil && !os.IsNotExist(err) {
 						return "", errors.Wrap(err, "failed to unmarshal images data")
 					}
-					processUpstreamImageOptions.SkipImagePush = true
+					processUpstreamImageOptions.UseKnownImages = true
 					processUpstreamImageOptions.KnownImages = images
 				}
 

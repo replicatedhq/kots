@@ -19,7 +19,8 @@ type ProcessUpstreamImagesOptions struct {
 	ImagesDir           string
 	AirgapBundle        string
 	CreateAppDir        bool
-	SkipImagePush       bool
+	RegistryIsReadOnly  bool
+	UseKnownImages      bool
 	KnownImages         []kustomizetypes.Image
 	Log                 *logger.CLILogger
 	ReplicatedRegistry  registry.RegistryOptions
@@ -36,22 +37,35 @@ func ProcessUpstreamImages(u *types.Upstream, options ProcessUpstreamImagesOptio
 	}
 
 	var foundImages []kustomizetypes.Image
-	if !options.SkipImagePush {
-		if options.AirgapBundle != "" {
-			images, err := kotsadm.TagAndPushAppImagesFromBundle(options.AirgapBundle, pushOpts)
-			if err != nil {
-				return nil, errors.Wrap(err, "failed to push images")
-			}
-			foundImages = images
-		} else {
-			images, err := kotsadm.TagAndPushAppImagesFromPath(options.ImagesDir, pushOpts)
-			if err != nil {
-				return nil, errors.Wrap(err, "failed to push images")
-			}
-			foundImages = images
-		}
-	} else {
+	if options.UseKnownImages {
 		foundImages = options.KnownImages
+	} else {
+		if options.RegistryIsReadOnly {
+			if options.AirgapBundle != "" {
+				images, err := kotsadm.GetImagesFromBundle(options.AirgapBundle, pushOpts)
+				if err != nil {
+					return nil, errors.Wrap(err, "failed to push images")
+				}
+				foundImages = images
+			} else {
+				// TODO: Implement GetImagesFromPath
+				return nil, errors.New("GetImagesFromPath is not implemented")
+			}
+		} else {
+			if options.AirgapBundle != "" {
+				images, err := kotsadm.TagAndPushAppImagesFromBundle(options.AirgapBundle, pushOpts)
+				if err != nil {
+					return nil, errors.Wrap(err, "failed to push images")
+				}
+				foundImages = images
+			} else {
+				images, err := kotsadm.TagAndPushAppImagesFromPath(options.ImagesDir, pushOpts)
+				if err != nil {
+					return nil, errors.Wrap(err, "failed to push images")
+				}
+				foundImages = images
+			}
+		}
 	}
 
 	withAltNames := make([]kustomizetypes.Image, 0)

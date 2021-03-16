@@ -159,7 +159,7 @@ func (s *OCIStore) GetAppFromSlug(slug string) (*apptypes.App, error) {
 	return nil, ErrNotFound
 }
 
-func (s *OCIStore) CreateApp(name string, upstreamURI string, licenseData string, isAirgapEnabled bool, skipImagePush bool) (*apptypes.App, error) {
+func (s *OCIStore) CreateApp(name string, upstreamURI string, licenseData string, isAirgapEnabled bool, skipImagePush bool, registryIsReadOnly bool) (*apptypes.App, error) {
 	appListConfigmap, err := s.getConfigmap(AppListConfigmapName)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get app list configmap")
@@ -211,14 +211,15 @@ func (s *OCIStore) CreateApp(name string, upstreamURI string, licenseData string
 	id := ksuid.New().String()
 
 	app := apptypes.App{
-		ID:           id,
-		Name:         name,
-		IconURI:      "",
-		CreatedAt:    time.Now(),
-		Slug:         slugProposal,
-		UpstreamURI:  upstreamURI,
-		License:      licenseData,
-		InstallState: installState,
+		ID:                 id,
+		Name:               name,
+		IconURI:            "",
+		CreatedAt:          time.Now(),
+		Slug:               slugProposal,
+		UpstreamURI:        upstreamURI,
+		License:            licenseData,
+		InstallState:       installState,
+		RegistryIsReadOnly: registryIsReadOnly,
 	}
 	b, err := json.Marshal(app)
 	if err != nil {

@@ -77,6 +77,7 @@ type LocalRegistry struct {
 	Namespace string
 	Username  string
 	Password  string
+	ReadOnly  bool
 }
 
 func (u *Upstream) GetUpstreamDir(options WriteOptions) string {

@@ -33,12 +33,24 @@ import (
 	"k8s.io/client-go/kubernetes/scheme"
 )
 
+type CreateAirgapAppOpts struct {
+	PendingApp         *types.PendingApp
+	AirgapPath         string
+	RegistryHost       string
+	RegistryNamespace  string
+	RegistryUsername   string
+	RegistryPassword   string
+	RegistryIsReadOnly bool
+	IsAutomated        bool
+	SkipPreflights     bool
+}
+
 // CreateAppFromAirgap does a lot. Maybe too much. Definitely too much.
 // This function assumes that there's an app in the database that doesn't have a version
 // After execution, there will be a sequence 0 of the app, and all clusters in the database
 // will also have a version
-func CreateAppFromAirgap(pendingApp *types.PendingApp, airgapPath string, registryHost string, namespace string, username string, password string, isAutomated bool, skipPreflights bool) (finalError error) {
-	taskID := fmt.Sprintf("airgap-install-slug-%s", pendingApp.Slug)
+func CreateAppFromAirgap(opts CreateAirgapAppOpts) (finalError error) {
+	taskID := fmt.Sprintf("airgap-install-slug-%s", opts.PendingApp.Slug)
 	if err := store.GetStore().SetTaskStatus(taskID, "Processing package...", "running"); err != nil {
 		return errors.Wrap(err, "failed to set task status")
 	}
@@ -63,20 +75,20 @@ func CreateAppFromAirgap(pendingApp *types.PendingApp, airgapPath string, regist
 			if err := store.GetStore().ClearTaskStatus(taskID); err != nil {
 				logger.Error(errors.Wrap(err, "failed to clear install task status"))
 			}
-			if err := store.GetStore().SetAppInstallState(pendingApp.ID, "installed"); err != nil {
+			if err := store.GetStore().SetAppInstallState(opts.PendingApp.ID, "installed"); err != nil {
 				logger.Error(errors.Wrap(err, "failed to set app status to installed"))
 			}
 		} else {
 			if err := store.GetStore().SetTaskStatus(taskID, finalError.Error(), "failed"); err != nil {
 				logger.Error(errors.Wrap(err, "failed to set error on install task status"))
 			}
-			if err := store.GetStore().SetAppInstallState(pendingApp.ID, "airgap_upload_error"); err != nil {
+			if err := store.GetStore().SetAppInstallState(opts.PendingApp.ID, "airgap_upload_error"); err != nil {
 				logger.Error(errors.Wrap(err, "failed to set app status to error"))
 			}
 		}
 	}()
 
-	if err := store.GetStore().SetAppIsAirgap(pendingApp.ID, true); err != nil {
+	if err := store.GetStore().SetAppIsAirgap(opts.PendingApp.ID, true); err != nil {
 		return errors.Wrap(err, "failed to set app is airgap")
 	}
 
@@ -86,16 +98,16 @@ func CreateAppFromAirgap(pendingApp *types.PendingApp, airgapPath string, regist
 	}
 
 	airgapBundle := ""
-	archiveDir := airgapPath
-	if strings.ToLower(filepath.Ext(airgapPath)) == ".airgap" {
+	archiveDir := opts.AirgapPath
+	if strings.ToLower(filepath.Ext(opts.AirgapPath)) == ".airgap" {
 		// on the api side, headless intalls don't have the airgap file
-		dir, err := extractAppMetaFromAirgapBundle(airgapPath)
+		dir, err := extractAppMetaFromAirgapBundle(opts.AirgapPath)
 		if err != nil {
 			return errors.Wrap(err, "failed to extract archive")
 		}
 		defer os.RemoveAll(dir)
 
-		airgapBundle = airgapPath
+		airgapBundle = opts.AirgapPath
 		archiveDir = dir
 	}
 
@@ -122,7 +134,7 @@ func CreateAppFromAirgap(pendingApp *types.PendingApp, airgapPath string, regist
 	}
 
 	decode := scheme.Codecs.UniversalDeserializer().Decode
-	obj, _, err := decode([]byte(pendingApp.LicenseData), nil, nil)
+	obj, _, err := decode([]byte(opts.PendingApp.LicenseData), nil, nil)
 	if err != nil {
 		return errors.Wrap(err, "failed to read pending license data")
 	}
@@ -132,7 +144,7 @@ func CreateAppFromAirgap(pendingApp *types.PendingApp, airgapPath string, regist
 	if err != nil {
 		return errors.Wrap(err, "failed to create temp file")
 	}
-	if err := ioutil.WriteFile(licenseFile.Name(), []byte(pendingApp.LicenseData), 0644); err != nil {
+	if err := ioutil.WriteFile(licenseFile.Name(), []byte(opts.PendingApp.LicenseData), 0644); err != nil {
 		os.Remove(licenseFile.Name())
 		return errors.Wrapf(err, "failed to write license to temp file")
 	}
@@ -171,7 +183,7 @@ func CreateAppFromAirgap(pendingApp *types.PendingApp, airgapPath string, regist
 		configFile = tmpFile.Name()
 	}
 
-	identityConfigFile, err := identity.InitAppIdentityConfig(pendingApp.Slug, kotsv1beta1.Storage{}, crypto.AESCipher{})
+	identityConfigFile, err := identity.InitAppIdentityConfig(opts.PendingApp.Slug, kotsv1beta1.Storage{}, crypto.AESCipher{})
 	if err != nil {
 		return errors.Wrap(err, "failed to init identity config")
 	}
@@ -194,12 +206,13 @@ func CreateAppFromAirgap(pendingApp *types.PendingApp, airgapPath string, regist
 		ReportWriter:        pipeWriter,
 		RewriteImageOptions: pull.RewriteImageOptions{
 			ImageFiles: filepath.Join(archiveDir, "images"),
-			Host:       registryHost,
-			Namespace:  namespace,
-			Username:   username,
-			Password:   password,
+			Host:       opts.RegistryHost,
+			Namespace:  opts.RegistryNamespace,
+			Username:   opts.RegistryUsername,
+			Password:   opts.RegistryPassword,
+			IsReadOnly: opts.RegistryIsReadOnly,
 		},
-		AppSlug:     pendingApp.Slug,
+		AppSlug:     opts.PendingApp.Slug,
 		AppSequence: 0,
 	}
 
@@ -207,36 +220,36 @@ func CreateAppFromAirgap(pendingApp *types.PendingApp, airgapPath string, regist
 		return errors.Wrap(err, "failed to pull")
 	}
 
-	if err := store.GetStore().AddAppToAllDownstreams(pendingApp.ID); err != nil {
+	if err := store.GetStore().AddAppToAllDownstreams(opts.PendingApp.ID); err != nil {
 		return errors.Wrap(err, "failed to add app to all downstreams")
 	}
 
-	a, err := store.GetStore().GetApp(pendingApp.ID)
+	a, err := store.GetStore().GetApp(opts.PendingApp.ID)
 	if err != nil {
 		return errors.Wrap(err, "failed to get app from pending app")
 	}
 
-	if password == registrytypes.PasswordMask {
+	if opts.RegistryPassword == registrytypes.PasswordMask {
 		// On initial install, registry info can be copied from kotsadm config,
 		// and password in this case will not be included in the request.
 		kotsadmSettings, err := registry.GetKotsadmRegistry()
 		if err != nil {
 			logger.Error(errors.Wrap(err, "failed to load kotsadm config"))
-		} else if kotsadmSettings.Hostname == registryHost {
-			password = kotsadmSettings.Password
+		} else if kotsadmSettings.Hostname == opts.RegistryHost {
+			opts.RegistryPassword = kotsadmSettings.Password
 		}
 	}
 
-	if err := store.GetStore().UpdateRegistry(pendingApp.ID, registryHost, username, password, namespace); err != nil {
+	if err := store.GetStore().UpdateRegistry(opts.PendingApp.ID, opts.RegistryHost, opts.RegistryUsername, opts.RegistryPassword, opts.RegistryNamespace, opts.RegistryIsReadOnly); err != nil {
 		return errors.Wrap(err, "failed to update registry")
 	}
 
 	// yes, again in case of errors
-	if err := store.GetStore().SetAppIsAirgap(pendingApp.ID, true); err != nil {
+	if err := store.GetStore().SetAppIsAirgap(opts.PendingApp.ID, true); err != nil {
 		return errors.Wrap(err, "failed to set app is airgap the second time")
 	}
 
-	newSequence, err := store.GetStore().CreateAppVersion(a.ID, nil, tmpRoot, "Airgap Upload", skipPreflights, &version.DownstreamGitOps{})
+	newSequence, err := store.GetStore().CreateAppVersion(a.ID, nil, tmpRoot, "Airgap Upload", opts.SkipPreflights, &version.DownstreamGitOps{})
 	if err != nil {
 		return errors.Wrap(err, "failed to create new version")
 	}
@@ -256,7 +269,7 @@ func CreateAppFromAirgap(pendingApp *types.PendingApp, airgapPath string, regist
 		return errors.Wrap(err, "failed to write app redact spec configmap")
 	}
 
-	if isAutomated && kotsKinds.Config != nil {
+	if opts.IsAutomated && kotsKinds.Config != nil {
 		// bypass the config screen if no configuration is required
 		licenseSpec, err := kotsKinds.Marshal("kots.io", "v1beta1", "License")
 		if err != nil {
@@ -283,10 +296,10 @@ func CreateAppFromAirgap(pendingApp *types.PendingApp, airgapPath string, regist
 			ConfigValuesSpec:   configValuesSpec,
 			LicenseSpec:        licenseSpec,
 			IdentityConfigSpec: identityConfigSpec,
-			RegistryHost:       registryHost,
-			RegistryNamespace:  namespace,
-			RegistryUser:       username,
-			RegistryPassword:   password,
+			RegistryHost:       opts.RegistryHost,
+			RegistryNamespace:  opts.RegistryNamespace,
+			RegistryUser:       opts.RegistryUsername,
+			RegistryPassword:   opts.RegistryPassword,
 		}
 
 		needsConfig, err := kotsadmconfig.NeedsConfiguration(configOpts)
@@ -295,12 +308,12 @@ func CreateAppFromAirgap(pendingApp *types.PendingApp, airgapPath string, regist
 		}
 
 		if !needsConfig {
-			if skipPreflights {
-				if err := version.DeployVersion(pendingApp.ID, newSequence); err != nil {
+			if opts.SkipPreflights {
+				if err := version.DeployVersion(opts.PendingApp.ID, newSequence); err != nil {
 					return errors.Wrap(err, "failed to deploy version")
 				}
 			} else {
-				err := downstream.SetDownstreamVersionPendingPreflight(pendingApp.ID, newSequence)
+				err := downstream.SetDownstreamVersionPendingPreflight(opts.PendingApp.ID, newSequence)
 				if err != nil {
 					return errors.Wrap(err, "failed to set downstream version status to 'pending preflight'")
 				}
@@ -308,8 +321,8 @@ func CreateAppFromAirgap(pendingApp *types.PendingApp, airgapPath string, regist
 		}
 	}
 
-	if !skipPreflights {
-		if err := preflight.Run(pendingApp.ID, pendingApp.Slug, newSequence, true, tmpRoot); err != nil {
+	if !opts.SkipPreflights {
+		if err := preflight.Run(opts.PendingApp.ID, opts.PendingApp.Slug, newSequence, true, tmpRoot); err != nil {
 			return errors.Wrap(err, "failed to start preflights")
 		}
 	}

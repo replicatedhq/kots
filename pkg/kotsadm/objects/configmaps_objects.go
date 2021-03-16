@@ -13,6 +13,7 @@ func KotsadmConfigMap(deployOptions types.DeployOptions) *corev1.ConfigMap {
 	data := map[string]string{
 		"initial-app-images-pushed": fmt.Sprintf("%v", deployOptions.AppImagesPushed),
 		"skip-preflights":           fmt.Sprintf("%v", deployOptions.SkipPreflights),
+		"registry-is-read-only":     fmt.Sprintf("%v", deployOptions.DisableImagePush),
 	}
 	if kotsadmversion.KotsadmPullSecret(deployOptions.Namespace, deployOptions.KotsadmOptions) != nil {
 		data["kotsadm-registry"] = kotsadmversion.KotsadmRegistry(deployOptions.KotsadmOptions)

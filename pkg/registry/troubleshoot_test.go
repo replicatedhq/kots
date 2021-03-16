@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
+	"github.com/replicatedhq/kots/pkg/registry/types"
 	registrytypes "github.com/replicatedhq/kots/pkg/registry/types"
 	troubleshootv1beta2 "github.com/replicatedhq/troubleshoot/pkg/apis/troubleshoot/v1beta2"
 	"github.com/stretchr/testify/assert"
@@ -14,7 +15,7 @@ func Test_UpdateCollectorSpecsWithRegistryData(t *testing.T) {
 	tests := []struct {
 		name               string
 		knownImages        []kotsv1beta1.InstallationImage
-		localRegistryInfo  *registrytypes.RegistrySettings
+		localRegistryInfo  registrytypes.RegistrySettings
 		license            *kotsv1beta1.License
 		collectors         []*troubleshootv1beta2.Collect
 		expectedCollectors []*troubleshootv1beta2.Collect
@@ -22,7 +23,7 @@ func Test_UpdateCollectorSpecsWithRegistryData(t *testing.T) {
 		{
 			name:               "empty spec, no change",
 			knownImages:        nil,
-			localRegistryInfo:  nil,
+			localRegistryInfo:  registrytypes.RegistrySettings{},
 			license:            nil,
 			collectors:         []*troubleshootv1beta2.Collect{},
 			expectedCollectors: []*troubleshootv1beta2.Collect{},
@@ -30,7 +31,7 @@ func Test_UpdateCollectorSpecsWithRegistryData(t *testing.T) {
 		{
 			name:              "valid spec, no change",
 			knownImages:       nil,
-			localRegistryInfo: nil,
+			localRegistryInfo: registrytypes.RegistrySettings{},
 			license:           nil,
 			collectors: []*troubleshootv1beta2.Collect{
 				{
@@ -51,7 +52,7 @@ func Test_UpdateCollectorSpecsWithRegistryData(t *testing.T) {
 					IsPrivate: false,
 				},
 			},
-			localRegistryInfo: nil,
+			localRegistryInfo: registrytypes.RegistrySettings{},
 			license:           nil,
 			collectors: []*troubleshootv1beta2.Collect{
 				{
@@ -73,7 +74,7 @@ func Test_UpdateCollectorSpecsWithRegistryData(t *testing.T) {
 		{
 			name:        "run collector, public image, private local registry",
 			knownImages: []kotsv1beta1.InstallationImage{},
-			localRegistryInfo: &registrytypes.RegistrySettings{
+			localRegistryInfo: registrytypes.RegistrySettings{
 				Hostname:  "ttl.sh",
 				Namespace: "abc",
 				Username:  "user",
@@ -110,7 +111,7 @@ func Test_UpdateCollectorSpecsWithRegistryData(t *testing.T) {
 					IsPrivate: true,
 				},
 			},
-			localRegistryInfo: nil,
+			localRegistryInfo: registrytypes.RegistrySettings{},
 			license: &kotsv1beta1.License{
 				Spec: kotsv1beta1.LicenseSpec{
 					LicenseID: "licenseid",
@@ -146,7 +147,7 @@ func Test_UpdateCollectorSpecsWithRegistryData(t *testing.T) {
 					IsPrivate: true,
 				},
 			},
-			localRegistryInfo: nil,
+			localRegistryInfo: types.RegistrySettings{},
 			license: &kotsv1beta1.License{
 				Spec: kotsv1beta1.LicenseSpec{
 					LicenseID: "licenseid",

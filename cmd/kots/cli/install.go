@@ -183,6 +183,8 @@ func InstallCmd() *cobra.Command {
 				EnsureRBAC:                v.GetBool("ensure-rbac"),
 				InstallID:                 m.InstallID,
 				SimultaneousUploads:       simultaneousUploads,
+				DisableImagePush:          v.GetBool("disable-image-push"),
+				AirgapBundle:              v.GetString("airgap-bundle"),
 
 				KotsadmOptions: *registryConfig,
 
@@ -230,7 +232,7 @@ func InstallCmd() *cobra.Command {
 				}
 				defer os.RemoveAll(airgapRootDir)
 
-				err = kotsadm.ExtractAirgapImages(airgapArchive, airgapRootDir, deployOptions.ProgressWriter)
+				err = kotsadm.ExtractAppAirgapArchive(airgapArchive, airgapRootDir, v.GetBool("disable-image-push"), deployOptions.ProgressWriter)
 				if err != nil {
 					return errors.Wrap(err, "failed to extract images")
 				}
@@ -368,6 +370,7 @@ func InstallCmd() *cobra.Command {
 	cmd.Flags().String("airgap-bundle", "", "path to the application airgap bundle where application metadata will be loaded from")
 	cmd.Flags().Bool("airgap", false, "set to true to run install in airgapped mode. setting --airgap-bundle implies --airgap=true.")
 	cmd.Flags().Bool("skip-preflights", false, "set to true to skip preflight checks")
+	cmd.Flags().Bool("disable-image-push", false, "set to true to disable images from being pushed to private registry")
 
 	cmd.Flags().String("repo", "", "repo uri to use when installing a helm chart")
 	cmd.Flags().StringSlice("set", []string{}, "values to pass to helm when running helm template")

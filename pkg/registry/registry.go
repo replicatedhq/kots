@@ -29,7 +29,7 @@ import (
 // RewriteImages will use the app (a) and send the images to the registry specified. It will create patches for these
 // and create a new version of the application
 // the caller is responsible for deleting the appDir returned
-func RewriteImages(appID string, sequence int64, hostname string, username string, password string, namespace string, configValues *kotsv1beta1.ConfigValues) (appDir string, finalError error) {
+func RewriteImages(appID string, sequence int64, hostname string, username string, password string, namespace string, isReadOnly bool, configValues *kotsv1beta1.ConfigValues) (appDir string, finalError error) {
 	if err := store.GetStore().SetTaskStatus("image-rewrite", "Updating registry settings", "running"); err != nil {
 		return "", errors.Wrap(err, "failed to set task status")
 	}
@@ -128,32 +128,37 @@ func RewriteImages(appID string, sequence int64, hostname string, username strin
 	}()
 
 	options := rewrite.RewriteOptions{
-		RootDir:           appDir,
-		UpstreamURI:       fmt.Sprintf("replicated://%s", license.Spec.AppSlug),
-		UpstreamPath:      filepath.Join(appDir, "upstream"),
-		Installation:      installation,
-		Downstreams:       downstreamNames,
-		CreateAppDir:      false,
-		ExcludeKotsKinds:  true,
-		License:           license,
-		ConfigValues:      configValues,
-		K8sNamespace:      appNamespace,
-		ReportWriter:      pipeWriter,
-		CopyImages:        true,
-		IsAirgap:          a.IsAirgap,
-		RegistryEndpoint:  hostname,
-		RegistryUsername:  username,
-		RegistryPassword:  password,
-		RegistryNamespace: namespace,
-		AppSlug:           a.Slug,
-		IsGitOps:          a.IsGitOps,
-		AppSequence:       a.CurrentSequence + 1, // sequence +1 because this is the current latest sequence, not the sequence that the rendered version will be saved as
-		ReportingInfo:     reporting.GetReportingInfo(a.ID),
+		RootDir:            appDir,
+		UpstreamURI:        fmt.Sprintf("replicated://%s", license.Spec.AppSlug),
+		UpstreamPath:       filepath.Join(appDir, "upstream"),
+		Installation:       installation,
+		Downstreams:        downstreamNames,
+		CreateAppDir:       false,
+		ExcludeKotsKinds:   true,
+		License:            license,
+		ConfigValues:       configValues,
+		K8sNamespace:       appNamespace,
+		ReportWriter:       pipeWriter,
+		IsAirgap:           a.IsAirgap,
+		RegistryEndpoint:   hostname,
+		RegistryUsername:   username,
+		RegistryPassword:   password,
+		RegistryNamespace:  namespace,
+		RegistryIsReadOnly: isReadOnly,
+		AppSlug:            a.Slug,
+		IsGitOps:           a.IsGitOps,
+		AppSequence:        a.CurrentSequence + 1, // sequence +1 because this is the current latest sequence, not the sequence that the rendered version will be saved as
+		ReportingInfo:      reporting.GetReportingInfo(a.ID),
 
 		// TODO: pass in as arguments if this is ever called from CLI
 		HTTPProxyEnvValue:  os.Getenv("HTTP_PROXY"),
 		HTTPSProxyEnvValue: os.Getenv("HTTPS_PROXY"),
 		NoProxyEnvValue:    os.Getenv("NO_PROXY"),
+	}
+
+	options.CopyImages = true
+	if isReadOnly {
+		options.CopyImages = false
 	}
 
 	if err := rewrite.Rewrite(options); err != nil {
@@ -211,10 +216,11 @@ func GetKotsadmRegistry() (*types.RegistrySettings, error) {
 	}
 
 	registrySettings := types.RegistrySettings{
-		Hostname:  registry,
-		Namespace: registryNamespace,
-		Username:  kotsadmOptions.Username,
-		Password:  kotsadmOptions.Password,
+		Hostname:   registry,
+		Namespace:  registryNamespace,
+		Username:   kotsadmOptions.Username,
+		Password:   kotsadmOptions.Password,
+		IsReadOnly: kotsadmOptions.IsReadOnly,
 	}
 
 	return &registrySettings, nil

@@ -56,6 +56,7 @@ func AdminPushImagesCmd() *cobra.Command {
 			}
 
 			options := kotsadmtypes.PushImagesOptions{
+				KotsadmTag: v.GetString("kotsadm-tag"),
 				Registry: registry.RegistryOptions{
 					Endpoint: args[1],
 					Username: username,
@@ -75,6 +76,9 @@ func AdminPushImagesCmd() *cobra.Command {
 
 	cmd.Flags().String("registry-username", "", "user name to use to authenticate with the registry")
 	cmd.Flags().String("registry-password", "", "password to use to authenticate with the registry")
+
+	cmd.Flags().String("kotsadm-tag", "", "set to override the tag of kotsadm. this may create an incompatible deployment because the version of kots and kotsadm are designed to work together")
+	cmd.Flags().MarkHidden("kotsadm-tag")
 
 	return cmd
 }

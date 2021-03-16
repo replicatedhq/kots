@@ -6,4 +6,5 @@ type KotsadmOptions struct {
 	OverrideNamespace string
 	Username          string
 	Password          string
+	IsReadOnly        bool
 }

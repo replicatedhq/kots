@@ -83,7 +83,7 @@ func UpstreamUpgradeCmd() *cobra.Command {
 
 				airgapPath = airgapRootDir
 
-				err = kotsadm.ExtractAirgapImages(v.GetString("airgap-bundle"), airgapRootDir, os.Stdout)
+				err = kotsadm.ExtractAppAirgapArchive(v.GetString("airgap-bundle"), airgapRootDir, v.GetBool("disable-image-push"), os.Stdout)
 				if err != nil {
 					return errors.Wrap(err, "failed to extract images")
 				}
@@ -98,10 +98,17 @@ func UpstreamUpgradeCmd() *cobra.Command {
 					ProgressWriter: os.Stdout,
 				}
 
-				imagesRootDir := filepath.Join(airgapRootDir, "images")
-				images, err = kotsadm.TagAndPushAppImagesFromPath(imagesRootDir, pushOptions)
-				if err != nil {
-					return errors.Wrap(err, "failed to list image formats")
+				if v.GetBool("disable-image-push") {
+					images, err = kotsadm.GetImagesFromBundle(v.GetString("airgap-bundle"), pushOptions)
+					if err != nil {
+						return errors.Wrap(err, "failed to get images from bundle")
+					}
+				} else {
+					imagesRootDir := filepath.Join(airgapRootDir, "images")
+					images, err = kotsadm.TagAndPushAppImagesFromPath(imagesRootDir, pushOptions)
+					if err != nil {
+						return errors.Wrap(err, "failed to list image formats")
+					}
 				}
 			}
 
@@ -286,6 +293,7 @@ func UpstreamUpgradeCmd() *cobra.Command {
 	cmd.Flags().String("kotsadm-namespace", "", "registry namespace to use for application images")
 	cmd.Flags().String("registry-username", "", "user name to use to authenticate with the registry")
 	cmd.Flags().String("registry-password", "", "password to use to authenticate with the registry")
+	cmd.Flags().Bool("disable-image-push", false, "set to true to disable images from being pushed to private registry")
 
 	cmd.Flags().Bool("debug", false, "when set, log full error traces in some cases where we provide a pretty message")
 	cmd.Flags().MarkHidden("debug")

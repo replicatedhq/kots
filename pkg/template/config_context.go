@@ -24,6 +24,7 @@ type LocalRegistry struct {
 	Namespace string
 	Username  string
 	Password  string
+	ReadOnly  bool
 }
 
 type ItemValue struct {
