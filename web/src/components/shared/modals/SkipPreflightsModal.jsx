@@ -18,7 +18,7 @@ export default function SkipPreflightsModal(props) {
           <span className="icon yellowWarningIcon" />
           <p className="u-fontSize--jumbo2 u-fontWeight--bold u-lineHeight--medium u-color--selectiveYellow u-marginTop--20"> Skipping Preflights is NOT Recommended </p>
           <p className="u-fontSize--normal u-color--dustyGray u-lineHeight--normal u-marginTop--12 u-textAlign--center">
-            Skipping Preflight checks deviates from the recommended deployment workflow. Preflight checks help ensure your current environment matches the requirements necessary for the application deployment to be successful.</p>
+            Preflight checks help ensure your current environment matches the requirements necessary for the application deployment to be successful.</p>
           <div className="u-marginTop--30 flex flex-column">
             <button type="button" className="btn blue primary" onClick={hideSkipModal}>Wait for Preflights to finish</button>
             {onForceDeployClick ?
