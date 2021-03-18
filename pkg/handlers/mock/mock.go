@@ -5,10 +5,9 @@
 package mock_handlers
 
 import (
+	gomock "github.com/golang/mock/gomock"
 	http "net/http"
 	reflect "reflect"
-
-	gomock "github.com/golang/mock/gomock"
 )
 
 // MockKOTSHandler is a mock of KOTSHandler interface

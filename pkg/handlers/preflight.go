@@ -18,7 +18,8 @@ import (
 )
 
 type GetPreflightResultResponse struct {
-	PreflightResult preflighttypes.PreflightResult `json:"preflightResult"`
+	PreflightProgress string                         `json:"preflightProgress,omitempty"`
+	PreflightResult   preflighttypes.PreflightResult `json:"preflightResult"`
 }
 
 type GetPreflightCommandRequest struct {
@@ -52,24 +53,49 @@ func (h *Handler) GetPreflightResult(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	progress, err := store.GetStore().GetPreflightProgress(foundApp.ID, 0)
+	if err != nil {
+		logger.Error(errors.Wrap(err, "failed to get preflight progress"))
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
 	response := GetPreflightResultResponse{
-		PreflightResult: *result,
+		PreflightResult:   *result,
+		PreflightProgress: progress,
 	}
 	JSON(w, 200, response)
 }
 
 func (h *Handler) GetLatestPreflightResultsForSequenceZero(w http.ResponseWriter, r *http.Request) {
-	result, err := store.GetStore().GetLatestPreflightResultsForSequenceZero()
+	appSlug := mux.Vars(r)["appSlug"]
+
+	foundApp, err := store.GetStore().GetAppFromSlug(appSlug)
 	if err != nil {
-		logger.Error(err)
-		w.WriteHeader(500)
+		logger.Error(errors.Wrap(err, "failed to get app from slug"))
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	result, err := store.GetStore().GetPreflightResults(foundApp.ID, 0)
+	if err != nil {
+		logger.Error(errors.Wrap(err, "failed to get reflight result"))
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	progress, err := store.GetStore().GetPreflightProgress(foundApp.ID, 0)
+	if err != nil {
+		logger.Error(errors.Wrap(err, "failed to get preflight progress"))
+		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
 	response := GetPreflightResultResponse{
-		PreflightResult: *result,
+		PreflightResult:   *result,
+		PreflightProgress: progress,
 	}
-	JSON(w, 200, response)
+	JSON(w, http.StatusOK, response)
 }
 
 func (h *Handler) IgnorePreflightRBACErrors(w http.ResponseWriter, r *http.Request) {
