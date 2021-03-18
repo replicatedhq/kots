@@ -3,6 +3,8 @@ package preflight
 import (
 	"encoding/json"
 	"strings"
+	"sync"
+	"time"
 
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/logger"
@@ -24,14 +26,42 @@ func execute(appID string, sequence int64, preflightSpec *troubleshootv1beta2.Pr
 	progressChan := make(chan interface{}, 0) // non-zero buffer will result in missed messages
 	defer close(progressChan)
 
+	completeMx := sync.Mutex{}
+	isComplete := false
 	go func() {
 		for {
 			msg, ok := <-progressChan
-			if ok {
-				logger.Debugf("%v", msg)
-			} else {
+			if !ok {
 				return
 			}
+
+			logger.Debugf("%v", msg)
+
+			progress, ok := msg.(preflight.CollectProgress)
+			if !ok {
+				continue
+			}
+
+			type CollectProgress struct {
+				Name   string
+				Status string
+			}
+
+			// TODO: We need a nice title to display
+			progresBytes, err := json.Marshal(map[string]interface{}{
+				"name":      progress.Name,
+				"status":    progress.Status,
+				"updatedAt": time.Now().Format(time.RFC3339),
+			})
+			if err != nil {
+				continue
+			}
+
+			completeMx.Lock()
+			if !isComplete {
+				_ = store.GetStore().SetPreflightProgress(appID, sequence, string(progresBytes))
+			}
+			completeMx.Unlock()
 		}
 	}()
 
@@ -99,6 +129,10 @@ func execute(appID string, sequence int64, preflightSpec *troubleshootv1beta2.Pr
 		return uploadPreflightResults, errors.Wrap(err, "failed to marshal results")
 	}
 
+	completeMx.Lock()
+	defer completeMx.Unlock()
+
+	isComplete = true
 	if err := store.GetStore().SetPreflightResults(appID, sequence, b); err != nil {
 		return uploadPreflightResults, errors.Wrap(err, "failed to set preflight results")
 	}

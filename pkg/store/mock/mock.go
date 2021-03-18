@@ -268,6 +268,35 @@ func (mr *MockStoreMockRecorder) DeletePendingSupportBundle(id interface{}) *gom
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeletePendingSupportBundle", reflect.TypeOf((*MockStore)(nil).DeletePendingSupportBundle), id)
 }
 
+// SetPreflightProgress mocks base method
+func (m *MockStore) SetPreflightProgress(appID string, sequence int64, progress string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SetPreflightProgress", appID, sequence, progress)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// SetPreflightProgress indicates an expected call of SetPreflightProgress
+func (mr *MockStoreMockRecorder) SetPreflightProgress(appID, sequence, progress interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetPreflightProgress", reflect.TypeOf((*MockStore)(nil).SetPreflightProgress), appID, sequence, progress)
+}
+
+// GetPreflightProgress mocks base method
+func (m *MockStore) GetPreflightProgress(appID string, sequence int64) (string, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetPreflightProgress", appID, sequence)
+	ret0, _ := ret[0].(string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetPreflightProgress indicates an expected call of GetPreflightProgress
+func (mr *MockStoreMockRecorder) GetPreflightProgress(appID, sequence interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPreflightProgress", reflect.TypeOf((*MockStore)(nil).GetPreflightProgress), appID, sequence)
+}
+
 // SetPreflightResults mocks base method
 func (m *MockStore) SetPreflightResults(appID string, sequence int64, results []byte) error {
 	m.ctrl.T.Helper()
@@ -295,21 +324,6 @@ func (m *MockStore) GetPreflightResults(appID string, sequence int64) (*types7.P
 func (mr *MockStoreMockRecorder) GetPreflightResults(appID, sequence interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPreflightResults", reflect.TypeOf((*MockStore)(nil).GetPreflightResults), appID, sequence)
-}
-
-// GetLatestPreflightResultsForSequenceZero mocks base method
-func (m *MockStore) GetLatestPreflightResultsForSequenceZero() (*types7.PreflightResult, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetLatestPreflightResultsForSequenceZero")
-	ret0, _ := ret[0].(*types7.PreflightResult)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetLatestPreflightResultsForSequenceZero indicates an expected call of GetLatestPreflightResultsForSequenceZero
-func (mr *MockStoreMockRecorder) GetLatestPreflightResultsForSequenceZero() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetLatestPreflightResultsForSequenceZero", reflect.TypeOf((*MockStore)(nil).GetLatestPreflightResultsForSequenceZero))
 }
 
 // ResetPreflightResults mocks base method
@@ -1567,6 +1581,35 @@ func (m *MockPreflightStore) EXPECT() *MockPreflightStoreMockRecorder {
 	return m.recorder
 }
 
+// SetPreflightProgress mocks base method
+func (m *MockPreflightStore) SetPreflightProgress(appID string, sequence int64, progress string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SetPreflightProgress", appID, sequence, progress)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// SetPreflightProgress indicates an expected call of SetPreflightProgress
+func (mr *MockPreflightStoreMockRecorder) SetPreflightProgress(appID, sequence, progress interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetPreflightProgress", reflect.TypeOf((*MockPreflightStore)(nil).SetPreflightProgress), appID, sequence, progress)
+}
+
+// GetPreflightProgress mocks base method
+func (m *MockPreflightStore) GetPreflightProgress(appID string, sequence int64) (string, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetPreflightProgress", appID, sequence)
+	ret0, _ := ret[0].(string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetPreflightProgress indicates an expected call of GetPreflightProgress
+func (mr *MockPreflightStoreMockRecorder) GetPreflightProgress(appID, sequence interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPreflightProgress", reflect.TypeOf((*MockPreflightStore)(nil).GetPreflightProgress), appID, sequence)
+}
+
 // SetPreflightResults mocks base method
 func (m *MockPreflightStore) SetPreflightResults(appID string, sequence int64, results []byte) error {
 	m.ctrl.T.Helper()
@@ -1594,21 +1637,6 @@ func (m *MockPreflightStore) GetPreflightResults(appID string, sequence int64) (
 func (mr *MockPreflightStoreMockRecorder) GetPreflightResults(appID, sequence interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPreflightResults", reflect.TypeOf((*MockPreflightStore)(nil).GetPreflightResults), appID, sequence)
-}
-
-// GetLatestPreflightResultsForSequenceZero mocks base method
-func (m *MockPreflightStore) GetLatestPreflightResultsForSequenceZero() (*types7.PreflightResult, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetLatestPreflightResultsForSequenceZero")
-	ret0, _ := ret[0].(*types7.PreflightResult)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetLatestPreflightResultsForSequenceZero indicates an expected call of GetLatestPreflightResultsForSequenceZero
-func (mr *MockPreflightStoreMockRecorder) GetLatestPreflightResultsForSequenceZero() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetLatestPreflightResultsForSequenceZero", reflect.TypeOf((*MockPreflightStore)(nil).GetLatestPreflightResultsForSequenceZero))
 }
 
 // ResetPreflightResults mocks base method

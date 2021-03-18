@@ -72,9 +72,10 @@ type SupportBundleStore interface {
 }
 
 type PreflightStore interface {
+	SetPreflightProgress(appID string, sequence int64, progress string) error
+	GetPreflightProgress(appID string, sequence int64) (string, error)
 	SetPreflightResults(appID string, sequence int64, results []byte) error
 	GetPreflightResults(appID string, sequence int64) (*preflighttypes.PreflightResult, error)
-	GetLatestPreflightResultsForSequenceZero() (*preflighttypes.PreflightResult, error)
 	ResetPreflightResults(appID string, sequence int64) error
 	SetIgnorePreflightPermissionErrors(appID string, sequence int64) error
 }
