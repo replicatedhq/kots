@@ -42,16 +42,13 @@ func execute(appID string, sequence int64, preflightSpec *troubleshootv1beta2.Pr
 				continue
 			}
 
-			type CollectProgress struct {
-				Name   string
-				Status string
-			}
-
 			// TODO: We need a nice title to display
 			progresBytes, err := json.Marshal(map[string]interface{}{
-				"name":      progress.Name,
-				"status":    progress.Status,
-				"updatedAt": time.Now().Format(time.RFC3339),
+				"completedCount": progress.CompletedCount,
+				"totalCount":     progress.TotalCount,
+				"currentName":    progress.CurrentName,
+				"currentStatus":  progress.CurrentStatus,
+				"updatedAt":      time.Now().Format(time.RFC3339),
 			})
 			if err != nil {
 				continue

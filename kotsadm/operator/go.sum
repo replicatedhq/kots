@@ -422,8 +422,8 @@ github.com/prometheus/procfs v0.0.5 h1:3+auTFlqw+ZaQYJARz6ArODtkaIwtvBTx3N2NehQl
 github.com/prometheus/procfs v0.0.5/go.mod h1:4A/X28fw3Fc593LaREMrKMqOKvUAntwMDaekg4FpcdQ=
 github.com/prometheus/tsdb v0.7.1/go.mod h1:qhTCs0VvXwvX/y3TZrWD7rabWM+ijKTux40TwIPHuXU=
 github.com/replicatedhq/termui/v3 v3.1.1-0.20200811145416-f40076d26851/go.mod h1:JDxG6+uubnk9/BZ2yUsyAJJwlptjrnmB2MPF5d2Xe/8=
-github.com/replicatedhq/troubleshoot v0.10.11 h1:6HdQAoxSqSgmjZmB/HZBFdEaYk0Bv66ahw012ach/sk=
-github.com/replicatedhq/troubleshoot v0.10.11/go.mod h1:szF/UQfsZWjshzJz3XylS1uEpkRDyGcNY2BZHcI+9DU=
+github.com/replicatedhq/troubleshoot v0.10.12 h1:2cjD7W/zwohYMVfaMf8jwT5+vViSn3g/yVZAzSmpd3g=
+github.com/replicatedhq/troubleshoot v0.10.12/go.mod h1:szF/UQfsZWjshzJz3XylS1uEpkRDyGcNY2BZHcI+9DU=
 github.com/rogpeppe/fastuuid v0.0.0-20150106093220-6724a57986af/go.mod h1:XWv6SoW27p1b0cqNHllgS5HIMJraePCO15w5zCzIWYg=
 github.com/rogpeppe/go-charset v0.0.0-20180617210344-2471d30d28b4/go.mod h1:qgYeAmZ5ZIpBWTGllZSQnw97Dj+woV0toclVaRGI8pc=
 github.com/russross/blackfriday v1.5.2/go.mod h1:JO/DiYxRf+HjHt06OyowR9PTA263kcR/rfWxYHBV53g=
