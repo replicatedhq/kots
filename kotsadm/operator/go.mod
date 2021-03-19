@@ -11,7 +11,7 @@ require (
 	github.com/mitchellh/hashstructure v1.1.0
 	github.com/pact-foundation/pact-go v1.5.1
 	github.com/pkg/errors v0.9.1
-	github.com/replicatedhq/troubleshoot v0.10.11
+	github.com/replicatedhq/troubleshoot v0.10.12
 	github.com/spf13/cobra v0.0.7
 	github.com/spf13/viper v1.4.0
 	gopkg.in/yaml.v2 v2.3.0
