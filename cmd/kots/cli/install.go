@@ -87,12 +87,6 @@ func InstallCmd() *cobra.Command {
 				}
 			}()
 
-			rootDir, err := ioutil.TempDir("", "kotsadm")
-			if err != nil {
-				return errors.Wrap(err, "failed to create temp dir")
-			}
-			defer os.RemoveAll(rootDir)
-
 			upstream := pull.RewriteUpstream(args[0])
 
 			namespace := v.GetString("namespace")
