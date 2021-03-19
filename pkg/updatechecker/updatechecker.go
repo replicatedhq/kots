@@ -15,6 +15,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/logger"
 	kotspull "github.com/replicatedhq/kots/pkg/pull"
+	"github.com/replicatedhq/kots/pkg/reporting"
 	"github.com/replicatedhq/kots/pkg/store"
 	"github.com/replicatedhq/kots/pkg/version"
 	cron "github.com/robfig/cron/v3"
@@ -209,7 +210,7 @@ func CheckForUpdates(appID string, deploy bool, skipPreflights bool) (int64, err
 		CurrentChannelName:  kotsKinds.Installation.Spec.ChannelName,
 		CurrentVersionLabel: kotsKinds.Installation.Spec.VersionLabel,
 		Silent:              false,
-		ReportingInfo:       store.GetStore().GetReportingInfo(a.ID),
+		ReportingInfo:       reporting.GetReportingInfo(a.ID),
 	}
 
 	// get updates

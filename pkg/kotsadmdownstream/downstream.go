@@ -122,8 +122,8 @@ func SetDownstreamVersionPendingPreflight(appID string, sequence int64) error {
 	return nil
 }
 
-// UpdateDownstreamStatus updates the status and status info for the downstream version with the given sequence and app id
-func UpdateDownstreamStatus(appID string, sequence int64, status string, statusInfo string) error {
+// UpdateDownstreamVersionStatus updates the status and status info for the downstream version with the given sequence and app id
+func UpdateDownstreamVersionStatus(appID string, sequence int64, status string, statusInfo string) error {
 	db := persistence.MustGetPGSession()
 	query := `update app_downstream_version set status = $3, status_info = $4 where app_id = $1 and sequence = $2`
 	_, err := db.Exec(query, appID, sequence, status, statusInfo)

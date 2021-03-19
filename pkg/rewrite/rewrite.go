@@ -8,6 +8,7 @@ import (
 
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
+	reportingtypes "github.com/replicatedhq/kots/pkg/api/reporting/types"
 	"github.com/replicatedhq/kots/pkg/base"
 	"github.com/replicatedhq/kots/pkg/crypto"
 	"github.com/replicatedhq/kots/pkg/docker/registry"
@@ -46,7 +47,7 @@ type RewriteOptions struct {
 	AppSlug            string
 	IsGitOps           bool
 	AppSequence        int64
-	ReportingInfo      *upstreamtypes.ReportingInfo
+	ReportingInfo      *reportingtypes.ReportingInfo
 	HTTPProxyEnvValue  string
 	HTTPSProxyEnvValue string
 	NoProxyEnvValue    string

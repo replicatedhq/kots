@@ -69,6 +69,10 @@ spec:
             #   value: "true"
             - name: KURL_PROXY_TLS_CERT_PATH
               value: /etc/kurl-proxy/ca/tls.crt
+            # - name: KURL_INSTALL_ID
+            #   value: dev-1ptUacubQ28kl65bndKWWW32KOA
+            - name: KOTS_INSTALL_ID
+              value: dev-1pu4oeY162e2pbLpK4JubK6hxrX
       volumes:
         - emptyDir:
             medium: Memory

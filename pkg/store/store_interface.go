@@ -18,7 +18,6 @@ import (
 	rendertypes "github.com/replicatedhq/kots/pkg/render/types"
 	sessiontypes "github.com/replicatedhq/kots/pkg/session/types"
 	supportbundletypes "github.com/replicatedhq/kots/pkg/supportbundle/types"
-	upstreamtypes "github.com/replicatedhq/kots/pkg/upstream/types"
 	usertypes "github.com/replicatedhq/kots/pkg/user/types"
 	troubleshootredact "github.com/replicatedhq/troubleshoot/pkg/redact"
 )
@@ -39,7 +38,6 @@ type Store interface {
 	ClusterStore
 	SnapshotStore
 	InstallationStore
-	ReportingStore
 	KotsadmParamsStore
 
 	Init() error // this may need options
@@ -107,6 +105,7 @@ type SessionStore interface {
 
 type AppStatusStore interface {
 	GetAppStatus(appID string) (*appstatustypes.AppStatus, error)
+	SetAppStatus(appID string, resourceStates []appstatustypes.ResourceState, updatedAt time.Time) error
 }
 
 type AppStore interface {
@@ -171,10 +170,6 @@ type ClusterStore interface {
 
 type InstallationStore interface {
 	GetPendingInstallationStatus() (*installationtypes.InstallStatus, error)
-}
-
-type ReportingStore interface {
-	GetReportingInfo(appID string) *upstreamtypes.ReportingInfo
 }
 
 type KotsadmParamsStore interface {

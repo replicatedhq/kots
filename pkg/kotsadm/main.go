@@ -14,11 +14,11 @@ import (
 	"github.com/replicatedhq/kots/pkg/docker/registry"
 	"github.com/replicatedhq/kots/pkg/identity"
 	"github.com/replicatedhq/kots/pkg/ingress"
+	"github.com/replicatedhq/kots/pkg/k8s"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/kotsadm/types"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/logger"
-	"github.com/replicatedhq/kots/pkg/store/kotsstore"
 	corev1 "k8s.io/api/core/v1"
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -709,7 +709,7 @@ func ensureDisasterRecoveryLabels(deployOptions *types.DeployOptions, clientset 
 		return errors.Wrap(err, "failed to list configmaps")
 	}
 	for _, configMap := range configMaps.Items {
-		if configMap.ObjectMeta.Name == kotsstore.KotsadmIDConfigMapName {
+		if configMap.ObjectMeta.Name == k8s.KotsadmIDConfigMapName {
 			// don't back up the kotsadm-id configmap so that we don't end up with multiple kotsadm instances with the same id after restoring to other clusters
 			continue
 		}

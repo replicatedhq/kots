@@ -19,7 +19,6 @@ import (
 	downstreamtypes "github.com/replicatedhq/kots/pkg/api/downstream/types"
 	"github.com/replicatedhq/kots/pkg/app"
 	apptypes "github.com/replicatedhq/kots/pkg/app/types"
-	"github.com/replicatedhq/kots/pkg/appstatus"
 	identitydeploy "github.com/replicatedhq/kots/pkg/identity/deploy"
 	identitytypes "github.com/replicatedhq/kots/pkg/identity/types"
 	downstream "github.com/replicatedhq/kots/pkg/kotsadmdownstream"
@@ -29,6 +28,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/midstream"
 	"github.com/replicatedhq/kots/pkg/redact"
 	"github.com/replicatedhq/kots/pkg/render"
+	"github.com/replicatedhq/kots/pkg/reporting"
 	"github.com/replicatedhq/kots/pkg/socket"
 	"github.com/replicatedhq/kots/pkg/socket/transport"
 	"github.com/replicatedhq/kots/pkg/store"
@@ -176,7 +176,7 @@ func processDeploySocketForApp(clusterSocket *ClusterSocket, a *apptypes.App) er
 	var deployError error
 	defer func() {
 		if deployError != nil {
-			err := downstream.UpdateDownstreamStatus(a.ID, deployedVersion.Sequence, "failed", deployError.Error())
+			err := downstream.UpdateDownstreamVersionStatus(a.ID, deployedVersion.Sequence, "failed", deployError.Error())
 			if err != nil {
 				logger.Error(errors.Wrap(err, "failed to update downstream status"))
 			}
@@ -377,10 +377,15 @@ func processDeploySocketForApp(clusterSocket *ClusterSocket, a *apptypes.App) er
 				State:     appstatustypes.StateReady,
 			},
 		}
-		err := appstatus.Set(a.ID, defaultReadyState, time.Now())
+		err := store.GetStore().SetAppStatus(a.ID, defaultReadyState, time.Now())
 		if err != nil {
 			return errors.Wrap(err, "failed to set app status")
 		}
+		go func() {
+			if err := reporting.SendAppInfo(a.ID); err != nil {
+				logger.Debugf("failed to send app info: %#v", err)
+			}
+		}()
 	}
 
 	return nil

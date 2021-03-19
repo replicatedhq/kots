@@ -6,6 +6,7 @@ import (
 
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	kotsscheme "github.com/replicatedhq/kots/kotskinds/client/kotsclientset/scheme"
+	reportingtypes "github.com/replicatedhq/kots/pkg/api/reporting/types"
 	"k8s.io/client-go/kubernetes/scheme"
 )
 
@@ -67,7 +68,7 @@ type FetchOptions struct {
 	AppSlug                string
 	AppSequence            int64
 	LocalRegistry          LocalRegistry
-	ReportingInfo          *ReportingInfo
+	ReportingInfo          *reportingtypes.ReportingInfo
 	IdentityPostgresConfig *kotsv1beta1.IdentityPostgresConfig
 }
 
@@ -76,17 +77,6 @@ type LocalRegistry struct {
 	Namespace string
 	Username  string
 	Password  string
-}
-
-type ReportingInfo struct {
-	InstanceID            string
-	ClusterID             string
-	DownstreamCursor      string
-	DownstreamChannelID   string
-	DownstreamChannelName string
-	AppStatus             string
-	IsKurl                bool
-	K8sVersion            string
 }
 
 func (u *Upstream) GetUpstreamDir(options WriteOptions) string {
