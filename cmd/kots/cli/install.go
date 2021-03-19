@@ -11,6 +11,7 @@ import (
 	"os"
 	"os/signal"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"time"
 
@@ -159,6 +160,8 @@ func InstallCmd() *cobra.Command {
 				}
 			}
 
+			simultaneousUploads, _ := strconv.Atoi(v.GetString("airgap-upload-parallelism"))
+
 			deployOptions := kotsadmtypes.DeployOptions{
 				Namespace:                 namespace,
 				KubernetesConfigFlags:     kubernetesConfigFlags,
@@ -180,6 +183,7 @@ func InstallCmd() *cobra.Command {
 				SkipPreflights:            v.GetBool("skip-preflights"),
 				EnsureRBAC:                v.GetBool("ensure-rbac"),
 				InstallID:                 m.InstallID,
+				SimultaneousUploads:       simultaneousUploads,
 
 				KotsadmOptions: *registryConfig,
 
@@ -392,6 +396,9 @@ func InstallCmd() *cobra.Command {
 
 	cmd.Flags().Bool("ensure-rbac", true, "when set, kots will create the roles and rolebindings necessary to manage applications")
 	cmd.Flags().MarkHidden("ensure-rbac")
+
+	cmd.Flags().String("airgap-upload-parallelism", "", "the number of chunks to upload in parallel when installing or updating in airgap mode")
+	cmd.Flags().MarkHidden("airgap-upload-parallelism")
 
 	cmd.Flags().Bool("enable-identity-service", false, "when set, the KOTS identity service will be enabled")
 	cmd.Flags().MarkHidden("enable-identity-service")

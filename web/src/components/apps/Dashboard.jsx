@@ -164,16 +164,12 @@ class Dashboard extends Component {
     });
   }
 
-  componentWillMount() {
-    const { app } = this.props;
-    if (!app?.isAirgap) {
-      return
-    }
-    this.airgapUploader = new AirgapUploader(true, app.slug, this.onDropBundle);
-  }
-
   componentDidMount() {
     const { app } = this.props;
+
+    if (app?.isAirgap && !this.state.airgapUploader) {
+      this.getAirgapConfig()
+    }
 
     this.state.updateChecker.start(this.updateStatus, 1000);
     this.state.getAppDashboardJob.start(this.getAppDashboard, 2000);
@@ -188,6 +184,31 @@ class Dashboard extends Component {
     this.state.updateChecker.stop();
     this.state.getAppDashboardJob.stop();
   }
+
+  getAirgapConfig = async () => {
+    const { app } = this.props;
+    const configUrl = `${window.env.API_ENDPOINT}/app/${app.slug}/airgap/config`;
+    let simultaneousUploads = 3;
+    try {
+      let res = await fetch(configUrl, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": Utilities.getToken(),
+        }
+      });
+      if (res.ok) {
+        const response = await res.json();
+        simultaneousUploads = response.simultaneousUploads;
+      }
+    } catch {
+      // no-op
+    }
+
+    this.setState({
+      airgapUploader: new AirgapUploader(true, app.slug, this.onDropBundle, simultaneousUploads),
+    });
+}
 
   getAppDashboard = () => {
     return new Promise((resolve, reject) => {
@@ -311,7 +332,7 @@ class Dashboard extends Component {
     const params = {
       appId: this.props.app?.id,
     };
-    this.airgapUploader.upload(params, this.onUploadProgress, this.onUploadError, this.onUploadComplete);
+    this.state.airgapUploader.upload(params, this.onUploadProgress, this.onUploadError, this.onUploadComplete);
   }
 
   onUploadProgress = (progress, size, resuming = false) => {
@@ -598,7 +619,6 @@ class Dashboard extends Component {
       );
     }
 
-
     return (
       <div className="flex-column flex1 u-position--relative u-overflow--auto u-padding--20">
         <Helmet>
@@ -639,7 +659,7 @@ class Dashboard extends Component {
                 checkingUpdateText={checkingUpdateText}
                 errorCheckingUpdate={errorCheckingUpdate}
                 onDropBundle={this.onDropBundle}
-                airgapUploader={this.airgapUploader}
+                airgapUploader={this.state.airgapUploader}
                 uploadingAirgapFile={uploadingAirgapFile}
                 airgapUploadError={airgapUploadError}
                 uploadProgress={this.state.uploadProgress}

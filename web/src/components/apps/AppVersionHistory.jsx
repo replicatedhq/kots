@@ -74,14 +74,11 @@ class AppVersionHistory extends Component {
     isSkipPreflights: false
   }
 
-  componentWillMount() {
-    const { app } = this.props;
-    if (app.isAirgap) {
-      this.airgapUploader = new AirgapUploader(true, app.slug, this.onDropBundle);
-    }
-  }
-
   componentDidMount() {
+    if (this.props.app?.isAirgap && !this.state.airgapUploader) {
+      this.getAirgapConfig()
+    }
+
     this.fetchKotsDownstreamHistory();
     this.state.updateChecker.start(this.updateStatus, 1000);
 
@@ -95,6 +92,31 @@ class AppVersionHistory extends Component {
       }
     }
   }
+
+  getAirgapConfig = async () => {
+    const { app } = this.props;
+    const configUrl = `${window.env.API_ENDPOINT}/app/${app.slug}/airgap/config`;
+    let simultaneousUploads = 3;
+    try {
+      let res = await fetch(configUrl, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": Utilities.getToken(),
+        }
+      });
+      if (res.ok) {
+        const response = await res.json();
+        simultaneousUploads = response.simultaneousUploads;
+      }
+    } catch {
+      // no-op
+    }
+
+    this.setState({
+      airgapUploader: new AirgapUploader(true, app.slug, this.onDropBundle, simultaneousUploads),
+    });
+}
 
   componentDidUpdate = async (lastProps) => {
     if (lastProps.match.params.slug !== this.props.match.params.slug || lastProps.app.id !== this.props.app.id) {
@@ -576,7 +598,7 @@ class AppVersionHistory extends Component {
     const params = {
       appId: this.props.app.id,
     };
-    this.airgapUploader.upload(params, this.onUploadProgress, this.onUploadError, this.onUploadComplete);
+    this.state.airgapUploader.upload(params, this.onUploadProgress, this.onUploadError, this.onUploadComplete);
   }
 
   onUploadProgress = (progress, size, resuming = false) => {
@@ -875,7 +897,7 @@ class AppVersionHistory extends Component {
           handleViewLogs={this.handleViewLogs}
           checkingForUpdates={checkingForUpdates}
           isBundleUploading={isBundleUploading}
-          airgapUploader={this.airgapUploader}
+          airgapUploader={this.state.airgapUploader}
           pendingVersions={pendingVersions}
           showOnlineUI={showOnlineUI}
           showAirgapUI={showAirgapUI}

@@ -44,6 +44,10 @@ type AirgapBundleExistsResponse struct {
 	Exists bool `json:"exists"`
 }
 
+type GetAirgapUploadConfigResponse struct {
+	SimultaneousUploads int `json:"simultaneousUploads"`
+}
+
 var uploadedAirgapBundleChunks = map[string]struct{}{}
 var chunkLock sync.Mutex
 var fileLock sync.Mutex
@@ -82,6 +86,19 @@ func (h *Handler) ResetAirgapInstallStatus(w http.ResponseWriter, r *http.Reques
 	}
 
 	w.WriteHeader(http.StatusOK)
+}
+
+func (h *Handler) GetAirgapUploadConfig(w http.ResponseWriter, r *http.Request) {
+	response := GetAirgapUploadConfigResponse{}
+
+	i, _ := strconv.Atoi(os.Getenv("AIRGAP_UPLOAD_PARALLELISM"))
+	if i > 0 {
+		response.SimultaneousUploads = i
+	} else {
+		response.SimultaneousUploads = 3
+	}
+
+	JSON(w, http.StatusOK, response)
 }
 
 func (h *Handler) CheckAirgapBundleChunk(w http.ResponseWriter, r *http.Request) {

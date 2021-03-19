@@ -272,6 +272,11 @@ export default class DashboardCard extends React.Component {
       updateText = null;
     }
 
+    const mountAware = this.props.airgapUploader ?
+      <MountAware className="u-marginTop--30" onMount={el => this.props.airgapUploader?.assignElement(el)}>
+        <button className="btn primary blue">Upload a new version</button>
+      </MountAware>
+    : null;
 
     return (
       <div className="flex1 flex-column">
@@ -285,10 +290,7 @@ export default class DashboardCard extends React.Component {
         {checkingForUpdates && !isBundleUploading
           ? <Loader className="flex justifyContent--center u-marginTop--10" size="32" />
           : showAirgapUI
-            ?
-            <MountAware className="u-marginTop--30" onMount={el => this.props.airgapUploader?.assignElement(el)}>
-              <button className="btn primary blue">Upload a new version</button>
-            </MountAware>
+            ? mountAware
             : showOnlineUI ?
               <div className="flex1 flex-column" style={{ flexGrow: 1 }}>
                 {this.renderVersionAvailable(downstream)}

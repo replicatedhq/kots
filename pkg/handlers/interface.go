@@ -52,6 +52,7 @@ type KOTSHandler interface {
 	UploadAirgapBundleChunk(w http.ResponseWriter, r *http.Request)
 	GetAirgapInstallStatus(w http.ResponseWriter, r *http.Request)
 	ResetAirgapInstallStatus(w http.ResponseWriter, r *http.Request)
+	GetAirgapUploadConfig(w http.ResponseWriter, r *http.Request)
 
 	// Implemented handlers
 	IgnorePreflightRBACErrors(w http.ResponseWriter, r *http.Request)

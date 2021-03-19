@@ -38,9 +38,10 @@ class UploadAirgapBundle extends React.Component {
 
   emptyHostnameErrMessage = "Please enter a value for \"Hostname\" field"
 
-  componentWillMount() {
-    const { match } = this.props;
-    this.airgapUploader = new AirgapUploader(false, match.params.slug, this.onDropBundle);
+  componentDidMount() {
+    if (!this.state.airgapUploader) {
+      this.getAirgapConfig()
+    }
   }
 
   clearFile = () => {
@@ -50,6 +51,31 @@ class UploadAirgapBundle extends React.Component {
   toggleShowRun = () => {
     this.setState({ showSupportBundleCommand: true });
   }
+
+  getAirgapConfig = async () => {
+    const { match } = this.props;
+    const configUrl = `${window.env.API_ENDPOINT}/app/${match.params.slug}/airgap/config`;
+    let simultaneousUploads = 3;
+    try {
+      let res = await fetch(configUrl, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": Utilities.getToken(),
+        }
+      });
+      if (res.ok) {
+        const response = await res.json();
+        simultaneousUploads = response.simultaneousUploads;
+      }
+    } catch {
+      // no-op
+    }
+
+    this.setState({
+      airgapUploader: new AirgapUploader(false, match.params.slug, this.onDropBundle, simultaneousUploads),
+    });
+}
 
   uploadAirgapBundle = async () => {
     const { match, showRegistry } = this.props;
@@ -145,8 +171,9 @@ class UploadAirgapBundle extends React.Component {
       namespace: this.state.registryDetails.namespace,
       username: this.state.registryDetails.username,
       password: this.state.registryDetails.password,
+      simultaneousUploads: this.state.simultaneousUploads,
     };
-    this.airgapUploader.upload(params, this.onUploadProgress, this.onUploadError);
+    this.state.airgapUploader.upload(params, this.onUploadProgress, this.onUploadError);
   }
 
   onUploadProgress = (progress, size, resuming = false) => {
@@ -458,21 +485,24 @@ class UploadAirgapBundle extends React.Component {
                   </div>
                 }
                 <div className="u-marginTop--20 flex">
-                  <MountAware onMount={el => this.airgapUploader.assignElement(el)} className={classNames("FileUpload-wrapper", "flex1", {
-                    "has-file": hasFile,
-                    "has-error": errorMessage
-                  })}>
-                    {hasFile ?
-                      <div className="has-file-wrapper">
-                        <p className="u-fontSize--normal u-fontWeight--medium">{bundleFile.name}</p>
-                      </div>
-                      :
-                      <div className="u-textAlign--center">
-                        <p className="u-fontSize--normal u-color--tundora u-fontWeight--medium u-lineHeight--normal">Drag your airgap bundle here or <span className="u-color--astral u-fontWeight--medium u-textDecoration--underlineOnHover">choose a bundle to upload</span></p>
-                        <p className="u-fontSize--normal u-color--dustyGray u-fontWeight--normal u-lineHeight--normal u-marginTop--10">This will be a .airgap file{applicationName?.length > 0 ? ` ${applicationName} provided` : ""}. Please contact your account rep if you are unable to locate your .airgap file.</p>
-                      </div>
-                    }
-                  </MountAware>
+                  {this.state.airgapUploader ?
+                    <MountAware onMount={el => this.state.airgapUploader.assignElement(el)} className={classNames("FileUpload-wrapper", "flex1", {
+                      "has-file": hasFile,
+                      "has-error": errorMessage
+                    })}>
+                      {hasFile ?
+                        <div className="has-file-wrapper">
+                          <p className="u-fontSize--normal u-fontWeight--medium">{bundleFile.name}</p>
+                        </div>
+                        :
+                        <div className="u-textAlign--center">
+                          <p className="u-fontSize--normal u-color--tundora u-fontWeight--medium u-lineHeight--normal">Drag your airgap bundle here or <span className="u-color--astral u-fontWeight--medium u-textDecoration--underlineOnHover">choose a bundle to upload</span></p>
+                          <p className="u-fontSize--normal u-color--dustyGray u-fontWeight--normal u-lineHeight--normal u-marginTop--10">This will be a .airgap file{applicationName?.length > 0 ? ` ${applicationName} provided` : ""}. Please contact your account rep if you are unable to locate your .airgap file.</p>
+                        </div>
+                      }
+                    </MountAware>
+                    : null
+                  }
                   {hasFile &&
                     <div className="flex-auto flex-column u-marginLeft--10 justifyContent--center">
                       <button

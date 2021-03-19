@@ -465,6 +465,18 @@ func (mr *MockKOTSHandlerMockRecorder) ResetAirgapInstallStatus(w, r interface{}
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ResetAirgapInstallStatus", reflect.TypeOf((*MockKOTSHandler)(nil).ResetAirgapInstallStatus), w, r)
 }
 
+// GetAirgapUploadConfig mocks base method
+func (m *MockKOTSHandler) GetAirgapUploadConfig(w http.ResponseWriter, r *http.Request) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "GetAirgapUploadConfig", w, r)
+}
+
+// GetAirgapUploadConfig indicates an expected call of GetAirgapUploadConfig
+func (mr *MockKOTSHandlerMockRecorder) GetAirgapUploadConfig(w, r interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAirgapUploadConfig", reflect.TypeOf((*MockKOTSHandler)(nil).GetAirgapUploadConfig), w, r)
+}
+
 // IgnorePreflightRBACErrors mocks base method
 func (m *MockKOTSHandler) IgnorePreflightRBACErrors(w http.ResponseWriter, r *http.Request) {
 	m.ctrl.T.Helper()

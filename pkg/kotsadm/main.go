@@ -123,6 +123,7 @@ func Upgrade(upgradeOptions types.UpgradeOptions) error {
 	deployOptions.Timeout = upgradeOptions.Timeout
 	deployOptions.KotsadmOptions = upgradeOptions.KotsadmOptions
 	deployOptions.EnsureRBAC = upgradeOptions.EnsureRBAC
+	deployOptions.SimultaneousUploads = upgradeOptions.SimultaneousUploads
 
 	if err := ensureKotsadm(*deployOptions, clientset, log); err != nil {
 		return errors.Wrap(err, "failed to upgrade admin console")

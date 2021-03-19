@@ -81,9 +81,12 @@ export default function AppVersionHistoryHeader(props) {
                 <div className="flex flex-column justifyContent--center">
                   <p className="u-fontSize--small u-fontWeight--bold u-lineHeight--normal u-color--tuna"> Upload a new version</p>
                   <span className="u-fontSize--small u-lineHeight--normal u-color--dustyGray u-marginTop--8"> When you have an Airgap Bundle for a new version, you can upload that new version here. </span>
-                  <MountAware className="flex alignItems--center" id="bundle-dropzone" onMount={el => airgapUploader.assignElement(el)}>
-                    <span className="btn primary blue u-marginTop--10">Upload a new version</span>
-                  </MountAware>
+                  {airgapUploader ?
+                    <MountAware className="flex alignItems--center" id="bundle-dropzone" onMount={el => airgapUploader.assignElement(el)}>
+                      <span className="btn primary blue u-marginTop--10">Upload a new version</span>
+                    </MountAware>
+                    : null
+                  }
                 </div>
                 : showOnlineUI ?
                   <div className="flex1 flex-column justifyContent--center">
