@@ -167,6 +167,8 @@ func (s KOTSStore) GetSession(id string) (*sessiontypes.Session, error) {
 }
 
 func (s KOTSStore) DeleteSession(id string) error {
+	s.sessionSecret = nil
+
 	secret, err := s.getSessionSecret()
 	if err != nil {
 		return errors.Wrap(err, "failed to get session secret")
