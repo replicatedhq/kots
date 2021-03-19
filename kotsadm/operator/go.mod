@@ -13,7 +13,7 @@ require (
 	github.com/replicatedhq/troubleshoot v0.10.12
 	github.com/spf13/cobra v0.0.7
 	github.com/spf13/viper v1.7.1
-	gopkg.in/yaml.v2 v2.3.0
+	gopkg.in/yaml.v2 v2.4.0
 	k8s.io/api v0.18.4
 	k8s.io/apimachinery v0.18.4
 	k8s.io/client-go v0.18.4
