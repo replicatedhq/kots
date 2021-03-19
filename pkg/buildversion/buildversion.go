@@ -60,15 +60,6 @@ func Version() string {
 	return build.Version
 }
 
-// Check if version is a pre-release (not clean: e.g. could include alpha, beta, dirty, etc..)
-func IsPreRelease() bool {
-	v, err := semver.NewVersion(Version())
-	if err != nil {
-		return false
-	}
-	return v.Prerelease() != ""
-}
-
 // GitSHA gets the gitsha
 func GitSHA() string {
 	return build.GitSHA

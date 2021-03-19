@@ -106,10 +106,6 @@ func getEndpoint(license *kotsv1beta1.License) string {
 		return license.Spec.Endpoint
 	}
 
-	if buildversion.IsPreRelease() {
-		return DevEndpoint
-	}
-
 	return ProdEndpoint
 }
 
