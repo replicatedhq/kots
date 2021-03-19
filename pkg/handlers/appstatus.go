@@ -59,11 +59,7 @@ func (h *Handler) SetAppStatus(w http.ResponseWriter, r *http.Request) {
 
 	newAppState := appstatus.GetState(newAppStatus.ResourceStates)
 	if currentAppStatus != nil && newAppState != currentAppStatus.State {
-		go func() {
-			if err := reporting.SendAppInfo(newAppStatus.AppID); err != nil {
-				logger.Debugf("failed to send app info: %#v", err)
-			}
-		}()
+		go reporting.SendAppInfo(newAppStatus.AppID)
 	}
 
 	w.WriteHeader(http.StatusNoContent)

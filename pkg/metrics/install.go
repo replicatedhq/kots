@@ -4,9 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"net/http"
-	"os"
 	"regexp"
 	"time"
 
@@ -22,45 +20,37 @@ const (
 )
 
 type InstallMetrics struct {
-	endpoint    string
-	InstallID   string    `json:"install_id"`
-	StartedAt   time.Time `json:"started"`
-	FinishedAt  time.Time `json:"finished"`
-	FailedAt    time.Time `json:"failed"`
-	KotsVersion string    `json:"kots_version"`
-	Cause       string    `json:"cause"`
+	endpoint                   string
+	disableOutboundConnections bool
+	InstallID                  string    `json:"install_id"`
+	StartedAt                  time.Time `json:"started"`
+	FinishedAt                 time.Time `json:"finished"`
+	FailedAt                   time.Time `json:"failed"`
+	KotsVersion                string    `json:"kots_version"`
+	Cause                      string    `json:"cause"`
 }
 
-func InitInstallMetrics(license *kotsv1beta1.License, disableOutboundConnections bool) *InstallMetrics {
-	if disableOutboundConnections {
-		return nil
-	}
+func InitInstallMetrics(license *kotsv1beta1.License, disableOutboundConnections bool) InstallMetrics {
 	m := InstallMetrics{
-		endpoint:    getEndpoint(license),
-		InstallID:   ksuid.New().String(),
-		StartedAt:   time.Now(),
-		KotsVersion: buildversion.Version(),
+		endpoint:                   getEndpoint(license),
+		disableOutboundConnections: disableOutboundConnections,
+		InstallID:                  ksuid.New().String(),
+		StartedAt:                  time.Now(),
+		KotsVersion:                buildversion.Version(),
 	}
-	return &m
+	return m
 }
 
-func (m *InstallMetrics) GetInstallID() string {
-	if m == nil {
-		return ""
-	}
-	return m.InstallID
-}
-
-func (m *InstallMetrics) ReportInstallStart() error {
-	if m == nil || m.InstallID == "" || m.endpoint == "" {
+func (m InstallMetrics) ReportInstallStart() error {
+	if m.endpoint == "" || m.InstallID == "" {
 		return nil
 	}
 	url := fmt.Sprintf("%s/kots_metrics/start_install/%s", m.endpoint, m.InstallID)
 	return m.Post(url)
 }
 
-func (m *InstallMetrics) ReportInstallFail(cause string) error {
-	if m == nil || m.InstallID == "" || m.endpoint == "" {
+func (m InstallMetrics) ReportInstallFail(cause string) error {
+	if m.endpoint == "" || m.InstallID == "" {
 		return nil
 	}
 	m.FailedAt = time.Now()
@@ -69,8 +59,8 @@ func (m *InstallMetrics) ReportInstallFail(cause string) error {
 	return m.Post(url)
 }
 
-func (m *InstallMetrics) ReportInstallFinish() error {
-	if m == nil || m.InstallID == "" || m.endpoint == "" {
+func (m InstallMetrics) ReportInstallFinish() error {
+	if m.endpoint == "" || m.InstallID == "" {
 		return nil
 	}
 	m.FinishedAt = time.Now()
@@ -78,13 +68,15 @@ func (m *InstallMetrics) ReportInstallFinish() error {
 	return m.Post(url)
 }
 
-func (m *InstallMetrics) Post(url string) error {
+func (m InstallMetrics) Post(url string) error {
+	if m.disableOutboundConnections {
+		return nil
+	}
+
 	b, err := json.Marshal(m)
 	if err != nil {
 		return errors.Wrap(err, "failed to marshal json")
 	}
-
-	fmt.Println("url", url)
 
 	req, err := http.NewRequest("POST", url, bytes.NewBuffer(b))
 	if err != nil {
@@ -114,15 +106,8 @@ func getEndpoint(license *kotsv1beta1.License) string {
 		return license.Spec.Endpoint
 	}
 
-	devCfgFile := fmt.Sprintf("%s/src/github.com/replicatedhq/kots/pkg/metrics/dev-cfg.json", os.Getenv("GOPATH"))
-	b, err := ioutil.ReadFile(devCfgFile)
-	if err == nil {
-		type DevCfg struct {
-			Endpoint string `json:"metrics_endpoint"`
-		}
-		devCfg := DevCfg{}
-		json.Unmarshal([]byte(b), &devCfg)
-		return devCfg.Endpoint
+	if buildversion.IsPreRelease() {
+		return DevEndpoint
 	}
 
 	return ProdEndpoint

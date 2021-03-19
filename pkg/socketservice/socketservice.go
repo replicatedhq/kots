@@ -381,11 +381,7 @@ func processDeploySocketForApp(clusterSocket *ClusterSocket, a *apptypes.App) er
 		if err != nil {
 			return errors.Wrap(err, "failed to set app status")
 		}
-		go func() {
-			if err := reporting.SendAppInfo(a.ID); err != nil {
-				logger.Debugf("failed to send app info: %#v", err)
-			}
-		}()
+		go reporting.SendAppInfo(a.ID)
 	}
 
 	return nil

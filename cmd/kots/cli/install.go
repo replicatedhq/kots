@@ -185,7 +185,7 @@ func InstallCmd() *cobra.Command {
 				NoProxyEnvValue:           v.GetString("no-proxy"),
 				SkipPreflights:            v.GetBool("skip-preflights"),
 				EnsureRBAC:                v.GetBool("ensure-rbac"),
-				InstallID:                 m.GetInstallID(),
+				InstallID:                 m.InstallID,
 
 				KotsadmOptions: *registryConfig,
 

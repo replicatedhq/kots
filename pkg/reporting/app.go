@@ -80,7 +80,7 @@ func GetReportingInfo(appID string) *types.ReportingInfo {
 
 	di, err := getDownstreamInfo(appID)
 	if err != nil {
-		logger.Infof("failed to get downstream info: %v", err.Error())
+		logger.Debugf("failed to get downstream info: %v", err.Error())
 	}
 	if di != nil {
 		r.Downstream = *di
@@ -89,7 +89,7 @@ func GetReportingInfo(appID string) *types.ReportingInfo {
 	// get kubernetes cluster version
 	k8sVersion, err := k8s.GetK8sVersion()
 	if err != nil {
-		logger.Infof("failed to get k8s version: %v", err.Error())
+		logger.Debugf("failed to get k8s version: %v", err.Error())
 	} else {
 		r.K8sVersion = k8sVersion
 	}
@@ -97,7 +97,7 @@ func GetReportingInfo(appID string) *types.ReportingInfo {
 	// get app status
 	appStatus, err := store.GetStore().GetAppStatus(appID)
 	if err != nil {
-		logger.Infof("failed to get app status: %v", err.Error())
+		logger.Debugf("failed to get app status: %v", err.Error())
 	} else {
 		r.AppStatus = string(appStatus.State)
 	}
