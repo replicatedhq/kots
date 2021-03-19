@@ -167,6 +167,8 @@ func (s KOTSStore) GetSession(id string) (*sessiontypes.Session, error) {
 }
 
 func (s KOTSStore) DeleteSession(id string) error {
+	s.sessionSecret = nil
+
 	secret, err := s.getSessionSecret()
 	if err != nil {
 		return errors.Wrap(err, "failed to get session secret")
@@ -182,6 +184,10 @@ func (s KOTSStore) DeleteSession(id string) error {
 }
 
 func (s KOTSStore) getSessionSecret() (*corev1.Secret, error) {
+	if s.sessionSecret != nil && time.Now().Before(s.sessionExpiration) {
+		return s.sessionSecret, nil
+	}
+
 	clientset, err := s.GetClientset()
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get clientset")
@@ -208,8 +214,14 @@ func (s KOTSStore) getSessionSecret() (*corev1.Secret, error) {
 			return nil, errors.Wrap(err, "failed to create session secret")
 		}
 
+		s.sessionExpiration = time.Now().Add(20 * time.Minute)
+		s.sessionSecret = createdSecret
+
 		return createdSecret, nil
 	}
+
+	s.sessionExpiration = time.Now().Add(20 * time.Minute)
+	s.sessionSecret = existingSecret
 
 	return existingSecret, nil
 }

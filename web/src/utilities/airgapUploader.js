@@ -3,7 +3,7 @@ import { Utilities } from "./utilities";
 import fetch from "./fetchWithTimeout";
 
 export class AirgapUploader {
-  constructor(isUpdate, appSlug, onFileAdded) {
+  constructor(isUpdate, appSlug, onFileAdded, simultaneousUploads) {
     this.isUpdate = isUpdate;
     this.appSlug = appSlug;
 
@@ -14,7 +14,7 @@ export class AirgapUploader {
       },
       fileType: ["airgap"],
       maxFiles: 1,
-      simultaneousUploads: 3,
+      simultaneousUploads: simultaneousUploads,
       maxChunkRetries: 0,
       xhrTimeout: 10000,
     });

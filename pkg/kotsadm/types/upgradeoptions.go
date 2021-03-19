@@ -12,6 +12,7 @@ type UpgradeOptions struct {
 	ForceUpgradeKurl      bool
 	Timeout               time.Duration
 	EnsureRBAC            bool
+	SimultaneousUploads   int
 
 	KotsadmOptions KotsadmOptions
 }

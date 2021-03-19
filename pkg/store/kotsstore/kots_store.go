@@ -33,6 +33,8 @@ var (
 )
 
 type KOTSStore struct {
+	sessionSecret     *corev1.Secret
+	sessionExpiration time.Time
 }
 
 func init() {

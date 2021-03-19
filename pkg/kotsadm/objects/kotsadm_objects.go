@@ -363,6 +363,13 @@ func KotsadmDeployment(deployOptions types.DeployOptions) *appsv1.Deployment {
 		})
 	}
 
+	if deployOptions.SimultaneousUploads > 0 {
+		env = append(env, corev1.EnvVar{
+			Name:  "AIRGAP_UPLOAD_PARALLELISM",
+			Value: fmt.Sprintf("%d", deployOptions.SimultaneousUploads),
+		})
+	}
+
 	deployment := &appsv1.Deployment{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "apps/v1",
