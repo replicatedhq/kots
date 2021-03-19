@@ -51,3 +51,19 @@ func (s KOTSStore) GetAppStatus(appID string) (*appstatustypes.AppStatus, error)
 
 	return &appStatus, nil
 }
+
+func (s KOTSStore) SetAppStatus(appID string, resourceStates []appstatustypes.ResourceState, updatedAt time.Time) error {
+	marshalledResourceStates, err := json.Marshal(resourceStates)
+	if err != nil {
+		return errors.Wrap(err, "failed to json marshal resource states")
+	}
+
+	db := persistence.MustGetPGSession()
+	query := `insert into app_status (app_id, resource_states, updated_at) values ($1, $2, $3) on conflict (app_id) do update set resource_states = $2, updated_at = $3`
+	_, err = db.Exec(query, appID, marshalledResourceStates, updatedAt)
+	if err != nil {
+		return errors.Wrap(err, "failed to exec")
+	}
+
+	return nil
+}

@@ -21,8 +21,7 @@ import (
 	types9 "github.com/replicatedhq/kots/pkg/render/types"
 	types10 "github.com/replicatedhq/kots/pkg/session/types"
 	types11 "github.com/replicatedhq/kots/pkg/supportbundle/types"
-	types12 "github.com/replicatedhq/kots/pkg/upstream/types"
-	types13 "github.com/replicatedhq/kots/pkg/user/types"
+	types12 "github.com/replicatedhq/kots/pkg/user/types"
 	redact "github.com/replicatedhq/troubleshoot/pkg/redact"
 	reflect "reflect"
 	time "time"
@@ -500,7 +499,7 @@ func (mr *MockStoreMockRecorder) GetTaskStatus(taskID interface{}) *gomock.Call 
 }
 
 // CreateSession mocks base method
-func (m *MockStore) CreateSession(user *types13.User, issuedAt, expiresAt time.Time, roles []string) (*types10.Session, error) {
+func (m *MockStore) CreateSession(user *types12.User, issuedAt, expiresAt time.Time, roles []string) (*types10.Session, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CreateSession", user, issuedAt, expiresAt, roles)
 	ret0, _ := ret[0].(*types10.Session)
@@ -556,6 +555,20 @@ func (m *MockStore) GetAppStatus(appID string) (*types0.AppStatus, error) {
 func (mr *MockStoreMockRecorder) GetAppStatus(appID interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAppStatus", reflect.TypeOf((*MockStore)(nil).GetAppStatus), appID)
+}
+
+// SetAppStatus mocks base method
+func (m *MockStore) SetAppStatus(appID string, resourceStates []types0.ResourceState, updatedAt time.Time) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SetAppStatus", appID, resourceStates, updatedAt)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// SetAppStatus indicates an expected call of SetAppStatus
+func (mr *MockStoreMockRecorder) SetAppStatus(appID, resourceStates, updatedAt interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetAppStatus", reflect.TypeOf((*MockStore)(nil).SetAppStatus), appID, resourceStates, updatedAt)
 }
 
 // AddAppToAllDownstreams mocks base method
@@ -1185,20 +1198,6 @@ func (m *MockStore) GetPendingInstallationStatus() (*types6.InstallStatus, error
 func (mr *MockStoreMockRecorder) GetPendingInstallationStatus() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPendingInstallationStatus", reflect.TypeOf((*MockStore)(nil).GetPendingInstallationStatus))
-}
-
-// GetReportingInfo mocks base method
-func (m *MockStore) GetReportingInfo(appID string) *types12.ReportingInfo {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetReportingInfo", appID)
-	ret0, _ := ret[0].(*types12.ReportingInfo)
-	return ret0
-}
-
-// GetReportingInfo indicates an expected call of GetReportingInfo
-func (mr *MockStoreMockRecorder) GetReportingInfo(appID interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetReportingInfo", reflect.TypeOf((*MockStore)(nil).GetReportingInfo), appID)
 }
 
 // IsKotsadmIDGenerated mocks base method
@@ -1905,7 +1904,7 @@ func (m *MockSessionStore) EXPECT() *MockSessionStoreMockRecorder {
 }
 
 // CreateSession mocks base method
-func (m *MockSessionStore) CreateSession(user *types13.User, issuedAt, expiresAt time.Time, roles []string) (*types10.Session, error) {
+func (m *MockSessionStore) CreateSession(user *types12.User, issuedAt, expiresAt time.Time, roles []string) (*types10.Session, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CreateSession", user, issuedAt, expiresAt, roles)
 	ret0, _ := ret[0].(*types10.Session)
@@ -1984,6 +1983,20 @@ func (m *MockAppStatusStore) GetAppStatus(appID string) (*types0.AppStatus, erro
 func (mr *MockAppStatusStoreMockRecorder) GetAppStatus(appID interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAppStatus", reflect.TypeOf((*MockAppStatusStore)(nil).GetAppStatus), appID)
+}
+
+// SetAppStatus mocks base method
+func (m *MockAppStatusStore) SetAppStatus(appID string, resourceStates []types0.ResourceState, updatedAt time.Time) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SetAppStatus", appID, resourceStates, updatedAt)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// SetAppStatus indicates an expected call of SetAppStatus
+func (mr *MockAppStatusStoreMockRecorder) SetAppStatus(appID, resourceStates, updatedAt interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetAppStatus", reflect.TypeOf((*MockAppStatusStore)(nil).SetAppStatus), appID, resourceStates, updatedAt)
 }
 
 // MockAppStore is a mock of AppStore interface
@@ -2751,43 +2764,6 @@ func (m *MockInstallationStore) GetPendingInstallationStatus() (*types6.InstallS
 func (mr *MockInstallationStoreMockRecorder) GetPendingInstallationStatus() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPendingInstallationStatus", reflect.TypeOf((*MockInstallationStore)(nil).GetPendingInstallationStatus))
-}
-
-// MockReportingStore is a mock of ReportingStore interface
-type MockReportingStore struct {
-	ctrl     *gomock.Controller
-	recorder *MockReportingStoreMockRecorder
-}
-
-// MockReportingStoreMockRecorder is the mock recorder for MockReportingStore
-type MockReportingStoreMockRecorder struct {
-	mock *MockReportingStore
-}
-
-// NewMockReportingStore creates a new mock instance
-func NewMockReportingStore(ctrl *gomock.Controller) *MockReportingStore {
-	mock := &MockReportingStore{ctrl: ctrl}
-	mock.recorder = &MockReportingStoreMockRecorder{mock}
-	return mock
-}
-
-// EXPECT returns an object that allows the caller to indicate expected use
-func (m *MockReportingStore) EXPECT() *MockReportingStoreMockRecorder {
-	return m.recorder
-}
-
-// GetReportingInfo mocks base method
-func (m *MockReportingStore) GetReportingInfo(appID string) *types12.ReportingInfo {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetReportingInfo", appID)
-	ret0, _ := ret[0].(*types12.ReportingInfo)
-	return ret0
-}
-
-// GetReportingInfo indicates an expected call of GetReportingInfo
-func (mr *MockReportingStoreMockRecorder) GetReportingInfo(appID interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetReportingInfo", reflect.TypeOf((*MockReportingStore)(nil).GetReportingInfo), appID)
 }
 
 // MockKotsadmParamsStore is a mock of KotsadmParamsStore interface

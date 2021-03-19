@@ -11,6 +11,7 @@ import (
 	"os"
 	"os/signal"
 	"path/filepath"
+	"strings"
 	"time"
 
 	cursor "github.com/ahmetalpbalkan/go-cursor"
@@ -25,6 +26,7 @@ import (
 	kotsadmtypes "github.com/replicatedhq/kots/pkg/kotsadm/types"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/logger"
+	"github.com/replicatedhq/kots/pkg/metrics"
 	"github.com/replicatedhq/kots/pkg/pull"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
@@ -43,7 +45,7 @@ func InstallCmd() *cobra.Command {
 		PreRun: func(cmd *cobra.Command, args []string) {
 			viper.BindPFlags(cmd.Flags())
 		},
-		RunE: func(cmd *cobra.Command, args []string) error {
+		RunE: func(cmd *cobra.Command, args []string) (finalError error) {
 			v := viper.GetViper()
 
 			if len(args) == 0 {
@@ -56,11 +58,34 @@ func InstallCmd() *cobra.Command {
 
 			log := logger.NewCLILogger()
 
-			rootDir, err := ioutil.TempDir("", "kotsadm")
+			license, err := getLicense(v)
 			if err != nil {
-				return errors.Wrap(err, "failed to create temp dir")
+				return errors.Wrap(err, "failed to get license")
 			}
-			defer os.RemoveAll(rootDir)
+
+			registryConfig, err := getRegistryConfig(v)
+			if err != nil {
+				return errors.Wrap(err, "failed to get registry config")
+			}
+
+			isAirgap := false
+			if v.GetString("airgap-bundle") != "" || v.GetBool("airgap") {
+				isAirgap = true
+			}
+
+			disableOutboundConnections := registryConfig.OverrideRegistry != "" || isAirgap
+
+			m := metrics.InitInstallMetrics(license, disableOutboundConnections)
+			m.ReportInstallStart()
+
+			// only handle reporting install failures in a defer statement.
+			// install finish is reported at the end of the function since the function might not exist because of port forwarding.
+			defer func() {
+				if finalError != nil {
+					cause := strings.Split(finalError.Error(), ":")[0]
+					m.ReportInstallFail(cause)
+				}
+			}()
 
 			upstream := pull.RewriteUpstream(args[0])
 
@@ -91,16 +116,6 @@ func InstallCmd() *cobra.Command {
 				}
 			}
 
-			isAirgap := false
-			if v.GetString("airgap-bundle") != "" || v.GetBool("airgap") {
-				isAirgap = true
-			}
-
-			license, err := getLicense(v)
-			if err != nil {
-				return errors.Wrap(err, "failed to get license")
-			}
-
 			var configValues *kotsv1beta1.ConfigValues
 			if filepath := v.GetString("config-values"); filepath != "" {
 				parsedConfigValues, err := pull.ParseConfigValuesFromFile(ExpandDir(filepath))
@@ -127,11 +142,6 @@ func InstallCmd() *cobra.Command {
 			}
 
 			sharedPassword := v.GetString("shared-password")
-
-			registryConfig, err := getRegistryConfig(v)
-			if err != nil {
-				return errors.Wrap(err, "failed to get registry config")
-			}
 
 			ingressConfig, err := getIngressConfig(v)
 			if err != nil {
@@ -169,6 +179,7 @@ func InstallCmd() *cobra.Command {
 				NoProxyEnvValue:           v.GetString("no-proxy"),
 				SkipPreflights:            v.GetBool("skip-preflights"),
 				EnsureRBAC:                v.GetBool("ensure-rbac"),
+				InstallID:                 m.InstallID,
 
 				KotsadmOptions: *registryConfig,
 
@@ -302,6 +313,8 @@ func InstallCmd() *cobra.Command {
 				case <-stopCh:
 				}
 			}()
+
+			m.ReportInstallFinish()
 
 			if v.GetBool("port-forward") && !deployOptions.ExcludeAdminConsole {
 				log.ActionWithoutSpinner("")

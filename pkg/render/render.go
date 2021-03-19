@@ -12,8 +12,8 @@ import (
 	"github.com/replicatedhq/kots/pkg/crypto"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	registrytypes "github.com/replicatedhq/kots/pkg/registry/types"
+	"github.com/replicatedhq/kots/pkg/reporting"
 	"github.com/replicatedhq/kots/pkg/rewrite"
-	"github.com/replicatedhq/kots/pkg/store"
 	"github.com/replicatedhq/kots/pkg/template"
 )
 
@@ -150,7 +150,7 @@ func RenderDir(archiveDir string, a *apptypes.App, downstreams []downstreamtypes
 		AppSlug:          a.Slug,
 		IsGitOps:         a.IsGitOps,
 		AppSequence:      a.CurrentSequence + 1, // sequence +1 because this is the current latest sequence, not the sequence that the rendered version will be saved as
-		ReportingInfo:    store.GetStore().GetReportingInfo(a.ID),
+		ReportingInfo:    reporting.GetReportingInfo(a.ID),
 
 		// TODO: pass in as arguments if this is ever called from CLI
 		HTTPProxyEnvValue:  os.Getenv("HTTP_PROXY"),

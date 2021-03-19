@@ -16,13 +16,13 @@ import (
 	"github.com/replicatedhq/kots/pkg/automation"
 	"github.com/replicatedhq/kots/pkg/handlers"
 	"github.com/replicatedhq/kots/pkg/informers"
+	"github.com/replicatedhq/kots/pkg/k8s"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/policy"
 	"github.com/replicatedhq/kots/pkg/rbac"
 	"github.com/replicatedhq/kots/pkg/snapshotscheduler"
 	"github.com/replicatedhq/kots/pkg/socketservice"
 	"github.com/replicatedhq/kots/pkg/store"
-	"github.com/replicatedhq/kots/pkg/store/kotsstore"
 	"github.com/replicatedhq/kots/pkg/supportbundle"
 	"github.com/replicatedhq/kots/pkg/updatechecker"
 	"github.com/segmentio/ksuid"
@@ -170,9 +170,7 @@ func Start() {
 	log.Fatal(srv.ListenAndServe())
 }
 
-// Detects the InstanceID of kodsadm pod across restores
 func generateKotsadmID() error {
-	var err error = nil
 	// Retrieve the ClusterID from store
 	clusters, err := store.GetStore().ListClusters()
 	if err != nil {
@@ -182,26 +180,29 @@ func generateKotsadmID() error {
 		return nil
 	}
 	clusterID := clusters[0].ClusterID
+
 	isKotsadmIDGenerated, err := store.GetStore().IsKotsadmIDGenerated()
 	if err != nil {
 		return errors.Wrap(err, "failed to generate id")
 	}
-	cmpExists, err := kotsstore.IsKotsadmIDConfigMapPresent()
+	cmpExists, err := k8s.IsKotsadmIDConfigMapPresent()
 	if err != nil {
 		return errors.Wrap(err, "failed to check configmap")
 	}
+
 	if isKotsadmIDGenerated && !cmpExists {
 		kotsadmID := ksuid.New().String()
-		err = kotsstore.CreateKotsadmIDConfigMap(kotsadmID)
+		err = k8s.CreateKotsadmIDConfigMap(kotsadmID)
 	} else if !isKotsadmIDGenerated && !cmpExists {
-		err = kotsstore.CreateKotsadmIDConfigMap(clusterID)
+		err = k8s.CreateKotsadmIDConfigMap(clusterID)
 	} else if !isKotsadmIDGenerated && cmpExists {
-		err = kotsstore.UpdateKotsadmIDConfigMap(clusterID)
+		err = k8s.UpdateKotsadmIDConfigMap(clusterID)
 	} else {
 		// id exists and so as configmap, noop
 	}
 	if err == nil {
 		err = store.GetStore().SetIsKotsadmIDGenerated()
 	}
+
 	return err
 }

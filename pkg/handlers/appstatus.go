@@ -8,6 +8,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/api/appstatus/types"
 	"github.com/replicatedhq/kots/pkg/appstatus"
 	"github.com/replicatedhq/kots/pkg/logger"
+	"github.com/replicatedhq/kots/pkg/reporting"
 	"github.com/replicatedhq/kots/pkg/store"
 )
 
@@ -34,19 +35,31 @@ func (h *Handler) SetAppStatus(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	status := types.AppStatus{}
-	err = json.Unmarshal(body, &status)
+	newAppStatus := types.AppStatus{}
+	err = json.Unmarshal(body, &newAppStatus)
 	if err != nil {
 		logger.Error(err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
-	err = appstatus.Set(status.AppID, status.ResourceStates, status.UpdatedAt)
+	currentAppStatus, err := store.GetStore().GetAppStatus(newAppStatus.AppID)
 	if err != nil {
 		logger.Error(err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
+	}
+
+	err = store.GetStore().SetAppStatus(newAppStatus.AppID, newAppStatus.ResourceStates, newAppStatus.UpdatedAt)
+	if err != nil {
+		logger.Error(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	newAppState := appstatus.GetState(newAppStatus.ResourceStates)
+	if currentAppStatus != nil && newAppState != currentAppStatus.State {
+		go reporting.SendAppInfo(newAppStatus.AppID)
 	}
 
 	w.WriteHeader(http.StatusNoContent)

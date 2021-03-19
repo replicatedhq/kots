@@ -17,6 +17,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/registry/types"
+	"github.com/replicatedhq/kots/pkg/reporting"
 	"github.com/replicatedhq/kots/pkg/rewrite"
 	"github.com/replicatedhq/kots/pkg/store"
 	corev1 "k8s.io/api/core/v1"
@@ -148,7 +149,7 @@ func RewriteImages(appID string, sequence int64, hostname string, username strin
 		AppSlug:           a.Slug,
 		IsGitOps:          a.IsGitOps,
 		AppSequence:       a.CurrentSequence + 1, // sequence +1 because this is the current latest sequence, not the sequence that the rendered version will be saved as
-		ReportingInfo:     store.GetStore().GetReportingInfo(a.ID),
+		ReportingInfo:     reporting.GetReportingInfo(a.ID),
 
 		// TODO: pass in as arguments if this is ever called from CLI
 		HTTPProxyEnvValue:  os.Getenv("HTTP_PROXY"),

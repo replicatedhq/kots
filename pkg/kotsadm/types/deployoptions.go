@@ -44,6 +44,7 @@ type DeployOptions struct {
 	EnsureKotsadmConfig       bool
 	SkipPreflights            bool
 	EnsureRBAC                bool
+	InstallID                 string
 
 	IdentityConfig kotsv1beta1.IdentityConfig
 	IngressConfig  kotsv1beta1.IngressConfig

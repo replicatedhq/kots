@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
-	"os"
 	"time"
 
 	"github.com/pkg/errors"
@@ -15,16 +14,9 @@ import (
 	"github.com/replicatedhq/kots/pkg/store"
 )
 
-func isDevEnvironment() bool {
-	if os.Getenv("KOTSADM_TARGET_NAMESPACE") != "" {
-		return true
-	}
-	return false
-}
-
 func SendPreflightsReportToReplicatedApp(license *kotsv1beta1.License, appID string, clusterID string, sequence int, skipPreflights bool, installStatus string) error {
-
-	if isDevEnvironment() {
+	endpoint := license.Spec.Endpoint
+	if !canReport(endpoint) {
 		return nil
 	}
 
@@ -37,7 +29,7 @@ func SendPreflightsReportToReplicatedApp(license *kotsv1beta1.License, appID str
 	urlValues.Set("skipPreflights", skipPreflightsToStr)
 	urlValues.Set("installStatus", installStatus)
 
-	url := fmt.Sprintf("%s/kots_metrics/preflights/%s/%s?%s", license.Spec.Endpoint, appID, clusterID, urlValues.Encode())
+	url := fmt.Sprintf("%s/kots_metrics/preflights/%s/%s?%s", endpoint, appID, clusterID, urlValues.Encode())
 
 	var buf bytes.Buffer
 	postReq, err := http.NewRequest("POST", url, &buf)

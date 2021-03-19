@@ -144,7 +144,7 @@ func CreateAppFromOnline(pendingApp *types.PendingApp, upstreamURI string, isAut
 		ReportWriter:        pipeWriter,
 		AppSlug:             pendingApp.Slug,
 		AppSequence:         0,
-		ReportingInfo:       store.GetStore().GetReportingInfo(pendingApp.ID),
+		ReportingInfo:       reporting.GetReportingInfo(pendingApp.ID),
 	}
 
 	if _, err := pull.Pull(upstreamURI, pullOptions); err != nil {

@@ -356,6 +356,13 @@ func KotsadmDeployment(deployOptions types.DeployOptions) *appsv1.Deployment {
 		})
 	}
 
+	if deployOptions.InstallID != "" {
+		env = append(env, corev1.EnvVar{
+			Name:  "KOTS_INSTALL_ID",
+			Value: deployOptions.InstallID,
+		})
+	}
+
 	deployment := &appsv1.Deployment{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "apps/v1",
