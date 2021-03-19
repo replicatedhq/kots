@@ -13,6 +13,7 @@ import SkipPreflightsModal from "./shared/modals/SkipPreflightsModal";
 import { getPreflightResultState, Utilities } from "../utilities/utilities";
 import { Repeater } from "../utilities/repeater";
 import "../scss/components/PreflightCheckPage.scss";
+import PreflightsProgress from "./troubleshoot/PreflightsProgress";
 
 
 class PreflightResultPage extends Component {
@@ -221,7 +222,12 @@ class PreflightResultPage extends Component {
       if (response.preflightResult?.result) {
         this.state.getKotsPreflightResultJob.stop();
       }
+      let parsedStatusResults = {};
+      try {
+        parsedStatusResults = JSON.parse(response.preflightProgress);
+      } catch {};
       this.setState({
+        preflightCurrentStatus: parsedStatusResults,
         preflightResultData: response.preflightResult,
       });
     } catch (err) {
@@ -253,7 +259,12 @@ class PreflightResultPage extends Component {
       if (response.preflightResult?.result) {
         this.state.getKotsPreflightResultJob.stop();
       }
+      let parsedStatusResults = {};
+      try {
+        parsedStatusResults = JSON.parse(response.preflightProgress);
+      } catch {};
       this.setState({
+        preflightCurrentStatus: parsedStatusResults,
         preflightResultData: response.preflightResult,
       });
     } catch (err) {
@@ -330,7 +341,7 @@ class PreflightResultPage extends Component {
               </p>
               {!stopPolling && (
                 <div className="flex-column justifyContent--center alignItems--center flex1 u-minWidth--full">
-                  <Loader size="60" />
+                  <PreflightsProgress progressData={this.state.preflightCurrentStatus} />
                 </div>
               )}
               {hasErrors && this.renderErrors(preflightJSON?.errors)}

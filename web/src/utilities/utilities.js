@@ -55,6 +55,16 @@ export function getApplicationType(watch) {
   }
 }
 
+export function getReadableCollectorName(name) {
+  const namesObj = {
+    "cluster-info": "Gathering basic information about the cluster",
+    "cluster-resources": "Gathering available resources in cluster",
+    "mysql": "Gathering information about MySQL",
+    "postgres": "Gathering information about PostgreSQL",
+    "redis": "Gathering information about Redis"
+  }
+}
+
 /**
  * @param {String} - Returns the commit SHA of the current build
  */
