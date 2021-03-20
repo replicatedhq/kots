@@ -1,4 +1,4 @@
-FROM schemahero/schemahero:0.9.0
+FROM schemahero/schemahero:0.12.0
 
 ADD --chown=schemahero:schemahero ./tables ./tables
 

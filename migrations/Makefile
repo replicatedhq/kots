@@ -14,6 +14,6 @@ schema-release: build_schema
 	skopeo copy docker://postgres:10.7 docker-archive:bin/docker-archive/postgres/${GIT_TAG}
 
 build_schema:
-	docker pull schemahero/schemahero:0.9.0
+	docker pull schemahero/schemahero:0.12.0
 	docker build -f deploy/Dockerfile -t ${IMAGE} .
 	docker push ${IMAGE}
