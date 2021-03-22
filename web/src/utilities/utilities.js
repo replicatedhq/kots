@@ -63,6 +63,12 @@ export function getReadableCollectorName(name) {
     "postgres": "Gathering information about PostgreSQL",
     "redis": "Gathering information about Redis"
   }
+  const statusToReturn = namesObj[name];
+  if (statusToReturn) {
+    return statusToReturn
+  } else {
+    return `Gathering details about the cluster`;
+  }
 }
 
 /**

@@ -225,7 +225,9 @@ class PreflightResultPage extends Component {
       let parsedStatusResults = {};
       try {
         parsedStatusResults = JSON.parse(response.preflightProgress);
-      } catch {};
+      } catch {
+        // empty
+      };
       this.setState({
         preflightCurrentStatus: parsedStatusResults,
         preflightResultData: response.preflightResult,
@@ -262,7 +264,9 @@ class PreflightResultPage extends Component {
       let parsedStatusResults = {};
       try {
         parsedStatusResults = JSON.parse(response.preflightProgress);
-      } catch {};
+      } catch {
+        // empty
+      };
       this.setState({
         preflightCurrentStatus: parsedStatusResults,
         preflightResultData: response.preflightResult,
