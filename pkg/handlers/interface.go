@@ -113,8 +113,8 @@ type KOTSHandler interface {
 	GetVeleroStatus(w http.ResponseWriter, r *http.Request)
 
 	// KURL
-	GenerateNodeJoinCommandWorker(w http.ResponseWriter, r *http.Request)
-	GenerateNodeJoinCommandMaster(w http.ResponseWriter, r *http.Request)
+	GenerateNodeJoinCommandSecondary(w http.ResponseWriter, r *http.Request)
+	GenerateNodeJoinCommandPrimary(w http.ResponseWriter, r *http.Request)
 	DrainNode(w http.ResponseWriter, r *http.Request)
 	DeleteNode(w http.ResponseWriter, r *http.Request)
 	GetKurlNodes(w http.ResponseWriter, r *http.Request)

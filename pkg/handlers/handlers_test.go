@@ -963,22 +963,22 @@ var HandlerPolicyTests = map[string][]HandlerPolicyTest{
 	},
 
 	"Kurl": {}, // Not implemented
-	"GenerateNodeJoinCommandWorker": {
+	"GenerateNodeJoinCommandSecondary": {
 		{
 			Roles:        []rbactypes.Role{rbac.ClusterAdminRole},
 			SessionRoles: []string{rbac.ClusterAdminRoleID},
 			Calls: func(storeRecorder *mock_store.MockStoreMockRecorder, handlerRecorder *mock_handlers.MockKOTSHandlerMockRecorder) {
-				handlerRecorder.GenerateNodeJoinCommandWorker(gomock.Any(), gomock.Any())
+				handlerRecorder.GenerateNodeJoinCommandSecondary(gomock.Any(), gomock.Any())
 			},
 			ExpectStatus: http.StatusOK,
 		},
 	},
-	"GenerateNodeJoinCommandMaster": {
+	"GenerateNodeJoinCommandPrimary": {
 		{
 			Roles:        []rbactypes.Role{rbac.ClusterAdminRole},
 			SessionRoles: []string{rbac.ClusterAdminRoleID},
 			Calls: func(storeRecorder *mock_store.MockStoreMockRecorder, handlerRecorder *mock_handlers.MockKOTSHandlerMockRecorder) {
-				handlerRecorder.GenerateNodeJoinCommandMaster(gomock.Any(), gomock.Any())
+				handlerRecorder.GenerateNodeJoinCommandPrimary(gomock.Any(), gomock.Any())
 			},
 			ExpectStatus: http.StatusOK,
 		},

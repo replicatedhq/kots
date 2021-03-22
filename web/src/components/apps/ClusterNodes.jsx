@@ -20,7 +20,7 @@ export class ClusterNodes extends Component {
     command: "",
     expiry: null,
     displayAddNode: false,
-    selectedNodeType: "worker", // Change when master node script is enabled
+    selectedNodeType: "secondary", // Change when primary node script is enabled
     generateCommandErrMsg: "",
     kurl: null,
     getNodeStatusJob: new Repeater(),
@@ -118,7 +118,7 @@ export class ClusterNodes extends Component {
   generateWorkerAddNodeCommand = async () => {
     this.setState({ generating: true, command: "", expiry: null, generateCommandErrMsg: "" });
 
-    fetch(`${window.env.API_ENDPOINT}/kurl/generate-node-join-command-worker`, {
+    fetch(`${window.env.API_ENDPOINT}/kurl/generate-node-join-command-secondary`, {
       headers: {
         "Authorization": Utilities.getToken(),
         "Content-Type": "application/json",
@@ -174,10 +174,10 @@ export class ClusterNodes extends Component {
       })
   }
 
-  generateMasterAddNodeCommand = async () => {
+  generatePrimaryAddNodeCommand = async () => {
     this.setState({ generating: true, command: "", expiry: null, generateCommandErrMsg: "" });
 
-    fetch(`${window.env.API_ENDPOINT}/kurl/generate-node-join-command-master`, {
+    fetch(`${window.env.API_ENDPOINT}/kurl/generate-node-join-command-primary`, {
       headers: {
         "Authorization": Utilities.getToken(),
         "Content-Type": "application/json",
@@ -211,10 +211,10 @@ export class ClusterNodes extends Component {
     this.setState({
       selectedNodeType: value
     }, async () => {
-      if (this.state.selectedNodeType === "worker") {
+      if (this.state.selectedNodeType === "secondary") {
         await this.generateWorkerAddNodeCommand();
       } else {
-        await this.generateMasterAddNodeCommand();
+        await this.generatePrimaryAddNodeCommand();
       }
     });
   }
@@ -271,49 +271,49 @@ export class ClusterNodes extends Component {
                     </div>
                     <div className="flex justifyContent--center alignItems--center u-marginTop--15">
                       <div className={classNames("BoxedCheckbox flex-auto flex u-marginRight--20", {
-                        "is-active": this.state.selectedNodeType === "master",
+                        "is-active": this.state.selectedNodeType === "primary",
                         "is-disabled": !kurl?.ha
                       })}>
                         <input
-                          id="masterNode"
+                          id="primaryNode"
                           className="u-cursor--pointer hidden-input"
                           type="radio"
                           name="nodeType"
-                          value="master"
+                          value="primary"
                           disabled={!kurl?.ha}
-                          checked={this.state.selectedNodeType === "master"}
+                          checked={this.state.selectedNodeType === "primary"}
                           onChange={this.onSelectNodeType}
                         />
                         <label
-                          htmlFor="masterNode"
+                          htmlFor="primaryNode"
                           className="flex1 flex u-width--full u-position--relative u-cursor--pointer u-userSelect--none">
                           <div className="flex-auto">
                             <span className="icon clickable commitOptionIcon u-marginRight--10" />
                           </div>
                           <div className="flex1">
-                            <p className="u-color--tuna u-fontSize--normal u-fontWeight--medium">Master Node</p>
+                            <p className="u-color--tuna u-fontSize--normal u-fontWeight--medium">Primary Node</p>
                             <p className="u-color--dustyGray u-lineHeight--normal u-fontSize--small u-fontWeight--medium u-marginTop--5">Provides high availability</p>
                           </div>
                         </label>
                       </div>
                       <div className={classNames("BoxedCheckbox flex-auto flex u-marginRight--20", {
-                        "is-active": this.state.selectedNodeType === "worker"
+                        "is-active": this.state.selectedNodeType === "secondary"
                       })}>
                         <input
-                          id="workerNode"
+                          id="secondaryNode"
                           className="u-cursor--pointer hidden-input"
                           type="radio"
                           name="nodeType"
-                          value="worker"
-                          checked={this.state.selectedNodeType === "worker"}
+                          value="secondary"
+                          checked={this.state.selectedNodeType === "secondary"}
                           onChange={this.onSelectNodeType}
                         />
-                        <label htmlFor="workerNode" className="flex1 flex u-width--full u-position--relative u-cursor--pointer u-userSelect--none">
+                        <label htmlFor="secondaryNode" className="flex1 flex u-width--full u-position--relative u-cursor--pointer u-userSelect--none">
                           <div className="flex-auto">
                             <span className="icon clickable commitOptionIcon u-marginRight--10" />
                           </div>
                           <div className="flex1">
-                            <p className="u-color--tuna u-fontSize--normal u-fontWeight--medium">Worker Node</p>
+                            <p className="u-color--tuna u-fontSize--normal u-fontWeight--medium">Secondary Node</p>
                             <p className="u-color--dustyGray u-lineHeight--normal u-fontSize--small u-fontWeight--medium u-marginTop--5">Optimal for running application workloads</p>
                           </div>
                         </label>
