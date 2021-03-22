@@ -14,9 +14,9 @@ require (
 	github.com/spf13/cobra v0.0.7
 	github.com/spf13/viper v1.7.1
 	gopkg.in/yaml.v2 v2.4.0
-	k8s.io/api v0.18.4
-	k8s.io/apimachinery v0.18.4
-	k8s.io/client-go v0.18.4
+	k8s.io/api v0.20.5
+	k8s.io/apimachinery v0.20.5
+	k8s.io/client-go v0.20.5
 	sigs.k8s.io/controller-runtime v0.6.0
 )
 
