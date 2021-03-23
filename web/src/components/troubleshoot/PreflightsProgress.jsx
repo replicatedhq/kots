@@ -14,7 +14,7 @@ export default class PreflightProgress extends React.Component {
 
     if (progressData?.completedCount > 0) {
       uploadComplete = progressData?.completedCount === progressData?.totalCount
-      percentage = (progressData?.completedCount / progressData.totalCount * 100) + "%";
+      percentage = (progressData?.completedCount / progressData.totalCount * 100).toFixed() + "%";
       progressBar = (
         <div className="progressbar">
           <div className={`progressbar-meter ${uploadComplete ? "complete" : ""}`} style={{ width: percentage }} />
