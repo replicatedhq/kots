@@ -1,5 +1,5 @@
-kind: Redactor
 apiVersion: troubleshoot.sh/v1beta2
+kind: Redactor
 metadata:
   name: kotsadm-redact
 spec:
@@ -8,6 +8,6 @@ spec:
     fileSelector:
       file: cluster-info/cluster_version.json
     removals:
-      values:
-      - major
-      - minor
+      regex:
+      - redactor: ("major"?:) (")(?P<mask>.*)(")
+      - redactor: ("minor"?:) (")(?P<mask>.*)(")
