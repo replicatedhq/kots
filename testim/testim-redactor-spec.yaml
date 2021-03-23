@@ -9,5 +9,5 @@ spec:
       file: cluster-info/cluster_version.json
     removals:
       values:
-      - major
-      - minor
+      - redactor: ("major"?:) (")(?P<mask>.*)(")
+      - redactor: ("minor"?:) (")(?P<mask>.*)(")
