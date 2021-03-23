@@ -1065,6 +1065,30 @@ func (mr *MockKOTSHandlerMockRecorder) GenerateNodeJoinCommandMaster(w, r interf
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GenerateNodeJoinCommandMaster", reflect.TypeOf((*MockKOTSHandler)(nil).GenerateNodeJoinCommandMaster), w, r)
 }
 
+// GenerateNodeJoinCommandSecondary mocks base method
+func (m *MockKOTSHandler) GenerateNodeJoinCommandSecondary(w http.ResponseWriter, r *http.Request) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "GenerateNodeJoinCommandSecondary", w, r)
+}
+
+// GenerateNodeJoinCommandSecondary indicates an expected call of GenerateNodeJoinCommandSecondary
+func (mr *MockKOTSHandlerMockRecorder) GenerateNodeJoinCommandSecondary(w, r interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GenerateNodeJoinCommandSecondary", reflect.TypeOf((*MockKOTSHandler)(nil).GenerateNodeJoinCommandSecondary), w, r)
+}
+
+// GenerateNodeJoinCommandPrimary mocks base method
+func (m *MockKOTSHandler) GenerateNodeJoinCommandPrimary(w http.ResponseWriter, r *http.Request) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "GenerateNodeJoinCommandPrimary", w, r)
+}
+
+// GenerateNodeJoinCommandPrimary indicates an expected call of GenerateNodeJoinCommandPrimary
+func (mr *MockKOTSHandlerMockRecorder) GenerateNodeJoinCommandPrimary(w, r interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GenerateNodeJoinCommandPrimary", reflect.TypeOf((*MockKOTSHandler)(nil).GenerateNodeJoinCommandPrimary), w, r)
+}
+
 // DrainNode mocks base method
 func (m *MockKOTSHandler) DrainNode(w http.ResponseWriter, r *http.Request) {
 	m.ctrl.T.Helper()

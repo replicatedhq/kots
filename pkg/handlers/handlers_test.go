@@ -983,6 +983,26 @@ var HandlerPolicyTests = map[string][]HandlerPolicyTest{
 			ExpectStatus: http.StatusOK,
 		},
 	},
+	"GenerateNodeJoinCommandSecondary": {
+		{
+			Roles:        []rbactypes.Role{rbac.ClusterAdminRole},
+			SessionRoles: []string{rbac.ClusterAdminRoleID},
+			Calls: func(storeRecorder *mock_store.MockStoreMockRecorder, handlerRecorder *mock_handlers.MockKOTSHandlerMockRecorder) {
+				handlerRecorder.GenerateNodeJoinCommandSecondary(gomock.Any(), gomock.Any())
+			},
+			ExpectStatus: http.StatusOK,
+		},
+	},
+	"GenerateNodeJoinCommandPrimary": {
+		{
+			Roles:        []rbactypes.Role{rbac.ClusterAdminRole},
+			SessionRoles: []string{rbac.ClusterAdminRoleID},
+			Calls: func(storeRecorder *mock_store.MockStoreMockRecorder, handlerRecorder *mock_handlers.MockKOTSHandlerMockRecorder) {
+				handlerRecorder.GenerateNodeJoinCommandPrimary(gomock.Any(), gomock.Any())
+			},
+			ExpectStatus: http.StatusOK,
+		},
+	},
 	"DrainNode": {
 		{
 			Vars:         map[string]string{"nodeName": "node-name"},

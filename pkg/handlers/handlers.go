@@ -230,6 +230,10 @@ func RegisterSessionAuthRoutes(r *mux.Router, kotsStore store.Store, handler KOT
 		HandlerFunc(middleware.EnforceAccess(policy.ClusterWrite, handler.GenerateNodeJoinCommandWorker))
 	r.Name("GenerateNodeJoinCommandMaster").Path("/api/v1/kurl/generate-node-join-command-master").Methods("POST").
 		HandlerFunc(middleware.EnforceAccess(policy.ClusterWrite, handler.GenerateNodeJoinCommandMaster))
+	r.Name("GenerateNodeJoinCommandSecondary").Path("/api/v1/kurl/generate-node-join-command-secondary").Methods("POST").
+		HandlerFunc(middleware.EnforceAccess(policy.ClusterWrite, handler.GenerateNodeJoinCommandSecondary))
+	r.Name("GenerateNodeJoinCommandPrimary").Path("/api/v1/kurl/generate-node-join-command-primary").Methods("POST").
+		HandlerFunc(middleware.EnforceAccess(policy.ClusterWrite, handler.GenerateNodeJoinCommandPrimary))
 	r.Name("DrainNode").Path("/api/v1/kurl/nodes/{nodeName}/drain").Methods("POST").
 		HandlerFunc(middleware.EnforceAccess(policy.ClusterWrite, handler.DrainNode))
 	r.Name("DeleteNode").Path("/api/v1/kurl/nodes/{nodeName}").Methods("DELETE").
