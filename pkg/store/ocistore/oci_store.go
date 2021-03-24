@@ -3,6 +3,8 @@ package ocistore
 import (
 	"context"
 	"os"
+	"strings"
+	"time"
 
 	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/pkg/errors"
@@ -27,36 +29,65 @@ import (
    configmap, but another process has modified it, the PUT will
    be rejected. This level of consistency is all that's needed for KOTS
 */
-type OCIStore struct {
-	BaseURI   string
-	PlainHTTP bool
-}
-
 var (
 	ErrNotFound       = errors.New("not found")
 	ErrNotImplemented = errors.New("not implemented in ocistore")
 )
 
-func (s OCIStore) Init() error {
+type cachedTaskStatus struct {
+	expirationTime time.Time
+	taskStatus     taskStatus
+}
+
+type OCIStore struct {
+	BaseURI   string
+	PlainHTTP bool
+
+	sessionSecret     *corev1.Secret
+	sessionExpiration time.Time
+
+	cachedTaskStatus map[string]*cachedTaskStatus
+}
+
+func (s *OCIStore) Init() error {
 	return nil
 }
 
-func (s OCIStore) WaitForReady(ctx context.Context) error {
+func (s *OCIStore) WaitForReady(ctx context.Context) error {
 	return nil
 }
 
-func (s OCIStore) IsNotFound(err error) bool {
+func (s *OCIStore) IsNotFound(err error) bool {
 	if err == nil {
 		return false
 	}
 	if aerr, ok := err.(awserr.Error); ok && aerr.Code() == "NotFound" {
 		return true
 	}
+	if kuberneteserrors.IsNotFound(err) {
+		return true
+	}
 	return errors.Cause(err) == ErrNotFound
 }
 
-func StoreFromEnv() OCIStore {
-	return OCIStore{
+func canIgnoreEtcdError(err error) bool {
+	if err == nil {
+		return false
+	}
+
+	if strings.Contains(err.Error(), "connection refused") {
+		return true
+	}
+
+	if strings.Contains(err.Error(), "request timed out") {
+		return true
+	}
+
+	return false
+}
+
+func StoreFromEnv() *OCIStore {
+	return &OCIStore{
 		BaseURI:   os.Getenv("STORAGE_BASEURI"),
 		PlainHTTP: os.Getenv("STORAGE_BASEURI_PLAINHTTP") == "true",
 	}
@@ -76,7 +107,7 @@ func (c OCIStore) GetClientset() (*kubernetes.Clientset, error) {
 	return clientset, nil
 }
 
-func (s OCIStore) getSecret(name string) (*corev1.Secret, error) {
+func (s *OCIStore) getSecret(name string) (*corev1.Secret, error) {
 	clientset, err := s.GetClientset()
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get clientset")
@@ -112,7 +143,7 @@ func (s OCIStore) getSecret(name string) (*corev1.Secret, error) {
 	return existingSecret, nil
 }
 
-func (s OCIStore) getConfigmap(name string) (*corev1.ConfigMap, error) {
+func (s *OCIStore) getConfigmap(name string) (*corev1.ConfigMap, error) {
 	clientset, err := s.GetClientset()
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get clientset")
@@ -148,7 +179,7 @@ func (s OCIStore) getConfigmap(name string) (*corev1.ConfigMap, error) {
 	return existingConfigmap, nil
 }
 
-func (s OCIStore) updateConfigmap(configmap *corev1.ConfigMap) error {
+func (s *OCIStore) updateConfigmap(configmap *corev1.ConfigMap) error {
 	clientset, err := s.GetClientset()
 	if err != nil {
 		return errors.Wrap(err, "failed to get clientset")
@@ -162,7 +193,7 @@ func (s OCIStore) updateConfigmap(configmap *corev1.ConfigMap) error {
 	return nil
 }
 
-func (s OCIStore) ensureApplicationMetadata(applicationMetadata string, namespace string) error {
+func (s *OCIStore) ensureApplicationMetadata(applicationMetadata string, namespace string) error {
 	clientset, err := s.GetClientset()
 	if err != nil {
 		return errors.Wrap(err, "failed to get clientset")

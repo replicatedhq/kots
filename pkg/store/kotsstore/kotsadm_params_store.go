@@ -8,7 +8,7 @@ import (
 )
 
 // IsKotsadmIDGenerated retrieves the id of kotsadm if the pod is already
-func (s KOTSStore) IsKotsadmIDGenerated() (bool, error) {
+func (s *KOTSStore) IsKotsadmIDGenerated() (bool, error) {
 	db := persistence.MustGetPGSession()
 	query := `select value from kotsadm_params where key = 'IS_KOTSADM_ID_GENERATED'`
 	row := db.QueryRow(query)
@@ -24,7 +24,7 @@ func (s KOTSStore) IsKotsadmIDGenerated() (bool, error) {
 }
 
 // SetIsKotsadmIDGenerated sets the status to true if the pod is starting for the first time
-func (s KOTSStore) SetIsKotsadmIDGenerated() error {
+func (s *KOTSStore) SetIsKotsadmIDGenerated() error {
 	db := persistence.MustGetPGSession()
 
 	query := `insert into kotsadm_params (key, value) values ($1, $2) on conflict (key) do update set value = $2`

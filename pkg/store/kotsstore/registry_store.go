@@ -13,7 +13,7 @@ import (
 	"go.uber.org/zap"
 )
 
-func (s KOTSStore) GetRegistryDetailsForApp(appID string) (*registrytypes.RegistrySettings, error) {
+func (s *KOTSStore) GetRegistryDetailsForApp(appID string) (*registrytypes.RegistrySettings, error) {
 	db := persistence.MustGetPGSession()
 	query := `select registry_hostname, registry_username, registry_password_enc, namespace from app where id = $1`
 	row := db.QueryRow(query, appID)
@@ -58,7 +58,7 @@ func (s KOTSStore) GetRegistryDetailsForApp(appID string) (*registrytypes.Regist
 	return &registrySettings, nil
 }
 
-func (s KOTSStore) UpdateRegistry(appID string, hostname string, username string, password string, namespace string) error {
+func (s *KOTSStore) UpdateRegistry(appID string, hostname string, username string, password string, namespace string) error {
 	logger.Debug("updating app registry",
 		zap.String("appID", appID))
 

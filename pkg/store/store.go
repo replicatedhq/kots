@@ -14,11 +14,12 @@ var _ Store = (*kotsstore.KOTSStore)(nil)
 func GetStore() Store {
 	if !hasStore {
 		globalStore = storeFromEnv()
+		hasStore = true
 	}
 
 	return globalStore
 }
 
 func storeFromEnv() Store {
-	return kotsstore.KOTSStore{}
+	return kotsstore.StoreFromEnv()
 }

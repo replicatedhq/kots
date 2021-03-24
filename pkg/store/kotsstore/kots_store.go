@@ -32,9 +32,16 @@ var (
 	ErrNotFound = errors.New("not found")
 )
 
+type cachedTaskStatus struct {
+	expirationTime time.Time
+	taskStatus     taskStatus
+}
+
 type KOTSStore struct {
 	sessionSecret     *corev1.Secret
 	sessionExpiration time.Time
+
+	cachedTaskStatus map[string]*cachedTaskStatus
 }
 
 func init() {
@@ -43,7 +50,7 @@ func init() {
 	troubleshootscheme.AddToScheme(scheme.Scheme)
 }
 
-func (s KOTSStore) Init() error {
+func (s *KOTSStore) Init() error {
 	if strings.HasPrefix(os.Getenv("STORAGE_BASEURI"), "docker://") {
 		return nil
 	}
@@ -79,7 +86,7 @@ func (s KOTSStore) Init() error {
 	return nil
 }
 
-func (s KOTSStore) WaitForReady(ctx context.Context) error {
+func (s *KOTSStore) WaitForReady(ctx context.Context) error {
 	errCh := make(chan error, 2)
 
 	go func() {
@@ -177,7 +184,7 @@ func waitForS3(ctx context.Context) error {
 	}
 }
 
-func (s KOTSStore) IsNotFound(err error) bool {
+func (s *KOTSStore) IsNotFound(err error) bool {
 	if err == nil {
 		return false
 	}
@@ -194,10 +201,36 @@ func (s KOTSStore) IsNotFound(err error) bool {
 		return true
 	}
 
+	if kuberneteserrors.IsNotFound(err) {
+		return true
+	}
+
 	return false
 }
 
-func (c KOTSStore) GetClientset() (*kubernetes.Clientset, error) {
+func canIgnoreEtcdError(err error) bool {
+	if err == nil {
+		return false
+	}
+
+	if strings.Contains(err.Error(), "connection refused") {
+		return true
+	}
+
+	if strings.Contains(err.Error(), "request timed out") {
+		return true
+	}
+
+	return false
+}
+
+func StoreFromEnv() *KOTSStore {
+	return &KOTSStore{
+		cachedTaskStatus: make(map[string]*cachedTaskStatus),
+	}
+}
+
+func (s *KOTSStore) GetClientset() (*kubernetes.Clientset, error) {
 	cfg, err := config.GetConfig()
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get cluster config")
@@ -211,7 +244,7 @@ func (c KOTSStore) GetClientset() (*kubernetes.Clientset, error) {
 	return clientset, nil
 }
 
-func (s KOTSStore) getConfigmap(name string) (*corev1.ConfigMap, error) {
+func (s *KOTSStore) getConfigmap(name string) (*corev1.ConfigMap, error) {
 	clientset, err := s.GetClientset()
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get clientset")
@@ -245,7 +278,7 @@ func (s KOTSStore) getConfigmap(name string) (*corev1.ConfigMap, error) {
 	return existingConfigmap, nil
 }
 
-func (s KOTSStore) updateConfigmap(configmap *corev1.ConfigMap) error {
+func (s *KOTSStore) updateConfigmap(configmap *corev1.ConfigMap) error {
 	clientset, err := s.GetClientset()
 	if err != nil {
 		return errors.Wrap(err, "failed to get clientset")

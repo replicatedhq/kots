@@ -5,19 +5,19 @@ import (
 	airgaptypes "github.com/replicatedhq/kots/pkg/airgap/types"
 )
 
-func (s OCIStore) GetPendingAirgapUploadApp() (*airgaptypes.PendingApp, error) {
+func (s *OCIStore) GetPendingAirgapUploadApp() (*airgaptypes.PendingApp, error) {
 	return nil, ErrNotImplemented
 }
 
-func (s OCIStore) GetAirgapInstallStatus(appID string) (*airgaptypes.InstallStatus, error) {
+func (s *OCIStore) GetAirgapInstallStatus(appID string) (*airgaptypes.InstallStatus, error) {
 	return nil, ErrNotImplemented
 }
 
-func (s OCIStore) ResetAirgapInstallInProgress(appID string) error {
+func (s *OCIStore) ResetAirgapInstallInProgress(appID string) error {
 	return ErrNotImplemented
 }
 
-func (s OCIStore) SetAppIsAirgap(appID string, isAirgap bool) error {
+func (s *OCIStore) SetAppIsAirgap(appID string, isAirgap bool) error {
 	app, err := s.GetApp(appID)
 	if err != nil {
 		return errors.Wrap(err, "failed to get app")

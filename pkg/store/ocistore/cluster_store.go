@@ -15,7 +15,7 @@ const (
 	ClusterDeployTokenSecret = "kotsadm-clustertokens"
 )
 
-func (s OCIStore) ListClusters() ([]*downstreamtypes.Downstream, error) {
+func (s *OCIStore) ListClusters() ([]*downstreamtypes.Downstream, error) {
 	configMap, err := s.getConfigmap(ClusterListConfigmapName)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get clusters config map")
@@ -38,11 +38,11 @@ func (s OCIStore) ListClusters() ([]*downstreamtypes.Downstream, error) {
 	return clusters, nil
 }
 
-func (s OCIStore) GetClusterIDFromSlug(slug string) (string, error) {
+func (s *OCIStore) GetClusterIDFromSlug(slug string) (string, error) {
 	return "", ErrNotImplemented
 }
 
-func (s OCIStore) GetClusterIDFromDeployToken(deployToken string) (string, error) {
+func (s *OCIStore) GetClusterIDFromDeployToken(deployToken string) (string, error) {
 	secret, err := s.getSecret(ClusterDeployTokenSecret)
 	if err != nil {
 		return "", errors.Wrap(err, "failed to get cluster deploy token secret")
@@ -60,7 +60,7 @@ func (s OCIStore) GetClusterIDFromDeployToken(deployToken string) (string, error
 	return string(clusterID), nil
 }
 
-func (s OCIStore) CreateNewCluster(userID string, isAllUsers bool, title string, token string) (string, error) {
+func (s *OCIStore) CreateNewCluster(userID string, isAllUsers bool, title string, token string) (string, error) {
 	downstream := downstreamtypes.Downstream{
 		ClusterID:   rand.StringWithCharset(32, rand.LOWER_CASE),
 		ClusterSlug: slug.Make(title),
@@ -122,10 +122,10 @@ func (s OCIStore) CreateNewCluster(userID string, isAllUsers bool, title string,
 	return downstream.ClusterID, nil
 }
 
-func (s OCIStore) SetInstanceSnapshotTTL(clusterID string, snapshotTTL string) error {
+func (s *OCIStore) SetInstanceSnapshotTTL(clusterID string, snapshotTTL string) error {
 	return ErrNotImplemented
 }
 
-func (s OCIStore) SetInstanceSnapshotSchedule(clusterID string, snapshotSchedule string) error {
+func (s *OCIStore) SetInstanceSnapshotSchedule(clusterID string, snapshotSchedule string) error {
 	return ErrNotImplemented
 }

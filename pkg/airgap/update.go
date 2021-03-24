@@ -129,7 +129,7 @@ func UpdateAppFromPath(a *apptypes.App, airgapRoot string, airgapBundlePath stri
 		scanner := bufio.NewScanner(pipeReader)
 		for scanner.Scan() {
 			if err := store.GetStore().SetTaskStatus("update-download", scanner.Text(), "running"); err != nil {
-				logger.Error(err)
+				logger.Error(errors.Wrap(err, "failed to update download status"))
 			}
 		}
 		pipeReader.CloseWithError(scanner.Err())

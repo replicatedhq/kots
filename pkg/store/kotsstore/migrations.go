@@ -11,7 +11,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/persistence"
 )
 
-func (s KOTSStore) RunMigrations() {
+func (s *KOTSStore) RunMigrations() {
 	if err := s.migrateKotsAppSpec(); err != nil {
 		logger.Error(errors.Wrap(err, "failed to migrate kots_app_spec"))
 	}
@@ -48,7 +48,7 @@ func (s KOTSStore) RunMigrations() {
 	}
 }
 
-func (s KOTSStore) migrateKotsAppSpec() error {
+func (s *KOTSStore) migrateKotsAppSpec() error {
 	db := persistence.MustGetPGSession()
 	query := `select app_id, sequence from app_version where kots_app_spec is null or not kots_app_spec like '%apiVersion%'`
 
@@ -118,7 +118,7 @@ func (s KOTSStore) migrateKotsAppSpec() error {
 	return nil
 }
 
-func (s KOTSStore) migrateKotsInstallationSpec() error {
+func (s *KOTSStore) migrateKotsInstallationSpec() error {
 	db := persistence.MustGetPGSession()
 	query := `select app_id, sequence from app_version where kots_installation_spec is null or not kots_installation_spec like '%apiVersion%'`
 
@@ -188,7 +188,7 @@ func (s KOTSStore) migrateKotsInstallationSpec() error {
 	return nil
 }
 
-func (s KOTSStore) migrateSupportBundleSpec() error {
+func (s *KOTSStore) migrateSupportBundleSpec() error {
 	db := persistence.MustGetPGSession()
 	query := `select app_id, sequence from app_version where supportbundle_spec is null`
 
@@ -258,7 +258,7 @@ func (s KOTSStore) migrateSupportBundleSpec() error {
 	return nil
 }
 
-func (s KOTSStore) migratePreflightSpec() error {
+func (s *KOTSStore) migratePreflightSpec() error {
 	db := persistence.MustGetPGSession()
 	query := `select app_id, sequence from app_version where preflight_spec is null`
 
@@ -328,7 +328,7 @@ func (s KOTSStore) migratePreflightSpec() error {
 	return nil
 }
 
-func (s KOTSStore) migrateAnalyzerSpec() error {
+func (s *KOTSStore) migrateAnalyzerSpec() error {
 	db := persistence.MustGetPGSession()
 	query := `select app_id, sequence from app_version where analyzer_spec is null`
 
@@ -398,7 +398,7 @@ func (s KOTSStore) migrateAnalyzerSpec() error {
 	return nil
 }
 
-func (s KOTSStore) migrateAppSpec() error {
+func (s *KOTSStore) migrateAppSpec() error {
 	db := persistence.MustGetPGSession()
 	query := `select app_id, sequence from app_version where app_spec is null`
 

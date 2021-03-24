@@ -34,7 +34,7 @@ const (
 	AppVersionConfigmapPrefix = "kotsadm-appversion-"
 )
 
-func (s OCIStore) appVersionConfigMapNameForApp(appID string) (string, error) {
+func (s *OCIStore) appVersionConfigMapNameForApp(appID string) (string, error) {
 	a, err := s.GetApp(appID)
 	if err != nil {
 		return "", errors.Wrap(err, "failed to get app")
@@ -43,7 +43,7 @@ func (s OCIStore) appVersionConfigMapNameForApp(appID string) (string, error) {
 	return fmt.Sprintf("%s%s", AppVersionConfigmapPrefix, a.Slug), nil
 }
 
-func (s OCIStore) getLatestAppVersion(appID string) (*versiontypes.AppVersion, error) {
+func (s *OCIStore) getLatestAppVersion(appID string) (*versiontypes.AppVersion, error) {
 	configMapName, err := s.appVersionConfigMapNameForApp(appID)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get appversion config map name")
@@ -81,7 +81,7 @@ func (s OCIStore) getLatestAppVersion(appID string) (*versiontypes.AppVersion, e
 	return &appVersion, nil
 }
 
-func (s OCIStore) IsIdentityServiceSupportedForVersion(appID string, sequence int64) (bool, error) {
+func (s *OCIStore) IsIdentityServiceSupportedForVersion(appID string, sequence int64) (bool, error) {
 	configMapName, err := s.appVersionConfigMapNameForApp(appID)
 	if err != nil {
 		return false, errors.Wrap(err, "failed to get appversion config map name")
@@ -109,7 +109,7 @@ func (s OCIStore) IsIdentityServiceSupportedForVersion(appID string, sequence in
 	return appVersion.KOTSKinds.Identity != nil, nil
 }
 
-func (s OCIStore) IsRollbackSupportedForVersion(appID string, sequence int64) (bool, error) {
+func (s *OCIStore) IsRollbackSupportedForVersion(appID string, sequence int64) (bool, error) {
 	configMapName, err := s.appVersionConfigMapNameForApp(appID)
 	if err != nil {
 		return false, errors.Wrap(err, "failed to get appversion config map name")
@@ -137,13 +137,13 @@ func (s OCIStore) IsRollbackSupportedForVersion(appID string, sequence int64) (b
 	return appVersion.KOTSKinds.KotsApplication.Spec.AllowRollback, nil
 }
 
-func (s OCIStore) IsSnapshotsSupportedForVersion(a *apptypes.App, sequence int64, renderer rendertypes.Renderer) (bool, error) {
+func (s *OCIStore) IsSnapshotsSupportedForVersion(a *apptypes.App, sequence int64, renderer rendertypes.Renderer) (bool, error) {
 	return false, ErrNotImplemented
 }
 
 // CreateAppVersion takes an unarchived app, makes an archive and then uploads it
 // to s3 with the appID and sequence specified
-func (s OCIStore) CreateAppVersionArchive(appID string, sequence int64, archivePath string) error {
+func (s *OCIStore) CreateAppVersionArchive(appID string, sequence int64, archivePath string) error {
 	paths := []string{
 		filepath.Join(archivePath, "upstream"),
 		filepath.Join(archivePath, "base"),
@@ -229,7 +229,7 @@ func (s OCIStore) CreateAppVersionArchive(appID string, sequence int64, archiveP
 
 // GetAppVersionArchive will fetch the archive and return a string that contains a
 // directory name where it's extracted into
-func (s OCIStore) GetAppVersionArchive(appID string, sequence int64, dstPath string) error {
+func (s *OCIStore) GetAppVersionArchive(appID string, sequence int64, dstPath string) error {
 	// too noisy
 	// logger.Debug("getting app version archive",
 	// 	zap.String("appID", appID),
@@ -293,7 +293,7 @@ func (s OCIStore) GetAppVersionArchive(appID string, sequence int64, dstPath str
 	return nil
 }
 
-func (s OCIStore) CreateAppVersion(appID string, currentSequence *int64, filesInDir string, source string, skipPreflights bool, gitops gitopstypes.DownstreamGitOps) (int64, error) {
+func (s *OCIStore) CreateAppVersion(appID string, currentSequence *int64, filesInDir string, source string, skipPreflights bool, gitops gitopstypes.DownstreamGitOps) (int64, error) {
 	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(filesInDir)
 	if err != nil {
 		return int64(0), errors.Wrap(err, "failed to read kots kinds")
@@ -432,7 +432,7 @@ func (s OCIStore) CreateAppVersion(appID string, currentSequence *int64, filesIn
 	return newSequence, nil
 }
 
-func (s OCIStore) createAppVersion(appID string, currentSequence *int64, appName string, appIcon string, kotsKinds *kotsutil.KotsKinds) (int64, error) {
+func (s *OCIStore) createAppVersion(appID string, currentSequence *int64, appName string, appIcon string, kotsKinds *kotsutil.KotsKinds) (int64, error) {
 	// NOTE that this experimental store doesn't have a tx and it's possible that this
 	// could overwrite if there are multiple updates happening concurrently
 	latestAppVersion, err := s.getLatestAppVersion(appID)
@@ -479,11 +479,11 @@ func (s OCIStore) createAppVersion(appID string, currentSequence *int64, appName
 	return newSequence, nil
 }
 
-func (s OCIStore) addAppVersionToDownstream(appID string, clusterID string, sequence int64, versionLabel string, status string, source string, diffSummary string, diffSummaryError string, commitURL string, gitDeployable bool) error {
+func (s *OCIStore) addAppVersionToDownstream(appID string, clusterID string, sequence int64, versionLabel string, status string, source string, diffSummary string, diffSummaryError string, commitURL string, gitDeployable bool) error {
 	return ErrNotImplemented
 }
 
-func (s OCIStore) GetAppVersion(appID string, sequence int64) (*versiontypes.AppVersion, error) {
+func (s *OCIStore) GetAppVersion(appID string, sequence int64) (*versiontypes.AppVersion, error) {
 	configMapName, err := s.appVersionConfigMapNameForApp(appID)
 	if err != nil {
 		return nil, errors.New("failed to get configmap name for app version")
@@ -511,7 +511,7 @@ func (s OCIStore) GetAppVersion(appID string, sequence int64) (*versiontypes.App
 	return &appVersion, nil
 }
 
-func (s OCIStore) GetAppVersionsAfter(appID string, sequence int64) ([]*versiontypes.AppVersion, error) {
+func (s *OCIStore) GetAppVersionsAfter(appID string, sequence int64) ([]*versiontypes.AppVersion, error) {
 	return nil, ErrNotImplemented
 }
 

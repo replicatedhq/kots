@@ -9,7 +9,7 @@ const (
 	PendingInstallationsConfigMapName = "kotsadm-pendinginstallation"
 )
 
-func (s OCIStore) GetPendingInstallationStatus() (*installationtypes.InstallStatus, error) {
+func (s *OCIStore) GetPendingInstallationStatus() (*installationtypes.InstallStatus, error) {
 	apps, err := s.ListInstalledApps()
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to list installed apps")

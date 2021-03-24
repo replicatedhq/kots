@@ -7,11 +7,11 @@ import (
 	rendertypes "github.com/replicatedhq/kots/pkg/render/types"
 )
 
-func (s OCIStore) GetLatestLicenseForApp(appID string) (*kotsv1beta1.License, error) {
+func (s *OCIStore) GetLatestLicenseForApp(appID string) (*kotsv1beta1.License, error) {
 	return nil, ErrNotImplemented
 }
 
-func (s OCIStore) GetLicenseForAppVersion(appID string, sequence int64) (*kotsv1beta1.License, error) {
+func (s *OCIStore) GetLicenseForAppVersion(appID string, sequence int64) (*kotsv1beta1.License, error) {
 	appVersion, err := s.GetAppVersion(appID, sequence)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get app version")
@@ -24,10 +24,10 @@ func (s OCIStore) GetLicenseForAppVersion(appID string, sequence int64) (*kotsv1
 	return appVersion.KOTSKinds.License, nil
 }
 
-func (s OCIStore) GetAllAppLicenses() ([]*kotsv1beta1.License, error) {
+func (s *OCIStore) GetAllAppLicenses() ([]*kotsv1beta1.License, error) {
 	return nil, ErrNotImplemented
 }
 
-func (s OCIStore) UpdateAppLicense(appID string, sequence int64, archiveDir string, newLicense *kotsv1beta1.License, originalLicenseData string, failOnVersionCreate bool, gitops gitopstypes.DownstreamGitOps, renderer rendertypes.Renderer) (int64, error) {
+func (s *OCIStore) UpdateAppLicense(appID string, sequence int64, archiveDir string, newLicense *kotsv1beta1.License, originalLicenseData string, failOnVersionCreate bool, gitops gitopstypes.DownstreamGitOps, renderer rendertypes.Renderer) (int64, error) {
 	return int64(0), ErrNotImplemented
 }
