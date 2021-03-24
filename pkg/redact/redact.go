@@ -45,9 +45,9 @@ func GetKotsadmRedactSpecURI() string {
 	return fmt.Sprintf("configmap/%s/%s/%s", os.Getenv("POD_NAMESPACE"), redactSpecConfigMapName, redactSpecDataKey)
 }
 
-// WriteKotsadmRedactSpecConfigMap creates a configmap that contains the admin console custom redaction yaml spec
-// auto-generated from "kotsadm-redact" configmap when collecting support bundles. contains the full redact spec type that is supported by troubleshoot.
-func WriteKotsadmRedactSpecConfigMap() error {
+// GenerateKotsadmRedactSpec creates a configmap that contains the admin console custom redaction yaml spec
+// generated from "kotsadm-redact" configmap for collecting support bundles. contains the full redact spec type that is supported by troubleshoot.
+func GenerateKotsadmRedactSpec() error {
 	spec, _, err := GetRedactSpec()
 	if err != nil {
 		return errors.Wrap(err, "failed to get redact spec")

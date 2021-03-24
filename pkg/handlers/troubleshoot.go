@@ -230,7 +230,7 @@ func (h *Handler) GetSupportBundleCommand(w http.ResponseWriter, r *http.Request
 		}
 	}
 
-	if err := createSupportBundle(foundApp.ID, sequence, getSupportBundleCommandRequest.Origin, false); err != nil {
+	if err := createSupportBundleSpec(foundApp.ID, sequence, getSupportBundleCommandRequest.Origin, false); err != nil {
 		logger.Error(errors.Wrap(err, "failed to create support bundle spec"))
 		JSON(w, http.StatusOK, response)
 		return

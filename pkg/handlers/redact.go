@@ -111,6 +111,14 @@ func (h *Handler) UpdateRedact(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	err = redact.GenerateKotsadmRedactSpec()
+	if err != nil {
+		logger.Error(err)
+		updateRedactResponse.Error = "failed to generate kotsadm redact spec"
+		JSON(w, 500, updateRedactResponse)
+		return
+	}
+
 	data, errMessage, err := redact.GetRedactSpec()
 	if err != nil {
 		logger.Error(err)

@@ -18,6 +18,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/online/types"
 	"github.com/replicatedhq/kots/pkg/preflight"
 	"github.com/replicatedhq/kots/pkg/pull"
+	"github.com/replicatedhq/kots/pkg/redact"
 	"github.com/replicatedhq/kots/pkg/reporting"
 	"github.com/replicatedhq/kots/pkg/store"
 	"github.com/replicatedhq/kots/pkg/supportbundle"
@@ -175,6 +176,11 @@ func CreateAppFromOnline(pendingApp *types.PendingApp, upstreamURI string, isAut
 	err = supportbundle.CreateRenderedSpec(pendingApp.ID, 0, "", true, kotsKinds)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create rendered support bundle spec")
+	}
+
+	err = redact.CreateRenderedAppRedactSpec(pendingApp.ID, 0, kotsKinds)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to write app redact spec configmap")
 	}
 
 	if isAutomated && kotsKinds.Config != nil {

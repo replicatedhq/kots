@@ -16,6 +16,7 @@ import (
 	downstream "github.com/replicatedhq/kots/pkg/kotsadmdownstream"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/logger"
+	"github.com/replicatedhq/kots/pkg/redact"
 	"github.com/replicatedhq/kots/pkg/reporting"
 	"github.com/replicatedhq/kots/pkg/store"
 	"github.com/replicatedhq/kots/pkg/supportbundle"
@@ -151,7 +152,7 @@ func (h *Handler) UpdateDeployResult(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := createSupportBundle(updateDeployResultRequest.AppID, currentSequence, "", true); err != nil {
+	if err := createSupportBundleSpec(updateDeployResultRequest.AppID, currentSequence, "", true); err != nil {
 		// support bundle is not essential.  keep processing deployment request
 		logger.Error(errors.Wrapf(err, "failed to create support bundle for sequence %d after deploying", currentSequence))
 	}
@@ -186,7 +187,7 @@ func (h *Handler) UpdateDeployResult(w http.ResponseWriter, r *http.Request) {
 	return
 }
 
-func createSupportBundle(appID string, sequence int64, origin string, inCluster bool) error {
+func createSupportBundleSpec(appID string, sequence int64, origin string, inCluster bool) error {
 	archivePath, err := ioutil.TempDir("", "kotsadm")
 	if err != nil {
 		return errors.Wrap(err, "failed to create temp dir")
@@ -206,6 +207,11 @@ func createSupportBundle(appID string, sequence int64, origin string, inCluster 
 	err = supportbundle.CreateRenderedSpec(appID, sequence, origin, inCluster, kotsKinds)
 	if err != nil {
 		return errors.Wrap(err, "failed to create rendered support bundle spec")
+	}
+
+	err = redact.CreateRenderedAppRedactSpec(appID, sequence, kotsKinds)
+	if err != nil {
+		return errors.Wrap(err, "failed to write app redact spec configmap")
 	}
 
 	return nil
