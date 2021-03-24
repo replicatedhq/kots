@@ -206,28 +206,6 @@ class GitOpsRepoDetails extends React.Component {
                   </label>
                 </div>
               </div>
-              <div className="BoxedCheckbox-wrapper flex1 u-textAlign--left u-marginLeft--10">
-                <div className={`BoxedCheckbox flex1 flex ${action === "pullRequest" ? "is-active" : ""} is-disabled`}>
-                  <input
-                    type="radio"
-                    className="u-cursor--pointer hidden-input"
-                    id="pullRequestOption"
-                    checked={action === "pullRequest"}
-                    defaultValue="pullRequest"
-                    onChange={this.onActionTypeChange}
-                    disabled={true}
-                  />
-                  <label htmlFor="pullRequestOption" className="flex1 flex u-width--full u-position--relative u-cursor--pointer u-userSelect--none">
-                    <div className="flex-auto">
-                    <span className="icon pullRequestOptionIcon u-marginRight--10" />
-                    </div>
-                    <div className="flex1">
-                      <p className="u-color--tuna u-fontSize--normal u-fontWeight--medium">Open a {isBitbucket ? "Merge" : "Pull"} Request</p>
-                      <p className="u-color--dustyGray u-fontSize--small u-fontWeight--medium u-marginTop--5">Coming soon!</p>
-                    </div>
-                  </label>
-                </div>
-              </div>
               <div className="BoxedCheckbox-wrapper flex1" />
             </div>
 
@@ -254,28 +232,6 @@ class GitOpsRepoDetails extends React.Component {
                     <div className="flex1">
                       <p className="u-color--tuna u-fontSize--normal u-fontWeight--medium">Rendered YAML</p>
                       <p className="u-color--dustyGray u-fontSize--small u-fontWeight--medium u-marginTop--5">Apply using <span className="inline-code no-bg">kubectl apply -f</span></p>
-                    </div>
-                  </label>
-                </div>
-              </div>
-              <div className="BoxedCheckbox-wrapper flex1 u-textAlign--left u-marginLeft--10">
-                <div className={`BoxedCheckbox flex1 flex ${format === "fullFiles" ? "is-active" : ""} is-disabled`}>
-                  <input
-                    type="radio"
-                    className="u-cursor--pointer hidden-input"
-                    id="fullFilesOption"
-                    checked={format === "fullFiles"}
-                    defaultValue="fullFiles"
-                    onChange={this.onFileContainChange}
-                    disabled={true}
-                  />
-                  <label htmlFor="fullFilesOption" className="flex1 flex u-width--full u-position--relative u-cursor--pointer u-userSelect--none">
-                    <div className="flex-auto">
-                    <span className="icon clickable fullFilesOptionIcon u-marginRight--10" />
-                    </div>
-                    <div className="flex1">
-                      <p className="u-color--tuna u-fontSize--normal u-fontWeight--medium">Full Kustomizable Output</p>
-                      <p className="u-color--dustyGray u-fontSize--small u-fontWeight--medium u-marginTop--5">Coming soon!</p>
                     </div>
                   </label>
                 </div>
