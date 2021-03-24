@@ -24,6 +24,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/kurl"
 	"github.com/replicatedhq/kots/pkg/logger"
+	"github.com/replicatedhq/kots/pkg/redact"
 	"github.com/replicatedhq/kots/pkg/registry"
 	"github.com/replicatedhq/kots/pkg/render/helper"
 	"github.com/replicatedhq/kots/pkg/snapshot"
@@ -171,9 +172,12 @@ func GetSpecURI(appSlug string) string {
 }
 
 func GetBundleCommand(appSlug string) []string {
+	redactURIs := []string{redact.GetKotsadmRedactSpecURI(), redact.GetAppRedactSpecURI(appSlug)}
+	redactors := strings.Join(redactURIs, ",")
+
 	comamnd := []string{
 		"curl https://krew.sh/support-bundle | bash",
-		fmt.Sprintf("kubectl support-bundle %s\n", GetSpecURI(appSlug)),
+		fmt.Sprintf("kubectl support-bundle %s --redactors=%s\n", GetSpecURI(appSlug), redactors),
 	}
 
 	return comamnd

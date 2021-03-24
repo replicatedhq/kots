@@ -455,13 +455,13 @@ func processSupportBundle(clusterSocket *ClusterSocket, pendingSupportBundle sup
 		return errors.Wrap(err, "failed to create rendered support bundle spec")
 	}
 
-	err = redact.WriteKotsadmRedactSpecConfigMap()
+	err = redact.GenerateKotsadmRedactSpec()
 	if err != nil {
 		return errors.Wrap(err, "failed to write kotsadm redact spec configmap")
 	}
 	redactURIs := []string{redact.GetKotsadmRedactSpecURI()}
 
-	err = redact.WriteAppRedactSpecConfigMap(a.ID, sequence, kotsKinds)
+	err = redact.CreateRenderedAppRedactSpec(a.ID, sequence, kotsKinds)
 	if err != nil {
 		return errors.Wrap(err, "failed to write app redact spec configmap")
 	}
@@ -615,7 +615,7 @@ func checkRestoreComplete(clusterSocket *ClusterSocket, a *apptypes.App, restore
 			return errors.Wrap(err, "failed to redeploy app version")
 		}
 
-		if err := createSupportBundle(a.ID, sequence, "", true); err != nil {
+		if err := createSupportBundleSpec(a.ID, sequence, "", true); err != nil {
 			// support bundle is not essential.  keep processing restore status
 			logger.Error(errors.Wrapf(err, "failed to create support bundle for sequence %d post restore", sequence))
 		}
@@ -641,7 +641,7 @@ func checkRestoreComplete(clusterSocket *ClusterSocket, a *apptypes.App, restore
 	return nil
 }
 
-func createSupportBundle(appID string, sequence int64, origin string, inCluster bool) error {
+func createSupportBundleSpec(appID string, sequence int64, origin string, inCluster bool) error {
 	archivePath, err := ioutil.TempDir("", "kotsadm")
 	if err != nil {
 		return errors.Wrap(err, "failed to create temp dir")
@@ -661,6 +661,11 @@ func createSupportBundle(appID string, sequence int64, origin string, inCluster 
 	err = supportbundle.CreateRenderedSpec(appID, sequence, origin, inCluster, kotsKinds)
 	if err != nil {
 		return errors.Wrap(err, "failed to create rendered support bundle spec")
+	}
+
+	err = redact.CreateRenderedAppRedactSpec(appID, sequence, kotsKinds)
+	if err != nil {
+		return errors.Wrap(err, "failed to write app redact spec configmap")
 	}
 
 	return nil

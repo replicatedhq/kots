@@ -24,6 +24,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/preflight"
 	"github.com/replicatedhq/kots/pkg/pull"
+	"github.com/replicatedhq/kots/pkg/redact"
 	"github.com/replicatedhq/kots/pkg/registry"
 	registrytypes "github.com/replicatedhq/kots/pkg/registry/types"
 	"github.com/replicatedhq/kots/pkg/store"
@@ -248,6 +249,11 @@ func CreateAppFromAirgap(pendingApp *types.PendingApp, airgapPath string, regist
 	err = supportbundle.CreateRenderedSpec(a.ID, a.CurrentSequence, "", true, kotsKinds)
 	if err != nil {
 		return errors.Wrap(err, "failed to create rendered support bundle spec")
+	}
+
+	err = redact.CreateRenderedAppRedactSpec(a.ID, a.CurrentSequence, kotsKinds)
+	if err != nil {
+		return errors.Wrap(err, "failed to write app redact spec configmap")
 	}
 
 	if isAutomated && kotsKinds.Config != nil {

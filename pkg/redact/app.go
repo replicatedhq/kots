@@ -28,8 +28,8 @@ func GetAppRedactSpecURI(appSlug string) string {
 	return fmt.Sprintf("configmap/%s/%s/%s", os.Getenv("POD_NAMESPACE"), GetAppRedactSpecConfigMapName(appSlug), redactSpecDataKey)
 }
 
-// WriteAppRedactSpecConfigMap creates a configmap that contains the redaction yaml spec included in the application release
-func WriteAppRedactSpecConfigMap(appID string, sequence int64, kotsKinds *kotsutil.KotsKinds) error {
+// CreateRenderedAppRedactSpec creates a configmap that contains the redaction yaml spec included in the application release
+func CreateRenderedAppRedactSpec(appID string, sequence int64, kotsKinds *kotsutil.KotsKinds) error {
 	builtRedactor := kotsKinds.Redactor.DeepCopy()
 	if builtRedactor == nil {
 		builtRedactor = &troubleshootv1beta2.Redactor{
