@@ -2,6 +2,7 @@ package ocistore
 
 import (
 	"encoding/json"
+	"sync"
 	"time"
 
 	"github.com/pkg/errors"
@@ -9,6 +10,12 @@ import (
 
 const (
 	TaskStatusConfigMapName = `kotsadm-tasks`
+
+	taskCacheTTL = 1 * time.Minute
+)
+
+var (
+	taskStatusLock = sync.Mutex{}
 )
 
 type taskStatus struct {
@@ -17,9 +24,25 @@ type taskStatus struct {
 	UpdatedAt time.Time `json:"updatedAt"`
 }
 
-func (s OCIStore) SetTaskStatus(id string, message string, status string) error {
+func (s *OCIStore) SetTaskStatus(id string, message string, status string) error {
+	taskStatusLock.Lock()
+	defer taskStatusLock.Unlock()
+
+	cached := s.cachedTaskStatus[id]
+	if cached == nil {
+		cached = &cachedTaskStatus{}
+		s.cachedTaskStatus[id] = cached
+	}
+	cached.taskStatus.Message = message
+	cached.taskStatus.Status = status
+	cached.taskStatus.UpdatedAt = time.Now()
+	cached.expirationTime = time.Now().Add(taskCacheTTL)
+
 	configmap, err := s.getConfigmap(TaskStatusConfigMapName)
 	if err != nil {
+		if canIgnoreEtcdError(err) {
+			return nil
+		}
 		return errors.Wrap(err, "failed to get task status configmap")
 	}
 
@@ -27,19 +50,7 @@ func (s OCIStore) SetTaskStatus(id string, message string, status string) error 
 		configmap.Data = map[string]string{}
 	}
 
-	ts := taskStatus{}
-	existingTsData, ok := configmap.Data[id]
-	if ok {
-		if err := json.Unmarshal([]byte(existingTsData), &ts); err != nil {
-			return errors.Wrap(err, "failed to unmarshal task status")
-		}
-	}
-
-	ts.Message = message
-	ts.Status = status
-	ts.UpdatedAt = time.Now()
-
-	b, err := json.Marshal(ts)
+	b, err := json.Marshal(cached.taskStatus)
 	if err != nil {
 		return errors.Wrap(err, "failed to marshal task status")
 	}
@@ -47,15 +58,30 @@ func (s OCIStore) SetTaskStatus(id string, message string, status string) error 
 	configmap.Data[id] = string(b)
 
 	if err := s.updateConfigmap(configmap); err != nil {
+		if canIgnoreEtcdError(err) {
+			return nil
+		}
 		return errors.Wrap(err, "failed to update task status configmap")
 	}
 
 	return nil
 }
 
-func (s OCIStore) UpdateTaskStatusTimestamp(id string) error {
+func (s *OCIStore) UpdateTaskStatusTimestamp(id string) error {
+	taskStatusLock.Lock()
+	defer taskStatusLock.Unlock()
+
+	cached := s.cachedTaskStatus[id]
+	if cached != nil {
+		cached.taskStatus.UpdatedAt = time.Now()
+		cached.expirationTime = time.Now().Add(taskCacheTTL)
+	}
+
 	configmap, err := s.getConfigmap(TaskStatusConfigMapName)
 	if err != nil {
+		if canIgnoreEtcdError(err) && cached != nil {
+			return nil
+		}
 		return errors.Wrap(err, "failed to get task status configmap")
 	}
 
@@ -83,13 +109,21 @@ func (s OCIStore) UpdateTaskStatusTimestamp(id string) error {
 	configmap.Data[id] = string(b)
 
 	if err := s.updateConfigmap(configmap); err != nil {
+		if canIgnoreEtcdError(err) && cached != nil {
+			return nil
+		}
 		return errors.Wrap(err, "failed to update task status configmap")
 	}
 
 	return nil
 }
 
-func (s OCIStore) ClearTaskStatus(id string) error {
+func (s *OCIStore) ClearTaskStatus(id string) error {
+	taskStatusLock.Lock()
+	defer taskStatusLock.Unlock()
+
+	defer delete(s.cachedTaskStatus, id)
+
 	configmap, err := s.getConfigmap(TaskStatusConfigMapName)
 	if err != nil {
 		return errors.Wrap(err, "failed to get task status configmap")
@@ -113,9 +147,20 @@ func (s OCIStore) ClearTaskStatus(id string) error {
 	return nil
 }
 
-func (s OCIStore) GetTaskStatus(id string) (string, string, error) {
+func (s *OCIStore) GetTaskStatus(id string) (string, string, error) {
+	taskStatusLock.Lock()
+	defer taskStatusLock.Unlock()
+
+	cached := s.cachedTaskStatus[id]
+	if cached != nil && time.Now().Before(cached.expirationTime) {
+		return cached.taskStatus.Status, cached.taskStatus.Message, nil
+	}
+
 	configmap, err := s.getConfigmap(TaskStatusConfigMapName)
 	if err != nil {
+		if canIgnoreEtcdError(err) && cached != nil {
+			return cached.taskStatus.Status, cached.taskStatus.Message, nil
+		}
 		return "", "", errors.Wrap(err, "failed to get task status configmap")
 	}
 
@@ -136,6 +181,13 @@ func (s OCIStore) GetTaskStatus(id string) (string, string, error) {
 	if ts.UpdatedAt.Before(time.Now().Add(-10 * time.Second)) {
 		return "", "", nil
 	}
+
+	if cached == nil {
+		cached = &cachedTaskStatus{}
+		s.cachedTaskStatus[id] = cached
+	}
+	cached.taskStatus = ts
+	cached.expirationTime = time.Now().Add(taskCacheTTL)
 
 	return ts.Status, ts.Message, nil
 }

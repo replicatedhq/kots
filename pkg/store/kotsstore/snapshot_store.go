@@ -10,7 +10,7 @@ import (
 	"go.uber.org/zap"
 )
 
-func (s KOTSStore) ListPendingScheduledSnapshots(appID string) ([]snapshottypes.ScheduledSnapshot, error) {
+func (s *KOTSStore) ListPendingScheduledSnapshots(appID string) ([]snapshottypes.ScheduledSnapshot, error) {
 	logger.Debug("Listing pending scheduled snapshots",
 		zap.String("appID", appID))
 
@@ -34,7 +34,7 @@ func (s KOTSStore) ListPendingScheduledSnapshots(appID string) ([]snapshottypes.
 	return scheduledSnapshots, nil
 }
 
-func (s KOTSStore) UpdateScheduledSnapshot(snapshotID string, backupName string) error {
+func (s *KOTSStore) UpdateScheduledSnapshot(snapshotID string, backupName string) error {
 	logger.Debug("Updating scheduled snapshot",
 		zap.String("ID", snapshotID))
 
@@ -47,7 +47,7 @@ func (s KOTSStore) UpdateScheduledSnapshot(snapshotID string, backupName string)
 	return nil
 }
 
-func (s KOTSStore) DeletePendingScheduledSnapshots(appID string) error {
+func (s *KOTSStore) DeletePendingScheduledSnapshots(appID string) error {
 	logger.Debug("Deleting pending scheduled snapshots",
 		zap.String("appID", appID))
 
@@ -61,7 +61,7 @@ func (s KOTSStore) DeletePendingScheduledSnapshots(appID string) error {
 	return nil
 }
 
-func (s KOTSStore) CreateScheduledSnapshot(id string, appID string, timestamp time.Time) error {
+func (s *KOTSStore) CreateScheduledSnapshot(id string, appID string, timestamp time.Time) error {
 	logger.Debug("Creating scheduled snapshot",
 		zap.String("appID", appID))
 
@@ -85,7 +85,7 @@ func (s KOTSStore) CreateScheduledSnapshot(id string, appID string, timestamp ti
 	return nil
 }
 
-func (s KOTSStore) ListPendingScheduledInstanceSnapshots(clusterID string) ([]snapshottypes.ScheduledInstanceSnapshot, error) {
+func (s *KOTSStore) ListPendingScheduledInstanceSnapshots(clusterID string) ([]snapshottypes.ScheduledInstanceSnapshot, error) {
 	logger.Debug("Listing pending scheduled instance snapshots",
 		zap.String("clusterID", clusterID))
 
@@ -109,7 +109,7 @@ func (s KOTSStore) ListPendingScheduledInstanceSnapshots(clusterID string) ([]sn
 	return scheduledSnapshots, nil
 }
 
-func (s KOTSStore) UpdateScheduledInstanceSnapshot(snapshotID string, backupName string) error {
+func (s *KOTSStore) UpdateScheduledInstanceSnapshot(snapshotID string, backupName string) error {
 	logger.Debug("Updating scheduled instance snapshot",
 		zap.String("ID", snapshotID))
 
@@ -122,7 +122,7 @@ func (s KOTSStore) UpdateScheduledInstanceSnapshot(snapshotID string, backupName
 	return nil
 }
 
-func (s KOTSStore) DeletePendingScheduledInstanceSnapshots(clusterID string) error {
+func (s *KOTSStore) DeletePendingScheduledInstanceSnapshots(clusterID string) error {
 	logger.Debug("Deleting pending scheduled instance snapshots",
 		zap.String("clusterID", clusterID))
 
@@ -136,7 +136,7 @@ func (s KOTSStore) DeletePendingScheduledInstanceSnapshots(clusterID string) err
 	return nil
 }
 
-func (s KOTSStore) CreateScheduledInstanceSnapshot(id string, clusterID string, timestamp time.Time) error {
+func (s *KOTSStore) CreateScheduledInstanceSnapshot(id string, clusterID string, timestamp time.Time) error {
 	logger.Debug("Creating scheduled instance snapshot",
 		zap.String("clusterID", clusterID))
 

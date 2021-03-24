@@ -20,27 +20,27 @@ import (
 	"go.uber.org/zap"
 )
 
-func (s OCIStore) DeletePendingSupportBundle(id string) error {
+func (s *OCIStore) DeletePendingSupportBundle(id string) error {
 	return ErrNotImplemented
 }
 
-func (s OCIStore) ListSupportBundles(appID string) ([]*supportbundletypes.SupportBundle, error) {
+func (s *OCIStore) ListSupportBundles(appID string) ([]*supportbundletypes.SupportBundle, error) {
 	return nil, ErrNotImplemented
 }
 
-func (s OCIStore) ListPendingSupportBundlesForApp(appID string) ([]*supportbundletypes.PendingSupportBundle, error) {
+func (s *OCIStore) ListPendingSupportBundlesForApp(appID string) ([]*supportbundletypes.PendingSupportBundle, error) {
 	return nil, ErrNotImplemented
 }
 
-func (s OCIStore) GetSupportBundle(id string) (*supportbundletypes.SupportBundle, error) {
+func (s *OCIStore) GetSupportBundle(id string) (*supportbundletypes.SupportBundle, error) {
 	return nil, ErrNotImplemented
 }
 
-func (s OCIStore) CreatePendingSupportBundle(id string, appID string, clusterID string) error {
+func (s *OCIStore) CreatePendingSupportBundle(id string, appID string, clusterID string) error {
 	return ErrNotImplemented
 }
 
-func (s OCIStore) CreateSupportBundle(id string, appID string, archivePath string, marshalledTree []byte) (*supportbundletypes.SupportBundle, error) {
+func (s *OCIStore) CreateSupportBundle(id string, appID string, archivePath string, marshalledTree []byte) (*supportbundletypes.SupportBundle, error) {
 
 	fileContents, err := ioutil.ReadFile(archivePath)
 	if err != nil {
@@ -103,7 +103,7 @@ func (s OCIStore) CreateSupportBundle(id string, appID string, archivePath strin
 
 // GetSupportBundle will fetch the bundle archive and return a path to where it
 // is stored. The caller is responsible for deleting.
-func (s OCIStore) GetSupportBundleArchive(bundleID string) (string, error) {
+func (s *OCIStore) GetSupportBundleArchive(bundleID string) (string, error) {
 	logger.Debug("getting support bundle",
 		zap.String("bundleID", bundleID))
 
@@ -159,22 +159,22 @@ func (s OCIStore) GetSupportBundleArchive(bundleID string) (string, error) {
 	return filepath.Join(tmpDir, "supportbundle.tar.gz"), nil
 }
 
-func (s OCIStore) GetSupportBundleAnalysis(id string) (*supportbundletypes.SupportBundleAnalysis, error) {
+func (s *OCIStore) GetSupportBundleAnalysis(id string) (*supportbundletypes.SupportBundleAnalysis, error) {
 	return nil, ErrNotImplemented
 }
 
-func (s OCIStore) SetSupportBundleAnalysis(id string, insights []byte) error {
+func (s *OCIStore) SetSupportBundleAnalysis(id string, insights []byte) error {
 	return ErrNotImplemented
 }
 
-func (s OCIStore) GetRedactions(bundleID string) (troubleshootredact.RedactionList, error) {
+func (s *OCIStore) GetRedactions(bundleID string) (troubleshootredact.RedactionList, error) {
 	return troubleshootredact.RedactionList{}, ErrNotImplemented
 }
 
-func (s OCIStore) SetRedactions(bundleID string, redacts troubleshootredact.RedactionList) error {
+func (s *OCIStore) SetRedactions(bundleID string, redacts troubleshootredact.RedactionList) error {
 	return ErrNotImplemented
 }
 
-func (s OCIStore) GetSupportBundleSpecForApp(id string) (string, error) {
+func (s *OCIStore) GetSupportBundleSpecForApp(id string) (string, error) {
 	return "", ErrNotImplemented
 }

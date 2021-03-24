@@ -11,7 +11,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/persistence"
 )
 
-func (s KOTSStore) GetAppStatus(appID string) (*appstatustypes.AppStatus, error) {
+func (s *KOTSStore) GetAppStatus(appID string) (*appstatustypes.AppStatus, error) {
 	db := persistence.MustGetPGSession()
 	query := `select resource_states, updated_at from app_status where app_id = $1`
 	row := db.QueryRow(query, appID)
@@ -52,7 +52,7 @@ func (s KOTSStore) GetAppStatus(appID string) (*appstatustypes.AppStatus, error)
 	return &appStatus, nil
 }
 
-func (s KOTSStore) SetAppStatus(appID string, resourceStates []appstatustypes.ResourceState, updatedAt time.Time) error {
+func (s *KOTSStore) SetAppStatus(appID string, resourceStates []appstatustypes.ResourceState, updatedAt time.Time) error {
 	marshalledResourceStates, err := json.Marshal(resourceStates)
 	if err != nil {
 		return errors.Wrap(err, "failed to json marshal resource states")

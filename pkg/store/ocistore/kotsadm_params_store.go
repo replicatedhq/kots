@@ -1,9 +1,9 @@
 package ocistore
 
-func (s OCIStore) IsKotsadmIDGenerated() (bool, error) {
+func (s *OCIStore) IsKotsadmIDGenerated() (bool, error) {
 	return false, ErrNotImplemented
 }
 
-func (s OCIStore) SetIsKotsadmIDGenerated() error {
+func (s *OCIStore) SetIsKotsadmIDGenerated() error {
 	return ErrNotImplemented
 }

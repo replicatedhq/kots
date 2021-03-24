@@ -50,7 +50,7 @@ func CreateAppFromAirgap(pendingApp *types.PendingApp, airgapPath string, regist
 			select {
 			case <-time.After(time.Second):
 				if err := store.GetStore().UpdateTaskStatusTimestamp(taskID); err != nil {
-					logger.Error(err)
+					logger.Error(errors.Wrapf(err, "failed to update task %s", taskID))
 				}
 			case <-finishedCh:
 				return
@@ -142,7 +142,7 @@ func CreateAppFromAirgap(pendingApp *types.PendingApp, airgapPath string, regist
 		scanner := bufio.NewScanner(pipeReader)
 		for scanner.Scan() {
 			if err := store.GetStore().SetTaskStatus(taskID, scanner.Text(), "running"); err != nil {
-				logger.Error(err)
+				logger.Error(errors.Wrapf(err, "failed to set status for task %s", taskID))
 			}
 		}
 		pipeReader.CloseWithError(scanner.Err())

@@ -33,7 +33,7 @@ import (
 	"k8s.io/apimachinery/pkg/labels"
 )
 
-func (s KOTSStore) migrateSupportBundlesFromPostgres() error {
+func (s *KOTSStore) migrateSupportBundlesFromPostgres() error {
 	logger.Debug("migrating support bundles from postgres")
 
 	db := persistence.MustGetPGSession()
@@ -174,7 +174,7 @@ func (s KOTSStore) migrateSupportBundlesFromPostgres() error {
 	return nil
 }
 
-func (s KOTSStore) ListSupportBundles(appID string) ([]*types.SupportBundle, error) {
+func (s *KOTSStore) ListSupportBundles(appID string) ([]*types.SupportBundle, error) {
 	clientset, err := s.GetClientset()
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get clientset")
@@ -211,7 +211,7 @@ func (s KOTSStore) ListSupportBundles(appID string) ([]*types.SupportBundle, err
 	return supportBundles, nil
 }
 
-func (s KOTSStore) DeletePendingSupportBundle(id string) error {
+func (s *KOTSStore) DeletePendingSupportBundle(id string) error {
 	clientset, err := s.GetClientset()
 	if err != nil {
 		return errors.Wrap(err, "failed to get clientset")
@@ -227,7 +227,7 @@ func (s KOTSStore) DeletePendingSupportBundle(id string) error {
 	return nil
 }
 
-func (s KOTSStore) ListPendingSupportBundlesForApp(appID string) ([]*types.PendingSupportBundle, error) {
+func (s *KOTSStore) ListPendingSupportBundlesForApp(appID string) ([]*types.PendingSupportBundle, error) {
 	clientset, err := s.GetClientset()
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get clientset")
@@ -258,7 +258,7 @@ func (s KOTSStore) ListPendingSupportBundlesForApp(appID string) ([]*types.Pendi
 	return pendingSupportBundles, nil
 }
 
-func (s KOTSStore) GetSupportBundle(id string) (*types.SupportBundle, error) {
+func (s *KOTSStore) GetSupportBundle(id string) (*types.SupportBundle, error) {
 	clientset, err := s.GetClientset()
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get clientset")
@@ -286,7 +286,7 @@ func (s KOTSStore) GetSupportBundle(id string) (*types.SupportBundle, error) {
 	return &supportBundle, nil
 }
 
-func (s KOTSStore) CreatePendingSupportBundle(id string, appID string, clusterID string) error {
+func (s *KOTSStore) CreatePendingSupportBundle(id string, appID string, clusterID string) error {
 	pendingSupportBundle := types.PendingSupportBundle{
 		ID:        id,
 		AppID:     appID,
@@ -328,7 +328,7 @@ func (s KOTSStore) CreatePendingSupportBundle(id string, appID string, clusterID
 	return nil
 }
 
-func (s KOTSStore) CreateSupportBundle(id string, appID string, archivePath string, marshalledTree []byte) (*types.SupportBundle, error) {
+func (s *KOTSStore) CreateSupportBundle(id string, appID string, archivePath string, marshalledTree []byte) (*types.SupportBundle, error) {
 	fi, err := os.Stat(archivePath)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to read archive")
@@ -407,7 +407,7 @@ func (s KOTSStore) CreateSupportBundle(id string, appID string, archivePath stri
 
 // GetSupportBundle will fetch the bundle archive and return a path to where it
 // is stored. The caller is responsible for deleting.
-func (s KOTSStore) GetSupportBundleArchive(bundleID string) (string, error) {
+func (s *KOTSStore) GetSupportBundleArchive(bundleID string) (string, error) {
 	logger.Debug("getting support bundle",
 		zap.String("bundleID", bundleID))
 
@@ -440,7 +440,7 @@ func (s KOTSStore) GetSupportBundleArchive(bundleID string) (string, error) {
 	return filepath.Join(tmpDir, "supportbundle.tar.gz"), nil
 }
 
-func (s KOTSStore) GetSupportBundleAnalysis(id string) (*types.SupportBundleAnalysis, error) {
+func (s *KOTSStore) GetSupportBundleAnalysis(id string) (*types.SupportBundleAnalysis, error) {
 	clientset, err := s.GetClientset()
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get clientset")
@@ -467,7 +467,7 @@ func (s KOTSStore) GetSupportBundleAnalysis(id string) (*types.SupportBundleAnal
 	return a, nil
 }
 
-func (s KOTSStore) SetSupportBundleAnalysis(id string, results []byte) error {
+func (s *KOTSStore) SetSupportBundleAnalysis(id string, results []byte) error {
 	insights, err := insightsFromResults(results)
 	if err != nil {
 		return errors.Wrap(err, "failed to convert results to insights")
@@ -502,7 +502,7 @@ func (s KOTSStore) SetSupportBundleAnalysis(id string, results []byte) error {
 	return nil
 }
 
-func (s KOTSStore) GetRedactions(id string) (troubleshootredact.RedactionList, error) {
+func (s *KOTSStore) GetRedactions(id string) (troubleshootredact.RedactionList, error) {
 	emptyRedactions := troubleshootredact.RedactionList{
 		ByRedactor: map[string][]troubleshootredact.Redaction{},
 		ByFile:     map[string][]troubleshootredact.Redaction{},
@@ -526,7 +526,7 @@ func (s KOTSStore) GetRedactions(id string) (troubleshootredact.RedactionList, e
 	return redacts, nil
 }
 
-func (s KOTSStore) SetRedactions(id string, redacts troubleshootredact.RedactionList) error {
+func (s *KOTSStore) SetRedactions(id string, redacts troubleshootredact.RedactionList) error {
 	redactBytes, err := json.Marshal(redacts)
 	if err != nil {
 		return errors.Wrap(err, "failed to marshal redactionlist")
@@ -539,7 +539,7 @@ func (s KOTSStore) SetRedactions(id string, redacts troubleshootredact.Redaction
 	return nil
 }
 
-func (s KOTSStore) GetSupportBundleSpecForApp(id string) (string, error) {
+func (s *KOTSStore) GetSupportBundleSpecForApp(id string) (string, error) {
 	q := `select supportbundle_spec from app_version
 	inner join app on app_version.app_id = app.id and app_version.sequence = app.current_sequence
 	where app.id = $1`
@@ -555,7 +555,7 @@ func (s KOTSStore) GetSupportBundleSpecForApp(id string) (string, error) {
 	return spec, nil
 }
 
-func (s KOTSStore) saveSupportBundleMetafile(id string, filename string, data []byte) error {
+func (s *KOTSStore) saveSupportBundleMetafile(id string, filename string, data []byte) error {
 	var gzipped bytes.Buffer
 	gzipWriter := gzip.NewWriter(&gzipped)
 	defer gzipWriter.Close()
@@ -584,7 +584,7 @@ func (s KOTSStore) saveSupportBundleMetafile(id string, filename string, data []
 	return nil
 }
 
-func (s KOTSStore) getSupportBundleMetafile(id string, filename string) ([]byte, error) {
+func (s *KOTSStore) getSupportBundleMetafile(id string, filename string) ([]byte, error) {
 	newSession := awssession.New(kotss3.GetConfig())
 
 	bucket := aws.String(os.Getenv("S3_BUCKET_NAME"))

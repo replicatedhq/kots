@@ -14,7 +14,7 @@ import (
 	"go.uber.org/zap"
 )
 
-func (s KOTSStore) ListClusters() ([]*downstreamtypes.Downstream, error) {
+func (s *KOTSStore) ListClusters() ([]*downstreamtypes.Downstream, error) {
 	db := persistence.MustGetPGSession()
 
 	query := `select id, slug, title, snapshot_schedule, snapshot_ttl from cluster` // TODO the current sequence
@@ -44,7 +44,7 @@ func (s KOTSStore) ListClusters() ([]*downstreamtypes.Downstream, error) {
 	return clusters, nil
 }
 
-func (s KOTSStore) GetClusterIDFromSlug(slug string) (string, error) {
+func (s *KOTSStore) GetClusterIDFromSlug(slug string) (string, error) {
 	db := persistence.MustGetPGSession()
 	query := `select id from cluster where slug = $1`
 	row := db.QueryRow(query, slug)
@@ -57,7 +57,7 @@ func (s KOTSStore) GetClusterIDFromSlug(slug string) (string, error) {
 	return clusterID, nil
 }
 
-func (s KOTSStore) GetClusterIDFromDeployToken(deployToken string) (string, error) {
+func (s *KOTSStore) GetClusterIDFromDeployToken(deployToken string) (string, error) {
 	db := persistence.MustGetPGSession()
 	query := `select id from cluster where token = $1`
 	row := db.QueryRow(query, deployToken)
@@ -70,7 +70,7 @@ func (s KOTSStore) GetClusterIDFromDeployToken(deployToken string) (string, erro
 	return clusterID, nil
 }
 
-func (s KOTSStore) CreateNewCluster(userID string, isAllUsers bool, title string, token string) (string, error) {
+func (s *KOTSStore) CreateNewCluster(userID string, isAllUsers bool, title string, token string) (string, error) {
 	clusterID := rand.StringWithCharset(32, rand.LOWER_CASE)
 	clusterSlug := slug.Make(title)
 
@@ -128,7 +128,7 @@ func (s KOTSStore) CreateNewCluster(userID string, isAllUsers bool, title string
 	return clusterID, nil
 }
 
-func (s KOTSStore) SetInstanceSnapshotTTL(clusterID string, snapshotTTL string) error {
+func (s *KOTSStore) SetInstanceSnapshotTTL(clusterID string, snapshotTTL string) error {
 	logger.Debug("Setting instance snapshot TTL",
 		zap.String("clusterID", clusterID))
 	db := persistence.MustGetPGSession()
@@ -141,7 +141,7 @@ func (s KOTSStore) SetInstanceSnapshotTTL(clusterID string, snapshotTTL string) 
 	return nil
 }
 
-func (s KOTSStore) SetInstanceSnapshotSchedule(clusterID string, snapshotSchedule string) error {
+func (s *KOTSStore) SetInstanceSnapshotSchedule(clusterID string, snapshotSchedule string) error {
 	logger.Debug("Setting instance snapshot Schedule",
 		zap.String("clusterID", clusterID))
 	db := persistence.MustGetPGSession()

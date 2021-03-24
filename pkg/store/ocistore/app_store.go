@@ -25,7 +25,7 @@ const (
 	AppDownstreamsConfigMapName = "kotsadm-appdownstreams"
 )
 
-func (s OCIStore) AddAppToAllDownstreams(appID string) error {
+func (s *OCIStore) AddAppToAllDownstreams(appID string) error {
 	clusters, err := s.ListClusters()
 	if err != nil {
 		return errors.Wrap(err, "failed to list clusters")
@@ -59,7 +59,7 @@ func (s OCIStore) AddAppToAllDownstreams(appID string) error {
 	return nil
 }
 
-func (s OCIStore) SetAppInstallState(appID string, state string) error {
+func (s *OCIStore) SetAppInstallState(appID string, state string) error {
 	app, err := s.GetApp(appID)
 	if err != nil {
 		return errors.Wrap(err, "failed to get app")
@@ -74,7 +74,7 @@ func (s OCIStore) SetAppInstallState(appID string, state string) error {
 	return nil
 }
 
-func (s OCIStore) ListInstalledApps() ([]*apptypes.App, error) {
+func (s *OCIStore) ListInstalledApps() ([]*apptypes.App, error) {
 	appListConfigmap, err := s.getConfigmap(AppListConfigmapName)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get app list configmap")
@@ -93,7 +93,7 @@ func (s OCIStore) ListInstalledApps() ([]*apptypes.App, error) {
 	return apps, nil
 }
 
-func (s OCIStore) ListInstalledAppSlugs() ([]string, error) {
+func (s *OCIStore) ListInstalledAppSlugs() ([]string, error) {
 	apps, err := s.ListInstalledApps()
 	if err != nil {
 		return nil, err
@@ -105,7 +105,7 @@ func (s OCIStore) ListInstalledAppSlugs() ([]string, error) {
 	return appSlugs, nil
 }
 
-func (s OCIStore) GetAppIDFromSlug(slug string) (string, error) {
+func (s *OCIStore) GetAppIDFromSlug(slug string) (string, error) {
 	appListConfigmap, err := s.getConfigmap(AppListConfigmapName)
 	if err != nil {
 		return "", errors.Wrap(err, "failed to get app list configmap")
@@ -125,7 +125,7 @@ func (s OCIStore) GetAppIDFromSlug(slug string) (string, error) {
 	return "", ErrNotFound
 }
 
-func (s OCIStore) GetApp(id string) (*apptypes.App, error) {
+func (s *OCIStore) GetApp(id string) (*apptypes.App, error) {
 	appListConfigmap, err := s.getConfigmap(AppListConfigmapName)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get app list configmap")
@@ -139,7 +139,7 @@ func (s OCIStore) GetApp(id string) (*apptypes.App, error) {
 	return &app, nil
 }
 
-func (s OCIStore) GetAppFromSlug(slug string) (*apptypes.App, error) {
+func (s *OCIStore) GetAppFromSlug(slug string) (*apptypes.App, error) {
 	appListConfigmap, err := s.getConfigmap(AppListConfigmapName)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get app list configmap")
@@ -159,7 +159,7 @@ func (s OCIStore) GetAppFromSlug(slug string) (*apptypes.App, error) {
 	return nil, ErrNotFound
 }
 
-func (s OCIStore) CreateApp(name string, upstreamURI string, licenseData string, isAirgapEnabled bool, skipImagePush bool) (*apptypes.App, error) {
+func (s *OCIStore) CreateApp(name string, upstreamURI string, licenseData string, isAirgapEnabled bool, skipImagePush bool) (*apptypes.App, error) {
 	appListConfigmap, err := s.getConfigmap(AppListConfigmapName)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get app list configmap")
@@ -237,7 +237,7 @@ func (s OCIStore) CreateApp(name string, upstreamURI string, licenseData string,
 	return s.GetApp(id)
 }
 
-func (s OCIStore) ListDownstreamsForApp(appID string) ([]downstreamtypes.Downstream, error) {
+func (s *OCIStore) ListDownstreamsForApp(appID string) ([]downstreamtypes.Downstream, error) {
 	appDownstreamsConfigMap, err := s.getConfigmap(AppDownstreamsConfigMapName)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get app downstreams list configmap")
@@ -270,7 +270,7 @@ func (s OCIStore) ListDownstreamsForApp(appID string) ([]downstreamtypes.Downstr
 	return matchingClusters, nil
 }
 
-func (s OCIStore) ListAppsForDownstream(clusterID string) ([]*apptypes.App, error) {
+func (s *OCIStore) ListAppsForDownstream(clusterID string) ([]*apptypes.App, error) {
 	appDownstreamsConfigMap, err := s.getConfigmap(AppDownstreamsConfigMapName)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get app downstreams list configmap")
@@ -324,7 +324,7 @@ func (c OCIStore) SetSnapshotTTL(appID string, snapshotTTL string) error {
 	return ErrNotImplemented
 }
 
-func (s OCIStore) updateApp(app *apptypes.App) error {
+func (s *OCIStore) updateApp(app *apptypes.App) error {
 	b, err := json.Marshal(app)
 	if err != nil {
 		return errors.Wrap(err, "failed to marhsal app")
@@ -348,6 +348,6 @@ func (s OCIStore) updateApp(app *apptypes.App) error {
 	return nil
 }
 
-func (s OCIStore) RemoveApp(appID string) error {
+func (s *OCIStore) RemoveApp(appID string) error {
 	return ErrNotImplemented
 }
