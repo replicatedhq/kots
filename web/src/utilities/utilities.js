@@ -67,7 +67,7 @@ export function getReadableCollectorName(name) {
   if (statusToReturn) {
     return statusToReturn
   } else {
-    return `Gathering details about the cluster`;
+    return "Gathering details about the cluster";
   }
 }
 
