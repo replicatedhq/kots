@@ -19,6 +19,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/credentials/ec2rolecreds"
 	"github.com/aws/aws-sdk-go/aws/ec2metadata"
+	"github.com/aws/aws-sdk-go/aws/endpoints"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/pkg/errors"
@@ -369,8 +370,14 @@ func updateGlobalStore(ctx context.Context, store *types.Store, kotsadmNamepsace
 	}
 
 	if store.AWS != nil {
+		resolver := endpoints.DefaultResolver()
+		resolvedEndpoint, err := resolver.EndpointFor("s3", store.AWS.Region)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to resolve endpoint")
+		}
 		kotsadmVeleroBackendStorageLocation.Spec.Config = map[string]string{
 			"region": store.AWS.Region,
+			"s3Url":  resolvedEndpoint.URL,
 		}
 
 		if store.AWS.UseInstanceRole {
@@ -788,8 +795,12 @@ func GetGlobalStore(ctx context.Context, kotsadmNamepsace string, kotsadmVeleroB
 
 func mapAWSBackupStorageLocationToStore(kotsadmVeleroBackendStorageLocation *velerov1.BackupStorageLocation, store *types.Store) error {
 	endpoint, isS3Compatible := kotsadmVeleroBackendStorageLocation.Spec.Config["s3Url"]
-
-	if !isS3Compatible {
+	u, err := url.Parse(endpoint)
+	if err != nil {
+		return errors.Wrap(err, "failed to parse s3 url")
+	}
+	// without endpoint, the ui has no logic to figure if it is amazon-s3 or other-s3 compatible storages
+	if !isS3Compatible || strings.HasSuffix(u.Hostname(), ".amazonaws.com") {
 		store.AWS = &types.StoreAWS{
 			Region: kotsadmVeleroBackendStorageLocation.Spec.Config["region"],
 		}
@@ -808,10 +819,6 @@ func mapAWSBackupStorageLocationToStore(kotsadmVeleroBackendStorageLocation *vel
 	}
 
 	// check if using file system store
-	u, err := url.Parse(endpoint)
-	if err != nil {
-		return errors.Wrap(err, "failed to parse s3 url")
-	}
 	serviceName := strings.Split(u.Hostname(), ".")[0]
 	if u.Scheme == "http" && serviceName == FileSystemMinioServiceName {
 		publicURL, ok := kotsadmVeleroBackendStorageLocation.Spec.Config["publicUrl"]
