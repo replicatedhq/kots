@@ -132,7 +132,7 @@ class SupportBundleRow extends React.Component {
                 <div className="flex u-marginTop--10">
                   {bundle?.analysis?.insights?.length ?
                     <div className="flex flex1 u-marginRight--5 alignItems--center">
-                      {sortBy(filter(bundle?.analysis?.insights, (i) => i.level !== "debug"), ["desiredPosition"]).map((insight, i) => {
+                      {sortBy(filter(bundle?.analysis?.insights, (i) => i.severity !== "debug"), ["desiredPosition"]).map((insight, i) => {
                         return (
                           <div key={i} className="analysis-icon-wrapper">
                             {this.renderInsightIcon(bundle, i, insight)}
