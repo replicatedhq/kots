@@ -1,7 +1,5 @@
-FROM minio/minio:RELEASE.2019-10-12T01-39-57Z
+FROM minio/minio:RELEASE.2021-03-17T02-33-02Z
 
-RUN apk update && apk add ca-certificates && rm -rf /var/cache/apk/*
-
-RUN adduser -h /home/minio -s /bin/sh -u 1001 -D minio
+RUN adduser -d /home/minio -s /bin/sh -u 1001 minio
 USER minio
 ENV HOME /home/minio
