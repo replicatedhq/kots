@@ -1,5 +1,4 @@
 import React from "react";
-import dayjs from "dayjs";
 import { Link } from "react-router-dom"
 
 import { Utilities } from "../../utilities/utilities";
@@ -34,7 +33,7 @@ class RedactorRow extends React.Component {
           <div className="flex flex1 alignItems--center u-marginBottom--small">
             <span className={`status-indicator u-marginBottom--10 ${this.state.redactorEnabled ? "enabled" : "disabled"}`} />
             <p className="u-fontSize--large u-lineHeight--normal u-fontWeight--bold u-color--tuna u-marginRight--10">{redactor?.name}</p>
-            <span className="u-fontSize--small u-color--dustyGray u-fontWeight--medium u-lineHeight--normal u-marginTop--5"> Last updated on {dayjs(redactor?.updatedAt).format("MM/DD/YY @ hh:mm a")} </span>
+            <span className="u-fontSize--small u-color--dustyGray u-fontWeight--medium u-lineHeight--normal u-marginTop--5"> Last updated on {Utilities.dateFormat(redactor?.updatedAt, "MM/DD/YY @ hh:mm a z")} </span>
           </div>
           <p className="u-fontSize--small u-fontWeight--medium u-lineHeight--normal u-color--nevada u-marginLeft--10"> {redactor?.description} </p>
         </div>

@@ -1,5 +1,7 @@
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
+import timezone from "dayjs/plugin/timezone";
+import advanced from "dayjs/plugin/advancedFormat";
 import Cookies from 'universal-cookie';
 import utc from "dayjs/plugin/utc";
 import queryString from "query-string";
@@ -10,9 +12,10 @@ import each from "lodash/each";
 import find from "lodash/find";
 import trim from "lodash/trim";
 import * as jsdiff from "diff";
-import moment from "moment";
 
+dayjs.extend(timezone);
 dayjs.extend(utc);
+dayjs.extend(advanced);
 dayjs.extend(relativeTime);
 
 /**
@@ -443,9 +446,9 @@ export const Utilities = {
 
   dateFormat(date, format, localize = true) {
     if (!localize) {
-      return dayjs.utc(date).format(format);
+      return dayjs.utc(date).tz(dayjs.tz.guess()).format(format);
     }
-    return dayjs.utc(date).local().format(format);
+    return dayjs.utc(date).local().tz(dayjs.tz.guess()).format(format);
   },
 
   dateFromNow(date) {
@@ -599,8 +602,8 @@ export const Utilities = {
   },
 
   checkIsDateExpired(date) {
-    const currentDate = moment();
-    const diff = currentDate.diff(moment(date), "days");
+    const currentDate = dayjs();
+    const diff = currentDate.diff(dayjs(date), "days");
     
     if(diff > 0) {
       return true;

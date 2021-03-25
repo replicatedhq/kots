@@ -4,7 +4,6 @@ import ReactTooltip from "react-tooltip"
 
 import Select from "react-select";
 import isEmpty from "lodash/isEmpty";
-import moment from "moment";
 import dayjs from "dayjs";
 import size from "lodash/size";
 import url from "url";
@@ -283,7 +282,7 @@ export default class DashboardCard extends React.Component {
         {currentVersion?.deployedAt ?
           <div className="flex flex-column" style={{ minHeight: "35px" }}>
             {this.getCurrentVersionStatus(currentVersion)}
-            <p className="u-fontSize--small u-fontWeight--medium u-color--dustyGray u-marginTop--5"> {moment(currentVersion?.deployedAt).format("lll")} </p>
+            <p className="u-fontSize--small u-fontWeight--medium u-color--dustyGray u-marginTop--5"> {Utilities.dateFormat(currentVersion?.deployedAt, "MMMM D, YYYY @ hh:mm a z")} </p>
           </div>
           :
           <p className="u-fontWeight--bold u-fontSize--normal u-color--dustyGray" style={{ minHeight: "35px" }}> No version deployed </p>}

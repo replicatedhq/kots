@@ -28,7 +28,7 @@ export default function DeleteSnapshotModal(props) {
           <div className="flex flex1 justifyContent--spaceBetween u-marginTop--20">
             <div className="flex flex-column">
               <p className="u-fontSize--normal u-fontWeight--bold u-color--tuna u-lineHeight--normal">{snapshotToDelete?.name}</p>
-              <p className="u-fontSize--normal u-color--doveGray u-fontWeight--bold u-lineHeight--normal u-marginRight--20"><span className="u-fontWeight--normal u-color--dustyGray">Captured on:</span> {Utilities.dateFormat(snapshotToDelete?.startedAt, "MM/DD/YY @ hh:mm a")}</p>
+              <p className="u-fontSize--normal u-color--doveGray u-fontWeight--bold u-lineHeight--normal u-marginRight--20"><span className="u-fontWeight--normal u-color--dustyGray">Captured on:</span> {Utilities.dateFormat(snapshotToDelete?.startedAt, "MM/DD/YY @ hh:mm a z")}</p>
             </div>
             <div className="flex alignItems--center">
               <span className={`status-indicator ${snapshotToDelete?.status.toLowerCase()}`}>{snapshotToDelete?.status}</span>

@@ -1,6 +1,6 @@
 import React from "react";
 import Modal from "react-modal";
-import dayjs from "dayjs";
+import { Utilities } from "../../utilities/utilities";
 
 export default function DeleteRedactorModal(props) {
   const { deleteRedactorModal, toggleConfirmDeleteModal, redactorToDelete, handleDeleteRedactor, deletingRedactor, deleteErrMsg } = props;
@@ -28,7 +28,7 @@ export default function DeleteRedactorModal(props) {
           <div className="flex flex1 justifyContent--spaceBetween u-marginTop--20">
             <div className="flex flex-column">
               <p className="u-fontSize--normal u-fontWeight--bold u-color--tuna u-lineHeight--normal">{redactorToDelete?.name}</p>
-              <p className="u-fontSize--normal u-color--doveGray u-fontWeight--bold u-lineHeight--normal u-marginRight--20">Last updated on {dayjs(redactorToDelete?.updatedOn).format("MM/DD/YY @ hh:mm a")}</p>
+              <p className="u-fontSize--normal u-color--doveGray u-fontWeight--bold u-lineHeight--normal u-marginRight--20">Last updated on {Utilities.dateFormat(redactorToDelete?.updatedOn, "MM/DD/YY @ hh:mm a z")}</p>
             </div>
           </div>
           <div className="flex justifyContent--flexStart u-marginTop--20">

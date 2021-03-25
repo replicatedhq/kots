@@ -2,7 +2,6 @@ import React, { Component } from "react";
 import { Link, withRouter } from "react-router-dom";
 import Helmet from "react-helmet";
 import ReactTooltip from "react-tooltip";
-import moment from "moment";
 
 import Loader from "../shared/Loader";
 import SnapshotRow from "./SnapshotRow";
@@ -16,6 +15,7 @@ import SnapshotDifferencesModal from "../modals/SnapshotDifferencesModal";
 import "../../scss/components/snapshots/AppSnapshots.scss";
 import { Utilities } from "../../utilities/utilities";
 import { Repeater } from "../../utilities/repeater";
+import dayjs from "dayjs";
 
 
 class Snapshots extends Component {
@@ -133,7 +133,7 @@ class Snapshots extends Component {
       status: "InProgress",
       trigger: "manual",
       sequence: "",
-      startedAt: moment().format("MM/DD/YY @ hh:mm a"),
+      startedAt: dayjs().format("MM/DD/YY @ hh:mm a z"),
       finishedAt: "",
       expiresAt: "",
       volumeCount: 0,
@@ -205,9 +205,9 @@ class Snapshots extends Component {
       status: "Deleting",
       trigger: "manual",
       sequence: snapshot.sequence,
-      startedAt: Utilities.dateFormat(snapshot.startedAt, "MM/DD/YY @ hh:mm a"),
-      finishedAt: Utilities.dateFormat(snapshot.finishedAt, "MM/DD/YY @ hh:mm a"),
-      expiresAt: Utilities.dateFormat(snapshot.expiresAt, "MM/DD/YY @ hh:mm a"),
+      startedAt: Utilities.dateFormat(snapshot.startedAt, "MM/DD/YY @ hh:mm a z"),
+      finishedAt: Utilities.dateFormat(snapshot.finishedAt, "MM/DD/YY @ hh:mm a z"),
+      expiresAt: Utilities.dateFormat(snapshot.expiresAt, "MM/DD/YY @ hh:mm a z"),
       volumeCount: snapshot.volumeCount,
       volumeSuccessCount: snapshot.volumeSuccessCount,
       volumeBytes: 0,

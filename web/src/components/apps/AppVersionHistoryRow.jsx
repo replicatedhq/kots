@@ -1,11 +1,8 @@
 
 import React from "react";
 import { Link } from "react-router-dom";
-import dayjs from "dayjs";
 import find from "lodash/find";
 import classNames from "classnames";
-import isSameOrAfter from "dayjs/plugin/isSameOrAfter";
-dayjs.extend(isSameOrAfter);
 import ReactTooltip from "react-tooltip";
 
 import Loader from "../shared/Loader";
@@ -254,7 +251,7 @@ export default function AppVersionHistoryRow(props) {
         </div>
         <div className="flex alignItems--center u-marginTop--10"></div>
         <div className="flex flex1 u-marginTop--15 alignItems--center">
-          <p className="u-fontSize--small u-lineHeight--normal u-color--dustyGray u-fontWeight--medium">Released <span className="u-fontWeight--bold">{version.upstreamReleasedAt ? dayjs(version.upstreamReleasedAt).format("MMMM D, YYYY") : dayjs(version.createdOn).format("MMMM D, YYYY")}</span></p>
+          <p className="u-fontSize--small u-lineHeight--normal u-color--dustyGray u-fontWeight--medium">Released <span className="u-fontWeight--bold">{version.upstreamReleasedAt ? Utilities.dateFormat(version.upstreamReleasedAt, "MMMM D, YYYY") : Utilities.dateFormat(version.createdOn, "MMMM D, YYYY")}</span></p>
           {version.releaseNotes ?
             <p className="release-notes-link u-fontSize--small u-fontWeight--medium u-lineHeight--normal u-marginLeft--10 flex alignItems--center" onClick={() => showDownstreamReleaseNotes(version.releaseNotes)}> <span className="icon releaseNotes-small--icon clickable u-marginRight--5" />Release notes</p> : null}
         </div>
@@ -276,7 +273,7 @@ export default function AppVersionHistoryRow(props) {
             renderVersionAction(version, latestVersion, nothingToCommit && selectedDiffReleases, props.app, props.history, props.deployVersion)
           }
         </div>
-        <p className="u-fontSize--small u-lineHeight--normal u-color--dustyGray u-fontWeight--medium u-marginTop--15">Deployed: <span className="u-fontWeight--bold">{version.deployedAt ? dayjs(version.deployedAt).format("MMMM D, YYYY @ hh:mm a") : "N/A"}</span></p>
+        <p className="u-fontSize--small u-lineHeight--normal u-color--dustyGray u-fontWeight--medium u-marginTop--15">Deployed: <span className="u-fontWeight--bold">{version.deployedAt ? Utilities.dateFormat(version.deployedAt, "MMMM D, YYYY @ hh:mm a z") : "N/A"}</span></p>
       </div>
     </div>
   )

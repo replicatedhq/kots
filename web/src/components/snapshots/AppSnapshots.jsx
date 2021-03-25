@@ -3,7 +3,6 @@ import { Link, withRouter } from "react-router-dom"
 import Helmet from "react-helmet";
 import Modal from "react-modal";
 import ReactTooltip from "react-tooltip"
-import moment from "moment";
 import Select from "react-select";
 import isEmpty from "lodash/isEmpty";
 
@@ -20,6 +19,7 @@ import ErrorModal from "../modals/ErrorModal";
 import "../../scss/components/snapshots/AppSnapshots.scss";
 import { Utilities } from "../../utilities/utilities";
 import { Repeater } from "../../utilities/repeater";
+import dayjs from "dayjs";
 
 
 class AppSnapshots extends Component {
@@ -257,9 +257,9 @@ class AppSnapshots extends Component {
       trigger: "manual",
       appID: this.state.selectedApp.id,
       sequence: snapshot.sequence,
-      startedAt: Utilities.dateFormat(snapshot.startedAt, "MM/DD/YY @ hh:mm a"),
-      finishedAt: Utilities.dateFormat(snapshot.finishedAt, "MM/DD/YY @ hh:mm a"),
-      expiresAt: Utilities.dateFormat(snapshot.expiresAt, "MM/DD/YY @ hh:mm a"),
+      startedAt: Utilities.dateFormat(snapshot.startedAt, "MM/DD/YY @ hh:mm a z"),
+      finishedAt: Utilities.dateFormat(snapshot.finishedAt, "MM/DD/YY @ hh:mm a z"),
+      expiresAt: Utilities.dateFormat(snapshot.expiresAt, "MM/DD/YY @ hh:mm a z"),
       volumeCount: snapshot.volumeCount,
       volumeSuccessCount: snapshot.volumeSuccessCount,
       volumeBytes: 0,
@@ -364,7 +364,7 @@ class AppSnapshots extends Component {
       trigger: "manual",
       appID: selectedApp.id,
       sequence: "",
-      startedAt: moment().format("MM/DD/YY @ hh:mm a"),
+      startedAt: dayjs().format("MM/DD/YY @ hh:mm a z"),
       finishedAt: "",
       expiresAt: "",
       volumeCount: 0,

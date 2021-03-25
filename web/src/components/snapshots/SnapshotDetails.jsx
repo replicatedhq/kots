@@ -5,8 +5,7 @@ import Modal from "react-modal";
 import filter from "lodash/filter";
 import isEmpty from "lodash/isEmpty";
 import ReactApexChart from "react-apexcharts";
-import moment from "moment";
-
+import dayjs from "dayjs";
 import Loader from "../shared/Loader";
 import ShowAllModal from "../modals/ShowAllModal";
 import ViewSnapshotLogsModal from "../modals/ViewSnapshotLogsModal";
@@ -61,7 +60,7 @@ class SnapshotDetails extends Component {
         type: "datetime",
         labels: {
           formatter: (value) => {
-            return moment(value).format("h:mm:ss");
+            return dayjs(value).format("h:mm:ss");
           }
         }
       },
@@ -92,10 +91,10 @@ class SnapshotDetails extends Component {
             "<br />" +
             "<br />" +
             '<span class="u-fontSize--normal u-fontWeight--normal u-color--dustyGray u-marginTop--10">' +
-            "Started at " + moment(w.globals.seriesRangeStart[seriesIndex][dataPointIndex]).format("h:mm:ss") + "</span>" +
+            "Started at " + dayjs(w.globals.seriesRangeStart[seriesIndex][dataPointIndex]).format("h:mm:ss") + "</span>" +
             "<br />" +
             '<span class="u-fontSize--normal u-fontWeight--normal u-color--dustyGray">' +
-            "Finished at " + moment(w.globals.seriesRangeEnd[seriesIndex][dataPointIndex]).format("h:mm:ss") + "</span>" +
+            "Finished at " + dayjs(w.globals.seriesRangeEnd[seriesIndex][dataPointIndex]).format("h:mm:ss") + "</span>" +
             "</div>"
           );
         }
@@ -271,7 +270,7 @@ class SnapshotDetails extends Component {
   renderShowAllVolumes = (volumes) => {
     return (
       volumes.map((volume) => {
-        const diffMinutes = moment(volume?.finished).diff(moment(volume?.started), "minutes");
+        const diffMinutes = dayjs(volume?.finished).diff(dayjs(volume?.started), "minutes");
         return (
           <div className="flex flex1 u-borderBottom--gray alignItems--center" key={volume.name}>
             <div className="flex1 u-paddingBottom--15 u-paddingTop--15 u-paddingLeft--10">
@@ -323,7 +322,7 @@ class SnapshotDetails extends Component {
   renderShowAllScripts = (hooks) => {
     return (
       hooks.map((hook, i) => {
-        const diffMinutes = moment(hook?.finishedAt).diff(moment(hook?.startedAt), "minutes");
+        const diffMinutes = dayjs(hook?.finishedAt).diff(dayjs(hook?.startedAt), "minutes");
         return (
           <div className="flex flex1 u-borderBottom--gray alignItems--center" key={`${hook.name}-${hook.phase}-${i}`}>
             <div className="flex flex1 u-paddingBottom--15 u-paddingTop--15 u-paddingLeft--10">
@@ -372,19 +371,19 @@ class SnapshotDetails extends Component {
 
 
   calculateTimeInterval = (data) => {
-    const startedTimes = data.map((d) => moment(d.startedAt));
-    const finishedTimes = data.map((d) => moment(d.finishedAt));
-    const minStarted = startedTimes?.length ? moment.min(startedTimes) : "";
-    const maxFinished = finishedTimes?.length ? moment.max(finishedTimes) : "";
+    const startedTimes = data.map((d) => dayjs(d.startedAt));
+    const finishedTimes = data.map((d) => dayjs(d.finishedAt));
+    const minStarted = startedTimes?.length ? dayjs.min(startedTimes) : "";
+    const maxFinished = finishedTimes?.length ? dayjs.max(finishedTimes) : "";
 
-    const duration = moment.duration(maxFinished.diff(minStarted));
+    const duration = dayjs.duration(maxFinished.diff(minStarted));
     const diffHours = parseInt(duration.asHours());
     const diffMinutes = parseInt(duration.asMinutes()) % 60;
     const diffDays = parseInt(duration.asDays());
 
     const timeObj = {
-      "minStarted": minStarted.format("MM/DD/YY @ hh:mm a"),
-      "maxFinished": maxFinished.format("MM/DD/YY @ hh:mm a"),
+      "minStarted": minStarted.format("MM/DD/YY @ hh:mm a z"),
+      "maxFinished": maxFinished.format("MM/DD/YY @ hh:mm a z"),
       "maxHourDifference": diffHours,
       "maxMinDifference": diffMinutes,
       "maxDaysDifference": diffDays
@@ -415,7 +414,7 @@ class SnapshotDetails extends Component {
     const data = seriesData.map((d, i) => {
       let finishedTime;
       if (d.startedAt === d.finishedAt) {
-        finishedTime = new Date(moment(d.finishedAt).add(1, "seconds")).getTime();
+        finishedTime = new Date(dayjs(d.finishedAt).add(1, "seconds")).getTime();
       } else {
         finishedTime = new Date(d.finishedAt).getTime()
       }
