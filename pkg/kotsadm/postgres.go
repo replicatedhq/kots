@@ -3,11 +3,14 @@ package kotsadm
 import (
 	"bytes"
 	"context"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
 	kotsadmobjects "github.com/replicatedhq/kots/pkg/kotsadm/objects"
 	"github.com/replicatedhq/kots/pkg/kotsadm/types"
+	"github.com/replicatedhq/kots/pkg/logger"
+	corev1 "k8s.io/api/core/v1"
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -95,4 +98,31 @@ func ensurePostgresService(namespace string, clientset *kubernetes.Clientset) er
 	}
 
 	return nil
+}
+
+func waitForHealthyPostgres(deployOptions types.DeployOptions, clientset *kubernetes.Clientset) error {
+	log := logger.NewCLILogger()
+
+	log.ChildActionWithSpinner("Waiting for datastore to be ready")
+	defer log.FinishChildSpinner()
+
+	start := time.Now()
+	for {
+		pods, err := clientset.CoreV1().Pods(deployOptions.Namespace).List(context.TODO(), metav1.ListOptions{LabelSelector: "app=kotsadm-postgres"})
+		if err != nil {
+			return errors.Wrap(err, "failed to list pods")
+		}
+
+		for _, pod := range pods.Items {
+			if pod.Status.Phase == corev1.PodRunning {
+				return nil
+			}
+		}
+
+		time.Sleep(time.Second)
+
+		if time.Now().Sub(start) > time.Duration(deployOptions.Timeout) {
+			return &types.ErrorTimeout{Message: "timeout waiting for postgres pod"}
+		}
+	}
 }
