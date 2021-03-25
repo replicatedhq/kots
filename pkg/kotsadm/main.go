@@ -63,14 +63,6 @@ func YAML(deployOptions types.DeployOptions) (map[string][]byte, error) {
 		docs[n] = v
 	}
 
-	migrationDocs, err := getMigrationsYAML(deployOptions)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to get migrations yaml")
-	}
-	for n, v := range migrationDocs {
-		docs[n] = v
-	}
-
 	// secrets
 	secretsDocs, err := getSecretsYAML(&deployOptions)
 	if err != nil {
@@ -379,7 +371,7 @@ func ensureKotsadm(deployOptions types.DeployOptions, clientset *kubernetes.Clie
 			return errors.Wrap(err, "failed to ensure postgres")
 		}
 
-		if err := runSchemaHeroMigrations(deployOptions, clientset); err != nil {
+		if err := waitForHealthyPostgres(deployOptions, clientset); err != nil {
 			return errors.Wrap(err, "failed to run database migrations")
 		}
 
