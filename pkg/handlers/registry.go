@@ -309,7 +309,7 @@ func (h *Handler) ValidateAppRegistry(w http.ResponseWriter, r *http.Request) {
 	err = dockerregistry.TestPushAccess(validateAppRegistryRequest.Hostname, validateAppRegistryRequest.Username, password, validateAppRegistryRequest.Namespace)
 	if err != nil {
 		// NOTE: it is possible this is a 500 sometimes
-		logger.Infof("Failed to test push access: %v", err)
+		logger.Infof("Failed to test push access to %q with user %q: %v", validateAppRegistryRequest.Hostname, validateAppRegistryRequest.Username, err)
 		JSON(w, 400, NewErrorResponse(err))
 		return
 	}
