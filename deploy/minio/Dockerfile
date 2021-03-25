@@ -1,4 +1,4 @@
-FROM minio/minio:RELEASE.2019-10-12T01-39-57Z
+FROM minio/minio:RELEASE.2021-03-17T02-33-02Z
 
 RUN apk update && apk add ca-certificates && rm -rf /var/cache/apk/*
 

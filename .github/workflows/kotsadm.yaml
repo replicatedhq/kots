@@ -626,6 +626,7 @@ jobs:
   scan_postgres:
     runs-on: ubuntu-18.04
     needs: [build-schema-migrations]
+    if: ${{ github.ref == 'refs/heads/master' }}
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -645,6 +646,7 @@ jobs:
   scan_migrations:
     runs-on: ubuntu-18.04
     needs: [build-schema-migrations]
+    if: ${{ github.ref == 'refs/heads/master' }}
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -663,7 +665,7 @@ jobs:
 
   scan_minio:
     runs-on: ubuntu-18.04
-    needs: [build_minio_alpha]
+    # needs: [build_minio_alpha]
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -671,7 +673,8 @@ jobs:
         id: scan
         uses: anchore/scan-action@v2
         with:
-          image: "kotsadm/minio:alpha"
+          # image: "kotsadm/minio:alpha"
+          image: "minio/minio:RELEASE.2021-03-17T02-33-02Z"
           fail-build: false
           acs-report-enable: true
 
