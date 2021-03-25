@@ -210,7 +210,7 @@ func (s *KOTSStore) IsNotFound(err error) bool {
 
 func canIgnoreEtcdError(err error) bool {
 	if err == nil {
-		return false
+		return true
 	}
 
 	if strings.Contains(err.Error(), "connection refused") {
