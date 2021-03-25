@@ -48,17 +48,17 @@ kotsadm:
 
 .PHONY: build-ttl.sh
 build-ttl.sh:
-	docker build -f deploy/Dockerfile -t ttl.sh/${CURRENT_USER}/kotsadm:12h .
+	docker build --pull -f deploy/Dockerfile -t ttl.sh/${CURRENT_USER}/kotsadm:12h .
 	docker push ttl.sh/${CURRENT_USER}/kotsadm:12h
 
 .PHONY: build-alpha
 build-alpha:
-	docker build -f deploy/Dockerfile --build-arg version=${GIT_COMMIT} -t kotsadm/kotsadm:alpha .
+	docker build --pull -f deploy/Dockerfile --build-arg version=${GIT_COMMIT} -t kotsadm/kotsadm:alpha .
 	docker push kotsadm/kotsadm:alpha
 
 .PHONY: build-release
 build-release:
-	docker build -f deploy/Dockerfile --build-arg version=${GIT_TAG} -t kotsadm/kotsadm:${GIT_TAG} .
+	docker build --pull -f deploy/Dockerfile --build-arg version=${GIT_TAG} -t kotsadm/kotsadm:${GIT_TAG} .
 	docker push kotsadm/kotsadm:${GIT_TAG}
 	mkdir -p bin/docker-archive/kotsadm
 	skopeo copy docker-daemon:kotsadm/kotsadm:${GIT_TAG} docker-archive:bin/docker-archive/kotsadm/${GIT_TAG}
