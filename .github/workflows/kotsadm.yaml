@@ -637,6 +637,7 @@ jobs:
           image: "postgres:10.7"
           fail-build: false
           acs-report-enable: true
+          severity-cutoff: high
 
       - name: Upload scan report
         uses: github/codeql-action/upload-sarif@v1
@@ -657,6 +658,7 @@ jobs:
           image: "kotsadm/kotsadm-migrations:alpha"
           fail-build: false
           acs-report-enable: true
+          severity-cutoff: high
 
       - name: Upload scan report
         uses: github/codeql-action/upload-sarif@v1
@@ -677,6 +679,7 @@ jobs:
           image: "minio/minio:RELEASE.2021-03-17T02-33-02Z"
           fail-build: false
           acs-report-enable: true
+          severity-cutoff: high
 
       - name: Upload scan report
         uses: github/codeql-action/upload-sarif@v1
@@ -696,6 +699,7 @@ jobs:
           image: "kotsadm/kurl-proxy:alpha"
           fail-build: false
           acs-report-enable: true
+          severity-cutoff: high
 
       - name: Upload scan report
         uses: github/codeql-action/upload-sarif@v1
@@ -715,6 +719,7 @@ jobs:
           image: "kotsadm/kotsadm-operator:alpha"
           fail-build: false
           acs-report-enable: true
+          severity-cutoff: high
 
       - name: Upload scan report
         uses: github/codeql-action/upload-sarif@v1
@@ -734,6 +739,7 @@ jobs:
           image: "kotsadm/kotsadm:alpha"
           fail-build: false
           acs-report-enable: true
+          severity-cutoff: high
 
       - name: Upload scan report
         uses: github/codeql-action/upload-sarif@v1
@@ -753,6 +759,7 @@ jobs:
           image: "quay.io/dexidp/dex:v2.26.0"
           fail-build: false
           acs-report-enable: true
+          severity-cutoff: high
 
       - name: Upload scan report
         uses: github/codeql-action/upload-sarif@v1
