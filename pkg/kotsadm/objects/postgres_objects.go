@@ -14,10 +14,8 @@ import (
 )
 
 func PostgresStatefulset(deployOptions types.DeployOptions, size resource.Quantity) *appsv1.StatefulSet {
-	image := "postgres:10.7"
 	var pullSecrets []corev1.LocalObjectReference
 	if s := kotsadmversion.KotsadmPullSecret(deployOptions.Namespace, deployOptions.KotsadmOptions); s != nil {
-		image = fmt.Sprintf("%s/postgres:%s", kotsadmversion.KotsadmRegistry(deployOptions.KotsadmOptions), kotsadmversion.KotsadmTag(deployOptions.KotsadmOptions))
 		pullSecrets = []corev1.LocalObjectReference{
 			{
 				Name: s.ObjectMeta.Name,
@@ -88,7 +86,7 @@ func PostgresStatefulset(deployOptions types.DeployOptions, size resource.Quanti
 					},
 					Containers: []corev1.Container{
 						{
-							Image:           image,
+							Image:           fmt.Sprintf("%s/postgres:%s", kotsadmversion.KotsadmRegistry(deployOptions.KotsadmOptions), kotsadmversion.KotsadmTag(deployOptions.KotsadmOptions)),
 							ImagePullPolicy: corev1.PullIfNotPresent,
 							Name:            "kotsadm-postgres",
 							Ports: []corev1.ContainerPort{
