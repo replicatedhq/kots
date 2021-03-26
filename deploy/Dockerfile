@@ -1,14 +1,22 @@
 FROM debian:buster-slim
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    curl ca-certificates git gnupg2 python-pip \
-  && pip install s3cmd \
+    curl ca-certificates git gnupg2 python-dateutil \
   && for i in 1 2 3 4 5 6 7 8; do mkdir -p "/usr/share/man/man$i"; done \
   && curl --fail -N -s https://www.postgresql.org/media/keys/ACCC4CF8.asc | apt-key add - \
   && echo "deb http://apt.postgresql.org/pub/repos/apt/ stretch-pgdg main" > /etc/apt/sources.list.d/PostgreSQL.list \
   && apt-get update && apt-get install -y --no-install-recommends postgresql-client-10 \
   && rm -rf /var/lib/apt/lists/* \
   && rm -rf /usr/share/man/man*
+
+# Install s3cmd
+ENV S3CMD_VERSION=2.1.0
+RUN curl -L https://github.com/s3tools/s3cmd/releases/download/v${S3CMD_VERSION}/s3cmd-${S3CMD_VERSION}.tar.gz > /tmp/s3cmd.tar.gz && \
+  cd /tmp && tar -xzvf s3cmd.tar.gz && \
+  rm s3cmd.tar.gz && \
+  mv s3cmd-${S3CMD_VERSION}/s3cmd /usr/local/bin/s3cmd && \
+  mv s3cmd-${S3CMD_VERSION}/S3 /usr/local/bin/S3 && \
+  rm -rf s3cmd-${S3CMD_VERSION}
 
 # Install kustomize 3
 RUN curl -L "https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize%2Fv3.5.4/kustomize_v3.5.4_linux_amd64.tar.gz" > /tmp/kustomize.tar.gz && \
