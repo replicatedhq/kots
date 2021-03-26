@@ -55,6 +55,7 @@ build-ttl.sh:
 build-alpha:
 	docker build --pull -f deploy/Dockerfile --build-arg version=${GIT_COMMIT} -t kotsadm/kotsadm:alpha .
 	docker push kotsadm/kotsadm:alpha
+	skopeo copy docker://ghcr.io/dexidp/dex:v2.28.1 docker://kotsadm/dex:v2.28.1
 
 .PHONY: build-release
 build-release:
@@ -63,7 +64,7 @@ build-release:
 	mkdir -p bin/docker-archive/kotsadm
 	skopeo copy docker-daemon:kotsadm/kotsadm:${GIT_TAG} docker-archive:bin/docker-archive/kotsadm/${GIT_TAG}
 	mkdir -p bin/docker-archive/dex
-	skopeo copy docker://quay.io/dexidp/dex:v2.26.0 docker-archive:bin/docker-archive/dex/${GIT_TAG}
+	skopeo copy docker://kotsadm/dex:v2.28.1 docker-archive:bin/docker-archive/dex/v2.28.1
 
 .PHONY: project-pact-tests
 project-pact-tests:

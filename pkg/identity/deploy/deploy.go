@@ -204,7 +204,7 @@ var (
 )
 
 func deploymentResource(issuerURL, configChecksum string, options Options) (*appsv1.Deployment, error) {
-	image := "quay.io/dexidp/dex:v2.26.0"
+	image := "kotsadm/dex:v2.28.1"
 	imagePullSecrets := []corev1.LocalObjectReference{}
 	if options.ImageRewriteFn != nil {
 		var err error

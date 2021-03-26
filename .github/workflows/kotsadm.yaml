@@ -755,7 +755,7 @@ jobs:
         id: scan
         uses: anchore/scan-action@v2
         with:
-          image: "quay.io/dexidp/dex:v2.26.0"
+          image: "kotsadm/dex:v2.28.1"
           fail-build: false
           acs-report-enable: true
           severity-cutoff: high
