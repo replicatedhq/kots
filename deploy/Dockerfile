@@ -1,7 +1,8 @@
 FROM debian:buster-slim
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    curl ca-certificates git gnupg2 s3cmd \
+    curl ca-certificates git gnupg2 python-pip \
+  && pip install s3cmd \
   && for i in 1 2 3 4 5 6 7 8; do mkdir -p "/usr/share/man/man$i"; done \
   && curl --fail -N -s https://www.postgresql.org/media/keys/ACCC4CF8.asc | apt-key add - \
   && echo "deb http://apt.postgresql.org/pub/repos/apt/ stretch-pgdg main" > /etc/apt/sources.list.d/PostgreSQL.list \
