@@ -810,7 +810,7 @@ jobs:
         id: scan
         uses: anchore/scan-action@v2
         with:
-          image: "kotsadm/dex:v2.28.1"
+          image: "ghcr.io/dexidp/dex:v2.28.1"
           fail-build: false
           acs-report-enable: true
           severity-cutoff: high
