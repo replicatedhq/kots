@@ -37,17 +37,17 @@ run: bin
 
 .PHONY: build-ttl.sh
 build-ttl.sh:
-	docker build -f deploy/Dockerfile -t ttl.sh/${CURRENT_USER}/kotsadm-operator:12h .
+	docker build --pull -f deploy/Dockerfile -t ttl.sh/${CURRENT_USER}/kotsadm-operator:12h .
 	docker push ttl.sh/${CURRENT_USER}/kotsadm-operator:12h
 
 .PHONY: build-alpha
 build-alpha:
-	docker build -f deploy/Dockerfile -t kotsadm/kotsadm-operator:alpha .
+	docker build --pull -f deploy/Dockerfile -t kotsadm/kotsadm-operator:alpha .
 	docker push kotsadm/kotsadm-operator:alpha
 
 .PHONY: build-release
 build-release:
-	docker build -f deploy/Dockerfile -t kotsadm/kotsadm-operator:${GIT_TAG} .
+	docker build --pull -f deploy/Dockerfile -t kotsadm/kotsadm-operator:${GIT_TAG} .
 	docker push kotsadm/kotsadm-operator:${GIT_TAG}
 	mkdir -p bin/docker-archive/kotsadm-operator
 	skopeo copy docker-daemon:kotsadm/kotsadm-operator:${GIT_TAG} docker-archive:bin/docker-archive/kotsadm-operator/${GIT_TAG}
