@@ -43,6 +43,7 @@ type ApplicationManifests struct {
 	ClearNamespaces      []string `json:"clear_namespaces"`
 	ClearPVCs            bool     `json:"clear_pvcs"`
 	AnnotateSlug         bool     `json:"annotate_slug"`
+	IsRestore            bool     `json:"is_restore"`
 }
 
 // DesiredState is what we receive from the kotsadm-api server

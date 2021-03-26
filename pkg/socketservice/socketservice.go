@@ -59,6 +59,7 @@ type DeployArgs struct {
 	ClearNamespaces      []string `json:"clear_namespaces"`
 	ClearPVCs            bool     `json:"clear_pvcs"`
 	AnnotateSlug         bool     `json:"annotate_slug"`
+	IsRestore            bool     `json:"is_restore"`
 }
 
 type AppInformersArgs struct {
@@ -523,7 +524,7 @@ func processRestoreForApp(clusterSocket *ClusterSocket, a *apptypes.App) error {
 			return errors.Wrap(err, "failed to get downstream")
 		}
 
-		if err := undeployApp(a, d, clusterSocket); err != nil {
+		if err := undeployApp(a, d, clusterSocket, true); err != nil {
 			return errors.Wrap(err, "failed to undeploy app")
 		}
 		break
@@ -671,7 +672,7 @@ func createSupportBundleSpec(appID string, sequence int64, origin string, inClus
 	return nil
 }
 
-func undeployApp(a *apptypes.App, d *downstreamtypes.Downstream, clusterSocket *ClusterSocket) error {
+func undeployApp(a *apptypes.App, d *downstreamtypes.Downstream, clusterSocket *ClusterSocket, isRestore bool) error {
 	deployedVersion, err := downstream.GetCurrentVersion(a.ID, d.ClusterID)
 	if err != nil {
 		return errors.Wrap(err, "failed to get current downstream version")
@@ -719,6 +720,7 @@ func undeployApp(a *apptypes.App, d *downstreamtypes.Downstream, clusterSocket *
 		Wait:              true,
 		ClearNamespaces:   backup.Spec.IncludedNamespaces,
 		ClearPVCs:         true,
+		IsRestore:         isRestore,
 	}
 
 	c, err := server.GetChannel(clusterSocket.SocketID)

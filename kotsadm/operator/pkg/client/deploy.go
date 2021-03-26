@@ -74,6 +74,13 @@ func (c *Client) diffAndRemovePreviousManifests(applicationManifests Application
 				}
 			}
 		}
+		if applicationManifests.IsRestore {
+			if excludeLabel, exists := o.Metadata.Labels["velero.io/exclude-from-backup"]; exists {
+				if excludeLabel == "true" {
+					delete = false
+				}
+			}
+		}
 		decodedPreviousMap[k] = previousObject{
 			spec:   decodedPreviousString,
 			delete: delete,
@@ -170,7 +177,7 @@ func (c *Client) diffAndRemovePreviousManifests(applicationManifests Application
 		log.Printf("Ensuring all %s objects have been removed from namespace %s\n", applicationManifests.AppSlug, namespace)
 		sleepTime := time.Second * 2
 		for i := 60; i >= 0; i-- { // 2 minute wait, 60 loops with 2 second sleep
-			gone, err := c.clearNamespace(applicationManifests.AppSlug, namespace)
+			gone, err := c.clearNamespace(applicationManifests.AppSlug, namespace, applicationManifests.IsRestore)
 			if err != nil {
 				log.Printf("Failed to check if app %s objects have been removed from namespace %s: %v\n", applicationManifests.AppSlug, namespace, err)
 			} else if gone {
@@ -341,7 +348,7 @@ func (c *Client) ensureResourcesPresent(applicationManifests ApplicationManifest
 	return result, nil
 }
 
-func (c *Client) clearNamespace(slug string, namespace string) (bool, error) {
+func (c *Client) clearNamespace(slug string, namespace string, isRestore bool) (bool, error) {
 	cfg, err := config.GetConfig()
 	if err != nil {
 		return false, errors.Wrap(err, "failed to get config")
@@ -393,6 +400,15 @@ func (c *Client) clearNamespace(slug string, namespace string) (bool, error) {
 			continue
 		}
 		for _, u := range unstructuredList.Items {
+			labels := u.GetLabels()
+			if isRestore {
+				if excludeLabel, exists := labels["velero.io/exclude-from-backup"]; exists {
+					if excludeLabel == "true" {
+						continue
+					}
+				}
+			}
+
 			annotations := u.GetAnnotations()
 			if annotations["kots.io/app-slug"] == slug {
 				clear = false
