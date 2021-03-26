@@ -62,8 +62,12 @@ build-release:
 	docker push kotsadm/kotsadm:${GIT_TAG}
 	mkdir -p bin/docker-archive/kotsadm
 	skopeo copy docker-daemon:kotsadm/kotsadm:${GIT_TAG} docker-archive:bin/docker-archive/kotsadm/${GIT_TAG}
+
+	docker pull ghcr.io/dexidp/dex:v2.28.1
+	docker tag ghcr.io/dexidp/dex:v2.28.1 kotsadm/dex:v2.28.1
+	docker push kotsadm/dex:v2.28.1
+
 	mkdir -p bin/docker-archive/dex
-	skopeo copy docker://ghcr.io/dexidp/dex:v2.28.1 docker://kotsadm/dex:v2.28.1
 	skopeo copy docker://kotsadm/dex:v2.28.1 docker-archive:bin/docker-archive/dex/v2.28.1
 
 .PHONY: project-pact-tests
