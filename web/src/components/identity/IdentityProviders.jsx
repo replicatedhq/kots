@@ -658,7 +658,7 @@ class IdentityProviders extends Component {
               <div className="RbacPolicy--wrapper flex1 flex-column">
                 <div className={`u-marginTop--30 ${size(this.state.rbacGroupRows) > 0 && "u-borderBottom--gray darker"}`}>
                   <p className="u-fontSize--large u-lineHeight--default u-fontWeight--bold u-color--tuna"> Role Based Access Control Group Policy </p>
-                  <p className="u-fontSize--normal u-lineHeight--medium u-fontWeight--medium u-color--dustyGray u-marginTop--12 u-marginBottom--10"> Groups are defined by your identity provider as is adding and removing of team memebers to those groups. </p>
+                  <p className="u-fontSize--normal u-lineHeight--medium u-fontWeight--medium u-color--dustyGray u-marginTop--12 u-marginBottom--10"> Groups are defined by your identity provider as is adding and removing of team members to those groups. </p>
                 </div>
                 {size(this.state.rbacGroupRows) > 0 ?
                   <div className="flex-1-auto flex-column">
