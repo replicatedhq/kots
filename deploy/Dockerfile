@@ -1,5 +1,6 @@
 FROM debian:buster-slim
 
+## python-dateutil pkg is needed for s3cmd to work
 RUN apt-get update && apt-get install -y --no-install-recommends \
     curl ca-certificates git gnupg2 python-dateutil \
   && for i in 1 2 3 4 5 6 7 8; do mkdir -p "/usr/share/man/man$i"; done \
