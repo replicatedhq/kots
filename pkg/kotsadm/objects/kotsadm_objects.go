@@ -172,6 +172,12 @@ func UpdateKotsadmDeployment(deployment *appsv1.Deployment, deployOptions types.
 	}
 	deployment.Spec.Template.Spec.InitContainers = append(deployment.Spec.Template.Spec.InitContainers, additionalInitContainers...)
 
+	newVolumes := []corev1.Volume{}
+	for _, v := range desiredDeployment.Spec.Template.Spec.Volumes {
+		newVolumes = append(newVolumes, *v.DeepCopy())
+	}
+	deployment.Spec.Template.Spec.Volumes = newVolumes
+
 	// copy the env vars from the desired to existing. this could undo a change that the user had.
 	// we don't know which env vars we set and which are user edited. this method avoids deleting
 	// env vars that the user added, but doesn't handle edited vars
