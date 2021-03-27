@@ -17,7 +17,6 @@ import (
 	"github.com/replicatedhq/kots/pkg/render"
 	"github.com/replicatedhq/kots/pkg/session"
 	"github.com/replicatedhq/kots/pkg/store"
-	"github.com/replicatedhq/kots/pkg/supportbundle"
 	"github.com/replicatedhq/kots/pkg/version"
 )
 
@@ -226,7 +225,6 @@ func responseAppFromApp(a *apptypes.App) (*types.ResponseApp, error) {
 		CreatedAt:                     a.CreatedAt,
 		UpdatedAt:                     a.UpdatedAt,
 		LastUpdateCheckAt:             a.LastUpdateCheckAt,
-		BundleCommand:                 supportbundle.GetBundleCommand(a.Slug),
 		HasPreflight:                  a.HasPreflight,
 		IsConfigurable:                a.IsConfigurable,
 		UpdateCheckerSpec:             a.UpdateCheckerSpec,

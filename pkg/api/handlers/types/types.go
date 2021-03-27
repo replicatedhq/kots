@@ -27,7 +27,6 @@ type ResponseApp struct {
 	CreatedAt         time.Time  `json:"createdAt"`
 	UpdatedAt         *time.Time `json:"updatedAt"`
 	LastUpdateCheckAt string     `json:"lastUpdateCheckAt"`
-	BundleCommand     []string   `json:"bundleCommand"`
 	HasPreflight      bool       `json:"hasPreflight"`
 	IsConfigurable    bool       `json:"isConfigurable"`
 	UpdateCheckerSpec string     `json:"updateCheckerSpec"`

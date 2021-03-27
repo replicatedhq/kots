@@ -15,6 +15,7 @@ import (
 	downstream "github.com/replicatedhq/kots/pkg/kotsadmdownstream"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/logger"
+	"github.com/replicatedhq/kots/pkg/redact"
 	"github.com/replicatedhq/kots/pkg/render/helper"
 	"github.com/replicatedhq/kots/pkg/store"
 	"github.com/replicatedhq/kots/pkg/supportbundle"
@@ -232,6 +233,44 @@ func (h *Handler) GetSupportBundleCommand(w http.ResponseWriter, r *http.Request
 
 	if err := createSupportBundleSpec(foundApp.ID, sequence, getSupportBundleCommandRequest.Origin, false); err != nil {
 		logger.Error(errors.Wrap(err, "failed to create support bundle spec"))
+		JSON(w, http.StatusOK, response)
+		return
+	}
+
+	// do a lazy migration for kotsadm and app redact specs //
+
+	err = redact.GenerateKotsadmRedactSpec()
+	if err != nil {
+		logger.Error(errors.Wrap(err, "failed to generate kotsadm redact spec"))
+		JSON(w, http.StatusOK, response)
+		return
+	}
+
+	archiveDir, err := ioutil.TempDir("", "kotsadm")
+	if err != nil {
+		logger.Error(errors.Wrap(err, "failed to create temp dir"))
+		JSON(w, http.StatusOK, response)
+		return
+	}
+	defer os.RemoveAll(archiveDir)
+
+	err = store.GetStore().GetAppVersionArchive(foundApp.ID, sequence, archiveDir)
+	if err != nil {
+		logger.Error(errors.Wrap(err, "failed to get app version archive"))
+		JSON(w, http.StatusOK, response)
+		return
+	}
+
+	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(archiveDir)
+	if err != nil {
+		logger.Error(errors.Wrap(err, "failed to load kots kinds from archive"))
+		JSON(w, http.StatusOK, response)
+		return
+	}
+
+	err = redact.CreateRenderedAppRedactSpec(foundApp.ID, sequence, kotsKinds)
+	if err != nil {
+		logger.Error(errors.Wrap(err, "failed to write app redact spec configmap"))
 		JSON(w, http.StatusOK, response)
 		return
 	}
