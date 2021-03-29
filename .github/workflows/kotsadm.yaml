@@ -859,6 +859,13 @@ jobs:
         name: kotsadm-minio-image
         path: ./docker-archive
 
+    - name: Download kotsadm-postgres image
+      if: ${{ steps.get_tag.outputs.GIT_TAG != '' }}
+      uses: actions/download-artifact@v2.0.8
+      with:
+        name: kotsadm-postgres-image
+        path: ./docker-archive
+
     - name: Get Release
       if: ${{ steps.get_tag.outputs.GIT_TAG != '' }}
       id: get_release
