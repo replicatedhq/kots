@@ -173,16 +173,17 @@ func (s *KOTSStore) GetSession(id string) (*sessiontypes.Session, error) {
 
 func (s *KOTSStore) DeleteSession(id string) error {
 	sessionLock.Lock()
-	defer sessionLock.Unlock()
-
 	s.sessionSecret = nil
+	sessionLock.Unlock()
 
 	secret, err := s.getSessionSecret()
 	if err != nil {
 		return errors.Wrap(err, "failed to get session secret")
 	}
 
+	sessionLock.Lock()
 	delete(secret.Data, id)
+	sessionLock.Unlock()
 
 	if err := s.updateSessionSecret(secret); err != nil {
 		return errors.Wrap(err, "failed to update session secret")
