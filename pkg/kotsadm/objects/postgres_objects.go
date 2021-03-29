@@ -26,8 +26,8 @@ func PostgresStatefulset(deployOptions types.DeployOptions, size resource.Quanti
 	var securityContext corev1.PodSecurityContext
 	if !deployOptions.IsOpenShift {
 		securityContext = corev1.PodSecurityContext{
-			RunAsUser: util.IntPointer(999),
-			FSGroup:   util.IntPointer(999),
+			RunAsUser: util.IntPointer(70),
+			FSGroup:   util.IntPointer(70),
 		}
 	}
 
