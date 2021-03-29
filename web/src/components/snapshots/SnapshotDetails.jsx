@@ -6,11 +6,15 @@ import filter from "lodash/filter";
 import isEmpty from "lodash/isEmpty";
 import ReactApexChart from "react-apexcharts";
 import dayjs from "dayjs";
+import minMax from "dayjs/plugin/minMax"
+import duration from "dayjs/plugin/duration"
 import Loader from "../shared/Loader";
 import ShowAllModal from "../modals/ShowAllModal";
 import ViewSnapshotLogsModal from "../modals/ViewSnapshotLogsModal";
 import ErrorModal from "../modals/ErrorModal";
 import { Utilities } from "../../utilities/utilities";
+dayjs.extend(minMax);
+dayjs.extend(duration);
 
 let colorIndex = 0;
 let mapColors = {}
