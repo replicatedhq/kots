@@ -46,10 +46,14 @@ func ResetPasswordCmd() *cobra.Command {
 				os.Exit(1)
 			}
 
-			log.ActionWithoutSpinner("Reset the admin console password for %s", namespace)
-			newPassword, err := promptForNewPassword()
-			if err != nil {
-				os.Exit(1)
+			newPassword := v.GetString("new-password")
+			if newPassword == "" {
+				log.ActionWithoutSpinner("Reset the admin console password for %s", namespace)
+				p, err := promptForNewPassword()
+				if err != nil {
+					os.Exit(1)
+				}
+				newPassword = p
 			}
 
 			if err := setKotsadmPassword(newPassword, namespace); err != nil {
@@ -60,6 +64,8 @@ func ResetPasswordCmd() *cobra.Command {
 			return nil
 		},
 	}
+
+	cmd.Flags().String("new-password", "", "the new password to be used")
 
 	return cmd
 }
