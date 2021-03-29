@@ -823,7 +823,7 @@ jobs:
 
   build_airgap:
     runs-on: ubuntu-18.04
-    needs: [release_go_api_tagged, release_operator_tagged, build_minio_tagged]
+    needs: [release_go_api_tagged, release_operator_tagged, build_minio_tagged, build_postgres_tagged]
     steps:
     - name: Get the version
       if: startsWith(github.ref, 'refs/tags/')
