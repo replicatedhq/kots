@@ -92,7 +92,7 @@ func (s *KOTSStore) migrateSessionsFromPostgres() error {
 		sessionSecret.Data[session.ID] = b
 	}
 
-	err = s.updateSessionSecret(sessionSecret)
+	err = s.saveSessionSecret(sessionSecret)
 	if err != nil {
 		return errors.Wrap(err, "failed to update session secre")
 	}
@@ -107,6 +107,9 @@ func (s *KOTSStore) migrateSessionsFromPostgres() error {
 }
 
 func (s *KOTSStore) CreateSession(forUser *usertypes.User, issuedAt time.Time, expiresAt time.Time, roles []string) (*sessiontypes.Session, error) {
+	sessionLock.Lock()
+	defer sessionLock.Unlock()
+
 	logger.Debug("creating session")
 
 	randomID, err := ksuid.NewRandom()
@@ -140,14 +143,17 @@ func (s *KOTSStore) CreateSession(forUser *usertypes.User, issuedAt time.Time, e
 
 	sessionSecret.Data[id] = b
 
-	if err := s.updateSessionSecret(sessionSecret); err != nil {
+	if err := s.saveSessionSecret(sessionSecret); err != nil {
 		return nil, errors.Wrap(err, "failed to update session")
 	}
 
-	return s.GetSession(id)
+	return &session, nil
 }
 
 func (s *KOTSStore) GetSession(id string) (*sessiontypes.Session, error) {
+	sessionLock.Lock()
+	defer sessionLock.Unlock()
+
 	secret, err := s.getSessionSecret()
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get session secret")
@@ -173,19 +179,18 @@ func (s *KOTSStore) GetSession(id string) (*sessiontypes.Session, error) {
 
 func (s *KOTSStore) DeleteSession(id string) error {
 	sessionLock.Lock()
+	defer sessionLock.Unlock()
+
 	s.sessionSecret = nil
-	sessionLock.Unlock()
 
 	secret, err := s.getSessionSecret()
 	if err != nil {
 		return errors.Wrap(err, "failed to get session secret")
 	}
 
-	sessionLock.Lock()
 	delete(secret.Data, id)
-	sessionLock.Unlock()
 
-	if err := s.updateSessionSecret(secret); err != nil {
+	if err := s.saveSessionSecret(secret); err != nil {
 		return errors.Wrap(err, "failed to update session secret")
 	}
 
@@ -193,9 +198,6 @@ func (s *KOTSStore) DeleteSession(id string) error {
 }
 
 func (s *KOTSStore) getSessionSecret() (*corev1.Secret, error) {
-	sessionLock.Lock()
-	defer sessionLock.Unlock()
-
 	if s.sessionSecret != nil && time.Now().Before(s.sessionExpiration) {
 		return s.sessionSecret, nil
 	}
@@ -205,50 +207,64 @@ func (s *KOTSStore) getSessionSecret() (*corev1.Secret, error) {
 		return nil, errors.Wrap(err, "failed to get clientset")
 	}
 
+	secret := corev1.Secret{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: "v1",
+			Kind:       "Secret",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      SessionSecretName,
+			Namespace: os.Getenv("POD_NAMESPACE"),
+		},
+		Data: map[string][]byte{},
+	}
+
 	existingSecret, err := clientset.CoreV1().Secrets(os.Getenv("POD_NAMESPACE")).Get(context.TODO(), SessionSecretName, metav1.GetOptions{})
-	if err != nil && !kuberneteserrors.IsNotFound(err) {
+	if err == nil {
+		secret.Data = existingSecret.DeepCopy().Data
+	} else if err != nil && !kuberneteserrors.IsNotFound(err) {
 		if canIgnoreEtcdError(err) && s.sessionSecret != nil {
 			return s.sessionSecret, nil
 		}
 		return nil, errors.Wrap(err, "failed to get secret")
 	} else if kuberneteserrors.IsNotFound(err) {
-		secret := corev1.Secret{
-			TypeMeta: metav1.TypeMeta{
-				APIVersion: "v1",
-				Kind:       "Secret",
-			},
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      SessionSecretName,
-				Namespace: os.Getenv("POD_NAMESPACE"),
-			},
-			Data: map[string][]byte{},
-		}
-
-		createdSecret, err := clientset.CoreV1().Secrets(os.Getenv("POD_NAMESPACE")).Create(context.TODO(), &secret, metav1.CreateOptions{})
+		_, err := clientset.CoreV1().Secrets(os.Getenv("POD_NAMESPACE")).Create(context.TODO(), &secret, metav1.CreateOptions{})
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to create session secret")
 		}
-
-		s.sessionExpiration = time.Now().Add(1 * time.Minute)
-		s.sessionSecret = createdSecret
-
-		return createdSecret, nil
 	}
 
 	s.sessionExpiration = time.Now().Add(1 * time.Minute)
-	s.sessionSecret = existingSecret
+	s.sessionSecret = &secret
 
-	return existingSecret, nil
+	return &secret, nil
 }
 
-func (s *KOTSStore) updateSessionSecret(secret *corev1.Secret) error {
+func (s *KOTSStore) saveSessionSecret(secret *corev1.Secret) error {
 	clientset, err := s.GetClientset()
 	if err != nil {
 		return errors.Wrap(err, "failed to get clientset")
 	}
 
-	if _, err := clientset.CoreV1().Secrets(os.Getenv("POD_NAMESPACE")).Update(context.TODO(), secret, metav1.UpdateOptions{}); err != nil {
-		return errors.Wrap(err, "failed to update session secret")
+	existingSecret, err := clientset.CoreV1().Secrets(os.Getenv("POD_NAMESPACE")).Get(context.TODO(), SessionSecretName, metav1.GetOptions{})
+	if err == nil {
+		existingSecret.Data = secret.DeepCopy().Data
+		if _, err := clientset.CoreV1().Secrets(os.Getenv("POD_NAMESPACE")).Update(context.TODO(), existingSecret, metav1.UpdateOptions{}); err != nil {
+			return errors.Wrap(err, "failed to update session secret")
+		}
+	} else if err != nil && !kuberneteserrors.IsNotFound(err) {
+		if canIgnoreEtcdError(err) && s.sessionSecret != nil {
+			return nil
+		}
+		return errors.Wrap(err, "failed to get secret for update")
+	} else if kuberneteserrors.IsNotFound(err) {
+		_, err := clientset.CoreV1().Secrets(os.Getenv("POD_NAMESPACE")).Create(context.TODO(), secret, metav1.CreateOptions{})
+		if err != nil {
+			if canIgnoreEtcdError(err) && s.sessionSecret != nil {
+				return nil
+			}
+			return errors.Wrap(err, "failed to create session secret")
+		}
 	}
 
 	return nil
