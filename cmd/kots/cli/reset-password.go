@@ -61,7 +61,7 @@ func ResetPasswordCmd() *cobra.Command {
 				log.ActionWithoutSpinner("Reset the admin console password for %s", namespace)
 				p, err := promptForNewPassword()
 				if err != nil {
-					os.Exit(1)
+					return errors.Wrap(err, "failed to prompt for new password")
 				}
 				newPassword = p
 			}
