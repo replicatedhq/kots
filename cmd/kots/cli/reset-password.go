@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"strings"
 
 	"github.com/manifoldco/promptui"
 	"github.com/pkg/errors"
@@ -49,14 +50,11 @@ func ResetPasswordCmd() *cobra.Command {
 
 			newPassword := ""
 			if v.GetBool("new-password-stdin") {
-				s, err := ioutil.ReadAll(os.Stdin)
+				p, err := passwordFromStdin()
 				if err != nil {
 					return errors.Wrap(err, "failed to read new password from stdin")
 				}
-				if len(s) < 6 {
-					return errors.New("invalid password, minimum password length is 6 characters.")
-				}
-				newPassword = string(s)
+				newPassword = p
 			}
 
 			if newPassword == "" {
@@ -80,6 +78,22 @@ func ResetPasswordCmd() *cobra.Command {
 	cmd.Flags().Bool("new-password-stdin", false, "the new password to use for logging into the admin console. will read the password from stdin.")
 
 	return cmd
+}
+
+func passwordFromStdin() (string, error) {
+	p, err := ioutil.ReadAll(os.Stdin)
+	if err != nil {
+		return "", errors.Wrap(err, "failed to read stdin")
+	}
+	if len(p) < 6 {
+		return "", errors.New("invalid password, minimum password length is 6 characters.")
+	}
+	password := string(p)
+
+	password = strings.TrimSuffix(password, "\n")
+	password = strings.TrimSuffix(password, "\r")
+
+	return password, nil
 }
 
 func promptForNewPassword() (string, error) {

@@ -144,11 +144,11 @@ func InstallCmd() *cobra.Command {
 
 			sharedPassword := ""
 			if v.GetBool("shared-password-stdin") {
-				s, err := ioutil.ReadAll(os.Stdin)
+				p, err := passwordFromStdin()
 				if err != nil {
 					return errors.Wrap(err, "failed to read shared password from stdin")
 				}
-				sharedPassword = string(s)
+				sharedPassword = p
 			} else {
 				sharedPassword = v.GetString("shared-password")
 			}
