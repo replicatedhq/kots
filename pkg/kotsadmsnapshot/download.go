@@ -37,19 +37,50 @@ func DownloadRestoreResults(veleroNamespace, restoreName string) ([]types.Snapsh
 	for ns, messages := range resultMap["warnings"].Namespaces {
 		for _, message := range messages {
 			warnings = append(warnings, types.SnapshotError{
+				Title:     "Warning from Namespaced Resource",
 				Message:   message,
 				Namespace: ns,
 			})
 		}
 	}
 
+	for _, message := range resultMap["warnings"].Cluster {
+		warnings = append(warnings, types.SnapshotError{
+			Title:   "Warning from Cluster Resource",
+			Message: message,
+		})
+	}
+
+	for _, message := range resultMap["warnings"].Velero {
+		warnings = append(warnings, types.SnapshotError{
+			Title:   "Warning from Velero Controller",
+			Message: message,
+		})
+	}
+
 	for ns, messages := range resultMap["errors"].Namespaces {
 		for _, message := range messages {
 			errors = append(errors, types.SnapshotError{
+				Title:     "Error from Namespaced Resource",
 				Message:   message,
 				Namespace: ns,
 			})
 		}
+	}
+
+	for _, message := range resultMap["errors"].Cluster {
+		errors = append(errors, types.SnapshotError{
+			Title:   "Error from Cluster Resource",
+			Message: message,
+		})
+	}
+
+	// Captures Restore Hook Errors
+	for _, message := range resultMap["errors"].Velero {
+		errors = append(errors, types.SnapshotError{
+			Title:   "Error from Velero Controller",
+			Message: message,
+		})
 	}
 
 	return warnings, errors, nil
