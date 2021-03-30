@@ -11,7 +11,7 @@ schema-release: build_schema
 	mkdir -p bin/docker-archive/${PROJECT_NAME}
 	skopeo copy docker-daemon:kotsadm/${PROJECT_NAME}:${GIT_TAG} docker-archive:bin/docker-archive/${PROJECT_NAME}/${GIT_TAG}
 	mkdir -p bin/docker-archive/postgres
-	skopeo copy docker://postgres:10.7 docker-archive:bin/docker-archive/postgres/${GIT_TAG}
+	skopeo copy docker://postgres:10.16-alpine docker-archive:bin/docker-archive/postgres/${GIT_TAG}
 
 build_schema:
 	docker build --pull -f deploy/Dockerfile -t ${IMAGE} .

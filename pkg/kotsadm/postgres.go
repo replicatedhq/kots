@@ -10,7 +10,6 @@ import (
 	kotsadmobjects "github.com/replicatedhq/kots/pkg/kotsadm/objects"
 	"github.com/replicatedhq/kots/pkg/kotsadm/types"
 	"github.com/replicatedhq/kots/pkg/logger"
-	corev1 "k8s.io/api/core/v1"
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -33,6 +32,12 @@ func getPostgresYAML(deployOptions types.DeployOptions) (map[string][]byte, erro
 		return nil, errors.Wrap(err, "failed to get size")
 	}
 
+	var configmap bytes.Buffer
+	if err := s.Encode(kotsadmobjects.PostgresConfigMap(deployOptions), &configmap); err != nil {
+		return nil, errors.Wrap(err, "failed to marshal postgres statefulset")
+	}
+	docs["postgres-configmap.yaml"] = configmap.Bytes()
+
 	if err := s.Encode(kotsadmobjects.PostgresStatefulset(deployOptions, size), &statefulset); err != nil {
 		return nil, errors.Wrap(err, "failed to marshal postgres statefulset")
 	}
@@ -52,6 +57,10 @@ func ensurePostgres(deployOptions types.DeployOptions, clientset *kubernetes.Cli
 		return errors.Wrap(err, "failed to ensure postgres secret")
 	}
 
+	if err := ensurePostgresConfigMap(deployOptions, clientset); err != nil {
+		return errors.Wrap(err, "failed to ensure postgres configmap")
+	}
+
 	size, err := getSize(deployOptions, "postgres", resource.MustParse("1Gi"))
 	if err != nil {
 		return errors.Wrap(err, "failed to get size")
@@ -69,16 +78,33 @@ func ensurePostgres(deployOptions types.DeployOptions, clientset *kubernetes.Cli
 }
 
 func ensurePostgresStatefulset(deployOptions types.DeployOptions, clientset *kubernetes.Clientset, size resource.Quantity) error {
-	_, err := clientset.AppsV1().StatefulSets(deployOptions.Namespace).Get(context.TODO(), "kotsadm-postgres", metav1.GetOptions{})
+	ctx := context.TODO()
+	desiredPostgres := kotsadmobjects.PostgresStatefulset(deployOptions, size)
+	existingPostgres, err := clientset.AppsV1().StatefulSets(deployOptions.Namespace).Get(ctx, "kotsadm-postgres", metav1.GetOptions{})
 	if err != nil {
 		if !kuberneteserrors.IsNotFound(err) {
 			return errors.Wrap(err, "failed to get existing statefulset")
 		}
 
-		_, err := clientset.AppsV1().StatefulSets(deployOptions.Namespace).Create(context.TODO(), kotsadmobjects.PostgresStatefulset(deployOptions, size), metav1.CreateOptions{})
+		_, err := clientset.AppsV1().StatefulSets(deployOptions.Namespace).Create(ctx, desiredPostgres, metav1.CreateOptions{})
 		if err != nil {
 			return errors.Wrap(err, "failed to create postgres statefulset")
 		}
+
+		return nil
+	}
+
+	if len(existingPostgres.Spec.Template.Spec.Containers) != 1 || len(desiredPostgres.Spec.Template.Spec.Containers) != 1 {
+		return errors.New("postgres stateful set cannot be upgraded")
+	}
+
+	existingPostgres.Spec.Template.Spec.Volumes = desiredPostgres.Spec.Template.Spec.DeepCopy().Volumes
+	existingPostgres.Spec.Template.Spec.Containers[0].Image = desiredPostgres.Spec.Template.Spec.Containers[0].Image
+	existingPostgres.Spec.Template.Spec.Containers[0].VolumeMounts = desiredPostgres.Spec.Template.Spec.Containers[0].DeepCopy().VolumeMounts
+
+	_, err = clientset.AppsV1().StatefulSets(deployOptions.Namespace).Update(ctx, existingPostgres, metav1.UpdateOptions{})
+	if err != nil {
+		return errors.Wrap(err, "failed to update postgres statefulset")
 	}
 
 	return nil
@@ -108,15 +134,13 @@ func waitForHealthyPostgres(deployOptions types.DeployOptions, clientset *kubern
 
 	start := time.Now()
 	for {
-		pods, err := clientset.CoreV1().Pods(deployOptions.Namespace).List(context.TODO(), metav1.ListOptions{LabelSelector: "app=kotsadm-postgres"})
+		s, err := clientset.AppsV1().StatefulSets(deployOptions.Namespace).Get(context.TODO(), "kotsadm-postgres", metav1.GetOptions{})
 		if err != nil {
 			return errors.Wrap(err, "failed to list pods")
 		}
 
-		for _, pod := range pods.Items {
-			if pod.Status.Phase == corev1.PodRunning {
-				return nil
-			}
+		if s.Status.ReadyReplicas == *s.Spec.Replicas && s.Status.UpdateRevision == s.Status.CurrentRevision {
+			return nil
 		}
 
 		time.Sleep(time.Second)

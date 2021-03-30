@@ -634,7 +634,7 @@ jobs:
         id: scan
         uses: anchore/scan-action@v2
         with:
-          image: "postgres:10.7"
+          image: "postgres:10.16-alpine"
           fail-build: false
           acs-report-enable: true
           severity-cutoff: high

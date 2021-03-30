@@ -14,7 +14,7 @@ import (
 )
 
 func PostgresStatefulset(deployOptions types.DeployOptions, size resource.Quantity) *appsv1.StatefulSet {
-	image := "postgres:10.7"
+	image := "postgres:10.16-alpine"
 	var pullSecrets []corev1.LocalObjectReference
 	if s := kotsadmversion.KotsadmPullSecret(deployOptions.Namespace, deployOptions.KotsadmOptions); s != nil {
 		image = fmt.Sprintf("%s/postgres:%s", kotsadmversion.KotsadmRegistry(deployOptions.KotsadmOptions), kotsadmversion.KotsadmTag(deployOptions.KotsadmOptions))
@@ -33,6 +33,7 @@ func PostgresStatefulset(deployOptions types.DeployOptions, size resource.Quanti
 		}
 	}
 
+	passwdFileMode := int32(0644)
 	statefulset := &appsv1.StatefulSet{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "apps/v1",
@@ -85,6 +86,23 @@ func PostgresStatefulset(deployOptions types.DeployOptions, size resource.Quanti
 								},
 							},
 						},
+						{
+							Name: "etc-passwd",
+							VolumeSource: corev1.VolumeSource{
+								ConfigMap: &corev1.ConfigMapVolumeSource{
+									LocalObjectReference: corev1.LocalObjectReference{
+										Name: "kotsadm-postgres",
+									},
+									Items: []corev1.KeyToPath{
+										{
+											Key:  "passwd",
+											Path: "passwd",
+											Mode: &passwdFileMode,
+										},
+									},
+								},
+							},
+						},
 					},
 					Containers: []corev1.Container{
 						{
@@ -101,6 +119,11 @@ func PostgresStatefulset(deployOptions types.DeployOptions, size resource.Quanti
 								{
 									Name:      "kotsadm-postgres",
 									MountPath: "/var/lib/postgresql/data",
+								},
+								{
+									Name:      "etc-passwd",
+									MountPath: "/etc/passwd",
+									SubPath:   "passwd",
 								},
 							},
 							Env: []corev1.EnvVar{
