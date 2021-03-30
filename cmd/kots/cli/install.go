@@ -142,7 +142,16 @@ func InstallCmd() *cobra.Command {
 				return errors.Wrap(err, "failed to check kURL")
 			}
 
-			sharedPassword := v.GetString("shared-password")
+			sharedPassword := ""
+			if v.GetBool("shared-password-stdin") {
+				s, err := ioutil.ReadAll(os.Stdin)
+				if err != nil {
+					return errors.Wrap(err, "failed to read shared password from stdin")
+				}
+				sharedPassword = string(s)
+			} else {
+				sharedPassword = v.GetString("shared-password")
+			}
 
 			ingressConfig, err := getIngressConfig(v)
 			if err != nil {
@@ -355,7 +364,8 @@ func InstallCmd() *cobra.Command {
 		},
 	}
 
-	cmd.Flags().String("shared-password", "", "shared password to apply")
+	cmd.Flags().String("shared-password", "", "sets the password for logging into the admin console.")
+	cmd.Flags().Bool("shared-password-stdin", false, "sets the password for logging into the admin console. will read the password from stdin.")
 	cmd.Flags().String("name", "", "name of the application to use in the Admin Console")
 	cmd.Flags().String("local-path", "", "specify a local-path to test the behavior of rendering a replicated app locally (only supported on replicated app types currently)")
 	cmd.Flags().String("license-file", "", "path to a license file to use when download a replicated app")
