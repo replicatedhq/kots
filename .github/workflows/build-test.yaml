@@ -204,10 +204,6 @@ jobs:
             kubectl -n legacy logs deployment/kotsadm-operator
             echo "------previous kotsadm-operator logs"
             kubectl -n legacy logs -p deployment/kotsadm-operator
-            echo "------kotsadm-postgres-0 logs"
-            kubectl -n legacy logs pod/kotsadm-postgres-0
-            echo "------previous kotsadm-postgres-0 logs"
-            kubectl -n legacy logs -p pod/kotsadm-postgres-0
           fi
           exit $EXIT_CODE
       
@@ -235,10 +231,6 @@ jobs:
             kubectl -n legacy logs deployment/kotsadm-operator
             echo "------previous kotsadm-operator logs"
             kubectl -n legacy logs -p deployment/kotsadm-operator
-            echo "------kotsadm-postgres-0 logs"
-            kubectl -n legacy logs pod/kotsadm-postgres-0
-            echo "------previous kotsadm-postgres-0 logs"
-            kubectl -n legacy logs -p pod/kotsadm-postgres-0
             echo "------velero logs"
             kubectl -n velero logs deployment/velero
           fi
@@ -292,10 +284,6 @@ jobs:
           kubectl -n minimal-rbac logs deployment/kotsadm-operator
           echo "------previos kotsadm-operator logs"
           kubectl -n minimal-rbac logs -p deployment/kotsadm-operator
-          echo "------kotsadm-postgres-0 logs"
-          kubectl -n minimal-rbac logs pod/kotsadm-postgres-0
-          echo "------previous kotsadm-postgres-0 logs"
-          kubectl -n minimal-rbac logs -p pod/kotsadm-postgres-0
           kill $ADMIN_CONSOLE_PID
           exit $EXIT_CODE
 
@@ -335,9 +323,5 @@ jobs:
           kubectl -n minimal-rbac logs deployment/kotsadm-operator
           echo "------previos kotsadm-operator logs"
           kubectl -n minimal-rbac logs -p deployment/kotsadm-operator
-          echo "------kotsadm-postgres-0 logs"
-          kubectl -n minimal-rbac logs pod/kotsadm-postgres-0
-          echo "------previous kotsadm-postgres-0 logs"
-          kubectl -n minimal-rbac logs -p pod/kotsadm-postgres-0
           kill $ADMIN_CONSOLE_PID
           exit $EXIT_CODE

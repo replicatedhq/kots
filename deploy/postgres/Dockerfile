@@ -1,5 +1,5 @@
-FROM postgres:10.16-alpine
+FROM postgres:10.16
 
-RUN apk add --update \
+RUN apt-get update && apt-get upgrade -y && apt-get install -y --no-install-recommends \
     curl ca-certificates git \
-  && rm -rf /var/cache/apk/*
+  && rm -rf /var/lib/apt/lists/*
