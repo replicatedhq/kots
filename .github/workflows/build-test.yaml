@@ -114,22 +114,6 @@ jobs:
           ignore-unfixed: true
           severity: 'CRITICAL,HIGH'
 
-      - name: build and push postgres for e2e
-        uses: docker/build-push-action@v2.3.0
-        with:
-          tags: ttl.sh/automated-${{ github.run_id }}/postgres:2h
-          context: ./deploy/postgres
-          file: ./deploy/postgres/Dockerfile
-          push: true
-      - name: Scan postgres for vulnerabilities
-        uses: aquasecurity/trivy-action@master
-        with:
-          image-ref: ttl.sh/automated-${{ github.run_id }}/postgres:2h
-          format: 'table'
-          exit-code: '0'
-          ignore-unfixed: true
-          severity: 'CRITICAL,HIGH'
-
   validate:
     runs-on: ubuntu-18.04
     needs: build-kots

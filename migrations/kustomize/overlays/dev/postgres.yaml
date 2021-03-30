@@ -45,7 +45,7 @@ spec:
         fsGroup: 999
       containers:
       - name: postgres
-        image: kotsadm/postgres:alpha
+        image: postgres:10.7
         imagePullPolicy: IfNotPresent
         env:
         - name: PGDATA
