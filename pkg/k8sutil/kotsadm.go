@@ -155,6 +155,7 @@ func DeleteKotsadm(ctx context.Context, clientset *kubernetes.Clientset, namespa
 
 	// kURL registry
 	registryNS := "kurl"
+
 	err = clientset.AppsV1().Deployments(registryNS).DeleteCollection(ctx, metav1.DeleteOptions{}, listOptions)
 	if err != nil {
 		return errors.Wrap(err, "failed to delete registry deployments")
@@ -162,6 +163,15 @@ func DeleteKotsadm(ctx context.Context, clientset *kubernetes.Clientset, namespa
 	if err := waitForDeleteDeployments(ctx, clientset, registryNS, listOptions); err != nil {
 		return errors.Wrap(err, "failed to wait for delete registry deployments")
 	}
+
+	err = clientset.CoreV1().Pods(registryNS).DeleteCollection(ctx, metav1.DeleteOptions{}, listOptions)
+	if err != nil {
+		return errors.Wrap(err, "failed to delete registry pods")
+	}
+	if err := waitForDeletePods(ctx, clientset, registryNS, listOptions); err != nil {
+		return errors.Wrap(err, "failed to wait for delete registry pods")
+	}
+
 	err = clientset.CoreV1().Secrets(registryNS).DeleteCollection(ctx, metav1.DeleteOptions{}, listOptions)
 	if err != nil {
 		return errors.Wrap(err, "failed to delete kotsadm secrets")
