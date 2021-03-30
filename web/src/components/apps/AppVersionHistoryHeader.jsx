@@ -1,9 +1,6 @@
 
 import React from "react";
 import { Link } from "react-router-dom";
-import dayjs from "dayjs";
-import isSameOrAfter from "dayjs/plugin/isSameOrAfter";
-dayjs.extend(isSameOrAfter);
 import ReactTooltip from "react-tooltip"
 
 import MountAware from "../shared/MountAware";
@@ -46,7 +43,7 @@ export default function AppVersionHistoryHeader(props) {
               <p className="u-fontSize--header2 u-fontWeight--bold u-color--tuna"> {currentDownstreamVersion ? currentDownstreamVersion.versionLabel : "---"}</p>
               <p className="u-fontSize--small u-lineHeight--normal u-color--tundora u-fontWeight--medium u-marginLeft--10"> {currentDownstreamVersion ? `Sequence ${currentDownstreamVersion?.sequence}` : null}</p>
             </div>
-            {currentDownstreamVersion?.deployedAt ? <p className="u-fontSize--small u-lineHeight--normal u-color--silverSand u-fontWeight--medium u-marginTop--5">{`${dayjs(currentDownstreamVersion.deployedAt).format("MMMM D, YYYY  @ hh:mm a")}`}</p> : null}
+            {currentDownstreamVersion?.deployedAt ? <p className="u-fontSize--small u-lineHeight--normal u-color--silverSand u-fontWeight--medium u-marginTop--5">{`${Utilities.dateFormat(currentDownstreamVersion.deployedAt, "MMMM D, YYYY @ hh:mm a z")}`}</p> : null}
             {currentDownstreamVersion && getCurrentVersionStatus(currentDownstreamVersion, handleViewLogs)}
             {currentDownstreamVersion ?
               <div className="flex alignItems--center u-marginTop--8 u-marginTop--8">
@@ -100,7 +97,7 @@ export default function AppVersionHistoryHeader(props) {
                           </div>
                           <div className="flex flex1 alignItems--center">
                             {pendingVersions[0]?.createdOn || pendingVersions[0].upstreamReleasedAt ?
-                              <p className="u-fontSize--small u-lineHeight--normal u-fontWeight--medium u-color--dustyGray">Released <span className="u-fontWeight--bold">{pendingVersions[0].upstreamReleasedAt ? dayjs(pendingVersions[0]?.upstreamReleasedAt).format("MMMM D, YYYY") : dayjs(pendingVersions[0]?.createdOn).format("MMMM D, YYYY")}</span></p>
+                              <p className="u-fontSize--small u-lineHeight--normal u-fontWeight--medium u-color--dustyGray">Released <span className="u-fontWeight--bold">{pendingVersions[0].upstreamReleasedAt ? Utilities.dateFormat(pendingVersions[0]?.upstreamReleasedAt, "MMMM D, YYYY") : Utilities.dateFormat(pendingVersions[0]?.createdOn, "MMMM D, YYYY")}</span></p>
                               : null}
                             {pendingVersions[0]?.releaseNotes ? <span className="release-notes-link u-fontWeight--medium u-fontSize--small u-fontWeight--medium u-marginLeft--10 flex alignItems--center" onClick={() => showDownstreamReleaseNotes(pendingVersions[0]?.releaseNotes)}><span className="icon releaseNotes-small--icon clickable u-marginRight--5" />Release notes</span> : null}
                           </div>

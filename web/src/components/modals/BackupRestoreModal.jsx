@@ -46,7 +46,7 @@ export default function BackupRestoreModal(props) {
           <div className="flex flex1 justifyContent--spaceBetween u-marginTop--20 SnapshotRow--wrapper">
             <div className="flex flex-column">
               <p className="u-fontSize--normal u-fontWeight--bold u-color--tuna u-lineHeight--normal">{snapshotToRestore?.name}</p>
-              <p className="u-fontSize--normal u-color--dustyGray u-fontWeight--medium u-lineHeight--normal u-marginRight--20">{Utilities.dateFormat(snapshotToRestore?.startedAt, "MMM D YYYY @ hh:mm a")}</p>
+              <p className="u-fontSize--normal u-color--dustyGray u-fontWeight--medium u-lineHeight--normal u-marginRight--20">{Utilities.dateFormat(snapshotToRestore?.startedAt, "MMM D YYYY @ hh:mm a z")}</p>
             </div>
             <div className="flex flex1 justifyContent--flexEnd">
               <p className="u-fontSize--normal u-color--dustyGray u-fontWeight--bold u-lineHeight--normal u-marginRight--30 justifyContent--center flex alignItems--center"><span className="icon snapshot-volume-size-icon" /> {snapshotToRestore?.volumeSizeHuman} </p>

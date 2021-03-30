@@ -1,4 +1,4 @@
-import moment from "moment";
+import dayjs from "dayjs";
 import React, { Component } from "react";
 import Helmet from "react-helmet";
 import { withRouter } from "react-router-dom";
@@ -471,13 +471,13 @@ class Dashboard extends Component {
         <XYPlot width={460} height={180} onMouseLeave={() => this.setState({ crosshairValues: [] })} margin={{ left: 60 }}>
           <VerticalGridLines />
           <HorizontalGridLines />
-          <XAxis tickFormat={v => `${moment.unix(v).format("H:mm")}`} style={axisStyle} />
+          <XAxis tickFormat={v => `${dayjs.unix(v).format("H:mm")}`} style={axisStyle} />
           <YAxis width={60} tickFormat={yAxisTickFormat} style={axisStyle} />
           {series}
           {this.state.crosshairValues?.length > 0 && this.state.activeChart === chart &&
             <Crosshair values={this.state.crosshairValues}>
               <div className="flex flex-column" style={{ background: "black", width: "250px" }}>
-                <p className="u-fontWeight--bold u-textAlign--center"> {moment.unix(this.state.crosshairValues[0].x).format("LLL")} </p>
+                <p className="u-fontWeight--bold u-textAlign--center"> {dayjs.unix(this.state.crosshairValues[0].x).format("LLL")} </p>
                 <br />
                 {this.state.crosshairValues.map((c, i) => {
                   return (

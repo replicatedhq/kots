@@ -1,6 +1,5 @@
 
 import React from "react";
-import dayjs from "dayjs";
 
 import { Utilities } from "../utilities/utilities";
 import "../scss/components/RestoreSnapshotRow.scss";
@@ -73,7 +72,7 @@ class RestoreSnapshotRow extends React.Component {
             <div className="flex flex-column">
               <div className="flex flex-auto alignItems--center u-fontWeight--bold u-color--tuna">
                 <p className="u-fontSize--normal u-color--tuna u-lineHeight--normal u-fontWeight--bold u-marginRight--10">{snapshot?.name}</p>
-                <p className="u-fontSize--normal u-color--dustyGray u-fontWeight--bold u-lineHeight--normal u-marginRight--20"> {dayjs(snapshot?.startedAt).format("MM/DD/YY @ hh:mm a")}</p>
+                <p className="u-fontSize--normal u-color--dustyGray u-fontWeight--bold u-lineHeight--normal u-marginRight--20"> {Utilities.dateFormat(snapshot?.startedAt, "MM/DD/YY @ hh:mm a z")}</p>
               </div>
               <div className="flex alignItems--center u-marginTop--10">
                 <span className="flex alignItems--center u-fontSize--normal u-color--dustyGray u-fontWeight--bold u-lineHeight--normal u-marginRight--20">
