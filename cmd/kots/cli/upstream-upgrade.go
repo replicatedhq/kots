@@ -182,6 +182,9 @@ func UpstreamUpgradeCmd() *cobra.Command {
 			if viper.GetBool("skip-preflights") {
 				urlVals.Set("skipPreflights", "true")
 			}
+			if viper.GetBool("is-cli") {
+				urlVals.Set("isCLI", "true")
+			}
 
 			updateCheckURI := fmt.Sprintf("http://localhost:%d/api/v1/app/%s/updatecheck?%s", localPort, url.PathEscape(appSlug), urlVals.Encode())
 

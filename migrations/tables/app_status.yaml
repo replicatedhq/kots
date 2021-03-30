@@ -17,3 +17,5 @@ spec:
         type: text
       - name: updated_at
         type: timestamp without time zone
+      - name: sequence
+        type: integer

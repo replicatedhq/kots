@@ -558,17 +558,17 @@ func (mr *MockStoreMockRecorder) GetAppStatus(appID interface{}) *gomock.Call {
 }
 
 // SetAppStatus mocks base method
-func (m *MockStore) SetAppStatus(appID string, resourceStates []types0.ResourceState, updatedAt time.Time) error {
+func (m *MockStore) SetAppStatus(appID string, resourceStates []types0.ResourceState, updatedAt time.Time, sequence int64) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SetAppStatus", appID, resourceStates, updatedAt)
+	ret := m.ctrl.Call(m, "SetAppStatus", appID, resourceStates, updatedAt, sequence)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // SetAppStatus indicates an expected call of SetAppStatus
-func (mr *MockStoreMockRecorder) SetAppStatus(appID, resourceStates, updatedAt interface{}) *gomock.Call {
+func (mr *MockStoreMockRecorder) SetAppStatus(appID, resourceStates, updatedAt, sequence interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetAppStatus", reflect.TypeOf((*MockStore)(nil).SetAppStatus), appID, resourceStates, updatedAt)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetAppStatus", reflect.TypeOf((*MockStore)(nil).SetAppStatus), appID, resourceStates, updatedAt, sequence)
 }
 
 // AddAppToAllDownstreams mocks base method
@@ -1986,17 +1986,17 @@ func (mr *MockAppStatusStoreMockRecorder) GetAppStatus(appID interface{}) *gomoc
 }
 
 // SetAppStatus mocks base method
-func (m *MockAppStatusStore) SetAppStatus(appID string, resourceStates []types0.ResourceState, updatedAt time.Time) error {
+func (m *MockAppStatusStore) SetAppStatus(appID string, resourceStates []types0.ResourceState, updatedAt time.Time, sequence int64) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SetAppStatus", appID, resourceStates, updatedAt)
+	ret := m.ctrl.Call(m, "SetAppStatus", appID, resourceStates, updatedAt, sequence)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // SetAppStatus indicates an expected call of SetAppStatus
-func (mr *MockAppStatusStoreMockRecorder) SetAppStatus(appID, resourceStates, updatedAt interface{}) *gomock.Call {
+func (mr *MockAppStatusStoreMockRecorder) SetAppStatus(appID, resourceStates, updatedAt, sequence interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetAppStatus", reflect.TypeOf((*MockAppStatusStore)(nil).SetAppStatus), appID, resourceStates, updatedAt)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetAppStatus", reflect.TypeOf((*MockAppStatusStore)(nil).SetAppStatus), appID, resourceStates, updatedAt, sequence)
 }
 
 // MockAppStore is a mock of AppStore interface

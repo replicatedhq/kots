@@ -39,6 +39,7 @@ type AppStatus struct {
 	AppID          string         `json:"appId"`
 	ResourceStates ResourceStates `json:"resourceStates" hash:"set"`
 	UpdatedAt      time.Time      `json:"updatedAt" hash:"ignore"`
+	Sequence       int64          `json:"sequence"`
 }
 
 type ResourceStates []ResourceState

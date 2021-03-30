@@ -113,7 +113,8 @@ class AppDetailPage extends Component {
         body: JSON.stringify({ 
           isSkipPreflights: isSkipPreflights ,
           continueWithFailedPreflights: continueWithFailedPreflights,
-          isAirgap: this.state.app?.isAirgap
+          isAirgap: this.state.app?.isAirgap,
+          isCLI: false
         }),
       });
       if (res.ok && res.status === 204) {

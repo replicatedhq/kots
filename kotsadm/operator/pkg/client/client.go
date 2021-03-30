@@ -67,6 +67,7 @@ type SupportBundleRequest struct {
 
 type InformRequest struct {
 	AppID     string                       `json:"app_id"`
+	Sequence  int64                        `json:"sequence"`
 	Informers []types.StatusInformerString `json:"informers"`
 }
 
@@ -335,7 +336,7 @@ func (c *Client) registerHandlers(socketClient *socket.Client) error {
 
 	err = socketClient.On("appInformers", func(h *socket.Channel, args InformRequest) {
 		log.Printf("received an inform event: %#v", args)
-		c.applyAppInformers(args.AppID, args.Informers)
+		c.applyAppInformers(args.AppID, args.Sequence, args.Informers)
 	})
 	if err != nil {
 		return errors.Wrap(err, "failed to add inform handler")
@@ -445,7 +446,7 @@ func runPreflight(preflightURI string, ignorePermissions bool) error {
 	return kubernetesApplier.Preflight(preflightURI, ignorePermissions)
 }
 
-func (c *Client) applyAppInformers(appID string, informerStrings []types.StatusInformerString) {
+func (c *Client) applyAppInformers(appID string, sequence int64, informerStrings []types.StatusInformerString) {
 	var informers []types.StatusInformer
 	for _, str := range informerStrings {
 		informer, err := str.Parse()
@@ -456,7 +457,7 @@ func (c *Client) applyAppInformers(appID string, informerStrings []types.StatusI
 		informers = append(informers, informer)
 	}
 	if len(informers) > 0 {
-		c.appStateMonitor.Apply(appID, informers)
+		c.appStateMonitor.Apply(appID, sequence, informers)
 	}
 }
 

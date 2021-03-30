@@ -2,6 +2,7 @@ package reporting
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -9,28 +10,30 @@ import (
 
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
+	appstatustypes "github.com/replicatedhq/kots/pkg/api/appstatus/types"
 	downstream "github.com/replicatedhq/kots/pkg/kotsadmdownstream"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/store"
+	troubleshootpreflight "github.com/replicatedhq/troubleshoot/pkg/preflight"
+	"github.com/replicatedhq/kots/pkg/buildversion"
 )
 
-func SendPreflightsReportToReplicatedApp(license *kotsv1beta1.License, appID string, clusterID string, sequence int, skipPreflights bool, installStatus string) error {
+func SendPreflightsReportToReplicatedApp(license *kotsv1beta1.License, appID string, clusterID string, sequence int, skipPreflights bool, installStatus string, isCLI bool, preflightStatus string, appStatus string) error {
 	endpoint := license.Spec.Endpoint
 	if !canReport(endpoint) {
 		return nil
 	}
 
 	urlValues := url.Values{}
-
-	sequenceToStr := fmt.Sprintf("%d", sequence)
-	skipPreflightsToStr := fmt.Sprintf("%t", skipPreflights)
-
-	urlValues.Set("sequence", sequenceToStr)
-	urlValues.Set("skipPreflights", skipPreflightsToStr)
+	urlValues.Set("sequence", fmt.Sprintf("%d", sequence))
+	urlValues.Set("skipPreflights", fmt.Sprintf("%t", skipPreflights))
 	urlValues.Set("installStatus", installStatus)
+	urlValues.Set("isCLI", fmt.Sprintf("%t", isCLI))
+	urlValues.Set("preflightStatus", preflightStatus)
+	urlValues.Set("appStatus", appStatus)
+	urlValues.Set("kotsVersion", buildversion.Version())
 
 	url := fmt.Sprintf("%s/kots_metrics/preflights/%s/%s?%s", endpoint, appID, clusterID, urlValues.Encode())
-
 	var buf bytes.Buffer
 	postReq, err := http.NewRequest("POST", url, &buf)
 	if err != nil {
@@ -38,21 +41,18 @@ func SendPreflightsReportToReplicatedApp(license *kotsv1beta1.License, appID str
 	}
 	postReq.Header.Add("Authorization", license.Spec.LicenseID)
 	postReq.Header.Set("Content-Type", "application/json")
-
 	resp, err := http.DefaultClient.Do(postReq)
 	if err != nil {
 		return errors.Wrap(err, "failed to send preflights reports")
 	}
 	defer resp.Body.Close()
-
 	if resp.StatusCode != 201 {
 		return errors.Errorf("Unexpected status code %d", resp.StatusCode)
 	}
-
 	return nil
 }
 
-func SendPreflightInfo(appID string, sequence int, isSkipPreflights bool, isUpdate bool) error {
+func SendPreflightInfo(appID string, sequence int, isSkipPreflights bool, isCLI bool) error {
 	license, err := store.GetStore().GetLatestLicenseForApp(appID)
 	if err != nil {
 		return errors.Wrap(err, "failed to find license for app")
@@ -68,30 +68,69 @@ func SendPreflightInfo(appID string, sequence int, isSkipPreflights bool, isUpda
 
 	clusterID := downstreams[0].ClusterID
 
-	if isSkipPreflights || isUpdate {
-		// at this point current version status does not exist so it's
-		// neccessary to create thread to get it after version is deployed
-
-		// isUpdate means that it's not on initial install
-		go func() {
-			<-time.After(20 * time.Second)
-			currentVersion, err := downstream.GetCurrentVersion(appID, clusterID)
+	go func() {
+		appStatus := appstatustypes.StateMissing
+		for start := time.Now(); time.Since(start) < 20*time.Minute; {
+			s, err := store.GetStore().GetAppStatus(appID)
 			if err != nil {
-				logger.Debugf("failed to get current downstream version: %v", err)
+				logger.Debugf("failed to get app status: %v", err.Error())
 				return
 			}
-			if currentVersion.Status != "" && currentVersion.Status != "deploying" {
-				if err := SendPreflightsReportToReplicatedApp(license, appID, clusterID, sequence, isSkipPreflights, currentVersion.Status); err != nil {
-					logger.Debugf("failed to send preflights data to replicated app: %v", err)
+			if s.Sequence == int64(sequence) && s.State == appstatustypes.StateReady {
+				appStatus = s.State
+				break
+			}
+			time.Sleep(time.Second * 10)
+		}
+
+		preflightState := ""
+		var preflightResults *troubleshootpreflight.UploadPreflightResults
+		for start := time.Now(); time.Since(start) < 5*time.Minute; {
+			p, err := store.GetStore().GetPreflightResults(appID, int64(sequence))
+			if err != nil {
+				logger.Debugf("failed to get preflight results: %v", err.Error())
+				return
+			}
+
+			if p.Result != "" {
+				if err := json.Unmarshal([]byte(p.Result), &preflightResults); err != nil {
+					logger.Debugf("failed to unmarshal preflight results: %v", err.Error())
 					return
 				}
+				preflightState = getPreflightState(preflightResults)
+				break
 			}
-		}()
-	} else {
-		if err := SendPreflightsReportToReplicatedApp(license, appID, clusterID, sequence, isSkipPreflights, ""); err != nil {
-			return errors.Wrap(err, "failed to send preflights data to replicated app")
+			time.Sleep(time.Second * 10)
+		}
+
+		currentVersionStatus, err := downstream.GetStatusForVersion(appID, clusterID, int64(sequence))
+		if err != nil {
+			logger.Debugf("failed to get status for version: %v", err)
+			return
+		}
+
+		if err := SendPreflightsReportToReplicatedApp(license, appID, clusterID, sequence, isSkipPreflights, currentVersionStatus, isCLI, preflightState, string(appStatus)); err != nil {
+			logger.Debugf("failed to send preflights data to replicated app: %v", err)
+			return
+		}
+	}()
+	return nil
+}
+
+func getPreflightState(preflightResults *troubleshootpreflight.UploadPreflightResults) string {
+	if len(preflightResults.Errors) > 0 {
+		return "fail"
+	}
+	if len(preflightResults.Results) == 0 {
+		return "pass"
+	}
+	state := "pass"
+	for _, result := range preflightResults.Results {
+		if result.IsFail {
+			return "fail"
+		} else if result.IsWarn {
+			state = "warn"
 		}
 	}
-
-	return nil
+	return state
 }

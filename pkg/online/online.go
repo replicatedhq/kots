@@ -213,12 +213,14 @@ func CreateAppFromOnline(pendingApp *types.PendingApp, upstreamURI string, isAut
 		}
 	}
 
-	go func() {
-		isUpdate := false
-		if err := reporting.SendPreflightInfo(pendingApp.ID, int(newSequence), skipPreflights, isUpdate); err != nil {
-			logger.Debugf("failed to send preflights data to replicated app: %v", err)
-		}
-	}()
+	if isAutomated {
+		go func() {
+			isCLI := true
+			if err := reporting.SendPreflightInfo(pendingApp.ID, int(newSequence), skipPreflights, isCLI); err != nil {
+				logger.Debugf("failed to send preflights data to replicated app: %v", err)
+			}
+		}()
+	}
 
 	return kotsKinds, nil
 }

@@ -8,6 +8,6 @@ func (s *OCIStore) GetAppStatus(appID string) (*appstatustypes.AppStatus, error)
 	return nil, ErrNotImplemented
 }
 
-func (s *OCIStore) SetAppStatus(appID string) error {
+func (s *OCIStore) SetAppStatus(appID string, sequence int64) error {
 	return ErrNotImplemented
 }

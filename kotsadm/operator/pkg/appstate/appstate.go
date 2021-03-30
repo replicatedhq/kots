@@ -29,6 +29,7 @@ type EventHandler interface {
 
 type appInformer struct {
 	appID     string
+	sequence  int64
 	informers []types.StatusInformer
 }
 
@@ -52,12 +53,14 @@ func (m *Monitor) Shutdown() {
 	m.cancel()
 }
 
-func (m *Monitor) Apply(appID string, informers []types.StatusInformer) {
+func (m *Monitor) Apply(appID string, sequence int64, informers []types.StatusInformer) {
 	m.appInformersCh <- struct {
 		appID     string
+		sequence  int64
 		informers []types.StatusInformer
 	}{
 		appID:     appID,
+		sequence:  sequence,
 		informers: informers,
 	}
 }
@@ -85,8 +88,11 @@ func (m *Monitor) run(ctx context.Context) {
 
 		case appInformer := <-m.appInformersCh:
 			appMonitor, ok := appMonitors[appInformer.appID]
-			if !ok {
-				appMonitor = NewAppMonitor(m.clientset, m.targetNamespace, appInformer.appID)
+			if !ok || appMonitor.sequence != appInformer.sequence {
+				if appMonitor != nil {
+					appMonitor.Shutdown()
+				}
+				appMonitor = NewAppMonitor(m.clientset, m.targetNamespace, appInformer.appID, appInformer.sequence)
 				go func() {
 					for appStatus := range appMonitor.AppStatusChan() {
 						m.appStatusCh <- appStatus
@@ -106,9 +112,10 @@ type AppMonitor struct {
 	informersCh     chan []types.StatusInformer
 	appStatusCh     chan types.AppStatus
 	cancel          context.CancelFunc
+	sequence        int64
 }
 
-func NewAppMonitor(clientset kubernetes.Interface, targetNamespace, appID string) *AppMonitor {
+func NewAppMonitor(clientset kubernetes.Interface, targetNamespace, appID string, sequence int64) *AppMonitor {
 	ctx, cancel := context.WithCancel(context.Background())
 	m := &AppMonitor{
 		appID:           appID,
@@ -117,6 +124,7 @@ func NewAppMonitor(clientset kubernetes.Interface, targetNamespace, appID string
 		informersCh:     make(chan []types.StatusInformer),
 		appStatusCh:     make(chan types.AppStatus),
 		cancel:          cancel,
+		sequence:        sequence,
 	}
 	go m.run(ctx)
 	return m
@@ -174,6 +182,7 @@ func (m *AppMonitor) runInformers(ctx context.Context, informers []types.StatusI
 		AppID:          m.appID,
 		ResourceStates: buildResourceStatesFromStatusInformers(informers),
 		UpdatedAt:      time.Now(),
+		Sequence:       m.sequence,
 	}
 	m.appStatusCh <- appStatus // reset last app status
 

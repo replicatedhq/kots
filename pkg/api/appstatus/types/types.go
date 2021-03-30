@@ -7,6 +7,7 @@ type AppStatus struct {
 	UpdatedAt      time.Time       `json:"updatedAt"`
 	ResourceStates []ResourceState `json:"resourceStates"`
 	State          State           `json:"state"`
+	Sequence       int64           `json:"sequence"`
 }
 
 type ResourceState struct {
