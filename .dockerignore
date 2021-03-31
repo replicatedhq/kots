@@ -6,5 +6,4 @@ docs
 kustomize
 migrations
 deploy/minio
-deploy/postgres
 operator

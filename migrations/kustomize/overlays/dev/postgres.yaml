@@ -41,11 +41,11 @@ spec:
         app: kotsadm-postgres
     spec:
       securityContext:
-        runAsUser: 999 # the default 'postgres' user
-        fsGroup: 999
+        runAsUser: 70 # the default 'postgres' user
+        fsGroup: 70
       containers:
       - name: postgres
-        image: kotsadm/postgres:alpha
+        image: postgres:10.16-alpine
         imagePullPolicy: IfNotPresent
         env:
         - name: PGDATA

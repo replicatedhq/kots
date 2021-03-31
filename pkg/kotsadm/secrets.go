@@ -110,7 +110,7 @@ func ensureSecrets(deployOptions *types.DeployOptions, clientset *kubernetes.Cli
 		User:     "dex",
 	}
 	if err := identitydeploy.EnsurePostgresSecret(context.TODO(), clientset, deployOptions.Namespace, "kotsadm", nil, postgresConfig, nil); err != nil {
-		return errors.Wrap(err, "failed to ensure postgres secret")
+		return errors.Wrap(err, "failed to ensure postgres secret for identity")
 	}
 
 	if deployOptions.SharedPasswordBcrypt == "" {

@@ -1,4 +1,4 @@
-FROM kotsadm/postgres:alpha
+FROM postgres:10.16-alpine
 
 ENV POSTGRES_USER=kotsadm
 ENV POSTGRES_PASSWORD=password
