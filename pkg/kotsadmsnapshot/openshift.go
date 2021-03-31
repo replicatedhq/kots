@@ -15,11 +15,26 @@ import (
 )
 
 type k8sGetter interface {
+	GetClientset() (kubernetes.Interface, error)
+	IsOpenShift(clientset kubernetes.Interface) bool
 	GetRole(namespace, roleName string, clientset kubernetes.Interface) (*rbacv1.Role, error)
 	GetRoleBinding(namespace, roleBindingName string, clientset kubernetes.Interface) (*rbacv1.RoleBinding, error)
 }
 
 type filterGetter struct {
+}
+
+func (g *filterGetter) GetClientset() (kubernetes.Interface, error) {
+	clientset, err := k8sutil.GetClientset()
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get k8s clientset")
+	}
+
+	return clientset, nil
+}
+
+func (g *filterGetter) IsOpenShift(clientset kubernetes.Interface) bool {
+	return k8sutil.IsOpenShift(clientset)
 }
 
 func (g *filterGetter) GetRole(namespace, roleName string, clientset kubernetes.Interface) (*rbacv1.Role, error) {
@@ -40,12 +55,12 @@ func (g *filterGetter) GetRoleBinding(namespace, roleBindingName string, clients
 
 // Some warnings in OpenShift clusters are harmless and should not be shown to the user
 func filterWarnings(restore *velerov1.Restore, warnings []types.SnapshotError, k8sGetter k8sGetter) ([]types.SnapshotError, error) {
-	clientset, err := k8sutil.GetClientset()
+	clientset, err := k8sGetter.GetClientset()
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to get k8s clientset")
+		return nil, errors.Wrap(err, "failed to get clientset")
 	}
 
-	if !k8sutil.IsOpenShift(clientset) {
+	if !k8sGetter.IsOpenShift(clientset) {
 		return warnings, nil
 	}
 
