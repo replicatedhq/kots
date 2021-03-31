@@ -1,4 +1,4 @@
-FROM nginx:1.17.5
+FROM nginx:1.19.9
 ARG version
 ARG nginxconf=deploy/nginx.conf
 
