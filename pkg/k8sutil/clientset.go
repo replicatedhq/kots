@@ -2,15 +2,22 @@ package k8sutil
 
 import (
 	"github.com/pkg/errors"
+	flag "github.com/spf13/pflag"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
 )
 
-var (
-	KubernetesConfigFlags *genericclioptions.ConfigFlags
-)
+var kubernetesConfigFlags *genericclioptions.ConfigFlags
+
+func init() {
+	kubernetesConfigFlags = genericclioptions.NewConfigFlags(false)
+}
+
+func AddFlags(flags *flag.FlagSet) {
+	kubernetesConfigFlags.AddFlags(flags)
+}
 
 func GetClientset() (*kubernetes.Clientset, error) {
 	cfg, err := GetClusterConfig()
@@ -30,8 +37,8 @@ func GetClusterConfig() (*rest.Config, error) {
 	var cfg *rest.Config
 	var err error
 
-	if KubernetesConfigFlags != nil {
-		cfg, err = KubernetesConfigFlags.ToRESTConfig()
+	if kubernetesConfigFlags != nil {
+		cfg, err = kubernetesConfigFlags.ToRESTConfig()
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to convert kube flags to rest config")
 		}
