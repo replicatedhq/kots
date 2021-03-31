@@ -143,7 +143,8 @@ func (h *Handler) InitGitOpsConnection(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := gitops.TestGitOpsConnection(downstreamGitOps); err != nil {
+	defaultBranchName, err := gitops.TestGitOpsConnection(downstreamGitOps)
+	if err != nil {
 		logger.Infof("Failed to test gitops connection: %v", err)
 
 		if err := gitops.SetGitOpsError(a.ID, d.ClusterID, err.Error()); err != nil {
@@ -152,6 +153,22 @@ func (h *Handler) InitGitOpsConnection(w http.ResponseWriter, r *http.Request) {
 
 		JSON(w, http.StatusBadRequest, NewErrorResponse(err))
 		return
+	}
+
+	// If a branch is not provided, use the default branch
+	if downstreamGitOps.Branch == "" {
+		err := gitops.UpdateDownstreamGitOps(a.ID, d.ClusterID, downstreamGitOps.RepoURI, defaultBranchName,
+			downstreamGitOps.Path, downstreamGitOps.Format, downstreamGitOps.Action)
+		if err != nil {
+			logger.Infof("Failed to update the gitops configmap with the default branch: %v", err)
+
+			if err := gitops.SetGitOpsError(a.ID, d.ClusterID, err.Error()); err != nil {
+				logger.Error(err)
+			}
+			JSON(w, http.StatusInternalServerError, NewErrorResponse(err))
+			return
+		}
+		downstreamGitOps.Branch = defaultBranchName
 	}
 
 	if err := gitops.SetGitOpsError(a.ID, d.ClusterID, ""); err != nil {
