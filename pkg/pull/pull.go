@@ -29,9 +29,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/util"
 	corev1 "k8s.io/api/core/v1"
 	k8sjson "k8s.io/apimachinery/pkg/runtime/serializer/json"
-	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/scheme"
-	"sigs.k8s.io/controller-runtime/pkg/client/config"
 	kustomizetypes "sigs.k8s.io/kustomize/api/types"
 )
 
@@ -113,14 +111,9 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 		pullOptions.ReportWriter = ioutil.Discard
 	}
 
-	cfg, err := config.GetConfig()
+	clientset, err := k8sutil.GetClientset()
 	if err != nil {
-		return "", errors.Wrap(err, "failed to get config")
-	}
-
-	clientset, err := kubernetes.NewForConfig(cfg)
-	if err != nil {
-		return "", errors.Wrap(err, "failed to create clientset")
+		return "", errors.Wrap(err, "failed to get k8s clientset")
 	}
 
 	uri, err := url.ParseRequestURI(upstreamURI)

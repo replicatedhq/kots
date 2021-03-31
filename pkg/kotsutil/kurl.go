@@ -5,23 +5,17 @@ import (
 	"encoding/json"
 
 	"github.com/pkg/errors"
+	"github.com/replicatedhq/kots/pkg/k8sutil"
 	corev1 "k8s.io/api/core/v1"
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
-	"sigs.k8s.io/controller-runtime/pkg/client/config"
 )
 
 func GetKurlRegistryCreds() (hostname string, username string, password string, finalErr error) {
-	cfg, err := config.GetConfig()
+	clientset, err := k8sutil.GetClientset()
 	if err != nil {
-		finalErr = errors.Wrap(err, "failed to get cluster config")
-		return
-	}
-
-	clientset, err := kubernetes.NewForConfig(cfg)
-	if err != nil {
-		finalErr = errors.Wrap(err, "failed to create kubernetes clientset")
+		finalErr = errors.Wrap(err, "failed to get k8s clientset")
 		return
 	}
 
@@ -63,14 +57,9 @@ func GetKurlRegistryCreds() (hostname string, username string, password string, 
 }
 
 func GetKurlS3Secret() (*corev1.Secret, error) {
-	cfg, err := config.GetConfig()
+	clientset, err := k8sutil.GetClientset()
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to get cluster config")
-	}
-
-	clientset, err := kubernetes.NewForConfig(cfg)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to create clientset")
+		return nil, errors.Wrap(err, "failed to get k8s clientset")
 	}
 
 	secret, err := clientset.CoreV1().Secrets("default").Get(context.TODO(), "kotsadm-s3", metav1.GetOptions{})

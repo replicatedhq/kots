@@ -14,6 +14,7 @@ import (
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	"github.com/replicatedhq/kots/pkg/airgap"
 	airgaptypes "github.com/replicatedhq/kots/pkg/airgap/types"
+	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/kotsadm"
 	kotsadmtypes "github.com/replicatedhq/kots/pkg/kotsadm/types"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
@@ -27,7 +28,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/client-go/kubernetes"
-	"sigs.k8s.io/controller-runtime/pkg/client/config"
 )
 
 // AutomateInstall will process any bits left in strategic places
@@ -37,14 +37,9 @@ func AutomateInstall() error {
 	logger.Debug("looking for any automated installs to complete")
 
 	// look for a license secret
-	cfg, err := config.GetConfig()
+	clientset, err := k8sutil.GetClientset()
 	if err != nil {
-		return errors.Wrap(err, "failed to get cluster config")
-	}
-
-	clientset, err := kubernetes.NewForConfig(cfg)
-	if err != nil {
-		return errors.Wrap(err, "failed to create kubernetes clientset")
+		return errors.Wrap(err, "failed to get k8s client set")
 	}
 
 	licenseSecrets, err := clientset.CoreV1().Secrets(os.Getenv("POD_NAMESPACE")).List(context.TODO(), metav1.ListOptions{
@@ -199,14 +194,9 @@ LICENSE_LOOP:
 }
 
 func AirgapInstall(appSlug string, additionalFiles map[string][]byte) error {
-	cfg, err := config.GetConfig()
+	clientset, err := k8sutil.GetClientset()
 	if err != nil {
-		return errors.Wrap(err, "failed to get cluster config")
-	}
-
-	clientset, err := kubernetes.NewForConfig(cfg)
-	if err != nil {
-		return errors.Wrap(err, "failed to create kubernetes clientset")
+		return errors.Wrap(err, "failed to get k8s client set")
 	}
 
 	selectorLabels := map[string]string{
@@ -333,14 +323,9 @@ func NeedToWaitForAirgapApp() (bool, error) {
 	logger.Debug("looking for any automated installs to complete")
 
 	// look for a license secret
-	cfg, err := config.GetConfig()
+	clientset, err := k8sutil.GetClientset()
 	if err != nil {
-		return false, errors.Wrap(err, "failed to get cluster config")
-	}
-
-	clientset, err := kubernetes.NewForConfig(cfg)
-	if err != nil {
-		return false, errors.Wrap(err, "failed to create kubernetes clientset")
+		return false, errors.Wrap(err, "failed to get k8s client set")
 	}
 
 	licenseSecrets, err := clientset.CoreV1().Secrets(os.Getenv("POD_NAMESPACE")).List(context.TODO(), metav1.ListOptions{

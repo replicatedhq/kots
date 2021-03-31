@@ -11,13 +11,11 @@ import (
 	"github.com/replicatedhq/kots/pkg/auth"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/logger"
-	"k8s.io/cli-runtime/pkg/genericclioptions"
 )
 
 type UploadLicenseOptions struct {
-	Namespace             string
-	KubernetesConfigFlags *genericclioptions.ConfigFlags
-	NewAppName            string
+	Namespace  string
+	NewAppName string
 }
 
 func UploadLicense(path string, uploadLicenseOptions UploadLicenseOptions) error {
@@ -41,7 +39,7 @@ func UploadLicense(path string, uploadLicenseOptions UploadLicenseOptions) error
 	log := logger.NewCLILogger()
 	log.ActionWithSpinner("Uploading license to Admin Console")
 
-	clientset, err := k8sutil.GetClientset(uploadLicenseOptions.KubernetesConfigFlags)
+	clientset, err := k8sutil.GetClientset()
 	if err != nil {
 		log.FinishSpinnerWithError()
 		return errors.Wrap(err, "failed to get clisnetset")
@@ -56,7 +54,7 @@ func UploadLicense(path string, uploadLicenseOptions UploadLicenseOptions) error
 	stopCh := make(chan struct{})
 	defer close(stopCh)
 
-	localPort, errChan, err := k8sutil.PortForward(uploadLicenseOptions.KubernetesConfigFlags, 0, 3000, uploadLicenseOptions.Namespace, podName, false, stopCh, log)
+	localPort, errChan, err := k8sutil.PortForward(0, 3000, uploadLicenseOptions.Namespace, podName, false, stopCh, log)
 	if err != nil {
 		log.FinishSpinnerWithError()
 		return errors.Wrap(err, "failed to start port forwarding")
@@ -120,7 +118,12 @@ func createUploadLicenseRequest(license string, uploadLicenseOptions UploadLicen
 		return nil, errors.Wrap(err, "failed to marshal json")
 	}
 
-	authSlug, err := auth.GetOrCreateAuthSlug(uploadLicenseOptions.KubernetesConfigFlags, uploadLicenseOptions.Namespace)
+	clientset, err := k8sutil.GetClientset()
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get k8s clientset")
+	}
+
+	authSlug, err := auth.GetOrCreateAuthSlug(clientset, uploadLicenseOptions.Namespace)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get kotsadm auth slug")
 	}

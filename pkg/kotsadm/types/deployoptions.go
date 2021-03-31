@@ -6,12 +6,10 @@ import (
 
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/cli-runtime/pkg/genericclioptions"
 )
 
 type DeployOptions struct {
 	Namespace                 string
-	KubernetesConfigFlags     *genericclioptions.ConfigFlags
 	Context                   string
 	SharedPassword            string
 	SharedPasswordBcrypt      string

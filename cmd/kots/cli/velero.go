@@ -60,7 +60,7 @@ func VeleroEnsurePermissionsCmd() *cobra.Command {
 				return err
 			}
 
-			clientset, err := k8sutil.GetClientset(kubernetesConfigFlags)
+			clientset, err := k8sutil.GetClientset()
 			if err != nil {
 				return errors.Wrap(err, "failed to get clientset")
 			}
@@ -221,7 +221,7 @@ type VeleroConfigureFileSystemOptions struct {
 func veleroConfigureFileSystem(ctx context.Context, log *logger.CLILogger, opts VeleroConfigureFileSystemOptions) error {
 	log.ActionWithSpinner("Setting up File System Minio")
 
-	clientset, err := k8sutil.GetClientset(kubernetesConfigFlags)
+	clientset, err := k8sutil.GetClientset()
 	if err != nil {
 		return errors.Wrap(err, "failed to get clientset")
 	}
@@ -324,7 +324,7 @@ func VeleroPrintFileSystemInstructionsCmd() *cobra.Command {
 				return err
 			}
 
-			clientset, err := k8sutil.GetClientset(kubernetesConfigFlags)
+			clientset, err := k8sutil.GetClientset()
 			if err != nil {
 				return errors.Wrap(err, "failed to get clientset")
 			}

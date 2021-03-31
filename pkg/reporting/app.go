@@ -9,7 +9,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/api/reporting/types"
-	"github.com/replicatedhq/kots/pkg/k8s"
+	"github.com/replicatedhq/kots/pkg/k8sutil"
 	downstream "github.com/replicatedhq/kots/pkg/kotsadmdownstream"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/kurl"
@@ -67,7 +67,7 @@ func GetReportingInfo(appID string) *types.ReportingInfo {
 		InstanceID: appID,
 	}
 
-	configMap, err := k8s.GetKotsadmIDConfigMap()
+	configMap, err := k8sutil.GetKotsadmIDConfigMap()
 	if err != nil {
 		r.ClusterID = ksuid.New().String()
 	} else if configMap != nil {
@@ -75,7 +75,7 @@ func GetReportingInfo(appID string) *types.ReportingInfo {
 	} else {
 		// configmap is missing for some reason, recreate with new guid, this will appear as a new instance in the report
 		r.ClusterID = ksuid.New().String()
-		k8s.CreateKotsadmIDConfigMap(r.ClusterID)
+		k8sutil.CreateKotsadmIDConfigMap(r.ClusterID)
 	}
 
 	di, err := getDownstreamInfo(appID)
@@ -87,7 +87,7 @@ func GetReportingInfo(appID string) *types.ReportingInfo {
 	}
 
 	// get kubernetes cluster version
-	k8sVersion, err := k8s.GetK8sVersion()
+	k8sVersion, err := k8sutil.GetK8sVersion()
 	if err != nil {
 		logger.Debugf("failed to get k8s version: %v", err.Error())
 	} else {

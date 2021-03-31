@@ -61,7 +61,7 @@ func SetConfigCmd() *cobra.Command {
 				return errors.Wrap(err, "failed to create config values from arguments")
 			}
 
-			clientset, err := k8sutil.GetClientset(kubernetesConfigFlags)
+			clientset, err := k8sutil.GetClientset()
 			if err != nil {
 				return errors.Wrap(err, "failed to get clientset")
 			}
@@ -76,7 +76,7 @@ func SetConfigCmd() *cobra.Command {
 
 			log.ActionWithoutSpinner("Updating %s configuration...", appSlug)
 
-			localPort, errChan, err := k8sutil.PortForward(kubernetesConfigFlags, 0, 3000, namespace, podName, false, stopCh, log)
+			localPort, errChan, err := k8sutil.PortForward(0, 3000, namespace, podName, false, stopCh, log)
 			if err != nil {
 				return errors.Wrap(err, "failed to start port forwarding")
 			}
@@ -91,7 +91,7 @@ func SetConfigCmd() *cobra.Command {
 				}
 			}()
 
-			authSlug, err := auth.GetOrCreateAuthSlug(kubernetesConfigFlags, namespace)
+			authSlug, err := auth.GetOrCreateAuthSlug(clientset, namespace)
 			if err != nil {
 				return errors.Wrap(err, "failed to get kotsadm auth slug")
 			}

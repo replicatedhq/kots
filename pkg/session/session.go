@@ -11,12 +11,11 @@ import (
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	"github.com/replicatedhq/kots/pkg/identity"
+	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/session/types"
 	"github.com/replicatedhq/kots/pkg/store"
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/kubernetes"
-	"sigs.k8s.io/controller-runtime/pkg/client/config"
 )
 
 func Parse(kotsStore store.Store, signedToken string) (*types.Session, error) {
@@ -38,14 +37,9 @@ func Parse(kotsStore store.Store, signedToken string) (*types.Session, error) {
 		// and the userID set to "kots-cli"
 		// this works for now as the endpoints used by the kots cli don't rely on user ID
 		// TODO make real userid/sessionid
-		cfg, err := config.GetConfig()
+		clientset, err := k8sutil.GetClientset()
 		if err != nil {
-			return nil, errors.New("failed to get cluster config")
-		}
-
-		clientset, err := kubernetes.NewForConfig(cfg)
-		if err != nil {
-			return nil, errors.New("failed to create clientset")
+			return nil, errors.Wrap(err, "failed to get k8s clientset")
 		}
 
 		secret, err := clientset.CoreV1().Secrets(os.Getenv("POD_NAMESPACE")).Get(context.TODO(), "kotsadm-authstring", metav1.GetOptions{})

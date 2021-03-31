@@ -48,7 +48,7 @@ func IdentityServiceInstallCmd() *cobra.Command {
 
 			log := logger.NewCLILogger()
 
-			clientset, err := k8sutil.GetClientset(kubernetesConfigFlags)
+			clientset, err := k8sutil.GetClientset()
 			if err != nil {
 				return errors.Wrap(err, "failed to get clientset")
 			}
@@ -115,7 +115,7 @@ func IdentityServiceConfigureCmd() *cobra.Command {
 
 			log := logger.NewCLILogger()
 
-			clientset, err := k8sutil.GetClientset(kubernetesConfigFlags)
+			clientset, err := k8sutil.GetClientset()
 			if err != nil {
 				return errors.Wrap(err, "failed to get clientset")
 			}
@@ -174,7 +174,7 @@ func IdentityServiceUninstallCmd() *cobra.Command {
 
 			log := logger.NewCLILogger()
 
-			clientset, err := k8sutil.GetClientset(kubernetesConfigFlags)
+			clientset, err := k8sutil.GetClientset()
 			if err != nil {
 				return errors.Wrap(err, "failed to get clientset")
 			}

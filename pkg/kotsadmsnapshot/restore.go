@@ -9,6 +9,7 @@ import (
 
 	units "github.com/docker/go-units"
 	"github.com/pkg/errors"
+	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/kotsadmsnapshot/types"
 	"github.com/replicatedhq/kots/pkg/logger"
 	kotssnapshot "github.com/replicatedhq/kots/pkg/snapshot"
@@ -18,7 +19,6 @@ import (
 	"go.uber.org/zap"
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"sigs.k8s.io/controller-runtime/pkg/client/config"
 )
 
 func GetRestore(ctx context.Context, kotsadmNamespace string, snapshotName string) (*velerov1.Restore, error) {
@@ -29,7 +29,7 @@ func GetRestore(ctx context.Context, kotsadmNamespace string, snapshotName strin
 
 	veleroNamespace := bsl.Namespace
 
-	cfg, err := config.GetConfig()
+	cfg, err := k8sutil.GetClusterConfig()
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get cluster config")
 	}
@@ -64,7 +64,7 @@ func CreateApplicationRestore(ctx context.Context, kotsadmNamespace string, snap
 	veleroNamespace := bsl.Namespace
 
 	// get the backup
-	cfg, err := config.GetConfig()
+	cfg, err := k8sutil.GetClusterConfig()
 	if err != nil {
 		return errors.Wrap(err, "failed to get cluster config")
 	}
@@ -121,7 +121,7 @@ func DeleteRestore(ctx context.Context, kotsadmNamespace string, snapshotName st
 
 	veleroNamespace := bsl.Namespace
 
-	cfg, err := config.GetConfig()
+	cfg, err := k8sutil.GetClusterConfig()
 	if err != nil {
 		return errors.Wrap(err, "failed to get cluster config")
 	}
@@ -140,7 +140,7 @@ func DeleteRestore(ctx context.Context, kotsadmNamespace string, snapshotName st
 }
 
 func GetRestoreDetails(ctx context.Context, kotsadmNamespace string, restoreName string) (*types.RestoreDetail, error) {
-	cfg, err := config.GetConfig()
+	cfg, err := k8sutil.GetClusterConfig()
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get cluster config")
 	}

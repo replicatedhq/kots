@@ -36,7 +36,6 @@ func DownloadCmd() *cobra.Command {
 
 			downloadOptions := download.DownloadOptions{
 				Namespace:             v.GetString("namespace"),
-				KubernetesConfigFlags: kubernetesConfigFlags,
 				Overwrite:             v.GetBool("overwrite"),
 				DecryptPasswordValues: v.GetBool("decrypt-password-values"),
 			}

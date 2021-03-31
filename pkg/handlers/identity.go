@@ -18,6 +18,7 @@ import (
 	identitydeploy "github.com/replicatedhq/kots/pkg/identity/deploy"
 	dextypes "github.com/replicatedhq/kots/pkg/identity/types/dex"
 	"github.com/replicatedhq/kots/pkg/ingress"
+	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/kotsadm"
 	kotsadmidentity "github.com/replicatedhq/kots/pkg/kotsadmidentity"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
@@ -29,8 +30,6 @@ import (
 	"github.com/replicatedhq/kots/pkg/version"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/client-go/kubernetes"
-	"sigs.k8s.io/controller-runtime/pkg/client/config"
 )
 
 const (
@@ -188,17 +187,9 @@ func (h *Handler) ConfigureIdentityService(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	cfg, err := config.GetConfig()
+	clientset, err := k8sutil.GetClientset()
 	if err != nil {
-		err = errors.Wrap(err, "failed to get cluster config")
-		logger.Error(err)
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-
-	clientset, err := kubernetes.NewForConfig(cfg)
-	if err != nil {
-		err = errors.Wrap(err, "failed to create kubernetes clientset")
+		err = errors.Wrap(err, "failed to get k8s client set")
 		logger.Error(err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return

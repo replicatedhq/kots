@@ -16,6 +16,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/auth"
 	"github.com/replicatedhq/kots/pkg/docker/registry"
+	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/kotsadm"
 	kotsadmtypes "github.com/replicatedhq/kots/pkg/kotsadm/types"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
@@ -47,7 +48,7 @@ func UpstreamUpgradeCmd() *cobra.Command {
 			appSlug := args[0]
 			var images []kustomizetypes.Image
 
-			isKurl, err := kotsadm.IsKurl(kubernetesConfigFlags)
+			isKurl, err := kotsadm.IsKurl()
 			if err != nil {
 				return errors.Wrap(err, "failed to check kURL")
 			}
@@ -113,7 +114,7 @@ func UpstreamUpgradeCmd() *cobra.Command {
 
 			stopCh := make(chan struct{})
 			defer close(stopCh)
-			localPort, errChan, err := upload.StartPortForward(v.GetString("namespace"), kubernetesConfigFlags, stopCh, log)
+			localPort, errChan, err := upload.StartPortForward(v.GetString("namespace"), stopCh, log)
 			if err != nil {
 				log.FinishSpinnerWithError()
 				return err
@@ -177,7 +178,12 @@ func UpstreamUpgradeCmd() *cobra.Command {
 
 			updateCheckURI := fmt.Sprintf("http://localhost:%d/api/v1/app/%s/updatecheck?%s", localPort, url.PathEscape(appSlug), urlVals.Encode())
 
-			authSlug, err := auth.GetOrCreateAuthSlug(kubernetesConfigFlags, v.GetString("namespace"))
+			clientset, err := k8sutil.GetClientset()
+			if err != nil {
+				return errors.Wrap(err, "failed to get k8s clientset")
+			}
+
+			authSlug, err := auth.GetOrCreateAuthSlug(clientset, v.GetString("namespace"))
 			if err != nil {
 				log.FinishSpinnerWithError()
 				log.Info("Unable to authenticate to the Admin Console running in the %s namespace. Ensure you have read access to secrets in this namespace and try again.", v.GetString("namespace"))

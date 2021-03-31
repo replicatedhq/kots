@@ -7,12 +7,11 @@ import (
 
 	"github.com/pkg/errors"
 	identitydeploy "github.com/replicatedhq/kots/pkg/identity/deploy"
+	"github.com/replicatedhq/kots/pkg/k8sutil"
 	kotsadmtypes "github.com/replicatedhq/kots/pkg/kotsadm/types"
 	corev1 "k8s.io/api/core/v1"
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/kubernetes"
-	k8sconfig "sigs.k8s.io/controller-runtime/pkg/client/config"
 )
 
 const OIDCStateSecretName = "kotsadm-dex-state"
@@ -25,14 +24,9 @@ func SetOIDCState(ctx context.Context, namespace string, state string) error {
 
 	secret := stateSecretResource(OIDCStateSecretName, state)
 
-	cfg, err := k8sconfig.GetConfig()
+	clientset, err := k8sutil.GetClientset()
 	if err != nil {
-		return errors.Wrap(err, "failed to get kubernetes config")
-	}
-
-	clientset, err := kubernetes.NewForConfig(cfg)
-	if err != nil {
-		return errors.Wrap(err, "failed to get client set")
+		return errors.Wrap(err, "failed to get k8s client set")
 	}
 
 	existingSecret, err := clientset.CoreV1().Secrets(namespace).Get(ctx, secret.Name, metav1.GetOptions{})
@@ -60,14 +54,9 @@ func SetOIDCState(ctx context.Context, namespace string, state string) error {
 }
 
 func GetOIDCState(ctx context.Context, namespace string, state string) (string, error) {
-	cfg, err := k8sconfig.GetConfig()
+	clientset, err := k8sutil.GetClientset()
 	if err != nil {
-		return "", errors.Wrap(err, "failed to get kubernetes config")
-	}
-
-	clientset, err := kubernetes.NewForConfig(cfg)
-	if err != nil {
-		return "", errors.Wrap(err, "failed to get client set")
+		return "", errors.Wrap(err, "failed to get k8s client set")
 	}
 
 	secret, err := clientset.CoreV1().Secrets(namespace).Get(ctx, OIDCStateSecretName, metav1.GetOptions{})
@@ -82,14 +71,9 @@ func ResetOIDCState(ctx context.Context, namespace string, state string) error {
 	stateMtx.Lock()
 	defer stateMtx.Unlock()
 
-	cfg, err := k8sconfig.GetConfig()
+	clientset, err := k8sutil.GetClientset()
 	if err != nil {
-		return errors.Wrap(err, "failed to get kubernetes config")
-	}
-
-	clientset, err := kubernetes.NewForConfig(cfg)
-	if err != nil {
-		return errors.Wrap(err, "failed to get client set")
+		return errors.Wrap(err, "failed to get k8s client set")
 	}
 
 	secret, err := clientset.CoreV1().Secrets(namespace).Get(ctx, OIDCStateSecretName, metav1.GetOptions{})

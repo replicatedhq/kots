@@ -14,7 +14,6 @@ import (
 	"github.com/replicatedhq/kots/pkg/docker/registry"
 	"github.com/replicatedhq/kots/pkg/identity"
 	"github.com/replicatedhq/kots/pkg/ingress"
-	"github.com/replicatedhq/kots/pkg/k8s"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/kotsadm/types"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
@@ -23,7 +22,6 @@ import (
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
-	"k8s.io/cli-runtime/pkg/genericclioptions"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/scheme"
 	kustomizetypes "sigs.k8s.io/kustomize/api/types"
@@ -94,7 +92,7 @@ func YAML(deployOptions types.DeployOptions) (map[string][]byte, error) {
 }
 
 func Upgrade(upgradeOptions types.UpgradeOptions) error {
-	clientset, err := k8sutil.GetClientset(upgradeOptions.KubernetesConfigFlags)
+	clientset, err := k8sutil.GetClientset()
 	if err != nil {
 		return errors.Wrap(err, "failed to get clientset")
 	}
@@ -106,7 +104,7 @@ func Upgrade(upgradeOptions types.UpgradeOptions) error {
 		return err
 	}
 
-	deployOptions, err := readDeployOptionsFromCluster(upgradeOptions.Namespace, upgradeOptions.KubernetesConfigFlags, clientset)
+	deployOptions, err := readDeployOptionsFromCluster(upgradeOptions.Namespace, clientset)
 	if err != nil {
 		return errors.Wrap(err, "failed to read deploy options")
 	}
@@ -154,7 +152,7 @@ func Deploy(deployOptions types.DeployOptions) error {
 		airgapPath = deployOptions.AirgapRootDir
 	}
 
-	clientset, err := k8sutil.GetClientset(deployOptions.KubernetesConfigFlags)
+	clientset, err := k8sutil.GetClientset()
 	if err != nil {
 		return errors.Wrap(err, "failed to get clientset")
 	}
@@ -233,8 +231,8 @@ func Deploy(deployOptions types.DeployOptions) error {
 	return nil
 }
 
-func IsKurl(k8sConfigFlags *genericclioptions.ConfigFlags) (bool, error) {
-	clientset, err := k8sutil.GetClientset(k8sConfigFlags)
+func IsKurl() (bool, error) {
+	clientset, err := k8sutil.GetClientset()
 	if err != nil {
 		return false, errors.Wrap(err, "failed to get clientset")
 	}
@@ -702,7 +700,7 @@ func ensureDisasterRecoveryLabels(deployOptions *types.DeployOptions, clientset 
 		return errors.Wrap(err, "failed to list configmaps")
 	}
 	for _, configMap := range configMaps.Items {
-		if configMap.ObjectMeta.Name == k8s.KotsadmIDConfigMapName {
+		if configMap.ObjectMeta.Name == k8sutil.KotsadmIDConfigMapName {
 			// don't back up the kotsadm-id configmap so that we don't end up with multiple kotsadm instances with the same id after restoring to other clusters
 			continue
 		}
@@ -790,11 +788,10 @@ func ensureDisasterRecoveryLabels(deployOptions *types.DeployOptions, clientset 
 	return nil
 }
 
-func readDeployOptionsFromCluster(namespace string, kubernetesConfigFlags *genericclioptions.ConfigFlags, clientset *kubernetes.Clientset) (*types.DeployOptions, error) {
+func readDeployOptionsFromCluster(namespace string, clientset *kubernetes.Clientset) (*types.DeployOptions, error) {
 	deployOptions := types.DeployOptions{
-		Namespace:             namespace,
-		KubernetesConfigFlags: kubernetesConfigFlags,
-		ServiceType:           "ClusterIP",
+		Namespace:   namespace,
+		ServiceType: "ClusterIP",
 	}
 
 	// Shared password, we can't read the original, but we can check if there's a bcrypted value

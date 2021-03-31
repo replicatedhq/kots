@@ -11,6 +11,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/kotsadm/operator/pkg/applier"
 	"github.com/replicatedhq/kots/kotsadm/operator/pkg/util"
+	"github.com/replicatedhq/kots/pkg/k8sutil"
 	appsv1 "k8s.io/api/apps/v1"
 	batchv1 "k8s.io/api/batch/v1"
 	batchv1beta1 "k8s.io/api/batch/v1beta1"
@@ -26,7 +27,6 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
-	"sigs.k8s.io/controller-runtime/pkg/client/config"
 )
 
 var metadataAccessor = meta.NewAccessor()
@@ -349,9 +349,9 @@ func (c *Client) ensureResourcesPresent(applicationManifests ApplicationManifest
 }
 
 func (c *Client) clearNamespace(slug string, namespace string, isRestore bool) (bool, error) {
-	cfg, err := config.GetConfig()
+	cfg, err := k8sutil.GetClusterConfig()
 	if err != nil {
-		return false, errors.Wrap(err, "failed to get config")
+		return false, errors.Wrap(err, "failed to get cluster config")
 	}
 	disc, err := discovery.NewDiscoveryClientForConfig(cfg)
 	if err != nil {
@@ -499,14 +499,9 @@ func getPVCs(targetNamespace string, obj k8sruntime.Object, gvk *k8sschema.Group
 }
 
 func deletePVCs(namespace string, pvcs []string) error {
-	cfg, err := config.GetConfig()
+	clientset, err := k8sutil.GetClientset()
 	if err != nil {
-		return errors.Wrap(err, "failed to get config")
-	}
-
-	clientset, err := kubernetes.NewForConfig(cfg)
-	if err != nil {
-		return errors.Wrap(err, "failed to get client set")
+		return errors.Wrap(err, "failed to get k8s client set")
 	}
 
 	for _, pvc := range pvcs {

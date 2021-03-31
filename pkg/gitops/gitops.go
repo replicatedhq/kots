@@ -22,14 +22,13 @@ import (
 	go_git_ssh "github.com/go-git/go-git/v5/plumbing/transport/ssh"
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/crypto"
+	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/kotsadm/types"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"golang.org/x/crypto/ssh"
 	v1 "k8s.io/api/core/v1"
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/kubernetes"
-	"sigs.k8s.io/controller-runtime/pkg/client/config"
 )
 
 type GitOpsConfig struct {
@@ -95,14 +94,9 @@ func (g *GitOpsConfig) CloneURL() string {
 // GetDownstreamGitOps will return the gitops config for a downstrea,
 // This implementation copies how it works in typescript.
 func GetDownstreamGitOps(appID string, clusterID string) (*GitOpsConfig, error) {
-	cfg, err := config.GetConfig()
+	clientset, err := k8sutil.GetClientset()
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to get cluster config")
-	}
-
-	clientset, err := kubernetes.NewForConfig(cfg)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to create kubernetes clientset")
+		return nil, errors.Wrap(err, "failed to get k8s client set")
 	}
 
 	secret, err := clientset.CoreV1().Secrets(os.Getenv("POD_NAMESPACE")).Get(context.TODO(), "kotsadm-gitops", metav1.GetOptions{})
@@ -186,14 +180,9 @@ func GetDownstreamGitOps(appID string, clusterID string) (*GitOpsConfig, error) 
 }
 
 func DisableDownstreamGitOps(appID string, clusterID string) error {
-	cfg, err := config.GetConfig()
+	clientset, err := k8sutil.GetClientset()
 	if err != nil {
-		return errors.Wrap(err, "failed to get cluster config")
-	}
-
-	clientset, err := kubernetes.NewForConfig(cfg)
-	if err != nil {
-		return errors.Wrap(err, "failed to create kubernetes clientset")
+		return errors.Wrap(err, "failed to get k8s client set")
 	}
 
 	configMap, err := clientset.CoreV1().ConfigMaps(os.Getenv("POD_NAMESPACE")).Get(context.TODO(), "kotsadm-gitops", metav1.GetOptions{})
@@ -216,14 +205,9 @@ func DisableDownstreamGitOps(appID string, clusterID string) error {
 }
 
 func UpdateDownstreamGitOps(appID, clusterID, uri, branch, path, format, action string) error {
-	cfg, err := config.GetConfig()
+	clientset, err := k8sutil.GetClientset()
 	if err != nil {
-		return errors.Wrap(err, "failed to get cluster config")
-	}
-
-	clientset, err := kubernetes.NewForConfig(cfg)
-	if err != nil {
-		return errors.Wrap(err, "failed to create kubernetes clientset")
+		return errors.Wrap(err, "failed to get k8s client set")
 	}
 
 	configMap, err := clientset.CoreV1().ConfigMaps(os.Getenv("POD_NAMESPACE")).Get(context.TODO(), "kotsadm-gitops", metav1.GetOptions{})
@@ -306,14 +290,9 @@ func UpdateDownstreamGitOps(appID, clusterID, uri, branch, path, format, action 
 }
 
 func SetGitOpsError(appID string, clusterID string, errMsg string) error {
-	cfg, err := config.GetConfig()
+	clientset, err := k8sutil.GetClientset()
 	if err != nil {
-		return errors.Wrap(err, "failed to get cluster config")
-	}
-
-	clientset, err := kubernetes.NewForConfig(cfg)
-	if err != nil {
-		return errors.Wrap(err, "failed to create kubernetes clientset")
+		return errors.Wrap(err, "failed to get k8s client set")
 	}
 
 	configMap, err := clientset.CoreV1().ConfigMaps(os.Getenv("POD_NAMESPACE")).Get(context.TODO(), "kotsadm-gitops", metav1.GetOptions{})
@@ -378,14 +357,9 @@ func TestGitOpsConnection(gitOpsConfig *GitOpsConfig) error {
 }
 
 func CreateGitOps(provider string, repoURI string, hostname string) error {
-	cfg, err := config.GetConfig()
+	clientset, err := k8sutil.GetClientset()
 	if err != nil {
-		return errors.Wrap(err, "failed to get cluster config")
-	}
-
-	clientset, err := kubernetes.NewForConfig(cfg)
-	if err != nil {
-		return errors.Wrap(err, "failed to create kubernetes clientset")
+		return errors.Wrap(err, "failed to get k8s client set")
 	}
 
 	secret, err := clientset.CoreV1().Secrets(os.Getenv("POD_NAMESPACE")).Get(context.TODO(), "kotsadm-gitops", metav1.GetOptions{})
@@ -491,14 +465,9 @@ func CreateGitOps(provider string, repoURI string, hostname string) error {
 }
 
 func ResetGitOps() error {
-	cfg, err := config.GetConfig()
+	clientset, err := k8sutil.GetClientset()
 	if err != nil {
-		return errors.Wrap(err, "failed to get cluster config")
-	}
-
-	clientset, err := kubernetes.NewForConfig(cfg)
-	if err != nil {
-		return errors.Wrap(err, "failed to create kubernetes clientset")
+		return errors.Wrap(err, "failed to get k8s client set")
 	}
 
 	err = clientset.CoreV1().Secrets(os.Getenv("POD_NAMESPACE")).Delete(context.TODO(), "kotsadm-gitops", metav1.DeleteOptions{})
@@ -515,14 +484,9 @@ func ResetGitOps() error {
 }
 
 func GetGitOps() (GlobalGitOpsConfig, error) {
-	cfg, err := config.GetConfig()
+	clientset, err := k8sutil.GetClientset()
 	if err != nil {
-		return GlobalGitOpsConfig{}, errors.Wrap(err, "failed to get cluster config")
-	}
-
-	clientset, err := kubernetes.NewForConfig(cfg)
-	if err != nil {
-		return GlobalGitOpsConfig{}, errors.Wrap(err, "failed to create kubernetes clientset")
+		return GlobalGitOpsConfig{}, errors.Wrap(err, "failed to get k8s client set")
 	}
 
 	secret, err := clientset.CoreV1().Secrets(os.Getenv("POD_NAMESPACE")).Get(context.TODO(), "kotsadm-gitops", metav1.GetOptions{})

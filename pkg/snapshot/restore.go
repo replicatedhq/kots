@@ -20,24 +20,20 @@ import (
 	velerov1 "github.com/vmware-tanzu/velero/pkg/apis/velero/v1"
 	veleroclientv1 "github.com/vmware-tanzu/velero/pkg/generated/clientset/versioned/typed/velero/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/cli-runtime/pkg/genericclioptions"
-	"sigs.k8s.io/controller-runtime/pkg/client/config"
 )
 
 type RestoreInstanceBackupOptions struct {
-	BackupName            string
-	KubernetesConfigFlags *genericclioptions.ConfigFlags
-	WaitForApps           bool
-	VeleroNamespace       string
+	BackupName      string
+	WaitForApps     bool
+	VeleroNamespace string
 }
 
 type ListInstanceRestoresOptions struct {
-	Namespace             string
-	KubernetesConfigFlags *genericclioptions.ConfigFlags
+	Namespace string
 }
 
 func RestoreInstanceBackup(ctx context.Context, options RestoreInstanceBackupOptions) (*velerov1.Restore, error) {
-	clientset, err := k8sutil.GetClientset(options.KubernetesConfigFlags)
+	clientset, err := k8sutil.GetClientset()
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get k8s clientset")
 	}
@@ -55,7 +51,7 @@ func RestoreInstanceBackup(ctx context.Context, options RestoreInstanceBackupOpt
 	}
 
 	// get the backup
-	cfg, err := config.GetConfig()
+	cfg, err := k8sutil.GetClusterConfig()
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get cluster config")
 	}
@@ -175,7 +171,7 @@ func RestoreInstanceBackup(ctx context.Context, options RestoreInstanceBackupOpt
 	log.ActionWithSpinner("Restoring Applications")
 
 	// initiate kotsadm applications restore
-	err = initiateKotsadmApplicationsRestore(options.BackupName, kotsadmNamespace, kotsadmPodName, options.KubernetesConfigFlags, log)
+	err = initiateKotsadmApplicationsRestore(options.BackupName, kotsadmNamespace, kotsadmPodName, log)
 	if err != nil {
 		log.FinishSpinnerWithError()
 		return nil, errors.Wrap(err, "failed to restore kotsadm applications")
@@ -183,7 +179,7 @@ func RestoreInstanceBackup(ctx context.Context, options RestoreInstanceBackupOpt
 
 	if options.WaitForApps {
 		// wait for applications restore to finish
-		err = waitForKotsadmApplicationsRestore(options.BackupName, kotsadmNamespace, kotsadmPodName, options.KubernetesConfigFlags, log)
+		err = waitForKotsadmApplicationsRestore(options.BackupName, kotsadmNamespace, kotsadmPodName, log)
 		if err != nil {
 			if _, ok := errors.Cause(err).(*kotsadmtypes.ErrorAppsRestore); ok {
 				log.FinishSpinnerWithError()
@@ -204,7 +200,7 @@ func RestoreInstanceBackup(ctx context.Context, options RestoreInstanceBackupOpt
 }
 
 func ListInstanceRestores(ctx context.Context, options ListInstanceRestoresOptions) ([]velerov1.Restore, error) {
-	clientset, err := k8sutil.GetClientset(options.KubernetesConfigFlags)
+	clientset, err := k8sutil.GetClientset()
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get k8s clientset")
 	}
@@ -216,7 +212,7 @@ func ListInstanceRestores(ctx context.Context, options ListInstanceRestoresOptio
 		return nil, errors.New("velero not found")
 	}
 
-	cfg, err := config.GetConfig()
+	cfg, err := k8sutil.GetClusterConfig()
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get cluster config")
 	}
@@ -249,7 +245,7 @@ func ListInstanceRestores(ctx context.Context, options ListInstanceRestoresOptio
 }
 
 func waitForVeleroRestoreCompleted(ctx context.Context, veleroNamespace string, restoreName string) (*velerov1.Restore, error) {
-	cfg, err := config.GetConfig()
+	cfg, err := k8sutil.GetClusterConfig()
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get cluster config")
 	}
@@ -280,11 +276,11 @@ func waitForVeleroRestoreCompleted(ctx context.Context, veleroNamespace string, 
 	}
 }
 
-func initiateKotsadmApplicationsRestore(backupName string, kotsadmNamespace string, kotsadmPodName string, kubernetesConfigFlags *genericclioptions.ConfigFlags, log *logger.CLILogger) error {
+func initiateKotsadmApplicationsRestore(backupName string, kotsadmNamespace string, kotsadmPodName string, log *logger.CLILogger) error {
 	stopCh := make(chan struct{})
 	defer close(stopCh)
 
-	localPort, errChan, err := k8sutil.PortForward(kubernetesConfigFlags, 0, 3000, kotsadmNamespace, kotsadmPodName, false, stopCh, log)
+	localPort, errChan, err := k8sutil.PortForward(0, 3000, kotsadmNamespace, kotsadmPodName, false, stopCh, log)
 	if err != nil {
 		return errors.Wrap(err, "failed to start port forwarding")
 	}
@@ -299,7 +295,12 @@ func initiateKotsadmApplicationsRestore(backupName string, kotsadmNamespace stri
 		}
 	}()
 
-	authSlug, err := auth.GetOrCreateAuthSlug(kubernetesConfigFlags, kotsadmNamespace)
+	clientset, err := k8sutil.GetClientset()
+	if err != nil {
+		return errors.Wrap(err, "failed to get k8s clientset")
+	}
+
+	authSlug, err := auth.GetOrCreateAuthSlug(clientset, kotsadmNamespace)
 	if err != nil {
 		return errors.Wrap(err, "failed to get kotsadm auth slug")
 	}
@@ -333,11 +334,11 @@ func initiateKotsadmApplicationsRestore(backupName string, kotsadmNamespace stri
 	return nil
 }
 
-func waitForKotsadmApplicationsRestore(backupName string, kotsadmNamespace string, kotsadmPodName string, kubernetesConfigFlags *genericclioptions.ConfigFlags, log *logger.CLILogger) error {
+func waitForKotsadmApplicationsRestore(backupName string, kotsadmNamespace string, kotsadmPodName string, log *logger.CLILogger) error {
 	stopCh := make(chan struct{})
 	defer close(stopCh)
 
-	localPort, errChan, err := k8sutil.PortForward(kubernetesConfigFlags, 0, 3000, kotsadmNamespace, kotsadmPodName, false, stopCh, log)
+	localPort, errChan, err := k8sutil.PortForward(0, 3000, kotsadmNamespace, kotsadmPodName, false, stopCh, log)
 	if err != nil {
 		return errors.Wrap(err, "failed to start port forwarding")
 	}
@@ -352,7 +353,12 @@ func waitForKotsadmApplicationsRestore(backupName string, kotsadmNamespace strin
 		}
 	}()
 
-	authSlug, err := auth.GetOrCreateAuthSlug(kubernetesConfigFlags, kotsadmNamespace)
+	clientset, err := k8sutil.GetClientset()
+	if err != nil {
+		return errors.Wrap(err, "failed to get k8s clientset")
+	}
+
+	authSlug, err := auth.GetOrCreateAuthSlug(clientset, kotsadmNamespace)
 	if err != nil {
 		return errors.Wrap(err, "failed to get kotsadm auth slug")
 	}

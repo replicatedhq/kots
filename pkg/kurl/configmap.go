@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	"github.com/replicatedhq/kots/pkg/k8s"
+	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/logger"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -23,7 +23,7 @@ const certKey = "cert_key"
 const certsExpirationKey = "upload_certs_expiration"
 
 func IsKurl() bool {
-	clientset, err := k8s.Clientset()
+	clientset, err := k8sutil.GetClientset()
 	if err != nil {
 		logger.Error(err)
 		return false
@@ -58,7 +58,7 @@ func UpdateConfigMap(client kubernetes.Interface, generateBootstrapToken, upload
 	if generateBootstrapToken {
 		bootstrapTokenDuration := time.Hour * 24
 		bootstrapTokenExpiration := time.Now().Add(bootstrapTokenDuration)
-		bootstrapToken, err := k8s.GenerateBootstrapToken(client, bootstrapTokenDuration)
+		bootstrapToken, err := k8sutil.GenerateBootstrapToken(client, bootstrapTokenDuration)
 		if err != nil {
 			return nil, errors.Wrap(err, "generate bootstrap token")
 		}

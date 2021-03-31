@@ -9,13 +9,13 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/logger"
 	usertypes "github.com/replicatedhq/kots/pkg/user/types"
 	"golang.org/x/crypto/bcrypt"
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
-	"sigs.k8s.io/controller-runtime/pkg/client/config"
 )
 
 var (
@@ -26,14 +26,9 @@ var (
 )
 
 func LogIn(password string) (*usertypes.User, error) {
-	cfg, err := config.GetConfig()
+	clientset, err := k8sutil.GetClientset()
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to get cluster config")
-	}
-
-	clientset, err := kubernetes.NewForConfig(cfg)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to create kubernetes clientset")
+		return nil, errors.Wrap(err, "failed to get k8s clientset")
 	}
 
 	var shaBytes []byte

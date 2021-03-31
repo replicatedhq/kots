@@ -28,14 +28,13 @@ import (
 	units "github.com/docker/go-units"
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/buildversion"
+	"github.com/replicatedhq/kots/pkg/k8sutil"
 	analyze "github.com/replicatedhq/troubleshoot/pkg/analyze"
 	"gopkg.in/yaml.v2"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	discovery "k8s.io/client-go/discovery"
-	"k8s.io/client-go/kubernetes"
 	certUtil "k8s.io/client-go/util/cert"
-	"sigs.k8s.io/controller-runtime/pkg/client/config"
 )
 
 type Ctx interface {
@@ -511,12 +510,7 @@ const kurlConfigMapNamespace = "kube-system"
 
 // checks if this is running in a kurl cluster, by checking for the existence of a configmap 'kurl-config'
 func (ctx StaticCtx) isKurl() bool {
-	cfg, err := config.GetConfig()
-	if err != nil {
-		return false
-	}
-
-	clientset, err := kubernetes.NewForConfig(cfg)
+	clientset, err := k8sutil.GetClientset()
 	if err != nil {
 		return false
 	}
@@ -530,12 +524,7 @@ func (ctx StaticCtx) isKurl() bool {
 }
 
 func getNodes() ([]corev1.Node, error) {
-	cfg, err := config.GetConfig()
-	if err != nil {
-		return nil, err
-	}
-
-	clientset, err := kubernetes.NewForConfig(cfg)
+	clientset, err := k8sutil.GetClientset()
 	if err != nil {
 		return nil, err
 	}
@@ -559,7 +548,7 @@ func (ctx StaticCtx) distribution() string {
 		return workingProvider
 	}
 
-	cfg, err := config.GetConfig()
+	cfg, err := k8sutil.GetClusterConfig()
 	if err != nil {
 		return ""
 	}

@@ -20,6 +20,7 @@ import (
 	versiontypes "github.com/replicatedhq/kots/pkg/api/version/types"
 	apptypes "github.com/replicatedhq/kots/pkg/app/types"
 	gitopstypes "github.com/replicatedhq/kots/pkg/gitops/types"
+	"github.com/replicatedhq/kots/pkg/k8sutil"
 	kotsadmobjects "github.com/replicatedhq/kots/pkg/kotsadm/objects"
 	kotsconfig "github.com/replicatedhq/kots/pkg/kotsadmconfig"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
@@ -35,7 +36,7 @@ import (
 )
 
 func (s *KOTSStore) ensureApplicationMetadata(applicationMetadata string, namespace string) error {
-	clientset, err := s.GetClientset()
+	clientset, err := k8sutil.GetClientset()
 	if err != nil {
 		return errors.Wrap(err, "failed to get clientset")
 	}

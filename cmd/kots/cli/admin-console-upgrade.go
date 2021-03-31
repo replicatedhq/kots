@@ -52,11 +52,10 @@ func AdminConsoleUpgradeCmd() *cobra.Command {
 			simultaneousUploads, _ := strconv.Atoi(v.GetString("airgap-upload-parallelism"))
 
 			upgradeOptions := kotsadmtypes.UpgradeOptions{
-				Namespace:             v.GetString("namespace"),
-				KubernetesConfigFlags: kubernetesConfigFlags,
-				ForceUpgradeKurl:      v.GetBool("force-upgrade-kurl"),
-				EnsureRBAC:            v.GetBool("ensure-rbac"),
-				SimultaneousUploads:   simultaneousUploads,
+				Namespace:           v.GetString("namespace"),
+				ForceUpgradeKurl:    v.GetBool("force-upgrade-kurl"),
+				EnsureRBAC:          v.GetBool("ensure-rbac"),
+				SimultaneousUploads: simultaneousUploads,
 
 				KotsadmOptions: kotsadmtypes.KotsadmOptions{
 					OverrideVersion:   v.GetString("kotsadm-tag"),

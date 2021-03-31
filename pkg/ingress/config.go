@@ -5,13 +5,12 @@ import (
 
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
+	"github.com/replicatedhq/kots/pkg/k8sutil"
 	kotsadmtypes "github.com/replicatedhq/kots/pkg/kotsadm/types"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	corev1 "k8s.io/api/core/v1"
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/kubernetes"
-	k8sconfig "sigs.k8s.io/controller-runtime/pkg/client/config"
 )
 
 var (
@@ -19,14 +18,9 @@ var (
 )
 
 func GetConfig(ctx context.Context, namespace string) (*kotsv1beta1.IngressConfig, error) {
-	cfg, err := k8sconfig.GetConfig()
+	clientset, err := k8sutil.GetClientset()
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to get kubernetes config")
-	}
-
-	clientset, err := kubernetes.NewForConfig(cfg)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to get client set")
+		return nil, errors.Wrap(err, "failed to get k8s client set")
 	}
 
 	configMap, err := clientset.CoreV1().ConfigMaps(namespace).Get(ctx, ConfigMapName, metav1.GetOptions{})
@@ -46,14 +40,9 @@ func GetConfig(ctx context.Context, namespace string) (*kotsv1beta1.IngressConfi
 }
 
 func SetConfig(ctx context.Context, namespace string, ingressConfig kotsv1beta1.IngressConfig) error {
-	cfg, err := k8sconfig.GetConfig()
+	clientset, err := k8sutil.GetClientset()
 	if err != nil {
-		return errors.Wrap(err, "failed to get kubernetes config")
-	}
-
-	clientset, err := kubernetes.NewForConfig(cfg)
-	if err != nil {
-		return errors.Wrap(err, "failed to get client set")
+		return errors.Wrap(err, "failed to get k8s client set")
 	}
 
 	configMap, err := ingressConfigResource(ingressConfig)

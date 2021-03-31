@@ -18,7 +18,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/kotskinds/client/kotsclientset/scheme"
 	apptypes "github.com/replicatedhq/kots/pkg/app/types"
-	"github.com/replicatedhq/kots/pkg/k8s"
+	"github.com/replicatedhq/kots/pkg/k8sutil"
 	kotstypes "github.com/replicatedhq/kots/pkg/kotsadm/types"
 	license "github.com/replicatedhq/kots/pkg/kotsadmlicense"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
@@ -40,8 +40,6 @@ import (
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	serializer "k8s.io/apimachinery/pkg/runtime/serializer/json"
 	"k8s.io/apimachinery/pkg/util/rand"
-	"k8s.io/client-go/kubernetes"
-	"sigs.k8s.io/controller-runtime/pkg/client/config"
 )
 
 const (
@@ -251,14 +249,9 @@ func CreateRenderedSpec(appID string, sequence int64, origin string, inCluster b
 
 	renderedSpec = b.Bytes()
 
-	cfg, err := config.GetConfig()
+	clientset, err := k8sutil.GetClientset()
 	if err != nil {
-		return errors.Wrap(err, "failed to get cluster config")
-	}
-
-	clientset, err := kubernetes.NewForConfig(cfg)
-	if err != nil {
-		return errors.Wrap(err, "failed to create clientset")
+		return errors.Wrap(err, "failed to get k8s clientset")
 	}
 
 	secretName := GetSpecSecretName(app.Slug)
@@ -677,7 +670,7 @@ func makeWeaveAnalyzers() []*troubleshootv1beta2.Analyze {
 func makeVeleroCollectors() []*troubleshootv1beta2.Collect {
 	collectors := []*troubleshootv1beta2.Collect{}
 
-	clientset, err := k8s.Clientset()
+	clientset, err := k8sutil.GetClientset()
 	if err != nil {
 		logger.Error(err)
 		return collectors
@@ -830,14 +823,9 @@ func makeCollectDCollectors() ([]*troubleshootv1beta2.Collect, error) {
 		return collectors, nil
 	}
 
-	cfg, err := config.GetConfig()
+	clientset, err := k8sutil.GetClientset()
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to get cluster config")
-	}
-
-	clientset, err := kubernetes.NewForConfig(cfg)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to create clientset")
+		return nil, errors.Wrap(err, "failed to get k8s clientset")
 	}
 
 	namespace := os.Getenv("POD_NAMESPACE")
