@@ -57,6 +57,7 @@ func AutomateInstall() error {
 
 LICENSE_LOOP:
 	for _, licenseSecret := range licenseSecrets.Items {
+
 		license, ok := licenseSecret.Data["license"]
 		if !ok {
 			logger.Errorf("license secret %q does not contain a license field", licenseSecret.Name)
@@ -124,6 +125,9 @@ LICENSE_LOOP:
 			continue
 		}
 
+		// check for the airgap flag in the annotations
+		objMeta := licenseSecret.GetObjectMeta()
+		annotations := objMeta.GetAnnotations()
 		if instParams.SkipImagePush && airgapData != nil {
 			// Images have been pushed and there is airgap app data available, so this is an airgap install.
 			airgapFilesDir, err := ioutil.TempDir("", "headless-airgap")
@@ -164,8 +168,8 @@ LICENSE_LOOP:
 				logger.Error(errors.Wrap(err, "failed to create airgap app"))
 				continue
 			}
-		} else {
-			// Otherwise there is no airgap data, so this is an airgap install.
+		} else if annotations["kots.io/airgap"] != "true" {
+			// Otherwise there is no airgap data, so this is an online install.
 			pendingApp := onlinetypes.PendingApp{
 				ID:          a.ID,
 				Slug:        a.Slug,

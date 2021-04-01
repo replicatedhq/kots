@@ -42,6 +42,7 @@ type KOTSHandler interface {
 	GetAppStatus(w http.ResponseWriter, r *http.Request)
 	GetAppVersionHistory(w http.ResponseWriter, r *http.Request)
 	GetUpdateDownloadStatus(w http.ResponseWriter, r *http.Request) // NOTE: appSlug is unused
+	GetPendingApp(w http.ResponseWriter, r *http.Request)
 
 	// Airgap
 	AirgapBundleProgress(w http.ResponseWriter, r *http.Request)

@@ -34,9 +34,12 @@ class SecureAdminConsole extends React.Component {
         }
 
         const apps = await this.props.onLoginSuccess();
+        const pendingApp = await this.props.pendingApp();
         this.setState({ authLoading: false });
         if (apps.length > 0) {
           this.props.history.replace(`/app/${apps[0].slug}`);
+        } else if (pendingApp?.slug) {
+          this.props.history.replace(`/${pendingApp.slug}/airgap`);
         } else {
           this.props.history.replace("upload-license");
         }
