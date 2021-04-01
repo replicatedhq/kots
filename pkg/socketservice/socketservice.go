@@ -612,15 +612,14 @@ func checkRestoreComplete(clusterSocket *ClusterSocket, a *apptypes.App, restore
 
 		logger.Info(fmt.Sprintf("restore complete, marking version %d as deployed", sequence))
 
-		// mark the sequence as deployed both in the socket history and db
+		// mark the sequence as deployed both in the db and socket history
 		// so that the admin console does not try to re-deploy it
-		socketMtx.Lock()
-		clusterSocket.LastDeployedSequences[a.ID] = sequence
-		socketMtx.Unlock()
-
 		if err := version.DeployVersion(a.ID, sequence); err != nil {
 			return errors.Wrap(err, "failed to mark app version as deployed")
 		}
+		socketMtx.Lock()
+		clusterSocket.LastDeployedSequences[a.ID] = sequence
+		socketMtx.Unlock()
 
 		if err := createSupportBundleSpec(a.ID, sequence, "", true); err != nil {
 			// support bundle is not essential.  keep processing restore status
