@@ -610,10 +610,16 @@ func checkRestoreComplete(clusterSocket *ClusterSocket, a *apptypes.App, restore
 			sequence = s
 		}
 
-		logger.Info(fmt.Sprintf("restore complete, re-deploying version %d", sequence))
+		logger.Info(fmt.Sprintf("restore complete, marking version %d as deployed", sequence))
 
-		if err := RedeployAppVersion(a.ID, sequence, clusterSocket); err != nil {
-			return errors.Wrap(err, "failed to redeploy app version")
+		// mark the sequence as deployed both in the socket history and db
+		// so that the admin console does not try to re-deploy it
+		socketMtx.Lock()
+		clusterSocket.LastDeployedSequences[a.ID] = sequence
+		socketMtx.Unlock()
+
+		if err := version.DeployVersion(a.ID, sequence); err != nil {
+			return errors.Wrap(err, "failed to mark app version as deployed")
 		}
 
 		if err := createSupportBundleSpec(a.ID, sequence, "", true); err != nil {
