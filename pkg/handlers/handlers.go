@@ -85,6 +85,8 @@ func RegisterSessionAuthRoutes(r *mux.Router, kotsStore store.Store, handler KOT
 		HandlerFunc(middleware.EnforceAccess(policy.AppIdentityServiceRead, handler.GetAppIdentityServiceConfig))
 
 	// Apps
+	r.Name("GetPendingApp").Path("/api/v1/pendingapp").Methods("GET").
+		HandlerFunc(middleware.EnforceAccess(policy.AppList, handler.GetPendingApp))
 	r.Name("ListApps").Path("/api/v1/apps").Methods("GET").
 		HandlerFunc(middleware.EnforceAccess(policy.AppList, handler.ListApps))
 	r.Name("GetApp").Path("/api/v1/app/{appSlug}").Methods("GET").

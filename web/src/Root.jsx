@@ -128,6 +128,38 @@ class Root extends Component {
     this.setState({ initSessionId: "" });
   }
 
+  getPendingApp = async () => {
+    try {
+      const res = await fetch(`${window.env.API_ENDPOINT}/pendingapp`, {
+        headers: {
+          "Authorization": Utilities.getToken(),
+          "Content-Type": "application/json",
+        },
+        method: "GET",
+      });
+      if (!res.ok) {
+        if (res.status === 401) {
+          Utilities.logoutUser();
+          return;
+        }
+        if (res.status === 404) {
+          return;
+        }
+ 
+        console.log("failed to get pending apps, unexpected status code", res.status);
+        return;
+      }
+      const response = await res.json();
+      const app = response.app;
+      this.setState({
+        pendingapp: app,
+      });
+      return app;
+    } catch (err) {
+      throw err;
+    }
+  }
+
   getAppsList = async () => {
     try {
       const res = await fetch(`${window.env.API_ENDPOINT}/apps`, {
@@ -328,7 +360,7 @@ class Root extends Component {
                   }} />
                   <ProtectedRoute path="/:slug/preflight" render={props => <PreflightResultPage {...props} logo={this.state.appLogo} appName={this.state.selectedAppName} appsList={appsList} fromLicenseFlow={true} refetchAppsList={this.getAppsList} />} />
                   <ProtectedRoute exact path="/:slug/config" render={props => <AppConfig {...props} fromLicenseFlow={true} refetchAppsList={this.getAppsList} />} />
-                  <Route exact path="/secure-console" render={props => <SecureAdminConsole {...props} logo={this.state.appLogo} appName={this.state.selectedAppName} onLoginSuccess={this.getAppsList} fetchingMetadata={this.state.fetchingMetadata} />} />
+                  <Route exact path="/secure-console" render={props => <SecureAdminConsole {...props} logo={this.state.appLogo} appName={this.state.selectedAppName} pendingApp={this.getPendingApp} onLoginSuccess={this.getAppsList} fetchingMetadata={this.state.fetchingMetadata} />} />
                   <ProtectedRoute exact path="/upload-license" render={props => <UploadLicenseFile {...props} logo={this.state.appLogo} appsListLength={appsList?.length} appName={this.state.selectedAppName} fetchingMetadata={this.state.fetchingMetadata} onUploadSuccess={this.getAppsList} />} />
                   <ProtectedRoute exact path="/restore" render={props => <BackupRestore {...props} logo={this.state.appLogo} appName={this.state.selectedAppName} appsListLength={appsList?.length} fetchingMetadata={this.state.fetchingMetadata}/>} />
                   <ProtectedRoute exact path="/:slug/airgap" render={props => <UploadAirgapBundle {...props} showRegistry={true} logo={this.state.appLogo} appsListLength={appsList?.length} appName={this.state.selectedAppName} onUploadSuccess={this.getAppsList} fetchingMetadata={this.state.fetchingMetadata} />} />

@@ -20,6 +20,51 @@ import (
 	"github.com/replicatedhq/kots/pkg/version"
 )
 
+func (h *Handler) GetPendingApp(w http.ResponseWriter, r *http.Request) {
+	sess := session.ContextGetSession(r)
+	if sess == nil {
+		logger.Error(errors.New("invalid session"))
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	papp, err := store.GetStore().GetPendingAirgapUploadApp()
+	if err != nil {
+		if store.GetStore().IsNotFound(err) {
+			w.WriteHeader(http.StatusNotFound)
+		} else {
+			logger.Error(errors.Wrap(err, "failed to get pending app"))
+			w.WriteHeader(http.StatusInternalServerError)
+		}
+		return
+	}
+
+	defaultRoles := rbac.DefaultRoles() // TODO (ethan): this should be set in the handler
+
+	if sess.HasRBAC { // handle pre-rbac sessions
+		allow, err := rbac.CheckAccess(r.Context(), defaultRoles, "read", fmt.Sprintf("app.%s", papp.Slug), sess.Roles)
+		if err != nil {
+			logger.Error(errors.Wrapf(err, "failed to check access for pending app %s", papp.Slug))
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		} else if !allow {
+			logger.Debug("failed to check access for pending app")
+			w.WriteHeader(http.StatusForbidden)
+			return
+		}
+	}
+
+	pendingAppResponse := types.GetPendingAppResponse{
+		App: types.ResponsePendingApp{
+			ID:          papp.ID,
+			Slug:        papp.Slug,
+			Name:        papp.Name,
+			LicenseData: papp.LicenseData,
+		},
+	}
+	JSON(w, http.StatusOK, pendingAppResponse)
+}
+
 func (h *Handler) ListApps(w http.ResponseWriter, r *http.Request) {
 	sess := session.ContextGetSession(r)
 	if sess == nil {

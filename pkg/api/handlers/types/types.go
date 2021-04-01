@@ -70,3 +70,14 @@ type ResponseCluster struct {
 	ID   string `json:"id"`
 	Slug string `json:"slug"`
 }
+
+type GetPendingAppResponse struct {
+	App ResponsePendingApp `json:"app"`
+}
+
+type ResponsePendingApp struct {
+	ID          string `json:"id"`
+	Slug        string `json:"slug"`
+	Name        string `json:"name"`
+	LicenseData string `json:"licenseData"`
+}

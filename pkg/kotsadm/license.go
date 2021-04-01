@@ -25,7 +25,7 @@ func getLicenseSecretYAML(deployOptions *types.DeployOptions) (map[string][]byte
 	}
 
 	var license bytes.Buffer
-	if err := s.Encode(kotsadmobjects.LicenseSecret(deployOptions.Namespace, deployOptions.License.Spec.AppSlug, b.String()), &license); err != nil {
+	if err := s.Encode(kotsadmobjects.LicenseSecret(deployOptions.Namespace, deployOptions.License.Spec.AppSlug, deployOptions.Airgap, b.String()), &license); err != nil {
 		return nil, errors.Wrap(err, "failed to marshal license secret")
 	}
 	docs["secret-license.yaml"] = license.Bytes()
@@ -49,7 +49,7 @@ func ensureLicenseSecret(deployOptions *types.DeployOptions, clientset *kubernet
 		return false, errors.Wrap(err, "failed to encode license")
 	}
 
-	_, err = clientset.CoreV1().Secrets(deployOptions.Namespace).Create(context.TODO(), kotsadmobjects.LicenseSecret(deployOptions.Namespace, deployOptions.License.Spec.AppSlug, b.String()), metav1.CreateOptions{})
+	_, err = clientset.CoreV1().Secrets(deployOptions.Namespace).Create(context.TODO(), kotsadmobjects.LicenseSecret(deployOptions.Namespace, deployOptions.License.Spec.AppSlug, deployOptions.Airgap, b.String()), metav1.CreateOptions{})
 	if err != nil {
 		return false, errors.Wrap(err, "failed to create license secret")
 	}

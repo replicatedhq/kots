@@ -369,6 +369,18 @@ func (mr *MockKOTSHandlerMockRecorder) GetUpdateDownloadStatus(w, r interface{})
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUpdateDownloadStatus", reflect.TypeOf((*MockKOTSHandler)(nil).GetUpdateDownloadStatus), w, r)
 }
 
+// GetPendingApp mocks base method
+func (m *MockKOTSHandler) GetPendingApp(w http.ResponseWriter, r *http.Request) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "GetPendingApp", w, r)
+}
+
+// GetPendingApp indicates an expected call of GetPendingApp
+func (mr *MockKOTSHandlerMockRecorder) GetPendingApp(w, r interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPendingApp", reflect.TypeOf((*MockKOTSHandler)(nil).GetPendingApp), w, r)
+}
+
 // AirgapBundleProgress mocks base method
 func (m *MockKOTSHandler) AirgapBundleProgress(w http.ResponseWriter, r *http.Request) {
 	m.ctrl.T.Helper()
