@@ -92,7 +92,7 @@ func (g *GitOpsConfig) CloneURL() string {
 	return ""
 }
 
-// GetDownstreamGitOps will return the gitops config for a downstrea,
+// GetDownstreamGitOps will return the gitops config for a downstream,
 // This implementation copies how it works in typescript.
 func GetDownstreamGitOps(appID string, clusterID string) (*GitOpsConfig, error) {
 	cfg, err := config.GetConfig()
@@ -353,28 +353,35 @@ func SetGitOpsError(appID string, clusterID string, errMsg string) error {
 	return nil
 }
 
-func TestGitOpsConnection(gitOpsConfig *GitOpsConfig) error {
+// TestGitOpsConnection will attempt a clone of the target gitops repo.
+// It returns the default branch name from the clone.
+func TestGitOpsConnection(gitOpsConfig *GitOpsConfig) (string, error) {
 	auth, err := getAuth(gitOpsConfig.PrivateKey)
 	if err != nil {
-		return errors.Wrap(err, "failed to get auth")
+		return "", errors.Wrap(err, "failed to get auth")
 	}
 
 	workDir, err := ioutil.TempDir("", "kotsadm")
 	if err != nil {
-		return errors.Wrap(err, "failed to create temp dir")
+		return "", errors.Wrap(err, "failed to create temp dir")
 	}
 	defer os.RemoveAll(workDir)
 
-	_, err = git.PlainClone(workDir, false, &git.CloneOptions{
+	repo, err := git.PlainClone(workDir, false, &git.CloneOptions{
 		URL:               gitOpsConfig.CloneURL(),
 		RecurseSubmodules: git.DefaultSubmoduleRecursionDepth,
 		Auth:              auth,
 	})
 	if err != nil && errors.Cause(err) != transport.ErrEmptyRemoteRepository {
-		return errors.Wrap(err, "failed to clone repo")
+		return "", errors.Wrap(err, "failed to clone repo")
 	}
 
-	return nil
+	ref, err := repo.Head()
+	if err != nil {
+		return "", errors.Wrap(err, "failed to identify HEAD of repo")
+	}
+
+	return ref.Name().Short(), nil
 }
 
 func CreateGitOps(provider string, repoURI string, hostname string) error {
