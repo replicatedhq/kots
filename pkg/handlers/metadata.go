@@ -7,7 +7,7 @@ import (
 
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
-	"github.com/replicatedhq/kots/pkg/k8s"
+	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/kurl"
 	"github.com/replicatedhq/kots/pkg/logger"
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
@@ -27,7 +27,7 @@ type MetadataResponse struct {
 func (h *Handler) Metadata(w http.ResponseWriter, r *http.Request) {
 	// This is not an authenticated request
 
-	clientset, err := k8s.Clientset()
+	clientset, err := k8sutil.GetClientset()
 	if err != nil {
 		logger.Error(err)
 		w.WriteHeader(500)

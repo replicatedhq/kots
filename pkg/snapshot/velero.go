@@ -3,13 +3,12 @@ package snapshot
 import (
 	"fmt"
 
-	"github.com/replicatedhq/kots/pkg/k8s"
-	"github.com/replicatedhq/kots/pkg/kotsadm"
-
 	"context"
 	"regexp"
 
 	"github.com/pkg/errors"
+	"github.com/replicatedhq/kots/pkg/k8sutil"
+	"github.com/replicatedhq/kots/pkg/kotsadm"
 	kotsadmtypes "github.com/replicatedhq/kots/pkg/kotsadm/types"
 	veleroclientv1 "github.com/vmware-tanzu/velero/pkg/generated/clientset/versioned/typed/velero/v1"
 	v1 "k8s.io/api/apps/v1"
@@ -18,7 +17,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/client-go/kubernetes"
-	"sigs.k8s.io/controller-runtime/pkg/client/config"
 )
 
 var (
@@ -45,7 +43,7 @@ func CheckKotsadmVeleroAccess(ctx context.Context, kotsadmNamespace string) (req
 		return
 	}
 
-	cfg, err := config.GetConfig()
+	cfg, err := k8sutil.GetClusterConfig()
 	if err != nil {
 		finalErr = errors.Wrap(err, "failed to get cluster config")
 		return
@@ -57,7 +55,7 @@ func CheckKotsadmVeleroAccess(ctx context.Context, kotsadmNamespace string) (req
 		return
 	}
 
-	if k8s.IsKotsadmClusterScoped(ctx, clientset, kotsadmNamespace) {
+	if k8sutil.IsKotsadmClusterScoped(ctx, clientset, kotsadmNamespace) {
 		return
 	}
 
@@ -131,7 +129,7 @@ func CheckKotsadmVeleroAccess(ctx context.Context, kotsadmNamespace string) (req
 }
 
 func EnsureVeleroPermissions(ctx context.Context, clientset kubernetes.Interface, veleroNamespace string, kotsadmNamespace string) error {
-	cfg, err := config.GetConfig()
+	cfg, err := k8sutil.GetClusterConfig()
 	if err != nil {
 		return errors.Wrap(err, "failed to get cluster config")
 	}
@@ -233,7 +231,7 @@ func DetectVeleroNamespace(ctx context.Context, clientset kubernetes.Interface, 
 		veleroNamespace = TryGetVeleroNamespaceFromConfigMap(ctx, clientset, kotsadmNamespace)
 	}
 
-	cfg, err := config.GetConfig()
+	cfg, err := k8sutil.GetClusterConfig()
 	if err != nil {
 		return "", errors.Wrap(err, "failed to get cluster config")
 	}
@@ -263,14 +261,9 @@ func DetectVeleroNamespace(ctx context.Context, clientset kubernetes.Interface, 
 }
 
 func DetectVelero(ctx context.Context, kotsadmNamespace string) (*VeleroStatus, error) {
-	cfg, err := config.GetConfig()
+	clientset, err := k8sutil.GetClientset()
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to get cluster config")
-	}
-
-	clientset, err := kubernetes.NewForConfig(cfg)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to create clientset")
+		return nil, errors.Wrap(err, "failed to get k8s clientset")
 	}
 
 	veleroNamespace, err := DetectVeleroNamespace(ctx, clientset, kotsadmNamespace)
@@ -382,14 +375,9 @@ func listPossibleResticDaemonsets(ctx context.Context, clientset *kubernetes.Cli
 
 // restartVelero will restart velero (and restic)
 func restartVelero(ctx context.Context, kotsadmNamespace string) error {
-	cfg, err := config.GetConfig()
+	clientset, err := k8sutil.GetClientset()
 	if err != nil {
-		return errors.Wrap(err, "failed to get cluster config")
-	}
-
-	clientset, err := kubernetes.NewForConfig(cfg)
-	if err != nil {
-		return errors.Wrap(err, "failed to create clientset")
+		return errors.Wrap(err, "failed to get k8s clientset")
 	}
 
 	veleroNamespace, err := DetectVeleroNamespace(ctx, clientset, kotsadmNamespace)

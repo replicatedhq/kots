@@ -12,12 +12,10 @@ import (
 	"github.com/replicatedhq/kots/pkg/auth"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/logger"
-	"k8s.io/cli-runtime/pkg/genericclioptions"
 )
 
 type DownloadOptions struct {
 	Namespace             string
-	KubernetesConfigFlags *genericclioptions.ConfigFlags
 	Overwrite             bool
 	Silent                bool
 	DecryptPasswordValues bool
@@ -31,7 +29,7 @@ func Download(appSlug string, path string, downloadOptions DownloadOptions) erro
 
 	log.ActionWithSpinner("Connecting to cluster")
 
-	clientset, err := k8sutil.GetClientset(downloadOptions.KubernetesConfigFlags)
+	clientset, err := k8sutil.GetClientset()
 	if err != nil {
 		log.FinishSpinnerWithError()
 		return errors.Wrap(err, "failed to get clientset")
@@ -46,7 +44,7 @@ func Download(appSlug string, path string, downloadOptions DownloadOptions) erro
 	stopCh := make(chan struct{})
 	defer close(stopCh)
 
-	localPort, errChan, err := k8sutil.PortForward(downloadOptions.KubernetesConfigFlags, 0, 3000, downloadOptions.Namespace, podName, false, stopCh, log)
+	localPort, errChan, err := k8sutil.PortForward(0, 3000, downloadOptions.Namespace, podName, false, stopCh, log)
 	if err != nil {
 		log.FinishSpinnerWithError()
 		return errors.Wrap(err, "failed to start port forwarding")
@@ -62,7 +60,7 @@ func Download(appSlug string, path string, downloadOptions DownloadOptions) erro
 		}
 	}()
 
-	authSlug, err := auth.GetOrCreateAuthSlug(downloadOptions.KubernetesConfigFlags, downloadOptions.Namespace)
+	authSlug, err := auth.GetOrCreateAuthSlug(clientset, downloadOptions.Namespace)
 	if err != nil {
 		log.FinishSpinnerWithError()
 		return errors.Wrap(err, "failed to get kotsadm auth slug")

@@ -10,7 +10,6 @@ import (
 	v1 "k8s.io/api/core/v1"
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/cli-runtime/pkg/genericclioptions"
 	"k8s.io/client-go/kubernetes"
 )
 
@@ -28,19 +27,9 @@ func SetAuthSlugCache(newval string) {
 // GetOrCreateAuthSlug will check for an authslug secret in the provided namespace
 // if one exists, it will return the value from that secret
 // if none exists, it will create one and return that value
-func GetOrCreateAuthSlug(kubernetesConfigFlags *genericclioptions.ConfigFlags, namespace string) (string, error) {
+func GetOrCreateAuthSlug(clientset kubernetes.Interface, namespace string) (string, error) {
 	if authSlugCache != "" {
 		return authSlugCache, nil
-	}
-
-	cfg, err := kubernetesConfigFlags.ToRESTConfig()
-	if err != nil {
-		return "", errors.Wrap(err, "failed to convert kube flags to rest config")
-	}
-
-	clientset, err := kubernetes.NewForConfig(cfg)
-	if err != nil {
-		return "", errors.Wrap(err, "failed to create kubernetes clientset")
 	}
 
 	existingSecret, err := clientset.CoreV1().Secrets(namespace).Get(context.TODO(), KotsadmAuthstringSecretName, metav1.GetOptions{})

@@ -104,7 +104,7 @@ func setKotsadmPassword(password string, namespace string) error {
 		return errors.Wrap(err, "failed to create encrypt password")
 	}
 
-	clientset, err := k8sutil.GetClientset(kubernetesConfigFlags)
+	clientset, err := k8sutil.GetClientset()
 	if err != nil {
 		return errors.Wrap(err, "failed to create k8s client")
 	}

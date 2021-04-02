@@ -4,11 +4,10 @@ import (
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/logger"
-	"k8s.io/cli-runtime/pkg/genericclioptions"
 )
 
-func StartPortForward(namespace string, kubernetesConfigFlags *genericclioptions.ConfigFlags, stopCh <-chan struct{}, log *logger.CLILogger) (int, <-chan error, error) {
-	clientset, err := k8sutil.GetClientset(kubernetesConfigFlags)
+func StartPortForward(namespace string, stopCh <-chan struct{}, log *logger.CLILogger) (int, <-chan error, error) {
+	clientset, err := k8sutil.GetClientset()
 	if err != nil {
 		return 0, nil, errors.Wrap(err, "failed to get clientset")
 	}
@@ -19,7 +18,7 @@ func StartPortForward(namespace string, kubernetesConfigFlags *genericclioptions
 	}
 
 	// set up port forwarding to get to it
-	localPort, errChan, err := k8sutil.PortForward(kubernetesConfigFlags, 0, 3000, namespace, podName, false, stopCh, log)
+	localPort, errChan, err := k8sutil.PortForward(0, 3000, namespace, podName, false, stopCh, log)
 	if err != nil {
 		return 0, nil, errors.Wrap(err, "failed to start port forwarding")
 	}

@@ -70,7 +70,7 @@ func Test_parseOpenShiftWarning(t *testing.T) {
 type mockGetter struct {
 }
 
-func (g *mockGetter) GetClientSet() (kubernetes.Interface, error) {
+func (g *mockGetter) GetClientset() (kubernetes.Interface, error) {
 	return nil, nil
 }
 

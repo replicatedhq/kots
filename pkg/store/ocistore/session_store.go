@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/logger"
 	sessiontypes "github.com/replicatedhq/kots/pkg/session/types"
 	usertypes "github.com/replicatedhq/kots/pkg/user/types"
@@ -111,7 +112,7 @@ func (s *OCIStore) getSessionSecret() (*corev1.Secret, error) {
 		return s.sessionSecret, nil
 	}
 
-	clientset, err := s.GetClientset()
+	clientset, err := k8sutil.GetClientset()
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get clientset")
 	}
@@ -153,7 +154,7 @@ func (s *OCIStore) getSessionSecret() (*corev1.Secret, error) {
 }
 
 func (s *OCIStore) updateSessionSecret(secret *corev1.Secret) error {
-	clientset, err := s.GetClientset()
+	clientset, err := k8sutil.GetClientset()
 	if err != nil {
 		return errors.Wrap(err, "failed to get clientset")
 	}

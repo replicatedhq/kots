@@ -28,7 +28,6 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/utils/pointer"
-	"sigs.k8s.io/controller-runtime/pkg/client/config"
 	k8syaml "sigs.k8s.io/yaml"
 )
 
@@ -820,14 +819,9 @@ func getFileSystemResetWarningMsg(fileSystemConfig types.FileSystemConfig) strin
 }
 
 func GetCurrentFileSystemConfig(ctx context.Context, namespace string) (*types.FileSystemConfig, error) {
-	cfg, err := config.GetConfig()
+	clientset, err := k8sutil.GetClientset()
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to get cluster config")
-	}
-
-	clientset, err := kubernetes.NewForConfig(cfg)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to create kubernetes clientset")
+		return nil, errors.Wrap(err, "failed to get k8s clientset")
 	}
 
 	fileSystemConfigMap, err := clientset.CoreV1().ConfigMaps(namespace).Get(ctx, FileSystemMinioConfigMapName, metav1.GetOptions{})

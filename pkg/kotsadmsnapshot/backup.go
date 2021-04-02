@@ -14,7 +14,7 @@ import (
 	"github.com/pkg/errors"
 	downstreamtypes "github.com/replicatedhq/kots/pkg/api/downstream/types"
 	apptypes "github.com/replicatedhq/kots/pkg/app/types"
-	"github.com/replicatedhq/kots/pkg/k8s"
+	"github.com/replicatedhq/kots/pkg/k8sutil"
 	kotsadmtypes "github.com/replicatedhq/kots/pkg/kotsadm/types"
 	downstream "github.com/replicatedhq/kots/pkg/kotsadmdownstream"
 	"github.com/replicatedhq/kots/pkg/kotsadmsnapshot/types"
@@ -29,7 +29,6 @@ import (
 	velerolabel "github.com/vmware-tanzu/velero/pkg/label"
 	"go.uber.org/zap"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"sigs.k8s.io/controller-runtime/pkg/client/config"
 )
 
 func CreateApplicationBackup(ctx context.Context, a *apptypes.App, isScheduled bool) (*velerov1.Backup, error) {
@@ -151,7 +150,7 @@ func CreateApplicationBackup(ctx context.Context, a *apptypes.App, isScheduled b
 		}
 	}
 
-	cfg, err := config.GetConfig()
+	cfg, err := k8sutil.GetClusterConfig()
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get cluster config")
 	}
@@ -288,19 +287,19 @@ func CreateInstanceBackup(ctx context.Context, cluster *downstreamtypes.Downstre
 		return nil, errors.Wrap(err, "failed to find backupstoragelocations")
 	}
 
-	clientset, err := k8s.Clientset()
+	clientset, err := k8sutil.GetClientset()
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create k8s clientset")
 	}
 
-	isKotsadmClusterScoped := k8s.IsKotsadmClusterScoped(ctx, clientset, kotsadmNamespace)
+	isKotsadmClusterScoped := k8sutil.IsKotsadmClusterScoped(ctx, clientset, kotsadmNamespace)
 	if !isKotsadmClusterScoped {
 		// in minimal rbac, a kotsadm role and rolebinding will exist in the velero namespace to give kotsadm access to velero.
 		// we backup and restore those so that restoring to a new cluster won't require that the user provide those permissions again.
 		includedNamespaces = append(includedNamespaces, kotsadmVeleroBackendStorageLocation.Namespace)
 	}
 
-	kotsadmImage, err := k8s.FindKotsadmImage(kotsadmNamespace)
+	kotsadmImage, err := k8sutil.FindKotsadmImage(kotsadmNamespace)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to find kotsadm image")
 	}
@@ -367,7 +366,7 @@ func CreateInstanceBackup(ctx context.Context, cluster *downstreamtypes.Downstre
 		}
 	}
 
-	cfg, err := config.GetConfig()
+	cfg, err := k8sutil.GetClusterConfig()
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get cluster config")
 	}
@@ -386,7 +385,7 @@ func CreateInstanceBackup(ctx context.Context, cluster *downstreamtypes.Downstre
 }
 
 func ListBackupsForApp(ctx context.Context, kotsadmNamespace string, appID string) ([]*types.Backup, error) {
-	cfg, err := config.GetConfig()
+	cfg, err := k8sutil.GetClusterConfig()
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get cluster config")
 	}
@@ -510,7 +509,7 @@ func ListBackupsForApp(ctx context.Context, kotsadmNamespace string, appID strin
 }
 
 func ListInstanceBackups(ctx context.Context, kotsadmNamespace string) ([]*types.Backup, error) {
-	cfg, err := config.GetConfig()
+	cfg, err := k8sutil.GetClusterConfig()
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get cluster config")
 	}
@@ -637,7 +636,7 @@ func ListInstanceBackups(ctx context.Context, kotsadmNamespace string) ([]*types
 }
 
 func getSnapshotVolumeSummary(ctx context.Context, veleroBackup *velerov1.Backup) (*types.VolumeSummary, error) {
-	cfg, err := config.GetConfig()
+	cfg, err := k8sutil.GetClusterConfig()
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get cluster config")
 	}
@@ -686,7 +685,7 @@ func GetBackup(ctx context.Context, kotsadmNamespace string, snapshotName string
 	veleroNamespace := bsl.Namespace
 
 	// get the backup
-	cfg, err := config.GetConfig()
+	cfg, err := k8sutil.GetClusterConfig()
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get cluster config")
 	}
@@ -721,7 +720,7 @@ func DeleteBackup(ctx context.Context, kotsadmNamespace string, snapshotName str
 		},
 	}
 
-	cfg, err := config.GetConfig()
+	cfg, err := k8sutil.GetClusterConfig()
 	if err != nil {
 		return errors.Wrap(err, "failed to get cluster config")
 	}
@@ -770,7 +769,7 @@ func HasUnfinishedInstanceBackup(ctx context.Context, kotsadmNamespace string) (
 }
 
 func GetBackupDetail(ctx context.Context, kotsadmNamespace string, backupName string) (*types.BackupDetail, error) {
-	cfg, err := config.GetConfig()
+	cfg, err := k8sutil.GetClusterConfig()
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get cluster config")
 	}

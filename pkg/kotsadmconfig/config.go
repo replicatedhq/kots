@@ -7,14 +7,13 @@ import (
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	kotsconfig "github.com/replicatedhq/kots/pkg/config"
+	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/persistence"
 	"github.com/replicatedhq/kots/pkg/template"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/scheme"
-	"sigs.k8s.io/controller-runtime/pkg/client/config"
 )
 
 type ConfigOptions struct {
@@ -115,14 +114,9 @@ func UpdateConfigValuesInDB(filesInDir string, appID string, sequence int64) err
 func ReadConfigValuesFromInClusterSecret() (string, error) {
 	log := logger.NewCLILogger()
 
-	cfg, err := config.GetConfig()
+	clientset, err := k8sutil.GetClientset()
 	if err != nil {
-		return "", errors.Wrap(err, "failed to get cluster config")
-	}
-
-	clientset, err := kubernetes.NewForConfig(cfg)
-	if err != nil {
-		return "", errors.Wrap(err, "failed to create clientset")
+		return "", errors.Wrap(err, "failed to get k8s client set")
 	}
 
 	configValuesSecrets, err := clientset.CoreV1().Secrets(os.Getenv("POD_NAMESPACE")).List(context.TODO(), metav1.ListOptions{

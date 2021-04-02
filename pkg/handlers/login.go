@@ -15,7 +15,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/identity"
 	identityclient "github.com/replicatedhq/kots/pkg/identity/client"
 	ingress "github.com/replicatedhq/kots/pkg/ingress"
-	"github.com/replicatedhq/kots/pkg/k8s"
+	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/session"
 	"github.com/replicatedhq/kots/pkg/store"
@@ -122,7 +122,7 @@ func (h *Handler) OIDCLogin(w http.ResponseWriter, r *http.Request) {
 
 	oidcLoginResponse := OIDCLoginResponse{}
 
-	clientset, err := k8s.Clientset()
+	clientset, err := k8sutil.GetClientset()
 	if err != nil {
 		logger.Error(errors.Wrap(err, "failed to get k8s client"))
 		w.WriteHeader(http.StatusInternalServerError)
@@ -164,7 +164,7 @@ func (h *Handler) OIDCLogin(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) OIDCLoginCallback(w http.ResponseWriter, r *http.Request) {
 	namespace := os.Getenv("POD_NAMESPACE")
 
-	clientset, err := k8s.Clientset()
+	clientset, err := k8sutil.GetClientset()
 	if err != nil {
 		logger.Error(errors.Wrap(err, "failed to get k8s client"))
 		w.WriteHeader(http.StatusInternalServerError)

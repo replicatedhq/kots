@@ -66,8 +66,7 @@ func getBackupsCmd(cmd *cobra.Command, args []string) error {
 	v := viper.GetViper()
 
 	options := snapshot.ListInstanceBackupsOptions{
-		Namespace:             v.GetString("namespace"),
-		KubernetesConfigFlags: kubernetesConfigFlags,
+		Namespace: v.GetString("namespace"),
 	}
 	backups, err := snapshot.ListInstanceBackups(cmd.Context(), options)
 	if err != nil {
@@ -83,8 +82,7 @@ func getRestoresCmd(cmd *cobra.Command, args []string) error {
 	v := viper.GetViper()
 
 	options := snapshot.ListInstanceRestoresOptions{
-		Namespace:             v.GetString("namespace"),
-		KubernetesConfigFlags: kubernetesConfigFlags,
+		Namespace: v.GetString("namespace"),
 	}
 	restores, err := snapshot.ListInstanceRestores(cmd.Context(), options)
 	if err != nil {
@@ -104,7 +102,7 @@ func getAppsCmd(cmd *cobra.Command, args []string) error {
 	stopCh := make(chan struct{})
 	defer close(stopCh)
 
-	clientset, err := k8sutil.GetClientset(kubernetesConfigFlags)
+	clientset, err := k8sutil.GetClientset()
 	if err != nil {
 		return errors.Wrap(err, "failed to get clientset")
 	}
@@ -119,7 +117,7 @@ func getAppsCmd(cmd *cobra.Command, args []string) error {
 		return errors.Wrap(err, "failed to find kotsadm pod")
 	}
 
-	localPort, errChan, err := k8sutil.PortForward(kubernetesConfigFlags, 0, 3000, namespace, podName, false, stopCh, log)
+	localPort, errChan, err := k8sutil.PortForward(0, 3000, namespace, podName, false, stopCh, log)
 	if err != nil {
 		log.FinishSpinnerWithError()
 		return errors.Wrap(err, "failed to start port forwarding")
@@ -135,7 +133,7 @@ func getAppsCmd(cmd *cobra.Command, args []string) error {
 		}
 	}()
 
-	authSlug, err := auth.GetOrCreateAuthSlug(kubernetesConfigFlags, namespace)
+	authSlug, err := auth.GetOrCreateAuthSlug(clientset, namespace)
 	if err != nil {
 		log.FinishSpinnerWithError()
 		log.Info("Unable to authenticate to the Admin Console running in the %s namespace. Ensure you have read access to secrets in this namespace and try again.", namespace)

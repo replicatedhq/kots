@@ -4,9 +4,9 @@ import (
 	"os"
 	"strings"
 
+	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"k8s.io/cli-runtime/pkg/genericclioptions"
 )
 
 func RootCmd() *cobra.Command {
@@ -21,8 +21,7 @@ func RootCmd() *cobra.Command {
 
 	cobra.OnInitialize(initConfig)
 
-	kubernetesConfigFlags = genericclioptions.NewConfigFlags(false)
-	kubernetesConfigFlags.AddFlags(cmd.PersistentFlags())
+	k8sutil.AddFlags(cmd.PersistentFlags())
 
 	cmd.AddCommand(PullCmd())
 	cmd.AddCommand(InstallCmd())

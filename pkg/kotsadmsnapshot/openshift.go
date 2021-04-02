@@ -12,11 +12,10 @@ import (
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
-	"sigs.k8s.io/controller-runtime/pkg/client/config"
 )
 
 type k8sGetter interface {
-	GetClientSet() (kubernetes.Interface, error)
+	GetClientset() (kubernetes.Interface, error)
 	IsOpenShift(clientset kubernetes.Interface) bool
 	GetRole(namespace, roleName string, clientset kubernetes.Interface) (*rbacv1.Role, error)
 	GetRoleBinding(namespace, roleBindingName string, clientset kubernetes.Interface) (*rbacv1.RoleBinding, error)
@@ -25,15 +24,10 @@ type k8sGetter interface {
 type filterGetter struct {
 }
 
-func (g *filterGetter) GetClientSet() (kubernetes.Interface, error) {
-	cfg, err := config.GetConfig()
+func (g *filterGetter) GetClientset() (kubernetes.Interface, error) {
+	clientset, err := k8sutil.GetClientset()
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to get config")
-	}
-
-	clientset, err := kubernetes.NewForConfig(cfg)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to create clientset")
+		return nil, errors.Wrap(err, "failed to get k8s clientset")
 	}
 
 	return clientset, nil
@@ -61,7 +55,7 @@ func (g *filterGetter) GetRoleBinding(namespace, roleBindingName string, clients
 
 // Some warnings in OpenShift clusters are harmless and should not be shown to the user
 func filterWarnings(restore *velerov1.Restore, warnings []types.SnapshotError, k8sGetter k8sGetter) ([]types.SnapshotError, error) {
-	clientset, err := k8sGetter.GetClientSet()
+	clientset, err := k8sGetter.GetClientset()
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get clientset")
 	}

@@ -19,26 +19,25 @@ import (
 	kotsscheme "github.com/replicatedhq/kots/kotskinds/client/kotsclientset/scheme"
 	"github.com/replicatedhq/kots/pkg/auth"
 	"github.com/replicatedhq/kots/pkg/docker/registry"
+	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/util"
-	"k8s.io/cli-runtime/pkg/genericclioptions"
 	"k8s.io/client-go/kubernetes/scheme"
 )
 
 type UploadOptions struct {
-	Namespace             string
-	UpstreamURI           string
-	KubernetesConfigFlags *genericclioptions.ConfigFlags
-	ExistingAppSlug       string
-	NewAppName            string
-	RegistryOptions       registry.RegistryOptions
-	Endpoint              string
-	Silent                bool
-	Deploy                bool
-	SkipPreflights        bool
-	updateCursor          string
-	license               *string
-	versionLabel          string
+	Namespace       string
+	UpstreamURI     string
+	ExistingAppSlug string
+	NewAppName      string
+	RegistryOptions registry.RegistryOptions
+	Endpoint        string
+	Silent          bool
+	Deploy          bool
+	SkipPreflights  bool
+	updateCursor    string
+	license         *string
+	versionLabel    string
 }
 
 func init() {
@@ -226,7 +225,12 @@ func createUploadRequest(path string, uploadOptions UploadOptions, uri string) (
 		return nil, errors.Wrap(err, "failed to close writer")
 	}
 
-	authSlug, err := auth.GetOrCreateAuthSlug(uploadOptions.KubernetesConfigFlags, uploadOptions.Namespace)
+	clientset, err := k8sutil.GetClientset()
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get k8s clientset")
+	}
+
+	authSlug, err := auth.GetOrCreateAuthSlug(clientset, uploadOptions.Namespace)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get auth slug")
 	}

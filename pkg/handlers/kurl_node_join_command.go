@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/replicatedhq/kots/pkg/k8s"
+	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/kurl"
 	"github.com/replicatedhq/kots/pkg/logger"
 )
@@ -15,7 +15,7 @@ type GenerateNodeJoinCommandResponse struct {
 }
 
 func (h *Handler) GenerateNodeJoinCommandWorker(w http.ResponseWriter, r *http.Request) {
-	client, err := k8s.Clientset()
+	client, err := k8sutil.GetClientset()
 	if err != nil {
 		logger.Error(err)
 		w.WriteHeader(http.StatusInternalServerError)
@@ -35,7 +35,7 @@ func (h *Handler) GenerateNodeJoinCommandWorker(w http.ResponseWriter, r *http.R
 }
 
 func (h *Handler) GenerateNodeJoinCommandMaster(w http.ResponseWriter, r *http.Request) {
-	client, err := k8s.Clientset()
+	client, err := k8sutil.GetClientset()
 	if err != nil {
 		logger.Error(err)
 		w.WriteHeader(http.StatusInternalServerError)
@@ -55,7 +55,7 @@ func (h *Handler) GenerateNodeJoinCommandMaster(w http.ResponseWriter, r *http.R
 }
 
 func (h *Handler) GenerateNodeJoinCommandSecondary(w http.ResponseWriter, r *http.Request) {
-	client, err := k8s.Clientset()
+	client, err := k8sutil.GetClientset()
 	if err != nil {
 		logger.Error(err)
 		w.WriteHeader(http.StatusInternalServerError)
@@ -75,7 +75,7 @@ func (h *Handler) GenerateNodeJoinCommandSecondary(w http.ResponseWriter, r *htt
 }
 
 func (h *Handler) GenerateNodeJoinCommandPrimary(w http.ResponseWriter, r *http.Request) {
-	client, err := k8s.Clientset()
+	client, err := k8sutil.GetClientset()
 	if err != nil {
 		logger.Error(err)
 		w.WriteHeader(http.StatusInternalServerError)

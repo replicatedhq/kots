@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/kotsadmsnapshot/types"
 	v1 "github.com/vmware-tanzu/velero/pkg/apis/velero/v1"
 	veleroapiv1 "github.com/vmware-tanzu/velero/pkg/apis/velero/v1"
@@ -17,7 +18,6 @@ import (
 	pkgrestore "github.com/vmware-tanzu/velero/pkg/restore"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/watch"
-	"sigs.k8s.io/controller-runtime/pkg/client/config"
 )
 
 func DownloadRestoreResults(veleroNamespace, restoreName string) ([]types.SnapshotError, []types.SnapshotError, error) {
@@ -87,7 +87,7 @@ func DownloadRestoreResults(veleroNamespace, restoreName string) ([]types.Snapsh
 }
 
 func DownloadRequest(veleroNamespace string, kind velerov1.DownloadTargetKind, name string) (io.ReadCloser, error) {
-	cfg, err := config.GetConfig()
+	cfg, err := k8sutil.GetClusterConfig()
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get cluster config")
 	}

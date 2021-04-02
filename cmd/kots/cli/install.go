@@ -137,7 +137,7 @@ func InstallCmd() *cobra.Command {
 				}
 			}
 
-			isKurl, err := kotsadm.IsKurl(kubernetesConfigFlags)
+			isKurl, err := kotsadm.IsKurl()
 			if err != nil {
 				return errors.Wrap(err, "failed to check kURL")
 			}
@@ -164,7 +164,6 @@ func InstallCmd() *cobra.Command {
 
 			deployOptions := kotsadmtypes.DeployOptions{
 				Namespace:                 namespace,
-				KubernetesConfigFlags:     kubernetesConfigFlags,
 				Context:                   v.GetString("context"),
 				SharedPassword:            sharedPassword,
 				ApplicationMetadata:       applicationMetadata,
@@ -254,7 +253,7 @@ func InstallCmd() *cobra.Command {
 			}
 
 			// port forward
-			clientset, err := k8sutil.GetClientset(kubernetesConfigFlags)
+			clientset, err := k8sutil.GetClientset()
 			if err != nil {
 				return errors.Wrap(err, "failed to get clientset")
 			}
@@ -270,7 +269,7 @@ func InstallCmd() *cobra.Command {
 			stopCh := make(chan struct{})
 			defer close(stopCh)
 
-			adminConsolePort, errChan, err := k8sutil.PortForward(kubernetesConfigFlags, 8800, 3000, namespace, podName, true, stopCh, log)
+			adminConsolePort, errChan, err := k8sutil.PortForward(8800, 3000, namespace, podName, true, stopCh, log)
 			if err != nil {
 				return errors.Wrap(err, "failed to forward port")
 			}
@@ -477,7 +476,7 @@ func uploadAirgapArchive(deployOptions kotsadmtypes.DeployOptions, clientset *ku
 	contentType := bodyWriter.FormDataContentType()
 	bodyWriter.Close()
 
-	authSlug, err := auth.GetOrCreateAuthSlug(deployOptions.KubernetesConfigFlags, deployOptions.Namespace)
+	authSlug, err := auth.GetOrCreateAuthSlug(clientset, deployOptions.Namespace)
 	if err != nil {
 		return false, errors.Wrap(err, "failed to get kotsadm auth slug")
 	}
@@ -574,7 +573,7 @@ func getRegistryConfig(v *viper.Viper) (*kotsadmtypes.KotsadmOptions, error) {
 	registryUsername := v.GetString("registry-username")
 	registryPassword := v.GetString("registry-password")
 
-	isKurl, err := kotsadm.IsKurl(kubernetesConfigFlags)
+	isKurl, err := kotsadm.IsKurl()
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to check kURL")
 	}

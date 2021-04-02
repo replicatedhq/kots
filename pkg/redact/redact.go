@@ -10,7 +10,7 @@ import (
 
 	"github.com/gosimple/slug"
 	"github.com/pkg/errors"
-	"github.com/replicatedhq/kots/pkg/k8s"
+	"github.com/replicatedhq/kots/pkg/k8sutil"
 	kotsadmtypes "github.com/replicatedhq/kots/pkg/kotsadm/types"
 	"github.com/replicatedhq/kots/pkg/redact/types"
 	"github.com/replicatedhq/kots/pkg/util"
@@ -20,9 +20,7 @@ import (
 	v1 "k8s.io/api/core/v1"
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/scheme"
-	"sigs.k8s.io/controller-runtime/pkg/client/config"
 )
 
 func init() {
@@ -53,7 +51,7 @@ func GenerateKotsadmRedactSpec() error {
 		return errors.Wrap(err, "failed to get redact spec")
 	}
 
-	clientset, err := k8s.Clientset()
+	clientset, err := k8sutil.GetClientset()
 	if err != nil {
 		return errors.Wrap(err, "failed to create k8s clientset")
 	}
@@ -196,14 +194,9 @@ func GetRedactBySlug(slug string) (*RedactorMetadata, error) {
 
 // SetRedactSpec sets the global redact spec to the specified string, and returns a pretty error string + the underlying error
 func SetRedactSpec(spec string) (string, error) {
-	cfg, err := config.GetConfig()
+	clientset, err := k8sutil.GetClientset()
 	if err != nil {
-		return "failed to get cluster config", errors.Wrap(err, "failed to get cluster config")
-	}
-
-	clientset, err := kubernetes.NewForConfig(cfg)
-	if err != nil {
-		return "failed to create kubernetes clientset", errors.Wrap(err, "failed to create kubernetes clientset")
+		return "failed to get k8s clientset", errors.Wrap(err, "failed to get k8s clientset")
 	}
 
 	configMap, errMsg, err := getRedactConfigmap()
@@ -383,14 +376,9 @@ func DeleteRedact(slug string) error {
 }
 
 func getRedactConfigmap() (*v1.ConfigMap, string, error) {
-	cfg, err := config.GetConfig()
+	clientset, err := k8sutil.GetClientset()
 	if err != nil {
-		return nil, "failed to get cluster config", errors.Wrap(err, "failed to get cluster config")
-	}
-
-	clientset, err := kubernetes.NewForConfig(cfg)
-	if err != nil {
-		return nil, "failed to create kubernetes clientset", errors.Wrap(err, "failed to create kubernetes clientset")
+		return nil, "failed to get k8s clientset", errors.Wrap(err, "failed to get k8s clientset")
 	}
 
 	configMap, err := clientset.CoreV1().ConfigMaps(os.Getenv("POD_NAMESPACE")).Get(context.TODO(), redactConfigMapName, metav1.GetOptions{})
@@ -427,14 +415,9 @@ func getRedactConfigmap() (*v1.ConfigMap, string, error) {
 
 // writeRedactConfigmap creates a configmap which contains kotsadm formatted redactors that include some additional metadata (e.g. if a redactor is enabled or not)
 func writeRedactConfigmap(configMap *v1.ConfigMap) (*v1.ConfigMap, error) {
-	cfg, err := config.GetConfig()
+	clientset, err := k8sutil.GetClientset()
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to get cluster config")
-	}
-
-	clientset, err := kubernetes.NewForConfig(cfg)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to create kubernetes clientset")
+		return nil, errors.Wrap(err, "failed to get k8s clientset")
 	}
 
 	newConfigMap, err := clientset.CoreV1().ConfigMaps(os.Getenv("POD_NAMESPACE")).Update(context.TODO(), configMap, metav1.UpdateOptions{})

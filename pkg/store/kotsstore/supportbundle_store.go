@@ -20,6 +20,7 @@ import (
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/aws/aws-sdk-go/service/s3/s3manager"
 	"github.com/pkg/errors"
+	"github.com/replicatedhq/kots/pkg/k8sutil"
 	kotsadmtypes "github.com/replicatedhq/kots/pkg/kotsadm/types"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/persistence"
@@ -44,7 +45,7 @@ func (s *KOTSStore) migrateSupportBundlesFromPostgres() error {
 	}
 	defer rows.Close()
 
-	clientset, err := s.GetClientset()
+	clientset, err := k8sutil.GetClientset()
 	if err != nil {
 		return errors.Wrap(err, "failed to get clientset")
 	}
@@ -175,7 +176,7 @@ func (s *KOTSStore) migrateSupportBundlesFromPostgres() error {
 }
 
 func (s *KOTSStore) ListSupportBundles(appID string) ([]*types.SupportBundle, error) {
-	clientset, err := s.GetClientset()
+	clientset, err := k8sutil.GetClientset()
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get clientset")
 	}
@@ -212,7 +213,7 @@ func (s *KOTSStore) ListSupportBundles(appID string) ([]*types.SupportBundle, er
 }
 
 func (s *KOTSStore) DeletePendingSupportBundle(id string) error {
-	clientset, err := s.GetClientset()
+	clientset, err := k8sutil.GetClientset()
 	if err != nil {
 		return errors.Wrap(err, "failed to get clientset")
 	}
@@ -228,7 +229,7 @@ func (s *KOTSStore) DeletePendingSupportBundle(id string) error {
 }
 
 func (s *KOTSStore) ListPendingSupportBundlesForApp(appID string) ([]*types.PendingSupportBundle, error) {
-	clientset, err := s.GetClientset()
+	clientset, err := k8sutil.GetClientset()
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get clientset")
 	}
@@ -259,7 +260,7 @@ func (s *KOTSStore) ListPendingSupportBundlesForApp(appID string) ([]*types.Pend
 }
 
 func (s *KOTSStore) GetSupportBundle(id string) (*types.SupportBundle, error) {
-	clientset, err := s.GetClientset()
+	clientset, err := k8sutil.GetClientset()
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get clientset")
 	}
@@ -297,7 +298,7 @@ func (s *KOTSStore) CreatePendingSupportBundle(id string, appID string, clusterI
 		return errors.Wrap(err, "failed to marshal")
 	}
 
-	clientset, err := s.GetClientset()
+	clientset, err := k8sutil.GetClientset()
 	if err != nil {
 		return errors.Wrap(err, "failed to get clientset")
 	}
@@ -393,7 +394,7 @@ func (s *KOTSStore) CreateSupportBundle(id string, appID string, archivePath str
 		},
 	}
 
-	clientset, err := s.GetClientset()
+	clientset, err := k8sutil.GetClientset()
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get clientset")
 	}
@@ -441,7 +442,7 @@ func (s *KOTSStore) GetSupportBundleArchive(bundleID string) (string, error) {
 }
 
 func (s *KOTSStore) GetSupportBundleAnalysis(id string) (*types.SupportBundleAnalysis, error) {
-	clientset, err := s.GetClientset()
+	clientset, err := k8sutil.GetClientset()
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get clientset")
 	}
@@ -478,7 +479,7 @@ func (s *KOTSStore) SetSupportBundleAnalysis(id string, results []byte) error {
 		Insights:  insights,
 	}
 
-	clientset, err := s.GetClientset()
+	clientset, err := k8sutil.GetClientset()
 	if err != nil {
 		return errors.Wrap(err, "failed to get clientset")
 	}

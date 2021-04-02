@@ -9,17 +9,17 @@ import (
 	"strings"
 	"text/template"
 
+	"github.com/replicatedhq/kots/pkg/k8sutil"
 	kurlclientset "github.com/replicatedhq/kurl/kurlkinds/client/kurlclientset/typed/cluster/v1beta1"
 	kurlv1beta1 "github.com/replicatedhq/kurl/kurlkinds/pkg/apis/cluster/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	k8sconfig "sigs.k8s.io/controller-runtime/pkg/client/config"
 )
 
 // getKurlValues returns the values found in the specified installer and namespace, if it exists
 // otherwise it returns the values found in the first installer in the specified namespace, if one exists
 // otherwise it returns nil
 func getKurlValues(installerName, nameSpace string) *kurlv1beta1.Installer {
-	cfg, err := k8sconfig.GetConfig()
+	cfg, err := k8sutil.GetClusterConfig()
 	if err != nil {
 		return nil
 	}

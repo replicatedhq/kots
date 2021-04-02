@@ -24,9 +24,8 @@ func BackupCmd() *cobra.Command {
 			namespace := v.GetString("namespace")
 
 			options := snapshot.CreateInstanceBackupOptions{
-				Namespace:             namespace,
-				KubernetesConfigFlags: kubernetesConfigFlags,
-				Wait:                  v.GetBool("wait"),
+				Namespace: namespace,
+				Wait:      v.GetBool("wait"),
 			}
 			if err := snapshot.CreateInstanceBackup(cmd.Context(), options); err != nil {
 				return errors.Wrap(err, "failed to create instance backup")
@@ -58,8 +57,7 @@ func BackupListCmd() *cobra.Command {
 			v := viper.GetViper()
 
 			options := snapshot.ListInstanceBackupsOptions{
-				Namespace:             v.GetString("namespace"),
-				KubernetesConfigFlags: kubernetesConfigFlags,
+				Namespace: v.GetString("namespace"),
 			}
 			backups, err := snapshot.ListInstanceBackups(cmd.Context(), options)
 			if err != nil {

@@ -15,6 +15,7 @@ import (
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	kotsscheme "github.com/replicatedhq/kots/kotskinds/client/kotsclientset/scheme"
 	"github.com/replicatedhq/kots/pkg/crypto"
+	"github.com/replicatedhq/kots/pkg/k8sutil"
 	troubleshootv1beta2 "github.com/replicatedhq/troubleshoot/pkg/apis/troubleshoot/v1beta2"
 	troubleshootscheme "github.com/replicatedhq/troubleshoot/pkg/client/troubleshootclientset/scheme"
 	"github.com/replicatedhq/troubleshoot/pkg/docrewrite"
@@ -22,10 +23,8 @@ import (
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	serializer "k8s.io/apimachinery/pkg/runtime/serializer/json"
-	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/scheme"
 	applicationv1beta1 "sigs.k8s.io/application/api/v1beta1"
-	"sigs.k8s.io/controller-runtime/pkg/client/config"
 )
 
 func init() {
@@ -588,14 +587,9 @@ type InstallationParams struct {
 func GetInstallationParams(configMapName string) (InstallationParams, error) {
 	autoConfig := InstallationParams{}
 
-	cfg, err := config.GetConfig()
+	clientset, err := k8sutil.GetClientset()
 	if err != nil {
-		return autoConfig, errors.Wrap(err, "failed to get cluster config")
-	}
-
-	clientset, err := kubernetes.NewForConfig(cfg)
-	if err != nil {
-		return autoConfig, errors.Wrap(err, "failed to create kubernetes clientset")
+		return autoConfig, errors.Wrap(err, "failed to get k8s clientset")
 	}
 
 	kotsadmConfigMap, err := clientset.CoreV1().ConfigMaps(os.Getenv("POD_NAMESPACE")).Get(context.TODO(), configMapName, metav1.GetOptions{})

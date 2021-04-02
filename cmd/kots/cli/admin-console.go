@@ -28,7 +28,7 @@ func AdminConsoleCmd() *cobra.Command {
 
 			log := logger.NewCLILogger()
 
-			clientset, err := k8sutil.GetClientset(kubernetesConfigFlags)
+			clientset, err := k8sutil.GetClientset()
 			if err != nil {
 				return errors.Wrap(err, "failed to get clientset")
 			}
@@ -44,7 +44,7 @@ func AdminConsoleCmd() *cobra.Command {
 			stopCh := make(chan struct{})
 			defer close(stopCh)
 
-			adminConsolePort, errChan, err := k8sutil.PortForward(kubernetesConfigFlags, 8800, 3000, v.GetString("namespace"), podName, true, stopCh, log)
+			adminConsolePort, errChan, err := k8sutil.PortForward(8800, 3000, v.GetString("namespace"), podName, true, stopCh, log)
 			if err != nil {
 				return errors.Wrap(err, "failed to port forward")
 			}

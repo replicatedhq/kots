@@ -8,12 +8,11 @@ import (
 
 	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/pkg/errors"
+	"github.com/replicatedhq/kots/pkg/k8sutil"
 	kotsadmobjects "github.com/replicatedhq/kots/pkg/kotsadm/objects"
 	corev1 "k8s.io/api/core/v1"
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/kubernetes"
-	"sigs.k8s.io/controller-runtime/pkg/client/config"
 )
 
 /* OCIStore stores most data in an OCI compatible image repository,
@@ -97,22 +96,8 @@ func StoreFromEnv() *OCIStore {
 	}
 }
 
-func (c OCIStore) GetClientset() (*kubernetes.Clientset, error) {
-	cfg, err := config.GetConfig()
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to get cluster config")
-	}
-
-	clientset, err := kubernetes.NewForConfig(cfg)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to create kubernetes clientset")
-	}
-
-	return clientset, nil
-}
-
 func (s *OCIStore) getSecret(name string) (*corev1.Secret, error) {
-	clientset, err := s.GetClientset()
+	clientset, err := k8sutil.GetClientset()
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get clientset")
 	}
@@ -148,7 +133,7 @@ func (s *OCIStore) getSecret(name string) (*corev1.Secret, error) {
 }
 
 func (s *OCIStore) getConfigmap(name string) (*corev1.ConfigMap, error) {
-	clientset, err := s.GetClientset()
+	clientset, err := k8sutil.GetClientset()
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get clientset")
 	}
@@ -184,7 +169,7 @@ func (s *OCIStore) getConfigmap(name string) (*corev1.ConfigMap, error) {
 }
 
 func (s *OCIStore) updateConfigmap(configmap *corev1.ConfigMap) error {
-	clientset, err := s.GetClientset()
+	clientset, err := k8sutil.GetClientset()
 	if err != nil {
 		return errors.Wrap(err, "failed to get clientset")
 	}
@@ -198,7 +183,7 @@ func (s *OCIStore) updateConfigmap(configmap *corev1.ConfigMap) error {
 }
 
 func (s *OCIStore) ensureApplicationMetadata(applicationMetadata string, namespace string) error {
-	clientset, err := s.GetClientset()
+	clientset, err := k8sutil.GetClientset()
 	if err != nil {
 		return errors.Wrap(err, "failed to get clientset")
 	}

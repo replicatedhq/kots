@@ -12,7 +12,6 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
-	"github.com/replicatedhq/kots/pkg/k8s"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/kotsadm"
 	kotsadmtypes "github.com/replicatedhq/kots/pkg/kotsadm/types"
@@ -117,7 +116,7 @@ func (h *Handler) UpdateGlobalSnapshotSettings(w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	clientset, err := k8s.Clientset()
+	clientset, err := k8sutil.GetClientset()
 	if err != nil {
 		logger.Error(err)
 		globalSnapshotSettingsResponse.Error = "failed to create k8s clientset"
@@ -133,7 +132,7 @@ func (h *Handler) UpdateGlobalSnapshotSettings(w http.ResponseWriter, r *http.Re
 	globalSnapshotSettingsResponse.IsResticRunning = veleroStatus.ResticStatus == "Ready"
 	globalSnapshotSettingsResponse.KotsadmNamespace = kotsadmNamespace
 	globalSnapshotSettingsResponse.IsKurl = kurl.IsKurl()
-	globalSnapshotSettingsResponse.IsMinimalRBACEnabled = !k8s.IsKotsadmClusterScoped(r.Context(), clientset, kotsadmNamespace)
+	globalSnapshotSettingsResponse.IsMinimalRBACEnabled = !k8sutil.IsKotsadmClusterScoped(r.Context(), clientset, kotsadmNamespace)
 
 	registryOptions, err := kotsadm.GetKotsadmOptionsFromCluster(kotsadmNamespace, clientset)
 	if err != nil {
@@ -229,7 +228,7 @@ func (h *Handler) GetGlobalSnapshotSettings(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	clientset, err := k8s.Clientset()
+	clientset, err := k8sutil.GetClientset()
 	if err != nil {
 		logger.Error(err)
 		globalSnapshotSettingsResponse.Error = "failed to create k8s clientset"
@@ -245,7 +244,7 @@ func (h *Handler) GetGlobalSnapshotSettings(w http.ResponseWriter, r *http.Reque
 	globalSnapshotSettingsResponse.IsResticRunning = veleroStatus.ResticStatus == "Ready"
 	globalSnapshotSettingsResponse.KotsadmNamespace = kotsadmNamespace
 	globalSnapshotSettingsResponse.IsKurl = kurl.IsKurl()
-	globalSnapshotSettingsResponse.IsMinimalRBACEnabled = !k8s.IsKotsadmClusterScoped(r.Context(), clientset, kotsadmNamespace)
+	globalSnapshotSettingsResponse.IsMinimalRBACEnabled = !k8sutil.IsKotsadmClusterScoped(r.Context(), clientset, kotsadmNamespace)
 
 	store, err := kotssnapshot.GetGlobalStore(r.Context(), kotsadmNamespace, nil)
 	if err != nil {
@@ -300,7 +299,7 @@ func (h *Handler) ConfigureFileSystemSnapshotProvider(w http.ResponseWriter, r *
 		return
 	}
 
-	clientset, err := k8s.Clientset()
+	clientset, err := k8sutil.GetClientset()
 	if err != nil {
 		errMsg := "failed to get k8s client set"
 		response.Error = errMsg

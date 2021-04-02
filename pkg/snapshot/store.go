@@ -37,7 +37,6 @@ import (
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
-	"sigs.k8s.io/controller-runtime/pkg/client/config"
 )
 
 type ConfigureStoreOptions struct {
@@ -224,13 +223,9 @@ func ConfigureStore(ctx context.Context, options ConfigureStoreOptions) (*types.
 			return nil, &InvalidStoreDataError{Message: "access key, secret key, endpoint and region are required"}
 		}
 	} else if options.Internal {
-		cfg, err := config.GetConfig()
+		clientset, err := k8sutil.GetClientset()
 		if err != nil {
-			return nil, errors.Wrap(err, "failed to get cluster config")
-		}
-		clientset, err := kubernetes.NewForConfig(cfg)
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to create clientset")
+			return nil, errors.Wrap(err, "failed to get k8s clientset")
 		}
 
 		if !kotsutil.IsKurl(clientset) {
@@ -275,14 +270,9 @@ func ConfigureStore(ctx context.Context, options ConfigureStoreOptions) (*types.
 		store.Bucket = FileSystemMinioBucketName
 		store.Path = ""
 
-		cfg, err := config.GetConfig()
+		clientset, err := k8sutil.GetClientset()
 		if err != nil {
-			return nil, errors.Wrap(err, "failed to get cluster config")
-		}
-
-		clientset, err := kubernetes.NewForConfig(cfg)
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to create clientset")
+			return nil, errors.Wrap(err, "failed to get k8s clientset")
 		}
 
 		storeFileSystem, err := BuildStoreFileSystem(ctx, clientset, options.KotsadmNamespace)
@@ -335,7 +325,7 @@ func ConfigureStore(ctx context.Context, options ConfigureStoreOptions) (*types.
 
 // updateGlobalStore will update the in-cluster storage with exactly what's in the store param
 func updateGlobalStore(ctx context.Context, store *types.Store, kotsadmNamepsace string) (*velerov1.BackupStorageLocation, error) {
-	cfg, err := config.GetConfig()
+	cfg, err := k8sutil.GetClusterConfig()
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get cluster config")
 	}
@@ -667,14 +657,9 @@ func updateGlobalStore(ctx context.Context, store *types.Store, kotsadmNamepsace
 // GetGlobalStore will return the global store from kotsadmVeleroBackupStorageLocation
 // or will find it, is the param is nil
 func GetGlobalStore(ctx context.Context, kotsadmNamepsace string, kotsadmVeleroBackendStorageLocation *velerov1.BackupStorageLocation) (*types.Store, error) {
-	cfg, err := config.GetConfig()
+	clientset, err := k8sutil.GetClientset()
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to get cluster config")
-	}
-
-	clientset, err := kubernetes.NewForConfig(cfg)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to create clientset")
+		return nil, errors.Wrap(err, "failed to get k8s clientset")
 	}
 
 	if kotsadmVeleroBackendStorageLocation == nil {
@@ -848,7 +833,7 @@ func mapAWSBackupStorageLocationToStore(kotsadmVeleroBackendStorageLocation *vel
 // FindBackupStoreLocation will find the backup storage location used by velero
 // kotsadmNamespace is only required in minimal rbac installations. if empty, cluster scope privilages will be needed to detect and validate velero
 func FindBackupStoreLocation(ctx context.Context, kotsadmNamespace string) (*velerov1.BackupStorageLocation, error) {
-	cfg, err := config.GetConfig()
+	cfg, err := k8sutil.GetClusterConfig()
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get cluster config")
 	}
@@ -1102,14 +1087,9 @@ func validateGCP(storeGoogle *types.StoreGoogle, bucket string) error {
 
 func validateOther(ctx context.Context, storeOther *types.StoreOther, bucket string, options ValidateStoreOptions) error {
 	if options.ValidateUsingAPod {
-		cfg, err := config.GetConfig()
+		clientset, err := k8sutil.GetClientset()
 		if err != nil {
-			return errors.Wrap(err, "failed to get cluster config")
-		}
-
-		clientset, err := kubernetes.NewForConfig(cfg)
-		if err != nil {
-			return errors.Wrap(err, "failed to create clientset")
+			return errors.Wrap(err, "failed to get k8s clientset")
 		}
 
 		podName := fmt.Sprintf("kotsadm-validate-other-s3-bucket-%d", time.Now().Unix())
@@ -1155,14 +1135,9 @@ func validateOther(ctx context.Context, storeOther *types.StoreOther, bucket str
 
 func validateInternal(ctx context.Context, storeInternal *types.StoreInternal, bucket string, options ValidateStoreOptions) error {
 	if options.ValidateUsingAPod {
-		cfg, err := config.GetConfig()
+		clientset, err := k8sutil.GetClientset()
 		if err != nil {
-			return errors.Wrap(err, "failed to get cluster config")
-		}
-
-		clientset, err := kubernetes.NewForConfig(cfg)
-		if err != nil {
-			return errors.Wrap(err, "failed to create clientset")
+			return errors.Wrap(err, "failed to get k8s clientset")
 		}
 
 		podName := fmt.Sprintf("kotsadm-validate-internal-bucket-%d", time.Now().Unix())
@@ -1208,14 +1183,9 @@ func validateInternal(ctx context.Context, storeInternal *types.StoreInternal, b
 
 func validateFileSystem(ctx context.Context, storeFileSystem *types.StoreFileSystem, bucket string, options ValidateStoreOptions) error {
 	if options.ValidateUsingAPod {
-		cfg, err := config.GetConfig()
+		clientset, err := k8sutil.GetClientset()
 		if err != nil {
-			return errors.Wrap(err, "failed to get cluster config")
-		}
-
-		clientset, err := kubernetes.NewForConfig(cfg)
-		if err != nil {
-			return errors.Wrap(err, "failed to create clientset")
+			return errors.Wrap(err, "failed to get k8s clientset")
 		}
 
 		podName := fmt.Sprintf("kotsadm-validate-fs-bucket-%d", time.Now().Unix())
@@ -1305,7 +1275,7 @@ func Redact(store *types.Store) error {
 
 func resetResticRepositories(ctx context.Context, kotsadmNamepsace string) error {
 	// ResticRepositories store the previous snapshot location which breaks volume backup when location changes.
-	cfg, err := config.GetConfig()
+	cfg, err := k8sutil.GetClusterConfig()
 	if err != nil {
 		return errors.Wrap(err, "failed to get cluster config")
 	}

@@ -1,4 +1,4 @@
-package k8s
+package k8sutil
 
 import (
 	"time"
@@ -45,7 +45,7 @@ func GenerateBootstrapToken(client kubernetes.Interface, ttl time.Duration) (str
 }
 
 func UploadCertsWithNewKey() (string, error) {
-	client, err := Clientset()
+	client, err := GetClientset()
 	if err != nil {
 		return "", errors.Wrap(err, "failed to create clientset")
 	}

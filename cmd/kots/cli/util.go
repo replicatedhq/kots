@@ -6,11 +6,6 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
-	"k8s.io/cli-runtime/pkg/genericclioptions"
-)
-
-var (
-	kubernetesConfigFlags *genericclioptions.ConfigFlags
 )
 
 func ExpandDir(input string) string {

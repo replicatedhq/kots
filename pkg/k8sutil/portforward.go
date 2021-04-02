@@ -19,7 +19,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
-	"k8s.io/cli-runtime/pkg/genericclioptions"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/portforward"
@@ -42,7 +41,7 @@ func IsPortAvailable(port int) bool {
 // if localport is set, it will attempt to use that port locally.
 // always check the port number returned though, because a port conflict
 // could cause a different port to be used
-func PortForward(kubernetesConfigFlags *genericclioptions.ConfigFlags, localPort int, remotePort int, namespace string, podName string, pollForAdditionalPorts bool, stopCh <-chan struct{}, log *logger.CLILogger) (int, <-chan error, error) {
+func PortForward(localPort int, remotePort int, namespace string, podName string, pollForAdditionalPorts bool, stopCh <-chan struct{}, log *logger.CLILogger) (int, <-chan error, error) {
 	if localPort == 0 {
 		freePort, err := freeport.GetFreePort()
 		if err != nil {
@@ -62,9 +61,9 @@ func PortForward(kubernetesConfigFlags *genericclioptions.ConfigFlags, localPort
 	}
 
 	// port forward
-	cfg, err := kubernetesConfigFlags.ToRESTConfig()
+	cfg, err := GetClusterConfig()
 	if err != nil {
-		return 0, nil, errors.Wrap(err, "failed to convert kube flags to rest config")
+		return 0, nil, errors.Wrap(err, "failed to get cluster config")
 	}
 
 	roundTripper, upgrader, err := spdy.RoundTripperFor(cfg)
@@ -166,7 +165,7 @@ func PortForward(kubernetesConfigFlags *genericclioptions.ConfigFlags, localPort
 
 		// This process is long lived, avoid creating too many clientsets here
 		// https://github.com/kubernetes/client-go/issues/803
-		clientset, err := GetClientset(kubernetesConfigFlags)
+		clientset, err := GetClientset()
 		if err != nil {
 			return 0, nil, errors.Wrap(err, "failed to get clientset")
 		}
@@ -192,7 +191,7 @@ func PortForward(kubernetesConfigFlags *genericclioptions.ConfigFlags, localPort
 				}
 				req.Header.Set("Accept", "application/json")
 
-				authSlug, err := auth.GetOrCreateAuthSlug(kubernetesConfigFlags, namespace)
+				authSlug, err := auth.GetOrCreateAuthSlug(clientset, namespace)
 				if err != nil {
 					log.Error(errors.Wrap(err, "failed to get kotsadm auth slug"))
 					continue

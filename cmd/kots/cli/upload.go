@@ -37,20 +37,19 @@ func UploadCmd() *cobra.Command {
 			}
 
 			uploadOptions := upload.UploadOptions{
-				Namespace:             v.GetString("namespace"),
-				KubernetesConfigFlags: kubernetesConfigFlags,
-				ExistingAppSlug:       v.GetString("slug"),
-				NewAppName:            v.GetString("name"),
-				UpstreamURI:           v.GetString("upstream-uri"),
-				Endpoint:              "http://localhost:3000",
-				Deploy:                v.GetBool("deploy"),
-				SkipPreflights:        v.GetBool("skip-preflights"),
+				Namespace:       v.GetString("namespace"),
+				ExistingAppSlug: v.GetString("slug"),
+				NewAppName:      v.GetString("name"),
+				UpstreamURI:     v.GetString("upstream-uri"),
+				Endpoint:        "http://localhost:3000",
+				Deploy:          v.GetBool("deploy"),
+				SkipPreflights:  v.GetBool("skip-preflights"),
 			}
 
 			stopCh := make(chan struct{})
 			defer close(stopCh)
 
-			localPort, errChan, err := upload.StartPortForward(uploadOptions.Namespace, kubernetesConfigFlags, stopCh, log)
+			localPort, errChan, err := upload.StartPortForward(uploadOptions.Namespace, stopCh, log)
 			if err != nil {
 				return errors.Wrap(err, "failed to port forward")
 			}

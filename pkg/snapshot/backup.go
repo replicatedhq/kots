@@ -15,20 +15,16 @@ import (
 	velerov1 "github.com/vmware-tanzu/velero/pkg/apis/velero/v1"
 	veleroclientv1 "github.com/vmware-tanzu/velero/pkg/generated/clientset/versioned/typed/velero/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/cli-runtime/pkg/genericclioptions"
 	"k8s.io/client-go/kubernetes"
-	"sigs.k8s.io/controller-runtime/pkg/client/config"
 )
 
 type CreateInstanceBackupOptions struct {
-	Namespace             string
-	KubernetesConfigFlags *genericclioptions.ConfigFlags
-	Wait                  bool
+	Namespace string
+	Wait      bool
 }
 
 type ListInstanceBackupsOptions struct {
-	Namespace             string
-	KubernetesConfigFlags *genericclioptions.ConfigFlags
+	Namespace string
 }
 
 type VeleroRBACResponse struct {
@@ -42,7 +38,7 @@ func CreateInstanceBackup(ctx context.Context, options CreateInstanceBackupOptio
 	log := logger.NewCLILogger()
 	log.ActionWithSpinner("Connecting to cluster")
 
-	clientset, err := k8sutil.GetClientset(options.KubernetesConfigFlags)
+	clientset, err := k8sutil.GetClientset()
 	if err != nil {
 		log.FinishSpinnerWithError()
 		return errors.Wrap(err, "failed to get clientset")
@@ -57,7 +53,7 @@ func CreateInstanceBackup(ctx context.Context, options CreateInstanceBackupOptio
 	stopCh := make(chan struct{})
 	defer close(stopCh)
 
-	localPort, errChan, err := k8sutil.PortForward(options.KubernetesConfigFlags, 0, 3000, options.Namespace, podName, false, stopCh, log)
+	localPort, errChan, err := k8sutil.PortForward(0, 3000, options.Namespace, podName, false, stopCh, log)
 	if err != nil {
 		log.FinishSpinnerWithError()
 		return errors.Wrap(err, "failed to start port forwarding")
@@ -76,7 +72,7 @@ func CreateInstanceBackup(ctx context.Context, options CreateInstanceBackupOptio
 	log.FinishSpinner()
 	log.ActionWithSpinner("Creating Backup")
 
-	authSlug, err := auth.GetOrCreateAuthSlug(options.KubernetesConfigFlags, options.Namespace)
+	authSlug, err := auth.GetOrCreateAuthSlug(clientset, options.Namespace)
 	if err != nil {
 		log.FinishSpinnerWithError()
 		return errors.Wrap(err, "failed to get kotsadm auth slug")
@@ -163,7 +159,7 @@ func CreateInstanceBackup(ctx context.Context, options CreateInstanceBackupOptio
 }
 
 func ListInstanceBackups(ctx context.Context, options ListInstanceBackupsOptions) ([]velerov1.Backup, error) {
-	clientset, err := k8sutil.GetClientset(options.KubernetesConfigFlags)
+	clientset, err := k8sutil.GetClientset()
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get k8s clientset")
 	}
@@ -175,7 +171,7 @@ func ListInstanceBackups(ctx context.Context, options ListInstanceBackupsOptions
 		return nil, errors.New("velero not found")
 	}
 
-	cfg, err := config.GetConfig()
+	cfg, err := k8sutil.GetClusterConfig()
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get cluster config")
 	}
@@ -216,7 +212,7 @@ func waitForVeleroBackupCompleted(ctx context.Context, clientset kubernetes.Inte
 		return nil, errors.New("velero not found")
 	}
 
-	cfg, err := config.GetConfig()
+	cfg, err := k8sutil.GetClusterConfig()
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get cluster config")
 	}

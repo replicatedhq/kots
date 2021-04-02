@@ -44,7 +44,7 @@ func RemoveCmd() *cobra.Command {
 			appSlug := args[0]
 			namespace := v.GetString("namespace")
 
-			clientset, err := k8sutil.GetClientset(kubernetesConfigFlags)
+			clientset, err := k8sutil.GetClientset()
 			if err != nil {
 				return errors.Wrap(err, "failed to get clientset")
 			}
@@ -59,7 +59,7 @@ func RemoveCmd() *cobra.Command {
 
 			log.ActionWithoutSpinner("Removing application %s reference from Admin Console", appSlug)
 
-			localPort, errChan, err := k8sutil.PortForward(kubernetesConfigFlags, 0, 3000, namespace, podName, false, stopCh, log)
+			localPort, errChan, err := k8sutil.PortForward(0, 3000, namespace, podName, false, stopCh, log)
 			if err != nil {
 				return errors.Wrap(err, "failed to start port forwarding")
 			}
@@ -74,7 +74,7 @@ func RemoveCmd() *cobra.Command {
 				}
 			}()
 
-			authSlug, err := auth.GetOrCreateAuthSlug(kubernetesConfigFlags, namespace)
+			authSlug, err := auth.GetOrCreateAuthSlug(clientset, namespace)
 			if err != nil {
 				return errors.Wrap(err, "failed to get kotsadm auth slug")
 			}
