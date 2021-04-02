@@ -209,7 +209,7 @@ func CheckForUpdates(appID string, deploy bool, skipPreflights bool) (int64, err
 		CurrentChannelID:    kotsKinds.Installation.Spec.ChannelID,
 		CurrentChannelName:  kotsKinds.Installation.Spec.ChannelName,
 		CurrentVersionLabel: kotsKinds.Installation.Spec.VersionLabel,
-		Silent:              false,
+		Silent:              true,
 		ReportingInfo:       reporting.GetReportingInfo(a.ID),
 	}
 
