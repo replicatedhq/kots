@@ -716,6 +716,11 @@ func undeployApp(a *apptypes.App, d *downstreamtypes.Downstream, clusterSocket *
 		return errors.Wrap(err, "failed to get backup")
 	}
 
+	// merge the backup label selector and the restore label selector so that we only undeploy manifests that are:
+	// 1- included in the backup AND
+	// 2- are going to be restored
+	// a valid use case here is when restoring just an app from a full snapshot because the backup won't have this label in that case.
+	// this will be a no-op when restoring from an app (partial) snapshot since the backup will already have this label.
 	restoreLabelSelector := backup.Spec.LabelSelector.DeepCopy()
 	if restoreLabelSelector == nil {
 		restoreLabelSelector = &metav1.LabelSelector{
