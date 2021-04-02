@@ -36,6 +36,7 @@ import (
 	supportbundletypes "github.com/replicatedhq/kots/pkg/supportbundle/types"
 	"github.com/replicatedhq/kots/pkg/version"
 	velerov1 "github.com/vmware-tanzu/velero/pkg/apis/velero/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 type ClusterSocket struct {
@@ -46,20 +47,21 @@ type ClusterSocket struct {
 }
 
 type DeployArgs struct {
-	AppID                string   `json:"app_id"`
-	AppSlug              string   `json:"app_slug"`
-	KubectlVersion       string   `json:"kubectl_version"`
-	AdditionalNamespaces []string `json:"additional_namespaces"`
-	ImagePullSecret      string   `json:"image_pull_secret"`
-	Namespace            string   `json:"namespace"`
-	PreviousManifests    string   `json:"previous_manifests"`
-	Manifests            string   `json:"manifests"`
-	Wait                 bool     `json:"wait"`
-	ResultCallback       string   `json:"result_callback"`
-	ClearNamespaces      []string `json:"clear_namespaces"`
-	ClearPVCs            bool     `json:"clear_pvcs"`
-	AnnotateSlug         bool     `json:"annotate_slug"`
-	IsRestore            bool     `json:"is_restore"`
+	AppID                string                `json:"app_id"`
+	AppSlug              string                `json:"app_slug"`
+	KubectlVersion       string                `json:"kubectl_version"`
+	AdditionalNamespaces []string              `json:"additional_namespaces"`
+	ImagePullSecret      string                `json:"image_pull_secret"`
+	Namespace            string                `json:"namespace"`
+	PreviousManifests    string                `json:"previous_manifests"`
+	Manifests            string                `json:"manifests"`
+	Wait                 bool                  `json:"wait"`
+	ResultCallback       string                `json:"result_callback"`
+	ClearNamespaces      []string              `json:"clear_namespaces"`
+	ClearPVCs            bool                  `json:"clear_pvcs"`
+	AnnotateSlug         bool                  `json:"annotate_slug"`
+	IsRestore            bool                  `json:"is_restore"`
+	RestoreLabelSelector *metav1.LabelSelector `json:"restore_label_selector"`
 }
 
 type AppInformersArgs struct {
@@ -715,17 +717,18 @@ func undeployApp(a *apptypes.App, d *downstreamtypes.Downstream, clusterSocket *
 	}
 
 	args := DeployArgs{
-		AppID:             a.ID,
-		AppSlug:           a.Slug,
-		KubectlVersion:    kotsKinds.KotsApplication.Spec.KubectlVersion,
-		Namespace:         ".",
-		Manifests:         "",
-		PreviousManifests: base64EncodedManifests,
-		ResultCallback:    "/api/v1/undeploy/result",
-		Wait:              true,
-		ClearNamespaces:   backup.Spec.IncludedNamespaces,
-		ClearPVCs:         true,
-		IsRestore:         isRestore,
+		AppID:                a.ID,
+		AppSlug:              a.Slug,
+		KubectlVersion:       kotsKinds.KotsApplication.Spec.KubectlVersion,
+		Namespace:            ".",
+		Manifests:            "",
+		PreviousManifests:    base64EncodedManifests,
+		ResultCallback:       "/api/v1/undeploy/result",
+		Wait:                 true,
+		ClearNamespaces:      backup.Spec.IncludedNamespaces,
+		ClearPVCs:            true,
+		IsRestore:            isRestore,
+		RestoreLabelSelector: backup.Spec.LabelSelector,
 	}
 
 	c, err := server.GetChannel(clusterSocket.SocketID)
