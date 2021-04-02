@@ -165,7 +165,7 @@ class GitOpsDeploymentManager extends React.Component {
     let gitOpsInput = new Object();
     gitOpsInput.provider = provider;
     gitOpsInput.uri = uri;
-    gitOpsInput.branch = branch || "master";
+    gitOpsInput.branch = branch || "";
     gitOpsInput.path = path;
     gitOpsInput.format = format;
     gitOpsInput.action = action;
@@ -312,7 +312,7 @@ class GitOpsDeploymentManager extends React.Component {
     }
 
     const { provider, hostname, uri } = this.state.gitops;
-    const branch = "master";
+    const branch = "";
     const path = "";
     const format = "single";
     const action = "commit";

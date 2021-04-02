@@ -155,7 +155,7 @@ class GitOpsRepoDetails extends React.Component {
 
     return (
       <div key={`action-active`} className="GitOpsDeploy--step u-textAlign--left">
-          <div className="ActionStepContent--widthRestrict">
+          <div>
             <p className="step-title">{this.props.stepTitle || `Enable GitOps for ${appName}`}</p>
 
             <div className="flex flex1 u-marginBottom--30 u-marginTop--20">
@@ -170,8 +170,8 @@ class GitOpsRepoDetails extends React.Component {
               {provider !== "other" &&
                 <div className="flex flex1 flex-column u-marginRight--20">
                   <p className="u-fontSize--large u-color--tuna u-fontWeight--bold u-lineHeight--normal">Branch</p>
-                  <p className="u-fontSize--normal u-color--dustyGray u-fontWeight--medium u-lineHeight--normal u-marginBottom--10">Master will be used by default.</p>
-                  <input type="text" className={`Input`} placeholder="master" value={branch} onChange={(e) => this.setState({ branch: e.target.value })} />
+                  <p className="u-fontSize--normal u-color--dustyGray u-fontWeight--medium u-lineHeight--normal u-marginBottom--10">Leave blank to use the default branch.</p>
+                  <input type="text" className={`Input`} placeholder="main" value={branch} onChange={(e) => this.setState({ branch: e.target.value })} />
                 </div>
               }
               {provider !== "other" &&
