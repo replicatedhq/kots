@@ -716,6 +716,14 @@ func undeployApp(a *apptypes.App, d *downstreamtypes.Downstream, clusterSocket *
 		return errors.Wrap(err, "failed to get backup")
 	}
 
+	restoreLabelSelector := backup.Spec.LabelSelector.DeepCopy()
+	if restoreLabelSelector == nil {
+		restoreLabelSelector = &metav1.LabelSelector{
+			MatchLabels: map[string]string{},
+		}
+	}
+	restoreLabelSelector.MatchLabels["kots.io/app-slug"] = a.Slug
+
 	args := DeployArgs{
 		AppID:                a.ID,
 		AppSlug:              a.Slug,
@@ -728,7 +736,7 @@ func undeployApp(a *apptypes.App, d *downstreamtypes.Downstream, clusterSocket *
 		ClearNamespaces:      backup.Spec.IncludedNamespaces,
 		ClearPVCs:            true,
 		IsRestore:            isRestore,
-		RestoreLabelSelector: backup.Spec.LabelSelector,
+		RestoreLabelSelector: restoreLabelSelector,
 	}
 
 	c, err := server.GetChannel(clusterSocket.SocketID)
