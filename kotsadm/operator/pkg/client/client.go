@@ -21,6 +21,7 @@ import (
 	"github.com/replicatedhq/kots/kotsadm/operator/pkg/socket/transport"
 	"github.com/replicatedhq/kots/kotsadm/operator/pkg/supportbundle"
 	"github.com/replicatedhq/kots/kotsadm/operator/pkg/util"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 )
@@ -30,20 +31,21 @@ var (
 )
 
 type ApplicationManifests struct {
-	AppID                string   `json:"app_id"`
-	AppSlug              string   `json:"app_slug"`
-	KubectlVersion       string   `json:"kubectl_version"`
-	AdditionalNamespaces []string `json:"additional_namespaces"`
-	ImagePullSecret      string   `json:"image_pull_secret"`
-	Namespace            string   `json:"namespace"`
-	PreviousManifests    string   `json:"previous_manifests"`
-	Manifests            string   `json:"manifests"`
-	Wait                 bool     `json:"wait"`
-	ResultCallback       string   `json:"result_callback"`
-	ClearNamespaces      []string `json:"clear_namespaces"`
-	ClearPVCs            bool     `json:"clear_pvcs"`
-	AnnotateSlug         bool     `json:"annotate_slug"`
-	IsRestore            bool     `json:"is_restore"`
+	AppID                string                `json:"app_id"`
+	AppSlug              string                `json:"app_slug"`
+	KubectlVersion       string                `json:"kubectl_version"`
+	AdditionalNamespaces []string              `json:"additional_namespaces"`
+	ImagePullSecret      string                `json:"image_pull_secret"`
+	Namespace            string                `json:"namespace"`
+	PreviousManifests    string                `json:"previous_manifests"`
+	Manifests            string                `json:"manifests"`
+	Wait                 bool                  `json:"wait"`
+	ResultCallback       string                `json:"result_callback"`
+	ClearNamespaces      []string              `json:"clear_namespaces"`
+	ClearPVCs            bool                  `json:"clear_pvcs"`
+	AnnotateSlug         bool                  `json:"annotate_slug"`
+	IsRestore            bool                  `json:"is_restore"`
+	RestoreLabelSelector *metav1.LabelSelector `json:"restore_label_selector"`
 }
 
 // DesiredState is what we receive from the kotsadm-api server
