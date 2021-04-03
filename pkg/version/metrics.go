@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
+	"os"
 	"strconv"
 	"time"
 
@@ -66,12 +67,12 @@ var (
 		},
 		{
 			Title:  "CPU Usage",
-			Query:  `sum(rate(container_cpu_usage_seconds_total{namespace="default",container!="POD",pod!=""}[5m])) by (pod)`,
+			Query:  fmt.Sprintf(`sum(rate(container_cpu_usage_seconds_total{namespace="%s",container!="POD",pod!=""}[5m])) by (pod)`, os.Getenv("POD_NAMESPACE")),
 			Legend: "{{ pod }}",
 		},
 		{
 			Title:       "Memory Usage",
-			Query:       `sum(container_memory_usage_bytes{namespace="default",container!="POD",pod!=""}) by (pod)`,
+			Query:       fmt.Sprintf(`sum(container_memory_usage_bytes{namespace="%s",container!="POD",pod!=""}) by (pod)`, os.Getenv("POD_NAMESPACE")),
 			Legend:      "{{ pod }}",
 			YAxisFormat: "bytes",
 		},
