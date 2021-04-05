@@ -5,7 +5,6 @@ import { withRouter } from "react-router-dom";
 import Modal from "react-modal";
 import size from "lodash/size";
 
-import Loader from "./shared/Loader";
 import PreflightRenderer from "./PreflightRenderer";
 import PreflightResultErrors from "./PreflightResultErrors";
 import SkipPreflightsModal from "./shared/modals/SkipPreflightsModal";
@@ -22,11 +21,12 @@ class PreflightResultPage extends Component {
     showWarningModal: false,
     getKotsPreflightResultJob: new Repeater(),
     preflightResultData: null,
-    errorMessage: ""
+    errorMessage: "",
+    preflightResultCheckCount: 0
   };
 
   componentDidMount() {
-    this.state.getKotsPreflightResultJob.start(this.getKotsPreflightResult, 2000);
+    this.state.getKotsPreflightResultJob.start(this.getKotsPreflightResult, 1000);
   }
 
   async componentWillUnmount() {
@@ -128,7 +128,7 @@ class PreflightResultPage extends Component {
         this.setState({
           preflightResultData: null,
         });
-        this.state.getKotsPreflightResultJob.start(this.getKotsPreflightResult, 2000);
+        this.state.getKotsPreflightResultJob.start(this.getKotsPreflightResult, 1000);
       })
       .catch((err) => {
         console.log(err);
@@ -157,7 +157,7 @@ class PreflightResultPage extends Component {
           this.setState({
             preflightResultData: null,
           });
-          this.state.getKotsPreflightResultJob.start(this.getKotsPreflightResult, 2000);
+          this.state.getKotsPreflightResultJob.start(this.getKotsPreflightResult, 1000);
         } else {
           this.setState({
             errorMessage: `Encountered an error while trying to re-run preflight checks: Status ${res.status}`
@@ -204,6 +204,7 @@ class PreflightResultPage extends Component {
   }
 
   getKotsPreflightResultForSequence = async (slug, sequence) => {
+    
     try {
       const res = await fetch(`${window.env.API_ENDPOINT}/app/${slug}/sequence/${sequence}/preflight/result`, {
         method: "GET",
@@ -215,12 +216,14 @@ class PreflightResultPage extends Component {
         this.state.getKotsPreflightResultJob.stop();
         this.setState({
           errorMessage: `Encountered an error while fetching preflight results: Unexpected status code: ${res.status}`,
+          preflightResultCheckCount: 0
         });
         return;
       }
       const response = await res.json();
       if (response.preflightResult?.result) {
         this.state.getKotsPreflightResultJob.stop();
+        this.setState({ preflightResultCheckCount: 0 });
       }
       let parsedStatusResults = {};
       try {
@@ -231,11 +234,13 @@ class PreflightResultPage extends Component {
       this.setState({
         preflightCurrentStatus: parsedStatusResults,
         preflightResultData: response.preflightResult,
+        preflightResultCheckCount: this.state.preflightResultCheckCount + 1
       });
     } catch (err) {
       console.log(err);
       this.setState({
-        errorMessage: err ? `Encountered an error while fetching preflight results: ${err.message}` : "Something went wrong, please try again."
+        errorMessage: err ? `Encountered an error while fetching preflight results: ${err.message}` : "Something went wrong, please try again.",
+        preflightResultCheckCount: 0
       });
     }
   }
@@ -254,12 +259,14 @@ class PreflightResultPage extends Component {
         this.state.getKotsPreflightResultJob.stop();
         this.setState({
           errorMessage: `Encountered an error while fetching preflight results: Unexpected status code: ${res.status}`,
+          preflightResultCheckCount: 0
         });
         return;
       }
       const response = await res.json();
       if (response.preflightResult?.result) {
         this.state.getKotsPreflightResultJob.stop();
+        this.setState({ preflightResultCheckCount: 0 });
       }
       let parsedStatusResults = {};
       try {
@@ -270,11 +277,13 @@ class PreflightResultPage extends Component {
       this.setState({
         preflightCurrentStatus: parsedStatusResults,
         preflightResultData: response.preflightResult,
+        preflightResultCheckCount: this.state.preflightResultCheckCount + 1
       });
     } catch (err) {
       console.log(err);
       this.setState({
-        errorMessage: err ? `Encountered an error while fetching preflight results: ${err.message}` : "Something went wrong, please try again."
+        errorMessage: err ? `Encountered an error while fetching preflight results: ${err.message}` : "Something went wrong, please try again.",
+        preflightResultCheckCount: 0
       });
     }
   }
@@ -345,7 +354,7 @@ class PreflightResultPage extends Component {
               </p>
               {!stopPolling && (
                 <div className="flex-column justifyContent--center alignItems--center flex1 u-minWidth--full">
-                  <PreflightsProgress progressData={this.state.preflightCurrentStatus} />
+                  <PreflightsProgress progressData={this.state.preflightCurrentStatus} preflightResultCheckCount={this.state.preflightResultCheckCount} />
                 </div>
               )}
               {hasErrors && this.renderErrors(preflightJSON?.errors)}
