@@ -53,7 +53,7 @@ func (h *Handler) GetPreflightResult(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	progress, err := store.GetStore().GetPreflightProgress(foundApp.ID, 0)
+	progress, err := store.GetStore().GetPreflightProgress(foundApp.ID, sequence)
 	if err != nil {
 		logger.Error(errors.Wrap(err, "failed to get preflight progress"))
 		w.WriteHeader(http.StatusInternalServerError)
