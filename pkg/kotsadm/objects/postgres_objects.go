@@ -23,6 +23,9 @@ func PostgresStatefulset(deployOptions types.DeployOptions, size resource.Quanti
 				Name: s.ObjectMeta.Name,
 			},
 		}
+	} else if deployOptions.KotsadmOptions.OverrideRegistry != "" {
+		// if there is a registry specified, use the postgres image there and not the one from docker hub - even though there's not a username/password specified
+		image = fmt.Sprintf("%s/postgres:%s", kotsadmversion.KotsadmRegistry(deployOptions.KotsadmOptions), kotsadmversion.KotsadmTag(deployOptions.KotsadmOptions))
 	}
 
 	var securityContext corev1.PodSecurityContext
