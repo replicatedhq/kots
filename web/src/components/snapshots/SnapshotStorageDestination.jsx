@@ -895,7 +895,7 @@ class SnapshotStorageDestination extends Component {
               label: "Host Path",
             });
             break;
-          case "velero-plugin-for-azure":
+          case "velero-plugin-for-microsoft-azure":
             availableDestinations.push({
               value: "azure",
               label: "Azure Blob Storage",
@@ -903,6 +903,7 @@ class SnapshotStorageDestination extends Component {
             break;
         }
       }
+      availableDestinations.sort( (a,b) => a.label.localeCompare(b.label) );
     }
 
     const selectedDestination = availableDestinations.find((d) => {
