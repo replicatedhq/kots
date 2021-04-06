@@ -193,3 +193,12 @@ func isPrimary(node corev1.Node) bool {
 
 	return false
 }
+
+func internalIP(node corev1.Node) string {
+	for _, address := range node.Status.Addresses {
+		if address.Type == v1.NodeInternalIP {
+			return address.Address
+		}
+	}
+	return ""
+}

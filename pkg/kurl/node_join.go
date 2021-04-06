@@ -1,6 +1,7 @@
 package kurl
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"strconv"
@@ -8,6 +9,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/logger"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 )
 
@@ -62,6 +64,20 @@ func GenerateAddNodeCommand(client kubernetes.Interface, master bool) ([]string,
 
 	if proxyAddr != "" && noProxyAddrs != "" {
 		command = append(command, fmt.Sprintf("additional-no-proxy-addresses=%s", noProxyAddrs))
+	}
+
+	nodes, err := client.CoreV1().Nodes().List(context.TODO(), metav1.ListOptions{})
+	if err != nil {
+		return nil, nil, errors.Wrap(err, "list nodes")
+	}
+	for _, node := range nodes.Items {
+		if nodeIP := internalIP(node); nodeIP != "" {
+			if isPrimary(node) {
+				command = append(command, fmt.Sprintf("primary-host=%s", nodeIP))
+			} else {
+				command = append(command, fmt.Sprintf("secondary-host=%s", nodeIP))
+			}
+		}
 	}
 
 	if master {
