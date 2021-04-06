@@ -46,7 +46,7 @@ export default class ConfigInput extends React.Component {
   // elements are rendered.
   render() {
     var hidden = this.props.hidden || this.props.when === "false";
-    var placeholder = this.props.inputType === "password" ? this.maskValue(this.props.default) : "";
+    var placeholder = this.props.inputType === "password" ? this.maskValue(this.props.default) : "";  
 
     return (
       <div id={`${this.props.name}-group`} className={`field field-type-text ${hidden ? "hidden" : "u-marginTop--15"}`}>
@@ -84,7 +84,7 @@ export default class ConfigInput extends React.Component {
             onBlur={() => this.setState({ focused: false })}
             className={`${this.props.className || ""} Input ${this.props.readonly ? "readonly" : ""}`} />
         </div>
-        {this.props.default ?
+        {this.props.inputType !== "password" && this.props.default ?
           <div className="default-value-section u-marginTop--8">
             Default value: <span className="value"> {this.props.default} </span>
           </div>
