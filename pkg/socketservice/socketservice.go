@@ -34,6 +34,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/store"
 	"github.com/replicatedhq/kots/pkg/supportbundle"
 	supportbundletypes "github.com/replicatedhq/kots/pkg/supportbundle/types"
+	"github.com/replicatedhq/kots/pkg/util"
 	"github.com/replicatedhq/kots/pkg/version"
 	velerov1 "github.com/vmware-tanzu/velero/pkg/apis/velero/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -135,6 +136,8 @@ func startLoop(fn func(), intervalInSeconds time.Duration) {
 	}()
 }
 
+var appDeployLoopErrorBackoff = map[string]*util.ErrorBackoff{}
+
 func deployLoop() {
 	for _, clusterSocket := range clusterSocketHistory {
 		apps, err := store.GetStore().ListAppsForDownstream(clusterSocket.ClusterID)
@@ -144,33 +147,53 @@ func deployLoop() {
 		}
 
 		for _, a := range apps {
-			if err := processDeploySocketForApp(clusterSocket, a); err != nil {
-				logger.Error(errors.Wrapf(err, "failed to run deploy loop for app %s in cluster %s", a.ID, clusterSocket.ClusterID))
-				continue
+			deployed, err := processDeploySocketForApp(clusterSocket, a)
+			if err != nil {
+				_, ok := appDeployLoopErrorBackoff[a.ID]
+				if !ok {
+					appDeployLoopErrorBackoff[a.ID] = &util.ErrorBackoff{MinPeriod: 1 * time.Second, MaxPeriod: 30 * time.Minute}
+				}
+				appDeployLoopErrorBackoff[a.ID].OnError(err, func() {
+					logger.Error(errors.Wrapf(err, "failed to run deploy loop for app %s in cluster %s", a.ID, clusterSocket.ClusterID))
+				})
+			} else if deployed {
+				logger.Infof("Deploy success for app %s in cluster %s", a.ID, clusterSocket.ClusterID)
 			}
 		}
+
+		time.Sleep(5 * time.Second)
 	}
 }
 
-func processDeploySocketForApp(clusterSocket *ClusterSocket, a *apptypes.App) error {
-	if a.RestoreInProgressName != "" {
-		return nil
-	}
-
-	deployedVersion, err := downstream.GetCurrentVersion(a.ID, clusterSocket.ClusterID)
+func processDeploySocketForApp(clusterSocket *ClusterSocket, a *apptypes.App) (bool, error) {
+	deployedVersion, err := getDeployedVersionForApp(clusterSocket, a)
 	if err != nil {
-		return errors.Wrap(err, "failed to get current downstream version")
-	}
-
-	if deployedVersion == nil {
-		return nil
+		return false, errors.Wrap(err, "failed to get deployed version")
+	} else if deployedVersion == nil {
+		return false, nil
 	}
 
 	if value, ok := clusterSocket.LastDeployedSequences[a.ID]; ok && value == deployedVersion.ParentSequence {
 		// this version is already the currently deployed version
-		return nil
+		return false, nil
 	}
 
+	if err := deployVersionForApp(clusterSocket, a, deployedVersion); err != nil {
+		return false, errors.Wrap(err, "failed to deploy version")
+	}
+	return true, nil
+}
+
+func getDeployedVersionForApp(clusterSocket *ClusterSocket, a *apptypes.App) (*downstreamtypes.DownstreamVersion, error) {
+	if a.RestoreInProgressName != "" {
+		return nil, nil
+	}
+
+	deployedVersion, err := downstream.GetCurrentVersion(a.ID, clusterSocket.ClusterID)
+	return deployedVersion, errors.Wrap(err, "failed to get current downstream version")
+}
+
+func deployVersionForApp(clusterSocket *ClusterSocket, a *apptypes.App, deployedVersion *downstreamtypes.DownstreamVersion) error {
 	d, err := store.GetStore().GetDownstream(clusterSocket.ClusterID)
 	if err != nil {
 		return errors.Wrap(err, "failed to get downstream")
