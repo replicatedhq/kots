@@ -10,10 +10,13 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"reflect"
+	"runtime/debug"
 	"strconv"
 	"strings"
 
 	"github.com/pkg/errors"
+	"github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/template"
@@ -37,6 +40,7 @@ func renderReplicated(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (
 		Bases: []Base{},
 	}
 
+	debug.PrintStack()
 	builder, err := NewConfigContextTemplateBuidler(u, renderOptions)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create new config context template builder")
@@ -85,6 +89,7 @@ func renderReplicated(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (
 		}
 	}
 
+	fmt.Println("\n++++++++++++++++++++++++++++++++++++++ Calling findAllKotsHelmCharts")
 	// render helm charts that were specified
 	// we just inject them into u.Files
 	kotsHelmCharts, err := findAllKotsHelmCharts(u.Files, *builder, renderOptions.Log)
@@ -129,6 +134,9 @@ func renderReplicated(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (
 		helmUpstream.Name = kotsHelmChart.Name
 
 		mergedValues := kotsHelmChart.Spec.Values
+		fmt.Println("\n++++++++++++++++++++++++++++++++++++++ At renderReplicated")
+		v1beta1.DebugGetHelmValues((mergedValues))
+		fmt.Println("\n++++++++++++++++++++++++++++++++++++++ kotsHelmChart.Spec.OptionalValues\n", kotsHelmChart.Spec.OptionalValues)
 		for _, optionalValues := range kotsHelmChart.Spec.OptionalValues {
 			parsedBool, err := strconv.ParseBool(optionalValues.When)
 			if err != nil {
@@ -137,12 +145,18 @@ func renderReplicated(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (
 			if !parsedBool {
 				continue
 			}
-
-			for k, v := range optionalValues.Values {
-				mergedValues[k] = v
+			if optionalValues.Recursive {
+				resultMap := kotsv1beta1.MergeHelmChartValues(kotsHelmChart.Spec.Values, optionalValues.Values)
+				kotsv1beta1.PrintResultMap(resultMap)
+				for k, v := range resultMap {
+					fmt.Println("++++++++++++++++++resultMap", k, v)
+				}
+			} else {
+				for k, v := range optionalValues.Values {
+					mergedValues[k] = v
+				}
 			}
 		}
-
 		helmValues, err := kotsHelmChart.Spec.GetHelmValues(mergedValues)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to render local values for chart")
@@ -240,6 +254,8 @@ func findAllKotsHelmCharts(upstreamFiles []upstreamtypes.UpstreamFile, builder t
 		if err != nil {
 			return nil, errors.Wrapf(err, "failed to parse rendered HelmChart %s", baseFile.Path)
 		}
+		fmt.Println("\n++++++++++++++++++++++++++++++++++++++ findAllKotsHelmCharts")
+		v1beta1.DebugGetHelmValues(helmChart.Spec.Values)
 
 		kotsHelmCharts = append(kotsHelmCharts, helmChart)
 	}
@@ -508,4 +524,27 @@ func chartArchiveToSparseUpstream(chartArchivePath string) (*upstreamtypes.Upstr
 	}
 
 	return upstream, nil
+}
+
+func MergeValues(value *kotsv1beta1.MappedChartValue, mergedValues map[string]kotsv1beta1.MappedChartValue) {
+	fmt.Println("+++++++++++++value", reflect.TypeOf(value))
+	/*
+		for k, v := range optionalValues {
+			fmt.Println("++++++++++++++++++++++++ optionalValues", k, v, reflect.TypeOf(v))
+			value := &v
+			fmt.Println(value, reflect.TypeOf(value))
+				if value.valueType == "children" {
+					result := map[string]interface{}{}
+					for k, v := range value.children {
+						built, err := MergeValues(v)
+						if err != nil {
+							// return nil, errors.Wrapf(err, "failed to render child value at key %s", k)
+						}
+						result[k] = built
+					}
+					fmt.Println("+++++++++++++++++++++ Result++++++++++", result)
+				}
+		}
+	*/
+
 }

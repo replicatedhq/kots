@@ -18,6 +18,7 @@ package v1beta1
 
 import (
 	"encoding/json"
+	"fmt"
 
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/kotskinds/multitype"
@@ -162,16 +163,105 @@ type ChartIdentifier struct {
 func (h *HelmChartSpec) GetHelmValues(values map[string]MappedChartValue) (map[string]interface{}, error) {
 	result := map[string]interface{}{}
 
+	fmt.Println("\n+++++++++++++++++++++++++++GetHelmValues\n", result)
 	for k, v := range values {
 		value, err := h.renderValue(&v)
 		if err != nil {
 			return nil, errors.Wrapf(err, "failed to render value at %s", k)
 		}
-
+		fmt.Println("\n++++++++++++++++++++++++++++++++++++++ h.renderValue\n", k, value)
 		result[k] = value
 	}
 
 	return result, nil
+}
+
+func MergeHelmChartValues(baseValues map[string]MappedChartValue,
+	overlayValues map[string]MappedChartValue) map[string]MappedChartValue {
+
+	result := map[string]MappedChartValue{}
+	/*
+		for k, v := range baseValues {
+			if v is a map {
+				result[k] = Merge(v, overlay[k])
+			} else {
+				result[k] = pick v or overlays[k]
+			}
+		}
+	*/
+	for k, v := range baseValues {
+		if v.valueType != "children" {
+			if _, exists := overlayValues[k]; exists {
+				result[k] = overlayValues[k]
+			} else {
+				result[k] = baseValues[k]
+			}
+		} else {
+			tmp := MappedChartValue{}
+			tmp.valueType = "children"
+			if overlayValues[k].children != nil {
+				tmp.children = RecurseMerge(v.children, overlayValues[k].children)
+			} else {
+				result[k] = v
+			}
+			result[k] = tmp
+
+		}
+	}
+
+	for k, v := range overlayValues {
+		if _, exists := baseValues[k]; !exists {
+			result[k] = v
+		}
+	}
+	return result
+
+}
+
+func RecurseMerge(baseValues map[string]*MappedChartValue, overlayValues map[string]*MappedChartValue) map[string]*MappedChartValue {
+
+	result := map[string]*MappedChartValue{}
+	for k, v := range baseValues {
+		if v.valueType != "children" {
+			if _, exists := overlayValues[k]; exists {
+				result[k] = overlayValues[k]
+			} else {
+				result[k] = baseValues[k]
+			}
+		} else {
+			tmp := &MappedChartValue{}
+			tmp.valueType = "children"
+			tmp.children = RecurseMerge(v.children, overlayValues[k].children)
+			result[k] = tmp
+		}
+	}
+
+	for k, v := range overlayValues {
+		if _, exists := baseValues[k]; !exists {
+			result[k] = v
+		}
+	}
+	return result
+
+}
+
+func PrintResultMap(baseValues map[string]MappedChartValue) {
+
+	for k, v := range baseValues {
+		if v.valueType == "children" {
+			RecursePrint(v.children)
+		}
+		fmt.Println("PrintResultMap+++++++++++++key, value\n", k, v)
+	}
+}
+
+func RecursePrint(baseValues map[string]*MappedChartValue) {
+	for k, v := range baseValues {
+		if v.valueType == "children" {
+			RecursePrint(v.children)
+		}
+		fmt.Println("RecursePrint+++++++++++++\n", k, v)
+	}
 }
 
 func (h *HelmChartSpec) renderValue(value *MappedChartValue) (interface{}, error) {
@@ -205,7 +295,8 @@ func (h *HelmChartSpec) renderValue(value *MappedChartValue) (interface{}, error
 }
 
 type OptionalValue struct {
-	When string `json:"when"`
+	When      string `json:"when"`
+	Recursive bool   `json:"recursive"`
 
 	Values map[string]MappedChartValue `json:"values,omitempty"`
 }
@@ -249,4 +340,48 @@ type HelmChartList struct {
 
 func init() {
 	SchemeBuilder.Register(&HelmChart{}, &HelmChartList{})
+}
+
+func DebugGetHelmValues(values map[string]MappedChartValue) (map[string]interface{}, error) {
+	result := map[string]interface{}{}
+
+	for k, v := range values {
+		value, err := DebugRenderValue(&v)
+		if err != nil {
+			return nil, errors.Wrapf(err, "failed to render value at %s", k)
+		}
+		fmt.Println("\n++++++++++++++++++++++++++++++++++++++ h.renderValue\n", k, value)
+		result[k] = value
+	}
+	return result, nil
+}
+
+func DebugRenderValue(value *MappedChartValue) (interface{}, error) {
+	if value.valueType == "children" {
+		result := map[string]interface{}{}
+		for k, v := range value.children {
+			built, err := DebugRenderValue(v)
+			if err != nil {
+				return nil, errors.Wrapf(err, "failed to render child value at key %s", k)
+			}
+			result[k] = built
+		}
+		return result, nil
+	} else if value.valueType == "array" {
+		result := []interface{}{}
+		for _, v := range value.array {
+			built, err := DebugRenderValue(v)
+			if err != nil {
+				return nil, errors.Wrap(err, "failed to render array value")
+			}
+			result = append(result, built)
+		}
+		return result, nil
+	} else {
+		built, err := value.getBuiltValue()
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to build value")
+		}
+		return built, nil
+	}
 }
