@@ -57,3 +57,48 @@ func TestIsConnected(t *testing.T) {
 		})
 	}
 }
+
+func TestInternalIP(t *testing.T) {
+	tests := []struct {
+		name   string
+		answer string
+		node   corev1.Node
+	}{
+		{
+			name:   "10.128.0.42",
+			answer: "10.128.0.42",
+			node: corev1.Node{
+				Status: corev1.NodeStatus{
+					Addresses: []corev1.NodeAddress{
+						{
+							Type:    corev1.NodeInternalIP,
+							Address: "10.128.0.42",
+						},
+					},
+				},
+			},
+		},
+		{
+			name:   "no internal IP",
+			answer: "",
+			node: corev1.Node{
+				Status: corev1.NodeStatus{
+					Addresses: []corev1.NodeAddress{
+						{
+							Type:    corev1.NodeExternalIP,
+							Address: "10.128.0.42",
+						},
+					},
+				},
+			},
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			output := internalIP(test.node)
+			if output != test.answer {
+				t.Errorf("got %q, want %q", output, test.answer)
+			}
+		})
+	}
+}
