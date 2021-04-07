@@ -353,6 +353,7 @@ func updateGlobalStore(ctx context.Context, store *types.Store, kotsadmNamepsace
 
 	kotsadmVeleroBackendStorageLocation.Spec.ObjectStorage.Bucket = store.Bucket
 	kotsadmVeleroBackendStorageLocation.Spec.ObjectStorage.Prefix = store.Path
+	kotsadmVeleroBackendStorageLocation.Spec.Config = map[string]string{} // Ensure config is clean when switching providers
 
 	currentSecret, currentSecretErr := clientset.CoreV1().Secrets(kotsadmVeleroBackendStorageLocation.Namespace).Get(ctx, "cloud-credentials", metav1.GetOptions{})
 	if currentSecretErr != nil && !kuberneteserrors.IsNotFound(currentSecretErr) {
@@ -553,7 +554,9 @@ func updateGlobalStore(ctx context.Context, store *types.Store, kotsadmNamepsace
 		}
 	} else if store.Google != nil {
 		if store.Google.UseInstanceRole {
-			kotsadmVeleroBackendStorageLocation.Spec.Config["serviceAccount"] = store.Google.ServiceAccount
+			kotsadmVeleroBackendStorageLocation.Spec.Config = map[string]string{
+				"serviceAccount": store.Google.ServiceAccount,
+			}
 
 			// delete the secret
 			if currentSecretErr == nil {
@@ -563,8 +566,6 @@ func updateGlobalStore(ctx context.Context, store *types.Store, kotsadmNamepsace
 				}
 			}
 		} else {
-			delete(kotsadmVeleroBackendStorageLocation.Spec.Config, "serviceAccount")
-
 			// create or update the secret
 			if kuberneteserrors.IsNotFound(currentSecretErr) {
 				// create
@@ -599,9 +600,12 @@ func updateGlobalStore(ctx context.Context, store *types.Store, kotsadmNamepsace
 			}
 		}
 	} else if store.Azure != nil {
-		kotsadmVeleroBackendStorageLocation.Spec.Config["resourceGroup"] = store.Azure.ResourceGroup
-		kotsadmVeleroBackendStorageLocation.Spec.Config["storageAccount"] = store.Azure.StorageAccount
-		kotsadmVeleroBackendStorageLocation.Spec.Config["subscriptionId"] = store.Azure.SubscriptionID
+		// https://github.com/vmware-tanzu/velero-plugin-for-microsoft-azure/blob/main/backupstoragelocation.md
+		kotsadmVeleroBackendStorageLocation.Spec.Config = map[string]string{
+			"resourceGroup":  store.Azure.ResourceGroup,
+			"storageAccount": store.Azure.StorageAccount,
+			"subscriptionId": store.Azure.SubscriptionID,
+		}
 
 		config := providers.Azure{
 			SubscriptionID: store.Azure.SubscriptionID,
@@ -644,6 +648,8 @@ func updateGlobalStore(ctx context.Context, store *types.Store, kotsadmNamepsace
 				return nil, errors.Wrap(err, "failed to update azure secret")
 			}
 		}
+	} else {
+		return nil, errors.Wrap(err, "malformed input - could not determine provider")
 	}
 
 	updated, err := veleroClient.BackupStorageLocations(kotsadmVeleroBackendStorageLocation.Namespace).Update(ctx, kotsadmVeleroBackendStorageLocation, metav1.UpdateOptions{})
