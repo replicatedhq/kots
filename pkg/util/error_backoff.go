@@ -5,6 +5,10 @@ import (
 	"time"
 )
 
+// ErrorBackoff keeps track of last time an error was logged to prevent duplicating the OnError
+// function. Errors are considered the same if the error text matches exactly. Only last error is
+// remembered, so if error changes every time, every OnError function will be executed. The period
+// is doubled every time OnError is called until the max period is reached.
 type ErrorBackoff struct {
 	MinPeriod time.Duration
 	MaxPeriod time.Duration

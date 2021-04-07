@@ -136,6 +136,8 @@ func startLoop(fn func(), intervalInSeconds time.Duration) {
 	}()
 }
 
+// appDeployLoopErrorBackoff is a global map of loggers for each app that deploy loop uses to keep
+// track of last time an error was logged and prevent duplicate logging.
 var appDeployLoopErrorBackoff = map[string]*util.ErrorBackoff{}
 
 func deployLoop() {
