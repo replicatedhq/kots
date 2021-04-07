@@ -11,21 +11,11 @@ import (
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/persistence"
+	registrytypes "github.com/replicatedhq/kots/pkg/registry/types"
 	"github.com/replicatedhq/kots/pkg/template"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes/scheme"
 )
-
-type ConfigOptions struct {
-	ConfigSpec         string
-	ConfigValuesSpec   string
-	LicenseSpec        string
-	IdentityConfigSpec string
-	RegistryHost       string
-	RegistryNamespace  string
-	RegistryUser       string
-	RegistryPassword   string
-}
 
 func IsRequiredItem(item kotsv1beta1.ConfigItem) bool {
 	if !item.Required {
@@ -47,19 +37,40 @@ func IsUnsetItem(item kotsv1beta1.ConfigItem) bool {
 	return true
 }
 
-func NeedsConfiguration(opts ConfigOptions) (bool, error) {
-	if opts.ConfigSpec == "" {
+func NeedsConfiguration(kotsKinds *kotsutil.KotsKinds, registrySettings registrytypes.RegistrySettings) (bool, error) {
+	configSpec, err := kotsKinds.Marshal("kots.io", "v1beta1", "Config")
+	if err != nil {
+		return false, errors.Wrap(err, "failed to marshal config spec")
+	}
+
+	if configSpec == "" {
 		return false, nil
 	}
 
-	localRegistry := template.LocalRegistry{
-		Host:      opts.RegistryHost,
-		Namespace: opts.RegistryNamespace,
-		Username:  opts.RegistryUser,
-		Password:  opts.RegistryPassword,
+	configValuesSpec, err := kotsKinds.Marshal("kots.io", "v1beta1", "ConfigValues")
+	if err != nil {
+		return false, errors.Wrap(err, "failed to marshal configvalues spec")
 	}
 
-	rendered, err := kotsconfig.TemplateConfig(logger.NewCLILogger(), opts.ConfigSpec, opts.ConfigValuesSpec, opts.LicenseSpec, opts.IdentityConfigSpec, localRegistry)
+	licenseSpec, err := kotsKinds.Marshal("kots.io", "v1beta1", "License")
+	if err != nil {
+		return false, errors.Wrap(err, "failed to marshal license spec")
+	}
+
+	identityConfigSpec, err := kotsKinds.Marshal("kots.io", "v1beta1", "IdentityConfig")
+	if err != nil {
+		return false, errors.Wrap(err, "failed to marshal identityconfig spec")
+	}
+
+	localRegistry := template.LocalRegistry{
+		Host:      registrySettings.Hostname,
+		Namespace: registrySettings.Namespace,
+		Username:  registrySettings.Username,
+		Password:  registrySettings.Password,
+		ReadOnly:  registrySettings.IsReadOnly,
+	}
+
+	rendered, err := kotsconfig.TemplateConfig(logger.NewCLILogger(), configSpec, configValuesSpec, licenseSpec, identityConfigSpec, localRegistry)
 	if err != nil {
 		return false, errors.Wrap(err, "failed to template config")
 	}

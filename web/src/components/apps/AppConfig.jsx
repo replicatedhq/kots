@@ -218,10 +218,10 @@ class AppConfig extends Component {
   handleSave = async () => {
     this.setState({ savingConfig: true, configError: "" });
 
-    const { fromLicenseFlow, history } = this.props;
+    const { fromLicenseFlow, history, match } = this.props;
     const sequence = this.getSequence();
     const slug = this.getSlug();
-    const createNewVersion = !fromLicenseFlow;
+    const createNewVersion = !fromLicenseFlow && match.params.sequence == undefined; // this logic might need to be changed when we add support for editing the config for previous versions (if that will need to create a new version)
 
     fetch(`${window.env.API_ENDPOINT}/app/${slug}/config`, {
       method: "PUT",
