@@ -229,12 +229,12 @@ func (h *Handler) LiveAppConfig(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	localRegistry := template.LocalRegistry{}
-	if registryInfo != nil {
-		localRegistry.Host = registryInfo.Hostname
-		localRegistry.Namespace = registryInfo.Namespace
-		localRegistry.Username = registryInfo.Username
-		localRegistry.Password = registryInfo.Password
+	localRegistry := template.LocalRegistry{
+		Host:      registryInfo.Hostname,
+		Namespace: registryInfo.Namespace,
+		Username:  registryInfo.Username,
+		Password:  registryInfo.Password,
+		ReadOnly:  registryInfo.IsReadOnly,
 	}
 
 	versionInfo := template.VersionInfoFromInstallation(liveAppConfigRequest.Sequence+1, foundApp.IsAirgap, kotsKinds.Installation.Spec) // sequence +1 because the sequence will be incremented on save (and we want the preview to be accurate)
@@ -322,12 +322,12 @@ func (h *Handler) CurrentAppConfig(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	localRegistry := template.LocalRegistry{}
-	if registryInfo != nil {
-		localRegistry.Host = registryInfo.Hostname
-		localRegistry.Namespace = registryInfo.Namespace
-		localRegistry.Username = registryInfo.Username
-		localRegistry.Password = registryInfo.Password
+	localRegistry := template.LocalRegistry{
+		Host:      registryInfo.Hostname,
+		Namespace: registryInfo.Namespace,
+		Username:  registryInfo.Username,
+		Password:  registryInfo.Password,
+		ReadOnly:  registryInfo.IsReadOnly,
 	}
 
 	versionInfo := template.VersionInfoFromInstallation(int64(sequence)+1, foundApp.IsAirgap, kotsKinds.Installation.Spec) // sequence +1 because the sequence will be incremented on save (and we want the preview to be accurate)

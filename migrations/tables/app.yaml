@@ -52,6 +52,8 @@ spec:
         type: text
       - name: namespace
         type: text
+      - name: registry_is_readonly
+        type: boolean
       - name: last_registry_sync
         type: timestamp without time zone
       - name: install_state

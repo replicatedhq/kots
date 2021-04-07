@@ -107,7 +107,7 @@ LICENSE_LOOP:
 		desiredAppName := strings.Replace(verifiedLicense.Spec.AppSlug, "-", " ", 0)
 		upstreamURI := fmt.Sprintf("replicated://%s", verifiedLicense.Spec.AppSlug)
 
-		a, err := store.GetStore().CreateApp(desiredAppName, upstreamURI, string(license), verifiedLicense.Spec.IsAirgapSupported, instParams.SkipImagePush)
+		a, err := store.GetStore().CreateApp(desiredAppName, upstreamURI, string(license), verifiedLicense.Spec.IsAirgapSupported, instParams.SkipImagePush, instParams.RegistryIsReadOnly)
 		if err != nil {
 			logger.Error(errors.Wrap(err, "failed to create app record"))
 			continue
@@ -146,19 +146,23 @@ LICENSE_LOOP:
 				continue
 			}
 
-			registryHost := kotsadmOpts.OverrideRegistry
-			namespace := kotsadmOpts.OverrideNamespace
-			username := kotsadmOpts.Username
-			password := kotsadmOpts.Password
-
-			pendingApp := airgaptypes.PendingApp{
-				ID:          a.ID,
-				Slug:        a.Slug,
-				Name:        a.Name,
-				LicenseData: string(license),
+			createAppOpts := airgap.CreateAirgapAppOpts{
+				PendingApp: &airgaptypes.PendingApp{
+					ID:          a.ID,
+					Slug:        a.Slug,
+					Name:        a.Name,
+					LicenseData: string(license),
+				},
+				AirgapPath:         airgapFilesDir,
+				RegistryHost:       kotsadmOpts.OverrideRegistry,
+				RegistryNamespace:  kotsadmOpts.OverrideNamespace,
+				RegistryUsername:   kotsadmOpts.Username,
+				RegistryPassword:   kotsadmOpts.Password,
+				RegistryIsReadOnly: instParams.RegistryIsReadOnly,
+				IsAutomated:        true,
+				SkipPreflights:     instParams.SkipPreflights,
 			}
-
-			err = airgap.CreateAppFromAirgap(&pendingApp, airgapFilesDir, registryHost, namespace, username, password, true, instParams.SkipPreflights)
+			err = airgap.CreateAppFromAirgap(createAppOpts)
 			if err != nil {
 				logger.Error(errors.Wrap(err, "failed to create airgap app"))
 				continue
@@ -254,7 +258,7 @@ func AirgapInstall(appSlug string, additionalFiles map[string][]byte) error {
 	desiredAppName := strings.Replace(verifiedLicense.Spec.AppSlug, "-", " ", 0)
 	upstreamURI := fmt.Sprintf("replicated://%s", verifiedLicense.Spec.AppSlug)
 
-	a, err := store.GetStore().CreateApp(desiredAppName, upstreamURI, string(license), verifiedLicense.Spec.IsAirgapSupported, instParams.SkipImagePush)
+	a, err := store.GetStore().CreateApp(desiredAppName, upstreamURI, string(license), verifiedLicense.Spec.IsAirgapSupported, instParams.SkipImagePush, instParams.RegistryIsReadOnly)
 	if err != nil {
 		return errors.Wrap(err, "failed to create app record")
 	}
@@ -292,19 +296,23 @@ func AirgapInstall(appSlug string, additionalFiles map[string][]byte) error {
 		return errors.Wrap(err, "failed to load registry info")
 	}
 
-	registryHost := kotsadmOpts.OverrideRegistry
-	namespace := kotsadmOpts.OverrideNamespace
-	username := kotsadmOpts.Username
-	password := kotsadmOpts.Password
-
-	pendingApp := airgaptypes.PendingApp{
-		ID:          a.ID,
-		Slug:        a.Slug,
-		Name:        a.Name,
-		LicenseData: string(license),
+	createAppOpts := airgap.CreateAirgapAppOpts{
+		PendingApp: &airgaptypes.PendingApp{
+			ID:          a.ID,
+			Slug:        a.Slug,
+			Name:        a.Name,
+			LicenseData: string(license),
+		},
+		AirgapPath:         airgapFilesDir,
+		RegistryHost:       kotsadmOpts.OverrideRegistry,
+		RegistryNamespace:  kotsadmOpts.OverrideNamespace,
+		RegistryUsername:   kotsadmOpts.Username,
+		RegistryPassword:   kotsadmOpts.Password,
+		RegistryIsReadOnly: instParams.RegistryIsReadOnly,
+		IsAutomated:        true,
+		SkipPreflights:     instParams.SkipPreflights,
 	}
-
-	err = airgap.CreateAppFromAirgap(&pendingApp, airgapFilesDir, registryHost, namespace, username, password, true, instParams.SkipPreflights)
+	err = airgap.CreateAppFromAirgap(createAppOpts)
 	if err != nil {
 		return errors.Wrap(err, "failed to create airgap app")
 	}

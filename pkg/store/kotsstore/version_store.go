@@ -22,7 +22,6 @@ import (
 	gitopstypes "github.com/replicatedhq/kots/pkg/gitops/types"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	kotsadmobjects "github.com/replicatedhq/kots/pkg/kotsadm/objects"
-	kotsconfig "github.com/replicatedhq/kots/pkg/kotsadmconfig"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/kustomize"
 	"github.com/replicatedhq/kots/pkg/persistence"
@@ -353,11 +352,6 @@ func (s *KOTSStore) createAppVersion(tx *sql.Tx, appID string, currentSequence *
 		previousArchiveDir = previousDir
 	}
 
-	registryInfo, err := s.GetRegistryDetailsForApp(appID)
-	if err != nil {
-		return int64(0), errors.Wrap(err, "failed to get app registry info")
-	}
-
 	downstreams, err := s.ListDownstreamsForApp(appID)
 	if err != nil {
 		return int64(0), errors.Wrap(err, "failed to list downstreams")
@@ -366,35 +360,6 @@ func (s *KOTSStore) createAppVersion(tx *sql.Tx, appID string, currentSequence *
 	for _, d := range downstreams {
 		// there's a small chance this is not optimal, but no current code path
 		// will support multiple downstreams, so this is cleaner here for now
-		licenseSpec, err := kotsKinds.Marshal("kots.io", "v1beta1", "License")
-		if err != nil {
-			return int64(0), errors.Wrap(err, "failed to marshal license spec")
-		}
-		configSpec, err := kotsKinds.Marshal("kots.io", "v1beta1", "Config")
-		if err != nil {
-			return int64(0), errors.Wrap(err, "failed to marshal config spec")
-		}
-		configValuesSpec, err := kotsKinds.Marshal("kots.io", "v1beta1", "ConfigValues")
-		if err != nil {
-			return int64(0), errors.Wrap(err, "failed to marshal configvalues spec")
-		}
-		identityConfigSpec, err := kotsKinds.Marshal("kots.io", "v1beta1", "IdentityConfig")
-		if err != nil {
-			return int64(0), errors.Wrap(err, "failed to marshal identityconfig spec")
-		}
-
-		configOpts := kotsconfig.ConfigOptions{
-			ConfigSpec:         configSpec,
-			ConfigValuesSpec:   configValuesSpec,
-			LicenseSpec:        licenseSpec,
-			IdentityConfigSpec: identityConfigSpec,
-		}
-		if registryInfo != nil {
-			configOpts.RegistryHost = registryInfo.Hostname
-			configOpts.RegistryNamespace = registryInfo.Namespace
-			configOpts.RegistryUser = registryInfo.Username
-			configOpts.RegistryPassword = registryInfo.Password
-		}
 
 		downstreamStatus := "pending"
 		if currentSequence == nil && kotsKinds.Config != nil {

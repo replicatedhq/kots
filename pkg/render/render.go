@@ -22,11 +22,11 @@ type Renderer struct {
 
 // RenderFile renders a single file
 // this is useful for upstream/kotskinds files that are not rendered in the dir
-func (r Renderer) RenderFile(kotsKinds *kotsutil.KotsKinds, registrySettings *registrytypes.RegistrySettings, appSlug string, sequence int64, isAirgap bool, inputContent []byte) ([]byte, error) {
+func (r Renderer) RenderFile(kotsKinds *kotsutil.KotsKinds, registrySettings registrytypes.RegistrySettings, appSlug string, sequence int64, isAirgap bool, inputContent []byte) ([]byte, error) {
 	return RenderFile(kotsKinds, registrySettings, appSlug, sequence, isAirgap, inputContent)
 }
 
-func RenderFile(kotsKinds *kotsutil.KotsKinds, registrySettings *registrytypes.RegistrySettings, appSlug string, sequence int64, isAirgap bool, inputContent []byte) ([]byte, error) {
+func RenderFile(kotsKinds *kotsutil.KotsKinds, registrySettings registrytypes.RegistrySettings, appSlug string, sequence int64, isAirgap bool, inputContent []byte) ([]byte, error) {
 	fixedUpContent, err := kotsutil.FixUpYAML(inputContent)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to fix up yaml")
@@ -37,7 +37,7 @@ func RenderFile(kotsKinds *kotsutil.KotsKinds, registrySettings *registrytypes.R
 
 // RenderContent renders any string/content
 // this is useful for rendering single values, like a status informer
-func RenderContent(kotsKinds *kotsutil.KotsKinds, registrySettings *registrytypes.RegistrySettings, appSlug string, sequence int64, isAirgap bool, inputContent []byte) ([]byte, error) {
+func RenderContent(kotsKinds *kotsutil.KotsKinds, registrySettings registrytypes.RegistrySettings, appSlug string, sequence int64, isAirgap bool, inputContent []byte) ([]byte, error) {
 	builder, err := NewBuilder(kotsKinds, registrySettings, appSlug, sequence, isAirgap)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create builder")
@@ -51,14 +51,13 @@ func RenderContent(kotsKinds *kotsutil.KotsKinds, registrySettings *registrytype
 	return []byte(rendered), nil
 }
 
-func NewBuilder(kotsKinds *kotsutil.KotsKinds, registrySettings *registrytypes.RegistrySettings, appSlug string, sequence int64, isAirgap bool) (*template.Builder, error) {
-	localRegistry := template.LocalRegistry{}
-
-	if registrySettings != nil {
-		localRegistry.Host = registrySettings.Hostname
-		localRegistry.Namespace = registrySettings.Namespace
-		localRegistry.Username = registrySettings.Username
-		localRegistry.Password = registrySettings.Password
+func NewBuilder(kotsKinds *kotsutil.KotsKinds, registrySettings registrytypes.RegistrySettings, appSlug string, sequence int64, isAirgap bool) (*template.Builder, error) {
+	localRegistry := template.LocalRegistry{
+		Host:      registrySettings.Hostname,
+		Namespace: registrySettings.Namespace,
+		Username:  registrySettings.Username,
+		Password:  registrySettings.Password,
+		ReadOnly:  registrySettings.IsReadOnly,
 	}
 
 	templateContextValues := make(map[string]template.ItemValue)
@@ -103,11 +102,11 @@ func NewBuilder(kotsKinds *kotsutil.KotsKinds, registrySettings *registrytypes.R
 
 // RenderDir renders an app archive dir
 // this is useful for when the license/config have updated, and template functions need to be evaluated again
-func (r Renderer) RenderDir(archiveDir string, a *apptypes.App, downstreams []downstreamtypes.Downstream, registrySettings *registrytypes.RegistrySettings) error {
+func (r Renderer) RenderDir(archiveDir string, a *apptypes.App, downstreams []downstreamtypes.Downstream, registrySettings registrytypes.RegistrySettings) error {
 	return RenderDir(archiveDir, a, downstreams, registrySettings)
 }
 
-func RenderDir(archiveDir string, a *apptypes.App, downstreams []downstreamtypes.Downstream, registrySettings *registrytypes.RegistrySettings) error {
+func RenderDir(archiveDir string, a *apptypes.App, downstreams []downstreamtypes.Downstream, registrySettings registrytypes.RegistrySettings) error {
 	installation, err := kotsutil.LoadInstallationFromPath(filepath.Join(archiveDir, "upstream", "userdata", "installation.yaml"))
 	if err != nil {
 		return errors.Wrap(err, "failed to load installation from path")
@@ -134,35 +133,33 @@ func RenderDir(archiveDir string, a *apptypes.App, downstreams []downstreamtypes
 	}
 
 	reOptions := rewrite.RewriteOptions{
-		RootDir:          archiveDir,
-		UpstreamURI:      fmt.Sprintf("replicated://%s", license.Spec.AppSlug),
-		UpstreamPath:     filepath.Join(archiveDir, "upstream"),
-		Installation:     installation,
-		Downstreams:      downstreamNames,
-		Silent:           true,
-		CreateAppDir:     false,
-		ExcludeKotsKinds: true,
-		License:          license,
-		ConfigValues:     configValues,
-		K8sNamespace:     appNamespace,
-		CopyImages:       false,
-		IsAirgap:         a.IsAirgap,
-		AppSlug:          a.Slug,
-		IsGitOps:         a.IsGitOps,
-		AppSequence:      a.CurrentSequence + 1, // sequence +1 because this is the current latest sequence, not the sequence that the rendered version will be saved as
-		ReportingInfo:    reporting.GetReportingInfo(a.ID),
+		RootDir:            archiveDir,
+		UpstreamURI:        fmt.Sprintf("replicated://%s", license.Spec.AppSlug),
+		UpstreamPath:       filepath.Join(archiveDir, "upstream"),
+		Installation:       installation,
+		Downstreams:        downstreamNames,
+		Silent:             true,
+		CreateAppDir:       false,
+		ExcludeKotsKinds:   true,
+		License:            license,
+		ConfigValues:       configValues,
+		K8sNamespace:       appNamespace,
+		CopyImages:         false,
+		IsAirgap:           a.IsAirgap,
+		AppSlug:            a.Slug,
+		IsGitOps:           a.IsGitOps,
+		AppSequence:        a.CurrentSequence + 1, // sequence +1 because this is the current latest sequence, not the sequence that the rendered version will be saved as
+		ReportingInfo:      reporting.GetReportingInfo(a.ID),
+		RegistryEndpoint:   registrySettings.Hostname,
+		RegistryNamespace:  registrySettings.Namespace,
+		RegistryUsername:   registrySettings.Username,
+		RegistryPassword:   registrySettings.Password,
+		RegistryIsReadOnly: registrySettings.IsReadOnly,
 
 		// TODO: pass in as arguments if this is ever called from CLI
 		HTTPProxyEnvValue:  os.Getenv("HTTP_PROXY"),
 		HTTPSProxyEnvValue: os.Getenv("HTTPS_PROXY"),
 		NoProxyEnvValue:    os.Getenv("NO_PROXY"),
-	}
-
-	if registrySettings != nil {
-		reOptions.RegistryEndpoint = registrySettings.Hostname
-		reOptions.RegistryNamespace = registrySettings.Namespace
-		reOptions.RegistryUsername = registrySettings.Username
-		reOptions.RegistryPassword = registrySettings.Password
 	}
 
 	err = rewrite.Rewrite(reOptions)

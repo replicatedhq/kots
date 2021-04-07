@@ -13,22 +13,19 @@ import (
 	"go.uber.org/zap"
 )
 
-func (s *KOTSStore) GetRegistryDetailsForApp(appID string) (*registrytypes.RegistrySettings, error) {
+func (s *KOTSStore) GetRegistryDetailsForApp(appID string) (registrytypes.RegistrySettings, error) {
 	db := persistence.MustGetPGSession()
-	query := `select registry_hostname, registry_username, registry_password_enc, namespace from app where id = $1`
+	query := `select registry_hostname, registry_username, registry_password_enc, namespace, registry_is_readonly from app where id = $1`
 	row := db.QueryRow(query, appID)
 
 	var registryHostname sql.NullString
 	var registryUsername sql.NullString
 	var registryPasswordEnc sql.NullString
 	var registryNamespace sql.NullString
+	var isReadOnly sql.NullBool
 
-	if err := row.Scan(&registryHostname, &registryUsername, &registryPasswordEnc, &registryNamespace); err != nil {
-		return nil, errors.Wrap(err, "failed to scan registry")
-	}
-
-	if !registryHostname.Valid {
-		return nil, nil
+	if err := row.Scan(&registryHostname, &registryUsername, &registryPasswordEnc, &registryNamespace, &isReadOnly); err != nil {
+		return registrytypes.RegistrySettings{}, errors.Wrap(err, "failed to scan registry")
 	}
 
 	registrySettings := registrytypes.RegistrySettings{
@@ -36,29 +33,34 @@ func (s *KOTSStore) GetRegistryDetailsForApp(appID string) (*registrytypes.Regis
 		Username:    registryUsername.String,
 		PasswordEnc: registryPasswordEnc.String,
 		Namespace:   registryNamespace.String,
+		IsReadOnly:  isReadOnly.Bool,
+	}
+
+	if !registryPasswordEnc.Valid {
+		return registrySettings, nil
 	}
 
 	apiCipher, err := crypto.AESCipherFromString(os.Getenv("API_ENCRYPTION_KEY"))
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to load apiCipher")
+		return registrytypes.RegistrySettings{}, errors.Wrap(err, "failed to load apiCipher")
 	}
 
 	decodedPassword, err := base64.StdEncoding.DecodeString(registrySettings.PasswordEnc)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to decode")
+		return registrytypes.RegistrySettings{}, errors.Wrap(err, "failed to decode")
 	}
 
 	decryptedPassword, err := apiCipher.Decrypt([]byte(decodedPassword))
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to decrypt")
+		return registrytypes.RegistrySettings{}, errors.Wrap(err, "failed to decrypt")
 	}
 
 	registrySettings.Password = string(decryptedPassword)
 
-	return &registrySettings, nil
+	return registrySettings, nil
 }
 
-func (s *KOTSStore) UpdateRegistry(appID string, hostname string, username string, password string, namespace string) error {
+func (s *KOTSStore) UpdateRegistry(appID string, hostname string, username string, password string, namespace string, isReadOnly bool) error {
 	logger.Debug("updating app registry",
 		zap.String("appID", appID))
 
@@ -66,8 +68,8 @@ func (s *KOTSStore) UpdateRegistry(appID string, hostname string, username strin
 
 	if password == registrytypes.PasswordMask {
 		// password unchanged - don't update it
-		query := `update app set registry_hostname = $1, registry_username = $2, namespace = $3 where id = $4`
-		_, err := db.Exec(query, hostname, username, namespace, appID)
+		query := `update app set registry_hostname = $1, registry_username = $2, namespace = $3, registry_is_readonly = $4 where id = $5`
+		_, err := db.Exec(query, hostname, username, namespace, isReadOnly, appID)
 		if err != nil {
 			return errors.Wrap(err, "failed to update registry settings")
 		}
@@ -79,8 +81,8 @@ func (s *KOTSStore) UpdateRegistry(appID string, hostname string, username strin
 
 		passwordEnc := base64.StdEncoding.EncodeToString(cipher.Encrypt([]byte(password)))
 
-		query := `update app set registry_hostname = $1, registry_username = $2, registry_password_enc = $3, namespace = $4 where id = $5`
-		_, err = db.Exec(query, hostname, username, passwordEnc, namespace, appID)
+		query := `update app set registry_hostname = $1, registry_username = $2, registry_password_enc = $3, namespace = $4, registry_is_readonly = $5 where id = $6`
+		_, err = db.Exec(query, hostname, username, passwordEnc, namespace, isReadOnly, appID)
 		if err != nil {
 			return errors.Wrap(err, "failed to update registry settings")
 		}

@@ -63,10 +63,10 @@ func (mr *MockStoreMockRecorder) RunMigrations() *gomock.Call {
 }
 
 // GetRegistryDetailsForApp mocks base method
-func (m *MockStore) GetRegistryDetailsForApp(appID string) (*types8.RegistrySettings, error) {
+func (m *MockStore) GetRegistryDetailsForApp(appID string) (types8.RegistrySettings, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetRegistryDetailsForApp", appID)
-	ret0, _ := ret[0].(*types8.RegistrySettings)
+	ret0, _ := ret[0].(types8.RegistrySettings)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -78,17 +78,17 @@ func (mr *MockStoreMockRecorder) GetRegistryDetailsForApp(appID interface{}) *go
 }
 
 // UpdateRegistry mocks base method
-func (m *MockStore) UpdateRegistry(appID, hostname, username, password, namespace string) error {
+func (m *MockStore) UpdateRegistry(appID, hostname, username, password, namespace string, isReadOnly bool) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UpdateRegistry", appID, hostname, username, password, namespace)
+	ret := m.ctrl.Call(m, "UpdateRegistry", appID, hostname, username, password, namespace, isReadOnly)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // UpdateRegistry indicates an expected call of UpdateRegistry
-func (mr *MockStoreMockRecorder) UpdateRegistry(appID, hostname, username, password, namespace interface{}) *gomock.Call {
+func (mr *MockStoreMockRecorder) UpdateRegistry(appID, hostname, username, password, namespace, isReadOnly interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateRegistry", reflect.TypeOf((*MockStore)(nil).UpdateRegistry), appID, hostname, username, password, namespace)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateRegistry", reflect.TypeOf((*MockStore)(nil).UpdateRegistry), appID, hostname, username, password, namespace, isReadOnly)
 }
 
 // ListSupportBundles mocks base method
@@ -675,18 +675,18 @@ func (mr *MockStoreMockRecorder) GetAppFromSlug(slug interface{}) *gomock.Call {
 }
 
 // CreateApp mocks base method
-func (m *MockStore) CreateApp(name, upstreamURI, licenseData string, isAirgapEnabled, skipImagePush bool) (*types3.App, error) {
+func (m *MockStore) CreateApp(name, upstreamURI, licenseData string, isAirgapEnabled, skipImagePush, registryIsReadOnly bool) (*types3.App, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CreateApp", name, upstreamURI, licenseData, isAirgapEnabled, skipImagePush)
+	ret := m.ctrl.Call(m, "CreateApp", name, upstreamURI, licenseData, isAirgapEnabled, skipImagePush, registryIsReadOnly)
 	ret0, _ := ret[0].(*types3.App)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // CreateApp indicates an expected call of CreateApp
-func (mr *MockStoreMockRecorder) CreateApp(name, upstreamURI, licenseData, isAirgapEnabled, skipImagePush interface{}) *gomock.Call {
+func (mr *MockStoreMockRecorder) CreateApp(name, upstreamURI, licenseData, isAirgapEnabled, skipImagePush, registryIsReadOnly interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateApp", reflect.TypeOf((*MockStore)(nil).CreateApp), name, upstreamURI, licenseData, isAirgapEnabled, skipImagePush)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateApp", reflect.TypeOf((*MockStore)(nil).CreateApp), name, upstreamURI, licenseData, isAirgapEnabled, skipImagePush, registryIsReadOnly)
 }
 
 // ListDownstreamsForApp mocks base method
@@ -1330,10 +1330,10 @@ func (m *MockRegistryStore) EXPECT() *MockRegistryStoreMockRecorder {
 }
 
 // GetRegistryDetailsForApp mocks base method
-func (m *MockRegistryStore) GetRegistryDetailsForApp(appID string) (*types8.RegistrySettings, error) {
+func (m *MockRegistryStore) GetRegistryDetailsForApp(appID string) (types8.RegistrySettings, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetRegistryDetailsForApp", appID)
-	ret0, _ := ret[0].(*types8.RegistrySettings)
+	ret0, _ := ret[0].(types8.RegistrySettings)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -1345,17 +1345,17 @@ func (mr *MockRegistryStoreMockRecorder) GetRegistryDetailsForApp(appID interfac
 }
 
 // UpdateRegistry mocks base method
-func (m *MockRegistryStore) UpdateRegistry(appID, hostname, username, password, namespace string) error {
+func (m *MockRegistryStore) UpdateRegistry(appID, hostname, username, password, namespace string, isReadOnly bool) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UpdateRegistry", appID, hostname, username, password, namespace)
+	ret := m.ctrl.Call(m, "UpdateRegistry", appID, hostname, username, password, namespace, isReadOnly)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // UpdateRegistry indicates an expected call of UpdateRegistry
-func (mr *MockRegistryStoreMockRecorder) UpdateRegistry(appID, hostname, username, password, namespace interface{}) *gomock.Call {
+func (mr *MockRegistryStoreMockRecorder) UpdateRegistry(appID, hostname, username, password, namespace, isReadOnly interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateRegistry", reflect.TypeOf((*MockRegistryStore)(nil).UpdateRegistry), appID, hostname, username, password, namespace)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateRegistry", reflect.TypeOf((*MockRegistryStore)(nil).UpdateRegistry), appID, hostname, username, password, namespace, isReadOnly)
 }
 
 // MockSupportBundleStore is a mock of SupportBundleStore interface
@@ -2126,18 +2126,18 @@ func (mr *MockAppStoreMockRecorder) GetAppFromSlug(slug interface{}) *gomock.Cal
 }
 
 // CreateApp mocks base method
-func (m *MockAppStore) CreateApp(name, upstreamURI, licenseData string, isAirgapEnabled, skipImagePush bool) (*types3.App, error) {
+func (m *MockAppStore) CreateApp(name, upstreamURI, licenseData string, isAirgapEnabled, skipImagePush, registryIsReadOnly bool) (*types3.App, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CreateApp", name, upstreamURI, licenseData, isAirgapEnabled, skipImagePush)
+	ret := m.ctrl.Call(m, "CreateApp", name, upstreamURI, licenseData, isAirgapEnabled, skipImagePush, registryIsReadOnly)
 	ret0, _ := ret[0].(*types3.App)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // CreateApp indicates an expected call of CreateApp
-func (mr *MockAppStoreMockRecorder) CreateApp(name, upstreamURI, licenseData, isAirgapEnabled, skipImagePush interface{}) *gomock.Call {
+func (mr *MockAppStoreMockRecorder) CreateApp(name, upstreamURI, licenseData, isAirgapEnabled, skipImagePush, registryIsReadOnly interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateApp", reflect.TypeOf((*MockAppStore)(nil).CreateApp), name, upstreamURI, licenseData, isAirgapEnabled, skipImagePush)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateApp", reflect.TypeOf((*MockAppStore)(nil).CreateApp), name, upstreamURI, licenseData, isAirgapEnabled, skipImagePush, registryIsReadOnly)
 }
 
 // ListDownstreamsForApp mocks base method

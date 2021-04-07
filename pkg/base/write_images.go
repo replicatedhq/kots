@@ -16,7 +16,7 @@ type WriteUpstreamImageOptions struct {
 	AppSlug        string
 	SourceRegistry registry.RegistryOptions
 	DestRegistry   registry.RegistryOptions
-	DryRun         bool
+	CopyImages     bool
 	IsAirgap       bool
 	Log            *logger.CLILogger
 	ReportWriter   io.Writer
@@ -29,7 +29,7 @@ type WriteUpstreamImageResult struct {
 	CheckedImages []kotsv1beta1.InstallationImage // all images found in the installation
 }
 
-func CopyUpstreamImages(options WriteUpstreamImageOptions) (*WriteUpstreamImageResult, error) {
+func ProcessUpstreamImages(options WriteUpstreamImageOptions) (*WriteUpstreamImageResult, error) {
 	additionalImages := make([]string, 0)
 	if options.Application != nil {
 		additionalImages = options.Application.Spec.AdditionalImages
@@ -41,7 +41,7 @@ func CopyUpstreamImages(options WriteUpstreamImageOptions) (*WriteUpstreamImageR
 		rewriteAll = true
 	}
 
-	newImages, err := image.CopyImages(options.SourceRegistry, options.DestRegistry, options.AppSlug, options.Log, options.ReportWriter, options.BaseDir, additionalImages, options.DryRun, rewriteAll, checkedImages)
+	newImages, err := image.ProcessImages(options.SourceRegistry, options.DestRegistry, options.AppSlug, options.Log, options.ReportWriter, options.BaseDir, additionalImages, options.CopyImages, rewriteAll, checkedImages)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to save images")
 	}

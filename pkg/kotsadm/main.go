@@ -132,6 +132,7 @@ func Deploy(deployOptions types.DeployOptions) error {
 	var images []kustomizetypes.Image
 
 	if deployOptions.AirgapRootDir != "" && deployOptions.KotsadmOptions.OverrideRegistry != "" {
+		var err error
 		pushOptions := types.PushImagesOptions{
 			Registry: registry.RegistryOptions{
 				Endpoint:  deployOptions.KotsadmOptions.OverrideRegistry,
@@ -142,11 +143,17 @@ func Deploy(deployOptions types.DeployOptions) error {
 			ProgressWriter: deployOptions.ProgressWriter,
 		}
 
-		var err error
-		imagesRootDir := filepath.Join(deployOptions.AirgapRootDir, "images")
-		images, err = TagAndPushAppImagesFromPath(imagesRootDir, pushOptions)
-		if err != nil {
-			return errors.Wrap(err, "failed to list image formats")
+		if deployOptions.DisableImagePush {
+			images, err = GetImagesFromBundle(deployOptions.AirgapBundle, pushOptions)
+			if err != nil {
+				return errors.Wrap(err, "failed to get images from bundle")
+			}
+		} else {
+			imagesRootDir := filepath.Join(deployOptions.AirgapRootDir, "images")
+			images, err = TagAndPushAppImagesFromPath(imagesRootDir, pushOptions)
+			if err != nil {
+				return errors.Wrap(err, "failed to list image formats")
+			}
 		}
 
 		airgapPath = deployOptions.AirgapRootDir
@@ -895,6 +902,11 @@ func GetKotsadmOptionsFromCluster(namespace string, clientset kubernetes.Interfa
 			return kotsadmOptions, nil
 		}
 		return kotsadmOptions, errors.Wrap(err, "failed to get existing kotsadm config map")
+	}
+
+	// this can be set even if there is no registry endpoint
+	if configMap.Data["registry-is-read-only"] == "true" {
+		kotsadmOptions.IsReadOnly = true
 	}
 
 	endpoint := configMap.Data["kotsadm-registry"]

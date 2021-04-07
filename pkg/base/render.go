@@ -7,20 +7,21 @@ import (
 )
 
 type RenderOptions struct {
-	SplitMultiDocYAML      bool
-	Namespace              string
-	HelmVersion            string
-	HelmOptions            []string
-	HelmValues             map[string]interface{}
-	LocalRegistryHost      string
-	LocalRegistryNamespace string
-	LocalRegistryUsername  string
-	LocalRegistryPassword  string
-	ExcludeKotsKinds       bool
-	AppSlug                string
-	Sequence               int64
-	IsAirgap               bool
-	Log                    *logger.CLILogger
+	SplitMultiDocYAML       bool
+	Namespace               string
+	HelmVersion             string
+	HelmOptions             []string
+	HelmValues              map[string]interface{}
+	LocalRegistryHost       string
+	LocalRegistryNamespace  string
+	LocalRegistryUsername   string
+	LocalRegistryPassword   string
+	LocalRegistryIsReadOnly bool
+	ExcludeKotsKinds        bool
+	AppSlug                 string
+	Sequence                int64
+	IsAirgap                bool
+	Log                     *logger.CLILogger
 }
 
 // RenderUpstream is responsible for any conversions or transpilation steps are required

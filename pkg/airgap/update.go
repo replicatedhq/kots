@@ -175,6 +175,7 @@ func UpdateAppFromPath(a *apptypes.App, airgapRoot string, airgapBundlePath stri
 			Namespace:  registrySettings.Namespace,
 			Username:   registrySettings.Username,
 			Password:   registrySettings.Password,
+			IsReadOnly: registrySettings.IsReadOnly,
 		},
 		AppSlug:     a.Slug,
 		AppSequence: appSequence,
