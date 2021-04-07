@@ -16,8 +16,9 @@ func getWebConfig(ctx context.Context, clientset kubernetes.Interface, namespace
 		Title: "Admin Console",
 		Theme: &kotsv1beta1.IdentityWebConfigTheme{
 			StyleCSSBase64: KotsStyleCSSBase64,
-			LogoURL:        KotsLogoURL,
-			FaviconBase64:  KotsFaviconBase64,
+			// LogoURL:        KotsLogoURL,
+			LogoBase64:    KotsLogoBase64,
+			FaviconBase64: KotsFaviconBase64,
 		},
 	}
 
@@ -50,6 +51,10 @@ func getWebConfig(ctx context.Context, clientset kubernetes.Interface, namespace
 
 	application := obj.(*kotsv1beta1.Application)
 	if application.Spec.Icon != "" {
+		// NOTE: this will not work for base64 icons
+		// something to do with the dex templating
+		// we will have to override the template
+		// <img class="theme-navbar__logo" src="{{ url .ReqPath logo }}">
 		webConfig.Theme.LogoURL = application.Spec.Icon
 	}
 	if application.Spec.Title != "" {
