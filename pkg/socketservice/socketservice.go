@@ -162,17 +162,17 @@ func deployLoop() {
 				logger.Infof("Deploy success for app %s in cluster %s", a.ID, clusterSocket.ClusterID)
 			}
 		}
-
-		time.Sleep(5 * time.Second)
 	}
 }
 
 func processDeploySocketForApp(clusterSocket *ClusterSocket, a *apptypes.App) (bool, error) {
-	deployedVersion, err := getDeployedVersionForApp(clusterSocket, a)
-	if err != nil {
-		return false, errors.Wrap(err, "failed to get deployed version")
-	} else if deployedVersion == nil {
+	if a.RestoreInProgressName != "" {
 		return false, nil
+	}
+
+	deployedVersion, err := downstream.GetCurrentVersion(a.ID, clusterSocket.ClusterID)
+	if err != nil {
+		return false, errors.Wrap(err, "failed to get current downstream version")
 	}
 
 	if value, ok := clusterSocket.LastDeployedSequences[a.ID]; ok && value == deployedVersion.ParentSequence {
@@ -184,15 +184,6 @@ func processDeploySocketForApp(clusterSocket *ClusterSocket, a *apptypes.App) (b
 		return false, errors.Wrap(err, "failed to deploy version")
 	}
 	return true, nil
-}
-
-func getDeployedVersionForApp(clusterSocket *ClusterSocket, a *apptypes.App) (*downstreamtypes.DownstreamVersion, error) {
-	if a.RestoreInProgressName != "" {
-		return nil, nil
-	}
-
-	deployedVersion, err := downstream.GetCurrentVersion(a.ID, clusterSocket.ClusterID)
-	return deployedVersion, errors.Wrap(err, "failed to get current downstream version")
 }
 
 func deployVersionForApp(clusterSocket *ClusterSocket, a *apptypes.App, deployedVersion *downstreamtypes.DownstreamVersion) error {
