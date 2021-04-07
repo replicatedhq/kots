@@ -271,42 +271,17 @@ func CreateAppFromAirgap(opts CreateAirgapAppOpts) (finalError error) {
 
 	if opts.IsAutomated && kotsKinds.Config != nil {
 		// bypass the config screen if no configuration is required
-		licenseSpec, err := kotsKinds.Marshal("kots.io", "v1beta1", "License")
-		if err != nil {
-			return errors.Wrap(err, "failed to marshal license spec")
+		registrySettings := registrytypes.RegistrySettings{
+			Hostname:   opts.RegistryHost,
+			Namespace:  opts.RegistryNamespace,
+			Username:   opts.RegistryUsername,
+			Password:   opts.RegistryPassword,
+			IsReadOnly: opts.RegistryIsReadOnly,
 		}
-
-		configSpec, err := kotsKinds.Marshal("kots.io", "v1beta1", "Config")
-		if err != nil {
-			return errors.Wrap(err, "failed to marshal config spec")
-		}
-
-		configValuesSpec, err := kotsKinds.Marshal("kots.io", "v1beta1", "ConfigValues")
-		if err != nil {
-			return errors.Wrap(err, "failed to marshal configvalues spec")
-		}
-
-		identityConfigSpec, err := kotsKinds.Marshal("kots.io", "v1beta1", "IdentityConfig")
-		if err != nil {
-			return errors.Wrap(err, "failed to marshal identityconfig spec")
-		}
-
-		configOpts := kotsadmconfig.ConfigOptions{
-			ConfigSpec:         configSpec,
-			ConfigValuesSpec:   configValuesSpec,
-			LicenseSpec:        licenseSpec,
-			IdentityConfigSpec: identityConfigSpec,
-			RegistryHost:       opts.RegistryHost,
-			RegistryNamespace:  opts.RegistryNamespace,
-			RegistryUser:       opts.RegistryUsername,
-			RegistryPassword:   opts.RegistryPassword,
-		}
-
-		needsConfig, err := kotsadmconfig.NeedsConfiguration(configOpts)
+		needsConfig, err := kotsadmconfig.NeedsConfiguration(kotsKinds, registrySettings)
 		if err != nil {
 			return errors.Wrap(err, "failed to check if app needs configuration")
 		}
-
 		if !needsConfig {
 			if opts.SkipPreflights {
 				if err := version.DeployVersion(opts.PendingApp.ID, newSequence); err != nil {

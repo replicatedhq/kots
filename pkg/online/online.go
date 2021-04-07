@@ -185,38 +185,14 @@ func CreateAppFromOnline(pendingApp *types.PendingApp, upstreamURI string, isAut
 
 	if isAutomated && kotsKinds.Config != nil {
 		// bypass the config screen if no configuration is required
-		licenseSpec, err := kotsKinds.Marshal("kots.io", "v1beta1", "License")
+		registrySettings, err := store.GetStore().GetRegistryDetailsForApp(pendingApp.ID)
 		if err != nil {
-			return nil, errors.Wrap(err, "failed to marshal license spec")
+			return nil, errors.Wrap(err, "failed to get registry settings for app")
 		}
-
-		configSpec, err := kotsKinds.Marshal("kots.io", "v1beta1", "Config")
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to marshal config spec")
-		}
-
-		configValuesSpec, err := kotsKinds.Marshal("kots.io", "v1beta1", "ConfigValues")
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to marshal configvalues spec")
-		}
-
-		identityConfigSpec, err := kotsKinds.Marshal("kots.io", "v1beta1", "IdentityConfig")
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to marshal identityconfig spec")
-		}
-
-		configOptions := kotsadmconfig.ConfigOptions{
-			ConfigSpec:         configSpec,
-			ConfigValuesSpec:   configValuesSpec,
-			LicenseSpec:        licenseSpec,
-			IdentityConfigSpec: identityConfigSpec,
-			// TODO: are there ever registry settings here?
-		}
-		needsConfig, err := kotsadmconfig.NeedsConfiguration(configOptions)
+		needsConfig, err := kotsadmconfig.NeedsConfiguration(kotsKinds, registrySettings)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to check if app needs configuration")
 		}
-
 		if !needsConfig {
 			if skipPreflights {
 				if err := version.DeployVersion(pendingApp.ID, newSequence); err != nil {

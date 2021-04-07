@@ -21,6 +21,7 @@ import (
 	versiontypes "github.com/replicatedhq/kots/pkg/api/version/types"
 	apptypes "github.com/replicatedhq/kots/pkg/app/types"
 	gitopstypes "github.com/replicatedhq/kots/pkg/gitops/types"
+	kotsadmconfig "github.com/replicatedhq/kots/pkg/kotsadmconfig"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/kustomize"
 	"github.com/replicatedhq/kots/pkg/logger"
@@ -340,6 +341,11 @@ func (s *OCIStore) CreateAppVersion(appID string, currentSequence *int64, filesI
 		previousArchiveDir = previousDir
 	}
 
+	registrySettings, err := s.GetRegistryDetailsForApp(appID)
+	if err != nil {
+		return int64(0), errors.Wrap(err, "failed to get app registry info")
+	}
+
 	downstreams, err := s.ListDownstreamsForApp(appID)
 	if err != nil {
 		return int64(0), errors.Wrap(err, "failed to list downstreams")
@@ -350,10 +356,20 @@ func (s *OCIStore) CreateAppVersion(appID string, currentSequence *int64, filesI
 		// will support multiple downstreams, so this is cleaner here for now
 
 		downstreamStatus := "pending"
-		if currentSequence == nil && kotsKinds.Config != nil {
+		if currentSequence == nil && kotsKinds.Config != nil { // initial version should always require configuration (if exists) even if all required items are already set and have values (except for automated installs, which can override this later)
 			downstreamStatus = "pending_config"
 		} else if kotsKinds.Preflight != nil && !skipPreflights {
 			downstreamStatus = "pending_preflight"
+		}
+		if currentSequence != nil { // only check if the version needs configuration for later versions (not the initial one) since the config is always required for the initial version (except for automated installs, which can override that later)
+			// check if version needs additional configuration
+			t, err := kotsadmconfig.NeedsConfiguration(kotsKinds, registrySettings)
+			if err != nil {
+				return int64(0), errors.Wrap(err, "failed to check if version needs configuration")
+			}
+			if t {
+				downstreamStatus = "pending_config"
+			}
 		}
 
 		diffSummary, diffSummaryError := "", ""
