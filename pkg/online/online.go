@@ -19,7 +19,6 @@ import (
 	"github.com/replicatedhq/kots/pkg/preflight"
 	"github.com/replicatedhq/kots/pkg/pull"
 	"github.com/replicatedhq/kots/pkg/redact"
-	registrytypes "github.com/replicatedhq/kots/pkg/registry/types"
 	"github.com/replicatedhq/kots/pkg/reporting"
 	"github.com/replicatedhq/kots/pkg/store"
 	"github.com/replicatedhq/kots/pkg/supportbundle"
@@ -186,7 +185,10 @@ func CreateAppFromOnline(pendingApp *types.PendingApp, upstreamURI string, isAut
 
 	if isAutomated && kotsKinds.Config != nil {
 		// bypass the config screen if no configuration is required
-		registrySettings := registrytypes.RegistrySettings{} // TODO: are there ever registry settings here?
+		registrySettings, err := store.GetStore().GetRegistryDetailsForApp(pendingApp.ID)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to get registry settings for app")
+		}
 		needsConfig, err := kotsadmconfig.NeedsConfiguration(kotsKinds, registrySettings)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to check if app needs configuration")
