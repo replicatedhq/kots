@@ -375,7 +375,7 @@ class AirgapRegistrySettings extends Component {
               }
             </div>
           }
-          <div className="flex u-marginBottom--5">
+          <div className="flex u-marginBottom--30">
             <div className="flex1">
               <p className="u-fontSize--normal u-color--tuna u-fontWeight--bold u-lineHeight--normal u-marginBottom--5">Registry Namespace</p>
               <p className="u-lineHeight--normal u-fontSize--small u-color--dustyGray u-fontWeight--medium u-marginBottom--10">{namespaceSubtext}</p>
@@ -383,15 +383,27 @@ class AirgapRegistrySettings extends Component {
             </div>
           </div>
           <div className="flex u-marginBottom--5">
-            <div className="flex1">
-              <p className="u-fontSize--normal u-color--tuna u-fontWeight--bold u-lineHeight--normal u-marginBottom--5">Disable Pushing Images to Registry</p>
-              <p className="u-lineHeight--normal u-fontSize--small u-color--dustyGray u-fontWeight--medium u-marginBottom--10">{imagePushSubtext}</p>
-              <input type="checkbox" className="u-cursor--pointer" checked={isReadOnly} onChange={(e) => { this.handleFormChange("isReadOnly", e.target.checked) }} />
+            <div className="BoxedCheckbox-wrapper flex1 u-textAlign--left">
+              <div className={`flex-auto flex ${isReadOnly ? "is-active" : ""}`}>
+                <input
+                  type="checkbox"
+                  className="u-cursor--pointer"
+                  id="ingressEnabled"
+                  checked={isReadOnly}
+                  onChange={(e) => { this.handleFormChange("isReadOnly", e.target.checked) }}
+                />
+                <label htmlFor="ingressEnabled" className="flex1 flex u-width--full u-position--relative u-cursor--pointer u-userSelect--none" style={{ marginTop: "2px" }}>
+                  <div className="flex flex-column u-marginLeft--5 justifyContent--center">
+                    <p className="u-fontSize--normal u-color--tuna u-fontWeight--bold u-marginBottom--5">Disable Pushing Images to Registry</p>
+                    <p className="u-lineHeight--normal u-fontSize--small u-color--dustyGray u-fontWeight--medium">{imagePushSubtext}</p>
+                  </div>
+                </label>
+              </div>
             </div>
           </div>
         </form>
         {hideCta ? null :
-          <div>
+          <div className="u-marginBottom--20 u-paddingTop--10">
             {showProgress ?
               <div className="u-marginTop--20">
                 <Loader size="30" />
