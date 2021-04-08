@@ -307,7 +307,9 @@ func (c *Client) registerHandlers(socketClient *socket.Client) error {
 		}
 
 		c.shutdownNamespacesInformer()
-		c.runNamespacesInformer()
+		if len(c.watchedNamespaces) > 0 {
+			c.runNamespacesInformer()
+		}
 
 	})
 	if err != nil {
