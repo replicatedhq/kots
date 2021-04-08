@@ -1,3 +1,9 @@
+
+# This workflow will add the '@actions/safe-to-test' label.
+# This action can only be triggered by someone who can add labels (maintainer permissions).
+# In addition this action will only run on the upstream repo.
+# Pull requests from forks will have to have the label added manually by a maintainer.
+
 name: "Label '@actions/safe-to-test'"
 
 on:
