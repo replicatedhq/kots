@@ -7,6 +7,10 @@ import (
 	"strings"
 )
 
+const (
+	AzureDefaultCloud = "AzurePublicCloud"
+)
+
 type Azure struct {
 	SubscriptionID string
 	TenantID       string

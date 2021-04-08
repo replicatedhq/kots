@@ -661,7 +661,7 @@ func updateGlobalStore(ctx context.Context, store *types.Store, kotsadmNamepsace
 }
 
 // GetGlobalStore will return the global store from kotsadmVeleroBackupStorageLocation
-// or will find it, is the param is nil
+// or will find it, if the param is nil
 func GetGlobalStore(ctx context.Context, kotsadmNamepsace string, kotsadmVeleroBackendStorageLocation *velerov1.BackupStorageLocation) (*types.Store, error) {
 	clientset, err := k8sutil.GetClientset()
 	if err != nil {
@@ -754,7 +754,7 @@ func GetGlobalStore(ctx context.Context, kotsadmNamepsace string, kotsadmVeleroB
 		}
 
 		if store.Azure.CloudName == "" {
-			store.Azure.CloudName = "AzurePublicCloud"
+			store.Azure.CloudName = providers.AzureDefaultCloud
 		}
 
 		break
