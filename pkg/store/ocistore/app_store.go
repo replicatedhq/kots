@@ -211,15 +211,14 @@ func (s *OCIStore) CreateApp(name string, upstreamURI string, licenseData string
 	id := ksuid.New().String()
 
 	app := apptypes.App{
-		ID:                 id,
-		Name:               name,
-		IconURI:            "",
-		CreatedAt:          time.Now(),
-		Slug:               slugProposal,
-		UpstreamURI:        upstreamURI,
-		License:            licenseData,
-		InstallState:       installState,
-		RegistryIsReadOnly: registryIsReadOnly,
+		ID:           id,
+		Name:         name,
+		IconURI:      "",
+		CreatedAt:    time.Now(),
+		Slug:         slugProposal,
+		UpstreamURI:  upstreamURI,
+		License:      licenseData,
+		InstallState: installState,
 	}
 	b, err := json.Marshal(app)
 	if err != nil {
@@ -233,6 +232,15 @@ func (s *OCIStore) CreateApp(name string, upstreamURI string, licenseData string
 	appListConfigmap.Data[id] = string(b)
 	if err := s.updateConfigmap(appListConfigmap); err != nil {
 		return nil, errors.Wrap(err, "failed to update app list")
+	}
+
+	r, err := s.GetRegistryDetailsForApp(id)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get app registry info")
+	}
+	err = s.UpdateRegistry(id, r.Hostname, r.Username, r.Password, r.Namespace, registryIsReadOnly)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to update app registry info")
 	}
 
 	return s.GetApp(id)

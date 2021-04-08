@@ -75,17 +75,17 @@ func (h *Handler) UpdateAppRegistry(w http.ResponseWriter, r *http.Request) {
 
 	updateAppRegistryRequest := UpdateAppRegistryRequest{}
 	if err := json.NewDecoder(r.Body).Decode(&updateAppRegistryRequest); err != nil {
-		logger.Error(err)
+		logger.Error(errors.Wrap(err, "failed to decode UpdateAppRegistry request body"))
 		updateAppRegistryResponse.Error = err.Error()
-		JSON(w, 500, updateAppRegistryResponse)
+		JSON(w, http.StatusInternalServerError, updateAppRegistryResponse)
 		return
 	}
 
 	currentStatus, _, err := store.GetStore().GetTaskStatus("image-rewrite")
 	if err != nil {
-		logger.Error(err)
+		logger.Error(errors.Wrap(err, "failed to get image-rewrite taks status"))
 		updateAppRegistryResponse.Error = err.Error()
-		JSON(w, 500, updateAppRegistryResponse)
+		JSON(w, http.StatusInternalServerError, updateAppRegistryResponse)
 		return
 	}
 
@@ -93,22 +93,22 @@ func (h *Handler) UpdateAppRegistry(w http.ResponseWriter, r *http.Request) {
 		err := errors.New("image-rewrite is already running, not starting a new one")
 		logger.Error(err)
 		updateAppRegistryResponse.Error = err.Error()
-		JSON(w, 500, updateAppRegistryResponse)
+		JSON(w, http.StatusInternalServerError, updateAppRegistryResponse)
 		return
 	}
 
 	if err := store.GetStore().ClearTaskStatus("image-rewrite"); err != nil {
-		logger.Error(err)
+		logger.Error(errors.Wrap(err, "failed to clear image-rewrite taks status"))
 		updateAppRegistryResponse.Error = err.Error()
-		JSON(w, 500, updateAppRegistryResponse)
+		JSON(w, http.StatusInternalServerError, updateAppRegistryResponse)
 		return
 	}
 
 	foundApp, err := store.GetStore().GetAppFromSlug(mux.Vars(r)["appSlug"])
 	if err != nil {
-		logger.Error(err)
+		logger.Error(errors.Wrap(err, "failed to get app from slug"))
 		updateAppRegistryResponse.Error = err.Error()
-		JSON(w, 500, updateAppRegistryResponse)
+		JSON(w, http.StatusInternalServerError, updateAppRegistryResponse)
 		return
 	}
 
@@ -119,7 +119,7 @@ func (h *Handler) UpdateAppRegistry(w http.ResponseWriter, r *http.Request) {
 	// if hostname and namespace have not changed, we don't need to re-push
 	registrySettings, err := store.GetStore().GetRegistryDetailsForApp(foundApp.ID)
 	if err != nil {
-		logger.Error(err)
+		logger.Error(errors.Wrap(err, "failed to get app registry settings"))
 		updateAppRegistryResponse.Error = err.Error()
 		JSON(w, http.StatusInternalServerError, updateAppRegistryResponse)
 		return
@@ -160,7 +160,7 @@ func (h *Handler) UpdateAppRegistry(w http.ResponseWriter, r *http.Request) {
 					causeErr,
 				)
 			default:
-				logger.Error(err)
+				logger.Error(errors.Wrap(err, "failed to rewrite images"))
 			}
 			return
 		}
@@ -168,28 +168,24 @@ func (h *Handler) UpdateAppRegistry(w http.ResponseWriter, r *http.Request) {
 
 		newSequence, err := store.GetStore().CreateAppVersion(foundApp.ID, &foundApp.CurrentSequence, appDir, "Registry Change", false, &version.DownstreamGitOps{})
 		if err != nil {
-			logger.Error(err)
-			updateAppRegistryResponse.Error = err.Error()
-			JSON(w, http.StatusInternalServerError, updateAppRegistryResponse)
-			return
-		}
-
-		if err := preflight.Run(foundApp.ID, foundApp.Slug, newSequence, foundApp.IsAirgap, appDir); err != nil {
-			logger.Error(err)
-			updateAppRegistryResponse.Error = err.Error()
-			JSON(w, http.StatusInternalServerError, updateAppRegistryResponse)
+			logger.Error(errors.Wrap(err, "failed to create app version"))
 			return
 		}
 
 		err = store.GetStore().UpdateRegistry(foundApp.ID, updateAppRegistryRequest.Hostname, updateAppRegistryRequest.Username, updateAppRegistryRequest.Password, updateAppRegistryRequest.Namespace, updateAppRegistryRequest.IsReadOnly)
 		if err != nil {
-			logger.Error(err)
+			logger.Error(errors.Wrap(err, "failed to update registry"))
+			return
+		}
+
+		if err := preflight.Run(foundApp.ID, foundApp.Slug, newSequence, foundApp.IsAirgap, appDir); err != nil {
+			logger.Error(errors.Wrap(err, "failed to run preflights"))
 			return
 		}
 	}()
 
 	updateAppRegistryResponse.Success = true
-	JSON(w, 200, updateAppRegistryResponse)
+	JSON(w, http.StatusOK, updateAppRegistryResponse)
 }
 
 func registrySettingsChanged(new UpdateAppRegistryRequest, current registrytypes.RegistrySettings) bool {

@@ -37,9 +37,9 @@ require (
 	github.com/go-logfmt/logfmt v0.5.0
 	github.com/go-logr/logr v0.3.0 // indirect
 	github.com/go-logr/zapr v0.2.0 // indirect
+	github.com/go-test/deep v1.0.7
 	github.com/gofrs/uuid v3.3.0+incompatible // indirect
 	github.com/golang/mock v1.4.4
-	github.com/google/go-containerregistry v0.4.1 // indirect
 	github.com/google/gofuzz v1.1.0
 	github.com/google/uuid v1.1.2
 	github.com/googleapis/gnostic v0.5.1 // indirect
@@ -64,7 +64,7 @@ require (
 	github.com/pierrec/lz4 v2.2.6+incompatible // indirect
 	github.com/pkg/errors v0.9.1
 	github.com/replicatedhq/kurl/kurlkinds v0.0.0-20210227025942-3b373149acb7
-	github.com/replicatedhq/troubleshoot v0.10.12
+	github.com/replicatedhq/troubleshoot v0.10.16
 	github.com/replicatedhq/yaml/v3 v3.0.0-beta5-replicatedhq
 	github.com/robfig/cron v1.1.0
 	github.com/robfig/cron/v3 v3.0.1
@@ -91,6 +91,7 @@ require (
 	gopkg.in/go-playground/assert.v1 v1.2.1
 	gopkg.in/ini.v1 v1.51.0
 	gopkg.in/yaml.v2 v2.3.0
+	gotest.tools v2.2.0+incompatible
 	helm.sh/helm/v3 v3.5.2
 	k8s.io/api v0.20.4
 	k8s.io/apiextensions-apiserver v0.20.2
@@ -104,7 +105,7 @@ require (
 	k8s.io/utils v0.0.0-20210111153108-fddb29f9d009
 	rsc.io/letsencrypt v0.0.3 // indirect
 	sigs.k8s.io/application v0.8.2
-	sigs.k8s.io/controller-runtime v0.6.5
+	sigs.k8s.io/controller-runtime v0.8.3
 	sigs.k8s.io/kustomize/api v0.3.2
 	sigs.k8s.io/yaml v1.2.0
 )
@@ -140,4 +141,5 @@ replace (
 	k8s.io/sample-apiserver => k8s.io/sample-apiserver v0.20.2
 	k8s.io/sample-cli-plugin => k8s.io/sample-cli-plugin v0.20.2
 	k8s.io/sample-controller => k8s.io/sample-controller v0.20.2
+	sigs.k8s.io/controller-runtime => sigs.k8s.io/controller-runtime v0.6.5
 )
