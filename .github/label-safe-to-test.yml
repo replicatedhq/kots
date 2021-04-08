@@ -1,5 +1,5 @@
 
-# Add 'safe to test' label to any root file changes
+# Add '@actions/safe-to-test' label to any root file changes
 # This action can only be triggered by someone who can add labels (contributor permissions)
-safe to test:
-  - ./*
+'@actions/safe-to-test':
+  - '**/*'
