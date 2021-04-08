@@ -162,11 +162,13 @@ type ChartIdentifier struct {
 
 func (h *HelmChartSpec) GetHelmValues(values map[string]MappedChartValue) (map[string]interface{}, error) {
 	result := map[string]interface{}{}
+
 	for k, v := range values {
 		value, err := h.renderValue(&v)
 		if err != nil {
 			return nil, errors.Wrapf(err, "failed to render value at %s", k)
 		}
+
 		result[k] = value
 	}
 
