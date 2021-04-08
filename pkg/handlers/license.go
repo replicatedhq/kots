@@ -465,7 +465,7 @@ type platformLicenseType struct {
 }
 
 var cachedLicense *platformLicenseType
-var cachedLicenseMut sync.RWMutex
+var cachedLicenseMut sync.Mutex
 var cachedLicenseUpdateTime time.Time
 
 // GetPlatformLicenseCompatibility route is UNAUTHENTICATED
@@ -473,15 +473,11 @@ var cachedLicenseUpdateTime time.Time
 // This route exists for backwards compatibility with platform License API and should be called by
 // the application only.
 func (h *Handler) GetPlatformLicenseCompatibility(w http.ResponseWriter, r *http.Request) {
-	cachedLicenseMut.RLock()
-	if time.Now().Sub(cachedLicenseUpdateTime) < time.Second*30 && cachedLicense != nil { // if the last update was within 30s
-		defer cachedLicenseMut.RUnlock()
+	cachedLicenseMut.Lock()
+	defer cachedLicenseMut.Unlock()
+	if time.Now().Sub(cachedLicenseUpdateTime) < time.Second*3 && cachedLicense != nil { // if the last update was within 3s
 		JSON(w, http.StatusOK, *cachedLicense)
 		return
-	} else { // if the last update was not within 30s, drop the read lock and get a write lock instead
-		cachedLicenseMut.RUnlock()
-		cachedLicenseMut.Lock()
-		defer cachedLicenseMut.Unlock()
 	}
 
 	apps, err := store.GetStore().ListInstalledApps()
