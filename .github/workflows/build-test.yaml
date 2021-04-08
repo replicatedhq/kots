@@ -35,6 +35,7 @@ jobs:
   build-kots:
     runs-on: ubuntu-18.04
     needs: [build-web]
+    if: contains(github.event.pull_request.labels.*.name, '@actions/safe-to-test')
     steps:
       - uses: actions/setup-go@v2
         with:
