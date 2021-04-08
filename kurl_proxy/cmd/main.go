@@ -135,7 +135,7 @@ func watchSecret(certs chan cert, name string, secrets corev1.SecretInterface) {
 		FieldSelector: fields.OneTermEqualSelector("metadata.name", name).String(),
 	}
 	for {
-		w, err := secrets.Watch(opts)
+		w, err := secrets.Watch(context.TODO(), opts)
 		if err != nil {
 			log.Printf("Failed to watch secret %s: %v", name, err)
 			time.Sleep(time.Second * 5)
@@ -279,14 +279,14 @@ func getHttpsServer(upstream, dexUpstream *url.URL, tlsSecretName string, secret
 		}
 
 		hostString, success := c.GetPostForm("hostname")
-		if success != true {
+		if !success {
 			log.Println("Invalid hostname")
 			c.AbortWithStatus(http.StatusInternalServerError)
 			return
 		}
 		log.Printf("hostname=%v", hostString)
 
-		secret, err := secrets.Get(tlsSecretName, metav1.GetOptions{})
+		secret, err := secrets.Get(c.Request.Context(), tlsSecretName, metav1.GetOptions{})
 		if err != nil {
 			log.Print(err)
 			c.AbortWithStatus(http.StatusInternalServerError)
@@ -317,7 +317,7 @@ func getHttpsServer(upstream, dexUpstream *url.URL, tlsSecretName string, secret
 			} else {
 				delete(secret.Annotations, "acceptAnonymousUploads")
 			}
-			_, err = secrets.Update(secret)
+			_, err = secrets.Update(context.Background(), secret, metav1.UpdateOptions{})
 			if err != nil {
 				log.Printf("POST /tls/skip: %v", err)
 				c.AbortWithStatus(http.StatusInternalServerError)
@@ -347,7 +347,7 @@ func getHttpsServer(upstream, dexUpstream *url.URL, tlsSecretName string, secret
 		}
 
 		hostString, success := c.GetPostForm("hostname")
-		if success != true {
+		if !success {
 			log.Println("Invalid hostname")
 			c.AbortWithStatus(http.StatusInternalServerError)
 			return
@@ -367,7 +367,7 @@ func getHttpsServer(upstream, dexUpstream *url.URL, tlsSecretName string, secret
 			return
 		}
 
-		secret, err := secrets.Get(tlsSecretName, metav1.GetOptions{})
+		secret, err := secrets.Get(c.Request.Context(), tlsSecretName, metav1.GetOptions{})
 		if err != nil {
 			log.Print(err)
 			c.AbortWithStatus(http.StatusInternalServerError)
@@ -392,7 +392,7 @@ func getHttpsServer(upstream, dexUpstream *url.URL, tlsSecretName string, secret
 			} else {
 				delete(secret.Annotations, "acceptAnonymousUploads")
 			}
-			_, err = secrets.Update(secret)
+			_, err = secrets.Update(context.Background(), secret, metav1.UpdateOptions{})
 			if err != nil {
 				log.Print(err)
 				c.AbortWithStatus(http.StatusInternalServerError)
