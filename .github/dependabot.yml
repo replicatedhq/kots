@@ -1,17 +1,34 @@
 ---
 version: 2
 updates:
+
+  # Npm
+  - package-ecosystem: "npm"
+    directory: "/web"
+    schedule:
+      interval: "daily"
+
+  - package-ecosystem: "npm"
+    directory: "/migrations/fixtures"
+    schedule:
+      interval: "daily"
+
   ## Go mod
 
   - package-ecosystem: "gomod"
     directory: "/"
     schedule:
-      interval: "weekly"
+      interval: "daily"
 
   - package-ecosystem: "gomod"
     directory: "/kotsadm/operator"
     schedule:
-      interval: "weekly"
+      interval: "daily"
+
+  - package-ecosystem: "gomod"
+    directory: "/kurl_proxy"
+    schedule:
+      interval: "daily"
 
   ## Github Actions
 
