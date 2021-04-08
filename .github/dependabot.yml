@@ -72,11 +72,6 @@ updates:
       interval: "weekly"
 
   - package-ecosystem: "docker"
-    directory: "/web/deploy"
-    schedule:
-      interval: "weekly"
-
-  - package-ecosystem: "docker"
     directory: "/actions/containers"
     schedule:
       interval: "weekly"
