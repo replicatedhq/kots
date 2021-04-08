@@ -2,16 +2,18 @@
 version: 2
 updates:
 
-  # Npm
-  - package-ecosystem: "npm"
-    directory: "/web"
-    schedule:
-      interval: "daily"
+  # Security updates are automatic
+  # (ethan) Disabling this for now to prevent too many prs
+  # # Npm
+  # - package-ecosystem: "npm"
+  #   directory: "/web"
+  #   schedule:
+  #     interval: "daily"
 
-  - package-ecosystem: "npm"
-    directory: "/migrations/fixtures"
-    schedule:
-      interval: "daily"
+  # - package-ecosystem: "npm"
+  #   directory: "/migrations/fixtures"
+  #   schedule:
+  #     interval: "daily"
 
   ## Go mod
 
