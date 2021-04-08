@@ -33,8 +33,8 @@ func (r *ErrorBackoff) OnError(err error, fn func()) {
 		}
 	} else {
 		r.period = r.MinPeriod
-		r.lastError = err
-		r.lastErrorTime = time.Now()
 	}
+	r.lastError = err
+	r.lastErrorTime = time.Now()
 	fn()
 }
