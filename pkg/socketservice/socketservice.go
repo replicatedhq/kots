@@ -173,6 +173,8 @@ func processDeploySocketForApp(clusterSocket *ClusterSocket, a *apptypes.App) (b
 	deployedVersion, err := downstream.GetCurrentVersion(a.ID, clusterSocket.ClusterID)
 	if err != nil {
 		return false, errors.Wrap(err, "failed to get current downstream version")
+	} else if deployedVersion == nil {
+		return false, nil
 	}
 
 	if value, ok := clusterSocket.LastDeployedSequences[a.ID]; ok && value == deployedVersion.ParentSequence {
