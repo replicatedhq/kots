@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"io/ioutil"
 	"os"
 
 	"github.com/pkg/errors"
@@ -15,6 +14,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/registry"
+	registrytypes "github.com/replicatedhq/kots/pkg/registry/types"
 	"github.com/replicatedhq/kots/pkg/render"
 	"github.com/replicatedhq/kots/pkg/render/helper"
 	"github.com/replicatedhq/kots/pkg/store"
@@ -89,6 +89,9 @@ func Run(appID string, appSlug string, sequence int64, isAirgap bool, archiveDir
 		if err != nil {
 			return errors.Wrap(err, "failed to load rendered preflight")
 		}
+
+		injectDefaultPreflights(p, renderedKotsKinds, registrySettings)
+
 		collectors, err := registry.UpdateCollectorSpecsWithRegistryData(p.Spec.Collectors, registrySettings, renderedKotsKinds.Installation.Spec.KnownImages, renderedKotsKinds.License)
 		if err != nil {
 			return errors.Wrap(err, "failed to rewrite images in preflight")
@@ -201,9 +204,10 @@ func GetPreflightCommand(appSlug string) []string {
 	return comamnd
 }
 
-func CreateRenderedSpec(appID string, sequence int64, origin string, inCluster bool, preflight *troubleshootv1beta2.Preflight) error {
-	if preflight == nil {
-		preflight = &troubleshootv1beta2.Preflight{
+func CreateRenderedSpec(appID string, sequence int64, origin string, inCluster bool, kotsKinds *kotsutil.KotsKinds) error {
+	builtPreflight := kotsKinds.Preflight.DeepCopy()
+	if builtPreflight == nil {
+		builtPreflight = &troubleshootv1beta2.Preflight{
 			TypeMeta: v1.TypeMeta{
 				Kind:       "Preflight",
 				APIVersion: "troubleshoot.sh/v1beta2",
@@ -219,34 +223,31 @@ func CreateRenderedSpec(appID string, sequence int64, origin string, inCluster b
 		return errors.Wrap(err, "failed to get app")
 	}
 
+	registrySettings, err := store.GetStore().GetRegistryDetailsForApp(appID)
+	if err != nil {
+		return errors.Wrap(err, "failed to get registry settings for app")
+	}
+
+	injectDefaultPreflights(builtPreflight, kotsKinds, registrySettings)
+
+	collectors, err := registry.UpdateCollectorSpecsWithRegistryData(builtPreflight.Spec.Collectors, registrySettings, kotsKinds.Installation.Spec.KnownImages, kotsKinds.License)
+	if err != nil {
+		return errors.Wrap(err, "failed to rewrite images in preflight")
+	}
+	builtPreflight.Spec.Collectors = collectors
+
 	baseURL := os.Getenv("API_ADVERTISE_ENDPOINT")
 	if inCluster {
 		baseURL = os.Getenv("API_ENDPOINT")
 	} else if origin != "" {
 		baseURL = origin
 	}
-	preflight.Spec.UploadResultsTo = fmt.Sprintf("%s/api/v1/preflight/app/%s/sequence/%d", baseURL, app.Slug, sequence)
+	builtPreflight.Spec.UploadResultsTo = fmt.Sprintf("%s/api/v1/preflight/app/%s/sequence/%d", baseURL, app.Slug, sequence)
 
 	s := serializer.NewYAMLSerializer(serializer.DefaultMetaFactory, scheme.Scheme, scheme.Scheme)
 	var b bytes.Buffer
-	if err := s.Encode(preflight, &b); err != nil {
+	if err := s.Encode(builtPreflight, &b); err != nil {
 		return errors.Wrap(err, "failed to encode preflight")
-	}
-
-	archivePath, err := ioutil.TempDir("", "kotsadm")
-	if err != nil {
-		return errors.Wrap(err, "failed to create temp dir")
-	}
-	defer os.RemoveAll(archivePath)
-
-	err = store.GetStore().GetAppVersionArchive(appID, sequence, archivePath)
-	if err != nil {
-		return errors.Wrap(err, "failed to get current archive")
-	}
-
-	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(archivePath)
-	if err != nil {
-		return errors.Wrap(err, "failed to load current kotskinds")
 	}
 
 	templatedSpec := b.Bytes()
@@ -302,4 +303,48 @@ func CreateRenderedSpec(appID string, sequence int64, origin string, inCluster b
 	}
 
 	return nil
+}
+
+func injectDefaultPreflights(preflight *troubleshootv1beta2.Preflight, kotskinds *kotsutil.KotsKinds, registrySettings registrytypes.RegistrySettings) {
+	if !registrySettings.IsValid() || !registrySettings.IsReadOnly {
+		return
+	}
+
+	// Get images from Installation.KnownImages, see UpdateCollectorSpecsWithRegistryData
+	images := []string{}
+	for _, image := range kotskinds.Installation.Spec.KnownImages {
+		images = append(images, image.Image)
+	}
+
+	preflight.Spec.Collectors = append(preflight.Spec.Collectors, &troubleshootv1beta2.Collect{
+		RegistryImages: &troubleshootv1beta2.RegistryImages{
+			Images: images,
+		},
+	})
+	preflight.Spec.Analyzers = append(preflight.Spec.Analyzers, &troubleshootv1beta2.Analyze{
+		RegistryImages: &troubleshootv1beta2.RegistryImagesAnalyze{
+			AnalyzeMeta: troubleshootv1beta2.AnalyzeMeta{
+				CheckName: "Private Registry Images Available",
+			},
+			Outcomes: []*troubleshootv1beta2.Outcome{
+				{
+					Fail: &troubleshootv1beta2.SingleOutcome{
+						When:    "missing > 0",
+						Message: "Application uses images that cannot be found in the private registry",
+					},
+				},
+				{
+					Warn: &troubleshootv1beta2.SingleOutcome{
+						When:    "errors > 0",
+						Message: "Availability of application images in the private registry could not be verified.",
+					},
+				},
+				{
+					Pass: &troubleshootv1beta2.SingleOutcome{
+						Message: "All images used by the application are present in the private registry",
+					},
+				},
+			},
+		},
+	})
 }

@@ -24,8 +24,6 @@ func UpdateCollectorSpecsWithRegistryData(collectors []*troubleshootv1beta2.Coll
 
 	if localRegistryInfo.IsValid() {
 		for idx, collect := range collectors {
-			// only the run collector supports an image currently
-			// this is written as in if statement to support additional collectors that include images
 			if collect.Run != nil {
 				run := collect.Run
 
@@ -42,6 +40,27 @@ func UpdateCollectorSpecsWithRegistryData(collectors []*troubleshootv1beta2.Coll
 					},
 				}
 				collect.Run = run
+
+				updatedCollectors[idx] = collect
+			} else if collect.RegistryImages != nil {
+				pullSecret, err := kotsregistry.PullSecretForRegistries([]string{localRegistryInfo.Hostname}, localRegistryInfo.Username, localRegistryInfo.Password, collect.RegistryImages.Namespace)
+				if err != nil {
+					return nil, errors.Wrap(err, "failed to generate pull secret for registry")
+				}
+
+				collect.RegistryImages.ImagePullSecrets = &troubleshootv1beta2.ImagePullSecrets{
+					SecretType: "kubernetes.io/dockerconfigjson",
+					Data: map[string]string{
+						".dockerconfigjson": base64.StdEncoding.EncodeToString(pullSecret.Data[".dockerconfigjson"]),
+					},
+				}
+
+				images := []string{}
+				for _, knownImage := range knownImages {
+					image := rewriteImage(localRegistryInfo.Hostname, localRegistryInfo.Namespace, knownImage.Image)
+					images = append(images, image)
+				}
+				collect.RegistryImages.Images = images
 
 				updatedCollectors[idx] = collect
 
