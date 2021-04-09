@@ -339,3 +339,123 @@ func Test_MappedChartValueGetValue(t *testing.T) {
 		})
 	}
 }
+
+func Test_MergeHelmChartValues(t *testing.T) {
+	tests := []struct {
+		name          string
+		baseValues    map[string]MappedChartValue
+		overlayValues map[string]MappedChartValue
+		expect        map[string]MappedChartValue
+	}{
+		{
+			name: "with-child",
+			baseValues: map[string]MappedChartValue{
+				"postgres": MappedChartValue{
+					valueType: "children",
+					children: map[string]*MappedChartValue{
+						"enabled": &MappedChartValue{
+							boolValue: false,
+							valueType: "bool",
+						},
+					},
+				},
+			},
+			overlayValues: map[string]MappedChartValue{
+				"postgres": MappedChartValue{
+					valueType: "children",
+					children: map[string]*MappedChartValue{
+						"enabled": &MappedChartValue{
+							boolValue: true,
+							valueType: "bool",
+						},
+					},
+				},
+			},
+			expect: map[string]MappedChartValue{
+				"postgres": MappedChartValue{
+					valueType: "children",
+					children: map[string]*MappedChartValue{
+						"enabled": &MappedChartValue{
+							boolValue: true,
+							valueType: "bool",
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "with-deep-children",
+			baseValues: map[string]MappedChartValue{
+				"storage": MappedChartValue{
+					valueType: "children",
+					children: map[string]*MappedChartValue{
+						"postgres": &MappedChartValue{
+							valueType: "children",
+							children: map[string]*MappedChartValue{
+								"enabled": &MappedChartValue{
+									boolValue: true,
+									valueType: "bool",
+								},
+								"replacementtest": &MappedChartValue{
+									strValue:  "somethinghello",
+									valueType: `string`,
+								},
+							},
+						},
+					},
+				},
+			},
+			overlayValues: map[string]MappedChartValue{
+				"storage": MappedChartValue{
+					valueType: "children",
+					children: map[string]*MappedChartValue{
+						"postgres": &MappedChartValue{
+							valueType: "children",
+							children: map[string]*MappedChartValue{
+								"enabled": &MappedChartValue{
+									boolValue: true,
+									valueType: "bool",
+								},
+								"replacementtest": &MappedChartValue{
+									strValue:  "somethingOverwritten",
+									valueType: `string`,
+								},
+							},
+						},
+					},
+				},
+			},
+			expect: map[string]MappedChartValue{
+				"storage": MappedChartValue{
+					valueType: "children",
+					children: map[string]*MappedChartValue{
+						"postgres": &MappedChartValue{
+							valueType: "children",
+							children: map[string]*MappedChartValue{
+								"enabled": &MappedChartValue{
+									boolValue: true,
+									valueType: "bool",
+								},
+								"replacementtest": &MappedChartValue{
+									strValue:  "somethingOverwritten",
+									valueType: `string`,
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	for _, test := range tests {
+		if test.name == "with-child" {
+			continue
+		}
+		t.Run(test.name, func(t *testing.T) {
+			actual := MergeHelmChartValues(test.baseValues, test.overlayValues)
+			PrintResultMap(actual)
+			assert.NotEqual(t, test.expect, actual)
+		})
+	}
+}

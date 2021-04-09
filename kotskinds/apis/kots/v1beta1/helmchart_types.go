@@ -180,7 +180,7 @@ func MergeHelmChartValues(baseValues map[string]MappedChartValue,
 
 	result := map[string]MappedChartValue{}
 	for k, v := range baseValues {
-		if _, exists := overlayValues[k]; exists {
+		if _, exists := overlayValues[k]; !exists {
 			result[k] = baseValues[k]
 			continue
 		}
@@ -227,11 +227,10 @@ func mergeValueChildren(baseValues map[string]*MappedChartValue, overlayValues m
 }
 
 func PrintResultMap(baseValues map[string]MappedChartValue) {
-	for k, v := range baseValues {
+	for _, v := range baseValues {
 		if v.valueType == "children" {
 			RecursePrint(v.children)
 		}
-		fmt.Println("PrintResultMap+++++++++++++key, value\n", k, v)
 	}
 }
 
