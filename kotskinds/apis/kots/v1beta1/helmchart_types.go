@@ -180,49 +180,41 @@ func MergeHelmChartValues(baseValues map[string]MappedChartValue,
 
 	result := map[string]MappedChartValue{}
 	for k, v := range baseValues {
+		if _, exists := overlayValues[k]; exists {
+			result[k] = baseValues[k]
+			continue
+		}
 		if v.valueType != "children" {
-			if _, exists := overlayValues[k]; exists {
-				result[k] = overlayValues[k]
-			} else {
-				result[k] = baseValues[k]
-			}
+			result[k] = overlayValues[k]
 		} else {
-			tmp := MappedChartValue{}
-			tmp.valueType = "children"
-			if overlayValues[k].children != nil {
-				tmp.children = mergeValueChildren(v.children, overlayValues[k].children)
-			} else {
-				result[k] = v
+			result[k] = MappedChartValue{
+				valueType: "children",
+				children:  mergeValueChildren(v.children, overlayValues[k].children),
 			}
-			result[k] = tmp
-
 		}
 	}
-
 	for k, v := range overlayValues {
 		if _, exists := baseValues[k]; !exists {
 			result[k] = v
 		}
 	}
 	return result
-
 }
 
 func mergeValueChildren(baseValues map[string]*MappedChartValue, overlayValues map[string]*MappedChartValue) map[string]*MappedChartValue {
-
 	result := map[string]*MappedChartValue{}
 	for k, v := range baseValues {
+		if _, exists := overlayValues[k]; !exists {
+			result[k] = baseValues[k]
+			continue
+		}
 		if v.valueType != "children" {
-			if _, exists := overlayValues[k]; exists {
-				result[k] = overlayValues[k]
-			} else {
-				result[k] = baseValues[k]
-			}
+			result[k] = overlayValues[k]
 		} else {
-			tmp := &MappedChartValue{}
-			tmp.valueType = "children"
-			tmp.children = mergeValueChildren(v.children, overlayValues[k].children)
-			result[k] = tmp
+			result[k] = &MappedChartValue{
+				valueType: "children",
+				children:  mergeValueChildren(v.children, overlayValues[k].children),
+			}
 		}
 	}
 
@@ -232,11 +224,9 @@ func mergeValueChildren(baseValues map[string]*MappedChartValue, overlayValues m
 		}
 	}
 	return result
-
 }
 
 func PrintResultMap(baseValues map[string]MappedChartValue) {
-
 	for k, v := range baseValues {
 		if v.valueType == "children" {
 			RecursePrint(v.children)
