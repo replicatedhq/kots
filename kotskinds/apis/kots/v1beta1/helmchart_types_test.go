@@ -492,7 +492,7 @@ func Test_MergeHelmChartValues(t *testing.T) {
 									valueType: "bool",
 								},
 								"replacementtest": &MappedChartValue{
-									strValue:  "somethingOverwritten-hello",
+									strValue:  "somethingOverwritten",
 									valueType: `string`,
 								},
 							},
@@ -513,7 +513,8 @@ func Test_MergeHelmChartValues(t *testing.T) {
 			PrintResultMap(actual)
 			fmt.Println("Expected++++++++++++++")
 			PrintResultMap(test.expect)
-			diff := deep.Equal(actual, test.expect)
+			deep.CompareUnexportedFields = true
+			diff := deep.Equal(&actual, &test.expect)
 			fmt.Println("Diff ++++++++++++++", diff)
 			if len(diff) != 0 {
 				fmt.Printf("Failed diff compare with %s", strings.Join(diff, "\n"))
