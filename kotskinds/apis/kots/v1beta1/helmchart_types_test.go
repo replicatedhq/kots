@@ -501,6 +501,65 @@ func Test_MergeHelmChartValues(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "with-deep-children-missing-overlay",
+			baseValues: map[string]MappedChartValue{
+				"storage": MappedChartValue{
+					valueType: "children",
+					children: map[string]*MappedChartValue{
+						"postgres": &MappedChartValue{
+							valueType: "children",
+							children: map[string]*MappedChartValue{
+								"enabled": &MappedChartValue{
+									boolValue: true,
+									valueType: "bool",
+								},
+								"replacementtest": &MappedChartValue{
+									strValue:  "somethinghello",
+									valueType: `string`,
+								},
+							},
+						},
+					},
+				},
+			},
+			overlayValues: map[string]MappedChartValue{
+				"storage": MappedChartValue{
+					valueType: "children",
+					children: map[string]*MappedChartValue{
+						"postgres": &MappedChartValue{
+							valueType: "children",
+							children: map[string]*MappedChartValue{
+								"enabled": &MappedChartValue{
+									boolValue: true,
+									valueType: "bool",
+								},
+							},
+						},
+					},
+				},
+			},
+			expect: map[string]MappedChartValue{
+				"storage": MappedChartValue{
+					valueType: "children",
+					children: map[string]*MappedChartValue{
+						"postgres": &MappedChartValue{
+							valueType: "children",
+							children: map[string]*MappedChartValue{
+								"enabled": &MappedChartValue{
+									boolValue: true,
+									valueType: "bool",
+								},
+								"replacementtest": &MappedChartValue{
+									strValue:  "somethinghello",
+									valueType: `string`,
+								},
+							},
+						},
+					},
+				},
+			},
+		},
 	}
 
 	for _, test := range tests {
