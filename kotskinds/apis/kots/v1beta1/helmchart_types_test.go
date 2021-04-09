@@ -1,8 +1,11 @@
 package v1beta1
 
 import (
+	"fmt"
+	"strings"
 	"testing"
 
+	"github.com/go-test/deep"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -384,6 +387,58 @@ func Test_MergeHelmChartValues(t *testing.T) {
 			},
 		},
 		{
+			name: "base-only-no-overlay",
+			baseValues: map[string]MappedChartValue{
+				"postgres": MappedChartValue{
+					valueType: "children",
+					children: map[string]*MappedChartValue{
+						"enabled": &MappedChartValue{
+							boolValue: false,
+							valueType: "bool",
+						},
+					},
+				},
+			},
+			overlayValues: map[string]MappedChartValue{},
+			expect: map[string]MappedChartValue{
+				"postgres": MappedChartValue{
+					valueType: "children",
+					children: map[string]*MappedChartValue{
+						"enabled": &MappedChartValue{
+							boolValue: false,
+							valueType: "bool",
+						},
+					},
+				},
+			},
+		},
+		{
+			name:       "no-base-only-overlay",
+			baseValues: map[string]MappedChartValue{},
+			overlayValues: map[string]MappedChartValue{
+				"postgres": MappedChartValue{
+					valueType: "children",
+					children: map[string]*MappedChartValue{
+						"enabled": &MappedChartValue{
+							boolValue: false,
+							valueType: "bool",
+						},
+					},
+				},
+			},
+			expect: map[string]MappedChartValue{
+				"postgres": MappedChartValue{
+					valueType: "children",
+					children: map[string]*MappedChartValue{
+						"enabled": &MappedChartValue{
+							boolValue: false,
+							valueType: "bool",
+						},
+					},
+				},
+			},
+		},
+		{
 			name: "with-deep-children",
 			baseValues: map[string]MappedChartValue{
 				"storage": MappedChartValue{
@@ -437,7 +492,7 @@ func Test_MergeHelmChartValues(t *testing.T) {
 									valueType: "bool",
 								},
 								"replacementtest": &MappedChartValue{
-									strValue:  "somethingOverwritten",
+									strValue:  "somethingOverwritten-hello",
 									valueType: `string`,
 								},
 							},
@@ -449,13 +504,21 @@ func Test_MergeHelmChartValues(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		if test.name == "with-child" {
+		if test.name != "with-deep-children" {
 			continue
 		}
 		t.Run(test.name, func(t *testing.T) {
 			actual := MergeHelmChartValues(test.baseValues, test.overlayValues)
+			fmt.Println("Actual++++++++++++++")
 			PrintResultMap(actual)
-			assert.NotEqual(t, test.expect, actual)
+			fmt.Println("Expected++++++++++++++")
+			PrintResultMap(test.expect)
+			diff := deep.Equal(actual, test.expect)
+			fmt.Println("Diff ++++++++++++++", diff)
+			if len(diff) != 0 {
+				fmt.Printf("Failed diff compare with %s", strings.Join(diff, "\n"))
+				assert.NotEqual(t, test.expect, actual)
+			}
 		})
 	}
 }
