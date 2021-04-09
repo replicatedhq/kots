@@ -145,6 +145,7 @@ func renderReplicated(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (
 				}
 			}
 		}
+
 		helmValues, err := kotsHelmChart.Spec.GetHelmValues(mergedValues)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to render local values for chart")
