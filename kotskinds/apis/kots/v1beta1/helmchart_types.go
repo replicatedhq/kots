@@ -174,6 +174,57 @@ func (h *HelmChartSpec) GetHelmValues(values map[string]MappedChartValue) (map[s
 	return result, nil
 }
 
+func MergeHelmChartValues(baseValues map[string]MappedChartValue,
+	overlayValues map[string]MappedChartValue) map[string]MappedChartValue {
+
+	result := map[string]MappedChartValue{}
+	for k, v := range baseValues {
+		if _, exists := overlayValues[k]; !exists {
+			result[k] = baseValues[k]
+			continue
+		}
+		if v.valueType != "children" {
+			result[k] = overlayValues[k]
+		} else {
+			result[k] = MappedChartValue{
+				valueType: "children",
+				children:  mergeValueChildren(v.children, overlayValues[k].children),
+			}
+		}
+	}
+	for k, v := range overlayValues {
+		if _, exists := baseValues[k]; !exists {
+			result[k] = v
+		}
+	}
+	return result
+}
+
+func mergeValueChildren(baseValues map[string]*MappedChartValue, overlayValues map[string]*MappedChartValue) map[string]*MappedChartValue {
+	result := map[string]*MappedChartValue{}
+	for k, v := range baseValues {
+		if _, exists := overlayValues[k]; !exists {
+			result[k] = baseValues[k]
+			continue
+		}
+		if v.valueType != "children" {
+			result[k] = overlayValues[k]
+		} else {
+			result[k] = &MappedChartValue{
+				valueType: "children",
+				children:  mergeValueChildren(v.children, overlayValues[k].children),
+			}
+		}
+	}
+
+	for k, v := range overlayValues {
+		if _, exists := baseValues[k]; !exists {
+			result[k] = v
+		}
+	}
+	return result
+}
+
 func (h *HelmChartSpec) renderValue(value *MappedChartValue) (interface{}, error) {
 	if value.valueType == "children" {
 		result := map[string]interface{}{}
@@ -205,7 +256,8 @@ func (h *HelmChartSpec) renderValue(value *MappedChartValue) (interface{}, error
 }
 
 type OptionalValue struct {
-	When string `json:"when"`
+	When           string `json:"when"`
+	RecursiveMerge bool   `json:"recursiveMerge"`
 
 	Values map[string]MappedChartValue `json:"values,omitempty"`
 }

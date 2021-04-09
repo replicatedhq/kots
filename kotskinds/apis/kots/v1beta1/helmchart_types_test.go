@@ -1,8 +1,11 @@
 package v1beta1
 
 import (
+	"fmt"
+	"strings"
 	"testing"
 
+	"github.com/go-test/deep"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -336,6 +339,238 @@ func Test_MappedChartValueGetValue(t *testing.T) {
 			req.NoError(err)
 
 			assert.Equal(t, test.expected, actual)
+		})
+	}
+}
+
+func Test_MergeHelmChartValues(t *testing.T) {
+	tests := []struct {
+		name          string
+		baseValues    map[string]MappedChartValue
+		overlayValues map[string]MappedChartValue
+		expect        map[string]MappedChartValue
+	}{
+		{
+			name: "with-child",
+			baseValues: map[string]MappedChartValue{
+				"postgres": MappedChartValue{
+					valueType: "children",
+					children: map[string]*MappedChartValue{
+						"enabled": &MappedChartValue{
+							boolValue: false,
+							valueType: "bool",
+						},
+					},
+				},
+			},
+			overlayValues: map[string]MappedChartValue{
+				"postgres": MappedChartValue{
+					valueType: "children",
+					children: map[string]*MappedChartValue{
+						"enabled": &MappedChartValue{
+							boolValue: true,
+							valueType: "bool",
+						},
+					},
+				},
+			},
+			expect: map[string]MappedChartValue{
+				"postgres": MappedChartValue{
+					valueType: "children",
+					children: map[string]*MappedChartValue{
+						"enabled": &MappedChartValue{
+							boolValue: true,
+							valueType: "bool",
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "base-only-no-overlay",
+			baseValues: map[string]MappedChartValue{
+				"postgres": MappedChartValue{
+					valueType: "children",
+					children: map[string]*MappedChartValue{
+						"enabled": &MappedChartValue{
+							boolValue: false,
+							valueType: "bool",
+						},
+					},
+				},
+			},
+			overlayValues: map[string]MappedChartValue{},
+			expect: map[string]MappedChartValue{
+				"postgres": MappedChartValue{
+					valueType: "children",
+					children: map[string]*MappedChartValue{
+						"enabled": &MappedChartValue{
+							boolValue: false,
+							valueType: "bool",
+						},
+					},
+				},
+			},
+		},
+		{
+			name:       "no-base-only-overlay",
+			baseValues: map[string]MappedChartValue{},
+			overlayValues: map[string]MappedChartValue{
+				"postgres": MappedChartValue{
+					valueType: "children",
+					children: map[string]*MappedChartValue{
+						"enabled": &MappedChartValue{
+							boolValue: false,
+							valueType: "bool",
+						},
+					},
+				},
+			},
+			expect: map[string]MappedChartValue{
+				"postgres": MappedChartValue{
+					valueType: "children",
+					children: map[string]*MappedChartValue{
+						"enabled": &MappedChartValue{
+							boolValue: false,
+							valueType: "bool",
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "with-deep-children",
+			baseValues: map[string]MappedChartValue{
+				"storage": MappedChartValue{
+					valueType: "children",
+					children: map[string]*MappedChartValue{
+						"postgres": &MappedChartValue{
+							valueType: "children",
+							children: map[string]*MappedChartValue{
+								"enabled": &MappedChartValue{
+									boolValue: true,
+									valueType: "bool",
+								},
+								"replacementtest": &MappedChartValue{
+									strValue:  "somethinghello",
+									valueType: `string`,
+								},
+							},
+						},
+					},
+				},
+			},
+			overlayValues: map[string]MappedChartValue{
+				"storage": MappedChartValue{
+					valueType: "children",
+					children: map[string]*MappedChartValue{
+						"postgres": &MappedChartValue{
+							valueType: "children",
+							children: map[string]*MappedChartValue{
+								"enabled": &MappedChartValue{
+									boolValue: true,
+									valueType: "bool",
+								},
+								"replacementtest": &MappedChartValue{
+									strValue:  "somethingOverwritten",
+									valueType: `string`,
+								},
+							},
+						},
+					},
+				},
+			},
+			expect: map[string]MappedChartValue{
+				"storage": MappedChartValue{
+					valueType: "children",
+					children: map[string]*MappedChartValue{
+						"postgres": &MappedChartValue{
+							valueType: "children",
+							children: map[string]*MappedChartValue{
+								"enabled": &MappedChartValue{
+									boolValue: true,
+									valueType: "bool",
+								},
+								"replacementtest": &MappedChartValue{
+									strValue:  "somethingOverwritten",
+									valueType: `string`,
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "with-deep-children-missing-overlay",
+			baseValues: map[string]MappedChartValue{
+				"storage": MappedChartValue{
+					valueType: "children",
+					children: map[string]*MappedChartValue{
+						"postgres": &MappedChartValue{
+							valueType: "children",
+							children: map[string]*MappedChartValue{
+								"enabled": &MappedChartValue{
+									boolValue: true,
+									valueType: "bool",
+								},
+								"replacementtest": &MappedChartValue{
+									strValue:  "somethinghello",
+									valueType: `string`,
+								},
+							},
+						},
+					},
+				},
+			},
+			overlayValues: map[string]MappedChartValue{
+				"storage": MappedChartValue{
+					valueType: "children",
+					children: map[string]*MappedChartValue{
+						"postgres": &MappedChartValue{
+							valueType: "children",
+							children: map[string]*MappedChartValue{
+								"enabled": &MappedChartValue{
+									boolValue: true,
+									valueType: "bool",
+								},
+							},
+						},
+					},
+				},
+			},
+			expect: map[string]MappedChartValue{
+				"storage": MappedChartValue{
+					valueType: "children",
+					children: map[string]*MappedChartValue{
+						"postgres": &MappedChartValue{
+							valueType: "children",
+							children: map[string]*MappedChartValue{
+								"enabled": &MappedChartValue{
+									boolValue: true,
+									valueType: "bool",
+								},
+								"replacementtest": &MappedChartValue{
+									strValue:  "somethinghello",
+									valueType: `string`,
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			actual := MergeHelmChartValues(test.baseValues, test.overlayValues)
+			deep.CompareUnexportedFields = true
+			diff := deep.Equal(&actual, &test.expect)
+			if len(diff) != 0 {
+				fmt.Printf("Failed diff compare with %s", strings.Join(diff, "\n"))
+				assert.NotEqual(t, test.expect, actual)
+			}
 		})
 	}
 }

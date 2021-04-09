@@ -137,9 +137,12 @@ func renderReplicated(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (
 			if !parsedBool {
 				continue
 			}
-
-			for k, v := range optionalValues.Values {
-				mergedValues[k] = v
+			if optionalValues.RecursiveMerge {
+				mergedValues = kotsv1beta1.MergeHelmChartValues(kotsHelmChart.Spec.Values, optionalValues.Values)
+			} else {
+				for k, v := range optionalValues.Values {
+					mergedValues[k] = v
+				}
 			}
 		}
 
