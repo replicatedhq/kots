@@ -18,7 +18,6 @@ package v1beta1
 
 import (
 	"encoding/json"
-	"fmt"
 
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/kotskinds/multitype"
@@ -224,23 +223,6 @@ func mergeValueChildren(baseValues map[string]*MappedChartValue, overlayValues m
 		}
 	}
 	return result
-}
-
-func PrintResultMap(baseValues map[string]MappedChartValue) {
-	for _, v := range baseValues {
-		if v.valueType == "children" {
-			RecursePrint(v.children)
-		}
-	}
-}
-
-func RecursePrint(baseValues map[string]*MappedChartValue) {
-	for k, v := range baseValues {
-		if v.valueType == "children" {
-			RecursePrint(v.children)
-		}
-		fmt.Println("RecursePrint+++++++++++++\n", k, v)
-	}
 }
 
 func (h *HelmChartSpec) renderValue(value *MappedChartValue) (interface{}, error) {

@@ -139,7 +139,6 @@ func renderReplicated(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (
 			}
 			if optionalValues.RecursiveMerge {
 				mergedValues = kotsv1beta1.MergeHelmChartValues(kotsHelmChart.Spec.Values, optionalValues.Values)
-				kotsv1beta1.PrintResultMap(mergedValues)
 			} else {
 				for k, v := range optionalValues.Values {
 					mergedValues[k] = v
