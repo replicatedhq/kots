@@ -35,7 +35,7 @@ jobs:
         run: make -C web build-kotsadm
 
       - name: build and push migrations for e2e
-        uses: docker/build-push-action@v2.3.0
+        uses: docker/build-push-action@v2.4.0
         with:
           tags: ttl.sh/automated-${{ github.run_id }}/kotsadm-migrations:2h
           context: ./migrations
@@ -51,7 +51,7 @@ jobs:
           severity: 'CRITICAL,HIGH'
 
       - name: build and push kotsadm for e2e
-        uses: docker/build-push-action@v2.3.0
+        uses: docker/build-push-action@v2.4.0
         with:
           tags: ttl.sh/automated-${{ github.run_id }}/kotsadm:2h
           context: ./
@@ -67,7 +67,7 @@ jobs:
           severity: 'CRITICAL,HIGH'
 
       - name: build and push operator for e2e
-        uses: docker/build-push-action@v2.3.0
+        uses: docker/build-push-action@v2.4.0
         with:
           tags: ttl.sh/automated-${{ github.run_id }}/kotsadm-operator:2h
           context: ./kotsadm/operator
@@ -83,7 +83,7 @@ jobs:
           severity: 'CRITICAL,HIGH'
 
       - name: build and push kurl_proxy for e2e
-        uses: docker/build-push-action@v2.3.0
+        uses: docker/build-push-action@v2.4.0
         with:
           tags: ttl.sh/automated-${{ github.run_id }}/kurl-proxy:2h
           context: ./kurl_proxy
@@ -99,7 +99,7 @@ jobs:
           severity: 'CRITICAL,HIGH'
 
       - name: build and push minio for e2e
-        uses: docker/build-push-action@v2.3.0
+        uses: docker/build-push-action@v2.4.0
         with:
           tags: ttl.sh/automated-${{ github.run_id }}/minio:2h
           context: ./deploy/minio
@@ -115,7 +115,7 @@ jobs:
           severity: 'CRITICAL,HIGH'
 
       - name: push postgres for CI
-        uses: docker/build-push-action@v2.3.0
+        uses: docker/build-push-action@v2.4.0
         with:
           tags: ttl.sh/automated-${{ github.run_id }}/postgres:2h
           context: ./hack/postgres
