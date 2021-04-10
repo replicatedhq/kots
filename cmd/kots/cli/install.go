@@ -576,6 +576,14 @@ func getRegistryConfig(v *viper.Viper) (*kotsadmtypes.KotsadmOptions, error) {
 	registryUsername := v.GetString("registry-username")
 	registryPassword := v.GetString("registry-password")
 
+	if registryNamespace == "" {
+		parts := strings.Split(registryEndpoint, "/")
+		if len(parts) > 1 {
+			registryEndpoint = parts[0]
+			registryNamespace = strings.Join(parts[1:], "/")
+		}
+	}
+
 	isKurl, err := kotsadm.IsKurl()
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to check kURL")

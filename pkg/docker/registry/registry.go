@@ -74,7 +74,9 @@ func PullSecretForRegistries(registries []string, username, password string, kub
 	}
 
 	for _, r := range registries {
-		dockerCfgJSON.Auths[r] = dockercfgAuth
+		// we can get "host/namespace" here, which can break parts of kots that use hostname to lookup secret.
+		host := strings.Split(r, "/")[0]
+		dockerCfgJSON.Auths[host] = dockercfgAuth
 	}
 
 	secretData, err := json.Marshal(dockerCfgJSON)
