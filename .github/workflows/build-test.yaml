@@ -144,7 +144,7 @@ jobs:
           version: ${{ matrix.k8s_version }}
 
       - name: download kots binary
-        uses: actions/download-artifact@v2.0.8
+        uses: actions/download-artifact@v2.0.9
         with:
           name: kots
           path: bin/
