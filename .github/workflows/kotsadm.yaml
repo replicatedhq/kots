@@ -272,6 +272,10 @@ jobs:
       image: replicated/gitops-builder:buildkite-go14-node10
       options: --user root
     steps:
+    - uses: actions/setup-go@v2.1.3
+      with:
+        go-version: '^1.16.3'
+
     - name: Checkout
       uses: actions/checkout@v1 # not @v2 because of: https://github.com/actions/checkout/issues/126
 
