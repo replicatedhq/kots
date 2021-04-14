@@ -310,7 +310,7 @@ class Snapshots extends Component {
         errorTitle: "",
         displayErrorModal: false
       })
-      if (result?.veleroVersion) {
+      if (result?.veleroVersion !== "" && result?.resticVersion !== "") {
         this.state.listSnapshotsJob.start(this.listInstanceSnapshots, 2000);
       } else {
         this.props.history.push("/snapshots/settings?configure=true")
