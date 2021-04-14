@@ -209,7 +209,11 @@ class AppSnapshots extends Component {
         }
 
         const result = await res.json();
-
+        if (result?.veleroVersion !== "" && result?.resticVersion !== "") {
+          this.state.listSnapshotsJob.start(this.listInstanceSnapshots, 2000);
+        } else {
+          this.props.history.push("/snapshots/settings?configure=true")
+        }
         this.setState({
           snapshotSettings: result,
           isLoadingSnapshotSettings: false,
