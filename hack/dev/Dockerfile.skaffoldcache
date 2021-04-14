@@ -8,12 +8,6 @@ RUN wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | apt-k
   && rm -rf /var/lib/apt/lists/*
 
 
-ENV PROJECTPATH=/go/src/github.com/replicatedhq/kots/kotsadm
-WORKDIR $PROJECTPATH
-ADD Makefile $PROJECTPATH/
-# ADD go.mod $PROJECTPATH/
-# ADD go.sum $PROJECTPATH/
-
 ENV GO111MODULE=on
 
 # Install Kubectl 1.14
@@ -67,7 +61,7 @@ RUN curl -L "https://github.com/kubernetes-sigs/kustomize/releases/download/kust
   mv kustomize "/usr/local/bin/kustomize3.5.4"
 	
 # Install krew
-ADD ./deploy/install-krew.sh /install-krew.sh
+COPY ./deploy/install-krew.sh /install-krew.sh
 RUN /install-krew.sh
 ENV PATH="/root/.krew/bin:$PATH"
 
@@ -75,9 +69,14 @@ ENV PATH="/root/.krew/bin:$PATH"
 RUN kubectl krew install preflight
 RUN kubectl krew install support-bundle
 
-# ADD cmd $PROJECTPATH/cmd
-# ADD pkg $PROJECTPATH/pkg
-# ADD web/dist $PROJECTPATH/web/dist
-ADD ./bin/kotsadm ./bin/kotsadm
+ENV PROJECTPATH=/go/src/github.com/replicatedhq/kots/kotsadm
+WORKDIR $PROJECTPATH
+COPY Makefile ./
+COPY Makefile.build ./
+COPY go.mod ./
+COPY go.sum ./
+COPY cmd ./cmd
+COPY pkg ./pkg
+COPY kotskinds ./kotskinds
 
-ENTRYPOINT ["./bin/kotsadm", "api"]
+RUN make kotsadm
