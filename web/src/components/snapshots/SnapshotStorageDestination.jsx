@@ -866,12 +866,14 @@ class SnapshotStorageDestination extends Component {
       for (const veleroPlugin of snapshotSettings?.veleroPlugins) {
         switch (veleroPlugin) {
           case "velero-plugin-for-gcp":
+          case "velero-velero-plugin-for-gcp":  // init containers are named differently starting in velero 1.6
             availableDestinations.push({
               value: "gcp",
               label: "Google Cloud Storage",
             });
             break;
           case "velero-plugin-for-aws":
+          case "velero-velero-plugin-for-aws":
             availableDestinations.push({
               value: "aws",
               label: "Amazon S3",
@@ -896,6 +898,7 @@ class SnapshotStorageDestination extends Component {
             });
             break;
           case "velero-plugin-for-microsoft-azure":
+          case "velero-velero-plugin-for-microsoft-azure":
             availableDestinations.push({
               value: "azure",
               label: "Azure Blob Storage",

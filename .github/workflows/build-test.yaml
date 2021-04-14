@@ -171,10 +171,10 @@ jobs:
 
       - name: velero install
         run: |
-          curl -LO https://github.com/vmware-tanzu/velero/releases/download/v1.5.2/velero-v1.5.2-linux-amd64.tar.gz && tar zxvf velero-v1.5.2-linux-amd64.tar.gz && \
-          ./velero-v1.5.2-linux-amd64/velero install \
+          curl -LO https://github.com/vmware-tanzu/velero/releases/download/v1.6.0/velero-v1.6.0-linux-amd64.tar.gz && tar zxvf velero-v1.6.0-linux-amd64.tar.gz && \
+          ./velero-v1.6.0-linux-amd64/velero install \
           --provider aws \
-          --plugins velero/velero-plugin-for-aws:v1.1.0 \
+          --plugins velero/velero-plugin-for-aws:v1.2.0 \
           --bucket kots-testim-snapshots \
           --backup-location-config region=us-east-1 \
           --snapshot-location-config region=us-east-1 \

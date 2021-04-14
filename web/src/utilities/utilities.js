@@ -387,6 +387,30 @@ export function getCommitHashFromUrl(commitUrl) {
   return uriParts[uriParts.length - 1];
 }
 
+/**
+ * Calculate if the version of Velero is compatible with kots
+ * @param {SnapshotSettings} snapshotSettings - snapshot configuration object
+ * @return {Boolean}
+ */
+export function isVeleroCorrectVersion (snapshotSettings) {
+  if (snapshotSettings?.isVeleroRunning && snapshotSettings?.veleroVersion) {
+     let semVer = snapshotSettings.veleroVersion.split(".")
+     
+     let majorVer = parseInt(semVer[0].slice(1))
+     let minorVer = parseInt(semVer[1])
+     let patchVer = parseInt(semVer[2])
+
+     if( majorVer !== 1) return false;
+     
+     if( minorVer < 5 ) return false;
+
+     if( minorVer === 5 && patchVer < 1) return false;
+
+     return true
+  }
+  return false
+}
+
 export const Utilities = {
   getToken() {
     if (this.localStorageEnabled()) {
@@ -623,3 +647,5 @@ export const Utilities = {
     }
   }
 };
+
+

@@ -13,7 +13,7 @@ import ErrorModal from "../modals/ErrorModal";
 import SnapshotDifferencesModal from "../modals/SnapshotDifferencesModal";
 
 import "../../scss/components/snapshots/AppSnapshots.scss";
-import { Utilities } from "../../utilities/utilities";
+import { isVeleroCorrectVersion, Utilities } from "../../utilities/utilities";
 import { Repeater } from "../../utilities/repeater";
 import dayjs from "dayjs";
 
@@ -430,17 +430,15 @@ class Snapshots extends Component {
       )
     }
 
-    const isVeleroCorrectVersion = snapshotSettings?.isVeleroRunning && snapshotSettings?.veleroVersion.includes("v1.5");
-
     return (
       <div className="flex1 flex-column u-overflow--auto">
         <Helmet>
           <title>Snapshots</title>
         </Helmet>
-        {!isVeleroCorrectVersion ?
+        {!isVeleroCorrectVersion(snapshotSettings) ?
           <div className="VeleroWarningBlock">
             <span className="icon small-warning-icon" />
-            <p> To use snapshots reliably you have to install velero version 1.5.1 </p>
+            <p> To use snapshots reliably, install Velero version 1.5.1 or greater </p>
           </div>
           : null}
         <div className="container flex-column flex1 u-paddingTop--30 u-paddingBottom--20 alignItems--center">
