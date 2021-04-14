@@ -1,4 +1,4 @@
-FROM golang:1.14 as deps
+FROM golang:1.16 as deps
 
 # Install Kubectl 1.14
 ENV KUBECTL_1_14_VERSION=v1.14.9

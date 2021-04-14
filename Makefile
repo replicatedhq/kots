@@ -1,7 +1,7 @@
 include Makefile.build
 CURRENT_USER := $(shell id -u -n)
 
-BUILDFLAGS = -tags "netgo containers_image_ostree_stub exclude_graphdriver_devicemapper exclude_graphdriver_btrfs containers_image_openpgp" -installsuffix netgo
+BUILDFLAGS = -tags='netgo containers_image_ostree_stub exclude_graphdriver_devicemapper exclude_graphdriver_btrfs containers_image_openpgp' -installsuffix netgo
 
 .PHONY: test
 test:
