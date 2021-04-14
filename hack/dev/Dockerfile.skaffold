@@ -1,0 +1,15 @@
+FROM kotsadm:cache
+
+ENV PROJECTPATH=/go/src/github.com/replicatedhq/kots/kotsadm
+WORKDIR $PROJECTPATH
+COPY Makefile ./
+COPY Makefile.build ./
+COPY go.mod ./
+COPY go.sum ./
+COPY cmd ./cmd
+COPY pkg ./pkg
+COPY kotskinds ./kotskinds
+
+RUN make kotsadm
+
+ENTRYPOINT ["./bin/kotsadm", "api"]

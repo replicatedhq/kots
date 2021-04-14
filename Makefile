@@ -83,3 +83,6 @@ project-pact-tests:
 	make -C api test
 
 	@echo All contract tests have passed.
+
+make cache:
+	docker build -f hack/dev/Dockerfile.skaffoldcache . -t kotsadm:cache

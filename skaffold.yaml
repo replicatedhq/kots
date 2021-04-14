@@ -46,7 +46,7 @@ build:
     - image: kotsadm
       context: "./"
       docker:
-        dockerfile: ./hack/dev/Dockerfile
+        dockerfile: ./hack/dev/Dockerfile.skaffold
 
     - image: kotsadm-operator
       context: "./kotsadm/operator"
