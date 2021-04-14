@@ -92,7 +92,7 @@ require (
 	k8s.io/apimachinery v0.20.5
 	k8s.io/cli-runtime v0.20.5
 	k8s.io/client-go v0.20.5
-	k8s.io/cluster-bootstrap v0.17.8
+	k8s.io/cluster-bootstrap v0.20.5
 	k8s.io/helm v2.14.3+incompatible
 	k8s.io/kube-openapi v0.0.0-20210323165736-1a6458611d18 // indirect
 	k8s.io/kubelet v0.0.0
