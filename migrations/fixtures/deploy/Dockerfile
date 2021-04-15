@@ -1,8 +1,8 @@
-FROM postgres:10.16-alpine
+FROM centos/postgresql-10-centos7
 
-ENV POSTGRES_USER=kotsadm
-ENV POSTGRES_PASSWORD=password
-ENV POSTGRES_DB=kotsadm
+ENV POSTGRESQL_USER=kotsadm
+ENV POSTGRESQL_PASSWORD=password
+ENV POSTGRESQL_DATABASE=kotsadm
 
 ## Insert fixtures
 COPY ./fixtures.sql /docker-entrypoint-initdb.d/

@@ -41,21 +41,23 @@ spec:
         app: kotsadm-postgres
     spec:
       securityContext:
-        runAsUser: 70 # the default 'postgres' user
-        fsGroup: 70
+        runAsUser: 999 # the default 'postgres' user
+        fsGroup: 999
       containers:
       - name: postgres
-        image: postgres:10.16-alpine
+        image: centos/postgresql-10-centos7
         imagePullPolicy: IfNotPresent
         env:
-        - name: PGDATA
-          value: /var/lib/postgresql/data/devpgdata
-        - name: POSTGRES_USER
+        - name: POSTGRESQL_USER
           value: kotsadm
-        - name: POSTGRES_PASSWORD
+        - name: POSTGRESQL_PASSWORD
           value: password
-        - name: POSTGRES_DB
+        - name: POSTGRESQL_DATABASE
           value: kotsadm
+        command:
+          - ls
+          - -la
+          - /var/lib/postgresql
         ports:
         - name: postgres
           containerPort: 5432

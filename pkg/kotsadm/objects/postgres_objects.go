@@ -14,7 +14,7 @@ import (
 )
 
 func PostgresStatefulset(deployOptions types.DeployOptions, size resource.Quantity) *appsv1.StatefulSet {
-	image := "postgres:10.16-alpine"
+	image := "centos/postgresql-10-centos7"
 	var pullSecrets []corev1.LocalObjectReference
 	if s := kotsadmversion.KotsadmPullSecret(deployOptions.Namespace, deployOptions.KotsadmOptions); s != nil {
 		image = fmt.Sprintf("%s/postgres:%s", kotsadmversion.KotsadmRegistry(deployOptions.KotsadmOptions), kotsadmversion.KotsadmTag(deployOptions.KotsadmOptions))
@@ -36,7 +36,6 @@ func PostgresStatefulset(deployOptions types.DeployOptions, size resource.Quanti
 		}
 	}
 
-	passwdFileMode := int32(0644)
 	statefulset := &appsv1.StatefulSet{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "apps/v1",
@@ -89,20 +88,33 @@ func PostgresStatefulset(deployOptions types.DeployOptions, size resource.Quanti
 								},
 							},
 						},
+					},
+					InitContainers: []corev1.Container{
 						{
-							Name: "etc-passwd",
-							VolumeSource: corev1.VolumeSource{
-								ConfigMap: &corev1.ConfigMapVolumeSource{
-									LocalObjectReference: corev1.LocalObjectReference{
-										Name: "kotsadm-postgres",
-									},
-									Items: []corev1.KeyToPath{
-										{
-											Key:  "passwd",
-											Path: "passwd",
-											Mode: &passwdFileMode,
-										},
-									},
+							Image:           image,
+							ImagePullPolicy: corev1.PullIfNotPresent,
+							Name:            "ensure-data-dir",
+							Command: []string{
+								"mkdir",
+							},
+							Args: []string{
+								"-p",
+								"/var/lib/pgsql/data/pgdata",
+							},
+							VolumeMounts: []corev1.VolumeMount{
+								{
+									Name:      "kotsadm-postgres",
+									MountPath: "/var/lib/pgsql/data",
+								},
+							},
+							Resources: corev1.ResourceRequirements{
+								Limits: corev1.ResourceList{
+									"cpu":    resource.MustParse("200m"),
+									"memory": resource.MustParse("200Mi"),
+								},
+								Requests: corev1.ResourceList{
+									"cpu":    resource.MustParse("100m"),
+									"memory": resource.MustParse("100Mi"),
 								},
 							},
 						},
@@ -121,25 +133,16 @@ func PostgresStatefulset(deployOptions types.DeployOptions, size resource.Quanti
 							VolumeMounts: []corev1.VolumeMount{
 								{
 									Name:      "kotsadm-postgres",
-									MountPath: "/var/lib/postgresql/data",
-								},
-								{
-									Name:      "etc-passwd",
-									MountPath: "/etc/passwd",
-									SubPath:   "passwd",
+									MountPath: "/var/lib/pgsql/data",
 								},
 							},
 							Env: []corev1.EnvVar{
 								{
-									Name:  "PGDATA",
-									Value: "/var/lib/postgresql/data/pgdata",
-								},
-								{
-									Name:  "POSTGRES_USER",
+									Name:  "POSTGRESQL_USER",
 									Value: "kotsadm",
 								},
 								{
-									Name: "POSTGRES_PASSWORD",
+									Name: "POSTGRESQL_PASSWORD",
 									ValueFrom: &corev1.EnvVarSource{
 										SecretKeyRef: &corev1.SecretKeySelector{
 											LocalObjectReference: corev1.LocalObjectReference{
@@ -150,9 +153,14 @@ func PostgresStatefulset(deployOptions types.DeployOptions, size resource.Quanti
 									},
 								},
 								{
-									Name:  "POSTGRES_DB",
+									Name:  "POSTGRESQL_DATABASE",
 									Value: "kotsadm",
 								},
+							},
+							Command: []string{
+								"postgres",
+								"-D",
+								"/var/lib/pgsql/data/pgdata",
 							},
 							LivenessProbe: &corev1.Probe{
 								InitialDelaySeconds: 30,
