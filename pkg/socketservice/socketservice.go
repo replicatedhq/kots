@@ -68,6 +68,7 @@ type DeployArgs struct {
 type AppInformersArgs struct {
 	AppID     string   `json:"app_id"`
 	Informers []string `json:"informers"`
+	Sequence  int64    `json:"sequence"`
 }
 
 type SupportBundleArgs struct {
@@ -386,6 +387,7 @@ func deployVersionForApp(clusterSocket *ClusterSocket, a *apptypes.App, deployed
 		appInformersArgs := AppInformersArgs{
 			AppID:     a.ID,
 			Informers: renderedInformers,
+			Sequence:  deployedVersion.Sequence,
 		}
 		c.Emit("appInformers", appInformersArgs)
 	} else {
@@ -398,7 +400,8 @@ func deployVersionForApp(clusterSocket *ClusterSocket, a *apptypes.App, deployed
 				State:     appstatustypes.StateReady,
 			},
 		}
-		err := store.GetStore().SetAppStatus(a.ID, defaultReadyState, time.Now())
+
+		err := store.GetStore().SetAppStatus(a.ID, defaultReadyState, time.Now(), deployedVersion.Sequence)
 		if err != nil {
 			return errors.Wrap(err, "failed to set app status")
 		}

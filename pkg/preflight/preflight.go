@@ -17,6 +17,7 @@ import (
 	registrytypes "github.com/replicatedhq/kots/pkg/registry/types"
 	"github.com/replicatedhq/kots/pkg/render"
 	"github.com/replicatedhq/kots/pkg/render/helper"
+	"github.com/replicatedhq/kots/pkg/reporting"
 	"github.com/replicatedhq/kots/pkg/store"
 	"github.com/replicatedhq/kots/pkg/version"
 	troubleshootv1beta2 "github.com/replicatedhq/troubleshoot/pkg/apis/troubleshoot/v1beta2"
@@ -112,6 +113,11 @@ func Run(appID string, appSlug string, sequence int64, isAirgap bool, archiveDir
 			if err != nil {
 				err = errors.Wrap(err, "failed to deploy first version")
 				logger.Error(err)
+				return
+			}
+
+			if err := reporting.SendPreflightInfo(appID, int(sequence), false, false); err != nil {
+				logger.Debugf("failed to send preflights data to replicated app: %v", err)
 				return
 			}
 		}()

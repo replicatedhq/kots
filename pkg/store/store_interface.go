@@ -105,7 +105,7 @@ type SessionStore interface {
 
 type AppStatusStore interface {
 	GetAppStatus(appID string) (*appstatustypes.AppStatus, error)
-	SetAppStatus(appID string, resourceStates []appstatustypes.ResourceState, updatedAt time.Time) error
+	SetAppStatus(appID string, resourceStates []appstatustypes.ResourceState, updatedAt time.Time, sequence int64) error
 }
 
 type AppStore interface {

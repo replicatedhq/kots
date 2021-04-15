@@ -50,7 +50,7 @@ func (h *Handler) SetAppStatus(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = store.GetStore().SetAppStatus(newAppStatus.AppID, newAppStatus.ResourceStates, newAppStatus.UpdatedAt)
+	err = store.GetStore().SetAppStatus(newAppStatus.AppID, newAppStatus.ResourceStates, newAppStatus.UpdatedAt, newAppStatus.Sequence)
 	if err != nil {
 		logger.Error(err)
 		w.WriteHeader(http.StatusInternalServerError)

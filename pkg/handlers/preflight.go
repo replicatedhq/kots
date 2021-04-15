@@ -339,7 +339,7 @@ func (h *Handler) PreflightsReports(w http.ResponseWriter, r *http.Request) {
 	clusterID := downstreams[0].ClusterID
 
 	go func() {
-		if err := reporting.SendPreflightsReportToReplicatedApp(license, foundApp.ID, clusterID, 0, true, ""); err != nil {
+		if err := reporting.SendPreflightsReportToReplicatedApp(license, foundApp.ID, clusterID, 0, true, "", false, "", ""); err != nil {
 			logger.Debugf("failed to send preflights data to replicated app: %v", err)
 			return
 		}

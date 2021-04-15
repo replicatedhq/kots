@@ -37,6 +37,7 @@ func (h *Handler) AppUpdateCheck(w http.ResponseWriter, r *http.Request) {
 
 	deploy, _ := strconv.ParseBool(r.URL.Query().Get("deploy"))
 	skipPreflights, _ := strconv.ParseBool(r.URL.Query().Get("skipPreflights"))
+	isCLI, _ := strconv.ParseBool(r.URL.Query().Get("isCLI"))
 
 	contentType := strings.Split(r.Header.Get("Content-Type"), ";")[0]
 	contentType = strings.TrimSpace(contentType)
@@ -60,13 +61,15 @@ func (h *Handler) AppUpdateCheck(w http.ResponseWriter, r *http.Request) {
 		}
 
 		// preflights reporting
-		go func() {
-			isUpdate := true
-			err = reporting.SendPreflightInfo(foundApp.ID, int(foundApp.CurrentSequence), skipPreflights, isUpdate)
-			if err != nil {
-				logger.Debugf("failed to update preflights reports: %v", err)
-			}
-		}()
+		if deploy {
+			go func() {
+				sequence := foundApp.CurrentSequence + availableUpdates
+				err = reporting.SendPreflightInfo(foundApp.ID, int(sequence), skipPreflights, isCLI)
+				if err != nil {
+					logger.Debugf("failed to update preflights reports: %v", err)
+				}
+			}()
+		}
 
 		JSON(w, http.StatusOK, appUpdateCheckResponse)
 

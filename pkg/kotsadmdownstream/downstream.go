@@ -222,6 +222,30 @@ func GetCurrentVersion(appID string, clusterID string) (*types.DownstreamVersion
 	return v, nil
 }
 
+func GetStatusForVersion(appID string, clusterID string, sequence int64) (string, error) {
+	db := persistence.MustGetPGSession()
+	query := `SELECT 
+	adv.status, ado.is_error 
+	FROM 
+		app_downstream_version AS adv
+	LEFT JOIN 
+		app_downstream_output AS ado 
+	ON
+		adv.app_id = ado.app_id AND adv.cluster_id = ado.cluster_id AND adv.sequence = ado.downstream_sequence
+ WHERE 
+ 	adv.app_id = $1 AND adv.cluster_id = $2 AND adv.sequence = $3`
+	row := db.QueryRow(query, appID, clusterID, sequence)
+
+	var status sql.NullString
+	var hasError sql.NullBool
+	if err := row.Scan(&status, &hasError); err != nil {
+		return "", errors.Wrap(err, "failed to scan")
+	}
+	versionStatus := getStatus(status.String, hasError)
+
+	return versionStatus, nil
+}
+
 func GetPendingVersions(appID string, clusterID string) ([]types.DownstreamVersion, error) {
 	currentSequence, err := GetCurrentSequence(appID, clusterID)
 	if err != nil {
