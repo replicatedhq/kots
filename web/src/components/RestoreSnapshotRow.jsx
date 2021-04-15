@@ -70,15 +70,15 @@ class RestoreSnapshotRow extends React.Component {
         <div className="flex flex1 alignItems--center">
           <div className="flex flex-column">
             <div className="flex flex-column">
-              <div className="flex flex-auto alignItems--center u-fontWeight--bold u-color--tuna">
-                <p className="u-fontSize--normal u-color--tuna u-lineHeight--normal u-fontWeight--bold u-marginRight--10">{snapshot?.name}</p>
-                <p className="u-fontSize--normal u-color--dustyGray u-fontWeight--bold u-lineHeight--normal u-marginRight--20"> {Utilities.dateFormat(snapshot?.startedAt, "MM/DD/YY @ hh:mm a z")}</p>
+              <div className="flex flex-auto alignItems--center u-fontWeight--bold u-textColor--primary">
+                <p className="u-fontSize--normal u-textColor--primary u-lineHeight--normal u-fontWeight--bold u-marginRight--10">{snapshot?.name}</p>
+                <p className="u-fontSize--normal u-textColor--bodyCopy u-fontWeight--bold u-lineHeight--normal u-marginRight--20"> {Utilities.dateFormat(snapshot?.startedAt, "MM/DD/YY @ hh:mm a z")}</p>
               </div>
               <div className="flex alignItems--center u-marginTop--10">
-                <span className="flex alignItems--center u-fontSize--normal u-color--dustyGray u-fontWeight--bold u-lineHeight--normal u-marginRight--20">
+                <span className="flex alignItems--center u-fontSize--normal u-textColor--bodyCopy u-fontWeight--bold u-lineHeight--normal u-marginRight--20">
                   <span className="icon snapshot-volume-icon" /> {snapshot?.volumeCount} volume{snapshot?.volumeCount === 1 ? "" : "s"}
                   {(!isBackupSelected && snapshot?.volumeCount > 0) ? <span className={`icon ${toggleVolumes ? "up" : "down"}-arrow-icon u-marginLeft--5 u-cursor--pointer`} onClick={this.showVolumes} /> : null} </span>
-                <span className="flex alignItems--center u-fontSize--normal u-color--dustyGray u-fontWeight--bold u-lineHeight--normal u-marginRight--20">
+                <span className="flex alignItems--center u-fontSize--normal u-textColor--bodyCopy u-fontWeight--bold u-lineHeight--normal u-marginRight--20">
                   <span className="icon snapshot-volume-size-icon" /> {Utilities.bytesToSize(snapshot?.volumeBytes)} </span>
               </div>
             </div>
@@ -88,8 +88,8 @@ class RestoreSnapshotRow extends React.Component {
                   return (
                     <div className="flex flex1 alignItems--center section u-marginTop--10" key={`${volume.name}-${i}`}>
                       <div className="flex flex-column">
-                        <p className="u-fontSize--normal u-lineHeight--normal u-fontWeight--bold u-color--tuna">{volume.name}</p>
-                        <p className="u-fontSize--normal u-color--dustyGray u-fontWeight--bold u-lineHeight--normal"> {volume.sizeBytesHuman} </p>
+                        <p className="u-fontSize--normal u-lineHeight--normal u-fontWeight--bold u-textColor--primary">{volume.name}</p>
+                        <p className="u-fontSize--normal u-textColor--bodyCopy u-fontWeight--bold u-lineHeight--normal"> {volume.sizeBytesHuman} </p>
                       </div>
                     </div>
                   )

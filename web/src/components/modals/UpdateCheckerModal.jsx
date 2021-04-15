@@ -128,23 +128,23 @@ export default class UpdateCheckerModal extends React.Component {
         className="Modal SmallSize"
       >
         <div className="u-position--relative flex-column u-padding--20">
-          <span className="u-fontSize--largest u-fontWeight--bold u-color--tuna u-marginBottom--15">Configure automatic update checks</span>
+          <span className="u-fontSize--largest u-fontWeight--bold u-textColor--primary u-marginBottom--15">Configure automatic update checks</span>
           {gitopsEnabled ? 
-            <p className="u-fontSize--normal u-lineHeight--normal u-color--dustyGray u-marginBottom--20">
+            <p className="u-fontSize--normal u-lineHeight--normal u-textColor--bodyCopy u-marginBottom--20">
               Configure how often you would like to automatically check for updates.<br/>A commit will be made if an update was found.
             </p>
             :
-            <p className="u-fontSize--normal u-lineHeight--normal u-color--dustyGray u-marginBottom--20">
+            <p className="u-fontSize--normal u-lineHeight--normal u-textColor--bodyCopy u-marginBottom--20">
               Configure how often you would like to automatically check for updates.<br/>This will only download updates, not deploy them.
             </p>
           }
           <div className="info-box u-marginBottom--20">
             <span className="u-fontSize--small">
-              You can enter <span className="u-fontWeight--bold u-color--tuna">@never</span> to disable scheduled update checks
+              You can enter <span className="u-fontWeight--bold u-textColor--primary">@never</span> to disable scheduled update checks
             </span>
           </div>
           <div className="flex-column flex1 u-paddingLeft--5">
-            <p className="u-fontSize--normal u-color--tuna u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">Cron expression</p>
+            <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">Cron expression</p>
             <div className="flex flex1">
               <Select
                 className="replicated-select-container flex1"
@@ -171,16 +171,16 @@ export default class UpdateCheckerModal extends React.Component {
                   }}
                 />
                 {selectedSchedule.value === "@default" ?
-                  <span className="u-fontSize--small u-fontWeight--medium u-color--dustyGray">Every 4 hours</span>
+                  <span className="u-fontSize--small u-fontWeight--medium u-textColor--bodyCopy">Every 4 hours</span>
                   :
                   humanReadableCron ?
-                    <span className="u-fontSize--small u-fontWeight--medium u-color--dustyGray">{humanReadableCron}</span>
+                    <span className="u-fontSize--small u-fontWeight--medium u-textColor--bodyCopy">{humanReadableCron}</span>
                     :
                     null
                 }
               </div>
             </div>
-            {submitUpdateCheckerSpecErr && <span className="u-color--chestnut u-fontSize--small u-fontWeight--bold u-marginTop--15">Error: {submitUpdateCheckerSpecErr}</span>}
+            {submitUpdateCheckerSpecErr && <span className="u-textColor--error u-fontSize--small u-fontWeight--bold u-marginTop--15">Error: {submitUpdateCheckerSpecErr}</span>}
           </div>
           <div className="flex u-marginTop--20">
             <button className="btn primary blue" onClick={this.onSubmitUpdateCheckerSpec}>Update</button>

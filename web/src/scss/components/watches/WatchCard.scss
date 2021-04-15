@@ -1,3 +1,5 @@
+@import "../../variables.scss";
+
 .installed-watch-wrapper {
   width: 100%;
 
@@ -248,14 +250,14 @@
       display: block;
       width: 80px;
       height: 2px;
-      border-top: 2px solid #C4C8CA;
+      border-top: 2px solid $border-color;
       right: -40px;
       top: 76px;
       margin-top: -10px;
     }
 
     .completed-step:nth-child(2)::after {
-      border-top: 2px dashed #C4C8CA
+      border-top: 2px dashed $border-color
     }
 
     .completed-step p {

@@ -38,7 +38,7 @@ export default function KotsSidebarItem(props) {
         to={`/app/${slug}`}>
           <span className="sidebar-link-icon" style={{ backgroundImage: `url(${iconUri})` }}></span>
           <div className="flex-column">
-            <p className={classNames("u-color--tuna u-fontWeight--bold", { "u-marginBottom--10": !gitopsEnabled })}>{name}</p>
+            <p className={classNames("u-textColor--primary u-fontWeight--bold", { "u-marginBottom--10": !gitopsEnabled })}>{name}</p>
             {!gitopsEnabled &&
               <div className="flex alignItems--center">
                 <div className={classNames("icon", {
@@ -48,8 +48,8 @@ export default function KotsSidebarItem(props) {
                 })}
                 />
                 <span className={classNames("u-marginLeft--5 u-fontSize--normal u-fontWeight--medium", {
-                  "u-color--dustyGray": !isBehind,
-                  "u-color--orange": isBehind
+                  "u-textColor--bodyCopy": !isBehind,
+                  "u-textColor--warning": isBehind
                 })}>
                   {versionsBehindText}
                 </span>

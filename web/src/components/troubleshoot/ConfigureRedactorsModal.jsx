@@ -140,8 +140,8 @@ export default class ConfigureRedactorsModal extends Component {
       case "linkSpec":
         return (
           <div className="flex1">
-            <p className="u-fontSize--normal u-color--tuna u-fontWeight--bold u-lineHeight--normal u-marginBottom--5">Where is your spec located</p>
-            <p className="u-lineHeight--normal u-fontSize--small u-color--dustyGray u-fontWeight--medium u-marginBottom--10">Provide the URI where your redactor spec is located.</p>
+            <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-lineHeight--normal u-marginBottom--5">Where is your spec located</p>
+            <p className="u-lineHeight--normal u-fontSize--small u-textColor--bodyCopy u-fontWeight--medium u-marginBottom--10">Provide the URI where your redactor spec is located.</p>
             <input type="text" className="Input" placeholder="github.com/org/myrepo/redactor.yaml" value={redactorUri} autoComplete="" onChange={(e) => { this.setState({ redactorUri: e.target.value }) }} />
             <div className="u-marginTop--10 flex alignItems--center">
               <button className="btn secondary blue u-marginRight--10" onClick={this.props.onClose}>Close</button>
@@ -149,12 +149,12 @@ export default class ConfigureRedactorsModal extends Component {
               {this.state.specSaved &&
                 <span className="u-marginLeft--10 flex alignItems--center">
                   <span className="icon checkmark-icon u-marginRight--5" />
-                  <span className="u-color--chateauGreen u-fontSize--small u-fontWeight--medium u-lineHeight--normal">Saved</span>
+                  <span className="u-textColor--success u-fontSize--small u-fontWeight--medium u-lineHeight--normal">Saved</span>
                 </span>
               }
               {this.state.errorSavingSpecUri &&
                 <span className="u-marginLeft--10 flex alignItems--center">
-                  <span className="u-color--chestnut u-fontSize--small u-fontWeight--medium u-lineHeight--normal">{this.state.savingSpecUriError}</span>
+                  <span className="u-textColor--error u-fontSize--small u-fontWeight--medium u-lineHeight--normal">{this.state.savingSpecUriError}</span>
                 </span>
               }
             </div>
@@ -191,12 +191,12 @@ export default class ConfigureRedactorsModal extends Component {
               {this.state.specSaved &&
                 <span className="u-marginLeft--10 flex alignItems--center">
                   <span className="icon checkmark-icon u-marginRight--5" />
-                  <span className="u-color--chateauGreen u-fontSize--small u-fontWeight--medium u-lineHeight--normal">Spec saved</span>
+                  <span className="u-textColor--success u-fontSize--small u-fontWeight--medium u-lineHeight--normal">Spec saved</span>
                 </span>
               }
               {this.state.errorSavingSpec &&
                 <span className="u-marginLeft--10 flex alignItems--center">
-                  <span className="u-color--chestnut u-fontSize--small u-fontWeight--medium u-lineHeight--normal">{this.state.savingSpecError}</span>
+                  <span className="u-textColor--error u-fontSize--small u-fontWeight--medium u-lineHeight--normal">{this.state.savingSpecError}</span>
                 </span>
               }
             </div>
@@ -224,10 +224,10 @@ export default class ConfigureRedactorsModal extends Component {
         className={`Modal ${this.state.activeRedactorTab === "linkSpec" ? "SmallSize" : "MediumSize"}`}
       >
         <div className="Modal-body">
-          <p className="u-fontSize--largest u-fontWeight--bold u-lineHeight--default u-color--tuna u-marginBottom--small">Configure redaction</p>
+          <p className="u-fontSize--largest u-fontWeight--bold u-lineHeight--default u-textColor--primary u-marginBottom--small">Configure redaction</p>
           {this.state.errFetchingRedactors ? 
             <div className="u-marginTop--40 flex justifyContent--center">
-              <span className="u-fontSize--large u-fontWeight--medium u-color--chestnut u-lineHeight--normal">Failed to fetch custom redactors</span>
+              <span className="u-fontSize--large u-fontWeight--medium u-textColor--error u-lineHeight--normal">Failed to fetch custom redactors</span>
             </div>
           :
             <div className="u-marginTop--40">

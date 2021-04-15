@@ -1,3 +1,5 @@
+@import "../../variables.scss";
+
 .GitOpsSettings--wrapper {
   .full-width-container {
     max-width: 90%;
@@ -43,6 +45,6 @@
 
 .disable-gitops-wrapper {
   padding-top: 30px;
-  border-top: 1px solid #C4C8CA;
+  border-top: 1px solid $border-color;
   
 }

@@ -208,7 +208,7 @@ class Redactors extends Component {
             <div className="flex1 flex-column">
               <div className="flex flex-auto alignItems--center justifyContent--spaceBetween">
                 <div className="flex flex1 alignItems--center">
-                  <p className="u-fontWeight--bold u-color--tuna u-fontSize--larger u-lineHeight--normal u-marginRight--10">Redactors</p>
+                  <p className="u-fontWeight--bold u-textColor--primary u-fontSize--larger u-lineHeight--normal u-marginRight--10">Redactors</p>
                   <div style={{ width: "220px" }}>
                     <Select
                       className="replicated-select-container"
@@ -225,9 +225,9 @@ class Redactors extends Component {
                   <Link to={`/app/${this.props.appSlug}/troubleshoot/redactors/new`} className="btn primary blue">Create new redactor</Link>
                 </div>
               </div>
-              <p className="u-fontSize--normal u-color--dustyGray u-fontWeight--medium u-lineHeight--normal u-marginTop--20 u-marginBottom--30">Define custom rules for sensitive values you need to be redacted when gathering a support bundle. This might include things like Secrets or IP addresses. For help with creating custom redactors,
+              <p className="u-fontSize--normal u-textColor--bodyCopy u-fontWeight--medium u-lineHeight--normal u-marginTop--20 u-marginBottom--30">Define custom rules for sensitive values you need to be redacted when gathering a support bundle. This might include things like Secrets or IP addresses. For help with creating custom redactors,
               <a href="https://troubleshoot.sh/reference/redactors/overview/" target="_blank" rel="noopener noreferrer" className="replicated-link"> check out our docs</a>.</p>
-              {enablingRedactorMsg && <p className="u-color--chestnut u-fontSize--normal u-fontWeight--medium u-lineHeight--normal u-marginBottom--10 flex justifyContent--center alignItems--center">{enablingRedactorMsg}</p>}
+              {enablingRedactorMsg && <p className="u-textColor--error u-fontSize--normal u-fontWeight--medium u-lineHeight--normal u-marginBottom--10 flex justifyContent--center alignItems--center">{enablingRedactorMsg}</p>}
               {sortedRedactors?.map((redactor) => (
                 <RedactorRow
                   key={`redactor-${redactor.slug}`}
@@ -242,8 +242,8 @@ class Redactors extends Component {
             :
             <div className="flex-column flex1 alignItems--center">
               <div className="flex-column flex1 alignItems--center u-textAlign--center justifyContent--center u-width--half">
-                <p className="u-fontSize--20 u-fontWeight--bold u-color--tundora u-lineHeight--normal">Configure custom redactors</p>
-                <p className="u-fontSize--normal u-color--dustyGray u-fontWeight--medium u-lineHeight--normal u-marginTop--20">Define custom rules for sensitive values you need to be redacted when gathering a support bundle. This might include things like Secrets or IP addresses. For help with creating custom redactors,
+                <p className="u-fontSize--20 u-fontWeight--bold u-textColor--secondary u-lineHeight--normal">Configure custom redactors</p>
+                <p className="u-fontSize--normal u-textColor--bodyCopy u-fontWeight--medium u-lineHeight--normal u-marginTop--20">Define custom rules for sensitive values you need to be redacted when gathering a support bundle. This might include things like Secrets or IP addresses. For help with creating custom redactors,
                 <a href="https://troubleshoot.sh/reference/redactors/overview/" target="_blank" rel="noopener noreferrer" className="replicated-link"> check out our docs</a>.</p>
                 <div className="u-marginTop--30">
                   <Link to={`/app/${this.props.appSlug}/troubleshoot/redactors/new`} className="btn primary blue">Create new redactor</Link>

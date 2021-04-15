@@ -497,7 +497,7 @@ class Dashboard extends Component {
         </XYPlot>
         {legendItems ? <DiscreteColorLegend className="legends" height={120} items={legendItems} /> : null}
         <div className="u-marginTop--10 u-paddingBottom--10 u-textAlign--center">
-          <p className="u-fontSize--normal u-fontWeight--bold u-color--tundora u-lineHeight--normal">{chart.title}</p>
+          <p className="u-fontSize--normal u-fontWeight--bold u-textColor--secondary u-lineHeight--normal">{chart.title}</p>
         </div>
       </div>
     );
@@ -634,7 +634,7 @@ class Dashboard extends Component {
                     className="Dashboard--appIcon u-position--relative">
                   </div>
                 </div>
-                <p className="u-fontSize--30 u-color--tuna u-fontWeight--bold u-marginLeft--20">{appName}</p>
+                <p className="u-fontSize--30 u-textColor--primary u-fontWeight--bold u-marginLeft--20">{appName}</p>
               </div>
             </div>
             <div className="u-marginTop--30 u-paddingTop--10 flex-auto flex flexWrap--wrap u-width--full alignItems--center justifyContent--center">
@@ -761,9 +761,9 @@ class Dashboard extends Component {
             className="Modal"
           >
             <div className="Modal-body">
-              <p className="u-fontSize--large u-fontWeight--bold u-color--tuna">Error uploading airgap buundle</p>
+              <p className="u-fontSize--large u-fontWeight--bold u-textColor--primary">Error uploading airgap buundle</p>
               <div className="ExpandedError--wrapper u-marginTop--10 u-marginBottom--10">
-                <p className="u-fontSize--normal u-color--chestnut">{this.state.airgapUploadError}</p>
+                <p className="u-fontSize--normal u-textColor--error">{this.state.airgapUploadError}</p>
               </div>
               <button type="button" className="btn primary u-marginTop--15" onClick={this.toggleViewAirgapUploadError}>Ok, got it!</button>
             </div>
@@ -778,9 +778,9 @@ class Dashboard extends Component {
             className="Modal"
           >
             <div className="Modal-body">
-              <p className="u-fontSize--large u-fontWeight--bold u-color--tuna">Error updating version</p>
+              <p className="u-fontSize--large u-fontWeight--bold u-textColor--primary">Error updating version</p>
               <div className="ExpandedError--wrapper u-marginTop--10 u-marginBottom--10">
-                <p className="u-fontSize--normal u-color--chestnut">{this.state.airgapUpdateError}</p>
+                <p className="u-fontSize--normal u-textColor--error">{this.state.airgapUpdateError}</p>
               </div>
               <button type="button" className="btn primary u-marginTop--15" onClick={this.toggleViewAirgapUpdateError}>Ok, got it!</button>
             </div>

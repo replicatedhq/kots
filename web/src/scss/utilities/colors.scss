@@ -1,19 +1,45 @@
-.u-color--chestnut { color: #BC4752; }
-.u-color--tuna { color: #323232; }
-.u-color--astral { color: #337AB7; }
-.u-color--royalBlue { color: #326DE6; }
-.u-color--tundora { color: #4A4A4A; }
-.u-color--doveGray { color: #717171; }
-.u-color--silverSand { color: #C4C8CA; }
-.u-color--dustyGray { color: #9B9B9B; }
-.u-color--nevada { color: #6D7278; }
-.u-color--chateauGreen { color: #44BB66; }
+@import "../variables.scss";
+
+.u-color--primary {
+  color: $primary-color;
+}
+.u-color--secondary {
+  color: $secondary-color;
+}
+.u-color--accent {
+  color: $accent-color;
+}
+
+
+.u-textColor--primary {
+  color: $text-color-primary;
+}
+.u-textColor--secondary {
+  color: $text-color-secondary;
+}
+.u-textColor--bodyCopy {
+  color: $text-color-body-copy;
+}
+.u-textColor--info {
+  color: $text-color-info;
+}
+.u-textColor--accent {
+  color: $text-color-accent
+}
+.u-textColor--error {
+  color: $error-color;
+}
+.u-textColor--success {
+  color: $success-color;
+}
+.u-textColor--warning {
+  color: $warning-color;
+}
+.u-linkColor {
+  color: $link-color;
+  &:hover {
+    color: $link-hover-color;
+  }
+}
+
 .u-color--white { color: #FFFFFF; }
-.u-color--red { color: #A31515; }
-.u-color--orange { color: #DB9016; }
-.u-color--vidaLoca { color: #65A61D; }
-.u-color--emperor { color: #545454; }
-.u-color--silverChalice { color: #AFAFAF; }
-.u-color--selectiveYellow { color: #F7B500; }
-.u-color--jaffa { color: #EC8F39; }
-.u-background--biscay { background-color: #193B5B;}

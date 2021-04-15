@@ -388,8 +388,8 @@ class GitOpsDeploymentManager extends React.Component {
   renderGitOpsProviderSelector = (services, selectedService) => {
     return (
       <div className="flex flex1 flex-column u-marginRight--10">
-        <p className="u-fontSize--large u-color--tuna u-fontWeight--bold u-lineHeight--normal">Which GitOps provider do you use?</p>
-        <p className="u-fontSize--normal u-color--dustyGray u-fontWeight--medium u-lineHeight--normal u-marginBottom--10">If your provider is not listed, select “Other”.</p>
+        <p className="u-fontSize--large u-textColor--primary u-fontWeight--bold u-lineHeight--normal">Which GitOps provider do you use?</p>
+        <p className="u-fontSize--normal u-textColor--bodyCopy u-fontWeight--medium u-lineHeight--normal u-marginBottom--10">If your provider is not listed, select “Other”.</p>
         <div className="u-position--relative">
           <Select
             className="replicated-select-container"
@@ -414,10 +414,10 @@ class GitOpsDeploymentManager extends React.Component {
     }
     return (
       <div className="flex flex1 flex-column u-marginLeft--10">
-        <p className="u-fontSize--large u-color--tuna u-fontWeight--bold u-lineHeight--normal">Hostname</p>
-        <p className="u-fontSize--normal u-color--dustyGray u-fontWeight--medium u-lineHeight--normal u-marginBottom--10">Hostname of your GitOps server.</p>
+        <p className="u-fontSize--large u-textColor--primary u-fontWeight--bold u-lineHeight--normal">Hostname</p>
+        <p className="u-fontSize--normal u-textColor--bodyCopy u-fontWeight--medium u-lineHeight--normal u-marginBottom--10">Hostname of your GitOps server.</p>
         <input type="text" className={`Input ${providerError?.field === "hostname" && "has-error"}`} placeholder="hostname" value={hostname} onChange={(e) => this.setState({ hostname: e.target.value })} />
-        {providerError?.field === "hostname" && <p className="u-fontSize--small u-marginTop--5 u-color--chestnut u-fontWeight--medium u-lineHeight--normal">A hostname must be provided</p>}
+        {providerError?.field === "hostname" && <p className="u-fontSize--small u-marginTop--5 u-textColor--error u-fontWeight--medium u-lineHeight--normal">A hostname must be provided</p>}
       </div>
     );
   }
@@ -521,7 +521,7 @@ class GitOpsDeploymentManager extends React.Component {
               <div className="flex alignItems--center">
                 <div style={{ backgroundImage: `url(${app.iconUri})` }} className="appIcon u-position--relative" />
                 <div className="u-marginLeft--10">
-                  <p className="u-fontSize--large u-fontWeight--bold u-color--tundora u-marginBottom--5">{app.name}</p>
+                  <p className="u-fontSize--large u-fontWeight--bold u-textColor--secondary u-marginBottom--5">{app.name}</p>
                   {gitopsEnabled && <Link to={`/app/${app.slug}/gitops`} className="gitops-action-link">Manage GitOps settings</Link>}
                 </div>
               </div>
@@ -534,9 +534,9 @@ class GitOpsDeploymentManager extends React.Component {
                     })}
                   />
                   <p className={classNames("u-fontSize--normal u-marginLeft--5", {
-                    "u-color--dustyGray": !gitopsEnabled && !gitopsConnected,
-                    "u-color--chestnut": gitopsEnabled && !gitopsConnected,
-                    "u-color--chateauGreen": gitopsEnabled && gitopsConnected,
+                    "u-textColor--bodyCopy": !gitopsEnabled && !gitopsConnected,
+                    "u-textColor--error": gitopsEnabled && !gitopsConnected,
+                    "u-textColor--success": gitopsEnabled && gitopsConnected,
                   })}>
                     {this.getGitOpsStatus(gitops)}
                   </p>
@@ -556,7 +556,7 @@ class GitOpsDeploymentManager extends React.Component {
     return (
       <div className="u-textAlign--center">
         <div className="ConfiguredGitOps--wrapper">
-            <p className="u-fontSize--largest u-fontWeight--bold u-color--tundora u-lineHeight--normal u-marginBottom--30">Admin Console GitOps</p>
+            <p className="u-fontSize--largest u-fontWeight--bold u-textColor--accent u-lineHeight--normal u-marginBottom--30">Admin Console GitOps</p>
             <div className={`flex ${dataChanged ? "u-marginBottom--20" : "u-marginBottom--30"}`}>
               {this.renderGitOpsProviderSelector(services, selectedService)}
               {this.renderHostName(selectedService?.value, hostname, providerError)}

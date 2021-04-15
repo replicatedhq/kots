@@ -108,10 +108,10 @@ class DownstreamWatchVersionDiff extends React.Component {
     if (hasErrSettingDiff) {
       return (
         <div className="u-height--full u-width--full flex-column alignItems--center justifyContent--center u-marginTop--15">
-          <p className="u-fontSize--largest u-fontWeight--bold u-color--tuna u-lineHeight--normal u-marginBottom--10">Unable to generate a file diff for the selected releases</p>
-          <p className="u-fontSize--normal u-color--dustyGray u-lineHeight--normal u-marginBottom--20">The release with the sequence <span className="u-fontWeight--bold">{failedSequence}</span> contains invalid YAML or config values and is unable to generate a diff. The full error is below.</p>
+          <p className="u-fontSize--largest u-fontWeight--bold u-textColor--primary u-lineHeight--normal u-marginBottom--10">Unable to generate a file diff for the selected releases</p>
+          <p className="u-fontSize--normal u-textColor--bodyCopy u-lineHeight--normal u-marginBottom--20">The release with the sequence <span className="u-fontWeight--bold">{failedSequence}</span> contains invalid YAML or config values and is unable to generate a diff. The full error is below.</p>
           <div className="error-block-wrapper u-marginBottom--30 flex flex1">
-            <span className="u-color--chestnut">{errSettingDiff}</span>
+            <span className="u-textColor--error">{errSettingDiff}</span>
           </div>
           <div className="flex u-marginBottom--10">
             <button className="btn primary" onClick={() => this.goBack()}>Back to all versions</button>
@@ -162,19 +162,19 @@ class DownstreamWatchVersionDiff extends React.Component {
     const content = diffEditors.length > 0 ? diffEditors :
       (<div className="flex flex-auto alignItems--center justifyContent--center">
         <div className="EmptyWrapper u-width--half u-textAlign--center">
-          <p className="u-fontSize--large u-color--tuna u-fontWeight--bold u-lineHeight--normal">There isn’t anything to compare.</p>
-          <p className="u-fontSize--normal u-color--dustyGray u-lineHeight--normal u-marginBottom--10">There are no changes in any of the files between these 2 versions.</p>
+          <p className="u-fontSize--large u-textColor--primary u-fontWeight--bold u-lineHeight--normal">There isn’t anything to compare.</p>
+          <p className="u-fontSize--normal u-textColor--bodyCopy u-lineHeight--normal u-marginBottom--10">There are no changes in any of the files between these 2 versions.</p>
         </div>
       </div>);
 
     return (
       <div className="u-position--relative u-height--full u-width--full">
         <div className="flex u-marginBottom--15">
-          <div className="u-fontWeight--bold u-color--astral u-cursor--pointer" onClick={this.goBack}>
+          <div className="u-fontWeight--bold u-linkColor u-cursor--pointer" onClick={this.goBack}>
             <span className="icon clickable backArrow-icon u-marginRight--10" style={{ verticalAlign: "0" }} />
             Back
           </div>
-          <span className="u-fontWeight--bold u-marginLeft--20 u-color--tuna">Diffing releases {firstSequence} and {secondSequence}</span>
+          <span className="u-fontWeight--bold u-marginLeft--20 u-textColor--primary">Diffing releases {firstSequence} and {secondSequence}</span>
         </div>
         {content}
       </div>

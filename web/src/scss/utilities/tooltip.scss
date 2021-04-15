@@ -1,36 +1,38 @@
+@import "../variables.scss";
+
 .__react_component_tooltip.replicated-tooltip.show {
   opacity: 1;
 }
 .__react_component_tooltip.type-dark.replicated-tooltip {
   color: #ffffff;
   font-weight: 500;
-  background-color: #193B5B;
+  background-color: darken($primary-color, 35%);
 
   &.white {
-    color: #4A4A4A;
+    color: $text-color-secondary;
     font-weight: 500;
     background-color: #ffffff;
-    border: 1px solid #DFDFDF;
+    border: 1px solid $border-color;
     box-sizing: border-box;
     width: 210px;
     padding: 8px;
   }
 }
 .__react_component_tooltip.type-dark.place-top.replicated-tooltip:after {
-  border-top-color: #193B5B;
+  border-top-color: darken($primary-color, 35%);
 }
 .__react_component_tooltip.type-dark.place-right.replicated-tooltip:after {
-  border-right-color: #193B5B;
+  border-right-color: darken($primary-color, 35%);
 }
 .__react_component_tooltip.type-dark.place-left.replicated-tooltip:after {
-  border-left-color: #193B5B;
+  border-left-color: darken($primary-color, 35%);
 }
 .__react_component_tooltip.type-dark.place-bottom.replicated-tooltip:after {
-  border-bottom-color: #193B5B;
+  border-bottom-color: darken($primary-color, 35%);
 }
 .__react_component_tooltip.type-dark.place-top.replicated-tooltip.white:after {
   border-top-color:#ffffff;
 }
 .__react_component_tooltip.type-dark.place-top.replicated-tooltip.white:before{
-  border-top: 8px solid #DFDFDF;
+  border-top: 8px solid $border-color;
 }

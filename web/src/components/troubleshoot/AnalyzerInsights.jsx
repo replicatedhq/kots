@@ -105,16 +105,16 @@ export class AnalyzerInsights extends React.Component {
     if (isEmpty(insights)) {
       if (status === "uploaded" || status === "analyzing") {
         noInsightsNode = (
-          <div className="flex-column flex1 justifyContent--center alignItems--center u-textAlign--center u-lineHeight--normal u-color--dustyGray">
+          <div className="flex-column flex1 justifyContent--center alignItems--center u-textAlign--center u-lineHeight--normal u-textColor--bodyCopy">
             <Loader size="40" />
-            <p className="u-color--tuna u-fontSize--normal u-fontWeight--bold">We are still analyzing this Support Bundle</p>
+            <p className="u-textColor--primary u-fontSize--normal u-fontWeight--bold">We are still analyzing this Support Bundle</p>
             <p className="u-fontSize--small u-fontWeight--regular u-marginTop--10">This can tak up to a minute, you can refresh the page to see if your analysis is ready.</p>
           </div>
         )
       } else {
         noInsightsNode = (
-          <div className="flex-column flex1 justifyContent--center alignItems--center u-textAlign--center u-lineHeight--normal u-color--dustyGray">
-            <p className="u-color--tuna u-fontSize--normal u-fontWeight--bold">We were unable to surface any insights for this Support Bundle</p>
+          <div className="flex-column flex1 justifyContent--center alignItems--center u-textAlign--center u-lineHeight--normal u-textColor--bodyCopy">
+            <p className="u-textColor--primary u-fontSize--normal u-fontWeight--bold">We were unable to surface any insights for this Support Bundle</p>
             <p className="u-fontSize--small u-fontWeight--regular u-marginTop--10">It's possible that the file that was uploaded was not a Replicated Support Bundle,<br />or that collection of OS or Docker stats was not enabled in your spec.</p>
             <p className="u-fontSize--small u-fontWeight--regular u-marginTop--10">We're adding new bundle analyzers all the time, so check back soon.</p>
           </div>
@@ -139,15 +139,15 @@ export class AnalyzerInsights extends React.Component {
                 />
                 <label htmlFor="filterTiles" className="flex1 u-width--full u-position--relative u-marginLeft--5 u-cursor--pointer">
                   <div className="flex-column">
-                    <span className="u-fontWeight--medium u-color--tuna u-fontSize--normal u-marginBottom--5 u-lineHeight--normal u-userSelect--none">Only show errors and warnings</span>
-                    <span className="u-fontSize--small u-color--dustyGray u-fontWeight--normal u-lineHeight--normal u-userSelect--none">By default we show you everything that was analyzed but you can choose to see only errors and warnings.</span>
+                    <span className="u-fontWeight--medium u-textColor--primary u-fontSize--normal u-marginBottom--5 u-lineHeight--normal u-userSelect--none">Only show errors and warnings</span>
+                    <span className="u-fontSize--small u-textColor--bodyCopy u-fontWeight--normal u-lineHeight--normal u-userSelect--none">By default we show you everything that was analyzed but you can choose to see only errors and warnings.</span>
                   </div>
                 </label>
               </div>
             </div>
             {isEmpty(filteredInsights) ?
-              <div className="flex-column flex1 justifyContent--center alignItems--center u-textAlign--center u-lineHeight--normal u-color--dustyGray">
-                <p className="u-color--tuna u-fontSize--normal u-fontWeight--bold">There were no errors or warnings found.</p>
+              <div className="flex-column flex1 justifyContent--center alignItems--center u-textAlign--center u-lineHeight--normal u-textColor--bodyCopy">
+                <p className="u-textColor--primary u-fontSize--normal u-fontWeight--bold">There were no errors or warnings found.</p>
                 <p className="u-fontSize--small u-fontWeight--regular u-marginTop--10">Turn off "Only show errors and warnings" to see informational analyzers that we were able to surface.</p>
               </div>
               :
@@ -170,8 +170,8 @@ export class AnalyzerInsights extends React.Component {
                                 <span className={`icon analysis tile-icon`}></span>
                             }
                           </div>
-                          <p className={tile.severity === "debug" ? "u-color--dustyGray u-fontSize--normal u-fontWeight--bold" : "u-color--tuna u-fontSize--normal u-fontWeight--bold"}>{tile.primary}</p>
-                          <p className={tile.severity === "debug" ? "u-color--dustyGray u-fontSize--smaller u-fontWeight--medium u-marginTop--5" : "u-color--doveGray u-fontSize--smaller u-fontWeight--medium u-marginTop--5"}>{tile.detail}</p>
+                          <p className={tile.severity === "debug" ? "u-textColor--bodyCopy u-fontSize--normal u-fontWeight--bold" : "u-textColor--primary u-fontSize--normal u-fontWeight--bold"}>{tile.primary}</p>
+                          <p className={tile.severity === "debug" ? "u-textColor--bodyCopy u-fontSize--smaller u-fontWeight--medium u-marginTop--5" : "u-textColor--accent u-fontSize--smaller u-fontWeight--medium u-marginTop--5"}>{tile.detail}</p>
                         </div>
                       </div>
                     )

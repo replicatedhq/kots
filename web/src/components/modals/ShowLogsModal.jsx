@@ -19,7 +19,7 @@ export default function ShowLogsModal(props) {
       {viewLogsErrMsg ?
         <div class="flex1 flex-column justifyContent--center alignItems--center">
           <span className="icon redWarningIcon" />
-          <p className="u-color--chestnut u-fontSize--normal u-fontWeight--medium u-lineHeight--normal u-marginTop--10">{viewLogsErrMsg}</p>
+          <p className="u-textColor--error u-fontSize--normal u-fontWeight--medium u-lineHeight--normal u-marginTop--10">{viewLogsErrMsg}</p>
         </div>
         :
         !logs || !selectedTab || logsLoading ? (

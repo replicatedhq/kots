@@ -261,8 +261,8 @@ class GenerateSupportBundle extends React.Component {
             <Link to={`/watch/${watch.slug}/troubleshoot`} className="replicated-link u-marginRight--5"> &lt; Support Bundle List </Link> : null
           }
           <div className="u-marginTop--15">
-            <h2 className="u-fontSize--larger u-fontWeight--bold u-color--tuna">Analyze {appTitle} for support</h2>
-            <p className="u-fontSize--normal u-color--dustyGray u-lineHeight--medium u-marginTop--5">
+            <h2 className="u-fontSize--larger u-fontWeight--bold u-textColor--primary">Analyze {appTitle} for support</h2>
+            <p className="u-fontSize--normal u-textColor--bodyCopy u-lineHeight--medium u-marginTop--5">
               To diagnose any problems with the application, click the button below to get started. This will
               collect logs, resources and other data from the running application and analyze them against a set of known
               problems in {appTitle}. Logs, cluster info and other data will not leave your cluster.
@@ -270,7 +270,7 @@ class GenerateSupportBundle extends React.Component {
           </div>
           <div className="flex1 flex-column u-paddingRight--30">
             <div>
-              {generateBundleErrMsg && <p className="u-color--chestnut u-fontSize--normal u-fontWeight--medium u-lineHeight--normal u-marginTop--10">{generateBundleErrMsg}</p>}
+              {generateBundleErrMsg && <p className="u-textColor--error u-fontSize--normal u-fontWeight--medium u-lineHeight--normal u-marginTop--10">{generateBundleErrMsg}</p>}
               {isGeneratingBundle ?
                 <div className="flex1 flex-column justifyContent--center alignItems--center">
                   <Loader size="60" />
@@ -284,11 +284,11 @@ class GenerateSupportBundle extends React.Component {
               {showRunCommand ?
                 <div>
                   <div className="u-marginTop--40">
-                    <h2 className="u-fontSize--larger u-fontWeight--bold u-color--tuna">Run this command in your cluster</h2>
+                    <h2 className="u-fontSize--larger u-fontWeight--bold u-textColor--primary">Run this command in your cluster</h2>
                     <CodeSnippet
                       language="bash"
                       canCopy={true}
-                      onCopyText={<span className="u-color--chateauGreen">Command has been copied to your clipboard</span>}
+                      onCopyText={<span className="u-textColor--success">Command has been copied to your clipboard</span>}
                     >
                       {this.state.bundleCommand}
                     </CodeSnippet>

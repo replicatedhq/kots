@@ -13,7 +13,7 @@ function renderYamlErrors(yamlErrorsDetails, version, toggleShowDetailsModal) {
   return (
     <div className="flex alignItems--center u-marginLeft--5">
       <span className="icon error-small" />
-      <span className="u-fontSize--small u-fontWeight--medium u-lineHeight--normal u-marginLeft--5 u-color--red">{yamlErrorsDetails?.length} Invalid file{yamlErrorsDetails?.length !== 1 ? "s" : ""} </span>
+      <span className="u-fontSize--small u-fontWeight--medium u-lineHeight--normal u-marginLeft--5 u-textColor--error">{yamlErrorsDetails?.length} Invalid file{yamlErrorsDetails?.length !== 1 ? "s" : ""} </span>
       <span className="replicated-link u-marginLeft--5 u-fontSize--small" onClick={() => toggleShowDetailsModal(yamlErrorsDetails, version.sequence)}> See details </span>
     </div>
   )
@@ -172,10 +172,10 @@ function renderVersionStatus(version, app, match, viewLogs) {
           />
           {version.status === "deploying" && <Loader className="flex alignItems--center" size="20" />}
           <span className={classNames("u-fontSize--small u-fontWeight--medium u-lineHeight--normal u-marginLeft--5", {
-            "u-color--nevada": version.status === "deployed" || version.status === "merged",
-            "u-color--orange": version.status === "opened",
-            "u-color--dustyGray": version.status === "closed" || version.status === "pending" || version.status === "pending_preflight",
-            "u-color--red": version.status === "failed" || preflightsFailed
+            "u-textColor--accent": version.status === "deployed" || version.status === "merged",
+            "u-textColor--warning": version.status === "opened",
+            "u-textColor--bodyCopy": version.status === "closed" || version.status === "pending" || version.status === "pending_preflight",
+            "u-textColor--error": version.status === "failed" || preflightsFailed
           })}>
             {Utilities.toTitleCase(
               version.status === "pending_preflight"
@@ -209,10 +209,10 @@ function renderVersionStatus(version, app, match, viewLogs) {
             })}
           />
           <span className={classNames("u-fontSize--small u-fontWeight--medium u-lineHeight--normal u-marginLeft--5", {
-            "u-color--nevada": version.status === "deployed" || version.status === "merged",
-            "u-color--orange": version.status === "opened",
-            "u-color--dustyGray": version.status === "closed" || version.status === "pending" || version.status === "pending_preflight",
-            "u-color--red": version.status === "failed"
+            "u-textColor--accent": version.status === "deployed" || version.status === "merged",
+            "u-textColor--warning": version.status === "opened",
+            "u-textColor--bodyCopy": version.status === "closed" || version.status === "pending" || version.status === "pending_preflight",
+            "u-textColor--error": version.status === "failed"
           })}>
             {version.status === "deployed" ?
               "Previously Deployed" :
@@ -246,20 +246,20 @@ export default function AppVersionHistoryRow(props) {
       {selectedDiffReleases && <div className={classNames("checkbox u-marginRight--20", { "checked": (isChecked && !nothingToCommit) }, { "disabled": nothingToCommit })} />}
       <div className={`${nothingToCommit && selectedDiffReleases && "u-opacity--half"} flex-column flex1 u-paddingRight--20`}>
         <div className="flex alignItems--center">
-          <p className="u-fontSize--large u-fontWeight--bold u-lineHeight--medium u-color--tuna">{version.versionLabel || version.title}</p>
-          <p className="u-fontSize--small u-fontWeight--medium u-lineHeight--normal u-color--tundora u-marginLeft--5" style={{ marginTop: "2px" }}>Sequence {version.sequence}</p>
+          <p className="u-fontSize--large u-fontWeight--bold u-lineHeight--medium u-textColor--primary">{version.versionLabel || version.title}</p>
+          <p className="u-fontSize--small u-fontWeight--medium u-lineHeight--normal u-textColor--secondary u-marginLeft--5" style={{ marginTop: "2px" }}>Sequence {version.sequence}</p>
         </div>
         <div className="flex alignItems--center u-marginTop--10"></div>
         <div className="flex flex1 u-marginTop--15 alignItems--center">
-          <p className="u-fontSize--small u-lineHeight--normal u-color--dustyGray u-fontWeight--medium">Released <span className="u-fontWeight--bold">{version.upstreamReleasedAt ? Utilities.dateFormat(version.upstreamReleasedAt, "MMMM D, YYYY") : Utilities.dateFormat(version.createdOn, "MMMM D, YYYY")}</span></p>
+          <p className="u-fontSize--small u-lineHeight--normal u-textColor--bodyCopy u-fontWeight--medium">Released <span className="u-fontWeight--bold">{version.upstreamReleasedAt ? Utilities.dateFormat(version.upstreamReleasedAt, "MMMM D, YYYY") : Utilities.dateFormat(version.createdOn, "MMMM D, YYYY")}</span></p>
           {version.releaseNotes ?
             <p className="release-notes-link u-fontSize--small u-fontWeight--medium u-lineHeight--normal u-marginLeft--10 flex alignItems--center" onClick={() => showDownstreamReleaseNotes(version.releaseNotes)}> <span className="icon releaseNotes-small--icon clickable u-marginRight--5" />Release notes</p> : null}
         </div>
       </div>
       <div className={`${nothingToCommit && selectedDiffReleases && "u-opacity--half"} flex-column flex1`}>
         <div className="flex flex-column">
-          <p className="u-fontSize--normal u-fontWeight--bold u-color--tuna">{version.source}</p>
-          <div className="flex alignItems--center u-fontSize--small u-marginTop--10 u-color--dustyGray">
+          <p className="u-fontSize--normal u-fontWeight--bold u-textColor--primary">{version.source}</p>
+          <div className="flex alignItems--center u-fontSize--small u-marginTop--10 u-textColor--bodyCopy">
             {renderSourceAndDiff(version)}
             {yamlErrorsDetails && renderYamlErrors(yamlErrorsDetails, version, toggleShowDetailsModal)}
           </div>
@@ -273,7 +273,7 @@ export default function AppVersionHistoryRow(props) {
             renderVersionAction(version, latestVersion, nothingToCommit && selectedDiffReleases, props.app, props.history, props.deployVersion)
           }
         </div>
-        <p className="u-fontSize--small u-lineHeight--normal u-color--dustyGray u-fontWeight--medium u-marginTop--15">Deployed: <span className="u-fontWeight--bold">{version.deployedAt ? Utilities.dateFormat(version.deployedAt, "MMMM D, YYYY @ hh:mm a z") : "N/A"}</span></p>
+        <p className="u-fontSize--small u-lineHeight--normal u-textColor--bodyCopy u-fontWeight--medium u-marginTop--15">Deployed: <span className="u-fontWeight--bold">{version.deployedAt ? Utilities.dateFormat(version.deployedAt, "MMMM D, YYYY @ hh:mm a z") : "N/A"}</span></p>
       </div>
     </div>
   )

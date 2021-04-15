@@ -26,11 +26,11 @@ class SnapshotRow extends React.Component {
     return (
       <div className={`flex flex-auto SnapshotRow--wrapper alignItems--center u-marginTop--10 ${snapshot?.status === "Deleting" && "is-deleting"} ${snapshot?.status === "InProgress" && "in-progress"} ${isExpired && "is-expired"}`}>
         <div className="flex-column flex1" style={{ maxWidth: "700px" }}>
-          <p className={`u-fontSize--largest ${isExpired || snapshot?.status === "Deleting" ? "u-color--dustyGray" : "u-color--tuna"} u-lineHeight--normal u-fontWeight--bold u-marginRight--10`}>{snapshot?.name}</p>
+          <p className={`u-fontSize--largest ${isExpired || snapshot?.status === "Deleting" ? "u-textColor--bodyCopy" : "u-textColor--primary"} u-lineHeight--normal u-fontWeight--bold u-marginRight--10`}>{snapshot?.name}</p>
           <div className="flex flex1 alignItems--center u-marginTop--10">
-            <p className="u-fontSize--small u-color--dustyGray u-fontWeight--medium u-lineHeight--normal u-marginRight--20">{snapshot?.startedAt ? Utilities.dateFormat(snapshot?.startedAt, "MMM D YYYY @ hh:mm a z") : "n/a"}</p>
+            <p className="u-fontSize--small u-textColor--bodyCopy u-fontWeight--medium u-lineHeight--normal u-marginRight--20">{snapshot?.startedAt ? Utilities.dateFormat(snapshot?.startedAt, "MMM D YYYY @ hh:mm a z") : "n/a"}</p>
             {snapshot?.status === "Completed" ?
-              <p className="u-fontSize--small u-color--dustyGray u-fontWeight--medium u-lineHeight--normal u-marginRight--20">
+              <p className="u-fontSize--small u-textColor--bodyCopy u-fontWeight--medium u-lineHeight--normal u-marginRight--20">
                 <span className={`status-indicator u-marginRight--5 ${snapshot?.status.toLowerCase()}`}>{Utilities.snapshotStatusToDisplayName(snapshot?.status)}</span>
                 on {snapshot?.finishedAt ? (snapshot?.finishedAt ? Utilities.dateFormat(snapshot?.finishedAt, "MMM D YYYY @ hh:mm a z") : "TBD") : "n/a"}
               </p> :
@@ -42,8 +42,8 @@ class SnapshotRow extends React.Component {
           <div className="flex flex-auto alignItems--center u-marginTop--5">
             <div className="flex flex1 alignItems--center">
               {snapshot?.volumeSizeHuman &&
-                <p className="u-fontSize--normal u-color--doveGray u-fontWeight--bold u-lineHeight--normal u-marginRight--30 justifyContent--center flex alignItems--center"><span className="icon snapshot-volume-size-icon" /> {snapshot?.volumeSizeHuman} </p>}
-              <p className="u-fontSize--normal u-color--doveGray u-fontWeight--bold u-lineHeight--normal justifyContent--center flex alignItems--center"><span className="icon snapshot-volume-icon" /> {snapshot?.volumeSuccessCount}/{snapshot?.volumeCount}</p>
+                <p className="u-fontSize--normal u-textColor--accent u-fontWeight--bold u-lineHeight--normal u-marginRight--30 justifyContent--center flex alignItems--center"><span className="icon snapshot-volume-size-icon" /> {snapshot?.volumeSizeHuman} </p>}
+              <p className="u-fontSize--normal u-textColor--accent u-fontWeight--bold u-lineHeight--normal justifyContent--center flex alignItems--center"><span className="icon snapshot-volume-icon" /> {snapshot?.volumeSuccessCount}/{snapshot?.volumeCount}</p>
             </div>
           </div>
         </div>

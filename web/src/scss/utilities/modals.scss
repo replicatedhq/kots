@@ -1,3 +1,5 @@
+@import "../variables.scss";
+
 /*
   Styles for the default global modal go here.
   Specific modal styles should go in their own respective css files.
@@ -12,7 +14,7 @@
     position: absolute;
     top: 50%;
     left: 50%;
-    border: 1px solid #DFDFDF;
+    border: 1px solid $border-color;
     border-radius: 6px;
     padding: 0;
     margin: 0;
@@ -55,12 +57,12 @@
     .Modal-header p {
       font-size: 20px;
       font-weight: 700;
-      color: #4A4A4A;
+      color: $text-color-secondary;
       line-height: 34px;
       margin: 0;
     }
     .Modal-header.has-border {
-      border-bottom: 1px solid #DFDFDF;
+      border-bottom: 1px solid $border-color;
       padding-bottom: 18px;
     }
     .Modal-body {

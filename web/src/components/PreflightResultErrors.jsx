@@ -98,9 +98,9 @@ class PreflightResultErrors extends Component {
                     <div className="watch-icon" style={{ backgroundImage: `url(${logo})`, width: "36px", height: "36px" }}></div>
                   </div>
                 }
-                <h2 className="u-fontSize--largest u-color--tuna u-fontWeight--bold u-lineHeight--normal">Unable to automatically run preflight checks</h2>
+                <h2 className="u-fontSize--largest u-textColor--primary u-fontWeight--bold u-lineHeight--normal">Unable to automatically run preflight checks</h2>
               </div>
-              <p className="u-marginTop--10 u-marginBottom--10 u-fontSize--normal u-lineHeight--normal u-color--dustyGray u-fontWeight--normal">
+              <p className="u-marginTop--10 u-marginBottom--10 u-fontSize--normal u-lineHeight--normal u-textColor--bodyCopy u-fontWeight--normal">
                 The Kubernetes RBAC policy that the Admin Console is running with does not have access to complete the Preflight Checks. It’s recommended that you run these manually before proceeding.
               </p>
               <p className="replicated-link u-fontSize--normal u-marginBottom--10" onClick={this.toggleShowErrorDetails}>{this.state.showErrorDetails ? "Hide details" : "Show details"}</p>
@@ -123,13 +123,13 @@ class PreflightResultErrors extends Component {
                 </div>
               }
               <div className="u-marginTop--20">
-                <h2 className="u-fontSize--largest u-color--tuna u-fontWeight--bold u-lineHeight--normal">Run Preflight Checks Manually</h2>
-                <p className="u-fontSize--normal u-color--dustyGray u-lineHeight--normal u-marginBottom--20">Run the commands below from your workstation to complete the Preflight Checks.</p>
+                <h2 className="u-fontSize--largest u-textColor--primary u-fontWeight--bold u-lineHeight--normal">Run Preflight Checks Manually</h2>
+                <p className="u-fontSize--normal u-textColor--bodyCopy u-lineHeight--normal u-marginBottom--20">Run the commands below from your workstation to complete the Preflight Checks.</p>
                 {command ?
                   <CodeSnippet
                     language="bash"
                     canCopy={true}
-                    onCopyText={<span className="u-color--chateauGreen">Command has been copied to your clipboard</span>}
+                    onCopyText={<span className="u-textColor--success">Command has been copied to your clipboard</span>}
                   >
                     {command}
                   </CodeSnippet>

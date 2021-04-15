@@ -48,8 +48,8 @@ class ConfigureSnapshots extends React.Component {
         className="Modal ConfigureSnapshots"
       >
         <div className="Modal-body">
-          <p className="u-fontSize--largest u-fontWeight--bold u-color--tundora u-marginBottom--20">Add a new destination</p>
-          <p className="u-fontSize--normal u-fontWeight--medium u-color--dustyGray u-lineHeight--normal">
+          <p className="u-fontSize--largest u-fontWeight--bold u-textColor--secondary u-marginBottom--20">Add a new destination</p>
+          <p className="u-fontSize--normal u-fontWeight--medium u-textColor--bodyCopy u-lineHeight--normal">
           In order to configure and use Snapshots (backup and restore), please install Velero in the cluster. Once Velero is installed, click the button below and the Admin Console will verify the installation and begin configuring Snapshots.
           </p>
           {kotsadmRequiresVeleroAccess &&
@@ -63,33 +63,33 @@ class ConfigureSnapshots extends React.Component {
           {activeTab === VELERO_IS_INSTALLED_TAB
             ?
             <div className="flex-column u-marginTop--12">
-              <p className="u-fontSize--large u-fontWeight--bold u-color--tundora u-marginBottom--10">Velero namespace access required</p>
-              <p className="u-fontSize--normal u-fontWeight--normal u-color--dustyGray u-lineHeight--normal u-marginBottom--10"> We’ve detected that the Admin Console is running with minimal role-based-access-control (RBAC) privileges, meaning that the Admin Console is limited to a single namespace. To use the snapshots functionality, the Admin Console requires access to the namespace Velero is installed in. Please make sure Velero is installed, then use the following command to provide the Admin Console with the necessary permissions to access it: </p>
+              <p className="u-fontSize--large u-fontWeight--bold u-textColor--secondary u-marginBottom--10">Velero namespace access required</p>
+              <p className="u-fontSize--normal u-fontWeight--normal u-textColor--bodyCopy u-lineHeight--normal u-marginBottom--10"> We’ve detected that the Admin Console is running with minimal role-based-access-control (RBAC) privileges, meaning that the Admin Console is limited to a single namespace. To use the snapshots functionality, the Admin Console requires access to the namespace Velero is installed in. Please make sure Velero is installed, then use the following command to provide the Admin Console with the necessary permissions to access it: </p>
               <CodeSnippet
                 language="bash"
                 canCopy={true}
-                onCopyText={<span className="u-color--chateauGreen">Command has been copied to your clipboard</span>}
+                onCopyText={<span className="u-textColor--success">Command has been copied to your clipboard</span>}
               >
                 {`kubectl kots velero ensure-permissions --namespace ${minimalRBACKotsadmNamespace} --velero-namespace <velero-namespace>`}
               </CodeSnippet>
-              <p className="u-fontSize--normal u-fontWeight--normal u-color--dustyGray u-lineHeight--normal u-marginTop--20 u-marginBottom--20"> <span className="u-fontWeight--bold u-color--tundora">Note:</span> Please replace {`"<velero-namespace>"`} with the actual namespace Velero is installed in, which is {`'velero'`} by default. </p>
+              <p className="u-fontSize--normal u-fontWeight--normal u-textColor--bodyCopy u-lineHeight--normal u-marginTop--20 u-marginBottom--20"> <span className="u-fontWeight--bold u-textColor--secondary">Note:</span> Please replace {`"<velero-namespace>"`} with the actual namespace Velero is installed in, which is {`'velero'`} by default. </p>
             </div>
             :
             <div className="flex-column u-marginTop--12">
               <div className="InstallVelero--wrapper flex flex-column">
-                <p className="u-color--tundora u-fontSize--large u-fontWeight--bold">To install Velero</p>
+                <p className="u-textColor--secondary u-fontSize--large u-fontWeight--bold">To install Velero</p>
                 <div className="flex1 flex-column u-marginBottom--30">
                   {isKurlEnabled ?
-                    <p className="u-fontSize--small flex-auto alignItems--center u-fontWeight--medium u-color--dustyGray u-marginTop--20"><span className="circleNumberGray u-marginRight--10"> 1 </span>Install the CLI on your machine by following the Velero installation instructions at: <a href="https://velero.io/docs/v1.6/basic-install/" target="_blank" rel="noopener noreferrer" className="replicated-link u-marginLeft--5">https://velero.io/docs/v1.6/basic-install/</a> </p>
+                    <p className="u-fontSize--small flex-auto alignItems--center u-fontWeight--medium u-textColor--bodyCopy u-marginTop--20"><span className="circleNumberGray u-marginRight--10"> 1 </span>Install the CLI on your machine by following the Velero installation instructions at: <a href="https://velero.io/docs/v1.5/basic-install/" target="_blank" rel="noopener noreferrer" className="replicated-link u-marginLeft--5">https://velero.io/docs/v1.5/basic-install/</a> </p>
                     :
-                    <p className="u-fontSize--small flex-auto alignItems--center u-fontWeight--medium u-color--dustyGray u-marginTop--20"><span className="circleNumberGray u-marginRight--10"> 1 </span>Install the CLI on your machine by following the <a href="https://velero.io/docs/v1.6/basic-install/" target="_blank" rel="noopener noreferrer" className="replicated-link u-marginLeft--5">Velero installation instructions</a> </p>
+                    <p className="u-fontSize--small flex-auto alignItems--center u-fontWeight--medium u-textColor--bodyCopy u-marginTop--20"><span className="circleNumberGray u-marginRight--10"> 1 </span>Install the CLI on your machine by following the <a href="https://velero.io/docs/v1.5/basic-install/" target="_blank" rel="noopener noreferrer" className="replicated-link u-marginLeft--5">Velero installation instructions</a> </p>
                   }
                   <div className="flex flex1 u-marginTop--20">
                     <div className="flex">
                       <span className="circleNumberGray u-marginRight--10"> 2 </span>
                     </div>
                     <div className="flex flex-column">
-                      <p className="u-fontSize--small flex alignItems--center u-fontWeight--medium u-color--dustyGray"> Run the commands from the instructions for your provider </p>
+                      <p className="u-fontSize--small flex alignItems--center u-fontWeight--medium u-textColor--bodyCopy"> Run the commands from the instructions for your provider </p>
                       <div className="flex flexWrap--wrap" style={{ width: "500px" }}>
                         <a href="https://github.com/vmware-tanzu/velero-plugin-for-aws#setup" target="_blank" rel="noopener noreferrer" className="snapshotOptions">
                           <span style={{ width: "130px" }}> <span className="icon awsIcon u-cursor--pointer u-marginRight--5" />Amazon AWS </span>
@@ -108,7 +108,7 @@ class ConfigureSnapshots extends React.Component {
                         <a className="snapshotOptions" onClick={() => openConfigureFileSystemProviderModal(FILE_SYSTEM_HOSTPATH_TYPE)}>
                           <span style={{ width: "130px" }}>  <span className="icon hostpathIcon u-cursor--pointer u-marginRight--5" /> Host Path </span></a>
                       </div>
-                      <p className="u-fontSize--small u-fontWeight--medium u-color--dustyGray u-marginTop--20"> With all providers, you must install using the  <span className="inline-code u-marginLeft--5 u-marginRight--5"> --use-restic </span>  flag for snapshots to work. </p>
+                      <p className="u-fontSize--small u-fontWeight--medium u-textColor--bodyCopy u-marginTop--20"> With all providers, you must install using the  <span className="inline-code u-marginLeft--5 u-marginRight--5"> --use-restic </span>  flag for snapshots to work. </p>
                     </div>
                   </div>
                 </div>

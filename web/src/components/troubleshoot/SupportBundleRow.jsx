@@ -26,9 +26,9 @@ class SupportBundleRow extends React.Component {
     // let shareContext;
 
     // if (notSameTeam) {
-    //   shareContext = <span className="u-marginLeft--normal u-fontSize--normal u-color--chateauGreen">Shared by <span className="u-fontWeight--bold">{bundle.teamName}</span></span>
+    //   shareContext = <span className="u-marginLeft--normal u-fontSize--normal u-textColor--success">Shared by <span className="u-fontWeight--bold">{bundle.teamName}</span></span>
     // } else if (isSameTeam && isShared) {
-    //   shareContext = <span className="u-marginLeft--normal u-fontSize--normal u-fontWeight--medium u-color--tundora">Shared with Replicated</span>
+    //   shareContext = <span className="u-marginLeft--normal u-fontSize--normal u-fontWeight--medium u-textColor--secondary">Shared with Replicated</span>
     // }
     // return shareContext;
   }
@@ -98,11 +98,11 @@ class SupportBundleRow extends React.Component {
         noInsightsMessage = (
           <div className="flex">
             <Loader size="14" />
-            <p className="u-fontSize--small u-fontWeight--medium u-marginLeft--5 u-color--doveGray">We are still analyzing your bundle</p>
+            <p className="u-fontSize--small u-fontWeight--medium u-marginLeft--5 u-textColor--accent">We are still analyzing your bundle</p>
           </div>
         )
       } else {
-        noInsightsMessage = <p className="u-fontSize--small u-fontWeight--medium u-color--doveGray">Unable to surface insights for this bundle</p>
+        noInsightsMessage = <p className="u-fontSize--small u-fontWeight--medium u-textColor--accent">Unable to surface insights for this bundle</p>
       }
     }
     return (
@@ -115,14 +115,14 @@ class SupportBundleRow extends React.Component {
                   <div className="flex">
                     {!this.props.isCustomer && bundle.customer ?
                       <div className="flex-column flex1 flex-verticalCenter">
-                        <span className="u-fontSize--large u-color--tuna u-fontWeight--medium u-cursor--pointer">
+                        <span className="u-fontSize--large u-textColor--primary u-fontWeight--medium u-cursor--pointer">
                           <span>Collected on <span className="u-fontWeight--bold">{dayjs(bundle.createdAt).format("MMMM D, YYYY @ h:mm a")}</span></span>
                         </span>
                       </div>
                       :
                       <div className="flex-column flex1 flex-verticalCenter">
                         <span>
-                          <span className="u-fontSize--large u-cursor--pointer u-color--tuna u-fontWeight--medium">Collected on <span className="u-fontWeight--medium">{dayjs(bundle.createdAt).format("MMMM D, YYYY @ h:mm a")}</span></span>
+                          <span className="u-fontSize--large u-cursor--pointer u-textColor--primary u-fontWeight--medium">Collected on <span className="u-fontWeight--medium">{dayjs(bundle.createdAt).format("MMMM D, YYYY @ h:mm a")}</span></span>
                           {this.renderSharedContext()}
                         </span>
                       </div>
@@ -150,11 +150,11 @@ class SupportBundleRow extends React.Component {
               </div>
               <div className="flex flex-auto alignItems--center justifyContent--flexEnd">
                 {this.state.downloadBundleErrMsg &&
-                  <p className="u-color--chestnut u-fontSize--normal u-fontWeight--medium u-lineHeight--normal u-marginRight--10">{this.state.downloadBundleErrMsg}</p>}
+                  <p className="u-textColor--error u-fontSize--normal u-fontWeight--medium u-lineHeight--normal u-marginRight--10">{this.state.downloadBundleErrMsg}</p>}
                 {this.state.downloadingBundle ?
                   <Loader size="30" />
                   :
-                  <span className="u-fontSize--small u-color--astral u-fontWeight--medium u-textDecoration--underlineOnHover u-marginRight--normal" onClick={() => this.downloadBundle(bundle)}>Download bundle</span>
+                  <span className="u-fontSize--small u-linkColor u-fontWeight--medium u-textDecoration--underlineOnHover u-marginRight--normal" onClick={() => this.downloadBundle(bundle)}>Download bundle</span>
                 }
               </div>
             </div>

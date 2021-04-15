@@ -335,8 +335,8 @@ class SnapshotSchedule extends Component {
             <div className="Info--wrapper flex flex1 u-marginBottom--15">
               <span className="icon info-icon flex-auto u-marginTop--5" />
               <div className="flex flex-column u-marginLeft--5">
-                <p className="u-fontSize--normal u-fontWeight--bold u-lineHeight--normal u-color--tuna"> Scheduling not active </p>
-                <span className="u-fontSize--small u-fontWeight--normal u-lineHeight--normal u-color--dustyGray"> Schedules will not take affect until Velero is running and a storage destination has been configured.</span>
+                <p className="u-fontSize--normal u-fontWeight--bold u-lineHeight--normal u-textColor--primary"> Scheduling not active </p>
+                <span className="u-fontSize--small u-fontWeight--normal u-lineHeight--normal u-textColor--bodyCopy"> Schedules will not take affect until Velero is running and a storage destination has been configured.</span>
               </div>
             </div>}
           <div className="SnapshotScheduleTabs--wrapper flex1 flex-column">
@@ -346,10 +346,10 @@ class SnapshotSchedule extends Component {
             </div>
           </div>
           {this.state.activeTab === "full" ?
-            <p className="u-fontSize--small u-fontWeight--normal u-lineHeight--normal u-color--dustyGray u-marginTop--12 schedule"> Set up a custom schedule with a retention policy to take automatic snapshots of the admin console and all application data. </p>
+            <p className="u-fontSize--small u-fontWeight--normal u-lineHeight--normal u-textColor--bodyCopy u-marginTop--12 schedule"> Set up a custom schedule with a retention policy to take automatic snapshots of the admin console and all application data. </p>
             :
             <div className="flex flex-column schedule">
-              <p className="u-fontSize--small u-fontWeight--normal u-lineHeight--normal u-color--dustyGray u-marginTop--12"> Set up a custom schedule with a retention policy to take automatic snapshots of your application and its data. </p>
+              <p className="u-fontSize--small u-fontWeight--normal u-lineHeight--normal u-textColor--bodyCopy u-marginTop--12"> Set up a custom schedule with a retention policy to take automatic snapshots of your application and its data. </p>
               <div className="flex u-marginTop--12">
                 <Select
                   className="replicated-select-container u-width--full"
@@ -367,7 +367,7 @@ class SnapshotSchedule extends Component {
           <form className="flex flex-column snapshot-form-wrapper u-marginTop--20">
             <div className={`flex-column ${!isAppConfig ? "u-marginTop--12" : "u-marginBottom--20"}`}>
               <div className="flex1 u-marginBottom--20">
-                <p className="u-fontSize--normal u-color--tuna u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">Automatic snapshots</p>
+                <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">Automatic snapshots</p>
                 <div className="BoxedCheckbox-wrapper flex1 u-textAlign--left">
                   <div className={`flex-auto flex alignItems--center ${this.state.autoEnabled ? "is-active" : ""}`}>
                     <input
@@ -379,7 +379,7 @@ class SnapshotSchedule extends Component {
                     />
                     <label htmlFor="autoEnabled" className="flex1 flex u-width--full u-position--relative u-cursor--pointer u-userSelect--none">
                       <div className="flex1">
-                        <p className="u-color--tuna u-fontSize--normal u-fontWeight--medium u-marginLeft--5">Enable automatic scheduled snapshots</p>
+                        <p className="u-textColor--primary u-fontSize--normal u-fontWeight--medium u-marginLeft--5">Enable automatic scheduled snapshots</p>
                       </div>
                     </label>
                   </div>
@@ -389,7 +389,7 @@ class SnapshotSchedule extends Component {
                 <div className="flex-column flex1 u-position--relative u-marginBottom--50">
                   <div className="flex flex1">
                     <div className="flex1 u-paddingRight--5">
-                      <p className="u-fontSize--normal u-color--tuna u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">Schedule</p>
+                      <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">Schedule</p>
                       <Select
                         className="replicated-select-container"
                         classNamePrefix="replicated-select"
@@ -404,7 +404,7 @@ class SnapshotSchedule extends Component {
                     </div>
                     {this.state.selectedSchedule.value === "custom" &&
                       <div className="flex1 u-paddingLeft--5">
-                        <p className="u-fontSize--normal u-color--tuna u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">Cron expression</p>
+                        <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">Cron expression</p>
                         <input type="text" className="Input" placeholder="0 0 * * MON" value={this.state.frequency} onChange={(e) => { this.handleFormChange("frequency", e) }} />
                       </div>
                     }
@@ -417,9 +417,9 @@ class SnapshotSchedule extends Component {
                 </div>
               }
               <div>
-                <p className="u-fontSize--normal u-color--tuna u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">Retention policy</p>
-                <p className="u-fontSize--small u-color--dustyGray u-fontWeight--normal u-lineHeight--normal u-marginBottom--10">The Admin Console can reclaim space by automatically deleting older scheduled snapshots.</p>
-                <p className="u-fontSize--small u-color--dustyGray u-fontWeight--normal u-lineHeight--normal u-marginBottom--10">Snapshots older than this will be deleted.</p>
+                <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">Retention policy</p>
+                <p className="u-fontSize--small u-textColor--bodyCopy u-fontWeight--normal u-lineHeight--normal u-marginBottom--10">The Admin Console can reclaim space by automatically deleting older scheduled snapshots.</p>
+                <p className="u-fontSize--small u-textColor--bodyCopy u-fontWeight--normal u-lineHeight--normal u-marginBottom--10">Snapshots older than this will be deleted.</p>
                 <div className="flex u-marginBottom--20">
                   <div className="flex-auto u-paddingRight--5">
                     <input type="text" className="Input" placeholder="4" value={this.state.retentionInput} onChange={(e) => { this.handleFormChange("retentionInput", e) }} />
@@ -444,12 +444,12 @@ class SnapshotSchedule extends Component {
                 {updateConfirm &&
                   <div className="u-marginLeft--10 flex alignItems--center">
                     <span className="icon checkmark-icon" />
-                    <span className="u-marginLeft--5 u-fontSize--small u-fontWeight--medium u-color--chateauGreen">Schedule updated</span>
+                    <span className="u-marginLeft--5 u-fontSize--small u-fontWeight--medium u-textColor--success">Schedule updated</span>
                   </div>
                 }
                 {updateScheduleErrMsg &&
                   <div className="u-marginLeft--10 flex alignItems--center">
-                    <span className="u-marginLeft--5 u-fontSize--small u-fontWeight--medium u-color--chestnut">{updateScheduleErrMsg}</span>
+                    <span className="u-marginLeft--5 u-fontSize--small u-fontWeight--medium u-textColor--error">{updateScheduleErrMsg}</span>
                   </div>}
               </div>
             </div>

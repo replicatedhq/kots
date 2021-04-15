@@ -1,3 +1,5 @@
+@import "../../variables.scss";
+
 .WatchDetailPage--wrapper {
 
   .watch-detail-header {
@@ -29,9 +31,9 @@
     top: 0;
     z-index: 1;
     padding: 0 20px;
-    background-color: #f8f8f8;
-    border-top: 1px solid #DFDFDF;
-    border-bottom: 1px solid #DFDFDF;
+    background-color: $secondary-color;
+    border-top: 1px solid $border-color;
+    border-bottom: 1px solid $border-color;
     ul {
       margin: 0 auto;
     }
@@ -47,20 +49,20 @@
         padding: 12px 10px 11px;
         font-size: 14px;
         font-weight: 500;
-        color: #9B9B9B;
+        color: $text-color-body-copy;
         display: inline-block;
         transition: color .2s;
 
         &:hover {
-          color: #717171;
+          color: $text-color-accent;
         }
       }
 
       &.is-active a {
-        color: #4a4a4a;
+        color: $text-color-secondary;
 
         &:hover {
-          color: #4a4a4a;
+          color: $text-color-secondary;
         }
         &:after {
           content: "";
@@ -68,7 +70,7 @@
           height: 2px;
           position: absolute;
           display: block;
-          background-color: #326de6;
+          background-color: $accent-color;
           bottom: -1px;
           left: 0;
         }
@@ -140,7 +142,7 @@
 
     .DetailPage--downstreamRow {
       padding: 11px 12px 12px;
-      border-bottom: 1px solid #C4C8CA;
+      border-bottom: 1px solid $border-color;
     }
 
   }
@@ -152,7 +154,7 @@
     code {
       white-space: pre-wrap;
       padding: 10px;
-      background: #4A4A4A;
+      background: $text-color-secondary;
       color: white;
       margin: 12px 0;
     }
@@ -168,7 +170,7 @@
   .test-connection-box {
     padding: 14px 12px;
     border-radius: 4px;
-    background-color: #F5F8FC;
-    border: 1px solid #C4C8CA;
+    background-color: lighten($primary-color, 43.5%);
+    border: 1px solid $border-color;
   }
 }

@@ -1,3 +1,5 @@
+@import "../../variables.scss";
+
 .is-kotsadm.markdown-wrapper {
   max-height: 50vh;
   overflow: auto;
@@ -152,7 +154,7 @@
 
   table { padding: 0; margin: 10px 0; }
   table tr {
-    border-top: 1px solid #C4C8CA;
+    border-top: 1px solid $border-color;
     background-color: white;
     margin: 0;
     padding: 0;
@@ -160,13 +162,13 @@
   table tr:nth-child(2n) { background-color: #f8f8f8; }
   table tr th {
     font-weight: bold;
-    border: 1px solid #C4C8CA;
+    border: 1px solid $border-color;
     text-align: left;
     margin: 0;
     padding: 6px 13px;
   }
   table tr td {
-    border: 1px solid #C4C8CA;
+    border: 1px solid $border-color;
     text-align: left;
     margin: 0;
     padding: 6px 13px;

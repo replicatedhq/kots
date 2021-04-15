@@ -11,7 +11,7 @@ export default class RBACGroupPolicyRow extends Component {
           <div className="flex1 flex-column justifyContent--flexStart u-paddingRight--10">
             <div className="flex alignItems--center">
               {!this.props.isEditing ?
-                <span className="u-fontSize--normal u-lineHeight--normal u-color--tundora" style={{ maxWidth: "690px" }}> {groupName} </span> :
+                <span className="u-fontSize--normal u-lineHeight--normal u-textColor--secondary" style={{ maxWidth: "690px" }}> {groupName} </span> :
                 <input type="text"
                   className="Input darker"
                   placeholder="Group name"
@@ -37,7 +37,7 @@ export default class RBACGroupPolicyRow extends Component {
                             onChange={(e) => { handleRoleCheckboxChange(index, i, e) }}
                           />
                           <label htmlFor={`checkbox-${index}=${role.id}`} className="flex1 flex u-width--full u-position--relative u-cursor--pointer u-userSelect--none">
-                            <p className="u-color--doveGray u-fontSize--small u-fontWeight--medium">{role.name}</p>
+                            <p className="u-textColor--accent u-fontSize--small u-fontWeight--medium">{role.name}</p>
                           </label>
                         </div>
                       )
@@ -59,7 +59,7 @@ export default class RBACGroupPolicyRow extends Component {
                             onChange={(e) => { handleFormChange(`${role.id}-${index}-${i}`, index, e) }}
                           />
                           <label htmlFor={`radio-${index}=${role.id}`} className="flex1 flex u-width--full u-position--relative u-cursor--pointer u-userSelect--none" style={{ marginTop: "3px" }}>
-                            <p className="u-color--doveGray u-fontSize--small u-fontWeight--medium">{role.name}</p>
+                            <p className="u-textColor--accent u-fontSize--small u-fontWeight--medium">{role.name}</p>
                           </label>
                         </div>
                       )

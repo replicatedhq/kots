@@ -89,7 +89,7 @@ class AirgapUploadProgress extends React.Component {
       return (
         <div>
           <Loader className="flex justifyContent--center" size="32" />
-          <p className="u-marginTop--10 u-fontSize--small u-color--dustyGray u-fontWeight--medium" style={{ maxWidth: 200 }}>
+          <p className="u-marginTop--10 u-fontSize--small u-textColor--bodyCopy u-fontWeight--medium" style={{ maxWidth: 200 }}>
             This may take a while depending on your network connection and size of your bundle
           </p>
         </div>
@@ -137,18 +137,18 @@ class AirgapUploadProgress extends React.Component {
       <div
         className={`u-marginTop--20 u-fontWeight--medium u-lineHeight--medium u-textAlign--center`}
       >
-        <div className="flex flex1 u-marginBottom--10 justifyContent--center alignItems--center u-color--tundora">
+        <div className="flex flex1 u-marginBottom--10 justifyContent--center alignItems--center u-textColor--secondary">
           {statusMsg && <Loader className="flex u-marginRight--5" size="24" />}
           <p>{statusMsg}</p>
         </div>
-        <p className="u-color--dustyGray">This may take a while depending on your network connection and size of your bundle</p>
+        <p className="u-textColor--bodyCopy">This may take a while depending on your network connection and size of your bundle</p>
       </div>
     );
 
     if (smallSize) {
       statusDiv = statusMsg && (
         <div
-          className={`u-marginTop--10 u-paddingRight--30 u-color--dustyGray u-fontWeight--bold u-lineHeight--medium u-textAlign--center`}
+          className={`u-marginTop--10 u-paddingRight--30 u-textColor--bodyCopy u-fontWeight--bold u-lineHeight--medium u-textAlign--center`}
           style={{ maxWidth: 200 }}
         >
           {statusMsg.substring(0, 30) + "..."}
@@ -159,7 +159,7 @@ class AirgapUploadProgress extends React.Component {
 
     return (
       <div className="AirgapUploadProgress--wrapper flex-1-auto flex-column alignItems--center justifyContent--center u-marginTop--10">
-        <div className="flex1 flex-column u-color--tuna">
+        <div className="flex1 flex-column u-textColor--primary">
           {processingImages ?
             <div className="flex1 flex-column alignItems--center justifyContent--center">
               <div className="flex-auto">
@@ -198,12 +198,12 @@ class AirgapUploadProgress extends React.Component {
                   return (
                     <div key={`${image.displayName}-${i}`} className="flex1 u-marginTop--20">
                       <div className="flex flex1 alignItems--center">
-                        <p className={`u-fontWeight--bold u-fontSize--normal u-color--tundora u-marginRight--10 u-textAlign--right flex1 ${image.status === "queued" ? "u-opacity--half" : ""}`}>{image.displayName}</p>
+                        <p className={`u-fontWeight--bold u-fontSize--normal u-textColor--secondary u-marginRight--10 u-textAlign--right flex1 ${image.status === "queued" ? "u-opacity--half" : ""}`}>{image.displayName}</p>
                         {imageProgressBar}
-                        {image.status === "uploaded" ? <span className="u-marginLeft--10 icon checkmark-icon" /> : <span className="u-fontWeight--medium u-fontSize--normal u-color--tundora u-marginLeft--10">{percentage}</span>}
+                        {image.status === "uploaded" ? <span className="u-marginLeft--10 icon checkmark-icon" /> : <span className="u-fontWeight--medium u-fontSize--normal u-textColor--secondary u-marginLeft--10">{percentage}</span>}
                       </div>
                       <div className="u-marginTop--5">
-                        {currentMessage ? <p className="u-textAlign--center u-fontSize--small u-fontWeight--medium u-color--dustyGray">{currentMessage}</p> : <p className="u-fontSize--small"></p>}
+                        {currentMessage ? <p className="u-textAlign--center u-fontSize--small u-fontWeight--medium u-textColor--bodyCopy">{currentMessage}</p> : <p className="u-fontSize--small"></p>}
                       </div>
                     </div>
                   )
@@ -216,9 +216,9 @@ class AirgapUploadProgress extends React.Component {
                 Uploading your airgap bundle
               </h1>
               <div className="flex alignItems--center u-marginTop--20">
-                <span className="u-fontWeight--bold u-fontSize--normal u-color--tundora u-marginRight--10">{percentage}</span>
+                <span className="u-fontWeight--bold u-fontSize--normal u-textColor--secondary u-marginRight--10">{percentage}</span>
                 {progressBar}
-                {uploadComplete ? <span className="u-marginLeft--10 icon checkmark-icon" /> : <span className="u-fontWeight--medium u-fontSize--normal u-color--tundora u-marginLeft--10">{formatByteSize(total)}</span>}
+                {uploadComplete ? <span className="u-marginLeft--10 icon checkmark-icon" /> : <span className="u-fontWeight--medium u-fontSize--normal u-textColor--secondary u-marginLeft--10">{formatByteSize(total)}</span>}
               </div>
               {statusDiv}
             </div>

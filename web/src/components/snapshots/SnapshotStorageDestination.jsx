@@ -544,21 +544,21 @@ class SnapshotStorageDestination extends Component {
           <div>
             <div className="flex u-marginBottom--30">
               <div className="flex1 u-paddingRight--5">
-                <p className="u-fontSize--normal u-color--tuna u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">Bucket</p>
+                <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">Bucket</p>
                 <input type="text" className="Input" placeholder="Bucket name" value={this.state.s3bucket} onChange={(e) => { this.handleFormChange("s3bucket", e) }} />
               </div>
               <div className="flex1 u-paddingLeft--5">
-                <p className="u-fontSize--normal u-color--tuna u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">Region</p>
+                <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">Region</p>
                 <input type="text" className="Input" placeholder="Bucket region" value={this.state.s3Region} onChange={(e) => { this.handleFormChange("s3Region", e) }} />
               </div>
             </div>
             <div className="flex u-marginBottom--30">
               <div className="flex1 u-paddingRight--5">
-                <p className="u-fontSize--normal u-color--tuna u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">Path</p>
+                <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">Path</p>
                 <input type="text" className="Input" placeholder="/path/to/destination" value={this.state.s3Path} onChange={(e) => { this.handleFormChange("s3Path", e) }} />
               </div>
               <div className="flex1 u-paddingLeft--5">
-                <p className="u-fontSize--normal u-color--tuna u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">&nbsp;</p>
+                <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">&nbsp;</p>
                 <div className="BoxedCheckbox-wrapper flex1 u-textAlign--left">
                   <div className={`BoxedCheckbox flex-auto flex alignItems--center ${this.state.useIamAws ? "is-active" : ""}`}>
                     <input
@@ -570,7 +570,7 @@ class SnapshotStorageDestination extends Component {
                     />
                     <label htmlFor="useIamAws" className="flex1 flex u-width--full u-position--relative u-cursor--pointer u-userSelect--none">
                       <div className="flex1">
-                        <p className="u-color--tuna u-fontSize--normal u-fontWeight--medium">Use IAM Instance Role</p>
+                        <p className="u-textColor--primary u-fontSize--normal u-fontWeight--medium">Use IAM Instance Role</p>
                       </div>
                     </label>
                   </div>
@@ -581,11 +581,11 @@ class SnapshotStorageDestination extends Component {
             {!useIamAws &&
               <div className="flex u-marginBottom--30">
                 <div className="flex1 u-paddingRight--5">
-                  <p className="u-fontSize--normal u-color--tuna u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">Access Key ID</p>
+                  <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">Access Key ID</p>
                   <input type="text" className="Input" placeholder="key ID" value={this.state.s3KeyId} onChange={(e) => { this.handleFormChange("s3KeyId", e) }} />
                 </div>
                 <div className="flex1 u-paddingLeft--5">
-                  <p className="u-fontSize--normal u-color--tuna u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">Access Key Secret</p>
+                  <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">Access Key Secret</p>
                   <input type="password" className="Input" placeholder="access key" value={this.state.s3KeySecret} onChange={(e) => { this.handleFormChange("s3KeySecret", e) }} />
                 </div>
               </div>
@@ -597,38 +597,38 @@ class SnapshotStorageDestination extends Component {
         return (
           <div>
             <div className="flex1 u-paddingRight--5">
-              <p className="u-fontSize--normal u-color--tuna u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">Bucket</p>
+              <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">Bucket</p>
               <input type="text" className="Input" placeholder="Bucket name" value={this.state.azureBucket} onChange={(e) => { this.handleFormChange("azureBucket", e) }} />
             </div>
             <div className="flex u-marginBottom--30">
               <div className="flex1 u-paddingRight--5">
-                <p className="u-fontSize--normal u-color--tuna u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">Path</p>
+                <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">Path</p>
                 <input type="text" className="Input" placeholder="/path/to/destination" value={this.state.azurePath} onChange={(e) => { this.handleFormChange("azurePath", e) }} />
               </div>
             </div>
             <div className="flex u-marginBottom--30">
               <div className="flex1 u-paddingRight--5">
-                <p className="u-fontSize--normal u-color--tuna u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">Subscription ID</p>
+                <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">Subscription ID</p>
                 <input type="text" className="Input" placeholder="Subscription ID" value={this.state.azureSubscriptionId} onChange={(e) => { this.handleFormChange("azureSubscriptionId", e) }} />
               </div>
               <div className="flex1 u-paddingLeft--5">
-                <p className="u-fontSize--normal u-color--tuna u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">Tenant ID</p>
+                <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">Tenant ID</p>
                 <input type="text" className="Input" placeholder="Tenant ID" value={this.state.azureTenantId} onChange={(e) => { this.handleFormChange("azureTenantId", e) }} />
               </div>
             </div>
             <div className="flex u-marginBottom--30">
               <div className="flex1 u-paddingRight--5">
-                <p className="u-fontSize--normal u-color--tuna u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">Client ID</p>
+                <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">Client ID</p>
                 <input type="text" className="Input" placeholder="Client ID" value={this.state.azureClientId} onChange={(e) => { this.handleFormChange("azureClientId", e) }} />
               </div>
               <div className="flex1 u-paddingLeft--5">
-                <p className="u-fontSize--normal u-color--tuna u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">Client Secret</p>
+                <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">Client Secret</p>
                 <input type="password" className="Input" placeholder="Client Secret" value={this.state.azureClientSecret} onChange={(e) => { this.handleFormChange("azureClientSecret", e) }} />
               </div>
             </div>
 
             <div className="flex-column u-marginBottom--30">
-              <p className="u-fontSize--normal u-color--tuna u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">Cloud Name</p>
+              <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">Cloud Name</p>
               <div className="flex1">
                 <Select
                   className="replicated-select-container"
@@ -645,11 +645,11 @@ class SnapshotStorageDestination extends Component {
             </div>
             <div className="flex u-marginBottom--30">
               <div className="flex1 u-paddingRight--5">
-                <p className="u-fontSize--normal u-color--tuna u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">Resource Group Name</p>
+                <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">Resource Group Name</p>
                 <input type="text" className="Input" placeholder="Resource Group Name" value={this.state.azureResourceGroupName} onChange={(e) => { this.handleFormChange("azureResourceGroupName", e) }} />
               </div>
               <div className="flex1 u-paddingLeft--5">
-                <p className="u-fontSize--normal u-color--tuna u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">Storage Account ID</p>
+                <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">Storage Account ID</p>
                 <input type="text" className="Input" placeholder="Storage Account ID" value={this.state.azureStorageAccountId} onChange={(e) => { this.handleFormChange("azureStorageAccountId", e) }} />
               </div>
             </div>
@@ -660,12 +660,12 @@ class SnapshotStorageDestination extends Component {
         return (
           <div>
             <div className="flex1 u-paddingRight--5">
-              <p className="u-fontSize--normal u-color--tuna u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">Bucket</p>
+              <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">Bucket</p>
               <input type="text" className="Input" placeholder="Bucket name" value={this.state.gcsBucket} onChange={(e) => { this.handleFormChange("gcsBucket", e) }} />
             </div>
             <div className="flex u-marginBottom--30">
               <div className="flex1 u-paddingRight--5">
-                <p className="u-fontSize--normal u-color--tuna u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">Path</p>
+                <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">Path</p>
                 <input type="text" className="Input" placeholder="/path/to/destination" value={this.state.gcsPath} onChange={(e) => { this.handleFormChange("gcsPath", e) }} />
               </div>
             </div>
@@ -680,7 +680,7 @@ class SnapshotStorageDestination extends Component {
                 />
                 <label htmlFor="gcsUseIam" className="flex1 flex u-width--full u-position--relative u-cursor--pointer u-userSelect--none">
                   <div className="flex1">
-                    <p className="u-color--tuna u-fontSize--normal u-fontWeight--medium">Use IAM Instance Role</p>
+                    <p className="u-textColor--primary u-fontSize--normal u-fontWeight--medium">Use IAM Instance Role</p>
                   </div>
                 </label>
               </div>
@@ -689,7 +689,7 @@ class SnapshotStorageDestination extends Component {
             {gcsUseIam &&
               <div className="flex u-marginBottom--30">
                 <div className="flex1 u-paddingRight--5">
-                  <p className="u-fontSize--normal u-color--tuna u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">Service Account</p>
+                  <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">Service Account</p>
                   <input type="text" className="Input" placeholder="" value={this.state.gcsServiceAccount} onChange={(e) => { this.handleFormChange("gcsServiceAccount", e) }} />
                 </div>
               </div>
@@ -698,7 +698,7 @@ class SnapshotStorageDestination extends Component {
             {!gcsUseIam &&
               <div className="flex u-marginBottom--30">
                 <div className="flex1">
-                  <p className="u-fontSize--normal u-color--tuna u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">JSON File</p>
+                  <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">JSON File</p>
                   <div className="gcs-editor">
                     <MonacoEditor
                       ref={(editor) => { this.monacoEditor = editor }}
@@ -726,32 +726,32 @@ class SnapshotStorageDestination extends Component {
         return (
           <div>
             <div className="flex1 u-paddingRight--5">
-              <p className="u-fontSize--normal u-color--tuna u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">Bucket</p>
+              <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">Bucket</p>
               <input type="text" className="Input" placeholder="Bucket name" value={this.state.s3CompatibleBucket} onChange={(e) => { this.handleFormChange("s3CompatibleBucket", e) }} />
             </div>
             <div className="flex u-marginBottom--30">
               <div className="flex1 u-paddingRight--5">
-                <p className="u-fontSize--normal u-color--tuna u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">Path</p>
+                <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">Path</p>
                 <input type="text" className="Input" placeholder="/path/to/destination" value={this.state.s3CompatiblePath} onChange={(e) => { this.handleFormChange("s3CompatiblePath", e) }} />
               </div>
             </div>
             <div className="flex u-marginBottom--30">
               <div className="flex1 u-paddingRight--5">
-                <p className="u-fontSize--normal u-color--tuna u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">Access Key ID</p>
+                <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">Access Key ID</p>
                 <input type="text" className="Input" placeholder="key ID" value={this.state.s3CompatibleKeyId} onChange={(e) => { this.handleFormChange("s3CompatibleKeyId", e) }} />
               </div>
               <div className="flex1 u-paddingLeft--5">
-                <p className="u-fontSize--normal u-color--tuna u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">Access Key Secret</p>
+                <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">Access Key Secret</p>
                 <input type="password" className="Input" placeholder="access key" value={this.state.s3CompatibleKeySecret} onChange={(e) => { this.handleFormChange("s3CompatibleKeySecret", e) }} />
               </div>
             </div>
             <div className="flex u-marginBottom--30">
               <div className="flex1 u-paddingRight--5">
-                <p className="u-fontSize--normal u-color--tuna u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">Endpoint</p>
+                <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">Endpoint</p>
                 <input type="text" className="Input" placeholder="endpoint" value={this.state.s3CompatibleEndpoint} onChange={(e) => { this.handleFormChange("s3CompatibleEndpoint", e) }} />
               </div>
               <div className="flex1 u-paddingLeft--5">
-                <p className="u-fontSize--normal u-color--tuna u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">Region</p>
+                <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">Region</p>
                 <input type="text" className="Input" placeholder="/path/to/destination" value={this.state.s3CompatibleRegion} onChange={(e) => { this.handleFormChange("s3CompatibleRegion", e) }} />
               </div>
             </div>
@@ -767,11 +767,11 @@ class SnapshotStorageDestination extends Component {
         return (
           <div className="flex u-marginBottom--30">
             <div className="flex1 u-paddingRight--5">
-              <p className="u-fontSize--normal u-color--tuna u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">Server</p>
+              <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">Server</p>
               <input key="filesystem-nfs-server" type="text" className="Input" placeholder="NFS server hostname/IP" value={this.state.fileSystemNFSServer} onChange={(e) => { this.handleFormChange("fileSystemNFSServer", e) }} />
             </div>
             <div className="flex1 u-paddingLeft--5">
-              <p className="u-fontSize--normal u-color--tuna u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">Path</p>
+              <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">Path</p>
               <input key="filesystem-nfs-path" type="text" className="Input" placeholder="/path/to/nfs-directory" value={this.state.fileSystemNFSPath} onChange={(e) => { this.handleFormChange("fileSystemNFSPath", e) }} />
             </div>
           </div>
@@ -781,7 +781,7 @@ class SnapshotStorageDestination extends Component {
         return (
           <div className="flex u-marginBottom--30">
             <div className="flex1 u-paddingRight--5">
-              <p className="u-fontSize--normal u-color--tuna u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">Host Path</p>
+              <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">Host Path</p>
               <input key="filesystem-hostpath" type="text" className="Input" placeholder="/path/to/host-directory" value={this.state.fileSystemHostPath} onChange={(e) => { this.handleFormChange("fileSystemHostPath", e) }} />
             </div>
           </div>
@@ -798,11 +798,11 @@ class SnapshotStorageDestination extends Component {
     if (this.state.tmpFileSystemType === FILE_SYSTEM_HOSTPATH_TYPE) {
       return (
         <div className="Modal-body">
-          <p className="u-fontSize--largest u-fontWeight--bold u-color--tundora u-marginBottom--10">Configure Host Path</p>
-          <p className="u-fontSize--normal u-fontWeight--medium u-color--dustyGray u-lineHeight--normal u-marginBottom--10">Enter the host path for the directory in which you would like to store the snapshots.</p>
+          <p className="u-fontSize--largest u-fontWeight--bold u-textColor--secondary u-marginBottom--10">Configure Host Path</p>
+          <p className="u-fontSize--normal u-fontWeight--medium u-textColor--bodyCopy u-lineHeight--normal u-marginBottom--10">Enter the host path for the directory in which you would like to store the snapshots.</p>
           <div className="flex u-marginBottom--30">
             <div className="flex1 u-paddingRight--5">
-              <p className="u-fontSize--normal u-color--tuna u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">Host Path</p>
+              <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">Host Path</p>
               <input type="text" className="Input" placeholder="/path/to/host-directory" value={this.state.tmpFileSystemHostPath} onChange={(e) => this.setState({ tmpFileSystemHostPath: e.target.value })} />
             </div>
           </div>
@@ -818,7 +818,7 @@ class SnapshotStorageDestination extends Component {
             </button>
             <button type="button" className="btn secondary" onClick={this.hideConfigureFileSystemProviderModal}>Cancel</button>
           </div>
-          {this.state.configureFileSystemProviderErrorMsg && <div className="flex u-fontWeight--bold u-fontSize--small u-color--red u-marginBottom--10 u-marginTop--10">{this.state.configureFileSystemProviderErrorMsg}</div>}
+          {this.state.configureFileSystemProviderErrorMsg && <div className="flex u-fontWeight--bold u-fontSize--small u-textColor--error u-marginBottom--10 u-marginTop--10">{this.state.configureFileSystemProviderErrorMsg}</div>}
         </div>
       )
     }
@@ -826,15 +826,15 @@ class SnapshotStorageDestination extends Component {
     if (this.state.tmpFileSystemType === FILE_SYSTEM_NFS_TYPE) {
       return (
         <div className="Modal-body">
-          <p className="u-fontSize--largest u-fontWeight--bold u-color--tundora u-marginBottom--10">Configure NFS</p>
-          <p className="u-fontSize--normal u-fontWeight--medium u-color--dustyGray u-lineHeight--normal u-marginBottom--10">Enter the NFS server hostname or IP address, and the exported directory path in which you would like to store the snapshots.</p>
+          <p className="u-fontSize--largest u-fontWeight--bold u-textColor--secondary u-marginBottom--10">Configure NFS</p>
+          <p className="u-fontSize--normal u-fontWeight--medium u-textColor--bodyCopy u-lineHeight--normal u-marginBottom--10">Enter the NFS server hostname or IP address, and the exported directory path in which you would like to store the snapshots.</p>
           <div className="flex u-marginBottom--30">
             <div className="flex1 u-paddingRight--5">
-              <p className="u-fontSize--normal u-color--tuna u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">Server</p>
+              <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">Server</p>
               <input type="text" className="Input" placeholder="NFS server hostname/IP" value={this.state.tmpFileSystemNFSServer} onChange={(e) => this.setState({ tmpFileSystemNFSServer: e.target.value })} />
             </div>
             <div className="flex1 u-paddingLeft--5">
-              <p className="u-fontSize--normal u-color--tuna u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">Path</p>
+              <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">Path</p>
               <input type="text" className="Input" placeholder="/path/to/nfs-directory" value={this.state.tmpFileSystemNFSPath} onChange={(e) => this.setState({ tmpFileSystemNFSPath: e.target.value })} />
             </div>
           </div>
@@ -850,7 +850,7 @@ class SnapshotStorageDestination extends Component {
             </button>
             <button type="button" className="btn secondary" onClick={this.hideConfigureFileSystemProviderModal}>Cancel</button>
           </div>
-          {this.state.configureFileSystemProviderErrorMsg && <div className="flex u-fontWeight--bold u-fontSize--small u-color--red u-marginBottom--10 u-marginTop--10">{this.state.configureFileSystemProviderErrorMsg}</div>}
+          {this.state.configureFileSystemProviderErrorMsg && <div className="flex u-fontWeight--bold u-fontSize--small u-textColor--error u-marginBottom--10 u-marginTop--10">{this.state.configureFileSystemProviderErrorMsg}</div>}
         </div>
       );
     }
@@ -919,34 +919,34 @@ class SnapshotStorageDestination extends Component {
 
     return (
       <div className="flex1 flex-column u-marginTop--40">
-        <p className="u-fontSize--normal u-marginBottom--15 u-fontWeight--bold u-color--tundora">Snapshot settings</p>
+        <p className="u-fontSize--normal u-marginBottom--15 u-fontWeight--bold u-textColor--secondary">Snapshot settings</p>
         <div className="flex">
           <div className="flex flex-column">
             <div className="Info--wrapper flex flex-auto u-marginBottom--15">
               <span className="icon info-icon flex-auto u-marginTop--5" />
               <div className="flex flex-column u-marginLeft--5">
-                <p className="u-fontSize--normal u-fontWeight--bold u-lineHeight--normal u-color--tuna"> Configuration is shared </p>
-                <span className="u-fontSize--small u-fontWeight--normal u-lineHeight--normal u-color--dustyGray">
+                <p className="u-fontSize--normal u-fontWeight--bold u-lineHeight--normal u-textColor--primary"> Configuration is shared </p>
+                <span className="u-fontSize--small u-fontWeight--normal u-lineHeight--normal u-textColor--bodyCopy">
                   Full (Instance) and Partial (Application) snapshots share Velero configuration. Your storage destination will be used for both.
             </span>
               </div>
             </div>
             <div className="flex flex-column u-marginRight--50">
               <form className="flex flex-column snapshot-form-wrapper">
-                <p className="u-fontSize--normal u-marginBottom--20 u-fontWeight--bold u-color--tundora">Storage</p>
+                <p className="u-fontSize--normal u-marginBottom--20 u-fontWeight--bold u-textColor--secondary">Storage</p>
                 {updateErrorMsg &&
-                  <div className="flex-auto u-fontWeight--bold u-fontSize--small u-color--red u-marginBottom--10">{updateErrorMsg}</div>}
+                  <div className="flex-auto u-fontWeight--bold u-fontSize--small u-textColor--error u-marginBottom--10">{updateErrorMsg}</div>}
                 <div className="flex flex-column u-marginBottom--20">
                   <div className="flex flex1 justifyContent--spaceBetween alignItems--center">
-                    <p className="u-fontSize--normal u-color--tuna u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">Destination</p>
+                    <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">Destination</p>
                     <span className="replicated-link u-fontSize--normal flex justifyContent--flexEnd u-cursor--pointer" onClick={this.props.toggleConfigureSnapshotsModal}> + Add a new storage destination </span>
                   </div>
                   {!snapshotSettings?.isVeleroRunning ?
                     isKurlEnabled ?
-                    <div className="flex-auto u-fontWeight--bold u-fontSize--small u-color--red u-marginBottom--10"> Please fix Velero so that the deployment is running. For help troubleshooting this issue visit
+                    <div className="flex-auto u-fontWeight--bold u-fontSize--small u-textColor--error u-marginBottom--10"> Please fix Velero so that the deployment is running. For help troubleshooting this issue visit
                     <a href="https://velero.io/docs/main/troubleshooting/" target="_blank" rel="noopener noreferrer" className="replicated-link u-marginLeft--5">https://velero.io/docs/main/troubleshooting/</a></div>
                     :
-                    <div className="flex-auto u-fontWeight--bold u-fontSize--small u-color--red u-marginBottom--10"> Please fix Velero so that the deployment is running. For help troubleshooting this issue visit
+                    <div className="flex-auto u-fontWeight--bold u-fontSize--small u-textColor--error u-marginBottom--10"> Please fix Velero so that the deployment is running. For help troubleshooting this issue visit
                     <a href="https://velero.io/docs/main/troubleshooting/" target="_blank" rel="noopener noreferrer" className="replicated-link u-marginLeft--5">Velero documentation</a></div> : null}
                   <div className="flex1">
                     {availableDestinations.length > 1 ?
@@ -964,7 +964,7 @@ class SnapshotStorageDestination extends Component {
                       />
                       :
                       availableDestinations.length === 1 ?
-                        <div className="u-color--tuna u-fontWeight--medium flex alignItems--center">
+                        <div className="u-textColor--primary u-fontWeight--medium flex alignItems--center">
                           {this.getDestinationLabel(availableDestinations[0], availableDestinations[0].label)}
                         </div>
                         :
@@ -981,13 +981,13 @@ class SnapshotStorageDestination extends Component {
                       {updateConfirm &&
                         <div className="u-marginLeft--10 flex alignItems--center">
                           <span className="icon checkmark-icon" />
-                          <span className="u-marginLeft--5 u-fontSize--small u-fontWeight--medium u-color--chateauGreen">Settings updated</span>
+                          <span className="u-marginLeft--5 u-fontSize--small u-fontWeight--medium u-textColor--success">Settings updated</span>
                         </div>
                       }
                     </div>
                   </div>
                 }
-                <span className="u-fontSize--small u-fontWeight--normal u-lineHeight--normal u-color--dustyGray u-marginTop--15">
+                <span className="u-fontSize--small u-fontWeight--normal u-lineHeight--normal u-textColor--bodyCopy u-marginTop--15">
                 All data in your snapshots will be deduplicated. Snapshots makes use of Restic, a fast and secure backup technology with native deduplication. </span>
               </form>
             </div>
@@ -1038,12 +1038,12 @@ class SnapshotStorageDestination extends Component {
             className="Modal SmallSize"
           >
             <div className="Modal-body">
-              <p className="u-fontSize--largest u-fontWeight--bold u-color--tundora u-marginBottom--10">Next steps</p>
-              <p className="u-fontSize--normal u-fontWeight--normal u-color--dustyGray u-lineHeight--normal"> Run the following command for instructions on how to set up Velero: </p>
+              <p className="u-fontSize--largest u-fontWeight--bold u-textColor--secondary u-marginBottom--10">Next steps</p>
+              <p className="u-fontSize--normal u-fontWeight--normal u-textColor--bodyCopy u-lineHeight--normal"> Run the following command for instructions on how to set up Velero: </p>
               <CodeSnippet
                 language="bash"
                 canCopy={true}
-                onCopyText={<span className="u-color--chateauGreen">Command has been copied to your clipboard</span>}
+                onCopyText={<span className="u-textColor--success">Command has been copied to your clipboard</span>}
               >
                 {`kubectl kots velero print-fs-instructions --namespace ${this.state.configureFileSystemProviderNamespace}`}
               </CodeSnippet>
@@ -1064,7 +1064,7 @@ class SnapshotStorageDestination extends Component {
             className="Modal MediumSize"
           >
             <div className="Modal-body">
-              <p className="u-fontSize--large u-color--chestnut u-marginBottom--20">{resetFileSystemWarningMessage} Would you like to continue?</p>
+              <p className="u-fontSize--large u-textColor--error u-marginBottom--20">{resetFileSystemWarningMessage} Would you like to continue?</p>
               <div className="u-marginTop--10 flex justifyContent--flexStart">
                 <button type="button" className="btn blue primary u-marginRight--10" onClick={this.state.showConfigureFileSystemProviderModal ? () => this.configureFileSystemProvider(true) : () => this.snapshotProviderFileSystem(true)}>Yes</button>
                 <button type="button" className="btn secondary" onClick={this.hideResetFileSystemWarningModal}>No</button>

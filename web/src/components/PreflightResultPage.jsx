@@ -332,7 +332,7 @@ class PreflightResultPage extends Component {
         <div className="flex1 flex u-overflow--auto">
           <div className="PreflightChecks--wrapper flex1 flex-column u-paddingTop--30">
             {this.props.history.location.pathname.includes("version-history") &&
-              <div className="u-fontWeight--bold u-color--royalBlue u-cursor--pointer" onClick={() => this.props.history.goBack()}>
+              <div className="u-fontWeight--bold u-linkColor u-cursor--pointer" onClick={() => this.props.history.goBack()}>
                 <span className="icon clickable backArrow-icon u-marginRight--10" style={{ verticalAlign: "0" }} />
                 Back
             </div>}
@@ -346,7 +346,7 @@ class PreflightResultPage extends Component {
                   </div>
                 </div>
                 : null}
-              <p className="u-fontSize--header u-color--tuna u-fontWeight--bold">
+              <p className="u-fontSize--header u-textColor--primary u-fontWeight--bold">
                 Preflight checks
               </p>
               <p className="u-fontWeight--medium u-lineHeight--more u-marginTop--5 u-marginBottom--10">
@@ -390,7 +390,7 @@ class PreflightResultPage extends Component {
                 Continue
               </button> :
               <div className="flex flex1 justifyContent--center alignItems--center">
-                <span className="u-fontSize--normal u-fontWeight--medium u-textDecoration--underline u-color--dustyGray u-marginTop--15 u-cursor--pointer" onClick={this.showSkipModal}>
+                <span className="u-fontSize--normal u-fontWeight--medium u-textDecoration--underline u-textColor--bodyCopy u-marginTop--15 u-cursor--pointer" onClick={this.showSkipModal}>
                   Skip Preflights </span>
               </div>}
           </div>
@@ -420,7 +420,7 @@ class PreflightResultPage extends Component {
           className="Modal"
         >
           <div className="Modal-body">
-            <p className="u-fontSize--normal u-color--dustyGray u-lineHeight--normal u-marginBottom--20">Preflight is showing some issues, are you sure you want to continue?</p>
+            <p className="u-fontSize--normal u-textColor--bodyCopy u-lineHeight--normal u-marginBottom--20">Preflight is showing some issues, are you sure you want to continue?</p>
             <div className="u-marginTop--10 flex justifyContent--flexEnd">
               <button type="button" className="btn secondary" onClick={this.hideWarningModal}>Close</button>
               <button type="button" className="btn blue primary u-marginLeft--10" onClick={() => this.deployKotsDownstream(true)}>

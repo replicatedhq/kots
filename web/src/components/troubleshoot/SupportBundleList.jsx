@@ -138,7 +138,7 @@ class SupportBundleList extends React.Component {
                   <div className="flex1 u-flexTabletReflow">
                     <div className="flex flex1">
                       <div className="flex-auto alignSelf--center">
-                        <h2 className="u-fontSize--larger u-fontWeight--bold u-color--tuna flex alignContent--center">Support bundles</h2>
+                        <h2 className="u-fontSize--larger u-fontWeight--bold u-textColor--primary flex alignContent--center">Support bundles</h2>
                       </div>
                     </div>
                     <div className="RightNode flex-auto flex alignItems--center u-position--relative">

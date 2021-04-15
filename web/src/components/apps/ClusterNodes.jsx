@@ -242,7 +242,7 @@ export class ClusterNodes extends Component {
         <div className="flex-column flex1 alignItems--center">
           <div className="flex1 flex-column centered-container">
             <div className="u-paddingBottom--30">
-              <p className="flex-auto u-fontSize--larger u-fontWeight--bold u-color--tuna u-paddingBottom--10">Your nodes</p>
+              <p className="flex-auto u-fontSize--larger u-fontWeight--bold u-textColor--primary u-paddingBottom--10">Your nodes</p>
               <div className="flex1 u-overflow--auto">
                 {kurl?.nodes && kurl?.nodes.map((node, i) => (
                   <NodeRow
@@ -265,7 +265,7 @@ export class ClusterNodes extends Component {
                 : (
                   <div className="flex-column">
                     <div>
-                      <p className="u-width--full u-fontSize--larger u-color--tuna u-fontWeight--bold u-lineHeight--normal u-borderBottom--gray u-paddingBottom--10">
+                      <p className="u-width--full u-fontSize--larger u-textColor--primary u-fontWeight--bold u-lineHeight--normal u-borderBottom--gray u-paddingBottom--10">
                         Add a Node
                       </p>
                     </div>
@@ -291,8 +291,8 @@ export class ClusterNodes extends Component {
                             <span className="icon clickable commitOptionIcon u-marginRight--10" />
                           </div>
                           <div className="flex1">
-                            <p className="u-color--tuna u-fontSize--normal u-fontWeight--medium">Primary Node</p>
-                            <p className="u-color--dustyGray u-lineHeight--normal u-fontSize--small u-fontWeight--medium u-marginTop--5">Provides high availability</p>
+                            <p className="u-textColor--primary u-fontSize--normal u-fontWeight--medium">Primary Node</p>
+                            <p className="u-textColor--bodyCopy u-lineHeight--normal u-fontSize--small u-fontWeight--medium u-marginTop--5">Provides high availability</p>
                           </div>
                         </label>
                       </div>
@@ -313,8 +313,8 @@ export class ClusterNodes extends Component {
                             <span className="icon clickable commitOptionIcon u-marginRight--10" />
                           </div>
                           <div className="flex1">
-                            <p className="u-color--tuna u-fontSize--normal u-fontWeight--medium">Secondary Node</p>
-                            <p className="u-color--dustyGray u-lineHeight--normal u-fontSize--small u-fontWeight--medium u-marginTop--5">Optimal for running application workloads</p>
+                            <p className="u-textColor--primary u-fontSize--normal u-fontWeight--medium">Secondary Node</p>
+                            <p className="u-textColor--bodyCopy u-lineHeight--normal u-fontSize--small u-fontWeight--medium u-marginTop--5">Optimal for running application workloads</p>
                           </div>
                         </label>
                       </div>
@@ -327,18 +327,18 @@ export class ClusterNodes extends Component {
                     {!this.state.generating && this.state.command?.length > 0
                       ? (
                         <Fragment>
-                          <p className="u-fontSize--normal u-color--dustyGray u-fontWeight--medium u-lineHeight--normal u-marginBottom--5 u-marginTop--15">
+                          <p className="u-fontSize--normal u-textColor--bodyCopy u-fontWeight--medium u-lineHeight--normal u-marginBottom--5 u-marginTop--15">
                             Run this command on the node you wish to join the cluster
                           </p>
                           <CodeSnippet
                             language="bash"
                             canCopy={true}
-                            onCopyText={<span className="u-color--chateauGreen">Command has been copied to your clipboard</span>}
+                            onCopyText={<span className="u-textColor--success">Command has been copied to your clipboard</span>}
                           >
                             {[this.state.command.join(" \\\n  ")]}
                           </CodeSnippet>
                           {this.state.expiry && (
-                            <span className="timestamp u-marginTop--15 u-width--full u-textAlign--right u-fontSize--small u-fontWeight--bold u-color--tuna">
+                            <span className="timestamp u-marginTop--15 u-width--full u-textAlign--right u-fontSize--small u-fontWeight--bold u-textColor--primary">
                               {`Expires on ${dayjs(this.state.expiry).format("MMM Do YYYY, h:mm:ss a z")} UTC${ -1 * (new Date().getTimezoneOffset()) / 60}`}
                             </span>
                           )}
@@ -348,7 +348,7 @@ export class ClusterNodes extends Component {
                         <Fragment>
                           {generateCommandErrMsg &&
                             <div className="alignSelf--center u-marginTop--15">
-                              <span className="u-color--chestnut">{generateCommandErrMsg}</span>
+                              <span className="u-textColor--error">{generateCommandErrMsg}</span>
                             </div>
                           }
                         </Fragment>
@@ -376,7 +376,7 @@ export class ClusterNodes extends Component {
           className="Modal"
         >
           <div className="Modal-body">
-            <p className="u-fontSize--normal u-color--dustyGray u-lineHeight--normal u-marginBottom--20">
+            <p className="u-fontSize--normal u-textColor--bodyCopy u-lineHeight--normal u-marginBottom--20">
               Deleting this node may cause data loss. Are you sure you want to proceed?
             </p>
             <div className="u-marginTop--10 flex">
@@ -407,10 +407,10 @@ export class ClusterNodes extends Component {
             className="Modal MediumSize"
           >
             <div className="Modal-body">
-              <p className="u-fontSize--larger u-color--tuna u-fontWeight--bold u-lineHeight--normal">
+              <p className="u-fontSize--larger u-textColor--primary u-fontWeight--bold u-lineHeight--normal">
                 Are you sure you want to drain {this.state.nodeNameToDrain}?
               </p>
-              <p className="u-fontSize--normal u-color--dustyGray u-lineHeight--normal u-marginBottom--20">
+              <p className="u-fontSize--normal u-textColor--bodyCopy u-lineHeight--normal u-marginBottom--20">
                 Draining this node may cause data loss. If you want to delete {this.state.nodeNameToDrain} you must disconnect it after it has been drained.
               </p>
               <div className="u-marginTop--10 flex">

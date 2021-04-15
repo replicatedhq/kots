@@ -17,7 +17,7 @@ export default function ViewSnapshotLogsModal(props) {
       className="Modal FullSize"
     >
       <div className="Modal-body flex1 flex-column" style={{ height: "97%" }}>
-        <p className="u-fontSize--larger u-fontWeight--bold u-color--tuna u-marginBottom--5">{snapshotDetails?.name} logs</p>
+        <p className="u-fontSize--larger u-fontWeight--bold u-textColor--primary u-marginBottom--5">{snapshotDetails?.name} logs</p>
         <div className="flex1 flex-column u-position--relative u-marginTop--10">
           {loadingSnapshotLogs ?
             <div className="flex-column flex1 alignItems--center justifyContent--center">
@@ -27,7 +27,7 @@ export default function ViewSnapshotLogsModal(props) {
             snapshotLogsErr ?
               <div class="flex1 flex-column justifyContent--center alignItems--center">
                 <span className="icon redWarningIcon" />
-                <p className="u-color--chestnut u-fontSize--normal u-fontWeight--medium u-lineHeight--normal u-marginTop--10">{snapshotLogsErrMsg}</p>
+                <p className="u-textColor--error u-fontSize--normal u-fontWeight--medium u-lineHeight--normal u-marginTop--10">{snapshotLogsErrMsg}</p>
               </div>
               :
               <AceEditor

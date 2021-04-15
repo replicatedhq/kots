@@ -270,7 +270,7 @@ class UploadLicenseFile extends React.Component {
             </div>
             {!fileUploading ?
               <div className="flex flex-column">
-                <p className="u-fontSize--header u-color--tuna u-fontWeight--bold u-textAlign--center u-marginTop--10 u-paddingTop--5"> {`${isBackupRestore ? "Verify your license" : "Upload your license file"}`} </p>
+                <p className="u-fontSize--header u-textColor--primary u-fontWeight--bold u-textAlign--center u-marginTop--10 u-paddingTop--5"> {`${isBackupRestore ? "Verify your license" : "Upload your license file"}`} </p>
                 <div className="flex u-marginTop--30">
                   <div className={`FileUpload-wrapper flex1 ${hasFile ? "has-file" : ""}`}>
                     <Dropzone
@@ -285,8 +285,8 @@ class UploadLicenseFile extends React.Component {
                         </div>
                         :
                         <div className="u-textAlign--center">
-                          <p className="u-fontSize--normal u-color--tundora u-fontWeight--medium u-lineHeight--normal">Drag your license here or <span className="u-color--royalBlue u-fontWeight--medium u-textDecoration--underlineOnHover">choose a file to upload</span></p>
-                          <p className="u-fontSize--normal u-color--dustyGray u-fontWeight--normal u-lineHeight--normal u-marginTop--10">This will be a .yaml file{applicationName?.length > 0 ? ` ${applicationName} provided` : ""}. Please contact your account rep if you are unable to locate your license file.</p>
+                          <p className="u-fontSize--normal u-textColor--secondary u-fontWeight--medium u-lineHeight--normal">Drag your license here or <span className="u-linkColor u-fontWeight--medium u-textDecoration--underlineOnHover">choose a file to upload</span></p>
+                          <p className="u-fontSize--normal u-textColor--bodyCopy u-fontWeight--normal u-lineHeight--normal u-marginTop--10">This will be a .yaml file{applicationName?.length > 0 ? ` ${applicationName} provided` : ""}. Please contact your account rep if you are unable to locate your license file.</p>
                         </div>
                       }
                     </Dropzone>
@@ -306,7 +306,7 @@ class UploadLicenseFile extends React.Component {
                 </div>
                 {errorMessage && (
                   <div className="u-marginTop--10">
-                    <span className="u-fontSize--small u-color--chestnut u-marginRight--5 u-fontWeight--bold">Unable to install license</span>
+                    <span className="u-fontSize--small u-textColor--error u-marginRight--5 u-fontWeight--bold">Unable to install license</span>
                     <span
                       className="u-fontSize--small replicated-link"
                       onClick={this.toggleViewErrorMessage}>
@@ -329,7 +329,7 @@ class UploadLicenseFile extends React.Component {
         {!isBackupRestore && isRestoreEnabled &&
           <div className="flex u-marginTop--15 alignItems--center">
             <span className="icon restore-icon" />
-            <Link className="u-fontSize--normal u-color--royalBlue u-fontWeight--medium u-textDecoration--underlineOnHover u-marginRight--5" to="/restore">{`Restore ${applicationName ? `${applicationName}` : "app"} from a snapshot`} </Link>
+            <Link className="u-fontSize--normal u-linkColor u-fontWeight--medium u-textDecoration--underlineOnHover u-marginRight--5" to="/restore">{`Restore ${applicationName ? `${applicationName}` : "app"} from a snapshot`} </Link>
             <span className="icon u-arrow" style={{ marginTop: "2px" }} />
           </div>}
         {isBackupRestore ?
@@ -345,25 +345,25 @@ class UploadLicenseFile extends React.Component {
         >
           <div className="Modal-body">
             <div className="ExpandedError--wrapper u-marginTop--10 u-marginBottom--10">
-              <p className="u-fontSize--small u-fontWeight--bold u-color--tuna u-marginBottom--5">Error description</p>
-              <p className="u-fontSize--small u-color--chestnut">{typeof errorMessage === "object" ? "An unknown error orrcured while trying to upload your license. Please try again." : errorMessage}</p>
+              <p className="u-fontSize--small u-fontWeight--bold u-textColor--primary u-marginBottom--5">Error description</p>
+              <p className="u-fontSize--small u-textColor--error">{typeof errorMessage === "object" ? "An unknown error orrcured while trying to upload your license. Please try again." : errorMessage}</p>
               {!size(licenseExistErrData) ?
                 <div className="flex flex-column">
-                  <p className="u-fontSize--small u-fontWeight--bold u-marginTop--15 u-color--tuna">Run this command to generate a support bundle</p>
+                  <p className="u-fontSize--small u-fontWeight--bold u-marginTop--15 u-textColor--primary">Run this command to generate a support bundle</p>
                   <CodeSnippet
                     language="bash"
                     canCopy={true}
-                    onCopyText={<span className="u-color--chateauGreen">Command has been copied to your clipboard</span>}
+                    onCopyText={<span className="u-textColor--success">Command has been copied to your clipboard</span>}
                   >
                     kubectl support-bundle https://kots.io
               </CodeSnippet>
                 </div> :
                 <div className="flex flex-column">
-                  <p className="u-fontSize--small u-fontWeight--bold u-marginTop--15 u-color--tuna">Run this command to remove the app</p>
+                  <p className="u-fontSize--small u-fontWeight--bold u-marginTop--15 u-textColor--primary">Run this command to remove the app</p>
                   <CodeSnippet
                     language="bash"
                     canCopy={true}
-                    onCopyText={<span className="u-color--chateauGreen">Command has been copied to your clipboard</span>}
+                    onCopyText={<span className="u-textColor--success">Command has been copied to your clipboard</span>}
                   >
                     {licenseExistErrData?.deleteAppCommand}
                   </CodeSnippet>

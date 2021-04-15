@@ -1,6 +1,8 @@
+@import "../variables.scss";
+
 .RestoreSnapshotRow--wrapper {
   background: #FFFFFF;
-  border: 1px solid #C4C8CA;
+  border: 1px solid $border-color;
   box-sizing: border-box;
   border-radius: 6px;
   padding: 15px;
@@ -8,7 +10,7 @@
 
   &.backupSelected {
     background: #F5F8FC;
-    border: 1px solid #DCEEFF;
+    border: 1px solid $border-color;
     box-sizing: border-box;
   }
 }

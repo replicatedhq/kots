@@ -144,23 +144,23 @@ export class SupportBundleAnalysis extends React.Component {
               <div className="u-position--relative flex-auto u-marginBottom--20 flex justifyContent--spaceBetween">
                 <div className="flex flex1 u-marginTop--10 u-marginBottom--10">
                   <div className="flex-column flex1">
-                    <div className="u-fontSize--small u-fontWeight--medium u-color--dustyGray u-marginBottom--20">
-                      <Link to={`/app/${this.props.watch.slug}/troubleshoot`} className="replicated-link u-marginRight--5">Support bundles</Link> > <span className="u-marginLeft--5">{dayjs(bundle.createdAt).format("MMMM D, YYYY")}</span>
+                    <div className="u-fontSize--small u-fontWeight--medium u-textColor--bodyCopy u-marginBottom--20">
+                      <Link to={`/app/${this.props.watch.slug}/troubleshoot`} className="replicated-link u-marginRight--5">Support bundles</Link> &gt; <span className="u-marginLeft--5">{dayjs(bundle.createdAt).format("MMMM D, YYYY")}</span>
                     </div>
                     <div className="flex flex1 justifyContent--spaceBetween">
                       <div className="flex flex-column">
-                        <h2 className="u-fontSize--header2 u-fontWeight--bold u-color--tuna flex alignContent--center alignItems--center">Support bundle analysis</h2>
+                        <h2 className="u-fontSize--header2 u-fontWeight--bold u-textColor--primary flex alignContent--center alignItems--center">Support bundle analysis</h2>
                       </div>
                     </div>
                     <div className="upload-date-container flex u-marginTop--5 alignItems--center">
                       <div className="flex alignSelf--center">
-                        <p className="flex u-fontSize--normal u-color--dustyGray u-fontWeight--medium">Collected on <span className="u-fontWeight--bold u-marginLeft--5">{dayjs(bundle.createdAt).format("MMMM D, YYYY @ h:mm a")}</span></p>
+                        <p className="flex u-fontSize--normal u-textColor--bodyCopy u-fontWeight--medium">Collected on <span className="u-fontWeight--bold u-marginLeft--5">{dayjs(bundle.createdAt).format("MMMM D, YYYY @ h:mm a")}</span></p>
                       </div>
                     </div>
                   </div>
                   <div className="flex flex-auto alignItems--center justifyContent--flexEnd">
                     {this.state.downloadBundleErrMsg &&
-                      <p className="u-color--chestnut u-fontSize--normal u-fontWeight--medium u-lineHeight--normal u-marginRight--10">{this.state.downloadBundleErrMsg}</p>}
+                      <p className="u-textColor--error u-fontSize--normal u-fontWeight--medium u-lineHeight--normal u-marginRight--10">{this.state.downloadBundleErrMsg}</p>}
                     {this.state.downloadingBundle ?
                       <Loader size="30" /> :
                       <button className="btn primary lightBlue" onClick={() => this.downloadBundle(bundle)}> Download bundle </button>
@@ -175,8 +175,8 @@ export class SupportBundleAnalysis extends React.Component {
                       <span className="icon communityIcon"></span>
                     </div>
                     <div className="flex1 flex-column u-marginLeft--10">
-                      <p className="u-color--emperor u-fontSize--large u-fontWeight--bold u-lineHeight--medium u-marginBottom--5"> This bundle was uploaded by a customer under a Community license type. </p>
-                      <p className="u-color--silverChalice u-fontSize--normal u-lineHeight--medium"> Customers with Community licenses are using the free, Community-Supported version of Nomad Enterprise. </p>
+                      <p className="u-textColor--accent u-fontSize--large u-fontWeight--bold u-lineHeight--medium u-marginBottom--5"> This bundle was uploaded by a customer under a Community license type. </p>
+                      <p className="u-textColor--info u-fontSize--normal u-lineHeight--medium"> Customers with Community licenses are using the free, Community-Supported version of Nomad Enterprise. </p>
                     </div>
                   </div>
                 </div>}

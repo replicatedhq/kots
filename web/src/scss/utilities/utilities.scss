@@ -1,3 +1,5 @@
+@import "../variables.scss";
+
 /* Utilities */
 
 .u-position--relative { position: relative; }
@@ -107,18 +109,18 @@
 
 /* Border classes */
 
-.u-border--gray { border: 1px solid #DFDFDF; }
-.u-borderTop--gray { border-top: 1px solid #DFDFDF; }
-.u-borderRight--gray { border-right: 1px solid #DFDFDF; }
-.u-borderBottom--gray { border-bottom: 1px solid #DFDFDF; }
-.u-borderLeft--gray { border-left: 1px solid #DFDFDF; }
+.u-border--gray { border: 1px solid $border-color; }
+.u-borderTop--gray { border-top: 1px solid $border-color; }
+.u-borderRight--gray { border-right: 1px solid $border-color; }
+.u-borderBottom--gray { border-bottom: 1px solid $border-color; }
+.u-borderLeft--gray { border-left: 1px solid $border-color; }
 
 .u-border--gray.darker,
 .u-borderTop--gray.darker,
 .u-borderRight--gray.darker,
 .u-borderBottom--gray.darker,
 .u-borderLeft--gray.darker {
-  border-color: #C4C7CA;
+  border-color: darken($border-color, 20%);
 }
 /* Filter classes */
 

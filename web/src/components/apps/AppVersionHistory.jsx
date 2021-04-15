@@ -251,7 +251,7 @@ class AppVersionHistory extends Component {
     if (hasDiffSummaryError) {
       return (
         <div className="flex flex1 alignItems--center">
-          <span className="u-fontSize--small u-fontWeight--medium u-lineHeight--normal u-color--dustyGray">Cannot generate diff <span className="replicated-link" onClick={() => this.toggleDiffErrModal(version)}>Why?</span></span>
+          <span className="u-fontSize--small u-fontWeight--medium u-lineHeight--normal u-textColor--bodyCopy">Cannot generate diff <span className="replicated-link" onClick={() => this.toggleDiffErrModal(version)}>Why?</span></span>
         </div>
       );
     } else {
@@ -685,7 +685,7 @@ class AppVersionHistory extends Component {
         :
         <div className="flex-auto flex alignItems--center" onClick={this.onSelectReleasesToDiff}>
           <span className="icon clickable diffReleasesIcon"></span>
-          <span className="u-fontSize--small u-fontWeight--medium u-color--royalBlue u-cursor--pointer u-marginLeft--5">Diff versions</span>
+          <span className="u-fontSize--small u-fontWeight--medium u-linkColor u-cursor--pointer u-marginLeft--5">Diff versions</span>
         </div>
     );
   }
@@ -835,7 +835,7 @@ class AppVersionHistory extends Component {
     const errorText = checkingUpdateMessage ? checkingUpdateMessage : "Error checking for updates, please try again";
     let updateText;
     if (airgapUploadError) {
-      updateText = <p className="u-marginTop--10 u-fontSize--small u-color--chestnut u-fontWeight--medium">{airgapUploadError}</p>;
+      updateText = <p className="u-marginTop--10 u-fontSize--small u-textColor--error u-fontWeight--medium">{airgapUploadError}</p>;
     } else if (uploadingAirgapFile) {
       updateText = (
         <AirgapUploadProgress
@@ -856,18 +856,18 @@ class AppVersionHistory extends Component {
           smallSize={true}
         />);
     } else if (errorCheckingUpdate || checkingForUpdateError) {
-      updateText = <p className="u-marginTop--10 u-fontSize--small u-color--chestnut u-fontWeight--medium">{errorText}</p>
+      updateText = <p className="u-marginTop--10 u-fontSize--small u-textColor--error u-fontWeight--medium">{errorText}</p>
     } else if (checkingForUpdates) {
-      updateText = <p className="u-fontSize--small u-color--dustyGray u-fontWeight--medium">{checkingUpdateTextShort}</p>
+      updateText = <p className="u-fontSize--small u-textColor--bodyCopy u-fontWeight--medium">{checkingUpdateTextShort}</p>
     } else if (app.lastUpdateCheckAt && !noUpdateAvailiableText) {
-      updateText = <p className="u-marginTop--10 u-fontSize--small u-color--silverSand u-fontWeight--medium">Last checked {dayjs(app.lastUpdateCheckAt).fromNow()}</p>;
+      updateText = <p className="u-marginTop--10 u-fontSize--small u-textColor--info u-fontWeight--medium">Last checked {dayjs(app.lastUpdateCheckAt).fromNow()}</p>;
     } else if (!app.lastUpdateCheckat) {
       updateText = null;
     }
 
     let noUpdateAvailiableMsg;
     if (noUpdateAvailiableText) {
-      noUpdateAvailiableMsg = <p className="u-marginTop--10 u-fontSize--small u-color--dustyGray u-fontWeight--medium">{noUpdateAvailiableText}</p>
+      noUpdateAvailiableMsg = <p className="u-marginTop--10 u-fontSize--small u-textColor--bodyCopy u-fontWeight--medium">{noUpdateAvailiableText}</p>
     } else {
       noUpdateAvailiableMsg = null;
     }
@@ -930,7 +930,7 @@ class AppVersionHistory extends Component {
               <div className="TableDiff--Wrapper flex-column flex1">
                 <div className={`flex-column flex1 ${showDiffOverlay ? "u-visibility--hidden" : ""}`}>
                   <div className="flex justifyContent--spaceBetween u-borderBottom--gray darker u-paddingBottom--10">
-                    <p className="u-fontSize--larger u-fontWeight--bold u-color--tuna u-lineHeight--normal">All versions</p>
+                    <p className="u-fontSize--larger u-fontWeight--bold u-textColor--primary u-lineHeight--normal">All versions</p>
                     {versionHistory.length > 1 && this.renderDiffBtn()}
                   </div>
                   {/* Downstream version history */}
@@ -964,7 +964,7 @@ class AppVersionHistory extends Component {
                     );
                   }) :
                     <div className="flex-column flex1 alignItems--center justifyContent--center">
-                      <p className="u-fontSize--large u-fontWeight--bold u-color--tuna">No versions have been deployed.</p>
+                      <p className="u-fontSize--large u-fontWeight--bold u-textColor--primary">No versions have been deployed.</p>
                     </div>
                   }
                 </div>
@@ -1055,10 +1055,10 @@ class AppVersionHistory extends Component {
           className="Modal MediumSize"
         >
           <div className="Modal-body">
-            <p className="u-fontSize--largest u-fontWeight--bold u-color--tuna u-lineHeight--normal u-marginBottom--10">Unable to generate a file diff for release</p>
-            <p className="u-fontSize--normal u-color--dustyGray u-lineHeight--normal u-marginBottom--20">The release with the <span className="u-fontWeight--bold">Upstream {this.state.releaseWithErr.title}, Sequence {this.state.releaseWithErr.sequence}</span> was unable to generate a files diff because the following error:</p>
+            <p className="u-fontSize--largest u-fontWeight--bold u-textColor--primary u-lineHeight--normal u-marginBottom--10">Unable to generate a file diff for release</p>
+            <p className="u-fontSize--normal u-textColor--bodyCopy u-lineHeight--normal u-marginBottom--20">The release with the <span className="u-fontWeight--bold">Upstream {this.state.releaseWithErr.title}, Sequence {this.state.releaseWithErr.sequence}</span> was unable to generate a files diff because the following error:</p>
             <div className="error-block-wrapper u-marginBottom--30 flex flex1">
-              <span className="u-color--chestnut">{this.state.releaseWithErr.diffSummaryError}</span>
+              <span className="u-textColor--error">{this.state.releaseWithErr.diffSummaryError}</span>
             </div>
             <div className="flex u-marginBottom--10">
               <button className="btn primary" onClick={this.toggleDiffErrModal}>Ok, got it!</button>
@@ -1075,7 +1075,7 @@ class AppVersionHistory extends Component {
             className="Modal DefaultSize"
           >
             <div className="Modal-body">
-              <p className="u-fontSize--largest u-fontWeight--bold u-color--tuna u-lineHeight--normal u-marginBottom--10">{this.state.confirmType === "rollback" ? "Rollback to" : this.state.confirmType === "redeploy" ? "Redeploy" : "Deploy"} {this.state.versionToDeploy?.versionLabel} (Sequence {this.state.versionToDeploy?.sequence})?</p>
+              <p className="u-fontSize--largest u-fontWeight--bold u-textColor--primary u-lineHeight--normal u-marginBottom--10">{this.state.confirmType === "rollback" ? "Rollback to" : this.state.confirmType === "redeploy" ? "Redeploy" : "Deploy"} {this.state.versionToDeploy?.versionLabel} (Sequence {this.state.versionToDeploy?.sequence})?</p>
               <div className="flex u-paddingTop--10">
                 <button className="btn secondary blue" onClick={() => this.setState({ displayConfirmDeploymentModal: false, confirmType: "", versionToDeploy: null })}>Cancel</button>
                 <button className="u-marginLeft--10 btn primary" onClick={this.state.confirmType === "redeploy" ? this.finalizeRedeployment : () => this.finalizeDeployment(false)}>Yes, {this.state.confirmType === "rollback" ? "rollback" : this.state.confirmType === "redeploy" ? "redeploy" : "deploy"}</button>

@@ -1,3 +1,5 @@
+@import "../variables.scss";
+
 body,
 html {
   margin: 0;
@@ -9,7 +11,7 @@ html {
 body {
   font-family: "Helvetica Neue", "Helvetica", sans-serif;
   font-weight: 400;
-  color: #9B9B9B;
+  color: $text-color-body-copy;
   display: flex;
   flex-direction: column;
   flex: 1;
@@ -30,7 +32,7 @@ body a {
 }
 
 .replicated-link {
-  color: #326DE6;
+  color: $link-color;
   cursor: pointer;
   font-weight: 500;
 
@@ -207,7 +209,7 @@ code {
 }
 
 .error-block-wrapper {
-  background-color: #FBECEA;
+  background-color: lighten($error-color, 43.5%);
   border-radius: 4px;
   padding: 15px;
   margin: 0 auto;
@@ -227,7 +229,7 @@ code {
   width: 8px;
   height: 8px;
   padding: 3px 6px 6px 5px;
-  background: #BC4752;
+  background: $error-color;
 }
 .warnings {
   display: inline-block;
@@ -240,7 +242,7 @@ code {
   width: 8px;
   height: 8px;
   padding: 3px 6px 6px 5px;
-  background: #F7B500;
+  background: $warning-color;
 }
 
 .circleNumberGray { 

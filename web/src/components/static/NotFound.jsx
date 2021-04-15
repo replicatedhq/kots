@@ -9,10 +9,10 @@ export default class NotFound extends React.Component {
         <div className="u-flexTabletReflow flex1 alignItems--center">
           <div className="Text-wrapper flex justifyContent--center flex1">
             <div className="Text u-textAlign--center">
-              <p className="u-fontSize--largest u-fontWeight--light u-color--tuna u-lineHeight--default">
+              <p className="u-fontSize--largest u-fontWeight--light u-textColor--primary u-lineHeight--default">
                 Error 404
               </p>
-              <p className="u-marginTop--30 u-color--dustyGray u-fontSize--large u-lineHeight--normal">
+              <p className="u-marginTop--30 u-textColor--bodyCopy u-fontSize--large u-lineHeight--normal">
                 Oops, we couldn't find the page you were looking for
               </p>
               <div className="u-marginTop--30">

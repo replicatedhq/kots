@@ -445,8 +445,8 @@ class Snapshots extends Component {
           <div className="AppSnapshots--wrapper flex1 flex-column u-width--full u-marginTop--20">
             <div className="flex flex-auto u-marginBottom--15 alignItems--center justifyContent--spaceBetween">
               <div className="flex1 flex-column" style={{ marginRight: "60px" }}>
-                <p className="u-fontWeight--bold u-color--tuna u-fontSize--larger u-lineHeight--normal">Full Snapshots (Instance) </p>
-                <p className="u-marginTop--10 u-fontSize--normal u-lineHeight--more u-fontWeight--medium u-color--dustyGray"> Full snapshots (Instance) back up the Admin Console and all application data. They can be used for full Disaster Recovery; by restoring over top of this instance, or into a new cluster.
+                <p className="u-fontWeight--bold u-textColor--primary u-fontSize--larger u-lineHeight--normal">Full Snapshots (Instance) </p>
+                <p className="u-marginTop--10 u-fontSize--normal u-lineHeight--more u-fontWeight--medium u-textColor--bodyCopy"> Full snapshots (Instance) back up the Admin Console and all application data. They can be used for full Disaster Recovery; by restoring over top of this instance, or into a new cluster.
                 <span className="replicated-link" onClick={this.toggleSnaphotDifferencesModal}> Learn more</span>.</p>
               </div>
               <div className="flex alignSelf--flexEnd">
@@ -463,7 +463,7 @@ class Snapshots extends Component {
             </div>
             {startSnapshotErr ?
               <div className="flex alignItems--center alignSelf--center justifyContent--center u-marginBottom--10">
-                <p className="u-color--chestnut u-fontSize--small u-fontWeight--medium u-lineHeight--normal">{startSnapshotErrorMsg}</p>
+                <p className="u-textColor--error u-fontSize--small u-fontWeight--medium u-lineHeight--normal">{startSnapshotErrorMsg}</p>
               </div>
               : null}
             {snapshots?.length > 0 && snapshotSettings?.veleroVersion ?

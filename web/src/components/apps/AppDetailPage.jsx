@@ -441,12 +441,12 @@ class AppDetailPage extends Component {
             className="DisplayDownloadCommandModal--wrapper Modal"
           >
             <div className="Modal-body">
-              <h2 className="u-fontSize--largest u-color--tuna u-fontWeight--bold u-lineHeight--normal">Download assets</h2>
-              <p className="u-fontSize--normal u-color--dustyGray u-lineHeight--normal u-marginBottom--20">Run this command in your cluster to download the assets.</p>
+              <h2 className="u-fontSize--largest u-textColor--primary u-fontWeight--bold u-lineHeight--normal">Download assets</h2>
+              <p className="u-fontSize--normal u-textColor--bodyCopy u-lineHeight--normal u-marginBottom--20">Run this command in your cluster to download the assets.</p>
               <CodeSnippet
                 language="bash"
                 canCopy={true}
-                onCopyText={<span className="u-color--chateauGreen">Command has been copied to your clipboard</span>}
+                onCopyText={<span className="u-textColor--success">Command has been copied to your clipboard</span>}
               >
                 kubectl krew install kots
                 {`kubectl kots download --namespace ${this.props.appNameSpace} --slug ${this.props.match.params.slug}`}

@@ -1,3 +1,5 @@
+@import "../../variables.scss";
+
 .empty-bundles-illustration {
   /*background-image: url("../../../images/global/empty_bundles_illustration@2x.png");*/
   background-repeat: no-repeat;
@@ -110,7 +112,7 @@
 .SupportBundleTimeline--wrapper {
   max-width: 784px;
   height: 120px;
-  border: 1px solid #C4C8CA;
+  border: 1px solid $border-color;
   border-radius: 4px;
   overflow: hidden;
   cursor: -webkit-grab;
@@ -125,7 +127,7 @@
     padding: 8px 12px;
     background: #F5F8FC;
     min-width: 200px;
-    border-left: solid 1px #C4C8CA;
+    border-left: solid 1px $border-color;
     cursor: initial;
 
     .inner {
@@ -144,8 +146,8 @@
       display: block;
       position: absolute;
       background: #F5F8FC;
-      border-bottom: 1px solid #C4C8CA;
-      border-left: 1px solid #C4C8CA;
+      border-bottom: 1px solid $border-color;
+      border-left: 1px solid $border-color;
       -webkit-transform: rotate(45deg) translateY(-50%);
       -ms-transform: rotate(45deg) translateY(-50%);
       transform: rotate(45deg) translateY(-50%);
@@ -157,7 +159,7 @@
 
     .bundles--wrapper {
       &:not(:last-of-type) {
-        border-bottom: 1px solid #C4C8CA;
+        border-bottom: 1px solid $border-color;
       }
     }
   }

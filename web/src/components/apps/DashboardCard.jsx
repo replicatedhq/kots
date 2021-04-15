@@ -82,7 +82,7 @@ export default class DashboardCard extends React.Component {
 
     return (
       <div className="flex-column flex1">
-        <p className="u-fontWeight--bold u-fontSize--normal u-color--tundora"> Status </p>
+        <p className="u-fontWeight--bold u-fontSize--normal u-textColor--secondary"> Status </p>
         {!isEmpty(appStatus)
           ?
           <div className="flex alignItems--center u-marginTop--5">
@@ -94,7 +94,7 @@ export default class DashboardCard extends React.Component {
                 :
                 <Loader size="16" color="#BC4752" />
             }
-            <span className={`u-marginLeft--5 u-fontSize--normal u-fontWeight--medium ${appStatus === "ready" ? "u-color--dustyGray" : appStatus === "degraded" ? "u-color--orange" : "u-color--chestnut"}`}>
+            <span className={`u-marginLeft--5 u-fontSize--normal u-fontWeight--medium ${appStatus === "ready" ? "u-textColor--bodyCopy" : appStatus === "degraded" ? "u-textColor--warning" : "u-textColor--error"}`}>
               {Utilities.toTitleCase(appStatus)}
             </span>
             {appStatus !== "ready" ?
@@ -104,7 +104,7 @@ export default class DashboardCard extends React.Component {
           :
           <div className="flex alignItems--center u-marginTop--5">
             <span className="icon grayQuestionMark--icon"></span>
-            <span className="u-marginLeft--5 u-fontSize--normal u-fontWeight--medium u-color--dustyGray">
+            <span className="u-marginLeft--5 u-fontSize--normal u-fontWeight--medium u-textColor--bodyCopy">
               Unknown
             </span>
           </div>
@@ -141,9 +141,9 @@ export default class DashboardCard extends React.Component {
     if (downstream?.pendingVersions?.length > 0) {
       return (
         <div className="flex flex-column u-marginTop--12">
-          <p className="u-fontSize--small u-lineHeight--normal u-color--chateauGreen u-fontWeight--bold">New version available</p>
+          <p className="u-fontSize--small u-lineHeight--normal u-textColor--success u-fontWeight--bold">New version available</p>
           <div className="flex flex1 alignItems--center u-marginTop--5">
-            <span className="u-fontSize--normal u-fontWeight--bold u-color--tundora"> {downstream?.pendingVersions[0].versionLabel} </span>
+            <span className="u-fontSize--normal u-fontWeight--bold u-textColor--secondary"> {downstream?.pendingVersions[0].versionLabel} </span>
             <Link to={`${this.props.url}/version-history`} className="card-link u-marginLeft--5"> View </Link>
           </div>
         </div>
@@ -213,17 +213,17 @@ export default class DashboardCard extends React.Component {
 
   getCurrentVersionStatus = (version) => {
     if (version?.status === "deployed" || version?.status === "merged" || version?.status === "pending") {
-      return <span className="u-fontSize--small u-lineHeight--normal u-color--dustyGray u-fontWeight--medium flex alignItems--center"> <span className="icon checkmark-icon u-marginRight--5" /> {Utilities.toTitleCase(version?.status).replace("_", " ")} </span>
+      return <span className="u-fontSize--small u-lineHeight--normal u-textColor--bodyCopy u-fontWeight--medium flex alignItems--center"> <span className="icon checkmark-icon u-marginRight--5" /> {Utilities.toTitleCase(version?.status).replace("_", " ")} </span>
     } else if (version?.status === "failed") {
-      return <span className="u-fontSize--small u-lineHeight--normal u-color--red u-fontWeight--medium flex alignItems--center"> <span className="icon error-small u-marginRight--5" /> Failed <span className="u-marginLeft--5 replicated-link u-fontSize--small" onClick={() => this.handleViewLogs(version, true)}> See details </span></span>
+      return <span className="u-fontSize--small u-lineHeight--normal u-textColor--error u-fontWeight--medium flex alignItems--center"> <span className="icon error-small u-marginRight--5" /> Failed <span className="u-marginLeft--5 replicated-link u-fontSize--small" onClick={() => this.handleViewLogs(version, true)}> See details </span></span>
     } else if (version?.status === "deploying") {
       return (
-        <span className="flex alignItems--center u-fontSize--small u-lineHeight--normal u-color--dustyGray u-fontWeight--medium">
+        <span className="flex alignItems--center u-fontSize--small u-lineHeight--normal u-textColor--bodyCopy u-fontWeight--medium">
           <Loader className="flex alignItems--center u-marginRight--5" size="16" />
             Deploying
         </span>);
     } else {
-      return <span className="u-fontSize--small u-lineHeight--normal u-color--dustyGray u-fontWeight--medium flex alignItems--center"> {Utilities.toTitleCase(version?.status).replace("_", " ")} </span>
+      return <span className="u-fontSize--small u-lineHeight--normal u-textColor--bodyCopy u-fontWeight--medium flex alignItems--center"> {Utilities.toTitleCase(version?.status).replace("_", " ")} </span>
     }
   }
 
@@ -241,9 +241,9 @@ export default class DashboardCard extends React.Component {
 
     let updateText;
     if (showOnlineUI && app.lastUpdateCheckAt) {
-      updateText = <p className="u-marginTop--8 u-fontSize--smaller u-color--silverSand u-marginTop--8">Last checked <span className="u-fontWeight--bold">{dayjs(app.lastUpdateCheckAt).fromNow()}</span></p>;
+      updateText = <p className="u-marginTop--8 u-fontSize--smaller u-textColor--info u-marginTop--8">Last checked <span className="u-fontWeight--bold">{dayjs(app.lastUpdateCheckAt).fromNow()}</span></p>;
     } else if (this.props.airgapUploadError) {
-      updateText = <p className="u-marginTop--10 u-fontSize--small u-color--chestnut u-fontWeight--medium">Error uploading bundle <span className="u-color--royalBlue u-textDecoration--underlineOnHover" onClick={this.props.viewAirgapUploadError}>See details</span></p>
+      updateText = <p className="u-marginTop--10 u-fontSize--small u-textColor--error u-fontWeight--medium">Error uploading bundle <span className="u-linkColor u-textDecoration--underlineOnHover" onClick={this.props.viewAirgapUploadError}>See details</span></p>
     } else if (this.props.uploadingAirgapFile) {
       updateText = (
         <AirgapUploadProgress
@@ -264,9 +264,9 @@ export default class DashboardCard extends React.Component {
           smallSize={true}
         />);
     } else if (errorCheckingUpdate) {
-      updateText = <p className="u-marginTop--10 u-fontSize--small u-color--chestnut u-fontWeight--medium">Error checking for updates, please try again</p>
+      updateText = <p className="u-marginTop--10 u-fontSize--small u-textColor--error u-fontWeight--medium">Error checking for updates, please try again</p>
     } else if (checkingForUpdates) {
-      updateText = <p className="u-marginTop--10 u-fontSize--small u-color--dustyGray u-fontWeight--medium">{checkingUpdateTextShort}</p>
+      updateText = <p className="u-marginTop--10 u-fontSize--small u-textColor--bodyCopy u-fontWeight--medium">{checkingUpdateTextShort}</p>
     } else if (!app.lastUpdateCheckAt) {
       updateText = null;
     }
@@ -282,10 +282,10 @@ export default class DashboardCard extends React.Component {
         {currentVersion?.deployedAt ?
           <div className="flex flex-column" style={{ minHeight: "35px" }}>
             {this.getCurrentVersionStatus(currentVersion)}
-            <p className="u-fontSize--small u-fontWeight--medium u-color--dustyGray u-marginTop--5"> {Utilities.dateFormat(currentVersion?.deployedAt, "MMMM D, YYYY @ hh:mm a z")} </p>
+            <p className="u-fontSize--small u-fontWeight--medium u-textColor--bodyCopy u-marginTop--5"> {Utilities.dateFormat(currentVersion?.deployedAt, "MMMM D, YYYY @ hh:mm a z")} </p>
           </div>
           :
-          <p className="u-fontWeight--bold u-fontSize--normal u-color--dustyGray" style={{ minHeight: "35px" }}> No version deployed </p>}
+          <p className="u-fontWeight--bold u-fontSize--normal u-textColor--bodyCopy" style={{ minHeight: "35px" }}> No version deployed </p>}
         {checkingForUpdates && !isBundleUploading
           ? <Loader className="flex justifyContent--center u-marginTop--10" size="32" />
           : showAirgapUI
@@ -305,7 +305,7 @@ export default class DashboardCard extends React.Component {
         {!showOnlineUI && updateText}
         {checkingForUpdateError &&
           <div className="flex-column flex-auto u-marginTop--5">
-            <p className="u-marginTop--10 u-fontSize--small u-color--chestnut u-fontWeight--medium">Error updating version <span className="u-color--royalBlue u-textDecoration--underlineOnHover" onClick={() => this.props.viewAirgapUpdateError(checkingUpdateText)}>View details</span></p>
+            <p className="u-marginTop--10 u-fontSize--small u-textColor--error u-fontWeight--medium">Error updating version <span className="u-linkColor u-textDecoration--underlineOnHover" onClick={() => this.props.viewAirgapUpdateError(checkingUpdateText)}>View details</span></p>
           </div>}
       </div>
     )
@@ -318,20 +318,20 @@ export default class DashboardCard extends React.Component {
     return (
       <div>
         {isSnapshotAllowed ?
-          getingAppLicenseErrMsg && <p className="u-color--chestnut u-fontSize--small u-fontWeight--medium u-lineHeight--normal flex">{getingAppLicenseErrMsg}</p>
+          getingAppLicenseErrMsg && <p className="u-textColor--error u-fontSize--small u-fontWeight--medium u-lineHeight--normal flex">{getingAppLicenseErrMsg}</p>
           :
           size(appLicense) > 0 ?
             <div>
-              {appLicense?.licenseType === "community" && <p className="u-fontSize--normal u-fontWeight--medium u-color--selectiveYellow u-marginBottom--15"> Community Edition </p>}
-              <p className="u-fontSize--normal u-fontWeight--medium u-color--dustyGray"> Channel: <span className="u-fontWeight--bold u-fontSize--normal u-color--tundora"> {appLicense?.channelName} </span></p>
-              <p className="u-fontSize--normal u-fontWeight--medium u-color--dustyGray u-marginTop--15"> Expires: <span className="u-fontWeight--bold u-fontSize--normal u-color--tundora"> {expiresAt} </span></p>
-              <p className="u-fontSize--small u-color--dustyGray u-marginTop--15 u-lineHeight--medium"> Contact your account rep to change your License. </p>
+              {appLicense?.licenseType === "community" && <p className="u-fontSize--normal u-fontWeight--medium u-textColor--warning u-marginBottom--15"> Community Edition </p>}
+              <p className="u-fontSize--normal u-fontWeight--medium u-textColor--bodyCopy"> Channel: <span className="u-fontWeight--bold u-fontSize--normal u-textColor--secondary"> {appLicense?.channelName} </span></p>
+              <p className="u-fontSize--normal u-fontWeight--medium u-textColor--bodyCopy u-marginTop--15"> Expires: <span className="u-fontWeight--bold u-fontSize--normal u-textColor--secondary"> {expiresAt} </span></p>
+              <p className="u-fontSize--small u-textColor--bodyCopy u-marginTop--15 u-lineHeight--medium"> Contact your account rep to change your License. </p>
             </div>
             :
             getingAppLicenseErrMsg ?
-              <p className="u-color--chestnut u-fontSize--small u-fontWeight--medium u-lineHeight--normal flex">{getingAppLicenseErrMsg}</p>
+              <p className="u-textColor--error u-fontSize--small u-fontWeight--medium u-lineHeight--normal flex">{getingAppLicenseErrMsg}</p>
               :
-              <p className="u-fontSize--normal u-color--dustyGray u-marginTop--15 u-lineHeight--more"> License data is not available on this application because it was installed via Helm </p>
+              <p className="u-fontSize--normal u-textColor--bodyCopy u-marginTop--15 u-lineHeight--more"> License data is not available on this application because it was installed via Helm </p>
         }
       </div>
     )
@@ -359,7 +359,7 @@ export default class DashboardCard extends React.Component {
           <span className={`icon ${cardIcon} u-marginRight--10`}></span>
           <div className="flex1 flex-column">
             <div className={`flex justifyContent--spaceBetween ${appLicense && size(appLicense) === 0 ? "u-marginTop--10" : ""}`}>
-              <p ref={this.cardTitleText} style={{ fontSize: "20px" }} className={`flex1 u-fontWeight--bold u-fontSize--largest u-paddingRight--5 u-marginBottom--5 ${appLicense && size(appLicense) === 0 ? "u-color--doveGray" : "u-color--tundora"}`}>{cardName}</p>
+              <p ref={this.cardTitleText} style={{ fontSize: "20px" }} className={`flex1 u-fontWeight--bold u-fontSize--largest u-paddingRight--5 u-marginBottom--5 ${appLicense && size(appLicense) === 0 ? "u-textColor--secondary" : "u-textColor--secondary"}`}>{cardName}</p>
             </div>
             {application ?
               app.isConfigurable && <Link to={`${url}/config/${app?.downstreams[0]?.currentVersion?.parentSequence}`} className="card-link"> {`${Utilities.checkIsDeployedConfigLatest(app) ? "Edit" : "View"}`} deployed config </Link>
@@ -390,7 +390,7 @@ export default class DashboardCard extends React.Component {
                       : isSnapshotAllowed ?
                         <div className="flex flex-column">
                           {startSnapshotErr &&
-                            <p className="u-color--chestnut u-fontSize--small u-fontWeight--medium u-lineHeight--normal flex">{startSnapshotErrorMsg}</p>}
+                            <p className="u-textColor--error u-fontSize--small u-fontWeight--medium u-lineHeight--normal flex">{startSnapshotErrorMsg}</p>}
                           <div className="flex u-position--relative">
                             <Select
                               className="replicated-select-container snapshot"

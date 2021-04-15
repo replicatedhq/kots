@@ -10,17 +10,17 @@ import { Utilities } from "../../utilities/utilities";
 
 function getCurrentVersionStatus(version, viewLogs) {
   if (version?.status === "deployed" || version?.status === "merged" || version?.status === "pending") {
-    return <span className="u-fontSize--small u-lineHeight--normal u-color--dustyGray u-fontWeight--medium flex alignItems--center u-marginTop--8"> <span className="icon checkmark-icon u-marginRight--5" /> {Utilities.toTitleCase(version?.status).replace("_", " ")} </span>
+    return <span className="u-fontSize--small u-lineHeight--normal u-textColor--bodyCopy u-fontWeight--medium flex alignItems--center u-marginTop--8"> <span className="icon checkmark-icon u-marginRight--5" /> {Utilities.toTitleCase(version?.status).replace("_", " ")} </span>
   } else if (version?.status === "failed") {
-    return <span className="u-fontSize--small u-lineHeight--normal u-color--red u-fontWeight--medium flex alignItems--center u-marginTop--8"> <span className="icon error-small u-marginRight--5" /> Failed <span className="u-marginLeft--5 replicated-link u-fontSize--small" onClick={() => viewLogs(version, true)}> See details </span></span>
+    return <span className="u-fontSize--small u-lineHeight--normal u-textColor--error u-fontWeight--medium flex alignItems--center u-marginTop--8"> <span className="icon error-small u-marginRight--5" /> Failed <span className="u-marginLeft--5 replicated-link u-fontSize--small" onClick={() => viewLogs(version, true)}> See details </span></span>
   } else if (version?.status === "deploying") {
     return (
-      <span className="flex alignItems--center u-fontSize--small u-lineHeight--normal u-color--dustyGray u-fontWeight--medium u-marginTop--8">
+      <span className="flex alignItems--center u-fontSize--small u-lineHeight--normal u-textColor--bodyCopy u-fontWeight--medium u-marginTop--8">
         <Loader className="flex alignItems--center u-marginRight--5" size="16" />
             Deploying
       </span>);
   } else {
-    return <span className="u-fontSize--small u-lineHeight--normal u-color--dustyGray u-fontWeight--medium flex alignItems--center u-marginTop--8"> {Utilities.toTitleCase(version?.status).replace("_", " ")} </span>
+    return <span className="u-fontSize--small u-lineHeight--normal u-textColor--bodyCopy u-fontWeight--medium flex alignItems--center u-marginTop--8"> {Utilities.toTitleCase(version?.status).replace("_", " ")} </span>
   }
 }
 
@@ -38,12 +38,12 @@ export default function AppVersionHistoryHeader(props) {
             </div>
           }
           <div className="flex1 flex-column">
-            <p className="u-fontSize--small u-fontWeight--bold u-lineHeight--normal u-color--tuna"> {currentDownstreamVersion?.versionLabel ? "Current version" : "No current version deployed"} </p>
+            <p className="u-fontSize--small u-fontWeight--bold u-lineHeight--normal u-textColor--primary"> {currentDownstreamVersion?.versionLabel ? "Current version" : "No current version deployed"} </p>
             <div className="flex alignItems--center u-marginTop--5">
-              <p className="u-fontSize--header2 u-fontWeight--bold u-color--tuna"> {currentDownstreamVersion ? currentDownstreamVersion.versionLabel : "---"}</p>
-              <p className="u-fontSize--small u-lineHeight--normal u-color--tundora u-fontWeight--medium u-marginLeft--10"> {currentDownstreamVersion ? `Sequence ${currentDownstreamVersion?.sequence}` : null}</p>
+              <p className="u-fontSize--header2 u-fontWeight--bold u-textColor--primary"> {currentDownstreamVersion ? currentDownstreamVersion.versionLabel : "---"}</p>
+              <p className="u-fontSize--small u-lineHeight--normal u-textColor--secondary u-fontWeight--medium u-marginLeft--10"> {currentDownstreamVersion ? `Sequence ${currentDownstreamVersion?.sequence}` : null}</p>
             </div>
-            {currentDownstreamVersion?.deployedAt ? <p className="u-fontSize--small u-lineHeight--normal u-color--silverSand u-fontWeight--medium u-marginTop--5">{`${Utilities.dateFormat(currentDownstreamVersion.deployedAt, "MMMM D, YYYY @ hh:mm a z")}`}</p> : null}
+            {currentDownstreamVersion?.deployedAt ? <p className="u-fontSize--small u-lineHeight--normal u-textColor--info u-fontWeight--medium u-marginTop--5">{`${Utilities.dateFormat(currentDownstreamVersion.deployedAt, "MMMM D, YYYY @ hh:mm a z")}`}</p> : null}
             {currentDownstreamVersion && getCurrentVersionStatus(currentDownstreamVersion, handleViewLogs)}
             {currentDownstreamVersion ?
               <div className="flex alignItems--center u-marginTop--8 u-marginTop--8">
@@ -76,8 +76,8 @@ export default function AppVersionHistoryHeader(props) {
               ? <Loader size="32" />
               : showAirgapUI ?
                 <div className="flex flex-column justifyContent--center">
-                  <p className="u-fontSize--small u-fontWeight--bold u-lineHeight--normal u-color--tuna"> Upload a new version</p>
-                  <span className="u-fontSize--small u-lineHeight--normal u-color--dustyGray u-marginTop--8"> When you have an Airgap Bundle for a new version, you can upload that new version here. </span>
+                  <p className="u-fontSize--small u-fontWeight--bold u-lineHeight--normal u-textColor--primary"> Upload a new version</p>
+                  <span className="u-fontSize--small u-lineHeight--normal u-textColor--bodyCopy u-marginTop--8"> When you have an Airgap Bundle for a new version, you can upload that new version here. </span>
                   {airgapUploader ?
                     <MountAware className="flex alignItems--center" id="bundle-dropzone" onMount={el => airgapUploader.assignElement(el)}>
                       <span className="btn primary blue u-marginTop--10">Upload a new version</span>
@@ -89,15 +89,15 @@ export default function AppVersionHistoryHeader(props) {
                   <div className="flex1 flex-column justifyContent--center">
                     {pendingVersions?.length > 0 ?
                       <div className="flex flex-column">
-                        <p className="u-fontSize--small u-lineHeight--normal u-color--chateauGreen u-fontWeight--bold">New version available</p>
+                        <p className="u-fontSize--small u-lineHeight--normal u-textColor--success u-fontWeight--bold">New version available</p>
                         <div className="flex flex-column u-marginTop--5 new-version-wrapper">
                           <div className="flex flex1 alignItems--center">
-                            <span className="u-fontSize--larger u-lineHeight--medium u-fontWeight--bold u-color--tundora">{pendingVersions[0]?.versionLabel}</span>
-                            <span className="u-fontSize--small u-lineHeight--normal u-fontWeight--medium u-color--tundora u-marginLeft--5"> Sequence {pendingVersions[0]?.sequence}</span>
+                            <span className="u-fontSize--larger u-lineHeight--medium u-fontWeight--bold u-textColor--secondary">{pendingVersions[0]?.versionLabel}</span>
+                            <span className="u-fontSize--small u-lineHeight--normal u-fontWeight--medium u-textColor--secondary u-marginLeft--5"> Sequence {pendingVersions[0]?.sequence}</span>
                           </div>
                           <div className="flex flex1 alignItems--center">
                             {pendingVersions[0]?.createdOn || pendingVersions[0].upstreamReleasedAt ?
-                              <p className="u-fontSize--small u-lineHeight--normal u-fontWeight--medium u-color--dustyGray">Released <span className="u-fontWeight--bold">{pendingVersions[0].upstreamReleasedAt ? Utilities.dateFormat(pendingVersions[0]?.upstreamReleasedAt, "MMMM D, YYYY") : Utilities.dateFormat(pendingVersions[0]?.createdOn, "MMMM D, YYYY")}</span></p>
+                              <p className="u-fontSize--small u-lineHeight--normal u-fontWeight--medium u-textColor--bodyCopy">Released <span className="u-fontWeight--bold">{pendingVersions[0].upstreamReleasedAt ? Utilities.dateFormat(pendingVersions[0]?.upstreamReleasedAt, "MMMM D, YYYY") : Utilities.dateFormat(pendingVersions[0]?.createdOn, "MMMM D, YYYY")}</span></p>
                               : null}
                             {pendingVersions[0]?.releaseNotes ? <span className="release-notes-link u-fontWeight--medium u-fontSize--small u-fontWeight--medium u-marginLeft--10 flex alignItems--center" onClick={() => showDownstreamReleaseNotes(pendingVersions[0]?.releaseNotes)}><span className="icon releaseNotes-small--icon clickable u-marginRight--5" />Release notes</span> : null}
                           </div>

@@ -20,7 +20,7 @@ class DeployWarningModal extends React.Component {
       className="Modal"
     >
       <div className="Modal-body">
-        <p className="u-fontSize--normal u-color--dustyGray u-lineHeight--normal u-marginBottom--20">
+        <p className="u-fontSize--normal u-textColor--bodyCopy u-lineHeight--normal u-marginBottom--20">
           Preflight checks for this version are currently failing. Are you sure you want to make this the current version?
         </p>
         <div className="u-marginTop--10 flex">
