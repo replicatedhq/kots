@@ -54,9 +54,13 @@
           "items": {
             "type": "object",
             "required": [
+              "recursiveMerge",
               "when"
             ],
             "properties": {
+              "recursiveMerge": {
+                "type": "boolean"
+              },
               "values": {
                 "type": "object",
                 "additionalProperties": {}

@@ -1,6 +1,6 @@
 module github.com/replicatedhq/kots/kotsadm/operator
 
-go 1.14
+go 1.16
 
 require (
 	github.com/blang/semver v3.5.1+incompatible
@@ -14,9 +14,9 @@ require (
 	github.com/spf13/cobra v1.1.1
 	github.com/spf13/viper v1.7.1
 	gopkg.in/yaml.v2 v2.4.0
-	k8s.io/api v0.20.2
-	k8s.io/apimachinery v0.20.2
-	k8s.io/client-go v0.20.2
+	k8s.io/api v0.20.5
+	k8s.io/apimachinery v0.20.5
+	k8s.io/client-go v0.20.5
 	sigs.k8s.io/controller-runtime v0.8.3
 )
 

@@ -11,7 +11,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	extensionsv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
+	extensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	extensionsscheme "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset/scheme"
 	"k8s.io/client-go/kubernetes/scheme"
 )
@@ -153,9 +153,9 @@ func generateSchemaFromCRD(crd []byte, outfile string) error {
 		return errors.Wrap(err, "failed to decode crd")
 	}
 
-	customResourceDefinition := obj.(*extensionsv1beta1.CustomResourceDefinition)
+	customResourceDefinition := obj.(*extensionsv1.CustomResourceDefinition)
 
-	b, err := json.MarshalIndent(customResourceDefinition.Spec.Validation.OpenAPIV3Schema, "", "  ")
+	b, err := json.MarshalIndent(customResourceDefinition.Spec.Versions[0].Schema.OpenAPIV3Schema, "", "  ")
 	if err != nil {
 		return errors.Wrap(err, "failed to marshal json")
 	}
