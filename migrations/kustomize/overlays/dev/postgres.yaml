@@ -54,10 +54,6 @@ spec:
           value: password
         - name: POSTGRESQL_DATABASE
           value: kotsadm
-        command:
-          - ls
-          - -la
-          - /var/lib/postgresql
         ports:
         - name: postgres
           containerPort: 5432
