@@ -1,3 +1,5 @@
+@import "../../variables.scss";
+
 .dashboard-card {
   min-width: 260px;
   max-height: 200px;
@@ -88,7 +90,7 @@
 }
 
 .card-link {
-  color: #326DE6;
+  color: $link-color;
   cursor: pointer;
   font-weight: 500;
   font-size: 12px;

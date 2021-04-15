@@ -9,7 +9,7 @@
   margin-top: 10px;
 
   &.backupSelected {
-    background: #F5F8FC;
+    background: lighten($primary-color, 43.5%);
     border: 1px solid $border-color;
     box-sizing: border-box;
   }

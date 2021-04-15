@@ -30,14 +30,14 @@
   .title {
     font-size: 20px;
     font-weight: bold;
-    color: #323232;
+    color: $text-color-primary;
     margin-bottom: 12px;
   }
 
   .sub {
     font-size: 16px;
     font-weight: medium;
-    color: #9B9B9B;
+    color: $text-color-body-copy;
     line-height: 1.7;
   }
 }

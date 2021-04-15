@@ -1,10 +1,12 @@
+@import "../../variables.scss";
+
 .CodeSnippet {
   &.variant-blue {
     .CodeSnippet-content {
       padding: 15px;
-      border: 1px solid #DFDFDF;
+      border: 1px solid $border-color;
       border-radius: 4px;
-      background-color: #F5F8FC;
+      background-color: lighten($primary-color, 43.5%);
     }
   }
 
@@ -13,7 +15,7 @@
 }
 
 .CodeSnippet-copy {
-  color: #326DE6;
+  color: $link-color;
   font-size: 12px;
 
   &:hover {

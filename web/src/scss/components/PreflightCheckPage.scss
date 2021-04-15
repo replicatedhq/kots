@@ -1,3 +1,5 @@
+@import "../variables.scss";
+
 .PreflightChecks--wrapper {
   max-width: 1000px;
   margin: 0 auto;
@@ -24,7 +26,7 @@
 .preflight-button {
   padding: 8px 16px;
   border-radius: 20px;
-  border: 2px solid #337AB7;
+  border: 2px solid $primary-color;
 }
 
 .preflight-check-row {

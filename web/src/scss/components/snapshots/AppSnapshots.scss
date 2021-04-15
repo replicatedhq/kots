@@ -14,16 +14,16 @@
 }
 
 .RestoreWarning--wrapper {
-  background-color: #FFF1DA;
-  color: #DB9016;
+  background-color: lighten($warning-color, 43.5%);
+  color: $warning-color;
   padding-bottom: 10px;
   padding-top: 10px;
   text-align: center;
-  border-top: 1px solid #DFDFDF;
-  border-right: 1px solid #DFDFDF;
-  border-left: 1px solid #DFDFDF;
+  border-top: 1px solid $border-color;
+  border-right: 1px solid $border-color;
+  border-left: 1px solid $border-color;
   &:last-child {
-    border-bottom: 1px solid #DFDFDF;
+    border-bottom: 1px solid $border-color;
   }
 }
 
@@ -51,11 +51,11 @@
   padding-bottom: 10px;
   padding-top: 10px;
   text-align: center;
-  border-top: 1px solid #DFDFDF;
-  border-right: 1px solid #DFDFDF;
-  border-left: 1px solid #DFDFDF;
+  border-top: 1px solid $border-color;
+  border-right: 1px solid $border-color;
+  border-left: 1px solid $border-color;
   &:last-child {
-    border-bottom: 1px solid #DFDFDF;
+    border-bottom: 1px solid $border-color;
   }
 }
 
@@ -63,7 +63,7 @@
   position: absolute;
   left: 26px;
   bottom: 83px;
-  background-color:#F5F8FC;
+  background-color:lighten($primary-color, 43.5%);
   color: #073551;
   width: 150px;
   height: 36px;
@@ -85,7 +85,7 @@
     top: 5px;
     left: 155px;
     width: 25px;
-    background:#F5F8FC;
+    background:lighten($primary-color, 43.5%);
     height: 25px;
     z-index: 1;
     transform: rotate(45deg);
@@ -99,7 +99,7 @@
   border-radius: 4px;
 
   &.in-progress {
-    background: #F5F8FC;
+    background: lighten($primary-color, 43.5%);
   }
 }
 
@@ -228,7 +228,7 @@
 .SnapshotScheduleTabs--wrapper {
   width: 100%;
   max-width: 400px;
-  border-bottom: 1px solid #DFDFDF;
+  border-bottom: 1px solid $border-color;
 
   .tab-items .tab-item {
     font-size: 12px;
@@ -263,7 +263,7 @@
 }
 
 .ConfigureSnapshotsTabs--wrapper {
-  border-bottom: 1px solid #DFDFDF;
+  border-bottom: 1px solid $border-color;
 
   .tab-items .tab-item {
     font-size: 14px;
@@ -314,7 +314,7 @@
 
 .SelectRestore--wrapper {
   background: #FFFFFF;
-  border: 1px solid #DFDFDF;
+  border: 1px solid $border-color;
   box-sizing: border-box;
   border-radius: 4px;
   padding: 12px 15px;
@@ -322,8 +322,8 @@
   cursor: pointer;
 
   &.is-selected {
-    background: #F5F8FC;
-    border: 1px solid #326DE6;
+    background: lighten($primary-color, 43.5%);
+    border: 1px solid $primary-color;
   }
 }
 
@@ -331,12 +331,12 @@
   cursor: pointer;
   outline: none;
   position: relative;
-  background-color: #326DE6;
+  background-color: $primary-button-color;
   color: #ffffff;
   border: none;
 
   &:not(:disabled):hover {
-    background-color: #265BC7;
+    background-color: darken($primary-button-color, 8%);
   }
   border-radius: 3px;
   height: 28px;

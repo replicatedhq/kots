@@ -1,3 +1,5 @@
+@import "../../variables.scss";
+
 .ErrorToast {
   position: absolute;
   left: 50%;
@@ -10,7 +12,7 @@
   border-radius: 4px;
   transition: transform .3s cubic-bezier(0.285, -0.575, 0.675, 1.440);
   transform: translate(-50%, -90px);
-  background-color: #FFDADA;
-  color: #863333;
+  background-color: lighten($error-color, 43.5%);
+  color: $error-color;
   max-width: 400px;
 }

@@ -25,7 +25,7 @@
   .step-title {
     font-size: 20px;
     font-weight: 700;
-    color: #4A4A4A;
+    color: $text-color-secondary;
     margin-bottom: 12px;
     line-height: 28px;
   }
@@ -33,7 +33,7 @@
   .step-sub {
     font-size: 14px;
     font-weight: 500;
-    color: #9B9B9B;
+    color: $text-color-body-copy;
     margin-bottom: 20px;
     line-height: 22px;
   }
@@ -57,7 +57,7 @@
 }
 
 .gitops-action-link {
-  color: #326DE6;
+  color: $link-color;
   cursor: pointer;
   font-weight: 500;
   font-size: 12px;

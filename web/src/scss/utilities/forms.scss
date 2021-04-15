@@ -53,7 +53,7 @@
   }
 
   &:hover {
-    border-color: darken($border-color, 30%);;
+    border-color: darken($border-color, 30%);
   }
 }
 
@@ -123,22 +123,36 @@
       cursor: pointer;
       outline: none;
       position: relative;
-      background-color: $primary-color;
+      background-color: $primary-button-color;
       color: #ffffff;
   
       &:not(:disabled):hover {
-        background-color: #265BC7;
+        background-color: darken($primary-button-color, 8%);
       }
     }
+
+    .replicated-select__control {
+      border-color:$primary-button-color;
+      cursor: pointer;
+      &.replicated-select__control--is-focused {
+        border-color: darken($primary-button-color, 8%);
+        box-shadow: none;
+  
+        .replicated-select__dropdown-indicator {
+          transform: rotate(180deg);
+        }
+      }
+    }
+
     .css-f8ooy8-control {
       cursor: pointer;
       outline: none;
       position: relative;
-      background-color: $primary-color;
+      background-color: $primary-button-color;
       color: #ffffff;
   
       &:not(:disabled):hover {
-        background-color: darken($primary-color, 8%);
+        background-color: darken($primary-button-color, 8%);
       }
     }
     .css-dvua67-singleValue {
@@ -150,12 +164,12 @@
       height: 20px;
     }
     .css-1wy0on6 {
-      background-color: $primary-color;
+      background-color: $primary-button-color;
       color: #ffffff;
       border-radius: 4px;
   
       &:not(:disabled):hover {
-        background-color: darken($primary-color, 8%);
+        background-color: darken($primary-button-color, 8%);
       }
     }
     .css-16pqwjk-indicatorContainer {

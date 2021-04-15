@@ -5,13 +5,13 @@
 
   .installed-watch {
     border-radius: 4px;
-    border: solid 1px #DFDFDF; 
+    border: solid 1px $border-color;
   }
 
   .installed-watch .installed-watch-header {
     padding: 16px 23px;
     background: #FAFAFA;
-    border-bottom: 1px solid #DFDFDF;
+    border-bottom: 1px solid $border-color;
     align-items: center;
     .installed-watch-name {
       margin-right: 50px;
@@ -45,7 +45,7 @@
 
     .installed-watch-header {
       background-color: #FCFCFC;
-      border-bottom: 1px dashed #DFDFDF;
+      border-bottom: 1px dashed $border-color;
 
       .installed-watch-name {
         opacity: .5;
@@ -57,11 +57,11 @@
     .installed-watch-sidebar {
       margin: 20px;
       max-width: 265px;
-      border-left: solid 1px #DFDFDF;
+      border-left: solid 1px $border-color;
       padding-left: 20px;
       .assets .download-wrapper {
         padding: 14px 12px 0;
-        border: solid #DFDFDF 1px;
+        border: solid $border-color 1px;
         border-radius: 4px;
       }
     }
@@ -80,7 +80,7 @@
   .button-wrapper {
     padding: 4px 0;
     margin-top: 0;
-    border-top: 1px solid #DFDFDF;
+    border-top: 1px solid $border-color;
 
     .card-action-wrapper {
       position: relative;
@@ -93,7 +93,7 @@
         top: 6px;
         height: 16px;
         width: 1px;
-        background-color: #DFDFDF;
+        background-color: $border-color;
       }
       &:last-child:after {
         display: none;
@@ -105,7 +105,7 @@
       transition: background-color .3s;
   
       &:hover {
-        background-color: #F5F8FC;
+        background-color: lighten($primary-color, 43.5%);
       }
       &.deployment:hover {
         background-color: #ECF8EF;
@@ -122,7 +122,7 @@
   .integration {
     max-width: 310px;
     min-width: 310px;
-    border: solid 1px #DFDFDF;
+    border: solid 1px $border-color;
     border-radius: 4px;
     padding: 12px 12px 0px 12px;
     margin-right: 20px;
@@ -147,7 +147,7 @@
           top: 1px;
           height: 14px;
           width: 1px;
-          background-color: #DFDFDF;
+          background-color: $border-color;
         }
         &:last-child {
           padding-right: 0;
@@ -169,7 +169,7 @@
         top: 6px;
         height: 16px;
         width: 1px;
-        background-color: #DFDFDF;
+        background-color: $border-color;
       }
       &:last-child:after {
         display: none;
@@ -181,7 +181,7 @@
       transition: background-color .3s;
   
       &:hover {
-        background-color: #F5F8FC;
+        background-color: lighten($primary-color, 43.5%);
       }
       &.deployment:hover {
         background-color: #ECF8EF;
@@ -221,7 +221,7 @@
 .EmptyState--wrapper {
   padding: 15px;
   border-radius: 4px;
-  border: 2px dashed #dfdfdf;
+  border: 2px dashed $border-color;
 
   .EmptyState {
     width: 100%;

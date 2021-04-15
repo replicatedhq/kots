@@ -1,8 +1,10 @@
+@import "../../variables.scss";
+
 .EmptyWrapper {
-  border: 1px solid #C4C7CA;
+  border: 1px solid $border-color;
   border-radius: 4px;
   padding: 18px 20px;
-  background-color: #F5F8FC;
+  background-color: lighten($primary-color, 43.5%);
 }
 
 .DiffEditor {

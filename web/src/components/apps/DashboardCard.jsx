@@ -127,7 +127,7 @@ export default class DashboardCard extends React.Component {
               :
               selectedAction?.uri ?
                 <div className="u-marginTop--15">
-                  <a href={this.createDashboardActionLink(selectedAction.uri)} target="_blank" rel="noopener noreferrer" className="btn secondary"> {selectedAction.title} </a>
+                  <a href={this.createDashboardActionLink(selectedAction.uri)} target="_blank" rel="noopener noreferrer" className="btn secondary blue"> {selectedAction.title} </a>
                 </div> : null
             }
           </div>

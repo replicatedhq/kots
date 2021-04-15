@@ -57,7 +57,7 @@ body a {
   line-height: 14px;
 
   &:hover {
-    background-color: #F5F8FC;
+    background-color: lighten($primary-color, 43.5%);
   }
 }
 

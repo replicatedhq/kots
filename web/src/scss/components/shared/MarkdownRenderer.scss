@@ -13,26 +13,26 @@
   }
 
   &.warn {
-    color: #DB9016;
-    border-color: #F1D6AB;
-    background-color: #FFFAF2;
+    color: $warning-color;
+    border-color: lighten($warning-color, 35%);
+    background-color: lighten($warning-color, 43.5%);
   }
 
   &.error {
-    color: #BC4752;
-    border-color: #DAB0B4;
-    background-color: #FFF6F5;
+    color: $error-color;
+    border-color: lighten($error-color, 35%);
+    background-color: lighten($error-color, 43.5%);
   }
 
   a,
   a:visited {
-    color: #337AB7;
+    color: $link-color;
   }
 
   a:hover,
   a:focus,
   a:active {
-    color: #193B5B;
+    color: darken($link-color, 10%);
   }
 
   p {
@@ -47,7 +47,7 @@
     margin: 10px 0;
     font-weight: inherit;
     line-height: 1.5;
-    color: #323232;
+    color: $text-color-primary;
     font-weight: bold;
   }
 
@@ -108,13 +108,13 @@
   h1,
   h2,
   h3 {
-    border-bottom: 1px solid #DFDFDF;
+    border-bottom: 1px solid $border-color;
     margin-bottom: 1.15rem;
     padding-bottom: .5rem;
   }
 
   blockquote {
-    border-left: 8px solid #DFDFDF;
+    border-left: 8px solid $border-color;
     padding: 1rem;
     margin: 20px 0;
   }
