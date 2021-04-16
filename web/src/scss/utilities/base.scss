@@ -41,6 +41,18 @@ body a {
   }
 }
 
+.Loader {
+  path {
+    fill: $primary-color
+  }
+  &.warning path {
+    fill: $warning-color;
+  }
+  &.error path {
+    fill: $error-color;
+  }
+}
+
 .snapshotOptions {
   display: flex;
   margin-top: 10px;

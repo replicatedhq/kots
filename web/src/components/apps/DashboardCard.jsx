@@ -90,9 +90,9 @@ export default class DashboardCard extends React.Component {
               <span className={`icon ${appStatus === "ready" ? "checkmark-icon" : ""}`}></span>
               :
               appStatus === "degraded" ?
-                <Loader size="16" color="#DB9016" />
+                <Loader size="16" className="warning" />
                 :
-                <Loader size="16" color="#BC4752" />
+                <Loader size="16" className="error" />
             }
             <span className={`u-marginLeft--5 u-fontSize--normal u-fontWeight--medium ${appStatus === "ready" ? "u-textColor--bodyCopy" : appStatus === "degraded" ? "u-textColor--warning" : "u-textColor--error"}`}>
               {Utilities.toTitleCase(appStatus)}
