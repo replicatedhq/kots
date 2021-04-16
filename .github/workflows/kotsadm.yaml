@@ -623,7 +623,7 @@ jobs:
         path: ./deploy/minio/bin/docker-archive
 
 
-  scan_postgres:
+  scan_postgres_alpine:
     runs-on: ubuntu-18.04
     needs: [build-schema-migrations]
     if: ${{ github.ref == 'refs/heads/master' }}
@@ -639,6 +639,26 @@ jobs:
           acs-report-enable: true
           severity-cutoff: high
 
+      - name: Upload scan report
+        uses: github/codeql-action/upload-sarif@v1
+        with:
+          sarif_file: ${{ steps.scan.outputs.sarif }}
+
+  scan_postgres_debian_stretch:
+    runs-on: ubuntu-18.04
+    needs: [build-schema-migrations]
+    if: ${{ github.ref == 'refs/heads/master' }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Scan postgres image
+        id: scan
+        uses: anchore/scan-action@v2
+        with:
+          image: "postgres:10.16"
+          fail-build: false
+          acs-report-enable: true
+          severity-cutoff: high
       - name: Upload scan report
         uses: github/codeql-action/upload-sarif@v1
         with:

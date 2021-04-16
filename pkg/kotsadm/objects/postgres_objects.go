@@ -15,6 +15,11 @@ import (
 
 func PostgresStatefulset(deployOptions types.DeployOptions, size resource.Quantity) *appsv1.StatefulSet {
 	image := "postgres:10.16-alpine"
+	if deployOptions.IsOpenShift {
+		// use the debian stretch based image for openshift because of this issue in alpine https://github.com/docker-library/postgres/issues/359
+		image = "postgres:10.16"
+	}
+
 	var pullSecrets []corev1.LocalObjectReference
 	if s := kotsadmversion.KotsadmPullSecret(deployOptions.Namespace, deployOptions.KotsadmOptions); s != nil {
 		image = fmt.Sprintf("%s/postgres:%s", kotsadmversion.KotsadmRegistry(deployOptions.KotsadmOptions), kotsadmversion.KotsadmTag(deployOptions.KotsadmOptions))
@@ -33,7 +38,52 @@ func PostgresStatefulset(deployOptions types.DeployOptions, size resource.Quanti
 		}
 	}
 
-	passwdFileMode := int32(0644)
+	volumes := []corev1.Volume{
+		{
+			Name: "kotsadm-postgres",
+			VolumeSource: corev1.VolumeSource{
+				PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
+					ClaimName: "kotsadm-postgres",
+				},
+			},
+		},
+	}
+	if !deployOptions.IsOpenShift {
+		// this is only needed for the alpine based postgres image for user remapping
+		passwdFileMode := int32(0644)
+		volumes = append(volumes, corev1.Volume{
+			Name: "etc-passwd",
+			VolumeSource: corev1.VolumeSource{
+				ConfigMap: &corev1.ConfigMapVolumeSource{
+					LocalObjectReference: corev1.LocalObjectReference{
+						Name: "kotsadm-postgres",
+					},
+					Items: []corev1.KeyToPath{
+						{
+							Key:  "passwd",
+							Path: "passwd",
+							Mode: &passwdFileMode,
+						},
+					},
+				},
+			},
+		})
+	}
+
+	volumeMounts := []corev1.VolumeMount{
+		{
+			Name:      "kotsadm-postgres",
+			MountPath: "/var/lib/postgresql/data",
+		},
+	}
+	if !deployOptions.IsOpenShift {
+		volumeMounts = append(volumeMounts, corev1.VolumeMount{
+			Name:      "etc-passwd",
+			MountPath: "/etc/passwd",
+			SubPath:   "passwd",
+		})
+	}
+
 	statefulset := &appsv1.StatefulSet{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "apps/v1",
@@ -77,33 +127,7 @@ func PostgresStatefulset(deployOptions types.DeployOptions, size resource.Quanti
 				Spec: corev1.PodSpec{
 					SecurityContext:  &securityContext,
 					ImagePullSecrets: pullSecrets,
-					Volumes: []corev1.Volume{
-						{
-							Name: "kotsadm-postgres",
-							VolumeSource: corev1.VolumeSource{
-								PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
-									ClaimName: "kotsadm-postgres",
-								},
-							},
-						},
-						{
-							Name: "etc-passwd",
-							VolumeSource: corev1.VolumeSource{
-								ConfigMap: &corev1.ConfigMapVolumeSource{
-									LocalObjectReference: corev1.LocalObjectReference{
-										Name: "kotsadm-postgres",
-									},
-									Items: []corev1.KeyToPath{
-										{
-											Key:  "passwd",
-											Path: "passwd",
-											Mode: &passwdFileMode,
-										},
-									},
-								},
-							},
-						},
-					},
+					Volumes:          volumes,
 					Containers: []corev1.Container{
 						{
 							Image:           image,
@@ -115,17 +139,7 @@ func PostgresStatefulset(deployOptions types.DeployOptions, size resource.Quanti
 									ContainerPort: 5432,
 								},
 							},
-							VolumeMounts: []corev1.VolumeMount{
-								{
-									Name:      "kotsadm-postgres",
-									MountPath: "/var/lib/postgresql/data",
-								},
-								{
-									Name:      "etc-passwd",
-									MountPath: "/etc/passwd",
-									SubPath:   "passwd",
-								},
-							},
+							VolumeMounts: volumeMounts,
 							Env: []corev1.EnvVar{
 								{
 									Name:  "PGDATA",
