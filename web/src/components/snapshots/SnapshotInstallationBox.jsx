@@ -38,7 +38,7 @@ export default class SnapshotInstallationBox extends Component {
       )
     } else if (snapshotSettings?.veleroVersion && snapshotSettings?.resticVersion && !snapshotSettings?.isResticRunning) {
       return (
-        <div className="flex u-marginTop--20">
+        <div className="flex u-marginBottom--20">
           <div className="flex u-marginRight--20">
             <span className="icon redWarningIcon" />
           </div>
