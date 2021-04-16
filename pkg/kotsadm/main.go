@@ -202,8 +202,6 @@ func Deploy(deployOptions types.DeployOptions) error {
 		deployOptions.LimitRange = limitRange
 	}
 
-	deployOptions.IsOpenShift = k8sutil.IsOpenShift(clientset)
-
 	if airgapPath != "" {
 		deployOptions.AppImagesPushed = true
 
@@ -799,6 +797,7 @@ func readDeployOptionsFromCluster(namespace string, clientset *kubernetes.Client
 	deployOptions := types.DeployOptions{
 		Namespace:   namespace,
 		ServiceType: "ClusterIP",
+		IsOpenShift: k8sutil.IsOpenShift(clientset),
 	}
 
 	// Shared password, we can't read the original, but we can check if there's a bcrypted value
