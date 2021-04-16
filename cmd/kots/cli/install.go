@@ -192,11 +192,16 @@ func InstallCmd() *cobra.Command {
 				IngressConfig:  *ingressConfig,
 			}
 
+			clientset, err := k8sutil.GetClientset()
+			if err != nil {
+				return errors.Wrap(err, "failed to get clientset")
+			}
+			deployOptions.IsOpenShift = k8sutil.IsOpenShift(clientset)
+
 			timeout, err := time.ParseDuration(v.GetString("wait-duration"))
 			if err != nil {
 				return errors.Wrap(err, "failed to parse timeout value")
 			}
-
 			deployOptions.Timeout = timeout
 
 			if v.GetBool("copy-proxy-env") {
@@ -255,11 +260,6 @@ func InstallCmd() *cobra.Command {
 			}
 
 			// port forward
-			clientset, err := k8sutil.GetClientset()
-			if err != nil {
-				return errors.Wrap(err, "failed to get clientset")
-			}
-
 			podName, err := k8sutil.WaitForKotsadm(clientset, namespace, timeout)
 			if err != nil {
 				if _, ok := errors.Cause(err).(*types.ErrorTimeout); ok {
