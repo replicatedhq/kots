@@ -11,11 +11,11 @@ import (
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	appstatustypes "github.com/replicatedhq/kots/pkg/api/appstatus/types"
+	"github.com/replicatedhq/kots/pkg/buildversion"
 	downstream "github.com/replicatedhq/kots/pkg/kotsadmdownstream"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/store"
 	troubleshootpreflight "github.com/replicatedhq/troubleshoot/pkg/preflight"
-	"github.com/replicatedhq/kots/pkg/buildversion"
 )
 
 func SendPreflightsReportToReplicatedApp(license *kotsv1beta1.License, appID string, clusterID string, sequence int, skipPreflights bool, installStatus string, isCLI bool, preflightStatus string, appStatus string) error {

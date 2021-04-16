@@ -32,11 +32,13 @@ func getPostgresYAML(deployOptions types.DeployOptions) (map[string][]byte, erro
 		return nil, errors.Wrap(err, "failed to get size")
 	}
 
-	var configmap bytes.Buffer
-	if err := s.Encode(kotsadmobjects.PostgresConfigMap(deployOptions), &configmap); err != nil {
-		return nil, errors.Wrap(err, "failed to marshal postgres statefulset")
+	if !deployOptions.IsOpenShift {
+		var configmap bytes.Buffer
+		if err := s.Encode(kotsadmobjects.PostgresConfigMap(deployOptions), &configmap); err != nil {
+			return nil, errors.Wrap(err, "failed to marshal postgres statefulset")
+		}
+		docs["postgres-configmap.yaml"] = configmap.Bytes()
 	}
-	docs["postgres-configmap.yaml"] = configmap.Bytes()
 
 	if err := s.Encode(kotsadmobjects.PostgresStatefulset(deployOptions, size), &statefulset); err != nil {
 		return nil, errors.Wrap(err, "failed to marshal postgres statefulset")
@@ -57,8 +59,10 @@ func ensurePostgres(deployOptions types.DeployOptions, clientset *kubernetes.Cli
 		return errors.Wrap(err, "failed to ensure postgres secret")
 	}
 
-	if err := ensurePostgresConfigMap(deployOptions, clientset); err != nil {
-		return errors.Wrap(err, "failed to ensure postgres configmap")
+	if !deployOptions.IsOpenShift {
+		if err := ensurePostgresConfigMap(deployOptions, clientset); err != nil {
+			return errors.Wrap(err, "failed to ensure postgres configmap")
+		}
 	}
 
 	size, err := getSize(deployOptions, "postgres", resource.MustParse("1Gi"))
