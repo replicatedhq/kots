@@ -31,7 +31,7 @@
     top: 0;
     z-index: 1;
     padding: 0 20px;
-    background-color: $secondary-color;
+    background-color: $sub-nav-color;
     border-top: 1px solid $border-color;
     border-bottom: 1px solid $border-color;
     ul {
@@ -49,20 +49,20 @@
         padding: 12px 10px 11px;
         font-size: 14px;
         font-weight: 500;
-        color: $text-color-body-copy;
+        color: $sub-nav-text-color;
         display: inline-block;
         transition: color .2s;
 
         &:hover {
-          color: $text-color-accent;
+          color: darken($sub-nav-text-color, 8%);
         }
       }
 
       &.is-active a {
-        color: $text-color-secondary;
+        color: darken($sub-nav-text-color, 20%);
 
         &:hover {
-          color: $text-color-secondary;
+          color: darken($sub-nav-text-color, 28%);
         }
         &:after {
           content: "";

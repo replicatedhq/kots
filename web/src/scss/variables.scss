@@ -1,21 +1,27 @@
+// navigation
+$nav-color: #FFFFFF;
+$nav-text-color: #4A4A4A;
+$sub-nav-color: #F8F8F8;
+$sub-nav-text-color: #9B9B9B;
+
 // colors
 $primary-color: #326DE6;
-$secondary-color: #F8F8F8;
+$secondary-color: #9B9B9B;
 $accent-color: #326DE6;
+$border-color:#C4C8CA;
+
+// errors and warnings
 $error-color: #BC4752;
 $warning-color: #F7B500;
 $success-color: #44BB66;
-$border-color:#C4C8CA;
 
 // text
 $text-color-primary: #323232;
-$text-color-body-copy: #9B9B9B;
 $text-color-secondary: #4A4A4A;
+$text-color-body-copy: #9B9B9B;
 $text-color-accent: #717171;
 $text-color-info: #C4C8CA;
+
+// links
 $link-color: #326DE6;
 $link-hover-color: #326DE6;
-
-// buttons
-$primary-button-color: #326DE6;
-$secondary-button-color: #9B9B9B;

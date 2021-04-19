@@ -159,7 +159,7 @@
     margin: 0;
     padding: 0;
   }
-  table tr:nth-child(2n) { background-color: #f8f8f8; }
+  table tr:nth-child(2n) { background-color: $sub-nav-color; }
   table tr th {
     font-weight: bold;
     border: 1px solid $border-color;

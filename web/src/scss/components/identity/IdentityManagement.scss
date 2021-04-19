@@ -37,12 +37,12 @@
   height: 55px;
 
   &:hover {
-    background-color: lighten($accent-color, 43.5%);
+    background-color: lighten($primary-color, 43.5%);
   }
 
   &.is-active {
-    background: lighten($accent-color, 43.5%);
-    border: 1px solid $accent-color;
+    background: lighten($primary-color, 43.5%);
+    border: 1px solid $primary-color;
   }
 }
 

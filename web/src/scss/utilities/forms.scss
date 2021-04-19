@@ -123,19 +123,19 @@
       cursor: pointer;
       outline: none;
       position: relative;
-      background-color: $primary-button-color;
+      background-color: $primary-color;
       color: #ffffff;
   
       &:not(:disabled):hover {
-        background-color: darken($primary-button-color, 8%);
+        background-color: darken($primary-color, 8%);
       }
     }
 
     .replicated-select__control {
-      border-color:$primary-button-color;
+      border-color:$primary-color;
       cursor: pointer;
       &.replicated-select__control--is-focused {
-        border-color: darken($primary-button-color, 8%);
+        border-color: darken($primary-color, 8%);
         box-shadow: none;
   
         .replicated-select__dropdown-indicator {
@@ -148,11 +148,11 @@
       cursor: pointer;
       outline: none;
       position: relative;
-      background-color: $primary-button-color;
+      background-color: $primary-color;
       color: #ffffff;
   
       &:not(:disabled):hover {
-        background-color: darken($primary-button-color, 8%);
+        background-color: darken($primary-color, 8%);
       }
     }
     .css-dvua67-singleValue {
@@ -164,12 +164,12 @@
       height: 20px;
     }
     .css-1wy0on6 {
-      background-color: $primary-button-color;
+      background-color: $primary-color;
       color: #ffffff;
       border-radius: 4px;
   
       &:not(:disabled):hover {
-        background-color: darken($primary-button-color, 8%);
+        background-color: darken($primary-color, 8%);
       }
     }
     .css-16pqwjk-indicatorContainer {

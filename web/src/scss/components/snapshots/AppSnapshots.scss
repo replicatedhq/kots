@@ -32,7 +32,7 @@
 }
 
 .CheckVelero--wrapper {
-  background: #F8F8F8;
+  background: $sub-nav-color;
   border: 1px solid $border-color;
   border-radius: 4px;
   max-height: 90px;
@@ -46,8 +46,8 @@
 }
 
 .RestoreError--wrapper {
-  background-color: #FBEDEB;
-  color: #BC4752;
+  background-color:lighten($error-color, 43.5%);
+  color: $error-color;
   padding-bottom: 10px;
   padding-top: 10px;
   text-align: center;
@@ -79,8 +79,8 @@
   &:after {
     display: inline-block;
     content: "";
-    border-right: 1px solid #D8D8D8;
-    border-top: 1px solid #D8D8D8;
+    border-right: 1px solid $border-color;
+    border-top: 1px solid $border-color;
     position: absolute;
     top: 5px;
     left: 155px;
@@ -95,7 +95,7 @@
 
 .SnapshotRow--wrapper {
   padding: 10px 12px;
-  background: #F8F8F8;
+  background: $sub-nav-color;
   border-radius: 4px;
 
   &.in-progress {
@@ -112,7 +112,7 @@
 }
 
 .DummySnapshotRow--wrapper {
-  background: #F8F8F8;
+  background: #f8f8f8;
   border-radius: 4px;
   margin-bottom: 15px; 
   height: 64px;
@@ -193,14 +193,14 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  background: #FBE9D7;
+  background: lighten($warning-color, 43.5%);
   padding: 10px;
 
   p {
     font-weight: 500;
     font-size: 14px;
     line-height: 16px;
-    color: #EC8F39;
+    color: $warning-color;
     margin-left: 10px;
   }
 }
@@ -233,7 +233,7 @@
   .tab-items .tab-item {
     font-size: 12px;
     font-weight: 500;
-    color: #9B9B9B;
+    color: $text-color-body-copy;
     padding: 6px 15px 7px;
     line-height: 14px;
     cursor: pointer;
@@ -241,11 +241,11 @@
     position: relative;
   
     &:hover {
-      color: #717171;
+      color: $text-color-accent;
     }
   
     &.is-active {
-      color: #4A4A4A;
+      color: $text-color-secondary;
       font-weight: 600;
   
       &::after {
@@ -254,7 +254,7 @@
         height: 2px;
         position: absolute;
         display: block;
-        background-color: #326de6;
+        background-color: $accent-color;
         bottom: 0;
         left: 0;
       }
@@ -268,7 +268,7 @@
   .tab-items .tab-item {
     font-size: 14px;
     font-weight: 500;
-    color: #9B9B9B;
+    color: $text-color-body-copy;
     padding: 6px 15px 7px;
     line-height: 14px;
     cursor: pointer;
@@ -276,11 +276,11 @@
     position: relative;
   
     &:hover {
-      color: #717171;
+      color: $text-color-accent;
     }
   
     &.is-active {
-      color: #4A4A4A;
+      color: $text-color-secondary;
       font-weight: 600;
   
       &::after {
@@ -289,7 +289,7 @@
         height: 2px;
         position: absolute;
         display: block;
-        background-color: #326de6;
+        background-color: $accent-color;
         bottom: 0;
         left: 0;
       }
@@ -331,12 +331,12 @@
   cursor: pointer;
   outline: none;
   position: relative;
-  background-color: $primary-button-color;
+  background-color: $primary-color;
   color: #ffffff;
   border: none;
 
   &:not(:disabled):hover {
-    background-color: darken($primary-button-color, 8%);
+    background-color: darken($primary-color, 8%);
   }
   border-radius: 3px;
   height: 28px;

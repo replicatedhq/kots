@@ -173,7 +173,7 @@ code {
     .is-disabled {
       user-select: none;
       cursor: not-allowed;
-      background-color: #F8F8F8;
+      background-color: #f8f8f8;
       border-color: #DFDFDF;
       color: #717171;
     }
@@ -297,9 +297,9 @@ and `background-position: [value]`
 }
 
 .required-label {
-  background-color: #FFF1D9;
+  background-color: lighten($warning-color, 43.5%);
   border-radius: 2px;
-  color: #EBB55C;
+  color: $warning-color;
   font-size: 10px;
   line-height: 10px;  
   font-weight: 500;

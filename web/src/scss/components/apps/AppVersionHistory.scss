@@ -48,7 +48,7 @@ $cell-width: 140px;
 }
 
 .upstream-version-box-wrapper {
-  background: #F8F8F8;
+  background: $sub-nav-color;
   border-radius: 6px;
   padding: 15px;
   width: 100%;
@@ -106,11 +106,11 @@ $cell-width: 140px;
   border-top: 1px solid #DFDFDF;
 
   &.is-expired {
-    background-color: #F8F8F8;
+    background-color: $sub-nav-color;
   }
 
   &.is-deleting {
-    background-color: #F8F8F8;
+    background-color: $sub-nav-color;
   }
 
   .nodeTag {
@@ -166,8 +166,8 @@ $cell-width: 140px;
   margin-left: 15px;
   border-width: 1px;
   border-style: solid;
-  border-color: $secondary-button-color;
-  color: $secondary-button-color;
+  border-color: $secondary-color;
+  color: $secondary-color;
   box-shadow: none;
 }
 
