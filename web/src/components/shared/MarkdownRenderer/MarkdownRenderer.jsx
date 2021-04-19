@@ -5,15 +5,27 @@ import "@src/scss/components/shared/MarkdownRenderer.scss";
 
 const md = Markdown();
 
-export default function MarkdownRenderer(props) {
-  const { children = "", className } = props;
+export default class MarkdownRenderer extends React.Component {
 
-  return (
-    <div className={className}>
-      <div
-        className="is-kotsadm markdown-wrapper"
-        dangerouslySetInnerHTML={{ __html: md.render(children)}}
-      />
-    </div>
-  );
+  componentDidMount() {
+    const anchors = document.getElementById("markdown-wrapper").getElementsByTagName("a");
+
+    for (let i=0; i < anchors.length; i++) {
+      anchors[i].setAttribute("target", "_blank");
+    }
+  }
+
+  render () {
+    const { children = "", className } = this.props;
+  
+    return (
+      <div className={className}>
+        <div
+          id="markdown-wrapper"
+          className="is-kotsadm markdown-wrapper"
+          dangerouslySetInnerHTML={{ __html: md.render(children)}}
+        />
+      </div>
+    );
+  }
 }
