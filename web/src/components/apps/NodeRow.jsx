@@ -60,7 +60,7 @@ export default function NodeRow(props) {
               {
                 node?.pods?.available === -1 ?
                 `${node?.pods?.capacity} pods` :
-                `${node?.pods?.available} pods used`
+                `${node?.pods?.available === 0 ? "0" : (node?.pods?.capacity - node?.pods?.available)} pods used`
               }
             </p>
             {node?.pods?.available !== -1 && <p className="u-marginTop--5 u-color--silverSand u-fontSize--small u-fontWeight--medium">of {node?.pods?.capacity} pods available</p>}
@@ -74,7 +74,7 @@ export default function NodeRow(props) {
               {
                 node?.cpu?.available === -1 ?
                 `${node?.cpu?.capacity} ${node?.cpu?.available === "1" ? "core" : "cores"}` :
-                `${node?.cpu?.available?.toFixed(1)} ${node?.cpu?.available === "1" ? "core used" : "cores used"}`
+                `${node?.cpu?.available === 0 ? "0" : (node?.cpu?.capacity - node?.cpu?.available?.toFixed(1))} ${node?.cpu?.available === "1" ? "core used" : "cores used"}`
               }
             </p>
             {node?.pods?.available !== -1 && <p className="u-marginTop--5 u-color--silverSand u-fontSize--small u-fontWeight--medium">of {node?.cpu?.capacity} {node?.cpu?.available === "1" ? "core available" : "cores available"}</p>}
@@ -88,7 +88,7 @@ export default function NodeRow(props) {
               {
                 node?.memory?.available === -1 ?
                 `${node?.memory?.capacity?.toFixed(1)} GB` :
-                `${node?.memory?.available?.toFixed(1)} GB used`
+                `${node?.memory?.available === 0 ? "0" : (node?.memory?.capacity?.toFixed(1) - node?.memory?.available?.toFixed(1))} GB used`
               }
             </p>
             {node?.pods?.available !== -1 && <p className="u-marginTop--5 u-color--silverSand u-fontSize--small u-fontWeight--medium">of {node?.memory?.capacity?.toFixed(1)} GB available</p>}
