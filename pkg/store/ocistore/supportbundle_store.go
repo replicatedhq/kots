@@ -20,15 +20,7 @@ import (
 	"go.uber.org/zap"
 )
 
-func (s *OCIStore) DeletePendingSupportBundle(id string) error {
-	return ErrNotImplemented
-}
-
 func (s *OCIStore) ListSupportBundles(appID string) ([]*supportbundletypes.SupportBundle, error) {
-	return nil, ErrNotImplemented
-}
-
-func (s *OCIStore) ListPendingSupportBundlesForApp(appID string) ([]*supportbundletypes.PendingSupportBundle, error) {
 	return nil, ErrNotImplemented
 }
 
@@ -36,7 +28,15 @@ func (s *OCIStore) GetSupportBundle(id string) (*supportbundletypes.SupportBundl
 	return nil, ErrNotImplemented
 }
 
-func (s *OCIStore) CreatePendingSupportBundle(id string, appID string, clusterID string) error {
+func (s *OCIStore) CreateInProgressSupportBundle(supportBundle *supportbundletypes.SupportBundle) error {
+	return ErrNotImplemented
+}
+
+func (s *OCIStore) UploadSupportBundle(bundleID string, archivePath string, marshalledTree []byte) error {
+	return ErrNotImplemented
+}
+
+func (s *OCIStore) UpdateSupportBundle(bundle *supportbundletypes.SupportBundle) error {
 	return ErrNotImplemented
 }
 

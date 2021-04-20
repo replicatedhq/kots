@@ -11,23 +11,36 @@ func (a ByCreated) Less(i, j int) bool { return a[i].CreatedAt.Before(a[j].Creat
 func (a ByCreated) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
 
 type SupportBundle struct {
-	ID         string     `json:"id"`
-	Slug       string     `json:"slug"`
-	AppID      string     `json:"appId"`
-	Name       string     `json:"name"`
-	Size       float64    `json:"size"`
-	Status     string     `json:"status"`
-	TreeIndex  string     `json:"treeIndex,omitempty"`
-	CreatedAt  time.Time  `json:"createdAt"`
-	UploadedAt *time.Time `json:"uploadedAt"`
-	IsArchived bool       `json:"isArchived"`
+	ID         string                `json:"id"`
+	Slug       string                `json:"slug"`
+	AppID      string                `json:"appId"`
+	Name       string                `json:"name"`
+	Size       float64               `json:"size"`
+	Status     SupportBundleStatus   `json:"status"`
+	TreeIndex  string                `json:"treeIndex,omitempty"`
+	CreatedAt  time.Time             `json:"createdAt"`
+	UpdatedAt  *time.Time            `json:"updatedAt"`
+	UploadedAt *time.Time            `json:"uploadedAt"`
+	IsArchived bool                  `json:"isArchived"`
+	Progress   SupportBundleProgress `json:"progress"`
+	URI        string                `json:"uri"`
+	RedactURIs []string              `json:"redactURIs"`
 }
 
-type PendingSupportBundle struct {
-	ID        string `json:"id"`
-	AppID     string `json:"appId"`
-	ClusterID string `json:"clusterId"`
+// TODO(dan): analyzer progress
+type SupportBundleProgress struct {
+	CollectorCount      int    `json:"collectorCount"`
+	CollectorsCompleted int    `json:"collectorsCompleted"`
+	Message             string `json:"message"`
 }
+
+type SupportBundleStatus string
+
+const (
+	BUNDLE_FAILED   SupportBundleStatus = "failed"
+	BUNDLE_UPLOADED SupportBundleStatus = "uploaded"
+	BUNDLE_RUNNING  SupportBundleStatus = "running"
+)
 
 type SupportBundleAnalysis struct {
 	Insights  []SupportBundleInsight `json:"insights"`

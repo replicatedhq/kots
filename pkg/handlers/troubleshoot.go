@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -15,17 +14,10 @@ import (
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/redact"
-	"github.com/replicatedhq/kots/pkg/render/helper"
 	"github.com/replicatedhq/kots/pkg/store"
 	"github.com/replicatedhq/kots/pkg/supportbundle"
 	"github.com/replicatedhq/kots/pkg/supportbundle/types"
-	troubleshootanalyze "github.com/replicatedhq/troubleshoot/pkg/analyze"
-	troubleshootv1beta2 "github.com/replicatedhq/troubleshoot/pkg/apis/troubleshoot/v1beta2"
-	"github.com/replicatedhq/troubleshoot/pkg/convert"
 	redact2 "github.com/replicatedhq/troubleshoot/pkg/redact"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	k8sjson "k8s.io/apimachinery/pkg/runtime/serializer/json"
-	"k8s.io/client-go/kubernetes/scheme"
 )
 
 type GetSupportBundleResponse struct {
@@ -38,8 +30,10 @@ type GetSupportBundleResponse struct {
 	TreeIndex  string                       `json:"treeIndex"`
 	CreatedAt  time.Time                    `json:"createdAt"`
 	UploadedAt *time.Time                   `json:"uploadedAt"`
+	UpdatedAt  *time.Time                   `json:"updatedAt"`
 	IsArchived bool                         `json:"isArchived"`
 	Analysis   *types.SupportBundleAnalysis `json:"analysis"`
+	Progress   *types.SupportBundleProgress `json:"progress"`
 }
 
 type GetSupportBundleFilesResponse struct {
@@ -71,6 +65,12 @@ type GetSupportBundleCommandRequest struct {
 
 type GetSupportBundleCommandResponse struct {
 	Command []string `json:"command"`
+}
+
+type CollectSupportBundlesResponse struct {
+	ID    string `json:"id"`
+	Slug  string `json:"slug"`
+	AppID string `json:"appId"`
 }
 
 type GetSupportBundleRedactionsResponse struct {
@@ -105,12 +105,14 @@ func (h *Handler) GetSupportBundle(w http.ResponseWriter, r *http.Request) {
 		AppID:      bundle.AppID,
 		Name:       bundle.Name,
 		Size:       bundle.Size,
-		Status:     bundle.Status,
+		Status:     string(bundle.Status),
 		TreeIndex:  bundle.TreeIndex,
 		CreatedAt:  bundle.CreatedAt,
+		UpdatedAt:  bundle.UpdatedAt,
 		UploadedAt: bundle.UploadedAt,
 		IsArchived: bundle.IsArchived,
 		Analysis:   analysis,
+		Progress:   &bundle.Progress,
 	}
 
 	JSON(w, http.StatusOK, getSupportBundleResponse)
@@ -168,7 +170,7 @@ func (h *Handler) ListSupportBundles(w http.ResponseWriter, r *http.Request) {
 			AppID:      bundle.AppID,
 			Name:       bundle.Name,
 			Size:       bundle.Size,
-			Status:     bundle.Status,
+			Status:     string(bundle.Status),
 			CreatedAt:  bundle.CreatedAt,
 			UploadedAt: bundle.UploadedAt,
 			IsArchived: bundle.IsArchived,
@@ -321,13 +323,20 @@ func (h *Handler) CollectSupportBundle(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := supportbundle.Collect(a.ID, mux.Vars(r)["clusterId"]); err != nil {
+	bundleID, err := supportbundle.Collect(a.ID, mux.Vars(r)["clusterId"])
+	if err != nil {
 		logger.Error(err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
-	JSON(w, http.StatusNoContent, "")
+	collectSupportBundlesResponse := CollectSupportBundlesResponse{
+		ID:    bundleID,
+		Slug:  bundleID,
+		AppID: a.ID,
+	}
+
+	JSON(w, http.StatusAccepted, collectSupportBundlesResponse)
 }
 
 // UploadSupportBundle route is UNAUTHENTICATED
@@ -363,94 +372,8 @@ func (h *Handler) UploadSupportBundle(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// we need the app archive to get the analyzers
-	foundApp, err := store.GetStore().GetApp(mux.Vars(r)["appId"])
-	if err != nil {
-		logger.Error(errors.Wrap(err, "failed to get app"))
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-
-	archiveDir, err := ioutil.TempDir("", "kotsadm")
-	if err != nil {
-		logger.Error(errors.Wrap(err, "failed to create temp dir"))
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-	defer os.RemoveAll(archiveDir)
-
-	err = store.GetStore().GetAppVersionArchive(foundApp.ID, foundApp.CurrentSequence, archiveDir)
-	if err != nil {
-		logger.Error(errors.Wrap(err, "failed to get app version archive"))
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-
-	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(archiveDir)
-	if err != nil {
-		logger.Error(errors.Wrap(err, "failed to load kots kinds from archive"))
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-
-	analyzer := kotsKinds.Analyzer
-	// SupportBundle overwrites Analyzer if defined
-	if kotsKinds.SupportBundle != nil {
-		analyzer = kotsutil.SupportBundleToAnalyzer(kotsKinds.SupportBundle)
-	}
-	if analyzer == nil {
-		analyzer = &troubleshootv1beta2.Analyzer{
-			TypeMeta: metav1.TypeMeta{
-				APIVersion: "troubleshoot.sh/v1beta2",
-				Kind:       "Analyzer",
-			},
-			ObjectMeta: metav1.ObjectMeta{
-				Name: "default-analyzers",
-			},
-			Spec: troubleshootv1beta2.AnalyzerSpec{
-				Analyzers: []*troubleshootv1beta2.Analyze{},
-			},
-		}
-	}
-
-	if err := supportbundle.InjectDefaultAnalyzers(analyzer); err != nil {
-		logger.Error(errors.Wrap(err, "failed to inject analyzers"))
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-
-	s := k8sjson.NewYAMLSerializer(k8sjson.DefaultMetaFactory, scheme.Scheme, scheme.Scheme)
-
-	var b bytes.Buffer
-	if err := s.Encode(analyzer, &b); err != nil {
-		logger.Error(errors.Wrap(err, "failed to encode analyzers"))
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-
-	renderedAnalyzers, err := helper.RenderAppFile(foundApp, nil, b.Bytes(), kotsKinds)
-	if err != nil {
-		logger.Error(errors.Wrap(err, "failed to render analyzers"))
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-
-	analyzeResult, err := troubleshootanalyze.DownloadAndAnalyze(tmpFile.Name(), string(renderedAnalyzers))
-	if err != nil {
-		logger.Error(errors.Wrap(err, "failed to analyze"))
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-
-	data := convert.FromAnalyzerResult(analyzeResult)
-	insights, err := json.MarshalIndent(data, "", "    ")
-	if err != nil {
-		logger.Error(errors.Wrap(err, "failed to marshal result"))
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-
-	if err := store.GetStore().SetSupportBundleAnalysis(supportBundle.ID, insights); err != nil {
-		logger.Error(errors.Wrap(err, "failed to save result"))
+	if err = supportbundle.CreateSupportBundleAnalysis(mux.Vars(r)["appId"], tmpFile.Name(), supportBundle); err != nil {
+		logger.Error(errors.Wrap(err, "failed create analysis"))
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}

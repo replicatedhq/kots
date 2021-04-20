@@ -115,7 +115,7 @@ func (c *Client) diffAndRemovePreviousManifests(applicationManifests Application
 
 	// this is pretty raw, and required kubectl...  we should
 	// consider some other options here?
-	kubernetesApplier := applier.NewKubectl(kubectl, "", "", config)
+	kubernetesApplier := applier.NewKubectl(kubectl, config)
 
 	allPVCs := make([]string, 0)
 	for k, previous := range decodedPreviousMap {

@@ -32,7 +32,6 @@ import (
 	"github.com/replicatedhq/kots/pkg/socket/transport"
 	"github.com/replicatedhq/kots/pkg/store"
 	"github.com/replicatedhq/kots/pkg/supportbundle"
-	supportbundletypes "github.com/replicatedhq/kots/pkg/supportbundle/types"
 	"github.com/replicatedhq/kots/pkg/util"
 	"github.com/replicatedhq/kots/pkg/version"
 	velerov1 "github.com/vmware-tanzu/velero/pkg/apis/velero/v1"
@@ -42,7 +41,6 @@ import (
 type ClusterSocket struct {
 	ClusterID             string
 	SocketID              string
-	SentPreflightURLs     map[string]bool
 	LastDeployedSequences map[string]int64
 }
 
@@ -68,11 +66,6 @@ type AppInformersArgs struct {
 	AppID     string   `json:"app_id"`
 	Informers []string `json:"informers"`
 	Sequence  int64    `json:"sequence"`
-}
-
-type SupportBundleArgs struct {
-	URI        string   `json:"uri"`
-	RedactURIs []string `json:"redactURIs"`
 }
 
 var server *socket.Server
@@ -101,7 +94,6 @@ func Start() *socket.Server {
 		clusterSocket := &ClusterSocket{
 			ClusterID:             clusterID,
 			SocketID:              c.Id(),
-			SentPreflightURLs:     make(map[string]bool, 0),
 			LastDeployedSequences: make(map[string]int64, 0),
 		}
 		clusterSocketHistory = append(clusterSocketHistory, clusterSocket)
@@ -121,7 +113,6 @@ func Start() *socket.Server {
 	})
 
 	startLoop(deployLoop, 1)
-	startLoop(supportBundleLoop, 1)
 	startLoop(restoreLoop, 1)
 
 	return server
@@ -410,99 +401,6 @@ func deployVersionForApp(clusterSocket *ClusterSocket, a *apptypes.App, deployed
 	return nil
 }
 
-func supportBundleLoop() {
-	for _, clusterSocket := range clusterSocketHistory {
-		apps, err := store.GetStore().ListAppsForDownstream(clusterSocket.ClusterID)
-		if err != nil {
-			logger.Error(errors.Wrap(err, "failed to list apps for cluster"))
-		}
-		pendingSupportBundles := []*supportbundletypes.PendingSupportBundle{}
-		for _, app := range apps {
-			appPendingSupportBundles, err := store.GetStore().ListPendingSupportBundlesForApp(app.ID)
-			if err != nil {
-				logger.Error(errors.Wrap(err, "failed to list pending support bundles for app"))
-				continue
-			}
-
-			pendingSupportBundles = append(pendingSupportBundles, appPendingSupportBundles...)
-		}
-
-		for _, sb := range pendingSupportBundles {
-			if err := processSupportBundle(clusterSocket, *sb); err != nil {
-				logger.Error(errors.Wrapf(err, "failed to process support bundle %s for app %s", sb.ID, sb.AppID))
-				continue
-			}
-		}
-	}
-}
-
-func processSupportBundle(clusterSocket *ClusterSocket, pendingSupportBundle supportbundletypes.PendingSupportBundle) error {
-	a, err := store.GetStore().GetApp(pendingSupportBundle.AppID)
-	if err != nil {
-		return errors.Wrapf(err, "failed to get app %s", pendingSupportBundle.AppID)
-	}
-
-	c, err := server.GetChannel(clusterSocket.SocketID)
-	if err != nil {
-		return errors.Wrap(err, "failed to get socket channel from server")
-	}
-
-	sequence := int64(0)
-
-	currentVersion, err := store.GetStore().GetCurrentVersion(a.ID, clusterSocket.ClusterID)
-	if err != nil {
-		return errors.Wrap(err, "failed to get current downstream version")
-	}
-	if currentVersion != nil {
-		sequence = currentVersion.Sequence
-	}
-
-	archivePath, err := ioutil.TempDir("", "kotsadm")
-	if err != nil {
-		return errors.Wrap(err, "failed to create temp dir")
-	}
-	defer os.RemoveAll(archivePath)
-
-	err = store.GetStore().GetAppVersionArchive(a.ID, sequence, archivePath)
-	if err != nil {
-		return errors.Wrap(err, "failed to get current archive")
-	}
-
-	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(archivePath)
-	if err != nil {
-		return errors.Wrap(err, "failed to load current kotskinds")
-	}
-
-	err = supportbundle.CreateRenderedSpec(a.ID, sequence, "", true, kotsKinds)
-	if err != nil {
-		return errors.Wrap(err, "failed to create rendered support bundle spec")
-	}
-
-	err = redact.GenerateKotsadmRedactSpec()
-	if err != nil {
-		return errors.Wrap(err, "failed to write kotsadm redact spec configmap")
-	}
-	redactURIs := []string{redact.GetKotsadmRedactSpecURI()}
-
-	err = redact.CreateRenderedAppRedactSpec(a.ID, sequence, kotsKinds)
-	if err != nil {
-		return errors.Wrap(err, "failed to write app redact spec configmap")
-	}
-	redactURIs = append(redactURIs, redact.GetAppRedactSpecURI(a.Slug))
-
-	supportBundleArgs := SupportBundleArgs{
-		URI:        supportbundle.GetSpecURI(a.Slug),
-		RedactURIs: redactURIs,
-	}
-	c.Emit("supportbundle", supportBundleArgs)
-
-	if err := supportbundle.ClearPending(pendingSupportBundle.ID); err != nil {
-		return errors.Wrap(err, "failed to clear pending support bundle")
-	}
-
-	return nil
-}
-
 func restoreLoop() {
 	for _, clusterSocket := range clusterSocketHistory {
 		apps, err := store.GetStore().ListAppsForDownstream(clusterSocket.ClusterID)
@@ -686,7 +584,12 @@ func createSupportBundleSpec(appID string, sequence int64, origin string, inClus
 		return errors.Wrap(err, "failed to load current kotskinds")
 	}
 
-	err = supportbundle.CreateRenderedSpec(appID, sequence, origin, inCluster, kotsKinds)
+	defaultOpts := supportbundle.DefaultTroubleshootOpts{
+		Origin:    origin,
+		InCluster: inCluster,
+	}
+
+	_, err = supportbundle.CreateRenderedSpec(appID, sequence, kotsKinds, defaultOpts)
 	if err != nil {
 		return errors.Wrap(err, "failed to create rendered support bundle spec")
 	}

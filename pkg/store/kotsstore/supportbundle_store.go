@@ -212,53 +212,6 @@ func (s *KOTSStore) ListSupportBundles(appID string) ([]*types.SupportBundle, er
 	return supportBundles, nil
 }
 
-func (s *KOTSStore) DeletePendingSupportBundle(id string) error {
-	clientset, err := k8sutil.GetClientset()
-	if err != nil {
-		return errors.Wrap(err, "failed to get clientset")
-	}
-
-	if err := clientset.CoreV1().Secrets(os.Getenv("POD_NAMESPACE")).Delete(context.TODO(), fmt.Sprintf("pendingsupportbundle-%s", id), metav1.DeleteOptions{}); err != nil {
-		if kuberneteserrors.IsNotFound(err) {
-			return nil
-		}
-		return errors.Wrap(err, "failed to delete")
-	}
-
-	return nil
-}
-
-func (s *KOTSStore) ListPendingSupportBundlesForApp(appID string) ([]*types.PendingSupportBundle, error) {
-	clientset, err := k8sutil.GetClientset()
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to get clientset")
-	}
-
-	labelSelector := metav1.LabelSelector{
-		MatchLabels: map[string]string{
-			"kots.io/kind":  "pendingsupportbundle",
-			"kots.io/appid": appID,
-		},
-	}
-	secrets, err := clientset.CoreV1().Secrets(os.Getenv("POD_NAMESPACE")).List(context.TODO(), metav1.ListOptions{
-		LabelSelector: labels.Set(labelSelector.MatchLabels).String(),
-	})
-
-	pendingSupportBundles := []*types.PendingSupportBundle{}
-
-	for _, secret := range secrets.Items {
-		s := types.PendingSupportBundle{}
-
-		if err := json.Unmarshal(secret.Data["data"], &s); err != nil {
-			return nil, errors.Wrap(err, "failed to unmarshal")
-		}
-
-		pendingSupportBundles = append(pendingSupportBundles, &s)
-	}
-
-	return pendingSupportBundles, nil
-}
-
 func (s *KOTSStore) GetSupportBundle(id string) (*types.SupportBundle, error) {
 	clientset, err := k8sutil.GetClientset()
 	if err != nil {
@@ -282,31 +235,27 @@ func (s *KOTSStore) GetSupportBundle(id string) (*types.SupportBundle, error) {
 		}
 		return nil, errors.Wrap(err, "failed to get treeindex from s3")
 	}
-
 	supportBundle.TreeIndex = string(treeindex)
 
 	return &supportBundle, nil
 }
 
-func (s *KOTSStore) CreatePendingSupportBundle(id string, appID string, clusterID string) error {
-	pendingSupportBundle := types.PendingSupportBundle{
-		ID:        id,
-		AppID:     appID,
-		ClusterID: clusterID,
-	}
-	b, err := json.Marshal(pendingSupportBundle)
-	if err != nil {
-		return errors.Wrap(err, "failed to marshal")
-	}
+func (s *KOTSStore) CreateInProgressSupportBundle(supportBundle *types.SupportBundle) error {
+	id := supportBundle.ID
+	appID := supportBundle.AppID
 
-	clientset, err := k8sutil.GetClientset()
+	supportBundle.Status = types.BUNDLE_RUNNING
+	supportBundle.CreatedAt = time.Now()
+
+	bundleMarshaled, err := json.Marshal(supportBundle)
 	if err != nil {
-		return errors.Wrap(err, "failed to get clientset")
+		return errors.Wrap(err, "failed to marshal support bundle")
 	}
 
 	labels := kotsadmtypes.GetKotsadmLabels()
-	labels["kots.io/kind"] = "pendingsupportbundle"
+	labels["kots.io/kind"] = "supportbundle"
 	labels["kots.io/appid"] = appID
+	labels["kots.io/status"] = string(types.BUNDLE_RUNNING)
 
 	secret := corev1.Secret{
 		TypeMeta: metav1.TypeMeta{
@@ -314,13 +263,19 @@ func (s *KOTSStore) CreatePendingSupportBundle(id string, appID string, clusterI
 			Kind:       "Secret",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      fmt.Sprintf("pendingsupportbundle-%s", id),
+			Name:      fmt.Sprintf("supportbundle-%s", id),
 			Namespace: os.Getenv("POD_NAMESPACE"),
 			Labels:    labels,
 		},
 		Data: map[string][]byte{
-			"data": b,
+			"bundle":   bundleMarshaled,
+			"analysis": nil,
 		},
+	}
+
+	clientset, err := k8sutil.GetClientset()
+	if err != nil {
+		return errors.Wrap(err, "failed to get clientset")
 	}
 
 	if _, err := clientset.CoreV1().Secrets(os.Getenv("POD_NAMESPACE")).Create(context.TODO(), &secret, metav1.CreateOptions{}); err != nil {
@@ -367,7 +322,7 @@ func (s *KOTSStore) CreateSupportBundle(id string, appID string, archivePath str
 		Slug:      id,
 		AppID:     appID,
 		Size:      float64(fi.Size()),
-		Status:    "uploaded",
+		Status:    types.BUNDLE_UPLOADED,
 		CreatedAt: time.Now(),
 	}
 	bundleMarshaled, err := json.Marshal(supportBundle)
@@ -378,6 +333,7 @@ func (s *KOTSStore) CreateSupportBundle(id string, appID string, archivePath str
 	labels := kotsadmtypes.GetKotsadmLabels()
 	labels["kots.io/kind"] = "supportbundle"
 	labels["kots.io/appid"] = appID
+	labels["kots.io/status"] = string(types.BUNDLE_UPLOADED)
 
 	secret := corev1.Secret{
 		TypeMeta: metav1.TypeMeta{
@@ -405,6 +361,70 @@ func (s *KOTSStore) CreateSupportBundle(id string, appID string, archivePath str
 	}
 
 	return &supportBundle, nil
+}
+
+// UpdateSupportBundle updates the support bundle definition in the secret
+func (s *KOTSStore) UpdateSupportBundle(bundle *types.SupportBundle) error {
+
+	now := time.Now()
+	bundle.UpdatedAt = &now
+
+	marshaledBundle, err := json.Marshal(bundle)
+	if err != nil {
+		return errors.Wrap(err, "failed to marshal support bundle")
+	}
+
+	clientset, err := k8sutil.GetClientset()
+	if err != nil {
+		return errors.Wrap(err, "failed to get clientset")
+	}
+
+	secret, err := clientset.CoreV1().Secrets(os.Getenv("POD_NAMESPACE")).Get(context.TODO(), fmt.Sprintf("supportbundle-%s", bundle.ID), metav1.GetOptions{})
+	if err != nil {
+		return errors.Wrap(err, "failed to list support bundle")
+	}
+
+	secret.ObjectMeta.Labels["kots.io/status"] = string(bundle.Status)
+
+	secret.Data["bundle"] = marshaledBundle
+
+	if _, err = clientset.CoreV1().Secrets(os.Getenv("POD_NAMESPACE")).Update(context.TODO(), secret, metav1.UpdateOptions{}); err != nil {
+		return errors.Wrap(err, "failed to update secret")
+	}
+
+	return nil
+}
+
+// UploadSupportBundle pushed the metadata file and support bundle archive to the object store
+func (s *KOTSStore) UploadSupportBundle(id string, archivePath string, marshalledTree []byte) error {
+
+	if err := s.saveSupportBundleMetafile(id, "treeindex", marshalledTree); err != nil {
+		return errors.Wrap(err, "faile to save treeindex")
+	}
+
+	// upload the bundle to s3
+	bucket := aws.String(os.Getenv("S3_BUCKET_NAME"))
+	key := aws.String(filepath.Join("supportbundles", id, "supportbundle.tar.gz"))
+
+	newSession := awssession.New(kotss3.GetConfig())
+
+	s3Client := s3.New(newSession)
+
+	f, err := os.Open(archivePath)
+	if err != nil {
+		return errors.Wrap(err, "failed to open archive file")
+	}
+
+	_, err = s3Client.PutObject(&s3.PutObjectInput{
+		Body:   f,
+		Bucket: bucket,
+		Key:    key,
+	})
+	if err != nil {
+		return errors.Wrap(err, "failed to upload to s3")
+	}
+
+	return nil
 }
 
 // GetSupportBundle will fetch the bundle archive and return a path to where it
@@ -539,22 +559,6 @@ func (s *KOTSStore) SetRedactions(id string, redacts troubleshootredact.Redactio
 	}
 
 	return nil
-}
-
-func (s *KOTSStore) GetSupportBundleSpecForApp(id string) (string, error) {
-	q := `select supportbundle_spec from app_version
-	inner join app on app_version.app_id = app.id and app_version.sequence = app.current_sequence
-	where app.id = $1`
-
-	spec := ""
-
-	db := persistence.MustGetPGSession()
-	row := db.QueryRow(q, id)
-	err := row.Scan(&spec)
-	if err != nil {
-		return "", err
-	}
-	return spec, nil
 }
 
 func (s *KOTSStore) saveSupportBundleMetafile(id string, filename string, data []byte) error {

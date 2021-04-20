@@ -258,7 +258,12 @@ func CreateAppFromAirgap(opts CreateAirgapAppOpts) (finalError error) {
 		return errors.Wrap(err, "failed to load kotskinds from path")
 	}
 
-	err = supportbundle.CreateRenderedSpec(a.ID, a.CurrentSequence, "", true, kotsKinds)
+	defaultOpts := supportbundle.DefaultTroubleshootOpts{
+		Origin:    "",
+		InCluster: true,
+	}
+
+	_, err = supportbundle.CreateRenderedSpec(a.ID, a.CurrentSequence, kotsKinds, defaultOpts)
 	if err != nil {
 		return errors.Wrap(err, "failed to create rendered support bundle spec")
 	}

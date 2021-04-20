@@ -7,7 +7,6 @@ import (
 	"log"
 	"net/http"
 	"net/url"
-	"os/exec"
 	"strconv"
 	"sync"
 	"time"
@@ -50,19 +49,8 @@ type ApplicationManifests struct {
 
 // DesiredState is what we receive from the kotsadm-api server
 type DesiredState struct {
-	Present   []ApplicationManifests `json:"present"`
-	Missing   map[string][]string    `json:"missing"`
-	Preflight []string               `json:"preflight"`
-}
-
-type PreflightRequest struct {
-	URI               string `json:"uri"`
-	IgnorePermissions bool   `json:"ignorePermissions"`
-}
-
-type SupportBundleRequest struct {
-	URI        string   `json:"uri"`
-	RedactURIs []string `json:"redactURIs"`
+	Present []ApplicationManifests `json:"present"`
+	Missing map[string][]string    `json:"missing"`
 }
 
 type InformRequest struct {
@@ -226,16 +214,6 @@ func (c *Client) connect() error {
 func (c *Client) registerHandlers(socketClient *socket.Client) error {
 	var err error
 
-	err = socketClient.On("preflight", func(h *socket.Channel, args PreflightRequest) {
-		log.Printf("received a preflight event: %#v", args)
-		if err := runPreflight(args.URI, args.IgnorePermissions); err != nil {
-			log.Printf("error running preflight: %s", err.Error())
-		}
-	})
-	if err != nil {
-		return errors.Wrap(err, "failed to add preflight handler")
-	}
-
 	err = socketClient.On("deploy", func(h *socket.Channel, args ApplicationManifests) {
 		// this mutex is mainly to prevent the app from being deployed and undeployed at the same time
 		// or to prevent two app versions from being deployed at the same time
@@ -317,23 +295,6 @@ func (c *Client) registerHandlers(socketClient *socket.Client) error {
 		return errors.Wrap(err, "failed to add deploy handler")
 	}
 
-	err = socketClient.On("supportbundle", func(h *socket.Channel, args SupportBundleRequest) {
-		log.Println("received a support bundle request")
-		go func() {
-			startTime := time.Now()
-			// This is in a goroutine because if we disconnect and reconnect to the
-			// websocket, we will want to report that it's completed...
-			err := runSupportBundle(args.URI, args.RedactURIs)
-			log.Printf("support bundle run completed in %s", time.Since(startTime).String())
-			if err != nil {
-				log.Printf("error running support bundle: %s", err.Error())
-			}
-		}()
-	})
-	if err != nil {
-		return errors.Wrap(err, "failed to add support bundle handler")
-	}
-
 	err = socketClient.On("appInformers", func(h *socket.Channel, args InformRequest) {
 		log.Printf("received an inform event: %#v", args)
 		c.applyAppInformers(args.AppID, args.Sequence, args.Informers)
@@ -375,11 +336,14 @@ func (c *Client) sendResult(applicationManifests ApplicationManifests, isError b
 	}
 
 	req, err := http.NewRequest("PUT", uri, bytes.NewBuffer(b))
+	if err != nil {
+		return errors.Wrap(err, "could not create result request")
+	}
 	req.Header.Set("Content-Type", "application/json")
 	req.SetBasicAuth("", c.Token)
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "could not execute result PUT request")
 	}
 	defer resp.Body.Close()
 
@@ -388,62 +352,6 @@ func (c *Client) sendResult(applicationManifests ApplicationManifests, isError b
 	}
 
 	return nil
-}
-
-func runSupportBundle(collectorURI string, redactURIs []string) error {
-	kubectl, err := exec.LookPath("kubectl")
-	if err != nil {
-		return errors.Wrap(err, "failed to find kubectl")
-	}
-
-	preflight := ""
-	localPreflight, err := exec.LookPath("preflight")
-	if err == nil {
-		preflight = localPreflight
-	}
-
-	supportBundle := ""
-	localSupportBundle, err := exec.LookPath("support-bundle")
-	if err == nil {
-		supportBundle = localSupportBundle
-	}
-
-	config, err := rest.InClusterConfig()
-	if err != nil {
-		return errors.Wrap(err, "failed to get in cluster config")
-	}
-
-	kubernetesApplier := applier.NewKubectl(kubectl, preflight, supportBundle, config)
-
-	return kubernetesApplier.SupportBundle(collectorURI, redactURIs)
-}
-
-func runPreflight(preflightURI string, ignorePermissions bool) error {
-	kubectl, err := exec.LookPath("kubectl")
-	if err != nil {
-		return errors.Wrap(err, "failed to find kubectl")
-	}
-
-	preflight := ""
-	localPreflight, err := exec.LookPath("preflight")
-	if err == nil {
-		preflight = localPreflight
-	}
-
-	supportBundle := ""
-	localSupportBundle, err := exec.LookPath("support-bundle")
-	if err == nil {
-		supportBundle = localSupportBundle
-	}
-
-	config, err := rest.InClusterConfig()
-	if err != nil {
-		return errors.Wrap(err, "failed to get in cluster config")
-	}
-
-	kubernetesApplier := applier.NewKubectl(kubectl, preflight, supportBundle, config)
-
-	return kubernetesApplier.Preflight(preflightURI, ignorePermissions)
 }
 
 func (c *Client) applyAppInformers(appID string, sequence int64, informerStrings []types.StatusInformerString) {
@@ -470,11 +378,14 @@ func (c *Client) sendAppStatus(appStatus types.AppStatus) error {
 	uri := fmt.Sprintf("%s/api/v1/appstatus", c.APIEndpoint)
 
 	req, err := http.NewRequest("PUT", uri, bytes.NewBuffer(b))
+	if err != nil {
+		return errors.Wrap(err, "could not create app status request")
+	}
 	req.Header.Set("Content-Type", "application/json")
 	req.SetBasicAuth("", c.Token)
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "could not execute app status PUT request")
 	}
 	defer resp.Body.Close()
 
@@ -491,22 +402,10 @@ func (c *Client) getApplier(kubectlVersion string) (*applier.Kubectl, error) {
 		return nil, errors.Wrap(err, "failed to find kubectl")
 	}
 
-	preflight := ""
-	localPreflight, err := exec.LookPath("preflight")
-	if err == nil {
-		preflight = localPreflight
-	}
-
-	supportBundle := ""
-	localSupportBundle, err := exec.LookPath("support-bundle")
-	if err == nil {
-		supportBundle = localSupportBundle
-	}
-
 	config, err := rest.InClusterConfig()
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get in cluster config")
 	}
 
-	return applier.NewKubectl(kubectl, preflight, supportBundle, config), nil
+	return applier.NewKubectl(kubectl, config), nil
 }
