@@ -115,12 +115,10 @@ jobs:
           severity: 'CRITICAL,HIGH'
 
       - name: push postgres for CI
-        uses: docker/build-push-action@v2.4.0
-        with:
-          tags: ttl.sh/automated-${{ github.run_id }}/postgres:2h
-          context: ./hack/postgres
-          file: ./hack/postgres/Dockerfile
-          push: true
+        run: |
+          docker pull postgres:10.16-alpine
+          docker tag postgres:10.16-alpine ttl.sh/automated-${{ github.run_id }}/postgres:2h
+          docker push ttl.sh/automated-${{ github.run_id }}/postgres:2h
       - name: Scan postgres for vulnerabilities
         uses: aquasecurity/trivy-action@master
         with:
