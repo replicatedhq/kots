@@ -51,7 +51,7 @@ func (entitlementValue *EntitlementValue) Value() interface{} {
 	return entitlementValue.StrVal
 }
 
-func (entitlementValue *EntitlementValue) MarshalJSON() ([]byte, error) {
+func (entitlementValue EntitlementValue) MarshalJSON() ([]byte, error) {
 	switch entitlementValue.Type {
 	case Int:
 		return json.Marshal(entitlementValue.IntVal)
