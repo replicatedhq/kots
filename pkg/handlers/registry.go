@@ -57,10 +57,11 @@ type GetKotsadmRegistryResponse struct {
 }
 
 type ValidateAppRegistryRequest struct {
-	Hostname  string `json:"hostname"`
-	Namespace string `json:"namespace"`
-	Username  string `json:"username"`
-	Password  string `json:"password"`
+	Hostname   string `json:"hostname"`
+	Namespace  string `json:"namespace"`
+	Username   string `json:"username"`
+	Password   string `json:"password"`
+	IsReadOnly bool   `json:"isReadOnly"`
 }
 
 type ValidateAppRegistryResponse struct {
@@ -120,11 +121,6 @@ func (h *Handler) UpdateAppRegistry(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	updateAppRegistryResponse.Hostname = updateAppRegistryRequest.Hostname
-	updateAppRegistryResponse.Username = updateAppRegistryRequest.Username
-	updateAppRegistryResponse.Namespace = updateAppRegistryRequest.Namespace
-
-	// if hostname and namespace have not changed, we don't need to re-push
 	registrySettings, err := store.GetStore().GetRegistryDetailsForApp(foundApp.ID)
 	if err != nil {
 		logger.Error(errors.Wrap(err, "failed to get app registry settings"))
@@ -132,6 +128,26 @@ func (h *Handler) UpdateAppRegistry(w http.ResponseWriter, r *http.Request) {
 		JSON(w, http.StatusInternalServerError, updateAppRegistryResponse)
 		return
 	}
+
+	registryPassword := updateAppRegistryRequest.Password
+	if registryPassword == registrytypes.PasswordMask {
+		registryPassword = registrySettings.Password
+	}
+
+	access := dockerregistry.ActionPush
+	if updateAppRegistryRequest.IsReadOnly {
+		access = dockerregistry.ActionPull
+	}
+	err = dockerregistry.CheckAccess(updateAppRegistryRequest.Hostname, updateAppRegistryRequest.Username, registryPassword, updateAppRegistryRequest.Namespace, access)
+	if err != nil {
+		logger.Infof("Failed to test %s access to %q with user %q: %v", access, updateAppRegistryRequest.Hostname, updateAppRegistryRequest.Username, err)
+		JSON(w, 400, NewErrorResponse(err))
+		return
+	}
+
+	updateAppRegistryResponse.Hostname = updateAppRegistryRequest.Hostname
+	updateAppRegistryResponse.Username = updateAppRegistryRequest.Username
+	updateAppRegistryResponse.Namespace = updateAppRegistryRequest.Namespace
 
 	if !registrySettingsChanged(updateAppRegistryRequest, registrySettings) {
 		updateAppRegistryResponse.Success = true
@@ -146,10 +162,6 @@ func (h *Handler) UpdateAppRegistry(w http.ResponseWriter, r *http.Request) {
 		if foundApp.IsAirgap {
 			// TODO: pushing images not yet supported in airgapped instances.
 			skipImagePush = true
-		}
-		registryPassword := updateAppRegistryRequest.Password
-		if registryPassword == registrytypes.PasswordMask {
-			registryPassword = registrySettings.Password
 		}
 
 		appDir, err := registry.RewriteImages(
@@ -332,10 +344,15 @@ func (h *Handler) ValidateAppRegistry(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = dockerregistry.TestPushAccess(validateAppRegistryRequest.Hostname, validateAppRegistryRequest.Username, password, validateAppRegistryRequest.Namespace)
+	access := dockerregistry.ActionPush
+	if validateAppRegistryRequest.IsReadOnly {
+		access = dockerregistry.ActionPull
+	}
+
+	err = dockerregistry.CheckAccess(validateAppRegistryRequest.Hostname, validateAppRegistryRequest.Username, password, validateAppRegistryRequest.Namespace, access)
 	if err != nil {
 		// NOTE: it is possible this is a 500 sometimes
-		logger.Infof("Failed to test push access to %q with user %q: %v", validateAppRegistryRequest.Hostname, validateAppRegistryRequest.Username, err)
+		logger.Infof("Failed to test %s access to %q with user %q: %v", access, validateAppRegistryRequest.Hostname, validateAppRegistryRequest.Username, err)
 		JSON(w, 400, NewErrorResponse(err))
 		return
 	}

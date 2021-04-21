@@ -17,6 +17,8 @@ import (
 	"github.com/replicatedhq/kots/pkg/logger"
 )
 
+type ScopeAction string
+
 var (
 	insecureClient = &http.Client{
 		Transport: &http.Transport{
@@ -26,6 +28,11 @@ var (
 			Proxy: http.ProxyFromEnvironment,
 		},
 	}
+)
+
+const (
+	ActionPull ScopeAction = "pull"
+	ActionPush ScopeAction = "push"
 )
 
 func LoadAuthForRegistry(endpoint string) (string, string, error) {
@@ -38,7 +45,7 @@ func LoadAuthForRegistry(endpoint string) (string, string, error) {
 	return username, password, nil
 }
 
-func TestPushAccess(endpoint, username, password, org string) error {
+func CheckAccess(endpoint, username, password, org string, requestedAction ScopeAction) error {
 
 	endpoint = sanitizeEndpoint(endpoint)
 
@@ -89,7 +96,7 @@ func TestPushAccess(endpoint, username, password, org string) error {
 	host := challenges[0].Parameters["realm"]
 	v := url.Values{}
 	v.Set("service", challenges[0].Parameters["service"])
-	v.Set("scope", fmt.Sprintf("repository:%s:push", scope))
+	v.Set("scope", fmt.Sprintf("repository:%s:%s", scope, requestedAction))
 
 	authURL := host + "?" + v.Encode()
 
@@ -137,6 +144,7 @@ func TestPushAccess(endpoint, username, password, org string) error {
 		return nil
 	}
 
+	// If requested access is "push", we need to check that we actually got it
 	for _, access := range claims.Access {
 		if access.Type != "repository" {
 			continue
@@ -145,13 +153,13 @@ func TestPushAccess(endpoint, username, password, org string) error {
 			continue
 		}
 		for _, action := range access.Actions {
-			if action == "push" {
+			if action == string(requestedAction) {
 				return nil
 			}
 		}
 	}
 
-	return errors.Errorf("%q has no push permission in %q", username, org)
+	return errors.Errorf("%q has no %s permission in %q", username, requestedAction, org)
 }
 
 func makeBasicAuthToken(username, password string) string {
