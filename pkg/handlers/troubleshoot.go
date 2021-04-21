@@ -467,9 +467,13 @@ func (h *Handler) GetSupportBundleRedactions(w http.ResponseWriter, r *http.Requ
 	bundleID := mux.Vars(r)["bundleId"]
 	redactions, err := store.GetStore().GetRedactions(bundleID)
 	if err != nil {
+		if store.GetStore().IsNotFound(err) {
+			JSON(w, http.StatusNotFound, getSupportBundleRedactionsResponse)
+			return
+		}
 		logger.Error(err)
 		getSupportBundleRedactionsResponse.Error = fmt.Sprintf("failed to find redactions for bundle %s", bundleID)
-		JSON(w, http.StatusBadRequest, getSupportBundleRedactionsResponse)
+		JSON(w, http.StatusInternalServerError, getSupportBundleRedactionsResponse)
 		return
 	}
 

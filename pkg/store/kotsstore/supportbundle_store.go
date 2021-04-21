@@ -277,9 +277,10 @@ func (s *KOTSStore) GetSupportBundle(id string) (*types.SupportBundle, error) {
 
 	treeindex, err := s.getSupportBundleMetafile(id, "treeindex")
 	if err != nil {
-		if !s.IsNotFound(err) {
-			return nil, errors.Wrap(err, "failed to get treeindex from s3")
+		if s.IsNotFound(err) {
+			return &supportBundle, nil
 		}
+		return nil, errors.Wrap(err, "failed to get treeindex from s3")
 	}
 
 	supportBundle.TreeIndex = string(treeindex)
@@ -606,9 +607,6 @@ func (s *KOTSStore) getSupportBundleMetafile(id string, filename string) ([]byte
 			Key:    key,
 		})
 	if err != nil {
-		if s.IsNotFound(err) {
-			return nil, nil
-		}
 		return nil, errors.Wrap(err, "failed to download from s3")
 	}
 
