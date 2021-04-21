@@ -60,13 +60,26 @@ func (s *OCIStore) IsNotFound(err error) bool {
 	if err == nil {
 		return false
 	}
-	if aerr, ok := err.(awserr.Error); ok && aerr.Code() == "NotFound" {
+
+	cause := errors.Cause(err)
+	if cause == ErrNotFound {
 		return true
 	}
-	if kuberneteserrors.IsNotFound(err) {
+
+	if err, ok := cause.(awserr.Error); ok {
+		switch err.Code() {
+		case "NotFound", "NoSuchKey":
+			return true
+		default:
+			return false
+		}
+	}
+
+	if kuberneteserrors.IsNotFound(cause) {
 		return true
 	}
-	return errors.Cause(err) == ErrNotFound
+
+	return false
 }
 
 func canIgnoreEtcdError(err error) bool {

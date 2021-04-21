@@ -188,19 +188,25 @@ func (s *KOTSStore) IsNotFound(err error) bool {
 		return false
 	}
 
-	if errors.Cause(err) == sql.ErrNoRows {
+	cause := errors.Cause(err)
+	if cause == sql.ErrNoRows {
 		return true
 	}
 
-	if errors.Cause(err) == ErrNotFound {
+	if cause == ErrNotFound {
 		return true
 	}
 
-	if aerr, ok := err.(awserr.Error); ok && aerr.Code() == "NotFound" {
-		return true
+	if err, ok := cause.(awserr.Error); ok {
+		switch err.Code() {
+		case "NotFound", "NoSuchKey":
+			return true
+		default:
+			return false
+		}
 	}
 
-	if kuberneteserrors.IsNotFound(err) {
+	if kuberneteserrors.IsNotFound(cause) {
 		return true
 	}
 
