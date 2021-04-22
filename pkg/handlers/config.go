@@ -687,9 +687,43 @@ func (h *Handler) SetAppConfigValues(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	configValueMap := map[string]template.ItemValue{}
+	for key, value := range newConfigValues.Spec.Values {
+		generatedValue := template.ItemValue{
+			Default: value.Default,
+			Value:   value.Value,
+		}
+		configValueMap[key] = generatedValue
+	}
+
+	registryInfo, err := store.GetStore().GetRegistryDetailsForApp(foundApp.ID)
+	if err != nil {
+		setAppConfigValuesResponse.Error = "failed to get app registry info"
+		logger.Error(errors.Wrap(err, setAppConfigValuesResponse.Error))
+		JSON(w, http.StatusInternalServerError, setAppConfigValuesResponse)
+		return
+	}
+
+	localRegistry := template.LocalRegistry{
+		Host:      registryInfo.Hostname,
+		Namespace: registryInfo.Namespace,
+		Username:  registryInfo.Username,
+		Password:  registryInfo.Password,
+		ReadOnly:  registryInfo.IsReadOnly,
+	}
+
+	versionInfo := template.VersionInfoFromInstallation(foundApp.CurrentSequence+1, foundApp.IsAirgap, kotsKinds.Installation.Spec) // sequence +1 because the sequence will be incremented on save (and we want the preview to be accurate)
+	renderedConfig, err := kotsconfig.TemplateConfigObjects(newConfig, configValueMap, kotsKinds.License, localRegistry, &versionInfo, kotsKinds.IdentityConfig)
+	if err != nil {
+		setAppConfigValuesResponse.Error = "failed to render templates"
+		logger.Error(errors.Wrap(err, setAppConfigValuesResponse.Error))
+		JSON(w, http.StatusInternalServerError, setAppConfigValuesResponse)
+		return
+	}
+
 	createNewVersion := true
 	isPrimaryVersion := true // see comment in updateAppConfig
-	resp, err := updateAppConfig(foundApp, foundApp.CurrentSequence, newConfig.Spec.Groups, createNewVersion, isPrimaryVersion, setAppConfigValuesRequest.SkipPreflights, setAppConfigValuesRequest.Deploy)
+	resp, err := updateAppConfig(foundApp, foundApp.CurrentSequence, renderedConfig.Spec.Groups, createNewVersion, isPrimaryVersion, setAppConfigValuesRequest.SkipPreflights, setAppConfigValuesRequest.Deploy)
 	if err != nil {
 		logger.Error(errors.Wrap(err, "failed to create new version"))
 		JSON(w, http.StatusInternalServerError, resp)
