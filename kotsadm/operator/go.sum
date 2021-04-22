@@ -441,8 +441,8 @@ github.com/opencontainers/selinux v1.5.1/go.mod h1:yTcKuYAh6R95iDpefGLQaPaRwJFwy
 github.com/opencontainers/selinux v1.8.0/go.mod h1:RScLhm78qiWa2gbVCcGkC7tCGdgk3ogry1nUQF8Evvo=
 github.com/openzipkin/zipkin-go v0.1.1/go.mod h1:NtoC/o8u3JlF1lSlyPNswIbeQH9bJTmOf0Erfk+hxe8=
 github.com/ostreedev/ostree-go v0.0.0-20190702140239-759a8c1ac913/go.mod h1:J6OG6YJVEWopen4avK3VNQSnALmmjvniMmni/YFYAwc=
-github.com/pact-foundation/pact-go v1.5.1 h1:qdgooqinmy+1E3u0wSAJpLctHgvD2i8yqzJcKXSM3XE=
-github.com/pact-foundation/pact-go v1.5.1/go.mod h1:dN3I+UHNkIk5ZMxSt2+lqavCqfTu+xsx56ZME8BNWlU=
+github.com/pact-foundation/pact-go v1.5.2 h1:3dpMKDcvowCmSsJscU/3D9qB4vIZH89NDxoXZcv73sA=
+github.com/pact-foundation/pact-go v1.5.2/go.mod h1:dN3I+UHNkIk5ZMxSt2+lqavCqfTu+xsx56ZME8BNWlU=
 github.com/pascaldekloe/goe v0.0.0-20180627143212-57f6aae5913c/go.mod h1:lzWF7FIEvWOWxwDKqyGYQf6ZUaNfKdP144TG7ZOy1lc=
 github.com/pelletier/go-toml v1.2.0 h1:T5zMGML61Wp+FlcbWjRDT7yAxhJNAiPPLOFECq181zc=
 github.com/pelletier/go-toml v1.2.0/go.mod h1:5z9KED0ma1S8pY6P1sdut58dfprrGBbd/94hg7ilaic=
