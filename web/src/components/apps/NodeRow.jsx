@@ -63,7 +63,7 @@ export default function NodeRow(props) {
                 `${node?.pods?.available === 0 ? "0" : (node?.pods?.capacity - node?.pods?.available)} pods used`
               }
             </p>
-            {node?.pods?.available !== -1 && <p className="u-marginTop--5 u-color--silverSand u-fontSize--small u-fontWeight--medium">of {node?.pods?.capacity} pods available</p>}
+            {node?.pods?.available !== -1 && <p className="u-marginTop--5 u-color--silverSand u-fontSize--small u-fontWeight--medium">of {node?.pods?.capacity} pods total</p>}
           </div>
           <div className="flex-column flex1 u-marginRight--10">
             <p className={classNames("flex1 u-fontSize--small u-fontWeight--medium u-color--tuna", {
@@ -77,7 +77,7 @@ export default function NodeRow(props) {
                 `${node?.cpu?.available === 0 ? "0" : (node?.cpu?.capacity - node?.cpu?.available?.toFixed(1))} ${node?.cpu?.available === "1" ? "core used" : "cores used"}`
               }
             </p>
-            {node?.pods?.available !== -1 && <p className="u-marginTop--5 u-color--silverSand u-fontSize--small u-fontWeight--medium">of {node?.cpu?.capacity} {node?.cpu?.available === "1" ? "core available" : "cores available"}</p>}
+            {node?.pods?.available !== -1 && <p className="u-marginTop--5 u-color--silverSand u-fontSize--small u-fontWeight--medium">of {node?.cpu?.capacity} {node?.cpu?.available === "1" ? "core total" : "cores total"}</p>}
           </div>
           <div className="flex-column flex1 u-marginRight--10">
             <p className={classNames("flex1 u-fontSize--small u-fontWeight--medium u-color--tuna", {
@@ -91,7 +91,7 @@ export default function NodeRow(props) {
                 `${node?.memory?.available === 0 ? "0" : (node?.memory?.capacity?.toFixed(1) - node?.memory?.available?.toFixed(1))} GB used`
               }
             </p>
-            {node?.pods?.available !== -1 && <p className="u-marginTop--5 u-color--silverSand u-fontSize--small u-fontWeight--medium">of {node?.memory?.capacity?.toFixed(1)} GB available</p>}
+            {node?.pods?.available !== -1 && <p className="u-marginTop--5 u-color--silverSand u-fontSize--small u-fontWeight--medium">of {node?.memory?.capacity?.toFixed(1)} GB total</p>}
           </div>
         </div>
         <div className="flex flex1 alignItems--center u-marginTop--15 NodeRow--items">
