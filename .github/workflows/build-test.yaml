@@ -134,7 +134,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        k8s_version: [v1.16.9-k3s1,v1.17.4-k3s1,v1.18.2-k3s1]
+        k8s_version: [v1.18.18-k3s1,v1.19.10-k3s1,v1.20.6-k3s1]
     steps:
       - uses: debianmaster/actions-k3s@v1.0.1
         id: k3s
