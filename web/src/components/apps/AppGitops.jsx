@@ -4,7 +4,7 @@ import Helmet from "react-helmet";
 import url from "url";
 import GitOpsRepoDetails from "../gitops/GitOpsRepoDetails";
 import CodeSnippet from "@src/components/shared/CodeSnippet";
-import { getServiceSite, getAddKeyUri, requiresHostname, Utilities } from "../../utilities/utilities";
+import { getGitOpsUri, getAddKeyUri, requiresHostname, Utilities } from "../../utilities/utilities";
 import Modal from "react-modal";
 
 import "../../scss/components/gitops/GitOpsSettings.scss";
@@ -30,10 +30,10 @@ const SERVICES = [
     value: "bitbucket",
     label: "Bitbucket",
   },
-  // {
-  //   value: "bitbucket_server",
-  //   label: "Bitbucket Server",
-  // },
+  {
+    value: "bitbucket_server",
+    label: "Bitbucket Server",
+  },
   // {
   //   value: "other",
   //   label: "Other",
@@ -44,23 +44,39 @@ class AppGitops extends Component {
   constructor(props) {
     super(props);
 
-    let ownerRepo = "";
-    if (props.app?.downstreams?.length) {
-      const gitops = props.app.downstreams[0].gitops;
-      if (gitops?.uri) {
-        const parsed = url.parse(gitops?.uri);
-        ownerRepo = parsed.path.slice(1);  // remove the "/"
-      }
-    }
-
     this.state = {
-      ownerRepo,
+      ownerRepo: this.getInitialOwnerRepo(props),
       testingConnection: false,
       disablingGitOps: false,
       showDisableGitopsModalPrompt: false,
       showGitOpsSettings: false,
       errorMsg: "",
     };
+  }
+
+  getInitialOwnerRepo = (props) => {
+    if (!props.app?.downstreams?.length) {
+      return "";
+    }
+
+    const gitops = props.app.downstreams[0].gitops;
+    if (!gitops?.uri) {
+      return "";
+    }
+
+    let ownerRepo = "";
+    const parsed = url.parse(gitops?.uri);
+    if (gitops?.provider === "bitbucket_server") {
+      const project = parsed.path.split("/").length > 2 && parsed.path.split("/")[2];
+      const repo = parsed.path.split("/").length > 4 && parsed.path.split("/")[4];
+      if (project && repo) {
+        ownerRepo = `${project}/${repo}`;
+      }
+    } else {
+      ownerRepo = parsed.path.slice(1);  // remove the "/"
+    }
+
+    return ownerRepo;
   }
 
   renderIcons = (service) => {
@@ -150,9 +166,10 @@ class AppGitops extends Component {
     const gitops = downstream?.gitops;
     const provider = gitops?.provider;
     const hostname = gitops?.hostname;
-    const serviceSite = getServiceSite(provider, hostname);
+    const httpPort = gitops?.httpPort;
+    const sshPort = gitops?.sshPort;
+    const newUri = getGitOpsUri(provider, ownerRepo, hostname, httpPort);
 
-    const newUri = `https://${serviceSite}/${ownerRepo}`;
     const gitOpsInput = {
       provider,
       uri: newUri,
@@ -164,6 +181,10 @@ class AppGitops extends Component {
 
     if (requiresHostname(provider)) {
       gitOpsInput.hostname = hostname;
+    }
+    if (provider === "bitbucket_server") {
+      gitOpsInput.httpPort = httpPort;
+      gitOpsInput.sshPort = sshPort;
     }
     if (provider === "other") {
       gitOpsInput.otherServiceName = otherService;
@@ -282,6 +303,7 @@ class AppGitops extends Component {
       case "gitlab_enterprise":
         return "gitlab-icon";
       case "bitbucket":
+      case "bitbucket_server":
         return "bitbucket-icon";
       default:
         return "github-icon";
@@ -328,7 +350,7 @@ class AppGitops extends Component {
     } = this.state;
 
     const deployKey = gitops?.deployKey;
-    const addKeyUri = getAddKeyUri(gitops?.uri, gitops?.provider, ownerRepo);
+    const addKeyUri = getAddKeyUri(gitops, ownerRepo);
     const gitopsIsConnected = gitops?.enabled && gitops?.isConnected;
 
     const selectedService = SERVICES.find((service) => {

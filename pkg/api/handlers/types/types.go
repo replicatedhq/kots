@@ -58,6 +58,8 @@ type ResponseGitOps struct {
 	Provider    string `json:"provider"`
 	Uri         string `json:"uri"`
 	Hostname    string `json:"hostname"`
+	HTTPPort    string `json:"httpPort"`
+	SSHPort     string `json:"sshPort"`
 	Path        string `json:"path"`
 	Branch      string `json:"branch"`
 	Format      string `json:"format"`
