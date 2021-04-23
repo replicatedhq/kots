@@ -25,16 +25,6 @@ spec:
     - from: "./kots"
       to: "."
     bin: "kots"
-  - selector:
-      matchLabels:
-        os: windows
-        arch: amd64
-    uri: https://github.com/replicatedhq/kots/releases/download/v0.3.0/kots_0.3.0_windows_amd64-0.3.0.zip
-    sha256: ""
-    files:
-    - from: "/kots.exe"
-      to: "."
-    bin: "kots.exe"
   shortDescription: KOTS helps prepare and configure Kubernetes Off-The-Shelf software
   homepage: https://github.com/replicatedhq/kots
   caveats: |

@@ -8,7 +8,6 @@ builds:
   - id: kots
     goos:
     - linux
-    - windows
     - darwin
     goarch:
     - amd64
@@ -29,9 +28,6 @@ archives:
     builds:
       - kots
     format: tar.gz
-    format_overrides:
-      - goos: windows
-        format: zip
     name_template: '{{ .Binary }}_{{ .Os }}_{{ .Arch }}'
     files:
       - licence*
