@@ -52,10 +52,14 @@ func AdminConsoleUpgradeCmd() *cobra.Command {
 			simultaneousUploads, _ := strconv.Atoi(v.GetString("airgap-upload-parallelism"))
 
 			upgradeOptions := kotsadmtypes.UpgradeOptions{
-				Namespace:           v.GetString("namespace"),
-				ForceUpgradeKurl:    v.GetBool("force-upgrade-kurl"),
-				EnsureRBAC:          v.GetBool("ensure-rbac"),
-				SimultaneousUploads: simultaneousUploads,
+				Namespace:                 v.GetString("namespace"),
+				ForceUpgradeKurl:          v.GetBool("force-upgrade-kurl"),
+				EnsureRBAC:                v.GetBool("ensure-rbac"),
+				SimultaneousUploads:       simultaneousUploads,
+				StorageBaseURI:            v.GetString("storage-base-uri"),
+				StorageBaseURIPlainHTTP:   v.GetBool("storage-base-uri-plainhttp"),
+				IncludeMinio:              v.GetBool("with-minio"),
+				IncludeDockerDistribution: v.GetBool("with-dockerdistribution"),
 
 				KotsadmOptions: kotsadmtypes.KotsadmOptions{
 					OverrideVersion:   v.GetString("kotsadm-tag"),
@@ -107,6 +111,16 @@ func AdminConsoleUpgradeCmd() *cobra.Command {
 	cmd.Flags().MarkHidden("kotsadm-namespace")
 	cmd.Flags().MarkHidden("ensure-rbac")
 	cmd.Flags().MarkHidden("airgap-upload-parallelism")
+
+	// options for the alpha feature of using a reg instead of s3 for storage
+	cmd.Flags().String("storage-base-uri", "", "an s3 or oci-registry uri to use for kots persistent storage in the cluster")
+	cmd.Flags().Bool("with-minio", true, "when set, kots install will deploy a local minio instance for storage")
+	cmd.Flags().Bool("with-dockerdistribution", false, "when set, kots install will deploy a local instance of docker distribution for storage")
+	cmd.Flags().Bool("storage-base-uri-plainhttp", false, "when set, use plain http (not https) connecting to the local oci storage")
+	cmd.Flags().MarkHidden("storage-base-uri")
+	cmd.Flags().MarkHidden("with-minio")
+	cmd.Flags().MarkHidden("with-dockerdistribution")
+	cmd.Flags().MarkHidden("storage-base-uri-plainhttp")
 
 	return cmd
 }

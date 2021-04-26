@@ -61,16 +61,33 @@ func ensureMinio(deployOptions types.DeployOptions, clientset *kubernetes.Client
 }
 
 func ensureMinioStatefulset(deployOptions types.DeployOptions, clientset *kubernetes.Clientset, size resource.Quantity) error {
-	_, err := clientset.AppsV1().StatefulSets(deployOptions.Namespace).Get(context.TODO(), "kotsadm-minio", metav1.GetOptions{})
+	ctx := context.TODO()
+	desiredMinio := kotsadmobjects.MinioStatefulset(deployOptions, size)
+	existingMinio, err := clientset.AppsV1().StatefulSets(deployOptions.Namespace).Get(ctx, "kotsadm-minio", metav1.GetOptions{})
 	if err != nil {
 		if !kuberneteserrors.IsNotFound(err) {
 			return errors.Wrap(err, "failed to get existing statefulset")
 		}
 
-		_, err := clientset.AppsV1().StatefulSets(deployOptions.Namespace).Create(context.TODO(), kotsadmobjects.MinioStatefulset(deployOptions, size), metav1.CreateOptions{})
+		_, err := clientset.AppsV1().StatefulSets(deployOptions.Namespace).Create(ctx, desiredMinio, metav1.CreateOptions{})
 		if err != nil {
 			return errors.Wrap(err, "failed to create minio statefulset")
 		}
+
+		return nil
+	}
+
+	if len(existingMinio.Spec.Template.Spec.Containers) != 1 || len(desiredMinio.Spec.Template.Spec.Containers) != 1 {
+		return errors.New("minio stateful set cannot be upgraded")
+	}
+
+	existingMinio.Spec.Template.Spec.Volumes = desiredMinio.Spec.Template.Spec.DeepCopy().Volumes
+	existingMinio.Spec.Template.Spec.Containers[0].Image = desiredMinio.Spec.Template.Spec.Containers[0].Image
+	existingMinio.Spec.Template.Spec.Containers[0].VolumeMounts = desiredMinio.Spec.Template.Spec.Containers[0].DeepCopy().VolumeMounts
+
+	_, err = clientset.AppsV1().StatefulSets(deployOptions.Namespace).Update(ctx, existingMinio, metav1.UpdateOptions{})
+	if err != nil {
+		return errors.Wrap(err, "failed to update minio statefulset")
 	}
 
 	return nil

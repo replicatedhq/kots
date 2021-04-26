@@ -70,6 +70,9 @@ build-release:
 	mkdir -p bin/docker-archive/dex
 	skopeo copy docker://kotsadm/dex:v2.28.1 docker-archive:bin/docker-archive/dex/v2.28.1
 
+	mkdir -p bin/docker-archive/minio
+	skopeo copy docker://minio/minio:RELEASE.2021-04-06T23-11-00Z docker-archive:bin/docker-archive/minio/RELEASE.2021-04-06T23-11-00Z
+
 .PHONY: project-pact-tests
 project-pact-tests:
 	make -C web test

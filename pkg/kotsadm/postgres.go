@@ -130,15 +130,13 @@ func ensurePostgresService(namespace string, clientset *kubernetes.Clientset) er
 	return nil
 }
 
-func waitForHealthyPostgres(deployOptions types.DeployOptions, clientset *kubernetes.Clientset) error {
-	log := logger.NewCLILogger()
-
+func waitForHealthyStatefulSet(name string, deployOptions types.DeployOptions, clientset *kubernetes.Clientset, log *logger.CLILogger) error {
 	log.ChildActionWithSpinner("Waiting for datastore to be ready")
 	defer log.FinishChildSpinner()
 
 	start := time.Now()
 	for {
-		s, err := clientset.AppsV1().StatefulSets(deployOptions.Namespace).Get(context.TODO(), "kotsadm-postgres", metav1.GetOptions{})
+		s, err := clientset.AppsV1().StatefulSets(deployOptions.Namespace).Get(context.TODO(), name, metav1.GetOptions{})
 		if err != nil {
 			return errors.Wrap(err, "failed to list pods")
 		}

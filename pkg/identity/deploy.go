@@ -34,7 +34,7 @@ func Deploy(ctx context.Context, clientset kubernetes.Interface, namespace strin
 	}
 
 	if !kotsutil.IsKurl(clientset) || namespace != metav1.NamespaceDefault {
-		options.ImageRewriteFn = kotsadmversion.ImageRewriteKotsadmRegistry(namespace, registryOptions)
+		options.ImageRewriteFn = kotsadmversion.DependencyImageRewriteKotsadmRegistry(namespace, registryOptions)
 	}
 
 	if err := migrateClientSecret(ctx, clientset, namespace); err != nil {

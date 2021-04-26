@@ -6,6 +6,7 @@ import (
 
 	"github.com/Masterminds/semver"
 	"github.com/docker/distribution/reference"
+	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/buildversion"
 	"github.com/replicatedhq/kots/pkg/docker/registry"
 	"github.com/replicatedhq/kots/pkg/kotsadm/types"
@@ -84,7 +85,8 @@ func KotsadmPullSecret(namespace string, options types.KotsadmOptions) *corev1.S
 	return secret
 }
 
-func ImageRewriteKotsadmRegistry(namespace string, registryOptions *types.KotsadmOptions) ImageRewriteFunc {
+// This function will rewrite images and use the version from this binary as image tag when not overriden
+func KotsadmImageRewriteKotsadmRegistry(namespace string, registryOptions *types.KotsadmOptions) ImageRewriteFunc {
 	secret := KotsadmPullSecret(namespace, *registryOptions)
 
 	return func(upstreamImage string, alwaysRewrite bool) (image string, imagePullSecrets []corev1.LocalObjectReference, err error) {
@@ -106,6 +108,54 @@ func ImageRewriteKotsadmRegistry(namespace string, registryOptions *types.Kotsad
 		parts := strings.Split(reference.Path(named), "/")
 		imageName := parts[len(parts)-1] // why not include the namespace here?
 		image = fmt.Sprintf("%s/%s:%s", KotsadmRegistry(*registryOptions), imageName, KotsadmTag(*registryOptions))
+
+		if secret != nil {
+			imagePullSecrets = []corev1.LocalObjectReference{
+				{Name: secret.ObjectMeta.Name},
+			}
+		}
+		return image, imagePullSecrets, err
+	}
+}
+
+// This function will rewrite images and use the image's original tag when not overriden
+func DependencyImageRewriteKotsadmRegistry(namespace string, registryOptions *types.KotsadmOptions) ImageRewriteFunc {
+	secret := KotsadmPullSecret(namespace, *registryOptions)
+
+	return func(upstreamImage string, alwaysRewrite bool) (image string, imagePullSecrets []corev1.LocalObjectReference, err error) {
+		image = upstreamImage
+
+		if registryOptions == nil {
+			return image, imagePullSecrets, err
+		}
+
+		if !alwaysRewrite && secret == nil {
+			return image, imagePullSecrets, err
+		}
+
+		named, err := reference.ParseNormalizedNamed(upstreamImage)
+		if err != nil {
+			return image, imagePullSecrets, err
+		}
+
+		tag := ""
+		if registryOptions.OverrideVersion != "" {
+			// kotadm-tag CLI flag was used, so all images will have the same tag
+			tag = registryOptions.OverrideVersion
+		} else {
+			if tagged, ok := named.(reference.Tagged); ok {
+				tag = tagged.Tag()
+				// TODO: support digests
+				// else if can, ok := named.(reference.Canonical); ok {
+				// 	tag = can.Digest().String()
+			} else {
+				return image, imagePullSecrets, errors.Errorf("only tagged references can be rewriten: %s", image)
+			}
+		}
+
+		parts := strings.Split(reference.Path(named), "/")
+		imageName := parts[len(parts)-1] // why not include the namespace here?
+		image = fmt.Sprintf("%s/%s:%s", KotsadmRegistry(*registryOptions), imageName, tag)
 
 		if secret != nil {
 			imagePullSecrets = []corev1.LocalObjectReference{
