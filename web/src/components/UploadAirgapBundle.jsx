@@ -466,8 +466,8 @@ class UploadAirgapBundle extends React.Component {
               </div>
               :
               <div>
-                <p className="u-marginTop--10 u-paddingTop--5 u-fontSize--header u-color--tuna u-fontWeight--bold">Install in airgapped environment</p>
-                <p className="u-marginTop--10 u-marginTop--5 u-fontSize--large u-textAlign--center u-fontWeight--medium u-lineHeight--normal u-color--dustyGray">
+                <p className="u-marginTop--10 u-paddingTop--5 u-fontSize--header u-textColor--primary u-fontWeight--bold">Install in airgapped environment</p>
+                <p className="u-marginTop--10 u-marginTop--5 u-fontSize--large u-textAlign--center u-fontWeight--medium u-lineHeight--normal u-textColor--bodyCopy">
                   {showRegistry ?
                     `To install on an airgapped network, you will need to provide access to a Docker registry. The images ${applicationName?.length > 0 ? `in ${applicationName}` : ""} will be retagged and pushed to the registry that you provide here.`
                     :
@@ -499,8 +499,8 @@ class UploadAirgapBundle extends React.Component {
                         </div>
                         :
                         <div className="u-textAlign--center">
-                          <p className="u-fontSize--normal u-color--tundora u-fontWeight--medium u-lineHeight--normal">Drag your airgap bundle here or <span className="u-color--astral u-fontWeight--medium u-textDecoration--underlineOnHover">choose a bundle to upload</span></p>
-                          <p className="u-fontSize--normal u-color--dustyGray u-fontWeight--normal u-lineHeight--normal u-marginTop--10">This will be a .airgap file{applicationName?.length > 0 ? ` ${applicationName} provided` : ""}. Please contact your account rep if you are unable to locate your .airgap file.</p>
+                          <p className="u-fontSize--normal u-textColor--secondary u-fontWeight--medium u-lineHeight--normal">Drag your airgap bundle here or <span className="u-linkColor u-fontWeight--medium u-textDecoration--underlineOnHover">choose a bundle to upload</span></p>
+                          <p className="u-fontSize--normal u-textColor--bodyCopy u-fontWeight--normal u-lineHeight--normal u-marginTop--10">This will be a .airgap file{applicationName?.length > 0 ? ` ${applicationName} provided` : ""}. Please contact your account rep if you are unable to locate your .airgap file.</p>
                         </div>
                       }
                     </MountAware>
@@ -521,14 +521,14 @@ class UploadAirgapBundle extends React.Component {
                 </div>
                 {errorMessage && (
                   <div className="u-marginTop--10">
-                    <span className="u-color--chestnut">{errorMessage}</span>
+                    <span className="u-textColor--error">{errorMessage}</span>
                     {this.state.showSupportBundleCommand ?
                       <div className="u-marginTop--10">
-                        <h2 className="u-fontSize--larger u-fontWeight--bold u-color--tuna">Run this command in your cluster</h2>
+                        <h2 className="u-fontSize--larger u-fontWeight--bold u-textColor--primary">Run this command in your cluster</h2>
                         <CodeSnippet
                           language="bash"
                           canCopy={true}
-                          onCopyText={<span className="u-color--chateauGreen">Command has been copied to your clipboard</span>}
+                          onCopyText={<span className="u-textColor--success">Command has been copied to your clipboard</span>}
                         >
                           {supportBundleCommand}
                         </CodeSnippet>
@@ -555,11 +555,11 @@ class UploadAirgapBundle extends React.Component {
           </div>
         </div>
         <div className={classNames("u-marginTop--10 u-textAlign--center", { "u-marginBottom--20": !onlineInstallErrorMessage }, { "u-display--none": preparingOnlineInstall })}>
-          <span className="u-fontSize--small u-color--dustyGray u-fontWeight--medium" onClick={this.handleOnlineInstall}>Optionally you can <span className="replicated-link">download {applicationName?.length > 0 ? applicationName : "this application"} from the Internet</span></span>
+          <span className="u-fontSize--small u-textColor--bodyCopy u-fontWeight--medium" onClick={this.handleOnlineInstall}>Optionally you can <span className="replicated-link">download {applicationName?.length > 0 ? applicationName : "this application"} from the Internet</span></span>
         </div>
         {onlineInstallErrorMessage && (
           <div className="u-marginTop--10 u-marginBottom--20">
-            <span className="u-fontSize--small u-color--chestnut u-marginRight--5 u-fontWeight--bold">Unable to install license</span>
+            <span className="u-fontSize--small u-textColor--error u-marginRight--5 u-fontWeight--bold">Unable to install license</span>
             <span
               className="u-fontSize--small replicated-link"
               onClick={this.toggleViewOnlineInstallErrorMessage}>
@@ -577,13 +577,13 @@ class UploadAirgapBundle extends React.Component {
         >
           <div className="Modal-body">
             <div className="ExpandedError--wrapper u-marginTop--10 u-marginBottom--10">
-              <p className="u-fontSize--small u-fontWeight--bold u-color--tuna u-marginBottom--5">Error description</p>
-              <p className="u-fontSize--small u-color--chestnut">{onlineInstallErrorMessage}</p>
-              <p className="u-fontSize--small u-fontWeight--bold u-marginTop--15 u-color--tuna">Run this command to generate a support bundle</p>
+              <p className="u-fontSize--small u-fontWeight--bold u-textColor--primary u-marginBottom--5">Error description</p>
+              <p className="u-fontSize--small u-textColor--error">{onlineInstallErrorMessage}</p>
+              <p className="u-fontSize--small u-fontWeight--bold u-marginTop--15 u-textColor--primary">Run this command to generate a support bundle</p>
               <CodeSnippet
                 language="bash"
                 canCopy={true}
-                onCopyText={<span className="u-color--chateauGreen">Command has been copied to your clipboard</span>}
+                onCopyText={<span className="u-textColor--success">Command has been copied to your clipboard</span>}
               >
                 kubectl support-bundle https://kots.io
               </CodeSnippet>

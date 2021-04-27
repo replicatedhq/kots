@@ -393,8 +393,8 @@ class AppGitops extends Component {
                   ctaText="Update settings"
                 />
                 <div className="disable-gitops-wrapper">
-                  <p className="u-fontSize--largest u-fontWeight--bold u-color--tuna u-marginBottom--10">Disable GitOps for {appTitle}</p>
-                  <p className="u-fontSize--normal u-fontWeight--medium u-color--dustyGray u-marginBottom--20">Disabling GitOps will only affect this application. </p>
+                  <p className="u-fontSize--largest u-fontWeight--bold u-textColor--primary u-marginBottom--10">Disable GitOps for {appTitle}</p>
+                  <p className="u-fontSize--normal u-fontWeight--medium u-textColor--bodyCopy u-marginBottom--20">Disabling GitOps will only affect this application. </p>
                   <button className="btn secondary red u-marginRight--10" disabled={disablingGitOps} onClick={this.promptToDisableGitOps}>{disablingGitOps ? "Disabling GitOps" : "Disable GitOps"}</button>
                 </div>
               </div>
@@ -410,17 +410,17 @@ class AppGitops extends Component {
                 </div>
 
                 <div className="u-marginBottom--30">
-                  <p className="u-fontSize--large u-fontWeight--bold u-color--tundora u-lineHeight--normal u-marginBottom--5">
+                  <p className="u-fontSize--large u-fontWeight--bold u-textColor--secondary u-lineHeight--normal u-marginBottom--5">
                     Deployment key
                   </p>
-                  <p className="u-fontSize--normal u-fontWeight--normal u-color--dustyGray u-marginBottom--15">
+                  <p className="u-fontSize--normal u-fontWeight--normal u-textColor--bodyCopy u-marginBottom--15">
                     Copy this deploy key to the
                     <a className="replicated-link" href={addKeyUri} target="_blank" rel="noopener noreferrer"> repo settings page.</a>
                   </p>
                   <CodeSnippet
                     canCopy={true}
                     copyText="Copy key"
-                    onCopyText={<span className="u-color--chateauGreen">Deploy key has been copied to your clipboard</span>}>
+                    onCopyText={<span className="u-textColor--success">Deploy key has been copied to your clipboard</span>}>
                     {deployKey}
                   </CodeSnippet>
                 </div>
@@ -433,7 +433,7 @@ class AppGitops extends Component {
                   <button className="btn secondary dustyGray" onClick={this.updateGitOpsSettings}>Update GitOps Settings</button>
                 </div>
                 { errorMsg ?
-                  <p className="u-color--chestnut u-fontSize--small u-fontWeight--medium u-lineHeight--normal u-marginTop--12">{errorMsg}</p>
+                  <p className="u-textColor--error u-fontSize--small u-fontWeight--medium u-lineHeight--normal u-marginTop--12">{errorMsg}</p>
                   : null
                 }
               </div>
@@ -449,8 +449,8 @@ class AppGitops extends Component {
         >
           <div className="Modal-body">
             <div className="u-marginTop--10 u-marginBottom--10">
-              <p className="u-fontSize--larger u-fontWeight--bold u-color--tuna u-marginBottom--10">Are you sure you want to disable GitOps?</p>
-              <p className="u-fontSize--large u-color--dustyGray">You can re-enable GitOps for this application by clicking "GitOps" in the Nav bar</p>
+              <p className="u-fontSize--larger u-fontWeight--bold u-textColor--primary u-marginBottom--10">Are you sure you want to disable GitOps?</p>
+              <p className="u-fontSize--large u-textColor--bodyCopy">You can re-enable GitOps for this application by clicking "GitOps" in the Nav bar</p>
             </div>
             <div className="u-marginTop--30">
               <button type="button" className="btn secondary u-marginRight--10" onClick={() => { this.setState({ showDisableGitopsModalPrompt: false }) }}>Cancel</button>

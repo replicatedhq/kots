@@ -253,12 +253,12 @@ spec:
         </Helmet>
         <div className="Redactors--wrapper flex1 flex-column u-width--full">
           {(createErrMsg || editingErrMsg) && <p className="ErrorToast flex justifyContent--center alignItems--center">{createErrMsg ? createErrMsg : editingErrMsg}</p>}
-          <div className="u-fontSize--small u-fontWeight--medium u-color--dustyGray u-marginBottom--20">
+          <div className="u-fontSize--small u-fontWeight--medium u-textColor--bodyCopy u-marginBottom--20">
             <Link to={`/app/${this.props.appSlug}/troubleshoot/redactors`} className="replicated-link u-marginRight--5">Redactors</Link> &gt; <span className="u-marginLeft--5">{this.state.redactorName}</span>
           </div>
           <div className="flex flex-auto alignItems--flexStart justifyContent--spaceBetween">
             <div className="flex flex1 alignItems--center">
-              <p className="u-fontWeight--bold u-color--tuna u-fontSize--jumbo u-lineHeight--normal u-marginRight--10">{this.state.redactorName}</p>
+              <p className="u-fontWeight--bold u-textColor--primary u-fontSize--jumbo u-lineHeight--normal u-marginRight--10">{this.state.redactorName}</p>
             </div>
             <div className="flex justifyContent--flexEnd">
               <div className="toggle flex flex1">
@@ -274,12 +274,12 @@ spec:
                   </div>
                 </div>
                 <div className="flex flex1 u-marginLeft--5">
-                  <p className="u-fontWeight--medium u-color--tundora u-fontSize--large alignSelf--center">{this.state.redactorEnabled ? "Enabled" : "Disabled"}</p>
+                  <p className="u-fontWeight--medium u-textColor--secondary u-fontSize--large alignSelf--center">{this.state.redactorEnabled ? "Enabled" : "Disabled"}</p>
                 </div>
               </div>
             </div>
           </div>
-          <p className="u-fontSize--normal u-color--dustyGray u-fontWeight--medium u-lineHeight--normal u-marginTop--10">For more information about creating redactors,
+          <p className="u-fontSize--normal u-textColor--bodyCopy u-fontWeight--medium u-lineHeight--normal u-marginTop--10">For more information about creating redactors,
           <a href="https://troubleshoot.sh/reference/redactors/overview/" target="_blank" rel="noopener noreferrer" className="replicated-link"> check out our docs</a>.</p>
           <div className="flex1 u-marginTop--30 u-border--gray">
             <AceEditor
@@ -311,7 +311,7 @@ spec:
               {createConfirm || editConfirm &&
                 <div className="u-marginRight--10 flex alignItems--center">
                   <span className="icon checkmark-icon" />
-                  <span className="u-marginLeft--5 u-fontSize--small u-fontWeight--medium u-color--chateauGreen">{createConfirm ? "Redactor created" : "Redactor updated"}</span>
+                  <span className="u-marginLeft--5 u-fontSize--small u-fontWeight--medium u-textColor--success">{createConfirm ? "Redactor created" : "Redactor updated"}</span>
                 </div>
               }
               <button type="button" className="btn primary blue" onClick={this.onSaveRedactor} disabled={creatingRedactor || editingRedactor}>{(creatingRedactor || editingRedactor) ? "Saving" : "Save redactor"} </button>

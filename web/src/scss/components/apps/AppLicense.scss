@@ -1,3 +1,5 @@
+@import "../../variables.scss";
+
 .CommunityLicense--wrapper {
   min-width: 557px;
   max-height: 94px;
@@ -12,7 +14,7 @@
 }
 
 .License--wrapper {
-  background: #F8F8F8;
+  background: $sub-nav-color;
   border-radius: 6px;
   padding: 15px;
   width: 80%;

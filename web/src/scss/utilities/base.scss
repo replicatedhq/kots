@@ -1,3 +1,5 @@
+@import "../variables.scss";
+
 body,
 html {
   margin: 0;
@@ -9,7 +11,7 @@ html {
 body {
   font-family: "Helvetica Neue", "Helvetica", sans-serif;
   font-weight: 400;
-  color: #9B9B9B;
+  color: $text-color-body-copy;
   display: flex;
   flex-direction: column;
   flex: 1;
@@ -30,12 +32,24 @@ body a {
 }
 
 .replicated-link {
-  color: #326DE6;
+  color: $link-color;
   cursor: pointer;
   font-weight: 500;
 
   &:hover {
     text-decoration: underline;
+  }
+}
+
+.Loader {
+  path {
+    fill: $primary-color
+  }
+  &.warning path {
+    fill: $warning-color;
+  }
+  &.error path {
+    fill: $error-color;
   }
 }
 
@@ -55,7 +69,7 @@ body a {
   line-height: 14px;
 
   &:hover {
-    background-color: #F5F8FC;
+    background-color: lighten($primary-color, 43.5%);
   }
 }
 
@@ -159,7 +173,7 @@ code {
     .is-disabled {
       user-select: none;
       cursor: not-allowed;
-      background-color: #F8F8F8;
+      background-color: #f8f8f8;
       border-color: #DFDFDF;
       color: #717171;
     }
@@ -207,7 +221,7 @@ code {
 }
 
 .error-block-wrapper {
-  background-color: #FBECEA;
+  background-color: lighten($error-color, 43.5%);
   border-radius: 4px;
   padding: 15px;
   margin: 0 auto;
@@ -227,7 +241,7 @@ code {
   width: 8px;
   height: 8px;
   padding: 3px 6px 6px 5px;
-  background: #BC4752;
+  background: $error-color;
 }
 .warnings {
   display: inline-block;
@@ -240,7 +254,7 @@ code {
   width: 8px;
   height: 8px;
   padding: 3px 6px 6px 5px;
-  background: #F7B500;
+  background: $warning-color;
 }
 
 .circleNumberGray { 
@@ -283,9 +297,9 @@ and `background-position: [value]`
 }
 
 .required-label {
-  background-color: #FFF1D9;
+  background-color: lighten($warning-color, 43.5%);
   border-radius: 2px;
-  color: #EBB55C;
+  color: $warning-color;
   font-size: 10px;
   line-height: 10px;  
   font-weight: 500;

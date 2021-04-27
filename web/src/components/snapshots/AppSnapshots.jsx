@@ -499,7 +499,7 @@ class AppSnapshots extends Component {
       return (
         <div class="flex1 flex-column justifyContent--center alignItems--center">
           <span className="icon redWarningIcon" />
-          <p className="u-color--chestnut u-fontSize--normal u-fontWeight--medium u-lineHeight--normal u-marginTop--10">{restoreInProgressErrMsg}</p>
+          <p className="u-textColor--error u-fontSize--normal u-fontWeight--medium u-lineHeight--normal u-marginTop--10">{restoreInProgressErrMsg}</p>
         </div>
       )
     }
@@ -532,7 +532,7 @@ class AppSnapshots extends Component {
         <div className="container flex-column flex1 u-paddingTop--30 u-paddingBottom--20 alignItems--center">
           <div className="InfoSnapshots--wrapper flex flex-auto u-marginBottom--20">
             <span className="icon info-icon flex-auto u-marginRight--5" />
-            <p className="u-fontSize--small u-fontWeight--normal u-lineHeight--normal u-color--doveGray">
+            <p className="u-fontSize--small u-fontWeight--normal u-lineHeight--normal u-textColor--accent">
               It’s recommend that you use <Link to="/snapshots" className="replicated-link u-fontSize--small">
                 Full snapshots (Instance) </Link> in lieu of Partial snapshots (Application),
                 given Full snapshots offers the same restoration capabilities.
@@ -541,8 +541,8 @@ class AppSnapshots extends Component {
           </div>
           <div className="AppSnapshots--wrapper flex1 flex-column u-width--full u-marginTop--20">
             <div className="flex flex-column u-marginBottom--15">
-              <p className="u-fontWeight--bold u-color--tuna u-fontSize--larger u-lineHeight--normal"> Partial snapshots (Application) </p>
-              <p className="u-marginTop--10 u-fontSize--normal u-lineHeight--more u-fontWeight--medium u-color--dustyGray"> Partial snapshots (Application) only back up application volumes and application manifests; they do not back up the Admin Console or the metadata about an application. </p>
+              <p className="u-fontWeight--bold u-textColor--primary u-fontSize--larger u-lineHeight--normal"> Partial snapshots (Application) </p>
+              <p className="u-marginTop--10 u-fontSize--normal u-lineHeight--more u-fontWeight--medium u-textColor--bodyCopy"> Partial snapshots (Application) only back up application volumes and application manifests; they do not back up the Admin Console or the metadata about an application. </p>
             </div>
             <div className="flex flex-auto u-marginBottom--15 alignItems--flexStart justifyContent--spaceBetween">
               <div className="flex">
@@ -572,7 +572,7 @@ class AppSnapshots extends Component {
             </div>
             {startSnapshotErr ?
               <div className="flex alignItems--center alignSelf--center u-marginBottom--10">
-                <p className="u-color--chestnut u-fontSize--small u-fontWeight--medium u-lineHeight--normal">{startSnapshotErrorMsg}</p>
+                <p className="u-textColor--error u-fontSize--small u-fontWeight--medium u-lineHeight--normal">{startSnapshotErrorMsg}</p>
               </div>
               : null}
             {snapshots?.length > 0 && snapshotSettings?.veleroVersion !== "" ?

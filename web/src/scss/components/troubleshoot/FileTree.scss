@@ -1,11 +1,13 @@
+@import "../../variables.scss";
+
 .AnalyzerFileTree--wrapper,
 .ApplicationTree--wrapper {
   position: relative;
 
   .edit-files-banner {
-    background-color: #F5F8FC;
-    color: #9B9B9B;
-    border-bottom: 1px solid #CEDCF8;
+    background-color: lighten($primary-color, 43.5%);
+    color: lighten($primary-color, 15%);
+    border-bottom: 1px solid lighten($primary-color, 15%);
     padding: 13px 20px 12px;
     position: absolute;
     left: 0;
@@ -17,6 +19,7 @@
   .dirtree-wrapper {
     max-width: 260px;
     border-radius: 4px;
+    background-color: darken($primary-color, 42%);
 
     &.fs-mode {
       max-width: 300px;
@@ -31,7 +34,7 @@
     margin-left: 12px;
     background-color: #ffffff;
     border-radius: 4px;
-    border: 1px solid #C4C8CA;
+    border: 1px solid $border-color;
     overflow: hidden;
   }
 
@@ -183,12 +186,12 @@
         display: block;
         width: 1px;
         height: 12px;
-        background-color: #C4C8CA;
+        background-color: $border-color;
         top: 10px;
       }
 
       &.can-scroll:hover {
-        background-color: #f8f8f8;
+        background-color: #F8F8F8;
         cursor: pointer;
         &::before {
           height: 100%;
@@ -219,8 +222,8 @@
     font-size: 14px;
     font-weight: 600;
     padding: 3px 8px;
-    border: 2px solid #326DE6;
-    color: #326DE6;
+    border: 2px solid $primary-color;
+    color: $primary-color;
     border-radius: 100%;
     line-height: 14px;
     margin-right: 10px;

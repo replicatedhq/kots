@@ -156,20 +156,20 @@ class AppSnapshotRestore extends Component {
         <div className="FailedRestore--wrapper">
           <div className="flex flex-column alignItems--center">
             <span className="icon u-superWarning--large"></span>
-            <p className="u-fontWeight--bold u-color--tuna u-fontSize--larger u-lineHeight--normal u-marginTop--15 u-marginBottom--10">
+            <p className="u-fontWeight--bold u-textColor--primary u-fontSize--larger u-lineHeight--normal u-marginTop--15 u-marginBottom--10">
               Application failed to restore </p>
             {detail?.warnings?.length > 0 ?
-              <p className="u-fontSize--normal u-fontWeight--medium u-color--dustyGray u-lineHeight--normal">
+              <p className="u-fontSize--normal u-fontWeight--medium u-textColor--bodyCopy u-lineHeight--normal">
                 Your application failed to restore to
-                <span className="u-fontWeight--bold u-color--dustyGray"> {this.props.match.params.id} </span> because of errors. During the restore there were
-                <span className="u-fontWeight--bold  u-color--tundora"> {detail?.warnings?.length} {detail?.warnings?.length === 1 ? "warning" : "warnings"} </span> and
-                <span className="u-fontWeight--bold u-color--tundora"> {detail?.errors?.length} {detail?.errors?.length === 1 ? "error" : "errors"}. </span>
+                <span className="u-fontWeight--bold u-textColor--bodyCopy"> {this.props.match.params.id} </span> because of errors. During the restore there were
+                <span className="u-fontWeight--bold  u-textColor--secondary"> {detail?.warnings?.length} {detail?.warnings?.length === 1 ? "warning" : "warnings"} </span> and
+                <span className="u-fontWeight--bold u-textColor--secondary"> {detail?.errors?.length} {detail?.errors?.length === 1 ? "error" : "errors"}. </span>
               </p>
               :
-              <p className="u-fontSize--normal u-fontWeight--medium u-color--dustyGray u-lineHeight--normal">
+              <p className="u-fontSize--normal u-fontWeight--medium u-textColor--bodyCopy u-lineHeight--normal">
                 Your application failed to restore to
-                <span className="u-fontWeight--bold u-color--dustyGray"> {this.props.match.params.id} </span> because of errors. During the restore there {detail?.errors?.length === 1 ? "was" : "were"}
-                <span className="u-fontWeight--bold u-color--tundora"> {detail?.errors?.length} {detail?.errors?.length === 1 ? "error" : "errors"}. </span>
+                <span className="u-fontWeight--bold u-textColor--bodyCopy"> {this.props.match.params.id} </span> because of errors. During the restore there {detail?.errors?.length === 1 ? "was" : "were"}
+                <span className="u-fontWeight--bold u-textColor--secondary"> {detail?.errors?.length} {detail?.errors?.length === 1 ? "error" : "errors"}. </span>
               </p>
             }
           </div>
@@ -178,7 +178,7 @@ class AppSnapshotRestore extends Component {
             {detail?.warnings?.length > 0 && this.renderWarnings(detail?.warnings)}
           </div>
           <div className="flex alignItems--center justifyContent--center">
-            <p className="u-fontSize--normal u-fontWeight--medium u-color--dustyGray u-lineHeight--normal u-marginTop--30"> Contact your vendor for help troubleshooting this restore. </p>
+            <p className="u-fontSize--normal u-fontWeight--medium u-textColor--bodyCopy u-lineHeight--normal u-marginTop--30"> Contact your vendor for help troubleshooting this restore. </p>
           </div>
         </div>
       )
@@ -187,14 +187,14 @@ class AppSnapshotRestore extends Component {
         <div className="FailedRestore--wrapper">
           <div className="flex flex-column alignItems--center">
             <span className="icon u-superWarning--large"></span>
-            <p className="u-fontWeight--bold u-color--tuna u-fontSize--larger u-lineHeight--normal u-marginTop--15 u-marginBottom--10">
+            <p className="u-fontWeight--bold u-textColor--primary u-fontSize--larger u-lineHeight--normal u-marginTop--15 u-marginBottom--10">
               Application failed to restore </p>
-            <p className="u-fontSize--normal u-fontWeight--medium u-color--dustyGray u-lineHeight--normal">
-              Your application failed to restore to  <span className="u-fontWeight--bold u-color--dustyGray"> {this.props.match.params.id} </span>
+            <p className="u-fontSize--normal u-fontWeight--medium u-textColor--bodyCopy u-lineHeight--normal">
+              Your application failed to restore to  <span className="u-fontWeight--bold u-textColor--bodyCopy"> {this.props.match.params.id} </span>
             </p>
           </div>
           <div className="flex alignItems--center justifyContent--center">
-            <p className="u-fontSize--normal u-fontWeight--medium u-color--dustyGray u-lineHeight--normal u-marginTop--30"> Contact your vendor for help troubleshooting this restore. </p>
+            <p className="u-fontSize--normal u-fontWeight--medium u-textColor--bodyCopy u-lineHeight--normal u-marginTop--30"> Contact your vendor for help troubleshooting this restore. </p>
           </div>
         </div>
       )
@@ -206,17 +206,17 @@ class AppSnapshotRestore extends Component {
       <div className="FailedRestore--wrapper">
         <div className="flex flex-column alignItems--center">
           <span className="icon yellowWarningIcon"></span>
-          <p className="u-fontWeight--bold u-color--tuna u-fontSize--larger u-lineHeight--normal u-marginTop--15 u-marginBottom--10">
+          <p className="u-fontWeight--bold u-textColor--primary u-fontSize--larger u-lineHeight--normal u-marginTop--15 u-marginBottom--10">
             Application restored with warnings </p>
-          <p className="u-fontSize--normal u-fontWeight--medium u-color--dustyGray u-lineHeight--normal">
-            Your application restored  to <span className="u-fontWeight--bold u-color--dustyGray"> {this.props.match.params.id} </span> but there were warnings that my affect the application. During the restore there were
-          <span className="u-fontWeight--bold  u-color--tundora"> {warnings?.length} warnings </span>.</p>
+          <p className="u-fontSize--normal u-fontWeight--medium u-textColor--bodyCopy u-lineHeight--normal">
+            Your application restored  to <span className="u-fontWeight--bold u-textColor--bodyCopy"> {this.props.match.params.id} </span> but there were warnings that my affect the application. During the restore there were
+          <span className="u-fontWeight--bold  u-textColor--secondary"> {warnings?.length} warnings </span>.</p>
         </div>
         <div className="u-marginTop--30">
           {this.renderWarnings(warnings)}
         </div>
         <div className="flex alignItems--center justifyContent--center">
-          <p className="u-fontSize--normal u-fontWeight--medium u-color--dustyGray u-lineHeight--normal u-marginTop--30"> Contact your vendor for help troubleshooting this restore. </p>
+          <p className="u-fontSize--normal u-fontWeight--medium u-textColor--bodyCopy u-lineHeight--normal u-marginTop--30"> Contact your vendor for help troubleshooting this restore. </p>
         </div>
       </div>
     )
@@ -251,8 +251,8 @@ class AppSnapshotRestore extends Component {
         </Helmet>
         {!restoreCompleted && !restoreFailing ?
           <div className="flex1 flex-column alignItems--center">
-            <p className="u-fontWeight--bold u-color--tuna u-fontSize--larger u-lineHeight--normal u-marginBottom--10"> Application restore in progress </p>
-            <p className="u-fontSize--normal u-fontWeight--medium u-color--dustyGray u-lineHeight--normal"> After all volumes have been restored you will need to log back in to the admin console. </p>
+            <p className="u-fontWeight--bold u-textColor--primary u-fontSize--larger u-lineHeight--normal u-marginBottom--10"> Application restore in progress </p>
+            <p className="u-fontSize--normal u-fontWeight--medium u-textColor--bodyCopy u-lineHeight--normal"> After all volumes have been restored you will need to log back in to the admin console. </p>
             <div className="flex flex-column  u-marginTop--40">
               {restoreLoading &&
                 <div className="flex-column flex1 alignItems--center justifyContent--center">
@@ -268,22 +268,22 @@ class AppSnapshotRestore extends Component {
                 return (
                   <div className="flex flex1 u-marginTop--30 alignItems--center" key={`${volume.name}-${i}`}>
                     <div className="flex flex1">
-                      <p className="u-fontSize--normal u-color--tuna u-fontWeight--bold u-lineHeight--bold u-marginRight--10">Restoring volume: {volume.name}</p>
+                      <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-lineHeight--bold u-marginRight--10">Restoring volume: {volume.name}</p>
                     </div>
                     <div className="flex flex1 flex-column justifyContent--center">
                       <Line percent={percentage} strokeWidth="3" strokeColor={strokeColor} />
                       {volume.completionPercent === 100 ?
-                        <div className="flex justifyContent--center u-fontSize--smaller u-fontWeight--medium u-color--silverSand u-marginTop--5"> Complete </div>
+                        <div className="flex justifyContent--center u-fontSize--smaller u-fontWeight--medium u-textColor--info u-marginTop--5"> Complete </div>
                         : volume.remainingSecondsExist ?
-                          <div className="flex justifyContent--center u-fontSize--smaller u-fontWeight--medium u-color--silverSand u-marginTop--5"> {volume.timeRemainingSeconds ? remainingTime : null}</div>
+                          <div className="flex justifyContent--center u-fontSize--smaller u-fontWeight--medium u-textColor--info u-marginTop--5"> {volume.timeRemainingSeconds ? remainingTime : null}</div>
                           :
-                          <div className="flex justifyContent--center u-fontSize--smaller u-fontWeight--medium u-color--silverSand u-marginTop--5"> In progress </div>
+                          <div className="flex justifyContent--center u-fontSize--smaller u-fontWeight--medium u-textColor--info u-marginTop--5"> In progress </div>
                       }
                     </div>
                     {volume.completionPercent === 100 ?
                       <span className="icon checkmark-icon u-marginLeft--10 u-marginBottom--15"></span>
                       :
-                      <span className="u-fontSize-small u-fontWeight--medium u-color--silverSand u-marginLeft--10 u-marginBottom--15">{volume.completionPercent ? `${volume.completionPercent}%` : null}</span>
+                      <span className="u-fontSize-small u-fontWeight--medium u-textColor--info u-marginLeft--10 u-marginBottom--15">{volume.completionPercent ? `${volume.completionPercent}%` : null}</span>
                     }
                   </div>
                 );

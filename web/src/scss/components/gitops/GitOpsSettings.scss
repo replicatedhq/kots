@@ -1,3 +1,5 @@
+@import "../../variables.scss";
+
 .GitOpsSettings--wrapper {
   .full-width-container {
     max-width: 90%;
@@ -28,14 +30,14 @@
   .title {
     font-size: 20px;
     font-weight: bold;
-    color: #323232;
+    color: $text-color-primary;
     margin-bottom: 12px;
   }
 
   .sub {
     font-size: 16px;
     font-weight: medium;
-    color: #9B9B9B;
+    color: $text-color-body-copy;
     line-height: 1.7;
   }
 }
@@ -43,6 +45,6 @@
 
 .disable-gitops-wrapper {
   padding-top: 30px;
-  border-top: 1px solid #C4C8CA;
+  border-top: 1px solid $border-color;
   
 }

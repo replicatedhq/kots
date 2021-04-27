@@ -39,7 +39,7 @@ export default function PreflightProgress(props) {
     <div
       className={`u-marginTop--20 u-fontWeight--medium u-lineHeight--medium u-textAlign--center`}
     >
-      <div className="flex flex1 u-marginBottom--10 justifyContent--center alignItems--center u-color--tundora">
+      <div className="flex flex1 u-marginBottom--10 justifyContent--center alignItems--center u-textColor--secondary">
         {progressData?.currentName && <Loader className="flex u-marginRight--5" size="24" />}
         <p>{readableName}</p>
       </div>
@@ -48,13 +48,13 @@ export default function PreflightProgress(props) {
 
   return (
     <div className="PreflightProgress--wrapper flex-1-auto flex-column alignItems--center justifyContent--center u-marginTop--10">
-      <div className="flex1 flex-column u-color--tuna">
+      <div className="flex1 flex-column u-textColor--primary">
           <div className="flex1 flex-column alignItems--center justifyContent--center">
             <h1 className="u-fontSize--larger u-fontWeight--bold u-marginBottom--10">Collecting information about your cluster</h1>
             <div className="flex alignItems--center u-marginTop--20">
-              <span className="u-fontWeight--bold u-fontSize--normal u-color--tundora u-marginRight--10">{percentage + "%"}</span>
+              <span className="u-fontWeight--bold u-fontSize--normal u-textColor--secondary u-marginRight--10">{percentage + "%"}</span>
               {progressBar}
-              <span className="u-fontWeight--bold u-fontSize--normal u-color--tundora u-marginRight--10">100%</span>
+              <span className="u-fontWeight--bold u-fontSize--normal u-textColor--secondary u-marginRight--10">100%</span>
             </div>
             {statusDiv}
           </div>

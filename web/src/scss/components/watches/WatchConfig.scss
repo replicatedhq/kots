@@ -1,3 +1,5 @@
+@import "../../variables.scss";
+
 .ConfigArea--wrapper {
   transform: translateX(80px);
   width: 100%;
@@ -9,7 +11,7 @@
   position: fixed;
   top: 140px;
   transform: translateX(-170px);
-  background: #F8F8F8;
+  background: $sub-nav-color;
   max-width: 200px;
   width: 100%;
   padding: 10px;
@@ -21,17 +23,17 @@
     display: block;
     margin-top: 10px;
     margin-bottom: 10px;
-    color: #9b9b9b;
+    color: $text-color-body-copy;
     cursor: pointer;
     font-weight: 400;
 
     &.active-item {
       font-weight: 500;
-      color: #4a4a4a;
+      color: $text-color-secondary;
     }
 
     &:hover {
-      color: #4a4a4a;
+      color: $text-color-secondary;
     }
 
     &:last-child {
@@ -42,12 +44,12 @@
   .AppConfigSidenav--group {
     a.group-title {
       margin-bottom: 0;
-      color: #4a4a4a;
+      color: $text-color-secondary;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
       &:hover {
-        color: #323232;
+        color: $text-color-primary;
       }
     }
     .icon.u-darkDropdownArrow {
@@ -84,7 +86,7 @@
 }
 
 .link, a:visited {
-  color: #326DE6;
+  color: $link-color;
   cursor: pointer;
   font-weight: 500;
   text-decoration: underline;
@@ -99,18 +101,18 @@
   padding: 13px 40px 10px;
 
   &.newer {
-    background: #F5F8FC;
-    color: #9B9B9B;
+    background: lighten($primary-color, 43.5%);
+    color: $text-color-body-copy;
   }
 
   &.older {
-    background: #FBE9D7;
-    color: #EC8F39;
+    background: lighten($warning-color, 43.5%);
+    color: $warning-color;
   }
 
   &.current {
-    background: #E3F5E8;
-    color: #44BB66
+    background: lighten($success-color, 43.5%);
+    color: $success-color;
   }
 }
 

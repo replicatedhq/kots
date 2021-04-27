@@ -181,7 +181,7 @@ class AppLicense extends Component {
         {size(appLicense) > 0 ?
           <div className="License--wrapper flex flex-column">
             <div className="flex flex1 alignItems--center">
-              <span className="u-fontSize--large u-fontWeight--bold u-lineHeight--normal u-color--tuna"> License </span>
+              <span className="u-fontSize--large u-fontWeight--bold u-lineHeight--normal u-textColor--primary"> License </span>
               {appLicense?.licenseType === "community" &&
                 <div className="flex-auto">
                   <span className="CommunityEditionTag u-marginLeft--10"> Community Edition </span>
@@ -191,7 +191,7 @@ class AppLicense extends Component {
             <div className="LicenseDetails flex justifyContent--spaceBetween">
               <div className="flex1 flex-column">
                 <div className="flex flex-auto alignItems--center">
-                  <span className="u-fontSize--larger u-fontWeight--bold u-lineHeight--normal u-color--tundora"> {appLicense.assignee} </span>
+                  <span className="u-fontSize--larger u-fontWeight--bold u-lineHeight--normal u-textColor--secondary"> {appLicense.assignee} </span>
                   {appLicense?.channelName &&
                     <span className="channelTag flex-auto alignItems--center u-fontWeight--medium u-marginLeft--10"> {appLicense.channelName} </span>}
                 </div>
@@ -202,7 +202,7 @@ class AppLicense extends Component {
                       ? `${Utilities.toTitleCase(appLicense.licenseType)} license`
                       : `---`}
                   </div>
-                  <p className={`u-fontWeight--medium u-fontSize--small u-lineHeight--normal u-marginLeft--10 ${Utilities.checkIsDateExpired(expiresAt) ? "u-color--chestnut" : "u-color--silverSand"}`}>
+                  <p className={`u-fontWeight--medium u-fontSize--small u-lineHeight--normal u-marginLeft--10 ${Utilities.checkIsDateExpired(expiresAt) ? "u-textColor--error" : "u-textColor--info"}`}>
                     {expiresAt === "Never" ? "Does not expire" : Utilities.checkIsDateExpired(expiresAt) ? `Expired ${expiresAt}` : `Expires ${expiresAt}`}
                   </p>
                 </div>
@@ -214,29 +214,29 @@ class AppLicense extends Component {
                       const isBooleanField = entitlement.valueType === "Boolean";
                       if (entitlement.value.length > 30 && (currEntitlement !== entitlement.title)) {
                         return (
-                          <span key={entitlement.label} className={`u-fontSize--small u-lineHeight--normal u-color--doveGray u-fontWeight--medium u-marginRight--10 ${i !== 0 ? "u-marginLeft--5" : ""}`}> {entitlement.title}: <span className={`u-fontWeight--bold ${isTextField && "u-fontFamily--monospace"}`}> {entitlement.value.slice(0, 30) + "..."} </span>
+                          <span key={entitlement.label} className={`u-fontSize--small u-lineHeight--normal u-textColor--secondary u-fontWeight--medium u-marginRight--10 ${i !== 0 ? "u-marginLeft--5" : ""}`}> {entitlement.title}: <span className={`u-fontWeight--bold ${isTextField && "u-fontFamily--monospace"}`}> {entitlement.value.slice(0, 30) + "..."} </span>
                             <span className="icon clickable down-arrow-icon" onClick={() => this.toggleShowDetails(entitlement.title)} />
                           </span>
                         )
                       } else if (entitlement.value.length > 30 && (currEntitlement === entitlement.title)) {
                         return (
-                          <span key={entitlement.label} className={`flex u-fontSize--small u-lineHeight--normal u-color--doveGray u-fontWeight--medium u-marginRight--10 ${i !== 0 ? "u-marginLeft--5" : ""}`}> {entitlement.title}: <span className={`u-fontWeight--bold ${isTextField && "u-fontFamily--monospace"}`} style={{whiteSpace: "pre"}}> {entitlement.value} </span>
+                          <span key={entitlement.label} className={`flex u-fontSize--small u-lineHeight--normal u-textColor--secondary u-fontWeight--medium u-marginRight--10 ${i !== 0 ? "u-marginLeft--5" : ""}`}> {entitlement.title}: <span className={`u-fontWeight--bold ${isTextField && "u-fontFamily--monospace"}`} style={{whiteSpace: "pre"}}> {entitlement.value} </span>
                             <span className="icon clickable up-arrow-icon u-marginTop--5 u-marginLeft--5" onClick={() => this.toggleHideDetails(entitlement.title)} />
                           </span>
                         )
                       } else {
                         return (
-                          <span key={entitlement.label} className={`u-fontSize--small u-lineHeight--normal u-color--doveGray u-fontWeight--medium u-marginRight--10 ${i !== 0 ? "u-marginLeft--5" : ""}`}> {entitlement.title}: <span className={`u-fontWeight--bold ${isTextField && "u-fontFamily--monospace"}`}> {isBooleanField ? entitlement.value.toString() : entitlement.value} </span></span>
+                          <span key={entitlement.label} className={`u-fontSize--small u-lineHeight--normal u-textColor--secondary u-fontWeight--medium u-marginRight--10 ${i !== 0 ? "u-marginLeft--5" : ""}`}> {entitlement.title}: <span className={`u-fontWeight--bold ${isTextField && "u-fontFamily--monospace"}`}> {isBooleanField ? entitlement.value.toString() : entitlement.value} </span></span>
                         );
                       }
                     })}
                   </div>}
                 <div className="flexWrap--wrap flex alignItems--center">
-                  {appLicense?.isAirgapSupported ? <span className="flex alignItems--center u-fontWeight--medium u-fontSize--small u-lineHeight--normal u-color--tundora u-marginRight--10 u-marginTop--10"><span className="icon licenseAirgapIcon" /> Airgap enabled </span> : null}
-                  {appLicense?.isSnapshotSupported ? <span className="flex alignItems--center u-fontWeight--medium u-fontSize--small u-lineHeight--normal u-color--tundora u-marginLeft--5 u-marginRight--10 u-marginTop--10"><span className="icon licenseVeleroIcon" /> Snapshots enabled </span> : null}
-                  {appLicense?.isGitOpsSupported ? <span className="flex alignItems--center u-fontWeight--medium u-fontSize--small u-lineHeight--normal u-color--tundora u-marginLeft--5 u-marginRight--10 u-marginTop--10"><span className="icon licenseGithubIcon" /> GitOps enabled </span> : null}
-                  {appLicense?.isIdentityServiceSupported ? <span className="flex alignItems--center u-fontWeight--medium u-fontSize--small u-lineHeight--normal u-color--tundora u-marginLeft--5 u-marginRight--10 u-marginTop--10"><span className="icon licenseIdentityIcon" /> Identity Service enabled </span> : null}
-                  {appLicense?.isGeoaxisSupported ? <span className="flex alignItems--center u-fontWeight--medium u-fontSize--small u-lineHeight--normal u-color--tundora u-marginLeft--5 u-marginRight--10 u-marginTop--10"><span className="icon licenseGeoaxisIcon" /> GEOAxIS Provider enabled </span> : null}
+                  {appLicense?.isAirgapSupported ? <span className="flex alignItems--center u-fontWeight--medium u-fontSize--small u-lineHeight--normal u-textColor--secondary u-marginRight--10 u-marginTop--10"><span className="icon licenseAirgapIcon" /> Airgap enabled </span> : null}
+                  {appLicense?.isSnapshotSupported ? <span className="flex alignItems--center u-fontWeight--medium u-fontSize--small u-lineHeight--normal u-textColor--secondary u-marginLeft--5 u-marginRight--10 u-marginTop--10"><span className="icon licenseVeleroIcon" /> Snapshots enabled </span> : null}
+                  {appLicense?.isGitOpsSupported ? <span className="flex alignItems--center u-fontWeight--medium u-fontSize--small u-lineHeight--normal u-textColor--secondary u-marginLeft--5 u-marginRight--10 u-marginTop--10"><span className="icon licenseGithubIcon" /> GitOps enabled </span> : null}
+                  {appLicense?.isIdentityServiceSupported ? <span className="flex alignItems--center u-fontWeight--medium u-fontSize--small u-lineHeight--normal u-textColor--secondary u-marginLeft--5 u-marginRight--10 u-marginTop--10"><span className="icon licenseIdentityIcon" /> Identity Service enabled </span> : null}
+                  {appLicense?.isGeoaxisSupported ? <span className="flex alignItems--center u-fontWeight--medium u-fontSize--small u-lineHeight--normal u-textColor--secondary u-marginLeft--5 u-marginRight--10 u-marginTop--10"><span className="icon licenseGeoaxisIcon" /> GEOAxIS Provider enabled </span> : null}
                 </div>
               </div>
               <div className="flex-column flex-auto alignItems--flexEnd justifyContent--center">
@@ -254,8 +254,8 @@ class AppLicense extends Component {
                 }
                 {message &&
                   <p className={classNames("u-fontWeight--bold u-fontSize--small", {
-                    "u-color--red": messageType === "error",
-                    "u-color--tuna": messageType === "info",
+                    "u-textColor--error": messageType === "error",
+                    "u-textColor--primary": messageType === "info",
                   })}>{message}</p>
                 }
               </div>
@@ -263,7 +263,7 @@ class AppLicense extends Component {
           </div>
           :
           <div>
-            <p className="u-fontSize--large u-color--dustyGray u-marginTop--15 u-lineHeight--more"> License data is not available on this application because it was installed via Helm </p>
+            <p className="u-fontSize--large u-textColor--bodyCopy u-marginTop--15 u-lineHeight--more"> License data is not available on this application because it was installed via Helm </p>
           </div>
         }
         <Modal
@@ -276,7 +276,7 @@ class AppLicense extends Component {
         >
           {gitops?.enabled ?
             <div className="Modal-body">
-              <p className="u-fontSize--large u-color--tuna u-lineHeight--medium u-marginBottom--20">
+              <p className="u-fontSize--large u-textColor--primary u-lineHeight--medium u-marginBottom--20">
                 The license for {appName} has been updated. A new commit has been made to the gitops repository with these changes. Please head to the <a className="link" target="_blank" href={gitops?.uri} rel="noopener noreferrer">repo</a> to see the diff.
               </p>
               <div className="flex justifyContent--flexEnd">
@@ -285,7 +285,7 @@ class AppLicense extends Component {
             </div>
             :
             <div className="Modal-body">
-              <p className="u-fontSize--large u-color--tuna u-lineHeight--medium u-marginBottom--20">
+              <p className="u-fontSize--large u-textColor--primary u-lineHeight--medium u-marginBottom--20">
                 The license for {appName} has been updated. A new version is available on the version history page with these changes.
               </p>
               <div className="flex justifyContent--flexEnd">

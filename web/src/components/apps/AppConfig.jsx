@@ -467,7 +467,7 @@ class AppConfig extends Component {
         </Helmet>
 
 
-        {fromLicenseFlow && app && <span className="u-fontSize--larger u-color--tuna u-fontWeight--bold u-marginTop--30">Configure {app.name}</span>}
+        {fromLicenseFlow && app && <span className="u-fontSize--larger u-textColor--primary u-fontWeight--bold u-marginTop--30">Configure {app.name}</span>}
         <div className="flex-column">
           <div id="configSidebarWrapper" className="AppConfigSidenav--wrapper" ref={(wrapper) => this.sidebarWrapper = wrapper}>
             {configGroups?.map((group, i) => {
@@ -506,7 +506,7 @@ class AppConfig extends Component {
               </div>
               :
               <div className="ConfigError--wrapper flex-column u-paddingBottom--30 alignItems--flexStart">
-                {configError && <span className="u-color--chestnut u-marginBottom--20 u-fontWeight--bold">{configError}</span>}
+                {configError && <span className="u-textColor--error u-marginBottom--20 u-fontWeight--bold">{configError}</span>}
                 <button className="btn primary blue" disabled={!changed && !fromLicenseFlow || this.checkIsCurrentOrPastVersion(app)} onClick={this.handleSave}>{fromLicenseFlow ? "Continue" : "Save config"}</button>
               </div>
             }
@@ -523,7 +523,7 @@ class AppConfig extends Component {
         >
           {gitops?.enabled ?
             <div className="Modal-body">
-              {<p className="u-fontSize--large u-color--tuna u-lineHeight--medium u-marginBottom--20">
+              {<p className="u-fontSize--large u-textColor--primary u-lineHeight--medium u-marginBottom--20">
                 The config for {app.name} has been updated. A new commit has been made to the gitops repository with these changes. Please head to the <a className="link" target="_blank" href={gitops?.uri} rel="noopener noreferrer">repo</a> to see the diff.
               </p>}
               <div className="flex justifyContent--flexEnd">
@@ -533,11 +533,11 @@ class AppConfig extends Component {
             :
             <div className="Modal-body">
               {isNewVersion ?
-                <p className="u-fontSize--large u-color--tuna u-lineHeight--medium u-marginBottom--20">
+                <p className="u-fontSize--large u-textColor--primary u-lineHeight--medium u-marginBottom--20">
                   The config for {app?.name} has been updated. A new version is available on the version history page with these changes.
                 </p>
                 :
-                <p className="u-fontSize--large u-color--tuna u-lineHeight--medium u-marginBottom--20">
+                <p className="u-fontSize--large u-textColor--primary u-lineHeight--medium u-marginBottom--20">
                   The config for {app?.name} has been updated.
                 </p>
               }

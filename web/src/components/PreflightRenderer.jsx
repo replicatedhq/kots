@@ -10,7 +10,7 @@ export default function PreflightRenderer(props) {
   const noResults = size(preflightJSON?.results) === 0;
   return (
     <div className={className}>
-      <p className="u-fontSize--jumbo u-color--tuna u-fontWeight--bold u-marginBottom--15">
+      <p className="u-fontSize--jumbo u-textColor--primary u-fontWeight--bold u-marginBottom--15">
         Results from your preflight checks
       </p>
       {noResults
@@ -32,7 +32,7 @@ export default function PreflightRenderer(props) {
             <div key={idx} className="flex justifyContent--space-between preflight-check-row">
               <div className={classNames("flex-auto icon", icon, "u-marginRight--10")} />
               <div className="flex1">
-                <p className="u-color--tuna u-fontSize--larger u-fontWeight--bold">{row.title}</p>
+                <p className="u-textColor--primary u-fontSize--larger u-fontWeight--bold">{row.title}</p>
                 <div className="PreflightMessageRow u-marginTop--10">
                   <Markdown source={row.message}/>
                 </div>

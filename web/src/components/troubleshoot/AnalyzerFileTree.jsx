@@ -215,12 +215,12 @@ class AnalyzerFileTree extends React.Component {
       <div className="flex-column flex1 AnalyzerFileTree--wrapper">
         {!files || !files.length || isOld ?
           <div className="flex-column flex1 justifyContent--center alignItems--center u-textAlign--center">
-            <p className="u-color--tuna u-fontSize--normal u-fontWeight--bold">We were unable to detect files from this Support Bundle</p>
-            <p className="u-fontSize--small u-color--dustyGray u-fontWeight--medium u-marginTop--10">It's possible that this feature didn't exists when you uploaded the bundle, try re-analyzing it to have files detected.</p>
+            <p className="u-textColor--primary u-fontSize--normal u-fontWeight--bold">We were unable to detect files from this Support Bundle</p>
+            <p className="u-fontSize--small u-textColor--bodyCopy u-fontWeight--medium u-marginTop--10">It's possible that this feature didn't exists when you uploaded the bundle, try re-analyzing it to have files detected.</p>
           </div>
           :
           <div className="flex flex1">
-            <div className="flex1 dirtree-wrapper flex-column u-overflow-hidden u-background--biscay">
+            <div className="flex1 dirtree-wrapper flex-column u-overflow-hidden">
               <div className="u-overflow--auto dirtree">
                 <FileTree
                   files={files}
@@ -247,12 +247,12 @@ class AnalyzerFileTree extends React.Component {
               : null}
               {selectedFile === "" || selectedFile === "/" ?
                 <div className="flex-column flex1 alignItems--center justifyContent--center">
-                  <p className="u-color--dustyGray u-fontSize--normal u-fontWeight--medium">Select a file from the directory tree to view it here.</p>
+                  <p className="u-textColor--bodyCopy u-fontSize--normal u-fontWeight--medium">Select a file from the directory tree to view it here.</p>
                 </div>
                 : fileLoadErr ?
                   <div className="flex-column flex1 alignItems--center justifyContent--center">
-                    <p className="u-color--chestnut u-fontSize--normal u-fontWeight--medium">Oops, we ran into a probelm getting that file, <span className="u-fontWeight--bold">{fileLoadErrMessage}</span></p>
-                    <p className="u-marginTop--10 u-fontSize--small u-fontWeight--medium u-color--dustyGray">Don't worry, you can download the bundle and have access to all of the files</p>
+                    <p className="u-textColor--error u-fontSize--normal u-fontWeight--medium">Oops, we ran into a probelm getting that file, <span className="u-fontWeight--bold">{fileLoadErrMessage}</span></p>
+                    <p className="u-marginTop--10 u-fontSize--small u-fontWeight--medium u-textColor--bodyCopy">Don't worry, you can download the bundle and have access to all of the files</p>
                     <div className="u-marginTop--20">
                       <button className="btn secondary" onClick={this.handleDownload}>Download bundle</button>
                     </div>
@@ -263,7 +263,7 @@ class AnalyzerFileTree extends React.Component {
                     </div>
                     : fileToView.content === "" ?
                       <div className="flex-column flex1 alignItems--center justifyContent--center">
-                        <p className="u-color--tundora u-fontSize--normal u-fontWeight--medium">This file was collected and analyzed but it contains no data.</p>
+                        <p className="u-textColor--secondary u-fontSize--normal u-fontWeight--medium">This file was collected and analyzed but it contains no data.</p>
                       </div>
                       :
                       <AceEditor
@@ -289,7 +289,7 @@ class AnalyzerFileTree extends React.Component {
                         }}
                       />
               }
-              <ReactTooltip id="current-redator-filename" type="light" effect="solid" borderColor="#C4C4C4" textColor="#4A4A4A" border={true} className="u-color--tundora">Viewing redactions from <span className="u-fontWeight--bold">{this.state.redactorFileName}</span></ReactTooltip>
+              <ReactTooltip id="current-redator-filename" type="light" effect="solid" borderColor="#C4C4C4" textColor="#4A4A4A" border={true} className="u-textColor--secondary">Viewing redactions from <span className="u-fontWeight--bold">{this.state.redactorFileName}</span></ReactTooltip>
             </div>
           </div>
         }

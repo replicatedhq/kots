@@ -1,22 +1,23 @@
 @import "../components/forms/input.scss";
 @import "../components/forms/textarea.scss";
 @import "../components/forms/select.scss";
+@import "../variables.scss";
 
 .Form-label {
   font-size: 14px;
   font-weight: 700;
-  color: #323232;
+  color: $text-color-primary;
   margin-bottom: 12px;
 }
 .Form-label-subtext {
   font-size: 12px;
   line-height: 18px;
-  color: #9B9B9B;
+  color: $text-color-body-copy;
   font-weight: 400;
 }
 
 .BoxedCheckbox {
-  border: 1px solid #C4C7CA;
+  border: 1px solid $border-color;
   border-radius: 4px;
   background-color: #ffffff;
   cursor: pointer;
@@ -33,10 +34,10 @@
   }
   
   &.is-active {
-    border-color: #326DE6;
-    background-color: #F5F8FC;
+    border-color: $accent-color;
+    background-color: $accent-color;
     &:hover {
-      border-color: #326DE6;
+      border-color: $accent-color;
     }
   }
 
@@ -44,7 +45,7 @@
     opacity: .5;
     cursor: not-allowed;
     &:hover {
-      border-color: #C4C7CA;
+      border-color: $border-color;
     }
     > * {
       cursor: default;
@@ -52,7 +53,7 @@
   }
 
   &:hover {
-    border-color: #9B9B9B;
+    border-color: darken($border-color, 30%);
   }
 }
 
@@ -70,7 +71,7 @@
   }
 
   .replicated-select__single-value {
-    color: #4A4A4A;
+    color: $text-color-primary;
   }
 
   .replicated-select__dropdown-indicator {
@@ -78,10 +79,10 @@
   }
 
   .replicated-select__control {
-    border-color: #DFDFDF;
+    border-color: $border-color;
     cursor: pointer;
     &.replicated-select__control--is-focused {
-      border-color: #4990E2;
+      border-color: $accent-color;
       box-shadow: none;
 
       .replicated-select__dropdown-indicator {
@@ -91,10 +92,10 @@
   }
 
   .replicated-select__menu {
-    border-color: #DFDFDF;
+    border-color: $border-color;
     font-size: 12px;
     font-weight: 500;
-    color: #4A4A4A;
+    color: $text-color-primary;
     line-height: 15px;
   }
   .replicated-select__option {
@@ -102,8 +103,8 @@
     padding: 12px;
 
     &.replicated-select__option--is-focused {
-      background-color: #F5F8FC;
-      color: #4A4A4A;
+      background-color: lighten($primary-color, 43.5%);
+      color: $text-color-primary;
     }
   }
 
@@ -122,22 +123,36 @@
       cursor: pointer;
       outline: none;
       position: relative;
-      background-color: #326DE6;
+      background-color: $primary-color;
       color: #ffffff;
   
       &:not(:disabled):hover {
-        background-color: #265BC7;
+        background-color: darken($primary-color, 8%);
       }
     }
+
+    .replicated-select__control {
+      border-color:$primary-color;
+      cursor: pointer;
+      &.replicated-select__control--is-focused {
+        border-color: darken($primary-color, 8%);
+        box-shadow: none;
+  
+        .replicated-select__dropdown-indicator {
+          transform: rotate(180deg);
+        }
+      }
+    }
+
     .css-f8ooy8-control {
       cursor: pointer;
       outline: none;
       position: relative;
-      background-color: #326DE6;
+      background-color: $primary-color;
       color: #ffffff;
   
       &:not(:disabled):hover {
-        background-color: #265BC7;
+        background-color: darken($primary-color, 8%);
       }
     }
     .css-dvua67-singleValue {
@@ -149,12 +164,12 @@
       height: 20px;
     }
     .css-1wy0on6 {
-      background-color: #326DE6;
+      background-color: $primary-color;
       color: #ffffff;
       border-radius: 4px;
   
       &:not(:disabled):hover {
-        background-color: #265BC7;
+        background-color: darken($primary-color, 8%);
       }
     }
     .css-16pqwjk-indicatorContainer {

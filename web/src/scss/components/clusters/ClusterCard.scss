@@ -1,9 +1,11 @@
+@import "../../variables.scss";
+
 .installed-cluster-wrapper {
   max-width: 330px;
   width: 100%;
 
   .deployed-cluster {
-    border: solid 1px #DFDFDF;
+    border: solid 1px $border-color;
     border-radius: 4px;
     padding: 12px 12px 0px 12px;
     margin-right: 20px;
@@ -26,7 +28,7 @@
         top: 10px;
         height: 16px;
         width: 1px;
-        background-color: #DFDFDF;
+        background-color: $border-color;
       }
       &:last-child:after {
         display: none;
@@ -38,7 +40,7 @@
       transition: background-color .3s;
   
       &:hover {
-        background-color: #F5F8FC;
+        background-color: lighten($primary-color, 43.5%);
       }
       &.deployment:hover {
         background-color: #ECF8EF;

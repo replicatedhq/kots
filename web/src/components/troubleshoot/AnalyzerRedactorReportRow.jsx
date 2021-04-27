@@ -46,9 +46,9 @@ class AnalyzerRedactorReportRow extends React.Component {
           <span className={`icon redactor-${this.getRedactorExtension(file?.file)}-icon`} />
         </div>
         <div className="flex flex-column">
-          <p className="u-fontSize--large u-lineHeight--normal u-fontWeight--bold u-color--tuna">{this.calculateRedactorFileName(file?.file)} <span className="u-fontSize--normal u-fontWeight--medium u-lineHeight--normal u-color--chateauGreen"> {totalFileRedactions} redaction{totalFileRedactions === 1 ? "" : "s"} </span> </p>
+          <p className="u-fontSize--large u-lineHeight--normal u-fontWeight--bold u-textColor--primary">{this.calculateRedactorFileName(file?.file)} <span className="u-fontSize--normal u-fontWeight--medium u-lineHeight--normal u-textColor--success"> {totalFileRedactions} redaction{totalFileRedactions === 1 ? "" : "s"} </span> </p>
           <div className="flex flex1 alignItems--center u-cursor--pointer" onClick={() => this.goToFile(file?.file)}>
-            <p className="u-fontSize--normal u-fontWeight--medium u-lineHeight--normal u-color--dustyGray"> {file?.file} </p>
+            <p className="u-fontSize--normal u-fontWeight--medium u-lineHeight--normal u-textColor--bodyCopy"> {file?.file} </p>
             <div className="icon u-iconFullArrowGray" />
           </div>
         </div>
@@ -60,12 +60,12 @@ class AnalyzerRedactorReportRow extends React.Component {
     if (totalLength > 0) {
       return (
         <div className="flex flex1 alignItems--center">
-          <p className="u-fontSize--normal u-fontWeight--medium u-lineHeight--normal u-color--dustyGray"> <span className="u-color--chateauGreen"> {totalLength} redaction{totalLength === 1 ? "" : "s"} </span> across <span className="u-color--nevada">{files?.length} file{files?.length === 1 ? "" : "s"}</span></p>
+          <p className="u-fontSize--normal u-fontWeight--medium u-lineHeight--normal u-textColor--bodyCopy"> <span className="u-textColor--success"> {totalLength} redaction{totalLength === 1 ? "" : "s"} </span> across <span className="u-textColor--accent">{files?.length} file{files?.length === 1 ? "" : "s"}</span></p>
           <span className="replicated-link u-fontSize--small u-marginLeft--10" onClick={this.toggleDetails}> {this.state.toggleDetails ? "Hide details" : "Show details"} </span>
         </div>
       )
     } else {
-      return <p className="u-fontSize--normal u-fontWeight--medium u-lineHeight--normal u-color--dustyGray"> This redactor doesn't have any additional files</p>
+      return <p className="u-fontSize--normal u-fontWeight--medium u-lineHeight--normal u-textColor--bodyCopy"> This redactor doesn't have any additional files</p>
     }
   }
 
@@ -82,7 +82,7 @@ class AnalyzerRedactorReportRow extends React.Component {
             <div className="flex flex1 alignItems--center">
               <span className="icon redactor-yaml-icon u-marginRight--10" />
               <div className="flex flex-column">
-                <p className="u-fontSize--large u-lineHeight--normal u-fontWeight--bold u-color--tuna">{redactor}</p>
+                <p className="u-fontSize--large u-lineHeight--normal u-fontWeight--bold u-textColor--primary">{redactor}</p>
                 {this.renderRedactionDetails(groupedFilesArray, redactorFiles.length)}
               </div>
             </div>

@@ -1,21 +1,23 @@
+@import "../../variables.scss";
+
 #UploadSupportBundleModal,
 .UploadLicenseFile--wrapper {
   .FileUpload-wrapper {
     cursor: default;
     border-radius: 4px;
-    border: 1px dashed #C4C7CA;
+    border: 1px dashed $border-color;
     padding: 20px 15px 18px;
     margin-bottom: 10px;
 
     &.has-file {
-      border: 1px solid #44bb66;
-      color: #44bb66;
+      border: 1px solid $success-color;
+      color: $success-color;
       padding: 12px;
 
       &.has-error {
-       border: 1px solid #BC4752;
-       background-color: #FFF9F9;
-       color: #BC4752;
+       border: 1px solid $error-color;
+       background-color: lighten($error-color, 43.5%);
+       color: $error-color;
       }
     }
 
@@ -45,17 +47,9 @@
   .UploadSuccess-wrapper p.sub {
     font-size: 16px;
     line-height: 24px;
-    color: #9B9B9B;
+    color: $text-color-body-copy;
   }
 
-  .required-label {
-    font-size: 14px;
-    position: relative;
-    top: -1px;
-    margin-left: 3px;
-    font-weight: 500;
-    color: #BC4752;
-  }
   .UploadBundleSelect--wrapper {
     max-height: 2000px;
     .UploadBundleSelect-menu {
@@ -66,7 +60,7 @@
   .InitialCommand--wrapper {
     cursor: default;
     border-radius: 4px;
-    border: 1px dashed #C4C7CA;
+    border: 1px dashed $border-color;
     padding: 7px 6px;
     margin-bottom: 10px;
     max-height: 300px;
@@ -75,14 +69,14 @@
       display: flex;
       justify-content: center;
       align-items: center;
-      background-color: #F8F8F8;
+      background-color: $sub-nav-color;
       text-align: center;
       font-family: "Monaco", "Helvetica Neue", "Helvetica", sans-serif;
       padding: 29px 25px;
       font-size: 10px;
       border-radius: 4px;
       line-height: 22px;
-      color: #323232;
+      color: $text-color-primary;
       max-height: 160px;
       height: 130px;
     }
@@ -95,7 +89,7 @@
 .ExpandedError--wrapper {
   max-width: 350px;
   padding: 8px;
-  border: 1px solid #DFDFDF;
+  border: 1px solid $border-color;
   background: #EFEFEF;
   border-radius: 4px;
 }

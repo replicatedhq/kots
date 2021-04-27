@@ -1,20 +1,22 @@
+@import "../../variables.scss";
+
 .Input {
   display: block;
   box-sizing: border-box;
   width: 100%;
-  border: 1px solid #DFDFDF;
+  border: 1px solid $border-color;
   border-radius: 4px;
   outline: 0;
   font-size: 12px;
   font-weight: normal;
   line-height: normal;
-  color: #323232;
+  color: $text-color-primary;
   padding: 7px 12px 8px;
   transition: border .2s;
   height: 38px;
 
   &.darker {
-    border: 1px solid #C4C7CA;
+    border: 1px solid darken($border-color, 20%);
     padding: 6px 10px 7px;
     height: 30px;
     width: 300px;
@@ -26,7 +28,7 @@
 
   &:active,
   &:focus {
-    border-color: #4990E2;
+    border-color: $accent-color;
   }
 
   &.larger {
@@ -41,14 +43,14 @@
   &.has-error,
   &.has-error:focus,
   &.has-error:active {
-    border-color: #EE5042;
+    border-color: $error-color;
   }
   &.is-disabled {
     user-select: none;
     cursor: not-allowed;
     background-color: #F8F8F8;
-    border-color: #DFDFDF;
-    color: #717171;
+    border-color: $border-color;
+    color: $text-color-accent;
   }
 }
 
@@ -91,10 +93,10 @@ input.Checkbox-toggle {
   position: relative;
   cursor: pointer;
   vertical-align: bottom;
-  border: 1px solid #DFDFDF;
+  border: 1px solid $border-color;
 }
 .Checkbox--switch.is-disabled {
-  border: 1px solid #DFDFDF;
+  border: 1px solid $border-color;
   opacity: 0.7;
 }
 .Checkbox--switch::before {
@@ -108,7 +110,7 @@ input.Checkbox-toggle {
   width: 48%;
   height: 100%;
   background: #ffffff;
-  border: 1px solid #DFDFDF;
+  border: 1px solid $border-color;
   left: 0;
   cursor: pointer;
   border-radius: 50%;
@@ -119,13 +121,13 @@ input.Checkbox-toggle {
 .Checkbox--switch::after:hover,
 .Checkbox--switch::after:active,
 .Checkbox--switch::after.is-checked {
-  border: 1px solid #DFDFDF;
+  border: 1px solid $border-color;
   background: #ffffff;
 }
 
 .Checkbox--switch.is-checked {
-  background: #44BB66;
-  border: 1px solid #44BB66;
+  background: $success-color;
+  border: 1px solid $success-color;
 }
 .Checkbox--switch.is-checked::after {
   left: 49%;

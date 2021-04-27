@@ -161,23 +161,23 @@ class GitOpsRepoDetails extends React.Component {
             <div className="flex flex1 u-marginBottom--30 u-marginTop--20">
               {provider !== "other" &&
                 <div className="flex flex1 flex-column u-marginRight--20">
-                  <p className="u-fontSize--large u-color--tuna u-fontWeight--bold u-lineHeight--normal">Owner &amp; Repository</p>
-                  <p className="u-fontSize--normal u-color--dustyGray u-fontWeight--medium u-lineHeight--normal u-marginBottom--10">Where will the commit be made?</p>
+                  <p className="u-fontSize--large u-textColor--primary u-fontWeight--bold u-lineHeight--normal">Owner &amp; Repository</p>
+                  <p className="u-fontSize--normal u-textColor--bodyCopy u-fontWeight--medium u-lineHeight--normal u-marginBottom--10">Where will the commit be made?</p>
                   <input type="text" className={`Input ${providerError?.field === "ownerRepo" && "has-error"}`} placeholder="owner/repository" value={ownerRepo} onChange={(e) => this.setState({ ownerRepo: e.target.value })} />
-                  {providerError?.field === "ownerRepo" && <p className="u-fontSize--small u-marginTop--5 u-color--chestnut u-fontWeight--medium u-lineHeight--normal">A owner and repository must be provided</p>}
+                  {providerError?.field === "ownerRepo" && <p className="u-fontSize--small u-marginTop--5 u-textColor--error u-fontWeight--medium u-lineHeight--normal">A owner and repository must be provided</p>}
                 </div>
               }
               {provider !== "other" &&
                 <div className="flex flex1 flex-column u-marginRight--20">
-                  <p className="u-fontSize--large u-color--tuna u-fontWeight--bold u-lineHeight--normal">Branch</p>
-                  <p className="u-fontSize--normal u-color--dustyGray u-fontWeight--medium u-lineHeight--normal u-marginBottom--10">Leave blank to use the default branch.</p>
+                  <p className="u-fontSize--large u-textColor--primary u-fontWeight--bold u-lineHeight--normal">Branch</p>
+                  <p className="u-fontSize--normal u-textColor--bodyCopy u-fontWeight--medium u-lineHeight--normal u-marginBottom--10">Leave blank to use the default branch.</p>
                   <input type="text" className={`Input`} placeholder="main" value={branch} onChange={(e) => this.setState({ branch: e.target.value })} />
                 </div>
               }
               {provider !== "other" &&
                 <div className="flex flex1 flex-column">
-                  <p className="u-fontSize--large u-color--tuna u-fontWeight--bold u-lineHeight--normal">Path</p>
-                  <p className="u-fontSize--normal u-color--dustyGray u-fontWeight--medium u-lineHeight--normal u-marginBottom--10">Where will the deployment file live?</p>
+                  <p className="u-fontSize--large u-textColor--primary u-fontWeight--bold u-lineHeight--normal">Path</p>
+                  <p className="u-fontSize--normal u-textColor--bodyCopy u-fontWeight--medium u-lineHeight--normal u-marginBottom--10">Where will the deployment file live?</p>
                   <input type="text" className={"Input"} placeholder="/my-path" value={path} onChange={(e) => this.setState({ path: e.target.value })} />
                 </div>
               }
@@ -200,8 +200,8 @@ class GitOpsRepoDetails extends React.Component {
                       <span className="icon clickable commitOptionIcon u-marginRight--10" />
                     </div>
                     <div className="flex1">
-                      <p className="u-color--tuna u-fontSize--normal u-fontWeight--medium">Create a commit</p>
-                      <p className="u-color--dustyGray u-fontSize--small u-fontWeight--medium u-marginTop--5">Automatic commits to repo</p>
+                      <p className="u-textColor--primary u-fontSize--normal u-fontWeight--medium">Create a commit</p>
+                      <p className="u-textColor--bodyCopy u-fontSize--small u-fontWeight--medium u-marginTop--5">Automatic commits to repo</p>
                     </div>
                   </label>
                 </div>
@@ -210,8 +210,8 @@ class GitOpsRepoDetails extends React.Component {
             </div>
 
             <div className="u-marginBottom--10 u-textAlign--left">
-              <p className="u-fontSize--large u-color--tuna u-fontWeight--bold u-lineHeight--normal">What content will it contain?</p>
-              <p className="u-fontSize--normal u-color--dustyGray u-fontWeight--medium u-lineHeight--normal u-marginBottom--10">Your commit can include a single rendered yaml file or it’s full output.</p>
+              <p className="u-fontSize--large u-textColor--primary u-fontWeight--bold u-lineHeight--normal">What content will it contain?</p>
+              <p className="u-fontSize--normal u-textColor--bodyCopy u-fontWeight--medium u-lineHeight--normal u-marginBottom--10">Your commit can include a single rendered yaml file or it’s full output.</p>
             </div>
 
             <div className="flex flex1 u-marginTop--normal gitops-checkboxes justifyContent--center u-marginBottom--30">
@@ -230,8 +230,8 @@ class GitOpsRepoDetails extends React.Component {
                       <span className="icon clickable singleOptionIcon u-marginRight--10" />
                     </div>
                     <div className="flex1">
-                      <p className="u-color--tuna u-fontSize--normal u-fontWeight--medium">Rendered YAML</p>
-                      <p className="u-color--dustyGray u-fontSize--small u-fontWeight--medium u-marginTop--5">Apply using <span className="inline-code no-bg">kubectl apply -f</span></p>
+                      <p className="u-textColor--primary u-fontSize--normal u-fontWeight--medium">Rendered YAML</p>
+                      <p className="u-textColor--bodyCopy u-fontSize--small u-fontWeight--medium u-marginTop--5">Apply using <span className="inline-code no-bg">kubectl apply -f</span></p>
                     </div>
                   </label>
                 </div>
@@ -253,7 +253,7 @@ class GitOpsRepoDetails extends React.Component {
               {showFinishedConfirm &&
                 <div className="u-marginLeft--10 flex alignItems--center">
                   <span className="icon checkmark-icon" />
-                  <span className="u-marginLeft--5 u-fontSize--small u-fontWeight--medium u-color--chateauGreen">Settings saved</span>
+                  <span className="u-marginLeft--5 u-fontSize--small u-fontWeight--medium u-textColor--success">Settings saved</span>
                 </div>
               }
             </div>

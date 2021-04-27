@@ -1,11 +1,13 @@
+@import "../../variables.scss";
+
 .MonacoEditor--wrapper {
     margin-bottom: 20px;
     overflow: auto;
-    border: 1px solid #DFDFDF;
+    border: 1px solid $border-color;
     border-radius: 4px;
     
     .error-highlight {
-      background:#FBEDEB;
+      background: lighten($error-color, 43.5%);
       position: absolute;
     }
   
@@ -21,11 +23,11 @@
 
   .MonacoDiffEditor--wrapper {
     overflow: auto;
-    border: 1px solid #DFDFDF;
+    border: 1px solid $border-color;
     border-radius: 4px;
     
     .error-highlight {
-      background:#FBEDEB;
+      background: lighten($error-color, 43.5%);
       position: absolute;
     }
   

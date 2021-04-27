@@ -18,7 +18,7 @@ export default class AnnotationRow extends Component {
         <div className="flex flex1 alignItems--center justifyContent--spaceBetween">
           <div className="flex justifyContent--flexStart">
             <div className="flex alignItems--center">
-              <span className="u-fontSize--normal u-fontWeight--medium u-lineHeight--normal u-color--doveGray">Key</span>
+              <span className="u-fontSize--normal u-fontWeight--medium u-lineHeight--normal u-textColor--accent">Key</span>
               <input type="text"
                 className="Input darker"
                 style={{ marginLeft: "12px" }}
@@ -27,7 +27,7 @@ export default class AnnotationRow extends Component {
                 onChange={(e) => { this.handleFormChange("key", e) }} />
             </div>
             <div className="flex alignItems--center u-marginLeft--20">
-              <span className="u-fontSize--normal u-fontWeight--medium u-lineHeight--normal u-color--doveGray">Value</span>
+              <span className="u-fontSize--normal u-fontWeight--medium u-lineHeight--normal u-textColor--accent">Value</span>
               <input type="text"
                 className="Input darker"
                 style={{ marginLeft: "12px" }}

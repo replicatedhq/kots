@@ -1,3 +1,5 @@
+@import "../../variables.scss";
+
 .verison-history-wrapper {
 	padding: 30px 200px;
 }
@@ -7,7 +9,7 @@
 }
 
 .line {
-	border-left: 2px solid #DFDFDF;;
+	border-left: 2px solid $border-color;
 	height:35px;
 	text-align: left; 
 	margin-left:4px;
@@ -16,7 +18,7 @@
 .dot {
 	height: 7px;
 	width: 7px;
-	background-color: #DFDFDF;
+	background-color: $border-color;
 	border-radius: 50%;
 	margin-left:2px;
 	margin-top:3px;
@@ -35,7 +37,7 @@
 	.checkmark-icon::after {
 		content: "";
 		height: 15px;
-		border-left: 2px solid #DFDFDF;;
+		border-left: 2px solid $border-color;
 		position: relative;
 		bottom: -28px;
 		left: 6px;
@@ -50,7 +52,7 @@
 	}
 
 	.verison-card {
-		border: 1px solid #DFDFDF;
+		border: 1px solid $border-color;
 		border-radius: 4px;
 		box-shadow: 0 0 3px rgba(0,0,0,0.06);
 		width: 100%;
@@ -59,7 +61,7 @@
 
 	.verison-card-selected {
 		border: 1px solid #4990E2;
-		background-color: #F5F8FC;
+		background-color: lighten($primary-color, 43.5%);
 		border-radius: 4px;
 		box-shadow: 0 0 3px rgba(0,0,0,0.06);
 		width: 100%;

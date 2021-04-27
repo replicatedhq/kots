@@ -356,18 +356,18 @@ class AirgapRegistrySettings extends Component {
         <form>
           <div className="flex u-marginBottom--20">
             <div className="flex1">
-              <p className="u-fontSize--normal u-color--tuna u-fontWeight--bold u-lineHeight--normal u-marginBottom--5">Hostname {showHostnameAsRequired && <span className="u-color--chestnut">(Required)</span>}</p>
-              <p className="u-lineHeight--normal u-fontSize--small u-color--dustyGray u-fontWeight--medium u-marginBottom--10">Ensure this domain supports the Docker V2 protocol.</p>
+              <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-lineHeight--normal u-marginBottom--5">Hostname {showHostnameAsRequired && <span className="u-textColor--error">(Required)</span>}</p>
+              <p className="u-lineHeight--normal u-fontSize--small u-textColor--bodyCopy u-fontWeight--medium u-marginBottom--10">Ensure this domain supports the Docker V2 protocol.</p>
               <input type="text" className={`Input ${disableRegistryFields && "is-disabled"}`} disabled={disableRegistryFields} placeholder="artifactory.some-big-bank.com" value={hostname || ""} autoComplete="" onChange={(e) => { this.handleFormChange("hostname", e.target.value) }} />
             </div>
           </div>
           <div className="flex u-marginBottom--20">
             <div className="flex1 u-paddingRight--5">
-              <p className="u-fontSize--normal u-color--tuna u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">Username</p>
+              <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">Username</p>
               <input type="text" className="Input" placeholder="username" value={username || ""} autoComplete="username" onChange={(e) => { this.handleFormChange("username", e.target.value) }} />
             </div>
             <div className="flex1 u-paddingLeft--5">
-              <p className="u-fontSize--normal u-color--tuna u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">Password</p>
+              <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">Password</p>
               <input type="password" className="Input" placeholder="password" autoComplete="current-password" value={password || ""} onChange={(e) => { this.handleFormChange("password", e.target.value) }} />
             </div>
           </div>
@@ -379,24 +379,24 @@ class AirgapRegistrySettings extends Component {
                 </div>
                 {this.state.pingedEndpoint &&
                   <div className="flex-column justifyContent--center">
-                    <p className="u-marginLeft--10 u-fontSize--small u-fontWeight--medium u-color--tundora"><span className={`icon checkmark-icon u-marginRight--5 u-verticalAlign--neg3`} />Connected to {this.state.pingedEndpoint}</p>
+                    <p className="u-marginLeft--10 u-fontSize--small u-fontWeight--medium u-textColor--secondary"><span className={`icon checkmark-icon u-marginRight--5 u-verticalAlign--neg3`} />Connected to {this.state.pingedEndpoint}</p>
                   </div>
                 }
               </div>
               {testFailed && !testInProgress ?
-                <p className="u-fontSize--small u-fontWeight--medium u-color--chestnut u-marginTop--10 u-lineHeight--normal">{testStatusText}</p>
+                <p className="u-fontSize--small u-fontWeight--medium u-textColor--error u-marginTop--10 u-lineHeight--normal">{testStatusText}</p>
                 :
-                <p className="u-fontSize--small u-fontWeight--medium u-color--dustyGray u-marginTop--10 u-lineHeight--normal">{testStatusText}</p>
+                <p className="u-fontSize--small u-fontWeight--medium u-textColor--bodyCopy u-marginTop--10 u-lineHeight--normal">{testStatusText}</p>
               }
             </div>
           }
           <div className="flex u-marginBottom--30">
             <div className="flex1">
               <div className="flex flex1 alignItems--center u-marginBottom--5">
-                <p className="u-fontSize--normal u-color--tuna u-fontWeight--bold u-lineHeight--normal">Registry Namespace</p>
+                <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-lineHeight--normal u-marginBottom--5">Registry Namespace</p>
                 <span className="required-label">Required</span>
               </div>
-              <p className="u-lineHeight--normal u-fontSize--small u-color--dustyGray u-fontWeight--medium u-marginBottom--10">{namespaceSubtext}</p>
+              <p className="u-lineHeight--normal u-fontSize--small u-textColor--bodyCopy u-fontWeight--medium u-marginBottom--10">{namespaceSubtext}</p>
               <input type="text" className={`Input ${disableRegistryFields && "is-disabled"}`} placeholder="namespace" disabled={disableRegistryFields} value={namespace || ""} autoComplete="" onChange={(e) => { this.handleFormChange("namespace", e.target.value) }} />
             </div>
           </div>
@@ -412,8 +412,8 @@ class AirgapRegistrySettings extends Component {
                 />
                 <label htmlFor="ingressEnabled" className="flex1 flex u-width--full u-position--relative u-cursor--pointer u-userSelect--none" style={{ marginTop: "2px" }}>
                   <div className="flex flex-column u-marginLeft--5 justifyContent--center">
-                    <p className="u-fontSize--normal u-color--tuna u-fontWeight--bold u-marginBottom--5">Disable Pushing Images to Registry</p>
-                    <p className="u-lineHeight--normal u-fontSize--small u-color--dustyGray u-fontWeight--medium">{imagePushSubtext}</p>
+                    <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-marginBottom--5">Disable Pushing Images to Registry</p>
+                    <p className="u-lineHeight--normal u-fontSize--small u-textColor--bodyCopy u-fontWeight--medium">{imagePushSubtext}</p>
                   </div>
                 </label>
               </div>
@@ -425,13 +425,13 @@ class AirgapRegistrySettings extends Component {
             {showProgress ?
               <div className="u-marginTop--20">
                 <Loader size="30" />
-                <p className="u-fontSize--small u-fontWeight--medium u-color--dustyGray u-marginTop--10">{statusText}</p>
+                <p className="u-fontSize--small u-fontWeight--medium u-textColor--bodyCopy u-marginTop--10">{statusText}</p>
               </div>
               :
               null
             }
             {showStatusError ?
-              <p className="u-fontSize--small u-fontWeight--medium u-color--chestnut u-marginTop--10">{statusText}</p>
+              <p className="u-fontSize--small u-fontWeight--medium u-textColor--error u-marginTop--10">{statusText}</p>
               :
               null
             }

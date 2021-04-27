@@ -88,13 +88,13 @@ class UploadSupportBundleModal extends React.Component {
       <div className="console">
         <div id="UploadSupportBundleModal">
           <div>
-            <p className="u-fontSize--largest u-fontWeight--bold u-lineHeight--default u-color--tuna u-marginBottom--small">
+            <p className="u-fontSize--largest u-fontWeight--bold u-lineHeight--default u-textColor--primary u-marginBottom--small">
               Upload a support bundle
               </p>
-            <p className="u-fontSize--normal u-fontWeight--medium u-lineHeight--normal u-color--dustyGray u-marginTop--10">
+            <p className="u-fontSize--normal u-fontWeight--medium u-lineHeight--normal u-textColor--bodyCopy u-marginTop--10">
               Upload a support bundle from your environment to visually analyze the server and receive insights about the server, the network and your application.
               </p>
-            {this.state.uploadBundleErrMsg && <p className="u-color--chestnut u-fontSize--normal u-fontWeight--medium u-lineHeight--normal u-marginTop--10 u-marginBottom--10">{this.state.uploadBundleErrMsg}</p>}
+            {this.state.uploadBundleErrMsg && <p className="u-textColor--error u-fontSize--normal u-fontWeight--medium u-lineHeight--normal u-marginTop--10 u-marginBottom--10">{this.state.uploadBundleErrMsg}</p>}
             <div className="u-marginTop--20">
               <div>
                 <div className={`FileUpload-wrapper ${hasFile ? "has-file" : ""}`}>
@@ -109,7 +109,7 @@ class UploadSupportBundleModal extends React.Component {
                       :
                       <div className="u-textAlign--center">
                         <span className="icon u-TarFileIcon u-marginBottom--20"></span>
-                        <p className="u-fontSize--normal u-color--dustyGray u-fontWeight--medium u-lineHeight--normal">Drag your bundle here or <span className="u-color--astral u-fontWeight--medium u-textDecoration--underlineOnHover">choose a file to upload</span></p>
+                        <p className="u-fontSize--normal u-textColor--bodyCopy u-fontWeight--medium u-lineHeight--normal">Drag your bundle here or <span className="u-linkColor u-fontWeight--medium u-textDecoration--underlineOnHover">choose a file to upload</span></p>
                       </div>
                     }
                   </Dropzone>

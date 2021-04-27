@@ -1,10 +1,11 @@
+@import '../../variables.scss';
 $cell-width: 140px;
 
 .VersionHistoryDeploymentRow {
   padding: 12px;
   border-width: 1px;
   border-style: solid;
-  border-color: #C4C7CA;
+  border-color: $border-color;
   border-top: none;
   border-right: none;
   border-left: none;
@@ -13,10 +14,10 @@ $cell-width: 140px;
   &.active-deploy-row {
     border-top-width: 1px;
     border-top-style: solid;
-    border-color: #44bb66;
+    border-color: $success-color;
 
     &.failed {
-      border-color: #BC4752;
+      border-color: $error-color;
     }
   }
 
@@ -47,7 +48,7 @@ $cell-width: 140px;
 }
 
 .upstream-version-box-wrapper {
-  background: #F8F8F8;
+  background: $sub-nav-color;
   border-radius: 6px;
   padding: 15px;
   width: 100%;
@@ -71,14 +72,14 @@ $cell-width: 140px;
 }
 
 .info-box {
-  background-color: #F5F8FC;
+  background-color: lighten($primary-color, 43.5%);
   border-radius: 4px;
   padding: 12px;
   text-align: center;
 }
 
 .checking-update-error-wrapper {
-  background-color: #FBECEA;
+  background-color: lighten($error-color, 43.5%);
   border-radius: 4px;
   padding: 15px;
   width: 100%;
@@ -87,7 +88,7 @@ $cell-width: 140px;
 }
 
 .airgap-upload-error-wrapper {
-  background-color: #FBECEA;
+  background-color: lighten($error-color, 43.5%);
   border-radius: 4px;
   padding: 0px 5px 0px 5px;
   width: 100%;
@@ -105,15 +106,15 @@ $cell-width: 140px;
   border-top: 1px solid #DFDFDF;
 
   &.is-expired {
-    background-color: #F8F8F8;
+    background-color: $sub-nav-color;
   }
 
   &.is-deleting {
-    background-color: #F8F8F8;
+    background-color: $sub-nav-color;
   }
 
   .nodeTag {
-    background-color: #F5F8FC;
+    background-color: lighten($primary-color, 43.5%);
     font-size: 12px;
     line-height: 12px;
     color: #73A3CD;
@@ -153,7 +154,7 @@ $cell-width: 140px;
 
 .ActiveRelease-wrapper {
   .no-current-version {
-    background-color: #F5F8FC;
+    background-color: lighten($primary-color, 43.5%);
     margin-top: 16px;
     border-radius: 4px;
     padding: 16px 12px;
@@ -165,13 +166,13 @@ $cell-width: 140px;
   margin-left: 15px;
   border-width: 1px;
   border-style: solid;
-  border-color: #6D7278;
-  color: #6D7278;
+  border-color: $secondary-color;
+  color: $secondary-color;
   box-shadow: none;
 }
 
 .release-notes-link {
-  color: #326DE6;
+  color: $link-color;
 
   &:hover {
     cursor: pointer;
@@ -193,20 +194,20 @@ $cell-width: 140px;
 .action-tab-bar .tab-item {
   font-size: 12px;
   font-weight: 500;
-  color: #9B9B9B;
+  color: $text-color-body-copy;
   padding: 0 10px;
-  border-right: 1px solid #DFDFDF;
+  border-right: 1px solid $border-color;
   line-height: 15px;
   cursor: pointer;
   transition: color .2s;
   position: relative;
 
   &:hover {
-    color: #717171;
+    color: $text-color-accent;
   }
 
   &.is-active {
-    color: #4A4A4A;
+    color: $text-color-secondary;
     font-weight: 600;
 
     &::after {
@@ -218,15 +219,15 @@ $cell-width: 140px;
       height: 8px;
       transform: rotate(45deg);
       background-color: #ffffff;
-      border-top: 1px solid #DFDFDF;
-      border-left: 1px solid #DFDFDF;
+      border-top: 1px solid $border-color;
+      border-left: 1px solid $border-color;
       left: 50%;
       margin-left: -4px;
     }
   }
 
   &.blue.is-active::after {
-    background-color: #F5F8FC;
+    background-color: lighten($primary-color, 43.5%);
   }
 
   &:last-child {
@@ -303,8 +304,8 @@ $cell-width: 140px;
   box-shadow: 0 0 4px rgba(0,0,0,0.16);
   line-height: normal;
   border-radius: 4px;
-  background-color: #FBECEA;
-  color: #BC4752;
+  background-color: lighten($error-color, 43.5%);
+  color: $error-color;
 
   .title {
     font-size: 16px;

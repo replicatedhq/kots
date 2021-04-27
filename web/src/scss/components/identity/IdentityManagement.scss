@@ -1,3 +1,5 @@
+@import "../../variables.scss";
+
 .Identity--wrapper {
   padding: 20px;
   background: #FFFFFF;
@@ -6,21 +8,21 @@
 
   .FileUpload-wrapper {
     cursor: default;
-    border: 1px dashed #DFDFDF;
+    border: 1px dashed $border-color;
     box-sizing: border-box;
     border-radius: 4px;
     padding: 10px;
     margin-bottom: 10px;
 
     &.has-file {
-      border: 1px solid #44bb66;
-      color: #44bb66;
+      border: 1px solid $success-color;
+      color: $success-color;
       padding: 12px;
 
       &.has-error {
-       border: 1px solid #BC4752;
-       background-color: #FFF9F9;
-       color: #BC4752;
+       border: 1px solid $error-color;
+       background-color: lighten($error-color, 43.5%);
+       color: $error-color;
       }
     }
   }
@@ -28,30 +30,30 @@
 
 .identityProviderBtn {
   background: #FFFFFF;
-  border: 1px solid #DFDFDF;
+  border: 1px solid $border-color;
   box-sizing: border-box;
   border-radius: 4px;
   padding: 15px 25px;
   height: 55px;
 
   &:hover {
-    background-color: #F5F8FC;
+    background-color: lighten($primary-color, 43.5%);
   }
 
   &.is-active {
-    background: #F5F8FC;
-    border: 1px solid #326DE6;
+    background: lighten($primary-color, 43.5%);
+    border: 1px solid $primary-color;
   }
 }
 
 .IdentityProviderWarning--wrapper {
-  background: #FBE9D7;
+  background: lighten($warning-color, 43.5%);
   border-radius: 4px;
   padding: 12px;
   font-weight: normal;
   font-size: 14px;
   line-height: 22px;
-  color: #EC8F39;
+  color: $warning-color;
   width: 490px;
 }
 

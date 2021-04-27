@@ -1,3 +1,5 @@
+@import "../../variables.scss";
+
 #config-render-component {
   .hidden {
     display: none;
@@ -7,7 +9,7 @@
     padding-top: 12px;
     padding-bottom: 12px;
     background: #fff;
-    border-top: solid 1px #DFDFDF;
+    border-top: solid 1px $border-color;
     z-index: 10;
   }
   
@@ -15,7 +17,7 @@
     text-decoration: none;
     outline: none;
     font-weight: 500;
-    color: #326DE6;
+    color: $link-color;
   
     &:hover {
       cursor: pointer;
@@ -38,25 +40,25 @@
     font-size: 14px;
     line-height: 1.5;
     font-weight: 500;
-    color: #9B9B9B;
+    color: $text-color-body-copy;
   }
   .default-value-section {
     font-size: 12px;
     line-height: 12px;
-    color: #9B9B9B;
+    color: $text-color-body-copy;
     font-weight: 500;
     .value {
-      color: #073551;
+      color: darken($primary-color, 42%);
     }
   }
   .field.hidden {
     display: none;
   }
   .header-color {
-    color: #323232;
+    color: $text-color-primary;
   }
   .sub-header-color {
-    color: #323232;
+    color: $text-color-primary;
   }
   
   .container {
@@ -84,7 +86,7 @@
   }
   
   .spinningLoaderPath {
-    fill: #323232;
+    fill: $text-color-primary;
   }
   
   .AceEditor--wrapper {
@@ -109,7 +111,7 @@
   .config-errblock {
     display: none;
     font-size: 14px;
-    color: #BC4752;
+    color: $error-color;
     font-weight: 500;
     line-height: 20px;
   
@@ -125,12 +127,12 @@
     border-radius: 2px;
   
     &.required {
-      background-color: #FFEFD4;
-      color: #DB9016;
+      background-color: lighten($warning-color, 43.5%);
+      color: $warning-color;
     }
     &.recommended {
-      background-color: #EAFFF0;
-      color: #44BB66;
+      background-color: lighten($success-color, 43.5%);
+      color: $success-color;
     }
   }
   
@@ -139,20 +141,20 @@
   }
   
   .custom-file-upload > label {
-    border: 1px dashed #C4C7CA;
+    border: 1px dashed $border-color;
     display: inline-block;
-    color: #C4C7CA;
+    color: $border-color;
     padding: 15px 17px;
     cursor: pointer;
     border-radius: 4px;
   }
   
   .file-uploaded {
-    border: 1px solid #9B9B9B;
+    border: 1px solid $border-color;
     display: inline-block;
     padding: 15px 17px;
     border-radius: 4px;
-    color: #323232;
+    color: $text-color-primary;
   }
 
 }

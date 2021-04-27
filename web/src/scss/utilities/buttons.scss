@@ -1,3 +1,5 @@
+@import "../variables.scss";
+
 .button-wrapper {
   margin-top: 20px;
   .btn {
@@ -55,7 +57,7 @@
   }
 
   &.primary {
-    background-color: #326DE6;
+    background-color: $primary-color;
     padding: 8px 14px 9px;
     color: #ffffff;
     -webkit-box-shadow: inset 0px -2px 0px 0px rgba(0,0,0,0.25);
@@ -63,7 +65,7 @@
     box-shadow: inset 0px -2px 0px 0px rgba(0,0,0,0.25);
 
     &:not(:disabled):hover {
-      background-color: #265BC7;
+      background-color: darken($primary-color, 8%);
     }
   }
 
@@ -72,13 +74,13 @@
   &.primary:disabled,
   &.primary[disabled] {
     cursor: not-allowed;
-    border-color: #A3D3E9;
+    border-color: lighten($primary-color, 25%);
     color: #ffffff;
-    background-color: #A3D3E9;
+    background-color: lighten($primary-color, 25%);
   }
 
   &.primary.red {
-    background-color: #BC4752;
+    background-color: $error-color;
     border-width: 1px;
     border-style: solid;
     border-color: transparent;
@@ -88,7 +90,7 @@
     box-shadow: inset 0px -2px 0px 0px rgba(0,0,0,0.25);
 
     &:not(:disabled):hover {
-      background: #A83F49;
+      background: darken($error-color, 8%);
     }
   }
 
@@ -97,35 +99,36 @@
   &.primary.red:disabled,
   &.primary.red[disabled] {
     cursor: not-allowed;
-    border-color: #DDA3A8;
+    border-color: lighten($error-color, 25%);
     color: #ffffff;
-    background-color: #DDA3A8;
+    background-color: lighten($error-color, 25%);
   }
 
   &.secondary {
     background-color: #ffffff;
     border-width: 1px;
     border-style: solid;
-    border-color: #9B9B9B;
-    color: #9B9B9B;
+    border-color: $secondary-color;
+    color: $secondary-color;
     box-shadow: none;
     padding: 8px 12px 7px;
 
     &:not(:disabled):hover {
-      border-color: #717171;
-      color: #717171;
+      background-color: lighten($secondary-color, 43.5%);
+      border-color: darken($secondary-color, 8%);
+      color: darken($secondary-color, 8%);
     }
   }
 
   &.secondary.red {
     background-color: #ffffff;
-    border: 1px solid #BC4752;
+    border: 1px solid $error-color;
     box-shadow: none;
-    color: #BC4752;
+    color: $error-color;
 
     &:not(:disabled):hover {
-      border-color: #A83F49;
-      color: #A83F49;
+      border-color: darken($error-color, 8%);
+      color: darken($error-color, 8%);
     }
   }
 
@@ -133,14 +136,14 @@
     background-color: #ffffff;
     border-width: 1px;
     border-style: solid;
-    border-color: #326DE6;
-    color: #326DE6;
+    border-color: $primary-color;
+    color: $primary-color;
     box-shadow: none;
 
     &:not(:disabled):hover {
-      background-color: #EBF0FC;
-      border-color: #326DE6;
-      color: #326DE6;
+      background-color: lighten($primary-color, 43.5%);
+      border-color: $primary-color;
+      color: $primary-color;
     }
   }
 
@@ -148,14 +151,14 @@
     background-color: #ffffff;
     border-width: 1px;
     border-style: solid;
-    border-color: #193B5B;
-    color: #193B5B;
+    border-color: darken($primary-color, 30%);
+    color: darken($primary-color, 30%);
     box-shadow: none;
 
     &:not(:disabled):hover {
-      background-color: #E8EBEF;
-      border-color: #193B5B;
-      color: #193B5B;
+      background-color: lighten($primary-color, 43.5%);
+      border-color: darken($primary-color, 42%);
+      color: darken($primary-color, 42%);
     }
   }
 
@@ -169,8 +172,8 @@
   &.secondary:disabled,
   &.secondary[disabled] {
     cursor: not-allowed;
-    color: #CBD6E3;
-    border-color: #CBD6E3;
+    color: lighten($secondary-color, 25%);
+    border-color: lighten($secondary-color, 25%);
   }
 
   &.github {
@@ -205,7 +208,7 @@
     color: #326DE6;
 
     &:not(:disabled):hover {
-      background-color: #F5F8FC;
+      background-color: lighten($primary-color, 43.5%);
     }
   }
 

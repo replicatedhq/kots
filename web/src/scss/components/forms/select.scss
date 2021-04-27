@@ -1,11 +1,13 @@
+@import "../../variables.scss";
+
 .Select {
   position: relative;
   width: 100%;
   background: #ffffff;
-  border: 1px solid #DFDFDF;
+  border: 1px solid $border-color;
   border-radius: 4px;
   font-size: 14px;
-  color: #323232;
+  color: $text-color-primary;
   line-height: normal;
   outline: none;
   height: 32px;
@@ -15,19 +17,19 @@
   &.has-error,
   &.has-error:focus,
   &.has-error:active {
-    border-color: #EE5042;
+    border-color: $error-color;
   }
 }
 .Select.no-selection {
-  color: #9B9B9B;
+  color: $text-color-body-copy;
 }
 .Select.is-disabled {
   &.has-error {
-    border-color: #EE5042;
+    border-color: $error-color;
   }
   cursor: not-allowed;
   background-color: #F8F8F8;
-  border-color: #DFDFDF;
-  color: #717171;
+  border-color: lighten($border-color, 30%);
+  color: $text-color-accent;
   
 }

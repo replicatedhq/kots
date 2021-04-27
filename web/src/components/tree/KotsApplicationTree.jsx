@@ -88,7 +88,7 @@ class KotsApplicationTree extends React.Component {
 
         <div className="edit-files-banner u-fontSize--small u-fontWeight--medium">Need to edit these files? <span onClick={this.toggleInstructionsModal} className="replicated-link">Click here</span> to learn how</div>
         <div className="flex flex1">
-          <div className="flex1 dirtree-wrapper flex-column u-overflow-hidden u-background--biscay">
+          <div className="flex1 dirtree-wrapper flex-column u-overflow-hidden">
             <div className="u-overflow--auto dirtree">
               <FileTree
                 files={applicationTree}
@@ -106,7 +106,7 @@ class KotsApplicationTree extends React.Component {
           <div className="AceEditor flex1 flex-column file-contents-wrapper u-position--relative">
             {this.state.selectedFile === "" || this.state.selectedFile === "/" ?
               <div className="flex-column flex1 alignItems--center justifyContent--center">
-                <p className="u-color--dustyGray u-fontSize--normal u-fontWeight--medium">Select a file from the file explorer to view it here.</p>
+                <p className="u-textColor--bodyCopy u-fontSize--normal u-fontWeight--medium">Select a file from the file explorer to view it here.</p>
               </div>
               : 
               <MonacoEditor
@@ -139,17 +139,17 @@ class KotsApplicationTree extends React.Component {
             className="DisplayInstructionsModal--wrapper Modal MediumSize"
           >
             <div className="Modal-body">
-              <h2 className="u-fontSize--largest u-color--tuna u-fontWeight--bold u-lineHeight--normal">Edit patches for your kots application</h2>
+              <h2 className="u-fontSize--largest u-textColor--primary u-fontWeight--bold u-lineHeight--normal">Edit patches for your kots application</h2>
               <div className="flex flex1 u-marginTop--20">
                 <div className="flex-auto">
                   <span className="instruction-modal-number">1</span>
                 </div>
                 <div className="flex1">
-                  <p className="u-fontSize--large u-fontWeight--bold u-color--tuna u-marginBottom--5 u-lineHeight--normal">Download your application bundle.</p>
+                  <p className="u-fontSize--large u-fontWeight--bold u-textColor--primary u-marginBottom--5 u-lineHeight--normal">Download your application bundle.</p>
                   <CodeSnippet
                     language="bash"
                     canCopy={true}
-                    onCopyText={<span className="u-color--chateauGreen">Command has been copied to your clipboard</span>}
+                    onCopyText={<span className="u-textColor--success">Command has been copied to your clipboard</span>}
                   >
                     {`kubectl kots download --namespace ${this.props.appNameSpace} --slug ${this.props.match.params.slug}`}
                   </CodeSnippet>
@@ -161,7 +161,7 @@ class KotsApplicationTree extends React.Component {
                   <span className="instruction-modal-number">2</span>
                 </div>
                 <div className="flex1">
-                  <p className="u-fontSize--large u-fontWeight--bold u-color--tuna u-marginBottom--5 u-lineHeight--normal">Edit any of your files in your favorite IDE.</p>
+                  <p className="u-fontSize--large u-fontWeight--bold u-textColor--primary u-marginBottom--5 u-lineHeight--normal">Edit any of your files in your favorite IDE.</p>
                 </div>
               </div>
 
@@ -170,11 +170,11 @@ class KotsApplicationTree extends React.Component {
                   <span className="instruction-modal-number">3</span>
                 </div>
                 <div className="flex1">
-                  <p className="u-fontSize--large u-fontWeight--bold u-color--tuna u-marginBottom--5 u-lineHeight--normal">Upload your edited application bundle.</p>
+                  <p className="u-fontSize--large u-fontWeight--bold u-textColor--primary u-marginBottom--5 u-lineHeight--normal">Upload your edited application bundle.</p>
                   <CodeSnippet
                     language="bash"
                     canCopy={true}
-                    onCopyText={<span className="u-color--chateauGreen">Command has been copied to your clipboard</span>}
+                    onCopyText={<span className="u-textColor--success">Command has been copied to your clipboard</span>}
                   >
                     {`kubectl kots upload --namespace ${this.props.appNameSpace} --slug ${this.props.match.params.slug} ./${this.props.match.params.slug}`}
                   </CodeSnippet>

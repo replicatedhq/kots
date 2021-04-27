@@ -1,15 +1,17 @@
+@import "../../variables.scss";
+
 .SupportBundle--Row {
   .actions {
     top: 15px;
     right: 15px;
   }
   &:hover {
-    background: #F5F8FC;
+    background: lighten($primary-color, 43.5%);
   }
 }
 
 .spec-row-wrapper {
-  border-bottom: 1px solid #DFDFDF;
+  border-bottom: 1px solid $border-color;
 
   .spec-wrapper {
     padding: 17px 12px;
@@ -17,7 +19,7 @@
 }
 
 .spec-row-wrapper:hover {
-  background-color: #F5F8FC;
+  background-color: lighten($primary-color, 43.5%);
   cursor: pointer;
 }
 
@@ -30,7 +32,7 @@
   width: 30%;
   background: #ffffff;
   font-size: 14px;
-  color: #323232;
+  color: $text-color-primary;
   line-height: normal;
   outline: none;
   height: 40px;
@@ -41,13 +43,13 @@
   &.has-error,
   &.has-error:focus,
   &.has-error:active {
-    border-color: #EE5042;
+    border-color: $error-color;
   }
 }
 
 .bundle-row-wrapper {
   padding: 17px 12px;
-  border-bottom: 1px solid #DFDFDF;
+  border-bottom: 1px solid $border-color;
   cursor: pointer;
 
   .spacer-div {

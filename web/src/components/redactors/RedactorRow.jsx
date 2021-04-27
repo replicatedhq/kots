@@ -32,14 +32,14 @@ class RedactorRow extends React.Component {
         <div className="flex-column flex1">
           <div className="flex flex1 alignItems--center u-marginBottom--small">
             <span className={`status-indicator u-marginBottom--10 ${this.state.redactorEnabled ? "enabled" : "disabled"}`} />
-            <p className="u-fontSize--large u-lineHeight--normal u-fontWeight--bold u-color--tuna u-marginRight--10">{redactor?.name}</p>
-            <span className="u-fontSize--small u-color--dustyGray u-fontWeight--medium u-lineHeight--normal u-marginTop--5"> Last updated on {Utilities.dateFormat(redactor?.updatedAt, "MM/DD/YY @ hh:mm a z")} </span>
+            <p className="u-fontSize--large u-lineHeight--normal u-fontWeight--bold u-textColor--primary u-marginRight--10">{redactor?.name}</p>
+            <span className="u-fontSize--small u-textColor--bodyCopy u-fontWeight--medium u-lineHeight--normal u-marginTop--5"> Last updated on {Utilities.dateFormat(redactor?.updatedAt, "MM/DD/YY @ hh:mm a z")} </span>
           </div>
-          <p className="u-fontSize--small u-fontWeight--medium u-lineHeight--normal u-color--nevada u-marginLeft--10"> {redactor?.description} </p>
+          <p className="u-fontSize--small u-fontWeight--medium u-lineHeight--normal u-textColor--accent u-marginLeft--10"> {redactor?.description} </p>
         </div>
         <div className="flex alignItems--center">
-          <Link to={`/app/${this.props.appSlug}/troubleshoot/redactors/${redactor?.slug}`} className="u-fontSize--normal u-fontWeight--medium u-color--royalBlue u-textDecoration--underlineOnHover u-marginRight--20">Edit</Link>
-          <span className="u-fontSize--normal u-fontWeight--medium u-color--chestnut u-textDecoration--underlineOnHover u-marginRight--20" onClick={() => this.handleDeleteClick(redactor)}>Delete</span>
+          <Link to={`/app/${this.props.appSlug}/troubleshoot/redactors/${redactor?.slug}`} className="u-fontSize--normal u-fontWeight--medium u-linkColor u-textDecoration--underlineOnHover u-marginRight--20">Edit</Link>
+          <span className="u-fontSize--normal u-fontWeight--medium u-textColor--error u-textDecoration--underlineOnHover u-marginRight--20" onClick={() => this.handleDeleteClick(redactor)}>Delete</span>
           <div className={`Checkbox--switch ${this.state.redactorEnabled ? "is-checked" : "is-notChecked"}`}>
             <input
               type="checkbox"

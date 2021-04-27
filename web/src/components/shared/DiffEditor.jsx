@@ -24,9 +24,9 @@ export default class DiffEditor extends React.Component {
         <div className="flex alignItems--center">
           {addedLines || removedLines || changes ?
             <div className="flex u-marginRight--10">
-              <span className="u-fontSize--normal u-fontWeight--medium u-lineHeight--normal u-color--vidaLoca u-marginRight--5"> {`+${addedLines} ${addedLines >= 0 ? "additions" : "addition"}`}</span>
-              <span className="u-fontSize--normal u-fontWeight--medium u-lineHeight--normal u-color--chestnut u-marginRight--5"> {`-${removedLines} ${removedLines >= 0 ? "subtractions" : "subtraction"}`}</span>
-              <span className="u-fontSize--normal u-fontWeight--medium u-lineHeight--normal u-color--doveGray"> {`${changes} ${changes > 1 ? "changes" : "change"}`}</span>
+              <span className="u-fontSize--normal u-fontWeight--medium u-lineHeight--normal u-textColor--success u-marginRight--5"> {`+${addedLines} ${addedLines >= 0 ? "additions" : "addition"}`}</span>
+              <span className="u-fontSize--normal u-fontWeight--medium u-lineHeight--normal u-textColor--error u-marginRight--5"> {`-${removedLines} ${removedLines >= 0 ? "subtractions" : "subtraction"}`}</span>
+              <span className="u-fontSize--normal u-fontWeight--medium u-lineHeight--normal u-textColor--accent"> {`${changes} ${changes > 1 ? "changes" : "change"}`}</span>
             </div>
             : null}
           {specKey}

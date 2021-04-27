@@ -1,3 +1,5 @@
+@import "../../variables.scss";
+
 .AppSnapshotsEmptyState--wrapper {
   max-width: 1000px;
   width: 100%;
@@ -12,16 +14,16 @@
 }
 
 .RestoreWarning--wrapper {
-  background-color: #FFF1DA;
-  color: #DB9016;
+  background-color: lighten($warning-color, 43.5%);
+  color: $warning-color;
   padding-bottom: 10px;
   padding-top: 10px;
   text-align: center;
-  border-top: 1px solid #DFDFDF;
-  border-right: 1px solid #DFDFDF;
-  border-left: 1px solid #DFDFDF;
+  border-top: 1px solid $border-color;
+  border-right: 1px solid $border-color;
+  border-left: 1px solid $border-color;
   &:last-child {
-    border-bottom: 1px solid #DFDFDF;
+    border-bottom: 1px solid $border-color;
   }
 }
 
@@ -30,8 +32,8 @@
 }
 
 .CheckVelero--wrapper {
-  background: #F8F8F8;
-  border: 1px solid #C4C8CA;
+  background: $sub-nav-color;
+  border: 1px solid $border-color;
   border-radius: 4px;
   max-height: 90px;
   padding: 20px;
@@ -44,16 +46,16 @@
 }
 
 .RestoreError--wrapper {
-  background-color: #FBEDEB;
-  color: #BC4752;
+  background-color:lighten($error-color, 43.5%);
+  color: $error-color;
   padding-bottom: 10px;
   padding-top: 10px;
   text-align: center;
-  border-top: 1px solid #DFDFDF;
-  border-right: 1px solid #DFDFDF;
-  border-left: 1px solid #DFDFDF;
+  border-top: 1px solid $border-color;
+  border-right: 1px solid $border-color;
+  border-left: 1px solid $border-color;
   &:last-child {
-    border-bottom: 1px solid #DFDFDF;
+    border-bottom: 1px solid $border-color;
   }
 }
 
@@ -61,7 +63,7 @@
   position: absolute;
   left: 26px;
   bottom: 83px;
-  background-color:#F5F8FC;
+  background-color:lighten($primary-color, 43.5%);
   color: #073551;
   width: 150px;
   height: 36px;
@@ -77,13 +79,13 @@
   &:after {
     display: inline-block;
     content: "";
-    border-right: 1px solid #D8D8D8;
-    border-top: 1px solid #D8D8D8;
+    border-right: 1px solid $border-color;
+    border-top: 1px solid $border-color;
     position: absolute;
     top: 5px;
     left: 155px;
     width: 25px;
-    background:#F5F8FC;
+    background:lighten($primary-color, 43.5%);
     height: 25px;
     z-index: 1;
     transform: rotate(45deg);
@@ -93,24 +95,24 @@
 
 .SnapshotRow--wrapper {
   padding: 10px 12px;
-  background: #F8F8F8;
+  background: $sub-nav-color;
   border-radius: 4px;
 
   &.in-progress {
-    background: #F5F8FC;
+    background: lighten($primary-color, 43.5%);
   }
 }
 
 .snapshotDetails--wrapper {
   padding: 10px;
   background: #FFFFFF;
-  border: 1px solid #C4C8CA;
+  border: 1px solid $border-color;
   box-sizing: border-box;
   border-radius: 6px;
 }
 
 .DummySnapshotRow--wrapper {
-  background: #F8F8F8;
+  background: #f8f8f8;
   border-radius: 4px;
   margin-bottom: 15px; 
   height: 64px;
@@ -191,14 +193,14 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  background: #FBE9D7;
+  background: lighten($warning-color, 43.5%);
   padding: 10px;
 
   p {
     font-weight: 500;
     font-size: 14px;
     line-height: 16px;
-    color: #EC8F39;
+    color: $warning-color;
     margin-left: 10px;
   }
 }
@@ -226,12 +228,12 @@
 .SnapshotScheduleTabs--wrapper {
   width: 100%;
   max-width: 400px;
-  border-bottom: 1px solid #DFDFDF;
+  border-bottom: 1px solid $border-color;
 
   .tab-items .tab-item {
     font-size: 12px;
     font-weight: 500;
-    color: #9B9B9B;
+    color: $text-color-body-copy;
     padding: 6px 15px 7px;
     line-height: 14px;
     cursor: pointer;
@@ -239,11 +241,11 @@
     position: relative;
   
     &:hover {
-      color: #717171;
+      color: $text-color-accent;
     }
   
     &.is-active {
-      color: #4A4A4A;
+      color: $text-color-secondary;
       font-weight: 600;
   
       &::after {
@@ -252,7 +254,7 @@
         height: 2px;
         position: absolute;
         display: block;
-        background-color: #326de6;
+        background-color: $accent-color;
         bottom: 0;
         left: 0;
       }
@@ -261,12 +263,12 @@
 }
 
 .ConfigureSnapshotsTabs--wrapper {
-  border-bottom: 1px solid #DFDFDF;
+  border-bottom: 1px solid $border-color;
 
   .tab-items .tab-item {
     font-size: 14px;
     font-weight: 500;
-    color: #9B9B9B;
+    color: $text-color-body-copy;
     padding: 6px 15px 7px;
     line-height: 14px;
     cursor: pointer;
@@ -274,11 +276,11 @@
     position: relative;
   
     &:hover {
-      color: #717171;
+      color: $text-color-accent;
     }
   
     &.is-active {
-      color: #4A4A4A;
+      color: $text-color-secondary;
       font-weight: 600;
   
       &::after {
@@ -287,7 +289,7 @@
         height: 2px;
         position: absolute;
         display: block;
-        background-color: #326de6;
+        background-color: $accent-color;
         bottom: 0;
         left: 0;
       }
@@ -312,7 +314,7 @@
 
 .SelectRestore--wrapper {
   background: #FFFFFF;
-  border: 1px solid #DFDFDF;
+  border: 1px solid $border-color;
   box-sizing: border-box;
   border-radius: 4px;
   padding: 12px 15px;
@@ -320,8 +322,8 @@
   cursor: pointer;
 
   &.is-selected {
-    background: #F5F8FC;
-    border: 1px solid #326DE6;
+    background: lighten($primary-color, 43.5%);
+    border: 1px solid $primary-color;
   }
 }
 
@@ -329,12 +331,12 @@
   cursor: pointer;
   outline: none;
   position: relative;
-  background-color: #326DE6;
+  background-color: $primary-color;
   color: #ffffff;
   border: none;
 
   &:not(:disabled):hover {
-    background-color: #265BC7;
+    background-color: darken($primary-color, 8%);
   }
   border-radius: 3px;
   height: 28px;

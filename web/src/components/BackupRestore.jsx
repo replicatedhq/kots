@@ -115,16 +115,16 @@ class BackupRestore extends React.Component {
     return (
       <div className="flex flex-column">
         <div className="flex-auto">
-          <Link to="/upload-license" className="u-fontSize--normal u-fontWeight--medium u-color--royalBlue u-cursor--pointer">
+          <Link to="/upload-license" className="u-fontSize--normal u-fontWeight--medium u-linkColor u-cursor--pointer">
             <span className="icon clickable backArrow-icon u-marginRight--10" style={{ verticalAlign: "0" }} />
           Back to license upload
         </Link>
-          <p className="u-fontSize--largest u-color--tuna u-fontWeight--bold u-marginTop--10">Select a snapshot to restore from</p>
-          <p className="u-fontSize--normal u-fontWeight--medium u-color--dustyGray u-lineHeight--normal u-marginTop--5">
+          <p className="u-fontSize--largest u-textColor--primary u-fontWeight--bold u-marginTop--10">Select a snapshot to restore from</p>
+          <p className="u-fontSize--normal u-fontWeight--medium u-textColor--bodyCopy u-lineHeight--normal u-marginTop--5">
             Choose the snapshot backup that you want to restore your application from.
         </p>
           {!isEmpty(this.state.backups) &&
-            <p className="u-fontSize--normal u-fontWeight--medium u-color--dustyGray u-lineHeight--normal u-marginTop--5">
+            <p className="u-fontSize--normal u-fontWeight--medium u-textColor--bodyCopy u-lineHeight--normal u-marginTop--5">
               Not seeing the the snapshots you want? <Link to="/snapshots?=license-upload" className="replicated-link">Pull from a different bucket</Link>.
         </p>}
         </div>
@@ -141,8 +141,8 @@ class BackupRestore extends React.Component {
             })}
           </div> :
           <div className="EmptyBackup--wrapper flex1 alignItems--center u-marginTop--20">
-            <p className="u-fontSize--normal u-color--tundora u-fontWeight--bold"> No backups availible </p>
-            <p className="u-fontSize--normal u-fontWeight--medium u-color--dustyGray u-lineHeight--normal u-marginTop--5">
+            <p className="u-fontSize--normal u-textColor--secondary u-fontWeight--bold"> No backups availible </p>
+            <p className="u-fontSize--normal u-fontWeight--medium u-textColor--bodyCopy u-lineHeight--normal u-marginTop--5">
               Not seeing the the snapshots you want? <Link to="/snapshots?=license-upload" className="replicated-link u-fontSize--normal">Check a different bucket</Link>.
         </p>
           </div>
@@ -155,8 +155,8 @@ class BackupRestore extends React.Component {
     return (
       <div className="flex flex-column BackupRestoreBox--wrapper">
         <div className="flex-auto">
-          <p className="u-fontSize--largest u-color--tuna u-fontWeight--bold u-marginTop--10">Selected backup</p>
-          <p className="u-fontSize--normal u-fontWeight--medium u-color--dustyGray u-lineHeight--normal u-marginTop--5"> KOTS Admin Console will be restored from this backup.</p>
+          <p className="u-fontSize--largest u-textColor--primary u-fontWeight--bold u-marginTop--10">Selected backup</p>
+          <p className="u-fontSize--normal u-fontWeight--medium u-textColor--bodyCopy u-lineHeight--normal u-marginTop--5"> KOTS Admin Console will be restored from this backup.</p>
         </div>
         <div className="flex flex-column">
           <RestoreSnapshotRow
@@ -168,8 +168,8 @@ class BackupRestore extends React.Component {
         </div>
         <div className="flex-auto flex-column justifyContent--center u-marginTop--40">
           <div className="flex-auto">
-            <p className="u-fontSize--largest u-color--tuna u-fontWeight--bold u-marginTop--10">{`Provide your license file ${applicationName ? `for ${applicationName}` : ""}`}</p>
-            <p className="u-fontSize--normal u-fontWeight--medium u-color--dustyGray u-lineHeight--normal u-marginTop--5">{`In order to do a complete restore of your application you must provide the license file ${applicationName ? `for ${applicationName}` : ""}.`}</p>
+            <p className="u-fontSize--largest u-textColor--primary u-fontWeight--bold u-marginTop--10">{`Provide your license file ${applicationName ? `for ${applicationName}` : ""}`}</p>
+            <p className="u-fontSize--normal u-fontWeight--medium u-textColor--bodyCopy u-lineHeight--normal u-marginTop--5">{`In order to do a complete restore of your application you must provide the license file ${applicationName ? `for ${applicationName}` : ""}.`}</p>
             <div className="u-marginTop--15">
               <UploadLicenseFile appName={applicationName} logo={logo} isBackupRestore snapshot={selectedBackup} />
             </div>
@@ -180,7 +180,7 @@ class BackupRestore extends React.Component {
   }
 
   renderNotVeleroMessage = () => {
-    return <p className="u-color--chestnut u-fontSize--small u-fontWeight--medium u-lineHeight--normal u-marginTop--12">Not able to find Velero</p>
+    return <p className="u-textColor--error u-fontSize--small u-fontWeight--medium u-lineHeight--normal u-marginTop--12">Not able to find Velero</p>
   }
 
   navigateToSnapshotConfiguration = () => {

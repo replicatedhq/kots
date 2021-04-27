@@ -41,8 +41,8 @@ export default class ErrorBoundaryComponent extends React.Component {
               <span
                 className="icon errorWarningIcon u-marginBottom--20 u-textAlign--center alignSelf--center"
               ></span>
-              <p className="u-textAlign--center alignItems--center u-fontSize--header2 u-fontWeight--bold u-color--tundora">Oops, something went wrong.</p>
-              <p className=" u-textAlign--center u-marginTop--20 u-fontWeight--medium u-color--dustyGray u-fontSize--normal u-lineHeight--normal"> Click the button below to try again. </p>
+              <p className="u-textAlign--center alignItems--center u-fontSize--header2 u-fontWeight--bold u-textColor--secondary">Oops, something went wrong.</p>
+              <p className=" u-textAlign--center u-marginTop--20 u-fontWeight--medium u-textColor--bodyCopy u-fontSize--normal u-lineHeight--normal"> Click the button below to try again. </p>
               <div className="flex alignItems--center alignSelf--center u-marginTop--20">
                 <button className="btn secondary" onClick={() => this.backToAdminConsole()}> Back to Admin Console </button>
               </div>

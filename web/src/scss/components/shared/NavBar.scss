@@ -1,10 +1,12 @@
+@import "../../variables.scss";
+
 /* Header */
 
 .NavBarWrapper {
   width: 100%;
   padding: 0;
-  background-color: #FFFFFF;
-  box-shadow: 0 1px 0 #DFDFDF;
+  background-color: $nav-color;
+  box-shadow: 0 1px 0 $border-color;
   margin-bottom: 0;
   min-height: 50px;
   &.cluster-scope {
@@ -16,12 +18,6 @@
       font-size: 12px;
     }
   }
-}
-
-.NavBar-add-app {
-  padding: 8px 25px;
-  border: 2px solid #44BB66;
-  border-radius: 30px;
 }
 
 /* Header Logo */
@@ -38,7 +34,7 @@
 .HeaderLogo .text {
   font-size: 16px;
   font-weight: 600;
-  color: #4A4A4A;
+  color: $nav-text-color;
   margin-left: 10px;
 }
 
@@ -50,6 +46,7 @@
   background-size: contain;
   background-repeat: no-repeat;
   box-shadow: inset 0 0 3px rgba(0,0,0,0.3);
+  background-color: #ffffff;
   z-index: 1;
 }
 
@@ -60,7 +57,7 @@
   padding: 0;
   margin: 0;
   cursor: pointer;
-  color: #4A4A4A;
+  color: $nav-text-color;
   font-size: 14px;
   font-weight: 500;
   line-height: 14px;
@@ -68,11 +65,11 @@
   user-select: none;
 
   &.is-active {
-    border-bottom: 2px solid #326DE6;
+    border-bottom: 2px solid $accent-color;
   }
 
   &:hover {
-    color: #323232;
+    color: darken($nav-text-color, 8%);
     text-decoration: none;
   }
 }

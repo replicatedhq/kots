@@ -21,8 +21,8 @@ export default function ErrorModal(props) {
         <div className="flex flex-column justifyContent--center alignItems--center">
           <span className="icon redWarningIcon flex-auto" />
           <div className="flex flex-column alignItems--center u-marginTop--10">
-            <p className="u-color--chestnut u-fontSize--largest u-fontWeight--bold u-lineHeight--normal">{err}</p>
-            <p className="u-color--chestnut u-fontSize--normal u-fontWeight--medium u-lineHeight--normal u-textAlign--center">{errMsg}</p>
+            <p className="u-textColor--error u-fontSize--largest u-fontWeight--bold u-lineHeight--normal">{err}</p>
+            <p className="u-textColor--error u-fontSize--normal u-fontWeight--medium u-lineHeight--normal u-textAlign--center">{errMsg}</p>
           </div>
           <div className="flex u-marginTop--20">
             <Link to={appSlug ? `/app/${appSlug}` : "/"} className="btn secondary blue">Back to the dashboard</Link>
