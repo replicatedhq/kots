@@ -208,7 +208,7 @@ class Dashboard extends Component {
     this.setState({
       airgapUploader: new AirgapUploader(true, app.slug, this.onDropBundle, simultaneousUploads),
     });
-}
+  }
 
   getAppDashboard = () => {
     return new Promise((resolve, reject) => {
@@ -560,13 +560,11 @@ class Dashboard extends Component {
   }
 
   onSnapshotOptionChange = (selectedSnapshotOption) => {
-    this.setState({ selectedSnapshotOption }, () => {
-      if (selectedSnapshotOption.option === "learn") {
-        this.setState({ snapshotDifferencesModal: true });
-      } else {
-        this.startASnapshot(selectedSnapshotOption.option);
-      }
-    });
+    if (selectedSnapshotOption.option === "learn") {
+      this.setState({ snapshotDifferencesModal: true });
+    } else {
+      this.startASnapshot(selectedSnapshotOption.option);
+    }
   }
 
   toggleSnaphotDifferencesModal = () => {

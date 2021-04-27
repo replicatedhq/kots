@@ -63,7 +63,7 @@ export default class SnapshotInstallationBox extends Component {
         {this.renderVeleroErrors(snapshotSettings)}
         {this.renderResticErrors(snapshotSettings)}
         <div className="CheckVelero--wrapper flex1 flex-column justifyContent--center">
-          <p className="u-color--accent u-fontSize--large u-fontWeight--bold">Check Velero installation</p>
+          <p className="u-textColor--primary u-fontSize--large u-fontWeight--bold">Check Velero installation</p>
           {!hideCheckVeleroButton ?
             <div className="u-marginTop--12">
               <button className="btn secondary blue" onClick={() => fetchSnapshotSettings(true)}>Check for Velero</button>
@@ -71,7 +71,7 @@ export default class SnapshotInstallationBox extends Component {
             : renderNotVeleroMessage()
           }
           {snapshotSettings?.veleroVersion ?
-            <span className="flex alignItems--center u-marginTop--10 u-fontSize--small u-fontWeight--medium u-color--primary"><span className="icon checkmark-icon u-marginRight--5" />Velero is installed on your cluster</span> : null}
+            <span className="flex alignItems--center u-marginTop--10 u-fontSize--small u-fontWeight--medium u-textColor--primary"><span className="icon checkmark-icon u-marginRight--5" />Velero is installed on your cluster</span> : null}
         </div>
       </div>
     );
