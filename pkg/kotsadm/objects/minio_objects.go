@@ -14,20 +14,30 @@ import (
 )
 
 func MinioStatefulset(deployOptions types.DeployOptions, size resource.Quantity) *appsv1.StatefulSet {
+	imageTag := "RELEASE.2021-04-06T23-11-00Z"
+	if deployOptions.KotsadmOptions.OverrideVersion != "" {
+		imageTag = deployOptions.KotsadmOptions.OverrideVersion
+	}
+
+	image := fmt.Sprintf("minio/minio:%s", imageTag)
+	var pullSecrets []corev1.LocalObjectReference
+	if s := kotsadmversion.KotsadmPullSecret(deployOptions.Namespace, deployOptions.KotsadmOptions); s != nil {
+		image = fmt.Sprintf("%s/minio:%s", kotsadmversion.KotsadmRegistry(deployOptions.KotsadmOptions), imageTag)
+		pullSecrets = []corev1.LocalObjectReference{
+			{
+				Name: s.ObjectMeta.Name,
+			},
+		}
+	} else if deployOptions.KotsadmOptions.OverrideRegistry != "" {
+		// if there is a registry specified, use the postgres image there and not the one from docker hub - even though there's not a username/password specified
+		image = fmt.Sprintf("%s/minio:%s", kotsadmversion.KotsadmRegistry(deployOptions.KotsadmOptions), imageTag)
+	}
+
 	var securityContext corev1.PodSecurityContext
 	if !deployOptions.IsOpenShift {
 		securityContext = corev1.PodSecurityContext{
 			RunAsUser: util.IntPointer(1001),
 			FSGroup:   util.IntPointer(1001),
-		}
-	}
-
-	var pullSecrets []corev1.LocalObjectReference
-	if s := kotsadmversion.KotsadmPullSecret(deployOptions.Namespace, deployOptions.KotsadmOptions); s != nil {
-		pullSecrets = []corev1.LocalObjectReference{
-			{
-				Name: s.ObjectMeta.Name,
-			},
 		}
 	}
 
@@ -98,7 +108,7 @@ func MinioStatefulset(deployOptions types.DeployOptions, size resource.Quantity)
 					},
 					Containers: []corev1.Container{
 						{
-							Image:           fmt.Sprintf("%s/minio:%s", kotsadmversion.KotsadmRegistry(deployOptions.KotsadmOptions), kotsadmversion.KotsadmTag(deployOptions.KotsadmOptions)),
+							Image:           image,
 							ImagePullPolicy: corev1.PullIfNotPresent,
 							Name:            "kotsadm-minio",
 							Command: []string{

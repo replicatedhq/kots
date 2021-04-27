@@ -572,61 +572,6 @@ jobs:
         make -C kurl_proxy build-release
 
 
-  build_minio_alpha:
-    runs-on: ubuntu-18.04
-    if: ${{ github.ref == 'refs/heads/master' }}
-    steps:
-    - name: Checkout
-      uses: actions/checkout@v2
-
-    - uses: azure/docker-login@v1
-      with:
-        username: ${{ secrets.DOCKERHUB_USER }}
-        password: ${{ secrets.DOCKERHUB_PASSWORD }}
-
-    - name: Build alpha release
-      env:
-        GIT_COMMIT: ${{ github.sha }}
-      run: |
-        make -C deploy/minio publish-latest
-
-
-  build_minio_tagged:
-    runs-on: ubuntu-18.04
-    steps:
-    - name: Checkout
-      uses: actions/checkout@v2
-
-    - uses: azure/docker-login@v1
-      env:
-        DOCKER_CONFIG: ./deploy/minio/.docker
-      with:
-        username: ${{ secrets.DOCKERHUB_USER }}
-        password: ${{ secrets.DOCKERHUB_PASSWORD }}
-
-    - name: Get the version
-      if: startsWith(github.ref, 'refs/tags/')
-      id: get_tag
-      shell: bash
-      run: echo ::set-output name=GIT_TAG::${GITHUB_REF/refs\/tags\//}
-
-    - name: Build tagged release
-      if: ${{ steps.get_tag.outputs.GIT_TAG != '' }}
-      env:
-        GIT_TAG: ${{ steps.get_tag.outputs.GIT_TAG }}
-        DOCKER_CONFIG: ./.docker
-      uses: ./actions/containers
-      with:
-        command: "make -C deploy/minio publish-release"
-
-    - name: Upload airgap image
-      if: ${{ steps.get_tag.outputs.GIT_TAG != '' }}
-      uses: actions/upload-artifact@v2.2.3
-      with:
-        name: kotsadm-minio-image
-        path: ./deploy/minio/bin/docker-archive
-
-
   scan_postgres_alpine:
     runs-on: ubuntu-18.04
     needs: [build-schema-migrations]
@@ -691,7 +636,6 @@ jobs:
 
   scan_minio:
     runs-on: ubuntu-18.04
-    needs: [build_minio_alpha]
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -699,7 +643,7 @@ jobs:
         id: scan
         uses: anchore/scan-action@v2
         with:
-          image: "kotsadm/minio:alpha"
+          image: "minio/minio:RELEASE.2021-04-06T23-11-00Z"
           fail-build: false
           acs-report-enable: true
           severity-cutoff: high
@@ -792,7 +736,7 @@ jobs:
 
   build_airgap:
     runs-on: ubuntu-18.04
-    needs: [release_go_api_tagged, release_operator_tagged, build_minio_tagged]
+    needs: [release_go_api_tagged, release_operator_tagged]
     steps:
     - name: Get the version
       if: startsWith(github.ref, 'refs/tags/')
@@ -819,13 +763,6 @@ jobs:
       uses: actions/download-artifact@v2.0.9
       with:
         name: kotsadm-operator-image
-        path: ./docker-archive
-
-    - name: Download kotsadm-minio image
-      if: ${{ steps.get_tag.outputs.GIT_TAG != '' }}
-      uses: actions/download-artifact@v2.0.9
-      with:
-        name: kotsadm-minio-image
         path: ./docker-archive
 
     - name: Get Release

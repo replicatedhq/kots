@@ -98,13 +98,11 @@ jobs:
           ignore-unfixed: true
           severity: 'CRITICAL,HIGH'
 
-      - name: build and push minio for e2e
-        uses: docker/build-push-action@v2.4.0
-        with:
-          tags: ttl.sh/automated-${{ github.run_id }}/minio:2h
-          context: ./deploy/minio
-          file: ./deploy/minio/Dockerfile
-          push: true
+      - name: push minio for e2e
+        run: |
+          docker pull minio/minio:RELEASE.2021-04-06T23-11-00Z
+          docker tag minio/minio:RELEASE.2021-04-06T23-11-00Z ttl.sh/automated-${{ github.run_id }}/minio:2h
+          docker push ttl.sh/automated-${{ github.run_id }}/minio:2h
       - name: Scan minio for vulnerabilities
         uses: aquasecurity/trivy-action@master
         with:

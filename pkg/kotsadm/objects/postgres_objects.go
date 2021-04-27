@@ -2,7 +2,6 @@ package kotsadm
 
 import (
 	"fmt"
-	"strings"
 
 	"github.com/replicatedhq/kots/pkg/kotsadm/types"
 	kotsadmversion "github.com/replicatedhq/kots/pkg/kotsadm/version"
@@ -15,15 +14,21 @@ import (
 )
 
 func PostgresStatefulset(deployOptions types.DeployOptions, size resource.Quantity) *appsv1.StatefulSet {
-	image := "postgres:10.16-alpine"
+	imageTag := "10.16-alpine"
 	if deployOptions.IsOpenShift {
 		// use the debian stretch based image for openshift because of this issue in alpine https://github.com/docker-library/postgres/issues/359
-		image = "postgres:10.16"
+		// TODO: This breaks when the hidden kotsadm-tag CLI flag is used to push images.  There will be only one postgres image.
+		imageTag = "10.16"
 	}
 
+	if deployOptions.KotsadmOptions.OverrideVersion != "" {
+		imageTag = deployOptions.KotsadmOptions.OverrideVersion
+	}
+
+	image := fmt.Sprintf("postgres:%s", imageTag)
 	var pullSecrets []corev1.LocalObjectReference
 	if s := kotsadmversion.KotsadmPullSecret(deployOptions.Namespace, deployOptions.KotsadmOptions); s != nil {
-		image = fmt.Sprintf("%s/postgres:%s", kotsadmversion.KotsadmRegistry(deployOptions.KotsadmOptions), strings.Split(image, ":")[1])
+		image = fmt.Sprintf("%s/postgres:%s", kotsadmversion.KotsadmRegistry(deployOptions.KotsadmOptions), imageTag)
 		pullSecrets = []corev1.LocalObjectReference{
 			{
 				Name: s.ObjectMeta.Name,
@@ -31,7 +36,7 @@ func PostgresStatefulset(deployOptions types.DeployOptions, size resource.Quanti
 		}
 	} else if deployOptions.KotsadmOptions.OverrideRegistry != "" {
 		// if there is a registry specified, use the postgres image there and not the one from docker hub - even though there's not a username/password specified
-		image = fmt.Sprintf("%s/postgres:%s", kotsadmversion.KotsadmRegistry(deployOptions.KotsadmOptions), kotsadmversion.KotsadmTag(deployOptions.KotsadmOptions))
+		image = fmt.Sprintf("%s/postgres:%s", kotsadmversion.KotsadmRegistry(deployOptions.KotsadmOptions), imageTag)
 	}
 
 	var securityContext corev1.PodSecurityContext

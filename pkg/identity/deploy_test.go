@@ -20,6 +20,7 @@ func Test_imageRewriteKotsadmRegistry(t *testing.T) {
 	tests := []struct {
 		name                 string
 		args                 args
+		isDependency         bool
 		wantImage            string
 		wantImagePullSecrets []corev1.LocalObjectReference
 		wantErr              bool
@@ -29,6 +30,7 @@ func Test_imageRewriteKotsadmRegistry(t *testing.T) {
 			args: args{
 				upstreamImage: "quay.io/dexidp/dex:v2.26.0",
 			},
+			isDependency:         true,
 			wantImage:            "quay.io/dexidp/dex:v2.26.0",
 			wantImagePullSecrets: nil,
 		},
@@ -40,7 +42,35 @@ func Test_imageRewriteKotsadmRegistry(t *testing.T) {
 				},
 				upstreamImage: "quay.io/dexidp/dex:v2.26.0",
 			},
+			isDependency:         true,
 			wantImage:            "quay.io/dexidp/dex:v2.26.0",
+			wantImagePullSecrets: nil,
+		},
+		{
+			name: "dex no rewrite tag",
+			args: args{
+				registryOptions: kotsadmtypes.KotsadmOptions{
+					OverrideNamespace: "testnamespace",
+				},
+				upstreamImage: "quay.io/dexidp/dex:v2.26.0",
+				alwaysRewrite: true,
+			},
+			isDependency:         true,
+			wantImage:            "testnamespace/dex:v2.26.0",
+			wantImagePullSecrets: nil,
+		},
+		{
+			name: "dex rewrite tag",
+			args: args{
+				registryOptions: kotsadmtypes.KotsadmOptions{
+					OverrideNamespace: "testnamespace",
+					OverrideVersion:   "v0.0.1",
+				},
+				upstreamImage: "quay.io/dexidp/dex:v2.26.0",
+				alwaysRewrite: true,
+			},
+			isDependency:         true,
+			wantImage:            "testnamespace/dex:v0.0.1",
 			wantImagePullSecrets: nil,
 		},
 		{
@@ -48,6 +78,7 @@ func Test_imageRewriteKotsadmRegistry(t *testing.T) {
 			args: args{
 				upstreamImage: "kotsadm/kotsadm:v1.25.0",
 			},
+			isDependency:         false,
 			wantImage:            "kotsadm/kotsadm:v1.25.0",
 			wantImagePullSecrets: nil,
 		},
@@ -60,13 +91,17 @@ func Test_imageRewriteKotsadmRegistry(t *testing.T) {
 				upstreamImage: "kotsadm/kotsadm:v1.25.0",
 				alwaysRewrite: true,
 			},
+			isDependency:         false,
 			wantImage:            "testnamespace/kotsadm:v0.0.0-unknown",
 			wantImagePullSecrets: nil,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			fn := kotsadmversion.ImageRewriteKotsadmRegistry(tt.args.namespace, &tt.args.registryOptions)
+			fn := kotsadmversion.KotsadmImageRewriteKotsadmRegistry(tt.args.namespace, &tt.args.registryOptions)
+			if tt.isDependency {
+				fn = kotsadmversion.DependencyImageRewriteKotsadmRegistry(tt.args.namespace, &tt.args.registryOptions)
+			}
 			gotImage, gotImagePullSecrets, err := fn(tt.args.upstreamImage, tt.args.alwaysRewrite)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("ImageRewriteFunc() error = %v, wantErr %v", err, tt.wantErr)

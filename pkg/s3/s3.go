@@ -177,7 +177,7 @@ func s3BucketPod(clientset kubernetes.Interface, podOptions S3OpsPodOptions, com
 
 	if !kotsutil.IsKurl(clientset) || podOptions.Namespace != metav1.NamespaceDefault {
 		var err error
-		imageRewriteFn := kotsadmversion.ImageRewriteKotsadmRegistry(podOptions.Namespace, podOptions.RegistryOptions)
+		imageRewriteFn := kotsadmversion.KotsadmImageRewriteKotsadmRegistry(podOptions.Namespace, podOptions.RegistryOptions)
 		image, imagePullSecrets, err = imageRewriteFn(image, false)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to rewrite image")

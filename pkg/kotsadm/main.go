@@ -114,6 +114,10 @@ func Upgrade(upgradeOptions types.UpgradeOptions) error {
 	deployOptions.KotsadmOptions = upgradeOptions.KotsadmOptions
 	deployOptions.EnsureRBAC = upgradeOptions.EnsureRBAC
 	deployOptions.SimultaneousUploads = upgradeOptions.SimultaneousUploads
+	deployOptions.StorageBaseURI = upgradeOptions.StorageBaseURI
+	deployOptions.StorageBaseURIPlainHTTP = upgradeOptions.StorageBaseURIPlainHTTP
+	deployOptions.IncludeMinio = upgradeOptions.IncludeMinio
+	deployOptions.IncludeDockerDistribution = upgradeOptions.IncludeDockerDistribution
 
 	if err := ensureKotsadm(*deployOptions, clientset, log); err != nil {
 		return errors.Wrap(err, "failed to upgrade admin console")
@@ -223,10 +227,6 @@ func Deploy(deployOptions types.DeployOptions) error {
 		if err := ensureWaitForAirgapConfig(deployOptions, clientset, "kotsadm-airgap-app"); err != nil {
 			return errors.Wrap(err, "failed to create config from app.tar.gz")
 		}
-	}
-
-	if err := ensureStorage(deployOptions, clientset, log); err != nil {
-		return errors.Wrap(err, "failed to deploy to backing storage") // originally 'failed to deplioyt backing storage'
 	}
 
 	if err := ensureKotsadm(deployOptions, clientset, log); err != nil {
@@ -370,12 +370,22 @@ func ensureKotsadm(deployOptions types.DeployOptions, clientset *kubernetes.Clie
 			return errors.Wrap(err, "failed to ensure kotsadm config")
 		}
 
+		if err := ensureStorage(deployOptions, clientset, log); err != nil {
+			return errors.Wrap(err, "failed to ensure postgres")
+		}
+
+		if deployOptions.IncludeMinio {
+			if err := waitForHealthyStatefulSet("kotsadm-minio", deployOptions, clientset, nil); err != nil {
+				return errors.Wrap(err, "failed to wait for minio")
+			}
+		}
+
 		if err := ensurePostgres(deployOptions, clientset); err != nil {
 			return errors.Wrap(err, "failed to ensure postgres")
 		}
 
-		if err := waitForHealthyPostgres(deployOptions, clientset); err != nil {
-			return errors.Wrap(err, "failed to run database migrations")
+		if err := waitForHealthyStatefulSet("kotsadm-postgres", deployOptions, clientset, log); err != nil {
+			return errors.Wrap(err, "failed to wait for postgres")
 		}
 
 		if err := ensureSecrets(&deployOptions, clientset); err != nil {

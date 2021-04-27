@@ -241,13 +241,12 @@ func ensureFileSystemMinioDeployment(ctx context.Context, clientset kubernetes.I
 }
 
 func fileSystemMinioDeploymentResource(clientset kubernetes.Interface, secretChecksum string, deployOptions FileSystemDeployOptions, registryOptions kotsadmtypes.KotsadmOptions) (*appsv1.Deployment, error) {
-	kotsadmTag := kotsadmversion.KotsadmTag(kotsadmtypes.KotsadmOptions{}) // default tag
-	image := fmt.Sprintf("kotsadm/minio:%s", kotsadmTag)
+	image := "minio/minio:RELEASE.2021-04-06T23-11-00Z"
 	imagePullSecrets := []corev1.LocalObjectReference{}
 
 	if !kotsutil.IsKurl(clientset) || deployOptions.Namespace != metav1.NamespaceDefault {
 		var err error
-		imageRewriteFn := kotsadmversion.ImageRewriteKotsadmRegistry(deployOptions.Namespace, &registryOptions)
+		imageRewriteFn := kotsadmversion.DependencyImageRewriteKotsadmRegistry(deployOptions.Namespace, &registryOptions)
 		image, imagePullSecrets, err = imageRewriteFn(image, false)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to rewrite image")
@@ -726,7 +725,7 @@ func fileSystemMinioConfigPod(clientset kubernetes.Interface, deployOptions File
 
 	if !kotsutil.IsKurl(clientset) || deployOptions.Namespace != metav1.NamespaceDefault {
 		var err error
-		imageRewriteFn := kotsadmversion.ImageRewriteKotsadmRegistry(deployOptions.Namespace, &registryOptions)
+		imageRewriteFn := kotsadmversion.KotsadmImageRewriteKotsadmRegistry(deployOptions.Namespace, &registryOptions)
 		image, imagePullSecrets, err = imageRewriteFn(image, false)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to rewrite image")
