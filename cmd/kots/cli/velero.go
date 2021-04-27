@@ -819,6 +819,9 @@ type VeleroConfigureFileSystemOptions struct {
 }
 
 func veleroConfigureFileSystem(ctx context.Context, log *logger.CLILogger, opts VeleroConfigureFileSystemOptions) error {
+	if opts.Output != "" {
+		log.Silence()
+	}
 	log.ActionWithSpinner("Setting up File System Minio")
 
 	clientset, err := k8sutil.GetClientset()
@@ -879,7 +882,7 @@ func veleroConfigureFileSystem(ctx context.Context, log *logger.CLILogger, opts 
 		if err != nil {
 			return errors.Wrap(err, "failed to get printable file system velero config")
 		}
-		if opts.Output != "json" {
+		if opts.Output == "" {
 			log.ActionWithoutSpinner("file system configuration for the Admin Console is successful, but no Velero installation has been detected.")
 		}
 		print.FileSystemMinioVeleroInfo(c, opts.Output, log)
