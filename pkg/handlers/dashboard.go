@@ -7,7 +7,6 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
 	appstatustypes "github.com/replicatedhq/kots/pkg/api/appstatus/types"
-	downstream "github.com/replicatedhq/kots/pkg/kotsadmdownstream"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/store"
 	"github.com/replicatedhq/kots/pkg/version"
@@ -37,7 +36,7 @@ func (h *Handler) GetAppDashboard(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	parentSequence, err := downstream.GetCurrentParentSequence(a.ID, clusterID)
+	parentSequence, err := store.GetStore().GetCurrentParentSequence(a.ID, clusterID)
 	if err != nil {
 		logger.Error(err)
 		w.WriteHeader(500)

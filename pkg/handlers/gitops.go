@@ -10,7 +10,6 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/gitops"
-	downstream "github.com/replicatedhq/kots/pkg/kotsadmdownstream"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/store"
 )
@@ -196,7 +195,7 @@ func (h *Handler) InitGitOpsConnection(w http.ResponseWriter, r *http.Request) {
 			}
 		}()
 
-		currentVersion, err := downstream.GetCurrentVersion(a.ID, d.ClusterID)
+		currentVersion, err := store.GetStore().GetCurrentVersion(a.ID, d.ClusterID)
 		if err != nil {
 			err = errors.Wrap(err, "failed to get downstream current version")
 			logger.Error(err)
@@ -204,7 +203,7 @@ func (h *Handler) InitGitOpsConnection(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		pendingVersions, err := downstream.GetPendingVersions(a.ID, d.ClusterID)
+		pendingVersions, err := store.GetStore().GetPendingVersions(a.ID, d.ClusterID)
 		if err != nil {
 			err = errors.Wrap(err, "failed to get downstream pending versions")
 			logger.Error(err)

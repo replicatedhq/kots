@@ -10,7 +10,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/api/reporting/types"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
-	downstream "github.com/replicatedhq/kots/pkg/kotsadmdownstream"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/kurl"
 	"github.com/replicatedhq/kots/pkg/logger"
@@ -119,7 +118,7 @@ func getDownstreamInfo(appID string) (*types.DownstreamInfo, error) {
 		return nil, errors.New("no downstreams found for app")
 	}
 
-	deployedAppSequence, err := downstream.GetCurrentParentSequence(appID, downstreams[0].ClusterID)
+	deployedAppSequence, err := store.GetStore().GetCurrentParentSequence(appID, downstreams[0].ClusterID)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get current downstream parent sequence")
 	}

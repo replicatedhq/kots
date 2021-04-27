@@ -11,7 +11,6 @@ import (
 	"github.com/replicatedhq/kots/pkg/api/handlers/types"
 	apptypes "github.com/replicatedhq/kots/pkg/app/types"
 	"github.com/replicatedhq/kots/pkg/gitops"
-	downstream "github.com/replicatedhq/kots/pkg/kotsadmdownstream"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/rbac"
 	"github.com/replicatedhq/kots/pkg/render"
@@ -181,7 +180,7 @@ func responseAppFromApp(a *apptypes.App) (*types.ResponseApp, error) {
 
 	responseDownstreams := []types.ResponseDownstream{}
 	for _, d := range downstreams {
-		parentSequence, err := downstream.GetCurrentParentSequence(a.ID, d.ClusterID)
+		parentSequence, err := store.GetStore().GetCurrentParentSequence(a.ID, d.ClusterID)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to get current parent sequence for downstream")
 		}
@@ -191,17 +190,17 @@ func responseAppFromApp(a *apptypes.App) (*types.ResponseApp, error) {
 			return nil, errors.Wrap(err, "failed to get realized links from app spec")
 		}
 
-		currentVersion, err := downstream.GetCurrentVersion(a.ID, d.ClusterID)
+		currentVersion, err := store.GetStore().GetCurrentVersion(a.ID, d.ClusterID)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to get current downstream version")
 		}
 
-		pendingVersions, err := downstream.GetPendingVersions(a.ID, d.ClusterID)
+		pendingVersions, err := store.GetStore().GetPendingVersions(a.ID, d.ClusterID)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to get pending versions")
 		}
 
-		pastVersions, err := downstream.GetPastVersions(a.ID, d.ClusterID)
+		pastVersions, err := store.GetStore().GetPastVersions(a.ID, d.ClusterID)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to get past versions")
 		}
@@ -247,7 +246,7 @@ func responseAppFromApp(a *apptypes.App) (*types.ResponseApp, error) {
 	// check snapshots for the parent sequence of the deployed version
 	allowSnapshots := false
 	if len(downstreams) > 0 {
-		parentSequence, err := downstream.GetCurrentParentSequence(a.ID, downstreams[0].ClusterID)
+		parentSequence, err := store.GetStore().GetCurrentParentSequence(a.ID, downstreams[0].ClusterID)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to get current parent sequence for downstream")
 		}
@@ -317,7 +316,7 @@ func (h *Handler) GetAppVersionHistory(w http.ResponseWriter, r *http.Request) {
 
 	clusterID := downstreams[0].ClusterID
 
-	currentVersion, err := downstream.GetCurrentVersion(foundApp.ID, clusterID)
+	currentVersion, err := store.GetStore().GetCurrentVersion(foundApp.ID, clusterID)
 	if err != nil {
 		err = errors.Wrap(err, "failed to get current downstream version")
 		logger.Error(err)
@@ -325,7 +324,7 @@ func (h *Handler) GetAppVersionHistory(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	pendingVersions, err := downstream.GetPendingVersions(foundApp.ID, clusterID)
+	pendingVersions, err := store.GetStore().GetPendingVersions(foundApp.ID, clusterID)
 	if err != nil {
 		err = errors.Wrap(err, "failed to get pending versions")
 		logger.Error(err)
@@ -333,7 +332,7 @@ func (h *Handler) GetAppVersionHistory(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	pastVersions, err := downstream.GetPastVersions(foundApp.ID, clusterID)
+	pastVersions, err := store.GetStore().GetPastVersions(foundApp.ID, clusterID)
 	if err != nil {
 		err = errors.Wrap(err, "failed to get past versions")
 		logger.Error(err)
@@ -398,7 +397,7 @@ func (h *Handler) RemoveApp(w http.ResponseWriter, r *http.Request) {
 		}
 
 		for _, d := range downstreams {
-			currentVersion, err := downstream.GetCurrentVersion(app.ID, d.ClusterID)
+			currentVersion, err := store.GetStore().GetCurrentVersion(app.ID, d.ClusterID)
 			if err != nil {
 				response.Error = "failed to get current downstream version"
 				logger.Error(errors.Wrap(err, response.Error))

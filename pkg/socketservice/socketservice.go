@@ -21,7 +21,6 @@ import (
 	apptypes "github.com/replicatedhq/kots/pkg/app/types"
 	identitydeploy "github.com/replicatedhq/kots/pkg/identity/deploy"
 	identitytypes "github.com/replicatedhq/kots/pkg/identity/types"
-	downstream "github.com/replicatedhq/kots/pkg/kotsadmdownstream"
 	snapshot "github.com/replicatedhq/kots/pkg/kotsadmsnapshot"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/logger"
@@ -171,7 +170,7 @@ func processDeploySocketForApp(clusterSocket *ClusterSocket, a *apptypes.App) (b
 		return false, nil
 	}
 
-	deployedVersion, err := downstream.GetCurrentVersion(a.ID, clusterSocket.ClusterID)
+	deployedVersion, err := store.GetStore().GetCurrentVersion(a.ID, clusterSocket.ClusterID)
 	if err != nil {
 		return false, errors.Wrap(err, "failed to get current downstream version")
 	} else if deployedVersion == nil {
@@ -198,7 +197,7 @@ func deployVersionForApp(clusterSocket *ClusterSocket, a *apptypes.App, deployed
 	var deployError error
 	defer func() {
 		if deployError != nil {
-			err := downstream.UpdateDownstreamVersionStatus(a.ID, deployedVersion.Sequence, "failed", deployError.Error())
+			err := store.GetStore().UpdateDownstreamVersionStatus(a.ID, deployedVersion.Sequence, "failed", deployError.Error())
 			if err != nil {
 				logger.Error(errors.Wrap(err, "failed to update downstream status"))
 			}
@@ -290,13 +289,13 @@ func deployVersionForApp(clusterSocket *ClusterSocket, a *apptypes.App, deployed
 
 	// get previous manifests (if any)
 	base64EncodedPreviousManifests := ""
-	previouslyDeployedSequence, err := downstream.GetPreviouslyDeployedSequence(a.ID, clusterSocket.ClusterID)
+	previouslyDeployedSequence, err := store.GetStore().GetPreviouslyDeployedSequence(a.ID, clusterSocket.ClusterID)
 	if err != nil {
 		deployError = errors.Wrap(err, "failed to get previously deployed sequence")
 		return deployError
 	}
 	if previouslyDeployedSequence != -1 {
-		previouslyDeployedParentSequence, err := downstream.GetParentSequenceForSequence(a.ID, clusterSocket.ClusterID, previouslyDeployedSequence)
+		previouslyDeployedParentSequence, err := store.GetStore().GetParentSequenceForSequence(a.ID, clusterSocket.ClusterID, previouslyDeployedSequence)
 		if err != nil {
 			deployError = errors.Wrap(err, "failed to get previously deployed parent sequence")
 			return deployError
@@ -450,7 +449,7 @@ func processSupportBundle(clusterSocket *ClusterSocket, pendingSupportBundle sup
 
 	sequence := int64(0)
 
-	currentVersion, err := downstream.GetCurrentVersion(a.ID, clusterSocket.ClusterID)
+	currentVersion, err := store.GetStore().GetCurrentVersion(a.ID, clusterSocket.ClusterID)
 	if err != nil {
 		return errors.Wrap(err, "failed to get current downstream version")
 	}
@@ -701,7 +700,7 @@ func createSupportBundleSpec(appID string, sequence int64, origin string, inClus
 }
 
 func undeployApp(a *apptypes.App, d *downstreamtypes.Downstream, clusterSocket *ClusterSocket, isRestore bool) error {
-	deployedVersion, err := downstream.GetCurrentVersion(a.ID, d.ClusterID)
+	deployedVersion, err := store.GetStore().GetCurrentVersion(a.ID, d.ClusterID)
 	if err != nil {
 		return errors.Wrap(err, "failed to get current downstream version")
 	}

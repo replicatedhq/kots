@@ -12,7 +12,6 @@ import (
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	appstatustypes "github.com/replicatedhq/kots/pkg/api/appstatus/types"
 	"github.com/replicatedhq/kots/pkg/buildversion"
-	downstream "github.com/replicatedhq/kots/pkg/kotsadmdownstream"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/store"
 	troubleshootpreflight "github.com/replicatedhq/troubleshoot/pkg/preflight"
@@ -103,7 +102,7 @@ func SendPreflightInfo(appID string, sequence int, isSkipPreflights bool, isCLI 
 			time.Sleep(time.Second * 10)
 		}
 
-		currentVersionStatus, err := downstream.GetStatusForVersion(appID, clusterID, int64(sequence))
+		currentVersionStatus, err := store.GetStore().GetStatusForVersion(appID, clusterID, int64(sequence))
 		if err != nil {
 			logger.Debugf("failed to get status for version: %v", err)
 			return

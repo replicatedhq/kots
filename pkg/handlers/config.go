@@ -21,7 +21,6 @@ import (
 	kotsconfig "github.com/replicatedhq/kots/pkg/config"
 	"github.com/replicatedhq/kots/pkg/crypto"
 	kotsadmconfig "github.com/replicatedhq/kots/pkg/kotsadmconfig"
-	downstream "github.com/replicatedhq/kots/pkg/kotsadmdownstream"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/preflight"
@@ -487,7 +486,7 @@ func updateAppConfig(updateApp *apptypes.App, sequence int64, configGroups []kot
 		}
 	}
 
-	if err := downstream.SetDownstreamVersionPendingPreflight(updateApp.ID, int64(sequence)); err != nil {
+	if err := store.GetStore().SetDownstreamVersionPendingPreflight(updateApp.ID, int64(sequence)); err != nil {
 		updateAppConfigResponse.Error = "failed to set downstream status to 'pending preflight'"
 		return updateAppConfigResponse, err
 	}

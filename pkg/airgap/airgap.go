@@ -18,7 +18,6 @@ import (
 	"github.com/replicatedhq/kots/pkg/archives"
 	"github.com/replicatedhq/kots/pkg/crypto"
 	kotsadmconfig "github.com/replicatedhq/kots/pkg/kotsadmconfig"
-	downstream "github.com/replicatedhq/kots/pkg/kotsadmdownstream"
 	identity "github.com/replicatedhq/kots/pkg/kotsadmidentity"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/logger"
@@ -288,7 +287,7 @@ func CreateAppFromAirgap(opts CreateAirgapAppOpts) (finalError error) {
 					return errors.Wrap(err, "failed to deploy version")
 				}
 			} else {
-				err := downstream.SetDownstreamVersionPendingPreflight(opts.PendingApp.ID, newSequence)
+				err := store.GetStore().SetDownstreamVersionPendingPreflight(opts.PendingApp.ID, newSequence)
 				if err != nil {
 					return errors.Wrap(err, "failed to set downstream version status to 'pending preflight'")
 				}

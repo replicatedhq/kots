@@ -5,7 +5,6 @@ import (
 	"strconv"
 
 	"github.com/gorilla/mux"
-	downstream "github.com/replicatedhq/kots/pkg/kotsadmdownstream"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/store"
 )
@@ -38,7 +37,7 @@ func (h *Handler) GetDownstreamOutput(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	output, err := downstream.GetDownstreamOutput(a.ID, clusterID, int64(sequence))
+	output, err := store.GetStore().GetDownstreamOutput(a.ID, clusterID, int64(sequence))
 	if err != nil {
 		logger.Error(err)
 		w.WriteHeader(http.StatusInternalServerError)

@@ -10,7 +10,6 @@ import (
 	"github.com/replicatedhq/kots/kotskinds/client/kotsclientset/scheme"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	kotstypes "github.com/replicatedhq/kots/pkg/kotsadm/types"
-	downstream "github.com/replicatedhq/kots/pkg/kotsadmdownstream"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/registry"
@@ -40,7 +39,7 @@ func Run(appID string, appSlug string, sequence int64, isAirgap bool, archiveDir
 		return errors.Wrap(err, "failed to load rendered kots kinds")
 	}
 
-	status, err := downstream.GetDownstreamVersionStatus(appID, sequence)
+	status, err := store.GetStore().GetDownstreamVersionStatus(appID, sequence)
 	if err != nil {
 		return errors.Wrapf(err, "failed to check downstream version %d status", sequence)
 	}
@@ -54,18 +53,18 @@ func Run(appID string, appSlug string, sequence int64, isAirgap bool, archiveDir
 	}
 
 	if renderedKotsKinds.Preflight != nil {
-		status, err := downstream.GetDownstreamVersionStatus(appID, sequence)
+		status, err := store.GetStore().GetDownstreamVersionStatus(appID, sequence)
 		if err != nil {
 			return errors.Wrap(err, "failed to get version status")
 		}
 
 		if status != "deployed" {
-			if err := downstream.SetDownstreamVersionPendingPreflight(appID, sequence); err != nil {
+			if err := store.GetStore().SetDownstreamVersionPendingPreflight(appID, sequence); err != nil {
 				return errors.Wrapf(err, "failed to set downstream version %d pending preflight", sequence)
 			}
 		}
 
-		ignoreRBAC, err := downstream.GetIgnoreRBACErrors(appID, sequence)
+		ignoreRBAC, err := store.GetStore().GetIgnoreRBACErrors(appID, sequence)
 		if err != nil {
 			return errors.Wrap(err, "failed to get ignore rbac flag")
 		}
@@ -127,12 +126,12 @@ func Run(appID string, appSlug string, sequence int64, isAirgap bool, archiveDir
 			return errors.Wrap(err, "failed to deploy first version")
 		}
 	} else {
-		status, err := downstream.GetDownstreamVersionStatus(appID, sequence)
+		status, err := store.GetStore().GetDownstreamVersionStatus(appID, sequence)
 		if err != nil {
 			return errors.Wrap(err, "failed to get version status")
 		}
 		if status != "deployed" {
-			if err := downstream.SetDownstreamVersionReady(appID, sequence); err != nil {
+			if err := store.GetStore().SetDownstreamVersionReady(appID, sequence); err != nil {
 				return errors.Wrap(err, "failed to set downstream version ready")
 			}
 		}
