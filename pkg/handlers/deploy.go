@@ -13,7 +13,6 @@ import (
 	downstreamtypes "github.com/replicatedhq/kots/pkg/api/downstream/types"
 	"github.com/replicatedhq/kots/pkg/app"
 	apptypes "github.com/replicatedhq/kots/pkg/app/types"
-	downstream "github.com/replicatedhq/kots/pkg/kotsadmdownstream"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/redact"
@@ -100,7 +99,7 @@ func (h *Handler) DeployAppVersion(w http.ResponseWriter, r *http.Request) {
 		}()
 	}
 
-	if err := downstream.DeleteDownstreamDeployStatus(a.ID, downstreams[0].ClusterID, int64(sequence)); err != nil {
+	if err := store.GetStore().DeleteDownstreamDeployStatus(a.ID, downstreams[0].ClusterID, int64(sequence)); err != nil {
 		logger.Error(err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
@@ -140,7 +139,7 @@ func (h *Handler) UpdateDeployResult(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// sequence really should be passed down to operator and returned from it
-	currentSequence, err := downstream.GetCurrentSequence(updateDeployResultRequest.AppID, clusterID)
+	currentSequence, err := store.GetStore().GetCurrentSequence(updateDeployResultRequest.AppID, clusterID)
 	if err != nil {
 		logger.Error(err)
 		w.WriteHeader(http.StatusInternalServerError)
@@ -152,7 +151,7 @@ func (h *Handler) UpdateDeployResult(w http.ResponseWriter, r *http.Request) {
 		logger.Error(errors.Wrapf(err, "failed to create support bundle for sequence %d after deploying", currentSequence))
 	}
 
-	alreadySuccessful, err := downstream.IsDownstreamDeploySuccessful(updateDeployResultRequest.AppID, clusterID, currentSequence)
+	alreadySuccessful, err := store.GetStore().IsDownstreamDeploySuccessful(updateDeployResultRequest.AppID, clusterID, currentSequence)
 	if err != nil {
 		logger.Error(err)
 		w.WriteHeader(http.StatusInternalServerError)
@@ -171,7 +170,7 @@ func (h *Handler) UpdateDeployResult(w http.ResponseWriter, r *http.Request) {
 		ApplyStderr:  updateDeployResultRequest.ApplyStderr,
 		RenderError:  updateDeployResultRequest.RenderError,
 	}
-	err = downstream.UpdateDownstreamDeployStatus(updateDeployResultRequest.AppID, clusterID, currentSequence, updateDeployResultRequest.IsError, downstreamOutput)
+	err = store.GetStore().UpdateDownstreamDeployStatus(updateDeployResultRequest.AppID, clusterID, currentSequence, updateDeployResultRequest.IsError, downstreamOutput)
 	if err != nil {
 		logger.Error(err)
 		w.WriteHeader(http.StatusInternalServerError)

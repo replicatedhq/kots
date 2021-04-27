@@ -12,7 +12,6 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
-	downstream "github.com/replicatedhq/kots/pkg/kotsadmdownstream"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/redact"
@@ -219,7 +218,7 @@ func (h *Handler) GetSupportBundleCommand(w http.ResponseWriter, r *http.Request
 		JSON(w, http.StatusOK, response)
 		return
 	} else if len(downstreams) > 0 {
-		currentVersion, err := downstream.GetCurrentVersion(foundApp.ID, downstreams[0].ClusterID)
+		currentVersion, err := store.GetStore().GetCurrentVersion(foundApp.ID, downstreams[0].ClusterID)
 		if err != nil {
 			logger.Error(errors.Wrap(err, "failed to get deployed app sequence"))
 			JSON(w, http.StatusOK, response)

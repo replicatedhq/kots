@@ -9,7 +9,6 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/app"
-	downstream "github.com/replicatedhq/kots/pkg/kotsadmdownstream"
 	license "github.com/replicatedhq/kots/pkg/kotsadmlicense"
 	upstream "github.com/replicatedhq/kots/pkg/kotsadmupstream"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
@@ -249,7 +248,7 @@ func CheckForUpdates(appID string, deploy bool, skipPreflights bool) (int64, err
 			return 0, errors.Wrap(err, "failed to list downstreams for app")
 		}
 
-		downstreamParentSequence, err := downstream.GetCurrentParentSequence(a.ID, downstreams[0].ClusterID)
+		downstreamParentSequence, err := store.GetStore().GetCurrentParentSequence(a.ID, downstreams[0].ClusterID)
 		if err != nil {
 			return 0, errors.Wrap(err, "failed to get current downstream parent sequence")
 		}

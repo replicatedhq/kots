@@ -6,7 +6,6 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
-	downstream "github.com/replicatedhq/kots/pkg/kotsadmdownstream"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/socketservice"
 	"github.com/replicatedhq/kots/pkg/store"
@@ -41,7 +40,7 @@ func (h *Handler) RedeployAppVersion(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := downstream.DeleteDownstreamDeployStatus(a.ID, downstreams[0].ClusterID, int64(sequence)); err != nil {
+	if err := store.GetStore().DeleteDownstreamDeployStatus(a.ID, downstreams[0].ClusterID, int64(sequence)); err != nil {
 		logger.Error(err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return

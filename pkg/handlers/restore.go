@@ -11,7 +11,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/app"
 	apptypes "github.com/replicatedhq/kots/pkg/app/types"
-	downstream "github.com/replicatedhq/kots/pkg/kotsadmdownstream"
 	snapshot "github.com/replicatedhq/kots/pkg/kotsadmsnapshot"
 	snapshottypes "github.com/replicatedhq/kots/pkg/kotsadmsnapshot/types"
 	"github.com/replicatedhq/kots/pkg/logger"
@@ -73,7 +72,7 @@ func (h *Handler) CreateApplicationRestore(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	status, err := downstream.GetDownstreamVersionStatus(kotsApp.ID, sequence)
+	status, err := store.GetStore().GetDownstreamVersionStatus(kotsApp.ID, sequence)
 	if err != nil {
 		logger.Error(err)
 		createRestoreResponse.Error = "failed to find downstream version"

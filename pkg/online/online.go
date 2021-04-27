@@ -11,7 +11,6 @@ import (
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	"github.com/replicatedhq/kots/pkg/crypto"
 	kotsadmconfig "github.com/replicatedhq/kots/pkg/kotsadmconfig"
-	downstream "github.com/replicatedhq/kots/pkg/kotsadmdownstream"
 	identity "github.com/replicatedhq/kots/pkg/kotsadmidentity"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/logger"
@@ -199,7 +198,7 @@ func CreateAppFromOnline(pendingApp *types.PendingApp, upstreamURI string, isAut
 					return nil, errors.Wrap(err, "failed to deploy version")
 				}
 			} else {
-				err := downstream.SetDownstreamVersionPendingPreflight(pendingApp.ID, newSequence)
+				err := store.GetStore().SetDownstreamVersionPendingPreflight(pendingApp.ID, newSequence)
 				if err != nil {
 					return nil, errors.Wrap(err, "failed to set downstream version status to 'pending preflight'")
 				}

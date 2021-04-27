@@ -16,7 +16,6 @@ import (
 	apptypes "github.com/replicatedhq/kots/pkg/app/types"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	kotsadmtypes "github.com/replicatedhq/kots/pkg/kotsadm/types"
-	downstream "github.com/replicatedhq/kots/pkg/kotsadmdownstream"
 	"github.com/replicatedhq/kots/pkg/kotsadmsnapshot/types"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/kurl"
@@ -41,7 +40,7 @@ func CreateApplicationBackup(ctx context.Context, a *apptypes.App, isScheduled b
 		return nil, errors.New("no downstreams found for app")
 	}
 
-	parentSequence, err := downstream.GetCurrentParentSequence(a.ID, downstreams[0].ClusterID)
+	parentSequence, err := store.GetStore().GetCurrentParentSequence(a.ID, downstreams[0].ClusterID)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get current downstream parent sequence")
 	}
@@ -209,7 +208,7 @@ func CreateInstanceBackup(ctx context.Context, cluster *downstreamtypes.Downstre
 			continue
 		}
 
-		parentSequence, err := downstream.GetCurrentParentSequence(a.ID, downstreams[0].ClusterID)
+		parentSequence, err := store.GetStore().GetCurrentParentSequence(a.ID, downstreams[0].ClusterID)
 		if err != nil {
 			return nil, errors.Wrapf(err, "failed to get current downstream parent sequence for app %s", a.Slug)
 		}

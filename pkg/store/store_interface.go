@@ -33,6 +33,7 @@ type Store interface {
 	SessionStore
 	AppStatusStore
 	AppStore
+	DownstreamStore
 	VersionStore
 	LicenseStore
 	ClusterStore
@@ -125,6 +126,26 @@ type AppStore interface {
 	SetSnapshotTTL(appID string, snapshotTTL string) error
 	SetSnapshotSchedule(appID string, snapshotSchedule string) error
 	RemoveApp(appID string) error
+}
+
+type DownstreamStore interface {
+	GetCurrentSequence(appID string, clusterID string) (int64, error)
+	GetCurrentParentSequence(appID string, clusterID string) (int64, error)
+	GetParentSequenceForSequence(appID string, clusterID string, sequence int64) (int64, error)
+	GetPreviouslyDeployedSequence(appID string, clusterID string) (int64, error)
+	SetDownstreamVersionReady(appID string, sequence int64) error
+	SetDownstreamVersionPendingPreflight(appID string, sequence int64) error
+	UpdateDownstreamVersionStatus(appID string, sequence int64, status string, statusInfo string) error
+	GetDownstreamVersionStatus(appID string, sequence int64) (string, error)
+	GetIgnoreRBACErrors(appID string, sequence int64) (bool, error)
+	GetCurrentVersion(appID string, clusterID string) (*downstreamtypes.DownstreamVersion, error)
+	GetStatusForVersion(appID string, clusterID string, sequence int64) (string, error)
+	GetPendingVersions(appID string, clusterID string) ([]downstreamtypes.DownstreamVersion, error)
+	GetPastVersions(appID string, clusterID string) ([]downstreamtypes.DownstreamVersion, error)
+	GetDownstreamOutput(appID string, clusterID string, sequence int64) (*downstreamtypes.DownstreamOutput, error)
+	IsDownstreamDeploySuccessful(appID string, clusterID string, sequence int64) (bool, error)
+	UpdateDownstreamDeployStatus(appID string, clusterID string, sequence int64, isError bool, output downstreamtypes.DownstreamOutput) error
+	DeleteDownstreamDeployStatus(appID string, clusterID string, sequence int64) error
 }
 
 type SnapshotStore interface {
