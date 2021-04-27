@@ -74,5 +74,12 @@
       background-color: #FEF4D9;
       color: #F7B500;
     }
+
+    .Details--wrapper {
+      overflow: scroll;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      width: 90%;
+    }
   }
 }
