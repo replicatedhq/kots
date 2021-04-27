@@ -179,7 +179,7 @@ class AppLicense extends Component {
           <title>{`${appName} License`}</title>
         </Helmet>
         {size(appLicense) > 0 ?
-          <div className="License--wrapper flex flex-column">
+          <div className="License--wrapper flex-column">
             <div className="flex flex1 alignItems--center">
               <span className="u-fontSize--large u-fontWeight--bold u-lineHeight--normal u-textColor--primary"> License </span>
               {appLicense?.licenseType === "community" &&
@@ -188,8 +188,8 @@ class AppLicense extends Component {
                   <span className="u-fontSize--small u-fontWeight--normal u-lineHeight--normal u-marginLeft--10" style={{ color: "#A5A5A5" }}> To change your license, please contact your account representative. </span>
                 </div>}
             </div>
-            <div className="LicenseDetails flex justifyContent--spaceBetween">
-              <div className="flex1 flex-column">
+            <div className="LicenseDetails flex flex1 justifyContent--spaceBetween">
+              <div className="Details--wrapper flex-auto flex-column">
                 <div className="flex flex-auto alignItems--center">
                   <span className="u-fontSize--larger u-fontWeight--bold u-lineHeight--normal u-textColor--secondary"> {appLicense.assignee} </span>
                   {appLicense?.channelName &&
@@ -220,7 +220,7 @@ class AppLicense extends Component {
                         )
                       } else if (entitlement.value.length > 30 && (currEntitlement === entitlement.title)) {
                         return (
-                          <span key={entitlement.label} className={`flex u-fontSize--small u-lineHeight--normal u-textColor--secondary u-fontWeight--medium u-marginRight--10 ${i !== 0 ? "u-marginLeft--5" : ""}`}> {entitlement.title}: <span className={`u-fontWeight--bold ${isTextField && "u-fontFamily--monospace"}`} style={{whiteSpace: "pre"}}> {entitlement.value} </span>
+                          <span key={entitlement.label} className={`flex-column u-fontSize--small u-lineHeight--normal u-textColor--secondary u-fontWeight--medium u-marginRight--10 ${i !== 0 ? "u-marginLeft--5" : ""}`}> {entitlement.title}: <span className={`u-fontWeight--bold ${isTextField && "u-fontFamily--monospace"}`} style={{whiteSpace: "pre"}}> {entitlement.value} </span>
                             <span className="icon clickable up-arrow-icon u-marginTop--5 u-marginLeft--5" onClick={() => this.toggleHideDetails(entitlement.title)} />
                           </span>
                         )
