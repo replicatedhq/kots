@@ -40,9 +40,10 @@ import (
 )
 
 type ConfigureStoreOptions struct {
-	Provider string
-	Bucket   string
-	Path     string
+	Provider   string
+	Bucket     string
+	Path       string
+	CACertData []byte
 
 	AWS        *types.StoreAWS
 	Google     *types.StoreGoogle
@@ -63,6 +64,7 @@ type ConfigureStoreOptions struct {
 type ValidateStoreOptions struct {
 	KotsadmNamespace string
 	RegistryOptions  *kotsadmtypes.KotsadmOptions
+	CACertData       []byte
 	// If set to true, will validate the endpoint and the bucket using a pod instead (when applicable)
 	ValidateUsingAPod bool
 }
@@ -87,6 +89,7 @@ func ConfigureStore(ctx context.Context, options ConfigureStoreOptions) (*types.
 	store.Provider = options.Provider
 	store.Bucket = options.Bucket
 	store.Path = options.Path
+	store.CACertData = options.CACertData
 
 	if options.AWS != nil {
 		if store.AWS == nil {
@@ -218,7 +221,6 @@ func ConfigureStore(ctx context.Context, options ConfigureStoreOptions) (*types.
 		if options.Other.Endpoint != "" {
 			store.Other.Endpoint = options.Other.Endpoint
 		}
-
 		if store.Other.AccessKeyID == "" || store.Other.SecretAccessKey == "" || store.Other.Endpoint == "" || store.Other.Region == "" {
 			return nil, &InvalidStoreDataError{Message: "access key, secret key, endpoint and region are required"}
 		}
@@ -287,6 +289,7 @@ func ConfigureStore(ctx context.Context, options ConfigureStoreOptions) (*types.
 			KotsadmNamespace:  options.KotsadmNamespace,
 			RegistryOptions:   options.RegistryOptions,
 			ValidateUsingAPod: options.ValidateUsingAPod,
+			CACertData:        options.CACertData,
 		}
 		if err := validateStore(ctx, store, validateStoreOptions); err != nil {
 			return nil, &InvalidStoreDataError{Message: errors.Cause(err).Error()}
@@ -353,6 +356,8 @@ func updateGlobalStore(ctx context.Context, store *types.Store, kotsadmNamepsace
 
 	kotsadmVeleroBackendStorageLocation.Spec.ObjectStorage.Bucket = store.Bucket
 	kotsadmVeleroBackendStorageLocation.Spec.ObjectStorage.Prefix = store.Path
+	kotsadmVeleroBackendStorageLocation.Spec.ObjectStorage.CACert = store.CACertData
+
 	kotsadmVeleroBackendStorageLocation.Spec.Config = map[string]string{} // Ensure config is clean when switching providers
 
 	currentSecret, currentSecretErr := clientset.CoreV1().Secrets(kotsadmVeleroBackendStorageLocation.Namespace).Get(ctx, "cloud-credentials", metav1.GetOptions{})
@@ -682,9 +687,10 @@ func GetGlobalStore(ctx context.Context, kotsadmNamepsace string, kotsadmVeleroB
 	prefix := kotsadmVeleroBackendStorageLocation.Spec.ObjectStorage.Prefix
 
 	store := types.Store{
-		Provider: kotsadmVeleroBackendStorageLocation.Spec.Provider,
-		Bucket:   kotsadmVeleroBackendStorageLocation.Spec.ObjectStorage.Bucket,
-		Path:     prefix,
+		Provider:   kotsadmVeleroBackendStorageLocation.Spec.Provider,
+		Bucket:     kotsadmVeleroBackendStorageLocation.Spec.ObjectStorage.Bucket,
+		Path:       prefix,
+		CACertData: kotsadmVeleroBackendStorageLocation.Spec.ObjectStorage.CACert,
 	}
 
 	switch store.Provider {
@@ -837,7 +843,7 @@ func mapAWSBackupStorageLocationToStore(kotsadmVeleroBackendStorageLocation *vel
 }
 
 // FindBackupStoreLocation will find the backup storage location used by velero
-// kotsadmNamespace is only required in minimal rbac installations. if empty, cluster scope privilages will be needed to detect and validate velero
+// kotsadmNamespace is only required in minimal rbac installations. if empty, cluster scope privileges will be needed to detect and validate velero
 func FindBackupStoreLocation(ctx context.Context, kotsadmNamespace string) (*velerov1.BackupStorageLocation, error) {
 	cfg, err := k8sutil.GetClusterConfig()
 	if err != nil {
@@ -1104,6 +1110,7 @@ func validateOther(ctx context.Context, storeOther *types.StoreOther, bucket str
 			PodName:         podName,
 			Endpoint:        storeOther.Endpoint,
 			BucketName:      bucket,
+			CACertData:      options.CACertData,
 			AccessKeyID:     storeOther.AccessKeyID,
 			SecretAccessKey: storeOther.SecretAccessKey,
 			Namespace:       options.KotsadmNamespace,
