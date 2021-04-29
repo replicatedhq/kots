@@ -21,7 +21,9 @@ import (
 	kotsadmconfig "github.com/replicatedhq/kots/pkg/kotsadmconfig"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/logger"
+	"github.com/replicatedhq/kots/pkg/midstream"
 	"github.com/replicatedhq/kots/pkg/preflight"
+	registrytypes "github.com/replicatedhq/kots/pkg/registry/types"
 	"github.com/replicatedhq/kots/pkg/render"
 	"github.com/replicatedhq/kots/pkg/store"
 	"github.com/replicatedhq/kots/pkg/template"
@@ -80,7 +82,22 @@ func (h *Handler) UpdateAppConfig(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	createNewVersion, err := shouldCreateNewAppVersion(foundApp.ID, foundApp.CurrentSequence)
+	isEditbale, err := isVersionConfigEditable(foundApp, updateAppConfigRequest.Sequence)
+	if err != nil {
+		updateAppConfigResponse.Error = "failed to check if version is editable"
+		logger.Error(errors.Wrap(err, updateAppConfigResponse.Error))
+		JSON(w, http.StatusInternalServerError, updateAppConfigResponse)
+		return
+	}
+
+	if !isEditbale {
+		updateAppConfigResponse.Error = "this version cannot be edited"
+		logger.Error(errors.Wrap(err, updateAppConfigResponse.Error))
+		JSON(w, http.StatusForbidden, updateAppConfigResponse)
+		return
+	}
+
+	createNewVersion, err := shouldCreateNewAppVersion(foundApp.ID, updateAppConfigRequest.Sequence)
 	if err != nil {
 		updateAppConfigResponse.Error = "failed to check if version should be created"
 		logger.Error(errors.Wrap(err, updateAppConfigResponse.Error))
@@ -301,6 +318,31 @@ func (h *Handler) CurrentAppConfig(w http.ResponseWriter, r *http.Request) {
 	JSON(w, http.StatusOK, CurrentAppConfigResponse{Success: true, ConfigGroups: renderedConfig.Spec.Groups})
 }
 
+func isVersionConfigEditable(app *apptypes.App, sequence int64) (bool, error) {
+	// Only latest and currently deployed versions can be edited
+	if app.CurrentSequence == sequence {
+		return true, nil
+	}
+
+	downstreams, err := store.GetStore().ListDownstreamsForApp(app.ID)
+	if err != nil {
+		return false, errors.Wrap(err, "failed to get downstreams")
+	}
+
+	for _, d := range downstreams {
+		parentSequence, err := store.GetStore().GetCurrentParentSequence(app.ID, d.ClusterID)
+		if err != nil {
+			return false, errors.Wrap(err, "failed to get downstream parent sequence")
+		}
+
+		if parentSequence == sequence {
+			return true, nil
+		}
+	}
+
+	return false, nil
+}
+
 func shouldCreateNewAppVersion(appID string, sequence int64) (bool, error) {
 	// Updates are allowed only for sequence 0 and only when it's pending config.
 	if sequence > 0 {
@@ -434,6 +476,7 @@ func updateAppConfig(updateApp *apptypes.App, sequence int64, configGroups []kot
 		updateAppConfigResponse.Error = "failed to get registry settings"
 		return updateAppConfigResponse, err
 	}
+
 	app, err := store.GetStore().GetApp(updateApp.ID)
 	if err != nil {
 		updateAppConfigResponse.Error = "failed to get app"
@@ -443,6 +486,25 @@ func updateAppConfig(updateApp *apptypes.App, sequence int64, configGroups []kot
 	if err != nil {
 		updateAppConfigResponse.Error = "failed to list downstreams for app"
 		return updateAppConfigResponse, err
+	}
+
+	if app.CurrentSequence != sequence {
+		// We are modifying an old version, registry settings may not match what the user has set
+		// for the app.  Midstream in version archive is the only place we can get them from.
+		versionRegistrySettings, err := midstream.LoadPrivateRegistryInfo(archiveDir)
+		if err != nil {
+			updateAppConfigResponse.Error = "failed to get version registry settings"
+			return updateAppConfigResponse, err
+		}
+
+		if versionRegistrySettings == nil {
+			registrySettings = registrytypes.RegistrySettings{}
+		} else {
+			// TODO: missing namespace
+			registrySettings.Hostname = versionRegistrySettings.Hostname
+			registrySettings.Username = versionRegistrySettings.Username
+			registrySettings.Password = versionRegistrySettings.Password
+		}
 	}
 
 	err = render.RenderDir(archiveDir, app, downstreams, registrySettings)

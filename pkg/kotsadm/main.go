@@ -944,12 +944,12 @@ func GetKotsadmOptionsFromCluster(namespace string, clientset kubernetes.Interfa
 		return kotsadmOptions, nil
 	}
 
-	username, password, err := registry.GetCredentialsForRegistry(string(dockerConfigJson), kotsadmOptions.OverrideRegistry)
+	creds, err := registry.GetCredentialsForRegistryFromConfigJSON(dockerConfigJson, kotsadmOptions.OverrideRegistry)
 	if err != nil {
 		return kotsadmOptions, errors.Wrap(err, "failed to parse dockerconfigjson")
 	}
 
-	kotsadmOptions.Username = username
-	kotsadmOptions.Password = password
+	kotsadmOptions.Username = creds.Username
+	kotsadmOptions.Password = creds.Password
 	return kotsadmOptions, nil
 }

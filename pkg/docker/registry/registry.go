@@ -26,6 +26,11 @@ type DockerCfgJSON struct {
 	Auths map[string]DockercfgAuth `json:"auths"`
 }
 
+type Credentials struct {
+	Username string
+	Password string
+}
+
 func ProxyEndpointFromLicense(license *kotsv1beta1.License) *RegistryProxyInfo {
 	defaultInfo := &RegistryProxyInfo{
 		Registry: "registry.replicated.com",
@@ -102,27 +107,44 @@ func PullSecretForRegistries(registries []string, username, password string, kub
 	return secret, nil
 }
 
-func GetCredentialsForRegistry(configJson string, registry string) (string, string, error) {
-	dockerCfgJSON := DockerCfgJSON{}
-	err := json.Unmarshal([]byte(configJson), &dockerCfgJSON)
+func GetCredentialsForRegistryFromConfigJSON(configJson []byte, registry string) (Credentials, error) {
+	creds, err := GetCredentialsFromConfigJSON(configJson)
 	if err != nil {
-		return "", "", errors.Wrap(err, "failed to unmarshal config json")
+		return Credentials{}, errors.Wrap(err, "failed parse config json")
 	}
 
-	auth, ok := dockerCfgJSON.Auths[registry]
+	c, ok := creds[registry]
 	if !ok {
-		return "", "", nil
+		return Credentials{}, nil
 	}
 
-	decoded, err := base64.StdEncoding.DecodeString(auth.Auth)
+	return c, nil
+}
+
+func GetCredentialsFromConfigJSON(configJson []byte) (map[string]Credentials, error) {
+	dockerCfgJSON := DockerCfgJSON{}
+	err := json.Unmarshal(configJson, &dockerCfgJSON)
 	if err != nil {
-		return "", "", errors.Wrap(err, "failed to decode auth string")
+		return nil, errors.Wrap(err, "failed to unmarshal config json")
 	}
 
-	parts := strings.Split(string(decoded), ":")
-	if len(parts) != 2 {
-		return "", "", errors.Errorf("expected 2 parts in the string, but found %d", len(parts))
+	result := map[string]Credentials{}
+	for registry, auth := range dockerCfgJSON.Auths {
+		decoded, err := base64.StdEncoding.DecodeString(auth.Auth)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to decode auth string")
+		}
+
+		parts := strings.Split(string(decoded), ":")
+		if len(parts) != 2 {
+			return nil, errors.Errorf("expected 2 parts in the string, but found %d", len(parts))
+		}
+
+		result[registry] = Credentials{
+			Username: parts[0],
+			Password: parts[1],
+		}
 	}
 
-	return parts[0], parts[1], nil
+	return result, nil
 }
