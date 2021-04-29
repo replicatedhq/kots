@@ -3,6 +3,7 @@ package s3
 import (
 	"bufio"
 	"bytes"
+	"fmt"
 	"os"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -10,7 +11,6 @@ import (
 
 	"context"
 	"encoding/json"
-	"fmt"
 	"time"
 
 	"github.com/pkg/errors"
@@ -29,6 +29,7 @@ type S3OpsPodOptions struct {
 	PodName         string
 	Endpoint        string
 	BucketName      string
+	CACertData      []byte
 	AccessKeyID     string
 	SecretAccessKey string
 	Namespace       string
@@ -101,7 +102,7 @@ func CreateS3BucketUsingAPod(ctx context.Context, clientset kubernetes.Interface
 	}
 
 	if !createBucketPodOutput.Success {
-		return errors.Wrapf(err, "failed to create bucket, please check %s pod logs for more details", createBucketPod.Name)
+		return errors.Errorf("failed to create bucket, please check %s pod logs for more details", createBucketPod.Name)
 	}
 
 	// only delete the pod on success
@@ -153,7 +154,7 @@ func HeadS3BucketUsingAPod(ctx context.Context, clientset kubernetes.Interface, 
 	}
 
 	if !headBucketPodOutput.Success {
-		return errors.Wrapf(err, "failed to head bucket, please check %s pod logs for more details", headBucketPod.Name)
+		return errors.Errorf("failed to head bucket, please check %s pod logs for more details", headBucketPod.Name)
 	}
 
 	// only delete the pod on success
@@ -201,6 +202,13 @@ func s3BucketPod(clientset kubernetes.Interface, podOptions S3OpsPodOptions, com
 			Name:  "TMP_S3_SECRET_ACCESS_KEY",
 			Value: podOptions.SecretAccessKey,
 		},
+	}
+
+	if podOptions.CACertData != nil {
+		env = append(env, corev1.EnvVar{
+			Name:  "TMP_CA_CERT",
+			Value: string(podOptions.CACertData),
+		})
 	}
 
 	pod := &corev1.Pod{

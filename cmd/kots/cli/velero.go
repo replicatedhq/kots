@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -325,7 +326,7 @@ func VeleroConfigureOtherS3Cmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:           "configure-other-s3",
 		Short:         "Configure snapshots to use an external s3 compatible storage",
-		Long:          ``,
+		Long:          `Note that this command assumes that the bucket has already been created.`,
 		SilenceUsage:  true,
 		SilenceErrors: false,
 		PreRun: func(cmd *cobra.Command, args []string) {
@@ -352,6 +353,19 @@ func VeleroConfigureOtherS3Cmd() *cobra.Command {
 				return errors.New("velero namespace not found")
 			}
 
+			var caCertData []byte
+			caCertFile := v.GetString("cacert")
+			if caCertFile != "" {
+				realPath, err := filepath.Abs(caCertFile)
+				if err != nil {
+					return err
+				}
+				caCertData, err = ioutil.ReadFile(realPath)
+				if err != nil {
+					return err
+				}
+			}
+
 			// init containers are names differently starting in velero 1.6
 			if !veleroStatus.ContainsPlugin("velero-plugin-for-aws") && !veleroStatus.ContainsPlugin("velero-velero-plugin-for-aws") {
 				return errors.New("velero does not have the 'velero-plugin-for-aws' installed; " +
@@ -361,6 +375,11 @@ func VeleroConfigureOtherS3Cmd() *cobra.Command {
 			registryOptions, err := kotsadm.GetKotsadmOptionsFromCluster(namespace, clientset)
 			if err != nil {
 				return errors.Wrap(err, "failed to get registry options from cluster")
+			}
+
+			log := logger.NewCLILogger()
+			if !v.GetBool("skip-validation") {
+				log.Info("\nRunning a pod to test the connection to your S3 API and if the bucket exists...")
 			}
 
 			configureStoreOptions := snapshot.ConfigureStoreOptions{
@@ -377,13 +396,13 @@ func VeleroConfigureOtherS3Cmd() *cobra.Command {
 				RegistryOptions:   &registryOptions,
 				SkipValidation:    v.GetBool("skip-validation"),
 				ValidateUsingAPod: true,
+				CACertData:        caCertData,
 			}
 			_, err = snapshot.ConfigureStore(cmd.Context(), configureStoreOptions)
 			if err != nil {
 				return errors.Wrap(err, "failed to configure store")
 			}
 
-			log := logger.NewCLILogger()
 			log.Info("\nStore Configured Successfully")
 
 			return nil
@@ -396,6 +415,7 @@ func VeleroConfigureOtherS3Cmd() *cobra.Command {
 	cmd.Flags().String("access-key-id", "", "the access key id to use for accessing the bucket (required)")
 	cmd.Flags().String("secret-access-key", "", "the secret access key to use for accessing the bucket (required)")
 	cmd.Flags().String("endpoint", "", "the s3 endpoint. (e.g. http://some-other-s3-endpoint, required)")
+	cmd.Flags().String("cacert", "", "file containing a certificate bundle to use when verifying TLS connections to the object store.")
 	cmd.Flags().Bool("skip-validation", false, "skip the validation of the s3 endpoint/bucket")
 
 	cmd.MarkFlagRequired("bucket")
