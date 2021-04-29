@@ -74,8 +74,9 @@ function renderVersionAction(version, latestVersion, nothingToCommitDiff, app, h
 
   const isSecondaryBtn = isPastVersion || needsConfiguration || isRedeploy && !isRollback;
   const isPrimaryButton = !isSecondaryBtn && !isRedeploy && !isRollback;
+  const editableConfig = isCurrentVersion || isLatestVersion;
   let tooltipTip;
-  if (isCurrentVersion || isLatestVersion) {
+  if (editableConfig) {
     tooltipTip = "Edit config";
   } else {
     tooltipTip = "View config"
@@ -85,7 +86,7 @@ function renderVersionAction(version, latestVersion, nothingToCommitDiff, app, h
     <div className="flex flex1 justifyContent--flexEnd">
       {app.isConfigurable &&
         <div className="flex alignItems--center">
-          <Link to={`/app/${app.slug}/config/${version.sequence}`} className="icon config--icon u-cursor--pointer" data-tip={tooltipTip} />
+          <Link to={`/app/${app.slug}/config/${version.sequence}`} className={`icon ${editableConfig ? "configEdit--icon" : "configView--icon"} u-cursor--pointer`} data-tip={tooltipTip} />
           <ReactTooltip effect="solid" className="replicated-tooltip" />
         </div>}
       {showActions &&

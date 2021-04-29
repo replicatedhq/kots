@@ -64,7 +64,7 @@ export default function AppVersionHistoryHeader(props) {
                 </div>
                 {app.isConfigurable &&
                   <div>
-                    <Link to={`/app/${slug}/config/${app?.downstreams[0]?.currentVersion?.parentSequence}`} className="icon config--icon u-cursor--pointer" data-tip={`${Utilities.checkIsDeployedConfigLatest(app) ? "Edit config" : "View config"}`} />
+                    <Link to={`/app/${slug}/config/${app?.downstreams[0]?.currentVersion?.parentSequence}`} className="icon configEdit--icon u-cursor--pointer" data-tip="Edit config" />
                     <ReactTooltip effect="solid" className="replicated-tooltip" />
                   </div>}
               </div> : null}
