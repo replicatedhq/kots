@@ -400,22 +400,13 @@ class AppConfig extends Component {
     }
   }
 
-  checkIsCurrentOrPastVersion = (app) => {
+  isConfigReadOnly = (app) => {
     const { match } = this.props;
     if (!match.params.sequence) return false;
     const sequence = parseInt(match.params.sequence);
-    let latestSequence;
-    if (app?.downstreams[0]?.pendingVersions.length > 0) {
-      latestSequence = app?.downstreams[0]?.pendingVersions[0]?.parentSequence;
-    } else {
-      latestSequence = app?.downstreams[0]?.currentVersion?.parentSequence;
-    }
-
-    if (sequence < latestSequence) {
-      return true;
-    } else {
-      return false;
-    }
+    const isCurrentVersion = app.downstreams[0]?.currentVersion?.sequence === sequence;
+    const isLatestVersion = app.currentVersion.sequence === sequence;
+    return !isLatestVersion && !isCurrentVersion;
   }
 
   toggleActiveGroups = (name) => {
@@ -497,7 +488,7 @@ class AppConfig extends Component {
             {this.renderConfigInfo(app)}
             <div className={classNames("ConfigOuterWrapper u-paddingTop--30", { "u-marginTop--20": fromLicenseFlow })}>
               <div className="ConfigInnerWrapper">
-                <AppConfigRenderer groups={configGroups} getData={this.handleConfigChange} readonly={this.checkIsCurrentOrPastVersion(app)} />
+                <AppConfigRenderer groups={configGroups} getData={this.handleConfigChange} readonly={this.isConfigReadOnly(app)} />
               </div>
             </div>
             {savingConfig ?
@@ -507,7 +498,7 @@ class AppConfig extends Component {
               :
               <div className="ConfigError--wrapper flex-column u-paddingBottom--30 alignItems--flexStart">
                 {configError && <span className="u-textColor--error u-marginBottom--20 u-fontWeight--bold">{configError}</span>}
-                <button className="btn primary blue" disabled={!changed && !fromLicenseFlow || this.checkIsCurrentOrPastVersion(app)} onClick={this.handleSave}>{fromLicenseFlow ? "Continue" : "Save config"}</button>
+                <button className="btn primary blue" disabled={!changed && !fromLicenseFlow || this.isConfigReadOnly(app)} onClick={this.handleSave}>{fromLicenseFlow ? "Continue" : "Save config"}</button>
               </div>
             }
           </div>

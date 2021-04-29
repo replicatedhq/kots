@@ -44,14 +44,6 @@ function deployButtonStatus(downstream, version, app) {
   }
 }
 
-function isVersionEditable(latestVersion, version) {
-  if (latestVersion?.sequence <= version?.parentSequence) {
-    return true;
-  } else {
-    return false;
-  }
-}
-
 function renderVersionAction(version, latestVersion, nothingToCommitDiff, app, history, deployVersion) {
   const downstream = app.downstreams[0];
 
@@ -73,6 +65,7 @@ function renderVersionAction(version, latestVersion, nothingToCommitDiff, app, h
   }
 
   const isCurrentVersion = version.sequence === downstream.currentVersion?.sequence;
+  const isLatestVersion = version.sequence === latestVersion.sequence;
   const isPastVersion = find(downstream.pastVersions, { sequence: version.sequence });
   const needsConfiguration = version.status === "pending_config";
   const showActions = !isPastVersion || app.allowRollback;
@@ -82,7 +75,7 @@ function renderVersionAction(version, latestVersion, nothingToCommitDiff, app, h
   const isSecondaryBtn = isPastVersion || needsConfiguration || isRedeploy && !isRollback;
   const isPrimaryButton = !isSecondaryBtn && !isRedeploy && !isRollback;
   let tooltipTip;
-  if (isVersionEditable(latestVersion, version)) {
+  if (isCurrentVersion || isLatestVersion) {
     tooltipTip = "Edit config";
   } else {
     tooltipTip = "View config"

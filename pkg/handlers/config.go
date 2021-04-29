@@ -8,7 +8,6 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
-	"sort"
 	"strconv"
 	"strings"
 
@@ -16,7 +15,6 @@ import (
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	"github.com/replicatedhq/kots/kotskinds/multitype"
-	versiontypes "github.com/replicatedhq/kots/pkg/api/version/types"
 	apptypes "github.com/replicatedhq/kots/pkg/app/types"
 	kotsconfig "github.com/replicatedhq/kots/pkg/config"
 	"github.com/replicatedhq/kots/pkg/crypto"
@@ -82,45 +80,18 @@ func (h *Handler) UpdateAppConfig(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if !updateAppConfigRequest.CreateNewVersion {
-		// special case handling for "do not create new version"
-		// no need to update versions after this/search for latest sequence that has the same upstream version/etc
-		isPrimaryVersion := true
-		skipPrefligths := false
-		deploy := false
-		resp, err := updateAppConfig(foundApp, updateAppConfigRequest.Sequence, updateAppConfigRequest.ConfigGroups, updateAppConfigRequest.CreateNewVersion, isPrimaryVersion, skipPrefligths, deploy)
-		if err != nil {
-			logger.Error(err)
-			JSON(w, http.StatusInternalServerError, resp)
-			return
-		}
-
-		if len(resp.RequiredItems) > 0 {
-			JSON(w, http.StatusBadRequest, resp)
-			return
-		}
-
-		JSON(w, http.StatusOK, resp)
-		return
-	}
-
-	// find the update cursor referred to by updateAppConfigRequest.Sequence
-	// then find the latest sequence with that update cursor, and use that for the update we're making here
-	// (for instance, the registry settings may have changed)
-	// if there are additional update cursors past this, also create updates for them
-	latestSequenceMatchingUpdateCursor, laterVersions, err := getLaterVersions(foundApp, updateAppConfigRequest.Sequence)
+	createNewVersion, err := shouldCreateNewAppVersion(foundApp.ID, foundApp.CurrentSequence)
 	if err != nil {
-		logger.Error(err)
-		updateAppConfigResponse.Error = err.Error()
+		updateAppConfigResponse.Error = "failed to check if version should be created"
+		logger.Error(errors.Wrap(err, updateAppConfigResponse.Error))
 		JSON(w, http.StatusInternalServerError, updateAppConfigResponse)
 		return
 	}
 
-	// attempt to apply the config to the app version specified in the request
 	isPrimaryVersion := true
 	skipPrefligths := false
 	deploy := false
-	resp, err := updateAppConfig(foundApp, latestSequenceMatchingUpdateCursor, updateAppConfigRequest.ConfigGroups, updateAppConfigRequest.CreateNewVersion, isPrimaryVersion, skipPrefligths, deploy)
+	resp, err := updateAppConfig(foundApp, updateAppConfigRequest.Sequence, updateAppConfigRequest.ConfigGroups, createNewVersion, isPrimaryVersion, skipPrefligths, deploy)
 	if err != nil {
 		logger.Error(err)
 		JSON(w, http.StatusInternalServerError, resp)
@@ -130,17 +101,6 @@ func (h *Handler) UpdateAppConfig(w http.ResponseWriter, r *http.Request) {
 	if len(resp.RequiredItems) > 0 {
 		JSON(w, http.StatusBadRequest, resp)
 		return
-	}
-
-	// if there were no errors applying the config for the desired version, do the same for any later versions too
-	for _, version := range laterVersions {
-		isPrimaryVersion := false
-		skipPrefligths := false
-		deploy := false
-		_, err := updateAppConfig(foundApp, version.Sequence, updateAppConfigRequest.ConfigGroups, updateAppConfigRequest.CreateNewVersion, isPrimaryVersion, skipPrefligths, deploy)
-		if err != nil {
-			logger.Error(errors.Wrapf(err, "error creating app with new config based on sequence %d for upstream %q", version.Sequence, version.KOTSKinds.Installation.Spec.VersionLabel))
-		}
 	}
 
 	JSON(w, http.StatusOK, UpdateAppConfigResponse{Success: true})
@@ -341,6 +301,30 @@ func (h *Handler) CurrentAppConfig(w http.ResponseWriter, r *http.Request) {
 	JSON(w, http.StatusOK, CurrentAppConfigResponse{Success: true, ConfigGroups: renderedConfig.Spec.Groups})
 }
 
+func shouldCreateNewAppVersion(appID string, sequence int64) (bool, error) {
+	// Updates are allowed only for sequence 0 and only when it's pending config.
+	if sequence > 0 {
+		return true, nil
+	}
+
+	downstreams, err := store.GetStore().ListDownstreamsForApp(appID)
+	if err != nil {
+		return false, errors.Wrap(err, "failed to get downstreams")
+	}
+
+	for _, d := range downstreams {
+		status, err := store.GetStore().GetStatusForVersion(appID, d.ClusterID, sequence)
+		if err != nil {
+			return false, errors.Wrap(err, "failed to get version status")
+		}
+		if status == "pending_config" {
+			return false, nil
+		}
+	}
+
+	return true, nil
+}
+
 // if isPrimaryVersion is false, missing a required config field will not cause a failure, and instead will create
 // the app version with status needs_config
 func updateAppConfig(updateApp *apptypes.App, sequence int64, configGroups []kotsv1beta1.ConfigGroup, createNewVersion bool, isPrimaryVersion bool, skipPreflights bool, deploy bool) (UpdateAppConfigResponse, error) {
@@ -526,57 +510,6 @@ func decrypt(input string, cipher *crypto.AESCipher) (string, error) {
 	}
 
 	return string(decrypted), nil
-}
-
-func getLaterVersions(versionedApp *apptypes.App, startSequence int64) (int64, []versiontypes.AppVersion, error) {
-	thisAppVersion, err := store.GetStore().GetAppVersion(versionedApp.ID, startSequence)
-	if err != nil {
-		return -1, nil, errors.Wrap(err, "failed to get this appversion")
-	}
-
-	laterAppVersions, err := store.GetStore().GetAppVersionsAfter(versionedApp.ID, startSequence)
-	if err != nil {
-		return -1, nil, errors.Wrap(err, "failed to get later app versions")
-	}
-
-	// latestSequenceWithThisUpdateCursor is the newest local version
-	// of the same upstream version
-	latestSequenceWithThisUpdateCursor := thisAppVersion.Sequence
-	for _, laterAppVersion := range laterAppVersions {
-		if laterAppVersion.KOTSKinds.Installation.Spec.UpdateCursor == thisAppVersion.KOTSKinds.Installation.Spec.UpdateCursor {
-			if laterAppVersion.Sequence > latestSequenceWithThisUpdateCursor {
-				latestSequenceWithThisUpdateCursor = laterAppVersion.Sequence
-			}
-		}
-	}
-
-	laterVersions := map[string][]versiontypes.AppVersion{}
-	for _, laterAppVersion := range laterAppVersions {
-		if current, ok := laterVersions[laterAppVersion.KOTSKinds.Installation.Spec.UpdateCursor]; ok {
-			current = append(current, *laterAppVersion)
-			laterVersions[laterAppVersion.KOTSKinds.Installation.Spec.UpdateCursor] = current
-		} else {
-			laterVersions[laterAppVersion.KOTSKinds.Installation.Spec.UpdateCursor] = []versiontypes.AppVersion{
-				*laterAppVersion,
-			}
-		}
-	}
-
-	// ensure that the returned versions array is sorted
-	keys := []string{}
-	for key := range laterVersions {
-		keys = append(keys, key)
-	}
-
-	// TODO sort by something in kotsutil that i need to write (these are either ints or semvers)
-	sort.Strings(keys)
-
-	sortedVersions := []versiontypes.AppVersion{}
-	for _, key := range keys {
-		sortedVersions = append(sortedVersions, laterVersions[key]...)
-	}
-
-	return latestSequenceWithThisUpdateCursor, sortedVersions, nil
 }
 
 type SetAppConfigValuesRequest struct {
