@@ -8,6 +8,7 @@ import (
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	apptypes "github.com/replicatedhq/kots/pkg/app/types"
+	"github.com/replicatedhq/kots/pkg/kotsutil"
 	kotslicense "github.com/replicatedhq/kots/pkg/license"
 	"github.com/replicatedhq/kots/pkg/preflight"
 	kotspull "github.com/replicatedhq/kots/pkg/pull"
@@ -48,19 +49,26 @@ func Sync(a *apptypes.App, licenseString string, failOnVersionCreate bool) (*kot
 		licenseString = string(licenseData.LicenseBytes)
 	}
 
-	// Save and make a new version if the sequence has changed
-	if updatedLicense.Spec.LicenseSequence != currentLicense.Spec.LicenseSequence {
-		archiveDir, err := ioutil.TempDir("", "kotsadm")
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to create temp dir")
-		}
-		defer os.RemoveAll(archiveDir)
+	archiveDir, err := ioutil.TempDir("", "kotsadm")
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to create temp dir")
+	}
+	defer os.RemoveAll(archiveDir)
 
-		err = store.GetStore().GetAppVersionArchive(a.ID, a.CurrentSequence, archiveDir)
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to get latest app version")
-		}
+	// Because an older version can be edited, it is possible to have latest version with an outdated license.
+	// So even if global license sequence is already latest, we still need to create a new app version in this case.
+	err = store.GetStore().GetAppVersionArchive(a.ID, a.CurrentSequence, archiveDir)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get latest app version")
+	}
 
+	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(archiveDir)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to load kotskinds from path")
+	}
+
+	if updatedLicense.Spec.LicenseSequence != currentLicense.Spec.LicenseSequence ||
+		updatedLicense.Spec.LicenseSequence != kotsKinds.License.Spec.LicenseSequence {
 		newSequence, err := store.GetStore().UpdateAppLicense(a.ID, a.CurrentSequence, archiveDir, updatedLicense, licenseString, failOnVersionCreate, &version.DownstreamGitOps{}, &render.Renderer{})
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to update license")

@@ -2,15 +2,18 @@ package handlers
 
 import (
 	"encoding/json"
+	"io/ioutil"
 	"net/http"
 	"net/url"
 	"os"
+	"path/filepath"
 
 	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/containers/image/v5/docker"
 	"github.com/docker/distribution/registry/api/errcode"
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
+	apptypes "github.com/replicatedhq/kots/pkg/app/types"
 	dockerregistry "github.com/replicatedhq/kots/pkg/docker/registry"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/preflight"
@@ -18,6 +21,8 @@ import (
 	registrytypes "github.com/replicatedhq/kots/pkg/registry/types"
 	"github.com/replicatedhq/kots/pkg/store"
 	"github.com/replicatedhq/kots/pkg/version"
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/client-go/kubernetes/scheme"
 )
 
 type UpdateAppRegistryRequest struct {
@@ -149,7 +154,15 @@ func (h *Handler) UpdateAppRegistry(w http.ResponseWriter, r *http.Request) {
 	updateAppRegistryResponse.Username = updateAppRegistryRequest.Username
 	updateAppRegistryResponse.Namespace = updateAppRegistryRequest.Namespace
 
-	if !registrySettingsChanged(updateAppRegistryRequest, registrySettings) {
+	registryChanged, err := registrySettingsChanged(foundApp, updateAppRegistryRequest, registrySettings)
+	if err != nil {
+		logger.Error(errors.Wrap(err, "failed to check registry settings"))
+		updateAppRegistryResponse.Error = err.Error()
+		JSON(w, http.StatusInternalServerError, updateAppRegistryResponse)
+		return
+	}
+
+	if !registryChanged {
 		updateAppRegistryResponse.Success = true
 		JSON(w, http.StatusOK, updateAppRegistryResponse)
 		return
@@ -208,23 +221,79 @@ func (h *Handler) UpdateAppRegistry(w http.ResponseWriter, r *http.Request) {
 	JSON(w, http.StatusOK, updateAppRegistryResponse)
 }
 
-func registrySettingsChanged(new UpdateAppRegistryRequest, current registrytypes.RegistrySettings) bool {
+func registrySettingsChanged(app *apptypes.App, new UpdateAppRegistryRequest, current registrytypes.RegistrySettings) (bool, error) {
 	if new.Hostname != current.Hostname {
-		return true
+		return true, nil
 	}
 	if new.Namespace != current.Namespace {
-		return true
+		return true, nil
 	}
 	if new.Username != current.Username {
-		return true
+		return true, nil
 	}
 	if new.Password != registrytypes.PasswordMask && new.Password != current.Password {
-		return true
+		return true, nil
 	}
 	if new.IsReadOnly != current.IsReadOnly {
-		return true
+		return true, nil
 	}
-	return false
+
+	// Because an old version can be editted, we may need to push images if registry hostname has changed
+	// TODO: Handle namespace changes too
+	archiveDir, err := ioutil.TempDir("", "kotsadm-")
+	if err != nil {
+		return false, errors.Wrap(err, "failed to create temp dir")
+	}
+	defer os.RemoveAll(archiveDir)
+
+	err = store.GetStore().GetAppVersionArchive(app.ID, app.CurrentSequence, archiveDir)
+	if err != nil {
+		return false, errors.Wrap(err, "failed to get version archive")
+	}
+
+	secretData, err := ioutil.ReadFile(filepath.Join(archiveDir, "overlays", "midstream", "secret.yaml"))
+	if err != nil {
+		if os.IsNotExist(err) {
+			if new.Hostname != "" {
+				return true, nil
+			} else {
+				return false, nil
+			}
+		}
+		return false, errors.Wrap(err, "failed to load image pull secret")
+	}
+
+	decode := scheme.Codecs.UniversalDeserializer().Decode
+	obj, gvk, err := decode(secretData, nil, nil)
+	if err != nil {
+		return false, errors.Wrap(err, "failed to decode image pull secret")
+	}
+
+	if gvk.Group != "" || gvk.Version != "v1" || gvk.Kind != "Secret" {
+		return false, errors.Errorf("unexpected secret GVK: %s", gvk.String())
+	}
+
+	secret := obj.(*corev1.Secret)
+	if secret.Type != "kubernetes.io/dockerconfigjson" {
+		return false, errors.Errorf("unexpected secret type: %s", secret.Type)
+	}
+
+	dockerConfig := struct {
+		Auths map[string]interface{} `json:"auths"`
+	}{}
+
+	err = json.Unmarshal(secret.Data[".dockerconfigjson"], &dockerConfig)
+	if err != nil {
+		return false, errors.Wrap(err, "failed to unmarshal .dockerconfigjson")
+	}
+
+	_, ok := dockerConfig.Auths[new.Hostname]
+	if !ok {
+		// New hostname is not in the auths list, so images have to pushed
+		return true, nil
+	}
+
+	return false, nil
 }
 
 func (h *Handler) GetAppRegistry(w http.ResponseWriter, r *http.Request) {
