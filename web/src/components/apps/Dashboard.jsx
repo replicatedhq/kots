@@ -152,11 +152,14 @@ class Dashboard extends Component {
         this.setState({ gettingAppLicenseErrMsg: body.error });
         return;
       }
+
       const body = await res.json();
       if (body === null) {
         this.setState({ appLicense: {}, gettingAppLicenseErrMsg: "" });
-      } else {
-        this.setState({ appLicense: body, gettingAppLicenseErrMsg: "" });
+      } else if (body.success) {
+        this.setState({ appLicense: body.license, gettingAppLicenseErrMsg: "" });
+      } else if (body.error) {
+        this.setState({ appLicense: {}, gettingAppLicenseErrMsg: body.error });
       }
     }).catch((err) => {
       console.log(err)

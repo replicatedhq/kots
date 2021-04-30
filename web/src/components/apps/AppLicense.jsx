@@ -37,8 +37,10 @@ class AppLicense extends Component {
       const body = await res.json();
       if (body === null) {
         this.setState({ appLicense: {} });
-      } else {
-        this.setState({ appLicense: body });
+      } else if (body.success) {
+        this.setState({ appLicense: body.license });
+      } else if (body.error) {
+        console.log(body.error);
       }
     }).catch((err) => {
       console.log(err)
@@ -106,11 +108,9 @@ class AppLicense extends Component {
         }
         return response.json();
       })
-      .then(async (latestLicense) => {
-        const currentLicense = this.state.appLicense;
-
+      .then(async (licenseResponse) => {
         let message;
-        if (latestLicense.licenseSequence === currentLicense.licenseSequence) {
+        if (!licenseResponse.synced) {
           message = "License is already up to date"
         } else if (app.isAirgap) {
           message = "License uploaded successfully"
@@ -119,10 +119,10 @@ class AppLicense extends Component {
         }
 
         this.setState({
-          appLicense: latestLicense,
+          appLicense: licenseResponse.license,
           message,
           messageType: "info",
-          showNextStepModal: latestLicense.licenseSequence !== currentLicense.licenseSequence
+          showNextStepModal: licenseResponse.synced
         });
 
         if (this.props.syncCallback) {

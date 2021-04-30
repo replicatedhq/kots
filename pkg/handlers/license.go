@@ -31,7 +31,7 @@ type SyncLicenseRequest struct {
 	LicenseData string `json:"licenseData"`
 }
 
-type SyncLicenseResponse struct {
+type LicenseResponse struct {
 	ID                         string                `json:"id"`
 	Assignee                   string                `json:"assignee"`
 	ExpiresAt                  time.Time             `json:"expiresAt"`
@@ -46,19 +46,17 @@ type SyncLicenseResponse struct {
 	IsSnapshotSupported        bool                  `json:"isSnapshotSupported"`
 }
 
+type SyncLicenseResponse struct {
+	Success bool            `json:"success"`
+	Error   string          `json:"error,omitempty"`
+	Synced  bool            `json:"synced"`
+	License LicenseResponse `json:"license"`
+}
+
 type GetLicenseResponse struct {
-	ID                         string                `json:"id"`
-	Assignee                   string                `json:"assignee"`
-	ExpiresAt                  time.Time             `json:"expiresAt"`
-	ChannelName                string                `json:"channelName"`
-	LicenseSequence            int64                 `json:"licenseSequence"`
-	LicenseType                string                `json:"licenseType"`
-	Entitlements               []EntitlementResponse `json:"entitlements"`
-	IsAirgapSupported          bool                  `json:"isAirgapSupported"`
-	IsGitOpsSupported          bool                  `json:"isGitOpsSupported"`
-	IsIdentityServiceSupported bool                  `json:"isIdentityServiceSupported"`
-	IsGeoaxisSupported         bool                  `json:"isGeoaxisSupported"`
-	IsSnapshotSupported        bool                  `json:"isSnapshotSupported"`
+	Success bool            `json:"success"`
+	Error   string          `json:"error,omitempty"`
+	License LicenseResponse `json:"license"`
 }
 
 type EntitlementResponse struct {
@@ -100,35 +98,45 @@ type GetOnlineInstallStatusErrorResponse struct {
 }
 
 func (h *Handler) SyncLicense(w http.ResponseWriter, r *http.Request) {
+	syncLicenseResponse := SyncLicenseResponse{
+		Success: false,
+	}
+
 	syncLicenseRequest := SyncLicenseRequest{}
 	if err := json.NewDecoder(r.Body).Decode(&syncLicenseRequest); err != nil {
-		logger.Error(err)
-		w.WriteHeader(500)
+		syncLicenseResponse.Error = "failed to decode request"
+		logger.Error(errors.Wrap(err, syncLicenseResponse.Error))
+		JSON(w, http.StatusInternalServerError, syncLicenseResponse)
 		return
 	}
 
 	foundApp, err := store.GetStore().GetAppFromSlug(mux.Vars(r)["appSlug"])
 	if err != nil {
-		logger.Error(err)
-		w.WriteHeader(500)
+		syncLicenseResponse.Error = "failed to get app from slug"
+		logger.Error(errors.Wrap(err, syncLicenseResponse.Error))
+		JSON(w, http.StatusInternalServerError, syncLicenseResponse)
 		return
 	}
 
-	latestLicense, err := license.Sync(foundApp, syncLicenseRequest.LicenseData, true)
+	latestLicense, synced, err := license.Sync(foundApp, syncLicenseRequest.LicenseData, true)
 	if err != nil {
-		logger.Error(err)
-		w.WriteHeader(500)
+		syncLicenseResponse.Error = "failed to sync license"
+		logger.Error(errors.Wrap(err, syncLicenseResponse.Error))
+		JSON(w, http.StatusInternalServerError, syncLicenseResponse)
 		return
 	}
 
 	entitlements, expiresAt, err := getLicenseEntitlements(latestLicense)
 	if err != nil {
-		logger.Error(err)
-		w.WriteHeader(500)
+		syncLicenseResponse.Error = "failed to get license entitlements"
+		logger.Error(errors.Wrap(err, syncLicenseResponse.Error))
+		JSON(w, http.StatusInternalServerError, syncLicenseResponse)
 		return
 	}
 
-	syncLicenseResponse := SyncLicenseResponse{
+	syncLicenseResponse.Success = true
+	syncLicenseResponse.Synced = synced
+	syncLicenseResponse.License = LicenseResponse{
 		ID:                         latestLicense.Spec.LicenseID,
 		Assignee:                   latestLicense.Spec.CustomerName,
 		ChannelName:                latestLicense.Spec.ChannelName,
@@ -143,33 +151,41 @@ func (h *Handler) SyncLicense(w http.ResponseWriter, r *http.Request) {
 		IsSnapshotSupported:        latestLicense.Spec.IsSnapshotSupported,
 	}
 
-	JSON(w, 200, syncLicenseResponse)
+	JSON(w, http.StatusOK, syncLicenseResponse)
 }
 
 func (h *Handler) GetLicense(w http.ResponseWriter, r *http.Request) {
+	getLicenseResponse := GetLicenseResponse{
+		Success: false,
+	}
+
 	appSlug := mux.Vars(r)["appSlug"]
 	foundApp, err := store.GetStore().GetAppFromSlug(appSlug)
 	if err != nil {
-		logger.Error(err)
-		w.WriteHeader(500)
+		getLicenseResponse.Error = "failed to get app from slug"
+		logger.Error(errors.Wrap(err, getLicenseResponse.Error))
+		JSON(w, http.StatusInternalServerError, getLicenseResponse)
 		return
 	}
 
 	license, err := store.GetStore().GetLatestLicenseForApp(foundApp.ID)
 	if err != nil {
-		logger.Error(err)
-		w.WriteHeader(500)
+		getLicenseResponse.Error = "failed to get license for app"
+		logger.Error(errors.Wrap(err, getLicenseResponse.Error))
+		JSON(w, http.StatusInternalServerError, getLicenseResponse)
 		return
 	}
 
 	entitlements, expiresAt, err := getLicenseEntitlements(license)
 	if err != nil {
-		logger.Error(err)
-		w.WriteHeader(500)
+		getLicenseResponse.Error = "failed to get license entitlements"
+		logger.Error(errors.Wrap(err, getLicenseResponse.Error))
+		JSON(w, http.StatusInternalServerError, getLicenseResponse)
 		return
 	}
 
-	getLicenseResponse := GetLicenseResponse{
+	getLicenseResponse.Success = true
+	getLicenseResponse.License = LicenseResponse{
 		ID:                         license.Spec.LicenseID,
 		Assignee:                   license.Spec.CustomerName,
 		ChannelName:                license.Spec.ChannelName,
@@ -184,7 +200,7 @@ func (h *Handler) GetLicense(w http.ResponseWriter, r *http.Request) {
 		IsSnapshotSupported:        license.Spec.IsSnapshotSupported,
 	}
 
-	JSON(w, 200, getLicenseResponse)
+	JSON(w, http.StatusOK, getLicenseResponse)
 }
 
 func getLicenseEntitlements(license *kotsv1beta1.License) ([]EntitlementResponse, time.Time, error) {
