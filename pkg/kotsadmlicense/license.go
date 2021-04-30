@@ -18,10 +18,10 @@ import (
 	"k8s.io/client-go/kubernetes/scheme"
 )
 
-func Sync(a *apptypes.App, licenseString string, failOnVersionCreate bool) (*kotsv1beta1.License, error) {
+func Sync(a *apptypes.App, licenseString string, failOnVersionCreate bool) (*kotsv1beta1.License, bool, error) {
 	currentLicense, err := store.GetStore().GetLatestLicenseForApp(a.ID)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to get current license")
+		return nil, false, errors.Wrap(err, "failed to get current license")
 	}
 
 	var updatedLicense *kotsv1beta1.License
@@ -29,13 +29,13 @@ func Sync(a *apptypes.App, licenseString string, failOnVersionCreate bool) (*kot
 		decode := scheme.Codecs.UniversalDeserializer().Decode
 		obj, _, err := decode([]byte(licenseString), nil, nil)
 		if err != nil {
-			return nil, errors.Wrap(err, "failed to parse license")
+			return nil, false, errors.Wrap(err, "failed to parse license")
 		}
 
 		unverifiedLicense := obj.(*kotsv1beta1.License)
 		verifiedLicense, err := kotspull.VerifySignature(unverifiedLicense)
 		if err != nil {
-			return nil, errors.Wrap(err, "failed to verify license")
+			return nil, false, errors.Wrap(err, "failed to verify license")
 		}
 
 		updatedLicense = verifiedLicense
@@ -43,7 +43,7 @@ func Sync(a *apptypes.App, licenseString string, failOnVersionCreate bool) (*kot
 		// get from the api
 		licenseData, err := kotslicense.GetLatestLicense(currentLicense)
 		if err != nil {
-			return nil, errors.Wrap(err, "failed to get latest license")
+			return nil, false, errors.Wrap(err, "failed to get latest license")
 		}
 		updatedLicense = licenseData.License
 		licenseString = string(licenseData.LicenseBytes)
@@ -51,7 +51,7 @@ func Sync(a *apptypes.App, licenseString string, failOnVersionCreate bool) (*kot
 
 	archiveDir, err := ioutil.TempDir("", "kotsadm")
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to create temp dir")
+		return nil, false, errors.Wrap(err, "failed to create temp dir")
 	}
 	defer os.RemoveAll(archiveDir)
 
@@ -59,27 +59,29 @@ func Sync(a *apptypes.App, licenseString string, failOnVersionCreate bool) (*kot
 	// So even if global license sequence is already latest, we still need to create a new app version in this case.
 	err = store.GetStore().GetAppVersionArchive(a.ID, a.CurrentSequence, archiveDir)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to get latest app version")
+		return nil, false, errors.Wrap(err, "failed to get latest app version")
 	}
 
 	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(archiveDir)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to load kotskinds from path")
+		return nil, false, errors.Wrap(err, "failed to load kotskinds from path")
 	}
 
+	synced := false
 	if updatedLicense.Spec.LicenseSequence != currentLicense.Spec.LicenseSequence ||
 		updatedLicense.Spec.LicenseSequence != kotsKinds.License.Spec.LicenseSequence {
 		newSequence, err := store.GetStore().UpdateAppLicense(a.ID, a.CurrentSequence, archiveDir, updatedLicense, licenseString, failOnVersionCreate, &version.DownstreamGitOps{}, &render.Renderer{})
 		if err != nil {
-			return nil, errors.Wrap(err, "failed to update license")
+			return nil, false, errors.Wrap(err, "failed to update license")
 		}
 
 		if err := preflight.Run(a.ID, a.Slug, newSequence, a.IsAirgap, archiveDir); err != nil {
-			return nil, errors.Wrap(err, "failed to run preflights")
+			return nil, false, errors.Wrap(err, "failed to run preflights")
 		}
+		synced = true
 	}
 
-	return updatedLicense, nil
+	return updatedLicense, synced, nil
 }
 
 // Gets the license as it was at a given app sequence
