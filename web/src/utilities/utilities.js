@@ -209,7 +209,29 @@ export function getReadableCronDescriptor(expression) {
   return cronstrue.toString(expression);
 }
 
-export function getServiceSite(provider, hostname = "") {
+export function getGitOpsUri(provider, ownerRepo, hostname = "", httpPort = "") {
+  const owner = ownerRepo.split("/").length && ownerRepo.split("/")[0] || "";
+  const repo = ownerRepo.split("/").length > 1 && ownerRepo.split("/")[1] || "";
+
+  switch (provider) {
+    case "github":
+      return `https://github.com/${ownerRepo}`;
+    case "github_enterprise":
+      return `https://${hostname}/${ownerRepo}`;
+    case "gitlab":
+      return `https://gitlab.com/${ownerRepo}`;
+    case "gitlab_enterprise":
+      return `https://${hostname}/${ownerRepo}`;
+    case "bitbucket":
+      return `https://bitbucket.org/${ownerRepo}`;
+    case "bitbucket_server":
+      return `https://${hostname}:${httpPort}/projects/${owner}/repos/${repo}`;
+    default:
+      return `https://github.com/${ownerRepo}`;
+  }
+}
+
+export function getGitOpsServiceSite(provider, hostname = "") {
   switch (provider) {
     case "github":
       return "github.com";
@@ -221,14 +243,21 @@ export function getServiceSite(provider, hostname = "") {
       return hostname;
     case "bitbucket":
       return "bitbucket.org";
+    case "bitbucket_server":
+      return hostname;
     default:
       return "github.com";
   }
 }
 
-export function getAddKeyUri(gitUri, provider, ownerRepo) {
+export function getAddKeyUri(gitops, ownerRepo) {
+  const gitUri = gitops?.uri;
+  const provider = gitops?.provider;
+  const hostname = gitops?.hostname;
+  const httpPort = gitops?.httpPort;
   const isGitlab = provider === "gitlab" || provider === "gitlab_enterprise";
-  const isBitbucket = provider === "bitbucket" || provider === "bitbucket_server";
+  const isBitbucket = provider === "bitbucket";
+  const isBitbucketServer = provider === "bitbucket_server";
 
   let addKeyUri = `${gitUri}/settings/keys/new`;
   if (isGitlab) {
@@ -236,7 +265,12 @@ export function getAddKeyUri(gitUri, provider, ownerRepo) {
   } else if (isBitbucket) {
     const owner = ownerRepo.split("/").length && ownerRepo.split("/")[0];
     addKeyUri = `https://bitbucket.org/account/user/${owner}/ssh-keys/`;
+  } else if (isBitbucketServer) {
+    const project = ownerRepo.split("/").length && ownerRepo.split("/")[0];
+    const repo = ownerRepo.split("/").length > 1 && ownerRepo.split("/")[1];
+    addKeyUri = `https://${hostname}:${httpPort}/plugins/servlet/ssh/projects/${project}/repos/${repo}/keys`;
   }
+
   return addKeyUri;
 }
 

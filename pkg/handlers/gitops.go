@@ -32,6 +32,8 @@ type CreateGitOpsInput struct {
 	Provider string `json:"provider"`
 	URI      string `json:"uri"`
 	Hostname string `json:"hostname"`
+	HTTPPort string `json:"httpPort"`
+	SSHPort  string `json:"sshPort"`
 }
 
 func (h *Handler) UpdateAppGitOps(w http.ResponseWriter, r *http.Request) {
@@ -305,7 +307,7 @@ func (h *Handler) CreateGitOps(w http.ResponseWriter, r *http.Request) {
 	}
 
 	gitOpsInput := createGitOpsRequest.GitOpsInput
-	if err := gitops.CreateGitOps(gitOpsInput.Provider, gitOpsInput.URI, gitOpsInput.Hostname); err != nil {
+	if err := gitops.CreateGitOps(gitOpsInput.Provider, gitOpsInput.URI, gitOpsInput.Hostname, gitOpsInput.HTTPPort, gitOpsInput.SSHPort); err != nil {
 		logger.Error(err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return

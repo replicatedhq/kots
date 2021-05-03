@@ -1,6 +1,6 @@
 import * as React from "react";
 import PropTypes from "prop-types";
-import { getServiceSite } from "../../utilities/utilities";
+import { getGitOpsServiceSite } from "../../utilities/utilities";
 import Loader from "../shared/Loader";
 
 import "../../scss/components/gitops/GitOpsDeploymentManager.scss";
@@ -149,9 +149,8 @@ class GitOpsRepoDetails extends React.Component {
     } = this.state;
 
     const provider = selectedService?.value;
-    const serviceSite = getServiceSite(provider, hostname);
-
-    const isBitbucket = provider === "bitbucket" || provider === "bitbucket_server";
+    const serviceSite = getGitOpsServiceSite(provider, hostname);
+    const isBitbucketServer = provider === "bitbucket_server";
 
     return (
       <div key={`action-active`} className="GitOpsDeploy--step u-textAlign--left">
@@ -161,10 +160,10 @@ class GitOpsRepoDetails extends React.Component {
             <div className="flex flex1 u-marginBottom--30 u-marginTop--20">
               {provider !== "other" &&
                 <div className="flex flex1 flex-column u-marginRight--20">
-                  <p className="u-fontSize--large u-textColor--primary u-fontWeight--bold u-lineHeight--normal">Owner &amp; Repository</p>
+                  <p className="u-fontSize--large u-textColor--primary u-fontWeight--bold u-lineHeight--normal">{isBitbucketServer ? "Project & Repository" : "Owner & Repository"}</p>
                   <p className="u-fontSize--normal u-textColor--bodyCopy u-fontWeight--medium u-lineHeight--normal u-marginBottom--10">Where will the commit be made?</p>
-                  <input type="text" className={`Input ${providerError?.field === "ownerRepo" && "has-error"}`} placeholder="owner/repository" value={ownerRepo} onChange={(e) => this.setState({ ownerRepo: e.target.value })} />
-                  {providerError?.field === "ownerRepo" && <p className="u-fontSize--small u-marginTop--5 u-textColor--error u-fontWeight--medium u-lineHeight--normal">A owner and repository must be provided</p>}
+                  <input type="text" className={`Input ${providerError?.field === "ownerRepo" && "has-error"}`} placeholder={isBitbucketServer ? "project/repository" : "owner/repository"} value={ownerRepo} onChange={(e) => this.setState({ ownerRepo: e.target.value })} />
+                  {providerError?.field === "ownerRepo" && <p className="u-fontSize--small u-marginTop--5 u-color--chestnut u-fontWeight--medium u-lineHeight--normal">{isBitbucketServer ? "A project and repository must be provided" : "An owner and repository must be provided"}</p>}
                 </div>
               }
               {provider !== "other" &&

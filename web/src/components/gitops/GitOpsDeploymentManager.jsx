@@ -8,7 +8,7 @@ import ErrorModal from "../modals/ErrorModal";
 import { withRouter, Link } from "react-router-dom";
 import GitOpsFlowIllustration from "./GitOpsFlowIllustration";
 import GitOpsRepoDetails from "./GitOpsRepoDetails";
-import { getServiceSite, requiresHostname, Utilities } from "../../utilities/utilities";
+import { getGitOpsUri, requiresHostname, Utilities } from "../../utilities/utilities";
 
 import "../../scss/components/gitops/GitOpsDeploymentManager.scss";
 
@@ -48,20 +48,25 @@ const SERVICES = [
     value: "bitbucket",
     label: "Bitbucket",
   },
-  // {
-  //   value: "bitbucket_server",
-  //   label: "Bitbucket Server",
-  // },
+  {
+    value: "bitbucket_server",
+    label: "Bitbucket Server",
+  },
   // {
   //   value: "other",
   //   label: "Other",
   // }
 ];
 
+const BITBUCKET_SERVER_DEFAULT_HTTP_PORT = "7990";
+const BITBUCKET_SERVER_DEFAULT_SSH_PORT = "7999";
+
 class GitOpsDeploymentManager extends React.Component {
   state = {
     step: "setup",
     hostname: "",
+    httpPort: "",
+    sshPort: "",
     services: SERVICES,
     selectedService: SERVICES[0],
     providerError: null,
@@ -132,6 +137,8 @@ class GitOpsDeploymentManager extends React.Component {
         this.setState({
           selectedService: selectedService ? selectedService : this.state.selectedService,
           hostname: freshGitops.hostname || "",
+          httpPort: freshGitops.httpPort || "",
+          sshPort: freshGitops.sshPort || "",
           gitops: freshGitops
         })
       } else {
@@ -161,7 +168,23 @@ class GitOpsDeploymentManager extends React.Component {
     return !this.providerChanged() && requiresHostname(provider) && hostname !== savedHostname;
   }
 
-  getGitOpsInput = (provider, uri, branch, path, format, action, hostname) => {
+  httpPortChanged = () => {
+    const { httpPort, selectedService } = this.state;
+    const provider = selectedService?.value;
+    const savedHttpPort = this.state.gitops?.httpPort || "";
+    const isBitbucketServer = provider === "bitbucket_server";
+    return !this.providerChanged() && isBitbucketServer && httpPort !== savedHttpPort;
+  }
+
+  sshPortChanged = () => {
+    const { sshPort, selectedService } = this.state;
+    const provider = selectedService?.value;
+    const savedSshPort = this.state.gitops?.sshPort || "";
+    const isBitbucketServer = provider === "bitbucket_server";
+    return !this.providerChanged() && isBitbucketServer && sshPort !== savedSshPort;
+  }
+
+  getGitOpsInput = (provider, uri, branch, path, format, action, hostname, httpPort, sshPort) => {
     let gitOpsInput = new Object();
     gitOpsInput.provider = provider;
     gitOpsInput.uri = uri;
@@ -169,8 +192,15 @@ class GitOpsDeploymentManager extends React.Component {
     gitOpsInput.path = path;
     gitOpsInput.format = format;
     gitOpsInput.action = action;
+
     if (requiresHostname(provider)) {
       gitOpsInput.hostname = hostname;
+    }
+
+    const isBitbucketServer = provider === "bitbucket_server";
+    if (isBitbucketServer) {
+      gitOpsInput.httpPort = httpPort;
+      gitOpsInput.sshPort = sshPort;
     }
 
     return gitOpsInput;
@@ -192,10 +222,12 @@ class GitOpsDeploymentManager extends React.Component {
       selectedService
     } = this.state;
 
+    const httpPort = this.state.httpPort || BITBUCKET_SERVER_DEFAULT_HTTP_PORT;
+    const sshPort = this.state.sshPort || BITBUCKET_SERVER_DEFAULT_SSH_PORT;
+
     const provider = selectedService.value;
-    const serviceSite = getServiceSite(provider, hostname);
-    const repoUri = this.isSingleApp() ? `https://${serviceSite}/${ownerRepo}` : "";
-    const gitOpsInput = this.getGitOpsInput(provider, repoUri, branch, path, format, action, hostname);
+    const repoUri = getGitOpsUri(provider, ownerRepo, hostname, httpPort);
+    const gitOpsInput = this.getGitOpsInput(provider, repoUri, branch, path, format, action, hostname, httpPort, sshPort);
 
     try {
       if (this.state.gitops?.enabled && this.providerChanged()) {
@@ -311,12 +343,12 @@ class GitOpsDeploymentManager extends React.Component {
       return;
     }
 
-    const { provider, hostname, uri } = this.state.gitops;
+    const { provider, hostname, httpPort, sshPort, uri } = this.state.gitops;
     const branch = "";
     const path = "";
     const format = "single";
     const action = "commit";
-    const gitOpsInput = this.getGitOpsInput(provider, uri, branch, path, format, action, hostname);
+    const gitOpsInput = this.getGitOpsInput(provider, uri, branch, path, format, action, hostname, httpPort, sshPort);
 
     try {
       const clusterId = downstream?.cluster?.id;
@@ -389,7 +421,7 @@ class GitOpsDeploymentManager extends React.Component {
     return (
       <div className="flex flex1 flex-column u-marginRight--10">
         <p className="u-fontSize--large u-textColor--primary u-fontWeight--bold u-lineHeight--normal">Which GitOps provider do you use?</p>
-        <p className="u-fontSize--normal u-textColor--bodyCopy u-fontWeight--medium u-lineHeight--normal u-marginBottom--10">If your provider is not listed, select “Other”.</p>
+        <p className="u-fontSize--normal u-textColor--bodyCopy u-fontWeight--medium u-lineHeight--normal u-marginBottom--10">Select the git provider you use for gitops.</p>
         <div className="u-position--relative">
           <Select
             className="replicated-select-container"
@@ -422,14 +454,47 @@ class GitOpsDeploymentManager extends React.Component {
     );
   }
 
+  renderHttpPort = (provider, httpPort) => {
+    const isBitbucketServer = provider === "bitbucket_server";
+    if (!isBitbucketServer) {
+      return <div className="flex flex1" />;
+    }
+    return (
+      <div className="flex flex1 flex-column u-marginRight--10">
+        <p className="u-fontSize--large u-color--tuna u-fontWeight--bold u-lineHeight--normal">HTTP Port</p>
+        <p className="u-fontSize--normal u-color--dustyGray u-fontWeight--medium u-lineHeight--normal u-marginBottom--10">HTTP Port of your GitOps server.</p>
+        <input type="text" className="Input" placeholder={BITBUCKET_SERVER_DEFAULT_HTTP_PORT} value={httpPort} onChange={(e) => this.setState({ httpPort: e.target.value })} />
+      </div>
+    );
+  }
+
+  renderSshPort = (provider, sshPort) => {
+    const isBitbucketServer = provider === "bitbucket_server";
+    if (!isBitbucketServer) {
+      return <div className="flex flex1" />;
+    }
+    return (
+      <div className="flex flex1 flex-column u-marginLeft--10">
+        <p className="u-fontSize--large u-color--tuna u-fontWeight--bold u-lineHeight--normal">SSH Port</p>
+        <p className="u-fontSize--normal u-color--dustyGray u-fontWeight--medium u-lineHeight--normal u-marginBottom--10">SSH Port of your GitOps server.</p>
+        <input type="text" className="Input" placeholder={BITBUCKET_SERVER_DEFAULT_SSH_PORT} value={sshPort} onChange={(e) => this.setState({ sshPort: e.target.value })} />
+      </div>
+    );
+  }
+
   renderActiveStep = (step) => {
     const {
       hostname,
+      httpPort,
+      sshPort,
       services,
       selectedService,
       providerError,
       finishingSetup,
     } = this.state;
+
+    const provider = selectedService?.value;
+    const isBitbucketServer = provider === "bitbucket_server";
 
     switch (step.step) {
       case "setup":
@@ -451,8 +516,14 @@ class GitOpsDeploymentManager extends React.Component {
             <div className="flex-column u-textAlign--left u-marginBottom--30">
               <div className="flex flex1">
                 {this.renderGitOpsProviderSelector(services, selectedService)}
-                {this.renderHostName(selectedService?.value, hostname, providerError)}
+                {this.renderHostName(provider, hostname, providerError)}
               </div>
+              {isBitbucketServer && 
+                <div className="flex flex1 u-marginTop--30">
+                  {this.renderHttpPort(provider, httpPort)}
+                  {this.renderSshPort(provider, sshPort)}
+                </div>
+              }
             </div>
             <div>
               <button
@@ -550,17 +621,29 @@ class GitOpsDeploymentManager extends React.Component {
     );
   }
 
+  dataChanged = () => {
+    return this.providerChanged() || this.hostnameChanged() || this.httpPortChanged() || this.sshPortChanged();
+  }
+
   renderConfiguredGitOps = () => {
-    const { services, selectedService, hostname, providerError, finishingSetup } = this.state;
-    const dataChanged = this.providerChanged() || this.hostnameChanged();
+    const { services, selectedService, hostname, httpPort, sshPort, providerError, finishingSetup } = this.state;
+    const provider = selectedService?.value;
+    const isBitbucketServer = provider === "bitbucket_server";
+    const dataChanged = this.dataChanged();
     return (
       <div className="u-textAlign--center">
         <div className="ConfiguredGitOps--wrapper">
             <p className="u-fontSize--largest u-fontWeight--bold u-textColor--accent u-lineHeight--normal u-marginBottom--30">Admin Console GitOps</p>
-            <div className={`flex ${dataChanged ? "u-marginBottom--20" : "u-marginBottom--30"}`}>
+            <div className="flex u-marginBottom--30">
               {this.renderGitOpsProviderSelector(services, selectedService)}
               {this.renderHostName(selectedService?.value, hostname, providerError)}
             </div>
+            {isBitbucketServer && 
+              <div className="flex u-marginBottom--30">
+                {this.renderHttpPort(selectedService?.value, httpPort)}
+                {this.renderSshPort(selectedService?.value, sshPort)}
+              </div>
+            }
             {dataChanged &&
               <button className="btn secondary u-marginBottom--30" disabled={finishingSetup} onClick={this.updateSettings}>
                 {finishingSetup ? "Updating" : "Update"}

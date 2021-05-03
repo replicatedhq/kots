@@ -216,6 +216,8 @@ func responseAppFromApp(a *apptypes.App) (*types.ResponseApp, error) {
 				Provider:    downstreamGitOps.Provider,
 				Uri:         downstreamGitOps.RepoURI,
 				Hostname:    downstreamGitOps.Hostname,
+				HTTPPort:    downstreamGitOps.HTTPPort,
+				SSHPort:     downstreamGitOps.SSHPort,
 				Path:        downstreamGitOps.Path,
 				Branch:      downstreamGitOps.Branch,
 				Format:      downstreamGitOps.Format,

@@ -35,6 +35,8 @@ type GitOpsConfig struct {
 	Provider    string `json:"provider"`
 	RepoURI     string `json:"repoUri"`
 	Hostname    string `json:"hostname"`
+	HTTPPort    string `json:"httpPort"`
+	SSHPort     string `json:"sshPort"`
 	Path        string `json:"path"`
 	Branch      string `json:"branch"`
 	Format      string `json:"format"`
@@ -47,6 +49,8 @@ type GitOpsConfig struct {
 type GlobalGitOpsConfig struct {
 	Enabled  bool   `json:"enabled"`
 	Hostname string `json:"hostname"`
+	HTTPPort string `json:"httpPort"`
+	SSHPort  string `json:"sshPort"`
 	Provider string `json:"provider"`
 	URI      string `json:"uri"`
 }
@@ -64,7 +68,7 @@ func (g *GitOpsConfig) CommitURL(hash string) string {
 	case "gitlab", "gitlab_enterprise":
 		return fmt.Sprintf("%s/commit/%s", g.RepoURI, hash)
 
-	case "bitbucket":
+	case "bitbucket", "bitbucket_server":
 		return fmt.Sprintf("%s/commits/%s", g.RepoURI, hash)
 
 	default:
@@ -72,23 +76,39 @@ func (g *GitOpsConfig) CommitURL(hash string) string {
 	}
 }
 
-func (g *GitOpsConfig) CloneURL() string {
+func (g *GitOpsConfig) CloneURL() (string, error) {
 	// copied this logic from node js api
-	// this feels incomplete and fragile....  needs enterprise support
 	uriParts := strings.Split(g.RepoURI, "/")
+
+	if len(uriParts) < 5 {
+		return "", errors.Errorf("unexpected url format: %s", g.RepoURI)
+	}
+
+	owner := uriParts[3]
+	repo := uriParts[4]
+
+	if g.Provider == "bitbucket_server" {
+		if len(uriParts) < 7 {
+			return "", errors.Errorf("unexpected bitbucket server url format: %s", g.RepoURI)
+		}
+		owner = uriParts[4]
+		repo = uriParts[6]
+	}
 
 	switch g.Provider {
 	case "github":
-		return fmt.Sprintf("git@github.com:%s/%s.git", uriParts[3], uriParts[4])
+		return fmt.Sprintf("git@github.com:%s/%s.git", owner, repo), nil
 	case "gitlab":
-		return fmt.Sprintf("git@gitlab.com:%s/%s.git", uriParts[3], uriParts[4])
+		return fmt.Sprintf("git@gitlab.com:%s/%s.git", owner, repo), nil
 	case "bitbucket":
-		return fmt.Sprintf("git@bitbucket.org:%s/%s.git", uriParts[3], uriParts[4])
+		return fmt.Sprintf("git@bitbucket.org:%s/%s.git", owner, repo), nil
+	case "bitbucket_server":
+		return fmt.Sprintf("git@%s:%s/%s/%s.git", g.Hostname, g.SSHPort, owner, repo), nil
 	case "github_enterprise", "gitlab_enterprise":
-		return fmt.Sprintf("git@%s:%s/%s.git", uriParts[2], uriParts[3], uriParts[4])
+		return fmt.Sprintf("git@%s:%s/%s.git", g.Hostname, owner, repo), nil
 	}
 
-	return ""
+	return "", errors.Errorf("unsupported provider type: %s", g.Provider)
 }
 
 // GetDownstreamGitOps will return the gitops config for a downstream,
@@ -139,7 +159,7 @@ func GetDownstreamGitOps(appID string, clusterID string) (*GitOpsConfig, error) 
 				if err != nil {
 					return nil, errors.Wrap(err, "failed to parse index")
 				}
-				provider, publicKey, privateKey, repoURI, hostname := gitOpsConfigFromSecretData(idx, secret.Data)
+				provider, publicKey, privateKey, repoURI, hostname, httpPort, sshPort := gitOpsConfigFromSecretData(idx, secret.Data)
 
 				cipher, err := crypto.AESCipherFromString(os.Getenv("API_ENCRYPTION_KEY"))
 				if err != nil {
@@ -161,6 +181,8 @@ func GetDownstreamGitOps(appID string, clusterID string) (*GitOpsConfig, error) 
 					PrivateKey: string(decryptedPrivateKey),
 					RepoURI:    repoURI,
 					Hostname:   hostname,
+					HTTPPort:   httpPort,
+					SSHPort:    sshPort,
 					Branch:     configMapData["branch"],
 					Path:       configMapData["path"],
 					Format:     configMapData["format"],
@@ -346,8 +368,13 @@ func TestGitOpsConnection(gitOpsConfig *GitOpsConfig) (string, error) {
 	}
 	defer os.RemoveAll(workDir)
 
+	cloneURL, err := gitOpsConfig.CloneURL()
+	if err != nil {
+		return "", errors.Wrap(err, "failed to get clone url")
+	}
+
 	repo, err := git.PlainClone(workDir, false, &git.CloneOptions{
-		URL:               gitOpsConfig.CloneURL(),
+		URL:               cloneURL,
 		RecurseSubmodules: git.DefaultSubmoduleRecursionDepth,
 		Auth:              auth,
 	})
@@ -363,7 +390,7 @@ func TestGitOpsConnection(gitOpsConfig *GitOpsConfig) (string, error) {
 	return ref.Name().Short(), nil
 }
 
-func CreateGitOps(provider string, repoURI string, hostname string) error {
+func CreateGitOps(provider string, repoURI string, hostname string, httpPort string, sshPort string) error {
 	clientset, err := k8sutil.GetClientset()
 	if err != nil {
 		return errors.Wrap(err, "failed to get k8s client set")
@@ -442,9 +469,26 @@ func CreateGitOps(provider string, repoURI string, hostname string) error {
 	if ok {
 		delete(secretData, hostnameKey)
 	}
-
 	if hostname != "" {
 		secretData[hostnameKey] = []byte(hostname)
+	}
+
+	httpPortKey := fmt.Sprintf("provider.%d.httpPort", repoIdx)
+	_, ok = secretData[httpPortKey]
+	if ok {
+		delete(secretData, httpPortKey)
+	}
+	if httpPort != "" {
+		secretData[httpPortKey] = []byte(httpPort)
+	}
+
+	sshPortKey := fmt.Sprintf("provider.%d.sshPort", repoIdx)
+	_, ok = secretData[sshPortKey]
+	if ok {
+		delete(secretData, sshPortKey)
+	}
+	if sshPort != "" {
+		secretData[sshPortKey] = []byte(sshPort)
 	}
 
 	if secretExists {
@@ -508,17 +552,21 @@ func GetGitOps() (GlobalGitOpsConfig, error) {
 		Provider: string(secret.Data["provider.0.type"]),
 		URI:      string(secret.Data["provider.0.repoUri"]),
 		Hostname: string(secret.Data["provider.0.hostname"]),
+		HTTPPort: string(secret.Data["provider.0.httpPort"]),
+		SSHPort:  string(secret.Data["provider.0.sshPort"]),
 	}
 
 	return parsedConfig, nil
 }
 
-func gitOpsConfigFromSecretData(idx int64, secretData map[string][]byte) (string, string, string, string, string) {
+func gitOpsConfigFromSecretData(idx int64, secretData map[string][]byte) (string, string, string, string, string, string, string) {
 	provider := ""
 	publicKey := ""
 	privateKey := ""
 	repoURI := ""
 	hostname := ""
+	httpPort := ""
+	sshPort := ""
 
 	providerDecoded, ok := secretData[fmt.Sprintf("provider.%d.type", idx)]
 	if ok {
@@ -545,7 +593,17 @@ func gitOpsConfigFromSecretData(idx int64, secretData map[string][]byte) (string
 		hostname = string(hostnameDecoded)
 	}
 
-	return provider, publicKey, privateKey, repoURI, hostname
+	httpPortDecoded, ok := secretData[fmt.Sprintf("provider.%d.httpPort", idx)]
+	if ok {
+		httpPort = string(httpPortDecoded)
+	}
+
+	sshPortDecoded, ok := secretData[fmt.Sprintf("provider.%d.sshPort", idx)]
+	if ok {
+		sshPort = string(sshPortDecoded)
+	}
+
+	return provider, publicKey, privateKey, repoURI, hostname, httpPort, sshPort
 }
 
 func getAuth(privateKey string) (transport.AuthMethod, error) {
@@ -587,9 +645,14 @@ func CreateGitOpsCommit(gitOpsConfig *GitOpsConfig, appSlug string, appName stri
 	}
 	defer os.RemoveAll(workDir)
 
+	cloneURL, err := gitOpsConfig.CloneURL()
+	if err != nil {
+		return "", errors.Wrap(err, "failed to get clone url")
+	}
+
 	cloneOptions := &git.CloneOptions{
 		RemoteName:        git.DefaultRemoteName,
-		URL:               gitOpsConfig.CloneURL(),
+		URL:               cloneURL,
 		RecurseSubmodules: git.DefaultSubmoduleRecursionDepth,
 		Auth:              auth,
 	}
