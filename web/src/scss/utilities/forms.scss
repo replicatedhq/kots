@@ -35,7 +35,7 @@
   
   &.is-active {
     border-color: $accent-color;
-    background-color: $accent-color;
+    background-color: lighten($accent-color, 43.5%);
     &:hover {
       border-color: $accent-color;
     }
