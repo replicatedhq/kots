@@ -13,7 +13,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/airgap"
 	"github.com/replicatedhq/kots/pkg/logger"
-	"github.com/replicatedhq/kots/pkg/reporting"
 	"github.com/replicatedhq/kots/pkg/store"
 	"github.com/replicatedhq/kots/pkg/updatechecker"
 	"github.com/replicatedhq/kots/pkg/util"
@@ -43,7 +42,7 @@ func (h *Handler) AppUpdateCheck(w http.ResponseWriter, r *http.Request) {
 	contentType = strings.TrimSpace(contentType)
 
 	if contentType == "application/json" {
-		availableUpdates, err := updatechecker.CheckForUpdates(foundApp.ID, deploy, skipPreflights)
+		availableUpdates, err := updatechecker.CheckForUpdates(foundApp.ID, deploy, skipPreflights, isCLI)
 		if err != nil {
 			logger.Error(err)
 			w.WriteHeader(500)
@@ -58,17 +57,6 @@ func (h *Handler) AppUpdateCheck(w http.ResponseWriter, r *http.Request) {
 		appUpdateCheckResponse := AppUpdateCheckResponse{
 			AvailableUpdates:   availableUpdates,
 			CurrentAppSequence: foundApp.CurrentSequence,
-		}
-
-		// preflights reporting
-		if deploy {
-			go func() {
-				sequence := foundApp.CurrentSequence + availableUpdates
-				err = reporting.SendPreflightInfo(foundApp.ID, int(sequence), skipPreflights, isCLI)
-				if err != nil {
-					logger.Debugf("failed to update preflights reports: %v", err)
-				}
-			}()
 		}
 
 		JSON(w, http.StatusOK, appUpdateCheckResponse)

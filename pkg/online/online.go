@@ -202,6 +202,14 @@ func CreateAppFromOnline(pendingApp *types.PendingApp, upstreamURI string, isAut
 				if err := version.DeployVersion(pendingApp.ID, newSequence); err != nil {
 					return nil, errors.Wrap(err, "failed to deploy version")
 				}
+
+				// preflights reporting
+				go func() {
+					isCLI := true
+					if err := reporting.SendPreflightInfo(pendingApp.ID, newSequence, skipPreflights, isCLI); err != nil {
+						logger.Debugf("failed to send preflights data to replicated app: %v", err)
+					}
+				}()
 			} else {
 				err := store.GetStore().SetDownstreamVersionPendingPreflight(pendingApp.ID, newSequence)
 				if err != nil {
@@ -215,15 +223,6 @@ func CreateAppFromOnline(pendingApp *types.PendingApp, upstreamURI string, isAut
 		if err := preflight.Run(pendingApp.ID, pendingApp.Slug, newSequence, false, tmpRoot); err != nil {
 			return nil, errors.Wrap(err, "failed to start preflights")
 		}
-	}
-
-	if isAutomated {
-		go func() {
-			isCLI := true
-			if err := reporting.SendPreflightInfo(pendingApp.ID, int(newSequence), skipPreflights, isCLI); err != nil {
-				logger.Debugf("failed to send preflights data to replicated app: %v", err)
-			}
-		}()
 	}
 
 	return kotsKinds, nil

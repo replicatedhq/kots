@@ -41,7 +41,6 @@ type UpdateUndeployResultRequest struct {
 type DeployAppVersionRequest struct {
 	IsSkipPreflights             bool `json:"isSkipPreflights"`
 	ContinueWithFailedPreflights bool `json:"continueWithFailedPreflights"`
-	IsAirgap                     bool `json:"isAirgap"`
 	IsCLI                        bool `json:"isCli"`
 }
 
@@ -82,23 +81,6 @@ func (h *Handler) DeployAppVersion(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// preflights reports
-	if !request.IsAirgap {
-		go func() {
-			if request.IsSkipPreflights {
-				if err := reporting.SendPreflightInfo(a.ID, int(sequence), request.IsSkipPreflights, request.IsCLI); err != nil {
-					logger.Debugf("failed to send preflights data to replicated app: %v", err)
-					return
-				}
-			} else if request.ContinueWithFailedPreflights && !request.IsSkipPreflights {
-				if err := reporting.SendPreflightInfo(a.ID, int(sequence), request.IsSkipPreflights, request.IsCLI); err != nil {
-					logger.Debugf("failed to send preflights data to replicated app: %v", err)
-					return
-				}
-			}
-		}()
-	}
-
 	if err := store.GetStore().DeleteDownstreamDeployStatus(a.ID, downstreams[0].ClusterID, int64(sequence)); err != nil {
 		logger.Error(err)
 		w.WriteHeader(http.StatusInternalServerError)
@@ -110,6 +92,16 @@ func (h *Handler) DeployAppVersion(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
+
+	// preflights reports
+	go func() {
+		if request.IsSkipPreflights || request.ContinueWithFailedPreflights {
+			if err := reporting.SendPreflightInfo(a.ID, int64(sequence), request.IsSkipPreflights, request.IsCLI); err != nil {
+				logger.Debugf("failed to send preflights data to replicated app: %v", err)
+				return
+			}
+		}
+	}()
 
 	JSON(w, 204, "")
 }

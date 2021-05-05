@@ -102,7 +102,7 @@ func Configure(appID string) error {
 	_, err = job.AddFunc(cronSpec, func() {
 		logger.Debug("checking updates for app", zap.String("slug", jobAppSlug))
 
-		availableUpdates, err := CheckForUpdates(jobAppID, false, false)
+		availableUpdates, err := CheckForUpdates(jobAppID, false, false, false)
 		if err != nil {
 			logger.Error(errors.Wrapf(err, "failed to check updates for app %s", jobAppSlug))
 			return
@@ -142,7 +142,7 @@ func Stop(appID string) {
 // CheckForUpdates checks (and downloads) latest updates for a specific app
 // if "deploy" is set to true, the latest version/update will be deployed
 // returns the number of available updates
-func CheckForUpdates(appID string, deploy bool, skipPreflights bool) (int64, error) {
+func CheckForUpdates(appID string, deploy bool, skipPreflights bool, isCLI bool) (int64, error) {
 	currentStatus, _, err := store.GetStore().GetTaskStatus("update-download")
 	if err != nil {
 		return 0, errors.Wrap(err, "failed to get task status")
@@ -287,6 +287,14 @@ func CheckForUpdates(appID string, deploy bool, skipPreflights bool) (int64, err
 				if err != nil {
 					logger.Error(err)
 				}
+
+				// preflights reporting
+				go func() {
+					err = reporting.SendPreflightInfo(a.ID, sequence, skipPreflights, isCLI)
+					if err != nil {
+						logger.Debugf("failed to update preflights reports: %v", err)
+					}
+				}()
 			}
 		}
 	}()
