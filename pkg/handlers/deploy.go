@@ -198,7 +198,12 @@ func createSupportBundleSpec(appID string, sequence int64, origin string, inClus
 		return errors.Wrap(err, "failed to load current kotskinds")
 	}
 
-	err = supportbundle.CreateRenderedSpec(appID, sequence, origin, inCluster, kotsKinds)
+	defaultOpts := supportbundle.DefaultTroubleshootOpts{
+		Origin:    origin,
+		InCluster: inCluster,
+	}
+
+	_, err = supportbundle.CreateRenderedSpec(appID, sequence, kotsKinds, defaultOpts)
 	if err != nil {
 		return errors.Wrap(err, "failed to create rendered support bundle spec")
 	}

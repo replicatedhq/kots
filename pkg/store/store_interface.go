@@ -17,6 +17,7 @@ import (
 	registrytypes "github.com/replicatedhq/kots/pkg/registry/types"
 	rendertypes "github.com/replicatedhq/kots/pkg/render/types"
 	sessiontypes "github.com/replicatedhq/kots/pkg/session/types"
+	"github.com/replicatedhq/kots/pkg/supportbundle/types"
 	supportbundletypes "github.com/replicatedhq/kots/pkg/supportbundle/types"
 	usertypes "github.com/replicatedhq/kots/pkg/user/types"
 	troubleshootredact "github.com/replicatedhq/troubleshoot/pkg/redact"
@@ -57,17 +58,16 @@ type RegistryStore interface {
 
 type SupportBundleStore interface {
 	ListSupportBundles(appID string) ([]*supportbundletypes.SupportBundle, error)
-	ListPendingSupportBundlesForApp(appID string) ([]*supportbundletypes.PendingSupportBundle, error)
 	GetSupportBundle(bundleID string) (*supportbundletypes.SupportBundle, error)
-	CreatePendingSupportBundle(bundleID string, appID string, clusterID string) error
 	CreateSupportBundle(bundleID string, appID string, archivePath string, marshalledTree []byte) (*supportbundletypes.SupportBundle, error)
 	GetSupportBundleArchive(bundleID string) (archivePath string, err error)
 	GetSupportBundleAnalysis(bundleID string) (*supportbundletypes.SupportBundleAnalysis, error)
 	SetSupportBundleAnalysis(bundleID string, insights []byte) error
 	GetRedactions(bundleID string) (troubleshootredact.RedactionList, error)
 	SetRedactions(bundleID string, redacts troubleshootredact.RedactionList) error
-	GetSupportBundleSpecForApp(id string) (spec string, err error)
-	DeletePendingSupportBundle(id string) error
+	CreateInProgressSupportBundle(supportBundle *types.SupportBundle) error
+	UpdateSupportBundle(bundle *types.SupportBundle) error
+	UploadSupportBundle(bundleID string, archivePath string, marshalledTree []byte) error
 }
 
 type PreflightStore interface {

@@ -52,24 +52,7 @@ RUN useradd -c 'kotsadm-operator user' -m -d /home/kotsadm-operator -s /bin/bash
 USER kotsadm-operator
 ENV HOME /home/kotsadm-operator
 
-# Install krew
-COPY --chown=kotsadm-operator:kotsadm-operator ./deploy/install-krew.sh /install-krew.sh
-RUN /install-krew.sh
-ENV PATH="$HOME/.krew/bin:$PATH"
-
 COPY --chown=kotsadm-operator:kotsadm-operator ./bin/kotsadm-operator /kotsadm-operator
-
-# Install our plugins
-USER root
-ENV TROUBLESHOOT_VERSION=0.10.21
-RUN curl -L "https://github.com/replicatedhq/troubleshoot/releases/download/v${TROUBLESHOOT_VERSION}/preflight_linux_amd64.tar.gz" > /tmp/preflight.tar.gz && \
-  cd /tmp && tar xzvf preflight.tar.gz && \
-  mv /tmp/preflight /usr/local/bin/kubectl-preflight
-
-RUN curl -L "https://github.com/replicatedhq/troubleshoot/releases/download/v${TROUBLESHOOT_VERSION}/support-bundle_linux_amd64.tar.gz" > /tmp/support-bundle.tar.gz && \
-  cd /tmp && tar xzvf support-bundle.tar.gz && \
-  mv /tmp/support-bundle /usr/local/bin/kubectl-support_bundle
-USER kotsadm-operator
 
 EXPOSE 3000
 # ARG version=unknown

@@ -106,21 +106,6 @@ func (mr *MockStoreMockRecorder) ListSupportBundles(appID interface{}) *gomock.C
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListSupportBundles", reflect.TypeOf((*MockStore)(nil).ListSupportBundles), appID)
 }
 
-// ListPendingSupportBundlesForApp mocks base method
-func (m *MockStore) ListPendingSupportBundlesForApp(appID string) ([]*types11.PendingSupportBundle, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ListPendingSupportBundlesForApp", appID)
-	ret0, _ := ret[0].([]*types11.PendingSupportBundle)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// ListPendingSupportBundlesForApp indicates an expected call of ListPendingSupportBundlesForApp
-func (mr *MockStoreMockRecorder) ListPendingSupportBundlesForApp(appID interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListPendingSupportBundlesForApp", reflect.TypeOf((*MockStore)(nil).ListPendingSupportBundlesForApp), appID)
-}
-
 // GetSupportBundle mocks base method
 func (m *MockStore) GetSupportBundle(bundleID string) (*types11.SupportBundle, error) {
 	m.ctrl.T.Helper()
@@ -134,20 +119,6 @@ func (m *MockStore) GetSupportBundle(bundleID string) (*types11.SupportBundle, e
 func (mr *MockStoreMockRecorder) GetSupportBundle(bundleID interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetSupportBundle", reflect.TypeOf((*MockStore)(nil).GetSupportBundle), bundleID)
-}
-
-// CreatePendingSupportBundle mocks base method
-func (m *MockStore) CreatePendingSupportBundle(bundleID, appID, clusterID string) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CreatePendingSupportBundle", bundleID, appID, clusterID)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// CreatePendingSupportBundle indicates an expected call of CreatePendingSupportBundle
-func (mr *MockStoreMockRecorder) CreatePendingSupportBundle(bundleID, appID, clusterID interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreatePendingSupportBundle", reflect.TypeOf((*MockStore)(nil).CreatePendingSupportBundle), bundleID, appID, clusterID)
 }
 
 // CreateSupportBundle mocks base method
@@ -238,33 +209,46 @@ func (mr *MockStoreMockRecorder) SetRedactions(bundleID, redacts interface{}) *g
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetRedactions", reflect.TypeOf((*MockStore)(nil).SetRedactions), bundleID, redacts)
 }
 
-// GetSupportBundleSpecForApp mocks base method
-func (m *MockStore) GetSupportBundleSpecForApp(id string) (string, error) {
+// CreateInProgressSupportBundle mocks base method
+func (m *MockStore) CreateInProgressSupportBundle(supportBundle *types11.SupportBundle) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetSupportBundleSpecForApp", id)
-	ret0, _ := ret[0].(string)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetSupportBundleSpecForApp indicates an expected call of GetSupportBundleSpecForApp
-func (mr *MockStoreMockRecorder) GetSupportBundleSpecForApp(id interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetSupportBundleSpecForApp", reflect.TypeOf((*MockStore)(nil).GetSupportBundleSpecForApp), id)
-}
-
-// DeletePendingSupportBundle mocks base method
-func (m *MockStore) DeletePendingSupportBundle(id string) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "DeletePendingSupportBundle", id)
+	ret := m.ctrl.Call(m, "CreateInProgressSupportBundle", supportBundle)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// DeletePendingSupportBundle indicates an expected call of DeletePendingSupportBundle
-func (mr *MockStoreMockRecorder) DeletePendingSupportBundle(id interface{}) *gomock.Call {
+// CreateInProgressSupportBundle indicates an expected call of CreateInProgressSupportBundle
+func (mr *MockStoreMockRecorder) CreateInProgressSupportBundle(supportBundle interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeletePendingSupportBundle", reflect.TypeOf((*MockStore)(nil).DeletePendingSupportBundle), id)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateInProgressSupportBundle", reflect.TypeOf((*MockStore)(nil).CreateInProgressSupportBundle), supportBundle)
+}
+
+// UpdateSupportBundle mocks base method
+func (m *MockStore) UpdateSupportBundle(bundle *types11.SupportBundle) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateSupportBundle", bundle)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpdateSupportBundle indicates an expected call of UpdateSupportBundle
+func (mr *MockStoreMockRecorder) UpdateSupportBundle(bundle interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateSupportBundle", reflect.TypeOf((*MockStore)(nil).UpdateSupportBundle), bundle)
+}
+
+// UploadSupportBundle mocks base method
+func (m *MockStore) UploadSupportBundle(bundleID, archivePath string, marshalledTree []byte) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UploadSupportBundle", bundleID, archivePath, marshalledTree)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UploadSupportBundle indicates an expected call of UploadSupportBundle
+func (mr *MockStoreMockRecorder) UploadSupportBundle(bundleID, archivePath, marshalledTree interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UploadSupportBundle", reflect.TypeOf((*MockStore)(nil).UploadSupportBundle), bundleID, archivePath, marshalledTree)
 }
 
 // SetPreflightProgress mocks base method
@@ -1646,21 +1630,6 @@ func (mr *MockSupportBundleStoreMockRecorder) ListSupportBundles(appID interface
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListSupportBundles", reflect.TypeOf((*MockSupportBundleStore)(nil).ListSupportBundles), appID)
 }
 
-// ListPendingSupportBundlesForApp mocks base method
-func (m *MockSupportBundleStore) ListPendingSupportBundlesForApp(appID string) ([]*types11.PendingSupportBundle, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ListPendingSupportBundlesForApp", appID)
-	ret0, _ := ret[0].([]*types11.PendingSupportBundle)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// ListPendingSupportBundlesForApp indicates an expected call of ListPendingSupportBundlesForApp
-func (mr *MockSupportBundleStoreMockRecorder) ListPendingSupportBundlesForApp(appID interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListPendingSupportBundlesForApp", reflect.TypeOf((*MockSupportBundleStore)(nil).ListPendingSupportBundlesForApp), appID)
-}
-
 // GetSupportBundle mocks base method
 func (m *MockSupportBundleStore) GetSupportBundle(bundleID string) (*types11.SupportBundle, error) {
 	m.ctrl.T.Helper()
@@ -1674,20 +1643,6 @@ func (m *MockSupportBundleStore) GetSupportBundle(bundleID string) (*types11.Sup
 func (mr *MockSupportBundleStoreMockRecorder) GetSupportBundle(bundleID interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetSupportBundle", reflect.TypeOf((*MockSupportBundleStore)(nil).GetSupportBundle), bundleID)
-}
-
-// CreatePendingSupportBundle mocks base method
-func (m *MockSupportBundleStore) CreatePendingSupportBundle(bundleID, appID, clusterID string) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CreatePendingSupportBundle", bundleID, appID, clusterID)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// CreatePendingSupportBundle indicates an expected call of CreatePendingSupportBundle
-func (mr *MockSupportBundleStoreMockRecorder) CreatePendingSupportBundle(bundleID, appID, clusterID interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreatePendingSupportBundle", reflect.TypeOf((*MockSupportBundleStore)(nil).CreatePendingSupportBundle), bundleID, appID, clusterID)
 }
 
 // CreateSupportBundle mocks base method
@@ -1778,33 +1733,46 @@ func (mr *MockSupportBundleStoreMockRecorder) SetRedactions(bundleID, redacts in
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetRedactions", reflect.TypeOf((*MockSupportBundleStore)(nil).SetRedactions), bundleID, redacts)
 }
 
-// GetSupportBundleSpecForApp mocks base method
-func (m *MockSupportBundleStore) GetSupportBundleSpecForApp(id string) (string, error) {
+// CreateInProgressSupportBundle mocks base method
+func (m *MockSupportBundleStore) CreateInProgressSupportBundle(supportBundle *types11.SupportBundle) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetSupportBundleSpecForApp", id)
-	ret0, _ := ret[0].(string)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetSupportBundleSpecForApp indicates an expected call of GetSupportBundleSpecForApp
-func (mr *MockSupportBundleStoreMockRecorder) GetSupportBundleSpecForApp(id interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetSupportBundleSpecForApp", reflect.TypeOf((*MockSupportBundleStore)(nil).GetSupportBundleSpecForApp), id)
-}
-
-// DeletePendingSupportBundle mocks base method
-func (m *MockSupportBundleStore) DeletePendingSupportBundle(id string) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "DeletePendingSupportBundle", id)
+	ret := m.ctrl.Call(m, "CreateInProgressSupportBundle", supportBundle)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// DeletePendingSupportBundle indicates an expected call of DeletePendingSupportBundle
-func (mr *MockSupportBundleStoreMockRecorder) DeletePendingSupportBundle(id interface{}) *gomock.Call {
+// CreateInProgressSupportBundle indicates an expected call of CreateInProgressSupportBundle
+func (mr *MockSupportBundleStoreMockRecorder) CreateInProgressSupportBundle(supportBundle interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeletePendingSupportBundle", reflect.TypeOf((*MockSupportBundleStore)(nil).DeletePendingSupportBundle), id)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateInProgressSupportBundle", reflect.TypeOf((*MockSupportBundleStore)(nil).CreateInProgressSupportBundle), supportBundle)
+}
+
+// UpdateSupportBundle mocks base method
+func (m *MockSupportBundleStore) UpdateSupportBundle(bundle *types11.SupportBundle) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateSupportBundle", bundle)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpdateSupportBundle indicates an expected call of UpdateSupportBundle
+func (mr *MockSupportBundleStoreMockRecorder) UpdateSupportBundle(bundle interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateSupportBundle", reflect.TypeOf((*MockSupportBundleStore)(nil).UpdateSupportBundle), bundle)
+}
+
+// UploadSupportBundle mocks base method
+func (m *MockSupportBundleStore) UploadSupportBundle(bundleID, archivePath string, marshalledTree []byte) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UploadSupportBundle", bundleID, archivePath, marshalledTree)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UploadSupportBundle indicates an expected call of UploadSupportBundle
+func (mr *MockSupportBundleStoreMockRecorder) UploadSupportBundle(bundleID, archivePath, marshalledTree interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UploadSupportBundle", reflect.TypeOf((*MockSupportBundleStore)(nil).UploadSupportBundle), bundleID, archivePath, marshalledTree)
 }
 
 // MockPreflightStore is a mock of PreflightStore interface
