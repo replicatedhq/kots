@@ -320,6 +320,7 @@ DeploymentFound:
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to list restic daemonsets")
 	}
+	// TODO (dan): find a way to set a status field here for "deployed" vs "not found"
 	for _, daemonset := range daemonsets {
 		matches := dockerImageNameRegex.FindStringSubmatch(daemonset.Spec.Template.Spec.Containers[0].Image)
 		if len(matches) == 5 {

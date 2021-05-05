@@ -209,6 +209,7 @@ func (h *Handler) GetGlobalSnapshotSettings(w http.ResponseWriter, r *http.Reque
 		Success: false,
 	}
 
+	// TODO (dan): find a better way to handle this error.
 	// check minimal rbac
 	if err := requiresKotsadmVeleroAccess(w, r); err != nil {
 		return
