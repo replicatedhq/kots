@@ -8,6 +8,7 @@ import SnapshotStorageDestination from "./SnapshotStorageDestination";
 
 import "../../scss/components/shared/SnapshotForm.scss";
 import { isVeleroCorrectVersion, Utilities } from "../../utilities/utilities";
+import { Repeater } from "../../utilities/repeater";
 
 
 class SnapshotSettings extends Component {
@@ -26,9 +27,11 @@ class SnapshotSettings extends Component {
     minimalRBACKotsadmNamespace: "",
     showResetFileSystemWarningModal: false,
     resetFileSystemWarningMessage: "",
+    snapshotSettingsJob: new Repeater(),
+    checkForVeleroAndRestic: false
   };
 
-  fetchSnapshotSettings = (isCheckForVelero) => {
+  fetchSnapshotSettings = async (isCheckForVelero) => {
     this.setState({
       isLoadingSnapshotSettings: true,
       snapshotSettingsErr: false,
@@ -95,11 +98,33 @@ class SnapshotSettings extends Component {
     }
   }
 
+  componentWillUnmount() {
+    this.state.snapshotSettingsJob.stop();
+  }
+
+  poolSnapshotSettingsOnUpdate = () => {
+    this.setState({ checkForVeleroAndRestic: true });
+    this.state.snapshotSettingsJob.start(this.fetchSnapshotSettings, 2000)
+  }
+
   componentDidUpdate(_, lastState) {
     if (this.state.snapshotSettings !== lastState.snapshotSettings && this.state.snapshotSettings) {
       if (!this.state.snapshotSettings?.veleroVersion) {
         this.props.history.replace("/snapshots/settings?configure=true");
         this.setState({ showConfigureSnapshotsModal: true });
+      }
+      if (this.state.snapshotSettings?.isVeleroRunning && this.state.snapshotSettings?.isResticRunning) {
+        if (this.state.updatingSettings) {
+          this.setState({
+            updatingSettings: false,
+            updateConfirm: true,
+            checkForVeleroAndRestic: false
+          });
+          setTimeout(() => {
+            this.setState({ updateConfirm: false })
+          }, 3000);
+          this.state.snapshotSettingsJob.stop();
+        }
       }
     }
   }
@@ -110,6 +135,8 @@ class SnapshotSettings extends Component {
 
   updateSettings = (payload) => {
     this.setState({ updatingSettings: true, updateErrorMsg: "" });
+
+    this.poolSnapshotSettingsOnUpdate();
 
     fetch(`${window.env.API_ENDPOINT}/snapshots/settings`, {
       method: "PUT",
@@ -149,13 +176,8 @@ class SnapshotSettings extends Component {
         if (settingsResponse.success) {
           this.setState({
             snapshotSettings: settingsResponse,
-            updatingSettings: false,
-            updateConfirm: true,
             updateErrorMsg: ""
           });
-          setTimeout(() => {
-            this.setState({ updateConfirm: false })
-          }, 3000);
         } else {
           this.setState({
             updatingSettings: false,
@@ -199,10 +221,10 @@ class SnapshotSettings extends Component {
   }
 
   render() {
-    const { isLoadingSnapshotSettings, snapshotSettings, hideCheckVeleroButton, updateConfirm, updatingSettings, updateErrorMsg, isEmptyView } = this.state;
+    const { isLoadingSnapshotSettings, snapshotSettings, hideCheckVeleroButton, updateConfirm, updatingSettings, updateErrorMsg, isEmptyView, checkForVeleroAndRestic } = this.state;
     const isLicenseUpload = !!this.props.history.location.search;
 
-    if (isLoadingSnapshotSettings) {
+    if (isLoadingSnapshotSettings && !checkForVeleroAndRestic) {
       return (
         <div className="flex-column flex1 alignItems--center justifyContent--center">
           <Loader size="60" />
@@ -215,7 +237,7 @@ class SnapshotSettings extends Component {
         <Helmet>
           <title>Snapshot Settings</title>
         </Helmet>
-        {!isVeleroCorrectVersion(snapshotSettings) ?
+        {!isVeleroCorrectVersion(snapshotSettings) && !checkForVeleroAndRestic ?
           <div className="VeleroWarningBlock">
             <span className="icon small-warning-icon" />
             <p> To use snapshots reliably, install Velero version 1.5.1 or greater </p>
@@ -226,6 +248,7 @@ class SnapshotSettings extends Component {
             snapshotSettings={snapshotSettings}
             updateSettings={this.updateSettings}
             fetchSnapshotSettings={this.fetchSnapshotSettings}
+            checkForVeleroAndRestic={checkForVeleroAndRestic}
             updateConfirm={updateConfirm}
             updatingSettings={updatingSettings}
             updateErrorMsg={updateErrorMsg}

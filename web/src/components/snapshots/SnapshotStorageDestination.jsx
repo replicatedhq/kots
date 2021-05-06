@@ -859,7 +859,7 @@ class SnapshotStorageDestination extends Component {
   }
 
   render() {
-    const { snapshotSettings, updatingSettings, updateConfirm, updateErrorMsg, isKurlEnabled } = this.props;
+    const { snapshotSettings, updatingSettings, updateConfirm, updateErrorMsg, isKurlEnabled, checkForVeleroAndRestic } = this.props;
 
     const availableDestinations = [];
     if (snapshotSettings?.veleroPlugins) {
@@ -941,7 +941,7 @@ class SnapshotStorageDestination extends Component {
                     <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">Destination</p>
                     <span className="replicated-link u-fontSize--normal flex justifyContent--flexEnd u-cursor--pointer" onClick={this.props.toggleConfigureSnapshotsModal}> + Add a new storage destination </span>
                   </div>
-                  {!snapshotSettings?.isVeleroRunning ?
+                  {!snapshotSettings?.isVeleroRunning && !checkForVeleroAndRestic ?
                     isKurlEnabled ?
                     <div className="flex-auto u-fontWeight--bold u-fontSize--small u-textColor--error u-marginBottom--10"> Please fix Velero so that the deployment is running. For help troubleshooting this issue visit
                     <a href="https://velero.io/docs/main/troubleshooting/" target="_blank" rel="noopener noreferrer" className="replicated-link u-marginLeft--5">https://velero.io/docs/main/troubleshooting/</a></div>
