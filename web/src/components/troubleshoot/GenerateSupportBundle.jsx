@@ -3,7 +3,7 @@ import Helmet from "react-helmet";
 import { withRouter, Link } from "react-router-dom";
 import Modal from "react-modal";
 
-import Loader from "../shared/Loader";
+import SupportBundleCollectProgress from "../troubleshoot/SupportBundleCollectProgress";
 import CodeSnippet from "@src/components/shared/CodeSnippet";
 import UploadSupportBundleModal from "../troubleshoot/UploadSupportBundleModal";
 import ConfigureRedactorsModal from "./ConfigureRedactorsModal";
@@ -31,6 +31,9 @@ class GenerateSupportBundle extends React.Component {
       loadingSupportBundles: false,
       supportBundles: [],
       listSupportBundlesJob: new Repeater(),
+      pollForBundleAnalysisProgress: new Repeater(),
+      newBundleSlug: "",
+      bundleAnalysisProgress: {},
       errorMsg: "",
       displayErrorModal: false,
       networkErr: false
@@ -70,12 +73,6 @@ class GenerateSupportBundle extends React.Component {
         });
         this.state.listSupportBundlesJob.start(this.listSupportBundles, 2000);
         return;
-      }
-
-      if (supportBundles?.length > totalBundles) {
-        this.state.listSupportBundlesJob.stop();
-        const bundle = supportBundles[0]; // safe. there's at least 1 element in this array.
-        history.push(`/app/${watch.slug}/troubleshoot/analyze/${bundle.id}`);
       }
     }
 
@@ -165,16 +162,47 @@ class GenerateSupportBundle extends React.Component {
     );
   }
 
+  pollForBundleAnalysisProgress = async () => {
+    const { newBundleSlug } = this.state;
+    fetch(`${window.env.API_ENDPOINT}/troubleshoot/supportbundle/${newBundleSlug}`, {
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": Utilities.getToken(),
+      },
+      method: "GET",
+    })
+      .then(async (res) => {
+        if (!res.ok) {
+          this.setState({
+            loading: false,
+            getSupportBundleErrMsg: `Unexpected status code: ${res.status}`,
+            displayErrorModal: true
+          }); 
+          return;
+        }
+        const bundle = await res.json();
+        this.setState({ bundleAnalysisProgress: bundle.progress });
+        if (bundle.status !== "running") {
+          this.state.pollForBundleAnalysisProgress.stop();
+          this.props.history.push(`/app/${this.props.watch.slug}/troubleshoot/analyze/${bundle.slug}`);
+        }
+      })
+      .catch((err) => {
+        console.log(err);
+        this.setState({
+          loading: false,
+          getSupportBundleErrMsg: err ? err.message : "Something went wrong, please try again.",
+          displayErrorModal: true
+        });
+      });
+  }
+
   collectBundle = (clusterId) => {
     const { watch } = this.props;
 
     this.setState({
       isGeneratingBundle: true,
       generateBundleErrMsg: ""
-    });
-
-    const currentBundles = this.state.supportBundles?.map(bundle => {
-      bundle.id
     });
 
     fetch(`${window.env.API_ENDPOINT}/troubleshoot/supportbundle/app/${watch?.id}/cluster/${clusterId}/collect`, {
@@ -189,7 +217,9 @@ class GenerateSupportBundle extends React.Component {
           this.setState({ isGeneratingBundle: false, generateBundleErrMsg: `Unable to generate bundle: Status ${res.status}` });
           return;
         }
-        this.redirectOnNewBundle(currentBundles);
+        const response = await res.json();
+        this.setState( { newBundleSlug: response.slug });
+        this.state.pollForBundleAnalysisProgress.start(this.pollForBundleAnalysisProgress, 1000);
       })
       .catch((err) => {
         console.log(err);
@@ -222,15 +252,6 @@ class GenerateSupportBundle extends React.Component {
 
   toggleErrorModal = () => {
     this.setState({ displayErrorModal: !this.state.displayErrorModal });
-  }
-
-  redirectOnNewBundle(currentBundles) {
-    if (this.state.supportBundles?.length === currentBundles.length) {
-      setTimeout(() => {
-        this.redirectOnNewBundle(currentBundles);
-      }, 1000);
-      return;
-    }
   }
 
   toggleModal = () => {
@@ -272,8 +293,8 @@ class GenerateSupportBundle extends React.Component {
             <div>
               {generateBundleErrMsg && <p className="u-textColor--error u-fontSize--normal u-fontWeight--medium u-lineHeight--normal u-marginTop--10">{generateBundleErrMsg}</p>}
               {isGeneratingBundle ?
-                <div className="flex1 flex-column justifyContent--center alignItems--center">
-                  <Loader size="60" />
+                <div className="u-marginTop--20 flex-column justifyContent--center alignItems--center flex1 u-minWidth--full">
+                  <SupportBundleCollectProgress appTitle={appTitle} progressData={this.state.bundleAnalysisProgress} analysisResultCheckCount={this.state.analysisResultCheckCount} />
                 </div>
                 :
                 <div className="flex alignItems--center u-marginTop--20">
