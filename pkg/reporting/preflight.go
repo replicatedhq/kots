@@ -92,6 +92,7 @@ func SendPreflightInfo(appID string, sequence int64, isSkipPreflights bool, isCL
 				return
 			}
 
+			// if user deploy another version and previous version is still running
 			if currentDeployedSequence != sequence {
 				logger.Debug("deployed sequence has changed")
 				return

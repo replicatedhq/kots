@@ -114,7 +114,8 @@ func Run(appID string, appSlug string, sequence int64, isAirgap bool, archiveDir
 				logger.Error(err)
 				return
 			}
-
+			
+			// preflight reporting
 			if isDeployed {
 				if err := reporting.SendPreflightInfo(appID, sequence, false, false); err != nil {
 					logger.Debugf("failed to send preflights data to replicated app: %v", err)
