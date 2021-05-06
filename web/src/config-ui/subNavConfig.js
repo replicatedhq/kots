@@ -33,7 +33,7 @@ export default [
   {
     tabName: "config",
     displayName: "Config",
-    to: (slug) => `/app/${slug}/config`,
+    to: (slug, sequence, configSequence) => `/app/${slug}/config/${configSequence}`,
     displayRule: watch => {
       return watch.isConfigurable || getApplicationType(watch) === "replicated.app";
     }
