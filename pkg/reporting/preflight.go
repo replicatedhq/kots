@@ -51,7 +51,7 @@ func SendPreflightsReportToReplicatedApp(license *kotsv1beta1.License, appID str
 	return nil
 }
 
-func SendPreflightInfo(appID string, sequence int64, isSkipPreflights bool, isCLI bool) error {
+func ReportAppInfo(appID string, sequence int64, isSkipPreflights bool, isCLI bool) error {
 	app, err := store.GetStore().GetApp(appID)
 	if err != nil {
 		return errors.Wrap(err, "failed to get app")

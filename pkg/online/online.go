@@ -206,7 +206,7 @@ func CreateAppFromOnline(pendingApp *types.PendingApp, upstreamURI string, isAut
 				// preflights reporting
 				go func() {
 					isCLI := true
-					if err := reporting.SendPreflightInfo(pendingApp.ID, newSequence, skipPreflights, isCLI); err != nil {
+					if err := reporting.ReportAppInfo(pendingApp.ID, newSequence, skipPreflights, isCLI); err != nil {
 						logger.Debugf("failed to send preflights data to replicated app: %v", err)
 					}
 				}()

@@ -290,7 +290,7 @@ func CheckForUpdates(appID string, deploy bool, skipPreflights bool, isCLI bool)
 
 				// preflights reporting
 				go func() {
-					err = reporting.SendPreflightInfo(a.ID, sequence, skipPreflights, isCLI)
+					err = reporting.ReportAppInfo(a.ID, sequence, skipPreflights, isCLI)
 					if err != nil {
 						logger.Debugf("failed to update preflights reports: %v", err)
 					}
