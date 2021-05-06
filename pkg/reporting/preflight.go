@@ -17,7 +17,7 @@ import (
 	troubleshootpreflight "github.com/replicatedhq/troubleshoot/pkg/preflight"
 )
 
-func SendPreflightsReportToReplicatedApp(license *kotsv1beta1.License, appID string, clusterID string, sequence int, skipPreflights bool, installStatus string, isCLI bool, preflightStatus string, appStatus string) error {
+func SendPreflightsReportToReplicatedApp(license *kotsv1beta1.License, appID string, clusterID string, sequence int64, skipPreflights bool, installStatus string, isCLI bool, preflightStatus string, appStatus string) error {
 	endpoint := license.Spec.Endpoint
 	if !canReport(endpoint) {
 		return nil
@@ -51,7 +51,17 @@ func SendPreflightsReportToReplicatedApp(license *kotsv1beta1.License, appID str
 	return nil
 }
 
-func SendPreflightInfo(appID string, sequence int, isSkipPreflights bool, isCLI bool) error {
+func ReportAppInfo(appID string, sequence int64, isSkipPreflights bool, isCLI bool) error {
+	app, err := store.GetStore().GetApp(appID)
+	if err != nil {
+		return errors.Wrap(err, "failed to get app")
+	}
+
+	if app.IsAirgap {
+		logger.Debug("no reporting for airgapped app")
+		return nil
+	}
+
 	license, err := store.GetStore().GetLatestLicenseForApp(appID)
 	if err != nil {
 		return errors.Wrap(err, "failed to find license for app")
@@ -75,7 +85,20 @@ func SendPreflightInfo(appID string, sequence int, isSkipPreflights bool, isCLI 
 				logger.Debugf("failed to get app status: %v", err.Error())
 				return
 			}
-			if s.Sequence == int64(sequence) && s.State == appstatustypes.StateReady {
+
+			currentDeployedSequence, err := store.GetStore().GetCurrentParentSequence(appID, clusterID)
+			if err != nil {
+				logger.Debugf("failed to get downstream parent sequence: %v", err.Error())
+				return
+			}
+
+			// if user deploy another version and previous version is still running
+			if currentDeployedSequence != sequence {
+				logger.Debug("deployed sequence has changed")
+				return
+			}
+
+			if s.Sequence == sequence && s.State == appstatustypes.StateReady {
 				appStatus = s.State
 				break
 			}
@@ -85,7 +108,7 @@ func SendPreflightInfo(appID string, sequence int, isSkipPreflights bool, isCLI 
 		preflightState := ""
 		var preflightResults *troubleshootpreflight.UploadPreflightResults
 		for start := time.Now(); time.Since(start) < 5*time.Minute; {
-			p, err := store.GetStore().GetPreflightResults(appID, int64(sequence))
+			p, err := store.GetStore().GetPreflightResults(appID, sequence)
 			if err != nil {
 				logger.Debugf("failed to get preflight results: %v", err.Error())
 				return
@@ -102,7 +125,7 @@ func SendPreflightInfo(appID string, sequence int, isSkipPreflights bool, isCLI 
 			time.Sleep(time.Second * 10)
 		}
 
-		currentVersionStatus, err := store.GetStore().GetStatusForVersion(appID, clusterID, int64(sequence))
+		currentVersionStatus, err := store.GetStore().GetStatusForVersion(appID, clusterID, sequence)
 		if err != nil {
 			logger.Debugf("failed to get status for version: %v", err)
 			return

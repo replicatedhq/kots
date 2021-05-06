@@ -108,20 +108,23 @@ func Run(appID string, appSlug string, sequence int64, isAirgap bool, archiveDir
 			}
 			logger.Debug("preflight checks completed")
 
-			err = maybeDeployFirstVersion(appID, sequence, uploadPreflightResults)
+			isDeployed, err := maybeDeployFirstVersion(appID, sequence, uploadPreflightResults)
 			if err != nil {
 				err = errors.Wrap(err, "failed to deploy first version")
 				logger.Error(err)
 				return
 			}
 
-			if err := reporting.SendPreflightInfo(appID, int(sequence), false, false); err != nil {
-				logger.Debugf("failed to send preflights data to replicated app: %v", err)
-				return
+			// preflight reporting
+			if isDeployed {
+				if err := reporting.ReportAppInfo(appID, sequence, false, false); err != nil {
+					logger.Debugf("failed to send preflights data to replicated app: %v", err)
+					return
+				}
 			}
 		}()
 	} else if sequence == 0 {
-		err := maybeDeployFirstVersion(appID, sequence, &troubleshootpreflight.UploadPreflightResults{})
+		_, err := maybeDeployFirstVersion(appID, sequence, &troubleshootpreflight.UploadPreflightResults{})
 		if err != nil {
 			return errors.Wrap(err, "failed to deploy first version")
 		}
@@ -143,24 +146,24 @@ func Run(appID string, appSlug string, sequence int64, isAirgap bool, archiveDir
 // maybeDeployFirstVersion will deploy the first version if
 // 1. preflight checks pass
 // 2. we have not already deployed it
-func maybeDeployFirstVersion(appID string, sequence int64, preflightResults *troubleshootpreflight.UploadPreflightResults) error {
+func maybeDeployFirstVersion(appID string, sequence int64, preflightResults *troubleshootpreflight.UploadPreflightResults) (bool, error) {
 	if sequence != 0 {
-		return nil
+		return false, nil
 	}
 
 	app, err := store.GetStore().GetApp(appID)
 	if err != nil {
-		return errors.Wrap(err, "failed to get app")
+		return false, errors.Wrap(err, "failed to get app")
 	}
 
 	// do not revert to first version
 	if app.CurrentSequence != 0 {
-		return nil
+		return false, nil
 	}
 
 	preflightState := getPreflightState(preflightResults)
 	if preflightState != "pass" {
-		return nil
+		return false, nil
 	}
 
 	logger.Debug("automatically deploying first app version")
@@ -168,7 +171,12 @@ func maybeDeployFirstVersion(appID string, sequence int64, preflightResults *tro
 	// note: this may attempt to re-deploy the first version but the operator will take care of
 	// comparing the version to current
 
-	return version.DeployVersion(appID, sequence)
+	err = version.DeployVersion(appID, sequence)
+	if err !=  nil {
+		return false, errors.Wrap(err, "failed to deploy version")
+	} 
+
+	return true, nil
 }
 
 func getPreflightState(preflightResults *troubleshootpreflight.UploadPreflightResults) string {
