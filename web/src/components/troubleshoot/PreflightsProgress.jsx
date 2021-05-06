@@ -32,13 +32,12 @@ export default function PreflightProgress(props) {
         <div className="progressbar-meter" id="preflightStatusBar" style={{ width: "0px" }} />
       </div>
     );
+    
   }
   
   const readableName = getReadableCollectorName(progressData?.currentName);
   let statusDiv = (
-    <div
-      className={`u-marginTop--20 u-fontWeight--medium u-lineHeight--medium u-textAlign--center`}
-    >
+    <div className="u-marginTop--20 u-fontWeight--medium u-lineHeight--medium u-textAlign--center">
       <div className="flex flex1 u-marginBottom--10 justifyContent--center alignItems--center u-textColor--secondary">
         {progressData?.currentName && <Loader className="flex u-marginRight--5" size="24" />}
         <p>{readableName}</p>

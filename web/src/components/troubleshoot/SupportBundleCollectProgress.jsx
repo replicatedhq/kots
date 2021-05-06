@@ -35,9 +35,7 @@ export default function SupportBundleCollectProgress(props) {
   }
   
   let statusDiv = (
-    <div
-      className={`u-marginTop--20 u-fontWeight--medium u-lineHeight--medium u-textAlign--center`}
-    >
+    <div className="u-marginTop--20 u-fontWeight--medium u-lineHeight--medium u-textAlign--center">
       <div className="flex flex1 u-marginBottom--10 justifyContent--center alignItems--center u-textColor--secondary">
         {progressData?.message && <Loader className="flex u-marginRight--5" size="24" />}
         {percentage >= 98 ?
