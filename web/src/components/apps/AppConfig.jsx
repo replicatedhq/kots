@@ -386,14 +386,14 @@ class AppConfig extends Component {
       return (
         <div className="ConfigInfo older justifyContent--center">
           <p className="flex alignItems--center u-marginRight--5"> <span className="icon info-warning-icon flex u-marginRight--5" /> This config is {currentSequence - sequence} version{currentSequence - sequence === 1 ? "" : "s"} older than the currently deployed config. </p>
-          <Link to={`/app/${app?.slug}/config/${currentSequence}`} className="replicated-link"> View the currently deployed config </Link>
+          <Link to={`/app/${app?.slug}/config/${currentSequence}`} className="replicated-link"> Edit the currently deployed config </Link>
         </div>
       )
     } else if (currentSequence < sequence) {
       return (
         <div className="ConfigInfo newer justifyContent--center">
           <p className="flex alignItems--center u-marginRight--5"> <span className="icon info-icon flex u-marginRight--5" /> This config is {sequence - currentSequence} version{sequence - currentSequence === 1 ? "" : "s"} newer than the currently deployed config. </p>
-          <Link to={`/app/${app?.slug}/config/${currentSequence}`} className="replicated-link"> View the currently deployed config </Link>
+          <Link to={`/app/${app?.slug}/config/${currentSequence}`} className="replicated-link"> Edit the currently deployed config </Link>
         </div>)
     } else if (size(pendingVersions) > 0 && (currentSequence === sequence)) {
       return (
