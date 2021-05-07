@@ -6,6 +6,7 @@ import { Link } from "react-router-dom";
 import { isHelmChart } from "@src/utilities/utilities";
 import subNavConfig from "@src/config-ui/subNavConfig";
 
+
 export default function SubNavBar(props) {
   const { className, activeTab, app, isVeleroInstalled, isAccess, isSnapshots } = props;
   let { slug } = app;
@@ -14,6 +15,15 @@ export default function SubNavBar(props) {
     slug = `helm/${app.id}`;
   }
   const kotsSequence = app.currentSequence;
+
+  // check is current deployed config latest
+  const currentDeployedSequence = app?.downstreams[0]?.currentVersion?.parentSequence;
+  let configSequence;
+  if (currentDeployedSequence != undefined) {
+    configSequence = currentDeployedSequence
+  } else {
+    configSequence = app?.currentSequence;
+  }
 
   const accessConfig = [
     {
@@ -92,7 +102,7 @@ export default function SubNavBar(props) {
                   className={classNames({
                     "is-active": activeTab === link.tabName
                   })}>
-                  <Link to={link.to(slug, kotsSequence)}>
+                  <Link to={link.to(slug, kotsSequence, configSequence)}>
                     {link.displayName} {hasBadge && <span className="subnav-badge" />}
                   </Link>
                 </li>

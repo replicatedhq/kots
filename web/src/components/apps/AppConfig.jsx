@@ -176,7 +176,14 @@ class AppConfig extends Component {
     if (match.params.sequence != undefined) {
       return parseInt(match.params.sequence);
     }
-    return app?.currentSequence;
+
+    // check is current deployed config latest
+    const currentDeployedSequence = app?.downstreams[0]?.currentVersion?.parentSequence;
+    if (currentDeployedSequence != undefined) {
+      return currentDeployedSequence
+    } else {
+      return app?.currentSequence; 
+    }
   }
 
   getSlug = () => {
@@ -450,7 +457,7 @@ class AppConfig extends Component {
 
     const gitops = app?.downstreams?.length && app.downstreams[0]?.gitops;
     const isNewVersion = !fromLicenseFlow && match.params.sequence == undefined;
-    
+
     return (
       <div className={classNames("flex1 flex-column u-padding--20 alignItems--center")}>
         <Helmet>
