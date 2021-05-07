@@ -113,17 +113,20 @@ class SnapshotSettings extends Component {
         this.props.history.replace("/snapshots/settings?configure=true");
         this.setState({ showConfigureSnapshotsModal: true });
       }
-      if (this.state.snapshotSettings?.isVeleroRunning && this.state.snapshotSettings?.isResticRunning) {
-        if (this.state.updatingSettings) {
-          this.setState({
-            updatingSettings: false,
-            updateConfirm: true,
-            checkForVeleroAndRestic: false
-          });
-          setTimeout(() => {
-            this.setState({ updateConfirm: false })
-          }, 3000);
-          this.state.snapshotSettingsJob.stop();
+      if (this.state.checkForVeleroAndRestic) {
+        if (this.state.snapshotSettings?.isVeleroRunning !== lastState.isVeleroRunning && this.state.snapshotSettings?.isVeleroRunning 
+          && this.state.snapshotSettings?.isResticRunning !== lastState.snapshotSettings?.isResticRunning && this.state.snapshotSettings?.isResticRunning) {
+          if (this.state.updatingSettings) {
+            this.setState({
+              updatingSettings: false,
+              updateConfirm: true,
+              checkForVeleroAndRestic: false
+            });
+            setTimeout(() => {
+              this.setState({ updateConfirm: false })
+            }, 3000);
+            this.state.snapshotSettingsJob.stop();
+          }
         }
       }
     }
