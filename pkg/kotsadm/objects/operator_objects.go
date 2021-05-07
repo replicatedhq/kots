@@ -26,9 +26,59 @@ func OperatorClusterRole() *rbacv1.ClusterRole {
 		},
 		Rules: []rbacv1.PolicyRule{
 			{
-				APIGroups: []string{"*"},
-				Resources: []string{"*"},
-				Verbs:     metav1.Verbs{"*"},
+				APIGroups: []string{""},
+				Resources: []string{"configmaps", "persistentvolumeclaims", "pods", "secrets", "services"},
+				Verbs:     metav1.Verbs{"get", "list", "watch", "create", "update", "patch", "delete"},
+			},
+			{
+				APIGroups: []string{""},
+				Resources: []string{"limitranges"},
+				Verbs:     metav1.Verbs{"list"},
+			},
+			{
+				APIGroups: []string{"apps"},
+				Resources: []string{"daemonsets", "deployments", "statefulsets"},
+				Verbs:     metav1.Verbs{"get", "list", "watch", "create", "update", "patch", "delete"},
+			},
+			{
+				APIGroups: []string{"batch"},
+				Resources: []string{"jobs", "cronjobs"},
+				Verbs:     metav1.Verbs{"get", "list", "watch", "create", "update", "patch", "delete"},
+			},
+			{
+				APIGroups: []string{"networking.k8s.io", "extensions"},
+				Resources: []string{"ingresses"},
+				Verbs:     metav1.Verbs{"get", "list", "watch", "create", "update", "patch", "delete"},
+			},
+			{
+				APIGroups: []string{""},
+				Resources: []string{"namespaces", "endpoints", "serviceaccounts"},
+				Verbs:     metav1.Verbs{"get"},
+			},
+			{
+				APIGroups: []string{"rbac.authorization.k8s.io"},
+				Resources: []string{"roles", "rolebindings"},
+				Verbs:     metav1.Verbs{"get", "create"},
+			},
+			{
+				APIGroups: []string{""},
+				Resources: []string{"serviceaccounts"},
+				Verbs:     metav1.Verbs{"create"},
+			},
+			{
+				APIGroups: []string{"authorization.k8s.io"},
+				Resources: []string{"selfsubjectaccessreviews", "selfsubjectrulesreviews"},
+				Verbs:     metav1.Verbs{"create"},
+			},
+			{
+				APIGroups: []string{""},
+				Resources: []string{"pods/log", "pods/exec"},
+				Verbs:     metav1.Verbs{"get", "list", "watch", "create"},
+			},
+			{
+				APIGroups: []string{"batch"},
+				Resources: []string{"jobs/status"},
+				Verbs:     metav1.Verbs{"get", "list", "watch"},
 			},
 		},
 	}
@@ -76,9 +126,59 @@ func OperatorRole(namespace string) *rbacv1.Role {
 		},
 		Rules: []rbacv1.PolicyRule{
 			{
-				APIGroups: []string{"*"},
-				Resources: []string{"*"},
-				Verbs:     metav1.Verbs{"*"},
+				APIGroups: []string{""},
+				Resources: []string{"configmaps", "persistentvolumeclaims", "pods", "secrets", "services"},
+				Verbs:     metav1.Verbs{"get", "list", "watch", "create", "update", "patch", "delete"},
+			},
+			{
+				APIGroups: []string{""},
+				Resources: []string{"limitranges"},
+				Verbs:     metav1.Verbs{"list"},
+			},
+			{
+				APIGroups: []string{"apps"},
+				Resources: []string{"daemonsets", "deployments", "statefulsets"},
+				Verbs:     metav1.Verbs{"get", "list", "watch", "create", "update", "patch", "delete"},
+			},
+			{
+				APIGroups: []string{"batch"},
+				Resources: []string{"jobs", "cronjobs"},
+				Verbs:     metav1.Verbs{"get", "list", "watch", "create", "update", "patch", "delete"},
+			},
+			{
+				APIGroups: []string{"networking.k8s.io", "extensions"},
+				Resources: []string{"ingresses"},
+				Verbs:     metav1.Verbs{"get", "list", "watch", "create", "update", "patch", "delete"},
+			},
+			{
+				APIGroups: []string{""},
+				Resources: []string{"namespaces", "endpoints", "serviceaccounts"},
+				Verbs:     metav1.Verbs{"get"},
+			},
+			{
+				APIGroups: []string{"rbac.authorization.k8s.io"},
+				Resources: []string{"roles", "rolebindings"},
+				Verbs:     metav1.Verbs{"get", "create"},
+			},
+			{
+				APIGroups: []string{""},
+				Resources: []string{"serviceaccounts"},
+				Verbs:     metav1.Verbs{"create"},
+			},
+			{
+				APIGroups: []string{"authorization.k8s.io"},
+				Resources: []string{"selfsubjectaccessreviews", "selfsubjectrulesreviews"},
+				Verbs:     metav1.Verbs{"create"},
+			},
+			{
+				APIGroups: []string{""},
+				Resources: []string{"pods/log", "pods/exec"},
+				Verbs:     metav1.Verbs{"get", "list", "watch", "create"},
+			},
+			{
+				APIGroups: []string{"batch"},
+				Resources: []string{"jobs/status"},
+				Verbs:     metav1.Verbs{"get", "list", "watch"},
 			},
 		},
 	}
