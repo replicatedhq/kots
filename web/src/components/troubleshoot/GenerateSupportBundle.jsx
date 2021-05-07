@@ -74,6 +74,18 @@ class GenerateSupportBundle extends React.Component {
         this.state.listSupportBundlesJob.start(this.listSupportBundles, 2000);
         return;
       }
+
+      // this is needed to redirect to the support bundle page
+      // after collecting a support bundle from the CLI is done
+      if (this.state.listSupportBundlesJob.isRunning()) {
+        if (supportBundles?.length > totalBundles) {
+          const bundle = supportBundles[0]; // safe. there's at least 1 element in this array.
+          if (bundle.status !== "running") {
+            this.state.listSupportBundlesJob.stop();
+            history.push(`/app/${watch.slug}/troubleshoot/analyze/${bundle.id}`);
+          }
+        }
+      }
     }
 
     if (networkErr !== lastState.networkErr) {
