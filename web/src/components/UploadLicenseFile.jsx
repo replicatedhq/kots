@@ -2,9 +2,12 @@ import * as React from "react";
 import { withRouter, Link } from "react-router-dom";
 import { Helmet } from "react-helmet";
 import Dropzone from "react-dropzone";
+import yaml from "js-yaml";
 import size from "lodash/size";
 import isEmpty from "lodash/isEmpty";
+import keyBy from "lodash/keyBy";
 import Modal from "react-modal";
+import Select from "react-select";
 import { getFileContent, Utilities } from "../utilities/utilities";
 import CodeSnippet from "./shared/CodeSnippet";
 import LicenseUploadProgress from "./LicenseUploadProgress";
@@ -19,7 +22,8 @@ class UploadLicenseFile extends React.Component {
     fileUploading: false,
     errorMessage: "",
     viewErrorMessage: false,
-    licenseExistErrData: {}
+    licenseExistErrData: {},
+    selectedAppToInstall: {}
   }
 
   clearFile = () => {
@@ -36,10 +40,12 @@ class UploadLicenseFile extends React.Component {
 
   uploadLicenseFile = async () => {
     const { onUploadSuccess, history } = this.props;
-    const { licenseFile, licenseFileContent } = this.state;
-
+    const { licenseFile, licenseFileContent, hasMultiApp } = this.state;
+    const isRliFile = licenseFile.name.substr(licenseFile.name.lastIndexOf('.')) === ".rli";
     let licenseText;
-    if (licenseFile.name.substr(licenseFile.name.lastIndexOf('.')) === ".rli") {
+
+    let serializedLicense;
+    if (isRliFile) {
       try {
         const base64String = btoa(String.fromCharCode.apply(null, new Uint8Array(licenseFileContent)));
         licenseText = await this.exchangeRliFileForLicense(base64String);
@@ -51,7 +57,8 @@ class UploadLicenseFile extends React.Component {
         return;
       }
     } else {
-      licenseText = (new TextDecoder("utf-8")).decode(licenseFileContent);
+      licenseText = hasMultiApp ? licenseFileContent[this.state.selectedAppToInstall.value] : licenseFileContent;
+      serializedLicense = yaml.dump(licenseText)
     }
 
     this.setState({
@@ -67,7 +74,7 @@ class UploadLicenseFile extends React.Component {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        licenseData: licenseText,
+        licenseData: isRliFile ? licenseText : serializedLicense,
       }),
     })
       .then(async (result) => {
@@ -133,12 +140,40 @@ class UploadLicenseFile extends React.Component {
     }, 1000);
   }
 
+  setAvailableAppOptions = (arr) => {
+    let availableAppOptions = [];
+    arr.map((option) => {
+      availableAppOptions.push({
+        value: option.spec.appSlug,
+        label: option.metadata.name
+      });
+    });
+    this.setState({
+      selectedAppToInstall: availableAppOptions[0],
+      availableAppOptions: availableAppOptions
+    });
+  }
+
   onDrop = async (files) => {
     const content = await getFileContent(files[0]);
+    const parsedLicenseYaml = (new TextDecoder("utf-8")).decode(content);
+    let licenseYamls;
+    try {
+      licenseYamls = yaml.loadAll(parsedLicenseYaml);
+    } catch (e) {
+      console.log(e);
+      this.setState({ errorMessage: "Faild to parse license file" });
+      return;
+    }
+    const hasMultiApp = licenseYamls.length > 1;
+    if (hasMultiApp) {
+      this.setAvailableAppOptions(licenseYamls);
+    }
     this.setState({
       licenseFile: files[0],
-      licenseFileContent: content,
-      errorMessage: ""
+      licenseFileContent: hasMultiApp? keyBy(licenseYamls, (option) => { return option.spec.appSlug }) : licenseYamls[0],
+      errorMessage: "",
+      hasMultiApp,
     });
   }
 
@@ -228,6 +263,19 @@ class UploadLicenseFile extends React.Component {
     })
   }
 
+  getLabel = (label) => {
+    return (
+      <div style={{ alignItems: "center", display: "flex" }}>
+        <span style={{ fontSize: 18, marginRight: "10px" }}><span className="app-icon" /></span>
+        <span style={{ fontSize: 14 }}>{label}</span>
+      </div>
+    );
+  }
+
+  onAppToInstallChange = (selectedAppToInstall) => {
+    this.setState({ selectedAppToInstall });
+  }
+
 
   render() {
     const {
@@ -238,7 +286,7 @@ class UploadLicenseFile extends React.Component {
       isBackupRestore,
       snapshot
     } = this.props;
-    const { licenseFile, fileUploading, errorMessage, viewErrorMessage, licenseExistErrData } = this.state;
+    const { licenseFile, fileUploading, errorMessage, viewErrorMessage, licenseExistErrData, selectedAppToInstall, hasMultiApp } = this.state;
     const hasFile = licenseFile && !isEmpty(licenseFile);
 
     let logoUri;
@@ -253,7 +301,7 @@ class UploadLicenseFile extends React.Component {
 
     // TODO remove when restore is enabled
     const isRestoreEnabled = false;
-
+    
     return (
       <div className={`UploadLicenseFile--wrapper ${isBackupRestore ? "" : "container"} flex-column flex1 u-overflow--auto Login-wrapper justifyContent--center alignItems--center`}>
         <Helmet>
@@ -271,36 +319,63 @@ class UploadLicenseFile extends React.Component {
             {!fileUploading ?
               <div className="flex flex-column">
                 <p className="u-fontSize--header u-textColor--primary u-fontWeight--bold u-textAlign--center u-marginTop--10 u-paddingTop--5"> {`${isBackupRestore ? "Verify your license" : "Upload your license file"}`} </p>
-                <div className="flex u-marginTop--30">
+                <div className="u-marginTop--30">
                   <div className={`FileUpload-wrapper flex1 ${hasFile ? "has-file" : ""}`}>
-                    <Dropzone
-                      className="Dropzone-wrapper"
-                      accept={["application/x-yaml", ".yaml", ".yml", ".rli"]}
-                      onDropAccepted={this.onDrop}
-                      multiple={false}
-                    >
-                      {hasFile ?
-                        <div className="has-file-wrapper">
-                          <p className="u-fontSize--normal u-fontWeight--medium">{licenseFile.name}</p>
+                    {hasFile ?
+                      <div className="has-file-wrapper">
+                        <div className="flex">
+                          <div className="icon u-yamlLtGray-small u-marginRight--10" />
+                          <div>
+                            <p className="u-fontSize--normal u-textColor--primary u-fontWeight--medium">{licenseFile.name}</p>
+                            <span className="replicated-link u-fontSize--small" onClick={this.clearFile}>Select a different file</span>
+                          </div>
                         </div>
-                        :
+                        {hasMultiApp &&
+                          <div className="u-marginTop--15 u-paddingTop--15 u-borderTop--gray">
+                            <div>
+                              <p className="u-fontSize--small u-fontWeight--medium u-textColor--primary u-lineHeight--normal">Your license has access to {this.state.availableAppOptions.length} applications</p>
+                              <p className="u-fontSize--small u-textColor--bodyCopy u-lineHeight--normal u-marginBottom--10">Select the application that you want to install.</p>
+                              <Select
+                                className="replicated-select-container"
+                                classNamePrefix="replicated-select"
+                                options={this.state.availableAppOptions}
+                                getOptionLabel={(option) => this.getLabel(option.label)}
+                                getOptionValue={(option) => option.value}
+                                value={selectedAppToInstall}
+                                onChange={this.onAppToInstallChange}
+                                isOptionSelected={(option) => { option.value === selectedAppToInstall.value }}
+                              />
+                            </div>
+                          </div>
+                        }
+                      </div>
+                    :
+                      <Dropzone
+                        className="Dropzone-wrapper"
+                        accept={["application/x-yaml", ".yaml", ".yml", ".rli"]}
+                        onDropAccepted={this.onDrop}
+                        multiple={false}
+                      >
                         <div className="u-textAlign--center">
-                          <p className="u-fontSize--normal u-textColor--secondary u-fontWeight--medium u-lineHeight--normal">Drag your license here or <span className="u-linkColor u-fontWeight--medium u-textDecoration--underlineOnHover">choose a file to upload</span></p>
-                          <p className="u-fontSize--normal u-textColor--bodyCopy u-fontWeight--normal u-lineHeight--normal u-marginTop--10">This will be a .yaml file{applicationName?.length > 0 ? ` ${applicationName} provided` : ""}. Please contact your account rep if you are unable to locate your license file.</p>
+                          <div className="icon u-yamlLtGray-lrg u-marginBottom--10" />
+                          <p className="u-fontSize--normal u-textColor--secondary u-fontWeight--medium u-lineHeight--normal">Drag your license here or <span className="u-linkColor u-fontWeight--medium u-textDecoration--underlineOnHover">choose a file</span></p>
+                          <p className="u-fontSize--small u-textColor--bodyCopy u-fontWeight--normal u-lineHeight--normal u-marginTop--10">This will be a .yaml file. Please contact your account rep if you are unable to locate your license file.</p>
                         </div>
-                      }
-                    </Dropzone>
+                      </Dropzone>
+                    }
                   </div>
                   {hasFile && !isBackupRestore &&
-                    <div className="flex-auto flex-column u-marginLeft--10 justifyContent--center">
-                      <button
-                        type="button"
-                        className="btn primary large flex-auto"
-                        onClick={this.uploadLicenseFile}
-                        disabled={fileUploading || !hasFile}
-                      >
-                        {fileUploading ? "Uploading" : "Upload license"}
-                      </button>
+                    <div className="flex-auto flex-column">
+                      <div>
+                        <button
+                          type="button"
+                          className="btn primary large flex-auto"
+                          onClick={this.uploadLicenseFile}
+                          disabled={fileUploading || !hasFile}
+                        >
+                          {fileUploading ? "Uploading" : "Upload license"}
+                        </button>
+                      </div>
                     </div>
                   }
                 </div>
@@ -314,11 +389,6 @@ class UploadLicenseFile extends React.Component {
                     </span>
                   </div>
                 )}
-                {hasFile &&
-                  <div className="u-marginTop--10">
-                    <span className="replicated-link u-fontSize--small" onClick={this.clearFile}>Select a different file</span>
-                  </div>
-                }
               </div>
               :
               <div><LicenseUploadProgress onError={this.handleUploadStatusErr} /></div>
