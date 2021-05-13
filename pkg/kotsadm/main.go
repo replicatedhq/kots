@@ -36,7 +36,7 @@ func YAML(deployOptions types.DeployOptions) (map[string][]byte, error) {
 	docs := map[string][]byte{}
 
 	if deployOptions.ApplicationMetadata != nil {
-		metadataDocs, err := getApplicationMetadataYAML(deployOptions.ApplicationMetadata, deployOptions.Namespace)
+		metadataDocs, err := getApplicationMetadataYAML(deployOptions.ApplicationMetadata, deployOptions.Namespace, deployOptions.AppSlug)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to get application metadata yaml")
 		}

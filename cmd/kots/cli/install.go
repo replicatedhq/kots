@@ -167,6 +167,7 @@ func InstallCmd() *cobra.Command {
 				Context:                   v.GetString("context"),
 				SharedPassword:            sharedPassword,
 				ApplicationMetadata:       applicationMetadata,
+				AppSlug:                   appSlugFromArgs(args[0]),
 				License:                   license,
 				ConfigValues:              configValues,
 				Airgap:                    isAirgap,
@@ -650,4 +651,8 @@ func getHttpProxyEnv(v *viper.Viper) map[string]string {
 	env["NO_PROXY"] = v.GetString("no-proxy")
 	return env
 
+}
+
+func appSlugFromArgs(arg string) string {
+	return strings.Split(arg, "/")[0]
 }

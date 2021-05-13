@@ -14,13 +14,13 @@ import (
 	"k8s.io/client-go/kubernetes/scheme"
 )
 
-func getApplicationMetadataYAML(data []byte, namespace string) (map[string][]byte, error) {
+func getApplicationMetadataYAML(data []byte, namespace string, appSlug string) (map[string][]byte, error) {
 	docs := map[string][]byte{}
 	s := json.NewYAMLSerializer(json.DefaultMetaFactory, scheme.Scheme, scheme.Scheme)
 
 	var configMap bytes.Buffer
-	if err := s.Encode(kotsadmobjects.ApplicationMetadataConfig(data, namespace), &configMap); err != nil {
-		return nil, errors.Wrap(err, "failed to marshal minio config map")
+	if err := s.Encode(kotsadmobjects.ApplicationMetadataConfig(data, namespace, appSlug), &configMap); err != nil {
+		return nil, errors.Wrap(err, "failed to marshal metadata config map")
 	}
 	docs["application.yaml"] = configMap.Bytes()
 
@@ -34,7 +34,7 @@ func ensureApplicationMetadata(deployOptions types.DeployOptions, clientset *kub
 			return errors.Wrap(err, "failed to get existing metadata config map")
 		}
 
-		_, err := clientset.CoreV1().ConfigMaps(deployOptions.Namespace).Create(context.TODO(), kotsadmobjects.ApplicationMetadataConfig(deployOptions.ApplicationMetadata, deployOptions.Namespace), metav1.CreateOptions{})
+		_, err := clientset.CoreV1().ConfigMaps(deployOptions.Namespace).Create(context.TODO(), kotsadmobjects.ApplicationMetadataConfig(deployOptions.ApplicationMetadata, deployOptions.Namespace, deployOptions.AppSlug), metav1.CreateOptions{})
 		if err != nil {
 			return errors.Wrap(err, "failed to create metadata config map")
 		}

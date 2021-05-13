@@ -618,8 +618,9 @@ func KotsadmDeployment(deployOptions types.DeployOptions) *appsv1.Deployment {
 					},
 					Containers: []corev1.Container{
 						{
-							Image:           fmt.Sprintf("%s/kotsadm:%s", kotsadmversion.KotsadmRegistry(deployOptions.KotsadmOptions), kotsadmversion.KotsadmTag(deployOptions.KotsadmOptions)),
-							ImagePullPolicy: corev1.PullIfNotPresent,
+							// TODO (dans): MUST UNDO THE FOLLOWING TWO LINES!!!
+							Image:           "ttl.sh/dans/kotsadm:12h",
+							ImagePullPolicy: corev1.PullAlways,
 							Name:            "kotsadm",
 							Ports: []corev1.ContainerPort{
 								{

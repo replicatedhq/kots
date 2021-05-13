@@ -300,12 +300,13 @@ func (s *OCIStore) CreateAppVersion(appID string, currentSequence *int64, filesI
 	}
 
 	appName := kotsKinds.KotsApplication.Spec.Title
-	if appName == "" {
-		a, err := s.GetApp(appID)
-		if err != nil {
-			return int64(0), errors.Wrap(err, "failed to get app")
-		}
 
+	a, err := s.GetApp(appID)
+	if err != nil {
+		return int64(0), errors.Wrap(err, "failed to get app")
+	}
+
+	if appName == "" {
 		appName = a.Name
 	}
 
@@ -405,7 +406,7 @@ func (s *OCIStore) CreateAppVersion(appID string, currentSequence *int64, filesI
 			return int64(0), errors.Wrap(err, "failed to marshal application spec")
 		}
 
-		if err := s.ensureApplicationMetadata(applicationSpec, os.Getenv("POD_NAMESPACE")); err != nil {
+		if err := s.ensureApplicationMetadata(applicationSpec, os.Getenv("POD_NAMESPACE"), a.Slug); err != nil {
 			return int64(0), errors.Wrap(err, "failed to get metadata config map")
 		}
 	}
