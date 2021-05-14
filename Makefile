@@ -1,5 +1,7 @@
 include Makefile.build
 CURRENT_USER := $(shell id -u -n)
+MINIO_VERSION := RELEASE.2021-05-11T23-27-41Z
+POSTGRES_VERSION := 10.16-alpine
 
 BUILDFLAGS = -tags='netgo containers_image_ostree_stub exclude_graphdriver_devicemapper exclude_graphdriver_btrfs containers_image_openpgp' -installsuffix netgo
 
@@ -47,9 +49,25 @@ kotsadm:
 	go build ${LDFLAGS} -o bin/kotsadm $(BUILDFLAGS) ./cmd/kotsadm
 
 .PHONY: build-ttl.sh
-build-ttl.sh:
+build-ttl.sh: kotsadm
+	make -C web build-kotsadm
 	docker build --pull -f deploy/Dockerfile -t ttl.sh/${CURRENT_USER}/kotsadm:12h .
 	docker push ttl.sh/${CURRENT_USER}/kotsadm:12h
+
+.PHONY: all-ttl.sh
+all-ttl.sh: build-ttl.sh
+
+	IMAGE=ttl.sh/${CURRENT_USER}/kotsadm-migrations:12h make -C migrations build_schema
+
+	make -C kotsadm/operator build-ttl.sh
+
+	docker pull minio/minio:${MINIO_VERSION} 
+	docker tag minio/minio:${MINIO_VERSION} ttl.sh/${CURRENT_USER}/minio:12h 
+	docker push ttl.sh/${CURRENT_USER}/minio:12h  
+
+	docker pull postgres:${POSTGRES_VERSION} 
+	docker tag postgres:${POSTGRES_VERSION} ttl.sh/${CURRENT_USER}/postgres:12h
+	docker push ttl.sh/${CURRENT_USER}/postgres:12h
 
 .PHONY: build-alpha
 build-alpha:
@@ -71,7 +89,7 @@ build-release:
 	skopeo copy docker://kotsadm/dex:v2.28.1 docker-archive:bin/docker-archive/dex/v2.28.1
 
 	mkdir -p bin/docker-archive/minio
-	skopeo copy docker://minio/minio:RELEASE.2021-05-11T23-27-41Z docker-archive:bin/docker-archive/minio/RELEASE.2021-05-11T23-27-41Z
+	skopeo copy docker://minio/minio:${MINIO_VERSION} docker-archive:bin/docker-archive/minio/${MINIO_VERSION}
 
 .PHONY: project-pact-tests
 project-pact-tests:
