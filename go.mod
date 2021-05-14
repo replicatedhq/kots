@@ -14,6 +14,7 @@ require (
 	github.com/ahmetalpbalkan/go-cursor v0.0.0-20131010032410-8136607ea412
 	github.com/aws/aws-sdk-go v1.35.24
 	github.com/bitnami-labs/sealed-secrets v0.14.1
+	github.com/blang/semver v3.5.1+incompatible
 	github.com/bshuster-repo/logrus-logstash-hook v0.4.1 // indirect
 	github.com/bugsnag/bugsnag-go v1.5.3 // indirect
 	github.com/bugsnag/panicwrap v1.2.0 // indirect
@@ -52,6 +53,8 @@ require (
 	github.com/nwaples/rardecode v1.0.0 // indirect
 	github.com/open-policy-agent/opa v0.24.0
 	github.com/opencontainers/image-spec v1.0.2-0.20190823105129-775207bd45b6
+	github.com/openshift/api v0.0.0-20210513192832-efee9960e6fd // indirect
+	github.com/openshift/client-go v0.0.0-20210503124028-ac0910aac9fa
 	github.com/otiai10/copy v1.0.2
 	github.com/phayes/freeport v0.0.0-20180830031419-95f893ade6f2
 	github.com/pierrec/lz4 v2.2.6+incompatible // indirect
@@ -85,11 +88,11 @@ require (
 	gopkg.in/yaml.v2 v2.4.0
 	gotest.tools v2.2.0+incompatible
 	helm.sh/helm/v3 v3.5.3
-	k8s.io/api v0.20.5
+	k8s.io/api v0.21.0
 	k8s.io/apiextensions-apiserver v0.20.5
-	k8s.io/apimachinery v0.20.5
+	k8s.io/apimachinery v0.21.0
 	k8s.io/cli-runtime v0.20.5
-	k8s.io/client-go v0.20.5
+	k8s.io/client-go v0.21.0
 	k8s.io/cluster-bootstrap v0.20.5
 	k8s.io/helm v2.14.3+incompatible
 	k8s.io/kube-openapi v0.0.0-20210323165736-1a6458611d18 // indirect
