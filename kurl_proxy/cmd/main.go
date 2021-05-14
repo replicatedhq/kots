@@ -82,7 +82,7 @@ func main() {
 	if err != nil {
 		log.Print("tls secret not found")
 
-		err = generateDefaultCert(secrets, namespace)
+		err = generateDefaultCertSecret(secrets, namespace)
 		if err != nil {
 			log.Printf("Could not regenerate default certificate: %v", err)
 		}
@@ -567,7 +567,7 @@ func cleanStringSlice(strSlice []string) []string {
 	return clean
 }
 
-func generateDefaultCert(secrets corev1.SecretInterface, namespace string) error {
+func generateDefaultCertSecret(secrets corev1.SecretInterface, namespace string) error {
 	secret := &v1.Secret{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Secret",
