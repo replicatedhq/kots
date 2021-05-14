@@ -195,7 +195,7 @@ func (s *OCIStore) updateConfigmap(configmap *corev1.ConfigMap) error {
 	return nil
 }
 
-func (s *OCIStore) ensureApplicationMetadata(applicationMetadata string, namespace string, appSlug string) error {
+func (s *OCIStore) ensureApplicationMetadata(applicationMetadata string, namespace string, upstreamURI string) error {
 	clientset, err := k8sutil.GetClientset()
 	if err != nil {
 		return errors.Wrap(err, "failed to get clientset")
@@ -208,7 +208,7 @@ func (s *OCIStore) ensureApplicationMetadata(applicationMetadata string, namespa
 		}
 
 		metadata := []byte(applicationMetadata)
-		_, err := clientset.CoreV1().ConfigMaps(namespace).Create(context.TODO(), kotsadmobjects.ApplicationMetadataConfig(metadata, namespace, appSlug), metav1.CreateOptions{})
+		_, err := clientset.CoreV1().ConfigMaps(namespace).Create(context.TODO(), kotsadmobjects.ApplicationMetadataConfig(metadata, namespace, upstreamURI), metav1.CreateOptions{})
 		if err != nil {
 			return errors.Wrap(err, "failed to create metadata config map")
 		}
@@ -221,7 +221,7 @@ func (s *OCIStore) ensureApplicationMetadata(applicationMetadata string, namespa
 	}
 
 	existingConfigMap.Data["application.yaml"] = applicationMetadata
-	existingConfigMap.Data["appSlug"] = appSlug
+	existingConfigMap.Data["upstreamUri"] = upstreamURI
 
 	_, err = clientset.CoreV1().ConfigMaps(os.Getenv("POD_NAMESPACE")).Update(context.Background(), existingConfigMap, metav1.UpdateOptions{})
 	if err != nil {

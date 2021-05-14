@@ -167,7 +167,11 @@ func InstallCmd() *cobra.Command {
 				Context:                   v.GetString("context"),
 				SharedPassword:            sharedPassword,
 				ApplicationMetadata:       applicationMetadata,
+<<<<<<< HEAD
 				AppSlug:                   appSlugFromArgs(args[0]),
+=======
+				UpstreamURI:               upstream,
+>>>>>>> chore: add upstream uri to metadata cm
 				License:                   license,
 				ConfigValues:              configValues,
 				Airgap:                    isAirgap,

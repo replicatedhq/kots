@@ -20,7 +20,7 @@ type MetadataResponse struct {
 	Name          string `json:"name"`
 	Namespace     string `json:"namespace"`
 	IsKurlEnabled bool   `json:"isKurlEnabled"`
-	AppSlug       string `json:"appSlug"`
+	UpstreamURI   string `json:"upstreamUri"`
 }
 
 // Metadata route is UNAUTHENTICATED
@@ -77,7 +77,7 @@ func (h *Handler) Metadata(w http.ResponseWriter, r *http.Request) {
 		application := obj.(*kotsv1beta1.Application)
 		metadataResponse.IconURI = application.Spec.Icon
 		metadataResponse.Name = application.Spec.Title
-		metadataResponse.AppSlug = brandingConfigMap.Data["appSlug"]
+		metadataResponse.UpstreamURI = brandingConfigMap.Data["upstreamUri"]
 	}
 
 	JSON(w, 200, metadataResponse)
