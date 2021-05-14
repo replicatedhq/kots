@@ -171,6 +171,9 @@ func executeSupportBundleCollectRoutine(bundle *types.SupportBundle, progressCha
 	go func() {
 		defer close(progressChan)
 
+		// redactions are global in troubleshoot....
+		redact.ResetRedactionList()
+
 		response, err := troubleshootv1beta2.CollectSupportBundleFromURI(bundle.URI, bundle.RedactURIs, opts)
 		if err != nil {
 			logger.Error(errors.Wrap(err, fmt.Sprintf("error collecting support bundle ID: %s", bundle.ID)))
