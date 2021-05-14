@@ -172,9 +172,9 @@ func maybeDeployFirstVersion(appID string, sequence int64, preflightResults *tro
 	// comparing the version to current
 
 	err = version.DeployVersion(appID, sequence)
-	if err !=  nil {
+	if err != nil {
 		return false, errors.Wrap(err, "failed to deploy version")
-	} 
+	}
 
 	return true, nil
 }

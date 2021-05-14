@@ -6,7 +6,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func ApplicationMetadataConfig(data []byte, namespace string) *corev1.ConfigMap {
+func ApplicationMetadataConfig(data []byte, namespace string, upstreamURI string) *corev1.ConfigMap {
 	labels := types.GetKotsadmLabels()
 	labels["kotsadm"] = "application"
 
@@ -22,6 +22,7 @@ func ApplicationMetadataConfig(data []byte, namespace string) *corev1.ConfigMap 
 		},
 		Data: map[string]string{
 			"application.yaml": string(data),
+			"upstreamUri":      upstreamURI,
 		},
 	}
 

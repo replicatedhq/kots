@@ -35,7 +35,7 @@ import (
 	"k8s.io/client-go/kubernetes/scheme"
 )
 
-func (s *KOTSStore) ensureApplicationMetadata(applicationMetadata string, namespace string) error {
+func (s *KOTSStore) ensureApplicationMetadata(applicationMetadata string, namespace string, upstreamURI string) error {
 	clientset, err := k8sutil.GetClientset()
 	if err != nil {
 		return errors.Wrap(err, "failed to get clientset")
@@ -48,7 +48,7 @@ func (s *KOTSStore) ensureApplicationMetadata(applicationMetadata string, namesp
 		}
 
 		metadata := []byte(applicationMetadata)
-		_, err := clientset.CoreV1().ConfigMaps(namespace).Create(context.TODO(), kotsadmobjects.ApplicationMetadataConfig(metadata, namespace), metav1.CreateOptions{})
+		_, err := clientset.CoreV1().ConfigMaps(namespace).Create(context.TODO(), kotsadmobjects.ApplicationMetadataConfig(metadata, namespace, upstreamURI), metav1.CreateOptions{})
 		if err != nil {
 			return errors.Wrap(err, "failed to create metadata config map")
 		}
@@ -312,12 +312,11 @@ func (s *KOTSStore) createAppVersion(tx *sql.Tx, appID string, currentSequence *
 	}
 
 	appName := kotsKinds.KotsApplication.Spec.Title
+	a, err := s.GetApp(appID)
+	if err != nil {
+		return int64(0), errors.Wrap(err, "failed to get app")
+	}
 	if appName == "" {
-		a, err := s.GetApp(appID)
-		if err != nil {
-			return int64(0), errors.Wrap(err, "failed to get app")
-		}
-
 		appName = a.Name
 	}
 
@@ -417,7 +416,7 @@ func (s *KOTSStore) createAppVersion(tx *sql.Tx, appID string, currentSequence *
 			return int64(0), errors.Wrap(err, "failed to marshal application spec")
 		}
 
-		if err := s.ensureApplicationMetadata(applicationSpec, os.Getenv("POD_NAMESPACE")); err != nil {
+		if err := s.ensureApplicationMetadata(applicationSpec, os.Getenv("POD_NAMESPACE"), a.UpstreamURI); err != nil {
 			return int64(0), errors.Wrap(err, "failed to get metadata config map")
 		}
 	}
