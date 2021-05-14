@@ -162,7 +162,7 @@ func executeSupportBundleCollectRoutine(bundle *types.SupportBundle, progressCha
 		CollectWithoutPermissions: true,
 		HttpClient:                http.DefaultClient,
 		KubernetesRestConfig:      k8sconfig,
-		Namespace:                 os.Getenv("POD_NAMESPACE"),
+		Namespace:                 "",
 		ProgressChan:              progressChan,
 	}
 
