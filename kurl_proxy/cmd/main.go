@@ -80,7 +80,7 @@ func main() {
 
 	_, err = secrets.Get(context.Background(), tlsSecretName, metav1.GetOptions{})
 	if err != nil {
-		log.Print("tls secret not found")
+		log.Print("creating tls secret")
 
 		err = generateDefaultCertSecret(secrets, namespace)
 		if err != nil {
