@@ -23,9 +23,6 @@ spec:
               name: backup
             - name: kubelet-client-cert
               mountPath: /etc/kubernetes/pki/kubelet
-            - name: kurl-proxy-kotsadm-tls-cert
-              readOnly: true
-              mountPath: /etc/kurl-proxy/ca
           env:
             - name: DEX_PGPASSWORD
               valueFrom:
@@ -82,9 +79,6 @@ spec:
           secret:
             secretName: kubelet-client-cert
             optional: true
-        - name: kurl-proxy-kotsadm-tls-cert
-          secret:
-            secretName: kotsadm-tls
         - name: init-dex-db
           configMap:
             name: init-dex-db
