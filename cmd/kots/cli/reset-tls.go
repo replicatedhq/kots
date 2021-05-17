@@ -16,7 +16,7 @@ import (
 
 func ResetTLSCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:           "reset-tls",
+		Use:           "reset-tls [namespace]",
 		Short:         "Reverts kurl_proxy to a self-signed TLS certificate",
 		Long:          ``,
 		SilenceUsage:  true,
@@ -59,8 +59,6 @@ func ResetTLSCmd() *cobra.Command {
 		},
 	}
 
-	cmd.Flags().StringP("namespace", "n", "default", "namespace in which kots/kotsadm is installed")
-
 	return cmd
 }
 
@@ -82,8 +80,6 @@ func deleteKotsTLSSecret(namespace string) error {
 		if err != nil {
 			return errors.Wrap(err, "failed to delete secret")
 		}
-	} else {
-		fmt.Print("kotsadm-tls secret not found - restarting kurl_proxy pod")
 	}
 
 	return nil
