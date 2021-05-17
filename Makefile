@@ -49,16 +49,18 @@ kotsadm:
 	go build ${LDFLAGS} -o bin/kotsadm $(BUILDFLAGS) ./cmd/kotsadm
 
 .PHONY: build-ttl.sh
-build-ttl.sh: kotsadm
-	make -C web build-kotsadm
+build-ttl.sh: 
 	docker build --pull -f deploy/Dockerfile -t ttl.sh/${CURRENT_USER}/kotsadm:12h .
 	docker push ttl.sh/${CURRENT_USER}/kotsadm:12h
 
 .PHONY: all-ttl.sh
-all-ttl.sh: build-ttl.sh
+all-ttl.sh: kotsadm
+	make -C web build-kotsadm
+	make build-ttl.sh
 
 	IMAGE=ttl.sh/${CURRENT_USER}/kotsadm-migrations:12h make -C migrations build_schema
 
+	make -C kotsadm/operator build
 	make -C kotsadm/operator build-ttl.sh
 
 	docker pull minio/minio:${MINIO_VERSION} 
