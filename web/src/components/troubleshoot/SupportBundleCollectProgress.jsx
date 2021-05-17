@@ -39,7 +39,7 @@ export default function SupportBundleCollectProgress(props) {
       <div className="flex flex1 u-marginBottom--10 justifyContent--center alignItems--center u-textColor--secondary">
         {progressData?.message && <Loader className="flex u-marginRight--5" size="24" />}
         {percentage >= 98 ?
-          <p>Almost done, finializing your bundle...</p>
+          <p>Almost done, finalizing your bundle...</p>
         :
           <p>Analyzing {progressData?.message}</p>
         }

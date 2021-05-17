@@ -3,6 +3,8 @@ package kotsadm
 import (
 	"fmt"
 
+	"github.com/blang/semver"
+	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/kotsadm/types"
 	kotsadmversion "github.com/replicatedhq/kots/pkg/kotsadm/version"
 	"github.com/replicatedhq/kots/pkg/util"
@@ -14,12 +16,7 @@ import (
 )
 
 func PostgresStatefulset(deployOptions types.DeployOptions, size resource.Quantity) *appsv1.StatefulSet {
-	imageTag := "10.16-alpine"
-	if deployOptions.IsOpenShift {
-		// use the debian stretch based image for openshift because of this issue in alpine https://github.com/docker-library/postgres/issues/359
-		// TODO: This breaks when the hidden kotsadm-tag CLI flag is used to push images.  There will be only one postgres image.
-		imageTag = "10.16"
-	}
+	imageTag := getPostgresTag(deployOptions)
 
 	if deployOptions.KotsadmOptions.OverrideVersion != "" {
 		imageTag = deployOptions.KotsadmOptions.OverrideVersion
@@ -251,4 +248,37 @@ func PostgresService(namespace string) *corev1.Service {
 	}
 
 	return service
+}
+
+func getPostgresTag(deployOptions types.DeployOptions) string {
+	// use the debian stretch based image for openshift because of this issue in alpine https://github.com/docker-library/postgres/issues/359
+	// TODO: This breaks when the hidden kotsadm-tag CLI flag is used to push images.  There will be only one postgres image.
+	alpineTag := "10.16-alpine"
+	debianTag := "10.16" // use this when version cannot be determined because this tag always works
+
+	if !deployOptions.IsOpenShift {
+		return alpineTag
+	}
+
+	ocVersion, err := k8sutil.OpenShiftVersion()
+	if err != nil {
+		fmt.Println("Failed to get OpenShift server version", err)
+		return debianTag
+	}
+
+	if ocVersion == "" {
+		return debianTag
+	}
+
+	ocSemver, err := semver.ParseTolerant(ocVersion)
+	if err != nil {
+		return debianTag
+	}
+
+	expectedRange, _ := semver.ParseRange(">=4.2.0")
+	if !expectedRange(ocSemver) {
+		return debianTag
+	}
+
+	return alpineTag
 }

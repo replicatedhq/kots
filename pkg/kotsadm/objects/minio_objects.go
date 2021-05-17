@@ -14,7 +14,7 @@ import (
 )
 
 func MinioStatefulset(deployOptions types.DeployOptions, size resource.Quantity) *appsv1.StatefulSet {
-	imageTag := "RELEASE.2021-04-06T23-11-00Z"
+	imageTag := "RELEASE.2021-05-11T23-27-41Z"
 	if deployOptions.KotsadmOptions.OverrideVersion != "" {
 		imageTag = deployOptions.KotsadmOptions.OverrideVersion
 	}
