@@ -38,6 +38,28 @@ class UploadLicenseFile extends React.Component {
     }
   }
 
+  componentDidMount() {
+    const { appSlugFromMetadata } = this.props;
+
+    if (appSlugFromMetadata) {
+      const hasChannelAsPartOfASlug = appSlugFromMetadata.includes("/");
+      let appSlug;
+      if (hasChannelAsPartOfASlug) {
+        const splitAppSlug = appSlugFromMetadata.split("/");
+        appSlug = splitAppSlug[0]
+      } else {
+        appSlug = appSlugFromMetadata;
+      }
+      this.setState({
+        selectedAppToInstall: {
+          ...this.state.selectedAppToInstall,
+          value: appSlug,
+          label: appSlugFromMetadata
+        }
+      })
+    }
+  }
+
   uploadLicenseFile = async () => {
     const { onUploadSuccess, history } = this.props;
     const { licenseFile, licenseFileContent, hasMultiApp } = this.state;
@@ -143,9 +165,10 @@ class UploadLicenseFile extends React.Component {
   setAvailableAppOptions = (arr) => {
     let availableAppOptions = [];
     arr.map((option) => {
+      const label = option.spec.channelName !== "Stable" ? `${option.spec.appSlug}/${option.spec.channelName}` : option.spec.appSlug;
       availableAppOptions.push({
         value: option.spec.appSlug,
-        label: option.metadata.name
+        label: label
       });
     });
     this.setState({
@@ -171,7 +194,7 @@ class UploadLicenseFile extends React.Component {
     }
     this.setState({
       licenseFile: files[0],
-      licenseFileContent: hasMultiApp? keyBy(licenseYamls, (option) => { return option.spec.appSlug }) : licenseYamls[0],
+      licenseFileContent: hasMultiApp ? keyBy(licenseYamls, (option) => { return option.spec.appSlug }) : licenseYamls[0],
       errorMessage: "",
       hasMultiApp,
     });
@@ -284,7 +307,8 @@ class UploadLicenseFile extends React.Component {
       fetchingMetadata,
       appsListLength,
       isBackupRestore,
-      snapshot
+      snapshot,
+      appSlugFromMetadata
     } = this.props;
     const { licenseFile, fileUploading, errorMessage, viewErrorMessage, licenseExistErrData, selectedAppToInstall, hasMultiApp } = this.state;
     const hasFile = licenseFile && !isEmpty(licenseFile);
@@ -296,12 +320,12 @@ class UploadLicenseFile extends React.Component {
       applicationName = "";
     } else {
       logoUri = logo;
-      applicationName = appName;
+      applicationName = appSlugFromMetadata ? appSlugFromMetadata : appName;
     }
 
     // TODO remove when restore is enabled
     const isRestoreEnabled = false;
-    
+
     return (
       <div className={`UploadLicenseFile--wrapper ${isBackupRestore ? "" : "container"} flex-column flex1 u-overflow--auto Login-wrapper justifyContent--center alignItems--center`}>
         <Helmet>
@@ -349,7 +373,7 @@ class UploadLicenseFile extends React.Component {
                           </div>
                         }
                       </div>
-                    :
+                      :
                       <Dropzone
                         className="Dropzone-wrapper"
                         accept={["application/x-yaml", ".yaml", ".yml", ".rli"]}

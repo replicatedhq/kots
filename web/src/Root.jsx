@@ -15,7 +15,7 @@ import AppDetailPage from "./components/apps/AppDetailPage";
 import ClusterNodes from "./components/apps/ClusterNodes";
 import UnsupportedBrowser from "./components/static/UnsupportedBrowser";
 import NotFound from "./components/static/NotFound";
-import { Utilities } from "./utilities/utilities";
+import { Utilities, parseUpstreamUri } from "./utilities/utilities";
 import fetch from "./utilities/fetchWithTimeout";
 import SecureAdminConsole from "./components/SecureAdminConsole";
 import UploadLicenseFile from "./components/UploadLicenseFile";
@@ -66,6 +66,7 @@ class Root extends Component {
     appLogo: null,
     selectedAppName: null,
     appNameSpace: null,
+    appSlugFromMetadata: null,
     fetchingMetadata: false,
     initSessionId: Utilities.localStorageEnabled()
       ? localStorage.getItem(INIT_SESSION_ID_STORAGE_KEY)
@@ -209,6 +210,7 @@ class Root extends Component {
         this.setState({
           appLogo: data.iconUri,
           selectedAppName: data.name,
+          appSlugFromMetadata: parseUpstreamUri(data.upstreamUri),
           appNameSpace: data.namespace,
           isKurlEnabled: data.isKurlEnabled,
           fetchingMetadata: false
@@ -361,7 +363,7 @@ class Root extends Component {
                   <ProtectedRoute path="/:slug/preflight" render={props => <PreflightResultPage {...props} logo={this.state.appLogo} appName={this.state.selectedAppName} appsList={appsList} fromLicenseFlow={true} refetchAppsList={this.getAppsList} />} />
                   <ProtectedRoute exact path="/:slug/config" render={props => <AppConfig {...props} fromLicenseFlow={true} refetchAppsList={this.getAppsList} />} />
                   <Route exact path="/secure-console" render={props => <SecureAdminConsole {...props} logo={this.state.appLogo} appName={this.state.selectedAppName} pendingApp={this.getPendingApp} onLoginSuccess={this.getAppsList} fetchingMetadata={this.state.fetchingMetadata} />} />
-                  <ProtectedRoute exact path="/upload-license" render={props => <UploadLicenseFile {...props} logo={this.state.appLogo} appsListLength={appsList?.length} appName={this.state.selectedAppName} fetchingMetadata={this.state.fetchingMetadata} onUploadSuccess={this.getAppsList} />} />
+                  <ProtectedRoute exact path="/upload-license" render={props => <UploadLicenseFile {...props} logo={this.state.appLogo} appsListLength={appsList?.length} appName={this.state.selectedAppName} appSlugFromMetadata={this.state.appSlugFromMetadata} fetchingMetadata={this.state.fetchingMetadata} onUploadSuccess={this.getAppsList} />} />
                   <ProtectedRoute exact path="/restore" render={props => <BackupRestore {...props} logo={this.state.appLogo} appName={this.state.selectedAppName} appsListLength={appsList?.length} fetchingMetadata={this.state.fetchingMetadata}/>} />
                   <ProtectedRoute exact path="/:slug/airgap" render={props => <UploadAirgapBundle {...props} showRegistry={true} logo={this.state.appLogo} appsListLength={appsList?.length} appName={this.state.selectedAppName} onUploadSuccess={this.getAppsList} fetchingMetadata={this.state.fetchingMetadata} />} />
                   <ProtectedRoute exact path="/:slug/airgap-bundle" render={props => <UploadAirgapBundle {...props} showRegistry={false} logo={this.state.appLogo} appsListLength={appsList?.length} appName={this.state.selectedAppName} onUploadSuccess={this.getAppsList} fetchingMetadata={this.state.fetchingMetadata} />} />
