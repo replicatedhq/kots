@@ -70,7 +70,7 @@ func KotsadmRegistry(options types.KotsadmOptions) string {
 }
 
 func KotsadmPullSecret(namespace string, options types.KotsadmOptions) *corev1.Secret {
-	if options.OverrideRegistry == "" || options.Username == "" || options.Password == "" {
+	if options.OverrideRegistry == "" {
 		return nil
 	}
 
