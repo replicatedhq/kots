@@ -78,6 +78,17 @@ func main() {
 	}
 	secrets := clientset.CoreV1().Secrets(namespace)
 
+	_, err = secrets.Get(context.Background(), tlsSecretName, metav1.GetOptions{})
+	if err != nil {
+		log.Print("creating tls secret")
+
+		err = generateDefaultCertSecret(secrets, namespace)
+		if err != nil {
+			log.Printf("Could not regenerate default certificate: %v", err)
+		}
+		return
+	}
+
 	certs := make(chan cert)
 	go watchSecret(certs, tlsSecretName, secrets)
 
@@ -306,8 +317,8 @@ func getHttpsServer(upstream, dexUpstream *url.URL, tlsSecretName string, secret
 				if err != nil {
 					log.Println(errors.Wrapf(err, "failed to generate self-signed cert"))
 				} else if certData != nil && keyData != nil {
-					secret.StringData["tls.crt"] = string(certData)
-					secret.StringData["tls.key"] = string(keyData)
+					secret.Data["tls.crt"] = certData
+					secret.Data["tls.key"] = keyData
 				}
 			}
 
@@ -554,4 +565,50 @@ func cleanStringSlice(strSlice []string) []string {
 		}
 	}
 	return clean
+}
+
+func generateDefaultCertSecret(secrets corev1.SecretInterface, namespace string) error {
+	secret := &v1.Secret{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "Secret",
+			APIVersion: "v1",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "kotsadm-tls",
+			Namespace: namespace,
+			Annotations: map[string]string{
+				"acceptAnonymousUploads": "0",
+			},
+		},
+		Type:       "kubernetes.io/tls",
+		Data:       make(map[string][]byte),
+		StringData: make(map[string]string),
+	}
+
+	altNames := []string{
+		"kotsadm",
+		"kotsadm.default",
+		"kotsadm.default.svc",
+		"kotsadm.default.svc.cluster",
+		"kotsadm.default.svc.cluster.local",
+	}
+
+	hostname := "kotsadm.default.svc.cluster.local"
+
+	// Generate a new self-signed cert
+	certData, keyData, err := certutil.GenerateSelfSignedCertKey(hostname, nil, altNames)
+	if err != nil {
+		return errors.Wrapf(err, "generate self-signed cert")
+	}
+
+	secret.Data["tls.crt"] = certData
+	secret.Data["tls.key"] = keyData
+	secret.StringData["hostname"] = hostname
+
+	_, err = secrets.Create(context.Background(), secret, metav1.CreateOptions{})
+	if err != nil {
+		return errors.Wrapf(err, "save tls secret")
+	}
+
+	return nil
 }
