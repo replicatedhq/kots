@@ -349,6 +349,15 @@ export function diffContent(oldContent, newContent) {
 export function isHelmChart(watch) {
   return Boolean(watch.helmName);
 }
+
+export function parseUpstreamUri(uri) {
+  let parsedSlug;
+  if (uri.includes("replicated")) {
+    const splitUri = uri.split("://");
+    parsedSlug = splitUri[1];
+  }
+  return parsedSlug;
+}
 /**
  * Returns true if any item in version history is awaiting results
  * from kotsadm operator.

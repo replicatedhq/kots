@@ -46,6 +46,7 @@ type DeployOptions struct {
 	InstallID                 string
 	SimultaneousUploads       int
 	DisableImagePush          bool
+	UpstreamURI               string
 
 	IdentityConfig kotsv1beta1.IdentityConfig
 	IngressConfig  kotsv1beta1.IngressConfig

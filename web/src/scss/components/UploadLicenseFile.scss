@@ -1,5 +1,26 @@
-.UploadLicenseFile-wrapper {
+@import "../variables.scss";
+
+.UploadLicenseFile--wrapper {
   position: relative;
+
+  .FileUpload-wrapper {
+    cursor: default;
+    border-radius: 4px;
+    border: 1px dashed $border-color;
+    padding: 20px 15px 18px;
+    margin-bottom: 10px;
+
+    &.has-file {
+      border: none;
+      padding: 20px 0 18px;
+
+      &.has-error {
+       border: 1px solid $error-color;
+       background-color: lighten($error-color, 43.5%);
+       color: $error-color;
+      }
+    }
+  }
 }
 .UploadLicenseFileBox-wrapper {
   background-color: #ffffff;
