@@ -575,7 +575,6 @@ jobs:
   scan_postgres_alpine:
     runs-on: ubuntu-18.04
     needs: [build-schema-migrations]
-    if: ${{ github.ref == 'refs/heads/master' }}
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -596,7 +595,6 @@ jobs:
   scan_postgres_debian_stretch:
     runs-on: ubuntu-18.04
     needs: [build-schema-migrations]
-    if: ${{ github.ref == 'refs/heads/master' }}
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -616,7 +614,6 @@ jobs:
   scan_migrations:
     runs-on: ubuntu-18.04
     needs: [build-schema-migrations]
-    if: ${{ github.ref == 'refs/heads/master' }}
     steps:
       - name: Checkout
         uses: actions/checkout@v2
