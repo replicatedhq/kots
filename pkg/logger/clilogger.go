@@ -249,3 +249,13 @@ func (l *CLILogger) Error(err error) {
 	c.Printf("  • ")
 	c.Println(fmt.Sprintf("%#v", err))
 }
+
+func (l *CLILogger) Errorf(msg string, args ...interface{}) {
+	if l == nil || l.isSilent {
+		return
+	}
+
+	c := color.New(color.FgHiRed)
+	c.Printf("  • ")
+	c.Println(fmt.Sprintf(msg, args...))
+}
