@@ -114,8 +114,8 @@ jobs:
 
       - name: push postgres for CI
         run: |
-          docker pull postgres:10.16-alpine
-          docker tag postgres:10.16-alpine ttl.sh/automated-${{ github.run_id }}/postgres:2h
+          docker pull postgres:10.17-alpine
+          docker tag postgres:10.17-alpine ttl.sh/automated-${{ github.run_id }}/postgres:2h
           docker push ttl.sh/automated-${{ github.run_id }}/postgres:2h
       - name: Scan postgres for vulnerabilities
         uses: aquasecurity/trivy-action@master
