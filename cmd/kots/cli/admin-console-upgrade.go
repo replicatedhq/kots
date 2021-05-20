@@ -78,6 +78,13 @@ func AdminConsoleUpgradeCmd() *cobra.Command {
 			upgradeOptions.Timeout = timeout
 
 			log := logger.NewCLILogger()
+			if !v.GetBool("skip-rbac-check") && v.GetBool("ensure-rbac") {
+				err := CheckRBAC()
+				if err != nil {
+					log.Errorf("Current user has insufficient privileges to upgrade Admin Console.\nFor more information, please visit https://kots.io/vendor/packaging/rbac\nTo bypass this check, use the --skip-rbac-check flag")
+					return errors.New("insufficient privileges")
+				}
+			}
 
 			if upgradeOptions.Namespace != "default" {
 				log.ActionWithoutSpinner("Upgrading Admin Console")
@@ -122,5 +129,7 @@ func AdminConsoleUpgradeCmd() *cobra.Command {
 	cmd.Flags().MarkHidden("with-dockerdistribution")
 	cmd.Flags().MarkHidden("storage-base-uri-plainhttp")
 
+	// option to check if the user has cluster-wide previliges to install application
+	cmd.Flags().Bool("skip-rbac-check", false, "set to true to bypass rbac check")
 	return cmd
 }

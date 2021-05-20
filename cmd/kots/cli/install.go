@@ -2,6 +2,7 @@ package cli
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -32,6 +33,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
+	authorizationv1 "k8s.io/api/authorization/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 )
@@ -58,6 +60,14 @@ func InstallCmd() *cobra.Command {
 			defer fmt.Print(cursor.Show())
 
 			log := logger.NewCLILogger()
+
+			if !v.GetBool("skip-rbac-check") && v.GetBool("ensure-rbac") {
+				err := CheckRBAC()
+				if err != nil {
+					log.Errorf("Current user has insufficient privileges to install Admin Console.\nFor more information, please visit https://kots.io/vendor/packaging/rbac\nTo bypass this check, use the --skip-rbac-check flag")
+					return errors.New("insufficient privileges")
+				}
+			}
 
 			license, err := getLicense(v)
 			if err != nil {
@@ -412,6 +422,8 @@ func InstallCmd() *cobra.Command {
 	cmd.Flags().String("ingress-config", "", "path to a kots.Ingress resource file")
 	cmd.Flags().MarkHidden("ingress-config")
 
+	// option to check if the user has cluster-wide previliges to install application
+	cmd.Flags().Bool("skip-rbac-check", false, "set to true to bypass rbac check")
 	return cmd
 }
 
@@ -650,4 +662,41 @@ func getHttpProxyEnv(v *viper.Viper) map[string]string {
 	env["NO_PROXY"] = v.GetString("no-proxy")
 	return env
 
+}
+
+func CheckRBAC() error {
+	clientConfig, err := k8sutil.GetClusterConfig()
+	if err != nil {
+		return errors.Wrap(err, "failed to get cluster config")
+	}
+
+	clientset, err := kubernetes.NewForConfig(clientConfig)
+	if err != nil {
+		return errors.Wrap(err, "failed to create clientset")
+	}
+
+	sar := &authorizationv1.SelfSubjectAccessReview{
+		Spec: authorizationv1.SelfSubjectAccessReviewSpec{
+			ResourceAttributes: &authorizationv1.ResourceAttributes{
+				Namespace:   "",
+				Verb:        "*",
+				Group:       "*",
+				Version:     "*",
+				Resource:    "*",
+				Subresource: "",
+				Name:        "",
+			},
+			NonResourceAttributes: nil,
+		},
+	}
+
+	resp, err := clientset.AuthorizationV1().SelfSubjectAccessReviews().Create(context.Background(), sar, metav1.CreateOptions{})
+	if err != nil {
+		return errors.Wrap(err, "failed to run subject review")
+	}
+
+	if !resp.Status.Allowed {
+		return errors.New("attempting to grant RBAC permissions not currently held")
+	}
+	return nil
 }
