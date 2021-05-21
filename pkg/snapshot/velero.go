@@ -2,7 +2,6 @@ package snapshot
 
 import (
 	"fmt"
-	"time"
 
 	"context"
 	"regexp"
@@ -11,17 +10,13 @@ import (
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/kotsadm"
 	kotsadmtypes "github.com/replicatedhq/kots/pkg/kotsadm/types"
-	velerov1api "github.com/vmware-tanzu/velero/pkg/apis/velero/v1"
-	"github.com/vmware-tanzu/velero/pkg/cmd/cli/serverstatus"
 	veleroclientv1 "github.com/vmware-tanzu/velero/pkg/generated/clientset/versioned/typed/velero/v1"
 	v1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes"
-	kbclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 var (
@@ -299,12 +294,6 @@ func DetectVelero(ctx context.Context, kotsadmNamespace string) (*VeleroStatus, 
 		return nil, errors.Wrap(err, "failed to list possible velero deployments")
 	}
 
-	version, err := getVersion(veleroNamespace)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to get velero version")
-	}
-	veleroStatus.Version = version
-
 	for _, deployment := range possibleDeployments {
 		for _, initContainer := range deployment.Spec.Template.Spec.InitContainers {
 			// the default installation is to name these like "velero-plugin-for-aws"
@@ -319,7 +308,9 @@ func DetectVelero(ctx context.Context, kotsadmNamespace string) (*VeleroStatus, 
 				status = "Ready"
 			}
 
+			veleroStatus.Version = matches[4]
 			veleroStatus.Status = status
+
 			goto DeploymentFound
 		}
 	}
@@ -339,6 +330,7 @@ DeploymentFound:
 					status = "Ready"
 				}
 			}
+
 			veleroStatus.ResticVersion = matches[4]
 			veleroStatus.ResticStatus = status
 
@@ -348,35 +340,6 @@ DeploymentFound:
 ResticFound:
 
 	return &veleroStatus, nil
-}
-
-func getVersion(nameSpace string) (string, error) {
-	clientConfig, err := k8sutil.GetClusterConfig()
-	if err != nil {
-		return "", errors.Wrap(err, "failed to get cluster config")
-	}
-	scheme := runtime.NewScheme()
-	velerov1api.AddToScheme(scheme)
-	kbClient, err := kbclient.New(clientConfig, kbclient.Options{
-		Scheme: scheme,
-	})
-	if err != nil {
-		return "", errors.Wrap(err, "failed to get velero client")
-	}
-
-	timeout := 5 * time.Second
-	ctx, cancel := context.WithTimeout(context.Background(), timeout)
-	defer cancel()
-
-	serverStatusGetter := &serverstatus.DefaultServerStatusGetter{
-		Namespace: nameSpace,
-		Context:   ctx,
-	}
-	serverStatus, err := serverStatusGetter.GetServerStatus(kbClient)
-	if err != nil {
-		return "", errors.Wrap(err, "error getting server version")
-	}
-	return serverStatus.Status.ServerVersion, nil
 }
 
 // listPossibleVeleroDeployments filters with a label selector based on how we've found velero deployed
