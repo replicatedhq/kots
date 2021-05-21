@@ -640,7 +640,7 @@ jobs:
         id: scan
         uses: anchore/scan-action@v2
         with:
-          image: "minio/minio:RELEASE.2021-05-11T23-27-41Z"
+          image: "minio/minio:RELEASE.2021-05-20T22-31-44Z"
           fail-build: false
           acs-report-enable: true
           severity-cutoff: high
