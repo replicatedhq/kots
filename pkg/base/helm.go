@@ -152,7 +152,7 @@ func checkChartForVersion(file *upstreamtypes.UpstreamFile) (string, error) {
 		return "", errors.Wrap(err, "failed to unmarshal chart.yaml")
 	}
 	// note: helm API version 2 is equivilent to Helm V3
-	if version := chartValues["apiVersion"]; strings.EqualFold(version.(string), "v2") {
+	if version, ok := chartValues["apiVersion"]; ok && strings.EqualFold(version.(string), "v2") {
 		return "v3", nil
 	}
 	if _, ok := chartValues["dependencies"]; ok {
