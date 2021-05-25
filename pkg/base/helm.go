@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/ghodss/yaml"
 	"github.com/pkg/errors"
 	upstreamtypes "github.com/replicatedhq/kots/pkg/upstream/types"
 	"github.com/replicatedhq/kots/pkg/util"
@@ -23,7 +24,7 @@ func RenderHelm(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (*Base,
 
 	for _, file := range u.Files {
 		p := path.Join(chartPath, file.Path)
-		d, _ := path.Split(p)
+		d, fileName := path.Split(p)
 		if _, err := os.Stat(d); err != nil {
 			if os.IsNotExist(err) {
 				if err := os.MkdirAll(d, 0744); err != nil {
@@ -32,6 +33,11 @@ func RenderHelm(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (*Base,
 			} else {
 				return nil, errors.Wrap(err, "failed to check if dir exists")
 			}
+		}
+
+		// check chart.yaml for Helm version if a helm version has not been explicitly provided
+		if strings.EqualFold(fileName, "Chart.yaml") && renderOptions.HelmVersion == "" {
+			renderOptions.HelmVersion, err = checkChartForVersion(&file)
 		}
 
 		if err := ioutil.WriteFile(p, file.Content, 0644); err != nil {
@@ -137,4 +143,22 @@ func RenderHelm(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (*Base,
 	return &Base{
 		Files: baseFiles,
 	}, nil
+}
+
+func checkChartForVersion(file *upstreamtypes.UpstreamFile) (string, error) {
+	var chartValues map[string]interface{}
+	err := yaml.Unmarshal(file.Content, &chartValues)
+	if err != nil {
+		return "", errors.Wrap(err, "failed to unmarshal chart.yaml")
+	}
+	// note: helm API version 2 is equivilent to Helm V3
+	if version := chartValues["apiVersion"]; strings.EqualFold(version.(string), "v2") {
+		return "v3", nil
+	}
+	if _, ok := chartValues["dependencies"]; ok {
+		return "v3", nil
+	}
+
+	// if no determination is made, assume v2 until default changes
+	return "v2", nil
 }
