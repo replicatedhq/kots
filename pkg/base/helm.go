@@ -38,6 +38,11 @@ func RenderHelm(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (*Base,
 		// check chart.yaml for Helm version if a helm version has not been explicitly provided
 		if strings.EqualFold(fileName, "Chart.yaml") && renderOptions.HelmVersion == "" {
 			renderOptions.HelmVersion, err = checkChartForVersion(&file)
+			if err != nil {
+				renderOptions.Log.Info("could not determine helm version (will use helm v2 by default): %v", err)
+			} else {
+				renderOptions.Log.Info("rendering with Helm %v", renderOptions.HelmVersion)
+			}
 		}
 
 		if err := ioutil.WriteFile(p, file.Content, 0644); err != nil {
