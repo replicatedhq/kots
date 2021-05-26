@@ -147,6 +147,7 @@ func RenderHelm(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (*Base,
 
 func checkChartForVersion(file *upstreamtypes.UpstreamFile) (string, error) {
 	var chartValues map[string]interface{}
+
 	err := yaml.Unmarshal(file.Content, &chartValues)
 	if err != nil {
 		return "", errors.Wrap(err, "failed to unmarshal chart.yaml")
