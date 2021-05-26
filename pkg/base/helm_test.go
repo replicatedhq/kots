@@ -8,26 +8,21 @@ import (
 )
 
 func Test_checkChartForVersion(t *testing.T) {
-	v3Test1 := map[string]interface{}{
+	v3Test := map[string]interface{}{
 		"apiVersion": "v2",
 		"name":       "testChart",
 		"type":       "application",
 		"version":    "v0.0.1",
 		"appVersion": "v1.0.0",
 	}
-	v3Test2 := map[string]interface{}{
-		"name":         "testChart",
-		"type":         "application",
-		"version":      "v0.0.1",
-		"appVersion":   "v1.0.0",
-		"dependencies": []string{"dep1", "dep2"},
-	}
+
 	v2Test := map[string]interface{}{
 		"name":       "testChart",
 		"type":       "application",
 		"version":    "v2",
 		"appVersion": "v2",
 	}
+
 	tests := []struct {
 		name    string
 		chart   map[string]interface{}
@@ -36,13 +31,7 @@ func Test_checkChartForVersion(t *testing.T) {
 	}{
 		{
 			name:    "version 3 API",
-			chart:   v3Test1,
-			want:    "v3",
-			wantErr: false,
-		},
-		{
-			name:    "dependency declaration",
-			chart:   v3Test2,
+			chart:   v3Test,
 			want:    "v3",
 			wantErr: false,
 		},
