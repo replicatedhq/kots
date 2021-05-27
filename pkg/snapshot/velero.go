@@ -33,10 +33,12 @@ const (
 )
 
 type VeleroStatus struct {
-	Version   string
-	Plugins   []string
-	Status    string
-	Namespace string
+	Version    string
+	Plugins    []string
+	Status     string
+	Namespace  string
+	VeleroPod  string
+	ResticPods []string
 
 	ResticVersion string
 	ResticStatus  string
@@ -289,9 +291,21 @@ func DetectVelero(ctx context.Context, kotsadmNamespace string) (*VeleroStatus, 
 		return nil, nil
 	}
 
+	veleroPod, err := getVeleroPod(ctx, clientset, veleroNamespace)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to list velero pods")
+	}
+
+	resticPods, err := getResticPods(ctx, clientset, veleroNamespace)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to list restic pods")
+	}
+
 	veleroStatus := VeleroStatus{
-		Plugins:   []string{},
-		Namespace: veleroNamespace,
+		Plugins:    []string{},
+		Namespace:  veleroNamespace,
+		VeleroPod:  veleroPod,
+		ResticPods: resticPods,
 	}
 
 	possibleDeployments, err := listPossibleVeleroDeployments(ctx, clientset, veleroNamespace)
@@ -377,6 +391,55 @@ func getVersion(nameSpace string) (string, error) {
 		return "", errors.Wrap(err, "error getting server version")
 	}
 	return serverStatus.Status.ServerVersion, nil
+}
+
+func getVeleroPod(ctx context.Context, clientset *kubernetes.Clientset, namespace string) (string, error) {
+	veleroLabels := map[string]string{
+		"component": "velero",
+		"deploy":    "velero",
+	}
+
+	veleroPods, err := clientset.CoreV1().Pods(namespace).List(context.TODO(), metav1.ListOptions{
+		LabelSelector: labels.SelectorFromSet(veleroLabels).String(),
+	})
+	if err != nil {
+		return "", errors.Wrap(err, "failed to list velero pods before restarting")
+	}
+
+	for _, pod := range veleroPods.Items {
+		if pod.Status.Phase == corev1.PodRunning {
+			if pod.Status.ContainerStatuses[0].Ready == true {
+				return pod.Name, nil
+			}
+		}
+	}
+
+	return "", nil
+}
+
+func getResticPods(ctx context.Context, clientset *kubernetes.Clientset, namespace string) ([]string, error) {
+	resticLabels := map[string]string{
+		"component": "velero",
+		"name":      "restic",
+	}
+
+	resticPods, err := clientset.CoreV1().Pods(namespace).List(context.TODO(), metav1.ListOptions{
+		LabelSelector: labels.SelectorFromSet(resticLabels).String(),
+	})
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to list restic pods before restarting")
+	}
+
+	pods := make([]string, 0)
+	for _, pod := range resticPods.Items {
+		if pod.Status.Phase == corev1.PodRunning {
+			if pod.Status.ContainerStatuses[0].Ready == true {
+				pods = append(pods, pod.Name)
+			}
+		}
+	}
+
+	return pods, nil
 }
 
 // listPossibleVeleroDeployments filters with a label selector based on how we've found velero deployed
