@@ -2,6 +2,7 @@ import React, { Component } from "react";
 import { withRouter } from "react-router-dom"
 import Helmet from "react-helmet";
 import isEmpty from "lodash/isEmpty";
+import isEqual from "lodash/isEqual";
 
 import Loader from "../shared/Loader";
 import SnapshotStorageDestination from "./SnapshotStorageDestination";
@@ -116,19 +117,29 @@ class SnapshotSettings extends Component {
 
 
       if (this.state.checkForVeleroAndRestic) {
-        if (this.state.snapshotSettings?.isVeleroRunning !== lastState.snapshotSettings?.isVeleroRunning) {
-          this.setState({ veleroVersionUpdated: this.state.snapshotSettings?.isVeleroRunning });
+        if (this.state.snapshotSettings?.veleroPod !== lastState.snapshotSettings?.veleroPod && !isEmpty(this.state.snapshotSettings?.veleroPod)) {
+          this.setState({ veleroUpdated: true });
         }
 
-        if (this.state.snapshotSettings?.isResticRunning !== lastState.snapshotSettings?.isResticRunning) {
-          this.setState({ resticVersionUpdated: this.state.snapshotSettings?.isResticRunning });
+        let sortedStateResticPods = []
+        let sortedLastStateResticPods = []
+        if (!isEmpty(this.state.snapshotSettings?.resticPods)) {
+          sortedStateResticPods = this.state.snapshotSettings?.resticPods.sort();
+        }
+        if (!isEmpty(lastState.snapshotSettings?.resticPods)) {
+          sortedLastStateResticPods = lastState.snapshotSettings?.resticPods.sort();
+        }
+        if (!isEqual(sortedStateResticPods, sortedLastStateResticPods) && !isEmpty(this.state.snapshotSettings?.resticPods)) {
+          this.setState({ resticUpdated: true });
         }
 
-        if (this.state.updatingSettings && this.state.veleroVersionUpdated && this.state.resticVersionUpdated) {
+        if (this.state.updatingSettings && this.state.veleroUpdated && this.state.resticUpdated) {
           this.setState({
             updatingSettings: false,
             updateConfirm: true,
-            checkForVeleroAndRestic: false
+            checkForVeleroAndRestic: false,
+            veleroUpdated: false,
+            resticUpdated: false
           });
           setTimeout(() => {
             this.setState({ updateConfirm: false })
@@ -139,149 +150,149 @@ class SnapshotSettings extends Component {
     }
   }
 
-    toggleSnapshotView = (isEmptyView) => {
-      this.setState({ toggleSnapshotView: !this.state.toggleSnapshotView, isEmptyView: isEmptyView ? isEmptyView : false });
-    }
+  toggleSnapshotView = (isEmptyView) => {
+    this.setState({ toggleSnapshotView: !this.state.toggleSnapshotView, isEmptyView: isEmptyView ? isEmptyView : false });
+  }
 
-    updateSettings = (payload) => {
-      this.setState({ updatingSettings: true, updateErrorMsg: "" });
+  updateSettings = (payload) => {
+    this.setState({ updatingSettings: true, updateErrorMsg: "" });
 
-      this.poolSnapshotSettingsOnUpdate();
+    this.poolSnapshotSettingsOnUpdate();
 
-      fetch(`${window.env.API_ENDPOINT}/snapshots/settings`, {
-        method: "PUT",
-        headers: {
-          "Authorization": Utilities.getToken(),
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(payload)
-      })
-        .then(async (res) => {
-          if (!res.ok && res.status === 409) {
-            const result = await res.json();
-            if (result.kotsadmRequiresVeleroAccess) {
-              this.setState({
-                updatingSettings: false,
-              });
-              this.openConfigureSnapshotsMinimalRBACModal(result.kotsadmRequiresVeleroAccess, result.kotsadmNamespace);
-              return;
-            }
+    fetch(`${window.env.API_ENDPOINT}/snapshots/settings`, {
+      method: "PUT",
+      headers: {
+        "Authorization": Utilities.getToken(),
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(payload)
+    })
+      .then(async (res) => {
+        if (!res.ok && res.status === 409) {
+          const result = await res.json();
+          if (result.kotsadmRequiresVeleroAccess) {
             this.setState({
               updatingSettings: false,
-              showResetFileSystemWarningModal: true,
-              resetFileSystemWarningMessage: result.error,
-            })
-            return;
-          }
-
-          const settingsResponse = await res.json();
-          if (!res.ok) {
-            this.setState({
-              updatingSettings: false,
-              updateErrorMsg: settingsResponse.error
-            })
-            return;
-          }
-
-          if (settingsResponse.success) {
-            this.setState({
-              snapshotSettings: settingsResponse,
-              updateErrorMsg: ""
             });
-          } else {
-            this.setState({
-              updatingSettings: false,
-              updateErrorMsg: settingsResponse.error
-            })
+            this.openConfigureSnapshotsMinimalRBACModal(result.kotsadmRequiresVeleroAccess, result.kotsadmNamespace);
+            return;
           }
-        })
-        .catch((err) => {
-          console.error(err);
           this.setState({
             updatingSettings: false,
-            updateErrorMsg: "Something went wrong, please try again."
+            showResetFileSystemWarningModal: true,
+            resetFileSystemWarningMessage: result.error,
+          })
+          return;
+        }
+
+        const settingsResponse = await res.json();
+        if (!res.ok) {
+          this.setState({
+            updatingSettings: false,
+            updateErrorMsg: settingsResponse.error
+          })
+          return;
+        }
+
+        if (settingsResponse.success) {
+          this.setState({
+            snapshotSettings: settingsResponse,
+            updateErrorMsg: ""
           });
+        } else {
+          this.setState({
+            updatingSettings: false,
+            updateErrorMsg: settingsResponse.error
+          })
+        }
+      })
+      .catch((err) => {
+        console.error(err);
+        this.setState({
+          updatingSettings: false,
+          updateErrorMsg: "Something went wrong, please try again."
         });
-    }
+      });
+  }
 
-    renderNotVeleroMessage = () => {
-      return <p className="u-textColor--error u-fontSize--small u-fontWeight--medium u-lineHeight--normal u-marginTop--12">Not able to find Velero</p>
-    }
+  renderNotVeleroMessage = () => {
+    return <p className="u-textColor--error u-fontSize--small u-fontWeight--medium u-lineHeight--normal u-marginTop--12">Not able to find Velero</p>
+  }
 
-    openConfigureSnapshotsMinimalRBACModal = (kotsadmRequiresVeleroAccess, minimalRBACKotsadmNamespace) => {
-      this.setState({ showConfigureSnapshotsModal: true, kotsadmRequiresVeleroAccess, minimalRBACKotsadmNamespace }, () => {
+  openConfigureSnapshotsMinimalRBACModal = (kotsadmRequiresVeleroAccess, minimalRBACKotsadmNamespace) => {
+    this.setState({ showConfigureSnapshotsModal: true, kotsadmRequiresVeleroAccess, minimalRBACKotsadmNamespace }, () => {
+      this.props.history.replace("/snapshots/settings?configure=true");
+    });
+  }
+
+  toggleConfigureSnapshotsModal = () => {
+    if (this.state.showConfigureSnapshotsModal) {
+      this.setState({ showConfigureSnapshotsModal: false }, () => {
+        this.props.history.replace("/snapshots/settings");
+      });
+    } else {
+      this.setState({ showConfigureSnapshotsModal: true }, () => {
         this.props.history.replace("/snapshots/settings?configure=true");
       });
     }
+  };
 
-    toggleConfigureSnapshotsModal = () => {
-      if (this.state.showConfigureSnapshotsModal) {
-        this.setState({ showConfigureSnapshotsModal: false }, () => {
-          this.props.history.replace("/snapshots/settings");
-        });
-      } else {
-        this.setState({ showConfigureSnapshotsModal: true }, () => {
-          this.props.history.replace("/snapshots/settings?configure=true");
-        });
-      }
-    };
-
-    hideResetFileSystemWarningModal = () => {
-      this.setState({ showResetFileSystemWarningModal: false });
-    }
-
-    render() {
-      const { isLoadingSnapshotSettings, snapshotSettings, hideCheckVeleroButton, updateConfirm, updatingSettings, updateErrorMsg, isEmptyView, checkForVeleroAndRestic } = this.state;
-      const isLicenseUpload = !!this.props.history.location.search;
-
-      if (isLoadingSnapshotSettings && !checkForVeleroAndRestic) {
-        return (
-          <div className="flex-column flex1 alignItems--center justifyContent--center">
-            <Loader size="60" />
-          </div>
-        )
-      }
-
-      return (
-        <div className="flex1 flex-column u-overflow--auto">
-          <Helmet>
-            <title>Snapshot Settings</title>
-          </Helmet>
-          {!isVeleroCorrectVersion(snapshotSettings) && !checkForVeleroAndRestic ?
-            <div className="VeleroWarningBlock">
-              <span className="icon small-warning-icon" />
-              <p> To use snapshots reliably, install Velero version 1.5.1 or greater </p>
-            </div>
-            : null}
-          <div className="container flex-column flex1u-paddingTop--30 u-paddingBottom--20 u-marginTop--10 alignItems--center">
-            <SnapshotStorageDestination
-              snapshotSettings={snapshotSettings}
-              updateSettings={this.updateSettings}
-              fetchSnapshotSettings={this.fetchSnapshotSettings}
-              checkForVeleroAndRestic={checkForVeleroAndRestic}
-              updateConfirm={updateConfirm}
-              updatingSettings={updatingSettings}
-              updateErrorMsg={updateErrorMsg}
-              renderNotVeleroMessage={this.renderNotVeleroMessage}
-              toggleSnapshotView={this.toggleSnapshotView}
-              isEmptyView={isEmptyView}
-              hideCheckVeleroButton={hideCheckVeleroButton}
-              isLicenseUpload={isLicenseUpload}
-              showConfigureSnapshotsModal={this.state.showConfigureSnapshotsModal}
-              toggleConfigureSnapshotsModal={this.toggleConfigureSnapshotsModal}
-              openConfigureSnapshotsMinimalRBACModal={this.openConfigureSnapshotsMinimalRBACModal}
-              kotsadmRequiresVeleroAccess={this.state.kotsadmRequiresVeleroAccess}
-              minimalRBACKotsadmNamespace={this.state.minimalRBACKotsadmNamespace}
-              showResetFileSystemWarningModal={this.state.showResetFileSystemWarningModal}
-              resetFileSystemWarningMessage={this.state.resetFileSystemWarningMessage}
-              hideResetFileSystemWarningModal={this.hideResetFileSystemWarningModal}
-              isKurlEnabled={this.props.isKurlEnabled}
-              apps={this.props.apps}
-            />
-          </div>
-        </div>
-      );
-    }
+  hideResetFileSystemWarningModal = () => {
+    this.setState({ showResetFileSystemWarningModal: false });
   }
 
-  export default withRouter(SnapshotSettings);
+  render() {
+    const { isLoadingSnapshotSettings, snapshotSettings, hideCheckVeleroButton, updateConfirm, updatingSettings, updateErrorMsg, isEmptyView, checkForVeleroAndRestic } = this.state;
+    const isLicenseUpload = !!this.props.history.location.search;
+
+    if (isLoadingSnapshotSettings && !checkForVeleroAndRestic) {
+      return (
+        <div className="flex-column flex1 alignItems--center justifyContent--center">
+          <Loader size="60" />
+        </div>
+      )
+    }
+
+    return (
+      <div className="flex1 flex-column u-overflow--auto">
+        <Helmet>
+          <title>Snapshot Settings</title>
+        </Helmet>
+        {!isVeleroCorrectVersion(snapshotSettings) && !checkForVeleroAndRestic ?
+          <div className="VeleroWarningBlock">
+            <span className="icon small-warning-icon" />
+            <p> To use snapshots reliably, install Velero version 1.5.1 or greater </p>
+          </div>
+          : null}
+        <div className="container flex-column flex1u-paddingTop--30 u-paddingBottom--20 u-marginTop--10 alignItems--center">
+          <SnapshotStorageDestination
+            snapshotSettings={snapshotSettings}
+            updateSettings={this.updateSettings}
+            fetchSnapshotSettings={this.fetchSnapshotSettings}
+            checkForVeleroAndRestic={checkForVeleroAndRestic}
+            updateConfirm={updateConfirm}
+            updatingSettings={updatingSettings}
+            updateErrorMsg={updateErrorMsg}
+            renderNotVeleroMessage={this.renderNotVeleroMessage}
+            toggleSnapshotView={this.toggleSnapshotView}
+            isEmptyView={isEmptyView}
+            hideCheckVeleroButton={hideCheckVeleroButton}
+            isLicenseUpload={isLicenseUpload}
+            showConfigureSnapshotsModal={this.state.showConfigureSnapshotsModal}
+            toggleConfigureSnapshotsModal={this.toggleConfigureSnapshotsModal}
+            openConfigureSnapshotsMinimalRBACModal={this.openConfigureSnapshotsMinimalRBACModal}
+            kotsadmRequiresVeleroAccess={this.state.kotsadmRequiresVeleroAccess}
+            minimalRBACKotsadmNamespace={this.state.minimalRBACKotsadmNamespace}
+            showResetFileSystemWarningModal={this.state.showResetFileSystemWarningModal}
+            resetFileSystemWarningMessage={this.state.resetFileSystemWarningMessage}
+            hideResetFileSystemWarningModal={this.hideResetFileSystemWarningModal}
+            isKurlEnabled={this.props.isKurlEnabled}
+            apps={this.props.apps}
+          />
+        </div>
+      </div>
+    );
+  }
+}
+
+export default withRouter(SnapshotSettings);

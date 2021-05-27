@@ -32,8 +32,10 @@ type GlobalSnapshotSettingsResponse struct {
 	VeleroPlugins   []string `json:"veleroPlugins"`
 	VeleroNamespace string   `json:"veleroNamespace"`
 	IsVeleroRunning bool     `json:"isVeleroRunning"`
+	VeleroPod       string   `json:"veleroPod"`
 	ResticVersion   string   `json:"resticVersion"`
 	IsResticRunning bool     `json:"isResticRunning"`
+	ResticPods      []string `json:"resticPods"`
 
 	KotsadmNamespace     string `json:"kotsadmNamespace"`
 	IsKurl               bool   `json:"isKurl"`
@@ -239,9 +241,11 @@ func (h *Handler) GetGlobalSnapshotSettings(w http.ResponseWriter, r *http.Reque
 	globalSnapshotSettingsResponse.VeleroVersion = veleroStatus.Version
 	globalSnapshotSettingsResponse.VeleroPlugins = veleroStatus.Plugins
 	globalSnapshotSettingsResponse.VeleroNamespace = veleroStatus.Namespace
+	globalSnapshotSettingsResponse.VeleroPod = veleroStatus.VeleroPod
 	globalSnapshotSettingsResponse.IsVeleroRunning = veleroStatus.Status == "Ready"
 	globalSnapshotSettingsResponse.ResticVersion = veleroStatus.ResticVersion
 	globalSnapshotSettingsResponse.IsResticRunning = veleroStatus.ResticStatus == "Ready"
+	globalSnapshotSettingsResponse.ResticPods = veleroStatus.ResticPods
 	globalSnapshotSettingsResponse.KotsadmNamespace = kotsadmNamespace
 	globalSnapshotSettingsResponse.IsKurl = kurl.IsKurl()
 	globalSnapshotSettingsResponse.IsMinimalRBACEnabled = !k8sutil.IsKotsadmClusterScoped(r.Context(), clientset, kotsadmNamespace)
