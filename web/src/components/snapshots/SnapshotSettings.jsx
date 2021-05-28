@@ -103,7 +103,7 @@ class SnapshotSettings extends Component {
     this.state.snapshotSettingsJob.stop();
   }
 
-  poolSnapshotSettingsOnUpdate = () => {
+  pollSnapshotSettingsOnUpdate = () => {
     this.setState({ checkForVeleroAndRestic: true });
     this.state.snapshotSettingsJob.start(this.fetchSnapshotSettings, 2000)
   }
@@ -156,8 +156,8 @@ class SnapshotSettings extends Component {
 
   updateSettings = (payload) => {
     this.setState({ updatingSettings: true, updateErrorMsg: "" });
-
-    this.poolSnapshotSettingsOnUpdate();
+      
+    this.pollSnapshotSettingsOnUpdate();
 
     fetch(`${window.env.API_ENDPOINT}/snapshots/settings`, {
       method: "PUT",

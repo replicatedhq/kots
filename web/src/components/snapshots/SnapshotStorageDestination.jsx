@@ -103,6 +103,7 @@ class SnapshotStorageDestination extends Component {
     s3CompatibleKeySecret: "",
     s3CompatibleEndpoint: "",
     s3CompatibleRegion: "",
+    s3CompatibleFieldErrors: {},
 
     configuringFileSystemProvider: false,
     configureFileSystemProviderErrorMsg: "",
@@ -353,6 +354,11 @@ class SnapshotStorageDestination extends Component {
         await this.snapshotProviderGoogle();
         break;
       case "other":
+        const s3CompatibleFieldErrors = this.validateSnapshotProviderS3Compatible();
+        this.setState({s3CompatibleFieldErrors});
+        if(Object.keys(s3CompatibleFieldErrors).length > 0){
+            break;
+        }
         await this.snapshotProviderS3Compatible();
         break;
       case "internal":
@@ -363,6 +369,16 @@ class SnapshotStorageDestination extends Component {
         await this.snapshotProviderFileSystem(false);
         break;
     }
+  }
+
+  validateSnapshotProviderS3Compatible = () => {
+    
+    const urlRe = /\b(https?):\/\/[\-A-Za-z0-9+&@#\/%?=~_|!:,.;]*[\-A-Za-z0-9+&@#\/%=~_|]/
+
+    if (!urlRe.test(this.state.s3CompatibleEndpoint)) {
+        return { "endpoint" : "Please enter a valid endpoint with protocol"}
+    }
+    return {}
   }
 
   getProviderPayload = (provider, bucket, path) => {
@@ -745,15 +761,18 @@ class SnapshotStorageDestination extends Component {
                 <input type="password" className="Input" placeholder="access key" value={this.state.s3CompatibleKeySecret} onChange={(e) => { this.handleFormChange("s3CompatibleKeySecret", e) }} />
               </div>
             </div>
-            <div className="flex u-marginBottom--30">
-              <div className="flex1 u-paddingRight--5">
-                <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">Endpoint</p>
-                <input type="text" className="Input" placeholder="endpoint" value={this.state.s3CompatibleEndpoint} onChange={(e) => { this.handleFormChange("s3CompatibleEndpoint", e) }} />
+            <div className="u-marginBottom--30">
+              <div className="flex">
+                <div className="flex1 u-paddingRight--5">
+                  <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">Endpoint</p>
+                  <input type="text" className="Input" placeholder="http[s]://hostname[:port]" value={this.state.s3CompatibleEndpoint} onChange={(e) => { this.handleFormChange("s3CompatibleEndpoint", e) }} />
+                </div>
+                <div className="flex1 u-paddingLeft--5">
+                  <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">Region</p>
+                  <input type="text" className="Input" placeholder="us-east-1" value={this.state.s3CompatibleRegion} onChange={(e) => { this.handleFormChange("s3CompatibleRegion", e) }} />
+                </div>
               </div>
-              <div className="flex1 u-paddingLeft--5">
-                <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">Region</p>
-                <input type="text" className="Input" placeholder="/path/to/destination" value={this.state.s3CompatibleRegion} onChange={(e) => { this.handleFormChange("s3CompatibleRegion", e) }} />
-              </div>
+              {this.state.s3CompatibleFieldErrors.endpoint && <div className="u-fontWeight--bold u-fontSize--small u-textColor--error u-marginBottom--10 u-marginTop--10">{this.state.s3CompatibleFieldErrors.endpoint}</div>}
             </div>
           </div>
         )
