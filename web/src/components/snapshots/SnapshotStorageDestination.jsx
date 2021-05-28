@@ -124,13 +124,13 @@ class SnapshotStorageDestination extends Component {
   };
 
   componentDidMount() {
-    if (this.props.snapshotSettings) {
+    if (this.props.snapshotSettings && !this.props.checkForVeleroAndRestic) {
       this.setFields();
     }
   }
 
   componentDidUpdate(lastProps) {
-    if (this.props.snapshotSettings !== lastProps.snapshotSettings && this.props.snapshotSettings) {
+    if (this.props.snapshotSettings !== lastProps.snapshotSettings && this.props.snapshotSettings && !this.props.checkForVeleroAndRestic) {
       this.setFields();
     }
   }
