@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -25,6 +26,10 @@ import (
 	"github.com/robfig/cron"
 	"k8s.io/apimachinery/pkg/util/rand"
 	"k8s.io/client-go/kubernetes"
+)
+
+const (
+	urlPattern = `\b(https?):\/\/[\-A-Za-z0-9+&@#\/%?=~_|!:,.;]*[\-A-Za-z0-9+&@#\/%=~_|]`
 )
 
 type GlobalSnapshotSettingsResponse struct {
@@ -102,6 +107,18 @@ func (h *Handler) UpdateGlobalSnapshotSettings(w http.ResponseWriter, r *http.Re
 		globalSnapshotSettingsResponse.Error = "failed to decode request body"
 		JSON(w, http.StatusBadRequest, globalSnapshotSettingsResponse)
 		return
+	}
+
+	// Validate Endpoint - velero is picky
+	if updateGlobalSnapshotSettingsRequest.Other != nil {
+
+		urlRe := regexp.MustCompile(urlPattern)
+
+		if !urlRe.Match([]byte(updateGlobalSnapshotSettingsRequest.Other.Endpoint)) {
+			globalSnapshotSettingsResponse.Error = "invalid endpoint for S3 compatible storage"
+			JSON(w, http.StatusUnprocessableEntity, globalSnapshotSettingsResponse)
+			return
+		}
 	}
 
 	kotsadmNamespace := os.Getenv("POD_NAMESPACE")
