@@ -899,6 +899,13 @@ func readDeployOptionsFromCluster(namespace string, clientset *kubernetes.Client
 		deployOptions.AutoCreateClusterToken = autocreateClusterToken
 	}
 
+	metadataConfig, err := clientset.CoreV1().ConfigMaps(deployOptions.Namespace).Get(context.TODO(), "kotsadm-application-metadata", metav1.GetOptions{})
+	if err == nil {
+		deployOptions.ApplicationMetadata = []byte(metadataConfig.Data["application.yaml"])
+	} else if !kuberneteserrors.IsNotFound(err) {
+		return nil, errors.Wrap(err, "failed to get app metadata from configmap")
+	}
+
 	return &deployOptions, nil
 }
 
