@@ -54,6 +54,7 @@ func downloadUpstream(upstreamURI string, fetchOptions *types.FetchOptions) (*ty
 			fetchOptions.AppSlug,
 			fetchOptions.AppSequence,
 			fetchOptions.Airgap != nil,
+			fetchOptions.Airgap,
 			fetchOptions.LocalRegistry,
 			fetchOptions.ReportingInfo,
 		)
