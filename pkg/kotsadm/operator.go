@@ -234,7 +234,7 @@ func ensureOperatorDeployment(deployOptions types.DeployOptions, clientset *kube
 }
 
 func isOperatorClusterScoped(applicationMetadata []byte) (bool, error) {
-	if applicationMetadata == nil {
+	if len(applicationMetadata) == 0 {
 		return true, nil
 	}
 
