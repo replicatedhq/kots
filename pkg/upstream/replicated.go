@@ -134,6 +134,7 @@ func downloadReplicated(
 	appSlug string,
 	appSequence int64,
 	isAirgap bool,
+	airgapMetadata *kotsv1beta1.Airgap,
 	registry types.LocalRegistry,
 	reportingInfo *reportingtypes.ReportingInfo,
 ) (*types.Upstream, error) {
@@ -143,6 +144,11 @@ func downloadReplicated(
 		parsedLocalRelease, err := readReplicatedAppFromLocalPath(localPath, updateCursor, versionLabel)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to read replicated app from local path")
+		}
+
+		// airgapMetadata is nil when saving initial config
+		if airgapMetadata != nil {
+			parsedLocalRelease.ReleaseNotes = airgapMetadata.Spec.ReleaseNotes
 		}
 
 		release = parsedLocalRelease
