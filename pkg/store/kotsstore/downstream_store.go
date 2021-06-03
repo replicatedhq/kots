@@ -187,6 +187,7 @@ func (s *KOTSStore) GetCurrentVersion(appID string, clusterID string) (*types.Do
 	adv.diff_summary_error,
 	adv.preflight_result,
 	adv.preflight_result_created_at,
+	adv.preflight_skipped,
 	adv.git_commit_url,
 	adv.git_deployable,
 	ado.is_error,
@@ -261,6 +262,7 @@ func (s *KOTSStore) GetPendingVersions(appID string, clusterID string) ([]types.
 	adv.diff_summary_error,
 	adv.preflight_result,
 	adv.preflight_result_created_at,
+	adv.preflight_skipped,
 	adv.git_commit_url,
 	adv.git_deployable,
 	ado.is_error,
@@ -325,6 +327,7 @@ func (s *KOTSStore) GetPastVersions(appID string, clusterID string) ([]types.Dow
 	adv.diff_summary_error,
 	adv.preflight_result,
 	adv.preflight_result_created_at,
+	adv.preflight_skipped,
 	adv.git_commit_url,
 	adv.git_deployable,
 	ado.is_error,
@@ -380,6 +383,7 @@ func downstreamVersionFromRow(appID string, row scannable) (*types.DownstreamVer
 	var diffSummaryError sql.NullString
 	var preflightResult sql.NullString
 	var preflightResultCreatedAt sql.NullTime
+	var preflightSkipped sql.NullBool
 	var commitURL sql.NullString
 	var gitDeployable sql.NullBool
 	var hasError sql.NullBool
@@ -398,6 +402,7 @@ func downstreamVersionFromRow(appID string, row scannable) (*types.DownstreamVer
 		&diffSummaryError,
 		&preflightResult,
 		&preflightResultCreatedAt,
+		&preflightSkipped,
 		&commitURL,
 		&gitDeployable,
 		&hasError,
@@ -425,6 +430,7 @@ func downstreamVersionFromRow(appID string, row scannable) (*types.DownstreamVer
 	if preflightResultCreatedAt.Valid {
 		v.PreflightResultCreatedAt = &preflightResultCreatedAt.Time
 	}
+	v.PreflightSkipped = preflightSkipped.Bool
 	v.CommitURL = commitURL.String
 	v.GitDeployable = gitDeployable.Bool
 
