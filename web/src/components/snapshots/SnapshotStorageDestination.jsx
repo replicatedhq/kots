@@ -343,6 +343,7 @@ class SnapshotStorageDestination extends Component {
 
   onSubmit = async (e) => {
     e.preventDefault();
+    let s3CompatibleFieldErrors = this.state.s3CompatibleFieldErrors;
     switch (this.state.selectedDestination.value) {
       case "aws":
         await this.snapshotProviderAWS();
@@ -354,7 +355,7 @@ class SnapshotStorageDestination extends Component {
         await this.snapshotProviderGoogle();
         break;
       case "other":
-        const s3CompatibleFieldErrors = this.validateSnapshotProviderS3Compatible();
+        s3CompatibleFieldErrors = this.validateSnapshotProviderS3Compatible();
         this.setState({s3CompatibleFieldErrors});
         if(Object.keys(s3CompatibleFieldErrors).length > 0){
             break;

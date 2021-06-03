@@ -48,6 +48,9 @@ spec:
       - name: preflight_ignore_permissions
         type: boolean
         default: "false"
+      - name: preflight_skipped
+        type: boolean
+        default: "false"
       - name: git_commit_url
         type: text
       - name: git_deployable
