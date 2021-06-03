@@ -446,6 +446,7 @@ func promptForNamespace(upstreamURI string) (string, error) {
 		Templates: templates,
 		Default:   u.Hostname(),
 		Validate:  validateNamespace,
+		AllowEdit: true,
 	}
 
 	for {

@@ -263,6 +263,7 @@ func relentlesslyPromptForAppName(defaultAppName string) (string, error) {
 			}
 			return nil
 		},
+		AllowEdit: true,
 	}
 
 	for {
