@@ -18,6 +18,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/render/helper"
 	"github.com/replicatedhq/kots/pkg/reporting"
 	"github.com/replicatedhq/kots/pkg/store"
+	storetypes "github.com/replicatedhq/kots/pkg/store/types"
 	"github.com/replicatedhq/kots/pkg/version"
 	troubleshootv1beta2 "github.com/replicatedhq/troubleshoot/pkg/apis/troubleshoot/v1beta2"
 	troubleshootpreflight "github.com/replicatedhq/troubleshoot/pkg/preflight"
@@ -45,7 +46,7 @@ func Run(appID string, appSlug string, sequence int64, isAirgap bool, archiveDir
 	}
 
 	// preflights should not run until config is finished
-	if status == "pending_config" {
+	if status == storetypes.VersionPendingConfig {
 		logger.Debug("not running preflights for app that is pending required configuration",
 			zap.String("appID", appID),
 			zap.Int64("sequence", sequence))

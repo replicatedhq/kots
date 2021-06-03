@@ -14,10 +14,11 @@ import (
 	"github.com/replicatedhq/kots/pkg/buildversion"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/store"
+	storetypes "github.com/replicatedhq/kots/pkg/store/types"
 	troubleshootpreflight "github.com/replicatedhq/troubleshoot/pkg/preflight"
 )
 
-func SendPreflightsReportToReplicatedApp(license *kotsv1beta1.License, appID string, clusterID string, sequence int64, skipPreflights bool, installStatus string, isCLI bool, preflightStatus string, appStatus string) error {
+func SendPreflightsReportToReplicatedApp(license *kotsv1beta1.License, appID string, clusterID string, sequence int64, skipPreflights bool, installStatus storetypes.DownstreamVersionStatus, isCLI bool, preflightStatus string, appStatus string) error {
 	endpoint := license.Spec.Endpoint
 	if !canReport(endpoint) {
 		return nil
@@ -26,7 +27,7 @@ func SendPreflightsReportToReplicatedApp(license *kotsv1beta1.License, appID str
 	urlValues := url.Values{}
 	urlValues.Set("sequence", fmt.Sprintf("%d", sequence))
 	urlValues.Set("skipPreflights", fmt.Sprintf("%t", skipPreflights))
-	urlValues.Set("installStatus", installStatus)
+	urlValues.Set("installStatus", string(installStatus))
 	urlValues.Set("isCLI", fmt.Sprintf("%t", isCLI))
 	urlValues.Set("preflightStatus", preflightStatus)
 	urlValues.Set("appStatus", appStatus)

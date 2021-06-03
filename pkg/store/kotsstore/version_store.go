@@ -29,6 +29,7 @@ import (
 	rendertypes "github.com/replicatedhq/kots/pkg/render/types"
 	kotss3 "github.com/replicatedhq/kots/pkg/s3"
 	"github.com/replicatedhq/kots/pkg/secrets"
+	"github.com/replicatedhq/kots/pkg/store/types"
 	velerov1 "github.com/vmware-tanzu/velero/pkg/apis/velero/v1"
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -366,11 +367,11 @@ func (s *KOTSStore) createAppVersion(tx *sql.Tx, appID string, currentSequence *
 		// there's a small chance this is not optimal, but no current code path
 		// will support multiple downstreams, so this is cleaner here for now
 
-		downstreamStatus := "pending"
+		downstreamStatus := types.VersionPending
 		if currentSequence == nil && kotsKinds.Config != nil { // initial version should always require configuration (if exists) even if all required items are already set and have values (except for automated installs, which can override this later)
-			downstreamStatus = "pending_config"
+			downstreamStatus = types.VersionPendingConfig
 		} else if kotsKinds.Preflight != nil && !skipPreflights {
-			downstreamStatus = "pending_preflight"
+			downstreamStatus = types.VersionPendingPreflight
 		}
 		if currentSequence != nil { // only check if the version needs configuration for later versions (not the initial one) since the config is always required for the initial version (except for automated installs, which can override that later)
 			// check if version needs additional configuration
@@ -379,7 +380,7 @@ func (s *KOTSStore) createAppVersion(tx *sql.Tx, appID string, currentSequence *
 				return int64(0), errors.Wrap(err, "failed to check if version needs configuration")
 			}
 			if t {
-				downstreamStatus = "pending_config"
+				downstreamStatus = types.VersionPendingConfig
 			}
 		}
 
@@ -543,7 +544,7 @@ func (s *KOTSStore) createAppVersionRecord(tx *sql.Tx, appID string, currentSequ
 	return int64(newSequence), nil
 }
 
-func (s *KOTSStore) addAppVersionToDownstream(tx *sql.Tx, appID string, clusterID string, sequence int64, versionLabel string, status string, source string, diffSummary string, diffSummaryError string, commitURL string, gitDeployable bool, preflightsSkipped bool) error {
+func (s *KOTSStore) addAppVersionToDownstream(tx *sql.Tx, appID string, clusterID string, sequence int64, versionLabel string, status types.DownstreamVersionStatus, source string, diffSummary string, diffSummaryError string, commitURL string, gitDeployable bool, preflightsSkipped bool) error {
 	query := `insert into app_downstream_version (app_id, cluster_id, sequence, parent_sequence, created_at, version_label, status, source, diff_summary, diff_summary_error, git_commit_url, git_deployable, preflight_skipped) values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)`
 	_, err := tx.Exec(
 		query,
