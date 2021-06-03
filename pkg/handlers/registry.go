@@ -389,7 +389,6 @@ func (h *Handler) ValidateAppRegistry(w http.ResponseWriter, r *http.Request) {
 
 		if appSettings.Password != "" {
 			password = appSettings.Password
-
 		} else {
 			kotsadmSettings, err := registry.GetKotsadmRegistry()
 			if err != nil {
@@ -398,16 +397,11 @@ func (h *Handler) ValidateAppRegistry(w http.ResponseWriter, r *http.Request) {
 				JSON(w, 500, validateAppRegistryResponse)
 				return
 			}
-
-			if kotsadmSettings.Hostname != validateAppRegistryRequest.Hostname || kotsadmSettings.Password == "" {
-				err := errors.Errorf("no password found for %s", validateAppRegistryRequest.Hostname)
-				JSON(w, 400, NewErrorResponse(err))
-				return
-			}
 			password = kotsadmSettings.Password
 		}
 	}
-	if password == "" || password == registrytypes.PasswordMask {
+
+	if password == registrytypes.PasswordMask {
 		err := errors.Errorf("no password found for %s", validateAppRegistryRequest.Hostname)
 		JSON(w, 400, NewErrorResponse(err))
 		return
