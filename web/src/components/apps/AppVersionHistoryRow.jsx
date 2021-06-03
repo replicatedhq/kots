@@ -159,7 +159,7 @@ function renderVersionStatus(version, app, match, viewLogs) {
             data-for={`${version.versionLabel || version.title}-${version.sequence}`}
             className={classNames("icon", {
               "checkmark-icon": version.status === "deployed" || version.status === "merged" || version.status === "pending",
-              "exclamationMark--icon": version.status === "opened",
+              "exclamationMark--icon": version.status === "opened" || version.preflightSkipped,
               "grayCircleMinus--icon": version.status === "closed",
               "error-small": version.status === "failed" || preflightsFailed
             })}
@@ -167,7 +167,7 @@ function renderVersionStatus(version, app, match, viewLogs) {
           {version.status === "deploying" && <Loader className="flex alignItems--center" size="20" />}
           <span className={classNames("u-fontSize--small u-fontWeight--medium u-lineHeight--normal u-marginLeft--5", {
             "u-textColor--accent": version.status === "deployed" || version.status === "merged",
-            "u-textColor--warning": version.status === "opened",
+            "u-textColor--warning": version.status === "opened" || version.preflightSkipped,
             "u-textColor--bodyCopy": version.status === "closed" || version.status === "pending" || version.status === "pending_preflight",
             "u-textColor--error": version.status === "failed" || preflightsFailed
           })}>
@@ -177,8 +177,10 @@ function renderVersionStatus(version, app, match, viewLogs) {
                 : preflightsFailed
                   ? "Checks failed"
                   : version.status === "pending"
-                    ? "Ready to deploy"
-                    : version.status
+                    ? "Ready to deploy" 
+                    : version.preflightSkipped
+                      ? "Checks skipped"
+                      : version.status
             ).replace("_", " ")}
           </span>
         </div>
@@ -197,14 +199,14 @@ function renderVersionStatus(version, app, match, viewLogs) {
             data-for={`${version.versionLabel || version.title}-${version.sequence}`}
             className={classNames("icon", {
               "analysis-gray_checkmark": version.status === "deployed" || version.status === "merged",
-              "exclamationMark--icon": version.status === "opened",
+              "exclamationMark--icon": version.status === "opened" || version.preflightSkipped,
               "grayCircleMinus--icon": version.status === "closed" || version.status === "pending",
               "error-small": version.status === "failed"
             })}
           />
           <span className={classNames("u-fontSize--small u-fontWeight--medium u-lineHeight--normal u-marginLeft--5", {
             "u-textColor--accent": version.status === "deployed" || version.status === "merged",
-            "u-textColor--warning": version.status === "opened",
+            "u-textColor--warning": version.status === "opened" || version.preflightSkipped,
             "u-textColor--bodyCopy": version.status === "closed" || version.status === "pending" || version.status === "pending_preflight",
             "u-textColor--error": version.status === "failed"
           })}>
@@ -212,8 +214,10 @@ function renderVersionStatus(version, app, match, viewLogs) {
               "Previously Deployed" :
               version.status === "pending" ?
                 "Skipped" :
-                version.status === "failed" ?
-                  "Failed" : ""}
+                version.preflightSkipped ?
+                 "Checks skipped" :
+                  version.status === "failed" ?
+                    "Failed" : ""}
           </span>
         </div>
         {preflightBlock}
