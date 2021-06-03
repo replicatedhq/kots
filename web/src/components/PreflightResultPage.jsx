@@ -264,7 +264,7 @@ class PreflightResultPage extends Component {
         return;
       }
       const response = await res.json();
-      if (response.preflightResult?.result) {
+      if (response.preflightResult?.result || response.preflightResult?.skipped) {
         this.state.getKotsPreflightResultJob.stop();
         this.setState({ preflightResultCheckCount: 0 });
       }
@@ -312,9 +312,10 @@ class PreflightResultPage extends Component {
     const { slug } = this.props.match.params;
     const { showSkipModal, showWarningModal, preflightResultData, errorMessage } = this.state;
 
-    const stopPolling = !!preflightResultData?.result;
+    const preflightSkipped = preflightResultData?.skipped;
+    const stopPolling = (preflightResultData?.result || preflightSkipped);
     let preflightJSON = {};
-    if (stopPolling) {
+    if (preflightResultData?.result) {
       if (showSkipModal) {
         this.hideSkipModal();
       }
@@ -363,6 +364,7 @@ class PreflightResultPage extends Component {
                   <PreflightRenderer
                     className="u-marginTop--20"
                     results={preflightResultData.result}
+                    skipped={preflightSkipped}
                   />
                 </div>
               }

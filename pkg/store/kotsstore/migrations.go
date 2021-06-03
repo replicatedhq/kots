@@ -36,6 +36,10 @@ func (s *KOTSStore) RunMigrations() {
 		logger.Error(errors.Wrap(err, "failed to migrate app_spec"))
 	}
 
+	if err := s.migrateSkippedPreflights(); err != nil {
+		logger.Error(errors.Wrap(err, "failed to migrate skipped preflights"))
+	}
+
 	// migrate postgrtes data from postgres
 	if err := s.migrateSessionsFromPostgres(); err != nil {
 		logger.Error(errors.Wrap(err, "failed to migrate sessions"))
@@ -463,6 +467,18 @@ func (s *KOTSStore) migrateAppSpec() error {
 		if err != nil {
 			logger.Error(errors.Wrapf(err, "failed to migrate app_spec app %v sequece %v", version.appID, version.sequence))
 		}
+	}
+
+	return nil
+}
+
+func (s *KOTSStore) migrateSkippedPreflights() error {
+	db := persistence.MustGetPGSession()
+
+	query := `update app_downstream_version set preflight_skipped = true where preflight_result_created_at is null`
+	_, err := db.Exec(query)
+	if err != nil {
+		return errors.Wrap(err, "failed to set preflight_skipped")
 	}
 
 	return nil

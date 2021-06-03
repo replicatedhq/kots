@@ -42,7 +42,7 @@ func (s *KOTSStore) SetPreflightResults(appID string, sequence int64, results []
 	db := persistence.MustGetPGSession()
 	query := `update app_downstream_version set preflight_result = $1, preflight_result_created_at = $2,
 status = (case when status = 'deployed' then 'deployed' else 'pending' end),
-preflight_progress = NULL
+preflight_progress = NULL, preflight_skipped = false
 where app_id = $3 and parent_sequence = $4`
 
 	_, err := db.Exec(query, results, time.Now(), appID, sequence)
@@ -59,6 +59,7 @@ func (s *KOTSStore) GetPreflightResults(appID string, sequence int64) (*prefligh
 	SELECT
 		app_downstream_version.preflight_result,
 		app_downstream_version.preflight_result_created_at,
+		app_downstream_version.preflight_skipped,
 		app.slug as app_slug,
 		cluster.slug as cluster_slug
 	FROM app_downstream_version
@@ -79,7 +80,7 @@ func (s *KOTSStore) GetPreflightResults(appID string, sequence int64) (*prefligh
 
 func (s *KOTSStore) ResetPreflightResults(appID string, sequence int64) error {
 	db := persistence.MustGetPGSession()
-	query := `update app_downstream_version set preflight_result=null, preflight_result_created_at=null where app_id = $1 and parent_sequence = $2`
+	query := `update app_downstream_version set preflight_result=null, preflight_result_created_at=null, preflight_skipped=false where app_id = $1 and parent_sequence = $2`
 	_, err := db.Exec(query, appID, sequence)
 	if err != nil {
 		return errors.Wrap(err, "failed to exec")
@@ -90,7 +91,7 @@ func (s *KOTSStore) ResetPreflightResults(appID string, sequence int64) error {
 func (s *KOTSStore) SetIgnorePreflightPermissionErrors(appID string, sequence int64) error {
 	db := persistence.MustGetPGSession()
 	query := `UPDATE app_downstream_version
-	SET status = 'pending_preflight', preflight_ignore_permissions = true, preflight_result = null
+	SET status = 'pending_preflight', preflight_ignore_permissions = true, preflight_result = null, preflight_skipped = false
 	WHERE app_id = $1 AND sequence = $2`
 
 	_, err := db.Exec(query, appID, sequence)
@@ -110,6 +111,7 @@ func preflightResultFromRow(row scannable) (*preflighttypes.PreflightResult, err
 	if err := row.Scan(
 		&preflightResult,
 		&preflightResultCreatedAt,
+		&r.Skipped,
 		&r.AppSlug,
 		&r.ClusterSlug,
 	); err != nil {
