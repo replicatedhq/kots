@@ -40,13 +40,31 @@ Two Main Goals
 ## Non Goals
 
 Vendor requests that were left out of scope of this proposal as future tasking:
-* Having Kotsadm parse file(s) to gather config data, including variadic resources - this doesn't seem to be needed immediately by any customer. Files will just be base64 encoded and inserted using template functions.
+* Having Kotsadm parse file(s) to gather config data, including variadic resources - this doesn't seem to be needed immediately by any customer. Individual Files can still be base64 encoded and inserted into resources using template functions.
 * Nested Groups - template or otherwise, are not supported.
-* Repeat File Dropzone: One dropzone that will create a repeated config values instead of clicking a "+" sign multiple times - I think this is a straightforward implementation following this proposal, so it is not covered for clarity.
+* Repeatable File Dropzone Widget: One dropzone that will create a repeated config values instead of clicking a "+" sign multiple times - I think this is a straightforward implementation following this proposal, so it is not covered for clarity.
 
 ## Background - TBD
 
 One to two paragraphs of exposition to set the context for this proposal.
+
+https://kots.io/reference/v1beta1/config/
+
+The current configuration resources consist of:
+1. Config Spec- TBD
+    1. Config Item- TBD
+1. ConfigValues Spec - TBD
+    1.  Config Value - TBD
+
+Examples of these are provided inline in the Detailed Design section of the proposal.
+
+The current configuration pipeline works as follows:
+1. Customer passes in config values via CLI or UI
+1. ConfigValue spec is saved to the `/userdata` folder along with upstream to the `upstream` directly
+1. Kots renders the upstream against the config values and also filters out any unnecessary files (e.g. preflight spec). This goes into the `base` directory along with a kustomize file.
+1. Midstream changes are applied.
+1. Downstream changes are applied.
+1. Completed manifests are sent to the operator to get deployed.
 
 ### Use Cases:
 
@@ -65,18 +83,24 @@ One to two paragraphs of exposition to set the context for this proposal.
 ## High-Level Design 
 
 Supporting the above customer use cases falls into two new feature additions for KOTS:
-1. `templateGroups`
-1. `repeatable` Config Items
+1. `templateGroups` added to the [Config specification](https://kots.io/reference/v1beta1/config/).
+1. `repeatable` attribute added to [Config Items](https://kots.io/reference/v1beta1/config/#items).
+
+### `reapeatable` Config Items
+
+The purpose of adding a `reapatable` attribute to config items is to add the capability *EXTEND* resources.
+
+
+
+
 
 ### templateGroups
 
-Template Groups are similar to the existing Config Groups concept, except this new category identified resources that can be cloned in ConfigValues or in the kotsadm UI. Instead of the relationshipt of groups->ConfigItems, 
+The purpose of adding `templateGroups` in the Config spec is to add the ability to *COPY* collections of resources/config.
 
-Kotsadm will take the templateGroup values and implicitly copy and render new resources
+Template Groups are similar to the existing Config Groups concept, except this new category identified resources that can be cloned in ConfigValues or in the kotsadm UI. They have addition properties like name prefixes and validation. Instead of the relationship of `Groups` having `ConfigItems`, `TemplateConfigGroups` have `TemplateItems`. The distinction is that TemplateItems can have an array of values while Config Items can only have a single value. When rendered into a ConfigValue spec by kots all of the values are flatten into a single list, the only difference being the naming convention and a `parent` field to point back to the template group.
 
-### reape
-
-
+Kotsadm will take the templateGroup values and implicitly copy and render new resources for any manifest file that utilizes them. This would make the integration for vendors more seemless, without needing to template multiple resources.
 
 ## Detailed Design
 
@@ -90,7 +114,7 @@ Ideally the changes should be made in sequence so that the work required to impl
 ### Repeat Config Item Manifest
 
 ```yaml
-piVersion: apps/v1
+apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: my-deploy
@@ -166,13 +190,25 @@ spec:
       title: "Nginx port", 
       default: "80", 
       value: ""
-    - <config items here>
+
+    # NEW!
+    # This is a repeat Config Item
+    - name: "static_files"
+      type: file
+      title: "Static Assets"
+      repeatable: true      # Tells the UI/Kots to expect an array
+      minimumCount: 3       # Not sure if this is needed here but including for discussion
+      repeatValues:         # Returned to the API filled in from the CLI/console    
+      - "value one"
+      - "value two"
+    - <more config items here>
+
   # NEW!
   templateGroups:
   - name: kafka_template    # Template ID
     title: Kafka Instances  # Group Friendly Name
     groupName: Kafka        # UI Name associated with "Create another -----"
-    groupPrefix: Kafka      # Label all resources+values created with <prefix>-resource-<cardnality>
+    groupPrefix: kafka      # Label all resources+values created with <prefix>-resource-<cardnality>
     minimumCount: 1         # How many instances need to be created? Populates this many templates in the UI w/ defaults.
     resources:
         # Do we indicate the resource(s) being templated, or can it be implicit based on usage.
@@ -183,10 +219,23 @@ spec:
       default: "kafka.default.local", 
       values:                       # values will get added by the UI
       - value: "kafka.one.local"
-        id: "kafka-hostname-0" 
+        id: "kafka-0-hostname" 
       - value: "kafka.two.local"
-        id: "kafka-hostname-1"
-      - <item values here>
+        id: "kafka-1-hostname"
+    # Combining both concepts
+    - name: "topic",
+      type: "text", 
+      title: "Kafka Default Topics", 
+      default: "", 
+      repeatable: true      # Tells the UI/Kots to expect an array
+      minimumCount: 1       
+      values:                       # values will get added by the UI
+      - value: "topic A"            # Instance 1 has two topic, but instance 2 only has 1
+        id: "kafka-0-topic-0" 
+      - value: "topic B"
+        id: "kafka-0-topic-1"
+      - value: "topic C"
+        id: "kafka-1-topic-0"
     - <template config items here>
 ```
 
@@ -252,7 +301,8 @@ TBD
 
 ## Design Limitations
 
-* Size of data in configmap/secrets can only hold so much data. No way to pass in an arbitrarily large file and have it passed as configuration.
+* Configmap/secrets can only hold 1MB of data. No way to pass in an arbitrarily large file and have it passed along as configuration.
+    * This more than likely eliminates the possibility of storing binary files.
 
 ## Testing
 
