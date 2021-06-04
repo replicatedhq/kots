@@ -26,6 +26,7 @@ import (
 	registrytypes "github.com/replicatedhq/kots/pkg/registry/types"
 	"github.com/replicatedhq/kots/pkg/render"
 	"github.com/replicatedhq/kots/pkg/store"
+	storetypes "github.com/replicatedhq/kots/pkg/store/types"
 	"github.com/replicatedhq/kots/pkg/template"
 	"github.com/replicatedhq/kots/pkg/version"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -359,7 +360,7 @@ func shouldCreateNewAppVersion(appID string, sequence int64) (bool, error) {
 		if err != nil {
 			return false, errors.Wrap(err, "failed to get version status")
 		}
-		if status == "pending_config" {
+		if status == storetypes.VersionPendingConfig {
 			return false, nil
 		}
 	}

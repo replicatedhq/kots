@@ -27,9 +27,11 @@ type AppUpdateCheckResponse struct {
 }
 
 func (h *Handler) AppUpdateCheck(w http.ResponseWriter, r *http.Request) {
-	foundApp, err := store.GetStore().GetAppFromSlug(mux.Vars(r)["appSlug"])
+	appSlug := mux.Vars(r)["appSlug"]
+
+	foundApp, err := store.GetStore().GetAppFromSlug(appSlug)
 	if err != nil {
-		logger.Error(err)
+		logger.Error(errors.Wrapf(err, "failed to get app for slug %q", appSlug))
 		w.WriteHeader(http.StatusNotFound)
 		return
 	}
@@ -44,8 +46,8 @@ func (h *Handler) AppUpdateCheck(w http.ResponseWriter, r *http.Request) {
 	if contentType == "application/json" {
 		availableUpdates, err := updatechecker.CheckForUpdates(foundApp.ID, deploy, skipPreflights, isCLI)
 		if err != nil {
-			logger.Error(err)
-			w.WriteHeader(500)
+			logger.Error(errors.Wrap(err, "failed to check for updates"))
+			w.WriteHeader(http.StatusInternalServerError)
 
 			cause := errors.Cause(err)
 			if _, ok := cause.(util.ActionableError); ok {

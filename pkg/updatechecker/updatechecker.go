@@ -16,6 +16,8 @@ import (
 	kotspull "github.com/replicatedhq/kots/pkg/pull"
 	"github.com/replicatedhq/kots/pkg/reporting"
 	"github.com/replicatedhq/kots/pkg/store"
+	storetypes "github.com/replicatedhq/kots/pkg/store/types"
+	"github.com/replicatedhq/kots/pkg/util"
 	"github.com/replicatedhq/kots/pkg/version"
 	cron "github.com/robfig/cron/v3"
 	"go.uber.org/zap"
@@ -224,6 +226,15 @@ func CheckForUpdates(appID string, deploy bool, skipPreflights bool, isCLI bool)
 		return 0, errors.Wrap(err, "failed to update last updated at time")
 	}
 
+	downstreams, err := store.GetStore().ListDownstreamsForApp(a.ID)
+	if err != nil {
+		return 0, errors.Wrap(err, "failed to list downstreams for app")
+	}
+	if len(downstreams) == 0 {
+		return 0, errors.Errorf("no downstreams found for app %q", a.Slug)
+	}
+	downstream := downstreams[0]
+
 	// if there are updates, go routine it
 	if len(updates) == 0 {
 		if !deploy {
@@ -243,19 +254,25 @@ func CheckForUpdates(appID string, deploy bool, skipPreflights bool, isCLI bool)
 		}
 
 		latestVersion := allVersions[len(allVersions)-1]
-		downstreams, err := store.GetStore().ListDownstreamsForApp(a.ID)
-		if err != nil {
-			return 0, errors.Wrap(err, "failed to list downstreams for app")
-		}
-
-		downstreamParentSequence, err := store.GetStore().GetCurrentParentSequence(a.ID, downstreams[0].ClusterID)
+		downstreamParentSequence, err := store.GetStore().GetCurrentParentSequence(a.ID, downstream.ClusterID)
 		if err != nil {
 			return 0, errors.Wrap(err, "failed to get current downstream parent sequence")
 		}
 
 		if latestVersion.Sequence != downstreamParentSequence {
-			err := version.DeployVersion(a.ID, latestVersion.Sequence)
+			status, err := store.GetStore().GetStatusForVersion(a.ID, downstream.ClusterID, latestVersion.Sequence)
 			if err != nil {
+				return 0, errors.Wrap(err, "failed to get update downstream status")
+			}
+
+			if status == storetypes.VersionPendingConfig {
+				return 0, util.ActionableError{
+					NoRetry: true,
+					Message: fmt.Sprintf("Version %d cannot be deployed because it needs configuration", latestVersion.Sequence),
+				}
+			}
+
+			if err := version.DeployVersion(a.ID, latestVersion.Sequence); err != nil {
 				return 0, errors.Wrap(err, "failed to deploy latest version")
 			}
 		}
@@ -278,24 +295,36 @@ func CheckForUpdates(appID string, deploy bool, skipPreflights bool, isCLI bool)
 			// the latest version is in archive dir
 			sequence, err := upstream.DownloadUpdate(a.ID, archiveDir, update.Cursor, skipPreflights)
 			if err != nil {
-				logger.Error(err)
+				logger.Error(errors.Wrap(err, "failed to download update"))
 				continue
 			}
-			// deploy latest version?
-			if deploy && index == len(updates)-1 {
-				err := version.DeployVersion(a.ID, sequence)
-				if err != nil {
-					logger.Error(err)
-				}
 
-				// preflights reporting
-				go func() {
-					err = reporting.ReportAppInfo(a.ID, sequence, skipPreflights, isCLI)
-					if err != nil {
-						logger.Debugf("failed to update preflights reports: %v", err)
-					}
-				}()
+			if !deploy || index != len(updates)-1 {
+				continue
 			}
+
+			status, err := store.GetStore().GetStatusForVersion(a.ID, downstream.ClusterID, sequence)
+			if err != nil {
+				logger.Error(errors.Wrap(err, "failed to get update downstream status"))
+				continue
+			}
+
+			if status == storetypes.VersionPendingConfig {
+				logger.Infof("not deploying version %d because it's %s", sequence, status)
+				continue
+			}
+
+			if err := version.DeployVersion(a.ID, sequence); err != nil {
+				logger.Error(errors.Wrap(err, "failed to queue update for deployment"))
+			}
+
+			// preflights reporting
+			go func() {
+				err = reporting.ReportAppInfo(a.ID, sequence, skipPreflights, isCLI)
+				if err != nil {
+					logger.Debugf("failed to update preflights reports: %v", err)
+				}
+			}()
 		}
 	}()
 
