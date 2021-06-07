@@ -33,28 +33,41 @@ This proposal outlines a plan to support dynamic/variadic application configurat
 
 ## Goals
 
-Two Main Goals
-1. Vendors can create "template" resources in the broadest sense; define once and they can be used _N_ times.
+Two Main Business-Driver Goals
+1. Vendors can create "template" resources in the broadest sense; define resources once and they can be used _N_ times as needed by their application.
 1. Vendors can extend resources with _N_ additional configuration properties, like environment variables or volume mounts.
+
+Additional Technical Goals
+1. Maintain last mile kustomization of of all resources.
 
 ## Non Goals
 
 Vendor requests that were left out of scope of this proposal as future tasking:
-* Having Kotsadm parse file(s) to gather config data, including variadic resources - this doesn't seem to be needed immediately by any customer. Individual Files can still be base64 encoded and inserted into resources using template functions.
-* Nested Groups - template or otherwise, are not supported.
-* Repeatable File Dropzone Widget: One dropzone that will create a repeated config values instead of clicking a "+" sign multiple times - I think this is a straightforward implementation following this proposal, so it is not covered for clarity.
+1. Having Kotsadm parse file(s) to gather config data, including variadic resources
+    * I don't think this was requested but could have been implied by some vendor requests. 
+    * Vendors and customers still interact with config fields the same way through the CLI or UI, although there will be options to create dynamic fields.
+    * Individual Files can still be base64 encoded and inserted into resources using template functions.
+1. Nested Groups 
+    * Template or otherwise, are not supported as part of this proposal.
+1. Glob File Dropzone Widget
+    * What is it: one dropzone that will create config values for a collection of files instead of clicking a "+" sign multiple times
+    * This might have been implied by various customer usage cases (I just want to dump some files here and mount them to a container) 
+    * I think this is a straightforward implementation following this proposal, so it is not covered for clarity.
 
-## Background - TBD
+## Background
 
-One to two paragraphs of exposition to set the context for this proposal.
+Application configuration values are currently defined by vendors as static fields with basic scalar value types like integer, string and boolean (the file options can be treated as a special case of string). 
+All fields must currently be defined ahead of time.
 
-https://kots.io/reference/v1beta1/config/
-
-The current configuration resources consist of:
-1. Config Spec- TBD
-    1. Config Item- TBD
-1. ConfigValues Spec - TBD
-    1.  Config Value - TBD
+KOTS currently uses resources with the following hierarchy:
+1. **Config Spec** - This top-level resource defines the static fields available to configure the application.
+It is defined by the vendor.
+_A Config Spec w/ values populated is used as request format to change config values._
+    1. **Config Group** - Defines collections of config items for navigation and bulk hide/show manipulation.
+        1. **Config Item** - The individual scalar fields defined in a group (and optionally their values).
+1. **ConfigValues Spec** - This top-level resource is _rendered by kots_ after the configuration is defined by the user into the app upstream archive under /upstream/userdata. 
+It is a flat list of field names and values w/o any group mapping.
+    1.  **Config Value** - The name, value and default value of each config item.
 
 Examples of these are provided inline in the Detailed Design section of the proposal.
 
@@ -66,9 +79,9 @@ The current configuration pipeline works as follows:
 1. Downstream changes are applied.
 1. Completed manifests are sent to the operator to get deployed.
 
-### Use Cases:
+### Target Use Cases:
 
-1. Template Resources example: create new Kafaka instance.
+1. Template Resources example: create new Kafka instance.
     * Customers can click "Add an Kafka" in the Kotsadm console and specify multi copies of configuration items for dynamic resource creation.
     * There will be some MVP validation of templates resources:
         * At least X instances of templated resources
@@ -78,7 +91,7 @@ The current configuration pipeline works as follows:
     * Vendor can use the values to amend 
 1. BOTH
     * Customers can still specify variadic config information using the CLI
-    * Last-mile kustomization still works, or there is a technical path forward.
+    * Last-mile Kustomization still works, or there is a technical path forward.
 
 ## High-Level Design 
 
@@ -86,13 +99,17 @@ Supporting the above customer use cases falls into two new feature additions for
 1. `templateGroups` added to the [Config specification](https://kots.io/reference/v1beta1/config/).
 1. `repeatable` attribute added to [Config Items](https://kots.io/reference/v1beta1/config/#items).
 
+Vendors will leverage these new features as part of the Config Spec design, and by using [Golang Text Templating](https://golang.org/pkg/text/template) syntax for repeated elements (`range`) and sub-template definitions (`template`) in their yaml configuration. Not only will this explicitly document dynamically created resources, but it will provide a standardized convention as reference. 
+
+Usage examples provided in the Detailed Design section.
+
 ### `reapeatable` Config Items
 
-The purpose of adding a `reapatable` attribute to config items is to add the capability *EXTEND* resources.
+The purpose of adding a `repeatable` attribute to config items is to add the capability *EXTEND* resources.
 
+The existing Config Item concept will be augmented with a new property `repeatable` to indicated the value will be an array of values rather than a scalar. The value types will still inherit from the `type` field.
 
-
-
+To use these array values, a new method `ConfigOptionList` will be added to the Replicated [Config Context](https://kots.io/reference/template-functions/config-context/) template functions to provide a `pipeline` output that can be used in conjunction with `range` in a Golang Text Tempalate to iterate over values.
 
 ### templateGroups
 
@@ -304,6 +321,9 @@ TBD
 * Configmap/secrets can only hold 1MB of data. No way to pass in an arbitrarily large file and have it passed along as configuration.
     * This more than likely eliminates the possibility of storing binary files.
 
+There is an ugly artifact of using comments 
+
+
 ## Testing
 
 Write a summary of how this enhancement will be tested to ensure there are no regressions in the future.
@@ -311,6 +331,8 @@ Write a summary of how this enhancement will be tested to ensure there are no re
 ## Alternatives Considered
 
 Just clone files that are repeated.
+
+Implicit collection of resources.
 
 Instead of using patch files to manage kustomization of the base, we could build a [custom generator in Go for kustomize](https://kubectl.docs.kubernetes.io/guides/extending_kustomize/) that takes in arbitrary templates and spits out the results directly.
 
