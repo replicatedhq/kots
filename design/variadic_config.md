@@ -53,6 +53,9 @@ Vendor requests that were left out of scope of this proposal as future tasking:
     * What is it: one dropzone that will create config values for a collection of files instead of clicking a "+" sign multiple times
     * This might have been implied by various customer usage cases (I just want to dump some files here and mount them to a container) 
     * I think this is a straightforward implementation following this proposal, so it is not covered for clarity.
+1. Dynamic Preflights
+    * Because resources can be created dynamically, preflights may be valuable if they could be modified based on the planned size of deployment.
+    * This is not included in this scope. Any modification to preflights would need to be submitted as an independent proposal.
 
 ## Background
 
@@ -109,84 +112,33 @@ The purpose of adding a `repeatable` attribute to config items is to add the cap
 
 The existing Config Item concept will be augmented with a new property `repeatable` to indicated the value will be an array of values rather than a scalar. The value types will still inherit from the `type` field.
 
-To use these array values, a new method `ConfigOptionList` will be added to the Replicated [Config Context](https://kots.io/reference/template-functions/config-context/) template functions to provide a `pipeline` output that can be used in conjunction with `range` in a Golang Text Tempalate to iterate over values.
+To use these array values, a new method `ConfigOptionMap` will be added to the Replicated [Config Context](https://kots.io/reference/template-functions/config-context/) template functions to provide a `pipeline` output that can be used in conjunction with `range` in a Golang Text Tempalate to iterate over values.
 
 ### templateGroups
 
 The purpose of adding `templateGroups` in the Config spec is to add the ability to *COPY* collections of resources/config.
 
-Template Groups are similar to the existing Config Groups concept, except this new category identified resources that can be cloned in ConfigValues or in the kotsadm UI. They have addition properties like name prefixes and validation. Instead of the relationship of `Groups` having `ConfigItems`, `TemplateConfigGroups` have `TemplateItems`. The distinction is that TemplateItems can have an array of values while Config Items can only have a single value. When rendered into a ConfigValue spec by kots all of the values are flatten into a single list, the only difference being the naming convention and a `parent` field to point back to the template group.
+Template Groups are similar to the existing Config Groups concept, except this new category identified resources that can be cloned in ConfigValues or in the kotsadm UI. They have addition properties like name prefixes and validation. 
 
-Kotsadm will take the templateGroup values and implicitly copy and render new resources for any manifest file that utilizes them. This would make the integration for vendors more seemless, without needing to template multiple resources.
+Instead of the relationship of `Groups` having `ConfigItems`, `TemplateConfigGroups` have `TemplateItems`. The distinction is that TemplateItems can have an array of values while Config Items can only have a single value. When rendered into a ConfigValue spec by KOTS all of the values are flatten into a single list, the only difference being the naming convention and a `parent` field to point back to the template group.
+
+YAML files rendered as part of of a `templateGroup` are declated using the Golang notation for declaring nested templates (`{{define <NAME>}} <content> {{end}}`.
+Explicit declaration will not only streamline business logic but provide additional debugging context. 
 
 ## Detailed Design
 
-A detailed design describing how the changes to the product should be made.
+While the design considered here is presented in an interleaved fashion, this proposal suggests that work be broken up in the following tasking:
+1. Repeatable Config Items
+1. templateGroups
+1. UI optimizations (Glob File Dropzone)
 
-The names of types, fields, interfaces, and methods should be agreed on here, not debated in code review.
-The same applies to changes in CRDs, YAML examples, and so on.
+The first consideration is how the revised API will look to Vendors using these features in their application.
 
-Ideally the changes should be made in sequence so that the work required to implement this design can be done incrementally, possibly in parallel.
+### Example Revised Kotskind Resources 
 
-### Repeat Config Item Manifest
-
-```yaml
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: my-deploy
-  labels:
-    kots.io/kotsadm: 'true'
-    kots.io/backup: velero
-spec:
-  template:
-    metadata:
-      labels:
-        kots.io/kotsadm: 'true'
-        kots.io/backup: velero
-      annotations:
-        backup.velero.io/backup-volumes: backup
-    spec:
-      containers:
-        - name: test
-          volumeMounts:
-            - mountPath: /backup
-              name: backup
-            - name: kubelet-client-cert
-              mountPath: /etc/kubernetes/pki/kubelet
-          env:
-            repl {{  }}
-            - name: DEX_PGPASSWORD
-              valueFrom:
-                secretKeyRef:
-                  key: PGPASSWORD
-                  name: kotsadm-dex-postgres
-            - name: KOTSADM_LOG_LEVEL
-              value: "debug"
-            - name: DISABLE_SPA_SERVING
-              value: "1"
-            - name: KOTSADM_TARGET_NAMESPACE
-              value: "test"
-              valueFrom: ~
-
-```
-
-### App Archive
-
-Rendered content in the app archive would look like the following. Note the files types are not mutually exclusive and could be overlapping. They are only for illustrative purposes.
-
-* Upstream
-    * Normal manifest files
-    * Manifest files that utilize config options from a repeat item 
-    * Manifest files that utilize config options from a template group
-* Base
-    * Rendered manifest files (including those with repeat config items)
-    * Copy of manifest files 
-* Overlays
-    * 
-
-
-### Revised Kotskind Resources
+Vendors will use the revised Config Spec to define templateGroups and repeatable Config Items. 
+Values are inserted by the Kots and returned as part of the API for creating the ConfigValues spec.
+Below is a representative resource.
 
 #### Config
 ```yaml
@@ -216,25 +168,40 @@ spec:
       repeatable: true      # Tells the UI/Kots to expect an array
       minimumCount: 3       # Not sure if this is needed here but including for discussion
       repeatValues:         # Returned to the API filled in from the CLI/console    
-      - "value one"
-      - "value two"
+      - "encoded file value one"
+      - "encoded file value two"
     - <more config items here>
 
   # NEW!
   templateGroups:
-  - name: kafka_template    # Template ID
-    title: Kafka Instances  # Group Friendly Name
-    groupName: Kafka        # UI Name associated with "Create another -----"
-    groupPrefix: kafka      # Label all resources+values created with <prefix>-resource-<cardnality>
+  - name: nginx             # Template ID
+    title: Proxy Instances  # Group Friendly Name
+    groupName: Proxy        # UI Name associated with "Create another -----"
+    groupPrefix: nginx      # Label all resources+values created with <prefix>-resource-<cardnality>
     minimumCount: 1         # How many instances need to be created? Populates this many templates in the UI w/ defaults.
-    resources:
-        # Do we indicate the resource(s) being templated, or can it be implicit based on usage.
+    templateItems: 
+    - name: "port",
+      type: "text", 
+      title: "Proxy Port", 
+      default: "", 
+      values:               # values will get added by the UI
+      - value: "80"
+        id: "nginx-0-port" 
+      - value: "443"
+        id: "nginx-1-port"
+      - value: "8080"
+        id: "nginx-2-port"
+  - name: kafka_template    
+    title: Kafka Instances  
+    groupName: Kafka        
+    groupPrefix: kafka      
+    minimumCount: 1         
     templateItems: 
     - name: "hostname",
       type: "text", 
       title: "Kafka Hostname", 
       default: "kafka.default.local", 
-      values:                       # values will get added by the UI
+      values:
       - value: "kafka.one.local"
         id: "kafka-0-hostname" 
       - value: "kafka.two.local"
@@ -244,7 +211,7 @@ spec:
       type: "text", 
       title: "Kafka Default Topics", 
       default: "", 
-      repeatable: true      # Tells the UI/Kots to expect an array
+      repeatable: true              # Tells the UI/Kots to expect an array
       minimumCount: 1       
       values:                       # values will get added by the UI
       - value: "topic A"            # Instance 1 has two topic, but instance 2 only has 1
@@ -257,6 +224,10 @@ spec:
 ```
 
 #### ConfigValues
+
+The ConfigValues spec is rendered by Kots and stored as part of the applications release archive.
+This will still be maintained as a flat list of values regardless of any new constructs.
+
 ```yaml
 apiVersion: kots.io/v1beta1 
 kind: ConfigValues 
@@ -286,23 +257,110 @@ spec:
       value: kafka-zero.corp.com
 ```
 
+### Resource Templates
+
+In addition to using the new syntax in the KOTS CRDS, they will template their resources using Golang Text Template `range` syntax like the following examples.
+Comments are used to keep valid syntax for linting purposes and also provide explicit documentation of generated fields.
+
+#### Repeatable Config Item Usage
+
+```yaml
+# deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: my-deploy
+spec:
+  template:
+    spec:
+      containers:
+        - name: test
+          image: httpd
+          volumeMounts:
+            - mountPath: /var/www/html
+              name: secret-assets
+              readOnly: true
+
+      volumes:
+      - name: secret-assets
+        projected:
+          sources:
+          # GENERATED CONTENT repl{{ range $name := ConfigOptionMap "static_files" }}
+          - secret:
+            name: repl{{ $name }} repl{{ end }}
+          # END GENERATED 
+---
+# confingmap.yaml
+# GENERATED CONTENT repl{{ range $name, $value := ConfigOptionMap "static_files" }} 
+apiVersion: v1
+kind: Secret
+metadata:
+  name: repl{{ $name }}
+data:
+  # property-like keys; each key maps to a simple value
+  file: repl{{ $value }} repl{{ end }}
+# END GENERATED
+```
+
+#### templateGroup Config Usage
+
+In addition to using the new syntax in the KOTS CRDS, they will template their resources using Golang Text Template `range` syntax like the following examples.
+Comments are used to keep valid syntax for linting purposes and also provide explicit documentation of generated fields.
+
+```yaml
+# GENERATED CONTENT repl{{ template nginx . }} 
+# deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: my-deploy
+spec:
+  template:
+    spec:
+      containers:
+        - name: proxy
+          image: nginx
+          env:
+          - name: NGINX_PORT
+            value: "{ { repl HasLocalRegistry } }"
+---
+# service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: example-nginx
+  labels:
+    app: example
+    component: nginx
+spec:
+  type: LoadBalancer
+  ports:
+  - port: 80
+  selector:
+    app: example
+    component: nginx
+# repl{{end}}
+```
+
+### App Archive
+
+Rendered content in the app archive would look like the following. Note the files types are not mutually exclusive and could be overlapping. They are only for illustrative purposes.
+
+* Upstream
+    * Normal manifest files
+    * Manifest files that utilize config options from a repeat item 
+    * Manifest files that utilize config options from a template group
+* Base
+    * Rendered manifest files (including those with repeat config items)
+    * Copy of manifest files 
+* Overlays
+    * 
+
 ### API Requests
 
 TBD - THIS IS THE CURRENT FUNCTIONALITY
 
 `POST /api/v1/app/{appSlug}/config`
-
-```json
-configGroups: [{name: "nginx_settings", title: "Nginx Configs",…},…]
-0: {
-    items: [{name: "nginx_port", type: "text", title: "Nginx port", default: "80", value: ""}]
-    name: "nginx_settings"
-    title: "Nginx Configs"
-},
-1: {name: "example_settings", title: "My Example Config",…}
-createNewVersion: false
-sequence: 0
-```
 
 `GET /api/v1/app/{appSlug}/config/{sequence}`
 
@@ -310,25 +368,36 @@ sequence: 0
 
 TBD
 
-### Validation
-
-* Minimum/Maxmimum
-* Individual resource validation
-* Hidden/Is Enabled?
-
 ## Design Limitations
 
 * Configmap/secrets can only hold 1MB of data. No way to pass in an arbitrarily large file and have it passed along as configuration.
     * This more than likely eliminates the possibility of storing binary files.
+
+* No ability to bulk-patch resources before they are rendered. Can still use Kustomize targets to accomplish this.
 
 There is an ugly artifact of using comments 
 
 
 ## Testing
 
-Write a summary of how this enhancement will be tested to ensure there are no regressions in the future.
+Any template rendering based on this design should be refactored in such a way as to allow unit/integration testing of sample manifests against the expected API output. 
+The following test cases are relevant:
+1. Repeatable Config Items
+    1. Happy Path w/ different various item types
+    1. Rendering without any defined values
+    1. Using ConfigOption and ConfigOptionList with fields that are (not) repeatable.
+1. templateGroup Configs
+    1. Happy path with templated resources
+    1. No matching templated resources
+    1. Multiple matching templated resources
+
+Testim tests (both smoke tests and release acceptance tests) will be augmented along with teh QAKots application to test the new UI elements for both features.
+
+At a future point we will need to add a test framework for the CLI (or augment the current acceptance tests) to test that configuration can be passed to kotsadm as part of an unattended install.
 
 ## Alternatives Considered
+
+TBD
 
 Just clone files that are repeated.
 
@@ -338,13 +407,15 @@ Instead of using patch files to manage kustomization of the base, we could build
 
 ## Security Considerations
 
-If this proposal has an impact to the security of the product, its users, or data stored or transmitted via the product, they must be addressed here.
+As configuration is already part of the app definition, this proposal doesn't anticipate any changes to security posture.
 
+Because the resources can be generated or extended dynamically, it's expected that the honnus is on the vendor to ensure this doesn't not open any vulnerabilities in their application.
 
 (Thanks to vmware-tanzu/velero for this design template)
 
 ## References
 
 Kustomize Resources
+1. [Golang Text/Template Package](https://golang.org/pkg/text/template)
 1. [Generic Generator Discussion](https://github.com/kubernetes-sigs/kustomize/issues/126)
 1. [JSON Path Example](https://github.com/yubessy/example-kustomize-cronjob-multiple-schedule)
