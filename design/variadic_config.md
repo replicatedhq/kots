@@ -1,34 +1,8 @@
-# OUSTANDING NOTES/QUESTIONS
-
-Missing Pieces:
-1. How to organize the file tree for these resources
-1. How to make sure any template functions are valid Yaml.
-
-Concerns Not Addressed:
-`We don’t even know all the file upload combinations that may pop up and so we can’t really templatize every possible function. Even if we could the amount of possible combinations in the UI would be crazy.`
--> *Dan's comment*: sounds like they are really looking for assisted editing capabilities here.
-
-Open Questions:
-1. At what stage are config values rendered now?
-  - Stored as part of upstream/userdata
-  - Also stored in DB as part of `app-version`
-1. Why /liveconfig?
-  - Server-side validation/computation of templates
-1. How to take something like a files and convert them into a config map
-  - . Use YAML Multi-doc with repeat config items?
-1. What to do about upstream, base, midstream, downstream
-  - Upstream: holds the config values under `userdata/`
-  - Base: ?
-  - Midstream: ?
-  - Downstream: ?
-1. What would midstream look like for these resources?
-1. Helm chart support?
-
 # Variadic Config Proposal
 
 Vendors require the ability to dynamically create resources as part of install configuration.
-A common use case is installing operators, where the customers need to create dynamic resources, like instances of an application, that are unknown until install time.
-They also need to be extend existing resources, like mounting _N_ files to a pod, where _N_ is not known at install time.
+One common use case is installing operators, where the customers need to create dynamic resources, like instances of an application or service, that are unknown until install time.
+They also need to be extend existing resources, like mounting _N_ files to a pod, where _N_ is not known until install time.
 This proposal outlines a plan to support dynamic/variadic application configuration to facilitate dynamic resource creation. 
 
 ## Goals
@@ -44,7 +18,7 @@ Additional Technical Goals
 
 Vendor requests that were left out of scope of this proposal as future tasking:
 1. Having Kotsadm parse file(s) to gather config data, including variadic resources
-    * I don't think this was requested but could have been implied by some vendor requests. 
+    * This may not have been requested but could have been implied by some vendor requests. 
     * Vendors and customers still interact with config fields the same way through the CLI or UI, although there will be options to create dynamic fields.
     * Individual Files can still be base64 encoded and inserted into resources using template functions.
 1. Nested Groups 
@@ -56,11 +30,13 @@ Vendor requests that were left out of scope of this proposal as future tasking:
 1. Dynamic Preflights
     * Because resources can be created dynamically, preflights may be valuable if they could be modified based on the planned size of deployment.
     * This is not included in this scope. Any modification to preflights would need to be submitted as an independent proposal.
+1. Large Binary File Config Items 
+    * Even though this was requested, the details of variadic config are considered a pre-requisite and this would need to be follow-on work.
 
 ## Background
 
 Application configuration values are currently defined by vendors as static fields with basic scalar value types like integer, string and boolean (the file options can be treated as a special case of string). 
-All fields must currently be defined ahead of time.
+All fields must currently be defined ahead of time by the vendor.
 
 KOTS currently uses resources with the following hierarchy:
 1. **Config Spec** - This top-level resource defines the static fields available to configure the application.
@@ -77,7 +53,7 @@ Examples of these are provided inline in the Detailed Design section of the prop
 The current configuration pipeline works as follows:
 1. Customer passes in config values via CLI or UI
 1. ConfigValue spec is saved to the `/userdata` folder along with upstream to the `upstream` directly
-1. Kots renders the upstream against the config values and also filters out any unnecessary files (e.g. preflight spec). This goes into the `base` directory along with a kustomize file.
+1. Kots renders the upstream against the config values and also filters out any unnecessary files (e.g. preflight spec). This goes into the `base` directory along with a Kustomize file.
 1. Midstream changes are applied.
 1. Downstream changes are applied.
 1. Completed manifests are sent to the operator to get deployed.
@@ -85,7 +61,7 @@ The current configuration pipeline works as follows:
 ### Target Use Cases:
 
 1. Template Resources example: create new Kafka instance.
-    * Customers can click "Add an Kafka" in the Kotsadm console and specify multi copies of configuration items for dynamic resource creation.
+    * Customers can click "Add a Kafka" in the Kotsadm console and specify multi copies of configuration items for dynamic resource creation.
     * There will be some MVP validation of templates resources:
         * At least X instances of templated resources
         * Individual config item validation still works
@@ -130,7 +106,6 @@ Explicit declaration will not only streamline business logic but provide additio
 While the design considered here is presented in an interleaved fashion, this proposal suggests that work be broken up in the following tasking:
 1. Repeatable Config Items
 1. templateGroups
-1. UI optimizations (Glob File Dropzone)
 
 The first consideration is how the revised API will look to Vendors using these features in their application.
 
@@ -170,7 +145,6 @@ spec:
       repeatValues:         # Returned to the API filled in from the CLI/console    
       - "encoded file value one"
       - "encoded file value two"
-    - <more config items here>
 
   # NEW!
   templateGroups:
@@ -220,7 +194,6 @@ spec:
         id: "kafka-0-topic-1"
       - value: "topic C"
         id: "kafka-1-topic-0"
-    - <template config items here>
 ```
 
 #### ConfigValues
@@ -247,12 +220,12 @@ spec:
     ...
     # NEW!
     # Values for a template
-    <prefix>-<name>-0:
+    <prefix>-0-<name>:
       parent: <templateGroup.Name>    # Not sure if this is needed, but seems like useful information, plus disambiguates from values that accidentally use the same syntax.
       default: <value>
       value: <value> 
     # Example
-    kafka-hostname-0:
+    kafka-0-hostname:
       parent: <templateGroup.Name>
       value: kafka-zero.corp.com
 ```
@@ -263,6 +236,8 @@ In addition to using the new syntax in the KOTS CRDS, they will template their r
 Comments are used to keep valid syntax for linting purposes and also provide explicit documentation of generated fields.
 
 #### Repeatable Config Item Usage
+
+Mounting a bunch of secrets (files) to a container as config data.
 
 ```yaml
 # deployment.yaml
@@ -280,7 +255,6 @@ spec:
             - mountPath: /var/www/html
               name: secret-assets
               readOnly: true
-
       volumes:
       - name: secret-assets
         projected:
@@ -289,9 +263,9 @@ spec:
           - secret:
             name: repl{{ $name }} repl{{ end }}
           # END GENERATED 
----
 # confingmap.yaml
 # GENERATED CONTENT repl{{ range $name, $value := ConfigOptionMap "static_files" }} 
+---
 apiVersion: v1
 kind: Secret
 metadata:
@@ -304,8 +278,15 @@ data:
 
 #### templateGroup Config Usage
 
-In addition to using the new syntax in the KOTS CRDS, they will template their resources using Golang Text Template `range` syntax like the following examples.
+`templateGroups` can leverage Golang Text Templates `template` syntax for defining templates inline in text files. It is possible using the `ParseGlob`, `Templates` and `Name` methods on the `Template` type to bulk parse these templates and associated them by name to the templateGroup name. 
+KOTS will then use the array of N values provided to render the N copies of the template as a pre-processing step on the existing render process.
+New template context functions will be needed to gather instance-specific template values. 
+For this reason, these functions will need to be created for each instance of running the template.
+
 Comments are used to keep valid syntax for linting purposes and also provide explicit documentation of generated fields.
+
+As part of a separate pass or parsing, we could decide to use the standard Golang delimiters. 
+We could also decide rather than using the following multi-doc YAML solution with a template named after the `templateGroup`, we could use multiple templates with a common prefix to identify the `templateGroup`.
 
 ```yaml
 # GENERATED CONTENT repl{{ template nginx . }} 
@@ -313,7 +294,10 @@ Comments are used to keep valid syntax for linting purposes and also provide exp
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: my-deploy
+  name: repl{{ ConfigOptionTemplateName "nginx" }} # Returns "nginx-0" for the first instance
+  labels:
+    app: example
+    component: repl{{ ConfigOptionTemplateName "nginx" }}
 spec:
   template:
     spec:
@@ -322,61 +306,51 @@ spec:
           image: nginx
           env:
           - name: NGINX_PORT
-            value: "{ { repl HasLocalRegistry } }"
+            value: {{repl ConfigOptionTemplate "nginx-port" }}  # Returns 80 for the first instance
 ---
 # service.yaml
 apiVersion: v1
 kind: Service
 metadata:
-  name: example-nginx
+  name: repl{{ ConfigOptionTemplateName "nginx" }} 
   labels:
     app: example
-    component: nginx
+    component: repl{{ ConfigOptionTemplateName "nginx" }}
 spec:
   type: LoadBalancer
   ports:
   - port: 80
+    targetPort: {{repl ConfigOptionTemplate "nginx-port" }}
   selector:
     app: example
-    component: nginx
-# repl{{end}}
+    component: repl{{ ConfigOptionTemplateName "nginx" }}
+---
+# END GENERATED CONTENT repl{{end}}
 ```
 
-### App Archive
+### Revised Business Logic Overview
 
-Rendered content in the app archive would look like the following. Note the files types are not mutually exclusive and could be overlapping. They are only for illustrative purposes.
-
-* Upstream
-    * Normal manifest files
-    * Manifest files that utilize config options from a repeat item 
-    * Manifest files that utilize config options from a template group
-* Base
-    * Rendered manifest files (including those with repeat config items)
-    * Copy of manifest files 
-* Overlays
-    * 
-
-### API Requests
-
-TBD - THIS IS THE CURRENT FUNCTIONALITY
-
-`POST /api/v1/app/{appSlug}/config`
-
-`GET /api/v1/app/{appSlug}/config/{sequence}`
-
-### Kustomization / File Tree View
-
-TBD
+Additions where noted:
+1. Customer passes in config values via CLI or UI
+1. ConfigValue spec is saved to the `/userdata` folder along with upstream to the `upstream` directly
+1. **NEW** First-pass render of Template Groups
+    1. `ParseGlob` all of the files in upstream looking for templates
+    1. Use the templateGroup names and the `Templates`/`Names` methods to construct a map of templateGroups to their respective text templates.
+    1. Create a new "templateGroup context" for each instance of this group, methods that will return the specific instance from the array of values in the ConfigValues].
+    1. Rendered each instance of the `templateGroup` into the base folder `base`
+1. Kots renders the rest of `upstream` against the config values and also filters out any unnecessary files (e.g. preflight spec). 
+This goes into the `base` directory along with a kustomize file.
+    1. **NEW** New context methods will be applied to provide iteration over `repeatable` config items.
+1. Midstream changes are applied.
+1. Downstream changes are applied.
+1. Completed manifests are sent to the operator to get deployed.
 
 ## Design Limitations
 
-* Configmap/secrets can only hold 1MB of data. No way to pass in an arbitrarily large file and have it passed along as configuration.
-    * This more than likely eliminates the possibility of storing binary files.
-
-* No ability to bulk-patch resources before they are rendered. Can still use Kustomize targets to accomplish this.
-
-There is an ugly artifact of using comments 
-
+1. Configmap/secrets can only hold 1MB of data. No way to pass in an arbitrarily large file and have it passed along as configuration.
+    * This more than likely eliminates the possibility of storing binary files, which has been specifically requested.
+1. No ability to bulk-patch resources before they are rendered. Can still use Kustomize targets to accomplish this.
+1. The syntax is ugly and somewhat verbose. There will comment artifacts left in the base, midstream and downstream YAML files after rendering.
 
 ## Testing
 
@@ -397,13 +371,11 @@ At a future point we will need to add a test framework for the CLI (or augment t
 
 ## Alternatives Considered
 
-TBD
-
-Just clone files that are repeated.
-
-Implicit collection of resources.
-
-Instead of using patch files to manage kustomization of the base, we could build a [custom generator in Go for kustomize](https://kubectl.docs.kubernetes.io/guides/extending_kustomize/) that takes in arbitrary templates and spits out the results directly.
+Using the Golang Text Template functionality has it's flaws as far as keeping valid YAML syntax and puts a lot of knowledge burden on the vendor. Some alternative considered here were:
+    1. Having KOTS Use very basic search/parse capabilities to look for Config Items that were members of a template group, which would implicitly copy any resource using them N times.
+    This wasn't proposed because it seemed like it would implement a brute-force search of each file for every possible templateGroup config item.
+    1. As a more obscure solution, we could build a [custom generator in Go for kustomize](https://kubectl.docs.kubernetes.io/guides/extending_kustomize/) that takes in arbitrary templates and spits out the results directly. This didn't seem to have too many advantages over using the standard go tooling, but would have require more complexity to manage in KOTS.
+    1. Having `ConfigContext` methods that returned valid YAML and/or JSON was also discussed, but this would require passing in templates as arguments for something complicated like rendering a whole configmap.
 
 ## Security Considerations
 
@@ -411,11 +383,11 @@ As configuration is already part of the app definition, this proposal doesn't an
 
 Because the resources can be generated or extended dynamically, it's expected that the honnus is on the vendor to ensure this doesn't not open any vulnerabilities in their application.
 
-(Thanks to vmware-tanzu/velero for this design template)
-
 ## References
 
 Kustomize Resources
 1. [Golang Text/Template Package](https://golang.org/pkg/text/template)
 1. [Generic Generator Discussion](https://github.com/kubernetes-sigs/kustomize/issues/126)
 1. [JSON Path Example](https://github.com/yubessy/example-kustomize-cronjob-multiple-schedule)
+
+(Thanks to vmware-tanzu/velero for this design template)
