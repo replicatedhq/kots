@@ -2,6 +2,7 @@ package midstream
 
 import (
 	"context"
+	"fmt"
 	"io/ioutil"
 	"os"
 	"path"
@@ -41,7 +42,17 @@ func (m *Midstream) KustomizationFilename(options WriteOptions) string {
 }
 
 func (m *Midstream) WriteMidstream(options WriteOptions) error {
+	//JALAJA . read the hooks, create hooks folder in the file system
 	var existingKustomization *kustomizetypes.Kustomization
+
+	fmt.Println("+++++++++++++++++++++ Midstream +++++++++++++++++++++++")
+	fmt.Println("+++++++++++++++++++++ Print base files in the midstream +++++++++++++++++++++++")
+	fmt.Println(m.Base.Files)
+
+	for _, file := range m.Base.Files {
+		fmt.Println("File:=======================", file.Path)
+		fmt.Println(string(file.Content))
+	}
 
 	_, err := os.Stat(m.KustomizationFilename(options))
 	if err == nil {
@@ -52,6 +63,7 @@ func (m *Midstream) WriteMidstream(options WriteOptions) error {
 		existingKustomization = k
 	}
 
+	fmt.Println("options.MidstreamDir", options.MidstreamDir)
 	if err := os.MkdirAll(options.MidstreamDir, 0744); err != nil {
 		return errors.Wrap(err, "failed to mkdir")
 	}

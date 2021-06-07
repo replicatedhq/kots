@@ -327,6 +327,8 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 	if err := b.WriteBase(writeBaseOptions); err != nil {
 		return "", errors.Wrap(err, "failed to write base")
 	}
+	fmt.Println("+++++++++++++++++++ writeBaseOptions+++++++++++++++")
+	fmt.Println(writeBaseOptions)
 
 	var pullSecret *corev1.Secret
 	var images []kustomizetypes.Image
@@ -542,6 +544,15 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 	log.ActionWithSpinner("Creating midstream")
 	io.WriteString(pullOptions.ReportWriter, "Creating midstream\n")
 
+	// JALAJA this func has info about hooks
+	// DMITRIY - ALSO MAKE SURE YOU DELETE THE files from base/kustomization.yaml
+
+	/*
+			- charts/chart-3/pre-install-hook-1.yaml
+		    - charts/chart-3/pre-install-hook-2.yaml
+		    - charts/chart-3/pre-install-hook-3.yaml
+
+	*/
 	m, err := midstream.CreateMidstream(b, images, objects, pullSecret, identitySpec, identityConfig)
 	if err != nil {
 		return "", errors.Wrap(err, "failed to create midstream")

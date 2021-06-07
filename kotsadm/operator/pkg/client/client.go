@@ -214,6 +214,8 @@ func (c *Client) connect() error {
 func (c *Client) registerHandlers(socketClient *socket.Client) error {
 	var err error
 
+	//JALAJA handler for the event from kotsadm
+	//JALAJA DO THE HELM INSTALL HERE
 	err = socketClient.On("deploy", func(h *socket.Channel, args ApplicationManifests) {
 		// this mutex is mainly to prevent the app from being deployed and undeployed at the same time
 		// or to prevent two app versions from being deployed at the same time
@@ -279,6 +281,7 @@ func (c *Client) registerHandlers(socketClient *socket.Client) error {
 		c.imagePullSecret = args.ImagePullSecret
 		c.watchedNamespaces = args.AdditionalNamespaces
 
+		// JALAJA - this is where we do applying the manifests
 		result, deployError = c.ensureResourcesPresent(args)
 		if deployError != nil {
 			log.Printf("error deploying: %s", deployError.Error())

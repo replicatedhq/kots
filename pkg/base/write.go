@@ -7,6 +7,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"runtime/debug"
 	"strings"
 
 	"github.com/pkg/errors"
@@ -23,6 +24,8 @@ type WriteOptions struct {
 }
 
 func (b *Base) WriteBase(options WriteOptions) error {
+
+	//JALAJA get the files from base here
 	renderDir := filepath.Join(options.BaseDir, b.Path)
 
 	_, err := os.Stat(renderDir)
@@ -41,11 +44,15 @@ func (b *Base) WriteBase(options WriteOptions) error {
 			return errors.Wrap(err, "failed to mkdir for base root")
 		}
 	}
+	debug.PrintStack()
+	fmt.Println("++++++++++++++++++++++++++++++++++++++++++++++++++++++")
+	fmt.Println("renderDir:", renderDir)
 
 	resources, patches, err := deduplicateOnContent(b.Files, options.ExcludeKotsKinds, b.Namespace)
 	if err != nil {
 		return errors.Wrap(err, "failed to deduplicate content")
 	}
+	fmt.Println("resources:")
 
 	kustomizeResources := []string{}
 	kustomizePatches := []kustomizetypes.PatchStrategicMerge{}
@@ -65,7 +72,9 @@ func (b *Base) WriteBase(options WriteOptions) error {
 		}
 
 		kustomizeResources = append(kustomizeResources, path.Join(".", file.Path))
+		fmt.Println("file.Path", fileRenderPath)
 	}
+	fmt.Println("kustomizeResources:", kustomizeResources)
 
 	for _, file := range patches {
 		fileRenderPath := path.Join(renderDir, file.Path)
@@ -82,6 +91,7 @@ func (b *Base) WriteBase(options WriteOptions) error {
 
 		kustomizePatches = append(kustomizePatches, kustomizetypes.PatchStrategicMerge(path.Join(".", file.Path)))
 	}
+	fmt.Println("kustomizePatches:", kustomizePatches)
 
 	for _, base := range b.Bases {
 		if base.Path == "" {
@@ -92,6 +102,7 @@ func (b *Base) WriteBase(options WriteOptions) error {
 		}
 		kustomizeBases = append(kustomizeBases, base.Path)
 	}
+	fmt.Println("kustomizeBases:", kustomizeBases)
 
 	kustomization := kustomizetypes.Kustomization{
 		TypeMeta: kustomizetypes.TypeMeta{
@@ -106,6 +117,7 @@ func (b *Base) WriteBase(options WriteOptions) error {
 		kustomization.Namespace = b.Namespace
 	}
 
+	fmt.Println("kustomization:", kustomization)
 	if err := k8sutil.WriteKustomizationToFile(kustomization, path.Join(renderDir, "kustomization.yaml")); err != nil {
 		return errors.Wrap(err, "failed to write kustomization to file")
 	}

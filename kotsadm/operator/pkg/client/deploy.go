@@ -274,6 +274,7 @@ func (c *Client) ensureResourcesPresent(applicationManifests ApplicationManifest
 			}
 
 			log.Printf("dry run applying manifests(s) in requested namespace: %s", requestedNamespace)
+			// Jalaja, this is where we apply the manifests
 			dryrunStdout, dryrunStderr, dryRunErr := kubernetesApplier.Apply(requestedNamespace, applicationManifests.AppSlug, docs, true, applicationManifests.Wait, applicationManifests.AnnotateSlug)
 			if dryRunErr != nil {
 				log.Printf("stdout (dryrun) = %s", dryrunStdout)

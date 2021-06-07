@@ -1,6 +1,8 @@
 package midstream
 
 import (
+	"fmt"
+
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	"github.com/replicatedhq/kots/pkg/base"
 	"github.com/replicatedhq/kots/pkg/k8sdoc"
@@ -38,6 +40,8 @@ func CreateMidstream(b *base.Base, images []kustomizetypes.Image, objects []k8sd
 		IdentitySpec:   identitySpec,
 		IdentityConfig: identityConfig,
 	}
+
+	fmt.Println(b.Bases)
 
 	return &m, nil
 }

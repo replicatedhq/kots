@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"regexp"
+	"runtime/debug"
 	"strings"
 
 	"github.com/pkg/errors"
@@ -16,10 +17,16 @@ var (
 )
 
 func renderHelmV3(chartName string, chartPath string, vals map[string]interface{}, renderOptions *RenderOptions) (map[string]string, error) {
+
+	fmt.Println("+++++++++++++++++++++++++++++++++++++++++++++++")
+	fmt.Println("renderHelmV3")
+	debug.PrintStack()
+
 	cfg := &action.Configuration{
 		Log: renderOptions.Log.Debug,
 	}
 	client := action.NewInstall(cfg)
+	// Ethan - cmd/template.go from helm repo
 	client.DryRun = true
 	client.ReleaseName = chartName
 	client.Replace = true
@@ -47,6 +54,9 @@ func renderHelmV3(chartName string, chartPath string, vals map[string]interface{
 	fmt.Fprintln(&manifests, strings.TrimSpace(rel.Manifest))
 	for _, m := range rel.Hooks {
 		fmt.Fprintf(&manifests, "---\n# Source: %s\n%s\n", m.Path, m.Manifest)
+		fmt.Println("rel.Hooks ++++++++++++++++++++++++++++++++++++++")
+		fmt.Println(m.Path)
+		fmt.Println(m.Manifest)
 	}
 
 	resources := map[string][]string{}
