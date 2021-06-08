@@ -75,37 +75,36 @@ The current configuration pipeline works as follows:
 ## High-Level Design 
 
 Supporting the above customer use cases falls into two new feature additions for KOTS:
-1. `templateGroups` added to the [Config specification](https://kots.io/reference/v1beta1/config/).
-1. `repeatable` attribute added to [Config Items](https://kots.io/reference/v1beta1/config/#items).
+1. "Repeatable Config Items" supported by to the [Config Item Schema](https://kots.io/reference/v1beta1/config/#items).
+1. "Repeatable Config Groups" supported by to the [Config Group Schema](https://kots.io/reference/v1beta1/config/#groups).
 
-Vendors will leverage these new features as part of the Config Spec design, and by using [Golang Text Templating](https://golang.org/pkg/text/template) syntax for repeated elements (`range`) and sub-template definitions (`template`) in their yaml configuration. Not only will this explicitly document dynamically created resources, but it will provide a standardized convention as reference. 
+Vendors will leverage these new features as part of the Config Spec design, and by using [Golang Text Templating](https://golang.org/pkg/text/template) syntax for repeated elements (`range`) in their yaml configuration and a number of new context methods. Not only will this explicitly document dynamically created resources, but it will provide a standardized convention as reference. 
 
 Usage examples provided in the Detailed Design section.
 
 ### `reapeatable` Config Items
 
-The purpose of adding a `repeatable` attribute to config items is to add the capability *EXTEND* resources.
+The purpose of adding a `repeatable` attribute to Config Items is to add the capability *EXTEND* resources.
 
 The existing Config Item concept will be augmented with a new property `repeatable` to indicated the value will be an array of values rather than a scalar. The value types will still inherit from the `type` field.
 
 To use these array values, a new method `ConfigOptionMap` will be added to the Replicated [Config Context](https://kots.io/reference/template-functions/config-context/) template functions to provide a `pipeline` output that can be used in conjunction with `range` in a Golang Text Tempalate to iterate over values.
 
-### templateGroups
+### `reapeatable` Config Groups
 
-The purpose of adding `templateGroups` in the Config spec is to add the ability to *COPY* collections of resources/config.
+The purpose of adding a `repeatable` attribute to Config Groups is to add the ability to *COPY* collections of resources/config.
 
-Template Groups are similar to the existing Config Groups concept, except this new category identified resources that can be cloned in ConfigValues or in the kotsadm UI. They have addition properties like name prefixes and validation. 
+The existing Config Group concept will be augmented with a new property `repeatable` to indicated the values in each Config Item will be an array. 
+In the case where this item also has the repeatable attribute, values will be flatted into a array with a stride defined by the number of group instances.
+Value names will also reflect both the index in the group and the index in the item.
 
-Instead of the relationship of `Groups` having `ConfigItems`, `TemplateConfigGroups` have `TemplateItems`. The distinction is that TemplateItems can have an array of values while Config Items can only have a single value. When rendered into a ConfigValue spec by KOTS all of the values are flatten into a single list, the only difference being the naming convention and a `parent` field to point back to the template group.
-
-YAML files rendered as part of of a `templateGroup` are declated using the Golang notation for declaring nested templates (`{{define <NAME>}} <content> {{end}}`.
-Explicit declaration will not only streamline business logic but provide additional debugging context. 
+To use these array values, a new method `ConfigGroupList` will be added to the Replicated [Config Context](https://kots.io/reference/template-functions/config-context/) template functions to provide a `pipeline` output that can be used in conjunction with `range` in a Golang Text Tempalate to iterate over values.
 
 ## Detailed Design
 
 While the design considered here is presented in an interleaved fashion, this proposal suggests that work be broken up in the following tasking:
 1. Repeatable Config Items
-1. templateGroups
+1. Repeatable Config Groups
 
 The first consideration is how the revised API will look to Vendors using these features in their application.
 
@@ -129,71 +128,72 @@ spec:
     title: Nginx Configs 
     description: Config to serve as an example for creating your own
     items: 
-    - name: "nginx_port",
-      type: "text", 
-      title: "Nginx port", 
-      default: "80", 
+    - name: "nginx_port"
+      type: "text"
+      title: "Nginx port"
+      default: "80"
       value: ""
 
     # NEW!
-    # This is a repeat Config Item
+    # This is a repeatable Config Item
     - name: "static_files"
       type: file
       title: "Static Assets"
-      repeatable: true      # Tells the UI/Kots to expect an array
-      minimumCount: 3       # Not sure if this is needed here but including for discussion
-      repeatValues:         # Returned to the API filled in from the CLI/console    
+      repeatable: true      # NEW! Tells the UI/Kots to expect an array
+      minimumCount: 3       # NEW! Not sure if this is needed here but including for discussion
+      repeatValues:         # NEW! Returned to the API filled in from the CLI/console
       - "encoded file value one"
       - "encoded file value two"
 
-  # NEW!
-  templateGroups:
-  - name: nginx             # Template ID
+  # NEW! This is a repeatable group
+  - name: nginx             # ID
     title: Proxy Instances  # Group Friendly Name
-    groupName: Proxy        # UI Name associated with "Create another -----"
-    groupPrefix: nginx      # Label all resources+values created with <prefix>-resource-<cardnality>
-    minimumCount: 1         # How many instances need to be created? Populates this many templates in the UI w/ defaults.
-    templateItems: 
-    - name: "port",
-      type: "text", 
-      title: "Proxy Port", 
+    repeatable: true        # NEW! Tells the UI/Kots this is a group
+    groupName: Proxy        # NEW! UI Name associated with "Create another -----"
+    groupPrefix: nginx      # NEW! Label all resources+values created with <prefix>-<cardnality>-resource
+    minimumCount: 1         # NEW! How many instances need to be created? Populates this many templates in the UI w/ defaults.
+    items: 
+    - name: "port"
+      type: "text"
+      title: "Proxy Port"
       default: "", 
-      values:               # values will get added by the UI
+      repeatValues:         # values will get added by the UI
       - value: "80"
         id: "nginx-0-port" 
       - value: "443"
         id: "nginx-1-port"
       - value: "8080"
         id: "nginx-2-port"
-  - name: kafka_template    
-    title: Kafka Instances  
-    groupName: Kafka        
-    groupPrefix: kafka      
-    minimumCount: 1         
-    templateItems: 
-    - name: "hostname",
-      type: "text", 
-      title: "Kafka Hostname", 
-      default: "kafka.default.local", 
-      values:
+
+  # Second Example of Repeatable Config Group
+  - name: kafka
+    title: Kafka Instances
+    repeatable: true
+    repeatGroupName: Kafka
+    minimumCount: 1
+    items: 
+    - name: "hostname"
+      type: "text"
+      title: "Kafka Hostname"
+      default: "kafka.default.local"
+      repeatValues:
       - value: "kafka.one.local"
         id: "kafka-0-hostname" 
       - value: "kafka.two.local"
         id: "kafka-1-hostname"
     # Combining both concepts
-    - name: "topic",
-      type: "text", 
-      title: "Kafka Default Topics", 
-      default: "", 
-      repeatable: true              # Tells the UI/Kots to expect an array
-      minimumCount: 1       
-      values:                       # values will get added by the UI
-      - value: "topic A"            # Instance 1 has two topic, but instance 2 only has 1
+    - name: "topic"
+      type: "text" 
+      title: "Kafka Default Topics"
+      repeatable: true
+      default: ""
+      minimumCount: 1
+      repeatValues:                 # values will get added by the UI
+      - value: "topic A"            # Instance 1 has two topics, but instance 2 only has 1
         id: "kafka-0-topic-0" 
       - value: "topic B"
         id: "kafka-0-topic-1"
-      - value: "topic C"
-        id: "kafka-1-topic-0"
+      - id: "kafka-1-topic-0"       # Assumes the default value; value property is optional
 ```
 
 #### ConfigValues
@@ -235,6 +235,16 @@ spec:
 In addition to using the new syntax in the KOTS CRDS, they will template their resources using Golang Text Template `range` syntax like the following examples.
 Comments are used to keep valid syntax for linting purposes and also provide explicit documentation of generated fields.
 
+#### New ConfigContext Methods
+
+| Method            | Input | Output | Purpose |
+|-------------------|-------|--------|---------|
+| ConfigOptionList  |       |        |         |
+| ConfigOptionIndex |       |        |         |
+| ConfigGroupList   |       |        |         |
+|                   |       |        |         |
+|                   |       |        |         |
+
 #### Repeatable Config Item Usage
 
 Mounting a bunch of secrets (files) to a container as config data.
@@ -259,12 +269,12 @@ spec:
       - name: secret-assets
         projected:
           sources:
-          # GENERATED CONTENT repl{{ range $name := ConfigOptionMap "static_files" }}
+          # GENERATED CONTENT repl{{ range $index, $name := ConfigOptionList "static_files" }}
           - secret:
             name: repl{{ $name }} repl{{ end }}
           # END GENERATED 
 # confingmap.yaml
-# GENERATED CONTENT repl{{ range $name, $value := ConfigOptionMap "static_files" }} 
+# GENERATED CONTENT repl{{ range $index, $value := ConfigOptionList "static_files" }} 
 ---
 apiVersion: v1
 kind: Secret
@@ -276,7 +286,7 @@ data:
 # END GENERATED
 ```
 
-#### templateGroup Config Usage
+#### Repeatable Config Group Usage
 
 `templateGroups` can leverage Golang Text Templates `template` syntax for defining templates inline in text files. It is possible using the `ParseGlob`, `Templates` and `Name` methods on the `Template` type to bulk parse these templates and associated them by name to the templateGroup name. 
 KOTS will then use the array of N values provided to render the N copies of the template as a pre-processing step on the existing render process.
@@ -288,16 +298,17 @@ Comments are used to keep valid syntax for linting purposes and also provide exp
 As part of a separate pass or parsing, we could decide to use the standard Golang delimiters. 
 We could also decide rather than using the following multi-doc YAML solution with a template named after the `templateGroup`, we could use multiple templates with a common prefix to identify the `templateGroup`.
 
+**NOTE**: Maybe we don't need group.
 ```yaml
-# GENERATED CONTENT repl{{ template nginx . }} 
+# GENERATED CONTENT repl{{ range $index, $group := ConfigGroupList "nginx"}}
 # deployment.yaml
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: repl{{ ConfigOptionTemplateName "nginx" }} # Returns "nginx-0" for the first instance
+  name: nginx-repl{{ $index }} # Returns "nginx-0" for the first instance
   labels:
     app: example
-    component: repl{{ ConfigOptionTemplateName "nginx" }}
+    component: nginx-repl{{ $index }}
 spec:
   template:
     spec:
@@ -306,7 +317,49 @@ spec:
           image: nginx
           env:
           - name: NGINX_PORT
-            value: {{repl ConfigOptionTemplate "nginx-port" }}  # Returns 80 for the first instance
+            value: {{repl ConfigOptionIndex "nginx-port" $index }}  # Returns 80 for the first instance
+---
+# service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: nginx-repl{{ $index }}
+  labels:
+    app: example
+    component: nginx-repl{{ $index }}
+spec:
+  type: LoadBalancer
+  ports:
+  - port: 80
+    targetPort: {{repl ConfigOptionIndex "nginx-port" $index }}
+  selector:
+    app: example
+    component: nginx-repl{{ $index }}
+---
+# END GENERATED CONTENT repl{{end}}
+```
+
+#### Combined Usage Example
+
+```yaml
+# GENERATED CONTENT repl{{ range $index, $group := ConfigGroupList "nginx"}}
+# deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-repl{{ $index }} # Returns "nginx-0" for the first instance
+  labels:
+    app: example
+    component: nginx-repl{{ $index }}
+spec:
+  template:
+    spec:
+      containers:
+        - name: proxy
+          image: nginx
+          env:
+          - name: NGINX_PORT
+            value: {{repl ConfigOptionTemplate "nginx-port" $index }}  # Returns 80 for the first instance
 ---
 # service.yaml
 apiVersion: v1
@@ -333,14 +386,9 @@ spec:
 Additions where noted:
 1. Customer passes in config values via CLI or UI
 1. ConfigValue spec is saved to the `/userdata` folder along with upstream to the `upstream` directly
-1. **NEW** First-pass render of Template Groups
-    1. `ParseGlob` all of the files in upstream looking for templates
-    1. Use the templateGroup names and the `Templates`/`Names` methods to construct a map of templateGroups to their respective text templates.
-    1. Create a new "templateGroup context" for each instance of this group, methods that will return the specific instance from the array of values in the ConfigValues].
-    1. Rendered each instance of the `templateGroup` into the base folder `base`
 1. Kots renders the rest of `upstream` against the config values and also filters out any unnecessary files (e.g. preflight spec). 
 This goes into the `base` directory along with a kustomize file.
-    1. **NEW** New context methods will be applied to provide iteration over `repeatable` config items.
+    1. **NEW** New context methods will be applied to provide iteration over `repeatable` config items and groups.
 1. Midstream changes are applied.
 1. Downstream changes are applied.
 1. Completed manifests are sent to the operator to get deployed.
@@ -360,7 +408,7 @@ The following test cases are relevant:
     1. Happy Path w/ different various item types
     1. Rendering without any defined values
     1. Using ConfigOption and ConfigOptionList with fields that are (not) repeatable.
-1. templateGroup Configs
+1. Repeatable Config Groups
     1. Happy path with templated resources
     1. No matching templated resources
     1. Multiple matching templated resources
@@ -370,6 +418,183 @@ Testim tests (both smoke tests and release acceptance tests) will be augmented a
 At a future point we will need to add a test framework for the CLI (or augment the current acceptance tests) to test that configuration can be passed to kotsadm as part of an unattended install.
 
 ## Alternatives Considered
+
+Support Full Helm Syntax.
+
+<details>
+  <summary>Annotations Approach</summary>
+  
+    ```yaml
+    # deployment.yaml
+    apiVersion: apps/v1
+    kind: Deployment
+    metadata:
+    name: my-deploy
+    annotation:
+    kots.io/repeatableGroup/spec.template.volumes[secret-assets].sources: static_files
+    kots.io/repeatableGroup/spec.template.volumes[secret-assets].sources: static_files
+    spec:
+    template:
+        spec:
+        containers:
+            - name: test
+            image: httpd
+            volumeMounts:
+                - mountPath: /var/www/html
+                name: secret-assets
+                readOnly: true
+        volumes:
+        - name: secret-assets
+            projected:
+            sources: {}
+            # END GENERATED 
+    # confingmap.yaml
+    ---
+    apiVersion: v1
+    kind: Secret
+    metadata:
+    name: repl{{ $name }}
+    labels:
+        vendorA: true
+    annotation:
+    kots.io/repeatableItem: nginx-ports
+    kots.io/repeatableItem: nginx-volumes
+    data:
+    # property-like keys; each key maps to a simple value
+    file: repl{{ ConfigOptionValue <ID> }} 
+    ```
+
+    ```yaml
+    # GENERATED CONTENT repl{{ $i, $group := range ConfigOptionRepeatableGroup "nginx"}}
+    # deployment.yaml
+    apiVersion: apps/v1
+    kind: Deployment
+    metadata:
+    name: nginx-repl{{$i}} # Returns "nginx-0" for the first instance
+    labels:
+        app: example
+        component: nginx-repl{{$i}}
+    spec:
+    template:
+        spec:
+        containers:
+            - name: proxy
+            image: nginx
+            env:
+            - name: NGINX_PORT
+                value: {{repl ConfigOptionTemplate "nginx-port" $i }}  # Returns 80 for the first instance
+                value: {{repl ConfigOptionTemplate "nginx-port" $i }}  # Returns 80 for the first instance
+    ---
+    # service.yaml
+    apiVersion: v1
+    kind: Service
+    metadata:
+    name: repl{{ ConfigOptionTemplateName "nginx" }} 
+    labels:
+        app: example
+        component: repl{{ ConfigOptionTemplateName "nginx" }}
+    annotation:
+    kots.io/repeatable: nginx
+    spec:
+    type: LoadBalancer
+    ports:
+    - port: 80
+        targetPort: {{repl ConfigOptionTemplate "nginx-port" }}
+    selector:
+        app: example
+        component: repl{{ ConfigOptionTemplateName "nginx" }}
+    ---
+    # END GENERATED CONTENT repl{{end}}
+    ```
+</details>
+
+<details>
+  <summary>Sub Templates Approach</summary>
+  
+    ```yaml
+    # deployment.yaml
+    apiVersion: apps/v1
+    kind: Deployment
+    metadata:
+    name: my-deploy
+    annotation:
+    kots.io/repeatableGroup/spec.template.volumes[secret-assets].sources: static_files
+    kots.io/repeatableGroup/spec.template.volumes[secret-assets].sources: static_files
+    spec:
+    template:
+        spec:
+        containers:
+            - name: test
+            image: httpd
+            volumeMounts:
+                - mountPath: /var/www/html
+                name: secret-assets
+                readOnly: true
+        volumes:
+        - name: secret-assets
+            projected:
+            sources: {}
+            # END GENERATED 
+    # confingmap.yaml
+    ---
+    apiVersion: v1
+    kind: Secret
+    metadata:
+    name: repl{{ $name }}
+    labels:
+        vendorA: true
+    annotation:
+    kots.io/repeatableItem: nginx-ports
+    kots.io/repeatableItem: nginx-volumes
+    data:
+    # property-like keys; each key maps to a simple value
+    file: repl{{ ConfigOptionValue <ID> }} 
+    ```
+
+    ```yaml
+    # GENERATED CONTENT repl{{ $i, $group := range ConfigOptionRepeatableGroup "nginx"}}
+    # deployment.yaml
+    apiVersion: apps/v1
+    kind: Deployment
+    metadata:
+    name: nginx-repl{{$i}} # Returns "nginx-0" for the first instance
+    labels:
+        app: example
+        component: nginx-repl{{$i}}
+    spec:
+    template:
+        spec:
+        containers:
+            - name: proxy
+            image: nginx
+            env:
+            - name: NGINX_PORT
+                value: {{repl ConfigOptionTemplate "nginx-port" $i }}  # Returns 80 for the first instance
+                value: {{repl ConfigOptionTemplate "nginx-port" $i }}  # Returns 80 for the first instance
+    ---
+    # service.yaml
+    apiVersion: v1
+    kind: Service
+    metadata:
+    name: repl{{ ConfigOptionTemplateName "nginx" }} 
+    labels:
+        app: example
+        component: repl{{ ConfigOptionTemplateName "nginx" }}
+    annotation:
+    kots.io/repeatable: nginx
+    spec:
+    type: LoadBalancer
+    ports:
+    - port: 80
+        targetPort: {{repl ConfigOptionTemplate "nginx-port" }}
+    selector:
+        app: example
+        component: repl{{ ConfigOptionTemplateName "nginx" }}
+    ---
+    # END GENERATED CONTENT repl{{end}}
+    ```
+</details>
+
 
 Using the Golang Text Template functionality has it's flaws as far as keeping valid YAML syntax and puts a lot of knowledge burden on the vendor. Some alternative considered here were:
     1. Having KOTS Use very basic search/parse capabilities to look for Config Items that were members of a template group, which would implicitly copy any resource using them N times.
