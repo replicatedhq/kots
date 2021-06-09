@@ -10,6 +10,7 @@ import (
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	"github.com/replicatedhq/kots/pkg/crypto"
+	"github.com/replicatedhq/kots/pkg/docker/registry"
 	identitydeploy "github.com/replicatedhq/kots/pkg/identity/deploy"
 	kotsadmobjects "github.com/replicatedhq/kots/pkg/kotsadm/objects"
 	"github.com/replicatedhq/kots/pkg/kotsadm/types"
@@ -116,6 +117,12 @@ func ensureSecrets(deployOptions *types.DeployOptions, clientset *kubernetes.Cli
 	if deployOptions.SharedPasswordBcrypt == "" {
 		if err := ensureSharedPasswordSecret(deployOptions, clientset); err != nil {
 			return errors.Wrap(err, "failed to ensure shared password secret")
+		}
+	}
+
+	if deployOptions.DockerHubUsername != "" && deployOptions.DockerHubPassword != "" {
+		if err := ensureDockerHubSecret(deployOptions, clientset); err != nil {
+			return errors.Wrap(err, "failed to ensure dockerhub secret")
 		}
 	}
 
@@ -261,6 +268,28 @@ func ensureSharedPasswordSecret(deployOptions *types.DeployOptions, clientset *k
 	}
 
 	// TODO handle update
+
+	return nil
+}
+
+func ensureDockerHubSecret(deployOptions *types.DeployOptions, clientset *kubernetes.Clientset) error {
+	_, err := clientset.CoreV1().Secrets(deployOptions.Namespace).Get(context.TODO(), registry.DockerHubSecretName, metav1.GetOptions{})
+	if err != nil {
+		if !kuberneteserrors.IsNotFound(err) {
+			return errors.Wrap(err, "failed to get existing dockerhub secret")
+		}
+
+		secret, err := registry.PullSecretForDockerHub(deployOptions.DockerHubUsername, deployOptions.DockerHubPassword, deployOptions.Namespace)
+		if err != nil {
+			return errors.Wrap(err, "failed to get pull secret for dockerhub")
+		}
+
+		// secret not found, create it
+		_, err = clientset.CoreV1().Secrets(deployOptions.Namespace).Create(context.TODO(), secret, metav1.CreateOptions{})
+		if err != nil {
+			return errors.Wrap(err, "failed to create dockerhub secret")
+		}
+	}
 
 	return nil
 }

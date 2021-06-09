@@ -268,7 +268,7 @@ func (ctx ConfigCtx) localImageName(imageRef string) string {
 	// Not airgap and no local registry.  Rewrite images that are private only.
 
 	if ctx.app == nil || !ctx.app.Spec.ProxyPublicImages {
-		isPrivate, err := image.IsPrivateImage(imageRef)
+		isPrivate, err := image.IsPrivateImage(imageRef, registry.RegistryOptions{}) // TODO: pass docker registry
 		if err != nil {
 			// TODO: log
 			return ""
