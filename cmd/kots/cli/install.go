@@ -61,6 +61,25 @@ func InstallCmd() *cobra.Command {
 
 			log := logger.NewCLILogger()
 
+			signalChan := make(chan os.Signal, 1)
+
+			finalMessage := ""
+			go func() {
+				signal.Notify(signalChan, os.Interrupt)
+				<-signalChan
+
+				log.ActionWithoutSpinner("")
+				log.ActionWithoutSpinner("Cleaning up")
+				if finalMessage != "" {
+					log.ActionWithoutSpinner("")
+					log.ActionWithoutSpinner(finalMessage)
+					log.ActionWithoutSpinner("")
+				}
+
+				fmt.Print(cursor.Show())
+				os.Exit(0)
+			}()
+
 			if !v.GetBool("skip-rbac-check") && v.GetBool("ensure-rbac") {
 				err := CheckRBAC()
 				if err != nil {
@@ -344,15 +363,10 @@ func InstallCmd() *cobra.Command {
 				log.ActionWithoutSpinner("Go to http://localhost:%d to access the Admin Console", adminConsolePort)
 				log.ActionWithoutSpinner("")
 
-				signalChan := make(chan os.Signal, 1)
-				signal.Notify(signalChan, os.Interrupt)
+				finalMessage = fmt.Sprintf("To access the Admin Console again, run kubectl kots admin-console --namespace %s", namespace)
 
-				<-signalChan
-
-				log.ActionWithoutSpinner("Cleaning up")
-				log.ActionWithoutSpinner("")
-				log.ActionWithoutSpinner("To access the Admin Console again, run kubectl kots admin-console --namespace %s", namespace)
-				log.ActionWithoutSpinner("")
+				// pause indefinitely and let Ctrl+C handle termination
+				<-make(chan struct{})
 			} else if !deployOptions.ExcludeAdminConsole {
 				log.ActionWithoutSpinner("")
 				log.ActionWithoutSpinner("To access the Admin Console, run kubectl kots admin-console --namespace %s", namespace)
