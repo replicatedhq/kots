@@ -518,6 +518,7 @@ func CopyFromFileToRegistry(path string, name string, tag string, digest string,
 
 func IsPrivateImage(image string, dockerHubRegistry registry.RegistryOptions) (bool, error) {
 	var lastErr error
+	isRateLimited := false
 	for i := 0; i < 3; i++ {
 		// ParseReference requires the // prefix
 		ref, err := imagedocker.ParseReference(fmt.Sprintf("//%s", image))
@@ -527,7 +528,8 @@ func IsPrivateImage(image string, dockerHubRegistry registry.RegistryOptions) (b
 
 		sysCtx := types.SystemContext{DockerDisableV1Ping: true}
 
-		if dockerHubRegistry.Username != "" && dockerHubRegistry.Password != "" {
+		registryHost := reference.Domain(ref.DockerReference())
+		if isRateLimited && strings.HasSuffix(registryHost, "docker.io") && dockerHubRegistry.Username != "" && dockerHubRegistry.Password != "" {
 			sysCtx.DockerAuthConfig = &types.DockerAuthConfig{
 				Username: dockerHubRegistry.Username,
 				Password: dockerHubRegistry.Password,
@@ -555,6 +557,11 @@ func IsPrivateImage(image string, dockerHubRegistry registry.RegistryOptions) (b
 		if strings.Contains(err.Error(), "EOF") {
 			lastErr = err
 			time.Sleep(1 * time.Second)
+			continue
+		}
+
+		if isTooManyRequests(err) {
+			isRateLimited = true
 			continue
 		}
 
@@ -616,6 +623,33 @@ func isUnauthorized(err error) bool {
 	}
 
 	return isUnauthorized(cause)
+}
+
+func isTooManyRequests(err error) bool {
+	switch err := err.(type) {
+	case errcode.Errors:
+		for _, e := range err {
+			if isTooManyRequests(e) {
+				return true
+			}
+		}
+		return false
+	case errcode.Error:
+		return err.Code.Descriptor().HTTPStatusCode == http.StatusTooManyRequests
+	}
+
+	if err.Error() == imagedocker.ErrTooManyRequests.Error() {
+		return true
+	}
+
+	cause := errors.Cause(err)
+	if cause, ok := cause.(error); ok {
+		if cause.Error() == err.Error() {
+			return false
+		}
+	}
+
+	return isTooManyRequests(cause)
 }
 
 func CopyImageWithGC(ctx context.Context, policyContext *signature.PolicyContext, destRef, srcRef types.ImageReference, options *copy.Options) ([]byte, error) {
