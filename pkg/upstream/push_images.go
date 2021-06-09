@@ -55,13 +55,13 @@ func ProcessUpstreamImages(u *types.Upstream, options ProcessUpstreamImagesOptio
 			if options.AirgapBundle != "" {
 				images, err := kotsadm.TagAndPushAppImagesFromBundle(options.AirgapBundle, pushOpts)
 				if err != nil {
-					return nil, errors.Wrap(err, "failed to push images")
+					return nil, errors.Wrap(err, "failed to push images from bundle")
 				}
 				foundImages = images
 			} else {
 				images, err := kotsadm.TagAndPushAppImagesFromPath(options.ImagesDir, pushOpts)
 				if err != nil {
-					return nil, errors.Wrap(err, "failed to push images")
+					return nil, errors.Wrap(err, "failed to push images from dir")
 				}
 				foundImages = images
 			}
