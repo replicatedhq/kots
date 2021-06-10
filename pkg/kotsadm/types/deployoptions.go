@@ -47,8 +47,6 @@ type DeployOptions struct {
 	SimultaneousUploads       int
 	DisableImagePush          bool
 	UpstreamURI               string
-	DockerHubUsername         string
-	DockerHubPassword         string
 
 	IdentityConfig kotsv1beta1.IdentityConfig
 	IngressConfig  kotsv1beta1.IngressConfig

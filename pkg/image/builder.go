@@ -516,6 +516,7 @@ func CopyFromFileToRegistry(path string, name string, tag string, digest string,
 	return nil
 }
 
+// if dockerHubRegistry is provided, its credentials will be used in case of rate limiting
 func IsPrivateImage(image string, dockerHubRegistry registry.RegistryOptions) (bool, error) {
 	var lastErr error
 	isRateLimited := false
@@ -562,6 +563,7 @@ func IsPrivateImage(image string, dockerHubRegistry registry.RegistryOptions) (b
 		}
 
 		if isTooManyRequests(err) {
+			lastErr = err
 			isRateLimited = true
 			continue
 		}

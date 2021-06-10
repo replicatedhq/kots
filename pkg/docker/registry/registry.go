@@ -113,6 +113,28 @@ func PullSecretForRegistries(registries []string, username, password string, kub
 	return secret, nil
 }
 
+func EnsureDockerHubSecret(username string, password string, namespace string, clientset *kubernetes.Clientset) error {
+	_, err := clientset.CoreV1().Secrets(namespace).Get(context.TODO(), DockerHubSecretName, metav1.GetOptions{})
+	if err != nil {
+		if !kuberneteserrors.IsNotFound(err) {
+			return errors.Wrap(err, "failed to get existing dockerhub secret")
+		}
+
+		secret, err := PullSecretForDockerHub(username, password, namespace)
+		if err != nil {
+			return errors.Wrap(err, "failed to get pull secret for dockerhub")
+		}
+
+		// secret not found, create it
+		_, err = clientset.CoreV1().Secrets(namespace).Create(context.TODO(), secret, metav1.CreateOptions{})
+		if err != nil {
+			return errors.Wrap(err, "failed to create dockerhub secret")
+		}
+	}
+
+	return nil
+}
+
 func PullSecretForDockerHub(username string, password string, kuberneteNamespace string) (*corev1.Secret, error) {
 	dockercfgAuth := DockercfgAuth{
 		Auth: base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", username, password))),

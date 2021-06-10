@@ -194,8 +194,6 @@ func InstallCmd() *cobra.Command {
 				EnsureRBAC:                v.GetBool("ensure-rbac"),
 				InstallID:                 m.InstallID,
 				SimultaneousUploads:       simultaneousUploads,
-				DockerHubUsername:         v.GetString("dockerhub-username"),
-				DockerHubPassword:         v.GetString("dockerhub-password"),
 				DisableImagePush:          v.GetBool("disable-image-push"),
 				AirgapBundle:              v.GetString("airgap-bundle"),
 
@@ -384,9 +382,6 @@ func InstallCmd() *cobra.Command {
 	cmd.Flags().Bool("airgap", false, "set to true to run install in airgapped mode. setting --airgap-bundle implies --airgap=true.")
 	cmd.Flags().Bool("skip-preflights", false, "set to true to skip preflight checks")
 	cmd.Flags().Bool("disable-image-push", false, "set to true to disable images from being pushed to private registry")
-
-	cmd.Flags().String("dockerhub-username", "", "DockerHub username to be used for increasing rate limits on public images")
-	cmd.Flags().String("dockerhub-password", "", "DockerHub password to be used for increasing rate limits on public images")
 
 	cmd.Flags().String("repo", "", "repo uri to use when installing a helm chart")
 	cmd.Flags().StringSlice("set", []string{}, "values to pass to helm when running helm template")
