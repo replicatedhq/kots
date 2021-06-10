@@ -529,7 +529,8 @@ func IsPrivateImage(image string, dockerHubRegistry registry.RegistryOptions) (b
 		sysCtx := types.SystemContext{DockerDisableV1Ping: true}
 
 		registryHost := reference.Domain(ref.DockerReference())
-		if isRateLimited && strings.HasSuffix(registryHost, "docker.io") && dockerHubRegistry.Username != "" && dockerHubRegistry.Password != "" {
+		isDockerIO := registryHost == "docker.io" || strings.HasSuffix(registryHost, ".docker.io")
+		if isRateLimited && isDockerIO && dockerHubRegistry.Username != "" && dockerHubRegistry.Password != "" {
 			sysCtx.DockerAuthConfig = &types.DockerAuthConfig{
 				Username: dockerHubRegistry.Username,
 				Password: dockerHubRegistry.Password,
