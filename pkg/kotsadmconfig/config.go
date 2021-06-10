@@ -70,7 +70,7 @@ func NeedsConfiguration(kotsKinds *kotsutil.KotsKinds, registrySettings registry
 		ReadOnly:  registrySettings.IsReadOnly,
 	}
 
-	rendered, err := kotsconfig.TemplateConfig(logger.NewCLILogger(), configSpec, configValuesSpec, licenseSpec, identityConfigSpec, localRegistry)
+	rendered, err := kotsconfig.TemplateConfig(logger.NewCLILogger(), configSpec, configValuesSpec, licenseSpec, identityConfigSpec, localRegistry, os.Getenv("POD_NAMESPACE"))
 	if err != nil {
 		return false, errors.Wrap(err, "failed to template config")
 	}

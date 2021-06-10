@@ -9,6 +9,8 @@ import (
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	"github.com/replicatedhq/kots/pkg/crypto"
+	"github.com/replicatedhq/kots/pkg/docker/registry"
+	"github.com/replicatedhq/kots/pkg/k8sutil"
 )
 
 var (
@@ -29,12 +31,30 @@ type BuilderOptions struct {
 	ApplicationInfo *ApplicationInfo
 	VersionInfo     *VersionInfo
 	IdentityConfig  *kotsv1beta1.IdentityConfig
+	Namespace       string
 }
 
 // NewBuilder creates a builder with all available contexts.
 func NewBuilder(opts BuilderOptions) (Builder, map[string]ItemValue, error) {
 	b := Builder{}
-	configCtx, err := b.newConfigContext(opts.ConfigGroups, opts.ExistingValues, opts.LocalRegistry, opts.Cipher, opts.License, opts.VersionInfo)
+
+	dockerHubRegistry := registry.RegistryOptions{}
+	if opts.Namespace != "" {
+		clientset, err := k8sutil.GetClientset()
+		if err != nil {
+			return Builder{}, nil, errors.Wrap(err, "failed to get clientset")
+		}
+		dockerHubRegistryCreds, err := registry.GetDockerHubCredentials(clientset, opts.Namespace)
+		if err != nil {
+			return Builder{}, nil, errors.Wrap(err, "failed to get dockerhub registry details")
+		}
+		dockerHubRegistry = registry.RegistryOptions{
+			Username: dockerHubRegistryCreds.Username,
+			Password: dockerHubRegistryCreds.Password,
+		}
+	}
+
+	configCtx, err := b.newConfigContext(opts.ConfigGroups, opts.ExistingValues, opts.LocalRegistry, opts.Cipher, opts.License, opts.VersionInfo, dockerHubRegistry)
 	if err != nil {
 		return Builder{}, nil, errors.Wrap(err, "create config context")
 	}

@@ -149,7 +149,7 @@ func (s *KOTSStore) IsSnapshotsSupportedForVersion(a *apptypes.App, sequence int
 	}
 
 	// as far as I can tell, this is the only place within pkg/store that uses templating
-	rendered, err := renderer.RenderFile(kotsKinds, registrySettings, a.Slug, sequence, a.IsAirgap, []byte(backupSpecStr.String))
+	rendered, err := renderer.RenderFile(kotsKinds, registrySettings, a.Slug, sequence, a.IsAirgap, os.Getenv("POD_NAMESPACE"), []byte(backupSpecStr.String))
 	if err != nil {
 		return false, errors.Wrap(err, "failed to render backup spec")
 	}

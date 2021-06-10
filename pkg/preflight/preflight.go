@@ -82,7 +82,7 @@ func Run(appID string, appSlug string, sequence int64, isAirgap bool, archiveDir
 			return errors.Wrap(err, "failed to get registry settings for app")
 		}
 
-		renderedPreflight, err := render.RenderFile(renderedKotsKinds, registrySettings, appSlug, sequence, isAirgap, []byte(renderedMarshalledPreflights))
+		renderedPreflight, err := render.RenderFile(renderedKotsKinds, registrySettings, appSlug, sequence, isAirgap, os.Getenv("POD_NAMESPACE"), []byte(renderedMarshalledPreflights))
 		if err != nil {
 			return errors.Wrap(err, "failed to render preflights")
 		}
@@ -266,7 +266,7 @@ func CreateRenderedSpec(appID string, sequence int64, origin string, inCluster b
 
 	templatedSpec := b.Bytes()
 
-	renderedSpec, err := helper.RenderAppFile(app, &sequence, templatedSpec, kotsKinds)
+	renderedSpec, err := helper.RenderAppFile(app, &sequence, templatedSpec, kotsKinds, os.Getenv("POD_NAMESPACE"))
 	if err != nil {
 		return errors.Wrap(err, "failed render preflight spec")
 	}
