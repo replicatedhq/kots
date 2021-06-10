@@ -184,6 +184,11 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 		return errors.Wrap(err, "failed to load identity config")
 	}
 
+	dockerHubRegistryCreds, err := registry.GetDockerHubCredentials(clientset, rewriteOptions.K8sNamespace)
+	if err != nil {
+		return errors.Wrap(err, "failed to get dockerhub credentials")
+	}
+
 	// TODO (ethan): rewrite dex image?
 
 	if rewriteOptions.CopyImages || rewriteOptions.RegistryEndpoint != "" {
@@ -214,6 +219,10 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 				Namespace: rewriteOptions.RegistryNamespace,
 				Username:  rewriteOptions.RegistryUsername,
 				Password:  rewriteOptions.RegistryPassword,
+			},
+			DockerHubRegistry: registry.RegistryOptions{
+				Username: dockerHubRegistryCreds.Username,
+				Password: dockerHubRegistryCreds.Password,
 			},
 			Installation: newInstallation,
 			Application:  application,
@@ -286,6 +295,10 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 			ReplicatedRegistry: registry.RegistryOptions{
 				Endpoint:      replicatedRegistryInfo.Registry,
 				ProxyEndpoint: replicatedRegistryInfo.Proxy,
+			},
+			DockerHubRegistry: registry.RegistryOptions{
+				Username: dockerHubRegistryCreds.Username,
+				Password: dockerHubRegistryCreds.Password,
 			},
 			Installation:     rewriteOptions.Installation,
 			AllImagesPrivate: allPrivate,

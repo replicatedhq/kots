@@ -306,7 +306,7 @@ func CreateSupportBundleAnalysis(appID string, archivePath string, bundle *types
 		return err
 	}
 
-	renderedAnalyzers, err := helper.RenderAppFile(foundApp, nil, b.Bytes(), kotsKinds)
+	renderedAnalyzers, err := helper.RenderAppFile(foundApp, nil, b.Bytes(), kotsKinds, os.Getenv("POD_NAMESPACE"))
 	if err != nil {
 		err = errors.Wrap(err, "failed to render analyzers")
 		logger.Error(err)

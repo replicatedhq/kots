@@ -62,19 +62,21 @@ func (i ItemValue) DefaultStr() string {
 
 // ConfigCtx is the context for builder functions before the application has started.
 type ConfigCtx struct {
-	ItemValues    map[string]ItemValue
-	LocalRegistry LocalRegistry
+	ItemValues        map[string]ItemValue
+	LocalRegistry     LocalRegistry
+	DockerHubRegistry registry.RegistryOptions
 
 	license *kotsv1beta1.License // Another agument for unifying all these contexts
 	app     *kotsv1beta1.Application
 }
 
 // newConfigContext creates and returns a context for template rendering
-func (b *Builder) newConfigContext(configGroups []kotsv1beta1.ConfigGroup, existingValues map[string]ItemValue, localRegistry LocalRegistry, cipher *crypto.AESCipher, license *kotsv1beta1.License, info *VersionInfo) (*ConfigCtx, error) {
+func (b *Builder) newConfigContext(configGroups []kotsv1beta1.ConfigGroup, existingValues map[string]ItemValue, localRegistry LocalRegistry, cipher *crypto.AESCipher, license *kotsv1beta1.License, info *VersionInfo, dockerHubRegistry registry.RegistryOptions) (*ConfigCtx, error) {
 	configCtx := &ConfigCtx{
-		ItemValues:    existingValues,
-		LocalRegistry: localRegistry,
-		license:       license,
+		ItemValues:        existingValues,
+		LocalRegistry:     localRegistry,
+		DockerHubRegistry: dockerHubRegistry,
+		license:           license,
 	}
 
 	builder := Builder{
@@ -268,7 +270,7 @@ func (ctx ConfigCtx) localImageName(imageRef string) string {
 	// Not airgap and no local registry.  Rewrite images that are private only.
 
 	if ctx.app == nil || !ctx.app.Spec.ProxyPublicImages {
-		isPrivate, err := image.IsPrivateImage(imageRef)
+		isPrivate, err := image.IsPrivateImage(imageRef, ctx.DockerHubRegistry)
 		if err != nil {
 			// TODO: log
 			return ""

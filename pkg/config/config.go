@@ -15,12 +15,12 @@ import (
 	"k8s.io/client-go/kubernetes/scheme"
 )
 
-func TemplateConfig(log *logger.CLILogger, configSpecData string, configValuesData string, licenseData string, identityConfigData string, localRegistry template.LocalRegistry) (string, error) {
-	return templateConfig(log, configSpecData, configValuesData, licenseData, identityConfigData, localRegistry, MarshalConfig)
+func TemplateConfig(log *logger.CLILogger, configSpecData string, configValuesData string, licenseData string, identityConfigData string, localRegistry template.LocalRegistry, namespace string) (string, error) {
+	return templateConfig(log, configSpecData, configValuesData, licenseData, identityConfigData, localRegistry, namespace, MarshalConfig)
 }
 
-func TemplateConfigObjects(configSpec *kotsv1beta1.Config, configValues map[string]template.ItemValue, license *kotsv1beta1.License, localRegistry template.LocalRegistry, versionInfo *template.VersionInfo, identityconfig *kotsv1beta1.IdentityConfig) (*kotsv1beta1.Config, error) {
-	templatedString, err := templateConfigObjects(configSpec, configValues, license, localRegistry, versionInfo, identityconfig, MarshalConfig)
+func TemplateConfigObjects(configSpec *kotsv1beta1.Config, configValues map[string]template.ItemValue, license *kotsv1beta1.License, localRegistry template.LocalRegistry, versionInfo *template.VersionInfo, identityconfig *kotsv1beta1.IdentityConfig, namespace string) (*kotsv1beta1.Config, error) {
+	templatedString, err := templateConfigObjects(configSpec, configValues, license, localRegistry, versionInfo, identityconfig, namespace, MarshalConfig)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to template config")
 	}
@@ -37,7 +37,7 @@ func TemplateConfigObjects(configSpec *kotsv1beta1.Config, configValues map[stri
 	return config, nil
 }
 
-func templateConfigObjects(configSpec *kotsv1beta1.Config, configValues map[string]template.ItemValue, license *kotsv1beta1.License, localRegistry template.LocalRegistry, versionInfo *template.VersionInfo, identityconfig *kotsv1beta1.IdentityConfig, marshalFunc func(config *kotsv1beta1.Config) (string, error)) (string, error) {
+func templateConfigObjects(configSpec *kotsv1beta1.Config, configValues map[string]template.ItemValue, license *kotsv1beta1.License, localRegistry template.LocalRegistry, versionInfo *template.VersionInfo, identityconfig *kotsv1beta1.IdentityConfig, namespace string, marshalFunc func(config *kotsv1beta1.Config) (string, error)) (string, error) {
 	builderOptions := template.BuilderOptions{
 		ConfigGroups:   configSpec.Spec.Groups,
 		ExistingValues: configValues,
@@ -46,6 +46,7 @@ func templateConfigObjects(configSpec *kotsv1beta1.Config, configValues map[stri
 		License:        license,
 		VersionInfo:    versionInfo,
 		IdentityConfig: identityconfig,
+		Namespace:      namespace,
 	}
 	builder, configVals, err := template.NewBuilder(builderOptions)
 	if err != nil {
@@ -66,7 +67,7 @@ func templateConfigObjects(configSpec *kotsv1beta1.Config, configValues map[stri
 	return rendered, nil
 }
 
-func templateConfig(log *logger.CLILogger, configSpecData string, configValuesData string, licenseData string, identityConfigData string, localRegistry template.LocalRegistry, marshalFunc func(config *kotsv1beta1.Config) (string, error)) (string, error) {
+func templateConfig(log *logger.CLILogger, configSpecData string, configValuesData string, licenseData string, identityConfigData string, localRegistry template.LocalRegistry, namespace string, marshalFunc func(config *kotsv1beta1.Config) (string, error)) (string, error) {
 	// This function will
 	// 1. unmarshal config
 	// 2. replace all item values with values that already exist
@@ -112,7 +113,7 @@ func templateConfig(log *logger.CLILogger, configSpecData string, configValuesDa
 		identityConfig = obj.(*kotsv1beta1.IdentityConfig)
 	}
 
-	return templateConfigObjects(config, templateContext, license, localRegistry, &template.VersionInfo{}, identityConfig, marshalFunc)
+	return templateConfigObjects(config, templateContext, license, localRegistry, &template.VersionInfo{}, identityConfig, namespace, marshalFunc)
 }
 
 func ApplyValuesToConfig(config *kotsv1beta1.Config, values map[string]template.ItemValue) {

@@ -12,16 +12,17 @@ import (
 )
 
 type WriteUpstreamImageOptions struct {
-	BaseDir        string
-	AppSlug        string
-	SourceRegistry registry.RegistryOptions
-	DestRegistry   registry.RegistryOptions
-	CopyImages     bool
-	IsAirgap       bool
-	Log            *logger.CLILogger
-	ReportWriter   io.Writer
-	Installation   *kotsv1beta1.Installation
-	Application    *kotsv1beta1.Application
+	BaseDir           string
+	AppSlug           string
+	SourceRegistry    registry.RegistryOptions
+	DestRegistry      registry.RegistryOptions
+	DockerHubRegistry registry.RegistryOptions
+	CopyImages        bool
+	IsAirgap          bool
+	Log               *logger.CLILogger
+	ReportWriter      io.Writer
+	Installation      *kotsv1beta1.Installation
+	Application       *kotsv1beta1.Application
 }
 
 type WriteUpstreamImageResult struct {
@@ -41,7 +42,7 @@ func ProcessUpstreamImages(options WriteUpstreamImageOptions) (*WriteUpstreamIma
 		rewriteAll = true
 	}
 
-	newImages, err := image.ProcessImages(options.SourceRegistry, options.DestRegistry, options.AppSlug, options.Log, options.ReportWriter, options.BaseDir, additionalImages, options.CopyImages, rewriteAll, checkedImages)
+	newImages, err := image.ProcessImages(options.SourceRegistry, options.DestRegistry, options.AppSlug, options.Log, options.ReportWriter, options.BaseDir, additionalImages, options.CopyImages, rewriteAll, checkedImages, options.DockerHubRegistry)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to save images")
 	}

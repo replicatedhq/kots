@@ -34,6 +34,7 @@ func RootCmd() *cobra.Command {
 	cmd.AddCommand(ResetTLSCmd())
 	cmd.AddCommand(VersionCmd())
 	cmd.AddCommand(VeleroCmd())
+	cmd.AddCommand(DockerCmd())
 	cmd.AddCommand(BackupCmd())
 	cmd.AddCommand(RestoreCmd())
 	cmd.AddCommand(IngressCmd())

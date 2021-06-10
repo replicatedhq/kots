@@ -49,7 +49,7 @@ type ImageInfo struct {
 	IsPrivate bool
 }
 
-func ProcessImages(srcRegistry, destRegistry registry.RegistryOptions, appSlug string, log *logger.CLILogger, reportWriter io.Writer, upstreamDir string, additionalImages []string, copyImages, allImagesPrivate bool, checkedImages map[string]ImageInfo) ([]kustomizeimage.Image, error) {
+func ProcessImages(srcRegistry, destRegistry registry.RegistryOptions, appSlug string, log *logger.CLILogger, reportWriter io.Writer, upstreamDir string, additionalImages []string, copyImages, allImagesPrivate bool, checkedImages map[string]ImageInfo, dockerHubRegistry registry.RegistryOptions) ([]kustomizeimage.Image, error) {
 	newImages := []kustomizeimage.Image{}
 
 	err := filepath.Walk(upstreamDir,
@@ -67,7 +67,7 @@ func ProcessImages(srcRegistry, destRegistry registry.RegistryOptions, appSlug s
 				return err
 			}
 
-			newImagesSubset, err := processImagesInFileBetweenRegistries(srcRegistry, destRegistry, appSlug, log, reportWriter, contents, copyImages, allImagesPrivate, checkedImages, newImages)
+			newImagesSubset, err := processImagesInFileBetweenRegistries(srcRegistry, destRegistry, appSlug, log, reportWriter, contents, copyImages, allImagesPrivate, checkedImages, newImages, dockerHubRegistry)
 			if err != nil {
 				return errors.Wrapf(err, "failed to copy images mentioned in %s", path)
 			}
@@ -81,7 +81,7 @@ func ProcessImages(srcRegistry, destRegistry registry.RegistryOptions, appSlug s
 	}
 
 	for _, additionalImage := range additionalImages {
-		newImage, err := processOneImage(srcRegistry, destRegistry, additionalImage, appSlug, reportWriter, log, copyImages, allImagesPrivate, checkedImages)
+		newImage, err := processOneImage(srcRegistry, destRegistry, additionalImage, appSlug, reportWriter, log, copyImages, allImagesPrivate, checkedImages, dockerHubRegistry)
 		if err != nil {
 			return nil, errors.Wrapf(err, "failed to process addditional image %s", additionalImage)
 		}
@@ -91,7 +91,7 @@ func ProcessImages(srcRegistry, destRegistry registry.RegistryOptions, appSlug s
 	return newImages, nil
 }
 
-func GetPrivateImages(upstreamDir string, checkedImages map[string]ImageInfo, allPrivate bool) ([]string, []k8sdoc.K8sDoc, error) {
+func GetPrivateImages(upstreamDir string, checkedImages map[string]ImageInfo, allPrivate bool, dockerHubRegistry registry.RegistryOptions) ([]string, []k8sdoc.K8sDoc, error) {
 	uniqueImages := make(map[string]bool)
 
 	objects := make([]k8sdoc.K8sDoc, 0) // all objects where images are referenced from
@@ -127,7 +127,7 @@ func GetPrivateImages(upstreamDir string, checkedImages map[string]ImageInfo, al
 					if i, ok := checkedImages[image]; ok {
 						isPrivate = i.IsPrivate
 					} else {
-						p, err := IsPrivateImage(image)
+						p, err := IsPrivateImage(image, dockerHubRegistry)
 						if err != nil {
 							return errors.Wrapf(err, "failed to check if image %d of %d in %q is private", idx+1, len(images), info.Name())
 						}
@@ -198,7 +198,7 @@ func GetObjectsWithImages(upstreamDir string) ([]k8sdoc.K8sDoc, error) {
 	return objects, nil
 }
 
-func processImagesInFileBetweenRegistries(srcRegistry, destRegistry registry.RegistryOptions, appSlug string, log *logger.CLILogger, reportWriter io.Writer, fileData []byte, copyImages, allImagesPrivate bool, checkedImages map[string]ImageInfo, alreadyPushedImagesFromOtherFiles []kustomizeimage.Image) ([]kustomizeimage.Image, error) {
+func processImagesInFileBetweenRegistries(srcRegistry, destRegistry registry.RegistryOptions, appSlug string, log *logger.CLILogger, reportWriter io.Writer, fileData []byte, copyImages, allImagesPrivate bool, checkedImages map[string]ImageInfo, alreadyPushedImagesFromOtherFiles []kustomizeimage.Image, dockerHubRegistry registry.RegistryOptions) ([]kustomizeimage.Image, error) {
 	savedImages := make(map[string]bool)
 	newImages := []kustomizeimage.Image{}
 
@@ -218,7 +218,7 @@ func processImagesInFileBetweenRegistries(srcRegistry, destRegistry registry.Reg
 				log.ChildActionWithSpinner("Found image %s", image)
 			}
 
-			newImage, err := processOneImage(srcRegistry, destRegistry, image, appSlug, reportWriter, log, copyImages, allImagesPrivate, checkedImages)
+			newImage, err := processOneImage(srcRegistry, destRegistry, image, appSlug, reportWriter, log, copyImages, allImagesPrivate, checkedImages, dockerHubRegistry)
 			if err != nil {
 				log.FinishChildSpinner()
 				return errors.Wrapf(err, "failed to transfer image %s", image)
@@ -258,7 +258,7 @@ func listImagesInFile(contents []byte, handler processImagesFunc) error {
 	return nil
 }
 
-func processOneImage(srcRegistry, destRegistry registry.RegistryOptions, image string, appSlug string, reportWriter io.Writer, log *logger.CLILogger, copyImages, allImagesPrivate bool, checkedImages map[string]ImageInfo) ([]kustomizeimage.Image, error) {
+func processOneImage(srcRegistry, destRegistry registry.RegistryOptions, image string, appSlug string, reportWriter io.Writer, log *logger.CLILogger, copyImages, allImagesPrivate bool, checkedImages map[string]ImageInfo, dockerHubRegistry registry.RegistryOptions) ([]kustomizeimage.Image, error) {
 	policy, err := signature.NewPolicyFromBytes(imagePolicy)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to read default policy")
@@ -281,7 +281,7 @@ func processOneImage(srcRegistry, destRegistry registry.RegistryOptions, image s
 		isPrivate = i.IsPrivate
 	} else {
 		if !allImagesPrivate {
-			p, err := IsPrivateImage(image)
+			p, err := IsPrivateImage(image, dockerHubRegistry)
 			if err != nil {
 				return nil, errors.Wrap(err, "failed to check if image is private")
 			}
@@ -516,8 +516,10 @@ func CopyFromFileToRegistry(path string, name string, tag string, digest string,
 	return nil
 }
 
-func IsPrivateImage(image string) (bool, error) {
+// if dockerHubRegistry is provided, its credentials will be used in case of rate limiting
+func IsPrivateImage(image string, dockerHubRegistry registry.RegistryOptions) (bool, error) {
 	var lastErr error
+	isRateLimited := false
 	for i := 0; i < 3; i++ {
 		// ParseReference requires the // prefix
 		ref, err := imagedocker.ParseReference(fmt.Sprintf("//%s", image))
@@ -526,6 +528,15 @@ func IsPrivateImage(image string) (bool, error) {
 		}
 
 		sysCtx := types.SystemContext{DockerDisableV1Ping: true}
+
+		registryHost := reference.Domain(ref.DockerReference())
+		isDockerIO := registryHost == "docker.io" || strings.HasSuffix(registryHost, ".docker.io")
+		if isRateLimited && isDockerIO && dockerHubRegistry.Username != "" && dockerHubRegistry.Password != "" {
+			sysCtx.DockerAuthConfig = &types.DockerAuthConfig{
+				Username: dockerHubRegistry.Username,
+				Password: dockerHubRegistry.Password,
+			}
+		}
 
 		// allow pulling images from http/invalid https docker repos
 		// intended for development only, _THIS MAKES THINGS INSECURE_
@@ -548,6 +559,12 @@ func IsPrivateImage(image string) (bool, error) {
 		if strings.Contains(err.Error(), "EOF") {
 			lastErr = err
 			time.Sleep(1 * time.Second)
+			continue
+		}
+
+		if isTooManyRequests(err) {
+			lastErr = err
+			isRateLimited = true
 			continue
 		}
 
@@ -609,6 +626,33 @@ func isUnauthorized(err error) bool {
 	}
 
 	return isUnauthorized(cause)
+}
+
+func isTooManyRequests(err error) bool {
+	switch err := err.(type) {
+	case errcode.Errors:
+		for _, e := range err {
+			if isTooManyRequests(e) {
+				return true
+			}
+		}
+		return false
+	case errcode.Error:
+		return err.Code.Descriptor().HTTPStatusCode == http.StatusTooManyRequests
+	}
+
+	if err.Error() == imagedocker.ErrTooManyRequests.Error() {
+		return true
+	}
+
+	cause := errors.Cause(err)
+	if cause, ok := cause.(error); ok {
+		if cause.Error() == err.Error() {
+			return false
+		}
+	}
+
+	return isTooManyRequests(cause)
 }
 
 func CopyImageWithGC(ctx context.Context, policyContext *signature.PolicyContext, destRef, srcRef types.ImageReference, options *copy.Options) ([]byte, error) {

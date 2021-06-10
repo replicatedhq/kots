@@ -328,6 +328,11 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 		return "", errors.Wrap(err, "failed to write base")
 	}
 
+	dockerHubRegistryCreds, err := registry.GetDockerHubCredentials(clientset, pullOptions.Namespace)
+	if err != nil {
+		return "", errors.Wrap(err, "failed to get dockerhub credentials")
+	}
+
 	var pullSecret *corev1.Secret
 	var images []kustomizetypes.Image
 	var objects []k8sdoc.K8sDoc
@@ -360,6 +365,10 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 				SourceRegistry: registry.RegistryOptions{
 					Endpoint:      replicatedRegistryInfo.Registry,
 					ProxyEndpoint: replicatedRegistryInfo.Proxy,
+				},
+				DockerHubRegistry: registry.RegistryOptions{
+					Username: dockerHubRegistryCreds.Username,
+					Password: dockerHubRegistryCreds.Password,
 				},
 				ReportWriter: pullOptions.ReportWriter,
 				Installation: newInstallation,
@@ -500,6 +509,10 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 			ReplicatedRegistry: registry.RegistryOptions{
 				Endpoint:      replicatedRegistryInfo.Registry,
 				ProxyEndpoint: replicatedRegistryInfo.Proxy,
+			},
+			DockerHubRegistry: registry.RegistryOptions{
+				Username: dockerHubRegistryCreds.Username,
+				Password: dockerHubRegistryCreds.Password,
 			},
 			Installation:     newInstallation,
 			AllImagesPrivate: allPrivate,

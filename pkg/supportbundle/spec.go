@@ -83,7 +83,7 @@ func CreateRenderedSpec(appID string, sequence int64, kotsKinds *kotsutil.KotsKi
 
 	templatedSpec := b.Bytes()
 
-	renderedSpec, err := helper.RenderAppFile(app, &sequence, templatedSpec, kotsKinds)
+	renderedSpec, err := helper.RenderAppFile(app, &sequence, templatedSpec, kotsKinds, os.Getenv("POD_NAMESPACE"))
 	if err != nil {
 		return nil, errors.Wrap(err, "failed render support bundle spec")
 	}

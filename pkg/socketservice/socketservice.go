@@ -228,7 +228,7 @@ func deployVersionForApp(clusterSocket *ClusterSocket, a *apptypes.App, deployed
 		return errors.Wrap(err, "failed to get registry settings for app")
 	}
 
-	builder, err := render.NewBuilder(kotsKinds, registrySettings, a.Slug, deployedVersion.Sequence, a.IsAirgap)
+	builder, err := render.NewBuilder(kotsKinds, registrySettings, a.Slug, deployedVersion.Sequence, a.IsAirgap, os.Getenv("POD_NAMESPACE"))
 	if err != nil {
 		return errors.Wrap(err, "failed to get template builder")
 	}
