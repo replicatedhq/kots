@@ -15,6 +15,7 @@ func init() {
 	atom.SetLevel(zapcore.InfoLevel)
 
 	encoderCfg := zap.NewProductionEncoderConfig()
+	encoderCfg.EncodeTime = zapcore.RFC3339TimeEncoder
 
 	l := zap.New(zapcore.NewCore(
 		zapcore.NewJSONEncoder(encoderCfg),
