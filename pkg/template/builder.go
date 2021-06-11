@@ -38,19 +38,18 @@ type BuilderOptions struct {
 func NewBuilder(opts BuilderOptions) (Builder, map[string]ItemValue, error) {
 	b := Builder{}
 
+	// do not fail on being unable to get dockerhub credentials, since they're just used to increase the rate limit
 	dockerHubRegistry := registry.RegistryOptions{}
 	if opts.Namespace != "" {
 		clientset, err := k8sutil.GetClientset()
-		if err != nil {
-			return Builder{}, nil, errors.Wrap(err, "failed to get clientset")
-		}
-		dockerHubRegistryCreds, err := registry.GetDockerHubCredentials(clientset, opts.Namespace)
-		if err != nil {
-			return Builder{}, nil, errors.Wrap(err, "failed to get dockerhub registry details")
-		}
-		dockerHubRegistry = registry.RegistryOptions{
-			Username: dockerHubRegistryCreds.Username,
-			Password: dockerHubRegistryCreds.Password,
+		if err == nil {
+			dockerHubRegistryCreds, err := registry.GetDockerHubCredentials(clientset, opts.Namespace)
+			if err == nil {
+				dockerHubRegistry = registry.RegistryOptions{
+					Username: dockerHubRegistryCreds.Username,
+					Password: dockerHubRegistryCreds.Password,
+				}
+			}
 		}
 	}
 
