@@ -103,7 +103,7 @@ spec:
   groups:
   - description: Configuration to serve as an example for creating your own
     items:
-    - default: ""
+    - default: "abc123"
       name: a_string
       title: a string field
       type: text
@@ -229,7 +229,7 @@ spec:
       title: xyz789
       type: text
       value: "xyz789"
-    - default: ""
+    - default: "val1"
       name: other
       title: other
       type: text
