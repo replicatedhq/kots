@@ -492,4 +492,22 @@ Kustomize Resources
 1. [Generic Generator Discussion](https://github.com/kubernetes-sigs/kustomize/issues/126)
 1. [JSON Path Example](https://github.com/yubessy/example-kustomize-cronjob-multiple-schedule)
 
+# Addendum: Proposal to expose File Names of `file` Type Config Items
+
+Discussions with vendors revealed that when uploading many files, there are use cases where the filenames need to be preserved, such as with an overlay configuration file that needs to be applied to a base. Right now the KOTS [`file` Config Item](https://kots.io/reference/v1beta1/config/#file) does not save this information anywhere. To support this use case the following feature request is also proposed.
+
+# Goals
+
+1. When customers upload a file, the vendor can access both the file contents and the original file name.
+
+# Technical Implentation
+
+A field `Filename` will be added to the `ConfigItem` struct in the [Config Spec](https://github.com/replicatedhq/kots/blob/90e777fdf250542b592d4401e5b06705b7830d5f/kotskinds/apis/kots/v1beta1/config_types.go#L33-L57) and the `ConfigValue` struct in the [ConfigValues Spec](https://github.com/replicatedhq/kots/blob/d2ec7fee11eaa73e8182a2363226535618716253/kotskinds/apis/kots/v1beta1/configvalues_types.go#L23-L29).
+
+To expose this information, there will be a new ConfigContext Template function `ConfigOptionFilename <item name>`.
+
+# Testing
+
+We can add an optional field to the QAKots application for a file and test that the name can be used to mount a configMap/secret with the content in that filename.
+
 (Thanks to vmware-tanzu/velero for this design template)
