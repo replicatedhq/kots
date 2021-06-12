@@ -43,12 +43,10 @@ func NewBuilder(opts BuilderOptions) (Builder, map[string]ItemValue, error) {
 	if opts.Namespace != "" {
 		clientset, err := k8sutil.GetClientset()
 		if err == nil {
-			dockerHubRegistryCreds, err := registry.GetDockerHubCredentials(clientset, opts.Namespace)
-			if err == nil {
-				dockerHubRegistry = registry.RegistryOptions{
-					Username: dockerHubRegistryCreds.Username,
-					Password: dockerHubRegistryCreds.Password,
-				}
+			dockerHubRegistryCreds, _ := registry.GetDockerHubCredentials(clientset, opts.Namespace)
+			dockerHubRegistry = registry.RegistryOptions{
+				Username: dockerHubRegistryCreds.Username,
+				Password: dockerHubRegistryCreds.Password,
 			}
 		}
 	}

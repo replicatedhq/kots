@@ -328,10 +328,8 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 		return "", errors.Wrap(err, "failed to write base")
 	}
 
-	dockerHubRegistryCreds, err := registry.GetDockerHubCredentials(clientset, pullOptions.Namespace)
-	if err != nil {
-		return "", errors.Wrap(err, "failed to get dockerhub credentials")
-	}
+	// do not fail on being unable to get dockerhub credentials, since they're just used to increase the rate limit
+	dockerHubRegistryCreds, _ := registry.GetDockerHubCredentials(clientset, pullOptions.Namespace)
 
 	var pullSecret *corev1.Secret
 	var images []kustomizetypes.Image

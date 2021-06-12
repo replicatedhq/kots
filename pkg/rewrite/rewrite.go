@@ -184,10 +184,8 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 		return errors.Wrap(err, "failed to load identity config")
 	}
 
-	dockerHubRegistryCreds, err := registry.GetDockerHubCredentials(clientset, rewriteOptions.K8sNamespace)
-	if err != nil {
-		return errors.Wrap(err, "failed to get dockerhub credentials")
-	}
+	// do not fail on being unable to get dockerhub credentials, since they're just used to increase the rate limit
+	dockerHubRegistryCreds, _ := registry.GetDockerHubCredentials(clientset, rewriteOptions.K8sNamespace)
 
 	// TODO (ethan): rewrite dex image?
 
