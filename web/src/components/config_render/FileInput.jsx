@@ -9,9 +9,7 @@ export default class FileInput extends React.Component {
     super(props);
     this.state = {
       errText: "",
-      fileAdded: false,
-      fileName: "",
-      fileNames: []
+      fileAdded: false
     }
   }
 
@@ -42,11 +40,6 @@ export default class FileInput extends React.Component {
           error = "Invalid file data";
         } else {
           files.push({ value: file.name, data: vals[1] });
-          if (this.props.multiple) {
-            this.setState({ fileNames: files.map(file => file.value) })
-          } else {
-            this.setState({ fileName: files[0].value })
-          }
         }
         done();
       };
@@ -79,7 +72,7 @@ export default class FileInput extends React.Component {
               />
               <label htmlFor={`${this.props.name} selector`} className="u-position--relative">
                 <span className={`icon ${this.state.fileAdded || this.props.value ? "u-smallCheckGreen" : "u-ovalIcon clickable"} u-marginRight--10 u-top--3`}></span>
-                {this.state.fileAdded || this.props.value ? this.props.multiple ? this.state.fileNames.join(",") : this.state.fileName : `Browse files for ${this.props.title}`}
+                {this.state.fileAdded || this.props.value ? this.props.filenamesText : `Browse files for ${this.props.title}`}
                 {this.state.fileAdded || this.props.value ? 
                   <p className="u-linkColor u-textDecoration--underlineOnHover u-fontSize--small u-marginLeft--30 u-marginTop--5">Select a different file</p>
                 : null }

@@ -19,8 +19,9 @@ func NewConfigContextTemplateBuidler(u *upstreamtypes.Upstream, renderOptions *R
 		ctx := map[string]template.ItemValue{}
 		for k, v := range configValues.Spec.Values {
 			ctx[k] = template.ItemValue{
-				Value:   v.Value,
-				Default: v.Default,
+				Value:    v.Value,
+				Default:  v.Default,
+				Filename: v.Filename,
 			}
 		}
 		templateContext = ctx

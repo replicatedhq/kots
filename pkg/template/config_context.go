@@ -28,8 +28,9 @@ type LocalRegistry struct {
 }
 
 type ItemValue struct {
-	Value   interface{}
-	Default interface{}
+	Value    interface{}
+	Default  interface{}
+	Filename string
 }
 
 func (i ItemValue) HasValue() bool {
@@ -141,9 +142,11 @@ func (b *Builder) newConfigContext(configGroups []kotsv1beta1.ConfigGroup, exist
 
 			// build "value"
 			builtValue, _ := builder.String(configItem.Value.String())
+			buildFilename, _ := builder.String(configItem.Filename)
 			itemValue := ItemValue{
-				Value:   builtValue,
-				Default: builtDefault,
+				Value:    builtValue,
+				Default:  builtDefault,
+				Filename: buildFilename,
 			}
 
 			configCtx.ItemValues[configItem.Name] = itemValue
@@ -167,6 +170,7 @@ func (ctx ConfigCtx) FuncMap() template.FuncMap {
 		"ConfigOption":                 ctx.configOption,
 		"ConfigOptionIndex":            ctx.configOptionIndex,
 		"ConfigOptionData":             ctx.configOptionData,
+		"ConfigOptionFilename":         ctx.configOptionFilename,
 		"ConfigOptionEquals":           ctx.configOptionEquals,
 		"ConfigOptionNotEquals":        ctx.configOptionNotEquals,
 		"LocalRegistryAddress":         ctx.localRegistryAddress,
@@ -226,6 +230,15 @@ func (ctx ConfigCtx) configOptionData(name string) string {
 	}
 
 	return string(decoded)
+}
+
+func (ctx ConfigCtx) configOptionFilename(itemName string) string {
+	val, ok := ctx.ItemValues[itemName]
+	if !ok {
+		return ""
+	}
+
+	return val.Filename
 }
 
 func (ctx ConfigCtx) configOptionEquals(name string, value string) bool {

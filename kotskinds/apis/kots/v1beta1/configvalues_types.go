@@ -26,6 +26,7 @@ type ConfigValue struct {
 	Data           string `json:"data,omitempty"`
 	ValuePlaintext string `json:"valuePlaintext,omitempty"`
 	DataPlaintext  string `json:"dataPlaintext,omitempty"`
+	Filename       string `json:"filename,omitempty"`
 }
 
 // ConfigValuesSpec defines the desired state of ConfigValue

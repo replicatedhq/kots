@@ -50,6 +50,7 @@ type ConfigItem struct {
 	Affix       string                 `json:"affix,omitempty"`
 	Required    bool                   `json:"required,omitempty"`
 	Items       []ConfigChildItem      `json:"items,omitempty"`
+	Filename    string                 `json:"filename,omitempty"`
 	// Props       map[string]interface{} `json:"props,omitempty"`
 	// DefaultCmd  *ConfigItemCmd         `json:"default_cmd,omitempty"`
 	// ValueCmd    *ConfigItemCmd         `json:"value_cmd,omitempty"`

@@ -194,6 +194,9 @@ func (h *Handler) LiveAppConfig(w http.ResponseWriter, r *http.Request) {
 			} else {
 				generatedValue.Default = item.Default.BoolVal
 			}
+			if item.Type == "file" {
+				generatedValue.Filename = item.Data
+			}
 			configValues[item.Name] = generatedValue
 		}
 	}
@@ -285,8 +288,9 @@ func (h *Handler) CurrentAppConfig(w http.ResponseWriter, r *http.Request) {
 
 	for key, value := range kotsKinds.ConfigValues.Spec.Values {
 		generatedValue := template.ItemValue{
-			Default: value.Default,
-			Value:   value.Value,
+			Default:  value.Default,
+			Value:    value.Value,
+			Filename: value.Filename,
 		}
 		configValues[key] = generatedValue
 	}
@@ -425,6 +429,11 @@ func updateAppConfig(updateApp *apptypes.App, sequence int64, configGroups []kot
 	values := kotsKinds.ConfigValues.Spec.Values
 	for _, group := range configGroups {
 		for _, item := range group.Items {
+			if item.Type == "file" {
+				v := values[item.Name]
+				v.Filename = item.Filename
+				values[item.Name] = v
+			}
 			if item.Value.Type == multitype.Bool {
 				updatedValue := item.Value.BoolVal
 				v := values[item.Name]
