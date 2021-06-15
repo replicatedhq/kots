@@ -225,7 +225,7 @@ func Test_splitHelmFiles(t *testing.T) {
 		args          args
 		wantRest      []BaseFile
 		wantCrds      []BaseFile
-		wantSubCharts map[string][]BaseFile
+		wantSubCharts []subChartBase
 	}{
 		{
 			name: "basic",
@@ -246,15 +246,21 @@ func Test_splitHelmFiles(t *testing.T) {
 			wantCrds: []BaseFile{
 				{Path: "crd-1.yaml", Content: []byte("file: 2")},
 			},
-			wantSubCharts: map[string][]BaseFile{
-				"my-subchart-1": {
-					{Path: "templates/deploy-2.yaml", Content: []byte("file: 3")},
+			wantSubCharts: []subChartBase{
+				{
+					Name: "my-subchart-1",
+					BaseFiles: []BaseFile{
+						{Path: "templates/deploy-2.yaml", Content: []byte("file: 3")},
+					},
 				},
-				"my-subchart-2": {
-					{Path: "templates/deploy-3.yaml", Content: []byte("file: 4")},
-					{Path: "templates/deploy-4.yaml", Content: []byte("file: 5")},
-					{Path: "crds/crd-2.yaml", Content: []byte("file: 6")},
-					{Path: "charts/my-sub-subchart-1/templates/deploy-5.yaml", Content: []byte("file: 7")},
+				{
+					Name: "my-subchart-2",
+					BaseFiles: []BaseFile{
+						{Path: "templates/deploy-3.yaml", Content: []byte("file: 4")},
+						{Path: "templates/deploy-4.yaml", Content: []byte("file: 5")},
+						{Path: "crds/crd-2.yaml", Content: []byte("file: 6")},
+						{Path: "charts/my-sub-subchart-1/templates/deploy-5.yaml", Content: []byte("file: 7")},
+					},
 				},
 			},
 		},

@@ -112,10 +112,10 @@ func writeHelmBase(chartName string, baseFiles []BaseFile, renderOptions *Render
 		base.Bases = append(base.Bases, crdsBase)
 	}
 
-	for subChartName, subChart := range subCharts {
-		subChartBase, err := writeHelmBase(subChartName, subChart, renderOptions)
+	for _, subChart := range subCharts {
+		subChartBase, err := writeHelmBase(subChart.Name, subChart.BaseFiles, renderOptions)
 		if err != nil {
-			return nil, errors.Wrapf(err, "failed to write helm sub chart %s base", subChartName)
+			return nil, errors.Wrapf(err, "failed to write helm sub chart %s base", subChart.Name)
 		}
 		base.Bases = append(base.Bases, *subChartBase)
 	}
@@ -123,13 +123,24 @@ func writeHelmBase(chartName string, baseFiles []BaseFile, renderOptions *Render
 	return base, nil
 }
 
-func splitHelmFiles(baseFiles []BaseFile) (rest []BaseFile, crds []BaseFile, subCharts map[string][]BaseFile) {
-	subCharts = map[string][]BaseFile{}
+type subChartBase struct {
+	Name      string
+	BaseFiles []BaseFile
+}
+
+func splitHelmFiles(baseFiles []BaseFile) (rest []BaseFile, crds []BaseFile, subCharts []subChartBase) {
+	subChartsIndex := map[string]int{}
 	for _, baseFile := range baseFiles {
 		dirPrefix := strings.SplitN(baseFile.Path, string(os.PathSeparator), 3)
 		if dirPrefix[0] == "charts" && len(dirPrefix) == 3 {
 			subChartName := dirPrefix[1]
-			subCharts[subChartName] = append(subCharts[subChartName], BaseFile{
+			index, ok := subChartsIndex[subChartName]
+			if !ok {
+				index = len(subCharts)
+				subCharts = append(subCharts, subChartBase{Name: subChartName})
+				subChartsIndex[subChartName] = index
+			}
+			subCharts[index].BaseFiles = append(subCharts[index].BaseFiles, BaseFile{
 				Path:    path.Join(dirPrefix[2:]...),
 				Content: baseFile.Content,
 			})
