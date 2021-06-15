@@ -10,15 +10,12 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/aws/aws-sdk-go/aws"
-	awssession "github.com/aws/aws-sdk-go/aws/session"
-	"github.com/aws/aws-sdk-go/service/s3"
-	"github.com/aws/aws-sdk-go/service/s3/s3manager"
 	"github.com/mholt/archiver"
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	versiontypes "github.com/replicatedhq/kots/pkg/api/version/types"
 	apptypes "github.com/replicatedhq/kots/pkg/app/types"
+	"github.com/replicatedhq/kots/pkg/filestore"
 	gitopstypes "github.com/replicatedhq/kots/pkg/gitops/types"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	kotsadmobjects "github.com/replicatedhq/kots/pkg/kotsadm/objects"
@@ -27,7 +24,6 @@ import (
 	"github.com/replicatedhq/kots/pkg/kustomize"
 	"github.com/replicatedhq/kots/pkg/persistence"
 	rendertypes "github.com/replicatedhq/kots/pkg/render/types"
-	kotss3 "github.com/replicatedhq/kots/pkg/s3"
 	"github.com/replicatedhq/kots/pkg/secrets"
 	"github.com/replicatedhq/kots/pkg/store/types"
 	velerov1 "github.com/vmware-tanzu/velero/pkg/apis/velero/v1"
@@ -208,77 +204,44 @@ func (s *KOTSStore) CreateAppVersionArchive(appID string, sequence int64, archiv
 		return errors.Wrap(err, "failed to create archive")
 	}
 
-	storageBaseURI := os.Getenv("STORAGE_BASEURI")
-	if storageBaseURI == "" {
-		storageBaseURI = fmt.Sprintf("s3://%s/%s", os.Getenv("S3_ENDPOINT"), os.Getenv("S3_BUCKET_NAME"))
-	}
-
-	bucket := aws.String(os.Getenv("S3_BUCKET_NAME"))
-	key := aws.String(fmt.Sprintf("%s/%d.tar.gz", appID, sequence))
-
-	newSession := awssession.New(kotss3.GetConfig())
-
-	s3Client := s3.New(newSession)
+	bucket := os.Getenv("S3_BUCKET_NAME")
+	key := fmt.Sprintf("%s/%d.tar.gz", appID, sequence)
 
 	f, err := os.Open(fileToUpload)
 	if err != nil {
 		return errors.Wrap(err, "failed to open archive file")
 	}
 
-	_, err = s3Client.PutObject(&s3.PutObjectInput{
-		Body:   f,
-		Bucket: bucket,
-		Key:    key,
-	})
+	err = filestore.GetStore().PutObject(bucket, key, f)
 	if err != nil {
-		return errors.Wrap(err, "failed to upload to s3")
+		return errors.Wrap(err, "failed to put object")
 	}
 
 	return nil
 }
 
-// GetAppVersionArchive will fetch the archive and return a string that contains a
-// directory name where it's extracted into
+// GetAppVersionArchive will fetch the archive and extract it into the given dstPath directory name
 func (s *KOTSStore) GetAppVersionArchive(appID string, sequence int64, dstPath string) error {
 	// too noisy
 	// logger.Debug("getting app version archive",
 	// 	zap.String("appID", appID),
 	// 	zap.Int64("sequence", sequence))
 
-	storageBaseURI := os.Getenv("STORAGE_BASEURI")
-	if storageBaseURI == "" {
-		storageBaseURI = fmt.Sprintf("s3://%s/%s", os.Getenv("S3_ENDPOINT"), os.Getenv("S3_BUCKET_NAME"))
-	}
+	bucket := os.Getenv("S3_BUCKET_NAME")
+	key := fmt.Sprintf("%s/%d.tar.gz", appID, sequence)
 
-	// Get the archive from object store
-	newSession := awssession.New(kotss3.GetConfig())
-
-	bucket := aws.String(os.Getenv("S3_BUCKET_NAME"))
-	key := aws.String(fmt.Sprintf("%s/%d.tar.gz", appID, sequence))
-
-	tmpFile, err := ioutil.TempFile("", "kotsadm")
+	bundlePath, err := filestore.GetStore().GetObject(bucket, key)
 	if err != nil {
-		return errors.Wrap(err, "failed to create temp file")
+		return errors.Wrap(err, "failed to get object")
 	}
-	defer tmpFile.Close()
-	defer os.RemoveAll(tmpFile.Name())
-
-	downloader := s3manager.NewDownloader(newSession)
-	_, err = downloader.Download(tmpFile,
-		&s3.GetObjectInput{
-			Bucket: bucket,
-			Key:    key,
-		})
-	if err != nil {
-		return errors.Wrapf(err, "failed to download app version archive %q from bucket %q", *key, *bucket)
-	}
+	defer os.RemoveAll(bundlePath)
 
 	tarGz := archiver.TarGz{
 		Tar: &archiver.Tar{
 			ImplicitTopLevelFolder: false,
 		},
 	}
-	if err := tarGz.Unarchive(tmpFile.Name(), dstPath); err != nil {
+	if err := tarGz.Unarchive(bundlePath, dstPath); err != nil {
 		return errors.Wrap(err, "failed to unarchive")
 	}
 
