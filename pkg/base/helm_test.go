@@ -288,3 +288,48 @@ func fmtJSONDiff(got, want interface{}) string {
 	diffStr, _ := difflib.GetUnifiedDiffString(diff)
 	return fmt.Sprintf("got:\n%s \n\nwant:\n%s \n\ndiff:\n%s", got, want, diffStr)
 }
+
+func Test_removeCommonPrefix(t *testing.T) {
+	type args struct {
+		baseFiles []BaseFile
+	}
+	tests := []struct {
+		name string
+		args args
+		want []BaseFile
+	}{
+		{
+			name: "basic",
+			args: args{
+				baseFiles: []BaseFile{
+					{Path: "a/b/c/d"},
+					{Path: "a/b/c/e"},
+					{Path: "a/b/d/e"},
+				},
+			},
+			want: []BaseFile{
+				{Path: "c/d"},
+				{Path: "c/e"},
+				{Path: "d/e"},
+			},
+		},
+		{
+			name: "one file",
+			args: args{
+				baseFiles: []BaseFile{
+					{Path: "a/b/c"},
+				},
+			},
+			want: []BaseFile{
+				{Path: "c"},
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := removeCommonPrefix(tt.args.baseFiles); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("removeCommonPrefix() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
