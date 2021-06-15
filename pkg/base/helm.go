@@ -73,81 +73,143 @@ func RenderHelm(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (*Base,
 		return nil, errors.Errorf("unknown helmVersion %s", renderOptions.HelmVersion)
 	}
 
+	base, err := writeHelmBase(u.Name, rendered, renderOptions)
+	if err != nil {
+		return nil, errors.Wrapf(err, "write helm chart %s base", u.Name)
+	}
+
+	base.Path = "" // this will be added back later by renderReplicated
+	return base, nil
+}
+
+func writeHelmBase(chartName string, fileMap map[string]string, renderOptions *RenderOptions) (*Base, error) {
+	rest, crds, subCharts := splitHelmFiles(removeCommonPrefix(fileMap))
+
+	base := &Base{
+		Path: path.Join("charts", chartName),
+	}
+	for k, v := range rest {
+		fileBaseFiles, err := writeHelmBaseFile(k, v, renderOptions)
+		if err != nil {
+			return nil, errors.Wrapf(err, "write helm base file %s", k)
+		}
+		base.Files = append(base.Files, fileBaseFiles...)
+	}
+
+	if len(crds) > 0 {
+		crdsBase := Base{
+			Path: "crds",
+		}
+		for k, v := range crds {
+			fileBaseFiles, err := writeHelmBaseFile(k, v, renderOptions)
+			if err != nil {
+				return nil, errors.Wrapf(err, "write crds helm base file %s", k)
+			}
+			crdsBase.Files = append(crdsBase.Files, fileBaseFiles...)
+		}
+		base.Bases = append(base.Bases, crdsBase)
+	}
+
+	for subChartName, subChart := range subCharts {
+		subChartBase, err := writeHelmBase(subChartName, subChart, renderOptions)
+		if err != nil {
+			return nil, errors.Wrapf(err, "failed to write helm sub chart %s base", subChartName)
+		}
+		base.Bases = append(base.Bases, *subChartBase)
+	}
+
+	return base, nil
+}
+
+func splitHelmFiles(files map[string]string) (rest map[string]string, crds map[string]string, subCharts map[string]map[string]string) {
+	subCharts = map[string]map[string]string{}
+	crds = map[string]string{}
+	rest = map[string]string{}
+	for k, v := range files {
+		dirPrefix := strings.SplitN(k, string(os.PathSeparator), 3)
+		if dirPrefix[0] == "charts" && len(dirPrefix) == 3 {
+			subChartName := dirPrefix[1]
+			if subCharts[subChartName] == nil {
+				subCharts[subChartName] = map[string]string{}
+			}
+			k = path.Join(dirPrefix[2:]...)
+			subCharts[subChartName][k] = v
+		} else if dirPrefix[0] == "crds" {
+			k = path.Join(dirPrefix[1:]...)
+			crds[k] = v
+		} else {
+			rest[k] = v
+		}
+	}
+	return
+}
+
+func writeHelmBaseFile(name, content string, renderOptions *RenderOptions) ([]BaseFile, error) {
+	fileStrings := []string{}
+	if renderOptions.SplitMultiDocYAML {
+		fileStrings = strings.Split(content, "\n---\n")
+	} else {
+		fileStrings = append(fileStrings, content)
+	}
+
 	baseFiles := []BaseFile{}
-	for k, v := range rendered {
-		if !renderOptions.SplitMultiDocYAML {
-			baseFile := BaseFile{
-				Path:    k,
-				Content: []byte(v),
-			}
-			if err := baseFile.transpileHelmHooksToKotsHooks(); err != nil {
-				return nil, errors.Wrap(err, "failed to transpile helm hooks to kots hooks")
-			}
 
-			baseFiles = append(baseFiles, baseFile)
-			continue
+	for idx, fileString := range fileStrings {
+		filename := name
+		if len(fileStrings) > 1 {
+			filename = strings.TrimSuffix(name, filepath.Ext(name))
+			filename = fmt.Sprintf("%s-%d%s", filename, idx+1, filepath.Ext(name))
 		}
 
-		fileStrings := strings.Split(v, "\n---\n")
-		if len(fileStrings) == 1 {
-			baseFile := BaseFile{
-				Path:    k,
-				Content: []byte(v),
-			}
-			if err := baseFile.transpileHelmHooksToKotsHooks(); err != nil {
-				return nil, errors.Wrap(err, "failed to transpile helm hooks to kots hooks")
-			}
-
-			baseFiles = append(baseFiles, baseFile)
-			continue
+		baseFile := BaseFile{
+			Path:    filename,
+			Content: []byte(fileString),
+		}
+		if err := baseFile.transpileHelmHooksToKotsHooks(); err != nil {
+			return nil, errors.Wrap(err, "failed to transpile helm hooks to kots hooks")
 		}
 
-		for idx, fileString := range fileStrings {
-			filename := strings.TrimSuffix(k, filepath.Ext(k))
-			filename = fmt.Sprintf("%s-%d%s", filename, idx+1, filepath.Ext(k))
-
-			baseFile := BaseFile{
-				Path:    filename,
-				Content: []byte(fileString),
-			}
-			if err := baseFile.transpileHelmHooksToKotsHooks(); err != nil {
-				return nil, errors.Wrap(err, "failed to transpile helm hooks to kots hooks")
-			}
-
-			baseFiles = append(baseFiles, baseFile)
-		}
+		baseFiles = append(baseFiles, baseFile)
 	}
 
-	// remove any common prefix from all files
-	if len(baseFiles) > 0 {
-		firstFileDir, _ := path.Split(baseFiles[0].Path)
-		commonPrefix := strings.Split(firstFileDir, string(os.PathSeparator))
+	return baseFiles, nil
+}
 
-		for _, file := range baseFiles {
-			d, _ := path.Split(file.Path)
-			dirs := strings.Split(d, string(os.PathSeparator))
-
-			commonPrefix = util.CommonSlicePrefix(commonPrefix, dirs)
-		}
-
-		cleanedBaseFiles := []BaseFile{}
-		for _, file := range baseFiles {
-			d, f := path.Split(file.Path)
-			d2 := strings.Split(d, string(os.PathSeparator))
-
-			cleanedBaseFile := file
-			d2 = d2[len(commonPrefix):]
-			cleanedBaseFile.Path = path.Join(path.Join(d2...), f)
-
-			cleanedBaseFiles = append(cleanedBaseFiles, cleanedBaseFile)
-		}
-
-		baseFiles = cleanedBaseFiles
+// removeCommonPrefix will remove any common prefix from all files
+func removeCommonPrefix(fileMap map[string]string) map[string]string {
+	if len(fileMap) == 0 {
+		return fileMap
 	}
 
-	return &Base{
-		Files: baseFiles,
-	}, nil
+	commonPrefix := []string{}
+
+	first := true
+	for filepath := range fileMap {
+		if first {
+			firstFileDir, _ := path.Split(filepath)
+			commonPrefix = strings.Split(firstFileDir, string(os.PathSeparator))
+
+			first = false
+			continue
+		}
+		d, _ := path.Split(filepath)
+		dirs := strings.Split(d, string(os.PathSeparator))
+
+		commonPrefix = util.CommonSlicePrefix(commonPrefix, dirs)
+	}
+
+	cleanedFileMap := map[string]string{}
+	for filepath, content := range fileMap {
+		d, f := path.Split(filepath)
+		d2 := strings.Split(d, string(os.PathSeparator))
+
+		d2 = d2[len(commonPrefix):]
+		filepath = path.Join(path.Join(d2...), f)
+
+		cleanedFileMap[filepath] = content
+	}
+
+	return cleanedFileMap
 }
 
 func checkChartForVersion(file *upstreamtypes.UpstreamFile) (string, error) {

@@ -610,7 +610,7 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 
 		writeDownstreamOptions := downstream.WriteOptions{
 			DownstreamDir: filepath.Join(b.GetOverlaysDir(writeBaseOptions), "downstreams", downstreamName),
-			MidstreamDir:  writeMidstreamOptions.MidstreamDir,
+			MidstreamDir:  filepath.Join(b.GetOverlaysDir(writeBaseOptions), "midstream"),
 		}
 
 		if err := d.WriteDownstream(writeDownstreamOptions); err != nil {
