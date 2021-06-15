@@ -99,7 +99,8 @@ func TestBuilder_NewConfigContext(t *testing.T) {
 			want: &ConfigCtx{
 				ItemValues: map[string]ItemValue{
 					"abcItem": {
-						Value: "replacedAbcItemValue",
+						Default: "abcItemDefault",
+						Value:   "replacedAbcItemValue",
 					},
 				},
 			},
@@ -166,7 +167,8 @@ func TestBuilder_NewConfigContext(t *testing.T) {
 			want: &ConfigCtx{
 				ItemValues: map[string]ItemValue{
 					"abcItem": {
-						Value: "replacedAbcItemValue",
+						Value:   "replacedAbcItemValue",
+						Default: "abcItemDefault",
 					},
 					"childItem1": {
 						Value:   "",
@@ -254,7 +256,8 @@ func TestBuilder_NewConfigContext(t *testing.T) {
 			want: &ConfigCtx{
 				ItemValues: map[string]ItemValue{
 					"abcItem": {
-						Value: "no func",
+						Value:   "no func",
+						Default: "HELLO, WORLD",
 					},
 					"childItem": {
 						Default: "the default value",
@@ -265,7 +268,8 @@ func TestBuilder_NewConfigContext(t *testing.T) {
 						Default: "chained value: hello world no func",
 					},
 					"overwrittenChild": {
-						Value: "overwritten default",
+						Value:   "overwritten default",
+						Default: "",
 					},
 				},
 			},
