@@ -2,6 +2,7 @@ package base
 
 import (
 	"encoding/json"
+	"fmt"
 	"reflect"
 	"testing"
 
@@ -209,18 +210,81 @@ func Test_writeHelmBase(t *testing.T) {
 				return
 			}
 			if !reflect.DeepEqual(got, tt.want) {
-				a, _ := json.MarshalIndent(got, "", "  ")
-				b, _ := json.MarshalIndent(tt.want, "", "  ")
-				diff := difflib.UnifiedDiff{
-					A:        difflib.SplitLines(string(a)),
-					B:        difflib.SplitLines(string(b)),
-					FromFile: "Got",
-					ToFile:   "Want",
-					Context:  1,
-				}
-				diffStr, _ := difflib.GetUnifiedDiffString(diff)
-				t.Errorf("writeHelmBase() got:\n%s \n\n want:\n%s \n\n diff:\n%s", got, tt.want, diffStr)
+				t.Errorf("writeHelmBase() \n\n%s", fmtJSONDiff(got, tt.want))
 			}
 		})
 	}
+}
+
+func Test_splitHelmFiles(t *testing.T) {
+	type args struct {
+		baseFiles []BaseFile
+	}
+	tests := []struct {
+		name          string
+		args          args
+		wantRest      []BaseFile
+		wantCrds      []BaseFile
+		wantSubCharts map[string][]BaseFile
+	}{
+		{
+			name: "basic",
+			args: args{
+				baseFiles: []BaseFile{
+					{Path: "templates/deploy-1.yaml", Content: []byte("file: 1")},
+					{Path: "crds/crd-1.yaml", Content: []byte("file: 2")},
+					{Path: "charts/my-subchart-1/templates/deploy-2.yaml", Content: []byte("file: 3")},
+					{Path: "charts/my-subchart-2/templates/deploy-3.yaml", Content: []byte("file: 4")},
+					{Path: "charts/my-subchart-2/templates/deploy-4.yaml", Content: []byte("file: 5")},
+					{Path: "charts/my-subchart-2/crds/crd-2.yaml", Content: []byte("file: 6")},
+					{Path: "charts/my-subchart-2/charts/my-sub-subchart-1/templates/deploy-5.yaml", Content: []byte("file: 7")},
+				},
+			},
+			wantRest: []BaseFile{
+				{Path: "templates/deploy-1.yaml", Content: []byte("file: 1")},
+			},
+			wantCrds: []BaseFile{
+				{Path: "crd-1.yaml", Content: []byte("file: 2")},
+			},
+			wantSubCharts: map[string][]BaseFile{
+				"my-subchart-1": {
+					{Path: "templates/deploy-2.yaml", Content: []byte("file: 3")},
+				},
+				"my-subchart-2": {
+					{Path: "templates/deploy-3.yaml", Content: []byte("file: 4")},
+					{Path: "templates/deploy-4.yaml", Content: []byte("file: 5")},
+					{Path: "crds/crd-2.yaml", Content: []byte("file: 6")},
+					{Path: "charts/my-sub-subchart-1/templates/deploy-5.yaml", Content: []byte("file: 7")},
+				},
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			gotRest, gotCrds, gotSubCharts := splitHelmFiles(tt.args.baseFiles)
+			if !reflect.DeepEqual(gotRest, tt.wantRest) {
+				t.Errorf("splitHelmFiles() rest \n\n%s", fmtJSONDiff(gotRest, tt.wantRest))
+			}
+			if !reflect.DeepEqual(gotCrds, tt.wantCrds) {
+				t.Errorf("splitHelmFiles() crds \n\n%s", fmtJSONDiff(gotCrds, tt.wantCrds))
+			}
+			if !reflect.DeepEqual(gotSubCharts, tt.wantSubCharts) {
+				t.Errorf("splitHelmFiles() subCharts \n\n%s", fmtJSONDiff(gotSubCharts, tt.wantSubCharts))
+			}
+		})
+	}
+}
+
+func fmtJSONDiff(got, want interface{}) string {
+	a, _ := json.MarshalIndent(got, "", "  ")
+	b, _ := json.MarshalIndent(want, "", "  ")
+	diff := difflib.UnifiedDiff{
+		A:        difflib.SplitLines(string(a)),
+		B:        difflib.SplitLines(string(b)),
+		FromFile: "Got",
+		ToFile:   "Want",
+		Context:  1,
+	}
+	diffStr, _ := difflib.GetUnifiedDiffString(diff)
+	return fmt.Sprintf("got:\n%s \n\nwant:\n%s \n\ndiff:\n%s", got, want, diffStr)
 }
