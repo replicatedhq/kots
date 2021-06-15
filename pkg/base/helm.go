@@ -1,6 +1,7 @@
 package base
 
 import (
+	"bytes"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -57,7 +58,7 @@ func RenderHelm(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (*Base,
 		}
 	}
 
-	var rendered map[string]string
+	var rendered []BaseFile
 	switch strings.ToLower(renderOptions.HelmVersion) {
 	case "v3":
 		rendered, err = renderHelmV3(u.Name, chartPath, vals, renderOptions)
@@ -73,6 +74,7 @@ func RenderHelm(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (*Base,
 		return nil, errors.Errorf("unknown helmVersion %s", renderOptions.HelmVersion)
 	}
 
+	rendered = removeCommonPrefix(rendered)
 	base, err := writeHelmBase(u.Name, rendered, renderOptions)
 	if err != nil {
 		return nil, errors.Wrapf(err, "write helm chart %s base", u.Name)
@@ -82,16 +84,16 @@ func RenderHelm(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (*Base,
 	return base, nil
 }
 
-func writeHelmBase(chartName string, fileMap map[string]string, renderOptions *RenderOptions) (*Base, error) {
-	rest, crds, subCharts := splitHelmFiles(removeCommonPrefix(fileMap))
+func writeHelmBase(chartName string, baseFiles []BaseFile, renderOptions *RenderOptions) (*Base, error) {
+	rest, crds, subCharts := splitHelmFiles(baseFiles)
 
 	base := &Base{
 		Path: path.Join("charts", chartName),
 	}
-	for k, v := range rest {
-		fileBaseFiles, err := writeHelmBaseFile(k, v, renderOptions)
+	for _, baseFile := range rest {
+		fileBaseFiles, err := writeHelmBaseFile(baseFile, renderOptions)
 		if err != nil {
-			return nil, errors.Wrapf(err, "write helm base file %s", k)
+			return nil, errors.Wrapf(err, "write helm base file %s", baseFile.Path)
 		}
 		base.Files = append(base.Files, fileBaseFiles...)
 	}
@@ -100,10 +102,10 @@ func writeHelmBase(chartName string, fileMap map[string]string, renderOptions *R
 		crdsBase := Base{
 			Path: "crds",
 		}
-		for k, v := range crds {
-			fileBaseFiles, err := writeHelmBaseFile(k, v, renderOptions)
+		for _, baseFile := range crds {
+			fileBaseFiles, err := writeHelmBaseFile(baseFile, renderOptions)
 			if err != nil {
-				return nil, errors.Wrapf(err, "write crds helm base file %s", k)
+				return nil, errors.Wrapf(err, "write crds helm base file %s", baseFile.Path)
 			}
 			crdsBase.Files = append(crdsBase.Files, fileBaseFiles...)
 		}
@@ -121,49 +123,48 @@ func writeHelmBase(chartName string, fileMap map[string]string, renderOptions *R
 	return base, nil
 }
 
-func splitHelmFiles(files map[string]string) (rest map[string]string, crds map[string]string, subCharts map[string]map[string]string) {
-	subCharts = map[string]map[string]string{}
-	crds = map[string]string{}
-	rest = map[string]string{}
-	for k, v := range files {
-		dirPrefix := strings.SplitN(k, string(os.PathSeparator), 3)
+func splitHelmFiles(baseFiles []BaseFile) (rest []BaseFile, crds []BaseFile, subCharts map[string][]BaseFile) {
+	subCharts = map[string][]BaseFile{}
+	for _, baseFile := range baseFiles {
+		dirPrefix := strings.SplitN(baseFile.Path, string(os.PathSeparator), 3)
 		if dirPrefix[0] == "charts" && len(dirPrefix) == 3 {
 			subChartName := dirPrefix[1]
-			if subCharts[subChartName] == nil {
-				subCharts[subChartName] = map[string]string{}
-			}
-			k = path.Join(dirPrefix[2:]...)
-			subCharts[subChartName][k] = v
+			subCharts[subChartName] = append(subCharts[subChartName], BaseFile{
+				Path:    path.Join(dirPrefix[2:]...),
+				Content: baseFile.Content,
+			})
 		} else if dirPrefix[0] == "crds" {
-			k = path.Join(dirPrefix[1:]...)
-			crds[k] = v
+			crds = append(crds, BaseFile{
+				Path:    path.Join(dirPrefix[1:]...),
+				Content: baseFile.Content,
+			})
 		} else {
-			rest[k] = v
+			rest = append(rest, baseFile)
 		}
 	}
 	return
 }
 
-func writeHelmBaseFile(name, content string, renderOptions *RenderOptions) ([]BaseFile, error) {
-	fileStrings := []string{}
+func writeHelmBaseFile(baseFile BaseFile, renderOptions *RenderOptions) ([]BaseFile, error) {
+	multiDoc := [][]byte{}
 	if renderOptions.SplitMultiDocYAML {
-		fileStrings = strings.Split(content, "\n---\n")
+		multiDoc = bytes.Split(baseFile.Content, []byte("\n---\n"))
 	} else {
-		fileStrings = append(fileStrings, content)
+		multiDoc = append(multiDoc, baseFile.Content)
 	}
 
 	baseFiles := []BaseFile{}
 
-	for idx, fileString := range fileStrings {
-		filename := name
-		if len(fileStrings) > 1 {
-			filename = strings.TrimSuffix(name, filepath.Ext(name))
-			filename = fmt.Sprintf("%s-%d%s", filename, idx+1, filepath.Ext(name))
+	for idx, content := range multiDoc {
+		filename := baseFile.Path
+		if len(multiDoc) > 1 {
+			filename = strings.TrimSuffix(baseFile.Path, filepath.Ext(baseFile.Path))
+			filename = fmt.Sprintf("%s-%d%s", filename, idx+1, filepath.Ext(baseFile.Path))
 		}
 
 		baseFile := BaseFile{
 			Path:    filename,
-			Content: []byte(fileString),
+			Content: content,
 		}
 		if err := baseFile.transpileHelmHooksToKotsHooks(); err != nil {
 			return nil, errors.Wrap(err, "failed to transpile helm hooks to kots hooks")
@@ -176,40 +177,41 @@ func writeHelmBaseFile(name, content string, renderOptions *RenderOptions) ([]Ba
 }
 
 // removeCommonPrefix will remove any common prefix from all files
-func removeCommonPrefix(fileMap map[string]string) map[string]string {
-	if len(fileMap) == 0 {
-		return fileMap
+func removeCommonPrefix(baseFiles []BaseFile) []BaseFile {
+	if len(baseFiles) == 0 {
+		return baseFiles
 	}
 
 	commonPrefix := []string{}
 
 	first := true
-	for filepath := range fileMap {
+	for _, baseFile := range baseFiles {
 		if first {
-			firstFileDir, _ := path.Split(filepath)
+			firstFileDir, _ := path.Split(baseFile.Path)
 			commonPrefix = strings.Split(firstFileDir, string(os.PathSeparator))
 
 			first = false
 			continue
 		}
-		d, _ := path.Split(filepath)
+		d, _ := path.Split(baseFile.Path)
 		dirs := strings.Split(d, string(os.PathSeparator))
 
 		commonPrefix = util.CommonSlicePrefix(commonPrefix, dirs)
 	}
 
-	cleanedFileMap := map[string]string{}
-	for filepath, content := range fileMap {
-		d, f := path.Split(filepath)
+	cleanedBaseFiles := []BaseFile{}
+	for _, baseFile := range baseFiles {
+		d, f := path.Split(baseFile.Path)
 		d2 := strings.Split(d, string(os.PathSeparator))
 
 		d2 = d2[len(commonPrefix):]
-		filepath = path.Join(path.Join(d2...), f)
-
-		cleanedFileMap[filepath] = content
+		cleanedBaseFiles = append(cleanedBaseFiles, BaseFile{
+			Path:    path.Join(path.Join(d2...), f),
+			Content: baseFile.Content,
+		})
 	}
 
-	return cleanedFileMap
+	return cleanedBaseFiles
 }
 
 func checkChartForVersion(file *upstreamtypes.UpstreamFile) (string, error) {
