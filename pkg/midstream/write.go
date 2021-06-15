@@ -108,14 +108,11 @@ func (m *Midstream) mergeKustomization(options WriteOptions, existing *kustomize
 	}
 
 	existing.PatchesStrategicMerge = removeFromPatches(existing.PatchesStrategicMerge, patchesFilename)
-	newPatches := findNewPatches(m.Kustomization.PatchesStrategicMerge, existing.PatchesStrategicMerge)
-	m.Kustomization.PatchesStrategicMerge = append(existing.PatchesStrategicMerge, newPatches...)
+	m.Kustomization.PatchesStrategicMerge = uniquePatches(existing.PatchesStrategicMerge, m.Kustomization.PatchesStrategicMerge)
 
-	newResources := findNewStrings(m.Kustomization.Resources, existing.Resources)
-	m.Kustomization.Resources = append(existing.Resources, newResources...)
+	m.Kustomization.Resources = uniqueStrings(existing.Resources, m.Kustomization.Resources)
 
-	newTransformers := findNewStrings(m.Kustomization.Transformers, existing.Transformers)
-	m.Kustomization.Transformers = append(existing.Transformers, newTransformers...)
+	m.Kustomization.Transformers = uniqueStrings(existing.Transformers, m.Kustomization.Transformers)
 
 	// annotations
 	if existing.CommonAnnotations == nil {
