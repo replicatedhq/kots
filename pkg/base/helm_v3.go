@@ -85,8 +85,8 @@ func mergeBaseFiles(baseFiles []BaseFile) []BaseFile {
 			merged[index].Content = append(merged[index].Content, []byte("\n---\n")...)
 			merged[index].Content = append(merged[index].Content, baseFile.Content...)
 		} else {
+			found[baseFile.Path] = len(merged)
 			merged = append(merged, baseFile)
-			found[baseFile.Path] = len(merged) - 1
 		}
 	}
 	return merged
