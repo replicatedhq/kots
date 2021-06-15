@@ -6,7 +6,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func Test_findNewStrings(t *testing.T) {
+func Test_uniqueStrings(t *testing.T) {
 	tests := []struct {
 		existingList []string
 		newList      []string
@@ -20,17 +20,17 @@ func Test_findNewStrings(t *testing.T) {
 		{
 			existingList: []string{"abc", "xyz"},
 			newList:      []string{},
-			expected:     []string{},
+			expected:     []string{"abc", "xyz"},
 		},
 		{
 			existingList: []string{"abc", "xyz", "ghi"},
 			newList:      []string{"abc", "def", "xyz"},
-			expected:     []string{"def"},
+			expected:     []string{"abc", "xyz", "ghi", "def"},
 		},
 	}
 
 	for _, test := range tests {
-		diff := findNewStrings(test.newList, test.existingList)
-		assert.Equal(t, test.expected, diff)
+		uniq := uniqueStrings(test.existingList, test.newList)
+		assert.Equal(t, test.expected, uniq)
 	}
 }

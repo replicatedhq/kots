@@ -87,8 +87,14 @@ func (b *Base) WriteBase(options WriteOptions) error {
 		if base.Path == "" {
 			return errors.New("kustomize sub-base path cannot be empty")
 		}
+		options := WriteOptions{
+			BaseDir:          filepath.Join(options.BaseDir, b.Path),
+			SkippedDir:       options.SkippedDir,
+			Overwrite:        options.Overwrite,
+			ExcludeKotsKinds: options.ExcludeKotsKinds,
+		}
 		if err := base.WriteBase(options); err != nil {
-			return errors.Wrapf(err, "failed to render base %q", base.Path)
+			return errors.Wrapf(err, "failed to render base %s", base.Path)
 		}
 		kustomizeBases = append(kustomizeBases, base.Path)
 	}
@@ -200,10 +206,6 @@ func deduplicateOnContent(files []BaseFile, excludeKotsKinds bool, baseNS string
 			}
 		}
 
-		if !writeToKustomization {
-			continue
-		}
-
 		if writeToKustomization {
 			thisGVKName := GetGVKWithNameAndNs(file.Content, baseNS)
 			found := foundGVKNamesMap[thisGVKName]
@@ -215,7 +217,6 @@ func deduplicateOnContent(files []BaseFile, excludeKotsKinds bool, baseNS string
 				patches = append(patches, file)
 			}
 		}
-
 	}
 
 	return resources, patches, nil

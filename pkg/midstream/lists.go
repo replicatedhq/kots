@@ -4,36 +4,32 @@ import (
 	kustomizetypes "sigs.k8s.io/kustomize/api/types"
 )
 
-func findNewPatches(new []kustomizetypes.PatchStrategicMerge, existing []kustomizetypes.PatchStrategicMerge) []kustomizetypes.PatchStrategicMerge {
+func uniquePatches(existing ...[]kustomizetypes.PatchStrategicMerge) []kustomizetypes.PatchStrategicMerge {
 	newPatches := make([]kustomizetypes.PatchStrategicMerge, 0)
 	names := make(map[string]bool)
 
-	for _, e := range existing {
-		names[string(e)] = true
-	}
-
-	for _, n := range new {
-		if _, exists := names[string(n)]; !exists {
-			names[string(n)] = true
-			newPatches = append(newPatches, n)
+	for _, ee := range existing {
+		for _, e := range ee {
+			if _, exists := names[string(e)]; !exists {
+				names[string(e)] = true
+				newPatches = append(newPatches, e)
+			}
 		}
 	}
 
 	return newPatches
 }
 
-func findNewStrings(new []string, existing []string) []string {
+func uniqueStrings(existing ...[]string) []string {
 	newStrings := make([]string, 0)
 	names := make(map[string]bool)
 
-	for _, e := range existing {
-		names[e] = true
-	}
-
-	for _, n := range new {
-		if _, exists := names[n]; !exists {
-			names[n] = true
-			newStrings = append(newStrings, n)
+	for _, ee := range existing {
+		for _, e := range ee {
+			if _, exists := names[e]; !exists {
+				names[e] = true
+				newStrings = append(newStrings, e)
+			}
 		}
 	}
 
