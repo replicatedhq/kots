@@ -122,11 +122,13 @@ func ApplyValuesToConfig(config *kotsv1beta1.Config, values map[string]template.
 			value, ok := values[i.Name]
 			if ok {
 				config.Spec.Groups[idxG].Items[idxI].Value = multitype.FromString(value.ValueStr())
+				config.Spec.Groups[idxG].Items[idxI].Default = multitype.FromString(value.DefaultStr())
 			}
 			for idxC, c := range i.Items {
 				value, ok := values[c.Name]
 				if ok {
 					config.Spec.Groups[idxG].Items[idxI].Items[idxC].Value = multitype.FromString(value.ValueStr())
+					config.Spec.Groups[idxG].Items[idxI].Items[idxC].Default = multitype.FromString(value.DefaultStr())
 				}
 			}
 		}
