@@ -275,18 +275,66 @@ func Test_splitHelmFiles(t *testing.T) {
 	}
 }
 
-func fmtJSONDiff(got, want interface{}) string {
-	a, _ := json.MarshalIndent(got, "", "  ")
-	b, _ := json.MarshalIndent(want, "", "  ")
-	diff := difflib.UnifiedDiff{
-		A:        difflib.SplitLines(string(a)),
-		B:        difflib.SplitLines(string(b)),
-		FromFile: "Got",
-		ToFile:   "Want",
-		Context:  1,
+func Test_writeHelmBaseFile(t *testing.T) {
+	type args struct {
+		baseFile      BaseFile
+		renderOptions *RenderOptions
 	}
-	diffStr, _ := difflib.GetUnifiedDiffString(diff)
-	return fmt.Sprintf("got:\n%s \n\nwant:\n%s \n\ndiff:\n%s", got, want, diffStr)
+	tests := []struct {
+		name    string
+		args    args
+		want    []BaseFile
+		wantErr bool
+	}{
+		{
+			name: "split",
+			args: args{
+				baseFile: BaseFile{
+					Path:    "multi.yaml",
+					Content: []byte("a: a\n---\nb: b"),
+				},
+				renderOptions: &RenderOptions{SplitMultiDocYAML: true},
+			},
+			want: []BaseFile{
+				{
+					Path:    "multi-1.yaml",
+					Content: []byte("a: a"),
+				},
+				{
+					Path:    "multi-2.yaml",
+					Content: []byte("b: b"),
+				},
+			},
+		},
+		{
+			name: "no split",
+			args: args{
+				baseFile: BaseFile{
+					Path:    "multi.yaml",
+					Content: []byte("a: a\n---\nb: b"),
+				},
+				renderOptions: &RenderOptions{},
+			},
+			want: []BaseFile{
+				{
+					Path:    "multi.yaml",
+					Content: []byte("a: a\n---\nb: b"),
+				},
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := writeHelmBaseFile(tt.args.baseFile, tt.args.renderOptions)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("writeHelmBaseFile() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("writeHelmBaseFile() = %v, want %v", got, tt.want)
+			}
+		})
+	}
 }
 
 func Test_removeCommonPrefix(t *testing.T) {
@@ -332,4 +380,18 @@ func Test_removeCommonPrefix(t *testing.T) {
 			}
 		})
 	}
+}
+
+func fmtJSONDiff(got, want interface{}) string {
+	a, _ := json.MarshalIndent(got, "", "  ")
+	b, _ := json.MarshalIndent(want, "", "  ")
+	diff := difflib.UnifiedDiff{
+		A:        difflib.SplitLines(string(a)),
+		B:        difflib.SplitLines(string(b)),
+		FromFile: "Got",
+		ToFile:   "Want",
+		Context:  1,
+	}
+	diffStr, _ := difflib.GetUnifiedDiffString(diff)
+	return fmt.Sprintf("got:\n%s \n\nwant:\n%s \n\ndiff:\n%s", got, want, diffStr)
 }
