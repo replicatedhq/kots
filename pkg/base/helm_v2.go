@@ -13,7 +13,7 @@ import (
 	"k8s.io/helm/pkg/timeconv"
 )
 
-func renderHelmV2(chartName string, chartPath string, vals map[string]interface{}, renderOptions *RenderOptions) (map[string]string, error) {
+func renderHelmV2(chartName string, chartPath string, vals map[string]interface{}, renderOptions *RenderOptions) ([]BaseFile, error) {
 	marshalledVals, err := yaml.Marshal(vals)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to marshal helm values")
@@ -40,5 +40,18 @@ func renderHelmV2(chartName string, chartPath string, vals map[string]interface{
 	// Silence the go logger because helm will complain about some of our template strings
 	golog.SetOutput(ioutil.Discard)
 	defer golog.SetOutput(os.Stdout)
-	return renderutil.Render(c, config, renderOpts)
+
+	rendered, err := renderutil.Render(c, config, renderOpts)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to render chart")
+	}
+
+	baseFiles := []BaseFile{}
+	for name, content := range rendered {
+		baseFiles = append(baseFiles, BaseFile{
+			Path:    name,
+			Content: []byte(content),
+		})
+	}
+	return baseFiles, nil
 }

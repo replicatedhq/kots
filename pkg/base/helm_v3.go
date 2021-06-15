@@ -15,7 +15,7 @@ var (
 	HelmV3ManifestNameRegex = regexp.MustCompile("^# Source: (.+)")
 )
 
-func renderHelmV3(chartName string, chartPath string, vals map[string]interface{}, renderOptions *RenderOptions) (map[string]string, error) {
+func renderHelmV3(chartName string, chartPath string, vals map[string]interface{}, renderOptions *RenderOptions) ([]BaseFile, error) {
 	cfg := &action.Configuration{
 		Log: renderOptions.Log.Debug,
 	}
@@ -49,7 +49,7 @@ func renderHelmV3(chartName string, chartPath string, vals map[string]interface{
 		fmt.Fprintf(&manifests, "---\n# Source: %s\n%s\n", m.Path, m.Manifest)
 	}
 
-	resources := map[string][]string{}
+	baseFiles := []BaseFile{}
 
 	splitManifests := splitManifests(manifests.String())
 	manifestName := ""
@@ -66,14 +66,30 @@ func renderHelmV3(chartName string, chartPath string, vals map[string]interface{
 			// filter out empty docs
 			continue
 		}
-		resources[manifestName] = append(resources[manifestName], manifest)
+		baseFiles = append(baseFiles, BaseFile{
+			Path:    manifestName,
+			Content: []byte(manifest),
+		})
 	}
 
-	multidocResources := map[string]string{}
-	for manifestName, manifests := range resources {
-		multidocResources[manifestName] = strings.Join(manifests, "\n---\n")
+	// maintain order
+	return mergeBaseFiles(baseFiles), nil
+}
+
+func mergeBaseFiles(baseFiles []BaseFile) []BaseFile {
+	merged := []BaseFile{}
+	found := map[string]int{}
+	for _, baseFile := range baseFiles {
+		index, ok := found[baseFile.Path]
+		if ok {
+			merged[index].Content = append(merged[index].Content, []byte("\n---\n")...)
+			merged[index].Content = append(merged[index].Content, baseFile.Content...)
+		} else {
+			merged = append(merged, baseFile)
+			found[baseFile.Path] = len(merged) - 1
+		}
 	}
-	return multidocResources, nil
+	return merged
 }
 
 var sep = regexp.MustCompile("(?:^|\\s*\n)---\\s*")
