@@ -156,7 +156,7 @@ func RenderDir(archiveDir string, a *apptypes.App, downstreams []downstreamtypes
 		RegistryUsername:   registrySettings.Username,
 		RegistryPassword:   registrySettings.Password,
 		RegistryIsReadOnly: registrySettings.IsReadOnly,
-		NativeHelmInstall:  true, // TODO
+		NativeHelmInstall:  true, // TODO (ch35027): opt-in
 
 		// TODO: pass in as arguments if this is ever called from CLI
 		HTTPProxyEnvValue:  os.Getenv("HTTP_PROXY"),

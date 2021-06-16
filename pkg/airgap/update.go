@@ -180,7 +180,7 @@ func UpdateAppFromPath(a *apptypes.App, airgapRoot string, airgapBundlePath stri
 		},
 		AppSlug:           a.Slug,
 		AppSequence:       appSequence,
-		NativeHelmInstall: true, // TODO: opt-in
+		NativeHelmInstall: true, // TODO (ch35027): opt-in
 	}
 
 	if _, err := pull.Pull(fmt.Sprintf("replicated://%s", beforeKotsKinds.License.Spec.AppSlug), pullOptions); err != nil {
