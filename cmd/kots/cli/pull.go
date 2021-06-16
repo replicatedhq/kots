@@ -56,6 +56,7 @@ func PullCmd() *cobra.Command {
 				HTTPProxyEnvValue:  v.GetString("http-proxy"),
 				HTTPSProxyEnvValue: v.GetString("https-proxy"),
 				NoProxyEnvValue:    v.GetString("no-proxy"),
+				NativeHelmInstall:  v.GetBool("native-helm-install"),
 			}
 
 			if v.GetBool("copy-proxy-env") {
@@ -116,6 +117,7 @@ func PullCmd() *cobra.Command {
 	cmd.Flags().String("registry-username", "", "the username of the local docker registry to use when pushing images (with --rewrite-images)")
 	cmd.Flags().String("registry-password", "", "the password of the local docker registry to use when pushing images (with --rewrite-images)")
 	cmd.Flags().String("helm-version", "v2", "the Helm version with which to render the Helm Chart")
+	cmd.Flags().Bool("native-helm-install", false, "when true, KOTS will use the helm install command to install Helm Charts rather than kubectl apply")
 
 	return cmd
 }
