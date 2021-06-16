@@ -8,7 +8,6 @@ import (
 	"io/ioutil"
 	"net/url"
 	"os"
-	"path"
 	"path/filepath"
 	"time"
 
@@ -582,27 +581,13 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 	}
 
 	var commonBase *base.Base
-	var m *midstream.Midstream
-	helmMidstreams := []*midstream.Midstream{}
+
 	if pullOptions.NativeHelmInstall {
 		for _, base := range b.Bases {
 			if base.Path == "common" {
 				b := base
 				commonBase = &b
-			} else {
-				helmMidstream, err := midstream.CreateMidstream(&base, images, objects, nil, nil, nil)
-				if err != nil {
-					return "", errors.Wrapf(err, "failed to create helm midstream %s", base.Path)
-				}
-
-				writeMidstreamOptions := commonWriteMidstreamOptions
-				writeMidstreamOptions.MidstreamDir = filepath.Join(b.GetOverlaysDir(writeBaseOptions), "midstream", base.Path)
-				writeMidstreamOptions.BaseDir = filepath.Join(u.GetBaseDir(writeUpstreamOptions), base.Path)
-				if err := helmMidstream.WriteMidstream(writeMidstreamOptions); err != nil {
-					return "", errors.Wrapf(err, "failed to write helm midstream %s", base.Path)
-				}
-
-				helmMidstreams = append(helmMidstreams, helmMidstream)
+				break
 			}
 		}
 	} else {
@@ -613,9 +598,28 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 		return "", errors.New("failed to find common base")
 	}
 
-	m, err = midstream.CreateMidstream(commonBase, images, objects, pullSecret, identitySpec, identityConfig)
+	m, err := midstream.CreateMidstream(commonBase, images, objects, pullSecret, identitySpec, identityConfig)
 	if err != nil {
 		return "", errors.Wrap(err, "failed to create midstream")
+	}
+
+	helmMidstreams := []*midstream.Midstream{}
+	for _, base := range b.Bases {
+		if base.Path != "common" {
+			helmMidstream, err := midstream.CreateMidstream(&base, images, objects, nil, nil, nil)
+			if err != nil {
+				return "", errors.Wrapf(err, "failed to create helm midstream %s", base.Path)
+			}
+
+			writeMidstreamOptions := commonWriteMidstreamOptions
+			writeMidstreamOptions.MidstreamDir = filepath.Join(b.GetOverlaysDir(writeBaseOptions), "midstream", base.Path)
+			writeMidstreamOptions.BaseDir = filepath.Join(u.GetBaseDir(writeUpstreamOptions), base.Path)
+			if err := helmMidstream.WriteMidstream(writeMidstreamOptions); err != nil {
+				return "", errors.Wrapf(err, "failed to write helm midstream %s", base.Path)
+			}
+
+			helmMidstreams = append(helmMidstreams, helmMidstream)
+		}
 	}
 
 	writeMidstreamOptions := commonWriteMidstreamOptions
@@ -658,28 +662,18 @@ func writeDownstreams(options PullOptions, overlaysDir string, m *midstream.Mids
 			return errors.Wrapf(err, "failed to write downstream %s", downstreamName)
 		}
 
-		if options.NativeHelmInstall {
-			combinedDownstreamBases := []string{"../"}
-
-			for _, mid := range helmMidstreams {
-				d, err := downstream.CreateDownstream(mid)
-				if err != nil {
-					return errors.Wrapf(err, "failed to create downstream %s for helm midstream %s", downstreamName, mid.Base.Path)
-				}
-
-				writeDownstreamOptions := downstream.WriteOptions{
-					DownstreamDir: filepath.Join(overlaysDir, "downstreams", downstreamName, mid.Base.Path),
-					MidstreamDir:  filepath.Join(overlaysDir, "midstream", mid.Base.Path),
-				}
-				if err := d.WriteDownstream(writeDownstreamOptions); err != nil {
-					return errors.Wrapf(err, "failed to write downstream %s for helm midstream %s", downstreamName, mid.Base.Path)
-				}
-
-				combinedDownstreamBases = append(combinedDownstreamBases, path.Join("..", mid.Base.Path))
+		for _, mid := range helmMidstreams {
+			d, err := downstream.CreateDownstream(mid)
+			if err != nil {
+				return errors.Wrapf(err, "failed to create downstream %s for helm midstream %s", downstreamName, mid.Base.Path)
 			}
 
-			if err := writeCombinedDownstreamBase(downstreamName, combinedDownstreamBases, filepath.Join(overlaysDir, "downstreams", downstreamName, "combined")); err != nil {
-				return errors.Wrap(err, "failed to write combined downstream base")
+			writeDownstreamOptions := downstream.WriteOptions{
+				DownstreamDir: filepath.Join(overlaysDir, "downstreams", downstreamName, mid.Base.Path),
+				MidstreamDir:  filepath.Join(overlaysDir, "midstream", mid.Base.Path),
+			}
+			if err := d.WriteDownstream(writeDownstreamOptions); err != nil {
+				return errors.Wrapf(err, "failed to write downstream %s for helm midstream %s", downstreamName, mid.Base.Path)
 			}
 		}
 
