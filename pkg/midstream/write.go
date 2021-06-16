@@ -2,9 +2,9 @@ package midstream
 
 import (
 	"context"
+	"fmt"
 	"io/ioutil"
 	"os"
-	"path"
 	"path/filepath"
 
 	"github.com/pkg/errors"
@@ -36,24 +36,14 @@ type WriteOptions struct {
 	NoProxyEnvValue    string
 }
 
-func (m *Midstream) KustomizationFilename(options WriteOptions) string {
-	return path.Join(options.MidstreamDir, "kustomization.yaml")
-}
-
 func (m *Midstream) WriteMidstream(options WriteOptions) error {
-	var existingKustomization *kustomizetypes.Kustomization
-
-	_, err := os.Stat(m.KustomizationFilename(options))
-	if err == nil {
-		k, err := k8sutil.ReadKustomizationFromFile(m.KustomizationFilename(options))
-		if err != nil {
-			return errors.Wrap(err, "load existing kustomization")
-		}
-		existingKustomization = k
-	}
-
 	if err := os.MkdirAll(options.MidstreamDir, 0744); err != nil {
 		return errors.Wrap(err, "failed to mkdir")
+	}
+
+	existingKustomization, err := m.getExistingKustomization(options)
+	if err != nil {
+		return errors.Wrap(err, "get existing kustomization")
 	}
 
 	secretFilename, err := m.writePullSecret(options)
@@ -91,9 +81,11 @@ func (m *Midstream) WriteMidstream(options WriteOptions) error {
 	}
 	m.Kustomization.CommonAnnotations["kots.io/app-slug"] = options.AppSlug
 
-	// Note that this function does nothing on the initial install
-	// if the user is not presented with the config screen.
-	m.mergeKustomization(options, existingKustomization)
+	if existingKustomization != nil {
+		// Note that this function does nothing on the initial install
+		// if the user is not presented with the config screen.
+		m.mergeKustomization(options, *existingKustomization)
+	}
 
 	if err := m.writeKustomization(options); err != nil {
 		return errors.Wrap(err, "failed to write kustomization")
@@ -102,11 +94,24 @@ func (m *Midstream) WriteMidstream(options WriteOptions) error {
 	return nil
 }
 
-func (m *Midstream) mergeKustomization(options WriteOptions, existing *kustomizetypes.Kustomization) {
-	if existing == nil {
-		return
+func (m *Midstream) getExistingKustomization(options WriteOptions) (*kustomizetypes.Kustomization, error) {
+	kustomizationFilename := filepath.Join(options.MidstreamDir, "kustomization.yaml")
+
+	_, err := os.Stat(kustomizationFilename)
+	if os.IsNotExist(err) {
+		return nil, nil
+	} else if err != nil {
+		return nil, errors.Wrap(err, "stat existing kustomization")
 	}
 
+	k, err := k8sutil.ReadKustomizationFromFile(kustomizationFilename)
+	if err != nil {
+		return nil, errors.Wrap(err, "load existing kustomization")
+	}
+	return k, nil
+}
+
+func (m *Midstream) mergeKustomization(options WriteOptions, existing kustomizetypes.Kustomization) {
 	existing.PatchesStrategicMerge = removeFromPatches(existing.PatchesStrategicMerge, patchesFilename)
 	m.Kustomization.PatchesStrategicMerge = uniquePatches(existing.PatchesStrategicMerge, m.Kustomization.PatchesStrategicMerge)
 
@@ -122,6 +127,16 @@ func (m *Midstream) mergeKustomization(options WriteOptions, existing *kustomize
 	m.Kustomization.CommonAnnotations = mergeMaps(m.Kustomization.CommonAnnotations, existing.CommonAnnotations)
 }
 
+func removeFromPatches(patches []kustomizetypes.PatchStrategicMerge, filename string) []kustomizetypes.PatchStrategicMerge {
+	newPatches := []kustomizetypes.PatchStrategicMerge{}
+	for _, patch := range patches {
+		if string(patch) != filename {
+			newPatches = append(newPatches, patch)
+		}
+	}
+	return newPatches
+}
+
 func mergeMaps(new map[string]string, existing map[string]string) map[string]string {
 	merged := existing
 	if merged == nil {
@@ -134,18 +149,19 @@ func mergeMaps(new map[string]string, existing map[string]string) map[string]str
 }
 
 func (m *Midstream) writeKustomization(options WriteOptions) error {
+	fmt.Println("+++ writeKustomization", options.MidstreamDir, options.BaseDir)
 	relativeBaseDir, err := filepath.Rel(options.MidstreamDir, options.BaseDir)
 	if err != nil {
 		return errors.Wrap(err, "failed to determine relative path for base from midstream")
 	}
 
-	fileRenderPath := m.KustomizationFilename(options)
+	kustomizationFilename := filepath.Join(options.MidstreamDir, "kustomization.yaml")
 
 	m.Kustomization.Bases = []string{
 		relativeBaseDir,
 	}
 
-	if err := k8sutil.WriteKustomizationToFile(*m.Kustomization, fileRenderPath); err != nil {
+	if err := k8sutil.WriteKustomizationToFile(*m.Kustomization, kustomizationFilename); err != nil {
 		return errors.Wrap(err, "failed to write kustomization to file")
 	}
 
@@ -218,7 +234,7 @@ func (m *Midstream) writeObjectsWithPullSecret(options WriteOptions) error {
 		}
 
 		if _, err := f.Write([]byte("---\n")); err != nil {
-			return errors.Wrap(err, "failed to write object")
+			return errors.Wrap(err, "failed to write doc separator")
 		}
 		if _, err := f.Write(b); err != nil {
 			return errors.Wrap(err, "failed to write object")
@@ -233,7 +249,10 @@ func (m *Midstream) writeObjectsWithPullSecret(options WriteOptions) error {
 func EnsureDisasterRecoveryLabelTransformer(archiveDir string, additionalLabels map[string]string) error {
 	labelTransformerExists := false
 
-	k, err := k8sutil.ReadKustomizationFromFile(filepath.Join(archiveDir, "overlays", "midstream", "kustomization.yaml"))
+	dirPath := filepath.Join(archiveDir, "overlays", "midstream")
+
+	// TODO (ch35027): this will not work with multiple kustomization files
+	k, err := k8sutil.ReadKustomizationFromFile(filepath.Join(dirPath, "kustomization.yaml"))
 	if err != nil {
 		return errors.Wrap(err, "failed to read kustomization file from midstream")
 	}
@@ -251,7 +270,7 @@ func EnsureDisasterRecoveryLabelTransformer(archiveDir string, additionalLabels 
 			return errors.Wrap(err, "failed to get disaster recovery label transformer yaml")
 		}
 
-		absFilename := filepath.Join(archiveDir, "overlays", "midstream", disasterRecoveryLabelTransformerFileName)
+		absFilename := filepath.Join(dirPath, disasterRecoveryLabelTransformerFileName)
 
 		if err := ioutil.WriteFile(absFilename, drLabelTransformerYAML, 0644); err != nil {
 			return errors.Wrap(err, "failed to write disaster recovery label transformer yaml file")
@@ -259,20 +278,10 @@ func EnsureDisasterRecoveryLabelTransformer(archiveDir string, additionalLabels 
 
 		k.Transformers = append(k.Transformers, disasterRecoveryLabelTransformerFileName)
 
-		if err := k8sutil.WriteKustomizationToFile(*k, filepath.Join(archiveDir, "overlays", "midstream", "kustomization.yaml")); err != nil {
+		if err := k8sutil.WriteKustomizationToFile(*k, filepath.Join(dirPath, "kustomization.yaml")); err != nil {
 			return errors.Wrap(err, "failed to write kustomization file to midstream")
 		}
 	}
 
 	return nil
-}
-
-func removeFromPatches(patches []kustomizetypes.PatchStrategicMerge, filename string) []kustomizetypes.PatchStrategicMerge {
-	newPatches := []kustomizetypes.PatchStrategicMerge{}
-	for _, patch := range patches {
-		if string(patch) != filename {
-			newPatches = append(newPatches, patch)
-		}
-	}
-	return newPatches
 }

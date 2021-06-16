@@ -77,7 +77,7 @@ func Start() {
 
 	r := mux.NewRouter()
 
-	r.Use(handlers.CorsMiddleware)
+	r.Use(handlers.LoggingMiddleware, handlers.CorsMiddleware)
 	r.Methods("OPTIONS").HandlerFunc(handlers.CORS)
 
 	handler := &handlers.Handler{}

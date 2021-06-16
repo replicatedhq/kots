@@ -10,7 +10,7 @@ type Downstream struct {
 	Midstream     *midstream.Midstream
 }
 
-func CreateDownstream(m *midstream.Midstream, name string) (*Downstream, error) {
+func CreateDownstream(m *midstream.Midstream) (*Downstream, error) {
 	kustomization := kustomizetypes.Kustomization{
 		TypeMeta: kustomizetypes.TypeMeta{
 			APIVersion: "kustomize.config.k8s.io/v1beta1",

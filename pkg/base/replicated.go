@@ -35,6 +35,12 @@ func renderReplicated(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (
 		Bases: []Base{},
 	}
 
+	commonBase := Base{
+		Path:  "common",
+		Files: []BaseFile{},
+		Bases: []Base{},
+	}
+
 	builder, err := NewConfigContextTemplateBuidler(u, renderOptions)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create new config context template builder")
@@ -75,13 +81,15 @@ func renderReplicated(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (
 				}
 			}
 			if include {
-				base.Files = append(base.Files, f)
+				commonBase.Files = append(commonBase.Files, f)
 			} else if err != nil {
 				f.Error = err
-				base.ErrorFiles = append(base.ErrorFiles, f)
+				commonBase.ErrorFiles = append(commonBase.ErrorFiles, f)
 			}
 		}
 	}
+
+	base.Bases = append(base.Bases, commonBase)
 
 	// render helm charts that were specified
 	// we just inject them into u.Files

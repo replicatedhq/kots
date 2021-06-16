@@ -222,8 +222,9 @@ func CreateAppFromAirgap(opts CreateAirgapAppOpts) (finalError error) {
 			Password:   opts.RegistryPassword,
 			IsReadOnly: opts.RegistryIsReadOnly,
 		},
-		AppSlug:     opts.PendingApp.Slug,
-		AppSequence: 0,
+		AppSlug:           opts.PendingApp.Slug,
+		AppSequence:       0,
+		NativeHelmInstall: true, // TODO: opt-in
 	}
 
 	if _, err := pull.Pull(fmt.Sprintf("replicated://%s", license.Spec.AppSlug), pullOptions); err != nil {
