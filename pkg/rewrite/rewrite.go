@@ -67,11 +67,6 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 		rewriteOptions.ReportWriter = ioutil.Discard
 	}
 
-	clientset, err := k8sutil.GetClientset()
-	if err != nil {
-		return errors.Wrap(err, "failed to get k8s clientset")
-	}
-
 	fetchOptions := &upstreamtypes.FetchOptions{
 		RootDir:             rewriteOptions.RootDir,
 		LocalPath:           rewriteOptions.UpstreamPath,
@@ -113,8 +108,6 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 		return errors.Wrap(err, "failed to write upstream")
 	}
 	log.FinishSpinner()
-
-	replicatedRegistryInfo := registry.ProxyEndpointFromLicense(rewriteOptions.License)
 
 	renderOptions := base.RenderOptions{
 		SplitMultiDocYAML:       true,
@@ -173,171 +166,13 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 		return errors.Wrap(err, "failed to write base")
 	}
 
-	var pullSecret *corev1.Secret
-	var images []kustomizetypes.Image
-	var objects []k8sdoc.K8sDoc
+	log.ActionWithSpinner("Creating midstreams")
+	io.WriteString(rewriteOptions.ReportWriter, "Creating midstreams\n")
 
-	identitySpec, err := upstream.LoadIdentity(u.GetUpstreamDir(writeUpstreamOptions))
+	clientset, err := k8sutil.GetClientset()
 	if err != nil {
-		return errors.Wrap(err, "failed to load identity")
+		return errors.Wrap(err, "failed to get k8s clientset")
 	}
-
-	identityConfig, err := upstream.LoadIdentityConfig(u.GetUpstreamDir(writeUpstreamOptions))
-	if err != nil {
-		return errors.Wrap(err, "failed to load identity config")
-	}
-
-	// do not fail on being unable to get dockerhub credentials, since they're just used to increase the rate limit
-	dockerHubRegistryCreds, _ := registry.GetDockerHubCredentials(clientset, rewriteOptions.K8sNamespace)
-
-	// TODO (ethan): rewrite dex image?
-
-	if rewriteOptions.CopyImages || rewriteOptions.RegistryEndpoint != "" {
-		// When CopyImages is set, we copy images, rewrite all images, and use registry
-		// settings to create secrets for all objects that have images.
-		// When only registry endpoint is set, we don't need to copy images, but still
-		// need to rewrite them and create secrets.
-
-		newInstallation, err := upstream.LoadInstallation(u.GetUpstreamDir(writeUpstreamOptions))
-		if err != nil {
-			return errors.Wrap(err, "failed to load installation")
-		}
-		application, err := upstream.LoadApplication(u.GetUpstreamDir(writeUpstreamOptions))
-		if err != nil {
-			return errors.Wrap(err, "failed to load application")
-		}
-
-		writeUpstreamImageOptions := base.WriteUpstreamImageOptions{
-			BaseDir:      writeBaseOptions.BaseDir,
-			ReportWriter: rewriteOptions.ReportWriter,
-			Log:          log,
-			SourceRegistry: registry.RegistryOptions{
-				Endpoint:      replicatedRegistryInfo.Registry,
-				ProxyEndpoint: replicatedRegistryInfo.Proxy,
-			},
-			DestRegistry: registry.RegistryOptions{
-				Endpoint:  rewriteOptions.RegistryEndpoint,
-				Namespace: rewriteOptions.RegistryNamespace,
-				Username:  rewriteOptions.RegistryUsername,
-				Password:  rewriteOptions.RegistryPassword,
-			},
-			DockerHubRegistry: registry.RegistryOptions{
-				Username: dockerHubRegistryCreds.Username,
-				Password: dockerHubRegistryCreds.Password,
-			},
-			Installation: newInstallation,
-			Application:  application,
-			IsAirgap:     rewriteOptions.IsAirgap,
-			CopyImages:   rewriteOptions.CopyImages,
-		}
-
-		if fetchOptions.License != nil {
-			writeUpstreamImageOptions.AppSlug = fetchOptions.License.Spec.AppSlug
-			writeUpstreamImageOptions.SourceRegistry.Username = fetchOptions.License.Spec.LicenseID
-			writeUpstreamImageOptions.SourceRegistry.Password = fetchOptions.License.Spec.LicenseID
-		}
-
-		copyResult, err := base.ProcessUpstreamImages(writeUpstreamImageOptions)
-		if err != nil {
-			return errors.Wrap(err, "failed to write upstream images")
-		}
-
-		newInstallation.Spec.KnownImages = copyResult.CheckedImages
-		err = upstream.SaveInstallation(newInstallation, u.GetUpstreamDir(writeUpstreamOptions))
-		if err != nil {
-			return errors.Wrap(err, "failed to save installation")
-		}
-
-		findObjectsOptions := base.FindObjectsWithImagesOptions{
-			BaseDir: writeBaseOptions.BaseDir,
-		}
-		affectedObjects, err := base.FindObjectsWithImages(findObjectsOptions)
-		if err != nil {
-			return errors.Wrap(err, "failed to find objects with images")
-		}
-
-		registryUser := rewriteOptions.RegistryUsername
-		registryPass := rewriteOptions.RegistryPassword
-		if registryUser == "" {
-			// this will only work when envoked from CLI where `docker login` command has been executed
-			registryUser, registryPass, err = registry.LoadAuthForRegistry(rewriteOptions.RegistryEndpoint)
-			if err != nil {
-				return errors.Wrapf(err, "failed to load registry auth for %q", rewriteOptions.RegistryEndpoint)
-			}
-		}
-		pullSecret, err = registry.PullSecretForRegistries(
-			[]string{rewriteOptions.RegistryEndpoint},
-			registryUser,
-			registryPass,
-			rewriteOptions.K8sNamespace,
-		)
-		if err != nil {
-			return errors.Wrap(err, "failed to create private registry pull secret")
-		}
-
-		images = copyResult.Images
-		objects = affectedObjects
-	} else {
-		application, err := upstream.LoadApplication(u.GetUpstreamDir(writeUpstreamOptions))
-		if err != nil {
-			return errors.Wrap(err, "failed to load application")
-		}
-
-		allPrivate := false
-		if application != nil {
-			allPrivate = application.Spec.ProxyPublicImages
-		}
-
-		// When CopyImages is not set, we only rewrite private images and use license to create secrets
-		// for all objects that have private images
-		findPrivateImagesOptions := base.FindPrivateImagesOptions{
-			BaseDir: writeBaseOptions.BaseDir,
-			AppSlug: fetchOptions.License.Spec.AppSlug,
-			ReplicatedRegistry: registry.RegistryOptions{
-				Endpoint:      replicatedRegistryInfo.Registry,
-				ProxyEndpoint: replicatedRegistryInfo.Proxy,
-			},
-			DockerHubRegistry: registry.RegistryOptions{
-				Username: dockerHubRegistryCreds.Username,
-				Password: dockerHubRegistryCreds.Password,
-			},
-			Installation:     rewriteOptions.Installation,
-			AllImagesPrivate: allPrivate,
-		}
-		findResult, err := base.FindPrivateImages(findPrivateImagesOptions)
-		if err != nil {
-			return errors.Wrap(err, "failed to find private images")
-		}
-
-		newInstallation, err := upstream.LoadInstallation(u.GetUpstreamDir(writeUpstreamOptions))
-		if err != nil {
-			return errors.Wrap(err, "failed to load installation")
-		}
-		newInstallation.Spec.KnownImages = findResult.CheckedImages
-		err = upstream.SaveInstallation(newInstallation, u.GetUpstreamDir(writeUpstreamOptions))
-		if err != nil {
-			return errors.Wrap(err, "failed to save installation")
-		}
-
-		if len(findResult.Docs) > 0 {
-			replicatedRegistryInfo := registry.ProxyEndpointFromLicense(rewriteOptions.License)
-			pullSecret, err = registry.PullSecretForRegistries(
-				replicatedRegistryInfo.ToSlice(),
-				rewriteOptions.License.Spec.LicenseID,
-				rewriteOptions.License.Spec.LicenseID,
-				rewriteOptions.K8sNamespace,
-			)
-			if err != nil {
-				return errors.Wrap(err, "failed to create Replicated registry pull secret")
-			}
-		}
-
-		images = findResult.Images
-		objects = findResult.Docs
-	}
-
-	log.ActionWithSpinner("Creating midstream")
-	io.WriteString(rewriteOptions.ReportWriter, "Creating midstream\n")
 
 	builder, err := base.NewConfigContextTemplateBuidler(u, &renderOptions)
 	if err != nil {
@@ -378,36 +213,29 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 		return errors.New("failed to find common base")
 	}
 
-	m, err := midstream.CreateMidstream(commonBase, images, objects, pullSecret, identitySpec, identityConfig)
+	writeMidstreamOptions := commonWriteMidstreamOptions
+	writeMidstreamOptions.MidstreamDir = filepath.Join(b.GetOverlaysDir(writeBaseOptions), "midstream")
+	writeMidstreamOptions.BaseDir = filepath.Join(u.GetBaseDir(writeUpstreamOptions), commonBase.Path)
+
+	m, err := writeMidstream(writeMidstreamOptions, rewriteOptions, commonBase, fetchOptions.License, u.GetUpstreamDir(writeUpstreamOptions), log)
 	if err != nil {
-		return errors.Wrap(err, "failed to create midstream")
+		return errors.Wrap(err, "failed to write common midstream")
 	}
 
 	helmMidstreams := []*midstream.Midstream{}
 	for _, base := range b.Bases {
 		if base.Path != "common" {
-			helmMidstream, err := midstream.CreateMidstream(&base, images, objects, nil, nil, nil)
-			if err != nil {
-				return errors.Wrapf(err, "failed to create helm midstream %s", base.Path)
-			}
-
 			writeMidstreamOptions := commonWriteMidstreamOptions
 			writeMidstreamOptions.MidstreamDir = filepath.Join(b.GetOverlaysDir(writeBaseOptions), "midstream", base.Path)
 			writeMidstreamOptions.BaseDir = filepath.Join(u.GetBaseDir(writeUpstreamOptions), base.Path)
-			if err := helmMidstream.WriteMidstream(writeMidstreamOptions); err != nil {
+
+			helmMidstream, err := writeMidstream(writeMidstreamOptions, rewriteOptions, &base, fetchOptions.License, u.GetUpstreamDir(writeUpstreamOptions), log)
+			if err != nil {
 				return errors.Wrapf(err, "failed to write helm midstream %s", base.Path)
 			}
 
 			helmMidstreams = append(helmMidstreams, helmMidstream)
 		}
-	}
-
-	writeMidstreamOptions := commonWriteMidstreamOptions
-	writeMidstreamOptions.MidstreamDir = filepath.Join(b.GetOverlaysDir(writeBaseOptions), "midstream")
-	writeMidstreamOptions.BaseDir = filepath.Join(u.GetBaseDir(writeUpstreamOptions), commonBase.Path)
-	fmt.Println("+++ writeMidstreamOptions.BaseDir", writeMidstreamOptions.MidstreamDir, writeMidstreamOptions.BaseDir)
-	if err := m.WriteMidstream(writeMidstreamOptions); err != nil {
-		return errors.Wrap(err, "failed to write common midstream")
 	}
 
 	log.FinishSpinner()
@@ -417,6 +245,189 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 	}
 
 	return nil
+}
+
+func writeMidstream(writeMidstreamOptions midstream.WriteOptions, options RewriteOptions, b *base.Base, license *kotsv1beta1.License, upstreamDir string, log *logger.CLILogger) (*midstream.Midstream, error) {
+	var pullSecret *corev1.Secret
+	var images []kustomizetypes.Image
+	var objects []k8sdoc.K8sDoc
+
+	clientset, err := k8sutil.GetClientset()
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get k8s clientset")
+	}
+
+	replicatedRegistryInfo := registry.ProxyEndpointFromLicense(options.License)
+
+	identitySpec, err := upstream.LoadIdentity(upstreamDir)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to load identity")
+	}
+
+	identityConfig, err := upstream.LoadIdentityConfig(upstreamDir)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to load identity config")
+	}
+
+	// do not fail on being unable to get dockerhub credentials, since they're just used to increase the rate limit
+	dockerHubRegistryCreds, _ := registry.GetDockerHubCredentials(clientset, options.K8sNamespace)
+
+	// TODO (ethan): rewrite dex image?
+
+	if options.CopyImages || options.RegistryEndpoint != "" {
+		// When CopyImages is set, we copy images, rewrite all images, and use registry
+		// settings to create secrets for all objects that have images.
+		// When only registry endpoint is set, we don't need to copy images, but still
+		// need to rewrite them and create secrets.
+
+		newInstallation, err := upstream.LoadInstallation(upstreamDir)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to load installation")
+		}
+		application, err := upstream.LoadApplication(upstreamDir)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to load application")
+		}
+
+		writeUpstreamImageOptions := base.WriteUpstreamImageOptions{
+			BaseDir:      writeMidstreamOptions.BaseDir,
+			ReportWriter: options.ReportWriter,
+			Log:          log,
+			SourceRegistry: registry.RegistryOptions{
+				Endpoint:      replicatedRegistryInfo.Registry,
+				ProxyEndpoint: replicatedRegistryInfo.Proxy,
+			},
+			DestRegistry: registry.RegistryOptions{
+				Endpoint:  options.RegistryEndpoint,
+				Namespace: options.RegistryNamespace,
+				Username:  options.RegistryUsername,
+				Password:  options.RegistryPassword,
+			},
+			DockerHubRegistry: registry.RegistryOptions{
+				Username: dockerHubRegistryCreds.Username,
+				Password: dockerHubRegistryCreds.Password,
+			},
+			Installation: newInstallation,
+			Application:  application,
+			IsAirgap:     options.IsAirgap,
+			CopyImages:   options.CopyImages,
+		}
+
+		if license != nil {
+			writeUpstreamImageOptions.AppSlug = license.Spec.AppSlug
+			writeUpstreamImageOptions.SourceRegistry.Username = license.Spec.LicenseID
+			writeUpstreamImageOptions.SourceRegistry.Password = license.Spec.LicenseID
+		}
+
+		copyResult, err := base.ProcessUpstreamImages(writeUpstreamImageOptions)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to write upstream images")
+		}
+
+		newInstallation.Spec.KnownImages = copyResult.CheckedImages
+		err = upstream.SaveInstallation(newInstallation, upstreamDir)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to save installation")
+		}
+
+		findObjectsOptions := base.FindObjectsWithImagesOptions{
+			BaseDir: writeMidstreamOptions.BaseDir,
+		}
+		affectedObjects, err := base.FindObjectsWithImages(findObjectsOptions)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to find objects with images")
+		}
+
+		registryUser := options.RegistryUsername
+		registryPass := options.RegistryPassword
+		if registryUser == "" {
+			// this will only work when envoked from CLI where `docker login` command has been executed
+			registryUser, registryPass, err = registry.LoadAuthForRegistry(options.RegistryEndpoint)
+			if err != nil {
+				return nil, errors.Wrapf(err, "failed to load registry auth for %q", options.RegistryEndpoint)
+			}
+		}
+		pullSecret, err = registry.PullSecretForRegistries(
+			[]string{options.RegistryEndpoint},
+			registryUser,
+			registryPass,
+			options.K8sNamespace,
+		)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to create private registry pull secret")
+		}
+
+		images = copyResult.Images
+		objects = affectedObjects
+	} else {
+		application, err := upstream.LoadApplication(upstreamDir)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to load application")
+		}
+
+		allPrivate := false
+		if application != nil {
+			allPrivate = application.Spec.ProxyPublicImages
+		}
+
+		// When CopyImages is not set, we only rewrite private images and use license to create secrets
+		// for all objects that have private images
+		findPrivateImagesOptions := base.FindPrivateImagesOptions{
+			BaseDir: writeMidstreamOptions.BaseDir,
+			AppSlug: license.Spec.AppSlug,
+			ReplicatedRegistry: registry.RegistryOptions{
+				Endpoint:      replicatedRegistryInfo.Registry,
+				ProxyEndpoint: replicatedRegistryInfo.Proxy,
+			},
+			DockerHubRegistry: registry.RegistryOptions{
+				Username: dockerHubRegistryCreds.Username,
+				Password: dockerHubRegistryCreds.Password,
+			},
+			Installation:     options.Installation,
+			AllImagesPrivate: allPrivate,
+		}
+		findResult, err := base.FindPrivateImages(findPrivateImagesOptions)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to find private images")
+		}
+
+		newInstallation, err := upstream.LoadInstallation(upstreamDir)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to load installation")
+		}
+		newInstallation.Spec.KnownImages = findResult.CheckedImages
+		err = upstream.SaveInstallation(newInstallation, upstreamDir)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to save installation")
+		}
+
+		if len(findResult.Docs) > 0 {
+			replicatedRegistryInfo := registry.ProxyEndpointFromLicense(options.License)
+			pullSecret, err = registry.PullSecretForRegistries(
+				replicatedRegistryInfo.ToSlice(),
+				options.License.Spec.LicenseID,
+				options.License.Spec.LicenseID,
+				options.K8sNamespace,
+			)
+			if err != nil {
+				return nil, errors.Wrap(err, "failed to create Replicated registry pull secret")
+			}
+		}
+
+		images = findResult.Images
+		objects = findResult.Docs
+	}
+
+	m, err := midstream.CreateMidstream(b, images, objects, pullSecret, identitySpec, identityConfig)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to create midstream")
+	}
+
+	if err := m.WriteMidstream(writeMidstreamOptions); err != nil {
+		return nil, errors.Wrap(err, "failed to write common midstream")
+	}
+
+	return m, nil
 }
 
 func writeDownstreams(options RewriteOptions, overlaysDir string, m *midstream.Midstream, helmMidstreams []*midstream.Midstream, log *logger.CLILogger) error {
