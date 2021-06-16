@@ -233,10 +233,11 @@ func renderReplicatedHelmBase(u *upstreamtypes.Upstream, renderOptions *RenderOp
 	}
 
 	return &Base{
-		Path:       helmBase.Path,
-		Files:      helmBaseFiles,
-		Bases:      helmBaseBases,
-		ErrorFiles: helmBaseYAMLErrorFiles,
+		Path:            helmBase.Path,
+		Files:           helmBaseFiles,
+		AdditionalFiles: helmBase.AdditionalFiles,
+		Bases:           helmBaseBases,
+		ErrorFiles:      helmBaseYAMLErrorFiles,
 	}, nil
 }
 

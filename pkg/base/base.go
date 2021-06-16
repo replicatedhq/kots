@@ -16,11 +16,12 @@ import (
 )
 
 type Base struct {
-	Path       string
-	Namespace  string
-	Files      []BaseFile
-	ErrorFiles []BaseFile
-	Bases      []Base
+	Path            string
+	Namespace       string
+	Files           []BaseFile
+	ErrorFiles      []BaseFile
+	AdditionalFiles []BaseFile
+	Bases           []Base
 }
 
 type BaseFile struct {

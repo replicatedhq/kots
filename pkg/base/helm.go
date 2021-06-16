@@ -74,14 +74,19 @@ func RenderHelm(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (*Base,
 		return nil, errors.Errorf("unknown helmVersion %s", renderOptions.HelmVersion)
 	}
 
-	rendered = removeCommonPrefix(rendered) // TODO: we should probably target the prefix here
+	rendered = removeCommonPrefix(rendered) // TODO: we should probably target the prefix here, maybe chartPath
 	base, err := writeHelmBase(u.Name, rendered, renderOptions)
 	if err != nil {
 		return nil, errors.Wrapf(err, "write helm chart %s base", u.Name)
 	}
 
-	base.Path = "" // this will be added back later by renderReplicated
-	return base, nil
+	// This will be added back later by renderReplicated
+	// I do not want to change the functionality of kots installing a helm chart
+	base.Path = ""
+
+	nextBase := helmChartBaseAppendAdditionalFiles(*base, u)
+
+	return &nextBase, nil
 }
 
 func writeHelmBase(chartName string, baseFiles []BaseFile, renderOptions *RenderOptions) (*Base, error) {
@@ -223,6 +228,32 @@ func removeCommonPrefix(baseFiles []BaseFile) []BaseFile {
 	}
 
 	return cleanedBaseFiles
+}
+
+func helmChartBaseAppendAdditionalFiles(base Base, u *upstreamtypes.Upstream) Base {
+	for _, upstreamFile := range u.Files {
+		if upstreamFile.Path == path.Join(base.Path, "Chart.yaml") {
+			base.AdditionalFiles = append(base.AdditionalFiles, BaseFile{
+				Path:    "Chart.yaml",
+				Content: upstreamFile.Content,
+			})
+		}
+		if upstreamFile.Path == path.Join(base.Path, "Chart.lock") {
+			base.AdditionalFiles = append(base.AdditionalFiles, BaseFile{
+				Path:    "Chart.lock",
+				Content: upstreamFile.Content,
+			})
+		}
+	}
+
+	var nextBases []Base
+	for _, base := range base.Bases {
+		base = helmChartBaseAppendAdditionalFiles(base, u)
+		nextBases = append(nextBases, base)
+	}
+	base.Bases = nextBases
+
+	return base
 }
 
 func checkChartForVersion(file *upstreamtypes.UpstreamFile) (string, error) {
