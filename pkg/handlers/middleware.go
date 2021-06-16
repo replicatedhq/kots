@@ -2,6 +2,8 @@ package handlers
 
 import (
 	"net/http"
+	"os"
+	"time"
 
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
@@ -17,6 +19,25 @@ func CorsMiddleware(next http.Handler) http.Handler {
 		}
 		next.ServeHTTP(w, r)
 	})
+}
+
+func LoggingMiddleware(next http.Handler) http.Handler {
+	debug := os.Getenv("DEBUG") == "true"
+	if debug {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			startTime := time.Now()
+
+			next.ServeHTTP(w, r)
+
+			logger.Debugf(
+				"request=%s method=%s duration=%s",
+				r.RequestURI,
+				r.Method,
+				time.Since(startTime).String(),
+			)
+		})
+	}
+	return next
 }
 
 func RequireValidSessionMiddleware(kotsStore store.Store) mux.MiddlewareFunc {
