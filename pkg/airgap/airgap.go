@@ -224,7 +224,7 @@ func CreateAppFromAirgap(opts CreateAirgapAppOpts) (finalError error) {
 		},
 		AppSlug:           opts.PendingApp.Slug,
 		AppSequence:       0,
-		NativeHelmInstall: true, // TODO: opt-in
+		NativeHelmInstall: true, // TODO (ch35027): opt-in
 	}
 
 	if _, err := pull.Pull(fmt.Sprintf("replicated://%s", license.Spec.AppSlug), pullOptions); err != nil {
