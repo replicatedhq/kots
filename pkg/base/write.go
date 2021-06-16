@@ -83,6 +83,21 @@ func (b *Base) WriteBase(options WriteOptions) error {
 		kustomizePatches = append(kustomizePatches, kustomizetypes.PatchStrategicMerge(path.Join(".", file.Path)))
 	}
 
+	// Additional files are not included in the kustomization.yaml
+	for _, file := range b.AdditionalFiles {
+		fileRenderPath := path.Join(renderDir, file.Path)
+		d, _ := path.Split(fileRenderPath)
+		if _, err := os.Stat(d); os.IsNotExist(err) {
+			if err := os.MkdirAll(d, 0744); err != nil {
+				return errors.Wrap(err, "failed to mkdir")
+			}
+		}
+
+		if err := ioutil.WriteFile(fileRenderPath, file.Content, 0644); err != nil {
+			return errors.Wrap(err, "failed to write additional file")
+		}
+	}
+
 	for _, base := range b.Bases {
 		if base.Path == "" {
 			return errors.New("kustomize sub-base path cannot be empty")
