@@ -64,18 +64,6 @@ func getSecretsYAML(deployOptions *types.DeployOptions) (map[string][]byte, erro
 	}
 	docs["secret-api-encryption.yaml"] = apiEncryptionBuffer.Bytes()
 
-	var s3 bytes.Buffer
-	if deployOptions.S3SecretKey == "" {
-		deployOptions.S3SecretKey = uuid.New().String()
-	}
-	if deployOptions.S3AccessKey == "" {
-		deployOptions.S3AccessKey = uuid.New().String()
-	}
-	if err := s.Encode(kotsadmobjects.S3Secret(deployOptions.Namespace, deployOptions.S3AccessKey, deployOptions.S3SecretKey), &s3); err != nil {
-		return nil, errors.Wrap(err, "failed to marshal s3 secret")
-	}
-	docs["secret-s3.yaml"] = s3.Bytes()
-
 	var tokenSecret bytes.Buffer
 	if err := s.Encode(kotsadmobjects.ApiClusterTokenSecret(*deployOptions), &tokenSecret); err != nil {
 		return nil, errors.Wrap(err, "failed to marshal api cluster token secret")
@@ -119,45 +107,12 @@ func ensureSecrets(deployOptions *types.DeployOptions, clientset *kubernetes.Cli
 		}
 	}
 
-	if err := ensureS3Secret(deployOptions.Namespace, clientset); err != nil {
-		return errors.Wrap(err, "failed to ensure s3 secret")
-	}
-
 	if err := ensureAPIEncryptionSecret(deployOptions, clientset); err != nil {
 		return errors.Wrap(err, "failed to ensure s3 secret")
 	}
 
 	if err := ensureAPIClusterTokenSecret(*deployOptions, clientset); err != nil {
 		return errors.Wrap(err, "failed to ensure api cluster token secret")
-	}
-
-	return nil
-}
-
-func getS3Secret(namespace string, clientset *kubernetes.Clientset) (*corev1.Secret, error) {
-	s3Secret, err := clientset.CoreV1().Secrets(namespace).Get(context.TODO(), "kotsadm-minio", metav1.GetOptions{})
-	if err != nil {
-		if kuberneteserrors.IsNotFound(err) {
-			return nil, nil
-		}
-
-		return nil, errors.Wrap(err, "failed to get s3 secret from cluster")
-	}
-
-	return s3Secret, nil
-}
-
-func ensureS3Secret(namespace string, clientset *kubernetes.Clientset) error {
-	existingS3Secret, err := getS3Secret(namespace, clientset)
-	if err != nil {
-		return errors.Wrap(err, "failed to check for existing s3 secret")
-	}
-
-	if existingS3Secret == nil {
-		_, err := clientset.CoreV1().Secrets(namespace).Create(context.TODO(), kotsadmobjects.S3Secret(namespace, uuid.New().String(), uuid.New().String()), metav1.CreateOptions{})
-		if err != nil {
-			return errors.Wrap(err, "failed to create s3 secret")
-		}
 	}
 
 	return nil

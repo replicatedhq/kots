@@ -23,5 +23,5 @@ func GetStore() FileStore {
 }
 
 func storeFromEnv() FileStore {
-	return &s3store.S3Store{}
+	return &blobstore.BlobStore{}
 }

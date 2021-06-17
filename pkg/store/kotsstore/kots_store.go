@@ -123,6 +123,10 @@ func (s *KOTSStore) IsNotFound(err error) bool {
 		return true
 	}
 
+	if os.IsNotExist(cause) {
+		return true
+	}
+
 	if err, ok := cause.(awserr.Error); ok {
 		switch err.Code() {
 		case "NotFound", "NoSuchKey":

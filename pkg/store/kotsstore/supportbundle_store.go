@@ -228,7 +228,7 @@ func (s *KOTSStore) GetSupportBundle(id string) (*types.SupportBundle, error) {
 		if s.IsNotFound(err) {
 			return &supportBundle, nil
 		}
-		return nil, errors.Wrap(err, "failed to get treeindex from s3")
+		return nil, errors.Wrap(err, "failed to get treeindex")
 	}
 	supportBundle.TreeIndex = string(treeindex)
 

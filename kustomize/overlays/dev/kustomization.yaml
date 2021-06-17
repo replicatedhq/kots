@@ -9,5 +9,5 @@ resources:
   - ./configmap-init-dex-db.yaml
 
 patches:
-  - ./deployment.yaml
+  - ./statefulset.yaml
   - ./service.yaml

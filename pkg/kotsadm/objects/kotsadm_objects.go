@@ -136,32 +136,32 @@ func KotsadmServiceAccount(namespace string) *corev1.ServiceAccount {
 	return serviceAccount
 }
 
-func UpdateKotsadmDeployment(deployment *appsv1.Deployment, deployOptions types.DeployOptions) error {
-	desiredDeployment := KotsadmDeployment(deployOptions)
+func UpdateKotsadmStatefulSet(statefulset *appsv1.StatefulSet, deployOptions types.DeployOptions, size resource.Quantity) error {
+	desiredStatefulSet := KotsadmStatefulSet(deployOptions, size)
 
 	containerIdx := -1
-	for idx, c := range deployment.Spec.Template.Spec.Containers {
+	for idx, c := range statefulset.Spec.Template.Spec.Containers {
 		if c.Name == "kotsadm" {
 			containerIdx = idx
 		}
 	}
 
 	if containerIdx == -1 {
-		return errors.New("failed to find kotsadm container in deployment")
+		return errors.New("failed to find kotsadm container in statefulset")
 	}
 
 	// image
-	deployment.Spec.Template.Spec.Containers[containerIdx].Image = fmt.Sprintf("%s/kotsadm:%s", kotsadmversion.KotsadmRegistry(deployOptions.KotsadmOptions), kotsadmversion.KotsadmTag(deployOptions.KotsadmOptions))
+	statefulset.Spec.Template.Spec.Containers[containerIdx].Image = fmt.Sprintf("%s/kotsadm:%s", kotsadmversion.KotsadmRegistry(deployOptions.KotsadmOptions), kotsadmversion.KotsadmTag(deployOptions.KotsadmOptions))
 
 	additionalInitContainers := []corev1.Container{}
-	for _, desiredContainer := range desiredDeployment.Spec.Template.Spec.InitContainers {
+	for _, desiredContainer := range desiredStatefulSet.Spec.Template.Spec.InitContainers {
 		found := false
-		for i, existingContainer := range deployment.Spec.Template.Spec.InitContainers {
+		for i, existingContainer := range statefulset.Spec.Template.Spec.InitContainers {
 			if existingContainer.Name != desiredContainer.Name {
 				continue
 			}
 
-			deployment.Spec.Template.Spec.InitContainers[i] = *desiredContainer.DeepCopy()
+			statefulset.Spec.Template.Spec.InitContainers[i] = *desiredContainer.DeepCopy()
 			found = true
 			break
 		}
@@ -170,24 +170,24 @@ func UpdateKotsadmDeployment(deployment *appsv1.Deployment, deployOptions types.
 			additionalInitContainers = append(additionalInitContainers, *desiredContainer.DeepCopy())
 		}
 	}
-	deployment.Spec.Template.Spec.InitContainers = append(deployment.Spec.Template.Spec.InitContainers, additionalInitContainers...)
+	statefulset.Spec.Template.Spec.InitContainers = append(statefulset.Spec.Template.Spec.InitContainers, additionalInitContainers...)
 
 	newVolumes := []corev1.Volume{}
-	for _, v := range desiredDeployment.Spec.Template.Spec.Volumes {
+	for _, v := range desiredStatefulSet.Spec.Template.Spec.Volumes {
 		newVolumes = append(newVolumes, *v.DeepCopy())
 	}
-	deployment.Spec.Template.Spec.Volumes = newVolumes
+	statefulset.Spec.Template.Spec.Volumes = newVolumes
 
 	// copy the env vars from the desired to existing. this could undo a change that the user had.
 	// we don't know which env vars we set and which are user edited. this method avoids deleting
 	// env vars that the user added, but doesn't handle edited vars
 	mergedEnvs := []corev1.EnvVar{}
-	for _, env := range desiredDeployment.Spec.Template.Spec.Containers[0].Env {
+	for _, env := range desiredStatefulSet.Spec.Template.Spec.Containers[0].Env {
 		mergedEnvs = append(mergedEnvs, env)
 	}
-	for _, existingEnv := range deployment.Spec.Template.Spec.Containers[containerIdx].Env {
+	for _, existingEnv := range statefulset.Spec.Template.Spec.Containers[containerIdx].Env {
 		isUnxpected := true
-		for _, env := range desiredDeployment.Spec.Template.Spec.Containers[0].Env {
+		for _, env := range desiredStatefulSet.Spec.Template.Spec.Containers[0].Env {
 			if env.Name == existingEnv.Name {
 				isUnxpected = false
 			}
@@ -197,12 +197,12 @@ func UpdateKotsadmDeployment(deployment *appsv1.Deployment, deployOptions types.
 			mergedEnvs = append(mergedEnvs, existingEnv)
 		}
 	}
-	deployment.Spec.Template.Spec.Containers[containerIdx].Env = mergedEnvs
+	statefulset.Spec.Template.Spec.Containers[containerIdx].Env = mergedEnvs
 
 	return nil
 }
 
-func KotsadmDeployment(deployOptions types.DeployOptions) *appsv1.Deployment {
+func KotsadmStatefulSet(deployOptions types.DeployOptions, size resource.Quantity) *appsv1.StatefulSet {
 	var securityContext corev1.PodSecurityContext
 	if !deployOptions.IsOpenShift {
 		securityContext = corev1.PodSecurityContext{
@@ -304,6 +304,8 @@ func KotsadmDeployment(deployOptions types.DeployOptions) *appsv1.Deployment {
 		},
 	}
 
+	s3env := []corev1.EnvVar{}
+
 	if strings.HasPrefix(deployOptions.StorageBaseURI, "docker://") {
 		env = append(env, corev1.EnvVar{
 			Name:  "STORAGE_BASEURI",
@@ -313,8 +315,8 @@ func KotsadmDeployment(deployOptions types.DeployOptions) *appsv1.Deployment {
 			Name:  "STORAGE_BASEURI_PLAINHTTP",
 			Value: strconv.FormatBool(deployOptions.StorageBaseURIPlainHTTP),
 		})
-	} else {
-		s3env := []corev1.EnvVar{
+	} else if deployOptions.HasObjectStore {
+		s3env = []corev1.EnvVar{
 			{
 				Name:  "S3_ENDPOINT",
 				Value: "http://kotsadm-minio:9000",
@@ -376,17 +378,18 @@ func KotsadmDeployment(deployOptions types.DeployOptions) *appsv1.Deployment {
 		})
 	}
 
-	deployment := &appsv1.Deployment{
+	statefulset := &appsv1.StatefulSet{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "apps/v1",
-			Kind:       "Deployment",
+			Kind:       "StatefulSet",
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "kotsadm",
 			Namespace: deployOptions.Namespace,
 			Labels:    types.GetKotsadmLabels(),
 		},
-		Spec: appsv1.DeploymentSpec{
+		Spec: appsv1.StatefulSetSpec{
+			ServiceName: "kotsadm",
 			Selector: &metav1.LabelSelector{
 				MatchLabels: map[string]string{
 					"app": "kotsadm",
@@ -410,6 +413,14 @@ func KotsadmDeployment(deployOptions types.DeployOptions) *appsv1.Deployment {
 					SecurityContext: &securityContext,
 					Volumes: []corev1.Volume{
 						{
+							Name: "kotsadmdata",
+							VolumeSource: corev1.VolumeSource{
+								PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
+									ClaimName: "kotsadmdata",
+								},
+							},
+						},
+						{
 							Name: "migrations",
 							VolumeSource: corev1.VolumeSource{
 								EmptyDir: &corev1.EmptyDirVolumeSource{
@@ -428,6 +439,31 @@ func KotsadmDeployment(deployOptions types.DeployOptions) *appsv1.Deployment {
 					RestartPolicy:      corev1.RestartPolicyAlways,
 					ImagePullSecrets:   pullSecrets,
 					InitContainers: []corev1.Container{
+						{
+							Image:           fmt.Sprintf("%s/kotsadm:%s", kotsadmversion.KotsadmRegistry(deployOptions.KotsadmOptions), kotsadmversion.KotsadmTag(deployOptions.KotsadmOptions)),
+							ImagePullPolicy: corev1.PullIfNotPresent,
+							Name:            "migrate-s3",
+							Command: []string{
+								"/migrate-s3.sh",
+							},
+							VolumeMounts: []corev1.VolumeMount{
+								{
+									Name:      "kotsadmdata",
+									MountPath: "/kotsadmdata",
+								},
+							},
+							Env: s3env,
+							Resources: corev1.ResourceRequirements{
+								Limits: corev1.ResourceList{
+									"cpu":    resource.MustParse("1"),
+									"memory": resource.MustParse("2Gi"),
+								},
+								Requests: corev1.ResourceList{
+									"cpu":    resource.MustParse("100m"),
+									"memory": resource.MustParse("100Mi"),
+								},
+							},
+						},
 						{
 							Image:           fmt.Sprintf("%s/kotsadm-migrations:%s", kotsadmversion.KotsadmRegistry(deployOptions.KotsadmOptions), kotsadmversion.KotsadmTag(deployOptions.KotsadmOptions)),
 							ImagePullPolicy: corev1.PullIfNotPresent,
@@ -568,42 +604,7 @@ func KotsadmDeployment(deployOptions types.DeployOptions) *appsv1.Deployment {
 									MountPath: "/backup",
 								},
 							},
-							Env: []corev1.EnvVar{
-								{
-									Name:  "S3_ENDPOINT",
-									Value: "http://kotsadm-minio:9000",
-								},
-								{
-									Name:  "S3_BUCKET_NAME",
-									Value: "kotsadm",
-								},
-								{
-									Name: "S3_ACCESS_KEY_ID",
-									ValueFrom: &corev1.EnvVarSource{
-										SecretKeyRef: &corev1.SecretKeySelector{
-											LocalObjectReference: corev1.LocalObjectReference{
-												Name: "kotsadm-minio",
-											},
-											Key: "accesskey",
-										},
-									},
-								},
-								{
-									Name: "S3_SECRET_ACCESS_KEY",
-									ValueFrom: &corev1.EnvVarSource{
-										SecretKeyRef: &corev1.SecretKeySelector{
-											LocalObjectReference: corev1.LocalObjectReference{
-												Name: "kotsadm-minio",
-											},
-											Key: "secretkey",
-										},
-									},
-								},
-								{
-									Name:  "S3_BUCKET_ENDPOINT",
-									Value: "true",
-								},
-							},
+							Env: s3env, // TODO NOW: this container shouldn't use s3 (and backup.sh)
 							Resources: corev1.ResourceRequirements{
 								Limits: corev1.ResourceList{
 									"cpu":    resource.MustParse("1"),
@@ -641,6 +642,10 @@ func KotsadmDeployment(deployOptions types.DeployOptions) *appsv1.Deployment {
 							},
 							VolumeMounts: []corev1.VolumeMount{
 								{
+									Name:      "kotsadmdata",
+									MountPath: "/kotsadmdata",
+								},
+								{
 									Name:      "backup",
 									MountPath: "/backup",
 								},
@@ -660,10 +665,28 @@ func KotsadmDeployment(deployOptions types.DeployOptions) *appsv1.Deployment {
 					},
 				},
 			},
+			VolumeClaimTemplates: []corev1.PersistentVolumeClaim{
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:   "kotsadmdata",
+						Labels: types.GetKotsadmLabels(),
+					},
+					Spec: corev1.PersistentVolumeClaimSpec{
+						AccessModes: []corev1.PersistentVolumeAccessMode{
+							corev1.ReadWriteOnce,
+						},
+						Resources: corev1.ResourceRequirements{
+							Requests: corev1.ResourceList{
+								corev1.ResourceName(corev1.ResourceStorage): size,
+							},
+						},
+					},
+				},
+			},
 		},
 	}
 
-	return deployment
+	return statefulset
 }
 
 func KotsadmService(namespace string, nodePort int32) *corev1.Service {

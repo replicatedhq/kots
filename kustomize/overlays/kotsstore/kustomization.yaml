@@ -4,4 +4,4 @@ bases:
   - ../../../migrations/kustomize/overlays/dev
 
 patches:
-  - ./deployment.yaml
+  - ./statefulset.yaml

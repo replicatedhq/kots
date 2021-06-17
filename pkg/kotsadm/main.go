@@ -45,14 +45,6 @@ func YAML(deployOptions types.DeployOptions) (map[string][]byte, error) {
 		}
 	}
 
-	minioDocs, err := getMinioYAML(deployOptions)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to get minio yaml")
-	}
-	for n, v := range minioDocs {
-		docs[n] = v
-	}
-
 	postgresDocs, err := getPostgresYAML(deployOptions)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get postgres yaml")
@@ -116,7 +108,6 @@ func Upgrade(upgradeOptions types.UpgradeOptions) error {
 	deployOptions.SimultaneousUploads = upgradeOptions.SimultaneousUploads
 	deployOptions.StorageBaseURI = upgradeOptions.StorageBaseURI
 	deployOptions.StorageBaseURIPlainHTTP = upgradeOptions.StorageBaseURIPlainHTTP
-	deployOptions.IncludeMinio = upgradeOptions.IncludeMinio
 	deployOptions.IncludeDockerDistribution = upgradeOptions.IncludeDockerDistribution
 
 	if err := ensureKotsadm(*deployOptions, clientset, log); err != nil {
@@ -297,12 +288,6 @@ func ensureStorage(deployOptions types.DeployOptions, clientset *kubernetes.Clie
 		if err := ensureDistribution(deployOptions, clientset); err != nil {
 			return errors.Wrap(err, "failed to ensure docker distribution")
 		}
-	} else if deployOptions.IncludeMinio {
-		// note that this is an else if.  if docker distribution _replaces_ minio
-		// in a kots install
-		if err := ensureMinio(deployOptions, clientset); err != nil {
-			return errors.Wrap(err, "failed to ensure minio")
-		}
 	}
 
 	return nil
@@ -372,12 +357,6 @@ func ensureKotsadm(deployOptions types.DeployOptions, clientset *kubernetes.Clie
 
 		if err := ensureStorage(deployOptions, clientset, log); err != nil {
 			return errors.Wrap(err, "failed to ensure postgres")
-		}
-
-		if deployOptions.IncludeMinio {
-			if err := waitForHealthyStatefulSet("kotsadm-minio", deployOptions, clientset, nil); err != nil {
-				return errors.Wrap(err, "failed to wait for minio")
-			}
 		}
 
 		if err := ensurePostgres(deployOptions, clientset); err != nil {
@@ -463,7 +442,7 @@ func ensureKotsadm(deployOptions types.DeployOptions, clientset *kubernetes.Clie
 
 	if !deployOptions.ExcludeAdminConsole {
 		log.ChildActionWithSpinner("Waiting for Admin Console to be ready")
-		if err := k8sutil.WaitForDeploymentReady(ctx, clientset, deployOptions.Namespace, "kotsadm", deployOptions.Timeout); err != nil {
+		if err := k8sutil.WaitForStatefulSetReady(ctx, clientset, deployOptions.Namespace, "kotsadm", deployOptions.Timeout); err != nil {
 			return errors.Wrap(err, "failed to wait for web")
 		}
 		log.FinishSpinner()
@@ -475,7 +454,7 @@ func ensureKotsadm(deployOptions types.DeployOptions, clientset *kubernetes.Clie
 			return errors.Wrap(err, "failed to wait for web")
 		}
 
-		if err := k8sutil.WaitForDeploymentReady(ctx, clientset, deployOptions.Namespace, "kotsadm", deployOptions.Timeout); err != nil {
+		if err := k8sutil.WaitForStatefulSetReady(ctx, clientset, deployOptions.Namespace, "kotsadm", deployOptions.Timeout); err != nil {
 			return errors.Wrap(err, "failed to wait for web")
 		}
 		log.FinishSpinner()
@@ -831,29 +810,6 @@ func readDeployOptionsFromCluster(namespace string, clientset *kubernetes.Client
 		deployOptions.SharedPassword = sharedPassword
 	}
 
-	// s3 secret, get from cluster or create new random values
-	s3Secret, err := getS3Secret(namespace, clientset)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to get s3 secret")
-	}
-	if s3Secret != nil {
-		accessKey, ok := s3Secret.Data["accesskey"]
-		if ok {
-			deployOptions.S3AccessKey = string(accessKey)
-		}
-
-		secretyKey, ok := s3Secret.Data["secretkey"]
-		if ok {
-			deployOptions.S3SecretKey = string(secretyKey)
-		}
-	}
-	if deployOptions.S3AccessKey == "" {
-		deployOptions.S3AccessKey = uuid.New().String()
-	}
-	if deployOptions.S3SecretKey == "" {
-		deployOptions.S3SecretKey = uuid.New().String()
-	}
-
 	// jwt key, get or create new value
 	jwtSecret, err := getJWTSessionSecret(namespace, clientset)
 	if err != nil {
@@ -904,6 +860,14 @@ func readDeployOptionsFromCluster(namespace string, clientset *kubernetes.Client
 		deployOptions.ApplicationMetadata = []byte(metadataConfig.Data["application.yaml"])
 	} else if !kuberneteserrors.IsNotFound(err) {
 		return nil, errors.Wrap(err, "failed to get app metadata from configmap")
+	}
+
+	// check if there's an object store (minio)
+	_, err = clientset.AppsV1().StatefulSets(deployOptions.Namespace).Get(context.TODO(), "kotsadm-minio", metav1.GetOptions{})
+	if err == nil {
+		deployOptions.HasObjectStore = true
+	} else if !kuberneteserrors.IsNotFound(err) {
+		return nil, errors.Wrap(err, "failed to get object store statefulset")
 	}
 
 	return &deployOptions, nil

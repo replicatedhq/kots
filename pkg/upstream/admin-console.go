@@ -19,8 +19,6 @@ import (
 type UpstreamSettings struct {
 	SharedPassword       string
 	SharedPasswordBcrypt string
-	S3AccessKey          string
-	S3SecretKey          string
 	JWT                  string
 	PostgresPassword     string
 	APIEncryptionKey     string
@@ -95,9 +93,6 @@ func loadUpstreamSettingsFromSecret(settings *UpstreamSettings, secret *corev1.S
 	switch secret.Name {
 	case "kotsadm-password":
 		settings.SharedPasswordBcrypt = string(secret.Data["passwordBcrypt"])
-	case "kotsadm-minio":
-		settings.S3AccessKey = string(secret.Data["accesskey"])
-		settings.S3SecretKey = string(secret.Data["secretkey"])
 	case "kotsadm-session":
 		settings.JWT = string(secret.Data["key"])
 	case "kotsadm-postgres":
@@ -125,8 +120,6 @@ func generateNewAdminConsoleFiles(settings *UpstreamSettings) ([]types.UpstreamF
 		Namespace:              "default",
 		SharedPassword:         settings.SharedPassword,
 		SharedPasswordBcrypt:   settings.SharedPasswordBcrypt,
-		S3AccessKey:            settings.S3AccessKey,
-		S3SecretKey:            settings.S3SecretKey,
 		JWT:                    settings.JWT,
 		PostgresPassword:       settings.PostgresPassword,
 		APIEncryptionKey:       settings.APIEncryptionKey,
