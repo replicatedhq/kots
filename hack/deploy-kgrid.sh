@@ -19,10 +19,10 @@ cat <<EOT > kgrid/version.yaml
 apiVersion: kgrid.replicated.com/v1alpha1
 kind: Version
 metadata:
-    name: version
-    namespace: kgrid-system
+  name: version
+  namespace: kgrid-system
 spec:
-    kots:
+  kots:
     latest: "${GIT_TAG}"
 EOT
 
