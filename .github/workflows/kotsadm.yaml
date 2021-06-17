@@ -784,3 +784,46 @@ jobs:
         asset_path: ./kotsadm.tar.gz
         asset_name: kotsadm.tar.gz
         asset_content_type: application/gzip
+
+
+  start_kgrid_test:
+    runs-on: ubuntu-18.04
+    needs: [release_go_api_tagged, release_operator_tagged]
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+
+    - name: Get the version
+      if: startsWith(github.ref, 'refs/tags/')
+      id: get_tag
+      shell: bash
+      run: echo ::set-output name=GIT_TAG::${GITHUB_REF/refs\/tags\//}
+
+    - uses: kceb/pull-request-url-action@v1
+      id: pr_url
+
+    - name: Expose git commit data
+      uses: rlespinasse/git-commit-data-action@v1.x
+
+    - name: Create staging gitops commit
+      if: ${{ steps.get_tag.outputs.GIT_TAG != '' }}
+      env:
+        REPLICATEDCOM_GITHUB_PRIVATE_KEY: ${{ secrets.REPLICATEDCOM_GITHUB_PRIVATE_KEY }}
+        PR_URL: ${{ steps.pr_url.outputs.url }}
+        GIT_TAG: ${{ steps.get_tag.outputs.GIT_TAG }}
+        GITOPS_OWNER: replicatedcom
+        GITOPS_REPO: gitops-deploy
+        GITOPS_BRANCH: master
+      run: ./hack/deploy-kgrid.sh
+
+    - name: Create production gitops commit
+      if: ${{ steps.get_tag.outputs.GIT_TAG != '' }}
+      env:
+        REPLICATEDCOM_GITHUB_PRIVATE_KEY: ${{ secrets.REPLICATEDCOM_GITHUB_PRIVATE_KEY }}
+        PR_URL: ${{ steps.pr_url.outputs.url }}
+        GIT_TAG: ${{ steps.get_tag.outputs.GIT_TAG }}
+        OVERLAY: production
+        GITOPS_OWNER: replicatedcom
+        GITOPS_REPO: gitops-deploy
+        GITOPS_BRANCH: release
+      run: ./hack/deploy-kgrid.sh
