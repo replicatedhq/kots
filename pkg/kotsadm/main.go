@@ -260,7 +260,7 @@ func canUpgrade(upgradeOptions types.UpgradeOptions, clientset *kubernetes.Clien
 }
 
 func removeUnusedKotsadmComponents(deployOptions types.DeployOptions, clientset *kubernetes.Clientset, log *logger.CLILogger) error {
-	// if there's a kotsadm web deployment, rmove (pre 1.11.0)
+	// if there's a kotsadm web deployment, remove (pre 1.11.0)
 	_, err := clientset.AppsV1().Deployments(deployOptions.Namespace).Get(context.TODO(), "kotsadm-web", metav1.GetOptions{})
 	if err == nil {
 		if err := clientset.AppsV1().Deployments(deployOptions.Namespace).Delete(context.TODO(), "kotsadm-web", metav1.DeleteOptions{}); err != nil {
@@ -273,6 +273,30 @@ func removeUnusedKotsadmComponents(deployOptions types.DeployOptions, clientset 
 	if err == nil {
 		if err := clientset.CoreV1().Services(deployOptions.Namespace).Delete(context.TODO(), "kotsadm-api", metav1.DeleteOptions{}); err != nil {
 			return errors.Wrap(err, "failed to delete kotsadm-api service")
+		}
+	}
+
+	// if there's a deployment named "kotsadm", remove (pre 1.45.0)
+	_, err = clientset.AppsV1().Deployments(deployOptions.Namespace).Get(context.TODO(), "kotsadm", metav1.GetOptions{})
+	if err == nil {
+		if err := clientset.AppsV1().Deployments(deployOptions.Namespace).Delete(context.TODO(), "kotsadm", metav1.DeleteOptions{}); err != nil {
+			return errors.Wrap(err, "failed to delete kotsadm deployment")
+		}
+	}
+
+	// if there's a service named "kotsadm-minio", remove (pre 1.45.0)
+	_, err = clientset.CoreV1().Services(deployOptions.Namespace).Get(context.TODO(), "kotsadm-minio", metav1.GetOptions{})
+	if err == nil {
+		if err := clientset.CoreV1().Services(deployOptions.Namespace).Delete(context.TODO(), "kotsadm-minio", metav1.DeleteOptions{}); err != nil {
+			return errors.Wrap(err, "failed to delete kotsadm-minio service")
+		}
+	}
+
+	// if there's a statefulset named "kotsadm-minio", remove (pre 1.45.0)
+	_, err = clientset.AppsV1().StatefulSets(deployOptions.Namespace).Get(context.TODO(), "kotsadm-minio", metav1.GetOptions{})
+	if err == nil {
+		if err := clientset.AppsV1().StatefulSets(deployOptions.Namespace).Delete(context.TODO(), "kotsadm-minio", metav1.DeleteOptions{}); err != nil {
+			return errors.Wrap(err, "failed to delete kotsadm-minio statefulset")
 		}
 	}
 
