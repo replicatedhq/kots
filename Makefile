@@ -107,5 +107,6 @@ project-pact-tests:
 
 	@echo All contract tests have passed.
 
-make cache:
+.PHONY: cache
+cache:
 	docker build -f hack/dev/Dockerfile.skaffoldcache . -t kotsadm:cache
