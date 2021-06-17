@@ -15,10 +15,6 @@ import (
 )
 
 func bootstrap() error {
-	if err := store.GetStore().Init(); err != nil {
-		return errors.Wrap(err, "failed to init store")
-	}
-
 	if err := bootstrapClusterToken(); err != nil {
 		return errors.Wrap(err, "failed to bootstrap cluster token")
 	}

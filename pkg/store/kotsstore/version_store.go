@@ -204,17 +204,15 @@ func (s *KOTSStore) CreateAppVersionArchive(appID string, sequence int64, archiv
 		return errors.Wrap(err, "failed to create archive")
 	}
 
-	bucket := os.Getenv("S3_BUCKET_NAME")
-	key := fmt.Sprintf("%s/%d.tar.gz", appID, sequence)
-
 	f, err := os.Open(fileToUpload)
 	if err != nil {
 		return errors.Wrap(err, "failed to open archive file")
 	}
 
-	err = filestore.GetStore().PutObject(bucket, key, f)
+	outputPath := fmt.Sprintf("%s/%d.tar.gz", appID, sequence)
+	err = filestore.WriteFile(outputPath, f)
 	if err != nil {
-		return errors.Wrap(err, "failed to put object")
+		return errors.Wrap(err, "failed to write file")
 	}
 
 	return nil
@@ -227,12 +225,10 @@ func (s *KOTSStore) GetAppVersionArchive(appID string, sequence int64, dstPath s
 	// 	zap.String("appID", appID),
 	// 	zap.Int64("sequence", sequence))
 
-	bucket := os.Getenv("S3_BUCKET_NAME")
-	key := fmt.Sprintf("%s/%d.tar.gz", appID, sequence)
-
-	bundlePath, err := filestore.GetStore().GetObject(bucket, key)
+	path := fmt.Sprintf("%s/%d.tar.gz", appID, sequence)
+	bundlePath, err := filestore.ReadFile(path)
 	if err != nil {
-		return errors.Wrap(err, "failed to get object")
+		return errors.Wrap(err, "failed to read file")
 	}
 	defer os.RemoveAll(bundlePath)
 

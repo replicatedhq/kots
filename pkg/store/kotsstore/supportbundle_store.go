@@ -295,12 +295,10 @@ func (s *KOTSStore) CreateSupportBundle(id string, appID string, archivePath str
 		return nil, errors.Wrap(err, "failed to open archive file")
 	}
 
-	bucket := os.Getenv("S3_BUCKET_NAME")
-	key := filepath.Join("supportbundles", id, "supportbundle.tar.gz")
-
-	err = filestore.GetStore().PutObject(bucket, key, f)
+	outputPath := filepath.Join("supportbundles", id, "supportbundle.tar.gz")
+	err = filestore.WriteFile(outputPath, f)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to put object")
+		return nil, errors.Wrap(err, "failed to write file")
 	}
 
 	supportBundle := types.SupportBundle{
@@ -381,25 +379,22 @@ func (s *KOTSStore) UpdateSupportBundle(bundle *types.SupportBundle) error {
 	return nil
 }
 
-// UploadSupportBundle pushed the metadata file and support bundle archive to the object store
+// UploadSupportBundle pushes the metadata file and support bundle archive to the file store
 func (s *KOTSStore) UploadSupportBundle(id string, archivePath string, marshalledTree []byte) error {
 
 	if err := s.saveSupportBundleMetafile(id, "treeindex", marshalledTree); err != nil {
 		return errors.Wrap(err, "faile to save treeindex")
 	}
 
-	// upload the bundle to s3
-	bucket := os.Getenv("S3_BUCKET_NAME")
-	key := filepath.Join("supportbundles", id, "supportbundle.tar.gz")
-
 	f, err := os.Open(archivePath)
 	if err != nil {
 		return errors.Wrap(err, "failed to open archive file")
 	}
 
-	err = filestore.GetStore().PutObject(bucket, key, f)
+	outputPath := filepath.Join("supportbundles", id, "supportbundle.tar.gz")
+	err = filestore.WriteFile(outputPath, f)
 	if err != nil {
-		return errors.Wrap(err, "failed to put object")
+		return errors.Wrap(err, "failed to write file")
 	}
 
 	return nil
@@ -411,12 +406,10 @@ func (s *KOTSStore) GetSupportBundleArchive(bundleID string) (string, error) {
 	logger.Debug("getting support bundle",
 		zap.String("bundleID", bundleID))
 
-	bucket := os.Getenv("S3_BUCKET_NAME")
-	key := fmt.Sprintf("supportbundles/%s/supportbundle.tar.gz", bundleID)
-
-	archivePath, err := filestore.GetStore().GetObject(bucket, key)
+	path := fmt.Sprintf("supportbundles/%s/supportbundle.tar.gz", bundleID)
+	archivePath, err := filestore.ReadFile(path)
 	if err != nil {
-		return "", errors.Wrap(err, "failed to get object")
+		return "", errors.Wrap(err, "failed to read file")
 	}
 
 	return archivePath, nil
@@ -531,24 +524,20 @@ func (s *KOTSStore) saveSupportBundleMetafile(id string, filename string, data [
 	}
 	gzipWriter.Close()
 
-	bucket := os.Getenv("S3_BUCKET_NAME")
-	key := filepath.Join("supportbundles", id, fmt.Sprintf("%s.gz", filename))
-
-	err := filestore.GetStore().PutObject(bucket, key, bytes.NewReader(gzipped.Bytes()))
+	outputPath := filepath.Join("supportbundles", id, fmt.Sprintf("%s.gz", filename))
+	err := filestore.WriteFile(outputPath, bytes.NewReader(gzipped.Bytes()))
 	if err != nil {
-		return errors.Wrap(err, "failed to put object")
+		return errors.Wrap(err, "failed to write file")
 	}
 
 	return nil
 }
 
 func (s *KOTSStore) getSupportBundleMetafile(id string, filename string) ([]byte, error) {
-	bucket := os.Getenv("S3_BUCKET_NAME")
-	key := filepath.Join("supportbundles", id, fmt.Sprintf("%s.gz", filename))
-
-	bundlePath, err := filestore.GetStore().GetObject(bucket, key)
+	path := filepath.Join("supportbundles", id, fmt.Sprintf("%s.gz", filename))
+	bundlePath, err := filestore.ReadFile(path)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to get object")
+		return nil, errors.Wrap(err, "failed to read file")
 	}
 	defer os.RemoveAll(bundlePath)
 

@@ -1,27 +1,72 @@
 package filestore
 
 import (
-	"github.com/replicatedhq/kots/pkg/filestore/blobstore"
-	"github.com/replicatedhq/kots/pkg/filestore/s3store"
+	"io"
+	"io/ioutil"
+	"os"
+	"path/filepath"
+	"strings"
+
+	"github.com/pkg/errors"
 )
 
-var (
-	hasStore    = false
-	globalStore FileStore
+const (
+	KotsadmDataDir = "/kotsadmdata"
 )
 
-var _ FileStore = (*s3store.S3Store)(nil)
-var _ FileStore = (*blobstore.BlobStore)(nil)
+func WriteFile(outputPath string, body io.ReadSeeker) error {
+	outputPath = filepath.Join(KotsadmDataDir, outputPath)
 
-func GetStore() FileStore {
-	if !hasStore {
-		globalStore = storeFromEnv()
-		hasStore = true
+	parentPath, _ := filepath.Split(outputPath)
+	err := os.MkdirAll(parentPath, 0755)
+	if err != nil {
+		return errors.Wrapf(err, "failed to create directory %q", parentPath)
 	}
 
-	return globalStore
+	fileWriter, err := os.Create(outputPath)
+	if err != nil {
+		return errors.Wrapf(err, "failed to create file %q", outputPath)
+	}
+	defer fileWriter.Close()
+
+	_, err = io.Copy(fileWriter, body)
+	if err != nil {
+		return errors.Wrapf(err, "failed to write file %q", outputPath)
+	}
+
+	return nil
 }
 
-func storeFromEnv() FileStore {
-	return &blobstore.BlobStore{}
+// ReadFile creates a new copy of the file under /tmp and returns the path for it.
+// the caller is responsible for cleaning up.
+// this is so that the original files are not removed by the caller on cleanup by mistake.
+func ReadFile(path string) (string, error) {
+	path = filepath.Join(KotsadmDataDir, path)
+
+	fileReader, err := os.Open(path)
+	if err != nil {
+		return "", errors.Wrapf(err, "failed to open file %q", path)
+	}
+	defer fileReader.Close()
+
+	tmpDir, err := ioutil.TempDir("", "kotsadm")
+	if err != nil {
+		return "", errors.Wrap(err, "failed to create temp dir")
+	}
+
+	pathParts := strings.Split(path, string(os.PathSeparator))
+	outputPath := filepath.Join(tmpDir, pathParts[len(pathParts)-1])
+
+	fileWriter, err := os.Create(outputPath)
+	if err != nil {
+		return "", errors.Wrapf(err, "failed to create file %q", outputPath)
+	}
+	defer fileWriter.Close()
+
+	_, err = io.Copy(fileWriter, fileReader)
+	if err != nil {
+		return "", errors.Wrapf(err, "failed to write file %q", outputPath)
+	}
+
+	return outputPath, nil
 }

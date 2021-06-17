@@ -11,7 +11,6 @@ import (
 	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/pkg/errors"
 	kotsscheme "github.com/replicatedhq/kots/kotskinds/client/kotsclientset/scheme"
-	"github.com/replicatedhq/kots/pkg/filestore"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	kotsadmtypes "github.com/replicatedhq/kots/pkg/kotsadm/types"
 	"github.com/replicatedhq/kots/pkg/logger"
@@ -46,23 +45,11 @@ func init() {
 	troubleshootscheme.AddToScheme(scheme.Scheme)
 }
 
-func (s *KOTSStore) Init() error {
-	if err := filestore.GetStore().Init(); err != nil {
-		return errors.Wrap(err, "failed to init file store")
-	}
-
-	return nil
-}
-
 func (s *KOTSStore) WaitForReady(ctx context.Context) error {
 	errCh := make(chan error, 2)
 
 	go func() {
 		errCh <- waitForPostgres(ctx)
-	}()
-
-	go func() {
-		errCh <- filestore.GetStore().WaitForReady(ctx)
 	}()
 
 	isError := false
