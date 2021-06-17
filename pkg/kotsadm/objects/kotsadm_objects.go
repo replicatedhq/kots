@@ -304,8 +304,6 @@ func KotsadmStatefulSet(deployOptions types.DeployOptions, size resource.Quantit
 		},
 	}
 
-	s3env := []corev1.EnvVar{}
-
 	if strings.HasPrefix(deployOptions.StorageBaseURI, "docker://") {
 		env = append(env, corev1.EnvVar{
 			Name:  "STORAGE_BASEURI",
@@ -315,44 +313,6 @@ func KotsadmStatefulSet(deployOptions types.DeployOptions, size resource.Quantit
 			Name:  "STORAGE_BASEURI_PLAINHTTP",
 			Value: strconv.FormatBool(deployOptions.StorageBaseURIPlainHTTP),
 		})
-	} else if deployOptions.HasObjectStore {
-		s3env = []corev1.EnvVar{
-			{
-				Name:  "S3_ENDPOINT",
-				Value: "http://kotsadm-minio:9000",
-			},
-			{
-				Name:  "S3_BUCKET_NAME",
-				Value: "kotsadm",
-			},
-			{
-				Name: "S3_ACCESS_KEY_ID",
-				ValueFrom: &corev1.EnvVarSource{
-					SecretKeyRef: &corev1.SecretKeySelector{
-						LocalObjectReference: corev1.LocalObjectReference{
-							Name: "kotsadm-minio",
-						},
-						Key: "accesskey",
-					},
-				},
-			},
-			{
-				Name: "S3_SECRET_ACCESS_KEY",
-				ValueFrom: &corev1.EnvVarSource{
-					SecretKeyRef: &corev1.SecretKeySelector{
-						LocalObjectReference: corev1.LocalObjectReference{
-							Name: "kotsadm-minio",
-						},
-						Key: "secretkey",
-					},
-				},
-			},
-			{
-				Name:  "S3_BUCKET_ENDPOINT",
-				Value: "true",
-			},
-		}
-		env = append(env, s3env...)
 	}
 
 	env = append(env, GetProxyEnv(deployOptions)...)
@@ -377,6 +337,203 @@ func KotsadmStatefulSet(deployOptions types.DeployOptions, size resource.Quantit
 			Value: fmt.Sprintf("%d", deployOptions.SimultaneousUploads),
 		})
 	}
+
+	initContainers := []corev1.Container{}
+
+	if deployOptions.HasObjectStore {
+		// this init container is only used for data migration from the object store/minio.
+		// so there's no need to include it if there's no object store/minio
+		initContainers = append(initContainers, corev1.Container{
+			Image:           fmt.Sprintf("%s/kotsadm:%s", kotsadmversion.KotsadmRegistry(deployOptions.KotsadmOptions), kotsadmversion.KotsadmTag(deployOptions.KotsadmOptions)),
+			ImagePullPolicy: corev1.PullIfNotPresent,
+			Name:            "migrate-s3",
+			Command: []string{
+				"/migrate-s3.sh",
+			},
+			VolumeMounts: []corev1.VolumeMount{
+				{
+					Name:      "kotsadmdata",
+					MountPath: "/kotsadmdata",
+				},
+			},
+			Env: []corev1.EnvVar{
+				{
+					Name:  "S3_ENDPOINT",
+					Value: "http://kotsadm-minio:9000",
+				},
+				{
+					Name:  "S3_BUCKET_NAME",
+					Value: "kotsadm",
+				},
+				{
+					Name: "S3_ACCESS_KEY_ID",
+					ValueFrom: &corev1.EnvVarSource{
+						SecretKeyRef: &corev1.SecretKeySelector{
+							LocalObjectReference: corev1.LocalObjectReference{
+								Name: "kotsadm-minio",
+							},
+							Key: "accesskey",
+						},
+					},
+				},
+				{
+					Name: "S3_SECRET_ACCESS_KEY",
+					ValueFrom: &corev1.EnvVarSource{
+						SecretKeyRef: &corev1.SecretKeySelector{
+							LocalObjectReference: corev1.LocalObjectReference{
+								Name: "kotsadm-minio",
+							},
+							Key: "secretkey",
+						},
+					},
+				},
+				{
+					Name:  "S3_BUCKET_ENDPOINT",
+					Value: "true",
+				},
+			},
+			Resources: corev1.ResourceRequirements{
+				Limits: corev1.ResourceList{
+					"cpu":    resource.MustParse("1"),
+					"memory": resource.MustParse("2Gi"),
+				},
+				Requests: corev1.ResourceList{
+					"cpu":    resource.MustParse("100m"),
+					"memory": resource.MustParse("100Mi"),
+				},
+			},
+		})
+	}
+
+	initContainers = append(initContainers, corev1.Container{
+		Image:           fmt.Sprintf("%s/kotsadm-migrations:%s", kotsadmversion.KotsadmRegistry(deployOptions.KotsadmOptions), kotsadmversion.KotsadmTag(deployOptions.KotsadmOptions)),
+		ImagePullPolicy: corev1.PullIfNotPresent,
+		Name:            "schemahero-plan",
+		Args:            []string{"plan"},
+		VolumeMounts: []corev1.VolumeMount{
+			{
+				Name:      "migrations",
+				MountPath: "/migrations",
+			},
+		},
+		Env: []corev1.EnvVar{
+			{
+				Name:  "SCHEMAHERO_DRIVER",
+				Value: "postgres",
+			},
+			{
+				Name:  "SCHEMAHERO_SPEC_FILE",
+				Value: "/tables",
+			},
+			{
+				Name:  "SCHEMAHERO_OUT",
+				Value: "/migrations/plan.yaml",
+			},
+			{
+				Name: "SCHEMAHERO_URI",
+				ValueFrom: &corev1.EnvVarSource{
+					SecretKeyRef: &corev1.SecretKeySelector{
+						LocalObjectReference: corev1.LocalObjectReference{
+							Name: "kotsadm-postgres",
+						},
+						Key: "uri",
+					},
+				},
+			},
+		},
+		Resources: corev1.ResourceRequirements{
+			Limits: corev1.ResourceList{
+				"cpu":    resource.MustParse("100m"),
+				"memory": resource.MustParse("100Mi"),
+			},
+			Requests: corev1.ResourceList{
+				"cpu":    resource.MustParse("50m"),
+				"memory": resource.MustParse("50Mi"),
+			},
+		},
+	})
+
+	initContainers = append(initContainers, corev1.Container{
+		Image:           fmt.Sprintf("%s/kotsadm-migrations:%s", kotsadmversion.KotsadmRegistry(deployOptions.KotsadmOptions), kotsadmversion.KotsadmTag(deployOptions.KotsadmOptions)),
+		ImagePullPolicy: corev1.PullIfNotPresent,
+		Name:            "schemahero-apply",
+		Args:            []string{"apply"},
+		VolumeMounts: []corev1.VolumeMount{
+			{
+				Name:      "migrations",
+				MountPath: "/migrations",
+			},
+		},
+		Env: []corev1.EnvVar{
+			{
+				Name:  "SCHEMAHERO_DRIVER",
+				Value: "postgres",
+			},
+			{
+				Name:  "SCHEMAHERO_DDL",
+				Value: "/migrations/plan.yaml",
+			},
+			{
+				Name: "SCHEMAHERO_URI",
+				ValueFrom: &corev1.EnvVarSource{
+					SecretKeyRef: &corev1.SecretKeySelector{
+						LocalObjectReference: corev1.LocalObjectReference{
+							Name: "kotsadm-postgres",
+						},
+						Key: "uri",
+					},
+				},
+			},
+		},
+		Resources: corev1.ResourceRequirements{
+			Limits: corev1.ResourceList{
+				"cpu":    resource.MustParse("100m"),
+				"memory": resource.MustParse("100Mi"),
+			},
+			Requests: corev1.ResourceList{
+				"cpu":    resource.MustParse("50m"),
+				"memory": resource.MustParse("50Mi"),
+			},
+		},
+	})
+
+	initContainers = append(initContainers, corev1.Container{
+		Image:           fmt.Sprintf("%s/kotsadm:%s", kotsadmversion.KotsadmRegistry(deployOptions.KotsadmOptions), kotsadmversion.KotsadmTag(deployOptions.KotsadmOptions)),
+		ImagePullPolicy: corev1.PullIfNotPresent,
+		Name:            "restore-db",
+		Command: []string{
+			"/restore-db.sh",
+		},
+		VolumeMounts: []corev1.VolumeMount{
+			{
+				Name:      "backup",
+				MountPath: "/backup",
+			},
+		},
+		Env: []corev1.EnvVar{
+			{
+				Name: "POSTGRES_PASSWORD",
+				ValueFrom: &corev1.EnvVarSource{
+					SecretKeyRef: &corev1.SecretKeySelector{
+						LocalObjectReference: corev1.LocalObjectReference{
+							Name: "kotsadm-postgres",
+						},
+						Key: "password",
+					},
+				},
+			},
+		},
+		Resources: corev1.ResourceRequirements{
+			Limits: corev1.ResourceList{
+				"cpu":    resource.MustParse("1"),
+				"memory": resource.MustParse("2Gi"),
+			},
+			Requests: corev1.ResourceList{
+				"cpu":    resource.MustParse("100m"),
+				"memory": resource.MustParse("100Mi"),
+			},
+		},
+	})
 
 	statefulset := &appsv1.StatefulSet{
 		TypeMeta: metav1.TypeMeta{
@@ -438,185 +595,7 @@ func KotsadmStatefulSet(deployOptions types.DeployOptions, size resource.Quantit
 					ServiceAccountName: "kotsadm",
 					RestartPolicy:      corev1.RestartPolicyAlways,
 					ImagePullSecrets:   pullSecrets,
-					InitContainers: []corev1.Container{
-						{
-							Image:           fmt.Sprintf("%s/kotsadm:%s", kotsadmversion.KotsadmRegistry(deployOptions.KotsadmOptions), kotsadmversion.KotsadmTag(deployOptions.KotsadmOptions)),
-							ImagePullPolicy: corev1.PullIfNotPresent,
-							Name:            "migrate-s3",
-							Command: []string{
-								"/migrate-s3.sh",
-							},
-							VolumeMounts: []corev1.VolumeMount{
-								{
-									Name:      "kotsadmdata",
-									MountPath: "/kotsadmdata",
-								},
-							},
-							Env: s3env,
-							Resources: corev1.ResourceRequirements{
-								Limits: corev1.ResourceList{
-									"cpu":    resource.MustParse("1"),
-									"memory": resource.MustParse("2Gi"),
-								},
-								Requests: corev1.ResourceList{
-									"cpu":    resource.MustParse("100m"),
-									"memory": resource.MustParse("100Mi"),
-								},
-							},
-						},
-						{
-							Image:           fmt.Sprintf("%s/kotsadm-migrations:%s", kotsadmversion.KotsadmRegistry(deployOptions.KotsadmOptions), kotsadmversion.KotsadmTag(deployOptions.KotsadmOptions)),
-							ImagePullPolicy: corev1.PullIfNotPresent,
-							Name:            "schemahero-plan",
-							Args:            []string{"plan"},
-							VolumeMounts: []corev1.VolumeMount{
-								{
-									Name:      "migrations",
-									MountPath: "/migrations",
-								},
-							},
-							Env: []corev1.EnvVar{
-								{
-									Name:  "SCHEMAHERO_DRIVER",
-									Value: "postgres",
-								},
-								{
-									Name:  "SCHEMAHERO_SPEC_FILE",
-									Value: "/tables",
-								},
-								{
-									Name:  "SCHEMAHERO_OUT",
-									Value: "/migrations/plan.yaml",
-								},
-								{
-									Name: "SCHEMAHERO_URI",
-									ValueFrom: &corev1.EnvVarSource{
-										SecretKeyRef: &corev1.SecretKeySelector{
-											LocalObjectReference: corev1.LocalObjectReference{
-												Name: "kotsadm-postgres",
-											},
-											Key: "uri",
-										},
-									},
-								},
-							},
-							Resources: corev1.ResourceRequirements{
-								Limits: corev1.ResourceList{
-									"cpu":    resource.MustParse("100m"),
-									"memory": resource.MustParse("100Mi"),
-								},
-								Requests: corev1.ResourceList{
-									"cpu":    resource.MustParse("50m"),
-									"memory": resource.MustParse("50Mi"),
-								},
-							},
-						},
-						{
-							Image:           fmt.Sprintf("%s/kotsadm-migrations:%s", kotsadmversion.KotsadmRegistry(deployOptions.KotsadmOptions), kotsadmversion.KotsadmTag(deployOptions.KotsadmOptions)),
-							ImagePullPolicy: corev1.PullIfNotPresent,
-							Name:            "schemahero-apply",
-							Args:            []string{"apply"},
-							VolumeMounts: []corev1.VolumeMount{
-								{
-									Name:      "migrations",
-									MountPath: "/migrations",
-								},
-							},
-							Env: []corev1.EnvVar{
-								{
-									Name:  "SCHEMAHERO_DRIVER",
-									Value: "postgres",
-								},
-								{
-									Name:  "SCHEMAHERO_DDL",
-									Value: "/migrations/plan.yaml",
-								},
-								{
-									Name: "SCHEMAHERO_URI",
-									ValueFrom: &corev1.EnvVarSource{
-										SecretKeyRef: &corev1.SecretKeySelector{
-											LocalObjectReference: corev1.LocalObjectReference{
-												Name: "kotsadm-postgres",
-											},
-											Key: "uri",
-										},
-									},
-								},
-							},
-							Resources: corev1.ResourceRequirements{
-								Limits: corev1.ResourceList{
-									"cpu":    resource.MustParse("100m"),
-									"memory": resource.MustParse("100Mi"),
-								},
-								Requests: corev1.ResourceList{
-									"cpu":    resource.MustParse("50m"),
-									"memory": resource.MustParse("50Mi"),
-								},
-							},
-						},
-						{
-							Image:           fmt.Sprintf("%s/kotsadm:%s", kotsadmversion.KotsadmRegistry(deployOptions.KotsadmOptions), kotsadmversion.KotsadmTag(deployOptions.KotsadmOptions)),
-							ImagePullPolicy: corev1.PullIfNotPresent,
-							Name:            "restore-db",
-							Command: []string{
-								"/restore-db.sh",
-							},
-							VolumeMounts: []corev1.VolumeMount{
-								{
-									Name:      "backup",
-									MountPath: "/backup",
-								},
-							},
-							Env: []corev1.EnvVar{
-								{
-									Name: "POSTGRES_PASSWORD",
-									ValueFrom: &corev1.EnvVarSource{
-										SecretKeyRef: &corev1.SecretKeySelector{
-											LocalObjectReference: corev1.LocalObjectReference{
-												Name: "kotsadm-postgres",
-											},
-											Key: "password",
-										},
-									},
-								},
-							},
-							Resources: corev1.ResourceRequirements{
-								Limits: corev1.ResourceList{
-									"cpu":    resource.MustParse("1"),
-									"memory": resource.MustParse("2Gi"),
-								},
-								Requests: corev1.ResourceList{
-									"cpu":    resource.MustParse("100m"),
-									"memory": resource.MustParse("100Mi"),
-								},
-							},
-						},
-						{
-							Image:           fmt.Sprintf("%s/kotsadm:%s", kotsadmversion.KotsadmRegistry(deployOptions.KotsadmOptions), kotsadmversion.KotsadmTag(deployOptions.KotsadmOptions)),
-							ImagePullPolicy: corev1.PullIfNotPresent,
-							Name:            "restore-s3",
-							Command: []string{
-								"/restore-s3.sh",
-							},
-							VolumeMounts: []corev1.VolumeMount{
-								{
-									Name:      "backup",
-									MountPath: "/backup",
-								},
-							},
-							Env: s3env, // TODO NOW: this container shouldn't use s3 (and backup.sh)
-							Resources: corev1.ResourceRequirements{
-								Limits: corev1.ResourceList{
-									"cpu":    resource.MustParse("1"),
-									"memory": resource.MustParse("2Gi"),
-								},
-								Requests: corev1.ResourceList{
-									"cpu":    resource.MustParse("100m"),
-									"memory": resource.MustParse("100Mi"),
-								},
-							},
-						},
-					},
+					InitContainers:     initContainers,
 					Containers: []corev1.Container{
 						{
 							Image:           fmt.Sprintf("%s/kotsadm:%s", kotsadmversion.KotsadmRegistry(deployOptions.KotsadmOptions), kotsadmversion.KotsadmTag(deployOptions.KotsadmOptions)),
