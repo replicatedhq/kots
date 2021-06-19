@@ -207,6 +207,7 @@ func KotsadmStatefulSet(deployOptions types.DeployOptions, size resource.Quantit
 	if !deployOptions.IsOpenShift {
 		securityContext = corev1.PodSecurityContext{
 			RunAsUser: util.IntPointer(1001),
+			FSGroup:   util.IntPointer(1001),
 		}
 	}
 
