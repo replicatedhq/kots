@@ -3,7 +3,6 @@ package kotsstore
 import (
 	"context"
 	"database/sql"
-	"log"
 	"os"
 	"strings"
 	"time"
@@ -46,26 +45,10 @@ func init() {
 }
 
 func (s *KOTSStore) WaitForReady(ctx context.Context) error {
-	errCh := make(chan error, 2)
-
-	go func() {
-		errCh <- waitForPostgres(ctx)
-	}()
-
-	isError := false
-	for i := 0; i < 2; i++ {
-		err := <-errCh
-		if err != nil {
-			log.Println(err.Error())
-			isError = true
-			break
-		}
+	err := waitForPostgres(ctx)
+	if err != nil {
+		return errors.Wrap(err, "failed to wait for postgres")
 	}
-
-	if isError {
-		return errors.New("failed to wait for dependencies")
-	}
-
 	return nil
 }
 
