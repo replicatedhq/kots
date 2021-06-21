@@ -178,16 +178,18 @@ func WaitForKotsadm(clientset *kubernetes.Clientset, namespace string, timeoutWa
 		}
 
 		for _, pod := range pods.Items {
-			if pod.Status.Phase == corev1.PodRunning {
-				if pod.Status.ContainerStatuses[0].Ready == true {
-					return pod.Name, nil
+			if len(pod.OwnerReferences) > 0 && pod.OwnerReferences[0].Kind == "StatefulSet" {
+				if pod.Status.Phase == corev1.PodRunning {
+					if pod.Status.ContainerStatuses[0].Ready {
+						return pod.Name, nil
+					}
 				}
 			}
 		}
 
 		time.Sleep(time.Second)
 
-		if time.Now().Sub(start) > timeoutWaitingForWeb {
+		if time.Since(start) > timeoutWaitingForWeb {
 			return "", &kotsadmtypes.ErrorTimeout{Message: "timeout waiting for kotsadm pod"}
 		}
 	}

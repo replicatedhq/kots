@@ -282,6 +282,8 @@ func removeUnusedKotsadmComponents(deployOptions types.DeployOptions, clientset 
 		if err := clientset.AppsV1().Deployments(deployOptions.Namespace).Delete(context.TODO(), "kotsadm", metav1.DeleteOptions{}); err != nil {
 			return errors.Wrap(err, "failed to delete kotsadm deployment")
 		}
+	} else if !kuberneteserrors.IsNotFound(err) {
+		return errors.Wrap(err, "failed to get kotsadm deployment")
 	}
 
 	// if there's a service named "kotsadm-minio", remove (pre 1.45.0)
