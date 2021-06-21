@@ -344,6 +344,7 @@ func KotsadmStatefulSet(deployOptions types.DeployOptions, size resource.Quantit
 	if deployOptions.HasObjectStore {
 		// this init container is only used for data migration from the object store/minio.
 		// so there's no need to include it if there's no object store/minio
+		trueVal := true
 		initContainers = append(initContainers, corev1.Container{
 			Image:           fmt.Sprintf("%s/kotsadm:%s", kotsadmversion.KotsadmRegistry(deployOptions.KotsadmOptions), kotsadmversion.KotsadmTag(deployOptions.KotsadmOptions)),
 			ImagePullPolicy: corev1.PullIfNotPresent,
@@ -373,7 +374,8 @@ func KotsadmStatefulSet(deployOptions types.DeployOptions, size resource.Quantit
 							LocalObjectReference: corev1.LocalObjectReference{
 								Name: "kotsadm-minio",
 							},
-							Key: "accesskey",
+							Key:      "accesskey",
+							Optional: &trueVal,
 						},
 					},
 				},
@@ -384,7 +386,8 @@ func KotsadmStatefulSet(deployOptions types.DeployOptions, size resource.Quantit
 							LocalObjectReference: corev1.LocalObjectReference{
 								Name: "kotsadm-minio",
 							},
-							Key: "secretkey",
+							Key:      "secretkey",
+							Optional: &trueVal,
 						},
 					},
 				},

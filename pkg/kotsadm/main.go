@@ -302,6 +302,14 @@ func removeUnusedKotsadmComponents(deployOptions types.DeployOptions, clientset 
 		}
 	}
 
+	// if there's a secret named "kotsadm-minio", remove (pre 1.45.0)
+	_, err = clientset.CoreV1().Secrets(deployOptions.Namespace).Get(context.TODO(), "kotsadm-minio", metav1.GetOptions{})
+	if err == nil {
+		if err := clientset.CoreV1().Secrets(deployOptions.Namespace).Delete(context.TODO(), "kotsadm-minio", metav1.DeleteOptions{}); err != nil {
+			return errors.Wrap(err, "failed to delete kotsadm-minio secret")
+		}
+	}
+
 	// if there's a minio pvc, remove (pre 1.45.0)
 	minioPVCSelectorLabels := map[string]string{
 		"app": "kotsadm-minio",
