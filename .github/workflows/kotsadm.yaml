@@ -25,7 +25,7 @@ jobs:
             --dbname ship-cloud --driver postgres
 
       - name: Upload schema artifact
-        uses: actions/upload-artifact@v2.2.3
+        uses: actions/upload-artifact@v2.2.4
         with:
           name: schema
           path: ./migrations/fixtures/schema/fixtures.sql
@@ -51,7 +51,7 @@ jobs:
       run: make -C migrations/fixtures deps build run
 
     - name: Upload fixtures artifact
-      uses: actions/upload-artifact@v2.2.3
+      uses: actions/upload-artifact@v2.2.4
       with:
         name: fixtures
         path: ./migrations/fixtures/fixtures.sql
@@ -119,7 +119,7 @@ jobs:
 
     - name: Upload airgap image
       if: ${{ steps.get_tag.outputs.GIT_TAG != '' }}
-      uses: actions/upload-artifact@v2.2.3
+      uses: actions/upload-artifact@v2.2.4
       with:
         name: migrations-image
         path: ./migrations/bin/docker-archive
@@ -193,7 +193,7 @@ jobs:
       #       limit: 5
 
     - name: Upload web artifact
-      uses: actions/upload-artifact@v2.2.3
+      uses: actions/upload-artifact@v2.2.4
       with:
         name: web
         path: ./web/dist
@@ -223,13 +223,13 @@ jobs:
       run: SCOPE_DSN=$SCOPE_DSN_PUBLIC make -C kotsadm/operator test build
 
     - name: Upload operator bin artifact
-      uses: actions/upload-artifact@v2.2.3
+      uses: actions/upload-artifact@v2.2.4
       with:
         name: operator
         path: ./kotsadm/operator/bin
 
     - name: Upload operator pact artifact
-      uses: actions/upload-artifact@v2.2.3
+      uses: actions/upload-artifact@v2.2.4
       with:
         name: operator
         path: ./kotsadm/operator/pacts
@@ -259,7 +259,7 @@ jobs:
       run: make -C kurl_proxy test build
 
     - name: Upload kurl_proxy artifact
-      uses: actions/upload-artifact@v2.2.3
+      uses: actions/upload-artifact@v2.2.4
       with:
         name: kurl_proxy
         path: ./kurl_proxy/bin
@@ -296,7 +296,7 @@ jobs:
       run: make test kotsadm
 
     - name: Upload Go API artifact
-      uses: actions/upload-artifact@v2.2.3
+      uses: actions/upload-artifact@v2.2.4
       with:
         name: go_api
         path: ./bin
@@ -396,7 +396,7 @@ jobs:
 
     - name: Upload airgap image
       if: ${{ steps.get_tag.outputs.GIT_TAG != '' }}
-      uses: actions/upload-artifact@v2.2.3
+      uses: actions/upload-artifact@v2.2.4
       with:
         name: kotsadm-image
         path: ./bin/docker-archive
@@ -490,7 +490,7 @@ jobs:
 
     - name: Upload airgap image
       if: ${{ steps.get_tag.outputs.GIT_TAG != '' }}
-      uses: actions/upload-artifact@v2.2.3
+      uses: actions/upload-artifact@v2.2.4
       with:
         name: kotsadm-operator-image
         path: ./kotsadm/operator/bin/docker-archive
