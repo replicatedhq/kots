@@ -29,21 +29,15 @@ type Document struct {
 	Kind       string `yaml:"kind"`
 }
 
-func renderReplicated(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (*Base, error) {
-	base := Base{
-		Files: []BaseFile{},
-		Bases: []Base{},
-	}
-
+func renderReplicated(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (*Base, []Base, error) {
 	commonBase := Base{
-		Path:  "common",
 		Files: []BaseFile{},
 		Bases: []Base{},
 	}
 
 	builder, err := NewConfigContextTemplateBuidler(u, renderOptions)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to create new config context template builder")
+		return nil, nil, errors.Wrap(err, "failed to create new config context template builder")
 	}
 
 	for _, upstreamFile := range u.Files {
@@ -69,7 +63,7 @@ func renderReplicated(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (
 
 		baseFile, err := upstreamFileToBaseFile(upstreamFile, *builder, renderOptions.Log)
 		if err != nil {
-			return nil, errors.Wrapf(err, "failed to convert upstream file %s to base", upstreamFile.Path)
+			return nil, nil, errors.Wrapf(err, "failed to convert upstream file %s to base", upstreamFile.Path)
 		}
 
 		baseFiles := convertToSingleDocBaseFiles([]BaseFile{baseFile})
@@ -77,7 +71,7 @@ func renderReplicated(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (
 			include, err := f.ShouldBeIncludedInBaseKustomization(renderOptions.ExcludeKotsKinds)
 			if err != nil {
 				if _, ok := err.(ParseError); !ok {
-					return nil, errors.Wrapf(err, "failed to determine if file %s should be included in base", f.Path)
+					return nil, nil, errors.Wrapf(err, "failed to determine if file %s should be included in base", f.Path)
 				}
 			}
 			if include {
@@ -89,34 +83,33 @@ func renderReplicated(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (
 		}
 	}
 
-	base.Bases = append(base.Bases, commonBase)
-
 	// render helm charts that were specified
 	// we just inject them into u.Files
 	kotsHelmCharts, err := findAllKotsHelmCharts(u.Files, *builder, renderOptions.Log)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to find helm charts")
+		return nil, nil, errors.Wrap(err, "failed to find helm charts")
 	}
 
+	helmBases := []Base{}
 	for _, kotsHelmChart := range kotsHelmCharts {
 		helmBase, err := renderReplicatedHelmChart(kotsHelmChart, u.Files, renderOptions, builder)
 		if err != nil {
-			return nil, errors.Wrapf(err, "failed to render helm chart %s", kotsHelmChart.Name)
+			return nil, nil, errors.Wrapf(err, "failed to render helm chart %s", kotsHelmChart.Name)
 		} else if helmBase == nil {
 			continue
 		}
 
 		renderedHelmBase, err := renderReplicatedHelmBase(u, renderOptions, *helmBase, *builder)
 		if err != nil {
-			return nil, errors.Wrapf(err, "failed to render helm chart base %s", helmBase.Path)
+			return nil, nil, errors.Wrapf(err, "failed to render helm chart base %s", helmBase.Path)
 		}
 
 		renderedHelmBase.Namespace = kotsHelmChart.Spec.Namespace // TODO (ch35027): probably remove this since its already done by "helm template"
 
-		base.Bases = append(base.Bases, *renderedHelmBase)
+		helmBases = append(helmBases, *renderedHelmBase)
 	}
 
-	return &base, nil
+	return &commonBase, helmBases, nil
 }
 
 func renderReplicatedHelmChart(kotsHelmChart *kotsv1beta1.HelmChart, upstreamFiles []upstreamtypes.UpstreamFile, renderOptions *RenderOptions, builder *template.Builder) (*Base, error) {

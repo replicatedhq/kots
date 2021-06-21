@@ -3,6 +3,7 @@ package base
 import (
 	"bytes"
 	"fmt"
+	"path"
 	"path/filepath"
 	"strconv"
 
@@ -239,7 +240,19 @@ func iskotsAPIVersionKind(o OverlySimpleGVK) bool {
 func (b Base) ListErrorFiles() []BaseFile {
 	files := append([]BaseFile{}, b.ErrorFiles...)
 	for _, b := range b.Bases {
-		files = append(files, b.ListErrorFiles()...)
+		files = append(files, PrependBaseFilesPath(b.ListErrorFiles(), b.Path)...)
 	}
 	return files
+}
+
+func PrependBaseFilesPath(files []BaseFile, prefix string) []BaseFile {
+	if prefix == "" {
+		return files
+	}
+	next := []BaseFile{}
+	for _, file := range files {
+		file.Path = path.Join(prefix, file.Path)
+		next = append(next, file)
+	}
+	return next
 }
