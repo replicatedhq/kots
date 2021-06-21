@@ -799,7 +799,7 @@ jobs:
       shell: bash
       run: echo ::set-output name=GIT_TAG::${GITHUB_REF/refs\/tags\//}
 
-    - uses: kceb/pull-request-url-action@v1
+    - uses: kceb/pull-request-url-action@v2
       id: pr_url
 
     - name: Expose git commit data
