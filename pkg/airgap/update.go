@@ -178,9 +178,8 @@ func UpdateAppFromPath(a *apptypes.App, airgapRoot string, airgapBundlePath stri
 			Password:   registrySettings.Password,
 			IsReadOnly: registrySettings.IsReadOnly,
 		},
-		AppSlug:           a.Slug,
-		AppSequence:       appSequence,
-		NativeHelmInstall: true, // TODO (ch35027): opt-in
+		AppSlug:     a.Slug,
+		AppSequence: appSequence,
 	}
 
 	if _, err := pull.Pull(fmt.Sprintf("replicated://%s", beforeKotsKinds.License.Spec.AppSlug), pullOptions); err != nil {

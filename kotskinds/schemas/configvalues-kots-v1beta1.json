@@ -34,6 +34,9 @@
               "default": {
                 "type": "string"
               },
+              "filename": {
+                "type": "string"
+              },
               "value": {
                 "type": "string"
               },

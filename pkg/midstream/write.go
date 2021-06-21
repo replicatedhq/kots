@@ -2,7 +2,6 @@ package midstream
 
 import (
 	"context"
-	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -149,7 +148,6 @@ func mergeMaps(new map[string]string, existing map[string]string) map[string]str
 }
 
 func (m *Midstream) writeKustomization(options WriteOptions) error {
-	fmt.Println("+++ writeKustomization", options.MidstreamDir, options.BaseDir)
 	relativeBaseDir, err := filepath.Rel(options.MidstreamDir, options.BaseDir)
 	if err != nil {
 		return errors.Wrap(err, "failed to determine relative path for base from midstream")
