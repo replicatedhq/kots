@@ -44,7 +44,6 @@ type RewriteOptions struct {
 	RegistryPassword   string
 	RegistryNamespace  string
 	RegistryIsReadOnly bool
-	NativeHelmInstall  bool
 	AppSlug            string
 	IsGitOps           bool
 	AppSequence        int64
@@ -135,10 +134,6 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 	errorFiles = append(errorFiles, base.PrependBaseFilesPath(commonBase.ListErrorFiles(), commonBase.Path)...)
 	for _, helmBase := range helmBases {
 		errorFiles = append(errorFiles, base.PrependBaseFilesPath(helmBase.ListErrorFiles(), helmBase.Path)...)
-	}
-
-	if !rewriteOptions.NativeHelmInstall {
-		commonBase.Bases = append(commonBase.Bases, helmBases...)
 	}
 
 	if ff := errorFiles; len(ff) > 0 {

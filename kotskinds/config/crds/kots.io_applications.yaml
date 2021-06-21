@@ -1,10 +1,10 @@
 
 ---
-apiVersion: apiextensions.k8s.io/v1beta1
+apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.3.0
+    controller-gen.kubebuilder.io/version: v0.5.0
   creationTimestamp: null
   name: applications.kots.io
 spec:
@@ -15,110 +15,113 @@ spec:
     plural: applications
     singular: application
   scope: Namespaced
-  subresources:
-    status: {}
-  validation:
-    openAPIV3Schema:
-      description: Application is the Schema for the application API
-      properties:
-        apiVersion:
-          description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
-          type: string
-        kind:
-          description: 'Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
-          type: string
-        metadata:
-          type: object
-        spec:
-          description: ApplicationSpec defines the desired state of ApplicationSpec
-          properties:
-            additionalImages:
-              items:
-                type: string
-              type: array
-            additionalNamespaces:
-              items:
-                type: string
-              type: array
-            allowRollback:
-              type: boolean
-            graphs:
-              items:
-                properties:
-                  durationSeconds:
-                    type: integer
-                  legend:
-                    type: string
-                  queries:
-                    items:
-                      properties:
-                        legend:
-                          type: string
-                        query:
-                          type: string
-                      required:
-                      - query
-                      type: object
-                    type: array
-                  query:
-                    type: string
-                  title:
-                    type: string
-                  yAxisFormat:
-                    description: https://github.com/grafana/grafana/blob/009d58c4a228b89046fdae02aa82cf5ff05e5e69/packages/grafana-ui/src/utils/valueFormats/categories.ts
-                    type: string
-                  yAxisTemplate:
-                    type: string
-                required:
-                - title
-                type: object
-              type: array
-            icon:
-              type: string
-            kubectlVersion:
-              type: string
-            kustomizeVersion:
-              type: string
-            ports:
-              items:
-                properties:
-                  applicationUrl:
-                    type: string
-                  localPort:
-                    type: integer
-                  serviceName:
-                    type: string
-                  servicePort:
-                    type: integer
-                required:
-                - serviceName
-                - servicePort
-                type: object
-              type: array
-            proxyPublicImages:
-              type: boolean
-            releaseNotes:
-              type: string
-            requireMinimalRBACPrivileges:
-              type: boolean
-            statusInformers:
-              items:
-                type: string
-              type: array
-            title:
-              type: string
-          required:
-          - title
-          type: object
-        status:
-          description: ApplicationStatus defines the observed state of Application
-          type: object
-      type: object
-  version: v1beta1
   versions:
   - name: v1beta1
+    schema:
+      openAPIV3Schema:
+        description: Application is the Schema for the application API
+        properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this
+              object represents. Servers may infer this from the endpoint the client
+              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: ApplicationSpec defines the desired state of ApplicationSpec
+            properties:
+              additionalImages:
+                items:
+                  type: string
+                type: array
+              additionalNamespaces:
+                items:
+                  type: string
+                type: array
+              allowRollback:
+                type: boolean
+              graphs:
+                items:
+                  properties:
+                    durationSeconds:
+                      type: integer
+                    legend:
+                      type: string
+                    queries:
+                      items:
+                        properties:
+                          legend:
+                            type: string
+                          query:
+                            type: string
+                        required:
+                        - query
+                        type: object
+                      type: array
+                    query:
+                      type: string
+                    title:
+                      type: string
+                    yAxisFormat:
+                      description: https://github.com/grafana/grafana/blob/009d58c4a228b89046fdae02aa82cf5ff05e5e69/packages/grafana-ui/src/utils/valueFormats/categories.ts
+                      type: string
+                    yAxisTemplate:
+                      type: string
+                  required:
+                  - title
+                  type: object
+                type: array
+              icon:
+                type: string
+              kubectlVersion:
+                type: string
+              kustomizeVersion:
+                type: string
+              ports:
+                items:
+                  properties:
+                    applicationUrl:
+                      type: string
+                    localPort:
+                      type: integer
+                    serviceName:
+                      type: string
+                    servicePort:
+                      type: integer
+                  required:
+                  - serviceName
+                  - servicePort
+                  type: object
+                type: array
+              proxyPublicImages:
+                type: boolean
+              releaseNotes:
+                type: string
+              requireMinimalRBACPrivileges:
+                type: boolean
+              statusInformers:
+                items:
+                  type: string
+                type: array
+              title:
+                type: string
+            required:
+            - title
+            type: object
+          status:
+            description: ApplicationStatus defines the observed state of Application
+            type: object
+        type: object
     served: true
     storage: true
+    subresources:
+      status: {}
 status:
   acceptedNames:
     kind: ""
