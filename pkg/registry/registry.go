@@ -149,7 +149,6 @@ func RewriteImages(appID string, sequence int64, hostname string, username strin
 		IsGitOps:           a.IsGitOps,
 		AppSequence:        a.CurrentSequence + 1, // sequence +1 because this is the current latest sequence, not the sequence that the rendered version will be saved as
 		ReportingInfo:      reporting.GetReportingInfo(a.ID),
-		NativeHelmInstall:  true, // TODO (ch35027): opt-in
 
 		// TODO: pass in as arguments if this is ever called from CLI
 		HTTPProxyEnvValue:  os.Getenv("HTTP_PROXY"),

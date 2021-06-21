@@ -56,7 +56,6 @@ type PullOptions struct {
 	RewriteImageOptions    RewriteImageOptions
 	HelmVersion            string
 	HelmOptions            []string
-	NativeHelmInstall      bool
 	ReportWriter           io.Writer
 	AppSlug                string
 	AppSequence            int64
@@ -290,10 +289,6 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 	errorFiles = append(errorFiles, base.PrependBaseFilesPath(commonBase.ListErrorFiles(), commonBase.Path)...)
 	for _, helmBase := range helmBases {
 		errorFiles = append(errorFiles, base.PrependBaseFilesPath(helmBase.ListErrorFiles(), helmBase.Path)...)
-	}
-
-	if !pullOptions.NativeHelmInstall {
-		commonBase.Bases = append(commonBase.Bases, helmBases...)
 	}
 
 	if ff := errorFiles; len(ff) > 0 {

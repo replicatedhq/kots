@@ -145,7 +145,6 @@ func CreateAppFromOnline(pendingApp *types.PendingApp, upstreamURI string, isAut
 		AppSlug:             pendingApp.Slug,
 		AppSequence:         0,
 		ReportingInfo:       reporting.GetReportingInfo(pendingApp.ID),
-		NativeHelmInstall:   true, // TODO (ch35027): opt-in
 	}
 
 	if _, err := pull.Pull(upstreamURI, pullOptions); err != nil {

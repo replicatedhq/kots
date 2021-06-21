@@ -132,7 +132,6 @@ func DownloadUpdate(appID string, archiveDir string, toCursor string, skipPrefli
 			Password:   registrySettings.Password,
 			IsReadOnly: registrySettings.IsReadOnly,
 		},
-		NativeHelmInstall: true, // TODO (ch35027): opt-in
 	}
 
 	if _, err := kotspull.Pull(fmt.Sprintf("replicated://%s", beforeKotsKinds.License.Spec.AppSlug), pullOptions); err != nil {
