@@ -81,8 +81,8 @@ func loadUpstreamSettingsFromFiles(settings *UpstreamSettings, renderDir string,
 
 		if gvk.Group == "" && gvk.Version == "v1" && gvk.Kind == "Secret" {
 			loadUpstreamSettingsFromSecret(settings, obj.(*corev1.Secret))
-		} else if gvk.Group == "apps" && gvk.Version == "v1" && gvk.Kind == "Deployment" {
-			loadUpstreamSettingsFromDeployment(settings, obj.(*appsv1.Deployment))
+		} else if gvk.Group == "apps" && gvk.Version == "v1" && gvk.Kind == "StatefulSet" {
+			loadUpstreamSettingsFromStatefulSet(settings, obj.(*appsv1.StatefulSet))
 		}
 	}
 
@@ -102,8 +102,8 @@ func loadUpstreamSettingsFromSecret(settings *UpstreamSettings, secret *corev1.S
 	}
 }
 
-func loadUpstreamSettingsFromDeployment(settings *UpstreamSettings, deployment *appsv1.Deployment) {
-	for _, c := range deployment.Spec.Template.Spec.Containers {
+func loadUpstreamSettingsFromStatefulSet(settings *UpstreamSettings, statefulset *appsv1.StatefulSet) {
+	for _, c := range statefulset.Spec.Template.Spec.Containers {
 		for _, e := range c.Env {
 			switch e.Name {
 			case "AUTO_CREATE_CLUSTER_TOKEN", "KOTSADM_TOKEN":

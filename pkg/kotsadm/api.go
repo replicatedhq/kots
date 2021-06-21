@@ -81,27 +81,27 @@ func getAPIAutoCreateClusterToken(namespace string, clientset *kubernetes.Client
 		return autoCreateClusterTokenSecretVal, nil
 	}
 
-	existingDeployment, err := clientset.AppsV1().Deployments(namespace).Get(context.TODO(), "kotsadm", metav1.GetOptions{})
+	existingStatefulSet, err := clientset.AppsV1().StatefulSets(namespace).Get(context.TODO(), "kotsadm", metav1.GetOptions{})
 	if err != nil {
-		return "", errors.Wrap(err, "failed to read deployment")
+		return "", errors.Wrap(err, "failed to read statefulset")
 	}
 
 	containerIdx := -1
-	for idx, c := range existingDeployment.Spec.Template.Spec.Containers {
+	for idx, c := range existingStatefulSet.Spec.Template.Spec.Containers {
 		if c.Name == "kotsadm" {
 			containerIdx = idx
 		}
 	}
 
 	if containerIdx == -1 {
-		return "", errors.New("failed to find kotsadm container in deployment")
+		return "", errors.New("failed to find kotsadm container in statefulset")
 	}
 
-	for _, env := range existingDeployment.Spec.Template.Spec.Containers[containerIdx].Env {
+	for _, env := range existingStatefulSet.Spec.Template.Spec.Containers[containerIdx].Env {
 		if env.Name == "AUTO_CREATE_CLUSTER_TOKEN" {
 			return env.Value, nil
 		}
 	}
 
-	return "", errors.New("failed to find autocreateclustertoken env on api deployment")
+	return "", errors.New("failed to find autocreateclustertoken env on api statefulset")
 }
