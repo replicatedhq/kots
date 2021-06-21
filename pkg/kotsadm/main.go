@@ -302,6 +302,23 @@ func removeUnusedKotsadmComponents(deployOptions types.DeployOptions, clientset 
 		}
 	}
 
+	// if there's a minio pvc, remove (pre 1.45.0)
+	minioPVCSelectorLabels := map[string]string{
+		"app": "kotsadm-minio",
+	}
+	pvcs, err := clientset.CoreV1().PersistentVolumeClaims(deployOptions.Namespace).List(context.TODO(), metav1.ListOptions{
+		LabelSelector: labels.SelectorFromSet(minioPVCSelectorLabels).String(),
+	})
+	if err != nil {
+		return errors.Wrap(err, "failed to list kotsadm-minio persistent volume claims")
+	}
+	for _, pvc := range pvcs.Items {
+		err := clientset.CoreV1().PersistentVolumeClaims(deployOptions.Namespace).Delete(context.TODO(), pvc.ObjectMeta.Name, metav1.DeleteOptions{})
+		if err != nil {
+			return errors.Wrap(err, "failed to delete kotsadm-minio pvc")
+		}
+	}
+
 	return nil
 }
 
