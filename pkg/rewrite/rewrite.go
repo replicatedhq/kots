@@ -124,12 +124,23 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 	}
 	log.ActionWithSpinner("Creating base")
 	io.WriteString(rewriteOptions.ReportWriter, "Creating base\n")
-	b, err := base.RenderUpstream(u, &renderOptions)
+
+	commonBase, helmBases, err := base.RenderUpstream(u, &renderOptions)
 	if err != nil {
 		return errors.Wrap(err, "failed to render upstream")
 	}
 
-	if ff := b.ListErrorFiles(); len(ff) > 0 {
+	errorFiles := []base.BaseFile{}
+	errorFiles = append(errorFiles, base.PrependBaseFilesPath(commonBase.ListErrorFiles(), commonBase.Path)...)
+	for _, helmBase := range helmBases {
+		errorFiles = append(errorFiles, base.PrependBaseFilesPath(helmBase.ListErrorFiles(), helmBase.Path)...)
+	}
+
+	if !rewriteOptions.NativeHelmInstall {
+		commonBase.Bases = append(commonBase.Bases, helmBases...)
+	}
+
+	if ff := errorFiles; len(ff) > 0 {
 		files := make([]kotsv1beta1.InstallationYAMLError, 0, len(ff))
 		for _, f := range ff {
 			file := kotsv1beta1.InstallationYAMLError{
@@ -153,17 +164,29 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 		}
 	}
 
-	log.FinishSpinner()
-
 	writeBaseOptions := base.WriteOptions{
 		BaseDir:          u.GetBaseDir(writeUpstreamOptions),
 		SkippedDir:       u.GetSkippedDir(writeUpstreamOptions),
 		Overwrite:        true,
 		ExcludeKotsKinds: rewriteOptions.ExcludeKotsKinds,
 	}
-	if err := b.WriteBase(writeBaseOptions); err != nil {
-		return errors.Wrap(err, "failed to write base")
+	if err := commonBase.WriteBase(writeBaseOptions); err != nil {
+		return errors.Wrap(err, "failed to write common base")
 	}
+
+	for _, helmBase := range helmBases {
+		writeBaseOptions := base.WriteOptions{
+			BaseDir:          u.GetBaseDir(writeUpstreamOptions),
+			SkippedDir:       u.GetSkippedDir(writeUpstreamOptions),
+			Overwrite:        true,
+			ExcludeKotsKinds: rewriteOptions.ExcludeKotsKinds,
+		}
+		if err := helmBase.WriteBase(writeBaseOptions); err != nil {
+			return errors.Wrapf(err, "failed to write helm base %s", helmBase.Path)
+		}
+	}
+
+	log.FinishSpinner()
 
 	log.ActionWithSpinner("Creating midstreams")
 	io.WriteString(rewriteOptions.ReportWriter, "Creating midstreams\n")
@@ -194,26 +217,8 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 		NoProxyEnvValue:    rewriteOptions.NoProxyEnvValue,
 	}
 
-	var commonBase *base.Base
-
-	if rewriteOptions.NativeHelmInstall {
-		for _, base := range b.Bases {
-			if base.Path == "common" {
-				b := base
-				commonBase = &b
-				break
-			}
-		}
-	} else {
-		commonBase = b
-	}
-
-	if commonBase == nil {
-		return errors.New("failed to find common base")
-	}
-
 	writeMidstreamOptions := commonWriteMidstreamOptions
-	writeMidstreamOptions.MidstreamDir = filepath.Join(b.GetOverlaysDir(writeBaseOptions), "midstream")
+	writeMidstreamOptions.MidstreamDir = filepath.Join(commonBase.GetOverlaysDir(writeBaseOptions), "midstream")
 	writeMidstreamOptions.BaseDir = filepath.Join(u.GetBaseDir(writeUpstreamOptions), commonBase.Path)
 
 	m, err := writeMidstream(writeMidstreamOptions, rewriteOptions, commonBase, fetchOptions.License, u.GetUpstreamDir(writeUpstreamOptions), log)
@@ -222,24 +227,22 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 	}
 
 	helmMidstreams := []*midstream.Midstream{}
-	for _, base := range b.Bases {
-		if base.Path != "common" {
-			writeMidstreamOptions := commonWriteMidstreamOptions
-			writeMidstreamOptions.MidstreamDir = filepath.Join(b.GetOverlaysDir(writeBaseOptions), "midstream", base.Path)
-			writeMidstreamOptions.BaseDir = filepath.Join(u.GetBaseDir(writeUpstreamOptions), base.Path)
+	for _, base := range helmBases {
+		writeMidstreamOptions := commonWriteMidstreamOptions
+		writeMidstreamOptions.MidstreamDir = filepath.Join(base.GetOverlaysDir(writeBaseOptions), "midstream", base.Path)
+		writeMidstreamOptions.BaseDir = filepath.Join(u.GetBaseDir(writeUpstreamOptions), base.Path)
 
-			helmMidstream, err := writeMidstream(writeMidstreamOptions, rewriteOptions, &base, fetchOptions.License, u.GetUpstreamDir(writeUpstreamOptions), log)
-			if err != nil {
-				return errors.Wrapf(err, "failed to write helm midstream %s", base.Path)
-			}
-
-			helmMidstreams = append(helmMidstreams, helmMidstream)
+		helmMidstream, err := writeMidstream(writeMidstreamOptions, rewriteOptions, &base, fetchOptions.License, u.GetUpstreamDir(writeUpstreamOptions), log)
+		if err != nil {
+			return errors.Wrapf(err, "failed to write helm midstream %s", base.Path)
 		}
+
+		helmMidstreams = append(helmMidstreams, helmMidstream)
 	}
 
 	log.FinishSpinner()
 
-	if err := writeDownstreams(rewriteOptions, b.GetOverlaysDir(writeBaseOptions), m, helmMidstreams, log); err != nil {
+	if err := writeDownstreams(rewriteOptions, commonBase.GetOverlaysDir(writeBaseOptions), m, helmMidstreams, log); err != nil {
 		return errors.Wrap(err, "failed to write downstreams")
 	}
 
