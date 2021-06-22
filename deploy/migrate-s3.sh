@@ -8,7 +8,11 @@ if [ -f $MIGRATION_FILE ]; then
   exit 0
 fi
 
-if [ -z $S3_ENDPOINT ]; then
+if [ -z $S3_ENDPOINT ] ||
+   [ -z $S3_ACCESS_KEY_ID ] ||
+   [ -z $S3_SECRET_ACCESS_KEY ] ||
+   [ -z $S3_BUCKET_NAME ];
+then
   echo 'no object store detected, skipping migration ...'
   exit 0
 fi
