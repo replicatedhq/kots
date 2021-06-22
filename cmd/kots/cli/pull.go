@@ -56,7 +56,6 @@ func PullCmd() *cobra.Command {
 				HTTPProxyEnvValue:  v.GetString("http-proxy"),
 				HTTPSProxyEnvValue: v.GetString("https-proxy"),
 				NoProxyEnvValue:    v.GetString("no-proxy"),
-				NativeHelmInstall:  v.GetBool("native-helm-install"),
 			}
 
 			if v.GetBool("copy-proxy-env") {

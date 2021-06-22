@@ -22,7 +22,9 @@ func (d *Downstream) WriteDownstream(options WriteOptions) error {
 
 	renderDir := options.DownstreamDir
 
-	_, err = os.Stat(renderDir)
+	fileRenderPath := path.Join(renderDir, "kustomization.yaml")
+
+	_, err = os.Stat(fileRenderPath)
 	if err == nil {
 		// We intentionally don't support overwriting downstreams...  this is user-created content
 		// and the user should be intentional about removing it
@@ -31,7 +33,6 @@ func (d *Downstream) WriteDownstream(options WriteOptions) error {
 		return nil
 	}
 
-	fileRenderPath := path.Join(renderDir, "kustomization.yaml")
 	dir, _ := path.Split(fileRenderPath)
 	if _, err := os.Stat(dir); os.IsNotExist(err) {
 		if err := os.MkdirAll(dir, 0744); err != nil {
