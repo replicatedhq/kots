@@ -1240,8 +1240,8 @@ github.com/rcrowley/go-metrics v0.0.0-20181016184325-3113b8401b8a/go.mod h1:bCqn
 github.com/remyoudompheng/bigfft v0.0.0-20170806203942-52369c62f446/go.mod h1:uYEyJGbgTkfkS4+E/PavXkNJcbFIpEtjt2B0KDQ5+9M=
 github.com/replicatedhq/kurl v0.0.0-20210414162418-8d6211901244 h1:aSORttMXeqRXgRnIS7kpRfR32c3MBkJGkZ6KoqWimhc=
 github.com/replicatedhq/kurl v0.0.0-20210414162418-8d6211901244/go.mod h1:SoROyLOtkt95R1COPVzdCi5FZbMmATPHohQQzW9V9ds=
-github.com/replicatedhq/longhorn-manager v1.1.2-0.20210526001437-4003f67ebd06 h1:RkTqne9rm2SpKoPBBCWj8sw1diMt5MQsmUvPLrtVv2o=
-github.com/replicatedhq/longhorn-manager v1.1.2-0.20210526001437-4003f67ebd06/go.mod h1:/5iB5+3q/p1HOj7GXF8PT/YrPersNLAH3VjFfmN90Y4=
+github.com/replicatedhq/longhorn-manager v1.1.2-0.20210622201804-05b01947b99d h1:sthFfBS5YOv/HWo2H9EQfQ0P+K+fANWWMgDqB2NAUaQ=
+github.com/replicatedhq/longhorn-manager v1.1.2-0.20210622201804-05b01947b99d/go.mod h1:/5iB5+3q/p1HOj7GXF8PT/YrPersNLAH3VjFfmN90Y4=
 github.com/replicatedhq/termui/v3 v3.1.1-0.20200811145416-f40076d26851/go.mod h1:JDxG6+uubnk9/BZ2yUsyAJJwlptjrnmB2MPF5d2Xe/8=
 github.com/replicatedhq/troubleshoot v0.10.18/go.mod h1:8oFRnMJlFjzJ490eq72iLEN7DGJjkgLx22Z1vX6WwU0=
 github.com/replicatedhq/troubleshoot v0.11.0 h1:bAaGX5GXD7OUR1L/95zYnmEnKi6wcvLgQY404V2CYnc=

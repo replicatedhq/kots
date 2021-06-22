@@ -111,7 +111,7 @@ require (
 replace (
 	github.com/docker/distribution => github.com/docker/distribution v0.0.0-20170817175659-5f6282db7d65
 	github.com/docker/docker => github.com/docker/docker v0.0.0-20180522102801-da99009bbb11
-	github.com/longhorn/longhorn-manager => github.com/replicatedhq/longhorn-manager v1.1.2-0.20210526001437-4003f67ebd06
+	github.com/longhorn/longhorn-manager => github.com/replicatedhq/longhorn-manager v1.1.2-0.20210622201804-05b01947b99d
 	google.golang.org/grpc => google.golang.org/grpc v1.29.1
 	k8s.io/api => k8s.io/api v0.20.5
 	k8s.io/apiextensions-apiserver => k8s.io/apiextensions-apiserver v0.20.5
