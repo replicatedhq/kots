@@ -107,13 +107,23 @@ func renderReplicated(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (
 		renderedHelmBase.Namespace = kotsHelmChart.Spec.Namespace // TODO (ch35027): probably remove this since its already done by "helm template"
 
 		if kotsHelmChart.Spec.UseCLIInstall {
-			helmBases = append(helmBases, *renderedHelmBase)
+			helmBases = append(helmBases, extractHelmBases(*renderedHelmBase)...)
 		} else {
 			commonBase.Bases = append(commonBase.Bases, *renderedHelmBase)
 		}
 	}
 
 	return &commonBase, helmBases, nil
+}
+
+func extractHelmBases(b Base) []Base {
+	bases := []Base{}
+	for _, sub := range b.Bases {
+		sub.Path = path.Join(b.Path, sub.Path)
+		bases = append(bases, extractHelmBases(sub)...)
+	}
+	b.Bases = nil
+	return append([]Base{b}, bases...)
 }
 
 func renderReplicatedHelmChart(kotsHelmChart *kotsv1beta1.HelmChart, upstreamFiles []upstreamtypes.UpstreamFile, renderOptions *RenderOptions, builder *template.Builder) (*Base, error) {
