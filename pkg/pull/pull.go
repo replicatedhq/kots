@@ -392,18 +392,20 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 		return "", errors.Wrap(err, "failed to write common midstream")
 	}
 
-	helmMidstreams := []*midstream.Midstream{}
+	helmMidstreams := []midstream.Midstream{}
 	for _, base := range helmBases {
 		writeMidstreamOptions := commonWriteMidstreamOptions
 		writeMidstreamOptions.MidstreamDir = filepath.Join(base.GetOverlaysDir(writeBaseOptions), "midstream", base.Path)
 		writeMidstreamOptions.BaseDir = filepath.Join(u.GetBaseDir(writeUpstreamOptions), base.Path)
 
-		helmMidstream, err := writeMidstream(writeMidstreamOptions, pullOptions, u, &base, fetchOptions.License, identityConfig, u.GetUpstreamDir(writeUpstreamOptions), log)
+		helmBase := base
+
+		helmMidstream, err := writeMidstream(writeMidstreamOptions, pullOptions, u, &helmBase, fetchOptions.License, identityConfig, u.GetUpstreamDir(writeUpstreamOptions), log)
 		if err != nil {
 			return "", errors.Wrapf(err, "failed to write helm midstream %s", base.Path)
 		}
 
-		helmMidstreams = append(helmMidstreams, helmMidstream)
+		helmMidstreams = append(helmMidstreams, *helmMidstream)
 	}
 
 	log.FinishSpinner()
@@ -663,7 +665,7 @@ func writeMidstream(writeMidstreamOptions midstream.WriteOptions, options PullOp
 	return m, nil
 }
 
-func writeDownstreams(options PullOptions, overlaysDir string, m *midstream.Midstream, helmMidstreams []*midstream.Midstream, log *logger.CLILogger) error {
+func writeDownstreams(options PullOptions, overlaysDir string, m *midstream.Midstream, helmMidstreams []midstream.Midstream, log *logger.CLILogger) error {
 	for _, downstreamName := range options.Downstreams {
 		log.ActionWithSpinner("Creating downstream %q", downstreamName)
 		io.WriteString(options.ReportWriter, fmt.Sprintf("Creating downstream %q\n", downstreamName))
@@ -682,7 +684,9 @@ func writeDownstreams(options PullOptions, overlaysDir string, m *midstream.Mids
 		}
 
 		for _, mid := range helmMidstreams {
-			d, err := downstream.CreateDownstream(mid)
+			helmMidstream := mid
+
+			d, err := downstream.CreateDownstream(&helmMidstream)
 			if err != nil {
 				return errors.Wrapf(err, "failed to create downstream %s for helm midstream %s", downstreamName, mid.Base.Path)
 			}

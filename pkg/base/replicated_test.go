@@ -241,3 +241,57 @@ func Test_renderReplicatedHelmBase(t *testing.T) {
 		})
 	}
 }
+
+func Test_extractHelmBases(t *testing.T) {
+	type args struct {
+		b Base
+	}
+	tests := []struct {
+		name string
+		args args
+		want []Base
+	}{
+		{
+			name: "recurse",
+			args: args{
+				b: Base{
+					Path: "a",
+					Bases: []Base{
+						{
+							Path: "b",
+							Bases: []Base{
+								{
+									Path: "d",
+								},
+							},
+						},
+						{
+							Path: "c",
+						},
+					},
+				},
+			},
+			want: []Base{
+				{
+					Path: "a",
+				},
+				{
+					Path: "a/b",
+				},
+				{
+					Path: "a/b/d",
+				},
+				{
+					Path: "a/c",
+				},
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := extractHelmBases(tt.args.b); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("extractHelmBases() \n\n%s", fmtJSONDiff(got, tt.want))
+			}
+		})
+	}
+}
