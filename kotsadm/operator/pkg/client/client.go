@@ -4,13 +4,19 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"net/url"
+	"os"
+	"os/exec"
+	"path"
+	"path/filepath"
 	"strconv"
 	"sync"
 	"time"
 
+	"github.com/mholt/archiver"
 	"github.com/mitchellh/hashstructure"
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/kotsadm/operator/pkg/applier"
@@ -38,6 +44,8 @@ type ApplicationManifests struct {
 	Namespace            string                `json:"namespace"`
 	PreviousManifests    string                `json:"previous_manifests"`
 	Manifests            string                `json:"manifests"`
+	PreviousCharts       []byte                `json:"previous_charts"`
+	Charts               []byte                `json:"charts"`
 	Wait                 bool                  `json:"wait"`
 	ResultCallback       string                `json:"result_callback"`
 	ClearNamespaces      []string              `json:"clear_namespaces"`
@@ -211,6 +219,29 @@ func (c *Client) connect() error {
 	}
 }
 
+func installHelm(helmDir string) error {
+	version := "3.4.2"
+	// TODO fixme Jalaja
+	releaseName := "helmtest"
+
+	chartsDir := filepath.Join(helmDir, "charts")
+	dirs, err := ioutil.ReadDir(chartsDir)
+	if err != nil {
+		return errors.Wrap(err, "failed to read archive dir")
+	}
+	for _, dir := range dirs {
+		installDir := filepath.Join(chartsDir, dir.Name())
+		installOutput, err := exec.Command(fmt.Sprintf("helm%s", version), "upgrade", "-i", releaseName, installDir).Output()
+		if err != nil {
+			if ee, ok := err.(*exec.ExitError); ok {
+				err = fmt.Errorf("helm stderr: %q", string(ee.Stderr))
+			}
+			return errors.Wrap(err, string(installOutput))
+		}
+	}
+	return nil
+}
+
 func (c *Client) registerHandlers(socketClient *socket.Client) error {
 	var err error
 
@@ -257,6 +288,60 @@ func (c *Client) registerHandlers(socketClient *socket.Client) error {
 				return
 			}
 		}
+		tarGz := archiver.TarGz{
+			Tar: &archiver.Tar{
+				ImplicitTopLevelFolder: false,
+			},
+		}
+		if len(args.PreviousCharts) > 0 {
+			tmpDir, err := ioutil.TempDir("", "helm")
+			if err != nil {
+				log.Printf("failed to create temp dir to stage previously deployed archive: %v", err)
+				return
+			}
+			defer os.RemoveAll(tmpDir)
+			err = ioutil.WriteFile(path.Join(tmpDir, "archive.tar.gz"), args.PreviousCharts, 0644)
+			if err != nil {
+				log.Printf("failed to write previous archive: %v", err)
+				return
+			}
+			helmDir := path.Join(tmpDir, "prevhelm")
+			if err := os.MkdirAll(helmDir, 0744); err != nil {
+				log.Printf("failed to create dir to stage previous helm archive: %v", err)
+				return
+			}
+			if err := tarGz.Unarchive(path.Join(tmpDir, "archive.tar.gz"), helmDir); err != nil {
+				log.Printf("falied to unarchive previous helm archive: %v", err)
+				return
+			}
+		}
+
+		if len(args.Charts) > 0 {
+			tmpDir, err := ioutil.TempDir("", "helm")
+			if err != nil {
+				log.Printf("failed to create temp dir to stage currently deployed archive: %v", err)
+				return
+			}
+			defer os.RemoveAll(tmpDir)
+			err = ioutil.WriteFile(path.Join(tmpDir, "archive.tar.gz"), args.Charts, 0644)
+			if err != nil {
+				log.Printf("failed to write current archive: %v", err)
+				return
+			}
+			helmDir := path.Join(tmpDir, "currhelm")
+			if err := os.MkdirAll(helmDir, 0744); err != nil {
+				log.Printf("failed to create dir to stage currently deployed archive: %v", err)
+				return
+			}
+			if err := tarGz.Unarchive(path.Join(tmpDir, "archive.tar.gz"), helmDir); err != nil {
+				log.Printf("falied to unarchive current helm archive: %v", err)
+				return
+			}
+			if err := installHelm(helmDir); err != nil {
+				log.Printf("falied to install helm: %v", err)
+				return
+			}
+		}
 
 		for _, additionalNamespace := range args.AdditionalNamespaces {
 			if additionalNamespace == "*" {
@@ -279,6 +364,7 @@ func (c *Client) registerHandlers(socketClient *socket.Client) error {
 		c.imagePullSecret = args.ImagePullSecret
 		c.watchedNamespaces = args.AdditionalNamespaces
 
+		// this is where the kubectl apply happens
 		result, deployError = c.ensureResourcesPresent(args)
 		if deployError != nil {
 			log.Printf("error deploying: %s", deployError.Error())

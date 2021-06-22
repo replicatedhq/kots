@@ -9,8 +9,11 @@ require (
 	github.com/google/martian v2.1.0+incompatible
 	github.com/gorilla/mux v1.8.0
 	github.com/gorilla/websocket v1.4.2
+	github.com/mholt/archiver v3.1.1+incompatible // indirect
 	github.com/mitchellh/hashstructure v1.1.0
+	github.com/nwaples/rardecode v1.1.0 // indirect
 	github.com/pact-foundation/pact-go v1.5.2
+	github.com/pierrec/lz4 v2.6.1+incompatible // indirect
 	github.com/pkg/errors v0.9.1
 	github.com/replicatedhq/troubleshoot v0.12.0
 	github.com/spf13/cobra v1.1.3
