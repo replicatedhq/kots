@@ -17,6 +17,6 @@ fi
 export KOTSADM_DATA_BACKUP_DIR=/backup/kotsadmdata
 
 if [ -d $KOTSADM_DATA_BACKUP_DIR ]; then
-    cp -R $KOTSADM_DATA_BACKUP_DIR/. /kotsadmdata
+    cp -afRv $KOTSADM_DATA_BACKUP_DIR/. /kotsadmdata
     rm -rf $KOTSADM_DATA_BACKUP_DIR
 fi

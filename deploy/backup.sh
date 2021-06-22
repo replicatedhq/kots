@@ -10,4 +10,4 @@ pg_dump -U kotsadm -h kotsadm-postgres --clean > $PG_BACKUP_FILE
 # we copy the contents to the /backup directory where it gets restored later during the restore process to /kotsadmdata
 # ref: https://github.com/vmware-tanzu/velero/discussions/3378
 rm -rf /backup/kotsadmdata
-cp -R /kotsadmdata /backup
+cp -afRv /kotsadmdata /backup
