@@ -51,17 +51,16 @@ function renderVersionAction(version, latestVersion, nothingToCommitDiff, app, h
     if (version.gitDeployable === false) {
       return (<div className={nothingToCommitDiff && "u-opacity--half"}>Nothing to commit</div>);
     }
+    if (!version.commitUrl) {
+      return null;
+    }
     return (
-      <div data-tip={!version.commitUrl ? "This version was created before gitops was enabled for this application." : ""}>
-        <button
-          className="btn primary blue"
-          disabled={!version.commitUrl}
-          onClick={() => window.open(version.commitUrl, '_blank')}
-        >
-          View
-        </button>
-        {!version.commitUrl && <ReactTooltip effect="solid" className="replicated-tooltip" />}
-      </div>
+      <button
+        className="btn primary blue"
+        onClick={() => window.open(version.commitUrl, '_blank')}
+      >
+        View
+      </button>
     );
   }
 

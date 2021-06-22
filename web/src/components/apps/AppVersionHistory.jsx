@@ -883,12 +883,16 @@ class AppVersionHistory extends Component {
     const currentMidstreamVersion = versionHistory.find(version => version.parentSequence === app.currentVersion.sequence) || app.currentVersion;
     const pendingVersions = downstream?.pendingVersions;
 
-
     return (
       <div className="flex flex-column flex1 u-position--relative u-overflow--auto u-padding--20">
         <Helmet>
           <title>{`${app.name} Version History`}</title>
         </Helmet>
+        {gitopsEnabled &&
+          <div className="edit-files-banner gitops-enabled-banner u-fontSize--small u-fontWeight--normal u-textColor--secondary flex alignItems--center justifyContent--center">
+            <span className={`icon gitopsService--${downstream.gitops?.provider} u-marginRight--10`}/>Gitops is enabled for this application. Versions are tracked {app.isAirgap ? "at" : "on"}&nbsp;<a target="_blank" rel="noopener noreferrer" href={downstream.gitops?.uri} className="replicated-link">{app.isAirgap ? downstream.gitops?.uri : Utilities.toTitleCase(downstream.gitops?.provider)}</a>
+          </div>
+        }
         <AppVersionHistoryHeader
           app={app}
           slug={this.props.match.params.slug}
