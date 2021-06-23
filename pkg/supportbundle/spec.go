@@ -286,6 +286,9 @@ func addDefaultTroubleshoot(supportBundle *troubleshootv1beta2.SupportBundle, ap
 	supportBundle.Spec.Collectors = append(supportBundle.Spec.Collectors, makeWeaveCollectors()...)
 	supportBundle.Spec.Analyzers = append(supportBundle.Spec.Analyzers, makeWeaveAnalyzers()...)
 
+	supportBundle.Spec.Collectors = append(supportBundle.Spec.Collectors, makeGoldpingerCollectors()...)
+	supportBundle.Spec.Analyzers = append(supportBundle.Spec.Analyzers, makeGoldpingerAnalyzers()...)
+
 	apps := []*apptypes.App{}
 	if app != nil {
 		apps = append(apps, app)
@@ -737,4 +740,53 @@ func makeCollectDCollectors() ([]*troubleshootv1beta2.Collect, error) {
 	collectors = append(collectors, collector)
 
 	return collectors, nil
+}
+
+func makeGoldpingerCollectors() []*troubleshootv1beta2.Collect {
+	collectors := []*troubleshootv1beta2.Collect{}
+
+	collectors = append(collectors, &troubleshootv1beta2.Collect{
+		Exec: &troubleshootv1beta2.Exec{
+			CollectorMeta: troubleshootv1beta2.CollectorMeta{
+				CollectorName: "goldpinger-statistics",
+			},
+			Name:          "kots/goldpinger",
+			Selector:      []string{"app=kotsadm"},
+			ContainerName: "kotsadm",
+			Command:       []string{"curl"},
+			Args:          []string{"http://goldpinger.kurl.svc.cluster.local:80/check_all"},
+			Timeout:       "10s",
+		},
+	})
+
+	return collectors
+}
+
+func makeGoldpingerAnalyzers() []*troubleshootv1beta2.Analyze {
+	analyzers := []*troubleshootv1beta2.Analyze{}
+
+	analyzers = append(analyzers, &troubleshootv1beta2.Analyze{
+		TextAnalyze: &troubleshootv1beta2.TextAnalyze{
+			AnalyzeMeta: troubleshootv1beta2.AnalyzeMeta{
+				CheckName: "Inter-pod Networking",
+			},
+			FileName:    "kots/goldpinger/*/kotsadm-*/goldpinger-statistics-stdout.txt",
+			RegexGroups: `"OK": ?(?P<OK>\w+)`,
+			Outcomes: []*troubleshootv1beta2.Outcome{
+				{
+					Fail: &troubleshootv1beta2.SingleOutcome{
+						When:    "OK = false",
+						Message: "Some nodes have pod communication issues",
+					},
+				},
+				{
+					Pass: &troubleshootv1beta2.SingleOutcome{
+						Message: "Goldpinger can communicate properly",
+					},
+				},
+			},
+		},
+	})
+
+	return analyzers
 }
