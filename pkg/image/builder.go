@@ -568,7 +568,7 @@ func IsPrivateImage(image string, dockerHubRegistry registry.RegistryOptions) (b
 			continue
 		}
 
-		if !isUnauthorized(err) {
+		if !isLoginRequired(err) {
 			return false, errors.Wrapf(err, "failed to create image from ref:%s", image)
 		}
 
@@ -601,11 +601,11 @@ func RewritePrivateImage(srcRegistry registry.RegistryOptions, image string, app
 	return newImage, nil
 }
 
-func isUnauthorized(err error) bool {
+func isLoginRequired(err error) bool {
 	switch err := err.(type) {
 	case errcode.Errors:
 		for _, e := range err {
-			if isUnauthorized(e) {
+			if isLoginRequired(e) {
 				return true
 			}
 		}
@@ -621,11 +621,16 @@ func isUnauthorized(err error) bool {
 	cause := errors.Cause(err)
 	if cause, ok := cause.(error); ok {
 		if cause == err {
+			// Google Artifact Registry returns a 403, and containers package simply does an Errorf
+			// when registry returns something other than 401, so we have to do text comparison here.
+			if strings.Contains(cause.Error(), "invalid status code from registry 403") {
+				return true
+			}
 			return false
 		}
 	}
 
-	return isUnauthorized(cause)
+	return isLoginRequired(cause)
 }
 
 func isTooManyRequests(err error) bool {
