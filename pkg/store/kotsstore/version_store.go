@@ -210,7 +210,7 @@ func (s *KOTSStore) CreateAppVersionArchive(appID string, sequence int64, archiv
 	}
 
 	outputPath := fmt.Sprintf("%s/%d.tar.gz", appID, sequence)
-	err = filestore.WriteFile(outputPath, f)
+	err = filestore.WriteArchive(outputPath, f)
 	if err != nil {
 		return errors.Wrap(err, "failed to write file")
 	}
@@ -226,7 +226,7 @@ func (s *KOTSStore) GetAppVersionArchive(appID string, sequence int64, dstPath s
 	// 	zap.Int64("sequence", sequence))
 
 	path := fmt.Sprintf("%s/%d.tar.gz", appID, sequence)
-	bundlePath, err := filestore.ReadFile(path)
+	bundlePath, err := filestore.ReadArchive(path)
 	if err != nil {
 		return errors.Wrap(err, "failed to read file")
 	}

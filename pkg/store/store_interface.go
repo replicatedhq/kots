@@ -42,6 +42,7 @@ type Store interface {
 	InstallationStore
 	KotsadmParamsStore
 
+	Init() error // this may need options
 	WaitForReady(ctx context.Context) error
 	IsNotFound(err error) bool
 }

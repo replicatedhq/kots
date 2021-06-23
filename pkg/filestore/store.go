@@ -11,12 +11,22 @@ import (
 )
 
 const (
-	KotsadmDataDir = "/kotsadmdata"
+	ArchivesDir = "/kotsadmdata/archives"
 )
 
-func WriteFile(outputPath string, body io.ReadSeeker) error {
-	outputPath = filepath.Join(KotsadmDataDir, outputPath)
+func Init() error {
+	err := os.MkdirAll(ArchivesDir, 0755)
+	if err != nil {
+		return errors.Wrapf(err, "failed to create archives directory")
+	}
+	return nil
+}
 
+func WriteArchive(outputPath string, body io.ReadSeeker) error {
+	return writeFile(filepath.Join(ArchivesDir, outputPath), body)
+}
+
+func writeFile(outputPath string, body io.ReadSeeker) error {
 	parentPath, _ := filepath.Split(outputPath)
 	err := os.MkdirAll(parentPath, 0755)
 	if err != nil {
@@ -37,12 +47,14 @@ func WriteFile(outputPath string, body io.ReadSeeker) error {
 	return nil
 }
 
-// ReadFile creates a new copy of the file under /tmp and returns the path for it.
+func ReadArchive(path string) (string, error) {
+	return readFile(filepath.Join(ArchivesDir, path))
+}
+
+// readFile creates a new copy of the file under /tmp and returns the path for it.
 // the caller is responsible for cleaning up.
 // this is so that the original files are not removed by the caller on cleanup by mistake.
-func ReadFile(path string) (string, error) {
-	path = filepath.Join(KotsadmDataDir, path)
-
+func readFile(path string) (string, error) {
 	fileReader, err := os.Open(path)
 	if err != nil {
 		return "", errors.Wrapf(err, "failed to open file %q", path)

@@ -1464,6 +1464,20 @@ func (mr *MockStoreMockRecorder) SetIsKotsadmIDGenerated() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetIsKotsadmIDGenerated", reflect.TypeOf((*MockStore)(nil).SetIsKotsadmIDGenerated))
 }
 
+// Init mocks base method
+func (m *MockStore) Init() error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Init")
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Init indicates an expected call of Init
+func (mr *MockStoreMockRecorder) Init() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Init", reflect.TypeOf((*MockStore)(nil).Init))
+}
+
 // WaitForReady mocks base method
 func (m *MockStore) WaitForReady(ctx context.Context) error {
 	m.ctrl.T.Helper()

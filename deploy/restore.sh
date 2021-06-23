@@ -14,9 +14,9 @@ fi
 
 # restore kotsadmdata volume
 
-export KOTSADM_DATA_BACKUP_DIR=/backup/kotsadmdata
+export ARCHIVES_BACKUP_DIR=/backup/archives
 
-if [ -d $KOTSADM_DATA_BACKUP_DIR ]; then
-    cp -afRv $KOTSADM_DATA_BACKUP_DIR/. /kotsadmdata
-    rm -rf $KOTSADM_DATA_BACKUP_DIR
+if [ -d $ARCHIVES_BACKUP_DIR ]; then
+    cp -afrv $ARCHIVES_BACKUP_DIR /kotsadmdata
+    rm -rf $ARCHIVES_BACKUP_DIR
 fi

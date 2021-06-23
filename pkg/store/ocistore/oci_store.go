@@ -48,6 +48,10 @@ type OCIStore struct {
 	cachedTaskStatus map[string]*cachedTaskStatus
 }
 
+func (s *OCIStore) Init() error {
+	return nil
+}
+
 func (s *OCIStore) WaitForReady(ctx context.Context) error {
 	return nil
 }
