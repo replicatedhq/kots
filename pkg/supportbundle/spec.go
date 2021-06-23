@@ -265,6 +265,16 @@ func addDefaultTroubleshoot(supportBundle *troubleshootv1beta2.SupportBundle, ap
 	}
 
 	supportBundle.Spec.Collectors = append(supportBundle.Spec.Collectors, &troubleshootv1beta2.Collect{
+		Data: &troubleshootv1beta2.Data{
+			CollectorMeta: troubleshootv1beta2.CollectorMeta{
+				CollectorName: "namespace.txt",
+			},
+			Name: "kots/admin-console",
+			Data: os.Getenv("POD_NAMESPACE"),
+		},
+	})
+
+	supportBundle.Spec.Collectors = append(supportBundle.Spec.Collectors, &troubleshootv1beta2.Collect{
 		Secret: &troubleshootv1beta2.Secret{
 			CollectorMeta: troubleshootv1beta2.CollectorMeta{
 				CollectorName: "kotsadm-replicated-registry",
