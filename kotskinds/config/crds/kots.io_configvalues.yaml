@@ -41,6 +41,8 @@ spec:
                     type: string
                   default:
                     type: string
+                  filename:
+                    type: string
                   value:
                     type: string
                   valuePlaintext:

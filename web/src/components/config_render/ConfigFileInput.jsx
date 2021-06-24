@@ -20,11 +20,13 @@ export default class ConfigFileInput extends React.Component {
 
   getFilenamesText = () => {
     if (this.props.multiple) {
-      if (this.props.multi_value && this.props.multi_value.length) {
-        return this.props.multi_value.join(", ");
+      if (this.props.multi_data && this.props.multi_data.length) {
+        return this.props.multi_data.join(", ");
       }
-    } else if (this.props.value) {
-      return this.props.value.slice(0,5) + "....";
+    } else if (this.props.data) {
+      return this.props.data;
+    } else if (this.props.filename) {
+      return this.props.filename;
     }
     return this.props.default;
   }
@@ -55,7 +57,7 @@ export default class ConfigFileInput extends React.Component {
                 disabled={this.props.readonly}
                 multiple={this.props.multiple}
                 onChange={this.handleOnChange}
-                getFilenamesText={this.getFilenamesText()}/>
+                filenamesText={this.getFilenamesText()}/>
             </span>
           </div>
         </div>
