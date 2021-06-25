@@ -4,6 +4,8 @@ go 1.16
 
 require (
 	github.com/blang/semver v3.5.1+incompatible
+	github.com/google/go-cmp v0.5.6 // indirect
+	github.com/google/gofuzz v1.2.0 // indirect
 	github.com/google/martian v2.1.0+incompatible
 	github.com/gorilla/mux v1.8.0
 	github.com/gorilla/websocket v1.4.2
@@ -12,12 +14,19 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/replicatedhq/troubleshoot v0.11.0
 	github.com/spf13/cobra v1.1.3
-	github.com/spf13/viper v1.7.1
+	github.com/spf13/viper v1.8.1
+	golang.org/x/crypto v0.0.0-20210616213533-5ff15b29337e // indirect
+	golang.org/x/net v0.0.0-20210614182718-04defd469f4e // indirect
+	golang.org/x/oauth2 v0.0.0-20210622215436-a8dc77f794b6 // indirect
+	golang.org/x/sys v0.0.0-20210616094352-59db8d763f22 // indirect
+	golang.org/x/term v0.0.0-20210615171337-6886f2dfbf5b // indirect
 	gopkg.in/yaml.v2 v2.4.0
-	k8s.io/api v0.21.1
-	k8s.io/apimachinery v0.21.1
-	k8s.io/client-go v0.21.1
-	sigs.k8s.io/controller-runtime v0.9.0
+	k8s.io/api v0.21.2
+	k8s.io/apimachinery v0.21.2
+	k8s.io/client-go v0.21.2
+	k8s.io/klog/v2 v2.9.0 // indirect
+	sigs.k8s.io/controller-runtime v0.9.2
+	sigs.k8s.io/structured-merge-diff/v4 v4.1.1 // indirect
 )
 
 replace (
