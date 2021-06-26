@@ -45,8 +45,12 @@ func getKotsadmYAML(deployOptions types.DeployOptions) (map[string][]byte, error
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get size")
 	}
+	kotsadmSts, err := kotsadmobjects.KotsadmStatefulSet(deployOptions, size)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get kotsadm statefulset definition")
+	}
 	var statefulset bytes.Buffer
-	if err := s.Encode(kotsadmobjects.KotsadmStatefulSet(deployOptions, size), &statefulset); err != nil {
+	if err := s.Encode(kotsadmSts, &statefulset); err != nil {
 		return nil, errors.Wrap(err, "failed to marshal kotsadm statefulset")
 	}
 	docs["kotsadm-statefulset.yaml"] = statefulset.Bytes()
@@ -313,20 +317,26 @@ func ensureKotsadmServiceAccount(namespace string, clientset *kubernetes.Clients
 }
 
 func ensureKotsadmStatefulSet(deployOptions types.DeployOptions, clientset *kubernetes.Clientset, size resource.Quantity) error {
+	desiredStatefulSet, err := kotsadmobjects.KotsadmStatefulSet(deployOptions, size)
+	if err != nil {
+		return errors.Wrap(err, "failed to get desired kotsadm statefulset definition")
+	}
+
 	existingStatefulSet, err := clientset.AppsV1().StatefulSets(deployOptions.Namespace).Get(context.TODO(), "kotsadm", metav1.GetOptions{})
 	if err != nil {
 		if !kuberneteserrors.IsNotFound(err) {
 			return errors.Wrap(err, "failed to get existing statefulset")
 		}
 
-		_, err := clientset.AppsV1().StatefulSets(deployOptions.Namespace).Create(context.TODO(), kotsadmobjects.KotsadmStatefulSet(deployOptions, size), metav1.CreateOptions{})
+		_, err := clientset.AppsV1().StatefulSets(deployOptions.Namespace).Create(context.TODO(), desiredStatefulSet, metav1.CreateOptions{})
 		if err != nil {
 			return errors.Wrap(err, "failed to create statefulset")
 		}
+
 		return nil
 	}
 
-	if err = kotsadmobjects.UpdateKotsadmStatefulSet(existingStatefulSet, deployOptions, size); err != nil {
+	if err = kotsadmobjects.UpdateKotsadmStatefulSet(existingStatefulSet, desiredStatefulSet); err != nil {
 		return errors.Wrap(err, "failed to merge statefulsets")
 	}
 
