@@ -42,6 +42,8 @@ func renderReplicated(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (
 		return nil, errors.Wrap(err, "failed to create new config context template builder")
 	}
 
+	config, _, _, _, _ := findConfigAndLicense(u, renderOptions.Log)
+
 	for _, upstreamFile := range u.Files {
 		if renderOptions.ExcludeKotsKinds {
 			// kots kinds are not expected to be valid yaml after builder.RenderTemplate
@@ -61,6 +63,11 @@ func renderReplicated(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (
 				continue
 			}
 			upstreamFile.Content = bytes.Join(newContent, []byte("\n---\n"))
+		}
+
+		err = processVariadicConfig(&upstreamFile, config)
+		if err != nil {
+			return nil, errors.Wrapf(err, "failed to process variadic config in file %s", upstreamFile.Path)
 		}
 
 		baseFile, err := upstreamFileToBaseFile(upstreamFile, *builder, renderOptions.Log)

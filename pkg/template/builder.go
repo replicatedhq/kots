@@ -58,7 +58,8 @@ func (b *Builder) String(text string) (string, error) {
 	if text == "" {
 		return "", nil
 	}
-	return b.RenderTemplate(text, text)
+	result, err := b.RenderTemplate(text, text)
+	return result, err
 }
 
 func (b *Builder) Bool(text string, defaultVal bool) (bool, error) {
