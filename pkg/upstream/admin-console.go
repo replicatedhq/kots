@@ -17,16 +17,16 @@ import (
 )
 
 type UpstreamSettings struct {
-	SharedPassword       string
-	SharedPasswordBcrypt string
-	JWT                  string
-	PostgresPassword     string
-	APIEncryptionKey     string
-	HTTPProxyEnvValue    string
-	HTTPSProxyEnvValue   string
-	NoProxyEnvValue      string
-
+	SharedPassword         string
+	SharedPasswordBcrypt   string
+	JWT                    string
+	PostgresPassword       string
+	APIEncryptionKey       string
+	HTTPProxyEnvValue      string
+	HTTPSProxyEnvValue     string
+	NoProxyEnvValue        string
 	AutoCreateClusterToken string
+	IsOpenShift            bool
 }
 
 func generateAdminConsoleFiles(renderDir string, options types.WriteOptions) ([]types.UpstreamFile, error) {
@@ -37,6 +37,7 @@ func generateAdminConsoleFiles(renderDir string, options types.WriteOptions) ([]
 			HTTPProxyEnvValue:      options.HTTPProxyEnvValue,
 			HTTPSProxyEnvValue:     options.HTTPSProxyEnvValue,
 			NoProxyEnvValue:        options.NoProxyEnvValue,
+			IsOpenShift:            options.IsOpenShift,
 		}
 		return generateNewAdminConsoleFiles(settings)
 	}
@@ -48,6 +49,7 @@ func generateAdminConsoleFiles(renderDir string, options types.WriteOptions) ([]
 
 	settings := &UpstreamSettings{
 		AutoCreateClusterToken: uuid.New().String(),
+		IsOpenShift:            options.IsOpenShift,
 	}
 	if err := loadUpstreamSettingsFromFiles(settings, renderDir, existingFiles); err != nil {
 		return nil, errors.Wrap(err, "failed to find existing settings")
@@ -127,6 +129,7 @@ func generateNewAdminConsoleFiles(settings *UpstreamSettings) ([]types.UpstreamF
 		HTTPProxyEnvValue:      settings.HTTPProxyEnvValue,
 		HTTPSProxyEnvValue:     settings.HTTPSProxyEnvValue,
 		NoProxyEnvValue:        settings.NoProxyEnvValue,
+		IsOpenShift:            settings.IsOpenShift,
 		EnsureRBAC:             true,
 	}
 

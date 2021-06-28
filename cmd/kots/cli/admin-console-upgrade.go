@@ -109,7 +109,7 @@ func AdminConsoleUpgradeCmd() *cobra.Command {
 	cmd.Flags().String("registry-username", "", "user name to use to authenticate with the registry")
 	cmd.Flags().String("registry-password", "", "password to use to authenticate with the registry")
 	cmd.Flags().String("kotsadm-namespace", "", "set to override the namespace of kotsadm images. this may create an incompatible deployment because the version of kots and kotsadm are designed to work together")
-	cmd.Flags().String("wait-duration", "2m", "timeout out to be used while waiting for individual components to be ready.  must be in Go duration format (eg: 10s, 2m)")
+	cmd.Flags().String("wait-duration", "3m", "timeout out to be used while waiting for individual components to be ready.  must be in Go duration format (eg: 10s, 2m)")
 	cmd.Flags().Bool("ensure-rbac", true, "when set, kots will create the roles and rolebindings necessary to manage applications")
 	cmd.Flags().String("airgap-upload-parallelism", "", "the number of chunks to upload in parallel when installing or updating in airgap mode")
 	cmd.Flags().MarkHidden("force-upgrade-kurl")
