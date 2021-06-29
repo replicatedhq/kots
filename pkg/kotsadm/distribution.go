@@ -99,7 +99,7 @@ func ensureDistributionStatefulset(deployOptions types.DeployOptions, clientset 
 }
 
 func ensureDistributionService(deployOptions types.DeployOptions, clientset *kubernetes.Clientset) error {
-	_, err := clientset.CoreV1().Services(deployOptions.Namespace).Get(context.TODO(), "kotsadm-minio", metav1.GetOptions{})
+	_, err := clientset.CoreV1().Services(deployOptions.Namespace).Get(context.TODO(), "kotsadm-storage-registry", metav1.GetOptions{})
 	if err != nil {
 		if !kuberneteserrors.IsNotFound(err) {
 			return errors.Wrap(err, "failed to get existing service")

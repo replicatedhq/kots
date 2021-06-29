@@ -28,13 +28,13 @@ func FindKotsadmImage(namespace string) (string, error) {
 		namespace = os.Getenv("POD_NAMESPACE")
 	}
 
-	kotsadmDeployment, err := client.AppsV1().Deployments(namespace).Get(context.TODO(), "kotsadm", metav1.GetOptions{})
+	kotsadmStatefulSet, err := client.AppsV1().StatefulSets(namespace).Get(context.TODO(), "kotsadm", metav1.GetOptions{})
 	if err != nil {
-		return "", errors.Wrap(err, "failed to get kotsadm deployment")
+		return "", errors.Wrap(err, "failed to get kotsadm statefulset")
 	}
 
 	apiContainerIndex := -1
-	for i, container := range kotsadmDeployment.Spec.Template.Spec.Containers {
+	for i, container := range kotsadmStatefulSet.Spec.Template.Spec.Containers {
 		if container.Name == "kotsadm" {
 			apiContainerIndex = i
 			break
@@ -45,7 +45,7 @@ func FindKotsadmImage(namespace string) (string, error) {
 		return "", errors.New("kotsadm container not found")
 	}
 
-	kotsadmImage := kotsadmDeployment.Spec.Template.Spec.Containers[apiContainerIndex].Image
+	kotsadmImage := kotsadmStatefulSet.Spec.Template.Spec.Containers[apiContainerIndex].Image
 
 	return kotsadmImage, nil
 }
@@ -165,6 +165,34 @@ func FindKotsadm(clientset *kubernetes.Clientset, namespace string) (string, err
 	}
 
 	return "", errors.New("unable to find kotsadm pod")
+}
+
+func WaitForKotsadm(clientset *kubernetes.Clientset, namespace string, timeoutWaitingForWeb time.Duration) (string, error) {
+	start := time.Now()
+
+	for {
+		// todo, find service, not pod
+		pods, err := clientset.CoreV1().Pods(namespace).List(context.TODO(), metav1.ListOptions{LabelSelector: "app=kotsadm"})
+		if err != nil {
+			return "", errors.Wrap(err, "failed to list pods")
+		}
+
+		for _, pod := range pods.Items {
+			if len(pod.OwnerReferences) > 0 && pod.OwnerReferences[0].Kind == "StatefulSet" {
+				if pod.Status.Phase == corev1.PodRunning {
+					if pod.Status.ContainerStatuses[0].Ready {
+						return pod.Name, nil
+					}
+				}
+			}
+		}
+
+		time.Sleep(time.Second)
+
+		if time.Since(start) > timeoutWaitingForWeb {
+			return "", &kotsadmtypes.ErrorTimeout{Message: "timeout waiting for kotsadm pod"}
+		}
+	}
 }
 
 func DeleteKotsadm(ctx context.Context, clientset *kubernetes.Clientset, namespace string, isKurl bool) error {

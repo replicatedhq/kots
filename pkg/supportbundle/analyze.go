@@ -34,7 +34,7 @@ func InjectDefaultAnalyzers(analyzer *troubleshootv1beta2.Analyzer) error {
 
 func injectAPIReplicaAnalyzer(analyzer *troubleshootv1beta2.Analyzer) error {
 	analyzer.Spec.Analyzers = append(analyzer.Spec.Analyzers, &troubleshootv1beta2.Analyze{
-		DeploymentStatus: &troubleshootv1beta2.DeploymentStatus{
+		StatefulsetStatus: &troubleshootv1beta2.StatefulsetStatus{
 			Name:      "kotsadm",
 			Namespace: os.Getenv("POD_NAMESPACE"),
 			Outcomes: []*troubleshootv1beta2.Outcome{

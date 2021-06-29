@@ -1,7 +1,6 @@
 bases:
   - ../dev
-  - ./minio
   - ../../../migrations/kustomize/overlays/dev
 
 patches:
-  - ./deployment.yaml
+  - ./statefulset.yaml

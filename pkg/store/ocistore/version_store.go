@@ -173,10 +173,6 @@ func (s *OCIStore) CreateAppVersionArchive(appID string, sequence int64, archive
 	}
 
 	storageBaseURI := os.Getenv("STORAGE_BASEURI")
-	if storageBaseURI == "" {
-		storageBaseURI = fmt.Sprintf("s3://%s/%s", os.Getenv("S3_ENDPOINT"), os.Getenv("S3_BUCKET_NAME"))
-	}
-
 	ref := refFromAppVersion(appID, sequence, storageBaseURI)
 
 	fileContents, err := ioutil.ReadFile(fileToUpload)
@@ -237,9 +233,6 @@ func (s *OCIStore) GetAppVersionArchive(appID string, sequence int64, dstPath st
 	// 	zap.Int64("sequence", sequence))
 
 	storageBaseURI := os.Getenv("STORAGE_BASEURI")
-	if storageBaseURI == "" {
-		storageBaseURI = fmt.Sprintf("s3://%s/%s", os.Getenv("S3_ENDPOINT"), os.Getenv("S3_BUCKET_NAME"))
-	}
 
 	fileStore := content.NewFileStore(dstPath)
 	defer fileStore.Close()

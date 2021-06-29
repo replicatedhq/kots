@@ -5,4 +5,4 @@ resources:
   - ./distribution/distribution.yaml
 
 patches:
-  - ./deployment.yaml
+  - ./statefulset.yaml

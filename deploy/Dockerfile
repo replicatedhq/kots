@@ -32,8 +32,8 @@ USER kotsadm
 ENV HOME /home/kotsadm
 
 COPY --chown=kotsadm:kotsadm ./deploy/backup.sh /backup.sh
-COPY --chown=kotsadm:kotsadm ./deploy/restore-db.sh /restore-db.sh
-COPY --chown=kotsadm:kotsadm ./deploy/restore-s3.sh /restore-s3.sh
+COPY --chown=kotsadm:kotsadm ./deploy/restore.sh /restore.sh
+COPY --chown=kotsadm:kotsadm ./deploy/migrate-s3.sh /migrate-s3.sh
 
 COPY --chown=kotsadm:kotsadm ./deploy/fs-minio-check.sh /fs-minio-check.sh
 COPY --chown=kotsadm:kotsadm ./deploy/fs-minio-reset.sh /fs-minio-reset.sh
