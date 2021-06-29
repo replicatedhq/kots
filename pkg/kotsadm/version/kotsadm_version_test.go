@@ -53,13 +53,13 @@ func Test_KotsadmRegistry(t *testing.T) {
 		{
 			name:             "local registry",
 			overrideRegistry: "localhost:32000",
-			expected:         "localhost:32000/kotsadm",
+			expected:         "localhost:32000",
 		},
 		{
 			name:              "local registry, custom namespace",
 			overrideRegistry:  "registry.somebigbank.com",
-			overrideNamespace: "my-namespace",
-			expected:          "registry.somebigbank.com/my-namespace",
+			overrideNamespace: "my-namespace/with/multiple/components",
+			expected:          "registry.somebigbank.com/my-namespace/with/multiple/components",
 		},
 	}
 
