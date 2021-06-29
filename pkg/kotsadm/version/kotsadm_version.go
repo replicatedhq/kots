@@ -44,6 +44,7 @@ func KotsadmTagForVersionString(kotsVersion string) string {
 
 func KotsadmRegistry(options types.KotsadmOptions) string {
 	if options.OverrideRegistry == "" {
+		// Images hosted in docker hub
 		if options.OverrideNamespace == "" {
 			return "kotsadm"
 		} else {
@@ -61,9 +62,7 @@ func KotsadmRegistry(options types.KotsadmOptions) string {
 	}
 
 	if namespace == "" {
-		// note that this makes it impossible to have a registry without a namespace
-		// keeping for backwards compatibility
-		return fmt.Sprintf("%s/kotsadm", registry)
+		return registry
 	}
 
 	return fmt.Sprintf("%s/%s", registry, namespace)

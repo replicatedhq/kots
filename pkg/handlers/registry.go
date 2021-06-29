@@ -87,14 +87,6 @@ func (h *Handler) UpdateAppRegistry(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if updateAppRegistryRequest.Namespace == "" {
-		err := errors.New("registry namespace is required")
-		logger.Error(err)
-		updateAppRegistryResponse.Error = err.Error()
-		JSON(w, http.StatusBadRequest, updateAppRegistryResponse)
-		return
-	}
-
 	currentStatus, _, err := store.GetStore().GetTaskStatus("image-rewrite")
 	if err != nil {
 		logger.Error(errors.Wrap(err, "failed to get image-rewrite taks status"))

@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"io/ioutil"
+	"path"
 	"path/filepath"
 	"strings"
 
@@ -951,10 +952,8 @@ func GetKotsadmOptionsFromCluster(namespace string, clientset kubernetes.Interfa
 
 	parts := strings.Split(endpoint, "/")
 	kotsadmOptions.OverrideRegistry = parts[0]
-	if len(parts) == 2 {
-		kotsadmOptions.OverrideNamespace = parts[1]
-	} else if len(parts) > 2 {
-		return kotsadmOptions, errors.Errorf("too many parts in endpoint %s", endpoint)
+	if len(parts) > 1 {
+		kotsadmOptions.OverrideNamespace = path.Join(parts[1:]...)
 	}
 
 	imagePullSecret, err := clientset.CoreV1().Secrets(namespace).Get(context.TODO(), types.PrivateKotsadmRegistrySecret, metav1.GetOptions{})
