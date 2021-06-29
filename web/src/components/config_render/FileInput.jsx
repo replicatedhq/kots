@@ -27,7 +27,7 @@ export default class FileInput extends React.Component {
         this.setState({ fileAdded: true })
         this.props.onChange(
           map(files, "value"),
-          map(files, "data")
+          map(files, "filename")
         );
       }
     });
@@ -39,7 +39,7 @@ export default class FileInput extends React.Component {
         if (vals.length !== 2) {
           error = "Invalid file data";
         } else {
-          files.push({ value: file.name, data: vals[1] });
+          files.push({ value: file.name, filename: vals[1] });
         }
         done();
       };

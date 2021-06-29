@@ -132,8 +132,9 @@ func (b *Builder) newConfigContext(configGroups []kotsv1beta1.ConfigGroup, exist
 				i, ok := configCtx.ItemValues[node]
 				if ok {
 					itemValue := ItemValue{
-						Value:   i.Value,
-						Default: builtDefault,
+						Value:    i.Value,
+						Default:  builtDefault,
+						Filename: i.Filename,
 					}
 					configCtx.ItemValues[configItem.Name] = itemValue
 					continue
