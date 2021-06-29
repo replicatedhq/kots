@@ -351,11 +351,27 @@ spec:
         name: my-deploy
         namespace: my-app
         yamlPath: spec.template.spec.containers[0].volumes[1].projected.sources[1]
-      valuesByGroup: 
-        secrets:
-          secretName-1: "123"
-          secretName-2: 456
-          secretName-3: true
+`,
+						),
+					},
+					{
+						Path: "userdata/config.yaml",
+						Content: []byte(`apiVersion: kots.io/v1beta1
+kind: ConfigValues
+metadata:
+  name: test-app
+spec:
+  values:
+    secretName-1:
+      value: "123"
+      repeatableItem: secretName
+    secretName-2:
+      value: "456"
+      repeatableItem: secretName
+    secretName-3:
+      value: "789"
+      repeatableItem: secretName
+status: {}
 `,
 						),
 					},
@@ -427,11 +443,11 @@ spec:
                     pod: "testPod"
                     metaData:
                     - pod: "testPod"
-                  - name: 456
+                  - name: "456"
                     pod: "testPod"
                     metaData:
                     - pod: "testPod"
-                  - name: true
+                  - name: "789"
                     pod: "testPod"
                     metaData:
                     - pod: "testPod"`),

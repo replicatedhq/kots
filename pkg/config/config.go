@@ -6,7 +6,6 @@ import (
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	"github.com/replicatedhq/kots/kotskinds/multitype"
-	"github.com/replicatedhq/kots/pkg/base"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/template"
 	"github.com/replicatedhq/kots/pkg/util"
@@ -95,7 +94,7 @@ func templateConfig(log *logger.CLILogger, configSpecData string, configValuesDa
 	config := obj.(*kotsv1beta1.Config)
 
 	// get template context from config values
-	templateContext, err := base.UnmarshalConfigValuesContent([]byte(configValuesData))
+	templateContext, err := UnmarshalConfigValuesContent([]byte(configValuesData))
 	if err != nil {
 		log.Error(err)
 		templateContext = map[string]template.ItemValue{}
@@ -119,6 +118,20 @@ func templateConfig(log *logger.CLILogger, configSpecData string, configValuesDa
 func ApplyValuesToConfig(config *kotsv1beta1.Config, values map[string]template.ItemValue) {
 	for idxG, g := range config.Spec.Groups {
 		for idxI, i := range g.Items {
+			if i.Repeatable {
+				for fieldName, item := range values {
+					if item.RepeatableItem == i.Name {
+						// nested too deep, split into another function?
+						if config.Spec.Groups[idxG].Items[idxI].ValuesByGroup == nil {
+							config.Spec.Groups[idxG].Items[idxI].ValuesByGroup = map[string]kotsv1beta1.GroupValues{}
+						}
+						if config.Spec.Groups[idxG].Items[idxI].ValuesByGroup[g.Name] == nil {
+							config.Spec.Groups[idxG].Items[idxI].ValuesByGroup[g.Name] = map[string]interface{}{}
+						}
+						config.Spec.Groups[idxG].Items[idxI].ValuesByGroup[g.Name][fieldName] = item.Value
+					}
+				}
+			}
 			value, ok := values[i.Name]
 			if ok {
 				config.Spec.Groups[idxG].Items[idxI].Value = multitype.FromString(value.ValueStr())
@@ -171,4 +184,29 @@ func MarshalConfig(config *kotsv1beta1.Config) (string, error) {
 	}
 
 	return string(marshalledYAML), nil
+}
+
+func UnmarshalConfigValuesContent(content []byte) (map[string]template.ItemValue, error) {
+	decode := scheme.Codecs.UniversalDeserializer().Decode
+	obj, gvk, err := decode(content, nil, nil)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to decode values")
+	}
+
+	if gvk.Group != "kots.io" || gvk.Version != "v1beta1" || gvk.Kind != "ConfigValues" {
+		return nil, errors.New("not a configvalues object")
+	}
+
+	values := obj.(*kotsv1beta1.ConfigValues)
+
+	ctx := map[string]template.ItemValue{}
+	for k, v := range values.Spec.Values {
+		ctx[k] = template.ItemValue{
+			Value:          v.Value,
+			Default:        v.Default,
+			RepeatableItem: v.RepeatableItem,
+		}
+	}
+
+	return ctx, nil
 }

@@ -421,6 +421,28 @@ func writeMidstream(writeMidstreamOptions midstream.WriteOptions, options Rewrit
 		return nil, errors.Wrap(err, "failed to create midstream")
 	}
 
+	builder, _, err := base.NewConfigContextTemplateBuidler(u, &renderOptions)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to create new config context template builder")
+	}
+
+	cipher, err := crypto.AESCipherFromString(rewriteOptions.Installation.Spec.EncryptionKey)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to create cipher from installation spec")
+	}
+
+	writeMidstreamOptions := midstream.WriteOptions{
+		MidstreamDir:       filepath.Join(b.GetOverlaysDir(writeBaseOptions), "midstream"),
+		BaseDir:            u.GetBaseDir(writeUpstreamOptions),
+		AppSlug:            rewriteOptions.AppSlug,
+		IsGitOps:           rewriteOptions.IsGitOps,
+		IsOpenShift:        k8sutil.IsOpenShift(clientset),
+		Cipher:             *cipher,
+		Builder:            *builder,
+		HTTPProxyEnvValue:  rewriteOptions.HTTPProxyEnvValue,
+		HTTPSProxyEnvValue: rewriteOptions.HTTPSProxyEnvValue,
+		NoProxyEnvValue:    rewriteOptions.NoProxyEnvValue,
+	}
 	if err := m.WriteMidstream(writeMidstreamOptions); err != nil {
 		return nil, errors.Wrap(err, "failed to write common midstream")
 	}
