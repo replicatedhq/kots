@@ -40,11 +40,6 @@ func AdminPushImagesCmd() *cobra.Command {
 			airgapArchive := args[0]
 			endpoint := args[1]
 
-			endpointParts := strings.Split(endpoint, "/")
-			if len(endpointParts) != 2 {
-				return errors.New("registry must be in the format <endpoint>/<namespace>")
-			}
-
 			username := v.GetString("registry-username")
 			password := v.GetString("registry-password")
 			if isECR(endpoint) && username != "AWS" {
