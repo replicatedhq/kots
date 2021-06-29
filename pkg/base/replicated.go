@@ -15,6 +15,7 @@ import (
 
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
+	kotsconfig "github.com/replicatedhq/kots/pkg/config"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/template"
 	"github.com/replicatedhq/kots/pkg/upstream/types"
@@ -37,12 +38,17 @@ func renderReplicated(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (
 		Bases: []Base{},
 	}
 
-	builder, err := NewConfigContextTemplateBuidler(u, renderOptions)
+	builder, itemValues, err := NewConfigContextTemplateBuidler(u, renderOptions)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create new config context template builder")
 	}
 
-	config, _, _, _, _ := findConfigAndLicense(u, renderOptions.Log)
+	config, _, _, _, err := findConfigAndLicense(u, renderOptions.Log)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to find config file")
+	}
+
+	actualizedConfig, err := kotsconfig.TemplateConfigObjects(config, itemValues, nil, template.LocalRegistry{}, nil, nil)
 
 	for _, upstreamFile := range u.Files {
 		if renderOptions.ExcludeKotsKinds {
@@ -65,7 +71,7 @@ func renderReplicated(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (
 			upstreamFile.Content = bytes.Join(newContent, []byte("\n---\n"))
 		}
 
-		err = processVariadicConfig(&upstreamFile, config)
+		err = processVariadicConfig(&upstreamFile, actualizedConfig)
 		if err != nil {
 			return nil, errors.Wrapf(err, "failed to process variadic config in file %s", upstreamFile.Path)
 		}
@@ -270,30 +276,6 @@ func UnmarshalLicenseContent(content []byte, log *logger.CLILogger) *kotsv1beta1
 	}
 
 	return nil
-}
-
-func UnmarshalConfigValuesContent(content []byte) (map[string]template.ItemValue, error) {
-	decode := scheme.Codecs.UniversalDeserializer().Decode
-	obj, gvk, err := decode(content, nil, nil)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to decode values")
-	}
-
-	if gvk.Group != "kots.io" || gvk.Version != "v1beta1" || gvk.Kind != "ConfigValues" {
-		return nil, errors.New("not a configvalues object")
-	}
-
-	values := obj.(*kotsv1beta1.ConfigValues)
-
-	ctx := map[string]template.ItemValue{}
-	for k, v := range values.Spec.Values {
-		ctx[k] = template.ItemValue{
-			Value:   v.Value,
-			Default: v.Default,
-		}
-	}
-
-	return ctx, nil
 }
 
 func parseHelmChart(content []byte) (*kotsv1beta1.HelmChart, error) {

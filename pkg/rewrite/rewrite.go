@@ -331,7 +331,7 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 	}
 	log.FinishSpinner()
 
-	builder, err := base.NewConfigContextTemplateBuidler(u, &renderOptions)
+	builder, _, err := base.NewConfigContextTemplateBuidler(u, &renderOptions)
 	if err != nil {
 		return errors.Wrap(err, "failed to create new config context template builder")
 	}

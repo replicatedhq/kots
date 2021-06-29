@@ -28,8 +28,9 @@ type LocalRegistry struct {
 }
 
 type ItemValue struct {
-	Value   interface{}
-	Default interface{}
+	Value          interface{}
+	Default        interface{}
+	RepeatableItem string
 }
 
 func (i ItemValue) HasValue() bool {

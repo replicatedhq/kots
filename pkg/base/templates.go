@@ -8,10 +8,10 @@ import (
 	upstreamtypes "github.com/replicatedhq/kots/pkg/upstream/types"
 )
 
-func NewConfigContextTemplateBuidler(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (*template.Builder, error) {
+func NewConfigContextTemplateBuidler(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (*template.Builder, map[string]template.ItemValue, error) {
 	config, configValues, identityConfig, license, err := findConfigAndLicense(u, renderOptions.Log)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	var templateContext map[string]template.ItemValue
@@ -19,8 +19,9 @@ func NewConfigContextTemplateBuidler(u *upstreamtypes.Upstream, renderOptions *R
 		ctx := map[string]template.ItemValue{}
 		for k, v := range configValues.Spec.Values {
 			ctx[k] = template.ItemValue{
-				Value:   v.Value,
-				Default: v.Default,
+				Value:          v.Value,
+				Default:        v.Default,
+				RepeatableItem: v.RepeatableItem,
 			}
 		}
 		templateContext = ctx
@@ -32,7 +33,7 @@ func NewConfigContextTemplateBuidler(u *upstreamtypes.Upstream, renderOptions *R
 	if u.EncryptionKey != "" {
 		c, err := crypto.AESCipherFromString(u.EncryptionKey)
 		if err != nil {
-			return nil, errors.Wrap(err, "failed to create cipher")
+			return nil, nil, errors.Wrap(err, "failed to create cipher")
 		}
 		cipher = c
 	}
@@ -73,6 +74,6 @@ func NewConfigContextTemplateBuidler(u *upstreamtypes.Upstream, renderOptions *R
 		ApplicationInfo: &appInfo,
 		IdentityConfig:  identityConfig,
 	}
-	builder, _, err := template.NewBuilder(builderOptions)
-	return &builder, errors.Wrap(err, "failed to create config context")
+	builder, itemValues, err := template.NewBuilder(builderOptions)
+	return &builder, itemValues, errors.Wrap(err, "failed to create config context")
 }

@@ -240,6 +240,80 @@ status: {}
 `,
 			expectOldFail: false,
 		},
+		{
+			name: "repeatable Items",
+			configSpecData: `apiVersion: kots.io/v1beta1 
+kind: Config 
+metadata: 
+  creationTimestamp: null 
+  name: test-app
+spec: 
+  groups:
+  - name: secrets
+    title: Secrets 
+    description: Buncha Secrets
+    items: 
+    - name: "secretName"
+      type: "text"
+      title: "Secret Name"
+      default: "onetwothree"
+      repeatable: true
+      minimumCount: 1
+      templates:
+      - apiVersion: apps/v1
+        kind: Deployment
+        name: my-deploy
+        namespace: my-app
+        yamlPath: spec.template.spec.containers[0].volumes[1].projected.sources[1]
+`,
+			configValuesData: `apiVersion: kots.io/v1beta1
+kind: ConfigValues
+metadata:
+  name: test-app
+spec:
+  values:
+    secretName-1:
+      value: "123"
+      repeatableItem: secretName
+    secretName-2:
+      value: "456"
+      repeatableItem: secretName
+    secretName-3:
+      value: "789"
+      repeatableItem: secretName
+status: {}
+`,
+			want: `apiVersion: kots.io/v1beta1 
+kind: Config 
+metadata: 
+  creationTimestamp: null 
+  name: test-app
+spec: 
+  groups:
+  - name: secrets
+    title: Secrets 
+    description: Buncha Secrets
+    items: 
+    - name: "secretName"
+      type: "text"
+      title: "Secret Name"
+      default: "onetwothree"
+      repeatable: true
+      minimumCount: 1
+      templates:
+      - apiVersion: apps/v1
+        kind: Deployment
+        name: my-deploy
+        namespace: my-app
+        yamlPath: spec.template.spec.containers[0].volumes[1].projected.sources[1]
+      valuesByGroup: 
+        secrets:
+          secretName-1: "123"
+          secretName-2: "456"
+          secretName-3: "789"
+`,
+			expectOldFail: false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
