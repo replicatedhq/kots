@@ -276,19 +276,19 @@ func removeUnusedKotsadmComponents(deployOptions types.DeployOptions, clientset 
 		}
 	}
 
+	// if there's a deployment named "kotsadm", remove (pre 1.46.0)
+	_, err = clientset.AppsV1().Deployments(deployOptions.Namespace).Get(context.TODO(), "kotsadm", metav1.GetOptions{})
+	if err == nil {
+		if err := clientset.AppsV1().Deployments(deployOptions.Namespace).Delete(context.TODO(), "kotsadm", metav1.DeleteOptions{}); err != nil {
+			return errors.Wrap(err, "failed to delete kotsadm deployment")
+		}
+	} else if !kuberneteserrors.IsNotFound(err) {
+		return errors.Wrap(err, "failed to get kotsadm deployment")
+	}
+
 	// check if an object store was detected before deleting its resources as an additional measure to make sure that
 	// the migration init container has been injected and that the data was migrated
 	if deployOptions.HasObjectStore {
-		// if there's a deployment named "kotsadm", remove (pre 1.46.0)
-		_, err = clientset.AppsV1().Deployments(deployOptions.Namespace).Get(context.TODO(), "kotsadm", metav1.GetOptions{})
-		if err == nil {
-			if err := clientset.AppsV1().Deployments(deployOptions.Namespace).Delete(context.TODO(), "kotsadm", metav1.DeleteOptions{}); err != nil {
-				return errors.Wrap(err, "failed to delete kotsadm deployment")
-			}
-		} else if !kuberneteserrors.IsNotFound(err) {
-			return errors.Wrap(err, "failed to get kotsadm deployment")
-		}
-
 		// if there's a service named "kotsadm-minio", remove (pre 1.46.0)
 		_, err = clientset.CoreV1().Services(deployOptions.Namespace).Get(context.TODO(), "kotsadm-minio", metav1.GetOptions{})
 		if err == nil {
