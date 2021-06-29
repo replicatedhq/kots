@@ -177,14 +177,20 @@ func WaitForKotsadm(clientset *kubernetes.Clientset, namespace string, timeoutWa
 			return "", errors.Wrap(err, "failed to list pods")
 		}
 
+		readyPods := []corev1.Pod{}
 		for _, pod := range pods.Items {
-			if len(pod.OwnerReferences) > 0 && pod.OwnerReferences[0].Kind == "StatefulSet" {
-				if pod.Status.Phase == corev1.PodRunning {
-					if pod.Status.ContainerStatuses[0].Ready {
-						return pod.Name, nil
-					}
+			if pod.Status.Phase == corev1.PodRunning {
+				if pod.Status.ContainerStatuses[0].Ready {
+					readyPods = append(readyPods, pod)
 				}
 			}
+		}
+
+		// kotsadm pods from different owners (deployment, statefulset) may co-exist for a brief period of time
+		// during the upgrade process from versions pre 1.46.0 to 1.46+. we can't just check that the owner is a statefulset
+		// because full snapshots taken before 1.46.0 will have kotsadm as a deployment and the restore will hang waiting for a statefulset.
+		if len(readyPods) > 0 && PodsHaveTheSameOwner(readyPods) {
+			return readyPods[0].Name, nil
 		}
 
 		time.Sleep(time.Second)
