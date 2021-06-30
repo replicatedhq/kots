@@ -48,7 +48,7 @@ export default class ConfigTextarea extends React.Component {
           />
           : null}
         {this.props.help_text !== "" ?
-          <div className="field-section-help-text u-marginTop--10">
+          <div className="field-section-help-text u-marginTop--5">
             <Markdown
               options={{
                 linkTarget: "_blank",

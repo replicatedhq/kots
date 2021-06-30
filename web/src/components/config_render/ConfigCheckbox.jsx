@@ -37,7 +37,7 @@ export default class ConfigCheckbox extends React.Component {
             onChange={(e) => this.handleOnChange(e)}
             className={`${this.props.className || ""} flex-auto ${this.props.readonly ? "readonly" : ""}`} />
           <div>
-            <label htmlFor={this.props.name} className={`u-marginLeft--10 header-color field-section-sub-header u-userSelect--none ${this.props.readonly ? "u-cursor--default" : "u-cursor--pointer"}`}>
+            <label htmlFor={this.props.name} className={`u-marginLeft--5 header-color field-section-sub-header u-userSelect--none ${this.props.readonly ? "u-cursor--default" : "u-cursor--pointer"}`}>
               {this.props.title} {
                 this.props.required ?
                   <span className="field-label required">Required</span> :
@@ -46,7 +46,7 @@ export default class ConfigCheckbox extends React.Component {
                     null}
             </label>
             {this.props.help_text !== "" ? 
-              <div className="field-section-help-text u-marginTop--10">
+              <div className="field-section-help-text u-marginTop--5 u-marginLeft--5">
                 <Markdown
                   options={{
                     linkTarget: "_blank",
