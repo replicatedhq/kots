@@ -221,6 +221,13 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 			return "", errors.Wrap(err, "failed to parse license from file")
 		}
 
+		if fetchOptions.License.Spec.ChannelID != airgap.Spec.ChannelID {
+			return "", util.ActionableError{
+				NoRetry: true, // if this is airgap upload, make sure to free up tmp space
+				Message: fmt.Sprintf("License (%s) and airgap bundle (%s) channels do not match.", fetchOptions.License.Spec.ChannelName, airgap.Spec.ChannelName),
+			}
+		}
+
 		if err := publicKeysMatch(fetchOptions.License, airgap); err != nil {
 			return "", errors.Wrap(err, "failed to validate app key")
 		}
