@@ -17,7 +17,7 @@ import (
 // This currently only addresses variadic items.  Variadic groups are not included yet and may require changes to these functions.
 // Test_renderReplicated may sometimes fail because the resulting array can be out of order.  A more specific results check could be executed instead.
 // getVariadicGroupsForTemplate should be split into subfunctions to make it easier to read
-// The last element in the YamlPath must be an array, and the target ConfigOption MUST be at the top level of the array item
+// The last element in the YamlPath must be an array
 
 func processVariadicConfig(u *upstreamtypes.UpstreamFile, config *kotsv1beta1.Config) error {
 	// get upstreamFile gvk
@@ -212,22 +212,6 @@ func buildYamlFromStack(stack yamlStack) map[string]interface{} {
 func (stack yamlStack) renderRepeatNodes(name string, values map[string]interface{}) {
 	target := stack[len(stack)-1]
 
-	var templateField string
-
-	// collect the field name to overwrite with a template value
-	for field, value := range target.Data {
-		// test if this value is a string, otherwise ignore it
-		switch v := value.(type) {
-		case string:
-			if isTargetValue(name, v) {
-				templateField = field
-			}
-		}
-		// can other cases go here to search sub nodes?
-		// case map[string]interface{}:
-		// case []interface{}:
-	}
-
 	// build new array with existing values from around the target
 	var newArray []interface{}
 	newArray = append(newArray, target.Array[:target.Index]...)
@@ -237,10 +221,9 @@ func (stack yamlStack) renderRepeatNodes(name string, values map[string]interfac
 		// copy all values into a new map
 		newMap := map[string]interface{}{}
 		for k, v := range target.Data {
-			newMap[k] = v
+			// replace the target value
+			newMap[k] = replaceTemplateValue(v, name, value)
 		}
-		// replace the target value
-		newMap[templateField] = value
 
 		newArray = append(newArray, newMap)
 	}
@@ -248,6 +231,32 @@ func (stack yamlStack) renderRepeatNodes(name string, values map[string]interfac
 	// insert new array into stack
 	target.Array = newArray
 	stack[len(stack)-1] = target
+}
+
+// replaceTemplateValue searches all nested nodes of a value
+// if the provided optionName is found within repl{{ ConfigOption "optionName" }}, the placeholder will be replaced with the repeatable value
+func replaceTemplateValue(node interface{}, optionName string, value interface{}) interface{} {
+	switch v := node.(type) {
+	case string:
+		if isTargetValue(optionName, v) {
+			return value
+		}
+		return node
+	case map[string]interface{}:
+		newMap := map[string]interface{}{}
+		for subField, subNode := range v {
+			newMap[subField] = replaceTemplateValue(subNode, optionName, value)
+		}
+		return newMap
+	case []interface{}:
+		resultSet := []interface{}{}
+		for _, subNode := range v {
+			results := replaceTemplateValue(subNode, optionName, value)
+			resultSet = append(resultSet, results)
+		}
+		return resultSet
+	}
+	return node
 }
 
 // isTargetValue determines if a string is the appropriate templated value target

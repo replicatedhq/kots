@@ -324,8 +324,8 @@ metadata:
   name: config-sample 
 spec: 
   groups:
-  - name: podInfo
-    description: info for pod
+  - name: "podInfo"
+    description: "info for pod"
     items:
     - name: "podName"
       type: "text"
@@ -333,7 +333,7 @@ spec:
       value: "testPod"
     - name: "mountPath"
       type: "text"
-      default: /var/www/html
+      default: "/var/www/html"
   - name: secrets
     minimumCount: 1
     title: Secrets 
@@ -401,12 +401,16 @@ spec:
           - name: secret-assets
             projected:
               sources:
-              - name: "don't touch this!"
-              - name: 'repl{{ ConfigOption "secretName"}}'
-                pod: repl{{ ConfigOption "podName" }}
-                metaData:
-                  - pod: repl{{ ConfigOption "podName"}}
-              - name: "don't touch this either!"`),
+              - secret:
+                  name: "don't touch this!"
+              - secret:
+                  name: 'repl{{ ConfigOption "secretName"}}'
+                  pod: repl{{ ConfigOption "podName" }}
+                  metaData:
+                    pod: repl{{ ConfigOption "podName"}}
+                    secretName: 'repl{{ ConfigOption "secretName"}}'
+              - secret:
+                  name: "don't touch this either!"`),
 					},
 				},
 			},
@@ -437,20 +441,28 @@ spec:
             - name: secret-assets
               projected:
                 sources:
-                  - name: "don't touch this!"
-                  - name: "don't touch this either!"
-                  - name: "123"
-                    pod: "testPod"
-                    metaData:
-                    - pod: "testPod"
-                  - name: "456"
-                    pod: "testPod"
-                    metaData:
-                    - pod: "testPod"
-                  - name: "789"
-                    pod: "testPod"
-                    metaData:
-                    - pod: "testPod"`),
+                  - secret:
+                      name: "don't touch this!"
+                  - secret:
+                      name: "don't touch this either!"
+                  - secret:
+                      name: "123"
+                      pod: "testPod"
+                      metaData:
+                        pod: "testPod"
+                        secretName: "123"
+                  - secret:
+                      name: "456"
+                      pod: "testPod"
+                      metaData:
+                        pod: "testPod"
+                        secretName: "456"
+                  - secret:
+                      name: "789"
+                      pod: "testPod"
+                      metaData:
+                        pod: "testPod"
+                        secretName: "789"`),
 			},
 		},
 	}
