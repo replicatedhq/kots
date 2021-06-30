@@ -25,6 +25,7 @@ import (
 	kotspull "github.com/replicatedhq/kots/pkg/pull"
 	"github.com/replicatedhq/kots/pkg/store"
 	"go.uber.org/zap"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/client-go/kubernetes"
@@ -50,6 +51,19 @@ func AutomateInstall() error {
 		return errors.Wrap(err, "failed to list license secrets")
 	}
 
+	cleanup := func(licenseSecret *corev1.Secret, appSlug string) {
+		err = clientset.CoreV1().Secrets(licenseSecret.Namespace).Delete(context.TODO(), licenseSecret.Name, metav1.DeleteOptions{})
+		if err != nil {
+			logger.Error(errors.Wrapf(err, "failed to delete license data %s", licenseSecret.Name))
+			// this is going to create a new app on each start now!
+		}
+
+		err = deleteAirgapData(clientset, appSlug)
+		if err != nil {
+			logger.Error(errors.Wrap(err, "failed to delete airgap data"))
+		}
+	}
+
 LICENSE_LOOP:
 	for _, licenseSecret := range licenseSecrets.Items {
 
@@ -62,6 +76,11 @@ LICENSE_LOOP:
 		unverifiedLicense, err := kotsutil.LoadLicenseFromBytes(license)
 		if err != nil {
 			logger.Error(errors.Wrap(err, "failed to unmarshal license data"))
+			appSlug := ""
+			if licenseSecret.Labels != nil {
+				appSlug = licenseSecret.Labels["kots.io/app"]
+			}
+			cleanup(&licenseSecret, appSlug)
 			continue
 		}
 
@@ -71,6 +90,7 @@ LICENSE_LOOP:
 		verifiedLicense, err := kotspull.VerifySignature(unverifiedLicense)
 		if err != nil {
 			logger.Error(errors.Wrap(err, "failed to verify license signature"))
+			cleanup(&licenseSecret, unverifiedLicense.Spec.AppSlug)
 			continue
 		}
 
@@ -91,10 +111,12 @@ LICENSE_LOOP:
 		expired, err := kotspull.LicenseIsExpired(verifiedLicense)
 		if err != nil {
 			logger.Error(errors.Wrap(err, "failed to check is license is expired"))
+			cleanup(&licenseSecret, unverifiedLicense.Spec.AppSlug)
 			continue
 		}
 		if expired {
 			logger.Error(errors.Errorf("license is expired for app %s", verifiedLicense.Spec.AppSlug))
+			cleanup(&licenseSecret, unverifiedLicense.Spec.AppSlug)
 			continue
 		}
 
@@ -183,19 +205,7 @@ LICENSE_LOOP:
 			}
 		}
 
-		// delete the license secret
-		err = clientset.CoreV1().Secrets(licenseSecret.Namespace).Delete(context.TODO(), licenseSecret.Name, metav1.DeleteOptions{})
-		if err != nil {
-			logger.Error(errors.Wrapf(err, "failed to delete license data %s", licenseSecret.Name))
-			// this is going to create a new app on each start now!
-			continue
-		}
-
-		err = deleteAirgapData(clientset, verifiedLicense)
-		if err != nil {
-			logger.Error(errors.Wrap(err, "failed to delete airgap data"))
-			continue
-		}
+		cleanup(&licenseSecret, verifiedLicense.Spec.AppSlug)
 	}
 
 	return nil
@@ -205,6 +215,18 @@ func AirgapInstall(appSlug string, additionalFiles map[string][]byte) error {
 	clientset, err := k8sutil.GetClientset()
 	if err != nil {
 		return errors.Wrap(err, "failed to get k8s client set")
+	}
+
+	cleanup := func(licenseSecret *corev1.Secret, appSlug string) {
+		err = clientset.CoreV1().Secrets(licenseSecret.Namespace).Delete(context.TODO(), licenseSecret.Name, metav1.DeleteOptions{})
+		if err != nil {
+			logger.Error(errors.Wrapf(err, "failed to delete license data %s", licenseSecret.Name))
+		}
+
+		err = deleteAirgapData(clientset, appSlug)
+		if err != nil {
+			logger.Error(errors.Wrap(err, "failed to delete airgap data"))
+		}
 	}
 
 	selectorLabels := map[string]string{
@@ -225,11 +247,17 @@ func AirgapInstall(appSlug string, additionalFiles map[string][]byte) error {
 	licenseSecret := licenseSecrets.Items[0]
 	license, ok := licenseSecret.Data["license"]
 	if !ok {
+		appSlug := ""
+		if licenseSecret.Labels != nil {
+			appSlug = licenseSecret.Labels["kots.io/app"]
+		}
+		cleanup(&licenseSecret, appSlug)
 		return errors.Errorf("license secret %q does not contain a license field", licenseSecret.Name)
 	}
 
 	unverifiedLicense, err := kotsutil.LoadLicenseFromBytes(license)
 	if err != nil {
+		cleanup(&licenseSecret, unverifiedLicense.Spec.AppSlug)
 		return errors.Wrap(err, "failed to unmarshal license data")
 	}
 
@@ -238,15 +266,18 @@ func AirgapInstall(appSlug string, additionalFiles map[string][]byte) error {
 
 	verifiedLicense, err := kotspull.VerifySignature(unverifiedLicense)
 	if err != nil {
+		cleanup(&licenseSecret, unverifiedLicense.Spec.AppSlug)
 		return errors.Wrap(err, "failed to verify license signature")
 	}
 
 	// check license expiration
 	expired, err := kotspull.LicenseIsExpired(verifiedLicense)
 	if err != nil {
+		cleanup(&licenseSecret, verifiedLicense.Spec.AppSlug)
 		return errors.Wrap(err, "failed to check is license is expired")
 	}
 	if expired {
+		cleanup(&licenseSecret, verifiedLicense.Spec.AppSlug)
 		return errors.Errorf("license is expired for app %s", verifiedLicense.Spec.AppSlug)
 	}
 
@@ -317,16 +348,7 @@ func AirgapInstall(appSlug string, additionalFiles map[string][]byte) error {
 		return errors.Wrap(err, "failed to create airgap app")
 	}
 
-	// delete the license secret
-	err = clientset.CoreV1().Secrets(licenseSecret.Namespace).Delete(context.TODO(), licenseSecret.Name, metav1.DeleteOptions{})
-	if err != nil {
-		logger.Error(errors.Wrapf(err, "failed to delete license data %s", licenseSecret.Name))
-	}
-
-	err = deleteAirgapData(clientset, verifiedLicense)
-	if err != nil {
-		logger.Error(errors.Wrap(err, "failed to delete airgap data"))
-	}
+	cleanup(&licenseSecret, verifiedLicense.Spec.AppSlug)
 
 	return nil
 }
@@ -431,10 +453,14 @@ func needToWaitForAirgapApp(clientset kubernetes.Interface, license *kotsv1beta1
 	return false, nil
 }
 
-func deleteAirgapData(clientset kubernetes.Interface, license *kotsv1beta1.License) error {
+func deleteAirgapData(clientset kubernetes.Interface, appSlug string) error {
+	if appSlug == "" {
+		return nil
+	}
+
 	selectorLabels := map[string]string{
 		"kots.io/automation": "airgap",
-		"kots.io/app":        license.Spec.AppSlug,
+		"kots.io/app":        appSlug,
 	}
 
 	configMaps, err := clientset.CoreV1().ConfigMaps(os.Getenv("POD_NAMESPACE")).List(context.TODO(), metav1.ListOptions{
