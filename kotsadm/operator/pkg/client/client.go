@@ -26,6 +26,7 @@ import (
 	"github.com/replicatedhq/kots/kotsadm/operator/pkg/socket/transport"
 	"github.com/replicatedhq/kots/kotsadm/operator/pkg/supportbundle"
 	"github.com/replicatedhq/kots/kotsadm/operator/pkg/util"
+	"github.com/replicatedhq/yaml/v3"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
@@ -219,11 +220,12 @@ func (c *Client) connect() error {
 	}
 }
 
+type ChartContent struct {
+	ChartName string `yaml:"name"`
+}
+
 func installHelm(helmDir string) error {
 	version := "3.4.2"
-	// TODO fixme Jalaja
-	releaseName := "helmtest"
-
 	chartsDir := filepath.Join(helmDir, "charts")
 	dirs, err := ioutil.ReadDir(chartsDir)
 	if err != nil {
@@ -231,7 +233,17 @@ func installHelm(helmDir string) error {
 	}
 	for _, dir := range dirs {
 		installDir := filepath.Join(chartsDir, dir.Name())
-		installOutput, err := exec.Command(fmt.Sprintf("helm%s", version), "upgrade", "-i", releaseName, installDir).Output()
+		chartfilePath := filepath.Join(installDir, "Chart.yaml")
+		chartFile, err := ioutil.ReadFile(chartfilePath)
+		if err != nil {
+			return errors.Wrap(err, "failed to parse chart file")
+		}
+		cname := ChartContent{}
+		err = yaml.Unmarshal(chartFile, &cname)
+		if err != nil {
+			return errors.Wrap(err, "failed to unmarshal chart file")
+		}
+		installOutput, err := exec.Command(fmt.Sprintf("helm%s", version), "upgrade", "-i", cname.ChartName, installDir).Output()
 		if err != nil {
 			if ee, ok := err.(*exec.ExitError); ok {
 				err = fmt.Errorf("helm stderr: %q", string(ee.Stderr))
