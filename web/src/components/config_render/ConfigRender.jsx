@@ -42,12 +42,12 @@ export default class ConfigRender extends React.Component {
             if (item.multiple) {
               item.multi_value = getValues(value);
               if (item.type === "file") {
-                item.multi_data = getValues(data);
+                item.multi_filename = getValues(data);
               }
             } else {
               item.value = getValue(value);
               if (item.type === "file") {
-                item.data = getValue(data);
+                item.filename = getValue(data);
               }
             }
           } else {
@@ -57,12 +57,12 @@ export default class ConfigRender extends React.Component {
                   if (childItem.multiple) {
                     childItem.multi_value = getValues(value);
                     if (childItem.type === "file") {
-                      childItem.multi_data = getValues(data);
+                      childItem.multi_filename = getValues(data);
                     }
                   } else {
                     childItem.value = getValue(value);
                     if (childItem.type === "file") {
-                      childItem.data = getValue(data);
+                      childItem.filename = getValue(data);
                     }
                   }
                 }

@@ -195,7 +195,7 @@ func (h *Handler) LiveAppConfig(w http.ResponseWriter, r *http.Request) {
 				generatedValue.Default = item.Default.BoolVal
 			}
 			if item.Type == "file" {
-				generatedValue.Filename = item.Data
+				generatedValue.Filename = item.Filename
 			}
 			configValues[item.Name] = generatedValue
 		}
