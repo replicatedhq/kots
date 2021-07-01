@@ -299,6 +299,9 @@ func addDefaultTroubleshoot(supportBundle *troubleshootv1beta2.SupportBundle, ap
 	supportBundle.Spec.Collectors = append(supportBundle.Spec.Collectors, makeGoldpingerCollectors()...)
 	supportBundle.Spec.Analyzers = append(supportBundle.Spec.Analyzers, makeGoldpingerAnalyzers()...)
 
+	supportBundle.Spec.Collectors = append(supportBundle.Spec.Collectors, makeLonghornCollectors()...)
+	supportBundle.Spec.Analyzers = append(supportBundle.Spec.Analyzers, makeLonghornAnalyzers()...)
+
 	apps := []*apptypes.App{}
 	if app != nil {
 		apps = append(apps, app)
@@ -794,6 +797,34 @@ func makeGoldpingerAnalyzers() []*troubleshootv1beta2.Analyze {
 						Message: "Goldpinger can communicate properly",
 					},
 				},
+			},
+		},
+	})
+
+	return analyzers
+}
+
+func makeLonghornCollectors() []*troubleshootv1beta2.Collect {
+	collectors := []*troubleshootv1beta2.Collect{}
+
+	collectors = append(collectors, &troubleshootv1beta2.Collect{
+		Longhorn: &troubleshootv1beta2.Longhorn{
+			CollectorMeta: troubleshootv1beta2.CollectorMeta{
+				CollectorName: "longhorn",
+			},
+		},
+	})
+
+	return collectors
+}
+
+func makeLonghornAnalyzers() []*troubleshootv1beta2.Analyze {
+	analyzers := []*troubleshootv1beta2.Analyze{}
+
+	analyzers = append(analyzers, &troubleshootv1beta2.Analyze{
+		Longhorn: &troubleshootv1beta2.LonghornAnalyze{
+			AnalyzeMeta: troubleshootv1beta2.AnalyzeMeta{
+				CheckName: "longhorn",
 			},
 		},
 	})
