@@ -2,7 +2,10 @@ package config
 
 import (
 	"bytes"
+	"fmt"
+	"strings"
 
+	"github.com/google/uuid"
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	"github.com/replicatedhq/kots/kotskinds/multitype"
@@ -119,16 +122,30 @@ func ApplyValuesToConfig(config *kotsv1beta1.Config, values map[string]template.
 	for idxG, g := range config.Spec.Groups {
 		for idxI, i := range g.Items {
 			if i.Repeatable {
+				if config.Spec.Groups[idxG].Items[idxI].ValuesByGroup == nil {
+					config.Spec.Groups[idxG].Items[idxI].ValuesByGroup = map[string]kotsv1beta1.GroupValues{}
+				}
 				for fieldName, item := range values {
 					if item.RepeatableItem == i.Name {
 						// nested too deep, split into another function?
-						if config.Spec.Groups[idxG].Items[idxI].ValuesByGroup == nil {
-							config.Spec.Groups[idxG].Items[idxI].ValuesByGroup = map[string]kotsv1beta1.GroupValues{}
-						}
 						if config.Spec.Groups[idxG].Items[idxI].ValuesByGroup[g.Name] == nil {
 							config.Spec.Groups[idxG].Items[idxI].ValuesByGroup[g.Name] = map[string]interface{}{}
 						}
 						config.Spec.Groups[idxG].Items[idxI].ValuesByGroup[g.Name][fieldName] = item.Value
+					}
+				}
+				for variadicGroup, groupValues := range i.ValuesByGroup {
+					if config.Spec.Groups[idxG].Items[idxI].ValuesByGroup[variadicGroup] == nil {
+						config.Spec.Groups[idxG].Items[idxI].ValuesByGroup[g.Name] = map[string]interface{}{}
+					}
+					// if this item becomes variadic, ensure it has at least the minimum count
+					if i.Count < i.MinimumCount {
+						i.Count = i.MinimumCount
+					}
+					for len(groupValues) < i.Count {
+						shortUUID := strings.Split(uuid.New().String(), "-")[0]
+						variadicName := fmt.Sprintf("%s-%s", i.Name, shortUUID)
+						config.Spec.Groups[idxG].Items[idxI].ValuesByGroup[variadicGroup][variadicName] = ""
 					}
 				}
 			}
