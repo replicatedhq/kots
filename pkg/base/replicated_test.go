@@ -403,12 +403,14 @@ spec:
               sources:
               - secret:
                   name: "don't touch this!"
+                  metaData:
+                    fileName: 'repl{{ ConfigOptionName "secretName"}}'
               - secret:
                   name: 'repl{{ ConfigOption "secretName"}}'
                   pod: repl{{ ConfigOption "podName" }}
                   metaData:
                     pod: repl{{ ConfigOption "podName"}}
-                    fileName: 'repl{{ RepeatOptionName "secretName"}}'
+                    fileName: 'repl{{ ConfigOptionName "secretName"}}'
               - secret:
                   name: "don't touch this either!"`),
 					},
@@ -443,6 +445,8 @@ spec:
                 sources:
                   - secret:
                       name: "don't touch this!"
+                      metaData:
+                        fileName: "secretName"
                   - secret:
                       name: "don't touch this either!"
                   - secret:

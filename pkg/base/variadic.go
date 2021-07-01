@@ -262,7 +262,7 @@ func generateTargetValue(configOptionName, valueName, target string, templateVal
 		variable := strings.Split(target, "\"")[1]
 		if variable == configOptionName && strings.Contains(target, "ConfigOption ") {
 			return templateValue
-		} else if variable == configOptionName && strings.Contains(target, "RepeatOptionName") {
+		} else if variable == configOptionName && strings.Contains(target, "ConfigOptionName") {
 			return valueName
 		} else if variable == configOptionName {
 			return strings.Replace(target, variable, valueName, 1)

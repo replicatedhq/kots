@@ -170,6 +170,7 @@ func (b *Builder) newConfigContext(configGroups []kotsv1beta1.ConfigGroup, exist
 func (ctx ConfigCtx) FuncMap() template.FuncMap {
 	return template.FuncMap{
 		"ConfigOption":                 ctx.configOption,
+		"ConfigOptionName":             ctx.configOptionName,
 		"ConfigOptionIndex":            ctx.configOptionIndex,
 		"ConfigOptionData":             ctx.configOptionData,
 		"ConfigOptionFilename":         ctx.configOptionFilename,
@@ -214,6 +215,10 @@ func (ctx ConfigCtx) configOption(name string) string {
 		return ""
 	}
 	return v
+}
+
+func (ctx ConfigCtx) configOptionName(name string) string {
+	return name
 }
 
 func (ctx ConfigCtx) configOptionIndex(name string) string {
