@@ -188,6 +188,17 @@ func CreateAppFromAirgap(opts CreateAirgapAppOpts) (finalError error) {
 	}
 	defer os.Remove(identityConfigFile)
 
+	if opts.RegistryPassword == registrytypes.PasswordMask {
+		// On initial install, registry info can be copied from kotsadm config,
+		// and password in this case will not be included in the request.
+		kotsadmSettings, err := registry.GetKotsadmRegistry()
+		if err != nil {
+			logger.Error(errors.Wrap(err, "failed to load kotsadm config"))
+		} else if kotsadmSettings.Hostname == opts.RegistryHost {
+			opts.RegistryPassword = kotsadmSettings.Password
+		}
+	}
+
 	pullOptions := pull.PullOptions{
 		Downstreams:         []string{"this-cluster"},
 		LocalPath:           releaseDir,
@@ -226,17 +237,6 @@ func CreateAppFromAirgap(opts CreateAirgapAppOpts) (finalError error) {
 	a, err := store.GetStore().GetApp(opts.PendingApp.ID)
 	if err != nil {
 		return errors.Wrap(err, "failed to get app from pending app")
-	}
-
-	if opts.RegistryPassword == registrytypes.PasswordMask {
-		// On initial install, registry info can be copied from kotsadm config,
-		// and password in this case will not be included in the request.
-		kotsadmSettings, err := registry.GetKotsadmRegistry()
-		if err != nil {
-			logger.Error(errors.Wrap(err, "failed to load kotsadm config"))
-		} else if kotsadmSettings.Hostname == opts.RegistryHost {
-			opts.RegistryPassword = kotsadmSettings.Password
-		}
 	}
 
 	if err := store.GetStore().UpdateRegistry(opts.PendingApp.ID, opts.RegistryHost, opts.RegistryUsername, opts.RegistryPassword, opts.RegistryNamespace, opts.RegistryIsReadOnly); err != nil {

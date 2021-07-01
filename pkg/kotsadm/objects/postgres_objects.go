@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/blang/semver"
+	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/kotsadm/types"
 	kotsadmversion "github.com/replicatedhq/kots/pkg/kotsadm/version"
@@ -15,7 +16,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
-func PostgresStatefulset(deployOptions types.DeployOptions, size resource.Quantity) *appsv1.StatefulSet {
+func PostgresStatefulset(deployOptions types.DeployOptions, size resource.Quantity) (*appsv1.StatefulSet, error) {
 	imageTag := getPostgresTag(deployOptions)
 
 	if deployOptions.KotsadmOptions.OverrideVersion != "" {
@@ -36,12 +37,18 @@ func PostgresStatefulset(deployOptions types.DeployOptions, size resource.Quanti
 		image = fmt.Sprintf("%s/postgres:%s", kotsadmversion.KotsadmRegistry(deployOptions.KotsadmOptions), imageTag)
 	}
 
-	var securityContext corev1.PodSecurityContext
-	if !deployOptions.IsOpenShift {
-		securityContext = corev1.PodSecurityContext{
-			RunAsUser: util.IntPointer(999),
-			FSGroup:   util.IntPointer(999),
+	securityContext := &corev1.PodSecurityContext{
+		RunAsUser: util.IntPointer(999),
+		FSGroup:   util.IntPointer(999),
+	}
+	if deployOptions.IsOpenShift {
+		// need to use a security context here because if the project is running with a scc that has "MustRunAsNonRoot" (or is not "MustRunAsRange"),
+		// openshift won't assign a user id to the container to run with, and the container will try to run as root and fail.
+		psc, err := k8sutil.GetOpenShiftPodSecurityContext(deployOptions.Namespace)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to get openshift pod security context")
 		}
+		securityContext = psc
 	}
 
 	volumes := []corev1.Volume{
@@ -131,7 +138,7 @@ func PostgresStatefulset(deployOptions types.DeployOptions, size resource.Quanti
 					}),
 				},
 				Spec: corev1.PodSpec{
-					SecurityContext:  &securityContext,
+					SecurityContext:  securityContext,
 					ImagePullSecrets: pullSecrets,
 					Volumes:          volumes,
 					Containers: []corev1.Container{
@@ -218,7 +225,7 @@ func PostgresStatefulset(deployOptions types.DeployOptions, size resource.Quanti
 		},
 	}
 
-	return statefulset
+	return statefulset, nil
 }
 
 func PostgresService(namespace string) *corev1.Service {

@@ -22,23 +22,23 @@ type Renderer struct {
 
 // RenderFile renders a single file
 // this is useful for upstream/kotskinds files that are not rendered in the dir
-func (r Renderer) RenderFile(kotsKinds *kotsutil.KotsKinds, registrySettings registrytypes.RegistrySettings, appSlug string, sequence int64, isAirgap bool, inputContent []byte) ([]byte, error) {
-	return RenderFile(kotsKinds, registrySettings, appSlug, sequence, isAirgap, inputContent)
+func (r Renderer) RenderFile(kotsKinds *kotsutil.KotsKinds, registrySettings registrytypes.RegistrySettings, appSlug string, sequence int64, isAirgap bool, namespace string, inputContent []byte) ([]byte, error) {
+	return RenderFile(kotsKinds, registrySettings, appSlug, sequence, isAirgap, namespace, inputContent)
 }
 
-func RenderFile(kotsKinds *kotsutil.KotsKinds, registrySettings registrytypes.RegistrySettings, appSlug string, sequence int64, isAirgap bool, inputContent []byte) ([]byte, error) {
+func RenderFile(kotsKinds *kotsutil.KotsKinds, registrySettings registrytypes.RegistrySettings, appSlug string, sequence int64, isAirgap bool, namespace string, inputContent []byte) ([]byte, error) {
 	fixedUpContent, err := kotsutil.FixUpYAML(inputContent)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to fix up yaml")
 	}
 
-	return RenderContent(kotsKinds, registrySettings, appSlug, sequence, isAirgap, fixedUpContent)
+	return RenderContent(kotsKinds, registrySettings, appSlug, sequence, isAirgap, namespace, fixedUpContent)
 }
 
 // RenderContent renders any string/content
 // this is useful for rendering single values, like a status informer
-func RenderContent(kotsKinds *kotsutil.KotsKinds, registrySettings registrytypes.RegistrySettings, appSlug string, sequence int64, isAirgap bool, inputContent []byte) ([]byte, error) {
-	builder, err := NewBuilder(kotsKinds, registrySettings, appSlug, sequence, isAirgap)
+func RenderContent(kotsKinds *kotsutil.KotsKinds, registrySettings registrytypes.RegistrySettings, appSlug string, sequence int64, isAirgap bool, namespace string, inputContent []byte) ([]byte, error) {
+	builder, err := NewBuilder(kotsKinds, registrySettings, appSlug, sequence, isAirgap, namespace)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create builder")
 	}
@@ -51,7 +51,7 @@ func RenderContent(kotsKinds *kotsutil.KotsKinds, registrySettings registrytypes
 	return []byte(rendered), nil
 }
 
-func NewBuilder(kotsKinds *kotsutil.KotsKinds, registrySettings registrytypes.RegistrySettings, appSlug string, sequence int64, isAirgap bool) (*template.Builder, error) {
+func NewBuilder(kotsKinds *kotsutil.KotsKinds, registrySettings registrytypes.RegistrySettings, appSlug string, sequence int64, isAirgap bool, namespace string) (*template.Builder, error) {
 	localRegistry := template.LocalRegistry{
 		Host:      registrySettings.Hostname,
 		Namespace: registrySettings.Namespace,
@@ -95,6 +95,7 @@ func NewBuilder(kotsKinds *kotsutil.KotsKinds, registrySettings registrytypes.Re
 		ApplicationInfo: &appInfo,
 		VersionInfo:     &versionInfo,
 		IdentityConfig:  kotsKinds.IdentityConfig,
+		Namespace:       namespace,
 	}
 	builder, _, err := template.NewBuilder(builderOptions)
 	return &builder, errors.Wrap(err, "failed to create builder")

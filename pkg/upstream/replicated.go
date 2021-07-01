@@ -134,6 +134,7 @@ func downloadReplicated(
 	appSlug string,
 	appSequence int64,
 	isAirgap bool,
+	airgapMetadata *kotsv1beta1.Airgap,
 	registry types.LocalRegistry,
 	reportingInfo *reportingtypes.ReportingInfo,
 ) (*types.Upstream, error) {
@@ -143,6 +144,11 @@ func downloadReplicated(
 		parsedLocalRelease, err := readReplicatedAppFromLocalPath(localPath, updateCursor, versionLabel)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to read replicated app from local path")
+		}
+
+		// airgapMetadata is nil when saving initial config
+		if airgapMetadata != nil {
+			parsedLocalRelease.ReleaseNotes = airgapMetadata.Spec.ReleaseNotes
 		}
 
 		release = parsedLocalRelease
@@ -579,8 +585,9 @@ func createConfigValues(applicationName string, config *kotsv1beta1.Config, exis
 				value = v.ValuePlaintext
 			}
 			templateContextValues[k] = template.ItemValue{
-				Value:   value,
-				Default: v.Default,
+				Value:    value,
+				Default:  v.Default,
+				Filename: v.Filename,
 			}
 		}
 		newValues = kotsv1beta1.ConfigValuesSpec{
@@ -622,11 +629,12 @@ func createConfigValues(applicationName string, config *kotsv1beta1.Config, exis
 
 	for _, group := range config.Spec.Groups {
 		for _, item := range group.Items {
-			var foundValue, foundValuePlaintext string
+			var foundValue, foundValuePlaintext, foundFilename string
 			prevValue, ok := newValues.Values[item.Name]
 			if ok {
 				foundValue = prevValue.Value
 				foundValuePlaintext = prevValue.ValuePlaintext
+				foundFilename = prevValue.Filename
 			}
 
 			renderedValue, err := builder.RenderTemplate(item.Name, item.Value.String())
@@ -644,15 +652,18 @@ func createConfigValues(applicationName string, config *kotsv1beta1.Config, exis
 					Value:          foundValue,
 					ValuePlaintext: foundValuePlaintext,
 					Default:        renderedDefault,
+					Filename:       foundFilename,
 				}
 			} else {
 				newValues.Values[item.Name] = kotsv1beta1.ConfigValue{
-					Value:   renderedValue,
-					Default: renderedDefault,
+					Value:    renderedValue,
+					Default:  renderedDefault,
+					Filename: foundFilename,
 				}
 				builderOptions.ExistingValues[item.Name] = template.ItemValue{
-					Value:   renderedValue,
-					Default: renderedDefault,
+					Value:    renderedValue,
+					Default:  renderedDefault,
+					Filename: foundFilename,
 				}
 			}
 		}

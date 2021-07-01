@@ -27,6 +27,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/logger"
 	rendertypes "github.com/replicatedhq/kots/pkg/render/types"
 	"github.com/replicatedhq/kots/pkg/secrets"
+	"github.com/replicatedhq/kots/pkg/store/types"
 	"go.uber.org/zap"
 )
 
@@ -172,10 +173,6 @@ func (s *OCIStore) CreateAppVersionArchive(appID string, sequence int64, archive
 	}
 
 	storageBaseURI := os.Getenv("STORAGE_BASEURI")
-	if storageBaseURI == "" {
-		storageBaseURI = fmt.Sprintf("s3://%s/%s", os.Getenv("S3_ENDPOINT"), os.Getenv("S3_BUCKET_NAME"))
-	}
-
 	ref := refFromAppVersion(appID, sequence, storageBaseURI)
 
 	fileContents, err := ioutil.ReadFile(fileToUpload)
@@ -236,9 +233,6 @@ func (s *OCIStore) GetAppVersionArchive(appID string, sequence int64, dstPath st
 	// 	zap.Int64("sequence", sequence))
 
 	storageBaseURI := os.Getenv("STORAGE_BASEURI")
-	if storageBaseURI == "" {
-		storageBaseURI = fmt.Sprintf("s3://%s/%s", os.Getenv("S3_ENDPOINT"), os.Getenv("S3_BUCKET_NAME"))
-	}
 
 	fileStore := content.NewFileStore(dstPath)
 	defer fileStore.Close()
@@ -356,11 +350,11 @@ func (s *OCIStore) CreateAppVersion(appID string, currentSequence *int64, filesI
 		// there's a small chance this is not optimal, but no current code path
 		// will support multiple downstreams, so this is cleaner here for now
 
-		downstreamStatus := "pending"
+		downstreamStatus := types.VersionPending
 		if currentSequence == nil && kotsKinds.Config != nil { // initial version should always require configuration (if exists) even if all required items are already set and have values (except for automated installs, which can override this later)
-			downstreamStatus = "pending_config"
+			downstreamStatus = types.VersionPendingConfig
 		} else if kotsKinds.Preflight != nil && !skipPreflights {
-			downstreamStatus = "pending_preflight"
+			downstreamStatus = types.VersionPendingPreflight
 		}
 		if currentSequence != nil { // only check if the version needs configuration for later versions (not the initial one) since the config is always required for the initial version (except for automated installs, which can override that later)
 			// check if version needs additional configuration
@@ -369,7 +363,7 @@ func (s *OCIStore) CreateAppVersion(appID string, currentSequence *int64, filesI
 				return int64(0), errors.Wrap(err, "failed to check if version needs configuration")
 			}
 			if t {
-				downstreamStatus = "pending_config"
+				downstreamStatus = types.VersionPendingConfig
 			}
 		}
 
@@ -461,7 +455,7 @@ func (s *OCIStore) createAppVersion(appID string, currentSequence *int64, appNam
 	return newSequence, nil
 }
 
-func (s *OCIStore) addAppVersionToDownstream(appID string, clusterID string, sequence int64, versionLabel string, status string, source string, diffSummary string, diffSummaryError string, commitURL string, gitDeployable bool) error {
+func (s *OCIStore) addAppVersionToDownstream(appID string, clusterID string, sequence int64, versionLabel string, status types.DownstreamVersionStatus, source string, diffSummary string, diffSummaryError string, commitURL string, gitDeployable bool) error {
 	return ErrNotImplemented
 }
 

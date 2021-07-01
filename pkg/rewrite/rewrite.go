@@ -104,6 +104,7 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 		CreateAppDir:         rewriteOptions.CreateAppDir,
 		IncludeAdminConsole:  includeAdminConsole,
 		PreserveInstallation: true,
+		IsOpenShift:          k8sutil.IsOpenShift(clientset),
 	}
 	if err := upstream.WriteUpstream(u, writeUpstreamOptions); err != nil {
 		log.FinishSpinnerWithError()
@@ -184,6 +185,9 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 		return errors.Wrap(err, "failed to load identity config")
 	}
 
+	// do not fail on being unable to get dockerhub credentials, since they're just used to increase the rate limit
+	dockerHubRegistryCreds, _ := registry.GetDockerHubCredentials(clientset, rewriteOptions.K8sNamespace)
+
 	// TODO (ethan): rewrite dex image?
 
 	if rewriteOptions.CopyImages || rewriteOptions.RegistryEndpoint != "" {
@@ -214,6 +218,10 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 				Namespace: rewriteOptions.RegistryNamespace,
 				Username:  rewriteOptions.RegistryUsername,
 				Password:  rewriteOptions.RegistryPassword,
+			},
+			DockerHubRegistry: registry.RegistryOptions{
+				Username: dockerHubRegistryCreds.Username,
+				Password: dockerHubRegistryCreds.Password,
 			},
 			Installation: newInstallation,
 			Application:  application,
@@ -286,6 +294,10 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 			ReplicatedRegistry: registry.RegistryOptions{
 				Endpoint:      replicatedRegistryInfo.Registry,
 				ProxyEndpoint: replicatedRegistryInfo.Proxy,
+			},
+			DockerHubRegistry: registry.RegistryOptions{
+				Username: dockerHubRegistryCreds.Username,
+				Password: dockerHubRegistryCreds.Password,
 			},
 			Installation:     rewriteOptions.Installation,
 			AllImagesPrivate: allPrivate,

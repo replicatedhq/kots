@@ -61,6 +61,25 @@ func InstallCmd() *cobra.Command {
 
 			log := logger.NewCLILogger()
 
+			signalChan := make(chan os.Signal, 1)
+
+			finalMessage := ""
+			go func() {
+				signal.Notify(signalChan, os.Interrupt)
+				<-signalChan
+
+				log.ActionWithoutSpinner("")
+				log.ActionWithoutSpinner("Cleaning up")
+				if finalMessage != "" {
+					log.ActionWithoutSpinner("")
+					log.ActionWithoutSpinner(finalMessage)
+					log.ActionWithoutSpinner("")
+				}
+
+				fmt.Print(cursor.Show())
+				os.Exit(0)
+			}()
+
 			if !v.GetBool("skip-rbac-check") && v.GetBool("ensure-rbac") {
 				err := CheckRBAC()
 				if err != nil {
@@ -184,7 +203,6 @@ func InstallCmd() *cobra.Command {
 				ProgressWriter:            os.Stdout,
 				StorageBaseURI:            v.GetString("storage-base-uri"),
 				StorageBaseURIPlainHTTP:   v.GetBool("storage-base-uri-plainhttp"),
-				IncludeMinio:              v.GetBool("with-minio"),
 				IncludeDockerDistribution: v.GetBool("with-dockerdistribution"),
 				Timeout:                   time.Minute * 2,
 				HTTPProxyEnvValue:         v.GetString("http-proxy"),
@@ -196,6 +214,7 @@ func InstallCmd() *cobra.Command {
 				SimultaneousUploads:       simultaneousUploads,
 				DisableImagePush:          v.GetBool("disable-image-push"),
 				AirgapBundle:              v.GetString("airgap-bundle"),
+				HasObjectStore:            false,
 
 				KotsadmOptions: *registryConfig,
 
@@ -344,15 +363,10 @@ func InstallCmd() *cobra.Command {
 				log.ActionWithoutSpinner("Go to http://localhost:%d to access the Admin Console", adminConsolePort)
 				log.ActionWithoutSpinner("")
 
-				signalChan := make(chan os.Signal, 1)
-				signal.Notify(signalChan, os.Interrupt)
+				finalMessage = fmt.Sprintf("To access the Admin Console again, run kubectl kots admin-console --namespace %s", namespace)
 
-				<-signalChan
-
-				log.ActionWithoutSpinner("Cleaning up")
-				log.ActionWithoutSpinner("")
-				log.ActionWithoutSpinner("To access the Admin Console again, run kubectl kots admin-console --namespace %s", namespace)
-				log.ActionWithoutSpinner("")
+				// pause indefinitely and let Ctrl+C handle termination
+				<-make(chan struct{})
 			} else if !deployOptions.ExcludeAdminConsole {
 				log.ActionWithoutSpinner("")
 				log.ActionWithoutSpinner("To access the Admin Console, run kubectl kots admin-console --namespace %s", namespace)
@@ -399,11 +413,9 @@ func InstallCmd() *cobra.Command {
 
 	// options for the alpha feature of using a reg instead of s3 for storage
 	cmd.Flags().String("storage-base-uri", "", "an s3 or oci-registry uri to use for kots persistent storage in the cluster")
-	cmd.Flags().Bool("with-minio", true, "when set, kots install will deploy a local minio instance for storage")
 	cmd.Flags().Bool("with-dockerdistribution", false, "when set, kots install will deploy a local instance of docker distribution for storage")
 	cmd.Flags().Bool("storage-base-uri-plainhttp", false, "when set, use plain http (not https) connecting to the local oci storage")
 	cmd.Flags().MarkHidden("storage-base-uri")
-	cmd.Flags().MarkHidden("with-minio")
 	cmd.Flags().MarkHidden("with-dockerdistribution")
 	cmd.Flags().MarkHidden("storage-base-uri-plainhttp")
 
@@ -446,6 +458,7 @@ func promptForNamespace(upstreamURI string) (string, error) {
 		Templates: templates,
 		Default:   u.Hostname(),
 		Validate:  validateNamespace,
+		AllowEdit: true,
 	}
 
 	for {

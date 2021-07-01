@@ -50,6 +50,7 @@ type ConfigItem struct {
 	Affix         string                 `json:"affix,omitempty"`
 	Required      bool                   `json:"required,omitempty"`
 	Items         []ConfigChildItem      `json:"items,omitempty"`
+	Filename      string                 `json:"filename,omitempty"`
 	Repeatable    bool                   `json:"repeatable,omitempty"`
 	MinimumCount  int                    `json:"minimumCount,omitempty"`
 	Templates     []RepeatTemplate       `json:"templates,omitempty"`

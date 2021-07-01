@@ -10,15 +10,12 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/aws/aws-sdk-go/aws"
-	awssession "github.com/aws/aws-sdk-go/aws/session"
-	"github.com/aws/aws-sdk-go/service/s3"
-	"github.com/aws/aws-sdk-go/service/s3/s3manager"
 	"github.com/mholt/archiver"
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	versiontypes "github.com/replicatedhq/kots/pkg/api/version/types"
 	apptypes "github.com/replicatedhq/kots/pkg/app/types"
+	"github.com/replicatedhq/kots/pkg/filestore"
 	gitopstypes "github.com/replicatedhq/kots/pkg/gitops/types"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	kotsadmobjects "github.com/replicatedhq/kots/pkg/kotsadm/objects"
@@ -27,8 +24,8 @@ import (
 	"github.com/replicatedhq/kots/pkg/kustomize"
 	"github.com/replicatedhq/kots/pkg/persistence"
 	rendertypes "github.com/replicatedhq/kots/pkg/render/types"
-	kotss3 "github.com/replicatedhq/kots/pkg/s3"
 	"github.com/replicatedhq/kots/pkg/secrets"
+	"github.com/replicatedhq/kots/pkg/store/types"
 	velerov1 "github.com/vmware-tanzu/velero/pkg/apis/velero/v1"
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -148,7 +145,7 @@ func (s *KOTSStore) IsSnapshotsSupportedForVersion(a *apptypes.App, sequence int
 	}
 
 	// as far as I can tell, this is the only place within pkg/store that uses templating
-	rendered, err := renderer.RenderFile(kotsKinds, registrySettings, a.Slug, sequence, a.IsAirgap, []byte(backupSpecStr.String))
+	rendered, err := renderer.RenderFile(kotsKinds, registrySettings, a.Slug, sequence, a.IsAirgap, os.Getenv("POD_NAMESPACE"), []byte(backupSpecStr.String))
 	if err != nil {
 		return false, errors.Wrap(err, "failed to render backup spec")
 	}
@@ -207,77 +204,40 @@ func (s *KOTSStore) CreateAppVersionArchive(appID string, sequence int64, archiv
 		return errors.Wrap(err, "failed to create archive")
 	}
 
-	storageBaseURI := os.Getenv("STORAGE_BASEURI")
-	if storageBaseURI == "" {
-		storageBaseURI = fmt.Sprintf("s3://%s/%s", os.Getenv("S3_ENDPOINT"), os.Getenv("S3_BUCKET_NAME"))
-	}
-
-	bucket := aws.String(os.Getenv("S3_BUCKET_NAME"))
-	key := aws.String(fmt.Sprintf("%s/%d.tar.gz", appID, sequence))
-
-	newSession := awssession.New(kotss3.GetConfig())
-
-	s3Client := s3.New(newSession)
-
 	f, err := os.Open(fileToUpload)
 	if err != nil {
 		return errors.Wrap(err, "failed to open archive file")
 	}
 
-	_, err = s3Client.PutObject(&s3.PutObjectInput{
-		Body:   f,
-		Bucket: bucket,
-		Key:    key,
-	})
+	outputPath := fmt.Sprintf("%s/%d.tar.gz", appID, sequence)
+	err = filestore.WriteArchive(outputPath, f)
 	if err != nil {
-		return errors.Wrap(err, "failed to upload to s3")
+		return errors.Wrap(err, "failed to write file")
 	}
 
 	return nil
 }
 
-// GetAppVersionArchive will fetch the archive and return a string that contains a
-// directory name where it's extracted into
+// GetAppVersionArchive will fetch the archive and extract it into the given dstPath directory name
 func (s *KOTSStore) GetAppVersionArchive(appID string, sequence int64, dstPath string) error {
 	// too noisy
 	// logger.Debug("getting app version archive",
 	// 	zap.String("appID", appID),
 	// 	zap.Int64("sequence", sequence))
 
-	storageBaseURI := os.Getenv("STORAGE_BASEURI")
-	if storageBaseURI == "" {
-		storageBaseURI = fmt.Sprintf("s3://%s/%s", os.Getenv("S3_ENDPOINT"), os.Getenv("S3_BUCKET_NAME"))
-	}
-
-	// Get the archive from object store
-	newSession := awssession.New(kotss3.GetConfig())
-
-	bucket := aws.String(os.Getenv("S3_BUCKET_NAME"))
-	key := aws.String(fmt.Sprintf("%s/%d.tar.gz", appID, sequence))
-
-	tmpFile, err := ioutil.TempFile("", "kotsadm")
+	path := fmt.Sprintf("%s/%d.tar.gz", appID, sequence)
+	bundlePath, err := filestore.ReadArchive(path)
 	if err != nil {
-		return errors.Wrap(err, "failed to create temp file")
+		return errors.Wrap(err, "failed to read file")
 	}
-	defer tmpFile.Close()
-	defer os.RemoveAll(tmpFile.Name())
-
-	downloader := s3manager.NewDownloader(newSession)
-	_, err = downloader.Download(tmpFile,
-		&s3.GetObjectInput{
-			Bucket: bucket,
-			Key:    key,
-		})
-	if err != nil {
-		return errors.Wrapf(err, "failed to download app version archive %q from bucket %q", *key, *bucket)
-	}
+	defer os.RemoveAll(bundlePath)
 
 	tarGz := archiver.TarGz{
 		Tar: &archiver.Tar{
 			ImplicitTopLevelFolder: false,
 		},
 	}
-	if err := tarGz.Unarchive(tmpFile.Name(), dstPath); err != nil {
+	if err := tarGz.Unarchive(bundlePath, dstPath); err != nil {
 		return errors.Wrap(err, "failed to unarchive")
 	}
 
@@ -366,11 +326,11 @@ func (s *KOTSStore) createAppVersion(tx *sql.Tx, appID string, currentSequence *
 		// there's a small chance this is not optimal, but no current code path
 		// will support multiple downstreams, so this is cleaner here for now
 
-		downstreamStatus := "pending"
+		downstreamStatus := types.VersionPending
 		if currentSequence == nil && kotsKinds.Config != nil { // initial version should always require configuration (if exists) even if all required items are already set and have values (except for automated installs, which can override this later)
-			downstreamStatus = "pending_config"
+			downstreamStatus = types.VersionPendingConfig
 		} else if kotsKinds.Preflight != nil && !skipPreflights {
-			downstreamStatus = "pending_preflight"
+			downstreamStatus = types.VersionPendingPreflight
 		}
 		if currentSequence != nil { // only check if the version needs configuration for later versions (not the initial one) since the config is always required for the initial version (except for automated installs, which can override that later)
 			// check if version needs additional configuration
@@ -379,7 +339,7 @@ func (s *KOTSStore) createAppVersion(tx *sql.Tx, appID string, currentSequence *
 				return int64(0), errors.Wrap(err, "failed to check if version needs configuration")
 			}
 			if t {
-				downstreamStatus = "pending_config"
+				downstreamStatus = types.VersionPendingConfig
 			}
 		}
 
@@ -405,7 +365,7 @@ func (s *KOTSStore) createAppVersion(tx *sql.Tx, appID string, currentSequence *
 
 		err = s.addAppVersionToDownstream(tx, appID, d.ClusterID, newSequence,
 			kotsKinds.Installation.Spec.VersionLabel, downstreamStatus, source,
-			diffSummary, diffSummaryError, commitURL, commitURL != "")
+			diffSummary, diffSummaryError, commitURL, commitURL != "", skipPreflights)
 		if err != nil {
 			return int64(0), errors.Wrap(err, "failed to create downstream version")
 		}
@@ -543,8 +503,8 @@ func (s *KOTSStore) createAppVersionRecord(tx *sql.Tx, appID string, currentSequ
 	return int64(newSequence), nil
 }
 
-func (s *KOTSStore) addAppVersionToDownstream(tx *sql.Tx, appID string, clusterID string, sequence int64, versionLabel string, status string, source string, diffSummary string, diffSummaryError string, commitURL string, gitDeployable bool) error {
-	query := `insert into app_downstream_version (app_id, cluster_id, sequence, parent_sequence, created_at, version_label, status, source, diff_summary, diff_summary_error, git_commit_url, git_deployable) values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)`
+func (s *KOTSStore) addAppVersionToDownstream(tx *sql.Tx, appID string, clusterID string, sequence int64, versionLabel string, status types.DownstreamVersionStatus, source string, diffSummary string, diffSummaryError string, commitURL string, gitDeployable bool, preflightsSkipped bool) error {
+	query := `insert into app_downstream_version (app_id, cluster_id, sequence, parent_sequence, created_at, version_label, status, source, diff_summary, diff_summary_error, git_commit_url, git_deployable, preflight_skipped) values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)`
 	_, err := tx.Exec(
 		query,
 		appID,
@@ -558,7 +518,8 @@ func (s *KOTSStore) addAppVersionToDownstream(tx *sql.Tx, appID string, clusterI
 		diffSummary,
 		diffSummaryError,
 		commitURL,
-		gitDeployable)
+		gitDeployable,
+		preflightsSkipped)
 	if err != nil {
 		return errors.Wrap(err, "failed to execute query")
 	}

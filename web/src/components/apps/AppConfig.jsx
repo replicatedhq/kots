@@ -182,7 +182,7 @@ class AppConfig extends Component {
     if (currentDeployedSequence != undefined) {
       return currentDeployedSequence
     } else {
-      return app?.currentSequence; 
+      return app?.currentSequence;
     }
   }
 
@@ -257,7 +257,7 @@ class AppConfig extends Component {
         }
 
         if (this.props.refreshAppData) {
-          this.props.refreshAppData();
+          await this.props.refreshAppData();
         }
 
         if (fromLicenseFlow) {
@@ -431,6 +431,13 @@ class AppConfig extends Component {
     this.setState({ displayErrorModal: !this.state.displayErrorModal });
   }
 
+  navigateToUpdatedConfig = (app) => {
+    this.setState({ showNextStepModal: false });
+
+    const pendingVersions = app?.downstreams[0]?.pendingVersions;
+    this.props.history.push(`/app/${app?.slug}/config/${pendingVersions[0].parentSequence}`)
+  }
+
 
   render() {
     const {
@@ -540,7 +547,7 @@ class AppConfig extends Component {
                 </p>
               }
               <div className="flex justifyContent--flexEnd">
-                <button type="button" className="btn blue secondary u-marginRight--10" onClick={this.hideNextStepModal}>Continue editing</button>
+                <button type="button" className="btn blue secondary u-marginRight--10" onClick={() => this.navigateToUpdatedConfig(app)}>Edit the latest config</button>
                 <Link to={`/app/${app?.slug}/version-history`}>
                   <button type="button" className="btn blue primary">{isNewVersion ? "Go to new version" : "Go to updated version"}</button>
                 </Link>

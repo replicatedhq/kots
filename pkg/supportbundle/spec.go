@@ -83,7 +83,7 @@ func CreateRenderedSpec(appID string, sequence int64, kotsKinds *kotsutil.KotsKi
 
 	templatedSpec := b.Bytes()
 
-	renderedSpec, err := helper.RenderAppFile(app, &sequence, templatedSpec, kotsKinds)
+	renderedSpec, err := helper.RenderAppFile(app, &sequence, templatedSpec, kotsKinds, os.Getenv("POD_NAMESPACE"))
 	if err != nil {
 		return nil, errors.Wrap(err, "failed render support bundle spec")
 	}
@@ -265,6 +265,16 @@ func addDefaultTroubleshoot(supportBundle *troubleshootv1beta2.SupportBundle, ap
 	}
 
 	supportBundle.Spec.Collectors = append(supportBundle.Spec.Collectors, &troubleshootv1beta2.Collect{
+		Data: &troubleshootv1beta2.Data{
+			CollectorMeta: troubleshootv1beta2.CollectorMeta{
+				CollectorName: "namespace.txt",
+			},
+			Name: "kots/admin-console",
+			Data: os.Getenv("POD_NAMESPACE"),
+		},
+	})
+
+	supportBundle.Spec.Collectors = append(supportBundle.Spec.Collectors, &troubleshootv1beta2.Collect{
 		Secret: &troubleshootv1beta2.Secret{
 			CollectorMeta: troubleshootv1beta2.CollectorMeta{
 				CollectorName: "kotsadm-replicated-registry",
@@ -285,6 +295,9 @@ func addDefaultTroubleshoot(supportBundle *troubleshootv1beta2.SupportBundle, ap
 
 	supportBundle.Spec.Collectors = append(supportBundle.Spec.Collectors, makeWeaveCollectors()...)
 	supportBundle.Spec.Analyzers = append(supportBundle.Spec.Analyzers, makeWeaveAnalyzers()...)
+
+	supportBundle.Spec.Collectors = append(supportBundle.Spec.Collectors, makeGoldpingerCollectors()...)
+	supportBundle.Spec.Analyzers = append(supportBundle.Spec.Analyzers, makeGoldpingerAnalyzers()...)
 
 	apps := []*apptypes.App{}
 	if app != nil {
@@ -696,13 +709,13 @@ func makeCollectDCollectors() ([]*troubleshootv1beta2.Collect, error) {
 	}
 
 	namespace := os.Getenv("POD_NAMESPACE")
-	existingDeployment, err := clientset.AppsV1().Deployments(namespace).Get(context.TODO(), "kotsadm", metav1.GetOptions{})
+	existingStatefulSet, err := clientset.AppsV1().StatefulSets(namespace).Get(context.TODO(), "kotsadm", metav1.GetOptions{})
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to get existing deployment")
+		return nil, errors.Wrap(err, "failed to get existing statefulset")
 	}
 
 	imageName := ""
-	for _, container := range existingDeployment.Spec.Template.Spec.Containers {
+	for _, container := range existingStatefulSet.Spec.Template.Spec.Containers {
 		if container.Name == "kotsadm" {
 			imageName = container.Image
 			break
@@ -713,8 +726,8 @@ func makeCollectDCollectors() ([]*troubleshootv1beta2.Collect, error) {
 	}
 
 	var pullSecret *troubleshootv1beta2.ImagePullSecrets
-	if len(existingDeployment.Spec.Template.Spec.ImagePullSecrets) > 0 {
-		existingSecret := existingDeployment.Spec.Template.Spec.ImagePullSecrets[0]
+	if len(existingStatefulSet.Spec.Template.Spec.ImagePullSecrets) > 0 {
+		existingSecret := existingStatefulSet.Spec.Template.Spec.ImagePullSecrets[0]
 		pullSecret = &troubleshootv1beta2.ImagePullSecrets{
 			Name: existingSecret.Name,
 		}
@@ -737,4 +750,53 @@ func makeCollectDCollectors() ([]*troubleshootv1beta2.Collect, error) {
 	collectors = append(collectors, collector)
 
 	return collectors, nil
+}
+
+func makeGoldpingerCollectors() []*troubleshootv1beta2.Collect {
+	collectors := []*troubleshootv1beta2.Collect{}
+
+	collectors = append(collectors, &troubleshootv1beta2.Collect{
+		Exec: &troubleshootv1beta2.Exec{
+			CollectorMeta: troubleshootv1beta2.CollectorMeta{
+				CollectorName: "goldpinger-statistics",
+			},
+			Name:          "kots/goldpinger",
+			Selector:      []string{"app=kotsadm"},
+			ContainerName: "kotsadm",
+			Command:       []string{"curl"},
+			Args:          []string{"http://goldpinger.kurl.svc.cluster.local:80/check_all"},
+			Timeout:       "10s",
+		},
+	})
+
+	return collectors
+}
+
+func makeGoldpingerAnalyzers() []*troubleshootv1beta2.Analyze {
+	analyzers := []*troubleshootv1beta2.Analyze{}
+
+	analyzers = append(analyzers, &troubleshootv1beta2.Analyze{
+		TextAnalyze: &troubleshootv1beta2.TextAnalyze{
+			AnalyzeMeta: troubleshootv1beta2.AnalyzeMeta{
+				CheckName: "Inter-pod Networking",
+			},
+			FileName:    "kots/goldpinger/*/kotsadm-*/goldpinger-statistics-stdout.txt",
+			RegexGroups: `"OK": ?(?P<OK>\w+)`,
+			Outcomes: []*troubleshootv1beta2.Outcome{
+				{
+					Fail: &troubleshootv1beta2.SingleOutcome{
+						When:    "OK = false",
+						Message: "Some nodes have pod communication issues",
+					},
+				},
+				{
+					Pass: &troubleshootv1beta2.SingleOutcome{
+						Message: "Goldpinger can communicate properly",
+					},
+				},
+			},
+		},
+	})
+
+	return analyzers
 }

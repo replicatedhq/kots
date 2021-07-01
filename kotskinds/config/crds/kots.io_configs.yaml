@@ -49,6 +49,8 @@ spec:
                           type: BoolString
                         error:
                           type: string
+                        filename:
+                          type: string
                         help_text:
                           type: string
                         hidden:

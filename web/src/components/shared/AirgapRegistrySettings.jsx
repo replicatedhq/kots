@@ -39,7 +39,6 @@ class AirgapRegistrySettings extends Component {
       rewriteMessage: "",
       fetchRegistryErrMsg: "",
       displayErrorModal: false,
-      namespaceRequiredErr: false
     }
   }
 
@@ -52,17 +51,6 @@ class AirgapRegistrySettings extends Component {
     this.triggerStatusUpdates();
   }
 
-  isInputValid = () => {
-    this.setState({ namespaceRequiredErr: false });
-    const { namespace } = this.state;
-    if (isEmpty(namespace)) {
-      this.setState({ namespaceRequiredErr: true });
-      return false;
-    } else {
-      return true;
-    }
-  }
-
   onSubmit = async () => {
     const {
       hostname,
@@ -72,8 +60,6 @@ class AirgapRegistrySettings extends Component {
       isReadOnly,
     } = this.state;
     const { slug } = this.props.match.params;
-
-    if (!this.isInputValid()) { return; }
 
     fetch(`${window.env.API_ENDPOINT}/app/${slug}/registry`, {
       method: "PUT",
@@ -306,7 +292,7 @@ class AirgapRegistrySettings extends Component {
 
   render() {
     const { app, hideTestConnection, hideCta, namespaceDescription, showHostnameAsRequired } = this.props;
-    const { hostname, password, username, namespace, isReadOnly, lastSync, testInProgress, testFailed, testMessage, namespaceRequiredErr } = this.state;
+    const { hostname, password, username, namespace, isReadOnly, lastSync, testInProgress, testFailed, testMessage } = this.state;
     const { rewriteMessage, rewriteStatus } = this.state;
 
     let statusText = rewriteMessage;
@@ -394,7 +380,6 @@ class AirgapRegistrySettings extends Component {
             <div className="flex1">
               <div className="flex flex1 alignItems--center u-marginBottom--5">
                 <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-lineHeight--normal u-marginBottom--5">Registry Namespace</p>
-                <span className="required-label">Required</span>
               </div>
               <p className="u-lineHeight--normal u-fontSize--small u-textColor--bodyCopy u-fontWeight--medium u-marginBottom--10">{namespaceSubtext}</p>
               <input type="text" className={`Input ${disableRegistryFields && "is-disabled"}`} placeholder="namespace" disabled={disableRegistryFields} value={namespace || ""} autoComplete="" onChange={(e) => { this.handleFormChange("namespace", e.target.value) }} />
@@ -432,11 +417,6 @@ class AirgapRegistrySettings extends Component {
             }
             {showStatusError ?
               <p className="u-fontSize--small u-fontWeight--medium u-textColor--error u-marginTop--10">{statusText}</p>
-              :
-              null
-            }
-            {namespaceRequiredErr ?
-              <p className="u-fontSize--small u-fontWeight--medium u-color--chestnut u-marginTop--10">Registry Namespace is required</p>
               :
               null
             }

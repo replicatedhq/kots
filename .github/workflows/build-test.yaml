@@ -22,7 +22,7 @@ jobs:
       - uses: actions/checkout@v2
 
       - run: make ci-test kots
-      - uses: actions/upload-artifact@v2.2.3
+      - uses: actions/upload-artifact@v2.2.4
         with:
           name: kots
           path: bin/kots
@@ -35,7 +35,7 @@ jobs:
         run: make -C web build-kotsadm
 
       - name: build and push migrations for e2e
-        uses: docker/build-push-action@v2.4.0
+        uses: docker/build-push-action@v2.5.0
         with:
           tags: ttl.sh/automated-${{ github.run_id }}/kotsadm-migrations:2h
           context: ./migrations
@@ -51,7 +51,7 @@ jobs:
           severity: 'CRITICAL,HIGH'
 
       - name: build and push kotsadm for e2e
-        uses: docker/build-push-action@v2.4.0
+        uses: docker/build-push-action@v2.5.0
         with:
           tags: ttl.sh/automated-${{ github.run_id }}/kotsadm:2h
           context: ./
@@ -67,7 +67,7 @@ jobs:
           severity: 'CRITICAL,HIGH'
 
       - name: build and push operator for e2e
-        uses: docker/build-push-action@v2.4.0
+        uses: docker/build-push-action@v2.5.0
         with:
           tags: ttl.sh/automated-${{ github.run_id }}/kotsadm-operator:2h
           context: ./kotsadm/operator
@@ -83,7 +83,7 @@ jobs:
           severity: 'CRITICAL,HIGH'
 
       - name: build and push kurl_proxy for e2e
-        uses: docker/build-push-action@v2.4.0
+        uses: docker/build-push-action@v2.5.0
         with:
           tags: ttl.sh/automated-${{ github.run_id }}/kurl-proxy:2h
           context: ./kurl_proxy
@@ -100,8 +100,8 @@ jobs:
 
       - name: push minio for e2e
         run: |
-          docker pull minio/minio:RELEASE.2021-05-20T22-31-44Z
-          docker tag minio/minio:RELEASE.2021-05-20T22-31-44Z ttl.sh/automated-${{ github.run_id }}/minio:2h
+          docker pull minio/minio:RELEASE.2021-06-07T21-40-51Z
+          docker tag minio/minio:RELEASE.2021-06-07T21-40-51Z ttl.sh/automated-${{ github.run_id }}/minio:2h
           docker push ttl.sh/automated-${{ github.run_id }}/minio:2h
       - name: Scan minio for vulnerabilities
         uses: aquasecurity/trivy-action@master
@@ -140,7 +140,7 @@ jobs:
           version: ${{ matrix.k8s_version }}
 
       - name: download kots binary
-        uses: actions/download-artifact@v2.0.9
+        uses: actions/download-artifact@v2.0.10
         with:
           name: kots
           path: bin/
@@ -194,9 +194,9 @@ jobs:
             echo "------pods:"
             kubectl -n legacy get pods
             echo "------kotsadm logs"
-            kubectl -n legacy logs deployment/kotsadm
+            kubectl -n legacy logs statefulset/kotsadm
             echo "------previous kotsadm logs"
-            kubectl -n legacy logs -p deployment/kotsadm
+            kubectl -n legacy logs -p statefulset/kotsadm
             echo "------kotsadm-operator logs"
             kubectl -n legacy logs deployment/kotsadm-operator
             echo "------previous kotsadm-operator logs"
@@ -221,9 +221,9 @@ jobs:
             echo "------pods:"
             kubectl -n legacy get pods
             echo "------kotsadm logs"
-            kubectl -n legacy logs deployment/kotsadm
+            kubectl -n legacy logs statefulset/kotsadm
             echo "------previous kotsadm logs"
-            kubectl -n legacy logs -p deployment/kotsadm
+            kubectl -n legacy logs -p statefulset/kotsadm
             echo "------kotsadm-operator logs"
             kubectl -n legacy logs deployment/kotsadm-operator
             echo "------previous kotsadm-operator logs"
@@ -274,9 +274,9 @@ jobs:
           echo "------pods:"
           kubectl -n minimal-rbac get pods
           echo "------kotsadm logs"
-          kubectl -n minimal-rbac logs deployment/kotsadm
+          kubectl -n minimal-rbac logs statefulset/kotsadm
           echo "------previous kotsadm logs"
-          kubectl -n minimal-rbac logs -p deployment/kotsadm
+          kubectl -n minimal-rbac logs -p statefulset/kotsadm
           echo "------kotsadm-operator logs"
           kubectl -n minimal-rbac logs deployment/kotsadm-operator
           echo "------previos kotsadm-operator logs"
@@ -313,9 +313,9 @@ jobs:
           echo "------pods:"
           kubectl -n no-config get pods
           echo "------kotsadm logs"
-          kubectl -n minimal-rbac logs deployment/kotsadm
+          kubectl -n minimal-rbac logs statefulset/kotsadm
           echo "------previous kotsadm logs"
-          kubectl -n minimal-rbac logs -p deployment/kotsadm
+          kubectl -n minimal-rbac logs -p statefulset/kotsadm
           echo "------kotsadm-operator logs"
           kubectl -n minimal-rbac logs deployment/kotsadm-operator
           echo "------previos kotsadm-operator logs"

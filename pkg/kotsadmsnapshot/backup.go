@@ -83,7 +83,7 @@ func CreateApplicationBackup(ctx context.Context, a *apptypes.App, isScheduled b
 		return nil, errors.Errorf("application %s does not have a backup spec", a.Slug)
 	}
 
-	renderedBackup, err := helper.RenderAppFile(a, nil, []byte(backupSpec), kotsKinds)
+	renderedBackup, err := helper.RenderAppFile(a, nil, []byte(backupSpec), kotsKinds, kotsadmNamespace)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to render backup")
 	}
@@ -244,7 +244,7 @@ func CreateInstanceBackup(ctx context.Context, cluster *downstreamtypes.Downstre
 
 		appsSequences[a.Slug] = parentSequence
 
-		renderedBackup, err := helper.RenderAppFile(a, nil, []byte(backupSpec), kotsKinds)
+		renderedBackup, err := helper.RenderAppFile(a, nil, []byte(backupSpec), kotsKinds, kotsadmNamespace)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to render backup")
 		}

@@ -27,9 +27,9 @@ jobs:
         echo "GORELEASER_PREVIOUS_TAG=${TAG}" >> $GITHUB_ENV
 
     - name: Run GoReleaser
-      uses: goreleaser/goreleaser-action@v2.5.0
+      uses: goreleaser/goreleaser-action@v2.6.1
       with:
-        version: latest
+        version: "v0.166.1"
         args: release --rm-dist --config deploy/.goreleaser.yaml
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

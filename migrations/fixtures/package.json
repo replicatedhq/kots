@@ -6,7 +6,7 @@
   "main": "./build/fixtures.js",
   "dependencies": {
     "js-yaml": "^3.13.1",
-    "lodash": "^4.17.19",
+    "lodash": "^4.17.21",
     "pg-escape": "^0.2.0",
     "source-map-support": "^0.5.0",
     "yargs": "^13.2.2"

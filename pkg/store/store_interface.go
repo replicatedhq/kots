@@ -17,7 +17,7 @@ import (
 	registrytypes "github.com/replicatedhq/kots/pkg/registry/types"
 	rendertypes "github.com/replicatedhq/kots/pkg/render/types"
 	sessiontypes "github.com/replicatedhq/kots/pkg/session/types"
-	"github.com/replicatedhq/kots/pkg/supportbundle/types"
+	"github.com/replicatedhq/kots/pkg/store/types"
 	supportbundletypes "github.com/replicatedhq/kots/pkg/supportbundle/types"
 	usertypes "github.com/replicatedhq/kots/pkg/user/types"
 	troubleshootredact "github.com/replicatedhq/troubleshoot/pkg/redact"
@@ -65,8 +65,8 @@ type SupportBundleStore interface {
 	SetSupportBundleAnalysis(bundleID string, insights []byte) error
 	GetRedactions(bundleID string) (troubleshootredact.RedactionList, error)
 	SetRedactions(bundleID string, redacts troubleshootredact.RedactionList) error
-	CreateInProgressSupportBundle(supportBundle *types.SupportBundle) error
-	UpdateSupportBundle(bundle *types.SupportBundle) error
+	CreateInProgressSupportBundle(supportBundle *supportbundletypes.SupportBundle) error
+	UpdateSupportBundle(bundle *supportbundletypes.SupportBundle) error
 	UploadSupportBundle(bundleID string, archivePath string, marshalledTree []byte) error
 }
 
@@ -136,10 +136,10 @@ type DownstreamStore interface {
 	SetDownstreamVersionReady(appID string, sequence int64) error
 	SetDownstreamVersionPendingPreflight(appID string, sequence int64) error
 	UpdateDownstreamVersionStatus(appID string, sequence int64, status string, statusInfo string) error
-	GetDownstreamVersionStatus(appID string, sequence int64) (string, error)
+	GetDownstreamVersionStatus(appID string, sequence int64) (types.DownstreamVersionStatus, error)
 	GetIgnoreRBACErrors(appID string, sequence int64) (bool, error)
 	GetCurrentVersion(appID string, clusterID string) (*downstreamtypes.DownstreamVersion, error)
-	GetStatusForVersion(appID string, clusterID string, sequence int64) (string, error)
+	GetStatusForVersion(appID string, clusterID string, sequence int64) (types.DownstreamVersionStatus, error)
 	GetPendingVersions(appID string, clusterID string) ([]downstreamtypes.DownstreamVersion, error)
 	GetPastVersions(appID string, clusterID string) ([]downstreamtypes.DownstreamVersion, error)
 	GetDownstreamOutput(appID string, clusterID string, sequence int64) (*downstreamtypes.DownstreamOutput, error)

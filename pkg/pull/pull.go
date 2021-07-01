@@ -221,6 +221,13 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 			return "", errors.Wrap(err, "failed to parse license from file")
 		}
 
+		if fetchOptions.License.Spec.ChannelID != airgap.Spec.ChannelID {
+			return "", util.ActionableError{
+				NoRetry: true, // if this is airgap upload, make sure to free up tmp space
+				Message: fmt.Sprintf("License (%s) and airgap bundle (%s) channels do not match.", fetchOptions.License.Spec.ChannelName, airgap.Spec.ChannelName),
+			}
+		}
+
 		if err := publicKeysMatch(fetchOptions.License, airgap); err != nil {
 			return "", errors.Wrap(err, "failed to validate app key")
 		}
@@ -259,6 +266,7 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 		HTTPProxyEnvValue:   pullOptions.HTTPProxyEnvValue,
 		HTTPSProxyEnvValue:  pullOptions.HTTPSProxyEnvValue,
 		NoProxyEnvValue:     pullOptions.NoProxyEnvValue,
+		IsOpenShift:         k8sutil.IsOpenShift(clientset),
 	}
 	if err := upstream.WriteUpstream(u, writeUpstreamOptions); err != nil {
 		log.FinishSpinnerWithError()
@@ -328,6 +336,9 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 		return "", errors.Wrap(err, "failed to write base")
 	}
 
+	// do not fail on being unable to get dockerhub credentials, since they're just used to increase the rate limit
+	dockerHubRegistryCreds, _ := registry.GetDockerHubCredentials(clientset, pullOptions.Namespace)
+
 	var pullSecret *corev1.Secret
 	var images []kustomizetypes.Image
 	var objects []k8sdoc.K8sDoc
@@ -360,6 +371,10 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 				SourceRegistry: registry.RegistryOptions{
 					Endpoint:      replicatedRegistryInfo.Registry,
 					ProxyEndpoint: replicatedRegistryInfo.Proxy,
+				},
+				DockerHubRegistry: registry.RegistryOptions{
+					Username: dockerHubRegistryCreds.Username,
+					Password: dockerHubRegistryCreds.Password,
 				},
 				ReportWriter: pullOptions.ReportWriter,
 				Installation: newInstallation,
@@ -500,6 +515,10 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 			ReplicatedRegistry: registry.RegistryOptions{
 				Endpoint:      replicatedRegistryInfo.Registry,
 				ProxyEndpoint: replicatedRegistryInfo.Proxy,
+			},
+			DockerHubRegistry: registry.RegistryOptions{
+				Username: dockerHubRegistryCreds.Username,
+				Password: dockerHubRegistryCreds.Password,
 			},
 			Installation:     newInstallation,
 			AllImagesPrivate: allPrivate,

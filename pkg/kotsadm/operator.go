@@ -38,8 +38,12 @@ func getOperatorYAML(deployOptions types.DeployOptions) (map[string][]byte, erro
 	}
 	docs["operator-serviceaccount.yaml"] = serviceAccount.Bytes()
 
+	operatorDeployment, err := kotsadmobjects.OperatorDeployment(deployOptions)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get operator deployment definition")
+	}
 	var deployment bytes.Buffer
-	if err := s.Encode(kotsadmobjects.OperatorDeployment(deployOptions), &deployment); err != nil {
+	if err := s.Encode(operatorDeployment, &deployment); err != nil {
 		return nil, errors.Wrap(err, "failed to marshal operator deployment")
 	}
 	docs["operator-deployment.yaml"] = deployment.Bytes()
@@ -207,13 +211,18 @@ func ensureOperatorServiceAccount(namespace string, clientset *kubernetes.Client
 }
 
 func ensureOperatorDeployment(deployOptions types.DeployOptions, clientset *kubernetes.Clientset) error {
+	desiredDeployment, err := kotsadmobjects.OperatorDeployment(deployOptions)
+	if err != nil {
+		return errors.Wrap(err, "failed to get desired operator deployment definition")
+	}
+
 	existingDeployment, err := clientset.AppsV1().Deployments(deployOptions.Namespace).Get(context.TODO(), "kotsadm-operator", metav1.GetOptions{})
 	if err != nil {
 		if !kuberneteserrors.IsNotFound(err) {
 			return errors.Wrap(err, "failed to get existing deployment")
 		}
 
-		_, err = clientset.AppsV1().Deployments(deployOptions.Namespace).Create(context.TODO(), kotsadmobjects.OperatorDeployment(deployOptions), metav1.CreateOptions{})
+		_, err = clientset.AppsV1().Deployments(deployOptions.Namespace).Create(context.TODO(), desiredDeployment, metav1.CreateOptions{})
 		if err != nil {
 			return errors.Wrap(err, "failed to create deployment")
 		}
@@ -221,7 +230,7 @@ func ensureOperatorDeployment(deployOptions types.DeployOptions, clientset *kube
 		return nil
 	}
 
-	if err = kotsadmobjects.UpdateOperatorDeployment(existingDeployment, deployOptions); err != nil {
+	if err = kotsadmobjects.UpdateOperatorDeployment(existingDeployment, desiredDeployment); err != nil {
 		return errors.Wrap(err, "failed to merge deployment")
 	}
 
@@ -234,7 +243,7 @@ func ensureOperatorDeployment(deployOptions types.DeployOptions, clientset *kube
 }
 
 func isOperatorClusterScoped(applicationMetadata []byte) (bool, error) {
-	if applicationMetadata == nil {
+	if len(applicationMetadata) == 0 {
 		return true, nil
 	}
 

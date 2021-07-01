@@ -31,6 +31,7 @@ type ItemValue struct {
 	Value          interface{}
 	Default        interface{}
 	RepeatableItem string
+	Filename       string
 }
 
 func (i ItemValue) HasValue() bool {
@@ -63,19 +64,21 @@ func (i ItemValue) DefaultStr() string {
 
 // ConfigCtx is the context for builder functions before the application has started.
 type ConfigCtx struct {
-	ItemValues    map[string]ItemValue
-	LocalRegistry LocalRegistry
+	ItemValues        map[string]ItemValue
+	LocalRegistry     LocalRegistry
+	DockerHubRegistry registry.RegistryOptions
 
 	license *kotsv1beta1.License // Another agument for unifying all these contexts
 	app     *kotsv1beta1.Application
 }
 
 // newConfigContext creates and returns a context for template rendering
-func (b *Builder) newConfigContext(configGroups []kotsv1beta1.ConfigGroup, existingValues map[string]ItemValue, localRegistry LocalRegistry, cipher *crypto.AESCipher, license *kotsv1beta1.License, info *VersionInfo) (*ConfigCtx, error) {
+func (b *Builder) newConfigContext(configGroups []kotsv1beta1.ConfigGroup, existingValues map[string]ItemValue, localRegistry LocalRegistry, cipher *crypto.AESCipher, license *kotsv1beta1.License, info *VersionInfo, dockerHubRegistry registry.RegistryOptions) (*ConfigCtx, error) {
 	configCtx := &ConfigCtx{
-		ItemValues:    existingValues,
-		LocalRegistry: localRegistry,
-		license:       license,
+		ItemValues:        existingValues,
+		LocalRegistry:     localRegistry,
+		DockerHubRegistry: dockerHubRegistry,
+		license:           license,
 	}
 
 	builder := Builder{
@@ -121,20 +124,31 @@ func (b *Builder) newConfigContext(configGroups []kotsv1beta1.ConfigGroup, exist
 
 			configItem := configItemsByName[node]
 
+			// build "default"
+			builtDefault, _ := builder.String(configItem.Default.String())
+
 			if !isReadOnly(configItem) {
-				// if item is editable and the live state is valid, skip the rest of this -
-				_, ok := configCtx.ItemValues[node]
+				// if item is editable and the live state is valid, only apply the rendered default
+				// since that's not editable
+				i, ok := configCtx.ItemValues[node]
 				if ok {
+					itemValue := ItemValue{
+						Value:    i.Value,
+						Default:  builtDefault,
+						Filename: i.Filename,
+					}
+					configCtx.ItemValues[configItem.Name] = itemValue
 					continue
 				}
 			}
 
-			// build "default" and "value"
-			builtDefault, _ := builder.String(configItem.Default.String())
+			// build "value"
 			builtValue, _ := builder.String(configItem.Value.String())
+			buildFilename, _ := builder.String(configItem.Filename)
 			itemValue := ItemValue{
-				Value:   builtValue,
-				Default: builtDefault,
+				Value:    builtValue,
+				Default:  builtDefault,
+				Filename: buildFilename,
 			}
 
 			configCtx.ItemValues[configItem.Name] = itemValue
@@ -159,6 +173,7 @@ func (ctx ConfigCtx) FuncMap() template.FuncMap {
 		"ConfigOptionName":             ctx.configOptionName,
 		"ConfigOptionIndex":            ctx.configOptionIndex,
 		"ConfigOptionData":             ctx.configOptionData,
+		"ConfigOptionFilename":         ctx.configOptionFilename,
 		"ConfigOptionEquals":           ctx.configOptionEquals,
 		"ConfigOptionNotEquals":        ctx.configOptionNotEquals,
 		"LocalRegistryAddress":         ctx.localRegistryAddress,
@@ -224,6 +239,15 @@ func (ctx ConfigCtx) configOptionData(name string) string {
 	return string(decoded)
 }
 
+func (ctx ConfigCtx) configOptionFilename(itemName string) string {
+	val, ok := ctx.ItemValues[itemName]
+	if !ok {
+		return ""
+	}
+
+	return val.Filename
+}
+
 func (ctx ConfigCtx) configOptionEquals(name string, value string) bool {
 	val, err := ctx.getConfigOptionValue(name)
 	if err != nil {
@@ -274,7 +298,7 @@ func (ctx ConfigCtx) localImageName(imageRef string) string {
 	// Not airgap and no local registry.  Rewrite images that are private only.
 
 	if ctx.app == nil || !ctx.app.Spec.ProxyPublicImages {
-		isPrivate, err := image.IsPrivateImage(imageRef)
+		isPrivate, err := image.IsPrivateImage(imageRef, ctx.DockerHubRegistry)
 		if err != nil {
 			// TODO: log
 			return ""

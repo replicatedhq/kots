@@ -1,6 +1,6 @@
 include Makefile.build
 CURRENT_USER := $(shell id -u -n)
-MINIO_VERSION := RELEASE.2021-05-20T22-31-44Z
+MINIO_VERSION := RELEASE.2021-06-07T21-40-51Z
 POSTGRES_VERSION := 10.17-alpine
 
 BUILDFLAGS = -tags='netgo containers_image_ostree_stub exclude_graphdriver_devicemapper exclude_graphdriver_btrfs containers_image_openpgp' -installsuffix netgo
@@ -107,5 +107,6 @@ project-pact-tests:
 
 	@echo All contract tests have passed.
 
-make cache:
+.PHONY: cache
+cache:
 	docker build -f hack/dev/Dockerfile.skaffoldcache . -t kotsadm:cache

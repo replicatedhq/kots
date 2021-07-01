@@ -1,7 +1,8 @@
 package ocistore
 
 import (
-	"github.com/replicatedhq/kots/pkg/api/downstream/types"
+	downstreamtypes "github.com/replicatedhq/kots/pkg/api/downstream/types"
+	"github.com/replicatedhq/kots/pkg/store/types"
 )
 
 func (s *OCIStore) GetCurrentSequence(appID string, clusterID string) (int64, error) {
@@ -32,31 +33,31 @@ func (s *OCIStore) UpdateDownstreamVersionStatus(appID string, sequence int64, s
 	return ErrNotImplemented
 }
 
-func (s *OCIStore) GetDownstreamVersionStatus(appID string, sequence int64) (string, error) {
-	return "", ErrNotImplemented
+func (s *OCIStore) GetDownstreamVersionStatus(appID string, sequence int64) (types.DownstreamVersionStatus, error) {
+	return types.DownstreamVersionStatus(""), ErrNotImplemented
 }
 
 func (s *OCIStore) GetIgnoreRBACErrors(appID string, sequence int64) (bool, error) {
 	return false, ErrNotImplemented
 }
 
-func (s *OCIStore) GetCurrentVersion(appID string, clusterID string) (*types.DownstreamVersion, error) {
+func (s *OCIStore) GetCurrentVersion(appID string, clusterID string) (*downstreamtypes.DownstreamVersion, error) {
 	return nil, ErrNotImplemented
 }
 
-func (s *OCIStore) GetStatusForVersion(appID string, clusterID string, sequence int64) (string, error) {
-	return "", ErrNotImplemented
+func (s *OCIStore) GetStatusForVersion(appID string, clusterID string, sequence int64) (types.DownstreamVersionStatus, error) {
+	return types.DownstreamVersionStatus(""), ErrNotImplemented
 }
 
-func (s *OCIStore) GetPendingVersions(appID string, clusterID string) ([]types.DownstreamVersion, error) {
+func (s *OCIStore) GetPendingVersions(appID string, clusterID string) ([]downstreamtypes.DownstreamVersion, error) {
 	return nil, ErrNotImplemented
 }
 
-func (s *OCIStore) GetPastVersions(appID string, clusterID string) ([]types.DownstreamVersion, error) {
+func (s *OCIStore) GetPastVersions(appID string, clusterID string) ([]downstreamtypes.DownstreamVersion, error) {
 	return nil, ErrNotImplemented
 }
 
-func (s *OCIStore) GetDownstreamOutput(appID string, clusterID string, sequence int64) (*types.DownstreamOutput, error) {
+func (s *OCIStore) GetDownstreamOutput(appID string, clusterID string, sequence int64) (*downstreamtypes.DownstreamOutput, error) {
 	return nil, ErrNotImplemented
 }
 
@@ -64,7 +65,7 @@ func (s *OCIStore) IsDownstreamDeploySuccessful(appID string, clusterID string, 
 	return false, ErrNotImplemented
 }
 
-func (s *OCIStore) UpdateDownstreamDeployStatus(appID string, clusterID string, sequence int64, isError bool, output types.DownstreamOutput) error {
+func (s *OCIStore) UpdateDownstreamDeployStatus(appID string, clusterID string, sequence int64, isError bool, output downstreamtypes.DownstreamOutput) error {
 	return ErrNotImplemented
 }
 

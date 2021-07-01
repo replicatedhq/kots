@@ -7,6 +7,7 @@ import (
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	"github.com/replicatedhq/kots/kotskinds/multitype"
 	"github.com/replicatedhq/kots/pkg/crypto"
+	"github.com/replicatedhq/kots/pkg/docker/registry"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -98,7 +99,8 @@ func TestBuilder_NewConfigContext(t *testing.T) {
 			want: &ConfigCtx{
 				ItemValues: map[string]ItemValue{
 					"abcItem": {
-						Value: "replacedAbcItemValue",
+						Default: "abcItemDefault",
+						Value:   "replacedAbcItemValue",
 					},
 				},
 			},
@@ -165,7 +167,8 @@ func TestBuilder_NewConfigContext(t *testing.T) {
 			want: &ConfigCtx{
 				ItemValues: map[string]ItemValue{
 					"abcItem": {
-						Value: "replacedAbcItemValue",
+						Value:   "replacedAbcItemValue",
+						Default: "abcItemDefault",
 					},
 					"childItem1": {
 						Value:   "",
@@ -253,7 +256,8 @@ func TestBuilder_NewConfigContext(t *testing.T) {
 			want: &ConfigCtx{
 				ItemValues: map[string]ItemValue{
 					"abcItem": {
-						Value: "no func",
+						Value:   "no func",
+						Default: "HELLO, WORLD",
 					},
 					"childItem": {
 						Default: "the default value",
@@ -264,7 +268,8 @@ func TestBuilder_NewConfigContext(t *testing.T) {
 						Default: "chained value: hello world no func",
 					},
 					"overwrittenChild": {
-						Value: "overwritten default",
+						Value:   "overwritten default",
+						Default: "",
 					},
 				},
 			},
@@ -365,7 +370,7 @@ func TestBuilder_NewConfigContext(t *testing.T) {
 			builder.AddCtx(StaticCtx{})
 
 			localRegistry := LocalRegistry{}
-			got, err := builder.newConfigContext(tt.args.configGroups, tt.args.templateContext, localRegistry, tt.args.cipher, tt.args.license, nil)
+			got, err := builder.newConfigContext(tt.args.configGroups, tt.args.templateContext, localRegistry, tt.args.cipher, tt.args.license, nil, registry.RegistryOptions{})
 			req.NoError(err)
 			req.Equal(tt.want, got)
 		})

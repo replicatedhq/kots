@@ -103,7 +103,7 @@ spec:
   groups:
   - description: Configuration to serve as an example for creating your own
     items:
-    - default: ""
+    - default: "abc123"
       name: a_string
       title: a string field
       type: text
@@ -229,7 +229,7 @@ spec:
       title: xyz789
       type: text
       value: "xyz789"
-    - default: ""
+    - default: "val1"
       name: other
       title: other
       type: text
@@ -324,7 +324,7 @@ spec:
 			req.NoError(err)
 
 			localRegistry := template.LocalRegistry{}
-			got, err := templateConfig(log, tt.configSpecData, tt.configValuesData, licenseData, "", localRegistry, MarshalConfig)
+			got, err := templateConfig(log, tt.configSpecData, tt.configValuesData, licenseData, "", localRegistry, "", MarshalConfig)
 			req.NoError(err)
 
 			gotObj, _, err := decode([]byte(got), nil, nil)
@@ -333,7 +333,7 @@ spec:
 			req.Equal(wantObj, gotObj)
 
 			// compare with oldMarshalConfig results
-			got, err = templateConfig(log, tt.configSpecData, tt.configValuesData, licenseData, "", localRegistry, oldMarshalConfig)
+			got, err = templateConfig(log, tt.configSpecData, tt.configValuesData, licenseData, "", localRegistry, "", oldMarshalConfig)
 			if !tt.expectOldFail {
 				req.NoError(err)
 

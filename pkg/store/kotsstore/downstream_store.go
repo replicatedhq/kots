@@ -6,9 +6,10 @@ import (
 
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
-	"github.com/replicatedhq/kots/pkg/api/downstream/types"
+	downstreamtypes "github.com/replicatedhq/kots/pkg/api/downstream/types"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/persistence"
+	"github.com/replicatedhq/kots/pkg/store/types"
 	"k8s.io/client-go/kubernetes/scheme"
 )
 
@@ -131,7 +132,7 @@ func (s *KOTSStore) UpdateDownstreamVersionStatus(appID string, sequence int64, 
 }
 
 // GetDownstreamVersionStatus gets the status for the downstream version with the given sequence and app id
-func (s *KOTSStore) GetDownstreamVersionStatus(appID string, sequence int64) (string, error) {
+func (s *KOTSStore) GetDownstreamVersionStatus(appID string, sequence int64) (types.DownstreamVersionStatus, error) {
 	db := persistence.MustGetPGSession()
 	query := `select status from app_downstream_version where app_id = $1 and sequence = $2`
 	row := db.QueryRow(query, appID, sequence)
@@ -144,7 +145,7 @@ func (s *KOTSStore) GetDownstreamVersionStatus(appID string, sequence int64) (st
 		return "", errors.Wrap(err, "failed to get downstream version")
 	}
 
-	return status.String, nil
+	return types.DownstreamVersionStatus(status.String), nil
 }
 
 func (s *KOTSStore) GetIgnoreRBACErrors(appID string, sequence int64) (bool, error) {
@@ -165,7 +166,7 @@ func (s *KOTSStore) GetIgnoreRBACErrors(appID string, sequence int64) (bool, err
 	return shouldIgnore.Bool, nil
 }
 
-func (s *KOTSStore) GetCurrentVersion(appID string, clusterID string) (*types.DownstreamVersion, error) {
+func (s *KOTSStore) GetCurrentVersion(appID string, clusterID string) (*downstreamtypes.DownstreamVersion, error) {
 	currentSequence, err := s.GetCurrentSequence(appID, clusterID)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get current sequence")
@@ -187,6 +188,7 @@ func (s *KOTSStore) GetCurrentVersion(appID string, clusterID string) (*types.Do
 	adv.diff_summary_error,
 	adv.preflight_result,
 	adv.preflight_result_created_at,
+	adv.preflight_skipped,
 	adv.git_commit_url,
 	adv.git_deployable,
 	ado.is_error,
@@ -218,7 +220,7 @@ func (s *KOTSStore) GetCurrentVersion(appID string, clusterID string) (*types.Do
 	return v, nil
 }
 
-func (s *KOTSStore) GetStatusForVersion(appID string, clusterID string, sequence int64) (string, error) {
+func (s *KOTSStore) GetStatusForVersion(appID string, clusterID string, sequence int64) (types.DownstreamVersionStatus, error) {
 	db := persistence.MustGetPGSession()
 	query := `SELECT 
 	adv.status, ado.is_error 
@@ -237,12 +239,12 @@ func (s *KOTSStore) GetStatusForVersion(appID string, clusterID string, sequence
 	if err := row.Scan(&status, &hasError); err != nil {
 		return "", errors.Wrap(err, "failed to scan")
 	}
-	versionStatus := getDownstreamVersionStatus(status.String, hasError)
+	versionStatus := getDownstreamVersionStatus(types.DownstreamVersionStatus(status.String), hasError)
 
-	return versionStatus, nil
+	return types.DownstreamVersionStatus(versionStatus), nil
 }
 
-func (s *KOTSStore) GetPendingVersions(appID string, clusterID string) ([]types.DownstreamVersion, error) {
+func (s *KOTSStore) GetPendingVersions(appID string, clusterID string) ([]downstreamtypes.DownstreamVersion, error) {
 	currentSequence, err := s.GetCurrentSequence(appID, clusterID)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get current sequence")
@@ -261,6 +263,7 @@ func (s *KOTSStore) GetPendingVersions(appID string, clusterID string) ([]types.
 	adv.diff_summary_error,
 	adv.preflight_result,
 	adv.preflight_result_created_at,
+	adv.preflight_skipped,
 	adv.git_commit_url,
 	adv.git_deployable,
 	ado.is_error,
@@ -289,7 +292,7 @@ func (s *KOTSStore) GetPendingVersions(appID string, clusterID string) ([]types.
 	}
 	defer rows.Close()
 
-	versions := []types.DownstreamVersion{}
+	versions := []downstreamtypes.DownstreamVersion{}
 	for rows.Next() {
 		v, err := downstreamVersionFromRow(appID, rows)
 		if err != nil {
@@ -303,13 +306,13 @@ func (s *KOTSStore) GetPendingVersions(appID string, clusterID string) ([]types.
 	return versions, nil
 }
 
-func (s *KOTSStore) GetPastVersions(appID string, clusterID string) ([]types.DownstreamVersion, error) {
+func (s *KOTSStore) GetPastVersions(appID string, clusterID string) ([]downstreamtypes.DownstreamVersion, error) {
 	currentSequence, err := s.GetCurrentSequence(appID, clusterID)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get current sequence")
 	}
 	if currentSequence == -1 {
-		return []types.DownstreamVersion{}, nil
+		return []downstreamtypes.DownstreamVersion{}, nil
 	}
 
 	db := persistence.MustGetPGSession()
@@ -325,6 +328,7 @@ func (s *KOTSStore) GetPastVersions(appID string, clusterID string) ([]types.Dow
 	adv.diff_summary_error,
 	adv.preflight_result,
 	adv.preflight_result_created_at,
+	adv.preflight_skipped,
 	adv.git_commit_url,
 	adv.git_deployable,
 	ado.is_error,
@@ -353,7 +357,7 @@ func (s *KOTSStore) GetPastVersions(appID string, clusterID string) ([]types.Dow
 	}
 	defer rows.Close()
 
-	versions := []types.DownstreamVersion{}
+	versions := []downstreamtypes.DownstreamVersion{}
 	for rows.Next() {
 		v, err := downstreamVersionFromRow(appID, rows)
 		if err != nil {
@@ -367,8 +371,8 @@ func (s *KOTSStore) GetPastVersions(appID string, clusterID string) ([]types.Dow
 	return versions, nil
 }
 
-func downstreamVersionFromRow(appID string, row scannable) (*types.DownstreamVersion, error) {
-	v := &types.DownstreamVersion{}
+func downstreamVersionFromRow(appID string, row scannable) (*downstreamtypes.DownstreamVersion, error) {
+	v := &downstreamtypes.DownstreamVersion{}
 
 	var createdOn sql.NullTime
 	var versionLabel sql.NullString
@@ -380,6 +384,7 @@ func downstreamVersionFromRow(appID string, row scannable) (*types.DownstreamVer
 	var diffSummaryError sql.NullString
 	var preflightResult sql.NullString
 	var preflightResultCreatedAt sql.NullTime
+	var preflightSkipped sql.NullBool
 	var commitURL sql.NullString
 	var gitDeployable sql.NullBool
 	var hasError sql.NullBool
@@ -398,6 +403,7 @@ func downstreamVersionFromRow(appID string, row scannable) (*types.DownstreamVer
 		&diffSummaryError,
 		&preflightResult,
 		&preflightResultCreatedAt,
+		&preflightSkipped,
 		&commitURL,
 		&gitDeployable,
 		&hasError,
@@ -411,7 +417,7 @@ func downstreamVersionFromRow(appID string, row scannable) (*types.DownstreamVer
 		v.CreatedOn = &createdOn.Time
 	}
 	v.VersionLabel = versionLabel.String
-	v.Status = getDownstreamVersionStatus(status.String, hasError)
+	v.Status = getDownstreamVersionStatus(types.DownstreamVersionStatus(status.String), hasError)
 	v.ParentSequence = parentSequence.Int64
 
 	if deployedAt.Valid {
@@ -425,6 +431,7 @@ func downstreamVersionFromRow(appID string, row scannable) (*types.DownstreamVer
 	if preflightResultCreatedAt.Valid {
 		v.PreflightResultCreatedAt = &preflightResultCreatedAt.Time
 	}
+	v.PreflightSkipped = preflightSkipped.Bool
 	v.CommitURL = commitURL.String
 	v.GitDeployable = gitDeployable.Bool
 
@@ -468,8 +475,8 @@ func getReleaseNotes(appID string, parentSequence int64) (string, error) {
 	return releaseNotes.String, nil
 }
 
-func getDownstreamVersionStatus(status string, hasError sql.NullBool) string {
-	s := "unknown"
+func getDownstreamVersionStatus(status types.DownstreamVersionStatus, hasError sql.NullBool) types.DownstreamVersionStatus {
+	s := types.VersionUnknown
 
 	// first check if operator has reported back.
 	// and if it hasn't, we should not show "deployed" to the user.
@@ -477,17 +484,17 @@ func getDownstreamVersionStatus(status string, hasError sql.NullBool) string {
 	if hasError.Valid && !hasError.Bool {
 		s = status
 	} else if hasError.Valid && hasError.Bool {
-		s = "failed"
-	} else if status == "deployed" {
-		s = "deploying"
-	} else if status != "" {
+		s = types.VersionFailed
+	} else if status == types.VersionDeployed {
+		s = types.VersionDeploying
+	} else if status != types.DownstreamVersionStatus("") {
 		s = status
 	}
 
 	return s
 }
 
-func (s *KOTSStore) GetDownstreamOutput(appID string, clusterID string, sequence int64) (*types.DownstreamOutput, error) {
+func (s *KOTSStore) GetDownstreamOutput(appID string, clusterID string, sequence int64) (*downstreamtypes.DownstreamOutput, error) {
 	db := persistence.MustGetPGSession()
 	query := `SELECT
 	adv.status,
@@ -517,7 +524,7 @@ WHERE
 
 	if err := row.Scan(&status, &statusInfo, &dryrunStdout, &dryrunStderr, &applyStdout, &applyStderr); err != nil {
 		if err == sql.ErrNoRows {
-			return &types.DownstreamOutput{}, nil
+			return &downstreamtypes.DownstreamOutput{}, nil
 		}
 		return nil, errors.Wrap(err, "failed to select downstream")
 	}
@@ -551,7 +558,7 @@ WHERE
 		applyStderrDecoded = []byte("")
 	}
 
-	output := &types.DownstreamOutput{
+	output := &downstreamtypes.DownstreamOutput{
 		DryrunStdout: string(dryrunStdoutDecoded),
 		DryrunStderr: string(dryrunStderrDecoded),
 		ApplyStdout:  string(applyStdoutDecoded),
@@ -582,7 +589,7 @@ func (s *KOTSStore) IsDownstreamDeploySuccessful(appID string, clusterID string,
 	return !isError, nil
 }
 
-func (s *KOTSStore) UpdateDownstreamDeployStatus(appID string, clusterID string, sequence int64, isError bool, output types.DownstreamOutput) error {
+func (s *KOTSStore) UpdateDownstreamDeployStatus(appID string, clusterID string, sequence int64, isError bool, output downstreamtypes.DownstreamOutput) error {
 	db := persistence.MustGetPGSession()
 
 	query := `insert into app_downstream_output (app_id, cluster_id, downstream_sequence, is_error, dryrun_stdout, dryrun_stderr, apply_stdout, apply_stderr)

@@ -57,6 +57,7 @@ func (d *depGraph) funcMap(parent string) template.FuncMap {
 		"ConfigOption":          addDepFunc,
 		"ConfigOptionIndex":     addDepFunc,
 		"ConfigOptionData":      addDepFunc,
+		"ConfigOptionFilename":  addDepFunc,
 		"ConfigOptionEquals":    addDepFunc,
 		"ConfigOptionNotEquals": addDepFunc,
 		"TLSCACert":             addCAFunc,

@@ -1,6 +1,7 @@
 package registry
 
 import (
+	"context"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
@@ -10,7 +11,9 @@ import (
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	corev1 "k8s.io/api/core/v1"
+	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes"
 )
 
 type RegistryProxyInfo struct {
@@ -30,6 +33,9 @@ type Credentials struct {
 	Username string
 	Password string
 }
+
+const DockerHubRegistryName = "index.docker.io"
+const DockerHubSecretName = "kotsadm-dockerhub"
 
 func ProxyEndpointFromLicense(license *kotsv1beta1.License) *RegistryProxyInfo {
 	defaultInfo := &RegistryProxyInfo{
@@ -105,6 +111,79 @@ func PullSecretForRegistries(registries []string, username, password string, kub
 	}
 
 	return secret, nil
+}
+
+func EnsureDockerHubSecret(username string, password string, namespace string, clientset *kubernetes.Clientset) error {
+	_, err := clientset.CoreV1().Secrets(namespace).Get(context.TODO(), DockerHubSecretName, metav1.GetOptions{})
+	if err != nil {
+		if !kuberneteserrors.IsNotFound(err) {
+			return errors.Wrap(err, "failed to get existing dockerhub secret")
+		}
+
+		secret, err := PullSecretForDockerHub(username, password, namespace)
+		if err != nil {
+			return errors.Wrap(err, "failed to get pull secret for dockerhub")
+		}
+
+		// secret not found, create it
+		_, err = clientset.CoreV1().Secrets(namespace).Create(context.TODO(), secret, metav1.CreateOptions{})
+		if err != nil {
+			return errors.Wrap(err, "failed to create dockerhub secret")
+		}
+	}
+
+	return nil
+}
+
+func PullSecretForDockerHub(username string, password string, kuberneteNamespace string) (*corev1.Secret, error) {
+	dockercfgAuth := DockercfgAuth{
+		Auth: base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", username, password))),
+	}
+
+	dockerCfgJSON := DockerCfgJSON{
+		Auths: map[string]DockercfgAuth{
+			DockerHubRegistryName: dockercfgAuth,
+		},
+	}
+
+	secretData, err := json.Marshal(dockerCfgJSON)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to marshal pull secret data")
+	}
+
+	secret := &corev1.Secret{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: "v1",
+			Kind:       "Secret",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      DockerHubSecretName,
+			Namespace: kuberneteNamespace,
+		},
+		Type: corev1.SecretTypeDockerConfigJson,
+		Data: map[string][]byte{
+			".dockerconfigjson": secretData,
+		},
+	}
+
+	return secret, nil
+}
+
+func GetDockerHubCredentials(clientset kubernetes.Interface, namespace string) (Credentials, error) {
+	imagePullSecret, err := clientset.CoreV1().Secrets(namespace).Get(context.TODO(), DockerHubSecretName, metav1.GetOptions{})
+	if err != nil {
+		if kuberneteserrors.IsNotFound(err) {
+			return Credentials{}, nil
+		}
+		return Credentials{}, errors.Wrap(err, "failed to get existing dockerhub secret")
+	}
+
+	dockerConfigJson := imagePullSecret.Data[".dockerconfigjson"]
+	if len(dockerConfigJson) == 0 {
+		return Credentials{}, nil
+	}
+
+	return GetCredentialsForRegistryFromConfigJSON(dockerConfigJson, DockerHubRegistryName)
 }
 
 func GetCredentialsForRegistryFromConfigJSON(configJson []byte, registry string) (Credentials, error) {

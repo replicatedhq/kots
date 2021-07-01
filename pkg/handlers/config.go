@@ -26,6 +26,7 @@ import (
 	registrytypes "github.com/replicatedhq/kots/pkg/registry/types"
 	"github.com/replicatedhq/kots/pkg/render"
 	"github.com/replicatedhq/kots/pkg/store"
+	storetypes "github.com/replicatedhq/kots/pkg/store/types"
 	"github.com/replicatedhq/kots/pkg/template"
 	"github.com/replicatedhq/kots/pkg/version"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -193,6 +194,9 @@ func (h *Handler) LiveAppConfig(w http.ResponseWriter, r *http.Request) {
 			} else {
 				generatedValue.Default = item.Default.BoolVal
 			}
+			if item.Type == "file" {
+				generatedValue.Filename = item.Filename
+			}
 			configValues[item.Name] = generatedValue
 
 			// collect all repeatable items
@@ -227,7 +231,7 @@ func (h *Handler) LiveAppConfig(w http.ResponseWriter, r *http.Request) {
 	}
 
 	versionInfo := template.VersionInfoFromInstallation(liveAppConfigRequest.Sequence+1, foundApp.IsAirgap, kotsKinds.Installation.Spec) // sequence +1 because the sequence will be incremented on save (and we want the preview to be accurate)
-	renderedConfig, err := kotsconfig.TemplateConfigObjects(kotsKinds.Config, configValues, appLicense, localRegistry, &versionInfo, kotsKinds.IdentityConfig)
+	renderedConfig, err := kotsconfig.TemplateConfigObjects(kotsKinds.Config, configValues, appLicense, localRegistry, &versionInfo, kotsKinds.IdentityConfig, os.Getenv("POD_NAMESPACE"))
 	if err != nil {
 		logger.Error(err)
 		liveAppConfigResponse.Error = "failed to render templates"
@@ -300,6 +304,7 @@ func (h *Handler) CurrentAppConfig(w http.ResponseWriter, r *http.Request) {
 			Default:        value.Default,
 			Value:          value.Value,
 			RepeatableItem: value.RepeatableItem,
+			Filename:       value.Filename,
 		}
 		configValues[key] = generatedValue
 	}
@@ -321,7 +326,7 @@ func (h *Handler) CurrentAppConfig(w http.ResponseWriter, r *http.Request) {
 	}
 
 	versionInfo := template.VersionInfoFromInstallation(int64(sequence)+1, foundApp.IsAirgap, kotsKinds.Installation.Spec) // sequence +1 because the sequence will be incremented on save (and we want the preview to be accurate)
-	renderedConfig, err := kotsconfig.TemplateConfigObjects(kotsKinds.Config, configValues, appLicense, localRegistry, &versionInfo, kotsKinds.IdentityConfig)
+	renderedConfig, err := kotsconfig.TemplateConfigObjects(kotsKinds.Config, configValues, appLicense, localRegistry, &versionInfo, kotsKinds.IdentityConfig, os.Getenv("POD_NAMESPACE"))
 	if err != nil {
 		logger.Error(err)
 		currentAppConfigResponse.Error = "failed to render templates"
@@ -373,7 +378,7 @@ func shouldCreateNewAppVersion(appID string, sequence int64) (bool, error) {
 		if err != nil {
 			return false, errors.Wrap(err, "failed to get version status")
 		}
-		if status == "pending_config" {
+		if status == storetypes.VersionPendingConfig {
 			return false, nil
 		}
 	}
@@ -544,6 +549,11 @@ func updateAppConfig(updateApp *apptypes.App, sequence int64, configGroups []kot
 func updateAppConfigValues(values map[string]kotsv1beta1.ConfigValue, configGroups []kotsv1beta1.ConfigGroup, encryptionKey string) (map[string]kotsv1beta1.ConfigValue, error) {
 	for _, group := range configGroups {
 		for _, item := range group.Items {
+			if item.Type == "file" {
+				v := values[item.Name]
+				v.Filename = item.Filename
+				values[item.Name] = v
+			}
 			if item.Value.Type == multitype.Bool {
 				updatedValue := item.Value.BoolVal
 				v := values[item.Name]
@@ -734,7 +744,7 @@ func (h *Handler) SetAppConfigValues(w http.ResponseWriter, r *http.Request) {
 	}
 
 	versionInfo := template.VersionInfoFromInstallation(foundApp.CurrentSequence+1, foundApp.IsAirgap, kotsKinds.Installation.Spec) // sequence +1 because the sequence will be incremented on save (and we want the preview to be accurate)
-	renderedConfig, err := kotsconfig.TemplateConfigObjects(newConfig, configValueMap, kotsKinds.License, localRegistry, &versionInfo, kotsKinds.IdentityConfig)
+	renderedConfig, err := kotsconfig.TemplateConfigObjects(newConfig, configValueMap, kotsKinds.License, localRegistry, &versionInfo, kotsKinds.IdentityConfig, os.Getenv("POD_NAMESPACE"))
 	if err != nil {
 		setAppConfigValuesResponse.Error = "failed to render templates"
 		logger.Error(errors.Wrap(err, setAppConfigValuesResponse.Error))

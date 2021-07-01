@@ -22,6 +22,7 @@ func NewConfigContextTemplateBuidler(u *upstreamtypes.Upstream, renderOptions *R
 				Value:          v.Value,
 				Default:        v.Default,
 				RepeatableItem: v.RepeatableItem,
+				Filename:       v.Filename,
 			}
 		}
 		templateContext = ctx
@@ -73,6 +74,7 @@ func NewConfigContextTemplateBuidler(u *upstreamtypes.Upstream, renderOptions *R
 		VersionInfo:     &versionInfo,
 		ApplicationInfo: &appInfo,
 		IdentityConfig:  identityConfig,
+		Namespace:       renderOptions.Namespace,
 	}
 	builder, itemValues, err := template.NewBuilder(builderOptions)
 	return &builder, itemValues, errors.Wrap(err, "failed to create config context")

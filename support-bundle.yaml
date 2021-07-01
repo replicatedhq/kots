@@ -1,5 +1,5 @@
-apiVersion: troubleshoot.replicated.com/v1beta1
-kind: Collector
+apiVersion: troubleshoot.sh/v1beta2
+kind: SupportBundle
 metadata:
   name: collector-sample
 spec:
@@ -162,6 +162,17 @@ spec:
         selector:
         - name=weave-net
         timeout: 10s
+    - exec:
+        args:
+        - "http://goldpinger.kurl.svc.cluster.local:80/check_all"
+        collectorName: goldpinger-statistics
+        command:
+        - curl
+        containerName: kotsadm
+        name: kots/goldpinger
+        selector:
+        - app=kotsadm
+        timeout: 10s
 
   analyzers:
     - textAnalyze:
@@ -184,3 +195,14 @@ spec:
         - pass:
             message: Weave is ready
         regex: '"Ready": true'
+    - textAnalyze:
+        checkName: Inter-pod Networking
+        exclude: ""
+        fileName: kots/goldpinger/*/kotsadm-*/goldpinger-statistics-stdout.txt
+        outcomes:
+        - fail:
+            when: "OK = false"
+            message: Some nodes have pod communication issues
+        - pass:
+            message: Goldpinger can communicate properly
+        regexGroups: '"OK": ?(?P<OK>\w+)'

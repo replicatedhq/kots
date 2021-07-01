@@ -19,6 +19,7 @@ type FindPrivateImagesOptions struct {
 	BaseDir            string
 	AppSlug            string
 	ReplicatedRegistry registry.RegistryOptions
+	DockerHubRegistry  registry.RegistryOptions
 	Installation       *kotsv1beta1.Installation
 	AllImagesPrivate   bool
 }
@@ -31,7 +32,7 @@ type FindPrivateImagesResult struct {
 
 func FindPrivateImages(options FindPrivateImagesOptions) (*FindPrivateImagesResult, error) {
 	checkedImages := makeImageInfoMap(options.Installation.Spec.KnownImages)
-	upstreamImages, objects, err := image.GetPrivateImages(options.BaseDir, checkedImages, options.AllImagesPrivate)
+	upstreamImages, objects, err := image.GetPrivateImages(options.BaseDir, checkedImages, options.AllImagesPrivate, options.DockerHubRegistry)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to list upstream images")
 	}

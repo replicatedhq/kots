@@ -33,7 +33,7 @@ func AdminConsoleCmd() *cobra.Command {
 				return errors.Wrap(err, "failed to get clientset")
 			}
 
-			podName, err := k8sutil.WaitForKotsadm(clientset, v.GetString("namespace"), time.Second*5)
+			podName, err := k8sutil.WaitForKotsadm(clientset, v.GetString("namespace"), time.Second*10)
 			if err != nil {
 				if _, ok := errors.Cause(err).(*types.ErrorTimeout); ok {
 					return errors.Errorf("kotsadm failed to start: %s. Use the --wait-duration flag to increase timeout.", err)

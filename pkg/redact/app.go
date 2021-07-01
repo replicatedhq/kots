@@ -55,7 +55,7 @@ func CreateRenderedAppRedactSpec(appID string, sequence int64, kotsKinds *kotsut
 	}
 	templatedSpec := b.Bytes()
 
-	rs, err := helper.RenderAppFile(app, &sequence, templatedSpec, kotsKinds)
+	rs, err := helper.RenderAppFile(app, &sequence, templatedSpec, kotsKinds, os.Getenv("POD_NAMESPACE"))
 	if err != nil {
 		return errors.Wrap(err, "failed render redactor spec")
 	}

@@ -10,7 +10,7 @@ import (
 
 // RenderAppFile renders a single file using the current sequence of the provided app, or the overrideSequence (if provided)
 // it's here for now to avoid an import cycle between kotsadm/pkg/render and pkg/store
-func RenderAppFile(a *types.App, overrideSequence *int64, inputContent []byte, kotsKinds *kotsutil.KotsKinds) ([]byte, error) {
+func RenderAppFile(a *types.App, overrideSequence *int64, inputContent []byte, kotsKinds *kotsutil.KotsKinds, namespace string) ([]byte, error) {
 	sequence := a.CurrentSequence
 	if overrideSequence != nil {
 		sequence = *overrideSequence
@@ -21,5 +21,5 @@ func RenderAppFile(a *types.App, overrideSequence *int64, inputContent []byte, k
 		return nil, errors.Wrap(err, "failed to load registry settings")
 	}
 
-	return render.RenderFile(kotsKinds, registrySettings, a.Slug, sequence, a.IsAirgap, inputContent)
+	return render.RenderFile(kotsKinds, registrySettings, a.Slug, sequence, a.IsAirgap, namespace, inputContent)
 }

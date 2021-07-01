@@ -20,6 +20,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/preflight"
 	"github.com/replicatedhq/kots/pkg/pull"
 	"github.com/replicatedhq/kots/pkg/store"
+	storetypes "github.com/replicatedhq/kots/pkg/store/types"
 	"github.com/replicatedhq/kots/pkg/util"
 	"github.com/replicatedhq/kots/pkg/version"
 )
@@ -235,8 +236,22 @@ func UpdateAppFromPath(a *apptypes.App, airgapRoot string, airgapBundlePath stri
 	}
 
 	if deploy {
-		err := version.DeployVersion(a.ID, newSequence)
+		downstreams, err := store.GetStore().ListDownstreamsForApp(a.ID)
+		if len(downstreams) == 0 {
+			return errors.Errorf("no downstreams found for app %q", a.Slug)
+		}
+		downstream := downstreams[0]
+
+		status, err := store.GetStore().GetStatusForVersion(a.ID, downstream.ClusterID, newSequence)
 		if err != nil {
+			return errors.Wrap(err, "failed to get update downstream status")
+		}
+
+		if status == storetypes.VersionPendingConfig {
+			return errors.Errorf("not deploying version %d because it's %s", newSequence, status)
+		}
+
+		if err := version.DeployVersion(a.ID, newSequence); err != nil {
 			return errors.Wrap(err, "failed to deploy app version")
 		}
 	}
