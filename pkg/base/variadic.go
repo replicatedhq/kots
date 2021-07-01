@@ -209,7 +209,7 @@ func buildYamlFromStack(stack yamlStack) map[string]interface{} {
 // renderRepeatNodes duplicates the target item,
 // renders each copy with the provided values,
 // and merges them in to the last stack array entry
-func (stack yamlStack) renderRepeatNodes(name string, values map[string]interface{}) {
+func (stack yamlStack) renderRepeatNodes(optionName string, values map[string]interface{}) {
 	target := stack[len(stack)-1]
 
 	// build new array with existing values from around the target
@@ -217,12 +217,12 @@ func (stack yamlStack) renderRepeatNodes(name string, values map[string]interfac
 	newArray = append(newArray, target.Array[:target.Index]...)
 	newArray = append(newArray, target.Array[target.Index+1:]...)
 
-	for _, value := range values {
+	for valueName, value := range values {
 		// copy all values into a new map
 		newMap := map[string]interface{}{}
-		for k, v := range target.Data {
+		for targetField, targetData := range target.Data {
 			// replace the target value
-			newMap[k] = replaceTemplateValue(v, name, value)
+			newMap[targetField] = replaceTemplateValue(targetData, optionName, valueName, value)
 		}
 
 		newArray = append(newArray, newMap)
@@ -235,23 +235,20 @@ func (stack yamlStack) renderRepeatNodes(name string, values map[string]interfac
 
 // replaceTemplateValue searches all nested nodes of a value
 // if the provided optionName is found within repl{{ ConfigOption "optionName" }}, the placeholder will be replaced with the repeatable value
-func replaceTemplateValue(node interface{}, optionName string, value interface{}) interface{} {
-	switch v := node.(type) {
+func replaceTemplateValue(node interface{}, optionName, valueName string, value interface{}) interface{} {
+	switch typedNode := node.(type) {
 	case string:
-		if isTargetValue(optionName, v) {
-			return value
-		}
-		return node
+		return generateTargetValue(optionName, valueName, typedNode, value)
 	case map[string]interface{}:
 		newMap := map[string]interface{}{}
-		for subField, subNode := range v {
-			newMap[subField] = replaceTemplateValue(subNode, optionName, value)
+		for subField, subNode := range typedNode {
+			newMap[subField] = replaceTemplateValue(subNode, optionName, valueName, value)
 		}
 		return newMap
 	case []interface{}:
 		resultSet := []interface{}{}
-		for _, subNode := range v {
-			results := replaceTemplateValue(subNode, optionName, value)
+		for _, subNode := range typedNode {
+			results := replaceTemplateValue(subNode, optionName, valueName, value)
 			resultSet = append(resultSet, results)
 		}
 		return resultSet
@@ -260,14 +257,19 @@ func replaceTemplateValue(node interface{}, optionName string, value interface{}
 }
 
 // isTargetValue determines if a string is the appropriate templated value target
-func isTargetValue(name, value string) bool {
-	if strings.Contains(value, "repl{{") || strings.Contains(value, "{{repl") {
-		variable := strings.Split(value, "\"")[1]
-		if variable == name {
-			return true
+func generateTargetValue(configOptionName, valueName, target string, templateValue interface{}) interface{} {
+	if strings.Contains(target, "repl{{") || strings.Contains(target, "{{repl") {
+		variable := strings.Split(target, "\"")[1]
+		if variable == configOptionName && strings.Contains(target, "ConfigOption ") {
+			return templateValue
+		} else if variable == configOptionName && strings.Contains(target, "RepeatOptionName") {
+			return valueName
+		} else if variable == configOptionName {
+			return strings.Replace(target, variable, valueName, 1)
 		}
 	}
-	return false
+	// if no edits are needed, return the original target
+	return target
 }
 
 // variadicGroup lists all repeat items under a ConfigGroup

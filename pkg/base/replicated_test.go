@@ -184,7 +184,7 @@ spec:
                   pod: repl{{ ConfigOption "podName" }}
                   metaData:
                     pod: repl{{ ConfigOption "podName"}}
-                    secretName: 'repl{{ ConfigOption "secretName"}}'
+                    fileName: 'repl{{ RepeatOptionName "secretName"}}'
               - secret:
                   name: "don't touch this either!"`),
 					},
@@ -226,19 +226,19 @@ spec:
                       pod: "testPod"
                       metaData:
                         pod: "testPod"
-                        secretName: "123"
+                        fileName: "secretName-1"
                   - secret:
                       name: "456"
                       pod: "testPod"
                       metaData:
                         pod: "testPod"
-                        secretName: "456"
+                        fileName: "secretName-2"
                   - secret:
                       name: "789"
                       pod: "testPod"
                       metaData:
                         pod: "testPod"
-                        secretName: "789"`),
+                        fileName: "secretName-3"`),
 			},
 		},
 	}
