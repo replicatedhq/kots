@@ -37,7 +37,7 @@ func Test_updateAppConfigValues(t *testing.T) {
 							Name: "secretName",
 							ValuesByGroup: kotsv1beta1.ValuesByGroup{
 								"Secrets": {
-									"secretName-1": "111",
+									"secretName-1": "123",
 									"secretName-2": "456",
 								},
 							},

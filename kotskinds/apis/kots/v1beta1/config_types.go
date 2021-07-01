@@ -53,8 +53,9 @@ type ConfigItem struct {
 	Filename      string                 `json:"filename,omitempty"`
 	Repeatable    bool                   `json:"repeatable,omitempty"`
 	MinimumCount  int                    `json:"minimumCount,omitempty"`
+	Count         int                    `json:"count,omitempty"`
 	Templates     []RepeatTemplate       `json:"templates,omitempty"`
-	ValuesByGroup ValuesByGroup          `json:"valuesByGroup"`
+	ValuesByGroup ValuesByGroup          `json:"valuesByGroup,omitempty"`
 	// Props       map[string]interface{} `json:"props,omitempty"`
 	// DefaultCmd  *ConfigItemCmd         `json:"default_cmd,omitempty"`
 	// ValueCmd    *ConfigItemCmd         `json:"value_cmd,omitempty"`
