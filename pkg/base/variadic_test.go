@@ -20,7 +20,7 @@ func Test_generateTargetValue(t *testing.T) {
 		{
 			configOptionName: "secret",
 			valueName:        "secret-1",
-			target:           "repl{{ RepeatOptionName \"secret\" }}",
+			target:           "repl{{ ConfigOptionName \"secret\" }}",
 			templateValue:    "123",
 			want:             "secret-1",
 		},
