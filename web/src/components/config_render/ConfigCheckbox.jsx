@@ -22,7 +22,7 @@ export default class ConfigCheckbox extends React.Component {
     var hidden = this.props.hidden || this.props.when === "false";
 
     return (
-      <div id={`${this.props.name}-group`} className={`field field-checkbox-wrapper u-marginTop--15 flex ${hidden ? "hidden" : ""}`}>
+      <div id={`${this.props.name}-group`} className={`field field-checkbox-wrapper u-marginTop--15 flex-column ${hidden ? "hidden" : ""}`}>
         <span className="u-marginTop--10 config-errblock" id={`${this.props.name}-errblock`}></span>
         <div className="flex1 flex u-marginRight--20">
           <input
@@ -58,6 +58,11 @@ export default class ConfigCheckbox extends React.Component {
             : null}
           </div>
         </div>
+          {this.props.repeatable &&
+          <div className="u-marginTop--10">
+            <span className="add-btn u-fontSize--small u-fontWeight--bold u-linkColor u-cursor--pointer"><span className="icon u-addIcon--blue clickable" />Add another {this.props.title}</span>
+          </div>
+          }
       </div>
     );
   }

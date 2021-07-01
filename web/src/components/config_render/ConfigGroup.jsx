@@ -165,6 +165,11 @@ export default class ConfigGroup extends React.Component {
             <div className="config-item u-marginTop--15">
               {this.renderConfigItems(item.items, readonly)}
             </div>
+            {item.repeatable &&
+              <div className="u-marginTop--15">
+                <button className="btn secondary blue rounded add-btn"><span className="icon u-addIcon--blue" />Add another {item.title}</button>
+              </div>
+            }
           </div>
         }
       </div>
