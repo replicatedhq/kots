@@ -47,6 +47,9 @@ func renderReplicated(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (
 	}
 
 	actualizedConfig, err := kotsconfig.TemplateConfigObjects(config, itemValues, nil, template.LocalRegistry{}, nil, nil, os.Getenv("POD_NAMESPACE"))
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to template config objects")
+	}
 
 	for _, upstreamFile := range u.Files {
 		if renderOptions.ExcludeKotsKinds {
