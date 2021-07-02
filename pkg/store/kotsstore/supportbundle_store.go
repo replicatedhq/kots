@@ -8,18 +8,23 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"os"
 	"path/filepath"
 	"sort"
 	"strconv"
 	"time"
 
+	"github.com/aws/aws-sdk-go/aws"
+	awssession "github.com/aws/aws-sdk-go/aws/session"
+	"github.com/aws/aws-sdk-go/service/s3"
+	"github.com/aws/aws-sdk-go/service/s3/s3manager"
 	"github.com/pkg/errors"
-	"github.com/replicatedhq/kots/pkg/filestore"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	kotsadmtypes "github.com/replicatedhq/kots/pkg/kotsadm/types"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/persistence"
+	kotss3 "github.com/replicatedhq/kots/pkg/s3"
 	"github.com/replicatedhq/kots/pkg/supportbundle/types"
 	troubleshootredact "github.com/replicatedhq/troubleshoot/pkg/redact"
 	"go.uber.org/zap"
@@ -228,7 +233,7 @@ func (s *KOTSStore) GetSupportBundle(id string) (*types.SupportBundle, error) {
 		if s.IsNotFound(err) {
 			return &supportBundle, nil
 		}
-		return nil, errors.Wrap(err, "failed to get treeindex")
+		return nil, errors.Wrap(err, "failed to get treeindex from s3")
 	}
 	supportBundle.TreeIndex = string(treeindex)
 
@@ -290,15 +295,26 @@ func (s *KOTSStore) CreateSupportBundle(id string, appID string, archivePath str
 		return nil, errors.Wrap(err, "faile to save treeindex")
 	}
 
+	// upload the bundle to s3
+	bucket := aws.String(os.Getenv("S3_BUCKET_NAME"))
+	key := aws.String(filepath.Join("supportbundles", id, "supportbundle.tar.gz"))
+
+	newSession := awssession.New(kotss3.GetConfig())
+
+	s3Client := s3.New(newSession)
+
 	f, err := os.Open(archivePath)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to open archive file")
 	}
 
-	outputPath := filepath.Join("supportbundles", id, "supportbundle.tar.gz")
-	err = filestore.WriteArchive(outputPath, f)
+	_, err = s3Client.PutObject(&s3.PutObjectInput{
+		Body:   f,
+		Bucket: bucket,
+		Key:    key,
+	})
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to write file")
+		return nil, errors.Wrap(err, "failed to upload to s3")
 	}
 
 	supportBundle := types.SupportBundle{
@@ -379,22 +395,33 @@ func (s *KOTSStore) UpdateSupportBundle(bundle *types.SupportBundle) error {
 	return nil
 }
 
-// UploadSupportBundle pushes the metadata file and support bundle archive to the file store
+// UploadSupportBundle pushed the metadata file and support bundle archive to the object store
 func (s *KOTSStore) UploadSupportBundle(id string, archivePath string, marshalledTree []byte) error {
 
 	if err := s.saveSupportBundleMetafile(id, "treeindex", marshalledTree); err != nil {
 		return errors.Wrap(err, "faile to save treeindex")
 	}
 
+	// upload the bundle to s3
+	bucket := aws.String(os.Getenv("S3_BUCKET_NAME"))
+	key := aws.String(filepath.Join("supportbundles", id, "supportbundle.tar.gz"))
+
+	newSession := awssession.New(kotss3.GetConfig())
+
+	s3Client := s3.New(newSession)
+
 	f, err := os.Open(archivePath)
 	if err != nil {
 		return errors.Wrap(err, "failed to open archive file")
 	}
 
-	outputPath := filepath.Join("supportbundles", id, "supportbundle.tar.gz")
-	err = filestore.WriteArchive(outputPath, f)
+	_, err = s3Client.PutObject(&s3.PutObjectInput{
+		Body:   f,
+		Bucket: bucket,
+		Key:    key,
+	})
 	if err != nil {
-		return errors.Wrap(err, "failed to write file")
+		return errors.Wrap(err, "failed to upload to s3")
 	}
 
 	return nil
@@ -406,13 +433,33 @@ func (s *KOTSStore) GetSupportBundleArchive(bundleID string) (string, error) {
 	logger.Debug("getting support bundle",
 		zap.String("bundleID", bundleID))
 
-	path := fmt.Sprintf("supportbundles/%s/supportbundle.tar.gz", bundleID)
-	archivePath, err := filestore.ReadArchive(path)
+	tmpDir, err := ioutil.TempDir("", "kotsadm")
 	if err != nil {
-		return "", errors.Wrap(err, "failed to read file")
+		return "", errors.Wrap(err, "failed to create temp dir")
 	}
 
-	return archivePath, nil
+	newSession := awssession.New(kotss3.GetConfig())
+
+	bucket := aws.String(os.Getenv("S3_BUCKET_NAME"))
+	key := aws.String(fmt.Sprintf("supportbundles/%s/supportbundle.tar.gz", bundleID))
+
+	outputFile, err := os.Create(filepath.Join(tmpDir, "supportbundle.tar.gz"))
+	if err != nil {
+		return "", errors.Wrap(err, "failed to open file")
+	}
+	defer outputFile.Close()
+
+	downloader := s3manager.NewDownloader(newSession)
+	_, err = downloader.Download(outputFile,
+		&s3.GetObjectInput{
+			Bucket: bucket,
+			Key:    key,
+		})
+	if err != nil {
+		return "", errors.Wrapf(err, "failed to download support bundle archive %q from bucket %q", *key, *bucket)
+	}
+
+	return filepath.Join(tmpDir, "supportbundle.tar.gz"), nil
 }
 
 func (s *KOTSStore) GetSupportBundleAnalysis(id string) (*types.SupportBundleAnalysis, error) {
@@ -524,29 +571,48 @@ func (s *KOTSStore) saveSupportBundleMetafile(id string, filename string, data [
 	}
 	gzipWriter.Close()
 
-	outputPath := filepath.Join("supportbundles", id, fmt.Sprintf("%s.gz", filename))
-	err := filestore.WriteArchive(outputPath, bytes.NewReader(gzipped.Bytes()))
+	bucket := aws.String(os.Getenv("S3_BUCKET_NAME"))
+	key := aws.String(filepath.Join("supportbundles", id, fmt.Sprintf("%s.gz", filename)))
+
+	newSession := awssession.New(kotss3.GetConfig())
+
+	s3Client := s3.New(newSession)
+
+	_, err := s3Client.PutObject(&s3.PutObjectInput{
+		Body:   bytes.NewReader(gzipped.Bytes()),
+		Bucket: bucket,
+		Key:    key,
+	})
 	if err != nil {
-		return errors.Wrap(err, "failed to write file")
+		return errors.Wrap(err, "failed to upload to s3")
 	}
 
 	return nil
 }
 
 func (s *KOTSStore) getSupportBundleMetafile(id string, filename string) ([]byte, error) {
-	path := filepath.Join("supportbundles", id, fmt.Sprintf("%s.gz", filename))
-	bundlePath, err := filestore.ReadArchive(path)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to read file")
-	}
-	defer os.RemoveAll(bundlePath)
+	newSession := awssession.New(kotss3.GetConfig())
 
-	// Using a file here because Download uses WriterAt type, which bytes.Buffer does not implement.
-	gzipFile, err := os.Open(bundlePath)
+	bucket := aws.String(os.Getenv("S3_BUCKET_NAME"))
+	key := aws.String(filepath.Join("supportbundles", id, fmt.Sprintf("%s.gz", filename)))
+
+	// Using a temp file here because Download uses WriterAt type, which bytes.Buffer does not implement.
+	gzipFile, err := ioutil.TempFile("", filename)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to open app archive")
+		return nil, errors.Wrap(err, "failed to create tmp file")
 	}
 	defer gzipFile.Close()
+	defer os.Remove(gzipFile.Name())
+
+	downloader := s3manager.NewDownloader(newSession)
+	_, err = downloader.Download(gzipFile,
+		&s3.GetObjectInput{
+			Bucket: bucket,
+			Key:    key,
+		})
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to download from s3")
+	}
 
 	_, err = gzipFile.Seek(0, 0)
 	if err != nil {
