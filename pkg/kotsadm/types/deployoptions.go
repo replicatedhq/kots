@@ -13,6 +13,8 @@ type DeployOptions struct {
 	Context                   string
 	SharedPassword            string
 	SharedPasswordBcrypt      string
+	S3AccessKey               string
+	S3SecretKey               string
 	JWT                       string
 	PostgresPassword          string
 	APIEncryptionKey          string
@@ -32,6 +34,7 @@ type DeployOptions struct {
 	StorageBaseURI            string
 	StorageBaseURIPlainHTTP   bool
 	IncludeDockerDistribution bool
+	IncludeMinio              bool
 	Timeout                   time.Duration
 	HTTPProxyEnvValue         string
 	HTTPSProxyEnvValue        string
@@ -44,7 +47,6 @@ type DeployOptions struct {
 	SimultaneousUploads       int
 	DisableImagePush          bool
 	UpstreamURI               string
-	HasObjectStore            bool
 
 	IdentityConfig kotsv1beta1.IdentityConfig
 	IngressConfig  kotsv1beta1.IngressConfig

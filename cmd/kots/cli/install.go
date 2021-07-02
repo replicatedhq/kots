@@ -214,7 +214,7 @@ func InstallCmd() *cobra.Command {
 				SimultaneousUploads:       simultaneousUploads,
 				DisableImagePush:          v.GetBool("disable-image-push"),
 				AirgapBundle:              v.GetString("airgap-bundle"),
-				HasObjectStore:            false,
+				IncludeMinio:              v.GetBool("with-minio"),
 
 				KotsadmOptions: *registryConfig,
 
@@ -413,6 +413,7 @@ func InstallCmd() *cobra.Command {
 
 	// options for the alpha feature of using a reg instead of s3 for storage
 	cmd.Flags().String("storage-base-uri", "", "an s3 or oci-registry uri to use for kots persistent storage in the cluster")
+	cmd.Flags().Bool("with-minio", false, "when set, kots will deploy a local minio instance for storage")
 	cmd.Flags().Bool("with-dockerdistribution", false, "when set, kots install will deploy a local instance of docker distribution for storage")
 	cmd.Flags().Bool("storage-base-uri-plainhttp", false, "when set, use plain http (not https) connecting to the local oci storage")
 	cmd.Flags().MarkHidden("storage-base-uri")

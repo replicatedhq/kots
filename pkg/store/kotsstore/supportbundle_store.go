@@ -296,9 +296,9 @@ func (s *KOTSStore) CreateSupportBundle(id string, appID string, archivePath str
 	}
 
 	outputPath := filepath.Join("supportbundles", id, "supportbundle.tar.gz")
-	err = filestore.WriteArchive(outputPath, f)
+	err = filestore.GetStore().WriteArchive(outputPath, f)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to write file")
+		return nil, errors.Wrap(err, "failed to write archive")
 	}
 
 	supportBundle := types.SupportBundle{
@@ -392,9 +392,9 @@ func (s *KOTSStore) UploadSupportBundle(id string, archivePath string, marshalle
 	}
 
 	outputPath := filepath.Join("supportbundles", id, "supportbundle.tar.gz")
-	err = filestore.WriteArchive(outputPath, f)
+	err = filestore.GetStore().WriteArchive(outputPath, f)
 	if err != nil {
-		return errors.Wrap(err, "failed to write file")
+		return errors.Wrap(err, "failed to write archive")
 	}
 
 	return nil
@@ -407,9 +407,9 @@ func (s *KOTSStore) GetSupportBundleArchive(bundleID string) (string, error) {
 		zap.String("bundleID", bundleID))
 
 	path := fmt.Sprintf("supportbundles/%s/supportbundle.tar.gz", bundleID)
-	archivePath, err := filestore.ReadArchive(path)
+	archivePath, err := filestore.GetStore().ReadArchive(path)
 	if err != nil {
-		return "", errors.Wrap(err, "failed to read file")
+		return "", errors.Wrap(err, "failed to read archive")
 	}
 
 	return archivePath, nil
@@ -525,9 +525,9 @@ func (s *KOTSStore) saveSupportBundleMetafile(id string, filename string, data [
 	gzipWriter.Close()
 
 	outputPath := filepath.Join("supportbundles", id, fmt.Sprintf("%s.gz", filename))
-	err := filestore.WriteArchive(outputPath, bytes.NewReader(gzipped.Bytes()))
+	err := filestore.GetStore().WriteArchive(outputPath, bytes.NewReader(gzipped.Bytes()))
 	if err != nil {
-		return errors.Wrap(err, "failed to write file")
+		return errors.Wrap(err, "failed to write archive")
 	}
 
 	return nil
@@ -535,9 +535,9 @@ func (s *KOTSStore) saveSupportBundleMetafile(id string, filename string, data [
 
 func (s *KOTSStore) getSupportBundleMetafile(id string, filename string) ([]byte, error) {
 	path := filepath.Join("supportbundles", id, fmt.Sprintf("%s.gz", filename))
-	bundlePath, err := filestore.ReadArchive(path)
+	bundlePath, err := filestore.GetStore().ReadArchive(path)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to read file")
+		return nil, errors.Wrap(err, "failed to read archive")
 	}
 	defer os.RemoveAll(bundlePath)
 

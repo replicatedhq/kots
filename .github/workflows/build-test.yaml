@@ -194,9 +194,9 @@ jobs:
             echo "------pods:"
             kubectl -n legacy get pods
             echo "------kotsadm logs"
-            kubectl -n legacy logs statefulset/kotsadm
+            kubectl -n legacy logs deployment/kotsadm
             echo "------previous kotsadm logs"
-            kubectl -n legacy logs -p statefulset/kotsadm
+            kubectl -n legacy logs -p deployment/kotsadm
             echo "------kotsadm-operator logs"
             kubectl -n legacy logs deployment/kotsadm-operator
             echo "------previous kotsadm-operator logs"
@@ -221,9 +221,9 @@ jobs:
             echo "------pods:"
             kubectl -n legacy get pods
             echo "------kotsadm logs"
-            kubectl -n legacy logs statefulset/kotsadm
+            kubectl -n legacy logs deployment/kotsadm
             echo "------previous kotsadm logs"
-            kubectl -n legacy logs -p statefulset/kotsadm
+            kubectl -n legacy logs -p deployment/kotsadm
             echo "------kotsadm-operator logs"
             kubectl -n legacy logs deployment/kotsadm-operator
             echo "------previous kotsadm-operator logs"
@@ -274,9 +274,9 @@ jobs:
           echo "------pods:"
           kubectl -n minimal-rbac get pods
           echo "------kotsadm logs"
-          kubectl -n minimal-rbac logs statefulset/kotsadm
+          kubectl -n minimal-rbac logs deployment/kotsadm
           echo "------previous kotsadm logs"
-          kubectl -n minimal-rbac logs -p statefulset/kotsadm
+          kubectl -n minimal-rbac logs -p deployment/kotsadm
           echo "------kotsadm-operator logs"
           kubectl -n minimal-rbac logs deployment/kotsadm-operator
           echo "------previos kotsadm-operator logs"
@@ -313,9 +313,9 @@ jobs:
           echo "------pods:"
           kubectl -n no-config get pods
           echo "------kotsadm logs"
-          kubectl -n minimal-rbac logs statefulset/kotsadm
+          kubectl -n minimal-rbac logs deployment/kotsadm
           echo "------previous kotsadm logs"
-          kubectl -n minimal-rbac logs -p statefulset/kotsadm
+          kubectl -n minimal-rbac logs -p deployment/kotsadm
           echo "------kotsadm-operator logs"
           kubectl -n minimal-rbac logs deployment/kotsadm-operator
           echo "------previos kotsadm-operator logs"

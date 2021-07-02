@@ -58,6 +58,7 @@ func AdminConsoleUpgradeCmd() *cobra.Command {
 				SimultaneousUploads:       simultaneousUploads,
 				StorageBaseURI:            v.GetString("storage-base-uri"),
 				StorageBaseURIPlainHTTP:   v.GetBool("storage-base-uri-plainhttp"),
+				IncludeMinio:              v.GetBool("with-minio"),
 				IncludeDockerDistribution: v.GetBool("with-dockerdistribution"),
 
 				KotsadmOptions: kotsadmtypes.KotsadmOptions{
@@ -120,6 +121,7 @@ func AdminConsoleUpgradeCmd() *cobra.Command {
 
 	// options for the alpha feature of using a reg instead of s3 for storage
 	cmd.Flags().String("storage-base-uri", "", "an s3 or oci-registry uri to use for kots persistent storage in the cluster")
+	cmd.Flags().Bool("with-minio", false, "when set, kots will deploy a local minio instance for storage")
 	cmd.Flags().Bool("with-dockerdistribution", false, "when set, kots install will deploy a local instance of docker distribution for storage")
 	cmd.Flags().Bool("storage-base-uri-plainhttp", false, "when set, use plain http (not https) connecting to the local oci storage")
 	cmd.Flags().MarkHidden("storage-base-uri")
