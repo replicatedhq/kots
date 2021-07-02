@@ -1,7 +1,7 @@
 # Variadic Config Proposal
 
 Vendors require the ability to dynamically create resources as part of install configuration.
-One common use case is installing operators, where the customers need to create dynamic resources, like instances of an application or service, that are unknown until install time.
+One common use case is installing operators, where the customers need to create dynamic resources, like instances of an application or service, the number of which is unknown until install time.
 They also need to be extend existing resources, like mounting _N_ files to a pod, where _N_ is not known until install time.
 This proposal outlines a plan to support dynamic/variadic application configuration to facilitate dynamic resource creation. 
 
