@@ -1,9 +1,14 @@
 package base
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/stretchr/testify/require"
+)
 
 func Test_generateTargetValue(t *testing.T) {
 	tests := []struct {
+		name             string
 		configOptionName string
 		valueName        string
 		target           string
@@ -33,9 +38,11 @@ func Test_generateTargetValue(t *testing.T) {
 		},
 	}
 	for _, test := range tests {
-		result := generateTargetValue(test.configOptionName, test.valueName, test.target, test.templateValue)
-		if result != test.want {
-			t.Errorf("generateTargetValue() failed: want: %v\ngot: %v", test.want, result)
-		}
+		t.Run(test.name, func(t *testing.T) {
+			req := require.New(t)
+			result := generateTargetValue(test.configOptionName, test.valueName, test.target, test.templateValue)
+
+			req.Equal(test.want, result)
+		})
 	}
 }

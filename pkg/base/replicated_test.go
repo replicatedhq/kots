@@ -1,14 +1,14 @@
 package base
 
 import (
-	"reflect"
 	"testing"
 
 	"github.com/replicatedhq/kots/pkg/template"
 	upstreamtypes "github.com/replicatedhq/kots/pkg/upstream/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"gopkg.in/yaml.v2"
+	appsv1 "k8s.io/api/apps/v1"
+	"k8s.io/client-go/kubernetes/scheme"
 )
 
 func Test_findAllKotsHelmCharts(t *testing.T) {
@@ -98,7 +98,7 @@ kind: Config
 metadata: 
   creationTimestamp: null 
   name: config-sample 
-spec: 
+spec:  
   groups:
   - name: "podInfo"
     description: "info for pod"
@@ -126,7 +126,7 @@ spec:
         kind: Deployment
         name: my-deploy
         namespace: my-app
-        yamlPath: spec.template.spec.containers[0].volumes[1].projected.sources[1]
+        yamlPath: spec.template.spec.volumes[1].projected.sources[1]
 `,
 						),
 					},
@@ -169,26 +169,26 @@ spec:
           - mountPath: '{{repl ConfigOption "mountPath"}}'
             name: secret-assets
             readOnly: true
-          volumes:
-          - name: normalVolume
-            projected:
-              sources:
-              - name: normalSecret
-          - name: secret-assets
-            projected:
-              sources:
-              - secret:
-                  name: "don't touch this!"
-                  metaData:
-                    fileName: 'repl{{ ConfigOptionName "secretName"}}'
-              - secret:
-                  name: 'repl{{ ConfigOption "secretName"}}'
-                  pod: repl{{ ConfigOption "podName" }}
-                  metaData:
-                    pod: repl{{ ConfigOption "podName"}}
-                    fileName: 'repl{{ ConfigOptionName "secretName"}}'
-              - secret:
-                  name: "don't touch this either!"`),
+      volumes:
+      - name: normalVolume
+        projected:
+          sources:
+          - name: normalSecret
+      - name: secret-assets
+        projected:
+          sources:
+          - secret:
+              name: "don't touch this!"
+              metaData:
+                fileName: 'repl{{ ConfigOptionName "secretName"}}'
+          - secret:
+              name: 'repl{{ ConfigOption "secretName"}}'
+              pod: repl{{ ConfigOption "podName" }}
+              metaData:
+                pod: repl{{ ConfigOption "podName"}}
+                fileName: 'repl{{ ConfigOptionName "secretName"}}'
+          - secret:
+              name: "don't touch this either!"`),
 					},
 				},
 			},
@@ -211,65 +211,66 @@ spec:
             - mountPath: /var/www/html
               name: secret-assets
               readOnly: true
-          volumes:
-            - name: normalVolume
-              projected:
-                sources:
-                  - name: normalSecret
-            - name: secret-assets
-              projected:
-                sources:
-                  - secret:
-                      name: "don't touch this!"
-                      metaData:
-                        fileName: "secretName"
-                  - secret:
-                      name: "don't touch this either!"
-                  - secret:
-                      name: "123"
-                      pod: "testPod"
-                      metaData:
-                        pod: "testPod"
-                        fileName: "secretName-1"
-                  - secret:
-                      name: "456"
-                      pod: "testPod"
-                      metaData:
-                        pod: "testPod"
-                        fileName: "secretName-2"
-                  - secret:
-                      name: "789"
-                      pod: "testPod"
-                      metaData:
-                        pod: "testPod"
-                        fileName: "secretName-3"`),
+      volumes:
+        - name: normalVolume
+          projected:
+            sources:
+              - name: normalSecret
+        - name: secret-assets
+          projected:
+            sources:
+              - secret:
+                  name: "don't touch this!"
+                  metaData:
+                    fileName: "secretName"
+              - secret:
+                  name: "don't touch this either!"
+              - secret:
+                  name: "123"
+                  pod: "testPod"
+                  metaData:
+                    pod: "testPod"
+                    fileName: "secretName-1"
+              - secret:
+                  name: "456"
+                  pod: "testPod"
+                  metaData:
+                    pod: "testPod"
+                    fileName: "secretName-2"
+              - secret:
+                  name: "789"
+                  pod: "testPod"
+                  metaData:
+                    pod: "testPod"
+                    fileName: "secretName-3"`),
 			},
 		},
 	}
 
 	for _, test := range tests {
-		base, err := renderReplicated(test.upstream, test.renderOptions)
-		if err != nil {
-			t.Errorf("renderReplicated(...) test %s failed with error %v", test.name, err)
-		}
+		t.Run(test.name, func(t *testing.T) {
+			req := require.New(t)
 
-		for _, targetFile := range base.Files {
-			if targetFile.Path == test.expectedFile.Path {
-				var got interface{}
-				var want interface{}
-				err := yaml.Unmarshal(targetFile.Content, &got)
-				if err != nil {
-					t.Errorf("renderReplicated(...) test %s failed with error %v", test.name, err)
-				}
-				err = yaml.Unmarshal(test.expectedFile.Content, &want)
-				if err != nil {
-					t.Errorf("renderReplicated(...) test %s failed with error %v", test.name, err)
-				}
+			base, err := renderReplicated(test.upstream, test.renderOptions)
+			req.NoError(err)
 
-				if !reflect.DeepEqual(got, want) {
-					t.Errorf("renderReplicated(...) test %s failed: wanted \n---\n%s, got \n---\n%s", test.name, want, got)
+			decode := scheme.Codecs.UniversalDeserializer().Decode
+			obj, _, err := decode(test.expectedFile.Content, nil, nil)
+
+			expected := obj.(*appsv1.Deployment)
+
+			for _, targetFile := range base.Files {
+				if targetFile.Path == test.expectedFile.Path {
+					decode := scheme.Codecs.UniversalDeserializer().Decode
+					obj, _, err := decode(targetFile.Content, nil, nil)
+
+					deployment := obj.(*appsv1.Deployment)
+
+					req.NoError(err)
+
+					assert.ElementsMatch(t, expected.Spec.Template.Spec.Volumes[1].Projected.Sources, deployment.Spec.Template.Spec.Volumes[1].Projected.Sources)
 				}
 			}
-		}
+		})
 	}
 }
