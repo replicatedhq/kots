@@ -15,9 +15,8 @@ import (
 
 // Known issues and TODOs:
 // This currently only addresses variadic items.  Variadic groups are not included yet and may require changes to these functions.
-// Test_renderReplicated may sometimes fail because the resulting array can be out of order.  A more specific results check could be executed instead.
 // getVariadicGroupsForTemplate should be split into subfunctions to make it easier to read
-// The last element in the YamlPath must be an array
+// The last element in the YamlPath must be an array. We cannot copy whole files yet.
 
 func processVariadicConfig(u *upstreamtypes.UpstreamFile, config *kotsv1beta1.Config) error {
 	// get upstreamFile gvk
