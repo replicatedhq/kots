@@ -3,6 +3,7 @@ package kotsadm
 import (
 	"fmt"
 
+	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/kotsadm/types"
 	kotsadmversion "github.com/replicatedhq/kots/pkg/kotsadm/version"
@@ -14,7 +15,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
-func MinioStatefulset(deployOptions types.DeployOptions, size resource.Quantity) *appsv1.StatefulSet {
+func MinioStatefulset(deployOptions types.DeployOptions, size resource.Quantity) (*appsv1.StatefulSet, error) {
 	imageTag := "RELEASE.2021-06-07T21-40-51Z"
 	if deployOptions.KotsadmOptions.OverrideVersion != "" {
 		imageTag = deployOptions.KotsadmOptions.OverrideVersion
@@ -43,8 +44,7 @@ func MinioStatefulset(deployOptions types.DeployOptions, size resource.Quantity)
 		// openshift won't assign a user id to the container to run with, and the container will try to run as root and fail.
 		psc, err := k8sutil.GetOpenShiftPodSecurityContext(deployOptions.Namespace)
 		if err != nil {
-			// TODO NOW: fix this
-			// return nil, errors.Wrap(err, "failed to get openshift pod security context")
+			return nil, errors.Wrap(err, "failed to get openshift pod security context")
 		}
 		securityContext = psc
 	}
@@ -217,7 +217,7 @@ func MinioStatefulset(deployOptions types.DeployOptions, size resource.Quantity)
 		},
 	}
 
-	return statefulset
+	return statefulset, nil
 }
 
 func MinioService(namespace string) *corev1.Service {
