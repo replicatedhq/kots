@@ -155,7 +155,7 @@ func UpdateKotsadmDeployment(existingDeployment *appsv1.Deployment, desiredDeplo
 	additionalInitContainers := []corev1.Container{}
 	for _, desiredContainer := range desiredDeployment.Spec.Template.Spec.InitContainers {
 		found := false
-		for i, existingContainer := range deployment.Spec.Template.Spec.InitContainers {
+		for i, existingContainer := range existingDeployment.Spec.Template.Spec.InitContainers {
 			if existingContainer.Name != desiredContainer.Name {
 				continue
 			}
