@@ -12,7 +12,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/serializer/json"
 	"k8s.io/client-go/kubernetes"
@@ -41,19 +40,11 @@ func getKotsadmYAML(deployOptions types.DeployOptions) (map[string][]byte, error
 	}
 	docs["kotsadm-serviceaccount.yaml"] = serviceAccount.Bytes()
 
-	size, err := getSize(deployOptions, "kotsadm", resource.MustParse("4Gi"))
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to get size")
+	var deployment bytes.Buffer
+	if err := s.Encode(kotsadmobjects.KotsadmDeployment(deployOptions), &deployment); err != nil {
+		return nil, errors.Wrap(err, "failed to marshal kotsadm deployment")
 	}
-	kotsadmSts, err := kotsadmobjects.KotsadmStatefulSet(deployOptions, size)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to get kotsadm statefulset definition")
-	}
-	var statefulset bytes.Buffer
-	if err := s.Encode(kotsadmSts, &statefulset); err != nil {
-		return nil, errors.Wrap(err, "failed to marshal kotsadm statefulset")
-	}
-	docs["kotsadm-statefulset.yaml"] = statefulset.Bytes()
+	docs["kotsadm-deployment.yaml"] = deployment.Bytes()
 
 	var nodePort int32
 	if deployOptions.IngressConfig.Spec.Enabled && deployOptions.IngressConfig.Spec.NodePort != nil {
@@ -129,13 +120,8 @@ func ensureKotsadmComponent(deployOptions *types.DeployOptions, clientset *kuber
 	if err := ensureApplicationMetadata(*deployOptions, clientset); err != nil {
 		return errors.Wrap(err, "failed to ensure custom branding")
 	}
-
-	size, err := getSize(*deployOptions, "kotsadm", resource.MustParse("4Gi"))
-	if err != nil {
-		return errors.Wrap(err, "failed to get size")
-	}
-	if err := ensureKotsadmStatefulSet(*deployOptions, clientset, size); err != nil {
-		return errors.Wrap(err, "failed to ensure kotsadm statefulset")
+	if err := ensureKotsadmDeployment(*deployOptions, clientset); err != nil {
+		return errors.Wrap(err, "failed to ensure kotsadm deployment")
 	}
 
 	var nodePort int32
@@ -316,33 +302,27 @@ func ensureKotsadmServiceAccount(namespace string, clientset *kubernetes.Clients
 	return nil
 }
 
-func ensureKotsadmStatefulSet(deployOptions types.DeployOptions, clientset *kubernetes.Clientset, size resource.Quantity) error {
-	desiredStatefulSet, err := kotsadmobjects.KotsadmStatefulSet(deployOptions, size)
-	if err != nil {
-		return errors.Wrap(err, "failed to get desired kotsadm statefulset definition")
-	}
-
-	existingStatefulSet, err := clientset.AppsV1().StatefulSets(deployOptions.Namespace).Get(context.TODO(), "kotsadm", metav1.GetOptions{})
+func ensureKotsadmDeployment(deployOptions types.DeployOptions, clientset *kubernetes.Clientset) error {
+	existingDeployment, err := clientset.AppsV1().Deployments(deployOptions.Namespace).Get(context.TODO(), "kotsadm", metav1.GetOptions{})
 	if err != nil {
 		if !kuberneteserrors.IsNotFound(err) {
-			return errors.Wrap(err, "failed to get existing statefulset")
+			return errors.Wrap(err, "failed to get existing deployment")
 		}
 
-		_, err := clientset.AppsV1().StatefulSets(deployOptions.Namespace).Create(context.TODO(), desiredStatefulSet, metav1.CreateOptions{})
+		_, err := clientset.AppsV1().Deployments(deployOptions.Namespace).Create(context.TODO(), kotsadmobjects.KotsadmDeployment(deployOptions), metav1.CreateOptions{})
 		if err != nil {
-			return errors.Wrap(err, "failed to create statefulset")
+			return errors.Wrap(err, "failed to create deployment")
 		}
-
 		return nil
 	}
 
-	if err = kotsadmobjects.UpdateKotsadmStatefulSet(existingStatefulSet, desiredStatefulSet); err != nil {
-		return errors.Wrap(err, "failed to merge statefulsets")
+	if err = kotsadmobjects.UpdateKotsadmDeployment(existingDeployment, deployOptions); err != nil {
+		return errors.Wrap(err, "failed to merge deployments")
 	}
 
-	_, err = clientset.AppsV1().StatefulSets(deployOptions.Namespace).Update(context.TODO(), existingStatefulSet, metav1.UpdateOptions{})
+	_, err = clientset.AppsV1().Deployments(deployOptions.Namespace).Update(context.TODO(), existingDeployment, metav1.UpdateOptions{})
 	if err != nil {
-		return errors.Wrap(err, "failed to update kotsadm statefulset")
+		return errors.Wrap(err, "failed to update kotsadm deployment")
 	}
 
 	return nil

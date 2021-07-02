@@ -173,6 +173,7 @@ spec:
         selector:
         - app=kotsadm
         timeout: 10s
+    - longhorn: {}
 
   analyzers:
     - textAnalyze:
@@ -206,3 +207,4 @@ spec:
         - pass:
             message: Goldpinger can communicate properly
         regexGroups: '"OK": ?(?P<OK>\w+)'
+    - longhorn: {}

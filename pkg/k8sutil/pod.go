@@ -80,31 +80,3 @@ func WaitForPod(ctx context.Context, clientset kubernetes.Interface, namespace s
 		}
 	}
 }
-
-func PodsHaveTheSameOwner(pods []corev1.Pod) bool {
-	if len(pods) == 0 {
-		return false
-	}
-
-	for _, pod := range pods {
-		if len(pod.OwnerReferences) == 0 {
-			return false
-		}
-	}
-
-	owner := pods[0].OwnerReferences[0]
-
-	for _, pod := range pods {
-		if pod.OwnerReferences[0].APIVersion != owner.APIVersion {
-			return false
-		}
-		if pod.OwnerReferences[0].Kind != owner.Kind {
-			return false
-		}
-		if pod.OwnerReferences[0].Name != owner.Name {
-			return false
-		}
-	}
-
-	return true
-}

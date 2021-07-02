@@ -76,6 +76,26 @@ func SharedPasswordSecret(namespace string, bcryptPassword string) *corev1.Secre
 	return secret
 }
 
+func S3Secret(namespace string, accessKey string, secretKey string) *corev1.Secret {
+	secret := &corev1.Secret{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: "v1",
+			Kind:       "Secret",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "kotsadm-minio",
+			Namespace: namespace,
+			Labels:    types.GetKotsadmLabels(),
+		},
+		Data: map[string][]byte{
+			"accesskey": []byte(accessKey),
+			"secretkey": []byte(secretKey),
+		},
+	}
+
+	return secret
+}
+
 func ApiEncryptionKeySecret(namespace string, key string) *corev1.Secret {
 	secret := &corev1.Secret{
 		TypeMeta: metav1.TypeMeta{

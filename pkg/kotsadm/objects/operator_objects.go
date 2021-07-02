@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/pkg/errors"
-	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/kotsadm/types"
 	kotsadmversion "github.com/replicatedhq/kots/pkg/kotsadm/version"
 	"github.com/replicatedhq/kots/pkg/util"
@@ -131,21 +130,30 @@ func OperatorServiceAccount(namespace string) *corev1.ServiceAccount {
 	return serviceAccount
 }
 
-func UpdateOperatorDeployment(existingDeployment *appsv1.Deployment, desiredDeployment *appsv1.Deployment) error {
+func UpdateOperatorDeployment(deployment *appsv1.Deployment, deployOptions types.DeployOptions) error {
+	var securityContext corev1.PodSecurityContext
+	if !deployOptions.IsOpenShift {
+		securityContext = corev1.PodSecurityContext{
+			RunAsUser: util.IntPointer(1001),
+		}
+	}
+
+	desiredDeployment := OperatorDeployment(deployOptions)
+
 	// ensure the non-optional kots labels are present (added in 1.11.0)
-	if existingDeployment.ObjectMeta.Labels == nil {
-		existingDeployment.ObjectMeta.Labels = map[string]string{}
+	if deployment.ObjectMeta.Labels == nil {
+		deployment.ObjectMeta.Labels = map[string]string{}
 	}
-	existingDeployment.ObjectMeta.Labels[types.KotsadmKey] = types.KotsadmLabelValue
-	if existingDeployment.Spec.Template.ObjectMeta.Labels == nil {
-		existingDeployment.Spec.Template.ObjectMeta.Labels = map[string]string{}
+	deployment.ObjectMeta.Labels[types.KotsadmKey] = types.KotsadmLabelValue
+	if deployment.Spec.Template.ObjectMeta.Labels == nil {
+		deployment.Spec.Template.ObjectMeta.Labels = map[string]string{}
 	}
-	existingDeployment.Spec.Template.ObjectMeta.Labels[types.KotsadmKey] = types.KotsadmLabelValue
+	deployment.Spec.Template.ObjectMeta.Labels[types.KotsadmKey] = types.KotsadmLabelValue
 
 	// security context (added in 1.11.0)
-	existingDeployment.Spec.Template.Spec.SecurityContext = desiredDeployment.Spec.Template.Spec.SecurityContext
+	deployment.Spec.Template.Spec.SecurityContext = &securityContext
 	containerIdx := -1
-	for idx, c := range existingDeployment.Spec.Template.Spec.Containers {
+	for idx, c := range deployment.Spec.Template.Spec.Containers {
 		if c.Name == "kotsadm-operator" {
 			containerIdx = idx
 		}
@@ -156,7 +164,7 @@ func UpdateOperatorDeployment(existingDeployment *appsv1.Deployment, desiredDepl
 	}
 
 	// image
-	existingDeployment.Spec.Template.Spec.Containers[containerIdx].Image = desiredDeployment.Spec.Template.Spec.Containers[0].Image
+	deployment.Spec.Template.Spec.Containers[containerIdx].Image = fmt.Sprintf("%s/kotsadm-operator:%s", kotsadmversion.KotsadmRegistry(deployOptions.KotsadmOptions), kotsadmversion.KotsadmTag(deployOptions.KotsadmOptions))
 
 	// copy the env vars from the desired to existing. this could undo a change that the user had.
 	// we don't know which env vars we set and which are user edited. this method avoids deleting
@@ -165,7 +173,7 @@ func UpdateOperatorDeployment(existingDeployment *appsv1.Deployment, desiredDepl
 	for _, env := range desiredDeployment.Spec.Template.Spec.Containers[0].Env {
 		mergedEnvs = append(mergedEnvs, env)
 	}
-	for _, existingEnv := range existingDeployment.Spec.Template.Spec.Containers[containerIdx].Env {
+	for _, existingEnv := range deployment.Spec.Template.Spec.Containers[containerIdx].Env {
 		isUnxpected := true
 		for _, env := range desiredDeployment.Spec.Template.Spec.Containers[0].Env {
 			if env.Name == existingEnv.Name {
@@ -177,24 +185,17 @@ func UpdateOperatorDeployment(existingDeployment *appsv1.Deployment, desiredDepl
 			mergedEnvs = append(mergedEnvs, existingEnv)
 		}
 	}
-	existingDeployment.Spec.Template.Spec.Containers[containerIdx].Env = mergedEnvs
+	deployment.Spec.Template.Spec.Containers[containerIdx].Env = mergedEnvs
 
 	return nil
 }
 
-func OperatorDeployment(deployOptions types.DeployOptions) (*appsv1.Deployment, error) {
-	securityContext := &corev1.PodSecurityContext{
-		RunAsUser: util.IntPointer(1001),
-	}
-	if deployOptions.IsOpenShift {
-		// need to include a security context since the operator pod is assoicated with a role/clusterrole that has wildcard privilages,
-		// which gives the operator pod/container the permission to run as any user id in openshift.
-		// so, run it with a specific user that falls in the allowable range by openshift for the namespace.
-		psc, err := k8sutil.GetOpenShiftPodSecurityContext(deployOptions.Namespace)
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to get openshift pod security context")
+func OperatorDeployment(deployOptions types.DeployOptions) *appsv1.Deployment {
+	var securityContext corev1.PodSecurityContext
+	if !deployOptions.IsOpenShift {
+		securityContext = corev1.PodSecurityContext{
+			RunAsUser: util.IntPointer(1001),
 		}
-		securityContext = psc
 	}
 
 	var pullSecrets []corev1.LocalObjectReference
@@ -232,7 +233,7 @@ func OperatorDeployment(deployOptions types.DeployOptions) (*appsv1.Deployment, 
 					Affinity: &corev1.Affinity{
 						NodeAffinity: defaultKotsNodeAffinity(),
 					},
-					SecurityContext:    securityContext,
+					SecurityContext:    &securityContext,
 					ServiceAccountName: "kotsadm-operator",
 					RestartPolicy:      corev1.RestartPolicyAlways,
 					ImagePullSecrets:   pullSecrets,
@@ -283,5 +284,5 @@ func OperatorDeployment(deployOptions types.DeployOptions) (*appsv1.Deployment, 
 		},
 	}
 
-	return deployment, nil
+	return deployment
 }

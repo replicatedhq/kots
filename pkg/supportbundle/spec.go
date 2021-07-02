@@ -299,6 +299,9 @@ func addDefaultTroubleshoot(supportBundle *troubleshootv1beta2.SupportBundle, ap
 	supportBundle.Spec.Collectors = append(supportBundle.Spec.Collectors, makeGoldpingerCollectors()...)
 	supportBundle.Spec.Analyzers = append(supportBundle.Spec.Analyzers, makeGoldpingerAnalyzers()...)
 
+	supportBundle.Spec.Collectors = append(supportBundle.Spec.Collectors, makeLonghornCollectors()...)
+	supportBundle.Spec.Analyzers = append(supportBundle.Spec.Analyzers, makeLonghornAnalyzers()...)
+
 	apps := []*apptypes.App{}
 	if app != nil {
 		apps = append(apps, app)
@@ -709,13 +712,13 @@ func makeCollectDCollectors() ([]*troubleshootv1beta2.Collect, error) {
 	}
 
 	namespace := os.Getenv("POD_NAMESPACE")
-	existingStatefulSet, err := clientset.AppsV1().StatefulSets(namespace).Get(context.TODO(), "kotsadm", metav1.GetOptions{})
+	existingDeployment, err := clientset.AppsV1().Deployments(namespace).Get(context.TODO(), "kotsadm", metav1.GetOptions{})
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to get existing statefulset")
+		return nil, errors.Wrap(err, "failed to get existing deployment")
 	}
 
 	imageName := ""
-	for _, container := range existingStatefulSet.Spec.Template.Spec.Containers {
+	for _, container := range existingDeployment.Spec.Template.Spec.Containers {
 		if container.Name == "kotsadm" {
 			imageName = container.Image
 			break
@@ -726,8 +729,8 @@ func makeCollectDCollectors() ([]*troubleshootv1beta2.Collect, error) {
 	}
 
 	var pullSecret *troubleshootv1beta2.ImagePullSecrets
-	if len(existingStatefulSet.Spec.Template.Spec.ImagePullSecrets) > 0 {
-		existingSecret := existingStatefulSet.Spec.Template.Spec.ImagePullSecrets[0]
+	if len(existingDeployment.Spec.Template.Spec.ImagePullSecrets) > 0 {
+		existingSecret := existingDeployment.Spec.Template.Spec.ImagePullSecrets[0]
 		pullSecret = &troubleshootv1beta2.ImagePullSecrets{
 			Name: existingSecret.Name,
 		}
@@ -794,6 +797,34 @@ func makeGoldpingerAnalyzers() []*troubleshootv1beta2.Analyze {
 						Message: "Goldpinger can communicate properly",
 					},
 				},
+			},
+		},
+	})
+
+	return analyzers
+}
+
+func makeLonghornCollectors() []*troubleshootv1beta2.Collect {
+	collectors := []*troubleshootv1beta2.Collect{}
+
+	collectors = append(collectors, &troubleshootv1beta2.Collect{
+		Longhorn: &troubleshootv1beta2.Longhorn{
+			CollectorMeta: troubleshootv1beta2.CollectorMeta{
+				CollectorName: "longhorn",
+			},
+		},
+	})
+
+	return collectors
+}
+
+func makeLonghornAnalyzers() []*troubleshootv1beta2.Analyze {
+	analyzers := []*troubleshootv1beta2.Analyze{}
+
+	analyzers = append(analyzers, &troubleshootv1beta2.Analyze{
+		Longhorn: &troubleshootv1beta2.LonghornAnalyze{
+			AnalyzeMeta: troubleshootv1beta2.AnalyzeMeta{
+				CheckName: "longhorn",
 			},
 		},
 	})
