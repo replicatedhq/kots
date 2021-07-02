@@ -71,7 +71,7 @@ func renderReplicated(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (
 			upstreamFile.Content = bytes.Join(newContent, []byte("\n---\n"))
 		}
 
-		err = processVariadicConfig(&upstreamFile, actualizedConfig)
+		err = processVariadicConfig(&upstreamFile, actualizedConfig, renderOptions.Log)
 		if err != nil {
 			return nil, errors.Wrapf(err, "failed to process variadic config in file %s", upstreamFile.Path)
 		}

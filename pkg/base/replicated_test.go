@@ -3,6 +3,7 @@ package base
 import (
 	"testing"
 
+	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/template"
 	upstreamtypes "github.com/replicatedhq/kots/pkg/upstream/types"
 	"github.com/stretchr/testify/assert"
@@ -74,6 +75,8 @@ spec:
 }
 
 func Test_renderReplicated(t *testing.T) {
+	// randomfile.yaml proves a file that cannot be marshaled will not throw an impactful error
+	// bogusmetadata.yaml proves missing or malformed metadata will not throw an impactful error
 	// podName tests a normal ConfigOption, proving this process does not impact existing behavior
 	// mountPath tests defaults if no value is provided
 	// secretName-1 tests repeatable items with a string
@@ -90,6 +93,26 @@ func Test_renderReplicated(t *testing.T) {
 			name: "replace array with repeat values",
 			upstream: &upstreamtypes.Upstream{
 				Files: []upstreamtypes.UpstreamFile{
+					{
+						Path: "randomfile.yaml",
+						Content: []byte(`
+apiVersion:
+  thisshouldntbehere:
+    heyoooo
+kind: 6
+`),
+					},
+					{
+						Path: "bogusmetadata.yaml",
+						Content: []byte(`
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name:
+    badnesting: true
+  namespace: 5
+`),
+					},
 					{
 						Path: "config.yaml",
 						Content: []byte(`
@@ -192,7 +215,9 @@ spec:
 					},
 				},
 			},
-			renderOptions: &RenderOptions{},
+			renderOptions: &RenderOptions{
+				Log: logger.NewCLILogger(),
+			},
 			expectedFile: BaseFile{
 				Path: "deployment.yaml",
 				Content: []byte(
