@@ -5,7 +5,9 @@ import (
 	"testing"
 
 	"github.com/pkg/errors"
+	"github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
+	"github.com/replicatedhq/kots/kotskinds/multitype"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/template"
 	"github.com/stretchr/testify/require"
@@ -240,6 +242,80 @@ status: {}
 `,
 			expectOldFail: false,
 		},
+		{
+			name: "repeatable Items",
+			configSpecData: `apiVersion: kots.io/v1beta1 
+kind: Config 
+metadata: 
+  creationTimestamp: null 
+  name: test-app
+spec: 
+  groups:
+  - name: secrets
+    title: Secrets 
+    description: Buncha Secrets
+    items: 
+    - name: "secretName"
+      type: "text"
+      title: "Secret Name"
+      default: "onetwothree"
+      repeatable: true
+      minimumCount: 1
+      templates:
+      - apiVersion: apps/v1
+        kind: Deployment
+        name: my-deploy
+        namespace: my-app
+        yamlPath: spec.template.spec.containers[0].volumes[1].projected.sources[1]
+`,
+			configValuesData: `apiVersion: kots.io/v1beta1
+kind: ConfigValues
+metadata:
+  name: test-app
+spec:
+  values:
+    secretName-1:
+      value: "123"
+      repeatableItem: secretName
+    secretName-2:
+      value: "456"
+      repeatableItem: secretName
+    secretName-3:
+      value: "789"
+      repeatableItem: secretName
+status: {}
+`,
+			want: `apiVersion: kots.io/v1beta1 
+kind: Config 
+metadata: 
+  creationTimestamp: null 
+  name: test-app
+spec: 
+  groups:
+  - name: secrets
+    title: Secrets 
+    description: Buncha Secrets
+    items: 
+    - name: "secretName"
+      type: "text"
+      title: "Secret Name"
+      default: "onetwothree"
+      repeatable: true
+      minimumCount: 3
+      templates:
+      - apiVersion: apps/v1
+        kind: Deployment
+        name: my-deploy
+        namespace: my-app
+        yamlPath: spec.template.spec.containers[0].volumes[1].projected.sources[1]
+      valuesByGroup: 
+        secrets:
+          secretName-1: "123"
+          secretName-2: "456"
+          secretName-3: "789"
+`,
+			expectOldFail: false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -270,6 +346,107 @@ status: {}
 			} else {
 				req.Error(err)
 			}
+		})
+	}
+}
+
+func TestApplyValuesToConfig(t *testing.T) {
+	tests := []struct {
+		name   string
+		config kotsv1beta1.Config
+		values map[string]template.ItemValue
+		want   kotsv1beta1.Config
+	}{
+		{
+			name: "create minimumCount",
+			config: kotsv1beta1.Config{
+				Spec: v1beta1.ConfigSpec{
+					Groups: []v1beta1.ConfigGroup{
+						{
+							Name: "secrets",
+							Items: []kotsv1beta1.ConfigItem{
+								{
+									Name:         "secretName",
+									Repeatable:   true,
+									MinimumCount: 1,
+									Count:        2,
+									ValuesByGroup: kotsv1beta1.ValuesByGroup{
+										"secrets": {
+											"secretName-1": "111",
+											"secretName-2": "222",
+										},
+										// use this to test creating minimum count entries for a group
+										// since it creates UUIDs, there's no way to test equality and the test will fail
+										//"alsoSecrets": {},
+									},
+								},
+							},
+						},
+						{
+							Name: "pod",
+							Items: []kotsv1beta1.ConfigItem{
+								{
+									Name:  "podName",
+									Value: multitype.BoolOrString{Type: 0, StrVal: "real-pod"},
+								},
+							},
+						},
+					},
+				},
+			},
+			values: map[string]template.ItemValue{
+				"secretName-1": {
+					Value:          "123",
+					RepeatableItem: "secretName",
+				},
+				"secretName-2": {
+					Value:          "456",
+					RepeatableItem: "secretName",
+				},
+				"podName": {
+					Value: "test-pod",
+				},
+			},
+			want: kotsv1beta1.Config{
+				Spec: v1beta1.ConfigSpec{
+					Groups: []v1beta1.ConfigGroup{
+						{
+							Name: "secrets",
+							Items: []kotsv1beta1.ConfigItem{
+								{
+									Name:         "secretName",
+									Repeatable:   true,
+									MinimumCount: 1,
+									Count:        2,
+									ValuesByGroup: kotsv1beta1.ValuesByGroup{
+										"secrets": {
+											"secretName-1": "123",
+											"secretName-2": "456",
+										},
+									},
+								},
+							},
+						},
+						{
+							Name: "pod",
+							Items: []kotsv1beta1.ConfigItem{
+								{
+									Name:  "podName",
+									Value: multitype.BoolOrString{Type: 0, StrVal: "test-pod"},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			req := require.New(t)
+			ApplyValuesToConfig(&test.config, test.values)
+
+			req.Equal(test.want, test.config)
 		})
 	}
 }
