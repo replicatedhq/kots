@@ -1098,8 +1098,15 @@ func KotsadmStatefulSet(deployOptions types.DeployOptions, size resource.Quantit
 									Value: "kotsadm",
 								},
 								{
-									Name:  "S3_ACCESS_KEY_ID",
-									Value: "test123",
+									Name: "S3_ACCESS_KEY_ID",
+									ValueFrom: &corev1.EnvVarSource{
+										SecretKeyRef: &corev1.SecretKeySelector{
+											LocalObjectReference: corev1.LocalObjectReference{
+												Name: "kotsadm-minio",
+											},
+											Key: "accesskey",
+										},
+									},
 								},
 								{
 									Name: "S3_SECRET_ACCESS_KEY",
