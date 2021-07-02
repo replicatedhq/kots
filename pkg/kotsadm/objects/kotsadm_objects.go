@@ -1104,7 +1104,7 @@ func KotsadmStatefulSet(deployOptions types.DeployOptions, size resource.Quantit
 											LocalObjectReference: corev1.LocalObjectReference{
 												Name: "kotsadm-minio",
 											},
-											Key: "accesskey",
+											Key:      "accesskey",
 											Optional: &trueVal,
 										},
 									},
