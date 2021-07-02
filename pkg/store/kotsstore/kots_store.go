@@ -3,6 +3,7 @@ package kotsstore
 import (
 	"context"
 	"database/sql"
+	"log"
 	"os"
 	"strings"
 	"time"
@@ -46,11 +47,7 @@ func init() {
 }
 
 func (s *KOTSStore) Init() error {
-	if strings.HasPrefix(os.Getenv("STORAGE_BASEURI"), "docker://") {
-		return nil
-	}
-
-	if err := filestore.Init(); err != nil {
+	if err := filestore.GetStore().Init(); err != nil {
 		return errors.Wrap(err, "failed to initialize the file store")
 	}
 
@@ -58,10 +55,30 @@ func (s *KOTSStore) Init() error {
 }
 
 func (s *KOTSStore) WaitForReady(ctx context.Context) error {
-	err := waitForPostgres(ctx)
-	if err != nil {
-		return errors.Wrap(err, "failed to wait for postgres")
+	errCh := make(chan error, 2)
+
+	go func() {
+		errCh <- waitForPostgres(ctx)
+	}()
+
+	go func() {
+		errCh <- filestore.GetStore().WaitForReady(ctx)
+	}()
+
+	isError := false
+	for i := 0; i < 2; i++ {
+		err := <-errCh
+		if err != nil {
+			log.Println(err.Error())
+			isError = true
+			break
+		}
 	}
+
+	if isError {
+		return errors.New("failed to wait for dependencies")
+	}
+
 	return nil
 }
 

@@ -19,6 +19,8 @@ import (
 type UpstreamSettings struct {
 	SharedPassword         string
 	SharedPasswordBcrypt   string
+	S3AccessKey            string
+	S3SecretKey            string
 	JWT                    string
 	PostgresPassword       string
 	APIEncryptionKey       string
@@ -83,6 +85,8 @@ func loadUpstreamSettingsFromFiles(settings *UpstreamSettings, renderDir string,
 
 		if gvk.Group == "" && gvk.Version == "v1" && gvk.Kind == "Secret" {
 			loadUpstreamSettingsFromSecret(settings, obj.(*corev1.Secret))
+		} else if gvk.Group == "apps" && gvk.Version == "v1" && gvk.Kind == "Deployment" {
+			loadUpstreamSettingsFromDeployment(settings, obj.(*appsv1.Deployment))
 		} else if gvk.Group == "apps" && gvk.Version == "v1" && gvk.Kind == "StatefulSet" {
 			loadUpstreamSettingsFromStatefulSet(settings, obj.(*appsv1.StatefulSet))
 		}
@@ -95,12 +99,26 @@ func loadUpstreamSettingsFromSecret(settings *UpstreamSettings, secret *corev1.S
 	switch secret.Name {
 	case "kotsadm-password":
 		settings.SharedPasswordBcrypt = string(secret.Data["passwordBcrypt"])
+	case "kotsadm-minio":
+		settings.S3AccessKey = string(secret.Data["accesskey"])
+		settings.S3SecretKey = string(secret.Data["secretkey"])
 	case "kotsadm-session":
 		settings.JWT = string(secret.Data["key"])
 	case "kotsadm-postgres":
 		settings.PostgresPassword = string(secret.Data["password"])
 	case "kotsadm-encryption":
 		settings.APIEncryptionKey = string(secret.Data["encryptionKey"])
+	}
+}
+
+func loadUpstreamSettingsFromDeployment(settings *UpstreamSettings, deployment *appsv1.Deployment) {
+	for _, c := range deployment.Spec.Template.Spec.Containers {
+		for _, e := range c.Env {
+			switch e.Name {
+			case "AUTO_CREATE_CLUSTER_TOKEN", "KOTSADM_TOKEN":
+				settings.AutoCreateClusterToken = e.Value
+			}
+		}
 	}
 }
 
@@ -122,6 +140,8 @@ func generateNewAdminConsoleFiles(settings *UpstreamSettings) ([]types.UpstreamF
 		Namespace:              "default",
 		SharedPassword:         settings.SharedPassword,
 		SharedPasswordBcrypt:   settings.SharedPasswordBcrypt,
+		S3AccessKey:            settings.S3AccessKey,
+		S3SecretKey:            settings.S3SecretKey,
 		JWT:                    settings.JWT,
 		PostgresPassword:       settings.PostgresPassword,
 		APIEncryptionKey:       settings.APIEncryptionKey,

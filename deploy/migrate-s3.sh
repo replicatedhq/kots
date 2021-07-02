@@ -1,6 +1,7 @@
-#!bin/bash
+#!/bin/bash
 
 set -e
+set -o pipefail
 
 export ARCHIVES_DIR=/kotsadmdata/archives
 export MIGRATION_FILE=$ARCHIVES_DIR/s3-migration.txt

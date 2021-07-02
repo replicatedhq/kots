@@ -41,19 +41,31 @@ func getKotsadmYAML(deployOptions types.DeployOptions) (map[string][]byte, error
 	}
 	docs["kotsadm-serviceaccount.yaml"] = serviceAccount.Bytes()
 
-	size, err := getSize(deployOptions, "kotsadm", resource.MustParse("4Gi"))
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to get size")
+	if deployOptions.IncludeMinio {
+		kotsadmDeployment, err := kotsadmobjects.KotsadmDeployment(deployOptions)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to get kotsadm deployment definition")
+		}
+		var deployment bytes.Buffer
+		if err := s.Encode(kotsadmDeployment, &deployment); err != nil {
+			return nil, errors.Wrap(err, "failed to marshal kotsadm deployment")
+		}
+		docs["kotsadm-deployment.yaml"] = deployment.Bytes()
+	} else {
+		size, err := getSize(deployOptions, "kotsadm", resource.MustParse("4Gi"))
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to get size")
+		}
+		kotsadmSts, err := kotsadmobjects.KotsadmStatefulSet(deployOptions, size)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to get kotsadm statefulset definition")
+		}
+		var statefulset bytes.Buffer
+		if err := s.Encode(kotsadmSts, &statefulset); err != nil {
+			return nil, errors.Wrap(err, "failed to marshal kotsadm statefulset")
+		}
+		docs["kotsadm-statefulset.yaml"] = statefulset.Bytes()
 	}
-	kotsadmSts, err := kotsadmobjects.KotsadmStatefulSet(deployOptions, size)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to get kotsadm statefulset definition")
-	}
-	var statefulset bytes.Buffer
-	if err := s.Encode(kotsadmSts, &statefulset); err != nil {
-		return nil, errors.Wrap(err, "failed to marshal kotsadm statefulset")
-	}
-	docs["kotsadm-statefulset.yaml"] = statefulset.Bytes()
 
 	var nodePort int32
 	if deployOptions.IngressConfig.Spec.Enabled && deployOptions.IngressConfig.Spec.NodePort != nil {
@@ -130,12 +142,18 @@ func ensureKotsadmComponent(deployOptions *types.DeployOptions, clientset *kuber
 		return errors.Wrap(err, "failed to ensure custom branding")
 	}
 
-	size, err := getSize(*deployOptions, "kotsadm", resource.MustParse("4Gi"))
-	if err != nil {
-		return errors.Wrap(err, "failed to get size")
-	}
-	if err := ensureKotsadmStatefulSet(*deployOptions, clientset, size); err != nil {
-		return errors.Wrap(err, "failed to ensure kotsadm statefulset")
+	if deployOptions.IncludeMinio {
+		if err := ensureKotsadmDeployment(*deployOptions, clientset); err != nil {
+			return errors.Wrap(err, "failed to ensure kotsadm deployment")
+		}
+	} else {
+		size, err := getSize(*deployOptions, "kotsadm", resource.MustParse("4Gi"))
+		if err != nil {
+			return errors.Wrap(err, "failed to get size")
+		}
+		if err := ensureKotsadmStatefulSet(*deployOptions, clientset, size); err != nil {
+			return errors.Wrap(err, "failed to ensure kotsadm statefulset")
+		}
 	}
 
 	var nodePort int32
@@ -311,6 +329,37 @@ func ensureKotsadmServiceAccount(namespace string, clientset *kubernetes.Clients
 		if err != nil {
 			return errors.Wrap(err, "failed to create serviceaccount")
 		}
+	}
+
+	return nil
+}
+
+func ensureKotsadmDeployment(deployOptions types.DeployOptions, clientset *kubernetes.Clientset) error {
+	desiredDeployment, err := kotsadmobjects.KotsadmDeployment(deployOptions)
+	if err != nil {
+		return errors.Wrap(err, "failed to get desired kotsadm deployment definition")
+	}
+
+	existingDeployment, err := clientset.AppsV1().Deployments(deployOptions.Namespace).Get(context.TODO(), "kotsadm", metav1.GetOptions{})
+	if err != nil {
+		if !kuberneteserrors.IsNotFound(err) {
+			return errors.Wrap(err, "failed to get existing deployment")
+		}
+
+		_, err := clientset.AppsV1().Deployments(deployOptions.Namespace).Create(context.TODO(), desiredDeployment, metav1.CreateOptions{})
+		if err != nil {
+			return errors.Wrap(err, "failed to create deployment")
+		}
+		return nil
+	}
+
+	if err = kotsadmobjects.UpdateKotsadmDeployment(existingDeployment, desiredDeployment); err != nil {
+		return errors.Wrap(err, "failed to merge deployments")
+	}
+
+	_, err = clientset.AppsV1().Deployments(deployOptions.Namespace).Update(context.TODO(), existingDeployment, metav1.UpdateOptions{})
+	if err != nil {
+		return errors.Wrap(err, "failed to update kotsadm deployment")
 	}
 
 	return nil
