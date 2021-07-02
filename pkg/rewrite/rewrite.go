@@ -104,7 +104,6 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 		CreateAppDir:         rewriteOptions.CreateAppDir,
 		IncludeAdminConsole:  includeAdminConsole,
 		PreserveInstallation: true,
-		IsOpenShift:          k8sutil.IsOpenShift(clientset),
 	}
 	if err := upstream.WriteUpstream(u, writeUpstreamOptions); err != nil {
 		log.FinishSpinnerWithError()
