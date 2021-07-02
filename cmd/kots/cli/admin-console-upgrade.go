@@ -58,6 +58,7 @@ func AdminConsoleUpgradeCmd() *cobra.Command {
 				SimultaneousUploads:       simultaneousUploads,
 				StorageBaseURI:            v.GetString("storage-base-uri"),
 				StorageBaseURIPlainHTTP:   v.GetBool("storage-base-uri-plainhttp"),
+				IncludeMinio:              v.GetBool("with-minio"),
 				IncludeDockerDistribution: v.GetBool("with-dockerdistribution"),
 
 				KotsadmOptions: kotsadmtypes.KotsadmOptions{
@@ -109,7 +110,7 @@ func AdminConsoleUpgradeCmd() *cobra.Command {
 	cmd.Flags().String("registry-username", "", "user name to use to authenticate with the registry")
 	cmd.Flags().String("registry-password", "", "password to use to authenticate with the registry")
 	cmd.Flags().String("kotsadm-namespace", "", "set to override the namespace of kotsadm images. this may create an incompatible deployment because the version of kots and kotsadm are designed to work together")
-	cmd.Flags().String("wait-duration", "3m", "timeout out to be used while waiting for individual components to be ready.  must be in Go duration format (eg: 10s, 2m)")
+	cmd.Flags().String("wait-duration", "2m", "timeout out to be used while waiting for individual components to be ready.  must be in Go duration format (eg: 10s, 2m)")
 	cmd.Flags().Bool("ensure-rbac", true, "when set, kots will create the roles and rolebindings necessary to manage applications")
 	cmd.Flags().String("airgap-upload-parallelism", "", "the number of chunks to upload in parallel when installing or updating in airgap mode")
 	cmd.Flags().MarkHidden("force-upgrade-kurl")
@@ -120,9 +121,11 @@ func AdminConsoleUpgradeCmd() *cobra.Command {
 
 	// options for the alpha feature of using a reg instead of s3 for storage
 	cmd.Flags().String("storage-base-uri", "", "an s3 or oci-registry uri to use for kots persistent storage in the cluster")
+	cmd.Flags().Bool("with-minio", true, "when set, kots install will deploy a local minio instance for storage")
 	cmd.Flags().Bool("with-dockerdistribution", false, "when set, kots install will deploy a local instance of docker distribution for storage")
 	cmd.Flags().Bool("storage-base-uri-plainhttp", false, "when set, use plain http (not https) connecting to the local oci storage")
 	cmd.Flags().MarkHidden("storage-base-uri")
+	cmd.Flags().MarkHidden("with-minio")
 	cmd.Flags().MarkHidden("with-dockerdistribution")
 	cmd.Flags().MarkHidden("storage-base-uri-plainhttp")
 

@@ -3,18 +3,22 @@ package kotsstore
 import (
 	"context"
 	"database/sql"
+	"log"
 	"os"
 	"strings"
 	"time"
 
+	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
+	awssession "github.com/aws/aws-sdk-go/aws/session"
+	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/pkg/errors"
 	kotsscheme "github.com/replicatedhq/kots/kotskinds/client/kotsclientset/scheme"
-	"github.com/replicatedhq/kots/pkg/filestore"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	kotsadmtypes "github.com/replicatedhq/kots/pkg/kotsadm/types"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/persistence"
+	kotss3 "github.com/replicatedhq/kots/pkg/s3"
 	troubleshootscheme "github.com/replicatedhq/troubleshoot/pkg/client/troubleshootclientset/scheme"
 	veleroscheme "github.com/vmware-tanzu/velero/pkg/generated/clientset/versioned/scheme"
 	corev1 "k8s.io/api/core/v1"
@@ -50,18 +54,62 @@ func (s *KOTSStore) Init() error {
 		return nil
 	}
 
-	if err := filestore.Init(); err != nil {
-		return errors.Wrap(err, "failed to initialize the file store")
+	if os.Getenv("S3_BUCKET_NAME") == "ship-pacts" {
+		log.Println("Not creating bucket because the desired name is ship-pacts. Consider using a different bucket name to make this work.")
+		return errors.New("bad bucket name")
+	}
+
+	if os.Getenv("S3_SKIP_ENSURE_BUCKET") == "1" {
+		log.Println("Not creating bucket because S3_SKIP_ENSURE_BUCKET was set.")
+		return nil
+	}
+
+	newSession := awssession.New(kotss3.GetConfig())
+	s3Client := s3.New(newSession)
+
+	_, err := s3Client.HeadBucket(&s3.HeadBucketInput{
+		Bucket: aws.String(os.Getenv("S3_BUCKET_NAME")),
+	})
+
+	if err == nil {
+		return nil
+	}
+
+	_, err = s3Client.CreateBucket(&s3.CreateBucketInput{
+		Bucket: aws.String(os.Getenv("S3_BUCKET_NAME")),
+	})
+	if err != nil {
+		return errors.Wrap(err, "failed to create bucket")
 	}
 
 	return nil
 }
 
 func (s *KOTSStore) WaitForReady(ctx context.Context) error {
-	err := waitForPostgres(ctx)
-	if err != nil {
-		return errors.Wrap(err, "failed to wait for postgres")
+	errCh := make(chan error, 2)
+
+	go func() {
+		errCh <- waitForPostgres(ctx)
+	}()
+
+	go func() {
+		errCh <- waitForS3(ctx)
+	}()
+
+	isError := false
+	for i := 0; i < 2; i++ {
+		err := <-errCh
+		if err != nil {
+			log.Println(err.Error())
+			isError = true
+			break
+		}
 	}
+
+	if isError {
+		return errors.New("failed to wait for dependencies")
+	}
+
 	return nil
 }
 
@@ -92,6 +140,49 @@ func waitForPostgres(ctx context.Context) error {
 	}
 }
 
+func waitForS3(ctx context.Context) error {
+	if strings.HasPrefix(os.Getenv("STORAGE_BASEURI"), "docker://") {
+		return nil
+	}
+
+	if os.Getenv("S3_BUCKET_NAME") == "ship-pacts" {
+		log.Println("Not creating bucket because the desired name is ship-pacts. Consider using a different bucket name to make this work.")
+		return errors.New("bad bucket name")
+	}
+
+	if os.Getenv("S3_SKIP_ENSURE_BUCKET") == "1" {
+		log.Println("Not creating bucket because S3_SKIP_ENSURE_BUCKET was set.")
+		return nil
+	}
+
+	logger.Debug("waiting for object store to be ready")
+
+	newSession := awssession.New(kotss3.GetConfig())
+	s3Client := s3.New(newSession)
+
+	period := 1 * time.Second // TOOD: backoff
+	for {
+		_, err := s3Client.HeadBucket(&s3.HeadBucketInput{
+			Bucket: aws.String(os.Getenv("S3_BUCKET_NAME")),
+		})
+		if err == nil {
+			logger.Debug("object store is ready")
+			return nil
+		}
+		if awsErr, ok := err.(awserr.Error); ok && awsErr.Code() == "NotFound" {
+			logger.Debug("object store is ready")
+			return nil
+		}
+
+		select {
+		case <-time.After(period):
+			continue
+		case <-ctx.Done():
+			return errors.Wrap(err, "failed to find valid object store")
+		}
+	}
+}
+
 func (s *KOTSStore) IsNotFound(err error) bool {
 	if err == nil {
 		return false
@@ -103,10 +194,6 @@ func (s *KOTSStore) IsNotFound(err error) bool {
 	}
 
 	if cause == ErrNotFound {
-		return true
-	}
-
-	if os.IsNotExist(cause) {
 		return true
 	}
 
