@@ -1105,6 +1105,7 @@ func KotsadmStatefulSet(deployOptions types.DeployOptions, size resource.Quantit
 												Name: "kotsadm-minio",
 											},
 											Key: "accesskey",
+											Optional: &trueVal,
 										},
 									},
 								},
