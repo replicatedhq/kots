@@ -266,6 +266,7 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 		HTTPProxyEnvValue:   pullOptions.HTTPProxyEnvValue,
 		HTTPSProxyEnvValue:  pullOptions.HTTPSProxyEnvValue,
 		NoProxyEnvValue:     pullOptions.NoProxyEnvValue,
+		IsOpenShift:         k8sutil.IsOpenShift(clientset),
 	}
 	if err := upstream.WriteUpstream(u, writeUpstreamOptions); err != nil {
 		log.FinishSpinnerWithError()

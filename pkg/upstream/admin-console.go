@@ -17,18 +17,16 @@ import (
 )
 
 type UpstreamSettings struct {
-	SharedPassword       string
-	SharedPasswordBcrypt string
-	S3AccessKey          string
-	S3SecretKey          string
-	JWT                  string
-	PostgresPassword     string
-	APIEncryptionKey     string
-	HTTPProxyEnvValue    string
-	HTTPSProxyEnvValue   string
-	NoProxyEnvValue      string
-
+	SharedPassword         string
+	SharedPasswordBcrypt   string
+	JWT                    string
+	PostgresPassword       string
+	APIEncryptionKey       string
+	HTTPProxyEnvValue      string
+	HTTPSProxyEnvValue     string
+	NoProxyEnvValue        string
 	AutoCreateClusterToken string
+	IsOpenShift            bool
 }
 
 func generateAdminConsoleFiles(renderDir string, options types.WriteOptions) ([]types.UpstreamFile, error) {
@@ -39,6 +37,7 @@ func generateAdminConsoleFiles(renderDir string, options types.WriteOptions) ([]
 			HTTPProxyEnvValue:      options.HTTPProxyEnvValue,
 			HTTPSProxyEnvValue:     options.HTTPSProxyEnvValue,
 			NoProxyEnvValue:        options.NoProxyEnvValue,
+			IsOpenShift:            options.IsOpenShift,
 		}
 		return generateNewAdminConsoleFiles(settings)
 	}
@@ -50,6 +49,7 @@ func generateAdminConsoleFiles(renderDir string, options types.WriteOptions) ([]
 
 	settings := &UpstreamSettings{
 		AutoCreateClusterToken: uuid.New().String(),
+		IsOpenShift:            options.IsOpenShift,
 	}
 	if err := loadUpstreamSettingsFromFiles(settings, renderDir, existingFiles); err != nil {
 		return nil, errors.Wrap(err, "failed to find existing settings")
@@ -83,8 +83,8 @@ func loadUpstreamSettingsFromFiles(settings *UpstreamSettings, renderDir string,
 
 		if gvk.Group == "" && gvk.Version == "v1" && gvk.Kind == "Secret" {
 			loadUpstreamSettingsFromSecret(settings, obj.(*corev1.Secret))
-		} else if gvk.Group == "apps" && gvk.Version == "v1" && gvk.Kind == "Deployment" {
-			loadUpstreamSettingsFromDeployment(settings, obj.(*appsv1.Deployment))
+		} else if gvk.Group == "apps" && gvk.Version == "v1" && gvk.Kind == "StatefulSet" {
+			loadUpstreamSettingsFromStatefulSet(settings, obj.(*appsv1.StatefulSet))
 		}
 	}
 
@@ -95,9 +95,6 @@ func loadUpstreamSettingsFromSecret(settings *UpstreamSettings, secret *corev1.S
 	switch secret.Name {
 	case "kotsadm-password":
 		settings.SharedPasswordBcrypt = string(secret.Data["passwordBcrypt"])
-	case "kotsadm-minio":
-		settings.S3AccessKey = string(secret.Data["accesskey"])
-		settings.S3SecretKey = string(secret.Data["secretkey"])
 	case "kotsadm-session":
 		settings.JWT = string(secret.Data["key"])
 	case "kotsadm-postgres":
@@ -107,8 +104,8 @@ func loadUpstreamSettingsFromSecret(settings *UpstreamSettings, secret *corev1.S
 	}
 }
 
-func loadUpstreamSettingsFromDeployment(settings *UpstreamSettings, deployment *appsv1.Deployment) {
-	for _, c := range deployment.Spec.Template.Spec.Containers {
+func loadUpstreamSettingsFromStatefulSet(settings *UpstreamSettings, statefulset *appsv1.StatefulSet) {
+	for _, c := range statefulset.Spec.Template.Spec.Containers {
 		for _, e := range c.Env {
 			switch e.Name {
 			case "AUTO_CREATE_CLUSTER_TOKEN", "KOTSADM_TOKEN":
@@ -125,8 +122,6 @@ func generateNewAdminConsoleFiles(settings *UpstreamSettings) ([]types.UpstreamF
 		Namespace:              "default",
 		SharedPassword:         settings.SharedPassword,
 		SharedPasswordBcrypt:   settings.SharedPasswordBcrypt,
-		S3AccessKey:            settings.S3AccessKey,
-		S3SecretKey:            settings.S3SecretKey,
 		JWT:                    settings.JWT,
 		PostgresPassword:       settings.PostgresPassword,
 		APIEncryptionKey:       settings.APIEncryptionKey,
@@ -134,6 +129,7 @@ func generateNewAdminConsoleFiles(settings *UpstreamSettings) ([]types.UpstreamF
 		HTTPProxyEnvValue:      settings.HTTPProxyEnvValue,
 		HTTPSProxyEnvValue:     settings.HTTPSProxyEnvValue,
 		NoProxyEnvValue:        settings.NoProxyEnvValue,
+		IsOpenShift:            settings.IsOpenShift,
 		EnsureRBAC:             true,
 	}
 

@@ -127,13 +127,13 @@ func parseCertGenOutput(logs []byte) (string, error) {
 }
 
 func getPodSpec(clientset kubernetes.Interface, namespace string) (*corev1.Pod, error) {
-	existingDeployment, err := clientset.AppsV1().Deployments(namespace).Get(context.TODO(), "kotsadm", metav1.GetOptions{})
+	existingStatefulSet, err := clientset.AppsV1().StatefulSets(namespace).Get(context.TODO(), "kotsadm", metav1.GetOptions{})
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to get existing deployment")
+		return nil, errors.Wrap(err, "failed to get existing statefulset")
 	}
 
 	apiContainerIndex := -1
-	for i, container := range existingDeployment.Spec.Template.Spec.Containers {
+	for i, container := range existingStatefulSet.Spec.Template.Spec.Containers {
 		if container.Name == "kotsadm" {
 			apiContainerIndex = i
 			break
@@ -157,8 +157,8 @@ func getPodSpec(clientset kubernetes.Interface, namespace string) (*corev1.Pod, 
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
-			Namespace: existingDeployment.Namespace,
-			Labels:    existingDeployment.Labels,
+			Namespace: existingStatefulSet.Namespace,
+			Labels:    existingStatefulSet.Labels,
 		},
 		Spec: corev1.PodSpec{
 			SecurityContext: &securityContext,
@@ -173,7 +173,7 @@ func getPodSpec(clientset kubernetes.Interface, namespace string) (*corev1.Pod, 
 				},
 			},
 			RestartPolicy:    corev1.RestartPolicyNever,
-			ImagePullSecrets: existingDeployment.Spec.Template.Spec.ImagePullSecrets,
+			ImagePullSecrets: existingStatefulSet.Spec.Template.Spec.ImagePullSecrets,
 			Volumes: []corev1.Volume{
 				{
 					Name: "config",
@@ -196,7 +196,7 @@ func getPodSpec(clientset kubernetes.Interface, namespace string) (*corev1.Pod, 
 			},
 			Containers: []corev1.Container{
 				{
-					Image:           existingDeployment.Spec.Template.Spec.Containers[apiContainerIndex].Image,
+					Image:           existingStatefulSet.Spec.Template.Spec.Containers[apiContainerIndex].Image,
 					ImagePullPolicy: corev1.PullNever,
 					Name:            "join-cert-gen",
 					Command:         []string{"/usr/bin/kubeadm"},

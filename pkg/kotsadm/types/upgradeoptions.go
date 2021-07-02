@@ -12,7 +12,6 @@ type UpgradeOptions struct {
 	SimultaneousUploads       int
 	StorageBaseURI            string
 	StorageBaseURIPlainHTTP   bool
-	IncludeMinio              bool
 	IncludeDockerDistribution bool
 
 	KotsadmOptions KotsadmOptions
