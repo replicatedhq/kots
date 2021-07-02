@@ -123,7 +123,7 @@
     "markdown-it": "^10.0.0",
     "monaco-editor": "0.14.3",
     "monaco-editor-webpack-plugin": "^1.5.4",
-    "prismjs": "^1.23.0",
+    "prismjs": "^1.24.0",
     "query-string": "6.13.1",
     "randomstring": "^1.1.5",
     "rc-progress": "^2.5.2",
