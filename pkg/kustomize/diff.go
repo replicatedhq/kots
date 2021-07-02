@@ -89,7 +89,7 @@ func DiffAppVersionsForDownstream(downstreamName string, archive string, diffBas
 
 		linesAdded, linesRemoved, err := diffContent(string(baseContents), string(archiveContents))
 		if err != nil {
-			return nil, errors.Wrap(err, "failed to diff contents")
+			return nil, errors.Wrapf(err, "failed to diff base and archive contents %s", archiveFilename)
 		}
 
 		diff.LinesAdded += linesAdded

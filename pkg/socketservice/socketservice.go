@@ -272,12 +272,12 @@ func exportContent(allContent []byte, rel string, exportChartsDir string, filena
 	}
 
 	if err := os.MkdirAll(relDir, 0744); err != nil {
-		return errors.Wrap(err, "failed to mkdir for export chart")
+		return errors.Wrapf(err, "failed to mkdir for export chart %s", relDir)
 	}
 	exportFile := filepath.Join(relDir, filename)
 	err := ioutil.WriteFile(exportFile, allContent, 0644)
 	if err != nil {
-		return err
+		return errors.Wrapf(err, "failed to write file %s", exportFile)
 	}
 	return nil
 }

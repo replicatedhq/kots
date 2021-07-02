@@ -224,31 +224,35 @@ type ChartContent struct {
 	ChartName string `yaml:"name"`
 }
 
-func installHelm(helmDir string) error {
+func installHelm(helmDir string, namespace string) error {
 	version := "3.4.2"
 	chartsDir := filepath.Join(helmDir, "charts")
 	dirs, err := ioutil.ReadDir(chartsDir)
 	if err != nil {
 		return errors.Wrap(err, "failed to read archive dir")
 	}
+	if os.Getenv("KOTSADM_TARGET_NAMESPACE") != "" {
+		namespace = os.Getenv("KOTSADM_TARGET_NAMESPACE")
+	}
+
 	for _, dir := range dirs {
 		installDir := filepath.Join(chartsDir, dir.Name())
 		chartfilePath := filepath.Join(installDir, "Chart.yaml")
 		chartFile, err := ioutil.ReadFile(chartfilePath)
 		if err != nil {
-			return errors.Wrap(err, "failed to parse chart file")
+			return errors.Wrapf(err, "failed to parse %s", chartfilePath)
 		}
 		cname := ChartContent{}
 		err = yaml.Unmarshal(chartFile, &cname)
 		if err != nil {
-			return errors.Wrap(err, "failed to unmarshal chart file")
+			return errors.Wrapf(err, "failed to unmarshal %s", chartfilePath)
 		}
-		installOutput, err := exec.Command(fmt.Sprintf("helm%s", version), "upgrade", "-i", cname.ChartName, installDir).Output()
+		_, err = exec.Command(fmt.Sprintf("helm%s", version), "upgrade", "-i", cname.ChartName, installDir, "-n", namespace).Output()
 		if err != nil {
 			if ee, ok := err.(*exec.ExitError); ok {
 				err = fmt.Errorf("helm stderr: %q", string(ee.Stderr))
 			}
-			return errors.Wrap(err, string(installOutput))
+			return errors.Wrapf(err, "failed to install %s", installDir)
 		}
 	}
 	return nil
@@ -349,7 +353,7 @@ func (c *Client) registerHandlers(socketClient *socket.Client) error {
 				log.Printf("falied to unarchive current helm archive: %v", err)
 				return
 			}
-			if err := installHelm(helmDir); err != nil {
+			if err := installHelm(helmDir, args.Namespace); err != nil {
 				log.Printf("falied to install helm: %v", err)
 				return
 			}
