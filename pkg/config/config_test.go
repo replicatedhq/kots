@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	"github.com/pkg/errors"
-	"github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	"github.com/replicatedhq/kots/kotskinds/multitype"
 	"github.com/replicatedhq/kots/pkg/logger"
@@ -321,6 +320,7 @@ spec:
 		t.Run(tt.name, func(t *testing.T) {
 			req := require.New(t)
 
+			// in package myapigroupv1...
 			decode := scheme.Codecs.UniversalDeserializer().Decode
 			wantObj, _, err := decode([]byte(tt.want), nil, nil)
 			req.NoError(err)
@@ -360,8 +360,8 @@ func TestApplyValuesToConfig(t *testing.T) {
 		{
 			name: "create minimumCount",
 			config: kotsv1beta1.Config{
-				Spec: v1beta1.ConfigSpec{
-					Groups: []v1beta1.ConfigGroup{
+				Spec: kotsv1beta1.ConfigSpec{
+					Groups: []kotsv1beta1.ConfigGroup{
 						{
 							Name: "secrets",
 							Items: []kotsv1beta1.ConfigItem{
@@ -408,8 +408,8 @@ func TestApplyValuesToConfig(t *testing.T) {
 				},
 			},
 			want: kotsv1beta1.Config{
-				Spec: v1beta1.ConfigSpec{
-					Groups: []v1beta1.ConfigGroup{
+				Spec: kotsv1beta1.ConfigSpec{
+					Groups: []kotsv1beta1.ConfigGroup{
 						{
 							Name: "secrets",
 							Items: []kotsv1beta1.ConfigItem{
