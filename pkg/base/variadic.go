@@ -12,7 +12,6 @@ import (
 	"github.com/replicatedhq/kots/pkg/logger"
 	upstreamtypes "github.com/replicatedhq/kots/pkg/upstream/types"
 	yaml3 "gopkg.in/yaml.v3"
-	"k8s.io/client-go/kubernetes/scheme"
 )
 
 // Known issues and TODOs:
@@ -57,12 +56,19 @@ func processVariadicConfig(u *upstreamtypes.UpstreamFile, config *kotsv1beta1.Co
 				}
 
 				for _, newFileContent := range newFilesContent {
-					shortUUID := strings.Split(uuid.New().String(), "-")[0]
-
 					newFile := upstreamtypes.UpstreamFile{
-						Path:    fmt.Sprintf("%s-%s", u.Path, shortUUID),
 						Content: newFileContent,
 					}
+
+					shortUUID := strings.Split(uuid.New().String(), "-")[0]
+					pathParts := strings.Split(u.Path, ".")
+
+					if len(pathParts) > 1 {
+						newFile.Path = fmt.Sprintf("%s-%s.%s", pathParts[0], shortUUID, pathParts[1])
+					} else {
+						newFile.Path = fmt.Sprintf("%s-%s", pathParts[0], shortUUID)
+					}
+
 					fmt.Printf("newFile is %+v, %+v\n", newFile.Path, string(newFile.Content))
 
 					generatedFiles = append(generatedFiles, newFile)
@@ -95,50 +101,27 @@ func processVariadicConfig(u *upstreamtypes.UpstreamFile, config *kotsv1beta1.Co
 func getUpstreamTemplateData(upstreamContent []byte) (kotsv1beta1.RepeatTemplate, map[string]interface{}, error) {
 	var templateHeaders kotsv1beta1.RepeatTemplate
 
-	// get upstreamFile gvk
-	decode := scheme.Codecs.UniversalDeserializer().Decode
-	_, gvk, err := decode(upstreamContent, nil, nil)
-	if err != nil {
-		return templateHeaders, nil, errors.Wrap(err, "failed to decode upstreamFile")
-	}
-	// skip variadic config on kots kinds
-	if gvk != nil && gvk.Group == "kots.io" {
-		return templateHeaders, nil, fmt.Errorf("upstreamContent is a kots kind")
-	}
-
 	node := map[string]interface{}{}
 
 	if err := yaml3.Unmarshal(upstreamContent, node); err != nil {
 		return templateHeaders, nil, errors.Wrap(err, "failed to unmarshal upstreamFile")
 	}
-
-	if gvk != nil {
-		// create templateHeaders with gvk info
-		templateHeaders = kotsv1beta1.RepeatTemplate{
-			APIVersion: fmt.Sprintf("%s/%s", gvk.Group, gvk.Version),
-			Kind:       gvk.Kind,
+	if apiVersion, ok := node["apiVersion"]; ok {
+		switch v := apiVersion.(type) {
+		case string:
+			templateHeaders.APIVersion = v
+		default:
+			// upstream file 'apiVersion' is not a string, this cannot be a valid target file and should be skipped
+			return templateHeaders, nil, fmt.Errorf("template apiVersion is not a string")
 		}
-
-		// in case the APIVersion only has a version and no group, strip the leading /
-		templateHeaders.APIVersion = strings.TrimPrefix(templateHeaders.APIVersion, "/")
-	} else {
-		if apiVersion, ok := node["apiVersion"]; ok {
-			switch v := apiVersion.(type) {
-			case string:
-				templateHeaders.APIVersion = v
-			default:
-				// upstream file 'apiVersion' is not a string, this cannot be a valid target file and should be skipped
-				return templateHeaders, nil, fmt.Errorf("template apiVersion is not a string")
-			}
-		}
-		if kind, ok := node["kind"]; ok {
-			switch v := kind.(type) {
-			case string:
-				templateHeaders.Kind = v
-			default:
-				// upstream file 'kind' is not a string, this cannot be a valid target file and should be skipped
-				return templateHeaders, nil, fmt.Errorf("template kind is not a string")
-			}
+	}
+	if kind, ok := node["kind"]; ok {
+		switch v := kind.(type) {
+		case string:
+			templateHeaders.Kind = v
+		default:
+			// upstream file 'kind' is not a string, this cannot be a valid target file and should be skipped
+			return templateHeaders, nil, fmt.Errorf("template kind is not a string")
 		}
 	}
 

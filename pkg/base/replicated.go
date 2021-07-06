@@ -108,6 +108,22 @@ func renderReplicated(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (
 			}
 			base.Files = addGeneratedFiles(base.Files, subBase.Files)
 		}
+
+		if len(generatedFiles) > 0 {
+			u.Files = removeFileFromUpstream(u.Files, fileIndex)
+			u.Files = append(u.Files, generatedFiles...)
+			subBase, err := renderReplicated(u, renderOptions)
+			if err != nil {
+				return nil, errors.Wrap(err, "failed to render generated variadic files")
+			}
+			for _, renderedFile := range subBase.Files {
+				for _, generatedFile := range generatedFiles {
+					if renderedFile.Path == generatedFile.Path {
+						base.Files = append(base.Files, renderedFile)
+					}
+				}
+			}
+		}
 	}
 
 	// render helm charts that were specified
