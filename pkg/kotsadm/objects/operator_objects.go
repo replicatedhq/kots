@@ -187,7 +187,7 @@ func OperatorDeployment(deployOptions types.DeployOptions) (*appsv1.Deployment, 
 		RunAsUser: util.IntPointer(1001),
 	}
 	if deployOptions.IsOpenShift {
-		// need to include a security context since the operator pod is assoicated with a role/clusterrole that has wildcard privilages,
+		// need to include a security context since the operator pod is assoicated with a role/clusterrole that has wildcard privileges,
 		// which gives the operator pod/container the permission to run as any user id in openshift.
 		// so, run it with a specific user that falls in the allowable range by openshift for the namespace.
 		psc, err := k8sutil.GetOpenShiftPodSecurityContext(deployOptions.Namespace)

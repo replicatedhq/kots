@@ -97,7 +97,7 @@ func (s *S3Store) WaitForReady(ctx context.Context) error {
 		case <-time.After(period):
 			continue
 		case <-ctx.Done():
-			return errors.Wrap(err, "failed to find valid object store")
+			return errors.Errorf("failed to find valid object store: %s", ctx.Err())
 		}
 	}
 }

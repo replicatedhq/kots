@@ -738,7 +738,7 @@ func KotsadmStatefulSet(deployOptions types.DeployOptions, size resource.Quantit
 	}
 	if deployOptions.IsOpenShift {
 		// we have to specify a pod security context here because if we don't, here's what will happen:
-		// the kotsadm service account is associated with a role/clusterrole that has wildcard privilages,
+		// the kotsadm service account is associated with a role/clusterrole that has wildcard privileges,
 		// which gives the kotsadm pod/container the permission to run as any user id in openshift.
 		// now, since the kotsadm docker image defines user "kotsadm" with uid "1001",
 		// openshift will run the container with that user and won't automatically assign a uid and fsgroup.

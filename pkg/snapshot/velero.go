@@ -240,7 +240,7 @@ func TryGetVeleroNamespaceFromConfigMap(ctx context.Context, clientset kubernete
 }
 
 // DetectVeleroNamespace will detect and validate the velero namespace
-// kotsadmNamespace is only required in minimal rbac installations. if empty, cluster scope privilages will be needed to detect and validate velero
+// kotsadmNamespace is only required in minimal rbac installations. if empty, cluster scope privileges will be needed to detect and validate velero
 func DetectVeleroNamespace(ctx context.Context, clientset kubernetes.Interface, kotsadmNamespace string) (string, error) {
 	veleroNamespace := ""
 	if kotsadmNamespace != "" {
