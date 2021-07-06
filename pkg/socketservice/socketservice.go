@@ -8,11 +8,13 @@ import (
 	"io/ioutil"
 	"os"
 	"os/exec"
+	"path"
 	"path/filepath"
 	"strconv"
 	"sync"
 	"time"
 
+	"github.com/mholt/archiver"
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/kotskinds/multitype"
 	appstatustypes "github.com/replicatedhq/kots/pkg/api/appstatus/types"
@@ -53,6 +55,8 @@ type DeployArgs struct {
 	Namespace            string                `json:"namespace"`
 	PreviousManifests    string                `json:"previous_manifests"`
 	Manifests            string                `json:"manifests"`
+	PreviousCharts       []byte                `json:"previous_charts"`
+	Charts               []byte                `json:"charts"`
 	Wait                 bool                  `json:"wait"`
 	ResultCallback       string                `json:"result_callback"`
 	ClearNamespaces      []string              `json:"clear_namespaces"`
@@ -179,6 +183,134 @@ func processDeploySocketForApp(clusterSocket *ClusterSocket, a *apptypes.App) (b
 	return true, nil
 }
 
+func kustomizeCharts(deployedVersionArchive string, name string, version string) ([]byte, error) {
+	archive := []byte{}
+	archiveChartDir := filepath.Join(deployedVersionArchive, "overlays", "downstreams", name, "charts")
+	_, err := os.Stat(archiveChartDir)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return archive, nil
+		}
+		return archive, err
+	}
+
+	exportChartPath, err := ioutil.TempDir("", "kotsadm")
+	if err != nil {
+		return archive, errors.Wrap(err, "failed to create temp dir")
+	}
+	defer os.RemoveAll(exportChartPath)
+	exportChartsDir := filepath.Join(exportChartPath, "charts")
+	if _, err := os.Stat(exportChartsDir); os.IsNotExist(err) {
+		if err := os.MkdirAll(exportChartsDir, 0744); err != nil {
+			return archive, errors.Wrap(err, "failed to mkdir for archive chart")
+		}
+	}
+
+	baseDir := filepath.Join(deployedVersionArchive, "base", "charts")
+	baseFiles := []string{"Chart.yaml", "Chart.lock"}
+
+	err = filepath.Walk(archiveChartDir,
+		func(path string, info os.FileInfo, err error) error {
+			if err != nil {
+				return err
+			}
+			rel, err := filepath.Rel(archiveChartDir, filepath.Dir(path))
+			if err != nil {
+				return err
+			}
+			for _, filename := range baseFiles {
+				err = exportFile(baseDir, rel, exportChartsDir, filename)
+				if err != nil {
+					return errors.Wrapf(err, "failed to export file %s", filename)
+				}
+			}
+			if info.Name() == "kustomization.yaml" {
+				archiveChartOutput, err := exec.Command(fmt.Sprintf("kustomize%s", version), "build", filepath.Dir(path)).Output()
+				if err != nil {
+					if ee, ok := err.(*exec.ExitError); ok {
+						err = fmt.Errorf("kustomize %s: %q", path, string(ee.Stderr))
+					}
+					return errors.Wrapf(err, "failed to kustomize %s", path)
+				}
+				err = exportContent(archiveChartOutput, rel, exportChartsDir, "all.yaml")
+				if err != nil {
+					return errors.Wrapf(err, "failed to export content for %s", path)
+				}
+			}
+			return nil
+		})
+	if err != nil {
+		return archive, err
+	}
+
+	tempDir, err := ioutil.TempDir("", "helmkots")
+	if err != nil {
+		return archive, errors.Wrap(err, "failed to create temp dir")
+	}
+	defer os.RemoveAll(tempDir)
+	tarGz := archiver.TarGz{
+		Tar: &archiver.Tar{
+			ImplicitTopLevelFolder: true,
+		},
+	}
+	if err := tarGz.Archive([]string{exportChartsDir}, path.Join(tempDir, "helmcharts.tar.gz")); err != nil {
+		return archive, errors.Wrap(err, "failed to create tar gz")
+	}
+	archive, err = ioutil.ReadFile(path.Join(tempDir, "helmcharts.tar.gz"))
+	if err != nil {
+		return archive, errors.Wrap(err, "failed to read helm tar.gz file")
+	}
+	return archive, nil
+}
+
+func exportContent(allContent []byte, rel string, exportChartsDir string, filename string) error {
+	relDir := ""
+	// TODO: needs a comment explaining this
+	if filepath.Base(rel) != "crds" {
+		relDir = filepath.Join(exportChartsDir, rel, "templates")
+	} else {
+		relDir = filepath.Join(exportChartsDir, rel)
+	}
+
+	if err := os.MkdirAll(relDir, 0744); err != nil {
+		return errors.Wrapf(err, "failed to mkdir for export chart %s", relDir)
+	}
+	exportFile := filepath.Join(relDir, filename)
+	err := ioutil.WriteFile(exportFile, allContent, 0644)
+	if err != nil {
+		return errors.Wrapf(err, "failed to write file %s", exportFile)
+	}
+	return nil
+}
+
+func exportFile(baseDir string, rel string, exportChartsDir string, filename string) error {
+	if filename != "Chart.yaml" && filename != "Chart.lock" {
+		return nil
+	}
+
+	baseFile := filepath.Join(baseDir, rel, filename)
+	baseFileContent, err := ioutil.ReadFile(baseFile)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return nil
+		}
+		return errors.Wrap(err, "failed to read file from base")
+	}
+
+	relDir := filepath.Join(exportChartsDir, rel)
+	if err := os.MkdirAll(relDir, 0744); err != nil {
+		return errors.Wrap(err, "failed to create export chart dir")
+	}
+
+	exportFile := filepath.Join(relDir, filename)
+	err = ioutil.WriteFile(exportFile, baseFileContent, 0644)
+	if err != nil {
+		return errors.Wrap(err, "failed to write file to export dir")
+	}
+
+	return nil
+}
+
 func deployVersionForApp(clusterSocket *ClusterSocket, a *apptypes.App, deployedVersion *downstreamtypes.DownstreamVersion) error {
 	d, err := store.GetStore().GetDownstream(clusterSocket.ClusterID)
 	if err != nil {
@@ -261,7 +393,12 @@ func deployVersionForApp(clusterSocket *ClusterSocket, a *apptypes.App, deployed
 		return deployError
 	}
 	base64EncodedManifests := base64.StdEncoding.EncodeToString(renderedManifests)
-
+	// Run kustomization on the charts as well
+	deployedChartArchive, err := kustomizeCharts(deployedVersionArchive, d.Name, kotsKinds.KustomizeVersion())
+	if err != nil {
+		deployError = errors.Wrap(err, "failed to run kustomize on currently deployed charts")
+		return deployError
+	}
 	imagePullSecret := ""
 	secretFilename := filepath.Join(deployedVersionArchive, "overlays", "midstream", "secret.yaml")
 	_, err = os.Stat(secretFilename)
@@ -280,6 +417,7 @@ func deployVersionForApp(clusterSocket *ClusterSocket, a *apptypes.App, deployed
 
 	// get previous manifests (if any)
 	base64EncodedPreviousManifests := ""
+	previouslyDeployedChartArchive := []byte{}
 	previouslyDeployedSequence, err := store.GetStore().GetPreviouslyDeployedSequence(a.ID, clusterSocket.ClusterID)
 	if err != nil {
 		deployError = errors.Wrap(err, "failed to get previously deployed sequence")
@@ -321,7 +459,15 @@ func deployVersionForApp(clusterSocket *ClusterSocket, a *apptypes.App, deployed
 				deployError = errors.Wrap(err, "failed to run kustomize for previously deployed app version")
 				return deployError
 			}
+
 			base64EncodedPreviousManifests = base64.StdEncoding.EncodeToString(previousRenderedManifests)
+			// Run kustomization on the charts as well
+			previouslyDeployedChartArchive, err = kustomizeCharts(previouslyDeployedVersionArchive, d.Name, kotsKinds.KustomizeVersion())
+			if err != nil {
+				deployError = errors.Wrap(err, "failed to run kustomize on previously deployed charts")
+				return deployError
+			}
+
 		}
 	}
 
@@ -334,6 +480,8 @@ func deployVersionForApp(clusterSocket *ClusterSocket, a *apptypes.App, deployed
 		Namespace:            ".",
 		Manifests:            base64EncodedManifests,
 		PreviousManifests:    base64EncodedPreviousManifests,
+		Charts:               deployedChartArchive,
+		PreviousCharts:       previouslyDeployedChartArchive,
 		ResultCallback:       "/api/v1/deploy/result",
 		Wait:                 false,
 		AnnotateSlug:         os.Getenv("ANNOTATE_SLUG") != "",

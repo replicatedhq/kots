@@ -4,13 +4,18 @@ import (
 	"context"
 	"encoding/base64"
 	"fmt"
+	"io/ioutil"
 	"log"
+	"os"
+	"os/exec"
+	"path/filepath"
 	"strings"
 	"time"
 
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/kotsadm/operator/pkg/applier"
 	"github.com/replicatedhq/kots/kotsadm/operator/pkg/util"
+	"github.com/replicatedhq/yaml/v3"
 	appsv1 "k8s.io/api/apps/v1"
 	batchv1 "k8s.io/api/batch/v1"
 	batchv1beta1 "k8s.io/api/batch/v1beta1"
@@ -32,7 +37,7 @@ import (
 
 var metadataAccessor = meta.NewAccessor()
 
-type applyResult struct {
+type commandResult struct {
 	hasErr      bool
 	multiStdout [][]byte
 	multiStderr [][]byte
@@ -238,7 +243,7 @@ func (c *Client) ensureNamespacePresent(name string) error {
 	return nil
 }
 
-func (c *Client) ensureResourcesPresent(applicationManifests ApplicationManifests) (*applyResult, error) {
+func (c *Client) ensureResourcesPresent(applicationManifests ApplicationManifests) (*commandResult, error) {
 	targetNamespace := c.TargetNamespace
 	if applicationManifests.Namespace != "." {
 		targetNamespace = applicationManifests.Namespace
@@ -284,7 +289,12 @@ func (c *Client) ensureResourcesPresent(applicationManifests ApplicationManifest
 			}
 
 			if dryRunErr != nil {
-				if err := c.sendResult(applicationManifests, true, dryrunStdout, dryrunStderr, []byte{}, []byte{}); err != nil {
+				dryrunResult := &commandResult{
+					hasErr:      true,
+					multiStdout: [][]byte{dryrunStdout},
+					multiStderr: [][]byte{dryrunStderr},
+				}
+				if err := c.sendResult(applicationManifests, dryrunResult, nil, nil); err != nil {
 					return nil, errors.Wrap(err, "failed to report dry run status")
 				}
 
@@ -305,7 +315,12 @@ func (c *Client) ensureResourcesPresent(applicationManifests ApplicationManifest
 			log.Printf("stderr (first apply) = %s", applyStderr)
 			log.Printf("error (CRDS): %s", applyErr.Error())
 
-			if err := c.sendResult(applicationManifests, applyErr != nil, []byte{}, []byte{}, applyStdout, applyStderr); err != nil {
+			applyResult := &commandResult{
+				hasErr:      true,
+				multiStdout: [][]byte{applyStdout},
+				multiStderr: [][]byte{applyStderr},
+			}
+			if err := c.sendResult(applicationManifests, nil, applyResult, nil); err != nil {
 				return nil, errors.Wrap(err, "failed to report crd status")
 			}
 
@@ -348,7 +363,7 @@ func (c *Client) ensureResourcesPresent(applicationManifests ApplicationManifest
 		}
 	}
 
-	result := &applyResult{
+	result := &commandResult{
 		hasErr:      hasErr,
 		multiStderr: multiStderr,
 		multiStdout: multiStdout,
@@ -442,6 +457,61 @@ func (c *Client) clearNamespace(slug string, namespace string, isRestore bool, r
 	}
 
 	return clear, nil
+}
+
+func (c *Client) installHelm(helmDir string, namespace string) (*commandResult, error) {
+	version := "3.4.2"
+	chartsDir := filepath.Join(helmDir, "charts")
+	dirs, err := ioutil.ReadDir(chartsDir)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to read archive dir")
+	}
+	if os.Getenv("KOTSADM_TARGET_NAMESPACE") != "" {
+		namespace = os.Getenv("KOTSADM_TARGET_NAMESPACE")
+	}
+
+	var hasErr bool
+	var multiStdout, multiStderr [][]byte
+	for _, dir := range dirs {
+		installDir := filepath.Join(chartsDir, dir.Name())
+		chartfilePath := filepath.Join(installDir, "Chart.yaml")
+		chartFile, err := ioutil.ReadFile(chartfilePath)
+		if err != nil {
+			return nil, errors.Wrapf(err, "failed to parse %s", chartfilePath)
+		}
+
+		cname := struct {
+			ChartName string `yaml:"name"`
+		}{}
+		err = yaml.Unmarshal(chartFile, &cname)
+		if err != nil {
+			return nil, errors.Wrapf(err, "failed to unmarshal %s", chartfilePath)
+		}
+
+		log.Printf("installing chart %s in namespace %s", cname.ChartName, namespace)
+		cmd := exec.Command(fmt.Sprintf("helm%s", version), "upgrade", "-i", cname.ChartName, installDir, "-n", namespace)
+		stdout, stderr, err := applier.Run(cmd)
+		if err != nil {
+			log.Printf("stdout (apply) = %s", stdout)
+			log.Printf("stderr (apply) = %s", stderr)
+			log.Printf("error: %s", err.Error())
+			hasErr = true
+		}
+
+		if stdout != nil {
+			multiStdout = append(multiStdout, stdout)
+		}
+		if stderr != nil {
+			multiStderr = append(multiStderr, stderr)
+		}
+	}
+
+	result := &commandResult{
+		hasErr:      hasErr,
+		multiStderr: multiStderr,
+		multiStdout: multiStdout,
+	}
+	return result, nil
 }
 
 func parseK8sYaml(doc []byte) (k8sruntime.Object, *k8sschema.GroupVersionKind, error) {
