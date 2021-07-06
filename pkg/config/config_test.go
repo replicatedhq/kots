@@ -5,8 +5,8 @@ import (
 	"testing"
 
 	"github.com/pkg/errors"
-	"github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
+	kotsscheme "github.com/replicatedhq/kots/kotskinds/client/kotsclientset/scheme"
 	"github.com/replicatedhq/kots/kotskinds/multitype"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/template"
@@ -261,6 +261,7 @@ spec:
       default: "onetwothree"
       repeatable: true
       minimumCount: 1
+      count: 0
       templates:
       - apiVersion: apps/v1
         kind: Deployment
@@ -301,7 +302,9 @@ spec:
       title: "Secret Name"
       default: "onetwothree"
       repeatable: true
-      minimumCount: 3
+      minimumCount: 1
+      countByGroup:
+        secrets: 3
       templates:
       - apiVersion: apps/v1
         kind: Deployment
@@ -321,6 +324,9 @@ spec:
 		t.Run(tt.name, func(t *testing.T) {
 			req := require.New(t)
 
+			kotsscheme.AddToScheme(scheme.Scheme)
+
+			// in package myapigroupv1...
 			decode := scheme.Codecs.UniversalDeserializer().Decode
 			wantObj, _, err := decode([]byte(tt.want), nil, nil)
 			req.NoError(err)
@@ -360,8 +366,8 @@ func TestApplyValuesToConfig(t *testing.T) {
 		{
 			name: "create minimumCount",
 			config: kotsv1beta1.Config{
-				Spec: v1beta1.ConfigSpec{
-					Groups: []v1beta1.ConfigGroup{
+				Spec: kotsv1beta1.ConfigSpec{
+					Groups: []kotsv1beta1.ConfigGroup{
 						{
 							Name: "secrets",
 							Items: []kotsv1beta1.ConfigItem{
@@ -369,7 +375,9 @@ func TestApplyValuesToConfig(t *testing.T) {
 									Name:         "secretName",
 									Repeatable:   true,
 									MinimumCount: 1,
-									Count:        2,
+									CountByGroup: map[string]int{
+										"secrets": 2,
+									},
 									ValuesByGroup: kotsv1beta1.ValuesByGroup{
 										"secrets": {
 											"secretName-1": "111",
@@ -408,8 +416,8 @@ func TestApplyValuesToConfig(t *testing.T) {
 				},
 			},
 			want: kotsv1beta1.Config{
-				Spec: v1beta1.ConfigSpec{
-					Groups: []v1beta1.ConfigGroup{
+				Spec: kotsv1beta1.ConfigSpec{
+					Groups: []kotsv1beta1.ConfigGroup{
 						{
 							Name: "secrets",
 							Items: []kotsv1beta1.ConfigItem{
@@ -417,7 +425,9 @@ func TestApplyValuesToConfig(t *testing.T) {
 									Name:         "secretName",
 									Repeatable:   true,
 									MinimumCount: 1,
-									Count:        2,
+									CountByGroup: map[string]int{
+										"secrets": 2,
+									},
 									ValuesByGroup: kotsv1beta1.ValuesByGroup{
 										"secrets": {
 											"secretName-1": "123",

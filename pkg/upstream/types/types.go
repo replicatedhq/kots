@@ -47,7 +47,6 @@ type WriteOptions struct {
 	// Set to true on initial installation when an unencrypted config file is provided
 	EncryptConfig  bool
 	SharedPassword string
-	IsOpenShift    bool
 }
 
 type FetchOptions struct {
