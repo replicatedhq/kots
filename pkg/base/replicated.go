@@ -51,7 +51,8 @@ func renderReplicated(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (
 		return nil, errors.Wrap(err, "failed to template config objects")
 	}
 
-	for _, upstreamFile := range u.Files {
+	for fileIndex, upstreamFile := range u.Files {
+		fmt.Printf("processing upstream file %s\n", upstreamFile.Path)
 		if renderOptions.ExcludeKotsKinds {
 			// kots kinds are not expected to be valid yaml after builder.RenderTemplate
 			// this will prevent errors later from ShouldBeIncludedInBaseKustomization
@@ -72,7 +73,7 @@ func renderReplicated(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (
 			upstreamFile.Content = bytes.Join(newContent, []byte("\n---\n"))
 		}
 
-		err = processVariadicConfig(&upstreamFile, actualizedConfig, renderOptions.Log)
+		generatedFiles, err := processVariadicConfig(&upstreamFile, actualizedConfig, renderOptions.Log)
 		if err != nil {
 			return nil, errors.Wrapf(err, "failed to process variadic config in file %s", upstreamFile.Path)
 		}
@@ -96,6 +97,16 @@ func renderReplicated(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (
 				f.Error = err
 				commonBase.ErrorFiles = append(commonBase.ErrorFiles, f)
 			}
+		}
+
+		if len(generatedFiles) > 0 {
+			u.Files = removeFileFromUpstream(u.Files, fileIndex)
+			u.Files = append(u.Files, generatedFiles...)
+			subBase, err := renderReplicated(u, renderOptions)
+			if err != nil {
+				return nil, errors.Wrap(err, "failed to render generated variadic files")
+			}
+			base.Files = addGeneratedFiles(base.Files, subBase.Files)
 		}
 	}
 
@@ -545,4 +556,23 @@ func chartArchiveToSparseUpstream(chartArchivePath string) (*upstreamtypes.Upstr
 	}
 
 	return upstream, nil
+}
+
+func removeFileFromUpstream(files []upstreamtypes.UpstreamFile, index int) []upstreamtypes.UpstreamFile {
+	files[index] = files[len(files)-1]
+	return files[:len(files)-1]
+}
+
+func addGeneratedFiles(files []BaseFile, subFiles []BaseFile) []BaseFile {
+	for _, subFile := range subFiles {
+		for _, file := range files {
+			if subFile.Path == file.Path {
+				continue
+			}
+		}
+		fmt.Printf("appending file %s\n\n", subFile.Path)
+		files = append(files, subFile)
+	}
+
+	return files
 }

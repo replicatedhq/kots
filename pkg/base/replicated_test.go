@@ -1,6 +1,7 @@
 package base
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/replicatedhq/kots/pkg/logger"
@@ -9,6 +10,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
+
 	"k8s.io/client-go/kubernetes/scheme"
 )
 
@@ -308,10 +311,11 @@ func Test_renderReplicated(t *testing.T) {
 	// secretName-3 tests repeatable items with a bool
 	// don't touch this! tests merging repeatable items with existing items
 	tests := []struct {
-		name          string
-		upstream      *upstreamtypes.Upstream
-		renderOptions *RenderOptions
-		expectedFile  BaseFile
+		name               string
+		upstream           *upstreamtypes.Upstream
+		renderOptions      *RenderOptions
+		expectedDeployment BaseFile
+		expectedSecret     BaseFile
 	}{
 		{
 			name: "replace array with repeat values",
@@ -374,6 +378,11 @@ spec:
         name: my-deploy
         namespace: my-app
         yamlPath: spec.template.spec.volumes[1].projected.sources[1]
+      - apiVersion: v1
+        kind: Secret
+        name: my-secret
+        namespace: my-app
+        yamlPath:
 `,
 						),
 					},
@@ -434,15 +443,30 @@ spec:
               metaData:
                 pod: repl{{ ConfigOption "podName"}}
                 fileName: 'repl{{ ConfigOptionName "secretName"}}'
+              items:
+                - key: "data"
+                  path: 'my-secrets/{{repl ConfigOption "secretName"}}'
           - secret:
               name: "don't touch this either!"`),
+					},
+					{
+						Path: "secret.yaml",
+						Content: []byte(
+							`apiVersion: v1
+kind: Secret
+metadata:
+  name: my-secret
+  namespace: my-app
+type: Opaque
+data:
+  password: MTIz`),
 					},
 				},
 			},
 			renderOptions: &RenderOptions{
 				Log: logger.NewCLILogger(),
 			},
-			expectedFile: BaseFile{
+			expectedDeployment: BaseFile{
 				Path: "deployment.yaml",
 				Content: []byte(
 					`apiVersion: apps/v1
@@ -480,18 +504,38 @@ spec:
                   metaData:
                     pod: "testPod"
                     fileName: "secretName-1"
+                  items:
+                  - key: "data"
+                    path: "my-secrets/123"
               - secret:
                   name: "456"
                   pod: "testPod"
                   metaData:
                     pod: "testPod"
                     fileName: "secretName-2"
+                  items:
+                  - key: "data"
+                    path: "my-secrets/456"
               - secret:
                   name: "789"
                   pod: "testPod"
                   metaData:
                     pod: "testPod"
-                    fileName: "secretName-3"`),
+                    fileName: "secretName-3"
+                  items:
+                  - key: "data"
+                    path: "my-secrets/789"`),
+			},
+			expectedSecret: BaseFile{
+				Path: "secret.yaml",
+				Content: []byte(
+					`apiVersion: v1
+kind: Secret
+metadata:
+  name: my-secret
+type: Opaque
+data:
+  data: MTIz`),
 			},
 		},
 	}
@@ -504,22 +548,39 @@ spec:
 			req.NoError(err)
 
 			decode := scheme.Codecs.UniversalDeserializer().Decode
-			obj, _, err := decode(test.expectedFile.Content, nil, nil)
+			depobj, _, err := decode(test.expectedDeployment.Content, nil, nil)
+			req.NoError(err)
 
-			expected := obj.(*appsv1.Deployment)
+			expectedDeployment := depobj.(*appsv1.Deployment)
+
+			secobj, _, err := decode(test.expectedSecret.Content, nil, nil)
+			req.NoError(err)
+
+			expectedSecret := secobj.(*corev1.Secret)
 
 			for _, targetFile := range base.Files {
-				if targetFile.Path == test.expectedFile.Path {
-					decode := scheme.Codecs.UniversalDeserializer().Decode
-					obj, _, err := decode(targetFile.Content, nil, nil)
+				obj, gvk, err := decode(targetFile.Content, nil, nil)
+				if err != nil {
+					continue
+				}
+				fmt.Printf("obj: %+v\n\n", obj)
 
+				if gvk.Kind == "deployment" {
 					deployment := obj.(*appsv1.Deployment)
 
-					req.NoError(err)
+					assert.ElementsMatch(t, expectedDeployment.Spec.Template.Spec.Volumes[1].Projected.Sources, deployment.Spec.Template.Spec.Volumes[1].Projected.Sources)
+				}
 
-					assert.ElementsMatch(t, expected.Spec.Template.Spec.Volumes[1].Projected.Sources, deployment.Spec.Template.Spec.Volumes[1].Projected.Sources)
+				if gvk.Kind == "secret" {
+					secret := obj.(*corev1.Secret)
+
+					fmt.Printf("secret is %+v\n", secret)
+
+					assert.Equal(t, expectedSecret, secret)
 				}
 			}
+			assert.Fail(t, "")
+
 		})
 	}
 }
