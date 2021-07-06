@@ -123,26 +123,36 @@ func ApplyValuesToConfig(config *kotsv1beta1.Config, values map[string]template.
 		for idxI, i := range g.Items {
 			if i.Repeatable {
 				if config.Spec.Groups[idxG].Items[idxI].ValuesByGroup == nil {
+					// initialize the appropriate maps
 					config.Spec.Groups[idxG].Items[idxI].ValuesByGroup = map[string]kotsv1beta1.GroupValues{}
+					config.Spec.Groups[idxG].Items[idxI].CountByGroup = map[string]int{}
 				}
 				for fieldName, item := range values {
 					if item.RepeatableItem == i.Name {
 						// nested too deep, split into another function?
 						if config.Spec.Groups[idxG].Items[idxI].ValuesByGroup[g.Name] == nil {
+							// initialize the map entries
 							config.Spec.Groups[idxG].Items[idxI].ValuesByGroup[g.Name] = map[string]interface{}{}
+							config.Spec.Groups[idxG].Items[idxI].CountByGroup[g.Name] = 0
 						}
 						config.Spec.Groups[idxG].Items[idxI].ValuesByGroup[g.Name][fieldName] = item.Value
 					}
 				}
-				for variadicGroup, groupValues := range i.ValuesByGroup {
-					if config.Spec.Groups[idxG].Items[idxI].ValuesByGroup[variadicGroup] == nil {
-						config.Spec.Groups[idxG].Items[idxI].ValuesByGroup[g.Name] = map[string]interface{}{}
-					}
+				for variadicGroup, groupValues := range config.Spec.Groups[idxG].Items[idxI].ValuesByGroup {
+					groupCount := i.CountByGroup[variadicGroup]
+
 					// if this item becomes variadic, ensure it has at least the minimum count
-					if i.Count < i.MinimumCount {
-						i.Count = i.MinimumCount
+					if groupCount < i.MinimumCount {
+						groupCount = i.MinimumCount
 					}
-					for len(groupValues) < i.Count {
+					// make sure the count is at least the number of items provided
+					if groupCount < len(groupValues) {
+						groupCount = len(groupValues)
+					}
+					// save updated Count back to config
+					config.Spec.Groups[idxG].Items[idxI].CountByGroup[variadicGroup] = groupCount
+
+					for len(groupValues) < groupCount {
 						shortUUID := strings.Split(uuid.New().String(), "-")[0]
 						variadicName := fmt.Sprintf("%s-%s", i.Name, shortUUID)
 						config.Spec.Groups[idxG].Items[idxI].ValuesByGroup[variadicGroup][variadicName] = ""

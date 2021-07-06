@@ -6,6 +6,7 @@ import (
 
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
+	kotsscheme "github.com/replicatedhq/kots/kotskinds/client/kotsclientset/scheme"
 	"github.com/replicatedhq/kots/kotskinds/multitype"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/template"
@@ -260,6 +261,7 @@ spec:
       default: "onetwothree"
       repeatable: true
       minimumCount: 1
+      count: 0
       templates:
       - apiVersion: apps/v1
         kind: Deployment
@@ -300,7 +302,9 @@ spec:
       title: "Secret Name"
       default: "onetwothree"
       repeatable: true
-      minimumCount: 3
+      minimumCount: 1
+      countByGroup:
+        secrets: 3
       templates:
       - apiVersion: apps/v1
         kind: Deployment
@@ -319,6 +323,8 @@ spec:
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			req := require.New(t)
+
+			kotsscheme.AddToScheme(scheme.Scheme)
 
 			// in package myapigroupv1...
 			decode := scheme.Codecs.UniversalDeserializer().Decode
@@ -369,7 +375,9 @@ func TestApplyValuesToConfig(t *testing.T) {
 									Name:         "secretName",
 									Repeatable:   true,
 									MinimumCount: 1,
-									Count:        2,
+									CountByGroup: map[string]int{
+										"secrets": 2,
+									},
 									ValuesByGroup: kotsv1beta1.ValuesByGroup{
 										"secrets": {
 											"secretName-1": "111",
@@ -417,7 +425,9 @@ func TestApplyValuesToConfig(t *testing.T) {
 									Name:         "secretName",
 									Repeatable:   true,
 									MinimumCount: 1,
-									Count:        2,
+									CountByGroup: map[string]int{
+										"secrets": 2,
+									},
 									ValuesByGroup: kotsv1beta1.ValuesByGroup{
 										"secrets": {
 											"secretName-1": "123",
