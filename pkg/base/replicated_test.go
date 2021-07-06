@@ -1,6 +1,7 @@
 package base
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/replicatedhq/kots/pkg/logger"
@@ -9,6 +10,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
+
 	"k8s.io/client-go/kubernetes/scheme"
 )
 
@@ -84,10 +87,11 @@ func Test_renderReplicated(t *testing.T) {
 	// secretName-3 tests repeatable items with a bool
 	// don't touch this! tests merging repeatable items with existing items
 	tests := []struct {
-		name          string
-		upstream      *upstreamtypes.Upstream
-		renderOptions *RenderOptions
-		expectedFile  BaseFile
+		name               string
+		upstream           *upstreamtypes.Upstream
+		renderOptions      *RenderOptions
+		expectedDeployment BaseFile
+		expectedSecrets    []BaseFile
 	}{
 		{
 			name: "replace array with repeat values",
@@ -150,6 +154,11 @@ spec:
         name: my-deploy
         namespace: my-app
         yamlPath: spec.template.spec.volumes[1].projected.sources[1]
+      - apiVersion: v1
+        kind: Secret
+        name: my-secret
+        namespace: my-app
+        yamlPath:
 `,
 						),
 					},
@@ -233,7 +242,7 @@ data:
 			renderOptions: &RenderOptions{
 				Log: logger.NewCLILogger(),
 			},
-			expectedFile: BaseFile{
+			expectedDeployment: BaseFile{
 				Path: "deployment.yaml",
 				Content: []byte(
 					`apiVersion: apps/v1
@@ -288,20 +297,51 @@ spec:
                   pod: "testPod"
                   metaData:
                     pod: "testPod"
+                    fileName: "secretName-3"
+                  items:
+                  - key: "file"
                     path: "secretName-3"`),
 			},
-			expectedSecret: BaseFile{
-				Path: "secret.yaml",
-				Content: []byte(
-					`apiVersion: v1
+			expectedSecrets: []BaseFile{
+				{
+					Path: "secret-rando.yaml",
+					Content: []byte(
+						`apiVersion: v1
 kind: Secret
 metadata:
-  name: my-secret
+  name: secretName-1
+  namespace: "my-app"
 type: Opaque
 data:
   file: MTIz`),
+				},
+				{
+					Path: "secret-rando.yaml",
+					Content: []byte(
+						`apiVersion: v1
+kind: Secret
+metadata:
+  name: secretName-2
+  namespace: "my-app"
+type: Opaque
+data:
+  file: MTIz`),
+				},
+				{
+					Path: "secret-rando.yaml",
+					Content: []byte(
+						`apiVersion: v1
+kind: Secret
+metadata:
+  name: secretName-3
+  namespace: "my-app"
+type: Opaque
+data:
+  file: MTIz`),
+				},
 			},
 		},
+	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
@@ -311,9 +351,20 @@ data:
 			req.NoError(err)
 
 			decode := scheme.Codecs.UniversalDeserializer().Decode
-			obj, _, err := decode(test.expectedFile.Content, nil, nil)
+			depobj, _, err := decode(test.expectedDeployment.Content, nil, nil)
+			req.NoError(err)
 
-			expected := obj.(*appsv1.Deployment)
+			expectedDeployment := depobj.(*appsv1.Deployment)
+
+			var unmarshaledSecrets []*corev1.Secret
+			for _, expectedSecret := range test.expectedSecrets {
+				secobj, _, err := decode(expectedSecret.Content, nil, nil)
+				req.NoError(err)
+
+				unmarshaledSecrets = append(unmarshaledSecrets, secobj.(*corev1.Secret))
+			}
+
+			secretsFound := 0
 
 			for _, targetFile := range base.Files {
 				obj, gvk, err := decode(targetFile.Content, nil, nil)
@@ -322,13 +373,25 @@ data:
 				}
 				fmt.Printf("gvk: %+v\n\n", gvk)
 
+				if gvk.Kind == "deployment" {
 					deployment := obj.(*appsv1.Deployment)
 
-					req.NoError(err)
+					assert.ElementsMatch(t, expectedDeployment.Spec.Template.Spec.Volumes[1].Projected.Sources, deployment.Spec.Template.Spec.Volumes[1].Projected.Sources)
+				}
 
-					assert.ElementsMatch(t, expected.Spec.Template.Spec.Volumes[1].Projected.Sources, deployment.Spec.Template.Spec.Volumes[1].Projected.Sources)
+				if gvk.Kind == "Secret" {
+					secretsFound++
+					secret := obj.(*corev1.Secret)
+
+					for _, unmarshaledSecret := range unmarshaledSecrets {
+						if secret.GetObjectMeta().GetName() == unmarshaledSecret.GetObjectMeta().GetName() {
+							assert.Equal(t, unmarshaledSecret, secret)
+						}
+					}
 				}
 			}
+			req.Equal(secretsFound, len(unmarshaledSecrets))
+
 		})
 	}
 }

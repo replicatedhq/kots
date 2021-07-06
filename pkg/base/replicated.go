@@ -53,7 +53,8 @@ func renderReplicated(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (
 		return nil, errors.Wrap(err, "failed to template config objects")
 	}
 
-	for _, upstreamFile := range u.Files {
+	for fileIndex, upstreamFile := range u.Files {
+		fmt.Printf("processing upstream file %s\n", upstreamFile.Path)
 		if renderOptions.ExcludeKotsKinds {
 			// kots kinds are not expected to be valid yaml after builder.RenderTemplate
 			// this will prevent errors later from ShouldBeIncludedInBaseKustomization
@@ -74,7 +75,7 @@ func renderReplicated(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (
 			upstreamFile.Content = bytes.Join(newContent, []byte("\n---\n"))
 		}
 
-		err = processVariadicConfig(&upstreamFile, actualizedConfig, renderOptions.Log)
+		generatedFiles, err := processVariadicConfig(&upstreamFile, actualizedConfig, renderOptions.Log)
 		if err != nil {
 			return nil, errors.Wrapf(err, "failed to process variadic config in file %s", upstreamFile.Path)
 		}

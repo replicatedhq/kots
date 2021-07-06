@@ -19,12 +19,12 @@ import (
 // getVariadicGroupsForTemplate should be split into subfunctions to make it easier to read
 // The last element in the YamlPath must be an array. We cannot copy whole files yet.
 
-func processVariadicConfig(u *upstreamtypes.UpstreamFile, config *kotsv1beta1.Config, log *logger.CLILogger) error {
+func processVariadicConfig(u *upstreamtypes.UpstreamFile, config *kotsv1beta1.Config, log *logger.CLILogger) ([]upstreamtypes.UpstreamFile, error) {
 	templateMetadata, node, err := getUpstreamTemplateData(u.Content)
 	if err != nil {
 		// if the upstream file can't be unmarshaled as a yaml manifest, this file should be skipped
 		log.Info("variadic processing on file %s skipped: %v", u.Path, err.Error())
-		return nil
+		return nil, nil
 	}
 
 	// fill in templateMetadata data from unmarshaled yaml
@@ -32,14 +32,17 @@ func processVariadicConfig(u *upstreamtypes.UpstreamFile, config *kotsv1beta1.Co
 	if err != nil {
 		// if upstream metadata doesn't exist, this file will not match any templates and should be skipped
 		log.Info("variadic processing on file %s skipped: %v", u.Path, err.Error())
-		return nil
+		return nil, nil
 	}
 
 	// collect all variadic config for this specific template
 	variadicGroups := getVariadicGroupsForTemplate(config, templateMetadata)
 
+	var generatedFiles []upstreamtypes.UpstreamFile
+
 	for _, vgroup := range variadicGroups {
 		for _, vitem := range vgroup.items {
+			// check for values that are assigned to this group
 			if len(vitem.item.ValuesByGroup[vgroup.group.Name]) == 0 {
 				// if no repeat values are provided, allow the default to be rendered as normal
 				continue
@@ -76,7 +79,7 @@ func processVariadicConfig(u *upstreamtypes.UpstreamFile, config *kotsv1beta1.Co
 
 			yamlStack, err := buildStackFromYaml(vitem.yamlPath, node)
 			if err != nil {
-				return errors.Wrapf(err, "failed to build yaml stack for item %s", vitem.item.Name)
+				return nil, errors.Wrapf(err, "failed to build yaml stack for item %s", vitem.item.Name)
 			}
 
 			yamlStack.renderRepeatNodes(vitem.item.Name, vitem.item.ValuesByGroup[vgroup.group.Name])
@@ -87,12 +90,12 @@ func processVariadicConfig(u *upstreamtypes.UpstreamFile, config *kotsv1beta1.Co
 
 	marshaled, err := yaml3.Marshal(node)
 	if err != nil {
-		return errors.Wrap(err, "failed to marshal variadic config")
+		return nil, errors.Wrap(err, "failed to marshal variadic config")
 	}
 
 	u.Content = marshaled
 
-	return nil
+	return generatedFiles, nil
 }
 
 func getUpstreamTemplateData(upstreamContent []byte) (kotsv1beta1.RepeatTemplate, map[string]interface{}, error) {
@@ -311,6 +314,32 @@ func generateTargetValue(configOptionName, valueName, target string, templateVal
 	}
 	// if no edits are needed, return the original target
 	return target
+}
+
+func renderRepeatFilesContent(yaml map[string]interface{}, optionName string, values map[string]interface{}) ([][]byte, error) {
+	var marshaledFiles [][]byte
+	for valueName, value := range values {
+		yaml = replaceNewYamlName(yaml, valueName)
+
+		newYaml := replaceTemplateValue(yaml, optionName, valueName, value)
+
+		marshaled, err := yaml3.Marshal(newYaml)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to marshal repeat file")
+		}
+
+		marshaledFiles = append(marshaledFiles, marshaled)
+	}
+
+	return marshaledFiles, nil
+}
+
+func replaceNewYamlName(yaml map[string]interface{}, name string) map[string]interface{} {
+	metadata := yaml["metadata"].(map[string]interface{})
+	metadata["name"] = name
+
+	yaml["metadata"] = metadata
+	return yaml
 }
 
 // variadicGroup lists all repeat items under a ConfigGroup
