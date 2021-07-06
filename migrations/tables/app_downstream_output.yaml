@@ -33,5 +33,9 @@ spec:
         type: text
       - name: apply_stderr
         type: text
+      - name: helm_stdout
+        type: text
+      - name: helm_stderr
+        type: text
       - name: is_error
         type: boolean
