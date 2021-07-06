@@ -3,6 +3,7 @@ package registry
 import (
 	"encoding/base64"
 	"fmt"
+	"path"
 	"strings"
 
 	"github.com/pkg/errors"
@@ -135,9 +136,5 @@ func rewriteImage(newHost string, newNamespace string, image string) string {
 	imageParts := strings.Split(image, "/")
 	imageNameWithOptionalTag := imageParts[len(imageParts)-1]
 
-	return strings.Join([]string{
-		newHost,
-		newNamespace,
-		imageNameWithOptionalTag,
-	}, "/")
+	return path.Join(newHost, newNamespace, imageNameWithOptionalTag)
 }

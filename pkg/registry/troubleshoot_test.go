@@ -188,3 +188,35 @@ func Test_UpdateCollectorSpecsWithRegistryData(t *testing.T) {
 		})
 	}
 }
+
+func Test_rewriteImage(t *testing.T) {
+	tests := []struct {
+		name    string
+		image   string
+		newHost string
+		newNS   string
+		want    string
+	}{
+		{
+			name:    "rewrite with namespace",
+			image:   "quay.io/replicatedhq/image:alpine-3.5",
+			newHost: "localhost:30000",
+			newNS:   "ns",
+			want:    "localhost:30000/ns/image:alpine-3.5",
+		},
+		{
+			name:    "rewrite without namespace",
+			image:   "quay.io/replicatedhq/image:alpine-3.5",
+			newHost: "localhost:30000",
+			newNS:   "",
+			want:    "localhost:30000/image:alpine-3.5",
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			got := rewriteImage(test.newHost, test.newNS, test.image)
+			assert.Equal(t, test.want, got)
+		})
+	}
+}
