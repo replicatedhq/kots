@@ -136,10 +136,10 @@ func getKustomizedFiles(kustomizeTarget string, version string) (map[string]stri
 
 	archiveChartDir := filepath.Join(kustomizeTarget, "charts")
 	_, err := os.Stat(archiveChartDir)
-	if err != nil && os.IsNotExist(err) {
-		return kustomizedFilesList, nil
-	}
-	if err != nil && !os.IsNotExist(err) {
+	if err != nil {
+		if os.IsNotExist(err) {
+			return kustomizedFilesList, nil
+		}
 		return kustomizedFilesList, err
 	}
 
@@ -153,13 +153,13 @@ func getKustomizedFiles(kustomizeTarget string, version string) (map[string]stri
 				archiveOutput, err := exec.Command(fmt.Sprintf("kustomize%s", version), "build", filepath.Dir(path)).Output()
 				if err != nil {
 					if ee, ok := err.(*exec.ExitError); ok {
-						err = fmt.Errorf("kustomize stderr: %q", string(ee.Stderr))
+						err = fmt.Errorf("kustomize %s: %q", path, string(ee.Stderr))
 					}
-					return errors.Wrap(err, "failed to kustomize")
+					return errors.Wrapf(err, "failed to kustomize %s", path)
 				}
 				archiveFiles, err := splitter.SplitYAML(archiveOutput)
 				if err != nil {
-					return errors.Wrap(err, "failed to split yaml")
+					return errors.Wrapf(err, "failed to split yaml result for %s", path)
 				}
 				for filename, b := range archiveFiles {
 					kustomizedFilesList[filename] = string(b)

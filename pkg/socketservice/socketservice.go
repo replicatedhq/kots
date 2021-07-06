@@ -187,11 +187,11 @@ func kustomizeCharts(deployedVersionArchive string, name string, version string)
 	archive := []byte{}
 	archiveChartDir := filepath.Join(deployedVersionArchive, "overlays", "downstreams", name, "charts")
 	_, err := os.Stat(archiveChartDir)
-	if err != nil && os.IsNotExist(err) {
-		return archive, nil
-	}
-	if err != nil && !os.IsNotExist(err) {
-		return archive, nil
+	if err != nil {
+		if os.IsNotExist(err) {
+			return archive, nil
+		}
+		return archive, err
 	}
 
 	exportChartPath, err := ioutil.TempDir("", "kotsadm")
@@ -221,20 +221,20 @@ func kustomizeCharts(deployedVersionArchive string, name string, version string)
 			for _, filename := range baseFiles {
 				err = exportFile(baseDir, rel, exportChartsDir, filename)
 				if err != nil {
-					return errors.Wrap(err, "failed to export file")
+					return errors.Wrapf(err, "failed to export file %s", filename)
 				}
 			}
 			if info.Name() == "kustomization.yaml" {
 				archiveChartOutput, err := exec.Command(fmt.Sprintf("kustomize%s", version), "build", filepath.Dir(path)).Output()
 				if err != nil {
 					if ee, ok := err.(*exec.ExitError); ok {
-						err = fmt.Errorf("kustomize stderr: %q", string(ee.Stderr))
+						err = fmt.Errorf("kustomize %s: %q", path, string(ee.Stderr))
 					}
-					return errors.Wrap(err, "failed to kustomize")
+					return errors.Wrapf(err, "failed to kustomize %s", path)
 				}
 				err = exportContent(archiveChartOutput, rel, exportChartsDir, "all.yaml")
 				if err != nil {
-					return errors.Wrap(err, "failed to export content")
+					return errors.Wrapf(err, "failed to export content for %s", path)
 				}
 			}
 			return nil
@@ -265,6 +265,7 @@ func kustomizeCharts(deployedVersionArchive string, name string, version string)
 
 func exportContent(allContent []byte, rel string, exportChartsDir string, filename string) error {
 	relDir := ""
+	// TODO: needs a comment explaining this
 	if filepath.Base(rel) != "crds" {
 		relDir = filepath.Join(exportChartsDir, rel, "templates")
 	} else {
@@ -286,22 +287,27 @@ func exportFile(baseDir string, rel string, exportChartsDir string, filename str
 	if filename != "Chart.yaml" && filename != "Chart.lock" {
 		return nil
 	}
+
 	baseFile := filepath.Join(baseDir, rel, filename)
-	if _, err := os.Stat(baseFile); !os.IsNotExist(err) {
-		baseFileContent, err := ioutil.ReadFile(baseFile)
-		if err != nil {
-			return errors.Wrap(err, "failed to read file from base")
+	baseFileContent, err := ioutil.ReadFile(baseFile)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return nil
 		}
-		relDir := filepath.Join(exportChartsDir, rel)
-		if err := os.MkdirAll(relDir, 0744); err != nil {
-			return errors.Wrap(err, "failed to create export chart dir")
-		}
-		exportFile := filepath.Join(relDir, filename)
-		err = ioutil.WriteFile(exportFile, baseFileContent, 0644)
-		if err != nil {
-			return errors.Wrap(err, "failed to write file to export dir")
-		}
+		return errors.Wrap(err, "failed to read file from base")
 	}
+
+	relDir := filepath.Join(exportChartsDir, rel)
+	if err := os.MkdirAll(relDir, 0744); err != nil {
+		return errors.Wrap(err, "failed to create export chart dir")
+	}
+
+	exportFile := filepath.Join(relDir, filename)
+	err = ioutil.WriteFile(exportFile, baseFileContent, 0644)
+	if err != nil {
+		return errors.Wrap(err, "failed to write file to export dir")
+	}
+
 	return nil
 }
 

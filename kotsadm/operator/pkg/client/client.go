@@ -9,9 +9,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
-	"os/exec"
 	"path"
-	"path/filepath"
 	"strconv"
 	"sync"
 	"time"
@@ -26,7 +24,6 @@ import (
 	"github.com/replicatedhq/kots/kotsadm/operator/pkg/socket/transport"
 	"github.com/replicatedhq/kots/kotsadm/operator/pkg/supportbundle"
 	"github.com/replicatedhq/kots/kotsadm/operator/pkg/util"
-	"github.com/replicatedhq/yaml/v3"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
@@ -220,44 +217,6 @@ func (c *Client) connect() error {
 	}
 }
 
-type ChartContent struct {
-	ChartName string `yaml:"name"`
-}
-
-func installHelm(helmDir string, namespace string) error {
-	version := "3.4.2"
-	chartsDir := filepath.Join(helmDir, "charts")
-	dirs, err := ioutil.ReadDir(chartsDir)
-	if err != nil {
-		return errors.Wrap(err, "failed to read archive dir")
-	}
-	if os.Getenv("KOTSADM_TARGET_NAMESPACE") != "" {
-		namespace = os.Getenv("KOTSADM_TARGET_NAMESPACE")
-	}
-
-	for _, dir := range dirs {
-		installDir := filepath.Join(chartsDir, dir.Name())
-		chartfilePath := filepath.Join(installDir, "Chart.yaml")
-		chartFile, err := ioutil.ReadFile(chartfilePath)
-		if err != nil {
-			return errors.Wrapf(err, "failed to parse %s", chartfilePath)
-		}
-		cname := ChartContent{}
-		err = yaml.Unmarshal(chartFile, &cname)
-		if err != nil {
-			return errors.Wrapf(err, "failed to unmarshal %s", chartfilePath)
-		}
-		_, err = exec.Command(fmt.Sprintf("helm%s", version), "upgrade", "-i", cname.ChartName, installDir, "-n", namespace).Output()
-		if err != nil {
-			if ee, ok := err.(*exec.ExitError); ok {
-				err = fmt.Errorf("helm stderr: %q", string(ee.Stderr))
-			}
-			return errors.Wrapf(err, "failed to install %s", installDir)
-		}
-	}
-	return nil
-}
-
 func (c *Client) registerHandlers(socketClient *socket.Client) error {
 	var err error
 
@@ -272,118 +231,39 @@ func (c *Client) registerHandlers(socketClient *socket.Client) error {
 
 		log.Println("received a deploy request for", args.AppSlug)
 
-		var result *applyResult
-		var deployError error
+		var applyResult, helmResult *commandResult
+		var applyError, helmError error
 		defer func() {
-			if result != nil {
-				err := c.sendResult(
-					args, result.hasErr, []byte{}, []byte{},
-					bytes.Join(result.multiStdout, []byte("\n")), bytes.Join(result.multiStderr, []byte("\n")),
-				)
-				if err != nil {
-					log.Printf("failed to report result: %v", err)
+			if applyError != nil {
+				applyResult = &commandResult{
+					hasErr:      true,
+					multiStdout: [][]byte{},
+					multiStderr: [][]byte{[]byte(applyError.Error())},
 				}
-				return
+			}
+			if helmError != nil {
+				helmResult = &commandResult{
+					hasErr:      true,
+					multiStdout: [][]byte{},
+					multiStderr: [][]byte{[]byte(helmError.Error())},
+				}
 			}
 
-			if deployError != nil {
-				err := c.sendResult(
-					args, true, []byte{}, []byte{},
-					nil, []byte(deployError.Error()),
-				)
-				if err != nil {
-					log.Printf("failed to report result: %v", err)
-				}
-				return
+			err := c.sendResult(args, nil, applyResult, helmResult)
+			if err != nil {
+				log.Printf("failed to report result: %v", err)
 			}
 		}()
 
-		if args.PreviousManifests != "" {
-			if deployError = c.diffAndRemovePreviousManifests(args); deployError != nil {
-				log.Printf("error diffing and removing previous manifests: %s", deployError.Error())
-				return
-			}
-		}
-		tarGz := archiver.TarGz{
-			Tar: &archiver.Tar{
-				ImplicitTopLevelFolder: false,
-			},
-		}
-		if len(args.PreviousCharts) > 0 {
-			tmpDir, err := ioutil.TempDir("", "helm")
-			if err != nil {
-				log.Printf("failed to create temp dir to stage previously deployed archive: %v", err)
-				return
-			}
-			defer os.RemoveAll(tmpDir)
-			err = ioutil.WriteFile(path.Join(tmpDir, "archive.tar.gz"), args.PreviousCharts, 0644)
-			if err != nil {
-				log.Printf("failed to write previous archive: %v", err)
-				return
-			}
-			helmDir := path.Join(tmpDir, "prevhelm")
-			if err := os.MkdirAll(helmDir, 0744); err != nil {
-				log.Printf("failed to create dir to stage previous helm archive: %v", err)
-				return
-			}
-			if err := tarGz.Unarchive(path.Join(tmpDir, "archive.tar.gz"), helmDir); err != nil {
-				log.Printf("falied to unarchive previous helm archive: %v", err)
-				return
-			}
+		applyResult, applyError = c.deployManifests(args)
+		if applyError != nil {
+			log.Printf("falied to deploy manifests: %v", applyError)
+			return
 		}
 
-		if len(args.Charts) > 0 {
-			tmpDir, err := ioutil.TempDir("", "helm")
-			if err != nil {
-				log.Printf("failed to create temp dir to stage currently deployed archive: %v", err)
-				return
-			}
-			defer os.RemoveAll(tmpDir)
-			err = ioutil.WriteFile(path.Join(tmpDir, "archive.tar.gz"), args.Charts, 0644)
-			if err != nil {
-				log.Printf("failed to write current archive: %v", err)
-				return
-			}
-			helmDir := path.Join(tmpDir, "currhelm")
-			if err := os.MkdirAll(helmDir, 0744); err != nil {
-				log.Printf("failed to create dir to stage currently deployed archive: %v", err)
-				return
-			}
-			if err := tarGz.Unarchive(path.Join(tmpDir, "archive.tar.gz"), helmDir); err != nil {
-				log.Printf("falied to unarchive current helm archive: %v", err)
-				return
-			}
-			if err := installHelm(helmDir, args.Namespace); err != nil {
-				log.Printf("falied to install helm: %v", err)
-				return
-			}
-		}
-
-		for _, additionalNamespace := range args.AdditionalNamespaces {
-			if additionalNamespace == "*" {
-				continue
-			}
-
-			if deployError = c.ensureNamespacePresent(additionalNamespace); deployError != nil {
-				// we don't fail here...
-				log.Printf("error creating namespace: %s", deployError.Error())
-			}
-			if _, ok := c.ExistingInformers[additionalNamespace]; !ok {
-				c.ExistingInformers[additionalNamespace] = true
-				if deployError = c.runHooksInformer(additionalNamespace); deployError != nil {
-					// we don't fail here...
-					log.Printf("error registering cleanup hooks for additionalNamespace: %s: %s",
-						additionalNamespace, deployError.Error())
-				}
-			}
-		}
-		c.imagePullSecret = args.ImagePullSecret
-		c.watchedNamespaces = args.AdditionalNamespaces
-
-		// this is where the kubectl apply happens
-		result, deployError = c.ensureResourcesPresent(args)
-		if deployError != nil {
-			log.Printf("error deploying: %s", deployError.Error())
+		helmResult, helmError = c.deployHelmCharts(args)
+		if helmError != nil {
+			log.Printf("falied to deploy helm charts: %v", helmError)
 			return
 		}
 
@@ -408,7 +288,106 @@ func (c *Client) registerHandlers(socketClient *socket.Client) error {
 	return nil
 }
 
-func (c *Client) sendResult(applicationManifests ApplicationManifests, isError bool, dryrunStdout []byte, dryrunStderr []byte, applyStdout []byte, applyStderr []byte) error {
+func (c *Client) deployManifests(args ApplicationManifests) (*commandResult, error) {
+	if args.PreviousManifests != "" {
+		if err := c.diffAndRemovePreviousManifests(args); err != nil {
+			return nil, errors.Wrapf(err, "failed to remove previous manifests")
+		}
+	}
+
+	for _, additionalNamespace := range args.AdditionalNamespaces {
+		if additionalNamespace == "*" {
+			continue
+		}
+
+		if err := c.ensureNamespacePresent(additionalNamespace); err != nil {
+			// we don't fail here...
+			log.Printf("error creating namespace: %s", err.Error())
+		}
+		if _, ok := c.ExistingInformers[additionalNamespace]; !ok {
+			c.ExistingInformers[additionalNamespace] = true
+			if err := c.runHooksInformer(additionalNamespace); err != nil {
+				// we don't fail here...
+				log.Printf("error registering cleanup hooks for additionalNamespace: %s: %s",
+					additionalNamespace, err.Error())
+			}
+		}
+	}
+	c.imagePullSecret = args.ImagePullSecret
+	c.watchedNamespaces = args.AdditionalNamespaces
+
+	result, err := c.ensureResourcesPresent(args)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to deploy")
+	}
+
+	return result, nil
+}
+
+func (c *Client) deployHelmCharts(args ApplicationManifests) (*commandResult, error) {
+	tarGz := archiver.TarGz{
+		Tar: &archiver.Tar{
+			ImplicitTopLevelFolder: false,
+		},
+	}
+
+	if len(args.PreviousCharts) > 0 {
+		tmpDir, err := ioutil.TempDir("", "helm")
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to create temp dir for previous charts")
+		}
+		defer os.RemoveAll(tmpDir)
+
+		err = ioutil.WriteFile(path.Join(tmpDir, "archive.tar.gz"), args.PreviousCharts, 0644)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to write previous archive")
+		}
+
+		helmDir := path.Join(tmpDir, "prevhelm")
+		if err := os.MkdirAll(helmDir, 0744); err != nil {
+			return nil, errors.Wrap(err, "failed to create dir to stage previous helm archive")
+		}
+
+		if err := tarGz.Unarchive(path.Join(tmpDir, "archive.tar.gz"), helmDir); err != nil {
+			return nil, errors.Wrap(err, "falied to unarchive previous helm archive")
+		}
+
+		// TODO: uninstall
+	}
+
+	if len(args.Charts) > 0 {
+		tmpDir, err := ioutil.TempDir("", "helm")
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to create temp dir to stage currently deployed archive")
+		}
+		defer os.RemoveAll(tmpDir)
+
+		err = ioutil.WriteFile(path.Join(tmpDir, "archive.tar.gz"), args.Charts, 0644)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to write current archive")
+		}
+
+		helmDir := path.Join(tmpDir, "currhelm")
+		if err := os.MkdirAll(helmDir, 0744); err != nil {
+			return nil, errors.Wrap(err, "failed to create dir to stage currently deployed archive")
+		}
+
+		if err := tarGz.Unarchive(path.Join(tmpDir, "archive.tar.gz"), helmDir); err != nil {
+			return nil, errors.Wrap(err, "falied to unarchive current helm archive")
+		}
+
+		installResult, err := c.installHelm(helmDir, args.Namespace)
+		if err != nil {
+			return nil, errors.Wrap(err, "falied to install helm")
+		}
+
+		return installResult, nil
+	}
+
+	return nil, nil
+}
+
+func (c *Client) sendResult(applicationManifests ApplicationManifests, dryRunResult *commandResult, applyResult *commandResult, helmResult *commandResult) error {
 	if applicationManifests.ResultCallback == "" {
 		return nil
 	}
@@ -416,23 +395,41 @@ func (c *Client) sendResult(applicationManifests ApplicationManifests, isError b
 	uri := fmt.Sprintf("%s%s", c.APIEndpoint, applicationManifests.ResultCallback)
 	log.Printf("Reporting results to %q", uri)
 
-	applyResult := struct {
+	result := struct {
 		AppID        string `json:"appId"`
 		IsError      bool   `json:"isError"`
 		DryrunStdout []byte `json:"dryrunStdout"`
 		DryrunStderr []byte `json:"dryrunStderr"`
 		ApplyStdout  []byte `json:"applyStdout"`
 		ApplyStderr  []byte `json:"applyStderr"`
+		HelmStdout   []byte `json:"helmStdout"`
+		HelmStderr   []byte `json:"helmStderr"`
 	}{
-		applicationManifests.AppID,
-		isError,
-		dryrunStdout,
-		dryrunStderr,
-		applyStdout,
-		applyStderr,
+		AppID: applicationManifests.AppID,
 	}
 
-	b, err := json.Marshal(applyResult)
+	isError := false
+	if dryRunResult != nil {
+		isError = isError || dryRunResult.hasErr
+		result.DryrunStdout = bytes.Join(dryRunResult.multiStdout, []byte("\n"))
+		result.DryrunStderr = bytes.Join(dryRunResult.multiStderr, []byte("\n"))
+	}
+
+	if applyResult != nil {
+		isError = isError || applyResult.hasErr
+		result.ApplyStdout = bytes.Join(applyResult.multiStdout, []byte("\n"))
+		result.ApplyStderr = bytes.Join(applyResult.multiStderr, []byte("\n"))
+	}
+
+	if helmResult != nil {
+		isError = isError || helmResult.hasErr
+		result.HelmStdout = bytes.Join(helmResult.multiStdout, []byte("\n"))
+		result.HelmStderr = bytes.Join(helmResult.multiStderr, []byte("\n"))
+	}
+
+	result.IsError = isError
+
+	b, err := json.Marshal(result)
 	if err != nil {
 		return errors.Wrap(err, "failed to marshal results")
 	}
