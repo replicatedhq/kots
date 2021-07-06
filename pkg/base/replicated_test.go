@@ -162,13 +162,13 @@ metadata:
 spec:
   values:
     secretName-1:
-      value: "123"
+      value: "MTIz"
       repeatableItem: secretName
     secretName-2:
-      value: "456"
+      value: "MTIz"
       repeatableItem: secretName
     secretName-3:
-      value: "789"
+      value: "MTIz"
       repeatableItem: secretName
 status: {}
 `,
@@ -205,13 +205,28 @@ spec:
               metaData:
                 fileName: 'repl{{ ConfigOptionName "secretName"}}'
           - secret:
-              name: 'repl{{ ConfigOption "secretName"}}'
+              name: 'repl{{ ConfigOptionName "secretName"}}'
               pod: repl{{ ConfigOption "podName" }}
               metaData:
                 pod: repl{{ ConfigOption "podName"}}
                 fileName: 'repl{{ ConfigOptionName "secretName"}}'
+              items:
+                - key: "data"
+                  path: '{{repl ConfigOptionName "secretName"}}'
           - secret:
               name: "don't touch this either!"`),
+					},
+					{
+						Path: "secret.yaml",
+						Content: []byte(
+							`apiVersion: v1
+kind: Secret
+metadata:
+  name: my-secret
+  namespace: my-app
+type: Opaque
+data:
+  file: '{{repl ConfigOption "secretName"}}'`),
 					},
 				},
 			},
@@ -251,26 +266,42 @@ spec:
               - secret:
                   name: "don't touch this either!"
               - secret:
-                  name: "123"
+                  name: "secretName-1"
                   pod: "testPod"
                   metaData:
                     pod: "testPod"
                     fileName: "secretName-1"
+                  items:
+                  - key: "file"
+                    path: "secretName-1"
               - secret:
-                  name: "456"
+                  name: "secretName-2"
                   pod: "testPod"
                   metaData:
                     pod: "testPod"
                     fileName: "secretName-2"
+                  items:
+                  - key: "file"
+                    path: "secretName-2"
               - secret:
-                  name: "789"
+                  name: "secretName-3"
                   pod: "testPod"
                   metaData:
                     pod: "testPod"
-                    fileName: "secretName-3"`),
+                    path: "secretName-3"`),
+			},
+			expectedSecret: BaseFile{
+				Path: "secret.yaml",
+				Content: []byte(
+					`apiVersion: v1
+kind: Secret
+metadata:
+  name: my-secret
+type: Opaque
+data:
+  file: MTIz`),
 			},
 		},
-	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
@@ -285,9 +316,11 @@ spec:
 			expected := obj.(*appsv1.Deployment)
 
 			for _, targetFile := range base.Files {
-				if targetFile.Path == test.expectedFile.Path {
-					decode := scheme.Codecs.UniversalDeserializer().Decode
-					obj, _, err := decode(targetFile.Content, nil, nil)
+				obj, gvk, err := decode(targetFile.Content, nil, nil)
+				if err != nil {
+					continue
+				}
+				fmt.Printf("gvk: %+v\n\n", gvk)
 
 					deployment := obj.(*appsv1.Deployment)
 
