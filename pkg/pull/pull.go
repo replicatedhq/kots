@@ -49,6 +49,7 @@ type PullOptions struct {
 	UpdateCursor           string
 	ExcludeKotsKinds       bool
 	ExcludeAdminConsole    bool
+	IncludeMinio           bool
 	SharedPassword         string
 	CreateAppDir           bool
 	Silent                 bool
@@ -267,6 +268,7 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 		HTTPSProxyEnvValue:  pullOptions.HTTPSProxyEnvValue,
 		NoProxyEnvValue:     pullOptions.NoProxyEnvValue,
 		IsOpenShift:         k8sutil.IsOpenShift(clientset),
+		IncludeMinio:        pullOptions.IncludeMinio,
 	}
 	if err := upstream.WriteUpstream(u, writeUpstreamOptions); err != nil {
 		log.FinishSpinnerWithError()

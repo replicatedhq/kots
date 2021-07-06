@@ -29,6 +29,7 @@ type UpstreamSettings struct {
 	NoProxyEnvValue        string
 	AutoCreateClusterToken string
 	IsOpenShift            bool
+	IncludeMinio           bool
 }
 
 func generateAdminConsoleFiles(renderDir string, options types.WriteOptions) ([]types.UpstreamFile, error) {
@@ -40,6 +41,7 @@ func generateAdminConsoleFiles(renderDir string, options types.WriteOptions) ([]
 			HTTPSProxyEnvValue:     options.HTTPSProxyEnvValue,
 			NoProxyEnvValue:        options.NoProxyEnvValue,
 			IsOpenShift:            options.IsOpenShift,
+			IncludeMinio:           options.IncludeMinio,
 		}
 		return generateNewAdminConsoleFiles(settings)
 	}
@@ -52,6 +54,7 @@ func generateAdminConsoleFiles(renderDir string, options types.WriteOptions) ([]
 	settings := &UpstreamSettings{
 		AutoCreateClusterToken: uuid.New().String(),
 		IsOpenShift:            options.IsOpenShift,
+		IncludeMinio:           options.IncludeMinio,
 	}
 	if err := loadUpstreamSettingsFromFiles(settings, renderDir, existingFiles); err != nil {
 		return nil, errors.Wrap(err, "failed to find existing settings")
@@ -150,6 +153,7 @@ func generateNewAdminConsoleFiles(settings *UpstreamSettings) ([]types.UpstreamF
 		HTTPSProxyEnvValue:     settings.HTTPSProxyEnvValue,
 		NoProxyEnvValue:        settings.NoProxyEnvValue,
 		IsOpenShift:            settings.IsOpenShift,
+		IncludeMinio:           settings.IncludeMinio,
 		EnsureRBAC:             true,
 	}
 
