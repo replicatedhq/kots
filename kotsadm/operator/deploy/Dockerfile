@@ -47,6 +47,13 @@ RUN curl -fsSLO "${KUBECTL_1_19_URL}" \
 	&& mv kubectl "/usr/local/bin/kubectl-${KUBECTL_1_19_VERSION}" \
 	&& ln -s "/usr/local/bin/kubectl-${KUBECTL_1_19_VERSION}" /usr/local/bin/kubectl
 
+# Install helm v3.4.2
+RUN curl -L "https://get.helm.sh/helm-v3.4.2-linux-amd64.tar.gz" -o /tmp/helm.tar.gz && \
+  tar -xzvf /tmp/helm.tar.gz && \
+  rm /tmp/helm.tar.gz && \
+  chmod a+x linux-amd64/helm && \
+  mv linux-amd64/helm "/usr/local/bin/helm3.4.2"
+
 # Setup user
 RUN useradd -c 'kotsadm-operator user' -m -d /home/kotsadm-operator -s /bin/bash -u 1001 kotsadm-operator
 USER kotsadm-operator
