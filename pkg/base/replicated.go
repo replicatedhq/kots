@@ -106,7 +106,13 @@ func renderReplicated(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (
 			if err != nil {
 				return nil, errors.Wrap(err, "failed to render generated variadic files")
 			}
-			base.Files = addGeneratedFiles(base.Files, subBase.Files)
+			for _, renderedFile := range subBase.Files {
+				for _, generatedFile := range generatedFiles {
+					if renderedFile.Path == generatedFile.Path {
+						base.Files = append(base.Files, renderedFile)
+					}
+				}
+			}
 		}
 
 		if len(generatedFiles) > 0 {
@@ -577,18 +583,4 @@ func chartArchiveToSparseUpstream(chartArchivePath string) (*upstreamtypes.Upstr
 func removeFileFromUpstream(files []upstreamtypes.UpstreamFile, index int) []upstreamtypes.UpstreamFile {
 	files[index] = files[len(files)-1]
 	return files[:len(files)-1]
-}
-
-func addGeneratedFiles(files []BaseFile, subFiles []BaseFile) []BaseFile {
-	for _, subFile := range subFiles {
-		for _, file := range files {
-			if subFile.Path == file.Path {
-				continue
-			}
-		}
-		fmt.Printf("appending file %s\n\n", subFile.Path)
-		files = append(files, subFile)
-	}
-
-	return files
 }

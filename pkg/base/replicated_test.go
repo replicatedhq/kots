@@ -521,6 +521,9 @@ spec:
                   pod: "testPod"
                   metaData:
                     pod: "testPod"
+                    fileName: "secretName-3"
+                  items:
+                  - key: "file"
                     path: "secretName-3"`),
 			},
 			expectedSecret: BaseFile{
