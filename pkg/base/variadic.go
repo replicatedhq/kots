@@ -69,22 +69,20 @@ func processVariadicConfig(u *upstreamtypes.UpstreamFile, config *kotsv1beta1.Co
 						newFile.Path = fmt.Sprintf("%s-%s", pathParts[0], shortUUID)
 					}
 
-					fmt.Printf("newFile is %+v, %+v\n", newFile.Path, string(newFile.Content))
-
 					generatedFiles = append(generatedFiles, newFile)
 				}
 
-				continue
+			} else {
+
+				yamlStack, err := buildStackFromYaml(vitem.yamlPath, node)
+				if err != nil {
+					return nil, errors.Wrapf(err, "failed to build yaml stack for item %s", vitem.item.Name)
+				}
+
+				yamlStack.renderRepeatNodes(vitem.item.Name, vitem.item.ValuesByGroup[vgroup.group.Name])
+
+				node = buildYamlFromStack(yamlStack)
 			}
-
-			yamlStack, err := buildStackFromYaml(vitem.yamlPath, node)
-			if err != nil {
-				return nil, errors.Wrapf(err, "failed to build yaml stack for item %s", vitem.item.Name)
-			}
-
-			yamlStack.renderRepeatNodes(vitem.item.Name, vitem.item.ValuesByGroup[vgroup.group.Name])
-
-			node = buildYamlFromStack(yamlStack)
 		}
 	}
 

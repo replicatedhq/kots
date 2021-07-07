@@ -243,7 +243,6 @@ func (h *Handler) LiveAppConfig(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) CurrentAppConfig(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("starting CurrentAppConfig")
 	currentAppConfigResponse := CurrentAppConfigResponse{
 		Success: false,
 	}
@@ -255,7 +254,6 @@ func (h *Handler) CurrentAppConfig(w http.ResponseWriter, r *http.Request) {
 		JSON(w, http.StatusInternalServerError, currentAppConfigResponse)
 		return
 	}
-	fmt.Println("got app from slug")
 
 	appLicense, err := store.GetStore().GetLatestLicenseForApp(foundApp.ID)
 	if err != nil {
@@ -264,7 +262,6 @@ func (h *Handler) CurrentAppConfig(w http.ResponseWriter, r *http.Request) {
 		JSON(w, http.StatusInternalServerError, currentAppConfigResponse)
 		return
 	}
-	fmt.Println("got license for app")
 
 	sequence, err := strconv.Atoi(mux.Vars(r)["sequence"])
 	if err != nil {
@@ -273,7 +270,6 @@ func (h *Handler) CurrentAppConfig(w http.ResponseWriter, r *http.Request) {
 		JSON(w, http.StatusInternalServerError, currentAppConfigResponse)
 		return
 	}
-	fmt.Println("got sequence")
 
 	archiveDir, err := ioutil.TempDir("", "kotsadm")
 	if err != nil {
@@ -283,7 +279,6 @@ func (h *Handler) CurrentAppConfig(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer os.RemoveAll(archiveDir)
-	fmt.Println("make tempdir")
 
 	err = store.GetStore().GetAppVersionArchive(foundApp.ID, int64(sequence), archiveDir)
 	if err != nil {
@@ -292,7 +287,6 @@ func (h *Handler) CurrentAppConfig(w http.ResponseWriter, r *http.Request) {
 		JSON(w, http.StatusInternalServerError, currentAppConfigResponse)
 		return
 	}
-	fmt.Println("got app version archive")
 
 	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(archiveDir)
 	if err != nil {
@@ -301,7 +295,6 @@ func (h *Handler) CurrentAppConfig(w http.ResponseWriter, r *http.Request) {
 		JSON(w, http.StatusInternalServerError, currentAppConfigResponse)
 		return
 	}
-	fmt.Println("loaded kots kinds from path")
 
 	// get values from saved app version
 	configValues := map[string]template.ItemValue{}
@@ -315,7 +308,6 @@ func (h *Handler) CurrentAppConfig(w http.ResponseWriter, r *http.Request) {
 		}
 		configValues[key] = generatedValue
 	}
-	fmt.Println("did a variadic thing")
 
 	registryInfo, err := store.GetStore().GetRegistryDetailsForApp(foundApp.ID)
 	if err != nil {
@@ -324,7 +316,6 @@ func (h *Handler) CurrentAppConfig(w http.ResponseWriter, r *http.Request) {
 		JSON(w, http.StatusInternalServerError, currentAppConfigResponse)
 		return
 	}
-	fmt.Println("got registry details for app")
 
 	localRegistry := template.LocalRegistry{
 		Host:      registryInfo.Hostname,
@@ -337,13 +328,11 @@ func (h *Handler) CurrentAppConfig(w http.ResponseWriter, r *http.Request) {
 	versionInfo := template.VersionInfoFromInstallation(int64(sequence)+1, foundApp.IsAirgap, kotsKinds.Installation.Spec) // sequence +1 because the sequence will be incremented on save (and we want the preview to be accurate)
 	renderedConfig, err := kotsconfig.TemplateConfigObjects(kotsKinds.Config, configValues, appLicense, localRegistry, &versionInfo, kotsKinds.IdentityConfig, os.Getenv("POD_NAMESPACE"))
 	if err != nil {
-		fmt.Printf("Templating config failed!!!\n %v\n", err)
 		logger.Error(err)
 		currentAppConfigResponse.Error = "failed to render templates"
 		JSON(w, http.StatusInternalServerError, currentAppConfigResponse)
 		return
 	}
-	fmt.Println("got version info from installation")
 
 	JSON(w, http.StatusOK, CurrentAppConfigResponse{Success: true, ConfigGroups: renderedConfig.Spec.Groups})
 }
