@@ -9,6 +9,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
+
 	"k8s.io/client-go/kubernetes/scheme"
 )
 
@@ -84,10 +86,11 @@ func Test_renderReplicated(t *testing.T) {
 	// secretName-3 tests repeatable items with a bool
 	// don't touch this! tests merging repeatable items with existing items
 	tests := []struct {
-		name          string
-		upstream      *upstreamtypes.Upstream
-		renderOptions *RenderOptions
-		expectedFile  BaseFile
+		name               string
+		upstream           *upstreamtypes.Upstream
+		renderOptions      *RenderOptions
+		expectedDeployment BaseFile
+		expectedSecrets    []BaseFile
 	}{
 		{
 			name: "replace array with repeat values",
@@ -150,6 +153,11 @@ spec:
         name: my-deploy
         namespace: my-app
         yamlPath: spec.template.spec.volumes[1].projected.sources[1]
+      - apiVersion: v1
+        kind: Secret
+        name: my-secret
+        namespace: my-app
+        yamlPath:
 `,
 						),
 					},
@@ -162,13 +170,13 @@ metadata:
 spec:
   values:
     secretName-1:
-      value: "123"
+      value: "MTIz"
       repeatableItem: secretName
     secretName-2:
-      value: "456"
+      value: "MTIz"
       repeatableItem: secretName
     secretName-3:
-      value: "789"
+      value: "MTIz"
       repeatableItem: secretName
 status: {}
 `,
@@ -205,20 +213,35 @@ spec:
               metaData:
                 fileName: 'repl{{ ConfigOptionName "secretName"}}'
           - secret:
-              name: 'repl{{ ConfigOption "secretName"}}'
+              name: 'repl{{ ConfigOptionName "secretName"}}'
               pod: repl{{ ConfigOption "podName" }}
               metaData:
                 pod: repl{{ ConfigOption "podName"}}
                 fileName: 'repl{{ ConfigOptionName "secretName"}}'
+              items:
+                - key: "data"
+                  path: '{{repl ConfigOptionName "secretName"}}'
           - secret:
               name: "don't touch this either!"`),
+					},
+					{
+						Path: "secret.yaml",
+						Content: []byte(
+							`apiVersion: v1
+kind: Secret
+metadata:
+  name: my-secret
+  namespace: my-app
+type: Opaque
+data:
+  file: '{{repl ConfigOption "secretName"}}'`),
 					},
 				},
 			},
 			renderOptions: &RenderOptions{
 				Log: logger.NewCLILogger(),
 			},
-			expectedFile: BaseFile{
+			expectedDeployment: BaseFile{
 				Path: "deployment.yaml",
 				Content: []byte(
 					`apiVersion: apps/v1
@@ -251,23 +274,70 @@ spec:
               - secret:
                   name: "don't touch this either!"
               - secret:
-                  name: "123"
+                  name: "secretName-1"
                   pod: "testPod"
                   metaData:
                     pod: "testPod"
                     fileName: "secretName-1"
+                  items:
+                  - key: "file"
+                    path: "secretName-1"
               - secret:
-                  name: "456"
+                  name: "secretName-2"
                   pod: "testPod"
                   metaData:
                     pod: "testPod"
                     fileName: "secretName-2"
+                  items:
+                  - key: "file"
+                    path: "secretName-2"
               - secret:
-                  name: "789"
+                  name: "secretName-3"
                   pod: "testPod"
                   metaData:
                     pod: "testPod"
-                    fileName: "secretName-3"`),
+                    fileName: "secretName-3"
+                  items:
+                  - key: "file"
+                    path: "secretName-3"`),
+			},
+			expectedSecrets: []BaseFile{
+				{
+					Path: "secret-rando.yaml",
+					Content: []byte(
+						`apiVersion: v1
+kind: Secret
+metadata:
+  name: secretName-1
+  namespace: "my-app"
+type: Opaque
+data:
+  file: MTIz`),
+				},
+				{
+					Path: "secret-rando.yaml",
+					Content: []byte(
+						`apiVersion: v1
+kind: Secret
+metadata:
+  name: secretName-2
+  namespace: "my-app"
+type: Opaque
+data:
+  file: MTIz`),
+				},
+				{
+					Path: "secret-rando.yaml",
+					Content: []byte(
+						`apiVersion: v1
+kind: Secret
+metadata:
+  name: secretName-3
+  namespace: "my-app"
+type: Opaque
+data:
+  file: MTIz`),
+				},
 			},
 		},
 	}
@@ -280,22 +350,46 @@ spec:
 			req.NoError(err)
 
 			decode := scheme.Codecs.UniversalDeserializer().Decode
-			obj, _, err := decode(test.expectedFile.Content, nil, nil)
+			depobj, _, err := decode(test.expectedDeployment.Content, nil, nil)
+			req.NoError(err)
 
-			expected := obj.(*appsv1.Deployment)
+			expectedDeployment := depobj.(*appsv1.Deployment)
+
+			var unmarshaledSecrets []*corev1.Secret
+			for _, expectedSecret := range test.expectedSecrets {
+				secobj, _, err := decode(expectedSecret.Content, nil, nil)
+				req.NoError(err)
+
+				unmarshaledSecrets = append(unmarshaledSecrets, secobj.(*corev1.Secret))
+			}
+
+			secretsFound := 0
 
 			for _, targetFile := range base.Files {
-				if targetFile.Path == test.expectedFile.Path {
-					decode := scheme.Codecs.UniversalDeserializer().Decode
-					obj, _, err := decode(targetFile.Content, nil, nil)
+				obj, gvk, err := decode(targetFile.Content, nil, nil)
+				if err != nil {
+					continue
+				}
 
+				if gvk.Kind == "deployment" {
 					deployment := obj.(*appsv1.Deployment)
 
-					req.NoError(err)
+					assert.ElementsMatch(t, expectedDeployment.Spec.Template.Spec.Volumes[1].Projected.Sources, deployment.Spec.Template.Spec.Volumes[1].Projected.Sources)
+				}
 
-					assert.ElementsMatch(t, expected.Spec.Template.Spec.Volumes[1].Projected.Sources, deployment.Spec.Template.Spec.Volumes[1].Projected.Sources)
+				if gvk.Kind == "Secret" {
+					secretsFound++
+					secret := obj.(*corev1.Secret)
+
+					for _, unmarshaledSecret := range unmarshaledSecrets {
+						if secret.GetObjectMeta().GetName() == unmarshaledSecret.GetObjectMeta().GetName() {
+							assert.Equal(t, unmarshaledSecret, secret)
+						}
+					}
 				}
 			}
+			req.Equal(secretsFound, len(unmarshaledSecrets))
+
 		})
 	}
 }

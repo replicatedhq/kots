@@ -6,25 +6,25 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/google/uuid"
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	"github.com/replicatedhq/kots/pkg/logger"
 	upstreamtypes "github.com/replicatedhq/kots/pkg/upstream/types"
 	yaml3 "gopkg.in/yaml.v3"
-	"k8s.io/client-go/kubernetes/scheme"
 )
 
 // Known issues and TODOs:
 // This currently only addresses variadic items.  Variadic groups are not included yet and may require changes to these functions.
 // getVariadicGroupsForTemplate should be split into subfunctions to make it easier to read
-// The last element in the YamlPath must be an array. We cannot copy whole files yet.
+// The last element in the YamlPath must be an array.
 
-func processVariadicConfig(u *upstreamtypes.UpstreamFile, config *kotsv1beta1.Config, log *logger.CLILogger) error {
+func processVariadicConfig(u *upstreamtypes.UpstreamFile, config *kotsv1beta1.Config, log *logger.CLILogger) ([]upstreamtypes.UpstreamFile, error) {
 	templateMetadata, node, err := getUpstreamTemplateData(u.Content)
 	if err != nil {
 		// if the upstream file can't be unmarshaled as a yaml manifest, this file should be skipped
 		log.Info("variadic processing on file %s skipped: %v", u.Path, err.Error())
-		return nil
+		return nil, nil
 	}
 
 	// fill in templateMetadata data from unmarshaled yaml
@@ -32,84 +32,94 @@ func processVariadicConfig(u *upstreamtypes.UpstreamFile, config *kotsv1beta1.Co
 	if err != nil {
 		// if upstream metadata doesn't exist, this file will not match any templates and should be skipped
 		log.Info("variadic processing on file %s skipped: %v", u.Path, err.Error())
-		return nil
+		return nil, nil
 	}
 
 	// collect all variadic config for this specific template
 	variadicGroups := getVariadicGroupsForTemplate(config, templateMetadata)
 
+	var generatedFiles []upstreamtypes.UpstreamFile
+
 	for _, vgroup := range variadicGroups {
 		for _, vitem := range vgroup.items {
+			// check for values that are assigned to this group
 			if len(vitem.item.ValuesByGroup[vgroup.group.Name]) == 0 {
 				// if no repeat values are provided, allow the default to be rendered as normal
 				continue
 			}
 
-			yamlStack, err := buildStackFromYaml(vitem.yamlPath, node)
-			if err != nil {
-				return errors.Wrapf(err, "failed to build yaml stack for item %s", vitem.item.Name)
+			// copy the entire yaml file if target yamlpath is empty
+			if vitem.yamlPath == "" {
+				newFilesContent, err := renderRepeatFilesContent(node, vitem.item.Name, vitem.item.ValuesByGroup[vgroup.group.Name])
+				if err != nil {
+					return nil, errors.Wrapf(err, "failed to clone file for item %s", vitem.item.Name)
+				}
+
+				for _, newFileContent := range newFilesContent {
+					newFile := upstreamtypes.UpstreamFile{
+						Content: newFileContent,
+					}
+
+					shortUUID := strings.Split(uuid.New().String(), "-")[0]
+					pathParts := strings.Split(u.Path, ".")
+
+					if len(pathParts) > 1 {
+						newFile.Path = fmt.Sprintf("%s-%s.%s", pathParts[0], shortUUID, pathParts[1])
+					} else {
+						newFile.Path = fmt.Sprintf("%s-%s", pathParts[0], shortUUID)
+					}
+
+					generatedFiles = append(generatedFiles, newFile)
+				}
+
+			} else {
+
+				yamlStack, err := buildStackFromYaml(vitem.yamlPath, node)
+				if err != nil {
+					return nil, errors.Wrapf(err, "failed to build yaml stack for item %s", vitem.item.Name)
+				}
+
+				yamlStack.renderRepeatNodes(vitem.item.Name, vitem.item.ValuesByGroup[vgroup.group.Name])
+
+				node = buildYamlFromStack(yamlStack)
 			}
-
-			yamlStack.renderRepeatNodes(vitem.item.Name, vitem.item.ValuesByGroup[vgroup.group.Name])
-
-			node = buildYamlFromStack(yamlStack)
 		}
 	}
 
 	marshaled, err := yaml3.Marshal(node)
 	if err != nil {
-		return errors.Wrap(err, "failed to marshal variadic config")
+		return nil, errors.Wrap(err, "failed to marshal variadic config")
 	}
 
 	u.Content = marshaled
 
-	return nil
+	return generatedFiles, nil
 }
 
 func getUpstreamTemplateData(upstreamContent []byte) (kotsv1beta1.RepeatTemplate, map[string]interface{}, error) {
 	var templateHeaders kotsv1beta1.RepeatTemplate
-
-	// get upstreamFile gvk
-	decode := scheme.Codecs.UniversalDeserializer().Decode
-	_, gvk, err := decode(upstreamContent, nil, nil)
-	if err != nil {
-		return templateHeaders, nil, errors.Wrap(err, "failed to decode upstreamFile")
-	}
-	// skip variadic config on kots kinds
-	if gvk != nil && gvk.Group == "kots.io" {
-		return templateHeaders, nil, fmt.Errorf("upstreamContent is a kots kind")
-	}
 
 	node := map[string]interface{}{}
 
 	if err := yaml3.Unmarshal(upstreamContent, node); err != nil {
 		return templateHeaders, nil, errors.Wrap(err, "failed to unmarshal upstreamFile")
 	}
-
-	if gvk != nil {
-		// create templateHeaders with gvk info
-		templateHeaders = kotsv1beta1.RepeatTemplate{
-			APIVersion: fmt.Sprintf("%s/%s", gvk.Group, gvk.Version),
-			Kind:       gvk.Kind,
+	if apiVersion, ok := node["apiVersion"]; ok {
+		switch v := apiVersion.(type) {
+		case string:
+			templateHeaders.APIVersion = v
+		default:
+			// upstream file 'apiVersion' is not a string, this cannot be a valid target file and should be skipped
+			return templateHeaders, nil, fmt.Errorf("template apiVersion is not a string")
 		}
-	} else {
-		if apiVersion, ok := node["apiVersion"]; ok {
-			switch v := apiVersion.(type) {
-			case string:
-				templateHeaders.APIVersion = v
-			default:
-				// upstream file 'apiVersion' is not a string, this cannot be a valid target file and should be skipped
-				return templateHeaders, nil, fmt.Errorf("template apiVersion is not a string")
-			}
-		}
-		if kind, ok := node["kind"]; ok {
-			switch v := kind.(type) {
-			case string:
-				templateHeaders.Kind = v
-			default:
-				// upstream file 'kind' is not a string, this cannot be a valid target file and should be skipped
-				return templateHeaders, nil, fmt.Errorf("template kind is not a string")
-			}
+	}
+	if kind, ok := node["kind"]; ok {
+		switch v := kind.(type) {
+		case string:
+			templateHeaders.Kind = v
+		default:
+			// upstream file 'kind' is not a string, this cannot be a valid target file and should be skipped
+			return templateHeaders, nil, fmt.Errorf("template kind is not a string")
 		}
 	}
 
@@ -292,16 +302,38 @@ func replaceTemplateValue(node interface{}, optionName, valueName string, value 
 func generateTargetValue(configOptionName, valueName, target string, templateValue interface{}) interface{} {
 	if strings.Contains(target, "repl{{") || strings.Contains(target, "{{repl") {
 		variable := strings.Split(target, "\"")[1]
-		if variable == configOptionName && strings.Contains(target, "ConfigOption ") {
-			return templateValue
-		} else if variable == configOptionName && strings.Contains(target, "ConfigOptionName") {
-			return valueName
-		} else if variable == configOptionName {
+		if variable == configOptionName {
 			return strings.Replace(target, variable, valueName, 1)
 		}
 	}
 	// if no edits are needed, return the original target
 	return target
+}
+
+func renderRepeatFilesContent(yaml map[string]interface{}, optionName string, values map[string]interface{}) ([][]byte, error) {
+	var marshaledFiles [][]byte
+	for valueName, value := range values {
+		yaml = replaceNewYamlName(yaml, valueName)
+
+		newYaml := replaceTemplateValue(yaml, optionName, valueName, value)
+
+		marshaled, err := yaml3.Marshal(newYaml)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to marshal repeat file")
+		}
+
+		marshaledFiles = append(marshaledFiles, marshaled)
+	}
+
+	return marshaledFiles, nil
+}
+
+func replaceNewYamlName(yaml map[string]interface{}, name string) map[string]interface{} {
+	metadata := yaml["metadata"].(map[string]interface{})
+	metadata["name"] = name
+
+	yaml["metadata"] = metadata
+	return yaml
 }
 
 // variadicGroup lists all repeat items under a ConfigGroup

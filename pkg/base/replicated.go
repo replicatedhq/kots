@@ -74,9 +74,35 @@ func renderReplicated(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (
 			upstreamFile.Content = bytes.Join(newContent, []byte("\n---\n"))
 		}
 
-		err = processVariadicConfig(&upstreamFile, actualizedConfig, renderOptions.Log)
+		generatedFiles, err := processVariadicConfig(&upstreamFile, actualizedConfig, renderOptions.Log)
 		if err != nil {
 			return nil, errors.Wrapf(err, "failed to process variadic config in file %s", upstreamFile.Path)
+		}
+
+		// render generated variadic files and add them to base
+		if len(generatedFiles) > 0 {
+			// remove the original file from upstream so it doesn't spawn more generated files
+			files := removeFileFromUpstream(u.Files, upstreamFile.Path)
+			// add the generated files into upstream
+			files = append(files, generatedFiles...)
+			newUpstream := u
+			newUpstream.Files = files
+			// re-render upstream with the new files
+			subBase, err := renderReplicated(newUpstream, renderOptions)
+			if err != nil {
+				return nil, errors.Wrap(err, "failed to render generated variadic files")
+			}
+			// add the rendered generated files into base
+			for _, renderedFile := range subBase.Files {
+				for _, uFile := range newUpstream.Files {
+					if renderedFile.Path == uFile.Path {
+						// log to inform where new files are coming from
+						renderOptions.Log.Info("adding generated file %s to base", renderedFile.Path)
+						base.Files = append(base.Files, renderedFile)
+					}
+				}
+			}
+			continue
 		}
 
 		baseFile, err := upstreamFileToBaseFile(upstreamFile, *builder, renderOptions.Log)
@@ -99,6 +125,7 @@ func renderReplicated(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (
 				base.ErrorFiles = append(base.ErrorFiles, f)
 			}
 		}
+
 	}
 
 	// render helm charts that were specified
@@ -503,4 +530,15 @@ func chartArchiveToSparseUpstream(chartArchivePath string) (*upstreamtypes.Upstr
 	}
 
 	return upstream, nil
+}
+
+func removeFileFromUpstream(files []upstreamtypes.UpstreamFile, path string) []upstreamtypes.UpstreamFile {
+	for index, file := range files {
+		if file.Path == path {
+			files[index] = files[len(files)-1]
+			files[len(files)-1] = upstreamtypes.UpstreamFile{}
+			return files[:len(files)-1]
+		}
+	}
+	return files
 }
