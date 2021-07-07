@@ -26,7 +26,7 @@ if s3cmd $S3_S3CMD_FLAGS ls s3://$S3_BUCKET_NAME 2>&1 | grep -q 'NoSuchBucket'; 
   exit 0
 fi
 
-echo 'object store and bucket detected, running migration ...'
+echo 'object store detected, running migration ...'
 
 mkdir -p $ARCHIVES_DIR
 s3cmd $S3_S3CMD_FLAGS sync s3://$S3_BUCKET_NAME $ARCHIVES_DIR
