@@ -202,8 +202,7 @@ func (h *Handler) LiveAppConfig(w http.ResponseWriter, r *http.Request) {
 
 			// collect all repeatable items
 			if item.Repeatable {
-				copyCountByGroup(kotsKinds.Config, item, group.Name)
-				for _, groupValues := range item.ValuesByGroup {
+				for valuesByGroupName, groupValues := range item.ValuesByGroup {
 					// if the front end sends an empty variadic group, create the first item
 					if len(groupValues) == 0 {
 						itemValue := template.ItemValue{
@@ -221,6 +220,7 @@ func (h *Handler) LiveAppConfig(w http.ResponseWriter, r *http.Request) {
 						}
 						configValues[fieldName] = itemValue
 					}
+					copyCountByGroup(kotsKinds.Config, item, valuesByGroupName)
 				}
 			}
 		}
