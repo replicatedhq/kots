@@ -928,6 +928,10 @@ func copyCountByGroup(config *kotsv1beta1.Config, item kotsv1beta1.ConfigItem, g
 		if configGroup.Name == groupName {
 			for itemIndex, configItem := range configGroup.Items {
 				if configItem.Name == item.Name {
+					// if this map doesn't exist yet, create it to avoid a panic
+					if config.Spec.Groups[groupIndex].Items[itemIndex].CountByGroup == nil {
+						config.Spec.Groups[groupIndex].Items[itemIndex].CountByGroup = map[string]int{}
+					}
 					config.Spec.Groups[groupIndex].Items[itemIndex].CountByGroup[configGroup.Name] = item.CountByGroup[groupName]
 				}
 			}
