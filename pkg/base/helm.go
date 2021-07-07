@@ -28,7 +28,7 @@ func RenderHelm(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (*Base,
 		d, fileName := path.Split(p)
 		if _, err := os.Stat(d); err != nil {
 			if os.IsNotExist(err) {
-				if err := os.MkdirAll(d, 0744); err != nil {
+				if err := os.MkdirAll(d, 0755); err != nil {
 					return nil, errors.Wrap(err, "failed to mkdir for chart resource")
 				}
 			} else {

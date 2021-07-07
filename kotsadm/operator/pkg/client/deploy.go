@@ -498,11 +498,11 @@ func (c *Client) installHelm(helmDir string, namespace string) (*commandResult, 
 			hasErr = true
 		}
 
-		if stdout != nil {
-			multiStdout = append(multiStdout, stdout)
+		if len(stdout) > 0 {
+			multiStdout = append(multiStdout, []byte(fmt.Sprintf("------- %s -------", cname.ChartName)), stdout)
 		}
-		if stderr != nil {
-			multiStderr = append(multiStderr, stderr)
+		if len(stderr) > 0 {
+			multiStderr = append(multiStderr, []byte(fmt.Sprintf("------- %s -------", cname.ChartName)), stderr)
 		}
 	}
 
