@@ -6,41 +6,266 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func Test_buildStackFromYaml(t *testing.T) {
+	tests := []struct {
+		name      string
+		yamlPath  string
+		yaml      map[string]interface{}
+		wantStack yamlStack
+	}{
+		{
+			name:     "build stack",
+			yamlPath: "spec.template.spec.containers[0]",
+			yaml: map[string]interface{}{
+				"spec": map[string]interface{}{
+					"template": map[string]interface{}{
+						"spec": map[string]interface{}{
+							"containers": []interface{}{
+								map[string]interface{}{
+									"name": "hello",
+								},
+							},
+						},
+					},
+				},
+			},
+			wantStack: yamlStack{
+				{
+					NodeName: "",
+					Type:     "map",
+					Index:    0,
+					Data: map[string]interface{}{
+						"spec": map[string]interface{}{
+							"template": map[string]interface{}{
+								"spec": map[string]interface{}{
+									"containers": []interface{}{
+										map[string]interface{}{
+											"name": "hello",
+										},
+									},
+								},
+							},
+						},
+					},
+					Array: nil,
+				},
+				{
+					NodeName: "spec",
+					Type:     "map",
+					Index:    0,
+					Data: map[string]interface{}{
+						"template": map[string]interface{}{
+							"spec": map[string]interface{}{
+								"containers": []interface{}{
+									map[string]interface{}{
+										"name": "hello",
+									},
+								},
+							},
+						},
+					},
+					Array: nil,
+				},
+				{
+					NodeName: "template",
+					Type:     "map",
+					Index:    0,
+					Data: map[string]interface{}{
+						"spec": map[string]interface{}{
+							"containers": []interface{}{
+								map[string]interface{}{
+									"name": "hello",
+								},
+							},
+						},
+					},
+					Array: nil,
+				},
+				{
+					NodeName: "spec",
+					Type:     "map",
+					Index:    0,
+					Data: map[string]interface{}{
+						"containers": []interface{}{
+							map[string]interface{}{
+								"name": "hello",
+							},
+						},
+					},
+					Array: nil,
+				},
+				{
+					NodeName: "containers",
+					Type:     "array",
+					Index:    0,
+					Data: map[string]interface{}{
+						"name": "hello",
+					},
+					Array: []interface{}{
+						map[string]interface{}{
+							"name": "hello",
+						},
+					},
+				},
+			},
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			req := require.New(t)
+
+			result, err := buildStackFromYaml(test.yamlPath, test.yaml)
+			req.NoError(err)
+
+			req.Equal(test.wantStack, result)
+		})
+	}
+}
+
+func Test_buildYamlFromStack(t *testing.T) {
+	tests := []struct {
+		name     string
+		stack    yamlStack
+		wantyaml map[string]interface{}
+	}{
+		{
+			name: "build stack",
+			stack: yamlStack{
+				{
+					NodeName: "",
+					Type:     "map",
+					Index:    0,
+					Data: map[string]interface{}{
+						"spec": map[string]interface{}{
+							"template": map[string]interface{}{
+								"spec": map[string]interface{}{
+									"containers": []interface{}{
+										map[string]interface{}{
+											"name": "hello",
+										},
+									},
+								},
+							},
+						},
+					},
+					Array: nil,
+				},
+				{
+					NodeName: "spec",
+					Type:     "map",
+					Index:    0,
+					Data: map[string]interface{}{
+						"template": map[string]interface{}{
+							"spec": map[string]interface{}{
+								"containers": []interface{}{
+									map[string]interface{}{
+										"name": "hello",
+									},
+								},
+							},
+						},
+					},
+					Array: nil,
+				},
+				{
+					NodeName: "template",
+					Type:     "map",
+					Index:    0,
+					Data: map[string]interface{}{
+						"spec": map[string]interface{}{
+							"containers": []interface{}{
+								map[string]interface{}{
+									"name": "hello",
+								},
+							},
+						},
+					},
+					Array: nil,
+				},
+				{
+					NodeName: "spec",
+					Type:     "map",
+					Index:    0,
+					Data: map[string]interface{}{
+						"containers": []interface{}{
+							map[string]interface{}{
+								"name": "hello",
+							},
+						},
+					},
+					Array: nil,
+				},
+				{
+					NodeName: "containers",
+					Type:     "array",
+					Index:    0,
+					Data: map[string]interface{}{
+						"name": "hello",
+					},
+					Array: []interface{}{
+						map[string]interface{}{
+							"name": "hello",
+						},
+					},
+				},
+			},
+			wantyaml: map[string]interface{}{
+				"spec": map[string]interface{}{
+					"template": map[string]interface{}{
+						"spec": map[string]interface{}{
+							"containers": []interface{}{
+								map[string]interface{}{
+									"name": "hello",
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			req := require.New(t)
+
+			result := buildYamlFromStack(test.stack)
+
+			req.Equal(test.wantyaml, result)
+		})
+	}
+}
+
 func Test_generateTargetValue(t *testing.T) {
 	tests := []struct {
 		name             string
 		configOptionName string
 		valueName        string
 		target           string
-		templateValue    interface{}
 		want             interface{}
 	}{
 		{
 			configOptionName: "secret",
 			valueName:        "secret-1",
 			target:           "repl{{ ConfigOption \"secret\" }}",
-			templateValue:    "123",
 			want:             "repl{{ ConfigOption \"secret-1\" }}",
 		},
 		{
 			configOptionName: "secret",
 			valueName:        "secret-1",
 			target:           "repl{{ ConfigOptionName \"secret\" }}",
-			templateValue:    "123",
 			want:             "repl{{ ConfigOptionName \"secret-1\" }}",
 		},
 		{
 			configOptionName: "secret",
 			valueName:        "secret-1",
 			target:           "repl{{ ConfigOptionFilename \"secret\" }}",
-			templateValue:    "123",
 			want:             "repl{{ ConfigOptionFilename \"secret-1\" }}",
 		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			req := require.New(t)
-			result := generateTargetValue(test.configOptionName, test.valueName, test.target, test.templateValue)
+			result := generateTargetValue(test.configOptionName, test.valueName, test.target)
 
 			req.Equal(test.want, result)
 		})

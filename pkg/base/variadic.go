@@ -16,7 +16,7 @@ import (
 
 // Known issues and TODOs:
 // This currently only addresses variadic items.  Variadic groups are not included yet and may require changes to these functions.
-// getVariadicGroupsForTemplate should be split into subfunctions to make it easier to read
+// getVariadicGroupsForTemplate should be split into subfunctions to make it easier to read.
 // The last element in the YamlPath must be an array.
 
 func processVariadicConfig(u *upstreamtypes.UpstreamFile, config *kotsv1beta1.Config, log *logger.CLILogger) ([]upstreamtypes.UpstreamFile, error) {
@@ -259,12 +259,12 @@ func (stack yamlStack) renderRepeatNodes(optionName string, values map[string]in
 	newArray = append(newArray, target.Array[:target.Index]...)
 	newArray = append(newArray, target.Array[target.Index+1:]...)
 
-	for valueName, value := range values {
+	for valueName := range values {
 		// copy all values into a new map
 		newMap := map[string]interface{}{}
 		for targetField, targetData := range target.Data {
 			// replace the target value
-			newMap[targetField] = replaceTemplateValue(targetData, optionName, valueName, value)
+			newMap[targetField] = replaceTemplateValue(targetData, optionName, valueName)
 		}
 
 		newArray = append(newArray, newMap)
@@ -277,20 +277,20 @@ func (stack yamlStack) renderRepeatNodes(optionName string, values map[string]in
 
 // replaceTemplateValue searches all nested nodes of a value
 // if the provided optionName is found within repl{{ ConfigOption "optionName" }}, the placeholder will be replaced with the repeatable value
-func replaceTemplateValue(node interface{}, optionName, valueName string, value interface{}) interface{} {
+func replaceTemplateValue(node interface{}, optionName, valueName string) interface{} {
 	switch typedNode := node.(type) {
 	case string:
-		return generateTargetValue(optionName, valueName, typedNode, value)
+		return generateTargetValue(optionName, valueName, typedNode)
 	case map[string]interface{}:
 		newMap := map[string]interface{}{}
 		for subField, subNode := range typedNode {
-			newMap[subField] = replaceTemplateValue(subNode, optionName, valueName, value)
+			newMap[subField] = replaceTemplateValue(subNode, optionName, valueName)
 		}
 		return newMap
 	case []interface{}:
 		resultSet := []interface{}{}
 		for _, subNode := range typedNode {
-			results := replaceTemplateValue(subNode, optionName, valueName, value)
+			results := replaceTemplateValue(subNode, optionName, valueName)
 			resultSet = append(resultSet, results)
 		}
 		return resultSet
@@ -299,7 +299,7 @@ func replaceTemplateValue(node interface{}, optionName, valueName string, value 
 }
 
 // isTargetValue determines if a string is the appropriate templated value target
-func generateTargetValue(configOptionName, valueName, target string, templateValue interface{}) interface{} {
+func generateTargetValue(configOptionName, valueName, target string) interface{} {
 	if strings.Contains(target, "repl{{") || strings.Contains(target, "{{repl") {
 		variable := strings.Split(target, "\"")[1]
 		if variable == configOptionName {
@@ -312,10 +312,10 @@ func generateTargetValue(configOptionName, valueName, target string, templateVal
 
 func renderRepeatFilesContent(yaml map[string]interface{}, optionName string, values map[string]interface{}) ([][]byte, error) {
 	var marshaledFiles [][]byte
-	for valueName, value := range values {
+	for valueName := range values {
 		yaml = replaceNewYamlName(yaml, valueName)
 
-		newYaml := replaceTemplateValue(yaml, optionName, valueName, value)
+		newYaml := replaceTemplateValue(yaml, optionName, valueName)
 
 		marshaled, err := yaml3.Marshal(newYaml)
 		if err != nil {
