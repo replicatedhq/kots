@@ -9,6 +9,12 @@ export default class ConfigGroups extends React.Component {
     }
   }
 
+  handleAddItem = (groupName, itemName) => {
+    if (this.props.handleAddItem) {
+      this.props.handleAddItem(groupName, itemName);
+    }
+  }
+
   render() {
     const { fieldsList, fields, readonly } = this.props;
     return (
@@ -17,6 +23,7 @@ export default class ConfigGroups extends React.Component {
           <ConfigGroup
             key={`${i}-${fieldName}`}
             items={fields}
+            handleAddItem={(itemName) => this.handleAddItem(fieldName, itemName)}
             item={fields[fieldName]}
             handleChange={(itemName, value, data) => this.handleGroupChange(fieldName, itemName, value, data)}
             readonly={readonly}

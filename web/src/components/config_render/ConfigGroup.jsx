@@ -24,6 +24,12 @@ export default class ConfigGroup extends React.Component {
     }
   }
 
+  handleAddItem = (itemName) => {
+    if (this.props.handleAddItem) {
+      this.props.handleAddItem(itemName);
+    }
+  }
+
   renderConfigItems = (items, readonly) => {
     if (!items) return null;
     return items.map((item, i) => {
@@ -34,6 +40,7 @@ export default class ConfigGroup extends React.Component {
           <ConfigInput
             key={`${i}-${item.name}`}
             handleOnChange={this.handleItemChange}
+            handleAddItem={this.handleAddItem}
             inputType="text"
             hidden={item.hidden}
             when={item.when}
@@ -47,6 +54,7 @@ export default class ConfigGroup extends React.Component {
           <ConfigTextarea
             key={`${i}-${item.name}`}
             handleOnChange={this.handleItemChange}
+            handleAddItem={this.handleAddItem}
             hidden={item.hidden}
             when={item.when}
             {...item}
@@ -58,6 +66,7 @@ export default class ConfigGroup extends React.Component {
           <ConfigCheckbox
             key={`${i}-${item.name}`}
             handleOnChange={this.handleItemChange}
+            handleAddItem={this.handleAddItem}
             hidden={item.hidden}
             when={item.when}
             {...item}
@@ -99,6 +108,7 @@ export default class ConfigGroup extends React.Component {
           <ConfigSelectOne
             key={`${i}-${item.name}`}
             handleOnChange={this.handleItemChange}
+            handleAddItem={this.handleAddItem}
             hidden={item.hidden}
             when={item.when}
             {...item}
@@ -116,6 +126,7 @@ export default class ConfigGroup extends React.Component {
           <ConfigInput
             key={`${i}-${item.name}`}
             handleOnChange={this.handleItemChange}
+            handleAddItem={this.handleAddItem}
             hidden={item.hidden}
             when={item.when}
             inputType="password"

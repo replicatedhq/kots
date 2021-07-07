@@ -1,6 +1,8 @@
 import React from "react";
 import keyBy from "lodash/keyBy";
+import find from "lodash/find";
 import debounce from "lodash/debounce";
+import uniqBy from "lodash/uniqBy";
 import _ from "lodash/core";
 
 import ConfigGroups from "./ConfigGroups";
@@ -76,9 +78,24 @@ export default class ConfigRender extends React.Component {
       return group;
     });
 
-    this.setState({groups: keyBy(groups, "name")});
+    this.setState({
+      rawGroups: groups,
+      groups: keyBy(groups, "name")
+    });
 
     // TODO: maybe this should only be on submit
+    this.triggerChange(this.props.getData(groups));
+  }
+
+  handleAddItem = (groupName, itemName) => {
+    const groups = this.props.rawGroups;
+    const groupToEdit = find(groups, ["name", groupName]);
+    let itemToEdit = find(groupToEdit.items, ["name", itemName]);
+    itemToEdit["valuesByGroup"] = {
+      [`${groupName}`]: {}
+    }
+    itemToEdit["minimumCount"] = Object.keys(itemToEdit.valuesByGroup).length;
+    this.setState({ rawGroups: groups });
     this.triggerChange(this.props.getData(groups));
   }
 
@@ -99,6 +116,7 @@ export default class ConfigRender extends React.Component {
           fieldsList={fieldsList}
           fields={this.state.groups}
           handleChange={this.handleGroupsChange}
+          handleAddItem={this.handleAddItem}
           readonly={readonly}
         />
       </div>
