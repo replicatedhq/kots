@@ -73,7 +73,7 @@ export default class ConfigTextarea extends React.Component {
           </textarea>
         </div>
         {this.props.repeatable &&
-          <div className="u-marginTop--10">
+          <div className="u-marginTop--10" onClick={() => this.props.handleAddItem(this.props.name)}>
             <span className="add-btn u-fontSize--small u-fontWeight--bold u-linkColor u-cursor--pointer"><span className="icon u-addIcon--blue clickable" />Add another {this.props.title}</span>
           </div>
         }
