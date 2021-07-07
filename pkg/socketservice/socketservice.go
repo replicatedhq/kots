@@ -199,31 +199,34 @@ func kustomizeCharts(deployedVersionArchive string, name string, version string)
 		return archive, errors.Wrap(err, "failed to create temp dir")
 	}
 	defer os.RemoveAll(exportChartPath)
-	exportChartsDir := filepath.Join(exportChartPath, "charts")
-	if _, err := os.Stat(exportChartsDir); os.IsNotExist(err) {
-		if err := os.MkdirAll(exportChartsDir, 0744); err != nil {
+
+	desrChartsDir := filepath.Join(exportChartPath, "charts")
+	if _, err := os.Stat(desrChartsDir); os.IsNotExist(err) {
+		if err := os.MkdirAll(desrChartsDir, 0744); err != nil {
 			return archive, errors.Wrap(err, "failed to mkdir for archive chart")
 		}
 	}
 
-	baseDir := filepath.Join(deployedVersionArchive, "base", "charts")
-	baseFiles := []string{"Chart.yaml", "Chart.lock"}
+	sourceChartsDir := filepath.Join(deployedVersionArchive, "base", "charts")
+	metadataFiles := []string{"Chart.yaml", "Chart.lock"}
 
 	err = filepath.Walk(archiveChartDir,
 		func(path string, info os.FileInfo, err error) error {
 			if err != nil {
 				return err
 			}
-			rel, err := filepath.Rel(archiveChartDir, filepath.Dir(path))
+			relPath, err := filepath.Rel(archiveChartDir, filepath.Dir(path))
 			if err != nil {
 				return err
 			}
-			for _, filename := range baseFiles {
-				err = exportFile(baseDir, rel, exportChartsDir, filename)
+
+			for _, filename := range metadataFiles {
+				err = copyHelmMetadataFile(sourceChartsDir, desrChartsDir, relPath, filename)
 				if err != nil {
 					return errors.Wrapf(err, "failed to export file %s", filename)
 				}
 			}
+
 			if info.Name() == "kustomization.yaml" {
 				archiveChartOutput, err := exec.Command(fmt.Sprintf("kustomize%s", version), "build", filepath.Dir(path)).Output()
 				if err != nil {
@@ -232,7 +235,7 @@ func kustomizeCharts(deployedVersionArchive string, name string, version string)
 					}
 					return errors.Wrapf(err, "failed to kustomize %s", path)
 				}
-				err = exportContent(archiveChartOutput, rel, exportChartsDir, "all.yaml")
+				err = saveHelmFile(desrChartsDir, relPath, "all.yaml", archiveChartOutput)
 				if err != nil {
 					return errors.Wrapf(err, "failed to export content for %s", path)
 				}
@@ -253,7 +256,7 @@ func kustomizeCharts(deployedVersionArchive string, name string, version string)
 			ImplicitTopLevelFolder: true,
 		},
 	}
-	if err := tarGz.Archive([]string{exportChartsDir}, path.Join(tempDir, "helmcharts.tar.gz")); err != nil {
+	if err := tarGz.Archive([]string{desrChartsDir}, path.Join(tempDir, "helmcharts.tar.gz")); err != nil {
 		return archive, errors.Wrap(err, "failed to create tar gz")
 	}
 	archive, err = ioutil.ReadFile(path.Join(tempDir, "helmcharts.tar.gz"))
@@ -263,49 +266,44 @@ func kustomizeCharts(deployedVersionArchive string, name string, version string)
 	return archive, nil
 }
 
-func exportContent(allContent []byte, rel string, exportChartsDir string, filename string) error {
-	relDir := ""
-	// TODO: needs a comment explaining this
-	if filepath.Base(rel) != "crds" {
-		relDir = filepath.Join(exportChartsDir, rel, "templates")
-	} else {
-		relDir = filepath.Join(exportChartsDir, rel)
+func saveHelmFile(rootDir string, relDir string, filename string, content []byte) error {
+	// We only get CRDs and templates YAML after kustomization
+	destDir := filepath.Join(rootDir, relDir)
+	if filepath.Base(relDir) != "crds" {
+		destDir = filepath.Join(destDir, "templates")
 	}
 
-	if err := os.MkdirAll(relDir, 0744); err != nil {
-		return errors.Wrapf(err, "failed to mkdir for export chart %s", relDir)
+	if err := os.MkdirAll(destDir, 0744); err != nil {
+		return errors.Wrapf(err, "failed to mkdir for export chart %s", destDir)
 	}
-	exportFile := filepath.Join(relDir, filename)
-	err := ioutil.WriteFile(exportFile, allContent, 0644)
+
+	exportFile := filepath.Join(destDir, filename)
+	err := ioutil.WriteFile(exportFile, content, 0644)
 	if err != nil {
 		return errors.Wrapf(err, "failed to write file %s", exportFile)
 	}
+
 	return nil
 }
 
-func exportFile(baseDir string, rel string, exportChartsDir string, filename string) error {
-	if filename != "Chart.yaml" && filename != "Chart.lock" {
-		return nil
-	}
-
-	baseFile := filepath.Join(baseDir, rel, filename)
-	baseFileContent, err := ioutil.ReadFile(baseFile)
+func copyHelmMetadataFile(srcRootDir string, dstRootDir string, relPath string, filename string) error {
+	fileContent, err := ioutil.ReadFile(filepath.Join(srcRootDir, relPath, filename))
 	if err != nil {
 		if os.IsNotExist(err) {
 			return nil
 		}
-		return errors.Wrap(err, "failed to read file from base")
+		return errors.Wrap(err, "failed to read file")
 	}
 
-	relDir := filepath.Join(exportChartsDir, rel)
-	if err := os.MkdirAll(relDir, 0744); err != nil {
-		return errors.Wrap(err, "failed to create export chart dir")
+	dstDir := filepath.Join(dstRootDir, relPath)
+	if err := os.MkdirAll(dstDir, 0744); err != nil {
+		return errors.Wrap(err, "failed to create destination dir")
 	}
 
-	exportFile := filepath.Join(relDir, filename)
-	err = ioutil.WriteFile(exportFile, baseFileContent, 0644)
+	dstFilename := filepath.Join(dstDir, filename)
+	err = ioutil.WriteFile(dstFilename, fileContent, 0644)
 	if err != nil {
-		return errors.Wrap(err, "failed to write file to export dir")
+		return errors.Wrap(err, "failed to write file")
 	}
 
 	return nil
