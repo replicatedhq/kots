@@ -17,6 +17,8 @@ type DownstreamLogs struct {
 	DryrunStderr string `json:"dryrunStderr"`
 	ApplyStdout  string `json:"applyStdout"`
 	ApplyStderr  string `json:"applyStderr"`
+	HelmStdout   string `json:"helmStdout"`
+	HelmStderr   string `json:"helmStderr"`
 	RenderError  string `json:"renderError"`
 }
 
@@ -49,6 +51,8 @@ func (h *Handler) GetDownstreamOutput(w http.ResponseWriter, r *http.Request) {
 		DryrunStderr: output.DryrunStderr,
 		ApplyStdout:  output.ApplyStdout,
 		ApplyStderr:  output.ApplyStderr,
+		HelmStdout:   output.HelmStdout,
+		HelmStderr:   output.HelmStderr,
 		RenderError:  output.RenderError,
 	}
 	getDownstreamOutputResponse := GetDownstreamOutputResponse{
