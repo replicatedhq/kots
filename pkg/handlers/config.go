@@ -202,9 +202,10 @@ func (h *Handler) LiveAppConfig(w http.ResponseWriter, r *http.Request) {
 
 			// collect all repeatable items
 			if item.Repeatable {
-				for _, group := range item.ValuesByGroup {
+				copyCountByGroup(kotsKinds.Config, item, group.Name)
+				for _, groupValues := range item.ValuesByGroup {
 					// if the front end sends an empty variadic group, create the first item
-					if len(group) == 0 {
+					if len(groupValues) == 0 {
 						itemValue := template.ItemValue{
 							Value:          "",
 							RepeatableItem: item.Name,
@@ -213,7 +214,7 @@ func (h *Handler) LiveAppConfig(w http.ResponseWriter, r *http.Request) {
 						variadicName := fmt.Sprintf("%s-%s", item.Name, shortUUID)
 						configValues[variadicName] = itemValue
 					}
-					for fieldName, subItem := range group {
+					for fieldName, subItem := range groupValues {
 						itemValue := template.ItemValue{
 							Value:          subItem,
 							RepeatableItem: item.Name,
@@ -920,4 +921,16 @@ func updateConfigObject(config *kotsv1beta1.Config, configValues *kotsv1beta1.Co
 	}
 
 	return newConfig, nil
+}
+
+func copyCountByGroup(config *kotsv1beta1.Config, item kotsv1beta1.ConfigItem, groupName string) {
+	for groupIndex, configGroup := range config.Spec.Groups {
+		if configGroup.Name == groupName {
+			for itemIndex, configItem := range configGroup.Items {
+				if configItem.Name == item.Name {
+					config.Spec.Groups[groupIndex].Items[itemIndex].CountByGroup[configGroup.Name] = item.CountByGroup[groupName]
+				}
+			}
+		}
+	}
 }
