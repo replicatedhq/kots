@@ -302,11 +302,7 @@ func replaceTemplateValue(node interface{}, optionName, valueName string, value 
 func generateTargetValue(configOptionName, valueName, target string, templateValue interface{}) interface{} {
 	if strings.Contains(target, "repl{{") || strings.Contains(target, "{{repl") {
 		variable := strings.Split(target, "\"")[1]
-		if variable == configOptionName && strings.Contains(target, "ConfigOption ") {
-			return templateValue
-		} else if variable == configOptionName && strings.Contains(target, "ConfigOptionName") {
-			return valueName
-		} else if variable == configOptionName {
+		if variable == configOptionName {
 			return strings.Replace(target, variable, valueName, 1)
 		}
 	}
