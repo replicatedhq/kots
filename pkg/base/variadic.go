@@ -17,7 +17,7 @@ import (
 // Known issues and TODOs:
 // This currently only addresses variadic items.  Variadic groups are not included yet and may require changes to these functions.
 // getVariadicGroupsForTemplate should be split into subfunctions to make it easier to read
-// The last element in the YamlPath must be an array. We cannot copy whole files yet.
+// The last element in the YamlPath must be an array.
 
 func processVariadicConfig(u *upstreamtypes.UpstreamFile, config *kotsv1beta1.Config, log *logger.CLILogger) ([]upstreamtypes.UpstreamFile, error) {
 	templateMetadata, node, err := getUpstreamTemplateData(u.Content)
