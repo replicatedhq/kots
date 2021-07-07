@@ -53,8 +53,7 @@ func renderReplicated(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (
 		return nil, errors.Wrap(err, "failed to template config objects")
 	}
 
-	for fileIndex, upstreamFile := range u.Files {
-		fmt.Printf("processing upstream file %s\n", upstreamFile.Path)
+	for _, upstreamFile := range u.Files {
 		if renderOptions.ExcludeKotsKinds {
 			// kots kinds are not expected to be valid yaml after builder.RenderTemplate
 			// this will prevent errors later from ShouldBeIncludedInBaseKustomization
@@ -80,6 +79,29 @@ func renderReplicated(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (
 			return nil, errors.Wrapf(err, "failed to process variadic config in file %s", upstreamFile.Path)
 		}
 
+		if len(generatedFiles) > 0 {
+			// remove the original file from upstream so it doesn't spawn more generated files
+			files := removeFileFromUpstream(u.Files, upstreamFile.Path)
+			// add the generated files into upstream
+			files = append(files, generatedFiles...)
+			newUpstream := u
+			newUpstream.Files = files
+			// re-render upstream with the new files
+			subBase, err := renderReplicated(newUpstream, renderOptions)
+			if err != nil {
+				return nil, errors.Wrap(err, "failed to render generated variadic files")
+			}
+			// add the rendered generated files into base
+			for _, renderedFile := range subBase.Files {
+				for _, uFile := range newUpstream.Files {
+					if renderedFile.Path == uFile.Path {
+						base.Files = append(base.Files, renderedFile)
+					}
+				}
+			}
+			continue
+		}
+
 		baseFile, err := upstreamFileToBaseFile(upstreamFile, *builder, renderOptions.Log)
 		if err != nil {
 			return nil, errors.Wrapf(err, "failed to convert upstream file %s to base", upstreamFile.Path)
@@ -101,21 +123,6 @@ func renderReplicated(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (
 			}
 		}
 
-		if len(generatedFiles) > 0 {
-			u.Files = removeFileFromUpstream(u.Files, fileIndex)
-			u.Files = append(u.Files, generatedFiles...)
-			subBase, err := renderReplicated(u, renderOptions)
-			if err != nil {
-				return nil, errors.Wrap(err, "failed to render generated variadic files")
-			}
-			for _, renderedFile := range subBase.Files {
-				for _, generatedFile := range generatedFiles {
-					if renderedFile.Path == generatedFile.Path {
-						base.Files = append(base.Files, renderedFile)
-					}
-				}
-			}
-		}
 	}
 
 	// render helm charts that were specified
@@ -522,7 +529,13 @@ func chartArchiveToSparseUpstream(chartArchivePath string) (*upstreamtypes.Upstr
 	return upstream, nil
 }
 
-func removeFileFromUpstream(files []upstreamtypes.UpstreamFile, index int) []upstreamtypes.UpstreamFile {
-	files[index] = files[len(files)-1]
-	return files[:len(files)-1]
+func removeFileFromUpstream(files []upstreamtypes.UpstreamFile, path string) []upstreamtypes.UpstreamFile {
+	for index, file := range files {
+		if file.Path == path {
+			files[index] = files[len(files)-1]
+			files[len(files)-1] = upstreamtypes.UpstreamFile{}
+			return files[:len(files)-1]
+		}
+	}
+	return files
 }
