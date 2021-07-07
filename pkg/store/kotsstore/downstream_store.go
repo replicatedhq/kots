@@ -502,7 +502,9 @@ func (s *KOTSStore) GetDownstreamOutput(appID string, clusterID string, sequence
 	ado.dryrun_stdout,
 	ado.dryrun_stderr,
 	ado.apply_stdout,
-	ado.apply_stderr
+	ado.apply_stderr,
+	ado.helm_stdout,
+	ado.helm_stderr
 FROM
 	app_downstream_version adv
 LEFT JOIN
@@ -521,8 +523,10 @@ WHERE
 	var dryrunStderr sql.NullString
 	var applyStdout sql.NullString
 	var applyStderr sql.NullString
+	var helmStdout sql.NullString
+	var helmStderr sql.NullString
 
-	if err := row.Scan(&status, &statusInfo, &dryrunStdout, &dryrunStderr, &applyStdout, &applyStderr); err != nil {
+	if err := row.Scan(&status, &statusInfo, &dryrunStdout, &dryrunStderr, &applyStdout, &applyStderr, &helmStdout, &helmStderr); err != nil {
 		if err == sql.ErrNoRows {
 			return &downstreamtypes.DownstreamOutput{}, nil
 		}
@@ -558,11 +562,25 @@ WHERE
 		applyStderrDecoded = []byte("")
 	}
 
+	helmStdoutDecoded, err := base64.StdEncoding.DecodeString(helmStdout.String)
+	if err != nil {
+		logger.Error(errors.Wrap(err, "failed to decode helm stdout"))
+		helmStdoutDecoded = []byte("")
+	}
+
+	helmStderrDecoded, err := base64.StdEncoding.DecodeString(helmStderr.String)
+	if err != nil {
+		logger.Error(errors.Wrap(err, "failed to decode helm stder"))
+		helmStderrDecoded = []byte("")
+	}
+
 	output := &downstreamtypes.DownstreamOutput{
 		DryrunStdout: string(dryrunStdoutDecoded),
 		DryrunStderr: string(dryrunStderrDecoded),
 		ApplyStdout:  string(applyStdoutDecoded),
 		ApplyStderr:  string(applyStderrDecoded),
+		HelmStdout:   string(helmStdoutDecoded),
+		HelmStderr:   string(helmStderrDecoded),
 		RenderError:  string(renderError),
 	}
 
@@ -592,11 +610,12 @@ func (s *KOTSStore) IsDownstreamDeploySuccessful(appID string, clusterID string,
 func (s *KOTSStore) UpdateDownstreamDeployStatus(appID string, clusterID string, sequence int64, isError bool, output downstreamtypes.DownstreamOutput) error {
 	db := persistence.MustGetPGSession()
 
-	query := `insert into app_downstream_output (app_id, cluster_id, downstream_sequence, is_error, dryrun_stdout, dryrun_stderr, apply_stdout, apply_stderr)
-	values ($1, $2, $3, $4, $5, $6, $7, $8) on conflict (app_id, cluster_id, downstream_sequence) do update set is_error = EXCLUDED.is_error,
-	dryrun_stdout = EXCLUDED.dryrun_stdout, dryrun_stderr = EXCLUDED.dryrun_stderr, apply_stdout = EXCLUDED.apply_stdout, apply_stderr = EXCLUDED.apply_stderr`
+	query := `insert into app_downstream_output (app_id, cluster_id, downstream_sequence, is_error, dryrun_stdout, dryrun_stderr, apply_stdout, apply_stderr, helm_stdout, helm_stderr)
+	values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) on conflict (app_id, cluster_id, downstream_sequence) do update set is_error = EXCLUDED.is_error,
+	dryrun_stdout = EXCLUDED.dryrun_stdout, dryrun_stderr = EXCLUDED.dryrun_stderr, apply_stdout = EXCLUDED.apply_stdout, apply_stderr = EXCLUDED.apply_stderr,
+	helm_stdout = EXCLUDED.helm_stdout, helm_stderr = EXCLUDED.helm_stderr`
 
-	_, err := db.Exec(query, appID, clusterID, sequence, isError, output.DryrunStdout, output.DryrunStderr, output.ApplyStdout, output.ApplyStderr)
+	_, err := db.Exec(query, appID, clusterID, sequence, isError, output.DryrunStdout, output.DryrunStderr, output.ApplyStdout, output.ApplyStderr, output.HelmStdout, output.HelmStderr)
 	if err != nil {
 		return errors.Wrap(err, "failed to exec")
 	}

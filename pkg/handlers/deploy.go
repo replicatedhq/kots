@@ -31,6 +31,8 @@ type UpdateDeployResultRequest struct {
 	DryrunStderr string `json:"dryrunStderr"`
 	ApplyStdout  string `json:"applyStdout"`
 	ApplyStderr  string `json:"applyStderr"`
+	HelmStdout   string `json:"helmStdout"`
+	HelmStderr   string `json:"helmStderr"`
 	RenderError  string `json:"renderError"`
 }
 
@@ -172,6 +174,8 @@ func (h *Handler) UpdateDeployResult(w http.ResponseWriter, r *http.Request) {
 		DryrunStderr: updateDeployResultRequest.DryrunStderr,
 		ApplyStdout:  updateDeployResultRequest.ApplyStdout,
 		ApplyStderr:  updateDeployResultRequest.ApplyStderr,
+		HelmStdout:   updateDeployResultRequest.HelmStdout,
+		HelmStderr:   updateDeployResultRequest.HelmStderr,
 		RenderError:  updateDeployResultRequest.RenderError,
 	}
 	err = store.GetStore().UpdateDownstreamDeployStatus(updateDeployResultRequest.AppID, clusterID, currentSequence, updateDeployResultRequest.IsError, downstreamOutput)
