@@ -1,7 +1,6 @@
 package base
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/replicatedhq/kots/pkg/logger"
@@ -371,7 +370,6 @@ data:
 				if err != nil {
 					continue
 				}
-				fmt.Printf("gvk: %+v\n\n", gvk)
 
 				if gvk.Kind == "deployment" {
 					deployment := obj.(*appsv1.Deployment)
