@@ -339,20 +339,6 @@ func Test_copyCountByGroup(t *testing.T) {
 							Items: []kotsv1beta1.ConfigItem{
 								{
 									Name: "podName",
-									CountByGroup: map[string]int{
-										"pod": 1,
-									},
-								},
-							},
-						},
-						{
-							Name: "secrets",
-							Items: []kotsv1beta1.ConfigItem{
-								{
-									Name: "secretName",
-									CountByGroup: map[string]int{
-										"secrets": 2,
-									},
 								},
 							},
 						},
@@ -376,17 +362,6 @@ func Test_copyCountByGroup(t *testing.T) {
 									Name: "podName",
 									CountByGroup: map[string]int{
 										"pod": 6,
-									},
-								},
-							},
-						},
-						{
-							Name: "secrets",
-							Items: []kotsv1beta1.ConfigItem{
-								{
-									Name: "secretName",
-									CountByGroup: map[string]int{
-										"secrets": 2,
 									},
 								},
 							},
