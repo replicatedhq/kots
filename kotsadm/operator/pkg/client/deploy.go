@@ -492,8 +492,8 @@ func (c *Client) installHelm(helmDir string, namespace string) (*commandResult, 
 		cmd := exec.Command(fmt.Sprintf("helm%s", version), "upgrade", "-i", cname.ChartName, installDir, "-n", namespace)
 		stdout, stderr, err := applier.Run(cmd)
 		if err != nil {
-			log.Printf("stdout (apply) = %s", stdout)
-			log.Printf("stderr (apply) = %s", stderr)
+			log.Printf("stdout (helm) = %s", stdout)
+			log.Printf("stderr (helm) = %s", stderr)
 			log.Printf("error: %s", err.Error())
 			hasErr = true
 		}
