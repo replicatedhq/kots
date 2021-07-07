@@ -11,6 +11,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/google/uuid"
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
@@ -202,6 +203,16 @@ func (h *Handler) LiveAppConfig(w http.ResponseWriter, r *http.Request) {
 			// collect all repeatable items
 			if item.Repeatable {
 				for _, group := range item.ValuesByGroup {
+					// if the front end sends an empty variadic group, create the first item
+					if len(group) == 0 {
+						itemValue := template.ItemValue{
+							Value:          "",
+							RepeatableItem: item.Name,
+						}
+						shortUUID := strings.Split(uuid.New().String(), "-")[0]
+						variadicName := fmt.Sprintf("%s-%s", item.Name, shortUUID)
+						configValues[variadicName] = itemValue
+					}
 					for fieldName, subItem := range group {
 						itemValue := template.ItemValue{
 							Value:          subItem,
