@@ -581,3 +581,43 @@ data:
 		})
 	}
 }
+
+func Test_removeFileFromUpstream(t *testing.T) {
+	tests := []struct {
+		name  string
+		files []upstreamtypes.UpstreamFile
+		path  string
+		want  []upstreamtypes.UpstreamFile
+	}{
+		{
+			name: "remove file",
+			files: []upstreamtypes.UpstreamFile{
+				{
+					Path: "deployment.yaml",
+				},
+				{
+					Path: "deployment-hhf928.yaml",
+				},
+				{
+					Path: "secret.yaml",
+				},
+			},
+			path: "deployment.yaml",
+			want: []upstreamtypes.UpstreamFile{
+				{
+					Path: "secret.yaml",
+				},
+				{
+					Path: "deployment-hhf928.yaml",
+				},
+			},
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			result := removeFileFromUpstream(test.files, test.path)
+
+			assert.Equal(t, test.want, result)
+		})
+	}
+}
