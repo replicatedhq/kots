@@ -15,6 +15,12 @@ export default class ConfigGroups extends React.Component {
     }
   }
 
+  handleRemoveItem = (groupName, itemName, itemToRemove) => {
+    if (this.props.handleRemoveItem) {
+      this.props.handleRemoveItem(groupName, itemName, itemToRemove);
+    }
+  }
+
   render() {
     const { fieldsList, fields, readonly } = this.props;
     return (
@@ -24,6 +30,7 @@ export default class ConfigGroups extends React.Component {
             key={`${i}-${fieldName}`}
             items={fields}
             handleAddItem={(itemName) => this.handleAddItem(fieldName, itemName)}
+            handleRemoveItem={(itemName, itemToRemove) => this.handleRemoveItem(fieldName, itemName, itemToRemove)}
             item={fields[fieldName]}
             handleChange={(itemName, value, data) => this.handleGroupChange(fieldName, itemName, value, data)}
             readonly={readonly}

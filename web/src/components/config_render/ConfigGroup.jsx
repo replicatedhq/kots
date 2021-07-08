@@ -30,6 +30,12 @@ export default class ConfigGroup extends React.Component {
     }
   }
 
+  handleRemoveItem = (itemName, itemToRemove) => {
+    if (this.props.handleRemoveItem) {
+      this.props.handleRemoveItem(itemName, itemToRemove);
+    }
+  }
+
   renderConfigItems = (items, readonly) => {
     if (!items) return null;
     return items.map((item, i) => {
@@ -41,7 +47,9 @@ export default class ConfigGroup extends React.Component {
             key={`${i}-${item.name}`}
             handleOnChange={this.handleItemChange}
             handleAddItem={this.handleAddItem}
+            handleRemoveItem={this.handleRemoveItem}
             inputType="text"
+            groupName={this.props.item.name}
             hidden={item.hidden}
             when={item.when}
             {...item}
@@ -55,7 +63,9 @@ export default class ConfigGroup extends React.Component {
             key={`${i}-${item.name}`}
             handleOnChange={this.handleItemChange}
             handleAddItem={this.handleAddItem}
+            handleRemoveItem={this.handleRemoveItem}
             hidden={item.hidden}
+            groupName={this.props.item.name}
             when={item.when}
             {...item}
             readonly={isReadOnly}
@@ -67,7 +77,9 @@ export default class ConfigGroup extends React.Component {
             key={`${i}-${item.name}`}
             handleOnChange={this.handleItemChange}
             handleAddItem={this.handleAddItem}
+            handleRemoveItem={this.handleRemoveItem}
             hidden={item.hidden}
+            groupName={this.props.item.name}
             when={item.when}
             {...item}
             readonly={isReadOnly}
@@ -81,6 +93,7 @@ export default class ConfigGroup extends React.Component {
               recommended={item.recommended}
               required={item.required}
               hidden={item.hidden}
+              groupName={this.props.item.name}
               when={item.when}
               name={item.name}
               error={item.error}
@@ -95,6 +108,7 @@ export default class ConfigGroup extends React.Component {
               {...item}
               title={item.title}
               recommended={item.recommended}
+              groupName={this.props.item.name}
               required={item.required}
               handleChange={this.handleItemChange}
               hidden={item.hidden}
@@ -109,7 +123,9 @@ export default class ConfigGroup extends React.Component {
             key={`${i}-${item.name}`}
             handleOnChange={this.handleItemChange}
             handleAddItem={this.handleAddItem}
+            handleRemoveItem={this.handleRemoveItem}
             hidden={item.hidden}
+            groupName={this.props.item.name}
             when={item.when}
             {...item}
             readonly={isReadOnly}
@@ -127,7 +143,9 @@ export default class ConfigGroup extends React.Component {
             key={`${i}-${item.name}`}
             handleOnChange={this.handleItemChange}
             handleAddItem={this.handleAddItem}
+            handleRemoveItem={this.handleRemoveItem}
             hidden={item.hidden}
+            groupName={this.props.item.name}
             when={item.when}
             inputType="password"
             {...item}
