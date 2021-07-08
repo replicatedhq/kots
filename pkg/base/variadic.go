@@ -291,7 +291,9 @@ func (stack yamlStack) renderRepeatNodes(optionName string, values map[string]in
 }
 
 // replaceTemplateValue searches all nested nodes of a value
-// if the provided optionName is found within repl{{ ConfigOption "optionName" }}, the placeholder will be replaced with the repeatable value
+// if the provided optionName is found within repl{{ AnyFunction "optionName" }}, "optionName" will be replaced with the repeatable value name
+// IE repl{{ ConfigOption "port" | ParseInt }} will become repl{{ ConfigOption "port-8jc8ud" | ParseInt }}, where "port" is the optionName and "port-8jc8ud" is the valueName
+// the templating function will be executed with the new variable name after variadic processing is finished
 func replaceTemplateValue(node interface{}, optionName, valueName string) interface{} {
 	switch typedNode := node.(type) {
 	case string:
@@ -325,16 +327,21 @@ func generateTargetValue(configOptionName, valueName, target string) interface{}
 	return target
 }
 
+// renderRepeatFilesContent builds repeat files for each repeat value provided
 func renderRepeatFilesContent(yaml map[string]interface{}, optionName string, values map[string]interface{}) ([][]byte, error) {
 	var marshaledFiles [][]byte
 	for valueName := range values {
-		yaml = replaceNewYamlName(yaml, valueName)
+		var err error
+		yaml, err = replaceNewYamlMetadataName(yaml, valueName)
+		if err != nil {
+			return nil, errors.Wrapf(err, "failed to replace metadata name in repeat file for value %s", valueName)
+		}
 
 		newYaml := replaceTemplateValue(yaml, optionName, valueName)
 
 		marshaled, err := yaml3.Marshal(newYaml)
 		if err != nil {
-			return nil, errors.Wrap(err, "failed to marshal repeat file")
+			return nil, errors.Wrapf(err, "failed to marshal repeat file for value %s", valueName)
 		}
 
 		marshaledFiles = append(marshaledFiles, marshaled)
@@ -343,12 +350,16 @@ func renderRepeatFilesContent(yaml map[string]interface{}, optionName string, va
 	return marshaledFiles, nil
 }
 
-func replaceNewYamlName(yaml map[string]interface{}, name string) map[string]interface{} {
-	metadata := yaml["metadata"].(map[string]interface{})
-	metadata["name"] = name
+func replaceNewYamlMetadataName(yaml map[string]interface{}, name string) (map[string]interface{}, error) {
+	switch metadata := yaml["metadata"].(type) {
+	case map[string]interface{}:
+		metadata["name"] = name
 
-	yaml["metadata"] = metadata
-	return yaml
+		yaml["metadata"] = metadata
+		return yaml, nil
+	default:
+		return nil, fmt.Errorf("yaml metadata is not map[string]interface{}")
+	}
 }
 
 // variadicGroup lists all repeat items under a ConfigGroup
@@ -363,7 +374,7 @@ type variadicItem struct {
 	yamlPath string
 }
 
-// TODO split this into nested functions
+// getVariadicGroupsForTemplate identifies which ConfigItems should be processed for a template
 func getVariadicGroupsForTemplate(config *kotsv1beta1.Config, templateTarget kotsv1beta1.RepeatTemplate) []variadicGroup {
 	var variadicGroups []variadicGroup
 	for _, group := range config.Spec.Groups {
