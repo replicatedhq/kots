@@ -100,7 +100,6 @@ export default class ConfigRender extends React.Component {
       itemToEdit["valuesByGroup"] = {
         [`${groupName}`]: {}
       }
-      itemToEdit["minimumCount"] = Object.keys(itemToEdit.valuesByGroup).length;
     }
     this.setState({ rawGroups: groups });
     this.triggerChange(this.props.getData(groups));
