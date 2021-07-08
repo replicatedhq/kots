@@ -263,8 +263,6 @@ spec:
 The ConfigValues spec is rendered by Kots and stored as part of the applications release archive.
 This will still be maintained as a flat list of values regardless of any new constructs.
 
-**NOTE:** @Marc Why can't this be nested? Problem is that unlike statefulsets, order doesn't matter, i.e. what happens when I delete instance #3
-
 ```yaml
 apiVersion: kots.io/v1beta1 
 kind: ConfigValues 
