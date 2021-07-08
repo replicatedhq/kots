@@ -28,6 +28,13 @@ func IsRequiredItem(item kotsv1beta1.ConfigItem) bool {
 }
 
 func IsUnsetItem(item kotsv1beta1.ConfigItem) bool {
+	if item.Repeatable {
+		for _, count := range item.CountByGroup {
+			if count > 0 {
+				return true
+			}
+		}
+	}
 	if item.Value.String() != "" {
 		return false
 	}

@@ -203,15 +203,17 @@ func (h *Handler) LiveAppConfig(w http.ResponseWriter, r *http.Request) {
 			// collect all repeatable items
 			if item.Repeatable {
 				for valuesByGroupName, groupValues := range item.ValuesByGroup {
-					// if the front end sends an empty variadic group, create the first item
+					// if the front end sends an empty variadic group, create the first two items
 					if len(groupValues) == 0 {
-						itemValue := template.ItemValue{
-							Value:          "",
-							RepeatableItem: item.Name,
+						for i := 0; i < 2; i++ {
+							itemValue := template.ItemValue{
+								Value:          "",
+								RepeatableItem: item.Name,
+							}
+							shortUUID := strings.Split(uuid.New().String(), "-")[0]
+							variadicName := fmt.Sprintf("%s-%s", item.Name, shortUUID)
+							configValues[variadicName] = itemValue
 						}
-						shortUUID := strings.Split(uuid.New().String(), "-")[0]
-						variadicName := fmt.Sprintf("%s-%s", item.Name, shortUUID)
-						configValues[variadicName] = itemValue
 					}
 					for fieldName, subItem := range groupValues {
 						itemValue := template.ItemValue{
@@ -933,7 +935,12 @@ func copyCountByGroup(config *kotsv1beta1.Config, item kotsv1beta1.ConfigItem, g
 					if config.Spec.Groups[groupIndex].Items[itemIndex].CountByGroup == nil {
 						config.Spec.Groups[groupIndex].Items[itemIndex].CountByGroup = map[string]int{}
 					}
-					config.Spec.Groups[groupIndex].Items[itemIndex].CountByGroup[configGroup.Name] = item.CountByGroup[groupName]
+					if item.CountByGroup[groupName] == 0 {
+						// if the count isn't set, configure it to be the number of variadic items
+						config.Spec.Groups[groupIndex].Items[itemIndex].CountByGroup[configGroup.Name] = len(item.ValuesByGroup[groupName])
+					} else {
+						config.Spec.Groups[groupIndex].Items[itemIndex].CountByGroup[configGroup.Name] = item.CountByGroup[groupName]
+					}
 				}
 			}
 		}
