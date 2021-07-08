@@ -9,11 +9,13 @@ import (
 
 	"github.com/manifoldco/promptui"
 	"github.com/pkg/errors"
+	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/kotsadm"
 	kotsadmtypes "github.com/replicatedhq/kots/pkg/kotsadm/types"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func AdminConsoleUpgradeCmd() *cobra.Command {
@@ -49,16 +51,30 @@ func AdminConsoleUpgradeCmd() *cobra.Command {
 				}
 			}
 
+			namespace := v.GetString("namespace")
+
+			clientset, err := k8sutil.GetClientset()
+			if err != nil {
+				return errors.Wrap(err, "failed to get clientset")
+			}
+
+			includeMinio := v.GetBool("with-minio")
+			_, err = clientset.AppsV1().StatefulSets(namespace).Get(cmd.Context(), "kotsadm", metav1.GetOptions{})
+			if err == nil {
+				// reverse migration is not supported
+				includeMinio = false
+			}
+
 			simultaneousUploads, _ := strconv.Atoi(v.GetString("airgap-upload-parallelism"))
 
 			upgradeOptions := kotsadmtypes.UpgradeOptions{
-				Namespace:                 v.GetString("namespace"),
+				Namespace:                 namespace,
 				ForceUpgradeKurl:          v.GetBool("force-upgrade-kurl"),
 				EnsureRBAC:                v.GetBool("ensure-rbac"),
 				SimultaneousUploads:       simultaneousUploads,
 				StorageBaseURI:            v.GetString("storage-base-uri"),
 				StorageBaseURIPlainHTTP:   v.GetBool("storage-base-uri-plainhttp"),
-				IncludeMinio:              v.GetBool("with-minio"),
+				IncludeMinio:              includeMinio,
 				IncludeDockerDistribution: v.GetBool("with-dockerdistribution"),
 
 				KotsadmOptions: kotsadmtypes.KotsadmOptions{
@@ -91,13 +107,13 @@ func AdminConsoleUpgradeCmd() *cobra.Command {
 			} else {
 				log.ActionWithoutSpinner("Upgrading Admin Console in the default namespace")
 			}
-			if err := kotsadm.Upgrade(upgradeOptions); err != nil {
+			if err := kotsadm.Upgrade(clientset, upgradeOptions); err != nil {
 				return errors.Wrap(err, "failed to upgrade")
 			}
 
 			log.ActionWithoutSpinner("")
 			log.ActionWithoutSpinner("The Admin Console is running the latest version")
-			log.ActionWithoutSpinner("To access the Admin Console, run kubectl kots admin-console --namespace %s", v.GetString("namespace"))
+			log.ActionWithoutSpinner("To access the Admin Console, run kubectl kots admin-console --namespace %s", namespace)
 			log.ActionWithoutSpinner("")
 
 			return nil

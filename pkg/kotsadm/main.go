@@ -94,12 +94,7 @@ func YAML(deployOptions types.DeployOptions) (map[string][]byte, error) {
 	return docs, nil
 }
 
-func Upgrade(upgradeOptions types.UpgradeOptions) error {
-	clientset, err := k8sutil.GetClientset()
-	if err != nil {
-		return errors.Wrap(err, "failed to get clientset")
-	}
-
+func Upgrade(clientset *kubernetes.Clientset, upgradeOptions types.UpgradeOptions) error {
 	log := logger.NewCLILogger()
 
 	if err := canUpgrade(upgradeOptions, clientset, log); err != nil {
