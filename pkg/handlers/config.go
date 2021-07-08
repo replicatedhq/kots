@@ -201,20 +201,24 @@ func (h *Handler) LiveAppConfig(w http.ResponseWriter, r *http.Request) {
 			configValues[item.Name] = generatedValue
 
 			// collect all repeatable items
+			// Future Note:  This could be refactored to use CountByGroup as the control.  Front end provides the exact CountByGroup it wants, back end takes care of ValuesByGroup entries.
+			// this way the front end doesn't have to add anything to ValuesByGroup, it just sets values there.
 			if item.Repeatable {
 				for valuesByGroupName, groupValues := range item.ValuesByGroup {
 					// if the front end sends an empty variadic group, create the first two items
 					if len(groupValues) == 0 {
-						for i := 0; i < 2; i++ {
-							itemValue := template.ItemValue{
-								Value:          "",
-								RepeatableItem: item.Name,
-							}
-							shortUUID := strings.Split(uuid.New().String(), "-")[0]
-							variadicName := fmt.Sprintf("%s-%s", item.Name, shortUUID)
-							configValues[variadicName] = itemValue
-						}
+						item.CountByGroup[valuesByGroupName] = 2
 					}
+					for len(groupValues) < item.CountByGroup[valuesByGroupName] {
+						itemValue := template.ItemValue{
+							Value:          "",
+							RepeatableItem: item.Name,
+						}
+						shortUUID := strings.Split(uuid.New().String(), "-")[0]
+						variadicName := fmt.Sprintf("%s-%s", item.Name, shortUUID)
+						configValues[variadicName] = itemValue
+					}
+
 					for fieldName, subItem := range groupValues {
 						itemValue := template.ItemValue{
 							Value:          subItem,
@@ -222,7 +226,7 @@ func (h *Handler) LiveAppConfig(w http.ResponseWriter, r *http.Request) {
 						}
 						configValues[fieldName] = itemValue
 					}
-					copyCountByGroup(kotsKinds.Config, item, valuesByGroupName)
+					//copyCountByGroup(kotsKinds.Config, item, valuesByGroupName)
 				}
 			}
 		}
