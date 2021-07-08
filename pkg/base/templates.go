@@ -8,7 +8,7 @@ import (
 	upstreamtypes "github.com/replicatedhq/kots/pkg/upstream/types"
 )
 
-func NewConfigContextTemplateBuidler(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (*template.Builder, map[string]template.ItemValue, error) {
+func NewConfigContextTemplateBuilder(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (*template.Builder, map[string]template.ItemValue, error) {
 	config, configValues, identityConfig, license, err := findConfigAndLicense(u, renderOptions.Log)
 	if err != nil {
 		return nil, nil, err
@@ -77,5 +77,9 @@ func NewConfigContextTemplateBuidler(u *upstreamtypes.Upstream, renderOptions *R
 		Namespace:       renderOptions.Namespace,
 	}
 	builder, itemValues, err := template.NewBuilder(builderOptions)
-	return &builder, itemValues, errors.Wrap(err, "failed to create config context")
+	if err != nil {
+		return &builder, itemValues, errors.Wrap(err, "failed to create config context")
+	}
+
+	return &builder, itemValues, nil
 }

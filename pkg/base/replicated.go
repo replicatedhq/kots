@@ -38,7 +38,7 @@ func renderReplicated(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (
 		Bases: []Base{},
 	}
 
-	builder, itemValues, err := NewConfigContextTemplateBuidler(u, renderOptions)
+	builder, itemValues, err := NewConfigContextTemplateBuilder(u, renderOptions)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create new config context template builder")
 	}
