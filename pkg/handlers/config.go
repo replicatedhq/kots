@@ -208,13 +208,10 @@ func (h *Handler) LiveAppConfig(w http.ResponseWriter, r *http.Request) {
 					var repeatItemCount int
 					// if the front end sends an empty variadic group, create the first two items
 					if len(groupValues) == 0 {
-						fmt.Printf("no groupValues found, setting itemCount to 2\n")
 						repeatItemCount = 2
 					} else if item.CountByGroup != nil {
-						fmt.Printf("CountByGroup detected, setting value to what was provided: %v\n", item.CountByGroup[valuesByGroupName])
 						repeatItemCount = item.CountByGroup[valuesByGroupName]
 					} else {
-						fmt.Printf("by default, setting repeatItemCount to length of groupValues: %v\n", len(groupValues))
 						repeatItemCount = len(groupValues)
 					}
 					setCountByGroup(&item, valuesByGroupName, repeatItemCount)
@@ -234,7 +231,6 @@ func (h *Handler) LiveAppConfig(w http.ResponseWriter, r *http.Request) {
 						shortUUID := strings.Split(uuid.New().String(), "-")[0]
 						variadicName := fmt.Sprintf("%s-%s", item.Name, shortUUID)
 						configValues[variadicName] = itemValue
-						fmt.Printf("added item %v\n", variadicName)
 					}
 				}
 			}
@@ -609,9 +605,7 @@ func updateAppConfigValues(values map[string]kotsv1beta1.ConfigValue, configGrou
 			for _, repeatableValues := range item.ValuesByGroup {
 				// clear out all variadic values for this group first
 				for name, value := range values {
-					fmt.Printf("looking at value name %s: %+v\n", name, value)
 					if value.RepeatableItem == item.Name {
-						fmt.Printf("deleting %s from values\n", name)
 						delete(values, name)
 					}
 				}
