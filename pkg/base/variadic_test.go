@@ -3,6 +3,7 @@ package base
 import (
 	"testing"
 
+	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	"github.com/stretchr/testify/require"
 )
 
@@ -268,6 +269,62 @@ func Test_generateTargetValue(t *testing.T) {
 			result := generateTargetValue(test.configOptionName, test.valueName, test.target)
 
 			req.Equal(test.want, result)
+		})
+	}
+}
+
+func Test_getUpstreamTemplateData(t *testing.T) {
+	tests := []struct {
+		name         string
+		content      []byte
+		wantMetadata kotsv1beta1.RepeatTemplate
+		wantErr      bool
+	}{
+		{
+			name: "has metadata",
+			content: []byte(`
+apiVersion: kots.io/v1beta1 
+kind: Config 
+metadata: 
+  creationTimestamp: null 
+  name: config-sample
+  namespace: test`),
+			wantMetadata: kotsv1beta1.RepeatTemplate{
+				APIVersion: "kots.io/v1beta1",
+				Kind:       "Config",
+				Name:       "config-sample",
+				Namespace:  "test",
+			},
+		},
+		{
+			name: "metadata in the wrong spot",
+			content: []byte(`
+apiVersion: kots.io/v1beta1 
+kind: Config 
+data: 
+  creationTimestamp: null
+  metadata:
+    name: config-sample
+    namespace: test`),
+			wantMetadata: kotsv1beta1.RepeatTemplate{
+				APIVersion: "kots.io/v1beta1",
+				Kind:       "Config",
+				Name:       "config-sample",
+				Namespace:  "test",
+			},
+			wantErr: true,
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			req := require.New(t)
+			metadataResult, _, err := getUpstreamTemplateData(test.content)
+			if test.wantErr {
+				req.Error(err)
+			} else {
+				req.NoError(err)
+				req.Equal(test.wantMetadata, metadataResult)
+			}
 		})
 	}
 }
