@@ -10,7 +10,7 @@ pg_dump -U kotsadm -h kotsadm-postgres --clean > $PG_BACKUP_FILE
 
 # back up s3 data if exists
 
-if [ ! -z $S3_ENDPOINT ]; then
+if [ -n "$S3_ENDPOINT" ]; then
   export S3_DIR=/backup/s3/
   export S3_HOST=`echo $S3_ENDPOINT | awk -F/ '{print $3}'`
   rm -rf $S3_DIR
