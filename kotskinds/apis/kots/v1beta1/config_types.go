@@ -66,8 +66,8 @@ type RepeatTemplate struct {
 	APIVersion string `json:"apiVersion"`
 	Kind       string `json:"kind"`
 	Name       string `json:"name"`
-	Namespace  string `json:"namespace"`
-	YamlPath   string `json:"yamlPath"`
+	Namespace  string `json:"namespace,omitempty"`
+	YamlPath   string `json:"yamlPath,omitempty"`
 }
 
 type ValuesByGroup map[string]GroupValues
