@@ -421,7 +421,7 @@ func writeMidstream(writeMidstreamOptions midstream.WriteOptions, options Rewrit
 		return nil, errors.Wrap(err, "failed to create midstream")
 	}
 
-	builder, _, err := base.NewConfigContextTemplateBuidler(u, &renderOptions)
+	builder, _, err := base.NewConfigContextTemplateBuilder(u, &renderOptions)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create new config context template builder")
 	}
