@@ -83,16 +83,15 @@ func renderReplicated(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (
 			files := removeFileFromUpstream(u.Files, upstreamFile.Path)
 			// add the generated files into upstream
 			files = append(files, generatedFiles...)
-			newUpstream := u
-			newUpstream.Files = files
+			u.Files = files
 			// re-render upstream with the new files
-			subBase, err := renderReplicated(newUpstream, renderOptions)
+			subBase, err := renderReplicated(u, renderOptions)
 			if err != nil {
 				return nil, errors.Wrap(err, "failed to render generated variadic files")
 			}
 			// add the rendered generated files into base
 			for _, renderedFile := range subBase.Files {
-				for _, uFile := range newUpstream.Files {
+				for _, uFile := range u.Files {
 					if renderedFile.Path == uFile.Path {
 						// log to inform where new files are coming from
 						renderOptions.Log.Info("adding generated file %s to base", renderedFile.Path)
