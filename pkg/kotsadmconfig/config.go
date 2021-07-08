@@ -31,7 +31,7 @@ func IsUnsetItem(item kotsv1beta1.ConfigItem) bool {
 	if item.Repeatable {
 		for _, count := range item.CountByGroup {
 			if count > 0 {
-				return true
+				return false
 			}
 		}
 	}
