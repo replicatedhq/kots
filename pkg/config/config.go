@@ -2,10 +2,7 @@ package config
 
 import (
 	"bytes"
-	"fmt"
-	"strings"
 
-	"github.com/google/uuid"
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	"github.com/replicatedhq/kots/kotskinds/multitype"
@@ -138,24 +135,7 @@ func ApplyValuesToConfig(config *kotsv1beta1.Config, values map[string]template.
 					}
 				}
 				for variadicGroup, groupValues := range config.Spec.Groups[idxG].Items[idxI].ValuesByGroup {
-					groupCount := i.CountByGroup[variadicGroup]
-
-					// if this item becomes variadic, ensure it has at least the minimum count
-					if groupCount < i.MinimumCount {
-						groupCount = i.MinimumCount
-					}
-					// make sure the count is at least the number of items provided
-					if groupCount < len(groupValues) {
-						groupCount = len(groupValues)
-					}
-					// save updated Count back to config
-					config.Spec.Groups[idxG].Items[idxI].CountByGroup[variadicGroup] = groupCount
-
-					for len(groupValues) < groupCount {
-						shortUUID := strings.Split(uuid.New().String(), "-")[0]
-						variadicName := fmt.Sprintf("%s-%s", i.Name, shortUUID)
-						config.Spec.Groups[idxG].Items[idxI].ValuesByGroup[variadicGroup][variadicName] = ""
-					}
+					config.Spec.Groups[idxG].Items[idxI].CountByGroup[variadicGroup] = len(groupValues)
 				}
 			}
 			value, ok := values[i.Name]
