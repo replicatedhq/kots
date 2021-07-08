@@ -808,8 +808,8 @@ github.com/quobyte/api v0.1.2/go.mod h1:jL7lIHrmqQ7yh05OJ+eEEdHr0u/kmT1Ff9iHd+4H
 github.com/rancher/go-rancher v0.1.1-0.20190307222549-9756097e5e4c/go.mod h1:7oQvGNiJsGvrUgB+7AH8bmdzuR0uhULfwKb43Ht0hUk=
 github.com/replicatedhq/longhorn-manager v1.1.2-0.20210622201804-05b01947b99d/go.mod h1:/5iB5+3q/p1HOj7GXF8PT/YrPersNLAH3VjFfmN90Y4=
 github.com/replicatedhq/termui/v3 v3.1.1-0.20200811145416-f40076d26851/go.mod h1:JDxG6+uubnk9/BZ2yUsyAJJwlptjrnmB2MPF5d2Xe/8=
-github.com/replicatedhq/troubleshoot v0.12.0 h1:tcl6mq3QZMzgCoEcD1dbjelT10bQMQg1Q0qXyHw8e54=
-github.com/replicatedhq/troubleshoot v0.12.0/go.mod h1:INf+DZhU9XXCHBeab5jLOhwsKzHcGCoEw4H6hGt9X5o=
+github.com/replicatedhq/troubleshoot v0.13.2 h1:uoYdQNKFdYuA0uNEf8cdM2T+yoznoebQCOPU8zR7Ovg=
+github.com/replicatedhq/troubleshoot v0.13.2/go.mod h1:INf+DZhU9XXCHBeab5jLOhwsKzHcGCoEw4H6hGt9X5o=
 github.com/robfig/cron v1.1.0/go.mod h1:JGuDeoQd7Z6yL4zQhZ3OPEVHB7fL6Ka6skscFHfmt2k=
 github.com/robfig/cron v1.2.0/go.mod h1:JGuDeoQd7Z6yL4zQhZ3OPEVHB7fL6Ka6skscFHfmt2k=
 github.com/rogpeppe/fastuuid v0.0.0-20150106093220-6724a57986af/go.mod h1:XWv6SoW27p1b0cqNHllgS5HIMJraePCO15w5zCzIWYg=
