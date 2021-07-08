@@ -320,3 +320,108 @@ func Test_updateConfigObject(t *testing.T) {
 		})
 	}
 }
+
+func Test_copyCountByGroup(t *testing.T) {
+	tests := []struct {
+		name      string
+		config    kotsv1beta1.Config
+		item      kotsv1beta1.ConfigItem
+		groupName string
+		want      kotsv1beta1.Config
+	}{
+		{
+			name: "increment",
+			config: kotsv1beta1.Config{
+				Spec: kotsv1beta1.ConfigSpec{
+					Groups: []kotsv1beta1.ConfigGroup{
+						{
+							Name: "pod",
+							Items: []kotsv1beta1.ConfigItem{
+								{
+									Name: "podName",
+								},
+							},
+						},
+					},
+				},
+			},
+			item: kotsv1beta1.ConfigItem{
+				Name: "podName",
+				CountByGroup: map[string]int{
+					"pod": 6,
+				},
+			},
+			groupName: "pod",
+			want: kotsv1beta1.Config{
+				Spec: kotsv1beta1.ConfigSpec{
+					Groups: []kotsv1beta1.ConfigGroup{
+						{
+							Name: "pod",
+							Items: []kotsv1beta1.ConfigItem{
+								{
+									Name: "podName",
+									CountByGroup: map[string]int{
+										"pod": 6,
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "set to values length",
+			config: kotsv1beta1.Config{
+				Spec: kotsv1beta1.ConfigSpec{
+					Groups: []kotsv1beta1.ConfigGroup{
+						{
+							Name: "pod",
+							Items: []kotsv1beta1.ConfigItem{
+								{
+									Name: "podName",
+								},
+							},
+						},
+					},
+				},
+			},
+			item: kotsv1beta1.ConfigItem{
+				Name: "podName",
+				ValuesByGroup: kotsv1beta1.ValuesByGroup{
+					"pod": kotsv1beta1.GroupValues{
+						"pod-92838":  "1",
+						"pod-ghd71b": "2",
+					},
+				},
+			},
+			groupName: "pod",
+			want: kotsv1beta1.Config{
+				Spec: kotsv1beta1.ConfigSpec{
+					Groups: []kotsv1beta1.ConfigGroup{
+						{
+							Name: "pod",
+							Items: []kotsv1beta1.ConfigItem{
+								{
+									Name: "podName",
+									CountByGroup: map[string]int{
+										"pod": 2,
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			req := require.New(t)
+			copyCountByGroup(&test.config, test.item, test.groupName)
+
+			req.Equal(test.want, test.config)
+		})
+	}
+}

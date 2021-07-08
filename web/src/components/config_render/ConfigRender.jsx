@@ -51,6 +51,9 @@ export default class ConfigRender extends React.Component {
               if (item.type === "file") {
                 item.filename = getValue(data);
               }
+              if (item.valuesByGroup) { // Variadic config value
+                item.valuesByGroup[groupName][data] = item.value;
+              }
             }
           } else {
             if (item.type !== "select_one") {
@@ -91,10 +94,23 @@ export default class ConfigRender extends React.Component {
     const groups = this.props.rawGroups;
     const groupToEdit = find(groups, ["name", groupName]);
     let itemToEdit = find(groupToEdit.items, ["name", itemName]);
-    itemToEdit["valuesByGroup"] = {
-      [`${groupName}`]: {}
+    if (itemToEdit.countByGroup) {
+      itemToEdit.countByGroup[groupName] = itemToEdit.countByGroup[groupName] + 1;
+    } else {
+      itemToEdit["valuesByGroup"] = {
+        [`${groupName}`]: {}
+      }
     }
-    itemToEdit["minimumCount"] = Object.keys(itemToEdit.valuesByGroup).length;
+    this.setState({ rawGroups: groups });
+    this.triggerChange(this.props.getData(groups));
+  }
+
+  handleRemoveItem = (groupName, itemName, itemToRemove) => {
+    const groups = this.props.rawGroups;
+    const groupToEdit = find(groups, ["name", groupName]);
+    let itemToEdit = find(groupToEdit.items, ["name", itemName]);
+    itemToEdit.countByGroup[groupName] = itemToEdit.countByGroup[groupName] - 1;
+    delete itemToEdit.valuesByGroup[`${groupName}`][`${itemToRemove}`]
     this.setState({ rawGroups: groups });
     this.triggerChange(this.props.getData(groups));
   }
@@ -117,6 +133,7 @@ export default class ConfigRender extends React.Component {
           fields={this.state.groups}
           handleChange={this.handleGroupsChange}
           handleAddItem={this.handleAddItem}
+          handleRemoveItem={this.handleRemoveItem}
           readonly={readonly}
         />
       </div>

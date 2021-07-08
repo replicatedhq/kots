@@ -27,14 +27,6 @@ func processVariadicConfig(u *upstreamtypes.UpstreamFile, config *kotsv1beta1.Co
 		return nil, nil
 	}
 
-	// fill in templateMetadata data from unmarshaled yaml
-	templateMetadata.Name, templateMetadata.Namespace, err = getTemplateMetadata(node)
-	if err != nil {
-		// if upstream metadata doesn't exist, this file will not match any templates and should be skipped
-		log.Info("variadic processing on file %s skipped: %v", u.Path, err.Error())
-		return nil, nil
-	}
-
 	// collect all variadic config for this specific template
 	variadicGroups := getVariadicGroupsForTemplate(config, templateMetadata)
 
@@ -121,6 +113,29 @@ func getUpstreamTemplateData(upstreamContent []byte) (kotsv1beta1.RepeatTemplate
 			// upstream file 'kind' is not a string, this cannot be a valid target file and should be skipped
 			return templateHeaders, nil, fmt.Errorf("template kind is not a string")
 		}
+	}
+
+	metadataInterface, ok := node["metadata"]
+	if !ok {
+		return templateHeaders, nil, fmt.Errorf("template metadata not found")
+	}
+
+	switch metadata := metadataInterface.(type) {
+	case map[string]interface{}:
+		// ensure the map entry exists
+		if metadataName, ok := metadata["name"]; ok {
+			// ensure it's a string
+			if reflect.TypeOf(metadataName).Name() == "string" {
+				templateHeaders.Name = metadataName.(string)
+			}
+		}
+		if metadataNamespace, ok := metadata["namespace"]; ok {
+			if reflect.TypeOf(metadataNamespace).Name() == "string" {
+				templateHeaders.Namespace = metadataNamespace.(string)
+			}
+		}
+	default:
+		return templateHeaders, nil, fmt.Errorf("template metadata not of type map[string]interface{}")
 	}
 
 	return templateHeaders, node, nil
@@ -276,7 +291,9 @@ func (stack yamlStack) renderRepeatNodes(optionName string, values map[string]in
 }
 
 // replaceTemplateValue searches all nested nodes of a value
-// if the provided optionName is found within repl{{ ConfigOption "optionName" }}, the placeholder will be replaced with the repeatable value
+// if the provided optionName is found within repl{{ AnyFunction "optionName" }}, "optionName" will be replaced with the repeatable value name
+// IE repl{{ ConfigOption "port" | ParseInt }} will become repl{{ ConfigOption "port-8jc8ud" | ParseInt }}, where "port" is the optionName and "port-8jc8ud" is the valueName
+// the templating function will be executed with the new variable name after variadic processing is finished
 func replaceTemplateValue(node interface{}, optionName, valueName string) interface{} {
 	switch typedNode := node.(type) {
 	case string:
@@ -310,16 +327,21 @@ func generateTargetValue(configOptionName, valueName, target string) interface{}
 	return target
 }
 
+// renderRepeatFilesContent builds repeat files for each repeat value provided
 func renderRepeatFilesContent(yaml map[string]interface{}, optionName string, values map[string]interface{}) ([][]byte, error) {
 	var marshaledFiles [][]byte
 	for valueName := range values {
-		yaml = replaceNewYamlName(yaml, valueName)
+		var err error
+		yaml, err = replaceNewYamlMetadataName(yaml, valueName)
+		if err != nil {
+			return nil, errors.Wrapf(err, "failed to replace metadata name in repeat file for value %s", valueName)
+		}
 
 		newYaml := replaceTemplateValue(yaml, optionName, valueName)
 
 		marshaled, err := yaml3.Marshal(newYaml)
 		if err != nil {
-			return nil, errors.Wrap(err, "failed to marshal repeat file")
+			return nil, errors.Wrapf(err, "failed to marshal repeat file for value %s", valueName)
 		}
 
 		marshaledFiles = append(marshaledFiles, marshaled)
@@ -328,12 +350,16 @@ func renderRepeatFilesContent(yaml map[string]interface{}, optionName string, va
 	return marshaledFiles, nil
 }
 
-func replaceNewYamlName(yaml map[string]interface{}, name string) map[string]interface{} {
-	metadata := yaml["metadata"].(map[string]interface{})
-	metadata["name"] = name
+func replaceNewYamlMetadataName(yaml map[string]interface{}, name string) (map[string]interface{}, error) {
+	switch metadata := yaml["metadata"].(type) {
+	case map[string]interface{}:
+		metadata["name"] = name
 
-	yaml["metadata"] = metadata
-	return yaml
+		yaml["metadata"] = metadata
+		return yaml, nil
+	default:
+		return nil, fmt.Errorf("yaml metadata is not map[string]interface{}")
+	}
 }
 
 // variadicGroup lists all repeat items under a ConfigGroup
@@ -348,7 +374,7 @@ type variadicItem struct {
 	yamlPath string
 }
 
-// TODO split this into nested functions
+// getVariadicGroupsForTemplate identifies which ConfigItems should be processed for a template
 func getVariadicGroupsForTemplate(config *kotsv1beta1.Config, templateTarget kotsv1beta1.RepeatTemplate) []variadicGroup {
 	var variadicGroups []variadicGroup
 	for _, group := range config.Spec.Groups {
@@ -374,32 +400,4 @@ func getVariadicGroupsForTemplate(config *kotsv1beta1.Config, templateTarget kot
 		}
 	}
 	return variadicGroups
-}
-
-// getTemplateMetadata returns the name and namespace fields from "metadata" at the top level of a template
-func getTemplateMetadata(template map[string]interface{}) (string, string, error) {
-	metadataInterface, ok := template["metadata"]
-	if !ok {
-		return "", "", fmt.Errorf("template metadata not found")
-	}
-
-	var name, namespace string
-	switch metadata := metadataInterface.(type) {
-	case map[string]interface{}:
-		// ensure the map entry exists
-		if metadataName, ok := metadata["name"]; ok {
-			// ensure it's a string
-			if reflect.TypeOf(metadataName).Name() == "string" {
-				name = metadataName.(string)
-			}
-		}
-		if metadataNamespace, ok := metadata["namespace"]; ok {
-			if reflect.TypeOf(metadataNamespace).Name() == "string" {
-				namespace = metadataNamespace.(string)
-			}
-		}
-	default:
-		return "", "", fmt.Errorf("template metadata not of type map[string]interface{}")
-	}
-	return name, namespace, nil
 }
