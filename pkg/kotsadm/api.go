@@ -5,6 +5,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/kotsadm/types"
+	corev1 "k8s.io/api/core/v1"
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
@@ -76,32 +77,44 @@ func removeNodeAPIClusterRBAC(deployOptions *types.DeployOptions, clientset *kub
 func getAPIAutoCreateClusterToken(namespace string, clientset *kubernetes.Clientset) (string, error) {
 	autoCreateClusterTokenSecretVal, err := getAPIClusterToken(namespace, clientset)
 	if err != nil {
-		return "", errors.Wrap(err, "get autocreate cluter token from secret")
+		return "", errors.Wrap(err, "failed to get autocreate cluster token from secret")
 	} else if autoCreateClusterTokenSecretVal != "" {
 		return autoCreateClusterTokenSecretVal, nil
 	}
 
+	var containers []corev1.Container
+
 	existingDeployment, err := clientset.AppsV1().Deployments(namespace).Get(context.TODO(), "kotsadm", metav1.GetOptions{})
-	if err != nil {
+	if err != nil && !kuberneteserrors.IsNotFound(err) {
 		return "", errors.Wrap(err, "failed to read deployment")
+	}
+	if err == nil {
+		containers = existingDeployment.Spec.Template.Spec.Containers
+	} else {
+		// deployment not found, check if there's a statefulset
+		existingStatefulSet, err := clientset.AppsV1().StatefulSets(namespace).Get(context.TODO(), "kotsadm", metav1.GetOptions{})
+		if err != nil {
+			return "", errors.Wrap(err, "failed to read statefulset")
+		}
+		containers = existingStatefulSet.Spec.Template.Spec.Containers
 	}
 
 	containerIdx := -1
-	for idx, c := range existingDeployment.Spec.Template.Spec.Containers {
+	for idx, c := range containers {
 		if c.Name == "kotsadm" {
 			containerIdx = idx
 		}
 	}
 
 	if containerIdx == -1 {
-		return "", errors.New("failed to find kotsadm container in deployment")
+		return "", errors.New("failed to find kotsadm container in statefulset")
 	}
 
-	for _, env := range existingDeployment.Spec.Template.Spec.Containers[containerIdx].Env {
+	for _, env := range containers[containerIdx].Env {
 		if env.Name == "AUTO_CREATE_CLUSTER_TOKEN" {
 			return env.Value, nil
 		}
 	}
 
-	return "", errors.New("failed to find autocreateclustertoken env on api deployment")
+	return "", errors.New("failed to find autocreateclustertoken env on api statefulset")
 }

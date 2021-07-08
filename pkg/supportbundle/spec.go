@@ -711,14 +711,28 @@ func makeCollectDCollectors() ([]*troubleshootv1beta2.Collect, error) {
 		return nil, errors.Wrap(err, "failed to get k8s clientset")
 	}
 
+	var containers []corev1.Container
+	var imagePullSecrets []corev1.LocalObjectReference
 	namespace := os.Getenv("POD_NAMESPACE")
-	existingDeployment, err := clientset.AppsV1().Deployments(namespace).Get(context.TODO(), "kotsadm", metav1.GetOptions{})
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to get existing deployment")
+
+	if os.Getenv("POD_OWNER_KIND") == "deployment" {
+		existingDeployment, err := clientset.AppsV1().Deployments(namespace).Get(context.TODO(), "kotsadm", metav1.GetOptions{})
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to get existing deployment")
+		}
+		imagePullSecrets = existingDeployment.Spec.Template.Spec.ImagePullSecrets
+		containers = existingDeployment.Spec.Template.Spec.Containers
+	} else {
+		existingStatefulSet, err := clientset.AppsV1().StatefulSets(namespace).Get(context.TODO(), "kotsadm", metav1.GetOptions{})
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to get existing statefulset")
+		}
+		imagePullSecrets = existingStatefulSet.Spec.Template.Spec.ImagePullSecrets
+		containers = existingStatefulSet.Spec.Template.Spec.Containers
 	}
 
 	imageName := ""
-	for _, container := range existingDeployment.Spec.Template.Spec.Containers {
+	for _, container := range containers {
 		if container.Name == "kotsadm" {
 			imageName = container.Image
 			break
@@ -729,8 +743,8 @@ func makeCollectDCollectors() ([]*troubleshootv1beta2.Collect, error) {
 	}
 
 	var pullSecret *troubleshootv1beta2.ImagePullSecrets
-	if len(existingDeployment.Spec.Template.Spec.ImagePullSecrets) > 0 {
-		existingSecret := existingDeployment.Spec.Template.Spec.ImagePullSecrets[0]
+	if len(imagePullSecrets) > 0 {
+		existingSecret := imagePullSecrets[0]
 		pullSecret = &troubleshootv1beta2.ImagePullSecrets{
 			Name: existingSecret.Name,
 		}

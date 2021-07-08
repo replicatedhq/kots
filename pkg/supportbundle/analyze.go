@@ -33,8 +33,31 @@ func InjectDefaultAnalyzers(analyzer *troubleshootv1beta2.Analyzer) error {
 }
 
 func injectAPIReplicaAnalyzer(analyzer *troubleshootv1beta2.Analyzer) error {
+	if os.Getenv("POD_OWNER_KIND") == "deployment" {
+		analyzer.Spec.Analyzers = append(analyzer.Spec.Analyzers, &troubleshootv1beta2.Analyze{
+			DeploymentStatus: &troubleshootv1beta2.DeploymentStatus{
+				Name:      "kotsadm",
+				Namespace: os.Getenv("POD_NAMESPACE"),
+				Outcomes: []*troubleshootv1beta2.Outcome{
+					{
+						Pass: &troubleshootv1beta2.SingleOutcome{
+							When:    "> 0",
+							Message: "At least 1 replica of the Admin Console API is running and ready",
+						},
+					},
+					{
+						Fail: &troubleshootv1beta2.SingleOutcome{
+							When:    "= 0",
+							Message: "There are no replicas of the Admin Console API running and ready",
+						},
+					},
+				},
+			},
+		})
+		return nil
+	}
 	analyzer.Spec.Analyzers = append(analyzer.Spec.Analyzers, &troubleshootv1beta2.Analyze{
-		DeploymentStatus: &troubleshootv1beta2.DeploymentStatus{
+		StatefulsetStatus: &troubleshootv1beta2.StatefulsetStatus{
 			Name:      "kotsadm",
 			Namespace: os.Getenv("POD_NAMESPACE"),
 			Outcomes: []*troubleshootv1beta2.Outcome{

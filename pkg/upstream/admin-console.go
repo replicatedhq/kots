@@ -17,18 +17,19 @@ import (
 )
 
 type UpstreamSettings struct {
-	SharedPassword       string
-	SharedPasswordBcrypt string
-	S3AccessKey          string
-	S3SecretKey          string
-	JWT                  string
-	PostgresPassword     string
-	APIEncryptionKey     string
-	HTTPProxyEnvValue    string
-	HTTPSProxyEnvValue   string
-	NoProxyEnvValue      string
-
+	SharedPassword         string
+	SharedPasswordBcrypt   string
+	S3AccessKey            string
+	S3SecretKey            string
+	JWT                    string
+	PostgresPassword       string
+	APIEncryptionKey       string
+	HTTPProxyEnvValue      string
+	HTTPSProxyEnvValue     string
+	NoProxyEnvValue        string
 	AutoCreateClusterToken string
+	IsOpenShift            bool
+	IncludeMinio           bool
 }
 
 func generateAdminConsoleFiles(renderDir string, options types.WriteOptions) ([]types.UpstreamFile, error) {
@@ -39,6 +40,8 @@ func generateAdminConsoleFiles(renderDir string, options types.WriteOptions) ([]
 			HTTPProxyEnvValue:      options.HTTPProxyEnvValue,
 			HTTPSProxyEnvValue:     options.HTTPSProxyEnvValue,
 			NoProxyEnvValue:        options.NoProxyEnvValue,
+			IsOpenShift:            options.IsOpenShift,
+			IncludeMinio:           options.IncludeMinio,
 		}
 		return generateNewAdminConsoleFiles(settings)
 	}
@@ -50,6 +53,8 @@ func generateAdminConsoleFiles(renderDir string, options types.WriteOptions) ([]
 
 	settings := &UpstreamSettings{
 		AutoCreateClusterToken: uuid.New().String(),
+		IsOpenShift:            options.IsOpenShift,
+		IncludeMinio:           options.IncludeMinio,
 	}
 	if err := loadUpstreamSettingsFromFiles(settings, renderDir, existingFiles); err != nil {
 		return nil, errors.Wrap(err, "failed to find existing settings")
@@ -85,6 +90,8 @@ func loadUpstreamSettingsFromFiles(settings *UpstreamSettings, renderDir string,
 			loadUpstreamSettingsFromSecret(settings, obj.(*corev1.Secret))
 		} else if gvk.Group == "apps" && gvk.Version == "v1" && gvk.Kind == "Deployment" {
 			loadUpstreamSettingsFromDeployment(settings, obj.(*appsv1.Deployment))
+		} else if gvk.Group == "apps" && gvk.Version == "v1" && gvk.Kind == "StatefulSet" {
+			loadUpstreamSettingsFromStatefulSet(settings, obj.(*appsv1.StatefulSet))
 		}
 	}
 
@@ -118,6 +125,17 @@ func loadUpstreamSettingsFromDeployment(settings *UpstreamSettings, deployment *
 	}
 }
 
+func loadUpstreamSettingsFromStatefulSet(settings *UpstreamSettings, statefulset *appsv1.StatefulSet) {
+	for _, c := range statefulset.Spec.Template.Spec.Containers {
+		for _, e := range c.Env {
+			switch e.Name {
+			case "AUTO_CREATE_CLUSTER_TOKEN", "KOTSADM_TOKEN":
+				settings.AutoCreateClusterToken = e.Value
+			}
+		}
+	}
+}
+
 func generateNewAdminConsoleFiles(settings *UpstreamSettings) ([]types.UpstreamFile, error) {
 	upstreamFiles := []types.UpstreamFile{}
 
@@ -134,6 +152,8 @@ func generateNewAdminConsoleFiles(settings *UpstreamSettings) ([]types.UpstreamF
 		HTTPProxyEnvValue:      settings.HTTPProxyEnvValue,
 		HTTPSProxyEnvValue:     settings.HTTPSProxyEnvValue,
 		NoProxyEnvValue:        settings.NoProxyEnvValue,
+		IsOpenShift:            settings.IsOpenShift,
+		IncludeMinio:           settings.IncludeMinio,
 		EnsureRBAC:             true,
 	}
 

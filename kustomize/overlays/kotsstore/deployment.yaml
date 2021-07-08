@@ -23,4 +23,3 @@ spec:
               value: not-a-secret
             - name: S3_BUCKET_ENDPOINT
               value: "true"
-

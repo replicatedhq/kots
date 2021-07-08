@@ -3,6 +3,8 @@ package kotsadm
 import (
 	"fmt"
 
+	"github.com/pkg/errors"
+	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/kotsadm/types"
 	kotsadmversion "github.com/replicatedhq/kots/pkg/kotsadm/version"
 	"github.com/replicatedhq/kots/pkg/util"
@@ -13,7 +15,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
-func MinioStatefulset(deployOptions types.DeployOptions, size resource.Quantity) *appsv1.StatefulSet {
+func MinioStatefulset(deployOptions types.DeployOptions, size resource.Quantity) (*appsv1.StatefulSet, error) {
 	imageTag := "RELEASE.2021-06-17T00-10-46Z"
 	if deployOptions.KotsadmOptions.OverrideVersion != "" {
 		imageTag = deployOptions.KotsadmOptions.OverrideVersion
@@ -33,12 +35,18 @@ func MinioStatefulset(deployOptions types.DeployOptions, size resource.Quantity)
 		image = fmt.Sprintf("%s/minio:%s", kotsadmversion.KotsadmRegistry(deployOptions.KotsadmOptions), imageTag)
 	}
 
-	var securityContext corev1.PodSecurityContext
-	if !deployOptions.IsOpenShift {
-		securityContext = corev1.PodSecurityContext{
-			RunAsUser: util.IntPointer(1001),
-			FSGroup:   util.IntPointer(1001),
+	securityContext := &corev1.PodSecurityContext{
+		RunAsUser: util.IntPointer(1001),
+		FSGroup:   util.IntPointer(1001),
+	}
+	if deployOptions.IsOpenShift {
+		// need to use a security context here because if the project is running with a scc that has "MustRunAsNonRoot" (or is not "MustRunAsRange"),
+		// openshift won't assign a user id to the container to run with, and the container will try to run as root and fail.
+		psc, err := k8sutil.GetOpenShiftPodSecurityContext(deployOptions.Namespace)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to get openshift pod security context")
 		}
+		securityContext = psc
 	}
 
 	statefulset := &appsv1.StatefulSet{
@@ -88,7 +96,7 @@ func MinioStatefulset(deployOptions types.DeployOptions, size resource.Quantity)
 					},
 				},
 				Spec: corev1.PodSpec{
-					SecurityContext:  &securityContext,
+					SecurityContext:  securityContext,
 					ImagePullSecrets: pullSecrets,
 					Volumes: []corev1.Volume{
 						{
@@ -209,7 +217,7 @@ func MinioStatefulset(deployOptions types.DeployOptions, size resource.Quantity)
 		},
 	}
 
-	return statefulset
+	return statefulset, nil
 }
 
 func MinioService(namespace string) *corev1.Service {

@@ -33,8 +33,8 @@ type DeployOptions struct {
 	ProgressWriter            io.Writer
 	StorageBaseURI            string
 	StorageBaseURIPlainHTTP   bool
-	IncludeMinio              bool
 	IncludeDockerDistribution bool
+	IncludeMinio              bool
 	Timeout                   time.Duration
 	HTTPProxyEnvValue         string
 	HTTPSProxyEnvValue        string

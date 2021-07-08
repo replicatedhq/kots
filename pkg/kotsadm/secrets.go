@@ -64,17 +64,19 @@ func getSecretsYAML(deployOptions *types.DeployOptions) (map[string][]byte, erro
 	}
 	docs["secret-api-encryption.yaml"] = apiEncryptionBuffer.Bytes()
 
-	var s3 bytes.Buffer
-	if deployOptions.S3SecretKey == "" {
-		deployOptions.S3SecretKey = uuid.New().String()
+	if deployOptions.IncludeMinio {
+		var s3 bytes.Buffer
+		if deployOptions.S3SecretKey == "" {
+			deployOptions.S3SecretKey = uuid.New().String()
+		}
+		if deployOptions.S3AccessKey == "" {
+			deployOptions.S3AccessKey = uuid.New().String()
+		}
+		if err := s.Encode(kotsadmobjects.S3Secret(deployOptions.Namespace, deployOptions.S3AccessKey, deployOptions.S3SecretKey), &s3); err != nil {
+			return nil, errors.Wrap(err, "failed to marshal s3 secret")
+		}
+		docs["secret-s3.yaml"] = s3.Bytes()
 	}
-	if deployOptions.S3AccessKey == "" {
-		deployOptions.S3AccessKey = uuid.New().String()
-	}
-	if err := s.Encode(kotsadmobjects.S3Secret(deployOptions.Namespace, deployOptions.S3AccessKey, deployOptions.S3SecretKey), &s3); err != nil {
-		return nil, errors.Wrap(err, "failed to marshal s3 secret")
-	}
-	docs["secret-s3.yaml"] = s3.Bytes()
 
 	var tokenSecret bytes.Buffer
 	if err := s.Encode(kotsadmobjects.ApiClusterTokenSecret(*deployOptions), &tokenSecret); err != nil {
@@ -119,8 +121,10 @@ func ensureSecrets(deployOptions *types.DeployOptions, clientset *kubernetes.Cli
 		}
 	}
 
-	if err := ensureS3Secret(deployOptions.Namespace, clientset); err != nil {
-		return errors.Wrap(err, "failed to ensure s3 secret")
+	if deployOptions.IncludeMinio {
+		if err := ensureS3Secret(deployOptions.Namespace, clientset); err != nil {
+			return errors.Wrap(err, "failed to ensure s3 secret")
+		}
 	}
 
 	if err := ensureAPIEncryptionSecret(deployOptions, clientset); err != nil {

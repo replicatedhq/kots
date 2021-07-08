@@ -19,22 +19,28 @@ const (
 )
 
 func FindKotsadmImage(namespace string) (string, error) {
-	client, err := GetClientset()
+	clientset, err := GetClientset()
 	if err != nil {
 		return "", errors.Wrap(err, "failed to get k8s client set")
 	}
 
-	if os.Getenv("KOTSADM_ENV") == "dev" {
-		namespace = os.Getenv("POD_NAMESPACE")
-	}
-
-	kotsadmDeployment, err := client.AppsV1().Deployments(namespace).Get(context.TODO(), "kotsadm", metav1.GetOptions{})
-	if err != nil {
-		return "", errors.Wrap(err, "failed to get kotsadm deployment")
+	var containers []corev1.Container
+	if os.Getenv("POD_OWNER_KIND") == "deployment" {
+		kotsadmDeployment, err := clientset.AppsV1().Deployments(namespace).Get(context.TODO(), "kotsadm", metav1.GetOptions{})
+		if err != nil {
+			return "", errors.Wrap(err, "failed to get kotsadm deployment")
+		}
+		containers = kotsadmDeployment.Spec.Template.Spec.Containers
+	} else {
+		kotsadmStatefulSet, err := clientset.AppsV1().StatefulSets(namespace).Get(context.TODO(), "kotsadm", metav1.GetOptions{})
+		if err != nil {
+			return "", errors.Wrap(err, "failed to get kotsadm statefulset")
+		}
+		containers = kotsadmStatefulSet.Spec.Template.Spec.Containers
 	}
 
 	apiContainerIndex := -1
-	for i, container := range kotsadmDeployment.Spec.Template.Spec.Containers {
+	for i, container := range containers {
 		if container.Name == "kotsadm" {
 			apiContainerIndex = i
 			break
@@ -45,7 +51,7 @@ func FindKotsadmImage(namespace string) (string, error) {
 		return "", errors.New("kotsadm container not found")
 	}
 
-	kotsadmImage := kotsadmDeployment.Spec.Template.Spec.Containers[apiContainerIndex].Image
+	kotsadmImage := containers[apiContainerIndex].Image
 
 	return kotsadmImage, nil
 }
@@ -165,6 +171,40 @@ func FindKotsadm(clientset *kubernetes.Clientset, namespace string) (string, err
 	}
 
 	return "", errors.New("unable to find kotsadm pod")
+}
+
+func WaitForKotsadm(clientset *kubernetes.Clientset, namespace string, timeoutWaitingForWeb time.Duration) (string, error) {
+	start := time.Now()
+
+	for {
+		// todo, find service, not pod
+		pods, err := clientset.CoreV1().Pods(namespace).List(context.TODO(), metav1.ListOptions{LabelSelector: "app=kotsadm"})
+		if err != nil {
+			return "", errors.Wrap(err, "failed to list pods")
+		}
+
+		readyPods := []corev1.Pod{}
+		for _, pod := range pods.Items {
+			if pod.Status.Phase == corev1.PodRunning {
+				if pod.Status.ContainerStatuses[0].Ready {
+					readyPods = append(readyPods, pod)
+				}
+			}
+		}
+
+		// kotsadm pods from different owners (deployment, statefulset) may co-exist for a brief period of time
+		// during the upgrade process from versions pre 1.47.0 to 1.47+. we can't just check that the owner is a statefulset
+		// because full snapshots taken before 1.47.0 will have kotsadm as a deployment and the restore will hang waiting for a statefulset.
+		if len(readyPods) > 0 && PodsHaveTheSameOwner(readyPods) {
+			return readyPods[0].Name, nil
+		}
+
+		time.Sleep(time.Second)
+
+		if time.Since(start) > timeoutWaitingForWeb {
+			return "", &kotsadmtypes.ErrorTimeout{Message: "timeout waiting for kotsadm pod"}
+		}
+	}
 }
 
 func DeleteKotsadm(ctx context.Context, clientset *kubernetes.Clientset, namespace string, isKurl bool) error {

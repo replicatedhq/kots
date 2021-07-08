@@ -46,12 +46,14 @@ func YAML(deployOptions types.DeployOptions) (map[string][]byte, error) {
 		}
 	}
 
-	minioDocs, err := getMinioYAML(deployOptions)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to get minio yaml")
-	}
-	for n, v := range minioDocs {
-		docs[n] = v
+	if deployOptions.IncludeMinio {
+		minioDocs, err := getMinioYAML(deployOptions)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to get minio yaml")
+		}
+		for n, v := range minioDocs {
+			docs[n] = v
+		}
 	}
 
 	postgresDocs, err := getPostgresYAML(deployOptions)
@@ -270,7 +272,7 @@ func canUpgrade(upgradeOptions types.UpgradeOptions, clientset *kubernetes.Clien
 }
 
 func removeUnusedKotsadmComponents(deployOptions types.DeployOptions, clientset *kubernetes.Clientset, log *logger.CLILogger) error {
-	// if there's a kotsadm web deployment, rmove (pre 1.11.0)
+	// if there's a kotsadm web deployment, remove (pre 1.11.0)
 	_, err := clientset.AppsV1().Deployments(deployOptions.Namespace).Get(context.TODO(), "kotsadm-web", metav1.GetOptions{})
 	if err == nil {
 		if err := clientset.AppsV1().Deployments(deployOptions.Namespace).Delete(context.TODO(), "kotsadm-web", metav1.DeleteOptions{}); err != nil {
@@ -283,6 +285,60 @@ func removeUnusedKotsadmComponents(deployOptions types.DeployOptions, clientset 
 	if err == nil {
 		if err := clientset.CoreV1().Services(deployOptions.Namespace).Delete(context.TODO(), "kotsadm-api", metav1.DeleteOptions{}); err != nil {
 			return errors.Wrap(err, "failed to delete kotsadm-api service")
+		}
+	}
+
+	if !deployOptions.IncludeMinio {
+		// if there's a deployment named "kotsadm", remove (pre 1.47.0)
+		// only delete the deployment if minio is not included because that will mean that it's been replaced with a statefulset
+		_, err = clientset.AppsV1().Deployments(deployOptions.Namespace).Get(context.TODO(), "kotsadm", metav1.GetOptions{})
+		if err == nil {
+			if err := clientset.AppsV1().Deployments(deployOptions.Namespace).Delete(context.TODO(), "kotsadm", metav1.DeleteOptions{}); err != nil {
+				return errors.Wrap(err, "failed to delete kotsadm deployment")
+			}
+		} else if !kuberneteserrors.IsNotFound(err) {
+			return errors.Wrap(err, "failed to get kotsadm deployment")
+		}
+
+		// if there's a service named "kotsadm-minio", remove (pre 1.47.0)
+		_, err = clientset.CoreV1().Services(deployOptions.Namespace).Get(context.TODO(), "kotsadm-minio", metav1.GetOptions{})
+		if err == nil {
+			if err := clientset.CoreV1().Services(deployOptions.Namespace).Delete(context.TODO(), "kotsadm-minio", metav1.DeleteOptions{}); err != nil {
+				return errors.Wrap(err, "failed to delete kotsadm-minio service")
+			}
+		}
+
+		// if there's a statefulset named "kotsadm-minio", remove (pre 1.47.0)
+		_, err = clientset.AppsV1().StatefulSets(deployOptions.Namespace).Get(context.TODO(), "kotsadm-minio", metav1.GetOptions{})
+		if err == nil {
+			if err := clientset.AppsV1().StatefulSets(deployOptions.Namespace).Delete(context.TODO(), "kotsadm-minio", metav1.DeleteOptions{}); err != nil {
+				return errors.Wrap(err, "failed to delete kotsadm-minio statefulset")
+			}
+		}
+
+		// if there's a secret named "kotsadm-minio", remove (pre 1.47.0)
+		_, err = clientset.CoreV1().Secrets(deployOptions.Namespace).Get(context.TODO(), "kotsadm-minio", metav1.GetOptions{})
+		if err == nil {
+			if err := clientset.CoreV1().Secrets(deployOptions.Namespace).Delete(context.TODO(), "kotsadm-minio", metav1.DeleteOptions{}); err != nil {
+				return errors.Wrap(err, "failed to delete kotsadm-minio secret")
+			}
+		}
+
+		// if there's a minio pvc, remove (pre 1.47.0)
+		minioPVCSelectorLabels := map[string]string{
+			"app": "kotsadm-minio",
+		}
+		pvcs, err := clientset.CoreV1().PersistentVolumeClaims(deployOptions.Namespace).List(context.TODO(), metav1.ListOptions{
+			LabelSelector: labels.SelectorFromSet(minioPVCSelectorLabels).String(),
+		})
+		if err != nil {
+			return errors.Wrap(err, "failed to list kotsadm-minio persistent volume claims")
+		}
+		for _, pvc := range pvcs.Items {
+			err := clientset.CoreV1().PersistentVolumeClaims(deployOptions.Namespace).Delete(context.TODO(), pvc.ObjectMeta.Name, metav1.DeleteOptions{})
+			if err != nil {
+				return errors.Wrap(err, "failed to delete kotsadm-minio pvc")
+			}
 		}
 	}
 
@@ -464,8 +520,14 @@ func ensureKotsadm(deployOptions types.DeployOptions, clientset *kubernetes.Clie
 
 	if !deployOptions.ExcludeAdminConsole {
 		log.ChildActionWithSpinner("Waiting for Admin Console to be ready")
-		if err := k8sutil.WaitForDeploymentReady(ctx, clientset, deployOptions.Namespace, "kotsadm", deployOptions.Timeout); err != nil {
-			return errors.Wrap(err, "failed to wait for web")
+		if deployOptions.IncludeMinio {
+			if err := k8sutil.WaitForDeploymentReady(ctx, clientset, deployOptions.Namespace, "kotsadm", deployOptions.Timeout); err != nil {
+				return errors.Wrap(err, "failed to wait for web")
+			}
+		} else {
+			if err := k8sutil.WaitForStatefulSetReady(ctx, clientset, deployOptions.Namespace, "kotsadm", deployOptions.Timeout); err != nil {
+				return errors.Wrap(err, "failed to wait for web")
+			}
 		}
 		log.FinishSpinner()
 	}
@@ -473,11 +535,17 @@ func ensureKotsadm(deployOptions types.DeployOptions, clientset *kubernetes.Clie
 	if restartKotsadmAPI {
 		log.ChildActionWithSpinner("Waiting for Admin Console to be ready")
 		if err := restartKotsadm(&deployOptions, clientset); err != nil {
-			return errors.Wrap(err, "failed to wait for web")
+			return errors.Wrap(err, "failed to restart kotsadm")
 		}
 
-		if err := k8sutil.WaitForDeploymentReady(ctx, clientset, deployOptions.Namespace, "kotsadm", deployOptions.Timeout); err != nil {
-			return errors.Wrap(err, "failed to wait for web")
+		if deployOptions.IncludeMinio {
+			if err := k8sutil.WaitForDeploymentReady(ctx, clientset, deployOptions.Namespace, "kotsadm", deployOptions.Timeout); err != nil {
+				return errors.Wrap(err, "failed to wait for web")
+			}
+		} else {
+			if err := k8sutil.WaitForStatefulSetReady(ctx, clientset, deployOptions.Namespace, "kotsadm", deployOptions.Timeout); err != nil {
+				return errors.Wrap(err, "failed to wait for web")
+			}
 		}
 		log.FinishSpinner()
 	}
@@ -832,27 +900,29 @@ func readDeployOptionsFromCluster(namespace string, clientset *kubernetes.Client
 		deployOptions.SharedPassword = sharedPassword
 	}
 
-	// s3 secret, get from cluster or create new random values
-	s3Secret, err := getS3Secret(namespace, clientset)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to get s3 secret")
-	}
-	if s3Secret != nil {
-		accessKey, ok := s3Secret.Data["accesskey"]
-		if ok {
-			deployOptions.S3AccessKey = string(accessKey)
+	if deployOptions.IncludeMinio {
+		// s3 secret, get from cluster or create new random values
+		s3Secret, err := getS3Secret(namespace, clientset)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to get s3 secret")
 		}
+		if s3Secret != nil {
+			accessKey, ok := s3Secret.Data["accesskey"]
+			if ok {
+				deployOptions.S3AccessKey = string(accessKey)
+			}
 
-		secretyKey, ok := s3Secret.Data["secretkey"]
-		if ok {
-			deployOptions.S3SecretKey = string(secretyKey)
+			secretyKey, ok := s3Secret.Data["secretkey"]
+			if ok {
+				deployOptions.S3SecretKey = string(secretyKey)
+			}
 		}
-	}
-	if deployOptions.S3AccessKey == "" {
-		deployOptions.S3AccessKey = uuid.New().String()
-	}
-	if deployOptions.S3SecretKey == "" {
-		deployOptions.S3SecretKey = uuid.New().String()
+		if deployOptions.S3AccessKey == "" {
+			deployOptions.S3AccessKey = uuid.New().String()
+		}
+		if deployOptions.S3SecretKey == "" {
+			deployOptions.S3SecretKey = uuid.New().String()
+		}
 	}
 
 	// jwt key, get or create new value
