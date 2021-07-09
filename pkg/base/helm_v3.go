@@ -72,6 +72,12 @@ func renderHelmV3(chartName string, chartPath string, vals map[string]interface{
 		})
 	}
 
+	// insert namespace defined in the HelmChart spec
+	baseFiles, err = insertHelmNamespace(baseFiles, renderOptions)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to insert helm namespace")
+	}
+
 	// maintain order
 	return mergeBaseFiles(baseFiles), nil
 }
