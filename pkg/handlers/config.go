@@ -11,12 +11,12 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/google/uuid"
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	"github.com/replicatedhq/kots/kotskinds/multitype"
 	apptypes "github.com/replicatedhq/kots/pkg/app/types"
+	"github.com/replicatedhq/kots/pkg/config"
 	kotsconfig "github.com/replicatedhq/kots/pkg/config"
 	"github.com/replicatedhq/kots/pkg/crypto"
 	kotsadmconfig "github.com/replicatedhq/kots/pkg/kotsadmconfig"
@@ -184,6 +184,27 @@ func (h *Handler) LiveAppConfig(w http.ResponseWriter, r *http.Request) {
 
 	for _, group := range liveAppConfigRequest.ConfigGroups {
 		for _, item := range group.Items {
+			// collect all repeatable items
+			// Future Note:  This could be refactored to use CountByGroup as the control.  Front end provides the exact CountByGroup it wants, back end takes care of ValuesByGroup entries.
+			// this way the front end doesn't have to add anything to ValuesByGroup, it just sets values there.
+			if item.Repeatable {
+				for valuesByGroupName, groupValues := range item.ValuesByGroup {
+					config.CreateVariadicValues(&item, valuesByGroupName)
+
+					for fieldName, subItem := range groupValues {
+						itemValue := template.ItemValue{
+							Value:          subItem,
+							RepeatableItem: item.Name,
+						}
+						if item.Filename != "" {
+							itemValue.Filename = fieldName
+						}
+						configValues[fieldName] = itemValue
+					}
+				}
+				continue
+			}
+
 			generatedValue := template.ItemValue{}
 			if item.Value.Type == multitype.String {
 				generatedValue.Value = item.Value.StrVal
@@ -199,41 +220,6 @@ func (h *Handler) LiveAppConfig(w http.ResponseWriter, r *http.Request) {
 				generatedValue.Filename = item.Filename
 			}
 			configValues[item.Name] = generatedValue
-
-			// collect all repeatable items
-			// Future Note:  This could be refactored to use CountByGroup as the control.  Front end provides the exact CountByGroup it wants, back end takes care of ValuesByGroup entries.
-			// this way the front end doesn't have to add anything to ValuesByGroup, it just sets values there.
-			if item.Repeatable {
-				for valuesByGroupName, groupValues := range item.ValuesByGroup {
-					var repeatItemCount int
-					// if the front end sends an empty variadic group, create the first two items
-					if len(groupValues) == 0 {
-						repeatItemCount = item.MinimumCount
-					} else if item.CountByGroup != nil {
-						repeatItemCount = item.CountByGroup[valuesByGroupName]
-					} else {
-						repeatItemCount = len(groupValues)
-					}
-					setCountByGroup(&item, valuesByGroupName, repeatItemCount)
-					for fieldName, subItem := range groupValues {
-						itemValue := template.ItemValue{
-							Value:          subItem,
-							RepeatableItem: item.Name,
-						}
-						configValues[fieldName] = itemValue
-					}
-
-					for len(configValues) <= item.CountByGroup[valuesByGroupName] {
-						itemValue := template.ItemValue{
-							Value:          "",
-							RepeatableItem: item.Name,
-						}
-						shortUUID := strings.Split(uuid.New().String(), "-")[0]
-						variadicName := fmt.Sprintf("%s-%s", item.Name, shortUUID)
-						configValues[variadicName] = itemValue
-					}
-				}
-			}
 		}
 	}
 
