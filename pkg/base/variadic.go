@@ -1,10 +1,12 @@
 package base
 
 import (
+	"bytes"
 	"fmt"
 	"reflect"
 	"strconv"
 	"strings"
+	"text/template"
 
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
@@ -71,7 +73,10 @@ func processVariadicConfig(u *upstreamtypes.UpstreamFile, config *kotsv1beta1.Co
 					return nil, errors.Wrapf(err, "failed to build yaml stack for item %s", vitem.item.Name)
 				}
 
-				yamlStack.renderRepeatNodes(vitem.item.Name, vitem.item.ValuesByGroup[vgroup.group.Name])
+				err = yamlStack.renderRepeatNodes(vitem.item.Name, vitem.item.ValuesByGroup[vgroup.group.Name])
+				if err != nil {
+					return nil, errors.Wrapf(err, "failed to render repeat nodes for item %s", vitem.item.Name)
+				}
 
 				node = buildYamlFromStack(yamlStack)
 			}
@@ -266,7 +271,7 @@ func buildYamlFromStack(stack yamlStack) map[string]interface{} {
 // renderRepeatNodes duplicates the target item,
 // renders each copy with the provided values,
 // and merges them in to the last stack array entry
-func (stack yamlStack) renderRepeatNodes(optionName string, values map[string]interface{}) {
+func (stack yamlStack) renderRepeatNodes(optionName string, values map[string]interface{}) error {
 	target := stack[len(stack)-1]
 
 	// build new array with existing values from around the target
@@ -278,8 +283,12 @@ func (stack yamlStack) renderRepeatNodes(optionName string, values map[string]in
 		// copy all values into a new map
 		newMap := map[string]interface{}{}
 		for targetField, targetData := range target.Data {
+			var err error
 			// replace the target value
-			newMap[targetField] = replaceTemplateValue(targetData, optionName, valueName)
+			newMap[targetField], err = replaceTemplateValue(targetData, optionName, valueName)
+			if err != nil {
+				return errors.Wrapf(err, "failed to replace template value on target %s", targetField)
+			}
 		}
 
 		newArray = append(newArray, newMap)
@@ -288,43 +297,79 @@ func (stack yamlStack) renderRepeatNodes(optionName string, values map[string]in
 	// insert new array into stack
 	target.Array = newArray
 	stack[len(stack)-1] = target
+
+	return nil
 }
 
 // replaceTemplateValue searches all nested nodes of a value
 // if the provided optionName is found within repl{{ AnyFunction "optionName" }}, "optionName" will be replaced with the repeatable value name
 // IE repl{{ ConfigOption "port" | ParseInt }} will become repl{{ ConfigOption "port-8jc8ud" | ParseInt }}, where "port" is the optionName and "port-8jc8ud" is the valueName
 // the templating function will be executed with the new variable name after variadic processing is finished
-func replaceTemplateValue(node interface{}, optionName, valueName string) interface{} {
+func replaceTemplateValue(node interface{}, optionName, valueName string) (interface{}, error) {
+	var err error
 	switch typedNode := node.(type) {
 	case string:
-		return generateTargetValue(optionName, valueName, typedNode)
+		resultString, err := parseVariadicTarget(optionName, valueName, typedNode)
+		if err != nil {
+			return nil, errors.Wrapf(err, "failed to parse %s into %s", optionName, valueName)
+		}
+
+		return resultString, nil
 	case map[string]interface{}:
 		newMap := map[string]interface{}{}
 		for subField, subNode := range typedNode {
-			newMap[subField] = replaceTemplateValue(subNode, optionName, valueName)
+			newMap[subField], err = replaceTemplateValue(subNode, optionName, valueName)
+			if err != nil {
+				// no need to wrap recursive errors
+				return nil, err
+			}
 		}
-		return newMap
+		return newMap, nil
 	case []interface{}:
 		resultSet := []interface{}{}
 		for _, subNode := range typedNode {
-			results := replaceTemplateValue(subNode, optionName, valueName)
+			results, err := replaceTemplateValue(subNode, optionName, valueName)
+			if err != nil {
+				// no need to wrap recursive errors
+				return nil, err
+			}
+
 			resultSet = append(resultSet, results)
 		}
-		return resultSet
+		return resultSet, nil
 	}
-	return node
+	return node, nil
 }
 
-// isTargetValue determines if a string is the appropriate templated value target
-func generateTargetValue(configOptionName, valueName, target string) interface{} {
-	if strings.Contains(target, "repl{{") || strings.Contains(target, "{{repl") {
-		variable := strings.Split(target, "\"")[1]
-		if variable == configOptionName {
-			return strings.Replace(target, variable, valueName, 1)
-		}
+// parseVariadicTarget replaces a variadic template entry with the variadic item name
+func parseVariadicTarget(configOptionName, valueName, target string) (string, error) {
+	delims := []struct {
+		ldelim string
+		rdelim string
+	}{
+		{"[[repl", "]]"},
+		{"repl[[", "]]"},
 	}
-	// if no edits are needed, return the original target
-	return target
+
+	replace := map[string]string{
+		configOptionName: fmt.Sprintf("\"%s\"", valueName),
+	}
+
+	curText := target
+	for _, d := range delims {
+		tmpl, err := template.New(configOptionName).Delims(d.ldelim, d.rdelim).Parse(curText)
+		if err != nil {
+			return "", errors.Wrap(err, "failed to create new template")
+		}
+
+		var contents bytes.Buffer
+		if err := tmpl.Execute(&contents, replace); err != nil {
+			return "", errors.Wrap(err, "failed to execute template")
+		}
+		curText = contents.String()
+	}
+
+	return curText, nil
 }
 
 // renderRepeatFilesContent builds repeat files for each repeat value provided
@@ -337,7 +382,10 @@ func renderRepeatFilesContent(yaml map[string]interface{}, optionName string, va
 			return nil, errors.Wrapf(err, "failed to replace metadata name in repeat file for value %s", valueName)
 		}
 
-		newYaml := replaceTemplateValue(yaml, optionName, valueName)
+		newYaml, err := replaceTemplateValue(yaml, optionName, valueName)
+		if err != nil {
+			return nil, errors.Wrapf(err, "failed to replace template values for value %s", valueName)
+		}
 
 		marshaled, err := yaml3.Marshal(newYaml)
 		if err != nil {
