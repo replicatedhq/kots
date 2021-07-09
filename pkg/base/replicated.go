@@ -15,6 +15,7 @@ import (
 
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
+	kotsconfig "github.com/replicatedhq/kots/pkg/config"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/template"
 	"github.com/replicatedhq/kots/pkg/upstream/types"
@@ -37,9 +38,19 @@ func renderReplicated(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (
 		Bases: []Base{},
 	}
 
-	builder, err := NewConfigContextTemplateBuidler(u, renderOptions)
+	builder, itemValues, err := NewConfigContextTemplateBuilder(u, renderOptions)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create new config context template builder")
+	}
+
+	config, _, _, _, err := findConfigAndLicense(u, renderOptions.Log)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to find config file")
+	}
+
+	actualizedConfig, err := kotsconfig.TemplateConfigObjects(config, itemValues, nil, template.LocalRegistry{}, nil, nil, os.Getenv("POD_NAMESPACE"))
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to template config objects")
 	}
 
 	for _, upstreamFile := range u.Files {
@@ -63,6 +74,36 @@ func renderReplicated(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (
 			upstreamFile.Content = bytes.Join(newContent, []byte("\n---\n"))
 		}
 
+		generatedFiles, err := processVariadicConfig(&upstreamFile, actualizedConfig, renderOptions.Log)
+		if err != nil {
+			return nil, errors.Wrapf(err, "failed to process variadic config in file %s", upstreamFile.Path)
+		}
+
+		// render generated variadic files and add them to base
+		if len(generatedFiles) > 0 {
+			// remove the original file from upstream so it doesn't spawn more generated files
+			files := removeFileFromUpstream(u.Files, upstreamFile.Path)
+			// add the generated files into upstream
+			files = append(files, generatedFiles...)
+			u.Files = files
+			// re-render upstream with the new files
+			subBase, err := renderReplicated(u, renderOptions)
+			if err != nil {
+				return nil, errors.Wrap(err, "failed to render generated variadic files")
+			}
+			// add the rendered generated files into base
+			for _, renderedFile := range subBase.Files {
+				for _, uFile := range u.Files {
+					if renderedFile.Path == uFile.Path {
+						// log to inform where new files are coming from
+						renderOptions.Log.Info("adding generated file %s to base", renderedFile.Path)
+						base.Files = append(base.Files, renderedFile)
+					}
+				}
+			}
+			continue
+		}
+
 		baseFile, err := upstreamFileToBaseFile(upstreamFile, *builder, renderOptions.Log)
 		if err != nil {
 			return nil, errors.Wrapf(err, "failed to convert upstream file %s to base", upstreamFile.Path)
@@ -83,6 +124,7 @@ func renderReplicated(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (
 				base.ErrorFiles = append(base.ErrorFiles, f)
 			}
 		}
+
 	}
 
 	// render helm charts that were specified
@@ -263,30 +305,6 @@ func UnmarshalLicenseContent(content []byte, log *logger.CLILogger) *kotsv1beta1
 	}
 
 	return nil
-}
-
-func UnmarshalConfigValuesContent(content []byte) (map[string]template.ItemValue, error) {
-	decode := scheme.Codecs.UniversalDeserializer().Decode
-	obj, gvk, err := decode(content, nil, nil)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to decode values")
-	}
-
-	if gvk.Group != "kots.io" || gvk.Version != "v1beta1" || gvk.Kind != "ConfigValues" {
-		return nil, errors.New("not a configvalues object")
-	}
-
-	values := obj.(*kotsv1beta1.ConfigValues)
-
-	ctx := map[string]template.ItemValue{}
-	for k, v := range values.Spec.Values {
-		ctx[k] = template.ItemValue{
-			Value:   v.Value,
-			Default: v.Default,
-		}
-	}
-
-	return ctx, nil
 }
 
 func parseHelmChart(content []byte) (*kotsv1beta1.HelmChart, error) {
@@ -511,4 +529,15 @@ func chartArchiveToSparseUpstream(chartArchivePath string) (*upstreamtypes.Upstr
 	}
 
 	return upstream, nil
+}
+
+func removeFileFromUpstream(files []upstreamtypes.UpstreamFile, path string) []upstreamtypes.UpstreamFile {
+	for index, file := range files {
+		if file.Path == path {
+			files[index] = files[len(files)-1]
+			files[len(files)-1] = upstreamtypes.UpstreamFile{}
+			return files[:len(files)-1]
+		}
+	}
+	return files
 }

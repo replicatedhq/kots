@@ -31,31 +31,48 @@ type ConfigChildItem struct {
 }
 
 type ConfigItem struct {
-	Name        string                 `json:"name"`
-	Type        string                 `json:"type"`
-	Title       string                 `json:"title,omitempty"`
-	HelpText    string                 `json:"help_text,omitempty"`
-	Recommended bool                   `json:"recommended,omitempty"`
-	Default     multitype.BoolOrString `json:"default,omitempty"`
-	Value       multitype.BoolOrString `json:"value,omitempty"`
-	Data        string                 `json:"data,omitempty"`
-	Error       string                 `json:"error,omitempty"`
-	MultiValue  []string               `json:"multi_value,omitempty"`
-	ReadOnly    bool                   `json:"readonly,omitempty"`
-	WriteOnce   bool                   `json:"write_once,omitempty"`
-	When        multitype.QuotedBool   `json:"when,omitempty"`
-	Multiple    bool                   `json:"multiple,omitempty"`
-	Hidden      bool                   `json:"hidden,omitempty"`
-	Position    int                    `json:"-"`
-	Affix       string                 `json:"affix,omitempty"`
-	Required    bool                   `json:"required,omitempty"`
-	Items       []ConfigChildItem      `json:"items,omitempty"`
-	Filename    string                 `json:"filename,omitempty"`
+	Name          string                 `json:"name"`
+	Type          string                 `json:"type"`
+	Title         string                 `json:"title,omitempty"`
+	HelpText      string                 `json:"help_text,omitempty"`
+	Recommended   bool                   `json:"recommended,omitempty"`
+	Default       multitype.BoolOrString `json:"default,omitempty"`
+	Value         multitype.BoolOrString `json:"value,omitempty"`
+	Data          string                 `json:"data,omitempty"`
+	Error         string                 `json:"error,omitempty"`
+	MultiValue    []string               `json:"multi_value,omitempty"`
+	ReadOnly      bool                   `json:"readonly,omitempty"`
+	WriteOnce     bool                   `json:"write_once,omitempty"`
+	When          multitype.QuotedBool   `json:"when,omitempty"`
+	Multiple      bool                   `json:"multiple,omitempty"`
+	Hidden        bool                   `json:"hidden,omitempty"`
+	Position      int                    `json:"-"`
+	Affix         string                 `json:"affix,omitempty"`
+	Required      bool                   `json:"required,omitempty"`
+	Items         []ConfigChildItem      `json:"items,omitempty"`
+	Filename      string                 `json:"filename,omitempty"`
+	Repeatable    bool                   `json:"repeatable,omitempty"`
+	MinimumCount  int                    `json:"minimumCount,omitempty"`
+	CountByGroup  map[string]int         `json:"countByGroup,omitempty"`
+	Templates     []RepeatTemplate       `json:"templates,omitempty"`
+	ValuesByGroup ValuesByGroup          `json:"valuesByGroup,omitempty"`
 	// Props       map[string]interface{} `json:"props,omitempty"`
 	// DefaultCmd  *ConfigItemCmd         `json:"default_cmd,omitempty"`
 	// ValueCmd    *ConfigItemCmd         `json:"value_cmd,omitempty"`
 	// DataCmd     *ConfigItemCmd         `json:"data_cmd,omitempty"`
 }
+
+type RepeatTemplate struct {
+	APIVersion string `json:"apiVersion"`
+	Kind       string `json:"kind"`
+	Name       string `json:"name"`
+	Namespace  string `json:"namespace,omitempty"`
+	YamlPath   string `json:"yamlPath,omitempty"`
+}
+
+type ValuesByGroup map[string]GroupValues
+
+type GroupValues map[string]interface{}
 
 type ConfigGroup struct {
 	Name        string               `json:"name"`

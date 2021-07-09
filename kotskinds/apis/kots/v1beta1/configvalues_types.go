@@ -26,6 +26,7 @@ type ConfigValue struct {
 	Data           string `json:"data,omitempty"`
 	ValuePlaintext string `json:"valuePlaintext,omitempty"`
 	DataPlaintext  string `json:"dataPlaintext,omitempty"`
+	RepeatableItem string `json:"repeatableItem,omitempty"`
 	Filename       string `json:"filename,omitempty"`
 }
 

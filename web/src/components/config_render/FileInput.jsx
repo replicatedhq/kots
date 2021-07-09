@@ -56,7 +56,7 @@ export default class FileInput extends React.Component {
     return (
       <div>
         <div className={`${this.props.readonly ? "readonly" : ""} ${this.props.disabled ? "disabled" : ""}`}>
-          <p className="sub-header-color field-section-sub-header u-marginTop--15 u-marginBottom--small">{label}</p>
+          <p className="sub-header-color field-section-sub-header u-marginTop--10 u-marginBottom--5">{label}</p>
           <div className="flex flex-row">
             <div className={`${this.state.fileAdded || this.props.value ? "file-uploaded" : "custom-file-upload"}`}>
               <input

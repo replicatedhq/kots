@@ -1,6 +1,21 @@
 @import "../../variables.scss";
 
 #config-render-component {
+
+  .config-item {
+    padding: 10px;
+    background-color: $sub-nav-color;
+    border-radius: 4px;
+  }
+
+  .field {
+    margin-top: 15px;
+
+    &:first-child {
+      margin-top: 0;
+    }
+  }
+
   .hidden {
     display: none;
   }
