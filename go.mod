@@ -59,6 +59,7 @@ require (
 	github.com/phayes/freeport v0.0.0-20180830031419-95f893ade6f2
 	github.com/pierrec/lz4 v2.2.6+incompatible // indirect
 	github.com/pkg/errors v0.9.1
+	github.com/pmezard/go-difflib v1.0.0
 	github.com/replicatedhq/kurl v0.0.0-20210414162418-8d6211901244
 	github.com/replicatedhq/troubleshoot v0.13.2
 	github.com/replicatedhq/yaml/v3 v3.0.0-beta5-replicatedhq
@@ -102,6 +103,7 @@ require (
 	rsc.io/letsencrypt v0.0.3 // indirect
 	sigs.k8s.io/application v0.8.3
 	sigs.k8s.io/controller-runtime v0.8.3
+	sigs.k8s.io/controller-tools v0.5.0 // indirect
 	sigs.k8s.io/kustomize/api v0.8.5
 	sigs.k8s.io/yaml v1.2.0
 )

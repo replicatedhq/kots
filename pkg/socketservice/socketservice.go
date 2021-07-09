@@ -53,6 +53,8 @@ type DeployArgs struct {
 	Namespace            string                `json:"namespace"`
 	PreviousManifests    string                `json:"previous_manifests"`
 	Manifests            string                `json:"manifests"`
+	PreviousCharts       []byte                `json:"previous_charts"`
+	Charts               []byte                `json:"charts"`
 	Wait                 bool                  `json:"wait"`
 	ResultCallback       string                `json:"result_callback"`
 	ClearNamespaces      []string              `json:"clear_namespaces"`
@@ -262,6 +264,12 @@ func deployVersionForApp(clusterSocket *ClusterSocket, a *apptypes.App, deployed
 	}
 	base64EncodedManifests := base64.StdEncoding.EncodeToString(renderedManifests)
 
+	chartArchive, err := renderChartsArchive(deployedVersionArchive, d.Name, kotsKinds.KustomizeVersion())
+	if err != nil {
+		deployError = errors.Wrap(err, "failed to run kustomize on currently deployed charts")
+		return deployError
+	}
+
 	imagePullSecret := ""
 	secretFilename := filepath.Join(deployedVersionArchive, "overlays", "midstream", "secret.yaml")
 	_, err = os.Stat(secretFilename)
@@ -280,6 +288,7 @@ func deployVersionForApp(clusterSocket *ClusterSocket, a *apptypes.App, deployed
 
 	// get previous manifests (if any)
 	base64EncodedPreviousManifests := ""
+	previouslyDeployedChartArchive := []byte{}
 	previouslyDeployedSequence, err := store.GetStore().GetPreviouslyDeployedSequence(a.ID, clusterSocket.ClusterID)
 	if err != nil {
 		deployError = errors.Wrap(err, "failed to get previously deployed sequence")
@@ -321,7 +330,15 @@ func deployVersionForApp(clusterSocket *ClusterSocket, a *apptypes.App, deployed
 				deployError = errors.Wrap(err, "failed to run kustomize for previously deployed app version")
 				return deployError
 			}
+
 			base64EncodedPreviousManifests = base64.StdEncoding.EncodeToString(previousRenderedManifests)
+			// Run kustomization on the charts as well
+			previouslyDeployedChartArchive, err = renderChartsArchive(previouslyDeployedVersionArchive, d.Name, kotsKinds.KustomizeVersion())
+			if err != nil {
+				deployError = errors.Wrap(err, "failed to run kustomize on previously deployed charts")
+				return deployError
+			}
+
 		}
 	}
 
@@ -334,6 +351,8 @@ func deployVersionForApp(clusterSocket *ClusterSocket, a *apptypes.App, deployed
 		Namespace:            ".",
 		Manifests:            base64EncodedManifests,
 		PreviousManifests:    base64EncodedPreviousManifests,
+		Charts:               chartArchive,
+		PreviousCharts:       previouslyDeployedChartArchive,
 		ResultCallback:       "/api/v1/deploy/result",
 		Wait:                 false,
 		AnnotateSlug:         os.Getenv("ANNOTATE_SLUG") != "",

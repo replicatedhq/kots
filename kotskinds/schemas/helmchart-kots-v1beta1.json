@@ -71,6 +71,9 @@
             }
           }
         },
+        "useHelmInstall": {
+          "type": "boolean"
+        },
         "values": {
           "type": "object",
           "additionalProperties": {}

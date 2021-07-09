@@ -1,6 +1,7 @@
 package base
 
 import (
+	"bytes"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -27,7 +28,7 @@ func RenderHelm(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (*Base,
 		d, fileName := path.Split(p)
 		if _, err := os.Stat(d); err != nil {
 			if os.IsNotExist(err) {
-				if err := os.MkdirAll(d, 0744); err != nil {
+				if err := os.MkdirAll(d, 0755); err != nil {
 					return nil, errors.Wrap(err, "failed to mkdir for chart resource")
 				}
 			} else {
@@ -57,7 +58,7 @@ func RenderHelm(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (*Base,
 		}
 	}
 
-	var rendered map[string]string
+	var rendered []BaseFile
 	switch strings.ToLower(renderOptions.HelmVersion) {
 	case "v3":
 		rendered, err = renderHelmV3(u.Name, chartPath, vals, renderOptions)
@@ -73,81 +74,186 @@ func RenderHelm(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (*Base,
 		return nil, errors.Errorf("unknown helmVersion %s", renderOptions.HelmVersion)
 	}
 
+	rendered = removeCommonPrefix(rendered) // TODO (ch35027): we should probably target the prefix here, maybe chartPath
+	base, err := writeHelmBase(u.Name, rendered, renderOptions)
+	if err != nil {
+		return nil, errors.Wrapf(err, "write helm chart %s base", u.Name)
+	}
+
+	// This will be added back later by renderReplicated
+	// I do not want to change the functionality of kots installing a helm chart
+	base.Path = ""
+
+	nextBase := helmChartBaseAppendAdditionalFiles(*base, u)
+
+	return &nextBase, nil
+}
+
+func writeHelmBase(chartName string, baseFiles []BaseFile, renderOptions *RenderOptions) (*Base, error) {
+	rest, crds, subCharts := splitHelmFiles(baseFiles)
+
+	base := &Base{
+		Path: path.Join("charts", chartName),
+	}
+	for _, baseFile := range rest {
+		fileBaseFiles, err := writeHelmBaseFile(baseFile, renderOptions)
+		if err != nil {
+			return nil, errors.Wrapf(err, "write helm base file %s", baseFile.Path)
+		}
+		base.Files = append(base.Files, fileBaseFiles...)
+	}
+
+	if len(crds) > 0 {
+		crdsBase := Base{
+			Path: "crds",
+		}
+		for _, baseFile := range crds {
+			fileBaseFiles, err := writeHelmBaseFile(baseFile, renderOptions)
+			if err != nil {
+				return nil, errors.Wrapf(err, "write crds helm base file %s", baseFile.Path)
+			}
+			crdsBase.Files = append(crdsBase.Files, fileBaseFiles...)
+		}
+		base.Bases = append(base.Bases, crdsBase)
+	}
+
+	for _, subChart := range subCharts {
+		subChartBase, err := writeHelmBase(subChart.Name, subChart.BaseFiles, renderOptions)
+		if err != nil {
+			return nil, errors.Wrapf(err, "failed to write helm sub chart %s base", subChart.Name)
+		}
+		base.Bases = append(base.Bases, *subChartBase)
+	}
+
+	return base, nil
+}
+
+type subChartBase struct {
+	Name      string
+	BaseFiles []BaseFile
+}
+
+func splitHelmFiles(baseFiles []BaseFile) (rest []BaseFile, crds []BaseFile, subCharts []subChartBase) {
+	subChartsIndex := map[string]int{}
+	for _, baseFile := range baseFiles {
+		dirPrefix := strings.SplitN(baseFile.Path, string(os.PathSeparator), 3)
+		if dirPrefix[0] == "charts" && len(dirPrefix) == 3 {
+			subChartName := dirPrefix[1]
+			index, ok := subChartsIndex[subChartName]
+			if !ok {
+				index = len(subCharts)
+				subCharts = append(subCharts, subChartBase{Name: subChartName})
+				subChartsIndex[subChartName] = index
+			}
+			subCharts[index].BaseFiles = append(subCharts[index].BaseFiles, BaseFile{
+				Path:    path.Join(dirPrefix[2:]...),
+				Content: baseFile.Content,
+			})
+		} else if dirPrefix[0] == "crds" {
+			crds = append(crds, BaseFile{
+				Path:    path.Join(dirPrefix[1:]...),
+				Content: baseFile.Content,
+			})
+		} else {
+			rest = append(rest, baseFile)
+		}
+	}
+	return
+}
+
+func writeHelmBaseFile(baseFile BaseFile, renderOptions *RenderOptions) ([]BaseFile, error) {
+	multiDoc := [][]byte{}
+	if renderOptions.SplitMultiDocYAML {
+		multiDoc = bytes.Split(baseFile.Content, []byte("\n---\n"))
+	} else {
+		multiDoc = append(multiDoc, baseFile.Content)
+	}
+
 	baseFiles := []BaseFile{}
-	for k, v := range rendered {
-		if !renderOptions.SplitMultiDocYAML {
-			baseFile := BaseFile{
-				Path:    k,
-				Content: []byte(v),
-			}
-			if err := baseFile.transpileHelmHooksToKotsHooks(); err != nil {
-				return nil, errors.Wrap(err, "failed to transpile helm hooks to kots hooks")
-			}
 
-			baseFiles = append(baseFiles, baseFile)
-			continue
+	for idx, content := range multiDoc {
+		filename := baseFile.Path
+		if len(multiDoc) > 1 {
+			filename = strings.TrimSuffix(baseFile.Path, filepath.Ext(baseFile.Path))
+			filename = fmt.Sprintf("%s-%d%s", filename, idx+1, filepath.Ext(baseFile.Path))
 		}
 
-		fileStrings := strings.Split(v, "\n---\n")
-		if len(fileStrings) == 1 {
-			baseFile := BaseFile{
-				Path:    k,
-				Content: []byte(v),
-			}
-			if err := baseFile.transpileHelmHooksToKotsHooks(); err != nil {
-				return nil, errors.Wrap(err, "failed to transpile helm hooks to kots hooks")
-			}
-
-			baseFiles = append(baseFiles, baseFile)
-			continue
+		baseFile := BaseFile{
+			Path:    filename,
+			Content: content,
+		}
+		if err := baseFile.transpileHelmHooksToKotsHooks(); err != nil {
+			return nil, errors.Wrap(err, "failed to transpile helm hooks to kots hooks")
 		}
 
-		for idx, fileString := range fileStrings {
-			filename := strings.TrimSuffix(k, filepath.Ext(k))
-			filename = fmt.Sprintf("%s-%d%s", filename, idx+1, filepath.Ext(k))
+		baseFiles = append(baseFiles, baseFile)
+	}
 
-			baseFile := BaseFile{
-				Path:    filename,
-				Content: []byte(fileString),
-			}
-			if err := baseFile.transpileHelmHooksToKotsHooks(); err != nil {
-				return nil, errors.Wrap(err, "failed to transpile helm hooks to kots hooks")
-			}
+	return baseFiles, nil
+}
 
-			baseFiles = append(baseFiles, baseFile)
+// removeCommonPrefix will remove any common prefix from all files
+func removeCommonPrefix(baseFiles []BaseFile) []BaseFile {
+	if len(baseFiles) == 0 {
+		return baseFiles
+	}
+
+	commonPrefix := []string{}
+
+	first := true
+	for _, baseFile := range baseFiles {
+		if first {
+			firstFileDir, _ := path.Split(baseFile.Path)
+			commonPrefix = strings.Split(firstFileDir, string(os.PathSeparator))
+
+			first = false
+			continue
+		}
+		d, _ := path.Split(baseFile.Path)
+		dirs := strings.Split(d, string(os.PathSeparator))
+
+		commonPrefix = util.CommonSlicePrefix(commonPrefix, dirs)
+	}
+
+	cleanedBaseFiles := []BaseFile{}
+	for _, baseFile := range baseFiles {
+		d, f := path.Split(baseFile.Path)
+		d2 := strings.Split(d, string(os.PathSeparator))
+
+		d2 = d2[len(commonPrefix):]
+		cleanedBaseFiles = append(cleanedBaseFiles, BaseFile{
+			Path:    path.Join(path.Join(d2...), f),
+			Content: baseFile.Content,
+		})
+	}
+
+	return cleanedBaseFiles
+}
+
+func helmChartBaseAppendAdditionalFiles(base Base, u *upstreamtypes.Upstream) Base {
+	for _, upstreamFile := range u.Files {
+		if upstreamFile.Path == path.Join(base.Path, "Chart.yaml") {
+			base.AdditionalFiles = append(base.AdditionalFiles, BaseFile{
+				Path:    "Chart.yaml",
+				Content: upstreamFile.Content,
+			})
+		}
+		if upstreamFile.Path == path.Join(base.Path, "Chart.lock") {
+			base.AdditionalFiles = append(base.AdditionalFiles, BaseFile{
+				Path:    "Chart.lock",
+				Content: upstreamFile.Content,
+			})
 		}
 	}
 
-	// remove any common prefix from all files
-	if len(baseFiles) > 0 {
-		firstFileDir, _ := path.Split(baseFiles[0].Path)
-		commonPrefix := strings.Split(firstFileDir, string(os.PathSeparator))
-
-		for _, file := range baseFiles {
-			d, _ := path.Split(file.Path)
-			dirs := strings.Split(d, string(os.PathSeparator))
-
-			commonPrefix = util.CommonSlicePrefix(commonPrefix, dirs)
-		}
-
-		cleanedBaseFiles := []BaseFile{}
-		for _, file := range baseFiles {
-			d, f := path.Split(file.Path)
-			d2 := strings.Split(d, string(os.PathSeparator))
-
-			cleanedBaseFile := file
-			d2 = d2[len(commonPrefix):]
-			cleanedBaseFile.Path = path.Join(path.Join(d2...), f)
-
-			cleanedBaseFiles = append(cleanedBaseFiles, cleanedBaseFile)
-		}
-
-		baseFiles = cleanedBaseFiles
+	var nextBases []Base
+	for _, base := range base.Bases {
+		base = helmChartBaseAppendAdditionalFiles(base, u)
+		nextBases = append(nextBases, base)
 	}
+	base.Bases = nextBases
 
-	return &Base{
-		Files: baseFiles,
-	}, nil
+	return base
 }
 
 func checkChartForVersion(file *upstreamtypes.UpstreamFile) (string, error) {

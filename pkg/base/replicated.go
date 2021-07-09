@@ -9,7 +9,6 @@ import (
 	"io/ioutil"
 	"os"
 	"path"
-	"path/filepath"
 	"strconv"
 	"strings"
 
@@ -17,7 +16,6 @@ import (
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/template"
-	"github.com/replicatedhq/kots/pkg/upstream/types"
 	upstreamtypes "github.com/replicatedhq/kots/pkg/upstream/types"
 	"github.com/replicatedhq/kots/pkg/util"
 	stdyaml "gopkg.in/yaml.v2"
@@ -31,15 +29,15 @@ type Document struct {
 	Kind       string `yaml:"kind"`
 }
 
-func renderReplicated(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (*Base, error) {
-	base := Base{
+func renderReplicated(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (*Base, []Base, error) {
+	commonBase := Base{
 		Files: []BaseFile{},
 		Bases: []Base{},
 	}
 
 	builder, err := NewConfigContextTemplateBuidler(u, renderOptions)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to create new config context template builder")
+		return nil, nil, errors.Wrap(err, "failed to create new config context template builder")
 	}
 
 	for _, upstreamFile := range u.Files {
@@ -65,7 +63,7 @@ func renderReplicated(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (
 
 		baseFile, err := upstreamFileToBaseFile(upstreamFile, *builder, renderOptions.Log)
 		if err != nil {
-			return nil, errors.Wrapf(err, "failed to convert upstream file %s to base", upstreamFile.Path)
+			return nil, nil, errors.Wrapf(err, "failed to convert upstream file %s to base", upstreamFile.Path)
 		}
 
 		baseFiles := convertToSingleDocBaseFiles([]BaseFile{baseFile})
@@ -73,14 +71,14 @@ func renderReplicated(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (
 			include, err := f.ShouldBeIncludedInBaseKustomization(renderOptions.ExcludeKotsKinds)
 			if err != nil {
 				if _, ok := err.(ParseError); !ok {
-					return nil, errors.Wrapf(err, "failed to determine if file %s should be included in base", f.Path)
+					return nil, nil, errors.Wrapf(err, "failed to determine if file %s should be included in base", f.Path)
 				}
 			}
 			if include {
-				base.Files = append(base.Files, f)
+				commonBase.Files = append(commonBase.Files, f)
 			} else if err != nil {
 				f.Error = err
-				base.ErrorFiles = append(base.ErrorFiles, f)
+				commonBase.ErrorFiles = append(commonBase.ErrorFiles, f)
 			}
 		}
 	}
@@ -89,132 +87,176 @@ func renderReplicated(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (
 	// we just inject them into u.Files
 	kotsHelmCharts, err := findAllKotsHelmCharts(u.Files, *builder, renderOptions.Log)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to find helm charts")
+		return nil, nil, errors.Wrap(err, "failed to find helm charts")
 	}
 
+	helmBases := []Base{}
 	for _, kotsHelmChart := range kotsHelmCharts {
-		if !kotsHelmChart.Spec.Exclude.IsEmpty() {
-			boolVal, err := kotsHelmChart.Spec.Exclude.Boolean()
-			if err != nil {
-				renderOptions.Log.Error(errors.Errorf("Kots.io/v1beta1 HelmChart rendered exclude is not parseable as bool, value = %s, filename = %s. Not excluding chart.", kotsHelmChart.Spec.Exclude.String(), u.Name))
-				return nil, errors.Wrap(err, "failed to parse helm chart exclude")
-			}
-
-			if boolVal {
-				continue
-			}
-		}
-
-		// Include this chart
-		archive, err := findHelmChartArchiveInRelease(u.Files, kotsHelmChart)
+		helmBase, err := renderReplicatedHelmChart(kotsHelmChart, u.Files, renderOptions, builder)
 		if err != nil {
-			return nil, errors.Wrap(err, "failed to find helm chart archive in release")
+			return nil, nil, errors.Wrapf(err, "failed to render helm chart %s", kotsHelmChart.Name)
+		} else if helmBase == nil {
+			continue
 		}
 
-		tmpFile, err := ioutil.TempFile("", "kots")
+		renderedHelmBase, err := renderReplicatedHelmBase(u, renderOptions, *helmBase, *builder)
 		if err != nil {
-			return nil, errors.Wrap(err, "failed to create temp file")
-		}
-		defer os.RemoveAll(tmpFile.Name())
-
-		_, err = io.Copy(tmpFile, bytes.NewReader(archive))
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to copy chart to temp file")
+			return nil, nil, errors.Wrapf(err, "failed to render helm chart base %s", helmBase.Path)
 		}
 
-		helmUpstream, err := chartArchiveToSparseUpstream(tmpFile.Name())
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to fetch helm dependency")
-		}
-		helmUpstream.Name = kotsHelmChart.Name
+		renderedHelmBase.Namespace = kotsHelmChart.Spec.Namespace // TODO (ch35027): probably remove this since its already done by "helm template"
 
-		mergedValues := kotsHelmChart.Spec.Values
-		for _, optionalValues := range kotsHelmChart.Spec.OptionalValues {
-			parsedBool, err := strconv.ParseBool(optionalValues.When)
-			if err != nil {
-				return nil, errors.Wrap(err, "failed to parse when conditional on optional values")
-			}
-			if !parsedBool {
-				continue
-			}
-			if optionalValues.RecursiveMerge {
-				mergedValues = kotsv1beta1.MergeHelmChartValues(kotsHelmChart.Spec.Values, optionalValues.Values)
-			} else {
-				for k, v := range optionalValues.Values {
-					mergedValues[k] = v
-				}
-			}
-		}
-
-		helmValues, err := kotsHelmChart.Spec.GetHelmValues(mergedValues)
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to render local values for chart")
-		}
-
-		namespace := kotsHelmChart.Spec.Namespace
-		if namespace == "" {
-			namespace = "repl{{ Namespace}}"
-		}
-
-		helmBase, err := RenderHelm(helmUpstream, &RenderOptions{
-			SplitMultiDocYAML: true,
-			Namespace:         namespace,
-			HelmVersion:       kotsHelmChart.Spec.HelmVersion,
-			HelmValues:        helmValues,
-			ExcludeKotsKinds:  renderOptions.ExcludeKotsKinds,
-			Log:               nil,
-		})
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to render helm chart in upstream")
-		}
-
-		helmBaseFiles, helmBaseYAMLErrorFiles := []BaseFile{}, []BaseFile{}
-		for _, helmBaseFile := range helmBase.Files {
-			filePath := filepath.Join("charts", kotsHelmChart.Name, helmBaseFile.Path)
-
-			upstreamFile := upstreamtypes.UpstreamFile{
-				Path:    filePath,
-				Content: helmBaseFile.Content,
-			}
-			u.Files = append(u.Files, upstreamFile)
-
-			baseFile, err := upstreamFileToBaseFile(upstreamFile, *builder, renderOptions.Log)
-			if err != nil {
-				return nil, errors.Wrapf(err, "failed to convert upstream file %s to base", filePath)
-			}
-
-			// this is a little bit of an abuse of the next function
-			include, err := helmBaseFile.ShouldBeIncludedInBaseKustomization(false)
-			if err != nil {
-				if _, ok := err.(ParseError); !ok {
-					return nil, errors.Wrapf(err, "failed to determine if file %s should be included in base", filePath)
-				}
-			}
-			if include {
-				helmBaseFiles = append(helmBaseFiles, baseFile)
-			} else if err != nil {
-				baseFile.Error = err
-				helmBaseYAMLErrorFiles = append(helmBaseYAMLErrorFiles, baseFile)
-			}
-		}
-
-		if kotsHelmChart.Spec.Namespace != "" {
-			base.Bases = append(base.Bases, Base{
-				Path:       filepath.Join("charts", kotsHelmChart.Name),
-				Namespace:  kotsHelmChart.Spec.Namespace,
-				Files:      helmBaseFiles,
-				ErrorFiles: helmBaseYAMLErrorFiles,
-			})
+		if kotsHelmChart.Spec.UseHelmInstall {
+			helmBases = append(helmBases, extractHelmBases(*renderedHelmBase)...)
 		} else {
-			base.Files = append(base.Files, helmBaseFiles...)
-			base.ErrorFiles = append(base.ErrorFiles, helmBaseYAMLErrorFiles...)
+			commonBase.Bases = append(commonBase.Bases, *renderedHelmBase)
 		}
 	}
 
-	return &base, nil
+	return &commonBase, helmBases, nil
 }
 
-func upstreamFileToBaseFile(upstreamFile types.UpstreamFile, builder template.Builder, log *logger.CLILogger) (BaseFile, error) {
+func extractHelmBases(b Base) []Base {
+	bases := []Base{}
+	for _, sub := range b.Bases {
+		sub.Path = path.Join(b.Path, sub.Path)
+		bases = append(bases, extractHelmBases(sub)...)
+	}
+	b.Bases = nil
+	return append([]Base{b}, bases...)
+}
+
+func renderReplicatedHelmChart(kotsHelmChart *kotsv1beta1.HelmChart, upstreamFiles []upstreamtypes.UpstreamFile, renderOptions *RenderOptions, builder *template.Builder) (*Base, error) {
+	if !kotsHelmChart.Spec.Exclude.IsEmpty() {
+		boolVal, err := kotsHelmChart.Spec.Exclude.Boolean()
+		if err != nil {
+			renderOptions.Log.Error(errors.Errorf("Kots.io/v1beta1 HelmChart %s rendered exclude is not parseable as bool, value = %s. Not excluding chart.", kotsHelmChart.Name, kotsHelmChart.Spec.Exclude.String()))
+
+			return nil, errors.Wrap(err, "failed to parse helm chart exclude")
+		}
+
+		if boolVal {
+			return nil, nil
+		}
+	}
+
+	// Include this chart
+	archive, err := findHelmChartArchiveInRelease(upstreamFiles, kotsHelmChart)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to find helm chart archive in release")
+	}
+
+	tmpFile, err := ioutil.TempFile("", "kots")
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to create temp file")
+	}
+	defer os.RemoveAll(tmpFile.Name())
+
+	_, err = io.Copy(tmpFile, bytes.NewReader(archive))
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to copy chart to temp file")
+	}
+
+	helmUpstream, err := chartArchiveToSparseUpstream(tmpFile.Name())
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to fetch helm dependency")
+	}
+	helmUpstream.Name = kotsHelmChart.Name
+
+	mergedValues := kotsHelmChart.Spec.Values
+	for _, optionalValues := range kotsHelmChart.Spec.OptionalValues {
+		parsedBool, err := strconv.ParseBool(optionalValues.When)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to parse when conditional on optional values")
+		}
+		if !parsedBool {
+			continue
+		}
+		if optionalValues.RecursiveMerge {
+			mergedValues = kotsv1beta1.MergeHelmChartValues(kotsHelmChart.Spec.Values, optionalValues.Values)
+		} else {
+			for k, v := range optionalValues.Values {
+				mergedValues[k] = v
+			}
+		}
+	}
+
+	helmValues, err := kotsHelmChart.Spec.GetHelmValues(mergedValues)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to render local values for chart")
+	}
+
+	namespace := kotsHelmChart.Spec.Namespace
+	if namespace == "" {
+		namespace = "repl{{ Namespace}}"
+	}
+
+	helmBase, err := RenderHelm(helmUpstream, &RenderOptions{
+		SplitMultiDocYAML: true,
+		Namespace:         namespace,
+		HelmVersion:       kotsHelmChart.Spec.HelmVersion,
+		HelmValues:        helmValues,
+		ExcludeKotsKinds:  renderOptions.ExcludeKotsKinds,
+		Log:               nil,
+	})
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to render helm chart in upstream")
+	}
+
+	helmBase.Path = path.Join("charts", helmUpstream.Name)
+	return helmBase, nil
+}
+
+func renderReplicatedHelmBase(u *upstreamtypes.Upstream, renderOptions *RenderOptions, helmBase Base, builder template.Builder) (*Base, error) {
+	helmBaseFiles, helmBaseYAMLErrorFiles := []BaseFile{}, []BaseFile{}
+	for _, helmBaseFile := range helmBase.Files {
+		upstreamFile := upstreamtypes.UpstreamFile{
+			Path:    helmBaseFile.Path,
+			Content: helmBaseFile.Content,
+		}
+		u.Files = append(u.Files, upstreamFile)
+
+		baseFile, err := upstreamFileToBaseFile(upstreamFile, builder, renderOptions.Log)
+		if err != nil {
+			return nil, errors.Wrapf(err, "failed to convert upstream file %s to base", upstreamFile.Path)
+		}
+
+		// this is a little bit of an abuse of the next function
+		include, err := helmBaseFile.ShouldBeIncludedInBaseKustomization(false)
+		if err != nil {
+			if _, ok := err.(ParseError); !ok {
+				return nil, errors.Wrapf(err, "failed to determine if file %s should be included in base", upstreamFile.Path)
+			}
+		}
+
+		if include {
+			helmBaseFiles = append(helmBaseFiles, baseFile)
+		} else if err != nil {
+			baseFile.Error = err
+			helmBaseYAMLErrorFiles = append(helmBaseYAMLErrorFiles, baseFile)
+		}
+	}
+
+	helmBaseBases := []Base{}
+	for _, helmBase := range helmBase.Bases {
+		renderedHelmBase, err := renderReplicatedHelmBase(u, renderOptions, helmBase, builder)
+		if err != nil {
+			return nil, errors.Wrapf(err, "failed to render helm chart %s base", helmBase.Path)
+		}
+
+		helmBaseBases = append(helmBaseBases, *renderedHelmBase)
+	}
+
+	return &Base{
+		Path:            helmBase.Path,
+		Files:           helmBaseFiles,
+		AdditionalFiles: helmBase.AdditionalFiles,
+		Bases:           helmBaseBases,
+		ErrorFiles:      helmBaseYAMLErrorFiles,
+	}, nil
+}
+
+func upstreamFileToBaseFile(upstreamFile upstreamtypes.UpstreamFile, builder template.Builder, log *logger.CLILogger) (BaseFile, error) {
 	rendered, err := builder.RenderTemplate(upstreamFile.Path, string(upstreamFile.Content))
 	if err != nil {
 		log.Error(errors.Errorf("Failed to render file %s. Contents are %s", upstreamFile.Path, upstreamFile.Content))
@@ -437,7 +479,7 @@ func readTarGz(source string) ([]upstreamtypes.UpstreamFile, error) {
 
 	tarReader := tar.NewReader(gzf)
 
-	upstreamFiles := []types.UpstreamFile{}
+	upstreamFiles := []upstreamtypes.UpstreamFile{}
 	for {
 		header, err := tarReader.Next()
 
@@ -457,7 +499,7 @@ func readTarGz(source string) ([]upstreamtypes.UpstreamFile, error) {
 			if err != nil {
 				return nil, errors.Wrap(err, "failed to read file from tar archive")
 			}
-			upstreamFile := types.UpstreamFile{
+			upstreamFile := upstreamtypes.UpstreamFile{
 				Path:    name,
 				Content: buf.Bytes(),
 			}
@@ -481,7 +523,7 @@ func readTarGz(source string) ([]upstreamtypes.UpstreamFile, error) {
 
 		}
 
-		cleanedUpstreamFiles := []types.UpstreamFile{}
+		cleanedUpstreamFiles := []upstreamtypes.UpstreamFile{}
 		for _, file := range upstreamFiles {
 			d, f := path.Split(file.Path)
 			d2 := strings.Split(d, string(os.PathSeparator))

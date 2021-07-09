@@ -36,6 +36,20 @@ func (b *Base) WriteBase(options WriteOptions) error {
 		}
 	}
 
+	if err := b.writeBase(options); err != nil {
+		return errors.Wrap(err, "failed to write root base")
+	}
+
+	if err := b.writeSkippedFiles(options); err != nil {
+		return errors.Wrap(err, "failed to write skipped files")
+	}
+
+	return nil
+}
+
+func (b *Base) writeBase(options WriteOptions) error {
+	renderDir := filepath.Join(options.BaseDir, b.Path)
+
 	if _, err := os.Stat(renderDir); os.IsNotExist(err) {
 		if err := os.MkdirAll(renderDir, 0744); err != nil {
 			return errors.Wrap(err, "failed to mkdir for base root")
@@ -52,7 +66,7 @@ func (b *Base) WriteBase(options WriteOptions) error {
 	kustomizeBases := []string{}
 
 	for _, file := range resources {
-		fileRenderPath := path.Join(renderDir, file.Path)
+		fileRenderPath := filepath.Join(renderDir, file.Path)
 		d, _ := path.Split(fileRenderPath)
 		if _, err := os.Stat(d); os.IsNotExist(err) {
 			if err := os.MkdirAll(d, 0744); err != nil {
@@ -68,7 +82,7 @@ func (b *Base) WriteBase(options WriteOptions) error {
 	}
 
 	for _, file := range patches {
-		fileRenderPath := path.Join(renderDir, file.Path)
+		fileRenderPath := filepath.Join(renderDir, file.Path)
 		d, _ := path.Split(fileRenderPath)
 		if _, err := os.Stat(d); os.IsNotExist(err) {
 			if err := os.MkdirAll(d, 0744); err != nil {
@@ -83,12 +97,32 @@ func (b *Base) WriteBase(options WriteOptions) error {
 		kustomizePatches = append(kustomizePatches, kustomizetypes.PatchStrategicMerge(path.Join(".", file.Path)))
 	}
 
+	// Additional files are not included in the kustomization.yaml
+	for _, file := range b.AdditionalFiles {
+		fileRenderPath := filepath.Join(renderDir, file.Path)
+		d, _ := path.Split(fileRenderPath)
+		if _, err := os.Stat(d); os.IsNotExist(err) {
+			if err := os.MkdirAll(d, 0744); err != nil {
+				return errors.Wrap(err, "failed to mkdir")
+			}
+		}
+
+		if err := ioutil.WriteFile(fileRenderPath, file.Content, 0644); err != nil {
+			return errors.Wrap(err, "failed to write additional file")
+		}
+	}
+
 	for _, base := range b.Bases {
 		if base.Path == "" {
 			return errors.New("kustomize sub-base path cannot be empty")
 		}
-		if err := base.WriteBase(options); err != nil {
-			return errors.Wrapf(err, "failed to render base %q", base.Path)
+		options := WriteOptions{
+			BaseDir:          filepath.Join(options.BaseDir, b.Path),
+			Overwrite:        options.Overwrite,
+			ExcludeKotsKinds: options.ExcludeKotsKinds,
+		}
+		if err := base.writeBase(options); err != nil {
+			return errors.Wrapf(err, "failed to render base %s", base.Path)
 		}
 		kustomizeBases = append(kustomizeBases, base.Path)
 	}
@@ -98,20 +132,13 @@ func (b *Base) WriteBase(options WriteOptions) error {
 			APIVersion: "kustomize.config.k8s.io/v1beta1",
 			Kind:       "Kustomization",
 		},
+		Namespace:             b.Namespace,
 		Resources:             kustomizeResources,
 		PatchesStrategicMerge: kustomizePatches,
 		Bases:                 kustomizeBases,
 	}
-	if b.Namespace != "" {
-		kustomization.Namespace = b.Namespace
-	}
-
-	if err := k8sutil.WriteKustomizationToFile(kustomization, path.Join(renderDir, "kustomization.yaml")); err != nil {
+	if err := k8sutil.WriteKustomizationToFile(kustomization, filepath.Join(renderDir, "kustomization.yaml")); err != nil {
 		return errors.Wrap(err, "failed to write kustomization to file")
-	}
-
-	if err := b.writeSkippedFiles(options); err != nil {
-		return errors.Wrap(err, "failed to write skipped files")
 	}
 
 	return nil
@@ -147,13 +174,15 @@ func (b *Base) writeSkippedFiles(options WriteOptions) error {
 		}
 	}
 
-	if len(b.ErrorFiles) == 0 {
+	errorFiles := b.getErrorFiles()
+
+	if len(errorFiles) == 0 {
 		return nil
 	}
 
 	index := SkippedFilesIndex{SkippedFiles: []SkippedFile{}}
-	for _, file := range b.ErrorFiles {
-		fileRenderPath := path.Join(renderDir, file.Path)
+	for _, file := range errorFiles {
+		fileRenderPath := filepath.Join(renderDir, file.Path)
 		d := path.Dir(fileRenderPath)
 		if _, err := os.Stat(d); os.IsNotExist(err) {
 			if err := os.MkdirAll(d, 0744); err != nil {
@@ -175,12 +204,28 @@ func (b *Base) writeSkippedFiles(options WriteOptions) error {
 	if err != nil {
 		return errors.Wrap(err, "failed to marshal skipped files index")
 	}
-	fileRenderPath := path.Join(renderDir, "_index.yaml")
+	fileRenderPath := filepath.Join(renderDir, "_index.yaml")
 	if err := ioutil.WriteFile(fileRenderPath, indexOut, 0644); err != nil {
 		return errors.Wrap(err, "failed to write skipped files index")
 	}
 
 	return nil
+}
+
+func (b *Base) getErrorFiles() []BaseFile {
+	errorFiles := b.ErrorFiles
+	for _, base := range b.Bases {
+		baseErrorFiles := []BaseFile{}
+		for _, errorFile := range base.getErrorFiles() {
+			baseErrorFiles = append(baseErrorFiles, BaseFile{
+				Path:    path.Join(base.Path, errorFile.Path),
+				Content: errorFile.Content,
+				Error:   errorFile.Error,
+			})
+		}
+		errorFiles = append(errorFiles, baseErrorFiles...)
+	}
+	return errorFiles
 }
 
 func deduplicateOnContent(files []BaseFile, excludeKotsKinds bool, baseNS string) ([]BaseFile, []BaseFile, error) {
@@ -200,10 +245,6 @@ func deduplicateOnContent(files []BaseFile, excludeKotsKinds bool, baseNS string
 			}
 		}
 
-		if !writeToKustomization {
-			continue
-		}
-
 		if writeToKustomization {
 			thisGVKName := GetGVKWithNameAndNs(file.Content, baseNS)
 			found := foundGVKNamesMap[thisGVKName]
@@ -215,7 +256,6 @@ func deduplicateOnContent(files []BaseFile, excludeKotsKinds bool, baseNS string
 				patches = append(patches, file)
 			}
 		}
-
 	}
 
 	return resources, patches, nil
@@ -266,5 +306,5 @@ func convertToSingleDocs(doc []byte) [][]byte {
 func (b *Base) GetOverlaysDir(options WriteOptions) string {
 	renderDir := options.BaseDir
 
-	return path.Join(renderDir, "..", "overlays")
+	return filepath.Join(renderDir, "..", "overlays")
 }

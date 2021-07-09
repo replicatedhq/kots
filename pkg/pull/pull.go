@@ -24,6 +24,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/midstream"
+	"github.com/replicatedhq/kots/pkg/store"
 	"github.com/replicatedhq/kots/pkg/upstream"
 	upstreamtypes "github.com/replicatedhq/kots/pkg/upstream/types"
 	"github.com/replicatedhq/kots/pkg/util"
@@ -50,6 +51,7 @@ type PullOptions struct {
 	ExcludeKotsKinds       bool
 	ExcludeAdminConsole    bool
 	IncludeMinio           bool
+	NativeHelmInstall      bool
 	SharedPassword         string
 	CreateAppDir           bool
 	Silent                 bool
@@ -111,11 +113,6 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 
 	if pullOptions.ReportWriter == nil {
 		pullOptions.ReportWriter = ioutil.Discard
-	}
-
-	clientset, err := k8sutil.GetClientset()
-	if err != nil {
-		return "", errors.Wrap(err, "failed to get k8s clientset")
 	}
 
 	uri, err := url.ParseRequestURI(upstreamURI)
@@ -248,12 +245,23 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 		fetchOptions.LocalPath = airgapAppFiles
 	}
 
+	prevHelmCharts, err := kotsutil.LoadHelmChartsFromPath(pullOptions.RootDir)
+	if err != nil {
+		log.FinishSpinnerWithError()
+		return "", errors.Wrap(err, "failed to load previous helm charts")
+	}
+
 	log.ActionWithSpinner("Pulling upstream")
 	io.WriteString(pullOptions.ReportWriter, "Pulling upstream\n")
 	u, err := upstream.FetchUpstream(upstreamURI, &fetchOptions)
 	if err != nil {
 		log.FinishSpinnerWithError()
 		return "", errors.Wrap(err, "failed to fetch upstream")
+	}
+
+	clientset, err := k8sutil.GetClientset()
+	if err != nil {
+		return "", errors.Wrap(err, "failed to get k8s clientset")
 	}
 
 	includeAdminConsole := uri.Scheme == "replicated" && !pullOptions.ExcludeAdminConsole
@@ -276,7 +284,23 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 	}
 	log.FinishSpinner()
 
-	replicatedRegistryInfo := registry.ProxyEndpointFromLicense(fetchOptions.License)
+	newHelmCharts, err := kotsutil.LoadHelmChartsFromPath(fetchOptions.RootDir)
+	if err != nil {
+		log.FinishSpinnerWithError()
+		return "", errors.Wrap(err, "failed to load new helm charts")
+	}
+
+	for _, prevChart := range prevHelmCharts {
+		for _, newChart := range newHelmCharts {
+			if prevChart.Spec.Chart.Name != newChart.Spec.Chart.Name {
+				continue
+			}
+			if prevChart.Spec.UseHelmInstall != newChart.Spec.UseHelmInstall {
+				log.FinishSpinnerWithError()
+				return "", errors.Errorf("deployment method for chart %s has changed", newChart.Spec.Chart.Name)
+			}
+		}
+	}
 
 	renderOptions := base.RenderOptions{
 		SplitMultiDocYAML:       true,
@@ -297,12 +321,18 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 	log.ActionWithSpinner("Creating base")
 	io.WriteString(pullOptions.ReportWriter, "Creating base\n")
 
-	b, err := base.RenderUpstream(u, &renderOptions)
+	commonBase, helmBases, err := base.RenderUpstream(u, &renderOptions)
 	if err != nil {
 		return "", errors.Wrap(err, "failed to render upstream")
 	}
 
-	if ff := b.ListErrorFiles(); len(ff) > 0 {
+	errorFiles := []base.BaseFile{}
+	errorFiles = append(errorFiles, base.PrependBaseFilesPath(commonBase.ListErrorFiles(), commonBase.Path)...)
+	for _, helmBase := range helmBases {
+		errorFiles = append(errorFiles, base.PrependBaseFilesPath(helmBase.ListErrorFiles(), helmBase.Path)...)
+	}
+
+	if ff := errorFiles; len(ff) > 0 {
 		files := make([]kotsv1beta1.InstallationYAMLError, 0, len(ff))
 		for _, f := range ff {
 			file := kotsv1beta1.InstallationYAMLError{
@@ -326,248 +356,32 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 		}
 	}
 
-	log.FinishSpinner()
-
 	writeBaseOptions := base.WriteOptions{
 		BaseDir:          u.GetBaseDir(writeUpstreamOptions),
 		SkippedDir:       u.GetSkippedDir(writeUpstreamOptions),
 		Overwrite:        true,
 		ExcludeKotsKinds: pullOptions.ExcludeKotsKinds,
 	}
-	if err := b.WriteBase(writeBaseOptions); err != nil {
-		return "", errors.Wrap(err, "failed to write base")
+	if err := commonBase.WriteBase(writeBaseOptions); err != nil {
+		return "", errors.Wrap(err, "failed to write common base")
 	}
 
-	// do not fail on being unable to get dockerhub credentials, since they're just used to increase the rate limit
-	dockerHubRegistryCreds, _ := registry.GetDockerHubCredentials(clientset, pullOptions.Namespace)
-
-	var pullSecret *corev1.Secret
-	var images []kustomizetypes.Image
-	var objects []k8sdoc.K8sDoc
-	if pullOptions.RewriteImages {
-
-		if pullOptions.RewriteImageOptions.IsReadOnly {
-			log.ActionWithSpinner("Rewriting private images")
-			io.WriteString(pullOptions.ReportWriter, "Rewriting private images\n")
-		} else {
-			log.ActionWithSpinner("Copying private images")
-			io.WriteString(pullOptions.ReportWriter, "Copying private images\n")
+	for _, helmBase := range helmBases {
+		writeBaseOptions := base.WriteOptions{
+			BaseDir:          u.GetBaseDir(writeUpstreamOptions),
+			SkippedDir:       u.GetSkippedDir(writeUpstreamOptions),
+			Overwrite:        true,
+			ExcludeKotsKinds: pullOptions.ExcludeKotsKinds,
 		}
-
-		// TODO (ethan): rewrite dex image?
-
-		// Rewrite all images
-		if pullOptions.RewriteImageOptions.ImageFiles == "" {
-			newInstallation, err := upstream.LoadInstallation(u.GetUpstreamDir(writeUpstreamOptions))
-			if err != nil {
-				return "", errors.Wrap(err, "failed to load installation")
-			}
-			newApplication, err := upstream.LoadApplication(u.GetUpstreamDir(writeUpstreamOptions))
-			if err != nil {
-				return "", errors.Wrap(err, "failed to load application")
-			}
-
-			writeUpstreamImageOptions := base.WriteUpstreamImageOptions{
-				BaseDir: writeBaseOptions.BaseDir,
-				Log:     log,
-				SourceRegistry: registry.RegistryOptions{
-					Endpoint:      replicatedRegistryInfo.Registry,
-					ProxyEndpoint: replicatedRegistryInfo.Proxy,
-				},
-				DockerHubRegistry: registry.RegistryOptions{
-					Username: dockerHubRegistryCreds.Username,
-					Password: dockerHubRegistryCreds.Password,
-				},
-				ReportWriter: pullOptions.ReportWriter,
-				Installation: newInstallation,
-				Application:  newApplication,
-				CopyImages:   !pullOptions.RewriteImageOptions.IsReadOnly,
-			}
-			if fetchOptions.License != nil {
-				writeUpstreamImageOptions.AppSlug = fetchOptions.License.Spec.AppSlug
-				writeUpstreamImageOptions.SourceRegistry.Username = fetchOptions.License.Spec.LicenseID
-				writeUpstreamImageOptions.SourceRegistry.Password = fetchOptions.License.Spec.LicenseID
-			}
-
-			if pullOptions.RewriteImageOptions.Host != "" {
-				writeUpstreamImageOptions.DestRegistry = registry.RegistryOptions{
-					Endpoint:  pullOptions.RewriteImageOptions.Host,
-					Namespace: pullOptions.RewriteImageOptions.Namespace,
-					Username:  pullOptions.RewriteImageOptions.Username,
-					Password:  pullOptions.RewriteImageOptions.Password,
-				}
-			}
-
-			copyResult, err := base.ProcessUpstreamImages(writeUpstreamImageOptions)
-			if err != nil {
-				return "", errors.Wrap(err, "failed to write upstream images")
-			}
-			images = copyResult.Images
-
-			newInstallation.Spec.KnownImages = copyResult.CheckedImages
-
-			err = upstream.SaveInstallation(newInstallation, u.GetUpstreamDir(writeUpstreamOptions))
-			if err != nil {
-				return "", errors.Wrap(err, "failed to save installation")
-			}
+		if err := helmBase.WriteBase(writeBaseOptions); err != nil {
+			return "", errors.Wrapf(err, "failed to write helm base %s", helmBase.Path)
 		}
-
-		// If the request includes a rewrite image options host name, then also
-		// push the images
-		if pullOptions.RewriteImageOptions.Host != "" {
-			processUpstreamImageOptions := upstream.ProcessUpstreamImagesOptions{
-				RootDir:            pullOptions.RootDir,
-				ImagesDir:          imagesDirFromOptions(u, pullOptions),
-				AirgapBundle:       pullOptions.AirgapBundle,
-				CreateAppDir:       pullOptions.CreateAppDir,
-				RegistryIsReadOnly: pullOptions.RewriteImageOptions.IsReadOnly,
-				Log:                log,
-				ReplicatedRegistry: registry.RegistryOptions{
-					Endpoint:      replicatedRegistryInfo.Registry,
-					ProxyEndpoint: replicatedRegistryInfo.Proxy,
-				},
-				ReportWriter: pullOptions.ReportWriter,
-				DestinationRegistry: registry.RegistryOptions{
-					Endpoint:  pullOptions.RewriteImageOptions.Host,
-					Namespace: pullOptions.RewriteImageOptions.Namespace,
-					Username:  pullOptions.RewriteImageOptions.Username,
-					Password:  pullOptions.RewriteImageOptions.Password,
-				},
-			}
-			if fetchOptions.License != nil {
-				processUpstreamImageOptions.ReplicatedRegistry.Username = fetchOptions.License.Spec.LicenseID
-				processUpstreamImageOptions.ReplicatedRegistry.Password = fetchOptions.License.Spec.LicenseID
-			}
-
-			var rewrittenImages []kustomizetypes.Image
-			if images == nil { // don't do ProcessUpstreamImages if we already copied them
-				imagesData, err := ioutil.ReadFile(filepath.Join(pullOptions.AirgapRoot, "images.json"))
-				if err != nil && !os.IsNotExist(err) {
-					return "", errors.Wrap(err, "failed to load images file")
-				}
-
-				if err == nil {
-					err := json.Unmarshal(imagesData, &images)
-					if err != nil && !os.IsNotExist(err) {
-						return "", errors.Wrap(err, "failed to unmarshal images data")
-					}
-					processUpstreamImageOptions.UseKnownImages = true
-					processUpstreamImageOptions.KnownImages = images
-				}
-
-				rewrittenImages, err = upstream.ProcessUpstreamImages(u, processUpstreamImageOptions)
-				if err != nil {
-					return "", errors.Wrap(err, "failed to push upstream images")
-				}
-			}
-
-			findObjectsOptions := base.FindObjectsWithImagesOptions{
-				BaseDir: writeBaseOptions.BaseDir,
-			}
-			affectedObjects, err := base.FindObjectsWithImages(findObjectsOptions)
-			if err != nil {
-				return "", errors.Wrap(err, "failed to find objects with images")
-			}
-
-			registryUser := pullOptions.RewriteImageOptions.Username
-			registryPass := pullOptions.RewriteImageOptions.Password
-			if registryUser == "" {
-				registryUser, registryPass, err = registry.LoadAuthForRegistry(pullOptions.RewriteImageOptions.Host)
-				if err != nil {
-					return "", errors.Wrapf(err, "failed to load registry auth for %q", pullOptions.RewriteImageOptions.Host)
-				}
-			}
-
-			pullSecret, err = registry.PullSecretForRegistries(
-				[]string{pullOptions.RewriteImageOptions.Host},
-				registryUser,
-				registryPass,
-				pullOptions.Namespace,
-			)
-			if err != nil {
-				return "", errors.Wrap(err, "create pull secret")
-			}
-
-			if rewrittenImages != nil {
-				images = rewrittenImages
-			}
-			objects = affectedObjects
-		}
-	} else if fetchOptions.License != nil {
-
-		newInstallation, err := upstream.LoadInstallation(u.GetUpstreamDir(writeUpstreamOptions))
-		if err != nil {
-			return "", errors.Wrap(err, "failed to load installation")
-		}
-
-		application, err := upstream.LoadApplication(u.GetUpstreamDir(writeUpstreamOptions))
-		if err != nil {
-			return "", errors.Wrap(err, "failed to load application")
-		}
-
-		allPrivate := false
-		if application != nil {
-			allPrivate = application.Spec.ProxyPublicImages
-		}
-
-		// Rewrite private images
-		findPrivateImagesOptions := base.FindPrivateImagesOptions{
-			BaseDir: writeBaseOptions.BaseDir,
-			AppSlug: fetchOptions.License.Spec.AppSlug,
-			ReplicatedRegistry: registry.RegistryOptions{
-				Endpoint:      replicatedRegistryInfo.Registry,
-				ProxyEndpoint: replicatedRegistryInfo.Proxy,
-			},
-			DockerHubRegistry: registry.RegistryOptions{
-				Username: dockerHubRegistryCreds.Username,
-				Password: dockerHubRegistryCreds.Password,
-			},
-			Installation:     newInstallation,
-			AllImagesPrivate: allPrivate,
-		}
-		findResult, err := base.FindPrivateImages(findPrivateImagesOptions)
-		if err != nil {
-			return "", errors.Wrap(err, "failed to find private images")
-		}
-
-		newInstallation.Spec.KnownImages = findResult.CheckedImages
-		err = upstream.SaveInstallation(newInstallation, u.GetUpstreamDir(writeUpstreamOptions))
-		if err != nil {
-			return "", errors.Wrap(err, "failed to save installation")
-		}
-
-		// TODO (ethan): proxy dex image
-
-		// Note that there maybe no rewritten images if only replicated private images are being used.
-		// We still need to create the secret in that case.
-		if len(findResult.Docs) > 0 {
-			pullSecret, err = registry.PullSecretForRegistries(
-				replicatedRegistryInfo.ToSlice(),
-				fetchOptions.License.Spec.LicenseID,
-				fetchOptions.License.Spec.LicenseID,
-				pullOptions.Namespace,
-			)
-			if err != nil {
-				return "", errors.Wrap(err, "create pull secret")
-			}
-		}
-		images = findResult.Images
-		objects = findResult.Docs
 	}
 
-	identitySpec, err := upstream.LoadIdentity(u.GetUpstreamDir(writeUpstreamOptions))
-	if err != nil {
-		return "", errors.Wrap(err, "failed to load identity")
-	}
-
-	log.ActionWithSpinner("Creating midstream")
-	io.WriteString(pullOptions.ReportWriter, "Creating midstream\n")
-
-	m, err := midstream.CreateMidstream(b, images, objects, pullSecret, identitySpec, identityConfig)
-	if err != nil {
-		return "", errors.Wrap(err, "failed to create midstream")
-	}
 	log.FinishSpinner()
+
+	log.ActionWithSpinner("Creating midstreams")
+	io.WriteString(pullOptions.ReportWriter, "Creating midstreams\n")
 
 	builder, err := base.NewConfigContextTemplateBuidler(u, &renderOptions)
 	if err != nil {
@@ -584,9 +398,7 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 		return "", errors.Wrap(err, "failed to load encryption cipher")
 	}
 
-	writeMidstreamOptions := midstream.WriteOptions{
-		MidstreamDir:       filepath.Join(b.GetOverlaysDir(writeBaseOptions), "midstream"),
-		BaseDir:            u.GetBaseDir(writeUpstreamOptions),
+	commonWriteMidstreamOptions := midstream.WriteOptions{
 		AppSlug:            pullOptions.AppSlug,
 		IsGitOps:           pullOptions.IsGitOps,
 		IsOpenShift:        k8sutil.IsOpenShift(clientset),
@@ -596,28 +408,39 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 		HTTPSProxyEnvValue: pullOptions.HTTPSProxyEnvValue,
 		NoProxyEnvValue:    pullOptions.NoProxyEnvValue,
 	}
-	if err := m.WriteMidstream(writeMidstreamOptions); err != nil {
-		return "", errors.Wrap(err, "failed to write midstream")
+
+	writeMidstreamOptions := commonWriteMidstreamOptions
+	writeMidstreamOptions.MidstreamDir = filepath.Join(commonBase.GetOverlaysDir(writeBaseOptions), "midstream")
+	writeMidstreamOptions.BaseDir = filepath.Join(u.GetBaseDir(writeUpstreamOptions), commonBase.Path)
+
+	m, err := writeMidstream(writeMidstreamOptions, pullOptions, u, commonBase, fetchOptions.License, identityConfig, u.GetUpstreamDir(writeUpstreamOptions), log)
+	if err != nil {
+		return "", errors.Wrap(err, "failed to write common midstream")
 	}
 
-	for _, downstreamName := range pullOptions.Downstreams {
-		log.ActionWithSpinner("Creating downstream %q", downstreamName)
-		io.WriteString(pullOptions.ReportWriter, fmt.Sprintf("Creating downstream %q\n", downstreamName))
-		d, err := downstream.CreateDownstream(m, downstreamName)
+	helmMidstreams := []midstream.Midstream{}
+	for _, helmBase := range helmBases {
+		writeMidstreamOptions := commonWriteMidstreamOptions
+		writeMidstreamOptions.MidstreamDir = filepath.Join(helmBase.GetOverlaysDir(writeBaseOptions), "midstream", helmBase.Path)
+		writeMidstreamOptions.BaseDir = filepath.Join(u.GetBaseDir(writeUpstreamOptions), helmBase.Path)
+
+		helmMidstream, err := writeMidstream(writeMidstreamOptions, pullOptions, u, &helmBase, fetchOptions.License, identityConfig, u.GetUpstreamDir(writeUpstreamOptions), log)
 		if err != nil {
-			return "", errors.Wrap(err, "failed to create downstream")
+			return "", errors.Wrapf(err, "failed to write helm midstream %s", helmBase.Path)
 		}
 
-		writeDownstreamOptions := downstream.WriteOptions{
-			DownstreamDir: filepath.Join(b.GetOverlaysDir(writeBaseOptions), "downstreams", downstreamName),
-			MidstreamDir:  writeMidstreamOptions.MidstreamDir,
-		}
+		helmMidstreams = append(helmMidstreams, *helmMidstream)
+	}
 
-		if err := d.WriteDownstream(writeDownstreamOptions); err != nil {
-			return "", errors.Wrap(err, "failed to write downstream")
-		}
+	err = removeUnusedHelmOverlays(writeMidstreamOptions.MidstreamDir, writeMidstreamOptions.BaseDir)
+	if err != nil {
+		return "", errors.Wrapf(err, "failed to remove unused helm midstreams")
+	}
 
-		log.FinishSpinner()
+	log.FinishSpinner()
+
+	if err := writeDownstreams(pullOptions, commonBase.GetOverlaysDir(writeBaseOptions), m, helmMidstreams, log); err != nil {
+		return "", errors.Wrap(err, "failed to write downstreams")
 	}
 
 	if includeAdminConsole {
@@ -627,6 +450,377 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 	}
 
 	return filepath.Join(pullOptions.RootDir, u.Name), nil
+}
+
+func writeMidstream(writeMidstreamOptions midstream.WriteOptions, options PullOptions, u *upstreamtypes.Upstream, b *base.Base, license *kotsv1beta1.License, identityConfig *kotsv1beta1.IdentityConfig, upstreamDir string, log *logger.CLILogger) (*midstream.Midstream, error) {
+	var pullSecret *corev1.Secret
+	var images []kustomizetypes.Image
+	var objects []k8sdoc.K8sDoc
+
+	clientset, err := k8sutil.GetClientset()
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get k8s clientset")
+	}
+
+	replicatedRegistryInfo := registry.ProxyEndpointFromLicense(license)
+
+	identitySpec, err := upstream.LoadIdentity(upstreamDir)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to load identity")
+	}
+
+	// do not fail on being unable to get dockerhub credentials, since they're just used to increase the rate limit
+	dockerHubRegistryCreds, _ := registry.GetDockerHubCredentials(clientset, options.Namespace)
+
+	if options.RewriteImages {
+
+		if options.RewriteImageOptions.IsReadOnly {
+			log.ActionWithSpinner("Rewriting private images")
+			io.WriteString(options.ReportWriter, "Rewriting private images\n")
+		} else {
+			log.ActionWithSpinner("Copying private images")
+			io.WriteString(options.ReportWriter, "Copying private images\n")
+		}
+
+		// TODO (ethan): rewrite dex image?
+
+		// Rewrite all images
+		if options.RewriteImageOptions.ImageFiles == "" {
+			newInstallation, err := upstream.LoadInstallation(upstreamDir)
+			if err != nil {
+				return nil, errors.Wrap(err, "failed to load installation")
+			}
+			newApplication, err := upstream.LoadApplication(upstreamDir)
+			if err != nil {
+				return nil, errors.Wrap(err, "failed to load application")
+			}
+
+			writeUpstreamImageOptions := base.WriteUpstreamImageOptions{
+				BaseDir: writeMidstreamOptions.BaseDir,
+				Log:     log,
+				SourceRegistry: registry.RegistryOptions{
+					Endpoint:      replicatedRegistryInfo.Registry,
+					ProxyEndpoint: replicatedRegistryInfo.Proxy,
+				},
+				DockerHubRegistry: registry.RegistryOptions{
+					Username: dockerHubRegistryCreds.Username,
+					Password: dockerHubRegistryCreds.Password,
+				},
+				ReportWriter: options.ReportWriter,
+				Installation: newInstallation,
+				Application:  newApplication,
+				CopyImages:   !options.RewriteImageOptions.IsReadOnly,
+			}
+			if license != nil {
+				writeUpstreamImageOptions.AppSlug = license.Spec.AppSlug
+				writeUpstreamImageOptions.SourceRegistry.Username = license.Spec.LicenseID
+				writeUpstreamImageOptions.SourceRegistry.Password = license.Spec.LicenseID
+			}
+
+			if options.RewriteImageOptions.Host != "" {
+				writeUpstreamImageOptions.DestRegistry = registry.RegistryOptions{
+					Endpoint:  options.RewriteImageOptions.Host,
+					Namespace: options.RewriteImageOptions.Namespace,
+					Username:  options.RewriteImageOptions.Username,
+					Password:  options.RewriteImageOptions.Password,
+				}
+			}
+
+			copyResult, err := base.ProcessUpstreamImages(writeUpstreamImageOptions)
+			if err != nil {
+				return nil, errors.Wrap(err, "failed to write upstream images")
+			}
+			images = copyResult.Images
+
+			newInstallation.Spec.KnownImages = copyResult.CheckedImages
+
+			err = upstream.SaveInstallation(newInstallation, upstreamDir)
+			if err != nil {
+				return nil, errors.Wrap(err, "failed to save installation")
+			}
+		}
+
+		// If the request includes a rewrite image options host name, then also
+		// push the images
+		if options.RewriteImageOptions.Host != "" {
+			processUpstreamImageOptions := upstream.ProcessUpstreamImagesOptions{
+				RootDir:            options.RootDir,
+				ImagesDir:          imagesDirFromOptions(u, options),
+				AirgapBundle:       options.AirgapBundle,
+				CreateAppDir:       options.CreateAppDir,
+				RegistryIsReadOnly: options.RewriteImageOptions.IsReadOnly,
+				Log:                log,
+				ReplicatedRegistry: registry.RegistryOptions{
+					Endpoint:      replicatedRegistryInfo.Registry,
+					ProxyEndpoint: replicatedRegistryInfo.Proxy,
+				},
+				ReportWriter: options.ReportWriter,
+				DestinationRegistry: registry.RegistryOptions{
+					Endpoint:  options.RewriteImageOptions.Host,
+					Namespace: options.RewriteImageOptions.Namespace,
+					Username:  options.RewriteImageOptions.Username,
+					Password:  options.RewriteImageOptions.Password,
+				},
+			}
+			if license != nil {
+				processUpstreamImageOptions.ReplicatedRegistry.Username = license.Spec.LicenseID
+				processUpstreamImageOptions.ReplicatedRegistry.Password = license.Spec.LicenseID
+			}
+
+			var rewrittenImages []kustomizetypes.Image
+			if images == nil { // don't do ProcessUpstreamImages if we already copied them
+				imagesData, err := ioutil.ReadFile(filepath.Join(options.AirgapRoot, "images.json"))
+				if err != nil && !os.IsNotExist(err) {
+					return nil, errors.Wrap(err, "failed to load images file")
+				}
+
+				if err == nil {
+					err := json.Unmarshal(imagesData, &images)
+					if err != nil && !os.IsNotExist(err) {
+						return nil, errors.Wrap(err, "failed to unmarshal images data")
+					}
+					processUpstreamImageOptions.UseKnownImages = true
+					processUpstreamImageOptions.KnownImages = images
+				}
+
+				rewrittenImages, err = upstream.ProcessUpstreamImages(u, processUpstreamImageOptions)
+				if err != nil {
+					return nil, errors.Wrap(err, "failed to push upstream images")
+				}
+			}
+
+			findObjectsOptions := base.FindObjectsWithImagesOptions{
+				BaseDir: writeMidstreamOptions.BaseDir,
+			}
+			affectedObjects, err := base.FindObjectsWithImages(findObjectsOptions)
+			if err != nil {
+				return nil, errors.Wrap(err, "failed to find objects with images")
+			}
+
+			registryUser := options.RewriteImageOptions.Username
+			registryPass := options.RewriteImageOptions.Password
+			if registryUser == "" {
+				registryUser, registryPass, err = registry.LoadAuthForRegistry(options.RewriteImageOptions.Host)
+				if err != nil {
+					return nil, errors.Wrapf(err, "failed to load registry auth for %q", options.RewriteImageOptions.Host)
+				}
+			}
+
+			pullSecret, err = registry.PullSecretForRegistries(
+				[]string{options.RewriteImageOptions.Host},
+				registryUser,
+				registryPass,
+				options.Namespace,
+			)
+			if err != nil {
+				return nil, errors.Wrap(err, "create pull secret")
+			}
+
+			if rewrittenImages != nil {
+				images = rewrittenImages
+			}
+			objects = affectedObjects
+		}
+	} else if license != nil {
+		newInstallation, err := upstream.LoadInstallation(upstreamDir)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to load installation")
+		}
+
+		application, err := upstream.LoadApplication(upstreamDir)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to load application")
+		}
+
+		allPrivate := false
+		if application != nil {
+			allPrivate = application.Spec.ProxyPublicImages
+		}
+
+		// Rewrite private images
+		findPrivateImagesOptions := base.FindPrivateImagesOptions{
+			BaseDir: writeMidstreamOptions.BaseDir,
+			AppSlug: license.Spec.AppSlug,
+			ReplicatedRegistry: registry.RegistryOptions{
+				Endpoint:      replicatedRegistryInfo.Registry,
+				ProxyEndpoint: replicatedRegistryInfo.Proxy,
+			},
+			DockerHubRegistry: registry.RegistryOptions{
+				Username: dockerHubRegistryCreds.Username,
+				Password: dockerHubRegistryCreds.Password,
+			},
+			Installation:     newInstallation,
+			AllImagesPrivate: allPrivate,
+		}
+		findResult, err := base.FindPrivateImages(findPrivateImagesOptions)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to find private images")
+		}
+
+		newInstallation.Spec.KnownImages = findResult.CheckedImages
+		err = upstream.SaveInstallation(newInstallation, upstreamDir)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to save installation")
+		}
+
+		// TODO (ethan): proxy dex image
+
+		// Note that there maybe no rewritten images if only replicated private images are being used.
+		// We still need to create the secret in that case.
+		if len(findResult.Docs) > 0 {
+			pullSecret, err = registry.PullSecretForRegistries(
+				replicatedRegistryInfo.ToSlice(),
+				license.Spec.LicenseID,
+				license.Spec.LicenseID,
+				options.Namespace,
+			)
+			if err != nil {
+				return nil, errors.Wrap(err, "create pull secret")
+			}
+		}
+		images = findResult.Images
+		objects = findResult.Docs
+	}
+
+	m, err := midstream.CreateMidstream(b, images, objects, pullSecret, identitySpec, identityConfig)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to create midstream")
+	}
+
+	if err := m.WriteMidstream(writeMidstreamOptions); err != nil {
+		return nil, errors.Wrap(err, "failed to write common midstream")
+	}
+
+	return m, nil
+}
+
+func removeUnusedHelmOverlays(overlayRoot string, baseRoot string) error {
+	// Only cleanup "charts" subdirectory. This can be isolated from customer overlays, so we don't destroy them.
+	return removeUnusedHelmOverlaysRec(overlayRoot, baseRoot, "charts")
+}
+
+func removeUnusedHelmOverlaysRec(overlayRoot string, baseRoot string, overlayRelDir string) error {
+	curMidstreamDir := filepath.Join(overlayRoot, overlayRelDir)
+	midstreamFiles, err := ioutil.ReadDir(curMidstreamDir)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return nil
+		}
+		return errors.Wrap(err, "failed to read midstream dir")
+	}
+
+	for _, midstreamFile := range midstreamFiles {
+		if !midstreamFile.IsDir() {
+			continue
+		}
+
+		midstreamPath := filepath.Join(curMidstreamDir, midstreamFile.Name())
+		relPath, err := filepath.Rel(overlayRoot, midstreamPath)
+		if err != nil {
+			return errors.Wrap(err, "failed to get relative midstream path")
+		}
+		basePath := filepath.Join(baseRoot, relPath)
+
+		_, err = os.Stat(basePath)
+		if err == nil {
+			err := removeUnusedHelmOverlaysRec(overlayRoot, baseRoot, relPath)
+			if err != nil {
+				return err // not wrapping recursive errors
+			}
+		}
+		if os.IsNotExist(err) {
+			// File is in midstream, but is no longer in base
+			err := os.RemoveAll(midstreamPath)
+			if err != nil {
+				return errors.Wrapf(err, "failed to remove %s from midtream", relPath)
+			}
+			continue
+		}
+		return errors.Wrap(err, "failed to stat base file")
+	}
+
+	return nil
+}
+
+func writeDownstreams(options PullOptions, overlaysDir string, m *midstream.Midstream, helmMidstreams []midstream.Midstream, log *logger.CLILogger) error {
+	//TODO make the options populated by the caller, DO NOT MUTATE HERE
+	if len(options.Downstreams) == 0 {
+		app, err := store.GetStore().GetAppFromSlug(options.AppSlug)
+		if err != nil {
+			return errors.Wrapf(err, "failed to get appID for appslug%s", options.AppSlug)
+		}
+		downstreams, err := store.GetStore().ListDownstreamsForApp(app.ID)
+		if err != nil {
+			return errors.Wrap(err, "failed to list downstream")
+		}
+		for _, d := range downstreams {
+			options.Downstreams = append(options.Downstreams, d.Name)
+		}
+	}
+	for _, downstreamName := range options.Downstreams {
+		log.ActionWithSpinner("Creating downstream %q", downstreamName)
+		io.WriteString(options.ReportWriter, fmt.Sprintf("Creating downstream %q\n", downstreamName))
+
+		d, err := downstream.CreateDownstream(m)
+		if err != nil {
+			return errors.Wrapf(err, "failed to create downstream %s", downstreamName)
+		}
+
+		writeDownstreamOptions := downstream.WriteOptions{
+			DownstreamDir: filepath.Join(overlaysDir, "downstreams", downstreamName),
+			MidstreamDir:  filepath.Join(overlaysDir, "midstream"),
+		}
+		if err := d.WriteDownstream(writeDownstreamOptions); err != nil {
+			return errors.Wrapf(err, "failed to write downstream %s", downstreamName)
+		}
+
+		for _, mid := range helmMidstreams {
+			helmMidstream := mid // bug? this object contains pointers which are not deep-copied here
+
+			d, err := downstream.CreateDownstream(&helmMidstream)
+			if err != nil {
+				return errors.Wrapf(err, "failed to create downstream %s for helm midstream %s", downstreamName, mid.Base.Path)
+			}
+
+			writeDownstreamOptions := downstream.WriteOptions{
+				DownstreamDir: filepath.Join(overlaysDir, "downstreams", downstreamName, mid.Base.Path),
+				MidstreamDir:  filepath.Join(overlaysDir, "midstream", mid.Base.Path),
+			}
+			if err := d.WriteDownstream(writeDownstreamOptions); err != nil {
+				return errors.Wrapf(err, "failed to write downstream %s for helm midstream %s", downstreamName, mid.Base.Path)
+			}
+		}
+
+		err = removeUnusedHelmOverlays(writeDownstreamOptions.DownstreamDir, writeDownstreamOptions.MidstreamDir)
+		if err != nil {
+			return errors.Wrapf(err, "failed to remove unused helm downstreams")
+		}
+
+		log.FinishSpinner()
+	}
+
+	return nil
+}
+
+func writeCombinedDownstreamBase(downstreamName string, bases []string, renderDir string) error {
+	if _, err := os.Stat(renderDir); os.IsNotExist(err) {
+		if err := os.MkdirAll(renderDir, 0744); err != nil {
+			return errors.Wrap(err, "failed to mkdir")
+		}
+	}
+
+	kustomization := kustomizetypes.Kustomization{
+		TypeMeta: kustomizetypes.TypeMeta{
+			APIVersion: "kustomize.config.k8s.io/v1beta1",
+			Kind:       "Kustomization",
+		},
+		Bases: bases,
+	}
+	if err := k8sutil.WriteKustomizationToFile(kustomization, filepath.Join(renderDir, "kustomization.yaml")); err != nil {
+		return errors.Wrap(err, "failed to write kustomization to file")
+	}
+
+	return nil
 }
 
 func ParseLicenseFromFile(filename string) (*kotsv1beta1.License, error) {

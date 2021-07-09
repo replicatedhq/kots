@@ -267,6 +267,7 @@ type HelmChartSpec struct {
 	Chart          ChartIdentifier             `json:"chart"`
 	Exclude        multitype.BoolOrString      `json:"exclude,omitempty"`
 	HelmVersion    string                      `json:"helmVersion,omitempty"`
+	UseHelmInstall bool                        `json:"useHelmInstall,omitempty"`
 	Namespace      string                      `json:"namespace,omitempty"`
 	Values         map[string]MappedChartValue `json:"values,omitempty"`
 	OptionalValues []*OptionalValue            `json:"optionalValues,omitempty"`

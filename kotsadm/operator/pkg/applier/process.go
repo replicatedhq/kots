@@ -3,6 +3,7 @@ package applier
 import (
 	"io/ioutil"
 	"os/exec"
+	"sync"
 
 	"github.com/pkg/errors"
 )
@@ -25,8 +26,23 @@ func Run(cmd *exec.Cmd) ([]byte, []byte, error) {
 		return nil, nil, errors.Wrap(err, "failed to start commmand")
 	}
 
-	stdout, _ := ioutil.ReadAll(stdoutReader)
-	stderr, _ := ioutil.ReadAll(stderrReader)
+	var stdout, stderr []byte
+	var wg sync.WaitGroup
+
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		stdout, _ = ioutil.ReadAll(stdoutReader)
+	}()
+
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		stderr, _ = ioutil.ReadAll(stderrReader)
+	}()
+
+	// cmd.Wait() must be called after all readers have completed
+	wg.Wait()
 
 	err = cmd.Wait()
 	return stdout, stderr, err

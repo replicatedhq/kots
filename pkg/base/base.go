@@ -3,6 +3,7 @@ package base
 import (
 	"bytes"
 	"fmt"
+	"path"
 	"path/filepath"
 	"strconv"
 
@@ -16,11 +17,12 @@ import (
 )
 
 type Base struct {
-	Path       string
-	Namespace  string
-	Files      []BaseFile
-	ErrorFiles []BaseFile
-	Bases      []Base
+	Path            string
+	Namespace       string
+	Files           []BaseFile
+	ErrorFiles      []BaseFile
+	AdditionalFiles []BaseFile
+	Bases           []Base
 }
 
 type BaseFile struct {
@@ -135,47 +137,54 @@ func (f BaseFile) ShouldBeIncludedInBaseKustomization(excludeKotsKinds bool) (bo
 		}
 	}
 
-	if o.Metadata.Annotations != nil {
-		if val, ok := o.Metadata.Annotations["kots.io/exclude"]; ok {
-			if boolVal, ok := val.(bool); ok {
-				return !boolVal, nil
-			}
+	exclude, err := isExcludedByAnnotation(o.Metadata.Annotations)
+	return !exclude, errors.Wrapf(err, "failed to check if object %s, kind %s/%s is excluded by annotation", o.Metadata.Name, o.APIVersion, o.Kind)
+}
 
-			if strVal, ok := val.(string); ok {
-				boolVal, err := strconv.ParseBool(strVal)
-				if err != nil {
-					// should this be a ParseError?
-					return true, errors.Errorf("unable to parse %s as bool in exclude annotation of object %s, kind %s/%s", strVal, o.Metadata.Name, o.APIVersion, o.Kind)
-				}
-
-				return !boolVal, nil
-			}
-
-			// should this be a ParseError?
-			return true, errors.Errorf("unexpected type in exclude annotation of %s/%s: %T", o.APIVersion, o.Metadata.Name, val)
-		}
-
-		if val, ok := o.Metadata.Annotations["kots.io/when"]; ok {
-			if boolVal, ok := val.(bool); ok {
-				return boolVal, nil
-			}
-
-			if strVal, ok := val.(string); ok {
-				boolVal, err := strconv.ParseBool(strVal)
-				if err != nil {
-					// should this be a ParseError?
-					return true, errors.Errorf("unable to parse %s as bool in when annotation of object %s, kind %s/%s", strVal, o.Metadata.Name, o.APIVersion, o.Kind)
-				}
-
-				return boolVal, nil
-			}
-
-			// should this be a ParseError?
-			return true, errors.Errorf("unexpected type in when annotation of %s/%s: %T", o.APIVersion, o.Metadata.Name, val)
-		}
+func isExcludedByAnnotation(annotations map[string]interface{}) (bool, error) {
+	if annotations == nil {
+		return false, nil
 	}
 
-	return true, nil
+	if val, ok := annotations["kots.io/exclude"]; ok {
+		if boolVal, ok := val.(bool); ok {
+			return boolVal, nil
+		}
+
+		if strVal, ok := val.(string); ok {
+			boolVal, err := strconv.ParseBool(strVal)
+			if err != nil {
+				// should this be a ParseError?
+				return false, errors.Errorf("unable to parse %s as bool in exclude annotation", strVal)
+			}
+
+			return boolVal, nil
+		}
+
+		// should this be a ParseError?
+		return false, errors.Errorf("unexpected type in exclude annotation: %T", val)
+	}
+
+	if val, ok := annotations["kots.io/when"]; ok {
+		if boolVal, ok := val.(bool); ok {
+			return !boolVal, nil
+		}
+
+		if strVal, ok := val.(string); ok {
+			boolVal, err := strconv.ParseBool(strVal)
+			if err != nil {
+				// should this be a ParseError?
+				return false, errors.Errorf("unable to parse %s as bool in when annotation", strVal)
+			}
+
+			return !boolVal, nil
+		}
+
+		// should this be a ParseError?
+		return false, errors.Errorf("unexpected type in when annotation: %T", val)
+	}
+
+	return false, nil
 }
 
 func (f BaseFile) IsKotsKind() (bool, error) {
@@ -231,7 +240,19 @@ func iskotsAPIVersionKind(o OverlySimpleGVK) bool {
 func (b Base) ListErrorFiles() []BaseFile {
 	files := append([]BaseFile{}, b.ErrorFiles...)
 	for _, b := range b.Bases {
-		files = append(files, b.ListErrorFiles()...)
+		files = append(files, PrependBaseFilesPath(b.ListErrorFiles(), b.Path)...)
 	}
 	return files
+}
+
+func PrependBaseFilesPath(files []BaseFile, prefix string) []BaseFile {
+	if prefix == "" {
+		return files
+	}
+	next := []BaseFile{}
+	for _, file := range files {
+		file.Path = path.Join(prefix, file.Path)
+		next = append(next, file)
+	}
+	return next
 }

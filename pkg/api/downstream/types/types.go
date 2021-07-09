@@ -41,5 +41,7 @@ type DownstreamOutput struct {
 	DryrunStderr string `json:"dryrunStderr"`
 	ApplyStdout  string `json:"applyStdout"`
 	ApplyStderr  string `json:"applyStderr"`
+	HelmStdout   string `json:"helmStdout"`
+	HelmStderr   string `json:"helmStderr"`
 	RenderError  string `json:"renderError"`
 }
