@@ -459,7 +459,7 @@ func (c *Client) clearNamespace(slug string, namespace string, isRestore bool, r
 	return clear, nil
 }
 
-func (c *Client) installHelm(helmDir string, namespace string) (*commandResult, error) {
+func (c *Client) installWithHelm(helmDir string, namespace string) (*commandResult, error) {
 	version := "3.4.2"
 	chartsDir := filepath.Join(helmDir, "charts")
 	dirs, err := ioutil.ReadDir(chartsDir)
@@ -492,8 +492,8 @@ func (c *Client) installHelm(helmDir string, namespace string) (*commandResult, 
 		cmd := exec.Command(fmt.Sprintf("helm%s", version), "upgrade", "-i", cname.ChartName, installDir, "-n", namespace)
 		stdout, stderr, err := applier.Run(cmd)
 		if err != nil {
-			log.Printf("stdout (helm) = %s", stdout)
-			log.Printf("stderr (helm) = %s", stderr)
+			log.Printf("stdout (helm install) = %s", stdout)
+			log.Printf("stderr (helm install) = %s", stderr)
 			log.Printf("error: %s", err.Error())
 			hasErr = true
 		}
@@ -512,6 +512,30 @@ func (c *Client) installHelm(helmDir string, namespace string) (*commandResult, 
 		multiStdout: multiStdout,
 	}
 	return result, nil
+}
+
+func (c *Client) uninstallWithHelm(helmDir string, namespace string, charts []string) error {
+	version := "3.4.2"
+	if os.Getenv("KOTSADM_TARGET_NAMESPACE") != "" {
+		namespace = os.Getenv("KOTSADM_TARGET_NAMESPACE")
+	}
+
+	for _, chart := range charts {
+		log.Printf("uninstalling chart %s in namespace %s", chart, namespace)
+		cmd := exec.Command(fmt.Sprintf("helm%s", version), "uninstall", chart, "-n", namespace)
+		stdout, stderr, err := applier.Run(cmd)
+		log.Printf("stdout (helm uninstall) = %s", stdout)
+		log.Printf("stderr (helm uninstall) = %s", stderr)
+		if err != nil {
+			if strings.Contains(string(stderr), "not found") {
+				continue
+			}
+			log.Printf("error: %s", err.Error())
+			return errors.Wrapf(err, "failed to uninstall chart %s: %s", chart, stderr)
+		}
+	}
+
+	return nil
 }
 
 func parseK8sYaml(doc []byte) (k8sruntime.Object, *k8sschema.GroupVersionKind, error) {
@@ -609,4 +633,55 @@ func deletePVCs(namespace string, pvcs []string) error {
 	}
 
 	return nil
+}
+
+func getRemovedCharts(prevDir string, curDir string) ([]string, error) {
+	if prevDir == "" {
+		return []string{}, nil
+	}
+
+	prevDirContent, err := ioutil.ReadDir(filepath.Join(prevDir, "charts"))
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to list previous chart dir")
+	}
+
+	prevCharts := []string{}
+	for _, f := range prevDirContent {
+		if f.IsDir() {
+			prevCharts = append(prevCharts, f.Name())
+		}
+	}
+
+	if curDir == "" {
+		return prevCharts, nil
+	}
+
+	curDirContent, err := ioutil.ReadDir(filepath.Join(curDir, "charts"))
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to list current chart dir")
+	}
+
+	curCharts := []string{}
+	for _, f := range curDirContent {
+		if f.IsDir() {
+			curCharts = append(curCharts, f.Name())
+		}
+	}
+
+	removedCharts := []string{}
+	for _, prevChart := range prevCharts {
+		found := false
+		for _, curChart := range curCharts {
+			if prevChart == curChart {
+				found = true
+				break
+			}
+		}
+
+		if !found {
+			removedCharts = append(removedCharts, prevChart)
+		}
+	}
+
+	return removedCharts, nil
 }

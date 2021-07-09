@@ -391,19 +391,22 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 	}
 
 	helmMidstreams := []midstream.Midstream{}
-	for _, base := range helmBases {
+	for _, helmBase := range helmBases {
 		writeMidstreamOptions := commonWriteMidstreamOptions
-		writeMidstreamOptions.MidstreamDir = filepath.Join(base.GetOverlaysDir(writeBaseOptions), "midstream", base.Path)
-		writeMidstreamOptions.BaseDir = filepath.Join(u.GetBaseDir(writeUpstreamOptions), base.Path)
-
-		helmBase := base
+		writeMidstreamOptions.MidstreamDir = filepath.Join(helmBase.GetOverlaysDir(writeBaseOptions), "midstream", helmBase.Path)
+		writeMidstreamOptions.BaseDir = filepath.Join(u.GetBaseDir(writeUpstreamOptions), helmBase.Path)
 
 		helmMidstream, err := writeMidstream(writeMidstreamOptions, pullOptions, u, &helmBase, fetchOptions.License, identityConfig, u.GetUpstreamDir(writeUpstreamOptions), log)
 		if err != nil {
-			return "", errors.Wrapf(err, "failed to write helm midstream %s", base.Path)
+			return "", errors.Wrapf(err, "failed to write helm midstream %s", helmBase.Path)
 		}
 
 		helmMidstreams = append(helmMidstreams, *helmMidstream)
+	}
+
+	err = removeUnusedHelmOverlays(writeMidstreamOptions.MidstreamDir, writeMidstreamOptions.BaseDir)
+	if err != nil {
+		return "", errors.Wrapf(err, "failed to remove unused helm midstreams")
 	}
 
 	log.FinishSpinner()
@@ -663,6 +666,54 @@ func writeMidstream(writeMidstreamOptions midstream.WriteOptions, options PullOp
 	return m, nil
 }
 
+func removeUnusedHelmOverlays(overlayRoot string, baseRoot string) error {
+	// Only cleanup "charts" subdirectory. This can be isolated from customer overlays, so we don't destroy them.
+	return removeUnusedHelmOverlaysRec(overlayRoot, baseRoot, "charts")
+}
+
+func removeUnusedHelmOverlaysRec(overlayRoot string, baseRoot string, overlayRelDir string) error {
+	curMidstreamDir := filepath.Join(overlayRoot, overlayRelDir)
+	midstreamFiles, err := ioutil.ReadDir(curMidstreamDir)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return nil
+		}
+		return errors.Wrap(err, "failed to read midstream dir")
+	}
+
+	for _, midstreamFile := range midstreamFiles {
+		if !midstreamFile.IsDir() {
+			continue
+		}
+
+		midstreamPath := filepath.Join(curMidstreamDir, midstreamFile.Name())
+		relPath, err := filepath.Rel(overlayRoot, midstreamPath)
+		if err != nil {
+			return errors.Wrap(err, "failed to get relative midstream path")
+		}
+		basePath := filepath.Join(baseRoot, relPath)
+
+		_, err = os.Stat(basePath)
+		if err == nil {
+			err := removeUnusedHelmOverlaysRec(overlayRoot, baseRoot, relPath)
+			if err != nil {
+				return err // not wrapping recursive errors
+			}
+		}
+		if os.IsNotExist(err) {
+			// File is in midstream, but is no longer in base
+			err := os.RemoveAll(midstreamPath)
+			if err != nil {
+				return errors.Wrapf(err, "failed to remove %s from midtream", relPath)
+			}
+			continue
+		}
+		return errors.Wrap(err, "failed to stat base file")
+	}
+
+	return nil
+}
+
 func writeDownstreams(options PullOptions, overlaysDir string, m *midstream.Midstream, helmMidstreams []midstream.Midstream, log *logger.CLILogger) error {
 	//TODO make the options populated by the caller, DO NOT MUTATE HERE
 	if len(options.Downstreams) == 0 {
@@ -696,7 +747,7 @@ func writeDownstreams(options PullOptions, overlaysDir string, m *midstream.Mids
 		}
 
 		for _, mid := range helmMidstreams {
-			helmMidstream := mid
+			helmMidstream := mid // bug? this object contains pointers which are not deep-copied here
 
 			d, err := downstream.CreateDownstream(&helmMidstream)
 			if err != nil {
@@ -710,6 +761,11 @@ func writeDownstreams(options PullOptions, overlaysDir string, m *midstream.Mids
 			if err := d.WriteDownstream(writeDownstreamOptions); err != nil {
 				return errors.Wrapf(err, "failed to write downstream %s for helm midstream %s", downstreamName, mid.Base.Path)
 			}
+		}
+
+		err = removeUnusedHelmOverlays(writeDownstreamOptions.DownstreamDir, writeDownstreamOptions.MidstreamDir)
+		if err != nil {
+			return errors.Wrapf(err, "failed to remove unused helm downstreams")
 		}
 
 		log.FinishSpinner()
