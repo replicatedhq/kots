@@ -306,7 +306,6 @@ func (stack yamlStack) renderRepeatNodes(optionName string, values map[string]in
 // IE repl{{ ConfigOption "port" | ParseInt }} will become repl{{ ConfigOption "port-8jc8ud" | ParseInt }}, where "port" is the optionName and "port-8jc8ud" is the valueName
 // the templating function will be executed with the new variable name after variadic processing is finished
 func replaceTemplateValue(node interface{}, optionName, valueName string) (interface{}, error) {
-	var err error
 	switch typedNode := node.(type) {
 	case string:
 		resultString, err := parseVariadicTarget(optionName, valueName, typedNode)
@@ -318,10 +317,27 @@ func replaceTemplateValue(node interface{}, optionName, valueName string) (inter
 	case map[string]interface{}:
 		newMap := map[string]interface{}{}
 		for subField, subNode := range typedNode {
-			newMap[subField], err = replaceTemplateValue(subNode, optionName, valueName)
+			//newMap[subField], err = replaceTemplateValue(subNode, optionName, valueName)
+			newValue, err := replaceTemplateValue(subNode, optionName, valueName)
 			if err != nil {
 				// no need to wrap recursive errors
 				return nil, err
+			}
+			newField, err := replaceTemplateValue(subField, optionName, valueName)
+			if err != nil {
+				// no need to wrap recursive errors
+				return nil, err
+			}
+			if newField != subField {
+				switch typedNewField := newField.(type) {
+				case string:
+					newMap[typedNewField] = newValue
+					delete(newMap, subField)
+				default:
+					// if it's not a string, we don't want it
+				}
+			} else {
+				newMap[subField] = newValue
 			}
 		}
 		return newMap, nil

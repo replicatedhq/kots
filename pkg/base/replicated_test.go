@@ -456,7 +456,7 @@ metadata:
   namespace: my-app
 type: Opaque
 data:
-  file: '{{repl ConfigOption repl[[ .secretName ]] }}'`),
+  repl{{ ConfigOptionName repl[[ .secretName ]] }}: '{{repl ConfigOption repl[[ .secretName ]] }}'`),
 					},
 				},
 			},
@@ -523,16 +523,42 @@ spec:
                   - key: "file"
                     path: "secretName-3"`),
 			},
-			expectedSecret: BaseFile{
-				Path: "secret.yaml",
-				Content: []byte(
-					`apiVersion: v1
+			expectedSecrets: []BaseFile{
+				{
+					Path: "secret-rando.yaml",
+					Content: []byte(
+						`apiVersion: v1
+kind: Secret
+metadata:
+  name: secretName-1
+  namespace: "my-app"
+type: Opaque
+data:
+  secretName-1: MTIz`),
+				},
+				{
+					Path: "secret-rando.yaml",
+					Content: []byte(
+						`apiVersion: v1
+kind: Secret
+metadata:
+  name: secretName-2
+  namespace: "my-app"
+type: Opaque
+data:
+  secretName-2: MTIz`),
+				},
+				{
+					Path: "secret-rando.yaml",
+					Content: []byte(
+						`apiVersion: v1
 kind: Secret
 metadata:
   name: my-secret
 type: Opaque
 data:
-  file: MTIz`),
+  secretName-3: MTIz`),
+				},
 			},
 		},
 

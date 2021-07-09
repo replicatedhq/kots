@@ -926,11 +926,3 @@ func updateConfigObject(config *kotsv1beta1.Config, configValues *kotsv1beta1.Co
 
 	return newConfig, nil
 }
-
-func setCountByGroup(item *kotsv1beta1.ConfigItem, groupName string, itemCount int) {
-	// if this map doesn't exist yet, create it to avoid a panic
-	if item.CountByGroup == nil {
-		item.CountByGroup = map[string]int{}
-	}
-	item.CountByGroup[groupName] = itemCount
-}
