@@ -238,12 +238,8 @@ func CreateVariadicValues(item *kotsv1beta1.ConfigItem, groupName string) {
 	}
 
 	for len(item.ValuesByGroup[groupName]) < item.CountByGroup[groupName] {
-		itemValue := template.ItemValue{
-			Value:          "",
-			RepeatableItem: item.Name,
-		}
 		shortUUID := strings.Split(uuid.New().String(), "-")[0]
 		variadicName := fmt.Sprintf("%s-%s", item.Name, shortUUID)
-		item.ValuesByGroup[groupName][variadicName] = itemValue
+		item.ValuesByGroup[groupName][variadicName] = ""
 	}
 }
