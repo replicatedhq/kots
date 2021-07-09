@@ -244,6 +244,12 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 		fetchOptions.LocalPath = airgapAppFiles
 	}
 
+	prevHelmCharts, err := kotsutil.LoadHelmChartsFromPath(pullOptions.RootDir)
+	if err != nil {
+		log.FinishSpinnerWithError()
+		return "", errors.Wrap(err, "failed to load previous helm charts")
+	}
+
 	log.ActionWithSpinner("Pulling upstream")
 	io.WriteString(pullOptions.ReportWriter, "Pulling upstream\n")
 	u, err := upstream.FetchUpstream(upstreamURI, &fetchOptions)
@@ -271,6 +277,24 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 		return "", errors.Wrap(err, "failed to write upstream")
 	}
 	log.FinishSpinner()
+
+	newHelmCharts, err := kotsutil.LoadHelmChartsFromPath(fetchOptions.RootDir)
+	if err != nil {
+		log.FinishSpinnerWithError()
+		return "", errors.Wrap(err, "failed to load new helm charts")
+	}
+
+	for _, prevChart := range prevHelmCharts {
+		for _, newChart := range newHelmCharts {
+			if prevChart.Spec.Chart.Name != newChart.Spec.Chart.Name {
+				continue
+			}
+			if prevChart.Spec.UseCLIInstall != newChart.Spec.UseCLIInstall {
+				log.FinishSpinnerWithError()
+				return "", errors.Errorf("deployment method for chart %s has changed", newChart.Spec.Chart.Name)
+			}
+		}
+	}
 
 	renderOptions := base.RenderOptions{
 		SplitMultiDocYAML:       true,
