@@ -325,12 +325,18 @@ func (c *Client) deployManifests(args ApplicationManifests) (*commandResult, err
 }
 
 func (c *Client) deployHelmCharts(args ApplicationManifests) (*commandResult, error) {
+	targetNamespace := c.TargetNamespace
+	if args.Namespace != "." {
+		targetNamespace = args.Namespace
+	}
+
 	tarGz := archiver.TarGz{
 		Tar: &archiver.Tar{
 			ImplicitTopLevelFolder: false,
 		},
 	}
 
+	var prevHelmDir string
 	if len(args.PreviousCharts) > 0 {
 		tmpDir, err := ioutil.TempDir("", "helm")
 		if err != nil {
@@ -343,18 +349,18 @@ func (c *Client) deployHelmCharts(args ApplicationManifests) (*commandResult, er
 			return nil, errors.Wrap(err, "failed to write previous archive")
 		}
 
-		helmDir := path.Join(tmpDir, "prevhelm")
-		if err := os.MkdirAll(helmDir, 0744); err != nil {
+		prevHelmDir = path.Join(tmpDir, "prevhelm")
+		if err := os.MkdirAll(prevHelmDir, 0755); err != nil {
 			return nil, errors.Wrap(err, "failed to create dir to stage previous helm archive")
 		}
 
-		if err := tarGz.Unarchive(path.Join(tmpDir, "archive.tar.gz"), helmDir); err != nil {
+		if err := tarGz.Unarchive(path.Join(tmpDir, "archive.tar.gz"), prevHelmDir); err != nil {
 			return nil, errors.Wrap(err, "falied to unarchive previous helm archive")
 		}
-
-		// TODO: uninstall
 	}
 
+	var curHelmDir string
+	var installResult *commandResult
 	if len(args.Charts) > 0 {
 		tmpDir, err := ioutil.TempDir("", "helm")
 		if err != nil {
@@ -367,24 +373,36 @@ func (c *Client) deployHelmCharts(args ApplicationManifests) (*commandResult, er
 			return nil, errors.Wrap(err, "failed to write current archive")
 		}
 
-		helmDir := path.Join(tmpDir, "currhelm")
-		if err := os.MkdirAll(helmDir, 0744); err != nil {
+		curHelmDir = path.Join(tmpDir, "currhelm")
+		if err := os.MkdirAll(curHelmDir, 0755); err != nil {
 			return nil, errors.Wrap(err, "failed to create dir to stage currently deployed archive")
 		}
 
-		if err := tarGz.Unarchive(path.Join(tmpDir, "archive.tar.gz"), helmDir); err != nil {
+		if err := tarGz.Unarchive(path.Join(tmpDir, "archive.tar.gz"), curHelmDir); err != nil {
 			return nil, errors.Wrap(err, "falied to unarchive current helm archive")
 		}
-
-		installResult, err := c.installHelm(helmDir, args.Namespace)
-		if err != nil {
-			return nil, errors.Wrap(err, "falied to install helm")
-		}
-
-		return installResult, nil
 	}
 
-	return nil, nil
+	removedCharts, err := getRemovedCharts(prevHelmDir, curHelmDir)
+	if err != nil {
+		return nil, errors.Wrap(err, "falied to find removed charts")
+	}
+
+	if len(removedCharts) > 0 {
+		err := c.uninstallWithHelm(prevHelmDir, targetNamespace, removedCharts)
+		if err != nil {
+			return nil, errors.Wrap(err, "falied to uninstall helm charts")
+		}
+	}
+
+	if len(args.Charts) > 0 {
+		installResult, err = c.installWithHelm(curHelmDir, targetNamespace)
+		if err != nil {
+			return nil, errors.Wrap(err, "falied to install helm charts")
+		}
+	}
+
+	return installResult, nil
 }
 
 func (c *Client) sendResult(applicationManifests ApplicationManifests, dryRunResult *commandResult, applyResult *commandResult, helmResult *commandResult) error {
