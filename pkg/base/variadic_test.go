@@ -236,7 +236,7 @@ func Test_buildYamlFromStack(t *testing.T) {
 	}
 }
 
-func Test_generateTargetValue(t *testing.T) {
+func Test_parseVariadicTarget(t *testing.T) {
 	tests := []struct {
 		name             string
 		configOptionName string
@@ -246,27 +246,36 @@ func Test_generateTargetValue(t *testing.T) {
 	}{
 		{
 			configOptionName: "secret",
-			valueName:        "secret-1",
-			target:           "repl{{ ConfigOption \"secret\" }}",
-			want:             "repl{{ ConfigOption \"secret-1\" }}",
+			valueName:        "secret-123",
+			target:           "repl{{ ConfigOption repl[[ .secret ]] }}",
+			want:             "repl{{ ConfigOption secret-123 }}",
+		},
+		{
+			configOptionName: "ingress_hostname",
+			valueName:        "ingress_hostname-123",
+			target: `repl{{ $ca := genCA (ConfigOption repl[[ .ingress_hostname ]] ) 365 }}
+			repl{{ $tls := dict "ca" $ca }}
+			repl{{ $cert := genSignedCert (ConfigOption repl[[ .ingress_hostname ]] ) (list ) (list (ConfigOption [[repl .ingress_hostname ]] )) 365 $ca }}
+			repl{{ $_ := set $tls "cert" $cert }}
+			repl{{ toJson $tls }}`,
+			want: `repl{{ $ca := genCA (ConfigOption ingress_hostname-123 ) 365 }}
+			repl{{ $tls := dict "ca" $ca }}
+			repl{{ $cert := genSignedCert (ConfigOption ingress_hostname-123 ) (list ) (list (ConfigOption ingress_hostname-123 )) 365 $ca }}
+			repl{{ $_ := set $tls "cert" $cert }}
+			repl{{ toJson $tls }}`,
 		},
 		{
 			configOptionName: "secret",
-			valueName:        "secret-1",
-			target:           "repl{{ ConfigOptionName \"secret\" }}",
-			want:             "repl{{ ConfigOptionName \"secret-1\" }}",
-		},
-		{
-			configOptionName: "secret",
-			valueName:        "secret-1",
-			target:           "repl{{ ConfigOptionFilename \"secret\" }}",
-			want:             "repl{{ ConfigOptionFilename \"secret-1\" }}",
+			valueName:        "secret-789",
+			target:           "repl{{ ConfigOptionFilename [[repl .secret ]] }}",
+			want:             "repl{{ ConfigOptionFilename secret-789 }}",
 		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			req := require.New(t)
-			result := generateTargetValue(test.configOptionName, test.valueName, test.target)
+			result, err := parseVariadicTarget(test.configOptionName, test.valueName, test.target)
+			req.NoError(err)
 
 			req.Equal(test.want, result)
 		})

@@ -434,17 +434,15 @@ spec:
           sources:
           - secret:
               name: "don't touch this!"
-              metaData:
-                fileName: 'repl{{ ConfigOptionName "secretName"}}'
           - secret:
-              name: 'repl{{ ConfigOptionName "secretName"}}'
+              name: 'repl{{ ConfigOptionName repl[[ .secretName ]] }}'
               pod: repl{{ ConfigOption "podName" }}
               metaData:
                 pod: repl{{ ConfigOption "podName"}}
-                fileName: 'repl{{ ConfigOptionName "secretName"}}'
+                fileName: 'repl{{ ConfigOptionName repl[[ .secretName ]] }}'
               items:
                 - key: "data"
-                  path: '{{repl ConfigOptionName "secretName"}}'
+                  path: '{{repl ConfigOptionName repl[[ .secretName ]] }}'
           - secret:
               name: "don't touch this either!"`),
 					},
@@ -458,7 +456,7 @@ metadata:
   namespace: my-app
 type: Opaque
 data:
-  file: '{{repl ConfigOption "secretName"}}'`),
+  file: '{{repl ConfigOption repl[[ .secretName ]] }}'`),
 					},
 				},
 			},
