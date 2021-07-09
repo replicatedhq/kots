@@ -371,7 +371,7 @@ func parseVariadicTarget(configOptionName, valueName, target string) (string, er
 	}
 
 	replace := map[string]string{
-		configOptionName: fmt.Sprintf("\"%s\"", valueName),
+		configOptionName: fmt.Sprintf("%s", valueName),
 	}
 
 	curText := target
