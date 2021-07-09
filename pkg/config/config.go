@@ -121,11 +121,13 @@ func templateConfig(log *logger.CLILogger, configSpecData string, configValuesDa
 func ApplyValuesToConfig(config *kotsv1beta1.Config, values map[string]template.ItemValue) {
 	for idxG, g := range config.Spec.Groups {
 		for idxI, i := range g.Items {
-			// if the item is repeatable and we have values belonging to the item...
-			if i.Repeatable && checkForRepeatableItems(i.Name, values) {
+			// if the item is repeatable
+			if i.Repeatable {
 				if config.Spec.Groups[idxG].Items[idxI].ValuesByGroup == nil {
 					// initialize the appropriate maps
 					config.Spec.Groups[idxG].Items[idxI].ValuesByGroup = map[string]kotsv1beta1.GroupValues{}
+				}
+				if config.Spec.Groups[idxG].Items[idxI].CountByGroup == nil {
 					config.Spec.Groups[idxG].Items[idxI].CountByGroup = map[string]int{}
 				}
 				if config.Spec.Groups[idxG].Items[idxI].ValuesByGroup[g.Name] == nil {
@@ -138,25 +140,9 @@ func ApplyValuesToConfig(config *kotsv1beta1.Config, values map[string]template.
 					}
 				}
 				for variadicGroup, groupValues := range config.Spec.Groups[idxG].Items[idxI].ValuesByGroup {
-					groupCount := i.CountByGroup[variadicGroup]
-
-					// if this item becomes variadic, ensure it has at least the minimum count
-					if groupCount < i.MinimumCount {
-						groupCount = i.MinimumCount
-					}
-					// make sure the count is at least the number of items provided
-					if groupCount < len(groupValues) {
-						groupCount = len(groupValues)
-					}
-					// save updated Count back to config
-					config.Spec.Groups[idxG].Items[idxI].CountByGroup[variadicGroup] = groupCount
-
-					for len(groupValues) < groupCount {
-						shortUUID := strings.Split(uuid.New().String(), "-")[0]
-						variadicName := fmt.Sprintf("%s-%s", i.Name, shortUUID)
-						config.Spec.Groups[idxG].Items[idxI].ValuesByGroup[variadicGroup][variadicName] = ""
-					}
+					config.Spec.Groups[idxG].Items[idxI].CountByGroup[variadicGroup] = len(groupValues)
 				}
+				CreateVariadicValues(&config.Spec.Groups[idxG].Items[idxI], g.Name)
 			}
 			value, ok := values[i.Name]
 			if ok {
@@ -237,11 +223,27 @@ func UnmarshalConfigValuesContent(content []byte) (map[string]template.ItemValue
 	return ctx, nil
 }
 
-func checkForRepeatableItems(itemName string, configValues map[string]template.ItemValue) bool {
-	for _, value := range configValues {
-		if value.RepeatableItem == itemName {
-			return true
-		}
+func CreateVariadicValues(item *kotsv1beta1.ConfigItem, groupName string) {
+	if item.ValuesByGroup == nil {
+		item.ValuesByGroup = map[string]kotsv1beta1.GroupValues{}
 	}
-	return false
+	if item.CountByGroup == nil {
+		item.CountByGroup = map[string]int{}
+	}
+
+	if item.MinimumCount != 0 && (item.CountByGroup[groupName] < item.MinimumCount) {
+		item.CountByGroup[groupName] = item.MinimumCount
+	} else if item.CountByGroup[groupName] == 0 {
+		item.CountByGroup[groupName] = 1
+	}
+
+	for len(item.ValuesByGroup[groupName]) < item.CountByGroup[groupName] {
+		itemValue := template.ItemValue{
+			Value:          "",
+			RepeatableItem: item.Name,
+		}
+		shortUUID := strings.Split(uuid.New().String(), "-")[0]
+		variadicName := fmt.Sprintf("%s-%s", item.Name, shortUUID)
+		item.ValuesByGroup[groupName][variadicName] = itemValue
+	}
 }

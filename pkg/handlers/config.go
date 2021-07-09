@@ -11,12 +11,12 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/google/uuid"
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	"github.com/replicatedhq/kots/kotskinds/multitype"
 	apptypes "github.com/replicatedhq/kots/pkg/app/types"
+	"github.com/replicatedhq/kots/pkg/config"
 	kotsconfig "github.com/replicatedhq/kots/pkg/config"
 	"github.com/replicatedhq/kots/pkg/crypto"
 	kotsadmconfig "github.com/replicatedhq/kots/pkg/kotsadmconfig"
@@ -184,6 +184,27 @@ func (h *Handler) LiveAppConfig(w http.ResponseWriter, r *http.Request) {
 
 	for _, group := range liveAppConfigRequest.ConfigGroups {
 		for _, item := range group.Items {
+			// collect all repeatable items
+			// Future Note:  This could be refactored to use CountByGroup as the control.  Front end provides the exact CountByGroup it wants, back end takes care of ValuesByGroup entries.
+			// this way the front end doesn't have to add anything to ValuesByGroup, it just sets values there.
+			if item.Repeatable {
+				for valuesByGroupName, groupValues := range item.ValuesByGroup {
+					config.CreateVariadicValues(&item, valuesByGroupName)
+
+					for fieldName, subItem := range groupValues {
+						itemValue := template.ItemValue{
+							Value:          subItem,
+							RepeatableItem: item.Name,
+						}
+						if item.Filename != "" {
+							itemValue.Filename = fieldName
+						}
+						configValues[fieldName] = itemValue
+					}
+				}
+				continue
+			}
+
 			generatedValue := template.ItemValue{}
 			if item.Value.Type == multitype.String {
 				generatedValue.Value = item.Value.StrVal
@@ -199,32 +220,6 @@ func (h *Handler) LiveAppConfig(w http.ResponseWriter, r *http.Request) {
 				generatedValue.Filename = item.Filename
 			}
 			configValues[item.Name] = generatedValue
-
-			// collect all repeatable items
-			if item.Repeatable {
-				for valuesByGroupName, groupValues := range item.ValuesByGroup {
-					// if the front end sends an empty variadic group, create the first two items
-					if len(groupValues) == 0 {
-						for i := 0; i < 2; i++ {
-							itemValue := template.ItemValue{
-								Value:          "",
-								RepeatableItem: item.Name,
-							}
-							shortUUID := strings.Split(uuid.New().String(), "-")[0]
-							variadicName := fmt.Sprintf("%s-%s", item.Name, shortUUID)
-							configValues[variadicName] = itemValue
-						}
-					}
-					for fieldName, subItem := range groupValues {
-						itemValue := template.ItemValue{
-							Value:          subItem,
-							RepeatableItem: item.Name,
-						}
-						configValues[fieldName] = itemValue
-					}
-					copyCountByGroup(kotsKinds.Config, item, valuesByGroupName)
-				}
-			}
 		}
 	}
 
@@ -594,6 +589,13 @@ func updateAppConfigValues(values map[string]kotsv1beta1.ConfigValue, configGrou
 				values[item.Name] = v
 			}
 			for _, repeatableValues := range item.ValuesByGroup {
+				// clear out all variadic values for this group first
+				for name, value := range values {
+					if value.RepeatableItem == item.Name {
+						delete(values, name)
+					}
+				}
+				// add variadic groups back in declaratively
 				for itemName, valueItem := range repeatableValues {
 					v := values[itemName]
 					v.Value = fmt.Sprintf("%v", valueItem)
@@ -926,23 +928,10 @@ func updateConfigObject(config *kotsv1beta1.Config, configValues *kotsv1beta1.Co
 	return newConfig, nil
 }
 
-func copyCountByGroup(config *kotsv1beta1.Config, item kotsv1beta1.ConfigItem, groupName string) {
-	for groupIndex, configGroup := range config.Spec.Groups {
-		if configGroup.Name == groupName {
-			for itemIndex, configItem := range configGroup.Items {
-				if configItem.Name == item.Name {
-					// if this map doesn't exist yet, create it to avoid a panic
-					if config.Spec.Groups[groupIndex].Items[itemIndex].CountByGroup == nil {
-						config.Spec.Groups[groupIndex].Items[itemIndex].CountByGroup = map[string]int{}
-					}
-					if item.CountByGroup[groupName] == 0 {
-						// if the count isn't set, configure it to be the number of variadic items
-						config.Spec.Groups[groupIndex].Items[itemIndex].CountByGroup[configGroup.Name] = len(item.ValuesByGroup[groupName])
-					} else {
-						config.Spec.Groups[groupIndex].Items[itemIndex].CountByGroup[configGroup.Name] = item.CountByGroup[groupName]
-					}
-				}
-			}
-		}
+func setCountByGroup(item *kotsv1beta1.ConfigItem, groupName string, itemCount int) {
+	// if this map doesn't exist yet, create it to avoid a panic
+	if item.CountByGroup == nil {
+		item.CountByGroup = map[string]int{}
 	}
+	item.CountByGroup[groupName] = itemCount
 }
