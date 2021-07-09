@@ -258,6 +258,11 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 		return "", errors.Wrap(err, "failed to fetch upstream")
 	}
 
+	clientset, err := k8sutil.GetClientset()
+	if err != nil {
+		return "", errors.Wrap(err, "failed to get k8s clientset")
+	}
+
 	includeAdminConsole := uri.Scheme == "replicated" && !pullOptions.ExcludeAdminConsole
 
 	writeUpstreamOptions := upstreamtypes.WriteOptions{
@@ -376,11 +381,6 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 
 	log.ActionWithSpinner("Creating midstreams")
 	io.WriteString(pullOptions.ReportWriter, "Creating midstreams\n")
-
-	clientset, err := k8sutil.GetClientset()
-	if err != nil {
-		return "", errors.Wrap(err, "failed to get k8s clientset")
-	}
 
 	builder, err := base.NewConfigContextTemplateBuidler(u, &renderOptions)
 	if err != nil {

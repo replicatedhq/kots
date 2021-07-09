@@ -93,12 +93,15 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 		return errors.Wrap(err, "failed to load upstream")
 	}
 
-	includeAdminConsole := false
+	clientset, err := k8sutil.GetClientset()
+	if err != nil {
+		return errors.Wrap(err, "failed to get k8s clientset")
+	}
 
 	writeUpstreamOptions := upstreamtypes.WriteOptions{
 		RootDir:              rewriteOptions.RootDir,
 		CreateAppDir:         rewriteOptions.CreateAppDir,
-		IncludeAdminConsole:  includeAdminConsole,
+		IncludeAdminConsole:  false,
 		PreserveInstallation: true,
 		IsOpenShift:          k8sutil.IsOpenShift(clientset),
 	}
@@ -186,11 +189,6 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 
 	log.ActionWithSpinner("Creating midstreams")
 	io.WriteString(rewriteOptions.ReportWriter, "Creating midstreams\n")
-
-	clientset, err := k8sutil.GetClientset()
-	if err != nil {
-		return errors.Wrap(err, "failed to get k8s clientset")
-	}
 
 	builder, err := base.NewConfigContextTemplateBuidler(u, &renderOptions)
 	if err != nil {
