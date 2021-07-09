@@ -51,6 +51,7 @@ type PullOptions struct {
 	ExcludeKotsKinds       bool
 	ExcludeAdminConsole    bool
 	IncludeMinio           bool
+	NativeHelmInstall      bool
 	SharedPassword         string
 	CreateAppDir           bool
 	Silent                 bool
