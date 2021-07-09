@@ -2,11 +2,13 @@ package config
 
 import (
 	"bytes"
+	"fmt"
+	"strings"
 
+	"github.com/google/uuid"
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	"github.com/replicatedhq/kots/kotskinds/multitype"
-	"github.com/replicatedhq/kots/pkg/base"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/template"
 	"github.com/replicatedhq/kots/pkg/util"
@@ -95,7 +97,7 @@ func templateConfig(log *logger.CLILogger, configSpecData string, configValuesDa
 	config := obj.(*kotsv1beta1.Config)
 
 	// get template context from config values
-	templateContext, err := base.UnmarshalConfigValuesContent([]byte(configValuesData))
+	templateContext, err := UnmarshalConfigValuesContent([]byte(configValuesData))
 	if err != nil {
 		log.Error(err)
 		templateContext = map[string]template.ItemValue{}
@@ -119,6 +121,29 @@ func templateConfig(log *logger.CLILogger, configSpecData string, configValuesDa
 func ApplyValuesToConfig(config *kotsv1beta1.Config, values map[string]template.ItemValue) {
 	for idxG, g := range config.Spec.Groups {
 		for idxI, i := range g.Items {
+			// if the item is repeatable
+			if i.Repeatable {
+				if config.Spec.Groups[idxG].Items[idxI].ValuesByGroup == nil {
+					// initialize the appropriate maps
+					config.Spec.Groups[idxG].Items[idxI].ValuesByGroup = map[string]kotsv1beta1.GroupValues{}
+				}
+				if config.Spec.Groups[idxG].Items[idxI].CountByGroup == nil {
+					config.Spec.Groups[idxG].Items[idxI].CountByGroup = map[string]int{}
+				}
+				if config.Spec.Groups[idxG].Items[idxI].ValuesByGroup[g.Name] == nil {
+					config.Spec.Groups[idxG].Items[idxI].ValuesByGroup[g.Name] = map[string]interface{}{}
+					config.Spec.Groups[idxG].Items[idxI].CountByGroup[g.Name] = 0
+				}
+				for fieldName, item := range values {
+					if item.RepeatableItem == i.Name {
+						config.Spec.Groups[idxG].Items[idxI].ValuesByGroup[g.Name][fieldName] = item.Value
+					}
+				}
+				for variadicGroup, groupValues := range config.Spec.Groups[idxG].Items[idxI].ValuesByGroup {
+					config.Spec.Groups[idxG].Items[idxI].CountByGroup[variadicGroup] = len(groupValues)
+				}
+				CreateVariadicValues(&config.Spec.Groups[idxG].Items[idxI], g.Name)
+			}
 			value, ok := values[i.Name]
 			if ok {
 				config.Spec.Groups[idxG].Items[idxI].Value = multitype.FromString(value.ValueStr())
@@ -171,4 +196,50 @@ func MarshalConfig(config *kotsv1beta1.Config) (string, error) {
 	}
 
 	return string(marshalledYAML), nil
+}
+
+func UnmarshalConfigValuesContent(content []byte) (map[string]template.ItemValue, error) {
+	decode := scheme.Codecs.UniversalDeserializer().Decode
+	obj, gvk, err := decode(content, nil, nil)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to decode values")
+	}
+
+	if gvk.Group != "kots.io" || gvk.Version != "v1beta1" || gvk.Kind != "ConfigValues" {
+		return nil, errors.New("not a configvalues object")
+	}
+
+	values := obj.(*kotsv1beta1.ConfigValues)
+
+	ctx := map[string]template.ItemValue{}
+	for k, v := range values.Spec.Values {
+		ctx[k] = template.ItemValue{
+			Value:          v.Value,
+			Default:        v.Default,
+			RepeatableItem: v.RepeatableItem,
+		}
+	}
+
+	return ctx, nil
+}
+
+func CreateVariadicValues(item *kotsv1beta1.ConfigItem, groupName string) {
+	if item.ValuesByGroup == nil {
+		item.ValuesByGroup = map[string]kotsv1beta1.GroupValues{}
+	}
+	if item.CountByGroup == nil {
+		item.CountByGroup = map[string]int{}
+	}
+
+	if item.MinimumCount != 0 && (item.CountByGroup[groupName] < item.MinimumCount) {
+		item.CountByGroup[groupName] = item.MinimumCount
+	} else if item.CountByGroup[groupName] == 0 {
+		item.CountByGroup[groupName] = 1
+	}
+
+	for len(item.ValuesByGroup[groupName]) < item.CountByGroup[groupName] {
+		shortUUID := strings.Split(uuid.New().String(), "-")[0]
+		variadicName := fmt.Sprintf("%s-%s", item.Name, shortUUID)
+		item.ValuesByGroup[groupName][variadicName] = ""
+	}
 }

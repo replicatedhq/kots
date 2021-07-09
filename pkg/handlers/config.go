@@ -16,6 +16,7 @@ import (
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	"github.com/replicatedhq/kots/kotskinds/multitype"
 	apptypes "github.com/replicatedhq/kots/pkg/app/types"
+	"github.com/replicatedhq/kots/pkg/config"
 	kotsconfig "github.com/replicatedhq/kots/pkg/config"
 	"github.com/replicatedhq/kots/pkg/crypto"
 	kotsadmconfig "github.com/replicatedhq/kots/pkg/kotsadmconfig"
@@ -183,6 +184,27 @@ func (h *Handler) LiveAppConfig(w http.ResponseWriter, r *http.Request) {
 
 	for _, group := range liveAppConfigRequest.ConfigGroups {
 		for _, item := range group.Items {
+			// collect all repeatable items
+			// Future Note:  This could be refactored to use CountByGroup as the control.  Front end provides the exact CountByGroup it wants, back end takes care of ValuesByGroup entries.
+			// this way the front end doesn't have to add anything to ValuesByGroup, it just sets values there.
+			if item.Repeatable {
+				for valuesByGroupName, groupValues := range item.ValuesByGroup {
+					config.CreateVariadicValues(&item, valuesByGroupName)
+
+					for fieldName, subItem := range groupValues {
+						itemValue := template.ItemValue{
+							Value:          subItem,
+							RepeatableItem: item.Name,
+						}
+						if item.Filename != "" {
+							itemValue.Filename = fieldName
+						}
+						configValues[fieldName] = itemValue
+					}
+				}
+				continue
+			}
+
 			generatedValue := template.ItemValue{}
 			if item.Value.Type == multitype.String {
 				generatedValue.Value = item.Value.StrVal
@@ -288,9 +310,10 @@ func (h *Handler) CurrentAppConfig(w http.ResponseWriter, r *http.Request) {
 
 	for key, value := range kotsKinds.ConfigValues.Spec.Values {
 		generatedValue := template.ItemValue{
-			Default:  value.Default,
-			Value:    value.Value,
-			Filename: value.Filename,
+			Default:        value.Default,
+			Value:          value.Value,
+			Filename:       value.Filename,
+			RepeatableItem: value.RepeatableItem,
 		}
 		configValues[key] = generatedValue
 	}
@@ -427,48 +450,14 @@ func updateAppConfig(updateApp *apptypes.App, sequence int64, configGroups []kot
 	// we don't merge, this is a wholesale replacement of the config values
 	// so we don't need the complex logic in kots, we can just write
 	values := kotsKinds.ConfigValues.Spec.Values
-	for _, group := range configGroups {
-		for _, item := range group.Items {
-			if item.Type == "file" {
-				v := values[item.Name]
-				v.Filename = item.Filename
-				values[item.Name] = v
-			}
-			if item.Value.Type == multitype.Bool {
-				updatedValue := item.Value.BoolVal
-				v := values[item.Name]
-				v.Value = strconv.FormatBool(updatedValue)
-				values[item.Name] = v
-			} else if item.Value.Type == multitype.String {
-				updatedValue := item.Value.String()
-				if item.Type == "password" {
-					// encrypt using the key
-					cipher, err := crypto.AESCipherFromString(kotsKinds.Installation.Spec.EncryptionKey)
-					if err != nil {
-						updateAppConfigResponse.Error = "failed to load encryption cipher"
-						return updateAppConfigResponse, err
-					}
-
-					// if the decryption succeeds, don't encrypt again
-					_, err = decrypt(updatedValue, cipher)
-					if err != nil {
-						updatedValue = base64.StdEncoding.EncodeToString(cipher.Encrypt([]byte(updatedValue)))
-					}
-				}
-
-				v := values[item.Name]
-				v.Value = updatedValue
-				values[item.Name] = v
-			}
-		}
-	}
+	updatedValues, err := updateAppConfigValues(values, configGroups, kotsKinds.Installation.Spec.EncryptionKey)
 
 	if kotsKinds.ConfigValues == nil {
 		updateAppConfigResponse.Error = "no config values found"
 		return updateAppConfigResponse, errors.New("no config values found")
 	}
 
-	kotsKinds.ConfigValues.Spec.Values = values
+	kotsKinds.ConfigValues.Spec.Values = updatedValues
 
 	configValuesSpec, err := kotsKinds.Marshal("kots.io", "v1beta1", "ConfigValues")
 	if err != nil {
@@ -566,6 +555,58 @@ func updateAppConfig(updateApp *apptypes.App, sequence int64, configGroups []kot
 	return updateAppConfigResponse, nil
 }
 
+func updateAppConfigValues(values map[string]kotsv1beta1.ConfigValue, configGroups []kotsv1beta1.ConfigGroup, encryptionKey string) (map[string]kotsv1beta1.ConfigValue, error) {
+	for _, group := range configGroups {
+		for _, item := range group.Items {
+			if item.Type == "file" {
+				v := values[item.Name]
+				v.Filename = item.Filename
+				values[item.Name] = v
+			}
+			if item.Value.Type == multitype.Bool {
+				updatedValue := item.Value.BoolVal
+				v := values[item.Name]
+				v.Value = strconv.FormatBool(updatedValue)
+				values[item.Name] = v
+			} else if item.Value.Type == multitype.String {
+				updatedValue := item.Value.String()
+				if item.Type == "password" {
+					// encrypt using the key
+					cipher, err := crypto.AESCipherFromString(encryptionKey)
+					if err != nil {
+						return nil, errors.Wrap(err, "failed to load encryption cipher")
+					}
+
+					// if the decryption succeeds, don't encrypt again
+					_, err = decrypt(updatedValue, cipher)
+					if err != nil {
+						updatedValue = base64.StdEncoding.EncodeToString(cipher.Encrypt([]byte(updatedValue)))
+					}
+				}
+
+				v := values[item.Name]
+				v.Value = updatedValue
+				values[item.Name] = v
+			}
+			for _, repeatableValues := range item.ValuesByGroup {
+				// clear out all variadic values for this group first
+				for name, value := range values {
+					if value.RepeatableItem == item.Name {
+						delete(values, name)
+					}
+				}
+				// add variadic groups back in declaratively
+				for itemName, valueItem := range repeatableValues {
+					v := values[itemName]
+					v.Value = fmt.Sprintf("%v", valueItem)
+					v.RepeatableItem = item.Name
+					values[itemName] = v
+				}
+			}
+		}
+	}
+	return values, nil
+}
 func decrypt(input string, cipher *crypto.AESCipher) (string, error) {
 	if cipher == nil {
 		return "", errors.New("cipher not defined")
@@ -694,8 +735,9 @@ func (h *Handler) SetAppConfigValues(w http.ResponseWriter, r *http.Request) {
 	configValueMap := map[string]template.ItemValue{}
 	for key, value := range newConfigValues.Spec.Values {
 		generatedValue := template.ItemValue{
-			Default: value.Default,
-			Value:   value.Value,
+			Default:        value.Default,
+			Value:          value.Value,
+			RepeatableItem: value.RepeatableItem,
 		}
 		configValueMap[key] = generatedValue
 	}
@@ -753,6 +795,28 @@ func mergeConfigValues(config *kotsv1beta1.Config, existingValues *kotsv1beta1.C
 	mergedValues := map[string]kotsv1beta1.ConfigValue{}
 	for _, group := range config.Spec.Groups {
 		for _, item := range group.Items {
+			// process repeatable items
+			for _, repeatGroup := range item.ValuesByGroup {
+				for valueName := range repeatGroup {
+					newValue, newOK := newValues.Spec.Values[valueName]
+					existingValue, existingOK := existingValues.Spec.Values[valueName]
+					if !newOK && !existingOK {
+						continue
+					}
+
+					if existingOK {
+						delete(unknownKeys, valueName)
+					}
+
+					if !newOK {
+						mergedValues[valueName] = existingValue
+						continue
+					}
+
+					mergedValues[valueName] = newValue
+				}
+			}
+
 			newValue, newOK := newValues.Spec.Values[item.Name]
 			existingValue, existingOK := existingValues.Spec.Values[item.Name]
 			if !newOK && !existingOK {
@@ -803,6 +867,24 @@ func updateConfigObject(config *kotsv1beta1.Config, configValues *kotsv1beta1.Co
 	for i, group := range newConfig.Spec.Groups {
 		newItems := make([]kotsv1beta1.ConfigItem, 0)
 		for _, item := range group.Items {
+
+			replacementRepeatValues := map[string]interface{}{}
+			for valueName, value := range configValues.Spec.Values {
+				if value.RepeatableItem == item.Name {
+					replacementRepeatValues[valueName] = value.Value
+				}
+			}
+
+			// ensure the map is initialized before we write to it
+			if item.ValuesByGroup == nil {
+				item.ValuesByGroup = map[string]kotsv1beta1.GroupValues{}
+			}
+			if len(replacementRepeatValues) > 0 {
+				item.ValuesByGroup[group.Name] = replacementRepeatValues
+			} else {
+				item.ValuesByGroup = map[string]kotsv1beta1.GroupValues{}
+			}
+
 			newValue, ok := configValues.Spec.Values[item.Name]
 			if !ok {
 				if !merge {

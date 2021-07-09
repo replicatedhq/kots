@@ -31,6 +31,7 @@ export class AppConfigRenderer extends React.Component {
         <ConfigRender
           fieldsList={groupsList}
           fields={_groups}
+          rawGroups={orderedFields}
           handleChange={this.props.handleChange || (() => { return; })}
           getData={this.props.getData || (() => { return; })}
           readonly={readonly}

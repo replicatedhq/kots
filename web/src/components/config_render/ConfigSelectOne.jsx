@@ -47,7 +47,7 @@ export default class ConfigSelectOne extends React.Component {
           />
           : null}
         {this.props.help_text !== "" ? 
-          <div className="field-section-help-text u-marginTop--10">
+          <div className="field-section-help-text u-marginTop--5">
             <Markdown
               options={{
                 linkTarget: "_blank",
@@ -60,6 +60,11 @@ export default class ConfigSelectOne extends React.Component {
         <div className="field-input-wrapper u-marginTop--5 flex flexWrap--wrap">
           {options}
         </div>
+        {this.props.repeatable &&
+          <div className="u-marginTop--10" onClick={() => this.props.handleAddItem(this.props.name)}>
+            <span className="add-btn u-fontSize--small u-fontWeight--bold u-linkColor u-cursor--pointer"><span className="icon u-addIcon--blue clickable" />Add another {this.props.title}</span>
+          </div>
+        }
       </div>
     );
   }
