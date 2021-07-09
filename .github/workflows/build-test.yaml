@@ -100,8 +100,8 @@ jobs:
 
       - name: push minio for e2e
         run: |
-          docker pull minio/minio:RELEASE.2021-06-17T00-10-46Z
-          docker tag minio/minio:RELEASE.2021-06-17T00-10-46Z ttl.sh/automated-${{ github.run_id }}/minio:2h
+          docker pull minio/minio:RELEASE.2021-07-08T19-43-25Z
+          docker tag minio/minio:RELEASE.2021-07-08T19-43-25Z ttl.sh/automated-${{ github.run_id }}/minio:2h
           docker push ttl.sh/automated-${{ github.run_id }}/minio:2h
       - name: Scan minio for vulnerabilities
         uses: aquasecurity/trivy-action@master
