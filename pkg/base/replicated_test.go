@@ -211,14 +211,14 @@ spec:
           - secret:
               name: "don't touch this!"
           - secret:
-              name: 'repl{{ ConfigOptionName repl[[ .secretName ]] }}'
+              name: 'repl{{ ConfigOptionName "repl[[ .secretName ]]" }}'
               pod: repl{{ ConfigOption "podName" }}
               metaData:
                 pod: repl{{ ConfigOption "podName"}}
-                fileName: 'repl{{ ConfigOptionName repl[[ .secretName ]] }}'
+                fileName: 'repl{{ ConfigOptionName "repl[[ .secretName ]]" }}'
               items:
                 - key: "data"
-                  path: '{{repl ConfigOptionName repl[[ .secretName ]] }}'
+                  path: '{{repl ConfigOptionName "repl[[ .secretName ]]" }}'
           - secret:
               name: "don't touch this either!"`),
 					},
@@ -232,7 +232,7 @@ metadata:
   namespace: my-app
 type: Opaque
 data:
-  repl{{ ConfigOptionName repl[[ .secretName ]] }}: '{{repl ConfigOption repl[[ .secretName ]] }}'`),
+  repl{{ ConfigOptionName "repl[[ .secretName ]]" }}: '{{repl ConfigOption "repl[[ .secretName ]]" }}'`),
 					},
 				},
 			},
