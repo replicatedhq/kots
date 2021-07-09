@@ -286,7 +286,7 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 			if prevChart.Spec.Chart.Name != newChart.Spec.Chart.Name {
 				continue
 			}
-			if prevChart.Spec.UseCLIInstall != newChart.Spec.UseCLIInstall {
+			if prevChart.Spec.UseHelmInstall != newChart.Spec.UseHelmInstall {
 				log.FinishSpinnerWithError()
 				return "", errors.Errorf("deployment method for chart %s has changed", newChart.Spec.Chart.Name)
 			}
