@@ -2,7 +2,10 @@ package config
 
 import (
 	"bytes"
+	"fmt"
+	"strings"
 
+	"github.com/google/uuid"
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	"github.com/replicatedhq/kots/kotskinds/multitype"
@@ -123,6 +126,8 @@ func ApplyValuesToConfig(config *kotsv1beta1.Config, values map[string]template.
 				if config.Spec.Groups[idxG].Items[idxI].ValuesByGroup == nil {
 					// initialize the appropriate maps
 					config.Spec.Groups[idxG].Items[idxI].ValuesByGroup = map[string]kotsv1beta1.GroupValues{}
+				}
+				if config.Spec.Groups[idxG].Items[idxI].CountByGroup == nil {
 					config.Spec.Groups[idxG].Items[idxI].CountByGroup = map[string]int{}
 				}
 				if config.Spec.Groups[idxG].Items[idxI].ValuesByGroup[g.Name] == nil {
@@ -137,6 +142,7 @@ func ApplyValuesToConfig(config *kotsv1beta1.Config, values map[string]template.
 				for variadicGroup, groupValues := range config.Spec.Groups[idxG].Items[idxI].ValuesByGroup {
 					config.Spec.Groups[idxG].Items[idxI].CountByGroup[variadicGroup] = len(groupValues)
 				}
+				CreateVariadicValues(&config.Spec.Groups[idxG].Items[idxI], g.Name)
 			}
 			value, ok := values[i.Name]
 			if ok {
@@ -215,4 +221,29 @@ func UnmarshalConfigValuesContent(content []byte) (map[string]template.ItemValue
 	}
 
 	return ctx, nil
+}
+
+func CreateVariadicValues(item *kotsv1beta1.ConfigItem, groupName string) {
+	if item.ValuesByGroup == nil {
+		item.ValuesByGroup = map[string]kotsv1beta1.GroupValues{}
+	}
+	if item.CountByGroup == nil {
+		item.CountByGroup = map[string]int{}
+	}
+
+	if item.MinimumCount != 0 && (item.CountByGroup[groupName] < item.MinimumCount) {
+		item.CountByGroup[groupName] = item.MinimumCount
+	} else if item.CountByGroup[groupName] == 0 {
+		item.CountByGroup[groupName] = 1
+	}
+
+	for len(item.ValuesByGroup[groupName]) < item.CountByGroup[groupName] {
+		itemValue := template.ItemValue{
+			Value:          "",
+			RepeatableItem: item.Name,
+		}
+		shortUUID := strings.Split(uuid.New().String(), "-")[0]
+		variadicName := fmt.Sprintf("%s-%s", item.Name, shortUUID)
+		item.ValuesByGroup[groupName][variadicName] = itemValue
+	}
 }
