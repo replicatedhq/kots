@@ -118,8 +118,8 @@ func templateConfig(log *logger.CLILogger, configSpecData string, configValuesDa
 func ApplyValuesToConfig(config *kotsv1beta1.Config, values map[string]template.ItemValue) {
 	for idxG, g := range config.Spec.Groups {
 		for idxI, i := range g.Items {
-			// if the item is repeatable and we have values belonging to the item...
-			if i.Repeatable && checkForRepeatableItems(i.Name, values) {
+			// if the item is repeatable
+			if i.Repeatable {
 				if config.Spec.Groups[idxG].Items[idxI].ValuesByGroup == nil {
 					// initialize the appropriate maps
 					config.Spec.Groups[idxG].Items[idxI].ValuesByGroup = map[string]kotsv1beta1.GroupValues{}
@@ -215,13 +215,4 @@ func UnmarshalConfigValuesContent(content []byte) (map[string]template.ItemValue
 	}
 
 	return ctx, nil
-}
-
-func checkForRepeatableItems(itemName string, configValues map[string]template.ItemValue) bool {
-	for _, value := range configValues {
-		if value.RepeatableItem == itemName {
-			return true
-		}
-	}
-	return false
 }
