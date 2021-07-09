@@ -122,8 +122,6 @@ export default class ConfigGroup extends React.Component {
           <ConfigSelectOne
             key={`${i}-${item.name}`}
             handleOnChange={this.handleItemChange}
-            handleAddItem={this.handleAddItem}
-            handleRemoveItem={this.handleRemoveItem}
             hidden={item.hidden}
             groupName={this.props.item.name}
             when={item.when}
