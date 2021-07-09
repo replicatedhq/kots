@@ -43,12 +43,12 @@ func renderReplicated(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (
 
 	config, _, _, _, err := findConfigAndLicense(u, renderOptions.Log)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to find config file")
+		return nil, nil, errors.Wrap(err, "failed to find config file")
 	}
 
 	actualizedConfig, err := kotsconfig.TemplateConfigObjects(config, itemValues, nil, template.LocalRegistry{}, nil, nil, os.Getenv("POD_NAMESPACE"))
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to template config objects")
+		return nil, nil, errors.Wrap(err, "failed to template config objects")
 	}
 
 	for _, upstreamFile := range u.Files {
@@ -74,7 +74,7 @@ func renderReplicated(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (
 
 		generatedFiles, err := processVariadicConfig(&upstreamFile, actualizedConfig, renderOptions.Log)
 		if err != nil {
-			return nil, errors.Wrapf(err, "failed to process variadic config in file %s", upstreamFile.Path)
+			return nil, nil, errors.Wrapf(err, "failed to process variadic config in file %s", upstreamFile.Path)
 		}
 
 		// render generated variadic files and add them to base
@@ -85,9 +85,9 @@ func renderReplicated(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (
 			files = append(files, generatedFiles...)
 			u.Files = files
 			// re-render upstream with the new files
-			subBase, err := renderReplicated(u, renderOptions)
+			subBase, _, err := renderReplicated(u, renderOptions)
 			if err != nil {
-				return nil, errors.Wrap(err, "failed to render generated variadic files")
+				return nil, nil, errors.Wrap(err, "failed to render generated variadic files")
 			}
 			// add the rendered generated files into base
 			for _, renderedFile := range subBase.Files {
@@ -95,7 +95,7 @@ func renderReplicated(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (
 					if renderedFile.Path == uFile.Path {
 						// log to inform where new files are coming from
 						renderOptions.Log.Info("adding generated file %s to base", renderedFile.Path)
-						base.Files = append(base.Files, renderedFile)
+						commonBase.Files = append(commonBase.Files, renderedFile)
 					}
 				}
 			}
@@ -122,23 +122,6 @@ func renderReplicated(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (
 				commonBase.ErrorFiles = append(commonBase.ErrorFiles, f)
 			}
 		}
-
-		if len(generatedFiles) > 0 {
-			u.Files = removeFileFromUpstream(u.Files, fileIndex)
-			u.Files = append(u.Files, generatedFiles...)
-			subBase, err := renderReplicated(u, renderOptions)
-			if err != nil {
-				return nil, errors.Wrap(err, "failed to render generated variadic files")
-			}
-			for _, renderedFile := range subBase.Files {
-				for _, generatedFile := range generatedFiles {
-					if renderedFile.Path == generatedFile.Path {
-						base.Files = append(base.Files, renderedFile)
-					}
-				}
-			}
-		}
-
 	}
 
 	// render helm charts that were specified
@@ -348,21 +331,6 @@ func findAllKotsHelmCharts(upstreamFiles []upstreamtypes.UpstreamFile, builder t
 	}
 
 	return kotsHelmCharts, nil
-}
-
-func UnmarshalLicenseContent(content []byte, log *logger.CLILogger) *kotsv1beta1.License {
-	decode := scheme.Codecs.UniversalDeserializer().Decode
-	obj, gvk, err := decode(content, nil, nil)
-	if err != nil {
-		log.Info("Failed to parse file while looking for license: %v", err)
-		return nil
-	}
-
-	if gvk.Group == "kots.io" && gvk.Version == "v1beta1" && gvk.Kind == "License" {
-		return obj.(*kotsv1beta1.License)
-	}
-
-	return nil
 }
 
 func parseHelmChart(content []byte) (*kotsv1beta1.HelmChart, error) {

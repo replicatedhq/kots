@@ -1,6 +1,7 @@
 package base
 
 import (
+	"reflect"
 	"testing"
 
 	"github.com/replicatedhq/kots/pkg/logger"
@@ -314,7 +315,7 @@ func Test_renderReplicated(t *testing.T) {
 		upstream           *upstreamtypes.Upstream
 		renderOptions      *RenderOptions
 		expectedDeployment BaseFile
-		expectedSecret     BaseFile
+		expectedSecrets    []BaseFile
 	}{
 		{
 			name: "replace array with repeat values",
@@ -554,19 +555,21 @@ data:
 						`apiVersion: v1
 kind: Secret
 metadata:
-  name: my-secret
+  name: secretName-3
+  namespace: "my-app"
 type: Opaque
 data:
   secretName-3: MTIz`),
 				},
 			},
 		},
+	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			req := require.New(t)
 
-			base, err := renderReplicated(test.upstream, test.renderOptions)
+			base, _, err := renderReplicated(test.upstream, test.renderOptions)
 			req.NoError(err)
 
 			decode := scheme.Codecs.UniversalDeserializer().Decode
@@ -575,10 +578,15 @@ data:
 
 			expectedDeployment := depobj.(*appsv1.Deployment)
 
-			secobj, _, err := decode(test.expectedSecret.Content, nil, nil)
-			req.NoError(err)
+			var unmarshaledSecrets []*corev1.Secret
+			for _, expectedSecret := range test.expectedSecrets {
+				secobj, _, err := decode(expectedSecret.Content, nil, nil)
+				req.NoError(err)
 
-			expectedSecret := secobj.(*corev1.Secret)
+				unmarshaledSecrets = append(unmarshaledSecrets, secobj.(*corev1.Secret))
+			}
+
+			secretsFound := 0
 
 			for _, targetFile := range base.Files {
 				obj, gvk, err := decode(targetFile.Content, nil, nil)
@@ -592,15 +600,18 @@ data:
 					assert.ElementsMatch(t, expectedDeployment.Spec.Template.Spec.Volumes[1].Projected.Sources, deployment.Spec.Template.Spec.Volumes[1].Projected.Sources)
 				}
 
-				if gvk.Kind == "secret" {
+				if gvk.Kind == "Secret" {
+					secretsFound++
 					secret := obj.(*corev1.Secret)
 
-					fmt.Printf("secret is %+v\n", secret)
-
-					assert.Equal(t, expectedSecret, secret)
+					for _, unmarshaledSecret := range unmarshaledSecrets {
+						if secret.GetObjectMeta().GetName() == unmarshaledSecret.GetObjectMeta().GetName() {
+							assert.Equal(t, unmarshaledSecret, secret)
+						}
+					}
 				}
 			}
-			assert.Fail(t, "")
+			req.Equal(secretsFound, len(unmarshaledSecrets))
 
 		})
 	}
