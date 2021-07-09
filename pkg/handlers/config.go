@@ -11,12 +11,12 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/google/uuid"
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	"github.com/replicatedhq/kots/kotskinds/multitype"
 	apptypes "github.com/replicatedhq/kots/pkg/app/types"
+	"github.com/replicatedhq/kots/pkg/config"
 	kotsconfig "github.com/replicatedhq/kots/pkg/config"
 	"github.com/replicatedhq/kots/pkg/crypto"
 	kotsadmconfig "github.com/replicatedhq/kots/pkg/kotsadmconfig"
@@ -205,32 +205,14 @@ func (h *Handler) LiveAppConfig(w http.ResponseWriter, r *http.Request) {
 			// this way the front end doesn't have to add anything to ValuesByGroup, it just sets values there.
 			if item.Repeatable {
 				for valuesByGroupName, groupValues := range item.ValuesByGroup {
-					var repeatItemCount int
-					// if the front end sends an empty variadic group, create the first two items
-					if len(groupValues) == 0 {
-						repeatItemCount = item.MinimumCount
-					} else if item.CountByGroup != nil {
-						repeatItemCount = item.CountByGroup[valuesByGroupName]
-					} else {
-						repeatItemCount = len(groupValues)
-					}
-					setCountByGroup(&item, valuesByGroupName, repeatItemCount)
+					config.CreateVariadicValues(&item, valuesByGroupName)
+
 					for fieldName, subItem := range groupValues {
 						itemValue := template.ItemValue{
 							Value:          subItem,
 							RepeatableItem: item.Name,
 						}
 						configValues[fieldName] = itemValue
-					}
-
-					for len(configValues) <= item.CountByGroup[valuesByGroupName] {
-						itemValue := template.ItemValue{
-							Value:          "",
-							RepeatableItem: item.Name,
-						}
-						shortUUID := strings.Split(uuid.New().String(), "-")[0]
-						variadicName := fmt.Sprintf("%s-%s", item.Name, shortUUID)
-						configValues[variadicName] = itemValue
 					}
 				}
 			}
