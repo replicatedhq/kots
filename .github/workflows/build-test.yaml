@@ -35,7 +35,7 @@ jobs:
         run: make -C web build-kotsadm
 
       - name: build and push migrations for e2e
-        uses: docker/build-push-action@v2.5.0
+        uses: docker/build-push-action@v2.6.1
         with:
           tags: ttl.sh/automated-${{ github.run_id }}/kotsadm-migrations:2h
           context: ./migrations
@@ -51,7 +51,7 @@ jobs:
           severity: 'CRITICAL,HIGH'
 
       - name: build and push kotsadm for e2e
-        uses: docker/build-push-action@v2.5.0
+        uses: docker/build-push-action@v2.6.1
         with:
           tags: ttl.sh/automated-${{ github.run_id }}/kotsadm:2h
           context: ./
@@ -67,7 +67,7 @@ jobs:
           severity: 'CRITICAL,HIGH'
 
       - name: build and push operator for e2e
-        uses: docker/build-push-action@v2.5.0
+        uses: docker/build-push-action@v2.6.1
         with:
           tags: ttl.sh/automated-${{ github.run_id }}/kotsadm-operator:2h
           context: ./kotsadm/operator
@@ -83,7 +83,7 @@ jobs:
           severity: 'CRITICAL,HIGH'
 
       - name: build and push kurl_proxy for e2e
-        uses: docker/build-push-action@v2.5.0
+        uses: docker/build-push-action@v2.6.1
         with:
           tags: ttl.sh/automated-${{ github.run_id }}/kurl-proxy:2h
           context: ./kurl_proxy
