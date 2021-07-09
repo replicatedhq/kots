@@ -232,7 +232,7 @@ metadata:
   namespace: my-app
 type: Opaque
 data:
-  file: '{{repl ConfigOption repl[[ .secretName ]] }}'`),
+  repl{{ ConfigOptionName repl[[ .secretName ]] }}: '{{repl ConfigOption repl[[ .secretName ]] }}'`),
 					},
 				},
 			},
@@ -310,7 +310,7 @@ metadata:
   namespace: "my-app"
 type: Opaque
 data:
-  file: MTIz`),
+  secretName-1: MTIz`),
 				},
 				{
 					Path: "secret-rando.yaml",
@@ -322,7 +322,7 @@ metadata:
   namespace: "my-app"
 type: Opaque
 data:
-  file: MTIz`),
+  secretName-2: MTIz`),
 				},
 				{
 					Path: "secret-rando.yaml",
@@ -334,7 +334,7 @@ metadata:
   namespace: "my-app"
 type: Opaque
 data:
-  file: MTIz`),
+  secretName-3: MTIz`),
 				},
 			},
 		},
