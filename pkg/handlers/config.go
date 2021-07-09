@@ -208,7 +208,7 @@ func (h *Handler) LiveAppConfig(w http.ResponseWriter, r *http.Request) {
 					var repeatItemCount int
 					// if the front end sends an empty variadic group, create the first two items
 					if len(groupValues) == 0 {
-						repeatItemCount = 2
+						repeatItemCount = item.MinimumCount
 					} else if item.CountByGroup != nil {
 						repeatItemCount = item.CountByGroup[valuesByGroupName]
 					} else {
