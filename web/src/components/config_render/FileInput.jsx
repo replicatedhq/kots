@@ -25,10 +25,7 @@ export default class FileInput extends React.Component {
         this.setState({ errText: error });
       } else if (this.props.onChange) {
         this.setState({ fileAdded: true })
-        this.props.onChange(
-          map(files, "value"),
-          map(files, "filename")
-        );
+        this.props.onChange(files);
       }
     });
 
@@ -58,7 +55,7 @@ export default class FileInput extends React.Component {
         <div className={`${this.props.readonly ? "readonly" : ""} ${this.props.disabled ? "disabled" : ""}`}>
           <p className="sub-header-color field-section-sub-header u-marginTop--10 u-marginBottom--5">{label}</p>
           <div className="flex flex-row">
-            <div className={`${this.state.fileAdded || this.props.value ? "file-uploaded" : "custom-file-upload"}`}>
+            <div className={`${this.state.fileAdded || this.props.value || (this.props.multiple && this.props.filenamesText !== "") ? "file-uploaded" : "custom-file-upload"}`}>
               <input
                 ref={(file) => this.file = file}
                 type="file"
@@ -71,10 +68,10 @@ export default class FileInput extends React.Component {
                 disabled={this.props.disabled}
               />
               <label htmlFor={`${this.props.name} selector`} className="u-position--relative">
-                <span className={`icon ${this.state.fileAdded || this.props.value ? "u-smallCheckGreen" : "u-ovalIcon clickable"} u-marginRight--10 u-top--3`}></span>
-                {this.state.fileAdded || this.props.value ? this.props.filenamesText : `Browse files for ${this.props.title}`}
-                {this.state.fileAdded || this.props.value ? 
-                  <p className="u-linkColor u-textDecoration--underlineOnHover u-fontSize--small u-marginLeft--30 u-marginTop--5">Select a different file</p>
+                <span className={`icon ${this.state.fileAdded || this.props.value || (this.props.multiple && this.props.filenamesText !== "") ? "u-smallCheckGreen" : "u-ovalIcon clickable"} u-marginRight--10 u-top--3`}></span>
+                {this.state.fileAdded || this.props.value || (this.props.multiple && this.props.filenamesText !== "") ? this.props.filenamesText : `Browse files for ${this.props.title}`}
+                {this.state.fileAdded || this.props.value || (this.props.multiple && this.props.filenamesText !== "") ? 
+                  <p className="u-linkColor u-textDecoration--underlineOnHover u-fontSize--small u-marginLeft--30 u-marginTop--5">Select {this.props.multiple ? "other files" : "a different file"}</p>
                 : null }
               </label>
             </div>

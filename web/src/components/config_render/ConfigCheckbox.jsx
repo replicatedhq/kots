@@ -58,11 +58,6 @@ export default class ConfigCheckbox extends React.Component {
             : null}
           </div>
         </div>
-          {this.props.repeatable &&
-          <div className="u-marginTop--10">
-            <span className="add-btn u-fontSize--small u-fontWeight--bold u-linkColor u-cursor--pointer"><span className="icon u-addIcon--blue clickable" />Add another {this.props.title}</span>
-          </div>
-          }
       </div>
     );
   }
