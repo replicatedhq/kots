@@ -184,6 +184,27 @@ func (h *Handler) LiveAppConfig(w http.ResponseWriter, r *http.Request) {
 
 	for _, group := range liveAppConfigRequest.ConfigGroups {
 		for _, item := range group.Items {
+			// collect all repeatable items
+			// Future Note:  This could be refactored to use CountByGroup as the control.  Front end provides the exact CountByGroup it wants, back end takes care of ValuesByGroup entries.
+			// this way the front end doesn't have to add anything to ValuesByGroup, it just sets values there.
+			if item.Repeatable {
+				for valuesByGroupName, groupValues := range item.ValuesByGroup {
+					config.CreateVariadicValues(&item, valuesByGroupName)
+
+					for fieldName, subItem := range groupValues {
+						itemValue := template.ItemValue{
+							Value:          subItem,
+							RepeatableItem: item.Name,
+						}
+						if item.Filename != "" {
+							itemValue.Filename = fieldName
+						}
+						configValues[fieldName] = itemValue
+					}
+				}
+				continue
+			}
+
 			generatedValue := template.ItemValue{}
 			if item.Value.Type == multitype.String {
 				generatedValue.Value = item.Value.StrVal
@@ -199,23 +220,6 @@ func (h *Handler) LiveAppConfig(w http.ResponseWriter, r *http.Request) {
 				generatedValue.Filename = item.Filename
 			}
 			configValues[item.Name] = generatedValue
-
-			// collect all repeatable items
-			// Future Note:  This could be refactored to use CountByGroup as the control.  Front end provides the exact CountByGroup it wants, back end takes care of ValuesByGroup entries.
-			// this way the front end doesn't have to add anything to ValuesByGroup, it just sets values there.
-			if item.Repeatable {
-				for valuesByGroupName, groupValues := range item.ValuesByGroup {
-					config.CreateVariadicValues(&item, valuesByGroupName)
-
-					for fieldName, subItem := range groupValues {
-						itemValue := template.ItemValue{
-							Value:          subItem,
-							RepeatableItem: item.Name,
-						}
-						configValues[fieldName] = itemValue
-					}
-				}
-			}
 		}
 	}
 
