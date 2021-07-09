@@ -106,7 +106,7 @@ func renderReplicated(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (
 
 		renderedHelmBase.Namespace = kotsHelmChart.Spec.Namespace // TODO (ch35027): probably remove this since its already done by "helm template"
 
-		if kotsHelmChart.Spec.UseCLIInstall {
+		if kotsHelmChart.Spec.UseHelmInstall {
 			helmBases = append(helmBases, extractHelmBases(*renderedHelmBase)...)
 		} else {
 			commonBase.Bases = append(commonBase.Bases, *renderedHelmBase)

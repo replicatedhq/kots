@@ -71,7 +71,7 @@
             }
           }
         },
-        "useCliInstall": {
+        "useHelmInstall": {
           "type": "boolean"
         },
         "values": {
