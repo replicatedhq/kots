@@ -308,12 +308,15 @@ func (stack yamlStack) renderRepeatNodes(optionName string, values map[string]in
 func replaceTemplateValue(node interface{}, optionName, valueName string) (interface{}, error) {
 	switch typedNode := node.(type) {
 	case string:
-		resultString, err := parseVariadicTarget(optionName, valueName, typedNode)
-		if err != nil {
-			return nil, errors.Wrapf(err, "failed to parse %s into %s", optionName, valueName)
-		}
+		if strings.Contains(typedNode, optionName) {
+			resultString, err := parseVariadicTarget(optionName, valueName, typedNode)
+			if err != nil {
+				return nil, errors.Wrapf(err, "failed to parse %s into %s", optionName, valueName)
+			}
 
-		return resultString, nil
+			return resultString, nil
+		}
+		return typedNode, nil
 	case map[string]interface{}:
 		newMap := map[string]interface{}{}
 		for subField, subNode := range typedNode {
