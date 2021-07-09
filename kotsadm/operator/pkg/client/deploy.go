@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
-	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
@@ -459,15 +458,12 @@ func (c *Client) clearNamespace(slug string, namespace string, isRestore bool, r
 	return clear, nil
 }
 
-func (c *Client) installWithHelm(helmDir string, namespace string) (*commandResult, error) {
+func (c *Client) installWithHelm(helmDir string, targetNamespace string) (*commandResult, error) {
 	version := "3.4.2"
 	chartsDir := filepath.Join(helmDir, "charts")
 	dirs, err := ioutil.ReadDir(chartsDir)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to read archive dir")
-	}
-	if os.Getenv("KOTSADM_TARGET_NAMESPACE") != "" {
-		namespace = os.Getenv("KOTSADM_TARGET_NAMESPACE")
 	}
 
 	var hasErr bool
@@ -488,8 +484,13 @@ func (c *Client) installWithHelm(helmDir string, namespace string) (*commandResu
 			return nil, errors.Wrapf(err, "failed to unmarshal %s", chartfilePath)
 		}
 
-		log.Printf("installing chart %s in namespace %s", cname.ChartName, namespace)
-		cmd := exec.Command(fmt.Sprintf("helm%s", version), "upgrade", "-i", cname.ChartName, installDir, "-n", namespace)
+		args := []string{"upgrade", "-i", cname.ChartName, installDir}
+		if targetNamespace != "" && targetNamespace != "." {
+			args = append(args, "-n", targetNamespace)
+		}
+
+		log.Printf("running helm with arguments %v", args)
+		cmd := exec.Command(fmt.Sprintf("helm%s", version), args...)
 		stdout, stderr, err := applier.Run(cmd)
 		if err != nil {
 			log.Printf("stdout (helm install) = %s", stdout)
@@ -514,15 +515,17 @@ func (c *Client) installWithHelm(helmDir string, namespace string) (*commandResu
 	return result, nil
 }
 
-func (c *Client) uninstallWithHelm(helmDir string, namespace string, charts []string) error {
+func (c *Client) uninstallWithHelm(helmDir string, targetNamespace string, charts []string) error {
 	version := "3.4.2"
-	if os.Getenv("KOTSADM_TARGET_NAMESPACE") != "" {
-		namespace = os.Getenv("KOTSADM_TARGET_NAMESPACE")
-	}
 
 	for _, chart := range charts {
-		log.Printf("uninstalling chart %s in namespace %s", chart, namespace)
-		cmd := exec.Command(fmt.Sprintf("helm%s", version), "uninstall", chart, "-n", namespace)
+		args := []string{"uninstall", chart}
+		if targetNamespace != "" && targetNamespace != "." {
+			args = append(args, "-n", targetNamespace)
+		}
+
+		log.Printf("running helm with arguments %v", args)
+		cmd := exec.Command(fmt.Sprintf("helm%s", version), args...)
 		stdout, stderr, err := applier.Run(cmd)
 		log.Printf("stdout (helm uninstall) = %s", stdout)
 		log.Printf("stderr (helm uninstall) = %s", stderr)

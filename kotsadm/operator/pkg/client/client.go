@@ -325,6 +325,11 @@ func (c *Client) deployManifests(args ApplicationManifests) (*commandResult, err
 }
 
 func (c *Client) deployHelmCharts(args ApplicationManifests) (*commandResult, error) {
+	targetNamespace := c.TargetNamespace
+	if args.Namespace != "." {
+		targetNamespace = args.Namespace
+	}
+
 	tarGz := archiver.TarGz{
 		Tar: &archiver.Tar{
 			ImplicitTopLevelFolder: false,
@@ -384,14 +389,14 @@ func (c *Client) deployHelmCharts(args ApplicationManifests) (*commandResult, er
 	}
 
 	if len(removedCharts) > 0 {
-		err := c.uninstallWithHelm(prevHelmDir, args.Namespace, removedCharts)
+		err := c.uninstallWithHelm(prevHelmDir, targetNamespace, removedCharts)
 		if err != nil {
 			return nil, errors.Wrap(err, "falied to uninstall helm charts")
 		}
 	}
 
 	if len(args.Charts) > 0 {
-		installResult, err = c.installWithHelm(curHelmDir, args.Namespace)
+		installResult, err = c.installWithHelm(curHelmDir, targetNamespace)
 		if err != nil {
 			return nil, errors.Wrap(err, "falied to install helm charts")
 		}
