@@ -247,15 +247,15 @@ func Test_parseVariadicTarget(t *testing.T) {
 		{
 			configOptionName: "secret",
 			valueName:        "secret-123",
-			target:           "repl{{ ConfigOption repl[[ .secret ]] }}",
+			target:           "repl{{ ConfigOption \"repl[[ .secret ]]\" }}",
 			want:             "repl{{ ConfigOption \"secret-123\" }}",
 		},
 		{
 			configOptionName: "ingress_hostname",
 			valueName:        "ingress_hostname-123",
-			target: `repl{{ $ca := genCA (ConfigOption repl[[ .ingress_hostname ]] ) 365 }}
+			target: `repl{{ $ca := genCA (ConfigOption "repl[[ .ingress_hostname ]]" ) 365 }}
 			repl{{ $tls := dict "ca" $ca }}
-			repl{{ $cert := genSignedCert (ConfigOption repl[[ .ingress_hostname ]] ) (list ) (list (ConfigOption [[repl .ingress_hostname ]] )) 365 $ca }}
+			repl{{ $cert := genSignedCert (ConfigOption "repl[[ .ingress_hostname ]]" ) (list ) (list (ConfigOption "[[repl .ingress_hostname ]]" )) 365 $ca }}
 			repl{{ $_ := set $tls "cert" $cert }}
 			repl{{ toJson $tls }}`,
 			want: `repl{{ $ca := genCA (ConfigOption "ingress_hostname-123" ) 365 }}
@@ -267,8 +267,8 @@ func Test_parseVariadicTarget(t *testing.T) {
 		{
 			configOptionName: "secret",
 			valueName:        "secret-789",
-			target:           "repl{{ ConfigOptionFilename [[repl .secret ]] }}",
-			want:             "repl{{ ConfigOptionFilename \"secret-789\" }}",
+			target:           "repl{{ ConfigOptionFilename '[[repl .secret ]]' }}",
+			want:             "repl{{ ConfigOptionFilename 'secret-789' }}",
 		},
 	}
 	for _, test := range tests {
