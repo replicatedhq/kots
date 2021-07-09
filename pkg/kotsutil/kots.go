@@ -416,6 +416,42 @@ func LoadKotsKindsFromPath(fromDir string) (*KotsKinds, error) {
 	return &kotsKinds, nil
 }
 
+func LoadHelmChartsFromPath(fromDir string) ([]*kotsv1beta1.HelmChart, error) {
+	charts := []*kotsv1beta1.HelmChart{}
+	decode := scheme.Codecs.UniversalDeserializer().Decode
+	err := filepath.Walk(fromDir,
+		func(path string, info os.FileInfo, err error) error {
+			if err != nil {
+				return err
+			}
+
+			if info.IsDir() {
+				return nil
+			}
+
+			contents, err := ioutil.ReadFile(path)
+			if err != nil {
+				return errors.Wrap(err, "failed to read file")
+			}
+
+			decoded, gvk, err := decode(contents, nil, nil)
+			if err != nil {
+				return nil
+			}
+
+			if gvk.String() == "kots.io/v1beta1, Kind=HelmChart" {
+				charts = append(charts, decoded.(*kotsv1beta1.HelmChart))
+			}
+
+			return nil
+		})
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to walk upstream dir")
+	}
+
+	return charts, nil
+}
+
 func LoadInstallationFromPath(installationFilePath string) (*kotsv1beta1.Installation, error) {
 	installationData, err := ioutil.ReadFile(installationFilePath)
 	if err != nil {
