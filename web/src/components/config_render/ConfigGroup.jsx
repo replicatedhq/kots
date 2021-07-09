@@ -24,6 +24,18 @@ export default class ConfigGroup extends React.Component {
     }
   }
 
+  handleAddItem = (itemName) => {
+    if (this.props.handleAddItem) {
+      this.props.handleAddItem(itemName);
+    }
+  }
+
+  handleRemoveItem = (itemName, itemToRemove) => {
+    if (this.props.handleRemoveItem) {
+      this.props.handleRemoveItem(itemName, itemToRemove);
+    }
+  }
+
   renderConfigItems = (items, readonly) => {
     if (!items) return null;
     return items.map((item, i) => {
@@ -34,7 +46,10 @@ export default class ConfigGroup extends React.Component {
           <ConfigInput
             key={`${i}-${item.name}`}
             handleOnChange={this.handleItemChange}
+            handleAddItem={this.handleAddItem}
+            handleRemoveItem={this.handleRemoveItem}
             inputType="text"
+            groupName={this.props.item.name}
             hidden={item.hidden}
             when={item.when}
             {...item}
@@ -47,7 +62,10 @@ export default class ConfigGroup extends React.Component {
           <ConfigTextarea
             key={`${i}-${item.name}`}
             handleOnChange={this.handleItemChange}
+            handleAddItem={this.handleAddItem}
+            handleRemoveItem={this.handleRemoveItem}
             hidden={item.hidden}
+            groupName={this.props.item.name}
             when={item.when}
             {...item}
             readonly={isReadOnly}
@@ -58,7 +76,10 @@ export default class ConfigGroup extends React.Component {
           <ConfigCheckbox
             key={`${i}-${item.name}`}
             handleOnChange={this.handleItemChange}
+            handleAddItem={this.handleAddItem}
+            handleRemoveItem={this.handleRemoveItem}
             hidden={item.hidden}
+            groupName={this.props.item.name}
             when={item.when}
             {...item}
             readonly={isReadOnly}
@@ -72,6 +93,7 @@ export default class ConfigGroup extends React.Component {
               recommended={item.recommended}
               required={item.required}
               hidden={item.hidden}
+              groupName={this.props.item.name}
               when={item.when}
               name={item.name}
               error={item.error}
@@ -81,11 +103,12 @@ export default class ConfigGroup extends React.Component {
         );
       case "file":
         return (
-          <div key={`${i}-${item.name}`}>
+          <div key={`${i}-${item.name}`} className="field field-type-label u-marginTop--15">
             <ConfigFileInput
               {...item}
               title={item.title}
               recommended={item.recommended}
+              groupName={this.props.item.name}
               required={item.required}
               handleChange={this.handleItemChange}
               hidden={item.hidden}
@@ -100,6 +123,7 @@ export default class ConfigGroup extends React.Component {
             key={`${i}-${item.name}`}
             handleOnChange={this.handleItemChange}
             hidden={item.hidden}
+            groupName={this.props.item.name}
             when={item.when}
             {...item}
             readonly={isReadOnly}
@@ -116,7 +140,10 @@ export default class ConfigGroup extends React.Component {
           <ConfigInput
             key={`${i}-${item.name}`}
             handleOnChange={this.handleItemChange}
+            handleAddItem={this.handleAddItem}
+            handleRemoveItem={this.handleRemoveItem}
             hidden={item.hidden}
+            groupName={this.props.item.name}
             when={item.when}
             inputType="password"
             {...item}
@@ -162,9 +189,14 @@ export default class ConfigGroup extends React.Component {
                 </Markdown>
               </div>
               : null}
-            <div className="config-item">
+            <div className="config-item u-marginTop--15">
               {this.renderConfigItems(item.items, readonly)}
             </div>
+            {item.repeatable &&
+              <div className="u-marginTop--15">
+                <button className="btn secondary blue rounded add-btn"><span className="icon u-addIcon--blue" />Add another {item.title}</button>
+              </div>
+            }
           </div>
         }
       </div>
