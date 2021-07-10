@@ -72,35 +72,11 @@ func renderReplicated(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (
 			upstreamFile.Content = bytes.Join(newContent, []byte("\n---\n"))
 		}
 
-		generatedFiles, err := processVariadicConfig(&upstreamFile, actualizedConfig, renderOptions.Log)
+		c, err := processVariadicConfig(&upstreamFile, actualizedConfig, renderOptions.Log)
 		if err != nil {
 			return nil, nil, errors.Wrapf(err, "failed to process variadic config in file %s", upstreamFile.Path)
 		}
-
-		// render generated variadic files and add them to base
-		if len(generatedFiles) > 0 {
-			// remove the original file from upstream so it doesn't spawn more generated files
-			files := removeFileFromUpstream(u.Files, upstreamFile.Path)
-			// add the generated files into upstream
-			files = append(files, generatedFiles...)
-			u.Files = files
-			// re-render upstream with the new files
-			subBase, _, err := renderReplicated(u, renderOptions)
-			if err != nil {
-				return nil, nil, errors.Wrap(err, "failed to render generated variadic files")
-			}
-			// add the rendered generated files into base
-			for _, renderedFile := range subBase.Files {
-				for _, uFile := range u.Files {
-					if renderedFile.Path == uFile.Path {
-						// log to inform where new files are coming from
-						renderOptions.Log.Info("adding generated file %s to base", renderedFile.Path)
-						commonBase.Files = append(commonBase.Files, renderedFile)
-					}
-				}
-			}
-			continue
-		}
+		upstreamFile.Content = c
 
 		baseFile, err := upstreamFileToBaseFile(upstreamFile, *builder, renderOptions.Log)
 		if err != nil {

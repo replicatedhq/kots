@@ -316,6 +316,7 @@ func Test_renderReplicated(t *testing.T) {
 		renderOptions      *RenderOptions
 		expectedDeployment BaseFile
 		expectedSecrets    []BaseFile
+		expectedMultidoc   BaseFile
 	}{
 		{
 			name: "replace array with repeat values",
@@ -445,7 +446,17 @@ spec:
                 - key: "data"
                   path: '{{repl ConfigOptionName "repl[[ .secretName ]]" }}'
           - secret:
-              name: "don't touch this either!"`),
+              name: "don't touch this either!"
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: multidoc-test
+  annotations:
+    key: val
+  labels:
+    app.kubernetes.io/name: multidoc
+`),
 					},
 					{
 						Path: "secret.yaml",
@@ -526,7 +537,7 @@ spec:
 			},
 			expectedSecrets: []BaseFile{
 				{
-					Path: "secret-rando.yaml",
+					Path: "secret.yaml",
 					Content: []byte(
 						`apiVersion: v1
 kind: Secret
@@ -538,7 +549,7 @@ data:
   secretName-1: MTIz`),
 				},
 				{
-					Path: "secret-rando.yaml",
+					Path: "secret-2.yaml",
 					Content: []byte(
 						`apiVersion: v1
 kind: Secret
@@ -550,7 +561,7 @@ data:
   secretName-2: MTIz`),
 				},
 				{
-					Path: "secret-rando.yaml",
+					Path: "secret-3.yaml",
 					Content: []byte(
 						`apiVersion: v1
 kind: Secret
@@ -561,6 +572,18 @@ type: Opaque
 data:
   secretName-3: MTIz`),
 				},
+			},
+			expectedMultidoc: BaseFile{
+				Path: "deployment-2.yaml",
+				Content: []byte(
+					`apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: multidoc-test
+  annotations:
+    key: val
+  labels:
+    app.kubernetes.io/name: multidoc`),
 			},
 		},
 	}
@@ -577,6 +600,11 @@ data:
 			req.NoError(err)
 
 			expectedDeployment := depobj.(*appsv1.Deployment)
+
+			multidocobj, _, err := decode(test.expectedMultidoc.Content, nil, nil)
+			req.NoError(err)
+
+			expectedMultidoc := multidocobj.(*corev1.ServiceAccount)
 
 			var unmarshaledSecrets []*corev1.Secret
 			for _, expectedSecret := range test.expectedSecrets {
@@ -598,6 +626,12 @@ data:
 					deployment := obj.(*appsv1.Deployment)
 
 					assert.ElementsMatch(t, expectedDeployment.Spec.Template.Spec.Volumes[1].Projected.Sources, deployment.Spec.Template.Spec.Volumes[1].Projected.Sources)
+				}
+
+				if gvk.Kind == "ServiceAccount" {
+					serviceAccount := obj.(*corev1.ServiceAccount)
+
+					assert.Equal(t, expectedMultidoc, serviceAccount)
 				}
 
 				if gvk.Kind == "Secret" {
