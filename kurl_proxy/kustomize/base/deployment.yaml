@@ -1,17 +1,17 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: kurl-proxy
+  name: kurl-proxy-kotsadm
   labels:
-    app: kurl-proxy
+    app: kurl-proxy-kotsadm
 spec:
   selector:
     matchLabels:
-      app: kurl-proxy
+      app: kurl-proxy-kotsadm
   template:
     metadata:
       labels:
-        app: kurl-proxy
+        app: kurl-proxy-kotsadm
     spec:
       containers:
       - name: proxy
