@@ -76,6 +76,16 @@ func DownloadUpdate(appID string, archiveDir string, toCursor string, skipPrefli
 		return 0, errors.Wrap(err, "failed to get app")
 	}
 
+	downstreams, err := store.GetStore().ListDownstreamsForApp(a.ID)
+	if err != nil {
+		return 0, errors.Wrap(err, "failed to list downstreams for app")
+	}
+
+	downstreamNames := []string{}
+	for _, d := range downstreams {
+		downstreamNames = append(downstreamNames, d.Name)
+	}
+
 	appNamespace := os.Getenv("POD_NAMESPACE")
 	if os.Getenv("KOTSADM_TARGET_NAMESPACE") != "" {
 		appNamespace = os.Getenv("KOTSADM_TARGET_NAMESPACE")
@@ -116,6 +126,7 @@ func DownloadUpdate(appID string, archiveDir string, toCursor string, skipPrefli
 		InstallationFile:    filepath.Join(archiveDir, "upstream", "userdata", "installation.yaml"),
 		UpdateCursor:        toCursor,
 		RootDir:             archiveDir,
+		Downstreams:         downstreamNames,
 		ExcludeKotsKinds:    true,
 		ExcludeAdminConsole: true,
 		CreateAppDir:        false,
