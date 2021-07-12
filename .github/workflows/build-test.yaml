@@ -134,7 +134,7 @@ jobs:
       matrix:
         k8s_version: [v1.18.18-k3s1,v1.19.10-k3s1,v1.20.6-k3s1]
     steps:
-      - uses: debianmaster/actions-k3s@v1.0.1
+      - uses: debianmaster/actions-k3s@v1.0.3
         id: k3s
         with:
           version: ${{ matrix.k8s_version }}
