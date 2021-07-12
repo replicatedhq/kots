@@ -8,7 +8,6 @@ import (
 	"strings"
 	"text/template"
 
-	"github.com/google/uuid"
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	"github.com/replicatedhq/kots/pkg/logger"
@@ -21,76 +20,72 @@ import (
 // getVariadicGroupsForTemplate should be split into subfunctions to make it easier to read.
 // The last element in the YamlPath must be an array.
 
-func processVariadicConfig(u *upstreamtypes.UpstreamFile, config *kotsv1beta1.Config, log *logger.CLILogger) ([]upstreamtypes.UpstreamFile, error) {
-	templateMetadata, node, err := getUpstreamTemplateData(u.Content)
-	if err != nil {
-		// if the upstream file can't be unmarshaled as a yaml manifest, this file should be skipped
-		log.Info("variadic processing on file %s skipped: %v", u.Path, err.Error())
-		return nil, nil
-	}
+func processVariadicConfig(u *upstreamtypes.UpstreamFile, config *kotsv1beta1.Config, log *logger.CLILogger) ([]byte, error) {
+	var finalDocs [][]byte
 
-	// collect all variadic config for this specific template
-	variadicGroups := getVariadicGroupsForTemplate(config, templateMetadata)
+	multiDoc := bytes.Split(u.Content, []byte("\n---\n"))
 
-	var generatedFiles []upstreamtypes.UpstreamFile
+	for _, doc := range multiDoc {
+		templateMetadata, node, err := getUpstreamTemplateData(doc)
+		if err != nil {
+			// if the upstream file can't be unmarshaled as a yaml manifest, this file should be skipped
+			//log.Info("variadic processing on file %s skipped: %v", u.Path, err.Error())
+			finalDocs = append(finalDocs, doc)
 
-	for _, vgroup := range variadicGroups {
-		for _, vitem := range vgroup.items {
-			// check for values that are assigned to this group
-			if len(vitem.item.ValuesByGroup[vgroup.group.Name]) == 0 {
-				// if no repeat values are provided, allow the default to be rendered as normal
-				continue
-			}
+			continue
+		}
 
-			// copy the entire yaml file if target yamlpath is empty
-			if vitem.yamlPath == "" {
-				newFilesContent, err := renderRepeatFilesContent(node, vitem.item.Name, vitem.item.ValuesByGroup[vgroup.group.Name])
-				if err != nil {
-					return nil, errors.Wrapf(err, "failed to clone file for item %s", vitem.item.Name)
+		// collect all variadic config for this specific template
+		variadicGroups := getVariadicGroupsForTemplate(config, templateMetadata)
+
+		var generatedDocs [][]byte
+
+		for _, vgroup := range variadicGroups {
+			for _, vitem := range vgroup.items {
+				// check for values that are assigned to this group
+				if len(vitem.item.ValuesByGroup[vgroup.group.Name]) == 0 {
+					// if no repeat values are provided, allow the default to be rendered as normal
+					continue
 				}
 
-				for _, newFileContent := range newFilesContent {
-					newFile := upstreamtypes.UpstreamFile{
-						Content: newFileContent,
+				// copy the entire yaml file if target yamlpath is empty
+				if vitem.yamlPath == "" {
+					c, err := renderRepeatFilesContent(node, vitem.item.Name, vitem.item.ValuesByGroup[vgroup.group.Name])
+					if err != nil {
+						return nil, errors.Wrapf(err, "failed to clone file for item %s", vitem.item.Name)
 					}
 
-					shortUUID := strings.Split(uuid.New().String(), "-")[0]
-					pathParts := strings.Split(u.Path, ".")
-
-					if len(pathParts) > 1 {
-						newFile.Path = fmt.Sprintf("%s-%s.%s", pathParts[0], shortUUID, pathParts[1])
-					} else {
-						newFile.Path = fmt.Sprintf("%s-%s", pathParts[0], shortUUID)
+					generatedDocs = c
+				} else {
+					yamlStack, err := buildStackFromYaml(vitem.yamlPath, node)
+					if err != nil {
+						return nil, errors.Wrapf(err, "failed to build yaml stack for item %s", vitem.item.Name)
 					}
 
-					generatedFiles = append(generatedFiles, newFile)
+					err = yamlStack.renderRepeatNodes(vitem.item.Name, vitem.item.ValuesByGroup[vgroup.group.Name])
+					if err != nil {
+						return nil, errors.Wrapf(err, "failed to render repeat nodes for item %s", vitem.item.Name)
+					}
+
+					marshaled, err := yaml3.Marshal(buildYamlFromStack(yamlStack))
+					if err != nil {
+						return nil, errors.Wrap(err, "failed to marshal variadic config")
+					}
+
+					generatedDocs = [][]byte{marshaled}
 				}
-
-			} else {
-
-				yamlStack, err := buildStackFromYaml(vitem.yamlPath, node)
-				if err != nil {
-					return nil, errors.Wrapf(err, "failed to build yaml stack for item %s", vitem.item.Name)
-				}
-
-				err = yamlStack.renderRepeatNodes(vitem.item.Name, vitem.item.ValuesByGroup[vgroup.group.Name])
-				if err != nil {
-					return nil, errors.Wrapf(err, "failed to render repeat nodes for item %s", vitem.item.Name)
-				}
-
-				node = buildYamlFromStack(yamlStack)
 			}
 		}
+
+		if len(generatedDocs) > 0 {
+			finalDocs = append(finalDocs, generatedDocs...)
+			continue
+		}
+
+		finalDocs = append(finalDocs, doc)
 	}
 
-	marshaled, err := yaml3.Marshal(node)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to marshal variadic config")
-	}
-
-	u.Content = marshaled
-
-	return generatedFiles, nil
+	return bytes.Join(finalDocs, []byte("\n---\n")), nil
 }
 
 func getUpstreamTemplateData(upstreamContent []byte) (kotsv1beta1.RepeatTemplate, map[string]interface{}, error) {
