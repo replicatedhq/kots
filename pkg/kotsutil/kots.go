@@ -446,7 +446,9 @@ func LoadHelmChartsFromPath(fromDir string) ([]*kotsv1beta1.HelmChart, error) {
 			return nil
 		})
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to walk upstream dir")
+		if !strings.Contains(err.Error(), "no such file or directory") {
+			return nil, errors.Wrap(err, "failed to walk upstream dir")
+		}
 	}
 
 	return charts, nil

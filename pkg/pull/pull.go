@@ -24,7 +24,6 @@ import (
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/midstream"
-	"github.com/replicatedhq/kots/pkg/store"
 	"github.com/replicatedhq/kots/pkg/upstream"
 	upstreamtypes "github.com/replicatedhq/kots/pkg/upstream/types"
 	"github.com/replicatedhq/kots/pkg/util"
@@ -247,7 +246,6 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 
 	prevHelmCharts, err := kotsutil.LoadHelmChartsFromPath(pullOptions.RootDir)
 	if err != nil {
-		log.FinishSpinnerWithError()
 		return "", errors.Wrap(err, "failed to load previous helm charts")
 	}
 
@@ -255,7 +253,6 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 	io.WriteString(pullOptions.ReportWriter, "Pulling upstream\n")
 	u, err := upstream.FetchUpstream(upstreamURI, &fetchOptions)
 	if err != nil {
-		log.FinishSpinnerWithError()
 		return "", errors.Wrap(err, "failed to fetch upstream")
 	}
 
@@ -279,14 +276,12 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 		IncludeMinio:        pullOptions.IncludeMinio,
 	}
 	if err := upstream.WriteUpstream(u, writeUpstreamOptions); err != nil {
-		log.FinishSpinnerWithError()
 		return "", errors.Wrap(err, "failed to write upstream")
 	}
 	log.FinishSpinner()
 
 	newHelmCharts, err := kotsutil.LoadHelmChartsFromPath(fetchOptions.RootDir)
 	if err != nil {
-		log.FinishSpinnerWithError()
 		return "", errors.Wrap(err, "failed to load new helm charts")
 	}
 
@@ -743,20 +738,6 @@ func removeUnusedHelmOverlaysRec(overlayRoot string, baseRoot string, overlayRel
 }
 
 func writeDownstreams(options PullOptions, overlaysDir string, m *midstream.Midstream, helmMidstreams []midstream.Midstream, log *logger.CLILogger) error {
-	//TODO make the options populated by the caller, DO NOT MUTATE HERE
-	if len(options.Downstreams) == 0 {
-		app, err := store.GetStore().GetAppFromSlug(options.AppSlug)
-		if err != nil {
-			return errors.Wrapf(err, "failed to get appID for appslug%s", options.AppSlug)
-		}
-		downstreams, err := store.GetStore().ListDownstreamsForApp(app.ID)
-		if err != nil {
-			return errors.Wrap(err, "failed to list downstream")
-		}
-		for _, d := range downstreams {
-			options.Downstreams = append(options.Downstreams, d.Name)
-		}
-	}
 	for _, downstreamName := range options.Downstreams {
 		log.ActionWithSpinner("Creating downstream %q", downstreamName)
 		io.WriteString(options.ReportWriter, fmt.Sprintf("Creating downstream %q\n", downstreamName))
