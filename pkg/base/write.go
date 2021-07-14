@@ -20,6 +20,7 @@ type WriteOptions struct {
 	SkippedDir       string
 	Overwrite        bool
 	ExcludeKotsKinds bool
+	IsHelmBase       bool
 }
 
 func (b *Base) WriteBase(options WriteOptions) error {
@@ -147,9 +148,9 @@ func (b *Base) writeBase(options WriteOptions, isTopLevelBase bool) ([]string, [
 		Bases:                 kustomizeBases,
 	}
 
-	if isTopLevelBase {
-		// For top level bases, we remove the "bases" key and move all spec files into the "resources" key.
-		// We then need to deduplicate resources and split duplicates into them into the "patchesStrategicMerge" key.
+	if isTopLevelBase && !options.IsHelmBase {
+		// For the top level base, the one that isn't a helm chart), we remove the "bases" key and move all spec files into the "resources" key.
+		// We then need to deduplicate resources and split duplicates into "patchesStrategicMerge" key.
 		// This is done for backwards compatibility with apps that include duplicate resources in different bases.
 		kustomization.Bases = nil
 		resources, patches, err := deduplicateResources(append(kustomization.Resources, subResources...), options.BaseDir, options.ExcludeKotsKinds, b.Namespace)
