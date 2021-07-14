@@ -91,7 +91,7 @@ func resetKurlProxyPod(namespace string) error {
 		return errors.Wrap(err, "failed to create k8s client")
 	}
 
-	kurlProxyPods, err := clientset.CoreV1().Pods(namespace).List(context.TODO(), metav1.ListOptions{LabelSelector: "app=kurl-proxy"})
+	kurlProxyPods, err := clientset.CoreV1().Pods(namespace).List(context.TODO(), metav1.ListOptions{LabelSelector: "app=kurl-proxy-kotsadm"})
 	if err != nil || len(kurlProxyPods.Items) == 0 {
 		return errors.Wrap(err, "failed to list kurl_proxy pods before restarting")
 	}
@@ -113,7 +113,7 @@ func checkTLSSecret(namespace string, timeout time.Duration) error {
 		return errors.Wrap(err, "failed to create k8s client")
 	}
 
-	kurlProxyPods, err := clientset.CoreV1().Pods(namespace).List(context.TODO(), metav1.ListOptions{LabelSelector: "app=kurl-proxy"})
+	kurlProxyPods, err := clientset.CoreV1().Pods(namespace).List(context.TODO(), metav1.ListOptions{LabelSelector: "app=kurl-proxy-kotsadm"})
 	if err != nil {
 		return errors.Wrap(err, "failed to list kurl_proxy pods before restarting")
 	}
