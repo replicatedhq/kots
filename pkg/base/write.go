@@ -20,6 +20,7 @@ type WriteOptions struct {
 	SkippedDir       string
 	Overwrite        bool
 	ExcludeKotsKinds bool
+	IsHelmBase       bool
 }
 
 func (b *Base) WriteBase(options WriteOptions) error {
@@ -36,7 +37,7 @@ func (b *Base) WriteBase(options WriteOptions) error {
 		}
 	}
 
-	if err := b.writeBase(options); err != nil {
+	if _, _, err := b.writeBase(options, true); err != nil {
 		return errors.Wrap(err, "failed to write root base")
 	}
 
@@ -47,18 +48,18 @@ func (b *Base) WriteBase(options WriteOptions) error {
 	return nil
 }
 
-func (b *Base) writeBase(options WriteOptions) error {
+func (b *Base) writeBase(options WriteOptions, isTopLevelBase bool) ([]string, []kustomizetypes.PatchStrategicMerge, error) {
 	renderDir := filepath.Join(options.BaseDir, b.Path)
 
 	if _, err := os.Stat(renderDir); os.IsNotExist(err) {
 		if err := os.MkdirAll(renderDir, 0744); err != nil {
-			return errors.Wrap(err, "failed to mkdir for base root")
+			return nil, nil, errors.Wrap(err, "failed to mkdir for base root")
 		}
 	}
 
 	resources, patches, err := deduplicateOnContent(b.Files, options.ExcludeKotsKinds, b.Namespace)
 	if err != nil {
-		return errors.Wrap(err, "failed to deduplicate content")
+		return nil, nil, errors.Wrap(err, "failed to deduplicate content")
 	}
 
 	kustomizeResources := []string{}
@@ -70,12 +71,12 @@ func (b *Base) writeBase(options WriteOptions) error {
 		d, _ := path.Split(fileRenderPath)
 		if _, err := os.Stat(d); os.IsNotExist(err) {
 			if err := os.MkdirAll(d, 0744); err != nil {
-				return errors.Wrap(err, "failed to mkdir")
+				return nil, nil, errors.Wrap(err, "failed to mkdir")
 			}
 		}
 
 		if err := ioutil.WriteFile(fileRenderPath, file.Content, 0644); err != nil {
-			return errors.Wrap(err, "failed to write base file")
+			return nil, nil, errors.Wrap(err, "failed to write base file")
 		}
 
 		kustomizeResources = append(kustomizeResources, path.Join(".", file.Path))
@@ -86,12 +87,12 @@ func (b *Base) writeBase(options WriteOptions) error {
 		d, _ := path.Split(fileRenderPath)
 		if _, err := os.Stat(d); os.IsNotExist(err) {
 			if err := os.MkdirAll(d, 0744); err != nil {
-				return errors.Wrap(err, "failed to mkdir")
+				return nil, nil, errors.Wrap(err, "failed to mkdir")
 			}
 		}
 
 		if err := ioutil.WriteFile(fileRenderPath, file.Content, 0644); err != nil {
-			return errors.Wrap(err, "failed to write base file")
+			return nil, nil, errors.Wrap(err, "failed to write base file")
 		}
 
 		kustomizePatches = append(kustomizePatches, kustomizetypes.PatchStrategicMerge(path.Join(".", file.Path)))
@@ -103,26 +104,35 @@ func (b *Base) writeBase(options WriteOptions) error {
 		d, _ := path.Split(fileRenderPath)
 		if _, err := os.Stat(d); os.IsNotExist(err) {
 			if err := os.MkdirAll(d, 0744); err != nil {
-				return errors.Wrap(err, "failed to mkdir")
+				return nil, nil, errors.Wrap(err, "failed to mkdir")
 			}
 		}
 
 		if err := ioutil.WriteFile(fileRenderPath, file.Content, 0644); err != nil {
-			return errors.Wrap(err, "failed to write additional file")
+			return nil, nil, errors.Wrap(err, "failed to write additional file")
 		}
 	}
 
+	subResources := []string{}
+	subPatches := []kustomizetypes.PatchStrategicMerge{}
 	for _, base := range b.Bases {
 		if base.Path == "" {
-			return errors.New("kustomize sub-base path cannot be empty")
+			return nil, nil, errors.New("kustomize sub-base path cannot be empty")
 		}
 		options := WriteOptions{
 			BaseDir:          filepath.Join(options.BaseDir, b.Path),
 			Overwrite:        options.Overwrite,
 			ExcludeKotsKinds: options.ExcludeKotsKinds,
 		}
-		if err := base.writeBase(options); err != nil {
-			return errors.Wrapf(err, "failed to render base %s", base.Path)
+		baseResources, basePatches, err := base.writeBase(options, false)
+		if err != nil {
+			return nil, nil, errors.Wrapf(err, "failed to render base %s", base.Path)
+		}
+		for _, r := range baseResources {
+			subResources = append(subResources, filepath.Join(base.Path, r))
+		}
+		for _, p := range basePatches {
+			subPatches = append(subPatches, kustomizetypes.PatchStrategicMerge(filepath.Join(base.Path, string(p))))
 		}
 		kustomizeBases = append(kustomizeBases, base.Path)
 	}
@@ -137,11 +147,27 @@ func (b *Base) writeBase(options WriteOptions) error {
 		PatchesStrategicMerge: kustomizePatches,
 		Bases:                 kustomizeBases,
 	}
-	if err := k8sutil.WriteKustomizationToFile(kustomization, filepath.Join(renderDir, "kustomization.yaml")); err != nil {
-		return errors.Wrap(err, "failed to write kustomization to file")
+
+	if isTopLevelBase && !options.IsHelmBase {
+		// For the top level base, the one that isn't a helm chart), we remove the "bases" key and move all spec files into the "resources" key.
+		// We then need to deduplicate resources and split duplicates into "patchesStrategicMerge" key.
+		// This is done for backwards compatibility with apps that include duplicate resources in different bases.
+		kustomization.Bases = nil
+		resources, patches, err := deduplicateResources(append(kustomization.Resources, subResources...), options.BaseDir, options.ExcludeKotsKinds, b.Namespace)
+		if err != nil {
+			return nil, nil, errors.Wrapf(err, "failed to defuplicate top level kustomize")
+		}
+		kustomization.Resources = resources
+		kustomization.PatchesStrategicMerge = append(kustomization.PatchesStrategicMerge, patches...)
 	}
 
-	return nil
+	if err := k8sutil.WriteKustomizationToFile(kustomization, filepath.Join(renderDir, "kustomization.yaml")); err != nil {
+		return nil, nil, errors.Wrap(err, "failed to write kustomization to file")
+	}
+
+	kustomizeResources = append(kustomizeResources, subResources...)
+	kustomizePatches = append(kustomizePatches, subPatches...)
+	return kustomizeResources, kustomizePatches, nil
 }
 
 type SkippedFilesIndex struct {
@@ -226,6 +252,35 @@ func (b *Base) getErrorFiles() []BaseFile {
 		errorFiles = append(errorFiles, baseErrorFiles...)
 	}
 	return errorFiles
+}
+
+func deduplicateResources(filePaths []string, baseDir string, excludeKotsKinds bool, baseNS string) ([]string, []kustomizetypes.PatchStrategicMerge, error) {
+	files := []BaseFile{}
+	for _, filePath := range filePaths {
+		content, err := ioutil.ReadFile(filepath.Join(baseDir, filePath))
+		if err != nil {
+			return nil, nil, errors.Wrapf(err, "failed to read base file %s", filePath)
+		}
+
+		files = append(files, BaseFile{Path: filePath, Content: content})
+	}
+
+	resourcesFiles, patchFiles, err := deduplicateOnContent(files, excludeKotsKinds, baseNS)
+	if err != nil {
+		return nil, nil, errors.Wrapf(err, "failed to deduplicate base file")
+	}
+
+	resources := []string{}
+	for _, f := range resourcesFiles {
+		resources = append(resources, f.Path)
+	}
+
+	patches := []kustomizetypes.PatchStrategicMerge{}
+	for _, f := range patchFiles {
+		patches = append(patches, kustomizetypes.PatchStrategicMerge(f.Path))
+	}
+
+	return resources, patches, nil
 }
 
 func deduplicateOnContent(files []BaseFile, excludeKotsKinds bool, baseNS string) ([]BaseFile, []BaseFile, error) {

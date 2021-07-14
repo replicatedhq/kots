@@ -356,6 +356,7 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 		SkippedDir:       u.GetSkippedDir(writeUpstreamOptions),
 		Overwrite:        true,
 		ExcludeKotsKinds: pullOptions.ExcludeKotsKinds,
+		IsHelmBase:       false,
 	}
 	if err := commonBase.WriteBase(writeBaseOptions); err != nil {
 		return "", errors.Wrap(err, "failed to write common base")
@@ -367,6 +368,7 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 			SkippedDir:       u.GetSkippedDir(writeUpstreamOptions),
 			Overwrite:        true,
 			ExcludeKotsKinds: pullOptions.ExcludeKotsKinds,
+			IsHelmBase:       true,
 		}
 		if err := helmBase.WriteBase(writeBaseOptions); err != nil {
 			return "", errors.Wrapf(err, "failed to write helm base %s", helmBase.Path)
