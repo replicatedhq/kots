@@ -9,10 +9,10 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/ghodss/yaml"
 	"github.com/pkg/errors"
 	upstreamtypes "github.com/replicatedhq/kots/pkg/upstream/types"
 	"github.com/replicatedhq/kots/pkg/util"
+	"gopkg.in/yaml.v2"
 	"helm.sh/helm/v3/pkg/strvals"
 )
 
@@ -270,4 +270,32 @@ func checkChartForVersion(file *upstreamtypes.UpstreamFile) (string, error) {
 
 	// if no determination is made, assume v2
 	return "v2", nil
+}
+
+// insert namespace if it's defined in the spec and not already present in the manifests
+func insertHelmNamespace(baseFiles []BaseFile, renderOptions *RenderOptions) ([]BaseFile, error) {
+	if renderOptions.Namespace != "" {
+		for i, v := range baseFiles {
+			var manifest map[string]interface{}
+			err := yaml.Unmarshal(v.Content, &manifest)
+			if err != nil {
+				return nil, errors.Wrap(err, "failed to unmarshal helm manifest")
+			}
+
+			if metadata, ok := manifest["metadata"].(map[interface{}]interface{}); ok {
+				if _, ok := metadata["namespace"]; !ok {
+					metadata["namespace"] = renderOptions.Namespace
+				} else {
+					continue // don't bother overwriting the yaml if a namespace already exists
+				}
+			}
+
+			baseFiles[i].Content, err = yaml.Marshal(manifest)
+			if err != nil {
+				return nil, errors.Wrap(err, "failed to encode helm manifest")
+			}
+		}
+	}
+
+	return baseFiles, nil
 }
