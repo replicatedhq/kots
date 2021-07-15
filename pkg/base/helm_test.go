@@ -67,6 +67,267 @@ func Test_checkChartForVersion(t *testing.T) {
 	}
 }
 
+func Test_RenderHelm(t *testing.T) {
+	type args struct {
+		upstream      *upstreamtypes.Upstream
+		renderOptions *RenderOptions
+	}
+	tests := []struct {
+		name    string
+		args    args
+		want    *Base
+		wantErr bool
+	}{
+		{
+			name: "helm v3 namespace insertion",
+			args: args{
+				upstream: &upstreamtypes.Upstream{
+					Name: "namespace-test",
+					Files: []upstreamtypes.UpstreamFile{
+						{
+							Path:    "Chart.yaml",
+							Content: []byte("name: test-chart\nversion: 0.1.0"),
+						},
+						{
+							Path:    "templates/deploy-1.yaml",
+							Content: []byte("apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: deploy-1\n  namespace: test-one"),
+						},
+						{
+							Path:    "templates/deploy-2.yaml",
+							Content: []byte("apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: deploy-2"),
+						},
+					},
+				},
+				renderOptions: &RenderOptions{
+					HelmVersion: "v3",
+					Namespace:   "test-two",
+				},
+			},
+			want: &Base{
+				Files: []BaseFile{
+					{
+						Path: "deploy-1.yaml",
+						Content: []byte("# Source: test-chart/templates/deploy-1.yaml\napiVersion: apps/v1\nkind: Deployment\n" +
+							"metadata:\n  name: deploy-1\n  namespace: test-one"),
+					},
+					{
+						Path:    "deploy-2.yaml",
+						Content: []byte("apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: deploy-2\n  namespace: test-two"),
+					},
+				},
+				AdditionalFiles: []BaseFile{
+					{
+						Path:    "Chart.yaml",
+						Content: []byte("name: test-chart\nversion: 0.1.0"),
+					},
+				},
+			},
+		},
+		{
+			name: "helm v2 namespace insertion",
+			args: args{
+				upstream: &upstreamtypes.Upstream{
+					Name: "namespace-test",
+					Files: []upstreamtypes.UpstreamFile{
+						{
+							Path:    "Chart.yaml",
+							Content: []byte("name: test-chart\nversion: 0.1.0"),
+						},
+						{
+							Path:    "templates/deploy-2.yaml",
+							Content: []byte("apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: deploy-2"),
+						},
+					},
+				},
+				renderOptions: &RenderOptions{
+					HelmVersion: "v2",
+					Namespace:   "test-two",
+				},
+			},
+			want: &Base{
+				Files: []BaseFile{
+					{
+						Path:    "deploy-2.yaml",
+						Content: []byte("apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: deploy-2\n  namespace: test-two"),
+					},
+				},
+				AdditionalFiles: []BaseFile{
+					{
+						Path:    "Chart.yaml",
+						Content: []byte("name: test-chart\nversion: 0.1.0"),
+					},
+				},
+			},
+		},
+		{
+			name: "helm v3 namespace insertion with multidoc",
+			args: args{
+				upstream: &upstreamtypes.Upstream{
+					Name: "namespace-test",
+					Files: []upstreamtypes.UpstreamFile{
+						{
+							Path:    "Chart.yaml",
+							Content: []byte("name: test-chart\nversion: 0.1.0"),
+						},
+						{
+							Path: "templates/deploy.yaml",
+							Content: []byte("apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: deploy-1\n  namespace: test-one\n" +
+								"---\n" +
+								"apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: deploy-2\n  namespace: test-two"),
+						},
+					},
+				},
+				renderOptions: &RenderOptions{
+					HelmVersion: "v3",
+					Namespace:   "test-two",
+				},
+			},
+			want: &Base{
+				Files: []BaseFile{
+					{
+						Path: "deploy.yaml",
+						Content: []byte("# Source: test-chart/templates/deploy.yaml\n" +
+							"apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: deploy-1\n  namespace: test-one\n" +
+							"---\n" +
+							"# Source: test-chart/templates/deploy.yaml\n" +
+							"apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: deploy-2\n  namespace: test-two"),
+					},
+				},
+				AdditionalFiles: []BaseFile{
+					{
+						Path:    "Chart.yaml",
+						Content: []byte("name: test-chart\nversion: 0.1.0"),
+					},
+				},
+			},
+		},
+		{
+			name: "helm v2 namespace insertion with multidoc",
+			args: args{
+				upstream: &upstreamtypes.Upstream{
+					Name: "namespace-test",
+					Files: []upstreamtypes.UpstreamFile{
+						{
+							Path:    "Chart.yaml",
+							Content: []byte("name: test-chart\nversion: 0.1.0"),
+						},
+						{
+							Path: "templates/deploy.yaml",
+							Content: []byte("apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: deploy-1\n  namespace: test-one\n" +
+								"---\n" +
+								"apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: deploy-2\n  namespace: test-two"),
+						},
+					},
+				},
+				renderOptions: &RenderOptions{
+					HelmVersion: "v2",
+					Namespace:   "test-two",
+				},
+			},
+			want: &Base{
+				Files: []BaseFile{
+					{
+						Path: "deploy.yaml",
+						Content: []byte("apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: deploy-1\n  namespace: test-one\n" +
+							"---\n" +
+							"apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: deploy-2\n  namespace: test-two"),
+					},
+				},
+				AdditionalFiles: []BaseFile{
+					{
+						Path:    "Chart.yaml",
+						Content: []byte("name: test-chart\nversion: 0.1.0"),
+					},
+				},
+			},
+		},
+		{
+			name: "namespace insertion with invalid yaml",
+			args: args{
+				upstream: &upstreamtypes.Upstream{
+					Name: "namespace-test",
+					Files: []upstreamtypes.UpstreamFile{
+						{
+							Path:    "Chart.yaml",
+							Content: []byte("name: test-chart\nversion: 0.1.0"),
+						},
+						{
+							Path:    "templates/invalid.yaml",
+							Content: []byte(" invalid\n\nyaml"),
+						},
+					},
+				},
+				renderOptions: &RenderOptions{
+					HelmVersion: "v2",
+					Namespace:   "test-two",
+				},
+			},
+			want: &Base{
+				Files: []BaseFile{
+					{
+						Path:    "invalid.yaml",
+						Content: []byte("invalid\n\nyaml"),
+					},
+				},
+				AdditionalFiles: []BaseFile{
+					{
+						Path:    "Chart.yaml",
+						Content: []byte("name: test-chart\nversion: 0.1.0"),
+					},
+				},
+			},
+		},
+		{
+			name: "namespace insertion with cluster scoped resources",
+			args: args{
+				upstream: &upstreamtypes.Upstream{
+					Name: "namespace-test",
+					Files: []upstreamtypes.UpstreamFile{
+						{
+							Path:    "Chart.yaml",
+							Content: []byte("name: test-chart\nversion: 0.1.0"),
+						},
+						{
+							Path:    "templates/crd.yaml",
+							Content: []byte("apiVersion: v1\nkind: CustomResourceDefinition\nmetadata:\n  name: example-crd\nspec:\n  scope: Cluster"),
+						},
+					},
+				},
+				renderOptions: &RenderOptions{
+					HelmVersion: "v3",
+					Namespace:   "test-two",
+				},
+			},
+			want: &Base{
+				Files: []BaseFile{
+					{
+						Path:    "crd.yaml",
+						Content: []byte("apiVersion: v1\nkind: CustomResourceDefinition\nmetadata:\n  name: example-crd\nspec:\n  scope: Cluster"),
+					},
+				},
+				AdditionalFiles: []BaseFile{
+					{
+						Path:    "Chart.yaml",
+						Content: []byte("name: test-chart\nversion: 0.1.0"),
+					},
+				},
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := RenderHelm(tt.args.upstream, tt.args.renderOptions)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("RenderHelm() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("RenderHelm() \n\n%s", fmtJSONDiff(got, tt.want))
+			}
+		})
+	}
+}
+
 func Test_writeHelmBase(t *testing.T) {
 	type args struct {
 		chartName     string
