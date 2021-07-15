@@ -5,7 +5,7 @@ metadata:
 spec:
   type: NodePort
   selector:
-    app: kurl-proxy
+    app: kurl-proxy-kotsadm
   ports:
   - port: 8800
     targetPort: 8800
