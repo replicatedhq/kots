@@ -279,7 +279,7 @@ func addDefaultTroubleshoot(supportBundle *troubleshootv1beta2.SupportBundle, ap
 			CollectorMeta: troubleshootv1beta2.CollectorMeta{
 				CollectorName: "kotsadm-replicated-registry",
 			},
-			SecretName:   "kotsadm-replicated-registry",
+			Name:         "kotsadm-replicated-registry",
 			Namespace:    os.Getenv("POD_NAMESPACE"),
 			Key:          ".dockerconfigjson",
 			IncludeValue: false,

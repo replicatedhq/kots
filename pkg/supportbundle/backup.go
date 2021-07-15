@@ -9,6 +9,7 @@ import (
 
 	"github.com/mholt/archiver"
 	"github.com/pkg/errors"
+	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/redact"
 	"github.com/replicatedhq/kots/pkg/store"
@@ -103,16 +104,22 @@ func CreateBundleForBackup(appID string, backupName string, backupNamespace stri
 
 		progressChan <- collector.GetDisplayName()
 
-		result, err := collector.RunCollectorSync(redacts)
+		k8sClientSet, err := k8sutil.GetClientset()
 		if err != nil {
-			progressChan <- fmt.Errorf("failed to run collector %q: %v", collector.GetDisplayName(), err)
+			progressChan <- errors.Wrapf(err, "failed to get kubernetes client for collector %q", collector.GetDisplayName())
+			continue
+		}
+
+		result, err := collector.RunCollectorSync(k8sClientSet, redacts)
+		if err != nil {
+			progressChan <- errors.Wrapf(err, "failed to run collector %q", collector.GetDisplayName())
 			continue
 		}
 
 		if result != nil {
 			err = saveCollectorOutput(result, bundlePath)
 			if err != nil {
-				progressChan <- fmt.Errorf("failed to parse collector spec %q: %v", collector.GetDisplayName(), err)
+				progressChan <- errors.Wrapf(err, "failed to parse collector spec %q", collector.GetDisplayName())
 				continue
 			}
 		}
