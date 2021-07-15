@@ -70,6 +70,8 @@ spec:
               value: dev-1pu4oeY162e2pbLpK4JubK6hxrX
             - name: AIRGAP_UPLOAD_PARALLELISM
               value: "3"
+            - name: POD_OWNER_KIND
+              value: "deployment"
       volumes:
         - emptyDir:
             medium: Memory
