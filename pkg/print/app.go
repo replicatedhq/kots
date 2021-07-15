@@ -6,8 +6,9 @@ import (
 )
 
 type App struct {
-	Slug  string `json:"slug"`
-	State string `json:"state"`
+	Slug         string `json:"slug"`
+	State        string `json:"state"`
+	VersionLabel string `json:"versionlabel"`
 }
 
 func Apps(apps []App, format string) {
@@ -28,9 +29,9 @@ func printAppsTable(apps []App) {
 	w := NewTabWriter()
 	defer w.Flush()
 
-	fmtColumns := "%s\t%s\n"
-	fmt.Fprintf(w, fmtColumns, "SLUG", "STATUS")
+	fmtColumns := "%s\t%s\t%s\n"
+	fmt.Fprintf(w, fmtColumns, "SLUG", "STATUS", "VERSION")
 	for _, app := range apps {
-		fmt.Fprintf(w, fmtColumns, app.Slug, app.State)
+		fmt.Fprintf(w, fmtColumns, app.Slug, app.State, app.VersionLabel)
 	}
 }

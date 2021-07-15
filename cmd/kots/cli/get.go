@@ -151,14 +151,22 @@ func getAppsCmd(cmd *cobra.Command, args []string) error {
 
 	printableApps := make([]print.App, 0)
 	for _, app := range apps.Apps {
+		versionLabel := ""
+		for _, d := range app.Downstreams {
+			if d.CurrentVersion != nil {
+				versionLabel = d.CurrentVersion.VersionLabel
+				break
+			}
+		}
 		url := fmt.Sprintf("http://localhost:%d/api/v1/app/%s/status", localPort, app.Slug)
 		appStatus, err := getAppStatus(url, authSlug)
 		if err != nil {
 			return errors.Wrapf(err, "failed to get app status for %s", app.Slug)
 		}
 		printableApps = append(printableApps, print.App{
-			Slug:  app.Slug,
-			State: string(appStatus.AppStatus.State),
+			Slug:         app.Slug,
+			State:        string(appStatus.AppStatus.State),
+			VersionLabel: versionLabel,
 		})
 	}
 
