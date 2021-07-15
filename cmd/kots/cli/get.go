@@ -12,6 +12,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
+	downstreamtypes "github.com/replicatedhq/kots/pkg/api/downstream/types"
 	handlertypes "github.com/replicatedhq/kots/pkg/api/handlers/types"
 	"github.com/replicatedhq/kots/pkg/auth"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
@@ -156,9 +157,16 @@ func getAppsCmd(cmd *cobra.Command, args []string) error {
 		if err != nil {
 			return errors.Wrapf(err, "failed to get app status for %s", app.Slug)
 		}
+		url = fmt.Sprintf("http://localhost:%d/api/v1/app/%s/versions", localPort, app.Slug)
+		versionLabel, err := getAppVersions(url, authSlug)
+		if err != nil {
+			return errors.Wrapf(err, "failed to get app version for %s", app.Slug)
+		}
+
 		printableApps = append(printableApps, print.App{
-			Slug:  app.Slug,
-			State: string(appStatus.AppStatus.State),
+			Slug:         app.Slug,
+			State:        string(appStatus.AppStatus.State),
+			VersionLabel: versionLabel,
 		})
 	}
 
@@ -219,4 +227,40 @@ func getAppStatus(url string, authSlug string) (*handlertypes.AppStatusResponse,
 	}
 
 	return status, nil
+}
+
+type GetAppVersions struct {
+	VersionHistory []downstreamtypes.DownstreamVersion `json:"versionHistory"`
+}
+
+func getAppVersions(url string, authSlug string) (string, error) {
+	newReq, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return "", errors.Wrap(err, "failed to create request")
+	}
+	newReq.Header.Add("Content-Type", "application/json")
+	newReq.Header.Add("Authorization", authSlug)
+
+	resp, err := http.DefaultClient.Do(newReq)
+	if err != nil {
+		return "", errors.Wrap(err, "failed to execute request")
+	}
+	defer resp.Body.Close()
+
+	b, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return "", errors.Wrap(err, "failed to read")
+	}
+	response := GetAppVersions{
+		VersionHistory: []downstreamtypes.DownstreamVersion{},
+	}
+
+	if err := json.Unmarshal(b, &response); err != nil {
+		return "", errors.Wrap(err, "failed to unmarshal status")
+	}
+	versionLabel := "unknown"
+	if len(response.VersionHistory) > 0 {
+		versionLabel = response.VersionHistory[0].VersionLabel
+	}
+	return versionLabel, nil
 }
