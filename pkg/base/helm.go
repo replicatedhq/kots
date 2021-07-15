@@ -5,15 +5,18 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"os/exec"
 	"path"
 	"path/filepath"
 	"strings"
 
 	"github.com/ghodss/yaml"
 	"github.com/pkg/errors"
+	"github.com/replicatedhq/kots/pkg/kotsutil"
 	upstreamtypes "github.com/replicatedhq/kots/pkg/upstream/types"
 	"github.com/replicatedhq/kots/pkg/util"
 	"helm.sh/helm/v3/pkg/strvals"
+	kustomizetypes "sigs.k8s.io/kustomize/api/types"
 )
 
 func RenderHelm(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (*Base, error) {
@@ -270,4 +273,106 @@ func checkChartForVersion(file *upstreamtypes.UpstreamFile) (string, error) {
 
 	// if no determination is made, assume v2
 	return "v2", nil
+}
+
+// insert namespace if it's defined in the spec and not already present in the manifests
+func kustomizeHelmNamespace(baseFiles []BaseFile, renderOptions *RenderOptions) ([]BaseFile, error) {
+	var updatedBaseFiles []BaseFile
+	if renderOptions.Namespace != "" {
+		chartsPath, err := ioutil.TempDir("", "charts")
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to create temp dir")
+		}
+		defer os.RemoveAll(chartsPath)
+
+		resources := map[string]BaseFile{}
+		var kustomizeResources []string
+		var kustomizePatches []kustomizetypes.PatchStrategicMerge
+		foundGVKNamesMap := map[string]bool{}
+		for _, baseFile := range baseFiles {
+			// write temp files for manifests that need a namespace
+			gvk, manifest := GetGVKWithNameAndNs(baseFile.Content, renderOptions.Namespace)
+			if manifest.APIVersion == "" && manifest.Kind == "" && manifest.Metadata.Name == "" {
+				updatedBaseFiles = append(updatedBaseFiles, baseFile)
+				continue // ignore invalid resources
+			}
+
+			if manifest.Metadata.Namespace == "" {
+				splitPath := strings.Split(baseFile.Path, "/")
+				name := splitPath[len(splitPath)-1]
+				tmpFile, err := ioutil.TempFile(chartsPath, name)
+				if err != nil {
+					return nil, errors.Wrapf(err, "failed to write temp file %v", tmpFile.Name())
+				}
+
+				if _, err := tmpFile.Write(baseFile.Content); err != nil {
+					return nil, errors.Wrapf(err, "failed to write temp file %v content", tmpFile.Name())
+				}
+				if err := tmpFile.Close(); err != nil {
+					return nil, errors.Wrapf(err, "failed to close temp file %v", tmpFile.Name())
+				}
+
+				if !foundGVKNamesMap[gvk] || gvk == "" {
+					resources[gvk] = baseFile
+					kustomizeResources = append(kustomizeResources, tmpFile.Name())
+					foundGVKNamesMap[gvk] = true
+				} else {
+					kustomizePatches = append(kustomizePatches, kustomizetypes.PatchStrategicMerge(tmpFile.Name()))
+				}
+			} else {
+				updatedBaseFiles = append(updatedBaseFiles, baseFile)
+				continue // don't bother kustomizing the yaml if namespace already exists
+			}
+		}
+
+		// write kustomization
+		kustomization := kustomizetypes.Kustomization{
+			TypeMeta: kustomizetypes.TypeMeta{
+				APIVersion: "kustomize.config.k8s.io/v1beta1",
+				Kind:       "Kustomization",
+			},
+			Namespace:             renderOptions.Namespace,
+			Resources:             kustomizeResources,
+			PatchesStrategicMerge: kustomizePatches,
+		}
+		b, err := yaml.Marshal(kustomization)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to marshal kustomization")
+		}
+		err = ioutil.WriteFile(filepath.Join(chartsPath, "kustomization.yaml"), b, 0644)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to write kustomization file")
+		}
+
+		// kustomize manifests
+		kotsKinds, err := kotsutil.LoadKotsKindsFromPath(chartsPath)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to load kotskinds")
+		}
+		updatedManifests, err := exec.Command(fmt.Sprintf("kustomize%s", kotsKinds.KustomizeVersion()), "build", chartsPath).Output()
+		if err != nil {
+			if ee, ok := err.(*exec.ExitError); ok {
+				err = fmt.Errorf("kustomize %s: %q", chartsPath, string(ee.Stderr))
+			}
+			return nil, errors.Wrapf(err, "failed to kustomize %s", chartsPath)
+		}
+
+		splitManifests := splitManifests(string(updatedManifests))
+		for _, manifest := range splitManifests {
+			if len(manifest) == 0 {
+				continue
+			}
+
+			gvk, _ := GetGVKWithNameAndNs([]byte(manifest), renderOptions.Namespace)
+			if _, ok := resources[gvk]; !ok {
+				return nil, errors.Wrapf(err, "failed to replace base %v", gvk)
+			}
+
+			baseFile := resources[gvk]
+			baseFile.Content = []byte(manifest)
+			updatedBaseFiles = append(updatedBaseFiles, baseFile)
+		}
+	}
+
+	return updatedBaseFiles, nil
 }

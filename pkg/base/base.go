@@ -48,11 +48,11 @@ func init() {
 	troubleshootscheme.AddToScheme(scheme.Scheme)
 }
 
-func GetGVKWithNameAndNs(content []byte, baseNS string) string {
+func GetGVKWithNameAndNs(content []byte, baseNS string) (string, OverlySimpleGVK) {
 	o := OverlySimpleGVK{}
 
 	if err := yaml.Unmarshal(content, &o); err != nil {
-		return ""
+		return "", o
 	}
 
 	namespace := baseNS
@@ -60,7 +60,7 @@ func GetGVKWithNameAndNs(content []byte, baseNS string) string {
 		namespace = o.Metadata.Namespace
 	}
 
-	return fmt.Sprintf("%s-%s-%s-%s", o.APIVersion, o.Kind, o.Metadata.Name, namespace)
+	return fmt.Sprintf("%s-%s-%s-%s", o.APIVersion, o.Kind, o.Metadata.Name, namespace), o
 }
 
 func (f *BaseFile) transpileHelmHooksToKotsHooks() error {

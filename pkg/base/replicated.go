@@ -121,8 +121,6 @@ func renderReplicated(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (
 			return nil, nil, errors.Wrapf(err, "failed to render helm chart base %s", helmBase.Path)
 		}
 
-		renderedHelmBase.Namespace = kotsHelmChart.Spec.Namespace // TODO (ch35027): probably remove this since its already done by "helm template"
-
 		if kotsHelmChart.Spec.UseHelmInstall {
 			helmBases = append(helmBases, extractHelmBases(*renderedHelmBase)...)
 		} else {
