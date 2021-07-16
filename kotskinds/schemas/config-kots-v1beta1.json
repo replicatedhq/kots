@@ -44,6 +44,12 @@
                     "affix": {
                       "type": "string"
                     },
+                    "countByGroup": {
+                      "type": "object",
+                      "additionalProperties": {
+                        "type": "integer"
+                      }
+                    },
                     "data": {
                       "type": "string"
                     },
@@ -92,6 +98,9 @@
                         }
                       }
                     },
+                    "minimumCount": {
+                      "type": "integer"
+                    },
                     "multi_value": {
                       "type": "array",
                       "items": {
@@ -110,8 +119,39 @@
                     "recommended": {
                       "type": "boolean"
                     },
+                    "repeatable": {
+                      "type": "boolean"
+                    },
                     "required": {
                       "type": "boolean"
+                    },
+                    "templates": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "required": [
+                          "apiVersion",
+                          "kind",
+                          "name"
+                        ],
+                        "properties": {
+                          "apiVersion": {
+                            "type": "string"
+                          },
+                          "kind": {
+                            "type": "string"
+                          },
+                          "name": {
+                            "type": "string"
+                          },
+                          "namespace": {
+                            "type": "string"
+                          },
+                          "yamlPath": {
+                            "type": "string"
+                          }
+                        }
+                      }
                     },
                     "title": {
                       "type": "string"
@@ -122,6 +162,15 @@
                     "value": {
                       "description": "BoolOrString is a type that can hold an bool or a string.  When used in JSON or YAML marshalling and unmarshalling, it produces or consumes the inner type.  This allows you to have, for example, a JSON field that can accept a booolean string or raw bool.",
                       "oneOf": [{"type": "string"},{"type": "boolean"}]
+                    },
+                    "valuesByGroup": {
+                      "type": "object",
+                      "additionalProperties": {
+                        "type": "object",
+                        "additionalProperties": {
+                          "type": "string"
+                        }
+                      }
                     },
                     "when": {
                       "description": "QuotedBool is a string type that can also unmarshal raw yaml bools.",

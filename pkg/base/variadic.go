@@ -266,7 +266,7 @@ func buildYamlFromStack(stack yamlStack) map[string]interface{} {
 // renderRepeatNodes duplicates the target item,
 // renders each copy with the provided values,
 // and merges them in to the last stack array entry
-func (stack yamlStack) renderRepeatNodes(optionName string, values map[string]interface{}) error {
+func (stack yamlStack) renderRepeatNodes(optionName string, values map[string]string) error {
 	target := stack[len(stack)-1]
 
 	// build new array with existing values from around the target
@@ -387,7 +387,7 @@ func parseVariadicTarget(configOptionName, valueName, target string) (string, er
 }
 
 // renderRepeatFilesContent builds repeat files for each repeat value provided
-func renderRepeatFilesContent(yaml map[string]interface{}, optionName string, values map[string]interface{}) ([][]byte, error) {
+func renderRepeatFilesContent(yaml map[string]interface{}, optionName string, values map[string]string) ([][]byte, error) {
 	var marshaledFiles [][]byte
 	for valueName := range values {
 		var err error

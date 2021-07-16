@@ -46,6 +46,10 @@ spec:
                         properties:
                           affix:
                             type: string
+                          countByGroup:
+                            additionalProperties:
+                              type: integer
+                            type: object
                           data:
                             type: string
                           default:
@@ -93,6 +97,8 @@ spec:
                               - title
                               type: object
                             type: array
+                          minimumCount:
+                            type: integer
                           multi_value:
                             items:
                               type: string
@@ -105,8 +111,29 @@ spec:
                             type: boolean
                           recommended:
                             type: boolean
+                          repeatable:
+                            type: boolean
                           required:
                             type: boolean
+                          templates:
+                            items:
+                              properties:
+                                apiVersion:
+                                  type: string
+                                kind:
+                                  type: string
+                                name:
+                                  type: string
+                                namespace:
+                                  type: string
+                                yamlPath:
+                                  type: string
+                              required:
+                              - apiVersion
+                              - kind
+                              - name
+                              type: object
+                            type: array
                           title:
                             type: string
                           type:
@@ -118,6 +145,12 @@ spec:
                               type.  This allows you to have, for example, a JSON
                               field that can accept a booolean string or raw bool.
                             type: BoolString
+                          valuesByGroup:
+                            additionalProperties:
+                              additionalProperties:
+                                type: string
+                              type: object
+                            type: object
                           when:
                             description: QuotedBool is a string type that can also
                               unmarshal raw yaml bools.

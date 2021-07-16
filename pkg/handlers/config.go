@@ -868,7 +868,7 @@ func updateConfigObject(config *kotsv1beta1.Config, configValues *kotsv1beta1.Co
 		newItems := make([]kotsv1beta1.ConfigItem, 0)
 		for _, item := range group.Items {
 
-			replacementRepeatValues := map[string]interface{}{}
+			replacementRepeatValues := map[string]string{}
 			for valueName, value := range configValues.Spec.Values {
 				if value.RepeatableItem == item.Name {
 					replacementRepeatValues[valueName] = value.Value

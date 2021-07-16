@@ -72,7 +72,7 @@ type RepeatTemplate struct {
 
 type ValuesByGroup map[string]GroupValues
 
-type GroupValues map[string]interface{}
+type GroupValues map[string]string
 
 type ConfigGroup struct {
 	Name        string               `json:"name"`
