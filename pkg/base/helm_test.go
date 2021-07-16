@@ -241,42 +241,6 @@ func Test_RenderHelm(t *testing.T) {
 				},
 			},
 		},
-		{
-			name: "namespace insertion with invalid yaml",
-			args: args{
-				upstream: &upstreamtypes.Upstream{
-					Name: "namespace-test",
-					Files: []upstreamtypes.UpstreamFile{
-						{
-							Path:    "Chart.yaml",
-							Content: []byte("name: test-chart\nversion: 0.1.0"),
-						},
-						{
-							Path:    "templates/invalid.yaml",
-							Content: []byte(" invalid\n\nyaml"),
-						},
-					},
-				},
-				renderOptions: &RenderOptions{
-					HelmVersion: "v2",
-					Namespace:   "test-two",
-				},
-			},
-			want: &Base{
-				Files: []BaseFile{
-					{
-						Path:    "invalid.yaml",
-						Content: []byte("invalid\n\nyaml"),
-					},
-				},
-				AdditionalFiles: []BaseFile{
-					{
-						Path:    "Chart.yaml",
-						Content: []byte("name: test-chart\nversion: 0.1.0"),
-					},
-				},
-			},
-		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

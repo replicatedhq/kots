@@ -279,7 +279,7 @@ func insertHelmNamespace(baseFiles []BaseFile, renderOptions *RenderOptions) ([]
 			var manifest map[string]interface{}
 			err := yaml.Unmarshal(v.Content, &manifest)
 			if err != nil {
-				continue // ignore invalid yaml
+				return nil, errors.Wrap(err, "failed to unmarshal helm manifest")
 			}
 
 			if metadata, ok := manifest["metadata"].(map[interface{}]interface{}); ok {
