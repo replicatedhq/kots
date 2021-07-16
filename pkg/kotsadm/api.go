@@ -24,8 +24,10 @@ func removeNodeAPI(deployOptions *types.DeployOptions, clientset *kubernetes.Cli
 		return errors.Wrap(err, "failed to delete service")
 	}
 
-	if err := removeNodeAPIRBAC(deployOptions, clientset); err != nil {
-		return errors.Wrap(err, "failed to ensure api rbac")
+	if deployOptions.EnsureRBAC {
+		if err := removeNodeAPIRBAC(deployOptions, clientset); err != nil {
+			return errors.Wrap(err, "failed to ensure api rbac")
+		}
 	}
 
 	return nil

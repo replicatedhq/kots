@@ -561,7 +561,7 @@ func ensureDisasterRecoveryLabels(deployOptions *types.DeployOptions, clientset 
 	if err != nil {
 		return errors.Wrap(err, "failed to check if kotsadm is cluster scoped")
 	}
-	if isClusterScoped {
+	if deployOptions.EnsureRBAC && isClusterScoped {
 		// cluster roles
 		clusterRoles, err := clientset.RbacV1().ClusterRoles().List(context.TODO(), listOptions)
 		if err != nil {
@@ -601,7 +601,7 @@ func ensureDisasterRecoveryLabels(deployOptions *types.DeployOptions, clientset 
 				}
 			}
 		}
-	} else {
+	} else if deployOptions.EnsureRBAC {
 		// roles
 		roles, err := clientset.RbacV1().Roles(deployOptions.Namespace).List(context.TODO(), listOptions)
 		if err != nil {
