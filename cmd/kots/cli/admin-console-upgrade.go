@@ -132,7 +132,6 @@ func AdminConsoleUpgradeCmd() *cobra.Command {
 	cmd.Flags().MarkHidden("force-upgrade-kurl")
 	cmd.Flags().MarkHidden("kotsadm-tag")
 	cmd.Flags().MarkHidden("kotsadm-namespace")
-	cmd.Flags().MarkHidden("ensure-rbac")
 	cmd.Flags().MarkHidden("airgap-upload-parallelism")
 
 	// options for the alpha feature of using a reg instead of s3 for storage

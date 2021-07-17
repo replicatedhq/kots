@@ -421,7 +421,6 @@ func InstallCmd() *cobra.Command {
 	cmd.Flags().MarkHidden("storage-base-uri-plainhttp")
 
 	cmd.Flags().Bool("ensure-rbac", true, "when set, kots will create the roles and rolebindings necessary to manage applications")
-	cmd.Flags().MarkHidden("ensure-rbac")
 
 	cmd.Flags().String("airgap-upload-parallelism", "", "the number of chunks to upload in parallel when installing or updating in airgap mode")
 	cmd.Flags().MarkHidden("airgap-upload-parallelism")
