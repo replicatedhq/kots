@@ -1,0 +1,25 @@
+
+# This workflow will add the '@actions/safe-to-test' label.
+# This action can only be triggered by someone who can add labels (maintainer permissions).
+# In addition this action will only run on the upstream repo.
+# Pull requests from forks will have to have the label added manually by a maintainer.
+
+name: "Label '@actions/safe-to-test'"
+
+on:
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  label:
+    runs-on: ubuntu-latest
+
+    # if not a fork
+    if: github.event.pull_request.head.repo.full_name == github.repository
+
+    steps:
+    - uses: actions/labeler@v2
+      with:
+        repo-token: "${{ secrets.GITHUB_TOKEN }}"
+        configuration-path: .github/label-safe-to-test.yml

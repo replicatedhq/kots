@@ -1,13 +1,13 @@
 name: build-test
 
 on:
-  push:
-    branches:
-      - "**"
+  pull_request_target:
+    types: [opened, synchronize, reopened, labeled]
 
 jobs:
   build-kots:
     runs-on: ubuntu-18.04
+    if: contains(github.event.pull_request.labels.*.name, '@actions/safe-to-test')
     steps:
       - uses: actions/setup-go@v2.1.3
         with:
@@ -20,6 +20,9 @@ jobs:
         shell: bash
 
       - uses: actions/checkout@v2
+        with:
+          ref: ${{github.event.pull_request.head.ref}}
+          repository: ${{github.event.pull_request.head.repo.full_name}}
 
       - run: make ci-test kots
       - uses: actions/upload-artifact@v2.2.4
