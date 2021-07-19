@@ -29,7 +29,7 @@ export default class ConfigFileInput extends React.Component {
           filenames.push(key);
         });
         if (filenames.length > 0) {
-          return filenames.join(", ");
+          return filenames;
         }
       }
     } else if (this.props.data) {
@@ -67,7 +67,8 @@ export default class ConfigFileInput extends React.Component {
                 disabled={this.props.readonly}
                 multiple={this.props.repeatable}
                 onChange={this.handleOnChange}
-                filenamesText={this.getFilenamesText()}/>
+                filenamesText={this.getFilenamesText()}
+                handleRemoveFile={(itemName, itemToRemove) => this.props.handleRemoveItem(itemName, itemToRemove)}/>
             </span>
           </div>
         </div>
