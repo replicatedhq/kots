@@ -37,6 +37,9 @@
               "filename": {
                 "type": "string"
               },
+              "repeatableItem": {
+                "type": "string"
+              },
               "value": {
                 "type": "string"
               },

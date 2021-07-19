@@ -131,12 +131,12 @@ func ApplyValuesToConfig(config *kotsv1beta1.Config, values map[string]template.
 					config.Spec.Groups[idxG].Items[idxI].CountByGroup = map[string]int{}
 				}
 				if config.Spec.Groups[idxG].Items[idxI].ValuesByGroup[g.Name] == nil {
-					config.Spec.Groups[idxG].Items[idxI].ValuesByGroup[g.Name] = map[string]interface{}{}
+					config.Spec.Groups[idxG].Items[idxI].ValuesByGroup[g.Name] = map[string]string{}
 					config.Spec.Groups[idxG].Items[idxI].CountByGroup[g.Name] = 0
 				}
 				for fieldName, item := range values {
 					if item.RepeatableItem == i.Name {
-						config.Spec.Groups[idxG].Items[idxI].ValuesByGroup[g.Name][fieldName] = item.Value
+						config.Spec.Groups[idxG].Items[idxI].ValuesByGroup[g.Name][fieldName] = fmt.Sprintf("%s", item.Value)
 					}
 				}
 				for variadicGroup, groupValues := range config.Spec.Groups[idxG].Items[idxI].ValuesByGroup {
