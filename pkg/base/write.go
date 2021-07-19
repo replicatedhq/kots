@@ -128,13 +128,16 @@ func (b *Base) writeBase(options WriteOptions, isTopLevelBase bool) ([]string, [
 		if err != nil {
 			return nil, nil, errors.Wrapf(err, "failed to render base %s", base.Path)
 		}
-		for _, r := range baseResources {
-			subResources = append(subResources, filepath.Join(base.Path, r))
+		if base.Namespace == "" {
+			for _, r := range baseResources {
+				subResources = append(subResources, filepath.Join(base.Path, r))
+			}
+			for _, p := range basePatches {
+				subPatches = append(subPatches, kustomizetypes.PatchStrategicMerge(filepath.Join(base.Path, string(p))))
+			}
+		} else {
+			kustomizeBases = append(kustomizeBases, base.Path)
 		}
-		for _, p := range basePatches {
-			subPatches = append(subPatches, kustomizetypes.PatchStrategicMerge(filepath.Join(base.Path, string(p))))
-		}
-		kustomizeBases = append(kustomizeBases, base.Path)
 	}
 
 	kustomization := kustomizetypes.Kustomization{
@@ -149,10 +152,9 @@ func (b *Base) writeBase(options WriteOptions, isTopLevelBase bool) ([]string, [
 	}
 
 	if isTopLevelBase && !options.IsHelmBase {
-		// For the top level base, the one that isn't a helm chart), we remove the "bases" key and move all spec files into the "resources" key.
-		// We then need to deduplicate resources and split duplicates into "patchesStrategicMerge" key.
+		// For the top level base, the one that isn't a helm chart), "bases" should contain all charts that are deployed to different namespaces.
+		// "resources" will then be deduplicated and split into "resources" and "patches", where patches will contain duplicate resources.
 		// This is done for backwards compatibility with apps that include duplicate resources in different bases.
-		kustomization.Bases = nil
 		resources, patches, err := deduplicateResources(append(kustomization.Resources, subResources...), options.BaseDir, options.ExcludeKotsKinds, b.Namespace)
 		if err != nil {
 			return nil, nil, errors.Wrapf(err, "failed to defuplicate top level kustomize")
