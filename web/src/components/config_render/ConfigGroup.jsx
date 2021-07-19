@@ -111,6 +111,7 @@ export default class ConfigGroup extends React.Component {
               groupName={this.props.item.name}
               required={item.required}
               handleChange={this.handleItemChange}
+              handleRemoveItem={this.handleRemoveItem}
               hidden={item.hidden}
               when={item.when}
               readonly={isReadOnly}

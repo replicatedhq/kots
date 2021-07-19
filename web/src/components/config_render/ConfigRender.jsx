@@ -37,15 +37,19 @@ export default class ConfigRender extends React.Component {
       }
       return _.isArray(val) ? _.first(val) : val;
     };
-    let groups = _.map(this.props.fields, (group) => {
+    const groups = _.map(this.props.fields, (group) => {
       if (group.name === groupName) {
         group.items = _.map(group.items, (item) => {
           if (!(item.type in ["select_many", "label", "heading"]) && item.name === itemName) {
-            if (item.multiple) {
-              item.multi_value = getValues(value);
-              if (item.type === "file") {
-                item.multi_filename = getValues(data);
+            if (item.valuesByGroup && item.type === "file") {
+              const multi_values = getValues(value);
+              item.valuesByGroup[groupName] = {};
+              if (multi_values.length > 0) {
+                multi_values.map((file) => {
+                  item.valuesByGroup[groupName][file.value] = file.filename
+                });
               }
+              item.countByGroup[groupName] = multi_values.length;
             } else {
               item.value = getValue(value);
               if (item.type === "file") {
