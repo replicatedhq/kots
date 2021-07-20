@@ -438,6 +438,10 @@ type variadicItem struct {
 
 // getVariadicGroupsForTemplate identifies which ConfigItems should be processed for a template
 func getVariadicGroupsForTemplate(config *kotsv1beta1.Config, templateTarget kotsv1beta1.RepeatTemplate) []variadicGroup {
+	if config == nil {
+		return nil
+	}
+
 	var variadicGroups []variadicGroup
 	for _, group := range config.Spec.Groups {
 		var variadicItems []variadicItem

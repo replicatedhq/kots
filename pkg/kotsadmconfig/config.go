@@ -82,6 +82,10 @@ func NeedsConfiguration(kotsKinds *kotsutil.KotsKinds, registrySettings registry
 		return false, errors.Wrap(err, "failed to template config")
 	}
 
+	if rendered == "" {
+		return false, nil
+	}
+
 	decode := scheme.Codecs.UniversalDeserializer().Decode
 	decoded, gvk, err := decode([]byte(rendered), nil, nil)
 	if err != nil {

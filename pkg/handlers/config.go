@@ -248,7 +248,12 @@ func (h *Handler) LiveAppConfig(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	JSON(w, http.StatusOK, LiveAppConfigResponse{Success: true, ConfigGroups: renderedConfig.Spec.Groups})
+	configGroups := []kotsv1beta1.ConfigGroup{}
+	if renderedConfig != nil {
+		configGroups = renderedConfig.Spec.Groups
+	}
+
+	JSON(w, http.StatusOK, LiveAppConfigResponse{Success: true, ConfigGroups: configGroups})
 }
 
 func (h *Handler) CurrentAppConfig(w http.ResponseWriter, r *http.Request) {
@@ -343,7 +348,12 @@ func (h *Handler) CurrentAppConfig(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	JSON(w, http.StatusOK, CurrentAppConfigResponse{Success: true, ConfigGroups: renderedConfig.Spec.Groups})
+	configGroups := []kotsv1beta1.ConfigGroup{}
+	if renderedConfig != nil {
+		configGroups = renderedConfig.Spec.Groups
+	}
+
+	JSON(w, http.StatusOK, CurrentAppConfigResponse{Success: true, ConfigGroups: configGroups})
 }
 
 func isVersionConfigEditable(app *apptypes.App, sequence int64) (bool, error) {
@@ -764,6 +774,13 @@ func (h *Handler) SetAppConfigValues(w http.ResponseWriter, r *http.Request) {
 		setAppConfigValuesResponse.Error = "failed to render templates"
 		logger.Error(errors.Wrap(err, setAppConfigValuesResponse.Error))
 		JSON(w, http.StatusInternalServerError, setAppConfigValuesResponse)
+		return
+	}
+
+	if renderedConfig == nil {
+		setAppConfigValuesResponse.Error = "application does not have config"
+		logger.Error(errors.New(setAppConfigValuesResponse.Error))
+		JSON(w, http.StatusBadRequest, setAppConfigValuesResponse)
 		return
 	}
 

@@ -27,6 +27,10 @@ func TemplateConfigObjects(configSpec *kotsv1beta1.Config, configValues map[stri
 		return nil, errors.Wrap(err, "failed to template config")
 	}
 
+	if len(templatedString) == 0 {
+		return nil, nil
+	}
+
 	decode := scheme.Codecs.UniversalDeserializer().Decode
 	obj, gvk, err := decode([]byte(templatedString), nil, nil) // TODO fix decode of boolstrings
 	if err != nil {
@@ -40,6 +44,10 @@ func TemplateConfigObjects(configSpec *kotsv1beta1.Config, configValues map[stri
 }
 
 func templateConfigObjects(configSpec *kotsv1beta1.Config, configValues map[string]template.ItemValue, license *kotsv1beta1.License, localRegistry template.LocalRegistry, versionInfo *template.VersionInfo, identityconfig *kotsv1beta1.IdentityConfig, namespace string, marshalFunc func(config *kotsv1beta1.Config) (string, error)) (string, error) {
+	if configSpec == nil {
+		return "", nil
+	}
+
 	builderOptions := template.BuilderOptions{
 		ConfigGroups:   configSpec.Spec.Groups,
 		ExistingValues: configValues,
@@ -50,6 +58,7 @@ func templateConfigObjects(configSpec *kotsv1beta1.Config, configValues map[stri
 		IdentityConfig: identityconfig,
 		Namespace:      namespace,
 	}
+
 	builder, configVals, err := template.NewBuilder(builderOptions)
 	if err != nil {
 		return "", errors.Wrap(err, "failed to create config context")
@@ -119,6 +128,10 @@ func templateConfig(log *logger.CLILogger, configSpecData string, configValuesDa
 }
 
 func ApplyValuesToConfig(config *kotsv1beta1.Config, values map[string]template.ItemValue) {
+	if config == nil {
+		return
+	}
+
 	for idxG, g := range config.Spec.Groups {
 		for idxI, i := range g.Items {
 			// if the item is repeatable
