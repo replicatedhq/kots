@@ -51,7 +51,7 @@ export default class FileInput extends React.Component {
         <div key={`${item}-${index}`} className="u-marginTop--10" onClick={() => this.props.handleRemoveFile(this.props.name, item)}>
           <span className={`icon u-smallCheckGreen u-marginRight--10 u-top--3`}></span>
           {item}
-          {arr.length > 1 ? <span className="icon red-trash-small clickable u-marginLeft--5 u-top--3" /> : null}
+          {arr.length > 1 ? <span className="icon gray-trash-small clickable u-marginLeft--5 u-top--3" /> : null}
         </div>
       );
     });
