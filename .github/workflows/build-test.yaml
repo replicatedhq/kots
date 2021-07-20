@@ -126,7 +126,7 @@ jobs:
           ignore-unfixed: true
           severity: 'CRITICAL,HIGH'
 
-  validate:
+  validate-legacy:
     runs-on: ubuntu-18.04
     needs: build-kots
     strategy:
@@ -254,6 +254,43 @@ jobs:
       - name: delete velero namespace
         run: kubectl delete namespace velero
 
+  validate-minimal-rbac:
+    runs-on: ubuntu-18.04
+    needs: build-kots
+    strategy:
+      fail-fast: false
+      matrix:
+        k8s_version: [v1.18.18-k3s1,v1.19.10-k3s1,v1.20.6-k3s1]
+    steps:
+      - uses: debianmaster/actions-k3s@v1.0.3
+        id: k3s
+        with:
+          version: ${{ matrix.k8s_version }}
+
+      - name: download kots binary
+        uses: actions/download-artifact@v2.0.10
+        with:
+          name: kots
+          path: bin/
+
+      - run: chmod +x bin/kots
+
+      - uses: actions/setup-node@v2.2.0
+        with:
+          node-version: '10.x'
+
+      - name: setup testIM
+        run: npm i -g @testim/testim-cli
+        shell: bash
+
+      ## testim tests
+
+      - name: get branch
+        if: startsWith(github.ref, 'refs/heads/')
+        id: get_branch
+        shell: bash
+        run: BRANCH=${GITHUB_REF/refs\/heads\//} && echo ::set-output name=GIT_BRANCH::${BRANCH:-master}
+
       - name: prepare minimal-rbac online install
         run: |
           ./bin/kots \
@@ -269,7 +306,7 @@ jobs:
           set +e
           ./bin/kots admin-console -n minimal-rbac &
           ADMIN_CONSOLE_PID=$!
-          testim --token ${{ secrets.TESTIM_ACCESS_TOKEN }} --project ${{ secrets.TESTIM_PROJECT_ID }} --grid "Testim-grid" --report-file testim-report.xml --suite bravo --tunnel --tunnel-port 8800
+          testim --token ${{ secrets.TESTIM_ACCESS_TOKEN }} --project ${{ secrets.TESTIM_PROJECT_ID }} --grid "Testim-grid" --branch ${{ steps.get_branch.outputs.GIT_BRANCH }} --report-file testim-report.xml --suite bravo --tunnel --tunnel-port 8800
           EXIT_CODE=$?
           echo "------pods:"
           kubectl -n minimal-rbac get pods
@@ -283,6 +320,43 @@ jobs:
           kubectl -n minimal-rbac logs -p deployment/kotsadm-operator
           kill $ADMIN_CONSOLE_PID
           exit $EXIT_CODE
+
+  validate-no-required-config:
+    runs-on: ubuntu-18.04
+    needs: build-kots
+    strategy:
+      fail-fast: false
+      matrix:
+        k8s_version: [v1.18.18-k3s1,v1.19.10-k3s1,v1.20.6-k3s1]
+    steps:
+      - uses: debianmaster/actions-k3s@v1.0.3
+        id: k3s
+        with:
+          version: ${{ matrix.k8s_version }}
+
+      - name: download kots binary
+        uses: actions/download-artifact@v2.0.10
+        with:
+          name: kots
+          path: bin/
+
+      - run: chmod +x bin/kots
+
+      - uses: actions/setup-node@v2.2.0
+        with:
+          node-version: '10.x'
+
+      - name: setup testIM
+        run: npm i -g @testim/testim-cli
+        shell: bash
+
+      ## testim tests
+
+      - name: get branch
+        if: startsWith(github.ref, 'refs/heads/')
+        id: get_branch
+        shell: bash
+        run: BRANCH=${GITHUB_REF/refs\/heads\//} && echo ::set-output name=GIT_BRANCH::${BRANCH:-master}
 
       - name: prepare no-required-config online install
         env:
@@ -308,7 +382,7 @@ jobs:
           sleep 5
           echo "KOTSADM_API_TOKEN=`kubectl -n $APP_NAME get secret kotsadm-authstring -o json | jq -r '.data."kotsadm-authstring"' | base64 -d`" > .env
 
-          testim --token ${{ secrets.TESTIM_ACCESS_TOKEN }} --project ${{ secrets.TESTIM_PROJECT_ID }} --grid "Testim-grid" --report-file testim-report.xml --suite $APP_NAME --tunnel --tunnel-port 8800
+          testim --token ${{ secrets.TESTIM_ACCESS_TOKEN }} --project ${{ secrets.TESTIM_PROJECT_ID }} --grid "Testim-grid" --branch ${{ steps.get_branch.outputs.GIT_BRANCH }} --report-file testim-report.xml --suite $APP_NAME --tunnel --tunnel-port 8800
           EXIT_CODE=$?
           echo "------pods:"
           kubectl -n no-config get pods
