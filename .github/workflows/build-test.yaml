@@ -396,3 +396,81 @@ jobs:
           kubectl -n minimal-rbac logs -p deployment/kotsadm-operator
           kill $ADMIN_CONSOLE_PID
           exit $EXIT_CODE
+
+
+  validate-multi-namespace:
+    runs-on: ubuntu-18.04
+    needs: build-kots
+    strategy:
+      fail-fast: false
+      matrix:
+        k8s_version: [v1.18.18-k3s1,v1.19.10-k3s1,v1.20.6-k3s1]
+    steps:
+      - uses: debianmaster/actions-k3s@v1.0.3
+        id: k3s
+        with:
+          version: ${{ matrix.k8s_version }}
+
+      - name: download kots binary
+        uses: actions/download-artifact@v2.0.10
+        with:
+          name: kots
+          path: bin/
+
+      - run: chmod +x bin/kots
+
+      - uses: actions/setup-node@v2.2.0
+        with:
+          node-version: '10.x'
+
+      - name: setup testIM
+        run: npm i -g @testim/testim-cli
+        shell: bash
+
+      ## testim tests
+
+      - name: get branch
+        if: startsWith(github.ref, 'refs/heads/')
+        id: get_branch
+        shell: bash
+        run: BRANCH=${GITHUB_REF/refs\/heads\//} && echo ::set-output name=GIT_BRANCH::${BRANCH:-master}
+
+      - name: prepare multi-namespace online install
+        env:
+          APP_NAME: multi-namespace-yeti
+        run: |
+          ./bin/kots \
+          install $APP_NAME/automated \
+          --port-forward=false \
+          --namespace $APP_NAME \
+          --shared-password password \
+          --kotsadm-registry ttl.sh \
+          --kotsadm-namespace automated-${{ github.run_id }} \
+          --kotsadm-tag 2h
+
+      - name: execute suite multi-namespace
+        env:
+          APP_NAME: multi-namespace-yeti
+          SUITE_NAME: multi-namespace
+        run: |
+          set +e
+          ./bin/kots admin-console -n $APP_NAME &
+          ADMIN_CONSOLE_PID=$!
+
+          sleep 5
+          echo "KOTSADM_API_TOKEN=`kubectl -n $APP_NAME get secret kotsadm-authstring -o json | jq -r '.data."kotsadm-authstring"' | base64 -d`" > .env
+
+          testim --token ${{ secrets.TESTIM_ACCESS_TOKEN }} --project ${{ secrets.TESTIM_PROJECT_ID }} --grid "Testim-grid" --branch ${{ steps.get_branch.outputs.GIT_BRANCH }} --report-file testim-report.xml --suite $SUITE_NAME --tunnel --tunnel-port 8800
+          EXIT_CODE=$?
+          echo "------pods:"
+          kubectl get pods -A
+          echo "------kotsadm logs"
+          kubectl -n $APP_NAME logs deployment/kotsadm
+          echo "------previous kotsadm logs"
+          kubectl -n $APP_NAME logs -p deployment/kotsadm
+          echo "------kotsadm-operator logs"
+          kubectl -n $APP_NAME logs deployment/kotsadm-operator
+          echo "------previos kotsadm-operator logs"
+          kubectl -n $APP_NAME logs -p deployment/kotsadm-operator
+          kill $ADMIN_CONSOLE_PID
+          exit $EXIT_CODE
