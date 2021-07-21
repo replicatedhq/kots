@@ -8,7 +8,6 @@ import (
 	"net/http/httputil"
 	"net/url"
 	"os"
-	"path/filepath"
 	"time"
 
 	"github.com/gorilla/mux"
@@ -18,6 +17,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/informers"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/logger"
+	"github.com/replicatedhq/kots/pkg/persistence"
 	"github.com/replicatedhq/kots/pkg/policy"
 	"github.com/replicatedhq/kots/pkg/rbac"
 	"github.com/replicatedhq/kots/pkg/snapshotscheduler"
@@ -28,27 +28,47 @@ import (
 	"github.com/segmentio/ksuid"
 )
 
-func Start() {
-	log.Printf("kotsadm version %s\n", os.Getenv("VERSION"))
+type APIServerParams struct {
+	Version                string
+	PostgresURI            string
+	SQLiteURI              string
+	AutocreateClusterToken string
+	EnableIdentity         bool
+}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Minute)
+func Start(params *APIServerParams) {
+	log.Printf("kotsadm version %s\n", params.Version)
+
+	// set some persistence variables
+	persistence.PostgresURI = params.PostgresURI
+	persistence.SQLiteURI = params.SQLiteURI
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	if err := store.GetStore().WaitForReady(ctx); err != nil {
+		log.Println("error waiting for ready")
 		panic(err)
 	}
 	cancel()
 
-	if err := bootstrap(); err != nil {
+	if err := bootstrap(BootstrapParams{
+		AutoCreateClusterToken: params.AutocreateClusterToken,
+	}); err != nil {
+		log.Println("error bootstrapping")
 		panic(err)
 	}
 
 	store.GetStore().RunMigrations()
 
-	err := bootstrapIdentity()
-	if err != nil {
-		panic(err)
+	if params.EnableIdentity {
+		err := bootstrapIdentity()
+		if err != nil {
+			log.Println("error bootstrapping identity")
+			panic(err)
+		}
 	}
 
 	if err := generateKotsadmID(); err != nil {
+		log.Println("error generating id")
 		logger.Infof("failed to generate kotsadm id:", err)
 	}
 
@@ -142,7 +162,7 @@ func Start() {
 
 	// to avoid confusion, we don't serve this in the dev env...
 	if os.Getenv("DISABLE_SPA_SERVING") != "1" {
-		spa := handlers.SPAHandler{StaticPath: filepath.Join("web", "dist"), IndexPath: "index.html"}
+		spa := handlers.SPAHandler{}
 		r.PathPrefix("/").Handler(spa)
 	} else if os.Getenv("ENABLE_WEB_PROXY") == "1" { // for dev env
 		u, err := url.Parse("http://kotsadm-web:30000")

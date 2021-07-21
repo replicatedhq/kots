@@ -27,6 +27,7 @@ import (
 	rendertypes "github.com/replicatedhq/kots/pkg/render/types"
 	"github.com/replicatedhq/kots/pkg/secrets"
 	"github.com/replicatedhq/kots/pkg/store/types"
+	"github.com/replicatedhq/kots/pkg/util"
 	velerov1 "github.com/vmware-tanzu/velero/pkg/apis/velero/v1"
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -61,7 +62,7 @@ func (s *KOTSStore) ensureApplicationMetadata(applicationMetadata string, namesp
 
 	existingConfigMap.Data["application.yaml"] = applicationMetadata
 
-	_, err = clientset.CoreV1().ConfigMaps(os.Getenv("POD_NAMESPACE")).Update(context.Background(), existingConfigMap, metav1.UpdateOptions{})
+	_, err = clientset.CoreV1().ConfigMaps(util.PodNamespace).Update(context.Background(), existingConfigMap, metav1.UpdateOptions{})
 	if err != nil {
 		return errors.Wrap(err, "failed to update config map")
 	}
@@ -70,7 +71,7 @@ func (s *KOTSStore) ensureApplicationMetadata(applicationMetadata string, namesp
 }
 
 func (s *KOTSStore) IsRollbackSupportedForVersion(appID string, sequence int64) (bool, error) {
-	db := persistence.MustGetPGSession()
+	db := persistence.MustGetDBSession()
 	query := `select kots_app_spec from app_version where app_id = $1 and sequence = $2`
 	row := db.QueryRow(query, appID, sequence)
 
@@ -93,7 +94,7 @@ func (s *KOTSStore) IsRollbackSupportedForVersion(appID string, sequence int64) 
 }
 
 func (s *KOTSStore) IsIdentityServiceSupportedForVersion(appID string, sequence int64) (bool, error) {
-	db := persistence.MustGetPGSession()
+	db := persistence.MustGetDBSession()
 	query := `select identity_spec from app_version where app_id = $1 and sequence = $2`
 	row := db.QueryRow(query, appID, sequence)
 
@@ -109,7 +110,7 @@ func (s *KOTSStore) IsIdentityServiceSupportedForVersion(appID string, sequence 
 }
 
 func (s *KOTSStore) IsSnapshotsSupportedForVersion(a *apptypes.App, sequence int64, renderer rendertypes.Renderer) (bool, error) {
-	db := persistence.MustGetPGSession()
+	db := persistence.MustGetDBSession()
 	query := `select backup_spec from app_version where app_id = $1 and sequence = $2`
 	row := db.QueryRow(query, a.ID, sequence)
 
@@ -147,7 +148,7 @@ func (s *KOTSStore) IsSnapshotsSupportedForVersion(a *apptypes.App, sequence int
 	}
 
 	// as far as I can tell, this is the only place within pkg/store that uses templating
-	rendered, err := renderer.RenderFile(kotsKinds, registrySettings, a.Slug, sequence, a.IsAirgap, os.Getenv("POD_NAMESPACE"), []byte(backupSpecStr.String))
+	rendered, err := renderer.RenderFile(kotsKinds, registrySettings, a.Slug, sequence, a.IsAirgap, util.PodNamespace, []byte(backupSpecStr.String))
 	if err != nil {
 		return false, errors.Wrap(err, "failed to render backup spec")
 	}
@@ -247,7 +248,7 @@ func (s *KOTSStore) GetAppVersionArchive(appID string, sequence int64, dstPath s
 }
 
 func (s *KOTSStore) CreateAppVersion(appID string, currentSequence *int64, filesInDir string, source string, skipPreflights bool, gitops gitopstypes.DownstreamGitOps) (int64, error) {
-	db := persistence.MustGetPGSession()
+	db := persistence.MustGetDBSession()
 
 	tx, err := db.Begin()
 	if err != nil {
@@ -378,7 +379,7 @@ func (s *KOTSStore) createAppVersion(tx *sql.Tx, appID string, currentSequence *
 			return int64(0), errors.Wrap(err, "failed to marshal application spec")
 		}
 
-		if err := s.ensureApplicationMetadata(applicationSpec, os.Getenv("POD_NAMESPACE"), a.UpstreamURI); err != nil {
+		if err := s.ensureApplicationMetadata(applicationSpec, util.PodNamespace, a.UpstreamURI); err != nil {
 			return int64(0), errors.Wrap(err, "failed to get metadata config map")
 		}
 	}
@@ -530,7 +531,7 @@ func (s *KOTSStore) addAppVersionToDownstream(tx *sql.Tx, appID string, clusterI
 }
 
 func (s *KOTSStore) GetAppVersion(appID string, sequence int64) (*versiontypes.AppVersion, error) {
-	db := persistence.MustGetPGSession()
+	db := persistence.MustGetDBSession()
 	query := `select sequence, created_at, status, applied_at, kots_installation_spec, kots_app_spec from app_version where app_id = $1 and sequence = $2`
 	row := db.QueryRow(query, appID, sequence)
 
@@ -579,7 +580,7 @@ func (s *KOTSStore) GetAppVersion(appID string, sequence int64) (*versiontypes.A
 }
 
 func (s *KOTSStore) GetAppVersionsAfter(appID string, sequence int64) ([]*versiontypes.AppVersion, error) {
-	db := persistence.MustGetPGSession()
+	db := persistence.MustGetDBSession()
 	query := `select sequence, created_at, status, applied_at, kots_installation_spec from app_version where app_id = $1 and sequence > $2`
 	rows, err := db.Query(query, appID, sequence)
 	if err != nil {
@@ -628,7 +629,7 @@ func (s *KOTSStore) UpdateAppVersionInstallationSpec(appID string, sequence int6
 		return errors.Wrap(err, "failed to encode installation")
 	}
 
-	db := persistence.MustGetPGSession()
+	db := persistence.MustGetDBSession()
 	query := `UPDATE app_version SET kots_installation_spec = $1 WHERE app_id = $2 AND sequence = $3`
 	_, err := db.Exec(query, b.String(), appID, sequence)
 	if err != nil {

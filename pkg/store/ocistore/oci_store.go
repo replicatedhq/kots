@@ -10,6 +10,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	kotsadmobjects "github.com/replicatedhq/kots/pkg/kotsadm/objects"
+	"github.com/replicatedhq/kots/pkg/util"
 	corev1 "k8s.io/api/core/v1"
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -115,7 +116,7 @@ func (s *OCIStore) getSecret(name string) (*corev1.Secret, error) {
 		return nil, errors.Wrap(err, "failed to get clientset")
 	}
 
-	existingSecret, err := clientset.CoreV1().Secrets(os.Getenv("POD_NAMESPACE")).Get(context.TODO(), name, metav1.GetOptions{})
+	existingSecret, err := clientset.CoreV1().Secrets(util.PodNamespace).Get(context.TODO(), name, metav1.GetOptions{})
 	if err != nil && !kuberneteserrors.IsNotFound(err) {
 		return nil, errors.Wrap(err, "failed to get secret")
 	} else if kuberneteserrors.IsNotFound(err) {
@@ -126,7 +127,7 @@ func (s *OCIStore) getSecret(name string) (*corev1.Secret, error) {
 			},
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      name,
-				Namespace: os.Getenv("POD_NAMESPACE"),
+				Namespace: util.PodNamespace,
 				Labels: map[string]string{
 					"owner": "kotsadm",
 				},
@@ -134,7 +135,7 @@ func (s *OCIStore) getSecret(name string) (*corev1.Secret, error) {
 			Data: map[string][]byte{},
 		}
 
-		createdSecret, err := clientset.CoreV1().Secrets(os.Getenv("POD_NAMESPACE")).Create(context.TODO(), &secret, metav1.CreateOptions{})
+		createdSecret, err := clientset.CoreV1().Secrets(util.PodNamespace).Create(context.TODO(), &secret, metav1.CreateOptions{})
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to create secret")
 		}
@@ -151,7 +152,7 @@ func (s *OCIStore) getConfigmap(name string) (*corev1.ConfigMap, error) {
 		return nil, errors.Wrap(err, "failed to get clientset")
 	}
 
-	existingConfigmap, err := clientset.CoreV1().ConfigMaps(os.Getenv("POD_NAMESPACE")).Get(context.TODO(), name, metav1.GetOptions{})
+	existingConfigmap, err := clientset.CoreV1().ConfigMaps(util.PodNamespace).Get(context.TODO(), name, metav1.GetOptions{})
 	if err != nil && !kuberneteserrors.IsNotFound(err) {
 		return nil, errors.Wrap(err, "failed to get configmap")
 	} else if kuberneteserrors.IsNotFound(err) {
@@ -162,7 +163,7 @@ func (s *OCIStore) getConfigmap(name string) (*corev1.ConfigMap, error) {
 			},
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      name,
-				Namespace: os.Getenv("POD_NAMESPACE"),
+				Namespace: util.PodNamespace,
 				Labels: map[string]string{
 					"owner": "kotsadm",
 				},
@@ -170,7 +171,7 @@ func (s *OCIStore) getConfigmap(name string) (*corev1.ConfigMap, error) {
 			Data: map[string]string{},
 		}
 
-		createdConfigmap, err := clientset.CoreV1().ConfigMaps(os.Getenv("POD_NAMESPACE")).Create(context.TODO(), &configmap, metav1.CreateOptions{})
+		createdConfigmap, err := clientset.CoreV1().ConfigMaps(util.PodNamespace).Create(context.TODO(), &configmap, metav1.CreateOptions{})
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to create configmap")
 		}
@@ -187,7 +188,7 @@ func (s *OCIStore) updateConfigmap(configmap *corev1.ConfigMap) error {
 		return errors.Wrap(err, "failed to get clientset")
 	}
 
-	_, err = clientset.CoreV1().ConfigMaps(os.Getenv("POD_NAMESPACE")).Update(context.Background(), configmap, metav1.UpdateOptions{})
+	_, err = clientset.CoreV1().ConfigMaps(util.PodNamespace).Update(context.Background(), configmap, metav1.UpdateOptions{})
 	if err != nil {
 		return errors.Wrap(err, "failed to update config map")
 	}
@@ -223,7 +224,7 @@ func (s *OCIStore) ensureApplicationMetadata(applicationMetadata string, namespa
 	existingConfigMap.Data["application.yaml"] = applicationMetadata
 	existingConfigMap.Data["upstreamUri"] = upstreamURI
 
-	_, err = clientset.CoreV1().ConfigMaps(os.Getenv("POD_NAMESPACE")).Update(context.Background(), existingConfigMap, metav1.UpdateOptions{})
+	_, err = clientset.CoreV1().ConfigMaps(util.PodNamespace).Update(context.Background(), existingConfigMap, metav1.UpdateOptions{})
 	if err != nil {
 		return errors.Wrap(err, "failed to update config map")
 	}

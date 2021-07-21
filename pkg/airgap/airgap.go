@@ -28,6 +28,7 @@ import (
 	registrytypes "github.com/replicatedhq/kots/pkg/registry/types"
 	"github.com/replicatedhq/kots/pkg/store"
 	"github.com/replicatedhq/kots/pkg/supportbundle"
+	"github.com/replicatedhq/kots/pkg/util"
 	"github.com/replicatedhq/kots/pkg/version"
 	"k8s.io/client-go/kubernetes/scheme"
 )
@@ -159,10 +160,7 @@ func CreateAppFromAirgap(opts CreateAirgapAppOpts) (finalError error) {
 		pipeReader.CloseWithError(scanner.Err())
 	}()
 
-	appNamespace := os.Getenv("POD_NAMESPACE")
-	if os.Getenv("KOTSADM_TARGET_NAMESPACE") != "" {
-		appNamespace = os.Getenv("KOTSADM_TARGET_NAMESPACE")
-	}
+	appNamespace := util.AppNamespace()
 
 	configValues, err := kotsadmconfig.ReadConfigValuesFromInClusterSecret()
 	if err != nil {

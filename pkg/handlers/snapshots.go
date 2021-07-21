@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"os"
 	"regexp"
 	"strconv"
 	"strings"
@@ -23,6 +22,7 @@ import (
 	kotssnapshot "github.com/replicatedhq/kots/pkg/snapshot"
 	kotssnapshottypes "github.com/replicatedhq/kots/pkg/snapshot/types"
 	"github.com/replicatedhq/kots/pkg/store"
+	"github.com/replicatedhq/kots/pkg/util"
 	"github.com/robfig/cron"
 	"k8s.io/apimachinery/pkg/util/rand"
 	"k8s.io/client-go/kubernetes"
@@ -121,7 +121,7 @@ func (h *Handler) UpdateGlobalSnapshotSettings(w http.ResponseWriter, r *http.Re
 		}
 	}
 
-	kotsadmNamespace := os.Getenv("POD_NAMESPACE")
+	kotsadmNamespace := util.PodNamespace
 
 	veleroStatus, err := kotssnapshot.DetectVelero(r.Context(), kotsadmNamespace)
 	if err != nil {
@@ -233,7 +233,7 @@ func (h *Handler) GetGlobalSnapshotSettings(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	kotsadmNamespace := os.Getenv("POD_NAMESPACE")
+	kotsadmNamespace := util.PodNamespace
 
 	veleroStatus, err := kotssnapshot.DetectVelero(r.Context(), kotsadmNamespace)
 	if err != nil {
@@ -329,7 +329,7 @@ func (h *Handler) ConfigureFileSystemSnapshotProvider(w http.ResponseWriter, r *
 		return
 	}
 
-	namespace := os.Getenv("POD_NAMESPACE")
+	namespace := util.PodNamespace
 
 	registryOptions, err := kotsadm.GetKotsadmOptionsFromCluster(namespace, clientset)
 	if err != nil {
@@ -430,7 +430,7 @@ func (h *Handler) GetSnapshotConfig(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) GetVeleroStatus(w http.ResponseWriter, r *http.Request) {
 	getVeleroStatusResponse := VeleroStatus{}
 
-	detectVelero, err := kotssnapshot.DetectVelero(r.Context(), os.Getenv("POD_NAMESPACE"))
+	detectVelero, err := kotssnapshot.DetectVelero(r.Context(), util.PodNamespace)
 	if err != nil {
 		logger.Error(err)
 		getVeleroStatusResponse.IsVeleroInstalled = false
@@ -725,7 +725,7 @@ func (h *Handler) SaveInstanceSnapshotConfig(w http.ResponseWriter, r *http.Requ
 }
 
 func requiresKotsadmVeleroAccess(w http.ResponseWriter, r *http.Request) error {
-	kotsadmNamespace := os.Getenv("POD_NAMESPACE")
+	kotsadmNamespace := util.PodNamespace
 	requiresVeleroAccess, err := kotssnapshot.CheckKotsadmVeleroAccess(r.Context(), kotsadmNamespace)
 	if err != nil {
 		errMsg := "failed to check if kotsadm requires access to velero"

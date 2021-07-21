@@ -12,7 +12,7 @@ import (
 )
 
 func (s *KOTSStore) GetAppStatus(appID string) (*appstatustypes.AppStatus, error) {
-	db := persistence.MustGetPGSession()
+	db := persistence.MustGetDBSession()
 	query := `select resource_states, updated_at, sequence from app_status where app_id = $1`
 	row := db.QueryRow(query, appID)
 
@@ -61,7 +61,7 @@ func (s *KOTSStore) SetAppStatus(appID string, resourceStates []appstatustypes.R
 		return errors.Wrap(err, "failed to json marshal resource states")
 	}
 
-	db := persistence.MustGetPGSession()
+	db := persistence.MustGetDBSession()
 	query := `insert into app_status (app_id, resource_states, updated_at, sequence) values ($1, $2, $3, $4) on conflict (app_id) do update set resource_states = $2, updated_at = $3, sequence = $4`
 	_, err = db.Exec(query, appID, marshalledResourceStates, updatedAt, sequence)
 	if err != nil {

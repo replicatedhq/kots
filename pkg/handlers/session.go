@@ -4,13 +4,13 @@ import (
 	"context"
 	"encoding/base64"
 	"net/http"
-	"os"
 	"strings"
 
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/session"
 	"github.com/replicatedhq/kots/pkg/session/types"
 	"github.com/replicatedhq/kots/pkg/store"
+	"github.com/replicatedhq/kots/pkg/util"
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
@@ -93,7 +93,7 @@ func requireValidKOTSToken(w http.ResponseWriter, r *http.Request) error {
 		return errors.Wrap(err, "Failed to create kubernetes clientset")
 	}
 
-	secret, err := client.CoreV1().Secrets(os.Getenv("POD_NAMESPACE")).Get(context.TODO(), "kotsadm-authstring", metav1.GetOptions{})
+	secret, err := client.CoreV1().Secrets(util.PodNamespace).Get(context.TODO(), "kotsadm-authstring", metav1.GetOptions{})
 	if kuberneteserrors.IsNotFound(err) {
 		return errors.New("no authstring found in cluster")
 	}

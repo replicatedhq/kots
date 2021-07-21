@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
-	"os"
 	"strings"
 	"time"
 
@@ -21,6 +20,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/store"
 	"github.com/replicatedhq/kots/pkg/user"
 	usertypes "github.com/replicatedhq/kots/pkg/user/types"
+	"github.com/replicatedhq/kots/pkg/util"
 	"github.com/segmentio/ksuid"
 	"golang.org/x/oauth2"
 )
@@ -53,7 +53,7 @@ func getRedirectOnErrorURL(redirectURL string, errorMsg string) string {
 }
 
 func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
-	identityConfig, err := identity.GetConfig(r.Context(), os.Getenv("POD_NAMESPACE"))
+	identityConfig, err := identity.GetConfig(r.Context(), util.PodNamespace)
 	if err != nil {
 		logger.Error(err)
 		w.WriteHeader(http.StatusInternalServerError)
@@ -118,7 +118,7 @@ type OIDCLoginResponse struct {
 }
 
 func (h *Handler) OIDCLogin(w http.ResponseWriter, r *http.Request) {
-	namespace := os.Getenv("POD_NAMESPACE")
+	namespace := util.PodNamespace
 
 	oidcLoginResponse := OIDCLoginResponse{}
 
@@ -162,7 +162,7 @@ func (h *Handler) OIDCLogin(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) OIDCLoginCallback(w http.ResponseWriter, r *http.Request) {
-	namespace := os.Getenv("POD_NAMESPACE")
+	namespace := util.PodNamespace
 
 	clientset, err := k8sutil.GetClientset()
 	if err != nil {
@@ -395,7 +395,7 @@ type GetLoginInfoResponse struct {
 func (h *Handler) GetLoginInfo(w http.ResponseWriter, r *http.Request) {
 	getLoginInfoResponse := GetLoginInfoResponse{}
 
-	identityConfig, err := identity.GetConfig(r.Context(), os.Getenv("POD_NAMESPACE"))
+	identityConfig, err := identity.GetConfig(r.Context(), util.PodNamespace)
 	if err != nil {
 		logger.Error(errors.Wrap(err, "failed to get identity config"))
 		w.WriteHeader(http.StatusInternalServerError)

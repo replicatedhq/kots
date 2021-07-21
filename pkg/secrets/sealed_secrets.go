@@ -11,6 +11,7 @@ import (
 	sealedsecretsv1alpha1 "github.com/bitnami-labs/sealed-secrets/pkg/apis/sealed-secrets/v1alpha1"
 	sealedsecretsscheme "github.com/bitnami-labs/sealed-secrets/pkg/client/clientset/versioned/scheme"
 	"github.com/pkg/errors"
+	"github.com/replicatedhq/kots/pkg/util"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
 	jsonserializer "k8s.io/apimachinery/pkg/runtime/serializer/json"
@@ -59,7 +60,7 @@ func replaceSecretsWithSealedSecrets(archivePath string, config map[string][]byt
 				secret.Namespace = os.Getenv("DEV_NAMESPACE")
 			}
 
-			secret.Namespace = os.Getenv("POD_NAMESPACE")
+			secret.Namespace = util.PodNamespace
 		}
 
 		sealedSecret, err := sealedsecretsv1alpha1.NewSealedSecret(codecFactory, cert.PublicKey.(*rsa.PublicKey), secret)

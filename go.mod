@@ -12,7 +12,7 @@ require (
 	github.com/Masterminds/sprig/v3 v3.2.2
 	github.com/Nvveen/Gotty v0.0.0-20120604004816-cd527374f1e5 // indirect
 	github.com/ahmetalpbalkan/go-cursor v0.0.0-20131010032410-8136607ea412
-	github.com/aws/aws-sdk-go v1.35.24
+	github.com/aws/aws-sdk-go v1.38.2
 	github.com/bitnami-labs/sealed-secrets v0.14.1
 	github.com/blang/semver v3.5.1+incompatible
 	github.com/bshuster-repo/logrus-logstash-hook v0.4.1 // indirect
@@ -21,18 +21,19 @@ require (
 	github.com/containerd/containerd v1.4.4
 	github.com/containers/image/v5 v5.10.4
 	github.com/coreos/go-oidc v2.2.1+incompatible
-	github.com/deislabs/oras v0.10.0
+	github.com/deislabs/oras v0.11.1
 	github.com/dexidp/dex v0.0.0-20201105145354-71bbbee07527
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/docker/distribution v2.7.1+incompatible
 	github.com/docker/go-units v0.4.0
 	github.com/dsnet/compress v0.0.1 // indirect
 	github.com/fatih/color v1.10.0
-	github.com/frankban/quicktest v1.7.2 // indirect
+	github.com/frankban/quicktest v1.13.0 // indirect
 	github.com/garyburd/redigo v1.6.0 // indirect
 	github.com/ghodss/yaml v1.0.0
 	github.com/go-git/go-git/v5 v5.2.0
 	github.com/go-logfmt/logfmt v0.5.0
+	github.com/go-sql-driver/mysql v1.6.0 // indirect
 	github.com/go-test/deep v1.0.7
 	github.com/gofrs/uuid v3.3.0+incompatible // indirect
 	github.com/golang/mock v1.5.0
@@ -43,12 +44,15 @@ require (
 	github.com/gorilla/websocket v1.4.2
 	github.com/gosimple/slug v1.9.0
 	github.com/gotestyourself/gotestyourself v2.2.0+incompatible // indirect
+	github.com/grpc-ecosystem/grpc-gateway v1.16.0 // indirect
 	github.com/hashicorp/go-cleanhttp v0.5.1
+	github.com/k3s-io/kine v0.6.1
 	github.com/kardianos/osext v0.0.0-20190222173326-2bc1f35cddc0 // indirect
-	github.com/lib/pq v1.9.0
+	github.com/lib/pq v1.10.2
 	github.com/manifoldco/promptui v0.8.0
 	github.com/marccampbell/yaml-toolbox v0.0.0-20200805160637-950ceb36c770
 	github.com/mattn/go-isatty v0.0.12
+	github.com/mattn/go-sqlite3 v1.14.8 // indirect
 	github.com/mholt/archiver v3.1.1+incompatible
 	github.com/nwaples/rardecode v1.0.0 // indirect
 	github.com/open-policy-agent/opa v0.24.0
@@ -60,12 +64,15 @@ require (
 	github.com/pierrec/lz4 v2.2.6+incompatible // indirect
 	github.com/pkg/errors v0.9.1
 	github.com/pmezard/go-difflib v1.0.0
+	github.com/prometheus/client_golang v1.11.0 // indirect
+	github.com/rancher/wrangler v0.8.3
 	github.com/replicatedhq/kurl v0.0.0-20210414162418-8d6211901244
 	github.com/replicatedhq/troubleshoot v0.13.7
 	github.com/replicatedhq/yaml/v3 v3.0.0-beta5-replicatedhq
 	github.com/robfig/cron v1.2.0
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/russellhaering/goxmldsig v1.1.0 // indirect
+	github.com/schemahero/schemahero v0.12.2 // indirect
 	github.com/segmentio/ksuid v1.0.3
 	github.com/sergi/go-diff v1.1.0
 	github.com/spf13/cobra v1.1.3
@@ -79,65 +86,81 @@ require (
 	github.com/yvasiyarov/go-metrics v0.0.0-20150112132944-c25f46c4b940 // indirect
 	github.com/yvasiyarov/gorelic v0.0.7 // indirect
 	github.com/yvasiyarov/newrelic_platform_go v0.0.0-20160601141957-9c099fbc30e9 // indirect
-	go.uber.org/multierr v1.5.0
-	go.uber.org/zap v1.15.0
-	golang.org/x/crypto v0.0.0-20210220033148-5ea612d1eb83
+	go.uber.org/multierr v1.6.0
+	go.uber.org/zap v1.17.0
+	golang.org/x/crypto v0.0.0-20210322153248-0c34fe9e7dc2
 	golang.org/x/oauth2 v0.0.0-20200107190931-bf48bf16ab8d
 	google.golang.org/api v0.22.0
+	google.golang.org/genproto v0.0.0-20210602131652-f16073e35f0c // indirect
 	gopkg.in/go-playground/assert.v1 v1.2.1
 	gopkg.in/ini.v1 v1.51.0
 	gopkg.in/yaml.v2 v2.4.0
 	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b
 	gotest.tools v2.2.0+incompatible
-	helm.sh/helm/v3 v3.5.3
-	k8s.io/api v0.21.0
-	k8s.io/apiextensions-apiserver v0.20.5
-	k8s.io/apimachinery v0.21.0
-	k8s.io/cli-runtime v0.20.5
-	k8s.io/client-go v0.21.0
-	k8s.io/cluster-bootstrap v0.20.5
+	helm.sh/helm/v3 v3.6.2
+	k8s.io/api v0.21.3
+	k8s.io/apiextensions-apiserver v0.21.3
+	k8s.io/apimachinery v0.21.3
+	k8s.io/cli-runtime v0.21.3
+	k8s.io/client-go v0.21.3
+	k8s.io/cluster-bootstrap v0.21.3
 	k8s.io/helm v2.14.3+incompatible
 	k8s.io/kubelet v0.0.0
-	k8s.io/kubernetes v1.20.5
+	k8s.io/kubernetes v1.21.3
 	k8s.io/utils v0.0.0-20210305010621-2afb4311ab10
 	rsc.io/letsencrypt v0.0.3 // indirect
 	sigs.k8s.io/application v0.8.3
 	sigs.k8s.io/controller-runtime v0.8.3
-	sigs.k8s.io/kustomize/api v0.8.5
+	sigs.k8s.io/kustomize/api v0.8.8
 	sigs.k8s.io/yaml v1.2.0
 )
 
 replace (
 	github.com/docker/distribution => github.com/docker/distribution v0.0.0-20170817175659-5f6282db7d65
 	github.com/docker/docker => github.com/docker/docker v0.0.0-20180522102801-da99009bbb11
+	github.com/go-openapi/analysis => github.com/go-openapi/analysis v0.19.5
+	github.com/go-openapi/errors => github.com/go-openapi/errors v0.19.2
+	github.com/go-openapi/jsonpointer => github.com/go-openapi/jsonpointer v0.19.3
+	github.com/go-openapi/jsonreference => github.com/go-openapi/jsonreference v0.19.3
+	github.com/go-openapi/loads => github.com/go-openapi/loads v0.19.4
+	github.com/go-openapi/runtime => github.com/go-openapi/runtime v0.19.4
+	github.com/go-openapi/spec => github.com/go-openapi/spec v0.19.5
+	github.com/go-openapi/strfmt => github.com/go-openapi/strfmt v0.19.5
+	github.com/go-openapi/swag => github.com/go-openapi/swag v0.19.5
+	github.com/go-openapi/validate => github.com/go-openapi/validate v0.19.8
+	github.com/googleapis/gnostic => github.com/googleapis/gnostic v0.4.1
+	github.com/jmoiron/sqlx v1.2.0 => github.com/longquanzheng/sqlx v0.0.0-20191125235044-053e6130695c
 	github.com/longhorn/longhorn-manager => github.com/replicatedhq/longhorn-manager v1.1.2-0.20210622201804-05b01947b99d
-	google.golang.org/grpc => google.golang.org/grpc v1.29.1
-	k8s.io/api => k8s.io/api v0.20.5
-	k8s.io/apiextensions-apiserver => k8s.io/apiextensions-apiserver v0.20.5
-	k8s.io/apimachinery => k8s.io/apimachinery v0.20.5
-	k8s.io/apiserver => k8s.io/apiserver v0.20.5
-	k8s.io/cli-runtime => k8s.io/cli-runtime v0.20.5
-	k8s.io/client-go => k8s.io/client-go v0.20.5
-	k8s.io/cloud-provider => k8s.io/cloud-provider v0.20.5
-	k8s.io/cluster-bootstrap => k8s.io/cluster-bootstrap v0.20.5
-	k8s.io/code-generator => k8s.io/code-generator v0.20.5
-	k8s.io/component-base => k8s.io/component-base v0.20.5
-	k8s.io/component-helpers => k8s.io/component-helpers v0.20.5
-	k8s.io/controller-manager => k8s.io/controller-manager v0.20.5
-	k8s.io/cri-api => k8s.io/cri-api v0.20.5
-	k8s.io/csi-translation-lib => k8s.io/csi-translation-lib v0.20.5
-	k8s.io/kube-aggregator => k8s.io/kube-aggregator v0.20.5
-	k8s.io/kube-controller-manager => k8s.io/kube-controller-manager v0.20.5
-	k8s.io/kube-proxy => k8s.io/kube-proxy v0.20.5
-	k8s.io/kube-scheduler => k8s.io/kube-scheduler v0.20.5
-	k8s.io/kubectl => k8s.io/kubectl v0.20.5
-	k8s.io/kubelet => k8s.io/kubelet v0.20.5
-	k8s.io/legacy-cloud-providers => k8s.io/legacy-cloud-providers v0.20.5
-	k8s.io/metrics => k8s.io/metrics v0.20.5
-	k8s.io/mount-utils => k8s.io/mount-utils v0.20.5
-	k8s.io/node-api => k8s.io/node-api v0.20.5
-	k8s.io/sample-apiserver => k8s.io/sample-apiserver v0.20.5
-	k8s.io/sample-cli-plugin => k8s.io/sample-cli-plugin v0.20.5
-	k8s.io/sample-controller => k8s.io/sample-controller v0.20.5
-	sigs.k8s.io/kustomize/api => sigs.k8s.io/kustomize/api v0.3.3
+	google.golang.org/grpc => google.golang.org/grpc v1.27.0
+	gopkg.in/square/go-jose.v2 => gopkg.in/square/go-jose.v2 v2.2.2
+	gopkg.in/yaml.v2 => gopkg.in/yaml.v2 v2.4.0
+	k8s.io/api => github.com/k3s-io/kubernetes/staging/src/k8s.io/api v1.21.3-k3s1
+	k8s.io/apiextensions-apiserver => github.com/k3s-io/kubernetes/staging/src/k8s.io/apiextensions-apiserver v1.21.3-k3s1
+	k8s.io/apimachinery => github.com/k3s-io/kubernetes/staging/src/k8s.io/apimachinery v1.21.3-k3s1
+	k8s.io/apiserver => github.com/k3s-io/kubernetes/staging/src/k8s.io/apiserver v1.21.3-k3s1
+	k8s.io/cli-runtime => github.com/k3s-io/kubernetes/staging/src/k8s.io/cli-runtime v1.21.3-k3s1
+	k8s.io/client-go => github.com/k3s-io/kubernetes/staging/src/k8s.io/client-go v1.21.3-k3s1
+	k8s.io/cloud-provider => github.com/k3s-io/kubernetes/staging/src/k8s.io/cloud-provider v1.21.3-k3s1
+	k8s.io/cluster-bootstrap => github.com/k3s-io/kubernetes/staging/src/k8s.io/cluster-bootstrap v1.21.3-k3s1
+	k8s.io/code-generator => github.com/k3s-io/kubernetes/staging/src/k8s.io/code-generator v1.21.3-k3s1
+	k8s.io/component-base => github.com/k3s-io/kubernetes/staging/src/k8s.io/component-base v1.21.3-k3s1
+	k8s.io/component-helpers => github.com/k3s-io/kubernetes/staging/src/k8s.io/component-helpers v1.21.3-k3s1
+	k8s.io/controller-manager => github.com/k3s-io/kubernetes/staging/src/k8s.io/controller-manager v1.21.3-k3s1
+	k8s.io/cri-api => github.com/k3s-io/kubernetes/staging/src/k8s.io/cri-api v1.21.3-k3s1
+	k8s.io/csi-translation-lib => github.com/k3s-io/kubernetes/staging/src/k8s.io/csi-translation-lib v1.21.3-k3s1
+	k8s.io/kube-aggregator => github.com/k3s-io/kubernetes/staging/src/k8s.io/kube-aggregator v1.21.3-k3s1
+	k8s.io/kube-controller-manager => github.com/k3s-io/kubernetes/staging/src/k8s.io/kube-controller-manager v1.21.3-k3s1
+	k8s.io/kube-proxy => github.com/k3s-io/kubernetes/staging/src/k8s.io/kube-proxy v1.21.3-k3s1
+	k8s.io/kube-scheduler => github.com/k3s-io/kubernetes/staging/src/k8s.io/kube-scheduler v1.21.3-k3s1
+	k8s.io/kubectl => github.com/k3s-io/kubernetes/staging/src/k8s.io/kubectl v1.21.3-k3s1
+	k8s.io/kubelet => github.com/k3s-io/kubernetes/staging/src/k8s.io/kubelet v1.21.3-k3s1
+	k8s.io/kubernetes => github.com/k3s-io/kubernetes v1.21.3-k3s1
+	k8s.io/kubernetes/pkg/serviceaccount => github.com/k3s-io/kubernetes/staging/src/k8s.io/kubernetes/pkg/serviceaccount v1.21.3-k3s1
+	k8s.io/legacy-cloud-providers => github.com/k3s-io/kubernetes/staging/src/k8s.io/legacy-cloud-providers v1.21.3-k3s1
+	k8s.io/metrics => github.com/k3s-io/kubernetes/staging/src/k8s.io/metrics v1.21.3-k3s1
+	k8s.io/mount-utils => github.com/k3s-io/kubernetes/staging/src/k8s.io/mount-utils v1.21.3-k3s1
+	k8s.io/node-api => github.com/k3s-io/kubernetes/staging/src/k8s.io/node-api v1.21.3-k3s1
+	k8s.io/sample-apiserver => github.com/k3s-io/kubernetes/staging/src/k8s.io/sample-apiserver v1.21.3-k3s1
+	k8s.io/sample-cli-plugin => github.com/k3s-io/kubernetes/staging/src/k8s.io/sample-cli-plugin v1.21.3-k3s1
+	k8s.io/sample-controller => github.com/k3s-io/kubernetes/staging/src/k8s.io/sample-controller v1.21.3-k3s1
 )

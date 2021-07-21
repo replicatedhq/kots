@@ -22,6 +22,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/store"
 	"github.com/replicatedhq/kots/pkg/supportbundle"
 	"github.com/replicatedhq/kots/pkg/updatechecker"
+	"github.com/replicatedhq/kots/pkg/util"
 	"github.com/replicatedhq/kots/pkg/version"
 	"go.uber.org/zap"
 )
@@ -98,10 +99,7 @@ func CreateAppFromOnline(pendingApp *types.PendingApp, upstreamURI string, isAut
 	}
 	defer os.RemoveAll(tmpRoot)
 
-	appNamespace := os.Getenv("POD_NAMESPACE")
-	if os.Getenv("KOTSADM_TARGET_NAMESPACE") != "" {
-		appNamespace = os.Getenv("KOTSADM_TARGET_NAMESPACE")
-	}
+	appNamespace := util.AppNamespace()
 
 	configValues, err := kotsadmconfig.ReadConfigValuesFromInClusterSecret()
 	if err != nil {

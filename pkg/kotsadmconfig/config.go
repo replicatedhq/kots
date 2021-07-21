@@ -2,7 +2,6 @@ package kotsadmconfig
 
 import (
 	"context"
-	"os"
 
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
@@ -13,6 +12,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/persistence"
 	registrytypes "github.com/replicatedhq/kots/pkg/registry/types"
 	"github.com/replicatedhq/kots/pkg/template"
+	"github.com/replicatedhq/kots/pkg/util"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes/scheme"
 )
@@ -77,7 +77,7 @@ func NeedsConfiguration(kotsKinds *kotsutil.KotsKinds, registrySettings registry
 		ReadOnly:  registrySettings.IsReadOnly,
 	}
 
-	rendered, err := kotsconfig.TemplateConfig(logger.NewCLILogger(), configSpec, configValuesSpec, licenseSpec, identityConfigSpec, localRegistry, os.Getenv("POD_NAMESPACE"))
+	rendered, err := kotsconfig.TemplateConfig(logger.NewCLILogger(), configSpec, configValuesSpec, licenseSpec, identityConfigSpec, localRegistry, util.PodNamespace)
 	if err != nil {
 		return false, errors.Wrap(err, "failed to template config")
 	}
@@ -123,7 +123,7 @@ func UpdateConfigValuesInDB(filesInDir string, appID string, sequence int64) err
 		return errors.Wrap(err, "failed to marshal configvalues spec")
 	}
 
-	db := persistence.MustGetPGSession()
+	db := persistence.MustGetDBSession()
 	query := `update app_version set config_values = $1 where app_id = $2 and sequence = $3`
 	_, err = db.Exec(query, configValues, appID, sequence)
 	if err != nil {
@@ -141,7 +141,7 @@ func ReadConfigValuesFromInClusterSecret() (string, error) {
 		return "", errors.Wrap(err, "failed to get k8s client set")
 	}
 
-	configValuesSecrets, err := clientset.CoreV1().Secrets(os.Getenv("POD_NAMESPACE")).List(context.TODO(), metav1.ListOptions{
+	configValuesSecrets, err := clientset.CoreV1().Secrets(util.PodNamespace).List(context.TODO(), metav1.ListOptions{
 		LabelSelector: "kots.io/automation=configvalues",
 	})
 	if err != nil {

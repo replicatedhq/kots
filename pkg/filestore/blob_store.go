@@ -11,7 +11,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-const (
+var (
 	ArchivesDir = "/kotsadmdata/archives"
 )
 
@@ -28,9 +28,7 @@ func (s *BlobStore) Init() error {
 
 func (s *BlobStore) WaitForReady(ctx context.Context) error {
 	// there's no waiting, it's either there or it's not. the pod won't come up if the volume didn't mount.
-	volumeMount := "/kotsadmdata"
-	_, err := os.Stat(volumeMount)
-	return err
+	return nil
 }
 
 func (s *BlobStore) WriteArchive(outputPath string, body io.ReadSeeker) error {

@@ -1,6 +1,6 @@
 FROM kotsadm:cache AS builder
 
-ENV PROJECTPATH=/go/src/github.com/replicatedhq/kots/kotsadm
+ENV PROJECTPATH=/go/src/github.com/replicatedhq/kots
 WORKDIR $PROJECTPATH
 COPY Makefile ./
 COPY Makefile.build ./
@@ -8,6 +8,8 @@ COPY go.mod ./
 COPY go.sum ./
 COPY cmd ./cmd
 COPY pkg ./pkg
+COPY web/webcontent.go ./web/webcontent.go
+COPY web/dist ./web/dist
 COPY kotskinds ./kotskinds
 
 RUN make kotsadm
@@ -83,6 +85,6 @@ ENV PATH="/root/.krew/bin:$PATH"
 RUN kubectl krew install preflight
 RUN kubectl krew install support-bundle
 
-COPY --from=builder /go/src/github.com/replicatedhq/kots/kotsadm/bin/kotsadm .
+COPY --from=builder /go/src/github.com/replicatedhq/kots/bin/kotsadm .
 
 ENTRYPOINT ["/kotsadm", "api"]

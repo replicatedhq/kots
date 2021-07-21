@@ -2,12 +2,12 @@ package kurl
 
 import (
 	"context"
-	"os"
 	"time"
 
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/logger"
+	"github.com/replicatedhq/kots/pkg/util"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
@@ -74,7 +74,7 @@ func UpdateConfigMap(client kubernetes.Interface, generateBootstrapToken, upload
 		ctx, cancel := context.WithTimeout(context.TODO(), 60*time.Second)
 		defer cancel()
 
-		key, err := createCertAndKey(ctx, client, os.Getenv("POD_NAMESPACE"))
+		key, err := createCertAndKey(ctx, client, util.PodNamespace)
 		if err != nil {
 			return nil, errors.Wrap(err, "upload certs with new key")
 		}

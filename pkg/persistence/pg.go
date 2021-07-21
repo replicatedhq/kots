@@ -3,23 +3,23 @@ package persistence
 import (
 	"database/sql"
 	"fmt"
-	"os"
 
 	_ "github.com/lib/pq"
 )
 
-var DB *sql.DB
+var postgresDB *sql.DB
 
-func MustGetPGSession() *sql.DB {
-	if DB != nil {
-		return DB
+func mustGetPGSession() *sql.DB {
+	if postgresDB != nil {
+		return postgresDB
 	}
-	db, err := sql.Open("postgres", os.Getenv("POSTGRES_URI"))
+
+	db, err := sql.Open("postgres", PostgresURI)
 	if err != nil {
 		fmt.Printf("error connecting to postgres: %v\n", err)
 		panic(err)
 	}
 
-	DB = db
+	postgresDB = db
 	return db
 }

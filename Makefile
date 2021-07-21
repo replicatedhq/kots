@@ -29,6 +29,12 @@ fmt:
 vet:
 	go vet $(BUILDFLAGS) ./pkg/... ./cmd/...
 
+.PHONY: run
+run:
+	# make -C web deps build-kotsadm
+	make kots
+	./bin/kots run test
+
 .PHONY: gosec
 gosec:
 	go get github.com/securego/gosec/cmd/gosec
@@ -49,7 +55,7 @@ kotsadm:
 	go build ${LDFLAGS} -o bin/kotsadm $(BUILDFLAGS) ./cmd/kotsadm
 
 .PHONY: build-ttl.sh
-build-ttl.sh: 
+build-ttl.sh:
 	docker build --pull -f deploy/Dockerfile -t ttl.sh/${CURRENT_USER}/kotsadm:12h .
 	docker push ttl.sh/${CURRENT_USER}/kotsadm:12h
 
@@ -63,11 +69,11 @@ all-ttl.sh: kotsadm
 	make -C kotsadm/operator build
 	make -C kotsadm/operator build-ttl.sh
 
-	docker pull minio/minio:${MINIO_VERSION} 
-	docker tag minio/minio:${MINIO_VERSION} ttl.sh/${CURRENT_USER}/minio:12h 
-	docker push ttl.sh/${CURRENT_USER}/minio:12h  
+	docker pull minio/minio:${MINIO_VERSION}
+	docker tag minio/minio:${MINIO_VERSION} ttl.sh/${CURRENT_USER}/minio:12h
+	docker push ttl.sh/${CURRENT_USER}/minio:12h
 
-	docker pull postgres:${POSTGRES_VERSION} 
+	docker pull postgres:${POSTGRES_VERSION}
 	docker tag postgres:${POSTGRES_VERSION} ttl.sh/${CURRENT_USER}/postgres:12h
 	docker push ttl.sh/${CURRENT_USER}/postgres:12h
 

@@ -29,6 +29,7 @@ import (
 	rendertypes "github.com/replicatedhq/kots/pkg/render/types"
 	"github.com/replicatedhq/kots/pkg/secrets"
 	"github.com/replicatedhq/kots/pkg/store/types"
+	"github.com/replicatedhq/kots/pkg/util"
 	"go.uber.org/zap"
 )
 
@@ -408,7 +409,7 @@ func (s *OCIStore) CreateAppVersion(appID string, currentSequence *int64, filesI
 			return int64(0), errors.Wrap(err, "failed to marshal application spec")
 		}
 
-		if err := s.ensureApplicationMetadata(applicationSpec, os.Getenv("POD_NAMESPACE"), a.UpstreamURI); err != nil {
+		if err := s.ensureApplicationMetadata(applicationSpec, util.PodNamespace, a.UpstreamURI); err != nil {
 			return int64(0), errors.Wrap(err, "failed to get metadata config map")
 		}
 	}

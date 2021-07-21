@@ -7,7 +7,6 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
-	"os"
 	"strconv"
 	"time"
 
@@ -15,6 +14,7 @@ import (
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/persistence"
+	"github.com/replicatedhq/kots/pkg/util"
 	"k8s.io/client-go/kubernetes/scheme"
 )
 
@@ -67,12 +67,12 @@ var (
 		},
 		{
 			Title:  "CPU Usage",
-			Query:  fmt.Sprintf(`sum(rate(container_cpu_usage_seconds_total{namespace="%s",container!="POD",pod!=""}[5m])) by (pod)`, os.Getenv("POD_NAMESPACE")),
+			Query:  fmt.Sprintf(`sum(rate(container_cpu_usage_seconds_total{namespace="%s",container!="POD",pod!=""}[5m])) by (pod)`, util.PodNamespace),
 			Legend: "{{ pod }}",
 		},
 		{
 			Title:       "Memory Usage",
-			Query:       fmt.Sprintf(`sum(container_memory_usage_bytes{namespace="%s",container!="POD",pod!=""}) by (pod)`, os.Getenv("POD_NAMESPACE")),
+			Query:       fmt.Sprintf(`sum(container_memory_usage_bytes{namespace="%s",container!="POD",pod!=""}) by (pod)`, util.PodNamespace),
 			Legend:      "{{ pod }}",
 			YAxisFormat: "bytes",
 		},
@@ -84,7 +84,7 @@ func GetMetricCharts(appID string, sequence int64, prometheusAddress string) ([]
 		return []MetricChart{}, nil
 	}
 
-	db := persistence.MustGetPGSession()
+	db := persistence.MustGetDBSession()
 	query := `select kots_app_spec from app_version where app_id = $1 and sequence = $2`
 	row := db.QueryRow(query, appID, sequence)
 

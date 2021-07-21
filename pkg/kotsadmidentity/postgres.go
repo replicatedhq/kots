@@ -10,7 +10,7 @@ import (
 )
 
 func postgresUserExists(user string) (bool, error) {
-	db := persistence.MustGetPGSession()
+	db := persistence.MustGetDBSession()
 
 	query := "SELECT 1 FROM pg_catalog.pg_roles WHERE rolname = $1"
 	row := db.QueryRow(query, user)
@@ -27,7 +27,7 @@ func postgresUserExists(user string) (bool, error) {
 }
 
 func CreateDexPostgresDatabase(database, user, password string) error {
-	db := persistence.MustGetPGSession()
+	db := persistence.MustGetDBSession()
 
 	databaseQ := pq.QuoteIdentifier(database)
 	userQ := pq.QuoteIdentifier(user)

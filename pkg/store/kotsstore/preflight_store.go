@@ -10,7 +10,7 @@ import (
 )
 
 func (s *KOTSStore) SetPreflightProgress(appID string, sequence int64, progress string) error {
-	db := persistence.MustGetPGSession()
+	db := persistence.MustGetDBSession()
 	query := `update app_downstream_version set preflight_progress = $1 where app_id = $2 and parent_sequence = $3`
 
 	_, err := db.Exec(query, progress, appID, sequence)
@@ -22,7 +22,7 @@ func (s *KOTSStore) SetPreflightProgress(appID string, sequence int64, progress 
 }
 
 func (s *KOTSStore) GetPreflightProgress(appID string, sequence int64) (string, error) {
-	db := persistence.MustGetPGSession()
+	db := persistence.MustGetDBSession()
 	query := `
 	SELECT preflight_progress
 	FROM app_downstream_version
@@ -39,7 +39,7 @@ func (s *KOTSStore) GetPreflightProgress(appID string, sequence int64) (string, 
 }
 
 func (s *KOTSStore) SetPreflightResults(appID string, sequence int64, results []byte) error {
-	db := persistence.MustGetPGSession()
+	db := persistence.MustGetDBSession()
 	query := `update app_downstream_version set preflight_result = $1, preflight_result_created_at = $2,
 status = (case when status = 'deployed' then 'deployed' else 'pending' end),
 preflight_progress = NULL, preflight_skipped = false
@@ -54,7 +54,7 @@ where app_id = $3 and parent_sequence = $4`
 }
 
 func (s *KOTSStore) GetPreflightResults(appID string, sequence int64) (*preflighttypes.PreflightResult, error) {
-	db := persistence.MustGetPGSession()
+	db := persistence.MustGetDBSession()
 	query := `
 	SELECT
 		app_downstream_version.preflight_result,
@@ -79,7 +79,7 @@ func (s *KOTSStore) GetPreflightResults(appID string, sequence int64) (*prefligh
 }
 
 func (s *KOTSStore) ResetPreflightResults(appID string, sequence int64) error {
-	db := persistence.MustGetPGSession()
+	db := persistence.MustGetDBSession()
 	query := `update app_downstream_version set preflight_result=null, preflight_result_created_at=null, preflight_skipped=false where app_id = $1 and parent_sequence = $2`
 	_, err := db.Exec(query, appID, sequence)
 	if err != nil {
@@ -89,7 +89,7 @@ func (s *KOTSStore) ResetPreflightResults(appID string, sequence int64) error {
 }
 
 func (s *KOTSStore) SetIgnorePreflightPermissionErrors(appID string, sequence int64) error {
-	db := persistence.MustGetPGSession()
+	db := persistence.MustGetDBSession()
 	query := `UPDATE app_downstream_version
 	SET status = 'pending_preflight', preflight_ignore_permissions = true, preflight_result = null, preflight_skipped = false
 	WHERE app_id = $1 AND sequence = $2`

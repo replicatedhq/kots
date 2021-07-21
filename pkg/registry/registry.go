@@ -21,6 +21,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/reporting"
 	"github.com/replicatedhq/kots/pkg/rewrite"
 	"github.com/replicatedhq/kots/pkg/store"
+	"github.com/replicatedhq/kots/pkg/util"
 	corev1 "k8s.io/api/core/v1"
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -111,7 +112,7 @@ func RewriteImages(appID string, sequence int64, hostname string, username strin
 	}
 
 	// dev_namespace makes the dev env work
-	appNamespace := os.Getenv("POD_NAMESPACE")
+	appNamespace := util.PodNamespace
 	if os.Getenv("KOTSADM_TARGET_NAMESPACE") != "" {
 		appNamespace = os.Getenv("KOTSADM_TARGET_NAMESPACE")
 	}
@@ -201,7 +202,7 @@ func GetKotsadmRegistry() (*types.RegistrySettings, error) {
 		return nil, errors.Wrap(err, "failed to get k8s clientset")
 	}
 
-	namespace := os.Getenv("POD_NAMESPACE")
+	namespace := util.PodNamespace
 
 	kotsadmOptions, err := kotsadm.GetKotsadmOptionsFromCluster(namespace, clientset)
 	if err != nil {

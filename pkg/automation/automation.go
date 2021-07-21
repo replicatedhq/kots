@@ -24,6 +24,7 @@ import (
 	onlinetypes "github.com/replicatedhq/kots/pkg/online/types"
 	kotspull "github.com/replicatedhq/kots/pkg/pull"
 	"github.com/replicatedhq/kots/pkg/store"
+	"github.com/replicatedhq/kots/pkg/util"
 	"go.uber.org/zap"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -43,7 +44,7 @@ func AutomateInstall() error {
 		return errors.Wrap(err, "failed to get k8s client set")
 	}
 
-	licenseSecrets, err := clientset.CoreV1().Secrets(os.Getenv("POD_NAMESPACE")).List(context.TODO(), metav1.ListOptions{
+	licenseSecrets, err := clientset.CoreV1().Secrets(util.PodNamespace).List(context.TODO(), metav1.ListOptions{
 		LabelSelector: "kots.io/automation=license",
 	})
 
@@ -162,7 +163,7 @@ LICENSE_LOOP:
 				}
 			}
 
-			kotsadmOpts, err := kotsadm.GetKotsadmOptionsFromCluster(os.Getenv("POD_NAMESPACE"), clientset)
+			kotsadmOpts, err := kotsadm.GetKotsadmOptionsFromCluster(util.PodNamespace, clientset)
 			if err != nil {
 				logger.Error(errors.Wrap(err, "failed to load registry info"))
 				continue
@@ -233,7 +234,7 @@ func AirgapInstall(appSlug string, additionalFiles map[string][]byte) error {
 		"kots.io/automation": "license",
 		"kots.io/app":        appSlug,
 	}
-	licenseSecrets, err := clientset.CoreV1().Secrets(os.Getenv("POD_NAMESPACE")).List(context.TODO(), metav1.ListOptions{
+	licenseSecrets, err := clientset.CoreV1().Secrets(util.PodNamespace).List(context.TODO(), metav1.ListOptions{
 		LabelSelector: labels.SelectorFromSet(selectorLabels).String(),
 	})
 	if err != nil {
@@ -322,7 +323,7 @@ func AirgapInstall(appSlug string, additionalFiles map[string][]byte) error {
 		}
 	}
 
-	kotsadmOpts, err := kotsadm.GetKotsadmOptionsFromCluster(os.Getenv("POD_NAMESPACE"), clientset)
+	kotsadmOpts, err := kotsadm.GetKotsadmOptionsFromCluster(util.PodNamespace, clientset)
 	if err != nil {
 		return errors.Wrap(err, "failed to load registry info")
 	}
@@ -362,7 +363,7 @@ func NeedToWaitForAirgapApp() (bool, error) {
 		return false, errors.Wrap(err, "failed to get k8s client set")
 	}
 
-	licenseSecrets, err := clientset.CoreV1().Secrets(os.Getenv("POD_NAMESPACE")).List(context.TODO(), metav1.ListOptions{
+	licenseSecrets, err := clientset.CoreV1().Secrets(util.PodNamespace).List(context.TODO(), metav1.ListOptions{
 		LabelSelector: "kots.io/automation=license",
 	})
 	if err != nil {
@@ -403,7 +404,7 @@ func getAirgapData(clientset kubernetes.Interface, license *kotsv1beta1.License)
 		"kots.io/app":        license.Spec.AppSlug,
 	}
 
-	configMaps, err := clientset.CoreV1().ConfigMaps(os.Getenv("POD_NAMESPACE")).List(context.TODO(), metav1.ListOptions{
+	configMaps, err := clientset.CoreV1().ConfigMaps(util.PodNamespace).List(context.TODO(), metav1.ListOptions{
 		LabelSelector: labels.SelectorFromSet(selectorLabels).String(),
 	})
 	if err != nil {
@@ -433,7 +434,7 @@ func needToWaitForAirgapApp(clientset kubernetes.Interface, license *kotsv1beta1
 		"kots.io/app":        license.Spec.AppSlug,
 	}
 
-	configMaps, err := clientset.CoreV1().ConfigMaps(os.Getenv("POD_NAMESPACE")).List(context.TODO(), metav1.ListOptions{
+	configMaps, err := clientset.CoreV1().ConfigMaps(util.PodNamespace).List(context.TODO(), metav1.ListOptions{
 		LabelSelector: labels.SelectorFromSet(selectorLabels).String(),
 	})
 	if err != nil {
@@ -463,7 +464,7 @@ func deleteAirgapData(clientset kubernetes.Interface, appSlug string) error {
 		"kots.io/app":        appSlug,
 	}
 
-	configMaps, err := clientset.CoreV1().ConfigMaps(os.Getenv("POD_NAMESPACE")).List(context.TODO(), metav1.ListOptions{
+	configMaps, err := clientset.CoreV1().ConfigMaps(util.PodNamespace).List(context.TODO(), metav1.ListOptions{
 		LabelSelector: labels.SelectorFromSet(selectorLabels).String(),
 	})
 	if err != nil {
@@ -471,7 +472,7 @@ func deleteAirgapData(clientset kubernetes.Interface, appSlug string) error {
 	}
 
 	for _, configMap := range configMaps.Items {
-		err = clientset.CoreV1().ConfigMaps(os.Getenv("POD_NAMESPACE")).Delete(context.TODO(), configMap.Name, metav1.DeleteOptions{})
+		err = clientset.CoreV1().ConfigMaps(util.PodNamespace).Delete(context.TODO(), configMap.Name, metav1.DeleteOptions{})
 		if err != nil {
 			return errors.Wrapf(err, "failed to delete configmap %s", configMap.Name)
 		}

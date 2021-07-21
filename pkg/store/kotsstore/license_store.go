@@ -17,7 +17,7 @@ import (
 )
 
 func (s *KOTSStore) GetLatestLicenseForApp(appID string) (*kotsv1beta1.License, error) {
-	db := persistence.MustGetPGSession()
+	db := persistence.MustGetDBSession()
 	query := `select license from app where id = $1`
 	row := db.QueryRow(query, appID)
 
@@ -36,7 +36,7 @@ func (s *KOTSStore) GetLatestLicenseForApp(appID string) (*kotsv1beta1.License, 
 }
 
 func (s *KOTSStore) GetLicenseForAppVersion(appID string, sequence int64) (*kotsv1beta1.License, error) {
-	db := persistence.MustGetPGSession()
+	db := persistence.MustGetDBSession()
 	query := `select kots_license from app_version where app_id = $1 and sequence = $2`
 	row := db.QueryRow(query, appID, sequence)
 
@@ -59,7 +59,7 @@ func (s *KOTSStore) GetLicenseForAppVersion(appID string, sequence int64) (*kots
 }
 
 func (s *KOTSStore) GetAllAppLicenses() ([]*kotsv1beta1.License, error) {
-	db := persistence.MustGetPGSession()
+	db := persistence.MustGetDBSession()
 	query := `select license from app`
 	rows, err := db.Query(query)
 	if err != nil {
@@ -88,7 +88,7 @@ func (s *KOTSStore) GetAllAppLicenses() ([]*kotsv1beta1.License, error) {
 }
 
 func (s *KOTSStore) UpdateAppLicense(appID string, sequence int64, archiveDir string, newLicense *kotsv1beta1.License, originalLicenseData string, failOnVersionCreate bool, gitops gitopstypes.DownstreamGitOps, renderer rendertypes.Renderer) (int64, error) {
-	db := persistence.MustGetPGSession()
+	db := persistence.MustGetDBSession()
 
 	tx, err := db.Begin()
 	if err != nil {

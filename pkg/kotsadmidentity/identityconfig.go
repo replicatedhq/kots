@@ -9,6 +9,7 @@ import (
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	"github.com/replicatedhq/kots/pkg/crypto"
+	"github.com/replicatedhq/kots/pkg/util"
 	"github.com/segmentio/ksuid"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	serializer "k8s.io/apimachinery/pkg/runtime/serializer/json"
@@ -32,7 +33,7 @@ func AppIdentityNeedsBootstrap(appSlug string) (bool, error) {
 func InitAppIdentityConfig(appSlug string, storage kotsv1beta1.Storage, cipher crypto.AESCipher) (string, error) {
 	// support for the dev environment where app is in "test" namespace
 	host := "kotsadm-postgres"
-	if kotsadmNamespace := os.Getenv("POD_NAMESPACE"); kotsadmNamespace != "" {
+	if kotsadmNamespace := util.PodNamespace; kotsadmNamespace != "" {
 		host = fmt.Sprintf("%s.%s", host, kotsadmNamespace)
 	}
 

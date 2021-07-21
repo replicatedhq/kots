@@ -14,7 +14,7 @@ import (
 )
 
 func (s *KOTSStore) GetRegistryDetailsForApp(appID string) (registrytypes.RegistrySettings, error) {
-	db := persistence.MustGetPGSession()
+	db := persistence.MustGetDBSession()
 	query := `select registry_hostname, registry_username, registry_password_enc, namespace, registry_is_readonly from app where id = $1`
 	row := db.QueryRow(query, appID)
 
@@ -64,7 +64,7 @@ func (s *KOTSStore) UpdateRegistry(appID string, hostname string, username strin
 	logger.Debug("updating app registry",
 		zap.String("appID", appID))
 
-	db := persistence.MustGetPGSession()
+	db := persistence.MustGetDBSession()
 
 	if password == registrytypes.PasswordMask {
 		// password unchanged - don't update it
@@ -92,7 +92,7 @@ func (s *KOTSStore) UpdateRegistry(appID string, hostname string, username strin
 }
 
 func (s *KOTSStore) GetAppIDsFromRegistry(hostname string) ([]string, error) {
-	db := persistence.MustGetPGSession()
+	db := persistence.MustGetDBSession()
 	query := `select id from app where registry_hostname = $1`
 	rows, err := db.Query(query, hostname)
 	if err != nil {

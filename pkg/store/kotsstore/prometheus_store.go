@@ -8,7 +8,7 @@ import (
 )
 
 func (s *KOTSStore) GetPrometheusAddress() (string, error) {
-	db := persistence.MustGetPGSession()
+	db := persistence.MustGetDBSession()
 	query := `select value from kotsadm_params where key = $1`
 	row := db.QueryRow(query, "PROMETHEUS_ADDRESS")
 
@@ -24,7 +24,7 @@ func (s *KOTSStore) GetPrometheusAddress() (string, error) {
 }
 
 func (s *KOTSStore) SetPrometheusAddress(address string) error {
-	db := persistence.MustGetPGSession()
+	db := persistence.MustGetDBSession()
 	query := `insert into kotsadm_params (key, value) values ($1, $2) on conflict (key) do update set value = $2`
 
 	_, err := db.Exec(query, "PROMETHEUS_ADDRESS", address)

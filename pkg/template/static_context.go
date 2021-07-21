@@ -29,6 +29,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/buildversion"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
+	"github.com/replicatedhq/kots/pkg/util"
 	analyze "github.com/replicatedhq/troubleshoot/pkg/analyze"
 	"gopkg.in/yaml.v2"
 	corev1 "k8s.io/api/core/v1"
@@ -343,7 +344,7 @@ func (ctx StaticCtx) namespace() string {
 		return os.Getenv("DEV_NAMESPACE")
 	}
 
-	return os.Getenv("POD_NAMESPACE")
+	return util.PodNamespace
 }
 
 func (ctx StaticCtx) tlsCert(certName string, cn string, ips []interface{}, alternateDNS []interface{}, daysValid int) string {

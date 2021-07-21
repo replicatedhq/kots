@@ -12,7 +12,7 @@ builds:
     goarch:
     - amd64
     env:
-      - CGO_ENABLED=0
+      - CGO_ENABLED=1
       - GO111MODULE=on
     main: cmd/kots/main.go
     ldflags: -s -w
