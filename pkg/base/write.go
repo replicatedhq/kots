@@ -303,7 +303,7 @@ func deduplicateOnContent(files []BaseFile, excludeKotsKinds bool, baseNS string
 		}
 
 		if writeToKustomization {
-			thisGVKName := GetGVKWithNameAndNs(file.Content, baseNS)
+			thisGVKName, _ := GetGVKWithNameAndNs(file.Content, baseNS)
 			found := foundGVKNamesMap[thisGVKName]
 
 			if !found || thisGVKName == "" {

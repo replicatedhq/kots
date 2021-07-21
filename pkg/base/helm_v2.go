@@ -4,6 +4,7 @@ import (
 	"io/ioutil"
 	golog "log"
 	"os"
+	"strings"
 
 	"github.com/ghodss/yaml"
 	"github.com/pkg/errors"
@@ -46,12 +47,28 @@ func renderHelmV2(chartName string, chartPath string, vals map[string]interface{
 		return nil, errors.Wrap(err, "failed to render chart")
 	}
 
+	// need to split base files before inserting namespace
 	baseFiles := []BaseFile{}
 	for name, content := range rendered {
-		baseFiles = append(baseFiles, BaseFile{
-			Path:    name,
-			Content: []byte(content),
-		})
+		splitManifests := splitManifests(content)
+		for _, manifest := range splitManifests {
+			if strings.TrimSpace(manifest) == "" {
+				// filter out empty docs
+				continue
+			}
+			baseFiles = append(baseFiles, BaseFile{
+				Path:    name,
+				Content: []byte(manifest),
+			})
+		}
 	}
-	return baseFiles, nil
+
+	// insert namespace defined in the HelmChart spec
+	baseFiles, err = kustomizeHelmNamespace(baseFiles, renderOptions)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to insert helm namespace")
+	}
+
+	// maintain order
+	return mergeBaseFiles(baseFiles), nil
 }

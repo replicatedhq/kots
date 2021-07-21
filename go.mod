@@ -97,7 +97,6 @@ require (
 	k8s.io/client-go v0.21.0
 	k8s.io/cluster-bootstrap v0.20.5
 	k8s.io/helm v2.14.3+incompatible
-	k8s.io/kube-openapi v0.0.0-20210323165736-1a6458611d18 // indirect
 	k8s.io/kubelet v0.0.0
 	k8s.io/kubernetes v1.20.5
 	k8s.io/utils v0.0.0-20210305010621-2afb4311ab10
@@ -140,4 +139,5 @@ replace (
 	k8s.io/sample-apiserver => k8s.io/sample-apiserver v0.20.5
 	k8s.io/sample-cli-plugin => k8s.io/sample-cli-plugin v0.20.5
 	k8s.io/sample-controller => k8s.io/sample-controller v0.20.5
+	sigs.k8s.io/kustomize/api => sigs.k8s.io/kustomize/api v0.3.3
 )
