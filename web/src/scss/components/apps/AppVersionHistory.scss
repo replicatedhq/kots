@@ -11,6 +11,10 @@ $cell-width: 140px;
   border-left: none;
   background-color: #ffffff;
 
+  & > div:last-child {
+    min-width: 270px;
+  }
+
   &.active-deploy-row {
     border-top-width: 1px;
     border-top-style: solid;
