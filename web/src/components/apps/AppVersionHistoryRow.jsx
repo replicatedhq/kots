@@ -151,6 +151,7 @@ function renderVersionStatus(version, app, match, viewLogs) {
   }
 
   if (!isPastVersion && !isPendingDeployedVersion) {
+    const deployedAndSkippedChecks = version.preflightSkipped ? " (checks skipped)" : "";
     return (
       <div className="flex alignItems--center">
         <div className="flex alignItems--center">
@@ -159,7 +160,7 @@ function renderVersionStatus(version, app, match, viewLogs) {
             data-for={`${version.versionLabel || version.title}-${version.sequence}`}
             className={classNames("icon", {
               "checkmark-icon": version.status === "deployed" || version.status === "merged" || version.status === "pending",
-              "exclamationMark--icon": version.status === "opened" || version.preflightSkipped,
+              "exclamationMark--icon": version.status === "opened" || (version.preflightSkipped && version.status !== "deployed"),
               "grayCircleMinus--icon": version.status === "closed",
               "error-small": version.status === "failed" || preflightsFailed
             })}
@@ -167,7 +168,7 @@ function renderVersionStatus(version, app, match, viewLogs) {
           {version.status === "deploying" && <Loader className="flex alignItems--center" size="20" />}
           <span className={classNames("u-fontSize--small u-fontWeight--medium u-lineHeight--normal u-marginLeft--5", {
             "u-textColor--accent": version.status === "deployed" || version.status === "merged",
-            "u-textColor--warning": version.status === "opened" || version.preflightSkipped,
+            "u-textColor--warning": version.status === "opened" || (version.preflightSkipped && version.status !== "deployed"),
             "u-textColor--bodyCopy": version.status === "closed" || version.status === "pending" || version.status === "pending_preflight",
             "u-textColor--error": version.status === "failed" || preflightsFailed
           })}>
@@ -178,9 +179,9 @@ function renderVersionStatus(version, app, match, viewLogs) {
                   ? "Checks failed"
                   : version.status === "pending"
                     ? "Ready to deploy" 
-                    : version.preflightSkipped
+                    : (version.preflightSkipped && version.status !== "deployed")
                       ? "Checks skipped"
-                      : version.status
+                      : `${version.status}${deployedAndSkippedChecks}`
             ).replace("_", " ")}
           </span>
         </div>
@@ -191,6 +192,7 @@ function renderVersionStatus(version, app, match, viewLogs) {
       </div>
     );
   } else {
+    const deployedAndSkippedChecks = version.preflightSkipped ? " (checks skipped)" : "";
     return (
       <div className="flex alignItems--center">
         <div className="flex alignItems--center">
@@ -199,19 +201,19 @@ function renderVersionStatus(version, app, match, viewLogs) {
             data-for={`${version.versionLabel || version.title}-${version.sequence}`}
             className={classNames("icon", {
               "analysis-gray_checkmark": version.status === "deployed" || version.status === "merged",
-              "exclamationMark--icon": version.status === "opened" || version.preflightSkipped,
+              "exclamationMark--icon": version.status === "opened" || (version.preflightSkipped && version.status !== "deployed"),
               "grayCircleMinus--icon": version.status === "closed" || version.status === "pending",
               "error-small": version.status === "failed"
             })}
           />
           <span className={classNames("u-fontSize--small u-fontWeight--medium u-lineHeight--normal u-marginLeft--5", {
             "u-textColor--accent": version.status === "deployed" || version.status === "merged",
-            "u-textColor--warning": version.status === "opened" || version.preflightSkipped,
+            "u-textColor--warning": version.status === "opened" || (version.preflightSkipped && version.status !== "deployed"),
             "u-textColor--bodyCopy": version.status === "closed" || version.status === "pending" || version.status === "pending_preflight",
             "u-textColor--error": version.status === "failed"
           })}>
             {version.status === "deployed" ?
-              "Previously Deployed" :
+              `Previously Deployed${deployedAndSkippedChecks}` :
               version.status === "pending" ?
                 "Skipped" :
                 version.preflightSkipped ?
@@ -264,7 +266,7 @@ export default function AppVersionHistoryRow(props) {
         </div>
         <div className="flex flex1 alignItems--flexEnd"> {gitopsEnabled ? renderViewPreflights(version, props.app, props.match) : renderVersionStatus(version, props.app, props.match, props.handleViewLogs)}</div>
       </div>
-      <div className={`${nothingToCommit && selectedDiffReleases && "u-opacity--half"} flex-column flex1 alignItems--flexEnd`}>
+      <div className={`${nothingToCommit && selectedDiffReleases && "u-opacity--half"} flex-column flex-auto alignItems--flexEnd`}>
         <div>
           {version.status === "failed" || version.status === "deployed" ?
             renderVersionAction(version, latestVersion, nothingToCommit && selectedDiffReleases, props.app, props.history, props.redeployVersion) :
