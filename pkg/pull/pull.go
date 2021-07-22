@@ -50,7 +50,6 @@ type PullOptions struct {
 	ExcludeKotsKinds       bool
 	ExcludeAdminConsole    bool
 	IncludeMinio           bool
-	NativeHelmInstall      bool
 	SharedPassword         string
 	CreateAppDir           bool
 	Silent                 bool
@@ -58,6 +57,7 @@ type PullOptions struct {
 	RewriteImageOptions    RewriteImageOptions
 	HelmVersion            string
 	HelmOptions            []string
+	SkipHelmChartCheck     bool
 	ReportWriter           io.Writer
 	AppSlug                string
 	AppSequence            int64
@@ -244,9 +244,12 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 		fetchOptions.LocalPath = airgapAppFiles
 	}
 
-	prevHelmCharts, err := kotsutil.LoadHelmChartsFromPath(pullOptions.RootDir)
-	if err != nil {
-		return "", errors.Wrap(err, "failed to load previous helm charts")
+	var prevHelmCharts []*kotsv1beta1.HelmChart
+	if !pullOptions.SkipHelmChartCheck {
+		prevHelmCharts, err = kotsutil.LoadHelmChartsFromPath(pullOptions.RootDir)
+		if err != nil {
+			return "", errors.Wrap(err, "failed to load previous helm charts")
+		}
 	}
 
 	log.ActionWithSpinner("Pulling upstream")
@@ -280,9 +283,17 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 	}
 	log.FinishSpinner()
 
-	newHelmCharts, err := kotsutil.LoadHelmChartsFromPath(fetchOptions.RootDir)
-	if err != nil {
-		return "", errors.Wrap(err, "failed to load new helm charts")
+	var newHelmCharts []*kotsv1beta1.HelmChart
+	if !pullOptions.SkipHelmChartCheck {
+		renderDir := pullOptions.RootDir
+		if pullOptions.CreateAppDir {
+			renderDir = filepath.Join(pullOptions.RootDir, u.Name)
+		}
+
+		newHelmCharts, err = kotsutil.LoadHelmChartsFromPath(renderDir)
+		if err != nil {
+			return "", errors.Wrap(err, "failed to load new helm charts")
+		}
 	}
 
 	for _, prevChart := range prevHelmCharts {
