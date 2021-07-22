@@ -327,7 +327,7 @@ func ConfigureStore(ctx context.Context, options ConfigureStoreOptions) (*types.
 }
 
 // updateGlobalStore will update the in-cluster storage with exactly what's in the store param
-func updateGlobalStore(ctx context.Context, store *types.Store, kotsadmNamepsace string) (*velerov1.BackupStorageLocation, error) {
+func updateGlobalStore(ctx context.Context, store *types.Store, kotsadmNamespace string) (*velerov1.BackupStorageLocation, error) {
 	cfg, err := k8sutil.GetClusterConfig()
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get cluster config")
@@ -343,7 +343,7 @@ func updateGlobalStore(ctx context.Context, store *types.Store, kotsadmNamepsace
 		return nil, errors.Wrap(err, "failed to create velero clientset")
 	}
 
-	kotsadmVeleroBackendStorageLocation, err := FindBackupStoreLocation(ctx, kotsadmNamepsace)
+	kotsadmVeleroBackendStorageLocation, err := FindBackupStoreLocation(ctx, kotsadmNamespace)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to find backupstoragelocations")
 	}
@@ -667,14 +667,14 @@ func updateGlobalStore(ctx context.Context, store *types.Store, kotsadmNamepsace
 
 // GetGlobalStore will return the global store from kotsadmVeleroBackupStorageLocation
 // or will find it, if the param is nil
-func GetGlobalStore(ctx context.Context, kotsadmNamepsace string, kotsadmVeleroBackendStorageLocation *velerov1.BackupStorageLocation) (*types.Store, error) {
+func GetGlobalStore(ctx context.Context, kotsadmNamespace string, kotsadmVeleroBackendStorageLocation *velerov1.BackupStorageLocation) (*types.Store, error) {
 	clientset, err := k8sutil.GetClientset()
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get k8s clientset")
 	}
 
 	if kotsadmVeleroBackendStorageLocation == nil {
-		kotsadmVeleroBackendStorageLocation, err = FindBackupStoreLocation(ctx, kotsadmNamepsace)
+		kotsadmVeleroBackendStorageLocation, err = FindBackupStoreLocation(ctx, kotsadmNamespace)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to find backupstoragelocations")
 		}
@@ -1286,14 +1286,14 @@ func Redact(store *types.Store) error {
 	return nil
 }
 
-func resetResticRepositories(ctx context.Context, kotsadmNamepsace string) error {
+func resetResticRepositories(ctx context.Context, kotsadmNamespace string) error {
 	// ResticRepositories store the previous snapshot location which breaks volume backup when location changes.
 	cfg, err := k8sutil.GetClusterConfig()
 	if err != nil {
 		return errors.Wrap(err, "failed to get cluster config")
 	}
 
-	storageLocation, err := FindBackupStoreLocation(ctx, kotsadmNamepsace)
+	storageLocation, err := FindBackupStoreLocation(ctx, kotsadmNamespace)
 	if err != nil {
 		return errors.Wrap(err, "failed to find backupstoragelocations")
 	}
