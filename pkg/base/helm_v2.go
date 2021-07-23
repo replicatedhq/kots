@@ -27,13 +27,18 @@ func renderHelmV2(chartName string, chartPath string, vals map[string]interface{
 		return nil, errors.Wrap(err, "failed to load chart")
 	}
 
+	namespace := renderOptions.Namespace
+	if namespace == "" {
+		namespace = "repl{{ Namespace}}"
+	}
+
 	renderOpts := renderutil.Options{
 		ReleaseOptions: chartutil.ReleaseOptions{
 			Name:      chartName,
 			IsInstall: true,
 			IsUpgrade: false,
 			Time:      timeconv.Now(),
-			Namespace: renderOptions.Namespace,
+			Namespace: namespace,
 		},
 		KubeVersion: "1.16.0",
 	}

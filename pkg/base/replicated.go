@@ -201,14 +201,9 @@ func renderReplicatedHelmChart(kotsHelmChart *kotsv1beta1.HelmChart, upstreamFil
 		return nil, errors.Wrap(err, "failed to render local values for chart")
 	}
 
-	namespace := kotsHelmChart.Spec.Namespace
-	if namespace == "" {
-		namespace = "repl{{ Namespace}}"
-	}
-
 	helmBase, err := RenderHelm(helmUpstream, &RenderOptions{
 		SplitMultiDocYAML: true,
-		Namespace:         namespace,
+		Namespace:         kotsHelmChart.Spec.Namespace,
 		HelmVersion:       kotsHelmChart.Spec.HelmVersion,
 		HelmValues:        helmValues,
 		ExcludeKotsKinds:  renderOptions.ExcludeKotsKinds,
