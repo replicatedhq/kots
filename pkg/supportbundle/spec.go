@@ -35,6 +35,7 @@ import (
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	serializer "k8s.io/apimachinery/pkg/runtime/serializer/json"
 	"k8s.io/apimachinery/pkg/util/rand"
+	"k8s.io/client-go/kubernetes"
 )
 
 type DefaultTroubleshootOpts struct {
@@ -247,6 +248,20 @@ func addDefaultTroubleshoot(supportBundle *troubleshootv1beta2.SupportBundle, ap
 		supportBundle.Spec.Analyzers = make([]*troubleshootv1beta2.Analyze, 0)
 	}
 
+	clientset, err := k8sutil.GetClientset()
+	if err != nil {
+		logger.Errorf("Failed to get kubernetes clientset: %v", err)
+	}
+
+	var image string
+	var pullSecret *troubleshootv1beta2.ImagePullSecrets
+	if clientset != nil {
+		image, pullSecret, err = getImageAndSecret(context.TODO(), clientset)
+		if err != nil {
+			logger.Errorf("Failed to get kotsadm image and secret: %v", err)
+		}
+	}
+
 	licenseData, err := license.GetCurrentLicenseString(app)
 	if err != nil {
 		logger.Errorf("Failed to load license data: %v", err)
@@ -290,7 +305,7 @@ func addDefaultTroubleshoot(supportBundle *troubleshootv1beta2.SupportBundle, ap
 	supportBundle.Spec.Collectors = append(supportBundle.Spec.Collectors, makeKotsadmCollectors()...)
 	supportBundle.Spec.Collectors = append(supportBundle.Spec.Collectors, makeGoRoutineCollectors()...)
 	supportBundle.Spec.Collectors = append(supportBundle.Spec.Collectors, makeRookCollectors()...)
-	supportBundle.Spec.Collectors = append(supportBundle.Spec.Collectors, makeKurlCollectors()...)
+	supportBundle.Spec.Collectors = append(supportBundle.Spec.Collectors, makeKurlCollectors(image, pullSecret)...)
 	supportBundle.Spec.Collectors = append(supportBundle.Spec.Collectors, makeVeleroCollectors()...)
 
 	supportBundle.Spec.Collectors = append(supportBundle.Spec.Collectors, makeWeaveCollectors()...)
@@ -321,12 +336,7 @@ func addDefaultTroubleshoot(supportBundle *troubleshootv1beta2.SupportBundle, ap
 		supportBundle.Spec.Collectors = append(supportBundle.Spec.Collectors, collectors...)
 	}
 
-	collectd, err := makeCollectDCollectors()
-	if err != nil {
-		logger.Errorf("Failed to make collectd collectors: %v", err)
-	} else {
-		supportBundle.Spec.Collectors = append(supportBundle.Spec.Collectors, collectd...)
-	}
+	supportBundle.Spec.Collectors = append(supportBundle.Spec.Collectors, makeCollectDCollectors(image, pullSecret)...)
 
 	return supportBundle
 }
@@ -442,11 +452,17 @@ func makeRookCollectors() []*troubleshootv1beta2.Collect {
 	return rookCollectors
 }
 
-func makeKurlCollectors() []*troubleshootv1beta2.Collect {
+func makeKurlCollectors(image string, pullSecret *troubleshootv1beta2.ImagePullSecrets) []*troubleshootv1beta2.Collect {
+	collectors := []*troubleshootv1beta2.Collect{}
+
+	if !kurl.IsKurl() {
+		return collectors
+	}
+
 	names := []string{
 		"registry",
+		"ekc-operator",
 	}
-	collectors := []*troubleshootv1beta2.Collect{}
 	for _, name := range names {
 		collectors = append(collectors, &troubleshootv1beta2.Collect{
 			Logs: &troubleshootv1beta2.Logs{
@@ -456,6 +472,24 @@ func makeKurlCollectors() []*troubleshootv1beta2.Collect {
 				Name:      "kots/kurl",
 				Selector:  []string{fmt.Sprintf("app=%s", name)},
 				Namespace: "kurl",
+			},
+		})
+	}
+
+	if image != "" {
+		collectors = append(collectors, &troubleshootv1beta2.Collect{
+			CopyFromHost: &troubleshootv1beta2.CopyFromHost{
+				CollectorMeta: troubleshootv1beta2.CollectorMeta{
+					CollectorName: "kurl-host-preflights",
+				},
+				Name:            "kots/kurl/host-preflights",
+				HostPath:        "/var/lib/kurl/host-preflights",
+				ExtractArchive:  true,
+				Namespace:       os.Getenv("POD_NAMESPACE"),
+				Image:           image,
+				ImagePullSecret: pullSecret,
+				ImagePullPolicy: string(corev1.PullIfNotPresent),
+				Timeout:         "1m",
 			},
 		})
 	}
@@ -699,39 +733,53 @@ func makeAppVersionArchiveCollector(app *apptypes.App, dirPrefix string) (*troub
 	}, nil
 }
 
-func makeCollectDCollectors() ([]*troubleshootv1beta2.Collect, error) {
+func makeCollectDCollectors(imageName string, pullSecret *troubleshootv1beta2.ImagePullSecrets) []*troubleshootv1beta2.Collect {
 	collectors := []*troubleshootv1beta2.Collect{}
 
 	if !kurl.IsKurl() {
-		return collectors, nil
+		return collectors
 	}
 
-	clientset, err := k8sutil.GetClientset()
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to get k8s clientset")
+	if imageName != "" {
+		collectors = append(collectors, &troubleshootv1beta2.Collect{
+			Collectd: &troubleshootv1beta2.Collectd{
+				CollectorMeta: troubleshootv1beta2.CollectorMeta{
+					CollectorName: "collectd",
+				},
+				Namespace:       os.Getenv("POD_NAMESPACE"),
+				Image:           imageName,
+				ImagePullSecret: pullSecret,
+				ImagePullPolicy: string(corev1.PullIfNotPresent),
+				HostPath:        "/var/lib/collectd/rrd",
+				Timeout:         "5m",
+			},
+		})
 	}
+
+	return collectors
+}
+
+func getImageAndSecret(ctx context.Context, clientset kubernetes.Interface) (imageName string, pullSecret *troubleshootv1beta2.ImagePullSecrets, err error) {
+	namespace := os.Getenv("POD_NAMESPACE")
 
 	var containers []corev1.Container
 	var imagePullSecrets []corev1.LocalObjectReference
-	namespace := os.Getenv("POD_NAMESPACE")
-
 	if os.Getenv("POD_OWNER_KIND") == "deployment" {
 		existingDeployment, err := clientset.AppsV1().Deployments(namespace).Get(context.TODO(), "kotsadm", metav1.GetOptions{})
 		if err != nil {
-			return nil, errors.Wrap(err, "failed to get existing deployment")
+			return imageName, pullSecret, errors.Wrap(err, "failed to get existing deployment")
 		}
 		imagePullSecrets = existingDeployment.Spec.Template.Spec.ImagePullSecrets
 		containers = existingDeployment.Spec.Template.Spec.Containers
 	} else {
 		existingStatefulSet, err := clientset.AppsV1().StatefulSets(namespace).Get(context.TODO(), "kotsadm", metav1.GetOptions{})
 		if err != nil {
-			return nil, errors.Wrap(err, "failed to get existing statefulset")
+			return imageName, pullSecret, errors.Wrap(err, "failed to get existing statefulset")
 		}
 		imagePullSecrets = existingStatefulSet.Spec.Template.Spec.ImagePullSecrets
 		containers = existingStatefulSet.Spec.Template.Spec.Containers
 	}
 
-	imageName := ""
 	for _, container := range containers {
 		if container.Name == "kotsadm" {
 			imageName = container.Image
@@ -739,10 +787,9 @@ func makeCollectDCollectors() ([]*troubleshootv1beta2.Collect, error) {
 		}
 	}
 	if imageName == "" {
-		return nil, errors.New("kotsadm container not found")
+		return imageName, pullSecret, errors.New("container not found")
 	}
 
-	var pullSecret *troubleshootv1beta2.ImagePullSecrets
 	if len(imagePullSecrets) > 0 {
 		existingSecret := imagePullSecrets[0]
 		pullSecret = &troubleshootv1beta2.ImagePullSecrets{
@@ -750,23 +797,7 @@ func makeCollectDCollectors() ([]*troubleshootv1beta2.Collect, error) {
 		}
 	}
 
-	collector := &troubleshootv1beta2.Collect{
-		Collectd: &troubleshootv1beta2.Collectd{
-			CollectorMeta: troubleshootv1beta2.CollectorMeta{
-				CollectorName: "collectd",
-			},
-			Namespace:       namespace,
-			Image:           imageName,
-			ImagePullSecret: pullSecret,
-			ImagePullPolicy: string(corev1.PullIfNotPresent),
-			HostPath:        "/var/lib/collectd/rrd",
-			Timeout:         "5m",
-		},
-	}
-
-	collectors = append(collectors, collector)
-
-	return collectors, nil
+	return imageName, pullSecret, nil
 }
 
 func makeGoldpingerCollectors() []*troubleshootv1beta2.Collect {

@@ -81,6 +81,18 @@ spec:
         name: kots/admin_console
         selector:
           - app=kotsadm-s3-ops
+    - logs:
+        collectorName: registry
+        name: kots/kurl
+        selector:
+          - app=registry
+        namespace: kurl
+    - logs:
+        collectorName: ekc-operator
+        name: kots/kurl
+        selector:
+          - app=ekc-operator
+        namespace: kurl
     - secret:
         collectorName: kotsadm-replicated-registry
         includeValue: false
@@ -137,43 +149,57 @@ spec:
     - exec:
         collectorName: weave-status
         command:
-        - /home/weave/weave
+          - /home/weave/weave
         args:
-        - --local
-        - status
+          - --local
+          - status
         containerName: weave
         exclude: ""
         name: kots/kurl/weave
         namespace: kube-system
         selector:
-        - name=weave-net
+          - name=weave-net
         timeout: 10s
     - exec:
         collectorName: weave-report
         command:
-        - /home/weave/weave
+          - /home/weave/weave
         args:
-        - --local
-        - report
+          - --local
+          - report
         containerName: weave
         exclude: ""
         name: kots/kurl/weave
         namespace: kube-system
         selector:
-        - name=weave-net
+          - name=weave-net
         timeout: 10s
     - exec:
         args:
-        - "http://goldpinger.kurl.svc.cluster.local:80/check_all"
+          - "http://goldpinger.kurl.svc.cluster.local:80/check_all"
         collectorName: goldpinger-statistics
         command:
-        - curl
+          - curl
         containerName: kotsadm
         name: kots/goldpinger
         selector:
-        - app=kotsadm
+          - app=kotsadm
         timeout: 10s
     - longhorn: {}
+    - collectFromHost:
+        collectorName: kurl-host-preflights
+        name: kots/kurl/host-preflights
+        hostPath: /var/lib/kurl/host-preflights
+        extractArchive: true
+        image: alpine
+        imagePullPolicy: PullIfNotPresent
+        timeout: 1m
+    - collectd:
+        collectorName: collectd
+        hostPath: /var/lib/collectd/rrd
+        image: alpine
+        imagePullPolicy: PullIfNotPresent
+        timeout: 5m
 
   analyzers:
     - textAnalyze:
@@ -181,30 +207,30 @@ spec:
         exclude: ""
         fileName: kots/kurl/weave/kube-system/weave-net-*/weave-status-stdout.txt
         outcomes:
-        - fail:
-            message: Weave is not ready
-        - pass:
-            message: Weave is ready
+          - fail:
+              message: Weave is not ready
+          - pass:
+              message: Weave is ready
         regex: 'Status: ready'
     - textAnalyze:
         checkName: Weave Report
         exclude: ""
         fileName: kots/kurl/weave/kube-system/weave-net-*/weave-report-stdout.txt
         outcomes:
-        - fail:
-            message: Weave is not ready
-        - pass:
-            message: Weave is ready
+          - fail:
+              message: Weave is not ready
+          - pass:
+              message: Weave is ready
         regex: '"Ready": true'
     - textAnalyze:
         checkName: Inter-pod Networking
         exclude: ""
         fileName: kots/goldpinger/*/kotsadm-*/goldpinger-statistics-stdout.txt
         outcomes:
-        - fail:
-            when: "OK = false"
-            message: Some nodes have pod communication issues
-        - pass:
-            message: Goldpinger can communicate properly
+          - fail:
+              when: "OK = false"
+              message: Some nodes have pod communication issues
+          - pass:
+              message: Goldpinger can communicate properly
         regexGroups: '"OK": ?(?P<OK>\w+)'
     - longhorn: {}
