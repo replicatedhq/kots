@@ -129,6 +129,7 @@ function renderVersionStatus(version, app, match, viewLogs) {
   const isPendingDeployedVersion = find(downstream.pendingVersions, { sequence: version.sequence, status: "deployed" });
   const clusterSlug = downstream.cluster?.slug;
   let preflightBlock = null;
+  const showCheckmarkIcon = version.status === "deployed" || version.status === "merged" || version.status === "pending";
 
   if (isPastVersion && app.hasPreflight) {
     if (preflightsFailed) {
@@ -151,7 +152,6 @@ function renderVersionStatus(version, app, match, viewLogs) {
   }
 
   if (!isPastVersion && !isPendingDeployedVersion) {
-    const deployedAndSkippedChecks = version.preflightSkipped ? " (checks skipped)" : "";
     return (
       <div className="flex alignItems--center">
         <div className="flex alignItems--center">
@@ -159,8 +159,8 @@ function renderVersionStatus(version, app, match, viewLogs) {
             data-tip={`${version.versionLabel || version.title}-${version.sequence}`}
             data-for={`${version.versionLabel || version.title}-${version.sequence}`}
             className={classNames("icon", {
-              "checkmark-icon": version.status === "deployed" || version.status === "merged" || version.status === "pending",
-              "exclamationMark--icon": version.status === "opened" || (version.preflightSkipped && version.status !== "deployed"),
+              "checkmark-icon": showCheckmarkIcon,
+              "exclamationMark--icon": version.status === "opened",
               "grayCircleMinus--icon": version.status === "closed",
               "error-small": version.status === "failed" || preflightsFailed
             })}
@@ -168,7 +168,7 @@ function renderVersionStatus(version, app, match, viewLogs) {
           {version.status === "deploying" && <Loader className="flex alignItems--center" size="20" />}
           <span className={classNames("u-fontSize--small u-fontWeight--medium u-lineHeight--normal u-marginLeft--5", {
             "u-textColor--accent": version.status === "deployed" || version.status === "merged",
-            "u-textColor--warning": version.status === "opened" || (version.preflightSkipped && version.status !== "deployed"),
+            "u-textColor--warning": version.status === "opened",
             "u-textColor--bodyCopy": version.status === "closed" || version.status === "pending" || version.status === "pending_preflight",
             "u-textColor--error": version.status === "failed" || preflightsFailed
           })}>
@@ -178,12 +178,11 @@ function renderVersionStatus(version, app, match, viewLogs) {
                 : preflightsFailed
                   ? "Checks failed"
                   : version.status === "pending"
-                    ? "Ready to deploy" 
-                    : (version.preflightSkipped && version.status !== "deployed")
-                      ? "Checks skipped"
-                      : `${version.status}${deployedAndSkippedChecks}`
+                    ? "Ready to deploy"
+                      : version.status
             ).replace("_", " ")}
           </span>
+          {version.preflightSkipped && <span className="u-textColor--warning u-fontSize--small u-fontWeight--medium u-lineHeight--normal u-marginLeft--5">Checks skipped</span>}
         </div>
         {preflightBlock}
         {version.status === "failed" &&
@@ -192,7 +191,6 @@ function renderVersionStatus(version, app, match, viewLogs) {
       </div>
     );
   } else {
-    const deployedAndSkippedChecks = version.preflightSkipped ? " (checks skipped)" : "";
     return (
       <div className="flex alignItems--center">
         <div className="flex alignItems--center">
@@ -201,26 +199,25 @@ function renderVersionStatus(version, app, match, viewLogs) {
             data-for={`${version.versionLabel || version.title}-${version.sequence}`}
             className={classNames("icon", {
               "analysis-gray_checkmark": version.status === "deployed" || version.status === "merged",
-              "exclamationMark--icon": version.status === "opened" || (version.preflightSkipped && version.status !== "deployed"),
+              "exclamationMark--icon": version.status === "opened",
               "grayCircleMinus--icon": version.status === "closed" || version.status === "pending",
               "error-small": version.status === "failed"
             })}
           />
           <span className={classNames("u-fontSize--small u-fontWeight--medium u-lineHeight--normal u-marginLeft--5", {
             "u-textColor--accent": version.status === "deployed" || version.status === "merged",
-            "u-textColor--warning": version.status === "opened" || (version.preflightSkipped && version.status !== "deployed"),
+            "u-textColor--warning": version.status === "opened",
             "u-textColor--bodyCopy": version.status === "closed" || version.status === "pending" || version.status === "pending_preflight",
             "u-textColor--error": version.status === "failed"
           })}>
             {version.status === "deployed" ?
-              `Previously Deployed${deployedAndSkippedChecks}` :
+              "Previously Deployed" :
               version.status === "pending" ?
                 "Skipped" :
-                version.preflightSkipped ?
-                 "Checks skipped" :
                   version.status === "failed" ?
                     "Failed" : ""}
           </span>
+          {version.preflightSkipped && <span className="u-textColor--warning u-fontSize--small u-fontWeight--medium u-lineHeight--normal u-marginLeft--5">Checks skipped</span>}
         </div>
         {preflightBlock}
         {version.status === "failed" &&
