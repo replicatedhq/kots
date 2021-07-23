@@ -231,38 +231,43 @@ func (c *Client) registerHandlers(socketClient *socket.Client) error {
 
 		log.Println("received a deploy request for", args.AppSlug)
 
-		var applyResult, helmResult *commandResult
-		var applyError, helmError error
+		var deployRes *deployResult
+		var helmResult *commandResult
+		var deployError, helmError error
 		defer func() {
-			if applyError != nil {
-				applyResult = &commandResult{
-					hasErr:      true,
-					multiStdout: [][]byte{},
-					multiStderr: [][]byte{[]byte(applyError.Error())},
-				}
+			var dryRunResult, applyResult *commandResult
+
+			// only send results if we have an error
+			if deployRes.dryRunResult.hasErr {
+				dryRunResult = &deployRes.dryRunResult
 			}
-			if helmError != nil {
-				helmResult = &commandResult{
-					hasErr:      true,
-					multiStdout: [][]byte{},
-					multiStderr: [][]byte{[]byte(helmError.Error())},
-				}
+			if deployRes.applyResult.hasErr {
+				applyResult = &deployRes.applyResult
+			}
+			if helmResult != nil && !helmResult.hasErr {
+				helmResult = &commandResult{}
 			}
 
-			err := c.sendResult(args, nil, applyResult, helmResult)
+			err := c.sendResult(args, dryRunResult, applyResult, helmResult)
 			if err != nil {
 				log.Printf("failed to report result: %v", err)
 			}
 		}()
 
-		applyResult, applyError = c.deployManifests(args)
-		if applyError != nil {
-			log.Printf("falied to deploy manifests: %v", applyError)
+		deployRes, deployError = c.deployManifests(args)
+		if deployError != nil {
+			deployRes = &deployResult{}
+			deployRes.applyResult.hasErr = true
+			deployRes.applyResult.multiStderr = [][]byte{[]byte(deployError.Error())}
+			log.Printf("falied to deploy manifests: %v", deployError)
 			return
 		}
 
 		helmResult, helmError = c.deployHelmCharts(args)
 		if helmError != nil {
+			helmResult = &commandResult{}
+			helmResult.hasErr = true
+			helmResult.multiStderr = [][]byte{[]byte(helmError.Error())}
 			log.Printf("falied to deploy helm charts: %v", helmError)
 			return
 		}
@@ -288,7 +293,7 @@ func (c *Client) registerHandlers(socketClient *socket.Client) error {
 	return nil
 }
 
-func (c *Client) deployManifests(args ApplicationManifests) (*commandResult, error) {
+func (c *Client) deployManifests(args ApplicationManifests) (*deployResult, error) {
 	if args.PreviousManifests != "" {
 		if err := c.diffAndRemovePreviousManifests(args); err != nil {
 			return nil, errors.Wrapf(err, "failed to remove previous manifests")
@@ -379,26 +384,26 @@ func (c *Client) deployHelmCharts(args ApplicationManifests) (*commandResult, er
 		}
 
 		if err := tarGz.Unarchive(path.Join(tmpDir, "archive.tar.gz"), curHelmDir); err != nil {
-			return nil, errors.Wrap(err, "falied to unarchive current helm archive")
+			return nil, errors.Wrap(err, "failed to unarchive current helm archive")
 		}
 	}
 
 	removedCharts, err := getRemovedCharts(prevHelmDir, curHelmDir)
 	if err != nil {
-		return nil, errors.Wrap(err, "falied to find removed charts")
+		return nil, errors.Wrap(err, "failed to find removed charts")
 	}
 
 	if len(removedCharts) > 0 {
 		err := c.uninstallWithHelm(prevHelmDir, targetNamespace, removedCharts)
 		if err != nil {
-			return nil, errors.Wrap(err, "falied to uninstall helm charts")
+			return nil, errors.Wrap(err, "failed to uninstall helm charts")
 		}
 	}
 
 	if len(args.Charts) > 0 {
 		installResult, err = c.installWithHelm(curHelmDir, targetNamespace)
 		if err != nil {
-			return nil, errors.Wrap(err, "falied to install helm charts")
+			return nil, errors.Wrap(err, "failed to install helm charts")
 		}
 	}
 
@@ -476,7 +481,7 @@ func (c *Client) applyAppInformers(appID string, sequence int64, informerStrings
 	for _, str := range informerStrings {
 		informer, err := str.Parse()
 		if err != nil {
-			log.Printf(fmt.Sprintf("failed to parse informer %s: %s", str, err.Error()))
+			log.Printf("failed to parse informer %s: %s", str, err.Error())
 			continue // don't stop
 		}
 		informers = append(informers, informer)
