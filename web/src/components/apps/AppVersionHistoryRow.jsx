@@ -160,7 +160,7 @@ function renderVersionStatus(version, app, match, viewLogs) {
             data-for={`${version.versionLabel || version.title}-${version.sequence}`}
             className={classNames("icon", {
               "checkmark-icon": showCheckmarkIcon,
-              "exclamationMark--icon": version.status === "opened" || (version.preflightSkipped && !showCheckmarkIcon),
+              "exclamationMark--icon": version.status === "opened",
               "grayCircleMinus--icon": version.status === "closed",
               "error-small": version.status === "failed" || preflightsFailed
             })}
@@ -199,7 +199,7 @@ function renderVersionStatus(version, app, match, viewLogs) {
             data-for={`${version.versionLabel || version.title}-${version.sequence}`}
             className={classNames("icon", {
               "analysis-gray_checkmark": version.status === "deployed" || version.status === "merged",
-              "exclamationMark--icon": version.status === "opened" || (version.preflightSkipped && !showCheckmarkIcon),
+              "exclamationMark--icon": version.status === "opened",
               "grayCircleMinus--icon": version.status === "closed" || version.status === "pending",
               "error-small": version.status === "failed"
             })}
