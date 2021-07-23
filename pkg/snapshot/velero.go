@@ -55,7 +55,7 @@ func (s *VeleroStatus) ContainsPlugin(plugin string) bool {
 
 func CheckKotsadmVeleroAccess(ctx context.Context, kotsadmNamespace string) (requiresAccess bool, finalErr error) {
 	if kotsadmNamespace == "" {
-		finalErr = errors.New("kotsadmNamepsace param is required")
+		finalErr = errors.New("kotsadmNamespace param is required")
 		return
 	}
 

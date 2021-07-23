@@ -201,7 +201,7 @@ func (c *Client) diffAndRemovePreviousManifests(applicationManifests Application
 			log.Printf("Namespace %s still has objects from app %s: sleeping...\n", namespace, applicationManifests.AppSlug)
 			time.Sleep(sleepTime)
 		}
-		log.Printf("Namepsace %s successfully cleared of app %s\n", namespace, applicationManifests.AppSlug)
+		log.Printf("Namespace %s successfully cleared of app %s\n", namespace, applicationManifests.AppSlug)
 	}
 	if len(applicationManifests.ClearNamespaces) > 0 {
 		// Extra time in case the app-slug annotation was not being used.
@@ -448,7 +448,7 @@ func (c *Client) clearNamespace(slug string, namespace string, isRestore bool, r
 				log.Printf("Deleting %s/%s/%s\n", namespace, gvr, u.GetName())
 				err := dyn.Resource(gvr).Namespace(namespace).Delete(context.TODO(), u.GetName(), metav1.DeleteOptions{})
 				if err != nil {
-					log.Printf("Resource %s (%s) in namepsace %s could not be deleted: %v\n", u.GetName(), gvr, namespace, err)
+					log.Printf("Resource %s (%s) in namespace %s could not be deleted: %v\n", u.GetName(), gvr, namespace, err)
 					return false, err
 				}
 			}
