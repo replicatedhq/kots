@@ -64,8 +64,8 @@ func templateConfigObjects(configSpec *kotsv1beta1.Config, configValues map[stri
 		return "", errors.Wrap(err, "failed to create config context")
 	}
 
-	ApplyValuesToConfig(configSpec, configVals)
-	configDocWithData, err := marshalFunc(configSpec)
+	actualizedConfig := ApplyValuesToConfig(configSpec, configVals)
+	configDocWithData, err := marshalFunc(actualizedConfig)
 	if err != nil {
 		return "", errors.Wrap(err, "failed to marshal config")
 	}
@@ -127,58 +127,62 @@ func templateConfig(log *logger.CLILogger, configSpecData string, configValuesDa
 	return templateConfigObjects(config, templateContext, license, localRegistry, &template.VersionInfo{}, identityConfig, namespace, marshalFunc)
 }
 
-func ApplyValuesToConfig(config *kotsv1beta1.Config, values map[string]template.ItemValue) {
+func ApplyValuesToConfig(config *kotsv1beta1.Config, values map[string]template.ItemValue) *kotsv1beta1.Config {
 	if config == nil {
-		return
+		return nil
 	}
 
-	for idxG, g := range config.Spec.Groups {
+	configInstance := config.DeepCopy()
+
+	for idxG, g := range configInstance.Spec.Groups {
 		for idxI, i := range g.Items {
 			// if the item is repeatable
 			if i.Repeatable {
-				if config.Spec.Groups[idxG].Items[idxI].ValuesByGroup == nil {
+				if configInstance.Spec.Groups[idxG].Items[idxI].ValuesByGroup == nil {
 					// initialize the appropriate maps
-					config.Spec.Groups[idxG].Items[idxI].ValuesByGroup = map[string]kotsv1beta1.GroupValues{}
+					configInstance.Spec.Groups[idxG].Items[idxI].ValuesByGroup = map[string]kotsv1beta1.GroupValues{}
 				}
-				if config.Spec.Groups[idxG].Items[idxI].CountByGroup == nil {
-					config.Spec.Groups[idxG].Items[idxI].CountByGroup = map[string]int{}
+				if configInstance.Spec.Groups[idxG].Items[idxI].CountByGroup == nil {
+					configInstance.Spec.Groups[idxG].Items[idxI].CountByGroup = map[string]int{}
 				}
-				if config.Spec.Groups[idxG].Items[idxI].ValuesByGroup[g.Name] == nil {
-					config.Spec.Groups[idxG].Items[idxI].ValuesByGroup[g.Name] = map[string]string{}
-					config.Spec.Groups[idxG].Items[idxI].CountByGroup[g.Name] = 0
+				if configInstance.Spec.Groups[idxG].Items[idxI].ValuesByGroup[g.Name] == nil {
+					configInstance.Spec.Groups[idxG].Items[idxI].ValuesByGroup[g.Name] = map[string]string{}
+					configInstance.Spec.Groups[idxG].Items[idxI].CountByGroup[g.Name] = 0
 				}
 				for fieldName, item := range values {
 					if item.RepeatableItem == i.Name {
-						config.Spec.Groups[idxG].Items[idxI].ValuesByGroup[g.Name][fieldName] = fmt.Sprintf("%s", item.Value)
+						configInstance.Spec.Groups[idxG].Items[idxI].ValuesByGroup[g.Name][fieldName] = fmt.Sprintf("%s", item.Value)
 					}
 				}
-				for variadicGroup, groupValues := range config.Spec.Groups[idxG].Items[idxI].ValuesByGroup {
-					config.Spec.Groups[idxG].Items[idxI].CountByGroup[variadicGroup] = len(groupValues)
+				for variadicGroup, groupValues := range configInstance.Spec.Groups[idxG].Items[idxI].ValuesByGroup {
+					configInstance.Spec.Groups[idxG].Items[idxI].CountByGroup[variadicGroup] = len(groupValues)
 				}
-				CreateVariadicValues(&config.Spec.Groups[idxG].Items[idxI], g.Name)
+				CreateVariadicValues(&configInstance.Spec.Groups[idxG].Items[idxI], g.Name)
 			}
 			value, ok := values[i.Name]
 			if ok {
-				config.Spec.Groups[idxG].Items[idxI].Value = multitype.FromString(value.ValueStr())
-				config.Spec.Groups[idxG].Items[idxI].Default = multitype.FromString(value.DefaultStr())
+				configInstance.Spec.Groups[idxG].Items[idxI].Value = multitype.FromString(value.ValueStr())
+				configInstance.Spec.Groups[idxG].Items[idxI].Default = multitype.FromString(value.DefaultStr())
 
 				if value.Filename != "" {
-					config.Spec.Groups[idxG].Items[idxI].Filename = value.Filename
+					configInstance.Spec.Groups[idxG].Items[idxI].Filename = value.Filename
 				}
 			}
 			for idxC, c := range i.Items {
 				value, ok := values[c.Name]
 				if ok {
-					config.Spec.Groups[idxG].Items[idxI].Items[idxC].Value = multitype.FromString(value.ValueStr())
-					config.Spec.Groups[idxG].Items[idxI].Items[idxC].Default = multitype.FromString(value.DefaultStr())
+					configInstance.Spec.Groups[idxG].Items[idxI].Items[idxC].Value = multitype.FromString(value.ValueStr())
+					configInstance.Spec.Groups[idxG].Items[idxI].Items[idxC].Default = multitype.FromString(value.DefaultStr())
 
 					if value.Filename != "" {
-						config.Spec.Groups[idxG].Items[idxI].Filename = value.Filename
+						configInstance.Spec.Groups[idxG].Items[idxI].Filename = value.Filename
 					}
 				}
 			}
 		}
 	}
+
+	return configInstance
 }
 
 // MarshalConfig runs the same code path as the k8s json->yaml serializer, but uses a different yaml library for those parts
