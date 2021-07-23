@@ -104,13 +104,19 @@ func CreateBundleForBackup(appID string, backupName string, backupNamespace stri
 
 		progressChan <- collector.GetDisplayName()
 
+		restConfig, err := k8sutil.GetClusterConfig()
+		if err != nil {
+			progressChan <- errors.Wrapf(err, "failed to get kubernetes rest config for collector %q", collector.GetDisplayName())
+			continue
+		}
+
 		k8sClientSet, err := k8sutil.GetClientset()
 		if err != nil {
 			progressChan <- errors.Wrapf(err, "failed to get kubernetes client for collector %q", collector.GetDisplayName())
 			continue
 		}
 
-		result, err := collector.RunCollectorSync(k8sClientSet, redacts)
+		result, err := collector.RunCollectorSync(restConfig, k8sClientSet, redacts)
 		if err != nil {
 			progressChan <- errors.Wrapf(err, "failed to run collector %q", collector.GetDisplayName())
 			continue
