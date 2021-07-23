@@ -235,20 +235,7 @@ func (c *Client) registerHandlers(socketClient *socket.Client) error {
 		var helmResult *commandResult
 		var deployError, helmError error
 		defer func() {
-			var dryRunResult, applyResult *commandResult
-
-			// only send results if we have an error
-			if deployRes.dryRunResult.hasErr {
-				dryRunResult = &deployRes.dryRunResult
-			}
-			if deployRes.applyResult.hasErr {
-				applyResult = &deployRes.applyResult
-			}
-			if helmResult != nil && !helmResult.hasErr {
-				helmResult = &commandResult{}
-			}
-
-			err := c.sendResult(args, dryRunResult, applyResult, helmResult)
+			err := c.sendResult(args, &deployRes.dryRunResult, &deployRes.applyResult, helmResult)
 			if err != nil {
 				log.Printf("failed to report result: %v", err)
 			}
