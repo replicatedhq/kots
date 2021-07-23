@@ -1,6 +1,6 @@
 FROM golang:1.16 as deps
 
-ENV PROJECTPATH=/go/src/github.com/replicatedhq/kots/kotsadm
+ENV PROJECTPATH=/go/src/github.com/replicatedhq/kots/kotsadm/operator
 WORKDIR $PROJECTPATH
 COPY Makefile ./
 COPY Makefile.build ./
@@ -8,6 +8,5 @@ COPY go.mod ./
 COPY go.sum ./
 COPY cmd ./cmd
 COPY pkg ./pkg
-COPY kotskinds ./kotskinds
 
-RUN make kotsadm
+RUN make build
