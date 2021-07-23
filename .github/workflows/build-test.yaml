@@ -20,51 +20,49 @@ jobs:
         shell: bash
 
       - uses: actions/checkout@v2
-
       - run: make ci-test kots
       - uses: actions/upload-artifact@v2.2.4
         with:
           name: kots
           path: bin/kots
 
+
+  build-kotsadm:
+    runs-on: ubuntu-18.04
+    steps:
+      - uses: actions/setup-go@v2.1.3
+        with:
+          go-version: '^1.16.3'
+
+      - name: setup env
+        run: |
+          echo "GOPATH=$(go env GOPATH)" >> $GITHUB_ENV
+          echo "$(go env GOPATH)/bin" >> $GITHUB_PATH
+        shell: bash
+
+      - uses: actions/checkout@v2
       - run: make kotsadm
+      - uses: actions/upload-artifact@v2.2.4
+        with:
+          name: kotsadm
+          path: bin/kotsadm
+
+
+  build-operator:
+    runs-on: ubuntu-18.04
+    steps:
+      - uses: actions/setup-go@v2.1.3
+        with:
+          go-version: '^1.16.3'
+
+      - name: setup env
+        run: |
+          echo "GOPATH=$(go env GOPATH)" >> $GITHUB_ENV
+          echo "$(go env GOPATH)/bin" >> $GITHUB_PATH
+        shell: bash
+
+      - uses: actions/checkout@v2
       - run: make -C kotsadm/operator build
-      - run: make -C kurl_proxy build
-      - env:
-          GIT_COMMIT: ${{ github.sha }}
-        run: make -C web build-kotsadm
-
-      - name: build and push migrations for e2e
-        uses: docker/build-push-action@v2.6.1
-        with:
-          tags: ttl.sh/automated-${{ github.run_id }}/kotsadm-migrations:2h
-          context: ./migrations
-          file: ./migrations/deploy/Dockerfile
-          push: true
-      - name: Scan migrations for vulnerabilities
-        uses: aquasecurity/trivy-action@master
-        with:
-          image-ref: ttl.sh/automated-${{ github.run_id }}/kotsadm-migrations:2h
-          format: 'table'
-          exit-code: '0'
-          ignore-unfixed: true
-          severity: 'CRITICAL,HIGH'
-
-      - name: build and push kotsadm for e2e
-        uses: docker/build-push-action@v2.6.1
-        with:
-          tags: ttl.sh/automated-${{ github.run_id }}/kotsadm:2h
-          context: ./
-          file: ./deploy/Dockerfile       
-          push: true   
-      - name: Scan kotsadm for vulnerabilities
-        uses: aquasecurity/trivy-action@master
-        with:
-          image-ref: ttl.sh/automated-${{ github.run_id }}/kotsadm:2h
-          format: 'table'
-          exit-code: '0'
-          ignore-unfixed: true
-          severity: 'CRITICAL,HIGH'
 
       - name: build and push operator for e2e
         uses: docker/build-push-action@v2.6.1
@@ -82,6 +80,23 @@ jobs:
           ignore-unfixed: true
           severity: 'CRITICAL,HIGH'
 
+
+  build-kurl-proxy:
+    runs-on: ubuntu-18.04
+    steps:
+      - uses: actions/setup-go@v2.1.3
+        with:
+          go-version: '^1.16.3'
+
+      - name: setup env
+        run: |
+          echo "GOPATH=$(go env GOPATH)" >> $GITHUB_ENV
+          echo "$(go env GOPATH)/bin" >> $GITHUB_PATH
+        shell: bash
+
+      - uses: actions/checkout@v2
+      - run: make -C kurl_proxy build
+
       - name: build and push kurl_proxy for e2e
         uses: docker/build-push-action@v2.6.1
         with:
@@ -98,6 +113,83 @@ jobs:
           ignore-unfixed: true
           severity: 'CRITICAL,HIGH'
 
+
+  build-web:
+    runs-on: ubuntu-18.04
+    steps:
+      - uses: actions/setup-go@v2.1.3
+        with:
+          go-version: '^1.16.3'
+
+      - name: setup env
+        run: |
+          echo "GOPATH=$(go env GOPATH)" >> $GITHUB_ENV
+          echo "$(go env GOPATH)/bin" >> $GITHUB_PATH
+        shell: bash
+
+      - uses: actions/checkout@v2
+      - env:
+          GIT_COMMIT: ${{ github.sha }}
+        run: make -C web build-kotsadm
+
+      - name: download kotsadm binary
+        uses: actions/download-artifact@v2.0.10
+        with:
+          name: kotsadm
+          path: bin/
+      - run: chmod +x bin/kotsadm
+
+      - name: build and push kotsadm for e2e
+        uses: docker/build-push-action@v2.6.1
+        with:
+          tags: ttl.sh/automated-${{ github.run_id }}/kotsadm:2h
+          context: ./
+          file: ./deploy/Dockerfile       
+          push: true   
+      - name: Scan kotsadm for vulnerabilities
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ttl.sh/automated-${{ github.run_id }}/kotsadm:2h
+          format: 'table'
+          exit-code: '0'
+          ignore-unfixed: true
+          severity: 'CRITICAL,HIGH'
+
+
+  build-migrations:
+    runs-on: ubuntu-18.04
+    steps:
+      - uses: actions/setup-go@v2.1.3
+        with:
+          go-version: '^1.16.3'
+
+      - name: setup env
+        run: |
+          echo "GOPATH=$(go env GOPATH)" >> $GITHUB_ENV
+          echo "$(go env GOPATH)/bin" >> $GITHUB_PATH
+        shell: bash
+
+      - uses: actions/checkout@v2
+      - name: build and push migrations for e2e
+        uses: docker/build-push-action@v2.6.1
+        with:
+          tags: ttl.sh/automated-${{ github.run_id }}/kotsadm-migrations:2h
+          context: ./migrations
+          file: ./migrations/deploy/Dockerfile
+          push: true
+      - name: Scan migrations for vulnerabilities
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ttl.sh/automated-${{ github.run_id }}/kotsadm-migrations:2h
+          format: 'table'
+          exit-code: '0'
+          ignore-unfixed: true
+          severity: 'CRITICAL,HIGH'
+
+
+  push-minio:
+    runs-on: ubuntu-18.04
+    steps:
       - name: push minio for e2e
         run: |
           docker pull minio/minio:RELEASE.2021-07-08T19-43-25Z
@@ -112,6 +204,10 @@ jobs:
           ignore-unfixed: true
           severity: 'CRITICAL,HIGH'
 
+
+  push-postgres:
+    runs-on: ubuntu-18.04
+    steps:
       - name: push postgres for CI
         run: |
           docker pull postgres:10.17-alpine
@@ -126,9 +222,10 @@ jobs:
           ignore-unfixed: true
           severity: 'CRITICAL,HIGH'
 
+
   validate-legacy:
     runs-on: ubuntu-18.04
-    needs: build-kots
+    needs: [build-kots, build-kotsadm, build-operator, build-kurl-proxy, build-web, build-migrations, push-minio, push-postgres]
     strategy:
       fail-fast: false
       matrix:
@@ -254,9 +351,10 @@ jobs:
       - name: delete velero namespace
         run: kubectl delete namespace velero
 
+
   validate-minimal-rbac:
     runs-on: ubuntu-18.04
-    needs: build-kots
+    needs: [build-kots, build-kotsadm, build-operator, build-kurl-proxy, build-web, build-migrations, push-minio, push-postgres]
     strategy:
       fail-fast: false
       matrix:
@@ -321,9 +419,10 @@ jobs:
           kill $ADMIN_CONSOLE_PID
           exit $EXIT_CODE
 
+
   validate-no-required-config:
     runs-on: ubuntu-18.04
-    needs: build-kots
+    needs: [build-kots, build-kotsadm, build-operator, build-kurl-proxy, build-web, build-migrations, push-minio, push-postgres]
     strategy:
       fail-fast: false
       matrix:
@@ -400,7 +499,7 @@ jobs:
 
   validate-multi-namespace:
     runs-on: ubuntu-18.04
-    needs: build-kots
+    needs: [build-kots, build-kotsadm, build-operator, build-kurl-proxy, build-web, build-migrations, push-minio, push-postgres]
     strategy:
       fail-fast: false
       matrix:
@@ -474,3 +573,66 @@ jobs:
           kubectl -n $APP_NAME logs -p deployment/kotsadm-operator
           kill $ADMIN_CONSOLE_PID
           exit $EXIT_CODE
+
+
+  validate-kots-pull:
+    runs-on: ubuntu-18.04
+    needs: [build-kots, build-kotsadm, build-operator, build-kurl-proxy, build-web, build-migrations, push-minio, push-postgres]
+    strategy:
+      fail-fast: false
+      matrix:
+        k8s_version: [v1.18.18-k3s1,v1.19.10-k3s1,v1.20.6-k3s1]
+    steps:
+      - uses: debianmaster/actions-k3s@v1.0.3
+        id: k3s
+        with:
+          version: ${{ matrix.k8s_version }}
+
+      - name: download kots binary
+        uses: actions/download-artifact@v2.0.10
+        with:
+          name: kots
+          path: bin/
+
+      - run: chmod +x bin/kots
+
+      - name: run kots pull
+        env:
+          APP_NAME: multi-namespace-yeti
+          APP_SLUG: multi-namespace
+        run: |
+          set +e
+          echo ${{ secrets.MULTI_NAMESPACE_LICENSE }} | base64 -d > license.yaml
+          ./bin/kots pull $APP_NAME/automated \
+            --license-file license.yaml \
+            --shared-password password \
+            --namespace $APP_NAME \
+            --exclude-admin-console
+
+          kubectl create ns $APP_NAME
+          kubectl create ns nginx-test
+          kubectl create ns redis-test
+          kubectl create ns postgres-test
+          kustomize build $HOME/$APP_SLUG/overlays/midstream | kubectl apply -f -
+
+          EXIT_CODE=$?
+          if [ $EXIT_CODE -ne 0 ]; then
+            echo "Failed to apply spec"
+            kubectl get pods -A
+            exit $EXIT_CODE
+          fi
+
+          echo "Waiting for pods to start"
+
+          COUNTER=1
+          while [ $(kubectl get pods --no-headers | grep -v Running | grep -v Completed | wc -l) -gt 0 ]; do
+            COUNTER=$[$COUNTER +1]
+            if [ $COUNTER -gt 120 ]; then
+              echo "Timed out waiting for pods to start"
+              kubectl get pods -A
+              exit -1
+            fi
+            sleep 1
+          done
+
+          echo "All pods started"
