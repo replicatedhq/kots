@@ -42,6 +42,11 @@ type commandResult struct {
 	multiStderr [][]byte
 }
 
+type deployResult struct {
+	dryRunResult commandResult
+	applyResult  commandResult
+}
+
 func (c *Client) diffAndRemovePreviousManifests(applicationManifests ApplicationManifests) error {
 	decodedPrevious, err := base64.StdEncoding.DecodeString(applicationManifests.PreviousManifests)
 	if err != nil {
@@ -242,7 +247,9 @@ func (c *Client) ensureNamespacePresent(name string) error {
 	return nil
 }
 
-func (c *Client) ensureResourcesPresent(applicationManifests ApplicationManifests) (*commandResult, error) {
+func (c *Client) ensureResourcesPresent(applicationManifests ApplicationManifests) (*deployResult, error) {
+	var deployRes deployResult
+
 	targetNamespace := c.TargetNamespace
 	if applicationManifests.Namespace != "." {
 		targetNamespace = applicationManifests.Namespace
@@ -267,6 +274,7 @@ func (c *Client) ensureResourcesPresent(applicationManifests ApplicationManifest
 	// other docs has a custom resource using it
 	shouldDryRun := firstApplyDocs == nil
 	if shouldDryRun {
+
 		byNamespace, err := docsByNamespace(decoded, targetNamespace)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to get docs by requested namespace")
@@ -279,26 +287,24 @@ func (c *Client) ensureResourcesPresent(applicationManifests ApplicationManifest
 
 			log.Printf("dry run applying manifests(s) in requested namespace: %s", requestedNamespace)
 			dryrunStdout, dryrunStderr, dryRunErr := kubernetesApplier.Apply(requestedNamespace, applicationManifests.AppSlug, docs, true, applicationManifests.Wait, applicationManifests.AnnotateSlug)
+
+			if len(dryrunStdout) > 0 {
+				deployRes.dryRunResult.multiStdout = append(deployRes.dryRunResult.multiStdout, dryrunStdout)
+			}
+			if len(dryrunStderr) > 0 {
+				deployRes.dryRunResult.multiStderr = append(deployRes.dryRunResult.multiStderr, dryrunStderr)
+			}
+
 			if dryRunErr != nil {
 				log.Printf("stdout (dryrun) = %s", dryrunStdout)
 				log.Printf("stderr (dryrun) = %s", dryrunStderr)
 				log.Printf("error: %s", dryRunErr.Error())
-			} else {
-				log.Printf("dry run applied manifests(s) in requested namespace: %s", requestedNamespace)
+
+				deployRes.dryRunResult.hasErr = true
+				return &deployRes, nil
 			}
 
-			if dryRunErr != nil {
-				dryrunResult := &commandResult{
-					hasErr:      true,
-					multiStdout: [][]byte{dryrunStdout},
-					multiStderr: [][]byte{dryrunStderr},
-				}
-				if err := c.sendResult(applicationManifests, dryrunResult, nil, nil); err != nil {
-					return nil, errors.Wrap(err, "failed to report dry run status")
-				}
-
-				return nil, nil // don't return an error because execution is proper, the api now has the error
-			}
+			log.Printf("dry run applied manifests(s) in requested namespace: %s", requestedNamespace)
 		}
 
 	}
@@ -309,24 +315,24 @@ func (c *Client) ensureResourcesPresent(applicationManifests ApplicationManifest
 		// CRDs don't have namespaces, so we can skip splitting
 
 		applyStdout, applyStderr, applyErr := kubernetesApplier.Apply("", applicationManifests.AppSlug, firstApplyDocs, false, applicationManifests.Wait, applicationManifests.AnnotateSlug)
+
+		if len(applyStdout) > 0 {
+			deployRes.applyResult.multiStdout = append(deployRes.applyResult.multiStdout, applyStdout)
+		}
+		if len(applyStderr) > 0 {
+			deployRes.applyResult.multiStderr = append(deployRes.applyResult.multiStderr, applyStderr)
+		}
+
 		if applyErr != nil {
 			log.Printf("stdout (first apply) = %s", applyStdout)
 			log.Printf("stderr (first apply) = %s", applyStderr)
 			log.Printf("error (CRDS): %s", applyErr.Error())
 
-			applyResult := &commandResult{
-				hasErr:      true,
-				multiStdout: [][]byte{applyStdout},
-				multiStderr: [][]byte{applyStderr},
-			}
-			if err := c.sendResult(applicationManifests, nil, applyResult, nil); err != nil {
-				return nil, errors.Wrap(err, "failed to report crd status")
-			}
-
-			return nil, nil
-		} else {
-			log.Println("custom resource definition(s) applied")
+			deployRes.applyResult.hasErr = true
+			return &deployRes, nil
 		}
+
+		log.Println("custom resource definition(s) applied")
 
 		// Give the API server a minute (well, 5 seconds) to cache the CRDs
 		time.Sleep(time.Second * 5)
@@ -362,12 +368,11 @@ func (c *Client) ensureResourcesPresent(applicationManifests ApplicationManifest
 		}
 	}
 
-	result := &commandResult{
-		hasErr:      hasErr,
-		multiStderr: multiStderr,
-		multiStdout: multiStdout,
-	}
-	return result, nil
+	deployRes.applyResult.hasErr = hasErr
+	deployRes.applyResult.multiStdout = multiStdout
+	deployRes.applyResult.multiStderr = multiStderr
+
+	return &deployRes, nil
 }
 
 func (c *Client) clearNamespace(slug string, namespace string, isRestore bool, restoreLabelSelector *metav1.LabelSelector) (bool, error) {
