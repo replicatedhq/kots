@@ -13,6 +13,17 @@ export default class FileInput extends React.Component {
     }
   }
 
+  handleRemoveFile = (name, item) => {
+    if (!item) {
+      // single file remove
+      this.props.onChange([{ filename: "", value: ""}]);
+      this.setState({ fileAdded: false });
+    } else {
+      // variadic config item remove
+      this.props.handleRemoveFile(name, item)
+    }
+  }
+
   handleOnChange = (ev) => {
     this.setState({ errText: "" });
 
@@ -48,10 +59,10 @@ export default class FileInput extends React.Component {
     if (!arr || arr.length === 0) { return null };
     return arr.map((item, index) => {
       return (
-        <div key={`${item}-${index}`} className="u-marginTop--10" onClick={() => this.props.handleRemoveFile(this.props.name, item)}>
+        <div key={`${item}-${index}`} className="u-marginTop--10">
           <span className={`icon u-smallCheckGreen u-marginRight--10 u-top--3`}></span>
           {item}
-          {arr.length > 1 ? <span className="icon gray-trash-small clickable u-marginLeft--5 u-top--3" /> : null}
+          {arr.length > 1 ? <span onClick={() => this.handleRemoveFile(this.props.name, item)} className="icon gray-trash-small clickable u-marginLeft--5 u-top--3" /> : null}
         </div>
       );
     });
@@ -81,13 +92,20 @@ export default class FileInput extends React.Component {
                 disabled={this.props.disabled}
               />
               {!this.props.multiple ?
-                <label htmlFor={`${this.props.name} selector`} className="u-position--relative">
-                  <span className={`icon ${hasFileOrValue ? "u-smallCheckGreen" : "u-ovalIcon clickable"} u-marginRight--10 u-top--3`}></span>
-                  {hasFileOrValue ? this.props.filenamesText : `Browse files for ${this.props.title}`}
-                  {hasFileOrValue ? 
-                    <p className="u-linkColor u-textDecoration--underlineOnHover u-fontSize--small u-marginLeft--30 u-marginTop--5">Select a different file</p>
-                  : null }
-                </label>
+                    hasFileOrValue ? 
+                      <div>
+                        <div>
+                          <span className={`icon u-smallCheckGreen u-marginRight--10 u-top--3`}></span>
+                          {this.props.filenamesText}
+                          <span onClick={() => this.handleRemoveFile(this.props.name)} className="icon gray-trash-small clickable u-marginLeft--5 u-top--3" />
+                        </div>
+                        <p className="u-linkColor u-textDecoration--underlineOnHover u-fontSize--small u-marginLeft--30 u-marginTop--5">Select a different file</p>
+                      </div>
+                    :
+                      <label htmlFor={`${this.props.name} selector`} className="u-position--relative">
+                        <span className={`icon u-ovalIcon clickable u-marginRight--10 u-top--3`}></span>
+                        Browse files for {this.props.title}
+                      </label>
               :
                 <div>
                   {this.renderFilesUploaded(this.props.filenamesText)}
