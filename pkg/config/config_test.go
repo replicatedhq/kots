@@ -454,9 +454,9 @@ func TestApplyValuesToConfig(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			req := require.New(t)
-			ApplyValuesToConfig(&test.config, test.values)
+			resultConfig := ApplyValuesToConfig(&test.config, test.values)
 
-			req.Equal(test.want, test.config)
+			req.Equal(test.want, *resultConfig)
 		})
 	}
 }

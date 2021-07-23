@@ -41,12 +41,12 @@ func renderReplicated(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (
 		return nil, nil, errors.Wrap(err, "failed to create new config context template builder")
 	}
 
-	config, _, _, _, err := findConfigAndLicense(u, renderOptions.Log)
+	config, _, idConfig, license, err := findConfigAndLicense(u, renderOptions.Log)
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "failed to find config file")
 	}
 
-	actualizedConfig, err := kotsconfig.TemplateConfigObjects(config, itemValues, nil, template.LocalRegistry{}, nil, nil, os.Getenv("POD_NAMESPACE"))
+	renderedConfig, err := kotsconfig.TemplateConfigObjects(config, itemValues, license, template.LocalRegistry{}, nil, idConfig, os.Getenv("POD_NAMESPACE"))
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "failed to template config objects")
 	}
@@ -72,7 +72,7 @@ func renderReplicated(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (
 			upstreamFile.Content = bytes.Join(newContent, []byte("\n---\n"))
 		}
 
-		c, err := processVariadicConfig(&upstreamFile, actualizedConfig, renderOptions.Log)
+		c, err := processVariadicConfig(&upstreamFile, renderedConfig, renderOptions.Log)
 		if err != nil {
 			return nil, nil, errors.Wrapf(err, "failed to process variadic config in file %s", upstreamFile.Path)
 		}
