@@ -1,4 +1,22 @@
-FROM golang:1.16 as deps
+FROM kotsadm-operator:cache AS builder
+
+ENV PROJECTPATH=/go/src/github.com/replicatedhq/kots/kotsadm/operator
+WORKDIR $PROJECTPATH
+ADD Makefile ./
+ADD Makefile.build ./
+ADD go.mod ./
+ADD go.sum ./
+ADD cmd ./cmd
+ADD pkg ./pkg
+
+RUN make build
+
+FROM debian:buster
+RUN apt-get update && apt-get install -y --no-install-recommends curl ca-certificates \
+  && rm -rf /var/lib/apt/lists/*
+
+ENV GO111MODULE=on
+ENV PATH="/usr/local/bin:$PATH"
 
 # Install Kubectl 1.14
 ENV KUBECTL_1_14_VERSION=v1.14.9
@@ -50,15 +68,6 @@ RUN curl -L "https://get.helm.sh/helm-v3.4.2-linux-amd64.tar.gz" -o /tmp/helm.ta
   chmod a+x linux-amd64/helm && \
   mv linux-amd64/helm "/usr/local/bin/helm3.4.2"
 
-ENV PROJECTPATH=/go/src/github.com/replicatedhq/kots/kotsadm/operator
-WORKDIR $PROJECTPATH
-ADD Makefile ./
-ADD Makefile.build ./
-ADD go.mod ./
-ADD go.sum ./
-ADD cmd ./cmd
-ADD pkg ./pkg
+COPY --from=builder /go/src/github.com/replicatedhq/kots/kotsadm/operator/bin/kotsadm-operator .
 
-RUN make build
-
-ENTRYPOINT ["./bin/kotsadm-operator"]
+ENTRYPOINT ["/kotsadm-operator"]

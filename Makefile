@@ -110,3 +110,4 @@ project-pact-tests:
 .PHONY: cache
 cache:
 	docker build -f hack/dev/Dockerfile.skaffoldcache . -t kotsadm:cache
+	docker build -f kotsadm/operator/Dockerfile.skaffoldcache kotsadm/operator -t kotsadm-operator:cache
