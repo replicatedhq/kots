@@ -1250,6 +1250,8 @@ github.com/replicatedhq/termui/v3 v3.1.1-0.20200811145416-f40076d26851/go.mod h1
 github.com/replicatedhq/troubleshoot v0.10.18/go.mod h1:8oFRnMJlFjzJ490eq72iLEN7DGJjkgLx22Z1vX6WwU0=
 github.com/replicatedhq/troubleshoot v0.13.5 h1:/WSW0oMcknoJyvwssnAw5zMap05eeWY2AJMPXfIsYgQ=
 github.com/replicatedhq/troubleshoot v0.13.5/go.mod h1:mfDCXqnMY1OUoELXFIZnNH7zHYIveAfuv5eZFcHZnVk=
+github.com/replicatedhq/troubleshoot v0.13.6 h1:btbQEV/ZN2QopXCCNhsmY74qmOCpsyESiBQd5C80skU=
+github.com/replicatedhq/troubleshoot v0.13.6/go.mod h1:mfDCXqnMY1OUoELXFIZnNH7zHYIveAfuv5eZFcHZnVk=
 github.com/replicatedhq/yaml/v3 v3.0.0-beta5-replicatedhq h1:PwPggruelq2336c1Ayg5STFqgbn/QB1tWLQwrVlU7ZQ=
 github.com/replicatedhq/yaml/v3 v3.0.0-beta5-replicatedhq/go.mod h1:Txa7LopbYCU8aRgmNe0n+y/EPMz50NbCPcVVJBquwag=
 github.com/robfig/cron v1.1.0/go.mod h1:JGuDeoQd7Z6yL4zQhZ3OPEVHB7fL6Ka6skscFHfmt2k=
