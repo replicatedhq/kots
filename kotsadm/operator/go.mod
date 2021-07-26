@@ -17,7 +17,7 @@ require (
 	github.com/pact-foundation/pact-go v1.5.3
 	github.com/pierrec/lz4 v2.6.1+incompatible // indirect
 	github.com/pkg/errors v0.9.1
-	github.com/replicatedhq/troubleshoot v0.13.3
+	github.com/replicatedhq/troubleshoot v0.13.5
 	github.com/replicatedhq/yaml/v3 v3.0.0-beta5-replicatedhq
 	github.com/spf13/cobra v1.2.1
 	github.com/spf13/viper v1.8.1
