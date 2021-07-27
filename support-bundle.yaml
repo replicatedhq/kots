@@ -186,19 +186,19 @@ spec:
           - app=kotsadm
         timeout: 10s
     - longhorn: {}
-    - collectFromHost:
+    - copyFromHost:
         collectorName: kurl-host-preflights
         name: kots/kurl/host-preflights
         hostPath: /var/lib/kurl/host-preflights
         extractArchive: true
         image: alpine
-        imagePullPolicy: PullIfNotPresent
+        imagePullPolicy: IfNotPresent
         timeout: 1m
     - collectd:
         collectorName: collectd
         hostPath: /var/lib/collectd/rrd
         image: alpine
-        imagePullPolicy: PullIfNotPresent
+        imagePullPolicy: IfNotPresent
         timeout: 5m
 
   analyzers:
