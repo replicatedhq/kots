@@ -18,6 +18,7 @@ import (
 	"github.com/mholt/archiver"
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/pkg/errors"
+	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	versiontypes "github.com/replicatedhq/kots/pkg/api/version/types"
 	apptypes "github.com/replicatedhq/kots/pkg/app/types"
 	gitopstypes "github.com/replicatedhq/kots/pkg/gitops/types"
@@ -490,6 +491,7 @@ func (s *OCIStore) GetAppVersion(appID string, sequence int64) (*versiontypes.Ap
 	if err := json.Unmarshal([]byte(data), &appVersion); err != nil {
 		return nil, errors.Wrap(err, "failed to unmarshal app version")
 	}
+	appVersion.AppID = appID
 
 	return &appVersion, nil
 }
@@ -506,4 +508,8 @@ func refFromAppVersion(appID string, sequence int64, baseURI string) string {
 	ref := fmt.Sprintf("%s/%s:%d", strings.TrimPrefix(baseURI, "docker://"), strings.ToLower(appID), sequence)
 
 	return ref
+}
+
+func (s *OCIStore) UpdateAppVersionInstallationSpec(appID string, sequence int64, installation kotsv1beta1.Installation) error {
+	return ErrNotImplemented
 }

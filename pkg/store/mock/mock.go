@@ -92,6 +92,21 @@ func (mr *MockStoreMockRecorder) UpdateRegistry(appID, hostname, username, passw
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateRegistry", reflect.TypeOf((*MockStore)(nil).UpdateRegistry), appID, hostname, username, password, namespace, isReadOnly)
 }
 
+// GetAppIDsFromRegistry mocks base method
+func (m *MockStore) GetAppIDsFromRegistry(hostname string) ([]string, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetAppIDsFromRegistry", hostname)
+	ret0, _ := ret[0].([]string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetAppIDsFromRegistry indicates an expected call of GetAppIDsFromRegistry
+func (mr *MockStoreMockRecorder) GetAppIDsFromRegistry(hostname interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAppIDsFromRegistry", reflect.TypeOf((*MockStore)(nil).GetAppIDsFromRegistry), hostname)
+}
+
 // ListSupportBundles mocks base method
 func (m *MockStore) ListSupportBundles(appID string) ([]*types12.SupportBundle, error) {
 	m.ctrl.T.Helper()
@@ -1129,33 +1144,47 @@ func (mr *MockStoreMockRecorder) CreateAppVersion(appID, currentSequence, filesI
 }
 
 // GetAppVersion mocks base method
-func (m *MockStore) GetAppVersion(arg0 string, arg1 int64) (*types2.AppVersion, error) {
+func (m *MockStore) GetAppVersion(appID string, sequence int64) (*types2.AppVersion, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetAppVersion", arg0, arg1)
+	ret := m.ctrl.Call(m, "GetAppVersion", appID, sequence)
 	ret0, _ := ret[0].(*types2.AppVersion)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetAppVersion indicates an expected call of GetAppVersion
-func (mr *MockStoreMockRecorder) GetAppVersion(arg0, arg1 interface{}) *gomock.Call {
+func (mr *MockStoreMockRecorder) GetAppVersion(appID, sequence interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAppVersion", reflect.TypeOf((*MockStore)(nil).GetAppVersion), arg0, arg1)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAppVersion", reflect.TypeOf((*MockStore)(nil).GetAppVersion), appID, sequence)
 }
 
 // GetAppVersionsAfter mocks base method
-func (m *MockStore) GetAppVersionsAfter(arg0 string, arg1 int64) ([]*types2.AppVersion, error) {
+func (m *MockStore) GetAppVersionsAfter(appID string, sequence int64) ([]*types2.AppVersion, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetAppVersionsAfter", arg0, arg1)
+	ret := m.ctrl.Call(m, "GetAppVersionsAfter", appID, sequence)
 	ret0, _ := ret[0].([]*types2.AppVersion)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetAppVersionsAfter indicates an expected call of GetAppVersionsAfter
-func (mr *MockStoreMockRecorder) GetAppVersionsAfter(arg0, arg1 interface{}) *gomock.Call {
+func (mr *MockStoreMockRecorder) GetAppVersionsAfter(appID, sequence interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAppVersionsAfter", reflect.TypeOf((*MockStore)(nil).GetAppVersionsAfter), arg0, arg1)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAppVersionsAfter", reflect.TypeOf((*MockStore)(nil).GetAppVersionsAfter), appID, sequence)
+}
+
+// UpdateAppVersionInstallationSpec mocks base method
+func (m *MockStore) UpdateAppVersionInstallationSpec(appID string, sequence int64, spec v1beta1.Installation) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateAppVersionInstallationSpec", appID, sequence, spec)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpdateAppVersionInstallationSpec indicates an expected call of UpdateAppVersionInstallationSpec
+func (mr *MockStoreMockRecorder) UpdateAppVersionInstallationSpec(appID, sequence, spec interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateAppVersionInstallationSpec", reflect.TypeOf((*MockStore)(nil).UpdateAppVersionInstallationSpec), appID, sequence, spec)
 }
 
 // GetLatestLicenseForApp mocks base method
@@ -1591,6 +1620,21 @@ func (m *MockRegistryStore) UpdateRegistry(appID, hostname, username, password, 
 func (mr *MockRegistryStoreMockRecorder) UpdateRegistry(appID, hostname, username, password, namespace, isReadOnly interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateRegistry", reflect.TypeOf((*MockRegistryStore)(nil).UpdateRegistry), appID, hostname, username, password, namespace, isReadOnly)
+}
+
+// GetAppIDsFromRegistry mocks base method
+func (m *MockRegistryStore) GetAppIDsFromRegistry(hostname string) ([]string, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetAppIDsFromRegistry", hostname)
+	ret0, _ := ret[0].([]string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetAppIDsFromRegistry indicates an expected call of GetAppIDsFromRegistry
+func (mr *MockRegistryStoreMockRecorder) GetAppIDsFromRegistry(hostname interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAppIDsFromRegistry", reflect.TypeOf((*MockRegistryStore)(nil).GetAppIDsFromRegistry), hostname)
 }
 
 // MockSupportBundleStore is a mock of SupportBundleStore interface
@@ -2997,33 +3041,47 @@ func (mr *MockVersionStoreMockRecorder) CreateAppVersion(appID, currentSequence,
 }
 
 // GetAppVersion mocks base method
-func (m *MockVersionStore) GetAppVersion(arg0 string, arg1 int64) (*types2.AppVersion, error) {
+func (m *MockVersionStore) GetAppVersion(appID string, sequence int64) (*types2.AppVersion, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetAppVersion", arg0, arg1)
+	ret := m.ctrl.Call(m, "GetAppVersion", appID, sequence)
 	ret0, _ := ret[0].(*types2.AppVersion)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetAppVersion indicates an expected call of GetAppVersion
-func (mr *MockVersionStoreMockRecorder) GetAppVersion(arg0, arg1 interface{}) *gomock.Call {
+func (mr *MockVersionStoreMockRecorder) GetAppVersion(appID, sequence interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAppVersion", reflect.TypeOf((*MockVersionStore)(nil).GetAppVersion), arg0, arg1)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAppVersion", reflect.TypeOf((*MockVersionStore)(nil).GetAppVersion), appID, sequence)
 }
 
 // GetAppVersionsAfter mocks base method
-func (m *MockVersionStore) GetAppVersionsAfter(arg0 string, arg1 int64) ([]*types2.AppVersion, error) {
+func (m *MockVersionStore) GetAppVersionsAfter(appID string, sequence int64) ([]*types2.AppVersion, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetAppVersionsAfter", arg0, arg1)
+	ret := m.ctrl.Call(m, "GetAppVersionsAfter", appID, sequence)
 	ret0, _ := ret[0].([]*types2.AppVersion)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetAppVersionsAfter indicates an expected call of GetAppVersionsAfter
-func (mr *MockVersionStoreMockRecorder) GetAppVersionsAfter(arg0, arg1 interface{}) *gomock.Call {
+func (mr *MockVersionStoreMockRecorder) GetAppVersionsAfter(appID, sequence interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAppVersionsAfter", reflect.TypeOf((*MockVersionStore)(nil).GetAppVersionsAfter), arg0, arg1)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAppVersionsAfter", reflect.TypeOf((*MockVersionStore)(nil).GetAppVersionsAfter), appID, sequence)
+}
+
+// UpdateAppVersionInstallationSpec mocks base method
+func (m *MockVersionStore) UpdateAppVersionInstallationSpec(appID string, sequence int64, spec v1beta1.Installation) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateAppVersionInstallationSpec", appID, sequence, spec)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpdateAppVersionInstallationSpec indicates an expected call of UpdateAppVersionInstallationSpec
+func (mr *MockVersionStoreMockRecorder) UpdateAppVersionInstallationSpec(appID, sequence, spec interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateAppVersionInstallationSpec", reflect.TypeOf((*MockVersionStore)(nil).UpdateAppVersionInstallationSpec), appID, sequence, spec)
 }
 
 // MockLicenseStore is a mock of LicenseStore interface

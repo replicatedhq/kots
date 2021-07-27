@@ -103,11 +103,11 @@ func NewBuilder(kotsKinds *kotsutil.KotsKinds, registrySettings registrytypes.Re
 
 // RenderDir renders an app archive dir
 // this is useful for when the license/config have updated, and template functions need to be evaluated again
-func (r Renderer) RenderDir(archiveDir string, a *apptypes.App, downstreams []downstreamtypes.Downstream, registrySettings registrytypes.RegistrySettings) error {
-	return RenderDir(archiveDir, a, downstreams, registrySettings)
+func (r Renderer) RenderDir(archiveDir string, a *apptypes.App, downstreams []downstreamtypes.Downstream, registrySettings registrytypes.RegistrySettings, createNewVersion bool) error {
+	return RenderDir(archiveDir, a, downstreams, registrySettings, createNewVersion)
 }
 
-func RenderDir(archiveDir string, a *apptypes.App, downstreams []downstreamtypes.Downstream, registrySettings registrytypes.RegistrySettings) error {
+func RenderDir(archiveDir string, a *apptypes.App, downstreams []downstreamtypes.Downstream, registrySettings registrytypes.RegistrySettings, createNewVersion bool) error {
 	installation, err := kotsutil.LoadInstallationFromPath(filepath.Join(archiveDir, "upstream", "userdata", "installation.yaml"))
 	if err != nil {
 		return errors.Wrap(err, "failed to load installation from path")
@@ -147,9 +147,9 @@ func RenderDir(archiveDir string, a *apptypes.App, downstreams []downstreamtypes
 		K8sNamespace:       appNamespace,
 		CopyImages:         false,
 		IsAirgap:           a.IsAirgap,
+		AppID:              a.ID,
 		AppSlug:            a.Slug,
 		IsGitOps:           a.IsGitOps,
-		AppSequence:        a.CurrentSequence + 1, // sequence +1 because this is the current latest sequence, not the sequence that the rendered version will be saved as
 		ReportingInfo:      reporting.GetReportingInfo(a.ID),
 		RegistryEndpoint:   registrySettings.Hostname,
 		RegistryNamespace:  registrySettings.Namespace,
@@ -161,6 +161,12 @@ func RenderDir(archiveDir string, a *apptypes.App, downstreams []downstreamtypes
 		HTTPProxyEnvValue:  os.Getenv("HTTP_PROXY"),
 		HTTPSProxyEnvValue: os.Getenv("HTTPS_PROXY"),
 		NoProxyEnvValue:    os.Getenv("NO_PROXY"),
+	}
+
+	if createNewVersion {
+		reOptions.AppSequence = a.CurrentSequence + 1
+	} else {
+		reOptions.AppSequence = a.CurrentSequence
 	}
 
 	err = rewrite.Rewrite(reOptions)

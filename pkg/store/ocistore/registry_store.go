@@ -11,3 +11,7 @@ func (s *OCIStore) GetRegistryDetailsForApp(appID string) (registrytypes.Registr
 func (s *OCIStore) UpdateRegistry(appID string, hostname string, username string, password string, namespace string, isReadOnly bool) error {
 	return ErrNotImplemented
 }
+
+func (s *OCIStore) GetAppIDsFromRegistry(hostname string) ([]string, error) {
+	return nil, ErrNotImplemented
+}

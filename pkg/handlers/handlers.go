@@ -149,6 +149,8 @@ func RegisterSessionAuthRoutes(r *mux.Router, kotsStore store.Store, handler KOT
 		HandlerFunc(middleware.EnforceAccess(policy.RegistryRead, handler.GetKotsadmRegistry))
 	r.Name("GetImageRewriteStatusOld").Path("/api/v1/imagerewritestatus").Methods("GET").
 		HandlerFunc(middleware.EnforceAccess(policy.RegistryRead, handler.GetImageRewriteStatus))
+	r.Name("GarbageCollectImages").Path("/api/v1/garbage-collect-images").Methods("POST").
+		HandlerFunc(middleware.EnforceAccess(policy.AppCreate, handler.GarbageCollectImages))
 
 	r.Name("UpdateAppRegistry").Path("/api/v1/app/{appSlug}/registry").Methods("PUT").
 		HandlerFunc(middleware.EnforceAccess(policy.AppRegistryWrite, handler.UpdateAppRegistry))

@@ -447,7 +447,7 @@ func (h *Handler) ConfigureAppIdentityService(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	err = render.RenderDir(archiveDir, a, downstreams, registrySettings)
+	err = render.RenderDir(archiveDir, a, downstreams, registrySettings, true)
 	if err != nil {
 		err = errors.Wrap(err, "failed to render archive directory")
 		logger.Error(err)

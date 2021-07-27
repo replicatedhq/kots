@@ -693,6 +693,18 @@ func (mr *MockKOTSHandlerMockRecorder) ValidateAppRegistry(w, r interface{}) *go
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ValidateAppRegistry", reflect.TypeOf((*MockKOTSHandler)(nil).ValidateAppRegistry), w, r)
 }
 
+// GarbageCollectImages mocks base method
+func (m *MockKOTSHandler) GarbageCollectImages(w http.ResponseWriter, r *http.Request) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "GarbageCollectImages", w, r)
+}
+
+// GarbageCollectImages indicates an expected call of GarbageCollectImages
+func (mr *MockKOTSHandlerMockRecorder) GarbageCollectImages(w, r interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GarbageCollectImages", reflect.TypeOf((*MockKOTSHandler)(nil).GarbageCollectImages), w, r)
+}
+
 // UpdateAppConfig mocks base method
 func (m *MockKOTSHandler) UpdateAppConfig(w http.ResponseWriter, r *http.Request) {
 	m.ctrl.T.Helper()

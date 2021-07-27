@@ -238,7 +238,7 @@ func OperatorDeployment(deployOptions types.DeployOptions) (*appsv1.Deployment, 
 					ImagePullSecrets:   pullSecrets,
 					Containers: []corev1.Container{
 						{
-							Image:           fmt.Sprintf("%s/kotsadm-operator:%s", kotsadmversion.KotsadmRegistry(deployOptions.KotsadmOptions), kotsadmversion.KotsadmTag(deployOptions.KotsadmOptions)),
+							Image:           GetAdminConsoleImage(deployOptions, "kotsadm-operator"),
 							ImagePullPolicy: corev1.PullIfNotPresent,
 							Name:            "kotsadm-operator",
 							Env: []corev1.EnvVar{

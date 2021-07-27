@@ -8,6 +8,7 @@ import (
 
 type AppVersion struct {
 	KOTSKinds  *kotsutil.KotsKinds `json:"kotsKinds"`
+	AppID      string              `json:"appId"`
 	Sequence   int64               `json:"sequence"`
 	Status     string              `json:"status"`
 	CreatedOn  time.Time           `json:"createdOn"`

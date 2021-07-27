@@ -1,7 +1,9 @@
 package handlers
 
 import (
+	"context"
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -11,11 +13,16 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
 	downstreamtypes "github.com/replicatedhq/kots/pkg/api/downstream/types"
+	versiontypes "github.com/replicatedhq/kots/pkg/api/version/types"
 	"github.com/replicatedhq/kots/pkg/app"
 	apptypes "github.com/replicatedhq/kots/pkg/app/types"
+	"github.com/replicatedhq/kots/pkg/kotsadm"
+	kotsadmobjects "github.com/replicatedhq/kots/pkg/kotsadm/objects"
+	kotsadmtypes "github.com/replicatedhq/kots/pkg/kotsadm/types"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/redact"
+	"github.com/replicatedhq/kots/pkg/registry"
 	"github.com/replicatedhq/kots/pkg/reporting"
 	"github.com/replicatedhq/kots/pkg/store"
 	storetypes "github.com/replicatedhq/kots/pkg/store/types"
@@ -124,14 +131,14 @@ func (h *Handler) DeployAppVersion(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) UpdateDeployResult(w http.ResponseWriter, r *http.Request) {
 	auth, err := parseClusterAuthorization(r.Header.Get("Authorization"))
 	if err != nil {
-		logger.Error(err)
+		logger.Error(errors.Wrap(err, "failed to parse cluster auth"))
 		w.WriteHeader(http.StatusForbidden)
 		return
 	}
 
 	clusterID, err := store.GetStore().GetClusterIDFromDeployToken(auth.Password)
 	if err != nil {
-		logger.Error(err)
+		logger.Error(errors.Wrap(err, "failed to get cluster ID"))
 		w.WriteHeader(http.StatusForbidden)
 		return
 	}
@@ -139,7 +146,7 @@ func (h *Handler) UpdateDeployResult(w http.ResponseWriter, r *http.Request) {
 	updateDeployResultRequest := UpdateDeployResultRequest{}
 	err = json.NewDecoder(r.Body).Decode(&updateDeployResultRequest)
 	if err != nil {
-		logger.Error(err)
+		logger.Error(errors.Wrap(err, "failed to decode deploy result"))
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
@@ -147,7 +154,7 @@ func (h *Handler) UpdateDeployResult(w http.ResponseWriter, r *http.Request) {
 	// sequence really should be passed down to operator and returned from it
 	currentSequence, err := store.GetStore().GetCurrentSequence(updateDeployResultRequest.AppID, clusterID)
 	if err != nil {
-		logger.Error(err)
+		logger.Error(errors.Wrap(err, "failed to get current sequence"))
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
@@ -159,7 +166,7 @@ func (h *Handler) UpdateDeployResult(w http.ResponseWriter, r *http.Request) {
 
 	alreadySuccessful, err := store.GetStore().IsDownstreamDeploySuccessful(updateDeployResultRequest.AppID, clusterID, currentSequence)
 	if err != nil {
-		logger.Error(err)
+		logger.Error(errors.Wrap(err, "failed to check deploy successful"))
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
@@ -180,13 +187,141 @@ func (h *Handler) UpdateDeployResult(w http.ResponseWriter, r *http.Request) {
 	}
 	err = store.GetStore().UpdateDownstreamDeployStatus(updateDeployResultRequest.AppID, clusterID, currentSequence, updateDeployResultRequest.IsError, downstreamOutput)
 	if err != nil {
-		logger.Error(err)
+		logger.Error(errors.Wrap(err, "failed to update downstream deploy status"))
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
+	if !updateDeployResultRequest.IsError {
+		go func() {
+			err := deleteUnusedImages(updateDeployResultRequest.AppID)
+			if err != nil {
+				if _, ok := err.(appRollbackError); ok {
+					logger.Infof("not garbage collecting images because version allows rollbacks: %v", err)
+				} else {
+					logger.Infof("failed to delete unused images: %v", err)
+				}
+			}
+		}()
+	}
+
 	w.WriteHeader(http.StatusOK)
 	return
+}
+
+type appRollbackError struct {
+	AppID    string
+	Sequence int64
+}
+
+func (e appRollbackError) Error() string {
+	return fmt.Sprintf("app:%s, version:%d", e.AppID, e.Sequence)
+}
+
+func deleteUnusedImages(appID string) error {
+	installParams, err := kotsutil.GetInstallationParams(kotsadmtypes.KotsadmConfigMap)
+	if err != nil {
+		return errors.Wrap(err, "failed to get app registry info")
+	}
+	if !installParams.EnableImageDeletion {
+		return nil
+	}
+
+	registrySettings, err := store.GetStore().GetRegistryDetailsForApp(appID)
+	if err != nil {
+		return errors.Wrap(err, "failed to get app registry info")
+	}
+
+	if registrySettings.IsReadOnly {
+		return nil
+	}
+
+	isKurl, err := kotsadm.IsKurl()
+	if err != nil {
+		return errors.Wrap(err, "failed to check kURL")
+	}
+
+	if !isKurl {
+		return nil
+	}
+
+	appIDs, err := store.GetStore().GetAppIDsFromRegistry(registrySettings.Hostname)
+	if err != nil {
+		return errors.Wrap(err, "failed to get apps with registry")
+	}
+
+	activeVersions := []*versiontypes.AppVersion{}
+	for _, appID := range appIDs {
+		downstreams, err := store.GetStore().ListDownstreamsForApp(appID)
+		if err != nil {
+			return errors.Wrap(err, "failed to list downstreams for app")
+		}
+
+		for _, d := range downstreams {
+			curSequence, err := store.GetStore().GetCurrentParentSequence(appID, d.ClusterID)
+			if err != nil {
+				return errors.Wrap(err, "failed to get current parent sequence")
+			}
+
+			curVersion, err := store.GetStore().GetAppVersion(appID, curSequence)
+			if err != nil {
+				return errors.Wrap(err, "failed to get app version")
+			}
+
+			activeVersions = append(activeVersions, curVersion)
+
+			laterVersions, err := store.GetStore().GetAppVersionsAfter(appID, curSequence)
+			if err != nil {
+				return errors.Wrapf(err, "failed to get versions after %d", curVersion.Sequence)
+			}
+			activeVersions = append(activeVersions, laterVersions...)
+		}
+	}
+
+	imagesDedup := map[string]struct{}{}
+	for _, version := range activeVersions {
+		if version == nil {
+			continue
+		}
+		if version.KOTSKinds == nil {
+			continue
+		}
+		if version.KOTSKinds.KotsApplication.Spec.AllowRollback {
+			return appRollbackError{AppID: version.AppID, Sequence: version.Sequence}
+		}
+		for _, i := range version.KOTSKinds.Installation.Spec.KnownImages {
+			imagesDedup[i.Image] = struct{}{}
+		}
+	}
+
+	usedImages := []string{}
+	for i, _ := range imagesDedup {
+		usedImages = append(usedImages, i)
+	}
+
+	if installParams.KotsadmRegistry != "" {
+		deployOptions := kotsadmtypes.DeployOptions{
+			// Minimal info needed to get the right image names
+			KotsadmOptions: kotsadmtypes.KotsadmOptions{
+				// TODO: OverrideVersion
+				OverrideRegistry:  registrySettings.Hostname,
+				OverrideNamespace: registrySettings.Namespace,
+				Username:          registrySettings.Username,
+				Password:          registrySettings.Password,
+			},
+		}
+		kotsadmImages := kotsadmobjects.GetAdminConsoleImages(deployOptions)
+		for _, i := range kotsadmImages {
+			usedImages = append(usedImages, i)
+		}
+	}
+
+	err = registry.DeleteUnusedImages(context.Background(), registrySettings, usedImages)
+	if err != nil {
+		return errors.Wrap(err, "failed to delete unused images")
+	}
+
+	return nil
 }
 
 func createSupportBundleSpec(appID string, sequence int64, origin string, inCluster bool) error {
