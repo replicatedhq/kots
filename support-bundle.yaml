@@ -186,7 +186,7 @@ spec:
           - app=kotsadm
         timeout: 10s
     - longhorn: {}
-    - collectFromHost:
+    - copyFromHost:
         collectorName: kurl-host-preflights
         name: kots/kurl/host-preflights
         hostPath: /var/lib/kurl/host-preflights
