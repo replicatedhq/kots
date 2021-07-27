@@ -256,7 +256,7 @@ func InstallCmd() *cobra.Command {
 
 			if airgapArchive := v.GetString("airgap-bundle"); airgapArchive != "" {
 				if deployOptions.License == nil {
-					return errors.New("license is requires when airgap bundle is specified")
+					return errors.New("license is required when airgap bundle is specified")
 				}
 
 				log.ActionWithoutSpinner("Extracting airgap bundle")
