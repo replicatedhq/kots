@@ -301,6 +301,28 @@ func addDefaultTroubleshoot(supportBundle *troubleshootv1beta2.SupportBundle, ap
 		},
 	})
 
+	supportBundle.Spec.Collectors = append(supportBundle.Spec.Collectors, &troubleshootv1beta2.Collect{
+		ConfigMap: &troubleshootv1beta2.ConfigMap{
+			CollectorMeta: troubleshootv1beta2.CollectorMeta{
+				CollectorName: "kurl-latest-version",
+			},
+			Name:           "kurl-latest-version",
+			Namespace:      "kurl",
+			IncludeAllData: true,
+		},
+	})
+
+	supportBundle.Spec.Collectors = append(supportBundle.Spec.Collectors, &troubleshootv1beta2.Collect{
+		ConfigMap: &troubleshootv1beta2.ConfigMap{
+			CollectorMeta: troubleshootv1beta2.CollectorMeta{
+				CollectorName: "kurl-latest-version",
+			},
+			Name:           "kurl-last-version",
+			Namespace:      "kurl",
+			IncludeAllData: true,
+		},
+	})
+
 	supportBundle.Spec.Collectors = append(supportBundle.Spec.Collectors, makeDbCollectors()...)
 	supportBundle.Spec.Collectors = append(supportBundle.Spec.Collectors, makeKotsadmCollectors()...)
 	supportBundle.Spec.Collectors = append(supportBundle.Spec.Collectors, makeGoRoutineCollectors()...)
