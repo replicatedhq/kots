@@ -494,6 +494,28 @@ func makeKurlCollectors(image string, pullSecret *troubleshootv1beta2.ImagePullS
 		})
 	}
 
+	collectors = append(collectors, &troubleshootv1beta2.Collect{
+		ConfigMap: &troubleshootv1beta2.ConfigMap{
+			CollectorMeta: troubleshootv1beta2.CollectorMeta{
+				CollectorName: "kurl-current-config",
+			},
+			Name:           "kurl-current-config",
+			Namespace:      "kurl",
+			IncludeAllData: true,
+		},
+	})
+
+	collectors = append(collectors, &troubleshootv1beta2.Collect{
+		ConfigMap: &troubleshootv1beta2.ConfigMap{
+			CollectorMeta: troubleshootv1beta2.CollectorMeta{
+				CollectorName: "kurl-last-config",
+			},
+			Name:           "kurl-last-config",
+			Namespace:      "kurl",
+			IncludeAllData: true,
+		},
+	})
+
 	return collectors
 }
 
