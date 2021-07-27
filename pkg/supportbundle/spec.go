@@ -301,28 +301,6 @@ func addDefaultTroubleshoot(supportBundle *troubleshootv1beta2.SupportBundle, ap
 		},
 	})
 
-	supportBundle.Spec.Collectors = append(supportBundle.Spec.Collectors, &troubleshootv1beta2.Collect{
-		ConfigMap: &troubleshootv1beta2.ConfigMap{
-			CollectorMeta: troubleshootv1beta2.CollectorMeta{
-				CollectorName: "kurl-current-config",
-			},
-			Name:           "kurl-current-config",
-			Namespace:      "kurl",
-			IncludeAllData: true,
-		},
-	})
-
-	supportBundle.Spec.Collectors = append(supportBundle.Spec.Collectors, &troubleshootv1beta2.Collect{
-		ConfigMap: &troubleshootv1beta2.ConfigMap{
-			CollectorMeta: troubleshootv1beta2.CollectorMeta{
-				CollectorName: "kurl-last-config",
-			},
-			Name:           "kurl-last-config",
-			Namespace:      "kurl",
-			IncludeAllData: true,
-		},
-	})
-
 	supportBundle.Spec.Collectors = append(supportBundle.Spec.Collectors, makeDbCollectors()...)
 	supportBundle.Spec.Collectors = append(supportBundle.Spec.Collectors, makeKotsadmCollectors()...)
 	supportBundle.Spec.Collectors = append(supportBundle.Spec.Collectors, makeGoRoutineCollectors()...)
@@ -515,6 +493,28 @@ func makeKurlCollectors(image string, pullSecret *troubleshootv1beta2.ImagePullS
 			},
 		})
 	}
+
+	supportBundle.Spec.Collectors = append(supportBundle.Spec.Collectors, &troubleshootv1beta2.Collect{
+		ConfigMap: &troubleshootv1beta2.ConfigMap{
+			CollectorMeta: troubleshootv1beta2.CollectorMeta{
+				CollectorName: "kurl-current-config",
+			},
+			Name:           "kurl-current-config",
+			Namespace:      "kurl",
+			IncludeAllData: true,
+		},
+	})
+
+	supportBundle.Spec.Collectors = append(supportBundle.Spec.Collectors, &troubleshootv1beta2.Collect{
+		ConfigMap: &troubleshootv1beta2.ConfigMap{
+			CollectorMeta: troubleshootv1beta2.CollectorMeta{
+				CollectorName: "kurl-last-config",
+			},
+			Name:           "kurl-last-config",
+			Namespace:      "kurl",
+			IncludeAllData: true,
+		},
+	})
 
 	return collectors
 }
