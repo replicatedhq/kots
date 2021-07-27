@@ -28,10 +28,6 @@ func InjectDefaultAnalyzers(analyzer *troubleshootv1beta2.Analyzer) error {
 		return errors.Wrap(err, "failed to inject ceph status analyzer")
 	}
 
-	if err := injectLonghornAnalyzers(analyzer); err != nil {
-		return errors.Wrap(err, "failed to inject longhorn analyzer")
-	}
-
 	return nil
 
 }
@@ -157,13 +153,6 @@ func injectIfMissingKubernetesVersionAnalyzer(analyzer *troubleshootv1beta2.Anal
 func injectCephAnalyzers(analyzer *troubleshootv1beta2.Analyzer) error {
 	analyzer.Spec.Analyzers = append(analyzer.Spec.Analyzers, &troubleshootv1beta2.Analyze{
 		CephStatus: &troubleshootv1beta2.CephStatusAnalyze{},
-	})
-	return nil
-}
-
-func injectLonghornAnalyzers(analyzer *troubleshootv1beta2.Analyzer) error {
-	analyzer.Spec.Analyzers = append(analyzer.Spec.Analyzers, &troubleshootv1beta2.Analyze{
-		Longhorn: &troubleshootv1beta2.LonghornAnalyze{},
 	})
 	return nil
 }
