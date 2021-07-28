@@ -82,6 +82,7 @@ func TestRenderUpstream(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.Name, func(t *testing.T) {
+			// This disables the need for a Kubernetes cluster when running unit tests.
 			template.TestingDisableKurlValues = true
 			defer func() { template.TestingDisableKurlValues = false }()
 
