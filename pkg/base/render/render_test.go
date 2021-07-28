@@ -153,7 +153,6 @@ func renderOptionsFromTestCaseSpec(spec TestCaseSpec) base.RenderOptions {
 	if renderOptions.AppSlug == "" {
 		renderOptions.AppSlug = "my-app"
 	}
-	// TODO: is namespace required?
 	return renderOptions
 }
 
