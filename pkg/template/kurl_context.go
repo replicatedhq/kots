@@ -15,10 +15,20 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+var (
+	// TestingDisableKurlValues should be set to true for testing purposes only.
+	// This disables the need for a Kubernetes cluster when running unit tests.
+	TestingDisableKurlValues = false
+)
+
 // getKurlValues returns the values found in the specified installer and namespace, if it exists
 // otherwise it returns the values found in the first installer in the specified namespace, if one exists
 // otherwise it returns nil
 func getKurlValues(installerName, nameSpace string) *kurlv1beta1.Installer {
+	if TestingDisableKurlValues {
+		return nil
+	}
+
 	cfg, err := k8sutil.GetClusterConfig()
 	if err != nil {
 		return nil

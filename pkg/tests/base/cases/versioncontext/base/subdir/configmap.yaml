@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: test-versioninfo
+data:
+    sequence: 321
+    cursor: 123
+    channelName: My Channel
+    versionLabel: 1.2.3
+    releaseNotes: Release version 1.2.3
+    isAirgap: true

@@ -1,0 +1,9 @@
+Name: test config context
+Upstream:
+  UpdateCursor: 123
+  ChannelName: My Channel
+  VersionLabel: 1.2.3
+  ReleaseNotes: "Release version 1.2.3"
+RenderOptions:
+  Sequence: 321
+  IsAirgap: true

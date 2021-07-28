@@ -1,0 +1,14 @@
+apiVersion: kots.io/v1beta1
+kind: ConfigValues
+metadata:
+  creationTimestamp: null
+  name: my-app
+spec:
+  values:
+    toggle_something:
+      default: "0"
+    toggled_off:
+      value: "off"
+    toggled_on:
+      value: "on"
+status: {}

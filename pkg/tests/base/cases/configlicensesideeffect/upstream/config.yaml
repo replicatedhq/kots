@@ -1,0 +1,24 @@
+apiVersion: kots.io/v1beta1
+kind: Config
+metadata:
+  name: my-app
+spec:
+  groups:
+    - name: ternary-test
+      title: testing ternary operators
+      items:
+        - name: toggle_something
+          type: bool
+          title: Toggle Something
+          default: '{{repl LicenseFieldValue "bool_field" | ParseBool | ternary "1" "0"}}'
+          hidden: true
+        - name: toggled_on
+          type: text
+          title: 'On'
+          hidden: true
+          when: '{{repl and (ConfigOptionEquals "toggle_something" "1") (LicenseFieldValue "bool_field" | ParseBool)}}'
+        - name: toggled_off
+          type: text
+          title: 'Off'
+          hidden: true
+          when: '{{repl ConfigOptionEquals "toggle_something" "0"}}'

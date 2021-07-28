@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: test-versioninfo
+data:
+    sequence: {{repl Sequence }}
+    cursor: {{repl Cursor }}
+    channelName: {{repl ChannelName }}
+    versionLabel: {{repl VersionLabel }}
+    releaseNotes: {{repl ReleaseNotes }}
+    isAirgap: {{repl IsAirgap }}
