@@ -626,6 +626,11 @@ func isLoginRequired(err error) bool {
 			if strings.Contains(cause.Error(), "invalid status code from registry 403") {
 				return true
 			}
+			// GitHub's Docker registry (which used the namespace docker.pkg.github.com) could return "denied" as the error message
+			// in some cases when the request is unauth'ed or has invalid credentials.
+			if cause.Error() == "denied" {
+				return true
+			}
 			return false
 		}
 	}
