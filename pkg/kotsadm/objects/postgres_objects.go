@@ -17,24 +17,15 @@ import (
 )
 
 func PostgresStatefulset(deployOptions types.DeployOptions, size resource.Quantity) (*appsv1.StatefulSet, error) {
-	imageTag := getPostgresTag(deployOptions)
+	image := GetAdminConsoleImage(deployOptions, "postgres")
 
-	if deployOptions.KotsadmOptions.OverrideVersion != "" {
-		imageTag = deployOptions.KotsadmOptions.OverrideVersion
-	}
-
-	image := fmt.Sprintf("postgres:%s", imageTag)
 	var pullSecrets []corev1.LocalObjectReference
 	if s := kotsadmversion.KotsadmPullSecret(deployOptions.Namespace, deployOptions.KotsadmOptions); s != nil {
-		image = fmt.Sprintf("%s/postgres:%s", kotsadmversion.KotsadmRegistry(deployOptions.KotsadmOptions), imageTag)
 		pullSecrets = []corev1.LocalObjectReference{
 			{
 				Name: s.ObjectMeta.Name,
 			},
 		}
-	} else if deployOptions.KotsadmOptions.OverrideRegistry != "" {
-		// if there is a registry specified, use the postgres image there and not the one from docker hub - even though there's not a username/password specified
-		image = fmt.Sprintf("%s/postgres:%s", kotsadmversion.KotsadmRegistry(deployOptions.KotsadmOptions), imageTag)
 	}
 
 	securityContext := &corev1.PodSecurityContext{

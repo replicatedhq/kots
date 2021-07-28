@@ -430,7 +430,7 @@ func KotsadmDeployment(deployOptions types.DeployOptions) (*appsv1.Deployment, e
 					ImagePullSecrets:   pullSecrets,
 					InitContainers: []corev1.Container{
 						{
-							Image:           fmt.Sprintf("%s/kotsadm-migrations:%s", kotsadmversion.KotsadmRegistry(deployOptions.KotsadmOptions), kotsadmversion.KotsadmTag(deployOptions.KotsadmOptions)),
+							Image:           GetAdminConsoleImage(deployOptions, "kotsadm-migrations"),
 							ImagePullPolicy: corev1.PullIfNotPresent,
 							Name:            "schemahero-plan",
 							Args:            []string{"plan"},
@@ -477,7 +477,7 @@ func KotsadmDeployment(deployOptions types.DeployOptions) (*appsv1.Deployment, e
 							},
 						},
 						{
-							Image:           fmt.Sprintf("%s/kotsadm-migrations:%s", kotsadmversion.KotsadmRegistry(deployOptions.KotsadmOptions), kotsadmversion.KotsadmTag(deployOptions.KotsadmOptions)),
+							Image:           GetAdminConsoleImage(deployOptions, "kotsadm-migrations"),
 							ImagePullPolicy: corev1.PullIfNotPresent,
 							Name:            "schemahero-apply",
 							Args:            []string{"apply"},
@@ -520,7 +520,7 @@ func KotsadmDeployment(deployOptions types.DeployOptions) (*appsv1.Deployment, e
 							},
 						},
 						{
-							Image:           fmt.Sprintf("%s/kotsadm:%s", kotsadmversion.KotsadmRegistry(deployOptions.KotsadmOptions), kotsadmversion.KotsadmTag(deployOptions.KotsadmOptions)),
+							Image:           GetAdminConsoleImage(deployOptions, "kotsadm"),
 							ImagePullPolicy: corev1.PullIfNotPresent,
 							Name:            "restore-db",
 							Command: []string{
@@ -557,7 +557,7 @@ func KotsadmDeployment(deployOptions types.DeployOptions) (*appsv1.Deployment, e
 							},
 						},
 						{
-							Image:           fmt.Sprintf("%s/kotsadm:%s", kotsadmversion.KotsadmRegistry(deployOptions.KotsadmOptions), kotsadmversion.KotsadmTag(deployOptions.KotsadmOptions)),
+							Image:           GetAdminConsoleImage(deployOptions, "kotsadm"),
 							ImagePullPolicy: corev1.PullIfNotPresent,
 							Name:            "restore-s3",
 							Command: []string{
@@ -619,7 +619,7 @@ func KotsadmDeployment(deployOptions types.DeployOptions) (*appsv1.Deployment, e
 					},
 					Containers: []corev1.Container{
 						{
-							Image:           fmt.Sprintf("%s/kotsadm:%s", kotsadmversion.KotsadmRegistry(deployOptions.KotsadmOptions), kotsadmversion.KotsadmTag(deployOptions.KotsadmOptions)),
+							Image:           GetAdminConsoleImage(deployOptions, "kotsadm"),
 							ImagePullPolicy: corev1.PullIfNotPresent,
 							Name:            "kotsadm",
 							Ports: []corev1.ContainerPort{
@@ -945,7 +945,7 @@ func KotsadmStatefulSet(deployOptions types.DeployOptions, size resource.Quantit
 					ImagePullSecrets:   pullSecrets,
 					InitContainers: []corev1.Container{
 						{
-							Image:           fmt.Sprintf("%s/kotsadm-migrations:%s", kotsadmversion.KotsadmRegistry(deployOptions.KotsadmOptions), kotsadmversion.KotsadmTag(deployOptions.KotsadmOptions)),
+							Image:           GetAdminConsoleImage(deployOptions, "kotsadm-migrations"),
 							ImagePullPolicy: corev1.PullIfNotPresent,
 							Name:            "schemahero-plan",
 							Args:            []string{"plan"},
@@ -992,7 +992,7 @@ func KotsadmStatefulSet(deployOptions types.DeployOptions, size resource.Quantit
 							},
 						},
 						{
-							Image:           fmt.Sprintf("%s/kotsadm-migrations:%s", kotsadmversion.KotsadmRegistry(deployOptions.KotsadmOptions), kotsadmversion.KotsadmTag(deployOptions.KotsadmOptions)),
+							Image:           GetAdminConsoleImage(deployOptions, "kotsadm-migrations"),
 							ImagePullPolicy: corev1.PullIfNotPresent,
 							Name:            "schemahero-apply",
 							Args:            []string{"apply"},
@@ -1035,7 +1035,7 @@ func KotsadmStatefulSet(deployOptions types.DeployOptions, size resource.Quantit
 							},
 						},
 						{
-							Image:           fmt.Sprintf("%s/kotsadm:%s", kotsadmversion.KotsadmRegistry(deployOptions.KotsadmOptions), kotsadmversion.KotsadmTag(deployOptions.KotsadmOptions)),
+							Image:           GetAdminConsoleImage(deployOptions, "kotsadm"),
 							ImagePullPolicy: corev1.PullIfNotPresent,
 							Name:            "restore-data",
 							Command: []string{
@@ -1076,7 +1076,7 @@ func KotsadmStatefulSet(deployOptions types.DeployOptions, size resource.Quantit
 							},
 						},
 						{
-							Image:           fmt.Sprintf("%s/kotsadm:%s", kotsadmversion.KotsadmRegistry(deployOptions.KotsadmOptions), kotsadmversion.KotsadmTag(deployOptions.KotsadmOptions)),
+							Image:           GetAdminConsoleImage(deployOptions, "kotsadm"),
 							ImagePullPolicy: corev1.PullIfNotPresent,
 							Name:            "migrate-s3",
 							Command: []string{
@@ -1140,7 +1140,7 @@ func KotsadmStatefulSet(deployOptions types.DeployOptions, size resource.Quantit
 					},
 					Containers: []corev1.Container{
 						{
-							Image:           fmt.Sprintf("%s/kotsadm:%s", kotsadmversion.KotsadmRegistry(deployOptions.KotsadmOptions), kotsadmversion.KotsadmTag(deployOptions.KotsadmOptions)),
+							Image:           GetAdminConsoleImage(deployOptions, "kotsadm"),
 							ImagePullPolicy: corev1.PullIfNotPresent,
 							Name:            "kotsadm",
 							Ports: []corev1.ContainerPort{

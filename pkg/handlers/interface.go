@@ -75,6 +75,7 @@ type KOTSHandler interface {
 	UpdateAppRegistry(w http.ResponseWriter, r *http.Request)
 	GetAppRegistry(w http.ResponseWriter, r *http.Request)
 	ValidateAppRegistry(w http.ResponseWriter, r *http.Request)
+	GarbageCollectImages(w http.ResponseWriter, r *http.Request)
 
 	UpdateAppConfig(w http.ResponseWriter, r *http.Request)
 	CurrentAppConfig(w http.ResponseWriter, r *http.Request)

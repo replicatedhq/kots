@@ -54,6 +54,7 @@ type Migrations interface {
 type RegistryStore interface {
 	GetRegistryDetailsForApp(appID string) (registrytypes.RegistrySettings, error)
 	UpdateRegistry(appID string, hostname string, username string, password string, namespace string, isReadOnly bool) error
+	GetAppIDsFromRegistry(hostname string) ([]string, error)
 }
 
 type SupportBundleStore interface {
@@ -167,8 +168,9 @@ type VersionStore interface {
 	GetAppVersionArchive(appID string, sequence int64, dstPath string) error
 	CreateAppVersionArchive(appID string, sequence int64, archivePath string) error
 	CreateAppVersion(appID string, currentSequence *int64, filesInDir string, source string, skipPreflights bool, gitops gitopstypes.DownstreamGitOps) (int64, error)
-	GetAppVersion(string, int64) (*versiontypes.AppVersion, error)
-	GetAppVersionsAfter(string, int64) ([]*versiontypes.AppVersion, error)
+	GetAppVersion(appID string, sequence int64) (*versiontypes.AppVersion, error)
+	GetAppVersionsAfter(appID string, sequence int64) ([]*versiontypes.AppVersion, error)
+	UpdateAppVersionInstallationSpec(appID string, sequence int64, spec kotsv1beta1.Installation) error
 }
 
 type LicenseStore interface {

@@ -16,8 +16,10 @@ import (
 	"github.com/replicatedhq/kots/pkg/downstream"
 	"github.com/replicatedhq/kots/pkg/k8sdoc"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
+	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/midstream"
+	"github.com/replicatedhq/kots/pkg/store"
 	"github.com/replicatedhq/kots/pkg/upstream"
 	upstreamtypes "github.com/replicatedhq/kots/pkg/upstream/types"
 	corev1 "k8s.io/api/core/v1"
@@ -44,6 +46,7 @@ type RewriteOptions struct {
 	RegistryPassword   string
 	RegistryNamespace  string
 	RegistryIsReadOnly bool
+	AppID              string
 	AppSlug            string
 	IsGitOps           bool
 	AppSequence        int64
@@ -238,11 +241,21 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 		helmMidstreams = append(helmMidstreams, *helmMidstream)
 	}
 
-	log.FinishSpinner()
-
 	if err := writeDownstreams(rewriteOptions, commonBase.GetOverlaysDir(writeBaseOptions), m, helmMidstreams, log); err != nil {
 		return errors.Wrap(err, "failed to write downstreams")
 	}
+
+	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(rewriteOptions.RootDir)
+	if err != nil {
+		return errors.Wrap(err, "failed to load kotskinds")
+	}
+
+	err = store.GetStore().UpdateAppVersionInstallationSpec(rewriteOptions.AppID, rewriteOptions.AppSequence, kotsKinds.Installation)
+	if err != nil {
+		return errors.Wrap(err, "failed to updates installation spec")
+	}
+
+	log.FinishSpinner()
 
 	return nil
 }

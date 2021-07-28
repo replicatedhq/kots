@@ -90,3 +90,24 @@ func (s *KOTSStore) UpdateRegistry(appID string, hostname string, username strin
 
 	return nil
 }
+
+func (s *KOTSStore) GetAppIDsFromRegistry(hostname string) ([]string, error) {
+	db := persistence.MustGetPGSession()
+	query := `select id from app where registry_hostname = $1`
+	rows, err := db.Query(query, hostname)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to query db")
+	}
+	defer rows.Close()
+
+	appIDs := []string{}
+	for rows.Next() {
+		var appID string
+		if err := rows.Scan(&appID); err != nil {
+			return nil, errors.Wrap(err, "failed to scan")
+		}
+		appIDs = append(appIDs, appID)
+	}
+
+	return appIDs, nil
+}

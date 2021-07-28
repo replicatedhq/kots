@@ -618,9 +618,11 @@ func SupportBundleToAnalyzer(sb *troubleshootv1beta2.SupportBundle) *troubleshoo
 }
 
 type InstallationParams struct {
-	SkipImagePush      bool
-	SkipPreflights     bool
-	RegistryIsReadOnly bool
+	KotsadmRegistry     string
+	SkipImagePush       bool
+	SkipPreflights      bool
+	RegistryIsReadOnly  bool
+	EnableImageDeletion bool
 }
 
 func GetInstallationParams(configMapName string) (InstallationParams, error) {
@@ -640,9 +642,11 @@ func GetInstallationParams(configMapName string) (InstallationParams, error) {
 		return autoConfig, errors.Wrap(err, "failed to get existing kotsadm config map")
 	}
 
+	autoConfig.KotsadmRegistry = kotsadmConfigMap.Data["kotsadm-registry"]
 	autoConfig.SkipImagePush, _ = strconv.ParseBool(kotsadmConfigMap.Data["initial-app-images-pushed"])
 	autoConfig.SkipPreflights, _ = strconv.ParseBool(kotsadmConfigMap.Data["skip-preflights"])
 	autoConfig.RegistryIsReadOnly, _ = strconv.ParseBool(kotsadmConfigMap.Data["registry-is-read-only"])
+	autoConfig.EnableImageDeletion, _ = strconv.ParseBool(kotsadmConfigMap.Data["enable-image-deletion"])
 
 	return autoConfig, nil
 }
