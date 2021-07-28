@@ -822,8 +822,8 @@ github.com/quobyte/api v0.1.2/go.mod h1:jL7lIHrmqQ7yh05OJ+eEEdHr0u/kmT1Ff9iHd+4H
 github.com/rancher/go-rancher v0.1.1-0.20190307222549-9756097e5e4c/go.mod h1:7oQvGNiJsGvrUgB+7AH8bmdzuR0uhULfwKb43Ht0hUk=
 github.com/replicatedhq/longhorn-manager v1.1.2-0.20210622201804-05b01947b99d/go.mod h1:/5iB5+3q/p1HOj7GXF8PT/YrPersNLAH3VjFfmN90Y4=
 github.com/replicatedhq/termui/v3 v3.1.1-0.20200811145416-f40076d26851/go.mod h1:JDxG6+uubnk9/BZ2yUsyAJJwlptjrnmB2MPF5d2Xe/8=
-github.com/replicatedhq/troubleshoot v0.13.3 h1:as51tcF2R71TLOX1eJ6KZiiadEYGyMNUvbT7CkMyNbk=
-github.com/replicatedhq/troubleshoot v0.13.3/go.mod h1:INf+DZhU9XXCHBeab5jLOhwsKzHcGCoEw4H6hGt9X5o=
+github.com/replicatedhq/troubleshoot v0.13.7 h1:WHZHx81NqRv8Ud3ilzPuSrLUj+mv4nF49EYH3YWGjYA=
+github.com/replicatedhq/troubleshoot v0.13.7/go.mod h1:mfDCXqnMY1OUoELXFIZnNH7zHYIveAfuv5eZFcHZnVk=
 github.com/replicatedhq/yaml/v3 v3.0.0-beta5-replicatedhq h1:PwPggruelq2336c1Ayg5STFqgbn/QB1tWLQwrVlU7ZQ=
 github.com/replicatedhq/yaml/v3 v3.0.0-beta5-replicatedhq/go.mod h1:Txa7LopbYCU8aRgmNe0n+y/EPMz50NbCPcVVJBquwag=
 github.com/robfig/cron v1.1.0/go.mod h1:JGuDeoQd7Z6yL4zQhZ3OPEVHB7fL6Ka6skscFHfmt2k=
