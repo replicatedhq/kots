@@ -23,6 +23,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	k8slabels "k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/runtime"
 	k8sruntime "k8s.io/apimachinery/pkg/runtime"
 	k8sschema "k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/util/sets"
@@ -135,15 +136,22 @@ func (c *Client) diffAndRemovePreviousManifests(applicationManifests Application
 			continue
 		}
 
-		obj, gvk, err := parseK8sYaml([]byte(previous.spec))
-		if err != nil {
-			log.Printf("deleting unidentified manifest. unable to parse error: %s", err.Error())
-		}
-
 		group := ""
 		kind := ""
 		namespace := targetNamespace
 		name := ""
+
+		obj, gvk, err := parseK8sYaml([]byte(previous.spec))
+		if err != nil {
+			log.Printf("deleting unidentified manifest. unable to parse error: %s", err.Error())
+			if runtime.IsNotRegisteredError(errors.Cause(err)) {
+				_, o := GetGVKWithNameAndNs([]byte(previous.spec), targetNamespace)
+				if o.Metadata.Namespace != "" {
+					namespace = o.Metadata.Namespace
+				}
+				name = o.Metadata.Name
+			}
+		}
 
 		if obj != nil {
 			if n, _ := metadataAccessor.Namespace(obj); n != "" {
