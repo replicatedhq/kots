@@ -16,6 +16,8 @@ import (
 )
 
 var (
+	// TestingDisableKurlValues should be set to true for testing purposes only.
+	// This disables the need for a Kubernetes cluster when running unit tests.
 	TestingDisableKurlValues = false
 )
 
@@ -23,13 +25,12 @@ var (
 // otherwise it returns the values found in the first installer in the specified namespace, if one exists
 // otherwise it returns nil
 func getKurlValues(installerName, nameSpace string) *kurlv1beta1.Installer {
-	cfg, err := k8sutil.GetClusterConfig()
-	if err != nil {
+	if TestingDisableKurlValues {
 		return nil
 	}
 
-	// NOTE: This is for testing purposes only. This disables the need for a real Kubernetes cluster when running unit tests.
-	if TestingDisableKurlValues {
+	cfg, err := k8sutil.GetClusterConfig()
+	if err != nil {
 		return nil
 	}
 
