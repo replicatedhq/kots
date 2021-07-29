@@ -1,6 +1,6 @@
 include Makefile.build
 CURRENT_USER := $(shell id -u -n)
-MINIO_VERSION := RELEASE.2021-07-08T19-43-25Z
+MINIO_VERSION := RELEASE.2021-07-27T02-40-15Z
 POSTGRES_VERSION := 10.17-alpine
 
 BUILDFLAGS = -tags='netgo containers_image_ostree_stub exclude_graphdriver_devicemapper exclude_graphdriver_btrfs containers_image_openpgp' -installsuffix netgo

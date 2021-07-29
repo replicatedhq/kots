@@ -12,7 +12,7 @@ func GetAdminConsoleImage(deployOptions types.DeployOptions, imageKey string) st
 }
 
 func GetAdminConsoleImages(deployOptions types.DeployOptions) map[string]string {
-	minioTag := "RELEASE.2021-07-08T19-43-25Z"
+	minioTag := "RELEASE.2021-07-27T02-40-15Z"
 	postgresTag := getPostgresTag(deployOptions)
 
 	if deployOptions.KotsadmOptions.OverrideVersion != "" {
