@@ -353,12 +353,12 @@ func (h *Handler) UploadNewLicense(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
+		uploadLicenseResponse.HasPreflight = kotsKinds.HasPreflights()
 		uploadLicenseResponse.IsAirgap = false
-		uploadLicenseResponse.HasPreflight = kotsKinds.Preflight != nil
 		uploadLicenseResponse.Success = true
 		uploadLicenseResponse.Slug = a.Slug
 		uploadLicenseResponse.NeedsRegistry = false
-		uploadLicenseResponse.IsConfigurable = kotsKinds.Config != nil
+		uploadLicenseResponse.IsConfigurable = kotsKinds.IsConfigurable()
 
 		JSON(w, 200, uploadLicenseResponse)
 		return
@@ -440,10 +440,10 @@ func (h *Handler) ResumeInstallOnline(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	resumeInstallOnlineResponse.HasPreflight = kotsKinds.Preflight != nil
+	resumeInstallOnlineResponse.HasPreflight = kotsKinds.HasPreflights()
 	resumeInstallOnlineResponse.Success = true
 	resumeInstallOnlineResponse.Slug = a.Slug
-	resumeInstallOnlineResponse.IsConfigurable = kotsKinds.Config != nil
+	resumeInstallOnlineResponse.IsConfigurable = kotsKinds.IsConfigurable()
 
 	JSON(w, 200, resumeInstallOnlineResponse)
 }

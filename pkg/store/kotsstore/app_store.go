@@ -11,6 +11,7 @@ import (
 	downstreamtypes "github.com/replicatedhq/kots/pkg/api/downstream/types"
 	apptypes "github.com/replicatedhq/kots/pkg/app/types"
 	"github.com/replicatedhq/kots/pkg/gitops"
+	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/persistence"
 	"github.com/segmentio/ksuid"
@@ -164,11 +165,23 @@ func (s *KOTSStore) GetApp(id string) (*apptypes.App, error) {
 			return nil, errors.Wrap(err, "failed to scan app_version")
 		}
 
-		if preflightSpec.Valid && preflightSpec.String != "" {
-			app.HasPreflight = true
+		if preflightSpec.String != "" {
+			preflight, err := kotsutil.LoadPreflightFromContents([]byte(preflightSpec.String))
+			if err != nil {
+				return nil, errors.Wrap(err, "failed to load preflights from spec")
+			}
+			if len(preflight.Spec.Analyzers) > 0 {
+				app.HasPreflight = true
+			}
 		}
-		if configSpec.Valid && configSpec.String != "" {
-			app.IsConfigurable = true
+		if configSpec.String != "" {
+			config, err := kotsutil.LoadConfigFromBytes([]byte(configSpec.String))
+			if err != nil {
+				return nil, errors.Wrap(err, "failed to load config from spec")
+			}
+			if len(config.Spec.Groups) > 0 {
+				app.IsConfigurable = true
+			}
 		}
 	}
 
