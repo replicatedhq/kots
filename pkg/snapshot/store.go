@@ -4,8 +4,12 @@ import (
 	"bufio"
 	"bytes"
 	"context"
+	"crypto/md5"
+	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"net/url"
+	"path"
 	"strings"
 	"time"
 
@@ -39,6 +43,8 @@ import (
 	"k8s.io/client-go/kubernetes"
 )
 
+const DefaultBackupStorageLocation = "default"
+
 type ConfigureStoreOptions struct {
 	Provider   string
 	Bucket     string
@@ -50,7 +56,7 @@ type ConfigureStoreOptions struct {
 	Azure      *types.StoreAzure
 	Other      *types.StoreOther
 	Internal   bool
-	FileSystem bool
+	FileSystem *types.FileSystemConfig
 
 	KotsadmNamespace string
 	RegistryOptions  *kotsadmtypes.KotsadmOptions
@@ -59,6 +65,7 @@ type ConfigureStoreOptions struct {
 	// Will be ignored if SkipValidation is set to true.
 	ValidateUsingAPod bool
 	SkipValidation    bool
+	IsMinioDisabled   bool
 }
 
 type ValidateStoreOptions struct {
@@ -261,7 +268,9 @@ func ConfigureStore(ctx context.Context, options ConfigureStoreOptions) (*types.
 		store.Internal.ObjectStoreClusterIP = string(secret.Data["object-store-cluster-ip"])
 		store.Internal.Region = "us-east-1"
 
-	} else if options.FileSystem {
+	} else if options.FileSystem != nil && !options.IsMinioDisabled {
+		// Legacy Minio Provider
+
 		store.AWS = nil
 		store.Google = nil
 		store.Azure = nil
@@ -277,7 +286,30 @@ func ConfigureStore(ctx context.Context, options ConfigureStoreOptions) (*types.
 			return nil, errors.Wrap(err, "failed to get k8s clientset")
 		}
 
-		storeFileSystem, err := BuildStoreFileSystem(ctx, clientset, options.KotsadmNamespace)
+		storeFileSystem, err := BuildMinioStoreFileSystem(ctx, clientset, options.KotsadmNamespace)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to build file system store")
+		}
+		store.FileSystem = storeFileSystem
+	} else if options.FileSystem != nil && options.IsMinioDisabled {
+		store.AWS = nil
+		store.Google = nil
+		store.Azure = nil
+		store.Other = nil
+		store.Internal = nil
+
+		store.Bucket, err = GetLvpBucket(options.FileSystem)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to generate bucket name")
+		}
+		store.Provider = GetLvpProvider(options.FileSystem)
+
+		clientset, err := k8sutil.GetClientset()
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to get k8s clientset")
+		}
+
+		storeFileSystem, err := BuildLvpStoreFileSystem(ctx, clientset, options.KotsadmNamespace, options.FileSystem)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to build file system store")
 		}
@@ -512,50 +544,16 @@ func updateGlobalStore(ctx context.Context, store *types.Store, kotsadmNamespace
 				return nil, errors.Wrap(err, "failed to update internal secret")
 			}
 		}
-	} else if store.FileSystem != nil {
-		kotsadmVeleroBackendStorageLocation.Spec.Config = map[string]string{
-			"region":           store.FileSystem.Region,
-			"s3Url":            store.FileSystem.Endpoint,
-			"publicUrl":        fmt.Sprintf("http://%s:%d", store.FileSystem.ObjectStoreClusterIP, FileSystemMinioServicePort),
-			"s3ForcePathStyle": "true",
-		}
-
-		fileSystemCredentials, err := BuildAWSCredentials(store.FileSystem.AccessKeyID, store.FileSystem.SecretAccessKey)
+	} else if store.FileSystem != nil && store.Provider == FileSystemMinioProvider {
+		// Legacy Minio case
+		err = updateMinioFileSystemStore(ctx, store, clientset, currentSecret, currentSecretErr, kotsadmVeleroBackendStorageLocation)
 		if err != nil {
-			return nil, errors.Wrap(err, "failed to format file system credentials")
+			return nil, errors.Wrap(err, "failed to update file system store for minio")
 		}
-
-		// create or update the secret
-		if kuberneteserrors.IsNotFound(currentSecretErr) {
-			// create
-			toCreate := corev1.Secret{
-				TypeMeta: metav1.TypeMeta{
-					APIVersion: "v1",
-					Kind:       "Secret",
-				},
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "cloud-credentials",
-					Namespace: kotsadmVeleroBackendStorageLocation.Namespace,
-				},
-				Data: map[string][]byte{
-					"cloud": fileSystemCredentials,
-				},
-			}
-			_, err = clientset.CoreV1().Secrets(kotsadmVeleroBackendStorageLocation.Namespace).Create(ctx, &toCreate, metav1.CreateOptions{})
-			if err != nil {
-				return nil, errors.Wrap(err, "failed to create file system secret")
-			}
-		} else {
-			// update
-			if currentSecret.Data == nil {
-				currentSecret.Data = map[string][]byte{}
-			}
-
-			currentSecret.Data["cloud"] = fileSystemCredentials
-			_, err = clientset.CoreV1().Secrets(kotsadmVeleroBackendStorageLocation.Namespace).Update(ctx, currentSecret, metav1.UpdateOptions{})
-			if err != nil {
-				return nil, errors.Wrap(err, "failed to update file system secret")
-			}
+	} else if store.FileSystem != nil {
+		err = updateLvpFileSystemStore(ctx, store, clientset, currentSecret, currentSecretErr, kotsadmVeleroBackendStorageLocation)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to update file system store for minio")
 		}
 	} else if store.Google != nil {
 		if store.Google.UseInstanceRole {
@@ -665,6 +663,82 @@ func updateGlobalStore(ctx context.Context, store *types.Store, kotsadmNamespace
 	return updated, nil
 }
 
+func updateMinioFileSystemStore(ctx context.Context, store *types.Store, clientset kubernetes.Interface, currentSecret *corev1.Secret, currentSecretErr error, bsl *velerov1.BackupStorageLocation) error {
+	bsl.Spec.Config = map[string]string{
+		"region":           store.FileSystem.Region,
+		"s3Url":            store.FileSystem.Endpoint,
+		"publicUrl":        fmt.Sprintf("http://%s:%d", store.FileSystem.ObjectStoreClusterIP, FileSystemMinioServicePort),
+		"s3ForcePathStyle": "true",
+	}
+
+	fileSystemCredentials, err := BuildAWSCredentials(store.FileSystem.AccessKeyID, store.FileSystem.SecretAccessKey)
+	if err != nil {
+		return errors.Wrap(err, "failed to format file system credentials")
+	}
+
+	// create or update the secret
+	if kuberneteserrors.IsNotFound(currentSecretErr) {
+		// create
+		toCreate := corev1.Secret{
+			TypeMeta: metav1.TypeMeta{
+				APIVersion: "v1",
+				Kind:       "Secret",
+			},
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "cloud-credentials",
+				Namespace: bsl.Namespace,
+			},
+			Data: map[string][]byte{
+				"cloud": fileSystemCredentials,
+			},
+		}
+		_, err = clientset.CoreV1().Secrets(bsl.Namespace).Create(ctx, &toCreate, metav1.CreateOptions{})
+		if err != nil {
+			return errors.Wrap(err, "failed to create file system secret")
+		}
+	} else {
+		// update
+		if currentSecret.Data == nil {
+			currentSecret.Data = map[string][]byte{}
+		}
+
+		currentSecret.Data["cloud"] = fileSystemCredentials
+		_, err = clientset.CoreV1().Secrets(bsl.Namespace).Update(ctx, currentSecret, metav1.UpdateOptions{})
+		if err != nil {
+			return errors.Wrap(err, "failed to update file system secret")
+		}
+	}
+	return nil
+}
+
+func updateLvpFileSystemStore(ctx context.Context, store *types.Store, clientset kubernetes.Interface, currentSecret *corev1.Secret, currentSecretErr error, bsl *velerov1.BackupStorageLocation) error {
+	if store.FileSystem.Config == nil {
+		return errors.New("missing file system config")
+	}
+
+	resticDir := path.Join(store.Bucket, store.Path)
+	if store.FileSystem.Config.HostPath != nil && *store.FileSystem.Config.HostPath != "" {
+		bsl.Spec.Config = map[string]string{
+			"path":             *store.FileSystem.Config.HostPath,
+			"resticRepoPrefix": fmt.Sprintf("/var/velero-local-volume-provider/%s/restic", resticDir),
+		}
+	} else {
+		if p := store.FileSystem.Config.NFS.Path; p == "" {
+			store.FileSystem.Config.NFS.Path = "/"
+		}
+
+		bsl.Spec.Config = map[string]string{
+			"path":             store.FileSystem.Config.NFS.Path,
+			"server":           store.FileSystem.Config.NFS.Server,
+			"resticRepoPrefix": fmt.Sprintf("/var/velero-local-volume-provider/%s/restic", resticDir),
+		}
+	}
+
+	// This will force an immediate sync by the velero controller
+	bsl.Status.LastSyncedTime = nil
+	return nil
+}
+
 // GetGlobalStore will return the global store from kotsadmVeleroBackupStorageLocation
 // or will find it, if the param is nil
 func GetGlobalStore(ctx context.Context, kotsadmNamespace string, kotsadmVeleroBackendStorageLocation *velerov1.BackupStorageLocation) (*types.Store, error) {
@@ -684,12 +758,10 @@ func GetGlobalStore(ctx context.Context, kotsadmNamespace string, kotsadmVeleroB
 		return nil, nil
 	}
 
-	prefix := kotsadmVeleroBackendStorageLocation.Spec.ObjectStorage.Prefix
-
 	store := types.Store{
 		Provider:   kotsadmVeleroBackendStorageLocation.Spec.Provider,
 		Bucket:     kotsadmVeleroBackendStorageLocation.Spec.ObjectStorage.Bucket,
-		Path:       prefix,
+		Path:       kotsadmVeleroBackendStorageLocation.Spec.ObjectStorage.Prefix,
 		CACertData: kotsadmVeleroBackendStorageLocation.Spec.ObjectStorage.CACert,
 	}
 
@@ -735,8 +807,6 @@ func GetGlobalStore(ctx context.Context, kotsadmNamespace string, kotsadmVeleroB
 			}
 		}
 
-		break
-
 	case "azure":
 		// TODO validate these keys in a real azure account
 		store.Azure = &types.StoreAzure{
@@ -763,8 +833,6 @@ func GetGlobalStore(ctx context.Context, kotsadmNamespace string, kotsadmVeleroB
 			store.Azure.CloudName = providers.AzureDefaultCloud
 		}
 
-		break
-
 	case "gcp":
 		currentSecret, err := clientset.CoreV1().Secrets(kotsadmVeleroBackendStorageLocation.Namespace).Get(ctx, "cloud-credentials", metav1.GetOptions{})
 		if err != nil && !kuberneteserrors.IsNotFound(err) {
@@ -784,7 +852,22 @@ func GetGlobalStore(ctx context.Context, kotsadmNamespace string, kotsadmVeleroB
 			JSONFile:        jsonFile,
 			UseInstanceRole: jsonFile == "",
 		}
-		break
+	case "replicated.com/hostpath":
+		path := kotsadmVeleroBackendStorageLocation.Spec.Config["path"]
+		store.FileSystem = &types.StoreFileSystem{
+			Config: &types.FileSystemConfig{
+				HostPath: &path,
+			},
+		}
+	case "replicated.com/nfs":
+		store.FileSystem = &types.StoreFileSystem{
+			Config: &types.FileSystemConfig{
+				NFS: &types.NFSConfig{
+					Path:   kotsadmVeleroBackendStorageLocation.Spec.Config["path"],
+					Server: kotsadmVeleroBackendStorageLocation.Spec.Config["server"],
+				},
+			},
+		}
 	}
 
 	return &store, nil
@@ -871,12 +954,32 @@ func FindBackupStoreLocation(ctx context.Context, kotsadmNamespace string) (*vel
 	}
 
 	for _, backupStorageLocation := range backupStorageLocations.Items {
-		if backupStorageLocation.Name == "default" {
+		if backupStorageLocation.Name == DefaultBackupStorageLocation {
 			return &backupStorageLocation, nil
 		}
 	}
 
 	return nil, errors.New("global config not found")
+}
+
+// UpdateBackupStorageLocation applies an updated Velero backup storage location resource to the cluster
+func UpdateBackupStorageLocation(ctx context.Context, veleroNamespace string, bsl *velerov1.BackupStorageLocation) error {
+	cfg, err := k8sutil.GetClusterConfig()
+	if err != nil {
+		return errors.Wrap(err, "failed to get cluster config")
+	}
+
+	veleroClient, err := veleroclientv1.NewForConfig(cfg)
+	if err != nil {
+		return errors.Wrap(err, "failed to create velero clientset")
+	}
+
+	_, err = veleroClient.BackupStorageLocations(veleroNamespace).Update(ctx, bsl, metav1.UpdateOptions{})
+	if err != nil {
+		return errors.Wrap(err, "failed to update backupstoragelocation")
+	}
+
+	return nil
 }
 
 func BuildAWSCredentials(accessKeyID, secretAccessKey string) ([]byte, error) {
@@ -908,7 +1011,7 @@ func BuildAWSCredentials(accessKeyID, secretAccessKey string) ([]byte, error) {
 	return awsCredentials.Bytes(), nil
 }
 
-func BuildStoreFileSystem(ctx context.Context, clientset kubernetes.Interface, kotsadmNamespace string) (*types.StoreFileSystem, error) {
+func BuildMinioStoreFileSystem(ctx context.Context, clientset kubernetes.Interface, kotsadmNamespace string) (*types.StoreFileSystem, error) {
 	secret, err := clientset.CoreV1().Secrets(kotsadmNamespace).Get(ctx, FileSystemMinioSecretName, metav1.GetOptions{})
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get file system minio secret")
@@ -925,6 +1028,17 @@ func BuildStoreFileSystem(ctx context.Context, clientset kubernetes.Interface, k
 	storeFileSystem.Endpoint = fmt.Sprintf("http://%s.%s:%d", FileSystemMinioServiceName, kotsadmNamespace, service.Spec.Ports[0].Port)
 	storeFileSystem.ObjectStoreClusterIP = service.Spec.ClusterIP
 	storeFileSystem.Region = FileSystemMinioRegion
+
+	return &storeFileSystem, nil
+}
+
+func BuildLvpStoreFileSystem(ctx context.Context, clientset kubernetes.Interface, kotsadmNamespace string, config *types.FileSystemConfig) (*types.StoreFileSystem, error) {
+	storeFileSystem := types.StoreFileSystem{}
+
+	if config.NFS != nil && config.NFS.Path == "" {
+		config.NFS.Path = "/"
+	}
+	storeFileSystem.Config = config
 
 	return &storeFileSystem, nil
 }
@@ -965,9 +1079,17 @@ func validateStore(ctx context.Context, store *types.Store, options ValidateStor
 		return nil
 	}
 
+	// Legacy Minio FS
+	if store.FileSystem != nil && store.Provider == FileSystemMinioProvider {
+		if err := validateMinioFileSystem(ctx, store.FileSystem, store.Bucket, options); err != nil {
+			return errors.Wrap(err, "failed to validate Minio File System configuration")
+		}
+		return nil
+	}
+
 	if store.FileSystem != nil {
-		if err := validateFileSystem(ctx, store.FileSystem, store.Bucket, options); err != nil {
-			return errors.Wrap(err, "failed to validate File System configuration")
+		if err := validateLvpFileSystem(ctx, store, options); err != nil {
+			return errors.Wrap(err, "failed to validate LVP File System configuration")
 		}
 		return nil
 	}
@@ -982,10 +1104,14 @@ func validateAWS(storeAWS *types.StoreAWS, bucket string) error {
 		S3ForcePathStyle: aws.Bool(false), // TODO: this may need to be configurable
 	}
 
+	ec2Session, err := session.NewSession()
+	if err != nil {
+		return errors.Wrap(err, "failed to create AWS ec2 session")
+	}
 	if storeAWS.UseInstanceRole {
 		s3Config.Credentials = credentials.NewChainCredentials([]credentials.Provider{
 			&ec2rolecreds.EC2RoleProvider{
-				Client:       ec2metadata.New(session.New()),
+				Client:       ec2metadata.New(ec2Session),
 				ExpiryWindow: 5 * time.Minute,
 			},
 		})
@@ -993,10 +1119,13 @@ func validateAWS(storeAWS *types.StoreAWS, bucket string) error {
 		s3Config.Credentials = credentials.NewStaticCredentials(storeAWS.AccessKeyID, storeAWS.SecretAccessKey, "")
 	}
 
-	newSession := session.New(s3Config)
+	newSession, err := session.NewSession(s3Config)
+	if err != nil {
+		return errors.Wrap(err, "failed to create AWS S3 session")
+	}
 	s3Client := s3.New(newSession)
 
-	_, err := s3Client.HeadBucket(&s3.HeadBucketInput{
+	_, err = s3Client.HeadBucket(&s3.HeadBucketInput{
 		Bucket: aws.String(bucket),
 	})
 
@@ -1038,9 +1167,9 @@ func validateAzure(ctx context.Context, storeAzure *types.StoreAzure, bucket str
 
 	var storageKey string
 	for _, key := range *res.Keys {
-		// uppercase both strings for comparison because the ListKeys call returns e.g. "FULL" but
+		// case-insensitive comparison because the ListKeys call returns e.g. "FULL" but
 		// the storagemgmt.Full constant in the SDK is defined as "Full".
-		if strings.ToUpper(string(key.Permissions)) == strings.ToUpper(string(storagemgmt.Full)) {
+		if strings.EqualFold(string(key.Permissions), string(storagemgmt.Full)) {
 			storageKey = *key.Value
 			break
 		}
@@ -1132,10 +1261,13 @@ func validateOther(ctx context.Context, storeOther *types.StoreOther, bucket str
 		s3Config.Credentials = credentials.NewStaticCredentials(storeOther.AccessKeyID, storeOther.SecretAccessKey, "")
 	}
 
-	newSession := session.New(s3Config)
+	newSession, err := session.NewSession(s3Config)
+	if err != nil {
+		return errors.Wrap(err, "failed to create s3 session")
+	}
 	s3Client := s3.New(newSession)
 
-	_, err := s3Client.HeadBucket(&s3.HeadBucketInput{
+	_, err = s3Client.HeadBucket(&s3.HeadBucketInput{
 		Bucket: aws.String(bucket),
 	})
 
@@ -1180,10 +1312,13 @@ func validateInternal(ctx context.Context, storeInternal *types.StoreInternal, b
 		s3Config.Credentials = credentials.NewStaticCredentials(storeInternal.AccessKeyID, storeInternal.SecretAccessKey, "")
 	}
 
-	newSession := session.New(s3Config)
+	newSession, err := session.NewSession(s3Config)
+	if err != nil {
+		return errors.Wrap(err, "failed to create s3 session")
+	}
 	s3Client := s3.New(newSession)
 
-	_, err := s3Client.HeadBucket(&s3.HeadBucketInput{
+	_, err = s3Client.HeadBucket(&s3.HeadBucketInput{
 		Bucket: aws.String(bucket),
 	})
 
@@ -1194,7 +1329,37 @@ func validateInternal(ctx context.Context, storeInternal *types.StoreInternal, b
 	return nil
 }
 
-func validateFileSystem(ctx context.Context, storeFileSystem *types.StoreFileSystem, bucket string, options ValidateStoreOptions) error {
+// validateLvpFileSystem checks that the fs configuration can be mounted, that the chosen directory is writable and
+// also test for legacy minio files. If minio files are detected, the store is updated with the /velero prefix
+func validateLvpFileSystem(ctx context.Context, store *types.Store, options ValidateStoreOptions) error {
+	// Check that mount is valid
+	clientset, err := k8sutil.GetClientset()
+	if err != nil {
+		return errors.Wrap(err, "failed to get k8s clientset")
+	}
+
+	// run the check to see if this is a legacy minio deployment and configure a prefix
+	// Only checking that the path is mountable
+	deployOptions := FileSystemDeployOptions{
+		Namespace:        options.KotsadmNamespace,
+		IsOpenShift:      k8sutil.IsOpenShift(clientset),
+		ForceReset:       false,
+		FileSystemConfig: *store.FileSystem.Config,
+	}
+	isLegacyMinioDeployment, writable, err := ValidateFileSystemDeployment(ctx, clientset, deployOptions, *options.RegistryOptions)
+	if err != nil {
+		return errors.Wrap(err, "could not validate lvp file system")
+	}
+	if !writable {
+		return errors.New("the volume path is not writable")
+	}
+	if isLegacyMinioDeployment {
+		store.Path = "/velero"
+	}
+	return nil
+}
+
+func validateMinioFileSystem(ctx context.Context, storeFileSystem *types.StoreFileSystem, bucket string, options ValidateStoreOptions) error {
 	if options.ValidateUsingAPod {
 		clientset, err := k8sutil.GetClientset()
 		if err != nil {
@@ -1228,10 +1393,13 @@ func validateFileSystem(ctx context.Context, storeFileSystem *types.StoreFileSys
 		s3Config.Credentials = credentials.NewStaticCredentials(storeFileSystem.AccessKeyID, storeFileSystem.SecretAccessKey, "")
 	}
 
-	newSession := session.New(s3Config)
+	newSession, err := session.NewSession(s3Config)
+	if err != nil {
+		return errors.Wrap(err, "failed to create s3 session")
+	}
 	s3Client := s3.New(newSession)
 
-	_, err := s3Client.HeadBucket(&s3.HeadBucketInput{
+	_, err = s3Client.HeadBucket(&s3.HeadBucketInput{
 		Bucket: aws.String(bucket),
 	})
 
@@ -1318,4 +1486,59 @@ func resetResticRepositories(ctx context.Context, kotsadmNamespace string) error
 	}
 
 	return nil
+}
+
+// GetLvpProvider returns the name of the Lvp provider corresponding to the desired filesystem
+// configuration
+func GetLvpProvider(fsConfig *types.FileSystemConfig) string {
+	if fsConfig.HostPath != nil {
+		return "replicated.com/hostpath"
+	}
+	return "replicated.com/nfs"
+}
+
+// GetLvpBucket returns the bucket/volume name used for the LVP backup. It includes a hash of the
+// Filesystem configuration
+func GetLvpBucket(fsConfig *types.FileSystemConfig) (string, error) {
+	b, err := json.Marshal(fsConfig)
+	if err != nil {
+		return "", errors.Wrap(err, "failed to marshal filesystem config")
+	}
+	hash := md5.Sum(b)
+	hashId := hex.EncodeToString(hash[:6])
+	return fmt.Sprintf("velero-lvp-%s", hashId), nil
+}
+
+// WaitForDefaultBslAvailableAndSynced blocks execution until the default backup storage location to display a status as "AVAILABLE"
+// and also until the backups in the location are available through the Velero api. There is a timeout of 5 minutes, though the
+// default Velero sync time is only 1 minute.
+func WaitForDefaultBslAvailableAndSynced(ctx context.Context, veleroNamespace string, start metav1.Time) error {
+	timeout := time.After(5 * time.Minute)
+
+	cfg, err := k8sutil.GetClusterConfig()
+	if err != nil {
+		return errors.Wrap(err, "failed to get cluster config")
+	}
+
+	veleroClient, err := veleroclientv1.NewForConfig(cfg)
+	if err != nil {
+		return errors.Wrap(err, "failed to create clientset")
+	}
+
+	for {
+		select {
+		case <-timeout:
+			return errors.New("timed out waiting for default backup storage location to be available")
+		default:
+			bsl, err := veleroClient.BackupStorageLocations(veleroNamespace).Get(ctx, DefaultBackupStorageLocation, metav1.GetOptions{})
+			if err != nil {
+				return errors.Wrap(err, "failed to get default backup storage location")
+			}
+
+			if bsl.Status.Phase == velerov1.BackupStorageLocationPhaseAvailable && bsl.Status.LastSyncedTime != nil {
+				return nil
+			}
+			time.Sleep(10 * time.Second)
+		}
+	}
 }

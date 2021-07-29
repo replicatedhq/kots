@@ -8,18 +8,20 @@ import (
 	"crypto/sha256"
 	"encoding/json"
 	"fmt"
+	"strconv"
 	"time"
 
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
-	"github.com/replicatedhq/kots/pkg/kotsadm"
+	kotsadmresources "github.com/replicatedhq/kots/pkg/kotsadm/resources"
 	kotsadmtypes "github.com/replicatedhq/kots/pkg/kotsadm/types"
 	kotsadmversion "github.com/replicatedhq/kots/pkg/kotsadm/version"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	kotss3 "github.com/replicatedhq/kots/pkg/s3"
 	types "github.com/replicatedhq/kots/pkg/snapshot/types"
 	"github.com/replicatedhq/kots/pkg/util"
+	velerov1api "github.com/vmware-tanzu/velero/pkg/apis/velero/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
@@ -55,13 +57,13 @@ func (e ResetFileSystemError) Error() string {
 
 func DeployFileSystemMinio(ctx context.Context, clientset kubernetes.Interface, deployOptions FileSystemDeployOptions, registryOptions kotsadmtypes.KotsadmOptions) error {
 	// file system minio can be deployed before installing kotsadm or the application (e.g. disaster recovery)
-	err := kotsadm.EnsurePrivateKotsadmRegistrySecret(deployOptions.Namespace, registryOptions, clientset)
+	err := kotsadmresources.EnsurePrivateKotsadmRegistrySecret(deployOptions.Namespace, registryOptions, clientset)
 	if err != nil {
 		return errors.Wrap(err, "failed to ensure private kotsadm registry secret")
 	}
 
 	// configure fs directory/mount
-	shouldReset, hasMinioConfig, err := shouldResetFileSystemMount(ctx, clientset, deployOptions, registryOptions)
+	shouldReset, hasMinioConfig, _, err := shouldResetFileSystemMount(ctx, clientset, deployOptions, registryOptions)
 	if err != nil {
 		return errors.Wrap(err, "failed to check if should reset file system mount")
 	}
@@ -107,6 +109,30 @@ func DeployFileSystemMinio(ctx context.Context, clientset kubernetes.Interface, 
 	}
 
 	return nil
+}
+
+func DeployFileSystemLvp(ctx context.Context, clientset kubernetes.Interface, deployOptions FileSystemDeployOptions, registryOptions kotsadmtypes.KotsadmOptions) error {
+
+	veleroNamespace, err := DetectVeleroNamespace(ctx, clientset, deployOptions.Namespace)
+	if err != nil {
+		return errors.Wrap(err, "failed to detect velero namespace")
+	}
+
+	// Deploy the config map exists for the plugin
+	if err = EnsureLocalVolumeProviderConfigMap(deployOptions, veleroNamespace); err != nil {
+		return errors.Wrap(err, "failed to configure local volume provider plugin config map")
+	}
+
+	return nil
+}
+
+func ValidateFileSystemDeployment(ctx context.Context, clientset kubernetes.Interface, deployOptions FileSystemDeployOptions, registryOptions kotsadmtypes.KotsadmOptions) (bool, bool, error) {
+	// configure fs directory/mount. This is a legacy check to see if this directory was migrated from Minio and has an intermediate directory
+	_, hasMinioConfig, writable, err := shouldResetFileSystemMount(ctx, clientset, deployOptions, registryOptions)
+	if err != nil {
+		return false, false, errors.Wrap(err, "failed to check if should reset file system mount")
+	}
+	return hasMinioConfig, writable, nil
 }
 
 func ensureFileSystemConfigMap(ctx context.Context, clientset kubernetes.Interface, deployOptions FileSystemDeployOptions) error {
@@ -475,7 +501,7 @@ func updateFileSystemMinioService(existingService, desiredService *corev1.Servic
 	return existingService
 }
 
-func shouldResetFileSystemMount(ctx context.Context, clientset kubernetes.Interface, deployOptions FileSystemDeployOptions, registryOptions kotsadmtypes.KotsadmOptions) (shouldReset bool, hasMinioConfig bool, finalErr error) {
+func shouldResetFileSystemMount(ctx context.Context, clientset kubernetes.Interface, deployOptions FileSystemDeployOptions, registryOptions kotsadmtypes.KotsadmOptions) (shouldReset bool, hasMinioConfig bool, writable bool, finalErr error) {
 	checkPod, err := createFileSystemMinioCheckPod(ctx, clientset, deployOptions, registryOptions)
 	if err != nil {
 		finalErr = errors.Wrap(err, "failed to create file system minio check pod")
@@ -500,6 +526,7 @@ func shouldResetFileSystemMount(ctx context.Context, clientset kubernetes.Interf
 	type FileSystemMinioCheckPodOutput struct {
 		HasMinioConfig bool   `json:"hasMinioConfig"`
 		MinioKeysSHA   string `json:"minioKeysSHA"`
+		Writable       bool   `json:"writable"`
 	}
 
 	checkPodOutput := FileSystemMinioCheckPodOutput{}
@@ -514,6 +541,8 @@ func shouldResetFileSystemMount(ctx context.Context, clientset kubernetes.Interf
 
 		break
 	}
+
+	writable = checkPodOutput.Writable
 
 	// only delete pod if we know we have an actionable output
 	clientset.CoreV1().Pods(deployOptions.Namespace).Delete(ctx, checkPod.Name, metav1.DeleteOptions{})
@@ -765,7 +794,6 @@ func fileSystemMinioConfigPod(clientset kubernetes.Interface, deployOptions File
 						{
 							Name:      "fs",
 							MountPath: "/fs",
-							ReadOnly:  readOnly,
 						},
 					},
 					Resources: corev1.ResourceRequirements{
@@ -787,7 +815,7 @@ func fileSystemMinioConfigPod(clientset kubernetes.Interface, deployOptions File
 }
 
 func CreateFileSystemMinioBucket(ctx context.Context, clientset kubernetes.Interface, namespace string, registryOptions kotsadmtypes.KotsadmOptions) error {
-	storeFileSystem, err := BuildStoreFileSystem(ctx, clientset, namespace)
+	storeFileSystem, err := BuildMinioStoreFileSystem(ctx, clientset, namespace)
 	if err != nil {
 		return errors.Wrap(err, "failed to build file system store")
 	}
@@ -817,7 +845,59 @@ func getFileSystemResetWarningMsg(fileSystemConfig types.FileSystemConfig) strin
 	return fmt.Sprintf("The %s directory was previously configured by a different minio instance.\nProceeding will re-configure it to be used only by the minio instance we deploy to configure the file system, and any other minio instance using this location will no longer have access.\nIf you are attempting to fully restore a prior installation, such as a disaster recovery scenario, this action is expected.", path)
 }
 
-func GetCurrentFileSystemConfig(ctx context.Context, namespace string) (*types.FileSystemConfig, error) {
+func GetCurrentFileSystemConfig(ctx context.Context, namespace string, isMinioDisabled bool) (*types.FileSystemConfig, error) {
+	var fileSystemConfig *types.FileSystemConfig
+
+	if !isMinioDisabled {
+		fileSystemConfig, err := GetCurrentMinioFileSystemConfig(ctx, namespace)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to get current minio file system config")
+		}
+		if fileSystemConfig != nil {
+			return fileSystemConfig, nil
+		}
+		return nil, nil
+	}
+
+	fileSystemConfig, err := GetCurrentLvpFileSystemConfig(ctx, namespace)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get current lvp file system config")
+	}
+
+	return fileSystemConfig, nil
+}
+
+func GetCurrentLvpFileSystemConfig(ctx context.Context, namespace string) (*types.FileSystemConfig, error) {
+	bsl, err := FindBackupStoreLocation(ctx, namespace)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to find velero backup storage location")
+	}
+	if bsl == nil {
+		return nil, nil
+	}
+
+	var fileSystemConfig *types.FileSystemConfig
+
+	switch bsl.Spec.Provider {
+	case "replicated.com/hostpath":
+		fileSystemConfig = &types.FileSystemConfig{}
+		hostPath := bsl.Spec.Config["path"]
+		fileSystemConfig.HostPath = &hostPath
+		return fileSystemConfig, nil
+	case "replicated.com/nfs":
+		fileSystemConfig = &types.FileSystemConfig{
+			NFS: &types.NFSConfig{
+				Path:   bsl.Spec.Config["path"],
+				Server: bsl.Spec.Config["server"],
+			},
+		}
+		return fileSystemConfig, nil
+	}
+	return nil, nil
+}
+
+func GetCurrentMinioFileSystemConfig(ctx context.Context, namespace string) (*types.FileSystemConfig, error) {
+
 	clientset, err := k8sutil.GetClientset()
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get k8s clientset")
@@ -847,4 +927,143 @@ func GetCurrentFileSystemConfig(ctx context.Context, namespace string) (*types.F
 	}
 
 	return &fileSystemConfig, nil
+}
+
+// RevertToMinioFS will apply the spec of the previous BSL to the current one and then update.
+// Used for recovery during a failed migration from Minio to LVP.
+func RevertToMinioFS(ctx context.Context, kotsadmNamespace, veleroNamespace string, previousBsl *velerov1api.BackupStorageLocation) error {
+	bsl, err := FindBackupStoreLocation(context.TODO(), kotsadmNamespace)
+	if err != nil {
+		return errors.Wrap(err, "failed to find backupstoragelocations")
+	}
+
+	bsl.Spec = previousBsl.Spec
+
+	err = UpdateBackupStorageLocation(ctx, veleroNamespace, bsl)
+	if err != nil {
+		return errors.Wrap(err, "failed to revert to minio backup storage location")
+	}
+	return nil
+}
+
+// DeleteFileSystemMinio cleans up the minio resources for hostpath and nfs snapshot deployments.
+// The secret is not deleted, just in case.
+func DeleteFileSystemMinio(ctx context.Context, kotsadmNamespace string) error {
+	clientset, err := k8sutil.GetClientset()
+	if err != nil {
+		return errors.Wrap(err, "failed to get kubernetes clientset")
+	}
+
+	if err := clientset.CoreV1().ConfigMaps(kotsadmNamespace).Delete(ctx, FileSystemMinioConfigMapName, metav1.DeleteOptions{}); err != nil {
+		return errors.Wrap(err, "failed to delete fs minio config map")
+	}
+
+	if err := clientset.AppsV1().Deployments(kotsadmNamespace).Delete(ctx, FileSystemMinioDeploymentName, metav1.DeleteOptions{}); err != nil {
+		return errors.Wrap(err, "failed to delete fs minio deployment")
+	}
+
+	if err := clientset.CoreV1().Services(kotsadmNamespace).Delete(ctx, FileSystemMinioServiceName, metav1.DeleteOptions{}); err != nil {
+		return errors.Wrap(err, "failed to delete fs minio service")
+	}
+
+	return nil
+}
+
+// EnsureLocalVolumeProviderConfigMap customizes the LVP plugin deployment with a config map
+// based on the chosen file system backing and the detection of Openshift. This ensures
+// the Velero and Restic have permissions to write to the disk.
+func EnsureLocalVolumeProviderConfigMap(deployOptions FileSystemDeployOptions, veleroNamespace string) error {
+	if deployOptions.IsOpenShift || veleroNamespace == "" {
+		return nil
+	}
+
+	fsConfig := deployOptions.FileSystemConfig
+
+	clientset, err := k8sutil.GetClientset()
+	if err != nil {
+		return errors.Wrap(err, "failed to get kubernetes clientset")
+	}
+
+	var pluginConfigMapLabel string
+	if fsConfig.HostPath != nil {
+		pluginConfigMapLabel = "replicated.com/hostpath"
+	} else {
+		pluginConfigMapLabel = "replicated.com/nfs"
+	}
+
+	listOpts := metav1.ListOptions{
+		LabelSelector: fmt.Sprintf("%s=%s", pluginConfigMapLabel, "ObjectStore"),
+	}
+
+	configmaps, err := clientset.CoreV1().ConfigMaps(veleroNamespace).List(context.TODO(), listOpts)
+	if err != nil {
+		return errors.Wrap(err, "failed to list existing config maps")
+	}
+
+	if len(configmaps.Items) == 0 {
+		// Create the config map
+		configmap := &corev1.ConfigMap{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "local-volume-provider-config",
+				Namespace: veleroNamespace,
+				Labels: map[string]string{
+					"velero.io/plugin-config": "",
+					"replicated.com/nfs":      "ObjectStore",
+					"replicated.com/hostpath": "ObjectStore",
+				},
+			},
+			// These values are the settings used for the minio filesystem deployment
+			Data: map[string]string{
+				"securityContextRunAsUser": "1001",
+				"securityContextFsGroup":   "1001",
+			},
+		}
+
+		_, err = clientset.CoreV1().ConfigMaps(veleroNamespace).Create(context.TODO(), configmap, metav1.CreateOptions{})
+		if err != nil {
+			return errors.Wrap(err, "failed to create new local-volume-provider config map")
+		}
+
+		return nil
+	}
+
+	configmap := &configmaps.Items[0]
+	configmap.Data["securityContextRunAsUser"] = "1001"
+	configmap.Data["securityContextFsGroup"] = "1001"
+
+	_, err = clientset.CoreV1().ConfigMaps(veleroNamespace).Update(context.TODO(), configmap, metav1.UpdateOptions{})
+	if err != nil {
+		return errors.Wrap(err, "failed to update local-volume-provider config map")
+	}
+
+	return nil
+}
+
+// IsFileSystemMinioDisable returns the value of an internal KOTS config map entry indicating
+// if this installation has opted in or out of migrating from Minio to the LVP plugin.
+func IsFileSystemMinioDisabled(kotsadmNamespace string) (bool, error) {
+	clientset, err := k8sutil.GetClientset()
+	if err != nil {
+		return false, errors.Wrap(err, "failed to get kubernetes clientset")
+	}
+
+	// Get minio snapshot migration status v1.48.0
+	kostadmConfig, err := clientset.CoreV1().ConfigMaps(kotsadmNamespace).Get(context.TODO(), "kotsadm-confg", metav1.GetOptions{})
+	if err != nil {
+		if kuberneteserrors.IsNotFound(err) {
+			// TODO (dans) this behavior needs to change when this feature is opt-out.
+			return false, nil
+		}
+		return false, errors.Wrap(err, "failed to get kotsadm-config map")
+	}
+	var minioEnabled bool
+	if v, ok := kostadmConfig.Data["minio-enabled-snapshots"]; ok {
+		minioEnabled, err = strconv.ParseBool(v)
+		if err != nil {
+			return false, errors.Wrap(err, "failed to parse minio-enabled-snapshots from kotsadm-confg")
+		}
+		return !minioEnabled, nil
+	}
+
+	return false, nil
 }

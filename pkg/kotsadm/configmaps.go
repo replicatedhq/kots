@@ -9,6 +9,7 @@ import (
 
 	"github.com/pkg/errors"
 	kotsadmobjects "github.com/replicatedhq/kots/pkg/kotsadm/objects"
+	kotsadmresources "github.com/replicatedhq/kots/pkg/kotsadm/resources"
 	"github.com/replicatedhq/kots/pkg/kotsadm/types"
 	corev1 "k8s.io/api/core/v1"
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
@@ -32,18 +33,18 @@ func getConfigMapsYAML(deployOptions types.DeployOptions) (map[string][]byte, er
 }
 
 func ensureKotsadmConfig(deployOptions types.DeployOptions, clientset *kubernetes.Clientset) error {
-	if err := EnsurePrivateKotsadmRegistrySecret(deployOptions.Namespace, deployOptions.KotsadmOptions, clientset); err != nil {
+	if err := kotsadmresources.EnsurePrivateKotsadmRegistrySecret(deployOptions.Namespace, deployOptions.KotsadmOptions, clientset); err != nil {
 		return errors.Wrap(err, "failed to ensure private kotsadm registry secret")
 	}
 
-	if err := ensureConfigMaps(deployOptions, clientset); err != nil {
+	if err := EnsureConfigMaps(deployOptions, clientset); err != nil {
 		return errors.Wrap(err, "failed to ensure kotsadm config maps")
 	}
 
 	return nil
 }
 
-func ensureConfigMaps(deployOptions types.DeployOptions, clientset *kubernetes.Clientset) error {
+func EnsureConfigMaps(deployOptions types.DeployOptions, clientset *kubernetes.Clientset) error {
 	desiredConfigMap := kotsadmobjects.KotsadmConfigMap(deployOptions)
 
 	existingConfigMap, err := clientset.CoreV1().ConfigMaps(deployOptions.Namespace).Get(context.TODO(), types.KotsadmConfigMap, metav1.GetOptions{})

@@ -29,6 +29,10 @@ import (
 	"k8s.io/client-go/kubernetes"
 )
 
+const (
+	resticRepoBase = "/var/velero-local-volume-provider"
+)
+
 func VeleroCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "velero",
@@ -44,6 +48,7 @@ func VeleroCmd() *cobra.Command {
 	cmd.AddCommand(VeleroConfigureNFSCmd())
 	cmd.AddCommand(VeleroConfigureHostPathCmd())
 	cmd.AddCommand(VeleroPrintFileSystemInstructionsCmd())
+	cmd.AddCommand(VeleroMigrateMinioFileSystemCmd())
 
 	return cmd
 }
@@ -125,8 +130,7 @@ func VeleroConfigureInternalCmd() *cobra.Command {
 				return errors.New("velero namespace not found")
 			}
 
-			// init containers are names differently starting in velero 1.6
-			if !veleroStatus.ContainsPlugin("velero-plugin-for-aws") && !veleroStatus.ContainsPlugin("velero-velero-plugin-for-aws") {
+			if !veleroStatus.ContainsPlugin("velero-plugin-for-aws") {
 				return errors.New("velero does not have the 'velero-plugin-for-aws' installed; " +
 					"consult https://kots.io/kotsadm/snapshots/overview/ for install instructions`)")
 			}
@@ -181,8 +185,7 @@ func VeleroConfigureAmazonS3Cmd() *cobra.Command {
 				return errors.New("velero namespace not found")
 			}
 
-			// init containers are names differently starting in velero 1.6
-			if !veleroStatus.ContainsPlugin("velero-plugin-for-aws") && !veleroStatus.ContainsPlugin("velero-velero-plugin-for-aws") {
+			if !veleroStatus.ContainsPlugin("velero-plugin-for-aws") {
 				return errors.New("velero does not have the 'velero-plugin-for-aws' installed; " +
 					"consult https://kots.io/kotsadm/snapshots/overview/ for install instructions`)")
 			}
@@ -366,8 +369,7 @@ func VeleroConfigureOtherS3Cmd() *cobra.Command {
 				}
 			}
 
-			// init containers are names differently starting in velero 1.6
-			if !veleroStatus.ContainsPlugin("velero-plugin-for-aws") && !veleroStatus.ContainsPlugin("velero-velero-plugin-for-aws") {
+			if !veleroStatus.ContainsPlugin("velero-plugin-for-aws") {
 				return errors.New("velero does not have the 'velero-plugin-for-aws' installed; " +
 					"consult https://kots.io/kotsadm/snapshots/overview/ for install instructions`)")
 			}
@@ -448,8 +450,7 @@ func VeleroConfigureGCPCmd() *cobra.Command {
 				return errors.New("velero namespace not found")
 			}
 
-			// init containers are names differently starting in velero 1.6
-			if !veleroStatus.ContainsPlugin("velero-plugin-for-gcp") && !veleroStatus.ContainsPlugin("velero-velero-plugin-for-gcp") {
+			if !veleroStatus.ContainsPlugin("velero-plugin-for-gcp") {
 				return errors.New("velero does not have the 'velero-plugin-for-gcp' installed; " +
 					"consult https://kots.io/kotsadm/snapshots/overview/ for install instructions`)")
 			}
@@ -611,8 +612,7 @@ func VeleroConfigureAzureCmd() *cobra.Command {
 				return errors.New("velero namespace not found")
 			}
 
-			// init containers are names differently starting in velero 1.6
-			if !veleroStatus.ContainsPlugin("velero-plugin-for-microsoft-azure") || !veleroStatus.ContainsPlugin("velero-velero-plugin-for-microsoft-azure") {
+			if !veleroStatus.ContainsPlugin("velero-plugin-for-microsoft-azure") {
 				return errors.New("velero does not have the 'velero-plugin-for-microsoft-azure' installed; " +
 					"consult https://kots.io/kotsadm/snapshots/overview/ for install instructions`)")
 			}
@@ -754,6 +754,7 @@ func VeleroConfigureNFSCmd() *cobra.Command {
 				Output:           v.GetString("output"),
 				ForceReset:       v.GetBool("force-reset"),
 				SkipValidation:   v.GetBool("skip-validation"),
+				IsMinioDisabled:  !v.GetBool("with-minio"),
 			}
 			return veleroConfigureFileSystem(cmd.Context(), log, opts)
 		},
@@ -763,6 +764,7 @@ func VeleroConfigureNFSCmd() *cobra.Command {
 	cmd.Flags().String("nfs-server", "", "the hostname or IP address of the NFS server")
 	cmd.Flags().StringP("output", "o", "", "output format. supported values: json")
 	cmd.Flags().Bool("force-reset", false, "bypass the reset prompt and force resetting the nfs path")
+	cmd.Flags().Bool("with-minio", true, "when set, kots will deploy minio for NFS snapshot locations")
 	cmd.Flags().Bool("skip-validation", false, "skip the validation of the backup store endpoint/bucket")
 	cmd.Flags().MarkHidden("skip-validation")
 
@@ -813,6 +815,7 @@ func VeleroConfigureHostPathCmd() *cobra.Command {
 				Output:           v.GetString("output"),
 				ForceReset:       v.GetBool("force-reset"),
 				SkipValidation:   v.GetBool("skip-validation"),
+				IsMinioDisabled:  !v.GetBool("with-minio"),
 			}
 			return veleroConfigureFileSystem(cmd.Context(), log, opts)
 		},
@@ -822,6 +825,8 @@ func VeleroConfigureHostPathCmd() *cobra.Command {
 	cmd.Flags().StringP("output", "o", "", "output format. supported values: json")
 	cmd.Flags().Bool("force-reset", false, "bypass the reset prompt and force resetting the host path directory")
 	cmd.Flags().Bool("skip-validation", false, "skip the validation of the backup store endpoint/bucket")
+	cmd.Flags().Bool("with-minio", true, "when set, kots will deploy minio for hostpath snapshot locations")
+
 	cmd.Flags().MarkHidden("skip-validation")
 
 	registryFlags(cmd.Flags())
@@ -830,23 +835,35 @@ func VeleroConfigureHostPathCmd() *cobra.Command {
 }
 
 type VeleroConfigureFileSystemOptions struct {
-	Namespace        string
-	RegistryOptions  *kotsadmtypes.KotsadmOptions
-	FileSystemConfig snapshottypes.FileSystemConfig
-	Output           string
-	ForceReset       bool
-	SkipValidation   bool
+	Namespace          string
+	RegistryOptions    *kotsadmtypes.KotsadmOptions
+	FileSystemConfig   snapshottypes.FileSystemConfig
+	Output             string
+	ForceReset         bool
+	SkipValidation     bool
+	IsMinioDisabled    bool
+	IsLegacyDeployment bool
 }
 
 func veleroConfigureFileSystem(ctx context.Context, log *logger.CLILogger, opts VeleroConfigureFileSystemOptions) error {
 	if opts.Output != "" {
 		log.Silence()
 	}
-	log.ActionWithSpinner("Setting up File System Minio")
+	log.ActionWithoutSpinner("Setting up File System")
 
 	clientset, err := k8sutil.GetClientset()
 	if err != nil {
 		return errors.Wrap(err, "failed to get clientset")
+	}
+
+	// Check for existing status; bail if not enabled
+	isMinioDisabled, err := snapshot.IsFileSystemMinioDisabled(opts.Namespace)
+	if err != nil {
+		return errors.Wrap(err, "could ")
+	}
+
+	if isMinioDisabled {
+		opts.IsMinioDisabled = isMinioDisabled
 	}
 
 	deployOptions := snapshot.FileSystemDeployOptions{
@@ -855,68 +872,64 @@ func veleroConfigureFileSystem(ctx context.Context, log *logger.CLILogger, opts 
 		FileSystemConfig: opts.FileSystemConfig,
 		ForceReset:       opts.ForceReset,
 	}
-	if err := snapshot.DeployFileSystemMinio(ctx, clientset, deployOptions, *opts.RegistryOptions); err != nil {
-		if _, ok := errors.Cause(err).(*snapshot.ResetFileSystemError); ok {
-			log.FinishSpinnerWithWarning(color.New(color.FgHiRed))
-			forceReset := promptForFileSystemReset(log, err.Error())
-			if forceReset {
-				log.ActionWithSpinner("Re-configuring File System Minio")
-				deployOptions.ForceReset = true
-				if err := snapshot.DeployFileSystemMinio(ctx, clientset, deployOptions, *opts.RegistryOptions); err != nil {
-					log.FinishSpinnerWithError()
-					return errors.Wrap(err, "failed to force deploy file system minio")
-				}
-			}
-		} else {
-			log.FinishSpinnerWithError()
-			return errors.Wrap(err, "failed to deploy file system minio")
+
+	if !opts.IsMinioDisabled {
+		// Minio Case
+		err = deployVeleroMinioFileSystem(ctx, clientset, log, deployOptions, opts)
+		if err != nil {
+			return errors.Wrap(err, "could not deploy minio fs")
+		}
+	} else {
+		// LVP Case
+		// Peak to see if this is a legacy minio deployment that was migrated
+		isLegacyMinioDeployment, _, err := snapshot.ValidateFileSystemDeployment(ctx, clientset, deployOptions, *opts.RegistryOptions)
+		if err != nil {
+			return errors.Wrap(err, "could not validate lvp file system")
+		}
+		opts.IsLegacyDeployment = isLegacyMinioDeployment
+
+		if err := snapshot.DeployFileSystemLvp(ctx, clientset, deployOptions, *opts.RegistryOptions); err != nil {
+			return errors.Wrap(err, "could not deploy lvp file system config")
 		}
 	}
 
-	log.FinishSpinner()
-	log.ActionWithSpinner("Waiting for File System Minio to be ready")
-
-	err = k8sutil.WaitForDeploymentReady(ctx, clientset, opts.Namespace, snapshot.FileSystemMinioDeploymentName, time.Minute*2)
-	if err != nil {
-		log.FinishSpinnerWithError()
-		return errors.Wrap(err, "failed to wait for file system minio")
-	}
-
-	log.FinishSpinner()
-	log.ActionWithSpinner("Creating Default Bucket")
-
-	err = snapshot.CreateFileSystemMinioBucket(ctx, clientset, opts.Namespace, *opts.RegistryOptions)
-	if err != nil {
-		log.FinishSpinnerWithError()
-		return errors.Wrap(err, "failed to create default bucket")
-	}
-
-	log.FinishSpinner()
-
-	veleroNamespace, err := snapshot.DetectVeleroNamespace(ctx, clientset, opts.Namespace)
+	veleroStatus, err := snapshot.DetectVelero(ctx, opts.Namespace)
 	if err != nil {
 		return errors.Wrap(err, "failed to detect velero namespace")
 	}
-	if veleroNamespace == "" {
-		c, err := buildPrintableFileSystemVeleroConfig(ctx, clientset, opts.Namespace)
+
+	if isVeleroConfiguredForMinio(veleroStatus, opts.IsMinioDisabled) {
+		c, err := buildPrintableMinioFileSystemVeleroConfig(ctx, clientset, opts.Namespace)
 		if err != nil {
-			return errors.Wrap(err, "failed to get printable file system velero config")
+			return errors.Wrap(err, "failed to get printable minio file system velero config")
 		}
 		if opts.Output == "" {
-			log.ActionWithoutSpinner("file system configuration for the Admin Console is successful, but no Velero installation has been detected.")
+			log.ActionWithoutSpinner("File system configuration for the Admin Console is successful, but no Velero installation has been detected.")
 		}
-		print.FileSystemMinioVeleroInfo(c, opts.Output, log)
+		print.MinioFileSystemVeleroInfo(c, opts.Output, log)
+		return nil
+	}
+	if veleroStatus == nil || !veleroStatus.ContainsPlugin("local-volume-provider") {
+		c, err := buildPrintableLvpFileSystemVeleroConfig(ctx, clientset, opts)
+		if err != nil {
+			return errors.Wrap(err, "failed to get printable lvp file system velero config")
+		}
+		if opts.Output == "" {
+			log.ActionWithoutSpinner("No Velero installation has been detected.")
+		}
+		print.LvpFileSystemVeleroInfo(c, opts.Output, log)
 		return nil
 	}
 
 	log.ActionWithSpinner("Configuring Velero")
 
 	configureStoreOptions := snapshot.ConfigureStoreOptions{
-		FileSystem:        true,
+		FileSystem:        &opts.FileSystemConfig,
 		KotsadmNamespace:  opts.Namespace,
 		RegistryOptions:   opts.RegistryOptions,
 		SkipValidation:    opts.SkipValidation,
 		ValidateUsingAPod: true,
+		IsMinioDisabled:   opts.IsMinioDisabled,
 	}
 	_, err = snapshot.ConfigureStore(ctx, configureStoreOptions)
 	if err != nil {
@@ -929,6 +942,51 @@ func veleroConfigureFileSystem(ctx context.Context, log *logger.CLILogger, opts 
 	return nil
 }
 
+func deployVeleroMinioFileSystem(ctx context.Context, clientset kubernetes.Interface, log *logger.CLILogger, deployOptions snapshot.FileSystemDeployOptions, opts VeleroConfigureFileSystemOptions) error {
+	log.ChildActionWithSpinner("Deploying File System Minio")
+	if err := snapshot.DeployFileSystemMinio(ctx, clientset, deployOptions, *opts.RegistryOptions); err != nil {
+		if _, ok := errors.Cause(err).(*snapshot.ResetFileSystemError); ok {
+			forceReset := promptForFileSystemReset(log, err.Error())
+			if forceReset {
+				log.FinishChildSpinner()
+				log.ChildActionWithSpinner("Re-configuring File System Minio")
+				deployOptions.ForceReset = true
+				if err := snapshot.DeployFileSystemMinio(ctx, clientset, deployOptions, *opts.RegistryOptions); err != nil {
+					log.FinishChildSpinner()
+					return errors.Wrap(err, "failed to force deploy file system minio")
+				}
+			}
+
+		} else {
+			log.FinishChildSpinner()
+			return errors.Wrap(err, "failed to deploy file system minio")
+		}
+	}
+
+	log.FinishChildSpinner()
+	log.ChildActionWithSpinner("Waiting for File System Minio to be ready")
+
+	err := k8sutil.WaitForDeploymentReady(ctx, clientset, opts.Namespace, snapshot.FileSystemMinioDeploymentName, time.Minute*2)
+	if err != nil {
+		log.FinishChildSpinner()
+		return errors.Wrap(err, "failed to wait for file system minio")
+	}
+
+	log.FinishChildSpinner()
+	log.ChildActionWithSpinner("Creating Default Bucket")
+
+	err = snapshot.CreateFileSystemMinioBucket(ctx, clientset, opts.Namespace, *opts.RegistryOptions)
+	if err != nil {
+		log.FinishChildSpinner()
+		return errors.Wrap(err, "failed to create default bucket")
+	}
+
+	log.FinishChildSpinner()
+	return nil
+}
+
+// VeleroPrintFileSystemInstrunctions logs to stdout or json, instructions for setting up the current
+// file system configuration including Velero installation
 func VeleroPrintFileSystemInstructionsCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:           "print-fs-instructions",
@@ -952,25 +1010,69 @@ func VeleroPrintFileSystemInstructionsCmd() *cobra.Command {
 				return errors.Wrap(err, "failed to get clientset")
 			}
 
-			c, err := buildPrintableFileSystemVeleroConfig(cmd.Context(), clientset, namespace)
+			isMinioDisabled, err := snapshot.IsFileSystemMinioDisabled(namespace)
 			if err != nil {
-				return errors.Wrap(err, "failed to get file system minio velero config")
+				return errors.Wrap(err, "failed to check for existing snapshot preference")
 			}
 
-			log := logger.NewCLILogger()
-			print.FileSystemMinioVeleroInfo(c, v.GetString("output"), log)
+			if !v.GetBool("with-minio") || isMinioDisabled {
+				registryOptions, err := getRegistryConfig(v)
+				if err != nil {
+					return errors.Wrap(err, "failed to get registry config")
+				}
+
+				fsConfig, err := snapshot.GetCurrentLvpFileSystemConfig(cmd.Context(), namespace)
+				if err != nil {
+					return errors.Wrap(err, "could not get the current filesystem configuration")
+				}
+
+				deployOptions := snapshot.FileSystemDeployOptions{
+					Namespace:        namespace,
+					IsOpenShift:      k8sutil.IsOpenShift(clientset),
+					FileSystemConfig: *fsConfig,
+				}
+
+				// Peak to see if this is a legacy minio deployment
+				isLegacyMinioDeployment, _, err := snapshot.ValidateFileSystemDeployment(cmd.Context(), clientset, deployOptions, *registryOptions)
+				if err != nil {
+					return errors.Wrap(err, "could not validate lvp file system")
+				}
+
+				opts := VeleroConfigureFileSystemOptions{
+					Namespace:          namespace,
+					RegistryOptions:    registryOptions,
+					FileSystemConfig:   *fsConfig,
+					IsLegacyDeployment: isLegacyMinioDeployment,
+					IsMinioDisabled:    true,
+				}
+
+				c, err := buildPrintableLvpFileSystemVeleroConfig(cmd.Context(), clientset, opts)
+				if err != nil {
+					return errors.Wrap(err, "failed to get file system minio velero config")
+				}
+				log := logger.NewCLILogger()
+				print.LvpFileSystemVeleroInfo(c, v.GetString("output"), log)
+			} else {
+				c, err := buildPrintableMinioFileSystemVeleroConfig(cmd.Context(), clientset, namespace)
+				if err != nil {
+					return errors.Wrap(err, "failed to get file system minio velero config")
+				}
+				log := logger.NewCLILogger()
+				print.MinioFileSystemVeleroInfo(c, v.GetString("output"), log)
+			}
 
 			return nil
 		},
 	}
 
 	cmd.Flags().StringP("output", "o", "", "output format. supported values: json")
+	cmd.Flags().Bool("with-minio", true, "when set, kots will deploy minio for hostpath snapshot locations")
 
 	return cmd
 }
 
-func buildPrintableFileSystemVeleroConfig(ctx context.Context, clientset kubernetes.Interface, namespace string) (*print.FileSystemVeleroConfig, error) {
-	fileSystemStore, err := snapshot.BuildStoreFileSystem(ctx, clientset, namespace)
+func buildPrintableMinioFileSystemVeleroConfig(ctx context.Context, clientset kubernetes.Interface, namespace string) (*print.MinioFileSystemVeleroConfig, error) {
+	fileSystemStore, err := snapshot.BuildMinioStoreFileSystem(ctx, clientset, namespace)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to build file system store")
 	}
@@ -983,7 +1085,7 @@ func buildPrintableFileSystemVeleroConfig(ctx context.Context, clientset kuberne
 	publicURL := fmt.Sprintf("http://%s:%d", fileSystemStore.ObjectStoreClusterIP, snapshot.FileSystemMinioServicePort)
 	s3URL := fileSystemStore.Endpoint
 
-	c := print.FileSystemVeleroConfig{
+	c := print.MinioFileSystemVeleroConfig{
 		Provider:    "aws",
 		Plugins:     []string{"velero/velero-plugin-for-aws:v1.2.0"},
 		Credentials: creds,
@@ -1001,6 +1103,60 @@ func buildPrintableFileSystemVeleroConfig(ctx context.Context, clientset kuberne
 	}
 
 	return &c, nil
+}
+
+func buildPrintableLvpFileSystemVeleroConfig(ctx context.Context, clientset kubernetes.Interface, opts VeleroConfigureFileSystemOptions) (*print.LvpFileSystemVeleroConfig, error) {
+
+	isHostPath := opts.FileSystemConfig.HostPath != nil
+
+	// Set the default path to root for NFS only
+	if opts.FileSystemConfig.NFS != nil && opts.FileSystemConfig.NFS.Path == "" {
+		opts.FileSystemConfig.NFS.Path = "/"
+	}
+
+	var backupLocationConfig map[string]string
+	if isHostPath {
+		backupLocationConfig = map[string]string{
+			"path": *opts.FileSystemConfig.HostPath,
+		}
+	} else {
+		backupLocationConfig = map[string]string{
+			"path":   opts.FileSystemConfig.NFS.Path,
+			"server": opts.FileSystemConfig.NFS.Server,
+		}
+	}
+	var prefix string
+	if opts.IsLegacyDeployment {
+		prefix = "/velero"
+	}
+
+	bucket, err := snapshot.GetLvpBucket(&opts.FileSystemConfig)
+	if err != nil {
+		return nil, errors.Wrap(err, "could not get bucket name")
+	}
+
+	backupLocationConfig["resticRepo"] = filepath.Join(resticRepoBase, bucket, prefix, "restic")
+
+	c := print.LvpFileSystemVeleroConfig{
+		IsHostPath:           isHostPath,
+		Provider:             snapshot.GetLvpProvider(&opts.FileSystemConfig),
+		Bucket:               bucket,
+		Prefix:               prefix,
+		BackupLocationConfig: backupLocationConfig,
+	}
+
+	return &c, nil
+}
+
+// isVeleroConfiguredForMinio returns true the following conditions are met:
+// 1. velero was detected (non-nil status)
+// 2. velero has the AWS plugin installed
+// 3. isMinioDisabeld is false
+func isVeleroConfiguredForMinio(status *snapshot.VeleroStatus, isMinioDisabled bool) bool {
+	if !isMinioDisabled {
+		return status == nil || status != nil && !status.ContainsPlugin("plugin-for-aws")
+	}
+	return false
 }
 
 func promptForFileSystemReset(log *logger.CLILogger, warningMsg string) bool {
@@ -1042,4 +1198,61 @@ func validateVeleroNamespace(namespace string) error {
 	}
 
 	return nil
+}
+
+// VeleroMigrateMinioFileSystemCmd is an internal command used by kURL to migrate
+// minio filesystem snapshots to using the LVP plugin. kURL does not run the upgrade command
+// directly
+func VeleroMigrateMinioFileSystemCmd() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:           "migrate-minio-filesystems",
+		Short:         "Migrates from Minio to Velero Local-Volume-Provider (LVP) plugin for filesystem snapshots (e.g. NFS, Host Path, etc..)",
+		Long:          ``,
+		Hidden:        true,
+		SilenceUsage:  true,
+		SilenceErrors: false,
+		PreRun: func(cmd *cobra.Command, args []string) {
+			viper.BindPFlags(cmd.Flags())
+		},
+		RunE: func(cmd *cobra.Command, args []string) error {
+			v := viper.GetViper()
+
+			log := logger.NewCLILogger()
+
+			namespace := v.GetString("namespace")
+			if err := validateNamespace(namespace); err != nil {
+				return err
+			}
+
+			clientset, err := k8sutil.GetClientset()
+			if err != nil {
+				return errors.Wrap(err, "failed to get clientset")
+			}
+
+			deployOptions, err := kotsadm.ReadDeployOptionsFromCluster(namespace, clientset)
+			if err != nil {
+				return errors.Wrap(err, "failed to read deploy options")
+			}
+
+			if !deployOptions.IncludeMinioSnapshots {
+				// Already migrated, so this is a no-op
+				log.Info("Snapshot migration not required")
+				return nil
+			}
+			deployOptions.IncludeMinioSnapshots = false
+
+			if err = kotsadm.MigrateExistingMinioFilesystemDeployments(log, deployOptions); err != nil {
+				return errors.Wrap(err, "failed to complete migration")
+			}
+
+			// Write back the new preference into the config
+			if err = kotsadm.EnsureConfigMaps(*deployOptions, clientset); err != nil {
+				return errors.Wrap(err, "failed to update kotsadm config with new snapshot preference")
+			}
+
+			return nil
+		},
+	}
+
+	return cmd
 }

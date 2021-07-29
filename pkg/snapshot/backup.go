@@ -159,6 +159,30 @@ func CreateInstanceBackup(ctx context.Context, options CreateInstanceBackupOptio
 }
 
 func ListInstanceBackups(ctx context.Context, options ListInstanceBackupsOptions) ([]velerov1.Backup, error) {
+
+	b, err := ListAllBackups(ctx, options)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get backup list")
+	}
+
+	backups := []velerov1.Backup{}
+
+	for _, backup := range b {
+		if backup.Annotations["kots.io/instance"] != "true" {
+			continue
+		}
+
+		if options.Namespace != "" && backup.Annotations["kots.io/kotsadm-deploy-namespace"] != options.Namespace {
+			continue
+		}
+
+		backups = append(backups, backup)
+	}
+
+	return backups, nil
+}
+
+func ListAllBackups(ctx context.Context, options ListInstanceBackupsOptions) ([]velerov1.Backup, error) {
 	clientset, err := k8sutil.GetClientset()
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get k8s clientset")
@@ -187,18 +211,7 @@ func ListInstanceBackups(ctx context.Context, options ListInstanceBackupsOptions
 	}
 
 	backups := []velerov1.Backup{}
-
-	for _, backup := range b.Items {
-		if backup.Annotations["kots.io/instance"] != "true" {
-			continue
-		}
-
-		if options.Namespace != "" && backup.Annotations["kots.io/kotsadm-deploy-namespace"] != options.Namespace {
-			continue
-		}
-
-		backups = append(backups, backup)
-	}
+	backups = append(backups, b.Items...)
 
 	return backups, nil
 }
