@@ -32,7 +32,7 @@ type UpstreamSettings struct {
 	IncludeMinio           bool
 }
 
-func generateAdminConsoleFiles(renderDir string, options types.WriteOptions) ([]types.UpstreamFile, error) {
+func GenerateAdminConsoleFiles(renderDir string, options types.WriteOptions) ([]types.UpstreamFile, error) {
 	if _, err := os.Stat(path.Join(renderDir, "admin-console")); os.IsNotExist(err) {
 		settings := &UpstreamSettings{
 			SharedPassword:         options.SharedPassword,
