@@ -10,6 +10,8 @@ import (
 )
 
 var knownKubectlVersions = []semver.Version{
+	semver.MustParse("1.21.2"),
+	semver.MustParse("1.20.4"),
 	semver.MustParse("1.19.3"),
 	semver.MustParse("1.18.10"),
 	semver.MustParse("1.17.13"),

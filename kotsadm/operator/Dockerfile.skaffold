@@ -58,8 +58,24 @@ ENV KUBECTL_1_19_SHA256SUM=84eeb8237448e4f431fef0f0ec0ba8b07558d8e52d5a7e89b4ae6
 RUN curl -fsSLO "${KUBECTL_1_19_URL}" \
 	&& echo "${KUBECTL_1_19_SHA256SUM}  kubectl" | sha256sum -c - \
 	&& chmod +x kubectl \
-	&& mv kubectl "/usr/local/bin/kubectl-${KUBECTL_1_19_VERSION}" \
-	&& ln -s "/usr/local/bin/kubectl-${KUBECTL_1_19_VERSION}" /usr/local/bin/kubectl
+	&& mv kubectl "/usr/local/bin/kubectl-${KUBECTL_1_19_VERSION}"
+
+ENV KUBECTL_1_20_VERSION=v1.20.4
+ENV KUBECTL_1_20_URL=https://storage.googleapis.com/kubernetes-release/release/${KUBECTL_1_20_VERSION}/bin/linux/amd64/kubectl
+ENV KUBECTL_1_20_SHA256SUM=98e8aea149b00f653beeb53d4bd27edda9e73b48fed156c4a0aa1dabe4b1794c
+RUN curl -fsSLO "${KUBECTL_1_20_URL}" \
+	&& echo "${KUBECTL_1_20_SHA256SUM}  kubectl" | sha256sum -c - \
+	&& chmod +x kubectl \
+	&& mv kubectl "/usr/local/bin/kubectl-${KUBECTL_1_20_VERSION}"
+
+ENV KUBECTL_1_21_VERSION=v1.21.2
+ENV KUBECTL_1_21_URL=https://storage.googleapis.com/kubernetes-release/release/${KUBECTL_1_21_VERSION}/bin/linux/amd64/kubectl
+ENV KUBECTL_1_21_SHA256SUM=55b982527d76934c2f119e70bf0d69831d3af4985f72bb87cd4924b1c7d528da
+RUN curl -fsSLO "${KUBECTL_1_21_URL}" \
+	&& echo "${KUBECTL_1_21_SHA256SUM}  kubectl" | sha256sum -c - \
+	&& chmod +x kubectl \
+	&& mv kubectl "/usr/local/bin/kubectl-${KUBECTL_1_21_VERSION}" \
+	&& ln -s "/usr/local/bin/kubectl-${KUBECTL_1_21_VERSION}" /usr/local/bin/kubectl
 
 # Install helm v3.4.2
 RUN curl -L "https://get.helm.sh/helm-v3.4.2-linux-amd64.tar.gz" -o /tmp/helm.tar.gz && \
