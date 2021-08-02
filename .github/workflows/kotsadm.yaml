@@ -572,6 +572,22 @@ jobs:
         make -C kurl_proxy build-release
 
 
+  build_kurl_addon_alpha:
+    runs-on: ubuntu-18.04
+    needs: [release_go_api_alpha, release_operator_alpha, build_kurl_proxy_alpha]
+    steps:
+      - name: Build kURL addon alpha package
+        if: ${{ github.ref == 'refs/heads/master' }}
+        env:
+          GH_PAT: ${{ secrets.GH_PAT }}
+        run: |
+          package=kotsadm-alpha.tar.gz
+          curl -H "Authorization: token $GH_PAT" \
+            -H 'Accept: application/json' \
+            -d "{\"event_type\": \"build-package-staging\", \"client_payload\": {\"package\": \"${package}\"}}" \
+            "https://api.github.com/repos/replicatedhq/kurl/dispatches"
+
+
   scan_postgres_alpine:
     runs-on: ubuntu-18.04
     needs: [build-schema-migrations]
