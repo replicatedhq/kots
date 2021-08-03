@@ -674,7 +674,7 @@ func GetInstallationParams(configMapName string) (InstallationParams, error) {
 	autoConfig.SkipImagePush, _ = strconv.ParseBool(kotsadmConfigMap.Data["initial-app-images-pushed"])
 	autoConfig.SkipPreflights, _ = strconv.ParseBool(kotsadmConfigMap.Data["skip-preflights"])
 	autoConfig.RegistryIsReadOnly, _ = strconv.ParseBool(kotsadmConfigMap.Data["registry-is-read-only"])
-	autoConfig.EnableImageDeletion, _ = strconv.ParseBool(kotsadmConfigMap.Data["enable-image-deletion"])
+	autoConfig.EnableImageDeletion = IsKurl(clientset)
 
 	return autoConfig, nil
 }
