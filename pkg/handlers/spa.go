@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"context"
-	"fmt"
 	"io/fs"
 	"net/http"
 	"os"
@@ -55,7 +54,6 @@ func (h SPAHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	fmt.Printf("\n\n%s\n\n", rr.URL.Path)
 	// otherwise, use http.FileServer to serve the static dir
 	http.FileServer(http.FS(fsys)).ServeHTTP(w, rr)
 }

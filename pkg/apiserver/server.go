@@ -68,7 +68,6 @@ func Start(params *APIServerParams) {
 	}
 
 	if err := generateKotsadmID(); err != nil {
-		log.Println("error generating id")
 		logger.Infof("failed to generate kotsadm id:", err)
 	}
 
