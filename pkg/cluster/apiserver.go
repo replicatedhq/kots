@@ -81,6 +81,7 @@ func runAPIServer(ctx context.Context, dataDir string, slug string) error {
 	command.SetArgs(args)
 
 	go func() {
+		// TODO @divolgin: This needs better handling. Nothing will attempt to restart the server if it exits.
 		logger.Infof("kubernetes api server exited %v", command.Execute())
 	}()
 

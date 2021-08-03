@@ -41,6 +41,7 @@ func RunCmd() *cobra.Command {
 			log := logger.NewCLILogger()
 			log.Info("Running application %s", slug)
 
+			// TODO: @emosbaugh: im not sure i agree with this pattern. im not sure context is the best place for DI
 			loggerCtx := context.WithValue(context.Background(), "log", log)
 			ctx, cancelFunc := context.WithCancel(loggerCtx)
 			defer cancelFunc()
@@ -70,6 +71,7 @@ func RunCmd() *cobra.Command {
 			c := make(chan os.Signal, 1)
 			signal.Notify(c, os.Interrupt, syscall.SIGTERM)
 			<-c
+			// TODO @emosbaugh: i dont think this works how you think it does. you probably have to catch another signal while the cluster terminates
 			cancelFunc()
 
 			return nil
@@ -89,6 +91,7 @@ func RunCmd() *cobra.Command {
 func startKotsadm(ctx context.Context, dataDir string) error {
 	filestore.ArchivesDir = filepath.Join(dataDir, "archives")
 
+	// TODO @divolgin: something is odd about this pattern. these variables are set in two places to two different values, yet they are global.
 	util.PodNamespace = "default"
 	util.KotsadmNamespace = "default"
 

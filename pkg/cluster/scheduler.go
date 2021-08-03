@@ -27,6 +27,7 @@ func runScheduler(ctx context.Context, dataDir string) error {
 	command.SetArgs(args)
 
 	go func() {
+		// TODO @divolgin this error needs to be nadled.
 		logger.Infof("kubernetes scheduler exited %v", command.Execute())
 	}()
 
