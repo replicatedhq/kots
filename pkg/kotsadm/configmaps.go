@@ -28,12 +28,6 @@ func getConfigMapsYAML(deployOptions types.DeployOptions) (map[string][]byte, er
 	}
 	docs["kotsadm-config.yaml"] = kotsadmConfigMap.Bytes()
 
-	var postgresConfigMap bytes.Buffer
-	if err := s.Encode(kotsadmobjects.PostgresConfigMap(deployOptions), &postgresConfigMap); err != nil {
-		return nil, errors.Wrap(err, "failed to marshal postgres config map")
-	}
-	docs["postgres-config.yaml"] = postgresConfigMap.Bytes()
-
 	return docs, nil
 }
 
