@@ -1,3 +1,5 @@
+// +build kots_experimental
+
 package cli
 
 import (
