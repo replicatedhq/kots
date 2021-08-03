@@ -3,13 +3,13 @@ package handlers
 import (
 	"context"
 	"net/http"
-	"os"
 
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/kurl"
 	"github.com/replicatedhq/kots/pkg/logger"
+	"github.com/replicatedhq/kots/pkg/util"
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes/scheme"
@@ -37,7 +37,7 @@ func (h *Handler) Metadata(w http.ResponseWriter, r *http.Request) {
 
 	isKurlEnabled := kurl.IsKurl()
 
-	brandingConfigMap, err := clientset.CoreV1().ConfigMaps(os.Getenv("POD_NAMESPACE")).Get(context.TODO(), "kotsadm-application-metadata", metav1.GetOptions{})
+	brandingConfigMap, err := clientset.CoreV1().ConfigMaps(util.PodNamespace).Get(context.TODO(), "kotsadm-application-metadata", metav1.GetOptions{})
 	if err != nil && !kuberneteserrors.IsNotFound(err) {
 		logger.Error(err)
 		w.WriteHeader(500)
@@ -47,7 +47,7 @@ func (h *Handler) Metadata(w http.ResponseWriter, r *http.Request) {
 	metadataResponse := MetadataResponse{
 		IconURI:       "https://cdn2.iconfinder.com/data/icons/mixd/512/16_kubernetes-512.png",
 		Name:          "the application",
-		Namespace:     os.Getenv("POD_NAMESPACE"),
+		Namespace:     util.PodNamespace,
 		IsKurlEnabled: isKurlEnabled,
 	}
 

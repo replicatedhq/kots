@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"os"
 	"sort"
 	"time"
 
@@ -40,7 +39,7 @@ const (
 )
 
 func GetKotsadmRedactSpecURI() string {
-	return fmt.Sprintf("configmap/%s/%s/%s", os.Getenv("POD_NAMESPACE"), redactSpecConfigMapName, redactSpecDataKey)
+	return fmt.Sprintf("configmap/%s/%s/%s", util.PodNamespace, redactSpecConfigMapName, redactSpecDataKey)
 }
 
 // GenerateKotsadmRedactSpec creates a configmap that contains the admin console custom redaction yaml spec
@@ -56,7 +55,7 @@ func GenerateKotsadmRedactSpec() error {
 		return errors.Wrap(err, "failed to create k8s clientset")
 	}
 
-	existingConfigMap, err := clientset.CoreV1().ConfigMaps(os.Getenv("POD_NAMESPACE")).Get(context.TODO(), redactSpecConfigMapName, metav1.GetOptions{})
+	existingConfigMap, err := clientset.CoreV1().ConfigMaps(util.PodNamespace).Get(context.TODO(), redactSpecConfigMapName, metav1.GetOptions{})
 	if err != nil && !kuberneteserrors.IsNotFound(err) {
 		return errors.Wrap(err, "failed to read redact spec configmap")
 	} else if kuberneteserrors.IsNotFound(err) {
@@ -67,7 +66,7 @@ func GenerateKotsadmRedactSpec() error {
 			},
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      redactSpecConfigMapName,
-				Namespace: os.Getenv("POD_NAMESPACE"),
+				Namespace: util.PodNamespace,
 				Labels:    kotsadmtypes.GetKotsadmLabels(),
 			},
 			Data: map[string]string{
@@ -75,7 +74,7 @@ func GenerateKotsadmRedactSpec() error {
 			},
 		}
 
-		_, err = clientset.CoreV1().ConfigMaps(os.Getenv("POD_NAMESPACE")).Create(context.TODO(), configmap, metav1.CreateOptions{})
+		_, err = clientset.CoreV1().ConfigMaps(util.PodNamespace).Create(context.TODO(), configmap, metav1.CreateOptions{})
 		if err != nil {
 			return errors.Wrap(err, "failed to create redactor spec configmap")
 		}
@@ -89,7 +88,7 @@ func GenerateKotsadmRedactSpec() error {
 	existingConfigMap.Data[redactSpecDataKey] = spec
 	existingConfigMap.ObjectMeta.Labels = kotsadmtypes.GetKotsadmLabels()
 
-	_, err = clientset.CoreV1().ConfigMaps(os.Getenv("POD_NAMESPACE")).Update(context.TODO(), existingConfigMap, metav1.UpdateOptions{})
+	_, err = clientset.CoreV1().ConfigMaps(util.PodNamespace).Update(context.TODO(), existingConfigMap, metav1.UpdateOptions{})
 	if err != nil {
 		return errors.Wrap(err, "failed to update redactor spec secret")
 	}
@@ -210,7 +209,7 @@ func SetRedactSpec(spec string) (string, error) {
 	}
 
 	configMap.Data = newMap
-	_, err = clientset.CoreV1().ConfigMaps(os.Getenv("POD_NAMESPACE")).Update(context.TODO(), configMap, metav1.UpdateOptions{})
+	_, err = clientset.CoreV1().ConfigMaps(util.PodNamespace).Update(context.TODO(), configMap, metav1.UpdateOptions{})
 	if err != nil {
 		return "failed to update kotsadm-redact configMap", errors.Wrap(err, "failed to update kotsadm-redact configMap")
 	}
@@ -381,7 +380,7 @@ func getRedactConfigmap() (*v1.ConfigMap, string, error) {
 		return nil, "failed to get k8s clientset", errors.Wrap(err, "failed to get k8s clientset")
 	}
 
-	configMap, err := clientset.CoreV1().ConfigMaps(os.Getenv("POD_NAMESPACE")).Get(context.TODO(), redactConfigMapName, metav1.GetOptions{})
+	configMap, err := clientset.CoreV1().ConfigMaps(util.PodNamespace).Get(context.TODO(), redactConfigMapName, metav1.GetOptions{})
 	if err != nil {
 		if !kuberneteserrors.IsNotFound(err) {
 			// not a not found error, so a real error
@@ -395,14 +394,14 @@ func getRedactConfigmap() (*v1.ConfigMap, string, error) {
 				},
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      redactConfigMapName,
-					Namespace: os.Getenv("POD_NAMESPACE"),
+					Namespace: util.PodNamespace,
 					Labels: map[string]string{
 						"kots.io/kotsadm": "true",
 					},
 				},
 				Data: map[string]string{},
 			}
-			createdMap, err := clientset.CoreV1().ConfigMaps(os.Getenv("POD_NAMESPACE")).Create(context.TODO(), &newMap, metav1.CreateOptions{})
+			createdMap, err := clientset.CoreV1().ConfigMaps(util.PodNamespace).Create(context.TODO(), &newMap, metav1.CreateOptions{})
 			if err != nil {
 				return nil, "failed to create kotsadm-redact configMap", errors.Wrap(err, "failed to create kotsadm-redact configMap")
 			}
@@ -420,7 +419,7 @@ func writeRedactConfigmap(configMap *v1.ConfigMap) (*v1.ConfigMap, error) {
 		return nil, errors.Wrap(err, "failed to get k8s clientset")
 	}
 
-	newConfigMap, err := clientset.CoreV1().ConfigMaps(os.Getenv("POD_NAMESPACE")).Update(context.TODO(), configMap, metav1.UpdateOptions{})
+	newConfigMap, err := clientset.CoreV1().ConfigMaps(util.PodNamespace).Update(context.TODO(), configMap, metav1.UpdateOptions{})
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to update configmap")
 	}

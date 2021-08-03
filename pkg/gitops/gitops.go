@@ -25,6 +25,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/kotsadm/types"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
+	"github.com/replicatedhq/kots/pkg/util"
 	"golang.org/x/crypto/ssh"
 	v1 "k8s.io/api/core/v1"
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
@@ -119,12 +120,12 @@ func GetDownstreamGitOps(appID string, clusterID string) (*GitOpsConfig, error) 
 		return nil, errors.Wrap(err, "failed to get k8s client set")
 	}
 
-	secret, err := clientset.CoreV1().Secrets(os.Getenv("POD_NAMESPACE")).Get(context.TODO(), "kotsadm-gitops", metav1.GetOptions{})
+	secret, err := clientset.CoreV1().Secrets(util.PodNamespace).Get(context.TODO(), "kotsadm-gitops", metav1.GetOptions{})
 	if kuberneteserrors.IsNotFound(err) {
 		return nil, nil
 	}
 
-	configMap, err := clientset.CoreV1().ConfigMaps(os.Getenv("POD_NAMESPACE")).Get(context.TODO(), "kotsadm-gitops", metav1.GetOptions{})
+	configMap, err := clientset.CoreV1().ConfigMaps(util.PodNamespace).Get(context.TODO(), "kotsadm-gitops", metav1.GetOptions{})
 	if kuberneteserrors.IsNotFound(err) {
 		return nil, nil
 	}
@@ -207,7 +208,7 @@ func DisableDownstreamGitOps(appID string, clusterID string) error {
 		return errors.Wrap(err, "failed to get k8s client set")
 	}
 
-	configMap, err := clientset.CoreV1().ConfigMaps(os.Getenv("POD_NAMESPACE")).Get(context.TODO(), "kotsadm-gitops", metav1.GetOptions{})
+	configMap, err := clientset.CoreV1().ConfigMaps(util.PodNamespace).Get(context.TODO(), "kotsadm-gitops", metav1.GetOptions{})
 	if kuberneteserrors.IsNotFound(err) {
 		return errors.Wrap(err, "gitops config map not found")
 	}
@@ -218,7 +219,7 @@ func DisableDownstreamGitOps(appID string, clusterID string) error {
 		delete(configMap.Data, configMapDataKey)
 	}
 
-	_, err = clientset.CoreV1().ConfigMaps(os.Getenv("POD_NAMESPACE")).Update(context.TODO(), configMap, metav1.UpdateOptions{})
+	_, err = clientset.CoreV1().ConfigMaps(util.PodNamespace).Update(context.TODO(), configMap, metav1.UpdateOptions{})
 	if err != nil {
 		return errors.Wrap(err, "failed to update config map")
 	}
@@ -232,7 +233,7 @@ func UpdateDownstreamGitOps(appID, clusterID, uri, branch, path, format, action 
 		return errors.Wrap(err, "failed to get k8s client set")
 	}
 
-	configMap, err := clientset.CoreV1().ConfigMaps(os.Getenv("POD_NAMESPACE")).Get(context.TODO(), "kotsadm-gitops", metav1.GetOptions{})
+	configMap, err := clientset.CoreV1().ConfigMaps(util.PodNamespace).Get(context.TODO(), "kotsadm-gitops", metav1.GetOptions{})
 	if err != nil && !kuberneteserrors.IsNotFound(err) {
 		return errors.Wrap(err, "failed to get configmap")
 	}
@@ -289,7 +290,7 @@ func UpdateDownstreamGitOps(appID, clusterID, uri, branch, path, format, action 
 
 	if configMapExists {
 		configMap.Data = configMapData
-		_, err = clientset.CoreV1().ConfigMaps(os.Getenv("POD_NAMESPACE")).Update(context.TODO(), configMap, metav1.UpdateOptions{})
+		_, err = clientset.CoreV1().ConfigMaps(util.PodNamespace).Update(context.TODO(), configMap, metav1.UpdateOptions{})
 		if err != nil {
 			return errors.Wrap(err, "failed to update config map")
 		}
@@ -297,12 +298,12 @@ func UpdateDownstreamGitOps(appID, clusterID, uri, branch, path, format, action 
 		configMap = &v1.ConfigMap{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "kotsadm-gitops",
-				Namespace: os.Getenv("POD_NAMESPACE"),
+				Namespace: util.PodNamespace,
 				Labels:    types.GetKotsadmLabels(),
 			},
 			Data: configMapData,
 		}
-		_, err = clientset.CoreV1().ConfigMaps(os.Getenv("POD_NAMESPACE")).Create(context.TODO(), configMap, metav1.CreateOptions{})
+		_, err = clientset.CoreV1().ConfigMaps(util.PodNamespace).Create(context.TODO(), configMap, metav1.CreateOptions{})
 		if err != nil {
 			return errors.Wrap(err, "failed to create config map")
 		}
@@ -317,7 +318,7 @@ func SetGitOpsError(appID string, clusterID string, errMsg string) error {
 		return errors.Wrap(err, "failed to get k8s client set")
 	}
 
-	configMap, err := clientset.CoreV1().ConfigMaps(os.Getenv("POD_NAMESPACE")).Get(context.TODO(), "kotsadm-gitops", metav1.GetOptions{})
+	configMap, err := clientset.CoreV1().ConfigMaps(util.PodNamespace).Get(context.TODO(), "kotsadm-gitops", metav1.GetOptions{})
 	if err != nil {
 		return errors.Wrap(err, "failed to get configmap")
 	}
@@ -346,7 +347,7 @@ func SetGitOpsError(appID string, clusterID string, errMsg string) error {
 	appDataEncoded = base64.StdEncoding.EncodeToString([]byte(appDataDecoded))
 	configMap.Data[appKey] = appDataEncoded
 
-	_, err = clientset.CoreV1().ConfigMaps(os.Getenv("POD_NAMESPACE")).Update(context.TODO(), configMap, metav1.UpdateOptions{})
+	_, err = clientset.CoreV1().ConfigMaps(util.PodNamespace).Update(context.TODO(), configMap, metav1.UpdateOptions{})
 	if err != nil {
 		return errors.Wrap(err, "failed to update config map")
 	}
@@ -396,7 +397,7 @@ func CreateGitOps(provider string, repoURI string, hostname string, httpPort str
 		return errors.Wrap(err, "failed to get k8s client set")
 	}
 
-	secret, err := clientset.CoreV1().Secrets(os.Getenv("POD_NAMESPACE")).Get(context.TODO(), "kotsadm-gitops", metav1.GetOptions{})
+	secret, err := clientset.CoreV1().Secrets(util.PodNamespace).Get(context.TODO(), "kotsadm-gitops", metav1.GetOptions{})
 	if err != nil && !kuberneteserrors.IsNotFound(err) {
 		return errors.Wrap(err, "failed to get secret")
 	}
@@ -493,7 +494,7 @@ func CreateGitOps(provider string, repoURI string, hostname string, httpPort str
 
 	if secretExists {
 		secret.Data = secretData
-		_, err = clientset.CoreV1().Secrets(os.Getenv("POD_NAMESPACE")).Update(context.TODO(), secret, metav1.UpdateOptions{})
+		_, err = clientset.CoreV1().Secrets(util.PodNamespace).Update(context.TODO(), secret, metav1.UpdateOptions{})
 		if err != nil {
 			return errors.Wrap(err, "failed to update secret")
 		}
@@ -501,12 +502,12 @@ func CreateGitOps(provider string, repoURI string, hostname string, httpPort str
 		secret = &v1.Secret{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "kotsadm-gitops",
-				Namespace: os.Getenv("POD_NAMESPACE"),
+				Namespace: util.PodNamespace,
 				Labels:    types.GetKotsadmLabels(),
 			},
 			Data: secretData,
 		}
-		_, err = clientset.CoreV1().Secrets(os.Getenv("POD_NAMESPACE")).Create(context.TODO(), secret, metav1.CreateOptions{})
+		_, err = clientset.CoreV1().Secrets(util.PodNamespace).Create(context.TODO(), secret, metav1.CreateOptions{})
 		if err != nil {
 			return errors.Wrap(err, "failed to create secret")
 		}
@@ -521,12 +522,12 @@ func ResetGitOps() error {
 		return errors.Wrap(err, "failed to get k8s client set")
 	}
 
-	err = clientset.CoreV1().Secrets(os.Getenv("POD_NAMESPACE")).Delete(context.TODO(), "kotsadm-gitops", metav1.DeleteOptions{})
+	err = clientset.CoreV1().Secrets(util.PodNamespace).Delete(context.TODO(), "kotsadm-gitops", metav1.DeleteOptions{})
 	if err != nil && !kuberneteserrors.IsNotFound(err) {
 		return errors.Wrap(err, "failed to delete secret")
 	}
 
-	err = clientset.CoreV1().ConfigMaps(os.Getenv("POD_NAMESPACE")).Delete(context.TODO(), "kotsadm-gitops", metav1.DeleteOptions{})
+	err = clientset.CoreV1().ConfigMaps(util.PodNamespace).Delete(context.TODO(), "kotsadm-gitops", metav1.DeleteOptions{})
 	if err != nil && !kuberneteserrors.IsNotFound(err) {
 		return errors.Wrap(err, "failed to delete configmap")
 	}
@@ -540,7 +541,7 @@ func GetGitOps() (GlobalGitOpsConfig, error) {
 		return GlobalGitOpsConfig{}, errors.Wrap(err, "failed to get k8s client set")
 	}
 
-	secret, err := clientset.CoreV1().Secrets(os.Getenv("POD_NAMESPACE")).Get(context.TODO(), "kotsadm-gitops", metav1.GetOptions{})
+	secret, err := clientset.CoreV1().Secrets(util.PodNamespace).Get(context.TODO(), "kotsadm-gitops", metav1.GetOptions{})
 	if kuberneteserrors.IsNotFound(err) {
 		return GlobalGitOpsConfig{}, nil
 	} else if err != nil {

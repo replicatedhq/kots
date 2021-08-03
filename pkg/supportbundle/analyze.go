@@ -4,6 +4,7 @@ import (
 	"os"
 
 	"github.com/pkg/errors"
+	"github.com/replicatedhq/kots/pkg/util"
 	troubleshootv1beta2 "github.com/replicatedhq/troubleshoot/pkg/apis/troubleshoot/v1beta2"
 )
 
@@ -41,7 +42,7 @@ func injectAPIReplicaAnalyzer(analyzer *troubleshootv1beta2.Analyzer) error {
 		analyzer.Spec.Analyzers = append(analyzer.Spec.Analyzers, &troubleshootv1beta2.Analyze{
 			DeploymentStatus: &troubleshootv1beta2.DeploymentStatus{
 				Name:      "kotsadm",
-				Namespace: os.Getenv("POD_NAMESPACE"),
+				Namespace: util.PodNamespace,
 				Outcomes: []*troubleshootv1beta2.Outcome{
 					{
 						Pass: &troubleshootv1beta2.SingleOutcome{
@@ -63,7 +64,7 @@ func injectAPIReplicaAnalyzer(analyzer *troubleshootv1beta2.Analyzer) error {
 	analyzer.Spec.Analyzers = append(analyzer.Spec.Analyzers, &troubleshootv1beta2.Analyze{
 		StatefulsetStatus: &troubleshootv1beta2.StatefulsetStatus{
 			Name:      "kotsadm",
-			Namespace: os.Getenv("POD_NAMESPACE"),
+			Namespace: util.PodNamespace,
 			Outcomes: []*troubleshootv1beta2.Outcome{
 				{
 					Pass: &troubleshootv1beta2.SingleOutcome{
@@ -87,7 +88,7 @@ func injectOperatorReplicaAnalyzer(analyzer *troubleshootv1beta2.Analyzer) error
 	analyzer.Spec.Analyzers = append(analyzer.Spec.Analyzers, &troubleshootv1beta2.Analyze{
 		DeploymentStatus: &troubleshootv1beta2.DeploymentStatus{
 			Name:      "kotsadm-operator",
-			Namespace: os.Getenv("POD_NAMESPACE"),
+			Namespace: util.PodNamespace,
 			Outcomes: []*troubleshootv1beta2.Outcome{
 				{
 					Pass: &troubleshootv1beta2.SingleOutcome{

@@ -302,7 +302,7 @@ func Test_RenderHelm(t *testing.T) {
 				Files: []BaseFile{
 					{
 						Path:    "crd.yaml",
-						Content: []byte("apiVersion: v1\nkind: CustomResourceDefinition\nmetadata:\n  name: example-crd\nspec:\n  scope: Cluster"),
+						Content: []byte("# Source: test-chart/templates/crd.yaml\napiVersion: v1\nkind: CustomResourceDefinition\nmetadata:\n  name: example-crd\nspec:\n  scope: Cluster"),
 					},
 				},
 				AdditionalFiles: []BaseFile{

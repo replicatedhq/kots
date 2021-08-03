@@ -3,13 +3,13 @@ package handlers
 import (
 	"context"
 	"net/http"
-	"os"
 	"strings"
 
 	snapshot "github.com/replicatedhq/kots/pkg/kotsadmsnapshot"
 	"github.com/replicatedhq/kots/pkg/logger"
 	kotssnapshot "github.com/replicatedhq/kots/pkg/snapshot"
 	"github.com/replicatedhq/kots/pkg/store"
+	"github.com/replicatedhq/kots/pkg/util"
 )
 
 type PingResponse struct {
@@ -35,7 +35,7 @@ func (h *Handler) Ping(w http.ResponseWriter, r *http.Request) {
 }
 
 func snapshotProgress(ctx context.Context, slugs []string, pingResponse *PingResponse) {
-	kotsadmNamespace := os.Getenv("POD_NAMESPACE")
+	kotsadmNamespace := util.PodNamespace
 
 	veleroStatus, err := kotssnapshot.DetectVelero(ctx, kotsadmNamespace)
 	if err != nil {

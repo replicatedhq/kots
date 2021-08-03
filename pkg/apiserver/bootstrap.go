@@ -14,24 +14,28 @@ import (
 	"k8s.io/client-go/kubernetes/scheme"
 )
 
-func bootstrap() error {
+type BootstrapParams struct {
+	AutoCreateClusterToken string
+}
+
+func bootstrap(params BootstrapParams) error {
 	if err := store.GetStore().Init(); err != nil {
 		return errors.Wrap(err, "failed to init store")
 	}
 
-	if err := bootstrapClusterToken(); err != nil {
+	if err := bootstrapClusterToken(params.AutoCreateClusterToken); err != nil {
 		return errors.Wrap(err, "failed to bootstrap cluster token")
 	}
 
 	return nil
 }
 
-func bootstrapClusterToken() error {
-	if os.Getenv("AUTO_CREATE_CLUSTER_TOKEN") == "" {
-		return errors.New("AUTO_CREATE_CLUSTER_TOKEN is not set")
+func bootstrapClusterToken(autoCreateClusterToken string) error {
+	if autoCreateClusterToken == "" {
+		return errors.New("autoCreateClusterToken is not set")
 	}
 
-	_, err := store.GetStore().GetClusterIDFromDeployToken(os.Getenv("AUTO_CREATE_CLUSTER_TOKEN"))
+	_, err := store.GetStore().GetClusterIDFromDeployToken(autoCreateClusterToken)
 	if err == nil {
 		return nil
 	}
@@ -40,7 +44,7 @@ func bootstrapClusterToken() error {
 		return errors.Wrap(err, "failed to lookup cluster ID")
 	}
 
-	_, err = store.GetStore().CreateNewCluster("", true, "this-cluster", os.Getenv("AUTO_CREATE_CLUSTER_TOKEN"))
+	_, err = store.GetStore().CreateNewCluster("", true, "this-cluster", autoCreateClusterToken)
 	if err != nil {
 		return errors.Wrap(err, "failed to create cluster")
 	}

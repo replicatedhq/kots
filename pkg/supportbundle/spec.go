@@ -27,6 +27,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/snapshot"
 	"github.com/replicatedhq/kots/pkg/store"
 	"github.com/replicatedhq/kots/pkg/template"
+	"github.com/replicatedhq/kots/pkg/util"
 	troubleshootv1beta2 "github.com/replicatedhq/troubleshoot/pkg/apis/troubleshoot/v1beta2"
 	"go.uber.org/multierr"
 	corev1 "k8s.io/api/core/v1"
@@ -84,7 +85,7 @@ func CreateRenderedSpec(appID string, sequence int64, kotsKinds *kotsutil.KotsKi
 
 	templatedSpec := b.Bytes()
 
-	renderedSpec, err := helper.RenderAppFile(app, &sequence, templatedSpec, kotsKinds, os.Getenv("POD_NAMESPACE"))
+	renderedSpec, err := helper.RenderAppFile(app, &sequence, templatedSpec, kotsKinds, util.PodNamespace)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed render support bundle spec")
 	}
@@ -120,7 +121,7 @@ func CreateRenderedSpec(appID string, sequence int64, kotsKinds *kotsutil.KotsKi
 
 	secretName := GetSpecSecretName(app.Slug)
 
-	existingSecret, err := clientset.CoreV1().Secrets(os.Getenv("POD_NAMESPACE")).Get(context.TODO(), secretName, metav1.GetOptions{})
+	existingSecret, err := clientset.CoreV1().Secrets(util.PodNamespace).Get(context.TODO(), secretName, metav1.GetOptions{})
 	if err != nil && !kuberneteserrors.IsNotFound(err) {
 		return nil, errors.Wrap(err, "failed to read support bundle secret")
 	} else if kuberneteserrors.IsNotFound(err) {
@@ -131,7 +132,7 @@ func CreateRenderedSpec(appID string, sequence int64, kotsKinds *kotsutil.KotsKi
 			},
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      secretName,
-				Namespace: os.Getenv("POD_NAMESPACE"),
+				Namespace: util.PodNamespace,
 				Labels:    kotstypes.GetKotsadmLabels(),
 			},
 			Data: map[string][]byte{
@@ -139,7 +140,7 @@ func CreateRenderedSpec(appID string, sequence int64, kotsKinds *kotsutil.KotsKi
 			},
 		}
 
-		_, err = clientset.CoreV1().Secrets(os.Getenv("POD_NAMESPACE")).Create(context.TODO(), secret, metav1.CreateOptions{})
+		_, err = clientset.CoreV1().Secrets(util.PodNamespace).Create(context.TODO(), secret, metav1.CreateOptions{})
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to create support bundle secret")
 		}
@@ -153,7 +154,7 @@ func CreateRenderedSpec(appID string, sequence int64, kotsKinds *kotsutil.KotsKi
 	existingSecret.Data[SpecDataKey] = renderedSpec
 	existingSecret.ObjectMeta.Labels = kotstypes.GetKotsadmLabels()
 
-	_, err = clientset.CoreV1().Secrets(os.Getenv("POD_NAMESPACE")).Update(context.TODO(), existingSecret, metav1.UpdateOptions{})
+	_, err = clientset.CoreV1().Secrets(util.PodNamespace).Update(context.TODO(), existingSecret, metav1.UpdateOptions{})
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to update support bundle secret")
 	}
@@ -178,8 +179,8 @@ func injectDefaults(app *apptypes.App, supportBundle *troubleshootv1beta2.Suppor
 		uploadURL = fmt.Sprintf("%s/api/v1/troubleshoot/%s/%s", opts.Origin, app.ID, randomBundleID)
 		redactURL = fmt.Sprintf("%s/api/v1/troubleshoot/supportbundle/%s/redactions", opts.Origin, randomBundleID)
 	} else if opts.InCluster {
-		uploadURL = fmt.Sprintf("%s/api/v1/troubleshoot/%s/%s", fmt.Sprintf("http://kotsadm.%s.svc.cluster.local:3000", os.Getenv("POD_NAMESPACE")), app.ID, randomBundleID)
-		redactURL = fmt.Sprintf("%s/api/v1/troubleshoot/supportbundle/%s/redactions", fmt.Sprintf("http://kotsadm.%s.svc.cluster.local:3000", os.Getenv("POD_NAMESPACE")), randomBundleID)
+		uploadURL = fmt.Sprintf("%s/api/v1/troubleshoot/%s/%s", fmt.Sprintf("http://kotsadm.%s.svc.cluster.local:3000", util.PodNamespace), app.ID, randomBundleID)
+		redactURL = fmt.Sprintf("%s/api/v1/troubleshoot/supportbundle/%s/redactions", fmt.Sprintf("http://kotsadm.%s.svc.cluster.local:3000", util.PodNamespace), randomBundleID)
 	} else {
 		uploadURL = fmt.Sprintf("%s/api/v1/troubleshoot/%s/%s", os.Getenv("API_ADVERTISE_ENDPOINT"), app.ID, randomBundleID)
 		redactURL = fmt.Sprintf("%s/api/v1/troubleshoot/supportbundle/%s/redactions", os.Getenv("API_ADVERTISE_ENDPOINT"), randomBundleID)
@@ -215,7 +216,7 @@ func populateNamespaces(supportBundle *troubleshootv1beta2.SupportBundle) {
 		if templated != "" {
 			return templated
 		}
-		return os.Getenv("POD_NAMESPACE")
+		return util.PodNamespace
 	}
 
 	collects := []*troubleshootv1beta2.Collect{}
@@ -285,7 +286,7 @@ func addDefaultTroubleshoot(supportBundle *troubleshootv1beta2.SupportBundle, ap
 				CollectorName: "namespace.txt",
 			},
 			Name: "kots/admin-console",
-			Data: os.Getenv("POD_NAMESPACE"),
+			Data: util.PodNamespace,
 		},
 	})
 
@@ -295,7 +296,7 @@ func addDefaultTroubleshoot(supportBundle *troubleshootv1beta2.SupportBundle, ap
 				CollectorName: "kotsadm-replicated-registry",
 			},
 			Name:         "kotsadm-replicated-registry",
-			Namespace:    os.Getenv("POD_NAMESPACE"),
+			Namespace:    util.PodNamespace,
 			Key:          ".dockerconfigjson",
 			IncludeValue: false,
 		},
@@ -358,7 +359,7 @@ func makeDbCollectors() []*troubleshootv1beta2.Collect {
 				},
 				Name:          "kots/admin-console",
 				Selector:      []string{fmt.Sprintf("app=%s", parsedPg.Host)},
-				Namespace:     os.Getenv("POD_NAMESPACE"),
+				Namespace:     util.PodNamespace,
 				ContainerName: parsedPg.Host,
 				Command:       []string{"pg_dump"},
 				Args:          []string{"-U", username},
@@ -388,7 +389,7 @@ func makeKotsadmCollectors() []*troubleshootv1beta2.Collect {
 				},
 				Name:      "kots/admin-console",
 				Selector:  []string{fmt.Sprintf("app=%s", name)},
-				Namespace: os.Getenv("POD_NAMESPACE"),
+				Namespace: util.PodNamespace,
 			},
 		})
 	}
@@ -409,7 +410,7 @@ func makeGoRoutineCollectors() []*troubleshootv1beta2.Collect {
 				},
 				Name:          "kots/admin-console",
 				Selector:      []string{fmt.Sprintf("app=%s", name)},
-				Namespace:     os.Getenv("POD_NAMESPACE"),
+				Namespace:     util.PodNamespace,
 				ContainerName: name,
 				Command:       []string{"curl"},
 				Args:          []string{"http://localhost:3030/goroutines"},
@@ -485,7 +486,7 @@ func makeKurlCollectors(image string, pullSecret *troubleshootv1beta2.ImagePullS
 				Name:            "kots/kurl/host-preflights",
 				HostPath:        "/var/lib/kurl/host-preflights",
 				ExtractArchive:  true,
-				Namespace:       os.Getenv("POD_NAMESPACE"),
+				Namespace:       util.PodNamespace,
 				Image:           image,
 				ImagePullSecret: pullSecret,
 				ImagePullPolicy: string(corev1.PullIfNotPresent),
@@ -615,7 +616,7 @@ func makeVeleroCollectors() []*troubleshootv1beta2.Collect {
 		return collectors
 	}
 
-	veleroNamespace, err := snapshot.DetectVeleroNamespace(context.TODO(), clientset, os.Getenv("POD_NAMESPACE"))
+	veleroNamespace, err := snapshot.DetectVeleroNamespace(context.TODO(), clientset, util.PodNamespace)
 	if err != nil {
 		logger.Error(err)
 		return collectors
@@ -747,7 +748,7 @@ func makeAppVersionArchiveCollector(app *apptypes.App, dirPrefix string) (*troub
 			Selector: []string{
 				"app=kotsadm", // can we assume this?
 			},
-			Namespace:     os.Getenv("POD_NAMESPACE"),
+			Namespace:     util.PodNamespace,
 			ContainerName: "kotsadm", // can we assume this? kotsadm-api
 			ContainerPath: fileName,
 			Name:          fmt.Sprintf("kots/admin-console/app/%s", app.Slug),
@@ -768,7 +769,7 @@ func makeCollectDCollectors(imageName string, pullSecret *troubleshootv1beta2.Im
 				CollectorMeta: troubleshootv1beta2.CollectorMeta{
 					CollectorName: "collectd",
 				},
-				Namespace:       os.Getenv("POD_NAMESPACE"),
+				Namespace:       util.PodNamespace,
 				Image:           imageName,
 				ImagePullSecret: pullSecret,
 				ImagePullPolicy: string(corev1.PullIfNotPresent),
@@ -782,7 +783,7 @@ func makeCollectDCollectors(imageName string, pullSecret *troubleshootv1beta2.Im
 }
 
 func getImageAndSecret(ctx context.Context, clientset kubernetes.Interface) (imageName string, pullSecret *troubleshootv1beta2.ImagePullSecrets, err error) {
-	namespace := os.Getenv("POD_NAMESPACE")
+	namespace := util.PodNamespace
 
 	var containers []corev1.Container
 	var imagePullSecrets []corev1.LocalObjectReference

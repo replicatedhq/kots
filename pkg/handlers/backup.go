@@ -3,7 +3,6 @@ package handlers
 import (
 	"context"
 	"net/http"
-	"os"
 
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
@@ -12,6 +11,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/logger"
 	kotssnapshot "github.com/replicatedhq/kots/pkg/snapshot"
 	"github.com/replicatedhq/kots/pkg/store"
+	"github.com/replicatedhq/kots/pkg/util"
 )
 
 type CreateApplicationBackupRequest struct {
@@ -76,7 +76,7 @@ func (h *Handler) ListBackups(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	kotsadmNamespace := os.Getenv("POD_NAMESPACE")
+	kotsadmNamespace := util.PodNamespace
 
 	veleroStatus, err := kotssnapshot.DetectVelero(r.Context(), kotsadmNamespace)
 	if err != nil {
@@ -111,7 +111,7 @@ type ListInstanceBackupsResponse struct {
 func (h *Handler) ListInstanceBackups(w http.ResponseWriter, r *http.Request) {
 	listBackupsResponse := ListInstanceBackupsResponse{}
 
-	backups, err := snapshot.ListInstanceBackups(r.Context(), os.Getenv("POD_NAMESPACE"))
+	backups, err := snapshot.ListInstanceBackups(r.Context(), util.PodNamespace)
 	if err != nil {
 		logger.Error(err)
 		listBackupsResponse.Error = "failed to list instance backups"
@@ -132,7 +132,7 @@ type GetBackupResponse struct {
 func (h *Handler) GetBackup(w http.ResponseWriter, r *http.Request) {
 	getBackupResponse := GetBackupResponse{}
 
-	backup, err := snapshot.GetBackupDetail(r.Context(), os.Getenv("POD_NAMESPACE"), mux.Vars(r)["snapshotName"])
+	backup, err := snapshot.GetBackupDetail(r.Context(), util.PodNamespace, mux.Vars(r)["snapshotName"])
 	if err != nil {
 		logger.Error(err)
 		getBackupResponse.Error = "failed to get backup detail"
@@ -154,7 +154,7 @@ type DeleteBackupResponse struct {
 func (h *Handler) DeleteBackup(w http.ResponseWriter, r *http.Request) {
 	deleteBackupResponse := DeleteBackupResponse{}
 
-	if err := snapshot.DeleteBackup(r.Context(), os.Getenv("POD_NAMESPACE"), mux.Vars(r)["snapshotName"]); err != nil {
+	if err := snapshot.DeleteBackup(r.Context(), util.PodNamespace, mux.Vars(r)["snapshotName"]); err != nil {
 		logger.Error(err)
 		deleteBackupResponse.Error = "failed to delete backup"
 		JSON(w, http.StatusInternalServerError, deleteBackupResponse)

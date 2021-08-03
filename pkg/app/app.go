@@ -10,7 +10,7 @@ import (
 
 // LastUpdateAtTime sets the time that the client last checked for an update to now
 func LastUpdateAtTime(appID string) error {
-	db := persistence.MustGetPGSession()
+	db := persistence.MustGetDBSession()
 	query := `update app set last_update_check_at = $1 where id = $2`
 	_, err := db.Exec(query, time.Now(), appID)
 	if err != nil {
@@ -21,7 +21,7 @@ func LastUpdateAtTime(appID string) error {
 }
 
 func InitiateRestore(snapshotName string, appID string) error {
-	db := persistence.MustGetPGSession()
+	db := persistence.MustGetDBSession()
 	query := `update app set restore_in_progress_name = $1 where id = $2`
 	_, err := db.Exec(query, snapshotName, appID)
 	if err != nil {
@@ -32,7 +32,7 @@ func InitiateRestore(snapshotName string, appID string) error {
 }
 
 func ResetRestore(appID string) error {
-	db := persistence.MustGetPGSession()
+	db := persistence.MustGetDBSession()
 	query := `update app set restore_in_progress_name = NULL, restore_undeploy_status = '' where id = $1`
 	_, err := db.Exec(query, appID)
 	if err != nil {
@@ -43,7 +43,7 @@ func ResetRestore(appID string) error {
 }
 
 func SetRestoreUndeployStatus(appID string, undeployStatus types.UndeployStatus) error {
-	db := persistence.MustGetPGSession()
+	db := persistence.MustGetDBSession()
 	query := `update app set restore_undeploy_status = $1 where id = $2`
 	_, err := db.Exec(query, undeployStatus, appID)
 	if err != nil {

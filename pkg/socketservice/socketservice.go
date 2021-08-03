@@ -230,7 +230,7 @@ func deployVersionForApp(clusterSocket *ClusterSocket, a *apptypes.App, deployed
 		return errors.Wrap(err, "failed to get registry settings for app")
 	}
 
-	builder, err := render.NewBuilder(kotsKinds, registrySettings, a.Slug, deployedVersion.Sequence, a.IsAirgap, os.Getenv("POD_NAMESPACE"))
+	builder, err := render.NewBuilder(kotsKinds, registrySettings, a.Slug, deployedVersion.Sequence, a.IsAirgap, util.PodNamespace)
 	if err != nil {
 		return errors.Wrap(err, "failed to get template builder")
 	}
@@ -476,7 +476,7 @@ func handleUndeployCompleted(clusterSocket *ClusterSocket, a *apptypes.App) erro
 	snapshotName := a.RestoreInProgressName
 	restoreName := a.RestoreInProgressName
 
-	backup, err := snapshot.GetBackup(context.Background(), os.Getenv("POD_NAMESPACE"), snapshotName)
+	backup, err := snapshot.GetBackup(context.Background(), util.PodNamespace, snapshotName)
 	if err != nil {
 		return errors.Wrap(err, "failed to get backup")
 	}
@@ -484,7 +484,7 @@ func handleUndeployCompleted(clusterSocket *ClusterSocket, a *apptypes.App) erro
 		restoreName = fmt.Sprintf("%s.%s", snapshotName, a.Slug)
 	}
 
-	restore, err := snapshot.GetRestore(context.Background(), os.Getenv("POD_NAMESPACE"), restoreName)
+	restore, err := snapshot.GetRestore(context.Background(), util.PodNamespace, restoreName)
 	if err != nil {
 		return errors.Wrap(err, "failed to get restore")
 	}
@@ -499,7 +499,7 @@ func handleUndeployCompleted(clusterSocket *ClusterSocket, a *apptypes.App) erro
 func startVeleroRestore(snapshotName string, appSlug string) error {
 	logger.Info(fmt.Sprintf("creating velero restore object from snapshot %s", snapshotName))
 
-	if err := snapshot.CreateApplicationRestore(context.Background(), os.Getenv("POD_NAMESPACE"), snapshotName, appSlug); err != nil {
+	if err := snapshot.CreateApplicationRestore(context.Background(), util.PodNamespace, snapshotName, appSlug); err != nil {
 		return errors.Wrap(err, "failed to create restore")
 	}
 
@@ -509,7 +509,7 @@ func startVeleroRestore(snapshotName string, appSlug string) error {
 func checkRestoreComplete(clusterSocket *ClusterSocket, a *apptypes.App, restore *velerov1.Restore) error {
 	switch restore.Status.Phase {
 	case velerov1.RestorePhaseCompleted:
-		backup, err := snapshot.GetBackup(context.Background(), os.Getenv("POD_NAMESPACE"), restore.Spec.BackupName)
+		backup, err := snapshot.GetBackup(context.Background(), util.PodNamespace, restore.Spec.BackupName)
 		if err != nil {
 			return errors.Wrap(err, "failed to get backup")
 		}
@@ -653,7 +653,7 @@ func undeployApp(a *apptypes.App, d *downstreamtypes.Downstream, clusterSocket *
 	}
 	base64EncodedManifests := base64.StdEncoding.EncodeToString(renderedManifests)
 
-	backup, err := snapshot.GetBackup(context.Background(), os.Getenv("POD_NAMESPACE"), a.RestoreInProgressName)
+	backup, err := snapshot.GetBackup(context.Background(), util.PodNamespace, a.RestoreInProgressName)
 	if err != nil {
 		return errors.Wrap(err, "failed to get backup")
 	}

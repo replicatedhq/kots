@@ -17,6 +17,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/store"
 	"github.com/replicatedhq/kots/pkg/supportbundle"
 	"github.com/replicatedhq/kots/pkg/supportbundle/types"
+	"github.com/replicatedhq/kots/pkg/util"
 	redact2 "github.com/replicatedhq/troubleshoot/pkg/redact"
 )
 
@@ -194,7 +195,7 @@ func (h *Handler) GetSupportBundleCommand(w http.ResponseWriter, r *http.Request
 	response := GetSupportBundleCommandResponse{
 		Command: []string{
 			"curl https://krew.sh/support-bundle | bash",
-			fmt.Sprintf("kubectl support-bundle secret/%s/%s", os.Getenv("POD_NAMESPACE"), supportbundle.GetSpecSecretName(appSlug)),
+			fmt.Sprintf("kubectl support-bundle secret/%s/%s", util.PodNamespace, supportbundle.GetSpecSecretName(appSlug)),
 		},
 	}
 

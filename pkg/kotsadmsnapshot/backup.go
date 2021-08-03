@@ -23,6 +23,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/render/helper"
 	kotssnapshot "github.com/replicatedhq/kots/pkg/snapshot"
 	"github.com/replicatedhq/kots/pkg/store"
+	"github.com/replicatedhq/kots/pkg/util"
 	velerov1 "github.com/vmware-tanzu/velero/pkg/apis/velero/v1"
 	veleroclientv1 "github.com/vmware-tanzu/velero/pkg/generated/clientset/versioned/typed/velero/v1"
 	velerolabel "github.com/vmware-tanzu/velero/pkg/label"
@@ -63,7 +64,7 @@ func CreateApplicationBackup(ctx context.Context, a *apptypes.App, isScheduled b
 		return nil, errors.Wrap(err, "failed to get app version archive")
 	}
 
-	kotsadmNamespace := os.Getenv("POD_NAMESPACE")
+	kotsadmNamespace := util.PodNamespace
 	kotsadmVeleroBackendStorageLocation, err := kotssnapshot.FindBackupStoreLocation(ctx, kotsadmNamespace)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to find backupstoragelocations")
@@ -170,7 +171,7 @@ func CreateApplicationBackup(ctx context.Context, a *apptypes.App, isScheduled b
 func CreateInstanceBackup(ctx context.Context, cluster *downstreamtypes.Downstream, isScheduled bool) (*velerov1.Backup, error) {
 	logger.Debug("creating instance backup")
 
-	kotsadmNamespace := os.Getenv("POD_NAMESPACE")
+	kotsadmNamespace := util.PodNamespace
 	appsSequences := map[string]int64{}
 	includedNamespaces := []string{kotsadmNamespace}
 	excludedNamespaces := []string{}

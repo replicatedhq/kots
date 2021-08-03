@@ -27,6 +27,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/rbac"
 	"github.com/replicatedhq/kots/pkg/render"
 	"github.com/replicatedhq/kots/pkg/store"
+	"github.com/replicatedhq/kots/pkg/util"
 	"github.com/replicatedhq/kots/pkg/version"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
@@ -90,7 +91,7 @@ func (h *Handler) ConfigureIdentityService(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	namespace := os.Getenv("POD_NAMESPACE")
+	namespace := util.PodNamespace
 
 	previousConfig, err := identity.GetConfig(r.Context(), namespace)
 	if err != nil {
@@ -350,7 +351,7 @@ func (h *Handler) ConfigureAppIdentityService(w http.ResponseWriter, r *http.Req
 		// if secrets in the request are not redacted, this won't have any effect
 		// the user has the option to use kotsadm identity config
 		// in that case, secrets should be retrieved from kotsadm identity config not the app identity config
-		namespace := os.Getenv("POD_NAMESPACE")
+		namespace := util.PodNamespace
 
 		kotsadmIdentityConfig, err := identity.GetConfig(r.Context(), namespace)
 		if err != nil {
@@ -396,7 +397,7 @@ func (h *Handler) ConfigureAppIdentityService(w http.ResponseWriter, r *http.Req
 		},
 	}
 
-	namespace := os.Getenv("POD_NAMESPACE")
+	namespace := util.PodNamespace
 
 	// TODO: handle configuring ingress for the app?
 	// TODO: validate dex issuer
@@ -576,7 +577,7 @@ type GetIdentityServiceConfigResponse struct {
 }
 
 func (h *Handler) GetIdentityServiceConfig(w http.ResponseWriter, r *http.Request) {
-	namespace := os.Getenv("POD_NAMESPACE")
+	namespace := util.PodNamespace
 
 	identityConfig, err := identity.GetConfig(r.Context(), namespace)
 	if err != nil {

@@ -3,7 +3,6 @@ package informers
 import (
 	"context"
 	"log"
-	"os"
 	"time"
 
 	"github.com/pkg/errors"
@@ -11,6 +10,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/logger"
 	kotssnapshot "github.com/replicatedhq/kots/pkg/snapshot"
 	"github.com/replicatedhq/kots/pkg/supportbundle"
+	"github.com/replicatedhq/kots/pkg/util"
 	velerov1 "github.com/vmware-tanzu/velero/pkg/apis/velero/v1"
 	veleroclientv1 "github.com/vmware-tanzu/velero/pkg/generated/clientset/versioned/typed/velero/v1"
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
@@ -34,7 +34,7 @@ func Start() error {
 		return errors.Wrap(err, "failed to create clientset")
 	}
 
-	veleroNamespace, err := kotssnapshot.DetectVeleroNamespace(context.TODO(), clientset, os.Getenv("POD_NAMESPACE"))
+	veleroNamespace, err := kotssnapshot.DetectVeleroNamespace(context.TODO(), clientset, util.PodNamespace)
 	if err != nil {
 		return errors.Wrap(err, "failed to detect velero namespace")
 	}

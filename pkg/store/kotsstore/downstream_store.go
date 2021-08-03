@@ -14,7 +14,7 @@ import (
 )
 
 func (s *KOTSStore) GetCurrentSequence(appID string, clusterID string) (int64, error) {
-	db := persistence.MustGetPGSession()
+	db := persistence.MustGetDBSession()
 	query := `select current_sequence from app_downstream where app_id = $1 and cluster_id = $2`
 	row := db.QueryRow(query, appID, clusterID)
 
@@ -39,7 +39,7 @@ func (s *KOTSStore) GetCurrentParentSequence(appID string, clusterID string) (in
 		return -1, nil
 	}
 
-	db := persistence.MustGetPGSession()
+	db := persistence.MustGetDBSession()
 	query := `select parent_sequence from app_downstream_version where app_id = $1 and cluster_id = $2 and sequence = $3`
 	row := db.QueryRow(query, appID, clusterID, currentSequence)
 
@@ -56,7 +56,7 @@ func (s *KOTSStore) GetCurrentParentSequence(appID string, clusterID string) (in
 }
 
 func (s *KOTSStore) GetParentSequenceForSequence(appID string, clusterID string, sequence int64) (int64, error) {
-	db := persistence.MustGetPGSession()
+	db := persistence.MustGetDBSession()
 	query := `select parent_sequence from app_downstream_version where app_id = $1 and cluster_id = $2 and sequence = $3`
 	row := db.QueryRow(query, appID, clusterID, sequence)
 
@@ -73,7 +73,7 @@ func (s *KOTSStore) GetParentSequenceForSequence(appID string, clusterID string,
 }
 
 func (s *KOTSStore) GetPreviouslyDeployedSequence(appID string, clusterID string) (int64, error) {
-	db := persistence.MustGetPGSession()
+	db := persistence.MustGetDBSession()
 	query := `select sequence from app_downstream_version where app_id = $1 and cluster_id = $2 and applied_at is not null order by applied_at desc limit 2`
 	rows, err := db.Query(query, appID, clusterID)
 	if err != nil {
@@ -97,7 +97,7 @@ func (s *KOTSStore) GetPreviouslyDeployedSequence(appID string, clusterID string
 
 // SetDownstreamVersionReady sets the status for the downstream version with the given sequence and app id to "pending"
 func (s *KOTSStore) SetDownstreamVersionReady(appID string, sequence int64) error {
-	db := persistence.MustGetPGSession()
+	db := persistence.MustGetDBSession()
 	query := `update app_downstream_version set status = 'pending' where app_id = $1 and sequence = $2`
 	_, err := db.Exec(query, appID, sequence)
 	if err != nil {
@@ -109,7 +109,7 @@ func (s *KOTSStore) SetDownstreamVersionReady(appID string, sequence int64) erro
 
 // SetDownstreamVersionPendingPreflight sets the status for the downstream version with the given sequence and app id to "pending_preflight"
 func (s *KOTSStore) SetDownstreamVersionPendingPreflight(appID string, sequence int64) error {
-	db := persistence.MustGetPGSession()
+	db := persistence.MustGetDBSession()
 	query := `update app_downstream_version set status = 'pending_preflight' where app_id = $1 and sequence = $2`
 	_, err := db.Exec(query, appID, sequence)
 	if err != nil {
@@ -121,7 +121,7 @@ func (s *KOTSStore) SetDownstreamVersionPendingPreflight(appID string, sequence 
 
 // UpdateDownstreamVersionStatus updates the status and status info for the downstream version with the given sequence and app id
 func (s *KOTSStore) UpdateDownstreamVersionStatus(appID string, sequence int64, status string, statusInfo string) error {
-	db := persistence.MustGetPGSession()
+	db := persistence.MustGetDBSession()
 	query := `update app_downstream_version set status = $3, status_info = $4 where app_id = $1 and sequence = $2`
 	_, err := db.Exec(query, appID, sequence, status, statusInfo)
 	if err != nil {
@@ -133,7 +133,7 @@ func (s *KOTSStore) UpdateDownstreamVersionStatus(appID string, sequence int64, 
 
 // GetDownstreamVersionStatus gets the status for the downstream version with the given sequence and app id
 func (s *KOTSStore) GetDownstreamVersionStatus(appID string, sequence int64) (types.DownstreamVersionStatus, error) {
-	db := persistence.MustGetPGSession()
+	db := persistence.MustGetDBSession()
 	query := `select status from app_downstream_version where app_id = $1 and sequence = $2`
 	row := db.QueryRow(query, appID, sequence)
 	var status sql.NullString
@@ -149,7 +149,7 @@ func (s *KOTSStore) GetDownstreamVersionStatus(appID string, sequence int64) (ty
 }
 
 func (s *KOTSStore) GetIgnoreRBACErrors(appID string, sequence int64) (bool, error) {
-	db := persistence.MustGetPGSession()
+	db := persistence.MustGetDBSession()
 	query := `SELECT preflight_ignore_permissions FROM app_downstream_version
 	WHERE app_id = $1 and sequence = $2 LIMIT 1`
 	row := db.QueryRow(query, appID, sequence)
@@ -175,7 +175,7 @@ func (s *KOTSStore) GetCurrentVersion(appID string, clusterID string) (*downstre
 		return nil, nil
 	}
 
-	db := persistence.MustGetPGSession()
+	db := persistence.MustGetDBSession()
 	query := `SELECT
 	adv.created_at,
 	adv.version_label,
@@ -221,16 +221,16 @@ func (s *KOTSStore) GetCurrentVersion(appID string, clusterID string) (*downstre
 }
 
 func (s *KOTSStore) GetStatusForVersion(appID string, clusterID string, sequence int64) (types.DownstreamVersionStatus, error) {
-	db := persistence.MustGetPGSession()
-	query := `SELECT 
-	adv.status, ado.is_error 
-	FROM 
+	db := persistence.MustGetDBSession()
+	query := `SELECT
+	adv.status, ado.is_error
+	FROM
 		app_downstream_version AS adv
-	LEFT JOIN 
-		app_downstream_output AS ado 
+	LEFT JOIN
+		app_downstream_output AS ado
 	ON
 		adv.app_id = ado.app_id AND adv.cluster_id = ado.cluster_id AND adv.sequence = ado.downstream_sequence
- WHERE 
+ WHERE
  	adv.app_id = $1 AND adv.cluster_id = $2 AND adv.sequence = $3`
 	row := db.QueryRow(query, appID, clusterID, sequence)
 
@@ -250,7 +250,7 @@ func (s *KOTSStore) GetPendingVersions(appID string, clusterID string) ([]downst
 		return nil, errors.Wrap(err, "failed to get current sequence")
 	}
 
-	db := persistence.MustGetPGSession()
+	db := persistence.MustGetDBSession()
 	query := `SELECT
 	adv.created_at,
 	adv.version_label,
@@ -315,7 +315,7 @@ func (s *KOTSStore) GetPastVersions(appID string, clusterID string) ([]downstrea
 		return []downstreamtypes.DownstreamVersion{}, nil
 	}
 
-	db := persistence.MustGetPGSession()
+	db := persistence.MustGetDBSession()
 	query := `SELECT
 	adv.created_at,
 	adv.version_label,
@@ -460,7 +460,7 @@ func downstreamVersionFromRow(appID string, row scannable) (*downstreamtypes.Dow
 }
 
 func getReleaseNotes(appID string, parentSequence int64) (string, error) {
-	db := persistence.MustGetPGSession()
+	db := persistence.MustGetDBSession()
 	query := `SELECT release_notes FROM app_version WHERE app_id = $1 AND sequence = $2`
 	row := db.QueryRow(query, appID, parentSequence)
 
@@ -495,7 +495,7 @@ func getDownstreamVersionStatus(status types.DownstreamVersionStatus, hasError s
 }
 
 func (s *KOTSStore) GetDownstreamOutput(appID string, clusterID string, sequence int64) (*downstreamtypes.DownstreamOutput, error) {
-	db := persistence.MustGetPGSession()
+	db := persistence.MustGetDBSession()
 	query := `SELECT
 	adv.status,
 	adv.status_info,
@@ -588,7 +588,7 @@ WHERE
 }
 
 func (s *KOTSStore) IsDownstreamDeploySuccessful(appID string, clusterID string, sequence int64) (bool, error) {
-	db := persistence.MustGetPGSession()
+	db := persistence.MustGetDBSession()
 
 	query := `SELECT is_error
 	FROM app_downstream_output
@@ -608,7 +608,7 @@ func (s *KOTSStore) IsDownstreamDeploySuccessful(appID string, clusterID string,
 }
 
 func (s *KOTSStore) UpdateDownstreamDeployStatus(appID string, clusterID string, sequence int64, isError bool, output downstreamtypes.DownstreamOutput) error {
-	db := persistence.MustGetPGSession()
+	db := persistence.MustGetDBSession()
 
 	query := `insert into app_downstream_output (app_id, cluster_id, downstream_sequence, is_error, dryrun_stdout, dryrun_stderr, apply_stdout, apply_stderr, helm_stdout, helm_stderr)
 	values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) on conflict (app_id, cluster_id, downstream_sequence) do update set is_error = EXCLUDED.is_error,
@@ -624,7 +624,7 @@ func (s *KOTSStore) UpdateDownstreamDeployStatus(appID string, clusterID string,
 }
 
 func (s *KOTSStore) DeleteDownstreamDeployStatus(appID string, clusterID string, sequence int64) error {
-	db := persistence.MustGetPGSession()
+	db := persistence.MustGetDBSession()
 
 	query := `delete from app_downstream_output where app_id = $1 and cluster_id = $2 and downstream_sequence = $3`
 

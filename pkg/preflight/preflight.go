@@ -19,6 +19,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/reporting"
 	"github.com/replicatedhq/kots/pkg/store"
 	storetypes "github.com/replicatedhq/kots/pkg/store/types"
+	"github.com/replicatedhq/kots/pkg/util"
 	"github.com/replicatedhq/kots/pkg/version"
 	troubleshootv1beta2 "github.com/replicatedhq/troubleshoot/pkg/apis/troubleshoot/v1beta2"
 	troubleshootpreflight "github.com/replicatedhq/troubleshoot/pkg/preflight"
@@ -82,7 +83,7 @@ func Run(appID string, appSlug string, sequence int64, isAirgap bool, archiveDir
 			return errors.Wrap(err, "failed to get registry settings for app")
 		}
 
-		renderedPreflight, err := render.RenderFile(renderedKotsKinds, registrySettings, appSlug, sequence, isAirgap, os.Getenv("POD_NAMESPACE"), []byte(renderedMarshalledPreflights))
+		renderedPreflight, err := render.RenderFile(renderedKotsKinds, registrySettings, appSlug, sequence, isAirgap, util.PodNamespace, []byte(renderedMarshalledPreflights))
 		if err != nil {
 			return errors.Wrap(err, "failed to render preflights")
 		}
@@ -206,7 +207,7 @@ func GetSpecSecretName(appSlug string) string {
 }
 
 func GetSpecURI(appSlug string) string {
-	return fmt.Sprintf("secret/%s/%s", os.Getenv("POD_NAMESPACE"), GetSpecSecretName(appSlug))
+	return fmt.Sprintf("secret/%s/%s", util.PodNamespace, GetSpecSecretName(appSlug))
 }
 
 func GetPreflightCommand(appSlug string) []string {
@@ -266,7 +267,7 @@ func CreateRenderedSpec(appID string, sequence int64, origin string, inCluster b
 
 	templatedSpec := b.Bytes()
 
-	renderedSpec, err := helper.RenderAppFile(app, &sequence, templatedSpec, kotsKinds, os.Getenv("POD_NAMESPACE"))
+	renderedSpec, err := helper.RenderAppFile(app, &sequence, templatedSpec, kotsKinds, util.PodNamespace)
 	if err != nil {
 		return errors.Wrap(err, "failed render preflight spec")
 	}
@@ -278,7 +279,7 @@ func CreateRenderedSpec(appID string, sequence int64, origin string, inCluster b
 
 	secretName := GetSpecSecretName(app.Slug)
 
-	existingSecret, err := clientset.CoreV1().Secrets(os.Getenv("POD_NAMESPACE")).Get(context.TODO(), secretName, metav1.GetOptions{})
+	existingSecret, err := clientset.CoreV1().Secrets(util.PodNamespace).Get(context.TODO(), secretName, metav1.GetOptions{})
 	if err != nil && !kuberneteserrors.IsNotFound(err) {
 		return errors.Wrap(err, "failed to read preflight secret")
 	} else if kuberneteserrors.IsNotFound(err) {
@@ -289,7 +290,7 @@ func CreateRenderedSpec(appID string, sequence int64, origin string, inCluster b
 			},
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      secretName,
-				Namespace: os.Getenv("POD_NAMESPACE"),
+				Namespace: util.PodNamespace,
 				Labels:    kotstypes.GetKotsadmLabels(),
 			},
 			Data: map[string][]byte{
@@ -297,7 +298,7 @@ func CreateRenderedSpec(appID string, sequence int64, origin string, inCluster b
 			},
 		}
 
-		_, err = clientset.CoreV1().Secrets(os.Getenv("POD_NAMESPACE")).Create(context.TODO(), secret, metav1.CreateOptions{})
+		_, err = clientset.CoreV1().Secrets(util.PodNamespace).Create(context.TODO(), secret, metav1.CreateOptions{})
 		if err != nil {
 			return errors.Wrap(err, "failed to create preflight secret")
 		}
@@ -311,7 +312,7 @@ func CreateRenderedSpec(appID string, sequence int64, origin string, inCluster b
 	existingSecret.Data[SpecDataKey] = renderedSpec
 	existingSecret.ObjectMeta.Labels = kotstypes.GetKotsadmLabels()
 
-	_, err = clientset.CoreV1().Secrets(os.Getenv("POD_NAMESPACE")).Update(context.TODO(), existingSecret, metav1.UpdateOptions{})
+	_, err = clientset.CoreV1().Secrets(util.PodNamespace).Update(context.TODO(), existingSecret, metav1.UpdateOptions{})
 	if err != nil {
 		return errors.Wrap(err, "failed to update preflight secret")
 	}

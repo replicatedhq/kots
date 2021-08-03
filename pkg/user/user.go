@@ -12,6 +12,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/logger"
 	usertypes "github.com/replicatedhq/kots/pkg/user/types"
+	"github.com/replicatedhq/kots/pkg/util"
 	"golang.org/x/crypto/bcrypt"
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -32,7 +33,7 @@ func LogIn(password string) (*usertypes.User, error) {
 	}
 
 	var shaBytes []byte
-	passwordSecret, err := clientset.CoreV1().Secrets(os.Getenv("POD_NAMESPACE")).Get(context.TODO(), passwordSecretName, metav1.GetOptions{})
+	passwordSecret, err := clientset.CoreV1().Secrets(util.PodNamespace).Get(context.TODO(), passwordSecretName, metav1.GetOptions{})
 	if err != nil {
 		// either no existing password secret or unable to get it
 		// so instead we fallback to the environment variable
@@ -75,7 +76,7 @@ func flagSuccessfulLogin(clientset kubernetes.Interface) error {
 	defer loginMutex.Unlock()
 
 	for i := 0; ; i++ {
-		secret, err := clientset.CoreV1().Secrets(os.Getenv("POD_NAMESPACE")).Get(context.TODO(), passwordSecretName, metav1.GetOptions{})
+		secret, err := clientset.CoreV1().Secrets(util.PodNamespace).Get(context.TODO(), passwordSecretName, metav1.GetOptions{})
 		if err != nil {
 			if kuberneteserrors.IsNotFound(err) {
 				return nil
@@ -89,7 +90,7 @@ func flagSuccessfulLogin(clientset kubernetes.Interface) error {
 
 		secret.Labels["lastLogin"] = fmt.Sprintf("%d", time.Now().Unix())
 		secret.Labels["numAttempts"] = "0"
-		if _, err := clientset.CoreV1().Secrets(os.Getenv("POD_NAMESPACE")).Update(context.TODO(), secret, metav1.UpdateOptions{}); err != nil {
+		if _, err := clientset.CoreV1().Secrets(util.PodNamespace).Update(context.TODO(), secret, metav1.UpdateOptions{}); err != nil {
 			if kuberneteserrors.IsConflict(err) {
 				if i > 2 {
 					return errors.New("failed to update password secret due to conflicts")
@@ -108,7 +109,7 @@ func flagInvalidPassword(clientset kubernetes.Interface) error {
 	defer loginMutex.Unlock()
 
 	for i := 0; ; i++ {
-		secret, err := clientset.CoreV1().Secrets(os.Getenv("POD_NAMESPACE")).Get(context.TODO(), passwordSecretName, metav1.GetOptions{})
+		secret, err := clientset.CoreV1().Secrets(util.PodNamespace).Get(context.TODO(), passwordSecretName, metav1.GetOptions{})
 		if err != nil {
 			if kuberneteserrors.IsNotFound(err) {
 				return nil
@@ -124,7 +125,7 @@ func flagInvalidPassword(clientset kubernetes.Interface) error {
 		numAttempts, _ := strconv.Atoi(secret.Labels["numAttempts"])
 		secret.Labels["numAttempts"] = strconv.Itoa(numAttempts + 1)
 
-		if _, err := clientset.CoreV1().Secrets(os.Getenv("POD_NAMESPACE")).Update(context.TODO(), secret, metav1.UpdateOptions{}); err != nil {
+		if _, err := clientset.CoreV1().Secrets(util.PodNamespace).Update(context.TODO(), secret, metav1.UpdateOptions{}); err != nil {
 			if kuberneteserrors.IsConflict(err) {
 				if i > 2 {
 					return errors.New("failed to update password secret due to conflicts")

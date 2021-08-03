@@ -15,6 +15,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/reporting"
 	"github.com/replicatedhq/kots/pkg/rewrite"
 	"github.com/replicatedhq/kots/pkg/template"
+	"github.com/replicatedhq/kots/pkg/util"
 )
 
 type Renderer struct {
@@ -128,7 +129,7 @@ func RenderDir(archiveDir string, a *apptypes.App, downstreams []downstreamtypes
 		downstreamNames = append(downstreamNames, d.Name)
 	}
 
-	appNamespace := os.Getenv("POD_NAMESPACE")
+	appNamespace := util.PodNamespace
 	if os.Getenv("KOTSADM_TARGET_NAMESPACE") != "" {
 		appNamespace = os.Getenv("KOTSADM_TARGET_NAMESPACE")
 	}

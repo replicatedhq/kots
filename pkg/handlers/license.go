@@ -23,6 +23,7 @@ import (
 	kotspull "github.com/replicatedhq/kots/pkg/pull"
 	"github.com/replicatedhq/kots/pkg/registry"
 	"github.com/replicatedhq/kots/pkg/store"
+	"github.com/replicatedhq/kots/pkg/util"
 	serializer "k8s.io/apimachinery/pkg/runtime/serializer/json"
 	"k8s.io/client-go/kubernetes/scheme"
 )
@@ -313,7 +314,7 @@ func (h *Handler) UploadNewLicense(w http.ResponseWriter, r *http.Request) {
 
 	if existingLicense != nil {
 		uploadLicenseResponse.Error = "License already exists"
-		uploadLicenseResponse.DeleteAppCommand = fmt.Sprintf("kubectl kots remove %s -n %s --force", existingLicense.Spec.AppSlug, os.Getenv("POD_NAMESPACE"))
+		uploadLicenseResponse.DeleteAppCommand = fmt.Sprintf("kubectl kots remove %s -n %s --force", existingLicense.Spec.AppSlug, util.PodNamespace)
 		JSON(w, 400, uploadLicenseResponse)
 		return
 	}

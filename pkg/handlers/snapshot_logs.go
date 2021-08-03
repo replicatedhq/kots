@@ -3,20 +3,20 @@ package handlers
 import (
 	"io"
 	"net/http"
-	"os"
 
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
 	snapshot "github.com/replicatedhq/kots/pkg/kotsadmsnapshot"
 	"github.com/replicatedhq/kots/pkg/logger"
 	kotssnapshot "github.com/replicatedhq/kots/pkg/snapshot"
+	"github.com/replicatedhq/kots/pkg/util"
 	velerov1 "github.com/vmware-tanzu/velero/pkg/apis/velero/v1"
 )
 
 func (h *Handler) DownloadSnapshotLogs(w http.ResponseWriter, r *http.Request) {
 	backupName := mux.Vars(r)["backup"]
 
-	bsl, err := kotssnapshot.FindBackupStoreLocation(r.Context(), os.Getenv("POD_NAMESPACE"))
+	bsl, err := kotssnapshot.FindBackupStoreLocation(r.Context(), util.PodNamespace)
 	if err != nil {
 		logger.Error(err)
 		w.WriteHeader(500)

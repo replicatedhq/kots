@@ -21,6 +21,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/persistence"
 	"github.com/replicatedhq/kots/pkg/supportbundle/types"
+	"github.com/replicatedhq/kots/pkg/util"
 	troubleshootredact "github.com/replicatedhq/troubleshoot/pkg/redact"
 	"go.uber.org/zap"
 	corev1 "k8s.io/api/core/v1"
@@ -32,7 +33,7 @@ import (
 func (s *KOTSStore) migrateSupportBundlesFromPostgres() error {
 	logger.Debug("migrating support bundles from postgres")
 
-	db := persistence.MustGetPGSession()
+	db := persistence.MustGetDBSession()
 	query := `select id, watch_id, name, size, status, tree_index, created_at, uploaded_at, is_archived from supportbundle order by created_at desc`
 	rows, err := db.Query(query)
 	if err != nil {
@@ -140,7 +141,7 @@ func (s *KOTSStore) migrateSupportBundlesFromPostgres() error {
 			},
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      fmt.Sprintf("supportbundle-%s", supportBundle.ID),
-				Namespace: os.Getenv("POD_NAMESPACE"),
+				Namespace: util.PodNamespace,
 				Labels:    labels,
 			},
 			Data: map[string][]byte{
@@ -149,7 +150,7 @@ func (s *KOTSStore) migrateSupportBundlesFromPostgres() error {
 			},
 		}
 
-		_, err = clientset.CoreV1().Secrets(os.Getenv("POD_NAMESPACE")).Create(context.TODO(), &secret, metav1.CreateOptions{})
+		_, err = clientset.CoreV1().Secrets(util.PodNamespace).Create(context.TODO(), &secret, metav1.CreateOptions{})
 		if err != nil {
 			if kuberneteserrors.IsAlreadyExists(err) {
 				continue
@@ -185,7 +186,7 @@ func (s *KOTSStore) ListSupportBundles(appID string) ([]*types.SupportBundle, er
 
 	supportBundles := []*types.SupportBundle{}
 
-	secrets, err := clientset.CoreV1().Secrets(os.Getenv("POD_NAMESPACE")).List(context.TODO(), metav1.ListOptions{
+	secrets, err := clientset.CoreV1().Secrets(util.PodNamespace).List(context.TODO(), metav1.ListOptions{
 		LabelSelector: labels.Set(labelSelector.MatchLabels).String(),
 	})
 	if err != nil {
@@ -213,7 +214,7 @@ func (s *KOTSStore) GetSupportBundle(id string) (*types.SupportBundle, error) {
 		return nil, errors.Wrap(err, "failed to get clientset")
 	}
 
-	secret, err := clientset.CoreV1().Secrets(os.Getenv("POD_NAMESPACE")).Get(context.TODO(), fmt.Sprintf("supportbundle-%s", id), metav1.GetOptions{})
+	secret, err := clientset.CoreV1().Secrets(util.PodNamespace).Get(context.TODO(), fmt.Sprintf("supportbundle-%s", id), metav1.GetOptions{})
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get secret")
 	}
@@ -259,7 +260,7 @@ func (s *KOTSStore) CreateInProgressSupportBundle(supportBundle *types.SupportBu
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      fmt.Sprintf("supportbundle-%s", id),
-			Namespace: os.Getenv("POD_NAMESPACE"),
+			Namespace: util.PodNamespace,
 			Labels:    labels,
 		},
 		Data: map[string][]byte{
@@ -273,7 +274,7 @@ func (s *KOTSStore) CreateInProgressSupportBundle(supportBundle *types.SupportBu
 		return errors.Wrap(err, "failed to get clientset")
 	}
 
-	if _, err := clientset.CoreV1().Secrets(os.Getenv("POD_NAMESPACE")).Create(context.TODO(), &secret, metav1.CreateOptions{}); err != nil {
+	if _, err := clientset.CoreV1().Secrets(util.PodNamespace).Create(context.TODO(), &secret, metav1.CreateOptions{}); err != nil {
 		return errors.Wrap(err, "failed to create secret")
 	}
 
@@ -326,7 +327,7 @@ func (s *KOTSStore) CreateSupportBundle(id string, appID string, archivePath str
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      fmt.Sprintf("supportbundle-%s", id),
-			Namespace: os.Getenv("POD_NAMESPACE"),
+			Namespace: util.PodNamespace,
 			Labels:    labels,
 		},
 		Data: map[string][]byte{
@@ -340,7 +341,7 @@ func (s *KOTSStore) CreateSupportBundle(id string, appID string, archivePath str
 		return nil, errors.Wrap(err, "failed to get clientset")
 	}
 
-	if _, err := clientset.CoreV1().Secrets(os.Getenv("POD_NAMESPACE")).Create(context.TODO(), &secret, metav1.CreateOptions{}); err != nil {
+	if _, err := clientset.CoreV1().Secrets(util.PodNamespace).Create(context.TODO(), &secret, metav1.CreateOptions{}); err != nil {
 		return nil, errors.Wrap(err, "failed to create secret")
 	}
 
@@ -363,7 +364,7 @@ func (s *KOTSStore) UpdateSupportBundle(bundle *types.SupportBundle) error {
 		return errors.Wrap(err, "failed to get clientset")
 	}
 
-	secret, err := clientset.CoreV1().Secrets(os.Getenv("POD_NAMESPACE")).Get(context.TODO(), fmt.Sprintf("supportbundle-%s", bundle.ID), metav1.GetOptions{})
+	secret, err := clientset.CoreV1().Secrets(util.PodNamespace).Get(context.TODO(), fmt.Sprintf("supportbundle-%s", bundle.ID), metav1.GetOptions{})
 	if err != nil {
 		return errors.Wrap(err, "failed to list support bundle")
 	}
@@ -372,7 +373,7 @@ func (s *KOTSStore) UpdateSupportBundle(bundle *types.SupportBundle) error {
 
 	secret.Data["bundle"] = marshaledBundle
 
-	if _, err = clientset.CoreV1().Secrets(os.Getenv("POD_NAMESPACE")).Update(context.TODO(), secret, metav1.UpdateOptions{}); err != nil {
+	if _, err = clientset.CoreV1().Secrets(util.PodNamespace).Update(context.TODO(), secret, metav1.UpdateOptions{}); err != nil {
 		return errors.Wrap(err, "failed to update secret")
 	}
 
@@ -421,7 +422,7 @@ func (s *KOTSStore) GetSupportBundleAnalysis(id string) (*types.SupportBundleAna
 		return nil, errors.Wrap(err, "failed to get clientset")
 	}
 
-	secret, err := clientset.CoreV1().Secrets(os.Getenv("POD_NAMESPACE")).Get(context.TODO(), fmt.Sprintf("supportbundle-%s", id), metav1.GetOptions{})
+	secret, err := clientset.CoreV1().Secrets(util.PodNamespace).Get(context.TODO(), fmt.Sprintf("supportbundle-%s", id), metav1.GetOptions{})
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get secret")
 	}
@@ -458,7 +459,7 @@ func (s *KOTSStore) SetSupportBundleAnalysis(id string, results []byte) error {
 		return errors.Wrap(err, "failed to get clientset")
 	}
 
-	secret, err := clientset.CoreV1().Secrets(os.Getenv("POD_NAMESPACE")).Get(context.TODO(), fmt.Sprintf("supportbundle-%s", id), metav1.GetOptions{})
+	secret, err := clientset.CoreV1().Secrets(util.PodNamespace).Get(context.TODO(), fmt.Sprintf("supportbundle-%s", id), metav1.GetOptions{})
 	if err != nil {
 		return errors.Wrap(err, "failed to list support bundle")
 	}
@@ -470,7 +471,7 @@ func (s *KOTSStore) SetSupportBundleAnalysis(id string, results []byte) error {
 
 	secret.Data["analysis"] = b
 
-	if _, err = clientset.CoreV1().Secrets(os.Getenv("POD_NAMESPACE")).Update(context.TODO(), secret, metav1.UpdateOptions{}); err != nil {
+	if _, err = clientset.CoreV1().Secrets(util.PodNamespace).Update(context.TODO(), secret, metav1.UpdateOptions{}); err != nil {
 		return errors.Wrap(err, "failed to update secret")
 	}
 

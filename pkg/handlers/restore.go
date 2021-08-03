@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"os"
 	"strconv"
 
 	"github.com/gorilla/mux"
@@ -15,6 +14,7 @@ import (
 	snapshottypes "github.com/replicatedhq/kots/pkg/kotsadmsnapshot/types"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/store"
+	"github.com/replicatedhq/kots/pkg/util"
 	velerov1 "github.com/vmware-tanzu/velero/pkg/apis/velero/v1"
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
 )
@@ -37,7 +37,7 @@ func (h *Handler) CreateApplicationRestore(w http.ResponseWriter, r *http.Reques
 
 	appSlug := mux.Vars(r)["appSlug"]
 	snapshotName := mux.Vars(r)["snapshotName"]
-	kotsadmNamespace := os.Getenv("POD_NAMESPACE")
+	kotsadmNamespace := util.PodNamespace
 
 	backup, err := snapshot.GetBackup(r.Context(), kotsadmNamespace, snapshotName)
 	if err != nil {
@@ -139,7 +139,7 @@ func (h *Handler) RestoreApps(w http.ResponseWriter, r *http.Request) {
 	}
 
 	snapshotName := mux.Vars(r)["snapshotName"]
-	kotsadmNamespace := os.Getenv("POD_NAMESPACE")
+	kotsadmNamespace := util.PodNamespace
 
 	backup, err := snapshot.GetBackup(r.Context(), kotsadmNamespace, snapshotName)
 	if err != nil {
@@ -234,7 +234,7 @@ func (h *Handler) GetRestoreAppsStatus(w http.ResponseWriter, r *http.Request) {
 	}
 
 	snapshotName := mux.Vars(r)["snapshotName"]
-	kotsadmNamespace := os.Getenv("POD_NAMESPACE")
+	kotsadmNamespace := util.PodNamespace
 
 	backup, err := snapshot.GetBackup(r.Context(), kotsadmNamespace, snapshotName)
 	if err != nil {
@@ -370,7 +370,7 @@ func (h *Handler) GetRestoreDetails(w http.ResponseWriter, r *http.Request) {
 		IsActive: foundApp.RestoreInProgressName == restoreName,
 	}
 
-	restoreDetail, err := snapshot.GetRestoreDetails(r.Context(), os.Getenv("POD_NAMESPACE"), restoreName)
+	restoreDetail, err := snapshot.GetRestoreDetails(r.Context(), util.PodNamespace, restoreName)
 	if kuberneteserrors.IsNotFound(errors.Cause(err)) {
 		if foundApp.RestoreUndeployStatus == apptypes.UndeployFailed {
 			// HACK: once the user has see the error, clear it out.

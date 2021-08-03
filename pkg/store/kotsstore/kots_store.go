@@ -16,6 +16,7 @@ import (
 	kotsadmtypes "github.com/replicatedhq/kots/pkg/kotsadm/types"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/persistence"
+	"github.com/replicatedhq/kots/pkg/util"
 	troubleshootscheme "github.com/replicatedhq/troubleshoot/pkg/client/troubleshootclientset/scheme"
 	veleroscheme "github.com/vmware-tanzu/velero/pkg/generated/clientset/versioned/scheme"
 	corev1 "k8s.io/api/core/v1"
@@ -87,7 +88,7 @@ func waitForPostgres(ctx context.Context) error {
 
 	period := 1 * time.Second // TOOD: backoff
 	for {
-		db := persistence.MustGetPGSession()
+		db := persistence.MustGetDBSession()
 
 		// any SQL will do.  just need tables to be created.
 		query := `select count(1) from app`
@@ -175,7 +176,7 @@ func (s *KOTSStore) getConfigmap(name string) (*corev1.ConfigMap, error) {
 		return nil, errors.Wrap(err, "failed to get clientset")
 	}
 
-	existingConfigmap, err := clientset.CoreV1().ConfigMaps(os.Getenv("POD_NAMESPACE")).Get(context.TODO(), name, metav1.GetOptions{})
+	existingConfigmap, err := clientset.CoreV1().ConfigMaps(util.PodNamespace).Get(context.TODO(), name, metav1.GetOptions{})
 	if err != nil && !kuberneteserrors.IsNotFound(err) {
 		return nil, errors.Wrap(err, "failed to get configmap")
 	} else if kuberneteserrors.IsNotFound(err) {
@@ -186,13 +187,13 @@ func (s *KOTSStore) getConfigmap(name string) (*corev1.ConfigMap, error) {
 			},
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      name,
-				Namespace: os.Getenv("POD_NAMESPACE"),
+				Namespace: util.PodNamespace,
 				Labels:    kotsadmtypes.GetKotsadmLabels(),
 			},
 			Data: map[string]string{},
 		}
 
-		createdConfigmap, err := clientset.CoreV1().ConfigMaps(os.Getenv("POD_NAMESPACE")).Create(context.TODO(), &configmap, metav1.CreateOptions{})
+		createdConfigmap, err := clientset.CoreV1().ConfigMaps(util.PodNamespace).Create(context.TODO(), &configmap, metav1.CreateOptions{})
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to create configmap")
 		}
@@ -209,7 +210,7 @@ func (s *KOTSStore) updateConfigmap(configmap *corev1.ConfigMap) error {
 		return errors.Wrap(err, "failed to get clientset")
 	}
 
-	_, err = clientset.CoreV1().ConfigMaps(os.Getenv("POD_NAMESPACE")).Update(context.Background(), configmap, metav1.UpdateOptions{})
+	_, err = clientset.CoreV1().ConfigMaps(util.PodNamespace).Update(context.Background(), configmap, metav1.UpdateOptions{})
 	if err != nil {
 		return errors.Wrap(err, "failed to update config map")
 	}

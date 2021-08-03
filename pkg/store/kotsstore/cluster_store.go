@@ -15,7 +15,7 @@ import (
 )
 
 func (s *KOTSStore) ListClusters() ([]*downstreamtypes.Downstream, error) {
-	db := persistence.MustGetPGSession()
+	db := persistence.MustGetDBSession()
 
 	query := `select id, slug, title, snapshot_schedule, snapshot_ttl from cluster` // TODO the current sequence
 	rows, err := db.Query(query)
@@ -45,7 +45,7 @@ func (s *KOTSStore) ListClusters() ([]*downstreamtypes.Downstream, error) {
 }
 
 func (s *KOTSStore) GetClusterIDFromSlug(slug string) (string, error) {
-	db := persistence.MustGetPGSession()
+	db := persistence.MustGetDBSession()
 	query := `select id from cluster where slug = $1`
 	row := db.QueryRow(query, slug)
 
@@ -58,7 +58,7 @@ func (s *KOTSStore) GetClusterIDFromSlug(slug string) (string, error) {
 }
 
 func (s *KOTSStore) GetClusterIDFromDeployToken(deployToken string) (string, error) {
-	db := persistence.MustGetPGSession()
+	db := persistence.MustGetDBSession()
 	query := `select id from cluster where token = $1`
 	row := db.QueryRow(query, deployToken)
 
@@ -74,7 +74,7 @@ func (s *KOTSStore) CreateNewCluster(userID string, isAllUsers bool, title strin
 	clusterID := rand.StringWithCharset(32, rand.LOWER_CASE)
 	clusterSlug := slug.Make(title)
 
-	db := persistence.MustGetPGSession()
+	db := persistence.MustGetDBSession()
 
 	foundUniqueSlug := false
 	for i := 0; !foundUniqueSlug; i++ {
@@ -131,7 +131,7 @@ func (s *KOTSStore) CreateNewCluster(userID string, isAllUsers bool, title strin
 func (s *KOTSStore) SetInstanceSnapshotTTL(clusterID string, snapshotTTL string) error {
 	logger.Debug("Setting instance snapshot TTL",
 		zap.String("clusterID", clusterID))
-	db := persistence.MustGetPGSession()
+	db := persistence.MustGetDBSession()
 	query := `update cluster set snapshot_ttl = $1 where id = $2`
 	_, err := db.Exec(query, snapshotTTL, clusterID)
 	if err != nil {
@@ -144,7 +144,7 @@ func (s *KOTSStore) SetInstanceSnapshotTTL(clusterID string, snapshotTTL string)
 func (s *KOTSStore) SetInstanceSnapshotSchedule(clusterID string, snapshotSchedule string) error {
 	logger.Debug("Setting instance snapshot Schedule",
 		zap.String("clusterID", clusterID))
-	db := persistence.MustGetPGSession()
+	db := persistence.MustGetDBSession()
 	query := `update cluster set snapshot_schedule = $1 where id = $2`
 	_, err := db.Exec(query, snapshotSchedule, clusterID)
 	if err != nil {

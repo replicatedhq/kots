@@ -23,3 +23,7 @@ dist/
 supportbundle.tar.gz
 
 .envrc
+
+# for the embed experiment
+kubernetes/
+kots.db

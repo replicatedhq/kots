@@ -134,12 +134,12 @@ jobs:
     steps:
     - name: Checkout
       uses: actions/checkout@v2
-      
+
     - name: Setup Node.js environment
       uses: actions/setup-node@v2.3.0
       with:
         node-version: '10'
-      
+
     - name: Install cross-env
       run: npm i -g cross-env
       shell: bash
@@ -285,6 +285,12 @@ jobs:
       shell: bash
       run: echo ::set-output name=GIT_TAG::${GITHUB_REF/refs\/tags\//}
 
+    - name: Download web artifact
+      uses: actions/download-artifact@v2.0.10
+      with:
+        name: web
+        path: ./web/dist
+
     - name: Build Go API
       env:
         GIT_COMMIT: ${{ github.sha }}
@@ -329,12 +335,6 @@ jobs:
     - name: Add executable permissions
       run: chmod a+x ./bin/kotsadm
 
-    - name: Download web artifact
-      uses: actions/download-artifact@v2.0.10
-      with:
-        name: web
-        path: ./web/dist
-
     - name: Build alpha release
       env:
         GIT_COMMIT: ${{ github.sha }}
@@ -366,7 +366,7 @@ jobs:
       id: get_tag
       shell: bash
       run: echo ::set-output name=GIT_TAG::${GITHUB_REF/refs\/tags\//}
-  
+
     - name: Download go_api artifact
       if: ${{ steps.get_tag.outputs.GIT_TAG != '' }}
       uses: actions/download-artifact@v2.0.10
@@ -377,13 +377,6 @@ jobs:
     - name: Add executable permissions
       if: ${{ steps.get_tag.outputs.GIT_TAG != '' }}
       run: chmod a+x ./bin/kotsadm
-
-    - name: Download web artifact
-      if: ${{ steps.get_tag.outputs.GIT_TAG != '' }}
-      uses: actions/download-artifact@v2.0.10
-      with:
-        name: web
-        path: ./web/dist
 
     - name: Build tagged release
       if: ${{ steps.get_tag.outputs.GIT_TAG != '' }}
@@ -552,7 +545,7 @@ jobs:
       id: get_tag
       shell: bash
       run: echo ::set-output name=GIT_TAG::${GITHUB_REF/refs\/tags\//}
-  
+
     - name: Download kurl_proxy artifact
       if: ${{ steps.get_tag.outputs.GIT_TAG != '' }}
       uses: actions/download-artifact@v2.0.10

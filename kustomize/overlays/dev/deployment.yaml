@@ -62,7 +62,7 @@ spec:
               value: "dev"
             - name: ENABLE_WEB_PROXY
               value: "1"
-            # - name: DISABLE_OUTBOUND_CONNECTIONS  
+            # - name: DISABLE_OUTBOUND_CONNECTIONS
             #   value: "true"
             - name: KURL_PROXY_TLS_CERT_PATH
               value: /etc/kurl-proxy/ca/tls.crt

@@ -46,7 +46,7 @@ func renderReplicated(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (
 		return nil, nil, errors.Wrap(err, "failed to find config file")
 	}
 
-	renderedConfig, err := kotsconfig.TemplateConfigObjects(config, itemValues, license, template.LocalRegistry{}, nil, idConfig, os.Getenv("POD_NAMESPACE"))
+	renderedConfig, err := kotsconfig.TemplateConfigObjects(config, itemValues, license, template.LocalRegistry{}, nil, idConfig, util.PodNamespace)
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "failed to template config objects")
 	}

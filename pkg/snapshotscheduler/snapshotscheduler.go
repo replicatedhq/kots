@@ -2,7 +2,6 @@ package snapshotscheduler
 
 import (
 	"context"
-	"os"
 	"strings"
 	"time"
 
@@ -13,6 +12,7 @@ import (
 	snapshottypes "github.com/replicatedhq/kots/pkg/kotsadmsnapshot/types"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/store"
+	"github.com/replicatedhq/kots/pkg/util"
 	"k8s.io/apimachinery/pkg/util/rand"
 
 	cron "github.com/robfig/cron/v3"
@@ -111,7 +111,7 @@ func handleApp(a *apptypes.App) error {
 		return nil
 	}
 
-	hasUnfinished, err := snapshot.HasUnfinishedApplicationBackup(context.Background(), os.Getenv("POD_NAMESPACE"), a.ID)
+	hasUnfinished, err := snapshot.HasUnfinishedApplicationBackup(context.Background(), util.PodNamespace, a.ID)
 	if err != nil {
 		return errors.Wrap(err, "failed to to check if app has unfinished backups")
 	}
@@ -194,7 +194,7 @@ func handleCluster(c *downstreamtypes.Downstream) error {
 		return nil
 	}
 
-	hasUnfinished, err := snapshot.HasUnfinishedInstanceBackup(context.Background(), os.Getenv("POD_NAMESPACE"))
+	hasUnfinished, err := snapshot.HasUnfinishedInstanceBackup(context.Background(), util.PodNamespace)
 	if err != nil {
 		return errors.Wrap(err, "failed to to check if cluster has unfinished backups")
 	}

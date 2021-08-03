@@ -14,6 +14,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/session/types"
 	"github.com/replicatedhq/kots/pkg/store"
+	"github.com/replicatedhq/kots/pkg/util"
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -42,7 +43,7 @@ func Parse(kotsStore store.Store, signedToken string) (*types.Session, error) {
 			return nil, errors.Wrap(err, "failed to get k8s clientset")
 		}
 
-		secret, err := clientset.CoreV1().Secrets(os.Getenv("POD_NAMESPACE")).Get(context.TODO(), "kotsadm-authstring", metav1.GetOptions{})
+		secret, err := clientset.CoreV1().Secrets(util.PodNamespace).Get(context.TODO(), "kotsadm-authstring", metav1.GetOptions{})
 		if err != nil && !kuberneteserrors.IsNotFound(err) {
 			return nil, errors.New("failed to read auth string")
 		}

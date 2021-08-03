@@ -7,6 +7,7 @@ import (
 
 	"github.com/pkg/errors"
 	kotsadmtypes "github.com/replicatedhq/kots/pkg/kotsadm/types"
+	"github.com/replicatedhq/kots/pkg/util"
 	corev1 "k8s.io/api/core/v1"
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -84,7 +85,7 @@ func GetKotsadmIDConfigMap() (*corev1.ConfigMap, error) {
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get clientset")
 	}
-	namespace := os.Getenv("POD_NAMESPACE")
+	namespace := util.PodNamespace
 	existingConfigmap, err := clientset.CoreV1().ConfigMaps(namespace).Get(context.TODO(), KotsadmIDConfigMapName, metav1.GetOptions{})
 	if err != nil && !kuberneteserrors.IsNotFound(err) {
 		return nil, errors.Wrap(err, "failed to get configmap")
@@ -107,7 +108,7 @@ func CreateKotsadmIDConfigMap(kotsadmID string) error {
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      KotsadmIDConfigMapName,
-			Namespace: os.Getenv("POD_NAMESPACE"),
+			Namespace: util.PodNamespace,
 			Labels: map[string]string{
 				kotsadmtypes.KotsadmKey: kotsadmtypes.KotsadmLabelValue,
 				kotsadmtypes.ExcludeKey: kotsadmtypes.ExcludeValue,
@@ -115,7 +116,7 @@ func CreateKotsadmIDConfigMap(kotsadmID string) error {
 		},
 		Data: map[string]string{"id": kotsadmID},
 	}
-	_, err = clientset.CoreV1().ConfigMaps(os.Getenv("POD_NAMESPACE")).Create(context.TODO(), &configmap, metav1.CreateOptions{})
+	_, err = clientset.CoreV1().ConfigMaps(util.PodNamespace).Create(context.TODO(), &configmap, metav1.CreateOptions{})
 	return err
 }
 
@@ -124,7 +125,7 @@ func IsKotsadmIDConfigMapPresent() (bool, error) {
 	if err != nil {
 		return false, errors.Wrap(err, "failed to get clientset")
 	}
-	namespace := os.Getenv("POD_NAMESPACE")
+	namespace := util.PodNamespace
 	_, err = clientset.CoreV1().ConfigMaps(namespace).Get(context.TODO(), KotsadmIDConfigMapName, metav1.GetOptions{})
 	if err != nil && !kuberneteserrors.IsNotFound(err) {
 		return false, errors.Wrap(err, "failed to get configmap")
@@ -139,7 +140,7 @@ func UpdateKotsadmIDConfigMap(kotsadmID string) error {
 	if err != nil {
 		return errors.Wrap(err, "failed to get clientset")
 	}
-	namespace := os.Getenv("POD_NAMESPACE")
+	namespace := util.PodNamespace
 	existingConfigMap, err := clientset.CoreV1().ConfigMaps(namespace).Get(context.TODO(), KotsadmIDConfigMapName, metav1.GetOptions{})
 	if err != nil && !kuberneteserrors.IsNotFound(err) {
 		return errors.Wrap(err, "failed to get configmap")
@@ -151,7 +152,7 @@ func UpdateKotsadmIDConfigMap(kotsadmID string) error {
 	}
 	existingConfigMap.Data["id"] = kotsadmID
 
-	_, err = clientset.CoreV1().ConfigMaps(os.Getenv("POD_NAMESPACE")).Update(context.Background(), existingConfigMap, metav1.UpdateOptions{})
+	_, err = clientset.CoreV1().ConfigMaps(util.PodNamespace).Update(context.Background(), existingConfigMap, metav1.UpdateOptions{})
 	if err != nil {
 		return errors.Wrap(err, "failed to update config map")
 	}

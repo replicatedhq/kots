@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"os"
 	"time"
 
 	"github.com/pkg/errors"
@@ -15,6 +14,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/persistence"
 	"github.com/replicatedhq/kots/pkg/store"
+	"github.com/replicatedhq/kots/pkg/util"
 	"go.uber.org/zap"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -28,7 +28,7 @@ import (
 func GetNextAppSequence(appID string, currentSequence *int64) (int64, error) {
 	newSequence := 0
 	if currentSequence != nil {
-		db := persistence.MustGetPGSession()
+		db := persistence.MustGetDBSession()
 		row := db.QueryRow(`select max(sequence) from app_version where app_id = $1`, appID)
 		if err := row.Scan(&newSequence); err != nil {
 			return 0, errors.Wrap(err, "failed to find current max sequence in row")
@@ -64,7 +64,7 @@ func (d *DownstreamGitOps) CreateGitOpsDownstreamCommit(appID string, clusterID 
 
 // return the list of versions available for an app
 func GetVersions(appID string) ([]types.AppVersion, error) {
-	db := persistence.MustGetPGSession()
+	db := persistence.MustGetDBSession()
 	query := `select sequence from app_version where app_id = $1 order by sequence asc`
 	rows, err := db.Query(query, appID)
 	if err != nil {
@@ -93,7 +93,7 @@ func GetVersions(appID string) ([]types.AppVersion, error) {
 
 // DeployVersion deploys the version for the given sequence
 func DeployVersion(appID string, sequence int64) error {
-	db := persistence.MustGetPGSession()
+	db := persistence.MustGetDBSession()
 
 	tx, err := db.Begin()
 	if err != nil {
@@ -121,7 +121,7 @@ func DeployVersion(appID string, sequence int64) error {
 }
 
 func GetRealizedLinksFromAppSpec(appID string, sequence int64) ([]types.RealizedLink, error) {
-	db := persistence.MustGetPGSession()
+	db := persistence.MustGetDBSession()
 	query := `select app_spec, kots_app_spec from app_version where app_id = $1 and sequence = $2`
 	row := db.QueryRow(query, appID, sequence)
 
@@ -192,10 +192,7 @@ func GetForwardedPortsFromAppSpec(appID string, sequence int64) ([]types.Forward
 		return nil, errors.Wrap(err, "failed to get clientset")
 	}
 
-	appNamespace := os.Getenv("POD_NAMESPACE")
-	if os.Getenv("KOTSADM_TARGET_NAMESPACE") != "" {
-		appNamespace = os.Getenv("KOTSADM_TARGET_NAMESPACE")
-	}
+	appNamespace := util.AppNamespace()
 
 	// To forward the ports, we need to have the port listed
 	// in the kots spec only
@@ -209,7 +206,7 @@ func GetForwardedPortsFromAppSpec(appID string, sequence int64) ([]types.Forward
 
 		svc, err := clientset.CoreV1().Services(appNamespace).Get(context.TODO(), port.ServiceName, metav1.GetOptions{})
 		if err != nil {
-			logger.Error(errors.Wrapf(err, "failed to get service to check status, namespace = %s", os.Getenv("POD_NAMESPACE")))
+			logger.Error(errors.Wrapf(err, "failed to get service to check status, namespace = %s", util.PodNamespace))
 			continue
 		}
 
@@ -232,7 +229,7 @@ func GetForwardedPortsFromAppSpec(appID string, sequence int64) ([]types.Forward
 		}
 
 		if !hasReadyPod {
-			logger.Info("not forwarding to service because no pods are ready", zap.String("serviceName", port.ServiceName), zap.String("namespace", os.Getenv("POD_NAMESPACE")))
+			logger.Info("not forwarding to service because no pods are ready", zap.String("serviceName", port.ServiceName), zap.String("namespace", util.PodNamespace))
 			continue
 		}
 

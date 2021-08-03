@@ -27,7 +27,7 @@ type taskStatus struct {
 }
 
 func (s *KOTSStore) migrationTasksFromPostgres() error {
-	db := persistence.MustGetPGSession()
+	db := persistence.MustGetDBSession()
 
 	query := `select updated_at, current_message, status from api_task_status`
 	rows, err := db.Query(query)

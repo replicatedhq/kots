@@ -14,7 +14,7 @@ func (s *KOTSStore) ListPendingScheduledSnapshots(appID string) ([]snapshottypes
 	logger.Debug("Listing pending scheduled snapshots",
 		zap.String("appID", appID))
 
-	db := persistence.MustGetPGSession()
+	db := persistence.MustGetDBSession()
 	query := `SELECT id, app_id, scheduled_timestamp FROM scheduled_snapshots WHERE app_id = $1 AND backup_name IS NULL;`
 	rows, err := db.Query(query, appID)
 	if err != nil {
@@ -38,7 +38,7 @@ func (s *KOTSStore) UpdateScheduledSnapshot(snapshotID string, backupName string
 	logger.Debug("Updating scheduled snapshot",
 		zap.String("ID", snapshotID))
 
-	db := persistence.MustGetPGSession()
+	db := persistence.MustGetDBSession()
 	query := `UPDATE scheduled_snapshots SET backup_name = $1 WHERE id = $2`
 	_, err := db.Exec(query, backupName, snapshotID)
 	if err != nil {
@@ -51,7 +51,7 @@ func (s *KOTSStore) DeletePendingScheduledSnapshots(appID string) error {
 	logger.Debug("Deleting pending scheduled snapshots",
 		zap.String("appID", appID))
 
-	db := persistence.MustGetPGSession()
+	db := persistence.MustGetDBSession()
 	query := `DELETE FROM scheduled_snapshots WHERE app_id = $1 AND backup_name IS NULL`
 	_, err := db.Exec(query, appID)
 	if err != nil {
@@ -65,7 +65,7 @@ func (s *KOTSStore) CreateScheduledSnapshot(id string, appID string, timestamp t
 	logger.Debug("Creating scheduled snapshot",
 		zap.String("appID", appID))
 
-	db := persistence.MustGetPGSession()
+	db := persistence.MustGetDBSession()
 	query := `
 		INSERT INTO scheduled_snapshots (
 			id,
@@ -89,7 +89,7 @@ func (s *KOTSStore) ListPendingScheduledInstanceSnapshots(clusterID string) ([]s
 	logger.Debug("Listing pending scheduled instance snapshots",
 		zap.String("clusterID", clusterID))
 
-	db := persistence.MustGetPGSession()
+	db := persistence.MustGetDBSession()
 	query := `SELECT id, cluster_id, scheduled_timestamp FROM scheduled_instance_snapshots WHERE cluster_id = $1 AND backup_name IS NULL;`
 	rows, err := db.Query(query, clusterID)
 	if err != nil {
@@ -113,7 +113,7 @@ func (s *KOTSStore) UpdateScheduledInstanceSnapshot(snapshotID string, backupNam
 	logger.Debug("Updating scheduled instance snapshot",
 		zap.String("ID", snapshotID))
 
-	db := persistence.MustGetPGSession()
+	db := persistence.MustGetDBSession()
 	query := `UPDATE scheduled_instance_snapshots SET backup_name = $1 WHERE id = $2`
 	_, err := db.Exec(query, backupName, snapshotID)
 	if err != nil {
@@ -126,7 +126,7 @@ func (s *KOTSStore) DeletePendingScheduledInstanceSnapshots(clusterID string) er
 	logger.Debug("Deleting pending scheduled instance snapshots",
 		zap.String("clusterID", clusterID))
 
-	db := persistence.MustGetPGSession()
+	db := persistence.MustGetDBSession()
 	query := `DELETE FROM scheduled_instance_snapshots WHERE cluster_id = $1 AND backup_name IS NULL`
 	_, err := db.Exec(query, clusterID)
 	if err != nil {
@@ -140,7 +140,7 @@ func (s *KOTSStore) CreateScheduledInstanceSnapshot(id string, clusterID string,
 	logger.Debug("Creating scheduled instance snapshot",
 		zap.String("clusterID", clusterID))
 
-	db := persistence.MustGetPGSession()
+	db := persistence.MustGetDBSession()
 	query := `
 		INSERT INTO scheduled_instance_snapshots (
 			id,

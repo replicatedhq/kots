@@ -3,7 +3,6 @@ package ocistore
 import (
 	"context"
 	"encoding/json"
-	"os"
 	"time"
 
 	"github.com/pkg/errors"
@@ -11,6 +10,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/logger"
 	sessiontypes "github.com/replicatedhq/kots/pkg/session/types"
 	usertypes "github.com/replicatedhq/kots/pkg/user/types"
+	"github.com/replicatedhq/kots/pkg/util"
 	"github.com/segmentio/ksuid"
 	corev1 "k8s.io/api/core/v1"
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
@@ -117,7 +117,7 @@ func (s *OCIStore) getSessionSecret() (*corev1.Secret, error) {
 		return nil, errors.Wrap(err, "failed to get clientset")
 	}
 
-	existingSecret, err := clientset.CoreV1().Secrets(os.Getenv("POD_NAMESPACE")).Get(context.TODO(), SessionSecretName, metav1.GetOptions{})
+	existingSecret, err := clientset.CoreV1().Secrets(util.PodNamespace).Get(context.TODO(), SessionSecretName, metav1.GetOptions{})
 	if err != nil && !kuberneteserrors.IsNotFound(err) {
 		if canIgnoreEtcdError(err) && s.sessionSecret != nil {
 			return s.sessionSecret, nil
@@ -131,12 +131,12 @@ func (s *OCIStore) getSessionSecret() (*corev1.Secret, error) {
 			},
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      SessionSecretName,
-				Namespace: os.Getenv("POD_NAMESPACE"),
+				Namespace: util.PodNamespace,
 			},
 			Data: map[string][]byte{},
 		}
 
-		createdSecret, err := clientset.CoreV1().Secrets(os.Getenv("POD_NAMESPACE")).Create(context.TODO(), &secret, metav1.CreateOptions{})
+		createdSecret, err := clientset.CoreV1().Secrets(util.PodNamespace).Create(context.TODO(), &secret, metav1.CreateOptions{})
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to create session secret")
 		}
@@ -159,7 +159,7 @@ func (s *OCIStore) updateSessionSecret(secret *corev1.Secret) error {
 		return errors.Wrap(err, "failed to get clientset")
 	}
 
-	if _, err := clientset.CoreV1().Secrets(os.Getenv("POD_NAMESPACE")).Update(context.TODO(), secret, metav1.UpdateOptions{}); err != nil {
+	if _, err := clientset.CoreV1().Secrets(util.PodNamespace).Update(context.TODO(), secret, metav1.UpdateOptions{}); err != nil {
 		return errors.Wrap(err, "failed to update session secret")
 	}
 

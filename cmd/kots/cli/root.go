@@ -43,6 +43,8 @@ func RootCmd() *cobra.Command {
 	cmd.AddCommand(GetCmd())
 	cmd.AddCommand(SetCmd())
 
+	addExperimentalCmds(cmd)
+
 	viper.BindPFlags(cmd.Flags())
 
 	viper.SetEnvKeyReplacer(strings.NewReplacer("-", "_"))

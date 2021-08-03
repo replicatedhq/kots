@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
-	"os"
 	"sync"
 	"time"
 
@@ -14,6 +13,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/persistence"
 	sessiontypes "github.com/replicatedhq/kots/pkg/session/types"
 	usertypes "github.com/replicatedhq/kots/pkg/user/types"
+	"github.com/replicatedhq/kots/pkg/util"
 	"github.com/segmentio/ksuid"
 	corev1 "k8s.io/api/core/v1"
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
@@ -41,7 +41,7 @@ type SessionMetadata struct {
 func (s *KOTSStore) migrateSessionsFromPostgres() error {
 	logger.Debug("migrating sessions from postgres")
 
-	db := persistence.MustGetPGSession()
+	db := persistence.MustGetDBSession()
 	query := `select id, metadata, issued_at, expire_at from session`
 	rows, err := db.Query(query)
 	if err != nil {
@@ -215,12 +215,12 @@ func (s *KOTSStore) getSessionSecret() (*corev1.Secret, error) {
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      SessionSecretName,
-			Namespace: os.Getenv("POD_NAMESPACE"),
+			Namespace: util.PodNamespace,
 		},
 		Data: map[string][]byte{},
 	}
 
-	existingSecret, err := clientset.CoreV1().Secrets(os.Getenv("POD_NAMESPACE")).Get(context.TODO(), SessionSecretName, metav1.GetOptions{})
+	existingSecret, err := clientset.CoreV1().Secrets(util.PodNamespace).Get(context.TODO(), SessionSecretName, metav1.GetOptions{})
 	if err == nil {
 		secret.Data = existingSecret.DeepCopy().Data
 	} else if err != nil && !kuberneteserrors.IsNotFound(err) {
@@ -229,7 +229,7 @@ func (s *KOTSStore) getSessionSecret() (*corev1.Secret, error) {
 		}
 		return nil, errors.Wrap(err, "failed to get secret")
 	} else if kuberneteserrors.IsNotFound(err) {
-		_, err := clientset.CoreV1().Secrets(os.Getenv("POD_NAMESPACE")).Create(context.TODO(), &secret, metav1.CreateOptions{})
+		_, err := clientset.CoreV1().Secrets(util.PodNamespace).Create(context.TODO(), &secret, metav1.CreateOptions{})
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to create session secret")
 		}
@@ -247,10 +247,10 @@ func (s *KOTSStore) saveSessionSecret(secret *corev1.Secret) error {
 		return errors.Wrap(err, "failed to get clientset")
 	}
 
-	existingSecret, err := clientset.CoreV1().Secrets(os.Getenv("POD_NAMESPACE")).Get(context.TODO(), SessionSecretName, metav1.GetOptions{})
+	existingSecret, err := clientset.CoreV1().Secrets(util.PodNamespace).Get(context.TODO(), SessionSecretName, metav1.GetOptions{})
 	if err == nil {
 		existingSecret.Data = secret.DeepCopy().Data
-		if _, err := clientset.CoreV1().Secrets(os.Getenv("POD_NAMESPACE")).Update(context.TODO(), existingSecret, metav1.UpdateOptions{}); err != nil {
+		if _, err := clientset.CoreV1().Secrets(util.PodNamespace).Update(context.TODO(), existingSecret, metav1.UpdateOptions{}); err != nil {
 			return errors.Wrap(err, "failed to update session secret")
 		}
 	} else if err != nil && !kuberneteserrors.IsNotFound(err) {
@@ -259,7 +259,7 @@ func (s *KOTSStore) saveSessionSecret(secret *corev1.Secret) error {
 		}
 		return errors.Wrap(err, "failed to get secret for update")
 	} else if kuberneteserrors.IsNotFound(err) {
-		_, err := clientset.CoreV1().Secrets(os.Getenv("POD_NAMESPACE")).Create(context.TODO(), secret, metav1.CreateOptions{})
+		_, err := clientset.CoreV1().Secrets(util.PodNamespace).Create(context.TODO(), secret, metav1.CreateOptions{})
 		if err != nil {
 			if canIgnoreEtcdError(err) && s.sessionSecret != nil {
 				return nil

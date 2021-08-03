@@ -18,6 +18,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/render/helper"
 	"github.com/replicatedhq/kots/pkg/store"
 	"github.com/replicatedhq/kots/pkg/supportbundle/types"
+	"github.com/replicatedhq/kots/pkg/util"
 	troubleshootanalyze "github.com/replicatedhq/troubleshoot/pkg/analyze"
 	troubleshootv1beta2 "github.com/replicatedhq/troubleshoot/pkg/apis/troubleshoot/v1beta2"
 	"github.com/replicatedhq/troubleshoot/pkg/convert"
@@ -156,7 +157,7 @@ func GetSpecSecretName(appSlug string) string {
 }
 
 func GetSpecURI(appSlug string) string {
-	return fmt.Sprintf("secret/%s/%s", os.Getenv("POD_NAMESPACE"), GetSpecSecretName(appSlug))
+	return fmt.Sprintf("secret/%s/%s", util.PodNamespace, GetSpecSecretName(appSlug))
 }
 
 func GetBundleCommand(appSlug string) []string {
@@ -306,7 +307,7 @@ func CreateSupportBundleAnalysis(appID string, archivePath string, bundle *types
 		return err
 	}
 
-	renderedAnalyzers, err := helper.RenderAppFile(foundApp, nil, b.Bytes(), kotsKinds, os.Getenv("POD_NAMESPACE"))
+	renderedAnalyzers, err := helper.RenderAppFile(foundApp, nil, b.Bytes(), kotsKinds, util.PodNamespace)
 	if err != nil {
 		err = errors.Wrap(err, "failed to render analyzers")
 		logger.Error(err)

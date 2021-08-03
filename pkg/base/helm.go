@@ -300,6 +300,12 @@ func kustomizeHelmNamespace(baseFiles []BaseFile, renderOptions *RenderOptions) 
 			continue // ignore invalid resources
 		}
 
+		// ignore crds
+		if manifest.Kind == "CustomResourceDefinition" {
+			updatedBaseFiles = append(updatedBaseFiles, baseFile)
+			continue
+		}
+
 		if manifest.Metadata.Namespace == "" {
 			name := filepath.Base(baseFile.Path)
 			tmpFile, err := ioutil.TempFile(chartsPath, name)
@@ -343,14 +349,15 @@ func kustomizeHelmNamespace(baseFiles []BaseFile, renderOptions *RenderOptions) 
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to marshal kustomization")
 	}
+
 	err = ioutil.WriteFile(filepath.Join(chartsPath, "kustomization.yaml"), b, 0644)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to write kustomization file")
 	}
 
-	fSys := filesys.MakeFsOnDisk()
-	k := krusty.MakeKustomizer(fSys, krusty.MakeDefaultOptions())
-	m, err := k.Run(chartsPath)
+	fsys := filesys.MakeFsOnDisk()
+	k := krusty.MakeKustomizer(krusty.MakeDefaultOptions())
+	m, err := k.Run(fsys, chartsPath)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to kustomize %s", chartsPath)
 	}

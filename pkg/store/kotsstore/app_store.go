@@ -19,7 +19,7 @@ import (
 )
 
 func (s *KOTSStore) AddAppToAllDownstreams(appID string) error {
-	db := persistence.MustGetPGSession()
+	db := persistence.MustGetDBSession()
 
 	clusters, err := s.ListClusters()
 	if err != nil {
@@ -37,7 +37,7 @@ func (s *KOTSStore) AddAppToAllDownstreams(appID string) error {
 }
 
 func (s *KOTSStore) SetAppInstallState(appID string, state string) error {
-	db := persistence.MustGetPGSession()
+	db := persistence.MustGetDBSession()
 
 	query := `update app set install_state = $2 where id = $1`
 	_, err := db.Exec(query, appID, state)
@@ -49,7 +49,7 @@ func (s *KOTSStore) SetAppInstallState(appID string, state string) error {
 }
 
 func (s *KOTSStore) ListInstalledApps() ([]*apptypes.App, error) {
-	db := persistence.MustGetPGSession()
+	db := persistence.MustGetDBSession()
 	query := `select id from app where install_state = 'installed'`
 	rows, err := db.Query(query)
 	if err != nil {
@@ -74,7 +74,7 @@ func (s *KOTSStore) ListInstalledApps() ([]*apptypes.App, error) {
 }
 
 func (s *KOTSStore) ListInstalledAppSlugs() ([]string, error) {
-	db := persistence.MustGetPGSession()
+	db := persistence.MustGetDBSession()
 	query := `select slug from app where install_state = 'installed'`
 	rows, err := db.Query(query)
 	if err != nil {
@@ -94,7 +94,7 @@ func (s *KOTSStore) ListInstalledAppSlugs() ([]string, error) {
 }
 
 func (s *KOTSStore) GetAppIDFromSlug(slug string) (string, error) {
-	db := persistence.MustGetPGSession()
+	db := persistence.MustGetDBSession()
 	query := `select id from app where slug = $1`
 	row := db.QueryRow(query, slug)
 
@@ -112,7 +112,7 @@ func (s *KOTSStore) GetApp(id string) (*apptypes.App, error) {
 	// logger.Debug("getting app from id",
 	// 	zap.String("id", id))
 
-	db := persistence.MustGetPGSession()
+	db := persistence.MustGetDBSession()
 	query := `select id, name, license, upstream_uri, icon_uri, created_at, updated_at, slug, current_sequence, last_update_check_at, is_airgap, snapshot_ttl_new, snapshot_schedule, restore_in_progress_name, restore_undeploy_status, update_checker_spec, install_state from app where id = $1`
 	row := db.QueryRow(query, id)
 
@@ -208,7 +208,7 @@ func (s *KOTSStore) CreateApp(name string, upstreamURI string, licenseData strin
 		zap.String("name", name),
 		zap.String("upstreamURI", upstreamURI))
 
-	db := persistence.MustGetPGSession()
+	db := persistence.MustGetDBSession()
 	tx, err := db.Begin()
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to begin transaction")
@@ -271,7 +271,7 @@ values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`
 }
 
 func (s *KOTSStore) ListDownstreamsForApp(appID string) ([]downstreamtypes.Downstream, error) {
-	db := persistence.MustGetPGSession()
+	db := persistence.MustGetDBSession()
 	query := `select c.id from app_downstream d inner join cluster c on d.cluster_id = c.id where app_id = $1`
 	rows, err := db.Query(query, appID)
 	if err != nil {
@@ -298,7 +298,7 @@ func (s *KOTSStore) ListDownstreamsForApp(appID string) ([]downstreamtypes.Downs
 }
 
 func (s *KOTSStore) ListAppsForDownstream(clusterID string) ([]*apptypes.App, error) {
-	db := persistence.MustGetPGSession()
+	db := persistence.MustGetDBSession()
 	query := `select ad.app_id from app_downstream ad inner join app a on ad.app_id = a.id where ad.cluster_id = $1 and a.install_state = 'installed'`
 	rows, err := db.Query(query, clusterID)
 	if err != nil {
@@ -323,7 +323,7 @@ func (s *KOTSStore) ListAppsForDownstream(clusterID string) ([]*apptypes.App, er
 }
 
 func (s *KOTSStore) GetDownstream(clusterID string) (*downstreamtypes.Downstream, error) {
-	db := persistence.MustGetPGSession()
+	db := persistence.MustGetDBSession()
 	query := `select c.id, c.slug, d.downstream_name, d.current_sequence from app_downstream d inner join cluster c on d.cluster_id = c.id where c.id = $1`
 	row := db.QueryRow(query, clusterID)
 
@@ -367,7 +367,7 @@ func (s *KOTSStore) SetUpdateCheckerSpec(appID string, updateCheckerSpec string)
 	logger.Debug("setting update checker spec",
 		zap.String("appID", appID))
 
-	db := persistence.MustGetPGSession()
+	db := persistence.MustGetDBSession()
 	query := `update app set update_checker_spec = $1 where id = $2`
 	_, err := db.Exec(query, updateCheckerSpec, appID)
 	if err != nil {
@@ -380,7 +380,7 @@ func (s *KOTSStore) SetUpdateCheckerSpec(appID string, updateCheckerSpec string)
 func (s *KOTSStore) SetSnapshotTTL(appID string, snapshotTTL string) error {
 	logger.Debug("Setting snapshot TTL",
 		zap.String("appID", appID))
-	db := persistence.MustGetPGSession()
+	db := persistence.MustGetDBSession()
 	query := `update app set snapshot_ttl_new = $1 where id = $2`
 	_, err := db.Exec(query, snapshotTTL, appID)
 	if err != nil {
@@ -393,7 +393,7 @@ func (s *KOTSStore) SetSnapshotTTL(appID string, snapshotTTL string) error {
 func (s *KOTSStore) SetSnapshotSchedule(appID string, snapshotSchedule string) error {
 	logger.Debug("Setting snapshot Schedule",
 		zap.String("appID", appID))
-	db := persistence.MustGetPGSession()
+	db := persistence.MustGetDBSession()
 	query := `update app set snapshot_schedule = $1 where id = $2`
 	_, err := db.Exec(query, snapshotSchedule, appID)
 	if err != nil {
@@ -407,7 +407,7 @@ func (s *KOTSStore) RemoveApp(appID string) error {
 	logger.Debug("Removing app",
 		zap.String("appID", appID))
 
-	db := persistence.MustGetPGSession()
+	db := persistence.MustGetDBSession()
 	tx, err := db.Begin()
 	if err != nil {
 		return errors.Wrap(err, "failed to begin transaction")

@@ -23,12 +23,44 @@ builds:
     binary: kots
     hooks: {}
 
+  - id: kots_experimental
+    goos:
+    - linux
+    goarch:
+    - amd64
+    env:
+    - CGO_ENABLED=1
+    - GO111MODULE=on
+    main: cmd/kots/main.go
+    ldflags: -s -w
+      -X github.com/replicatedhq/kots/pkg/buildversion.version={{.Version}}
+      -X github.com/replicatedhq/kots/pkg/buildversion.gitSHA={{.FullCommit}}
+      -X github.com/replicatedhq/kots/pkg/buildversion.buildTime={{.Date}}
+    flags: -tags netgo -tags containers_image_ostree_stub -tags exclude_graphdriver_devicemapper -tags exclude_graphdriver_btrfs -tags containers_image_openpgp -tags kots_experimental -installsuffix netgo
+    binary: kots
+    hooks: {}
+
 archives:
   - id: kots
     builds:
       - kots
     format: tar.gz
     name_template: '{{ .Binary }}_{{ .Os }}_{{ .Arch }}'
+    files:
+      - licence*
+      - LICENCE*
+      - license*
+      - LICENSE*
+      - readme*
+      - README*
+      - changelog*
+      - CHANGELOG*
+
+  - id: kots_experimental
+    builds:
+      - kots_experimental
+    format: tar.gz
+    name_template: '{{ .Binary }}_{{ .Os }}_{{ .Arch }}_experimental'
     files:
       - licence*
       - LICENCE*

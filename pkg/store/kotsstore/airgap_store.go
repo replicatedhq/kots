@@ -11,7 +11,7 @@ import (
 )
 
 func (s *KOTSStore) GetPendingAirgapUploadApp() (*airgaptypes.PendingApp, error) {
-	db := persistence.MustGetPGSession()
+	db := persistence.MustGetDBSession()
 	query := `select id from app where install_state in ('airgap_upload_pending', 'airgap_upload_in_progress', 'airgap_upload_error') order by created_at desc limit 1`
 	row := db.QueryRow(query)
 
@@ -32,7 +32,7 @@ func (s *KOTSStore) GetPendingAirgapUploadApp() (*airgaptypes.PendingApp, error)
 }
 
 func (s *KOTSStore) GetAirgapInstallStatus(appID string) (*airgaptypes.InstallStatus, error) {
-	db := persistence.MustGetPGSession()
+	db := persistence.MustGetDBSession()
 	query := `SELECT slug, install_state FROM app WHERE id = $1`
 	row := db.QueryRow(query, appID)
 
@@ -62,7 +62,7 @@ func (s *KOTSStore) GetAirgapInstallStatus(appID string) (*airgaptypes.InstallSt
 }
 
 func (s *KOTSStore) ResetAirgapInstallInProgress(appID string) error {
-	db := persistence.MustGetPGSession()
+	db := persistence.MustGetDBSession()
 
 	query := `update app set install_state = 'airgap_upload_in_progress' where id = $1`
 	_, err := db.Exec(query, appID)
@@ -74,7 +74,7 @@ func (s *KOTSStore) ResetAirgapInstallInProgress(appID string) error {
 }
 
 func (s *KOTSStore) SetAppIsAirgap(appID string, isAirgap bool) error {
-	db := persistence.MustGetPGSession()
+	db := persistence.MustGetDBSession()
 
 	query := `update app set is_airgap=$1 where id = $2`
 	_, err := db.Exec(query, isAirgap, appID)

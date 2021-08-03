@@ -45,7 +45,6 @@ COPY --chown=kotsadm:kotsadm ./deploy/s3-bucket-create.sh /s3-bucket-create.sh
 COPY --chown=kotsadm:kotsadm ./deploy/s3-bucket-head.sh /s3-bucket-head.sh
 
 COPY --chown=kotsadm:kotsadm ./bin/kotsadm /kotsadm
-COPY --chown=kotsadm:kotsadm ./web/dist /web/dist
 
 WORKDIR /
 

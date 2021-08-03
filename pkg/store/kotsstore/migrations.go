@@ -53,7 +53,7 @@ func (s *KOTSStore) RunMigrations() {
 }
 
 func (s *KOTSStore) migrateKotsAppSpec() error {
-	db := persistence.MustGetPGSession()
+	db := persistence.MustGetDBSession()
 	query := `select app_id, sequence from app_version where kots_app_spec is null or not kots_app_spec like '%apiVersion%'`
 
 	rows, err := db.Query(query)
@@ -123,7 +123,7 @@ func (s *KOTSStore) migrateKotsAppSpec() error {
 }
 
 func (s *KOTSStore) migrateKotsInstallationSpec() error {
-	db := persistence.MustGetPGSession()
+	db := persistence.MustGetDBSession()
 	query := `select app_id, sequence from app_version where kots_installation_spec is null or not kots_installation_spec like '%apiVersion%'`
 
 	rows, err := db.Query(query)
@@ -193,7 +193,7 @@ func (s *KOTSStore) migrateKotsInstallationSpec() error {
 }
 
 func (s *KOTSStore) migrateSupportBundleSpec() error {
-	db := persistence.MustGetPGSession()
+	db := persistence.MustGetDBSession()
 	query := `select app_id, sequence from app_version where supportbundle_spec is null`
 
 	rows, err := db.Query(query)
@@ -263,7 +263,7 @@ func (s *KOTSStore) migrateSupportBundleSpec() error {
 }
 
 func (s *KOTSStore) migratePreflightSpec() error {
-	db := persistence.MustGetPGSession()
+	db := persistence.MustGetDBSession()
 	query := `select app_id, sequence from app_version where preflight_spec is null`
 
 	rows, err := db.Query(query)
@@ -333,7 +333,7 @@ func (s *KOTSStore) migratePreflightSpec() error {
 }
 
 func (s *KOTSStore) migrateAnalyzerSpec() error {
-	db := persistence.MustGetPGSession()
+	db := persistence.MustGetDBSession()
 	query := `select app_id, sequence from app_version where analyzer_spec is null`
 
 	rows, err := db.Query(query)
@@ -403,7 +403,7 @@ func (s *KOTSStore) migrateAnalyzerSpec() error {
 }
 
 func (s *KOTSStore) migrateAppSpec() error {
-	db := persistence.MustGetPGSession()
+	db := persistence.MustGetDBSession()
 	query := `select app_id, sequence from app_version where app_spec is null`
 
 	rows, err := db.Query(query)
@@ -473,7 +473,7 @@ func (s *KOTSStore) migrateAppSpec() error {
 }
 
 func (s *KOTSStore) migrateSkippedPreflights() error {
-	db := persistence.MustGetPGSession()
+	db := persistence.MustGetDBSession()
 
 	query := `update app_downstream_version set preflight_skipped = true where preflight_result_created_at is null`
 	_, err := db.Exec(query)

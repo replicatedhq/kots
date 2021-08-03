@@ -18,6 +18,7 @@ import (
 	kotspull "github.com/replicatedhq/kots/pkg/pull"
 	"github.com/replicatedhq/kots/pkg/reporting"
 	"github.com/replicatedhq/kots/pkg/store"
+	"github.com/replicatedhq/kots/pkg/util"
 	"github.com/replicatedhq/kots/pkg/version"
 )
 
@@ -86,10 +87,7 @@ func DownloadUpdate(appID string, archiveDir string, toCursor string, skipPrefli
 		downstreamNames = append(downstreamNames, d.Name)
 	}
 
-	appNamespace := os.Getenv("POD_NAMESPACE")
-	if os.Getenv("KOTSADM_TARGET_NAMESPACE") != "" {
-		appNamespace = os.Getenv("KOTSADM_TARGET_NAMESPACE")
-	}
+	appNamespace := util.AppNamespace()
 
 	appSequence, err := version.GetNextAppSequence(a.ID, &a.CurrentSequence)
 	if err != nil {
