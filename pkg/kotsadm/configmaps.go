@@ -22,11 +22,17 @@ func getConfigMapsYAML(deployOptions types.DeployOptions) (map[string][]byte, er
 	docs := map[string][]byte{}
 	s := json.NewYAMLSerializer(json.DefaultMetaFactory, scheme.Scheme, scheme.Scheme)
 
-	var configMap bytes.Buffer
-	if err := s.Encode(kotsadmobjects.KotsadmConfigMap(deployOptions), &configMap); err != nil {
-		return nil, errors.Wrap(err, "failed to marshal minio config map")
+	var kotsadmConfigMap bytes.Buffer
+	if err := s.Encode(kotsadmobjects.KotsadmConfigMap(deployOptions), &kotsadmConfigMap); err != nil {
+		return nil, errors.Wrap(err, "failed to marshal kotsadm config map")
 	}
-	docs["kotsadm-config.yaml"] = configMap.Bytes()
+	docs["kotsadm-config.yaml"] = kotsadmConfigMap.Bytes()
+
+	var postgresConfigMap bytes.Buffer
+	if err := s.Encode(kotsadmobjects.PostgresConfigMap(deployOptions), &postgresConfigMap); err != nil {
+		return nil, errors.Wrap(err, "failed to marshal postgres config map")
+	}
+	docs["postgres-config.yaml"] = postgresConfigMap.Bytes()
 
 	return docs, nil
 }
@@ -44,19 +50,35 @@ func ensureKotsadmConfig(deployOptions types.DeployOptions, clientset *kubernete
 }
 
 func ensureConfigMaps(deployOptions types.DeployOptions, clientset *kubernetes.Clientset) error {
-	_, err := clientset.CoreV1().ConfigMaps(deployOptions.Namespace).Get(context.TODO(), types.KotsadmConfigMap, metav1.GetOptions{})
+	desiredConfigMap := kotsadmobjects.KotsadmConfigMap(deployOptions)
+
+	existingConfigMap, err := clientset.CoreV1().ConfigMaps(deployOptions.Namespace).Get(context.TODO(), types.KotsadmConfigMap, metav1.GetOptions{})
 	if err != nil {
 		if !kuberneteserrors.IsNotFound(err) {
 			return errors.Wrap(err, "failed to get existing kotsadm config map")
 		}
 
-		_, err := clientset.CoreV1().ConfigMaps(deployOptions.Namespace).Create(context.TODO(), kotsadmobjects.KotsadmConfigMap(deployOptions), metav1.CreateOptions{})
+		_, err := clientset.CoreV1().ConfigMaps(deployOptions.Namespace).Create(context.TODO(), desiredConfigMap, metav1.CreateOptions{})
 		if err != nil {
 			return errors.Wrap(err, "failed to create kotsadm config map")
 		}
+
+		return nil
+	}
+
+	existingConfigMap = updateConfigMap(existingConfigMap, desiredConfigMap)
+
+	_, err = clientset.CoreV1().ConfigMaps(deployOptions.Namespace).Update(context.TODO(), existingConfigMap, metav1.UpdateOptions{})
+	if err != nil {
+		return errors.Wrap(err, "failed to update kotsadm config map")
 	}
 
 	return nil
+}
+
+func updateConfigMap(existingConfigMap, desiredConfigMap *corev1.ConfigMap) *corev1.ConfigMap {
+	existingConfigMap.Data = desiredConfigMap.Data
+	return existingConfigMap
 }
 
 func ensurePostgresConfigMap(deployOptions types.DeployOptions, clientset *kubernetes.Clientset) error {
