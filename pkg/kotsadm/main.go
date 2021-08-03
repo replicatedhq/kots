@@ -73,6 +73,15 @@ func YAML(deployOptions types.DeployOptions) (map[string][]byte, error) {
 		docs[n] = v
 	}
 
+	// configmaps
+	configMapsDocs, err := getConfigMapsYAML(deployOptions)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get configmaps yaml")
+	}
+	for n, v := range configMapsDocs {
+		docs[n] = v
+	}
+
 	// kotsadm
 	kotsadmDocs, err := getKotsadmYAML(deployOptions)
 	if err != nil {
