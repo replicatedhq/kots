@@ -22,7 +22,7 @@ func StartServer() {
 			Addr:    fmt.Sprintf(":%d", port),
 		}
 
-		fmt.Printf("Starting suppotbundle server on port %d...\n", port)
+		logger.Debugf("Starting supportbundle server on port %d...\n", port)
 
 		err := srv.ListenAndServe()
 		logger.Error(errors.Wrap(err, "failed to run support bundle server"))

@@ -564,6 +564,21 @@ func (mr *MockStoreMockRecorder) GetDownstreamVersionStatus(appID, sequence inte
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetDownstreamVersionStatus", reflect.TypeOf((*MockStore)(nil).GetDownstreamVersionStatus), appID, sequence)
 }
 
+// GetEmbeddedClusterAuthToken mocks base method.
+func (m *MockStore) GetEmbeddedClusterAuthToken() (string, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetEmbeddedClusterAuthToken")
+	ret0, _ := ret[0].(string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetEmbeddedClusterAuthToken indicates an expected call of GetEmbeddedClusterAuthToken.
+func (mr *MockStoreMockRecorder) GetEmbeddedClusterAuthToken() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetEmbeddedClusterAuthToken", reflect.TypeOf((*MockStore)(nil).GetEmbeddedClusterAuthToken))
+}
+
 // GetIgnoreRBACErrors mocks base method.
 func (m *MockStore) GetIgnoreRBACErrors(appID string, sequence int64) (bool, error) {
 	m.ctrl.T.Helper()
@@ -1240,6 +1255,20 @@ func (m *MockStore) SetDownstreamVersionReady(appID string, sequence int64) erro
 func (mr *MockStoreMockRecorder) SetDownstreamVersionReady(appID, sequence interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetDownstreamVersionReady", reflect.TypeOf((*MockStore)(nil).SetDownstreamVersionReady), appID, sequence)
+}
+
+// SetEmbeddedClusterAuthToken mocks base method.
+func (m *MockStore) SetEmbeddedClusterAuthToken(token string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SetEmbeddedClusterAuthToken", token)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// SetEmbeddedClusterAuthToken indicates an expected call of SetEmbeddedClusterAuthToken.
+func (mr *MockStoreMockRecorder) SetEmbeddedClusterAuthToken(token interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetEmbeddedClusterAuthToken", reflect.TypeOf((*MockStore)(nil).SetEmbeddedClusterAuthToken), token)
 }
 
 // SetIgnorePreflightPermissionErrors mocks base method.
@@ -3476,4 +3505,56 @@ func (m *MockKotsadmParamsStore) SetIsKotsadmIDGenerated() error {
 func (mr *MockKotsadmParamsStoreMockRecorder) SetIsKotsadmIDGenerated() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetIsKotsadmIDGenerated", reflect.TypeOf((*MockKotsadmParamsStore)(nil).SetIsKotsadmIDGenerated))
+}
+
+// MockEmbeddedStore is a mock of EmbeddedStore interface.
+type MockEmbeddedStore struct {
+	ctrl     *gomock.Controller
+	recorder *MockEmbeddedStoreMockRecorder
+}
+
+// MockEmbeddedStoreMockRecorder is the mock recorder for MockEmbeddedStore.
+type MockEmbeddedStoreMockRecorder struct {
+	mock *MockEmbeddedStore
+}
+
+// NewMockEmbeddedStore creates a new mock instance.
+func NewMockEmbeddedStore(ctrl *gomock.Controller) *MockEmbeddedStore {
+	mock := &MockEmbeddedStore{ctrl: ctrl}
+	mock.recorder = &MockEmbeddedStoreMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use.
+func (m *MockEmbeddedStore) EXPECT() *MockEmbeddedStoreMockRecorder {
+	return m.recorder
+}
+
+// GetEmbeddedClusterAuthToken mocks base method.
+func (m *MockEmbeddedStore) GetEmbeddedClusterAuthToken() (string, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetEmbeddedClusterAuthToken")
+	ret0, _ := ret[0].(string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetEmbeddedClusterAuthToken indicates an expected call of GetEmbeddedClusterAuthToken.
+func (mr *MockEmbeddedStoreMockRecorder) GetEmbeddedClusterAuthToken() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetEmbeddedClusterAuthToken", reflect.TypeOf((*MockEmbeddedStore)(nil).GetEmbeddedClusterAuthToken))
+}
+
+// SetEmbeddedClusterAuthToken mocks base method.
+func (m *MockEmbeddedStore) SetEmbeddedClusterAuthToken(token string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SetEmbeddedClusterAuthToken", token)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// SetEmbeddedClusterAuthToken indicates an expected call of SetEmbeddedClusterAuthToken.
+func (mr *MockEmbeddedStoreMockRecorder) SetEmbeddedClusterAuthToken(token interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetEmbeddedClusterAuthToken", reflect.TypeOf((*MockEmbeddedStore)(nil).SetEmbeddedClusterAuthToken), token)
 }
