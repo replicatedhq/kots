@@ -60,7 +60,13 @@ func AdminGenerateManifestsCmd() *cobra.Command {
 		},
 	}
 
-	cmd.Flags().String("rootdir", homeDir(), "root directory that will be used to write the yaml to")
+	defaultRootDir := homeDir()
+	cwd, err := os.Getwd()
+	if err == nil {
+		defaultRootDir = cwd
+	}
+
+	cmd.Flags().String("rootdir", defaultRootDir, "root directory that will be used to write the yaml to")
 	cmd.Flags().String("http-proxy", "", "sets HTTP_PROXY environment variable in all KOTS Admin Console components")
 	cmd.Flags().String("https-proxy", "", "sets HTTPS_PROXY environment variable in all KOTS Admin Console components")
 	cmd.Flags().String("no-proxy", "", "sets NO_PROXY environment variable in all KOTS Admin Console components")
