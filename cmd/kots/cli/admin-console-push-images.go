@@ -131,7 +131,7 @@ func getECRLogin(endpoint string, keyID string, accessKey string) (string, strin
 
 func getECRService(accessKeyID, secretAccessKey, zone string) *ecr.ECR {
 	awsConfig := &aws.Config{Region: aws.String(zone)}
-	if (accessKeyID != "" && secretAccessKey != "") {
+	if accessKeyID != "" && secretAccessKey != "" {
 		awsConfig.Credentials = credentials.NewStaticCredentials(accessKeyID, secretAccessKey, "")
 	}
 	return ecr.New(session.New(awsConfig))
