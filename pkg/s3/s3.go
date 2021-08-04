@@ -51,9 +51,9 @@ func GetConfig() *aws.Config {
 	accessKeyID := os.Getenv("S3_ACCESS_KEY_ID")
 	secretAccessKey := os.Getenv("S3_SECRET_ACCESS_KEY")
 
-	creds := credentials.NewStaticCredentials(accessKeyID, secretAccessKey, "")
-	if (accessKeyID == "" || secretAccessKey == "") {
-		creds = nil
+	var creds *credentials.Credentials
+	if (accessKeyID != "" && secretAccessKey != "") {
+		creds := credentials.NewStaticCredentials(accessKeyID, secretAccessKey, "")
 	}
 
 	s3Config := &aws.Config{
