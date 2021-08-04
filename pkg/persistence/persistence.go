@@ -16,3 +16,7 @@ func MustGetDBSession() *sql.DB {
 
 	return mustGetPGSession()
 }
+
+func IsSQlite() bool {
+	return SQLiteURI != ""
+}

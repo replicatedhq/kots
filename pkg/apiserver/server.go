@@ -26,6 +26,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/supportbundle"
 	"github.com/replicatedhq/kots/pkg/updatechecker"
 	"github.com/segmentio/ksuid"
+	"golang.org/x/crypto/bcrypt"
 )
 
 type APIServerParams struct {
@@ -34,6 +35,7 @@ type APIServerParams struct {
 	SQLiteURI              string
 	AutocreateClusterToken string
 	EnableIdentity         bool
+	SharedPassword         string
 }
 
 func Start(params *APIServerParams) {
@@ -58,6 +60,17 @@ func Start(params *APIServerParams) {
 	}
 
 	store.GetStore().RunMigrations()
+
+	if params.SharedPassword != "" {
+		// TODO: this won't override the password in the database
+		// it's only possible to set this in the kots run workflow
+		bcryptPassword, err := bcrypt.GenerateFromPassword([]byte(params.SharedPassword), 10)
+		if err != nil {
+			panic(err)
+		}
+
+		os.Setenv("SHARED_PASSWORD_BCRYPT", string(bcryptPassword))
+	}
 
 	if params.EnableIdentity {
 		err := bootstrapIdentity()

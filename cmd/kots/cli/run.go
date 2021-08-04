@@ -47,7 +47,7 @@ func RunCmd() *cobra.Command {
 			defer cancelFunc()
 
 			// stat the kots api (aka, kotsadm in a former world)
-			if err := startKotsadm(ctx, v.GetString("data-dir")); err != nil {
+			if err := startKotsadm(ctx, v.GetString("data-dir"), v.GetString("shared-password")); err != nil {
 				return err
 			}
 
@@ -84,11 +84,12 @@ func RunCmd() *cobra.Command {
 	}
 
 	cmd.Flags().String("data-dir", cwd, "directory to store admin console, kubernetes, and application data in")
+	cmd.Flags().String("shared-password", "", "the shared password to set to authenticate to the admin console")
 
 	return cmd
 }
 
-func startKotsadm(ctx context.Context, dataDir string) error {
+func startKotsadm(ctx context.Context, dataDir string, sharedPassword string) error {
 	filestore.ArchivesDir = filepath.Join(dataDir, "archives")
 
 	// TODO @divolgin: something is odd about this pattern. these variables are set in two places to two different values, yet they are global.
@@ -100,6 +101,7 @@ func startKotsadm(ctx context.Context, dataDir string) error {
 		SQLiteURI:              fmt.Sprintf("%s/kots.db", dataDir),
 		AutocreateClusterToken: "TODO", // this needs to be static for an install, but different per installation
 		EnableIdentity:         false,
+		SharedPassword:         sharedPassword,
 	}
 
 	go apiserver.Start(&params)
