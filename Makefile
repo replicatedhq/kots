@@ -4,6 +4,7 @@ MINIO_VERSION := RELEASE.2021-07-27T02-40-15Z
 POSTGRES_VERSION := 10.17-alpine
 
 BUILDFLAGS = -tags='netgo containers_image_ostree_stub exclude_graphdriver_devicemapper exclude_graphdriver_btrfs containers_image_openpgp' -installsuffix netgo
+EXPERIMENTAL_BUILDFLAGS = -tags 'netgo -tags containers_image_ostree_stub -tags exclude_graphdriver_devicemapper -tags exclude_graphdriver_btrfs -tags containers_image_openpgp -tags kots_experimental' -installsuffix netgo
 
 .PHONY: test
 test:
@@ -20,6 +21,10 @@ ci-test:
 .PHONY: kots
 kots: fmt vet
 	go build ${LDFLAGS} -o bin/kots $(BUILDFLAGS) github.com/replicatedhq/kots/cmd/kots
+
+.PHONY: kots-experimental
+kots-experimental: fmt vet
+	CGO_ENABLED=1 go build ${LDFLAGS} -o bin/kots $(EXPERIMENTAL_BUILDFLAGS) github.com/replicatedhq/kots/cmd/kots
 
 .PHONY: fmt
 fmt:
@@ -46,7 +51,7 @@ release:
 
 .PHONY: mock
 mock:
-	go get github.com/golang/mock/mockgen@v1.4.4
+	go get github.com/golang/mock/mockgen@v1.5.0
 	mockgen -source=pkg/store/store_interface.go -destination=pkg/store/mock/mock.go
 	mockgen -source=pkg/handlers/interface.go -destination=pkg/handlers/mock/mock.go
 

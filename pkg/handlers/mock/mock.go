@@ -5,1230 +5,1231 @@
 package mock_handlers
 
 import (
-	gomock "github.com/golang/mock/gomock"
 	http "net/http"
 	reflect "reflect"
+
+	gomock "github.com/golang/mock/gomock"
 )
 
-// MockKOTSHandler is a mock of KOTSHandler interface
+// MockKOTSHandler is a mock of KOTSHandler interface.
 type MockKOTSHandler struct {
 	ctrl     *gomock.Controller
 	recorder *MockKOTSHandlerMockRecorder
 }
 
-// MockKOTSHandlerMockRecorder is the mock recorder for MockKOTSHandler
+// MockKOTSHandlerMockRecorder is the mock recorder for MockKOTSHandler.
 type MockKOTSHandlerMockRecorder struct {
 	mock *MockKOTSHandler
 }
 
-// NewMockKOTSHandler creates a new mock instance
+// NewMockKOTSHandler creates a new mock instance.
 func NewMockKOTSHandler(ctrl *gomock.Controller) *MockKOTSHandler {
 	mock := &MockKOTSHandler{ctrl: ctrl}
 	mock.recorder = &MockKOTSHandlerMockRecorder{mock}
 	return mock
 }
 
-// EXPECT returns an object that allows the caller to indicate expected use
+// EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockKOTSHandler) EXPECT() *MockKOTSHandlerMockRecorder {
 	return m.recorder
 }
 
-// Ping mocks base method
-func (m *MockKOTSHandler) Ping(w http.ResponseWriter, r *http.Request) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "Ping", w, r)
-}
-
-// Ping indicates an expected call of Ping
-func (mr *MockKOTSHandlerMockRecorder) Ping(w, r interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Ping", reflect.TypeOf((*MockKOTSHandler)(nil).Ping), w, r)
-}
-
-// UploadNewLicense mocks base method
-func (m *MockKOTSHandler) UploadNewLicense(w http.ResponseWriter, r *http.Request) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "UploadNewLicense", w, r)
-}
-
-// UploadNewLicense indicates an expected call of UploadNewLicense
-func (mr *MockKOTSHandlerMockRecorder) UploadNewLicense(w, r interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UploadNewLicense", reflect.TypeOf((*MockKOTSHandler)(nil).UploadNewLicense), w, r)
-}
-
-// ExchangePlatformLicense mocks base method
-func (m *MockKOTSHandler) ExchangePlatformLicense(w http.ResponseWriter, r *http.Request) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "ExchangePlatformLicense", w, r)
-}
-
-// ExchangePlatformLicense indicates an expected call of ExchangePlatformLicense
-func (mr *MockKOTSHandlerMockRecorder) ExchangePlatformLicense(w, r interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ExchangePlatformLicense", reflect.TypeOf((*MockKOTSHandler)(nil).ExchangePlatformLicense), w, r)
-}
-
-// ResumeInstallOnline mocks base method
-func (m *MockKOTSHandler) ResumeInstallOnline(w http.ResponseWriter, r *http.Request) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "ResumeInstallOnline", w, r)
-}
-
-// ResumeInstallOnline indicates an expected call of ResumeInstallOnline
-func (mr *MockKOTSHandlerMockRecorder) ResumeInstallOnline(w, r interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ResumeInstallOnline", reflect.TypeOf((*MockKOTSHandler)(nil).ResumeInstallOnline), w, r)
-}
-
-// GetOnlineInstallStatus mocks base method
-func (m *MockKOTSHandler) GetOnlineInstallStatus(w http.ResponseWriter, r *http.Request) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "GetOnlineInstallStatus", w, r)
-}
-
-// GetOnlineInstallStatus indicates an expected call of GetOnlineInstallStatus
-func (mr *MockKOTSHandlerMockRecorder) GetOnlineInstallStatus(w, r interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetOnlineInstallStatus", reflect.TypeOf((*MockKOTSHandler)(nil).GetOnlineInstallStatus), w, r)
-}
-
-// GetSupportBundle mocks base method
-func (m *MockKOTSHandler) GetSupportBundle(w http.ResponseWriter, r *http.Request) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "GetSupportBundle", w, r)
-}
-
-// GetSupportBundle indicates an expected call of GetSupportBundle
-func (mr *MockKOTSHandlerMockRecorder) GetSupportBundle(w, r interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetSupportBundle", reflect.TypeOf((*MockKOTSHandler)(nil).GetSupportBundle), w, r)
-}
-
-// ListSupportBundles mocks base method
-func (m *MockKOTSHandler) ListSupportBundles(w http.ResponseWriter, r *http.Request) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "ListSupportBundles", w, r)
-}
-
-// ListSupportBundles indicates an expected call of ListSupportBundles
-func (mr *MockKOTSHandlerMockRecorder) ListSupportBundles(w, r interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListSupportBundles", reflect.TypeOf((*MockKOTSHandler)(nil).ListSupportBundles), w, r)
-}
-
-// GetSupportBundleCommand mocks base method
-func (m *MockKOTSHandler) GetSupportBundleCommand(w http.ResponseWriter, r *http.Request) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "GetSupportBundleCommand", w, r)
-}
-
-// GetSupportBundleCommand indicates an expected call of GetSupportBundleCommand
-func (mr *MockKOTSHandlerMockRecorder) GetSupportBundleCommand(w, r interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetSupportBundleCommand", reflect.TypeOf((*MockKOTSHandler)(nil).GetSupportBundleCommand), w, r)
-}
-
-// GetSupportBundleFiles mocks base method
-func (m *MockKOTSHandler) GetSupportBundleFiles(w http.ResponseWriter, r *http.Request) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "GetSupportBundleFiles", w, r)
-}
-
-// GetSupportBundleFiles indicates an expected call of GetSupportBundleFiles
-func (mr *MockKOTSHandlerMockRecorder) GetSupportBundleFiles(w, r interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetSupportBundleFiles", reflect.TypeOf((*MockKOTSHandler)(nil).GetSupportBundleFiles), w, r)
-}
-
-// GetSupportBundleRedactions mocks base method
-func (m *MockKOTSHandler) GetSupportBundleRedactions(w http.ResponseWriter, r *http.Request) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "GetSupportBundleRedactions", w, r)
-}
-
-// GetSupportBundleRedactions indicates an expected call of GetSupportBundleRedactions
-func (mr *MockKOTSHandlerMockRecorder) GetSupportBundleRedactions(w, r interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetSupportBundleRedactions", reflect.TypeOf((*MockKOTSHandler)(nil).GetSupportBundleRedactions), w, r)
-}
-
-// DownloadSupportBundle mocks base method
-func (m *MockKOTSHandler) DownloadSupportBundle(w http.ResponseWriter, r *http.Request) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "DownloadSupportBundle", w, r)
-}
-
-// DownloadSupportBundle indicates an expected call of DownloadSupportBundle
-func (mr *MockKOTSHandlerMockRecorder) DownloadSupportBundle(w, r interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DownloadSupportBundle", reflect.TypeOf((*MockKOTSHandler)(nil).DownloadSupportBundle), w, r)
-}
-
-// CollectSupportBundle mocks base method
-func (m *MockKOTSHandler) CollectSupportBundle(w http.ResponseWriter, r *http.Request) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "CollectSupportBundle", w, r)
-}
-
-// CollectSupportBundle indicates an expected call of CollectSupportBundle
-func (mr *MockKOTSHandlerMockRecorder) CollectSupportBundle(w, r interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CollectSupportBundle", reflect.TypeOf((*MockKOTSHandler)(nil).CollectSupportBundle), w, r)
-}
-
-// UpdateRedact mocks base method
-func (m *MockKOTSHandler) UpdateRedact(w http.ResponseWriter, r *http.Request) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "UpdateRedact", w, r)
-}
-
-// UpdateRedact indicates an expected call of UpdateRedact
-func (mr *MockKOTSHandlerMockRecorder) UpdateRedact(w, r interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateRedact", reflect.TypeOf((*MockKOTSHandler)(nil).UpdateRedact), w, r)
-}
-
-// GetRedact mocks base method
-func (m *MockKOTSHandler) GetRedact(w http.ResponseWriter, r *http.Request) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "GetRedact", w, r)
-}
-
-// GetRedact indicates an expected call of GetRedact
-func (mr *MockKOTSHandlerMockRecorder) GetRedact(w, r interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRedact", reflect.TypeOf((*MockKOTSHandler)(nil).GetRedact), w, r)
-}
-
-// ListRedactors mocks base method
-func (m *MockKOTSHandler) ListRedactors(w http.ResponseWriter, r *http.Request) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "ListRedactors", w, r)
-}
-
-// ListRedactors indicates an expected call of ListRedactors
-func (mr *MockKOTSHandlerMockRecorder) ListRedactors(w, r interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListRedactors", reflect.TypeOf((*MockKOTSHandler)(nil).ListRedactors), w, r)
-}
-
-// GetRedactMetadataAndYaml mocks base method
-func (m *MockKOTSHandler) GetRedactMetadataAndYaml(w http.ResponseWriter, r *http.Request) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "GetRedactMetadataAndYaml", w, r)
-}
-
-// GetRedactMetadataAndYaml indicates an expected call of GetRedactMetadataAndYaml
-func (mr *MockKOTSHandlerMockRecorder) GetRedactMetadataAndYaml(w, r interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRedactMetadataAndYaml", reflect.TypeOf((*MockKOTSHandler)(nil).GetRedactMetadataAndYaml), w, r)
-}
-
-// SetRedactMetadataAndYaml mocks base method
-func (m *MockKOTSHandler) SetRedactMetadataAndYaml(w http.ResponseWriter, r *http.Request) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "SetRedactMetadataAndYaml", w, r)
-}
-
-// SetRedactMetadataAndYaml indicates an expected call of SetRedactMetadataAndYaml
-func (mr *MockKOTSHandlerMockRecorder) SetRedactMetadataAndYaml(w, r interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetRedactMetadataAndYaml", reflect.TypeOf((*MockKOTSHandler)(nil).SetRedactMetadataAndYaml), w, r)
-}
-
-// DeleteRedact mocks base method
-func (m *MockKOTSHandler) DeleteRedact(w http.ResponseWriter, r *http.Request) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "DeleteRedact", w, r)
-}
-
-// DeleteRedact indicates an expected call of DeleteRedact
-func (mr *MockKOTSHandlerMockRecorder) DeleteRedact(w, r interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteRedact", reflect.TypeOf((*MockKOTSHandler)(nil).DeleteRedact), w, r)
-}
-
-// SetRedactEnabled mocks base method
-func (m *MockKOTSHandler) SetRedactEnabled(w http.ResponseWriter, r *http.Request) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "SetRedactEnabled", w, r)
-}
-
-// SetRedactEnabled indicates an expected call of SetRedactEnabled
-func (mr *MockKOTSHandlerMockRecorder) SetRedactEnabled(w, r interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetRedactEnabled", reflect.TypeOf((*MockKOTSHandler)(nil).SetRedactEnabled), w, r)
-}
-
-// ConfigureIdentityService mocks base method
-func (m *MockKOTSHandler) ConfigureIdentityService(w http.ResponseWriter, r *http.Request) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "ConfigureIdentityService", w, r)
-}
-
-// ConfigureIdentityService indicates an expected call of ConfigureIdentityService
-func (mr *MockKOTSHandlerMockRecorder) ConfigureIdentityService(w, r interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ConfigureIdentityService", reflect.TypeOf((*MockKOTSHandler)(nil).ConfigureIdentityService), w, r)
-}
-
-// GetIdentityServiceConfig mocks base method
-func (m *MockKOTSHandler) GetIdentityServiceConfig(w http.ResponseWriter, r *http.Request) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "GetIdentityServiceConfig", w, r)
-}
-
-// GetIdentityServiceConfig indicates an expected call of GetIdentityServiceConfig
-func (mr *MockKOTSHandlerMockRecorder) GetIdentityServiceConfig(w, r interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetIdentityServiceConfig", reflect.TypeOf((*MockKOTSHandler)(nil).GetIdentityServiceConfig), w, r)
-}
-
-// ConfigureAppIdentityService mocks base method
-func (m *MockKOTSHandler) ConfigureAppIdentityService(w http.ResponseWriter, r *http.Request) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "ConfigureAppIdentityService", w, r)
-}
-
-// ConfigureAppIdentityService indicates an expected call of ConfigureAppIdentityService
-func (mr *MockKOTSHandlerMockRecorder) ConfigureAppIdentityService(w, r interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ConfigureAppIdentityService", reflect.TypeOf((*MockKOTSHandler)(nil).ConfigureAppIdentityService), w, r)
-}
-
-// GetAppIdentityServiceConfig mocks base method
-func (m *MockKOTSHandler) GetAppIdentityServiceConfig(w http.ResponseWriter, r *http.Request) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "GetAppIdentityServiceConfig", w, r)
-}
-
-// GetAppIdentityServiceConfig indicates an expected call of GetAppIdentityServiceConfig
-func (mr *MockKOTSHandlerMockRecorder) GetAppIdentityServiceConfig(w, r interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAppIdentityServiceConfig", reflect.TypeOf((*MockKOTSHandler)(nil).GetAppIdentityServiceConfig), w, r)
-}
-
-// ListApps mocks base method
-func (m *MockKOTSHandler) ListApps(w http.ResponseWriter, r *http.Request) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "ListApps", w, r)
-}
-
-// ListApps indicates an expected call of ListApps
-func (mr *MockKOTSHandlerMockRecorder) ListApps(w, r interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListApps", reflect.TypeOf((*MockKOTSHandler)(nil).ListApps), w, r)
-}
-
-// GetApp mocks base method
-func (m *MockKOTSHandler) GetApp(w http.ResponseWriter, r *http.Request) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "GetApp", w, r)
-}
-
-// GetApp indicates an expected call of GetApp
-func (mr *MockKOTSHandlerMockRecorder) GetApp(w, r interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetApp", reflect.TypeOf((*MockKOTSHandler)(nil).GetApp), w, r)
-}
-
-// GetAppStatus mocks base method
-func (m *MockKOTSHandler) GetAppStatus(w http.ResponseWriter, r *http.Request) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "GetAppStatus", w, r)
-}
-
-// GetAppStatus indicates an expected call of GetAppStatus
-func (mr *MockKOTSHandlerMockRecorder) GetAppStatus(w, r interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAppStatus", reflect.TypeOf((*MockKOTSHandler)(nil).GetAppStatus), w, r)
-}
-
-// GetAppVersionHistory mocks base method
-func (m *MockKOTSHandler) GetAppVersionHistory(w http.ResponseWriter, r *http.Request) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "GetAppVersionHistory", w, r)
-}
-
-// GetAppVersionHistory indicates an expected call of GetAppVersionHistory
-func (mr *MockKOTSHandlerMockRecorder) GetAppVersionHistory(w, r interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAppVersionHistory", reflect.TypeOf((*MockKOTSHandler)(nil).GetAppVersionHistory), w, r)
-}
-
-// GetUpdateDownloadStatus mocks base method
-func (m *MockKOTSHandler) GetUpdateDownloadStatus(w http.ResponseWriter, r *http.Request) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "GetUpdateDownloadStatus", w, r)
-}
-
-// GetUpdateDownloadStatus indicates an expected call of GetUpdateDownloadStatus
-func (mr *MockKOTSHandlerMockRecorder) GetUpdateDownloadStatus(w, r interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUpdateDownloadStatus", reflect.TypeOf((*MockKOTSHandler)(nil).GetUpdateDownloadStatus), w, r)
-}
-
-// GetPendingApp mocks base method
-func (m *MockKOTSHandler) GetPendingApp(w http.ResponseWriter, r *http.Request) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "GetPendingApp", w, r)
-}
-
-// GetPendingApp indicates an expected call of GetPendingApp
-func (mr *MockKOTSHandlerMockRecorder) GetPendingApp(w, r interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPendingApp", reflect.TypeOf((*MockKOTSHandler)(nil).GetPendingApp), w, r)
-}
-
-// AirgapBundleProgress mocks base method
-func (m *MockKOTSHandler) AirgapBundleProgress(w http.ResponseWriter, r *http.Request) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "AirgapBundleProgress", w, r)
-}
-
-// AirgapBundleProgress indicates an expected call of AirgapBundleProgress
-func (mr *MockKOTSHandlerMockRecorder) AirgapBundleProgress(w, r interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AirgapBundleProgress", reflect.TypeOf((*MockKOTSHandler)(nil).AirgapBundleProgress), w, r)
-}
-
-// AirgapBundleExists mocks base method
+// AirgapBundleExists mocks base method.
 func (m *MockKOTSHandler) AirgapBundleExists(w http.ResponseWriter, r *http.Request) {
 	m.ctrl.T.Helper()
 	m.ctrl.Call(m, "AirgapBundleExists", w, r)
 }
 
-// AirgapBundleExists indicates an expected call of AirgapBundleExists
+// AirgapBundleExists indicates an expected call of AirgapBundleExists.
 func (mr *MockKOTSHandlerMockRecorder) AirgapBundleExists(w, r interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AirgapBundleExists", reflect.TypeOf((*MockKOTSHandler)(nil).AirgapBundleExists), w, r)
 }
 
-// CreateAppFromAirgap mocks base method
-func (m *MockKOTSHandler) CreateAppFromAirgap(w http.ResponseWriter, r *http.Request) {
+// AirgapBundleProgress mocks base method.
+func (m *MockKOTSHandler) AirgapBundleProgress(w http.ResponseWriter, r *http.Request) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "CreateAppFromAirgap", w, r)
+	m.ctrl.Call(m, "AirgapBundleProgress", w, r)
 }
 
-// CreateAppFromAirgap indicates an expected call of CreateAppFromAirgap
-func (mr *MockKOTSHandlerMockRecorder) CreateAppFromAirgap(w, r interface{}) *gomock.Call {
+// AirgapBundleProgress indicates an expected call of AirgapBundleProgress.
+func (mr *MockKOTSHandlerMockRecorder) AirgapBundleProgress(w, r interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateAppFromAirgap", reflect.TypeOf((*MockKOTSHandler)(nil).CreateAppFromAirgap), w, r)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AirgapBundleProgress", reflect.TypeOf((*MockKOTSHandler)(nil).AirgapBundleProgress), w, r)
 }
 
-// UpdateAppFromAirgap mocks base method
-func (m *MockKOTSHandler) UpdateAppFromAirgap(w http.ResponseWriter, r *http.Request) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "UpdateAppFromAirgap", w, r)
-}
-
-// UpdateAppFromAirgap indicates an expected call of UpdateAppFromAirgap
-func (mr *MockKOTSHandlerMockRecorder) UpdateAppFromAirgap(w, r interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateAppFromAirgap", reflect.TypeOf((*MockKOTSHandler)(nil).UpdateAppFromAirgap), w, r)
-}
-
-// CheckAirgapBundleChunk mocks base method
-func (m *MockKOTSHandler) CheckAirgapBundleChunk(w http.ResponseWriter, r *http.Request) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "CheckAirgapBundleChunk", w, r)
-}
-
-// CheckAirgapBundleChunk indicates an expected call of CheckAirgapBundleChunk
-func (mr *MockKOTSHandlerMockRecorder) CheckAirgapBundleChunk(w, r interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CheckAirgapBundleChunk", reflect.TypeOf((*MockKOTSHandler)(nil).CheckAirgapBundleChunk), w, r)
-}
-
-// UploadAirgapBundleChunk mocks base method
-func (m *MockKOTSHandler) UploadAirgapBundleChunk(w http.ResponseWriter, r *http.Request) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "UploadAirgapBundleChunk", w, r)
-}
-
-// UploadAirgapBundleChunk indicates an expected call of UploadAirgapBundleChunk
-func (mr *MockKOTSHandlerMockRecorder) UploadAirgapBundleChunk(w, r interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UploadAirgapBundleChunk", reflect.TypeOf((*MockKOTSHandler)(nil).UploadAirgapBundleChunk), w, r)
-}
-
-// GetAirgapInstallStatus mocks base method
-func (m *MockKOTSHandler) GetAirgapInstallStatus(w http.ResponseWriter, r *http.Request) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "GetAirgapInstallStatus", w, r)
-}
-
-// GetAirgapInstallStatus indicates an expected call of GetAirgapInstallStatus
-func (mr *MockKOTSHandlerMockRecorder) GetAirgapInstallStatus(w, r interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAirgapInstallStatus", reflect.TypeOf((*MockKOTSHandler)(nil).GetAirgapInstallStatus), w, r)
-}
-
-// ResetAirgapInstallStatus mocks base method
-func (m *MockKOTSHandler) ResetAirgapInstallStatus(w http.ResponseWriter, r *http.Request) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "ResetAirgapInstallStatus", w, r)
-}
-
-// ResetAirgapInstallStatus indicates an expected call of ResetAirgapInstallStatus
-func (mr *MockKOTSHandlerMockRecorder) ResetAirgapInstallStatus(w, r interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ResetAirgapInstallStatus", reflect.TypeOf((*MockKOTSHandler)(nil).ResetAirgapInstallStatus), w, r)
-}
-
-// GetAirgapUploadConfig mocks base method
-func (m *MockKOTSHandler) GetAirgapUploadConfig(w http.ResponseWriter, r *http.Request) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "GetAirgapUploadConfig", w, r)
-}
-
-// GetAirgapUploadConfig indicates an expected call of GetAirgapUploadConfig
-func (mr *MockKOTSHandlerMockRecorder) GetAirgapUploadConfig(w, r interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAirgapUploadConfig", reflect.TypeOf((*MockKOTSHandler)(nil).GetAirgapUploadConfig), w, r)
-}
-
-// IgnorePreflightRBACErrors mocks base method
-func (m *MockKOTSHandler) IgnorePreflightRBACErrors(w http.ResponseWriter, r *http.Request) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "IgnorePreflightRBACErrors", w, r)
-}
-
-// IgnorePreflightRBACErrors indicates an expected call of IgnorePreflightRBACErrors
-func (mr *MockKOTSHandlerMockRecorder) IgnorePreflightRBACErrors(w, r interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IgnorePreflightRBACErrors", reflect.TypeOf((*MockKOTSHandler)(nil).IgnorePreflightRBACErrors), w, r)
-}
-
-// StartPreflightChecks mocks base method
-func (m *MockKOTSHandler) StartPreflightChecks(w http.ResponseWriter, r *http.Request) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "StartPreflightChecks", w, r)
-}
-
-// StartPreflightChecks indicates an expected call of StartPreflightChecks
-func (mr *MockKOTSHandlerMockRecorder) StartPreflightChecks(w, r interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "StartPreflightChecks", reflect.TypeOf((*MockKOTSHandler)(nil).StartPreflightChecks), w, r)
-}
-
-// GetLatestPreflightResultsForSequenceZero mocks base method
-func (m *MockKOTSHandler) GetLatestPreflightResultsForSequenceZero(w http.ResponseWriter, r *http.Request) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "GetLatestPreflightResultsForSequenceZero", w, r)
-}
-
-// GetLatestPreflightResultsForSequenceZero indicates an expected call of GetLatestPreflightResultsForSequenceZero
-func (mr *MockKOTSHandlerMockRecorder) GetLatestPreflightResultsForSequenceZero(w, r interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetLatestPreflightResultsForSequenceZero", reflect.TypeOf((*MockKOTSHandler)(nil).GetLatestPreflightResultsForSequenceZero), w, r)
-}
-
-// GetPreflightResult mocks base method
-func (m *MockKOTSHandler) GetPreflightResult(w http.ResponseWriter, r *http.Request) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "GetPreflightResult", w, r)
-}
-
-// GetPreflightResult indicates an expected call of GetPreflightResult
-func (mr *MockKOTSHandlerMockRecorder) GetPreflightResult(w, r interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPreflightResult", reflect.TypeOf((*MockKOTSHandler)(nil).GetPreflightResult), w, r)
-}
-
-// GetPreflightCommand mocks base method
-func (m *MockKOTSHandler) GetPreflightCommand(w http.ResponseWriter, r *http.Request) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "GetPreflightCommand", w, r)
-}
-
-// GetPreflightCommand indicates an expected call of GetPreflightCommand
-func (mr *MockKOTSHandlerMockRecorder) GetPreflightCommand(w, r interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPreflightCommand", reflect.TypeOf((*MockKOTSHandler)(nil).GetPreflightCommand), w, r)
-}
-
-// PreflightsReports mocks base method
-func (m *MockKOTSHandler) PreflightsReports(w http.ResponseWriter, r *http.Request) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "PreflightsReports", w, r)
-}
-
-// PreflightsReports indicates an expected call of PreflightsReports
-func (mr *MockKOTSHandlerMockRecorder) PreflightsReports(w, r interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PreflightsReports", reflect.TypeOf((*MockKOTSHandler)(nil).PreflightsReports), w, r)
-}
-
-// DeployAppVersion mocks base method
-func (m *MockKOTSHandler) DeployAppVersion(w http.ResponseWriter, r *http.Request) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "DeployAppVersion", w, r)
-}
-
-// DeployAppVersion indicates an expected call of DeployAppVersion
-func (mr *MockKOTSHandlerMockRecorder) DeployAppVersion(w, r interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeployAppVersion", reflect.TypeOf((*MockKOTSHandler)(nil).DeployAppVersion), w, r)
-}
-
-// RedeployAppVersion mocks base method
-func (m *MockKOTSHandler) RedeployAppVersion(w http.ResponseWriter, r *http.Request) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "RedeployAppVersion", w, r)
-}
-
-// RedeployAppVersion indicates an expected call of RedeployAppVersion
-func (mr *MockKOTSHandlerMockRecorder) RedeployAppVersion(w, r interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RedeployAppVersion", reflect.TypeOf((*MockKOTSHandler)(nil).RedeployAppVersion), w, r)
-}
-
-// GetAppRenderedContents mocks base method
-func (m *MockKOTSHandler) GetAppRenderedContents(w http.ResponseWriter, r *http.Request) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "GetAppRenderedContents", w, r)
-}
-
-// GetAppRenderedContents indicates an expected call of GetAppRenderedContents
-func (mr *MockKOTSHandlerMockRecorder) GetAppRenderedContents(w, r interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAppRenderedContents", reflect.TypeOf((*MockKOTSHandler)(nil).GetAppRenderedContents), w, r)
-}
-
-// GetAppContents mocks base method
-func (m *MockKOTSHandler) GetAppContents(w http.ResponseWriter, r *http.Request) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "GetAppContents", w, r)
-}
-
-// GetAppContents indicates an expected call of GetAppContents
-func (mr *MockKOTSHandlerMockRecorder) GetAppContents(w, r interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAppContents", reflect.TypeOf((*MockKOTSHandler)(nil).GetAppContents), w, r)
-}
-
-// GetAppDashboard mocks base method
-func (m *MockKOTSHandler) GetAppDashboard(w http.ResponseWriter, r *http.Request) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "GetAppDashboard", w, r)
-}
-
-// GetAppDashboard indicates an expected call of GetAppDashboard
-func (mr *MockKOTSHandlerMockRecorder) GetAppDashboard(w, r interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAppDashboard", reflect.TypeOf((*MockKOTSHandler)(nil).GetAppDashboard), w, r)
-}
-
-// GetDownstreamOutput mocks base method
-func (m *MockKOTSHandler) GetDownstreamOutput(w http.ResponseWriter, r *http.Request) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "GetDownstreamOutput", w, r)
-}
-
-// GetDownstreamOutput indicates an expected call of GetDownstreamOutput
-func (mr *MockKOTSHandlerMockRecorder) GetDownstreamOutput(w, r interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetDownstreamOutput", reflect.TypeOf((*MockKOTSHandler)(nil).GetDownstreamOutput), w, r)
-}
-
-// GetKotsadmRegistry mocks base method
-func (m *MockKOTSHandler) GetKotsadmRegistry(w http.ResponseWriter, r *http.Request) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "GetKotsadmRegistry", w, r)
-}
-
-// GetKotsadmRegistry indicates an expected call of GetKotsadmRegistry
-func (mr *MockKOTSHandlerMockRecorder) GetKotsadmRegistry(w, r interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetKotsadmRegistry", reflect.TypeOf((*MockKOTSHandler)(nil).GetKotsadmRegistry), w, r)
-}
-
-// GetImageRewriteStatus mocks base method
-func (m *MockKOTSHandler) GetImageRewriteStatus(w http.ResponseWriter, r *http.Request) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "GetImageRewriteStatus", w, r)
-}
-
-// GetImageRewriteStatus indicates an expected call of GetImageRewriteStatus
-func (mr *MockKOTSHandlerMockRecorder) GetImageRewriteStatus(w, r interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetImageRewriteStatus", reflect.TypeOf((*MockKOTSHandler)(nil).GetImageRewriteStatus), w, r)
-}
-
-// UpdateAppRegistry mocks base method
-func (m *MockKOTSHandler) UpdateAppRegistry(w http.ResponseWriter, r *http.Request) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "UpdateAppRegistry", w, r)
-}
-
-// UpdateAppRegistry indicates an expected call of UpdateAppRegistry
-func (mr *MockKOTSHandlerMockRecorder) UpdateAppRegistry(w, r interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateAppRegistry", reflect.TypeOf((*MockKOTSHandler)(nil).UpdateAppRegistry), w, r)
-}
-
-// GetAppRegistry mocks base method
-func (m *MockKOTSHandler) GetAppRegistry(w http.ResponseWriter, r *http.Request) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "GetAppRegistry", w, r)
-}
-
-// GetAppRegistry indicates an expected call of GetAppRegistry
-func (mr *MockKOTSHandlerMockRecorder) GetAppRegistry(w, r interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAppRegistry", reflect.TypeOf((*MockKOTSHandler)(nil).GetAppRegistry), w, r)
-}
-
-// ValidateAppRegistry mocks base method
-func (m *MockKOTSHandler) ValidateAppRegistry(w http.ResponseWriter, r *http.Request) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "ValidateAppRegistry", w, r)
-}
-
-// ValidateAppRegistry indicates an expected call of ValidateAppRegistry
-func (mr *MockKOTSHandlerMockRecorder) ValidateAppRegistry(w, r interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ValidateAppRegistry", reflect.TypeOf((*MockKOTSHandler)(nil).ValidateAppRegistry), w, r)
-}
-
-// GarbageCollectImages mocks base method
-func (m *MockKOTSHandler) GarbageCollectImages(w http.ResponseWriter, r *http.Request) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "GarbageCollectImages", w, r)
-}
-
-// GarbageCollectImages indicates an expected call of GarbageCollectImages
-func (mr *MockKOTSHandlerMockRecorder) GarbageCollectImages(w, r interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GarbageCollectImages", reflect.TypeOf((*MockKOTSHandler)(nil).GarbageCollectImages), w, r)
-}
-
-// UpdateAppConfig mocks base method
-func (m *MockKOTSHandler) UpdateAppConfig(w http.ResponseWriter, r *http.Request) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "UpdateAppConfig", w, r)
-}
-
-// UpdateAppConfig indicates an expected call of UpdateAppConfig
-func (mr *MockKOTSHandlerMockRecorder) UpdateAppConfig(w, r interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateAppConfig", reflect.TypeOf((*MockKOTSHandler)(nil).UpdateAppConfig), w, r)
-}
-
-// CurrentAppConfig mocks base method
-func (m *MockKOTSHandler) CurrentAppConfig(w http.ResponseWriter, r *http.Request) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "CurrentAppConfig", w, r)
-}
-
-// CurrentAppConfig indicates an expected call of CurrentAppConfig
-func (mr *MockKOTSHandlerMockRecorder) CurrentAppConfig(w, r interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CurrentAppConfig", reflect.TypeOf((*MockKOTSHandler)(nil).CurrentAppConfig), w, r)
-}
-
-// LiveAppConfig mocks base method
-func (m *MockKOTSHandler) LiveAppConfig(w http.ResponseWriter, r *http.Request) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "LiveAppConfig", w, r)
-}
-
-// LiveAppConfig indicates an expected call of LiveAppConfig
-func (mr *MockKOTSHandlerMockRecorder) LiveAppConfig(w, r interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "LiveAppConfig", reflect.TypeOf((*MockKOTSHandler)(nil).LiveAppConfig), w, r)
-}
-
-// SetAppConfigValues mocks base method
-func (m *MockKOTSHandler) SetAppConfigValues(w http.ResponseWriter, r *http.Request) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "SetAppConfigValues", w, r)
-}
-
-// SetAppConfigValues indicates an expected call of SetAppConfigValues
-func (mr *MockKOTSHandlerMockRecorder) SetAppConfigValues(w, r interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetAppConfigValues", reflect.TypeOf((*MockKOTSHandler)(nil).SetAppConfigValues), w, r)
-}
-
-// SyncLicense mocks base method
-func (m *MockKOTSHandler) SyncLicense(w http.ResponseWriter, r *http.Request) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "SyncLicense", w, r)
-}
-
-// SyncLicense indicates an expected call of SyncLicense
-func (mr *MockKOTSHandlerMockRecorder) SyncLicense(w, r interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SyncLicense", reflect.TypeOf((*MockKOTSHandler)(nil).SyncLicense), w, r)
-}
-
-// GetLicense mocks base method
-func (m *MockKOTSHandler) GetLicense(w http.ResponseWriter, r *http.Request) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "GetLicense", w, r)
-}
-
-// GetLicense indicates an expected call of GetLicense
-func (mr *MockKOTSHandlerMockRecorder) GetLicense(w, r interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetLicense", reflect.TypeOf((*MockKOTSHandler)(nil).GetLicense), w, r)
-}
-
-// AppUpdateCheck mocks base method
+// AppUpdateCheck mocks base method.
 func (m *MockKOTSHandler) AppUpdateCheck(w http.ResponseWriter, r *http.Request) {
 	m.ctrl.T.Helper()
 	m.ctrl.Call(m, "AppUpdateCheck", w, r)
 }
 
-// AppUpdateCheck indicates an expected call of AppUpdateCheck
+// AppUpdateCheck indicates an expected call of AppUpdateCheck.
 func (mr *MockKOTSHandlerMockRecorder) AppUpdateCheck(w, r interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AppUpdateCheck", reflect.TypeOf((*MockKOTSHandler)(nil).AppUpdateCheck), w, r)
 }
 
-// UpdateCheckerSpec mocks base method
-func (m *MockKOTSHandler) UpdateCheckerSpec(w http.ResponseWriter, r *http.Request) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "UpdateCheckerSpec", w, r)
-}
-
-// UpdateCheckerSpec indicates an expected call of UpdateCheckerSpec
-func (mr *MockKOTSHandlerMockRecorder) UpdateCheckerSpec(w, r interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateCheckerSpec", reflect.TypeOf((*MockKOTSHandler)(nil).UpdateCheckerSpec), w, r)
-}
-
-// RemoveApp mocks base method
-func (m *MockKOTSHandler) RemoveApp(w http.ResponseWriter, r *http.Request) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "RemoveApp", w, r)
-}
-
-// RemoveApp indicates an expected call of RemoveApp
-func (mr *MockKOTSHandlerMockRecorder) RemoveApp(w, r interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveApp", reflect.TypeOf((*MockKOTSHandler)(nil).RemoveApp), w, r)
-}
-
-// CreateApplicationBackup mocks base method
-func (m *MockKOTSHandler) CreateApplicationBackup(w http.ResponseWriter, r *http.Request) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "CreateApplicationBackup", w, r)
-}
-
-// CreateApplicationBackup indicates an expected call of CreateApplicationBackup
-func (mr *MockKOTSHandlerMockRecorder) CreateApplicationBackup(w, r interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateApplicationBackup", reflect.TypeOf((*MockKOTSHandler)(nil).CreateApplicationBackup), w, r)
-}
-
-// GetRestoreStatus mocks base method
-func (m *MockKOTSHandler) GetRestoreStatus(w http.ResponseWriter, r *http.Request) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "GetRestoreStatus", w, r)
-}
-
-// GetRestoreStatus indicates an expected call of GetRestoreStatus
-func (mr *MockKOTSHandlerMockRecorder) GetRestoreStatus(w, r interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRestoreStatus", reflect.TypeOf((*MockKOTSHandler)(nil).GetRestoreStatus), w, r)
-}
-
-// CancelRestore mocks base method
+// CancelRestore mocks base method.
 func (m *MockKOTSHandler) CancelRestore(w http.ResponseWriter, r *http.Request) {
 	m.ctrl.T.Helper()
 	m.ctrl.Call(m, "CancelRestore", w, r)
 }
 
-// CancelRestore indicates an expected call of CancelRestore
+// CancelRestore indicates an expected call of CancelRestore.
 func (mr *MockKOTSHandlerMockRecorder) CancelRestore(w, r interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CancelRestore", reflect.TypeOf((*MockKOTSHandler)(nil).CancelRestore), w, r)
 }
 
-// CreateApplicationRestore mocks base method
-func (m *MockKOTSHandler) CreateApplicationRestore(w http.ResponseWriter, r *http.Request) {
+// CheckAirgapBundleChunk mocks base method.
+func (m *MockKOTSHandler) CheckAirgapBundleChunk(w http.ResponseWriter, r *http.Request) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "CreateApplicationRestore", w, r)
+	m.ctrl.Call(m, "CheckAirgapBundleChunk", w, r)
 }
 
-// CreateApplicationRestore indicates an expected call of CreateApplicationRestore
-func (mr *MockKOTSHandlerMockRecorder) CreateApplicationRestore(w, r interface{}) *gomock.Call {
+// CheckAirgapBundleChunk indicates an expected call of CheckAirgapBundleChunk.
+func (mr *MockKOTSHandlerMockRecorder) CheckAirgapBundleChunk(w, r interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateApplicationRestore", reflect.TypeOf((*MockKOTSHandler)(nil).CreateApplicationRestore), w, r)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CheckAirgapBundleChunk", reflect.TypeOf((*MockKOTSHandler)(nil).CheckAirgapBundleChunk), w, r)
 }
 
-// GetRestoreDetails mocks base method
-func (m *MockKOTSHandler) GetRestoreDetails(w http.ResponseWriter, r *http.Request) {
+// CollectSupportBundle mocks base method.
+func (m *MockKOTSHandler) CollectSupportBundle(w http.ResponseWriter, r *http.Request) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "GetRestoreDetails", w, r)
+	m.ctrl.Call(m, "CollectSupportBundle", w, r)
 }
 
-// GetRestoreDetails indicates an expected call of GetRestoreDetails
-func (mr *MockKOTSHandlerMockRecorder) GetRestoreDetails(w, r interface{}) *gomock.Call {
+// CollectSupportBundle indicates an expected call of CollectSupportBundle.
+func (mr *MockKOTSHandlerMockRecorder) CollectSupportBundle(w, r interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRestoreDetails", reflect.TypeOf((*MockKOTSHandler)(nil).GetRestoreDetails), w, r)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CollectSupportBundle", reflect.TypeOf((*MockKOTSHandler)(nil).CollectSupportBundle), w, r)
 }
 
-// ListBackups mocks base method
-func (m *MockKOTSHandler) ListBackups(w http.ResponseWriter, r *http.Request) {
+// ConfigureAppIdentityService mocks base method.
+func (m *MockKOTSHandler) ConfigureAppIdentityService(w http.ResponseWriter, r *http.Request) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "ListBackups", w, r)
+	m.ctrl.Call(m, "ConfigureAppIdentityService", w, r)
 }
 
-// ListBackups indicates an expected call of ListBackups
-func (mr *MockKOTSHandlerMockRecorder) ListBackups(w, r interface{}) *gomock.Call {
+// ConfigureAppIdentityService indicates an expected call of ConfigureAppIdentityService.
+func (mr *MockKOTSHandlerMockRecorder) ConfigureAppIdentityService(w, r interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListBackups", reflect.TypeOf((*MockKOTSHandler)(nil).ListBackups), w, r)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ConfigureAppIdentityService", reflect.TypeOf((*MockKOTSHandler)(nil).ConfigureAppIdentityService), w, r)
 }
 
-// GetSnapshotConfig mocks base method
-func (m *MockKOTSHandler) GetSnapshotConfig(w http.ResponseWriter, r *http.Request) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "GetSnapshotConfig", w, r)
-}
-
-// GetSnapshotConfig indicates an expected call of GetSnapshotConfig
-func (mr *MockKOTSHandlerMockRecorder) GetSnapshotConfig(w, r interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetSnapshotConfig", reflect.TypeOf((*MockKOTSHandler)(nil).GetSnapshotConfig), w, r)
-}
-
-// SaveSnapshotConfig mocks base method
-func (m *MockKOTSHandler) SaveSnapshotConfig(w http.ResponseWriter, r *http.Request) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "SaveSnapshotConfig", w, r)
-}
-
-// SaveSnapshotConfig indicates an expected call of SaveSnapshotConfig
-func (mr *MockKOTSHandlerMockRecorder) SaveSnapshotConfig(w, r interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SaveSnapshotConfig", reflect.TypeOf((*MockKOTSHandler)(nil).SaveSnapshotConfig), w, r)
-}
-
-// ListInstanceBackups mocks base method
-func (m *MockKOTSHandler) ListInstanceBackups(w http.ResponseWriter, r *http.Request) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "ListInstanceBackups", w, r)
-}
-
-// ListInstanceBackups indicates an expected call of ListInstanceBackups
-func (mr *MockKOTSHandlerMockRecorder) ListInstanceBackups(w, r interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListInstanceBackups", reflect.TypeOf((*MockKOTSHandler)(nil).ListInstanceBackups), w, r)
-}
-
-// CreateInstanceBackup mocks base method
-func (m *MockKOTSHandler) CreateInstanceBackup(w http.ResponseWriter, r *http.Request) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "CreateInstanceBackup", w, r)
-}
-
-// CreateInstanceBackup indicates an expected call of CreateInstanceBackup
-func (mr *MockKOTSHandlerMockRecorder) CreateInstanceBackup(w, r interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateInstanceBackup", reflect.TypeOf((*MockKOTSHandler)(nil).CreateInstanceBackup), w, r)
-}
-
-// GetInstanceSnapshotConfig mocks base method
-func (m *MockKOTSHandler) GetInstanceSnapshotConfig(w http.ResponseWriter, r *http.Request) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "GetInstanceSnapshotConfig", w, r)
-}
-
-// GetInstanceSnapshotConfig indicates an expected call of GetInstanceSnapshotConfig
-func (mr *MockKOTSHandlerMockRecorder) GetInstanceSnapshotConfig(w, r interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetInstanceSnapshotConfig", reflect.TypeOf((*MockKOTSHandler)(nil).GetInstanceSnapshotConfig), w, r)
-}
-
-// SaveInstanceSnapshotConfig mocks base method
-func (m *MockKOTSHandler) SaveInstanceSnapshotConfig(w http.ResponseWriter, r *http.Request) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "SaveInstanceSnapshotConfig", w, r)
-}
-
-// SaveInstanceSnapshotConfig indicates an expected call of SaveInstanceSnapshotConfig
-func (mr *MockKOTSHandlerMockRecorder) SaveInstanceSnapshotConfig(w, r interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SaveInstanceSnapshotConfig", reflect.TypeOf((*MockKOTSHandler)(nil).SaveInstanceSnapshotConfig), w, r)
-}
-
-// GetGlobalSnapshotSettings mocks base method
-func (m *MockKOTSHandler) GetGlobalSnapshotSettings(w http.ResponseWriter, r *http.Request) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "GetGlobalSnapshotSettings", w, r)
-}
-
-// GetGlobalSnapshotSettings indicates an expected call of GetGlobalSnapshotSettings
-func (mr *MockKOTSHandlerMockRecorder) GetGlobalSnapshotSettings(w, r interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetGlobalSnapshotSettings", reflect.TypeOf((*MockKOTSHandler)(nil).GetGlobalSnapshotSettings), w, r)
-}
-
-// UpdateGlobalSnapshotSettings mocks base method
-func (m *MockKOTSHandler) UpdateGlobalSnapshotSettings(w http.ResponseWriter, r *http.Request) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "UpdateGlobalSnapshotSettings", w, r)
-}
-
-// UpdateGlobalSnapshotSettings indicates an expected call of UpdateGlobalSnapshotSettings
-func (mr *MockKOTSHandlerMockRecorder) UpdateGlobalSnapshotSettings(w, r interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateGlobalSnapshotSettings", reflect.TypeOf((*MockKOTSHandler)(nil).UpdateGlobalSnapshotSettings), w, r)
-}
-
-// ConfigureFileSystemSnapshotProvider mocks base method
+// ConfigureFileSystemSnapshotProvider mocks base method.
 func (m *MockKOTSHandler) ConfigureFileSystemSnapshotProvider(w http.ResponseWriter, r *http.Request) {
 	m.ctrl.T.Helper()
 	m.ctrl.Call(m, "ConfigureFileSystemSnapshotProvider", w, r)
 }
 
-// ConfigureFileSystemSnapshotProvider indicates an expected call of ConfigureFileSystemSnapshotProvider
+// ConfigureFileSystemSnapshotProvider indicates an expected call of ConfigureFileSystemSnapshotProvider.
 func (mr *MockKOTSHandlerMockRecorder) ConfigureFileSystemSnapshotProvider(w, r interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ConfigureFileSystemSnapshotProvider", reflect.TypeOf((*MockKOTSHandler)(nil).ConfigureFileSystemSnapshotProvider), w, r)
 }
 
-// GetBackup mocks base method
-func (m *MockKOTSHandler) GetBackup(w http.ResponseWriter, r *http.Request) {
+// ConfigureIdentityService mocks base method.
+func (m *MockKOTSHandler) ConfigureIdentityService(w http.ResponseWriter, r *http.Request) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "GetBackup", w, r)
+	m.ctrl.Call(m, "ConfigureIdentityService", w, r)
 }
 
-// GetBackup indicates an expected call of GetBackup
-func (mr *MockKOTSHandlerMockRecorder) GetBackup(w, r interface{}) *gomock.Call {
+// ConfigureIdentityService indicates an expected call of ConfigureIdentityService.
+func (mr *MockKOTSHandlerMockRecorder) ConfigureIdentityService(w, r interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetBackup", reflect.TypeOf((*MockKOTSHandler)(nil).GetBackup), w, r)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ConfigureIdentityService", reflect.TypeOf((*MockKOTSHandler)(nil).ConfigureIdentityService), w, r)
 }
 
-// DeleteBackup mocks base method
-func (m *MockKOTSHandler) DeleteBackup(w http.ResponseWriter, r *http.Request) {
+// CreateAppFromAirgap mocks base method.
+func (m *MockKOTSHandler) CreateAppFromAirgap(w http.ResponseWriter, r *http.Request) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "DeleteBackup", w, r)
+	m.ctrl.Call(m, "CreateAppFromAirgap", w, r)
 }
 
-// DeleteBackup indicates an expected call of DeleteBackup
-func (mr *MockKOTSHandlerMockRecorder) DeleteBackup(w, r interface{}) *gomock.Call {
+// CreateAppFromAirgap indicates an expected call of CreateAppFromAirgap.
+func (mr *MockKOTSHandlerMockRecorder) CreateAppFromAirgap(w, r interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteBackup", reflect.TypeOf((*MockKOTSHandler)(nil).DeleteBackup), w, r)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateAppFromAirgap", reflect.TypeOf((*MockKOTSHandler)(nil).CreateAppFromAirgap), w, r)
 }
 
-// RestoreApps mocks base method
-func (m *MockKOTSHandler) RestoreApps(w http.ResponseWriter, r *http.Request) {
+// CreateApplicationBackup mocks base method.
+func (m *MockKOTSHandler) CreateApplicationBackup(w http.ResponseWriter, r *http.Request) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "RestoreApps", w, r)
+	m.ctrl.Call(m, "CreateApplicationBackup", w, r)
 }
 
-// RestoreApps indicates an expected call of RestoreApps
-func (mr *MockKOTSHandlerMockRecorder) RestoreApps(w, r interface{}) *gomock.Call {
+// CreateApplicationBackup indicates an expected call of CreateApplicationBackup.
+func (mr *MockKOTSHandlerMockRecorder) CreateApplicationBackup(w, r interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RestoreApps", reflect.TypeOf((*MockKOTSHandler)(nil).RestoreApps), w, r)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateApplicationBackup", reflect.TypeOf((*MockKOTSHandler)(nil).CreateApplicationBackup), w, r)
 }
 
-// GetRestoreAppsStatus mocks base method
-func (m *MockKOTSHandler) GetRestoreAppsStatus(w http.ResponseWriter, r *http.Request) {
+// CreateApplicationRestore mocks base method.
+func (m *MockKOTSHandler) CreateApplicationRestore(w http.ResponseWriter, r *http.Request) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "GetRestoreAppsStatus", w, r)
+	m.ctrl.Call(m, "CreateApplicationRestore", w, r)
 }
 
-// GetRestoreAppsStatus indicates an expected call of GetRestoreAppsStatus
-func (mr *MockKOTSHandlerMockRecorder) GetRestoreAppsStatus(w, r interface{}) *gomock.Call {
+// CreateApplicationRestore indicates an expected call of CreateApplicationRestore.
+func (mr *MockKOTSHandlerMockRecorder) CreateApplicationRestore(w, r interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRestoreAppsStatus", reflect.TypeOf((*MockKOTSHandler)(nil).GetRestoreAppsStatus), w, r)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateApplicationRestore", reflect.TypeOf((*MockKOTSHandler)(nil).CreateApplicationRestore), w, r)
 }
 
-// DownloadSnapshotLogs mocks base method
-func (m *MockKOTSHandler) DownloadSnapshotLogs(w http.ResponseWriter, r *http.Request) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "DownloadSnapshotLogs", w, r)
-}
-
-// DownloadSnapshotLogs indicates an expected call of DownloadSnapshotLogs
-func (mr *MockKOTSHandlerMockRecorder) DownloadSnapshotLogs(w, r interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DownloadSnapshotLogs", reflect.TypeOf((*MockKOTSHandler)(nil).DownloadSnapshotLogs), w, r)
-}
-
-// GetVeleroStatus mocks base method
-func (m *MockKOTSHandler) GetVeleroStatus(w http.ResponseWriter, r *http.Request) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "GetVeleroStatus", w, r)
-}
-
-// GetVeleroStatus indicates an expected call of GetVeleroStatus
-func (mr *MockKOTSHandlerMockRecorder) GetVeleroStatus(w, r interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetVeleroStatus", reflect.TypeOf((*MockKOTSHandler)(nil).GetVeleroStatus), w, r)
-}
-
-// GenerateNodeJoinCommandWorker mocks base method
-func (m *MockKOTSHandler) GenerateNodeJoinCommandWorker(w http.ResponseWriter, r *http.Request) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "GenerateNodeJoinCommandWorker", w, r)
-}
-
-// GenerateNodeJoinCommandWorker indicates an expected call of GenerateNodeJoinCommandWorker
-func (mr *MockKOTSHandlerMockRecorder) GenerateNodeJoinCommandWorker(w, r interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GenerateNodeJoinCommandWorker", reflect.TypeOf((*MockKOTSHandler)(nil).GenerateNodeJoinCommandWorker), w, r)
-}
-
-// GenerateNodeJoinCommandMaster mocks base method
-func (m *MockKOTSHandler) GenerateNodeJoinCommandMaster(w http.ResponseWriter, r *http.Request) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "GenerateNodeJoinCommandMaster", w, r)
-}
-
-// GenerateNodeJoinCommandMaster indicates an expected call of GenerateNodeJoinCommandMaster
-func (mr *MockKOTSHandlerMockRecorder) GenerateNodeJoinCommandMaster(w, r interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GenerateNodeJoinCommandMaster", reflect.TypeOf((*MockKOTSHandler)(nil).GenerateNodeJoinCommandMaster), w, r)
-}
-
-// GenerateNodeJoinCommandSecondary mocks base method
-func (m *MockKOTSHandler) GenerateNodeJoinCommandSecondary(w http.ResponseWriter, r *http.Request) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "GenerateNodeJoinCommandSecondary", w, r)
-}
-
-// GenerateNodeJoinCommandSecondary indicates an expected call of GenerateNodeJoinCommandSecondary
-func (mr *MockKOTSHandlerMockRecorder) GenerateNodeJoinCommandSecondary(w, r interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GenerateNodeJoinCommandSecondary", reflect.TypeOf((*MockKOTSHandler)(nil).GenerateNodeJoinCommandSecondary), w, r)
-}
-
-// GenerateNodeJoinCommandPrimary mocks base method
-func (m *MockKOTSHandler) GenerateNodeJoinCommandPrimary(w http.ResponseWriter, r *http.Request) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "GenerateNodeJoinCommandPrimary", w, r)
-}
-
-// GenerateNodeJoinCommandPrimary indicates an expected call of GenerateNodeJoinCommandPrimary
-func (mr *MockKOTSHandlerMockRecorder) GenerateNodeJoinCommandPrimary(w, r interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GenerateNodeJoinCommandPrimary", reflect.TypeOf((*MockKOTSHandler)(nil).GenerateNodeJoinCommandPrimary), w, r)
-}
-
-// DrainNode mocks base method
-func (m *MockKOTSHandler) DrainNode(w http.ResponseWriter, r *http.Request) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "DrainNode", w, r)
-}
-
-// DrainNode indicates an expected call of DrainNode
-func (mr *MockKOTSHandlerMockRecorder) DrainNode(w, r interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DrainNode", reflect.TypeOf((*MockKOTSHandler)(nil).DrainNode), w, r)
-}
-
-// DeleteNode mocks base method
-func (m *MockKOTSHandler) DeleteNode(w http.ResponseWriter, r *http.Request) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "DeleteNode", w, r)
-}
-
-// DeleteNode indicates an expected call of DeleteNode
-func (mr *MockKOTSHandlerMockRecorder) DeleteNode(w, r interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteNode", reflect.TypeOf((*MockKOTSHandler)(nil).DeleteNode), w, r)
-}
-
-// GetKurlNodes mocks base method
-func (m *MockKOTSHandler) GetKurlNodes(w http.ResponseWriter, r *http.Request) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "GetKurlNodes", w, r)
-}
-
-// GetKurlNodes indicates an expected call of GetKurlNodes
-func (mr *MockKOTSHandlerMockRecorder) GetKurlNodes(w, r interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetKurlNodes", reflect.TypeOf((*MockKOTSHandler)(nil).GetKurlNodes), w, r)
-}
-
-// SetPrometheusAddress mocks base method
-func (m *MockKOTSHandler) SetPrometheusAddress(w http.ResponseWriter, r *http.Request) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "SetPrometheusAddress", w, r)
-}
-
-// SetPrometheusAddress indicates an expected call of SetPrometheusAddress
-func (mr *MockKOTSHandlerMockRecorder) SetPrometheusAddress(w, r interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetPrometheusAddress", reflect.TypeOf((*MockKOTSHandler)(nil).SetPrometheusAddress), w, r)
-}
-
-// UpdateAppGitOps mocks base method
-func (m *MockKOTSHandler) UpdateAppGitOps(w http.ResponseWriter, r *http.Request) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "UpdateAppGitOps", w, r)
-}
-
-// UpdateAppGitOps indicates an expected call of UpdateAppGitOps
-func (mr *MockKOTSHandlerMockRecorder) UpdateAppGitOps(w, r interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateAppGitOps", reflect.TypeOf((*MockKOTSHandler)(nil).UpdateAppGitOps), w, r)
-}
-
-// DisableAppGitOps mocks base method
-func (m *MockKOTSHandler) DisableAppGitOps(w http.ResponseWriter, r *http.Request) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "DisableAppGitOps", w, r)
-}
-
-// DisableAppGitOps indicates an expected call of DisableAppGitOps
-func (mr *MockKOTSHandlerMockRecorder) DisableAppGitOps(w, r interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DisableAppGitOps", reflect.TypeOf((*MockKOTSHandler)(nil).DisableAppGitOps), w, r)
-}
-
-// InitGitOpsConnection mocks base method
-func (m *MockKOTSHandler) InitGitOpsConnection(w http.ResponseWriter, r *http.Request) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "InitGitOpsConnection", w, r)
-}
-
-// InitGitOpsConnection indicates an expected call of InitGitOpsConnection
-func (mr *MockKOTSHandlerMockRecorder) InitGitOpsConnection(w, r interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InitGitOpsConnection", reflect.TypeOf((*MockKOTSHandler)(nil).InitGitOpsConnection), w, r)
-}
-
-// CreateGitOps mocks base method
+// CreateGitOps mocks base method.
 func (m *MockKOTSHandler) CreateGitOps(w http.ResponseWriter, r *http.Request) {
 	m.ctrl.T.Helper()
 	m.ctrl.Call(m, "CreateGitOps", w, r)
 }
 
-// CreateGitOps indicates an expected call of CreateGitOps
+// CreateGitOps indicates an expected call of CreateGitOps.
 func (mr *MockKOTSHandlerMockRecorder) CreateGitOps(w, r interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateGitOps", reflect.TypeOf((*MockKOTSHandler)(nil).CreateGitOps), w, r)
 }
 
-// ResetGitOps mocks base method
-func (m *MockKOTSHandler) ResetGitOps(w http.ResponseWriter, r *http.Request) {
+// CreateInstanceBackup mocks base method.
+func (m *MockKOTSHandler) CreateInstanceBackup(w http.ResponseWriter, r *http.Request) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "ResetGitOps", w, r)
+	m.ctrl.Call(m, "CreateInstanceBackup", w, r)
 }
 
-// ResetGitOps indicates an expected call of ResetGitOps
-func (mr *MockKOTSHandlerMockRecorder) ResetGitOps(w, r interface{}) *gomock.Call {
+// CreateInstanceBackup indicates an expected call of CreateInstanceBackup.
+func (mr *MockKOTSHandlerMockRecorder) CreateInstanceBackup(w, r interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ResetGitOps", reflect.TypeOf((*MockKOTSHandler)(nil).ResetGitOps), w, r)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateInstanceBackup", reflect.TypeOf((*MockKOTSHandler)(nil).CreateInstanceBackup), w, r)
 }
 
-// GetGitOpsRepo mocks base method
+// CurrentAppConfig mocks base method.
+func (m *MockKOTSHandler) CurrentAppConfig(w http.ResponseWriter, r *http.Request) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "CurrentAppConfig", w, r)
+}
+
+// CurrentAppConfig indicates an expected call of CurrentAppConfig.
+func (mr *MockKOTSHandlerMockRecorder) CurrentAppConfig(w, r interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CurrentAppConfig", reflect.TypeOf((*MockKOTSHandler)(nil).CurrentAppConfig), w, r)
+}
+
+// DeleteBackup mocks base method.
+func (m *MockKOTSHandler) DeleteBackup(w http.ResponseWriter, r *http.Request) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "DeleteBackup", w, r)
+}
+
+// DeleteBackup indicates an expected call of DeleteBackup.
+func (mr *MockKOTSHandlerMockRecorder) DeleteBackup(w, r interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteBackup", reflect.TypeOf((*MockKOTSHandler)(nil).DeleteBackup), w, r)
+}
+
+// DeleteNode mocks base method.
+func (m *MockKOTSHandler) DeleteNode(w http.ResponseWriter, r *http.Request) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "DeleteNode", w, r)
+}
+
+// DeleteNode indicates an expected call of DeleteNode.
+func (mr *MockKOTSHandlerMockRecorder) DeleteNode(w, r interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteNode", reflect.TypeOf((*MockKOTSHandler)(nil).DeleteNode), w, r)
+}
+
+// DeleteRedact mocks base method.
+func (m *MockKOTSHandler) DeleteRedact(w http.ResponseWriter, r *http.Request) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "DeleteRedact", w, r)
+}
+
+// DeleteRedact indicates an expected call of DeleteRedact.
+func (mr *MockKOTSHandlerMockRecorder) DeleteRedact(w, r interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteRedact", reflect.TypeOf((*MockKOTSHandler)(nil).DeleteRedact), w, r)
+}
+
+// DeployAppVersion mocks base method.
+func (m *MockKOTSHandler) DeployAppVersion(w http.ResponseWriter, r *http.Request) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "DeployAppVersion", w, r)
+}
+
+// DeployAppVersion indicates an expected call of DeployAppVersion.
+func (mr *MockKOTSHandlerMockRecorder) DeployAppVersion(w, r interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeployAppVersion", reflect.TypeOf((*MockKOTSHandler)(nil).DeployAppVersion), w, r)
+}
+
+// DisableAppGitOps mocks base method.
+func (m *MockKOTSHandler) DisableAppGitOps(w http.ResponseWriter, r *http.Request) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "DisableAppGitOps", w, r)
+}
+
+// DisableAppGitOps indicates an expected call of DisableAppGitOps.
+func (mr *MockKOTSHandlerMockRecorder) DisableAppGitOps(w, r interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DisableAppGitOps", reflect.TypeOf((*MockKOTSHandler)(nil).DisableAppGitOps), w, r)
+}
+
+// DownloadSnapshotLogs mocks base method.
+func (m *MockKOTSHandler) DownloadSnapshotLogs(w http.ResponseWriter, r *http.Request) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "DownloadSnapshotLogs", w, r)
+}
+
+// DownloadSnapshotLogs indicates an expected call of DownloadSnapshotLogs.
+func (mr *MockKOTSHandlerMockRecorder) DownloadSnapshotLogs(w, r interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DownloadSnapshotLogs", reflect.TypeOf((*MockKOTSHandler)(nil).DownloadSnapshotLogs), w, r)
+}
+
+// DownloadSupportBundle mocks base method.
+func (m *MockKOTSHandler) DownloadSupportBundle(w http.ResponseWriter, r *http.Request) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "DownloadSupportBundle", w, r)
+}
+
+// DownloadSupportBundle indicates an expected call of DownloadSupportBundle.
+func (mr *MockKOTSHandlerMockRecorder) DownloadSupportBundle(w, r interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DownloadSupportBundle", reflect.TypeOf((*MockKOTSHandler)(nil).DownloadSupportBundle), w, r)
+}
+
+// DrainNode mocks base method.
+func (m *MockKOTSHandler) DrainNode(w http.ResponseWriter, r *http.Request) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "DrainNode", w, r)
+}
+
+// DrainNode indicates an expected call of DrainNode.
+func (mr *MockKOTSHandlerMockRecorder) DrainNode(w, r interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DrainNode", reflect.TypeOf((*MockKOTSHandler)(nil).DrainNode), w, r)
+}
+
+// ExchangePlatformLicense mocks base method.
+func (m *MockKOTSHandler) ExchangePlatformLicense(w http.ResponseWriter, r *http.Request) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "ExchangePlatformLicense", w, r)
+}
+
+// ExchangePlatformLicense indicates an expected call of ExchangePlatformLicense.
+func (mr *MockKOTSHandlerMockRecorder) ExchangePlatformLicense(w, r interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ExchangePlatformLicense", reflect.TypeOf((*MockKOTSHandler)(nil).ExchangePlatformLicense), w, r)
+}
+
+// GarbageCollectImages mocks base method.
+func (m *MockKOTSHandler) GarbageCollectImages(w http.ResponseWriter, r *http.Request) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "GarbageCollectImages", w, r)
+}
+
+// GarbageCollectImages indicates an expected call of GarbageCollectImages.
+func (mr *MockKOTSHandlerMockRecorder) GarbageCollectImages(w, r interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GarbageCollectImages", reflect.TypeOf((*MockKOTSHandler)(nil).GarbageCollectImages), w, r)
+}
+
+// GenerateNodeJoinCommandMaster mocks base method.
+func (m *MockKOTSHandler) GenerateNodeJoinCommandMaster(w http.ResponseWriter, r *http.Request) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "GenerateNodeJoinCommandMaster", w, r)
+}
+
+// GenerateNodeJoinCommandMaster indicates an expected call of GenerateNodeJoinCommandMaster.
+func (mr *MockKOTSHandlerMockRecorder) GenerateNodeJoinCommandMaster(w, r interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GenerateNodeJoinCommandMaster", reflect.TypeOf((*MockKOTSHandler)(nil).GenerateNodeJoinCommandMaster), w, r)
+}
+
+// GenerateNodeJoinCommandPrimary mocks base method.
+func (m *MockKOTSHandler) GenerateNodeJoinCommandPrimary(w http.ResponseWriter, r *http.Request) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "GenerateNodeJoinCommandPrimary", w, r)
+}
+
+// GenerateNodeJoinCommandPrimary indicates an expected call of GenerateNodeJoinCommandPrimary.
+func (mr *MockKOTSHandlerMockRecorder) GenerateNodeJoinCommandPrimary(w, r interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GenerateNodeJoinCommandPrimary", reflect.TypeOf((*MockKOTSHandler)(nil).GenerateNodeJoinCommandPrimary), w, r)
+}
+
+// GenerateNodeJoinCommandSecondary mocks base method.
+func (m *MockKOTSHandler) GenerateNodeJoinCommandSecondary(w http.ResponseWriter, r *http.Request) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "GenerateNodeJoinCommandSecondary", w, r)
+}
+
+// GenerateNodeJoinCommandSecondary indicates an expected call of GenerateNodeJoinCommandSecondary.
+func (mr *MockKOTSHandlerMockRecorder) GenerateNodeJoinCommandSecondary(w, r interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GenerateNodeJoinCommandSecondary", reflect.TypeOf((*MockKOTSHandler)(nil).GenerateNodeJoinCommandSecondary), w, r)
+}
+
+// GenerateNodeJoinCommandWorker mocks base method.
+func (m *MockKOTSHandler) GenerateNodeJoinCommandWorker(w http.ResponseWriter, r *http.Request) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "GenerateNodeJoinCommandWorker", w, r)
+}
+
+// GenerateNodeJoinCommandWorker indicates an expected call of GenerateNodeJoinCommandWorker.
+func (mr *MockKOTSHandlerMockRecorder) GenerateNodeJoinCommandWorker(w, r interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GenerateNodeJoinCommandWorker", reflect.TypeOf((*MockKOTSHandler)(nil).GenerateNodeJoinCommandWorker), w, r)
+}
+
+// GetAirgapInstallStatus mocks base method.
+func (m *MockKOTSHandler) GetAirgapInstallStatus(w http.ResponseWriter, r *http.Request) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "GetAirgapInstallStatus", w, r)
+}
+
+// GetAirgapInstallStatus indicates an expected call of GetAirgapInstallStatus.
+func (mr *MockKOTSHandlerMockRecorder) GetAirgapInstallStatus(w, r interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAirgapInstallStatus", reflect.TypeOf((*MockKOTSHandler)(nil).GetAirgapInstallStatus), w, r)
+}
+
+// GetAirgapUploadConfig mocks base method.
+func (m *MockKOTSHandler) GetAirgapUploadConfig(w http.ResponseWriter, r *http.Request) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "GetAirgapUploadConfig", w, r)
+}
+
+// GetAirgapUploadConfig indicates an expected call of GetAirgapUploadConfig.
+func (mr *MockKOTSHandlerMockRecorder) GetAirgapUploadConfig(w, r interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAirgapUploadConfig", reflect.TypeOf((*MockKOTSHandler)(nil).GetAirgapUploadConfig), w, r)
+}
+
+// GetApp mocks base method.
+func (m *MockKOTSHandler) GetApp(w http.ResponseWriter, r *http.Request) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "GetApp", w, r)
+}
+
+// GetApp indicates an expected call of GetApp.
+func (mr *MockKOTSHandlerMockRecorder) GetApp(w, r interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetApp", reflect.TypeOf((*MockKOTSHandler)(nil).GetApp), w, r)
+}
+
+// GetAppContents mocks base method.
+func (m *MockKOTSHandler) GetAppContents(w http.ResponseWriter, r *http.Request) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "GetAppContents", w, r)
+}
+
+// GetAppContents indicates an expected call of GetAppContents.
+func (mr *MockKOTSHandlerMockRecorder) GetAppContents(w, r interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAppContents", reflect.TypeOf((*MockKOTSHandler)(nil).GetAppContents), w, r)
+}
+
+// GetAppDashboard mocks base method.
+func (m *MockKOTSHandler) GetAppDashboard(w http.ResponseWriter, r *http.Request) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "GetAppDashboard", w, r)
+}
+
+// GetAppDashboard indicates an expected call of GetAppDashboard.
+func (mr *MockKOTSHandlerMockRecorder) GetAppDashboard(w, r interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAppDashboard", reflect.TypeOf((*MockKOTSHandler)(nil).GetAppDashboard), w, r)
+}
+
+// GetAppIdentityServiceConfig mocks base method.
+func (m *MockKOTSHandler) GetAppIdentityServiceConfig(w http.ResponseWriter, r *http.Request) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "GetAppIdentityServiceConfig", w, r)
+}
+
+// GetAppIdentityServiceConfig indicates an expected call of GetAppIdentityServiceConfig.
+func (mr *MockKOTSHandlerMockRecorder) GetAppIdentityServiceConfig(w, r interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAppIdentityServiceConfig", reflect.TypeOf((*MockKOTSHandler)(nil).GetAppIdentityServiceConfig), w, r)
+}
+
+// GetAppRegistry mocks base method.
+func (m *MockKOTSHandler) GetAppRegistry(w http.ResponseWriter, r *http.Request) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "GetAppRegistry", w, r)
+}
+
+// GetAppRegistry indicates an expected call of GetAppRegistry.
+func (mr *MockKOTSHandlerMockRecorder) GetAppRegistry(w, r interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAppRegistry", reflect.TypeOf((*MockKOTSHandler)(nil).GetAppRegistry), w, r)
+}
+
+// GetAppRenderedContents mocks base method.
+func (m *MockKOTSHandler) GetAppRenderedContents(w http.ResponseWriter, r *http.Request) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "GetAppRenderedContents", w, r)
+}
+
+// GetAppRenderedContents indicates an expected call of GetAppRenderedContents.
+func (mr *MockKOTSHandlerMockRecorder) GetAppRenderedContents(w, r interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAppRenderedContents", reflect.TypeOf((*MockKOTSHandler)(nil).GetAppRenderedContents), w, r)
+}
+
+// GetAppStatus mocks base method.
+func (m *MockKOTSHandler) GetAppStatus(w http.ResponseWriter, r *http.Request) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "GetAppStatus", w, r)
+}
+
+// GetAppStatus indicates an expected call of GetAppStatus.
+func (mr *MockKOTSHandlerMockRecorder) GetAppStatus(w, r interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAppStatus", reflect.TypeOf((*MockKOTSHandler)(nil).GetAppStatus), w, r)
+}
+
+// GetAppVersionHistory mocks base method.
+func (m *MockKOTSHandler) GetAppVersionHistory(w http.ResponseWriter, r *http.Request) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "GetAppVersionHistory", w, r)
+}
+
+// GetAppVersionHistory indicates an expected call of GetAppVersionHistory.
+func (mr *MockKOTSHandlerMockRecorder) GetAppVersionHistory(w, r interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAppVersionHistory", reflect.TypeOf((*MockKOTSHandler)(nil).GetAppVersionHistory), w, r)
+}
+
+// GetBackup mocks base method.
+func (m *MockKOTSHandler) GetBackup(w http.ResponseWriter, r *http.Request) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "GetBackup", w, r)
+}
+
+// GetBackup indicates an expected call of GetBackup.
+func (mr *MockKOTSHandlerMockRecorder) GetBackup(w, r interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetBackup", reflect.TypeOf((*MockKOTSHandler)(nil).GetBackup), w, r)
+}
+
+// GetDownstreamOutput mocks base method.
+func (m *MockKOTSHandler) GetDownstreamOutput(w http.ResponseWriter, r *http.Request) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "GetDownstreamOutput", w, r)
+}
+
+// GetDownstreamOutput indicates an expected call of GetDownstreamOutput.
+func (mr *MockKOTSHandlerMockRecorder) GetDownstreamOutput(w, r interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetDownstreamOutput", reflect.TypeOf((*MockKOTSHandler)(nil).GetDownstreamOutput), w, r)
+}
+
+// GetGitOpsRepo mocks base method.
 func (m *MockKOTSHandler) GetGitOpsRepo(w http.ResponseWriter, r *http.Request) {
 	m.ctrl.T.Helper()
 	m.ctrl.Call(m, "GetGitOpsRepo", w, r)
 }
 
-// GetGitOpsRepo indicates an expected call of GetGitOpsRepo
+// GetGitOpsRepo indicates an expected call of GetGitOpsRepo.
 func (mr *MockKOTSHandlerMockRecorder) GetGitOpsRepo(w, r interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetGitOpsRepo", reflect.TypeOf((*MockKOTSHandler)(nil).GetGitOpsRepo), w, r)
+}
+
+// GetGlobalSnapshotSettings mocks base method.
+func (m *MockKOTSHandler) GetGlobalSnapshotSettings(w http.ResponseWriter, r *http.Request) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "GetGlobalSnapshotSettings", w, r)
+}
+
+// GetGlobalSnapshotSettings indicates an expected call of GetGlobalSnapshotSettings.
+func (mr *MockKOTSHandlerMockRecorder) GetGlobalSnapshotSettings(w, r interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetGlobalSnapshotSettings", reflect.TypeOf((*MockKOTSHandler)(nil).GetGlobalSnapshotSettings), w, r)
+}
+
+// GetIdentityServiceConfig mocks base method.
+func (m *MockKOTSHandler) GetIdentityServiceConfig(w http.ResponseWriter, r *http.Request) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "GetIdentityServiceConfig", w, r)
+}
+
+// GetIdentityServiceConfig indicates an expected call of GetIdentityServiceConfig.
+func (mr *MockKOTSHandlerMockRecorder) GetIdentityServiceConfig(w, r interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetIdentityServiceConfig", reflect.TypeOf((*MockKOTSHandler)(nil).GetIdentityServiceConfig), w, r)
+}
+
+// GetImageRewriteStatus mocks base method.
+func (m *MockKOTSHandler) GetImageRewriteStatus(w http.ResponseWriter, r *http.Request) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "GetImageRewriteStatus", w, r)
+}
+
+// GetImageRewriteStatus indicates an expected call of GetImageRewriteStatus.
+func (mr *MockKOTSHandlerMockRecorder) GetImageRewriteStatus(w, r interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetImageRewriteStatus", reflect.TypeOf((*MockKOTSHandler)(nil).GetImageRewriteStatus), w, r)
+}
+
+// GetInstanceSnapshotConfig mocks base method.
+func (m *MockKOTSHandler) GetInstanceSnapshotConfig(w http.ResponseWriter, r *http.Request) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "GetInstanceSnapshotConfig", w, r)
+}
+
+// GetInstanceSnapshotConfig indicates an expected call of GetInstanceSnapshotConfig.
+func (mr *MockKOTSHandlerMockRecorder) GetInstanceSnapshotConfig(w, r interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetInstanceSnapshotConfig", reflect.TypeOf((*MockKOTSHandler)(nil).GetInstanceSnapshotConfig), w, r)
+}
+
+// GetKotsadmRegistry mocks base method.
+func (m *MockKOTSHandler) GetKotsadmRegistry(w http.ResponseWriter, r *http.Request) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "GetKotsadmRegistry", w, r)
+}
+
+// GetKotsadmRegistry indicates an expected call of GetKotsadmRegistry.
+func (mr *MockKOTSHandlerMockRecorder) GetKotsadmRegistry(w, r interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetKotsadmRegistry", reflect.TypeOf((*MockKOTSHandler)(nil).GetKotsadmRegistry), w, r)
+}
+
+// GetKurlNodes mocks base method.
+func (m *MockKOTSHandler) GetKurlNodes(w http.ResponseWriter, r *http.Request) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "GetKurlNodes", w, r)
+}
+
+// GetKurlNodes indicates an expected call of GetKurlNodes.
+func (mr *MockKOTSHandlerMockRecorder) GetKurlNodes(w, r interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetKurlNodes", reflect.TypeOf((*MockKOTSHandler)(nil).GetKurlNodes), w, r)
+}
+
+// GetLatestPreflightResultsForSequenceZero mocks base method.
+func (m *MockKOTSHandler) GetLatestPreflightResultsForSequenceZero(w http.ResponseWriter, r *http.Request) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "GetLatestPreflightResultsForSequenceZero", w, r)
+}
+
+// GetLatestPreflightResultsForSequenceZero indicates an expected call of GetLatestPreflightResultsForSequenceZero.
+func (mr *MockKOTSHandlerMockRecorder) GetLatestPreflightResultsForSequenceZero(w, r interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetLatestPreflightResultsForSequenceZero", reflect.TypeOf((*MockKOTSHandler)(nil).GetLatestPreflightResultsForSequenceZero), w, r)
+}
+
+// GetLicense mocks base method.
+func (m *MockKOTSHandler) GetLicense(w http.ResponseWriter, r *http.Request) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "GetLicense", w, r)
+}
+
+// GetLicense indicates an expected call of GetLicense.
+func (mr *MockKOTSHandlerMockRecorder) GetLicense(w, r interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetLicense", reflect.TypeOf((*MockKOTSHandler)(nil).GetLicense), w, r)
+}
+
+// GetOnlineInstallStatus mocks base method.
+func (m *MockKOTSHandler) GetOnlineInstallStatus(w http.ResponseWriter, r *http.Request) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "GetOnlineInstallStatus", w, r)
+}
+
+// GetOnlineInstallStatus indicates an expected call of GetOnlineInstallStatus.
+func (mr *MockKOTSHandlerMockRecorder) GetOnlineInstallStatus(w, r interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetOnlineInstallStatus", reflect.TypeOf((*MockKOTSHandler)(nil).GetOnlineInstallStatus), w, r)
+}
+
+// GetPendingApp mocks base method.
+func (m *MockKOTSHandler) GetPendingApp(w http.ResponseWriter, r *http.Request) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "GetPendingApp", w, r)
+}
+
+// GetPendingApp indicates an expected call of GetPendingApp.
+func (mr *MockKOTSHandlerMockRecorder) GetPendingApp(w, r interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPendingApp", reflect.TypeOf((*MockKOTSHandler)(nil).GetPendingApp), w, r)
+}
+
+// GetPreflightCommand mocks base method.
+func (m *MockKOTSHandler) GetPreflightCommand(w http.ResponseWriter, r *http.Request) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "GetPreflightCommand", w, r)
+}
+
+// GetPreflightCommand indicates an expected call of GetPreflightCommand.
+func (mr *MockKOTSHandlerMockRecorder) GetPreflightCommand(w, r interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPreflightCommand", reflect.TypeOf((*MockKOTSHandler)(nil).GetPreflightCommand), w, r)
+}
+
+// GetPreflightResult mocks base method.
+func (m *MockKOTSHandler) GetPreflightResult(w http.ResponseWriter, r *http.Request) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "GetPreflightResult", w, r)
+}
+
+// GetPreflightResult indicates an expected call of GetPreflightResult.
+func (mr *MockKOTSHandlerMockRecorder) GetPreflightResult(w, r interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPreflightResult", reflect.TypeOf((*MockKOTSHandler)(nil).GetPreflightResult), w, r)
+}
+
+// GetRedact mocks base method.
+func (m *MockKOTSHandler) GetRedact(w http.ResponseWriter, r *http.Request) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "GetRedact", w, r)
+}
+
+// GetRedact indicates an expected call of GetRedact.
+func (mr *MockKOTSHandlerMockRecorder) GetRedact(w, r interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRedact", reflect.TypeOf((*MockKOTSHandler)(nil).GetRedact), w, r)
+}
+
+// GetRedactMetadataAndYaml mocks base method.
+func (m *MockKOTSHandler) GetRedactMetadataAndYaml(w http.ResponseWriter, r *http.Request) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "GetRedactMetadataAndYaml", w, r)
+}
+
+// GetRedactMetadataAndYaml indicates an expected call of GetRedactMetadataAndYaml.
+func (mr *MockKOTSHandlerMockRecorder) GetRedactMetadataAndYaml(w, r interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRedactMetadataAndYaml", reflect.TypeOf((*MockKOTSHandler)(nil).GetRedactMetadataAndYaml), w, r)
+}
+
+// GetRestoreAppsStatus mocks base method.
+func (m *MockKOTSHandler) GetRestoreAppsStatus(w http.ResponseWriter, r *http.Request) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "GetRestoreAppsStatus", w, r)
+}
+
+// GetRestoreAppsStatus indicates an expected call of GetRestoreAppsStatus.
+func (mr *MockKOTSHandlerMockRecorder) GetRestoreAppsStatus(w, r interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRestoreAppsStatus", reflect.TypeOf((*MockKOTSHandler)(nil).GetRestoreAppsStatus), w, r)
+}
+
+// GetRestoreDetails mocks base method.
+func (m *MockKOTSHandler) GetRestoreDetails(w http.ResponseWriter, r *http.Request) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "GetRestoreDetails", w, r)
+}
+
+// GetRestoreDetails indicates an expected call of GetRestoreDetails.
+func (mr *MockKOTSHandlerMockRecorder) GetRestoreDetails(w, r interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRestoreDetails", reflect.TypeOf((*MockKOTSHandler)(nil).GetRestoreDetails), w, r)
+}
+
+// GetRestoreStatus mocks base method.
+func (m *MockKOTSHandler) GetRestoreStatus(w http.ResponseWriter, r *http.Request) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "GetRestoreStatus", w, r)
+}
+
+// GetRestoreStatus indicates an expected call of GetRestoreStatus.
+func (mr *MockKOTSHandlerMockRecorder) GetRestoreStatus(w, r interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRestoreStatus", reflect.TypeOf((*MockKOTSHandler)(nil).GetRestoreStatus), w, r)
+}
+
+// GetSnapshotConfig mocks base method.
+func (m *MockKOTSHandler) GetSnapshotConfig(w http.ResponseWriter, r *http.Request) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "GetSnapshotConfig", w, r)
+}
+
+// GetSnapshotConfig indicates an expected call of GetSnapshotConfig.
+func (mr *MockKOTSHandlerMockRecorder) GetSnapshotConfig(w, r interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetSnapshotConfig", reflect.TypeOf((*MockKOTSHandler)(nil).GetSnapshotConfig), w, r)
+}
+
+// GetSupportBundle mocks base method.
+func (m *MockKOTSHandler) GetSupportBundle(w http.ResponseWriter, r *http.Request) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "GetSupportBundle", w, r)
+}
+
+// GetSupportBundle indicates an expected call of GetSupportBundle.
+func (mr *MockKOTSHandlerMockRecorder) GetSupportBundle(w, r interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetSupportBundle", reflect.TypeOf((*MockKOTSHandler)(nil).GetSupportBundle), w, r)
+}
+
+// GetSupportBundleCommand mocks base method.
+func (m *MockKOTSHandler) GetSupportBundleCommand(w http.ResponseWriter, r *http.Request) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "GetSupportBundleCommand", w, r)
+}
+
+// GetSupportBundleCommand indicates an expected call of GetSupportBundleCommand.
+func (mr *MockKOTSHandlerMockRecorder) GetSupportBundleCommand(w, r interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetSupportBundleCommand", reflect.TypeOf((*MockKOTSHandler)(nil).GetSupportBundleCommand), w, r)
+}
+
+// GetSupportBundleFiles mocks base method.
+func (m *MockKOTSHandler) GetSupportBundleFiles(w http.ResponseWriter, r *http.Request) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "GetSupportBundleFiles", w, r)
+}
+
+// GetSupportBundleFiles indicates an expected call of GetSupportBundleFiles.
+func (mr *MockKOTSHandlerMockRecorder) GetSupportBundleFiles(w, r interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetSupportBundleFiles", reflect.TypeOf((*MockKOTSHandler)(nil).GetSupportBundleFiles), w, r)
+}
+
+// GetSupportBundleRedactions mocks base method.
+func (m *MockKOTSHandler) GetSupportBundleRedactions(w http.ResponseWriter, r *http.Request) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "GetSupportBundleRedactions", w, r)
+}
+
+// GetSupportBundleRedactions indicates an expected call of GetSupportBundleRedactions.
+func (mr *MockKOTSHandlerMockRecorder) GetSupportBundleRedactions(w, r interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetSupportBundleRedactions", reflect.TypeOf((*MockKOTSHandler)(nil).GetSupportBundleRedactions), w, r)
+}
+
+// GetUpdateDownloadStatus mocks base method.
+func (m *MockKOTSHandler) GetUpdateDownloadStatus(w http.ResponseWriter, r *http.Request) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "GetUpdateDownloadStatus", w, r)
+}
+
+// GetUpdateDownloadStatus indicates an expected call of GetUpdateDownloadStatus.
+func (mr *MockKOTSHandlerMockRecorder) GetUpdateDownloadStatus(w, r interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUpdateDownloadStatus", reflect.TypeOf((*MockKOTSHandler)(nil).GetUpdateDownloadStatus), w, r)
+}
+
+// GetVeleroStatus mocks base method.
+func (m *MockKOTSHandler) GetVeleroStatus(w http.ResponseWriter, r *http.Request) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "GetVeleroStatus", w, r)
+}
+
+// GetVeleroStatus indicates an expected call of GetVeleroStatus.
+func (mr *MockKOTSHandlerMockRecorder) GetVeleroStatus(w, r interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetVeleroStatus", reflect.TypeOf((*MockKOTSHandler)(nil).GetVeleroStatus), w, r)
+}
+
+// IgnorePreflightRBACErrors mocks base method.
+func (m *MockKOTSHandler) IgnorePreflightRBACErrors(w http.ResponseWriter, r *http.Request) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "IgnorePreflightRBACErrors", w, r)
+}
+
+// IgnorePreflightRBACErrors indicates an expected call of IgnorePreflightRBACErrors.
+func (mr *MockKOTSHandlerMockRecorder) IgnorePreflightRBACErrors(w, r interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IgnorePreflightRBACErrors", reflect.TypeOf((*MockKOTSHandler)(nil).IgnorePreflightRBACErrors), w, r)
+}
+
+// InitGitOpsConnection mocks base method.
+func (m *MockKOTSHandler) InitGitOpsConnection(w http.ResponseWriter, r *http.Request) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "InitGitOpsConnection", w, r)
+}
+
+// InitGitOpsConnection indicates an expected call of InitGitOpsConnection.
+func (mr *MockKOTSHandlerMockRecorder) InitGitOpsConnection(w, r interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InitGitOpsConnection", reflect.TypeOf((*MockKOTSHandler)(nil).InitGitOpsConnection), w, r)
+}
+
+// ListApps mocks base method.
+func (m *MockKOTSHandler) ListApps(w http.ResponseWriter, r *http.Request) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "ListApps", w, r)
+}
+
+// ListApps indicates an expected call of ListApps.
+func (mr *MockKOTSHandlerMockRecorder) ListApps(w, r interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListApps", reflect.TypeOf((*MockKOTSHandler)(nil).ListApps), w, r)
+}
+
+// ListBackups mocks base method.
+func (m *MockKOTSHandler) ListBackups(w http.ResponseWriter, r *http.Request) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "ListBackups", w, r)
+}
+
+// ListBackups indicates an expected call of ListBackups.
+func (mr *MockKOTSHandlerMockRecorder) ListBackups(w, r interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListBackups", reflect.TypeOf((*MockKOTSHandler)(nil).ListBackups), w, r)
+}
+
+// ListInstanceBackups mocks base method.
+func (m *MockKOTSHandler) ListInstanceBackups(w http.ResponseWriter, r *http.Request) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "ListInstanceBackups", w, r)
+}
+
+// ListInstanceBackups indicates an expected call of ListInstanceBackups.
+func (mr *MockKOTSHandlerMockRecorder) ListInstanceBackups(w, r interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListInstanceBackups", reflect.TypeOf((*MockKOTSHandler)(nil).ListInstanceBackups), w, r)
+}
+
+// ListRedactors mocks base method.
+func (m *MockKOTSHandler) ListRedactors(w http.ResponseWriter, r *http.Request) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "ListRedactors", w, r)
+}
+
+// ListRedactors indicates an expected call of ListRedactors.
+func (mr *MockKOTSHandlerMockRecorder) ListRedactors(w, r interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListRedactors", reflect.TypeOf((*MockKOTSHandler)(nil).ListRedactors), w, r)
+}
+
+// ListSupportBundles mocks base method.
+func (m *MockKOTSHandler) ListSupportBundles(w http.ResponseWriter, r *http.Request) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "ListSupportBundles", w, r)
+}
+
+// ListSupportBundles indicates an expected call of ListSupportBundles.
+func (mr *MockKOTSHandlerMockRecorder) ListSupportBundles(w, r interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListSupportBundles", reflect.TypeOf((*MockKOTSHandler)(nil).ListSupportBundles), w, r)
+}
+
+// LiveAppConfig mocks base method.
+func (m *MockKOTSHandler) LiveAppConfig(w http.ResponseWriter, r *http.Request) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "LiveAppConfig", w, r)
+}
+
+// LiveAppConfig indicates an expected call of LiveAppConfig.
+func (mr *MockKOTSHandlerMockRecorder) LiveAppConfig(w, r interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "LiveAppConfig", reflect.TypeOf((*MockKOTSHandler)(nil).LiveAppConfig), w, r)
+}
+
+// Ping mocks base method.
+func (m *MockKOTSHandler) Ping(w http.ResponseWriter, r *http.Request) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "Ping", w, r)
+}
+
+// Ping indicates an expected call of Ping.
+func (mr *MockKOTSHandlerMockRecorder) Ping(w, r interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Ping", reflect.TypeOf((*MockKOTSHandler)(nil).Ping), w, r)
+}
+
+// PreflightsReports mocks base method.
+func (m *MockKOTSHandler) PreflightsReports(w http.ResponseWriter, r *http.Request) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "PreflightsReports", w, r)
+}
+
+// PreflightsReports indicates an expected call of PreflightsReports.
+func (mr *MockKOTSHandlerMockRecorder) PreflightsReports(w, r interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PreflightsReports", reflect.TypeOf((*MockKOTSHandler)(nil).PreflightsReports), w, r)
+}
+
+// RedeployAppVersion mocks base method.
+func (m *MockKOTSHandler) RedeployAppVersion(w http.ResponseWriter, r *http.Request) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "RedeployAppVersion", w, r)
+}
+
+// RedeployAppVersion indicates an expected call of RedeployAppVersion.
+func (mr *MockKOTSHandlerMockRecorder) RedeployAppVersion(w, r interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RedeployAppVersion", reflect.TypeOf((*MockKOTSHandler)(nil).RedeployAppVersion), w, r)
+}
+
+// RemoveApp mocks base method.
+func (m *MockKOTSHandler) RemoveApp(w http.ResponseWriter, r *http.Request) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "RemoveApp", w, r)
+}
+
+// RemoveApp indicates an expected call of RemoveApp.
+func (mr *MockKOTSHandlerMockRecorder) RemoveApp(w, r interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveApp", reflect.TypeOf((*MockKOTSHandler)(nil).RemoveApp), w, r)
+}
+
+// ResetAirgapInstallStatus mocks base method.
+func (m *MockKOTSHandler) ResetAirgapInstallStatus(w http.ResponseWriter, r *http.Request) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "ResetAirgapInstallStatus", w, r)
+}
+
+// ResetAirgapInstallStatus indicates an expected call of ResetAirgapInstallStatus.
+func (mr *MockKOTSHandlerMockRecorder) ResetAirgapInstallStatus(w, r interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ResetAirgapInstallStatus", reflect.TypeOf((*MockKOTSHandler)(nil).ResetAirgapInstallStatus), w, r)
+}
+
+// ResetGitOps mocks base method.
+func (m *MockKOTSHandler) ResetGitOps(w http.ResponseWriter, r *http.Request) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "ResetGitOps", w, r)
+}
+
+// ResetGitOps indicates an expected call of ResetGitOps.
+func (mr *MockKOTSHandlerMockRecorder) ResetGitOps(w, r interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ResetGitOps", reflect.TypeOf((*MockKOTSHandler)(nil).ResetGitOps), w, r)
+}
+
+// RestoreApps mocks base method.
+func (m *MockKOTSHandler) RestoreApps(w http.ResponseWriter, r *http.Request) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "RestoreApps", w, r)
+}
+
+// RestoreApps indicates an expected call of RestoreApps.
+func (mr *MockKOTSHandlerMockRecorder) RestoreApps(w, r interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RestoreApps", reflect.TypeOf((*MockKOTSHandler)(nil).RestoreApps), w, r)
+}
+
+// ResumeInstallOnline mocks base method.
+func (m *MockKOTSHandler) ResumeInstallOnline(w http.ResponseWriter, r *http.Request) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "ResumeInstallOnline", w, r)
+}
+
+// ResumeInstallOnline indicates an expected call of ResumeInstallOnline.
+func (mr *MockKOTSHandlerMockRecorder) ResumeInstallOnline(w, r interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ResumeInstallOnline", reflect.TypeOf((*MockKOTSHandler)(nil).ResumeInstallOnline), w, r)
+}
+
+// SaveInstanceSnapshotConfig mocks base method.
+func (m *MockKOTSHandler) SaveInstanceSnapshotConfig(w http.ResponseWriter, r *http.Request) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "SaveInstanceSnapshotConfig", w, r)
+}
+
+// SaveInstanceSnapshotConfig indicates an expected call of SaveInstanceSnapshotConfig.
+func (mr *MockKOTSHandlerMockRecorder) SaveInstanceSnapshotConfig(w, r interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SaveInstanceSnapshotConfig", reflect.TypeOf((*MockKOTSHandler)(nil).SaveInstanceSnapshotConfig), w, r)
+}
+
+// SaveSnapshotConfig mocks base method.
+func (m *MockKOTSHandler) SaveSnapshotConfig(w http.ResponseWriter, r *http.Request) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "SaveSnapshotConfig", w, r)
+}
+
+// SaveSnapshotConfig indicates an expected call of SaveSnapshotConfig.
+func (mr *MockKOTSHandlerMockRecorder) SaveSnapshotConfig(w, r interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SaveSnapshotConfig", reflect.TypeOf((*MockKOTSHandler)(nil).SaveSnapshotConfig), w, r)
+}
+
+// SetAppConfigValues mocks base method.
+func (m *MockKOTSHandler) SetAppConfigValues(w http.ResponseWriter, r *http.Request) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "SetAppConfigValues", w, r)
+}
+
+// SetAppConfigValues indicates an expected call of SetAppConfigValues.
+func (mr *MockKOTSHandlerMockRecorder) SetAppConfigValues(w, r interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetAppConfigValues", reflect.TypeOf((*MockKOTSHandler)(nil).SetAppConfigValues), w, r)
+}
+
+// SetPrometheusAddress mocks base method.
+func (m *MockKOTSHandler) SetPrometheusAddress(w http.ResponseWriter, r *http.Request) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "SetPrometheusAddress", w, r)
+}
+
+// SetPrometheusAddress indicates an expected call of SetPrometheusAddress.
+func (mr *MockKOTSHandlerMockRecorder) SetPrometheusAddress(w, r interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetPrometheusAddress", reflect.TypeOf((*MockKOTSHandler)(nil).SetPrometheusAddress), w, r)
+}
+
+// SetRedactEnabled mocks base method.
+func (m *MockKOTSHandler) SetRedactEnabled(w http.ResponseWriter, r *http.Request) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "SetRedactEnabled", w, r)
+}
+
+// SetRedactEnabled indicates an expected call of SetRedactEnabled.
+func (mr *MockKOTSHandlerMockRecorder) SetRedactEnabled(w, r interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetRedactEnabled", reflect.TypeOf((*MockKOTSHandler)(nil).SetRedactEnabled), w, r)
+}
+
+// SetRedactMetadataAndYaml mocks base method.
+func (m *MockKOTSHandler) SetRedactMetadataAndYaml(w http.ResponseWriter, r *http.Request) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "SetRedactMetadataAndYaml", w, r)
+}
+
+// SetRedactMetadataAndYaml indicates an expected call of SetRedactMetadataAndYaml.
+func (mr *MockKOTSHandlerMockRecorder) SetRedactMetadataAndYaml(w, r interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetRedactMetadataAndYaml", reflect.TypeOf((*MockKOTSHandler)(nil).SetRedactMetadataAndYaml), w, r)
+}
+
+// StartPreflightChecks mocks base method.
+func (m *MockKOTSHandler) StartPreflightChecks(w http.ResponseWriter, r *http.Request) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "StartPreflightChecks", w, r)
+}
+
+// StartPreflightChecks indicates an expected call of StartPreflightChecks.
+func (mr *MockKOTSHandlerMockRecorder) StartPreflightChecks(w, r interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "StartPreflightChecks", reflect.TypeOf((*MockKOTSHandler)(nil).StartPreflightChecks), w, r)
+}
+
+// SyncLicense mocks base method.
+func (m *MockKOTSHandler) SyncLicense(w http.ResponseWriter, r *http.Request) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "SyncLicense", w, r)
+}
+
+// SyncLicense indicates an expected call of SyncLicense.
+func (mr *MockKOTSHandlerMockRecorder) SyncLicense(w, r interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SyncLicense", reflect.TypeOf((*MockKOTSHandler)(nil).SyncLicense), w, r)
+}
+
+// UpdateAppConfig mocks base method.
+func (m *MockKOTSHandler) UpdateAppConfig(w http.ResponseWriter, r *http.Request) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "UpdateAppConfig", w, r)
+}
+
+// UpdateAppConfig indicates an expected call of UpdateAppConfig.
+func (mr *MockKOTSHandlerMockRecorder) UpdateAppConfig(w, r interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateAppConfig", reflect.TypeOf((*MockKOTSHandler)(nil).UpdateAppConfig), w, r)
+}
+
+// UpdateAppFromAirgap mocks base method.
+func (m *MockKOTSHandler) UpdateAppFromAirgap(w http.ResponseWriter, r *http.Request) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "UpdateAppFromAirgap", w, r)
+}
+
+// UpdateAppFromAirgap indicates an expected call of UpdateAppFromAirgap.
+func (mr *MockKOTSHandlerMockRecorder) UpdateAppFromAirgap(w, r interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateAppFromAirgap", reflect.TypeOf((*MockKOTSHandler)(nil).UpdateAppFromAirgap), w, r)
+}
+
+// UpdateAppGitOps mocks base method.
+func (m *MockKOTSHandler) UpdateAppGitOps(w http.ResponseWriter, r *http.Request) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "UpdateAppGitOps", w, r)
+}
+
+// UpdateAppGitOps indicates an expected call of UpdateAppGitOps.
+func (mr *MockKOTSHandlerMockRecorder) UpdateAppGitOps(w, r interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateAppGitOps", reflect.TypeOf((*MockKOTSHandler)(nil).UpdateAppGitOps), w, r)
+}
+
+// UpdateAppRegistry mocks base method.
+func (m *MockKOTSHandler) UpdateAppRegistry(w http.ResponseWriter, r *http.Request) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "UpdateAppRegistry", w, r)
+}
+
+// UpdateAppRegistry indicates an expected call of UpdateAppRegistry.
+func (mr *MockKOTSHandlerMockRecorder) UpdateAppRegistry(w, r interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateAppRegistry", reflect.TypeOf((*MockKOTSHandler)(nil).UpdateAppRegistry), w, r)
+}
+
+// UpdateCheckerSpec mocks base method.
+func (m *MockKOTSHandler) UpdateCheckerSpec(w http.ResponseWriter, r *http.Request) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "UpdateCheckerSpec", w, r)
+}
+
+// UpdateCheckerSpec indicates an expected call of UpdateCheckerSpec.
+func (mr *MockKOTSHandlerMockRecorder) UpdateCheckerSpec(w, r interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateCheckerSpec", reflect.TypeOf((*MockKOTSHandler)(nil).UpdateCheckerSpec), w, r)
+}
+
+// UpdateGlobalSnapshotSettings mocks base method.
+func (m *MockKOTSHandler) UpdateGlobalSnapshotSettings(w http.ResponseWriter, r *http.Request) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "UpdateGlobalSnapshotSettings", w, r)
+}
+
+// UpdateGlobalSnapshotSettings indicates an expected call of UpdateGlobalSnapshotSettings.
+func (mr *MockKOTSHandlerMockRecorder) UpdateGlobalSnapshotSettings(w, r interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateGlobalSnapshotSettings", reflect.TypeOf((*MockKOTSHandler)(nil).UpdateGlobalSnapshotSettings), w, r)
+}
+
+// UpdateRedact mocks base method.
+func (m *MockKOTSHandler) UpdateRedact(w http.ResponseWriter, r *http.Request) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "UpdateRedact", w, r)
+}
+
+// UpdateRedact indicates an expected call of UpdateRedact.
+func (mr *MockKOTSHandlerMockRecorder) UpdateRedact(w, r interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateRedact", reflect.TypeOf((*MockKOTSHandler)(nil).UpdateRedact), w, r)
+}
+
+// UploadAirgapBundleChunk mocks base method.
+func (m *MockKOTSHandler) UploadAirgapBundleChunk(w http.ResponseWriter, r *http.Request) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "UploadAirgapBundleChunk", w, r)
+}
+
+// UploadAirgapBundleChunk indicates an expected call of UploadAirgapBundleChunk.
+func (mr *MockKOTSHandlerMockRecorder) UploadAirgapBundleChunk(w, r interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UploadAirgapBundleChunk", reflect.TypeOf((*MockKOTSHandler)(nil).UploadAirgapBundleChunk), w, r)
+}
+
+// UploadNewLicense mocks base method.
+func (m *MockKOTSHandler) UploadNewLicense(w http.ResponseWriter, r *http.Request) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "UploadNewLicense", w, r)
+}
+
+// UploadNewLicense indicates an expected call of UploadNewLicense.
+func (mr *MockKOTSHandlerMockRecorder) UploadNewLicense(w, r interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UploadNewLicense", reflect.TypeOf((*MockKOTSHandler)(nil).UploadNewLicense), w, r)
+}
+
+// ValidateAppRegistry mocks base method.
+func (m *MockKOTSHandler) ValidateAppRegistry(w http.ResponseWriter, r *http.Request) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "ValidateAppRegistry", w, r)
+}
+
+// ValidateAppRegistry indicates an expected call of ValidateAppRegistry.
+func (mr *MockKOTSHandlerMockRecorder) ValidateAppRegistry(w, r interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ValidateAppRegistry", reflect.TypeOf((*MockKOTSHandler)(nil).ValidateAppRegistry), w, r)
 }
