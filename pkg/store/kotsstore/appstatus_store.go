@@ -62,7 +62,13 @@ func (s *KOTSStore) SetAppStatus(appID string, resourceStates []appstatustypes.R
 	}
 
 	db := persistence.MustGetDBSession()
-	query := `insert into app_status (app_id, resource_states, updated_at, sequence) values ($1, $2, $3, $4) on conflict (app_id) do update set resource_states = $2, updated_at = $3, sequence = $4`
+	query := `
+	insert into app_status (app_id, resource_states, updated_at, sequence)
+	values ($1, $2, $3, $4)
+	on conflict (app_id) do update set
+	  resource_states = EXCLUDED.resource_states,
+	  updated_at = EXCLUDED.updated_at,
+	  sequence = EXCLUDED.sequence`
 	_, err = db.Exec(query, appID, marshalledResourceStates, updatedAt, sequence)
 	if err != nil {
 		return errors.Wrap(err, "failed to exec")

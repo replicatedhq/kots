@@ -39,8 +39,8 @@ func (s *KOTSStore) AddAppToAllDownstreams(appID string) error {
 func (s *KOTSStore) SetAppInstallState(appID string, state string) error {
 	db := persistence.MustGetDBSession()
 
-	query := `update app set install_state = $2 where id = $1`
-	_, err := db.Exec(query, appID, state)
+	query := `update app set install_state = $1 where id = $2`
+	_, err := db.Exec(query, state, appID)
 	if err != nil {
 		return errors.Wrap(err, "failed to update app install state")
 	}
@@ -108,6 +108,7 @@ func (s *KOTSStore) GetAppIDFromSlug(slug string) (string, error) {
 }
 
 func (s *KOTSStore) GetApp(id string) (*apptypes.App, error) {
+
 	// too noisy
 	// logger.Debug("getting app from id",
 	// 	zap.String("id", id))

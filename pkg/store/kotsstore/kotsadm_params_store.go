@@ -27,7 +27,7 @@ func (s *KOTSStore) IsKotsadmIDGenerated() (bool, error) {
 func (s *KOTSStore) SetIsKotsadmIDGenerated() error {
 	db := persistence.MustGetDBSession()
 
-	query := `insert into kotsadm_params (key, value) values ($1, $2) on conflict (key) do update set value = $2`
+	query := `insert into kotsadm_params (key, value) values ($1, $2) on conflict (key) do update set value = EXCLUDED.value`
 	_, err := db.Exec(query, "IS_KOTSADM_ID_GENERATED", true)
 	if err != nil {
 		return errors.Wrap(err, "failed to exec")

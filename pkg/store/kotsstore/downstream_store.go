@@ -122,8 +122,8 @@ func (s *KOTSStore) SetDownstreamVersionPendingPreflight(appID string, sequence 
 // UpdateDownstreamVersionStatus updates the status and status info for the downstream version with the given sequence and app id
 func (s *KOTSStore) UpdateDownstreamVersionStatus(appID string, sequence int64, status string, statusInfo string) error {
 	db := persistence.MustGetDBSession()
-	query := `update app_downstream_version set status = $3, status_info = $4 where app_id = $1 and sequence = $2`
-	_, err := db.Exec(query, appID, sequence, status, statusInfo)
+	query := `update app_downstream_version set status = $1, status_info = $2 where app_id = $3 and sequence = $4`
+	_, err := db.Exec(query, status, statusInfo, appID, sequence)
 	if err != nil {
 		return errors.Wrap(err, "failed to exec")
 	}
@@ -206,11 +206,11 @@ func (s *KOTSStore) GetCurrentVersion(appID string, clusterID string) (*downstre
 	 adv.app_id = ado.app_id AND adv.cluster_id = ado.cluster_id AND adv.sequence = ado.downstream_sequence
  WHERE
 	 adv.app_id = $1 AND
-	 adv.cluster_id = $3 AND
-	 adv.sequence = $2
+	 adv.cluster_id = $2 AND
+	 adv.sequence = $3
  ORDER BY
 	 adv.sequence DESC`
-	row := db.QueryRow(query, appID, currentSequence, clusterID)
+	row := db.QueryRow(query, appID, clusterID, currentSequence)
 
 	v, err := downstreamVersionFromRow(appID, row)
 	if err != nil {
@@ -281,12 +281,12 @@ func (s *KOTSStore) GetPendingVersions(appID string, clusterID string) ([]downst
 	 adv.app_id = ado.app_id AND adv.cluster_id = ado.cluster_id AND adv.sequence = ado.downstream_sequence
  WHERE
 	 adv.app_id = $1 AND
-	 adv.cluster_id = $3 AND
-	 adv.sequence > $2
+	 adv.cluster_id = $2 AND
+	 adv.sequence > $3
  ORDER BY
 	 adv.sequence DESC`
 
-	rows, err := db.Query(query, appID, currentSequence, clusterID)
+	rows, err := db.Query(query, appID, clusterID, currentSequence)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to query")
 	}
@@ -346,12 +346,12 @@ func (s *KOTSStore) GetPastVersions(appID string, clusterID string) ([]downstrea
 	 adv.app_id = ado.app_id AND adv.cluster_id = ado.cluster_id AND adv.sequence = ado.downstream_sequence
  WHERE
 	 adv.app_id = $1 AND
-	 adv.cluster_id = $3 AND
-	 adv.sequence < $2
+	 adv.cluster_id = $2 AND
+	 adv.sequence < $3
  ORDER BY
 	 adv.sequence DESC`
 
-	rows, err := db.Query(query, appID, currentSequence, clusterID)
+	rows, err := db.Query(query, appID, clusterID, currentSequence)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to query")
 	}
@@ -374,21 +374,21 @@ func (s *KOTSStore) GetPastVersions(appID string, clusterID string) ([]downstrea
 func downstreamVersionFromRow(appID string, row scannable) (*downstreamtypes.DownstreamVersion, error) {
 	v := &downstreamtypes.DownstreamVersion{}
 
-	var createdOn sql.NullTime
+	var createdOn persistence.NullStringTime
 	var versionLabel sql.NullString
 	var status sql.NullString
 	var parentSequence sql.NullInt64
-	var deployedAt sql.NullTime
+	var deployedAt persistence.NullStringTime
 	var source sql.NullString
 	var diffSummary sql.NullString
 	var diffSummaryError sql.NullString
 	var preflightResult sql.NullString
-	var preflightResultCreatedAt sql.NullTime
+	var preflightResultCreatedAt persistence.NullStringTime
 	var preflightSkipped sql.NullBool
 	var commitURL sql.NullString
 	var gitDeployable sql.NullBool
 	var hasError sql.NullBool
-	var upstreamReleasedAt sql.NullTime
+	var upstreamReleasedAt persistence.NullStringTime
 	var kotsInstallationSpecStr sql.NullString
 
 	if err := row.Scan(

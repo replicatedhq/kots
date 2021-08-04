@@ -25,7 +25,7 @@ func (s *KOTSStore) GetPrometheusAddress() (string, error) {
 
 func (s *KOTSStore) SetPrometheusAddress(address string) error {
 	db := persistence.MustGetDBSession()
-	query := `insert into kotsadm_params (key, value) values ($1, $2) on conflict (key) do update set value = $2`
+	query := `insert into kotsadm_params (key, value) values ($1, $2) on conflict (key) do update set value = EXCLUDED.value`
 
 	_, err := db.Exec(query, "PROMETHEUS_ADDRESS", address)
 	if err != nil {
