@@ -622,7 +622,7 @@ jobs:
           kubectl create ns nginx-test
           kubectl create ns redis-test
           kubectl create ns postgres-test
-          kustomize build $HOME/$APP_SLUG/overlays/midstream | kubectl apply -f -
+          kustomize build $PWD/$APP_SLUG/overlays/midstream | kubectl apply -f -
 
           EXIT_CODE=$?
           if [ $EXIT_CODE -ne 0 ]; then
