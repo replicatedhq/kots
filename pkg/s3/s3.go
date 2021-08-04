@@ -48,8 +48,16 @@ func GetConfig() *aws.Config {
 		region = "us-east-1"
 	}
 
+	accessKeyID := os.Getenv("S3_ACCESS_KEY_ID")
+	secretAccessKey := os.Getenv("S3_SECRET_ACCESS_KEY")
+
+	creds := credentials.NewStaticCredentials(accessKeyID, secretAccessKey, "")
+	if (accessKeyID == "" || secretAccessKey == "") {
+		creds = nil
+	}
+
 	s3Config := &aws.Config{
-		Credentials:      credentials.NewStaticCredentials(os.Getenv("S3_ACCESS_KEY_ID"), os.Getenv("S3_SECRET_ACCESS_KEY"), ""),
+		Credentials:      creds,
 		Endpoint:         aws.String(os.Getenv("S3_ENDPOINT")),
 		Region:           aws.String(region),
 		DisableSSL:       aws.Bool(true),
