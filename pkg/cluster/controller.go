@@ -3,7 +3,8 @@ package cluster
 import (
 	"context"
 	"fmt"
-	"sync"
+	"net/http"
+	"time"
 
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/logger"
@@ -54,9 +55,32 @@ func runController(ctx context.Context, wg *sync.WaitGroup, dataDir string) erro
 		logger.Infof("kubernetes contoller manager exited %v", command.Execute())
 	}()
 
-	// <-ctx.Done()
+	// watch the readyz endpoint to know when the api server has started
+	stopWaitingAfter := time.Now().Add(time.Minute)
+	for {
+		url := "http://localhost:11252/healthz"
 
-	wg.Done()
 
-	return nil
+		client := http.Client{}
+
+		req, err := http.NewRequest("GET", url, nil)
+		if err != nil {
+			return errors.Wrap(err, "failed to create http request")
+		}
+
+		resp, err := client.Do(req)
+		if err != nil {
+			time.Sleep(time.Second)
+			continue // keep trying
+		}
+		if resp.StatusCode == http.StatusOK {
+			return nil
+		}
+
+		if stopWaitingAfter.Before(time.Now()) {
+			return errors.New("controller manager did not start")
+		}
+
+		time.Sleep(time.Second)
+	}
 }
