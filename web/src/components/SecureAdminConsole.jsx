@@ -38,8 +38,10 @@ class SecureAdminConsole extends React.Component {
         this.setState({ authLoading: false });
         if (apps.length > 0) {
           this.props.history.replace(`/app/${apps[0].slug}`);
-        } else if (pendingApp?.slug) {
+        } else if (pendingApp?.slug && pendingApp?.needsRegistry) {
           this.props.history.replace(`/${pendingApp.slug}/airgap`);
+        } else if (pendingApp?.slug && !pendingApp?.needsRegistry) {
+          this.props.history.replace(`/${pendingApp.slug}/airgap-bundle`);
         } else {
           this.props.history.replace("upload-license");
         }
