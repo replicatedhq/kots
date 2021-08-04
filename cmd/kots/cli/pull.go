@@ -98,7 +98,7 @@ func PullCmd() *cobra.Command {
 
 	cmd.Flags().StringSlice("set", []string{}, "values to pass to helm when running helm template")
 	cmd.Flags().String("repo", "", "repo uri to use when downloading a helm chart")
-	cmd.Flags().String("rootdir", homeDir(), "root directory that will be used to write the yaml to")
+	cmd.Flags().String("rootdir", ".", "root directory that will be used to write the yaml to")
 	cmd.Flags().StringP("namespace", "n", "default", "namespace to render the upstream to in the base")
 	cmd.Flags().StringSlice("downstream", []string{}, "the list of any downstreams to create/update")
 	cmd.Flags().String("local-path", "", "specify a local-path to pull a locally available replicated app (only supported on replicated app types currently)")
