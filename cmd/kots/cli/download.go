@@ -55,13 +55,7 @@ func DownloadCmd() *cobra.Command {
 		},
 	}
 
-	defaultDest := homeDir()
-	cwd, err := os.Getwd()
-	if err == nil {
-		defaultDest = cwd
-	}
-
-	cmd.Flags().String("dest", defaultDest, "the directory to store the application in")
+	cmd.Flags().String("dest", ".", "the directory to store the application in")
 	cmd.Flags().Bool("overwrite", false, "overwrite any local files, if present")
 	cmd.Flags().String("slug", "", "the application slug to download")
 	cmd.Flags().Bool("decrypt-password-values", false, "decrypt password values to plaintext")
