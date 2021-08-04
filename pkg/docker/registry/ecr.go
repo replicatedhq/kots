@@ -65,7 +65,9 @@ func GetECRBasicAuthToken(ecrEndpoint, username, password string) (string, error
 
 func getECRService(accessKeyID, secretAccessKey, zone string) *ecr.ECR {
 	awsConfig := &aws.Config{Region: aws.String(zone)}
-	awsConfig.Credentials = credentials.NewStaticCredentials(accessKeyID, secretAccessKey, "")
+	if accessKeyID != "" && secretAccessKey != "" {
+		awsConfig.Credentials = credentials.NewStaticCredentials(accessKeyID, secretAccessKey, "")
+	}
 	return ecr.New(session.New(awsConfig))
 }
 
