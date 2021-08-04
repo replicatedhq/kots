@@ -78,8 +78,9 @@ type GetPendingAppResponse struct {
 }
 
 type ResponsePendingApp struct {
-	ID          string `json:"id"`
-	Slug        string `json:"slug"`
-	Name        string `json:"name"`
-	LicenseData string `json:"licenseData"`
+	ID            string `json:"id"`
+	Slug          string `json:"slug"`
+	Name          string `json:"name"`
+	LicenseData   string `json:"licenseData"`
+	NeedsRegistry bool   `json:"needsRegistry"`
 }
