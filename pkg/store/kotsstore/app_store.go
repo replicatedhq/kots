@@ -121,7 +121,8 @@ func (s *KOTSStore) GetApp(id string) (*apptypes.App, error) {
 	var licenseStr sql.NullString
 	var upstreamURI sql.NullString
 	var iconURI sql.NullString
-	var updatedAt sql.NullTime
+	var createdAt persistence.StringTime
+	var updatedAt persistence.NullStringTime
 	var currentSequence sql.NullInt64
 	var lastUpdateCheckAt sql.NullString
 	var snapshotTTLNew sql.NullString
@@ -130,10 +131,11 @@ func (s *KOTSStore) GetApp(id string) (*apptypes.App, error) {
 	var restoreUndeployStatus sql.NullString
 	var updateCheckerSpec sql.NullString
 
-	if err := row.Scan(&app.ID, &app.Name, &licenseStr, &upstreamURI, &iconURI, &app.CreatedAt, &updatedAt, &app.Slug, &currentSequence, &lastUpdateCheckAt, &app.IsAirgap, &snapshotTTLNew, &snapshotSchedule, &restoreInProgressName, &restoreUndeployStatus, &updateCheckerSpec, &app.InstallState); err != nil {
+	if err := row.Scan(&app.ID, &app.Name, &licenseStr, &upstreamURI, &iconURI, &createdAt, &updatedAt, &app.Slug, &currentSequence, &lastUpdateCheckAt, &app.IsAirgap, &snapshotTTLNew, &snapshotSchedule, &restoreInProgressName, &restoreUndeployStatus, &updateCheckerSpec, &app.InstallState); err != nil {
 		return nil, errors.Wrap(err, "failed to scan app")
 	}
 
+	app.CreatedAt = createdAt.Time
 	app.License = licenseStr.String
 	app.UpstreamURI = upstreamURI.String
 	app.IconURI = iconURI.String
