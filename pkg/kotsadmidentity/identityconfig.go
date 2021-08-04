@@ -9,6 +9,7 @@ import (
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	"github.com/replicatedhq/kots/pkg/crypto"
+	"github.com/replicatedhq/kots/pkg/kotsadmidentity/store"
 	"github.com/replicatedhq/kots/pkg/util"
 	"github.com/segmentio/ksuid"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -20,7 +21,7 @@ func AppIdentityNeedsBootstrap(appSlug string) (bool, error) {
 	user := fmt.Sprintf("%s-dex", appSlug)
 	exists, err := postgresUserExists(user)
 	if err != nil {
-		return false, errors.Wrap(err, "failed to create dex postgres database")
+		return false, errors.Wrapf(err, "failed to check %s user exists", user)
 	}
 
 	if exists {
@@ -51,9 +52,9 @@ func InitAppIdentityConfig(appSlug string, storage kotsv1beta1.Storage, cipher c
 
 	database := fmt.Sprintf("%s-dex", appSlug)
 	user := fmt.Sprintf("%s-dex", appSlug)
-	err := CreateDexPostgresDatabase(database, user, postgresPassword)
+	err := store.GetStore().CreateDexDatabase(database, user, postgresPassword)
 	if err != nil {
-		return "", errors.Wrap(err, "failed to create dex postgres database")
+		return "", errors.Wrap(err, "failed to create dex database")
 	}
 
 	identityConfig := &kotsv1beta1.IdentityConfig{

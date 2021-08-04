@@ -536,14 +536,15 @@ func (s *KOTSStore) GetAppVersion(appID string, sequence int64) (*versiontypes.A
 	row := db.QueryRow(query, appID, sequence)
 
 	var status sql.NullString
-	var deployedAt sql.NullTime
+	var deployedAt persistence.NullStringTime
+	var createdAt persistence.NullStringTime
 	var installationSpec sql.NullString
 	var kotsAppSpec sql.NullString
 
 	v := versiontypes.AppVersion{
 		AppID: appID,
 	}
-	if err := row.Scan(&v.Sequence, &v.CreatedOn, &status, &deployedAt, &installationSpec, &kotsAppSpec); err != nil {
+	if err := row.Scan(&v.Sequence, &createdAt, &status, &deployedAt, &installationSpec, &kotsAppSpec); err != nil {
 		if err == sql.ErrNoRows {
 			return nil, ErrNotFound
 		}
@@ -569,6 +570,7 @@ func (s *KOTSStore) GetAppVersion(appID string, sequence int64) (*versiontypes.A
 		}
 	}
 
+	v.CreatedOn = createdAt.Time
 	if deployedAt.Valid {
 		v.DeployedAt = &deployedAt.Time
 	}

@@ -9,6 +9,7 @@ import (
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	"github.com/replicatedhq/kots/pkg/crypto"
 	identity "github.com/replicatedhq/kots/pkg/kotsadmidentity"
+	identitystore "github.com/replicatedhq/kots/pkg/kotsadmidentity/store"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/store"
 	"k8s.io/client-go/kubernetes/scheme"
@@ -53,7 +54,7 @@ func bootstrapClusterToken(autoCreateClusterToken string) error {
 }
 
 func bootstrapIdentity() error {
-	err := identity.CreateDexPostgresDatabase("dex", "dex", os.Getenv("DEX_PGPASSWORD"))
+	err := identitystore.GetStore().CreateDexDatabase("dex", "dex", os.Getenv("DEX_PGPASSWORD"))
 	if err != nil {
 		return errors.Wrap(err, "failed to create identity db")
 	}
