@@ -544,7 +544,7 @@ func (s *KOTSStore) GetAppVersion(appID string, sequence int64) (*versiontypes.A
 	v := versiontypes.AppVersion{
 		AppID: appID,
 	}
-	if err := row.Scan(&v.Sequence, &createdAt, &status, &deployedAt, &installationSpec, &kotsAppSpec); err != nil {
+	if err := row.Scan(&v.Sequence, &createdAt, &status, &createdAt, &installationSpec, &kotsAppSpec); err != nil {
 		if err == sql.ErrNoRows {
 			return nil, ErrNotFound
 		}
