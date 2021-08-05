@@ -17,6 +17,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/kotsadm"
 	kotsadmtypes "github.com/replicatedhq/kots/pkg/kotsadm/types"
+	kotsadmlicense "github.com/replicatedhq/kots/pkg/kotsadmlicense"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	kotslicense "github.com/replicatedhq/kots/pkg/license"
 	"github.com/replicatedhq/kots/pkg/logger"
@@ -111,13 +112,26 @@ LICENSE_LOOP:
 		// check license expiration
 		expired, err := kotspull.LicenseIsExpired(verifiedLicense)
 		if err != nil {
-			logger.Error(errors.Wrap(err, "failed to check is license is expired"))
-			cleanup(&licenseSecret, unverifiedLicense.Spec.AppSlug)
+			logger.Error(errors.Wrapf(err, "failed to check if license is expired for app %s", verifiedLicense.Spec.AppSlug))
+			cleanup(&licenseSecret, verifiedLicense.Spec.AppSlug)
 			continue
 		}
 		if expired {
-			logger.Error(errors.Errorf("license is expired for app %s", verifiedLicense.Spec.AppSlug))
-			cleanup(&licenseSecret, unverifiedLicense.Spec.AppSlug)
+			logger.Errorf("license is expired for app %s", verifiedLicense.Spec.AppSlug)
+			cleanup(&licenseSecret, verifiedLicense.Spec.AppSlug)
+			continue
+		}
+
+		// check if license already exists
+		existingLicense, err := kotsadmlicense.CheckIfLicenseExists(license)
+		if err != nil {
+			logger.Error(errors.Wrapf(err, "failed to check if license already exists for app %s", verifiedLicense.Spec.AppSlug))
+			cleanup(&licenseSecret, verifiedLicense.Spec.AppSlug)
+			continue
+		}
+		if existingLicense != nil {
+			logger.Errorf("license already exists for app %s", verifiedLicense.Spec.AppSlug)
+			cleanup(&licenseSecret, verifiedLicense.Spec.AppSlug)
 			continue
 		}
 
@@ -275,11 +289,22 @@ func AirgapInstall(appSlug string, additionalFiles map[string][]byte) error {
 	expired, err := kotspull.LicenseIsExpired(verifiedLicense)
 	if err != nil {
 		cleanup(&licenseSecret, verifiedLicense.Spec.AppSlug)
-		return errors.Wrap(err, "failed to check is license is expired")
+		return errors.Wrapf(err, "failed to check is license is expired for app %s", verifiedLicense.Spec.AppSlug)
 	}
 	if expired {
 		cleanup(&licenseSecret, verifiedLicense.Spec.AppSlug)
 		return errors.Errorf("license is expired for app %s", verifiedLicense.Spec.AppSlug)
+	}
+
+	// check if license already exists
+	existingLicense, err := kotsadmlicense.CheckIfLicenseExists(license)
+	if err != nil {
+		cleanup(&licenseSecret, verifiedLicense.Spec.AppSlug)
+		return errors.Wrapf(err, "failed to check if license already exists for app %s", verifiedLicense.Spec.AppSlug)
+	}
+	if existingLicense != nil {
+		cleanup(&licenseSecret, verifiedLicense.Spec.AppSlug)
+		return errors.Errorf("License already exists for app %s", verifiedLicense.Spec.AppSlug)
 	}
 
 	instParams, err := kotsutil.GetInstallationParams(kotsadmtypes.KotsadmConfigMap)
