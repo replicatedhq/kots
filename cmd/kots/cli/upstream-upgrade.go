@@ -67,6 +67,15 @@ func UpstreamUpgradeCmd() *cobra.Command {
 				registryPassword := v.GetString("registry-password")
 
 				if registryNamespace == "" {
+					// check if it's provided as part of the registry endpoint
+					parts := strings.Split(registryEndpoint, "/")
+					if len(parts) > 1 {
+						registryEndpoint = parts[0]
+						registryNamespace = strings.Join(parts[1:], "/")
+					}
+				}
+
+				if registryNamespace == "" {
 					if isKurl {
 						registryNamespace = appSlug
 					} else {
