@@ -50,5 +50,9 @@ func Start(ctx context.Context, slug string, dataDir string) error {
 		return errors.Wrap(err, "install cri")
 	}
 
+	if err := installKubelet(false); err != nil {
+		return errors.Wrap(err, "install kubelet")
+	}
+
 	return nil
 }
