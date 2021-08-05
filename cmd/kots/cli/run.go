@@ -14,6 +14,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/cluster"
 	"github.com/replicatedhq/kots/pkg/filestore"
 	"github.com/replicatedhq/kots/pkg/logger"
+	"github.com/replicatedhq/kots/pkg/persistence"
 	"github.com/replicatedhq/kots/pkg/util"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -45,6 +46,10 @@ func RunCmd() *cobra.Command {
 			loggerCtx := context.WithValue(context.Background(), "log", log)
 			ctx, cancelFunc := context.WithCancel(loggerCtx)
 			defer cancelFunc()
+
+			// this is here to ensure that the store is initialized before we spawn kots and kubernetes at the same time, which
+			// might both try to initialize the store.
+			_ = persistence.MustGetDBSession()
 
 			// stat the kots api (aka, kotsadm in a former world)
 			if err := startKotsadm(ctx, v.GetString("data-dir"), v.GetString("shared-password")); err != nil {

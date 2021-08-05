@@ -13,6 +13,7 @@ import (
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	dextypes "github.com/replicatedhq/kots/pkg/identity/types/dex"
+	"github.com/replicatedhq/kots/pkg/persistence"
 	"github.com/replicatedhq/kots/pkg/template"
 )
 
@@ -43,16 +44,27 @@ func getDexConfig(ctx context.Context, issuerURL string, options Options) ([]byt
 		}
 	}
 
-	config := dextypes.Config{
-		Issuer: issuerURL,
-		Storage: dextypes.Storage{
+	var storage dextypes.Storage
+	if persistence.IsPostgres() {
+		storage = dextypes.Storage{
 			Type: "postgres",
 			Config: dextypes.Postgres{
 				SSL: dextypes.SSL{
 					Mode: "disable", // TODO ssl
 				},
 			},
-		},
+		}
+	} else {
+		storage = dextypes.Storage{
+			Type: "kubernetes",
+			Config: dextypes.Kubernetes{
+				InCluster: true,
+			},
+		}
+	}
+	config := dextypes.Config{
+		Issuer:  issuerURL,
+		Storage: storage,
 		Web: dextypes.Web{
 			HTTP: "0.0.0.0:5556",
 		},

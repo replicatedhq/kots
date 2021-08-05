@@ -3,6 +3,7 @@ package persistence
 import (
 	"database/sql"
 	"fmt"
+	"sync"
 
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/pkg/errors"
@@ -12,7 +13,10 @@ import (
 	"k8s.io/client-go/kubernetes/scheme"
 )
 
-var sqliteDB *sql.DB
+var (
+	sqliteDB    *sql.DB
+	schemaMutex sync.Mutex
+)
 
 func mustGetSQLiteSession() *sql.DB {
 	if sqliteDB != nil {
@@ -36,6 +40,9 @@ func mustGetSQLiteSession() *sql.DB {
 }
 
 func applySQLiteSchema(db *sql.DB) error {
+	schemaMutex.Lock()
+	defer schemaMutex.Unlock()
+
 	schemaheroscheme.AddToScheme(scheme.Scheme)
 	decode := scheme.Codecs.UniversalDeserializer().Decode
 

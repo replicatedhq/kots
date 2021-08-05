@@ -1,8 +1,6 @@
 package store
 
 import (
-	"path/filepath"
-
 	"github.com/replicatedhq/kots/pkg/persistence"
 )
 
@@ -12,7 +10,7 @@ var (
 )
 
 var _ DexStore = (*PostgresStore)(nil)
-var _ DexStore = (*SQLiteStore)(nil)
+var _ DexStore = (*K8sStore)(nil)
 
 func GetStore() DexStore {
 	if hasStore {
@@ -21,9 +19,7 @@ func GetStore() DexStore {
 
 	hasStore = true
 	if persistence.IsSQlite() {
-		globalStore = &SQLiteStore{
-			dbFilename: filepath.Join(filepath.Dir(persistence.SQLiteURI), "dex.db"),
-		}
+		globalStore = &K8sStore{}
 	} else {
 		globalStore = &PostgresStore{}
 	}

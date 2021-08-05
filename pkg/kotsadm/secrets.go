@@ -13,6 +13,7 @@ import (
 	identitydeploy "github.com/replicatedhq/kots/pkg/identity/deploy"
 	kotsadmobjects "github.com/replicatedhq/kots/pkg/kotsadm/objects"
 	"github.com/replicatedhq/kots/pkg/kotsadm/types"
+	"github.com/replicatedhq/kots/pkg/persistence"
 	"golang.org/x/crypto/bcrypt"
 	corev1 "k8s.io/api/core/v1"
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
@@ -105,14 +106,16 @@ func ensureSecrets(deployOptions *types.DeployOptions, clientset *kubernetes.Cli
 		return errors.Wrap(err, "failed to ensure postgres secret")
 	}
 
-	// this secret is used by one of kotsadm init containers to ensure dex db/user
-	postgresConfig := kotsv1beta1.IdentityPostgresConfig{
-		Host:     "kotsadm-postgres",
-		Database: "dex",
-		User:     "dex",
-	}
-	if err := identitydeploy.EnsurePostgresSecret(context.TODO(), clientset, deployOptions.Namespace, "kotsadm", nil, postgresConfig, nil); err != nil {
-		return errors.Wrap(err, "failed to ensure postgres secret for identity")
+	if persistence.IsPostgres() {
+		// this secret is used by one of kotsadm init containers to ensure dex db/user
+		postgresConfig := kotsv1beta1.IdentityPostgresConfig{
+			Host:     "kotsadm-postgres",
+			Database: "dex",
+			User:     "dex",
+		}
+		if err := identitydeploy.EnsurePostgresSecret(context.TODO(), clientset, deployOptions.Namespace, "kotsadm", nil, postgresConfig, nil); err != nil {
+			return errors.Wrap(err, "failed to ensure postgres secret for identity")
+		}
 	}
 
 	if deployOptions.SharedPasswordBcrypt == "" {
