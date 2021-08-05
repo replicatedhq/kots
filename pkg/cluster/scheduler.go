@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"sync"
 	"time"
 
 	"github.com/pkg/errors"
@@ -12,7 +11,7 @@ import (
 	"k8s.io/kubernetes/cmd/kube-scheduler/app"
 )
 
-func runScheduler(ctx context.Context, wg *sync.WaitGroup, dataDir string) error {
+func runScheduler(ctx context.Context, dataDir string) error {
 	log := ctx.Value("log").(*logger.CLILogger)
 	log.Info("starting kubernetes scheduler")
 

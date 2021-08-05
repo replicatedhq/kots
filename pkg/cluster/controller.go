@@ -2,8 +2,10 @@ package cluster
 
 import (
 	"context"
+	"crypto/tls"
 	"fmt"
 	"net/http"
+	"sync"
 	"time"
 
 	"github.com/pkg/errors"
@@ -34,7 +36,8 @@ func runController(ctx context.Context, wg *sync.WaitGroup, dataDir string) erro
 	}
 
 	args := []string{
-		"--bind-address=0.0.0.0:11252",
+		"--bind-address=0.0.0.0",
+		"--secure-port=11252",
 		"--cluster-cidr=10.200.0.0/16",
 		"--cluster-name=kubernetes",
 		fmt.Sprintf("--cluster-signing-cert-file=%s", caCertFile),
@@ -60,8 +63,10 @@ func runController(ctx context.Context, wg *sync.WaitGroup, dataDir string) erro
 	for {
 		url := "http://localhost:11252/healthz"
 
-
-		client := http.Client{}
+		tr := &http.Transport{
+			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+		}
+		client := http.Client{Transport: tr}
 
 		req, err := http.NewRequest("GET", url, nil)
 		if err != nil {
