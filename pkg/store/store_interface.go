@@ -42,6 +42,7 @@ type Store interface {
 	SnapshotStore
 	InstallationStore
 	KotsadmParamsStore
+	EmbeddedStore
 
 	Init() error // this may need options
 	WaitForReady(ctx context.Context) error
@@ -205,4 +206,9 @@ type InstallationStore interface {
 type KotsadmParamsStore interface {
 	IsKotsadmIDGenerated() (bool, error)
 	SetIsKotsadmIDGenerated() error
+}
+
+type EmbeddedStore interface {
+	GetEmbeddedClusterAuthToken() (string, error)
+	SetEmbeddedClusterAuthToken(token string) error
 }

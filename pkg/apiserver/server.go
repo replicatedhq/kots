@@ -196,7 +196,7 @@ func Start(params *APIServerParams) {
 		Addr:    ":3000",
 	}
 
-	fmt.Printf("Starting kotsadm API on port %d...\n", 3000)
+	fmt.Printf("Starting Admin Console API on port %d...\n", 3000)
 
 	log.Fatal(srv.ListenAndServe())
 }

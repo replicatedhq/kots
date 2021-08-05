@@ -2,15 +2,21 @@ package cluster
 
 import (
 	"context"
+	"crypto/tls"
 	"fmt"
+	"net/http"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/logger"
+	"github.com/replicatedhq/kots/pkg/store"
 	"k8s.io/kubernetes/cmd/kube-apiserver/app"
 )
 
+// runAPIServer will start the kubernetes api server and call the wg when it's started
+// this is designed to be run in a goroutine
 func runAPIServer(ctx context.Context, dataDir string, slug string) error {
 	log := ctx.Value("log").(*logger.CLILogger)
 	log.Info("starting kubernetes api server")
@@ -68,7 +74,6 @@ func runAPIServer(ctx context.Context, dataDir string, slug string) error {
 		"--anonymous-auth=false",
 		fmt.Sprintf("--authentication-token-webhook-config-file=%s", authenticationConfigFile),
 		"--authorization-mode=Node,RBAC,Webhook",
-		// "--authorization-mode=Node,RBAC",
 		fmt.Sprintf("--authorization-webhook-config-file=%s", authorizationConfigFile),
 		"--allow-privileged=true",
 		"--enable-admission-plugins=NamespaceLifecycle,NodeRestriction,LimitRanger,ServiceAccount,DefaultStorageClass,ResourceQuota",
@@ -85,7 +90,55 @@ func runAPIServer(ctx context.Context, dataDir string, slug string) error {
 		logger.Infof("kubernetes api server exited %v", command.Execute())
 	}()
 
-	// <-ctx.Done()
+	token := ""
 
-	return nil
+	// there's a lot starting at the same time, so this needs to wait for the token to be created
+
+	numAttempts := 0
+	for token == "" && numAttempts < 10 {
+		t, err := store.GetStore().GetEmbeddedClusterAuthToken()
+		if store.GetStore().IsNotFound(err) {
+			numAttempts++
+			time.Sleep(time.Second)
+			continue
+		}
+		if err != nil {
+			return errors.Wrap(err, "get embedded cluster auth token")
+		}
+
+		token = t
+	}
+
+	// watch the readyz endpoint to know when the api server has started
+	stopWaitingAfter := time.Now().Add(time.Minute)
+	for {
+		url := "https://localhost:8443/readyz?verbose&exclude=etcd"
+
+		// TODO instead of this we should pull the cert that we provisioned and use it
+		tr := &http.Transport{
+			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+		}
+		client := http.Client{Transport: tr}
+
+		req, err := http.NewRequest("GET", url, nil)
+		if err != nil {
+			return errors.Wrap(err, "failed to create http request")
+		}
+
+		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+		resp, err := client.Do(req)
+		if err != nil {
+			time.Sleep(time.Second)
+			continue // keep trying
+		}
+		if resp.StatusCode == http.StatusOK {
+			return nil
+		}
+
+		if stopWaitingAfter.Before(time.Now()) {
+			return errors.New("api server did not start")
+		}
+
+		time.Sleep(time.Second)
+	}
 }

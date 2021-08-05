@@ -7,12 +7,27 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/replicatedhq/kots/pkg/logger"
+	"github.com/replicatedhq/kots/pkg/store"
+	"github.com/segmentio/ksuid"
 	authenticationv1 "k8s.io/api/authentication/v1"
 	authorizationv1 "k8s.io/api/authorization/v1"
 )
 
 func StartAuthnzServer() {
 	log.Printf("starting k8s authnz server")
+
+	// verify that there's a single auth token in the sqlite database
+	_, err := store.GetStore().GetEmbeddedClusterAuthToken()
+	if store.GetStore().IsNotFound(err) {
+		token, err := ksuid.NewRandom()
+		if err != nil {
+			panic(err)
+		}
+
+		if err := store.GetStore().SetEmbeddedClusterAuthToken(token.String()); err != nil {
+			panic(err)
+		}
+	}
 
 	r := mux.NewRouter()
 

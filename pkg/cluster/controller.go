@@ -3,13 +3,14 @@ package cluster
 import (
 	"context"
 	"fmt"
+	"sync"
 
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"k8s.io/kubernetes/cmd/kube-controller-manager/app"
 )
 
-func runController(ctx context.Context, dataDir string) error {
+func runController(ctx context.Context, wg *sync.WaitGroup, dataDir string) error {
 	log := ctx.Value("log").(*logger.CLILogger)
 	log.Info("starting kubernetes controller manager")
 
@@ -54,6 +55,8 @@ func runController(ctx context.Context, dataDir string) error {
 	}()
 
 	// <-ctx.Done()
+
+	wg.Done()
 
 	return nil
 }
