@@ -3,14 +3,15 @@ package cluster
 import (
 	"context"
 	"fmt"
-	"sync"
+	"net/http"
+	"time"
 
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"k8s.io/kubernetes/cmd/kube-scheduler/app"
 )
 
-func runScheduler(ctx context.Context, wg *sync.WaitGroup, dataDir string) error {
+func runScheduler(ctx context.Context, dataDir string) error {
 	log := ctx.Value("log").(*logger.CLILogger)
 	log.Info("starting kubernetes scheduler")
 
@@ -32,7 +33,31 @@ func runScheduler(ctx context.Context, wg *sync.WaitGroup, dataDir string) error
 		logger.Infof("kubernetes scheduler exited %v", command.Execute())
 	}()
 
-	wg.Done()
+	// watch the readyz endpoint to know when the api server has started
+	stopWaitingAfter := time.Now().Add(time.Minute)
+	for {
+		url := "http://localhost:11251/healthz"
 
-	return nil
+		client := http.Client{}
+
+		req, err := http.NewRequest("GET", url, nil)
+		if err != nil {
+			return errors.Wrap(err, "failed to create http request")
+		}
+
+		resp, err := client.Do(req)
+		if err != nil {
+			time.Sleep(time.Second)
+			continue // keep trying
+		}
+		if resp.StatusCode == http.StatusOK {
+			return nil
+		}
+
+		if stopWaitingAfter.Before(time.Now()) {
+			return errors.New("scheduler did not start")
+		}
+
+		time.Sleep(time.Second)
+	}
 }

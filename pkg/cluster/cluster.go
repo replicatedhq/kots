@@ -26,16 +26,26 @@ func Start(ctx context.Context, slug string, dataDir string) error {
 	}
 
 	// start the scheduler on port 11251 (this is a non-standard port)
-	// wg.Add(1)
-	// if err := runScheduler(ctx, &wg, dataDir); err != nil {
-	// 	return errors.Wrap(err, "start scheduler")
-	// }
+	if err := runScheduler(ctx, dataDir); err != nil {
+		return errors.Wrap(err, "start scheduler")
+	}
 
-	// // start the controller manager on port 11252 (non standard)
-	// wg.Add(1)
-	// if err := runController(ctx, &wg, dataDir); err != nil {
+	// start the controller manager on port 11252 (non standard)
+	// TODO the controller should start
+	// if err := runController(ctx, dataDir); err != nil {
 	// 	return errors.Wrap(err, "start controller")
 	// }
+
+	// because these are all synchoronous, the api is ready and we
+	// can install our addons
+	kubeconfigPath, err := kubeconfigFilePath(dataDir)
+	if err != nil {
+		return errors.Wrap(err, "get kubeconfig path")
+	}
+
+	if err := installAntrea(kubeconfigPath); err != nil {
+		return errors.Wrap(err, "install antrea")
+	}
 
 	return nil
 }

@@ -2,8 +2,11 @@ package cluster
 
 import (
 	"context"
+	"crypto/tls"
 	"fmt"
+	"net/http"
 	"sync"
+	"time"
 
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/logger"
@@ -33,7 +36,8 @@ func runController(ctx context.Context, wg *sync.WaitGroup, dataDir string) erro
 	}
 
 	args := []string{
-		"--bind-address=0.0.0.0:11252",
+		"--bind-address=0.0.0.0",
+		"--secure-port=11252",
 		"--cluster-cidr=10.200.0.0/16",
 		"--cluster-name=kubernetes",
 		fmt.Sprintf("--cluster-signing-cert-file=%s", caCertFile),
@@ -54,9 +58,34 @@ func runController(ctx context.Context, wg *sync.WaitGroup, dataDir string) erro
 		logger.Infof("kubernetes contoller manager exited %v", command.Execute())
 	}()
 
-	// <-ctx.Done()
+	// watch the readyz endpoint to know when the api server has started
+	stopWaitingAfter := time.Now().Add(time.Minute)
+	for {
+		url := "http://localhost:11252/healthz"
 
-	wg.Done()
+		tr := &http.Transport{
+			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+		}
+		client := http.Client{Transport: tr}
 
-	return nil
+		req, err := http.NewRequest("GET", url, nil)
+		if err != nil {
+			return errors.Wrap(err, "failed to create http request")
+		}
+
+		resp, err := client.Do(req)
+		if err != nil {
+			time.Sleep(time.Second)
+			continue // keep trying
+		}
+		if resp.StatusCode == http.StatusOK {
+			return nil
+		}
+
+		if stopWaitingAfter.Before(time.Now()) {
+			return errors.New("controller manager did not start")
+		}
+
+		time.Sleep(time.Second)
+	}
 }
