@@ -204,6 +204,7 @@ var (
 )
 
 func deploymentResource(issuerURL, configChecksum string, options Options) (*appsv1.Deployment, error) {
+	// TODO: use GetAdminConsoleImage function
 	image := "kotsadm/dex:v2.28.1"
 	imagePullSecrets := []corev1.LocalObjectReference{}
 	if options.ImageRewriteFn != nil {

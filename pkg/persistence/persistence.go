@@ -20,3 +20,7 @@ func MustGetDBSession() *sql.DB {
 func IsSQlite() bool {
 	return SQLiteURI != ""
 }
+
+func IsPostgres() bool {
+	return PostgresURI != ""
+}

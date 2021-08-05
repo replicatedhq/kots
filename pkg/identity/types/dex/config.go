@@ -163,8 +163,8 @@ type GRPC struct {
 
 // Storage holds app's storage configuration.
 type Storage struct {
-	Type   string   `json:"type"`
-	Config Postgres `json:"config"`
+	Type   string      `json:"type"`
+	Config interface{} `json:"config"`
 }
 
 // Connector is a magical type that can unmarshal YAML dynamically. The

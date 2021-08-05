@@ -38,3 +38,8 @@ type Postgres struct {
 
 	SSL SSL `json:"ssl" yaml:"ssl"`
 }
+
+// In cluster options when not using a SQL db.
+type Kubernetes struct {
+	InCluster bool `json:"inCluster" yaml:"inCluster"`
+}
