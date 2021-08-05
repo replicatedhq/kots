@@ -238,8 +238,8 @@ func getLicenseEntitlements(license *kotsv1beta1.License) ([]EntitlementResponse
 func (h *Handler) UploadNewLicense(w http.ResponseWriter, r *http.Request) {
 	uploadLicenseRequest := UploadLicenseRequest{}
 	if err := json.NewDecoder(r.Body).Decode(&uploadLicenseRequest); err != nil {
-		logger.Error(err)
-		w.WriteHeader(500)
+		logger.Error(errors.Wrap(err, "failed to decode request body"))
+		w.WriteHeader(400)
 		return
 	}
 
@@ -248,7 +248,7 @@ func (h *Handler) UploadNewLicense(w http.ResponseWriter, r *http.Request) {
 	// validate the license
 	unverifiedLicense, err := kotsutil.LoadLicenseFromBytes([]byte(licenseString))
 	if err != nil {
-		logger.Error(err)
+		logger.Error(errors.Wrap(err, "failed to load license from bytes"))
 		w.WriteHeader(400)
 		return
 	}
@@ -272,7 +272,7 @@ func (h *Handler) UploadNewLicense(w http.ResponseWriter, r *http.Request) {
 		logger.Info("syncing license with server to retrieve latest version")
 		licenseData, err := kotslicense.GetLatestLicense(verifiedLicense)
 		if err != nil {
-			logger.Error(err)
+			logger.Error(errors.Wrap(err, "failed to get latest license"))
 			uploadLicenseResponse.Error = err.Error()
 			JSON(w, 500, uploadLicenseResponse)
 			return
@@ -284,7 +284,7 @@ func (h *Handler) UploadNewLicense(w http.ResponseWriter, r *http.Request) {
 	// check license expiration
 	expired, err := kotspull.LicenseIsExpired(verifiedLicense)
 	if err != nil {
-		logger.Error(err)
+		logger.Error(errors.Wrap(err, "failed to check if license is expired"))
 		uploadLicenseResponse.Error = err.Error()
 		JSON(w, 500, uploadLicenseResponse)
 		return
@@ -295,23 +295,14 @@ func (h *Handler) UploadNewLicense(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	allLicenses, err := store.GetStore().GetAllAppLicenses()
+	// check if license already exists
+	existingLicense, err := license.CheckIfLicenseExists([]byte(licenseString))
 	if err != nil {
-		logger.Error(err)
+		logger.Error(errors.Wrap(err, "failed to check if license already exists"))
 		uploadLicenseResponse.Error = err.Error()
 		JSON(w, 500, uploadLicenseResponse)
 		return
 	}
-
-	// check does license already exist
-	existingLicense, err := license.CheckDoesLicenseExists(allLicenses, uploadLicenseRequest.LicenseData)
-	if err != nil {
-		logger.Error(err)
-		uploadLicenseResponse.Error = err.Error()
-		JSON(w, 500, uploadLicenseResponse)
-		return
-	}
-
 	if existingLicense != nil {
 		uploadLicenseResponse.Error = "License already exists"
 		uploadLicenseResponse.DeleteAppCommand = fmt.Sprintf("kubectl kots remove %s -n %s --force", existingLicense.Spec.AppSlug, util.PodNamespace)
