@@ -304,7 +304,7 @@ func AirgapInstall(appSlug string, additionalFiles map[string][]byte) error {
 	}
 	if existingLicense != nil {
 		cleanup(&licenseSecret, verifiedLicense.Spec.AppSlug)
-		return errors.Errorf("License already exists for app %s", verifiedLicense.Spec.AppSlug)
+		return errors.Errorf("license already exists for app %s", verifiedLicense.Spec.AppSlug)
 	}
 
 	instParams, err := kotsutil.GetInstallationParams(kotsadmtypes.KotsadmConfigMap)
