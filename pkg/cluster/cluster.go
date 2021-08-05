@@ -11,8 +11,7 @@ import (
 // This function blocks until the cluster control plane has started
 func Start(ctx context.Context, slug string, dataDir string) error {
 	log := ctx.Value("log").(*logger.CLILogger)
-	log.ActionWithSpinner("Starting cluster")
-	defer log.FinishSpinner()
+	log.ActionWithoutSpinner("Starting cluster")
 
 	// init tls and misc
 	// this function is synchronous and blocks until ready
@@ -43,8 +42,12 @@ func Start(ctx context.Context, slug string, dataDir string) error {
 		return errors.Wrap(err, "get kubeconfig path")
 	}
 
-	if err := installAntrea(kubeconfigPath); err != nil {
+	if err := installCNI(kubeconfigPath); err != nil {
 		return errors.Wrap(err, "install antrea")
+	}
+
+	if err := installCRI(); err != nil {
+		return errors.Wrap(err, "install cri")
 	}
 
 	return nil

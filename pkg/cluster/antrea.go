@@ -30,7 +30,7 @@ var antreaManifests string
 
 // note: https://github.com/antrea-io/antrea/releases/download/v0.13.5/antrea.yml
 
-func installAntrea(kubeconfigPath string) error {
+func installCNI(kubeconfigPath string) error {
 	config, err := clientcmd.BuildConfigFromFlags("", kubeconfigPath)
 	if err != nil {
 		return errors.Wrap(err, "build config")
