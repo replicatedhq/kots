@@ -59,3 +59,50 @@ func extractOneFileFromArchiveStreamToDir(filename string, r io.ReadCloser, dest
 
 	return nil
 }
+
+func extractArchiveStreamToDir(r io.ReadCloser, dest string) error {
+	uncompressedStream, err := gzip.NewReader(r)
+	if err != nil {
+		return errors.Wrap(err, "create gzip reader")
+	}
+
+	tarReader := tar.NewReader(uncompressedStream)
+
+	for true {
+		header, err := tarReader.Next()
+
+		if err == io.EOF {
+			break
+		}
+
+		if err != nil {
+			return errors.Wrap(err, "read next")
+		}
+
+		switch header.Typeflag {
+		case tar.TypeDir:
+			if err := os.Mkdir(filepath.Join(dest, (header.Name)), 0755); err != nil {
+				return errors.Wrap(err, "mkdir")
+			}
+		case tar.TypeReg:
+			outFile, err := os.Create(filepath.Join(dest, header.Name))
+			if err != nil {
+				return errors.Wrap(err, "create")
+			}
+			if _, err := io.Copy(outFile, tarReader); err != nil {
+				return errors.Wrap(err, "copy")
+			}
+			if err := os.Chmod(filepath.Join(dest, header.Name), fs.FileMode(header.Mode)); err != nil {
+				return errors.Wrap(err, "chmod")
+			}
+
+			outFile.Close()
+
+		default:
+			return errors.New("unknown type")
+		}
+
+	}
+
+	return nil
+}

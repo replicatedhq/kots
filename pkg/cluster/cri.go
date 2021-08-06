@@ -7,7 +7,7 @@ import (
 )
 
 func startCRI(dataDir string) error {
-	if err := verifyRuncInstallation(); err != nil {
+	if err := verifyRunc(dataDir); err != nil {
 		return errors.Wrap(err, "verify runc")
 	}
 

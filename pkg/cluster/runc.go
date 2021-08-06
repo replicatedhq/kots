@@ -7,29 +7,27 @@ import (
 	"os/exec"
 	"path/filepath"
 
-	"github.com/manifoldco/promptui"
 	"github.com/pkg/errors"
 )
 
-func verifyRuncInstallation() error {
-	currentVersion, err := getCurrentRuncVersion()
+// verifyRunc will ensure that a compatble version of runc is present in the runc directory
+func verifyRunc(dataDir string) error {
+	installDir := filepath.Join(dataDir, "runc")
+
+	if _, err := os.Stat(installDir); os.IsNotExist(err) {
+		if err := os.MkdirAll(installDir, 0755); err != nil {
+			return errors.Wrapf(err, "create install dir")
+		}
+	}
+
+	currentVersion, err := getCurrentRuncVersion(installDir)
 	if err != nil {
 		return errors.Wrap(err, "get current version")
 	}
 
+	// TODO which versions do we support?
 	if currentVersion != "" {
 		return nil
-	}
-
-	// verify that we have permission to install
-	prompt := promptui.Prompt{
-		Label:     "runc is not found and required to run the application. Press Y to install runc on this server and continue, or press n to exit.",
-		IsConfirm: true,
-	}
-
-	_, err = prompt.Run()
-	if err != nil {
-		return errors.New("Cannot continue without installing runc. You can install runc manually or try again and allow KOTS to install runc.")
 	}
 
 	packageURI := `https://github.com/opencontainers/runc/releases/download/v1.0.0-rc95/runc.amd64`
@@ -39,7 +37,6 @@ func verifyRuncInstallation() error {
 	}
 	defer resp.Body.Close()
 
-	installDir := `/usr/bin/`
 	out, err := os.Create(filepath.Join(installDir, "runc"))
 	if err != nil {
 		return errors.Wrap(err, "create file")
@@ -58,9 +55,9 @@ func verifyRuncInstallation() error {
 	return nil
 }
 
-func getCurrentRuncVersion() (string, error) {
+func getCurrentRuncVersion(dir string) (string, error) {
 	// TODO check runc
-	cmd := exec.Command("runc", "--version")
+	cmd := exec.Command(filepath.Join(dir, "runc"), "--version")
 	out, err := cmd.CombinedOutput()
 	if err != nil {
 		return "", nil

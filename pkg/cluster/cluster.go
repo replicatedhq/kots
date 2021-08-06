@@ -21,14 +21,14 @@ func Start(ctx context.Context, slug string, dataDir string) error {
 	}
 
 	// start the api server
-	// if err := runAPIServer(ctx, dataDir, slug); err != nil {
-	// 	return errors.Wrap(err, "start api server")
-	// }
+	if err := runAPIServer(ctx, dataDir, slug); err != nil {
+		return errors.Wrap(err, "start api server")
+	}
 
-	// // start the scheduler on port 11251 (this is a non-standard port)
-	// if err := runScheduler(ctx, dataDir); err != nil {
-	// 	return errors.Wrap(err, "start scheduler")
-	// }
+	// start the scheduler on port 11251 (this is a non-standard port)
+	if err := runScheduler(ctx, dataDir); err != nil {
+		return errors.Wrap(err, "start scheduler")
+	}
 
 	// start the controller manager on port 11252 (non standard)
 	// TODO the controller should start
@@ -38,19 +38,19 @@ func Start(ctx context.Context, slug string, dataDir string) error {
 
 	// because these are all synchoronous, the api is ready and we
 	// can install our addons
-	// kubeconfigPath, err := kubeconfigFilePath(dataDir)
-	// if err != nil {
-	// 	return errors.Wrap(err, "get kubeconfig path")
-	// }
+	kubeconfigPath, err := kubeconfigFilePath(dataDir)
+	if err != nil {
+		return errors.Wrap(err, "get kubeconfig path")
+	}
 
-	// if err := installCNI(kubeconfigPath); err != nil {
-	// 	return errors.Wrap(err, "install antrea")
-	// }
+	if err := installCNI(kubeconfigPath); err != nil {
+		return errors.Wrap(err, "install antrea")
+	}
 
-	// fmt.Println("starting cri")
-	// if err := startCRI(dataDir); err != nil {
-	// 	return errors.Wrap(err, "install cri")
-	// }
+	fmt.Println("starting cri")
+	if err := startCRI(dataDir); err != nil {
+		return errors.Wrap(err, "install cri")
+	}
 
 	fmt.Println("starting kubelet")
 	if err := startKubelet(ctx, dataDir); err != nil {
