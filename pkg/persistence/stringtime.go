@@ -3,7 +3,8 @@ package persistence
 import "time"
 
 type StringTime struct {
-	Time time.Time
+	Time  time.Time
+	Valid bool
 }
 
 // this seems to be the format that we are using!
@@ -18,14 +19,17 @@ func (s *StringTime) Scan(value interface{}) error {
 	switch v := value.(type) {
 	case *time.Time:
 		s.Time = *v
-		break
+		s.Valid = true
+	case time.Time:
+		s.Time = v
+		s.Valid = true
 	case string:
 		t, err := time.Parse(formatString, v)
 		if err != nil {
 			return err
 		}
 		s.Time = t
-		break
+		s.Valid = true
 	}
 
 	return nil
@@ -47,7 +51,9 @@ func (s *NullStringTime) Scan(value interface{}) error {
 	case *time.Time:
 		s.Time = *v
 		s.Valid = true
-		break
+	case time.Time:
+		s.Time = v
+		s.Valid = true
 	case string:
 		t, err := time.Parse(formatString, v)
 		if err != nil {
@@ -55,7 +61,6 @@ func (s *NullStringTime) Scan(value interface{}) error {
 		}
 		s.Time = t
 		s.Valid = true
-		break
 	}
 
 	return nil
