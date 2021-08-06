@@ -155,7 +155,7 @@ clusters:
 - name: kubernetes
   cluster:
     certificate-authority-data: %s
-    server: "https://localhost:8443
+    server: "https://localhost:8443"
 
 contexts:
 - name: tls-bootstrap-token-user@kubernetes

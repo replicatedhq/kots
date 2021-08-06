@@ -8,7 +8,9 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
+	"os/user"
 	"path/filepath"
+	"strconv"
 
 	"github.com/pkg/errors"
 )
@@ -19,7 +21,7 @@ oom_score = 0
 plugin_dir = ""
 required_plugins = []
 root = "%s"
-state = "/run/containerd"
+state = "%s"
 version = 2
 
 [cgroup]
@@ -34,13 +36,13 @@ version = 2
 
 [grpc]
   address = "%s"
-  gid = 0
+  gid = %d
   max_recv_message_size = 16777216
   max_send_message_size = 16777216
   tcp_address = ""
   tcp_tls_cert = ""
   tcp_tls_key = ""
-  uid = 0
+  uid = %d
 
 [metrics]
   address = ""
@@ -304,9 +306,26 @@ func spwanContainerd(installDir string) error {
 // writeContainerdConfig will write execute the config template
 // and store it in a well known location (installDir/config.toml)
 func writeContainerdConfig(installDir string) error {
+	currentUser, err := user.Current()
+	if err != nil {
+		return errors.Wrap(err, "get current user")
+	}
+
+	gid, err := strconv.Atoi(currentUser.Gid)
+	if err != nil {
+		return errors.Wrap(err, "convert gid to int")
+	}
+	uid, err := strconv.Atoi(currentUser.Uid)
+	if err != nil {
+		return errors.Wrap(err, "convert uid to int")
+	}
+
 	b := fmt.Sprintf(containerdConfig,
 		installDir,
+		filepath.Join(installDir, "state"),
 		filepath.Join(installDir, "containerd.sock"),
+		gid,
+		uid,
 	)
 
 	if err := ioutil.WriteFile(filepath.Join(installDir, "config.toml"), []byte(b), 0644); err != nil {
