@@ -122,11 +122,9 @@ function renderVersionStatus(version, app, match, viewLogs) {
   let preflightState = "";
   if (version.preflightResult) {
     const preflightResult = JSON.parse(version.preflightResult);
+    preflightState = getPreflightResultState(preflightResult);
     if (version.status === "pending") {
-      preflightState = getPreflightResultState(preflightResult);
       preflightsFailed = preflightState === "fail";
-    } else {
-      preflightState = getPreflightResultState(preflightResult);
     }
   }
 
