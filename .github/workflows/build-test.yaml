@@ -565,13 +565,13 @@ jobs:
           echo "------pods:"
           kubectl -n no-config get pods
           echo "------kotsadm logs"
-          kubectl -n minimal-rbac logs deployment/kotsadm
+          kubectl -n $APP_NAME logs deployment/kotsadm
           echo "------previous kotsadm logs"
-          kubectl -n minimal-rbac logs -p deployment/kotsadm
+          kubectl -n $APP_NAME logs -p deployment/kotsadm
           echo "------kotsadm-operator logs"
-          kubectl -n minimal-rbac logs deployment/kotsadm-operator
+          kubectl -n $APP_NAME logs deployment/kotsadm-operator
           echo "------previos kotsadm-operator logs"
-          kubectl -n minimal-rbac logs -p deployment/kotsadm-operator
+          kubectl -n $APP_NAME logs -p deployment/kotsadm-operator
           kill $ADMIN_CONSOLE_PID
           exit $EXIT_CODE
 
