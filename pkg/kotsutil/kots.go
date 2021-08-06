@@ -374,52 +374,57 @@ func LoadKotsKindsFromPath(fromDir string) (*KotsKinds, error) {
 				return err
 			}
 
-			decoded, gvk, err := decode(contents, nil, nil)
-			if err != nil {
-				// TODO: log something on yaml errors (based on file extention)
-				return nil // not an error because the file might not be yaml
-			}
+			// kots kinds could be part of a multi-yaml doc
+			docs := util.ConvertToSingleDocs(contents)
 
-			if strings.HasPrefix(gvk.String(), "troubleshoot.replicated.com/v1beta1,") {
-				contents, err = docrewrite.ConvertToV1Beta2(contents)
+			for _, doc := range docs {
+				decoded, gvk, err := decode(doc, nil, nil)
 				if err != nil {
-					return errors.Wrap(err, "failed to convert to v1beta2")
+					// TODO: log something on yaml errors (based on file extention)
+					return nil // not an error because the file might not be yaml
 				}
-				decoded, gvk, err = decode(contents, nil, nil)
-				if err != nil {
-					return err
-				}
-			}
 
-			switch gvk.String() {
-			case "kots.io/v1beta1, Kind=Config":
-				kotsKinds.Config = decoded.(*kotsv1beta1.Config)
-			case "kots.io/v1beta1, Kind=ConfigValues":
-				kotsKinds.ConfigValues = decoded.(*kotsv1beta1.ConfigValues)
-			case "kots.io/v1beta1, Kind=Application":
-				kotsKinds.KotsApplication = *decoded.(*kotsv1beta1.Application)
-			case "kots.io/v1beta1, Kind=License":
-				kotsKinds.License = decoded.(*kotsv1beta1.License)
-			case "kots.io/v1beta1, Kind=Identity":
-				kotsKinds.Identity = decoded.(*kotsv1beta1.Identity)
-			case "kots.io/v1beta1, Kind=IdentityConfig":
-				kotsKinds.IdentityConfig = decoded.(*kotsv1beta1.IdentityConfig)
-			case "kots.io/v1beta1, Kind=Installation":
-				kotsKinds.Installation = *decoded.(*kotsv1beta1.Installation)
-			case "troubleshoot.sh/v1beta2, Kind=Collector":
-				kotsKinds.Collector = decoded.(*troubleshootv1beta2.Collector)
-			case "troubleshoot.sh/v1beta2, Kind=Analyzer":
-				kotsKinds.Analyzer = decoded.(*troubleshootv1beta2.Analyzer)
-			case "troubleshoot.sh/v1beta2, Kind=SupportBundle":
-				kotsKinds.SupportBundle = decoded.(*troubleshootv1beta2.SupportBundle)
-			case "troubleshoot.sh/v1beta2, Kind=Redactor":
-				kotsKinds.Redactor = decoded.(*troubleshootv1beta2.Redactor)
-			case "troubleshoot.sh/v1beta2, Kind=Preflight":
-				kotsKinds.Preflight = decoded.(*troubleshootv1beta2.Preflight)
-			case "velero.io/v1, Kind=Backup":
-				kotsKinds.Backup = decoded.(*velerov1.Backup)
-			case "app.k8s.io/v1beta1, Kind=Application":
-				kotsKinds.Application = decoded.(*applicationv1beta1.Application)
+				if strings.HasPrefix(gvk.String(), "troubleshoot.replicated.com/v1beta1,") {
+					doc, err = docrewrite.ConvertToV1Beta2(doc)
+					if err != nil {
+						return errors.Wrap(err, "failed to convert to v1beta2")
+					}
+					decoded, gvk, err = decode(doc, nil, nil)
+					if err != nil {
+						return err
+					}
+				}
+
+				switch gvk.String() {
+				case "kots.io/v1beta1, Kind=Config":
+					kotsKinds.Config = decoded.(*kotsv1beta1.Config)
+				case "kots.io/v1beta1, Kind=ConfigValues":
+					kotsKinds.ConfigValues = decoded.(*kotsv1beta1.ConfigValues)
+				case "kots.io/v1beta1, Kind=Application":
+					kotsKinds.KotsApplication = *decoded.(*kotsv1beta1.Application)
+				case "kots.io/v1beta1, Kind=License":
+					kotsKinds.License = decoded.(*kotsv1beta1.License)
+				case "kots.io/v1beta1, Kind=Identity":
+					kotsKinds.Identity = decoded.(*kotsv1beta1.Identity)
+				case "kots.io/v1beta1, Kind=IdentityConfig":
+					kotsKinds.IdentityConfig = decoded.(*kotsv1beta1.IdentityConfig)
+				case "kots.io/v1beta1, Kind=Installation":
+					kotsKinds.Installation = *decoded.(*kotsv1beta1.Installation)
+				case "troubleshoot.sh/v1beta2, Kind=Collector":
+					kotsKinds.Collector = decoded.(*troubleshootv1beta2.Collector)
+				case "troubleshoot.sh/v1beta2, Kind=Analyzer":
+					kotsKinds.Analyzer = decoded.(*troubleshootv1beta2.Analyzer)
+				case "troubleshoot.sh/v1beta2, Kind=SupportBundle":
+					kotsKinds.SupportBundle = decoded.(*troubleshootv1beta2.SupportBundle)
+				case "troubleshoot.sh/v1beta2, Kind=Redactor":
+					kotsKinds.Redactor = decoded.(*troubleshootv1beta2.Redactor)
+				case "troubleshoot.sh/v1beta2, Kind=Preflight":
+					kotsKinds.Preflight = decoded.(*troubleshootv1beta2.Preflight)
+				case "velero.io/v1, Kind=Backup":
+					kotsKinds.Backup = decoded.(*velerov1.Backup)
+				case "app.k8s.io/v1beta1, Kind=Application":
+					kotsKinds.Application = decoded.(*applicationv1beta1.Application)
+				}
 			}
 
 			return nil

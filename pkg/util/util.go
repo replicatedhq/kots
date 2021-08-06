@@ -121,6 +121,18 @@ func CompareStringArrays(arr1, arr2 []string) bool {
 	return true
 }
 
+func ConvertToSingleDocs(doc []byte) [][]byte {
+	singleDocs := [][]byte{}
+	docs := bytes.Split(doc, []byte("\n---\n"))
+	for _, doc := range docs {
+		if len(bytes.TrimSpace(doc)) == 0 {
+			continue
+		}
+		singleDocs = append(singleDocs, doc)
+	}
+	return singleDocs
+}
+
 type ActionableError struct {
 	NoRetry bool
 	Message string
