@@ -5,7 +5,6 @@ import (
 	"crypto/tls"
 	"fmt"
 	"net/http"
-	"sync"
 	"time"
 
 	"github.com/pkg/errors"
@@ -13,7 +12,7 @@ import (
 	"k8s.io/kubernetes/cmd/kube-controller-manager/app"
 )
 
-func runController(ctx context.Context, wg *sync.WaitGroup, dataDir string) error {
+func runController(ctx context.Context, dataDir string) error {
 	log := ctx.Value("log").(*logger.CLILogger)
 	log.Info("starting kubernetes controller manager")
 
@@ -38,6 +37,7 @@ func runController(ctx context.Context, wg *sync.WaitGroup, dataDir string) erro
 	args := []string{
 		"--bind-address=0.0.0.0",
 		"--secure-port=11252",
+		"--port=0", // Don't serve insecure
 		"--cluster-cidr=10.200.0.0/16",
 		"--cluster-name=kubernetes",
 		fmt.Sprintf("--cluster-signing-cert-file=%s", caCertFile),
