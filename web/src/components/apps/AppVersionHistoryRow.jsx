@@ -147,6 +147,8 @@ function renderVersionStatus(version, app, match, viewLogs) {
   if (isPastVersion && app.hasPreflight) {
     if (preflightsFailed) {
       preflightBlock = (<Link to={`/app/${match.params.slug}/downstreams/${clusterSlug}/version-history/preflight/${version.sequence}`} className="replicated-link u-marginLeft--5 u-fontSize--small">View preflights</Link>);
+    } else if (version.status !== "pending_config") {
+      preflightBlock = (<Link to={`/app/${match.params.slug}/downstreams/${clusterSlug}/version-history/preflight/${version.sequence}`} className="replicated-link u-marginLeft--5 u-fontSize--small">View preflights</Link>);
     }
   }
   if (version.status === "pending_preflight") {
@@ -156,6 +158,8 @@ function renderVersionStatus(version, app, match, viewLogs) {
       </span>);
   } else if (app.hasPreflight) {
     if (preflightsFailed) {
+      preflightBlock = (<Link to={`/app/${match.params.slug}/downstreams/${clusterSlug}/version-history/preflight/${version.sequence}`} className="replicated-link u-marginLeft--5 u-fontSize--small">View preflights</Link>);
+    } else if (version.status !== "pending_config") {
       preflightBlock = (<Link to={`/app/${match.params.slug}/downstreams/${clusterSlug}/version-history/preflight/${version.sequence}`} className="replicated-link u-marginLeft--5 u-fontSize--small">View preflights</Link>);
     }
   }
