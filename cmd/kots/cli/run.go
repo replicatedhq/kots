@@ -5,6 +5,7 @@ package cli
 import (
 	"context"
 	"fmt"
+	"io/ioutil"
 	"os"
 	"os/signal"
 	"path/filepath"
@@ -18,6 +19,8 @@ import (
 	"github.com/replicatedhq/kots/pkg/util"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+	"google.golang.org/grpc/grpclog"
+	"k8s.io/klog/v2"
 )
 
 func RunCmd() *cobra.Command {
@@ -41,6 +44,16 @@ func RunCmd() *cobra.Command {
 			slug := args[0]
 			log := logger.NewCLILogger()
 			log.Info("Running application %s", slug)
+
+			k8sLogRoot := filepath.Join(v.GetString("data-dir"), "kubernetes", "log")
+			if err := os.MkdirAll(k8sLogRoot, 0755); err == nil {
+				if f, err := ioutil.TempFile(k8sLogRoot, "k8s-"); err == nil {
+					defer f.Close()
+					grpclog.SetLoggerV2(grpclog.NewLoggerV2(f, f, f))
+					klog.SetOutput(f)
+					klog.LogToStderr(false)
+				}
+			}
 
 			// TODO: @emosbaugh: im not sure i agree with this pattern. im not sure context is the best place for DI
 			loggerCtx := context.WithValue(context.Background(), "log", log)
