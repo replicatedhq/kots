@@ -1,58 +1,73 @@
 package cluster
 
 import (
-	"archive/tar"
-	"compress/gzip"
+	"bytes"
+	"context"
+	"encoding/base64"
 	"fmt"
-	"io"
-	"io/fs"
 	"io/ioutil"
 	"net/http"
 	"os"
 	"os/exec"
 	"path/filepath"
-	"strings"
-	"time"
 
 	"github.com/pkg/errors"
 )
 
-const kubeletConfig = `apiVersion: kubelet.config.k8s.io/v1beta1
+const (
+	kubeletConfig = `apiVersion: kubelet.config.k8s.io/v1beta1
 kind: KubeletConfiguration
 evictionHard:
   memory.available:  "200Mi"
 `
+	kubeletKubeconfigFilename = "kubelet-kubeconfig.yaml"
+	kubeletConfigFilename     = "config.yaml"
+)
 
-const kubeletServiceFileWithNodeAuthorizer = `[Service]
-Environment="KUBELET_KUBECONFIG_ARGS=--bootstrap-kubeconfig=/etc/kubernetes/bootstrap-kubelet.conf --kubeconfig=/etc/kubernetes/kubelet.conf"
-Environment="KUBELET_CONFIG_ARGS=--config=/var/lib/kubelet/config.yaml"
-Environment="KUBELET_EXTRA_ARGS=--container-runtime=remote --runtime-request-timeout=15m --container-runtime-endpoint=unix:///run/containerd/containerd.sock"
-EnvironmentFile=-/var/lib/kubelet/kubeadm-flags.env
-EnvironmentFile=-/etc/default/kubelet
-ExecStart=
-ExecStart=/usr/bin/kubelet $KUBELET_KUBECONFIG_ARGS $KUBELET_CONFIG_ARGS $KUBELET_KUBEADM_ARGS $KUBELET_EXTRA_ARGS
-`
-const kubeletServiceFileWithoutNodeAuthorizer = `[Service]
-Environment="KUBELET_KUBECONFIG_ARGS=--kubeconfig=/etc/kubernetes/kubelet.conf"
-Environment="KUBELET_CONFIG_ARGS=--config=/var/lib/kubelet/config.yaml"
-Environment="KUBELET_EXTRA_ARGS=--container-runtime=remote --runtime-request-timeout=15m --container-runtime-endpoint=unix:///run/containerd/containerd.sock"
-EnvironmentFile=-/var/lib/kubelet/kubeadm-flags.env
-EnvironmentFile=-/etc/default/kubelet
-ExecStart=
-ExecStart=/usr/bin/kubelet $KUBELET_KUBECONFIG_ARGS $KUBELET_CONFIG_ARGS $KUBELET_KUBEADM_ARGS $KUBELET_EXTRA_ARGS
-`
-
-func installKubelet(useNodeAuthorizer bool) error {
-	currentStatus, err := getCurrentKubeletStatus()
-	if err != nil {
-		return errors.Wrap(err, "get current status")
+// startKubelet will (spwan) a kubelet process that's basically unsupervised
+// we need to think about resiliency and supervision for this kubelet before this can be reliable
+// we do this instead of a systemd service for kubelet because we don't want to ask for sudo/root
+func startKubelet(ctx context.Context, dataDir string) error {
+	// make a kubelet directory under datadir
+	kubeletDir := filepath.Join(dataDir, "kubelet")
+	if _, err := os.Stat(kubeletDir); os.IsNotExist(err) {
+		if err := os.MkdirAll(kubeletDir, 0755); err != nil {
+			return errors.Wrap(err, "mkdir kubelet")
+		}
 	}
 
-	if currentStatus == "active\n" {
-		// TODO versions?
-		return nil
+	kubeletFile := filepath.Join(kubeletDir, "kubelet")
+	if _, err := os.Stat(kubeletFile); err != nil {
+		if os.IsNotExist(err) {
+			if err := downloadKubelet(kubeletDir); err != nil {
+				return errors.Wrap(err, "download kubelet")
+			}
+		} else {
+			return errors.Wrap(err, "stat kubelet")
+		}
 	}
 
+	// TODO check the version of kubelet in case there was an old version
+
+	// write the kubelet config file
+	if err := writeKubeletConfig(kubeletDir); err != nil {
+		return errors.Wrap(err, "write kubelet config")
+	}
+
+	// write the kubelet kubeconfig file
+	if err := writeKubeletKubeconfig(dataDir, kubeletDir); err != nil {
+		return errors.Wrap(err, "write kubelet kubeconfig")
+	}
+
+	// spawn the kubelet process
+	if err := spawnKubelet(dataDir, kubeletDir); err != nil {
+		return errors.Wrap(err, "spawn kubelet")
+	}
+
+	return nil
+}
+
+func downloadKubelet(kubeletDir string) error {
 	packageURI := `https://dl.k8s.io/v1.21.1/kubernetes-server-linux-amd64.tar.gz`
 	resp, err := http.Get(packageURI)
 	if err != nil {
@@ -61,151 +76,110 @@ func installKubelet(useNodeAuthorizer bool) error {
 	defer resp.Body.Close()
 
 	// extract kubelet to a new directory
-	if err := extractOneFileFromArchiveStreamToDir("kubelet", resp.Body, "/usr/bin"); err != nil {
+	if err := extractOneFileFromArchiveStreamToDir("kubelet", resp.Body, kubeletDir); err != nil {
 		return errors.Wrap(err, "extract one file")
 	}
 
-	if err := writeKubeletConfig(); err != nil {
-		return errors.Wrap(err, "write kubelet config")
-	}
-
-	if err := installKubeletService(useNodeAuthorizer); err != nil {
-		return errors.Wrap(err, "install kubelet service")
-	}
-
 	return nil
 }
 
-func getCurrentKubeletStatus() (string, error) {
-	cmd := exec.Command("systemctl", "check", "kubelet")
-	out, err := cmd.CombinedOutput()
-	if err != nil {
-		if exitErr, ok := err.(*exec.ExitError); ok {
-			if string(out) != "active\n" {
-				return string(out), nil
-			}
-
-			return "", fmt.Errorf("exit error running systemctl: %s", (exitErr.Error()))
+func spawnKubelet(dataDir string, kubeletDir string) error {
+	go func() {
+		args := []string{
+			fmt.Sprintf("--kubeconfig=%s", filepath.Join(kubeletDir, kubeletKubeconfigFilename)),
+			fmt.Sprintf("--config=%s", filepath.Join(kubeletDir, kubeletConfigFilename)),
+			"--container-runtime=remote",
+			fmt.Sprintf("--container-runtime-endpoint=unix://%s/containerd/containerd.sock", dataDir),
+			fmt.Sprintf("--root-dir=%s", kubeletDir),
+			fmt.Sprintf("--cert-dir=%s", filepath.Join(kubeletDir, "pki")),
 		}
 
-		return "", errors.Wrap(err, "run systemctl")
-	}
+		cmd := exec.Command(filepath.Join(kubeletDir, "kubelet"), args...)
+		cmd.Env = os.Environ() // TODO
 
-	return string(out), nil
-}
+		// TODO stream the output of stdout and stderr to files
 
-func extractOneFileFromArchiveStreamToDir(filename string, r io.ReadCloser, dest string) error {
-	uncompressedStream, err := gzip.NewReader(r)
-	if err != nil {
-		return errors.Wrap(err, "create gzip reader")
-	}
+		// TODO stream the output of stdout and stderr to files
+		var stdout bytes.Buffer
+		var stderr bytes.Buffer
 
-	tarReader := tar.NewReader(uncompressedStream)
+		cmd.Stdout = &stdout
+		cmd.Stderr = &stderr
 
-	for true {
-		header, err := tarReader.Next()
-
-		if err == io.EOF {
-			break
-		}
-
+		err := cmd.Run()
 		if err != nil {
-			return errors.Wrap(err, "read next")
+			fmt.Printf("%s\n", stderr.String())
+			panic(err)
 		}
 
-		switch header.Typeflag {
-		case tar.TypeDir:
-			continue
-		case tar.TypeReg:
-			if !strings.HasSuffix(header.Name, filename) {
-				continue
-			}
-			outFile, err := os.Create(filepath.Join(dest, filename))
-			if err != nil {
-				return errors.Wrap(err, "create")
-			}
-			if _, err := io.Copy(outFile, tarReader); err != nil {
-				return errors.Wrap(err, "copy")
-			}
-			if err := os.Chmod(filepath.Join(dest, filename), fs.FileMode(header.Mode)); err != nil {
-				return errors.Wrap(err, "chmod")
-			}
+		fmt.Printf("%s\n", stdout.String())
 
-			outFile.Close()
+	}()
 
-		default:
-			return errors.New("unknown type")
-		}
+	return nil
+}
 
+// writeKubeletKubeconfig will write a file named kubelet-kubeconfig.yaml
+// to the kubelet dir. this is the kubeconfig that the kubelet will use to
+// connect to the api server. it's not using a bootstrap token yet, this is
+// using a static token that we JIT provision when writing this file
+func writeKubeletKubeconfig(dataDir string, kubeletDir string) error {
+	b, err := getKubeletKubeconfig(dataDir)
+	if err != nil {
+		return errors.Wrap(err, "get kubelet bootstrap config")
+	}
+
+	if err := ioutil.WriteFile(filepath.Join(kubeletDir, kubeletKubeconfigFilename), b, 0644); err != nil {
+		return errors.Wrap(err, "write kubelet kubeconfig")
 	}
 
 	return nil
 }
 
-func writeKubeletConfig() error {
-	dir := `/var/lib/kubelet`
-	if _, err := os.Stat(dir); err == nil {
-		if err := os.RemoveAll(dir); err != nil {
-			return errors.Wrap(err, "remove previous kubelet dir")
-		}
+// getKubeletKubeconfig will return the kubeconfig used by the kubelet
+func getKubeletKubeconfig(dataDir string) ([]byte, error) {
+	certFile, err := caCertFilePath(dataDir)
+	if err != nil {
+		return nil, errors.Wrap(err, "get cert file path")
 	}
-
-	if err := os.MkdirAll(dir, 0755); err != nil {
-		return errors.Wrap(err, "mkdir")
+	data, err := ioutil.ReadFile(certFile)
+	if err != nil {
+		return nil, errors.Wrap(err, "read cert file")
 	}
+	encodedCert := base64.StdEncoding.EncodeToString(data)
 
-	if err := ioutil.WriteFile(filepath.Join(dir, "config.yaml"), []byte(kubeletConfig), 0644); err != nil {
+	bootstrapToken := "NOT_VALID" // TODO
+
+	b := fmt.Sprintf(`apiVersion: v1
+clusters:
+- name: kubernetes
+  cluster:
+    certificate-authority-data: %s
+    server: "https://localhost:8443
+
+contexts:
+- name: tls-bootstrap-token-user@kubernetes
+  context:
+    cluster: kubernetes
+    user: tls-bootstrap-token-user
+
+current-context: tls-bootstrap-token-user@kubernetes
+kind: Config
+preferences: {}
+users:
+- name: tls-bootstrap-token-user
+  user:
+    token: %s`, encodedCert, bootstrapToken)
+
+	return []byte(b), nil
+}
+
+// writeKubeletConfig writes the current kubelet config to a file to pass in
+// when spawning the kubelet process.
+func writeKubeletConfig(kubeletDir string) error {
+	if err := ioutil.WriteFile(filepath.Join(kubeletDir, kubeletConfigFilename), []byte(kubeletConfig), 0644); err != nil {
 		return errors.Wrap(err, "write kubelet config")
 	}
 
 	return nil
-}
-
-func installKubeletService(useNodeAuthorizer bool) error {
-	serviceFile := `/etc/systemd/system/kubelet.service`
-	if _, err := os.Stat(serviceFile); err == nil {
-		if err := os.RemoveAll(serviceFile); err != nil {
-			return errors.Wrap(err, "remove previous service file")
-		}
-	}
-
-	contents := kubeletServiceFileWithoutNodeAuthorizer
-	if useNodeAuthorizer {
-		contents = kubeletServiceFileWithNodeAuthorizer
-	}
-
-	if err := ioutil.WriteFile(serviceFile, []byte(contents), 0644); err != nil {
-		return errors.Wrap(err, "write systemd service file")
-	}
-
-	cmd := exec.Command("systemctl", "enable", "kubelet")
-	out, err := cmd.CombinedOutput()
-	if err != nil {
-		fmt.Printf("%s\n", out)
-		return errors.Wrap(err, "enable service")
-	}
-
-	cmd = exec.Command("systemctl", "start", "kubelet")
-	out, err = cmd.CombinedOutput()
-	if err != nil {
-		fmt.Printf("%s\n", out)
-		return errors.Wrap(err, "start service")
-	}
-
-	giveUpAfter := time.Now().Add(time.Second * 15)
-
-	fmt.Println("waiting for kubelet service to become active")
-	for {
-		if time.Now().After(giveUpAfter) {
-			return errors.New("systemd service did not become active")
-		}
-
-		afterStatus, afterErr := getCurrentStatus()
-		if afterErr == nil && afterStatus == "active\n" {
-			return nil
-		}
-
-		fmt.Printf("%q", afterStatus)
-		time.Sleep(time.Second)
-	}
 }

@@ -1,13 +1,17 @@
 package cluster
 
-import "github.com/pkg/errors"
+import (
+	"context"
 
-func installCRI() error {
+	"github.com/pkg/errors"
+)
+
+func startCRI(dataDir string) error {
 	if err := verifyRuncInstallation(); err != nil {
 		return errors.Wrap(err, "verify runc")
 	}
 
-	if err := verifyContainerdInstallation(); err != nil {
+	if err := startContainerd(context.Background(), dataDir); err != nil {
 		return errors.Wrap(err, "verify containerd")
 	}
 
