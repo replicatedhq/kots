@@ -57,7 +57,7 @@ func renderReplicated(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (
 			// this will prevent errors later from ShouldBeIncludedInBaseKustomization
 			newContent := [][]byte{}
 			isKotsKind := false
-			for _, doc := range convertToSingleDocs(upstreamFile.Content) {
+			for _, doc := range util.ConvertToSingleDocs(upstreamFile.Content) {
 				file := BaseFile{Path: upstreamFile.Path, Content: doc}
 				// ignore the error here, we will catch it later in ShouldBeIncludedInBaseKustomization
 				if ok, _ := file.IsKotsKind(); ok {

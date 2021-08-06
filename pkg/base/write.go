@@ -1,7 +1,6 @@
 package base
 
 import (
-	"bytes"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -11,6 +10,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
+	"github.com/replicatedhq/kots/pkg/util"
 	"gopkg.in/yaml.v2"
 	kustomizetypes "sigs.k8s.io/kustomize/api/types"
 )
@@ -321,7 +321,7 @@ func deduplicateOnContent(files []BaseFile, excludeKotsKinds bool, baseNS string
 func convertToSingleDocBaseFiles(files []BaseFile) []BaseFile {
 	singleDocs := []BaseFile{}
 	for _, file := range files {
-		docs := convertToSingleDocs(file.Content)
+		docs := util.ConvertToSingleDocs(file.Content)
 		// This is here so as not to change previous behavior
 		if len(docs) == 0 {
 			singleDocs = append(singleDocs, BaseFile{
@@ -344,18 +344,6 @@ func convertToSingleDocBaseFiles(files []BaseFile) []BaseFile {
 
 			singleDocs = append(singleDocs, baseFile)
 		}
-	}
-	return singleDocs
-}
-
-func convertToSingleDocs(doc []byte) [][]byte {
-	singleDocs := [][]byte{}
-	docs := bytes.Split(doc, []byte("\n---\n"))
-	for _, doc := range docs {
-		if len(bytes.TrimSpace(doc)) == 0 {
-			continue
-		}
-		singleDocs = append(singleDocs, doc)
 	}
 	return singleDocs
 }
