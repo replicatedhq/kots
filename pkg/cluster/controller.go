@@ -49,6 +49,8 @@ func runController(ctx context.Context, dataDir string) error {
 		"--service-cluster-ip-range=10.32.0.0/24",
 		"--use-service-account-credentials=true",
 		"--v=2",
+		fmt.Sprintf("--flex-volume-plugin-dir=%s", dataDir),
+		"--controllers=-service,-route,-cloud-node-lifecycle", // This is equivalent to using ExternalLoops in the ControllerLoopMode type, which excludes cloud specific controlers
 	}
 
 	command := app.NewControllerManagerCommand()
@@ -61,7 +63,7 @@ func runController(ctx context.Context, dataDir string) error {
 	// watch the readyz endpoint to know when the api server has started
 	stopWaitingAfter := time.Now().Add(time.Minute)
 	for {
-		url := "http://localhost:11252/healthz"
+		url := "https://localhost:11252/healthz"
 
 		tr := &http.Transport{
 			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
@@ -78,6 +80,7 @@ func runController(ctx context.Context, dataDir string) error {
 			time.Sleep(time.Second)
 			continue // keep trying
 		}
+		// TODO: log responces for troubleshooting
 		if resp.StatusCode == http.StatusOK {
 			return nil
 		}
