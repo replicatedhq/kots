@@ -32,9 +32,9 @@ func Start(ctx context.Context, slug string, dataDir string) error {
 
 	// start the controller manager on port 11252 (non standard)
 	// TODO the controller should start
-	// if err := runController(ctx, dataDir); err != nil {
-	// 	return errors.Wrap(err, "start controller")
-	// }
+	if err := runController(ctx, dataDir); err != nil {
+		return errors.Wrap(err, "start controller")
+	}
 
 	// because these are all synchoronous, the api is ready and we
 	// can install our addons
