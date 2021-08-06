@@ -100,8 +100,9 @@ func RunCmd() *cobra.Command {
 	if err != nil {
 		panic(err)
 	}
+	defaultDataDir := filepath.Join(cwd, "kotsdata")
 
-	cmd.Flags().String("data-dir", cwd, "directory to store admin console, kubernetes, and application data in")
+	cmd.Flags().String("data-dir", defaultDataDir, "directory to store admin console, kubernetes, and application data in")
 	cmd.Flags().String("shared-password", "", "the shared password to set to authenticate to the admin console")
 
 	return cmd
