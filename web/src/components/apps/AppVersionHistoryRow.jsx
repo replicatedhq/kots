@@ -119,10 +119,25 @@ function renderVersionStatus(version, app, match, viewLogs) {
   }
 
   let preflightsFailed = false;
-  if (version.status === "pending" && version.preflightResult) {
+  let preflightState = "";
+  if (version.preflightResult) {
     const preflightResult = JSON.parse(version.preflightResult);
-    const preflightState = getPreflightResultState(preflightResult);
-    preflightsFailed = preflightState === "fail";
+    if (version.status === "pending") {
+      preflightState = getPreflightResultState(preflightResult);
+      preflightsFailed = preflightState === "fail";
+    } else {
+      preflightState = getPreflightResultState(preflightResult);
+    }
+  }
+
+  const checksPassedToolTip = "This version was deployed before preflight checks had finished. Checks continue to run in the background until completed.";
+  let checkBypassedResultText = "";
+  if (preflightState === "pass") {
+    checkBypassedResultText = "Checks bypassed & passed";
+  } else if (preflightState === "warn") {
+    checkBypassedResultText = "Checks bypassed & passed with warnings";
+  } else if (preflightState === "fail") {
+    checkBypassedResultText = "Checks bypassed";
   }
 
   const isPastVersion = find(downstream.pastVersions, { sequence: version.sequence });
@@ -133,8 +148,6 @@ function renderVersionStatus(version, app, match, viewLogs) {
 
   if (isPastVersion && app.hasPreflight) {
     if (preflightsFailed) {
-      preflightBlock = (<Link to={`/app/${match.params.slug}/downstreams/${clusterSlug}/version-history/preflight/${version.sequence}`} className="replicated-link u-marginLeft--5 u-fontSize--small">See details</Link>);
-    } else if (version.status !== "pending_config") {
       preflightBlock = (<Link to={`/app/${match.params.slug}/downstreams/${clusterSlug}/version-history/preflight/${version.sequence}`} className="replicated-link u-marginLeft--5 u-fontSize--small">View preflights</Link>);
     }
   }
@@ -145,8 +158,6 @@ function renderVersionStatus(version, app, match, viewLogs) {
       </span>);
   } else if (app.hasPreflight) {
     if (preflightsFailed) {
-      preflightBlock = (<Link to={`/app/${match.params.slug}/downstreams/${clusterSlug}/version-history/preflight/${version.sequence}`} className="replicated-link u-marginLeft--5 u-fontSize--small">See details</Link>);
-    } else if (version.status !== "pending_config") {
       preflightBlock = (<Link to={`/app/${match.params.slug}/downstreams/${clusterSlug}/version-history/preflight/${version.sequence}`} className="replicated-link u-marginLeft--5 u-fontSize--small">View preflights</Link>);
     }
   }
@@ -182,7 +193,9 @@ function renderVersionStatus(version, app, match, viewLogs) {
                       : version.status
             ).replace("_", " ")}
           </span>
-          {version.preflightSkipped && <span className="u-textColor--warning u-fontSize--small u-fontWeight--medium u-lineHeight--normal u-marginLeft--5">Checks skipped</span>}
+          {version.preflightSkipped && <span className="u-textColor--warning u-fontSize--small u-fontWeight--medium u-lineHeight--normal u-marginLeft--5 alignItems--center justifyContent--center">{checkBypassedResultText} <span className="icon u-top--3 grayOutlineQuestionMark--icon" data-tip={checksPassedToolTip} />
+          <ReactTooltip effect="solid" className="replicated-tooltip" />
+          </span>}
         </div>
         {preflightBlock}
         {version.status === "failed" &&
@@ -217,7 +230,9 @@ function renderVersionStatus(version, app, match, viewLogs) {
                   version.status === "failed" ?
                     "Failed" : ""}
           </span>
-          {version.preflightSkipped && <span className="u-textColor--warning u-fontSize--small u-fontWeight--medium u-lineHeight--normal u-marginLeft--5">Checks skipped</span>}
+          {version.preflightSkipped && <span className="u-textColor--warning u-fontSize--small u-fontWeight--medium u-lineHeight--normal u-marginLeft--5 alignItems--center justifyContent--center">{checkBypassedResultText} <span className="icon u-top--3 grayOutlineQuestionMark--icon" data-tip={checksPassedToolTip}/>
+          <ReactTooltip effect="solid" className="replicated-tooltip" />
+          </span>}
         </div>
         {preflightBlock}
         {version.status === "failed" &&
