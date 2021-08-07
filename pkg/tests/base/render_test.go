@@ -30,6 +30,7 @@ type testCase struct {
 	Upstream      upstreamtypes.Upstream
 	RenderOptions base.RenderOptions
 	WantBase      base.Base
+	WantHelmBase  base.Base
 }
 
 func TestRenderUpstream(t *testing.T) {
@@ -72,10 +73,11 @@ func TestRenderUpstream(t *testing.T) {
 
 		test.Upstream.Files = upstreamFilesFromDir(t, filepath.Join(path, "upstream"))
 
-		test.WantBase = baseFromDir(t, filepath.Join(path, "base"))
-
-		// TODO: helm bases
-
+		test.WantBase = baseFromDir(t, filepath.Join(path, "base"), false)
+		helmpath := filepath.Join(path, "basehelm")
+		if _, err := os.Stat(helmpath); err == nil {
+			test.WantHelmBase = baseFromDir(t, filepath.Join(path, "basehelm"), true)
+		}
 		tests = append(tests, test)
 	}
 	require.NoError(t, err)
@@ -86,24 +88,51 @@ func TestRenderUpstream(t *testing.T) {
 			template.TestingDisableKurlValues = true
 			defer func() { template.TestingDisableKurlValues = false }()
 
-			gotBase, _, err := base.RenderUpstream(&tt.Upstream, &tt.RenderOptions)
+			gotBase, gotHelmBases, err := base.RenderUpstream(&tt.Upstream, &tt.RenderOptions)
 			require.NoError(t, err)
 
-			if !assert.IsEqual(tt.WantBase, gotBase) {
-				t.Log(diffJSON(gotBase, tt.WantBase))
+			if len(tt.WantBase.Files) > 0 {
+				if !assert.IsEqual(tt.WantBase, gotBase) {
+					t.Log(diffJSON(gotBase, tt.WantBase))
+					t.FailNow()
+				}
+
+				if !assert.IsEqual(tt.WantBase.Files, gotBase.Files) {
+					for idx := range tt.WantBase.Files {
+						if len(gotBase.Files) > idx && gotBase.Files[idx].Path == tt.WantBase.Files[idx].Path {
+							t.Log("FILE", tt.WantBase.Files[idx].Path)
+							t.Log(diffString(string(gotBase.Files[idx].Content), string(tt.WantBase.Files[idx].Content)))
+						}
+					}
+					t.FailNow()
+				}
 			}
 
-			if !assert.IsEqual(tt.WantBase.Files, gotBase.Files) {
-				for idx := range tt.WantBase.Files {
-					if len(gotBase.Files) > idx && gotBase.Files[idx].Path == tt.WantBase.Files[idx].Path {
-						t.Log("FILE", tt.WantBase.Files[idx].Path)
-						t.Log(diffString(string(gotBase.Files[idx].Content), string(tt.WantBase.Files[idx].Content)))
+			// TODO: Need to test upstream with multiple Helm charts.
+			// HACK: Also right now "no files" in WantHelmBase implies test does not include any charts.
+			if len(tt.WantHelmBase.Files) == 0 {
+				return
+			}
+
+			if !assert.IsEqual(1, len(gotHelmBases)) {
+				t.FailNow()
+			}
+
+			gotHelmBase := gotHelmBases[0] // TODO: add more helm charts
+			if !assert.IsEqual(tt.WantHelmBase.Files, gotHelmBase.Files) {
+				t.Log(diffJSON(gotHelmBases, tt.WantHelmBase))
+				t.FailNow()
+			}
+			if !assert.IsEqual(tt.WantHelmBase.Files, gotHelmBase.Files) {
+				for idx := range tt.WantHelmBase.Files {
+					if len(gotHelmBase.Files) > idx && gotHelmBase.Files[idx].Path == tt.WantHelmBase.Files[idx].Path {
+						t.Log("FILE", tt.WantHelmBase.Files[idx].Path)
+						t.Log("FILE", gotHelmBases[0].Files[idx].Path)
+						t.Log(diffString(string(gotHelmBases[0].Files[idx].Content), string(tt.WantHelmBase.Files[idx].Content)))
 					}
 				}
 				t.FailNow()
 			}
-
-			// TODO: gotHelmBases
 		})
 	}
 }
@@ -182,15 +211,15 @@ func upstreamFilesFromDir(t *testing.T, root string) []upstreamtypes.UpstreamFil
 	return files
 }
 
-func baseFromDir(t *testing.T, root string) base.Base {
+func baseFromDir(t *testing.T, root string, isHelm bool) base.Base {
 	b := base.Base{Bases: []base.Base{}}
 
-	b.Files = baseFilesFromDir(t, root)
+	b.Files = baseFilesFromDir(t, root, isHelm)
 
 	return b
 }
 
-func baseFilesFromDir(t *testing.T, root string) []base.BaseFile {
+func baseFilesFromDir(t *testing.T, root string, isHelm bool) []base.BaseFile {
 	files := []base.BaseFile{}
 	err := filepath.Walk(root, func(path string, info os.FileInfo, err error) error {
 		require.NoError(t, err, path)
@@ -201,12 +230,15 @@ func baseFilesFromDir(t *testing.T, root string) []base.BaseFile {
 
 		b, err := ioutil.ReadFile(path)
 		require.NoError(t, err, path)
-
-		relPath, err := filepath.Rel(root, path)
-		require.NoError(t, err, path)
+		var fPath string
+		fPath, err = filepath.Rel(root, path)
+		require.NoError(t, err, fPath)
+		if isHelm {
+			fPath = filepath.Base(path)
+		}
 
 		files = append(files, base.BaseFile{
-			Path:    relPath,
+			Path:    fPath,
 			Content: b,
 		})
 
