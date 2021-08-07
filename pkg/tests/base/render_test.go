@@ -94,6 +94,7 @@ func TestRenderUpstream(t *testing.T) {
 			if len(tt.WantBase.Files) > 0 {
 				if !assert.IsEqual(tt.WantBase, gotBase) {
 					t.Log(diffJSON(gotBase, tt.WantBase))
+					t.FailNow()
 				}
 
 				if !assert.IsEqual(tt.WantBase.Files, gotBase.Files) {
@@ -106,24 +107,32 @@ func TestRenderUpstream(t *testing.T) {
 					t.FailNow()
 				}
 			}
-			if len(tt.WantHelmBase.Files) > 0 {
-				// TODO handle multiple charts
-				gotHelmBase := gotHelmBases[0]
-				if !assert.IsEqual(tt.WantHelmBase.Files, gotHelmBase.Files) {
-					t.Log(diffJSON(gotHelmBases, tt.WantHelmBase))
-				}
-				if !assert.IsEqual(tt.WantHelmBase.Files, gotHelmBase.Files) {
-					for idx := range tt.WantHelmBase.Files {
-						if len(gotHelmBase.Files) > idx && gotHelmBase.Files[idx].Path == tt.WantHelmBase.Files[idx].Path {
-							t.Log("FILE", tt.WantHelmBase.Files[idx].Path)
-							t.Log("FILE", gotHelmBases[0].Files[idx].Path)
-							t.Log(diffString(string(gotHelmBases[0].Files[idx].Content), string(tt.WantHelmBase.Files[idx].Content)))
-						}
-					}
-					t.FailNow()
-				}
+
+			// TODO: Need to test upstream with multiple Helm charts.
+			// HACK: Also right now "no files" in WantHelmBase implies test does not include any charts.
+			if len(tt.WantHelmBase.Files) == 0 {
+				return
 			}
 
+			if !assert.IsEqual(1, len(gotHelmBases)) {
+				t.FailNow()
+			}
+
+			gotHelmBase := gotHelmBases[0] // TODO: add more helm charts
+			if !assert.IsEqual(tt.WantHelmBase.Files, gotHelmBase.Files) {
+				t.Log(diffJSON(gotHelmBases, tt.WantHelmBase))
+				t.FailNow()
+			}
+			if !assert.IsEqual(tt.WantHelmBase.Files, gotHelmBase.Files) {
+				for idx := range tt.WantHelmBase.Files {
+					if len(gotHelmBase.Files) > idx && gotHelmBase.Files[idx].Path == tt.WantHelmBase.Files[idx].Path {
+						t.Log("FILE", tt.WantHelmBase.Files[idx].Path)
+						t.Log("FILE", gotHelmBases[0].Files[idx].Path)
+						t.Log(diffString(string(gotHelmBases[0].Files[idx].Content), string(tt.WantHelmBase.Files[idx].Content)))
+					}
+				}
+				t.FailNow()
+			}
 		})
 	}
 }
