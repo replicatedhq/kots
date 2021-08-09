@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"time"
 
-	jwt "github.com/form3tech-oss/jwt-go"
+	jwt "github.com/golang-jwt/jwt"
 	"github.com/pkg/errors"
 )
 
