@@ -119,18 +119,34 @@ func TestRenderUpstream(t *testing.T) {
 			}
 
 			gotHelmBase := gotHelmBases[0] // TODO: add more helm charts
-			if !assert.IsEqual(tt.WantHelmBase.Files, gotHelmBase.Files) {
-				t.Log(diffJSON(gotHelmBases, tt.WantHelmBase))
-				t.FailNow()
-			}
-			if !assert.IsEqual(tt.WantHelmBase.Files, gotHelmBase.Files) {
-				for idx := range tt.WantHelmBase.Files {
-					if len(gotHelmBase.Files) > idx && gotHelmBase.Files[idx].Path == tt.WantHelmBase.Files[idx].Path {
-						t.Log("FILE", tt.WantHelmBase.Files[idx].Path)
-						t.Log("FILE", gotHelmBases[0].Files[idx].Path)
-						t.Log(diffString(string(gotHelmBases[0].Files[idx].Content), string(tt.WantHelmBase.Files[idx].Content)))
+
+			helmTestFailed := false
+			for _, wantFile := range tt.WantHelmBase.Files {
+				contentFound := false
+				for _, gotFile := range gotHelmBase.Files {
+					if string(wantFile.Content) == string(gotFile.Content) {
+						contentFound = true
+						break
 					}
 				}
+				if !assert.IsEqual(true, contentFound) {
+					helmTestFailed = true
+					t.Log("file content not found", wantFile.Content)
+				}
+
+				pathFound := false
+				for _, gotFile := range gotHelmBase.Files {
+					if wantFile.Path == gotFile.Path {
+						pathFound = true
+						break
+					}
+				}
+				if !assert.IsEqual(true, pathFound) {
+					helmTestFailed = true
+					t.Log("file name not found", wantFile.Path)
+				}
+			}
+			if helmTestFailed {
 				t.FailNow()
 			}
 		})
@@ -212,7 +228,9 @@ func upstreamFilesFromDir(t *testing.T, root string) []upstreamtypes.UpstreamFil
 }
 
 func baseFromDir(t *testing.T, root string, isHelm bool) base.Base {
-	b := base.Base{Bases: []base.Base{}}
+	b := base.Base{
+		Bases: []base.Base{},
+	}
 
 	b.Files = baseFilesFromDir(t, root, isHelm)
 
