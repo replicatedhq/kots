@@ -14,7 +14,7 @@ require (
 	github.com/mholt/archiver v3.1.1+incompatible
 	github.com/mitchellh/hashstructure v1.1.0
 	github.com/nwaples/rardecode v1.1.0 // indirect
-	github.com/pact-foundation/pact-go v1.5.3
+	github.com/pact-foundation/pact-go v1.6.4
 	github.com/pierrec/lz4 v2.6.1+incompatible // indirect
 	github.com/pkg/errors v0.9.1
 	github.com/replicatedhq/troubleshoot v0.13.7
