@@ -39,7 +39,7 @@ func VersionCmd() *cobra.Command {
 			}
 
 			if output != "json" && output != "" {
-				return errors.Errorf("output format %s not supported", output)
+				return errors.Errorf("output format %s not supported (allowed formats are: json)", output)
 			} else if output == "json" {
 				// marshal JSON
 				outputJSON, err := json.Marshal(versionOutput)
