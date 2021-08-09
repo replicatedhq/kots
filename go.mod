@@ -23,11 +23,11 @@ require (
 	github.com/coreos/go-oidc v2.2.1+incompatible
 	github.com/deislabs/oras v0.11.1
 	github.com/dexidp/dex v0.0.0-20201105145354-71bbbee07527
-	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/docker/distribution v2.7.1+incompatible
 	github.com/docker/go-units v0.4.0
 	github.com/dsnet/compress v0.0.1 // indirect
 	github.com/fatih/color v1.10.0
+	github.com/form3tech-oss/jwt-go v3.2.2+incompatible
 	github.com/frankban/quicktest v1.13.0 // indirect
 	github.com/garyburd/redigo v1.6.0 // indirect
 	github.com/ghodss/yaml v1.0.0
