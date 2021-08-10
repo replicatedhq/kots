@@ -34,7 +34,7 @@ func parseClusterAuthorization(authHeader string) (authorization, error) {
 		return authorization{}, errors.Wrap(err, "failed ot base64 decode auth header")
 	}
 
-	parts := strings.Split(string(data), ":")
+	parts := strings.SplitN(string(data), ":", 2)
 	if len(parts) != 2 {
 		return authorization{}, errors.Errorf("expected 2 parts in auth header, found %d", len(parts))
 	}

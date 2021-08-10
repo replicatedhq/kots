@@ -214,7 +214,7 @@ func GetCredentialsFromConfigJSON(configJson []byte) (map[string]Credentials, er
 			return nil, errors.Wrap(err, "failed to decode auth string")
 		}
 
-		parts := strings.Split(string(decoded), ":")
+		parts := strings.SplitN(string(decoded), ":", 2)
 		if len(parts) != 2 {
 			return nil, errors.Errorf("expected 2 parts in the string, but found %d", len(parts))
 		}
