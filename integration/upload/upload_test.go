@@ -57,7 +57,7 @@ func Test_Upload(t *testing.T) {
 				stopCh <- true
 			}()
 
-			err = kotsupload.Upload(path.Join("tests", test.path, "input"), uploadOptions)
+			_, err = kotsupload.Upload(path.Join("tests", test.path, "input"), uploadOptions)
 			req.NoError(err)
 		})
 	}
