@@ -64,8 +64,6 @@ type Client struct {
 	ExistingInformers map[string]bool // namespaces map to invoke the Informer once during deploy
 }
 
-// TODO NOW: add description for this
-// Init
 func (c *Client) Init() error {
 	if _, ok := c.ExistingInformers[c.TargetNamespace]; !ok {
 		c.ExistingInformers[c.TargetNamespace] = true
