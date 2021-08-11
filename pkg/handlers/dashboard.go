@@ -6,16 +6,16 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
-	appstatustypes "github.com/replicatedhq/kots/pkg/api/appstatus/types"
+	appstatetypes "github.com/replicatedhq/kots/pkg/appstate/types"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/store"
 	"github.com/replicatedhq/kots/pkg/version"
 )
 
 type GetAppDashboardResponse struct {
-	AppStatus         *appstatustypes.AppStatus `json:"appStatus"`
-	Metrics           []version.MetricChart     `json:"metrics"`
-	PrometheusAddress string                    `json:"prometheusAddress"`
+	AppStatus         *appstatetypes.AppStatus `json:"appStatus"`
+	Metrics           []version.MetricChart    `json:"metrics"`
+	PrometheusAddress string                   `json:"prometheusAddress"`
 }
 
 func (h *Handler) GetAppDashboard(w http.ResponseWriter, r *http.Request) {

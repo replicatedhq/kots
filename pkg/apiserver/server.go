@@ -17,11 +17,11 @@ import (
 	"github.com/replicatedhq/kots/pkg/informers"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/logger"
+	"github.com/replicatedhq/kots/pkg/operator"
 	"github.com/replicatedhq/kots/pkg/persistence"
 	"github.com/replicatedhq/kots/pkg/policy"
 	"github.com/replicatedhq/kots/pkg/rbac"
 	"github.com/replicatedhq/kots/pkg/snapshotscheduler"
-	"github.com/replicatedhq/kots/pkg/socketservice"
 	"github.com/replicatedhq/kots/pkg/store"
 	"github.com/replicatedhq/kots/pkg/supportbundle"
 	"github.com/replicatedhq/kots/pkg/updatechecker"
@@ -60,6 +60,12 @@ func Start(params *APIServerParams) {
 	}
 
 	store.GetStore().RunMigrations()
+
+	if err := operator.Start(params.AutocreateClusterToken); err != nil {
+		log.Println("error starting the operator")
+		panic(err)
+	}
+	defer operator.Shutdown()
 
 	if params.SharedPassword != "" {
 		// TODO: this won't override the password in the database
@@ -132,15 +138,6 @@ func Start(params *APIServerParams) {
 
 	// This the handler for license API and should be called by the application only.
 	r.Path("/license/v1/license").Methods("GET").HandlerFunc(handler.GetPlatformLicenseCompatibility)
-
-	/**********************************************************************
-	* Cluster auth routes (functions that the operator calls)
-	**********************************************************************/
-
-	r.Path("/api/v1/appstatus").Methods("PUT").HandlerFunc(handler.SetAppStatus)
-	r.Path("/api/v1/deploy/result").Methods("PUT").HandlerFunc(handler.UpdateDeployResult)
-	r.Path("/api/v1/undeploy/result").Methods("PUT").HandlerFunc(handler.UpdateUndeployResult)
-	r.Handle("/socket.io/", socketservice.Start())
 
 	/**********************************************************************
 	* KOTS token auth routes

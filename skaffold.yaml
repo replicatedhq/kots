@@ -2,16 +2,6 @@ apiVersion: skaffold/v2beta2
 kind: Config
 
 profiles:
-  - name: microk8s
-    activation:
-      - kubeContext: microk8s
-    deploy:
-      kustomize:
-        paths:
-          - "./kustomize/overlays/microk8s"
-        flags:
-          apply:
-            - --validate=false ## Skaffold turns CRDs into invalid yaml (https://github.com/GoogleContainerTools/skaffold/issues/1737)
   - name: kotsstore
     activation: 
       - env: KOTSSTORE=
@@ -47,11 +37,6 @@ build:
       context: "./"
       docker:
         dockerfile: ./hack/dev/Dockerfile.skaffold
-
-    - image: kotsadm-operator
-      context: "./kotsadm/operator"
-      docker:
-        dockerfile: ./Dockerfile.skaffold
 
     - image: kotsadm-migrations
       context: "./migrations"

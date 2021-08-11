@@ -10,7 +10,7 @@ import (
 
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
-	appstatustypes "github.com/replicatedhq/kots/pkg/api/appstatus/types"
+	appstatetypes "github.com/replicatedhq/kots/pkg/appstate/types"
 	"github.com/replicatedhq/kots/pkg/buildversion"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/store"
@@ -79,7 +79,7 @@ func ReportAppInfo(appID string, sequence int64, isSkipPreflights bool, isCLI bo
 	clusterID := downstreams[0].ClusterID
 
 	go func() {
-		appStatus := appstatustypes.StateMissing
+		appStatus := appstatetypes.StateMissing
 		for start := time.Now(); time.Since(start) < 20*time.Minute; {
 			s, err := store.GetStore().GetAppStatus(appID)
 			if err != nil {
@@ -99,7 +99,7 @@ func ReportAppInfo(appID string, sequence int64, isSkipPreflights bool, isCLI bo
 				return
 			}
 
-			if s.Sequence == sequence && s.State == appstatustypes.StateReady {
+			if s.Sequence == sequence && s.State == appstatetypes.StateReady {
 				appStatus = s.State
 				break
 			}

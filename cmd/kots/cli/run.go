@@ -113,7 +113,7 @@ func startKotsadm(ctx context.Context, dataDir string, sharedPassword string) er
 
 	// TODO @divolgin: something is odd about this pattern. these variables are set in two places to two different values, yet they are global.
 	util.PodNamespace = "default"
-	util.KotsadmNamespace = "default"
+	util.KotsadmTargetNamespace = "default"
 
 	params := apiserver.APIServerParams{
 		Version:                "???",

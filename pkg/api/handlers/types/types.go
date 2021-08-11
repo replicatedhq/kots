@@ -3,9 +3,9 @@ package types
 import (
 	"time"
 
-	appstatustypes "github.com/replicatedhq/kots/pkg/api/appstatus/types"
 	downstreamtypes "github.com/replicatedhq/kots/pkg/api/downstream/types"
 	versiontypes "github.com/replicatedhq/kots/pkg/api/version/types"
+	appstatetypes "github.com/replicatedhq/kots/pkg/appstate/types"
 )
 
 type ListAppsResponse struct {
@@ -13,7 +13,7 @@ type ListAppsResponse struct {
 }
 
 type AppStatusResponse struct {
-	AppStatus *appstatustypes.AppStatus `json:"appstatus"`
+	AppStatus *appstatetypes.AppStatus `json:"appstatus"`
 }
 
 type ResponseApp struct {

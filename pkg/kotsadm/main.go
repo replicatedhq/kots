@@ -92,15 +92,6 @@ func YAML(deployOptions types.DeployOptions) (map[string][]byte, error) {
 		docs[n] = v
 	}
 
-	// operator
-	operatorDocs, err := getOperatorYAML(deployOptions)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to get operator yaml")
-	}
-	for n, v := range operatorDocs {
-		docs[n] = v
-	}
-
 	return docs, nil
 }
 
@@ -306,6 +297,44 @@ func removeUnusedKotsadmComponents(deployOptions types.DeployOptions, clientset 
 		}
 	}
 
+	// if there are kotsadm-operator objects, remove (pre 1.50.0)
+	_, err = clientset.AppsV1().Deployments(deployOptions.Namespace).Get(context.TODO(), "kotsadm-operator", metav1.GetOptions{})
+	if err == nil {
+		if err := clientset.AppsV1().Deployments(deployOptions.Namespace).Delete(context.TODO(), "kotsadm-operator", metav1.DeleteOptions{}); err != nil {
+			return errors.Wrap(err, "failed to delete kotsadm-operator deployment")
+		}
+	}
+	_, err = clientset.RbacV1().ClusterRoleBindings().Get(context.TODO(), "kotsadm-operator-rolebinding", metav1.GetOptions{})
+	if err == nil {
+		if err := clientset.RbacV1().ClusterRoleBindings().Delete(context.TODO(), "kotsadm-operator-rolebinding", metav1.DeleteOptions{}); err != nil {
+			return errors.Wrap(err, "failed to delete kotsadm-operator-rolebinding clusterrolebinding")
+		}
+	}
+	_, err = clientset.RbacV1().RoleBindings(deployOptions.Namespace).Get(context.TODO(), "kotsadm-operator-rolebinding", metav1.GetOptions{})
+	if err == nil {
+		if err := clientset.RbacV1().RoleBindings(deployOptions.Namespace).Delete(context.TODO(), "kotsadm-operator-rolebinding", metav1.DeleteOptions{}); err != nil {
+			return errors.Wrap(err, "failed to delete kotsadm-operator-rolebinding rolebinding")
+		}
+	}
+	_, err = clientset.RbacV1().ClusterRoles().Get(context.TODO(), "kotsadm-operator-role", metav1.GetOptions{})
+	if err == nil {
+		if err := clientset.RbacV1().ClusterRoles().Delete(context.TODO(), "kotsadm-operator-role", metav1.DeleteOptions{}); err != nil {
+			return errors.Wrap(err, "failed to delete kotsadm-operator-role clusterrole")
+		}
+	}
+	_, err = clientset.RbacV1().Roles(deployOptions.Namespace).Get(context.TODO(), "kotsadm-operator-role", metav1.GetOptions{})
+	if err == nil {
+		if err := clientset.RbacV1().Roles(deployOptions.Namespace).Delete(context.TODO(), "kotsadm-operator-role", metav1.DeleteOptions{}); err != nil {
+			return errors.Wrap(err, "failed to delete kotsadm-operator-role role")
+		}
+	}
+	_, err = clientset.CoreV1().ServiceAccounts(deployOptions.Namespace).Get(context.TODO(), "kotsadm-operator", metav1.GetOptions{})
+	if err == nil {
+		if err := clientset.CoreV1().ServiceAccounts(deployOptions.Namespace).Delete(context.TODO(), "kotsadm-operator", metav1.DeleteOptions{}); err != nil {
+			return errors.Wrap(err, "failed to delete kotsadm-operator serviceaccount")
+		}
+	}
+
 	if !deployOptions.IncludeMinio {
 		// if there's a deployment named "kotsadm", remove (pre 1.47.0)
 		// only delete the deployment if minio is not included because that will mean that it's been replaced with a statefulset
@@ -477,10 +506,6 @@ func ensureKotsadm(deployOptions types.DeployOptions, clientset *kubernetes.Clie
 	}
 
 	if !deployOptions.ExcludeAdminConsole {
-		if err := ensureOperator(deployOptions, clientset); err != nil {
-			return errors.Wrap(err, "failed to ensure operator")
-		}
-
 		if err := removeNodeAPI(&deployOptions, clientset); err != nil {
 			log.Error(errors.Errorf("Failed to remove unused API: %v", err))
 		}

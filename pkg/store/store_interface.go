@@ -6,10 +6,10 @@ import (
 
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	airgaptypes "github.com/replicatedhq/kots/pkg/airgap/types"
-	appstatustypes "github.com/replicatedhq/kots/pkg/api/appstatus/types"
 	downstreamtypes "github.com/replicatedhq/kots/pkg/api/downstream/types"
 	versiontypes "github.com/replicatedhq/kots/pkg/api/version/types"
 	apptypes "github.com/replicatedhq/kots/pkg/app/types"
+	appstatetypes "github.com/replicatedhq/kots/pkg/appstate/types"
 	gitopstypes "github.com/replicatedhq/kots/pkg/gitops/types"
 	snapshottypes "github.com/replicatedhq/kots/pkg/kotsadmsnapshot/types"
 	installationtypes "github.com/replicatedhq/kots/pkg/online/types"
@@ -108,8 +108,8 @@ type SessionStore interface {
 }
 
 type AppStatusStore interface {
-	GetAppStatus(appID string) (*appstatustypes.AppStatus, error)
-	SetAppStatus(appID string, resourceStates []appstatustypes.ResourceState, updatedAt time.Time, sequence int64) error
+	GetAppStatus(appID string) (*appstatetypes.AppStatus, error)
+	SetAppStatus(appID string, resourceStates appstatetypes.ResourceStates, updatedAt time.Time, sequence int64) error
 }
 
 type AppStore interface {

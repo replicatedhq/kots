@@ -128,53 +128,6 @@ jobs:
           severity: 'CRITICAL,HIGH'
 
 
-  build-operator:
-    runs-on: ubuntu-18.04
-    steps:
-      - uses: actions/setup-go@v2.1.3
-        with:
-          go-version: '^1.16.3'
-
-      - name: setup env
-        run: |
-          echo "GOPATH=$(go env GOPATH)" >> $GITHUB_ENV
-          echo "$(go env GOPATH)/bin" >> $GITHUB_PATH
-        shell: bash
-
-      - id: go-cache-paths
-        run: |
-          echo "::set-output name=go-build::$(go env GOCACHE)"
-          echo "::set-output name=go-mod::$(go env GOMODCACHE)"
-      - uses: actions/checkout@v2.3.4
-
-      - uses: actions/cache@v2.1.6
-        with:
-          path: ${{ steps.go-cache-paths.outputs.go-build }}
-          key: ${{ runner.os }}-go-build-${{ hashFiles('**/go.sum') }}
-      - uses: actions/cache@v2.1.6
-        with:
-          path: ${{ steps.go-cache-paths.outputs.go-mod }}
-          key: ${{ runner.os }}-go-mod-${{ hashFiles('**/go.sum') }}
-
-      - run: make -C kotsadm/operator build
-
-      - name: build and push operator for e2e
-        uses: docker/build-push-action@v2.6.1
-        with:
-          tags: ttl.sh/automated-${{ github.run_id }}/kotsadm-operator:2h
-          context: ./kotsadm/operator
-          file: ./kotsadm/operator/deploy/Dockerfile
-          push: true
-      - name: Scan operator for vulnerabilities
-        uses: aquasecurity/trivy-action@master
-        with:
-          image-ref: ttl.sh/automated-${{ github.run_id }}/kotsadm-operator:2h
-          format: 'table'
-          exit-code: '0'
-          ignore-unfixed: true
-          severity: 'CRITICAL,HIGH'
-
-
   build-kurl-proxy:
     runs-on: ubuntu-18.04
     steps:
@@ -304,7 +257,7 @@ jobs:
 
   validate-legacy:
     runs-on: ubuntu-18.04
-    needs: [build-kots, build-kotsadm, build-operator, build-kurl-proxy, build-migrations, push-minio, push-postgres]
+    needs: [build-kots, build-kotsadm, build-kurl-proxy, build-migrations, push-minio, push-postgres]
     strategy:
       fail-fast: false
       matrix:
@@ -373,10 +326,6 @@ jobs:
             kubectl -n legacy logs deployment/kotsadm
             echo "------previous kotsadm logs"
             kubectl -n legacy logs -p deployment/kotsadm
-            echo "------kotsadm-operator logs"
-            kubectl -n legacy logs deployment/kotsadm-operator
-            echo "------previous kotsadm-operator logs"
-            kubectl -n legacy logs -p deployment/kotsadm-operator
           fi
           exit $EXIT_CODE
 
@@ -400,32 +349,11 @@ jobs:
             kubectl -n legacy logs deployment/kotsadm
             echo "------previous kotsadm logs"
             kubectl -n legacy logs -p deployment/kotsadm
-            echo "------kotsadm-operator logs"
-            kubectl -n legacy logs deployment/kotsadm-operator
-            echo "------previous kotsadm-operator logs"
-            kubectl -n legacy logs -p deployment/kotsadm-operator
             echo "------velero logs"
             kubectl -n velero logs deployment/velero
           fi
           kill $ADMIN_CONSOLE_PID
           exit $EXIT_CODE
-
-      # - name: prepare cluster-admin online install
-      #   run: |
-      #     ./bin/kots \
-      #     install cluster-admin/automated \
-      #     --port-forward=false \
-      #     --namespace cluster-admin \
-      #     --shared-password password \
-      #     --kotsadm-registry ttl.sh \
-      #     --kotsadm-namespace automated-${{ github.run_id }} \
-      #     --kotsadm-tag 2h
-      # - name: execute suite alpha
-      #   run: |
-      #     ./bin/kots admin-console -n cluster-admin &
-      #     ADMIN_CONSOLE_PID=$!
-      #     testim --token ${{ secrets.TESTIM_ACCESS_TOKEN }} --project ${{ secrets.TESTIM_PROJECT_ID }} --grid "Testim-grid" --report-file testim-report.xml --suite alpha --tunnel --tunnel-port 8800
-      #     kill $ADMIN_CONSOLE_PID
 
       - name: delete velero namespace
         run: kubectl delete namespace velero
@@ -433,7 +361,7 @@ jobs:
 
   validate-minimal-rbac:
     runs-on: ubuntu-18.04
-    needs: [build-kots, build-kotsadm, build-operator, build-kurl-proxy, build-migrations, push-minio, push-postgres]
+    needs: [build-kots, build-kotsadm, build-kurl-proxy, build-migrations, push-minio, push-postgres]
     strategy:
       fail-fast: false
       matrix:
@@ -491,17 +419,13 @@ jobs:
           kubectl -n minimal-rbac logs deployment/kotsadm
           echo "------previous kotsadm logs"
           kubectl -n minimal-rbac logs -p deployment/kotsadm
-          echo "------kotsadm-operator logs"
-          kubectl -n minimal-rbac logs deployment/kotsadm-operator
-          echo "------previos kotsadm-operator logs"
-          kubectl -n minimal-rbac logs -p deployment/kotsadm-operator
           kill $ADMIN_CONSOLE_PID
           exit $EXIT_CODE
 
 
   validate-no-required-config:
     runs-on: ubuntu-18.04
-    needs: [build-kots, build-kotsadm, build-operator, build-kurl-proxy, build-migrations, push-minio, push-postgres]
+    needs: [build-kots, build-kotsadm, build-kurl-proxy, build-migrations, push-minio, push-postgres]
     strategy:
       fail-fast: false
       matrix:
@@ -568,17 +492,13 @@ jobs:
           kubectl -n $APP_NAME logs deployment/kotsadm
           echo "------previous kotsadm logs"
           kubectl -n $APP_NAME logs -p deployment/kotsadm
-          echo "------kotsadm-operator logs"
-          kubectl -n $APP_NAME logs deployment/kotsadm-operator
-          echo "------previos kotsadm-operator logs"
-          kubectl -n $APP_NAME logs -p deployment/kotsadm-operator
           kill $ADMIN_CONSOLE_PID
           exit $EXIT_CODE
 
 
   validate-multi-namespace:
     runs-on: ubuntu-18.04
-    needs: [build-kots, build-kotsadm, build-operator, build-kurl-proxy, build-migrations, push-minio, push-postgres]
+    needs: [build-kots, build-kotsadm, build-kurl-proxy, build-migrations, push-minio, push-postgres]
     strategy:
       fail-fast: false
       matrix:
@@ -646,17 +566,13 @@ jobs:
           kubectl -n $APP_NAME logs deployment/kotsadm
           echo "------previous kotsadm logs"
           kubectl -n $APP_NAME logs -p deployment/kotsadm
-          echo "------kotsadm-operator logs"
-          kubectl -n $APP_NAME logs deployment/kotsadm-operator
-          echo "------previos kotsadm-operator logs"
-          kubectl -n $APP_NAME logs -p deployment/kotsadm-operator
           kill $ADMIN_CONSOLE_PID
           exit $EXIT_CODE
 
 
   validate-kots-pull:
     runs-on: ubuntu-18.04
-    needs: [build-kots, build-kotsadm, build-operator, build-kurl-proxy, build-migrations, push-minio, push-postgres]
+    needs: [build-kots, build-kotsadm, build-kurl-proxy, build-migrations, push-minio, push-postgres]
     strategy:
       fail-fast: false
       matrix:

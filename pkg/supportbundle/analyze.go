@@ -13,10 +13,6 @@ func InjectDefaultAnalyzers(analyzer *troubleshootv1beta2.Analyzer) error {
 		return errors.Wrap(err, "failed to inject api replica analyzer")
 	}
 
-	if err := injectOperatorReplicaAnalyzer(analyzer); err != nil {
-		return errors.Wrap(err, "failed to inject operators replica analyzer")
-	}
-
 	if err := injectNoGvisorAnalyzer(analyzer); err != nil {
 		return errors.Wrap(err, "failed to inject no gvisor analyzer")
 	}
@@ -76,29 +72,6 @@ func injectAPIReplicaAnalyzer(analyzer *troubleshootv1beta2.Analyzer) error {
 					Fail: &troubleshootv1beta2.SingleOutcome{
 						When:    "= 0",
 						Message: "There are no replicas of the Admin Console API running and ready",
-					},
-				},
-			},
-		},
-	})
-	return nil
-}
-
-func injectOperatorReplicaAnalyzer(analyzer *troubleshootv1beta2.Analyzer) error {
-	analyzer.Spec.Analyzers = append(analyzer.Spec.Analyzers, &troubleshootv1beta2.Analyze{
-		DeploymentStatus: &troubleshootv1beta2.DeploymentStatus{
-			Name:      "kotsadm-operator",
-			Namespace: util.PodNamespace,
-			Outcomes: []*troubleshootv1beta2.Outcome{
-				{
-					Pass: &troubleshootv1beta2.SingleOutcome{
-						When:    "= 1",
-						Message: "Exactly 1 replica of the Admin Console Operator is running and ready",
-					},
-				},
-				{
-					Fail: &troubleshootv1beta2.SingleOutcome{
-						Message: "There is not exactly 1 replica of the Admin Console Operator running and ready",
 					},
 				},
 			},

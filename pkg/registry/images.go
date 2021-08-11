@@ -12,9 +12,14 @@ import (
 	"github.com/containers/image/v5/docker"
 	imagetypes "github.com/containers/image/v5/types"
 	"github.com/pkg/errors"
+	versiontypes "github.com/replicatedhq/kots/pkg/api/version/types"
 	dockerregistry "github.com/replicatedhq/kots/pkg/docker/registry"
 	"github.com/replicatedhq/kots/pkg/image"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
+	"github.com/replicatedhq/kots/pkg/kotsadm"
+	kotsadmobjects "github.com/replicatedhq/kots/pkg/kotsadm/objects"
+	kotsadmtypes "github.com/replicatedhq/kots/pkg/kotsadm/types"
+	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/registry/types"
 	"github.com/replicatedhq/kots/pkg/store"
@@ -27,7 +32,122 @@ import (
 
 var deleteImagesTaskID = "delete-images"
 
-func DeleteUnusedImages(ctx context.Context, registry types.RegistrySettings, usedImages []string) (finalError error) {
+type AppRollbackError struct {
+	AppID    string
+	Sequence int64
+}
+
+func (e AppRollbackError) Error() string {
+	return fmt.Sprintf("app:%s, version:%d", e.AppID, e.Sequence)
+}
+
+func DeleteUnusedImages(appID string) error {
+	installParams, err := kotsutil.GetInstallationParams(kotsadmtypes.KotsadmConfigMap)
+	if err != nil {
+		return errors.Wrap(err, "failed to get app registry info")
+	}
+	if !installParams.EnableImageDeletion {
+		return nil
+	}
+
+	registrySettings, err := store.GetStore().GetRegistryDetailsForApp(appID)
+	if err != nil {
+		return errors.Wrap(err, "failed to get app registry info")
+	}
+
+	if registrySettings.IsReadOnly {
+		return nil
+	}
+
+	isKurl, err := kotsadm.IsKurl()
+	if err != nil {
+		return errors.Wrap(err, "failed to check kURL")
+	}
+
+	if !isKurl {
+		return nil
+	}
+
+	appIDs, err := store.GetStore().GetAppIDsFromRegistry(registrySettings.Hostname)
+	if err != nil {
+		return errors.Wrap(err, "failed to get apps with registry")
+	}
+
+	activeVersions := []*versiontypes.AppVersion{}
+	for _, appID := range appIDs {
+		downstreams, err := store.GetStore().ListDownstreamsForApp(appID)
+		if err != nil {
+			return errors.Wrap(err, "failed to list downstreams for app")
+		}
+
+		for _, d := range downstreams {
+			curSequence, err := store.GetStore().GetCurrentParentSequence(appID, d.ClusterID)
+			if err != nil {
+				return errors.Wrap(err, "failed to get current parent sequence")
+			}
+
+			curVersion, err := store.GetStore().GetAppVersion(appID, curSequence)
+			if err != nil {
+				return errors.Wrap(err, "failed to get app version")
+			}
+
+			activeVersions = append(activeVersions, curVersion)
+
+			laterVersions, err := store.GetStore().GetAppVersionsAfter(appID, curSequence)
+			if err != nil {
+				return errors.Wrapf(err, "failed to get versions after %d", curVersion.Sequence)
+			}
+			activeVersions = append(activeVersions, laterVersions...)
+		}
+	}
+
+	imagesDedup := map[string]struct{}{}
+	for _, version := range activeVersions {
+		if version == nil {
+			continue
+		}
+		if version.KOTSKinds == nil {
+			continue
+		}
+		if version.KOTSKinds.KotsApplication.Spec.AllowRollback {
+			return AppRollbackError{AppID: version.AppID, Sequence: version.Sequence}
+		}
+		for _, i := range version.KOTSKinds.Installation.Spec.KnownImages {
+			imagesDedup[i.Image] = struct{}{}
+		}
+	}
+
+	usedImages := []string{}
+	for i, _ := range imagesDedup {
+		usedImages = append(usedImages, i)
+	}
+
+	if installParams.KotsadmRegistry != "" {
+		deployOptions := kotsadmtypes.DeployOptions{
+			// Minimal info needed to get the right image names
+			KotsadmOptions: kotsadmtypes.KotsadmOptions{
+				// TODO: OverrideVersion
+				OverrideRegistry:  registrySettings.Hostname,
+				OverrideNamespace: registrySettings.Namespace,
+				Username:          registrySettings.Username,
+				Password:          registrySettings.Password,
+			},
+		}
+		kotsadmImages := kotsadmobjects.GetAdminConsoleImages(deployOptions)
+		for _, i := range kotsadmImages {
+			usedImages = append(usedImages, i)
+		}
+	}
+
+	err = deleteUnusedImages(context.Background(), registrySettings, usedImages)
+	if err != nil {
+		return errors.Wrap(err, "failed to delete unused images")
+	}
+
+	return nil
+}
+
+func deleteUnusedImages(ctx context.Context, registry types.RegistrySettings, usedImages []string) (finalError error) {
 	if registry.Hostname == "" {
 		return nil
 	}

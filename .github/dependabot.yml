@@ -23,11 +23,6 @@ updates:
       interval: "daily"
 
   - package-ecosystem: "gomod"
-    directory: "/kotsadm/operator"
-    schedule:
-      interval: "daily"
-
-  - package-ecosystem: "gomod"
     directory: "/kurl_proxy"
     schedule:
       interval: "daily"
@@ -43,11 +38,6 @@ updates:
 
   - package-ecosystem: "docker"
     directory: "/deploy"
-    schedule:
-      interval: "weekly"
-
-  - package-ecosystem: "docker"
-    directory: "/kotsadm/operator/deploy"
     schedule:
       interval: "weekly"
 

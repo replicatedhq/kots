@@ -8,6 +8,7 @@ import (
 	kotsadmtypes "github.com/replicatedhq/kots/pkg/kotsadm/types"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/logger"
+	"github.com/replicatedhq/kots/pkg/registry"
 	"github.com/replicatedhq/kots/pkg/store"
 )
 
@@ -65,9 +66,9 @@ func (h *Handler) GarbageCollectImages(w http.ResponseWriter, r *http.Request) {
 	go func() {
 		for _, app := range apps {
 			logger.Infof("Deleting images for app %s", app.Slug)
-			err := deleteUnusedImages(app.ID)
+			err := registry.DeleteUnusedImages(app.ID)
 			if err != nil {
-				if _, ok := err.(appRollbackError); ok {
+				if _, ok := err.(registry.AppRollbackError); ok {
 					logger.Infof("not garbage collecting images because version allows rollbacks: %v", err)
 				} else {
 					logger.Error(errors.Wrap(err, "failed to delete unused images"))
