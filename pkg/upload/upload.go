@@ -46,25 +46,25 @@ func init() {
 
 // Upload will upload the application version at path
 // using the options in uploadOptions
-func Upload(path string, uploadOptions UploadOptions) error {
+func Upload(path string, uploadOptions UploadOptions) (string, error) {
 	license, err := findLicense(path)
 	if err != nil {
-		return errors.Wrap(err, "failed to find license")
+		return "", errors.Wrap(err, "failed to find license")
 	}
 	uploadOptions.license = license
 
 	updateCursor, err := findUpdateCursor(path)
 	if err != nil {
-		return errors.Wrapf(err, "failed to find update cursor in %q. Please double check the path provided.", path)
+		return "", errors.Wrapf(err, "failed to find update cursor in %q. Please double check the path provided.", path)
 	}
 	if updateCursor == "" {
-		return errors.Errorf("no update cursor found in %q. Please double check the path provided.", path)
+		return "", errors.Errorf("no update cursor found in %q. Please double check the path provided.", path)
 	}
 	uploadOptions.updateCursor = updateCursor
 
 	archiveFilename, err := createUploadableArchive(path)
 	if err != nil {
-		return errors.Wrap(err, "failed to create uploadable archive")
+		return "", errors.Wrap(err, "failed to create uploadable archive")
 	}
 
 	defer os.Remove(archiveFilename)
@@ -86,7 +86,7 @@ func Upload(path string, uploadOptions UploadOptions) error {
 
 		appName, err := relentlesslyPromptForAppName(lastPathPart)
 		if err != nil {
-			return errors.Wrap(err, "failed to prompt for app name")
+			return "", errors.Wrap(err, "failed to prompt for app name")
 		}
 
 		uploadOptions.NewAppName = appName
@@ -96,7 +96,7 @@ func Upload(path string, uploadOptions UploadOptions) error {
 	if uploadOptions.ExistingAppSlug == "" && uploadOptions.UpstreamURI == "" {
 		upstreamURI, err := promptForUpstreamURI()
 		if err != nil {
-			return errors.Wrap(err, "failed to prompt for upstream uri")
+			return "", errors.Wrap(err, "failed to prompt for upstream uri")
 		}
 
 		uploadOptions.UpstreamURI = upstreamURI
@@ -114,24 +114,24 @@ func Upload(path string, uploadOptions UploadOptions) error {
 	req, err := createUploadRequest(archiveFilename, uploadOptions, fmt.Sprintf("%s/api/v1/upload", uploadOptions.Endpoint))
 	if err != nil {
 		log.FinishSpinnerWithError()
-		return errors.Wrap(err, "failed to create upload request")
+		return "", errors.Wrap(err, "failed to create upload request")
 	}
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		log.FinishSpinnerWithError()
-		return errors.Wrap(err, "failed to execute request")
+		return "", errors.Wrap(err, "failed to execute request")
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != 200 {
 		log.FinishSpinnerWithError()
-		return errors.Errorf("unexpected status code: %d", resp.StatusCode)
+		return "", errors.Errorf("unexpected status code: %d", resp.StatusCode)
 	}
 
 	b, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		log.FinishSpinnerWithError()
-		return errors.Wrap(err, "failed to read response body")
+		return "", errors.Wrap(err, "failed to read response body")
 	}
 	type UploadResponse struct {
 		Slug string `json:"slug"`
@@ -139,12 +139,12 @@ func Upload(path string, uploadOptions UploadOptions) error {
 	var uploadResponse UploadResponse
 	if err := json.Unmarshal(b, &uploadResponse); err != nil {
 		log.FinishSpinnerWithError()
-		return errors.Wrap(err, "failed to unmarshal response")
+		return "", errors.Wrap(err, "failed to unmarshal response")
 	}
 
 	log.FinishSpinner()
 
-	return nil
+	return uploadResponse.Slug, nil
 }
 
 func createUploadRequest(path string, uploadOptions UploadOptions, uri string) (*http.Request, error) {
