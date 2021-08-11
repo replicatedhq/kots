@@ -393,7 +393,7 @@ class PreflightResultPage extends Component {
               </button> :
               <div className="flex flex1 justifyContent--center alignItems--center">
                 <span className="u-fontSize--normal u-fontWeight--medium u-textDecoration--underline u-textColor--bodyCopy u-marginTop--15 u-cursor--pointer" onClick={this.showSkipModal}>
-                  Skip Preflights </span>
+                  Ignore Preflights </span>
               </div>}
           </div>
           : stopPolling ?
