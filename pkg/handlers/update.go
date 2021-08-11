@@ -22,8 +22,9 @@ type AppUpdateCheckRequest struct {
 }
 
 type AppUpdateCheckResponse struct {
-	AvailableUpdates   int64 `json:"availableUpdates"`
-	CurrentAppSequence int64 `json:"currentAppSequence"`
+	AvailableUpdates   int64  `json:"availableUpdates"`
+	CurrentAppSequence int64  `json:"currentAppSequence"`
+	LatestVersion      string `json:"latestVersion"`
 }
 
 func (h *Handler) AppUpdateCheck(w http.ResponseWriter, r *http.Request) {
@@ -44,7 +45,7 @@ func (h *Handler) AppUpdateCheck(w http.ResponseWriter, r *http.Request) {
 	contentType = strings.TrimSpace(contentType)
 
 	if contentType == "application/json" {
-		availableUpdates, err := updatechecker.CheckForUpdates(foundApp.ID, deploy, skipPreflights, isCLI)
+		availableUpdates, latestVersion, err := updatechecker.CheckForUpdates(foundApp.ID, deploy, skipPreflights, isCLI)
 		if err != nil {
 			logger.Error(errors.Wrap(err, "failed to check for updates"))
 			w.WriteHeader(http.StatusInternalServerError)
@@ -59,6 +60,7 @@ func (h *Handler) AppUpdateCheck(w http.ResponseWriter, r *http.Request) {
 		appUpdateCheckResponse := AppUpdateCheckResponse{
 			AvailableUpdates:   availableUpdates,
 			CurrentAppSequence: foundApp.CurrentSequence,
+			LatestVersion:      latestVersion,
 		}
 
 		JSON(w, http.StatusOK, appUpdateCheckResponse)

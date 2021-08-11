@@ -104,7 +104,7 @@ func Configure(appID string) error {
 	_, err = job.AddFunc(cronSpec, func() {
 		logger.Debug("checking updates for app", zap.String("slug", jobAppSlug))
 
-		availableUpdates, err := CheckForUpdates(jobAppID, false, false, false)
+		availableUpdates, _, err := CheckForUpdates(jobAppID, false, false, false)
 		if err != nil {
 			logger.Error(errors.Wrapf(err, "failed to check updates for app %s", jobAppSlug))
 			return
@@ -144,41 +144,41 @@ func Stop(appID string) {
 // CheckForUpdates checks (and downloads) latest updates for a specific app
 // if "deploy" is set to true, the latest version/update will be deployed
 // returns the number of available updates
-func CheckForUpdates(appID string, deploy bool, skipPreflights bool, isCLI bool) (int64, error) {
+func CheckForUpdates(appID string, deploy bool, skipPreflights bool, isCLI bool) (int64, string, error) {
 	currentStatus, _, err := store.GetStore().GetTaskStatus("update-download")
 	if err != nil {
-		return 0, errors.Wrap(err, "failed to get task status")
+		return 0, "", errors.Wrap(err, "failed to get task status")
 	}
 
 	if currentStatus == "running" {
 		logger.Debug("update-download is already running, not starting a new one")
-		return 0, nil
+		return 0, "", nil
 	}
 
 	if err := store.GetStore().ClearTaskStatus("update-download"); err != nil {
-		return 0, errors.Wrap(err, "failed to clear task status")
+		return 0, "", errors.Wrap(err, "failed to clear task status")
 	}
 
 	a, err := store.GetStore().GetApp(appID)
 	if err != nil {
-		return 0, errors.Wrap(err, "failed to get app")
+		return 0, "", errors.Wrap(err, "failed to get app")
 	}
 
 	// sync license, this method is only called when online
 	_, _, err = license.Sync(a, "", false)
 	if err != nil {
-		return 0, errors.Wrap(err, "failed to sync license")
+		return 0, "", errors.Wrap(err, "failed to sync license")
 	}
 
 	// reload app because license sync could have created a new release
 	a, err = store.GetStore().GetApp(appID)
 	if err != nil {
-		return 0, errors.Wrap(err, "failed to get app")
+		return 0, "", errors.Wrap(err, "failed to get app")
 	}
 
 	archiveDir, err := ioutil.TempDir("", "kotsadm")
 	if err != nil {
-		return 0, errors.Wrap(err, "failed to create temp dir")
+		return 0, "", errors.Wrap(err, "failed to create temp dir")
 	}
 
 	removeArchiveDir := true
@@ -190,18 +190,18 @@ func CheckForUpdates(appID string, deploy bool, skipPreflights bool, isCLI bool)
 
 	err = store.GetStore().GetAppVersionArchive(a.ID, a.CurrentSequence, archiveDir)
 	if err != nil {
-		return 0, errors.Wrap(err, "failed to get app version archive")
+		return 0, "", errors.Wrap(err, "failed to get app version archive")
 	}
 
 	// we need a few objects from the app to check for updates
 	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(archiveDir)
 	if err != nil {
-		return 0, errors.Wrap(err, "failed to load kotskinds from path")
+		return 0, "", errors.Wrap(err, "failed to load kotskinds from path")
 	}
 
 	latestLicense, err := store.GetStore().GetLatestLicenseForApp(a.ID)
 	if err != nil {
-		return 0, errors.Wrap(err, "failed to get latest license")
+		return 0, "", errors.Wrap(err, "failed to get latest license")
 	}
 
 	getUpdatesOptions := kotspull.GetUpdatesOptions{
@@ -217,75 +217,77 @@ func CheckForUpdates(appID string, deploy bool, skipPreflights bool, isCLI bool)
 	// get updates
 	updates, err := kotspull.GetUpdates(fmt.Sprintf("replicated://%s", kotsKinds.License.Spec.AppSlug), getUpdatesOptions)
 	if err != nil {
-		return 0, errors.Wrap(err, "failed to get updates")
+		return 0, "", errors.Wrap(err, "failed to get updates")
 	}
 
 	// update last updated at time
 	t := app.LastUpdateAtTime(a.ID)
 	if t != nil {
-		return 0, errors.Wrap(err, "failed to update last updated at time")
+		return 0, "", errors.Wrap(err, "failed to update last updated at time")
 	}
 
 	downstreams, err := store.GetStore().ListDownstreamsForApp(a.ID)
 	if err != nil {
-		return 0, errors.Wrap(err, "failed to list downstreams for app")
+		return 0, "", errors.Wrap(err, "failed to list downstreams for app")
 	}
 	if len(downstreams) == 0 {
-		return 0, errors.Errorf("no downstreams found for app %q", a.Slug)
+		return 0, "", errors.Errorf("no downstreams found for app %q", a.Slug)
 	}
 	downstream := downstreams[0]
 
 	// if there are updates, go routine it
 	if len(updates) == 0 {
-		if !deploy {
-			return 0, nil
-		}
-
 		// ensure that the latest version is deployed
 		allVersions, err := version.GetVersions(a.ID)
 		if err != nil {
-			return 0, errors.Wrap(err, "failed to list app versions")
+			return 0, "", errors.Wrap(err, "failed to list app versions")
 		}
 
 		// get the first version, the array must contain versions at this point
 		// this function can't run without an app
 		if len(allVersions) == 0 {
-			return 0, errors.New("no versions found")
+			return 0, "", errors.New("no versions found")
 		}
 
 		latestVersion := allVersions[len(allVersions)-1]
+		latestVersionLabel := latestVersion.KOTSKinds.Installation.Spec.VersionLabel
+		if !deploy {
+			return 0, latestVersionLabel, nil
+		}
+
 		downstreamParentSequence, err := store.GetStore().GetCurrentParentSequence(a.ID, downstream.ClusterID)
 		if err != nil {
-			return 0, errors.Wrap(err, "failed to get current downstream parent sequence")
+			return 0, "", errors.Wrap(err, "failed to get current downstream parent sequence")
 		}
 
 		if latestVersion.Sequence != downstreamParentSequence {
 			status, err := store.GetStore().GetStatusForVersion(a.ID, downstream.ClusterID, latestVersion.Sequence)
 			if err != nil {
-				return 0, errors.Wrap(err, "failed to get update downstream status")
+				return 0, "", errors.Wrap(err, "failed to get update downstream status")
 			}
 
 			if status == storetypes.VersionPendingConfig {
-				return 0, util.ActionableError{
+				return 0, "", util.ActionableError{
 					NoRetry: true,
 					Message: fmt.Sprintf("Version %d cannot be deployed because it needs configuration", latestVersion.Sequence),
 				}
 			}
 
 			if err := version.DeployVersion(a.ID, latestVersion.Sequence); err != nil {
-				return 0, errors.Wrap(err, "failed to deploy latest version")
+				return 0, "", errors.Wrap(err, "failed to deploy latest version")
 			}
 		}
 
-		return 0, nil
+		return 0, latestVersionLabel, nil
 	}
 
 	availableUpdates := int64(len(updates))
+	latestVersionLabel := updates[len(updates)-1].VersionLabel
 
 	// this is to avoid a race condition where the UI polls the task status before it is set by the goroutine
 	status := fmt.Sprintf("%d Updates available...", availableUpdates)
 	if err := store.GetStore().SetTaskStatus("update-download", status, "running"); err != nil {
-		return 0, errors.Wrap(err, "failed to set task status")
+		return 0, "", errors.Wrap(err, "failed to set task status")
 	}
 
 	removeArchiveDir = false
@@ -328,5 +330,5 @@ func CheckForUpdates(appID string, deploy bool, skipPreflights bool, isCLI bool)
 		}
 	}()
 
-	return availableUpdates, nil
+	return availableUpdates, latestVersionLabel, nil
 }

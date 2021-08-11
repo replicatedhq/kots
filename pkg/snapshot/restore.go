@@ -26,6 +26,7 @@ type RestoreInstanceBackupOptions struct {
 	BackupName      string
 	WaitForApps     bool
 	VeleroNamespace string
+	Silent          bool
 }
 
 type ListInstanceRestoresOptions struct {
@@ -92,6 +93,9 @@ func RestoreInstanceBackup(ctx context.Context, options RestoreInstanceBackupOpt
 	}
 
 	log := logger.NewCLILogger()
+	if options.Silent {
+		log.Silence()
+	}
 	log.ActionWithSpinner("Deleting Admin Console")
 
 	// delete all kotsadm objects before creating the restore

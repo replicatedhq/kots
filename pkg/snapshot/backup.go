@@ -21,6 +21,7 @@ import (
 type CreateInstanceBackupOptions struct {
 	Namespace string
 	Wait      bool
+	Silent    bool
 }
 
 type ListInstanceBackupsOptions struct {
@@ -34,20 +35,30 @@ type VeleroRBACResponse struct {
 	KotsadmRequiresVeleroAccess bool   `json:"kotsadmRequiresVeleroAccess,omitempty"`
 }
 
-func CreateInstanceBackup(ctx context.Context, options CreateInstanceBackupOptions) error {
+type BackupResponse struct {
+	Success    bool   `json:"success"`
+	BackupName string `json:"backupName,omitempty"`
+	Error      string `json:"error,omitempty"`
+}
+
+func CreateInstanceBackup(ctx context.Context, options CreateInstanceBackupOptions) (*BackupResponse, error) {
 	log := logger.NewCLILogger()
+	if options.Silent {
+		log.Silence()
+	}
+
 	log.ActionWithSpinner("Connecting to cluster")
 
 	clientset, err := k8sutil.GetClientset()
 	if err != nil {
 		log.FinishSpinnerWithError()
-		return errors.Wrap(err, "failed to get clientset")
+		return nil, errors.Wrap(err, "failed to get clientset")
 	}
 
 	podName, err := k8sutil.FindKotsadm(clientset, options.Namespace)
 	if err != nil {
 		log.FinishSpinnerWithError()
-		return errors.Wrap(err, "failed to find kotsadm pod")
+		return nil, errors.Wrap(err, "failed to find kotsadm pod")
 	}
 
 	stopCh := make(chan struct{})
@@ -56,7 +67,7 @@ func CreateInstanceBackup(ctx context.Context, options CreateInstanceBackupOptio
 	localPort, errChan, err := k8sutil.PortForward(0, 3000, options.Namespace, podName, false, stopCh, log)
 	if err != nil {
 		log.FinishSpinnerWithError()
-		return errors.Wrap(err, "failed to start port forwarding")
+		return nil, errors.Wrap(err, "failed to start port forwarding")
 	}
 
 	go func() {
@@ -75,7 +86,7 @@ func CreateInstanceBackup(ctx context.Context, options CreateInstanceBackupOptio
 	authSlug, err := auth.GetOrCreateAuthSlug(clientset, options.Namespace)
 	if err != nil {
 		log.FinishSpinnerWithError()
-		return errors.Wrap(err, "failed to get kotsadm auth slug")
+		return nil, errors.Wrap(err, "failed to get kotsadm auth slug")
 	}
 
 	url := fmt.Sprintf("http://localhost:%d/api/v1/snapshot/backup", localPort)
@@ -83,21 +94,21 @@ func CreateInstanceBackup(ctx context.Context, options CreateInstanceBackupOptio
 	newRequest, err := http.NewRequest("POST", url, nil)
 	if err != nil {
 		log.FinishSpinnerWithError()
-		return errors.Wrap(err, "failed to create instance snapshot backup request")
+		return nil, errors.Wrap(err, "failed to create instance snapshot backup request")
 	}
 	newRequest.Header.Add("Authorization", authSlug)
 
 	resp, err := http.DefaultClient.Do(newRequest)
 	if err != nil {
 		log.FinishSpinnerWithError()
-		return errors.Wrap(err, "failed to get from kotsadm")
+		return nil, errors.Wrap(err, "failed to get from kotsadm")
 	}
 	defer resp.Body.Close()
 
 	respBody, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		log.FinishSpinnerWithError()
-		return errors.Wrap(err, "failed to read server response")
+		return nil, errors.Wrap(err, "failed to read server response")
 	}
 
 	if resp.StatusCode != http.StatusOK {
@@ -105,33 +116,30 @@ func CreateInstanceBackup(ctx context.Context, options CreateInstanceBackupOptio
 		if resp.StatusCode == http.StatusConflict {
 			veleroRBACResponse := VeleroRBACResponse{}
 			if err := json.Unmarshal(respBody, &veleroRBACResponse); err != nil {
-				return errors.Wrap(err, "failed to unmarshal velero rbac response")
+				return nil, errors.Wrap(err, "failed to unmarshal velero rbac response")
 			}
 			if veleroRBACResponse.KotsadmRequiresVeleroAccess {
 				log.ActionWithoutSpinner("Velero Namespace Access Required")
 				log.ActionWithoutSpinner("We’ve detected that the Admin Console is running with minimal role-based-access-control (RBAC) privileges, meaning that the Admin Console is limited to a single namespace. To use the snapshots functionality, the Admin Console requires access to the namespace Velero is installed in. Please make sure Velero is installed, then use the following command to provide the Admin Console with the necessary permissions to access it:\n")
 				log.Info("kubectl kots velero ensure-permissions --namespace %s --velero-namespace <velero-namespace>", veleroRBACResponse.KotsadmNamespace)
 				log.Info("* Note: Please replace `<velero-namespace>` with the actual namespace Velero is installed in, which is 'velero' by default.\n")
-				return nil
+				return &BackupResponse{
+					Error: "unable to access velero due to minimal RBAC privileges",
+				}, nil
 			}
 		}
-		return errors.Errorf("unexpected status code from %s: %s", url, resp.Status)
+		return nil, errors.Errorf("unexpected status code from %s: %s", url, resp.Status)
 	}
 
-	type BackupResponse struct {
-		Success    bool   `json:"success"`
-		BackupName string `json:"backupName,omitempty"`
-		Error      string `json:"error,omitempty"`
-	}
 	var backupResponse BackupResponse
 	if err := json.Unmarshal(respBody, &backupResponse); err != nil {
 		log.FinishSpinnerWithError()
-		return errors.Wrap(err, "failed to unmarshal response")
+		return nil, errors.Wrap(err, "failed to unmarshal response")
 	}
 
 	if backupResponse.Error != "" {
 		log.FinishSpinnerWithError()
-		return errors.New(backupResponse.Error)
+		return nil, errors.New(backupResponse.Error)
 	}
 
 	if options.Wait {
@@ -142,10 +150,10 @@ func CreateInstanceBackup(ctx context.Context, options CreateInstanceBackupOptio
 				errMsg := fmt.Sprintf("backup failed with %d errors and %d warnings.", backup.Status.Errors, backup.Status.Warnings)
 				log.FinishSpinnerWithError()
 				log.ActionWithoutSpinner(errMsg)
-				return errors.Wrap(err, errMsg)
+				return nil, errors.Wrap(err, errMsg)
 			}
 			log.FinishSpinnerWithError()
-			return errors.Wrap(err, "failed to wait for velero backup completed")
+			return nil, errors.Wrap(err, "failed to wait for velero backup completed")
 		}
 
 		log.FinishSpinner()
@@ -155,7 +163,7 @@ func CreateInstanceBackup(ctx context.Context, options CreateInstanceBackupOptio
 		log.ActionWithoutSpinner(fmt.Sprintf("Backup is in progress. Backup name is %s", backupResponse.BackupName))
 	}
 
-	return nil
+	return &backupResponse, nil
 }
 
 func ListInstanceBackups(ctx context.Context, options ListInstanceBackupsOptions) ([]velerov1.Backup, error) {

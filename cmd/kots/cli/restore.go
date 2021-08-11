@@ -1,15 +1,22 @@
 package cli
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 
 	"github.com/pkg/errors"
+	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/print"
 	"github.com/replicatedhq/kots/pkg/snapshot"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
+
+type RestoreOutput struct {
+	Success bool   `json:"success"`
+	Error   string `json:"error,omitempty"`
+}
 
 func RestoreCmd() *cobra.Command {
 	cmd := &cobra.Command{
@@ -30,14 +37,34 @@ func RestoreCmd() *cobra.Command {
 				os.Exit(1)
 			}
 
+			output := v.GetString("output")
+			if output != "json" && output != "" {
+				return errors.Errorf("output format %s not supported (allowed formats are: json)", output)
+			}
+
+			var restoreOutput RestoreOutput
 			options := snapshot.RestoreInstanceBackupOptions{
 				BackupName:      backupName,
 				WaitForApps:     v.GetBool("wait-for-apps"),
 				VeleroNamespace: v.GetString("velero-namespace"),
+				Silent:          output != "",
 			}
 			_, err := snapshot.RestoreInstanceBackup(cmd.Context(), options)
-			if err != nil {
+			if err != nil && output == "" {
 				return errors.Wrap(err, "failed to restore instance backup")
+			} else if err != nil {
+				restoreOutput.Error = fmt.Sprint(errors.Wrap(err, "failed to restore instance backup"))
+			} else {
+				restoreOutput.Success = true
+			}
+
+			log := logger.NewCLILogger()
+			if output == "json" {
+				outputJSON, err := json.Marshal(restoreOutput)
+				if err != nil {
+					return errors.Wrap(err, "error marshaling JSON")
+				}
+				log.Info(string(outputJSON))
 			}
 
 			return nil
@@ -47,6 +74,7 @@ func RestoreCmd() *cobra.Command {
 	cmd.Flags().String("from-backup", "", "the name of the backup to restore from")
 	cmd.Flags().String("velero-namespace", "", "namespace in which velero is installed")
 	cmd.Flags().Bool("wait-for-apps", true, "wait for all applications to be restored")
+	cmd.Flags().StringP("output", "o", "", "output format (currently supported: json)")
 
 	cmd.AddCommand(RestoreListCmd())
 

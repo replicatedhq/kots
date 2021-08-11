@@ -1,12 +1,22 @@
 package cli
 
 import (
+	"encoding/json"
+	"fmt"
+
 	"github.com/pkg/errors"
+	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/print"
 	"github.com/replicatedhq/kots/pkg/snapshot"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
+
+type BackupOutput struct {
+	Success    bool   `json:"success"`
+	BackupName string `json:"backupName"`
+	Error      string `json:"error,omitempty"`
+}
 
 func BackupCmd() *cobra.Command {
 	cmd := &cobra.Command{
@@ -23,12 +33,34 @@ func BackupCmd() *cobra.Command {
 
 			namespace := v.GetString("namespace")
 
+			output := v.GetString("output")
+			if output != "json" && output != "" {
+				return errors.Errorf("output format %s not supported (allowed formats are: json)", output)
+			}
+
+			var backupOutput BackupOutput
 			options := snapshot.CreateInstanceBackupOptions{
 				Namespace: namespace,
 				Wait:      v.GetBool("wait"),
+				Silent:    output != "",
 			}
-			if err := snapshot.CreateInstanceBackup(cmd.Context(), options); err != nil {
+			backupRes, err := snapshot.CreateInstanceBackup(cmd.Context(), options)
+			if err != nil && output == "" {
 				return errors.Wrap(err, "failed to create instance backup")
+			} else if err != nil {
+				backupOutput.Error = fmt.Sprint(errors.Wrap(err, "failed to create instance backup"))
+			} else if backupRes.Error == "" {
+				backupOutput.Success = true
+				backupOutput.BackupName = backupRes.BackupName
+			}
+
+			log := logger.NewCLILogger()
+			if output == "json" {
+				outputJSON, err := json.Marshal(backupOutput)
+				if err != nil {
+					return errors.Wrap(err, "error marshaling JSON")
+				}
+				log.Info(string(outputJSON))
 			}
 
 			return nil
@@ -37,6 +69,7 @@ func BackupCmd() *cobra.Command {
 
 	cmd.Flags().StringP("namespace", "n", "default", "namespace in which kots/kotsadm is installed")
 	cmd.Flags().Bool("wait", true, "wait for the backup to finish")
+	cmd.Flags().StringP("output", "o", "", "output format (currently supported: json)")
 
 	cmd.AddCommand(BackupListCmd())
 
