@@ -905,7 +905,7 @@ class SnapshotStorageDestination extends Component {
               });
             }
             // Checks for legacy behavior where minio was used for hostpath and nfs
-            if (!snapshotSettings.isMinioDisabled) {
+            if (!snapshotSettings?.isMinioDisabled) {
                 availableDestinations.push({
                     value: "nfs",
                     label: "Network File System (NFS)",
@@ -921,7 +921,7 @@ class SnapshotStorageDestination extends Component {
               label: "Azure Blob Storage",
             });
 
-        } else if (veleroPlugin.includes("local-volume-provider") && snapshotSettings.isMinioDisabled) {
+        } else if (veleroPlugin.includes("local-volume-provider") && snapshotSettings?.isMinioDisabled) {
             availableDestinations.push({
                 value: "nfs",
                 label: "Network File System (NFS)",
