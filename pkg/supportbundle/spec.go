@@ -26,6 +26,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/render/helper"
 	"github.com/replicatedhq/kots/pkg/snapshot"
 	"github.com/replicatedhq/kots/pkg/store"
+	"github.com/replicatedhq/kots/pkg/supportbundle/types"
 	"github.com/replicatedhq/kots/pkg/template"
 	"github.com/replicatedhq/kots/pkg/util"
 	troubleshootv1beta2 "github.com/replicatedhq/troubleshoot/pkg/apis/troubleshoot/v1beta2"
@@ -39,14 +40,8 @@ import (
 	"k8s.io/client-go/kubernetes"
 )
 
-type DefaultTroubleshootOpts struct {
-	Origin        string
-	InCluster     bool
-	DisableUpload bool
-}
-
 // CreateRenderedSpec creates the support bundle specification from defaults and the kots app
-func CreateRenderedSpec(appID string, sequence int64, kotsKinds *kotsutil.KotsKinds, opts DefaultTroubleshootOpts) (*troubleshootv1beta2.SupportBundle, error) {
+func CreateRenderedSpec(appID string, sequence int64, kotsKinds *kotsutil.KotsKinds, opts types.TroubleshootOptions) (*troubleshootv1beta2.SupportBundle, error) {
 	builtBundle := kotsKinds.SupportBundle.DeepCopy()
 	if builtBundle == nil {
 		builtBundle = &troubleshootv1beta2.SupportBundle{
@@ -163,7 +158,7 @@ func CreateRenderedSpec(appID string, sequence int64, kotsKinds *kotsutil.KotsKi
 }
 
 // injectDefaults injects the kots adm default collectors/analyzers in the the support bundle specification.
-func injectDefaults(app *apptypes.App, supportBundle *troubleshootv1beta2.SupportBundle, opts DefaultTroubleshootOpts) error {
+func injectDefaults(app *apptypes.App, supportBundle *troubleshootv1beta2.SupportBundle, opts types.TroubleshootOptions) error {
 	populateNamespaces(supportBundle)
 
 	addDefaultTroubleshoot(supportBundle, app)
@@ -374,7 +369,6 @@ func makeKotsadmCollectors() []*troubleshootv1beta2.Collect {
 	names := []string{
 		"kotsadm-postgres",
 		"kotsadm",
-		"kotsadm-operator",
 		"kurl-proxy-kotsadm",
 		"kotsadm-dex",
 		"kotsadm-fs-minio",
@@ -399,7 +393,6 @@ func makeKotsadmCollectors() []*troubleshootv1beta2.Collect {
 func makeGoRoutineCollectors() []*troubleshootv1beta2.Collect {
 	names := []string{
 		"kotsadm",
-		"kotsadm-operator",
 	}
 	goroutineCollectors := []*troubleshootv1beta2.Collect{}
 	for _, name := range names {

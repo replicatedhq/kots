@@ -35,8 +35,20 @@ const (
 // It returns the ID of the support bundle so that the status can be queried by the
 // front end.
 func Collect(appID string, clusterID string) (string, error) {
+	sequence := int64(0)
 
-	supportBundle, err := createSupportBundleDependencies(appID, clusterID)
+	currentVersion, err := store.GetStore().GetCurrentVersion(appID, clusterID)
+	if err != nil {
+		return "", errors.Wrap(err, "failed to get current downstream version")
+	}
+	if currentVersion != nil {
+		sequence = currentVersion.Sequence
+	}
+
+	opts := types.TroubleshootOptions{
+		DisableUpload: true,
+	}
+	supportBundle, err := CreateSupportBundleDependencies(appID, sequence, opts)
 	if err != nil {
 		return "", errors.Wrap(err, "could not generate support bundle dependencies")
 	}
@@ -172,22 +184,12 @@ func GetBundleCommand(appSlug string) []string {
 	return command
 }
 
-// createSupportBundleDependencies generates k8s secrets for the support bundle spec and redactors.
+// CreateSupportBundleDependencies generates k8s secrets and configmaps for the support bundle spec and redactors.
 // These resources will be used when executing a support bundle collection
-func createSupportBundleDependencies(appID string, clusterID string) (*types.SupportBundle, error) {
+func CreateSupportBundleDependencies(appID string, sequence int64, opts types.TroubleshootOptions) (*types.SupportBundle, error) {
 	a, err := store.GetStore().GetApp(appID)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to get app %s", appID)
-	}
-
-	sequence := int64(0)
-
-	currentVersion, err := store.GetStore().GetCurrentVersion(a.ID, clusterID)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to get current downstream version")
-	}
-	if currentVersion != nil {
-		sequence = currentVersion.Sequence
 	}
 
 	archivePath, err := ioutil.TempDir("", "kotsadm")
@@ -206,11 +208,7 @@ func createSupportBundleDependencies(appID string, clusterID string) (*types.Sup
 		return nil, errors.Wrap(err, "failed to load current kotskinds")
 	}
 
-	defaultOpts := DefaultTroubleshootOpts{
-		DisableUpload: true,
-	}
-
-	supportBundle, err := CreateRenderedSpec(a.ID, sequence, kotsKinds, defaultOpts)
+	supportBundle, err := CreateRenderedSpec(a.ID, sequence, kotsKinds, opts)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create rendered support bundle spec")
 	}

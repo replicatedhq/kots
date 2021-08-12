@@ -17,10 +17,10 @@ import (
 	"github.com/replicatedhq/kots/pkg/online/types"
 	"github.com/replicatedhq/kots/pkg/preflight"
 	"github.com/replicatedhq/kots/pkg/pull"
-	"github.com/replicatedhq/kots/pkg/redact"
 	"github.com/replicatedhq/kots/pkg/reporting"
 	"github.com/replicatedhq/kots/pkg/store"
 	"github.com/replicatedhq/kots/pkg/supportbundle"
+	supportbundletypes "github.com/replicatedhq/kots/pkg/supportbundle/types"
 	"github.com/replicatedhq/kots/pkg/updatechecker"
 	"github.com/replicatedhq/kots/pkg/util"
 	"github.com/replicatedhq/kots/pkg/version"
@@ -165,24 +165,17 @@ func CreateAppFromOnline(pendingApp *types.PendingApp, upstreamURI string, isAut
 		return nil, errors.Wrap(err, "failed to create new version")
 	}
 
-	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(tmpRoot)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to load kotskinds from path")
-	}
-
-	defaultOpts := supportbundle.DefaultTroubleshootOpts{
-		Origin:    "",
+	troubleshootOpts := supportbundletypes.TroubleshootOptions{
 		InCluster: true,
 	}
-
-	_, err = supportbundle.CreateRenderedSpec(pendingApp.ID, 0, kotsKinds, defaultOpts)
+	_, err = supportbundle.CreateSupportBundleDependencies(pendingApp.ID, 0, troubleshootOpts)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create rendered support bundle spec")
 	}
 
-	err = redact.CreateRenderedAppRedactSpec(pendingApp.ID, 0, kotsKinds)
+	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(tmpRoot)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to write app redact spec configmap")
+		return nil, errors.Wrap(err, "failed to load kotskinds from path")
 	}
 
 	if isAutomated && kotsKinds.Config != nil {

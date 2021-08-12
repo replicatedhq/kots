@@ -6,12 +6,11 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	appstatustypes "github.com/replicatedhq/kots/pkg/api/appstatus/types"
-	"github.com/replicatedhq/kots/pkg/appstatus"
+	appstatetypes "github.com/replicatedhq/kots/pkg/appstate/types"
 	"github.com/replicatedhq/kots/pkg/persistence"
 )
 
-func (s *KOTSStore) GetAppStatus(appID string) (*appstatustypes.AppStatus, error) {
+func (s *KOTSStore) GetAppStatus(appID string) (*appstatetypes.AppStatus, error) {
 	db := persistence.MustGetDBSession()
 	query := `select resource_states, updated_at, sequence from app_status where app_id = $1`
 	row := db.QueryRow(query, appID)
@@ -22,18 +21,18 @@ func (s *KOTSStore) GetAppStatus(appID string) (*appstatustypes.AppStatus, error
 
 	if err := row.Scan(&resourceStatesStr, &updatedAt, &sequence); err != nil {
 		if err == sql.ErrNoRows {
-			return &appstatustypes.AppStatus{
+			return &appstatetypes.AppStatus{
 				AppID:          appID,
 				UpdatedAt:      time.Time{},
-				ResourceStates: []appstatustypes.ResourceState{},
-				State:          appstatustypes.StateMissing,
+				ResourceStates: appstatetypes.ResourceStates{},
+				State:          appstatetypes.StateMissing,
 				Sequence:       0,
 			}, nil
 		}
 		return nil, errors.Wrap(err, "failed to scan")
 	}
 
-	appStatus := appstatustypes.AppStatus{
+	appStatus := appstatetypes.AppStatus{
 		AppID:    appID,
 		Sequence: sequence.Int64,
 	}
@@ -43,19 +42,19 @@ func (s *KOTSStore) GetAppStatus(appID string) (*appstatustypes.AppStatus, error
 	}
 
 	if resourceStatesStr.Valid {
-		var resourceStates []appstatustypes.ResourceState
+		var resourceStates appstatetypes.ResourceStates
 		if err := json.Unmarshal([]byte(resourceStatesStr.String), &resourceStates); err != nil {
 			return nil, errors.Wrap(err, "failed to unmarshal resource states")
 		}
 		appStatus.ResourceStates = resourceStates
 	}
 
-	appStatus.State = appstatus.GetState(appStatus.ResourceStates)
+	appStatus.State = appstatetypes.GetState(appStatus.ResourceStates)
 
 	return &appStatus, nil
 }
 
-func (s *KOTSStore) SetAppStatus(appID string, resourceStates []appstatustypes.ResourceState, updatedAt time.Time, sequence int64) error {
+func (s *KOTSStore) SetAppStatus(appID string, resourceStates appstatetypes.ResourceStates, updatedAt time.Time, sequence int64) error {
 	marshalledResourceStates, err := json.Marshal(resourceStates)
 	if err != nil {
 		return errors.Wrap(err, "failed to json marshal resource states")

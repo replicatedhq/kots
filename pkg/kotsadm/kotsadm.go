@@ -175,9 +175,17 @@ func ensureKotsadmRBAC(deployOptions types.DeployOptions, clientset *kubernetes.
 		return errors.Wrap(err, "failed to check if kotsadm is cluster scoped")
 	}
 
+	// if this is cluster scoped, it's easy... create everything as a cluster role and cluster role binding
+	// with pretty open permissions
+
 	if isClusterScoped {
 		return ensureKotsadmClusterRBAC(deployOptions, clientset)
 	}
+
+	// we want to ensure that the principle of least privilege is applied.
+	// so we will create our role and rolebinding
+	// and then create a role and role binding PER namespace that the application
+	// wants...  everthing will be linked to the same service account
 
 	if err := kotsadmresources.EnsureKotsadmRole(deployOptions.Namespace, clientset); err != nil {
 		return errors.Wrap(err, "failed to ensure kotsadm role")
@@ -185,6 +193,26 @@ func ensureKotsadmRBAC(deployOptions types.DeployOptions, clientset *kubernetes.
 
 	if err := kotsadmresources.EnsureKotsadmRoleBinding(deployOptions.Namespace, deployOptions.Namespace, clientset); err != nil {
 		return errors.Wrap(err, "failed to ensure kotsadm role binding")
+	}
+
+	decode := scheme.Codecs.UniversalDeserializer().Decode
+	obj, gvk, err := decode(deployOptions.ApplicationMetadata, nil, nil)
+	if err != nil {
+		return errors.Wrap(err, "failed to decode application metadata")
+	}
+	if gvk.Group != "kots.io" || gvk.Version != "v1beta1" || gvk.Kind != "Application" {
+		return errors.New("application metadata contained unepxected gvk")
+	}
+
+	application := obj.(*kotsv1beta1.Application)
+	for _, additionalNamespace := range application.Spec.AdditionalNamespaces {
+		if err = kotsadmresources.EnsureKotsadmRole(additionalNamespace, clientset); err != nil {
+			return errors.Wrap(err, "failed to ensure kotsadm additional namespace role")
+		}
+
+		if err = kotsadmresources.EnsureKotsadmRoleBinding(additionalNamespace, deployOptions.Namespace, clientset); err != nil {
+			return errors.Wrap(err, "failed to ensure kotsadm additional namespace role binding")
+		}
 	}
 
 	if err := ensureKotsadmServiceAccount(deployOptions.Namespace, clientset); err != nil {
@@ -387,6 +415,12 @@ func isKotsadmClusterScoped(applicationMetadata []byte) (bool, error) {
 	// An application can request cluster scope privileges quite simply
 	if !application.Spec.RequireMinimalRBACPrivileges {
 		return true, nil
+	}
+
+	for _, additionalNamespace := range application.Spec.AdditionalNamespaces {
+		if additionalNamespace == "*" {
+			return true, nil
+		}
 	}
 
 	return false, nil

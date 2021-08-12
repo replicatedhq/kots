@@ -66,3 +66,9 @@ type FileTreeNode struct {
 	Path     string         `json:"path"`
 	Children []FileTreeNode `json:"children,omitempty"`
 }
+
+type TroubleshootOptions struct {
+	Origin        string
+	InCluster     bool
+	DisableUpload bool
+}

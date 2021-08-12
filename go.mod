@@ -54,6 +54,7 @@ require (
 	github.com/mattn/go-isatty v0.0.12
 	github.com/mattn/go-sqlite3 v1.14.8
 	github.com/mholt/archiver v3.1.1+incompatible
+	github.com/mitchellh/hashstructure v1.1.0 // indirect
 	github.com/nwaples/rardecode v1.0.0 // indirect
 	github.com/open-policy-agent/opa v0.24.0
 	github.com/opencontainers/image-spec v1.0.2-0.20190823105129-775207bd45b6

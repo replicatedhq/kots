@@ -111,6 +111,53 @@ spec:
   icon: https://raw.githubusercontent.com/cncf/artwork/master/projects/kubernetes/icon/color/kubernetes-icon-color.png`),
 			expected: false,
 		},
+		{
+			name: "with wildcard namespace",
+			applicationMetadata: []byte(`apiVersion: kots.io/v1beta1
+kind: Application
+metadata:
+  name: app-slug
+spec:
+  title: App Name
+  requireMinimalRBACPrivileges: true
+  additionalNamespaces:
+    - "*"
+  icon: https://raw.githubusercontent.com/cncf/artwork/master/projects/kubernetes/icon/color/kubernetes-icon-color.png`,
+			),
+			expected: true,
+		},
+		{
+			name: "with static and wildcard namespace",
+			applicationMetadata: []byte(`apiVersion: kots.io/v1beta1
+kind: Application
+metadata:
+  name: app-slug
+spec:
+  title: App Name
+  requireMinimalRBACPrivileges: true
+  additionalNamespaces:
+    - "*"
+    - "test"
+  icon: https://raw.githubusercontent.com/cncf/artwork/master/projects/kubernetes/icon/color/kubernetes-icon-color.png`,
+			),
+			expected: true,
+		},
+		{
+			name: "with static additional namespaces",
+			applicationMetadata: []byte(`apiVersion: kots.io/v1beta1
+kind: Application
+metadata:
+  name: app-slug
+spec:
+  title: App Name
+  requireMinimalRBACPrivileges: true
+  additionalNamespaces:
+    - other1
+    - other2
+  icon: https://raw.githubusercontent.com/cncf/artwork/master/projects/kubernetes/icon/color/kubernetes-icon-color.png`,
+			),
+			expected: false,
+		},
 	}
 
 	for _, test := range tests {

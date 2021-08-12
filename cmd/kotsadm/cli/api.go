@@ -27,7 +27,7 @@ func APICmd() *cobra.Command {
 			}
 
 			util.PodNamespace = os.Getenv("POD_NAMESPACE")
-			util.KotsadmNamespace = os.Getenv("KOTSADM_TARGET_NAMESPACE")
+			util.KotsadmTargetNamespace = os.Getenv("KOTSADM_TARGET_NAMESPACE")
 
 			params := apiserver.APIServerParams{
 				Version:                os.Getenv("VERSION"),

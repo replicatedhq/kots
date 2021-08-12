@@ -71,9 +71,6 @@ all-ttl.sh: kotsadm
 
 	IMAGE=ttl.sh/${CURRENT_USER}/kotsadm-migrations:12h make -C migrations build_schema
 
-	make -C kotsadm/operator build
-	make -C kotsadm/operator build-ttl.sh
-
 	docker pull minio/minio:${MINIO_VERSION}
 	docker tag minio/minio:${MINIO_VERSION} ttl.sh/${CURRENT_USER}/minio:12h
 	docker push ttl.sh/${CURRENT_USER}/minio:12h
@@ -107,7 +104,6 @@ build-release:
 .PHONY: project-pact-tests
 project-pact-tests:
 	make -C web test
-	make -C operator test
 
 	make -C migrations/fixtures schema-fixtures build run
 	cd migrations && docker build -t kotsadm/kotsadm-fixtures:local -f ./fixtures/deploy/Dockerfile ./fixtures
@@ -121,4 +117,3 @@ project-pact-tests:
 .PHONY: cache
 cache:
 	docker build -f hack/dev/Dockerfile.skaffoldcache . -t kotsadm:cache
-	docker build -f kotsadm/operator/Dockerfile.skaffoldcache kotsadm/operator -t kotsadm-operator:cache

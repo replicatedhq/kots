@@ -1,13 +1,16 @@
 bases:
   - ../../base
   - ../../../web/kustomize/overlays/dev
-  - ../../../kotsadm/operator/kustomize/overlays/dev
   - ../../../kurl_proxy/kustomize/overlays/dev
 
 resources:
   - ./dex-postgres-secret.yaml
   - ./configmap-init-dex-db.yaml
+  - ./cluster-rbac.yaml
 
 patches:
   - ./deployment.yaml
   - ./service.yaml
+
+commonLabels:
+  app.kubernetes.io/name: kotsadm

@@ -23,11 +23,11 @@ import (
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/preflight"
 	"github.com/replicatedhq/kots/pkg/pull"
-	"github.com/replicatedhq/kots/pkg/redact"
 	"github.com/replicatedhq/kots/pkg/registry"
 	registrytypes "github.com/replicatedhq/kots/pkg/registry/types"
 	"github.com/replicatedhq/kots/pkg/store"
 	"github.com/replicatedhq/kots/pkg/supportbundle"
+	supportbundletypes "github.com/replicatedhq/kots/pkg/supportbundle/types"
 	"github.com/replicatedhq/kots/pkg/util"
 	"github.com/replicatedhq/kots/pkg/version"
 	"k8s.io/client-go/kubernetes/scheme"
@@ -251,24 +251,17 @@ func CreateAppFromAirgap(opts CreateAirgapAppOpts) (finalError error) {
 		return errors.Wrap(err, "failed to create new version")
 	}
 
+	troubleshootOpts := supportbundletypes.TroubleshootOptions{
+		InCluster: true,
+	}
+	_, err = supportbundle.CreateSupportBundleDependencies(a.ID, a.CurrentSequence, troubleshootOpts)
+	if err != nil {
+		return errors.Wrap(err, "failed to create support bundle dependencies")
+	}
+
 	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(tmpRoot)
 	if err != nil {
 		return errors.Wrap(err, "failed to load kotskinds from path")
-	}
-
-	defaultOpts := supportbundle.DefaultTroubleshootOpts{
-		Origin:    "",
-		InCluster: true,
-	}
-
-	_, err = supportbundle.CreateRenderedSpec(a.ID, a.CurrentSequence, kotsKinds, defaultOpts)
-	if err != nil {
-		return errors.Wrap(err, "failed to create rendered support bundle spec")
-	}
-
-	err = redact.CreateRenderedAppRedactSpec(a.ID, a.CurrentSequence, kotsKinds)
-	if err != nil {
-		return errors.Wrap(err, "failed to write app redact spec configmap")
 	}
 
 	if opts.IsAutomated && kotsKinds.Config != nil {
