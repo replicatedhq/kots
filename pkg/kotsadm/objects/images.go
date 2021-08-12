@@ -12,7 +12,7 @@ func GetAdminConsoleImage(deployOptions types.DeployOptions, imageKey string) st
 }
 
 func GetAdminConsoleImages(deployOptions types.DeployOptions) map[string]string {
-	minioTag := "RELEASE.2021-07-27T02-40-15Z"
+	minioTag := "RELEASE.2021-08-05T22-01-19Z"
 	postgresTag := getPostgresTag(deployOptions)
 	dexTag := "v2.28.1"
 
