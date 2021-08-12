@@ -351,29 +351,27 @@ func removeKotsadmOperator(deployOptions types.DeployOptions, clientset *kuberne
 		}
 	}
 
-	// remove roles/rolebindings from the additional namespaces
-	decode := scheme.Codecs.UniversalDeserializer().Decode
-	obj, gvk, err := decode(deployOptions.ApplicationMetadata, nil, nil)
-	if err != nil {
-		return errors.Wrap(err, "failed to decode application metadata")
-	}
-	if gvk.Group != "kots.io" || gvk.Version != "v1beta1" || gvk.Kind != "Application" {
-		return errors.New("application metadata contained unepxected gvk")
-	}
-	application := obj.(*kotsv1beta1.Application)
-	for _, additionalNamespace := range application.Spec.AdditionalNamespaces {
-		_, err = clientset.RbacV1().RoleBindings(additionalNamespace).Get(context.TODO(), "kotsadm-operator-rolebinding", metav1.GetOptions{})
-		if err == nil {
-			if err := clientset.RbacV1().RoleBindings(additionalNamespace).Delete(context.TODO(), "kotsadm-operator-rolebinding", metav1.DeleteOptions{}); err != nil {
-				// user might not have enough permissions to do so, so don't fail here since it's not critical
-				log.Error(errors.Wrapf(err, "failed to delete kotsadm-operator-rolebinding rolebinding in namespace %s", additionalNamespace))
-			}
-		}
-		_, err = clientset.RbacV1().Roles(additionalNamespace).Get(context.TODO(), "kotsadm-operator-role", metav1.GetOptions{})
-		if err == nil {
-			if err := clientset.RbacV1().Roles(additionalNamespace).Delete(context.TODO(), "kotsadm-operator-role", metav1.DeleteOptions{}); err != nil {
-				// user might not have enough permissions to do so, so don't fail here since it's not critical
-				log.Error(errors.Wrapf(err, "failed to delete kotsadm-operator-role role in namespace %s", additionalNamespace))
+	// remove roles/rolebindings from the additional namespaces (if applicable)
+	if len(deployOptions.ApplicationMetadata) > 0 {
+		decode := scheme.Codecs.UniversalDeserializer().Decode
+		obj, gvk, err := decode(deployOptions.ApplicationMetadata, nil, nil)
+		if err == nil && gvk.Group == "kots.io" && gvk.Version == "v1beta1" && gvk.Kind == "Application" {
+			application := obj.(*kotsv1beta1.Application)
+			for _, additionalNamespace := range application.Spec.AdditionalNamespaces {
+				_, err = clientset.RbacV1().RoleBindings(additionalNamespace).Get(context.TODO(), "kotsadm-operator-rolebinding", metav1.GetOptions{})
+				if err == nil {
+					if err := clientset.RbacV1().RoleBindings(additionalNamespace).Delete(context.TODO(), "kotsadm-operator-rolebinding", metav1.DeleteOptions{}); err != nil {
+						// user might not have enough permissions to do so, so don't fail here since it's not critical
+						log.Error(errors.Wrapf(err, "failed to delete kotsadm-operator-rolebinding rolebinding in namespace %s", additionalNamespace))
+					}
+				}
+				_, err = clientset.RbacV1().Roles(additionalNamespace).Get(context.TODO(), "kotsadm-operator-role", metav1.GetOptions{})
+				if err == nil {
+					if err := clientset.RbacV1().Roles(additionalNamespace).Delete(context.TODO(), "kotsadm-operator-role", metav1.DeleteOptions{}); err != nil {
+						// user might not have enough permissions to do so, so don't fail here since it's not critical
+						log.Error(errors.Wrapf(err, "failed to delete kotsadm-operator-role role in namespace %s", additionalNamespace))
+					}
+				}
 			}
 		}
 	}
