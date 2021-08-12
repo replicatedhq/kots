@@ -298,94 +298,147 @@ func removeUnusedKotsadmComponents(deployOptions types.DeployOptions, clientset 
 	}
 
 	// if there are kotsadm-operator objects, remove (pre 1.50.0)
-	_, err = clientset.AppsV1().Deployments(deployOptions.Namespace).Get(context.TODO(), "kotsadm-operator", metav1.GetOptions{})
+	if err := removeKotsadmOperator(deployOptions, clientset, log); err != nil {
+		return errors.Wrap(err, "failed to remove kotsadm operator")
+	}
+
+	if !deployOptions.IncludeMinio {
+		if err := removeKotsadmMinio(deployOptions, clientset); err != nil {
+			return errors.Wrap(err, "failed to remove kotsadm minio")
+		}
+	}
+
+	return nil
+}
+
+func removeKotsadmOperator(deployOptions types.DeployOptions, clientset *kubernetes.Clientset, log *logger.CLILogger) error {
+	_, err := clientset.AppsV1().Deployments(deployOptions.Namespace).Get(context.TODO(), "kotsadm-operator", metav1.GetOptions{})
 	if err == nil {
 		if err := clientset.AppsV1().Deployments(deployOptions.Namespace).Delete(context.TODO(), "kotsadm-operator", metav1.DeleteOptions{}); err != nil {
 			return errors.Wrap(err, "failed to delete kotsadm-operator deployment")
 		}
 	}
+
 	_, err = clientset.RbacV1().ClusterRoleBindings().Get(context.TODO(), "kotsadm-operator-rolebinding", metav1.GetOptions{})
 	if err == nil {
 		if err := clientset.RbacV1().ClusterRoleBindings().Delete(context.TODO(), "kotsadm-operator-rolebinding", metav1.DeleteOptions{}); err != nil {
-			return errors.Wrap(err, "failed to delete kotsadm-operator-rolebinding clusterrolebinding")
+			// user might not have enough permissions to do so, so don't fail here since it's not critical
+			log.Error(errors.Wrap(err, "failed to delete kotsadm-operator-rolebinding clusterrolebinding"))
 		}
 	}
+
 	_, err = clientset.RbacV1().RoleBindings(deployOptions.Namespace).Get(context.TODO(), "kotsadm-operator-rolebinding", metav1.GetOptions{})
 	if err == nil {
 		if err := clientset.RbacV1().RoleBindings(deployOptions.Namespace).Delete(context.TODO(), "kotsadm-operator-rolebinding", metav1.DeleteOptions{}); err != nil {
-			return errors.Wrap(err, "failed to delete kotsadm-operator-rolebinding rolebinding")
+			// user might not have enough permissions to do so, so don't fail here since it's not critical
+			log.Error(errors.Wrap(err, "failed to delete kotsadm-operator-rolebinding rolebinding"))
 		}
 	}
+
 	_, err = clientset.RbacV1().ClusterRoles().Get(context.TODO(), "kotsadm-operator-role", metav1.GetOptions{})
 	if err == nil {
 		if err := clientset.RbacV1().ClusterRoles().Delete(context.TODO(), "kotsadm-operator-role", metav1.DeleteOptions{}); err != nil {
-			return errors.Wrap(err, "failed to delete kotsadm-operator-role clusterrole")
+			// user might not have enough permissions to do so, so don't fail here since it's not critical
+			log.Error(errors.Wrap(err, "failed to delete kotsadm-operator-role clusterrole"))
 		}
 	}
+
 	_, err = clientset.RbacV1().Roles(deployOptions.Namespace).Get(context.TODO(), "kotsadm-operator-role", metav1.GetOptions{})
 	if err == nil {
 		if err := clientset.RbacV1().Roles(deployOptions.Namespace).Delete(context.TODO(), "kotsadm-operator-role", metav1.DeleteOptions{}); err != nil {
-			return errors.Wrap(err, "failed to delete kotsadm-operator-role role")
+			// user might not have enough permissions to do so, so don't fail here since it's not critical
+			log.Error(errors.Wrap(err, "failed to delete kotsadm-operator-role role"))
 		}
 	}
+
+	// remove roles/rolebindings from the additional namespaces
+	decode := scheme.Codecs.UniversalDeserializer().Decode
+	obj, gvk, err := decode(deployOptions.ApplicationMetadata, nil, nil)
+	if err != nil {
+		return errors.Wrap(err, "failed to decode application metadata")
+	}
+	if gvk.Group != "kots.io" || gvk.Version != "v1beta1" || gvk.Kind != "Application" {
+		return errors.New("application metadata contained unepxected gvk")
+	}
+	application := obj.(*kotsv1beta1.Application)
+	for _, additionalNamespace := range application.Spec.AdditionalNamespaces {
+		_, err = clientset.RbacV1().RoleBindings(additionalNamespace).Get(context.TODO(), "kotsadm-operator-rolebinding", metav1.GetOptions{})
+		if err == nil {
+			if err := clientset.RbacV1().RoleBindings(additionalNamespace).Delete(context.TODO(), "kotsadm-operator-rolebinding", metav1.DeleteOptions{}); err != nil {
+				// user might not have enough permissions to do so, so don't fail here since it's not critical
+				log.Error(errors.Wrapf(err, "failed to delete kotsadm-operator-rolebinding rolebinding in namespace %s", additionalNamespace))
+			}
+		}
+		_, err = clientset.RbacV1().Roles(additionalNamespace).Get(context.TODO(), "kotsadm-operator-role", metav1.GetOptions{})
+		if err == nil {
+			if err := clientset.RbacV1().Roles(additionalNamespace).Delete(context.TODO(), "kotsadm-operator-role", metav1.DeleteOptions{}); err != nil {
+				// user might not have enough permissions to do so, so don't fail here since it's not critical
+				log.Error(errors.Wrapf(err, "failed to delete kotsadm-operator-role role in namespace %s", additionalNamespace))
+			}
+		}
+	}
+
 	_, err = clientset.CoreV1().ServiceAccounts(deployOptions.Namespace).Get(context.TODO(), "kotsadm-operator", metav1.GetOptions{})
 	if err == nil {
 		if err := clientset.CoreV1().ServiceAccounts(deployOptions.Namespace).Delete(context.TODO(), "kotsadm-operator", metav1.DeleteOptions{}); err != nil {
-			return errors.Wrap(err, "failed to delete kotsadm-operator serviceaccount")
+			// user might not have enough permissions to do so, so don't fail here since it's not critical
+			log.Error(errors.Wrap(err, "failed to delete kotsadm-operator serviceaccount"))
 		}
 	}
 
-	if !deployOptions.IncludeMinio {
-		// if there's a deployment named "kotsadm", remove (pre 1.47.0)
-		// only delete the deployment if minio is not included because that will mean that it's been replaced with a statefulset
-		_, err = clientset.AppsV1().Deployments(deployOptions.Namespace).Get(context.TODO(), "kotsadm", metav1.GetOptions{})
-		if err == nil {
-			if err := clientset.AppsV1().Deployments(deployOptions.Namespace).Delete(context.TODO(), "kotsadm", metav1.DeleteOptions{}); err != nil {
-				return errors.Wrap(err, "failed to delete kotsadm deployment")
-			}
-		} else if !kuberneteserrors.IsNotFound(err) {
-			return errors.Wrap(err, "failed to get kotsadm deployment")
-		}
+	return nil
+}
 
-		// if there's a service named "kotsadm-minio", remove (pre 1.47.0)
-		_, err = clientset.CoreV1().Services(deployOptions.Namespace).Get(context.TODO(), "kotsadm-minio", metav1.GetOptions{})
-		if err == nil {
-			if err := clientset.CoreV1().Services(deployOptions.Namespace).Delete(context.TODO(), "kotsadm-minio", metav1.DeleteOptions{}); err != nil {
-				return errors.Wrap(err, "failed to delete kotsadm-minio service")
-			}
+func removeKotsadmMinio(deployOptions types.DeployOptions, clientset *kubernetes.Clientset) error {
+	// if there's a deployment named "kotsadm", remove (pre 1.47.0)
+	// only delete the deployment if minio is not included because that will mean that it's been replaced with a statefulset
+	_, err := clientset.AppsV1().Deployments(deployOptions.Namespace).Get(context.TODO(), "kotsadm", metav1.GetOptions{})
+	if err == nil {
+		if err := clientset.AppsV1().Deployments(deployOptions.Namespace).Delete(context.TODO(), "kotsadm", metav1.DeleteOptions{}); err != nil {
+			return errors.Wrap(err, "failed to delete kotsadm deployment")
 		}
+	} else if !kuberneteserrors.IsNotFound(err) {
+		return errors.Wrap(err, "failed to get kotsadm deployment")
+	}
 
-		// if there's a statefulset named "kotsadm-minio", remove (pre 1.47.0)
-		_, err = clientset.AppsV1().StatefulSets(deployOptions.Namespace).Get(context.TODO(), "kotsadm-minio", metav1.GetOptions{})
-		if err == nil {
-			if err := clientset.AppsV1().StatefulSets(deployOptions.Namespace).Delete(context.TODO(), "kotsadm-minio", metav1.DeleteOptions{}); err != nil {
-				return errors.Wrap(err, "failed to delete kotsadm-minio statefulset")
-			}
+	// if there's a service named "kotsadm-minio", remove (pre 1.47.0)
+	_, err = clientset.CoreV1().Services(deployOptions.Namespace).Get(context.TODO(), "kotsadm-minio", metav1.GetOptions{})
+	if err == nil {
+		if err := clientset.CoreV1().Services(deployOptions.Namespace).Delete(context.TODO(), "kotsadm-minio", metav1.DeleteOptions{}); err != nil {
+			return errors.Wrap(err, "failed to delete kotsadm-minio service")
 		}
+	}
 
-		// if there's a secret named "kotsadm-minio", remove (pre 1.47.0)
-		_, err = clientset.CoreV1().Secrets(deployOptions.Namespace).Get(context.TODO(), "kotsadm-minio", metav1.GetOptions{})
-		if err == nil {
-			if err := clientset.CoreV1().Secrets(deployOptions.Namespace).Delete(context.TODO(), "kotsadm-minio", metav1.DeleteOptions{}); err != nil {
-				return errors.Wrap(err, "failed to delete kotsadm-minio secret")
-			}
+	// if there's a statefulset named "kotsadm-minio", remove (pre 1.47.0)
+	_, err = clientset.AppsV1().StatefulSets(deployOptions.Namespace).Get(context.TODO(), "kotsadm-minio", metav1.GetOptions{})
+	if err == nil {
+		if err := clientset.AppsV1().StatefulSets(deployOptions.Namespace).Delete(context.TODO(), "kotsadm-minio", metav1.DeleteOptions{}); err != nil {
+			return errors.Wrap(err, "failed to delete kotsadm-minio statefulset")
 		}
+	}
 
-		// if there's a minio pvc, remove (pre 1.47.0)
-		minioPVCSelectorLabels := map[string]string{
-			"app": "kotsadm-minio",
+	// if there's a secret named "kotsadm-minio", remove (pre 1.47.0)
+	_, err = clientset.CoreV1().Secrets(deployOptions.Namespace).Get(context.TODO(), "kotsadm-minio", metav1.GetOptions{})
+	if err == nil {
+		if err := clientset.CoreV1().Secrets(deployOptions.Namespace).Delete(context.TODO(), "kotsadm-minio", metav1.DeleteOptions{}); err != nil {
+			return errors.Wrap(err, "failed to delete kotsadm-minio secret")
 		}
-		pvcs, err := clientset.CoreV1().PersistentVolumeClaims(deployOptions.Namespace).List(context.TODO(), metav1.ListOptions{
-			LabelSelector: labels.SelectorFromSet(minioPVCSelectorLabels).String(),
-		})
+	}
+
+	// if there's a minio pvc, remove (pre 1.47.0)
+	minioPVCSelectorLabels := map[string]string{
+		"app": "kotsadm-minio",
+	}
+	pvcs, err := clientset.CoreV1().PersistentVolumeClaims(deployOptions.Namespace).List(context.TODO(), metav1.ListOptions{
+		LabelSelector: labels.SelectorFromSet(minioPVCSelectorLabels).String(),
+	})
+	if err != nil {
+		return errors.Wrap(err, "failed to list kotsadm-minio persistent volume claims")
+	}
+	for _, pvc := range pvcs.Items {
+		err := clientset.CoreV1().PersistentVolumeClaims(deployOptions.Namespace).Delete(context.TODO(), pvc.ObjectMeta.Name, metav1.DeleteOptions{})
 		if err != nil {
-			return errors.Wrap(err, "failed to list kotsadm-minio persistent volume claims")
-		}
-		for _, pvc := range pvcs.Items {
-			err := clientset.CoreV1().PersistentVolumeClaims(deployOptions.Namespace).Delete(context.TODO(), pvc.ObjectMeta.Name, metav1.DeleteOptions{})
-			if err != nil {
-				return errors.Wrap(err, "failed to delete kotsadm-minio pvc")
-			}
+			return errors.Wrap(err, "failed to delete kotsadm-minio pvc")
 		}
 	}
 

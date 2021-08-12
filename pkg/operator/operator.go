@@ -314,7 +314,7 @@ func deployVersionForApp(a *apptypes.App, deployedVersion *downstreamtypes.Downs
 		Wait:                 false,
 		AnnotateSlug:         os.Getenv("ANNOTATE_SLUG") != "",
 	}
-	operatorClient.DeployApp(deployArgs) // this happens async and results are reported once the process is complete
+	go operatorClient.DeployApp(deployArgs) // this happens async and results are reported once the process is complete.
 
 	socketMtx.Lock()
 	lastDeployedSequences[a.ID] = deployedVersion.ParentSequence
@@ -348,7 +348,7 @@ func deployVersionForApp(a *apptypes.App, deployedVersion *downstreamtypes.Downs
 			Informers: renderedInformers,
 			Sequence:  deployedVersion.Sequence,
 		}
-		operatorClient.ApplyAppInformers(informersArgs)
+		go operatorClient.ApplyAppInformers(informersArgs)
 	} else {
 		// no informers, set state to ready
 		defaultReadyState := appstatetypes.ResourceStates{
@@ -602,7 +602,7 @@ func undeployApp(a *apptypes.App, d *downstreamtypes.Downstream, isRestore bool)
 		IsRestore:            isRestore,
 		RestoreLabelSelector: restoreLabelSelector,
 	}
-	operatorClient.DeployApp(undeployArgs)
+	go operatorClient.DeployApp(undeployArgs) // this happens async and progress/status is polled later.
 
 	if err := app.SetRestoreUndeployStatus(a.ID, apptypes.UndeployInProcess); err != nil {
 		return errors.Wrap(err, "failed to set restore undeploy status")
