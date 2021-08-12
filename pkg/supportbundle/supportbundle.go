@@ -160,16 +160,24 @@ func GetSpecURI(appSlug string) string {
 	return fmt.Sprintf("secret/%s/%s", util.PodNamespace, GetSpecSecretName(appSlug))
 }
 
-func GetBundleCommand(appSlug string) []string {
+func GetBundleCommand(appSlug string, isAirgap bool) []string {
+	commands := []string{}
 	redactURIs := []string{redact.GetKotsadmRedactSpecURI(), redact.GetAppRedactSpecURI(appSlug)}
 	redactors := strings.Join(redactURIs, ",")
-
-	command := []string{
-		"curl https://krew.sh/support-bundle | bash",
-		fmt.Sprintf("kubectl support-bundle %s --redactors=%s\n", GetSpecURI(appSlug), redactors),
+	if isAirgap {
+		// ui will prompt the user to run the first command with internet access and the second in the cluster
+		commands = []string{
+			fmt.Sprintf("curl -o /tmp/support-bundle-spec.yaml https://kots.io -H 'User-agent:Replicated_Troubleshoot/v1beta1'"),
+			fmt.Sprintf("kubectl support-bundle /tmp/support-bundle-spec.yaml\n"),
+		}
+	} else {
+		commands = []string{
+			"curl https://krew.sh/support-bundle | bash",
+			fmt.Sprintf("kubectl support-bundle %s --redactors=%s\n", GetSpecURI(appSlug), redactors),
+		}
 	}
 
-	return command
+	return commands
 }
 
 // createSupportBundleDependencies generates k8s secrets for the support bundle spec and redactors.

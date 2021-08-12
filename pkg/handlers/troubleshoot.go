@@ -277,7 +277,7 @@ func (h *Handler) GetSupportBundleCommand(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	response.Command = supportbundle.GetBundleCommand(foundApp.Slug)
+	response.Command = supportbundle.GetBundleCommand(foundApp.Slug, foundApp.IsAirgap)
 
 	JSON(w, http.StatusOK, response)
 }
