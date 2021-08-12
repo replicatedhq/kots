@@ -19,7 +19,7 @@ jobs:
         run: echo ::set-output name=GIT_TAG::${GITHUB_REF/refs\/tags\//}
 
       - name: Setup Node.js environment
-        uses: actions/setup-node@v2.2.0
+        uses: actions/setup-node@v2.4.0
         with:
           node-version: '10'
 
@@ -323,7 +323,7 @@ jobs:
 
       - run: chmod +x bin/kots
 
-      - uses: actions/setup-node@v2.3.0
+      - uses: actions/setup-node@v2.4.0
         with:
           node-version: '10.x'
 
@@ -452,7 +452,7 @@ jobs:
 
       - run: chmod +x bin/kots
 
-      - uses: actions/setup-node@v2.3.0
+      - uses: actions/setup-node@v2.4.0
         with:
           node-version: '10.x'
 
@@ -520,7 +520,7 @@ jobs:
 
       - run: chmod +x bin/kots
 
-      - uses: actions/setup-node@v2.3.0
+      - uses: actions/setup-node@v2.4.0
         with:
           node-version: '10.x'
 
@@ -597,7 +597,7 @@ jobs:
 
       - run: chmod +x bin/kots
 
-      - uses: actions/setup-node@v2.3.0
+      - uses: actions/setup-node@v2.4.0
         with:
           node-version: '10.x'
 
