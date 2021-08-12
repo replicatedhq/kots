@@ -101,6 +101,11 @@ ENV PATH="/root/.krew/bin:$PATH"
 RUN kubectl krew install preflight
 RUN kubectl krew install support-bundle
 
+# Setup user
+RUN useradd -c 'kotsadm user' -m -d /home/kotsadm -s /bin/bash -u 1001 kotsadm
+USER kotsadm
+ENV HOME /home/kotsadm
+
 COPY --chown=kotsadm:kotsadm ./deploy/backup.sh /backup.sh
 COPY --chown=kotsadm:kotsadm ./deploy/restore-db.sh /restore-db.sh
 COPY --chown=kotsadm:kotsadm ./deploy/restore-s3.sh /restore-s3.sh
