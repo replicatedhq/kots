@@ -167,8 +167,8 @@ func GetBundleCommand(appSlug string, isAirgap bool) []string {
 	if isAirgap {
 		// ui will prompt the user to run the first command with internet access and the second in the cluster
 		commands = []string{
-			fmt.Sprintf("curl -o /tmp/support-bundle-spec.yaml https://kots.io -H 'User-agent:Replicated_Troubleshoot/v1beta1'"),
-			fmt.Sprintf("kubectl support-bundle /tmp/support-bundle-spec.yaml\n"),
+			fmt.Sprintf("curl -o support-bundle-spec.yaml https://kots.io -H 'User-agent:Replicated_Troubleshoot/v1beta1'"),
+			fmt.Sprintf("kubectl support-bundle /path/to/support-bundle-spec.yaml\n"),
 		}
 	} else {
 		commands = []string{

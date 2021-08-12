@@ -314,6 +314,37 @@ class GenerateSupportBundle extends React.Component {
                 </div>
               }
               {showRunCommand ?
+                watch.isAirgap ?
+                <div>
+                  <div className="u-marginTop--40">
+                    <p className="u-fontSize--normal u-textColor--bodyCopy u-lineHeight--medium u-marginBottom--20">
+                      To manually generate a support bundle you will need a support bundle spec. Check with your vendor to see if they can provide you with a spec. Alternatively you can run the following command from a machine with internet access to get a support bundle spec.
+                    </p>
+                    <h2 className="u-fontSize--larger u-fontWeight--bold u-textColor--primary u-marginBottom--10">Run this command from a machine with internet access</h2>
+                    <CodeSnippet
+                      language="bash"
+                      canCopy={true}
+                      onCopyText={<span className="u-textColor--success">Command has been copied to your clipboard</span>}
+                    >
+                      {this.state.bundleCommand[0]}
+                    </CodeSnippet>
+                    <p className="u-fontSize--normal u-textColor--bodyCopy u-lineHeight--medium u-marginTop--30 u-marginBottom--20">
+                    Once you have a support bundle spec and put it somewhere in your cluster run the following command to generate a support bundle.
+                    </p>
+                    <h2 className="u-fontSize--larger u-fontWeight--bold u-textColor--primary u-marginBottom--10">Run this command on your cluster</h2>
+                    <CodeSnippet
+                      language="bash"
+                      canCopy={true}
+                      onCopyText={<span className="u-textColor--success">Command has been copied to your clipboard</span>}
+                    >
+                      {this.state.bundleCommand[1]}
+                    </CodeSnippet>
+                  </div>
+                  <div className="u-marginTop--15">
+                    <button className="btn secondary" type="button" onClick={this.toggleModal}> Upload a support bundle </button>
+                  </div>
+                </div>
+                :
                 <div>
                   <div className="u-marginTop--40">
                     <h2 className="u-fontSize--larger u-fontWeight--bold u-textColor--primary">Run this command in your cluster</h2>
