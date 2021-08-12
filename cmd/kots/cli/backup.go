@@ -2,7 +2,6 @@ package cli
 
 import (
 	"encoding/json"
-	"fmt"
 
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/logger"
@@ -11,12 +10,6 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
-
-type BackupOutput struct {
-	Success    bool   `json:"success"`
-	BackupName string `json:"backupName"`
-	Error      string `json:"error,omitempty"`
-}
 
 func BackupCmd() *cobra.Command {
 	cmd := &cobra.Command{
@@ -38,7 +31,6 @@ func BackupCmd() *cobra.Command {
 				return errors.Errorf("output format %s not supported (allowed formats are: json)", output)
 			}
 
-			var backupOutput BackupOutput
 			options := snapshot.CreateInstanceBackupOptions{
 				Namespace: namespace,
 				Wait:      v.GetBool("wait"),
@@ -47,16 +39,11 @@ func BackupCmd() *cobra.Command {
 			backupRes, err := snapshot.CreateInstanceBackup(cmd.Context(), options)
 			if err != nil && output == "" {
 				return errors.Wrap(err, "failed to create instance backup")
-			} else if err != nil {
-				backupOutput.Error = fmt.Sprint(errors.Wrap(err, "failed to create instance backup"))
-			} else if backupRes.Error == "" {
-				backupOutput.Success = true
-				backupOutput.BackupName = backupRes.BackupName
 			}
 
 			log := logger.NewCLILogger()
 			if output == "json" {
-				outputJSON, err := json.Marshal(backupOutput)
+				outputJSON, err := json.Marshal(backupRes)
 				if err != nil {
 					return errors.Wrap(err, "error marshaling JSON")
 				}
