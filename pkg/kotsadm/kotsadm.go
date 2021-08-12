@@ -417,5 +417,11 @@ func isKotsadmClusterScoped(applicationMetadata []byte) (bool, error) {
 		return true, nil
 	}
 
+	for _, additionalNamespace := range application.Spec.AdditionalNamespaces {
+		if additionalNamespace == "*" {
+			return true, nil
+		}
+	}
+
 	return false, nil
 }
