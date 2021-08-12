@@ -215,6 +215,7 @@ func InstallCmd() *cobra.Command {
 				DisableImagePush:          v.GetBool("disable-image-push"),
 				AirgapBundle:              v.GetString("airgap-bundle"),
 				IncludeMinio:              v.GetBool("with-minio"),
+				IncludeMinioSnapshots:     v.GetBool("with-minio"),
 
 				KotsadmOptions: *registryConfig,
 

@@ -2,6 +2,7 @@ package snapshot
 
 import (
 	"fmt"
+	"strings"
 	"time"
 
 	"context"
@@ -9,7 +10,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
-	"github.com/replicatedhq/kots/pkg/kotsadm"
+	kotsadmresources "github.com/replicatedhq/kots/pkg/kotsadm/resources"
 	kotsadmtypes "github.com/replicatedhq/kots/pkg/kotsadm/types"
 	velerov1api "github.com/vmware-tanzu/velero/pkg/apis/velero/v1"
 	"github.com/vmware-tanzu/velero/pkg/cmd/cli/serverstatus"
@@ -25,7 +26,7 @@ import (
 )
 
 var (
-	dockerImageNameRegex = regexp.MustCompile("(?:([^\\/]+)\\/)?(?:([^\\/]+)\\/)?([^@:\\/]+)(?:[@:](.+))")
+	dockerImageNameRegex = regexp.MustCompile(`(?:([^\/]+)\/)?(?:([^\/]+)\/)?([^@:\/]+)(?:[@:](.+))`)
 )
 
 const (
@@ -46,7 +47,7 @@ type VeleroStatus struct {
 
 func (s *VeleroStatus) ContainsPlugin(plugin string) bool {
 	for _, x := range s.Plugins {
-		if x == plugin {
+		if strings.Contains(x, plugin) {
 			return true
 		}
 	}
@@ -172,11 +173,11 @@ func EnsureVeleroPermissions(ctx context.Context, clientset kubernetes.Interface
 		return errors.New(fmt.Sprintf("could not detect velero in '%s' namespace", veleroNamespace))
 	}
 
-	if err := kotsadm.EnsureKotsadmRole(verifiedVeleroNamespace, clientset); err != nil {
+	if err := kotsadmresources.EnsureKotsadmRole(verifiedVeleroNamespace, clientset); err != nil {
 		return errors.Wrap(err, "failed to ensure kotsadm role")
 	}
 
-	if err := kotsadm.EnsureKotsadmRoleBinding(verifiedVeleroNamespace, kotsadmNamespace, clientset); err != nil {
+	if err := kotsadmresources.EnsureKotsadmRoleBinding(verifiedVeleroNamespace, kotsadmNamespace, clientset); err != nil {
 		return errors.Wrap(err, "failed to ensure kotsadm rolebinding")
 	}
 
@@ -214,7 +215,7 @@ func EnsureVeleroNamespaceConfigMap(ctx context.Context, clientset kubernetes.In
 	}
 
 	if existingConfigMap.Data == nil {
-		existingConfigMap.Data = make(map[string]string, 0)
+		existingConfigMap.Data = make(map[string]string)
 	}
 	existingConfigMap.Data["veleroNamespace"] = veleroNamespace
 
@@ -408,7 +409,7 @@ func getVeleroPod(ctx context.Context, clientset *kubernetes.Clientset, namespac
 
 	for _, pod := range veleroPods.Items {
 		if pod.Status.Phase == corev1.PodRunning {
-			if pod.Status.ContainerStatuses[0].Ready == true {
+			if pod.Status.ContainerStatuses[0].Ready {
 				return pod.Name, nil
 			}
 		}
@@ -433,7 +434,7 @@ func getResticPods(ctx context.Context, clientset *kubernetes.Clientset, namespa
 	pods := make([]string, 0)
 	for _, pod := range resticPods.Items {
 		if pod.Status.Phase == corev1.PodRunning {
-			if pod.Status.ContainerStatuses[0].Ready == true {
+			if pod.Status.ContainerStatuses[0].Ready {
 				pods = append(pods, pod.Name)
 			}
 		}

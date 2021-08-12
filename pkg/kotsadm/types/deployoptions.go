@@ -35,6 +35,7 @@ type DeployOptions struct {
 	StorageBaseURIPlainHTTP   bool
 	IncludeDockerDistribution bool
 	IncludeMinio              bool
+	IncludeMinioSnapshots     bool
 	Timeout                   time.Duration
 	HTTPProxyEnvValue         string
 	HTTPSProxyEnvValue        string

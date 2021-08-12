@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"path"
 	"path/filepath"
+	"strconv"
 	"strings"
 
 	"github.com/google/uuid"
@@ -111,9 +112,15 @@ func Upgrade(clientset *kubernetes.Clientset, upgradeOptions types.UpgradeOption
 		return err
 	}
 
-	deployOptions, err := readDeployOptionsFromCluster(upgradeOptions.Namespace, clientset)
+	deployOptions, err := ReadDeployOptionsFromCluster(upgradeOptions.Namespace, clientset)
 	if err != nil {
 		return errors.Wrap(err, "failed to read deploy options")
+	}
+
+	// If user has passed in the flag to migrate minio, save this status as part of the install
+	// Only works if they have not already chose to opt-in
+	if !upgradeOptions.IncludeMinio && deployOptions.IncludeMinioSnapshots {
+		deployOptions.IncludeMinioSnapshots = false
 	}
 
 	// these options are not stored in cluster (yet)
@@ -125,6 +132,13 @@ func Upgrade(clientset *kubernetes.Clientset, upgradeOptions types.UpgradeOption
 	deployOptions.StorageBaseURIPlainHTTP = upgradeOptions.StorageBaseURIPlainHTTP
 	deployOptions.IncludeMinio = upgradeOptions.IncludeMinio
 	deployOptions.IncludeDockerDistribution = upgradeOptions.IncludeDockerDistribution
+
+	// Attempt migrations to fail early.
+	if !deployOptions.IncludeMinioSnapshots {
+		if err = MigrateExistingMinioFilesystemDeployments(log, deployOptions); err != nil {
+			return errors.Wrap(err, "failed to migrate minio filesystem")
+		}
+	}
 
 	if err := ensureKotsadm(*deployOptions, clientset, log); err != nil {
 		return errors.Wrap(err, "failed to upgrade admin console")
@@ -876,7 +890,7 @@ func ensureDisasterRecoveryLabels(deployOptions *types.DeployOptions, clientset 
 	return nil
 }
 
-func readDeployOptionsFromCluster(namespace string, clientset *kubernetes.Clientset) (*types.DeployOptions, error) {
+func ReadDeployOptionsFromCluster(namespace string, clientset *kubernetes.Clientset) (*types.DeployOptions, error) {
 	deployOptions := types.DeployOptions{
 		Namespace:   namespace,
 		ServiceType: "ClusterIP",
@@ -979,6 +993,26 @@ func readDeployOptionsFromCluster(namespace string, clientset *kubernetes.Client
 		deployOptions.ApplicationMetadata = []byte(metadataConfig.Data["application.yaml"])
 	} else if !kuberneteserrors.IsNotFound(err) {
 		return nil, errors.Wrap(err, "failed to get app metadata from configmap")
+	}
+
+	// Get minio snapshot migration status v1.50.0
+	kostadmConfig, err := clientset.CoreV1().ConfigMaps(deployOptions.Namespace).Get(context.TODO(), types.KotsadmConfigMap, metav1.GetOptions{})
+	if err == nil {
+		var includeMinioSnapshots bool
+		includeMinioSnapshotStr, ok := kostadmConfig.Data["minio-enabled-snapshots"]
+
+		if ok {
+			includeMinioSnapshots, err = strconv.ParseBool(includeMinioSnapshotStr)
+			if err != nil {
+				return nil, errors.Wrap(err, "failed to parse minio-enabled-snapshots")
+			}
+		} else {
+			includeMinioSnapshots = true
+		}
+
+		deployOptions.IncludeMinioSnapshots = includeMinioSnapshots
+	} else if !kuberneteserrors.IsNotFound(err) {
+		return nil, errors.Wrap(err, "failed to get kotsadm config from configmap")
 	}
 
 	return &deployOptions, nil

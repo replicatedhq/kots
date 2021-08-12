@@ -904,20 +904,32 @@ class SnapshotStorageDestination extends Component {
                 label: "Internal Storage (Default)",
               });
             }
-            availableDestinations.push({
-              value: "nfs",
-              label: "Network File System (NFS)",
-            });
-            availableDestinations.push({
-              value: "hostpath",
-              label: "Host Path",
-            });
+            // Checks for legacy behavior where minio was used for hostpath and nfs
+            if (!snapshotSettings.isMinioDisabled) {
+                availableDestinations.push({
+                    value: "nfs",
+                    label: "Network File System (NFS)",
+                });
+                availableDestinations.push({
+                    value: "hostpath",
+                    label: "Host Path",
+                });
+            }
         } else if (veleroPlugin.includes("velero-plugin-for-microsoft-azure")) {
             availableDestinations.push({
               value: "azure",
               label: "Azure Blob Storage",
             });
 
+        } else if (veleroPlugin.includes("local-volume-provider") && snapshotSettings.isMinioDisabled) {
+            availableDestinations.push({
+                value: "nfs",
+                label: "Network File System (NFS)",
+            });
+            availableDestinations.push({
+                value: "hostpath",
+                label: "Host Path",
+            });
         }
       }
       availableDestinations.sort( (a,b) => a.label.localeCompare(b.label) );

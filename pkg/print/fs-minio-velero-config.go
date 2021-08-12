@@ -9,7 +9,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/logger"
 )
 
-type FileSystemVeleroConfig struct {
+type MinioFileSystemVeleroConfig struct {
 	Provider               string            `json:"provider"`
 	Plugins                []string          `json:"plugins"`
 	Credentials            []byte            `json:"credentials"`
@@ -19,21 +19,21 @@ type FileSystemVeleroConfig struct {
 	UseRestic              bool              `json:"useRestic"`
 }
 
-func FileSystemMinioVeleroInfo(c *FileSystemVeleroConfig, format string, log *logger.CLILogger) {
+func MinioFileSystemVeleroInfo(c *MinioFileSystemVeleroConfig, format string, log *logger.CLILogger) {
 	switch format {
 	case "json":
-		printFileSystemVeleroConfigJSON(c)
+		printMinioFileSystemVeleroConfigJSON(c)
 	default:
-		printFileSystemVeleroInstructions(c, log)
+		printMinioFileSystemVeleroInstructions(c, log)
 	}
 }
 
-func printFileSystemVeleroConfigJSON(c *FileSystemVeleroConfig) {
+func printMinioFileSystemVeleroConfigJSON(c *MinioFileSystemVeleroConfig) {
 	str, _ := json.MarshalIndent(c, "", "    ")
 	fmt.Println(string(str))
 }
 
-func printFileSystemVeleroInstructions(c *FileSystemVeleroConfig, log *logger.CLILogger) {
+func printMinioFileSystemVeleroInstructions(c *MinioFileSystemVeleroConfig, log *logger.CLILogger) {
 	green := color.New(color.FgGreen).SprintFunc()
 	blue := color.New(color.FgHiBlue).SprintFunc()
 	red := color.New(color.FgHiRed).SprintFunc()

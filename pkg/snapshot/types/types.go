@@ -45,11 +45,12 @@ type StoreInternal struct {
 }
 
 type StoreFileSystem struct {
-	Region               string `json:"region"`
-	AccessKeyID          string `json:"accessKeyID"`
-	SecretAccessKey      string `json:"secretAccessKey"` // added for unmarshaling, redacted on marshaling
-	Endpoint             string `json:"endpoint"`
-	ObjectStoreClusterIP string `json:"objectStoreClusterIP"`
+	Region               string            `json:"region"`               // Legacy field for minio backwards compatibility
+	AccessKeyID          string            `json:"accessKeyID"`          // Legacy field for minio backwards compatibility
+	SecretAccessKey      string            `json:"secretAccessKey"`      // Legacy field for minio backwards compatibility; added for unmarshaling, redacted on marshaling
+	Endpoint             string            `json:"endpoint"`             // Legacy field for minio backwards compatibility
+	ObjectStoreClusterIP string            `json:"objectStoreClusterIP"` // Legacy field for minio backwards compatibility
+	Config               *FileSystemConfig `json:"config,omitempty"`
 }
 
 type Store struct {
