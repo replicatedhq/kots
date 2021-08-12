@@ -494,9 +494,6 @@ func CopyFromFileToRegistry(path string, name string, tag string, digest string,
 		password = login.Password
 	}
 
-	fmt.Println("username", username)
-	fmt.Println("password", password)
-
 	if username != "" && password != "" {
 		destCtx.DockerAuthConfig = &types.DockerAuthConfig{
 			Username: username,
