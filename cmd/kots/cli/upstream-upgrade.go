@@ -106,8 +106,6 @@ func UpstreamUpgradeCmd() *cobra.Command {
 			} else {
 				upgradeOutput.Success = true
 				upgradeOutput.AvailableUpdates = res.AvailableUpdates
-				upgradeOutput.CurrentRelease = res.CurrentVersion
-				upgradeOutput.LatestRelease = res.LatestVersion
 			}
 
 			if output == "json" {
