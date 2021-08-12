@@ -143,23 +143,10 @@ func MigrateExistingMinioFilesystemDeployments(log *logger.CLILogger, deployOpti
 		return errors.Wrap(err, "failed to detect velero for filesystem migration")
 	}
 	if veleroStatus == nil {
-		return errors.New("velero is not installed - cannot perform migration")
+		log.Info("velero is not installed - skipping snapshot migration")
+		return nil
 	}
 	veleroNamespace := veleroStatus.Namespace
-
-	if !veleroStatus.ContainsPlugin("local-volume-provider") {
-		log.Info("velero local-volume-provider plugin is not installed - migration cannot be performed")
-		log.Info("")
-		log.Info("---TO INSTALL the local-volume-provider plugin---")
-		log.Info("For existing cluster installations, complete the installation instructions here:")
-		log.Info("https://github.com/replicatedhq/local-volume-provider")
-		log.Info("")
-		log.Info("If you're seeing this message on an embedded cluster installation, please contact your vendor for support.")
-		log.Info("")
-		log.Info("After the plugin has been installed, re-run your upgrade command.")
-
-		return errors.New("velero local-volume-provider plugin is not installed - cannot perform migration")
-	}
 
 	bsl, err := snapshot.FindBackupStoreLocation(context.TODO(), deployOptions.Namespace)
 	if err != nil {
@@ -183,6 +170,20 @@ func MigrateExistingMinioFilesystemDeployments(log *logger.CLILogger, deployOpti
 		// Not catching the error here, as this is not required to proceed
 		snapshot.DeleteFileSystemMinio(context.TODO(), deployOptions.Namespace)
 		return nil
+	}
+
+	if !veleroStatus.ContainsPlugin("local-volume-provider") {
+		log.Info("velero local-volume-provider plugin is not installed - migration cannot be performed")
+		log.Info("")
+		log.Info("---TO INSTALL the local-volume-provider plugin---")
+		log.Info("For existing cluster installations, complete the installation instructions here:")
+		log.Info("https://github.com/replicatedhq/local-volume-provider")
+		log.Info("")
+		log.Info("If you're seeing this message on an embedded cluster installation, please contact your vendor for support.")
+		log.Info("")
+		log.Info("After the plugin has been installed, re-run your upgrade command.")
+
+		return errors.New("velero local-volume-provider plugin is not installed - cannot perform migration")
 	}
 
 	previousBsl := bsl.DeepCopy()
