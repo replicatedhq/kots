@@ -2,6 +2,7 @@ package cli
 
 import (
 	"encoding/json"
+	"fmt"
 
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/logger"
@@ -39,6 +40,10 @@ func BackupCmd() *cobra.Command {
 			backupRes, err := snapshot.CreateInstanceBackup(cmd.Context(), options)
 			if err != nil && output == "" {
 				return errors.Wrap(err, "failed to create instance backup")
+			} else if err != nil {
+				backupRes = &snapshot.BackupResponse{
+					Error: fmt.Sprint(errors.Wrap(err, "failed to create instance backup")),
+				}
 			}
 
 			log := logger.NewCLILogger()
