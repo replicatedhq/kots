@@ -103,7 +103,7 @@ class ConfigureSnapshots extends React.Component {
                         <a href="https://velero.io/docs/v1.6/supported-providers/" target="_blank" rel="noopener noreferrer" className="snapshotOptions">
                           <span style={{ width: "130px" }}>  <span className="icon cloudIcon u-cursor--pointer u-marginRight--5" /> Other provider  </span>
                           <span className="icon external-link-icon u-cursor--pointer u-marginLeft--30" /></a>
-                        { snapshotSettings.isMinioDisabled ?
+                        {snapshotSettings?.isMinioDisabled ?
                             <>
                               <a href="https://github.com/replicatedhq/local-volume-provider" target="_blank" rel="noopener noreferrer" className="snapshotOptions">
                                 <span style={{ width: "130px" }}>  <span className="icon nfsIcon u-cursor--pointer u-marginRight--5" /> NFS </span>
