@@ -129,7 +129,10 @@ func MigrateExistingMinioFilesystemDeployments(log *logger.CLILogger, deployOpti
 	if err != nil {
 		errors.Wrap(err, "failed to get check for filesystem snapshot")
 	}
-	if prevFsConfig == nil || prevFsConfig.NFS == nil || prevFsConfig.HostPath == nil {
+	if prevFsConfig == nil {
+		return nil
+	}
+	if prevFsConfig.NFS == nil && prevFsConfig.HostPath == nil {
 		return nil
 	}
 
