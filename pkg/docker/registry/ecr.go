@@ -2,6 +2,8 @@ package registry
 
 import (
 	"encoding/base64"
+	"fmt"
+	"net/url"
 	"strings"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -16,8 +18,18 @@ type Login struct {
 	Password string
 }
 
-func IsECREndpoint(host string) bool {
-	return strings.HasSuffix(host, ".amazonaws.com")
+func IsECREndpoint(endpoint string) bool {
+	if !strings.HasPrefix(endpoint, "http") {
+		// url.Parse doesn't work without scheme
+		endpoint = fmt.Sprintf("https://%s", endpoint)
+	}
+
+	parsed, err := url.Parse(endpoint)
+	if err != nil {
+		return false
+	}
+
+	return strings.HasSuffix(parsed.Hostname(), ".amazonaws.com")
 }
 
 func GetECRLogin(ecrEndpoint, username, password string) (*Login, error) {

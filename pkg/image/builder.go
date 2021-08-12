@@ -482,19 +482,22 @@ func CopyFromFileToRegistry(path string, name string, tag string, digest string,
 		DockerDisableV1Ping:         true,
 	}
 
-	if auth.Username != "" && auth.Password != "" {
-		username, password := auth.Username, auth.Password
+	username, password := auth.Username, auth.Password
+	registryHost := reference.Domain(destRef.DockerReference())
 
-		registryHost := reference.Domain(destRef.DockerReference())
-		if registry.IsECREndpoint(registryHost) {
-			login, err := registry.GetECRLogin(registryHost, username, password)
-			if err != nil {
-				return errors.Wrap(err, "failed to get ECR login")
-			}
-			username = login.Username
-			password = login.Password
+	if registry.IsECREndpoint(registryHost) && username != "AWS" {
+		login, err := registry.GetECRLogin(registryHost, username, password)
+		if err != nil {
+			return errors.Wrap(err, "failed to get ECR login")
 		}
+		username = login.Username
+		password = login.Password
+	}
 
+	fmt.Println("username", username)
+	fmt.Println("password", password)
+
+	if username != "" && password != "" {
 		destCtx.DockerAuthConfig = &types.DockerAuthConfig{
 			Username: username,
 			Password: password,
