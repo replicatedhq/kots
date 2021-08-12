@@ -18,8 +18,6 @@ import (
 type UpstreamUpgradeOutput struct {
 	Success          bool   `json:"success"`
 	AvailableUpdates int64  `json:"availableUpdates,omitempty"`
-	CurrentRelease   string `json:"currentRelease,omitempty"`
-	LatestRelease    string `json:"latestRelease,omitempty"`
 	Error            string `json:"error,omitempty"`
 }
 

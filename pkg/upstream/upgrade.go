@@ -25,8 +25,6 @@ import (
 
 type UpgradeResponse struct {
 	AvailableUpdates int64
-	CurrentVersion   string
-	LatestVersion    string
 }
 
 type UpgradeOptions struct {
