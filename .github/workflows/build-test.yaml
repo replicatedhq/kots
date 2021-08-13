@@ -261,7 +261,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        k8s_version: [v1.19.11-k3s1,v1.20.7-k3s1,v1.21.1-k3s1]
+        k8s_version: [v1.20.7-k3s1,v1.21.1-k3s1,v1.21.2-k3s1]
     steps:
       - uses: debianmaster/actions-k3s@v1.0.3
         id: k3s
@@ -365,7 +365,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        k8s_version: [v1.19.11-k3s1,v1.20.7-k3s1,v1.21.1-k3s1]
+        k8s_version: [v1.20.7-k3s1,v1.21.1-k3s1,v1.21.2-k3s1]
     steps:
       - uses: debianmaster/actions-k3s@v1.0.3
         id: k3s
@@ -429,7 +429,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        k8s_version: [v1.19.11-k3s1,v1.20.7-k3s1,v1.21.1-k3s1]
+        k8s_version: [v1.20.7-k3s1,v1.21.1-k3s1,v1.21.2-k3s1]
     steps:
       - uses: debianmaster/actions-k3s@v1.0.3
         id: k3s
@@ -502,7 +502,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        k8s_version: [v1.19.11-k3s1,v1.20.7-k3s1,v1.21.1-k3s1]
+        k8s_version: [v1.20.7-k3s1,v1.21.1-k3s1,v1.21.2-k3s1]
     steps:
       - uses: debianmaster/actions-k3s@v1.0.3
         id: k3s
@@ -576,7 +576,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        k8s_version: [v1.19.11-k3s1,v1.20.7-k3s1,v1.21.1-k3s1]
+        k8s_version: [v1.20.7-k3s1,v1.21.1-k3s1,v1.21.2-k3s1]
     steps:
       - uses: debianmaster/actions-k3s@v1.0.3
         id: k3s
