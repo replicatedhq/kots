@@ -1245,7 +1245,8 @@ func VeleroMigrateMinioFileSystemCmd() *cobra.Command {
 				return errors.Wrap(err, "failed to complete migration")
 			}
 
-			// Write back the new preference into the config
+			log.Info("Saving snapshot preferences.")
+			// Write back the new preference into the config. Needed for new kurl installs
 			if err = kotsadm.EnsureConfigMaps(*deployOptions, clientset); err != nil {
 				return errors.Wrap(err, "failed to update kotsadm config with new snapshot preference")
 			}

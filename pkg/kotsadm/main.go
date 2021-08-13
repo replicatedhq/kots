@@ -1087,7 +1087,9 @@ func ReadDeployOptionsFromCluster(namespace string, clientset *kubernetes.Client
 		}
 
 		deployOptions.IncludeMinioSnapshots = includeMinioSnapshots
-	} else if !kuberneteserrors.IsNotFound(err) {
+	} else if kuberneteserrors.IsNotFound(err) {
+		deployOptions.IncludeMinioSnapshots = true
+	} else {
 		return nil, errors.Wrap(err, "failed to get kotsadm config from configmap")
 	}
 
