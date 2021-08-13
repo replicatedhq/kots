@@ -254,7 +254,7 @@ func CreateAppFromAirgap(opts CreateAirgapAppOpts) (finalError error) {
 	troubleshootOpts := supportbundletypes.TroubleshootOptions{
 		InCluster: true,
 	}
-	_, err = supportbundle.CreateSupportBundleDependencies(a.ID, 0, troubleshootOpts)
+	_, err = supportbundle.CreateSupportBundleDependencies(a.ID, newSequence, troubleshootOpts)
 	if err != nil {
 		return errors.Wrap(err, "failed to create support bundle dependencies")
 	}
