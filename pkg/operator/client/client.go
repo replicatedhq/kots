@@ -2,6 +2,7 @@ package client
 
 import (
 	"bytes"
+	"encoding/base64"
 	"encoding/json"
 	"io/ioutil"
 	"log"
@@ -347,12 +348,12 @@ func (c *Client) setDeployResults(args operatortypes.DeployAppArgs, results Depl
 	}
 
 	downstreamOutput := downstreamtypes.DownstreamOutput{
-		DryrunStdout: string(results.DryrunStdout),
-		DryrunStderr: string(results.DryrunStderr),
-		ApplyStdout:  string(results.ApplyStdout),
-		ApplyStderr:  string(results.ApplyStderr),
-		HelmStdout:   string(results.HelmStdout),
-		HelmStderr:   string(results.HelmStderr),
+		DryrunStdout: base64.StdEncoding.EncodeToString(results.DryrunStdout),
+		DryrunStderr: base64.StdEncoding.EncodeToString(results.DryrunStderr),
+		ApplyStdout:  base64.StdEncoding.EncodeToString(results.ApplyStdout),
+		ApplyStderr:  base64.StdEncoding.EncodeToString(results.ApplyStderr),
+		HelmStdout:   base64.StdEncoding.EncodeToString(results.HelmStdout),
+		HelmStderr:   base64.StdEncoding.EncodeToString(results.HelmStderr),
 		RenderError:  "",
 	}
 	err = store.GetStore().UpdateDownstreamDeployStatus(args.AppID, args.ClusterID, args.Sequence, results.IsError, downstreamOutput)
