@@ -53,8 +53,8 @@ func UpstreamUpgradeCmd() *cobra.Command {
 
 			upgradeOptions := upstream.UpgradeOptions{
 				AirgapBundle:      v.GetString("airgap-bundle"),
-				RegistryEndpoint:  v.GetString("kotsadm-namespace"),
-				RegistryNamespace: v.GetString("registry-namespace"),
+				RegistryEndpoint:  v.GetString("kotsadm-registry"),
+				RegistryNamespace: v.GetString("kotsadm-namespace"),
 				RegistryUsername:  v.GetString("registry-username"),
 				RegistryPassword:  v.GetString("registry-password"),
 				IsKurl:            isKurl,
