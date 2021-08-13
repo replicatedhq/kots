@@ -74,8 +74,6 @@ func Upgrade(appSlug string, options UpgradeOptions) (*UpgradeResponse, error) {
 		if registryNamespace == "" {
 			if options.IsKurl {
 				registryNamespace = appSlug
-			} else {
-				return nil, errors.New("--kotsadm-namespace is required")
 			}
 		}
 
