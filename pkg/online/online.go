@@ -168,7 +168,7 @@ func CreateAppFromOnline(pendingApp *types.PendingApp, upstreamURI string, isAut
 	troubleshootOpts := supportbundletypes.TroubleshootOptions{
 		InCluster: true,
 	}
-	_, err = supportbundle.CreateSupportBundleDependencies(pendingApp.ID, 0, troubleshootOpts)
+	_, err = supportbundle.CreateSupportBundleDependencies(pendingApp.ID, newSequence, troubleshootOpts)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create rendered support bundle spec")
 	}
