@@ -2,6 +2,7 @@ include Makefile.build
 CURRENT_USER := $(shell id -u -n)
 MINIO_VERSION := RELEASE.2021-08-05T22-01-19Z
 POSTGRES_VERSION := 10.17-alpine
+LVP_VERSION := v0.1.0
 
 BUILDFLAGS = -tags='netgo containers_image_ostree_stub exclude_graphdriver_devicemapper exclude_graphdriver_btrfs containers_image_openpgp' -installsuffix netgo
 EXPERIMENTAL_BUILDFLAGS = -tags 'netgo -tags containers_image_ostree_stub -tags exclude_graphdriver_devicemapper -tags exclude_graphdriver_btrfs -tags containers_image_openpgp -tags kots_experimental' -installsuffix netgo
@@ -100,6 +101,12 @@ build-release:
 
 	mkdir -p bin/docker-archive/minio
 	skopeo copy docker://minio/minio:${MINIO_VERSION} docker-archive:bin/docker-archive/minio/${MINIO_VERSION}
+
+	mkdir -p bin/docker-archive/local-volume-provider
+	skopeo copy docker://replicated/local-volume-provider:${LVP_VERSION} docker-archive:bin/docker-archive/local-volume-provider/${LVP_VERSION}
+
+	mkdir -p bin/docker-archive/local-volume-fileserver
+	skopeo copy docker://replicated/local-volume-fileserver:${LVP_VERSION} docker-archive:bin/docker-archive/local-volume-fileserver/${LVP_VERSION}
 
 .PHONY: project-pact-tests
 project-pact-tests:
