@@ -267,7 +267,7 @@ func ensureFileSystemMinioDeployment(ctx context.Context, clientset kubernetes.I
 }
 
 func fileSystemMinioDeploymentResource(clientset kubernetes.Interface, secretChecksum string, deployOptions FileSystemDeployOptions, registryOptions kotsadmtypes.KotsadmOptions) (*appsv1.Deployment, error) {
-	image := "minio/minio:RELEASE.2021-07-27T02-40-15Z"
+	image := "minio/minio:RELEASE.2021-08-05T22-01-19Z"
 	imagePullSecrets := []corev1.LocalObjectReference{}
 
 	if !kotsutil.IsKurl(clientset) || deployOptions.Namespace != metav1.NamespaceDefault {
