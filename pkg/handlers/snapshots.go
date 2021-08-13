@@ -194,6 +194,11 @@ func (h *Handler) UpdateGlobalSnapshotSettings(w http.ResponseWriter, r *http.Re
 		}
 	}
 
+	var filesystem *kotssnapshottypes.FileSystemConfig
+	if updateGlobalSnapshotSettingsRequest.FileSystem != nil {
+		filesystem = &updateGlobalSnapshotSettingsRequest.FileSystem.FileSystemConfig
+	}
+
 	// update/configure store
 	options := kotssnapshot.ConfigureStoreOptions{
 		Provider: updateGlobalSnapshotSettingsRequest.Provider,
@@ -205,7 +210,7 @@ func (h *Handler) UpdateGlobalSnapshotSettings(w http.ResponseWriter, r *http.Re
 		Azure:      updateGlobalSnapshotSettingsRequest.Azure,
 		Other:      updateGlobalSnapshotSettingsRequest.Other,
 		Internal:   updateGlobalSnapshotSettingsRequest.Internal,
-		FileSystem: &updateGlobalSnapshotSettingsRequest.FileSystem.FileSystemConfig,
+		FileSystem: filesystem,
 
 		KotsadmNamespace: kotsadmNamespace,
 		RegistryOptions:  &registryOptions,
