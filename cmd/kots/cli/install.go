@@ -633,9 +633,6 @@ func getRegistryConfig(v *viper.Viper) (*kotsadmtypes.KotsadmOptions, error) {
 		if registryNamespace == "" && license != nil {
 			registryNamespace = license.Spec.AppSlug
 		}
-		if registryNamespace == "" {
-			return nil, errors.New("--kotsadm-namespace is required")
-		}
 	}
 	return &kotsadmtypes.KotsadmOptions{
 		OverrideVersion:   v.GetString("kotsadm-tag"),
