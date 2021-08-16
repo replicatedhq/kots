@@ -6,7 +6,6 @@ bases:
 resources:
   - ./dex-postgres-secret.yaml
   - ./configmap-init-dex-db.yaml
-  - ./cluster-rbac.yaml
 
 patches:
   - ./deployment.yaml
