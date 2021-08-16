@@ -12,6 +12,7 @@ spec:
         app: kotsadm
     spec:
       restartPolicy: Always
+      serviceAccountName: kotsadm
       containers:
         - name: kotsadm
           image: kotsadm
