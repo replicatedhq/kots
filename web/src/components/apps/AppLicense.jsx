@@ -180,7 +180,7 @@ class AppLicense extends Component {
         </Helmet>
         {size(appLicense) > 0 ?
           <div className="License--wrapper flex-column">
-            <div className="flex flex1 alignItems--center">
+            <div className="flex flex-auto alignItems--center">
               <span className="u-fontSize--large u-fontWeight--bold u-lineHeight--normal u-textColor--primary"> License </span>
               {appLicense?.licenseType === "community" &&
                 <div className="flex-auto">
