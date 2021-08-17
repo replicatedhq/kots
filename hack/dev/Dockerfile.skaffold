@@ -92,6 +92,13 @@ RUN curl -L "https://github.com/kubernetes-sigs/kustomize/releases/download/kust
   chmod a+x kustomize && \
   mv kustomize "/usr/local/bin/kustomize3.5.4"
 
+# Install helm v3.4.2
+RUN curl -L "https://get.helm.sh/helm-v3.4.2-linux-amd64.tar.gz" -o /tmp/helm.tar.gz && \
+  tar -xzvf /tmp/helm.tar.gz && \
+  rm /tmp/helm.tar.gz && \
+  chmod a+x linux-amd64/helm && \
+  mv linux-amd64/helm "/usr/local/bin/helm3.4.2"
+
 # Install krew
 COPY ./deploy/install-krew.sh /install-krew.sh
 RUN /install-krew.sh
