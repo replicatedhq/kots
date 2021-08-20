@@ -91,7 +91,7 @@ func ProcessImages(srcRegistry, destRegistry registry.RegistryOptions, appSlug s
 	return newImages, nil
 }
 
-func GetPrivateImages(upstreamDir string, checkedImages map[string]ImageInfo, allPrivate bool, dockerHubRegistry registry.RegistryOptions) ([]string, []k8sdoc.K8sDoc, error) {
+func GetPrivateImages(upstreamDir string, checkedImages map[string]ImageInfo, allPrivate bool, dockerHubRegistry registry.RegistryOptions, UseHelmInstall map[string]bool) ([]string, []k8sdoc.K8sDoc, error) {
 	uniqueImages := make(map[string]bool)
 
 	objects := make([]k8sdoc.K8sDoc, 0) // all objects where images are referenced from
@@ -100,6 +100,9 @@ func GetPrivateImages(upstreamDir string, checkedImages map[string]ImageInfo, al
 		func(path string, info os.FileInfo, err error) error {
 			if err != nil {
 				return err
+			}
+			if info.IsDir() && (UseHelmInstall[info.Name()] == true) {
+				return filepath.SkipDir
 			}
 
 			if info.IsDir() {
@@ -163,39 +166,6 @@ func GetPrivateImages(upstreamDir string, checkedImages map[string]ImageInfo, al
 	}
 
 	return result, objects, nil
-}
-
-func GetObjectsWithImages(upstreamDir string) ([]k8sdoc.K8sDoc, error) {
-	objects := make([]k8sdoc.K8sDoc, 0)
-
-	err := filepath.Walk(upstreamDir,
-		func(path string, info os.FileInfo, err error) error {
-			if err != nil {
-				return err
-			}
-
-			if info.IsDir() {
-				return nil
-			}
-
-			contents, err := ioutil.ReadFile(path)
-			if err != nil {
-				return err
-			}
-
-			return listImagesInFile(contents, func(images []string, doc k8sdoc.K8sDoc) error {
-				if len(images) > 0 {
-					objects = append(objects, doc)
-				}
-				return nil
-			})
-		})
-
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to walk upstream dir")
-	}
-
-	return objects, nil
 }
 
 func processImagesInFileBetweenRegistries(srcRegistry, destRegistry registry.RegistryOptions, appSlug string, log *logger.CLILogger, reportWriter io.Writer, fileData []byte, copyImages, allImagesPrivate bool, checkedImages map[string]ImageInfo, alreadyPushedImagesFromOtherFiles []kustomizeimage.Image, dockerHubRegistry registry.RegistryOptions) ([]kustomizeimage.Image, error) {

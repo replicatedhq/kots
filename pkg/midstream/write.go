@@ -33,6 +33,7 @@ type WriteOptions struct {
 	HTTPProxyEnvValue  string
 	HTTPSProxyEnvValue string
 	NoProxyEnvValue    string
+	UseHelmInstall     map[string]bool
 }
 
 func (m *Midstream) WriteMidstream(options WriteOptions) error {

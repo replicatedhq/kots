@@ -9,6 +9,7 @@ import (
 
 	"github.com/pkg/errors"
 	kotsscheme "github.com/replicatedhq/kots/kotskinds/client/kotsclientset/scheme"
+	"github.com/replicatedhq/kots/pkg/k8sdoc"
 	troubleshootscheme "github.com/replicatedhq/troubleshoot/pkg/client/troubleshootclientset/scheme"
 	"gopkg.in/yaml.v2"
 	batchv1 "k8s.io/api/batch/v1"
@@ -243,6 +244,22 @@ func (b Base) ListErrorFiles() []BaseFile {
 		files = append(files, PrependBaseFilesPath(b.ListErrorFiles(), b.Path)...)
 	}
 	return files
+}
+
+func (b *Base) FindObjectsWithImages() ([]k8sdoc.K8sDoc, error) {
+	var objects []k8sdoc.K8sDoc
+	for _, file := range b.Files {
+		parsed, err := k8sdoc.ParseYAML(file.Content)
+		if err != nil {
+			continue
+		}
+
+		images := parsed.ListImages()
+		if len(images) > 0 {
+			objects = append(objects, parsed)
+		}
+	}
+	return objects, nil
 }
 
 func PrependBaseFilesPath(files []BaseFile, prefix string) []BaseFile {

@@ -205,6 +205,12 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 		return errors.Wrap(err, "failed to create cipher from installation spec")
 	}
 
+	var newHelmCharts []*kotsv1beta1.HelmChart
+	newHelmCharts, err = kotsutil.LoadHelmChartsFromPath(rewriteOptions.UpstreamPath)
+	if err != nil {
+		return errors.Wrap(err, "failed to load new helm charts")
+	}
+
 	commonWriteMidstreamOptions := midstream.WriteOptions{
 		AppSlug:            rewriteOptions.AppSlug,
 		IsGitOps:           rewriteOptions.IsGitOps,
@@ -216,6 +222,11 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 		NoProxyEnvValue:    rewriteOptions.NoProxyEnvValue,
 	}
 
+	commonWriteMidstreamOptions.UseHelmInstall = map[string]bool{}
+	for _, v := range newHelmCharts {
+		commonWriteMidstreamOptions.UseHelmInstall[v.Spec.Chart.Name] = v.Spec.UseHelmInstall
+	}
+
 	writeMidstreamOptions := commonWriteMidstreamOptions
 	writeMidstreamOptions.MidstreamDir = filepath.Join(commonBase.GetOverlaysDir(writeBaseOptions), "midstream")
 	writeMidstreamOptions.BaseDir = filepath.Join(u.GetBaseDir(writeUpstreamOptions), commonBase.Path)
@@ -225,6 +236,7 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 		return errors.Wrap(err, "failed to write common midstream")
 	}
 
+	commonWriteMidstreamOptions.UseHelmInstall = map[string]bool{}
 	helmMidstreams := []midstream.Midstream{}
 	for _, base := range helmBases {
 		writeMidstreamOptions := commonWriteMidstreamOptions
@@ -342,11 +354,7 @@ func writeMidstream(writeMidstreamOptions midstream.WriteOptions, options Rewrit
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to save installation")
 		}
-
-		findObjectsOptions := base.FindObjectsWithImagesOptions{
-			BaseDir: writeMidstreamOptions.BaseDir,
-		}
-		affectedObjects, err := base.FindObjectsWithImages(findObjectsOptions)
+		affectedObjects, err := b.FindObjectsWithImages()
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to find objects with images")
 		}
@@ -398,6 +406,7 @@ func writeMidstream(writeMidstreamOptions midstream.WriteOptions, options Rewrit
 			},
 			Installation:     options.Installation,
 			AllImagesPrivate: allPrivate,
+			UseHelmInstall:   writeMidstreamOptions.UseHelmInstall,
 		}
 		findResult, err := base.FindPrivateImages(findPrivateImagesOptions)
 		if err != nil {

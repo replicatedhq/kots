@@ -22,6 +22,7 @@ type FindPrivateImagesOptions struct {
 	DockerHubRegistry  registry.RegistryOptions
 	Installation       *kotsv1beta1.Installation
 	AllImagesPrivate   bool
+	UseHelmInstall     map[string]bool
 }
 
 type FindPrivateImagesResult struct {
@@ -32,7 +33,7 @@ type FindPrivateImagesResult struct {
 
 func FindPrivateImages(options FindPrivateImagesOptions) (*FindPrivateImagesResult, error) {
 	checkedImages := makeImageInfoMap(options.Installation.Spec.KnownImages)
-	upstreamImages, objects, err := image.GetPrivateImages(options.BaseDir, checkedImages, options.AllImagesPrivate, options.DockerHubRegistry)
+	upstreamImages, objects, err := image.GetPrivateImages(options.BaseDir, checkedImages, options.AllImagesPrivate, options.DockerHubRegistry, options.UseHelmInstall)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to list upstream images")
 	}
@@ -73,19 +74,6 @@ func FindPrivateImages(options FindPrivateImagesOptions) (*FindPrivateImagesResu
 		Docs:          objects,
 		CheckedImages: makeInstallationImages(checkedImages),
 	}, nil
-}
-
-type FindObjectsWithImagesOptions struct {
-	BaseDir string
-}
-
-func FindObjectsWithImages(options FindObjectsWithImagesOptions) ([]k8sdoc.K8sDoc, error) {
-	objects, err := image.GetObjectsWithImages(options.BaseDir)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to list upstream images")
-	}
-
-	return objects, nil
 }
 
 func makeImageInfoMap(images []kotsv1beta1.InstallationImage) map[string]image.ImageInfo {

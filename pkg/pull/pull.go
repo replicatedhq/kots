@@ -416,6 +416,10 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 		HTTPSProxyEnvValue: pullOptions.HTTPSProxyEnvValue,
 		NoProxyEnvValue:    pullOptions.NoProxyEnvValue,
 	}
+	commonWriteMidstreamOptions.UseHelmInstall = map[string]bool{}
+	for _, v := range newHelmCharts {
+		commonWriteMidstreamOptions.UseHelmInstall[v.Spec.Chart.Name] = v.Spec.UseHelmInstall
+	}
 
 	writeMidstreamOptions := commonWriteMidstreamOptions
 	writeMidstreamOptions.MidstreamDir = filepath.Join(commonBase.GetOverlaysDir(writeBaseOptions), "midstream")
@@ -426,6 +430,7 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 		return "", errors.Wrap(err, "failed to write common midstream")
 	}
 
+	commonWriteMidstreamOptions.UseHelmInstall = map[string]bool{}
 	helmMidstreams := []midstream.Midstream{}
 	for _, helmBase := range helmBases {
 		writeMidstreamOptions := commonWriteMidstreamOptions
@@ -597,10 +602,7 @@ func writeMidstream(writeMidstreamOptions midstream.WriteOptions, options PullOp
 				}
 			}
 
-			findObjectsOptions := base.FindObjectsWithImagesOptions{
-				BaseDir: writeMidstreamOptions.BaseDir,
-			}
-			affectedObjects, err := base.FindObjectsWithImages(findObjectsOptions)
+			affectedObjects, err := b.FindObjectsWithImages()
 			if err != nil {
 				return nil, errors.Wrap(err, "failed to find objects with images")
 			}
@@ -659,6 +661,7 @@ func writeMidstream(writeMidstreamOptions midstream.WriteOptions, options PullOp
 			},
 			Installation:     newInstallation,
 			AllImagesPrivate: allPrivate,
+			UseHelmInstall:   writeMidstreamOptions.UseHelmInstall,
 		}
 		findResult, err := base.FindPrivateImages(findPrivateImagesOptions)
 		if err != nil {
