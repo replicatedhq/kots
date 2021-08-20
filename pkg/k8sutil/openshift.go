@@ -20,7 +20,7 @@ func IsOpenShift(clientset kubernetes.Interface) bool {
 	_, resources, _ := clientset.Discovery().ServerGroupsAndResources()
 	if resources != nil {
 		for _, resource := range resources {
-			if strings.Contains(resource.GroupVersion, "openshift") && resource.Kind == "APIResourceList" {
+			if strings.HasPrefix(resource.GroupVersion, "apps.openshift.io/") {
 				return true
 			}
 		}
