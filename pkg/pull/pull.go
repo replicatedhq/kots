@@ -225,7 +225,7 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 			}
 		}
 
-		if err := publicKeysMatch(fetchOptions.License, airgap); err != nil {
+		if err := publicKeysMatch(log, fetchOptions.License, airgap); err != nil {
 			return "", errors.Wrap(err, "failed to validate app key")
 		}
 
@@ -1000,7 +1000,7 @@ func imagesDirFromOptions(upstream *upstreamtypes.Upstream, pullOptions PullOpti
 	return filepath.Join(pullOptions.RootDir, "images")
 }
 
-func publicKeysMatch(license *kotsv1beta1.License, airgap *kotsv1beta1.Airgap) error {
+func publicKeysMatch(log *logger.CLILogger, license *kotsv1beta1.License, airgap *kotsv1beta1.Airgap) error {
 	if license == nil || airgap == nil {
 		// not sure when this would happen, but earlier logic allows this combination
 		return nil
@@ -1012,6 +1012,7 @@ func publicKeysMatch(license *kotsv1beta1.License, airgap *kotsv1beta1.Airgap) e
 	}
 
 	if err := verify([]byte(license.Spec.AppSlug), []byte(airgap.Spec.Signature), publicKey); err != nil {
+		log.Info("got error validating airgap bundle: %s", err.Error())
 		if airgap.Spec.AppSlug != "" {
 			return util.ActionableError{
 				NoRetry: true,
