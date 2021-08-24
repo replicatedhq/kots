@@ -750,6 +750,10 @@ func (h *Handler) SetAppConfigValues(w http.ResponseWriter, r *http.Request) {
 			Value:          value.Value,
 			RepeatableItem: value.RepeatableItem,
 		}
+		if value.ValuePlaintext != "" {
+			// passwords don't have Value, they have ValuePlaintext
+			generatedValue.Value = value.ValuePlaintext
+		}
 		configValueMap[key] = generatedValue
 	}
 
