@@ -76,7 +76,7 @@ func RunCmd() *cobra.Command {
 				return err
 			}
 
-			if err := cluster.Init(ctx, v.GetString("data-dir")); err != nil {
+			if err := cluster.ClientInit(ctx, v.GetString("data-dir")); err != nil {
 				return err
 			}
 

@@ -25,8 +25,8 @@ import (
 	"go.uber.org/zap"
 )
 
-// Init will download all binaries for the cluster
-func Init(ctx context.Context, dataDir string) error {
+// ClientInit will download all binaries for the cluster
+func ClientInit(ctx context.Context, dataDir string) error {
 	binRoot := BinRoot(dataDir)
 	if _, err := os.Stat(binRoot); os.IsNotExist(err) {
 		if err := os.MkdirAll(binRoot, 0755); err != nil {
