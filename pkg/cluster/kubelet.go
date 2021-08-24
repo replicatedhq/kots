@@ -6,7 +6,6 @@ import (
 	"encoding/base64"
 	"fmt"
 	"io/ioutil"
-	"net/http"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -36,17 +35,6 @@ func startKubelet(ctx context.Context, dataDir string) error {
 		}
 	}
 
-	kubeletFile := filepath.Join(kubeletDir, "kubelet")
-	if _, err := os.Stat(kubeletFile); err != nil {
-		if os.IsNotExist(err) {
-			if err := downloadKubelet(kubeletDir); err != nil {
-				return errors.Wrap(err, "download kubelet")
-			}
-		} else {
-			return errors.Wrap(err, "stat kubelet")
-		}
-	}
-
 	// TODO check the version of kubelet in case there was an old version
 
 	// write the kubelet config file
@@ -67,22 +55,6 @@ func startKubelet(ctx context.Context, dataDir string) error {
 	return nil
 }
 
-func downloadKubelet(kubeletDir string) error {
-	packageURI := `https://dl.k8s.io/v1.21.1/kubernetes-server-linux-amd64.tar.gz`
-	resp, err := http.Get(packageURI)
-	if err != nil {
-		return errors.Wrap(err, "download kubelet")
-	}
-	defer resp.Body.Close()
-
-	// extract kubelet to a new directory
-	if err := extractOneFileFromArchiveStreamToDir("kubelet", resp.Body, kubeletDir); err != nil {
-		return errors.Wrap(err, "extract one file")
-	}
-
-	return nil
-}
-
 func spawnKubelet(dataDir string, kubeletDir string) error {
 	go func() {
 		args := []string{
@@ -94,7 +66,7 @@ func spawnKubelet(dataDir string, kubeletDir string) error {
 			fmt.Sprintf("--cert-dir=%s", filepath.Join(kubeletDir, "pki")),
 		}
 
-		cmd := exec.Command(filepath.Join(kubeletDir, "kubelet"), args...)
+		cmd := exec.Command(filepath.Join(BinRoot(dataDir), "kubelet"), args...)
 		cmd.Env = os.Environ() // TODO
 
 		// TODO stream the output of stdout and stderr to files

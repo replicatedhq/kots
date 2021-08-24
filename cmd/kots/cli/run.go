@@ -11,7 +11,6 @@ import (
 	"path/filepath"
 	"syscall"
 
-	"github.com/mholt/archiver"
 	"github.com/replicatedhq/kots/pkg/apiserver"
 	"github.com/replicatedhq/kots/pkg/cluster"
 	"github.com/replicatedhq/kots/pkg/filestore"
@@ -77,12 +76,12 @@ func RunCmd() *cobra.Command {
 				return err
 			}
 
-			kubeconfigPath, err := cluster.Start(ctx, slug, v.GetString("data-dir"))
-			if err != nil {
+			if err := cluster.Init(ctx, v.GetString("data-dir")); err != nil {
 				return err
 			}
 
-			if err := ensureBinaries(v.GetString("data-dir")); err != nil {
+			kubeconfigPath, err := cluster.Start(ctx, slug, v.GetString("data-dir"))
+			if err != nil {
 				return err
 			}
 
@@ -139,68 +138,6 @@ func startKotsadm(ctx context.Context, dataDir string, sharedPassword string, ku
 
 func startK8sAuthnz(ctx context.Context, dataDir string) error {
 	go cluster.StartAuthnzServer()
-
-	return nil
-}
-
-func ensureBinaries(dataDir string) error {
-	binariesRoot := filepath.Join(dataDir, "binaries")
-	if _, err := os.Stat(binariesRoot); os.IsNotExist(err) {
-		if err := os.MkdirAll(binariesRoot, 0755); err != nil {
-			return err
-		}
-	}
-
-	if err := ensureKubectlBinary(binariesRoot); err != nil {
-		return err
-	}
-
-	if err := ensureKustomizeBinary(binariesRoot); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func ensureKubectlBinary(rootDir string) error {
-	kubectlFilePath := filepath.Join(rootDir, "kubectl")
-	if err := downloadFileFromURL(kubectlFilePath, "https://dl.k8s.io/release/v1.22.0/bin/linux/amd64/kubectl"); err != nil {
-		return err
-	}
-
-	if err := os.Chmod(kubectlFilePath, 0755); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func ensureKustomizeBinary(rootDir string) error {
-	kustomizeArchive := filepath.Join(rootDir, "kustomize.tar.gz")
-	if err := downloadFileFromURL(kustomizeArchive, "https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize%2Fv3.5.4/kustomize_v3.5.4_linux_amd64.tar.gz"); err != nil {
-		return err
-	}
-	defer os.RemoveAll(kustomizeArchive)
-
-	unarchived, err := ioutil.TempDir("", "kustomize")
-	if err != nil {
-		return err
-	}
-	defer os.RemoveAll(unarchived)
-
-	tarGz := archiver.TarGz{
-		Tar: &archiver.Tar{
-			ImplicitTopLevelFolder: false,
-		},
-	}
-	if err := tarGz.Unarchive(kustomizeArchive, unarchived); err != nil {
-		return err
-	}
-
-	err = os.Rename(filepath.Join(unarchived, "kustomize"), filepath.Join(rootDir, "kustomize3.5.4"))
-	if err != nil {
-		return err
-	}
 
 	return nil
 }

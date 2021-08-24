@@ -10,17 +10,48 @@ import (
 	"encoding/base64"
 	"encoding/pem"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"math/big"
 	"net"
+	"net/http"
 	"os"
 	"path/filepath"
 	"time"
 
+	"github.com/mholt/archiver"
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"go.uber.org/zap"
 )
+
+// Init will download all binaries for the cluster
+func Init(ctx context.Context, dataDir string) error {
+	binRoot := BinRoot(dataDir)
+	if _, err := os.Stat(binRoot); os.IsNotExist(err) {
+		if err := os.MkdirAll(binRoot, 0755); err != nil {
+			return errors.Wrap(err, "mkdir binroot")
+		}
+	}
+
+	if err := ensureKubectlBinary(binRoot); err != nil {
+		return errors.Wrap(err, "ensure kubectl binary")
+	}
+
+	if err := ensureKustomizeBinary(binRoot); err != nil {
+		return errors.Wrap(err, "ensure kustomize binary")
+	}
+
+	if err := ensureKubeletBinary(binRoot); err != nil {
+		return errors.Wrap(err, "ensure kubelet binary")
+	}
+
+	return nil
+}
+
+func BinRoot(dataDir string) string {
+	return filepath.Join(dataDir, "bin")
+}
 
 // clusterInit will ensure that all certs and keys are in well-known locations
 func clusterInit(ctx context.Context, dataDir string, slug string, version string) error {
@@ -587,4 +618,88 @@ current-context: authz`, "test")
 	}
 
 	return authorizationConfigFile, nil
+}
+
+func ensureKubeletBinary(rootDir string) error {
+	packageURI := `https://dl.k8s.io/v1.21.1/kubernetes-server-linux-amd64.tar.gz`
+	resp, err := http.Get(packageURI)
+	if err != nil {
+		return errors.Wrap(err, "download kubelet")
+	}
+	defer resp.Body.Close()
+
+	// extract kubelet to a new directory
+	if err := extractOneFileFromArchiveStreamToDir("kubelet", resp.Body, rootDir); err != nil {
+		return errors.Wrap(err, "extract one file")
+	}
+
+	return nil
+}
+
+func ensureKubectlBinary(rootDir string) error {
+	kubectlFilePath := filepath.Join(rootDir, "kubectl")
+	if err := downloadFileFromURL(kubectlFilePath, "https://dl.k8s.io/release/v1.22.0/bin/linux/amd64/kubectl"); err != nil {
+		return err
+	}
+
+	if err := os.Chmod(kubectlFilePath, 0755); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func ensureKustomizeBinary(rootDir string) error {
+	kustomizeArchive := filepath.Join(rootDir, "kustomize.tar.gz")
+	if err := downloadFileFromURL(kustomizeArchive, "https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize%2Fv3.5.4/kustomize_v3.5.4_linux_amd64.tar.gz"); err != nil {
+		return err
+	}
+	defer os.RemoveAll(kustomizeArchive)
+
+	unarchived, err := ioutil.TempDir("", "kustomize")
+	if err != nil {
+		return err
+	}
+	defer os.RemoveAll(unarchived)
+
+	tarGz := archiver.TarGz{
+		Tar: &archiver.Tar{
+			ImplicitTopLevelFolder: false,
+		},
+	}
+	if err := tarGz.Unarchive(kustomizeArchive, unarchived); err != nil {
+		return err
+	}
+
+	err = os.Rename(filepath.Join(unarchived, "kustomize"), filepath.Join(rootDir, "kustomize3.5.4"))
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func downloadFileFromURL(destination string, url string) error {
+	out, err := os.Create(destination)
+	if err != nil {
+		return errors.Wrap(err, "failed to create file")
+	}
+	defer out.Close()
+
+	resp, err := http.Get(url)
+	if err != nil {
+		return errors.Wrap(err, "failed to http get")
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return errors.Errorf("unexpected status code: %d", resp.StatusCode)
+	}
+
+	_, err = io.Copy(out, resp.Body)
+	if err != nil {
+		return errors.Wrap(err, "failed to copy to file")
+	}
+
+	return nil
 }
