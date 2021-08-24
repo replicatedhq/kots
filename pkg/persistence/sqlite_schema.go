@@ -20,7 +20,7 @@ spec:
         constraints:
           notNull: true
       - name: updated_at
-        type: integer
+        type: timestamp
       - name: current_message
         type: text
       - name: status
@@ -91,9 +91,9 @@ spec:
       - name: parent_sequence
         type: integer
       - name: created_at
-        type: integer
+        type: timestamp
       - name: applied_at
-        type: integer
+        type: timestamp
       - name: version_label
         type: text
         constraints:
@@ -113,7 +113,7 @@ spec:
       - name: preflight_result
         type: text
       - name: preflight_result_created_at
-        type: integer
+        type: timestamp
       - name: preflight_ignore_permissions
         type: boolean
         default: "false"
@@ -173,7 +173,7 @@ spec:
       - name: resource_states
         type: text
       - name: updated_at
-        type: integer
+        type: timestamp
       - name: sequence
         type: integer
 `,
@@ -202,9 +202,9 @@ spec:
       - name: channel_name
         type: text
       - name: upstream_released_at
-        type: integer
+        type: timestamp
       - name: created_at
-        type: integer
+        type: timestamp
       - name: version_label
         type: text
         constraints:
@@ -230,7 +230,7 @@ spec:
       - name: config_values
         type: text
       - name: applied_at
-        type: integer
+        type: timestamp
       - name: status
         type: text
       - name: encryption_key
@@ -263,11 +263,11 @@ spec:
       - name: icon_uri
         type: text
       - name: created_at
-        type: integer
+        type: timestamp
         constraints:
           notNull: true
       - name: updated_at
-        type: integer
+        type: timestamp
       - name: slug
         type: text
         constraints:
@@ -281,7 +281,7 @@ spec:
       - name: current_sequence
         type: integer
       - name: last_update_check_at
-        type: integer
+        type: timestamp
       - name: is_all_users
         type: boolean
       - name: registry_hostname
@@ -348,11 +348,11 @@ spec:
         constraints:
           notNull: true
       - name: created_at
-        type: integer
+        type: timestamp
         constraints:
           notNull: true
       - name: updated_at
-        type: integer
+        type: timestamp
       - name: token
         type: text
       - name: cluster_type
@@ -443,7 +443,7 @@ spec:
         constraints:
           notNull: true
       - name: created_at
-        type: integer
+        type: timestamp
 `,
 	`apiVersion: schemas.schemahero.io/v1alpha4
 kind: Table
@@ -473,7 +473,7 @@ spec:
         constraints:
           notNull: true
       - name: created_at
-        type: integer
+        type: timestamp
         constraints:
           notNull: true
 
@@ -586,9 +586,9 @@ spec:
         constraints:
           notNull: true
       - name: issued_at
-        type: integer
+        type: timestamp
       - name: expire_at
-        type: integer
+        type: timestamp
         constraints:
           notNull: true
 `,
@@ -647,7 +647,7 @@ spec:
         constraints:
           notNull: true
       - name: created_at
-        type: integer
+        type: timestamp
       - name: github_id
         type: integer
       - name: last_login
@@ -683,7 +683,7 @@ spec:
       - name: insights
         type: text
       - name: created_at
-        type: integer
+        type: timestamp
         constraints:
           notNull: true
 `,
@@ -728,11 +728,11 @@ spec:
       - name: analysis_id
         type: text
       - name: created_at
-        type: integer
+        type: timestamp
         constraints:
           notNull: true
       - name: uploaded_at
-        type: integer
+        type: timestamp
       - name: is_archived
         type: boolean
       - name: redact_report

@@ -30,7 +30,6 @@ import (
 	supportbundletypes "github.com/replicatedhq/kots/pkg/supportbundle/types"
 	"github.com/replicatedhq/kots/pkg/util"
 	"go.uber.org/zap"
-	"k8s.io/client-go/rest"
 )
 
 var (
@@ -455,9 +454,9 @@ func (c *Client) getApplier(kubectlVersion string) (*applier.Kubectl, error) {
 		return nil, errors.Wrap(err, "failed to find kubectl")
 	}
 
-	config, err := rest.InClusterConfig()
+	config, err := k8sutil.GetClusterConfig()
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to get in cluster config")
+		return nil, errors.Wrap(err, "failed to get cluster config")
 	}
 
 	return applier.NewKubectl(kubectl, config), nil

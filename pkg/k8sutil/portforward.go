@@ -16,6 +16,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/auth"
 	"github.com/replicatedhq/kots/pkg/logger"
+	"github.com/replicatedhq/kots/pkg/persistence"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
@@ -42,6 +43,11 @@ func IsPortAvailable(port int) bool {
 // always check the port number returned though, because a port conflict
 // could cause a different port to be used
 func PortForward(localPort int, remotePort int, namespace string, podName string, pollForAdditionalPorts bool, stopCh <-chan struct{}, log *logger.CLILogger) (int, <-chan error, error) {
+	if persistence.IsSQlite() {
+		// in the kots run workflow, kotsadm runs directly on the host as a service on port 3000
+		return 3000, make(chan error, 2), nil
+	}
+
 	if localPort == 0 {
 		freePort, err := freeport.GetFreePort()
 		if err != nil {

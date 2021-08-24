@@ -7,23 +7,18 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	"github.com/replicatedhq/kots/pkg/k8sutil"
 	batchv1 "k8s.io/api/batch/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
-	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/cache"
 )
 
 // runHooksInformer will create goroutines to start various informers for kots objects
 func (c *Client) runHooksInformer(namespace string) error {
-	restconfig, err := rest.InClusterConfig()
+	clientset, err := k8sutil.GetClientset()
 	if err != nil {
-		return errors.Wrap(err, "failed to get in cluster config")
-	}
-	clientset, err := kubernetes.NewForConfig(restconfig)
-	if err != nil {
-		return errors.Wrap(err, "failed to get new kubernetes client")
+		return errors.Wrap(err, "failed to get clientset")
 	}
 	restClient := clientset.BatchV1().RESTClient()
 

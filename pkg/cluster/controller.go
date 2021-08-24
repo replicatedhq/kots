@@ -50,7 +50,7 @@ func runController(ctx context.Context, dataDir string) error {
 		"--use-service-account-credentials=true",
 		"--v=2",
 		fmt.Sprintf("--flex-volume-plugin-dir=%s", dataDir),
-		"--controllers=-service,-route,-cloud-node-lifecycle", // This is equivalent to using ExternalLoops in the ControllerLoopMode type, which excludes cloud specific controlers
+		"--controllers=*,-service,-route,-cloud-node-lifecycle", // This is equivalent to using ExternalLoops in the ControllerLoopMode type, which excludes cloud specific controlers
 	}
 
 	command := app.NewControllerManagerCommand()

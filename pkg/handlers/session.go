@@ -7,14 +7,13 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
+	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/session"
 	"github.com/replicatedhq/kots/pkg/session/types"
 	"github.com/replicatedhq/kots/pkg/store"
 	"github.com/replicatedhq/kots/pkg/util"
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/rest"
 )
 
 type authorization struct {
@@ -83,17 +82,12 @@ func requireValidKOTSToken(w http.ResponseWriter, r *http.Request) error {
 		return errors.New("authorization header empty")
 	}
 
-	config, err := rest.InClusterConfig()
+	clientset, err := k8sutil.GetClientset()
 	if err != nil {
-		return errors.Wrap(err, "failed to get in cluster config")
+		return errors.Wrap(err, "failed to get clientset")
 	}
 
-	client, err := kubernetes.NewForConfig(config)
-	if err != nil {
-		return errors.Wrap(err, "Failed to create kubernetes clientset")
-	}
-
-	secret, err := client.CoreV1().Secrets(util.PodNamespace).Get(context.TODO(), "kotsadm-authstring", metav1.GetOptions{})
+	secret, err := clientset.CoreV1().Secrets(util.PodNamespace).Get(context.TODO(), "kotsadm-authstring", metav1.GetOptions{})
 	if kuberneteserrors.IsNotFound(err) {
 		return errors.New("no authstring found in cluster")
 	}

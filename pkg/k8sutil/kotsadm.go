@@ -7,6 +7,7 @@ import (
 
 	"github.com/pkg/errors"
 	kotsadmtypes "github.com/replicatedhq/kots/pkg/kotsadm/types"
+	"github.com/replicatedhq/kots/pkg/persistence"
 	"github.com/replicatedhq/kots/pkg/util"
 	corev1 "k8s.io/api/core/v1"
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
@@ -160,6 +161,11 @@ func UpdateKotsadmIDConfigMap(kotsadmID string) error {
 }
 
 func FindKotsadm(clientset *kubernetes.Clientset, namespace string) (string, error) {
+	if persistence.IsSQlite() {
+		// in the kots run workflow, kotsadm runs directly on the host as a service on port 3000
+		return "", nil
+	}
+
 	pods, err := clientset.CoreV1().Pods(namespace).List(context.TODO(), metav1.ListOptions{LabelSelector: "app=kotsadm"})
 	if err != nil {
 		return "", errors.Wrap(err, "failed to list pods")
@@ -175,6 +181,11 @@ func FindKotsadm(clientset *kubernetes.Clientset, namespace string) (string, err
 }
 
 func WaitForKotsadm(clientset *kubernetes.Clientset, namespace string, timeoutWaitingForWeb time.Duration) (string, error) {
+	if persistence.IsSQlite() {
+		// in the kots run workflow, kotsadm runs directly on the host as a service on port 3000
+		return "", nil
+	}
+
 	start := time.Now()
 
 	for {

@@ -1482,6 +1482,9 @@ data:
     # Enable metrics exposure via Prometheus. Initializes Prometheus metrics listener.
     #enablePrometheusMetrics: true
 
+    clientConnection:
+      kubeconfig: /etc/antrea/kubeconfig
+
     # Indicates whether to use auto-generated self-signed TLS certificate.
     # If false, A Secret named "antrea-controller-tls" must be provided with the following keys:
     #   ca.crt: <CA certificate>
@@ -1611,6 +1614,8 @@ spec:
           name: antrea-controller-tls
         - mountPath: /var/log/antrea
           name: host-var-log-antrea
+        - mountPath: /etc/antrea/kubeconfig
+          name: antrea-controller-kubeconfig
       hostNetwork: true
       nodeSelector:
         kubernetes.io/os: linux
@@ -1634,6 +1639,10 @@ spec:
           path: /var/log/antrea
           type: DirectoryOrCreate
         name: host-var-log-antrea
+      - hostPath:
+          path: /home/ubuntu/kotsdata/kubernetes/kubeconfig # TODO NOW
+          type: File
+        name: antrea-controller-kubeconfig
 ---
 apiVersion: apiregistration.k8s.io/v1
 kind: APIService

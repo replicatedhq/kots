@@ -7,13 +7,13 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/store"
 	troubleshootv1beta2 "github.com/replicatedhq/troubleshoot/pkg/apis/troubleshoot/v1beta2"
 	"github.com/replicatedhq/troubleshoot/pkg/preflight"
 	troubleshootpreflight "github.com/replicatedhq/troubleshoot/pkg/preflight"
 	"go.uber.org/zap"
-	"k8s.io/client-go/rest"
 )
 
 // execute will execute the preflights using spec in preflightSpec.
@@ -62,9 +62,9 @@ func execute(appID string, sequence int64, preflightSpec *troubleshootv1beta2.Pr
 		}
 	}()
 
-	restConfig, err := rest.InClusterConfig()
+	restConfig, err := k8sutil.GetClusterConfig()
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to read in cluster config")
+		return nil, errors.Wrap(err, "failed to get cluster config")
 	}
 
 	collectOpts := troubleshootpreflight.CollectOpts{
