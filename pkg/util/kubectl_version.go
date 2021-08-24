@@ -3,10 +3,12 @@ package util
 import (
 	"fmt"
 	"log"
+	"os"
 	"os/exec"
 
 	"github.com/blang/semver"
 	"github.com/pkg/errors"
+	"github.com/replicatedhq/kots/pkg/persistence"
 )
 
 var knownKubectlVersions = []semver.Version{
@@ -39,6 +41,11 @@ func matchKnownVersion(userString string) string {
 }
 
 func FindKubectlVersion(userString string) (string, error) {
+	if persistence.IsSQlite() {
+		// in the kots run workflow, binaries exist under {kotsdatadir}/binaries
+		return fmt.Sprintf("%s/binaries/kubectl", os.Getenv("KOTS_DATA_DIR")), nil
+	}
+
 	kubectl, err := exec.LookPath("kubectl")
 	if err != nil {
 		return "", errors.Wrap(err, "failed to find kubectl")

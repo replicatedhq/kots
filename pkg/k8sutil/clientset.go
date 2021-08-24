@@ -34,19 +34,17 @@ func GetClientset() (*kubernetes.Clientset, error) {
 }
 
 func GetClusterConfig() (*rest.Config, error) {
-	var cfg *rest.Config
-	var err error
-
 	if kubernetesConfigFlags != nil {
-		cfg, err = kubernetesConfigFlags.ToRESTConfig()
+		cfg, err := kubernetesConfigFlags.ToRESTConfig()
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to convert kube flags to rest config")
 		}
-	} else {
-		cfg, err = config.GetConfig()
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to get config")
-		}
+		return cfg, nil
+	}
+
+	cfg, err := config.GetConfig()
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get config")
 	}
 
 	return cfg, nil

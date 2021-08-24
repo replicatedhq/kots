@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/operator/applier"
 	operatortypes "github.com/replicatedhq/kots/pkg/operator/types"
 	"github.com/replicatedhq/kots/pkg/util"
@@ -32,7 +33,6 @@ import (
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/scheme"
-	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
 )
 
@@ -119,9 +119,9 @@ func (c *Client) diffAndRemovePreviousManifests(deployArgs operatortypes.DeployA
 	if err != nil {
 		return errors.Wrap(err, "failed to find kubectl")
 	}
-	config, err := rest.InClusterConfig()
+	config, err := k8sutil.GetClusterConfig()
 	if err != nil {
-		return errors.Wrap(err, "failed to get in cluster config")
+		return errors.Wrap(err, "failed to get cluster config")
 	}
 
 	// this is pretty raw, and required kubectl...  we should
@@ -226,13 +226,9 @@ func (c *Client) diffAndRemovePreviousManifests(deployArgs operatortypes.DeployA
 }
 
 func (c *Client) ensureNamespacePresent(name string) error {
-	restconfig, err := rest.InClusterConfig()
+	clientset, err := k8sutil.GetClientset()
 	if err != nil {
-		return errors.Wrap(err, "failed to get in cluster config")
-	}
-	clientset, err := kubernetes.NewForConfig(restconfig)
-	if err != nil {
-		return errors.Wrap(err, "failed to get new kubernetes client")
+		return errors.Wrap(err, "failed to get clientset")
 	}
 
 	_, err = clientset.CoreV1().Namespaces().Get(context.TODO(), name, metav1.GetOptions{})

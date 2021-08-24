@@ -13,6 +13,7 @@ import (
 	"github.com/marccampbell/yaml-toolbox/pkg/splitter"
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
+	"github.com/replicatedhq/kots/pkg/kustomize"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/store"
 )
@@ -86,7 +87,7 @@ func (h *Handler) GetAppRenderedContents(w http.ResponseWriter, r *http.Request)
 		kustomizeBuildTarget = filepath.Join(archivePath, "overlays", "downstreams", downstreamName)
 	}
 
-	archiveOutput, err := exec.Command(fmt.Sprintf("kustomize%s", kotsKinds.KustomizeVersion()), "build", kustomizeBuildTarget).Output()
+	archiveOutput, err := exec.Command(kustomize.GetKustomizePath(kotsKinds.KustomizeVersion()), "build", kustomizeBuildTarget).Output()
 	if err != nil {
 		if ee, ok := err.(*exec.ExitError); ok {
 			err = fmt.Errorf("kustomize stderr: %q", string(ee.Stderr))
@@ -150,7 +151,7 @@ func getKustomizedFiles(kustomizeTarget string, version string) (map[string]stri
 			}
 
 			if info.Name() == "kustomization.yaml" {
-				archiveOutput, err := exec.Command(fmt.Sprintf("kustomize%s", version), "build", filepath.Dir(path)).Output()
+				archiveOutput, err := exec.Command(kustomize.GetKustomizePath(version), "build", filepath.Dir(path)).Output()
 				if err != nil {
 					if ee, ok := err.(*exec.ExitError); ok {
 						err = fmt.Errorf("kustomize %s: %q", path, string(ee.Stderr))

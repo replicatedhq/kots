@@ -49,14 +49,14 @@ func diffContent(baseContent string, updatedContent string) (int, int, error) {
 // archivedirs
 func DiffAppVersionsForDownstream(downstreamName string, archive string, diffBasePath string, kustomizeVersion string) (*Diff, error) {
 	// kustomize build both of these archives before diffing
-	archiveOutput, err := exec.Command(fmt.Sprintf("kustomize%s", kustomizeVersion), "build", filepath.Join(archive, "overlays", "downstreams", downstreamName)).Output()
+	archiveOutput, err := exec.Command(GetKustomizePath(kustomizeVersion), "build", filepath.Join(archive, "overlays", "downstreams", downstreamName)).Output()
 	if err != nil {
 		if ee, ok := err.(*exec.ExitError); ok {
 			err = fmt.Errorf("kustomize stderr: %q", string(ee.Stderr))
 		}
 		return nil, errors.Wrap(err, "failed to run kustomize on archive dir")
 	}
-	baseOutput, err := exec.Command(fmt.Sprintf("kustomize%s", kustomizeVersion), "build", filepath.Join(diffBasePath, "overlays", "downstreams", downstreamName)).Output()
+	baseOutput, err := exec.Command(GetKustomizePath(kustomizeVersion), "build", filepath.Join(diffBasePath, "overlays", "downstreams", downstreamName)).Output()
 	if err != nil {
 		if ee, ok := err.(*exec.ExitError); ok {
 			err = fmt.Errorf("kustomize stderr: %q", string(ee.Stderr))
@@ -182,7 +182,7 @@ func getKustomizedFiles(kustomizeTarget string, version string) (map[string][]by
 			}
 
 			if info.Name() == "kustomization.yaml" {
-				archiveOutput, err := exec.Command(fmt.Sprintf("kustomize%s", version), "build", filepath.Dir(path)).Output()
+				archiveOutput, err := exec.Command(GetKustomizePath(version), "build", filepath.Dir(path)).Output()
 				if err != nil {
 					if ee, ok := err.(*exec.ExitError); ok {
 						err = fmt.Errorf("kustomize %s: %q", path, string(ee.Stderr))

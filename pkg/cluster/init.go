@@ -63,7 +63,7 @@ func clusterInit(ctx context.Context, dataDir string, slug string, version strin
 
 	serviceAccountKeyFile, err := ensureServiceAccountKeyFile(dataDir)
 	if err != nil {
-		return errors.Wrap(err, "ensuire service account key file")
+		return errors.Wrap(err, "ensure service account key file")
 	}
 	logger.Info("verified service account key file",
 		zap.String("serviceAccountKeyFile", serviceAccountKeyFile))
@@ -175,8 +175,8 @@ func ensureKubeconfigFile(slug string, dataDir string) (string, error) {
 		if err := ioutil.WriteFile(kubeconfigFile, kubeconfigBytes, 0600); err != nil {
 			return "", errors.Wrap(err, "write file")
 		}
-
 	}
+
 	return kubeconfigFile, nil
 }
 

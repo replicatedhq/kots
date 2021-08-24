@@ -36,10 +36,21 @@ type APIServerParams struct {
 	AutocreateClusterToken string
 	EnableIdentity         bool
 	SharedPassword         string
+	KubeconfigPath         string
+	KotsDataDir            string
 }
 
 func Start(params *APIServerParams) {
 	log.Printf("kotsadm version %s\n", params.Version)
+
+	if params.KubeconfigPath != "" {
+		// it's only possible to set this in the kots run workflow
+		os.Setenv("KUBECONFIG", params.KubeconfigPath)
+	}
+	if params.KotsDataDir != "" {
+		// it's only possible to set this in the kots run workflow
+		os.Setenv("KOTS_DATA_DIR", params.KotsDataDir)
+	}
 
 	// set some persistence variables
 	persistence.PostgresURI = params.PostgresURI
@@ -74,7 +85,6 @@ func Start(params *APIServerParams) {
 		if err != nil {
 			panic(err)
 		}
-
 		os.Setenv("SHARED_PASSWORD_BCRYPT", string(bcryptPassword))
 	}
 

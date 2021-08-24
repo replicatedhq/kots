@@ -334,33 +334,3 @@ func writeContainerdConfig(installDir string) error {
 
 	return nil
 }
-
-// generateDefaultConfig will run containerd and output the config.toml for a default installation
-// this is not currently used
-func generateDefaultConfig(dataDir string, installDir string) error {
-	cmd := exec.Command(filepath.Join(installDir, "bin", "containerd"), "config", "default")
-	out, err := cmd.CombinedOutput()
-	if err != nil {
-		return errors.Wrap(err, "exec containerd config default")
-	}
-
-	configFile := filepath.Join(installDir, "config.toml")
-	if _, err := os.Stat(configFile); err == nil {
-		if err := os.RemoveAll(configFile); err != nil {
-			return errors.Wrap(err, "remove containerd config")
-		}
-	}
-
-	d := filepath.Dir(configFile)
-	if _, err := os.Stat(d); os.IsNotExist(err) {
-		if err := os.MkdirAll(d, 0755); err != nil {
-			return errors.Wrap(err, "mkdir")
-		}
-	}
-
-	if err := ioutil.WriteFile(configFile, out, 0644); err != nil {
-		return errors.Wrap(err, "write containerd config")
-	}
-
-	return nil
-}

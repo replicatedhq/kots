@@ -21,7 +21,6 @@ import (
 	"go.uber.org/zap"
 	"gopkg.in/yaml.v2"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/rest"
 )
 
 func CreateBundleForBackup(appID string, backupName string, backupNamespace string) (string, error) {
@@ -43,9 +42,9 @@ func CreateBundleForBackup(appID string, backupName string, backupNamespace stri
 		}
 	}()
 
-	restConfig, err := rest.InClusterConfig()
+	restConfig, err := k8sutil.GetClusterConfig()
 	if err != nil {
-		return "", errors.Wrap(err, "failed to read in cluster config")
+		return "", errors.Wrap(err, "failed to get cluster config")
 	}
 
 	var collectors troubleshootcollect.Collectors

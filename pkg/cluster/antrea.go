@@ -52,23 +52,23 @@ func installCNI(kubeconfigPath string) error {
 		obj := &unstructured.Unstructured{}
 		_, gvk, err := decUnstructured.Decode(buf, nil, obj)
 		if err != nil {
-			return err
+			return errors.Wrap(err, "decode doc")
 		}
 
 		dc, err := discovery.NewDiscoveryClientForConfig(config)
 		if err != nil {
-			return err
+			return errors.Wrap(err, "new discovery client for config")
 		}
 		mapper := restmapper.NewDeferredDiscoveryRESTMapper(memory.NewMemCacheClient(dc))
 
 		dyn, err := dynamic.NewForConfig(config)
 		if err != nil {
-			return err
+			return errors.Wrap(err, "new dynamic config")
 		}
 
 		mapping, err := mapper.RESTMapping(gvk.GroupKind(), gvk.Version)
 		if err != nil {
-			return err
+			return errors.Wrap(err, "rest mapping")
 		}
 
 		var dr dynamic.ResourceInterface
@@ -82,19 +82,15 @@ func installCNI(kubeconfigPath string) error {
 
 		data, err := json.Marshal(obj)
 		if err != nil {
-			return err
+			return errors.Wrap(err, "json marshal")
 		}
 
 		_, err = dr.Patch(context.Background(), obj.GetName(), types.ApplyPatchType, data, metav1.PatchOptions{
 			FieldManager: "kots",
 		})
-
 		if err != nil {
-			return err
+			return errors.Wrap(err, "patch")
 		}
-
-		return nil
-
 	}
 }
 

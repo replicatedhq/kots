@@ -5,24 +5,19 @@ import (
 	"log"
 
 	"github.com/pkg/errors"
+	"github.com/replicatedhq/kots/pkg/k8sutil"
 	corev1 "k8s.io/api/core/v1"
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/informers"
-	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/scheme"
-	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/cache"
 )
 
 func (c *Client) runNamespacesInformer() error {
-	restconfig, err := rest.InClusterConfig()
+	clientset, err := k8sutil.GetClientset()
 	if err != nil {
-		return errors.Wrap(err, "failed to get in cluster config")
-	}
-	clientset, err := kubernetes.NewForConfig(restconfig)
-	if err != nil {
-		return errors.Wrap(err, "failed to get new kubernetes client")
+		return errors.Wrap(err, "failed to get clientset")
 	}
 
 	c.namespaceStopChan = make(chan struct{})

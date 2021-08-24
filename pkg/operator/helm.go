@@ -11,6 +11,7 @@ import (
 
 	"github.com/mholt/archiver"
 	"github.com/pkg/errors"
+	"github.com/replicatedhq/kots/pkg/kustomize"
 )
 
 var (
@@ -87,7 +88,7 @@ func renderChartsArchive(deployedVersionArchive string, name string, version str
 			}
 
 			if info.Name() == "kustomization.yaml" {
-				archiveChartOutput, err := exec.Command(fmt.Sprintf("kustomize%s", version), "build", filepath.Dir(path)).Output()
+				archiveChartOutput, err := exec.Command(kustomize.GetKustomizePath(version), "build", filepath.Dir(path)).Output()
 				if err != nil {
 					if ee, ok := err.(*exec.ExitError); ok {
 						err = fmt.Errorf("kustomize %s: %q", path, string(ee.Stderr))
