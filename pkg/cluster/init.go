@@ -621,7 +621,7 @@ current-context: authz`, "test")
 }
 
 func ensureKubeletBinary(rootDir string) error {
-	packageURI := `https://dl.k8s.io/v1.21.1/kubernetes-server-linux-amd64.tar.gz`
+	packageURI := `https://dl.k8s.io/v1.22.1/kubernetes-server-linux-amd64.tar.gz`
 	resp, err := http.Get(packageURI)
 	if err != nil {
 		return errors.Wrap(err, "download kubelet")
@@ -638,7 +638,7 @@ func ensureKubeletBinary(rootDir string) error {
 
 func ensureKubectlBinary(rootDir string) error {
 	kubectlFilePath := filepath.Join(rootDir, "kubectl")
-	if err := downloadFileFromURL(kubectlFilePath, "https://dl.k8s.io/release/v1.22.0/bin/linux/amd64/kubectl"); err != nil {
+	if err := downloadFileFromURL(kubectlFilePath, "https://dl.k8s.io/release/v1.22.1/bin/linux/amd64/kubectl"); err != nil {
 		return err
 	}
 
@@ -671,9 +671,13 @@ func ensureKustomizeBinary(rootDir string) error {
 		return err
 	}
 
-	err = os.Rename(filepath.Join(unarchived, "kustomize"), filepath.Join(rootDir, "kustomize3.5.4"))
+	err = moveFile(filepath.Join(unarchived, "kustomize"), filepath.Join(rootDir, "kustomize3.5.4"))
 	if err != nil {
 		return err
+	}
+
+	if err := os.Chmod(filepath.Join(rootDir, "kustomize3.5.4"), 0755); err != nil {
+		return errors.Wrap(err, "chmod kustomize")
 	}
 
 	return nil
@@ -699,6 +703,34 @@ func downloadFileFromURL(destination string, url string) error {
 	_, err = io.Copy(out, resp.Body)
 	if err != nil {
 		return errors.Wrap(err, "failed to copy to file")
+	}
+
+	return nil
+}
+
+func moveFile(sourcePath, destPath string) error {
+	inputFile, err := os.Open(sourcePath)
+	if err != nil {
+		return errors.Wrap(err, "open source")
+	}
+
+	outputFile, err := os.Create(destPath)
+	if err != nil {
+		inputFile.Close()
+		return errors.Wrap(err, "create dest")
+	}
+
+	defer outputFile.Close()
+
+	_, err = io.Copy(outputFile, inputFile)
+	inputFile.Close()
+	if err != nil {
+		return errors.Wrap(err, "copy")
+	}
+
+	err = os.Remove(sourcePath)
+	if err != nil {
+		return errors.Wrap(err, "remove source")
 	}
 
 	return nil

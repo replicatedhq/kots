@@ -18,6 +18,8 @@ const (
 kind: KubeletConfiguration
 evictionHard:
   memory.available:  "200Mi"
+featureGates:
+  KubeletInUserNamespace: true  
 `
 	kubeletKubeconfigFilename = "kubelet-kubeconfig.yaml"
 	kubeletConfigFilename     = "config.yaml"

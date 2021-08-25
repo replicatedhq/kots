@@ -10,14 +10,14 @@ import (
 	"strings"
 
 	"github.com/containerd/containerd/remotes/docker"
-	"github.com/deislabs/oras/pkg/content"
-	"github.com/deislabs/oras/pkg/oras"
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/logger"
 	supportbundletypes "github.com/replicatedhq/kots/pkg/supportbundle/types"
 	troubleshootredact "github.com/replicatedhq/troubleshoot/pkg/redact"
 	"go.uber.org/zap"
+	"oras.land/oras-go/pkg/content"
+	"oras.land/oras-go/pkg/oras"
 )
 
 func (s *OCIStore) ListSupportBundles(appID string) ([]*supportbundletypes.SupportBundle, error) {

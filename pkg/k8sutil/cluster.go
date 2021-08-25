@@ -7,8 +7,8 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	bootstraputil "k8s.io/cluster-bootstrap/token/util"
-	"k8s.io/kubernetes/cmd/kubeadm/app/apis/kubeadm"
-	kubeadmapiv1beta2 "k8s.io/kubernetes/cmd/kubeadm/app/apis/kubeadm/v1beta2"
+	bootstraptokenv1 "k8s.io/kubernetes/cmd/kubeadm/app/apis/bootstraptoken/v1"
+	kubeadmapiv1beta3 "k8s.io/kubernetes/cmd/kubeadm/app/apis/kubeadm/v1beta3"
 	kubeadmconstants "k8s.io/kubernetes/cmd/kubeadm/app/constants"
 	tokenphase "k8s.io/kubernetes/cmd/kubeadm/app/phases/bootstraptoken/node"
 	"k8s.io/kubernetes/cmd/kubeadm/app/phases/copycerts"
@@ -23,14 +23,14 @@ func GenerateBootstrapToken(client kubernetes.Interface, ttl time.Duration) (str
 		return "", errors.Wrap(err, "generate kubeadm token")
 	}
 
-	bts, err := kubeadm.NewBootstrapTokenString(token)
+	bts, err := bootstraptokenv1.NewBootstrapTokenString(token)
 	if err != nil {
 		return "", errors.Wrap(err, "new kubeadm token string")
 	}
 
 	duration := &metav1.Duration{Duration: ttl}
 
-	if err := tokenphase.UpdateOrCreateTokens(client, false, []kubeadm.BootstrapToken{
+	if err := tokenphase.UpdateOrCreateTokens(client, false, []bootstraptokenv1.BootstrapToken{
 		{
 			Token:  bts,
 			TTL:    duration,
@@ -50,7 +50,7 @@ func UploadCertsWithNewKey() (string, error) {
 		return "", errors.Wrap(err, "failed to create clientset")
 	}
 
-	config, err := kubeadmconfig.DefaultedInitConfiguration(&kubeadmapiv1beta2.InitConfiguration{}, &kubeadmapiv1beta2.ClusterConfiguration{})
+	config, err := kubeadmconfig.DefaultedInitConfiguration(&kubeadmapiv1beta3.InitConfiguration{}, &kubeadmapiv1beta3.ClusterConfiguration{})
 	if err != nil {
 		return "", errors.Wrap(err, "failed to get kotsadm config")
 	}
