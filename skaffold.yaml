@@ -11,6 +11,9 @@ profiles:
           - "./kustomize/overlays/kotsstore"
 
 build:
+  insecureRegistries:
+    - localhost:5000
+
   local:
     concurrency: 0
     useBuildkit: true
@@ -53,3 +56,9 @@ deploy:
   kustomize:
     paths:
       - "./kustomize/overlays/dev"
+
+portForward:
+  - resourceType: deployment
+    resourceName: kotsadm
+    port: 3000
+    localPort: 30000
