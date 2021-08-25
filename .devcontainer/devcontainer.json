@@ -1,0 +1,8 @@
+{
+    "remoteEnv": {
+    },
+    "extensions": [
+        "golang.go",
+        "github.copilot",
+    ],
+}
