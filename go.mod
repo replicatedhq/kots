@@ -15,6 +15,7 @@ require (
 	github.com/aws/aws-sdk-go v1.38.49
 	github.com/bitnami-labs/sealed-secrets v0.14.1
 	github.com/blang/semver v3.5.1+incompatible
+	github.com/bshuster-repo/logrus-logstash-hook v1.0.0 // indirect
 	github.com/bugsnag/bugsnag-go v1.5.3 // indirect
 	github.com/bugsnag/panicwrap v1.2.0 // indirect
 	github.com/containerd/containerd v1.5.5
@@ -30,12 +31,12 @@ require (
 	github.com/ghodss/yaml v1.0.0
 	github.com/go-git/go-git/v5 v5.2.0
 	github.com/go-logfmt/logfmt v0.5.0
-	github.com/go-sql-driver/mysql v1.6.0 // indirect
 	github.com/go-test/deep v1.0.7
 	github.com/golang-jwt/jwt v3.2.2+incompatible
 	github.com/golang/mock v1.5.0
 	github.com/google/gofuzz v1.2.0
 	github.com/google/uuid v1.2.0
+	github.com/gorilla/handlers v1.5.1 // indirect
 	github.com/gorilla/mux v1.8.0
 	github.com/gorilla/websocket v1.4.2
 	github.com/gosimple/slug v1.9.0
@@ -66,6 +67,7 @@ require (
 	github.com/replicatedhq/yaml/v3 v3.0.0-beta5-replicatedhq
 	github.com/robfig/cron v1.2.0
 	github.com/robfig/cron/v3 v3.0.1
+	github.com/rubenv/sql-migrate v0.0.0-20210614095031-55d5740dbbcc // indirect
 	github.com/russellhaering/goxmldsig v1.1.0 // indirect
 	github.com/schemahero/schemahero v0.12.2
 	github.com/segmentio/ksuid v1.0.3
@@ -92,17 +94,17 @@ require (
 	gopkg.in/yaml.v2 v2.4.0
 	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b
 	gotest.tools v2.2.0+incompatible
-	helm.sh/helm/v3 v3.6.1-0.20210825143946-c635f6610384
+	helm.sh/helm/v3 v3.6.3
 	k8s.io/api v0.22.1
 	k8s.io/apiextensions-apiserver v0.22.1
 	k8s.io/apimachinery v0.22.1
-	k8s.io/apiserver v0.22.1 // indirect
 	k8s.io/cli-runtime v0.22.1
 	k8s.io/client-go v0.22.1
 	k8s.io/cluster-bootstrap v0.22.1
 	k8s.io/helm v2.14.3+incompatible
 	k8s.io/klog/v2 v2.9.0
 	k8s.io/kube-openapi v0.0.0-20210817084001-7fbd8d59e5b8 // indirect
+	k8s.io/kubectl v0.21.3 // indirect
 	k8s.io/kubelet v0.0.0
 	k8s.io/kubernetes v1.22.1
 	k8s.io/utils v0.0.0-20210802155522-efc7438f0176
@@ -110,7 +112,6 @@ require (
 	rsc.io/letsencrypt v0.0.3 // indirect
 	sigs.k8s.io/application v0.8.3
 	sigs.k8s.io/controller-runtime v0.8.3
-	sigs.k8s.io/kind v0.11.1 // indirect
 	sigs.k8s.io/kustomize/api v0.8.11
 	sigs.k8s.io/kustomize/kyaml v0.11.0
 	sigs.k8s.io/yaml v1.2.0
