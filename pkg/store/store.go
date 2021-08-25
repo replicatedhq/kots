@@ -2,6 +2,7 @@ package store
 
 import (
 	"github.com/replicatedhq/kots/pkg/store/kotsstore"
+	"github.com/replicatedhq/kots/pkg/store/ocistore"
 )
 
 var (
@@ -10,6 +11,7 @@ var (
 )
 
 var _ Store = (*kotsstore.KOTSStore)(nil)
+var _ Store = (*ocistore.OCIStore)(nil)
 
 func GetStore() Store {
 	if !hasStore {
