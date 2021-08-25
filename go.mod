@@ -41,7 +41,7 @@ require (
 	github.com/gosimple/slug v1.9.0
 	github.com/gotestyourself/gotestyourself v2.2.0+incompatible // indirect
 	github.com/hashicorp/go-cleanhttp v0.5.1
-	github.com/k3s-io/kine v0.6.1
+	github.com/k3s-io/kine v0.7.3
 	github.com/kardianos/osext v0.0.0-20190222173326-2bc1f35cddc0 // indirect
 	github.com/lib/pq v1.10.2
 	github.com/manifoldco/promptui v0.8.0
