@@ -1,0 +1,17 @@
+name: prebuild codespace
+on:
+  push:
+    branches:
+    - main
+    - codespaces-sandbox
+  workflow_dispatch: 
+
+jobs:
+  createPrebuild:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - uses: github/codespaces-precache@v1.0.1
+      with:
+        regions: WestUs2 EastUs WestEurope SouthEastAsia
+        sku_name: premiumLinux

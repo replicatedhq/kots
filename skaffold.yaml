@@ -12,7 +12,8 @@ profiles:
 
 build:
   insecureRegistries:
-    - localhost:5000
+  - localhost:5000
+  - k3d-replicated-registry.localhost:5000
 
   local:
     concurrency: 0
@@ -58,7 +59,15 @@ deploy:
       - "./kustomize/overlays/dev"
 
 portForward:
-  - resourceType: deployment
+  - resourceType: service
     resourceName: kotsadm
     port: 3000
     localPort: 30000
+  - resourceType: statefulset
+    resourceName: kotsadm-postgres
+    port: 5432
+    localPort: 30432
+  - resourceType: deployment
+    resourceName: kurl-proxy-kotsadm
+    port: 8080
+    localPort: 30880
