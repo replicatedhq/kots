@@ -61,10 +61,19 @@ spec:
       value: "123asd"
   signature: IA==`
 
+	appSpec := `
+apiVersion: kots.io/v1beta1
+kind: Application
+metadata:
+  name: local
+spec:
+  title: My Application`
+
 	tests := []struct {
 		name             string
 		configSpecData   string
 		configValuesData string
+		useAppSpec       bool
 		want             string
 		expectOldFail    bool
 	}{
@@ -96,6 +105,7 @@ spec:
       value: "xyz789"
 status: {}
 `,
+			useAppSpec: true,
 			want: `apiVersion: kots.io/v1beta1
 kind: Config
 metadata:
@@ -147,6 +157,7 @@ spec:
   values: {}
 status: {}
 `,
+			useAppSpec: false,
 			want: `apiVersion: kots.io/v1beta1
 kind: Config
 metadata:
@@ -213,6 +224,7 @@ spec:
       value: "xyz789"
 status: {}
 `,
+			useAppSpec: false,
 			want: `apiVersion: kots.io/v1beta1
 kind: Config
 metadata:
@@ -286,6 +298,7 @@ spec:
       repeatableItem: secretName
 status: {}
 `,
+			useAppSpec: true,
 			want: `apiVersion: kots.io/v1beta1 
 kind: Config 
 metadata: 
@@ -331,8 +344,13 @@ spec:
 			wantObj, _, err := decode([]byte(tt.want), nil, nil)
 			req.NoError(err)
 
+			appData := ""
+			if tt.useAppSpec {
+				appData = appSpec
+			}
+
 			localRegistry := template.LocalRegistry{}
-			got, err := templateConfig(log, tt.configSpecData, tt.configValuesData, licenseData, "", localRegistry, "", MarshalConfig)
+			got, err := templateConfig(log, tt.configSpecData, tt.configValuesData, licenseData, appData, "", localRegistry, "", MarshalConfig)
 			req.NoError(err)
 
 			gotObj, _, err := decode([]byte(got), nil, nil)
@@ -341,7 +359,7 @@ spec:
 			req.Equal(wantObj, gotObj)
 
 			// compare with oldMarshalConfig results
-			got, err = templateConfig(log, tt.configSpecData, tt.configValuesData, licenseData, "", localRegistry, "", oldMarshalConfig)
+			got, err = templateConfig(log, tt.configSpecData, tt.configValuesData, licenseData, appData, "", localRegistry, "", oldMarshalConfig)
 			if !tt.expectOldFail {
 				req.NoError(err)
 

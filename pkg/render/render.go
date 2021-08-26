@@ -93,6 +93,7 @@ func NewBuilder(kotsKinds *kotsutil.KotsKinds, registrySettings registrytypes.Re
 		LocalRegistry:   localRegistry,
 		Cipher:          appCipher,
 		License:         kotsKinds.License,
+		Application:     &kotsKinds.KotsApplication,
 		ApplicationInfo: &appInfo,
 		VersionInfo:     &versionInfo,
 		IdentityConfig:  kotsKinds.IdentityConfig,

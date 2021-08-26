@@ -28,6 +28,7 @@ type BuilderOptions struct {
 	LocalRegistry   LocalRegistry
 	Cipher          *crypto.AESCipher
 	License         *kotsv1beta1.License
+	Application     *kotsv1beta1.Application
 	ApplicationInfo *ApplicationInfo
 	VersionInfo     *VersionInfo
 	IdentityConfig  *kotsv1beta1.IdentityConfig
@@ -51,7 +52,8 @@ func NewBuilder(opts BuilderOptions) (Builder, map[string]ItemValue, error) {
 		}
 	}
 
-	configCtx, err := b.newConfigContext(opts.ConfigGroups, opts.ExistingValues, opts.LocalRegistry, opts.Cipher, opts.License, opts.VersionInfo, dockerHubRegistry)
+	configCtx, err := b.newConfigContext(opts.ConfigGroups, opts.ExistingValues, opts.LocalRegistry, opts.Cipher,
+		opts.License, opts.Application, opts.VersionInfo, dockerHubRegistry)
 	if err != nil {
 		return Builder{}, nil, errors.Wrap(err, "create config context")
 	}

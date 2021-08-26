@@ -241,7 +241,7 @@ func (h *Handler) LiveAppConfig(w http.ResponseWriter, r *http.Request) {
 	}
 
 	versionInfo := template.VersionInfoFromInstallation(liveAppConfigRequest.Sequence+1, foundApp.IsAirgap, kotsKinds.Installation.Spec) // sequence +1 because the sequence will be incremented on save (and we want the preview to be accurate)
-	renderedConfig, err := kotsconfig.TemplateConfigObjects(kotsKinds.Config, configValues, appLicense, localRegistry, &versionInfo, kotsKinds.IdentityConfig, util.PodNamespace)
+	renderedConfig, err := kotsconfig.TemplateConfigObjects(kotsKinds.Config, configValues, appLicense, &kotsKinds.KotsApplication, localRegistry, &versionInfo, kotsKinds.IdentityConfig, util.PodNamespace)
 	if err != nil {
 		logger.Error(err)
 		liveAppConfigResponse.Error = "failed to render templates"
@@ -341,7 +341,7 @@ func (h *Handler) CurrentAppConfig(w http.ResponseWriter, r *http.Request) {
 	}
 
 	versionInfo := template.VersionInfoFromInstallation(int64(sequence)+1, foundApp.IsAirgap, kotsKinds.Installation.Spec) // sequence +1 because the sequence will be incremented on save (and we want the preview to be accurate)
-	renderedConfig, err := kotsconfig.TemplateConfigObjects(kotsKinds.Config, configValues, appLicense, localRegistry, &versionInfo, kotsKinds.IdentityConfig, util.PodNamespace)
+	renderedConfig, err := kotsconfig.TemplateConfigObjects(kotsKinds.Config, configValues, appLicense, &kotsKinds.KotsApplication, localRegistry, &versionInfo, kotsKinds.IdentityConfig, util.PodNamespace)
 	if err != nil {
 		logger.Error(err)
 		currentAppConfigResponse.Error = "failed to render templates"
@@ -774,7 +774,7 @@ func (h *Handler) SetAppConfigValues(w http.ResponseWriter, r *http.Request) {
 	}
 
 	versionInfo := template.VersionInfoFromInstallation(foundApp.CurrentSequence+1, foundApp.IsAirgap, kotsKinds.Installation.Spec) // sequence +1 because the sequence will be incremented on save (and we want the preview to be accurate)
-	renderedConfig, err := kotsconfig.TemplateConfigObjects(newConfig, configValueMap, kotsKinds.License, localRegistry, &versionInfo, kotsKinds.IdentityConfig, util.PodNamespace)
+	renderedConfig, err := kotsconfig.TemplateConfigObjects(newConfig, configValueMap, kotsKinds.License, &kotsKinds.KotsApplication, localRegistry, &versionInfo, kotsKinds.IdentityConfig, util.PodNamespace)
 	if err != nil {
 		setAppConfigValuesResponse.Error = "failed to render templates"
 		logger.Error(errors.Wrap(err, setAppConfigValuesResponse.Error))

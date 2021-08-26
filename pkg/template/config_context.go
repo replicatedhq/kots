@@ -73,12 +73,13 @@ type ConfigCtx struct {
 }
 
 // newConfigContext creates and returns a context for template rendering
-func (b *Builder) newConfigContext(configGroups []kotsv1beta1.ConfigGroup, existingValues map[string]ItemValue, localRegistry LocalRegistry, cipher *crypto.AESCipher, license *kotsv1beta1.License, info *VersionInfo, dockerHubRegistry registry.RegistryOptions) (*ConfigCtx, error) {
+func (b *Builder) newConfigContext(configGroups []kotsv1beta1.ConfigGroup, existingValues map[string]ItemValue, localRegistry LocalRegistry, cipher *crypto.AESCipher, license *kotsv1beta1.License, app *kotsv1beta1.Application, info *VersionInfo, dockerHubRegistry registry.RegistryOptions) (*ConfigCtx, error) {
 	configCtx := &ConfigCtx{
 		ItemValues:        existingValues,
 		LocalRegistry:     localRegistry,
 		DockerHubRegistry: dockerHubRegistry,
 		license:           license,
+		app:               app,
 	}
 
 	builder := Builder{
