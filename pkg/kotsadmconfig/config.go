@@ -64,6 +64,11 @@ func NeedsConfiguration(kotsKinds *kotsutil.KotsKinds, registrySettings registry
 		return false, errors.Wrap(err, "failed to marshal license spec")
 	}
 
+	appSpec, err := kotsKinds.Marshal("kots.io", "v1beta1", "Application")
+	if err != nil {
+		return false, errors.Wrap(err, "failed to marshal license spec")
+	}
+
 	identityConfigSpec, err := kotsKinds.Marshal("kots.io", "v1beta1", "IdentityConfig")
 	if err != nil {
 		return false, errors.Wrap(err, "failed to marshal identityconfig spec")
@@ -77,7 +82,7 @@ func NeedsConfiguration(kotsKinds *kotsutil.KotsKinds, registrySettings registry
 		ReadOnly:  registrySettings.IsReadOnly,
 	}
 
-	rendered, err := kotsconfig.TemplateConfig(logger.NewCLILogger(), configSpec, configValuesSpec, licenseSpec, identityConfigSpec, localRegistry, util.PodNamespace)
+	rendered, err := kotsconfig.TemplateConfig(logger.NewCLILogger(), configSpec, configValuesSpec, licenseSpec, appSpec, identityConfigSpec, localRegistry, util.PodNamespace)
 	if err != nil {
 		return false, errors.Wrap(err, "failed to template config")
 	}

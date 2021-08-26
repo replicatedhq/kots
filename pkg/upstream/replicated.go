@@ -256,7 +256,7 @@ func downloadReplicated(
 
 		// If config existed and was removed from the app,
 		// values will be carried over to the new version anyway.
-		configValues, err := createConfigValues(application.Name, config, existingConfigValues, cipher, license, &appInfo, &versionInfo, localRegistry, existingIdentityConfig)
+		configValues, err := createConfigValues(application.Name, config, existingConfigValues, cipher, license, application, &appInfo, &versionInfo, localRegistry, existingIdentityConfig)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to create empty config values")
 		}
@@ -574,7 +574,7 @@ func mustMarshalConfigValues(configValues *kotsv1beta1.ConfigValues) []byte {
 	return b.Bytes()
 }
 
-func createConfigValues(applicationName string, config *kotsv1beta1.Config, existingConfigValues *kotsv1beta1.ConfigValues, cipher *crypto.AESCipher, license *kotsv1beta1.License, appInfo *template.ApplicationInfo, versionInfo *template.VersionInfo, localRegistry template.LocalRegistry, identityConfig *kotsv1beta1.IdentityConfig) (*kotsv1beta1.ConfigValues, error) {
+func createConfigValues(applicationName string, config *kotsv1beta1.Config, existingConfigValues *kotsv1beta1.ConfigValues, cipher *crypto.AESCipher, license *kotsv1beta1.License, app *kotsv1beta1.Application, appInfo *template.ApplicationInfo, versionInfo *template.VersionInfo, localRegistry template.LocalRegistry, identityConfig *kotsv1beta1.IdentityConfig) (*kotsv1beta1.ConfigValues, error) {
 	templateContextValues := make(map[string]template.ItemValue)
 
 	var newValues kotsv1beta1.ConfigValuesSpec
@@ -618,6 +618,7 @@ func createConfigValues(applicationName string, config *kotsv1beta1.Config, exis
 		LocalRegistry:   localRegistry,
 		Cipher:          cipher,
 		License:         license,
+		Application:     app,
 		ApplicationInfo: appInfo,
 		VersionInfo:     versionInfo,
 		IdentityConfig:  identityConfig,

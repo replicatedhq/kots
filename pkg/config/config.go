@@ -17,12 +17,12 @@ import (
 	"k8s.io/client-go/kubernetes/scheme"
 )
 
-func TemplateConfig(log *logger.CLILogger, configSpecData string, configValuesData string, licenseData string, identityConfigData string, localRegistry template.LocalRegistry, namespace string) (string, error) {
-	return templateConfig(log, configSpecData, configValuesData, licenseData, identityConfigData, localRegistry, namespace, MarshalConfig)
+func TemplateConfig(log *logger.CLILogger, configSpecData string, configValuesData string, licenseData string, appData string, identityConfigData string, localRegistry template.LocalRegistry, namespace string) (string, error) {
+	return templateConfig(log, configSpecData, configValuesData, licenseData, appData, identityConfigData, localRegistry, namespace, MarshalConfig)
 }
 
-func TemplateConfigObjects(configSpec *kotsv1beta1.Config, configValues map[string]template.ItemValue, license *kotsv1beta1.License, localRegistry template.LocalRegistry, versionInfo *template.VersionInfo, identityconfig *kotsv1beta1.IdentityConfig, namespace string) (*kotsv1beta1.Config, error) {
-	templatedString, err := templateConfigObjects(configSpec, configValues, license, localRegistry, versionInfo, identityconfig, namespace, MarshalConfig)
+func TemplateConfigObjects(configSpec *kotsv1beta1.Config, configValues map[string]template.ItemValue, license *kotsv1beta1.License, app *kotsv1beta1.Application, localRegistry template.LocalRegistry, versionInfo *template.VersionInfo, identityconfig *kotsv1beta1.IdentityConfig, namespace string) (*kotsv1beta1.Config, error) {
+	templatedString, err := templateConfigObjects(configSpec, configValues, license, app, localRegistry, versionInfo, identityconfig, namespace, MarshalConfig)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to template config")
 	}
@@ -43,7 +43,7 @@ func TemplateConfigObjects(configSpec *kotsv1beta1.Config, configValues map[stri
 	return config, nil
 }
 
-func templateConfigObjects(configSpec *kotsv1beta1.Config, configValues map[string]template.ItemValue, license *kotsv1beta1.License, localRegistry template.LocalRegistry, versionInfo *template.VersionInfo, identityconfig *kotsv1beta1.IdentityConfig, namespace string, marshalFunc func(config *kotsv1beta1.Config) (string, error)) (string, error) {
+func templateConfigObjects(configSpec *kotsv1beta1.Config, configValues map[string]template.ItemValue, license *kotsv1beta1.License, app *kotsv1beta1.Application, localRegistry template.LocalRegistry, versionInfo *template.VersionInfo, identityconfig *kotsv1beta1.IdentityConfig, namespace string, marshalFunc func(config *kotsv1beta1.Config) (string, error)) (string, error) {
 	if configSpec == nil {
 		return "", nil
 	}
@@ -54,6 +54,7 @@ func templateConfigObjects(configSpec *kotsv1beta1.Config, configValues map[stri
 		LocalRegistry:  localRegistry,
 		Cipher:         nil,
 		License:        license,
+		Application:    app,
 		VersionInfo:    versionInfo,
 		IdentityConfig: identityconfig,
 		Namespace:      namespace,
@@ -78,7 +79,7 @@ func templateConfigObjects(configSpec *kotsv1beta1.Config, configValues map[stri
 	return rendered, nil
 }
 
-func templateConfig(log *logger.CLILogger, configSpecData string, configValuesData string, licenseData string, identityConfigData string, localRegistry template.LocalRegistry, namespace string, marshalFunc func(config *kotsv1beta1.Config) (string, error)) (string, error) {
+func templateConfig(log *logger.CLILogger, configSpecData string, configValuesData string, licenseData string, appData string, identityConfigData string, localRegistry template.LocalRegistry, namespace string, marshalFunc func(config *kotsv1beta1.Config) (string, error)) (string, error) {
 	// This function will
 	// 1. unmarshal config
 	// 2. replace all item values with values that already exist
@@ -95,6 +96,18 @@ func templateConfig(log *logger.CLILogger, configSpecData string, configValuesDa
 		return "", errors.Errorf("expected License, but found %s/%s/%s", gvk.Group, gvk.Version, gvk.Kind)
 	}
 	license := obj.(*kotsv1beta1.License)
+
+	var app *kotsv1beta1.Application
+	if appData != "" {
+		obj, gvk, err = decode([]byte(appData), nil, nil)
+		if err != nil {
+			return "", errors.Wrap(err, "failed to decode applicationappData := ` data")
+		}
+		if gvk.Group != "kots.io" || gvk.Version != "v1beta1" || gvk.Kind != "Application" {
+			return "", errors.Errorf("expected Application, but found %s/%s/%s", gvk.Group, gvk.Version, gvk.Kind)
+		}
+		app = obj.(*kotsv1beta1.Application)
+	}
 
 	obj, gvk, err = decode([]byte(configSpecData), nil, nil) // TODO fix decode of boolstrings
 	if err != nil {
@@ -124,7 +137,7 @@ func templateConfig(log *logger.CLILogger, configSpecData string, configValuesDa
 		identityConfig = obj.(*kotsv1beta1.IdentityConfig)
 	}
 
-	return templateConfigObjects(config, templateContext, license, localRegistry, &template.VersionInfo{}, identityConfig, namespace, marshalFunc)
+	return templateConfigObjects(config, templateContext, license, app, localRegistry, &template.VersionInfo{}, identityConfig, namespace, marshalFunc)
 }
 
 func ApplyValuesToConfig(config *kotsv1beta1.Config, values map[string]template.ItemValue) *kotsv1beta1.Config {

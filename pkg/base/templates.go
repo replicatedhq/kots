@@ -9,15 +9,15 @@ import (
 )
 
 func NewConfigContextTemplateBuilder(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (*template.Builder, map[string]template.ItemValue, error) {
-	config, configValues, identityConfig, license, err := findConfigAndLicense(u, renderOptions.Log)
+	kotsKinds, err := getKotsKinds(u, renderOptions.Log)
 	if err != nil {
 		return nil, nil, err
 	}
 
 	var templateContext map[string]template.ItemValue
-	if configValues != nil {
+	if kotsKinds.ConfigValues != nil {
 		ctx := map[string]template.ItemValue{}
-		for k, v := range configValues.Spec.Values {
+		for k, v := range kotsKinds.ConfigValues.Spec.Values {
 			ctx[k] = template.ItemValue{
 				Value:          v.Value,
 				Default:        v.Default,
@@ -40,8 +40,8 @@ func NewConfigContextTemplateBuilder(u *upstreamtypes.Upstream, renderOptions *R
 	}
 
 	configGroups := []kotsv1beta1.ConfigGroup{}
-	if config != nil {
-		configGroups = config.Spec.Groups
+	if kotsKinds.Config != nil {
+		configGroups = kotsKinds.Config.Spec.Groups
 	}
 
 	localRegistry := template.LocalRegistry{
@@ -70,10 +70,11 @@ func NewConfigContextTemplateBuilder(u *upstreamtypes.Upstream, renderOptions *R
 		ExistingValues:  templateContext,
 		LocalRegistry:   localRegistry,
 		Cipher:          cipher,
-		License:         license,
+		License:         kotsKinds.License,
+		Application:     &kotsKinds.KotsApplication,
 		VersionInfo:     &versionInfo,
 		ApplicationInfo: &appInfo,
-		IdentityConfig:  identityConfig,
+		IdentityConfig:  kotsKinds.IdentityConfig,
 		Namespace:       renderOptions.Namespace,
 	}
 	builder, itemValues, err := template.NewBuilder(builderOptions)

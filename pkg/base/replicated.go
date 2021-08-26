@@ -14,16 +14,29 @@ import (
 
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
+	kotsscheme "github.com/replicatedhq/kots/kotskinds/client/kotsclientset/scheme"
 	kotsconfig "github.com/replicatedhq/kots/pkg/config"
+	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/template"
 	upstreamtypes "github.com/replicatedhq/kots/pkg/upstream/types"
 	"github.com/replicatedhq/kots/pkg/util"
+	troubleshootv1beta2 "github.com/replicatedhq/troubleshoot/pkg/apis/troubleshoot/v1beta2"
+	troubleshootscheme "github.com/replicatedhq/troubleshoot/pkg/client/troubleshootclientset/scheme"
+	velerov1 "github.com/vmware-tanzu/velero/pkg/apis/velero/v1"
 	stdyaml "gopkg.in/yaml.v2"
 	"helm.sh/helm/v3/pkg/chart"
 	"k8s.io/client-go/kubernetes/scheme"
+	applicationv1beta1 "sigs.k8s.io/application/api/v1beta1"
 	"sigs.k8s.io/yaml"
 )
+
+func init() {
+	kotsscheme.AddToScheme(scheme.Scheme)
+	troubleshootscheme.AddToScheme(scheme.Scheme)
+	velerov1.AddToScheme(scheme.Scheme)
+	applicationv1beta1.AddToScheme(scheme.Scheme)
+}
 
 type Document struct {
 	APIVersion string `yaml:"apiVersion"`
@@ -41,12 +54,12 @@ func renderReplicated(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (
 		return nil, nil, errors.Wrap(err, "failed to create new config context template builder")
 	}
 
-	config, _, idConfig, license, err := findConfigAndLicense(u, renderOptions.Log)
+	kotsKinds, err := getKotsKinds(u, renderOptions.Log)
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "failed to find config file")
 	}
 
-	renderedConfig, err := kotsconfig.TemplateConfigObjects(config, itemValues, license, template.LocalRegistry{}, nil, idConfig, util.PodNamespace)
+	renderedConfig, err := kotsconfig.TemplateConfigObjects(kotsKinds.Config, itemValues, kotsKinds.License, &kotsKinds.KotsApplication, template.LocalRegistry{}, nil, kotsKinds.IdentityConfig, util.PodNamespace)
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "failed to template config objects")
 	}
@@ -348,11 +361,8 @@ func tryGetConfigFromFileContent(content []byte, log *logger.CLILogger) *kotsv1b
 	return nil
 }
 
-func findConfigAndLicense(u *upstreamtypes.Upstream, log *logger.CLILogger) (*kotsv1beta1.Config, *kotsv1beta1.ConfigValues, *kotsv1beta1.IdentityConfig, *kotsv1beta1.License, error) {
-	var config *kotsv1beta1.Config
-	var values *kotsv1beta1.ConfigValues
-	var identityConfig *kotsv1beta1.IdentityConfig
-	var license *kotsv1beta1.License
+func getKotsKinds(u *upstreamtypes.Upstream, log *logger.CLILogger) (*kotsutil.KotsKinds, error) {
+	kotsKinds := &kotsutil.KotsKinds{}
 
 	for _, file := range u.Files {
 		document := &Document{}
@@ -361,27 +371,48 @@ func findConfigAndLicense(u *upstreamtypes.Upstream, log *logger.CLILogger) (*ko
 		}
 
 		decode := scheme.Codecs.UniversalDeserializer().Decode
-		obj, gvk, err := decode(file.Content, nil, nil)
+		decoded, gvk, err := decode(file.Content, nil, nil)
 		if err != nil {
 			if document.APIVersion == "kots.io/v1beta1" && (document.Kind == "Config" || document.Kind == "License") {
 				errMessage := fmt.Sprintf("Failed to decode %s", file.Path)
-				return nil, nil, nil, nil, errors.Wrap(err, errMessage)
+				return nil, errors.Wrap(err, errMessage)
 			}
 			continue
 		}
 
-		if gvk.Group == "kots.io" && gvk.Version == "v1beta1" && gvk.Kind == "Config" {
-			config = obj.(*kotsv1beta1.Config)
-		} else if gvk.Group == "kots.io" && gvk.Version == "v1beta1" && gvk.Kind == "ConfigValues" {
-			values = obj.(*kotsv1beta1.ConfigValues)
-		} else if gvk.Group == "kots.io" && gvk.Version == "v1beta1" && gvk.Kind == "IdentityConfig" {
-			identityConfig = obj.(*kotsv1beta1.IdentityConfig)
-		} else if gvk.Group == "kots.io" && gvk.Version == "v1beta1" && gvk.Kind == "License" {
-			license = obj.(*kotsv1beta1.License)
+		switch gvk.String() {
+		case "kots.io/v1beta1, Kind=Config":
+			kotsKinds.Config = decoded.(*kotsv1beta1.Config)
+		case "kots.io/v1beta1, Kind=ConfigValues":
+			kotsKinds.ConfigValues = decoded.(*kotsv1beta1.ConfigValues)
+		case "kots.io/v1beta1, Kind=Application":
+			kotsKinds.KotsApplication = *decoded.(*kotsv1beta1.Application)
+		case "kots.io/v1beta1, Kind=License":
+			kotsKinds.License = decoded.(*kotsv1beta1.License)
+		case "kots.io/v1beta1, Kind=Identity":
+			kotsKinds.Identity = decoded.(*kotsv1beta1.Identity)
+		case "kots.io/v1beta1, Kind=IdentityConfig":
+			kotsKinds.IdentityConfig = decoded.(*kotsv1beta1.IdentityConfig)
+		case "kots.io/v1beta1, Kind=Installation":
+			kotsKinds.Installation = *decoded.(*kotsv1beta1.Installation)
+		case "troubleshoot.sh/v1beta2, Kind=Collector":
+			kotsKinds.Collector = decoded.(*troubleshootv1beta2.Collector)
+		case "troubleshoot.sh/v1beta2, Kind=Analyzer":
+			kotsKinds.Analyzer = decoded.(*troubleshootv1beta2.Analyzer)
+		case "troubleshoot.sh/v1beta2, Kind=SupportBundle":
+			kotsKinds.SupportBundle = decoded.(*troubleshootv1beta2.SupportBundle)
+		case "troubleshoot.sh/v1beta2, Kind=Redactor":
+			kotsKinds.Redactor = decoded.(*troubleshootv1beta2.Redactor)
+		case "troubleshoot.sh/v1beta2, Kind=Preflight":
+			kotsKinds.Preflight = decoded.(*troubleshootv1beta2.Preflight)
+		case "velero.io/v1, Kind=Backup":
+			kotsKinds.Backup = decoded.(*velerov1.Backup)
+		case "app.k8s.io/v1beta1, Kind=Application":
+			kotsKinds.Application = decoded.(*applicationv1beta1.Application)
 		}
 	}
 
-	return config, values, identityConfig, license, nil
+	return kotsKinds, nil
 }
 
 // findHelmChartArchiveInRelease iterates through all files in the release (upstreamFiles), looking for a helm chart archive
