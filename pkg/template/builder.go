@@ -53,7 +53,7 @@ func NewBuilder(opts BuilderOptions) (Builder, map[string]ItemValue, error) {
 	}
 
 	configCtx, err := b.newConfigContext(opts.ConfigGroups, opts.ExistingValues, opts.LocalRegistry, opts.Cipher,
-		opts.License, opts.Application, opts.VersionInfo, dockerHubRegistry)
+		opts.License, opts.Application, opts.VersionInfo, dockerHubRegistry, opts.ApplicationInfo.Slug)
 	if err != nil {
 		return Builder{}, nil, errors.Wrap(err, "create config context")
 	}

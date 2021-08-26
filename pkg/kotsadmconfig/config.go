@@ -5,6 +5,7 @@ import (
 
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
+	"github.com/replicatedhq/kots/pkg/config"
 	kotsconfig "github.com/replicatedhq/kots/pkg/config"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
@@ -14,7 +15,6 @@ import (
 	"github.com/replicatedhq/kots/pkg/template"
 	"github.com/replicatedhq/kots/pkg/util"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/kubernetes/scheme"
 )
 
 func IsRequiredItem(item kotsv1beta1.ConfigItem) bool {
@@ -44,7 +44,9 @@ func IsUnsetItem(item kotsv1beta1.ConfigItem) bool {
 	return true
 }
 
-func NeedsConfiguration(kotsKinds *kotsutil.KotsKinds, registrySettings registrytypes.RegistrySettings) (bool, error) {
+func NeedsConfiguration(appSlug string, sequence int64, isAirgap bool, kotsKinds *kotsutil.KotsKinds, registrySettings registrytypes.RegistrySettings) (bool, error) {
+	log := logger.NewCLILogger()
+
 	configSpec, err := kotsKinds.Marshal("kots.io", "v1beta1", "Config")
 	if err != nil {
 		return false, errors.Wrap(err, "failed to marshal config spec")
@@ -58,20 +60,10 @@ func NeedsConfiguration(kotsKinds *kotsutil.KotsKinds, registrySettings registry
 	if err != nil {
 		return false, errors.Wrap(err, "failed to marshal configvalues spec")
 	}
-
-	licenseSpec, err := kotsKinds.Marshal("kots.io", "v1beta1", "License")
+	configValues, err := config.UnmarshalConfigValuesContent([]byte(configValuesSpec))
 	if err != nil {
-		return false, errors.Wrap(err, "failed to marshal license spec")
-	}
-
-	appSpec, err := kotsKinds.Marshal("kots.io", "v1beta1", "Application")
-	if err != nil {
-		return false, errors.Wrap(err, "failed to marshal license spec")
-	}
-
-	identityConfigSpec, err := kotsKinds.Marshal("kots.io", "v1beta1", "IdentityConfig")
-	if err != nil {
-		return false, errors.Wrap(err, "failed to marshal identityconfig spec")
+		log.Error(errors.Wrap(err, "failed to create config values"))
+		configValues = map[string]template.ItemValue{}
 	}
 
 	localRegistry := template.LocalRegistry{
@@ -82,27 +74,20 @@ func NeedsConfiguration(kotsKinds *kotsutil.KotsKinds, registrySettings registry
 		ReadOnly:  registrySettings.IsReadOnly,
 	}
 
-	rendered, err := kotsconfig.TemplateConfig(logger.NewCLILogger(), configSpec, configValuesSpec, licenseSpec, appSpec, identityConfigSpec, localRegistry, util.PodNamespace)
+	versionInfo := template.VersionInfoFromInstallation(sequence, isAirgap, kotsKinds.Installation.Spec)
+	appInfo := template.ApplicationInfo{Slug: appSlug}
+
+	// rendered, err := kotsconfig.TemplateConfig(logger.NewCLILogger(), configSpec, configValuesSpec, licenseSpec, appSpec, identityConfigSpec, localRegistry, util.PodNamespace)
+	config, err := kotsconfig.TemplateConfigObjects(kotsKinds.Config, configValues, kotsKinds.License, &kotsKinds.KotsApplication, localRegistry, &versionInfo, &appInfo, kotsKinds.IdentityConfig, util.PodNamespace)
 	if err != nil {
 		return false, errors.Wrap(err, "failed to template config")
 	}
 
-	if rendered == "" {
+	if config == nil {
 		return false, nil
 	}
 
-	decode := scheme.Codecs.UniversalDeserializer().Decode
-	decoded, gvk, err := decode([]byte(rendered), nil, nil)
-	if err != nil {
-		return false, errors.Wrap(err, "failed to decode config")
-	}
-	if gvk.Group != "kots.io" || gvk.Version != "v1beta1" || gvk.Kind != "Config" {
-		return false, errors.Errorf("unexpected gvk found in metadata: %s/%s/%s", gvk.Group, gvk.Version, gvk.Kind)
-	}
-
-	renderedConfig := decoded.(*kotsv1beta1.Config)
-
-	for _, group := range renderedConfig.Spec.Groups {
+	for _, group := range config.Spec.Groups {
 		if group.When == "false" {
 			continue
 		}

@@ -285,17 +285,23 @@ func addDefaultTroubleshoot(supportBundle *troubleshootv1beta2.SupportBundle, ap
 		},
 	})
 
-	supportBundle.Spec.Collectors = append(supportBundle.Spec.Collectors, &troubleshootv1beta2.Collect{
-		Secret: &troubleshootv1beta2.Secret{
-			CollectorMeta: troubleshootv1beta2.CollectorMeta{
-				CollectorName: "kotsadm-replicated-registry",
+	secretNames := []string{
+		"kotsadm-replicated-registry",
+		fmt.Sprintf("%s-registry", app.Slug),
+	}
+	for _, name := range secretNames {
+		supportBundle.Spec.Collectors = append(supportBundle.Spec.Collectors, &troubleshootv1beta2.Collect{
+			Secret: &troubleshootv1beta2.Secret{
+				CollectorMeta: troubleshootv1beta2.CollectorMeta{
+					CollectorName: name,
+				},
+				Name:         name,
+				Namespace:    util.PodNamespace,
+				Key:          ".dockerconfigjson",
+				IncludeValue: false,
 			},
-			Name:         "kotsadm-replicated-registry",
-			Namespace:    util.PodNamespace,
-			Key:          ".dockerconfigjson",
-			IncludeValue: false,
-		},
-	})
+		})
+	}
 
 	supportBundle.Spec.Collectors = append(supportBundle.Spec.Collectors, makeDbCollectors()...)
 	supportBundle.Spec.Collectors = append(supportBundle.Spec.Collectors, makeKotsadmCollectors()...)

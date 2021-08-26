@@ -29,7 +29,7 @@ func UpdateCollectorSpecsWithRegistryData(collectors []*troubleshootv1beta2.Coll
 				run := collect.Run
 
 				run.Image = rewriteImage(localRegistryInfo.Hostname, localRegistryInfo.Namespace, run.Image)
-				pullSecret, err := kotsregistry.PullSecretForRegistries([]string{localRegistryInfo.Hostname}, localRegistryInfo.Username, localRegistryInfo.Password, run.Namespace)
+				pullSecret, err := kotsregistry.PullSecretForRegistries([]string{localRegistryInfo.Hostname}, localRegistryInfo.Username, localRegistryInfo.Password, run.Namespace, "")
 				if err != nil {
 					return nil, errors.Wrap(err, "failed to generate pull secret for registry")
 				}
@@ -44,7 +44,7 @@ func UpdateCollectorSpecsWithRegistryData(collectors []*troubleshootv1beta2.Coll
 
 				updatedCollectors[idx] = collect
 			} else if collect.RegistryImages != nil {
-				pullSecret, err := kotsregistry.PullSecretForRegistries([]string{localRegistryInfo.Hostname}, localRegistryInfo.Username, localRegistryInfo.Password, collect.RegistryImages.Namespace)
+				pullSecret, err := kotsregistry.PullSecretForRegistries([]string{localRegistryInfo.Hostname}, localRegistryInfo.Username, localRegistryInfo.Password, collect.RegistryImages.Namespace, "")
 				if err != nil {
 					return nil, errors.Wrap(err, "failed to generate pull secret for registry")
 				}
@@ -91,7 +91,7 @@ func UpdateCollectorSpecsWithRegistryData(collectors []*troubleshootv1beta2.Coll
 						if len(tag) > 1 {
 							run.Image = fmt.Sprintf("%s:%s", run.Image, tag[len(tag)-1])
 						}
-						pullSecret, err := kotsregistry.PullSecretForRegistries([]string{registryProxyInfo.Proxy}, license.Spec.LicenseID, license.Spec.LicenseID, run.Namespace)
+						pullSecret, err := kotsregistry.PullSecretForRegistries([]string{registryProxyInfo.Proxy}, license.Spec.LicenseID, license.Spec.LicenseID, run.Namespace, "")
 						if err != nil {
 							return nil, errors.Wrap(err, "failed to generate pull secret for proxy registry")
 						}
@@ -105,7 +105,7 @@ func UpdateCollectorSpecsWithRegistryData(collectors []*troubleshootv1beta2.Coll
 
 						collect.Run = run
 					} else {
-						pullSecret, err := kotsregistry.PullSecretForRegistries([]string{registryProxyInfo.Registry}, license.Spec.LicenseID, license.Spec.LicenseID, run.Namespace)
+						pullSecret, err := kotsregistry.PullSecretForRegistries([]string{registryProxyInfo.Registry}, license.Spec.LicenseID, license.Spec.LicenseID, run.Namespace, "")
 						if err != nil {
 							return nil, errors.Wrap(err, "failed to generate pull secret for replicated registry")
 						}

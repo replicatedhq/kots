@@ -155,6 +155,7 @@ func Test_releaseToFiles(t *testing.T) {
 
 func Test_createConfigValues(t *testing.T) {
 	applicationName := "Test App"
+	appInfo := &template.ApplicationInfo{Slug: "app-slug"}
 
 	config := &kotsv1beta1.Config{
 		TypeMeta: metav1.TypeMeta{
@@ -250,13 +251,13 @@ func Test_createConfigValues(t *testing.T) {
 			Default: "default_4",
 		},
 	}
-	values1, err := createConfigValues(applicationName, config, nil, nil, nil, nil, nil, nil, template.LocalRegistry{}, nil)
+	values1, err := createConfigValues(applicationName, config, nil, nil, nil, nil, appInfo, nil, template.LocalRegistry{}, nil)
 	req.NoError(err)
 	assert.Equal(t, expected1, values1.Spec.Values)
 
 	// Like an app without a config, should have exact same values
 	expected2 := configValues.Spec.Values
-	values2, err := createConfigValues(applicationName, nil, configValues, nil, nil, nil, nil, nil, template.LocalRegistry{}, nil)
+	values2, err := createConfigValues(applicationName, nil, configValues, nil, nil, nil, appInfo, nil, template.LocalRegistry{}, nil)
 	req.NoError(err)
 	assert.Equal(t, expected2, values2.Spec.Values)
 
@@ -277,7 +278,7 @@ func Test_createConfigValues(t *testing.T) {
 			Default: "default_4",
 		},
 	}
-	values3, err := createConfigValues(applicationName, config, configValues, nil, nil, nil, nil, nil, template.LocalRegistry{}, nil)
+	values3, err := createConfigValues(applicationName, config, configValues, nil, nil, nil, appInfo, nil, template.LocalRegistry{}, nil)
 	req.NoError(err)
 	assert.Equal(t, expected3, values3.Spec.Values)
 }

@@ -59,7 +59,18 @@ func renderReplicated(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (
 		return nil, nil, errors.Wrap(err, "failed to find config file")
 	}
 
-	renderedConfig, err := kotsconfig.TemplateConfigObjects(kotsKinds.Config, itemValues, kotsKinds.License, &kotsKinds.KotsApplication, template.LocalRegistry{}, nil, kotsKinds.IdentityConfig, util.PodNamespace)
+	registry := template.LocalRegistry{
+		Host:      renderOptions.LocalRegistryHost,
+		Namespace: renderOptions.LocalRegistryNamespace,
+		Username:  renderOptions.LocalRegistryUsername,
+		Password:  renderOptions.LocalRegistryPassword,
+		ReadOnly:  renderOptions.LocalRegistryIsReadOnly,
+	}
+
+	versionInfo := template.VersionInfoFromInstallation(renderOptions.Sequence, renderOptions.IsAirgap, kotsKinds.Installation.Spec)
+	appInfo := template.ApplicationInfo{Slug: renderOptions.AppSlug}
+
+	renderedConfig, err := kotsconfig.TemplateConfigObjects(kotsKinds.Config, itemValues, kotsKinds.License, &kotsKinds.KotsApplication, registry, &versionInfo, &appInfo, kotsKinds.IdentityConfig, util.PodNamespace)
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "failed to template config objects")
 	}

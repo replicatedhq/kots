@@ -107,7 +107,7 @@ func (d *Doc) PatchWithPullSecret(secret *corev1.Secret) K8sDoc {
 					Template: Template{
 						Spec: PodSpec{
 							ImagePullSecrets: []ImagePullSecret{
-								{"name": "kotsadm-replicated-registry"},
+								{"name": secret.Name},
 							},
 						},
 					},
@@ -120,7 +120,7 @@ func (d *Doc) PatchWithPullSecret(secret *corev1.Secret) K8sDoc {
 			Template: Template{
 				Spec: PodSpec{
 					ImagePullSecrets: []ImagePullSecret{
-						{"name": "kotsadm-replicated-registry"},
+						{"name": secret.Name},
 					},
 				},
 			},
@@ -161,7 +161,7 @@ func (d *PodDoc) PatchWithPullSecret(secret *corev1.Secret) K8sDoc {
 		},
 		Spec: PodSpec{
 			ImagePullSecrets: []ImagePullSecret{
-				{"name": "kotsadm-replicated-registry"},
+				{"name": secret.Name},
 			},
 		},
 	}

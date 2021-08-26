@@ -273,7 +273,7 @@ func CreateAppFromAirgap(opts CreateAirgapAppOpts) (finalError error) {
 			Password:   opts.RegistryPassword,
 			IsReadOnly: opts.RegistryIsReadOnly,
 		}
-		needsConfig, err := kotsadmconfig.NeedsConfiguration(kotsKinds, registrySettings)
+		needsConfig, err := kotsadmconfig.NeedsConfiguration(a.Slug, newSequence, a.IsAirgap, kotsKinds, registrySettings)
 		if err != nil {
 			return errors.Wrap(err, "failed to check if app needs configuration")
 		}
