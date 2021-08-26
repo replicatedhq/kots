@@ -568,9 +568,10 @@ func IsPrivateImage(image string, dockerHubRegistry registry.RegistryOptions) (b
 			continue
 		}
 
-		if !isLoginRequired(err) {
-			return false, errors.Wrapf(err, "failed to create image from ref:%s", image)
-		}
+		// if the registry is unreachable (which might be due to a firewall, proxy, etc..),
+		// we won't be able to determine if the error is due to a missing auth or not.
+		// so we consider the image private. a use-case for this is when the images are supposed to be
+		// proxied through proxy.replicated.com and the other domains are blocked by the firewall.
 
 		return true, nil
 	}
@@ -599,43 +600,6 @@ func RewritePrivateImage(srcRegistry registry.RegistryOptions, image string, app
 
 	// no tag, so it will be "latest"
 	return newImage, nil
-}
-
-func isLoginRequired(err error) bool {
-	switch err := err.(type) {
-	case errcode.Errors:
-		for _, e := range err {
-			if isLoginRequired(e) {
-				return true
-			}
-		}
-		return false
-	case errcode.Error:
-		return err.Code.Descriptor().HTTPStatusCode == http.StatusUnauthorized
-	}
-
-	if _, ok := err.(imagedocker.ErrUnauthorizedForCredentials); ok {
-		return true
-	}
-
-	cause := errors.Cause(err)
-	if cause, ok := cause.(error); ok {
-		if cause == err {
-			// Google Artifact Registry returns a 403, and containers package simply does an Errorf
-			// when registry returns something other than 401, so we have to do text comparison here.
-			if strings.Contains(cause.Error(), "invalid status code from registry 403") {
-				return true
-			}
-			// GitHub's Docker registry (which used the namespace docker.pkg.github.com) could return "denied" as the error message
-			// in some cases when the request is unauth'ed or has invalid credentials.
-			if cause.Error() == "denied" {
-				return true
-			}
-			return false
-		}
-	}
-
-	return isLoginRequired(cause)
 }
 
 func isTooManyRequests(err error) bool {
