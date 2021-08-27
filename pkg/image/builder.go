@@ -91,7 +91,7 @@ func ProcessImages(srcRegistry, destRegistry registry.RegistryOptions, appSlug s
 	return newImages, nil
 }
 
-func GetPrivateImages(upstreamDir string, checkedImages map[string]ImageInfo, allPrivate bool, dockerHubRegistry registry.RegistryOptions, UseHelmInstall map[string]bool) ([]string, []k8sdoc.K8sDoc, error) {
+func GetPrivateImages(upstreamDir string, checkedImages map[string]ImageInfo, allPrivate bool, dockerHubRegistry registry.RegistryOptions, useHelmInstall map[string]bool) ([]string, []k8sdoc.K8sDoc, error) {
 	uniqueImages := make(map[string]bool)
 
 	objects := make([]k8sdoc.K8sDoc, 0) // all objects where images are referenced from
@@ -101,7 +101,7 @@ func GetPrivateImages(upstreamDir string, checkedImages map[string]ImageInfo, al
 			if err != nil {
 				return err
 			}
-			if info.IsDir() && (UseHelmInstall[info.Name()] == true) {
+			if info.IsDir() && (useHelmInstall[info.Name()] == true) {
 				return filepath.SkipDir
 			}
 
