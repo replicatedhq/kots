@@ -67,17 +67,19 @@ type ConfigCtx struct {
 	ItemValues        map[string]ItemValue
 	LocalRegistry     LocalRegistry
 	DockerHubRegistry registry.RegistryOptions
+	AppSlug           string
 
 	license *kotsv1beta1.License // Another agument for unifying all these contexts
 	app     *kotsv1beta1.Application
 }
 
 // newConfigContext creates and returns a context for template rendering
-func (b *Builder) newConfigContext(configGroups []kotsv1beta1.ConfigGroup, existingValues map[string]ItemValue, localRegistry LocalRegistry, cipher *crypto.AESCipher, license *kotsv1beta1.License, app *kotsv1beta1.Application, info *VersionInfo, dockerHubRegistry registry.RegistryOptions) (*ConfigCtx, error) {
+func (b *Builder) newConfigContext(configGroups []kotsv1beta1.ConfigGroup, existingValues map[string]ItemValue, localRegistry LocalRegistry, cipher *crypto.AESCipher, license *kotsv1beta1.License, app *kotsv1beta1.Application, info *VersionInfo, dockerHubRegistry registry.RegistryOptions, appSlug string) (*ConfigCtx, error) {
 	configCtx := &ConfigCtx{
 		ItemValues:        existingValues,
 		LocalRegistry:     localRegistry,
 		DockerHubRegistry: dockerHubRegistry,
+		AppSlug:           appSlug,
 		license:           license,
 		app:               app,
 	}
@@ -342,6 +344,7 @@ func (ctx ConfigCtx) localRegistryImagePullSecret() string {
 			ctx.LocalRegistry.Username,
 			ctx.LocalRegistry.Password,
 			"default", // this value doesn't matter
+			ctx.AppSlug,
 		)
 		if err != nil {
 			return ""
@@ -359,6 +362,7 @@ func (ctx ConfigCtx) localRegistryImagePullSecret() string {
 			licenseIDString,
 			licenseIDString,
 			"default", // this value doesn't matter
+			ctx.AppSlug,
 		)
 		if err != nil {
 			return ""

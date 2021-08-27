@@ -184,7 +184,7 @@ func CreateAppFromOnline(pendingApp *types.PendingApp, upstreamURI string, isAut
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to get registry settings for app")
 		}
-		needsConfig, err := kotsadmconfig.NeedsConfiguration(kotsKinds, registrySettings)
+		needsConfig, err := kotsadmconfig.NeedsConfiguration(pendingApp.Slug, newSequence, false, kotsKinds, registrySettings)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to check if app needs configuration")
 		}

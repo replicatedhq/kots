@@ -31,7 +31,10 @@ func TestBuilder_NewConfigContext(t *testing.T) {
 				templateContext: map[string]ItemValue{},
 				cipher:          nil,
 			},
-			want: &ConfigCtx{ItemValues: map[string]ItemValue{}},
+			want: &ConfigCtx{
+				AppSlug:    "app-slug",
+				ItemValues: map[string]ItemValue{},
+			},
 		},
 		{
 			name: "configGroup",
@@ -59,6 +62,7 @@ func TestBuilder_NewConfigContext(t *testing.T) {
 				cipher:          nil,
 			},
 			want: &ConfigCtx{
+				AppSlug: "app-slug",
 				ItemValues: map[string]ItemValue{
 					"abcItem": {
 						Value:   "",
@@ -97,6 +101,7 @@ func TestBuilder_NewConfigContext(t *testing.T) {
 				cipher: nil,
 			},
 			want: &ConfigCtx{
+				AppSlug: "app-slug",
 				ItemValues: map[string]ItemValue{
 					"abcItem": {
 						Default: "abcItemDefault",
@@ -165,6 +170,7 @@ func TestBuilder_NewConfigContext(t *testing.T) {
 				cipher: nil,
 			},
 			want: &ConfigCtx{
+				AppSlug: "app-slug",
 				ItemValues: map[string]ItemValue{
 					"abcItem": {
 						Value:   "replacedAbcItemValue",
@@ -254,6 +260,7 @@ func TestBuilder_NewConfigContext(t *testing.T) {
 				cipher: nil,
 			},
 			want: &ConfigCtx{
+				AppSlug: "app-slug",
 				ItemValues: map[string]ItemValue{
 					"abcItem": {
 						Value:   "no func",
@@ -285,11 +292,14 @@ func TestBuilder_NewConfigContext(t *testing.T) {
 				},
 				cipher: nil,
 			},
-			want: &ConfigCtx{ItemValues: map[string]ItemValue{
-				"item": {
-					Value: "item does not exist",
+			want: &ConfigCtx{
+				AppSlug: "app-slug",
+				ItemValues: map[string]ItemValue{
+					"item": {
+						Value: "item does not exist",
+					},
 				},
-			}},
+			},
 		},
 		{
 			name: "chain from license template func",
@@ -344,6 +354,7 @@ func TestBuilder_NewConfigContext(t *testing.T) {
 				},
 			},
 			want: &ConfigCtx{
+				AppSlug: "app-slug",
 				ItemValues: map[string]ItemValue{
 					"abcItem": {
 						Value:   "license val: abcValue",
@@ -370,7 +381,7 @@ func TestBuilder_NewConfigContext(t *testing.T) {
 			builder.AddCtx(StaticCtx{})
 
 			localRegistry := LocalRegistry{}
-			got, err := builder.newConfigContext(tt.args.configGroups, tt.args.templateContext, localRegistry, tt.args.cipher, tt.args.license, nil, nil, registry.RegistryOptions{})
+			got, err := builder.newConfigContext(tt.args.configGroups, tt.args.templateContext, localRegistry, tt.args.cipher, tt.args.license, nil, nil, registry.RegistryOptions{}, "app-slug")
 			req.NoError(err)
 			req.Equal(tt.want, got)
 		})

@@ -367,7 +367,7 @@ func (s *OCIStore) CreateAppVersion(appID string, currentSequence *int64, filesI
 		}
 		if currentSequence != nil { // only check if the version needs configuration for later versions (not the initial one) since the config is always required for the initial version (except for automated installs, which can override that later)
 			// check if version needs additional configuration
-			t, err := kotsadmconfig.NeedsConfiguration(kotsKinds, registrySettings)
+			t, err := kotsadmconfig.NeedsConfiguration(a.Slug, newSequence, a.IsAirgap, kotsKinds, registrySettings)
 			if err != nil {
 				return int64(0), errors.Wrap(err, "failed to check if version needs configuration")
 			}

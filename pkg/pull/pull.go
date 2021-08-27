@@ -624,6 +624,7 @@ func writeMidstream(writeMidstreamOptions midstream.WriteOptions, options PullOp
 				registryUser,
 				registryPass,
 				options.Namespace,
+				options.AppSlug,
 			)
 			if err != nil {
 				return nil, errors.Wrap(err, "create pull secret")
@@ -687,6 +688,7 @@ func writeMidstream(writeMidstreamOptions midstream.WriteOptions, options PullOp
 				license.Spec.LicenseID,
 				license.Spec.LicenseID,
 				options.Namespace,
+				options.AppSlug,
 			)
 			if err != nil {
 				return nil, errors.Wrap(err, "create pull secret")

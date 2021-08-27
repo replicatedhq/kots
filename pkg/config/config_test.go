@@ -11,6 +11,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/template"
 	"github.com/stretchr/testify/require"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/serializer/json"
 	"k8s.io/client-go/kubernetes/scheme"
 )
@@ -30,49 +31,82 @@ func TestTemplateConfig(t *testing.T) {
 	log := logger.NewCLILogger()
 	log.Silence()
 
-	licenseData := `
-apiVersion: kots.io/v1beta1
-kind: License
-metadata:
-  name: local
-spec:
-  licenseID: abcdef
-  appSlug: my-app
-  endpoint: 'http://localhost:30016'
-  entitlements:
-    expires_at:
-      title: Expiration
-      description: License Expiration
-      value: ""
-    has-product-2:
-      title: Has Product 2
-      value: "test"
-    is_vip:
-      title: Is VIP
-      value: false
-    num_seats:
-      title: Number Of Seats
-      value: 10
-    sdzf:
-      title: sdf
-      value: 1
-    test:
-      title: test
-      value: "123asd"
-  signature: IA==`
+	license := &kotsv1beta1.License{
+		Spec: kotsv1beta1.LicenseSpec{
+			LicenseID: "abcdef",
+			AppSlug:   "my-app",
+			Endpoint:  "http://localhost:30016",
+			Entitlements: map[string]kotsv1beta1.EntitlementField{
+				"expires_at": {
+					Title:       "Expiration",
+					Description: "License Expiration",
+				},
+				"has-product-2": {
+					Title: "Has Product 2",
+					Value: kotsv1beta1.EntitlementValue{
+						Type:   kotsv1beta1.String,
+						StrVal: "test",
+					},
+				},
+				"is_vip": {
+					Title: "Is VIP",
+					Value: kotsv1beta1.EntitlementValue{
+						Type:    kotsv1beta1.Bool,
+						BoolVal: false,
+					},
+				},
+				"num_seats": {
+					Title: "Number Of Seats",
+					Value: kotsv1beta1.EntitlementValue{
+						Type:   kotsv1beta1.Int,
+						IntVal: 10,
+					},
+				},
+				"sdzf": {
+					Title: "sdf",
+					Value: kotsv1beta1.EntitlementValue{
+						Type:   kotsv1beta1.Int,
+						IntVal: 1,
+					},
+				},
+				"test": {
+					Title: "test",
+					Value: kotsv1beta1.EntitlementValue{
+						Type:   kotsv1beta1.String,
+						StrVal: "123asd",
+					},
+				},
+			},
+		},
+	}
 
-	appSpec := `
-apiVersion: kots.io/v1beta1
-kind: Application
-metadata:
-  name: local
-spec:
-  title: My Application`
+	application := &kotsv1beta1.Application{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: "kots.io/v1beta1",
+			Kind:       "Application",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "local",
+		},
+		Spec: kotsv1beta1.ApplicationSpec{
+			Title: "My Application",
+		},
+	}
+
+	versionInfo := &template.VersionInfo{
+		Sequence:     0,
+		Cursor:       "345",
+		ChannelName:  "Stable",
+		VersionLabel: "1.2.3",
+		ReleaseNotes: "",
+		IsAirgap:     false,
+	}
+	appInfo := &template.ApplicationInfo{Slug: "my-app-1"}
 
 	tests := []struct {
 		name             string
 		configSpecData   string
-		configValuesData string
+		configValuesData map[string]template.ItemValue
 		useAppSpec       bool
 		want             string
 		expectOldFail    bool
@@ -94,17 +128,11 @@ spec:
           title: a string field
           type: text
           default: "abc123"`,
-			configValuesData: `
-apiVersion: kots.io/v1beta1
-kind: ConfigValues
-metadata:
-  name: test-app
-spec:
-  values:
-    a_string:
-      value: "xyz789"
-status: {}
-`,
+			configValuesData: map[string]template.ItemValue{
+				"a_string": {
+					Value: "xyz789",
+				},
+			},
 			useAppSpec: true,
 			want: `apiVersion: kots.io/v1beta1
 kind: Config
@@ -148,16 +176,8 @@ spec:
        title: Database Password
        type: password
        when: '{{repl or (ConfigOptionEquals "db_type" "external") (ConfigOptionEquals "db_type" "embedded")}}'`,
-			configValuesData: `
-apiVersion: kots.io/v1beta1
-kind: ConfigValues
-metadata:
-  name: test-app
-spec:
-  values: {}
-status: {}
-`,
-			useAppSpec: false,
+			configValuesData: map[string]template.ItemValue{},
+			useAppSpec:       false,
 			want: `apiVersion: kots.io/v1beta1
 kind: Config
 metadata:
@@ -213,17 +233,11 @@ spec:
        title: other
        type: text
        default: 'val1'`,
-			configValuesData: `
-apiVersion: kots.io/v1beta1
-kind: ConfigValues
-metadata:
-  name: test-app
-spec:
-  values:
-    other:
-      value: "xyz789"
-status: {}
-`,
+			configValuesData: map[string]template.ItemValue{
+				"other": {
+					Value: "xyz789",
+				},
+			},
 			useAppSpec: false,
 			want: `apiVersion: kots.io/v1beta1
 kind: Config
@@ -281,23 +295,20 @@ spec:
         namespace: my-app
         yamlPath: spec.template.spec.containers[0].volumes[1].projected.sources[1]
 `,
-			configValuesData: `apiVersion: kots.io/v1beta1
-kind: ConfigValues
-metadata:
-  name: test-app
-spec:
-  values:
-    secretName-1:
-      value: "123"
-      repeatableItem: secretName
-    secretName-2:
-      value: "456"
-      repeatableItem: secretName
-    secretName-3:
-      value: "789"
-      repeatableItem: secretName
-status: {}
-`,
+			configValuesData: map[string]template.ItemValue{
+				"secretName-1": {
+					Value:          "123",
+					RepeatableItem: "secretName",
+				},
+				"secretName-2": {
+					Value:          "456",
+					RepeatableItem: "secretName",
+				},
+				"secretName-3": {
+					Value:          "789",
+					RepeatableItem: "secretName",
+				},
+			},
 			useAppSpec: true,
 			want: `apiVersion: kots.io/v1beta1 
 kind: Config 
@@ -344,13 +355,15 @@ spec:
 			wantObj, _, err := decode([]byte(tt.want), nil, nil)
 			req.NoError(err)
 
-			appData := ""
+			var app *kotsv1beta1.Application
 			if tt.useAppSpec {
-				appData = appSpec
+				app = application
 			}
 
+			configObj, _, _ := decode([]byte(tt.configSpecData), nil, nil)
+
 			localRegistry := template.LocalRegistry{}
-			got, err := templateConfig(log, tt.configSpecData, tt.configValuesData, licenseData, appData, "", localRegistry, "", MarshalConfig)
+			got, err := templateConfigObjects(configObj.(*kotsv1beta1.Config), tt.configValuesData, license, app, localRegistry, versionInfo, appInfo, nil, "app-namespace", MarshalConfig)
 			req.NoError(err)
 
 			gotObj, _, err := decode([]byte(got), nil, nil)
@@ -359,7 +372,7 @@ spec:
 			req.Equal(wantObj, gotObj)
 
 			// compare with oldMarshalConfig results
-			got, err = templateConfig(log, tt.configSpecData, tt.configValuesData, licenseData, appData, "", localRegistry, "", oldMarshalConfig)
+			got, err = templateConfigObjects(configObj.(*kotsv1beta1.Config), tt.configValuesData, license, app, localRegistry, versionInfo, appInfo, nil, "app-namespace", oldMarshalConfig)
 			if !tt.expectOldFail {
 				req.NoError(err)
 

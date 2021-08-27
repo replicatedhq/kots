@@ -9,7 +9,6 @@ import (
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	"github.com/replicatedhq/kots/kotskinds/multitype"
-	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/template"
 	"github.com/replicatedhq/kots/pkg/util"
 	yaml "github.com/replicatedhq/yaml/v3"
@@ -17,12 +16,8 @@ import (
 	"k8s.io/client-go/kubernetes/scheme"
 )
 
-func TemplateConfig(log *logger.CLILogger, configSpecData string, configValuesData string, licenseData string, appData string, identityConfigData string, localRegistry template.LocalRegistry, namespace string) (string, error) {
-	return templateConfig(log, configSpecData, configValuesData, licenseData, appData, identityConfigData, localRegistry, namespace, MarshalConfig)
-}
-
-func TemplateConfigObjects(configSpec *kotsv1beta1.Config, configValues map[string]template.ItemValue, license *kotsv1beta1.License, app *kotsv1beta1.Application, localRegistry template.LocalRegistry, versionInfo *template.VersionInfo, identityconfig *kotsv1beta1.IdentityConfig, namespace string) (*kotsv1beta1.Config, error) {
-	templatedString, err := templateConfigObjects(configSpec, configValues, license, app, localRegistry, versionInfo, identityconfig, namespace, MarshalConfig)
+func TemplateConfigObjects(configSpec *kotsv1beta1.Config, configValues map[string]template.ItemValue, license *kotsv1beta1.License, app *kotsv1beta1.Application, localRegistry template.LocalRegistry, versionInfo *template.VersionInfo, appInfo *template.ApplicationInfo, identityconfig *kotsv1beta1.IdentityConfig, namespace string) (*kotsv1beta1.Config, error) {
+	templatedString, err := templateConfigObjects(configSpec, configValues, license, app, localRegistry, versionInfo, appInfo, identityconfig, namespace, MarshalConfig)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to template config")
 	}
@@ -43,21 +38,22 @@ func TemplateConfigObjects(configSpec *kotsv1beta1.Config, configValues map[stri
 	return config, nil
 }
 
-func templateConfigObjects(configSpec *kotsv1beta1.Config, configValues map[string]template.ItemValue, license *kotsv1beta1.License, app *kotsv1beta1.Application, localRegistry template.LocalRegistry, versionInfo *template.VersionInfo, identityconfig *kotsv1beta1.IdentityConfig, namespace string, marshalFunc func(config *kotsv1beta1.Config) (string, error)) (string, error) {
+func templateConfigObjects(configSpec *kotsv1beta1.Config, configValues map[string]template.ItemValue, license *kotsv1beta1.License, app *kotsv1beta1.Application, localRegistry template.LocalRegistry, versionInfo *template.VersionInfo, appInfo *template.ApplicationInfo, identityconfig *kotsv1beta1.IdentityConfig, namespace string, marshalFunc func(config *kotsv1beta1.Config) (string, error)) (string, error) {
 	if configSpec == nil {
 		return "", nil
 	}
 
 	builderOptions := template.BuilderOptions{
-		ConfigGroups:   configSpec.Spec.Groups,
-		ExistingValues: configValues,
-		LocalRegistry:  localRegistry,
-		Cipher:         nil,
-		License:        license,
-		Application:    app,
-		VersionInfo:    versionInfo,
-		IdentityConfig: identityconfig,
-		Namespace:      namespace,
+		ConfigGroups:    configSpec.Spec.Groups,
+		ExistingValues:  configValues,
+		LocalRegistry:   localRegistry,
+		Cipher:          nil,
+		License:         license,
+		Application:     app,
+		VersionInfo:     versionInfo,
+		ApplicationInfo: appInfo,
+		IdentityConfig:  identityconfig,
+		Namespace:       namespace,
 	}
 
 	builder, configVals, err := template.NewBuilder(builderOptions)
@@ -77,67 +73,6 @@ func templateConfigObjects(configSpec *kotsv1beta1.Config, configValues map[stri
 	}
 
 	return rendered, nil
-}
-
-func templateConfig(log *logger.CLILogger, configSpecData string, configValuesData string, licenseData string, appData string, identityConfigData string, localRegistry template.LocalRegistry, namespace string, marshalFunc func(config *kotsv1beta1.Config) (string, error)) (string, error) {
-	// This function will
-	// 1. unmarshal config
-	// 2. replace all item values with values that already exist
-	// 3. evaluate the dependency graph for config values (template function chaining)
-	// 4. re-marshal it (with an unlimited line length)
-	// 5. put new config yaml through templating engine
-	// This process will re-order items and discard comments, so it should not be saved.
-	decode := scheme.Codecs.UniversalDeserializer().Decode
-	obj, gvk, err := decode([]byte(licenseData), nil, nil)
-	if err != nil {
-		return "", errors.Wrap(err, "failed to decode license data")
-	}
-	if gvk.Group != "kots.io" || gvk.Version != "v1beta1" || gvk.Kind != "License" {
-		return "", errors.Errorf("expected License, but found %s/%s/%s", gvk.Group, gvk.Version, gvk.Kind)
-	}
-	license := obj.(*kotsv1beta1.License)
-
-	var app *kotsv1beta1.Application
-	if appData != "" {
-		obj, gvk, err = decode([]byte(appData), nil, nil)
-		if err != nil {
-			return "", errors.Wrap(err, "failed to decode applicationappData := ` data")
-		}
-		if gvk.Group != "kots.io" || gvk.Version != "v1beta1" || gvk.Kind != "Application" {
-			return "", errors.Errorf("expected Application, but found %s/%s/%s", gvk.Group, gvk.Version, gvk.Kind)
-		}
-		app = obj.(*kotsv1beta1.Application)
-	}
-
-	obj, gvk, err = decode([]byte(configSpecData), nil, nil) // TODO fix decode of boolstrings
-	if err != nil {
-		return "", errors.Wrap(err, "failed to decode config data")
-	}
-	if gvk.Group != "kots.io" || gvk.Version != "v1beta1" || gvk.Kind != "Config" {
-		return "", errors.Errorf("expected Config, but found %s/%s/%s", gvk.Group, gvk.Version, gvk.Kind)
-	}
-	config := obj.(*kotsv1beta1.Config)
-
-	// get template context from config values
-	templateContext, err := UnmarshalConfigValuesContent([]byte(configValuesData))
-	if err != nil {
-		log.Error(err)
-		templateContext = map[string]template.ItemValue{}
-	}
-
-	var identityConfig *kotsv1beta1.IdentityConfig
-	if identityConfigData != "" {
-		obj, gvk, err = decode([]byte(identityConfigData), nil, nil)
-		if err != nil {
-			return "", errors.Wrap(err, "failed to decode config data")
-		}
-		if gvk.Group != "kots.io" || gvk.Version != "v1beta1" || gvk.Kind != "IdentityConfig" {
-			return "", errors.Errorf("expected IdentityConfig, but found %s/%s/%s", gvk.Group, gvk.Version, gvk.Kind)
-		}
-		identityConfig = obj.(*kotsv1beta1.IdentityConfig)
-	}
-
-	return templateConfigObjects(config, templateContext, license, app, localRegistry, &template.VersionInfo{}, identityConfig, namespace, marshalFunc)
 }
 
 func ApplyValuesToConfig(config *kotsv1beta1.Config, values map[string]template.ItemValue) *kotsv1beta1.Config {

@@ -373,6 +373,7 @@ func writeMidstream(writeMidstreamOptions midstream.WriteOptions, options Rewrit
 			registryUser,
 			registryPass,
 			options.K8sNamespace,
+			options.AppSlug,
 		)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to create private registry pull secret")
@@ -430,6 +431,7 @@ func writeMidstream(writeMidstreamOptions midstream.WriteOptions, options Rewrit
 				options.License.Spec.LicenseID,
 				options.License.Spec.LicenseID,
 				options.K8sNamespace,
+				options.AppSlug,
 			)
 			if err != nil {
 				return nil, errors.Wrap(err, "failed to create Replicated registry pull secret")
