@@ -4,8 +4,8 @@ import (
 	"github.com/pkg/errors"
 	kotsadmtypes "github.com/replicatedhq/kots/pkg/kotsadm/types"
 	"gopkg.in/yaml.v2"
-	"sigs.k8s.io/kustomize/api/resid"
 	kustomizetypes "sigs.k8s.io/kustomize/api/types"
+	"sigs.k8s.io/kustomize/kyaml/resid"
 )
 
 type LabelTransformer struct {
