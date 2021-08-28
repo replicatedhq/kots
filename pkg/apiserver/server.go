@@ -96,6 +96,10 @@ func Start(params *APIServerParams) {
 		}
 	}
 
+	if err := k8sutil.InitHelmCapabilities(); err != nil {
+		panic(err)
+	}
+
 	if err := generateKotsadmID(); err != nil {
 		logger.Infof("failed to generate kotsadm id:", err)
 	}

@@ -7,11 +7,8 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
-	"github.com/replicatedhq/kots/pkg/k8sutil"
-	"github.com/replicatedhq/kots/pkg/util"
 	"helm.sh/helm/v3/pkg/action"
 	"helm.sh/helm/v3/pkg/chart/loader"
-	"helm.sh/helm/v3/pkg/kube"
 )
 
 var (
@@ -20,20 +17,18 @@ var (
 
 func renderHelmV3(chartName string, chartPath string, vals map[string]interface{}, renderOptions *RenderOptions) ([]BaseFile, error) {
 	cfg := &action.Configuration{
-		RESTClientGetter: k8sutil.RESTClientGetter{},
-		Log:              renderOptions.Log.Debug,
-		KubeClient:       kube.New(k8sutil.RESTClientGetter{}),
+		Log: renderOptions.Log.Debug,
 	}
 	client := action.NewInstall(cfg)
 	client.DryRun = true
 	client.ReleaseName = chartName
 	client.Replace = true
-	client.ClientOnly = false
+	client.ClientOnly = true
 	client.IncludeCRDs = true
 
 	client.Namespace = renderOptions.Namespace
 	if client.Namespace == "" {
-		client.Namespace = util.PodNamespace
+		client.Namespace = "repl{{ Namespace}}"
 	}
 
 	chartRequested, err := loader.Load(chartPath)
