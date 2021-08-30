@@ -50,11 +50,11 @@ func RunCmd() *cobra.Command {
 			ctx, cancelFunc := context.WithCancel(loggerCtx)
 			defer cancelFunc()
 
-			if os.Geteuid() != 0 {
-				if err := cluster.InitUserNamespace(ctx, v.GetString("data-dir")); err != nil {
-					return err
-				}
-			}
+			// if os.Geteuid() != 0 {
+			// 	if err := cluster.InitUserNamespace(ctx, v.GetString("data-dir")); err != nil {
+			// 		return err
+			// 	}
+			// }
 
 			slug := args[0]
 			log.Info("Running application %s", slug)
