@@ -1,3 +1,4 @@
+//go:build kots_experimental
 // +build kots_experimental
 
 package cli
@@ -41,8 +42,21 @@ func RunCmd() *cobra.Command {
 				os.Exit(1)
 			}
 
-			slug := args[0]
+			// kots run uses rootless containers, so we need to create
+			// a user namespace so that the k8s components have a sandboxed root
+			// TODO: @emosbaugh: im not sure i agree with this pattern. im not sure context is the best place for DI
 			log := logger.NewCLILogger()
+			loggerCtx := context.WithValue(context.Background(), "log", log)
+			ctx, cancelFunc := context.WithCancel(loggerCtx)
+			defer cancelFunc()
+
+			if os.Geteuid() != 0 {
+				if err := cluster.InitUserNamespace(ctx, v.GetString("data-dir")); err != nil {
+					return err
+				}
+			}
+
+			slug := args[0]
 			log.Info("Running application %s", slug)
 
 			k8sLogRoot := filepath.Join(v.GetString("data-dir"), "kubernetes", "log")
@@ -54,11 +68,6 @@ func RunCmd() *cobra.Command {
 					klog.LogToStderr(false)
 				}
 			}
-
-			// TODO: @emosbaugh: im not sure i agree with this pattern. im not sure context is the best place for DI
-			loggerCtx := context.WithValue(context.Background(), "log", log)
-			ctx, cancelFunc := context.WithCancel(loggerCtx)
-			defer cancelFunc()
 
 			// this is here to ensure that the store is initialized before we spawn kots and kubernetes at the same time, which
 			// might both try to initialize the store.
@@ -76,9 +85,11 @@ func RunCmd() *cobra.Command {
 				return err
 			}
 
+			fmt.Printf("downloading clients\n")
 			if err := cluster.ClientInit(ctx, v.GetString("data-dir")); err != nil {
 				return err
 			}
+			fmt.Printf("finished downloading clients\n")
 
 			kubeconfigPath, err := cluster.Start(ctx, slug, v.GetString("data-dir"))
 			if err != nil {

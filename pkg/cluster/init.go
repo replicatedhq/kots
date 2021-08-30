@@ -46,6 +46,10 @@ func ClientInit(ctx context.Context, dataDir string) error {
 		return errors.Wrap(err, "ensure kubelet binary")
 	}
 
+	if err := ensureSlirp4netnsBinary(binRoot); err != nil {
+		return errors.Wrap(err, "ensure slirp4netns binary")
+	}
+
 	return nil
 }
 
@@ -618,6 +622,20 @@ current-context: authz`, "test")
 	}
 
 	return authorizationConfigFile, nil
+}
+
+func ensureSlirp4netnsBinary(rootDir string) error {
+	slirp4netnsPath := filepath.Join(rootDir, "slirp4netns")
+	if err := downloadFileFromURL(slirp4netnsPath, "https://github.com/rootless-containers/slirp4netns/releases/download/v1.1.12/slirp4netns-x86_64"); err != nil {
+		return err
+	}
+
+	if err := os.Chmod(slirp4netnsPath, 0755); err != nil {
+		return err
+	}
+
+	return nil
+
 }
 
 func ensureKubeletBinary(rootDir string) error {
