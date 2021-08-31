@@ -4,6 +4,8 @@ import (
 	"os"
 	"path"
 
+	"github.com/pkg/errors"
+	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/pull"
 	"github.com/spf13/cobra"
@@ -30,6 +32,12 @@ func PullCmd() *cobra.Command {
 
 			// registry host should not have the scheme (https).  need to
 			// strip it if included or else the rewrite images will fail
+
+			if v.GetBool("load-apiversions-from-server") {
+				if err := k8sutil.InitHelmCapabilities(); err != nil {
+					return errors.Wrap(err, "failed to initialize helm")
+				}
+			}
 
 			pullOptions := pull.PullOptions{
 				HelmRepoURI:         v.GetString("repo"),
@@ -78,7 +86,7 @@ func PullCmd() *cobra.Command {
 			upstream := pull.RewriteUpstream(args[0])
 			renderDir, err := pull.Pull(upstream, pullOptions)
 			if err != nil {
-				return err
+				return errors.Wrap(err, "failed to pull")
 			}
 
 			log := logger.NewCLILogger()
@@ -119,6 +127,8 @@ func PullCmd() *cobra.Command {
 	cmd.Flags().String("registry-password", "", "the password of the local docker registry to use when pushing images (with --rewrite-images)")
 	cmd.Flags().String("helm-version", "v2", "the Helm version with which to render the Helm Chart")
 	cmd.Flags().Bool("with-minio", true, "set to true to include a local minio instance to be used for storage")
+	cmd.Flags().Bool("load-apiversions-from-server", false, "load supported k8s api versions from cluster for Helm charts with useHelmInstall flag set to true")
+	cmd.Flags().MarkHidden("load-apiversions-from-server")
 
 	return cmd
 }
