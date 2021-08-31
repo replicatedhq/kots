@@ -55,6 +55,9 @@ archives:
       - README*
       - changelog*
       - CHANGELOG*
+      - sbom/kots-sbom.tgz
+      - sbom/kots-sbom.tgz.sig
+      - cosign.pub
 
   - id: kots_experimental
     builds:
@@ -70,3 +73,6 @@ archives:
       - README*
       - changelog*
       - CHANGELOG*
+      - sbom/kots-sbom.tgz
+      - sbom/kots-sbom.tgz.sig
+      - cosign.pub

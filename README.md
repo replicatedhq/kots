@@ -43,3 +43,11 @@ For questions about using KOTS, there's a [Replicated Community](https://help.re
 # Notifications
 
 If KOTS is installed into an existing Kubernetes cluster, KOTS will leverage [MinIO](https://github.com/minio/minio) as a standalone object store instance to store application archives and support bundles. All communication between KOTS and the MinIO object store is limited to a REST API released under the Apache 2.0 license. KOTS has not modified the MinIO source code. Use of [MinIO](https://github.com/minio/minio) is currently governed by the GNU AGPLv3 license that can be found in their [LICENSE](https://github.com/minio/minio/blob/master/LICENSE) file.
+
+# Software Bill of Materials
+Signed SBOMs for Kots Go and Javascript dependencies are combined into a tar file and are included in each release. 
+Use [Cosign](https://github.com/sigstore/cosign) to validate the signature by running the following
+command.
+```shell
+cosign verify-blob -key cosign.pub -signature sbom/kots-sbom.tgz.sig sbom/kots-sbom.tgz
+```

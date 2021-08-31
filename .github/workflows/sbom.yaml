@@ -1,0 +1,29 @@
+name: sbom-build
+
+on: workflow_dispatch
+
+jobs:
+  sbom:
+    runs-on: ubuntu-18.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Initialize Yarn
+        run: make -C web deps
+
+      - uses: sigstore/cosign-installer@main
+
+      - name: Get Cosign Key
+        run: |
+          echo $COSIGN_KEY | base64 -d > ./cosign.key
+        env:
+          COSIGN_KEY: ${{secrets.COSIGN_KEY}}
+
+      - name: Generate SBOM
+        run: |
+          COSIGN_PASSWORD=$COSIGN_PASSWORD make sbom
+        env:
+          COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSWORD }}
+
+
