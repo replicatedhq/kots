@@ -40,10 +40,22 @@ jobs:
         export TAG=$(curl --silent "https://api.github.com/repos/replicatedhq/kots/releases/latest" | grep -Po '"tag_name": "\K.*?(?=")')
         echo "GORELEASER_PREVIOUS_TAG=${TAG}" >> $GITHUB_ENV
 
+    - id: yarn-cache-dir-path
+      run: echo "::set-output name=dir::$(yarn config get cacheFolder)"
+
+    - uses: actions/cache@v2.1.6
+      id: yarn-cache
+      with:
+        path: ${{ steps.yarn-cache-dir-path.outputs.dir }}
+        key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
+        restore-keys: |
+          ${{ runner.os }}-yarn-
+
     - name: Initialize Yarn
+      if: steps.yarn-cache.outputs.cache-hit != 'true'
       run: make -C web deps
 
-    - uses: sigstore/cosign-installer@main
+    - uses: sigstore/cosign-installer@v1.1.0
 
     - name: Get Cosign Key
       run: |
