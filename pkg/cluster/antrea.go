@@ -12,14 +12,13 @@ import (
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/serializer/yaml"
 	"k8s.io/apimachinery/pkg/types"
 	utilyaml "k8s.io/apimachinery/pkg/util/yaml"
 	"k8s.io/client-go/discovery"
 	"k8s.io/client-go/discovery/cached/memory"
 	"k8s.io/client-go/dynamic"
-	"k8s.io/client-go/rest"
 	"k8s.io/client-go/restmapper"
 	"k8s.io/client-go/tools/clientcmd"
 )
@@ -28,7 +27,7 @@ import (
 //go:embed antrea.yaml
 var antreaManifests string
 
-// note: https://github.com/antrea-io/antrea/releases/download/v0.13.5/antrea.yml
+// note: https://github.com/antrea-io/antrea/releases/download/v1.2.2/antrea.yml
 
 func installCNI(kubeconfigPath string) error {
 	config, err := clientcmd.BuildConfigFromFlags("", kubeconfigPath)
@@ -36,14 +35,44 @@ func installCNI(kubeconfigPath string) error {
 		return errors.Wrap(err, "build config")
 	}
 
+	// Create dynamic client for loading CNI resources in the cluster
+	dyn, err := dynamic.NewForConfig(config)
+	if err != nil {
+		return errors.Wrap(err, "new dynamic config")
+	}
+
+	// Create DiscoveryClient
+	dc, err := discovery.NewDiscoveryClientForConfig(config)
+	if err != nil {
+		return errors.Wrap(err, "new discovery client for config")
+	}
+
+	mapper := restmapper.NewDeferredDiscoveryRESTMapper(memory.NewMemCacheClient(dc))
+
 	var decUnstructured = yaml.NewDecodingSerializer(unstructured.UnstructuredJSONScheme)
 
-	multidocReader := utilyaml.NewYAMLReader(bufio.NewReader(strings.NewReader(antreaManifests)))
+	// Pass one: install CRDs
+	if err = applyUnstructuredManifests(antreaManifests, dc, dyn, mapper, decUnstructured, true); err != nil {
+		return errors.Wrap(err, "apply unstructured CRDs")
+	}
+
+	// Pass two: install CNI objects
+	if err = applyUnstructuredManifests(antreaManifests, dc, dyn, mapper, decUnstructured, false); err != nil {
+		return errors.Wrap(err, "apply unstructured manifests")
+	}
+
+	return nil
+}
+
+// Reference: https://ymmt2005.hatenablog.com/entry/2020/04/14/An_example_of_using_dynamic_client_of_k8s.io/client-go
+func applyUnstructuredManifests(manifests string, dc *discovery.DiscoveryClient, dyn dynamic.Interface, mapper *restmapper.DeferredDiscoveryRESTMapper, decUnstructured runtime.Serializer, filterCrds bool) error {
+
+	multidocReader := utilyaml.NewYAMLReader(bufio.NewReader(strings.NewReader(manifests)))
 	for {
 		buf, err := multidocReader.Read()
 		if err != nil {
 			if err == io.EOF {
-				return nil
+				break
 			}
 
 			return errors.Wrap(err, "reading multidoc")
@@ -55,15 +84,8 @@ func installCNI(kubeconfigPath string) error {
 			return errors.Wrap(err, "decode doc")
 		}
 
-		dc, err := discovery.NewDiscoveryClientForConfig(config)
-		if err != nil {
-			return errors.Wrap(err, "new discovery client for config")
-		}
-		mapper := restmapper.NewDeferredDiscoveryRESTMapper(memory.NewMemCacheClient(dc))
-
-		dyn, err := dynamic.NewForConfig(config)
-		if err != nil {
-			return errors.Wrap(err, "new dynamic config")
+		if filterCrds && gvk.Kind != "CustomResourceDefinition" {
+			continue
 		}
 
 		mapping, err := mapper.RESTMapping(gvk.GroupKind(), gvk.Version)
@@ -92,17 +114,5 @@ func installCNI(kubeconfigPath string) error {
 			return errors.Wrap(err, "patch")
 		}
 	}
-}
-
-// find the corresponding GVR (available in *meta.RESTMapping) for gvk
-func findGVR(gvk *schema.GroupVersionKind, cfg *rest.Config) (*meta.RESTMapping, error) {
-
-	// DiscoveryClient queries API server about the resources
-	dc, err := discovery.NewDiscoveryClientForConfig(cfg)
-	if err != nil {
-		return nil, err
-	}
-	mapper := restmapper.NewDeferredDiscoveryRESTMapper(memory.NewMemCacheClient(dc))
-
-	return mapper.RESTMapping(gvk.GroupKind(), gvk.Version)
+	return nil
 }

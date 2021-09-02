@@ -37,7 +37,6 @@ func runController(ctx context.Context, dataDir string) error {
 	args := []string{
 		"--bind-address=0.0.0.0",
 		"--secure-port=11252",
-		"--port=0", // Don't serve insecure
 		"--cluster-cidr=10.200.0.0/16",
 		"--cluster-name=kubernetes",
 		fmt.Sprintf("--cluster-signing-cert-file=%s", caCertFile),

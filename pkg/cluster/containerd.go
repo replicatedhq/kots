@@ -268,14 +268,14 @@ func startContainerd(ctx context.Context, dataDir string) error {
 		return errors.Wrap(err, "write containerd config")
 	}
 
-	if err := spwanContainerd(installDir); err != nil {
+	if err := spawnContainerd(installDir); err != nil {
 		return errors.Wrap(err, "spawn containerd")
 	}
 
 	return nil
 }
 
-func spwanContainerd(installDir string) error {
+func spawnContainerd(installDir string) error {
 	go func() {
 		args := []string{
 			fmt.Sprintf("--config=%s", filepath.Join(installDir, "config.toml")),
