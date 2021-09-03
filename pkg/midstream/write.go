@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 
 	"github.com/pkg/errors"
+	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	"github.com/replicatedhq/kots/pkg/crypto"
 	"github.com/replicatedhq/kots/pkg/disasterrecovery"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
@@ -34,6 +35,7 @@ type WriteOptions struct {
 	HTTPSProxyEnvValue string
 	NoProxyEnvValue    string
 	UseHelmInstall     map[string]bool
+	NewHelmCharts      []*kotsv1beta1.HelmChart
 }
 
 func (m *Midstream) WriteMidstream(options WriteOptions) error {
