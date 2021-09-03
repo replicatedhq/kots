@@ -246,7 +246,7 @@ func (b Base) ListErrorFiles() []BaseFile {
 	return files
 }
 
-func (b *Base) FindObjectsWithImages() ([]k8sdoc.K8sDoc, error) {
+func FindObjectsWithImages(b *Base) []k8sdoc.K8sDoc {
 	var objects []k8sdoc.K8sDoc
 	for _, file := range b.Files {
 		parsed, err := k8sdoc.ParseYAML(file.Content)
@@ -259,7 +259,13 @@ func (b *Base) FindObjectsWithImages() ([]k8sdoc.K8sDoc, error) {
 			objects = append(objects, parsed)
 		}
 	}
-	return objects, nil
+
+	for _, subBase := range b.Bases {
+		subObjects := FindObjectsWithImages(&subBase)
+		objects = append(objects, subObjects...)
+	}
+
+	return objects
 }
 
 func PrependBaseFilesPath(files []BaseFile, prefix string) []BaseFile {

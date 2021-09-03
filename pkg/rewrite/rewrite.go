@@ -355,10 +355,7 @@ func writeMidstream(writeMidstreamOptions midstream.WriteOptions, options Rewrit
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to save installation")
 		}
-		affectedObjects, err := b.FindObjectsWithImages()
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to find objects with images")
-		}
+		affectedObjects := base.FindObjectsWithImages(b)
 
 		registryUser := options.RegistryUsername
 		registryPass := options.RegistryPassword
