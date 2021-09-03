@@ -415,7 +415,6 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 		HTTPProxyEnvValue:  pullOptions.HTTPProxyEnvValue,
 		HTTPSProxyEnvValue: pullOptions.HTTPSProxyEnvValue,
 		NoProxyEnvValue:    pullOptions.NoProxyEnvValue,
-		NewHelmCharts:      newHelmCharts,
 	}
 	commonWriteMidstreamOptions.UseHelmInstall = map[string]bool{}
 	// this map contains chart names and useHelmInstall flag
@@ -620,21 +619,12 @@ func writeMidstream(writeMidstreamOptions midstream.WriteOptions, options PullOp
 				}
 			}
 
-			namePrefix := options.AppSlug
-			// For the newer style charts, create a new secret per chart as helm adds chart specific
-			// details to annotations and labels to it.
-			for _, v := range writeMidstreamOptions.NewHelmCharts {
-				if filepath.Base(b.Path) == v.Spec.Chart.Name && v.Spec.UseHelmInstall == true {
-					namePrefix = fmt.Sprintf("%s-%s", options.AppSlug, filepath.Base(b.Path))
-					break
-				}
-			}
 			pullSecret, err = registry.PullSecretForRegistries(
 				[]string{options.RewriteImageOptions.Host},
 				registryUser,
 				registryPass,
 				options.Namespace,
-				namePrefix,
+				options.AppSlug,
 			)
 			if err != nil {
 				return nil, errors.Wrap(err, "create pull secret")
@@ -693,21 +683,12 @@ func writeMidstream(writeMidstreamOptions midstream.WriteOptions, options PullOp
 		// Note that there maybe no rewritten images if only replicated private images are being used.
 		// We still need to create the secret in that case.
 		if len(findResult.Docs) > 0 {
-			namePrefix := options.AppSlug
-			// For the newer style charts, create a new secret per chart as helm adds chart specific
-			// details to annotations and labels to it.
-			for _, v := range writeMidstreamOptions.NewHelmCharts {
-				if filepath.Base(b.Path) == v.Spec.Chart.Name && v.Spec.UseHelmInstall == true {
-					namePrefix = fmt.Sprintf("%s-%s", options.AppSlug, filepath.Base(b.Path))
-					break
-				}
-			}
 			pullSecret, err = registry.PullSecretForRegistries(
 				replicatedRegistryInfo.ToSlice(),
 				license.Spec.LicenseID,
 				license.Spec.LicenseID,
 				options.Namespace,
-				namePrefix,
+				options.AppSlug,
 			)
 			if err != nil {
 				return nil, errors.Wrap(err, "create pull secret")
