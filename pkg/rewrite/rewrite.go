@@ -220,6 +220,7 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 		HTTPProxyEnvValue:  rewriteOptions.HTTPProxyEnvValue,
 		HTTPSProxyEnvValue: rewriteOptions.HTTPSProxyEnvValue,
 		NoProxyEnvValue:    rewriteOptions.NoProxyEnvValue,
+		NewHelmCharts:      newHelmCharts,
 	}
 
 	commonWriteMidstreamOptions.UseHelmInstall = map[string]bool{}
@@ -368,12 +369,21 @@ func writeMidstream(writeMidstreamOptions midstream.WriteOptions, options Rewrit
 				return nil, errors.Wrapf(err, "failed to load registry auth for %q", options.RegistryEndpoint)
 			}
 		}
+		namePrefix := options.AppSlug
+		// For the newer style charts, create a new secret per chart as helm adds chart specific
+		// details to annotations and labels to it.
+		for _, v := range writeMidstreamOptions.NewHelmCharts {
+			if filepath.Base(b.Path) == v.Spec.Chart.Name && v.Spec.UseHelmInstall == true {
+				namePrefix = fmt.Sprintf("%s-%s", options.AppSlug, filepath.Base(b.Path))
+				break
+			}
+		}
 		pullSecret, err = registry.PullSecretForRegistries(
 			[]string{options.RegistryEndpoint},
 			registryUser,
 			registryPass,
 			options.K8sNamespace,
-			options.AppSlug,
+			namePrefix,
 		)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to create private registry pull secret")
@@ -425,13 +435,23 @@ func writeMidstream(writeMidstreamOptions midstream.WriteOptions, options Rewrit
 		}
 
 		if len(findResult.Docs) > 0 {
+			namePrefix := options.AppSlug
+			// For the newer style charts, create a new secret per chart as helm adds chart specific
+			// details to annotations and labels to it.
+			for _, v := range writeMidstreamOptions.NewHelmCharts {
+				if filepath.Base(b.Path) == v.Spec.Chart.Name && v.Spec.UseHelmInstall == true {
+					namePrefix = fmt.Sprintf("%s-%s", options.AppSlug, filepath.Base(b.Path))
+					break
+				}
+			}
+
 			replicatedRegistryInfo := registry.ProxyEndpointFromLicense(options.License)
 			pullSecret, err = registry.PullSecretForRegistries(
 				replicatedRegistryInfo.ToSlice(),
 				options.License.Spec.LicenseID,
 				options.License.Spec.LicenseID,
 				options.K8sNamespace,
-				options.AppSlug,
+				namePrefix,
 			)
 			if err != nil {
 				return nil, errors.Wrap(err, "failed to create Replicated registry pull secret")
