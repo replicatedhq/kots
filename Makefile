@@ -152,4 +152,4 @@ sbom/kots-sbom.tgz: sbom/spdx/bom-go-mod.spdx sbom/spdx/bom-yarn.spdx
 	tar -czf sbom/kots-sbom.tgz sbom/spdx/*.spdx
 
 sbom: sbom/kots-sbom.tgz
-	$(shell cosign sign-blob -key ./cosign.key sbom/kots-sbom.tgz > ./sbom/kots-sbom.tgz.sig)
+	cosign sign-blob -key ./cosign.key sbom/kots-sbom.tgz > ./sbom/kots-sbom.tgz.sig
