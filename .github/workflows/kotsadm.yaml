@@ -529,7 +529,7 @@ jobs:
         uses: actions/checkout@v2
       - name: Scan postgres image
         id: scan
-        uses: anchore/scan-action@v2
+        uses: anchore/scan-action@v3
         with:
           image: "postgres:10.17-alpine"
           fail-build: false
@@ -549,7 +549,7 @@ jobs:
         uses: actions/checkout@v2
       - name: Scan postgres image
         id: scan
-        uses: anchore/scan-action@v2
+        uses: anchore/scan-action@v3
         with:
           image: "postgres:10.17"
           fail-build: false
@@ -568,7 +568,7 @@ jobs:
         uses: actions/checkout@v2
       - name: Scan migrations image
         id: scan
-        uses: anchore/scan-action@v2
+        uses: anchore/scan-action@v3
         with:
           image: "kotsadm/kotsadm-migrations:alpha"
           fail-build: false
@@ -587,7 +587,7 @@ jobs:
         uses: actions/checkout@v2
       - name: Scan minio image
         id: scan
-        uses: anchore/scan-action@v2
+        uses: anchore/scan-action@v3
         with:
           image: "minio/minio:RELEASE.2021-08-05T22-01-19Z"
           fail-build: false
@@ -607,7 +607,7 @@ jobs:
         uses: actions/checkout@v2
       - name: Scan kurl proxy image
         id: scan
-        uses: anchore/scan-action@v2
+        uses: anchore/scan-action@v3
         with:
           image: "kotsadm/kurl-proxy:alpha"
           fail-build: false
@@ -627,7 +627,7 @@ jobs:
         uses: actions/checkout@v2
       - name: Scan kotsadm image
         id: scan
-        uses: anchore/scan-action@v2
+        uses: anchore/scan-action@v3
         with:
           image: "kotsadm/kotsadm:alpha"
           fail-build: false
@@ -647,7 +647,7 @@ jobs:
         uses: actions/checkout@v2
       - name: Scan dex image
         id: scan
-        uses: anchore/scan-action@v2
+        uses: anchore/scan-action@v3
         with:
           image: "ghcr.io/dexidp/dex:v2.28.1"
           fail-build: false
