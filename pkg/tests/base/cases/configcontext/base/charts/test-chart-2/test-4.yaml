@@ -1,9 +1,6 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  annotations:
-    helm.sh/hook: post-install
-    helm.sh/hook-weight: "2"
   labels: null
   name: post-install-job-2
   namespace: helmns-2
