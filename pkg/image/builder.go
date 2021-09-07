@@ -488,6 +488,7 @@ func CopyFromFileToRegistry(path string, name string, tag string, digest string,
 
 // if dockerHubRegistry is provided, its credentials will be used in case of rate limiting
 func IsPrivateImage(image string, dockerHubRegistry registry.RegistryOptions) (bool, error) {
+	fmt.Printf("\n+++++++%s\n", image)
 	var lastErr error
 	isRateLimited := false
 	for i := 0; i < 3; i++ {
@@ -515,6 +516,7 @@ func IsPrivateImage(image string, dockerHubRegistry registry.RegistryOptions) (b
 		}
 
 		remoteImage, err := ref.NewImage(context.Background(), &sysCtx)
+		fmt.Printf("\n     +++++++err:%s\n", err)
 		if err == nil {
 			remoteImage.Close()
 			return false, nil
@@ -543,6 +545,7 @@ func IsPrivateImage(image string, dockerHubRegistry registry.RegistryOptions) (b
 		// so we consider the image private. a use-case for this is when the images are supposed to be
 		// proxied through proxy.replicated.com and the other domains are blocked by the firewall.
 
+		fmt.Printf("\n     +++++++is private\n")
 		return true, nil
 	}
 

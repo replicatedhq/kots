@@ -597,12 +597,22 @@ jobs:
           APP_SLUG: multi-namespace
         run: |
           set +e
+
+          set -x
+          ls -l ~/.docker
+          cat ~/.docker/config.json
+          set +x
+
           echo ${{ secrets.MULTI_NAMESPACE_LICENSE }} | base64 -d > license.yaml
           ./bin/kots pull $APP_NAME/automated \
             --license-file license.yaml \
             --shared-password password \
             --namespace $APP_NAME \
             --exclude-admin-console
+
+          set -x
+          cat $PWD/$APP_SLUG/overlays/midstream/pullsecrets.yaml
+          set +x
 
           kubectl create ns $APP_NAME
           kubectl create ns nginx-test
@@ -625,6 +635,9 @@ jobs:
             if [ $COUNTER -gt 120 ]; then
               echo "Timed out waiting for pods to start"
               kubectl get pods -A
+              kubectl describe pods -n default
+              kubectl describe pods -n postgres-test
+              kubectl get secrets -A
               exit -1
             fi
             sleep 1
