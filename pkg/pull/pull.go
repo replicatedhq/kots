@@ -606,10 +606,7 @@ func writeMidstream(writeMidstreamOptions midstream.WriteOptions, options PullOp
 				}
 			}
 
-			affectedObjects, err := b.FindObjectsWithImages()
-			if err != nil {
-				return nil, errors.Wrap(err, "failed to find objects with images")
-			}
+			affectedObjects := base.FindObjectsWithImages(b)
 
 			registryUser := options.RewriteImageOptions.Username
 			registryPass := options.RewriteImageOptions.Password
