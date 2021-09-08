@@ -119,142 +119,15 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 		return "", errors.Wrap(err, "failed to parse uri")
 	}
 
-	fetchOptions := upstreamtypes.FetchOptions{
-		HelmRepoURI:   pullOptions.HelmRepoURI,
-		RootDir:       pullOptions.RootDir,
-		UseAppDir:     pullOptions.CreateAppDir,
-		LocalPath:     pullOptions.LocalPath,
-		CurrentCursor: pullOptions.UpdateCursor,
-		AppSlug:       pullOptions.AppSlug,
-		AppSequence:   pullOptions.AppSequence,
-		LocalRegistry: upstreamtypes.LocalRegistry{
-			Host:      pullOptions.RewriteImageOptions.Host,
-			Namespace: pullOptions.RewriteImageOptions.Namespace,
-			Username:  pullOptions.RewriteImageOptions.Username,
-			Password:  pullOptions.RewriteImageOptions.Password,
-			ReadOnly:  pullOptions.RewriteImageOptions.IsReadOnly,
-		},
-		ReportingInfo: pullOptions.ReportingInfo,
-	}
-
-	var installation *kotsv1beta1.Installation
-
-	_, localConfigValues, localLicense, localInstallation, localIdentityConfig, err := findConfig(pullOptions.LocalPath)
+	license, configValues, identityConfig, installation, err := findKotsKinds(pullOptions)
 	if err != nil {
-		return "", errors.Wrap(err, "failed to find config files in local path")
-	}
-
-	if pullOptions.LicenseObj != nil {
-		fetchOptions.License = pullOptions.LicenseObj
-	} else if pullOptions.LicenseFile != "" {
-		license, err := ParseLicenseFromFile(pullOptions.LicenseFile)
-		if err != nil {
-			if errors.Cause(err) == ErrSignatureInvalid {
-				return "", ErrSignatureInvalid
-			}
-			if errors.Cause(err) == ErrSignatureMissing {
-				return "", ErrSignatureMissing
-			}
-			return "", errors.Wrap(err, "failed to parse license from file")
-		}
-
-		fetchOptions.License = license
-	} else {
-		fetchOptions.License = localLicense
-	}
-
-	encryptConfig := false
-	if pullOptions.ConfigFile != "" {
-		config, err := ParseConfigValuesFromFile(pullOptions.ConfigFile)
-		if err != nil {
-			return "", errors.Wrap(err, "failed to parse config values from file")
-		}
-		fetchOptions.ConfigValues = config
-		encryptConfig = true
-	} else {
-		fetchOptions.ConfigValues = localConfigValues
-	}
-
-	var identityConfig *kotsv1beta1.IdentityConfig
-	if pullOptions.IdentityConfigFile != "" {
-		identityConfig, err = ParseIdentityConfigFromFile(pullOptions.IdentityConfigFile)
-		if err != nil {
-			return "", errors.Wrap(err, "failed to parse identity config from file")
-		}
-	} else {
-		identityConfig = localIdentityConfig
-	}
-	fetchOptions.IdentityConfig = identityConfig
-
-	if pullOptions.InstallationFile != "" {
-		i, err := parseInstallationFromFile(pullOptions.InstallationFile)
-		if err != nil {
-			return "", errors.Wrap(err, "failed to parse installation from file")
-		}
-		installation = i
-	} else {
-		installation = localInstallation
-	}
-
-	if installation != nil {
-		fetchOptions.EncryptionKey = installation.Spec.EncryptionKey
-		fetchOptions.CurrentVersionLabel = installation.Spec.VersionLabel
-		fetchOptions.CurrentChannelID = installation.Spec.ChannelID
-		fetchOptions.CurrentChannelName = installation.Spec.ChannelName
-		if fetchOptions.CurrentCursor == "" {
-			fetchOptions.CurrentCursor = installation.Spec.UpdateCursor
-		}
-	}
-
-	if pullOptions.AirgapRoot != "" {
-		if expired, err := LicenseIsExpired(fetchOptions.License); err != nil {
-			return "", errors.Wrap(err, "failed to check license expiration")
-		} else if expired {
-			return "", util.ActionableError{Message: "License is expired"}
-		}
-
-		airgap, err := findAirgapMetaInDir(pullOptions.AirgapRoot)
-		if err != nil {
-			return "", errors.Wrap(err, "failed to parse license from file")
-		}
-
-		if fetchOptions.License.Spec.ChannelID != airgap.Spec.ChannelID {
-			return "", util.ActionableError{
-				NoRetry: true, // if this is airgap upload, make sure to free up tmp space
-				Message: fmt.Sprintf("License (%s) and airgap bundle (%s) channels do not match.", fetchOptions.License.Spec.ChannelName, airgap.Spec.ChannelName),
-			}
-		}
-
-		if err := publicKeysMatch(log, fetchOptions.License, airgap); err != nil {
-			return "", errors.Wrap(err, "failed to validate app key")
-		}
-
-		airgapAppFiles, err := ioutil.TempDir("", "airgap-kots")
-		if err != nil {
-			return "", errors.Wrap(err, "failed to create temp airgap dir")
-		}
-		defer os.RemoveAll(airgapAppFiles)
-
-		err = util.ExtractTGZArchive(filepath.Join(pullOptions.AirgapRoot, "app.tar.gz"), airgapAppFiles)
-		if err != nil {
-			return "", errors.Wrap(err, "failed to extract app files")
-		}
-
-		fetchOptions.Airgap = airgap
-		fetchOptions.LocalPath = airgapAppFiles
-	}
-
-	var prevHelmCharts []*kotsv1beta1.HelmChart
-	if !pullOptions.SkipHelmChartCheck {
-		prevHelmCharts, err = kotsutil.LoadHelmChartsFromPath(pullOptions.RootDir)
-		if err != nil {
-			return "", errors.Wrap(err, "failed to load previous helm charts")
-		}
+		return "", errors.Wrap(err, "failed to find kots kinds")
 	}
 
 	log.ActionWithSpinner("Pulling upstream")
 	io.WriteString(pullOptions.ReportWriter, "Pulling upstream\n")
-	u, err := upstream.FetchUpstream(upstreamURI, &fetchOptions)
+
+	u, err := fetchUpstream(log, pullOptions, upstreamURI, license, configValues, identityConfig, installation)
 	if err != nil {
 		return "", errors.Wrap(err, "failed to fetch upstream")
 	}
@@ -265,6 +138,11 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 	}
 
 	includeAdminConsole := uri.Scheme == "replicated" && !pullOptions.ExcludeAdminConsole
+
+	encryptConfig := false
+	if pullOptions.ConfigFile != "" {
+		encryptConfig = true
+	}
 
 	writeUpstreamOptions := upstreamtypes.WriteOptions{
 		RootDir:             pullOptions.RootDir,
@@ -283,8 +161,13 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 	}
 	log.FinishSpinner()
 
-	var newHelmCharts []*kotsv1beta1.HelmChart
+	var prevHelmCharts, newHelmCharts []*kotsv1beta1.HelmChart
 	if !pullOptions.SkipHelmChartCheck {
+		prevHelmCharts, err = kotsutil.LoadHelmChartsFromPath(pullOptions.RootDir)
+		if err != nil {
+			return "", errors.Wrap(err, "failed to load previous helm charts")
+		}
+
 		renderDir := pullOptions.RootDir
 		if pullOptions.CreateAppDir {
 			renderDir = filepath.Join(pullOptions.RootDir, u.Name)
@@ -428,7 +311,7 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 	writeMidstreamOptions.MidstreamDir = filepath.Join(commonBase.GetOverlaysDir(writeBaseOptions), "midstream")
 	writeMidstreamOptions.BaseDir = filepath.Join(u.GetBaseDir(writeUpstreamOptions), commonBase.Path)
 
-	m, err := writeMidstream(writeMidstreamOptions, pullOptions, u, commonBase, fetchOptions.License, identityConfig, u.GetUpstreamDir(writeUpstreamOptions), log)
+	m, err := writeMidstream(writeMidstreamOptions, pullOptions, u, commonBase, license, identityConfig, u.GetUpstreamDir(writeUpstreamOptions), log)
 	if err != nil {
 		return "", errors.Wrap(err, "failed to write common midstream")
 	}
@@ -441,7 +324,7 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 		// empty map indicates that the pullsecrets need to be generated within each chart
 		writeMidstreamOptions.UseHelmInstall = map[string]bool{}
 
-		helmMidstream, err := writeMidstream(writeMidstreamOptions, pullOptions, u, &helmBase, fetchOptions.License, identityConfig, u.GetUpstreamDir(writeUpstreamOptions), log)
+		helmMidstream, err := writeMidstream(writeMidstreamOptions, pullOptions, u, &helmBase, license, identityConfig, u.GetUpstreamDir(writeUpstreamOptions), log)
 		if err != nil {
 			return "", errors.Wrapf(err, "failed to write helm midstream %s", helmBase.Path)
 		}
@@ -467,6 +350,79 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 	}
 
 	return filepath.Join(pullOptions.RootDir, u.Name), nil
+}
+
+func fetchUpstream(log *logger.CLILogger, options PullOptions, upstreamURI string, license *kotsv1beta1.License, configValues *kotsv1beta1.ConfigValues, identityConfig *kotsv1beta1.IdentityConfig, installation *kotsv1beta1.Installation) (*upstreamtypes.Upstream, error) {
+	fetchOptions := upstreamtypes.FetchOptions{
+		HelmRepoURI:   options.HelmRepoURI,
+		RootDir:       options.RootDir,
+		UseAppDir:     options.CreateAppDir,
+		LocalPath:     options.LocalPath,
+		CurrentCursor: options.UpdateCursor,
+		AppSlug:       options.AppSlug,
+		AppSequence:   options.AppSequence,
+		LocalRegistry: upstreamtypes.LocalRegistry{
+			Host:      options.RewriteImageOptions.Host,
+			Namespace: options.RewriteImageOptions.Namespace,
+			Username:  options.RewriteImageOptions.Username,
+			Password:  options.RewriteImageOptions.Password,
+			ReadOnly:  options.RewriteImageOptions.IsReadOnly,
+		},
+		ReportingInfo:  options.ReportingInfo,
+		License:        license,
+		ConfigValues:   configValues,
+		IdentityConfig: identityConfig,
+	}
+
+	if installation != nil {
+		fetchOptions.EncryptionKey = installation.Spec.EncryptionKey
+		fetchOptions.CurrentVersionLabel = installation.Spec.VersionLabel
+		fetchOptions.CurrentChannelID = installation.Spec.ChannelID
+		fetchOptions.CurrentChannelName = installation.Spec.ChannelName
+		if fetchOptions.CurrentCursor == "" {
+			fetchOptions.CurrentCursor = installation.Spec.UpdateCursor
+		}
+	}
+
+	if options.AirgapRoot != "" {
+		if expired, err := LicenseIsExpired(fetchOptions.License); err != nil {
+			return nil, errors.Wrap(err, "failed to check license expiration")
+		} else if expired {
+			return nil, util.ActionableError{Message: "License is expired"}
+		}
+
+		airgap, err := findAirgapMetaInDir(options.AirgapRoot)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to parse license from file")
+		}
+
+		if fetchOptions.License.Spec.ChannelID != airgap.Spec.ChannelID {
+			return nil, util.ActionableError{
+				NoRetry: true, // if this is airgap upload, make sure to free up tmp space
+				Message: fmt.Sprintf("License (%s) and airgap bundle (%s) channels do not match.", fetchOptions.License.Spec.ChannelName, airgap.Spec.ChannelName),
+			}
+		}
+
+		if err := publicKeysMatch(log, fetchOptions.License, airgap); err != nil {
+			return nil, errors.Wrap(err, "failed to validate app key")
+		}
+
+		airgapAppFiles, err := ioutil.TempDir("", "airgap-kots")
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to create temp airgap dir")
+		}
+		defer os.RemoveAll(airgapAppFiles)
+
+		err = util.ExtractTGZArchive(filepath.Join(options.AirgapRoot, "app.tar.gz"), airgapAppFiles)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to extract app files")
+		}
+
+		fetchOptions.Airgap = airgap
+		fetchOptions.LocalPath = airgapAppFiles
+	}
+
+	return upstream.FetchUpstream(upstreamURI, &fetchOptions)
 }
 
 func writeMidstream(writeMidstreamOptions midstream.WriteOptions, options PullOptions, u *upstreamtypes.Upstream, b *base.Base, license *kotsv1beta1.License, identityConfig *kotsv1beta1.IdentityConfig, upstreamDir string, log *logger.CLILogger) (*midstream.Midstream, error) {
@@ -1072,7 +1028,62 @@ func LicenseIsExpired(license *kotsv1beta1.License) (bool, error) {
 	return partsed.Before(time.Now()), nil
 }
 
-func findConfig(localPath string) (*kotsv1beta1.Config, *kotsv1beta1.ConfigValues, *kotsv1beta1.License, *kotsv1beta1.Installation, *kotsv1beta1.IdentityConfig, error) {
+func findKotsKinds(options PullOptions) (*kotsv1beta1.License, *kotsv1beta1.ConfigValues, *kotsv1beta1.IdentityConfig, *kotsv1beta1.Installation, error) {
+	var license *kotsv1beta1.License
+	var configValues *kotsv1beta1.ConfigValues
+	var identityConfig *kotsv1beta1.IdentityConfig
+	var installation *kotsv1beta1.Installation
+
+	_, localConfigValues, localLicense, localInstallation, localIdentityConfig, err := findLocalKotsKinds(options.LocalPath)
+	if err != nil {
+		return nil, nil, nil, nil, errors.Wrap(err, "failed to find kots kinds in local path")
+	}
+
+	if options.LicenseObj != nil {
+		license = options.LicenseObj
+	} else if options.LicenseFile != "" {
+		license, err = ParseLicenseFromFile(options.LicenseFile)
+		if err != nil {
+			if errors.Cause(err) == ErrSignatureInvalid || errors.Cause(err) == ErrSignatureMissing {
+				return nil, nil, nil, nil, errors.Cause(err)
+			}
+			return nil, nil, nil, nil, errors.Wrap(err, "failed to parse license from file")
+		}
+	} else {
+		license = localLicense
+	}
+
+	if options.ConfigFile != "" {
+		configValues, err = ParseConfigValuesFromFile(options.ConfigFile)
+		if err != nil {
+			return nil, nil, nil, nil, errors.Wrap(err, "failed to parse config values from file")
+		}
+	} else {
+		configValues = localConfigValues
+	}
+
+	if options.IdentityConfigFile != "" {
+		identityConfig, err = ParseIdentityConfigFromFile(options.IdentityConfigFile)
+		if err != nil {
+			return nil, nil, nil, nil, errors.Wrap(err, "failed to parse identity config from file")
+		}
+	} else {
+		identityConfig = localIdentityConfig
+	}
+
+	if options.InstallationFile != "" {
+		installation, err = parseInstallationFromFile(options.InstallationFile)
+		if err != nil {
+			return nil, nil, nil, nil, errors.Wrap(err, "failed to parse installation from file")
+		}
+	} else {
+		installation = localInstallation
+	}
+
+	return license, configValues, identityConfig, installation, nil
+}
+
+func findLocalKotsKinds(localPath string) (*kotsv1beta1.Config, *kotsv1beta1.ConfigValues, *kotsv1beta1.License, *kotsv1beta1.Installation, *kotsv1beta1.IdentityConfig, error) {
 	if localPath == "" {
 		return nil, nil, nil, nil, nil, nil
 	}
