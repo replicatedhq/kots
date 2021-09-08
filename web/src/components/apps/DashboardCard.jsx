@@ -78,7 +78,7 @@ export default class DashboardCard extends React.Component {
 
   renderApplicationCard = () => {
     const { selectedAction } = this.state;
-    const { appStatus, url, links } = this.props;
+    const { appStatus, links } = this.props;
 
     return (
       <div className="flex-column flex1">

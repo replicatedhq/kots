@@ -585,6 +585,10 @@ class Dashboard extends Component {
     this.setState({ showAppStatusModal: !this.state.showAppStatusModal });
   }
 
+  goToTroubleshootPage = () => {
+    this.props.history.push(`${this.props.match.url}/troubleshoot`);
+  }
+
   getAppResourcesByState = () => {
     const appStatus = this.state.dashboard?.appStatus;
     if (!appStatus?.resourceStates?.length) {
@@ -867,7 +871,10 @@ class Dashboard extends Component {
                   </div>
                 ))}
               </div>
-              <button type="button" className="btn primary u-marginTop--15" onClick={this.toggleAppStatusModal}>Ok, got it!</button>
+              <div className="flex alignItems--center u-marginTop--30">
+                <button type="button" className="btn primary" onClick={this.toggleAppStatusModal}>Ok, got it!</button>
+                <button type="button" className="btn secondary blue u-marginLeft--10" onClick={this.goToTroubleshootPage}>Troubleshoot</button>
+              </div>
             </div>
           </Modal>
         }
