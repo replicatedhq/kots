@@ -17,3 +17,34 @@
     }
   }
 }
+
+.ResourceStateText {
+  margin-bottom: 5px;
+  margin-top: 10px;
+  padding-bottom: 3px;
+  padding-top: 3px;
+  padding-right: 4px;
+  padding-left: 4px;
+  border-radius: 2px;
+  display: inline-block;
+
+  &.missing {
+    color: #F65C5C;
+    background-color: #FFD1C7;
+  }
+  
+  &.unavailable {
+    color: #EC8F39;
+    background-color: #FBE9D7;
+  }
+  
+  &.degraded {
+    color: #EBB55C;
+    background-color: #FFFDF6;
+  }
+  
+  &.ready {
+    color: #44BB66;
+    background-color: #ECF8F0;
+  }
+}

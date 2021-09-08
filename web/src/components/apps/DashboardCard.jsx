@@ -98,7 +98,7 @@ export default class DashboardCard extends React.Component {
               {Utilities.toTitleCase(appStatus)}
             </span>
             {appStatus !== "ready" ?
-              <Link to={`${url}/troubleshoot`} className="card-link u-marginLeft--10"> Troubleshoot </Link>
+              <span onClick={this.props.onViewAppStatusDetails} className="card-link u-marginLeft--10"> Details </span>
               : null}
           </div>
           :
