@@ -4,6 +4,7 @@ import Helmet from "react-helmet";
 import { withRouter } from "react-router-dom";
 import size from "lodash/size";
 import get from "lodash/get";
+import sortBy from "lodash/sortBy";
 import Loader from "../shared/Loader";
 import DashboardCard from "./DashboardCard";
 import ConfigureGraphsModal from "../shared/modals/ConfigureGraphsModal";
@@ -54,6 +55,7 @@ class Dashboard extends Component {
     airgapUpdateError: "",
     startSnapshotErrorMsg: "",
     showUpdateCheckerModal: false,
+    showAppStatusModal: false,
     dashboard: {
       appStatus: null,
       metrics: [],
@@ -579,6 +581,62 @@ class Dashboard extends Component {
     this.startASnapshot(selectedSnapshotOption.option);
   }
 
+  toggleAppStatusModal = () => {
+    this.setState({ showAppStatusModal: !this.state.showAppStatusModal });
+  }
+
+  goToTroubleshootPage = () => {
+    this.props.history.push(`${this.props.match.url}/troubleshoot`);
+  }
+
+  getAppResourcesByState = () => {
+    const appStatus = this.state.dashboard?.appStatus;
+    if (!appStatus?.resourceStates?.length) {
+      return {};
+    }
+
+    const resourceStates = appStatus?.resourceStates;
+    const statesMap = {};
+  
+    for (let i = 0; i < resourceStates.length; i++) {
+      const resourceState = resourceStates[i];
+      if (!statesMap.hasOwnProperty(resourceState.state)) {
+        statesMap[resourceState.state] = [];
+      }
+      statesMap[resourceState.state].push(resourceState);
+    }
+
+    // sort resources so that the order doesn't change while polling (since we show live data)
+    Object.keys(statesMap).forEach(state => {
+      statesMap[state] = sortBy(statesMap[state], resource => {
+        const fullResourceName = `${resource?.namespace}/${resource?.kind}/${resource?.name}`;
+        return fullResourceName;
+      });
+    });
+
+    // sort the available states to show them in the correct order
+    const allStates = Object.keys(statesMap);
+    const sortedStates = sortBy(allStates, s => {
+      if (s === "missing") {
+        return 1
+      }
+      if (s === "unavailable") {
+        return 2
+      }
+      if (s === "degraded") {
+        return 3
+      }
+      if (s === "ready") {
+        return 4
+      }
+    });
+
+    return {
+      statesMap,
+      sortedStates,
+    };
+  }
+
   render() {
     const {
       appName,
@@ -620,6 +678,8 @@ class Dashboard extends Component {
       );
     }
 
+    const appResourcesByState = this.getAppResourcesByState();
+
     return (
       <div className="flex-column flex1 u-position--relative u-overflow--auto u-padding--20">
         <Helmet>
@@ -644,6 +704,7 @@ class Dashboard extends Component {
                 application={true}
                 cardIcon="applicationIcon"
                 appStatus={this.state.dashboard?.appStatus?.state}
+                onViewAppStatusDetails={this.toggleAppStatusModal}
                 url={this.props.match.url}
                 links={links}
                 app={app}
@@ -787,7 +848,36 @@ class Dashboard extends Component {
             </div>
           </Modal>
         }
-
+        {this.state.showAppStatusModal &&
+          <Modal
+            isOpen={this.state.showAppStatusModal}
+            onRequestClose={this.toggleAppStatusModal}
+            ariaHideApp={false}
+            className="Modal DefaultSize"
+          >
+            <div className="Modal-body">
+              <p className="u-fontSize--large u-fontWeight--bold u-textColor--primary">Resource status</p>
+              <div className="u-marginTop--10 u-marginBottom--10 u-overflow--auto" style={{ maxHeight: "50vh" }}>
+                {appResourcesByState?.sortedStates?.map((state, i) => (
+                  <div key={i}>
+                    <p className="u-fontSize--normal u-color--mutedteal u-fontWeight--bold u-marginTop--20">{Utilities.toTitleCase(state)}</p>
+                    {appResourcesByState?.statesMap[state]?.map(resource => (
+                      <div>
+                      <p className={`ResourceStateText u-fontSize--normal ${resource.state}`}>
+                        {resource?.namespace}/{resource?.kind}/{resource?.name}
+                      </p>
+                      </div>
+                    ))}
+                  </div>
+                ))}
+              </div>
+              <div className="flex alignItems--center u-marginTop--30">
+                <button type="button" className="btn primary" onClick={this.toggleAppStatusModal}>Ok, got it!</button>
+                <button type="button" className="btn secondary blue u-marginLeft--10" onClick={this.goToTroubleshootPage}>Troubleshoot</button>
+              </div>
+            </div>
+          </Modal>
+        }
         {this.state.showUpdateCheckerModal &&
           <UpdateCheckerModal
             isOpen={this.state.showUpdateCheckerModal}
