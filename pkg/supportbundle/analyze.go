@@ -29,6 +29,10 @@ func InjectDefaultAnalyzers(analyzer *troubleshootv1beta2.Analyzer) error {
 		return errors.Wrap(err, "failed to inject longhorn analyzer")
 	}
 
+	if err := injectWeaveReportAnalyzer(analyzer); err != nil {
+		return errors.Wrap(err, "failed to inject weave report analyzer")
+	}
+
 	return nil
 
 }
@@ -138,6 +142,15 @@ func injectCephAnalyzers(analyzer *troubleshootv1beta2.Analyzer) error {
 func injectLonghornAnalyzers(analyzer *troubleshootv1beta2.Analyzer) error {
 	analyzer.Spec.Analyzers = append(analyzer.Spec.Analyzers, &troubleshootv1beta2.Analyze{
 		Longhorn: &troubleshootv1beta2.LonghornAnalyze{},
+	})
+	return nil
+}
+
+func injectWeaveReportAnalyzer(analyzer *troubleshootv1beta2.Analyzer) error {
+	analyzer.Spec.Analyzers = append(analyzer.Spec.Analyzers, &troubleshootv1beta2.Analyze{
+		WeaveReport: &troubleshootv1beta2.WeaveReportAnalyze{
+			ReportFileGlob: "kots/kurl/weave/kube-system/*/weave-report-stdout.txt",
+		},
 	})
 	return nil
 }
