@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 
@@ -74,6 +75,19 @@ func TestRenderUpstream(t *testing.T) {
 		test.Upstream.Files = upstreamFilesFromDir(t, filepath.Join(path, "upstream"))
 
 		test.WantBase = baseFromDir(t, filepath.Join(path, "base"), false)
+
+		chartsPath := filepath.Join(path, "base", "charts")
+		if _, err := os.Stat(chartsPath); err == nil {
+			charts, err := os.ReadDir(chartsPath)
+			require.NoError(t, err)
+			for _, chart := range charts {
+				chartBase := baseFromDir(t, filepath.Join(chartsPath, chart.Name()), true)
+				chartBase.Path = filepath.Join("charts", chart.Name())
+				chartBase.ErrorFiles = []base.BaseFile{}
+				test.WantBase.Bases = append(test.WantBase.Bases, chartBase)
+			}
+		}
+
 		helmpath := filepath.Join(path, "basehelm")
 		if _, err := os.Stat(helmpath); err == nil {
 			test.WantHelmBase = baseFromDir(t, filepath.Join(path, "basehelm"), true)
@@ -234,6 +248,23 @@ func baseFromDir(t *testing.T, root string, isHelm bool) base.Base {
 
 	b.Files = baseFilesFromDir(t, root, isHelm)
 
+	if !isHelm {
+		return b
+	}
+
+	chartFile := filepath.Join(root, "Chart.yaml")
+	if _, err := os.Stat(chartFile); err == nil {
+		data, err := ioutil.ReadFile(chartFile)
+		require.NoError(t, err, chartFile)
+
+		b.AdditionalFiles = []base.BaseFile{
+			{
+				Path:    "Chart.yaml",
+				Content: data,
+			},
+		}
+	}
+
 	return b
 }
 
@@ -243,6 +274,17 @@ func baseFilesFromDir(t *testing.T, root string, isHelm bool) []base.BaseFile {
 		require.NoError(t, err, path)
 
 		if info.IsDir() {
+			return nil
+		}
+
+		if isHelm && info.Name() == "Chart.yaml" {
+			// This file goes into AdditonalFiles
+			return nil
+		}
+
+		chartsPrefix := root + string(filepath.Separator) + "charts" + string(filepath.Separator)
+		if !isHelm && strings.HasPrefix(path, chartsPrefix) {
+			// Classic style charts are not Files. They become Bases.
 			return nil
 		}
 
