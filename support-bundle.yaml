@@ -234,3 +234,5 @@ spec:
               message: Goldpinger can communicate properly
         regexGroups: '"OK": ?(?P<OK>\w+)'
     - longhorn: {}
+    - weaveReport:
+        reportFileGlob: kots/kurl/weave/kube-system/*/weave-report-stdout.txt

@@ -61,7 +61,7 @@ require (
 	github.com/pmezard/go-difflib v1.0.0
 	github.com/rancher/wrangler v0.8.3
 	github.com/replicatedhq/kurl v0.0.0-20210414162418-8d6211901244
-	github.com/replicatedhq/troubleshoot v0.13.7
+	github.com/replicatedhq/troubleshoot v0.13.9
 	github.com/replicatedhq/yaml/v3 v3.0.0-beta5-replicatedhq
 	github.com/robfig/cron v1.2.0
 	github.com/robfig/cron/v3 v3.0.1

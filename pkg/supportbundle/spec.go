@@ -603,6 +603,12 @@ func makeWeaveAnalyzers() []*troubleshootv1beta2.Analyze {
 		},
 	})
 
+	analyzers = append(analyzers, &troubleshootv1beta2.Analyze{
+		WeaveReport: &troubleshootv1beta2.WeaveReportAnalyze{
+			ReportFileGlob: "kots/kurl/weave/kube-system/*/weave-report-stdout.txt",
+		},
+	})
+
 	return analyzers
 }
 
