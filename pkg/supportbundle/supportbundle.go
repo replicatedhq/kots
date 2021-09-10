@@ -237,9 +237,77 @@ func CreateSupportBundleDependencies(appID string, sequence int64, opts types.Tr
 	return &supportBundleObj, nil
 }
 
-// CreateSupportBundleAnalysis takes a support bundle, unpacks to analyze then adds the analysis to
-// the support bundle secret
+func getAnalysisFromBundle(archivePath string) ([]byte, error) {
+	bundleDir, err := ioutil.TempDir("", "kots")
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to create temp dir")
+	}
+	defer os.RemoveAll(bundleDir)
+
+	tarGz := archiver.TarGz{
+		Tar: &archiver.Tar{
+			ImplicitTopLevelFolder: false,
+		},
+	}
+	if err := tarGz.Unarchive(archivePath, bundleDir); err != nil {
+		return nil, errors.Wrap(err, "failed to unarchive")
+	}
+
+	var analysis []byte
+	err = filepath.Walk(bundleDir, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+
+		if info.IsDir() {
+			return nil
+		}
+
+		relPath, err := filepath.Rel(bundleDir, path)
+		if err != nil {
+			return errors.Wrap(err, "failed to get relative path")
+		}
+
+		// trim the subdirectory from the path too (if any)
+		trimmedRelPath := SupportBundleNameRegex.ReplaceAllString(relPath, "")
+		trimmedRelPath = strings.TrimPrefix(trimmedRelPath, string(os.PathSeparator))
+		if trimmedRelPath == "" {
+			return nil
+		}
+
+		if trimmedRelPath == "analysis.json" {
+			b, err := ioutil.ReadFile(path)
+			if err != nil {
+				return errors.Wrap(err, "failed to read analysis file")
+			}
+			analysis = b
+		}
+
+		return nil
+	})
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to walk")
+	}
+
+	return analysis, nil
+}
+
+// CreateSupportBundleAnalysis adds the analysis to the support bundle secret.
+// if the support bundle archive already includes analysis, the secret will be updated with that. (which is the case for new support bundles)
+// if not, the support bundle archive will be unpacked and analyzed and then the secret will be updated with the results. (which is the case for older support bundles formats)
 func CreateSupportBundleAnalysis(appID string, archivePath string, bundle *types.SupportBundle) error {
+	analysis, err := getAnalysisFromBundle(archivePath)
+	if err != nil {
+		return errors.Wrap(err, "failed to check if support bundle includes analysis")
+	}
+	if len(analysis) > 0 {
+		// new support bundles include the analysis as part of the bundle
+		if err := store.GetStore().SetSupportBundleAnalysis(bundle.ID, analysis); err != nil {
+			return errors.Wrap(err, "failed to set support bundle analysis")
+		}
+		return nil
+	}
+
 	// we need the app archive to get the analyzers
 	foundApp, err := store.GetStore().GetApp(appID)
 	if err != nil {
@@ -290,11 +358,7 @@ func CreateSupportBundleAnalysis(appID string, archivePath string, bundle *types
 		}
 	}
 
-	if err := InjectDefaultAnalyzers(analyzer); err != nil {
-		err = errors.Wrap(err, "failed to inject analyzers")
-		logger.Error(err)
-		return err
-	}
+	analyzer.Spec.Analyzers = InjectDefaultAnalyzers(analyzer.Spec.Analyzers)
 
 	s := k8sjson.NewYAMLSerializer(k8sjson.DefaultMetaFactory, scheme.Scheme, scheme.Scheme)
 

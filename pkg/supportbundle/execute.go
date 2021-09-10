@@ -246,7 +246,7 @@ func executeSupportBundleCollectRoutine(bundle *types.SupportBundle, progressCha
 			Size:    &size,
 		}
 
-		// we need the app archive to get the analyzers
+		// we need the app archive to get the analyzers for old support bundles that don't include the analysis in the bundle
 		if err := CreateSupportBundleAnalysis(bundle.AppID, response.ArchivePath, bundle); err != nil {
 			logger.Error(errors.Wrap(err, "failed to create analysis"))
 			return

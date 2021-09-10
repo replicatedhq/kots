@@ -3,43 +3,23 @@ package supportbundle
 import (
 	"os"
 
-	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/util"
 	troubleshootv1beta2 "github.com/replicatedhq/troubleshoot/pkg/apis/troubleshoot/v1beta2"
 )
 
-func InjectDefaultAnalyzers(analyzer *troubleshootv1beta2.Analyzer) error {
-	if err := injectAPIReplicaAnalyzer(analyzer); err != nil {
-		return errors.Wrap(err, "failed to inject api replica analyzer")
-	}
-
-	if err := injectNoGvisorAnalyzer(analyzer); err != nil {
-		return errors.Wrap(err, "failed to inject no gvisor analyzer")
-	}
-
-	if err := injectIfMissingKubernetesVersionAnalyzer(analyzer); err != nil {
-		return errors.Wrap(err, "failed to inject k8s version analyzer")
-	}
-
-	if err := injectCephAnalyzers(analyzer); err != nil {
-		return errors.Wrap(err, "failed to inject ceph status analyzer")
-	}
-
-	if err := injectLonghornAnalyzers(analyzer); err != nil {
-		return errors.Wrap(err, "failed to inject longhorn analyzer")
-	}
-
-	if err := injectWeaveReportAnalyzer(analyzer); err != nil {
-		return errors.Wrap(err, "failed to inject weave report analyzer")
-	}
-
-	return nil
-
+func InjectDefaultAnalyzers(analyzers []*troubleshootv1beta2.Analyze) []*troubleshootv1beta2.Analyze {
+	analyzers = append(analyzers, getAPIReplicaAnalyzer())
+	analyzers = append(analyzers, getNoGvisorAnalyzer())
+	analyzers = append(analyzers, getIfMissingKubernetesVersionAnalyzer(analyzers))
+	analyzers = append(analyzers, getCephAnalyzers())
+	analyzers = append(analyzers, getLonghornAnalyzers())
+	analyzers = append(analyzers, getWeaveReportAnalyzer())
+	return analyzers
 }
 
-func injectAPIReplicaAnalyzer(analyzer *troubleshootv1beta2.Analyzer) error {
+func getAPIReplicaAnalyzer() *troubleshootv1beta2.Analyze {
 	if os.Getenv("POD_OWNER_KIND") == "deployment" {
-		analyzer.Spec.Analyzers = append(analyzer.Spec.Analyzers, &troubleshootv1beta2.Analyze{
+		return &troubleshootv1beta2.Analyze{
 			DeploymentStatus: &troubleshootv1beta2.DeploymentStatus{
 				Name:      "kotsadm",
 				Namespace: util.PodNamespace,
@@ -58,10 +38,9 @@ func injectAPIReplicaAnalyzer(analyzer *troubleshootv1beta2.Analyzer) error {
 					},
 				},
 			},
-		})
-		return nil
+		}
 	}
-	analyzer.Spec.Analyzers = append(analyzer.Spec.Analyzers, &troubleshootv1beta2.Analyze{
+	return &troubleshootv1beta2.Analyze{
 		StatefulsetStatus: &troubleshootv1beta2.StatefulsetStatus{
 			Name:      "kotsadm",
 			Namespace: util.PodNamespace,
@@ -80,12 +59,11 @@ func injectAPIReplicaAnalyzer(analyzer *troubleshootv1beta2.Analyzer) error {
 				},
 			},
 		},
-	})
-	return nil
+	}
 }
 
-func injectNoGvisorAnalyzer(analyzer *troubleshootv1beta2.Analyzer) error {
-	analyzer.Spec.Analyzers = append(analyzer.Spec.Analyzers, &troubleshootv1beta2.Analyze{
+func getNoGvisorAnalyzer() *troubleshootv1beta2.Analyze {
+	return &troubleshootv1beta2.Analyze{
 		ContainerRuntime: &troubleshootv1beta2.ContainerRuntime{
 			Outcomes: []*troubleshootv1beta2.Outcome{
 				{
@@ -101,18 +79,16 @@ func injectNoGvisorAnalyzer(analyzer *troubleshootv1beta2.Analyzer) error {
 				},
 			},
 		},
-	})
-	return nil
+	}
 }
 
-func injectIfMissingKubernetesVersionAnalyzer(analyzer *troubleshootv1beta2.Analyzer) error {
-	for _, existingAnalyzer := range analyzer.Spec.Analyzers {
+func getIfMissingKubernetesVersionAnalyzer(analyzers []*troubleshootv1beta2.Analyze) *troubleshootv1beta2.Analyze {
+	for _, existingAnalyzer := range analyzers {
 		if existingAnalyzer.ClusterVersion != nil {
 			return nil
 		}
 	}
-
-	analyzer.Spec.Analyzers = append(analyzer.Spec.Analyzers, &troubleshootv1beta2.Analyze{
+	return &troubleshootv1beta2.Analyze{
 		ClusterVersion: &troubleshootv1beta2.ClusterVersion{
 			Outcomes: []*troubleshootv1beta2.Outcome{
 				{
@@ -128,29 +104,25 @@ func injectIfMissingKubernetesVersionAnalyzer(analyzer *troubleshootv1beta2.Anal
 				},
 			},
 		},
-	})
-	return nil
+	}
 }
 
-func injectCephAnalyzers(analyzer *troubleshootv1beta2.Analyzer) error {
-	analyzer.Spec.Analyzers = append(analyzer.Spec.Analyzers, &troubleshootv1beta2.Analyze{
+func getCephAnalyzers() *troubleshootv1beta2.Analyze {
+	return &troubleshootv1beta2.Analyze{
 		CephStatus: &troubleshootv1beta2.CephStatusAnalyze{},
-	})
-	return nil
+	}
 }
 
-func injectLonghornAnalyzers(analyzer *troubleshootv1beta2.Analyzer) error {
-	analyzer.Spec.Analyzers = append(analyzer.Spec.Analyzers, &troubleshootv1beta2.Analyze{
+func getLonghornAnalyzers() *troubleshootv1beta2.Analyze {
+	return &troubleshootv1beta2.Analyze{
 		Longhorn: &troubleshootv1beta2.LonghornAnalyze{},
-	})
-	return nil
+	}
 }
 
-func injectWeaveReportAnalyzer(analyzer *troubleshootv1beta2.Analyzer) error {
-	analyzer.Spec.Analyzers = append(analyzer.Spec.Analyzers, &troubleshootv1beta2.Analyze{
+func getWeaveReportAnalyzer() *troubleshootv1beta2.Analyze {
+	return &troubleshootv1beta2.Analyze{
 		WeaveReport: &troubleshootv1beta2.WeaveReportAnalyze{
 			ReportFileGlob: "kots/kurl/weave/kube-system/*/weave-report-stdout.txt",
 		},
-	})
-	return nil
+	}
 }

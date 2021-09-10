@@ -244,6 +244,8 @@ func addDefaultTroubleshoot(supportBundle *troubleshootv1beta2.SupportBundle, ap
 		supportBundle.Spec.Analyzers = make([]*troubleshootv1beta2.Analyze, 0)
 	}
 
+	supportBundle.Spec.Analyzers = InjectDefaultAnalyzers(supportBundle.Spec.Analyzers)
+
 	clientset, err := k8sutil.GetClientset()
 	if err != nil {
 		logger.Errorf("Failed to get kubernetes clientset: %v", err)
