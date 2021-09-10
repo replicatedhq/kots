@@ -127,13 +127,14 @@ func GetFilesContents(bundleID string, filenames []string) (map[string][]byte, e
 		// this is needed to handle old and new support bundle formats
 		// where old support bundles don't include a top level subdirectory and the new ones do
 		// this basically compares file paths after trimming the subdirectory path from both (if exists)
-		relPath, err := filepath.Rel(bundleDir, path)
+		// for example: "support-bundle-2021-09-10T18_50_35/support-bundle-2021-09-10T18_50_35/path/to/file"
+		relPath, err := filepath.Rel(bundleDir, path) // becomes: "support-bundle-2021-09-10T18_50_35/path/to/file"
 		if err != nil {
 			return errors.Wrap(err, "failed to get relative path")
 		}
 
-		trimmedRelPath := SupportBundleNameRegex.ReplaceAllString(relPath, "")
-		trimmedRelPath = strings.TrimPrefix(trimmedRelPath, string(os.PathSeparator))
+		trimmedRelPath := SupportBundleNameRegex.ReplaceAllString(relPath, "")        // becomes: "path/to/file"
+		trimmedRelPath = strings.TrimPrefix(trimmedRelPath, string(os.PathSeparator)) // extra measure to ensure no leading slashes. for example: "/path/to/file"
 		if trimmedRelPath == "" {
 			return nil
 		}
@@ -263,17 +264,14 @@ func getAnalysisFromBundle(archivePath string) ([]byte, error) {
 			return nil
 		}
 
-		relPath, err := filepath.Rel(bundleDir, path)
+		// trim the directory and subdirectory from the path
+		// for example: "support-bundle-2021-09-10T18_50_35/support-bundle-2021-09-10T18_50_35/analysis.json"
+		relPath, err := filepath.Rel(bundleDir, path) // becomes: "support-bundle-2021-09-10T18_50_35/analysis.json"
 		if err != nil {
 			return errors.Wrap(err, "failed to get relative path")
 		}
-
-		// trim the subdirectory from the path too (if any)
-		trimmedRelPath := SupportBundleNameRegex.ReplaceAllString(relPath, "")
-		trimmedRelPath = strings.TrimPrefix(trimmedRelPath, string(os.PathSeparator))
-		if trimmedRelPath == "" {
-			return nil
-		}
+		trimmedRelPath := SupportBundleNameRegex.ReplaceAllString(relPath, "")        // becomes: "analysis.json"
+		trimmedRelPath = strings.TrimPrefix(trimmedRelPath, string(os.PathSeparator)) // extra measure to ensure no leading slashes. for example: "/analysis.json"
 
 		if trimmedRelPath == "analysis.json" {
 			b, err := ioutil.ReadFile(path)
