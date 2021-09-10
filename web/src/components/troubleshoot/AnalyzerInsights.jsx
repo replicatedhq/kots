@@ -71,24 +71,9 @@ export class AnalyzerInsights extends React.Component {
     let nextState = {};
     const val = e.target.checked ? "1" : "0";
     nextState[field] = val;
-    let insights;
+    let insights = sortAnalyzers(this.props.insights);
     if (val === "1") {
-      insights = filter(this.props.insights, (i) => { return i.severity !== "debug" && i.severity !== "info" });
-    } else {
-      insights = sortBy(this.props.insights, (item) => {
-        if (item.severity === "error") {
-          return 1
-        }
-        if (item.severity === "warn") {
-          return 2
-        }
-        if (item.severity === "info") {
-          return 3
-        }
-        if (item.severity === "debug") {
-          return 4
-        }
-      })
+      insights = filter(insights, (i) => { return i.severity !== "debug" && i.severity !== "info" });
     }
     this.setState({
       ...nextState,
