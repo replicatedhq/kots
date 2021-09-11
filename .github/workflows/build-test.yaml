@@ -598,7 +598,6 @@ jobs:
       - run: chmod +x bin/kots
 
       - name: run kots pull
-        continue-on-error: true
         env:
           APP_NAME: multi-namespace-yeti
           APP_SLUG: multi-namespace
@@ -615,6 +614,14 @@ jobs:
           kubectl create ns nginx-test
           kubectl create ns redis-test
           kubectl create ns postgres-test
+
+          # HACK: without operator, additonal namespaces don't get image pull secrets
+          echo ${{ secrets.MULTI_NAMESPACE_REGISTRY_AUTH }} | base64 -d > replicated-registry-auth.json
+          kubectl -n nginx-test create secret generic kotsadm-replicated-registry --type=kubernetes.io/dockerconfigjson --from-file=.dockerconfigjson=./replicated-registry-auth.json
+          kubectl -n redis-test create secret generic kotsadm-replicated-registry --type=kubernetes.io/dockerconfigjson --from-file=.dockerconfigjson=./replicated-registry-auth.json
+          kubectl -n postgres-test create secret generic kotsadm-replicated-registry --type=kubernetes.io/dockerconfigjson --from-file=.dockerconfigjson=./replicated-registry-auth.json
+          kubectl -n default create secret generic kotsadm-replicated-registry --type=kubernetes.io/dockerconfigjson --from-file=.dockerconfigjson=./replicated-registry-auth.json
+
           kustomize build $PWD/$APP_SLUG/overlays/midstream | kubectl apply -f -
 
           EXIT_CODE=$?
