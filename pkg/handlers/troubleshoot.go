@@ -336,7 +336,7 @@ func (h *Handler) UploadSupportBundle(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// we need the app archive to get the analyzers
+	// we need the app archive to get the analyzers for old support bundles that don't include the analysis in the bundle
 	if err = supportbundle.CreateSupportBundleAnalysis(mux.Vars(r)["appId"], tmpFile.Name(), supportBundle); err != nil {
 		logger.Error(errors.Wrap(err, "failed create analysis"))
 		w.WriteHeader(http.StatusInternalServerError)
