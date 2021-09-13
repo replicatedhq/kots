@@ -52,7 +52,7 @@ build-local: deps
 		--compress
 
 .PHONY: build-kotsadm
-build-kotsadm: KOTSADM_BUILD_VERSION = $(if ${IMAGE_TAG},${IMAGE_TAG},$(shell echo ${GIT_COMMIT} | cut -c1-7))
+build-kotsadm: KOTSADM_BUILD_VERSION = $(if ${GIT_TAG},${GIT_TAG},$(shell echo ${GIT_COMMIT} | cut -c1-7))
 build-kotsadm: deps
 	KOTSADM_BUILD_VERSION=$(KOTSADM_BUILD_VERSION) \
 	node \

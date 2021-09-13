@@ -1,7 +1,7 @@
 #!/bin/bash
 
-if [ -z ${IMAGE_TAG} ]; then
-    echo "This script must run from GithubActions with IMAGE_TAG env variable set"
+if [ -z ${GIT_TAG} ]; then
+    echo "This script must run from GithubActions with GIT_TAG env variable set"
     exit 1
 fi
 
@@ -23,7 +23,7 @@ metadata:
   namespace: kgrid-system
 spec:
   kots:
-    latest: "${IMAGE_TAG}"
+    latest: "${GIT_TAG}"
 EOT
 
 git add .

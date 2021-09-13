@@ -13,7 +13,7 @@ jobs:
         uses: actions/checkout@v2
 
       - name: Get tags
-        id: get_tags
+        id: get_tag
         uses: ./actions/version-tag
 
       - name: Setup Node.js environment
@@ -24,7 +24,7 @@ jobs:
       - name: Build web
         env:
           GIT_COMMIT: ${{ github.sha }}
-          IMAGE_TAG: ${{ steps.get_tags.outputs.IMAGE_TAG }}
+          GIT_TAG: ${{ steps.get_tag.outputs.GIT_TAG }}
         run: make -C web deps build-kotsadm
 
       - name: Upload web artifact

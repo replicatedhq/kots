@@ -3,8 +3,6 @@ description: 'Create Admin Console image tag'
 outputs:
   GIT_TAG:
     description: 'Git tag if this is a tagged revision'
-  IMAGE_TAG:
-    description: 'Image tag if this run results in image artifacts'
 runs:
   using: 'node12'
   main: 'index.js'

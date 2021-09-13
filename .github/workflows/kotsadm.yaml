@@ -6,40 +6,8 @@ on:
       - "**"
     tags:
       - "v*.*.*"
-  schedule:
-    - cron:  '45 5 * * *' # 5:45 UTC = 22:45 Pacific
 
 jobs:
-
-  schedule-test:
-    runs-on: ubuntu-18.04
-    container:
-      image: replicated/gitops-builder:buildkite
-      options: --user root
-    steps:
-    - name: Checkout
-      uses: actions/checkout@v2
-
-    - name: Test if schedule
-      if: ${{ github.event_name == 'schedule' }}
-      run: echo "running on schedule"
-
-    - name: Test if not schedule
-      if: ${{ github.event_name != 'schedule' }}
-      run: echo "not running on schedule"
-
-    - name: Get tags
-      id: get_tags
-      uses: ./actions/version-tag
-
-    - name: Print tags
-      env:
-        GIT_TAG: ${{ steps.get_tags.outputs.GIT_TAG }}
-        IMAGE_TAG: ${{ steps.get_tags.outputs.IMAGE_TAG }}
-      run: |
-        set +x
-        echo $GIT_TAG
-        echo $IMAGE_TAG
 
 
   generate-schema:
@@ -129,7 +97,7 @@ jobs:
         password: ${{ secrets.DOCKERHUB_PASSWORD }}
 
     - name: Get tags
-      id: get_tags
+      id: get_tag
       uses: ./actions/version-tag
 
     - name: Build
@@ -140,16 +108,16 @@ jobs:
         make -C migrations schema-alpha
 
     - name: "Release schema migrations on tag"
-      if: ${{ steps.get_tags.outputs.IMAGE_TAG != '' }}
+      if: ${{ steps.get_tag.outputs.GIT_TAG != '' }}
       env:
-        IMAGE_TAG: ${{ steps.get_tags.outputs.IMAGE_TAG }}
+        GIT_TAG: ${{ steps.get_tag.outputs.GIT_TAG }}
         DOCKER_CONFIG: ./.docker
       uses: ./actions/containers
       with:
         command: "make -C migrations schema-release"
 
     - name: Upload airgap image
-      if: ${{ steps.get_tags.outputs.IMAGE_TAG != '' }}
+      if: ${{ steps.get_tag.outputs.GIT_TAG != '' }}
       uses: actions/upload-artifact@v2
       with:
         name: migrations-image
@@ -201,7 +169,7 @@ jobs:
       uses: actions/checkout@v2
 
     - name: Get tags
-      id: get_tags
+      id: get_tag
       uses: ./actions/version-tag
 
     - name: Setup Node.js environment
@@ -212,7 +180,7 @@ jobs:
     - name: Build web
       env:
         GIT_COMMIT: ${{ github.sha }}
-        IMAGE_TAG: ${{ steps.get_tags.outputs.IMAGE_TAG }}
+        GIT_TAG: ${{ steps.get_tag.outputs.GIT_TAG }}
       run: make -C web deps build-kotsadm
       ## TODO: retry logic
       # retry:
@@ -244,13 +212,13 @@ jobs:
         go-version: '^1.16.3'
 
     - name: Get tags
-      id: get_tags
+      id: get_tag
       uses: ./actions/version-tag
 
     - name: Build kurl_proxy
       env:
         GIT_COMMIT: ${{ github.sha }}
-        IMAGE_TAG: ${{ steps.get_tags.outputs.IMAGE_TAG }}
+        GIT_TAG: ${{ steps.get_tag.outputs.GIT_TAG }}
         SCOPE_DSN_PUBLIC: ""
       run: make -C kurl_proxy test build
 
@@ -289,7 +257,7 @@ jobs:
         key: ${{ runner.os }}-go-mod-${{ hashFiles('**/go.sum') }}
 
     - name: Get tags
-      id: get_tags
+      id: get_tag
       uses: ./actions/version-tag
 
     - name: Download web artifact
@@ -302,7 +270,7 @@ jobs:
       env:
         GIT_COMMIT: ${{ github.sha }}
         # GITHUB_SHA: ${{ github.sha }}
-        IMAGE_TAG: ${{ steps.get_tags.outputs.IMAGE_TAG }}
+        GIT_TAG: ${{ steps.get_tag.outputs.GIT_TAG }}
         # GITHUB_REPOSITORY:
         # GITHUB_WORKSPACE:
         SCOPE_DSN_PUBLIC: ""
@@ -388,18 +356,18 @@ jobs:
         key: ${{ runner.os }}-go-mod-${{ hashFiles('**/go.sum') }}
 
     - name: Get tags
-      id: get_tags
+      id: get_tag
       uses: ./actions/version-tag
 
     - name: Download go_api artifact
-      if: ${{ steps.get_tags.outputs.IMAGE_TAG != '' }}
+      if: ${{ steps.get_tag.outputs.GIT_TAG != '' }}
       uses: actions/download-artifact@v2
       with:
         name: go_api
         path: ./bin
 
     - name: Add executable permissions
-      if: ${{ steps.get_tags.outputs.IMAGE_TAG != '' }}
+      if: ${{ steps.get_tag.outputs.GIT_TAG != '' }}
       run: chmod a+x ./bin/kotsadm
 
     - uses: azure/docker-login@v1
@@ -410,16 +378,16 @@ jobs:
         password: ${{ secrets.DOCKERHUB_PASSWORD }}
 
     - name: Build tagged release
-      if: ${{ steps.get_tags.outputs.IMAGE_TAG != '' }}
+      if: ${{ steps.get_tag.outputs.GIT_TAG != '' }}
       env:
-        IMAGE_TAG: ${{ steps.get_tags.outputs.IMAGE_TAG }}
+        GIT_TAG: ${{ steps.get_tag.outputs.GIT_TAG }}
         DOCKER_CONFIG: ./.docker
       uses: ./actions/containers
       with:
         command: "make build-release"
 
     - name: Upload airgap image
-      if: ${{ steps.get_tags.outputs.IMAGE_TAG != '' }}
+      if: ${{ steps.get_tag.outputs.GIT_TAG != '' }}
       uses: actions/upload-artifact@v2
       with:
         name: kotsadm-image
@@ -504,24 +472,24 @@ jobs:
         key: ${{ runner.os }}-go-mod-${{ hashFiles('**/go.sum') }}
 
     - name: Get tags
-      id: get_tags
+      id: get_tag
       uses: ./actions/version-tag
 
     - name: Download kurl_proxy artifact
-      if: ${{ steps.get_tags.outputs.IMAGE_TAG != '' }}
+      if: ${{ steps.get_tag.outputs.GIT_TAG != '' }}
       uses: actions/download-artifact@v2
       with:
         name: kurl_proxy
         path: ./kurl_proxy/bin
 
     - name: Add executable permissions
-      if: ${{ steps.get_tags.outputs.IMAGE_TAG != '' }}
+      if: ${{ steps.get_tag.outputs.GIT_TAG != '' }}
       run: chmod a+x ./kurl_proxy/bin/kurl_proxy
 
     - name: Build tagged release
-      if: ${{ steps.get_tags.outputs.IMAGE_TAG != '' }}
+      if: ${{ steps.get_tag.outputs.GIT_TAG != '' }}
       env:
-        IMAGE_TAG: ${{ steps.get_tags.outputs.IMAGE_TAG }}
+        GIT_TAG: ${{ steps.get_tag.outputs.GIT_TAG }}
       run: |
         make -C kurl_proxy build-release
 
@@ -688,37 +656,37 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v2
     - name: Get tags
-      id: get_tags
+      id: get_tag
       uses: ./actions/version-tag
 
     - name: Download migrations
-      if: ${{ steps.get_tags.outputs.GIT_TAG != '' }}
+      if: ${{ steps.get_tag.outputs.GIT_TAG != '' }}
       uses: actions/download-artifact@v2
       with:
         name: migrations-image
         path: ./docker-archive
 
     - name: Download kotsadm image
-      if: ${{ steps.get_tags.outputs.GIT_TAG != '' }}
+      if: ${{ steps.get_tag.outputs.GIT_TAG != '' }}
       uses: actions/download-artifact@v2
       with:
         name: kotsadm-image
         path: ./docker-archive
 
     - name: Get Release
-      if: ${{ steps.get_tags.outputs.GIT_TAG != '' }}
+      if: ${{ steps.get_tag.outputs.GIT_TAG != '' }}
       id: get_release
       uses: bruceadams/get-release@v1.2.3   # no v1 tag
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
     - name: Make kotsadm airgap archive
-      if: ${{ steps.get_tags.outputs.GIT_TAG != '' }}
+      if: ${{ steps.get_tag.outputs.GIT_TAG != '' }}
       run: |
         tar czf ./kotsadm.tar.gz -C ./ ./docker-archive
 
     - name: Upload airgap bundle
-      if: ${{ steps.get_tags.outputs.GIT_TAG != '' }}
+      if: ${{ steps.get_tag.outputs.GIT_TAG != '' }}
       uses: actions/upload-release-asset@v1
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -737,7 +705,7 @@ jobs:
       uses: actions/checkout@v2
 
     - name: Get tags
-      id: get_tags
+      id: get_tag
       uses: ./actions/version-tag
 
     - uses: kceb/pull-request-url-action@v2
@@ -747,22 +715,22 @@ jobs:
       uses: rlespinasse/git-commit-data-action@v1.x   # no v1 tag
 
     - name: Create staging gitops commit
-      if: ${{ steps.get_tags.outputs.GIT_TAG != '' }}
+      if: ${{ steps.get_tag.outputs.GIT_TAG != '' }}
       env:
         REPLICATEDCOM_GITHUB_PRIVATE_KEY: ${{ secrets.REPLICATEDCOM_GITHUB_PRIVATE_KEY }}
         PR_URL: ${{ steps.pr_url.outputs.url }}
-        IMAGE_TAG: ${{ steps.get_tags.outputs.IMAGE_TAG }}
+        GIT_TAG: ${{ steps.get_tag.outputs.GIT_TAG }}
         GITOPS_OWNER: replicatedcom
         GITOPS_REPO: gitops-deploy
         GITOPS_BRANCH: master
       run: ./hack/deploy-kgrid.sh
 
     - name: Create production gitops commit
-      if: ${{ steps.get_tags.outputs.GIT_TAG != '' }}
+      if: ${{ steps.get_tag.outputs.GIT_TAG != '' }}
       env:
         REPLICATEDCOM_GITHUB_PRIVATE_KEY: ${{ secrets.REPLICATEDCOM_GITHUB_PRIVATE_KEY }}
         PR_URL: ${{ steps.pr_url.outputs.url }}
-        IMAGE_TAG: ${{ steps.get_tags.outputs.IMAGE_TAG }}
+        GIT_TAG: ${{ steps.get_tag.outputs.GIT_TAG }}
         OVERLAY: production
         GITOPS_OWNER: replicatedcom
         GITOPS_REPO: gitops-deploy
@@ -778,13 +746,13 @@ jobs:
       uses: actions/checkout@v2
 
     - name: Get tags
-      id: get_tags
+      id: get_tag
       uses: ./actions/version-tag
 
     - name: Generate Kurl Addon PR
-      if: ${{ steps.get_tags.outputs.GIT_TAG != '' }}
+      if: ${{ steps.get_tag.outputs.GIT_TAG != '' }}
       env:
-        IMAGE_TAG: ${{ steps.get_tags.outputs.IMAGE_TAG }}
+        GIT_TAG: ${{ steps.get_tag.outputs.GIT_TAG }}
         GH_PAT: ${{ secrets.GH_PAT }}  
       run: |
         # Strips off the 'v' in version

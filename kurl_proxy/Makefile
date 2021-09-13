@@ -20,8 +20,8 @@ build-alpha:
 
 .PHONY: build-release
 build-release:
-	docker build --pull -f deploy/Dockerfile -t kotsadm/kurl-proxy:${IMAGE_TAG} .
-	docker push kotsadm/kurl-proxy:${IMAGE_TAG}
+	docker build --pull -f deploy/Dockerfile -t kotsadm/kurl-proxy:${GIT_TAG} .
+	docker push kotsadm/kurl-proxy:${GIT_TAG}
 
 .PHONY: build-ttl.sh
 build-ttl.sh: build
