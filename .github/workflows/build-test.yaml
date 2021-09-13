@@ -19,7 +19,7 @@ jobs:
         run: echo ::set-output name=GIT_TAG::${GITHUB_REF/refs\/tags\//}
 
       - name: Setup Node.js environment
-        uses: actions/setup-node@v2.4.0
+        uses: actions/setup-node@v2
         with:
           node-version: '10'
 
@@ -30,7 +30,7 @@ jobs:
         run: make -C web deps build-kotsadm
 
       - name: Upload web artifact
-        uses: actions/upload-artifact@v2.2.4
+        uses: actions/upload-artifact@v2
         with:
           name: web
           path: ./web/dist
@@ -39,7 +39,7 @@ jobs:
     runs-on: ubuntu-18.04
     needs: [build-web]
     steps:
-      - uses: actions/setup-go@v2.1.3
+      - uses: actions/setup-go@v2
         with:
           go-version: '^1.16.3'
 
@@ -53,24 +53,24 @@ jobs:
         run: |
           echo "::set-output name=go-build::$(go env GOCACHE)"
           echo "::set-output name=go-mod::$(go env GOMODCACHE)"
-      - uses: actions/checkout@v2.3.4
+      - uses: actions/checkout@v2
 
-      - uses: actions/cache@v2.1.6
+      - uses: actions/cache@v2
         with:
           path: ${{ steps.go-cache-paths.outputs.go-build }}
           key: ${{ runner.os }}-go-build-${{ hashFiles('**/go.sum') }}
-      - uses: actions/cache@v2.1.6
+      - uses: actions/cache@v2
         with:
           path: ${{ steps.go-cache-paths.outputs.go-mod }}
           key: ${{ runner.os }}-go-mod-${{ hashFiles('**/go.sum') }}
 
       - name: Download web artifact
-        uses: actions/download-artifact@v2.0.10
+        uses: actions/download-artifact@v2
         with:
           name: web
           path: ./web/dist
       - run: make ci-test kots
-      - uses: actions/upload-artifact@v2.2.4
+      - uses: actions/upload-artifact@v2
         with:
           name: kots
           path: bin/kots
@@ -80,7 +80,7 @@ jobs:
     runs-on: ubuntu-18.04
     needs: [build-web]
     steps:
-      - uses: actions/setup-go@v2.1.3
+      - uses: actions/setup-go@v2
         with:
           go-version: '^1.16.3'
 
@@ -94,25 +94,25 @@ jobs:
         run: |
           echo "::set-output name=go-build::$(go env GOCACHE)"
           echo "::set-output name=go-mod::$(go env GOMODCACHE)"
-      - uses: actions/checkout@v2.3.4
+      - uses: actions/checkout@v2
 
-      - uses: actions/cache@v2.1.6
+      - uses: actions/cache@v2
         with:
           path: ${{ steps.go-cache-paths.outputs.go-build }}
           key: ${{ runner.os }}-go-build-${{ hashFiles('**/go.sum') }}
-      - uses: actions/cache@v2.1.6
+      - uses: actions/cache@v2
         with:
           path: ${{ steps.go-cache-paths.outputs.go-mod }}
           key: ${{ runner.os }}-go-mod-${{ hashFiles('**/go.sum') }}
 
       - name: Download web artifact
-        uses: actions/download-artifact@v2.0.10
+        uses: actions/download-artifact@v2
         with:
           name: web
           path: ./web/dist
       - run: make kotsadm
       - name: build and push kotsadm for e2e
-        uses: docker/build-push-action@v2.6.1
+        uses: docker/build-push-action@v2
         with:
           tags: ttl.sh/automated-${{ github.run_id }}/kotsadm:2h
           context: ./
@@ -131,7 +131,7 @@ jobs:
   build-kurl-proxy:
     runs-on: ubuntu-18.04
     steps:
-      - uses: actions/setup-go@v2.1.3
+      - uses: actions/setup-go@v2
         with:
           go-version: '^1.16.3'
 
@@ -145,13 +145,13 @@ jobs:
         run: |
           echo "::set-output name=go-build::$(go env GOCACHE)"
           echo "::set-output name=go-mod::$(go env GOMODCACHE)"
-      - uses: actions/checkout@v2.3.4
+      - uses: actions/checkout@v2
 
-      - uses: actions/cache@v2.1.6
+      - uses: actions/cache@v2
         with:
           path: ${{ steps.go-cache-paths.outputs.go-build }}
           key: ${{ runner.os }}-go-build-${{ hashFiles('**/go.sum') }}
-      - uses: actions/cache@v2.1.6
+      - uses: actions/cache@v2
         with:
           path: ${{ steps.go-cache-paths.outputs.go-mod }}
           key: ${{ runner.os }}-go-mod-${{ hashFiles('**/go.sum') }}
@@ -159,7 +159,7 @@ jobs:
       - run: make -C kurl_proxy build
 
       - name: build and push kurl_proxy for e2e
-        uses: docker/build-push-action@v2.6.1
+        uses: docker/build-push-action@v2
         with:
           tags: ttl.sh/automated-${{ github.run_id }}/kurl-proxy:2h
           context: ./kurl_proxy
@@ -177,7 +177,7 @@ jobs:
   build-migrations:
     runs-on: ubuntu-18.04
     steps:
-      - uses: actions/setup-go@v2.1.3
+      - uses: actions/setup-go@v2
         with:
           go-version: '^1.16.3'
 
@@ -191,19 +191,19 @@ jobs:
         run: |
           echo "::set-output name=go-build::$(go env GOCACHE)"
           echo "::set-output name=go-mod::$(go env GOMODCACHE)"
-      - uses: actions/checkout@v2.3.4
+      - uses: actions/checkout@v2
 
-      - uses: actions/cache@v2.1.6
+      - uses: actions/cache@v2
         with:
           path: ${{ steps.go-cache-paths.outputs.go-build }}
           key: ${{ runner.os }}-go-build-${{ hashFiles('**/go.sum') }}
-      - uses: actions/cache@v2.1.6
+      - uses: actions/cache@v2
         with:
           path: ${{ steps.go-cache-paths.outputs.go-mod }}
           key: ${{ runner.os }}-go-mod-${{ hashFiles('**/go.sum') }}
 
       - name: build and push migrations for e2e
-        uses: docker/build-push-action@v2.6.1
+        uses: docker/build-push-action@v2
         with:
           tags: ttl.sh/automated-${{ github.run_id }}/kotsadm-migrations:2h
           context: ./migrations
@@ -263,20 +263,20 @@ jobs:
       matrix:
         k8s_version: [v1.19.11-k3s1,v1.20.7-k3s1,v1.21.1-k3s1]
     steps:
-      - uses: debianmaster/actions-k3s@v1.0.3
+      - uses: debianmaster/actions-k3s@master   #no v1 tag
         id: k3s
         with:
           version: ${{ matrix.k8s_version }}
 
       - name: download kots binary
-        uses: actions/download-artifact@v2.0.10
+        uses: actions/download-artifact@v2
         with:
           name: kots
           path: bin/
 
       - run: chmod +x bin/kots
 
-      - uses: actions/setup-node@v2.4.0
+      - uses: actions/setup-node@v2
         with:
           node-version: '10.x'
 
@@ -367,20 +367,20 @@ jobs:
       matrix:
         k8s_version: [v1.19.11-k3s1,v1.20.7-k3s1,v1.21.1-k3s1]
     steps:
-      - uses: debianmaster/actions-k3s@v1.0.3
+      - uses: debianmaster/actions-k3s@master   #no v1 tag
         id: k3s
         with:
           version: ${{ matrix.k8s_version }}
 
       - name: download kots binary
-        uses: actions/download-artifact@v2.0.10
+        uses: actions/download-artifact@v2
         with:
           name: kots
           path: bin/
 
       - run: chmod +x bin/kots
 
-      - uses: actions/setup-node@v2.4.0
+      - uses: actions/setup-node@v2
         with:
           node-version: '10.x'
 
@@ -431,20 +431,20 @@ jobs:
       matrix:
         k8s_version: [v1.19.11-k3s1,v1.20.7-k3s1,v1.21.1-k3s1]
     steps:
-      - uses: debianmaster/actions-k3s@v1.0.3
+      - uses: debianmaster/actions-k3s@master   #no v1 tag
         id: k3s
         with:
           version: ${{ matrix.k8s_version }}
 
       - name: download kots binary
-        uses: actions/download-artifact@v2.0.10
+        uses: actions/download-artifact@v2
         with:
           name: kots
           path: bin/
 
       - run: chmod +x bin/kots
 
-      - uses: actions/setup-node@v2.4.0
+      - uses: actions/setup-node@v2
         with:
           node-version: '10.x'
 
@@ -504,20 +504,20 @@ jobs:
       matrix:
         k8s_version: [v1.19.11-k3s1,v1.20.7-k3s1,v1.21.1-k3s1]
     steps:
-      - uses: debianmaster/actions-k3s@v1.0.3
+      - uses: debianmaster/actions-k3s@master   #no v1 tag
         id: k3s
         with:
           version: ${{ matrix.k8s_version }}
 
       - name: download kots binary
-        uses: actions/download-artifact@v2.0.10
+        uses: actions/download-artifact@v2
         with:
           name: kots
           path: bin/
 
       - run: chmod +x bin/kots
 
-      - uses: actions/setup-node@v2.4.0
+      - uses: actions/setup-node@v2
         with:
           node-version: '10.x'
 
@@ -584,13 +584,13 @@ jobs:
       matrix:
         k8s_version: [v1.19.11-k3s1,v1.20.7-k3s1,v1.21.1-k3s1]
     steps:
-      - uses: debianmaster/actions-k3s@v1.0.3
+      - uses: debianmaster/actions-k3s@master   #no v1 tag
         id: k3s
         with:
           version: ${{ matrix.k8s_version }}
 
       - name: download kots binary
-        uses: actions/download-artifact@v2.0.10
+        uses: actions/download-artifact@v2
         with:
           name: kots
           path: bin/
