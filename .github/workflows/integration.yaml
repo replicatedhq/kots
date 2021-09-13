@@ -25,6 +25,8 @@ jobs:
           path: automation
           ref: main
 
-      - name: Read Dir
+      - name: Create Jumpbox
+        working-directory: automation/jumpbox
         run: |
-          ls -laR
+          terraform plan
+          
