@@ -24,6 +24,6 @@ jobs:
           token: ${{ secrets.E2E_GH_PAT }}
           ref: main
 
-      - name: Test Step
+      - name: Read Dir
         run: |
-          echo 'HELLO WORLD'
+          pwd
