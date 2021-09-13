@@ -18,7 +18,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v2
         with:
-          repository: git@github.com:replicatedcom/regression-automation.git
+          repository: replicatedcom/regression-automation
           token: ${{ secrets.GH_PAT }}
 
       - name: Test Step
