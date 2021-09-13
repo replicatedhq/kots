@@ -21,6 +21,7 @@ jobs:
         uses: actions/checkout@v2
         with:
           repository: replicatedhq/admin
+          ref: master
 
       - name: Test Step
         run: |
