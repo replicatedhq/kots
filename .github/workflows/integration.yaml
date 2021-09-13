@@ -22,8 +22,9 @@ jobs:
         with:
           repository: replicatedcom/regression-automation
           token: ${{ secrets.E2E_GH_PAT }}
+          path: automation
           ref: main
 
       - name: Read Dir
         run: |
-          pwd
+          ls -laR
