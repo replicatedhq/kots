@@ -38,22 +38,22 @@ jobs:
           echo 'TODO: Actually run some plans'
 
       - name: Get Results
-        work-directory: automation/cluster
+        working-directory: automation/cluster
         run: |
           echo 'TODO: Get Results'
 
       - name: Analyze Results
-        work-directory: automation/cluster
+        working-directory: automation/cluster
         run: |
           echo 'TODO: Analyze Results'
 
       - name: Cleanup Test Environment
-        work-directory: automation/cluster
+        working-directory: automation/cluster
         run: |
           echo 'TODO: terraform destroy'
 
       - name: Cleanup Jumpbox Environment
-        work-directory: automation/jumpbox
+        working-directory: automation/jumpbox
         run: |
           terraform destroy --auto-approve           
       
