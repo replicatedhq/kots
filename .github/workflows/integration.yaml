@@ -1,0 +1,27 @@
+name: integration-test
+
+on:
+  push:
+    branches:
+      - "automated-test-regression"
+
+jobs:
+  integration-test:
+    runs-on: ubuntu-20.04
+    container:
+      image: hashicorp/terraform:1.0.6
+    env:
+      AWS_REGION: us-east-2
+      AWS_AVAILABILITY_ZONE: us-east2a
+      GH
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          repository: git@github.com:replicatedcom/regression-automation.git
+          token: ${{ secrets.GH_PAT }}
+
+      - name: Test Step
+        run: |
+          echo 'HELLO WORLD'
