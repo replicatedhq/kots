@@ -13,7 +13,6 @@ jobs:
     env:
       AWS_REGION: us-east-2
       AWS_AVAILABILITY_ZONE: us-east2a
-      GH
 
     steps:
       - name: Checkout
