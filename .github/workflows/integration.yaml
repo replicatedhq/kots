@@ -20,6 +20,8 @@ jobs:
         with:
           repository: replicatedcom/regression-automation
           token: ${{ secrets.GH_PAT }}
+          path: main
+          ref: main
 
       - name: Test Step
         run: |
