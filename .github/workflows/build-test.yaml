@@ -12,11 +12,9 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v2
 
-      - name: Get the version
-        if: startsWith(github.ref, 'refs/tags/')
-        id: get_tag
-        shell: bash
-        run: echo ::set-output name=GIT_TAG::${GITHUB_REF/refs\/tags\//}
+      - name: Get tags
+        id: get_tags
+        uses: ./actions/version-tag
 
       - name: Setup Node.js environment
         uses: actions/setup-node@v2
@@ -26,7 +24,7 @@ jobs:
       - name: Build web
         env:
           GIT_COMMIT: ${{ github.sha }}
-          GIT_TAG: ${{ steps.get_tag.outputs.GIT_TAG }}
+          IMAGE_TAG: ${{ steps.get_tags.outputs.IMAGE_TAG }}
         run: make -C web deps build-kotsadm
 
       - name: Upload web artifact
