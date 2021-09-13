@@ -30,6 +30,7 @@ jobs:
         run: |
           terraform init
           terraform plan
+          terraform apply --auto-approve
       
       - name: Create Test Environment
         working-directory: automation/cluster
