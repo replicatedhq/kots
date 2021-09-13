@@ -20,8 +20,9 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v2
         with:
-          repository: replicatedhq/admin
-          ref: master
+          repository: replicatedcom/regression-automation
+          token: ${{ secrets.E2E_GH_PAT }}
+          ref: main
 
       - name: Test Step
         run: |
