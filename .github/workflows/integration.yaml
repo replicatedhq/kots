@@ -28,5 +28,6 @@ jobs:
       - name: Create Jumpbox
         working-directory: automation/jumpbox
         run: |
+          terraform init
           terraform plan
           
