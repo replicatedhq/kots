@@ -48,11 +48,13 @@ jobs:
           echo 'TODO: Analyze Results'
 
       - name: Cleanup Test Environment
+        if: ${{ always() }}
         working-directory: automation/cluster
         run: |
           echo 'TODO: terraform destroy'
 
       - name: Cleanup Jumpbox Environment
+        if: ${{ always() }}
         working-directory: automation/jumpbox
         run: |
           terraform destroy --auto-approve           
