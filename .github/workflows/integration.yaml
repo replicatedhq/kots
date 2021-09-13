@@ -11,7 +11,7 @@ jobs:
     container:
       image: hashicorp/terraform:1.0.6
     env:
-      AWS_REGION: us-east-2
+      AWS_DEFAULT_REGION: us-east-2
       AWS_AVAILABILITY_ZONE: us-east2a
       AWS_ACCESS_KEY_ID: ${{ secrets.E2E_TESTIM_AWS_ACCESS_KEY_ID }}
       AWS_SECRET_ACCESS_KEY: ${{ secrets.E2E_TESTIM_AWS_SECRET_ACCESS_KEY }}
