@@ -125,7 +125,7 @@ jobs:
           format: 'table'
           exit-code: '0'
           ignore-unfixed: true
-          severity: 'CRITICAL,HIGH'
+          severity: 'CRITICAL,HIGH,MEDIUM'
 
 
   build-kurl-proxy:
@@ -172,7 +172,7 @@ jobs:
           format: 'table'
           exit-code: '0'
           ignore-unfixed: true
-          severity: 'CRITICAL,HIGH'
+          severity: 'CRITICAL,HIGH,MEDIUM'
 
   build-migrations:
     runs-on: ubuntu-18.04
@@ -216,7 +216,7 @@ jobs:
           format: 'table'
           exit-code: '0'
           ignore-unfixed: true
-          severity: 'CRITICAL,HIGH'
+          severity: 'CRITICAL,HIGH,MEDIUM'
 
 
   push-minio:
@@ -234,7 +234,7 @@ jobs:
           format: 'table'
           exit-code: '0'
           ignore-unfixed: true
-          severity: 'CRITICAL,HIGH'
+          severity: 'CRITICAL,HIGH,MEDIUM'
 
 
   push-postgres:
@@ -252,7 +252,7 @@ jobs:
           format: 'table'
           exit-code: '0'
           ignore-unfixed: true
-          severity: 'CRITICAL,HIGH'
+          severity: 'CRITICAL,HIGH,MEDIUM'
 
 
   validate-legacy:
