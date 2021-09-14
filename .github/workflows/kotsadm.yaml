@@ -535,14 +535,14 @@ jobs:
           image-ref: "postgres:10.17-alpine"
           format: 'template'
           template: '@/contrib/sarif.tpl'
-          output: 'output.sarif'
+          output: 'postgres-scan-output.sarif'
           exit-code: '0'
           ignore-unfixed: true
           severity: 'CRITICAL,HIGH,MEDIUM'
       - name: Upload scan report
         uses: github/codeql-action/upload-sarif@v1
         with:
-          sarif_file: ${{ steps.scan.output.sarif }}
+          sarif_file: postgres-scan-output.sarif
 
   scan_postgres_debian_stretch:
     runs-on: ubuntu-18.04
@@ -557,14 +557,14 @@ jobs:
           image-ref: "postgres:10.17"
           format: 'template'
           template: '@/contrib/sarif.tpl'
-          output: 'output.sarif'
+          output: 'postgres-stretch-scan-output.sarif'
           exit-code: '0'
           ignore-unfixed: true
           severity: 'CRITICAL,HIGH,MEDIUM'
       - name: Upload scan report
         uses: github/codeql-action/upload-sarif@v1
         with:
-          sarif_file: ${{ steps.scan.output.sarif }}
+          sarif_file: postgres-stretch-scan-output.sarif
 
   scan_migrations:
     runs-on: ubuntu-18.04
@@ -579,14 +579,14 @@ jobs:
           image-ref: "kotsadm/kotsadm-migrations:alpha"
           format: 'template'
           template: '@/contrib/sarif.tpl'
-          output: 'output.sarif'
+          output: 'migration-scan-output.sarif'
           exit-code: '0'
           ignore-unfixed: true
           severity: 'CRITICAL,HIGH,MEDIUM'
       - name: Upload scan report
         uses: github/codeql-action/upload-sarif@v1
         with:
-          sarif_file: ${{ steps.scan.output.sarif }}
+          sarif_file: migration-scan-output.sarif
 
   scan_minio:
     runs-on: ubuntu-18.04
@@ -623,14 +623,14 @@ jobs:
           image-ref: "kotsadm/kurl-proxy:alpha"
           format: 'template'
           template: '@/contrib/sarif.tpl'
-          output: 'output.sarif'
+          output: 'kurl-scan-output.sarif'
           exit-code: '0'
           ignore-unfixed: true
           severity: 'CRITICAL,HIGH,MEDIUM'
       - name: Upload scan report
         uses: github/codeql-action/upload-sarif@v1
         with:
-          sarif_file: ${{ steps.scan.output.sarif }}
+          sarif_file: kurl-scan-output.sarif
 
   scan_kotsadm:
     runs-on: ubuntu-18.04
@@ -645,14 +645,14 @@ jobs:
           image-ref: "kotsadm/kotsadm:alpha"
           format: 'template'
           template: '@/contrib/sarif.tpl'
-          output: 'output.sarif'
+          output: 'kotsadm-scan-output.sarif'
           exit-code: '0'
           ignore-unfixed: true
           severity: 'CRITICAL,HIGH,MEDIUM'
       - name: Upload scan report
         uses: github/codeql-action/upload-sarif@v1
         with:
-          sarif_file: ${{ steps.scan.output.sarif }}
+          sarif_file: kotsadm-scan-output.sarif
 
   scan_dex:
     runs-on: ubuntu-18.04
@@ -667,14 +667,14 @@ jobs:
           image-ref: "ghcr.io/dexidp/dex:v2.28.1"
           format: 'template'
           template: '@/contrib/sarif.tpl'
-          output: 'output.sarif'
+          output: 'dex-scan-output.sarif'
           exit-code: '0'
           ignore-unfixed: true
           severity: 'CRITICAL,HIGH,MEDIUM'
       - name: Upload scan report
         uses: github/codeql-action/upload-sarif@v1
         with:
-          sarif_file: ${{ steps.scan.output.sarif }}
+          sarif_file: dex-scan-output.sarif
 
 
   build_airgap:
