@@ -17,12 +17,17 @@ jobs:
         with:
           node-version: '10'
 
-      - name: port forward
-        run: |
-          sudo echo '${{ secrets.TESTIM_SSH_PRIVATE_KEY }}' > /home/runner/.ssh/id_rsa && \
-          sudo chmod 600 /home/runner/.ssh/id_rsa && \
-          sudo ssh -oStrictHostKeyChecking=no -i /home/runner/.ssh/id_rsa -NfL *:8800:10.128.0.11:8800 34.121.160.197 && \
-          sudo ls /home/runner/.ssh
+      - name: save private key
+        run: sudo echo '${{ secrets.TESTIM_SSH_PRIVATE_KEY }}' > ./testim_id_rsa
+      
+      - name: chmod 
+        run: sudo chmod 600 ./testim_id_rsa
+      
+      - name: ssh
+        run: sudo ssh -oStrictHostKeyChecking=no -i ./testim_id_rsa -NfL *:8800:10.128.0.11:8800 34.121.160.197
+
+      - name: ls
+        run: sudo ls /home/runner/.ssh  
 
       - name: Public IP
         id: ip
