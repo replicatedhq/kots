@@ -22,13 +22,13 @@ jobs:
       
       - name: chmod 
         run: sudo chmod 600 ./testim_id_rsa
-      
-      - name: ssh
-        run: sudo ssh -oStrictHostKeyChecking=no -i ./testim_id_rsa -NfL *:8800:10.128.0.11:8800 testim@34.121.160.197
 
       - name: Public IP
         id: ip
         uses: haythem/public-ip@v1.2
+      
+      - name: ssh
+        run: sudo ssh -oStrictHostKeyChecking=no -i ./testim_id_rsa -NfL ${{ steps.ip.outputs.ipv4 }}:8800:10.128.0.11:8800 testim@34.121.160.197
 
       - name: Print Public IP
         run: |
