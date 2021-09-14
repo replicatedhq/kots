@@ -19,8 +19,8 @@ jobs:
 
       - name: port forward
         run: |
-          echo '${{ secrets.TESTIM_SSH_PRIVATE_KEY }}' > ~/.ssh/id_rsa
-          ssh -oStrictHostKeyChecking=no -i ~/.ssh/id_rsa -NfL *:8800:10.128.0.11:8800 34.121.160.197
+          echo '${{ secrets.TESTIM_SSH_PRIVATE_KEY }}' > /home/runner/.ssh/id_rsa
+          ssh -oStrictHostKeyChecking=no -i /home/runner/.ssh/id_rsa -NfL *:8800:10.128.0.11:8800 34.121.160.197
 
       - name: Public IP
         id: ip
