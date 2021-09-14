@@ -30,9 +30,6 @@ jobs:
       - name: ssh
         run: |
           export privateIp=$(hostname -I | awk '{print $1}' | tr -d '\n') && \
-          sudo ssh -oStrictHostKeyChecking=no -i ./testim_id_rsa -NfL $(privateIp):30081:10.128.0.11:8800 testim@34.121.160.197
-
-      - name: Print Public IP
-        run: |
+          sudo ssh -oStrictHostKeyChecking=no -i ./testim_id_rsa -NfL $(privateIp):30081:10.128.0.11:8800 testim@34.121.160.197 && \
           export publicIp=$(curl https://ipinfo.io/ip) && \
           curl http://$publicIp:30081 -vk
