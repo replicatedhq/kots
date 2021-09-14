@@ -1,0 +1,24 @@
+name: trigger-nightly
+
+on:
+  schedule:
+    - cron:  '45 5 * * *' # 5:45 UTC = 22:45 Pacific
+
+jobs:
+  trigger-nightly:
+    runs-on: ubuntu-18.04
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+
+    - name: Get tags
+      id: get_tag
+      uses: ./actions/version-tag
+
+    - name: Push nightly tag
+      env:
+        GIT_TAG: ${{ steps.get_tag.outputs.GIT_TAG }}
+      run: |
+        echo $GIT_TAG
+        git tag $GIT_TAG
+        git push origin $GIT_TAG

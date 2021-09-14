@@ -9,6 +9,7 @@ on:
 
 jobs:
 
+
   generate-schema:
     runs-on: ubuntu-18.04
     container:
@@ -95,11 +96,9 @@ jobs:
         username: ${{ secrets.DOCKERHUB_USER }}
         password: ${{ secrets.DOCKERHUB_PASSWORD }}
 
-    - name: Get the version
-      if: startsWith(github.ref, 'refs/tags/')
+    - name: Get tags
       id: get_tag
-      shell: bash
-      run: echo ::set-output name=GIT_TAG::${GITHUB_REF/refs\/tags\//}
+      uses: ./actions/version-tag
 
     - name: Build
       if: ${{ github.ref == 'refs/heads/master' }}
@@ -169,11 +168,9 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v2
 
-    - name: Get the version
-      if: startsWith(github.ref, 'refs/tags/')
+    - name: Get tags
       id: get_tag
-      shell: bash
-      run: echo ::set-output name=GIT_TAG::${GITHUB_REF/refs\/tags\//}
+      uses: ./actions/version-tag
 
     - name: Setup Node.js environment
       uses: actions/setup-node@v2
@@ -214,11 +211,9 @@ jobs:
       with:
         go-version: '^1.16.3'
 
-    - name: Get the version
-      if: startsWith(github.ref, 'refs/tags/')
+    - name: Get tags
       id: get_tag
-      shell: bash
-      run: echo ::set-output name=GIT_TAG::${GITHUB_REF/refs\/tags\//}
+      uses: ./actions/version-tag
 
     - name: Build kurl_proxy
       env:
@@ -261,11 +256,9 @@ jobs:
         path: ${{ steps.go-cache-paths.outputs.go-mod }}
         key: ${{ runner.os }}-go-mod-${{ hashFiles('**/go.sum') }}
 
-    - name: Get the version
-      if: startsWith(github.ref, 'refs/tags/')
+    - name: Get tags
       id: get_tag
-      shell: bash
-      run: echo ::set-output name=GIT_TAG::${GITHUB_REF/refs\/tags\//}
+      uses: ./actions/version-tag
 
     - name: Download web artifact
       uses: actions/download-artifact@v2
@@ -362,11 +355,9 @@ jobs:
         path: ${{ steps.go-cache-paths.outputs.go-mod }}
         key: ${{ runner.os }}-go-mod-${{ hashFiles('**/go.sum') }}
 
-    - name: Get the version
-      if: startsWith(github.ref, 'refs/tags/')
+    - name: Get tags
       id: get_tag
-      shell: bash
-      run: echo ::set-output name=GIT_TAG::${GITHUB_REF/refs\/tags\//}
+      uses: ./actions/version-tag
 
     - name: Download go_api artifact
       if: ${{ steps.get_tag.outputs.GIT_TAG != '' }}
@@ -480,11 +471,9 @@ jobs:
         path: ${{ steps.go-cache-paths.outputs.go-mod }}
         key: ${{ runner.os }}-go-mod-${{ hashFiles('**/go.sum') }}
 
-    - name: Get the version
-      if: startsWith(github.ref, 'refs/tags/')
+    - name: Get tags
       id: get_tag
-      shell: bash
-      run: echo ::set-output name=GIT_TAG::${GITHUB_REF/refs\/tags\//}
+      uses: ./actions/version-tag
 
     - name: Download kurl_proxy artifact
       if: ${{ steps.get_tag.outputs.GIT_TAG != '' }}
@@ -664,11 +653,11 @@ jobs:
     runs-on: ubuntu-18.04
     needs: [release_go_api_tagged]
     steps:
-    - name: Get the version
-      if: startsWith(github.ref, 'refs/tags/')
+    - name: Checkout
+      uses: actions/checkout@v2
+    - name: Get tags
       id: get_tag
-      shell: bash
-      run: echo ::set-output name=GIT_TAG::${GITHUB_REF/refs\/tags\//}
+      uses: ./actions/version-tag
 
     - name: Download migrations
       if: ${{ steps.get_tag.outputs.GIT_TAG != '' }}
@@ -715,11 +704,9 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v2
 
-    - name: Get the version
-      if: startsWith(github.ref, 'refs/tags/')
+    - name: Get tags
       id: get_tag
-      shell: bash
-      run: echo ::set-output name=GIT_TAG::${GITHUB_REF/refs\/tags\//}
+      uses: ./actions/version-tag
 
     - uses: kceb/pull-request-url-action@v2
       id: pr_url
@@ -755,11 +742,12 @@ jobs:
     needs: [release_go_api_tagged, build_kurl_proxy_tagged]
     steps:
 
-    - name: Get the version
-      if: startsWith(github.ref, 'refs/tags/')
+    - name: Checkout
+      uses: actions/checkout@v2
+
+    - name: Get tags
       id: get_tag
-      shell: bash
-      run: echo ::set-output name=GIT_TAG::${GITHUB_REF/refs\/tags\//}
+      uses: ./actions/version-tag
 
     - name: Generate Kurl Addon PR
       if: ${{ steps.get_tag.outputs.GIT_TAG != '' }}

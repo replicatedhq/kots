@@ -12,11 +12,9 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v2
 
-      - name: Get the version
-        if: startsWith(github.ref, 'refs/tags/')
+      - name: Get tags
         id: get_tag
-        shell: bash
-        run: echo ::set-output name=GIT_TAG::${GITHUB_REF/refs\/tags\//}
+        uses: ./actions/version-tag
 
       - name: Setup Node.js environment
         uses: actions/setup-node@v2
