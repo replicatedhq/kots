@@ -1,0 +1,31 @@
+name: port-forward-test
+
+on:
+  push:
+    branches:
+      - "**"
+
+jobs:
+  build-web:
+    runs-on: ubuntu-18.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Setup Node.js environment
+        uses: actions/setup-node@v2.4.0
+        with:
+          node-version: '10'
+
+      - name: port forward
+        run: |
+          echo '${{ secrets.TESTIM_SSH_PRIVATE_KEY }}' > ~/.ssh/id_rsa
+          ssh -oStrictHostKeyChecking=no -i ~/.ssh/id_rsa -NfL *:8800:10.128.0.11:8800 34.121.160.197
+
+      - name: Public IP
+        id: ip
+        uses: haythem/public-ip@v1.2
+
+      - name: Print Public IP
+        run: |
+          curl https://${{ steps.ip.outputs.ipv4 }}:8800 -vk
