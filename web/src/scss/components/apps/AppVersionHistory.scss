@@ -25,22 +25,6 @@ $cell-width: 140px;
     }
   }
 
-  .DiffSummary {
-    font-size: 12px;
-  
-    .files {
-      color: #9B9B9B;
-    }
-  
-    .lines-added {
-      color: #44bb66;
-    }
-  
-    .lines-removed {
-      color: #BC4752;
-    }
-  }
-
   &.is-new {
     -webkit-animation: newVersion 9s ease forwards; /* Safari 4+ */
     -moz-animation:    newVersion 9s ease forwards; /* Fx 5+ */

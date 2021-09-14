@@ -20,7 +20,8 @@ class DownstreamWatchVersionDiff extends React.Component {
       fileLoadErrMessage: "",
       hasErrSettingDiff: false,
       errSettingDiff: "",
-      failedSequence: undefined
+      failedSequence: undefined,
+      fromDashboard: false
     };
   }
 
@@ -68,9 +69,14 @@ class DownstreamWatchVersionDiff extends React.Component {
   }
 
   componentDidMount() {
-    const { firstSequence, secondSequence } = this.props;
+    const { firstSequence, secondSequence, history, location } = this.props;
     this.fetchRenderedApplicationTree(firstSequence, true);
     this.fetchRenderedApplicationTree(secondSequence, false);
+
+    if (location.search === "?d=1") {
+      this.setState({ fromDashboard: true });
+      history.replace(location.pathname);
+    }
 
     const url = window.location.pathname;
     if (!url.includes("/diff")) {
@@ -81,6 +87,9 @@ class DownstreamWatchVersionDiff extends React.Component {
   componentWillUnmount() {
     const url = window.location.pathname;
     if (url.includes("/diff")) {
+      if (this.state.fromDashboard) {
+        return this.props.history.replace(`/app/${this.props.slug}`);
+      }
       const { firstSequence, secondSequence } = this.props;
       const diffPath = `/diff/${firstSequence}/${secondSequence}`;
       window.history.replaceState("", "", url.substring(0, url.indexOf(diffPath)));

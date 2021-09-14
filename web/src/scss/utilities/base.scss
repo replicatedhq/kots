@@ -65,6 +65,22 @@ body a {
   }
 }
 
+.DiffSummary {
+  font-size: 12px;
+
+  .files {
+    color: #9B9B9B;
+  }
+
+  .lines-added {
+    color: #44bb66;
+  }
+
+  .lines-removed {
+    color: #BC4752;
+  }
+}
+
 .Loader {
   path {
     fill: $primary-color

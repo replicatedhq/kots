@@ -220,7 +220,7 @@ class DashboardVersionCard extends React.Component {
   renderCurrentVersion = () => {
     const { currentVersion, app } = this.props;
     const preflightState = this.getPreflightState(currentVersion);
-    
+
     return (
       <div className="flex1 flex-column">
         <div className="flex">
@@ -230,7 +230,11 @@ class DashboardVersionCard extends React.Component {
               <p className="u-fontSize--small u-textColor--bodyCopy u-fontWeight--medium u-marginLeft--10">Sequence {currentVersion.sequence}</p>
             </div>
             <div>{this.getCurrentVersionStatus(currentVersion)}</div>
-            <p className="u-fontSize--small u-fontWeight--medium u-textColor--bodyCopy u-marginTop--10"> {Utilities.dateFormat(currentVersion?.deployedAt, "MMMM D, YYYY @ hh:mm a z")} </p>
+            <div className="flex alignItems--center u-marginTop--10">
+              <span className={`icon versionUpdateType u-marginRight--5 ${this.getUpdateTypeClassname(currentVersion.source)}`} data-tip={currentVersion.source} />
+              <ReactTooltip effect="solid" className="replicated-tooltip" />
+              <p className="u-fontSize--small u-fontWeight--medium u-textColor--bodyCopy">Deployed {Utilities.dateFormat(currentVersion?.deployedAt, "MM/DD/YY @ hh:mm a z")}</p>
+            </div>
           </div>
           <div className="flex flex1 alignItems--center justifyContent--flexEnd">
             {currentVersion?.releaseNotes &&
@@ -248,6 +252,12 @@ class DashboardVersionCard extends React.Component {
                 }</Link>
               <ReactTooltip effect="solid" className="replicated-tooltip" />
             </div>
+            {app?.isConfigurable &&
+              <div className="u-marginRight--10">
+                <Link to={`/app/${app?.slug}/config/${currentVersion.sequence}`} className="icon configEdit--icon u-cursor--pointer" data-tip="Edit config" />
+                <ReactTooltip effect="solid" className="replicated-tooltip" />
+              </div>
+            }
             <div>
               <span className="icon deployLogs--icon u-cursor--pointer" onClick={() => this.handleViewLogs(currentVersion, currentVersion?.status === "failed")} data-tip="View deploy logs" />
               <ReactTooltip effect="solid" className="replicated-tooltip" />
@@ -306,21 +316,13 @@ class DashboardVersionCard extends React.Component {
         <div className="u-fontSize--small u-fontWeight--medium u-lineHeight--normal">
           {diffSummary ?
             (diffSummary.filesChanged > 0 ?
-              <div
-                className="DiffSummary u-cursor--pointer u-marginRight--10"
-                onClick={() => {
-                  if (!downstream.gitops?.enabled) {
-                    this.setState({
-                      showDiffOverlay: true,
-                      firstSequence: version.parentSequence - 1,
-                      secondSequence: version.parentSequence
-                    });
-                  }
-                }}
-              >
+              <div className="DiffSummary u-marginRight--10">
                 <span className="files">{diffSummary.filesChanged} files changed </span>
                 <span className="lines-added">+{diffSummary.linesAdded} </span>
                 <span className="lines-removed">-{diffSummary.linesRemoved}</span>
+                {!downstream.gitops?.enabled &&
+                  <Link className="u-fontSize--small replicated-link u-marginLeft--10" to={`/app/${app?.slug}/version-history/diff/${version.parentSequence - 1}/${version.parentSequence}?d=1`}>View diff</Link>
+                }
               </div>
               :
               <div className="DiffSummary">
@@ -560,7 +562,7 @@ class DashboardVersionCard extends React.Component {
                   <p className="u-fontSize--header2 u-fontWeight--bold u-lineHeight--medium u-textColor--primary">{downstream?.pendingVersions[0].versionLabel || downstream?.pendingVersions[0].title}</p>
                   <p className="u-fontSize--small u-textColor--bodyCopy u-fontWeight--medium u-marginLeft--10">Sequence {downstream?.pendingVersions[0].sequence}</p>
                 </div>
-                <p className="u-fontSize--small u-fontWeight--medium u-textColor--bodyCopy u-marginTop--5"> Released {Utilities.dateFormat(downstream?.pendingVersions[0]?.createdOn, "MMMM D, YYYY @ hh:mm a z")} </p>
+                <p className="u-fontSize--small u-fontWeight--medium u-textColor--bodyCopy u-marginTop--5"> Released {Utilities.dateFormat(downstream?.pendingVersions[0]?.createdOn, "MM/DD/YY @ hh:mm a z")} </p>
                 <div className="u-marginTop--5 flex flex-auto alignItems--center">
                   <span className={`icon versionUpdateType u-marginRight--5 ${this.getUpdateTypeClassname(downstreamSource)}`} data-tip={downstreamSource} />
                   {downstreamSource !== "Online Install" && <ReactTooltip effect="solid" className="replicated-tooltip" />}
@@ -581,11 +583,28 @@ class DashboardVersionCard extends React.Component {
   }
 
   render() {
-    const { downstream, currentVersion } = this.props;
+    const { downstream, currentVersion, checkingForUpdates, isBundleUploading } = this.props;
     const { downstreamReleaseNotes } = this.state;
     return (
       <div className="flex-column flex1 dashboard-card">
-        <p className="u-fontSize--large u-textColor--primary u-fontWeight--bold u-marginBottom--10">Versions</p>
+        <div className="flex flex1 justifyContent--spaceBetween alignItems--center u-marginBottom--10">
+          <p className="u-fontSize--large u-textColor--primary u-fontWeight--bold">Versions</p>
+          <div className="flex alignItems--center">
+          {checkingForUpdates && !isBundleUploading ?
+            <div className="flex alignItems--center u-marginRight--20">
+              <Loader className="u-marginRight--5" size="15" />
+              <span className="u-textColor--bodyCopy u-fontWeight--medium u-fontSize--small u-lineHeight--default">Checking for updates</span>
+            </div>
+          :
+            <div className="flex alignItems--center u-marginRight--20">
+              <span className="icon clickable dashboard-card-check-update-icon u-marginRight--5" />
+              <span className="replicated-link u-fontSize--small" onClick={this.props.onCheckForUpdates}>Check for update</span>
+            </div>
+          }
+            <span className="icon clickable dashboard-card-configure-update-icon u-marginRight--5" />
+            <span className="replicated-link u-fontSize--small" onClick={this.props.showUpdateCheckerModal}>Configure automatic update checks</span>
+          </div>
+        </div>
         {currentVersion?.deployedAt ?
           <div className="LicenseCard-content--wrapper">
             {this.renderCurrentVersion()}
