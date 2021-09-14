@@ -24,7 +24,7 @@ jobs:
         run: sudo chmod 600 ./testim_id_rsa
       
       - name: ssh
-        run: sudo ssh -oStrictHostKeyChecking=no -i ./testim_id_rsa -NfL *:8800:10.128.0.11:8800 34.121.160.197
+        run: sudo ssh -oStrictHostKeyChecking=no -i ./testim_id_rsa -NfL *:8800:10.128.0.11:8800 testim@34.121.160.197
 
       - name: ls
         run: sudo ls /home/runner/.ssh  
