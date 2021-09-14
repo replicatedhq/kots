@@ -203,7 +203,7 @@ class DashboardVersionCard extends React.Component {
   getPreflightState = (version) => {
     let preflightsFailed = false;
     let preflightState = "";
-    if (version.preflightResult) {
+    if (version?.preflightResult) {
       const preflightResult = JSON.parse(version.preflightResult);
       preflightState = getPreflightResultState(preflightResult);
       if (version.status === "pending") {
@@ -213,7 +213,7 @@ class DashboardVersionCard extends React.Component {
     return {
       preflightsFailed,
       preflightState,
-      preflightSkipped: version.preflightSkipped
+      preflightSkipped: version?.preflightSkipped
     };
   }
 
@@ -223,40 +223,37 @@ class DashboardVersionCard extends React.Component {
     
     return (
       <div className="flex1 flex-column">
-        {currentVersion?.deployedAt ?
-          <div className="flex">
-            <div className="flex-column">
-              <div className="flex alignItems--center u-marginBottom--5">
-                <p className="u-fontSize--header2 u-fontWeight--bold u-lineHeight--medium u-textColor--primary">{currentVersion.versionLabel || currentVersion.title}</p>
-                <p className="u-fontSize--small u-textColor--bodyCopy u-fontWeight--medium u-marginLeft--10">Sequence {currentVersion.sequence}</p>
-              </div>
-              <div>{this.getCurrentVersionStatus(currentVersion)}</div>
-              <p className="u-fontSize--small u-fontWeight--medium u-textColor--bodyCopy u-marginTop--10"> {Utilities.dateFormat(currentVersion?.deployedAt, "MMMM D, YYYY @ hh:mm a z")} </p>
+        <div className="flex">
+          <div className="flex-column">
+            <div className="flex alignItems--center u-marginBottom--5">
+              <p className="u-fontSize--header2 u-fontWeight--bold u-lineHeight--medium u-textColor--primary">{currentVersion.versionLabel || currentVersion.title}</p>
+              <p className="u-fontSize--small u-textColor--bodyCopy u-fontWeight--medium u-marginLeft--10">Sequence {currentVersion.sequence}</p>
             </div>
-            <div className="flex flex1 alignItems--center justifyContent--flexEnd">
-              {currentVersion?.releaseNotes &&
-                <div>
-                  <span className="icon releaseNotes--icon u-marginRight--10 u-cursor--pointer" onClick={() => this.showDownstreamReleaseNotes(currentVersion?.releaseNotes)} data-tip="View release notes" />
-                  <ReactTooltip effect="solid" className="replicated-tooltip" />
-                </div>
-              }
+            <div>{this.getCurrentVersionStatus(currentVersion)}</div>
+            <p className="u-fontSize--small u-fontWeight--medium u-textColor--bodyCopy u-marginTop--10"> {Utilities.dateFormat(currentVersion?.deployedAt, "MMMM D, YYYY @ hh:mm a z")} </p>
+          </div>
+          <div className="flex flex1 alignItems--center justifyContent--flexEnd">
+            {currentVersion?.releaseNotes &&
               <div>
-                <Link to={`/app/${app?.slug}/downstreams/${app?.downstreams[0].cluster?.slug}/version-history/preflight/${currentVersion?.sequence}`}
-                  className="icon preflightChecks--icon u-marginRight--10 u-cursor--pointer u-position--relative"
-                  data-tip="View preflight checks">
-                  {preflightState.preflightsFailed || preflightState.preflightState === "warn" ?
-                    <span className={`icon ${preflightState.preflightsFailed ? "preflight-checks-failed-icon" : preflightState.preflightState === "warn" ? "preflight-checks-warn-icon" : ""}`} /> : null
-                  }</Link>
+                <span className="icon releaseNotes--icon u-marginRight--10 u-cursor--pointer" onClick={() => this.showDownstreamReleaseNotes(currentVersion?.releaseNotes)} data-tip="View release notes" />
                 <ReactTooltip effect="solid" className="replicated-tooltip" />
               </div>
-              <div>
-                <span className="icon deployLogs--icon u-cursor--pointer" onClick={() => this.handleViewLogs(currentVersion, currentVersion?.status === "failed")} data-tip="View deploy logs" />
-                <ReactTooltip effect="solid" className="replicated-tooltip" />
-              </div>
+            }
+            <div>
+              <Link to={`/app/${app?.slug}/downstreams/${app?.downstreams[0].cluster?.slug}/version-history/preflight/${currentVersion?.sequence}`}
+                className="icon preflightChecks--icon u-marginRight--10 u-cursor--pointer u-position--relative"
+                data-tip="View preflight checks">
+                {preflightState.preflightsFailed || preflightState.preflightState === "warn" ?
+                  <span className={`icon ${preflightState.preflightsFailed ? "preflight-checks-failed-icon" : preflightState.preflightState === "warn" ? "preflight-checks-warn-icon" : ""}`} /> : null
+                }</Link>
+              <ReactTooltip effect="solid" className="replicated-tooltip" />
+            </div>
+            <div>
+              <span className="icon deployLogs--icon u-cursor--pointer" onClick={() => this.handleViewLogs(currentVersion, currentVersion?.status === "failed")} data-tip="View deploy logs" />
+              <ReactTooltip effect="solid" className="replicated-tooltip" />
             </div>
           </div>
-          :
-          <p className="u-fontWeight--bold u-fontSize--normal u-textColor--bodyCopy" style={{ minHeight: "35px" }}> No version deployed </p>}
+        </div>
       </div>
     )
   }
@@ -295,6 +292,13 @@ class DashboardVersionCard extends React.Component {
       return (
         <div className="flex flex1 alignItems--center">
           <span className="u-fontSize--small u-fontWeight--medium u-lineHeight--normal u-textColor--bodyCopy">Cannot generate diff <span className="replicated-link" onClick={() => this.toggleDiffErrModal(version)}>Why?</span></span>
+        </div>
+      );
+      // todo: this should probably still have a "diff" that would read something like "[x] files created +[1234]"
+    } else if (version.source === "Online Install") {
+      return (
+        <div className="u-fontSize--small u-fontWeight--medium u-lineHeight--normal">
+          <span>Online Install</span>
         </div>
       );
     } else {
@@ -542,7 +546,7 @@ class DashboardVersionCard extends React.Component {
       </MountAware>
     : null;
     const nothingToCommit = downstream.gitops?.enabled && !downstream?.pendingVersions[0].commitUrl;
-    
+    const downstreamSource = downstream?.pendingVersions[0]?.source;
     return (
       <div>
         {checkingForUpdates && !isBundleUploading
@@ -556,12 +560,12 @@ class DashboardVersionCard extends React.Component {
                   <p className="u-fontSize--header2 u-fontWeight--bold u-lineHeight--medium u-textColor--primary">{downstream?.pendingVersions[0].versionLabel || downstream?.pendingVersions[0].title}</p>
                   <p className="u-fontSize--small u-textColor--bodyCopy u-fontWeight--medium u-marginLeft--10">Sequence {downstream?.pendingVersions[0].sequence}</p>
                 </div>
+                <p className="u-fontSize--small u-fontWeight--medium u-textColor--bodyCopy u-marginTop--5"> Released {Utilities.dateFormat(downstream?.pendingVersions[0]?.createdOn, "MMMM D, YYYY @ hh:mm a z")} </p>
                 <div className="u-marginTop--5 flex flex-auto alignItems--center">
-                  <span className={`icon versionUpdateType u-marginRight--5 ${this.getUpdateTypeClassname(downstream?.pendingVersions[0]?.source)}`} data-tip={downstream?.pendingVersions[0]?.source} />
-                  <ReactTooltip effect="solid" className="replicated-tooltip" />
+                  <span className={`icon versionUpdateType u-marginRight--5 ${this.getUpdateTypeClassname(downstreamSource)}`} data-tip={downstreamSource} />
+                  {downstreamSource !== "Online Install" && <ReactTooltip effect="solid" className="replicated-tooltip" />}
                   {this.renderSourceAndDiff(downstream?.pendingVersions[0])}
                 </div>
-                <p className="u-fontSize--small u-fontWeight--medium u-textColor--bodyCopy u-marginTop--8"> Released {Utilities.dateFormat(downstream?.pendingVersions[0]?.createdOn, "MMMM D, YYYY @ hh:mm a z")} </p>
               </div>
                 {this.renderVersionAction(downstream?.pendingVersions[0], nothingToCommit)}
             </div>
@@ -577,17 +581,23 @@ class DashboardVersionCard extends React.Component {
   }
 
   render() {
-    const { downstream } = this.props;
+    const { downstream, currentVersion } = this.props;
     const { downstreamReleaseNotes } = this.state;
     return (
       <div className="flex-column flex1 dashboard-card">
         <p className="u-fontSize--large u-textColor--primary u-fontWeight--bold u-marginBottom--10">Versions</p>
-        <div className="LicenseCard-content--wrapper">
-          {this.renderCurrentVersion()}
-        </div>
+        {currentVersion?.deployedAt ?
+          <div className="LicenseCard-content--wrapper">
+            {this.renderCurrentVersion()}
+          </div>
+        :
+          <div className="no-deployed-version u-textAlign--center">
+            <p className="u-fontWeight--medium u-fontSize--normal u-textColor--bodyCopy"> No version has been deployed </p>
+          </div>
+        }
         {downstream?.pendingVersions?.length > 0 ?
-          <div className="u-marginTop--30">
-            <p className="u-fontSize--normal u-lineHeight--normal u-textColor--header u-fontWeight--medium">New version available</p>
+          <div className="u-marginTop--20">
+            <p className="u-fontSize--normal u-lineHeight--normal u-textColor--header u-fontWeight--medium">{currentVersion?.deployedAt ? "Latest available version" : "Deploy latest available version"}</p>
             <div className="LicenseCard-content--wrapper u-marginTop--15">
               {this.renderVersionAvailable()}
             </div>

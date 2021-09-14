@@ -84,6 +84,12 @@
   background-color: #ffffff;
 }
 
+.no-deployed-version {
+  padding: 25px;
+  border-radius: 4px;
+  border: 1px dashed $border-color;
+}
+
 @media screen and (min-width: 642px) {
   
 }
