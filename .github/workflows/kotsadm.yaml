@@ -525,7 +525,6 @@ jobs:
     runs-on: ubuntu-18.04
     needs: [build-schema-migrations]
     steps:
-    # is this checkout still needed?
       - name: Checkout
         uses: actions/checkout@v2
       - name: Scan postgres for vulnerabilities
