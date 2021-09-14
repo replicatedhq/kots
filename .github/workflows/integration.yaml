@@ -29,8 +29,14 @@ jobs:
         working-directory: automation/jumpbox
         run: |
           terraform init
-          terraform plan
           terraform apply --auto-approve
+      - name: Set Jumpbox Public Ip
+        run: |
+          export $JUMPBOX_IP=$(terraform output jumpbox_ip_private | tr -d '"')
+          echo "::set-env name=JUMPBOX_IP::$JUMPBOX_IP"
+      - name: Test Jumpbox Public Ip
+        run: |
+          echo $JUMPBOX_IP
       
       - name: Create Test Environment
         working-directory: automation/cluster
