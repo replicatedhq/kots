@@ -525,21 +525,23 @@ jobs:
     runs-on: ubuntu-18.04
     needs: [build-schema-migrations]
     steps:
+    # is this checkout still needed?
       - name: Checkout
         uses: actions/checkout@v2
-      - name: Scan postgres image
-        id: scan
-        uses: anchore/scan-action@v2
+      - name: Scan postgres for vulnerabilities
+        uses: aquasecurity/trivy-action@master
         with:
-          image: "postgres:10.17-alpine"
-          fail-build: false
-          acs-report-enable: true
-          severity-cutoff: high
-
+          image-ref: "postgres:10.17-alpine"
+          format: 'template'
+          template: '@/contrib/sarif.tpl'
+          output: 'output.sarif'
+          exit-code: '0'
+          ignore-unfixed: true
+          severity: 'CRITICAL,HIGH,MEDIUM'
       - name: Upload scan report
         uses: github/codeql-action/upload-sarif@v1
         with:
-          sarif_file: ${{ steps.scan.outputs.sarif }}
+          sarif_file: ${{ output.sarif }}
 
   scan_postgres_debian_stretch:
     runs-on: ubuntu-18.04
@@ -547,18 +549,20 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v2
-      - name: Scan postgres image
-        id: scan
-        uses: anchore/scan-action@v2
+      - name: Scan postgres for vulnerabilities
+        uses: aquasecurity/trivy-action@master
         with:
-          image: "postgres:10.17"
-          fail-build: false
-          acs-report-enable: true
-          severity-cutoff: high
+          image-ref: "postgres:10.17"
+          format: 'template'
+          template: '@/contrib/sarif.tpl'
+          output: 'output.sarif'
+          exit-code: '0'
+          ignore-unfixed: true
+          severity: 'CRITICAL,HIGH,MEDIUM'
       - name: Upload scan report
         uses: github/codeql-action/upload-sarif@v1
         with:
-          sarif_file: ${{ steps.scan.outputs.sarif }}
+          sarif_file: ${{ output.sarif }}
 
   scan_migrations:
     runs-on: ubuntu-18.04
@@ -566,38 +570,41 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v2
-      - name: Scan migrations image
-        id: scan
-        uses: anchore/scan-action@v2
+      - name: Scan migrations for vulnerabilities
+        uses: aquasecurity/trivy-action@master
         with:
-          image: "kotsadm/kotsadm-migrations:alpha"
-          fail-build: false
-          acs-report-enable: true
-          severity-cutoff: high
-
+          image-ref: "kotsadm/kotsadm-migrations:alpha"
+          format: 'template'
+          template: '@/contrib/sarif.tpl'
+          output: 'output.sarif'
+          exit-code: '0'
+          ignore-unfixed: true
+          severity: 'CRITICAL,HIGH,MEDIUM'
       - name: Upload scan report
         uses: github/codeql-action/upload-sarif@v1
         with:
-          sarif_file: ${{ steps.scan.outputs.sarif }}
+          sarif_file: ${{ output.sarif }}
 
   scan_minio:
     runs-on: ubuntu-18.04
     steps:
       - name: Checkout
         uses: actions/checkout@v2
-      - name: Scan minio image
-        id: scan
-        uses: anchore/scan-action@v2
+      - name: Scan minio for vulnerabilities
+        uses: aquasecurity/trivy-action@master
         with:
-          image: "minio/minio:RELEASE.2021-08-05T22-01-19Z"
-          fail-build: false
-          acs-report-enable: true
-          severity-cutoff: high
+          image-ref: "minio/minio:RELEASE.2021-08-05T22-01-19Z"
+          format: 'template'
+          template: '@/contrib/sarif.tpl'
+          output: 'output.sarif'
+          exit-code: '0'
+          ignore-unfixed: true
+          severity: 'CRITICAL,HIGH,MEDIUM'
 
       - name: Upload scan report
         uses: github/codeql-action/upload-sarif@v1
         with:
-          sarif_file: ${{ steps.scan.outputs.sarif }}
+          sarif_file: ${{ output.sarif }}
 
   scan_kurl_proxy:
     runs-on: ubuntu-18.04
@@ -605,19 +612,20 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v2
-      - name: Scan kurl proxy image
-        id: scan
-        uses: anchore/scan-action@v2
+      - name: Scan kurl-proxy for vulnerabilities
+        uses: aquasecurity/trivy-action@master
         with:
-          image: "kotsadm/kurl-proxy:alpha"
-          fail-build: false
-          acs-report-enable: true
-          severity-cutoff: high
-
+          image-ref: "kotsadm/kurl-proxy:alpha"
+          format: 'template'
+          template: '@/contrib/sarif.tpl'
+          output: 'output.sarif'
+          exit-code: '0'
+          ignore-unfixed: true
+          severity: 'CRITICAL,HIGH,MEDIUM'
       - name: Upload scan report
         uses: github/codeql-action/upload-sarif@v1
         with:
-          sarif_file: ${{ steps.scan.outputs.sarif }}
+          sarif_file: ${{ output.sarif }}
 
   scan_kotsadm:
     runs-on: ubuntu-18.04
@@ -625,19 +633,20 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v2
-      - name: Scan kotsadm image
-        id: scan
-        uses: anchore/scan-action@v2
+      - name: Scan kotsadm for vulnerabilities
+        uses: aquasecurity/trivy-action@master
         with:
-          image: "kotsadm/kotsadm:alpha"
-          fail-build: false
-          acs-report-enable: true
-          severity-cutoff: high
-
+          image-ref: "kotsadm/kotsadm:alpha"
+          format: 'template'
+          template: '@/contrib/sarif.tpl'
+          output: 'output.sarif'
+          exit-code: '0'
+          ignore-unfixed: true
+          severity: 'CRITICAL,HIGH,MEDIUM'
       - name: Upload scan report
         uses: github/codeql-action/upload-sarif@v1
         with:
-          sarif_file: ${{ steps.scan.outputs.sarif }}
+          sarif_file: ${{ output.sarif }}
 
   scan_dex:
     runs-on: ubuntu-18.04
@@ -645,19 +654,20 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v2
-      - name: Scan dex image
-        id: scan
-        uses: anchore/scan-action@v2
+      - name: Scan dex for vulnerabilities
+        uses: aquasecurity/trivy-action@master
         with:
-          image: "ghcr.io/dexidp/dex:v2.28.1"
-          fail-build: false
-          acs-report-enable: true
-          severity-cutoff: high
-
+          image-ref: "ghcr.io/dexidp/dex:v2.28.1"
+          format: 'template'
+          template: '@/contrib/sarif.tpl'
+          output: 'output.sarif'
+          exit-code: '0'
+          ignore-unfixed: true
+          severity: 'CRITICAL,HIGH,MEDIUM'
       - name: Upload scan report
         uses: github/codeql-action/upload-sarif@v1
         with:
-          sarif_file: ${{ steps.scan.outputs.sarif }}
+          sarif_file: ${{ output.sarif }}
 
 
   build_airgap:
