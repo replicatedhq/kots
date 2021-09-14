@@ -32,4 +32,4 @@ jobs:
 
       - name: Print Public IP
         run: |
-          curl https://${{ steps.ip.outputs.ipv4 }}:30081 -vk
+          curl http://localhost:30081 -vk
