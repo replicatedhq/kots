@@ -590,7 +590,6 @@ jobs:
           kill $ADMIN_CONSOLE_PID
           exit $EXIT_CODE
 
-
   validate-kots-pull:
     runs-on: ubuntu-18.04
     needs: [build-kots, build-kotsadm, build-kurl-proxy, build-migrations, push-minio, push-postgres]
