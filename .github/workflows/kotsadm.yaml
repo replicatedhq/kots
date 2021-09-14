@@ -600,7 +600,7 @@ jobs:
           image-ref: "minio/minio:RELEASE.2021-08-05T22-01-19Z"
           format: 'template'
           template: '@/contrib/sarif.tpl'
-          output: 'output.sarif'
+          output: 'minio-scan-output.sarif'
           exit-code: '0'
           ignore-unfixed: true
           severity: 'CRITICAL,HIGH,MEDIUM'
@@ -608,7 +608,7 @@ jobs:
       - name: Upload scan report
         uses: github/codeql-action/upload-sarif@v1
         with:
-          sarif_file: ${{ steps.scan.output.sarif }}
+          sarif_file: 'minio-scan-output.sarif'
 
   scan_kurl_proxy:
     runs-on: ubuntu-18.04
