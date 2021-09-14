@@ -36,8 +36,32 @@ body a {
   cursor: pointer;
   font-weight: 500;
 
+  &.has-arrow {
+    position: relative;
+
+    &::after {
+      content: "";
+      display: inline-block;
+      position: absolute;
+      width: 12px;
+      height: 7px;
+      background-image: url("../images/main_spritesheet.svg");
+      background-repeat: no-repeat;
+      background-size: initial;
+      background-position: -275px -85px;
+      top: 4px;
+      right: -15px;
+      transform: rotate(90deg);
+      transition: ease-in-out .2s;
+    }
+  }
+
   &:hover {
     text-decoration: underline;
+
+    &.has-arrow::after {
+      right: -18px;
+    }
   }
 }
 
@@ -70,6 +94,36 @@ body a {
 
   &:hover {
     background-color: lighten($primary-color, 43.5%);
+  }
+}
+
+.status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 100%;
+  margin-right: 6px;
+  display: inline-block;
+  position: relative;
+}
+
+.status-tag {
+  border-radius: 2px;
+  padding: 2px 4px;
+  font-size: 12px;
+  line-height: 12px;
+  font-weight: 500;
+
+  &.success {
+    background-color: $success-color;
+    color: #ffffff;
+  }
+  &.failed {
+    background-color: $error-color;
+    color: #ffffff;
+  }
+  &.unknown {
+    background-color: $secondary-color;
+    color: #ffffff;
   }
 }
 

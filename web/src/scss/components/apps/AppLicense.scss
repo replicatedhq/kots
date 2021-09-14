@@ -7,7 +7,7 @@
   height: 94px;
   box-shadow: 0 0 4px rgba(0, 0, 0, 0.16);
   transition: box-shadow .2s;
-  border: 1px solid #F7B500;
+  border: 1px solid #FCD977;
   background-color: #FFF9E8;
   border-radius: 4px;
   padding: 20px 15px;
@@ -19,67 +19,67 @@
   padding: 15px;
   width: 80%;
   margin-top: 30px;
+}
 
-  .CommunityEditionTag {
-    background: #F7B500;
-    border-radius: 3px;
-    padding: 4px 6px 4px 6px;
-    font-size: 12px;
-    line-height: 12px;
-    font-weight: 500;
-    color: #FFFFFF;
-  }
+.CommunityEditionTag {
+  background: #FCD977;
+  border-radius: 3px;
+  padding: 3px 6px;
+  font-size: 12px;
+  line-height: 12px;
+  font-weight: 500;
+  color: #FFFFFF;
+}
 
-  .LicenseDetails {
-    background: #FFFFFF;
-    border-radius: 4px;
-    padding: 12px;
-    margin-top: 12px;
+.LicenseDetails {
+  background: #FFFFFF;
+  border-radius: 4px;
+  padding: 12px;
+  margin-top: 12px;
+}
 
-    .channelTag {
-      background-color: #F5F8FC;
-      font-size: 12px;
-      line-height: 12px;
-      color: #73A3CD;
-      justify-content: center;
-      border-radius: 3px;
-      padding: 2px 4px 2px 4px;
-    }
+.channelTag {
+  background-color: #F5F8FC;
+  font-size: 12px;
+  line-height: 12px;
+  color: #73A3CD;
+  justify-content: center;
+  border-radius: 3px;
+  padding: 2px 4px 2px 4px;
+}
 
-    .LicenseTypeTag {
-      display: flex;
-      border-radius: 2px;
-      font-weight: 500;
-      font-size: 12px;
-      line-height: 12px;
-      padding: 2px 4px;
-    }
+.LicenseTypeTag {
+  display: flex;
+  border-radius: 2px;
+  font-weight: 500;
+  font-size: 12px;
+  line-height: 12px;
+  padding: 2px 4px;
+}
 
-    .dev {
-      background-color: #E4E4E4;
-      color: #4A4A4A;
-    }
+.dev {
+  background-color: #E4E4E4;
+  color: #4A4A4A;
+}
 
-    .trial {
-      background-color: #DEF0FA;
-      color: #239DE0;
-    }
+.trial {
+  background-color: #DEF0FA;
+  color: #239DE0;
+}
 
-    .prod {
-      background-color: #E3F5E8;
-      color: #44BB66;
-    }
+.prod {
+  background-color: #E3F5E8;
+  color: #44BB66;
+}
 
-    .community {
-      background-color: #FEF4D9;
-      color: #F7B500;
-    }
+.community {
+  background-color: #FEF4D9;
+  color: #F7B500;
+}
 
-    .Details--wrapper {
-      overflow: scroll;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-      width: 90%;
-    }
-  }
+.Details--wrapper {
+  overflow: scroll;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  width: 90%;
 }

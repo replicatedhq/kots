@@ -1,5 +1,7 @@
+@import "../../variables.scss";
+
 .Dashboard {
-  max-width: 1000px;
+  max-width: 1160px;
   width: 100%;
 
   .Dashboard--appIcon {
@@ -46,5 +48,21 @@
   &.ready {
     color: #44BB66;
     background-color: #ECF8F0;
+  }
+}
+
+.icon.version-row-preflight-status-icon {
+  top: -6px;
+  right: -12px;
+
+  &.preflight-checks-warn-icon {
+    top: -8px;
+  }
+}
+
+.ConfigureGraphs--wrapper {
+  max-width: 520px;
+  p, h3 {
+    color: $text-color-body-copy;
   }
 }

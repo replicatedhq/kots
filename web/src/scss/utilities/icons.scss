@@ -965,7 +965,59 @@
   height: 14px;
   background-position: -246px -763px;
 }
+.icon.versionUpdateType {
+  width: 15px;
+  height: 15px;
+
+  &.online-install {
+    background-position: -260px -527px;
+  }
+  &.config-update {
+    background-position: -260px -510px;
+  }
+  &.upstream-update {
+    background-position: -260px -493px;
+  }
+  &.license-sync {
+    background-position: -277px -493px;
+  }
+}
 .add-btn .icon.u-addIcon--blue {
   top: 2px;
   margin-right: 5px;
+}
+.icon.dashboard-card-snapshot-icon {
+  background-position: -260px -584px;
+  width: 15px;
+  height: 17px;
+}
+.icon.dashboard-card-settings-icon {
+  background-position: -259px -565px;
+  width: 15px;
+  height: 16px;
+}
+.icon.dashboard-card-sync-icon {
+  background-position: -259px -546px;
+  width: 13px;
+  height: 17px;
+}
+.icon.dashboard-card-configure-update-icon {
+  background-position: -259px -622px;
+  width: 16px;
+  height: 16px;
+}
+.icon.dashboard-card-check-update-icon {
+  background-position: -259px -603px;
+  width: 15px;
+  height: 17px;
+}
+.icon.preflight-checks-failed-icon {
+  background-position: -277px -510px;
+  width: 12px;
+  height: 12px;
+}
+.icon.preflight-checks-warn-icon {
+  background-position: -277px -527px;
+  width: 12px;
+  height: 11px;
 }

@@ -1,0 +1,56 @@
+import * as React from "react";
+import { Link } from "react-router-dom";
+import ClickOutsideAction from "./ClickOutsideAction";
+import "../../scss/components/shared/InlineDropdown.scss";
+
+export default class InlineDropdown extends React.Component {
+  
+  state = { 
+    showOptions: false,
+    displayText: this.props.defaultDisplayText || ""
+  }
+
+  toggleDropdownVisible = () => {
+    this.setState({ showOptions: !this.state.showOptions });
+  }
+
+  buildOptions = () => {
+    /* Option object
+      {
+        displayText: String,
+        link | onClick: String | Func
+      }
+    */
+    const { dropdownOptions } = this.props;
+    if (!dropdownOptions || dropdownOptions.length === 0) { return null; }
+
+    return dropdownOptions.map((opt, i) => {
+      if (opt.link) {
+        return <Link className="option" key={i} to={opt.link}>{opt.displayText}</Link>
+      } else if (opt.onClick) {
+        return <div className="option" key={i} onClick={opt.onClick}>{opt.displayText}</div>
+      }
+    });
+  }
+
+  render() {
+    const {
+      showOptions,
+      displayText
+    } = this.state;
+
+    return (
+      <ClickOutsideAction onOutsideClick={() => this.setState({ showOptions: false })}>
+        <div className={`InlineDropdown--wrapper ${showOptions ? "show-options" : ""}`}>
+          <div className="flex flex-auto alignItems--center" onClick={() => this.toggleDropdownVisible()}>
+            <span className="display-text">{displayText}</span>
+            <span className="icon clickable down-arrow-icon-blue u-marginLeft--5" />
+          </div>
+          <div className="Options--wrapper">
+            {this.buildOptions()}
+          </div>
+        </div>
+      </ClickOutsideAction>
+    );
+  }
+}

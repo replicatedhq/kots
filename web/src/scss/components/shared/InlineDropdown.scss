@@ -1,0 +1,56 @@
+@import "../../variables.scss";
+
+.InlineDropdown--wrapper {
+  position: relative;
+
+  .display-text {
+    font-size: inherit;
+    font-weight: inherit;
+    cursor: pointer;
+    user-select: none;
+    color: $link-color;
+  }
+
+  &:hover .display-text {
+    text-decoration: underline;
+  }
+
+  .icon.down-arrow-icon-blue {
+    transition: transform .2s ease-in-out;
+  }
+
+  &.show-options .icon.down-arrow-icon-blue {
+    transform: rotate(180deg);
+  }
+
+  .Options--wrapper {
+    display: none;
+    position: absolute;
+    right: 0;
+    top: 130%;
+    background-color: #ffffff;
+    border: 1px solid $border-color;
+    border-radius: 4px;
+    white-space: nowrap;
+    overflow: hidden;
+
+    .option {
+      font-size: 12px;
+      line-height: 20px;
+      font-weight: 500;
+      color: $link-color;
+      padding: 8px;
+      cursor: pointer;
+      transition: background-color .2s ease-in-out;
+
+      &:hover {
+        background-color: $really-light-accent;
+      }
+    }
+  }
+
+  &.show-options .Options--wrapper {
+    display: block;
+  }
+
+}
