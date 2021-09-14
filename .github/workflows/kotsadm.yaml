@@ -534,14 +534,14 @@ jobs:
           image-ref: "postgres:10.17-alpine"
           format: 'template'
           template: '@/contrib/sarif.tpl'
-          output: 'postgres-scan-output.sarif'
+          output: 'postgres-alpine-scan-output.sarif'
           exit-code: '0'
           ignore-unfixed: true
           severity: 'CRITICAL,HIGH,MEDIUM'
       - name: Upload scan report
         uses: github/codeql-action/upload-sarif@v1
         with:
-          sarif_file: postgres-scan-output.sarif
+          sarif_file: postgres-alpine-scan-output.sarif
 
   scan_postgres_debian_stretch:
     runs-on: ubuntu-18.04
@@ -556,14 +556,14 @@ jobs:
           image-ref: "postgres:10.17"
           format: 'template'
           template: '@/contrib/sarif.tpl'
-          output: 'postgres-stretch-scan-output.sarif'
+          output: 'postgres-scan-output.sarif'
           exit-code: '0'
           ignore-unfixed: true
           severity: 'CRITICAL,HIGH,MEDIUM'
       - name: Upload scan report
         uses: github/codeql-action/upload-sarif@v1
         with:
-          sarif_file: postgres-stretch-scan-output.sarif
+          sarif_file: postgres-scan-output.sarif
 
   scan_migrations:
     runs-on: ubuntu-18.04
@@ -578,14 +578,14 @@ jobs:
           image-ref: "kotsadm/kotsadm-migrations:alpha"
           format: 'template'
           template: '@/contrib/sarif.tpl'
-          output: 'migration-scan-output.sarif'
+          output: 'kotsadm-migration-scan-output.sarif'
           exit-code: '0'
           ignore-unfixed: true
           severity: 'CRITICAL,HIGH,MEDIUM'
       - name: Upload scan report
         uses: github/codeql-action/upload-sarif@v1
         with:
-          sarif_file: migration-scan-output.sarif
+          sarif_file: kotsadm-migration-scan-output.sarif
 
   scan_minio:
     runs-on: ubuntu-18.04
@@ -622,14 +622,14 @@ jobs:
           image-ref: "kotsadm/kurl-proxy:alpha"
           format: 'template'
           template: '@/contrib/sarif.tpl'
-          output: 'kurl-scan-output.sarif'
+          output: 'kurl-proxy-scan-output.sarif'
           exit-code: '0'
           ignore-unfixed: true
           severity: 'CRITICAL,HIGH,MEDIUM'
       - name: Upload scan report
         uses: github/codeql-action/upload-sarif@v1
         with:
-          sarif_file: kurl-scan-output.sarif
+          sarif_file: kurl-proxy-scan-output.sarif
 
   scan_kotsadm:
     runs-on: ubuntu-18.04
