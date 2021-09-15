@@ -46,7 +46,7 @@ jobs:
           terraform init
           ./embedded-airgapped-install.sh apply
        
-       - name: Create Test Environment for Embedded AirGapped Upgrade
+      - name: Create Test Environment for Embedded AirGapped Upgrade
         working-directory: automation/cluster
         run: |
           terraform init
