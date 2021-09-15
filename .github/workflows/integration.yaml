@@ -45,6 +45,12 @@ jobs:
         run: |
           terraform init
           ./embedded-airgapped-install.sh apply
+       
+       - name: Create Test Environment for Embedded AirGapped Upgrade
+        working-directory: automation/cluster
+        run: |
+          terraform init
+          ./embedded-airgapped-upgrade.sh apply
 
       - name: Get Results
         working-directory: automation/cluster
@@ -61,6 +67,12 @@ jobs:
         working-directory: automation/cluster
         run: |
           ./embedded-airgapped-install.sh destroy
+      
+      - name: Cleanup Test Environment for Embedded AirGapped Upgrade
+        working-directory: automation/cluster
+        run: |
+          terraform init
+          ./embedded-airgapped-upgrade.sh destroy
 
       - name: Cleanup Jumpbox Environment
         if: ${{ always() }}
