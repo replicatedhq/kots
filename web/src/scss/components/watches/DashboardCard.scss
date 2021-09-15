@@ -82,6 +82,25 @@
   padding: 8px;
   border-radius: 4px;
   background-color: #ffffff;
+
+  &.is-new {
+    -webkit-animation: newVersion 9s ease forwards; /* Safari 4+ */
+    -moz-animation:    newVersion 9s ease forwards; /* Fx 5+ */
+    -o-animation:      newVersion 9s ease forwards; /* Opera 12+ */
+    animation:         newVersion 9s ease forwards; /* IE 10+, Fx 29+ */
+    animation:         newVersion 9s ease forwards;
+  }
+
+  &.airgap-upload-block {
+    background-color: transparent;
+    border: 1px dashed $border-color;
+  }
+}
+
+.gitops-enabled-block {
+  background-color: #E1F0F1;
+  border-radius: 4px;
+  padding: 8px;
 }
 
 .no-deployed-version {
@@ -100,4 +119,21 @@
 
 @media screen and (min-width: 1040px) {
   
+}
+
+@-webkit-keyframes newVersion {
+  0%   { background-color: #fff7dc; }
+  100% { background-color: #FFFFFF; }
+}
+@-moz-keyframes newVersion {
+  0%   { background-color: #fff7dc; }
+  100% { background-color: #FFFFFF; }
+}
+@-o-keyframes newVersion {
+  0%   { background-color: #fff7dc; }
+  100% { background-color: #FFFFFF; }
+}
+@keyframes newVersion {
+  0%   { background-color: #fff7dc; }
+  100% { background-color: #FFFFFF; }
 }

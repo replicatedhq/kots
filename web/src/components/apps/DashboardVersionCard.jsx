@@ -12,7 +12,7 @@ import ShowLogsModal from "@src/components/modals/ShowLogsModal";
 import DeployWarningModal from "../shared/modals/DeployWarningModal";
 import classNames from "classnames";
 
-import { Utilities, getPreflightResultState, isAwaitingResults } from "@src/utilities/utilities";
+import { Utilities, getPreflightResultState, isAwaitingResults, secondsAgo } from "@src/utilities/utilities";
 
 import "../../scss/components/watches/DashboardCard.scss";
 
@@ -233,7 +233,7 @@ class DashboardVersionCard extends React.Component {
             <div className="flex alignItems--center u-marginTop--10">
               <span className={`icon versionUpdateType u-marginRight--5 ${this.getUpdateTypeClassname(currentVersion.source)}`} data-tip={currentVersion.source} />
               <ReactTooltip effect="solid" className="replicated-tooltip" />
-              <p className="u-fontSize--small u-fontWeight--medium u-textColor--bodyCopy">Deployed {Utilities.dateFormat(currentVersion?.deployedAt, "MM/DD/YY @ hh:mm a z")}</p>
+              <p className="u-fontSize--small u-fontWeight--medium u-textColor--bodyCopy">{currentVersion.status === "failed" ? "Failed to deploy" : `Deployed ${Utilities.dateFormat(currentVersion?.deployedAt, "MM/DD/YY @ hh:mm a z")}}`}</p>
             </div>
           </div>
           <div className="flex flex1 alignItems--center justifyContent--flexEnd">
@@ -277,6 +277,9 @@ class DashboardVersionCard extends React.Component {
     }
     if (updateType.includes("License Change")) {
       return "license-sync";
+    }
+    if (updateType.includes("Airgap Install") || updateType.includes("Airgap Update")) {
+      return "airgap-install";
     }
     return "online-install";
   }
@@ -449,7 +452,13 @@ class DashboardVersionCard extends React.Component {
         return (<div className={nothingToCommit && "u-opacity--half"}>Nothing to commit</div>);
       }
       if (!version.commitUrl) {
-        return null;
+        return (
+          <div className="flex flex1 alignItems--center justifyContent--flexEnd">
+            <span className="u-fontSize--small u-textColor--bodyCopy u-fontWeight--normal">No commit URL found</span>
+            <span className="icon grayOutlineQuestionMark--icon u-marginLeft--5" data-tip="This version may have been created before Gitops was enabled" />
+            <ReactTooltip effect="solid" className="replicated-tooltip" />
+          </div>
+        );
       }
       return (
         <button
@@ -500,15 +509,11 @@ class DashboardVersionCard extends React.Component {
   }
 
   renderVersionAvailable = () => {
-    const { app, downstream, checkingForUpdates, checkingForUpdateError, checkingUpdateText, errorCheckingUpdate, isBundleUploading } = this.props;
+    const { app, downstream, checkingForUpdateError, checkingUpdateText, errorCheckingUpdate, isBundleUploading } = this.props;
 
-    let checkingUpdateTextShort = checkingUpdateText;
-    if (checkingUpdateTextShort && checkingUpdateTextShort.length > 30) {
-      checkingUpdateTextShort = checkingUpdateTextShort.slice(0, 30) + "...";
-    }
-
-    const showOnlineUI = !app.isAirgap && !checkingForUpdates;
-    const showAirgapUI = app.isAirgap && !isBundleUploading;
+    const showOnlineUI = !app.isAirgap;
+    const nothingToCommit = downstream.gitops?.enabled && !downstream?.pendingVersions[0].commitUrl;
+    const downstreamSource = downstream?.pendingVersions[0]?.source;
 
     let updateText;
     if (showOnlineUI && app.lastUpdateCheckAt) {
@@ -536,43 +541,29 @@ class DashboardVersionCard extends React.Component {
         />);
     } else if (errorCheckingUpdate) {
       updateText = <p className="u-marginTop--10 u-fontSize--small u-textColor--error u-fontWeight--medium">Error checking for updates, please try again</p>
-    } else if (checkingForUpdates) {
-      updateText = <p className="u-marginTop--10 u-fontSize--small u-textColor--bodyCopy u-fontWeight--medium">{checkingUpdateTextShort}</p>
     } else if (!app.lastUpdateCheckAt) {
       updateText = null;
     }
 
-    const mountAware = this.props.airgapUploader ?
-      <MountAware className="u-marginTop--30" onMount={el => this.props.airgapUploader?.assignElement(el)}>
-        <button className="btn primary blue">Upload a new version</button>
-      </MountAware>
-    : null;
-    const nothingToCommit = downstream.gitops?.enabled && !downstream?.pendingVersions[0].commitUrl;
-    const downstreamSource = downstream?.pendingVersions[0]?.source;
     return (
       <div>
-        {checkingForUpdates && !isBundleUploading
-          ? <Loader className="flex justifyContent--center u-marginTop--10" size="32" />
-          : showAirgapUI
-            ? mountAware
-            : showOnlineUI ?
-            <div className="flex">
-              <div className="flex-column">
-                <div className="flex alignItems--center">
-                  <p className="u-fontSize--header2 u-fontWeight--bold u-lineHeight--medium u-textColor--primary">{downstream?.pendingVersions[0].versionLabel || downstream?.pendingVersions[0].title}</p>
-                  <p className="u-fontSize--small u-textColor--bodyCopy u-fontWeight--medium u-marginLeft--10">Sequence {downstream?.pendingVersions[0].sequence}</p>
-                </div>
-                <p className="u-fontSize--small u-fontWeight--medium u-textColor--bodyCopy u-marginTop--5"> Released {Utilities.dateFormat(downstream?.pendingVersions[0]?.createdOn, "MM/DD/YY @ hh:mm a z")} </p>
-                <div className="u-marginTop--5 flex flex-auto alignItems--center">
-                  <span className={`icon versionUpdateType u-marginRight--5 ${this.getUpdateTypeClassname(downstreamSource)}`} data-tip={downstreamSource} />
-                  {downstreamSource !== "Online Install" && <ReactTooltip effect="solid" className="replicated-tooltip" />}
-                  {this.renderSourceAndDiff(downstream?.pendingVersions[0])}
-                </div>
+        {!isBundleUploading || !this.props.uploadingAirgapFile ?
+          <div className="flex">
+            <div className="flex-column">
+              <div className="flex alignItems--center">
+                <p className="u-fontSize--header2 u-fontWeight--bold u-lineHeight--medium u-textColor--primary">{downstream?.pendingVersions[0].versionLabel || downstream?.pendingVersions[0].title}</p>
+                <p className="u-fontSize--small u-textColor--bodyCopy u-fontWeight--medium u-marginLeft--10">Sequence {downstream?.pendingVersions[0].sequence}</p>
               </div>
-                {this.renderVersionAction(downstream?.pendingVersions[0], nothingToCommit)}
+              <p className="u-fontSize--small u-fontWeight--medium u-textColor--bodyCopy u-marginTop--5"> Released {Utilities.dateFormat(downstream?.pendingVersions[0]?.createdOn, "MM/DD/YY @ hh:mm a z")} </p>
+              <div className="u-marginTop--5 flex flex-auto alignItems--center">
+                <span className={`icon versionUpdateType u-marginRight--5 ${this.getUpdateTypeClassname(downstreamSource)}`} data-tip={downstreamSource} />
+                {downstreamSource !== "Online Install" && <ReactTooltip effect="solid" className="replicated-tooltip" />}
+                {this.renderSourceAndDiff(downstream?.pendingVersions[0])}
+              </div>
             </div>
-              : null
-        }
+              {this.renderVersionAction(downstream?.pendingVersions[0], nothingToCommit)}
+          </div>
+        : null}
         {!showOnlineUI && updateText}
         {checkingForUpdateError &&
           <div className="flex-column flex-auto u-marginTop--5">
@@ -583,26 +574,45 @@ class DashboardVersionCard extends React.Component {
   }
 
   render() {
-    const { downstream, currentVersion, checkingForUpdates, isBundleUploading } = this.props;
+    const { app, downstream, currentVersion, checkingForUpdates, checkingUpdateText, uploadingAirgapFile, isBundleUploading, airgapUploader } = this.props;
     const { downstreamReleaseNotes } = this.state;
+    const versionsToSkip = downstream?.pendingVersions?.length - 1;
+    const gitopsEnabled = downstream?.gitops?.enabled;
+
+    let checkingUpdateTextShort = checkingUpdateText;
+    if (checkingUpdateTextShort && checkingUpdateTextShort.length > 30) {
+      checkingUpdateTextShort = checkingUpdateTextShort.slice(0, 30) + "...";
+    }
+    const isNew = downstream?.pendingVersions ? secondsAgo(downstream?.pendingVersions[0]?.createdOn) < 10 : false;
     return (
       <div className="flex-column flex1 dashboard-card">
         <div className="flex flex1 justifyContent--spaceBetween alignItems--center u-marginBottom--10">
           <p className="u-fontSize--large u-textColor--primary u-fontWeight--bold">Versions</p>
           <div className="flex alignItems--center">
-          {checkingForUpdates && !isBundleUploading ?
-            <div className="flex alignItems--center u-marginRight--20">
-              <Loader className="u-marginRight--5" size="15" />
-              <span className="u-textColor--bodyCopy u-fontWeight--medium u-fontSize--small u-lineHeight--default">Checking for updates</span>
+            {app?.isAirgap && airgapUploader ?
+              <MountAware onMount={el => this.props.airgapUploader?.assignElement(el)}>
+                <div className="flex alignItems--center">
+                  <span className="icon clickable dashboard-card-upload-version-icon u-marginRight--5" />
+                  <span className="replicated-link u-fontSize--small u-lineHeight--default">Upload new version</span>
+                </div>
+              </MountAware>
+            :
+            <div className="flex alignItems--center">
+              {checkingForUpdates && !isBundleUploading ?
+                <div className="flex alignItems--center">
+                  <Loader className="u-marginRight--5" size="15" />
+                  <span className="u-textColor--bodyCopy u-fontWeight--medium u-fontSize--small u-lineHeight--default">{checkingUpdateText === "" ? "Checking for updates" : checkingUpdateTextShort}</span>
+                </div>
+              :
+                <div className="flex alignItems--center u-marginRight--20">
+                  <span className="icon clickable dashboard-card-check-update-icon u-marginRight--5" />
+                  <span className="replicated-link u-fontSize--small" onClick={this.props.onCheckForUpdates}>Check for update</span>
+                </div>
+              }
+              <span className="icon clickable dashboard-card-configure-update-icon u-marginRight--5" />
+              <span className="replicated-link u-fontSize--small" onClick={this.props.showUpdateCheckerModal}>Configure automatic update checks</span>
             </div>
-          :
-            <div className="flex alignItems--center u-marginRight--20">
-              <span className="icon clickable dashboard-card-check-update-icon u-marginRight--5" />
-              <span className="replicated-link u-fontSize--small" onClick={this.props.onCheckForUpdates}>Check for update</span>
-            </div>
-          }
-            <span className="icon clickable dashboard-card-configure-update-icon u-marginRight--5" />
-            <span className="replicated-link u-fontSize--small" onClick={this.props.showUpdateCheckerModal}>Configure automatic update checks</span>
+            }
           </div>
         </div>
         {currentVersion?.deployedAt ?
@@ -616,10 +626,18 @@ class DashboardVersionCard extends React.Component {
         }
         {downstream?.pendingVersions?.length > 0 ?
           <div className="u-marginTop--20">
-            <p className="u-fontSize--normal u-lineHeight--normal u-textColor--header u-fontWeight--medium">{currentVersion?.deployedAt ? "Latest available version" : "Deploy latest available version"}</p>
-            <div className="LicenseCard-content--wrapper u-marginTop--15">
+            {uploadingAirgapFile || isBundleUploading ? null :
+              <p className="u-fontSize--normal u-lineHeight--normal u-textColor--header u-fontWeight--medium">{currentVersion?.deployedAt ? "Latest available version" : "Deploy latest available version"}</p>
+            }
+            {gitopsEnabled &&
+              <div className="gitops-enabled-block u-fontSize--small u-fontWeight--medium flex alignItems--center u-textColor--header u-marginTop--10">
+                <span className={`icon gitopsService--${downstream?.gitops?.provider} u-marginRight--10`}/>Gitops is enabled for this application. Versions are tracked {app?.isAirgap ? "at" : "on"}&nbsp;<a target="_blank" rel="noopener noreferrer" href={downstream?.gitops?.uri} className="replicated-link">{app.isAirgap ? downstream?.gitops?.uri : Utilities.toTitleCase(downstream?.gitops?.provider)}</a>
+              </div>
+            }
+            <div className={`LicenseCard-content--wrapper u-marginTop--15 ${isNew && !app?.isAirgap ? "is-new" : ""}`}>
               {this.renderVersionAvailable()}
             </div>
+            {versionsToSkip > 0 && <p className="u-fontSize--small u-fontWeight--medium u-textColor--header u-marginTop--10">{versionsToSkip} version{versionsToSkip > 1 && "s"} will be skipped in upgrading to {downstream?.pendingVersions[0]?.versionLabel}.</p>}
           </div>
         : null}
         <div className="u-marginTop--10">
