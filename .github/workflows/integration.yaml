@@ -32,8 +32,7 @@ jobs:
           terraform apply --auto-approve
       - name: Set Jumpbox Public Ip
         run: |
-          export JUMPBOX_IP=$(terraform output jumpbox_ip_private | tr -d '"')
-          echo "::set-env name=JUMPBOX_IP::$JUMPBOX_IP"
+          echo "JUMPBOX_IP=$(terraform output jumpbox_ip_private | tr -d '"')" >> $GITHUB_ENV
       - name: Test Jumpbox Public Ip
         run: |
           echo $JUMPBOX_IP
