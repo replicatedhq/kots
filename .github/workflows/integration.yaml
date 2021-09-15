@@ -80,3 +80,6 @@ jobs:
         run: |
           terraform destroy --auto-approve           
       
+      - name: EndGame
+         run: |
+          echo "GOOD JOB!"
