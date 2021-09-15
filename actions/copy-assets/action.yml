@@ -1,0 +1,10 @@
+name: "Copy Release Assets"
+description: "Copies release assets"
+inputs:
+  srcReleaseTag:
+    description: "Source release tag"
+  dstReleaseTag:
+    description: "Destination release tag"
+runs:
+  using: "docker"
+  image: "Dockerfile"
