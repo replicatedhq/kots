@@ -38,12 +38,12 @@ jobs:
       - name: Test Jumpbox Public Ip
         run: |
           echo $JUMPBOX_IP
-      
-      - name: Create Test Environment
+
+      - name: Create Test Environment for Embedded AirGapped Install
         working-directory: automation/cluster
         run: |
           terraform init
-          echo 'TODO: Actually run some plans'
+          ./embedded-airgapped-install.sh apply
 
       - name: Get Results
         working-directory: automation/cluster
@@ -55,11 +55,11 @@ jobs:
         run: |
           echo 'TODO: Analyze Results'
 
-      - name: Cleanup Test Environment
+      - name: Cleanup Test Environment for Embedded AirGapped Install
         if: ${{ always() }}
         working-directory: automation/cluster
         run: |
-          echo 'TODO: terraform destroy'
+          ./embedded-airgapped-install.sh destroy
 
       - name: Cleanup Jumpbox Environment
         if: ${{ always() }}
