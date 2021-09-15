@@ -33,6 +33,7 @@ require (
 	github.com/go-test/deep v1.0.7
 	github.com/golang-jwt/jwt v3.2.2+incompatible
 	github.com/golang/mock v1.5.0
+	github.com/google/go-github/v39 v39.0.0 // indirect
 	github.com/google/gofuzz v1.2.0
 	github.com/google/uuid v1.2.0
 	github.com/gorilla/mux v1.8.0
@@ -40,11 +41,13 @@ require (
 	github.com/gosimple/slug v1.9.0
 	github.com/gotestyourself/gotestyourself v2.2.0+incompatible // indirect
 	github.com/hashicorp/go-cleanhttp v0.5.1
+	github.com/heroku/docker-registry-client v0.0.0-20190909225348-afc9e1acc3d5
 	github.com/k3s-io/kine v0.7.3
 	github.com/kardianos/osext v0.0.0-20190222173326-2bc1f35cddc0 // indirect
 	github.com/lib/pq v1.10.2
 	github.com/manifoldco/promptui v0.8.0
 	github.com/marccampbell/yaml-toolbox v0.0.0-20200805160637-950ceb36c770
+	github.com/masterminds/semver v1.5.0 // indirect
 	github.com/mattn/go-isatty v0.0.12
 	github.com/mattn/go-sqlite3 v1.14.8
 	github.com/mholt/archiver v3.1.1+incompatible
@@ -83,8 +86,8 @@ require (
 	github.com/yvasiyarov/newrelic_platform_go v0.0.0-20160601141957-9c099fbc30e9 // indirect; indirect=
 	go.uber.org/multierr v1.6.0
 	go.uber.org/zap v1.17.0
-	golang.org/x/crypto v0.0.0-20210513164829-c07d793c2f9a
-	golang.org/x/oauth2 v0.0.0-20210402161424-2e8d93401602
+	golang.org/x/crypto v0.0.0-20210817164053-32db794688a5
+	golang.org/x/oauth2 v0.0.0-20210819190943-2bc19b11175f
 	google.golang.org/api v0.44.0
 	google.golang.org/grpc v1.38.0
 	gopkg.in/go-playground/assert.v1 v1.2.1
