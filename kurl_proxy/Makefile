@@ -22,6 +22,8 @@ build-alpha:
 build-release:
 	docker build --pull -f deploy/Dockerfile -t kotsadm/kurl-proxy:${GIT_TAG} .
 	docker push kotsadm/kurl-proxy:${GIT_TAG}
+	docker tag kotsadm/kurl-proxy:${GIT_TAG} kotsadm/kurl-proxy:v0.0.0-nightly
+	docker push kotsadm/kurl-proxy:v0.0.0-nightly
 
 .PHONY: build-ttl.sh
 build-ttl.sh: build

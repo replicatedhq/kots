@@ -92,6 +92,9 @@ build-release:
 	mkdir -p bin/docker-archive/kotsadm
 	skopeo copy docker-daemon:kotsadm/kotsadm:${GIT_TAG} docker-archive:bin/docker-archive/kotsadm/${GIT_TAG}
 
+	docker tag kotsadm/kotsadm:${GIT_TAG} kotsadm/kotsadm:v0.0.0-nightly
+	docker push kotsadm/kotsadm:v0.0.0-nightly
+
 	docker pull ghcr.io/dexidp/dex:v2.28.1
 	docker tag ghcr.io/dexidp/dex:v2.28.1 kotsadm/dex:v2.28.1
 	docker push kotsadm/dex:v2.28.1
