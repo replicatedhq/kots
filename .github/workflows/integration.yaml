@@ -56,7 +56,7 @@ jobs:
       - name: Get Results
         working-directory: automation/jumpbox
         run: |
-          ssh -i ssh.pem ubuntu@$JUMPBOX_IP
+          ssh -i ssh.pem ubuntu@$JUMPBOX_IP -oStrictHostKeyChecking=no
           whoami
 
 
