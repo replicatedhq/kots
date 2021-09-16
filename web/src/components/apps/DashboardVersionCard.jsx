@@ -12,7 +12,7 @@ import ShowLogsModal from "@src/components/modals/ShowLogsModal";
 import DeployWarningModal from "../shared/modals/DeployWarningModal";
 import classNames from "classnames";
 
-import { Utilities, getPreflightResultState, isAwaitingResults, secondsAgo } from "@src/utilities/utilities";
+import { Utilities, getPreflightResultState, getDeployErrorTab, isAwaitingResults, secondsAgo } from "@src/utilities/utilities";
 
 import "../../scss/components/watches/DashboardCard.scss";
 
@@ -70,7 +70,7 @@ class DashboardVersionCard extends React.Component {
       const { app } = this.props;
       const clusterId = app.downstreams?.length && app.downstreams[0].cluster?.id;
 
-      this.setState({ logsLoading: true, showLogsModal: true, viewLogsErrMsg: "" });
+      this.setState({ logsLoading: true, showLogsModal: true, viewLogsErrMsg: "", versionFailing: false });
 
       const res = await fetch(`${window.env.API_ENDPOINT}/app/${app?.slug}/cluster/${clusterId}/sequence/${version?.sequence}/downstreamoutput`, {
         headers: {
@@ -87,7 +87,7 @@ class DashboardVersionCard extends React.Component {
         } else {
           selectedTab = Object.keys(response.logs)[0];
         }
-        this.setState({ logs: response.logs, selectedTab, logsLoading: false, viewLogsErrMsg: "" });
+        this.setState({ logs: response.logs, selectedTab, logsLoading: false, viewLogsErrMsg: "", versionFailing: isFailing });
       } else {
         this.setState({ logsLoading: false, viewLogsErrMsg: `Failed to view logs, unexpected status code, ${res.status}` });
       }
@@ -101,7 +101,12 @@ class DashboardVersionCard extends React.Component {
     if (version?.status === "deployed" || version?.status === "merged" || version?.status === "pending") {
       return <span className="status-tag success flex-auto">Currently {version?.status.replace("_", " ")} version</span>
     } else if (version?.status === "failed") {
-      return <span className="status-tag failed flex-auto">Deploy Failed</span>
+      return (
+        <div className="flex alignItems--center">
+          <span className="status-tag failed flex-auto u-marginRight--10">Deploy Failed</span>
+          <span className="replicated-link u-fontSize--small" onClick={() => this.handleViewLogs(version, true)}>View deploy logs</span>
+        </div>
+      );
     } else if (version?.status === "deploying") {
       return (
         <span className="flex alignItems--center u-fontSize--small u-lineHeight--normal u-textColor--bodyCopy u-fontWeight--medium">
@@ -545,9 +550,14 @@ class DashboardVersionCard extends React.Component {
       updateText = null;
     }
 
+    let checkingUpdateTextShort = checkingUpdateText;
+    if (checkingUpdateTextShort && checkingUpdateTextShort.length > 65) {
+      checkingUpdateTextShort = checkingUpdateTextShort.slice(0, 65) + "...";
+    }
+
     return (
       <div>
-        {!isBundleUploading || !this.props.uploadingAirgapFile ?
+        {!this.props.checkingForUpdates && !checkingForUpdateError && (!isBundleUploading || !this.props.uploadingAirgapFile) ?
           <div className="flex">
             <div className="flex-column">
               <div className="flex alignItems--center">
@@ -565,9 +575,16 @@ class DashboardVersionCard extends React.Component {
           </div>
         : null}
         {!showOnlineUI && updateText}
+        {app?.isAirgap && this.props.checkingForUpdates && !isBundleUploading ?
+          <div className="flex-column justifyContent--center alignItems--center">
+            <Loader className="u-marginBottom--10" size="30" />
+            <span className="u-textColor--bodyCopy u-fontWeight--medium u-fontSize--normal u-lineHeight--default">{checkingUpdateTextShort}</span>
+          </div>
+        : null }
         {checkingForUpdateError &&
-          <div className="flex-column flex-auto u-marginTop--5">
-            <p className="u-marginTop--10 u-fontSize--small u-textColor--error u-fontWeight--medium">Error updating version <span className="u-linkColor u-textDecoration--underlineOnHover" onClick={() => this.props.viewAirgapUpdateError(checkingUpdateText)}>View details</span></p>
+          <div className={`flex-column flex-auto ${this.props.uploadingAirgapFile || this.props.checkingForUpdates || isBundleUploading ? "u-marginTop--10" : ""}`}>
+            <p className="u-fontSize--normal u-marginBottom--5 u-textColor--error u-fontWeight--medium">Error updating version:</p>
+            <p className="u-fontSize--small u-textColor--error u-lineHeight--normal u-fontWeight--medium">{checkingUpdateText}</p>
           </div>}
       </div>
     )
@@ -599,7 +616,7 @@ class DashboardVersionCard extends React.Component {
             :
             <div className="flex alignItems--center">
               {checkingForUpdates && !isBundleUploading ?
-                <div className="flex alignItems--center">
+                <div className="flex alignItems--center u-marginRight--20">
                   <Loader className="u-marginRight--5" size="15" />
                   <span className="u-textColor--bodyCopy u-fontWeight--medium u-fontSize--small u-lineHeight--default">{checkingUpdateText === "" ? "Checking for updates" : checkingUpdateTextShort}</span>
                 </div>
@@ -624,9 +641,9 @@ class DashboardVersionCard extends React.Component {
             <p className="u-fontWeight--medium u-fontSize--normal u-textColor--bodyCopy"> No version has been deployed </p>
           </div>
         }
-        {downstream?.pendingVersions?.length > 0 ?
+        {downstream?.pendingVersions?.length > 0 || uploadingAirgapFile || isBundleUploading || this.props.checkingForUpdateError || (app?.isAirgap && this.props.checkingForUpdates)  ?
           <div className="u-marginTop--20">
-            {uploadingAirgapFile || isBundleUploading ? null :
+            {uploadingAirgapFile || isBundleUploading || this.props.checkingForUpdateError || (app?.isAirgap && this.props.checkingForUpdates) ? null :
               <p className="u-fontSize--normal u-lineHeight--normal u-textColor--header u-fontWeight--medium">{currentVersion?.deployedAt ? "Latest available version" : "Deploy latest available version"}</p>
             }
             {gitopsEnabled &&
@@ -666,6 +683,8 @@ class DashboardVersionCard extends React.Component {
             showLogsModal={this.state.showLogsModal}
             hideLogsModal={this.hideLogsModal}
             viewLogsErrMsg={this.state.viewLogsErrMsg}
+            versionFailing={this.state.versionFailing}
+            troubleshootUrl={`/app/${this.props.app?.slug}/troubleshoot`}
             logs={this.state.logs}
             selectedTab={this.state.selectedTab}
             logsLoading={this.state.logsLoading}
