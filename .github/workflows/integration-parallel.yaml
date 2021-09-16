@@ -34,6 +34,7 @@ jobs:
       - name: Encrypt ssh.pem
         working-directory: automation/jumpbox
         run: |
+          sudo apt-get install openssl && \
           openssl enc -aes-256-cbc -md sha512 -pbkdf2 -iter 100000 -pass pass:somepassword -salt -in ssh.pem -out ssh.pem.enc
 
       - name: Upload ssh.pem.enc artifact
