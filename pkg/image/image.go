@@ -2,6 +2,7 @@ package image
 
 import (
 	"fmt"
+	"github.com/containers/image/v5/docker/reference"
 	"path"
 	"strings"
 
@@ -12,15 +13,15 @@ import (
 
 // GetTag extracts the image tag from an image reference
 func GetTag(imageRef string) (string, error) {
-	parts := strings.Split(imageRef, ":")
-	if len(parts) < 2 {
-		return "", fmt.Errorf("malformed image reference %q could not find tag", imageRef)
+	ref, err := reference.ParseNormalizedNamed(imageRef)
+	if err != nil {
+		return "", err
 	}
-	tag := parts[len(parts)-1]
-	if len(tag) == 0 {
-		return "", fmt.Errorf("empty tag")
+	if tagged, ok := ref.(reference.Tagged); ok {
+		return tagged.Tag(), nil
 	}
-	return parts[len(parts)-1], nil
+	return "", fmt.Errorf("image reference is not tagged")
+
 }
 
 func ImageInfoFromFile(registry registry.RegistryOptions, nameParts []string) (kustomizetypes.Image, error) {
