@@ -34,7 +34,7 @@ jobs:
       - name: Set Jumpbox Public Ip
         working-directory: automation/jumpbox
         run: |
-          export JUMPBOX_IP=$(terraform output jumpbox_ip_private | tr -d '"')
+          export JUMPBOX_IP=$(terraform output jumpbox_ip_public | tr -d '"')
           echo JUMPBOX_IP=$JUMPBOX_IP >> $GITHUB_ENV
       - name: Test Jumpbox Public Ip
         run: |
@@ -45,7 +45,8 @@ jobs:
         run: |
           terraform init -backend-config embedded-airgapped-install-backend-config.tfvars
           ./embedded-airgapped-install.sh apply
-       
+          export EMBEDDED_AIRGAP_INSTALL_IP=$(terraform output -raw control_plane_private_ip)
+          echo EMBEDDED_AIRGAP_INSTALL_IP=$EMBEDDED_AIRGAP_INSTALL_IP >> $GITHUB_ENV
       - name: Create Test Environment for Embedded AirGapped Upgrade
         working-directory: automation/cluster
         run: |
@@ -53,9 +54,11 @@ jobs:
           ./embedded-airgapped-upgrade.sh apply
 
       - name: Get Results
-        working-directory: automation/cluster
+        working-directory: automation/jumpbox
         run: |
-          echo 'TODO: Get Results'
+          ssh -i ssh.pem ubuntu@$JUMPBOX_IP
+          whoami
+
 
       - name: Analyze Results
         working-directory: automation/cluster
