@@ -1,7 +1,8 @@
 include Makefile.build
 CURRENT_USER := $(shell id -u -n)
-MINIO_VERSION := RELEASE.2021-08-05T22-01-19Z
-POSTGRES_VERSION := 10.17-alpine
+MINIO_TAG ?= RELEASE.2021-08-05T22-01-19Z
+POSTGRES_ALPINE_TAG ?= 10.17-alpine
+DEX_TAG ?= v2.28.1
 LVP_VERSION := v0.1.0
 
 BUILDFLAGS = -tags='netgo containers_image_ostree_stub exclude_graphdriver_devicemapper exclude_graphdriver_btrfs containers_image_openpgp' -installsuffix netgo
@@ -38,7 +39,7 @@ vet:
 .PHONY: run
 run:
 	# make -C web deps build-kotsadm
-	make kots
+	source .image.env && make kots
 	./bin/kots run test
 
 .PHONY: gosec
@@ -68,16 +69,16 @@ build-ttl.sh:
 .PHONY: all-ttl.sh
 all-ttl.sh: kotsadm
 	make -C web build-kotsadm
-	make build-ttl.sh
+	source .image.env && make build-ttl.sh
 
-	IMAGE=ttl.sh/${CURRENT_USER}/kotsadm-migrations:12h make -C migrations build_schema
+	source .image.env && IMAGE=ttl.sh/${CURRENT_USER}/kotsadm-migrations:12h make -C migrations build_schema
 
-	docker pull minio/minio:${MINIO_VERSION}
-	docker tag minio/minio:${MINIO_VERSION} ttl.sh/${CURRENT_USER}/minio:12h
+	docker pull minio/minio:${MINIO_TAG}
+	docker tag minio/minio:${MINIO_TAG} ttl.sh/${CURRENT_USER}/minio:12h
 	docker push ttl.sh/${CURRENT_USER}/minio:12h
 
-	docker pull postgres:${POSTGRES_VERSION}
-	docker tag postgres:${POSTGRES_VERSION} ttl.sh/${CURRENT_USER}/postgres:12h
+	docker pull postgres:${POSTGRES_ALPINE_TAG}
+	docker tag postgres:${POSTGRES_ALPINE_TAG} ttl.sh/${CURRENT_USER}/postgres:12h
 	docker push ttl.sh/${CURRENT_USER}/postgres:12h
 
 .PHONY: build-alpha
@@ -95,15 +96,15 @@ build-release:
 	docker tag kotsadm/kotsadm:${GIT_TAG} kotsadm/kotsadm:v0.0.0-nightly
 	docker push kotsadm/kotsadm:v0.0.0-nightly
 
-	docker pull ghcr.io/dexidp/dex:v2.28.1
-	docker tag ghcr.io/dexidp/dex:v2.28.1 kotsadm/dex:v2.28.1
-	docker push kotsadm/dex:v2.28.1
+	docker pull ghcr.io/dexidp/dex:${DEX_TAG}
+	docker tag ghcr.io/dexidp/dex:${DEX_TAG} kotsadm/dex:${DEX_TAG}
+	docker push kotsadm/dex:${DEX_TAG}
 
 	mkdir -p bin/docker-archive/dex
-	skopeo copy docker://kotsadm/dex:v2.28.1 docker-archive:bin/docker-archive/dex/v2.28.1
+	skopeo copy docker://kotsadm/dex:${DEX_TAG} docker-archive:bin/docker-archive/dex/${DEX_TAG}
 
 	mkdir -p bin/docker-archive/minio
-	skopeo copy docker://minio/minio:${MINIO_VERSION} docker-archive:bin/docker-archive/minio/${MINIO_VERSION}
+	skopeo copy docker://minio/minio:${MINIO_TAG} docker-archive:bin/docker-archive/minio/${MINIO_TAG}
 
 	mkdir -p bin/docker-archive/local-volume-provider
 	skopeo copy docker://replicated/local-volume-provider:${LVP_VERSION} docker-archive:bin/docker-archive/local-volume-provider/${LVP_VERSION}

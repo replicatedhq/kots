@@ -47,7 +47,7 @@ jobs:
         env:
           GIT_COMMIT: ${{ github.sha }}
           GIT_TAG: ${{ steps.get_tag.outputs.GIT_TAG }}
-        run: make -C web deps build-kotsadm
+        run: source .image.env && make -C web deps build-kotsadm
 
       - name: Upload web artifact
         uses: actions/upload-artifact@v2
@@ -106,7 +106,7 @@ jobs:
         with:
           name: web
           path: ./web/dist
-      - run: make ci-test kots
+      - run: source .image.env && make ci-test kots
       - uses: actions/upload-artifact@v2
         with:
           name: kots
@@ -153,7 +153,7 @@ jobs:
         with:
           name: web
           path: ./web/dist
-      - run: make kotsadm
+      - run: source .image.env && make kotsadm
       - name: build and push kotsadm for e2e
         uses: docker/build-push-action@v2
         with:
@@ -198,7 +198,7 @@ jobs:
           path: ${{ steps.go-cache-paths.outputs.go-mod }}
           key: ${{ runner.os }}-go-mod-${{ hashFiles('**/go.sum') }}
 
-      - run: make -C kurl_proxy build
+      - run: source .image.env && make -C kurl_proxy build
 
       - name: build and push kurl_proxy for e2e
         uses: docker/build-push-action@v2
@@ -257,10 +257,18 @@ jobs:
     runs-on: ubuntu-18.04
     needs: [can-run-ci]
     steps:
+      - uses: actions/checkout@v2
+
+      - name: load environment variables from .image.env
+        uses: falti/dotenv-action@v0.2
+        id: dotenv
+        with:
+          path: .image.env
+
       - name: push minio for e2e
         run: |
-          docker pull minio/minio:RELEASE.2021-08-05T22-01-19Z
-          docker tag minio/minio:RELEASE.2021-08-05T22-01-19Z ttl.sh/automated-${{ github.run_id }}/minio:2h
+          docker pull minio/minio:${{  steps.dotenv.outputs.minio_tag }}
+          docker tag minio/minio:${{  steps.dotenv.outputs.minio_tag }} ttl.sh/automated-${{ github.run_id }}/minio:2h
           docker push ttl.sh/automated-${{ github.run_id }}/minio:2h
 
 
@@ -268,10 +276,18 @@ jobs:
     runs-on: ubuntu-18.04
     needs: [can-run-ci]
     steps:
+      - uses: actions/checkout@v2
+
+      - name: load environment variables from .image.env
+        uses: falti/dotenv-action@v0.2
+        id: dotenv
+        with:
+          path: .image.env
+
       - name: push postgres for CI
         run: |
-          docker pull postgres:10.17-alpine
-          docker tag postgres:10.17-alpine ttl.sh/automated-${{ github.run_id }}/postgres:2h
+          docker pull postgres:${{ steps.dotenv.outputs.postgres_alpine_tag }}
+          docker tag postgres:${{ steps.dotenv.outputs.postgres_alpine_tag }} ttl.sh/automated-${{ github.run_id }}/postgres:2h
           docker push ttl.sh/automated-${{ github.run_id }}/postgres:2h
 
 

@@ -46,7 +46,7 @@ jobs:
         path: ./migrations/fixtures/schema
 
     - name: Build fixtures
-      run: make -C migrations/fixtures deps build run
+      run: source .image.env && make -C migrations/fixtures deps build run
 
     - name: Upload fixtures artifact
       uses: actions/upload-artifact@v2
@@ -75,7 +75,7 @@ jobs:
 
     - name: Publish fixtures
       run: |
-        make -C migrations/fixtures publish
+        source .image.env && make -C migrations/fixtures publish
 
 
   build-schema-migrations:
@@ -96,7 +96,7 @@ jobs:
       env:
         DOCKER_CONFIG: ./.docker
       run: |
-        make -C migrations schema-alpha
+        source .image.env && make -C migrations schema-alpha
 
 
   test_web:
@@ -152,7 +152,7 @@ jobs:
       env:
         GIT_COMMIT: ${{ github.sha }}
         GIT_TAG: ""
-      run: make -C web deps build-kotsadm
+      run: source .image.env && make -C web deps build-kotsadm
       ## TODO: retry logic
       # retry:
       #   automatic:
@@ -187,7 +187,7 @@ jobs:
         GIT_COMMIT: ${{ github.sha }}
         GIT_TAG: ""
         SCOPE_DSN_PUBLIC: ""
-      run: make -C kurl_proxy test build
+      run: source .image.env && make -C kurl_proxy test build
 
     - name: Upload kurl_proxy artifact
       uses: actions/upload-artifact@v2
@@ -237,7 +237,7 @@ jobs:
         # GITHUB_REPOSITORY:
         # GITHUB_WORKSPACE:
         SCOPE_DSN_PUBLIC: ""
-      run: make test kotsadm
+      run: source .image.env && make test kotsadm
 
     - name: Upload Go API artifact
       uses: actions/upload-artifact@v2
@@ -289,7 +289,7 @@ jobs:
       env:
         GIT_COMMIT: ${{ github.sha }}
       run: |
-        make build-alpha
+        source .image.env && make build-alpha
 
 
   release_go_api_tagged:
@@ -368,7 +368,7 @@ jobs:
       env:
         GIT_COMMIT: ${{ github.sha }}
       run: |
-        make -C kurl_proxy build-alpha
+        source .image.env && make -C kurl_proxy build-alpha
 
 
   build_kurl_addon_alpha:

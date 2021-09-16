@@ -4,7 +4,7 @@ set -e
 export CURRENT_USER=`id -u -n`
 
 make -C web build-kotsadm
-make kotsadm build-ttl.sh
+source .image.env && make kotsadm build-ttl.sh
 
 GREEN='\033[0;32m'
 NC='\033[0m' # No Color
