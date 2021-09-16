@@ -50,8 +50,8 @@ jobs:
       - name: Create Test Environment for Embedded AirGapped Install
         working-directory: automation/cluster
         run: |
-        terraform init -backend-config embedded-airgapped-install-backend-config.tfvars
-        ./embedded-airgapped-install.sh apply
+          terraform init -backend-config embedded-airgapped-install-backend-config.tfvars
+          ./embedded-airgapped-install.sh apply
   testim-testim-airgap-install:
     needs: testim-terraform-airgap-install
     runs-on: ubuntu-20.04
@@ -112,8 +112,8 @@ jobs:
       - name: Cleanup Test Environment for Embedded AirGapped Install
         working-directory: automation/cluster
         run: |
-        terraform init -backend-config embedded-airgapped-install-backend-config.tfvars
-        ./embedded-airgapped-install.sh destroy
+          terraform init -backend-config embedded-airgapped-install-backend-config.tfvars
+          ./embedded-airgapped-install.sh destroy
    
   destroy-jumpbox:
     if: ${{ always() }}
