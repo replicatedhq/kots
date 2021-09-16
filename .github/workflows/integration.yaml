@@ -78,8 +78,4 @@ jobs:
         if: ${{ always() }}
         working-directory: automation/jumpbox
         run: |
-          terraform destroy --auto-approve           
-      
-      - name: EndGame
-         run: |
-          echo "GOOD JOB!"
+          terraform destroy --auto-approve  
