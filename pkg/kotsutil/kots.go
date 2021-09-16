@@ -35,6 +35,10 @@ func init() {
 	applicationv1beta1.AddToScheme(scheme.Scheme)
 }
 
+const (
+	KotsKustomizeVersion = "3.5.4"
+)
+
 // KotsKinds are all of the special "client-side" kinds that are packaged in
 // an application. These should be pointers because they are all optional.
 // But a few are still expected in the code later, so we make them not pointers,
@@ -170,7 +174,7 @@ func (k *KotsKinds) HasPreflights() bool {
 // KustomizeVersion will return the kustomize version to use for this application
 // applying the default, if there is one, for the current version of kots
 func (k KotsKinds) KustomizeVersion() string {
-	return "3.5.4"
+	return KotsKustomizeVersion
 }
 
 func (o KotsKinds) Marshal(g string, v string, k string) (string, error) {

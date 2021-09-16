@@ -5,7 +5,6 @@ import (
 	"encoding/base64"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"os/exec"
 	"path/filepath"
 	"strings"
@@ -13,6 +12,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
+	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/operator/applier"
 	operatortypes "github.com/replicatedhq/kots/pkg/operator/types"
 	"github.com/replicatedhq/kots/pkg/util"
@@ -144,7 +144,7 @@ func (c *Client) diffAndRemovePreviousManifests(deployArgs operatortypes.DeployA
 
 		obj, gvk, err := parseK8sYaml([]byte(previous.spec))
 		if err != nil {
-			log.Printf("deleting unidentified manifest. unable to parse error: %s", err.Error())
+			logger.Infof("deleting unidentified manifest. unable to parse error: %s", err.Error())
 			if runtime.IsNotRegisteredError(errors.Cause(err)) {
 				_, o := GetGVKWithNameAndNs([]byte(previous.spec), targetNamespace)
 				if o.Metadata.Namespace != "" {
@@ -164,7 +164,7 @@ func (c *Client) diffAndRemovePreviousManifests(deployArgs operatortypes.DeployA
 		if obj != nil && gvk != nil {
 			group = gvk.Group
 			kind = gvk.Kind
-			log.Printf("deleting manifest(s): %s/%s/%s", group, kind, name)
+			logger.Infof("deleting manifest(s): %s/%s/%s", group, kind, name)
 
 			pvcs, err := getPVCs(namespace, obj, gvk)
 			if err != nil {
@@ -182,16 +182,16 @@ func (c *Client) diffAndRemovePreviousManifests(deployArgs operatortypes.DeployA
 
 		stdout, stderr, err := kubernetesApplier.Remove(namespace, []byte(previous.spec), wait)
 		if err != nil {
-			log.Printf("stdout (delete) = %s", stdout)
-			log.Printf("stderr (delete) = %s", stderr)
-			log.Printf("error: %s", err.Error())
+			logger.Infof("stdout (delete) = %s", stdout)
+			logger.Infof("stderr (delete) = %s", stderr)
+			logger.Infof("error: %s", err.Error())
 		} else {
-			log.Printf("manifest(s) deleted: %s/%s/%s", group, kind, name)
+			logger.Infof("manifest(s) deleted: %s/%s/%s", group, kind, name)
 		}
 	}
 
 	if deployArgs.ClearPVCs {
-		log.Printf("deleting pvcs: %s", strings.Join(allPVCs, ","))
+		logger.Infof("deleting pvcs: %s", strings.Join(allPVCs, ","))
 		// TODO: multi-namespace support
 		err := deletePVCs(targetNamespace, allPVCs)
 		if err != nil {
@@ -200,22 +200,22 @@ func (c *Client) diffAndRemovePreviousManifests(deployArgs operatortypes.DeployA
 	}
 
 	for _, namespace := range deployArgs.ClearNamespaces {
-		log.Printf("Ensuring all %s objects have been removed from namespace %s\n", deployArgs.AppSlug, namespace)
+		logger.Infof("Ensuring all %s objects have been removed from namespace %s\n", deployArgs.AppSlug, namespace)
 		sleepTime := time.Second * 2
 		for i := 60; i >= 0; i-- { // 2 minute wait, 60 loops with 2 second sleep
 			gone, err := c.clearNamespace(deployArgs.AppSlug, namespace, deployArgs.IsRestore, deployArgs.RestoreLabelSelector)
 			if err != nil {
-				log.Printf("Failed to check if app %s objects have been removed from namespace %s: %v\n", deployArgs.AppSlug, namespace, err)
+				logger.Errorf("Failed to check if app %s objects have been removed from namespace %s: %v\n", deployArgs.AppSlug, namespace, err)
 			} else if gone {
 				break
 			}
 			if i == 0 {
 				return fmt.Errorf("Failed to clear app %s from namespace %s\n", deployArgs.AppSlug, namespace)
 			}
-			log.Printf("Namespace %s still has objects from app %s: sleeping...\n", namespace, deployArgs.AppSlug)
+			logger.Infof("Namespace %s still has objects from app %s: sleeping...\n", namespace, deployArgs.AppSlug)
 			time.Sleep(sleepTime)
 		}
-		log.Printf("Namespace %s successfully cleared of app %s\n", namespace, deployArgs.AppSlug)
+		logger.Infof("Namespace %s successfully cleared of app %s\n", namespace, deployArgs.AppSlug)
 	}
 	if len(deployArgs.ClearNamespaces) > 0 {
 		// Extra time in case the app-slug annotation was not being used.
@@ -275,7 +275,7 @@ func (c *Client) ensureResourcesPresent(deployArgs operatortypes.DeployAppArgs) 
 		return nil, errors.Wrap(err, "failed to split decoded into crds and other")
 	}
 
-	// We don't dry run if there's a crd becasue there's a likely chance that the
+	// We don't dry run if there's a crd because there's a likely chance that the
 	// other docs has a custom resource using it
 	shouldDryRun := firstApplyDocs == nil
 	if shouldDryRun {
@@ -290,8 +290,8 @@ func (c *Client) ensureResourcesPresent(deployArgs operatortypes.DeployAppArgs) 
 				continue
 			}
 
-			log.Printf("dry run applying manifests(s) in requested namespace: %s", requestedNamespace)
-			dryrunStdout, dryrunStderr, dryRunErr := kubernetesApplier.Apply(requestedNamespace, deployArgs.AppSlug, docs, true, deployArgs.Wait, deployArgs.AnnotateSlug)
+			logger.Infof("dry run applying manifests(s) in requested namespace: %s", requestedNamespace)
+			dryrunStdout, dryrunStderr, dryRunErr := kubernetesApplier.ApplyCreateOrPatch(requestedNamespace, deployArgs.AppSlug, docs, true, deployArgs.Wait, deployArgs.AnnotateSlug)
 
 			if len(dryrunStdout) > 0 {
 				deployRes.dryRunResult.multiStdout = append(deployRes.dryRunResult.multiStdout, dryrunStdout)
@@ -301,25 +301,25 @@ func (c *Client) ensureResourcesPresent(deployArgs operatortypes.DeployAppArgs) 
 			}
 
 			if dryRunErr != nil {
-				log.Printf("stdout (dryrun) = %s", dryrunStdout)
-				log.Printf("stderr (dryrun) = %s", dryrunStderr)
-				log.Printf("error: %s", dryRunErr.Error())
+				logger.Infof("stdout (dryrun) = %s", dryrunStdout)
+				logger.Infof("stderr (dryrun) = %s", dryrunStderr)
+				logger.Infof("error: %s", dryRunErr.Error())
 
 				deployRes.dryRunResult.hasErr = true
 				return &deployRes, nil
 			}
 
-			log.Printf("dry run applied manifests(s) in requested namespace: %s", requestedNamespace)
+			logger.Infof("dry run applied manifests(s) in requested namespace: %s", requestedNamespace)
 		}
 
 	}
 
 	if len(firstApplyDocs) > 0 {
-		log.Println("applying first apply docs (CRDs, Namespaces)")
+		logger.Info("applying first apply docs (CRDs, Namespaces)")
 
 		// CRDs don't have namespaces, so we can skip splitting
 
-		applyStdout, applyStderr, applyErr := kubernetesApplier.Apply("", deployArgs.AppSlug, firstApplyDocs, false, deployArgs.Wait, deployArgs.AnnotateSlug)
+		applyStdout, applyStderr, applyErr := kubernetesApplier.ApplyCreateOrPatch("", deployArgs.AppSlug, firstApplyDocs, false, deployArgs.Wait, deployArgs.AnnotateSlug)
 
 		if len(applyStdout) > 0 {
 			deployRes.applyResult.multiStdout = append(deployRes.applyResult.multiStdout, applyStdout)
@@ -329,15 +329,15 @@ func (c *Client) ensureResourcesPresent(deployArgs operatortypes.DeployAppArgs) 
 		}
 
 		if applyErr != nil {
-			log.Printf("stdout (first apply) = %s", applyStdout)
-			log.Printf("stderr (first apply) = %s", applyStderr)
-			log.Printf("error (CRDS): %s", applyErr.Error())
+			logger.Infof("stdout (first apply) = %s", applyStdout)
+			logger.Infof("stderr (first apply) = %s", applyStderr)
+			logger.Infof("error (CRDS): %s", applyErr.Error())
 
 			deployRes.applyResult.hasErr = true
 			return &deployRes, nil
 		}
 
-		log.Println("custom resource definition(s) applied")
+		logger.Info("custom resource definition(s) applied")
 
 		// Give the API server a minute (well, 5 seconds) to cache the CRDs
 		time.Sleep(time.Second * 5)
@@ -355,15 +355,15 @@ func (c *Client) ensureResourcesPresent(deployArgs operatortypes.DeployAppArgs) 
 			continue
 		}
 
-		log.Printf("applying manifest(s) in namespace %s", requestedNamespace)
-		applyStdout, applyStderr, applyErr := kubernetesApplier.Apply(requestedNamespace, deployArgs.AppSlug, docs, false, deployArgs.Wait, deployArgs.AnnotateSlug)
+		logger.Infof("applying manifest(s) in namespace %s", requestedNamespace)
+		applyStdout, applyStderr, applyErr := kubernetesApplier.ApplyCreateOrPatch(requestedNamespace, deployArgs.AppSlug, docs, false, deployArgs.Wait, deployArgs.AnnotateSlug)
 		if applyErr != nil {
-			log.Printf("stdout (apply) = %s", applyStdout)
-			log.Printf("stderr (apply) = %s", applyStderr)
-			log.Printf("error: %s", applyErr.Error())
+			logger.Infof("stdout (apply) = %s", applyStdout)
+			logger.Infof("stderr (apply) = %s", applyStderr)
+			logger.Infof("error: %s", applyErr.Error())
 			hasErr = true
 		} else {
-			log.Printf("manifest(s) applied in namespace %s", requestedNamespace)
+			logger.Infof("manifest(s) applied in namespace %s", requestedNamespace)
 		}
 		if len(applyStdout) > 0 {
 			multiStdout = append(multiStdout, applyStdout)
@@ -399,7 +399,7 @@ func (c *Client) clearNamespace(slug string, namespace string, isRestore bool, r
 		// In that case there will be a race condition listing resources in that API group and there
 		// could be an error here. Most of the API groups would still be in the resource list so the
 		// error is not terminal.
-		log.Printf("Failed to list all resources: %v", err)
+		logger.Infof("Failed to list all resources: %v", err)
 	}
 	gvrs, err := discovery.GroupVersionResources(resourceList)
 	if err != nil {
@@ -427,7 +427,7 @@ func (c *Client) clearNamespace(slug string, namespace string, isRestore bool, r
 		unstructuredList, err := dyn.Resource(gvr).Namespace(namespace).List(context.TODO(), metav1.ListOptions{})
 		if unstructuredList == nil {
 			if err != nil {
-				log.Printf("failed to list namespace resources: %s", err.Error())
+				logger.Errorf("failed to list namespace resources: %s", err.Error())
 			}
 			continue
 		}
@@ -452,13 +452,13 @@ func (c *Client) clearNamespace(slug string, namespace string, isRestore bool, r
 			if annotations["kots.io/app-slug"] == slug {
 				clear = false
 				if u.GetDeletionTimestamp() != nil {
-					log.Printf("%s %s is pending deletion\n", gvr, u.GetName())
+					logger.Infof("%s %s is pending deletion\n", gvr, u.GetName())
 					continue
 				}
-				log.Printf("Deleting %s/%s/%s\n", namespace, gvr, u.GetName())
+				logger.Infof("Deleting %s/%s/%s\n", namespace, gvr, u.GetName())
 				err := dyn.Resource(gvr).Namespace(namespace).Delete(context.TODO(), u.GetName(), metav1.DeleteOptions{})
 				if err != nil {
-					log.Printf("Resource %s (%s) in namespace %s could not be deleted: %v\n", u.GetName(), gvr, namespace, err)
+					logger.Errorf("Resource %s (%s) in namespace %s could not be deleted: %v\n", u.GetName(), gvr, namespace, err)
 					return false, err
 				}
 			}
@@ -499,13 +499,13 @@ func (c *Client) installWithHelm(helmDir string, targetNamespace string) (*comma
 			args = append(args, "-n", targetNamespace)
 		}
 
-		log.Printf("running helm with arguments %v", args)
+		logger.Infof("running helm with arguments %v", args)
 		cmd := exec.Command(fmt.Sprintf("helm%s", version), args...)
 		stdout, stderr, err := applier.Run(cmd)
 		if err != nil {
-			log.Printf("stdout (helm install) = %s", stdout)
-			log.Printf("stderr (helm install) = %s", stderr)
-			log.Printf("error: %s", err.Error())
+			logger.Infof("stdout (helm install) = %s", stdout)
+			logger.Infof("stderr (helm install) = %s", stderr)
+			logger.Infof("error: %s", err.Error())
 			hasErr = true
 		}
 
@@ -534,16 +534,16 @@ func (c *Client) uninstallWithHelm(helmDir string, targetNamespace string, chart
 			args = append(args, "-n", targetNamespace)
 		}
 
-		log.Printf("running helm with arguments %v", args)
+		logger.Infof("running helm with arguments %v", args)
 		cmd := exec.Command(fmt.Sprintf("helm%s", version), args...)
 		stdout, stderr, err := applier.Run(cmd)
-		log.Printf("stdout (helm uninstall) = %s", stdout)
-		log.Printf("stderr (helm uninstall) = %s", stderr)
+		logger.Infof("stdout (helm uninstall) = %s", stdout)
+		logger.Infof("stderr (helm uninstall) = %s", stderr)
 		if err != nil {
 			if strings.Contains(string(stderr), "not found") {
 				continue
 			}
-			log.Printf("error: %s", err.Error())
+			logger.Errorf("error: %s", err.Error())
 			return errors.Wrapf(err, "failed to uninstall chart %s: %s", chart, stderr)
 		}
 	}
@@ -638,7 +638,7 @@ func deletePVCs(namespace string, pvcs []string) error {
 			GracePeriodSeconds: &grace,
 			PropagationPolicy:  &policy,
 		}
-		log.Printf("deleting pvc: %s", pvc)
+		logger.Infof("deleting pvc: %s", pvc)
 		err := clientset.CoreV1().PersistentVolumeClaims(namespace).Delete(context.TODO(), pvc, opts)
 		if err != nil && !kuberneteserrors.IsNotFound(err) {
 			return errors.Wrapf(err, "failed to delete pvc %s", pvc)
