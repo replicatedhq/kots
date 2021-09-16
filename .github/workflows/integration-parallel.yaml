@@ -28,7 +28,7 @@ jobs:
         run: |
           terraform init
           terraform apply --auto-approve
-  testim-terraform-airgap-install:
+  terraform-embed-airgap-intall:
     needs: create-jumpbox
     runs-on: ubuntu-20.04
     container:
@@ -52,8 +52,8 @@ jobs:
         run: |
           terraform init -backend-config embedded-airgapped-install-backend-config.tfvars
           ./embedded-airgapped-install.sh apply
-  testim-test-airgap-install:
-    needs: testim-terraform-airgap-install
+  testim-embed-airgap-intall:
+    needs: terraform-embed-airgap-intall
     runs-on: ubuntu-20.04
     container:
       image: hashicorp/terraform:1.0.6
@@ -91,9 +91,9 @@ jobs:
           ssh -i ssh.pem ubuntu@$JUMPBOX_IP -oStrictHostKeyChecking=no <<EOT
           ssh ubuntu@$EMBEDDED_AIRGAP_INSTALL_IP "sudo bash /tmp/start.sh"
           EOT
-  testim-cleanup-airgap-install:
+  cleanup-embed-airgap-install:
     if: ${{ always() }}
-    needs: testim-testim-airgap-install
+    needs: testim-embed-airgap-intall
     runs-on: ubuntu-20.04
     container:
       image: hashicorp/terraform:1.0.6
@@ -120,7 +120,7 @@ jobs:
   destroy-jumpbox:
     if: ${{ always() }}
     runs-on: ubuntu-20.04
-    needs: [ testim-cleanup-airgap-install ]
+    needs: [ cleanup-embed-airgap-install ]
     container:
       image: hashicorp/terraform:1.0.6
     env:
