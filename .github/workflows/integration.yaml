@@ -56,8 +56,10 @@ jobs:
       - name: Get Results
         working-directory: automation/jumpbox
         run: |
-          ssh -i ssh.pem ubuntu@$JUMPBOX_IP -oStrictHostKeyChecking=no
+          ssh -i ssh.pem ubuntu@$JUMPBOX_IP -oStrictHostKeyChecking=no "whoami"
+          ssh -i ssh.pem ubuntu@$JUMPBOX_IP -oStrictHostKeyChecking=no <<EOT
           whoami
+          EOT
 
 
       - name: Analyze Results
