@@ -561,6 +561,9 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v2
+      - name: Get tags
+        id: get_tag
+        uses: ./actions/version-tag
       - name: Scan kurl-proxy for vulnerabilities
         id: scan
         uses: aquasecurity/trivy-action@master
@@ -584,6 +587,9 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v2
+      - name: Get tags
+        id: get_tag
+        uses: ./actions/version-tag
       - name: Scan kotsadm for vulnerabilities
         id: scan
         uses: aquasecurity/trivy-action@master
@@ -607,6 +613,9 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v2
+      - name: Get tags
+        id: get_tag
+        uses: ./actions/version-tag
       - name: Scan migrations for vulnerabilities
         id: scan
         uses: aquasecurity/trivy-action@master

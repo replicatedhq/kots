@@ -92,10 +92,6 @@ jobs:
         username: ${{ secrets.DOCKERHUB_USER }}
         password: ${{ secrets.DOCKERHUB_PASSWORD }}
 
-    - name: Get tags
-      id: get_tag
-      uses: ./actions/version-tag
-
     - name: Build
       env:
         DOCKER_CONFIG: ./.docker
@@ -147,10 +143,6 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v2
 
-    - name: Get tags
-      id: get_tag
-      uses: ./actions/version-tag
-
     - name: Setup Node.js environment
       uses: actions/setup-node@v2
       with:
@@ -159,7 +151,7 @@ jobs:
     - name: Build web
       env:
         GIT_COMMIT: ${{ github.sha }}
-        GIT_TAG: ${{ steps.get_tag.outputs.GIT_TAG }}
+        GIT_TAG: ""
       run: make -C web deps build-kotsadm
       ## TODO: retry logic
       # retry:
@@ -190,14 +182,10 @@ jobs:
       with:
         go-version: '^1.16.3'
 
-    - name: Get tags
-      id: get_tag
-      uses: ./actions/version-tag
-
     - name: Build kurl_proxy
       env:
         GIT_COMMIT: ${{ github.sha }}
-        GIT_TAG: ${{ steps.get_tag.outputs.GIT_TAG }}
+        GIT_TAG: ""
         SCOPE_DSN_PUBLIC: ""
       run: make -C kurl_proxy test build
 
@@ -235,10 +223,6 @@ jobs:
         path: ${{ steps.go-cache-paths.outputs.go-mod }}
         key: ${{ runner.os }}-go-mod-${{ hashFiles('**/go.sum') }}
 
-    - name: Get tags
-      id: get_tag
-      uses: ./actions/version-tag
-
     - name: Download web artifact
       uses: actions/download-artifact@v2
       with:
@@ -249,7 +233,7 @@ jobs:
       env:
         GIT_COMMIT: ${{ github.sha }}
         # GITHUB_SHA: ${{ github.sha }}
-        GIT_TAG: ${{ steps.get_tag.outputs.GIT_TAG }}
+        GIT_TAG: ""
         # GITHUB_REPOSITORY:
         # GITHUB_WORKSPACE:
         SCOPE_DSN_PUBLIC: ""
@@ -332,10 +316,6 @@ jobs:
       with:
         path: ${{ steps.go-cache-paths.outputs.go-mod }}
         key: ${{ runner.os }}-go-mod-${{ hashFiles('**/go.sum') }}
-
-    - name: Get tags
-      id: get_tag
-      uses: ./actions/version-tag
 
     - uses: azure/docker-login@v1
       env:
