@@ -653,6 +653,15 @@ jobs:
         srcReleaseTag: ${{ steps.get_tag.outputs.GIT_TAG }}
         dstReleaseTag: "v0.0.0-nightly"
 
+    - name: Notify Slack
+        if: always()
+        uses: 8398a7/action-slack@v3
+        with:
+          status: ${{ job.status }}
+          fields: repo,message,commit,author,action,eventName,ref,workflow,job,took
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.KOTS_BUILD_STATUS_SLACK_WEBHOOK_URL }}
+
 
   start_kgrid_test:
     runs-on: ubuntu-18.04
