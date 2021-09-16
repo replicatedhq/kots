@@ -3,7 +3,7 @@ name: integration-test
 on:
   push:
     branches:
-      - "automated-test-regression"
+      - "automated-test-regression2"
 
 jobs:
   integration-test:
@@ -24,7 +24,7 @@ jobs:
           repository: replicatedhq/kots-regression-automation
           token: ${{ secrets.E2E_GH_PAT }}
           path: automation
-          ref: remote-state
+          ref: main
 
       - name: Create Jumpbox Environment
         working-directory: automation/jumpbox
@@ -53,7 +53,7 @@ jobs:
           terraform init -backend-config embedded-airgapped-upgrade-backend-config.tfvars -reconfigure
           ./embedded-airgapped-upgrade.sh apply
 
-      - name: Get Results
+      - name: Run Bootstrap and Testim tests
         working-directory: automation/jumpbox
         run: |
           ssh -i ssh.pem ubuntu@$JUMPBOX_IP -oStrictHostKeyChecking=no <<EOT
