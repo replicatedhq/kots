@@ -3,6 +3,7 @@ package kotsadm
 import (
 	"fmt"
 
+	"github.com/replicatedhq/kots/pkg/image"
 	"github.com/replicatedhq/kots/pkg/kotsadm/types"
 	kotsadmversion "github.com/replicatedhq/kots/pkg/kotsadm/version"
 )
@@ -12,9 +13,10 @@ func GetAdminConsoleImage(deployOptions types.DeployOptions, imageKey string) st
 }
 
 func GetAdminConsoleImages(deployOptions types.DeployOptions) map[string]string {
-	minioTag := "RELEASE.2021-08-05T22-01-19Z"
+	// TODO: Add error handling to this function
+	minioTag, _  := image.GetTag(image.Minio)
 	postgresTag := getPostgresTag(deployOptions)
-	dexTag := "v2.28.1"
+	dexTag, _ := image.GetTag(image.Dex)
 
 	if deployOptions.KotsadmOptions.OverrideVersion != "" {
 		minioTag = deployOptions.KotsadmOptions.OverrideVersion

@@ -10,6 +10,19 @@ import (
 	kustomizetypes "sigs.k8s.io/kustomize/api/types"
 )
 
+// GetTag extracts the image tag from an image reference
+func GetTag(imageRef string) (string, error) {
+	parts := strings.Split(imageRef, ":")
+	if len(parts) < 2 {
+		return "", fmt.Errorf("malformed image reference %q could not find tag", imageRef)
+	}
+	tag := parts[len(parts)-1]
+	if len(tag) == 0 {
+		return "", fmt.Errorf("empty tag")
+	}
+	return parts[len(parts)-1], nil
+}
+
 func ImageInfoFromFile(registry registry.RegistryOptions, nameParts []string) (kustomizetypes.Image, error) {
 	// imageNameParts looks like this:
 	// ["quay.io", "someorg", "imagename", "imagetag"]
