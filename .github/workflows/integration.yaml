@@ -81,8 +81,8 @@ jobs:
       #    terraform init -backend-config embedded-airgapped-upgrade-backend-config.tfvars -reconfigure
       #    ./embedded-airgapped-upgrade.sh destroy
 
-      - name: Cleanup Jumpbox Environment
-        if: ${{ always() }}
-        working-directory: automation/jumpbox
-        run: |
-          terraform destroy --auto-approve  
+      #- name: Cleanup Jumpbox Environment
+      #  if: ${{ always() }}
+      #  working-directory: automation/jumpbox
+      #  run: |
+      #    terraform destroy --auto-approve  
