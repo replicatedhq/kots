@@ -1,0 +1,3 @@
+minio minio/minio
+postgres-alpine postgres ^10.\d+-alpine$
+postgres-debian postgres ^10.\d+$
