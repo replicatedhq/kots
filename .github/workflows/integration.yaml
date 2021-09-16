@@ -24,7 +24,7 @@ jobs:
           repository: replicatedhq/kots-regression-automation
           token: ${{ secrets.E2E_GH_PAT }}
           path: automation
-          ref: main
+          ref: remote-state
 
       - name: Create Jumpbox Environment
         working-directory: automation/jumpbox
@@ -43,13 +43,13 @@ jobs:
       - name: Create Test Environment for Embedded AirGapped Install
         working-directory: automation/cluster
         run: |
-          terraform init
+          terraform init -backend-config embedded-airgapped-install-backend-config.tfvars
           ./embedded-airgapped-install.sh apply
        
       - name: Create Test Environment for Embedded AirGapped Upgrade
         working-directory: automation/cluster
         run: |
-          terraform init
+          terraform init -backend-config embedded-airgapped-upgrade-backend-config.tfvars
           ./embedded-airgapped-upgrade.sh apply
 
       - name: Get Results
@@ -66,13 +66,13 @@ jobs:
         if: ${{ always() }}
         working-directory: automation/cluster
         run: |
-          terraform init
+          terraform init -backend-config embedded-airgapped-install-backend-config.tfvars
           ./embedded-airgapped-install.sh destroy
       
       - name: Cleanup Test Environment for Embedded AirGapped Upgrade
         working-directory: automation/cluster
         run: |
-          terraform init
+          terraform init -backend-config embedded-airgapped-upgrade-backend-config.tfvars
           ./embedded-airgapped-upgrade.sh destroy
 
       - name: Cleanup Jumpbox Environment
