@@ -1,0 +1,386 @@
+name: alpha
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+
+  generate-schema:
+    runs-on: ubuntu-18.04
+    container:
+      image: schemahero/schemahero:0.12.2
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Generate fixtures
+        run: |
+          /schemahero fixtures \
+            --input-dir ./migrations/tables \
+            --output-dir ./migrations/fixtures/schema \
+            --dbname ship-cloud --driver postgres
+
+      - name: Upload schema artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: schema
+          path: ./migrations/fixtures/schema/fixtures.sql
+
+
+  generate-fixtures:
+    runs-on: ubuntu-18.04
+    needs: [generate-schema]
+    container:
+      image: replicated/gitops-builder:buildkite
+      options: --user root
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+
+    - name: Download schema artifact
+      uses: actions/download-artifact@v2
+      with:
+        name: schema
+        path: ./migrations/fixtures/schema
+
+    - name: Build fixtures
+      run: make -C migrations/fixtures deps build run
+
+    - name: Upload fixtures artifact
+      uses: actions/upload-artifact@v2
+      with:
+        name: fixtures
+        path: ./migrations/fixtures/fixtures.sql
+
+
+  publish-fixtures:
+    runs-on: ubuntu-18.04
+    needs: [generate-fixtures]
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+
+    - uses: azure/docker-login@v1
+      with:
+        username: ${{ secrets.DOCKERHUB_USER }}
+        password: ${{ secrets.DOCKERHUB_PASSWORD }}
+
+    - name: Download fixtures artifact
+      uses: actions/download-artifact@v2
+      with:
+        name: fixtures
+        path: ./migrations/fixtures
+
+    - name: Publish fixtures
+      run: |
+        make -C migrations/fixtures publish
+
+
+  build-schema-migrations:
+    runs-on: ubuntu-18.04
+    needs: [publish-fixtures]
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+
+    - uses: azure/docker-login@v1
+      env:
+        DOCKER_CONFIG: ./migrations/.docker
+      with:
+        username: ${{ secrets.DOCKERHUB_USER }}
+        password: ${{ secrets.DOCKERHUB_PASSWORD }}
+
+    - name: Build
+      env:
+        DOCKER_CONFIG: ./.docker
+      run: |
+        make -C migrations schema-alpha
+
+
+  test_web:
+    runs-on: ubuntu-18.04
+    needs: [build-schema-migrations]
+    container:
+      image: replicated/gitops-builder:buildkite
+      options: --user root
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+
+    - name: Setup Node.js environment
+      uses: actions/setup-node@v2
+      with:
+        node-version: '10'
+
+    - name: Install cross-env
+      run: npm i -g cross-env
+      shell: bash
+
+    # - name: Test web
+    #   env:
+    #     PACT_BROKER_USERNAME: ${{ secrets.PACT_BROKER_USERNAME }}
+    #     PACT_BROKER_PASSWORD: ${{ secrets.PACT_BROKER_PASSWORD }}
+    #   run: |
+    #     make -C kotsadm/web deps test publish-pact
+
+      # TODO: migrate retry logic for pacts
+      # retry:
+      #   automatic:
+      #     # this command exiting with status 2 typically means that the yarn package failed to download
+      #     - exit_status: 2
+      #       limit: 5
+
+
+  build_web:
+    runs-on: ubuntu-18.04
+    needs: [build-schema-migrations]
+    container:
+      image: replicated/gitops-builder:buildkite
+      options: --user root
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+
+    - name: Setup Node.js environment
+      uses: actions/setup-node@v2
+      with:
+        node-version: '10'
+
+    - name: Build web
+      env:
+        GIT_COMMIT: ${{ github.sha }}
+        GIT_TAG: ""
+      run: make -C web deps build-kotsadm
+      ## TODO: retry logic
+      # retry:
+      #   automatic:
+      #     # this command exiting with status 2 typically means that the yarn package failed to download
+      #     - exit_status: 2
+      #       limit: 5
+
+    - name: Upload web artifact
+      uses: actions/upload-artifact@v2
+      with:
+        name: web
+        path: ./web/dist
+
+
+  build_kurl_proxy:
+    runs-on: ubuntu-18.04
+    needs: [build-schema-migrations]
+    container:
+      image: replicated/gitops-builder:buildkite-go14-node10
+      options: --user root
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+
+    - name: Setup Go
+      uses: actions/setup-go@v2
+      with:
+        go-version: '^1.16.3'
+
+    - name: Build kurl_proxy
+      env:
+        GIT_COMMIT: ${{ github.sha }}
+        GIT_TAG: ""
+        SCOPE_DSN_PUBLIC: ""
+      run: make -C kurl_proxy test build
+
+    - name: Upload kurl_proxy artifact
+      uses: actions/upload-artifact@v2
+      with:
+        name: kurl_proxy
+        path: ./kurl_proxy/bin
+
+
+  build_go_api:
+    runs-on: ubuntu-18.04
+    needs: [test_web, build_web, build_kurl_proxy]
+    container:
+      image: replicated/gitops-builder:buildkite-go14-node10
+      options: --user root
+    steps:
+    - uses: actions/setup-go@v2
+      with:
+        go-version: '^1.16.3'
+
+    - id: go-cache-paths
+      run: |
+        echo "::set-output name=go-build::$(go env GOCACHE)"
+        echo "::set-output name=go-mod::$(go env GOMODCACHE)"
+    - name: Checkout
+      uses: actions/checkout@v1 # not @v2 because of: https://github.com/actions/checkout/issues/126
+
+    - uses: actions/cache@v2
+      with:
+        path: ${{ steps.go-cache-paths.outputs.go-build }}
+        key: ${{ runner.os }}-go-build-${{ hashFiles('**/go.sum') }}
+    - uses: actions/cache@v2
+      with:
+        path: ${{ steps.go-cache-paths.outputs.go-mod }}
+        key: ${{ runner.os }}-go-mod-${{ hashFiles('**/go.sum') }}
+
+    - name: Download web artifact
+      uses: actions/download-artifact@v2
+      with:
+        name: web
+        path: ./web/dist
+
+    - name: Build Go API
+      env:
+        GIT_COMMIT: ${{ github.sha }}
+        # GITHUB_SHA: ${{ github.sha }}
+        GIT_TAG: ""
+        # GITHUB_REPOSITORY:
+        # GITHUB_WORKSPACE:
+        SCOPE_DSN_PUBLIC: ""
+      run: make test kotsadm
+
+    - name: Upload Go API artifact
+      uses: actions/upload-artifact@v2
+      with:
+        name: go_api
+        path: ./bin
+
+
+  release_go_api_alpha:
+    runs-on: ubuntu-18.04
+    needs: [build_web, build_go_api]
+    steps:
+    - name: Setup Go
+      uses: actions/setup-go@v2
+      with:
+        go-version: '^1.16.3'
+
+    - id: go-cache-paths
+      run: |
+        echo "::set-output name=go-build::$(go env GOCACHE)"
+        echo "::set-output name=go-mod::$(go env GOMODCACHE)"
+    - name: Checkout
+      uses: actions/checkout@v2
+
+    - uses: actions/cache@v2
+      with:
+        path: ${{ steps.go-cache-paths.outputs.go-build }}
+        key: ${{ runner.os }}-go-build-${{ hashFiles('**/go.sum') }}
+    - uses: actions/cache@v2
+      with:
+        path: ${{ steps.go-cache-paths.outputs.go-mod }}
+        key: ${{ runner.os }}-go-mod-${{ hashFiles('**/go.sum') }}
+
+    - name: Download go_api artifact
+      uses: actions/download-artifact@v2
+      with:
+        name: go_api
+        path: ./bin
+
+    - name: Add executable permissions
+      run: chmod a+x ./bin/kotsadm
+
+    - uses: azure/docker-login@v1
+      with:
+        username: ${{ secrets.DOCKERHUB_USER }}
+        password: ${{ secrets.DOCKERHUB_PASSWORD }}
+
+    - name: Build alpha release
+      env:
+        GIT_COMMIT: ${{ github.sha }}
+      run: |
+        make build-alpha
+
+
+  release_go_api_tagged:
+    runs-on: ubuntu-18.04
+    needs: [build_web, build_go_api]
+    steps:
+    - name: Setup Go
+      uses: actions/setup-go@v2
+      with:
+        go-version: '^1.16.3'
+
+    - id: go-cache-paths
+      run: |
+        echo "::set-output name=go-build::$(go env GOCACHE)"
+        echo "::set-output name=go-mod::$(go env GOMODCACHE)"
+    - name: Checkout
+      uses: actions/checkout@v2
+
+    - uses: actions/cache@v2
+      with:
+        path: ${{ steps.go-cache-paths.outputs.go-build }}
+        key: ${{ runner.os }}-go-build-${{ hashFiles('**/go.sum') }}
+    - uses: actions/cache@v2
+      with:
+        path: ${{ steps.go-cache-paths.outputs.go-mod }}
+        key: ${{ runner.os }}-go-mod-${{ hashFiles('**/go.sum') }}
+
+    - uses: azure/docker-login@v1
+      env:
+        DOCKER_CONFIG: ./.docker
+      with:
+        username: ${{ secrets.DOCKERHUB_USER }}
+        password: ${{ secrets.DOCKERHUB_PASSWORD }}
+
+
+  build_kurl_proxy_alpha:
+    runs-on: ubuntu-18.04
+    needs: [build_kurl_proxy]
+    steps:
+    - uses: azure/docker-login@v1
+      with:
+        username: ${{ secrets.DOCKERHUB_USER }}
+        password: ${{ secrets.DOCKERHUB_PASSWORD }}
+
+    - name: Setup Go
+      uses: actions/setup-go@v2
+      with:
+        go-version: '^1.16.3'
+
+    - id: go-cache-paths
+      run: |
+        echo "::set-output name=go-build::$(go env GOCACHE)"
+        echo "::set-output name=go-mod::$(go env GOMODCACHE)"
+    - name: Checkout
+      uses: actions/checkout@v2
+
+    - uses: actions/cache@v2
+      with:
+        path: ${{ steps.go-cache-paths.outputs.go-build }}
+        key: ${{ runner.os }}-go-build-${{ hashFiles('**/go.sum') }}
+    - uses: actions/cache@v2
+      with:
+        path: ${{ steps.go-cache-paths.outputs.go-mod }}
+        key: ${{ runner.os }}-go-mod-${{ hashFiles('**/go.sum') }}
+
+    - name: Download kurl_proxy artifact
+      uses: actions/download-artifact@v2
+      with:
+        name: kurl_proxy
+        path: ./kurl_proxy/bin
+
+    - name: Add executable permissions
+      run: chmod a+x ./kurl_proxy/bin/kurl_proxy
+
+    - name: Build alpha release
+      env:
+        GIT_COMMIT: ${{ github.sha }}
+      run: |
+        make -C kurl_proxy build-alpha
+
+
+  build_kurl_addon_alpha:
+    runs-on: ubuntu-18.04
+    needs: [release_go_api_alpha, build_kurl_proxy_alpha]
+    steps:
+      - name: Build kURL addon alpha package
+        env:
+          GH_PAT: ${{ secrets.GH_PAT }}
+        run: |
+          package=kotsadm-alpha.tar.gz
+          curl -H "Authorization: token $GH_PAT" \
+            -H 'Accept: application/json' \
+            -d "{\"event_type\": \"build-package-staging\", \"client_payload\": {\"package\": \"${package}\"}}" \
+            "https://api.github.com/repos/replicatedhq/kurl/dispatches"

@@ -152,14 +152,6 @@ jobs:
           context: ./
           file: ./deploy/Dockerfile
           push: true
-      - name: Scan kotsadm for vulnerabilities
-        uses: aquasecurity/trivy-action@master
-        with:
-          image-ref: ttl.sh/automated-${{ github.run_id }}/kotsadm:2h
-          format: 'table'
-          exit-code: '0'
-          ignore-unfixed: true
-          severity: 'CRITICAL,HIGH,MEDIUM'
 
 
   build-kurl-proxy:
@@ -206,14 +198,7 @@ jobs:
           context: ./kurl_proxy
           file: ./kurl_proxy/deploy/Dockerfile
           push: true
-      - name: Scan kurl_proxy for vulnerabilities
-        uses: aquasecurity/trivy-action@master
-        with:
-          image-ref: ttl.sh/automated-${{ github.run_id }}/kurl-proxy:2h
-          format: 'table'
-          exit-code: '0'
-          ignore-unfixed: true
-          severity: 'CRITICAL,HIGH,MEDIUM'
+
 
   build-migrations:
     runs-on: ubuntu-18.04
@@ -257,14 +242,6 @@ jobs:
           context: ./migrations
           file: ./migrations/deploy/Dockerfile
           push: true
-      - name: Scan migrations for vulnerabilities
-        uses: aquasecurity/trivy-action@master
-        with:
-          image-ref: ttl.sh/automated-${{ github.run_id }}/kotsadm-migrations:2h
-          format: 'table'
-          exit-code: '0'
-          ignore-unfixed: true
-          severity: 'CRITICAL,HIGH,MEDIUM'
 
 
   push-minio:
@@ -276,14 +253,6 @@ jobs:
           docker pull minio/minio:RELEASE.2021-08-05T22-01-19Z
           docker tag minio/minio:RELEASE.2021-08-05T22-01-19Z ttl.sh/automated-${{ github.run_id }}/minio:2h
           docker push ttl.sh/automated-${{ github.run_id }}/minio:2h
-      - name: Scan minio for vulnerabilities
-        uses: aquasecurity/trivy-action@master
-        with:
-          image-ref: ttl.sh/automated-${{ github.run_id }}/minio:2h
-          format: 'table'
-          exit-code: '0'
-          ignore-unfixed: true
-          severity: 'CRITICAL,HIGH,MEDIUM'
 
 
   push-postgres:
@@ -295,14 +264,6 @@ jobs:
           docker pull postgres:10.17-alpine
           docker tag postgres:10.17-alpine ttl.sh/automated-${{ github.run_id }}/postgres:2h
           docker push ttl.sh/automated-${{ github.run_id }}/postgres:2h
-      - name: Scan postgres for vulnerabilities
-        uses: aquasecurity/trivy-action@master
-        with:
-          image-ref: ttl.sh/automated-${{ github.run_id }}/postgres:2h
-          format: 'table'
-          exit-code: '0'
-          ignore-unfixed: true
-          severity: 'CRITICAL,HIGH,MEDIUM'
 
 
   validate-legacy:
