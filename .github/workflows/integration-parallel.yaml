@@ -70,7 +70,7 @@ jobs:
 
 
   testim-embed-airgap-upgrade:
-    # needs: terraform-embed-airgap-upgrade
+    needs: create-jumpbox
     runs-on: ubuntu-20.04
     # container:
     #   image: hashicorp/terraform:1.0.6
