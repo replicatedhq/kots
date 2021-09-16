@@ -38,10 +38,9 @@ jobs:
 
       - name: Upload ssh.pem.enc artifact
         uses: actions/upload-artifact@v2
-        working-directory: automation/jumpbox
         with:
           name: ssh.pem.enc
-          path: ./ssh.pem.enc
+          path: automation/jumpbox/ssh.pem.enc
 
   # terraform-embed-airgap-upgrade:
   #   needs: create-jumpbox
