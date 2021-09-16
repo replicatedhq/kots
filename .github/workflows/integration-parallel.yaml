@@ -43,37 +43,35 @@ jobs:
           name: ssh.pem.enc
           path: automation/jumpbox/ssh.pem.enc
 
-  # terraform-embed-airgap-upgrade:
-  #   needs: create-jumpbox
-  #   runs-on: ubuntu-20.04
-  #   container:
-  #     image: hashicorp/terraform:1.0.6
-  #   env:
-  #     AWS_DEFAULT_REGION: us-east-2
-  #     AWS_AVAILABILITY_ZONE: us-east2a
-  #     AWS_ACCESS_KEY_ID: ${{ secrets.E2E_TESTIM_AWS_ACCESS_KEY_ID }}
-  #     AWS_SECRET_ACCESS_KEY: ${{ secrets.E2E_TESTIM_AWS_SECRET_ACCESS_KEY }}
-  #     TF_VAR_testim_token: ${{ secrets.TESTIM_ACCESS_TOKEN }}
-  #   steps:
-  #     - name: Checkout
-  #       uses: actions/checkout@v2
-  #       with:
-  #         repository: replicatedhq/kots-regression-automation
-  #         token: ${{ secrets.E2E_GH_PAT }}
-  #         path: automation
-  #         ref: main
-  #     - name: Create Test Environment for Embedded AirGapped upgrade
-  #       working-directory: automation/cluster
-  #       run: |
-  #         terraform init -backend-config embedded-airgapped-upgrade-backend-config.tfvars
-  #         ./embedded-airgapped-upgrade.sh apply
+  terraform-embed-airgap-upgrade:
+    needs: create-jumpbox
+    runs-on: ubuntu-20.04
+    container:
+      image: hashicorp/terraform:1.0.6
+    env:
+      AWS_DEFAULT_REGION: us-east-2
+      AWS_AVAILABILITY_ZONE: us-east2a
+      AWS_ACCESS_KEY_ID: ${{ secrets.E2E_TESTIM_AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.E2E_TESTIM_AWS_SECRET_ACCESS_KEY }}
+      TF_VAR_testim_token: ${{ secrets.TESTIM_ACCESS_TOKEN }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          repository: replicatedhq/kots-regression-automation
+          token: ${{ secrets.E2E_GH_PAT }}
+          path: automation
+          ref: main
+      - name: Create Test Environment for Embedded AirGapped upgrade
+        working-directory: automation/cluster
+        run: |
+          terraform init -backend-config embedded-airgapped-upgrade-backend-config.tfvars
+          ./embedded-airgapped-upgrade.sh apply
 
 
   testim-embed-airgap-upgrade:
     needs: create-jumpbox
     runs-on: ubuntu-20.04
-    # container:
-    #   image: hashicorp/terraform:1.0.6
     env:
       AWS_DEFAULT_REGION: us-east-2
       AWS_AVAILABILITY_ZONE: us-east2a
@@ -115,11 +113,10 @@ jobs:
       - name: Decrypt ssh.pem
         working-directory: automation/jumpbox
         run: |
-          openssl enc -aes-256-cbc -md sha512 -pbkdf2 -iter 100000 -pass pass:somepassword -salt -d -in ssh.pem.enc -out ssh.pem && \
-          cat ssh.pem
+          openssl enc -aes-256-cbc -md sha512 -pbkdf2 -iter 100000 -pass pass:somepassword -salt -d -in ssh.pem.enc -out ssh.pem
 
       - name: Create Test Environment for Embedded AirGapped Install
-        # if: ${{ github.ref == 'refs/heads/main' }}
+        if: ${{ github.ref == 'refs/heads/main' }}
         working-directory: automation/jumpbox
         run: |
           ssh -i ssh.pem ubuntu@$JUMPBOX_IP -oStrictHostKeyChecking=no <<EOT
@@ -127,141 +124,141 @@ jobs:
           EOT
 
 
-  # cleanup-embed-airgap-upgrade:
-  #   if: ${{ always() }}
-  #   needs: testim-embed-airgap-upgrade
-  #   runs-on: ubuntu-20.04
-  #   container:
-  #     image: hashicorp/terraform:1.0.6
-  #   env:
-  #     AWS_DEFAULT_REGION: us-east-2
-  #     AWS_AVAILABILITY_ZONE: us-east2a
-  #     AWS_ACCESS_KEY_ID: ${{ secrets.E2E_TESTIM_AWS_ACCESS_KEY_ID }}
-  #     AWS_SECRET_ACCESS_KEY: ${{ secrets.E2E_TESTIM_AWS_SECRET_ACCESS_KEY }}
-  #     TF_VAR_testim_token: ${{ secrets.TESTIM_ACCESS_TOKEN }}
-  #   steps:
-  #     - name: Checkout
-  #       uses: actions/checkout@v2
-  #       with:
-  #         repository: replicatedhq/kots-regression-automation
-  #         token: ${{ secrets.E2E_GH_PAT }}
-  #         path: automation
-  #         ref: main
-  #     - name: Cleanup Test Environment for Embedded AirGapped Install
-  #       working-directory: automation/cluster
-  #       run: |
-  #         terraform init -backend-config embedded-airgapped-install-backend-config.tfvars
-  #         ./embedded-airgapped-install.sh destroy
-  # terraform-embed-airgap-intall:
-  #   needs: create-jumpbox
-  #   runs-on: ubuntu-20.04
-  #   container:
-  #     image: hashicorp/terraform:1.0.6
-  #   env:
-  #     AWS_DEFAULT_REGION: us-east-2
-  #     AWS_AVAILABILITY_ZONE: us-east2a
-  #     AWS_ACCESS_KEY_ID: ${{ secrets.E2E_TESTIM_AWS_ACCESS_KEY_ID }}
-  #     AWS_SECRET_ACCESS_KEY: ${{ secrets.E2E_TESTIM_AWS_SECRET_ACCESS_KEY }}
-  #     TF_VAR_testim_token: ${{ secrets.TESTIM_ACCESS_TOKEN }}
-  #   steps:
-  #     - name: Checkout
-  #       uses: actions/checkout@v2
-  #       with:
-  #         repository: replicatedhq/kots-regression-automation
-  #         token: ${{ secrets.E2E_GH_PAT }}
-  #         path: automation
-  #         ref: main
-  #     - name: Create Test Environment for Embedded AirGapped Install
-  #       working-directory: automation/cluster
-  #       run: |
-  #         terraform init -backend-config embedded-airgapped-install-backend-config.tfvars
-  #         ./embedded-airgapped-install.sh apply
-  # testim-embed-airgap-intall:
-  #   needs: terraform-embed-airgap-intall
-  #   runs-on: ubuntu-20.04
-  #   container:
-  #     image: hashicorp/terraform:1.0.6
-  #   env:
-  #     AWS_DEFAULT_REGION: us-east-2
-  #     AWS_AVAILABILITY_ZONE: us-east2a
-  #     AWS_ACCESS_KEY_ID: ${{ secrets.E2E_TESTIM_AWS_ACCESS_KEY_ID }}
-  #     AWS_SECRET_ACCESS_KEY: ${{ secrets.E2E_TESTIM_AWS_SECRET_ACCESS_KEY }}
-  #     TF_VAR_testim_token: ${{ secrets.TESTIM_ACCESS_TOKEN }}
-  #   steps:
-  #     - name: Checkout
-  #       uses: actions/checkout@v2
-  #       with:
-  #         repository: replicatedhq/kots-regression-automation
-  #         token: ${{ secrets.E2E_GH_PAT }}
-  #         path: automation
-  #         ref: main
-  #     - name: Set Jumpbox Public Ip
-  #       working-directory: automation/jumpbox
-  #       run: |
-  #         terraform init
-  #         export JUMPBOX_IP=$(terraform output jumpbox_ip_public -raw)
-  #         echo JUMPBOX_IP=$JUMPBOX_IP >> $GITHUB_ENV
-  #     - name: Create Test Environment for Embedded AirGapped Install
-  #       working-directory: automation/cluster
-  #       run: |
-  #         terraform init -backend-config embedded-airgapped-install-backend-config.tfvars
-  #         export EMBEDDED_AIRGAP_INSTALL_IP=$(terraform output -raw control_plane_private_ip)
-  #         echo EMBEDDED_AIRGAP_INSTALL_IP=$EMBEDDED_AIRGAP_INSTALL_IP >> $GITHUB_ENV
-  #     - name: Create Test Environment for Embedded AirGapped Install
-  #       if: ${{ github.ref == 'refs/heads/main' }}
-  #       working-directory: automation/jumpbox
-  #       run: |
-  #         ssh -i ssh.pem ubuntu@$JUMPBOX_IP -oStrictHostKeyChecking=no <<EOT
-  #         ssh ubuntu@$EMBEDDED_AIRGAP_INSTALL_IP "sudo bash /tmp/start.sh"
-  #         EOT
-  # cleanup-embed-airgap-install:
-  #   if: ${{ always() }}
-  #   needs: testim-embed-airgap-intall
-  #   runs-on: ubuntu-20.04
-  #   container:
-  #     image: hashicorp/terraform:1.0.6
-  #   env:
-  #     AWS_DEFAULT_REGION: us-east-2
-  #     AWS_AVAILABILITY_ZONE: us-east2a
-  #     AWS_ACCESS_KEY_ID: ${{ secrets.E2E_TESTIM_AWS_ACCESS_KEY_ID }}
-  #     AWS_SECRET_ACCESS_KEY: ${{ secrets.E2E_TESTIM_AWS_SECRET_ACCESS_KEY }}
-  #     TF_VAR_testim_token: ${{ secrets.TESTIM_ACCESS_TOKEN }}
-  #   steps:
-  #     - name: Checkout
-  #       uses: actions/checkout@v2
-  #       with:
-  #         repository: replicatedhq/kots-regression-automation
-  #         token: ${{ secrets.E2E_GH_PAT }}
-  #         path: automation
-  #         ref: main
-  #     - name: Cleanup Test Environment for Embedded AirGapped Install
-  #       working-directory: automation/cluster
-  #       run: |
-  #         terraform init -backend-config embedded-airgapped-install-backend-config.tfvars
-  #         ./embedded-airgapped-install.sh destroy
-  # destroy-jumpbox:
-  #   if: ${{ always() }}
-  #   runs-on: ubuntu-20.04
-  #   needs: [ cleanup-embed-airgap-install, cleanup-embed-airgap-upgrade ]
-  #   container:
-  #     image: hashicorp/terraform:1.0.6
-  #   env:
-  #     AWS_DEFAULT_REGION: us-east-2
-  #     AWS_AVAILABILITY_ZONE: us-east2a
-  #     AWS_ACCESS_KEY_ID: ${{ secrets.E2E_TESTIM_AWS_ACCESS_KEY_ID }}
-  #     AWS_SECRET_ACCESS_KEY: ${{ secrets.E2E_TESTIM_AWS_SECRET_ACCESS_KEY }}
-  #     TF_VAR_testim_token: ${{ secrets.TESTIM_ACCESS_TOKEN }}
+  cleanup-embed-airgap-upgrade:
+    if: ${{ always() }}
+    needs: testim-embed-airgap-upgrade
+    runs-on: ubuntu-20.04
+    container:
+      image: hashicorp/terraform:1.0.6
+    env:
+      AWS_DEFAULT_REGION: us-east-2
+      AWS_AVAILABILITY_ZONE: us-east2a
+      AWS_ACCESS_KEY_ID: ${{ secrets.E2E_TESTIM_AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.E2E_TESTIM_AWS_SECRET_ACCESS_KEY }}
+      TF_VAR_testim_token: ${{ secrets.TESTIM_ACCESS_TOKEN }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          repository: replicatedhq/kots-regression-automation
+          token: ${{ secrets.E2E_GH_PAT }}
+          path: automation
+          ref: main
+      - name: Cleanup Test Environment for Embedded AirGapped Install
+        working-directory: automation/cluster
+        run: |
+          terraform init -backend-config embedded-airgapped-install-backend-config.tfvars
+          ./embedded-airgapped-install.sh destroy
+  terraform-embed-airgap-intall:
+    needs: create-jumpbox
+    runs-on: ubuntu-20.04
+    container:
+      image: hashicorp/terraform:1.0.6
+    env:
+      AWS_DEFAULT_REGION: us-east-2
+      AWS_AVAILABILITY_ZONE: us-east2a
+      AWS_ACCESS_KEY_ID: ${{ secrets.E2E_TESTIM_AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.E2E_TESTIM_AWS_SECRET_ACCESS_KEY }}
+      TF_VAR_testim_token: ${{ secrets.TESTIM_ACCESS_TOKEN }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          repository: replicatedhq/kots-regression-automation
+          token: ${{ secrets.E2E_GH_PAT }}
+          path: automation
+          ref: main
+      - name: Create Test Environment for Embedded AirGapped Install
+        working-directory: automation/cluster
+        run: |
+          terraform init -backend-config embedded-airgapped-install-backend-config.tfvars
+          ./embedded-airgapped-install.sh apply
+  testim-embed-airgap-intall:
+    needs: terraform-embed-airgap-intall
+    runs-on: ubuntu-20.04
+    container:
+      image: hashicorp/terraform:1.0.6
+    env:
+      AWS_DEFAULT_REGION: us-east-2
+      AWS_AVAILABILITY_ZONE: us-east2a
+      AWS_ACCESS_KEY_ID: ${{ secrets.E2E_TESTIM_AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.E2E_TESTIM_AWS_SECRET_ACCESS_KEY }}
+      TF_VAR_testim_token: ${{ secrets.TESTIM_ACCESS_TOKEN }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          repository: replicatedhq/kots-regression-automation
+          token: ${{ secrets.E2E_GH_PAT }}
+          path: automation
+          ref: main
+      - name: Set Jumpbox Public Ip
+        working-directory: automation/jumpbox
+        run: |
+          terraform init
+          export JUMPBOX_IP=$(terraform output jumpbox_ip_public -raw)
+          echo JUMPBOX_IP=$JUMPBOX_IP >> $GITHUB_ENV
+      - name: Create Test Environment for Embedded AirGapped Install
+        working-directory: automation/cluster
+        run: |
+          terraform init -backend-config embedded-airgapped-install-backend-config.tfvars
+          export EMBEDDED_AIRGAP_INSTALL_IP=$(terraform output -raw control_plane_private_ip)
+          echo EMBEDDED_AIRGAP_INSTALL_IP=$EMBEDDED_AIRGAP_INSTALL_IP >> $GITHUB_ENV
+      - name: Create Test Environment for Embedded AirGapped Install
+        if: ${{ github.ref == 'refs/heads/main' }}
+        working-directory: automation/jumpbox
+        run: |
+          ssh -i ssh.pem ubuntu@$JUMPBOX_IP -oStrictHostKeyChecking=no <<EOT
+          ssh ubuntu@$EMBEDDED_AIRGAP_INSTALL_IP "sudo bash /tmp/start.sh"
+          EOT
+  cleanup-embed-airgap-install:
+    if: ${{ always() }}
+    needs: testim-embed-airgap-intall
+    runs-on: ubuntu-20.04
+    container:
+      image: hashicorp/terraform:1.0.6
+    env:
+      AWS_DEFAULT_REGION: us-east-2
+      AWS_AVAILABILITY_ZONE: us-east2a
+      AWS_ACCESS_KEY_ID: ${{ secrets.E2E_TESTIM_AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.E2E_TESTIM_AWS_SECRET_ACCESS_KEY }}
+      TF_VAR_testim_token: ${{ secrets.TESTIM_ACCESS_TOKEN }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          repository: replicatedhq/kots-regression-automation
+          token: ${{ secrets.E2E_GH_PAT }}
+          path: automation
+          ref: main
+      - name: Cleanup Test Environment for Embedded AirGapped Install
+        working-directory: automation/cluster
+        run: |
+          terraform init -backend-config embedded-airgapped-install-backend-config.tfvars
+          ./embedded-airgapped-install.sh destroy
+  destroy-jumpbox:
+    if: ${{ always() }}
+    runs-on: ubuntu-20.04
+    needs: [ cleanup-embed-airgap-install, cleanup-embed-airgap-upgrade ]
+    container:
+      image: hashicorp/terraform:1.0.6
+    env:
+      AWS_DEFAULT_REGION: us-east-2
+      AWS_AVAILABILITY_ZONE: us-east2a
+      AWS_ACCESS_KEY_ID: ${{ secrets.E2E_TESTIM_AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.E2E_TESTIM_AWS_SECRET_ACCESS_KEY }}
+      TF_VAR_testim_token: ${{ secrets.TESTIM_ACCESS_TOKEN }}
 
-  #   steps:
-  #     - name: Checkout
-  #       uses: actions/checkout@v2
-  #       with:
-  #         repository: replicatedhq/kots-regression-automation
-  #         token: ${{ secrets.E2E_GH_PAT }}
-  #         path: automation
-  #         ref: main
-  #     - name: Delete Jumpbox Environment
-  #       working-directory: automation/jumpbox
-  #       run: |
-  #         terraform init
-  #         terraform destroy --auto-approve    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          repository: replicatedhq/kots-regression-automation
+          token: ${{ secrets.E2E_GH_PAT }}
+          path: automation
+          ref: main
+      - name: Delete Jumpbox Environment
+        working-directory: automation/jumpbox
+        run: |
+          terraform init
+          terraform destroy --auto-approve    
