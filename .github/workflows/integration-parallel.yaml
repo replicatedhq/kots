@@ -58,17 +58,17 @@ jobs:
       - name: Create Test Environment for Embedded AirGapped Install
         working-directory: automation/cluster
         run: |
-        echo "filler1"
+        echo 'filler1'
 #      - name: Run testim for Embedded AirGapped Install
 #        working-directory: automation/cluster
 #        run: |
-#          echo "filler2 Run Testim"
+#          echo 'filler2 Run Testim'
 
       - name: Cleanup Test Environment for Embedded AirGapped Install
         if: ${{ always() }}
         working-directory: automation/cluster
         run: |
-          echo "filler3 ./embedded-airgapped-install.sh destroy"
+          echo 'filler3 ./embedded-airgapped-install.sh destroy'
       
       - name: Cleanup Test Environment for Embedded AirGapped Upgrade
         working-directory: automation/cluster
@@ -105,4 +105,4 @@ jobs:
         working-directory: automation/jumpbox
         run: |
           terraform init
-          echo "terraform destroy --auto-approve"      
+          echo 'terraform destroy --auto-approve'      
