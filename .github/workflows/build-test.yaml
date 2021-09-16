@@ -1,16 +1,38 @@
 name: build-test
 
 on:
-  push:
-    branches:
-      - "**"
+  pull_request_target:
+  # This workflow trigger may lead to malicious PR authors being able to obtain repository write permissions or stealing repository secrets. 
+  # Please read https://securitylab.github.com/research/github-actions-preventing-pwn-requests/
+    types: [opened, synchronize, reopened, labeled]
 
 jobs:
+  can-run-ci:
+    runs-on: ubuntu-18.04
+    # This workflow trigger may lead to malicious PR authors being able to obtain repository write permissions or stealing repository secrets. 
+    # Please read https://securitylab.github.com/research/github-actions-preventing-pwn-requests/
+    # only run this workflow if:
+    #   not a fork or user is dependabot or PR is labeled with '@actions/safe-to-test'
+    if: >
+      github.event.pull_request.head.repo.full_name == github.repository ||
+      github.event.pull_request.user.login == 'dependabot[bot]' ||
+      contains(github.event.pull_request.labels.*.name, '@actions/safe-to-test')
+    steps:
+      - name: ok
+        run: echo "yes"
+    
   build-web:
     runs-on: ubuntu-18.04
+    needs: [can-run-ci]
     steps:
+      # This workflow trigger may lead to malicious PR authors being able to obtain repository write permissions or stealing repository secrets. 
+      # Please read https://securitylab.github.com/research/github-actions-preventing-pwn-requests/
+      # this action checksout the remote branch and runs CI
       - name: Checkout
         uses: actions/checkout@v2
+        with:
+          ref: ${{github.event.pull_request.head.ref}}
+          repository: ${{github.event.pull_request.head.repo.full_name}}
 
       - name: Get tags
         id: get_tag
@@ -35,7 +57,8 @@ jobs:
 
   build-kots:
     runs-on: ubuntu-18.04
-    needs: [build-web]
+    needs: [can-run-ci, build-web]
+
     steps:
       - uses: actions/setup-go@v2
         with:
@@ -51,7 +74,14 @@ jobs:
         run: |
           echo "::set-output name=go-build::$(go env GOCACHE)"
           echo "::set-output name=go-mod::$(go env GOMODCACHE)"
+
+      # This workflow trigger may lead to malicious PR authors being able to obtain repository write permissions or stealing repository secrets. 
+      # Please read https://securitylab.github.com/research/github-actions-preventing-pwn-requests/
+      # this action checksout the remote branch and runs CI
       - uses: actions/checkout@v2
+        with:
+          ref: ${{github.event.pull_request.head.ref}}
+          repository: ${{github.event.pull_request.head.repo.full_name}}
 
       - uses: actions/cache@v2
         with:
@@ -76,7 +106,7 @@ jobs:
 
   build-kotsadm:
     runs-on: ubuntu-18.04
-    needs: [build-web]
+    needs: [can-run-ci, build-web]
     steps:
       - uses: actions/setup-go@v2
         with:
@@ -92,8 +122,14 @@ jobs:
         run: |
           echo "::set-output name=go-build::$(go env GOCACHE)"
           echo "::set-output name=go-mod::$(go env GOMODCACHE)"
-      - uses: actions/checkout@v2
 
+      # This workflow trigger may lead to malicious PR authors being able to obtain repository write permissions or stealing repository secrets. 
+      # Please read https://securitylab.github.com/research/github-actions-preventing-pwn-requests/
+      # this action creates a branch based on remote branch and runs the tests
+      - uses: actions/checkout@v2
+        with:
+          ref: ${{github.event.pull_request.head.ref}}
+          repository: ${{github.event.pull_request.head.repo.full_name}}
       - uses: actions/cache@v2
         with:
           path: ${{ steps.go-cache-paths.outputs.go-build }}
@@ -128,6 +164,7 @@ jobs:
 
   build-kurl-proxy:
     runs-on: ubuntu-18.04
+    needs: [can-run-ci]
     steps:
       - uses: actions/setup-go@v2
         with:
@@ -143,8 +180,14 @@ jobs:
         run: |
           echo "::set-output name=go-build::$(go env GOCACHE)"
           echo "::set-output name=go-mod::$(go env GOMODCACHE)"
-      - uses: actions/checkout@v2
 
+      # This workflow trigger may lead to malicious PR authors being able to obtain repository write permissions or stealing repository secrets. 
+      # Please read https://securitylab.github.com/research/github-actions-preventing-pwn-requests/
+      # this action creates a branch based on remote branch and runs the tests
+      - uses: actions/checkout@v2
+        with:
+          ref: ${{github.event.pull_request.head.ref}}
+          repository: ${{github.event.pull_request.head.repo.full_name}}
       - uses: actions/cache@v2
         with:
           path: ${{ steps.go-cache-paths.outputs.go-build }}
@@ -174,6 +217,7 @@ jobs:
 
   build-migrations:
     runs-on: ubuntu-18.04
+    needs: [can-run-ci]
     steps:
       - uses: actions/setup-go@v2
         with:
@@ -189,8 +233,14 @@ jobs:
         run: |
           echo "::set-output name=go-build::$(go env GOCACHE)"
           echo "::set-output name=go-mod::$(go env GOMODCACHE)"
-      - uses: actions/checkout@v2
 
+      # This workflow trigger may lead to malicious PR authors being able to obtain repository write permissions or stealing repository secrets. 
+      # Please read https://securitylab.github.com/research/github-actions-preventing-pwn-requests/
+      # this action creates a branch based on remote branch and runs the tests
+      - uses: actions/checkout@v2
+        with:
+          ref: ${{github.event.pull_request.head.ref}}
+          repository: ${{github.event.pull_request.head.repo.full_name}}
       - uses: actions/cache@v2
         with:
           path: ${{ steps.go-cache-paths.outputs.go-build }}
@@ -219,6 +269,7 @@ jobs:
 
   push-minio:
     runs-on: ubuntu-18.04
+    needs: [can-run-ci]
     steps:
       - name: push minio for e2e
         run: |
@@ -237,6 +288,7 @@ jobs:
 
   push-postgres:
     runs-on: ubuntu-18.04
+    needs: [can-run-ci]
     steps:
       - name: push postgres for CI
         run: |
@@ -255,7 +307,7 @@ jobs:
 
   validate-legacy:
     runs-on: ubuntu-18.04
-    needs: [build-kots, build-kotsadm, build-kurl-proxy, build-migrations, push-minio, push-postgres]
+    needs: [can-run-ci, build-kots, build-kotsadm, build-kurl-proxy, build-migrations, push-minio, push-postgres]
     strategy:
       fail-fast: false
       matrix:
@@ -359,7 +411,7 @@ jobs:
 
   validate-minimal-rbac:
     runs-on: ubuntu-18.04
-    needs: [build-kots, build-kotsadm, build-kurl-proxy, build-migrations, push-minio, push-postgres]
+    needs: [can-run-ci, build-kots, build-kotsadm, build-kurl-proxy, build-migrations, push-minio, push-postgres]
     strategy:
       fail-fast: false
       matrix:
@@ -423,7 +475,7 @@ jobs:
 
   validate-no-required-config:
     runs-on: ubuntu-18.04
-    needs: [build-kots, build-kotsadm, build-kurl-proxy, build-migrations, push-minio, push-postgres]
+    needs: [can-run-ci, build-kots, build-kotsadm, build-kurl-proxy, build-migrations, push-minio, push-postgres]
     strategy:
       fail-fast: false
       matrix:
@@ -496,7 +548,7 @@ jobs:
 
   validate-multi-namespace:
     runs-on: ubuntu-18.04
-    needs: [build-kots, build-kotsadm, build-kurl-proxy, build-migrations, push-minio, push-postgres]
+    needs: [can-run-ci, build-kots, build-kotsadm, build-kurl-proxy, build-migrations, push-minio, push-postgres]
     strategy:
       fail-fast: false
       matrix:
@@ -573,10 +625,9 @@ jobs:
           kill $ADMIN_CONSOLE_PID
           exit $EXIT_CODE
 
-
   validate-kots-pull:
     runs-on: ubuntu-18.04
-    needs: [build-kots, build-kotsadm, build-kurl-proxy, build-migrations, push-minio, push-postgres]
+    needs: [can-run-ci, build-kots, build-kotsadm, build-kurl-proxy, build-migrations, push-minio, push-postgres]
     strategy:
       fail-fast: false
       matrix:
