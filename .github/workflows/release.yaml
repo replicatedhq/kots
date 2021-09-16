@@ -471,7 +471,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v2
       - name: Read image tags from env file
-        uses: falti/dotenv-action@v0.2.7
+        uses: falti/dotenv-action@v0.2
         id: dotenv
         with:
           path: .image.env
@@ -499,7 +499,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v2
       - name: Read image tags from env file
-        uses: falti/dotenv-action@v0.2.7
+        uses: falti/dotenv-action@v0.2
         id: dotenv
         with:
           path: .image.env
@@ -526,7 +526,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v2
       - name: Read image tags from env file
-        uses: falti/dotenv-action@v0.2.7
+        uses: falti/dotenv-action@v0.2
         id: dotenv
         with:
           path: .image.env
@@ -554,7 +554,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v2
       - name: Read image tags from env file
-        uses: falti/dotenv-action@v0.2.7
+        uses: falti/dotenv-action@v0.2
         id: dotenv
         with:
           path: .image.env
