@@ -656,6 +656,7 @@ jobs:
 
   start_kgrid_test:
     runs-on: ubuntu-18.04
+    if: false
     needs: [release_go_api_tagged]
     steps:
     - name: Checkout
