@@ -77,7 +77,7 @@ jobs:
           terraform destroy --auto-approve           
   destroy-jumpbox:
     runs-on: ubuntu-20.04
-    needs: [testim-terraform-aigap-install]
+    needs: [testim-terraform-airgap-install]
     container:
       image: hashicorp/terraform:1.0.6
     env:
