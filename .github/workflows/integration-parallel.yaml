@@ -27,7 +27,7 @@ jobs:
         working-directory: automation/jumpbox
         run: |
           terraform init
-          terraform apply
+          terraform apply --auto-approve
   testim-terraform-airgap-install:
     needs: create-jumpbox
     runs-on: ubuntu-20.04
