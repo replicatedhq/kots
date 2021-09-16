@@ -1,14 +1,11 @@
-name: kotsadm-build
+name: release
 
 on:
   push:
-    branches:
-      - "**"
     tags:
       - "v*.*.*"
 
 jobs:
-
 
   generate-schema:
     runs-on: ubuntu-18.04
@@ -76,11 +73,6 @@ jobs:
         name: fixtures
         path: ./migrations/fixtures
 
-    - name: Publish fixtures
-      if: ${{ github.ref == 'refs/heads/master' }}
-      run: |
-        make -C migrations/fixtures publish
-
 
   build-schema-migrations:
     runs-on: ubuntu-18.04
@@ -100,15 +92,7 @@ jobs:
       id: get_tag
       uses: ./actions/version-tag
 
-    - name: Build
-      if: ${{ github.ref == 'refs/heads/master' }}
-      env:
-        DOCKER_CONFIG: ./.docker
-      run: |
-        make -C migrations schema-alpha
-
     - name: "Release schema migrations on tag"
-      if: ${{ steps.get_tag.outputs.GIT_TAG != '' }}
       env:
         GIT_TAG: ${{ steps.get_tag.outputs.GIT_TAG }}
         DOCKER_CONFIG: ./.docker
@@ -117,7 +101,6 @@ jobs:
         command: "make -C migrations schema-release"
 
     - name: Upload airgap image
-      if: ${{ steps.get_tag.outputs.GIT_TAG != '' }}
       uses: actions/upload-artifact@v2
       with:
         name: migrations-image
@@ -283,53 +266,6 @@ jobs:
         path: ./bin
 
 
-  release_go_api_alpha:
-    runs-on: ubuntu-18.04
-    if: ${{ github.ref == 'refs/heads/master' }}
-    needs: [build_web, build_go_api]
-    steps:
-    - name: Setup Go
-      uses: actions/setup-go@v2
-      with:
-        go-version: '^1.16.3'
-
-    - id: go-cache-paths
-      run: |
-        echo "::set-output name=go-build::$(go env GOCACHE)"
-        echo "::set-output name=go-mod::$(go env GOMODCACHE)"
-    - name: Checkout
-      uses: actions/checkout@v2
-
-    - uses: actions/cache@v2
-      with:
-        path: ${{ steps.go-cache-paths.outputs.go-build }}
-        key: ${{ runner.os }}-go-build-${{ hashFiles('**/go.sum') }}
-    - uses: actions/cache@v2
-      with:
-        path: ${{ steps.go-cache-paths.outputs.go-mod }}
-        key: ${{ runner.os }}-go-mod-${{ hashFiles('**/go.sum') }}
-
-    - name: Download go_api artifact
-      uses: actions/download-artifact@v2
-      with:
-        name: go_api
-        path: ./bin
-
-    - name: Add executable permissions
-      run: chmod a+x ./bin/kotsadm
-
-    - uses: azure/docker-login@v1
-      with:
-        username: ${{ secrets.DOCKERHUB_USER }}
-        password: ${{ secrets.DOCKERHUB_PASSWORD }}
-
-    - name: Build alpha release
-      env:
-        GIT_COMMIT: ${{ github.sha }}
-      run: |
-        make build-alpha
-
-
   release_go_api_tagged:
     runs-on: ubuntu-18.04
     needs: [build_web, build_go_api]
@@ -360,14 +296,12 @@ jobs:
       uses: ./actions/version-tag
 
     - name: Download go_api artifact
-      if: ${{ steps.get_tag.outputs.GIT_TAG != '' }}
       uses: actions/download-artifact@v2
       with:
         name: go_api
         path: ./bin
 
     - name: Add executable permissions
-      if: ${{ steps.get_tag.outputs.GIT_TAG != '' }}
       run: chmod a+x ./bin/kotsadm
 
     - uses: azure/docker-login@v1
@@ -378,7 +312,6 @@ jobs:
         password: ${{ secrets.DOCKERHUB_PASSWORD }}
 
     - name: Build tagged release
-      if: ${{ steps.get_tag.outputs.GIT_TAG != '' }}
       env:
         GIT_TAG: ${{ steps.get_tag.outputs.GIT_TAG }}
         DOCKER_CONFIG: ./.docker
@@ -387,58 +320,10 @@ jobs:
         command: "make build-release"
 
     - name: Upload airgap image
-      if: ${{ steps.get_tag.outputs.GIT_TAG != '' }}
       uses: actions/upload-artifact@v2
       with:
         name: kotsadm-image
         path: ./bin/docker-archive
-
-
-  build_kurl_proxy_alpha:
-    runs-on: ubuntu-18.04
-    if: ${{ github.ref == 'refs/heads/master' }}
-    needs: [build_kurl_proxy]
-    steps:
-    - uses: azure/docker-login@v1
-      with:
-        username: ${{ secrets.DOCKERHUB_USER }}
-        password: ${{ secrets.DOCKERHUB_PASSWORD }}
-
-    - name: Setup Go
-      uses: actions/setup-go@v2
-      with:
-        go-version: '^1.16.3'
-
-    - id: go-cache-paths
-      run: |
-        echo "::set-output name=go-build::$(go env GOCACHE)"
-        echo "::set-output name=go-mod::$(go env GOMODCACHE)"
-    - name: Checkout
-      uses: actions/checkout@v2
-
-    - uses: actions/cache@v2
-      with:
-        path: ${{ steps.go-cache-paths.outputs.go-build }}
-        key: ${{ runner.os }}-go-build-${{ hashFiles('**/go.sum') }}
-    - uses: actions/cache@v2
-      with:
-        path: ${{ steps.go-cache-paths.outputs.go-mod }}
-        key: ${{ runner.os }}-go-mod-${{ hashFiles('**/go.sum') }}
-
-    - name: Download kurl_proxy artifact
-      uses: actions/download-artifact@v2
-      with:
-        name: kurl_proxy
-        path: ./kurl_proxy/bin
-
-    - name: Add executable permissions
-      run: chmod a+x ./kurl_proxy/bin/kurl_proxy
-
-    - name: Build alpha release
-      env:
-        GIT_COMMIT: ${{ github.sha }}
-      run: |
-        make -C kurl_proxy build-alpha
 
 
   build_kurl_proxy_tagged:
@@ -476,38 +361,107 @@ jobs:
       uses: ./actions/version-tag
 
     - name: Download kurl_proxy artifact
-      if: ${{ steps.get_tag.outputs.GIT_TAG != '' }}
       uses: actions/download-artifact@v2
       with:
         name: kurl_proxy
         path: ./kurl_proxy/bin
 
     - name: Add executable permissions
-      if: ${{ steps.get_tag.outputs.GIT_TAG != '' }}
       run: chmod a+x ./kurl_proxy/bin/kurl_proxy
 
     - name: Build tagged release
-      if: ${{ steps.get_tag.outputs.GIT_TAG != '' }}
       env:
         GIT_TAG: ${{ steps.get_tag.outputs.GIT_TAG }}
       run: |
         make -C kurl_proxy build-release
 
 
-  build_kurl_addon_alpha:
+  goreleaser:
     runs-on: ubuntu-18.04
-    needs: [release_go_api_alpha, build_kurl_proxy_alpha]
     steps:
-      - name: Build kURL addon alpha package
-        if: ${{ github.ref == 'refs/heads/master' }}
-        env:
-          GH_PAT: ${{ secrets.GH_PAT }}
-        run: |
-          package=kotsadm-alpha.tar.gz
-          curl -H "Authorization: token $GH_PAT" \
-            -H 'Accept: application/json' \
-            -d "{\"event_type\": \"build-package-staging\", \"client_payload\": {\"package\": \"${package}\"}}" \
-            "https://api.github.com/repos/replicatedhq/kurl/dispatches"
+    - id: go-cache-paths
+      run: |
+        echo "::set-output name=go-build::$(go env GOCACHE)"
+        echo "::set-output name=go-mod::$(go env GOMODCACHE)"
+
+    - name: Checkout
+      uses: actions/checkout@v2
+
+    - uses: actions/cache@v2
+      with:
+        path: ${{ steps.go-cache-paths.outputs.go-build }}
+        key: ${{ runner.os }}-go-build-${{ hashFiles('**/go.sum') }}
+    - uses: actions/cache@v2
+      with:
+        path: ${{ steps.go-cache-paths.outputs.go-mod }}
+        key: ${{ runner.os }}-go-mod-${{ hashFiles('**/go.sum') }}
+
+    - name: Unshallow
+      run: git fetch --prune --unshallow
+
+    - uses: actions/setup-go@v2
+      with:
+        go-version: '^1.16.3'
+
+    - run: sudo apt-get update -y
+    - run: sudo apt-get -qq -y install gnupg2 libdevmapper-dev libgpgme-dev libc6-dev-i386 btrfs-progs btrfs-tools pkg-config
+    - name: set previous release tag for goreleaser
+      shell: bash
+      run: |
+        export TAG=$(curl --silent "https://api.github.com/repos/replicatedhq/kots/releases/latest" | grep -Po '"tag_name": "\K.*?(?=")')
+        echo "GORELEASER_PREVIOUS_TAG=${TAG}" >> $GITHUB_ENV
+
+    - name: Run GoReleaser
+      uses: goreleaser/goreleaser-action@v2
+      with:
+        version: "v0.166.1"
+        args: release --rm-dist --config deploy/.goreleaser.yaml
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+
+  build_airgap:
+    runs-on: ubuntu-18.04
+    needs: [release_go_api_tagged, goreleaser]
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+    - name: Get tags
+      id: get_tag
+      uses: ./actions/version-tag
+
+    - name: Download migrations
+      uses: actions/download-artifact@v2
+      with:
+        name: migrations-image
+        path: ./docker-archive
+
+    - name: Download kotsadm image
+      uses: actions/download-artifact@v2
+      with:
+        name: kotsadm-image
+        path: ./docker-archive
+
+    - name: Get Release
+      id: get_release
+      uses: bruceadams/get-release@v1.2.3   # no v1 tag
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Make kotsadm airgap archive
+      run: |
+        tar czf ./kotsadm.tar.gz -C ./ ./docker-archive
+
+    - name: Upload airgap bundle
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: https://uploads.github.com/repos/replicatedhq/kots/releases/${{ steps.get_release.outputs.id }}/assets?name=kotsadm.tar.gz
+        asset_path: ./kotsadm.tar.gz
+        asset_name: kotsadm.tar.gz
+        asset_content_type: application/gzip
+
 
 
   scan_postgres_alpine:
@@ -532,6 +486,7 @@ jobs:
         with:
           sarif_file: postgres-alpine-scan-output.sarif
 
+
   scan_postgres_debian_stretch:
     runs-on: ubuntu-18.04
     needs: [build-schema-migrations]
@@ -554,27 +509,6 @@ jobs:
         with:
           sarif_file: postgres-scan-output.sarif
 
-  scan_migrations:
-    runs-on: ubuntu-18.04
-    needs: [build-schema-migrations]
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v2
-      - name: Scan migrations for vulnerabilities
-        id: scan
-        uses: aquasecurity/trivy-action@master
-        with:
-          image-ref: "kotsadm/kotsadm-migrations:alpha"
-          format: 'template'
-          template: '@/contrib/sarif.tpl'
-          output: 'kotsadm-migration-scan-output.sarif'
-          exit-code: '0'
-          ignore-unfixed: true
-          severity: 'CRITICAL,HIGH,MEDIUM'
-      - name: Upload scan report
-        uses: github/codeql-action/upload-sarif@v1
-        with:
-          sarif_file: kotsadm-migration-scan-output.sarif
 
   scan_minio:
     runs-on: ubuntu-18.04
@@ -598,53 +532,9 @@ jobs:
         with:
           sarif_file: 'minio-scan-output.sarif'
 
-  scan_kurl_proxy:
-    runs-on: ubuntu-18.04
-    needs: [build_kurl_proxy_alpha]
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v2
-      - name: Scan kurl-proxy for vulnerabilities
-        id: scan
-        uses: aquasecurity/trivy-action@master
-        with:
-          image-ref: "kotsadm/kurl-proxy:alpha"
-          format: 'template'
-          template: '@/contrib/sarif.tpl'
-          output: 'kurl-proxy-scan-output.sarif'
-          exit-code: '0'
-          ignore-unfixed: true
-          severity: 'CRITICAL,HIGH,MEDIUM'
-      - name: Upload scan report
-        uses: github/codeql-action/upload-sarif@v1
-        with:
-          sarif_file: kurl-proxy-scan-output.sarif
-
-  scan_kotsadm:
-    runs-on: ubuntu-18.04
-    needs: [release_go_api_alpha]
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v2
-      - name: Scan kotsadm for vulnerabilities
-        id: scan
-        uses: aquasecurity/trivy-action@master
-        with:
-          image-ref: "kotsadm/kotsadm:alpha"
-          format: 'template'
-          template: '@/contrib/sarif.tpl'
-          output: 'kotsadm-scan-output.sarif'
-          exit-code: '0'
-          ignore-unfixed: true
-          severity: 'CRITICAL,HIGH,MEDIUM'
-      - name: Upload scan report
-        uses: github/codeql-action/upload-sarif@v1
-        with:
-          sarif_file: kotsadm-scan-output.sarif
 
   scan_dex:
     runs-on: ubuntu-18.04
-    needs: [release_go_api_alpha]
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -652,7 +542,7 @@ jobs:
         id: scan
         uses: aquasecurity/trivy-action@master
         with:
-          image-ref: "ghcr.io/dexidp/dex:v2.28.1"
+          image-ref: "ghcr.io/dexidp/dex:v2.28.1" # TODO: update this
           format: 'template'
           template: '@/contrib/sarif.tpl'
           output: 'dex-scan-output.sarif'
@@ -665,52 +555,73 @@ jobs:
           sarif_file: dex-scan-output.sarif
 
 
-  build_airgap:
+  scan_kurl_proxy:
+    runs-on: ubuntu-18.04
+    needs: [build_kurl_proxy_tagged]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Scan kurl-proxy for vulnerabilities
+        id: scan
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: "kotsadm/kurl-proxy:${{ steps.get_tag.outputs.GIT_TAG }}"
+          format: 'template'
+          template: '@/contrib/sarif.tpl'
+          output: 'kurl-proxy-scan-output.sarif'
+          exit-code: '0'
+          ignore-unfixed: true
+          severity: 'CRITICAL,HIGH,MEDIUM'
+      - name: Upload scan report
+        uses: github/codeql-action/upload-sarif@v1
+        with:
+          sarif_file: kurl-proxy-scan-output.sarif
+
+
+  scan_kotsadm:
     runs-on: ubuntu-18.04
     needs: [release_go_api_tagged]
     steps:
-    - name: Checkout
-      uses: actions/checkout@v2
-    - name: Get tags
-      id: get_tag
-      uses: ./actions/version-tag
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Scan kotsadm for vulnerabilities
+        id: scan
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: "kotsadm/kotsadm:${{ steps.get_tag.outputs.GIT_TAG }}"
+          format: 'template'
+          template: '@/contrib/sarif.tpl'
+          output: 'kotsadm-scan-output.sarif'
+          exit-code: '0'
+          ignore-unfixed: true
+          severity: 'CRITICAL,HIGH,MEDIUM'
+      - name: Upload scan report
+        uses: github/codeql-action/upload-sarif@v1
+        with:
+          sarif_file: kotsadm-scan-output.sarif
 
-    - name: Download migrations
-      if: ${{ steps.get_tag.outputs.GIT_TAG != '' }}
-      uses: actions/download-artifact@v2
-      with:
-        name: migrations-image
-        path: ./docker-archive
 
-    - name: Download kotsadm image
-      if: ${{ steps.get_tag.outputs.GIT_TAG != '' }}
-      uses: actions/download-artifact@v2
-      with:
-        name: kotsadm-image
-        path: ./docker-archive
-
-    - name: Get Release
-      if: ${{ steps.get_tag.outputs.GIT_TAG != '' }}
-      id: get_release
-      uses: bruceadams/get-release@v1.2.3   # no v1 tag
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-    - name: Make kotsadm airgap archive
-      if: ${{ steps.get_tag.outputs.GIT_TAG != '' }}
-      run: |
-        tar czf ./kotsadm.tar.gz -C ./ ./docker-archive
-
-    - name: Upload airgap bundle
-      if: ${{ steps.get_tag.outputs.GIT_TAG != '' }}
-      uses: actions/upload-release-asset@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: https://uploads.github.com/repos/replicatedhq/kots/releases/${{ steps.get_release.outputs.id }}/assets?name=kotsadm.tar.gz
-        asset_path: ./kotsadm.tar.gz
-        asset_name: kotsadm.tar.gz
-        asset_content_type: application/gzip
+  scan_migrations:
+    runs-on: ubuntu-18.04
+    needs: [build-schema-migrations]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Scan migrations for vulnerabilities
+        id: scan
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: "kotsadm/kotsadm-migrations:${{ steps.get_tag.outputs.GIT_TAG }}"
+          format: 'template'
+          template: '@/contrib/sarif.tpl'
+          output: 'kotsadm-migration-scan-output.sarif'
+          exit-code: '0'
+          ignore-unfixed: true
+          severity: 'CRITICAL,HIGH,MEDIUM'
+      - name: Upload scan report
+        uses: github/codeql-action/upload-sarif@v1
+        with:
+          sarif_file: kotsadm-migration-scan-output.sarif
 
 
   copy_nightly:
@@ -752,7 +663,6 @@ jobs:
       uses: rlespinasse/git-commit-data-action@v1.x   # no v1 tag
 
     - name: Create staging gitops commit
-      if: ${{ steps.get_tag.outputs.GIT_TAG != '' }}
       env:
         REPLICATEDCOM_GITHUB_PRIVATE_KEY: ${{ secrets.REPLICATEDCOM_GITHUB_PRIVATE_KEY }}
         PR_URL: ${{ steps.pr_url.outputs.url }}
@@ -763,7 +673,6 @@ jobs:
       run: ./hack/deploy-kgrid.sh
 
     - name: Create production gitops commit
-      if: ${{ steps.get_tag.outputs.GIT_TAG != '' }}
       env:
         REPLICATEDCOM_GITHUB_PRIVATE_KEY: ${{ secrets.REPLICATEDCOM_GITHUB_PRIVATE_KEY }}
         PR_URL: ${{ steps.pr_url.outputs.url }}
@@ -773,6 +682,7 @@ jobs:
         GITOPS_REPO: gitops-deploy
         GITOPS_BRANCH: release
       run: ./hack/deploy-kgrid.sh
+
 
   generate-kurl-addon-pr:
     runs-on: ubuntu-18.04
@@ -787,7 +697,6 @@ jobs:
       uses: ./actions/version-tag
 
     - name: Generate Kurl Addon PR
-      if: ${{ steps.get_tag.outputs.GIT_TAG != '' }}
       env:
         GIT_TAG: ${{ steps.get_tag.outputs.GIT_TAG }}
         GH_PAT: ${{ secrets.GH_PAT }}  
