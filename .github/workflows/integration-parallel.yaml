@@ -52,7 +52,7 @@ jobs:
         run: |
           terraform init -backend-config embedded-airgapped-install-backend-config.tfvars
           ./embedded-airgapped-install.sh apply
-  testim-testim-airgap-install:
+  testim-test-airgap-install:
     needs: testim-terraform-airgap-install
     runs-on: ubuntu-20.04
     container:
@@ -75,6 +75,7 @@ jobs:
         working-directory: automation/jumpbox
         run: |
           terraform init
+          terraform apply
           export JUMPBOX_IP=$(terraform output jumpbox_ip_public -raw)
           echo JUMPBOX_IP=$JUMPBOX_IP >> $GITHUB_ENV
       - name: Create Test Environment for Embedded AirGapped Install
@@ -84,7 +85,8 @@ jobs:
           export EMBEDDED_AIRGAP_INSTALL_IP=$(terraform output -raw control_plane_private_ip)
           echo EMBEDDED_AIRGAP_INSTALL_IP=$EMBEDDED_AIRGAP_INSTALL_IP >> $GITHUB_ENV
       - name: Create Test Environment for Embedded AirGapped Install
-        working-directory: automation/cluster
+        if: ${{ github.ref == 'refs/heads/main' }}
+        working-directory: automation/jumpbox
         run: |
           ssh -i ssh.pem ubuntu@$JUMPBOX_IP -oStrictHostKeyChecking=no <<EOT
           ssh ubuntu@$EMBEDDED_AIRGAP_INSTALL_IP "sudo bash /tmp/start.sh"
