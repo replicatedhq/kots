@@ -53,16 +53,10 @@ jobs:
           export JUMPBOX_IP=$(terraform output jumpbox_ip_private | tr -d '"')
           echo JUMPBOX_IP=$JUMPBOX_IP >> $GITHUB_ENV
       - name: Test Jumpbox Public Ip
-        run: |
-          echo $JUMPBOX_IP
+        run: echo $JUMPBOX_IP
       - name: Create Test Environment for Embedded AirGapped Install
         working-directory: automation/cluster
-        run: |
-        echo 'filler1'
-#      - name: Run testim for Embedded AirGapped Install
-#        working-directory: automation/cluster
-#        run: |
-#          echo 'filler2 Run Testim'
+        run:  echo 'filler1'
 
       - name: Cleanup Test Environment for Embedded AirGapped Install
         if: ${{ always() }}
