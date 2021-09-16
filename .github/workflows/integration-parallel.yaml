@@ -63,7 +63,7 @@ jobs:
       - name: Run testim for Embedded AirGapped Install
         working-directory: automation/cluster
         run: |
-          echo 'TODO: Run Testim'
+          echo "TODO: Run Testim"
 
       - name: Cleanup Test Environment for Embedded AirGapped Install
         if: ${{ always() }}
