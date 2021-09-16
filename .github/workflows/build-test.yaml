@@ -55,15 +55,6 @@ jobs:
           name: web
           path: ./web/dist
 
-      - name: Notify Slack
-        if: always()
-        uses: 8398a7/action-slack@v3
-        with:
-          status: ${{ job.status }}
-          fields: repo,message,commit,author,action,eventName,ref,workflow,job,took
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.KOTS_BUILD_STATUS_SLACK_WEBHOOK_URL }}
-
   build-kots:
     runs-on: ubuntu-18.04
     needs: [can-run-ci, build-web]
