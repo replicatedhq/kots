@@ -58,8 +58,8 @@ jobs:
       - name: Create Test Environment for Embedded AirGapped Install
         working-directory: automation/cluster
         run: |
-        echo `TODO: terraform init`
-        echo `TODO: ./embedded-airgapped-install.sh apply`
+        echo "TODO: terraform init"
+        echo "TODO: ./embedded-airgapped-install.sh apply"
 
       - name: Run testim for Embedded AirGapped Install
         working-directory: automation/cluster
@@ -70,7 +70,7 @@ jobs:
         if: ${{ always() }}
         working-directory: automation/cluster
         run: |
-          echo `TODO: ./embedded-airgapped-install.sh destroy`
+          echo "TODO: ./embedded-airgapped-install.sh destroy"
       
       - name: Cleanup Test Environment for Embedded AirGapped Upgrade
         working-directory: automation/cluster
@@ -85,6 +85,7 @@ jobs:
           terraform destroy --auto-approve           
   destroy-jumpbox:
     runs-on: ubuntu-20.04
+    needs: [testim-terraform-aigap-install]
     container:
       image: hashicorp/terraform:1.0.6
     env:
@@ -106,4 +107,4 @@ jobs:
         working-directory: automation/jumpbox
         run: |
           terraform init
-          echo 'terraform destroy --auto-approve`      
+          echo "terraform destroy --auto-approve"      
