@@ -115,6 +115,8 @@ jobs:
       - name: Decrypt ssh.pem
         working-directory: automation/jumpbox
         run: |
+          ls && \
+          cat ssh.pem.enc && \
           openssl enc -aes-256-cbc -md sha512 -pbkdf2 -iter 100000 -pass pass:somepassword -salt -d -in ssh.pem.enc -out ssh.pem
 
       - name: Create Test Environment for Embedded AirGapped Install
