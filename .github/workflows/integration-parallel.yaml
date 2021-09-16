@@ -58,17 +58,17 @@ jobs:
       - name: Create Test Environment for Embedded AirGapped Install
         working-directory: automation/cluster
         run: |
-        echo "TODO terraform init"
-      - name: Run testim for Embedded AirGapped Install
-        working-directory: automation/cluster
-        run: |
-          echo "TODO Run Testim"
+        echo "filler1"
+#      - name: Run testim for Embedded AirGapped Install
+#        working-directory: automation/cluster
+#        run: |
+#          echo "filler2 Run Testim"
 
       - name: Cleanup Test Environment for Embedded AirGapped Install
         if: ${{ always() }}
         working-directory: automation/cluster
         run: |
-          echo "TODO ./embedded-airgapped-install.sh destroy"
+          echo "filler3 ./embedded-airgapped-install.sh destroy"
       
       - name: Cleanup Test Environment for Embedded AirGapped Upgrade
         working-directory: automation/cluster
