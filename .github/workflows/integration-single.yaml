@@ -1,4 +1,4 @@
-name: integration-test-parallel
+name: integration-test-single
 on:
   push:
     branches:
