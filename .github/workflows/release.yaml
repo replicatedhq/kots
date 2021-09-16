@@ -470,11 +470,16 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v2
+      - name: Read image tags from env file
+        uses: falti/dotenv-action@v0.2.7
+        id: dotenv
+        with:
+          path: .image.env
       - name: Scan postgres for vulnerabilities
         id: scan
         uses: aquasecurity/trivy-action@master
         with:
-          image-ref: "postgres:10.17-alpine"
+          image-ref: "postgres:${{ steps.dotenv.outputs.postgres_alpine_tag }}"
           format: 'template'
           template: '@/contrib/sarif.tpl'
           output: 'postgres-alpine-scan-output.sarif'
@@ -493,11 +498,16 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v2
+      - name: Read image tags from env file
+        uses: falti/dotenv-action@v0.2.7
+        id: dotenv
+        with:
+          path: .image.env
       - name: Scan postgres for vulnerabilities
         id: scan
         uses: aquasecurity/trivy-action@master
         with:
-          image-ref: "postgres:10.17"
+          image-ref: "postgres:${{ steps.dotenv.outputs.postgres_debian_tag }}"
           format: 'template'
           template: '@/contrib/sarif.tpl'
           output: 'postgres-scan-output.sarif'
@@ -515,11 +525,16 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v2
+      - name: Read image tags from env file
+        uses: falti/dotenv-action@v0.2.7
+        id: dotenv
+        with:
+          path: .image.env
       - name: Scan minio for vulnerabilities
         id: scan
         uses: aquasecurity/trivy-action@master
         with:
-          image-ref: "minio/minio:RELEASE.2021-08-05T22-01-19Z"
+          image-ref: "minio/minio:${{ steps.dotenv.outputs.minio_tag }}"
           format: 'template'
           template: '@/contrib/sarif.tpl'
           output: 'minio-scan-output.sarif'
@@ -538,11 +553,16 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v2
+      - name: Read image tags from env file
+        uses: falti/dotenv-action@v0.2.7
+        id: dotenv
+        with:
+          path: .image.env
       - name: Scan dex for vulnerabilities
         id: scan
         uses: aquasecurity/trivy-action@master
         with:
-          image-ref: "ghcr.io/dexidp/dex:v2.28.1" # TODO: update this
+          image-ref: "ghcr.io/dexidp/dex:${{ steps.dotenv.outputs.dex_tag }}"
           format: 'template'
           template: '@/contrib/sarif.tpl'
           output: 'dex-scan-output.sarif'
