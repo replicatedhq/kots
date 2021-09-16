@@ -2,7 +2,7 @@ name: integration-test-parallel
 on:
   push:
     branches:
-      - "automated-test-regression"
+      - "automated-test-regression-salah"
 jobs:
   create-jumpbox:
     runs-on: ubuntu-20.04
