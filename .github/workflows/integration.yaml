@@ -49,7 +49,7 @@ jobs:
       - name: Create Test Environment for Embedded AirGapped Upgrade
         working-directory: automation/cluster
         run: |
-          terraform init -backend-config embedded-airgapped-upgrade-backend-config.tfvars
+          terraform init -backend-config embedded-airgapped-upgrade-backend-config.tfvars -reconfigure
           ./embedded-airgapped-upgrade.sh apply
 
       - name: Get Results
@@ -66,13 +66,13 @@ jobs:
         if: ${{ always() }}
         working-directory: automation/cluster
         run: |
-          terraform init -backend-config embedded-airgapped-install-backend-config.tfvars
+          terraform init -backend-config embedded-airgapped-install-backend-config.tfvars -reconfigure
           ./embedded-airgapped-install.sh destroy
       
       - name: Cleanup Test Environment for Embedded AirGapped Upgrade
         working-directory: automation/cluster
         run: |
-          terraform init -backend-config embedded-airgapped-upgrade-backend-config.tfvars
+          terraform init -backend-config embedded-airgapped-upgrade-backend-config.tfvars -reconfigure
           ./embedded-airgapped-upgrade.sh destroy
 
       - name: Cleanup Jumpbox Environment
