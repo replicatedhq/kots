@@ -2,6 +2,7 @@ package image
 
 import (
 	"fmt"
+	"github.com/containers/image/v5/docker/reference"
 	"path"
 	"strings"
 
@@ -9,6 +10,19 @@ import (
 	"github.com/replicatedhq/kots/pkg/docker/registry"
 	kustomizetypes "sigs.k8s.io/kustomize/api/types"
 )
+
+// GetTag extracts the image tag from an image reference
+func GetTag(imageRef string) (string, error) {
+	ref, err := reference.ParseNormalizedNamed(imageRef)
+	if err != nil {
+		return "", err
+	}
+	if tagged, ok := ref.(reference.Tagged); ok {
+		return tagged.Tag(), nil
+	}
+	return "", fmt.Errorf("image reference is not tagged")
+
+}
 
 func ImageInfoFromFile(registry registry.RegistryOptions, nameParts []string) (kustomizetypes.Image, error) {
 	// imageNameParts looks like this:

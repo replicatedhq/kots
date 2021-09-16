@@ -2,6 +2,7 @@ package kotsadm
 
 import (
 	"fmt"
+	"github.com/replicatedhq/kots/pkg/image"
 
 	"github.com/blang/semver"
 	"github.com/pkg/errors"
@@ -251,8 +252,9 @@ func PostgresService(namespace string) *corev1.Service {
 func getPostgresTag(deployOptions types.DeployOptions) string {
 	// use the debian stretch based image for openshift because of this issue in alpine https://github.com/docker-library/postgres/issues/359
 	// TODO: This breaks when the hidden kotsadm-tag CLI flag is used to push images.  There will be only one postgres image.
-	alpineTag := "10.17-alpine"
-	debianTag := "10.17" // use this when version cannot be determined because this tag always works
+	// TODO: Add error handling getPostgres tag should return error
+	alpineTag, _ := image.GetTag(image.PostgresAlpine)
+	debianTag, _ :=  image.GetTag(image.PostgresDebian) // use this when version cannot be determined because this tag always works
 
 	if !deployOptions.IsOpenShift {
 		return alpineTag

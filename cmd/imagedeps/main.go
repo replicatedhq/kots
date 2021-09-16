@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"bytes"
 	"fmt"
+	"go/format"
 	"io/ioutil"
 	"log"
 	"os"
@@ -85,24 +86,39 @@ func generateTaggedImageFiles(ctx generationContext) error {
 		return fmt.Errorf("no references to images found")
 	}
 
-	if err := generateOutput(ctx.outputConstantFilename, constantFileTemplate, references); err != nil {
+	if err := generateOutput(ctx.outputConstantFilename, constantFileTemplate, references, goFmt); err != nil {
 		return fmt.Errorf("failed to generate output file %q %w", ctx.outputConstantFilename, err)
 	}
 
-	if err := generateOutput(ctx.outputEnvFilename, environmentFileTemplate, references); err != nil {
+	if err := generateOutput(ctx.outputEnvFilename, environmentFileTemplate, references, noopPostProcessor); err != nil {
 		return fmt.Errorf("failed to generate file %q %w", ctx.outputEnvFilename, err)
 	}
 
 	return nil
 }
 
-func generateOutput(filename, fileTemplate string, refs []*ImageRef) error {
+type templatePostProcessorFn func(buff []byte)([]byte, error)
+
+func goFmt(buff []byte)([]byte, error){
+	return format.Source(buff)
+}
+
+func noopPostProcessor(buff []byte)([]byte, error) {
+	return buff, nil
+}
+
+func generateOutput(filename, fileTemplate string, refs []*ImageRef, fn templatePostProcessorFn) error {
 	var out bytes.Buffer
 	if err := template.Must(template.New("constants").Parse(fileTemplate)).Execute(&out, refs); err != nil {
 		return err
 	}
 
-	if err := ioutil.WriteFile(filename, out.Bytes(), 0644); err != nil {
+	buff, err := fn(out.Bytes())
+	if err != nil {
+		return err
+	}
+
+	if err := ioutil.WriteFile(filename, buff, 0644); err != nil {
 		return err
 	}
 
