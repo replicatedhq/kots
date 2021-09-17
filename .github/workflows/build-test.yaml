@@ -20,7 +20,8 @@ jobs:
     steps:
       - name: ok
         run: echo "yes"
-    
+
+
   build-web:
     runs-on: ubuntu-18.04
     needs: [can-run-ci]
@@ -54,6 +55,7 @@ jobs:
         with:
           name: web
           path: ./web/dist
+
 
   build-kots:
     runs-on: ubuntu-18.04
@@ -602,6 +604,7 @@ jobs:
           kill $ADMIN_CONSOLE_PID
           exit $EXIT_CODE
 
+
   validate-kots-pull:
     runs-on: ubuntu-18.04
     needs: [can-run-ci, build-kots, build-kotsadm, build-kurl-proxy, build-migrations, push-minio, push-postgres]
@@ -671,3 +674,11 @@ jobs:
           done
 
           echo "All pods started"
+
+
+  # this job will validate that all validate-* jobs succeed
+  validate-success:
+    runs-on: ubuntu-18.04
+    needs: [validate-legacy, validate-minimal-rbac, validate-no-required-config, validate-multi-namespace, validate-kots-pull]
+    steps:
+      - run: echo "Validate success"
