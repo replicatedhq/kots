@@ -682,3 +682,5 @@ jobs:
     needs: [validate-legacy, validate-minimal-rbac, validate-no-required-config, validate-multi-namespace, validate-kots-pull]
     steps:
       - run: echo "Validate success"
+
+# testing CI
