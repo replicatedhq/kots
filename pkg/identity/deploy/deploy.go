@@ -11,6 +11,7 @@ import (
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	"github.com/replicatedhq/kots/pkg/crypto"
 	"github.com/replicatedhq/kots/pkg/identity/types"
+	"github.com/replicatedhq/kots/pkg/image"
 	"github.com/replicatedhq/kots/pkg/ingress"
 	kotsadmtypes "github.com/replicatedhq/kots/pkg/kotsadm/types"
 	kotsadmversion "github.com/replicatedhq/kots/pkg/kotsadm/version"
@@ -205,7 +206,11 @@ var (
 
 func deploymentResource(issuerURL, configChecksum string, options Options) (*appsv1.Deployment, error) {
 	// TODO: use GetAdminConsoleImage function
-	image := "kotsadm/dex:v2.28.1"
+	dexVersion, err := image.GetTag(image.Dex)
+	if err != nil {
+		return nil, err
+	}
+	image := fmt.Sprintf("kotsadm/dex:%s", dexVersion)
 	imagePullSecrets := []corev1.LocalObjectReference{}
 	if options.ImageRewriteFn != nil {
 		var err error
