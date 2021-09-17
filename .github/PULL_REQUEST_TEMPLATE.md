@@ -2,21 +2,19 @@
 
 1. If this is your first time, please read our contributor guidelines here:
 https://github.com/replicatedhq/kots/blob/master/CONTRIBUTING.md.
-2. Please label this pull request according to what type of issue you are addressing, especially if this is a release targeted pull request. For reference on required PR/issue labels, see here:
-https://github.com/replicatedhq/kots/labels?q=kind%2F
-3. Ensure you have added appropriate tests for your PR. For more information read here:
+2. Ensure you have added appropriate tests for your PR. For more information read here:
 https://github.com/replicatedhq/kots/blob/master/CONTRIBUTING.md#testing
-4. If the PR is unfinished, please mark it as a draft.
+3. If the PR is unfinished, please mark it as a draft.
 -->
 
 #### What type of PR is this?
 
 <!--
-Add one of the following labels:
-/kind bug
-/kind documentation
-/kind enhancement
-/kind chore
+Please choose from one of the following:
+kind/bug
+kind/documentation
+kind/enhancement
+kind/chore
 -->
 
 #### What this PR does / why we need it:
