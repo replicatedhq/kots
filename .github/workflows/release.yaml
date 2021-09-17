@@ -98,7 +98,6 @@ jobs:
         GIT_TAG: ${{ steps.get_tag.outputs.GIT_TAG }}
         DOCKER_CONFIG: ./.docker
       uses: ./actions/containers
-      shell: bash
       with:
         command: "source .image.env && make -C migrations schema-release"
 
