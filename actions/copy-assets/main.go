@@ -91,7 +91,10 @@ func copyAssets(ctx context.Context, client *github.Client, srcRelease *github.R
 		fmt.Printf("Uploading asset %s to release %s\n", *asset.Name, *dstRelease.TagName)
 		_, resp, err := client.Repositories.UploadReleaseAsset(ctx, repoName, owner, *dstRelease.ID, opts, reader)
 		if err != nil {
-			b, _ := ioutil.ReadAll(resp.Body)
+			var b []byte
+			if resp != nil {
+				b, _ = ioutil.ReadAll(resp.Body)
+			}
 			panic(errors.Wrapf(err, "failed to upload %s release asset: %s", *dstRelease.TagName, b))
 		}
 	}
