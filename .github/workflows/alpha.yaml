@@ -97,7 +97,7 @@ jobs:
       env:
         DOCKER_CONFIG: ./.docker
       run: |
-        source .image.env && make -C migrations schema-alpha
+        make -C migrations schema-alpha
 
 
   test_web:

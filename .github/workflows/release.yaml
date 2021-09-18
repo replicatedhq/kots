@@ -99,7 +99,7 @@ jobs:
         DOCKER_CONFIG: ./.docker
       uses: ./actions/containers
       with:
-        command: "source .image.env && make -C migrations schema-release"
+        command: "make -C migrations schema-release"
 
     - name: Upload airgap image
       uses: actions/upload-artifact@v2
