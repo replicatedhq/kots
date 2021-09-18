@@ -271,7 +271,7 @@ jobs:
 
 
   release_go_api_tagged:
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-20.04
     needs: [build_web, build_go_api]
     steps:
     - name: Setup Go
@@ -316,7 +316,6 @@ jobs:
         password: ${{ secrets.DOCKERHUB_PASSWORD }}
 
     - name: Build tagged release
-      runs-on: ubuntu-20.04
       env:
         GIT_TAG: ${{ steps.get_tag.outputs.GIT_TAG }}
         DOCKER_CONFIG: ./.docker
