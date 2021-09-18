@@ -98,8 +98,6 @@ jobs:
         GIT_TAG: ${{ steps.get_tag.outputs.GIT_TAG }}
         DOCKER_CONFIG: ./.docker
       run: |
-        sudo apt-get -y update
-        sudo apt-get -y install skopeo
         source .image.env && make -C migrations schema-release
 
     - name: Upload airgap image
@@ -321,8 +319,6 @@ jobs:
         GIT_TAG: ${{ steps.get_tag.outputs.GIT_TAG }}
         DOCKER_CONFIG: ./.docker
       run: |
-        sudo apt-get -y update
-        sudo apt-get -y install skopeo
         source .image.env && make build-release
 
     - name: Upload airgap image
