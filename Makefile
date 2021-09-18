@@ -1,8 +1,9 @@
 include Makefile.build
+include .image.env
 CURRENT_USER := $(shell id -u -n)
-MINIO_TAG ?= RELEASE.2021-09-15T04-54-25Z
-POSTGRES_ALPINE_TAG ?= 10.17-alpine
-DEX_TAG ?= v2.28.1
+MINIO_TAG := $(shell echo $(MINIO_TAG))
+POSTGRES_ALPINE_TAG := $(shell echo $(POSTGRES_ALPINE_TAG))
+DEX_TAG := $(shell echo $(DEX_TAG))
 LVP_VERSION := v0.1.0
 
 BUILDFLAGS = -tags='netgo containers_image_ostree_stub exclude_graphdriver_devicemapper exclude_graphdriver_btrfs containers_image_openpgp' -installsuffix netgo
