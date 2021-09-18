@@ -13,6 +13,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
+	"github.com/replicatedhq/kots/pkg/image"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	kotsadmresources "github.com/replicatedhq/kots/pkg/kotsadm/resources"
 	kotsadmtypes "github.com/replicatedhq/kots/pkg/kotsadm/types"
@@ -267,7 +268,11 @@ func ensureFileSystemMinioDeployment(ctx context.Context, clientset kubernetes.I
 }
 
 func fileSystemMinioDeploymentResource(clientset kubernetes.Interface, secretChecksum string, deployOptions FileSystemDeployOptions, registryOptions kotsadmtypes.KotsadmOptions) (*appsv1.Deployment, error) {
-	image := "minio/minio:RELEASE.2021-08-05T22-01-19Z"
+	minioTag, err := image.GetTag(image.Minio)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get minio image tag")
+	}
+	image := fmt.Sprintf("minio/minio:%s", minioTag)
 	imagePullSecrets := []corev1.LocalObjectReference{}
 
 	if !kotsutil.IsKurl(clientset) || deployOptions.Namespace != metav1.NamespaceDefault {

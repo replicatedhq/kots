@@ -97,13 +97,13 @@ func generateTaggedImageFiles(ctx generationContext) error {
 	return nil
 }
 
-type templatePostProcessorFn func(buff []byte)([]byte, error)
+type templatePostProcessorFn func(buff []byte) ([]byte, error)
 
-func goFmt(buff []byte)([]byte, error){
+func goFmt(buff []byte) ([]byte, error) {
 	return format.Source(buff)
 }
 
-func noopPostProcessor(buff []byte)([]byte, error) {
+func noopPostProcessor(buff []byte) ([]byte, error) {
 	return buff, nil
 }
 

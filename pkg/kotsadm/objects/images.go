@@ -14,7 +14,7 @@ func GetAdminConsoleImage(deployOptions types.DeployOptions, imageKey string) st
 
 func GetAdminConsoleImages(deployOptions types.DeployOptions) map[string]string {
 	// TODO: Add error handling to this function
-	minioTag, _  := image.GetTag(image.Minio)
+	minioTag, _ := image.GetTag(image.Minio)
 	postgresTag := getPostgresTag(deployOptions)
 	dexTag, _ := image.GetTag(image.Dex)
 

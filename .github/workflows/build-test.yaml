@@ -260,8 +260,8 @@ jobs:
 
       - name: push minio for e2e
         run: |
-          docker pull minio/minio:${{  steps.dotenv.outputs.minio_tag }}
-          docker tag minio/minio:${{  steps.dotenv.outputs.minio_tag }} ttl.sh/automated-${{ github.run_id }}/minio:2h
+          docker pull minio/minio:${{ steps.dotenv.outputs.minio_tag }}
+          docker tag minio/minio:${{ steps.dotenv.outputs.minio_tag }} ttl.sh/automated-${{ github.run_id }}/minio:2h
           docker push ttl.sh/automated-${{ github.run_id }}/minio:2h
 
 

@@ -545,49 +545,48 @@ func Test_stripImageTag(t *testing.T) {
 }
 
 func TestGetTag(t *testing.T) {
-	tt := []struct{
-		name string
-		imageRef string
+	tt := []struct {
+		name        string
+		imageRef    string
 		expectedTag string
-		wantErr bool
+		wantErr     bool
 	}{
 		{
-			name:"happy path",
-			imageRef: "some/image:v1.2.3",
+			name:        "happy path",
+			imageRef:    "some/image:v1.2.3",
 			expectedTag: "v1.2.3",
 		},
 		{
-			name: "failed case",
+			name:     "failed case",
 			imageRef: "",
-			wantErr: true,
+			wantErr:  true,
 		},
 		{
-			name: "no tag",
+			name:     "no tag",
 			imageRef: "foo/bar",
-			wantErr: true,
+			wantErr:  true,
 		},
 		{
-			name: "fat fingered",
+			name:     "fat fingered",
 			imageRef: "some/image:",
-			wantErr: true,
+			wantErr:  true,
 		},
 		{
-			name: "long image",
-			imageRef: "some/image/image2:v1.2.3",
+			name:        "long image",
+			imageRef:    "some/image/image2:v1.2.3",
 			expectedTag: "v1.2.3",
-
 		},
 	}
 
 	for _, tc := range tt {
-		t.Run(tc.name, func(t *testing.T){
+		t.Run(tc.name, func(t *testing.T) {
 			actual, err := GetTag(tc.imageRef)
 			if tc.wantErr {
 				require.NotNil(t, err)
 				return
 			}
 			require.Nil(t, err)
-			require.Equal(t, tc.expectedTag, actual )
+			require.Equal(t, tc.expectedTag, actual)
 		})
 	}
 }
