@@ -1044,7 +1044,7 @@ jobs:
           EOT
 
 
-  # #### ---- END OF AUTOMATED REGRESSION TESTS ---- ####
+  #### ---- END OF AUTOMATED REGRESSION TESTS ---- ####
 
 
   start_kgrid_test:
