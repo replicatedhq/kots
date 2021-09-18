@@ -678,9 +678,91 @@ jobs:
 
   #### ---- START OF AUTOMATED REGRESSION TESTS ---- ####
 
-  terraform-setup-jumpbox:
+  terraform-cleanup-test-instances:
     if: startsWith(github.ref, 'refs/tags/v') && endsWith(github.ref, '-nightly')
     needs: copy_nightly
+    runs-on: ubuntu-20.04
+    container:
+      image: hashicorp/terraform:1.0.7
+    strategy:
+      fail-fast: false
+      matrix:
+        test: [
+          {
+            backend_config: "embedded-airgapped-upgrade-backend-config.tfvars",
+            terraform_script: "embedded-airgapped-upgrade.sh"
+          },
+          {
+            backend_config: "embedded-airgapped-install-backend-config.tfvars",
+            terraform_script: "embedded-airgapped-install.sh"
+          },
+          {
+            backend_config: "embedded-online-install-backend-config.tfvars",
+            terraform_script: "embedded-online-install.sh"
+          },
+          {
+            backend_config: "embedded-online-upgrade-backend-config.tfvars",
+            terraform_script: "embedded-online-upgrade.sh"
+          },
+          {
+            backend_config: "existing-airgapped-install-admin-backend-config.tfvars",
+            terraform_script: "existing-airgapped-install-admin.sh"
+          },
+          {
+            backend_config: "existing-airgapped-install-minimum-backend-config.tfvars",
+            terraform_script: "existing-airgapped-install-minimum.sh"
+          },
+          {
+            backend_config: "existing-online-upgrade-admin-backend-config.tfvars",
+            terraform_script: "existing-online-upgrade-admin.sh"
+          },
+          {
+            backend_config: "existing-online-upgrade-minimum-backend-config.tfvars",
+            terraform_script: "existing-online-upgrade-minimum.sh"
+          },
+          {
+            backend_config: "existing-online-install-admin-backend-config.tfvars",
+            terraform_script: "existing-online-install-admin.sh"
+          },
+          {
+            backend_config: "existing-online-install-minimum-backend-config.tfvars",
+            terraform_script: "existing-online-install-minimum.sh"
+          },
+          {
+            backend_config: "existing-airgapped-upgrade-admin-backend-config.tfvars",
+            terraform_script: "existing-airgapped-upgrade-admin.sh"
+          },
+          {
+            backend_config: "existing-airgapped-upgrade-minimum-backend-config.tfvars",
+            terraform_script: "existing-airgapped-upgrade-minimum.sh"
+          }
+        ]
+    env:
+      AWS_DEFAULT_REGION: us-east-1
+      AWS_ACCESS_KEY_ID: ${{ secrets.E2E_TESTIM_AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.E2E_TESTIM_AWS_SECRET_ACCESS_KEY }}
+      TF_VAR_testim_token: ${{ secrets.TESTIM_ACCESS_TOKEN }}
+      TF_WORKSPACE: automation
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          repository: replicatedhq/kots-regression-automation
+          token: ${{ secrets.E2E_GH_PAT }}
+          path: automation
+          ref: main
+
+      - name: Cleanup Test Environment for Embedded AirGapped Upgrade
+        working-directory: automation/cluster
+        run: |
+          terraform init -backend-config ${{ matrix.test.backend_config }}
+          ./${{ matrix.test.terraform_script }} destroy
+
+
+  terraform-setup-jumpbox:
+    if: startsWith(github.ref, 'refs/tags/v') && endsWith(github.ref, '-nightly')
+    needs: terraform-cleanup-test-instances
     runs-on: ubuntu-20.04
     container:
       image: hashicorp/terraform:1.0.7
@@ -934,88 +1016,6 @@ jobs:
           EOT
 
 
-  terraform-cleanup-test-instances:
-    if: startsWith(github.ref, 'refs/tags/v') && endsWith(github.ref, '-nightly')
-    needs: testim-run-regression-tests
-    runs-on: ubuntu-20.04
-    container:
-      image: hashicorp/terraform:1.0.7
-    strategy:
-      fail-fast: false
-      matrix:
-        test: [
-          {
-            backend_config: "embedded-airgapped-upgrade-backend-config.tfvars",
-            terraform_script: "embedded-airgapped-upgrade.sh"
-          },
-          {
-            backend_config: "embedded-airgapped-install-backend-config.tfvars",
-            terraform_script: "embedded-airgapped-install.sh"
-          },
-          {
-            backend_config: "embedded-online-install-backend-config.tfvars",
-            terraform_script: "embedded-online-install.sh"
-          },
-          {
-            backend_config: "embedded-online-upgrade-backend-config.tfvars",
-            terraform_script: "embedded-online-upgrade.sh"
-          },
-          {
-            backend_config: "existing-airgapped-install-admin-backend-config.tfvars",
-            terraform_script: "existing-airgapped-install-admin.sh"
-          },
-          {
-            backend_config: "existing-airgapped-install-minimum-backend-config.tfvars",
-            terraform_script: "existing-airgapped-install-minimum.sh"
-          },
-          {
-            backend_config: "existing-online-upgrade-admin-backend-config.tfvars",
-            terraform_script: "existing-online-upgrade-admin.sh"
-          },
-          {
-            backend_config: "existing-online-upgrade-minimum-backend-config.tfvars",
-            terraform_script: "existing-online-upgrade-minimum.sh"
-          },
-          {
-            backend_config: "existing-online-install-admin-backend-config.tfvars",
-            terraform_script: "existing-online-install-admin.sh"
-          },
-          {
-            backend_config: "existing-online-install-minimum-backend-config.tfvars",
-            terraform_script: "existing-online-install-minimum.sh"
-          },
-          {
-            backend_config: "existing-airgapped-upgrade-admin-backend-config.tfvars",
-            terraform_script: "existing-airgapped-upgrade-admin.sh"
-          },
-          {
-            backend_config: "existing-airgapped-upgrade-minimum-backend-config.tfvars",
-            terraform_script: "existing-airgapped-upgrade-minimum.sh"
-          }
-        ]
-    env:
-      AWS_DEFAULT_REGION: us-east-1
-      AWS_ACCESS_KEY_ID: ${{ secrets.E2E_TESTIM_AWS_ACCESS_KEY_ID }}
-      AWS_SECRET_ACCESS_KEY: ${{ secrets.E2E_TESTIM_AWS_SECRET_ACCESS_KEY }}
-      TF_VAR_testim_token: ${{ secrets.TESTIM_ACCESS_TOKEN }}
-      TF_WORKSPACE: automation
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v2
-        with:
-          repository: replicatedhq/kots-regression-automation
-          token: ${{ secrets.E2E_GH_PAT }}
-          path: automation
-          ref: main
-
-      - name: Cleanup Test Environment for Embedded AirGapped Upgrade
-        working-directory: automation/cluster
-        run: |
-          terraform init -backend-config ${{ matrix.test.backend_config }}
-          ./${{ matrix.test.terraform_script }} destroy
-
-
   terraform-destroy-jumpbox:
     if: startsWith(github.ref, 'refs/tags/v') && endsWith(github.ref, '-nightly')
     needs: terraform-cleanup-test-instances
@@ -1043,7 +1043,7 @@ jobs:
           terraform init
           terraform destroy --auto-approve
 
-  #### ---- END OF AUTOMATED REGRESSION TESTS ---- ####
+  # #### ---- END OF AUTOMATED REGRESSION TESTS ---- ####
 
 
   start_kgrid_test:
