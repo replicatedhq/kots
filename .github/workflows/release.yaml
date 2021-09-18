@@ -316,12 +316,14 @@ jobs:
         password: ${{ secrets.DOCKERHUB_PASSWORD }}
 
     - name: Build tagged release
+      runs-on: ubuntu-20.04
       env:
         GIT_TAG: ${{ steps.get_tag.outputs.GIT_TAG }}
         DOCKER_CONFIG: ./.docker
-      uses: ./actions/containers
-      with:
-        command: "source .image.env && make build-release"
+      run: |
+        sudo apt-get -y update
+        sudo apt-get -y install skopeo
+        source .image.env && make build-release
 
     - name: Upload airgap image
       uses: actions/upload-artifact@v2
