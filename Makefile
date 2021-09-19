@@ -1,7 +1,7 @@
 include Makefile.build
 CURRENT_USER := $(shell id -u -n)
 MINIO_TAG ?= RELEASE.2021-09-15T04-54-25Z
-POSTGRES_ALPINE_TAG ?= 10.17-alpine
+POSTGRES_ALPINE_TAG ?= 10.18-alpine
 DEX_TAG ?= v2.28.1
 LVP_VERSION := v0.1.0
 
