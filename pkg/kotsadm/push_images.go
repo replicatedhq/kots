@@ -74,13 +74,12 @@ func ExtractAppAirgapArchive(archive string, destDir string, excludeImages bool,
 		if err == io.EOF {
 			break
 		}
+		if err != nil {
+			return errors.Wrap(err, "failed to read tar header")
+		}
 
 		if header.Name == "." {
 			continue
-		}
-
-		if err != nil {
-			return errors.Wrap(err, "failed to read tar header")
 		}
 
 		if excludeImages && header.Typeflag == tar.TypeDir {
