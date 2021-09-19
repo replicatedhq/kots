@@ -753,7 +753,7 @@ jobs:
           path: automation
           ref: main
 
-      - name: Cleanup Test Environment for Embedded AirGapped Upgrade
+      - name: Cleanup test environment
         working-directory: automation/cluster
         run: |
           terraform init -backend-config ${{ matrix.test.backend_config }}
