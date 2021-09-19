@@ -1039,8 +1039,8 @@ jobs:
       - name: Run the test
         working-directory: automation/jumpbox
         run: |
-          ssh -i ssh.pem ubuntu@${{ steps.set_jumpbox_ip.outputs.jumpbox_ip }} -oStrictHostKeyChecking=no <<EOT
-          ssh ubuntu@${{ steps.init_test_env.outputs.instance_ip }} "sudo bash /tmp/start.sh"
+          ssh -i ssh.pem ubuntu@${{ steps.set_jumpbox_ip.outputs.jumpbox_ip }} -oStrictHostKeyChecking=no -oServerAliveInterval=60 -oServerAliveCountMax=10 <<EOT
+          ssh ubuntu@${{ steps.init_test_env.outputs.instance_ip }} -oServerAliveInterval=60 -oServerAliveCountMax=10 "sudo bash /tmp/start.sh"
           EOT
 
 
