@@ -759,6 +759,21 @@ jobs:
           terraform init -backend-config ${{ matrix.test.backend_config }}
           ./${{ matrix.test.terraform_script }} destroy
 
+      - name: Notify Slack
+        if: failure()
+        uses: 8398a7/action-slack@v3
+        with:
+          status: ${{ job.status }}
+          fields: repo,ref,workflow,job,took
+          custom_payload: |
+            {
+              attachments: [{
+                text: `${process.env.AS_WORKFLOW}\n${process.env.AS_JOB} of ${process.env.AS_REPO}@${process.env.AS_REF}\n${{ job.status }} in ${process.env.AS_TOOK}`,
+              }]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.KOTS_BUILD_STATUS_SLACK_WEBHOOK_URL }}
+
 
   terraform-destroy-jumpbox:
     if: startsWith(github.ref, 'refs/tags/v') && endsWith(github.ref, '-nightly')
@@ -786,6 +801,21 @@ jobs:
         run: |
           terraform init
           terraform destroy --auto-approve
+
+      - name: Notify Slack
+        if: failure()
+        uses: 8398a7/action-slack@v3
+        with:
+          status: ${{ job.status }}
+          fields: repo,ref,workflow,job,took
+          custom_payload: |
+            {
+              attachments: [{
+                text: `${process.env.AS_WORKFLOW}\n${process.env.AS_JOB} of ${process.env.AS_REPO}@${process.env.AS_REF}\n${{ job.status }} in ${process.env.AS_TOOK}`,
+              }]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.KOTS_BUILD_STATUS_SLACK_WEBHOOK_URL }}
 
 
   terraform-setup-jumpbox:
@@ -830,6 +860,21 @@ jobs:
         with:
           name: ssh.pem.enc
           path: automation/jumpbox/ssh.pem.enc
+
+      - name: Notify Slack
+        if: failure()
+        uses: 8398a7/action-slack@v3
+        with:
+          status: ${{ job.status }}
+          fields: repo,ref,workflow,job,took
+          custom_payload: |
+            {
+              attachments: [{
+                text: `${process.env.AS_WORKFLOW}\n${process.env.AS_JOB} of ${process.env.AS_REPO}@${process.env.AS_REF}\n${{ job.status }} in ${process.env.AS_TOOK}`,
+              }]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.KOTS_BUILD_STATUS_SLACK_WEBHOOK_URL }}
 
 
   terraform-setup-test-instances:
@@ -941,6 +986,21 @@ jobs:
           terraform init -backend-config ${{ matrix.test.backend_config }}
           ./${{ matrix.test.terraform_script }} apply
 
+      - name: Notify Slack
+        if: failure()
+        uses: 8398a7/action-slack@v3
+        with:
+          status: ${{ job.status }}
+          fields: repo,ref,workflow,job,took
+          custom_payload: |
+            {
+              attachments: [{
+                text: `${process.env.AS_WORKFLOW}\n${process.env.AS_JOB} of ${process.env.AS_REPO}@${process.env.AS_REF}\n${{ job.status }} in ${process.env.AS_TOOK}`,
+              }]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.KOTS_BUILD_STATUS_SLACK_WEBHOOK_URL }}
+
 
   testim-run-regression-tests:
     if: startsWith(github.ref, 'refs/tags/v') && endsWith(github.ref, '-nightly')
@@ -1042,6 +1102,21 @@ jobs:
           ssh -i ssh.pem ubuntu@${{ steps.set_jumpbox_ip.outputs.jumpbox_ip }} -oStrictHostKeyChecking=no -oServerAliveInterval=60 -oServerAliveCountMax=10 <<EOT
           ssh ubuntu@${{ steps.init_test_env.outputs.instance_ip }} -oServerAliveInterval=60 -oServerAliveCountMax=10 "sudo bash /tmp/start.sh"
           EOT
+
+      - name: Notify Slack
+        if: failure()
+        uses: 8398a7/action-slack@v3
+        with:
+          status: ${{ job.status }}
+          fields: repo,ref,workflow,job,took
+          custom_payload: |
+            {
+              attachments: [{
+                text: `${process.env.AS_WORKFLOW}\n${process.env.AS_JOB} of ${process.env.AS_REPO}@${process.env.AS_REF}\n${{ job.status }} in ${process.env.AS_TOOK}`,
+              }]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.KOTS_BUILD_STATUS_SLACK_WEBHOOK_URL }}
 
 
   #### ---- END OF AUTOMATED REGRESSION TESTS ---- ####
