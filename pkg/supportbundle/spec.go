@@ -27,7 +27,6 @@ import (
 	"github.com/replicatedhq/kots/pkg/snapshot"
 	"github.com/replicatedhq/kots/pkg/store"
 	"github.com/replicatedhq/kots/pkg/supportbundle/types"
-	"github.com/replicatedhq/kots/pkg/template"
 	"github.com/replicatedhq/kots/pkg/util"
 	troubleshootv1beta2 "github.com/replicatedhq/troubleshoot/pkg/apis/troubleshoot/v1beta2"
 	"go.uber.org/multierr"
@@ -200,36 +199,22 @@ func populateNamespaces(supportBundle *troubleshootv1beta2.SupportBundle) {
 		return
 	}
 
-	builder := template.Builder{}
-	builder.AddCtx(template.StaticCtx{})
-
-	ns := func(ns string) string {
-		templated, err := builder.RenderTemplate("ns", ns)
-		if err != nil {
-			logger.Error(err)
-		}
-		if templated != "" {
-			return templated
-		}
-		return util.PodNamespace
-	}
-
 	collects := []*troubleshootv1beta2.Collect{}
 	for _, collect := range supportBundle.Spec.Collectors {
-		if collect.Secret != nil {
-			collect.Secret.Namespace = ns(collect.Secret.Namespace)
+		if collect.Secret != nil && collect.Secret.Namespace == "" {
+			collect.Secret.Namespace = util.PodNamespace
 		}
-		if collect.Run != nil {
-			collect.Run.Namespace = ns(collect.Run.Namespace)
+		if collect.Run != nil && collect.Run.Namespace == "" {
+			collect.Run.Namespace = util.PodNamespace
 		}
-		if collect.Logs != nil {
-			collect.Logs.Namespace = ns(collect.Logs.Namespace)
+		if collect.Logs != nil && collect.Logs.Namespace == "" {
+			collect.Logs.Namespace = util.PodNamespace
 		}
-		if collect.Exec != nil {
-			collect.Exec.Namespace = ns(collect.Exec.Namespace)
+		if collect.Exec != nil && collect.Exec.Namespace == "" {
+			collect.Exec.Namespace = util.PodNamespace
 		}
-		if collect.Copy != nil {
-			collect.Copy.Namespace = ns(collect.Copy.Namespace)
+		if collect.Copy != nil && collect.Copy.Namespace == "" {
+			collect.Copy.Namespace = util.PodNamespace
 		}
 		collects = append(collects, collect)
 	}
