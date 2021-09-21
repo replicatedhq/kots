@@ -859,13 +859,13 @@ class Dashboard extends Component {
               <p className="u-fontSize--large u-fontWeight--bold u-textColor--primary">Resource status</p>
               <div className="u-marginTop--10 u-marginBottom--10 u-overflow--auto" style={{ maxHeight: "50vh" }}>
                 {appResourcesByState?.sortedStates?.map((state, i) => (
-                  <div key={i}>
+                  <div key={"iter-" + i}>
                     <p className="u-fontSize--normal u-color--mutedteal u-fontWeight--bold u-marginTop--20">{Utilities.toTitleCase(state)}</p>
-                    {appResourcesByState?.statesMap[state]?.map(resource => (
-                      <div>
-                      <p className={`ResourceStateText u-fontSize--normal ${resource.state}`}>
-                        {resource?.namespace}/{resource?.kind}/{resource?.name}
-                      </p>
+                    {appResourcesByState?.statesMap[state]?.map((resource, i) => (
+                      <div key={"iter-" + i}>
+                        <p className={`ResourceStateText u-fontSize--normal ${resource.state}`}>
+                          {resource?.namespace}/{resource?.kind}/{resource?.name}
+                        </p>
                       </div>
                     ))}
                   </div>
