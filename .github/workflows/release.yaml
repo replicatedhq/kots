@@ -413,6 +413,20 @@ jobs:
         export TAG=$(curl --silent "https://api.github.com/repos/replicatedhq/kots/releases/latest" | grep -Po '"tag_name": "\K.*?(?=")')
         echo "GORELEASER_PREVIOUS_TAG=${TAG}" >> $GITHUB_ENV
 
+    - uses: sigstore/cosign-installer@v1.2.1
+
+    - name: Get Cosign Key
+      run: |
+        echo $COSIGN_KEY | base64 -d > ./cosign.key
+      env:
+        COSIGN_KEY: ${{secrets.COSIGN_KEY}}
+
+    - name: Generate SBOM
+      run: |
+        COSIGN_PASSWORD=$COSIGN_PASSWORD make sbom
+      env:
+        COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSWORD }}
+
     - name: Run GoReleaser
       uses: goreleaser/goreleaser-action@v2
       with:

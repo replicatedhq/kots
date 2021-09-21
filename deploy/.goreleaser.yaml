@@ -57,7 +57,7 @@ archives:
       - CHANGELOG*
       - sbom/kots-sbom.tgz
       - sbom/kots-sbom.tgz.sig
-      - cosign.pub
+      - sbom/key.pub
 
   - id: kots_experimental
     builds:

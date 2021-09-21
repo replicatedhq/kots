@@ -145,11 +145,9 @@ endif
 sbom/spdx/bom-go-mod.spdx: install-spdx-sbom-generator
 	$(SPDX_GENERATOR) -o ./sbom/spdx 
 
-sbom/spdx/bom-yarn.spdx: install-spdx-sbom-generator 
-	$(SPDX_GENERATOR) -o ./sbom/spdx -p web 
-
-sbom/kots-sbom.tgz: sbom/spdx/bom-go-mod.spdx sbom/spdx/bom-yarn.spdx
+sbom/kots-sbom.tgz: sbom/spdx/bom-go-mod.spdx 
 	tar -czf sbom/kots-sbom.tgz sbom/spdx/*.spdx
 
 sbom: sbom/kots-sbom.tgz
 	cosign sign-blob -key ./cosign.key sbom/kots-sbom.tgz > ./sbom/kots-sbom.tgz.sig
+	cosign public-key -key ./cosign.key -outfile ./sbom/key.pub
