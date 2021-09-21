@@ -46,7 +46,7 @@ jobs:
         path: ./migrations/fixtures/schema
 
     - name: Build fixtures
-      run: source .image.env && make -C migrations/fixtures deps build run
+      run: export $(cat .image.env | sed 's/#.*//g' | xargs) && make -C migrations/fixtures deps build run
       shell: bash
 
     - name: Upload fixtures artifact
@@ -98,7 +98,7 @@ jobs:
         GIT_TAG: ${{ steps.get_tag.outputs.GIT_TAG }}
         DOCKER_CONFIG: ./.docker
       run: |
-        source .image.env && make -C migrations schema-release
+       export $(cat .image.env | sed 's/#.*//g' | xargs) && make -C migrations schema-release
 
     - name: Upload airgap image
       uses: actions/upload-artifact@v2
@@ -164,7 +164,7 @@ jobs:
       env:
         GIT_COMMIT: ${{ github.sha }}
         GIT_TAG: ${{ steps.get_tag.outputs.GIT_TAG }}
-      run: source .image.env && make -C web deps build-kotsadm
+      run: export $(cat .image.env | sed 's/#.*//g' | xargs) && make -C web deps build-kotsadm
       shell: bash
       ## TODO: retry logic
       # retry:
@@ -204,7 +204,7 @@ jobs:
         GIT_COMMIT: ${{ github.sha }}
         GIT_TAG: ${{ steps.get_tag.outputs.GIT_TAG }}
         SCOPE_DSN_PUBLIC: ""
-      run: source .image.env && make -C kurl_proxy test build
+      run: export $(cat .image.env | sed 's/#.*//g' | xargs) && make -C kurl_proxy test build
       shell: bash
 
     - name: Upload kurl_proxy artifact
@@ -259,7 +259,7 @@ jobs:
         # GITHUB_REPOSITORY:
         # GITHUB_WORKSPACE:
         SCOPE_DSN_PUBLIC: ""
-      run: source .image.env && make test kotsadm
+      run: export $(cat .image.env | sed 's/#.*//g' | xargs) && make test kotsadm
       shell: bash
 
     - name: Upload Go API artifact
@@ -319,7 +319,7 @@ jobs:
         GIT_TAG: ${{ steps.get_tag.outputs.GIT_TAG }}
         DOCKER_CONFIG: ./.docker
       run: |
-        source .image.env && make build-release
+       export $(cat .image.env | sed 's/#.*//g' | xargs) && make build-release
 
     - name: Upload airgap image
       uses: actions/upload-artifact@v2
@@ -375,7 +375,7 @@ jobs:
       env:
         GIT_TAG: ${{ steps.get_tag.outputs.GIT_TAG }}
       run: |
-        source .image.env && make -C kurl_proxy build-release
+        export $(cat .image.env | sed 's/#.*//g' | xargs) && make -C kurl_proxy build-release
 
 
   goreleaser:
