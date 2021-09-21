@@ -292,19 +292,19 @@ func processOneImage(srcRegistry, destRegistry registry.RegistryOptions, image s
 		DockerDisableV1Ping:         true,
 	}
 
-	if destRegistry.Username != "" && destRegistry.Password != "" {
-		username, password := destRegistry.Username, destRegistry.Password
+	username, password := destRegistry.Username, destRegistry.Password
+	registryHost := reference.Domain(destRef.DockerReference())
 
-		registryHost := reference.Domain(destRef.DockerReference())
-		if registry.IsECREndpoint(registryHost) {
-			login, err := registry.GetECRLogin(registryHost, username, password)
-			if err != nil {
-				return nil, errors.Wrap(err, "failed to get ECR login")
-			}
-			username = login.Username
-			password = login.Password
+	if registry.IsECREndpoint(registryHost) && username != "AWS" {
+		login, err := registry.GetECRLogin(registryHost, username, password)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to get ECR login")
 		}
+		username = login.Username
+		password = login.Password
+	}
 
+	if username != "" && password != "" {
 		destCtx.DockerAuthConfig = &types.DockerAuthConfig{
 			Username: username,
 			Password: password,
