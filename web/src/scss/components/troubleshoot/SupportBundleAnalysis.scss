@@ -76,6 +76,11 @@
     background-color: #F8F8F8;
     border-color: #DFDFDF;
   }
+
+  a:hover {
+    text-decoration: underline;
+    cursor: pointer;
+  }
 }
 
 .avatar-wrapper {

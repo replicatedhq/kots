@@ -861,8 +861,8 @@ class Dashboard extends Component {
                 {appResourcesByState?.sortedStates?.map((state, i) => (
                   <div key={i}>
                     <p className="u-fontSize--normal u-color--mutedteal u-fontWeight--bold u-marginTop--20">{Utilities.toTitleCase(state)}</p>
-                    {appResourcesByState?.statesMap[state]?.map(resource => (
-                      <div>
+                    {appResourcesByState?.statesMap[state]?.map((resource, i) => (
+                      <div key={`${resource?.name}-${i}`}>
                       <p className={`ResourceStateText u-fontSize--normal ${resource.state}`}>
                         {resource?.namespace}/{resource?.kind}/{resource?.name}
                       </p>
