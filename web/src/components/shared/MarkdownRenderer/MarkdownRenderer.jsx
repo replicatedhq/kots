@@ -8,8 +8,7 @@ const md = Markdown();
 export default class MarkdownRenderer extends React.Component {
 
   componentDidMount() {
-    const anchors = document.getElementById("markdown-wrapper").getElementsByTagName("a");
-
+    const anchors = document.getElementById(this.props.id).getElementsByTagName("a");
     for (let i=0; i < anchors.length; i++) {
       anchors[i].setAttribute("target", "_blank");
     }
@@ -21,8 +20,8 @@ export default class MarkdownRenderer extends React.Component {
     return (
       <div className={className}>
         <div
-          id="markdown-wrapper"
-          className="is-kotsadm markdown-wrapper"
+          id={this.props.id}
+          className={`${className || ""} markdown-wrapper`}
           dangerouslySetInnerHTML={{ __html: md.render(children)}}
         />
       </div>

@@ -2,7 +2,7 @@ import * as React from "react";
 import Loader from "../shared/Loader";
 import isEmpty from "lodash/isEmpty";
 import filter from "lodash/filter";
-import sortBy from "lodash/sortBy";
+import MarkdownRenderer from "@src/components/shared/MarkdownRenderer";
 import { sortAnalyzers, parseIconUri } from "../../utilities/utilities";
 
 export class AnalyzerInsights extends React.Component {
@@ -156,7 +156,9 @@ export class AnalyzerInsights extends React.Component {
                             }
                           </div>
                           <p className={tile.severity === "debug" ? "u-textColor--bodyCopy u-fontSize--normal u-fontWeight--bold" : "u-textColor--primary u-fontSize--normal u-fontWeight--bold"}>{tile.primary}</p>
-                          <p className={tile.severity === "debug" ? "u-textColor--bodyCopy u-fontSize--smaller u-fontWeight--medium u-marginTop--5" : "u-textColor--accent u-fontSize--smaller u-fontWeight--medium u-marginTop--5"}>{tile.detail}</p>
+                          <MarkdownRenderer id={`markdown-wrapper-${i}`} className={tile.severity === "debug" ? "u-textColor--bodyCopy u-fontSize--smaller u-fontWeight--medium u-marginTop--5" : "u-textColor--accent u-fontSize--smaller u-fontWeight--medium u-marginTop--5"}>
+                            {tile.detail}
+                          </MarkdownRenderer>
                         </div>
                       </div>
                     )

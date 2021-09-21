@@ -999,7 +999,7 @@ class AppVersionHistory extends Component {
           className="Modal LargeSize"
         >
           <div className="flex-column">
-            <MarkdownRenderer>
+            <MarkdownRenderer className="is-kotsadm" id="markdown-wrapper">
               {currentMidstreamVersion?.releaseNotes || "No release notes for this version"}
             </MarkdownRenderer>
           </div>
@@ -1042,7 +1042,7 @@ class AppVersionHistory extends Component {
           className="Modal MediumSize"
         >
           <div className="flex-column">
-            <MarkdownRenderer>
+            <MarkdownRenderer className="is-kotsadm" id="markdown-wrapper">
               {downstreamReleaseNotes || ""}
             </MarkdownRenderer>
           </div>
