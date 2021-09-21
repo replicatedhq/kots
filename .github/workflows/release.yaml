@@ -413,7 +413,9 @@ jobs:
         export TAG=$(curl --silent "https://api.github.com/repos/replicatedhq/kots/releases/latest" | grep -Po '"tag_name": "\K.*?(?=")')
         echo "GORELEASER_PREVIOUS_TAG=${TAG}" >> $GITHUB_ENV
 
-    - uses: sigstore/cosign-installer@v1
+    - uses: sigstore/cosign-installer@main
+      with:
+        cosign-release: 'v1.2.1'
 
     - name: Get Cosign Key
       run: |
