@@ -1,4 +1,5 @@
-FROM postgres:10.18-alpine
+ARG TAG=10.18-alpine
+FROM postgres:$TAG
 
 ENV POSTGRES_USER=kotsadm
 ENV POSTGRES_PASSWORD=password
