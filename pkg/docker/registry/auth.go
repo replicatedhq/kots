@@ -54,7 +54,7 @@ func CheckAccess(endpoint, username, password, org string, requestedAction Scope
 	scope := org + "/testrepo"
 	basicAuthToken := makeBasicAuthToken(username, password)
 
-	if IsECREndpoint(endpoint) {
+	if IsECREndpoint(endpoint) && username != "AWS" {
 		token, err := GetECRBasicAuthToken(endpoint, username, password)
 		if err != nil {
 			return errors.Wrap(err, "failed to ping registry")
