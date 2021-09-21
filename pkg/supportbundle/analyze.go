@@ -10,7 +10,9 @@ import (
 func InjectDefaultAnalyzers(analyzers []*troubleshootv1beta2.Analyze) []*troubleshootv1beta2.Analyze {
 	analyzers = append(analyzers, getAPIReplicaAnalyzer())
 	analyzers = append(analyzers, getNoGvisorAnalyzer())
-	analyzers = append(analyzers, getIfMissingKubernetesVersionAnalyzer(analyzers))
+	if a := getIfMissingKubernetesVersionAnalyzer(analyzers); a != nil {
+		analyzers = append(analyzers, a)
+	}
 	analyzers = append(analyzers, getCephAnalyzers())
 	analyzers = append(analyzers, getLonghornAnalyzers())
 	analyzers = append(analyzers, getWeaveReportAnalyzer())
