@@ -604,7 +604,7 @@ class DashboardVersionCard extends React.Component {
     return (
       <div className="flex-column flex1 dashboard-card">
         <div className="flex flex1 justifyContent--spaceBetween alignItems--center u-marginBottom--10">
-          <p className="u-fontSize--large u-textColor--primary u-fontWeight--bold">Versions</p>
+          <p className="u-fontSize--large u-textColor--primary u-fontWeight--bold">Version</p>
           <div className="flex alignItems--center">
             {app?.isAirgap && airgapUploader ?
               <MountAware onMount={el => this.props.airgapUploader?.assignElement(el)}>
