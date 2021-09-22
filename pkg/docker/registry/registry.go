@@ -108,6 +108,11 @@ func PullSecretForRegistries(registries []string, username, password string, kub
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      secretName,
 			Namespace: kuberneteNamespace,
+			// try to ensure this is created first if using a helm install
+			Annotations: map[string]string{
+				"helm.sh/hook":        "pre-install,pre-upgrade",
+				"helm.sh/hook-weight": "-99",
+			},
 		},
 		Type: corev1.SecretTypeDockerConfigJson,
 		Data: map[string][]byte{
