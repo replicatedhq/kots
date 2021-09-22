@@ -152,7 +152,7 @@ func (c *Client) DeployApp(deployArgs operatortypes.DeployAppArgs) {
 		deployRes = &deployResult{}
 		deployRes.applyResult.hasErr = true
 		deployRes.applyResult.multiStderr = [][]byte{[]byte(deployError.Error())}
-		log.Printf("falied to deploy manifests: %v", deployError)
+		log.Printf("failed to deploy manifests: %v", deployError)
 		return
 	}
 
@@ -161,7 +161,7 @@ func (c *Client) DeployApp(deployArgs operatortypes.DeployAppArgs) {
 		helmResult = &commandResult{}
 		helmResult.hasErr = true
 		helmResult.multiStderr = [][]byte{[]byte(helmError.Error())}
-		log.Printf("falied to deploy helm charts: %v", helmError)
+		log.Printf("failed to deploy helm charts: %v", helmError)
 		return
 	}
 
