@@ -780,12 +780,12 @@ jobs:
         uses: 8398a7/action-slack@v3
         with:
           status: custom
-          fields: repo,ref,workflow,job,took
+          fields: repo,ref,workflow
           custom_payload: |
             {
               attachments: [{
                 color: '${{ job.status }}' === 'success' ? 'good' : '${{ job.status }}' === 'failure' ? 'danger' : 'warning',
-                text: `${process.env.AS_WORKFLOW}\n${process.env.AS_JOB} of ${process.env.AS_REPO}@${process.env.AS_REF}\n${{ job.status }} in ${process.env.AS_TOOK}`,
+                text: `${{ job.status }} in ${process.env.AS_WORKFLOW} of ${process.env.AS_REPO}@${process.env.AS_REF}`,
               }]
             }
         env:
@@ -825,12 +825,12 @@ jobs:
         uses: 8398a7/action-slack@v3
         with:
           status: custom
-          fields: repo,ref,workflow,job,took
+          fields: repo,ref,workflow
           custom_payload: |
             {
               attachments: [{
                 color: '${{ job.status }}' === 'success' ? 'good' : '${{ job.status }}' === 'failure' ? 'danger' : 'warning',
-                text: `${process.env.AS_WORKFLOW}\n${process.env.AS_JOB} of ${process.env.AS_REPO}@${process.env.AS_REF}\n${{ job.status }} in ${process.env.AS_TOOK}`,
+                text: `${{ job.status }} in ${process.env.AS_WORKFLOW} of ${process.env.AS_REPO}@${process.env.AS_REF}`,
               }]
             }
         env:
@@ -885,12 +885,12 @@ jobs:
         uses: 8398a7/action-slack@v3
         with:
           status: custom
-          fields: repo,ref,workflow,job,took
+          fields: repo,ref,workflow
           custom_payload: |
             {
               attachments: [{
                 color: '${{ job.status }}' === 'success' ? 'good' : '${{ job.status }}' === 'failure' ? 'danger' : 'warning',
-                text: `${process.env.AS_WORKFLOW}\n${process.env.AS_JOB} of ${process.env.AS_REPO}@${process.env.AS_REF}\n${{ job.status }} in ${process.env.AS_TOOK}`,
+                text: `${{ job.status }} in ${process.env.AS_WORKFLOW} of ${process.env.AS_REPO}@${process.env.AS_REF}`,
               }]
             }
         env:
@@ -1011,12 +1011,12 @@ jobs:
         uses: 8398a7/action-slack@v3
         with:
           status: custom
-          fields: repo,ref,workflow,job,took
+          fields: repo,ref,workflow
           custom_payload: |
             {
               attachments: [{
                 color: '${{ job.status }}' === 'success' ? 'good' : '${{ job.status }}' === 'failure' ? 'danger' : 'warning',
-                text: `${process.env.AS_WORKFLOW}\n${process.env.AS_JOB} of ${process.env.AS_REPO}@${process.env.AS_REF}\n${{ job.status }} in ${process.env.AS_TOOK}`,
+                text: `${{ job.status }} in ${process.env.AS_WORKFLOW} of ${process.env.AS_REPO}@${process.env.AS_REF}`,
               }]
             }
         env:
@@ -1128,12 +1128,12 @@ jobs:
         uses: 8398a7/action-slack@v3
         with:
           status: custom
-          fields: repo,ref,workflow,job,took
+          fields: repo,ref,workflow
           custom_payload: |
             {
               attachments: [{
                 color: '${{ job.status }}' === 'success' ? 'good' : '${{ job.status }}' === 'failure' ? 'danger' : 'warning',
-                text: `${process.env.AS_WORKFLOW}\n${process.env.AS_JOB} of ${process.env.AS_REPO}@${process.env.AS_REF}\n${{ job.status }} in ${process.env.AS_TOOK}`,
+                text: `${{ job.status }} in ${process.env.AS_WORKFLOW} of ${process.env.AS_REPO}@${process.env.AS_REF}`,
               }]
             }
         env:
