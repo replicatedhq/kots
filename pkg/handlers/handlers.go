@@ -28,7 +28,7 @@ func init() {
 }
 
 func RegisterSessionAuthRoutes(r *mux.Router, kotsStore store.Store, handler KOTSHandler, middleware *policy.Middleware) {
-	r.Use(RequireValidSessionMiddleware(kotsStore))
+	r.Use(LoggingMiddleware, RequireValidSessionMiddleware(kotsStore))
 
 	// Installation
 	r.Name("UploadNewLicense").Path("/api/v1/license").Methods("POST").
