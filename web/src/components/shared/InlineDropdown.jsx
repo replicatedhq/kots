@@ -6,8 +6,7 @@ import "../../scss/components/shared/InlineDropdown.scss";
 export default class InlineDropdown extends React.Component {
   
   state = { 
-    showOptions: false,
-    displayText: this.props.defaultDisplayText || ""
+    showOptions: false
   }
 
   toggleDropdownVisible = () => {
@@ -18,7 +17,7 @@ export default class InlineDropdown extends React.Component {
     /* Option object
       {
         displayText: String,
-        link | onClick: String | Func
+        link | href | onClick: String | String | Func
       }
     */
     const { dropdownOptions } = this.props;
@@ -27,7 +26,10 @@ export default class InlineDropdown extends React.Component {
     return dropdownOptions.map((opt, i) => {
       if (opt.link) {
         return <Link className="option" key={i} to={opt.link}>{opt.displayText}</Link>
-      } else if (opt.onClick) {
+      } else if (opt.href) {
+        return <a target="_blank" mrel="noopener noreferrer" className="option" key={i} href={opt.href}>{opt.displayText}</a>
+      }
+      else if (opt.onClick) {
         return <div className="option" key={i} onClick={opt.onClick}>{opt.displayText}</div>
       }
     });
@@ -35,15 +37,14 @@ export default class InlineDropdown extends React.Component {
 
   render() {
     const {
-      showOptions,
-      displayText
+      showOptions
     } = this.state;
 
     return (
       <ClickOutsideAction onOutsideClick={() => this.setState({ showOptions: false })}>
         <div className={`InlineDropdown--wrapper ${showOptions ? "show-options" : ""}`}>
           <div className="flex flex-auto alignItems--center" onClick={() => this.toggleDropdownVisible()}>
-            <span className="display-text">{displayText}</span>
+            <span className="display-text">{this.props.defaultDisplayText || ""}</span>
             <span className="icon clickable down-arrow-icon-blue u-marginLeft--5" />
           </div>
           <div className="Options--wrapper">

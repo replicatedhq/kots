@@ -41,6 +41,7 @@
       color: $link-color;
       padding: 8px;
       cursor: pointer;
+      display: block;
       transition: background-color .2s ease-in-out;
 
       &:hover {

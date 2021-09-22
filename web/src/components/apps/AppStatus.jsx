@@ -1,6 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import Select from "react-select";
+import InlineDropdown from "../shared/InlineDropdown";
 import isEmpty from "lodash/isEmpty";
 import url from "url";
 import { Utilities } from "@src/utilities/utilities";
@@ -8,26 +8,33 @@ import { Utilities } from "@src/utilities/utilities";
 export default class AppStatus extends React.Component {
 
   state = {
-    selectedAction: "",
+    dropdownOptions: [],
   }
 
   componentDidMount() {
     if (this.props.links && this.props.links.length > 0) {
-      this.setState({ selectedAction: this.props.links[0] })
+      this.getOptions();
     }
   }
 
   componentDidUpdate(lastProps) {
     if (this.props.links !== lastProps.links && this.props.links && this.props.links.length > 0) {
-      this.setState({ selectedAction: this.props.links[0] })
+      this.getOptions();
     }
   }
 
-  onActionChange = (selectedOption) => {
-    if (selectedOption.uri) {
-      window.open(this.createDashboardActionLink(selectedOption.uri), "_blank");
-    }
-    this.setState({ selectedAction: selectedOption });
+  getOptions = () => {
+    const { links } = this.props;
+    let dropdownLinks = [];
+
+    links.map(link => {
+      const linkObj = {
+        displayText: link.title,
+        href: link.uri
+      };
+      dropdownLinks.push(linkObj);
+    })
+    this.setState({ dropdownOptions: dropdownLinks });
   }
 
   createDashboardActionLink = (uri) => {
@@ -44,7 +51,9 @@ export default class AppStatus extends React.Component {
 
   render() {
     const { appStatus, url, links, app } = this.props;
-    const { selectedAction } = this.state;
+    const { selectedAction, dropdownOptions } = this.state;
+    const defaultDisplayText = dropdownOptions.length > 0 ? dropdownOptions[0].displayText : "";
+
     return (
       <div className="flex flex1 u-marginTop--10">
       {!isEmpty(appStatus) ?
@@ -67,21 +76,14 @@ export default class AppStatus extends React.Component {
         </div>
       }
       {links?.length > 0 ? // TODO: fix this and make it an inline dropdown
-        <div className="flex alignItems--center u-marginLeft--10 u-borderLeft--gray u-paddingLeft--10">
+        <div className="flex alignItems--center u-marginLeft--10 u-borderLeft--gray u-paddingLeft--10 u-fontSize--small u-fontWeight--medium">
           {links?.length > 1 ?
-              <Select
-                className="replicated-select-container"
-                classNamePrefix="replicated-select"
-                options={links}
-                getOptionLabel={(link) => link.title}
-                getOptionValue={(option) => option.title}
-                value={selectedAction}
-                onChange={this.onActionChange}
-                isOptionSelected={(option) => { option.title === selectedAction.title }}
-              />
+            <InlineDropdown
+              defaultDisplayText={defaultDisplayText}
+              dropdownOptions={dropdownOptions} />
             :
-            selectedAction?.uri ?
-              <a href={this.createDashboardActionLink(selectedAction.uri)} target="_blank" rel="noopener noreferrer" className="card-link"> {selectedAction.title} </a> : null
+            links[0]?.uri ?
+              <a href={this.createDashboardActionLink(links[0].uri)} target="_blank" rel="noopener noreferrer" className="card-link"> {links[0].title} </a> : null
           }
         </div>
         : null
