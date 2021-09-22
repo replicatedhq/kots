@@ -111,7 +111,7 @@ func PullSecretForRegistries(registries []string, username, password string, kub
 			// try to ensure this is created first if using a helm install
 			Annotations: map[string]string{
 				"helm.sh/hook":        "pre-install,pre-upgrade",
-				"helm.sh/hook-weight": "-99",
+				"helm.sh/hook-weight": "-9999",
 			},
 		},
 		Type: corev1.SecretTypeDockerConfigJson,
