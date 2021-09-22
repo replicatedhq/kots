@@ -128,3 +128,26 @@ project-pact-tests:
 .PHONY: cache
 cache:
 	docker build -f hack/dev/Dockerfile.skaffoldcache . -t kotsadm:cache
+
+.PHONY: init-sbom
+init-sbom:
+	mkdir -p sbom/spdx 
+
+.PHONY: install-spdx-sbom-generator
+install-spdx-sbom-generator: init-sbom  
+ifeq (,$(shell command -v spdx-sbom-generator))
+	./scripts/install-sbom-generator.sh
+SPDX_GENERATOR=./sbom/spdx-sbom-generator
+else
+SPDX_GENERATOR=$(shell command -v spdx-sbom-generator)
+endif
+
+sbom/spdx/bom-go-mod.spdx: install-spdx-sbom-generator
+	$(SPDX_GENERATOR) -o ./sbom/spdx 
+
+sbom/kots-sbom.tgz: sbom/spdx/bom-go-mod.spdx 
+	tar -czf sbom/kots-sbom.tgz sbom/spdx/*.spdx
+
+sbom: sbom/kots-sbom.tgz
+	cosign sign-blob -key ./cosign.key sbom/kots-sbom.tgz > ./sbom/kots-sbom.tgz.sig
+	cosign public-key -key ./cosign.key -outfile ./sbom/key.pub
