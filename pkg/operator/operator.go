@@ -10,6 +10,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 
@@ -226,7 +227,7 @@ func deployVersionForApp(a *apptypes.App, deployedVersion *downstreamtypes.Downs
 		return deployError
 	}
 
-	imagePullSecret := ""
+	imagePullSecrets := []string{}
 	secretFilename := filepath.Join(deployedVersionArchive, "overlays", "midstream", "secret.yaml")
 	_, err = os.Stat(secretFilename)
 	if err != nil && !os.IsNotExist(err) {
@@ -239,7 +240,7 @@ func deployVersionForApp(a *apptypes.App, deployedVersion *downstreamtypes.Downs
 			deployError = errors.Wrap(err, "failed to read image pull secret file")
 			return deployError
 		}
-		imagePullSecret = string(b)
+		imagePullSecrets = strings.Split(string(b), "\n---\n")
 	}
 
 	// get previous manifests (if any)
@@ -305,7 +306,7 @@ func deployVersionForApp(a *apptypes.App, deployedVersion *downstreamtypes.Downs
 		Sequence:             deployedVersion.ParentSequence,
 		KubectlVersion:       kotsKinds.KotsApplication.Spec.KubectlVersion,
 		AdditionalNamespaces: kotsKinds.KotsApplication.Spec.AdditionalNamespaces,
-		ImagePullSecret:      imagePullSecret,
+		ImagePullSecrets:     imagePullSecrets,
 		Namespace:            ".",
 		Manifests:            base64EncodedManifests,
 		PreviousManifests:    base64EncodedPreviousManifests,

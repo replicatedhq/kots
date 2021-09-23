@@ -29,7 +29,7 @@ func UpdateCollectorSpecsWithRegistryData(collectors []*troubleshootv1beta2.Coll
 				run := collect.Run
 
 				run.Image = rewriteImage(localRegistryInfo.Hostname, localRegistryInfo.Namespace, run.Image)
-				pullSecret, err := kotsregistry.PullSecretForRegistries([]string{localRegistryInfo.Hostname}, localRegistryInfo.Username, localRegistryInfo.Password, run.Namespace, "")
+				pullSecrets, err := kotsregistry.PullSecretForRegistries([]string{localRegistryInfo.Hostname}, localRegistryInfo.Username, localRegistryInfo.Password, run.Namespace, "")
 				if err != nil {
 					return nil, errors.Wrap(err, "failed to generate pull secret for registry")
 				}
@@ -37,14 +37,14 @@ func UpdateCollectorSpecsWithRegistryData(collectors []*troubleshootv1beta2.Coll
 				run.ImagePullSecret = &troubleshootv1beta2.ImagePullSecrets{
 					SecretType: "kubernetes.io/dockerconfigjson",
 					Data: map[string]string{
-						".dockerconfigjson": base64.StdEncoding.EncodeToString(pullSecret.Data[".dockerconfigjson"]),
+						".dockerconfigjson": base64.StdEncoding.EncodeToString(pullSecrets.AdminConsoleSecret.Data[".dockerconfigjson"]),
 					},
 				}
 				collect.Run = run
 
 				updatedCollectors[idx] = collect
 			} else if collect.RegistryImages != nil {
-				pullSecret, err := kotsregistry.PullSecretForRegistries([]string{localRegistryInfo.Hostname}, localRegistryInfo.Username, localRegistryInfo.Password, collect.RegistryImages.Namespace, "")
+				pullSecrets, err := kotsregistry.PullSecretForRegistries([]string{localRegistryInfo.Hostname}, localRegistryInfo.Username, localRegistryInfo.Password, collect.RegistryImages.Namespace, "")
 				if err != nil {
 					return nil, errors.Wrap(err, "failed to generate pull secret for registry")
 				}
@@ -52,7 +52,7 @@ func UpdateCollectorSpecsWithRegistryData(collectors []*troubleshootv1beta2.Coll
 				collect.RegistryImages.ImagePullSecrets = &troubleshootv1beta2.ImagePullSecrets{
 					SecretType: "kubernetes.io/dockerconfigjson",
 					Data: map[string]string{
-						".dockerconfigjson": base64.StdEncoding.EncodeToString(pullSecret.Data[".dockerconfigjson"]),
+						".dockerconfigjson": base64.StdEncoding.EncodeToString(pullSecrets.AdminConsoleSecret.Data[".dockerconfigjson"]),
 					},
 				}
 
@@ -91,7 +91,7 @@ func UpdateCollectorSpecsWithRegistryData(collectors []*troubleshootv1beta2.Coll
 						if len(tag) > 1 {
 							run.Image = fmt.Sprintf("%s:%s", run.Image, tag[len(tag)-1])
 						}
-						pullSecret, err := kotsregistry.PullSecretForRegistries([]string{registryProxyInfo.Proxy}, license.Spec.LicenseID, license.Spec.LicenseID, run.Namespace, "")
+						pullSecrets, err := kotsregistry.PullSecretForRegistries([]string{registryProxyInfo.Proxy}, license.Spec.LicenseID, license.Spec.LicenseID, run.Namespace, "")
 						if err != nil {
 							return nil, errors.Wrap(err, "failed to generate pull secret for proxy registry")
 						}
@@ -99,13 +99,13 @@ func UpdateCollectorSpecsWithRegistryData(collectors []*troubleshootv1beta2.Coll
 						run.ImagePullSecret = &troubleshootv1beta2.ImagePullSecrets{
 							SecretType: "kubernetes.io/dockerconfigjson",
 							Data: map[string]string{
-								".dockerconfigjson": base64.StdEncoding.EncodeToString(pullSecret.Data[".dockerconfigjson"]),
+								".dockerconfigjson": base64.StdEncoding.EncodeToString(pullSecrets.AdminConsoleSecret.Data[".dockerconfigjson"]),
 							},
 						}
 
 						collect.Run = run
 					} else {
-						pullSecret, err := kotsregistry.PullSecretForRegistries([]string{registryProxyInfo.Registry}, license.Spec.LicenseID, license.Spec.LicenseID, run.Namespace, "")
+						pullSecrets, err := kotsregistry.PullSecretForRegistries([]string{registryProxyInfo.Registry}, license.Spec.LicenseID, license.Spec.LicenseID, run.Namespace, "")
 						if err != nil {
 							return nil, errors.Wrap(err, "failed to generate pull secret for replicated registry")
 						}
@@ -113,7 +113,7 @@ func UpdateCollectorSpecsWithRegistryData(collectors []*troubleshootv1beta2.Coll
 						run.ImagePullSecret = &troubleshootv1beta2.ImagePullSecrets{
 							SecretType: "kubernetes.io/dockerconfigjson",
 							Data: map[string]string{
-								".dockerconfigjson": base64.StdEncoding.EncodeToString(pullSecret.Data[".dockerconfigjson"]),
+								".dockerconfigjson": base64.StdEncoding.EncodeToString(pullSecrets.AdminConsoleSecret.Data[".dockerconfigjson"]),
 							},
 						}
 

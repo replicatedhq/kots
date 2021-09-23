@@ -1,10 +1,14 @@
 package cli
 
 import (
+	"io/ioutil"
 	"os"
 	"path"
+	"strings"
 
 	"github.com/pkg/errors"
+	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
+	"github.com/replicatedhq/kots/kotskinds/client/kotsclientset/scheme"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/pull"
@@ -39,7 +43,13 @@ func PullCmd() *cobra.Command {
 				}
 			}
 
+			appSlug, err := getAppSlugForPull(args[0], v.GetString("license-file"))
+			if err != nil {
+				return errors.Wrap(err, "failed to determine app slug")
+			}
+
 			pullOptions := pull.PullOptions{
+				AppSlug:             appSlug,
 				HelmRepoURI:         v.GetString("repo"),
 				RootDir:             ExpandDir(v.GetString("rootdir")),
 				Namespace:           v.GetString("namespace"),
@@ -131,4 +141,30 @@ func PullCmd() *cobra.Command {
 	cmd.Flags().MarkHidden("load-apiversions-from-server")
 
 	return cmd
+}
+
+func getAppSlugForPull(uri string, licenseFile string) (string, error) {
+	appSlug := strings.Split(uri, "/")[0]
+	if licenseFile == "" {
+		return appSlug, nil
+	}
+
+	licenseData, err := ioutil.ReadFile(licenseFile)
+	if err != nil {
+		return "", errors.Wrap(err, "failed to read license file")
+	}
+
+	decode := scheme.Codecs.UniversalDeserializer().Decode
+	decoded, gvk, err := decode(licenseData, nil, nil)
+	if err != nil {
+		return "", errors.Wrap(err, "unable to decode license file")
+	}
+
+	if gvk.Group != "kots.io" || gvk.Version != "v1beta1" || gvk.Kind != "License" {
+		return "", errors.New("not an application license")
+	}
+
+	license := decoded.(*kotsv1beta1.License)
+
+	return license.Spec.AppSlug, nil
 }
