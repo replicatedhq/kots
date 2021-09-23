@@ -939,6 +939,12 @@ func KotsadmStatefulSet(deployOptions types.DeployOptions, size resource.Quantit
 								EmptyDir: &corev1.EmptyDirVolumeSource{},
 							},
 						},
+						{
+							Name: "tmp",
+							VolumeSource: corev1.VolumeSource{
+								EmptyDir: &corev1.EmptyDirVolumeSource{},
+							},
+						},
 					},
 					ServiceAccountName: "kotsadm",
 					RestartPolicy:      corev1.RestartPolicyAlways,
@@ -1169,6 +1175,10 @@ func KotsadmStatefulSet(deployOptions types.DeployOptions, size resource.Quantit
 								{
 									Name:      "backup",
 									MountPath: "/backup",
+								},
+								{
+									Name:      "tmp",
+									MountPath: "/tmp",
 								},
 							},
 							Env: env,
