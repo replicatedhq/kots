@@ -68,6 +68,9 @@ func DeleteUnusedImages(appID string, ignoreRollback bool) error {
 		return nil
 	}
 
+	// we check all apps here because different apps could share the same images,
+	// and the images could be active in one but not the other.
+	// so, we also do not delete the images if rollback is enabled for any app.
 	appIDs, err := store.GetStore().GetAppIDsFromRegistry(registrySettings.Hostname)
 	if err != nil {
 		return errors.Wrap(err, "failed to get apps with registry")
