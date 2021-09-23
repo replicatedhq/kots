@@ -75,7 +75,7 @@ func TestBuilder_populateNamespaces(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			req := require.New(t)
 
-			populateNamespaces(&tt.supportBundle)
+			populateNamespaces(&tt.supportBundle, []string{})
 
 			req.Equal(tt.want, tt.supportBundle)
 		})
