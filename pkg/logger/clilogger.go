@@ -103,29 +103,32 @@ func (l *CLILogger) ActionWithSpinner(msg string, args ...interface{}) {
 	fmt.Printf("  • ")
 	fmt.Printf(msg, args...)
 
-	if isatty.IsTerminal(os.Stdout.Fd()) {
-		s := spin.New()
-
-		fmt.Printf(" %s", s.Next())
-
-		l.spinnerStopCh = make(chan bool)
-		l.spinnerMsg = msg
-		l.spinnerArgs = args
-
-		go func() {
-			for {
-				select {
-				case <-l.spinnerStopCh:
-					return
-				case <-time.After(time.Millisecond * 100):
-					fmt.Printf("\r")
-					fmt.Printf("  • ")
-					fmt.Printf(msg, args...)
-					fmt.Printf(" %s", s.Next())
-				}
-			}
-		}()
+	if !isatty.IsTerminal(os.Stdout.Fd()) {
+		fmt.Println()
+		return
 	}
+
+	s := spin.New()
+
+	fmt.Printf(" %s", s.Next())
+
+	l.spinnerStopCh = make(chan bool)
+	l.spinnerMsg = msg
+	l.spinnerArgs = args
+
+	go func() {
+		for {
+			select {
+			case <-l.spinnerStopCh:
+				return
+			case <-time.After(time.Millisecond * 100):
+				fmt.Printf("\r")
+				fmt.Printf("  • ")
+				fmt.Printf(msg, args...)
+				fmt.Printf(" %s", s.Next())
+			}
+		}
+	}()
 }
 
 func (l *CLILogger) ChildActionWithSpinner(msg string, args ...interface{}) {
@@ -136,33 +139,41 @@ func (l *CLILogger) ChildActionWithSpinner(msg string, args ...interface{}) {
 	fmt.Printf("    • ")
 	fmt.Printf(msg, args...)
 
-	if isatty.IsTerminal(os.Stdout.Fd()) {
-		s := spin.New()
-
-		fmt.Printf(" %s", s.Next())
-
-		l.spinnerStopCh = make(chan bool)
-		l.spinnerMsg = msg
-		l.spinnerArgs = args
-
-		go func() {
-			for {
-				select {
-				case <-l.spinnerStopCh:
-					return
-				case <-time.After(time.Millisecond * 100):
-					fmt.Printf("\r")
-					fmt.Printf("    • ")
-					fmt.Printf(msg, args...)
-					fmt.Printf(" %s", s.Next())
-				}
-			}
-		}()
+	if !isatty.IsTerminal(os.Stdout.Fd()) {
+		fmt.Println()
+		return
 	}
+
+	s := spin.New()
+
+	fmt.Printf(" %s", s.Next())
+
+	l.spinnerStopCh = make(chan bool)
+	l.spinnerMsg = msg
+	l.spinnerArgs = args
+
+	go func() {
+		for {
+			select {
+			case <-l.spinnerStopCh:
+				return
+			case <-time.After(time.Millisecond * 100):
+				fmt.Printf("\r")
+				fmt.Printf("    • ")
+				fmt.Printf(msg, args...)
+				fmt.Printf(" %s", s.Next())
+			}
+		}
+	}()
 }
 
 func (l *CLILogger) FinishChildSpinner() {
 	if l == nil || l.isSilent {
+		return
+	}
+
+	if !isatty.IsTerminal(os.Stdout.Fd()) {
+		fmt.Println("    •  ✓")
 		return
 	}
 
@@ -174,14 +185,17 @@ func (l *CLILogger) FinishChildSpinner() {
 	green.Printf(" ✓")
 	fmt.Printf("  \n")
 
-	if isatty.IsTerminal(os.Stdout.Fd()) {
-		l.spinnerStopCh <- true
-		close(l.spinnerStopCh)
-	}
+	l.spinnerStopCh <- true
+	close(l.spinnerStopCh)
 }
 
 func (l *CLILogger) FinishSpinner() {
 	if l == nil || l.isSilent {
+		return
+	}
+
+	if !isatty.IsTerminal(os.Stdout.Fd()) {
+		fmt.Println("  •  ✓")
 		return
 	}
 
@@ -193,14 +207,17 @@ func (l *CLILogger) FinishSpinner() {
 	green.Printf(" ✓")
 	fmt.Printf("  \n")
 
-	if isatty.IsTerminal(os.Stdout.Fd()) {
-		l.spinnerStopCh <- true
-		close(l.spinnerStopCh)
-	}
+	l.spinnerStopCh <- true
+	close(l.spinnerStopCh)
 }
 
 func (l *CLILogger) FinishSpinnerWithError() {
 	if l == nil || l.isSilent {
+		return
+	}
+
+	if !isatty.IsTerminal(os.Stdout.Fd()) {
+		fmt.Println("  •  ✗")
 		return
 	}
 
@@ -212,15 +229,18 @@ func (l *CLILogger) FinishSpinnerWithError() {
 	red.Printf(" ✗")
 	fmt.Printf("  \n")
 
-	if isatty.IsTerminal(os.Stdout.Fd()) {
-		l.spinnerStopCh <- true
-		close(l.spinnerStopCh)
-	}
+	l.spinnerStopCh <- true
+	close(l.spinnerStopCh)
 }
 
 // FinishSpinnerWithWarning if no color is provided, color.FgYellow will be used
 func (l *CLILogger) FinishSpinnerWithWarning(c *color.Color) {
 	if l == nil || l.isSilent {
+		return
+	}
+
+	if !isatty.IsTerminal(os.Stdout.Fd()) {
+		fmt.Println("  •  !")
 		return
 	}
 
@@ -234,10 +254,8 @@ func (l *CLILogger) FinishSpinnerWithWarning(c *color.Color) {
 	c.Printf(" !")
 	fmt.Printf("  \n")
 
-	if isatty.IsTerminal(os.Stdout.Fd()) {
-		l.spinnerStopCh <- true
-		close(l.spinnerStopCh)
-	}
+	l.spinnerStopCh <- true
+	close(l.spinnerStopCh)
 }
 
 func (l *CLILogger) Error(err error) {
