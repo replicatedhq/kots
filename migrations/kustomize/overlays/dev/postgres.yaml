@@ -6,12 +6,11 @@ metadata:
   labels:
     app: kotsadm-postgres
 spec:
-  type: NodePort
+  type: ClusterIP
   ports:
   - name: postgres
     port: 5432
     targetPort: postgres
-    nodePort: 30432
   selector:
     app: kotsadm-postgres
 ---
