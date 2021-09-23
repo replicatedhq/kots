@@ -123,19 +123,24 @@ export default class DashboardLicenseCard extends React.Component {
         </div>
         <div className="LicenseCard-content--wrapper u-marginTop--10">
           {size(appLicense) > 0 ?
-            <div className="flex-column flex1">
-              <div className="flex alignItems--center">
-                <p className="u-fontSize--large u-fontWeight--medium u-textColor--header"> {appLicense?.assignee}</p>
-                {appLicense?.channelName && <span className="channelTag flex-auto alignItems--center u-fontWeight--medium u-marginLeft--10"> {appLicense.channelName} </span>}
-              </div>
-              <div className="flex flex1 alignItems--center u-marginTop--15">
-                <div className={`LicenseTypeTag ${appLicense?.licenseType} flex-auto justifyContent--center alignItems--center`}>
-                  <span className={`icon ${appLicense?.licenseType === "---" ? "" : appLicense?.licenseType}-icon`}></span>
-                  {appLicense?.licenseType !== "---"
-                    ? `${Utilities.toTitleCase(appLicense.licenseType)} license`
-                    : `---`}
+            <div className="flex">
+              <div className="flex-column flex1">
+                <div className="flex alignItems--center">
+                  <p className="u-fontSize--large u-fontWeight--medium u-textColor--header"> {appLicense?.assignee}</p>
+                  {appLicense?.channelName && <span className="channelTag flex-auto alignItems--center u-fontWeight--medium u-marginLeft--10"> {appLicense.channelName} </span>}
                 </div>
-                <span className="u-fontSize--small u-fontWeight--medium u-textColor--bodyCopy u-marginLeft--10"> Expires {expiresAt} </span>
+                <div className="flex flex1 alignItems--center u-marginTop--15">
+                  <div className={`LicenseTypeTag ${appLicense?.licenseType} flex-auto justifyContent--center alignItems--center`}>
+                    <span className={`icon ${appLicense?.licenseType === "---" ? "" : appLicense?.licenseType}-icon`}></span>
+                    {appLicense?.licenseType !== "---"
+                      ? `${Utilities.toTitleCase(appLicense.licenseType)} license`
+                      : `---`}
+                  </div>
+                  <span className="u-fontSize--small u-fontWeight--medium u-textColor--bodyCopy u-marginLeft--10"> Expires {expiresAt} </span>
+                </div>
+              </div>
+              <div className="flex-column flex-auto justifyContent--center">
+                {appLicense.lastSyncedAt && <span className="u-fontSize--small u-textColor--header u-fontWeight--medium u-lineHeight--normal">Last synced {Utilities.dateFromNow(appLicense.lastSyncedAt)}</span>}
               </div>
             </div>
             :

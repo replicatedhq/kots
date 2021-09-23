@@ -298,6 +298,8 @@ spec:
         type: boolean
       - name: last_registry_sync
         type: integer
+      - name: last_license_sync
+        type: integer
       - name: install_state
         type: text
       - name: is_airgap

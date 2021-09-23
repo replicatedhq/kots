@@ -79,6 +79,11 @@ func Sync(a *apptypes.App, licenseString string, failOnVersionCreate bool) (*kot
 			return nil, false, errors.Wrap(err, "failed to run preflights")
 		}
 		synced = true
+	} else {
+		err := store.GetStore().UpdateAppLicenseSyncNow(a.ID)
+		if err != nil {
+			return nil, false, errors.Wrap(err, "failed to update license sync time")
+		}
 	}
 
 	return updatedLicense, synced, nil

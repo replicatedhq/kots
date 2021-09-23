@@ -238,7 +238,7 @@ class DashboardVersionCard extends React.Component {
             <div className="flex alignItems--center u-marginTop--10">
               <span className={`icon versionUpdateType u-marginRight--5 ${this.getUpdateTypeClassname(currentVersion.source)}`} data-tip={currentVersion.source} />
               <ReactTooltip effect="solid" className="replicated-tooltip" />
-              <p className="u-fontSize--small u-fontWeight--medium u-textColor--bodyCopy">{currentVersion.status === "failed" ? "Failed to deploy" : `Deployed ${Utilities.dateFormat(currentVersion?.deployedAt, "MM/DD/YY @ hh:mm a z")}}`}</p>
+              <p className="u-fontSize--small u-fontWeight--medium u-textColor--bodyCopy">{currentVersion.status === "failed" ? "---" : `Deployed ${Utilities.dateFormat(currentVersion?.deployedAt, "MM/DD/YY @ hh:mm a z")}`}</p>
             </div>
           </div>
           <div className="flex flex1 alignItems--center justifyContent--flexEnd">
@@ -567,7 +567,7 @@ class DashboardVersionCard extends React.Component {
               <p className="u-fontSize--small u-fontWeight--medium u-textColor--bodyCopy u-marginTop--5"> Released {Utilities.dateFormat(downstream?.pendingVersions[0]?.createdOn, "MM/DD/YY @ hh:mm a z")} </p>
               <div className="u-marginTop--5 flex flex-auto alignItems--center">
                 <span className={`icon versionUpdateType u-marginRight--5 ${this.getUpdateTypeClassname(downstreamSource)}`} data-tip={downstreamSource} />
-                {downstreamSource !== "Online Install" && <ReactTooltip effect="solid" className="replicated-tooltip" />}
+                <ReactTooltip effect="solid" className="replicated-tooltip" />
                 {this.renderSourceAndDiff(downstream?.pendingVersions[0])}
               </div>
             </div>

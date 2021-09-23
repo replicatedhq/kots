@@ -45,6 +45,7 @@ type LicenseResponse struct {
 	IsIdentityServiceSupported bool                  `json:"isIdentityServiceSupported"`
 	IsGeoaxisSupported         bool                  `json:"isGeoaxisSupported"`
 	IsSnapshotSupported        bool                  `json:"isSnapshotSupported"`
+	LastSyncedAt               string                `json:"lastSyncedAt"`
 }
 
 type SyncLicenseResponse struct {
@@ -150,6 +151,7 @@ func (h *Handler) SyncLicense(w http.ResponseWriter, r *http.Request) {
 		IsIdentityServiceSupported: latestLicense.Spec.IsIdentityServiceSupported,
 		IsGeoaxisSupported:         latestLicense.Spec.IsGeoaxisSupported,
 		IsSnapshotSupported:        latestLicense.Spec.IsSnapshotSupported,
+		LastSyncedAt:               foundApp.LastLicenseSync,
 	}
 
 	JSON(w, http.StatusOK, syncLicenseResponse)
@@ -199,6 +201,7 @@ func (h *Handler) GetLicense(w http.ResponseWriter, r *http.Request) {
 		IsIdentityServiceSupported: license.Spec.IsIdentityServiceSupported,
 		IsGeoaxisSupported:         license.Spec.IsGeoaxisSupported,
 		IsSnapshotSupported:        license.Spec.IsSnapshotSupported,
+		LastSyncedAt:               foundApp.LastLicenseSync,
 	}
 
 	JSON(w, http.StatusOK, getLicenseResponse)

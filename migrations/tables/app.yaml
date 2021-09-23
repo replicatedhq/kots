@@ -56,6 +56,8 @@ spec:
         type: boolean
       - name: last_registry_sync
         type: timestamp without time zone
+      - name: last_license_sync
+        type: timestamp without time zone
       - name: install_state
         type: text
       - name: is_airgap
