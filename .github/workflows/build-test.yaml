@@ -646,10 +646,10 @@ jobs:
 
           # HACK: without operator, additonal namespaces don't get image pull secrets
           echo ${{ secrets.MULTI_NAMESPACE_REGISTRY_AUTH }} | base64 -d > replicated-registry-auth.json
-          kubectl -n nginx-test create secret generic kotsadm-replicated-registry --type=kubernetes.io/dockerconfigjson --from-file=.dockerconfigjson=./replicated-registry-auth.json
-          kubectl -n redis-test create secret generic kotsadm-replicated-registry --type=kubernetes.io/dockerconfigjson --from-file=.dockerconfigjson=./replicated-registry-auth.json
-          kubectl -n postgres-test create secret generic kotsadm-replicated-registry --type=kubernetes.io/dockerconfigjson --from-file=.dockerconfigjson=./replicated-registry-auth.json
-          kubectl -n default create secret generic kotsadm-replicated-registry --type=kubernetes.io/dockerconfigjson --from-file=.dockerconfigjson=./replicated-registry-auth.json
+          kubectl -n nginx-test create secret generic multi-namespace-yeti-registry --type=kubernetes.io/dockerconfigjson --from-file=.dockerconfigjson=./replicated-registry-auth.json
+          kubectl -n redis-test create secret generic multi-namespace-yeti-registry --type=kubernetes.io/dockerconfigjson --from-file=.dockerconfigjson=./replicated-registry-auth.json
+          kubectl -n postgres-test create secret generic multi-namespace-yeti-registry --type=kubernetes.io/dockerconfigjson --from-file=.dockerconfigjson=./replicated-registry-auth.json
+          kubectl -n default create secret generic multi-namespace-yeti-registry --type=kubernetes.io/dockerconfigjson --from-file=.dockerconfigjson=./replicated-registry-auth.json
 
           kustomize build $PWD/$APP_SLUG/overlays/midstream | kubectl apply -f -
 
@@ -666,6 +666,7 @@ jobs:
           while [ $(kubectl get pods --no-headers | grep -v Running | grep -v Completed | wc -l) -gt 0 ]; do
             COUNTER=$[$COUNTER +1]
             if [ $COUNTER -gt 120 ]; then
+              kubectl -n redis-test get pod redis-slave-0 -o yaml   
               echo "Timed out waiting for pods to start"
               kubectl get pods -A
               exit -1

@@ -27,7 +27,6 @@ import (
 	"github.com/replicatedhq/kots/pkg/upstream"
 	upstreamtypes "github.com/replicatedhq/kots/pkg/upstream/types"
 	"github.com/replicatedhq/kots/pkg/util"
-	corev1 "k8s.io/api/core/v1"
 	k8sjson "k8s.io/apimachinery/pkg/runtime/serializer/json"
 	"k8s.io/client-go/kubernetes/scheme"
 	kustomizetypes "sigs.k8s.io/kustomize/api/types"
@@ -470,7 +469,7 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 }
 
 func writeMidstream(writeMidstreamOptions midstream.WriteOptions, options PullOptions, u *upstreamtypes.Upstream, b *base.Base, license *kotsv1beta1.License, identityConfig *kotsv1beta1.IdentityConfig, upstreamDir string, log *logger.CLILogger) (*midstream.Midstream, error) {
-	var pullSecret *corev1.Secret
+	var pullSecrets *registry.ImagePullSecrets
 	var images []kustomizetypes.Image
 	var objects []k8sdoc.K8sDoc
 
@@ -626,7 +625,7 @@ func writeMidstream(writeMidstreamOptions midstream.WriteOptions, options PullOp
 					break
 				}
 			}
-			pullSecret, err = registry.PullSecretForRegistries(
+			pullSecrets, err = registry.PullSecretForRegistries(
 				[]string{options.RewriteImageOptions.Host},
 				registryUser,
 				registryPass,
@@ -699,7 +698,7 @@ func writeMidstream(writeMidstreamOptions midstream.WriteOptions, options PullOp
 					break
 				}
 			}
-			pullSecret, err = registry.PullSecretForRegistries(
+			pullSecrets, err = registry.PullSecretForRegistries(
 				replicatedRegistryInfo.ToSlice(),
 				license.Spec.LicenseID,
 				license.Spec.LicenseID,
@@ -714,7 +713,7 @@ func writeMidstream(writeMidstreamOptions midstream.WriteOptions, options PullOp
 		objects = findResult.Docs
 	}
 
-	m, err := midstream.CreateMidstream(b, images, objects, pullSecret, identitySpec, identityConfig)
+	m, err := midstream.CreateMidstream(b, images, objects, pullSecrets, identitySpec, identityConfig)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create midstream")
 	}

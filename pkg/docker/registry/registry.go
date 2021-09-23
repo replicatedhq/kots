@@ -34,6 +34,11 @@ type Credentials struct {
 	Password string
 }
 
+type ImagePullSecrets struct {
+	AdminConsoleSecret corev1.Secret // this field is always populated
+	AppSecret          *corev1.Secret
+}
+
 const DockerHubRegistryName = "index.docker.io"
 const DockerHubSecretName = "kotsadm-dockerhub"
 
@@ -75,7 +80,15 @@ func (r *RegistryProxyInfo) ToSlice() []string {
 	}
 }
 
-func PullSecretForRegistries(registries []string, username, password string, kuberneteNamespace string, namePrefix string) (*corev1.Secret, error) {
+func SecretNameFromPrefix(namePrefix string) string {
+	if namePrefix == "" {
+		return ""
+	}
+
+	return fmt.Sprintf("%s-registry", namePrefix)
+}
+
+func PullSecretForRegistries(registries []string, username, password string, kuberneteNamespace string, namePrefix string) (*ImagePullSecrets, error) {
 	dockercfgAuth := DockercfgAuth{
 		Auth: base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", username, password))),
 	}
@@ -95,24 +108,43 @@ func PullSecretForRegistries(registries []string, username, password string, kub
 		return nil, errors.Wrap(err, "failed to marshal pull secret data")
 	}
 
-	secretName := "kotsadm-replicated-registry"
-	if namePrefix != "" {
-		secretName = fmt.Sprintf("%s-registry", namePrefix)
+	// try to ensure this is created first if using a helm install
+	annotations := map[string]string{
+		"helm.sh/hook":        "pre-install,pre-upgrade",
+		"helm.sh/hook-weight": "-9999",
 	}
 
-	secret := &corev1.Secret{
+	secrets := &ImagePullSecrets{
+		AdminConsoleSecret: corev1.Secret{
+			TypeMeta: metav1.TypeMeta{
+				APIVersion: "v1",
+				Kind:       "Secret",
+			},
+			ObjectMeta: metav1.ObjectMeta{
+				Name:        "kotsadm-replicated-registry",
+				Namespace:   kuberneteNamespace,
+				Annotations: annotations,
+			},
+			Type: corev1.SecretTypeDockerConfigJson,
+			Data: map[string][]byte{
+				".dockerconfigjson": secretData,
+			},
+		},
+	}
+
+	if namePrefix == "" {
+		return secrets, nil
+	}
+
+	secrets.AppSecret = &corev1.Secret{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "v1",
 			Kind:       "Secret",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      secretName,
-			Namespace: kuberneteNamespace,
-			// try to ensure this is created first if using a helm install
-			Annotations: map[string]string{
-				"helm.sh/hook":        "pre-install,pre-upgrade",
-				"helm.sh/hook-weight": "-9999",
-			},
+			Name:        SecretNameFromPrefix(namePrefix),
+			Namespace:   kuberneteNamespace,
+			Annotations: annotations,
 		},
 		Type: corev1.SecretTypeDockerConfigJson,
 		Data: map[string][]byte{
@@ -120,7 +152,7 @@ func PullSecretForRegistries(registries []string, username, password string, kub
 		},
 	}
 
-	return secret, nil
+	return secrets, nil
 }
 
 func EnsureDockerHubSecret(username string, password string, namespace string, clientset *kubernetes.Clientset) error {
