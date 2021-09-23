@@ -25,6 +25,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/registry"
 	"github.com/replicatedhq/kots/pkg/render/helper"
 	"github.com/replicatedhq/kots/pkg/snapshot"
+	kotssnapshot "github.com/replicatedhq/kots/pkg/snapshot"
 	"github.com/replicatedhq/kots/pkg/store"
 	"github.com/replicatedhq/kots/pkg/supportbundle/types"
 	"github.com/replicatedhq/kots/pkg/util"
@@ -61,12 +62,34 @@ func CreateRenderedSpec(appID string, sequence int64, kotsKinds *kotsutil.KotsKi
 		}
 	}
 
+	clientset, err := k8sutil.GetClientset()
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get k8s clientset")
+	}
+
+	minimalRBACNamespaces := []string{}
+	if !k8sutil.IsKotsadmClusterScoped(context.TODO(), clientset, util.PodNamespace) {
+		minimalRBACNamespaces = append(minimalRBACNamespaces, util.PodNamespace)
+		minimalRBACNamespaces = append(minimalRBACNamespaces, kotsKinds.KotsApplication.Spec.AdditionalNamespaces...)
+		requiresAccess, err := kotssnapshot.CheckKotsadmVeleroAccess(context.TODO(), util.PodNamespace)
+		if err != nil {
+			logger.Errorf("Failed to check kotsadm velero access for the support bundle: %v", err)
+		} else if !requiresAccess {
+			veleroNamespace, err := kotssnapshot.DetectVeleroNamespace(context.TODO(), clientset, util.PodNamespace)
+			if err != nil {
+				logger.Errorf("Failed to detect velero namespace for the support bundle: %v", err)
+			} else {
+				minimalRBACNamespaces = append(minimalRBACNamespaces, veleroNamespace)
+			}
+		}
+	}
+
 	app, err := store.GetStore().GetApp(appID)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get app")
 	}
 
-	err = injectDefaults(app, builtBundle, opts)
+	err = injectDefaults(app, builtBundle, opts, minimalRBACNamespaces)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to inject defaults")
 	}
@@ -105,16 +128,9 @@ func CreateRenderedSpec(appID string, sequence int64, kotsKinds *kotsutil.KotsKi
 	if err := s.Encode(supportBundle, &b); err != nil {
 		return nil, errors.Wrap(err, "failed to encode support bundle")
 	}
-
 	renderedSpec = b.Bytes()
 
-	clientset, err := k8sutil.GetClientset()
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to get k8s clientset")
-	}
-
 	secretName := GetSpecSecretName(app.Slug)
-
 	existingSecret, err := clientset.CoreV1().Secrets(util.PodNamespace).Get(context.TODO(), secretName, metav1.GetOptions{})
 	if err != nil && !kuberneteserrors.IsNotFound(err) {
 		return nil, errors.Wrap(err, "failed to read support bundle secret")
@@ -156,11 +172,10 @@ func CreateRenderedSpec(appID string, sequence int64, kotsKinds *kotsutil.KotsKi
 	return supportBundle, nil
 }
 
-// injectDefaults injects the kots adm default collectors/analyzers in the the support bundle specification.
-func injectDefaults(app *apptypes.App, supportBundle *troubleshootv1beta2.SupportBundle, opts types.TroubleshootOptions) error {
-	populateNamespaces(supportBundle)
-
+// injectDefaults injects the kotsadm default collectors/analyzers in the the support bundle specification.
+func injectDefaults(app *apptypes.App, supportBundle *troubleshootv1beta2.SupportBundle, opts types.TroubleshootOptions, minimalRBACNamespaces []string) error {
 	addDefaultTroubleshoot(supportBundle, app)
+	populateNamespaces(supportBundle, minimalRBACNamespaces)
 
 	// determine an upload URL
 	var uploadURL string
@@ -194,11 +209,11 @@ func injectDefaults(app *apptypes.App, supportBundle *troubleshootv1beta2.Suppor
 }
 
 // if a namespace is not set for a secret/run/logs/exec/copy collector, set it to the current namespace
-func populateNamespaces(supportBundle *troubleshootv1beta2.SupportBundle) {
+// if kotsadm is running with minimal rbac priviliges, only collect resources from the specified minimal rbac namespaces
+func populateNamespaces(supportBundle *troubleshootv1beta2.SupportBundle, minimalRBACNamespaces []string) {
 	if supportBundle == nil || supportBundle.Spec.Collectors == nil {
 		return
 	}
-
 	collects := []*troubleshootv1beta2.Collect{}
 	for _, collect := range supportBundle.Spec.Collectors {
 		if collect.Secret != nil && collect.Secret.Namespace == "" {
@@ -215,6 +230,9 @@ func populateNamespaces(supportBundle *troubleshootv1beta2.SupportBundle) {
 		}
 		if collect.Copy != nil && collect.Copy.Namespace == "" {
 			collect.Copy.Namespace = util.PodNamespace
+		}
+		if collect.ClusterResources != nil && len(collect.ClusterResources.Namespaces) == 0 && len(minimalRBACNamespaces) > 0 {
+			collect.ClusterResources.Namespaces = minimalRBACNamespaces
 		}
 		collects = append(collects, collect)
 	}
@@ -290,11 +308,24 @@ func addDefaultTroubleshoot(supportBundle *troubleshootv1beta2.SupportBundle, ap
 		})
 	}
 
+	hasClusterResourcesCollector := false
+	for _, c := range supportBundle.Spec.Collectors {
+		if c.ClusterResources != nil {
+			hasClusterResourcesCollector = true
+			break
+		}
+	}
+	if !hasClusterResourcesCollector {
+		// for minimal rbac installations, a limited number of namespaces are specified later
+		supportBundle.Spec.Collectors = append(supportBundle.Spec.Collectors, &troubleshootv1beta2.Collect{ClusterResources: &troubleshootv1beta2.ClusterResources{}})
+	}
+
 	supportBundle.Spec.Collectors = append(supportBundle.Spec.Collectors, makeDbCollectors()...)
 	supportBundle.Spec.Collectors = append(supportBundle.Spec.Collectors, makeKotsadmCollectors()...)
 	supportBundle.Spec.Collectors = append(supportBundle.Spec.Collectors, makeGoRoutineCollectors()...)
 	supportBundle.Spec.Collectors = append(supportBundle.Spec.Collectors, makeRookCollectors()...)
 	supportBundle.Spec.Collectors = append(supportBundle.Spec.Collectors, makeKurlCollectors(image, pullSecret)...)
+	supportBundle.Spec.Collectors = append(supportBundle.Spec.Collectors, makeCollectDCollectors(image, pullSecret)...)
 	supportBundle.Spec.Collectors = append(supportBundle.Spec.Collectors, makeVeleroCollectors()...)
 
 	supportBundle.Spec.Collectors = append(supportBundle.Spec.Collectors, makeWeaveCollectors()...)
@@ -324,8 +355,6 @@ func addDefaultTroubleshoot(supportBundle *troubleshootv1beta2.SupportBundle, ap
 		}
 		supportBundle.Spec.Collectors = append(supportBundle.Spec.Collectors, collectors...)
 	}
-
-	supportBundle.Spec.Collectors = append(supportBundle.Spec.Collectors, makeCollectDCollectors(image, pullSecret)...)
 
 	return supportBundle
 }
