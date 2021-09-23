@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"encoding/json"
 	"net/http"
 
 	"github.com/pkg/errors"
@@ -12,12 +13,24 @@ import (
 	"github.com/replicatedhq/kots/pkg/store"
 )
 
+type GarbageCollectImagesRequest struct {
+	IgnoreRollback bool `json:"ignoreRollback,omitempty"`
+}
+
 type GarbageCollectImagesResponse struct {
 	Error string `json:"error,omitempty"`
 }
 
 func (h *Handler) GarbageCollectImages(w http.ResponseWriter, r *http.Request) {
 	response := GarbageCollectImagesResponse{}
+
+	garbageCollectImagesRequest := GarbageCollectImagesRequest{}
+	if err := json.NewDecoder(r.Body).Decode(&garbageCollectImagesRequest); err != nil {
+		response.Error = "failed to decode request"
+		logger.Error(errors.Wrap(err, response.Error))
+		JSON(w, http.StatusBadRequest, response)
+		return
+	}
 
 	installParams, err := kotsutil.GetInstallationParams(kotsadmtypes.KotsadmConfigMap)
 	if err != nil {
@@ -66,7 +79,7 @@ func (h *Handler) GarbageCollectImages(w http.ResponseWriter, r *http.Request) {
 	go func() {
 		for _, app := range apps {
 			logger.Infof("Deleting images for app %s", app.Slug)
-			err := registry.DeleteUnusedImages(app.ID)
+			err := registry.DeleteUnusedImages(app.ID, garbageCollectImagesRequest.IgnoreRollback)
 			if err != nil {
 				if _, ok := err.(registry.AppRollbackError); ok {
 					logger.Infof("not garbage collecting images because version allows rollbacks: %v", err)

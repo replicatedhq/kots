@@ -362,7 +362,7 @@ func (c *Client) setDeployResults(args operatortypes.DeployAppArgs, results Depl
 
 	if !results.IsError {
 		go func() {
-			err := registry.DeleteUnusedImages(args.AppID)
+			err := registry.DeleteUnusedImages(args.AppID, false)
 			if err != nil {
 				if _, ok := err.(registry.AppRollbackError); ok {
 					logger.Infof("not garbage collecting images because version allows rollbacks: %v", err)
