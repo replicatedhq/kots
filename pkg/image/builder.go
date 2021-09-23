@@ -101,6 +101,13 @@ func GetPrivateImages(upstreamDir string, checkedImages map[string]ImageInfo, al
 			if err != nil {
 				return err
 			}
+
+			// Skip charts folders containing subcharts.  The kustomization for subcharts will be defined
+			// inside of those charts, and should not be referenced at the parent chart level.
+			if info.IsDir() && info.Name() == "charts" {
+				return filepath.SkipDir
+			}
+
 			if info.IsDir() && (useHelmInstall[info.Name()] == true) {
 				return filepath.SkipDir
 			}
