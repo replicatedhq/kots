@@ -22,7 +22,6 @@ import (
 	"github.com/replicatedhq/kots/pkg/store"
 	"github.com/replicatedhq/kots/pkg/upstream"
 	upstreamtypes "github.com/replicatedhq/kots/pkg/upstream/types"
-	corev1 "k8s.io/api/core/v1"
 	kustomizetypes "sigs.k8s.io/kustomize/api/types"
 )
 
@@ -274,7 +273,7 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 }
 
 func writeMidstream(writeMidstreamOptions midstream.WriteOptions, options RewriteOptions, b *base.Base, license *kotsv1beta1.License, upstreamDir string, log *logger.CLILogger) (*midstream.Midstream, error) {
-	var pullSecret *corev1.Secret
+	var pullSecrets *registry.ImagePullSecrets
 	var images []kustomizetypes.Image
 	var objects []k8sdoc.K8sDoc
 
@@ -375,7 +374,7 @@ func writeMidstream(writeMidstreamOptions midstream.WriteOptions, options Rewrit
 				break
 			}
 		}
-		pullSecret, err = registry.PullSecretForRegistries(
+		pullSecrets, err = registry.PullSecretForRegistries(
 			[]string{options.RegistryEndpoint},
 			registryUser,
 			registryPass,
@@ -383,7 +382,7 @@ func writeMidstream(writeMidstreamOptions midstream.WriteOptions, options Rewrit
 			namePrefix,
 		)
 		if err != nil {
-			return nil, errors.Wrap(err, "failed to create private registry pull secret")
+			return nil, errors.Wrap(err, "failed to create private registry pull secrets")
 		}
 
 		images = copyResult.Images
@@ -443,7 +442,7 @@ func writeMidstream(writeMidstreamOptions midstream.WriteOptions, options Rewrit
 			}
 
 			replicatedRegistryInfo := registry.ProxyEndpointFromLicense(options.License)
-			pullSecret, err = registry.PullSecretForRegistries(
+			pullSecrets, err = registry.PullSecretForRegistries(
 				replicatedRegistryInfo.ToSlice(),
 				options.License.Spec.LicenseID,
 				options.License.Spec.LicenseID,
@@ -459,7 +458,7 @@ func writeMidstream(writeMidstreamOptions midstream.WriteOptions, options Rewrit
 		objects = findResult.Docs
 	}
 
-	m, err := midstream.CreateMidstream(b, images, objects, pullSecret, identitySpec, identityConfig)
+	m, err := midstream.CreateMidstream(b, images, objects, pullSecrets, identitySpec, identityConfig)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create midstream")
 	}

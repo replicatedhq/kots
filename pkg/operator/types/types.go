@@ -12,7 +12,7 @@ type DeployAppArgs struct {
 	Sequence             int64                 `json:"sequence"`
 	KubectlVersion       string                `json:"kubectl_version"`
 	AdditionalNamespaces []string              `json:"additional_namespaces"`
-	ImagePullSecret      string                `json:"image_pull_secret"`
+	ImagePullSecrets     []string              `json:"image_pull_secrets"`
 	Namespace            string                `json:"namespace"`
 	PreviousManifests    string                `json:"previous_manifests"`
 	Manifests            string                `json:"manifests"`
