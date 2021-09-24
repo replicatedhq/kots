@@ -88,7 +88,7 @@ func CreateRenderedSpec(appID string, sequence int64, kotsKinds *kotsutil.KotsKi
 		return nil, errors.Wrap(err, "failed to get app")
 	}
 
-	err = injectDefaults(app, builtBundle, opts, minimalRBACNamespaces, imageName, pullSecret)
+	err = injectDefaults(app, builtBundle, opts, minimalRBACNamespaces)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to inject defaults")
 	}
