@@ -15,3 +15,5 @@ jobs:
       with:
         regions: WestUs2 EastUs WestEurope SouthEastAsia
         sku_name: premiumLinux
+      env:
+        GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
