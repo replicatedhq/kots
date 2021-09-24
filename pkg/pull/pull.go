@@ -442,12 +442,14 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 		writeMidstreamOptions.UseHelmInstall = map[string]bool{}
 		for _, v := range newHelmCharts {
 			writeMidstreamOptions.UseHelmInstall[v.Spec.Chart.Name] = v.Spec.UseHelmInstall
-			subcharts, err := base.FindHelmSubChartsFromBase(writeBaseOptions.BaseDir, v.Spec.Chart.Name)
-			if err != nil {
-				return "", errors.Wrapf(err, "failed to find subcharts for parent chart %s", v.Spec.Chart.Name)
-			}
-			for _, subchart := range subcharts.SubCharts {
-				writeMidstreamOptions.UseHelmInstall[subchart] = v.Spec.UseHelmInstall
+			if v.Spec.UseHelmInstall {
+				subcharts, err := base.FindHelmSubChartsFromBase(writeBaseOptions.BaseDir, v.Spec.Chart.Name)
+				if err != nil {
+					return "", errors.Wrapf(err, "failed to find subcharts for parent chart %s", v.Spec.Chart.Name)
+				}
+				for _, subchart := range subcharts.SubCharts {
+					writeMidstreamOptions.UseHelmInstall[subchart] = v.Spec.UseHelmInstall
+				}
 			}
 		}
 
