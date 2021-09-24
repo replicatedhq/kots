@@ -195,6 +195,7 @@ func injectDefaults(app *apptypes.App, supportBundle *troubleshootv1beta2.Suppor
 		populateImages(supportBundle, imageName, pullSecret)
 	}
 	deduplicatedCollectors(supportBundle)
+	deduplicatedAnalyzers(supportBundle)
 
 	// determine an upload URL
 	var uploadURL string
@@ -313,21 +314,76 @@ func deduplicatedCollectors(supportBundle *troubleshootv1beta2.SupportBundle) *t
 	return supportBundle
 }
 
+func deduplicatedAnalyzers(supportBundle *troubleshootv1beta2.SupportBundle) *troubleshootv1beta2.SupportBundle {
+	next := []*troubleshootv1beta2.Analyze{}
+
+	hasClusterVersion := false
+	for _, a := range supportBundle.Spec.Analyzers {
+		if a.ClusterVersion != nil {
+			if hasClusterVersion {
+				continue
+			}
+			hasClusterVersion = true
+		}
+		next = append(next, a)
+	}
+
+	hasLonghorn := false
+	for _, a := range supportBundle.Spec.Analyzers {
+		if a.Longhorn != nil {
+			if hasLonghorn {
+				continue
+			}
+			hasLonghorn = true
+		}
+		next = append(next, a)
+	}
+
+	hasWeaveReport := false
+	for _, a := range supportBundle.Spec.Analyzers {
+		if a.WeaveReport != nil {
+			if hasWeaveReport {
+				continue
+			}
+			hasWeaveReport = true
+		}
+		next = append(next, a)
+	}
+
+	supportBundle.Spec.Analyzers = next
+
+	return supportBundle
+}
+
 // addDefaultTroubleshoot adds kots.io (github.com/replicatedhq/kots/support-bundle/spec.yaml) spec to the support bundle.
 func addDefaultTroubleshoot(supportBundle *troubleshootv1beta2.SupportBundle) *troubleshootv1beta2.SupportBundle {
-	if supportBundle.Spec.Collectors == nil {
-		supportBundle.Spec.Collectors = make([]*troubleshootv1beta2.Collect, 0)
-	}
-	if supportBundle.Spec.Analyzers == nil {
-		supportBundle.Spec.Analyzers = make([]*troubleshootv1beta2.Analyze, 0)
+	supportBundle.Spec.Collectors = addDefaultCollectors(supportBundle.Spec.Collectors)
+	supportBundle.Spec.Analyzers = addDefaultAnalyzers(supportBundle.Spec.Analyzers)
+	return supportBundle
+}
+
+func addDefaultCollectors(collectors []*troubleshootv1beta2.Collect) []*troubleshootv1beta2.Collect {
+	if collectors == nil {
+		collectors = make([]*troubleshootv1beta2.Collect, 0)
 	}
 
 	spec := supportbundle_embed.Spec()
 
-	supportBundle.Spec.Collectors = append(supportBundle.Spec.Collectors, spec.Spec.Collectors...)
-	supportBundle.Spec.Analyzers = append(supportBundle.Spec.Analyzers, spec.Spec.Analyzers...)
+	collectors = append(collectors, spec.Spec.Collectors...)
 
-	return supportBundle
+	return collectors
+}
+
+func addDefaultAnalyzers(analyzers []*troubleshootv1beta2.Analyze) []*troubleshootv1beta2.Analyze {
+	if analyzers == nil {
+		analyzers = make([]*troubleshootv1beta2.Analyze, 0)
+	}
+
+	spec := supportbundle_embed.Spec()
+
+	analyzers = append(analyzers, spec.Spec.Analyzers...)
+
+	return analyzers
 }
 
 // addDefaultDynamicTroubleshoot adds dynamic spec to the support bundle.
@@ -339,8 +395,6 @@ func addDefaultDynamicTroubleshoot(supportBundle *troubleshootv1beta2.SupportBun
 	if supportBundle.Spec.Analyzers == nil {
 		supportBundle.Spec.Analyzers = make([]*troubleshootv1beta2.Analyze, 0)
 	}
-
-	supportBundle.Spec.Analyzers = InjectDefaultAnalyzers(supportBundle.Spec.Analyzers)
 
 	licenseData, err := license.GetCurrentLicenseString(app)
 	if err != nil {
