@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
-	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
@@ -20,7 +19,6 @@ import (
 	kotstypes "github.com/replicatedhq/kots/pkg/kotsadm/types"
 	license "github.com/replicatedhq/kots/pkg/kotsadmlicense"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
-	"github.com/replicatedhq/kots/pkg/kurl"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/registry"
 	"github.com/replicatedhq/kots/pkg/render/helper"
@@ -29,6 +27,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/store"
 	"github.com/replicatedhq/kots/pkg/supportbundle/types"
 	"github.com/replicatedhq/kots/pkg/util"
+	supportbundle_embed "github.com/replicatedhq/kots/support-bundle"
 	troubleshootv1beta2 "github.com/replicatedhq/troubleshoot/pkg/apis/troubleshoot/v1beta2"
 	"go.uber.org/multierr"
 	corev1 "k8s.io/api/core/v1"
@@ -89,7 +88,7 @@ func CreateRenderedSpec(appID string, sequence int64, kotsKinds *kotsutil.KotsKi
 		return nil, errors.Wrap(err, "failed to get app")
 	}
 
-	err = injectDefaults(app, builtBundle, opts, minimalRBACNamespaces)
+	err = injectDefaults(app, builtBundle, opts, minimalRBACNamespaces, imageName, pullSecret)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to inject defaults")
 	}
@@ -174,8 +173,28 @@ func CreateRenderedSpec(appID string, sequence int64, kotsKinds *kotsutil.KotsKi
 
 // injectDefaults injects the kotsadm default collectors/analyzers in the the support bundle specification.
 func injectDefaults(app *apptypes.App, supportBundle *troubleshootv1beta2.SupportBundle, opts types.TroubleshootOptions, minimalRBACNamespaces []string) error {
-	addDefaultTroubleshoot(supportBundle, app)
+
+	clientset, err := k8sutil.GetClientset()
+	if err != nil {
+		logger.Errorf("Failed to get kubernetes clientset: %v", err)
+	}
+
+	var imageName string
+	var pullSecret *troubleshootv1beta2.ImagePullSecrets
+	if clientset != nil {
+		imageName, pullSecret, err = getImageAndSecret(context.TODO(), clientset)
+		if err != nil {
+			logger.Errorf("Failed to get kotsadm image and secret: %v", err)
+		}
+	}
+
+	addDefaultTroubleshoot(supportBundle)
+	addDefaultDynamicTroubleshoot(supportBundle, app)
 	populateNamespaces(supportBundle, minimalRBACNamespaces)
+	if imageName != "" && pullSecret != nil {
+		populateImages(supportBundle, imageName, pullSecret)
+	}
+	deduplicatedCollectors(supportBundle)
 
 	// determine an upload URL
 	var uploadURL string
@@ -219,6 +238,9 @@ func populateNamespaces(supportBundle *troubleshootv1beta2.SupportBundle, minima
 		if collect.Secret != nil && collect.Secret.Namespace == "" {
 			collect.Secret.Namespace = util.PodNamespace
 		}
+		if collect.ConfigMap != nil && collect.ConfigMap.Namespace == "" {
+			collect.ConfigMap.Namespace = util.PodNamespace
+		}
 		if collect.Run != nil && collect.Run.Namespace == "" {
 			collect.Run.Namespace = util.PodNamespace
 		}
@@ -239,7 +261,78 @@ func populateNamespaces(supportBundle *troubleshootv1beta2.SupportBundle, minima
 	supportBundle.Spec.Collectors = collects
 }
 
-func addDefaultTroubleshoot(supportBundle *troubleshootv1beta2.SupportBundle, app *apptypes.App) *troubleshootv1beta2.SupportBundle {
+func deduplicatedCollectors(supportBundle *troubleshootv1beta2.SupportBundle) *troubleshootv1beta2.SupportBundle {
+	next := []*troubleshootv1beta2.Collect{}
+
+	hasClusterResources := false
+	for _, c := range supportBundle.Spec.Collectors {
+		if c.ClusterResources != nil {
+			if hasClusterResources {
+				continue
+			}
+			hasClusterResources = true
+		}
+		next = append(next, c)
+	}
+
+	hasClusterInfo := false
+	for _, c := range supportBundle.Spec.Collectors {
+		if c.ClusterInfo != nil {
+			if hasClusterInfo {
+				continue
+			}
+			hasClusterInfo = true
+		}
+		next = append(next, c)
+	}
+
+	hasCeph := false
+	for _, c := range supportBundle.Spec.Collectors {
+		if c.Ceph != nil {
+			if hasCeph {
+				continue
+			}
+			hasCeph = true
+		}
+		next = append(next, c)
+	}
+
+	hasLonghorn := false
+	for _, c := range supportBundle.Spec.Collectors {
+		if c.Longhorn != nil {
+			if hasLonghorn {
+				continue
+			}
+			hasLonghorn = true
+		}
+		next = append(next, c)
+	}
+
+	supportBundle.Spec.Collectors = next
+
+	return supportBundle
+}
+
+// addDefaultTroubleshoot adds kots.io (github.com/replicatedhq/kots/support-bundle/spec.yaml) spec to the support bundle.
+func addDefaultTroubleshoot(supportBundle *troubleshootv1beta2.SupportBundle) *troubleshootv1beta2.SupportBundle {
+	if supportBundle.Spec.Collectors == nil {
+		supportBundle.Spec.Collectors = make([]*troubleshootv1beta2.Collect, 0)
+	}
+	if supportBundle.Spec.Analyzers == nil {
+		supportBundle.Spec.Analyzers = make([]*troubleshootv1beta2.Analyze, 0)
+	}
+
+	spec := supportbundle_embed.Spec()
+
+	supportBundle.Spec.Collectors = append(supportBundle.Spec.Collectors, spec.Spec.Collectors...)
+	supportBundle.Spec.Analyzers = append(supportBundle.Spec.Analyzers, spec.Spec.Analyzers...)
+
+	return supportBundle
+}
+
+// addDefaultDynamicTroubleshoot adds dynamic spec to the support bundle.
+// prefer addDefaultTroubleshoot unless absolutely necessary to encourage consistency across built-in and kots.io specs.
+func addDefaultDynamicTroubleshoot(supportBundle *troubleshootv1beta2.SupportBundle, app *apptypes.App) *troubleshootv1beta2.SupportBundle {
 	if supportBundle.Spec.Collectors == nil {
 		supportBundle.Spec.Collectors = make([]*troubleshootv1beta2.Collect, 0)
 	}
@@ -248,20 +341,6 @@ func addDefaultTroubleshoot(supportBundle *troubleshootv1beta2.SupportBundle, ap
 	}
 
 	supportBundle.Spec.Analyzers = InjectDefaultAnalyzers(supportBundle.Spec.Analyzers)
-
-	clientset, err := k8sutil.GetClientset()
-	if err != nil {
-		logger.Errorf("Failed to get kubernetes clientset: %v", err)
-	}
-
-	var image string
-	var pullSecret *troubleshootv1beta2.ImagePullSecrets
-	if clientset != nil {
-		image, pullSecret, err = getImageAndSecret(context.TODO(), clientset)
-		if err != nil {
-			logger.Errorf("Failed to get kotsadm image and secret: %v", err)
-		}
-	}
 
 	licenseData, err := license.GetCurrentLicenseString(app)
 	if err != nil {
@@ -290,52 +369,19 @@ func addDefaultTroubleshoot(supportBundle *troubleshootv1beta2.SupportBundle, ap
 		},
 	})
 
-	secretNames := []string{
-		"kotsadm-replicated-registry",
-		fmt.Sprintf("%s-registry", app.Slug),
-	}
-	for _, name := range secretNames {
-		supportBundle.Spec.Collectors = append(supportBundle.Spec.Collectors, &troubleshootv1beta2.Collect{
-			Secret: &troubleshootv1beta2.Secret{
-				CollectorMeta: troubleshootv1beta2.CollectorMeta{
-					CollectorName: name,
-				},
-				Name:         name,
-				Namespace:    util.PodNamespace,
-				Key:          ".dockerconfigjson",
-				IncludeValue: false,
+	supportBundle.Spec.Collectors = append(supportBundle.Spec.Collectors, &troubleshootv1beta2.Collect{
+		Secret: &troubleshootv1beta2.Secret{
+			CollectorMeta: troubleshootv1beta2.CollectorMeta{
+				CollectorName: fmt.Sprintf("%s-registry", app.Slug),
 			},
-		})
-	}
+			Name:         fmt.Sprintf("%s-registry", app.Slug),
+			Namespace:    util.PodNamespace,
+			Key:          ".dockerconfigjson",
+			IncludeValue: false,
+		},
+	})
 
-	hasClusterResourcesCollector := false
-	for _, c := range supportBundle.Spec.Collectors {
-		if c.ClusterResources != nil {
-			hasClusterResourcesCollector = true
-			break
-		}
-	}
-	if !hasClusterResourcesCollector {
-		// for minimal rbac installations, a limited number of namespaces are specified later
-		supportBundle.Spec.Collectors = append(supportBundle.Spec.Collectors, &troubleshootv1beta2.Collect{ClusterResources: &troubleshootv1beta2.ClusterResources{}})
-	}
-
-	supportBundle.Spec.Collectors = append(supportBundle.Spec.Collectors, makeDbCollectors()...)
-	supportBundle.Spec.Collectors = append(supportBundle.Spec.Collectors, makeKotsadmCollectors()...)
-	supportBundle.Spec.Collectors = append(supportBundle.Spec.Collectors, makeGoRoutineCollectors()...)
-	supportBundle.Spec.Collectors = append(supportBundle.Spec.Collectors, makeRookCollectors()...)
-	supportBundle.Spec.Collectors = append(supportBundle.Spec.Collectors, makeKurlCollectors(image, pullSecret)...)
-	supportBundle.Spec.Collectors = append(supportBundle.Spec.Collectors, makeCollectDCollectors(image, pullSecret)...)
 	supportBundle.Spec.Collectors = append(supportBundle.Spec.Collectors, makeVeleroCollectors()...)
-
-	supportBundle.Spec.Collectors = append(supportBundle.Spec.Collectors, makeWeaveCollectors()...)
-	supportBundle.Spec.Analyzers = append(supportBundle.Spec.Analyzers, makeWeaveAnalyzers()...)
-
-	supportBundle.Spec.Collectors = append(supportBundle.Spec.Collectors, makeGoldpingerCollectors()...)
-	supportBundle.Spec.Analyzers = append(supportBundle.Spec.Analyzers, makeGoldpingerAnalyzers()...)
-
-	supportBundle.Spec.Collectors = append(supportBundle.Spec.Collectors, makeLonghornCollectors()...)
-	supportBundle.Spec.Analyzers = append(supportBundle.Spec.Analyzers, makeLonghornAnalyzers()...)
 
 	apps := []*apptypes.App{}
 	if app != nil {
@@ -357,275 +403,6 @@ func addDefaultTroubleshoot(supportBundle *troubleshootv1beta2.SupportBundle, ap
 	}
 
 	return supportBundle
-}
-
-func makeDbCollectors() []*troubleshootv1beta2.Collect {
-	dbCollectors := []*troubleshootv1beta2.Collect{}
-
-	pgConnectionString := os.Getenv("POSTGRES_URI")
-	parsedPg, err := url.Parse(pgConnectionString)
-	if err == nil {
-		username := "kotsadm"
-		if parsedPg.User != nil {
-			username = parsedPg.User.Username()
-		}
-		dbCollectors = append(dbCollectors, &troubleshootv1beta2.Collect{
-			Exec: &troubleshootv1beta2.Exec{
-				CollectorMeta: troubleshootv1beta2.CollectorMeta{
-					CollectorName: "kotsadm-postgres-db",
-				},
-				Name:          "kots/admin-console",
-				Selector:      []string{fmt.Sprintf("app=%s", parsedPg.Host)},
-				Namespace:     util.PodNamespace,
-				ContainerName: parsedPg.Host,
-				Command:       []string{"pg_dump"},
-				Args:          []string{"-U", username},
-				Timeout:       "10s",
-			},
-		})
-	}
-	return dbCollectors
-}
-
-func makeKotsadmCollectors() []*troubleshootv1beta2.Collect {
-	names := []string{
-		"kotsadm-postgres",
-		"kotsadm",
-		"kurl-proxy-kotsadm",
-		"kotsadm-dex",
-		"kotsadm-fs-minio",
-		"kotsadm-s3-ops",
-	}
-	kotsadmCollectors := []*troubleshootv1beta2.Collect{}
-	for _, name := range names {
-		kotsadmCollectors = append(kotsadmCollectors, &troubleshootv1beta2.Collect{
-			Logs: &troubleshootv1beta2.Logs{
-				CollectorMeta: troubleshootv1beta2.CollectorMeta{
-					CollectorName: name,
-				},
-				Name:      "kots/admin-console",
-				Selector:  []string{fmt.Sprintf("app=%s", name)},
-				Namespace: util.PodNamespace,
-			},
-		})
-	}
-	return kotsadmCollectors
-}
-
-func makeGoRoutineCollectors() []*troubleshootv1beta2.Collect {
-	names := []string{
-		"kotsadm",
-	}
-	goroutineCollectors := []*troubleshootv1beta2.Collect{}
-	for _, name := range names {
-		goroutineCollectors = append(goroutineCollectors, &troubleshootv1beta2.Collect{
-			Exec: &troubleshootv1beta2.Exec{
-				CollectorMeta: troubleshootv1beta2.CollectorMeta{
-					CollectorName: fmt.Sprintf("%s-goroutines", name),
-				},
-				Name:          "kots/admin-console",
-				Selector:      []string{fmt.Sprintf("app=%s", name)},
-				Namespace:     util.PodNamespace,
-				ContainerName: name,
-				Command:       []string{"curl"},
-				Args:          []string{"http://localhost:3030/goroutines"},
-				Timeout:       "10s",
-			},
-		})
-	}
-	return goroutineCollectors
-}
-
-func makeRookCollectors() []*troubleshootv1beta2.Collect {
-	names := []string{
-		"rook-ceph-agent",
-		"rook-ceph-mgr",
-		"rook-ceph-mon",
-		"rook-ceph-operator",
-		"rook-ceph-osd",
-		"rook-ceph-osd-prepare",
-		"rook-ceph-rgw",
-		"rook-discover",
-	}
-	rookCollectors := []*troubleshootv1beta2.Collect{}
-	for _, name := range names {
-		rookCollectors = append(rookCollectors, &troubleshootv1beta2.Collect{
-			Logs: &troubleshootv1beta2.Logs{
-				CollectorMeta: troubleshootv1beta2.CollectorMeta{
-					CollectorName: name,
-				},
-				Name:      "kots/rook",
-				Selector:  []string{fmt.Sprintf("app=%s", name)},
-				Namespace: "rook-ceph",
-			},
-		})
-	}
-
-	rookCollectors = append(rookCollectors, &troubleshootv1beta2.Collect{
-		Ceph: &troubleshootv1beta2.Ceph{},
-	})
-
-	return rookCollectors
-}
-
-func makeKurlCollectors(image string, pullSecret *troubleshootv1beta2.ImagePullSecrets) []*troubleshootv1beta2.Collect {
-	collectors := []*troubleshootv1beta2.Collect{}
-
-	if !kurl.IsKurl() {
-		return collectors
-	}
-
-	names := []string{
-		"registry",
-		"ekc-operator",
-	}
-	for _, name := range names {
-		collectors = append(collectors, &troubleshootv1beta2.Collect{
-			Logs: &troubleshootv1beta2.Logs{
-				CollectorMeta: troubleshootv1beta2.CollectorMeta{
-					CollectorName: name,
-				},
-				Name:      "kots/kurl",
-				Selector:  []string{fmt.Sprintf("app=%s", name)},
-				Namespace: "kurl",
-			},
-		})
-	}
-
-	if image != "" {
-		collectors = append(collectors, &troubleshootv1beta2.Collect{
-			CopyFromHost: &troubleshootv1beta2.CopyFromHost{
-				CollectorMeta: troubleshootv1beta2.CollectorMeta{
-					CollectorName: "kurl-host-preflights",
-				},
-				Name:            "kots/kurl/host-preflights",
-				HostPath:        "/var/lib/kurl/host-preflights",
-				ExtractArchive:  true,
-				Namespace:       util.PodNamespace,
-				Image:           image,
-				ImagePullSecret: pullSecret,
-				ImagePullPolicy: string(corev1.PullIfNotPresent),
-				Timeout:         "1m",
-			},
-		})
-	}
-
-	collectors = append(collectors, &troubleshootv1beta2.Collect{
-		ConfigMap: &troubleshootv1beta2.ConfigMap{
-			CollectorMeta: troubleshootv1beta2.CollectorMeta{
-				CollectorName: "kurl-current-config",
-			},
-			Name:           "kurl-current-config",
-			Namespace:      "kurl",
-			IncludeAllData: true,
-		},
-	})
-
-	collectors = append(collectors, &troubleshootv1beta2.Collect{
-		ConfigMap: &troubleshootv1beta2.ConfigMap{
-			CollectorMeta: troubleshootv1beta2.CollectorMeta{
-				CollectorName: "kurl-last-config",
-			},
-			Name:           "kurl-last-config",
-			Namespace:      "kurl",
-			IncludeAllData: true,
-		},
-	})
-
-	return collectors
-}
-
-func makeWeaveCollectors() []*troubleshootv1beta2.Collect {
-	collectors := []*troubleshootv1beta2.Collect{}
-
-	collectors = append(collectors, &troubleshootv1beta2.Collect{
-		Exec: &troubleshootv1beta2.Exec{
-			CollectorMeta: troubleshootv1beta2.CollectorMeta{
-				CollectorName: "weave-status",
-			},
-			Name:          "kots/kurl/weave",
-			Selector:      []string{"name=weave-net"},
-			Namespace:     "kube-system",
-			ContainerName: "weave",
-			Command:       []string{"/home/weave/weave"},
-			Args:          []string{"--local", "status"},
-			Timeout:       "10s",
-		},
-	})
-
-	collectors = append(collectors, &troubleshootv1beta2.Collect{
-		Exec: &troubleshootv1beta2.Exec{
-			CollectorMeta: troubleshootv1beta2.CollectorMeta{
-				CollectorName: "weave-report",
-			},
-			Name:          "kots/kurl/weave",
-			Selector:      []string{"name=weave-net"},
-			Namespace:     "kube-system",
-			ContainerName: "weave",
-			Command:       []string{"/home/weave/weave"},
-			Args:          []string{"--local", "report"},
-			Timeout:       "10s",
-		},
-	})
-
-	return collectors
-}
-
-func makeWeaveAnalyzers() []*troubleshootv1beta2.Analyze {
-	analyzers := []*troubleshootv1beta2.Analyze{}
-
-	analyzers = append(analyzers, &troubleshootv1beta2.Analyze{
-		TextAnalyze: &troubleshootv1beta2.TextAnalyze{
-			AnalyzeMeta: troubleshootv1beta2.AnalyzeMeta{
-				CheckName: "Weave Status",
-			},
-			FileName:     "kots/kurl/weave/kube-system/weave-net-*/weave-status-stdout.txt",
-			RegexPattern: `Status: ready`,
-			Outcomes: []*troubleshootv1beta2.Outcome{
-				{
-					Fail: &troubleshootv1beta2.SingleOutcome{
-						Message: "Weave is not ready",
-					},
-				},
-				{
-					Pass: &troubleshootv1beta2.SingleOutcome{
-						Message: "Weave is ready",
-					},
-				},
-			},
-		},
-	})
-
-	analyzers = append(analyzers, &troubleshootv1beta2.Analyze{
-		TextAnalyze: &troubleshootv1beta2.TextAnalyze{
-
-			AnalyzeMeta: troubleshootv1beta2.AnalyzeMeta{
-				CheckName: "Weave Report",
-			},
-			FileName:     "kots/kurl/weave/kube-system/weave-net-*/weave-report-stdout.txt",
-			RegexPattern: `"Ready": true`,
-			Outcomes: []*troubleshootv1beta2.Outcome{
-				{
-					Fail: &troubleshootv1beta2.SingleOutcome{
-						Message: "Weave is not ready",
-					},
-				},
-				{
-					Pass: &troubleshootv1beta2.SingleOutcome{
-						Message: "Weave is ready",
-					},
-				},
-			},
-		},
-	})
-
-	analyzers = append(analyzers, &troubleshootv1beta2.Analyze{
-		WeaveReport: &troubleshootv1beta2.WeaveReportAnalyze{
-			ReportFileGlob: "kots/kurl/weave/kube-system/*/weave-report-stdout.txt",
-		},
-	})
-
-	return analyzers
 }
 
 func makeVeleroCollectors() []*troubleshootv1beta2.Collect {
@@ -777,32 +554,6 @@ func makeAppVersionArchiveCollector(app *apptypes.App, dirPrefix string) (*troub
 	}, nil
 }
 
-func makeCollectDCollectors(imageName string, pullSecret *troubleshootv1beta2.ImagePullSecrets) []*troubleshootv1beta2.Collect {
-	collectors := []*troubleshootv1beta2.Collect{}
-
-	if !kurl.IsKurl() {
-		return collectors
-	}
-
-	if imageName != "" {
-		collectors = append(collectors, &troubleshootv1beta2.Collect{
-			Collectd: &troubleshootv1beta2.Collectd{
-				CollectorMeta: troubleshootv1beta2.CollectorMeta{
-					CollectorName: "collectd",
-				},
-				Namespace:       util.PodNamespace,
-				Image:           imageName,
-				ImagePullSecret: pullSecret,
-				ImagePullPolicy: string(corev1.PullIfNotPresent),
-				HostPath:        "/var/lib/collectd/rrd",
-				Timeout:         "5m",
-			},
-		})
-	}
-
-	return collectors
-}
-
 func getImageAndSecret(ctx context.Context, clientset kubernetes.Interface) (imageName string, pullSecret *troubleshootv1beta2.ImagePullSecrets, err error) {
 	namespace := util.PodNamespace
 
@@ -844,79 +595,18 @@ func getImageAndSecret(ctx context.Context, clientset kubernetes.Interface) (ima
 	return imageName, pullSecret, nil
 }
 
-func makeGoldpingerCollectors() []*troubleshootv1beta2.Collect {
-	collectors := []*troubleshootv1beta2.Collect{}
-
-	collectors = append(collectors, &troubleshootv1beta2.Collect{
-		Exec: &troubleshootv1beta2.Exec{
-			CollectorMeta: troubleshootv1beta2.CollectorMeta{
-				CollectorName: "goldpinger-statistics",
-			},
-			Name:          "kots/goldpinger",
-			Selector:      []string{"app=kotsadm"},
-			ContainerName: "kotsadm",
-			Command:       []string{"curl"},
-			Args:          []string{"http://goldpinger.kurl.svc.cluster.local:80/check_all"},
-			Timeout:       "10s",
-		},
-	})
-
-	return collectors
-}
-
-func makeGoldpingerAnalyzers() []*troubleshootv1beta2.Analyze {
-	analyzers := []*troubleshootv1beta2.Analyze{}
-
-	analyzers = append(analyzers, &troubleshootv1beta2.Analyze{
-		TextAnalyze: &troubleshootv1beta2.TextAnalyze{
-			AnalyzeMeta: troubleshootv1beta2.AnalyzeMeta{
-				CheckName: "Inter-pod Networking",
-			},
-			FileName:    "kots/goldpinger/*/kotsadm-*/goldpinger-statistics-stdout.txt",
-			RegexGroups: `"OK": ?(?P<OK>\w+)`,
-			Outcomes: []*troubleshootv1beta2.Outcome{
-				{
-					Fail: &troubleshootv1beta2.SingleOutcome{
-						When:    "OK = false",
-						Message: "Some nodes have pod communication issues",
-					},
-				},
-				{
-					Pass: &troubleshootv1beta2.SingleOutcome{
-						Message: "Goldpinger can communicate properly",
-					},
-				},
-			},
-		},
-	})
-
-	return analyzers
-}
-
-func makeLonghornCollectors() []*troubleshootv1beta2.Collect {
-	collectors := []*troubleshootv1beta2.Collect{}
-
-	collectors = append(collectors, &troubleshootv1beta2.Collect{
-		Longhorn: &troubleshootv1beta2.Longhorn{
-			CollectorMeta: troubleshootv1beta2.CollectorMeta{
-				CollectorName: "longhorn",
-			},
-		},
-	})
-
-	return collectors
-}
-
-func makeLonghornAnalyzers() []*troubleshootv1beta2.Analyze {
-	analyzers := []*troubleshootv1beta2.Analyze{}
-
-	analyzers = append(analyzers, &troubleshootv1beta2.Analyze{
-		Longhorn: &troubleshootv1beta2.LonghornAnalyze{
-			AnalyzeMeta: troubleshootv1beta2.AnalyzeMeta{
-				CheckName: "longhorn",
-			},
-		},
-	})
-
-	return analyzers
+func populateImages(supportBundle *troubleshootv1beta2.SupportBundle, imageName string, pullSecret *troubleshootv1beta2.ImagePullSecrets) {
+	collects := []*troubleshootv1beta2.Collect{}
+	for _, collect := range supportBundle.Spec.Collectors {
+		if collect.Collectd != nil && collect.Collectd.Image == "alpine" { // TODO: is this too strong of an assumption?
+			collect.Collectd.Image = imageName
+			collect.Collectd.ImagePullSecret = pullSecret
+		}
+		if collect.CopyFromHost != nil && collect.CopyFromHost.Image == "alpine" { // TODO: is this too strong of an assumption?
+			collect.CopyFromHost.Image = imageName
+			collect.CopyFromHost.ImagePullSecret = pullSecret
+		}
+		collects = append(collects, collect)
+	}
+	supportBundle.Spec.Collectors = collects
 }
