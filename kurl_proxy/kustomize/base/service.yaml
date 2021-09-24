@@ -8,5 +8,5 @@ spec:
     app: kurl-proxy-kotsadm
   ports:
   - port: 8800
-    targetPort: 8800
+    targetPort: 30880
     nodePort: 30880
