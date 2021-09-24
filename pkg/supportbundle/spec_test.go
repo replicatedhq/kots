@@ -18,13 +18,13 @@ func TestBuilder_populateNamespaces(t *testing.T) {
 	tests := []struct {
 		name                  string
 		minimalRBACNamespaces []string
-		supportBundle         troubleshootv1beta2.SupportBundle
-		want                  troubleshootv1beta2.SupportBundle
+		supportBundle         *troubleshootv1beta2.SupportBundle
+		want                  *troubleshootv1beta2.SupportBundle
 	}{
 		{
 			name:                  "all",
 			minimalRBACNamespaces: []string{},
-			supportBundle: troubleshootv1beta2.SupportBundle{
+			supportBundle: &troubleshootv1beta2.SupportBundle{
 				Spec: troubleshootv1beta2.SupportBundleSpec{
 					Collectors: []*troubleshootv1beta2.Collect{
 						{
@@ -48,7 +48,7 @@ func TestBuilder_populateNamespaces(t *testing.T) {
 					},
 				},
 			},
-			want: troubleshootv1beta2.SupportBundle{
+			want: &troubleshootv1beta2.SupportBundle{
 				Spec: troubleshootv1beta2.SupportBundleSpec{
 					Collectors: []*troubleshootv1beta2.Collect{
 						{
@@ -76,7 +76,7 @@ func TestBuilder_populateNamespaces(t *testing.T) {
 		{
 			name:                  "minimal rbac namespaces - preserve",
 			minimalRBACNamespaces: []string{"rbac-namespace-1", "rbac-namespace-2"},
-			supportBundle: troubleshootv1beta2.SupportBundle{
+			supportBundle: &troubleshootv1beta2.SupportBundle{
 				Spec: troubleshootv1beta2.SupportBundleSpec{
 					Collectors: []*troubleshootv1beta2.Collect{
 						{
@@ -87,7 +87,7 @@ func TestBuilder_populateNamespaces(t *testing.T) {
 					},
 				},
 			},
-			want: troubleshootv1beta2.SupportBundle{
+			want: &troubleshootv1beta2.SupportBundle{
 				Spec: troubleshootv1beta2.SupportBundleSpec{
 					Collectors: []*troubleshootv1beta2.Collect{
 						{
@@ -102,7 +102,7 @@ func TestBuilder_populateNamespaces(t *testing.T) {
 		{
 			name:                  "minimal rbac namespaces - override",
 			minimalRBACNamespaces: []string{"rbac-namespace-1", "rbac-namespace-2"},
-			supportBundle: troubleshootv1beta2.SupportBundle{
+			supportBundle: &troubleshootv1beta2.SupportBundle{
 				Spec: troubleshootv1beta2.SupportBundleSpec{
 					Collectors: []*troubleshootv1beta2.Collect{
 						{
@@ -111,7 +111,7 @@ func TestBuilder_populateNamespaces(t *testing.T) {
 					},
 				},
 			},
-			want: troubleshootv1beta2.SupportBundle{
+			want: &troubleshootv1beta2.SupportBundle{
 				Spec: troubleshootv1beta2.SupportBundleSpec{
 					Collectors: []*troubleshootv1beta2.Collect{
 						{
@@ -129,9 +129,9 @@ func TestBuilder_populateNamespaces(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			req := require.New(t)
 
-			populateNamespaces(&tt.supportBundle, tt.minimalRBACNamespaces)
+			got := populateNamespaces(tt.supportBundle, tt.minimalRBACNamespaces)
 
-			req.Equal(tt.want, tt.supportBundle)
+			req.Equal(tt.want, got)
 		})
 	}
 }

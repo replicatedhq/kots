@@ -188,14 +188,24 @@ func injectDefaults(app *apptypes.App, supportBundle *troubleshootv1beta2.Suppor
 		}
 	}
 
-	addDefaultTroubleshoot(supportBundle)
-	addDefaultDynamicTroubleshoot(supportBundle, app)
-	populateNamespaces(supportBundle, minimalRBACNamespaces)
-	if imageName != "" && pullSecret != nil {
-		populateImages(supportBundle, imageName, pullSecret)
+	if supportBundle == nil {
+		supportBundle = &troubleshootv1beta2.SupportBundle{}
 	}
-	deduplicatedCollectors(supportBundle)
-	deduplicatedAnalyzers(supportBundle)
+	if supportBundle.Spec.Collectors == nil {
+		supportBundle.Spec.Collectors = make([]*troubleshootv1beta2.Collect, 0)
+	}
+	if supportBundle.Spec.Analyzers == nil {
+		supportBundle.Spec.Analyzers = make([]*troubleshootv1beta2.Analyze, 0)
+	}
+
+	supportBundle = addDefaultTroubleshoot(supportBundle)
+	supportBundle = addDefaultDynamicTroubleshoot(supportBundle, app)
+	supportBundle = populateNamespaces(supportBundle, minimalRBACNamespaces)
+	if imageName != "" && pullSecret != nil {
+		supportBundle = populateImages(supportBundle, imageName, pullSecret)
+	}
+	supportBundle = deduplicatedCollectors(supportBundle)
+	supportBundle = deduplicatedAnalyzers(supportBundle)
 
 	// determine an upload URL
 	var uploadURL string
@@ -230,12 +240,11 @@ func injectDefaults(app *apptypes.App, supportBundle *troubleshootv1beta2.Suppor
 
 // if a namespace is not set for a secret/run/logs/exec/copy collector, set it to the current namespace
 // if kotsadm is running with minimal rbac priviliges, only collect resources from the specified minimal rbac namespaces
-func populateNamespaces(supportBundle *troubleshootv1beta2.SupportBundle, minimalRBACNamespaces []string) {
-	if supportBundle == nil || supportBundle.Spec.Collectors == nil {
-		return
-	}
-	collects := []*troubleshootv1beta2.Collect{}
-	for _, collect := range supportBundle.Spec.Collectors {
+func populateNamespaces(supportBundle *troubleshootv1beta2.SupportBundle, minimalRBACNamespaces []string) *troubleshootv1beta2.SupportBundle {
+	next := supportBundle.DeepCopy()
+
+	var collects []*troubleshootv1beta2.Collect
+	for _, collect := range next.Spec.Collectors {
 		if collect.Secret != nil && collect.Secret.Namespace == "" {
 			collect.Secret.Namespace = util.PodNamespace
 		}
@@ -259,145 +268,139 @@ func populateNamespaces(supportBundle *troubleshootv1beta2.SupportBundle, minima
 		}
 		collects = append(collects, collect)
 	}
-	supportBundle.Spec.Collectors = collects
+	next.Spec.Collectors = collects
+
+	// no analyzers need to be populated
+
+	return next
 }
 
 func deduplicatedCollectors(supportBundle *troubleshootv1beta2.SupportBundle) *troubleshootv1beta2.SupportBundle {
-	next := []*troubleshootv1beta2.Collect{}
+	next := supportBundle.DeepCopy()
+
+	collectors := []*troubleshootv1beta2.Collect{}
 
 	hasClusterResources := false
-	for _, c := range supportBundle.Spec.Collectors {
+	for _, c := range next.Spec.Collectors {
 		if c.ClusterResources != nil {
 			if hasClusterResources {
 				continue
 			}
 			hasClusterResources = true
 		}
-		next = append(next, c)
+		collectors = append(collectors, c)
 	}
 
 	hasClusterInfo := false
-	for _, c := range supportBundle.Spec.Collectors {
+	for _, c := range next.Spec.Collectors {
 		if c.ClusterInfo != nil {
 			if hasClusterInfo {
 				continue
 			}
 			hasClusterInfo = true
 		}
-		next = append(next, c)
+		collectors = append(collectors, c)
 	}
 
 	hasCeph := false
-	for _, c := range supportBundle.Spec.Collectors {
+	for _, c := range next.Spec.Collectors {
 		if c.Ceph != nil {
 			if hasCeph {
 				continue
 			}
 			hasCeph = true
 		}
-		next = append(next, c)
+		collectors = append(collectors, c)
 	}
 
 	hasLonghorn := false
-	for _, c := range supportBundle.Spec.Collectors {
+	for _, c := range next.Spec.Collectors {
 		if c.Longhorn != nil {
 			if hasLonghorn {
 				continue
 			}
 			hasLonghorn = true
 		}
-		next = append(next, c)
+		collectors = append(collectors, c)
 	}
 
-	supportBundle.Spec.Collectors = next
+	next.Spec.Collectors = collectors
 
-	return supportBundle
+	return next
 }
 
 func deduplicatedAnalyzers(supportBundle *troubleshootv1beta2.SupportBundle) *troubleshootv1beta2.SupportBundle {
-	next := []*troubleshootv1beta2.Analyze{}
+	next := supportBundle.DeepCopy()
+
+	analyzers := []*troubleshootv1beta2.Analyze{}
 
 	hasClusterVersion := false
-	for _, a := range supportBundle.Spec.Analyzers {
+	for _, a := range next.Spec.Analyzers {
 		if a.ClusterVersion != nil {
 			if hasClusterVersion {
 				continue
 			}
 			hasClusterVersion = true
 		}
-		next = append(next, a)
+		analyzers = append(analyzers, a)
 	}
 
 	hasLonghorn := false
-	for _, a := range supportBundle.Spec.Analyzers {
+	for _, a := range next.Spec.Analyzers {
 		if a.Longhorn != nil {
 			if hasLonghorn {
 				continue
 			}
 			hasLonghorn = true
 		}
-		next = append(next, a)
+		analyzers = append(analyzers, a)
 	}
 
 	hasWeaveReport := false
-	for _, a := range supportBundle.Spec.Analyzers {
+	for _, a := range next.Spec.Analyzers {
 		if a.WeaveReport != nil {
 			if hasWeaveReport {
 				continue
 			}
 			hasWeaveReport = true
 		}
-		next = append(next, a)
+		analyzers = append(analyzers, a)
 	}
 
-	supportBundle.Spec.Analyzers = next
+	next.Spec.Analyzers = analyzers
 
-	return supportBundle
+	return next
 }
 
 // addDefaultTroubleshoot adds kots.io (github.com/replicatedhq/kots/support-bundle/spec.yaml) spec to the support bundle.
 func addDefaultTroubleshoot(supportBundle *troubleshootv1beta2.SupportBundle) *troubleshootv1beta2.SupportBundle {
-	supportBundle.Spec.Collectors = addDefaultCollectors(supportBundle.Spec.Collectors)
-	supportBundle.Spec.Analyzers = addDefaultAnalyzers(supportBundle.Spec.Analyzers)
-	return supportBundle
+	next := supportBundle.DeepCopy()
+	next.Spec.Collectors = append(next.Spec.Collectors, getDefaultCollectors()...)
+	next.Spec.Analyzers = append(next.Spec.Analyzers, getDefaultAnalyzers()...)
+	return next
 }
 
-func addDefaultCollectors(collectors []*troubleshootv1beta2.Collect) []*troubleshootv1beta2.Collect {
-	if collectors == nil {
-		collectors = make([]*troubleshootv1beta2.Collect, 0)
-	}
-
+func getDefaultCollectors() []*troubleshootv1beta2.Collect {
 	spec := supportbundle_embed.Spec()
-
-	collectors = append(collectors, spec.Spec.Collectors...)
-
-	return collectors
+	return spec.DeepCopy().Spec.Collectors
 }
 
-func addDefaultAnalyzers(analyzers []*troubleshootv1beta2.Analyze) []*troubleshootv1beta2.Analyze {
-	if analyzers == nil {
-		analyzers = make([]*troubleshootv1beta2.Analyze, 0)
-	}
-
+func getDefaultAnalyzers() []*troubleshootv1beta2.Analyze {
 	spec := supportbundle_embed.Spec()
-
-	analyzers = append(analyzers, spec.Spec.Analyzers...)
-
-	return analyzers
+	return spec.DeepCopy().Spec.Analyzers
 }
 
 // addDefaultDynamicTroubleshoot adds dynamic spec to the support bundle.
 // prefer addDefaultTroubleshoot unless absolutely necessary to encourage consistency across built-in and kots.io specs.
 func addDefaultDynamicTroubleshoot(supportBundle *troubleshootv1beta2.SupportBundle, app *apptypes.App) *troubleshootv1beta2.SupportBundle {
-	supportBundle.Spec.Collectors = addDefaultDynamicCollectors(supportBundle.Spec.Collectors, app)
-	supportBundle.Spec.Analyzers = addDefaultDynamicAnalyzers(supportBundle.Spec.Analyzers, app)
-	return supportBundle
+	next := supportBundle.DeepCopy()
+	next.Spec.Collectors = append(next.Spec.Collectors, getDefaultDynamicCollectors(app)...)
+	next.Spec.Analyzers = append(next.Spec.Analyzers, getDefaultDynamicAnalyzers(app)...)
+	return next
 }
 
-func addDefaultDynamicCollectors(collectors []*troubleshootv1beta2.Collect, app *apptypes.App) []*troubleshootv1beta2.Collect {
-	if collectors == nil {
-		collectors = make([]*troubleshootv1beta2.Collect, 0)
-	}
+func getDefaultDynamicCollectors(app *apptypes.App) []*troubleshootv1beta2.Collect {
+	collectors := make([]*troubleshootv1beta2.Collect, 0)
 
 	licenseData, err := license.GetCurrentLicenseString(app)
 	if err != nil {
@@ -462,10 +465,8 @@ func addDefaultDynamicCollectors(collectors []*troubleshootv1beta2.Collect, app 
 	return collectors
 }
 
-func addDefaultDynamicAnalyzers(analyzers []*troubleshootv1beta2.Analyze, app *apptypes.App) []*troubleshootv1beta2.Analyze {
-	if analyzers == nil {
-		analyzers = make([]*troubleshootv1beta2.Analyze, 0)
-	}
+func getDefaultDynamicAnalyzers(app *apptypes.App) []*troubleshootv1beta2.Analyze {
+	analyzers := make([]*troubleshootv1beta2.Analyze, 0)
 
 	analyzers = append(analyzers, makeAPIReplicaAnalyzer())
 
@@ -707,9 +708,11 @@ func getImageAndSecret(ctx context.Context, clientset kubernetes.Interface) (ima
 	return imageName, pullSecret, nil
 }
 
-func populateImages(supportBundle *troubleshootv1beta2.SupportBundle, imageName string, pullSecret *troubleshootv1beta2.ImagePullSecrets) {
+func populateImages(supportBundle *troubleshootv1beta2.SupportBundle, imageName string, pullSecret *troubleshootv1beta2.ImagePullSecrets) *troubleshootv1beta2.SupportBundle {
+	next := supportBundle.DeepCopy()
+
 	collects := []*troubleshootv1beta2.Collect{}
-	for _, collect := range supportBundle.Spec.Collectors {
+	for _, collect := range next.Spec.Collectors {
 		if collect.Collectd != nil && collect.Collectd.Image == "alpine" { // TODO: is this too strong of an assumption?
 			collect.Collectd.Image = imageName
 			collect.Collectd.ImagePullSecret = pullSecret
@@ -720,5 +723,7 @@ func populateImages(supportBundle *troubleshootv1beta2.SupportBundle, imageName 
 		}
 		collects = append(collects, collect)
 	}
-	supportBundle.Spec.Collectors = collects
+	next.Spec.Collectors = collects
+
+	return next
 }
