@@ -440,7 +440,7 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 		writeMidstreamOptions.BaseDir = filepath.Join(u.GetBaseDir(writeUpstreamOptions), helmBase.Path)
 		// empty map indicates that the pullsecrets need to be generated within each chart
 		writeMidstreamOptions.UseHelmInstall = map[string]bool{}
-		for _, v := range newHelmCharts {
+		/* for _, v := range newHelmCharts {
 			writeMidstreamOptions.UseHelmInstall[v.Spec.Chart.Name] = v.Spec.UseHelmInstall
 			if v.Spec.UseHelmInstall {
 				subcharts, err := base.FindHelmSubChartsFromBase(writeBaseOptions.BaseDir, v.Spec.Chart.Name)
@@ -451,7 +451,7 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 					writeMidstreamOptions.UseHelmInstall[subchart] = v.Spec.UseHelmInstall
 				}
 			}
-		}
+		} */
 
 		helmMidstream, err := writeMidstream(writeMidstreamOptions, pullOptions, u, &helmBase, fetchOptions.License, identityConfig, u.GetUpstreamDir(writeUpstreamOptions), log)
 		if err != nil {

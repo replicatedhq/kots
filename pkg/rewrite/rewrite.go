@@ -244,7 +244,7 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 		writeMidstreamOptions.MidstreamDir = filepath.Join(helmBase.GetOverlaysDir(writeBaseOptions), "midstream", helmBase.Path)
 		writeMidstreamOptions.BaseDir = filepath.Join(u.GetBaseDir(writeUpstreamOptions), helmBase.Path)
 
-		for _, v := range newHelmCharts {
+		/* for _, v := range newHelmCharts {
 			writeMidstreamOptions.UseHelmInstall[v.Spec.Chart.Name] = v.Spec.UseHelmInstall
 			if v.Spec.UseHelmInstall {
 				subcharts, err := base.FindHelmSubChartsFromBase(writeBaseOptions.BaseDir, v.Spec.Chart.Name)
@@ -255,9 +255,11 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 					writeMidstreamOptions.UseHelmInstall[subchart] = v.Spec.UseHelmInstall
 				}
 			}
-		}
+		} */
 
-		helmMidstream, err := writeMidstream(writeMidstreamOptions, rewriteOptions, &helmBase, fetchOptions.License, u.GetUpstreamDir(writeUpstreamOptions), log)
+		helmBaseCopy := helmBase
+
+		helmMidstream, err := writeMidstream(writeMidstreamOptions, rewriteOptions, &helmBaseCopy, fetchOptions.License, u.GetUpstreamDir(writeUpstreamOptions), log)
 		if err != nil {
 			return errors.Wrapf(err, "failed to write helm midstream %s", helmBase.Path)
 		}
