@@ -447,7 +447,7 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 		writeMidstreamOptions.MidstreamDir = filepath.Join(helmBase.GetOverlaysDir(writeBaseOptions), "midstream", helmBase.Path)
 		writeMidstreamOptions.BaseDir = filepath.Join(u.GetBaseDir(writeUpstreamOptions), helmBase.Path)
 		// empty map indicates that the pullsecrets need to be generated within each chart
-		//writeMidstreamOptions.UseHelmInstall = map[string]bool{}
+		writeMidstreamOptions.UseHelmInstall = map[string]bool{}
 
 		helmMidstream, err := writeMidstream(writeMidstreamOptions, pullOptions, u, &helmBase, fetchOptions.License, identityConfig, u.GetUpstreamDir(writeUpstreamOptions), log)
 		if err != nil {

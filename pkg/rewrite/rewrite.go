@@ -244,7 +244,7 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 		return errors.Wrap(err, "failed to write common midstream")
 	}
 
-	//commonWriteMidstreamOptions.UseHelmInstall = map[string]bool{}
+	commonWriteMidstreamOptions.UseHelmInstall = map[string]bool{}
 	helmMidstreams := []midstream.Midstream{}
 	for _, base := range helmBases {
 		writeMidstreamOptions := commonWriteMidstreamOptions
