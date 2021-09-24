@@ -56,7 +56,7 @@ type Client struct {
 	TargetNamespace string
 
 	watchedNamespaces []string
-	imagePullSecret   string
+	imagePullSecrets  []string
 
 	appStateMonitor   *appstate.Monitor
 	HookStopChans     []chan struct{}
@@ -196,7 +196,7 @@ func (c *Client) deployManifests(deployArgs operatortypes.DeployAppArgs) (*deplo
 			}
 		}
 	}
-	c.imagePullSecret = deployArgs.ImagePullSecret
+	c.imagePullSecrets = deployArgs.ImagePullSecrets
 	c.watchedNamespaces = deployArgs.AdditionalNamespaces
 
 	result, err := c.ensureResourcesPresent(deployArgs)

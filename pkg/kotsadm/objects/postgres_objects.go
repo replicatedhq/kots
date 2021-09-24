@@ -2,6 +2,7 @@ package kotsadm
 
 import (
 	"fmt"
+
 	"github.com/replicatedhq/kots/pkg/image"
 
 	"github.com/blang/semver"
@@ -52,6 +53,18 @@ func PostgresStatefulset(deployOptions types.DeployOptions, size resource.Quanti
 				},
 			},
 		},
+		{
+			Name: "tmp",
+			VolumeSource: corev1.VolumeSource{
+				EmptyDir: &corev1.EmptyDirVolumeSource{},
+			},
+		},
+		{
+			Name: "run",
+			VolumeSource: corev1.VolumeSource{
+				EmptyDir: &corev1.EmptyDirVolumeSource{},
+			},
+		},
 	}
 	if !deployOptions.IsOpenShift {
 		// this is only needed for the alpine based postgres image for user remapping
@@ -79,6 +92,14 @@ func PostgresStatefulset(deployOptions types.DeployOptions, size resource.Quanti
 		{
 			Name:      "kotsadm-postgres",
 			MountPath: "/var/lib/postgresql/data",
+		},
+		{
+			Name:      "tmp",
+			MountPath: "/tmp",
+		},
+		{
+			Name:      "run",
+			MountPath: "/var/run/postgresql",
 		},
 	}
 	if !deployOptions.IsOpenShift {

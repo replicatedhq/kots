@@ -362,7 +362,16 @@ func fileSystemMinioDeploymentResource(clientset kubernetes.Interface, secretChe
 							Env: env,
 							VolumeMounts: []corev1.VolumeMount{
 								{
-									Name: "data", MountPath: "/data",
+									Name:      "data",
+									MountPath: "/data",
+								},
+								{
+									Name:      "minio-config-dir",
+									MountPath: "/home/minio/.minio/",
+								},
+								{
+									Name:      "minio-cert-dir",
+									MountPath: "/.minio/",
 								},
 							},
 							Args: []string{"--quiet", "server", "data"},
@@ -392,6 +401,18 @@ func fileSystemMinioDeploymentResource(clientset kubernetes.Interface, secretChe
 						{
 							Name:         "data",
 							VolumeSource: volumeSourceFromFileSystemConfig(deployOptions.FileSystemConfig),
+						},
+						{
+							Name: "minio-config-dir",
+							VolumeSource: corev1.VolumeSource{
+								EmptyDir: &corev1.EmptyDirVolumeSource{},
+							},
+						},
+						{
+							Name: "minio-cert-dir",
+							VolumeSource: corev1.VolumeSource{
+								EmptyDir: &corev1.EmptyDirVolumeSource{},
+							},
 						},
 					},
 				},
