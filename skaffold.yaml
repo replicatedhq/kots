@@ -63,11 +63,11 @@ portForward:
     resourceName: kotsadm
     port: 3000
     localPort: 30000
-  - resourceType: statefulset
+  - resourceType: service
     resourceName: kotsadm-postgres
     port: 5432
     localPort: 30432
-  - resourceType: deployment
-    resourceName: kurl-proxy-kotsadm
-    port: 8080
+  - resourceType: service
+    resourceName: kurl-proxy
+    port: 8800
     localPort: 30880
