@@ -357,6 +357,7 @@ func CreateSupportBundleAnalysis(appID string, archivePath string, bundle *types
 	}
 
 	analyzer.Spec.Analyzers = addDefaultAnalyzers(analyzer.Spec.Analyzers)
+	analyzer.Spec.Analyzers = addDefaultDynamicAnalyzers(analyzer.Spec.Analyzers, foundApp)
 
 	s := k8sjson.NewYAMLSerializer(k8sjson.DefaultMetaFactory, scheme.Scheme, scheme.Scheme)
 

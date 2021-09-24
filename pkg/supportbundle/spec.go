@@ -389,11 +389,14 @@ func addDefaultAnalyzers(analyzers []*troubleshootv1beta2.Analyze) []*troublesho
 // addDefaultDynamicTroubleshoot adds dynamic spec to the support bundle.
 // prefer addDefaultTroubleshoot unless absolutely necessary to encourage consistency across built-in and kots.io specs.
 func addDefaultDynamicTroubleshoot(supportBundle *troubleshootv1beta2.SupportBundle, app *apptypes.App) *troubleshootv1beta2.SupportBundle {
-	if supportBundle.Spec.Collectors == nil {
-		supportBundle.Spec.Collectors = make([]*troubleshootv1beta2.Collect, 0)
-	}
-	if supportBundle.Spec.Analyzers == nil {
-		supportBundle.Spec.Analyzers = make([]*troubleshootv1beta2.Analyze, 0)
+	supportBundle.Spec.Collectors = addDefaultDynamicCollectors(supportBundle.Spec.Collectors, app)
+	supportBundle.Spec.Analyzers = addDefaultDynamicAnalyzers(supportBundle.Spec.Analyzers, app)
+	return supportBundle
+}
+
+func addDefaultDynamicCollectors(collectors []*troubleshootv1beta2.Collect, app *apptypes.App) []*troubleshootv1beta2.Collect {
+	if collectors == nil {
+		collectors = make([]*troubleshootv1beta2.Collect, 0)
 	}
 
 	licenseData, err := license.GetCurrentLicenseString(app)
@@ -402,7 +405,7 @@ func addDefaultDynamicTroubleshoot(supportBundle *troubleshootv1beta2.SupportBun
 	}
 
 	if licenseData != "" {
-		supportBundle.Spec.Collectors = append(supportBundle.Spec.Collectors, &troubleshootv1beta2.Collect{
+		collectors = append(collectors, &troubleshootv1beta2.Collect{
 			Data: &troubleshootv1beta2.Data{
 				CollectorMeta: troubleshootv1beta2.CollectorMeta{
 					CollectorName: "license.yaml",
@@ -413,7 +416,7 @@ func addDefaultDynamicTroubleshoot(supportBundle *troubleshootv1beta2.SupportBun
 		})
 	}
 
-	supportBundle.Spec.Collectors = append(supportBundle.Spec.Collectors, &troubleshootv1beta2.Collect{
+	collectors = append(collectors, &troubleshootv1beta2.Collect{
 		Data: &troubleshootv1beta2.Data{
 			CollectorMeta: troubleshootv1beta2.CollectorMeta{
 				CollectorName: "namespace.txt",
@@ -423,7 +426,7 @@ func addDefaultDynamicTroubleshoot(supportBundle *troubleshootv1beta2.SupportBun
 		},
 	})
 
-	supportBundle.Spec.Collectors = append(supportBundle.Spec.Collectors, &troubleshootv1beta2.Collect{
+	collectors = append(collectors, &troubleshootv1beta2.Collect{
 		Secret: &troubleshootv1beta2.Secret{
 			CollectorMeta: troubleshootv1beta2.CollectorMeta{
 				CollectorName: fmt.Sprintf("%s-registry", app.Slug),
@@ -435,7 +438,7 @@ func addDefaultDynamicTroubleshoot(supportBundle *troubleshootv1beta2.SupportBun
 		},
 	})
 
-	supportBundle.Spec.Collectors = append(supportBundle.Spec.Collectors, makeVeleroCollectors()...)
+	collectors = append(collectors, makeVeleroCollectors()...)
 
 	apps := []*apptypes.App{}
 	if app != nil {
@@ -449,14 +452,24 @@ func addDefaultDynamicTroubleshoot(supportBundle *troubleshootv1beta2.SupportBun
 	}
 
 	if len(apps) > 0 {
-		collectors, err := makeAppVersionArchiveCollectors(apps)
+		appVersionArchiveCollectors, err := makeAppVersionArchiveCollectors(apps)
 		if err != nil {
 			logger.Errorf("Failed to make app version archive collectors: %v", err)
 		}
-		supportBundle.Spec.Collectors = append(supportBundle.Spec.Collectors, collectors...)
+		collectors = append(collectors, appVersionArchiveCollectors...)
 	}
 
-	return supportBundle
+	return collectors
+}
+
+func addDefaultDynamicAnalyzers(analyzers []*troubleshootv1beta2.Analyze, app *apptypes.App) []*troubleshootv1beta2.Analyze {
+	if analyzers == nil {
+		analyzers = make([]*troubleshootv1beta2.Analyze, 0)
+	}
+
+	analyzers = append(analyzers, makeAPIReplicaAnalyzer())
+
+	return analyzers
 }
 
 func makeVeleroCollectors() []*troubleshootv1beta2.Collect {
@@ -606,6 +619,51 @@ func makeAppVersionArchiveCollector(app *apptypes.App, dirPrefix string) (*troub
 			Name:          fmt.Sprintf("kots/admin-console/app/%s", app.Slug),
 		},
 	}, nil
+}
+
+func makeAPIReplicaAnalyzer() *troubleshootv1beta2.Analyze {
+	if os.Getenv("POD_OWNER_KIND") == "deployment" {
+		return &troubleshootv1beta2.Analyze{
+			DeploymentStatus: &troubleshootv1beta2.DeploymentStatus{
+				Name:      "kotsadm",
+				Namespace: util.PodNamespace,
+				Outcomes: []*troubleshootv1beta2.Outcome{
+					{
+						Pass: &troubleshootv1beta2.SingleOutcome{
+							When:    "> 0",
+							Message: "At least 1 replica of the Admin Console API is running and ready",
+						},
+					},
+					{
+						Fail: &troubleshootv1beta2.SingleOutcome{
+							When:    "= 0",
+							Message: "There are no replicas of the Admin Console API running and ready",
+						},
+					},
+				},
+			},
+		}
+	}
+	return &troubleshootv1beta2.Analyze{
+		StatefulsetStatus: &troubleshootv1beta2.StatefulsetStatus{
+			Name:      "kotsadm",
+			Namespace: util.PodNamespace,
+			Outcomes: []*troubleshootv1beta2.Outcome{
+				{
+					Pass: &troubleshootv1beta2.SingleOutcome{
+						When:    "> 0",
+						Message: "At least 1 replica of the Admin Console API is running and ready",
+					},
+				},
+				{
+					Fail: &troubleshootv1beta2.SingleOutcome{
+						When:    "= 0",
+						Message: "There are no replicas of the Admin Console API running and ready",
+					},
+				},
+			},
+		},
+	}
 }
 
 func getImageAndSecret(ctx context.Context, clientset kubernetes.Interface) (imageName string, pullSecret *troubleshootv1beta2.ImagePullSecrets, err error) {
