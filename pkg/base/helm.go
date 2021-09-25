@@ -235,13 +235,26 @@ func removeCommonPrefix(baseFiles []BaseFile) []BaseFile {
 
 func helmChartBaseAppendAdditionalFiles(base Base, u *upstreamtypes.Upstream) Base {
 	for _, upstreamFile := range u.Files {
-		if upstreamFile.Path == path.Join(base.Path, "Chart.yaml") {
+		// need to check if base path is an empty string here to catch just the top level additional files
+		// otherwise, we need to check if the upstream path contains the base path to correctly add files for sub-charts
+		if base.Path == "" && upstreamFile.Path == path.Join(base.Path, "Chart.yaml") {
+			base.AdditionalFiles = append(base.AdditionalFiles, BaseFile{
+				Path:    "Chart.yaml",
+				Content: upstreamFile.Content,
+			})
+		} else if base.Path != "" && strings.Contains(upstreamFile.Path, path.Join(base.Path, "Chart.yaml")) {
 			base.AdditionalFiles = append(base.AdditionalFiles, BaseFile{
 				Path:    "Chart.yaml",
 				Content: upstreamFile.Content,
 			})
 		}
-		if upstreamFile.Path == path.Join(base.Path, "Chart.lock") {
+
+		if base.Path == "" && upstreamFile.Path == path.Join(base.Path, "Chart.lock") {
+			base.AdditionalFiles = append(base.AdditionalFiles, BaseFile{
+				Path:    "Chart.lock",
+				Content: upstreamFile.Content,
+			})
+		} else if base.Path != "" && strings.Contains(upstreamFile.Path, path.Join(base.Path, "Chart.lock")) {
 			base.AdditionalFiles = append(base.AdditionalFiles, BaseFile{
 				Path:    "Chart.lock",
 				Content: upstreamFile.Content,
