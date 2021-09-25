@@ -421,6 +421,15 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 	commonWriteMidstreamOptions.UseHelmInstall = map[string]bool{}
 	for _, v := range newHelmCharts {
 		commonWriteMidstreamOptions.UseHelmInstall[v.Spec.Chart.Name] = v.Spec.UseHelmInstall
+		if v.Spec.UseHelmInstall {
+			subcharts, err := base.FindHelmSubChartsFromBase(writeBaseOptions.BaseDir, v.Spec.Chart.Name)
+			if err != nil {
+				return "", errors.Wrapf(err, "failed to find subcharts for parent chart %s", v.Spec.Chart.Name)
+			}
+			for _, subchart := range subcharts.SubCharts {
+				commonWriteMidstreamOptions.UseHelmInstall[subchart] = v.Spec.UseHelmInstall
+			}
+		}
 	}
 
 	writeMidstreamOptions := commonWriteMidstreamOptions
@@ -437,20 +446,6 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 		writeMidstreamOptions := commonWriteMidstreamOptions
 		writeMidstreamOptions.MidstreamDir = filepath.Join(helmBase.GetOverlaysDir(writeBaseOptions), "midstream", helmBase.Path)
 		writeMidstreamOptions.BaseDir = filepath.Join(u.GetBaseDir(writeUpstreamOptions), helmBase.Path)
-		// empty map indicates that the pullsecrets need to be generated within each chart
-		writeMidstreamOptions.UseHelmInstall = map[string]bool{}
-		/* for _, v := range newHelmCharts {
-			writeMidstreamOptions.UseHelmInstall[v.Spec.Chart.Name] = v.Spec.UseHelmInstall
-			if v.Spec.UseHelmInstall {
-				subcharts, err := base.FindHelmSubChartsFromBase(writeBaseOptions.BaseDir, v.Spec.Chart.Name)
-				if err != nil {
-					return "", errors.Wrapf(err, "failed to find subcharts for parent chart %s", v.Spec.Chart.Name)
-				}
-				for _, subchart := range subcharts.SubCharts {
-					writeMidstreamOptions.UseHelmInstall[subchart] = v.Spec.UseHelmInstall
-				}
-			}
-		} */
 
 		helmMidstream, err := writeMidstream(writeMidstreamOptions, pullOptions, u, &helmBase, fetchOptions.License, identityConfig, u.GetUpstreamDir(writeUpstreamOptions), log)
 		if err != nil {
