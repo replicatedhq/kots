@@ -25,9 +25,9 @@ import (
 	"github.com/replicatedhq/kots/pkg/snapshot"
 	kotssnapshot "github.com/replicatedhq/kots/pkg/snapshot"
 	"github.com/replicatedhq/kots/pkg/store"
+	"github.com/replicatedhq/kots/pkg/supportbundle/defaultspec"
 	"github.com/replicatedhq/kots/pkg/supportbundle/types"
 	"github.com/replicatedhq/kots/pkg/util"
-	supportbundle_embed "github.com/replicatedhq/kots/support-bundle"
 	troubleshootv1beta2 "github.com/replicatedhq/troubleshoot/pkg/apis/troubleshoot/v1beta2"
 	"go.uber.org/multierr"
 	corev1 "k8s.io/api/core/v1"
@@ -381,13 +381,11 @@ func addDefaultTroubleshoot(supportBundle *troubleshootv1beta2.SupportBundle) *t
 }
 
 func getDefaultCollectors() []*troubleshootv1beta2.Collect {
-	spec := supportbundle_embed.Spec()
-	return spec.DeepCopy().Spec.Collectors
+	return defaultspec.Get().Spec.Collectors
 }
 
 func getDefaultAnalyzers() []*troubleshootv1beta2.Analyze {
-	spec := supportbundle_embed.Spec()
-	return spec.DeepCopy().Spec.Analyzers
+	return defaultspec.Get().Spec.Analyzers
 }
 
 // addDefaultDynamicTroubleshoot adds dynamic spec to the support bundle.

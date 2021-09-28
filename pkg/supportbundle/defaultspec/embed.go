@@ -1,4 +1,4 @@
-package supportbundle_embed
+package defaultspec
 
 import (
 	_ "embed"
@@ -20,6 +20,6 @@ func init() {
 	}
 }
 
-func Spec() *troubleshootv1beta2.SupportBundle {
-	return spec
+func Get() troubleshootv1beta2.SupportBundle {
+	return *spec
 }
