@@ -343,6 +343,7 @@ class AppDetailPage extends Component {
                   />
                   <Switch>
                     <Route exact path="/app/:slug" render={() =>
+                      /* TODO: feature flag to turn on <Dashboard/> or <DashboardClassic/> */
                       <Dashboard
                         app={app}
                         cluster={app.downstreams?.length && app.downstreams[0]?.cluster}
