@@ -88,7 +88,7 @@ func CreateRenderedSpec(appID string, sequence int64, kotsKinds *kotsutil.KotsKi
 		return nil, errors.Wrap(err, "failed to get app")
 	}
 
-	err = injectDefaults(app, builtBundle, opts, minimalRBACNamespaces)
+	builtBundle, err = injectDefaults(app, builtBundle, opts, minimalRBACNamespaces)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to inject defaults")
 	}
@@ -172,7 +172,8 @@ func CreateRenderedSpec(appID string, sequence int64, kotsKinds *kotsutil.KotsKi
 }
 
 // injectDefaults injects the kotsadm default collectors/analyzers in the the support bundle specification.
-func injectDefaults(app *apptypes.App, supportBundle *troubleshootv1beta2.SupportBundle, opts types.TroubleshootOptions, minimalRBACNamespaces []string) error {
+func injectDefaults(app *apptypes.App, b *troubleshootv1beta2.SupportBundle, opts types.TroubleshootOptions, minimalRBACNamespaces []string) (*troubleshootv1beta2.SupportBundle, error) {
+	supportBundle := b.DeepCopy()
 
 	clientset, err := k8sutil.GetClientset()
 	if err != nil {
@@ -213,7 +214,7 @@ func injectDefaults(app *apptypes.App, supportBundle *troubleshootv1beta2.Suppor
 	randomBundleID := strings.ToLower(rand.String(32))
 	if opts.DisableUpload {
 		//Just use the library internally
-		return nil
+		return supportBundle, nil
 	} else if opts.Origin != "" {
 		uploadURL = fmt.Sprintf("%s/api/v1/troubleshoot/%s/%s", opts.Origin, app.ID, randomBundleID)
 		redactURL = fmt.Sprintf("%s/api/v1/troubleshoot/supportbundle/%s/redactions", opts.Origin, randomBundleID)
@@ -235,7 +236,7 @@ func injectDefaults(app *apptypes.App, supportBundle *troubleshootv1beta2.Suppor
 		},
 	}
 
-	return nil
+	return supportBundle, nil
 }
 
 // if a namespace is not set for a secret/run/logs/exec/copy collector, set it to the current namespace
@@ -281,6 +282,10 @@ func deduplicatedCollectors(supportBundle *troubleshootv1beta2.SupportBundle) *t
 	collectors := []*troubleshootv1beta2.Collect{}
 
 	hasClusterResources := false
+	hasClusterInfo := false
+	hasCeph := false
+	hasLonghorn := false
+
 	for _, c := range next.Spec.Collectors {
 		if c.ClusterResources != nil {
 			if hasClusterResources {
@@ -288,39 +293,28 @@ func deduplicatedCollectors(supportBundle *troubleshootv1beta2.SupportBundle) *t
 			}
 			hasClusterResources = true
 		}
-		collectors = append(collectors, c)
-	}
 
-	hasClusterInfo := false
-	for _, c := range next.Spec.Collectors {
 		if c.ClusterInfo != nil {
 			if hasClusterInfo {
 				continue
 			}
 			hasClusterInfo = true
 		}
-		collectors = append(collectors, c)
-	}
 
-	hasCeph := false
-	for _, c := range next.Spec.Collectors {
 		if c.Ceph != nil {
 			if hasCeph {
 				continue
 			}
 			hasCeph = true
 		}
-		collectors = append(collectors, c)
-	}
 
-	hasLonghorn := false
-	for _, c := range next.Spec.Collectors {
 		if c.Longhorn != nil {
 			if hasLonghorn {
 				continue
 			}
 			hasLonghorn = true
 		}
+
 		collectors = append(collectors, c)
 	}
 
@@ -335,6 +329,9 @@ func deduplicatedAnalyzers(supportBundle *troubleshootv1beta2.SupportBundle) *tr
 	analyzers := []*troubleshootv1beta2.Analyze{}
 
 	hasClusterVersion := false
+	hasLonghorn := false
+	hasWeaveReport := false
+
 	for _, a := range next.Spec.Analyzers {
 		if a.ClusterVersion != nil {
 			if hasClusterVersion {
@@ -342,28 +339,21 @@ func deduplicatedAnalyzers(supportBundle *troubleshootv1beta2.SupportBundle) *tr
 			}
 			hasClusterVersion = true
 		}
-		analyzers = append(analyzers, a)
-	}
 
-	hasLonghorn := false
-	for _, a := range next.Spec.Analyzers {
 		if a.Longhorn != nil {
 			if hasLonghorn {
 				continue
 			}
 			hasLonghorn = true
 		}
-		analyzers = append(analyzers, a)
-	}
 
-	hasWeaveReport := false
-	for _, a := range next.Spec.Analyzers {
 		if a.WeaveReport != nil {
 			if hasWeaveReport {
 				continue
 			}
 			hasWeaveReport = true
 		}
+
 		analyzers = append(analyzers, a)
 	}
 
