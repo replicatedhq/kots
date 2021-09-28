@@ -4,12 +4,14 @@ import ReactTooltip from "react-tooltip"
 
 import dayjs from "dayjs";
 import MarkdownRenderer from "@src/components/shared/MarkdownRenderer";
+import DownstreamWatchVersionDiff from "@src/components/watches/DownstreamWatchVersionDiff";
 import Modal from "react-modal";
 import AirgapUploadProgress from "../AirgapUploadProgress";
 import Loader from "../shared/Loader";
 import MountAware from "../shared/MountAware";
 import ShowLogsModal from "@src/components/modals/ShowLogsModal";
 import DeployWarningModal from "../shared/modals/DeployWarningModal";
+import SkipPreflightsModal from "../shared/modals/SkipPreflightsModal";
 import classNames from "classnames";
 
 import { Utilities, getPreflightResultState, getDeployErrorTab, isAwaitingResults, secondsAgo } from "@src/utilities/utilities";
@@ -25,6 +27,7 @@ class DashboardVersionCard extends React.Component {
       logs: null,
       selectedTab: null,
       displayConfirmDeploymentModal: false,
+      showDiffModal: false
     }
     this.cardTitleText = React.createRef();
   }
@@ -39,6 +42,21 @@ class DashboardVersionCard extends React.Component {
     if (this.props.links !== lastProps.links && this.props.links && this.props.links.length > 0) {
       this.setState({ selectedAction: this.props.links[0] })
     }
+    if (this.props.location.search !== lastProps.location.search && this.props.location.search !== "") {
+      const splitSearch = this.props.location.search.split("/");
+      this.setState({
+        showDiffModal: true,
+        firstSequence: splitSearch[1],
+        secondSequence: splitSearch[2]
+      });
+    }
+  }
+
+  closeViewDiffModal = () => {
+    if (this.props.location.search) {
+      this.props.history.replace(location.pathname);
+    }
+    this.setState({ showDiffModal: false });
   }
 
   hideLogsModal = () => {
@@ -312,7 +330,6 @@ class DashboardVersionCard extends React.Component {
           <span className="u-fontSize--small u-fontWeight--medium u-lineHeight--normal u-textColor--bodyCopy">Cannot generate diff <span className="replicated-link" onClick={() => this.toggleDiffErrModal(version)}>Why?</span></span>
         </div>
       );
-      // todo: this should probably still have a "diff" that would read something like "[x] files created +[1234]"
     } else if (version.source === "Online Install") {
       return (
         <div className="u-fontSize--small u-fontWeight--medium u-lineHeight--normal">
@@ -329,7 +346,7 @@ class DashboardVersionCard extends React.Component {
                 <span className="lines-added">+{diffSummary.linesAdded} </span>
                 <span className="lines-removed">-{diffSummary.linesRemoved}</span>
                 {!downstream.gitops?.enabled &&
-                  <Link className="u-fontSize--small replicated-link u-marginLeft--10" to={`/app/${app?.slug}/version-history/diff/${version.parentSequence - 1}/${version.parentSequence}?d=1`}>View diff</Link>
+                  <Link className="u-fontSize--small replicated-link u-marginLeft--10" to={`${this.props.location.pathname}?diff/${version.parentSequence - 1}/${version.parentSequence}`}>View diff</Link>
                 }
               </div>
               :
@@ -713,6 +730,36 @@ class DashboardVersionCard extends React.Component {
             hideDeployWarningModal={() => this.setState({ showDeployWarningModal: false })}
             onForceDeployClick={this.onForceDeployClick}
           />}
+          {this.state.showSkipModal &&
+            <SkipPreflightsModal
+              showSkipModal={true}
+              hideSkipModal={() => this.setState({ showSkipModal: false })}
+              onForceDeployClick={this.onForceDeployClick} 
+            />
+          }
+          {this.state.showDiffModal && 
+            <Modal
+              isOpen={true}
+              onRequestClose={this.closeViewDiffModal}
+              contentLabel="Release Diff Modal"
+              ariaHideApp={false}
+              className="Modal DiffViewerModal"
+            >
+              <div className="DiffOverlay">
+                <DownstreamWatchVersionDiff
+                  slug={this.props.match.params.slug}
+                  firstSequence={this.state.firstSequence}
+                  secondSequence={this.state.secondSequence}
+                  hideBackButton={true}
+                  onBackClick={this.closeViewDiffModal}
+                  app={this.props.app}
+                />
+              </div>
+              <div className="flex u-marginTop--10 u-marginLeft--10 u-marginBottom--10">
+                <button className="btn primary" onClick={this.closeViewDiffModal}>Close</button>
+              </div>
+            </Modal>
+          }
       </div>
     );
   }
