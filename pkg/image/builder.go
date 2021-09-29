@@ -101,6 +101,7 @@ func GetPrivateImages(upstreamDir string, checkedImages map[string]ImageInfo, al
 			if err != nil {
 				return err
 			}
+
 			if info.IsDir() && (useHelmInstall[info.Name()] == true) {
 				return filepath.SkipDir
 			}

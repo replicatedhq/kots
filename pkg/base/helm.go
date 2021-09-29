@@ -397,3 +397,58 @@ func kustomizeHelmNamespace(baseFiles []BaseFile, renderOptions *RenderOptions) 
 
 	return updatedBaseFiles, nil
 }
+
+type HelmSubCharts struct {
+	ParentName string
+	SubCharts  []string
+}
+
+func FindHelmSubChartsFromBase(baseDir, parentChart string) (*HelmSubCharts, error) {
+	type helmName struct {
+		Name string `yaml:"name"`
+	}
+
+	charts := make([]string, 0)
+	rootSearch := fmt.Sprintf("%s/charts/%s", baseDir, parentChart)
+
+	err := filepath.Walk(rootSearch,
+		func(path string, info os.FileInfo, err error) error {
+			if err != nil {
+				return err
+			}
+
+			// ignore anything that's not a chart yaml
+			if info.Name() != "Chart.yaml" {
+				return nil
+			}
+
+			contents, err := ioutil.ReadFile(path)
+			if err != nil {
+				return errors.Wrap(err, "failed to read file")
+			}
+
+			// unmarshal just the name of the chart
+			var chartInfo helmName
+			err = yaml.Unmarshal(contents, &chartInfo)
+			if err != nil {
+				return nil
+			}
+
+			// add the chart name into our subchart results
+			if chartInfo.Name != "" {
+				charts = append(charts, chartInfo.Name)
+			}
+
+			return nil
+		})
+	if err != nil {
+		if !strings.Contains(err.Error(), "no such file or directory") {
+			return nil, errors.Wrap(err, "failed to walk upstream dir")
+		}
+	}
+
+	return &HelmSubCharts{
+		ParentName: parentChart,
+		SubCharts:  charts,
+	}, nil
+}
