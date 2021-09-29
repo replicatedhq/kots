@@ -199,12 +199,9 @@ func injectDefaults(app *apptypes.App, b *troubleshootv1beta2.SupportBundle, opt
 		supportBundle.Spec.Analyzers = make([]*troubleshootv1beta2.Analyze, 0)
 	}
 
-	supportBundle = addDefaultTroubleshoot(supportBundle)
+	supportBundle = addDefaultTroubleshoot(supportBundle, imageName, pullSecret)
 	supportBundle = addDefaultDynamicTroubleshoot(supportBundle, app)
 	supportBundle = populateNamespaces(supportBundle, minimalRBACNamespaces)
-	if imageName != "" && pullSecret != nil {
-		supportBundle = populateImages(supportBundle, imageName, pullSecret)
-	}
 	supportBundle = deduplicatedCollectors(supportBundle)
 	supportBundle = deduplicatedAnalyzers(supportBundle)
 
@@ -363,15 +360,19 @@ func deduplicatedAnalyzers(supportBundle *troubleshootv1beta2.SupportBundle) *tr
 }
 
 // addDefaultTroubleshoot adds kots.io (github.com/replicatedhq/kots/support-bundle/spec.yaml) spec to the support bundle.
-func addDefaultTroubleshoot(supportBundle *troubleshootv1beta2.SupportBundle) *troubleshootv1beta2.SupportBundle {
+func addDefaultTroubleshoot(supportBundle *troubleshootv1beta2.SupportBundle, imageName string, pullSecret *troubleshootv1beta2.ImagePullSecrets) *troubleshootv1beta2.SupportBundle {
 	next := supportBundle.DeepCopy()
-	next.Spec.Collectors = append(next.Spec.Collectors, getDefaultCollectors()...)
+	next.Spec.Collectors = append(next.Spec.Collectors, getDefaultCollectors(imageName, pullSecret)...)
 	next.Spec.Analyzers = append(next.Spec.Analyzers, getDefaultAnalyzers()...)
 	return next
 }
 
-func getDefaultCollectors() []*troubleshootv1beta2.Collect {
-	return defaultspec.Get().Spec.Collectors
+func getDefaultCollectors(imageName string, pullSecret *troubleshootv1beta2.ImagePullSecrets) []*troubleshootv1beta2.Collect {
+	supportBundle := defaultspec.Get()
+	if imageName != "" && pullSecret != nil {
+		supportBundle = *populateImages(&supportBundle, imageName, pullSecret)
+	}
+	return supportBundle.Spec.Collectors
 }
 
 func getDefaultAnalyzers() []*troubleshootv1beta2.Analyze {

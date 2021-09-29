@@ -96,7 +96,7 @@ spec:
         namespace: kurl
     - secret:
         collectorName: kotsadm-replicated-registry
-        name: kotsadm-replicated-registry # TODO: what is the correct name here?
+        name: kotsadm-replicated-registry # NOTE: this will not live under the kots/ directory like other collectors
         includeValue: false
         key: .dockerconfigjson
         name: kotsadm-replicated-registry
@@ -197,12 +197,12 @@ spec:
         timeout: 1m
     - configMap:
         collectorName: kurl-current-config
-        name: kurl-current-config # TODO: what is the correct name here?
+        name: kurl-current-config # NOTE: this will not live under the kots/ directory like other collectors
         namespace: kurl
         includeAllData: true
     - configMap:
         collectorName: kurl-last-config
-        name: kurl-last-config # TODO: what is the correct name here?
+        name: kurl-last-config # NOTE: this will not live under the kots/ directory like other collectors
         namespace: kurl
         includeAllData: true
     - collectd:

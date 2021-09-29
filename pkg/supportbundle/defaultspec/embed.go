@@ -21,5 +21,5 @@ func init() {
 }
 
 func Get() troubleshootv1beta2.SupportBundle {
-	return *spec
+	return *spec.DeepCopy()
 }
