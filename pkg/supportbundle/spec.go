@@ -369,7 +369,7 @@ func addDefaultTroubleshoot(supportBundle *troubleshootv1beta2.SupportBundle, im
 
 func getDefaultCollectors(imageName string, pullSecret *troubleshootv1beta2.ImagePullSecrets) []*troubleshootv1beta2.Collect {
 	supportBundle := defaultspec.Get()
-	if imageName != "" && pullSecret != nil {
+	if imageName != "" {
 		supportBundle = *populateImages(&supportBundle, imageName, pullSecret)
 	}
 	return supportBundle.Spec.Collectors
