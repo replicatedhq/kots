@@ -159,11 +159,12 @@ export default class DashboardLicenseCard extends React.Component {
           shouldReturnFocusAfterClose={false}
           contentLabel="Next step"
           ariaHideApp={false}
-          className="Modal MediumSize"
+          className="Modal SmallSize"
         >
           {gitops?.enabled ?
             <div className="Modal-body">
-              <p className="u-fontSize--large u-textColor--primary u-lineHeight--medium u-marginBottom--20">
+              <p className="u-fontSize--largest u-fontWeight--bold u-textColor--primary u-lineHeight--normal u-marginBottom--10">License synced</p>
+              <p className="u-fontSize--large u-textColor--bodyCopy u-lineHeight--medium u-marginBottom--20">
                 The license for {appName} has been updated. A new commit has been made to the gitops repository with these changes. Please head to the <a className="link" target="_blank" href={gitops?.uri} rel="noopener noreferrer">repo</a> to see the diff.
               </p>
               <div>
@@ -172,7 +173,8 @@ export default class DashboardLicenseCard extends React.Component {
             </div>
             :
             <div className="Modal-body">
-              <p className="u-fontSize--large u-textColor--primary u-lineHeight--medium u-marginBottom--20">
+              <p className="u-fontSize--largest u-fontWeight--bold u-textColor--primary u-lineHeight--normal u-marginBottom--10">License synced</p>
+              <p className="u-fontSize--large u-textColor--bodyCopy u-lineHeight--medium u-marginBottom--20">
                 The license for {appName} has been updated. A new version is available for deploy with these changes from the Version card on the dashboard. To see a full list of versions visit the <Link to={`/app/${app?.slug}/version-history`}>version history</Link> page.
               </p>
               <div>
