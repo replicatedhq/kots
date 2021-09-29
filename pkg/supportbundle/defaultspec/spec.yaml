@@ -7,6 +7,7 @@ spec:
     - clusterInfo: {}
     - clusterResources: {}
     - ceph: {}
+    - longhorn: {}
     - exec:
         args:
           - "-U"
@@ -95,6 +96,7 @@ spec:
         namespace: kurl
     - secret:
         collectorName: kotsadm-replicated-registry
+        name: kotsadm-replicated-registry # NOTE: this will not live under the kots/ directory like other collectors
         includeValue: false
         key: .dockerconfigjson
         name: kotsadm-replicated-registry
@@ -185,7 +187,6 @@ spec:
         selector:
           - app=kotsadm
         timeout: 10s
-    - longhorn: {}
     - copyFromHost:
         collectorName: kurl-host-preflights
         name: kots/kurl/host-preflights
@@ -194,6 +195,16 @@ spec:
         image: alpine
         imagePullPolicy: IfNotPresent
         timeout: 1m
+    - configMap:
+        collectorName: kurl-current-config
+        name: kurl-current-config # NOTE: this will not live under the kots/ directory like other collectors
+        namespace: kurl
+        includeAllData: true
+    - configMap:
+        collectorName: kurl-last-config
+        name: kurl-last-config # NOTE: this will not live under the kots/ directory like other collectors
+        namespace: kurl
+        includeAllData: true
     - collectd:
         collectorName: collectd
         hostPath: /var/lib/collectd/rrd
@@ -202,6 +213,24 @@ spec:
         timeout: 5m
 
   analyzers:
+    - clusterVersion:
+        outcomes:
+          - fail:
+              when: "< 1.16.0"
+              message: The Admin Console requires at least Kubernetes 1.16.0
+          - pass:
+              message: Your cluster meets the recommended and required versions of Kubernetes
+    - containerRuntime:
+        outcomes:
+          - fail:
+              when: "== gvisor"
+              message: The Admin Console does not support using the gvisor runtime
+          - pass:
+              message: A supported container runtime is present on all nodes
+    - cephStatus: {}
+    - longhorn: {}
+    - weaveReport:
+        reportFileGlob: kots/kurl/weave/kube-system/*/weave-report-stdout.txt
     - textAnalyze:
         checkName: Weave Status
         exclude: ""
@@ -233,6 +262,3 @@ spec:
           - pass:
               message: Goldpinger can communicate properly
         regexGroups: '"OK": ?(?P<OK>\w+)'
-    - longhorn: {}
-    - weaveReport:
-        reportFileGlob: kots/kurl/weave/kube-system/*/weave-report-stdout.txt
