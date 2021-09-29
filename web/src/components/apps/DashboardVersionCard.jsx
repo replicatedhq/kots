@@ -343,10 +343,8 @@ class DashboardVersionCard extends React.Component {
             (diffSummary.filesChanged > 0 ?
               <div className="DiffSummary u-marginRight--10">
                 <span className="files">{diffSummary.filesChanged} files changed </span>
-                <span className="lines-added">+{diffSummary.linesAdded} </span>
-                <span className="lines-removed">-{diffSummary.linesRemoved}</span>
                 {!downstream.gitops?.enabled &&
-                  <Link className="u-fontSize--small replicated-link u-marginLeft--10" to={`${this.props.location.pathname}?diff/${version.parentSequence - 1}/${version.parentSequence}`}>View diff</Link>
+                  <Link className="u-fontSize--small replicated-link u-marginLeft--10" to={`${this.props.location.pathname}?diff/${this.props.currentVersion.sequence}/${version.parentSequence}`}>View diff against</Link>
                 }
               </div>
               :
