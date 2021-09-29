@@ -12,7 +12,7 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v2
       with:
-        token: ${{ secrets.NIGHTLY_GH_PAT }}
+        token: ${{ secrets.NIGHTLY_GH_PAT }} # needed to git push nightly tag
 
     - name: Get tags
       id: get_tag
