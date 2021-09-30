@@ -99,7 +99,6 @@ spec:
         name: kotsadm-replicated-registry # NOTE: this will not live under the kots/ directory like other collectors
         includeValue: false
         key: .dockerconfigjson
-        name: kotsadm-replicated-registry
     - logs:
         collectorName: rook-ceph-agent
         selector:
