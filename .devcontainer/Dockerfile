@@ -101,9 +101,15 @@ RUN bash /tmp/scripts/replicated-debian.sh \
     && rm -rf /tmp/scripts \
     && apt-get clean -y 
 
+# Userspace
+ENV SHELL=/bin/zsh
+USER ${USERNAME}
+COPY --chown=${USERNAME}:root library-scripts/replicated-userspace.sh /tmp/scripts/
+RUN bash /usr/local/share/docker-init.sh \
+    && bash /tmp/scripts/replicated-userspace.sh \
+    && rm -rf /tmp/scripts/scripts
+
 # Fire Docker/Moby script if needed along with Oryx's benv
 ENTRYPOINT [ "/usr/local/share/docker-init.sh", "/usr/local/share/ssh-init.sh", "benv" ]
 CMD [ "sleep", "infinity" ]
 
-ENV SHELL=/bin/zsh
-USER ${USERNAME}

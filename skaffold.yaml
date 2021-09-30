@@ -9,6 +9,14 @@ profiles:
       kustomize:
         paths: 
           - "./kustomize/overlays/kotsstore"
+  - name: codespace
+    activation:
+      - env: USER=codespace 
+    build:
+      local:
+        concurrency: 0
+        useBuildkit: true
+        push: true
 
 build:
   insecureRegistries:
