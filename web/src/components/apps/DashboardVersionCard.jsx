@@ -27,7 +27,11 @@ class DashboardVersionCard extends React.Component {
       logs: null,
       selectedTab: null,
       displayConfirmDeploymentModal: false,
-      showDiffModal: false
+      showDiffModal: false,
+      showNoChangesModal: false,
+      releaseWithNoChanges: {},
+      releaseWithErr: {},
+      showDiffErrModal: false
     }
     this.cardTitleText = React.createRef();
   }
@@ -223,6 +227,20 @@ class DashboardVersionCard extends React.Component {
     }
   }
 
+  toggleDiffErrModal = (release) => {
+    this.setState({
+      showDiffErrModal: !this.state.showDiffErrModal,
+      releaseWithErr: !this.state.showDiffErrModal ? release : {}
+    });
+  }
+
+  toggleNoChangesModal = (version) => {
+    this.setState({
+      showNoChangesModal: !this.state.showNoChangesModal,
+      releaseWithNoChanges: !this.state.showNoChangesModal ? version: {}
+    });
+  }
+
   getPreflightState = (version) => {
     let preflightsFailed = false;
     let preflightState = "";
@@ -327,7 +345,7 @@ class DashboardVersionCard extends React.Component {
     if (hasDiffSummaryError) {
       return (
         <div className="flex flex1 alignItems--center">
-          <span className="u-fontSize--small u-fontWeight--medium u-lineHeight--normal u-textColor--bodyCopy">Cannot generate diff <span className="replicated-link" onClick={() => this.toggleDiffErrModal(version)}>Why?</span></span>
+          <span className="u-fontSize--small u-fontWeight--medium u-lineHeight--normal u-textColor--bodyCopy">Unable to generate diff <span className="replicated-link" onClick={() => this.toggleDiffErrModal(version)}>Why?</span></span>
         </div>
       );
     } else if (version.source === "Online Install") {
@@ -344,12 +362,12 @@ class DashboardVersionCard extends React.Component {
               <div className="DiffSummary u-marginRight--10">
                 <span className="files">{diffSummary.filesChanged} files changed </span>
                 {!downstream.gitops?.enabled &&
-                  <Link className="u-fontSize--small replicated-link u-marginLeft--10" to={`${this.props.location.pathname}?diff/${this.props.currentVersion.sequence}/${version.parentSequence}`}>View diff against</Link>
+                  <Link className="u-fontSize--small replicated-link u-marginLeft--5" to={`${this.props.location.pathname}?diff/${this.props.currentVersion.sequence}/${version.parentSequence}`}>View diff</Link>
                 }
               </div>
               :
               <div className="DiffSummary">
-                <span className="files">No changes</span>
+                <span className="files">No changes to show. <span className="replicated-link" onClick={() => this.toggleNoChangesModal(version)}>Why?</span></span>
               </div>
             )
             : <span>&nbsp;</span>}
@@ -705,6 +723,43 @@ class DashboardVersionCard extends React.Component {
             logsLoading={this.state.logsLoading}
             renderLogsTabs={this.renderLogsTabs()}
           />}
+          {this.state.showDiffErrModal &&
+            <Modal
+              isOpen={true}
+              onRequestClose={this.toggleDiffErrModal}
+              contentLabel="Unable to Get Diff"
+              ariaHideApp={false}
+              className="Modal MediumSize"
+            >
+              <div className="Modal-body">
+                <p className="u-fontSize--largest u-fontWeight--bold u-textColor--primary u-lineHeight--normal u-marginBottom--10">Unable to generate a file diff for release</p>
+                <p className="u-fontSize--normal u-textColor--bodyCopy u-lineHeight--normal u-marginBottom--20">The release with the <span className="u-fontWeight--bold">Upstream {this.state.releaseWithErr.versionLabel}, Sequence {this.state.releaseWithErr.sequence}</span> was unable to generate a diff because the following error:</p>
+                <div className="error-block-wrapper u-marginBottom--30 flex flex1">
+                  <span className="u-textColor--error">{this.state.releaseWithErr.diffSummaryError}</span>
+                </div>
+                <div className="flex u-marginBottom--10">
+                  <button className="btn primary" onClick={this.toggleDiffErrModal}>Ok, got it!</button>
+                </div>
+              </div>
+            </Modal>
+          }
+          {this.state.showNoChangesModal &&
+            <Modal
+              isOpen={true}
+              onRequestClose={this.toggleNoChangesModal}
+              contentLabel="No Changes"
+              ariaHideApp={false}
+              className="Modal DefaultSize"
+            >
+              <div className="Modal-body">
+                <p className="u-fontSize--largest u-fontWeight--bold u-textColor--primary u-lineHeight--normal u-marginBottom--10">No changes to show</p>
+                <p className="u-fontSize--normal u-textColor--bodyCopy u-lineHeight--normal u-marginBottom--20">The release with the <span className="u-fontWeight--bold">Upstream {this.state.releaseWithNoChanges.versionLabel}, Sequence {this.state.releaseWithNoChanges.sequence}</span> was unable to generate a diff because the changes made do not affect any manifests that will be deployed. Only changes affecting the application manifest will be included in a diff.</p>
+                <div className="flex u-paddingTop--10">
+                  <button className="btn primary" onClick={this.toggleNoChangesModal}>Ok, got it!</button>
+                </div>
+              </div>
+            </Modal>
+          }
           {this.state.displayConfirmDeploymentModal &&
             <Modal
               isOpen={true}
