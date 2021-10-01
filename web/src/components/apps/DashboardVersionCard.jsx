@@ -733,7 +733,7 @@ class DashboardVersionCard extends React.Component {
             >
               <div className="Modal-body">
                 <p className="u-fontSize--largest u-fontWeight--bold u-textColor--primary u-lineHeight--normal u-marginBottom--10">Unable to generate a file diff for release</p>
-                <p className="u-fontSize--normal u-textColor--bodyCopy u-lineHeight--normal u-marginBottom--20">The release with the <span className="u-fontWeight--bold">Upstream {this.state.releaseWithErr.versionLabel}, Sequence {this.state.releaseWithErr.sequence}</span> was unable to generate a diff because the following error:</p>
+                <p className="u-fontSize--normal u-textColor--bodyCopy u-lineHeight--normal u-marginBottom--20">The <span className="u-fontWeight--bold">Upstream {this.state.releaseWithErr.versionLabel}, Sequence {this.state.releaseWithErr.sequence}</span> release was unable to generate a diff because the following error:</p>
                 <div className="error-block-wrapper u-marginBottom--30 flex flex1">
                   <span className="u-textColor--error">{this.state.releaseWithErr.diffSummaryError}</span>
                 </div>
@@ -753,7 +753,7 @@ class DashboardVersionCard extends React.Component {
             >
               <div className="Modal-body">
                 <p className="u-fontSize--largest u-fontWeight--bold u-textColor--primary u-lineHeight--normal u-marginBottom--10">No changes to show</p>
-                <p className="u-fontSize--normal u-textColor--bodyCopy u-lineHeight--normal u-marginBottom--20">The release with the <span className="u-fontWeight--bold">Upstream {this.state.releaseWithNoChanges.versionLabel}, Sequence {this.state.releaseWithNoChanges.sequence}</span> was unable to generate a diff because the changes made do not affect any manifests that will be deployed. Only changes affecting the application manifest will be included in a diff.</p>
+                <p className="u-fontSize--normal u-textColor--bodyCopy u-lineHeight--normal u-marginBottom--20">The <span className="u-fontWeight--bold">Upstream {this.state.releaseWithNoChanges.versionLabel}, Sequence {this.state.releaseWithNoChanges.sequence}</span> release was unable to generate a diff because the changes made do not affect any manifests that will be deployed. Only changes affecting the application manifest will be included in a diff.</p>
                 <div className="flex u-paddingTop--10">
                   <button className="btn primary" onClick={this.toggleNoChangesModal}>Ok, got it!</button>
                 </div>
