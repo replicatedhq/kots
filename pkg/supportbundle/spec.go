@@ -462,15 +462,13 @@ func getDefaultDynamicCollectors(app *apptypes.App, imageName string, pullSecret
 	clientset, err := k8sutil.GetClientset()
 	if err != nil {
 		logger.Errorf("Failed to get clientset for dynamic kurl collectors: %v", err)
-	} else {
-		if kotsutil.IsKurl(clientset) {
-			collectors = append(collectors, &troubleshootv1beta2.Collect{
-				Sysctl: &troubleshootv1beta2.Sysctl{
-					Image:           imageName,
-					ImagePullSecret: pullSecret,
-				},
-			})
-		}
+	} else if kotsutil.IsKurl(clientset) {
+		collectors = append(collectors, &troubleshootv1beta2.Collect{
+			Sysctl: &troubleshootv1beta2.Sysctl{
+				Image:           imageName,
+				ImagePullSecret: pullSecret,
+			},
+		})
 	}
 
 	return collectors
@@ -484,39 +482,37 @@ func getDefaultDynamicAnalyzers(app *apptypes.App) []*troubleshootv1beta2.Analyz
 	clientset, err := k8sutil.GetClientset()
 	if err != nil {
 		logger.Errorf("Failed to get clientset for dynamic kurl analyzers: %v", err)
-	} else {
-		if kotsutil.IsKurl(clientset) {
-			analyzers = append(analyzers, &troubleshootv1beta2.Analyze{
-				Sysctl: &troubleshootv1beta2.SysctlAnalyze{
-					AnalyzeMeta: troubleshootv1beta2.AnalyzeMeta{
-						CheckName: "IP forwarding not enabled",
-					},
-					Outcomes: []*troubleshootv1beta2.Outcome{
-						{
-							Fail: &troubleshootv1beta2.SingleOutcome{
-								When:    "net.ipv4.ip_forward = 0",
-								Message: "IP forwarding not enabled",
-							},
+	} else if kotsutil.IsKurl(clientset) {
+		analyzers = append(analyzers, &troubleshootv1beta2.Analyze{
+			Sysctl: &troubleshootv1beta2.SysctlAnalyze{
+				AnalyzeMeta: troubleshootv1beta2.AnalyzeMeta{
+					CheckName: "IP forwarding not enabled",
+				},
+				Outcomes: []*troubleshootv1beta2.Outcome{
+					{
+						Fail: &troubleshootv1beta2.SingleOutcome{
+							When:    "net.ipv4.ip_forward = 0",
+							Message: "IP forwarding not enabled",
 						},
 					},
 				},
 			},
-				&troubleshootv1beta2.Analyze{
-					Sysctl: &troubleshootv1beta2.SysctlAnalyze{
-						AnalyzeMeta: troubleshootv1beta2.AnalyzeMeta{
-							CheckName: "Bridge iptables integration",
-						},
-						Outcomes: []*troubleshootv1beta2.Outcome{
-							{
-								Fail: &troubleshootv1beta2.SingleOutcome{
-									When:    "net.bridge.bridge-nf-call-iptables = 0",
-									Message: "Packets traversing bridge interfaces not processed by iptables",
-								},
+		},
+			&troubleshootv1beta2.Analyze{
+				Sysctl: &troubleshootv1beta2.SysctlAnalyze{
+					AnalyzeMeta: troubleshootv1beta2.AnalyzeMeta{
+						CheckName: "Bridge iptables integration",
+					},
+					Outcomes: []*troubleshootv1beta2.Outcome{
+						{
+							Fail: &troubleshootv1beta2.SingleOutcome{
+								When:    "net.bridge.bridge-nf-call-iptables = 0",
+								Message: "Packets traversing bridge interfaces not processed by iptables",
 							},
 						},
 					},
-				})
-		}
+				},
+			})
 	}
 
 	return analyzers
