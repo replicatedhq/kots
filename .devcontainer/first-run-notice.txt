@@ -6,3 +6,5 @@ Drivers Manual:
 * KOTS will be on port http://localhost:30000 - check the skaffold logs
 * `k` alias is available for `kubectl` with auto-completion for your pleasure
 * This is a `zsh` terminal with Oh My Zsh installed. Just thought you should know.
+
+
