@@ -5,6 +5,11 @@ if [ -z ${GIT_TAG} ]; then
     exit 1
 fi
 
+if [ -z ${RUN_ID} ]; then
+    echo "This script must run from GithubActions with RUN_ID env variable set"
+    exit 1
+fi
+
 echo ${REPLICATEDCOM_GITHUB_PRIVATE_KEY} | base64 -d > ~/github_private_key
 chmod 600 ~/github_private_key
 export GIT_SSH_COMMAND='ssh -i ~/github_private_key'
@@ -21,6 +26,8 @@ kind: Version
 metadata:
   name: version
   namespace: kgrid-system
+  labels:
+    runId: ${GIT_TAG}
 spec:
   kots:
     latest: "${GIT_TAG}"
