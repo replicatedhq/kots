@@ -178,8 +178,8 @@ func CreateAppFromOnline(pendingApp *types.PendingApp, upstreamURI string, isAut
 		return nil, errors.Wrap(err, "failed to load kotskinds from path")
 	}
 
-	if isAutomated && kotsKinds.Config != nil {
-		// bypass the config screen if no configuration is required
+	if isAutomated && kotsKinds.IsConfigurable() {
+		// bypass the config screen if no configuration is required and it's an automated install
 		registrySettings, err := store.GetStore().GetRegistryDetailsForApp(pendingApp.ID)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to get registry settings for app")
@@ -193,11 +193,8 @@ func CreateAppFromOnline(pendingApp *types.PendingApp, upstreamURI string, isAut
 				if err := version.DeployVersion(pendingApp.ID, newSequence); err != nil {
 					return nil, errors.Wrap(err, "failed to deploy version")
 				}
-
-				// preflights reporting
 				go func() {
-					isCLI := true
-					if err := reporting.ReportAppInfo(pendingApp.ID, newSequence, skipPreflights, isCLI); err != nil {
+					if err := reporting.ReportAppInfo(pendingApp.ID, newSequence, skipPreflights, isAutomated); err != nil {
 						logger.Debugf("failed to send preflights data to replicated app: %v", err)
 					}
 				}()
@@ -208,6 +205,18 @@ func CreateAppFromOnline(pendingApp *types.PendingApp, upstreamURI string, isAut
 				}
 			}
 		}
+	}
+
+	if !kotsKinds.IsConfigurable() && skipPreflights {
+		// app is not configurable and preflights are skipped, so just deploy the app
+		if err := version.DeployVersion(pendingApp.ID, newSequence); err != nil {
+			return nil, errors.Wrap(err, "failed to deploy version")
+		}
+		go func() {
+			if err := reporting.ReportAppInfo(pendingApp.ID, newSequence, skipPreflights, isAutomated); err != nil {
+				logger.Debugf("failed to send preflights data to replicated app: %v", err)
+			}
+		}()
 	}
 
 	if !skipPreflights {
