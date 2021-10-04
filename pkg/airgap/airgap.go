@@ -264,7 +264,7 @@ func CreateAppFromAirgap(opts CreateAirgapAppOpts) (finalError error) {
 		return errors.Wrap(err, "failed to load kotskinds from path")
 	}
 
-	if opts.IsAutomated && kotsKinds.Config != nil {
+	if opts.IsAutomated && kotsKinds.IsConfigurable() {
 		// bypass the config screen if no configuration is required
 		registrySettings := registrytypes.RegistrySettings{
 			Hostname:   opts.RegistryHost,
@@ -288,6 +288,13 @@ func CreateAppFromAirgap(opts CreateAirgapAppOpts) (finalError error) {
 					return errors.Wrap(err, "failed to set downstream version status to 'pending preflight'")
 				}
 			}
+		}
+	}
+
+	if !kotsKinds.IsConfigurable() && opts.SkipPreflights {
+		// app is not configurable and preflights are skipped, so just deploy the app
+		if err := version.DeployVersion(opts.PendingApp.ID, newSequence); err != nil {
+			return errors.Wrap(err, "failed to deploy version")
 		}
 	}
 
