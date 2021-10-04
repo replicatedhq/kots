@@ -41,7 +41,7 @@ func (e AppRollbackError) Error() string {
 	return fmt.Sprintf("app:%s, version:%d", e.AppID, e.Sequence)
 }
 
-func DeleteUnusedImages(appID string) error {
+func DeleteUnusedImages(appID string, ignoreRollback bool) error {
 	installParams, err := kotsutil.GetInstallationParams(kotsadmtypes.KotsadmConfigMap)
 	if err != nil {
 		return errors.Wrap(err, "failed to get app registry info")
@@ -68,6 +68,9 @@ func DeleteUnusedImages(appID string) error {
 		return nil
 	}
 
+	// we check all apps here because different apps could share the same images,
+	// and the images could be active in one but not the other.
+	// so, we also do not delete the images if rollback is enabled for any app.
 	appIDs, err := store.GetStore().GetAppIDsFromRegistry(registrySettings.Hostname)
 	if err != nil {
 		return errors.Wrap(err, "failed to get apps with registry")
@@ -75,25 +78,43 @@ func DeleteUnusedImages(appID string) error {
 
 	activeVersions := []*versiontypes.AppVersion{}
 	for _, appID := range appIDs {
-		downstreams, err := store.GetStore().ListDownstreamsForApp(appID)
+		a, err := store.GetStore().GetApp(appID)
+		if err != nil {
+			errors.Wrap(err, "failed to get app")
+		}
+
+		if !ignoreRollback {
+			// rollback support is detected from the latest available version, not the currently deployed one
+			allowRollback, err := store.GetStore().IsRollbackSupportedForVersion(a.ID, a.CurrentSequence)
+			if err != nil {
+				return errors.Wrap(err, "failed to check if rollback is supported")
+			}
+			if allowRollback {
+				return AppRollbackError{AppID: a.ID, Sequence: a.CurrentSequence}
+			}
+		} else {
+			logger.Info("ignoring the fact that rollback is enabled and will continue with the images removal process")
+		}
+
+		downstreams, err := store.GetStore().ListDownstreamsForApp(a.ID)
 		if err != nil {
 			return errors.Wrap(err, "failed to list downstreams for app")
 		}
 
 		for _, d := range downstreams {
-			curSequence, err := store.GetStore().GetCurrentParentSequence(appID, d.ClusterID)
+			curSequence, err := store.GetStore().GetCurrentParentSequence(a.ID, d.ClusterID)
 			if err != nil {
 				return errors.Wrap(err, "failed to get current parent sequence")
 			}
 
-			curVersion, err := store.GetStore().GetAppVersion(appID, curSequence)
+			curVersion, err := store.GetStore().GetAppVersion(a.ID, curSequence)
 			if err != nil {
 				return errors.Wrap(err, "failed to get app version")
 			}
 
 			activeVersions = append(activeVersions, curVersion)
 
-			laterVersions, err := store.GetStore().GetAppVersionsAfter(appID, curSequence)
+			laterVersions, err := store.GetStore().GetAppVersionsAfter(a.ID, curSequence)
 			if err != nil {
 				return errors.Wrapf(err, "failed to get versions after %d", curVersion.Sequence)
 			}
@@ -108,9 +129,6 @@ func DeleteUnusedImages(appID string) error {
 		}
 		if version.KOTSKinds == nil {
 			continue
-		}
-		if version.KOTSKinds.KotsApplication.Spec.AllowRollback {
-			return AppRollbackError{AppID: version.AppID, Sequence: version.Sequence}
 		}
 		for _, i := range version.KOTSKinds.Installation.Spec.KnownImages {
 			imagesDedup[i.Image] = struct{}{}

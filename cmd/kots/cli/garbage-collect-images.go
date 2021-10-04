@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -82,7 +83,14 @@ func GarbageCollectImagesCmd() *cobra.Command {
 				os.Exit(2) // not returning error here as we don't want to show the entire stack trace to normal users
 			}
 
-			newReq, err := http.NewRequest("POST", url, nil)
+			requestPayload := map[string]interface{}{
+				"ignoreRollback": v.GetBool("ignore-rollback"),
+			}
+			requestBody, err := json.Marshal(requestPayload)
+			if err != nil {
+				return errors.Wrap(err, "failed to marshal request json")
+			}
+			newReq, err := http.NewRequest("POST", url, bytes.NewBuffer(requestBody))
 			if err != nil {
 				return errors.Wrap(err, "failed to create request")
 			}
@@ -121,6 +129,8 @@ func GarbageCollectImagesCmd() *cobra.Command {
 			return nil
 		},
 	}
+
+	cmd.Flags().Bool("ignore-rollback", false, "force images garbage collection even if rollback is enabled for the application")
 
 	return cmd
 }

@@ -2,7 +2,7 @@ include Makefile.build
 CURRENT_USER := $(shell id -u -n)
 MINIO_TAG ?= RELEASE.2021-09-15T04-54-25Z
 POSTGRES_ALPINE_TAG ?= 10.18-alpine
-DEX_TAG ?= v2.28.1
+DEX_TAG ?= v2.30.0
 LVP_VERSION := v0.1.0
 
 BUILDFLAGS = -tags='netgo containers_image_ostree_stub exclude_graphdriver_devicemapper exclude_graphdriver_btrfs containers_image_openpgp' -installsuffix netgo
@@ -96,10 +96,8 @@ build-release:
 	docker tag kotsadm/kotsadm:${GIT_TAG} kotsadm/kotsadm:v0.0.0-nightly
 	docker push kotsadm/kotsadm:v0.0.0-nightly
 
-	docker pull ghcr.io/dexidp/dex:${DEX_TAG}
-	docker tag ghcr.io/dexidp/dex:${DEX_TAG} kotsadm/dex:${DEX_TAG}
+	docker build --pull -f deploy/Dockerfile.dex -t kotsadm/dex:${DEX_TAG} --build-arg TAG=${DEX_TAG} .
 	docker push kotsadm/dex:${DEX_TAG}
-
 	mkdir -p bin/docker-archive/dex
 	skopeo copy docker://kotsadm/dex:${DEX_TAG} docker-archive:bin/docker-archive/dex/${DEX_TAG}
 
@@ -128,3 +126,26 @@ project-pact-tests:
 .PHONY: cache
 cache:
 	docker build -f hack/dev/Dockerfile.skaffoldcache . -t kotsadm:cache
+
+.PHONY: init-sbom
+init-sbom:
+	mkdir -p sbom/spdx 
+
+.PHONY: install-spdx-sbom-generator
+install-spdx-sbom-generator: init-sbom  
+ifeq (,$(shell command -v spdx-sbom-generator))
+	./scripts/install-sbom-generator.sh
+SPDX_GENERATOR=./sbom/spdx-sbom-generator
+else
+SPDX_GENERATOR=$(shell command -v spdx-sbom-generator)
+endif
+
+sbom/spdx/bom-go-mod.spdx: install-spdx-sbom-generator
+	$(SPDX_GENERATOR) -o ./sbom/spdx 
+
+sbom/kots-sbom.tgz: sbom/spdx/bom-go-mod.spdx 
+	tar -czf sbom/kots-sbom.tgz sbom/spdx/*.spdx
+
+sbom: sbom/kots-sbom.tgz
+	cosign sign-blob -key ./cosign.key sbom/kots-sbom.tgz > ./sbom/kots-sbom.tgz.sig
+	cosign public-key -key ./cosign.key -outfile ./sbom/key.pub

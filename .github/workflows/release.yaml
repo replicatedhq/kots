@@ -46,7 +46,7 @@ jobs:
         path: ./migrations/fixtures/schema
 
     - name: Build fixtures
-      run: source .image.env && make -C migrations/fixtures deps build run
+      run: export $(cat .image.env | sed 's/#.*//g' | xargs) && make -C migrations/fixtures deps build run
       shell: bash
 
     - name: Upload fixtures artifact
@@ -98,7 +98,7 @@ jobs:
         GIT_TAG: ${{ steps.get_tag.outputs.GIT_TAG }}
         DOCKER_CONFIG: ./.docker
       run: |
-        source .image.env && make -C migrations schema-release
+       export $(cat .image.env | sed 's/#.*//g' | xargs) && make -C migrations schema-release
 
     - name: Upload airgap image
       uses: actions/upload-artifact@v2
@@ -164,7 +164,7 @@ jobs:
       env:
         GIT_COMMIT: ${{ github.sha }}
         GIT_TAG: ${{ steps.get_tag.outputs.GIT_TAG }}
-      run: source .image.env && make -C web deps build-kotsadm
+      run: export $(cat .image.env | sed 's/#.*//g' | xargs) && make -C web deps build-kotsadm
       shell: bash
       ## TODO: retry logic
       # retry:
@@ -204,7 +204,7 @@ jobs:
         GIT_COMMIT: ${{ github.sha }}
         GIT_TAG: ${{ steps.get_tag.outputs.GIT_TAG }}
         SCOPE_DSN_PUBLIC: ""
-      run: source .image.env && make -C kurl_proxy test build
+      run: export $(cat .image.env | sed 's/#.*//g' | xargs) && make -C kurl_proxy test build
       shell: bash
 
     - name: Upload kurl_proxy artifact
@@ -259,7 +259,7 @@ jobs:
         # GITHUB_REPOSITORY:
         # GITHUB_WORKSPACE:
         SCOPE_DSN_PUBLIC: ""
-      run: source .image.env && make test kotsadm
+      run: export $(cat .image.env | sed 's/#.*//g' | xargs) && make test kotsadm
       shell: bash
 
     - name: Upload Go API artifact
@@ -319,7 +319,7 @@ jobs:
         GIT_TAG: ${{ steps.get_tag.outputs.GIT_TAG }}
         DOCKER_CONFIG: ./.docker
       run: |
-        source .image.env && make build-release
+       export $(cat .image.env | sed 's/#.*//g' | xargs) && make build-release
 
     - name: Upload airgap image
       uses: actions/upload-artifact@v2
@@ -375,7 +375,7 @@ jobs:
       env:
         GIT_TAG: ${{ steps.get_tag.outputs.GIT_TAG }}
       run: |
-        source .image.env && make -C kurl_proxy build-release
+        export $(cat .image.env | sed 's/#.*//g' | xargs) && make -C kurl_proxy build-release
 
 
   goreleaser:
@@ -412,6 +412,22 @@ jobs:
       run: |
         export TAG=$(curl --silent "https://api.github.com/repos/replicatedhq/kots/releases/latest" | grep -Po '"tag_name": "\K.*?(?=")')
         echo "GORELEASER_PREVIOUS_TAG=${TAG}" >> $GITHUB_ENV
+
+    - uses: sigstore/cosign-installer@main
+      with:
+        cosign-release: 'v1.2.1'
+
+    - name: Get Cosign Key
+      run: |
+        echo $COSIGN_KEY | base64 -d > ./cosign.key
+      env:
+        COSIGN_KEY: ${{secrets.COSIGN_KEY}}
+
+    - name: Generate SBOM
+      run: |
+        make sbom
+      env:
+        COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSWORD }}
 
     - name: Run GoReleaser
       uses: goreleaser/goreleaser-action@v2
@@ -764,12 +780,12 @@ jobs:
         uses: 8398a7/action-slack@v3
         with:
           status: custom
-          fields: repo,ref,workflow,job,took
+          fields: repo,ref,workflow
           custom_payload: |
             {
               attachments: [{
                 color: '${{ job.status }}' === 'success' ? 'good' : '${{ job.status }}' === 'failure' ? 'danger' : 'warning',
-                text: `${process.env.AS_WORKFLOW}\n${process.env.AS_JOB} of ${process.env.AS_REPO}@${process.env.AS_REF}\n${{ job.status }} in ${process.env.AS_TOOK}`,
+                text: `${{ job.status }} in ${process.env.AS_WORKFLOW} of ${process.env.AS_REPO}@${process.env.AS_REF}`,
               }]
             }
         env:
@@ -809,12 +825,12 @@ jobs:
         uses: 8398a7/action-slack@v3
         with:
           status: custom
-          fields: repo,ref,workflow,job,took
+          fields: repo,ref,workflow
           custom_payload: |
             {
               attachments: [{
                 color: '${{ job.status }}' === 'success' ? 'good' : '${{ job.status }}' === 'failure' ? 'danger' : 'warning',
-                text: `${process.env.AS_WORKFLOW}\n${process.env.AS_JOB} of ${process.env.AS_REPO}@${process.env.AS_REF}\n${{ job.status }} in ${process.env.AS_TOOK}`,
+                text: `${{ job.status }} in ${process.env.AS_WORKFLOW} of ${process.env.AS_REPO}@${process.env.AS_REF}`,
               }]
             }
         env:
@@ -869,12 +885,12 @@ jobs:
         uses: 8398a7/action-slack@v3
         with:
           status: custom
-          fields: repo,ref,workflow,job,took
+          fields: repo,ref,workflow
           custom_payload: |
             {
               attachments: [{
                 color: '${{ job.status }}' === 'success' ? 'good' : '${{ job.status }}' === 'failure' ? 'danger' : 'warning',
-                text: `${process.env.AS_WORKFLOW}\n${process.env.AS_JOB} of ${process.env.AS_REPO}@${process.env.AS_REF}\n${{ job.status }} in ${process.env.AS_TOOK}`,
+                text: `${{ job.status }} in ${process.env.AS_WORKFLOW} of ${process.env.AS_REPO}@${process.env.AS_REF}`,
               }]
             }
         env:
@@ -995,12 +1011,12 @@ jobs:
         uses: 8398a7/action-slack@v3
         with:
           status: custom
-          fields: repo,ref,workflow,job,took
+          fields: repo,ref,workflow
           custom_payload: |
             {
               attachments: [{
                 color: '${{ job.status }}' === 'success' ? 'good' : '${{ job.status }}' === 'failure' ? 'danger' : 'warning',
-                text: `${process.env.AS_WORKFLOW}\n${process.env.AS_JOB} of ${process.env.AS_REPO}@${process.env.AS_REF}\n${{ job.status }} in ${process.env.AS_TOOK}`,
+                text: `${{ job.status }} in ${process.env.AS_WORKFLOW} of ${process.env.AS_REPO}@${process.env.AS_REF}`,
               }]
             }
         env:
@@ -1112,12 +1128,12 @@ jobs:
         uses: 8398a7/action-slack@v3
         with:
           status: custom
-          fields: repo,ref,workflow,job,took
+          fields: repo,ref,workflow
           custom_payload: |
             {
               attachments: [{
                 color: '${{ job.status }}' === 'success' ? 'good' : '${{ job.status }}' === 'failure' ? 'danger' : 'warning',
-                text: `${process.env.AS_WORKFLOW}\n${process.env.AS_JOB} of ${process.env.AS_REPO}@${process.env.AS_REF}\n${{ job.status }} in ${process.env.AS_TOOK}`,
+                text: `${{ job.status }} in ${process.env.AS_WORKFLOW} of ${process.env.AS_REPO}@${process.env.AS_REF}`,
               }]
             }
         env:
@@ -1130,7 +1146,6 @@ jobs:
 
   start_kgrid_test:
     runs-on: ubuntu-18.04
-    if: false
     needs: [release_go_api_tagged]
     steps:
     - name: Checkout

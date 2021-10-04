@@ -1,5 +1,6 @@
 SHELL := /bin/bash
 PROJECT_NAME ?= kotsadm-fixtures
+POSTGRES_ALPINE_TAG ?= 10.18-alpine
 
 .PHONY: deps
 deps:
@@ -30,5 +31,5 @@ schema-fixtures:
 .PHONY: publish
 publish: IMAGE = kotsadm/${PROJECT_NAME}:latest
 publish:
-	docker build -f deploy/Dockerfile -t ${IMAGE} .
+	docker build -f deploy/Dockerfile -t ${IMAGE} --build-arg TAG=${POSTGRES_ALPINE_TAG} .
 	docker push ${IMAGE}

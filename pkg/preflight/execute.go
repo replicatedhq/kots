@@ -35,7 +35,11 @@ func execute(appID string, sequence int64, preflightSpec *troubleshootv1beta2.Pr
 				return
 			}
 
-			logger.Debugf("%v", msg)
+			if err, ok := msg.(error); ok {
+				logger.Errorf("error while running preflights: %v", err)
+			} else {
+				logger.Infof("preflight progress: %v", msg)
+			}
 
 			progress, ok := msg.(preflight.CollectProgress)
 			if !ok {

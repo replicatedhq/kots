@@ -9,7 +9,6 @@ resources:
 
 patches:
   - ./deployment.yaml
-  - ./service.yaml
 
 commonLabels:
   app.kubernetes.io/name: kotsadm

@@ -1,0 +1,10 @@
+apiVersion: k3d.io/v1alpha3 
+kind: Simple 
+name: replicated
+servers: 1
+image: rancher/k3s:v1.21.4-k3s1 # v1.21.3-k3s1 default is broken
+registries:
+  create: 
+    name: k3d-replicated-registry.localhost
+    host: "0.0.0.0"
+    hostPort: "5000"

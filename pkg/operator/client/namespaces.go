@@ -44,35 +44,37 @@ func (c *Client) runNamespacesInformer() error {
 					continue
 				}
 
-				decode := scheme.Codecs.UniversalDeserializer().Decode
-				obj, _, err := decode([]byte(c.imagePullSecret), nil, nil)
-				if err != nil {
-					log.Print(err)
-					return
-				}
+				for _, secret := range c.imagePullSecrets {
+					decode := scheme.Codecs.UniversalDeserializer().Decode
+					obj, _, err := decode([]byte(secret), nil, nil)
+					if err != nil {
+						log.Print(err)
+						return
+					}
 
-				secret := obj.(*corev1.Secret)
-				secret.Namespace = addedNamespace.Name
+					secret := obj.(*corev1.Secret)
+					secret.Namespace = addedNamespace.Name
 
-				foundSecret, err := clientset.CoreV1().Secrets(addedNamespace.Name).Get(context.TODO(), secret.Name, metav1.GetOptions{})
-				if err != nil {
-					if kuberneteserrors.IsNotFound(err) {
-						// create it
-						_, err := clientset.CoreV1().Secrets(addedNamespace.Name).Create(context.TODO(), secret, metav1.CreateOptions{})
-						if err != nil {
+					foundSecret, err := clientset.CoreV1().Secrets(addedNamespace.Name).Get(context.TODO(), secret.Name, metav1.GetOptions{})
+					if err != nil {
+						if kuberneteserrors.IsNotFound(err) {
+							// create it
+							_, err := clientset.CoreV1().Secrets(addedNamespace.Name).Create(context.TODO(), secret, metav1.CreateOptions{})
+							if err != nil {
+								log.Print(err)
+								return
+							}
+						} else {
 							log.Print(err)
 							return
 						}
 					} else {
-						log.Print(err)
-						return
-					}
-				} else {
-					// Update it
-					foundSecret.Data[".dockerconfigjson"] = secret.Data[".dockerconfigjson"]
-					if _, err := clientset.CoreV1().Secrets(addedNamespace.Name).Update(context.TODO(), secret, metav1.UpdateOptions{}); err != nil {
-						log.Print(err)
-						return
+						// Update it
+						foundSecret.Data[".dockerconfigjson"] = secret.Data[".dockerconfigjson"]
+						if _, err := clientset.CoreV1().Secrets(addedNamespace.Name).Update(context.TODO(), secret, metav1.UpdateOptions{}); err != nil {
+							log.Print(err)
+							return
+						}
 					}
 				}
 			}

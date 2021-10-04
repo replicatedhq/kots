@@ -22,7 +22,6 @@ import (
 	"github.com/replicatedhq/kots/pkg/store"
 	"github.com/replicatedhq/kots/pkg/upstream"
 	upstreamtypes "github.com/replicatedhq/kots/pkg/upstream/types"
-	corev1 "k8s.io/api/core/v1"
 	kustomizetypes "sigs.k8s.io/kustomize/api/types"
 )
 
@@ -226,6 +225,15 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 	commonWriteMidstreamOptions.UseHelmInstall = map[string]bool{}
 	for _, v := range newHelmCharts {
 		commonWriteMidstreamOptions.UseHelmInstall[v.Spec.Chart.Name] = v.Spec.UseHelmInstall
+		if v.Spec.UseHelmInstall {
+			subcharts, err := base.FindHelmSubChartsFromBase(writeBaseOptions.BaseDir, v.Spec.Chart.Name)
+			if err != nil {
+				return errors.Wrapf(err, "failed to find subcharts for parent chart %s", v.Spec.Chart.Name)
+			}
+			for _, subchart := range subcharts.SubCharts {
+				commonWriteMidstreamOptions.UseHelmInstall[subchart] = v.Spec.UseHelmInstall
+			}
+		}
 	}
 
 	writeMidstreamOptions := commonWriteMidstreamOptions
@@ -237,18 +245,18 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 		return errors.Wrap(err, "failed to write common midstream")
 	}
 
-	commonWriteMidstreamOptions.UseHelmInstall = map[string]bool{}
+	//commonWriteMidstreamOptions.UseHelmInstall = map[string]bool{}
 	helmMidstreams := []midstream.Midstream{}
-	for _, base := range helmBases {
+	for _, helmBase := range helmBases {
 		writeMidstreamOptions := commonWriteMidstreamOptions
-		writeMidstreamOptions.MidstreamDir = filepath.Join(base.GetOverlaysDir(writeBaseOptions), "midstream", base.Path)
-		writeMidstreamOptions.BaseDir = filepath.Join(u.GetBaseDir(writeUpstreamOptions), base.Path)
+		writeMidstreamOptions.MidstreamDir = filepath.Join(helmBase.GetOverlaysDir(writeBaseOptions), "midstream", helmBase.Path)
+		writeMidstreamOptions.BaseDir = filepath.Join(u.GetBaseDir(writeUpstreamOptions), helmBase.Path)
 
-		helmBase := base
+		helmBaseCopy := helmBase
 
-		helmMidstream, err := writeMidstream(writeMidstreamOptions, rewriteOptions, &helmBase, fetchOptions.License, u.GetUpstreamDir(writeUpstreamOptions), log)
+		helmMidstream, err := writeMidstream(writeMidstreamOptions, rewriteOptions, &helmBaseCopy, fetchOptions.License, u.GetUpstreamDir(writeUpstreamOptions), log)
 		if err != nil {
-			return errors.Wrapf(err, "failed to write helm midstream %s", base.Path)
+			return errors.Wrapf(err, "failed to write helm midstream %s", helmBase.Path)
 		}
 
 		helmMidstreams = append(helmMidstreams, *helmMidstream)
@@ -274,7 +282,7 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 }
 
 func writeMidstream(writeMidstreamOptions midstream.WriteOptions, options RewriteOptions, b *base.Base, license *kotsv1beta1.License, upstreamDir string, log *logger.CLILogger) (*midstream.Midstream, error) {
-	var pullSecret *corev1.Secret
+	var pullSecrets *registry.ImagePullSecrets
 	var images []kustomizetypes.Image
 	var objects []k8sdoc.K8sDoc
 
@@ -375,7 +383,7 @@ func writeMidstream(writeMidstreamOptions midstream.WriteOptions, options Rewrit
 				break
 			}
 		}
-		pullSecret, err = registry.PullSecretForRegistries(
+		pullSecrets, err = registry.PullSecretForRegistries(
 			[]string{options.RegistryEndpoint},
 			registryUser,
 			registryPass,
@@ -383,7 +391,7 @@ func writeMidstream(writeMidstreamOptions midstream.WriteOptions, options Rewrit
 			namePrefix,
 		)
 		if err != nil {
-			return nil, errors.Wrap(err, "failed to create private registry pull secret")
+			return nil, errors.Wrap(err, "failed to create private registry pull secrets")
 		}
 
 		images = copyResult.Images
@@ -443,7 +451,7 @@ func writeMidstream(writeMidstreamOptions midstream.WriteOptions, options Rewrit
 			}
 
 			replicatedRegistryInfo := registry.ProxyEndpointFromLicense(options.License)
-			pullSecret, err = registry.PullSecretForRegistries(
+			pullSecrets, err = registry.PullSecretForRegistries(
 				replicatedRegistryInfo.ToSlice(),
 				options.License.Spec.LicenseID,
 				options.License.Spec.LicenseID,
@@ -459,7 +467,7 @@ func writeMidstream(writeMidstreamOptions midstream.WriteOptions, options Rewrit
 		objects = findResult.Docs
 	}
 
-	m, err := midstream.CreateMidstream(b, images, objects, pullSecret, identitySpec, identityConfig)
+	m, err := midstream.CreateMidstream(b, images, objects, pullSecrets, identitySpec, identityConfig)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create midstream")
 	}

@@ -559,6 +559,7 @@ func TestConfigCtx_localRegistryImagePullSecret(t *testing.T) {
 			ctx := ConfigCtx{
 				LocalRegistry: tt.LocalRegistry,
 				license:       tt.license,
+				AppSlug:       "myapp",
 			}
 			want := base64.StdEncoding.EncodeToString([]byte(tt.want))
 			got := ctx.localRegistryImagePullSecret()

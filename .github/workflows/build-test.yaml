@@ -48,7 +48,7 @@ jobs:
         env:
           GIT_COMMIT: ${{ github.sha }}
           GIT_TAG: ${{ steps.get_tag.outputs.GIT_TAG }}
-        run: source .image.env && make -C web deps build-kotsadm
+        run: export $(cat .image.env | sed 's/#.*//g' | xargs) && make -C web deps build-kotsadm
 
       - name: Upload web artifact
         uses: actions/upload-artifact@v2
@@ -99,7 +99,7 @@ jobs:
         with:
           name: web
           path: ./web/dist
-      - run: source .image.env && make ci-test kots
+      - run: export $(cat .image.env | sed 's/#.*//g' | xargs) && make ci-test kots
       - uses: actions/upload-artifact@v2
         with:
           name: kots
@@ -146,7 +146,7 @@ jobs:
         with:
           name: web
           path: ./web/dist
-      - run: source .image.env && make kotsadm
+      - run: export $(cat .image.env | sed 's/#.*//g' | xargs) && make kotsadm
       - name: build and push kotsadm for e2e
         uses: docker/build-push-action@v2
         with:
@@ -191,7 +191,7 @@ jobs:
           path: ${{ steps.go-cache-paths.outputs.go-mod }}
           key: ${{ runner.os }}-go-mod-${{ hashFiles('**/go.sum') }}
 
-      - run: source .image.env && make -C kurl_proxy build
+      - run: export $(cat .image.env | sed 's/#.*//g' | xargs) && make -C kurl_proxy build
 
       - name: build and push kurl_proxy for e2e
         uses: docker/build-push-action@v2
@@ -646,10 +646,10 @@ jobs:
 
           # HACK: without operator, additonal namespaces don't get image pull secrets
           echo ${{ secrets.MULTI_NAMESPACE_REGISTRY_AUTH }} | base64 -d > replicated-registry-auth.json
-          kubectl -n nginx-test create secret generic kotsadm-replicated-registry --type=kubernetes.io/dockerconfigjson --from-file=.dockerconfigjson=./replicated-registry-auth.json
-          kubectl -n redis-test create secret generic kotsadm-replicated-registry --type=kubernetes.io/dockerconfigjson --from-file=.dockerconfigjson=./replicated-registry-auth.json
-          kubectl -n postgres-test create secret generic kotsadm-replicated-registry --type=kubernetes.io/dockerconfigjson --from-file=.dockerconfigjson=./replicated-registry-auth.json
-          kubectl -n default create secret generic kotsadm-replicated-registry --type=kubernetes.io/dockerconfigjson --from-file=.dockerconfigjson=./replicated-registry-auth.json
+          kubectl -n nginx-test create secret generic multi-namespace-yeti-registry --type=kubernetes.io/dockerconfigjson --from-file=.dockerconfigjson=./replicated-registry-auth.json
+          kubectl -n redis-test create secret generic multi-namespace-yeti-registry --type=kubernetes.io/dockerconfigjson --from-file=.dockerconfigjson=./replicated-registry-auth.json
+          kubectl -n postgres-test create secret generic multi-namespace-yeti-registry --type=kubernetes.io/dockerconfigjson --from-file=.dockerconfigjson=./replicated-registry-auth.json
+          kubectl -n default create secret generic multi-namespace-yeti-registry --type=kubernetes.io/dockerconfigjson --from-file=.dockerconfigjson=./replicated-registry-auth.json
 
           kustomize build $PWD/$APP_SLUG/overlays/midstream | kubectl apply -f -
 

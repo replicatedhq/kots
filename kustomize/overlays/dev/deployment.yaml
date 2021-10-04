@@ -72,6 +72,8 @@ spec:
               value: "3"
             - name: POD_OWNER_KIND
               value: "deployment"
+            - name: DEBUG
+              value: "false"
       volumes:
         - emptyDir:
             medium: Memory

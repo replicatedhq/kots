@@ -184,6 +184,7 @@ func (ctx ConfigCtx) FuncMap() template.FuncMap {
 		"LocalRegistryNamespace":       ctx.localRegistryNamespace,
 		"LocalImageName":               ctx.localImageName,
 		"LocalRegistryImagePullSecret": ctx.localRegistryImagePullSecret,
+		"ImagePullSecretName":          ctx.imagePullSecretName,
 		"HasLocalRegistry":             ctx.hasLocalRegistry,
 	}
 }
@@ -339,7 +340,7 @@ func (ctx ConfigCtx) hasLocalRegistry() bool {
 func (ctx ConfigCtx) localRegistryImagePullSecret() string {
 	var secret *corev1.Secret
 	if ctx.LocalRegistry.Host != "" {
-		s, err := registry.PullSecretForRegistries(
+		secrets, err := registry.PullSecretForRegistries(
 			[]string{ctx.LocalRegistry.Host},
 			ctx.LocalRegistry.Username,
 			ctx.LocalRegistry.Password,
@@ -349,7 +350,7 @@ func (ctx ConfigCtx) localRegistryImagePullSecret() string {
 		if err != nil {
 			return ""
 		}
-		secret = s
+		secret = secrets.AppSecret
 	} else {
 		licenseIDString := ""
 		if ctx.license != nil {
@@ -357,7 +358,7 @@ func (ctx ConfigCtx) localRegistryImagePullSecret() string {
 		}
 
 		proxyInfo := registry.ProxyEndpointFromLicense(ctx.license)
-		s, err := registry.PullSecretForRegistries(
+		secrets, err := registry.PullSecretForRegistries(
 			proxyInfo.ToSlice(),
 			licenseIDString,
 			licenseIDString,
@@ -367,7 +368,7 @@ func (ctx ConfigCtx) localRegistryImagePullSecret() string {
 		if err != nil {
 			return ""
 		}
-		secret = s
+		secret = secrets.AppSecret
 	}
 	dockerConfig, found := secret.Data[".dockerconfigjson"]
 	if !found {
@@ -375,6 +376,10 @@ func (ctx ConfigCtx) localRegistryImagePullSecret() string {
 	}
 
 	return base64.StdEncoding.EncodeToString(dockerConfig)
+}
+
+func (ctx ConfigCtx) imagePullSecretName() string {
+	return registry.SecretNameFromPrefix(ctx.AppSlug)
 }
 
 func (ctx ConfigCtx) getConfigOptionValue(itemName string) (string, error) {

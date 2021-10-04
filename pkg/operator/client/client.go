@@ -56,7 +56,7 @@ type Client struct {
 	TargetNamespace string
 
 	watchedNamespaces []string
-	imagePullSecret   string
+	imagePullSecrets  []string
 
 	appStateMonitor   *appstate.Monitor
 	HookStopChans     []chan struct{}
@@ -152,7 +152,7 @@ func (c *Client) DeployApp(deployArgs operatortypes.DeployAppArgs) {
 		deployRes = &deployResult{}
 		deployRes.applyResult.hasErr = true
 		deployRes.applyResult.multiStderr = [][]byte{[]byte(deployError.Error())}
-		log.Printf("falied to deploy manifests: %v", deployError)
+		log.Printf("failed to deploy manifests: %v", deployError)
 		return
 	}
 
@@ -161,7 +161,7 @@ func (c *Client) DeployApp(deployArgs operatortypes.DeployAppArgs) {
 		helmResult = &commandResult{}
 		helmResult.hasErr = true
 		helmResult.multiStderr = [][]byte{[]byte(helmError.Error())}
-		log.Printf("falied to deploy helm charts: %v", helmError)
+		log.Printf("failed to deploy helm charts: %v", helmError)
 		return
 	}
 
@@ -196,7 +196,7 @@ func (c *Client) deployManifests(deployArgs operatortypes.DeployAppArgs) (*deplo
 			}
 		}
 	}
-	c.imagePullSecret = deployArgs.ImagePullSecret
+	c.imagePullSecrets = deployArgs.ImagePullSecrets
 	c.watchedNamespaces = deployArgs.AdditionalNamespaces
 
 	result, err := c.ensureResourcesPresent(deployArgs)
@@ -362,7 +362,7 @@ func (c *Client) setDeployResults(args operatortypes.DeployAppArgs, results Depl
 
 	if !results.IsError {
 		go func() {
-			err := registry.DeleteUnusedImages(args.AppID)
+			err := registry.DeleteUnusedImages(args.AppID, false)
 			if err != nil {
 				if _, ok := err.(registry.AppRollbackError); ok {
 					logger.Infof("not garbage collecting images because version allows rollbacks: %v", err)

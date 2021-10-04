@@ -188,18 +188,33 @@ func (m *Midstream) writeDisasterRecoveryLabelTransformer(options WriteOptions) 
 }
 
 func (m *Midstream) writePullSecret(options WriteOptions) (string, error) {
-	if m.PullSecret == nil {
+	var secretBytes []byte
+	if m.AppPullSecret != nil {
+		b, err := k8syaml.Marshal(m.AppPullSecret)
+		if err != nil {
+			return "", errors.Wrap(err, "failed to marshal app pull secret")
+		}
+		secretBytes = b
+	}
+
+	if m.AdminConsolePullSecret != nil {
+		if secretBytes != nil {
+			secretBytes = append(secretBytes, []byte("\n---\n")...)
+		}
+
+		b, err := k8syaml.Marshal(m.AdminConsolePullSecret)
+		if err != nil {
+			return "", errors.Wrap(err, "failed to marshal kots pull secret")
+		}
+		secretBytes = append(secretBytes, b...)
+	}
+
+	if secretBytes == nil {
 		return "", nil
 	}
 
 	absFilename := filepath.Join(options.MidstreamDir, secretFilename)
-
-	b, err := k8syaml.Marshal(m.PullSecret)
-	if err != nil {
-		return "", errors.Wrap(err, "failed to marshal pull secret")
-	}
-
-	if err := ioutil.WriteFile(absFilename, b, 0644); err != nil {
+	if err := ioutil.WriteFile(absFilename, secretBytes, 0644); err != nil {
 		return "", errors.Wrap(err, "failed to write pull secret file")
 	}
 
@@ -224,7 +239,7 @@ func (m *Midstream) writeObjectsWithPullSecret(options WriteOptions) error {
 	defer f.Close()
 
 	for _, o := range m.DocForPatches {
-		withPullSecret := o.PatchWithPullSecret(m.PullSecret)
+		withPullSecret := o.PatchWithPullSecret(m.AppPullSecret)
 		if withPullSecret == nil {
 			continue
 		}

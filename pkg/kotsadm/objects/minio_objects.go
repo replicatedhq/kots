@@ -82,7 +82,7 @@ func MinioStatefulset(deployOptions types.DeployOptions, size resource.Quantity)
 						"app": "kotsadm-minio",
 					}),
 					Annotations: map[string]string{
-						"backup.velero.io/backup-volumes": "kotsadm-minio,minio-config-dir",
+						"backup.velero.io/backup-volumes": "kotsadm-minio,minio-config-dir,minio-cert-dir",
 					},
 				},
 				Spec: corev1.PodSpec{
@@ -99,6 +99,12 @@ func MinioStatefulset(deployOptions types.DeployOptions, size resource.Quantity)
 						},
 						{
 							Name: "minio-config-dir",
+							VolumeSource: corev1.VolumeSource{
+								EmptyDir: &corev1.EmptyDirVolumeSource{},
+							},
+						},
+						{
+							Name: "minio-cert-dir",
 							VolumeSource: corev1.VolumeSource{
 								EmptyDir: &corev1.EmptyDirVolumeSource{},
 							},
@@ -128,6 +134,10 @@ func MinioStatefulset(deployOptions types.DeployOptions, size resource.Quantity)
 								{
 									Name:      "minio-config-dir",
 									MountPath: "/home/minio/.minio/",
+								},
+								{
+									Name:      "minio-cert-dir",
+									MountPath: "/.minio/",
 								},
 							},
 							Env: []corev1.EnvVar{

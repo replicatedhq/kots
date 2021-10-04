@@ -29,3 +29,7 @@ kubernetes/
 kots.db
 archives/
 kotsdata/
+
+sbom/
+cosign.key
+node_modules/

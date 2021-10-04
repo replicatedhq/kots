@@ -129,8 +129,14 @@ func Start(params *APIServerParams) {
 
 	r := mux.NewRouter()
 
-	r.Use(handlers.LoggingMiddleware, handlers.CorsMiddleware)
+	r.Use(handlers.CorsMiddleware)
 	r.Methods("OPTIONS").HandlerFunc(handlers.CORS)
+
+	debugRouter := r.NewRoute().Subrouter()
+	debugRouter.Use(handlers.DebugLoggingMiddleware)
+
+	loggingRouter := r.NewRoute().Subrouter()
+	loggingRouter.Use(handlers.LoggingMiddleware)
 
 	handler := &handlers.Handler{}
 
@@ -138,29 +144,29 @@ func Start(params *APIServerParams) {
 	* Unauthenticated routes
 	**********************************************************************/
 
-	r.HandleFunc("/healthz", handler.Healthz)
-	r.HandleFunc("/api/v1/login", handler.Login)
-	r.HandleFunc("/api/v1/login/info", handler.GetLoginInfo)
-	r.HandleFunc("/api/v1/logout", handler.Logout) // this route uses its own auth
-	r.Path("/api/v1/metadata").Methods("GET").HandlerFunc(handler.Metadata)
+	debugRouter.HandleFunc("/healthz", handler.Healthz)
+	loggingRouter.HandleFunc("/api/v1/login", handler.Login)
+	loggingRouter.HandleFunc("/api/v1/login/info", handler.GetLoginInfo)
+	loggingRouter.HandleFunc("/api/v1/logout", handler.Logout) // this route uses its own auth
+	loggingRouter.Path("/api/v1/metadata").Methods("GET").HandlerFunc(handler.Metadata)
 
-	r.HandleFunc("/api/v1/oidc/login", handler.OIDCLogin)
-	r.HandleFunc("/api/v1/oidc/login/callback", handler.OIDCLoginCallback)
+	loggingRouter.HandleFunc("/api/v1/oidc/login", handler.OIDCLogin)
+	loggingRouter.HandleFunc("/api/v1/oidc/login/callback", handler.OIDCLoginCallback)
 
-	r.Path("/api/v1/troubleshoot/{appId}/{bundleId}").Methods("PUT").HandlerFunc(handler.UploadSupportBundle)
-	r.Path("/api/v1/troubleshoot/supportbundle/{bundleId}/redactions").Methods("PUT").HandlerFunc(handler.SetSupportBundleRedactions)
+	loggingRouter.Path("/api/v1/troubleshoot/{appId}/{bundleId}").Methods("PUT").HandlerFunc(handler.UploadSupportBundle)
+	loggingRouter.Path("/api/v1/troubleshoot/supportbundle/{bundleId}/redactions").Methods("PUT").HandlerFunc(handler.SetSupportBundleRedactions)
 
 	// This the handler for license API and should be called by the application only.
-	r.Path("/license/v1/license").Methods("GET").HandlerFunc(handler.GetPlatformLicenseCompatibility)
+	loggingRouter.Path("/license/v1/license").Methods("GET").HandlerFunc(handler.GetPlatformLicenseCompatibility)
 
 	/**********************************************************************
 	* KOTS token auth routes
 	**********************************************************************/
 
-	r.Path("/api/v1/kots/ports").Methods("GET").HandlerFunc(handler.GetApplicationPorts)
-	r.Path("/api/v1/upload").Methods("PUT").HandlerFunc(handler.UploadExistingApp)
-	r.Path("/api/v1/download").Methods("GET").HandlerFunc(handler.DownloadApp)
-	r.Path("/api/v1/airgap/install").Methods("POST").HandlerFunc(handler.UploadInitialAirgapApp)
+	debugRouter.Path("/api/v1/kots/ports").Methods("GET").HandlerFunc(handler.GetApplicationPorts)
+	loggingRouter.Path("/api/v1/upload").Methods("PUT").HandlerFunc(handler.UploadExistingApp)
+	loggingRouter.Path("/api/v1/download").Methods("GET").HandlerFunc(handler.DownloadApp)
+	loggingRouter.Path("/api/v1/airgap/install").Methods("POST").HandlerFunc(handler.UploadInitialAirgapApp)
 
 	/**********************************************************************
 	* Session auth routes

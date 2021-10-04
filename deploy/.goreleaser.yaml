@@ -55,6 +55,9 @@ archives:
       - README*
       - changelog*
       - CHANGELOG*
+      - sbom/kots-sbom.tgz
+      - sbom/kots-sbom.tgz.sig
+      - sbom/key.pub
 
   - id: kots_experimental
     builds:

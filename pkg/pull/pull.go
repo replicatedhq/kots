@@ -27,7 +27,6 @@ import (
 	"github.com/replicatedhq/kots/pkg/upstream"
 	upstreamtypes "github.com/replicatedhq/kots/pkg/upstream/types"
 	"github.com/replicatedhq/kots/pkg/util"
-	corev1 "k8s.io/api/core/v1"
 	k8sjson "k8s.io/apimachinery/pkg/runtime/serializer/json"
 	"k8s.io/client-go/kubernetes/scheme"
 	kustomizetypes "sigs.k8s.io/kustomize/api/types"
@@ -417,11 +416,20 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 		NoProxyEnvValue:    pullOptions.NoProxyEnvValue,
 		NewHelmCharts:      newHelmCharts,
 	}
-	commonWriteMidstreamOptions.UseHelmInstall = map[string]bool{}
 	// this map contains chart names and useHelmInstall flag
 	// presence of chartname and the flag determines if the pullsecrets will be generated within each chart or at the top level
+	commonWriteMidstreamOptions.UseHelmInstall = map[string]bool{}
 	for _, v := range newHelmCharts {
 		commonWriteMidstreamOptions.UseHelmInstall[v.Spec.Chart.Name] = v.Spec.UseHelmInstall
+		if v.Spec.UseHelmInstall {
+			subcharts, err := base.FindHelmSubChartsFromBase(writeBaseOptions.BaseDir, v.Spec.Chart.Name)
+			if err != nil {
+				return "", errors.Wrapf(err, "failed to find subcharts for parent chart %s", v.Spec.Chart.Name)
+			}
+			for _, subchart := range subcharts.SubCharts {
+				commonWriteMidstreamOptions.UseHelmInstall[subchart] = v.Spec.UseHelmInstall
+			}
+		}
 	}
 
 	writeMidstreamOptions := commonWriteMidstreamOptions
@@ -438,8 +446,6 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 		writeMidstreamOptions := commonWriteMidstreamOptions
 		writeMidstreamOptions.MidstreamDir = filepath.Join(helmBase.GetOverlaysDir(writeBaseOptions), "midstream", helmBase.Path)
 		writeMidstreamOptions.BaseDir = filepath.Join(u.GetBaseDir(writeUpstreamOptions), helmBase.Path)
-		// empty map indicates that the pullsecrets need to be generated within each chart
-		writeMidstreamOptions.UseHelmInstall = map[string]bool{}
 
 		helmMidstream, err := writeMidstream(writeMidstreamOptions, pullOptions, u, &helmBase, fetchOptions.License, identityConfig, u.GetUpstreamDir(writeUpstreamOptions), log)
 		if err != nil {
@@ -470,7 +476,7 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 }
 
 func writeMidstream(writeMidstreamOptions midstream.WriteOptions, options PullOptions, u *upstreamtypes.Upstream, b *base.Base, license *kotsv1beta1.License, identityConfig *kotsv1beta1.IdentityConfig, upstreamDir string, log *logger.CLILogger) (*midstream.Midstream, error) {
-	var pullSecret *corev1.Secret
+	var pullSecrets *registry.ImagePullSecrets
 	var images []kustomizetypes.Image
 	var objects []k8sdoc.K8sDoc
 
@@ -626,7 +632,7 @@ func writeMidstream(writeMidstreamOptions midstream.WriteOptions, options PullOp
 					break
 				}
 			}
-			pullSecret, err = registry.PullSecretForRegistries(
+			pullSecrets, err = registry.PullSecretForRegistries(
 				[]string{options.RewriteImageOptions.Host},
 				registryUser,
 				registryPass,
@@ -699,7 +705,7 @@ func writeMidstream(writeMidstreamOptions midstream.WriteOptions, options PullOp
 					break
 				}
 			}
-			pullSecret, err = registry.PullSecretForRegistries(
+			pullSecrets, err = registry.PullSecretForRegistries(
 				replicatedRegistryInfo.ToSlice(),
 				license.Spec.LicenseID,
 				license.Spec.LicenseID,
@@ -714,7 +720,7 @@ func writeMidstream(writeMidstreamOptions midstream.WriteOptions, options PullOp
 		objects = findResult.Docs
 	}
 
-	m, err := midstream.CreateMidstream(b, images, objects, pullSecret, identitySpec, identityConfig)
+	m, err := midstream.CreateMidstream(b, images, objects, pullSecrets, identitySpec, identityConfig)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create midstream")
 	}

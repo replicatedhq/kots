@@ -2,12 +2,12 @@ package client
 
 import (
 	"context"
-	"fmt"
 	"strings"
 	"time"
 
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
+	"github.com/replicatedhq/kots/pkg/logger"
 	batchv1 "k8s.io/api/batch/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
@@ -33,7 +33,7 @@ func (c *Client) runHooksInformer(namespace string) error {
 
 					job, ok := newObj.(*batchv1.Job)
 					if !ok {
-						fmt.Println("error getting new job")
+						logger.Errorf("expected batchv1.Job, but got %T", newObj)
 						return
 					}
 
@@ -56,11 +56,8 @@ func (c *Client) runHooksInformer(namespace string) error {
 					}
 
 					if !cleanUpJob {
-						fmt.Printf("not cleaning up job %q, active=%d, succeeeded=%d, failed=%d\n", job.Name, job.Status.Active, job.Status.Succeeded, job.Status.Failed)
 						return
 					}
-
-					fmt.Printf("attempting to %s delete job %s\n", reason, job.Name)
 
 					grace := int64(0)
 					policy := metav1.DeletePropagationBackground
@@ -69,10 +66,10 @@ func (c *Client) runHooksInformer(namespace string) error {
 						PropagationPolicy:  &policy,
 					}
 					if err := clientset.BatchV1().Jobs(job.Namespace).Delete(context.TODO(), job.Name, opts); err != nil {
-						fmt.Printf("error deleting job: %s\n", err.Error())
+						logger.Error(errors.Wrap(err, "failed to delete job"))
 						return
 					}
-					fmt.Printf("deleted %s job %s\n", reason, job.Name)
+					logger.Debugf("deleted %s job %s\n", reason, job.Name)
 				},
 			},
 		)
