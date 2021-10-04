@@ -200,7 +200,7 @@ func injectDefaults(app *apptypes.App, b *troubleshootv1beta2.SupportBundle, opt
 	}
 
 	supportBundle = addDefaultTroubleshoot(supportBundle, imageName, pullSecret)
-	supportBundle = addDefaultDynamicTroubleshoot(supportBundle, app)
+	supportBundle = addDefaultDynamicTroubleshoot(supportBundle, app, imageName, pullSecret)
 	supportBundle = populateNamespaces(supportBundle, minimalRBACNamespaces)
 	supportBundle = deduplicatedCollectors(supportBundle)
 	supportBundle = deduplicatedAnalyzers(supportBundle)
@@ -282,6 +282,7 @@ func deduplicatedCollectors(supportBundle *troubleshootv1beta2.SupportBundle) *t
 	hasClusterInfo := false
 	hasCeph := false
 	hasLonghorn := false
+	hasSysctl := false
 
 	for _, c := range next.Spec.Collectors {
 		if c.ClusterResources != nil {
@@ -310,6 +311,13 @@ func deduplicatedCollectors(supportBundle *troubleshootv1beta2.SupportBundle) *t
 				continue
 			}
 			hasLonghorn = true
+		}
+
+		if c.Sysctl != nil {
+			if hasSysctl {
+				continue
+			}
+			hasSysctl = true
 		}
 
 		collectors = append(collectors, c)
@@ -381,14 +389,14 @@ func getDefaultAnalyzers() []*troubleshootv1beta2.Analyze {
 
 // addDefaultDynamicTroubleshoot adds dynamic spec to the support bundle.
 // prefer addDefaultTroubleshoot unless absolutely necessary to encourage consistency across built-in and kots.io specs.
-func addDefaultDynamicTroubleshoot(supportBundle *troubleshootv1beta2.SupportBundle, app *apptypes.App) *troubleshootv1beta2.SupportBundle {
+func addDefaultDynamicTroubleshoot(supportBundle *troubleshootv1beta2.SupportBundle, app *apptypes.App, imageName string, pullSecret *troubleshootv1beta2.ImagePullSecrets) *troubleshootv1beta2.SupportBundle {
 	next := supportBundle.DeepCopy()
-	next.Spec.Collectors = append(next.Spec.Collectors, getDefaultDynamicCollectors(app)...)
+	next.Spec.Collectors = append(next.Spec.Collectors, getDefaultDynamicCollectors(app, imageName, pullSecret)...)
 	next.Spec.Analyzers = append(next.Spec.Analyzers, getDefaultDynamicAnalyzers(app)...)
 	return next
 }
 
-func getDefaultDynamicCollectors(app *apptypes.App) []*troubleshootv1beta2.Collect {
+func getDefaultDynamicCollectors(app *apptypes.App, imageName string, pullSecret *troubleshootv1beta2.ImagePullSecrets) []*troubleshootv1beta2.Collect {
 	collectors := make([]*troubleshootv1beta2.Collect, 0)
 
 	licenseData, err := license.GetCurrentLicenseString(app)
@@ -451,6 +459,18 @@ func getDefaultDynamicCollectors(app *apptypes.App) []*troubleshootv1beta2.Colle
 		collectors = append(collectors, appVersionArchiveCollectors...)
 	}
 
+	clientset, err := k8sutil.GetClientset()
+	if err != nil {
+		logger.Errorf("Failed to get clientset for dynamic kurl collectors: %v", err)
+	} else if kotsutil.IsKurl(clientset) {
+		collectors = append(collectors, &troubleshootv1beta2.Collect{
+			Sysctl: &troubleshootv1beta2.Sysctl{
+				Image:           imageName,
+				ImagePullSecret: pullSecret,
+			},
+		})
+	}
+
 	return collectors
 }
 
@@ -458,6 +478,42 @@ func getDefaultDynamicAnalyzers(app *apptypes.App) []*troubleshootv1beta2.Analyz
 	analyzers := make([]*troubleshootv1beta2.Analyze, 0)
 
 	analyzers = append(analyzers, makeAPIReplicaAnalyzer())
+
+	clientset, err := k8sutil.GetClientset()
+	if err != nil {
+		logger.Errorf("Failed to get clientset for dynamic kurl analyzers: %v", err)
+	} else if kotsutil.IsKurl(clientset) {
+		analyzers = append(analyzers, &troubleshootv1beta2.Analyze{
+			Sysctl: &troubleshootv1beta2.SysctlAnalyze{
+				AnalyzeMeta: troubleshootv1beta2.AnalyzeMeta{
+					CheckName: "IP forwarding not enabled",
+				},
+				Outcomes: []*troubleshootv1beta2.Outcome{
+					{
+						Fail: &troubleshootv1beta2.SingleOutcome{
+							When:    "net.ipv4.ip_forward = 0",
+							Message: "IP forwarding not enabled",
+						},
+					},
+				},
+			},
+		},
+			&troubleshootv1beta2.Analyze{
+				Sysctl: &troubleshootv1beta2.SysctlAnalyze{
+					AnalyzeMeta: troubleshootv1beta2.AnalyzeMeta{
+						CheckName: "Bridge iptables integration",
+					},
+					Outcomes: []*troubleshootv1beta2.Outcome{
+						{
+							Fail: &troubleshootv1beta2.SingleOutcome{
+								When:    "net.bridge.bridge-nf-call-iptables = 0",
+								Message: "Packets traversing bridge interfaces not processed by iptables",
+							},
+						},
+					},
+				},
+			})
+	}
 
 	return analyzers
 }
