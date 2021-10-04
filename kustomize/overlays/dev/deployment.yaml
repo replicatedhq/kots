@@ -23,6 +23,10 @@ spec:
               name: backup
             - name: kubelet-client-cert
               mountPath: /etc/kubernetes/pki/kubelet
+          ports:
+            - containerPort: 40000
+              name: dlv
+              protocol: TCP
           env:
             - name: DEX_PGPASSWORD
               valueFrom:
