@@ -1169,6 +1169,7 @@ jobs:
         GITOPS_OWNER: replicatedcom
         GITOPS_REPO: gitops-deploy
         GITOPS_BRANCH: master
+        RUN_ID: ${{ github.run_id }}
       run: ./hack/deploy-kgrid.sh
 
     - name: Create production gitops commit
@@ -1180,7 +1181,14 @@ jobs:
         GITOPS_OWNER: replicatedcom
         GITOPS_REPO: gitops-deploy
         GITOPS_BRANCH: release
+        RUN_ID: ${{ github.run_id }}
       run: ./hack/deploy-kgrid.sh
+
+    - name: Wait for production kgrid tests
+      env:
+        KGRID_API_TOKEN: ${{ secrets.KGRID_API_TOKEN }}
+        RUN_ID: ${{ github.run_id }}
+      run: ./hack/wait-kgrid.sh
 
 
   generate-kurl-addon-pr:
