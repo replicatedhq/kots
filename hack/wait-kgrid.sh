@@ -5,14 +5,14 @@ if [ -z ${KGRID_API_TOKEN} ]; then
     exit 1
 fi
 
-if [ -z ${RUN_ID} ]; then
-    echo "RUN_ID must be set"
+if [ -z ${KGRID_RUN_ID} ]; then
+    echo "KGRID_RUN_ID must be set"
     exit 1
 fi
 
 touch -d '+40 minute' kgrid_timeout
 while true; do
-  curl https://kgrid.replicated.systems/v1/run/${RUN_ID}/outcome \
+  curl -s https://kgrid.replicated.systems/v1/run/${KGRID_RUN_ID}/outcome \
     -H "Authorization: $KGRID_API_TOKEN" \
     > outcome.json
 

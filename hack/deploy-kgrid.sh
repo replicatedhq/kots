@@ -5,10 +5,12 @@ if [ -z ${GIT_TAG} ]; then
     exit 1
 fi
 
-if [ -z ${RUN_ID} ]; then
-    echo "This script must run from GithubActions with RUN_ID env variable set"
+if [ -z ${GITHUB_RUN_ID} ]; then
+    echo "This script must run from GithubActions with GITHUB_RUN_ID env variable set"
     exit 1
 fi
+
+export KGRID_RUN_ID=`date +%s`-${GITHUB_RUN_ID}
 
 echo ${REPLICATEDCOM_GITHUB_PRIVATE_KEY} | base64 -d > ~/github_private_key
 chmod 600 ~/github_private_key
@@ -27,7 +29,7 @@ metadata:
   name: version
   namespace: kgrid-system
   labels:
-    runId: ${GIT_TAG}
+    runId: ${KGRID_RUN_ID}
 spec:
   kots:
     latest: "${GIT_TAG}"
@@ -36,3 +38,5 @@ EOT
 git add .
 git commit --allow-empty -m "${PR_URL}"
 git push origin ${GITOPS_BRANCH}
+
+echo "::set-output name=kgrid-run-id::$KGRID_RUN_ID"
