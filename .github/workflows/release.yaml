@@ -1173,6 +1173,7 @@ jobs:
       run: ./hack/deploy-kgrid.sh
 
     - name: Create production gitops commit
+      id: deploy_kgrid
       env:
         REPLICATEDCOM_GITHUB_PRIVATE_KEY: ${{ secrets.REPLICATEDCOM_GITHUB_PRIVATE_KEY }}
         PR_URL: ${{ steps.pr_url.outputs.url }}
@@ -1181,13 +1182,12 @@ jobs:
         GITOPS_OWNER: replicatedcom
         GITOPS_REPO: gitops-deploy
         GITOPS_BRANCH: release
-        RUN_ID: ${{ github.run_id }}
       run: ./hack/deploy-kgrid.sh
 
     - name: Wait for production kgrid tests
       env:
         KGRID_API_TOKEN: ${{ secrets.KGRID_API_TOKEN }}
-        RUN_ID: ${{ github.run_id }}
+        KGRID_RUN_ID: ${{ steps.deploy_kgrid.outputs.kgrid-run-id }}
       run: ./hack/wait-kgrid.sh
 
 
