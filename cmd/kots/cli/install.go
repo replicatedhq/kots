@@ -82,9 +82,11 @@ func InstallCmd() *cobra.Command {
 
 			if !v.GetBool("skip-rbac-check") && v.GetBool("ensure-rbac") {
 				err := CheckRBAC()
-				if err != nil {
+				if err == RBACError {
 					log.Errorf("Current user has insufficient privileges to install Admin Console.\nFor more information, please visit https://kots.io/vendor/packaging/rbac\nTo bypass this check, use the --skip-rbac-check flag")
 					return errors.New("insufficient privileges")
+				} else if err != nil {
+					return errors.Wrap(err, "failed to check RBAC")
 				}
 			}
 
@@ -676,6 +678,10 @@ func getHttpProxyEnv(v *viper.Viper) map[string]string {
 
 }
 
+var (
+	RBACError = errors.New("attempting to grant RBAC permissions not currently held")
+)
+
 func CheckRBAC() error {
 	clientConfig, err := k8sutil.GetClusterConfig()
 	if err != nil {
@@ -708,7 +714,7 @@ func CheckRBAC() error {
 	}
 
 	if !resp.Status.Allowed {
-		return errors.New("attempting to grant RBAC permissions not currently held")
+		return RBACError
 	}
 	return nil
 }

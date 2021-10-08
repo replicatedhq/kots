@@ -96,9 +96,11 @@ func AdminConsoleUpgradeCmd() *cobra.Command {
 			log := logger.NewCLILogger()
 			if !v.GetBool("skip-rbac-check") && v.GetBool("ensure-rbac") {
 				err := CheckRBAC()
-				if err != nil {
+				if err == RBACError {
 					log.Errorf("Current user has insufficient privileges to upgrade Admin Console.\nFor more information, please visit https://kots.io/vendor/packaging/rbac\nTo bypass this check, use the --skip-rbac-check flag")
 					return errors.New("insufficient privileges")
+				} else if err != nil {
+					return errors.Wrap(err, "failed to check RBAC")
 				}
 			}
 
