@@ -84,7 +84,7 @@ func InstallCmd() *cobra.Command {
 				err := CheckRBAC()
 				if err != nil {
 					log.Errorf("Current user has insufficient privileges to install Admin Console.\nFor more information, please visit https://kots.io/vendor/packaging/rbac\nTo bypass this check, use the --skip-rbac-check flag")
-					return errors.New("insufficient privileges")
+					return errors.Wrap(err, "insufficient privileges")
 				}
 			}
 
