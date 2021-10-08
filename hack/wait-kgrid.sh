@@ -18,13 +18,13 @@ while true; do
 
   RUN_RESULT=`cat outcome.json | jq ".outcome"`
 
-  if [ "$RUN_RESULT" == "Pass" ]; then
+  if [ "$RUN_RESULT" == "\"Pass\"" ]; then
     echo "Passed"
     cat outcome.json
     exit 0
   fi
 
-  if [ "$RUN_RESULT" == "Fail" ]; then
+  if [ "$RUN_RESULT" == "\"Fail\"" ]; then
     echo "Failed"
     cat outcome.json
     exit 1
