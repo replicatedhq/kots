@@ -1,4 +1,4 @@
-FROM schemahero/schemahero:0.12.4
+FROM schemahero/schemahero:0.12.5
 
 USER root
 RUN apt-get update && apt-get install -y --only-upgrade --no-install-recommends \
