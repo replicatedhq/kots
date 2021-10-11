@@ -295,6 +295,7 @@ func (s *KOTSStore) CreateSupportBundle(id string, appID string, archivePath str
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to open archive file")
 	}
+	defer f.Close()
 
 	outputPath := filepath.Join("supportbundles", id, "supportbundle.tar.gz")
 	err = filestore.GetStore().WriteArchive(outputPath, f)
@@ -391,6 +392,7 @@ func (s *KOTSStore) UploadSupportBundle(id string, archivePath string, marshalle
 	if err != nil {
 		return errors.Wrap(err, "failed to open archive file")
 	}
+	defer f.Close()
 
 	outputPath := filepath.Join("supportbundles", id, "supportbundle.tar.gz")
 	err = filestore.GetStore().WriteArchive(outputPath, f)

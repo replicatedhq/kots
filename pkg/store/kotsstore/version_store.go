@@ -211,6 +211,7 @@ func (s *KOTSStore) CreateAppVersionArchive(appID string, sequence int64, archiv
 	if err != nil {
 		return errors.Wrap(err, "failed to open archive file")
 	}
+	defer f.Close()
 
 	outputPath := fmt.Sprintf("%s/%d.tar.gz", appID, sequence)
 	err = filestore.GetStore().WriteArchive(outputPath, f)
