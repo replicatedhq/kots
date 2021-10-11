@@ -1116,7 +1116,7 @@ jobs:
         working-directory: automation/cluster
         run: |
           terraform init -backend-config ${{ matrix.test.backend_config }}
-          echo "::set-output name=instance_ip::$(terraform output -raw control_plane_public_ip)"
+          echo "::set-output name=instance_ip::$(terraform output -raw control_plane_private_ip)"
 
       - name: Run the test
         working-directory: automation/jumpbox
