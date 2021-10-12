@@ -357,3 +357,183 @@ jobs:
             -H 'Accept: application/json' \
             -d "{\"event_type\": \"build-package-staging\", \"client_payload\": {\"package\": \"${package}\"}}" \
             "https://api.github.com/repos/replicatedhq/kurl/dispatches"
+
+
+  scan_postgres_alpine:
+    runs-on: ubuntu-18.04
+    needs: [build-schema-migrations]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Read image tags from env file
+        uses: falti/dotenv-action@v0.2
+        id: dotenv
+        with:
+          path: .image.env
+      - name: Scan postgres for vulnerabilities
+        id: scan
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: "docker.io/library/postgres:${{ steps.dotenv.outputs.postgres_alpine_tag }}"
+          format: 'template'
+          template: '@/contrib/sarif.tpl'
+          output: 'postgres-alpine-scan-output.sarif'
+          exit-code: '0'
+          ignore-unfixed: true
+          severity: 'CRITICAL,HIGH,MEDIUM'
+      - name: Upload scan report
+        uses: github/codeql-action/upload-sarif@v1
+        with:
+          sarif_file: postgres-alpine-scan-output.sarif
+
+
+  scan_postgres_debian_stretch:
+    runs-on: ubuntu-18.04
+    needs: [build-schema-migrations]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Read image tags from env file
+        uses: falti/dotenv-action@v0.2
+        id: dotenv
+        with:
+          path: .image.env
+      - name: Scan postgres for vulnerabilities
+        id: scan
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: "docker.io/library/postgres:${{ steps.dotenv.outputs.postgres_debian_tag }}"
+          format: 'template'
+          template: '@/contrib/sarif.tpl'
+          output: 'postgres-scan-output.sarif'
+          exit-code: '0'
+          ignore-unfixed: true
+          severity: 'CRITICAL,HIGH,MEDIUM'
+      - name: Upload scan report
+        uses: github/codeql-action/upload-sarif@v1
+        with:
+          sarif_file: postgres-scan-output.sarif
+
+
+  scan_minio:
+    runs-on: ubuntu-18.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Read image tags from env file
+        uses: falti/dotenv-action@v0.2
+        id: dotenv
+        with:
+          path: .image.env
+      - name: Scan minio for vulnerabilities
+        id: scan
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: "docker.io/minio/minio:${{ steps.dotenv.outputs.minio_tag }}"
+          format: 'template'
+          template: '@/contrib/sarif.tpl'
+          output: 'minio-scan-output.sarif'
+          exit-code: '0'
+          ignore-unfixed: true
+          severity: 'CRITICAL,HIGH,MEDIUM'
+
+      - name: Upload scan report
+        uses: github/codeql-action/upload-sarif@v1
+        with:
+          sarif_file: 'minio-scan-output.sarif'
+
+
+  scan_dex:
+    runs-on: ubuntu-18.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Read image tags from env file
+        uses: falti/dotenv-action@v0.2
+        id: dotenv
+        with:
+          path: .image.env
+      - name: Scan dex for vulnerabilities
+        id: scan
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: "docker.io/ghcr.io/dexidp/dex:${{ steps.dotenv.outputs.dex_tag }}"
+          format: 'template'
+          template: '@/contrib/sarif.tpl'
+          output: 'dex-scan-output.sarif'
+          exit-code: '0'
+          ignore-unfixed: true
+          severity: 'CRITICAL,HIGH,MEDIUM'
+      - name: Upload scan report
+        uses: github/codeql-action/upload-sarif@v1
+        with:
+          sarif_file: dex-scan-output.sarif
+
+
+  scan_kurl_proxy:
+    runs-on: ubuntu-18.04
+    needs: [build_kurl_proxy_alpha]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Scan kurl-proxy for vulnerabilities
+        id: scan
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: 'docker.io/kotsadm/kurl-proxy:alpha'
+          format: 'template'
+          template: '@/contrib/sarif.tpl'
+          output: 'kurl-proxy-scan-output.sarif'
+          exit-code: '0'
+          ignore-unfixed: true
+          severity: 'CRITICAL,HIGH,MEDIUM'
+      - name: Upload scan report
+        uses: github/codeql-action/upload-sarif@v1
+        with:
+          sarif_file: kurl-proxy-scan-output.sarif
+
+
+  scan_kotsadm:
+    runs-on: ubuntu-18.04
+    needs: [release_go_api_alpha]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Scan kotsadm for vulnerabilities
+        id: scan
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: 'docker.io/kotsadm/kotsadm:alpha'
+          format: 'template'
+          template: '@/contrib/sarif.tpl'
+          output: 'kotsadm-scan-output.sarif'
+          exit-code: '0'
+          ignore-unfixed: true
+          severity: 'CRITICAL,HIGH,MEDIUM'
+      - name: Upload scan report
+        uses: github/codeql-action/upload-sarif@v1
+        with:
+          sarif_file: kotsadm-scan-output.sarif
+
+
+  scan_migrations:
+    runs-on: ubuntu-18.04
+    needs: [build-schema-migrations]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Scan migrations for vulnerabilities
+        id: scan
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: 'docker.io/kotsadm/kotsadm-migrations:alpha'
+          format: 'template'
+          template: '@/contrib/sarif.tpl'
+          output: 'kotsadm-migration-scan-output.sarif'
+          exit-code: '0'
+          ignore-unfixed: true
+          severity: 'CRITICAL,HIGH,MEDIUM'
+      - name: Upload scan report
+        uses: github/codeql-action/upload-sarif@v1
+        with:
+          sarif_file: kotsadm-migration-scan-output.sarif
