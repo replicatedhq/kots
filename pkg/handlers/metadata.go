@@ -69,6 +69,7 @@ func GetMetadataHandler(h *Handler, fn MetadataK8sFn) http.HandlerFunc {
 		metadataResponse.UpstreamURI = brandingConfigMap.Data["upstreamUri"]
 		metadataResponse.ConsoleFeatureFlags = application.Spec.ConsoleFeatureFlags
 
+		JSON(w, http.StatusOK, metadataResponse)
 	}
 
 }

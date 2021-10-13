@@ -1,9 +1,8 @@
 package handlers
 
 import (
-	"fmt"
-	"io"
-	"log"
+	"encoding/json"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -15,9 +14,7 @@ import (
 
 func Test_MetadataHandler(t *testing.T) {
 
-	configMap :=
-		`
-	apiVersion: v1
+	configMap := `apiVersion: v1
 data:
   application.yaml: |
     apiVersion: kots.io/v1beta1
@@ -38,13 +35,12 @@ metadata:
     manager: kotsadm
   name: kotsadm-application-metadata
   namespace: default
-	
-	`
+`
 
 	tests := []struct {
 		name                 string
 		funcPtr              MetadataK8sFn
-		expectErr            bool
+		httpStatus           int
 		expectedFeatureFlags []string
 	}{
 		{
@@ -59,37 +55,32 @@ metadata:
 
 			},
 			expectedFeatureFlags: []string{"feature1", "feature2"},
+			httpStatus: http.StatusOK,
+		},
+		{
+			name: "k8s sad clown",
+			funcPtr: func() (*v1.ConfigMap, bool, error) {
+				return nil, false, errors.New("wah wah wah")
+			},
+			httpStatus: http.StatusServiceUnavailable,
 		},
 	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
+			ts := httptest.NewServer(GetMetadataHandler(&Handler{}, test.funcPtr))
+			defer ts.Close()
 
-			req := require.New(t)
-			returnedFeatureFlags, err := testServer()
-
-			req.NoError(err)
-			req.Equal(test.expectedFeatureFlags, returnedFeatureFlags)
-
+			response, err := http.Get(ts.URL)
+			require.Nil(t, err)
+			require.Equal(t, test.httpStatus, response.StatusCode)
+			if response.StatusCode != http.StatusOK {
+				return
+			}
+			var metadata MetadataResponse
+			require.Nil(t, json.NewDecoder(response.Body).Decode(&metadata))
+			require.Equal(t, test.expectedFeatureFlags, metadata.ConsoleFeatureFlags)
 		})
 	}
 
-}
-
-func testServer() ([]string, error) {
-	ts := httptest.NewServer(GetMetadataHandler(&Handler{}, GetMetaDataConfig))
-	defer ts.Close()
-
-	res, err := http.Get(ts.URL)
-	if err != nil {
-		log.Fatal(err)
-	}
-	greeting, err := io.ReadAll(res.Body)
-	res.Body.Close()
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	fmt.Printf("%s", greeting)
-	return nil, nil
 }
