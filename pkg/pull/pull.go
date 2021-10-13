@@ -451,6 +451,8 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 		// to do this, we remove only the current helmBase name from the UseHelmInstall map to unblock visibility into the chart directory
 		// this ensures only the current chart resources are added to kustomization.yaml and pullsecret.yaml
 		chartName := strings.Split(helmBase.Path, "/")[len(strings.Split(helmBase.Path, "/"))-1]
+		// copy the bool setting in the map to restore it after this process loop
+		useHelmSetting := writeMidstreamOptions.UseHelmInstall[chartName]
 		delete(writeMidstreamOptions.UseHelmInstall, chartName)
 
 		writeMidstreamOptions.MidstreamDir = filepath.Join(helmBase.GetOverlaysDir(writeBaseOptions), "midstream", helmBase.Path)
@@ -460,6 +462,9 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 		if err != nil {
 			return "", errors.Wrapf(err, "failed to write helm midstream %s", helmBase.Path)
 		}
+
+		// add this chart back into UseHelmInstall to make sure it's not processed again
+		writeMidstreamOptions.UseHelmInstall[chartName] = useHelmSetting
 
 		helmMidstreams = append(helmMidstreams, *helmMidstream)
 	}
