@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
@@ -222,6 +223,10 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 		NewHelmCharts:      newHelmCharts,
 	}
 
+	// the UseHelmInstall map blocks visibility into charts and subcharts when searching for private images
+	// any chart name listed here will be skipped when writing midstream kustomization.yaml and pullsecret.yaml
+	// when using Helm Install, each chart gets it's own kustomization and pullsecret yaml and MUST be skipped when processing higher level directories!
+	// for writing Common Midstream, every chart and subchart is in this map as Helm Midstreams will be processed later in the code
 	commonWriteMidstreamOptions.UseHelmInstall = map[string]bool{}
 	for _, v := range newHelmCharts {
 		commonWriteMidstreamOptions.UseHelmInstall[v.Spec.Chart.Name] = v.Spec.UseHelmInstall
@@ -245,10 +250,16 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 		return errors.Wrap(err, "failed to write common midstream")
 	}
 
-	//commonWriteMidstreamOptions.UseHelmInstall = map[string]bool{}
 	helmMidstreams := []midstream.Midstream{}
 	for _, helmBase := range helmBases {
-		writeMidstreamOptions := commonWriteMidstreamOptions
+		// we must look at the current chart for private images, but must ignore subcharts
+		// to do this, we remove only the current helmBase name from the UseHelmInstall map to unblock visibility into the chart directory
+		// this ensures only the current chart resources are added to kustomization.yaml and pullsecret.yaml
+		chartName := strings.Split(helmBase.Path, "/")[len(strings.Split(helmBase.Path, "/"))-1]
+		// copy the bool setting in the map to restore it after this process loop
+		useHelmSetting := writeMidstreamOptions.UseHelmInstall[chartName]
+		delete(writeMidstreamOptions.UseHelmInstall, chartName)
+
 		writeMidstreamOptions.MidstreamDir = filepath.Join(helmBase.GetOverlaysDir(writeBaseOptions), "midstream", helmBase.Path)
 		writeMidstreamOptions.BaseDir = filepath.Join(u.GetBaseDir(writeUpstreamOptions), helmBase.Path)
 
@@ -258,6 +269,9 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 		if err != nil {
 			return errors.Wrapf(err, "failed to write helm midstream %s", helmBase.Path)
 		}
+
+		// add this chart back into UseHelmInstall to make sure it's not processed again
+		writeMidstreamOptions.UseHelmInstall[chartName] = useHelmSetting
 
 		helmMidstreams = append(helmMidstreams, *helmMidstream)
 	}
