@@ -137,8 +137,12 @@ body a {
     background-color: $error-color;
     color: #ffffff;
   }
+  &.skipped {
+    background-color: $light-accent;
+    color: $text-color-header;
+  }
   &.unknown {
-    background-color: $secondary-color;
+    background-color: $muted-light-accent;
     color: #ffffff;
   }
 }

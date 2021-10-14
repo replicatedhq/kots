@@ -361,6 +361,7 @@ class AppDetailPage extends Component {
                     <Route exact path="/app/:slug/tree/:sequence?" render={props => <DownstreamTree {...props} app={app} appNameSpace={this.props.appNameSpace} />} />
 
                     <Route exact path={["/app/:slug/version-history", "/app/:slug/version-history/diff/:firstSequence/:secondSequence"]} render={() =>
+                    /* TODO: Add feature flag for new version history page or classic page */
                       <AppVersionHistory
                         app={app}
                         match={this.props.match}

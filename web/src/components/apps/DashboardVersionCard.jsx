@@ -247,9 +247,7 @@ class DashboardVersionCard extends React.Component {
     if (version?.preflightResult) {
       const preflightResult = JSON.parse(version.preflightResult);
       preflightState = getPreflightResultState(preflightResult);
-      if (version.status === "pending") {
-        preflightsFailed = preflightState === "fail";
-      }
+      preflightsFailed = preflightState === "fail";
     }
     return {
       preflightsFailed,
@@ -261,7 +259,12 @@ class DashboardVersionCard extends React.Component {
   renderCurrentVersion = () => {
     const { currentVersion, app } = this.props;
     const preflightState = this.getPreflightState(currentVersion);
-
+    let checksStatusText;
+    if (preflightState.preflightsFailed) {
+      checksStatusText = "Checks failed"
+    } else if (preflightState.preflightState === "warn") {
+      checksStatusText = "Checks passed with warnings"
+    }
     return (
       <div className="flex1 flex-column">
         <div className="flex">
@@ -285,13 +288,26 @@ class DashboardVersionCard extends React.Component {
               </div>
             }
             <div>
+            {currentVersion.status === "pending_preflight" ?
+              <div className="u-marginRight--10 u-position--relative">
+                <Loader size="30" />
+                <p className="checks-running-text u-fontSize--small u-lineHeight--normal u-fontWeight--medium">Running checks</p>
+              </div>
+            :
+            <div>
               <Link to={`/app/${app?.slug}/downstreams/${app?.downstreams[0].cluster?.slug}/version-history/preflight/${currentVersion?.sequence}`}
                 className="icon preflightChecks--icon u-marginRight--10 u-cursor--pointer u-position--relative"
                 data-tip="View preflight checks">
-                {preflightState.preflightsFailed || preflightState.preflightState === "warn" ?
-                  <span className={`icon ${preflightState.preflightsFailed ? "preflight-checks-failed-icon" : preflightState.preflightState === "warn" ? "preflight-checks-warn-icon" : ""}`} /> : null
-                }</Link>
+                  {preflightState.preflightsFailed || preflightState.preflightState === "warn" ?
+                  <div>
+                    <span className={`icon version-row-preflight-status-icon ${preflightState.preflightsFailed ? "preflight-checks-failed-icon" : preflightState.preflightState === "warn" ? "preflight-checks-warn-icon" : ""}`} />
+                    <p className={`checks-running-text u-fontSize--small u-lineHeight--normal u-fontWeight--medium ${preflightState.preflightsFailed ? "err" : preflightState.preflightState === "warn" ? "warning" : ""}`}>{checksStatusText}</p>
+                  </div>
+                  : null}
+                </Link>
               <ReactTooltip effect="solid" className="replicated-tooltip" />
+            </div>
+            }
             </div>
             {app?.isConfigurable &&
               <div className="u-marginRight--10">
@@ -510,6 +526,12 @@ class DashboardVersionCard extends React.Component {
   
     const needsConfiguration = version.status === "pending_config";
     const preflightState = this.getPreflightState(version);
+    let checksStatusText;
+    if (preflightState.preflightsFailed) {
+      checksStatusText = "Checks failed"
+    } else if (preflightState.preflightState === "warn") {
+      checksStatusText = "Checks passed with warnings"
+    }
     return (
       <div className="flex flex1 alignItems--center justifyContent--flexEnd">
           {version?.releaseNotes &&
@@ -518,15 +540,26 @@ class DashboardVersionCard extends React.Component {
               <ReactTooltip effect="solid" className="replicated-tooltip" />
             </div>
           }
-          <div>
-          <Link to={`/app/${app?.slug}/downstreams/${app?.downstreams[0].cluster?.slug}/version-history/preflight/${version?.sequence}`}
-            className="icon preflightChecks--icon u-marginRight--10 u-cursor--pointer u-position--relative"
-            data-tip="View preflight checks">
-            {preflightState.preflightsFailed || preflightState.preflightState === "warn" ?
-              <span className={`icon version-row-preflight-status-icon ${preflightState.preflightsFailed ? "preflight-checks-failed-icon" : preflightState.preflightState === "warn" ? "preflight-checks-warn-icon" : ""}`} /> : null
-            }</Link>
-            <ReactTooltip effect="solid" className="replicated-tooltip" />
-          </div>
+          {version.status === "pending_preflight" ?
+            <div className="u-marginRight--10 u-position--relative">
+              <Loader size="30" />
+              <p className="checks-running-text u-fontSize--small u-lineHeight--normal u-fontWeight--medium">Running checks</p>
+            </div>
+            :
+            <div>
+              <Link to={`/app/${app?.slug}/downstreams/${app?.downstreams[0].cluster?.slug}/version-history/preflight/${version?.sequence}`}
+                className="icon preflightChecks--icon u-marginRight--10 u-cursor--pointer u-position--relative"
+                data-tip="View preflight checks">
+                  {preflightState.preflightsFailed || preflightState.preflightState === "warn" ?
+                  <div>
+                    <span className={`icon version-row-preflight-status-icon ${preflightState.preflightsFailed ? "preflight-checks-failed-icon" : preflightState.preflightState === "warn" ? "preflight-checks-warn-icon" : ""}`} />
+                    <p className={`checks-running-text u-fontSize--small u-lineHeight--normal u-fontWeight--medium ${preflightState.preflightsFailed ? "err" : preflightState.preflightState === "warn" ? "warning" : ""}`}>{checksStatusText}</p>
+                  </div>
+                  : null}
+                </Link>
+              <ReactTooltip effect="solid" className="replicated-tooltip" />
+            </div>
+          }
           {app?.isConfigurable &&
             <div>
               <Link to={`/app/${app?.slug}/config/${version.sequence}`} className="icon configEdit--icon u-cursor--pointer" data-tip="Edit config" />

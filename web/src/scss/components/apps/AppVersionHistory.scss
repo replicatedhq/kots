@@ -3,26 +3,16 @@ $cell-width: 140px;
 
 .VersionHistoryDeploymentRow {
   padding: 12px;
-  border-width: 1px;
-  border-style: solid;
-  border-color: $border-color;
-  border-top: none;
-  border-right: none;
-  border-left: none;
+  border-radius: 4px;  
+  margin-bottom: 15px;
   background-color: #ffffff;
+
+  &:last-child {
+    margin-bottom: 0;
+  }
 
   & > div:last-child {
     min-width: 270px;
-  }
-
-  &.active-deploy-row {
-    border-top-width: 1px;
-    border-top-style: solid;
-    border-color: $success-color;
-
-    &.failed {
-      border-color: $error-color;
-    }
   }
 
   &.is-new {
@@ -225,14 +215,44 @@ $cell-width: 140px;
 
 .TableDiff--Wrapper {
   position: relative;
-  width: 95%;
+  width: 100%;
   max-width: 1000px;
+
+  &:not(.classic) {
+    padding: 15px;
+    border-radius: 4px;
+    background-color: $really-light-accent;
+  }
+
+  &.gitops-enabled {
+    margin-top: 30px;
+  }
+
+}
+
+.checks-running-text {
+  position: absolute;
+  bottom: -26px;
+  margin-left: 50%;
+  transform: translateX(-50%);
+  white-space: nowrap;
+  color: $text-color-body-copy;
+
+  &.err {
+    color: $error-color;
+  }
+  &.warning {
+    color: $warning-color;
+  }
 }
 
 .DiffOverlay {
-  width: calc(100% + 2px);
+  width: calc(100% - 60px);
   background: white;
   position: absolute;
+  left: 15px;
+  padding: 15px;
+  border-radius: 4px;
 }
 
 .overlay {
