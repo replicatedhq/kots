@@ -148,7 +148,7 @@ func Start(params *APIServerParams) {
 	loggingRouter.HandleFunc("/api/v1/login", handler.Login)
 	loggingRouter.HandleFunc("/api/v1/login/info", handler.GetLoginInfo)
 	loggingRouter.HandleFunc("/api/v1/logout", handler.Logout) // this route uses its own auth
-	loggingRouter.Path("/api/v1/metadata").Methods("GET").HandlerFunc(handlers.GetMetadataHandler(handler, handlers.GetMetaDataConfig))
+	loggingRouter.Path("/api/v1/metadata").Methods("GET").HandlerFunc(handlers.GetMetadataHandler(handlers.GetMetaDataConfig))
 
 	loggingRouter.HandleFunc("/api/v1/oidc/login", handler.OIDCLogin)
 	loggingRouter.HandleFunc("/api/v1/oidc/login/callback", handler.OIDCLoginCallback)
