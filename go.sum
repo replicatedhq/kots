@@ -949,8 +949,9 @@ github.com/hashicorp/go-syslog v1.0.0/go.mod h1:qPfqrKkXGihmCqbJM2mZgkZGvKG1dFdv
 github.com/hashicorp/go-uuid v1.0.0/go.mod h1:6SBZvOh/SIDV7/2o3Jml5SYk/TvGqwFJ/bN7x4byOro=
 github.com/hashicorp/go-uuid v1.0.1/go.mod h1:6SBZvOh/SIDV7/2o3Jml5SYk/TvGqwFJ/bN7x4byOro=
 github.com/hashicorp/go-version v1.1.0/go.mod h1:fltr4n8CU8Ke44wwGCBoEymUuxUHl09ZGVZPK5anwXA=
-github.com/hashicorp/go-version v1.2.0 h1:3vNe/fWF5CBgRIguda1meWhsZHy3m8gCJ5wx+dIzX/E=
 github.com/hashicorp/go-version v1.2.0/go.mod h1:fltr4n8CU8Ke44wwGCBoEymUuxUHl09ZGVZPK5anwXA=
+github.com/hashicorp/go-version v1.3.0 h1:McDWVJIU/y+u1BRV06dPaLfLCaT7fUTJLp5r04x7iNw=
+github.com/hashicorp/go-version v1.3.0/go.mod h1:fltr4n8CU8Ke44wwGCBoEymUuxUHl09ZGVZPK5anwXA=
 github.com/hashicorp/go.net v0.0.1/go.mod h1:hjKkEWcCURg++eb33jQU7oqQcI9XDCnUzHA0oac0k90=
 github.com/hashicorp/golang-lru v0.0.0-20180201235237-0fb14efe8c47/go.mod h1:/m3WP610KZHVQ1SGc6re/UDhFvYD7pJ4Ao+sR/qLZy8=
 github.com/hashicorp/golang-lru v0.5.0/go.mod h1:/m3WP610KZHVQ1SGc6re/UDhFvYD7pJ4Ao+sR/qLZy8=
@@ -1599,8 +1600,8 @@ github.com/replicatedhq/longhorn-manager v1.1.2-0.20210622201804-05b01947b99d h1
 github.com/replicatedhq/longhorn-manager v1.1.2-0.20210622201804-05b01947b99d/go.mod h1:/5iB5+3q/p1HOj7GXF8PT/YrPersNLAH3VjFfmN90Y4=
 github.com/replicatedhq/termui/v3 v3.1.1-0.20200811145416-f40076d26851/go.mod h1:JDxG6+uubnk9/BZ2yUsyAJJwlptjrnmB2MPF5d2Xe/8=
 github.com/replicatedhq/troubleshoot v0.10.18/go.mod h1:8oFRnMJlFjzJ490eq72iLEN7DGJjkgLx22Z1vX6WwU0=
-github.com/replicatedhq/troubleshoot v0.15.0 h1:/7fKgLN0GqGgDRx/p/DlQ6xiAM2jwa4vMdMqSzpKARY=
-github.com/replicatedhq/troubleshoot v0.15.0/go.mod h1:WRH6cc+LQA3ysWgKGYByC8+G6PQ5fNHLCmf633ZmrWg=
+github.com/replicatedhq/troubleshoot v0.16.0 h1:x3su4RIJdxAj6m8EDQWQ/luB8gpqYn/tiUT5ga04Ksk=
+github.com/replicatedhq/troubleshoot v0.16.0/go.mod h1:Q61Ojqmd8vU7QLFgDKllza3IzpBiD5WvabdFTEm35vE=
 github.com/replicatedhq/yaml/v3 v3.0.0-beta5-replicatedhq h1:PwPggruelq2336c1Ayg5STFqgbn/QB1tWLQwrVlU7ZQ=
 github.com/replicatedhq/yaml/v3 v3.0.0-beta5-replicatedhq/go.mod h1:Txa7LopbYCU8aRgmNe0n+y/EPMz50NbCPcVVJBquwag=
 github.com/rivo/uniseg v0.2.0 h1:S1pD9weZBuJdFmowNwbpi7BJ8TNftyUImj/0WQi72jY=
