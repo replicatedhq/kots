@@ -27,7 +27,8 @@ import (
 )
 
 const (
-	KotsKubeVersion = "1.22.1"
+	KotsKubeVersion      = "1.22.1"
+	KotsKustomizeVersion = "3.10.0"
 )
 
 var (
@@ -667,7 +668,8 @@ func ensureKubectlBinary(rootDir string) error {
 
 func ensureKustomizeBinary(rootDir string) error {
 	kustomizeArchive := filepath.Join(rootDir, "kustomize.tar.gz")
-	if err := downloadFileFromURL(kustomizeArchive, "https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize%2Fv3.5.4/kustomize_v3.5.4_linux_amd64.tar.gz"); err != nil {
+	packageURI := fmt.Sprintf("https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize%%2Fv%s/kustomize_v%s_linux_amd64.tar.gz", KotsKustomizeVersion, KotsKustomizeVersion)
+	if err := downloadFileFromURL(kustomizeArchive, packageURI); err != nil {
 		return err
 	}
 	defer os.RemoveAll(kustomizeArchive)
@@ -687,13 +689,20 @@ func ensureKustomizeBinary(rootDir string) error {
 		return err
 	}
 
-	err = moveFile(filepath.Join(unarchived, "kustomize"), filepath.Join(rootDir, "kustomize3.5.4"))
+	dest := filepath.Join(rootDir, "kustomize3")
+
+	err = moveFile(filepath.Join(unarchived, "kustomize"), dest)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "move file")
 	}
 
-	if err := os.Chmod(filepath.Join(rootDir, "kustomize3.5.4"), 0755); err != nil {
+	if err := os.Chmod(dest, 0755); err != nil {
 		return errors.Wrap(err, "chmod kustomize")
+	}
+
+	err = linkFile(dest, filepath.Join(rootDir, "kustomize"))
+	if err != nil {
+		return errors.Wrap(err, "link file")
 	}
 
 	return nil

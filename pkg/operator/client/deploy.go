@@ -119,6 +119,10 @@ func (c *Client) diffAndRemovePreviousManifests(deployArgs operatortypes.DeployA
 	if err != nil {
 		return errors.Wrap(err, "failed to find kubectl")
 	}
+	kustomize, err := binaries.GetKustomizePathForVersion(deployArgs.KustomizeVersion)
+	if err != nil {
+		return errors.Wrap(err, "failed to find kustomize")
+	}
 	config, err := k8sutil.GetClusterConfig()
 	if err != nil {
 		return errors.Wrap(err, "failed to get cluster config")
@@ -126,7 +130,7 @@ func (c *Client) diffAndRemovePreviousManifests(deployArgs operatortypes.DeployA
 
 	// this is pretty raw, and required kubectl...  we should
 	// consider some other options here?
-	kubernetesApplier := applier.NewKubectl(kubectl, config)
+	kubernetesApplier := applier.NewKubectl(kubectl, kustomize, config)
 
 	allPVCs := make([]string, 0)
 	for k, previous := range decodedPreviousMap {
@@ -260,7 +264,7 @@ func (c *Client) ensureResourcesPresent(deployArgs operatortypes.DeployAppArgs) 
 		targetNamespace = deployArgs.Namespace
 	}
 
-	kubernetesApplier, err := c.getApplier(deployArgs.KubectlVersion)
+	kubernetesApplier, err := c.getApplier(deployArgs.KubectlVersion, deployArgs.KustomizeVersion)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get applier")
 	}

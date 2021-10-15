@@ -13,7 +13,6 @@ import (
 	"github.com/marccampbell/yaml-toolbox/pkg/splitter"
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
-	"github.com/replicatedhq/kots/pkg/kustomize"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/store"
 )
@@ -87,7 +86,9 @@ func (h *Handler) GetAppRenderedContents(w http.ResponseWriter, r *http.Request)
 		kustomizeBuildTarget = filepath.Join(archivePath, "overlays", "downstreams", downstreamName)
 	}
 
-	archiveOutput, err := exec.Command(kustomize.GetKustomizePath(kotsKinds.KustomizeVersion()), "build", kustomizeBuildTarget).Output()
+	kustomizeBinPath := kotsKinds.GetKustomizeBinaryPath()
+
+	archiveOutput, err := exec.Command(kustomizeBinPath, "build", kustomizeBuildTarget).Output()
 	if err != nil {
 		if ee, ok := err.(*exec.ExitError); ok {
 			err = fmt.Errorf("kustomize stderr: %q", string(ee.Stderr))
@@ -116,7 +117,7 @@ func (h *Handler) GetAppRenderedContents(w http.ResponseWriter, r *http.Request)
 		decodedArchiveFiles[filename] = string(b)
 	}
 
-	kustomizedFiles, err := getKustomizedFiles(kustomizeBuildTarget, kotsKinds.KustomizeVersion())
+	kustomizedFiles, err := getKustomizedFiles(kustomizeBuildTarget, kustomizeBinPath)
 	if err != nil {
 		logger.Error(err)
 		w.WriteHeader(500)
@@ -132,7 +133,7 @@ func (h *Handler) GetAppRenderedContents(w http.ResponseWriter, r *http.Request)
 	})
 }
 
-func getKustomizedFiles(kustomizeTarget string, version string) (map[string]string, error) {
+func getKustomizedFiles(kustomizeTarget string, kustomizeBinPath string) (map[string]string, error) {
 	kustomizedFilesList := map[string]string{}
 
 	archiveChartDir := filepath.Join(kustomizeTarget, "charts")
@@ -151,7 +152,7 @@ func getKustomizedFiles(kustomizeTarget string, version string) (map[string]stri
 			}
 
 			if info.Name() == "kustomization.yaml" {
-				archiveOutput, err := exec.Command(kustomize.GetKustomizePath(version), "build", filepath.Dir(path)).Output()
+				archiveOutput, err := exec.Command(kustomizeBinPath, "build", filepath.Dir(path)).Output()
 				if err != nil {
 					if ee, ok := err.(*exec.ExitError); ok {
 						err = fmt.Errorf("kustomize %s: %q", path, string(ee.Stderr))

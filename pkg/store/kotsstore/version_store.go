@@ -326,6 +326,8 @@ func (s *KOTSStore) createAppVersion(tx *sql.Tx, appID string, currentSequence *
 		return int64(0), errors.Wrap(err, "failed to list downstreams")
 	}
 
+	kustomizeBinPath := kotsKinds.GetKustomizeBinaryPath()
+
 	for _, d := range downstreams {
 		// there's a small chance this is not optimal, but no current code path
 		// will support multiple downstreams, so this is cleaner here for now
@@ -350,7 +352,7 @@ func (s *KOTSStore) createAppVersion(tx *sql.Tx, appID string, currentSequence *
 		diffSummary, diffSummaryError := "", ""
 		if currentSequence != nil {
 			// diff this release from the last release
-			diff, err := kustomize.DiffAppVersionsForDownstream(d.Name, filesInDir, previousArchiveDir, kotsKinds.KustomizeVersion())
+			diff, err := kustomize.DiffAppVersionsForDownstream(d.Name, filesInDir, previousArchiveDir, kustomizeBinPath)
 			if err != nil {
 				diffSummaryError = errors.Wrap(err, "failed to diff").Error()
 			} else {
