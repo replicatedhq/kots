@@ -1,0 +1,21 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  labels: null
+  name: pre-install-job-2
+  namespace: helmns-2
+spec:
+  backoffLimit: 3
+  template:
+    metadata:
+      name: security-test
+    spec:
+      containers:
+      - command:
+        - sh
+        - -c
+        - sleep 10
+        image: alpine
+        imagePullPolicy: IfNotPresent
+        name: hook-test
+      restartPolicy: Never
