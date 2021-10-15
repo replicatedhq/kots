@@ -3,8 +3,10 @@ import { Link } from "react-router-dom";
 import ReactTooltip from "react-tooltip"
 
 import Select from "react-select";
+import isEmpty from "lodash/isEmpty";
 import dayjs from "dayjs";
 import size from "lodash/size";
+import url from "url";
 
 import AirgapUploadProgress from "../AirgapUploadProgress";
 import Loader from "../shared/Loader";
@@ -14,9 +16,10 @@ import ShowLogsModal from "@src/components/modals/ShowLogsModal";
 import {
   dynamicallyResizeText,
   Utilities,
+  getLicenseExpiryDate,
 } from "@src/utilities/utilities";
 
-import "../../scss/components/watches/DashboardCard.scss";
+import "../../scss/components/watches/DashboardCardClassic.scss";
 
 export default class DashboardCard extends React.Component {
   constructor(props) {
@@ -308,6 +311,32 @@ export default class DashboardCard extends React.Component {
     )
   }
 
+  renderLicenseCard = () => {
+    const { appLicense, isSnapshotAllowed, getingAppLicenseErrMsg } = this.props;
+    const expiresAt = getLicenseExpiryDate(appLicense);
+
+    return (
+      <div>
+        {isSnapshotAllowed ?
+          getingAppLicenseErrMsg && <p className="u-textColor--error u-fontSize--small u-fontWeight--medium u-lineHeight--normal flex">{getingAppLicenseErrMsg}</p>
+          :
+          size(appLicense) > 0 ?
+            <div>
+              {appLicense?.licenseType === "community" && <p className="u-fontSize--normal u-fontWeight--medium u-textColor--warning u-marginBottom--15"> Community Edition </p>}
+              <p className="u-fontSize--normal u-fontWeight--medium u-textColor--bodyCopy"> Channel: <span className="u-fontWeight--bold u-fontSize--normal u-textColor--secondary"> {appLicense?.channelName} </span></p>
+              <p className="u-fontSize--normal u-fontWeight--medium u-textColor--bodyCopy u-marginTop--15"> Expires: <span className="u-fontWeight--bold u-fontSize--normal u-textColor--secondary"> {expiresAt} </span></p>
+              <p className="u-fontSize--small u-textColor--bodyCopy u-marginTop--15 u-lineHeight--medium"> Contact your account rep to change your License. </p>
+            </div>
+            :
+            getingAppLicenseErrMsg ?
+              <p className="u-textColor--error u-fontSize--small u-fontWeight--medium u-lineHeight--normal flex">{getingAppLicenseErrMsg}</p>
+              :
+              <p className="u-fontSize--normal u-textColor--bodyCopy u-marginTop--15 u-lineHeight--more"> License data is not available on this application because it was installed via Helm </p>
+        }
+      </div>
+    )
+  }
+
   render() {
     const { cardName, cardIcon, application, versionHistory, url, app, appLicense, license,
       isSnapshotAllowed, startSnapshotErr, startSnapshotErrorMsg,
@@ -325,7 +354,7 @@ export default class DashboardCard extends React.Component {
     };
 
     return (
-      <div className={`${appLicense?.licenseType === "community" ? "community-dashboard-card" : appLicense && size(appLicense) === 0 ? "grayed-dashboard-card" : "dashboard-card"} flex flex1`}>
+      <div className={`${isSnapshotAllowed ? "small-dashboard-card" : appLicense?.licenseType === "community" ? "community-dashboard-card" : appLicense && size(appLicense) === 0 ? "grayed-dashboard-card" : "dashboard-card"} flex flex1`}>
         <div className="flex flex1 u-marginBottom--5">
           <span className={`icon ${cardIcon} u-marginRight--10`}></span>
           <div className="flex1 flex-column">

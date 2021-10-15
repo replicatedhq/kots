@@ -81,6 +81,14 @@ export function getBuildVersion() {
   return window.env.KOTSADM_BUILD_VERSION;
 }
 
+/**
+ * @param {Array} - the features flag array
+ * @param {String} - name of feature to check
+ */
+ export function isFeatureEnabled(featureArr, featureName) {
+  return featureArr.includes(featureName);
+}
+
 export function parseIconUri(uri) {
   const splitUri = uri.split("?");
   if (splitUri.length < 2) {

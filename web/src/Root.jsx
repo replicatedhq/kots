@@ -213,6 +213,7 @@ class Root extends Component {
           appSlugFromMetadata: parseUpstreamUri(data.upstreamUri),
           appNameSpace: data.namespace,
           isKurlEnabled: data.isKurlEnabled,
+          featureFlags: data.consoleFeatureFlags,
           fetchingMetadata: false
         });
       })
@@ -400,6 +401,7 @@ class Root extends Component {
                           appNameSpace={this.state.appNameSpace}
                           appName={this.state.selectedAppName}
                           snapshotInProgressApps={this.state.snapshotInProgressApps}
+                          featureFlags={this.state.featureFlags}
                           ping={this.ping}
                         />
                       )
