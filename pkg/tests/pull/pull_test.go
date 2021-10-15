@@ -1,0 +1,177 @@
+package pull
+
+import (
+	"fmt"
+	"io/ioutil"
+	"os"
+	"path/filepath"
+	"strings"
+	"testing"
+
+	"github.com/ghodss/yaml"
+	"github.com/pmezard/go-difflib/difflib"
+	"github.com/replicatedhq/kots/pkg/pull"
+	"github.com/replicatedhq/kots/pkg/template"
+	upstreamtypes "github.com/replicatedhq/kots/pkg/upstream/types"
+	"github.com/stretchr/testify/require"
+)
+
+type TestCaseSpec struct {
+	Name        string
+	PullOptions pull.PullOptions
+	ResultsDir  string
+}
+
+type testCase struct {
+	Name        string
+	UpstreamURI string
+	PullOptions pull.PullOptions
+	Upstream    upstreamtypes.Upstream
+}
+
+func TestKotsPull(t *testing.T) {
+	tests := []testCase{}
+
+	root := "cases"
+
+	entries, err := os.ReadDir(root)
+	require.NoError(t, err)
+
+	for _, entry := range entries {
+		path := filepath.Join(root, entry.Name())
+
+		if !entry.IsDir() {
+			t.Logf("unexpected file %s", path)
+			continue
+		}
+
+		upstreamURI := filepath.Join(path, "upstream")
+		_, err = os.Stat(upstreamURI)
+		if os.IsNotExist(err) {
+			t.Logf("no upstream directory found in test directory %s", path)
+			continue
+		} else {
+			require.NoError(t, err, path)
+		}
+
+		// prepend upstreamURI with replicated:// scheme
+		upstream := pull.RewriteUpstream(upstreamURI)
+
+		testcaseFilepath := filepath.Join(path, "testcase.yaml")
+		_, err = os.Stat(testcaseFilepath)
+		if os.IsNotExist(err) {
+			t.Logf("no testcase.yaml found in directory %s", path)
+			continue
+		} else {
+			require.NoError(t, err, path)
+		}
+
+		b, err := ioutil.ReadFile(testcaseFilepath)
+		require.NoError(t, err, path)
+
+		var spec TestCaseSpec
+		err = yaml.Unmarshal(b, &spec)
+		require.NoError(t, err, path)
+
+		test := testCase{
+			Name:        spec.Name,
+			UpstreamURI: upstream,
+			PullOptions: pullOptionsFromTestCaseSpec(spec),
+		}
+
+		tests = append(tests, test)
+	}
+	require.NoError(t, err)
+
+	// ensure the tests are actually loaded
+	if len(tests) == 0 {
+		fmt.Printf("Kots Pull test cases not found")
+		t.FailNow()
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.Name, func(t *testing.T) {
+			// This disables the need for a Kubernetes cluster when running unit tests.
+			template.TestingDisableKurlValues = true
+			defer func() { template.TestingDisableKurlValues = false }()
+
+			// create the result directories and defer cleanup
+			os.Mkdir(tt.PullOptions.RootDir, 0755)
+			os.Mkdir(fmt.Sprintf("%s/replicated-kots-app", tt.PullOptions.RootDir), 0755)
+			defer func() { os.RemoveAll(tt.PullOptions.RootDir) }()
+
+			_, err := pull.Pull(tt.UpstreamURI, tt.PullOptions)
+			require.NoError(t, err)
+
+			// TODO loop through the wanted files to ensure all wanted files exist
+
+			// compare result files to wanted files
+			err = filepath.Walk(tt.PullOptions.RootDir,
+				func(path string, info os.FileInfo, err error) error {
+					if err != nil {
+						return err
+					}
+
+					if info.IsDir() {
+						return nil
+					}
+
+					// exclude installation.yaml as it has a randomly generated encryptionKey
+					if strings.HasSuffix(path, "upstream/userdata/installation.yaml") {
+						return nil
+					}
+
+					contents, err := ioutil.ReadFile(path)
+					if err != nil {
+						return err
+					}
+
+					wantPath := strings.Replace(path, "results", "wantResults", 1)
+
+					wantContents, err := ioutil.ReadFile(wantPath)
+					require.NoError(t, err)
+
+					contentsString := string(contents)
+					wantContentsString := string(wantContents)
+					//assert.IsEqual(contentsString, wantContentsString)
+
+					// there has to be a faster way to compare these strings, but assert.IsEqual wasn't finding valid diffs
+					diff := diffString(contentsString, wantContentsString)
+					if diff != "" {
+						fmt.Printf("error in file %s\n", path)
+						fmt.Printf("%s", diff)
+						t.FailNow()
+					}
+
+					return nil
+				})
+
+			require.NoError(t, err)
+		})
+	}
+}
+
+func pullOptionsFromTestCaseSpec(spec TestCaseSpec) pull.PullOptions {
+	pullOptions := spec.PullOptions
+	pullOptions.ExcludeKotsKinds = true
+	if pullOptions.AppSlug == "" {
+		pullOptions.AppSlug = "my-app"
+	}
+	return pullOptions
+}
+
+func diffString(got, want string) string {
+	diff := difflib.UnifiedDiff{
+		A:        difflib.SplitLines(got),
+		B:        difflib.SplitLines(want),
+		FromFile: "Got",
+		ToFile:   "Want",
+		Context:  1,
+	}
+	diffStr, _ := difflib.GetUnifiedDiffString(diff)
+	if diffStr != "" {
+		return fmt.Sprintf("\ngot:\n%s \nwant:\n%s \ndiff:\n%s", got, want, diffStr)
+	}
+
+	return ""
+}
