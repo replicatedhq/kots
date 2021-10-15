@@ -1189,7 +1189,9 @@ jobs:
       env:
         KGRID_API_TOKEN: ${{ secrets.KGRID_API_TOKEN }}
         KGRID_RUN_ID: ${{ steps.deploy_kgrid.outputs.kgrid-run-id }}
-      run: ./hack/wait-kgrid.sh
+      run: |
+        ./hack/wait-kgrid.sh
+        printf "\n\nSupport bundles are available in the Replicated production AWS account under the 'kgrid-support-bundles' S3 bucket. To download a support bundle, you can do so using the AWS Management Console, or by configuring the AWS cli tool with the appropriate credentials and running the following command: \n\naws s3 cp <test-supportbundle-s3-url> <local-filename>.tar.gz\n\n"
 
 
   generate-kurl-addon-pr:
