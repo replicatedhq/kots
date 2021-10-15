@@ -457,7 +457,7 @@ jobs:
         id: scan
         uses: aquasecurity/trivy-action@master
         with:
-          image-ref: "docker.io/ghcr.io/dexidp/dex:${{ steps.dotenv.outputs.dex_tag }}"
+          image-ref: "ghcr.io/dexidp/dex:${{ steps.dotenv.outputs.dex_tag }}"
           format: 'template'
           template: '@/contrib/sarif.tpl'
           output: 'dex-scan-output.sarif'
