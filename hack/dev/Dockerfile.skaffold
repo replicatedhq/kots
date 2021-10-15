@@ -104,15 +104,6 @@ RUN curl -L "https://get.helm.sh/helm-v3.4.2-linux-amd64.tar.gz" -o /tmp/helm.ta
   chmod a+x linux-amd64/helm && \
   mv linux-amd64/helm "/usr/local/bin/helm3.4.2"
 
-# Install krew
-COPY ./deploy/install-krew.sh /install-krew.sh
-RUN /install-krew.sh
-ENV PATH="/root/.krew/bin:$PATH"
-
-# Install our plugins
-RUN kubectl krew install preflight
-RUN kubectl krew install support-bundle
-
 COPY --from=builder /go/src/github.com/replicatedhq/kots/bin/kotsadm .
 
 ENTRYPOINT ["/kotsadm", "api"]
