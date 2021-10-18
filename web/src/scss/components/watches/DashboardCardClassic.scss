@@ -1,6 +1,6 @@
 @import "../../variables.scss";
 
-.dashboard-card {
+.dashboard-card.classic {
   min-width: 260px;
   max-height: 200px;
   width: 260px;
@@ -102,7 +102,7 @@
 }
 
 
-.community-dashboard-card {
+.community-dashboard-card.classic {
   min-width: 260px;
   max-height: 200px;
   width: 260px;
@@ -114,7 +114,7 @@
   padding: 12px 12px 0px 12px;
 }
 
-.grayed-dashboard-card {
+.grayed-dashboard-card.classic {
   min-width: 260px;
   max-height: 200px;
   width: 260px;
@@ -134,7 +134,7 @@
   margin-right: 30px;
 }
 
-.small-dashboard-card {
+.small-dashboard-card.classic {
   min-width: 260px;
   max-height: 100px;
   width: 260px;
@@ -155,7 +155,7 @@
 }
 
 @media screen and (min-width: 642px) {
-  .dashboard-card {
+  .dashboard-card.classic {
     margin-right: 30px;
     &:nth-child(2n),
     &:nth-child(3n) {
@@ -165,7 +165,7 @@
 }
 
 @media screen and (min-width: 960px) {
-  .dashboard-card {
+  .dashboard-card.classic {
     margin-bottom: 0;
     &:nth-child(2n) {
       margin-right: 30px;

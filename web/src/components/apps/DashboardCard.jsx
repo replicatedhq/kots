@@ -354,7 +354,7 @@ export default class DashboardCard extends React.Component {
     };
 
     return (
-      <div className={`${isSnapshotAllowed ? "small-dashboard-card" : appLicense?.licenseType === "community" ? "community-dashboard-card" : appLicense && size(appLicense) === 0 ? "grayed-dashboard-card" : "dashboard-card"} flex flex1`}>
+      <div className={`${isSnapshotAllowed ? "small-dashboard-card" : appLicense?.licenseType === "community" ? "community-dashboard-card" : appLicense && size(appLicense) === 0 ? "grayed-dashboard-card" : "dashboard-card"} classic flex flex1`}>
         <div className="flex flex1 u-marginBottom--5">
           <span className={`icon ${cardIcon} u-marginRight--10`}></span>
           <div className="flex1 flex-column">

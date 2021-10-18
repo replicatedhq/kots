@@ -86,6 +86,7 @@ export function getBuildVersion() {
  * @param {String} - name of feature to check
  */
  export function isFeatureEnabled(featureArr, featureName) {
+   if (!featureArr || featureArr.length === 0) return false;
   return featureArr.includes(featureName);
 }
 

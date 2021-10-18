@@ -787,17 +787,17 @@ class Dashboard extends Component {
                 </div>
                 :
                 <div className="flex-auto flex flexWrap--wrap u-width--full u-position--relative">
-                  <div className="dashboard-card emptyGraph flex-column flex1 flex">
+                  <div className="dashboard-card classic emptyGraph flex-column flex1 flex">
                     <div className="flex flex1 justifyContent--center alignItems--center alignSelf--center">
                       <span className="icon graphIcon"></span>
                     </div>
                   </div>
-                  <div className="dashboard-card emptyGraph flex-column flex1 flex">
+                  <div className="dashboard-card classic emptyGraph flex-column flex1 flex">
                     <div className="flex flex1 justifyContent--center alignItems--center alignSelf--center">
                       <span className="icon graphPieIcon"></span>
                     </div>
                   </div>
-                  <div className="dashboard-card absolute-button  flex flex1 alignItems--center justifyContent--center alignSelf--center">
+                  <div className="dashboard-card classic absolute-button flex flex1 alignItems--center justifyContent--center alignSelf--center">
                     <button className="btn secondary blue" onClick={this.toggleConfigureGraphs}> Configure graphs </button>
                   </div>
                 </div>
