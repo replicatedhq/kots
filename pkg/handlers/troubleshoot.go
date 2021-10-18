@@ -280,6 +280,53 @@ func (h *Handler) DownloadSupportBundle(w http.ResponseWriter, r *http.Request) 
 	io.Copy(w, f)
 }
 
+func (h *Handler) ShareSupportBundle(w http.ResponseWriter, r *http.Request) {
+	bundleID := mux.Vars(r)["bundleId"]
+
+	// TODO check if feature is enabled for license
+
+	bundle, err := store.GetStore().GetSupportBundle(bundleID)
+	if err != nil {
+		logger.Error(err)
+		JSON(w, http.StatusInternalServerError, nil)
+		return
+	}
+
+	bundleArchive, err := store.GetStore().GetSupportBundleArchive(bundle.ID)
+	if err != nil {
+		logger.Error(err)
+		JSON(w, http.StatusInternalServerError, nil)
+		return
+	}
+	defer os.RemoveAll(bundleArchive)
+
+	f, err := os.Open(bundleArchive)
+	if err != nil {
+		logger.Error(err)
+		JSON(w, http.StatusInternalServerError, nil)
+		return
+	}
+	defer f.Close()
+
+	resp, err := http.DefaultClient.Post("TODO replicated.app URL", "application/gzip", f)
+	if err != nil {
+		logger.Error(err)
+		JSON(w, http.StatusInternalServerError, nil)
+		return
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode >= 400 {
+		body, err := io.ReadAll(resp.Body)
+		if err == nil {
+			logger.Errorf("Failed to share support bundle: %d: %s", resp.StatusCode, string(body))
+		} else {
+			logger.Errorf("Failed to share support bundle: %d", resp.StatusCode)
+		}
+		JSON(w, http.StatusInternalServerError, nil)
+		return
+	}
+}
+
 func (h *Handler) CollectSupportBundle(w http.ResponseWriter, r *http.Request) {
 	a, err := store.GetStore().GetApp(mux.Vars(r)["appId"])
 	if err != nil {
