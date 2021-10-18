@@ -11,28 +11,47 @@ import (
 	"github.com/replicatedhq/kots/pkg/persistence"
 )
 
-var knownKubectlVersions = []semver.Version{
-	semver.MustParse("1.21.2"),
-	semver.MustParse("1.20.4"),
-	semver.MustParse("1.19.3"),
-	semver.MustParse("1.18.10"),
-	semver.MustParse("1.17.13"),
-	semver.MustParse("1.16.3"),
-	semver.MustParse("1.14.9"),
+var knownKubectlVersions = []kubectlFuzzyVersion{
+	{semver: semver.MustParse("1.21.1")},
+	{semver: semver.MustParse("1.20.1")},
+	{semver: semver.MustParse("1.19.1")},
+	{semver: semver.MustParse("1.18.1")},
+	{semver: semver.MustParse("1.17.1")},
+	{semver: semver.MustParse("1.16.1")},
+	{semver: semver.MustParse("1.14.1")},
+}
+
+type kubectlFuzzyVersion struct {
+	semver semver.Version
+}
+
+func (v kubectlFuzzyVersion) String() string {
+	return fmt.Sprintf("v%d.%d", v.semver.Major, v.semver.Minor)
+}
+
+func (v kubectlFuzzyVersion) Match(userString string) bool {
+	if userString == "" || userString == "latest" {
+		return false
+	}
+
+	if exactVer, err := semver.Parse(userString); err == nil {
+		return exactVer.Major == v.semver.Major && exactVer.Minor == v.semver.Minor
+	}
+
+	rangeVer, err := semver.ParseRange(userString)
+	if err != nil {
+		return false
+	}
+
+	return rangeVer(v.semver)
 }
 
 // finds a known version that matches the provided range
 func matchKnownVersion(userString string) string {
-	parsedRange, err := semver.ParseRange(userString)
-	if err != nil {
-		log.Printf("unable to parse range %s: %s", userString, err)
-		return ""
-	}
-
 	// loop through list of known versions and check for matches
 	for _, knownVersion := range knownKubectlVersions {
-		if parsedRange(knownVersion) {
-			return "v" + knownVersion.String()
+		if knownVersion.Match(userString) {
+			return knownVersion.String()
 		}
 	}
 
@@ -52,7 +71,9 @@ func FindKubectlVersion(userString string) (string, error) {
 	}
 
 	// then maybe override it with custom kubectl version
-	if userString != "" && userString != "latest" {
+	if userString == "latest" {
+		log.Printf("using latest kubectl version")
+	} else if userString != "" {
 		// matchKnownVersion only returns a string on success
 		actualVersion := matchKnownVersion(userString)
 		if actualVersion == "" {
@@ -67,8 +88,6 @@ func FindKubectlVersion(userString string) (string, error) {
 			log.Printf("using custom kubectl version %s at %s", actualVersion, customKubectl)
 			kubectl = customKubectl
 		}
-	} else if userString == "latest" {
-		log.Printf("using latest kubectl version")
 	} else {
 		log.Printf("no kubectl version set, using default of 'latest'")
 	}
