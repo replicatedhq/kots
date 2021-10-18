@@ -55,7 +55,7 @@ func RegisterSessionAuthRoutes(r *mux.Router, kotsStore store.Store, handler KOT
 		HandlerFunc(middleware.EnforceAccess(policy.AppSupportbundleRead, handler.DownloadSupportBundle)) // TODO: appSlug
 	r.Name("CollectSupportBundle").Path("/api/v1/troubleshoot/supportbundle/app/{appId}/cluster/{clusterId}/collect").Methods("POST").
 		HandlerFunc(middleware.EnforceAccess(policy.AppSupportbundleWrite, handler.CollectSupportBundle))
-	r.Name("ShareSupportBundle").Path("/api/v1/troubleshoot/supportbundle/{bundleId}/share").Methods("POST").
+	r.Name("ShareSupportBundle").Path("/api/v1/troubleshoot/app/{appSlug}/supportbundle/{bundleId}/share").Methods("POST").
 		HandlerFunc(middleware.EnforceAccess(policy.AppSupportbundleWrite, handler.ShareSupportBundle))
 
 	// redactor routes

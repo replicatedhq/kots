@@ -282,15 +282,23 @@ func (h *Handler) DownloadSupportBundle(w http.ResponseWriter, r *http.Request) 
 }
 
 func (h *Handler) ShareSupportBundle(w http.ResponseWriter, r *http.Request) {
-	appID := mux.Vars(r)["appId"]
+	appSlug := mux.Vars(r)["appSlug"]
 	bundleID := mux.Vars(r)["bundleId"]
 
-	license, err := store.GetStore().GetLatestLicenseForApp(appID)
+	app, err := store.GetStore().GetAppFromSlug(appSlug)
 	if err != nil {
 		logger.Error(err)
 		JSON(w, http.StatusInternalServerError, nil)
 		return
 	}
+
+	license, err := store.GetStore().GetLatestLicenseForApp(app.ID)
+	if err != nil {
+		logger.Error(err)
+		JSON(w, http.StatusInternalServerError, nil)
+		return
+	}
+
 	if !license.Spec.IsShareSupportBundleSupported {
 		logger.Errorf("License does not have support bundle sharing enabled")
 		JSON(w, http.StatusForbidden, nil)
