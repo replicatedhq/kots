@@ -11,65 +11,60 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
   && rm -rf /usr/share/man/man*
 
 # Install Kubectl 1.14
-ENV KUBECTL_1_14_VERSION=v1.14.10
+ENV KUBECTL_1_14_VERSION=v1.14.9
 ENV KUBECTL_1_14_URL=https://storage.googleapis.com/kubernetes-release/release/${KUBECTL_1_14_VERSION}/bin/linux/amd64/kubectl
-ENV KUBECTL_1_14_SHA256SUM=7729c6612bec76badc7926a79b26e0d9b06cc312af46dbb80ea7416d1fce0b36
+ENV KUBECTL_1_14_SHA256SUM=d2a31e87c5f6deced4ba8899f9c465e54822f0cd146f32ea83cb1daafa5d9c4f
 RUN curl -fsSLO "${KUBECTL_1_14_URL}" \
-	&& echo "${KUBECTL_1_14_SHA256SUM} kubectl" | sha256sum -c - \
+	&& echo "${KUBECTL_1_14_SHA256SUM}  kubectl" | sha256sum -c - \
 	&& chmod +x kubectl \
 	&& mv kubectl "/usr/local/bin/kubectl-${KUBECTL_1_14_VERSION}"
 
 # Install Kubectl 1.16
-ENV KUBECTL_1_16_VERSION=v1.16.15
+ENV KUBECTL_1_16_VERSION=v1.16.3
 ENV KUBECTL_1_16_URL=https://storage.googleapis.com/kubernetes-release/release/${KUBECTL_1_16_VERSION}/bin/linux/amd64/kubectl
-ENV KUBECTL_1_16_SHA256SUM=e8913069293156ddf55f243814a22d2384fc18b165efb6200606fdeaad146605
+ENV KUBECTL_1_16_SHA256SUM=cded1b46405741575f31024b757fd967645e815bb0ab1c5f5fcd029f25cc0f2d
 RUN curl -fsSLO "${KUBECTL_1_16_URL}" \
-	&& echo "${KUBECTL_1_16_SHA256SUM} kubectl" | sha256sum -c - \
+	&& echo "${KUBECTL_1_16_SHA256SUM}  kubectl" | sha256sum -c - \
 	&& chmod +x kubectl \
 	&& mv kubectl "/usr/local/bin/kubectl-${KUBECTL_1_16_VERSION}"
 
-# Install Kubectl 1.17
-ENV KUBECTL_1_17_VERSION=v1.17.17
+ENV KUBECTL_1_17_VERSION=v1.17.13
 ENV KUBECTL_1_17_URL=https://storage.googleapis.com/kubernetes-release/release/${KUBECTL_1_17_VERSION}/bin/linux/amd64/kubectl
-ENV KUBECTL_1_17_SHA256SUM=8329fac94c66bf7a475b630972a8c0b036bab1f28a5584115e8dd26483de8349
+ENV KUBECTL_1_17_SHA256SUM=25824bf20d8d9501e9b6cabdd6bd25ec10cc649d4e3155dba86037f57bba842e
 RUN curl -fsSLO "${KUBECTL_1_17_URL}" \
-	&& echo "${KUBECTL_1_17_SHA256SUM} kubectl" | sha256sum -c - \
+	&& echo "${KUBECTL_1_17_SHA256SUM}  kubectl" | sha256sum -c - \
 	&& chmod +x kubectl \
 	&& mv kubectl "/usr/local/bin/kubectl-${KUBECTL_1_17_VERSION}"
 
-# Install Kubectl 1.18
-ENV KUBECTL_1_18_VERSION=v1.18.20
+ENV KUBECTL_1_18_VERSION=v1.18.10
 ENV KUBECTL_1_18_URL=https://storage.googleapis.com/kubernetes-release/release/${KUBECTL_1_18_VERSION}/bin/linux/amd64/kubectl
-ENV KUBECTL_1_18_SHA256SUM=66a9bb8e9843050340844ca6e72e67632b75b9ebb651559c49db22f35450ed2f
+ENV KUBECTL_1_18_SHA256SUM=b25c445cb36ab168de590c13b50bced4e7877ed15ca899a261053b4ba3ba1456
 RUN curl -fsSLO "${KUBECTL_1_18_URL}" \
-	&& echo "${KUBECTL_1_18_SHA256SUM} kubectl" | sha256sum -c - \
+	&& echo "${KUBECTL_1_18_SHA256SUM}  kubectl" | sha256sum -c - \
 	&& chmod +x kubectl \
 	&& mv kubectl "/usr/local/bin/kubectl-${KUBECTL_1_18_VERSION}"
 
-# Install Kubectl 1.19
-ENV KUBECTL_1_19_VERSION=v1.19.15
+ENV KUBECTL_1_19_VERSION=v1.19.3
 ENV KUBECTL_1_19_URL=https://storage.googleapis.com/kubernetes-release/release/${KUBECTL_1_19_VERSION}/bin/linux/amd64/kubectl
-ENV KUBECTL_1_19_SHA256SUM=6f2ac7db8cfd59f660abc9891c1bb7da2dabd1cf5e114d836f2ffd39ee677d04
+ENV KUBECTL_1_19_SHA256SUM=84eeb8237448e4f431fef0f0ec0ba8b07558d8e52d5a7e89b4ae64dadcffbe66
 RUN curl -fsSLO "${KUBECTL_1_19_URL}" \
-	&& echo "${KUBECTL_1_19_SHA256SUM} kubectl" | sha256sum -c - \
+	&& echo "${KUBECTL_1_19_SHA256SUM}  kubectl" | sha256sum -c - \
 	&& chmod +x kubectl \
 	&& mv kubectl "/usr/local/bin/kubectl-${KUBECTL_1_19_VERSION}"
 
-# Install Kubectl 1.20
-ENV KUBECTL_1_20_VERSION=v1.20.11
+ENV KUBECTL_1_20_VERSION=v1.20.4
 ENV KUBECTL_1_20_URL=https://storage.googleapis.com/kubernetes-release/release/${KUBECTL_1_20_VERSION}/bin/linux/amd64/kubectl
-ENV KUBECTL_1_20_SHA256SUM=3a2bf981939df89f807858a481f6f5f2e33a7b9708bd029c8bece434db228efe
+ENV KUBECTL_1_20_SHA256SUM=98e8aea149b00f653beeb53d4bd27edda9e73b48fed156c4a0aa1dabe4b1794c
 RUN curl -fsSLO "${KUBECTL_1_20_URL}" \
-	&& echo "${KUBECTL_1_20_SHA256SUM} kubectl" | sha256sum -c - \
+	&& echo "${KUBECTL_1_20_SHA256SUM}  kubectl" | sha256sum -c - \
 	&& chmod +x kubectl \
 	&& mv kubectl "/usr/local/bin/kubectl-${KUBECTL_1_20_VERSION}"
 
-# Install Kubectl 1.21
-ENV KUBECTL_1_21_VERSION=v1.21.5
+ENV KUBECTL_1_21_VERSION=v1.21.2
 ENV KUBECTL_1_21_URL=https://storage.googleapis.com/kubernetes-release/release/${KUBECTL_1_21_VERSION}/bin/linux/amd64/kubectl
-ENV KUBECTL_1_21_SHA256SUM=060ede75550c63bdc84e14fcc4c8ab3017f7ffc032fc4cac3bf20d274fab1be4
+ENV KUBECTL_1_21_SHA256SUM=55b982527d76934c2f119e70bf0d69831d3af4985f72bb87cd4924b1c7d528da
 RUN curl -fsSLO "${KUBECTL_1_21_URL}" \
-	&& echo "${KUBECTL_1_21_SHA256SUM} kubectl" | sha256sum -c - \
+	&& echo "${KUBECTL_1_21_SHA256SUM}  kubectl" | sha256sum -c - \
 	&& chmod +x kubectl \
 	&& mv kubectl "/usr/local/bin/kubectl-${KUBECTL_1_21_VERSION}" \
 	&& ln -s "/usr/local/bin/kubectl-${KUBECTL_1_21_VERSION}" /usr/local/bin/kubectl
