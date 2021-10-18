@@ -1090,6 +1090,18 @@ func (mr *MockKOTSHandlerMockRecorder) SetRedactMetadataAndYaml(w, r interface{}
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetRedactMetadataAndYaml", reflect.TypeOf((*MockKOTSHandler)(nil).SetRedactMetadataAndYaml), w, r)
 }
 
+// ShareSupportBundle mocks base method.
+func (m *MockKOTSHandler) ShareSupportBundle(w http.ResponseWriter, r *http.Request) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "ShareSupportBundle", w, r)
+}
+
+// ShareSupportBundle indicates an expected call of ShareSupportBundle.
+func (mr *MockKOTSHandlerMockRecorder) ShareSupportBundle(w, r interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ShareSupportBundle", reflect.TypeOf((*MockKOTSHandler)(nil).ShareSupportBundle), w, r)
+}
+
 // StartPreflightChecks mocks base method.
 func (m *MockKOTSHandler) StartPreflightChecks(w http.ResponseWriter, r *http.Request) {
 	m.ctrl.T.Helper()
