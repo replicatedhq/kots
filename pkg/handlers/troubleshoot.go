@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
+	"path"
 	"time"
 
 	"github.com/gorilla/mux"
@@ -281,9 +282,20 @@ func (h *Handler) DownloadSupportBundle(w http.ResponseWriter, r *http.Request) 
 }
 
 func (h *Handler) ShareSupportBundle(w http.ResponseWriter, r *http.Request) {
+	appID := mux.Vars(r)["appId"]
 	bundleID := mux.Vars(r)["bundleId"]
 
-	// TODO check if feature is enabled for license
+	license, err := store.GetStore().GetLatestLicenseForApp(appID)
+	if err != nil {
+		logger.Error(err)
+		JSON(w, http.StatusInternalServerError, nil)
+		return
+	}
+	if !license.Spec.IsShareSupportBundleSupported {
+		logger.Errorf("License does not have support bundle sharing enabled")
+		JSON(w, http.StatusForbidden, nil)
+		return
+	}
 
 	bundle, err := store.GetStore().GetSupportBundle(bundleID)
 	if err != nil {
@@ -308,7 +320,8 @@ func (h *Handler) ShareSupportBundle(w http.ResponseWriter, r *http.Request) {
 	}
 	defer f.Close()
 
-	resp, err := http.DefaultClient.Post("TODO replicated.app URL", "application/gzip", f)
+	endpoint := path.Join(license.Spec.Endpoint, "/TODO")
+	resp, err := http.DefaultClient.Post(endpoint, "application/gzip", f)
 	if err != nil {
 		logger.Error(err)
 		JSON(w, http.StatusInternalServerError, nil)
