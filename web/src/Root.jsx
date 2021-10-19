@@ -289,9 +289,9 @@ class Root extends Component {
     return !!find(apps, app => app.isGitOpsSupported);
   }
 
-  isUploadBundleToVendorSupported = () => {
+  isSupportBundleUploadEnabled = () => {
     const apps = this.state.appsList;
-    return !!find(apps, app => app.isUploadBundleToVendorSupported);
+    return !!find(apps, app => app.isSupportBundleUploadEnabled);
   }
 
   isIdentityServiceSupported = () => {
@@ -401,7 +401,7 @@ class Root extends Component {
                           {...props}
                           rootDidInitialAppFetch={rootDidInitialWatchFetch}
                           appsList={appsList}
-                          isUploadBundleToVendorSupported={this.isUploadBundleToVendorSupported()}
+                          isSupportBundleUploadEnabled={this.isSupportBundleUploadEnabled()}
                           refetchAppsList={this.getAppsList}
                           onActiveInitSession={this.handleActiveInitSession}
                           appNameSpace={this.state.appNameSpace}
