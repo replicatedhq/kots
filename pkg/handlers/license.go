@@ -33,20 +33,20 @@ type SyncLicenseRequest struct {
 }
 
 type LicenseResponse struct {
-	ID                           string                `json:"id"`
-	Assignee                     string                `json:"assignee"`
-	ExpiresAt                    time.Time             `json:"expiresAt"`
-	ChannelName                  string                `json:"channelName"`
-	LicenseSequence              int64                 `json:"licenseSequence"`
-	LicenseType                  string                `json:"licenseType"`
-	Entitlements                 []EntitlementResponse `json:"entitlements"`
-	IsAirgapSupported            bool                  `json:"isAirgapSupported"`
-	IsGitOpsSupported            bool                  `json:"isGitOpsSupported"`
-	IsIdentityServiceSupported   bool                  `json:"isIdentityServiceSupported"`
-	IsGeoaxisSupported           bool                  `json:"isGeoaxisSupported"`
-	IsSnapshotSupported          bool                  `json:"isSnapshotSupported"`
-	LastSyncedAt                 string                `json:"lastSyncedAt"`
-	IsSupportBundleUploadEnabled bool                  `json:"isSupportBundleUploadEnabled"`
+	ID                             string                `json:"id"`
+	Assignee                       string                `json:"assignee"`
+	ExpiresAt                      time.Time             `json:"expiresAt"`
+	ChannelName                    string                `json:"channelName"`
+	LicenseSequence                int64                 `json:"licenseSequence"`
+	LicenseType                    string                `json:"licenseType"`
+	Entitlements                   []EntitlementResponse `json:"entitlements"`
+	IsAirgapSupported              bool                  `json:"isAirgapSupported"`
+	IsGitOpsSupported              bool                  `json:"isGitOpsSupported"`
+	IsIdentityServiceSupported     bool                  `json:"isIdentityServiceSupported"`
+	IsGeoaxisSupported             bool                  `json:"isGeoaxisSupported"`
+	IsSnapshotSupported            bool                  `json:"isSnapshotSupported"`
+	LastSyncedAt                   string                `json:"lastSyncedAt"`
+	IsSupportBundleUploadSupported bool                  `json:"isSupportBundleUploadSupported"`
 }
 
 type SyncLicenseResponse struct {
@@ -140,20 +140,20 @@ func (h *Handler) SyncLicense(w http.ResponseWriter, r *http.Request) {
 	syncLicenseResponse.Success = true
 	syncLicenseResponse.Synced = synced
 	syncLicenseResponse.License = LicenseResponse{
-		ID:                           latestLicense.Spec.LicenseID,
-		Assignee:                     latestLicense.Spec.CustomerName,
-		ChannelName:                  latestLicense.Spec.ChannelName,
-		LicenseSequence:              latestLicense.Spec.LicenseSequence,
-		LicenseType:                  latestLicense.Spec.LicenseType,
-		Entitlements:                 entitlements,
-		ExpiresAt:                    expiresAt,
-		IsAirgapSupported:            latestLicense.Spec.IsAirgapSupported,
-		IsGitOpsSupported:            latestLicense.Spec.IsGitOpsSupported,
-		IsIdentityServiceSupported:   latestLicense.Spec.IsIdentityServiceSupported,
-		IsGeoaxisSupported:           latestLicense.Spec.IsGeoaxisSupported,
-		IsSnapshotSupported:          latestLicense.Spec.IsSnapshotSupported,
-		LastSyncedAt:                 foundApp.LastLicenseSync,
-		IsSupportBundleUploadEnabled: latestLicense.Spec.IsSupportBundleUploadEnabled,
+		ID:                             latestLicense.Spec.LicenseID,
+		Assignee:                       latestLicense.Spec.CustomerName,
+		ChannelName:                    latestLicense.Spec.ChannelName,
+		LicenseSequence:                latestLicense.Spec.LicenseSequence,
+		LicenseType:                    latestLicense.Spec.LicenseType,
+		Entitlements:                   entitlements,
+		ExpiresAt:                      expiresAt,
+		IsAirgapSupported:              latestLicense.Spec.IsAirgapSupported,
+		IsGitOpsSupported:              latestLicense.Spec.IsGitOpsSupported,
+		IsIdentityServiceSupported:     latestLicense.Spec.IsIdentityServiceSupported,
+		IsGeoaxisSupported:             latestLicense.Spec.IsGeoaxisSupported,
+		IsSnapshotSupported:            latestLicense.Spec.IsSnapshotSupported,
+		LastSyncedAt:                   foundApp.LastLicenseSync,
+		IsSupportBundleUploadSupported: latestLicense.Spec.IsSupportBundleUploadSupported,
 	}
 
 	JSON(w, http.StatusOK, syncLicenseResponse)
@@ -191,20 +191,20 @@ func (h *Handler) GetLicense(w http.ResponseWriter, r *http.Request) {
 
 	getLicenseResponse.Success = true
 	getLicenseResponse.License = LicenseResponse{
-		ID:                           license.Spec.LicenseID,
-		Assignee:                     license.Spec.CustomerName,
-		ChannelName:                  license.Spec.ChannelName,
-		LicenseSequence:              license.Spec.LicenseSequence,
-		LicenseType:                  license.Spec.LicenseType,
-		Entitlements:                 entitlements,
-		ExpiresAt:                    expiresAt,
-		IsAirgapSupported:            license.Spec.IsAirgapSupported,
-		IsGitOpsSupported:            license.Spec.IsGitOpsSupported,
-		IsIdentityServiceSupported:   license.Spec.IsIdentityServiceSupported,
-		IsGeoaxisSupported:           license.Spec.IsGeoaxisSupported,
-		IsSnapshotSupported:          license.Spec.IsSnapshotSupported,
-		LastSyncedAt:                 foundApp.LastLicenseSync,
-		IsSupportBundleUploadEnabled: license.Spec.IsSupportBundleUploadEnabled,
+		ID:                             license.Spec.LicenseID,
+		Assignee:                       license.Spec.CustomerName,
+		ChannelName:                    license.Spec.ChannelName,
+		LicenseSequence:                license.Spec.LicenseSequence,
+		LicenseType:                    license.Spec.LicenseType,
+		Entitlements:                   entitlements,
+		ExpiresAt:                      expiresAt,
+		IsAirgapSupported:              license.Spec.IsAirgapSupported,
+		IsGitOpsSupported:              license.Spec.IsGitOpsSupported,
+		IsIdentityServiceSupported:     license.Spec.IsIdentityServiceSupported,
+		IsGeoaxisSupported:             license.Spec.IsGeoaxisSupported,
+		IsSnapshotSupported:            license.Spec.IsSnapshotSupported,
+		LastSyncedAt:                   foundApp.LastLicenseSync,
+		IsSupportBundleUploadSupported: license.Spec.IsSupportBundleUploadSupported,
 	}
 
 	JSON(w, http.StatusOK, getLicenseResponse)
