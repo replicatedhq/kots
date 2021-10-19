@@ -22,7 +22,7 @@ class TroubleshootContainer extends Component {
             <GenerateSupportBundle watch={app} />
           } />
           <Route path="/app/:slug/troubleshoot/analyze/:bundleSlug" render={() =>
-            <SupportBundleAnalysis watch={app} />
+            <SupportBundleAnalysis watch={app} isSupportBundleUploadSupported={this.props.isSupportBundleUploadSupported} />
           } />
           <Route exact path="/app/:slug/troubleshoot/redactors" render={(props) =>
             <Redactors {...props} appSlug={app.slug} appName={appName} />}
