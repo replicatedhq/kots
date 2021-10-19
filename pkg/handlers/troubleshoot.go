@@ -366,6 +366,8 @@ func (h *Handler) ShareSupportBundle(w http.ResponseWriter, r *http.Request) {
 		JSON(w, http.StatusInternalServerError, nil)
 		return
 	}
+
+	JSON(w, http.StatusOK, nil)
 }
 
 func (h *Handler) CollectSupportBundle(w http.ResponseWriter, r *http.Request) {
