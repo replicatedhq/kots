@@ -422,6 +422,7 @@ class AppDetailPage extends Component {
                       <TroubleshootContainer
                         app={app}
                         appName={appName}
+                        isUploadBundleToVendorSupported={this.props.isUploadBundleToVendorSupported}
                       />
                     } />
                     <Route exact path="/app/:slug/license" render={() =>

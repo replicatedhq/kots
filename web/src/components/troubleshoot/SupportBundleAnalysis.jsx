@@ -26,6 +26,10 @@ export class SupportBundleAnalysis extends React.Component {
     };
   }
 
+  sendBundleToVendor = async (bundle) => {
+    // TODO: implement this once API exists
+  }
+
   downloadBundle = async (bundle) => {
     this.setState({ downloadingBundle: true, downloadBundleErrMsg: "" });
     fetch(`${window.env.API_ENDPOINT}/troubleshoot/supportbundle/${bundle.id}/download`, {
@@ -161,6 +165,9 @@ export class SupportBundleAnalysis extends React.Component {
                   <div className="flex flex-auto alignItems--center justifyContent--flexEnd">
                     {this.state.downloadBundleErrMsg &&
                       <p className="u-textColor--error u-fontSize--normal u-fontWeight--medium u-lineHeight--normal u-marginRight--10">{this.state.downloadBundleErrMsg}</p>}
+                    {this.props.isUploadBundleToVendorSupported &&
+                      <button className="btn primary lightBlue" onClick={() => this.sendBundleToVendor(bundle)}>Send bundle to vendor</button>
+                    }
                     {this.state.downloadingBundle ?
                       <Loader size="30" /> :
                       <button className="btn primary lightBlue" onClick={() => this.downloadBundle(bundle)}> Download bundle </button>
