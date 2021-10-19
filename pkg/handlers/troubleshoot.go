@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"mime/multipart"
 	"net/http"
 	"os"
 	"time"
@@ -330,7 +331,39 @@ func (h *Handler) ShareSupportBundle(w http.ResponseWriter, r *http.Request) {
 	}
 	defer f.Close()
 
-	fileStat, err := f.Stat()
+	// Convert to form multipart type
+	tmp, err := ioutil.TempFile("", "kotsadm")
+	if err != nil {
+		logger.Error(err)
+		w.WriteHeader(500)
+		return
+	}
+	defer os.Remove(tmp.Name())
+	mw := multipart.NewWriter(tmp)
+	fw, err := mw.CreateFormFile("supportbundle", f.Name())
+	if err != nil {
+		logger.Error(err)
+		w.WriteHeader(500)
+		return
+	}
+	_, err = io.Copy(fw, f)
+	if err != nil {
+		logger.Error(err)
+		w.WriteHeader(500)
+		return
+	}
+	if err := mw.Close(); err != nil {
+		logger.Error(err)
+		w.WriteHeader(500)
+		return
+	}
+	if _, err := tmp.Seek(0, 0); err != nil {
+		logger.Error(err)
+		w.WriteHeader(500)
+		return
+	}
+
+	fileStat, err := tmp.Stat()
 	if err != nil {
 		logger.Error(err)
 		JSON(w, http.StatusInternalServerError, nil)
@@ -339,12 +372,14 @@ func (h *Handler) ShareSupportBundle(w http.ResponseWriter, r *http.Request) {
 
 	endpoint := fmt.Sprintf("%s/supportbundle/upload/%s", license.Spec.Endpoint, license.Spec.AppSlug)
 
-	req, err := http.NewRequest("POST", endpoint, f)
+	req, err := http.NewRequest("POST", endpoint, tmp)
 	if err != nil {
 		logger.Error(err)
 		JSON(w, http.StatusInternalServerError, nil)
 		return
 	}
+
+	req.Header.Set("Content-Type", mw.FormDataContentType())
 
 	req.ContentLength = fileStat.Size()
 
