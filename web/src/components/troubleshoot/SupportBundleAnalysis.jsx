@@ -165,7 +165,7 @@ export class SupportBundleAnalysis extends React.Component {
                   <div className="flex flex-auto alignItems--center justifyContent--flexEnd">
                     {this.state.downloadBundleErrMsg &&
                       <p className="u-textColor--error u-fontSize--normal u-fontWeight--medium u-lineHeight--normal u-marginRight--10">{this.state.downloadBundleErrMsg}</p>}
-                    {this.props.isSupportBundleUploadEnabled &&
+                    {this.props.isSupportBundleUploadSupported &&
                       <button className="btn primary lightBlue" onClick={() => this.sendBundleToVendor(bundle)}>Send bundle to vendor</button>
                     }
                     {this.state.downloadingBundle ?

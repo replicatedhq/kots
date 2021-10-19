@@ -69,7 +69,7 @@
         "isGitOpsSupported": {
           "type": "boolean"
         },
-        "isSupportBundleUploadEnabled": {
+        "isSupportBundleUploadSupported": {
           "type": "boolean"
         },
         "isIdentityServiceSupported": {

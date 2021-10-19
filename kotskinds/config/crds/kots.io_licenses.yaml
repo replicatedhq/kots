@@ -67,7 +67,7 @@ spec:
                 type: boolean
               isGitOpsSupported:
                 type: boolean
-              isSupportBundleUploadEnabled:
+              isSupportBundleUploadSupported:
                 type: boolean
               isIdentityServiceSupported:
                 type: boolean

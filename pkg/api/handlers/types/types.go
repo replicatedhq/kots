@@ -31,15 +31,15 @@ type ResponseApp struct {
 	IsConfigurable    bool       `json:"isConfigurable"`
 	UpdateCheckerSpec string     `json:"updateCheckerSpec"`
 
-	IsGitOpsSupported             bool                     `json:"isGitOpsSupported"`
-	IsIdentityServiceSupported    bool                     `json:"isIdentityServiceSupported"`
-	IsAppIdentityServiceSupported bool                     `json:"isAppIdentityServiceSupported"`
-	IsGeoaxisSupported            bool                     `json:"isGeoaxisSupported"`
-	IsSupportBundleUploadEnabled  bool                     `json:"isSupportBundleUploadEnabled"`
-	AllowRollback                 bool                     `json:"allowRollback"`
-	AllowSnapshots                bool                     `json:"allowSnapshots"`
-	LicenseType                   string                   `json:"licenseType"`
-	CurrentVersion                *versiontypes.AppVersion `json:"currentVersion"`
+	IsGitOpsSupported              bool                     `json:"isGitOpsSupported"`
+	IsIdentityServiceSupported     bool                     `json:"isIdentityServiceSupported"`
+	IsAppIdentityServiceSupported  bool                     `json:"isAppIdentityServiceSupported"`
+	IsGeoaxisSupported             bool                     `json:"isGeoaxisSupported"`
+	IsSupportBundleUploadSupported bool                     `json:"isSupportBundleUploadSupported"`
+	AllowRollback                  bool                     `json:"allowRollback"`
+	AllowSnapshots                 bool                     `json:"allowSnapshots"`
+	LicenseType                    string                   `json:"licenseType"`
+	CurrentVersion                 *versiontypes.AppVersion `json:"currentVersion"`
 
 	Downstreams []ResponseDownstream `json:"downstreams"`
 }
