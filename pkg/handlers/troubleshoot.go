@@ -280,6 +280,96 @@ func (h *Handler) DownloadSupportBundle(w http.ResponseWriter, r *http.Request) 
 	io.Copy(w, f)
 }
 
+func (h *Handler) ShareSupportBundle(w http.ResponseWriter, r *http.Request) {
+	appSlug := mux.Vars(r)["appSlug"]
+	bundleID := mux.Vars(r)["bundleId"]
+
+	app, err := store.GetStore().GetAppFromSlug(appSlug)
+	if err != nil {
+		logger.Error(err)
+		JSON(w, http.StatusInternalServerError, nil)
+		return
+	}
+
+	license, err := store.GetStore().GetLatestLicenseForApp(app.ID)
+	if err != nil {
+		logger.Error(err)
+		JSON(w, http.StatusInternalServerError, nil)
+		return
+	}
+
+	if !license.Spec.IsSupportBundleUploadSupported {
+		logger.Errorf("License does not have support bundle sharing enabled")
+		JSON(w, http.StatusForbidden, nil)
+		return
+	}
+
+	bundle, err := store.GetStore().GetSupportBundle(bundleID)
+	if err != nil {
+		logger.Error(err)
+		JSON(w, http.StatusInternalServerError, nil)
+		return
+	}
+
+	bundleArchive, err := store.GetStore().GetSupportBundleArchive(bundle.ID)
+	if err != nil {
+		logger.Error(err)
+		JSON(w, http.StatusInternalServerError, nil)
+		return
+	}
+	defer os.RemoveAll(bundleArchive)
+
+	f, err := os.Open(bundleArchive)
+	if err != nil {
+		logger.Error(err)
+		JSON(w, http.StatusInternalServerError, nil)
+		return
+	}
+	defer f.Close()
+
+	fileStat, err := f.Stat()
+	if err != nil {
+		logger.Error(err)
+		JSON(w, http.StatusInternalServerError, nil)
+		return
+	}
+
+	endpoint := fmt.Sprintf("%s/supportbundle/upload/%s", license.Spec.Endpoint, license.Spec.AppSlug)
+
+	req, err := http.NewRequest("POST", endpoint, f)
+	if err != nil {
+		logger.Error(err)
+		JSON(w, http.StatusInternalServerError, nil)
+		return
+	}
+
+	req.Header.Set("Content-Type", "application/tar+gzip")
+
+	req.ContentLength = fileStat.Size()
+
+	req.SetBasicAuth(license.Spec.LicenseID, license.Spec.LicenseID)
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		logger.Error(err)
+		JSON(w, http.StatusInternalServerError, nil)
+		return
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode >= 400 {
+		body, err := io.ReadAll(resp.Body)
+		if err == nil {
+			logger.Errorf("Failed to share support bundle: %d: %s", resp.StatusCode, string(body))
+		} else {
+			logger.Errorf("Failed to share support bundle: %d", resp.StatusCode)
+		}
+		JSON(w, http.StatusInternalServerError, nil)
+		return
+	}
+
+	JSON(w, http.StatusOK, "")
+}
+
 func (h *Handler) CollectSupportBundle(w http.ResponseWriter, r *http.Request) {
 	a, err := store.GetStore().GetApp(mux.Vars(r)["appId"])
 	if err != nil {

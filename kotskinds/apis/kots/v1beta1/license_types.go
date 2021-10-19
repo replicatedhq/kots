@@ -100,21 +100,22 @@ type EntitlementField struct {
 
 // LicenseSpec defines the desired state of LicenseSpec
 type LicenseSpec struct {
-	Signature                  []byte                      `json:"signature"`
-	AppSlug                    string                      `json:"appSlug"`
-	Endpoint                   string                      `json:"endpoint,omitempty"`
-	CustomerName               string                      `json:"customerName,omitempty"`
-	ChannelID                  string                      `json:"channelID,omitempty"`
-	ChannelName                string                      `json:"channelName,omitempty"`
-	LicenseSequence            int64                       `json:"licenseSequence,omitempty"`
-	LicenseID                  string                      `json:"licenseID"`
-	LicenseType                string                      `json:"licenseType,omitempty"`
-	IsAirgapSupported          bool                        `json:"isAirgapSupported,omitempty"`
-	IsGitOpsSupported          bool                        `json:"isGitOpsSupported,omitempty"`
-	IsIdentityServiceSupported bool                        `json:"isIdentityServiceSupported,omitempty"`
-	IsGeoaxisSupported         bool                        `json:"isGeoaxisSupported,omitempty"`
-	IsSnapshotSupported        bool                        `json:"isSnapshotSupported,omitempty"`
-	Entitlements               map[string]EntitlementField `json:"entitlements,omitempty"`
+	Signature                      []byte                      `json:"signature"`
+	AppSlug                        string                      `json:"appSlug"`
+	Endpoint                       string                      `json:"endpoint,omitempty"`
+	CustomerName                   string                      `json:"customerName,omitempty"`
+	ChannelID                      string                      `json:"channelID,omitempty"`
+	ChannelName                    string                      `json:"channelName,omitempty"`
+	LicenseSequence                int64                       `json:"licenseSequence,omitempty"`
+	LicenseID                      string                      `json:"licenseID"`
+	LicenseType                    string                      `json:"licenseType,omitempty"`
+	IsAirgapSupported              bool                        `json:"isAirgapSupported,omitempty"`
+	IsGitOpsSupported              bool                        `json:"isGitOpsSupported,omitempty"`
+	IsIdentityServiceSupported     bool                        `json:"isIdentityServiceSupported,omitempty"`
+	IsGeoaxisSupported             bool                        `json:"isGeoaxisSupported,omitempty"`
+	IsSnapshotSupported            bool                        `json:"isSnapshotSupported,omitempty"`
+	IsSupportBundleUploadSupported bool                        `json:"isSupportBundleUploadSupported,omitempty"`
+	Entitlements                   map[string]EntitlementField `json:"entitlements,omitempty"`
 }
 
 // LicenseStatus defines the observed state of License

@@ -71,6 +71,8 @@ spec:
                 type: boolean
               isSnapshotSupported:
                 type: boolean
+              isSupportBundleUploadEnabled:
+                type: boolean
               licenseID:
                 type: string
               licenseSequence:
