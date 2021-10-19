@@ -22,12 +22,36 @@ export class SupportBundleAnalysis extends React.Component {
       loading: false,
       downloadBundleErrMsg: "",
       getSupportBundleErrMsg: "",
+      sendingBundle: false,
+      sendingBundleErrMsg: "",
+      bundleSentToVendor: false,
       displayErrorModal: false
     };
   }
 
-  sendBundleToVendor = async (bundle) => {
-    // TODO: implement this once API exists
+  sendBundleToVendor = async () => {
+    this.setState({ sendingBundle: true, sendingBundleErrMsg: "" });
+    fetch(`${window.env.API_ENDPOINT}/troubleshoot/app/${this.props.match.params.slug}/supportbundle/${this.props.match.params.bundleSlug}/share`, {
+      method: "POST",
+      headers: {
+        "Authorization": Utilities.getToken(),
+      }
+    })
+      .then(async (result) => {
+        if (!result.ok) {
+          this.setState({ sendingBundle: false, sendingBundleErrMsg: `Unable to send bundle to vendor: Status ${result.status}, please try again.` });
+          return;
+        }
+
+        this.setState({ sendingBundle: false, bundleSentToVendor: true, sendingBundleErrMsg: "" });
+        setTimeout(() => {
+          this.setState({ bundleSentToVendor: false });
+        }, 3000);
+      })
+      .catch(err => {
+        console.log(err);
+        this.setState({ sendingBundle: false, sendingBundleErrMsg: err ? `Unable to send bundle to vendor: ${err.message}` : "Something went wrong, please try again." });
+      })
   }
 
   downloadBundle = async (bundle) => {
@@ -166,11 +190,12 @@ export class SupportBundleAnalysis extends React.Component {
                     {this.state.downloadBundleErrMsg &&
                       <p className="u-textColor--error u-fontSize--normal u-fontWeight--medium u-lineHeight--normal u-marginRight--10">{this.state.downloadBundleErrMsg}</p>}
                     {this.props.isSupportBundleUploadSupported &&
-                      <button className="btn primary lightBlue" onClick={() => this.sendBundleToVendor(bundle)}>Send bundle to vendor</button>
+                      this.state.sendingBundle ? <Loader className="u-marginRight--10" size="30" /> : this.state.bundleSentToVendor ? <p className="u-fontSize--small u-fontWeight--medium u-textColor--success u-lineHeight--normal u-marginRight--10">Bundle sent to vendor</p> :
+                      <button className="btn primary lightBlue u-marginRight--10" onClick={this.sendBundleToVendor}>Send bundle to vendor</button>
                     }
                     {this.state.downloadingBundle ?
                       <Loader size="30" /> :
-                      <button className="btn primary lightBlue" onClick={() => this.downloadBundle(bundle)}> Download bundle </button>
+                      <button className={`btn ${this.props.isSupportBundleUploadSupported ? "secondary blue" : "primary lightBlue"}`} onClick={() => this.downloadBundle(bundle)}> Download bundle </button>
                     }
                   </div>
                 </div>
