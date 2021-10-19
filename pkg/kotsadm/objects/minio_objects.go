@@ -26,8 +26,13 @@ func MinioStatefulset(deployOptions types.DeployOptions, size resource.Quantity)
 	}
 
 	securityContext := &corev1.PodSecurityContext{
-		RunAsUser: util.IntPointer(1001),
-		FSGroup:   util.IntPointer(1001),
+		RunAsUser:          util.IntPointer(1001),
+		RunAsGroup:         util.IntPointer(1001),
+		SupplementalGroups: []int64{1001},
+		FSGroup:            util.IntPointer(1001),
+		SeccompProfile: &corev1.SeccompProfile{
+			Type: corev1.SeccompProfileTypeRuntimeDefault,
+		},
 	}
 	if deployOptions.IsOpenShift {
 		// need to use a security context here because if the project is running with a scc that has "MustRunAsNonRoot" (or is not "MustRunAsRange"),

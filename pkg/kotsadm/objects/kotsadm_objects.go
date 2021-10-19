@@ -201,8 +201,12 @@ func UpdateKotsadmDeployment(existingDeployment *appsv1.Deployment, desiredDeplo
 
 func KotsadmDeployment(deployOptions types.DeployOptions) (*appsv1.Deployment, error) {
 	securityContext := &corev1.PodSecurityContext{
-		RunAsUser: util.IntPointer(1001),
-		FSGroup:   util.IntPointer(1001),
+		RunAsUser:          util.IntPointer(1001),
+		FSGroup:            util.IntPointer(1001),
+		SupplementalGroups: []int64{1001},
+		SeccompProfile: &corev1.SeccompProfile{
+			Type: corev1.SeccompProfileTypeRuntimeDefault,
+		},
 	}
 	if deployOptions.IsOpenShift {
 		psc, err := k8sutil.GetOpenShiftPodSecurityContext(deployOptions.Namespace)
@@ -733,8 +737,12 @@ func UpdateKotsadmStatefulSet(existingStatefulset *appsv1.StatefulSet, desiredSt
 
 func KotsadmStatefulSet(deployOptions types.DeployOptions, size resource.Quantity) (*appsv1.StatefulSet, error) {
 	securityContext := &corev1.PodSecurityContext{
-		RunAsUser: util.IntPointer(1001),
-		FSGroup:   util.IntPointer(1001),
+		RunAsUser:          util.IntPointer(1001),
+		FSGroup:            util.IntPointer(1001),
+		SupplementalGroups: []int64{1001},
+		SeccompProfile: &corev1.SeccompProfile{
+			Type: corev1.SeccompProfileTypeRuntimeDefault,
+		},
 	}
 	if deployOptions.IsOpenShift {
 		// we have to specify a pod security context here because if we don't, here's what will happen:

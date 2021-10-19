@@ -31,8 +31,12 @@ func PostgresStatefulset(deployOptions types.DeployOptions, size resource.Quanti
 	}
 
 	securityContext := &corev1.PodSecurityContext{
-		RunAsUser: util.IntPointer(999),
-		FSGroup:   util.IntPointer(999),
+		RunAsUser:          util.IntPointer(999),
+		FSGroup:            util.IntPointer(999),
+		SupplementalGroups: []int64{999},
+		SeccompProfile: &corev1.SeccompProfile{
+			Type: corev1.SeccompProfileTypeRuntimeDefault,
+		},
 	}
 	if deployOptions.IsOpenShift {
 		// need to use a security context here because if the project is running with a scc that has "MustRunAsNonRoot" (or is not "MustRunAsRange"),
