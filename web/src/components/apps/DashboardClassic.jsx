@@ -1,20 +1,24 @@
+import dayjs from "dayjs";
 import React, { Component } from "react";
 import Helmet from "react-helmet";
 import { withRouter } from "react-router-dom";
+import size from "lodash/size";
 import get from "lodash/get";
 import sortBy from "lodash/sortBy";
 import Loader from "../shared/Loader";
-import DashboardVersionCard from "./DashboardVersionCard";
-import AppStatus from "./AppStatus";
-import DashboardLicenseCard from "./DashboardLicenseCard";
-import DashboardSnapshotsCard from "./DashboardSnapshotsCard";
-import DashboardGraphsCard from "./DashboardGraphsCard";
+import DashboardCard from "./DashboardCard";
+import ConfigureGraphsModal from "../shared/modals/ConfigureGraphsModal";
 import UpdateCheckerModal from "@src/components/modals/UpdateCheckerModal";
 import SnapshotDifferencesModal from "@src/components/modals/SnapshotDifferencesModal";
 import Modal from "react-modal";
 import { Repeater } from "../../utilities/repeater";
 import { Utilities } from "../../utilities/utilities";
 import { AirgapUploader } from "../../utilities/airgapUploader";
+
+import { XYPlot, XAxis, YAxis, HorizontalGridLines, VerticalGridLines, LineSeries, DiscreteColorLegend, Crosshair } from "react-vis";
+
+import { getValueFormat } from "@grafana/ui"
+import Handlebars from "handlebars";
 
 import "../../scss/components/watches/Dashboard.scss";
 import "../../../node_modules/react-vis/dist/style";
@@ -37,6 +41,10 @@ class Dashboard extends Component {
     checkingUpdateMessage: "Checking for updates",
     errorCheckingUpdate: false,
     appLicense: null,
+    showConfigureGraphs: false,
+    promValue: "",
+    savingPromValue: false,
+    savingPromError: "",
     activeChart: null,
     crosshairValues: [],
     updateChecker: new Repeater(),
@@ -62,6 +70,59 @@ class Dashboard extends Component {
     ],
     selectedSnapshotOption: { option: "full", name: "Start a Full snapshot" },
     snapshotDifferencesModal: false
+  }
+
+  toggleConfigureGraphs = () => {
+    const { showConfigureGraphs } = this.state;
+    this.setState({
+      showConfigureGraphs: !showConfigureGraphs
+    });
+  }
+
+  updatePromValue = () => {
+    this.setState({ savingPromValue: true, savingPromError: "" });
+
+    fetch(`${window.env.API_ENDPOINT}/prometheus`, {
+      headers: {
+        "Authorization": Utilities.getToken(),
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        value: this.state.promValue,
+      }),
+      method: "POST",
+    })
+      .then(async (res) => {
+        if (!res.ok) {
+          if (res.status === 401) {
+            Utilities.logoutUser();
+            return;
+          }
+          try {
+            const response = await res.json();
+            if (response?.error) {
+              throw new Error(response?.error);
+            }
+          } catch (_) {
+            // ignore
+          }
+          throw new Error(`Unexpected status code ${res.status}`);
+        }
+        await this.getAppDashboard();
+        this.toggleConfigureGraphs();
+        this.setState({ savingPromValue: false, savingPromError: "" });
+      })
+      .catch((err) => {
+        console.log(err);
+        this.setState({ savingPromValue: false, savingPromError: err?.message });
+      });
+  }
+
+  onPromValueChange = (e) => {
+    const { value } = e.target;
+    this.setState({
+      promValue: value
+    });
   }
 
   setWatchState = (app) => {
@@ -326,6 +387,24 @@ class Dashboard extends Component {
     });
   }
 
+  getLegendItems = (chart) => {
+    return chart.series.map((series) => {
+      const metrics = {};
+      series.metric.forEach((metric) => {
+        metrics[metric.name] = metric.value;
+      });
+      if (series.legendTemplate) {
+        try {
+          const template = Handlebars.compile(series.legendTemplate);
+          return template(metrics);
+        } catch (err) {
+          console.error("Failed to compile legend template", err);
+        }
+      }
+      return metrics.length > 0 ? metrics[Object.keys(metrics)[0]] : "";
+    });
+  }
+
   toggleViewAirgapUploadError = () => {
     this.setState({ viewAirgapUploadError: !this.state.viewAirgapUploadError });
   }
@@ -335,6 +414,98 @@ class Dashboard extends Component {
       viewAirgapUpdateError: !this.state.viewAirgapUpdateError,
       airgapUpdateError: !this.state.viewAirgapUpdateError ? err : ""
     });
+  }
+
+  getValue = (chart, value) => {
+    let yAxisTickFormat = null;
+    if (chart.tickFormat) {
+      const valueFormatter = getValueFormat(chart.tickFormat);
+      yAxisTickFormat = (v) => `${valueFormatter(v)}`;
+      return yAxisTickFormat(value);
+    } else if (chart.tickTemplate) {
+      try {
+        const template = Handlebars.compile(chart.tickTemplate);
+        yAxisTickFormat = (v) => `${template({ values: v })}`;
+        return yAxisTickFormat(value);
+      } catch (err) {
+        console.error("Failed to compile y axis tick template", err);
+      }
+    } else {
+      return value.toFixed(5);
+    }
+  }
+
+  renderGraph = (chart) => {
+    const axisStyle = {
+      title: { fontSize: "12px", fontWeight: 500, fill: "#4A4A4A" },
+      ticks: { fontSize: "12px", fontWeight: 400, fill: "#4A4A4A" }
+    }
+    const legendItems = this.getLegendItems(chart);
+    const series = chart.series.map((series, idx) => {
+      const data = series.data.map((valuePair) => {
+        return { x: valuePair.timestamp, y: valuePair.value };
+      });
+
+      return (
+        <LineSeries
+          key={idx}
+          data={data}
+          onNearestX={(value, { index }) => this.setState({
+            crosshairValues: chart.series.map(s => ({ x: s.data[index].timestamp, y: s.data[index].value, pod: s.metric[0].value })),
+            activeChart: chart
+          })}
+        />
+      );
+    });
+
+    let yAxisTickFormat = null;
+    if (chart.tickFormat) {
+      const valueFormatter = getValueFormat(chart.tickFormat);
+      yAxisTickFormat = (v) => `${valueFormatter(v)}`;
+    } else if (chart.tickTemplate) {
+      try {
+        const template = Handlebars.compile(chart.tickTemplate);
+        yAxisTickFormat = (v) => `${template({ values: v })}`;
+      } catch (err) {
+        console.error("Failed to compile y axis tick template", err);
+      }
+    }
+
+    return (
+      <div className="dashboard-card graph flex-column flex1 flex u-marginTop--20" key={chart.title}>
+        <XYPlot width={460} height={180} onMouseLeave={() => this.setState({ crosshairValues: [] })} margin={{ left: 60 }}>
+          <VerticalGridLines />
+          <HorizontalGridLines />
+          <XAxis tickFormat={v => `${dayjs.unix(v).format("H:mm")}`} style={axisStyle} />
+          <YAxis width={60} tickFormat={yAxisTickFormat} style={axisStyle} />
+          {series}
+          {this.state.crosshairValues?.length > 0 && this.state.activeChart === chart &&
+            <Crosshair values={this.state.crosshairValues}>
+              <div className="flex flex-column" style={{ background: "black", width: "250px" }}>
+                <p className="u-fontWeight--bold u-textAlign--center"> {dayjs.unix(this.state.crosshairValues[0].x).format("LLL")} </p>
+                <br />
+                {this.state.crosshairValues.map((c, i) => {
+                  return (
+                    <div className="flex-auto flex flexWrap--wrap u-padding--5" key={i}>
+                      <div className="flex flex1">
+                        <p className="u-fontWeight--normal">{c.pod}:</p>
+                      </div>
+                      <div className="flex flex1">
+                        <span className="u-fontWeight--bold u-marginLeft--10">{this.getValue(chart, c.y)}</span>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            </Crosshair>
+          }
+        </XYPlot>
+        {legendItems ? <DiscreteColorLegend className="legends" height={120} items={legendItems} /> : null}
+        <div className="u-marginTop--10 u-paddingBottom--10 u-textAlign--center">
+          <p className="u-fontSize--normal u-fontWeight--bold u-textColor--secondary u-lineHeight--normal">{chart.title}</p>
+        </div>
+      </div>
+    );
   }
 
   startASnapshot = (option) => {
@@ -479,6 +650,10 @@ class Dashboard extends Component {
       uploadingAirgapFile,
       airgapUploadError,
       appLicense,
+      showConfigureGraphs,
+      promValue,
+      savingPromValue,
+      savingPromError,
     } = this.state;
 
     const { app, isBundleUploading, isVeleroInstalled } = this.props;
@@ -512,88 +687,133 @@ class Dashboard extends Component {
         </Helmet>
         <div className="Dashboard flex flex-auto justifyContent--center alignSelf--center alignItems--center">
           <div className="flex1 flex-column">
+            <div className="flex flex1">
               <div className="flex flex1 alignItems--center">
                 <div className="flex flex-auto">
-                  <div style={{ backgroundImage: `url(${iconUri})` }} className="Dashboard--appIcon u-position--relative" />
+                  <div
+                    style={{ backgroundImage: `url(${iconUri})` }}
+                    className="Dashboard--appIcon u-position--relative">
+                  </div>
                 </div>
-                <div className="u-marginLeft--20">
-                  <p className="u-fontSize--30 u-textColor--primary u-fontWeight--bold">{appName}</p>
-                  <AppStatus
-                    appStatus={this.state.dashboard?.appStatus?.state}
+                <p className="u-fontSize--30 u-textColor--primary u-fontWeight--bold u-marginLeft--20">{appName}</p>
+              </div>
+            </div>
+            <div className="u-marginTop--30 u-paddingTop--10 flex-auto flex flexWrap--wrap u-width--full alignItems--center justifyContent--center">
+              <DashboardCard
+                cardName="Application"
+                application={true}
+                cardIcon="applicationIcon"
+                appStatus={this.state.dashboard?.appStatus?.state}
+                onViewAppStatusDetails={this.toggleAppStatusModal}
+                url={this.props.match.url}
+                links={links}
+                app={app}
+              />
+              <DashboardCard
+                cardName={`Version ${currentVersion?.versionLabel ? currentVersion?.versionLabel : ""}`}
+                cardIcon="versionIcon"
+                versionHistory={true}
+                currentVersion={currentVersion}
+                downstream={downstream}
+                app={app}
+                url={this.props.match.url}
+                checkingForUpdates={checkingForUpdates}
+                checkingUpdateText={checkingUpdateText}
+                errorCheckingUpdate={errorCheckingUpdate}
+                onDropBundle={this.onDropBundle}
+                airgapUploader={this.state.airgapUploader}
+                uploadingAirgapFile={uploadingAirgapFile}
+                airgapUploadError={airgapUploadError}
+                uploadProgress={this.state.uploadProgress}
+                uploadSize={this.state.uploadSize}
+                uploadResuming={this.state.uploadResuming}
+                onProgressError={this.onProgressError}
+                onCheckForUpdates={() => this.onCheckForUpdates()}
+                onUploadNewVersion={() => this.onUploadNewVersion()}
+                isBundleUploading={isBundleUploading}
+                checkingForUpdateError={this.state.checkingForUpdateError}
+                viewAirgapUploadError={() => this.toggleViewAirgapUploadError()}
+                viewAirgapUpdateError={(err) => this.toggleViewAirgapUpdateError(err)}
+                showUpdateCheckerModal={this.showUpdateCheckerModal}
+              />
+              {app.allowSnapshots && isVeleroInstalled ?
+                <div className="small-dashboard-wrapper flex-column flex">
+                  <DashboardCard
+                    cardName="Snapshots"
+                    cardIcon="snapshotIcon"
                     url={this.props.match.url}
-                    links={links}
                     app={app}
+                    isSnapshotAllowed={app.allowSnapshots && isVeleroInstalled}
+                    isVeleroInstalled={isVeleroInstalled}
+                    startASnapshot={this.startASnapshot}
+                    startSnapshotOptions={this.state.startSnapshotOptions}
+                    startSnapshotErr={this.state.startSnapshotErr}
+                    startSnapshotErrorMsg={this.state.startSnapshotErrorMsg}
+                    snapshotInProgressApps={this.props.snapshotInProgressApps}
+                    selectedSnapshotOption={this.state.selectedSnapshotOption}
+                    onSnapshotOptionChange={this.onSnapshotOptionChange}
+                    onSnapshotOptionClick={this.onSnapshotOptionClick}
+                  />
+                  <DashboardCard
+                    cardName="License"
+                    cardIcon={size(appLicense) > 0 ? "licenseIcon" : "grayedLicenseIcon"}
+                    license={true}
+                    isSnapshotAllowed={app.allowSnapshots && isVeleroInstalled}
+                    url={this.props.match.url}
+                    appLicense={appLicense}
+                    gettingAppLicenseErrMsg={this.state.gettingAppLicenseErrMsg}
                   />
                 </div>
-              </div>
-            
-            <div className="u-marginTop--30 flex flex1 u-width--full">
-              <div className="flex1 u-paddingRight--15">
-                <DashboardVersionCard
-                  currentVersion={currentVersion}
-                  downstream={downstream}
-                  app={app}
+                :
+                <DashboardCard
+                  cardName="License"
+                  cardIcon={size(appLicense) > 0 ? "licenseIcon" : "grayedLicenseIcon"}
+                  license={true}
                   url={this.props.match.url}
-                  checkingForUpdates={checkingForUpdates}
-                  checkingUpdateText={checkingUpdateText}
-                  errorCheckingUpdate={errorCheckingUpdate}
-                  onDropBundle={this.onDropBundle}
-                  airgapUploader={this.state.airgapUploader}
-                  uploadingAirgapFile={uploadingAirgapFile}
-                  airgapUploadError={airgapUploadError}
-                  refetchData={this.props.updateCallback}
-                  uploadProgress={this.state.uploadProgress}
-                  uploadSize={this.state.uploadSize}
-                  uploadResuming={this.state.uploadResuming}
-                  onProgressError={this.onProgressError}
-                  onCheckForUpdates={() => this.onCheckForUpdates()}
-                  onUploadNewVersion={() => this.onUploadNewVersion()}
-                  isBundleUploading={isBundleUploading}
-                  checkingForUpdateError={this.state.checkingForUpdateError}
-                  viewAirgapUploadError={() => this.toggleViewAirgapUploadError()}
-                  viewAirgapUpdateError={(err) => this.toggleViewAirgapUpdateError(err)}
-                  showUpdateCheckerModal={this.showUpdateCheckerModal}
-                />
-              </div>
-              <div className="flex1 flex-column u-paddingLeft--15">
-                {app.allowSnapshots && isVeleroInstalled ?
-                  <div className="u-marginBottom--30">
-                    <DashboardSnapshotsCard
-                      url={this.props.match.url}
-                      app={app}
-                      ping={this.props.ping}
-                      isSnapshotAllowed={app.allowSnapshots && isVeleroInstalled}
-                      isVeleroInstalled={isVeleroInstalled}
-                      startASnapshot={this.startASnapshot}
-                      startSnapshotOptions={this.state.startSnapshotOptions}
-                      startSnapshotErr={this.state.startSnapshotErr}
-                      startSnapshotErrorMsg={this.state.startSnapshotErrorMsg}
-                      snapshotInProgressApps={this.props.snapshotInProgressApps}
-                      selectedSnapshotOption={this.state.selectedSnapshotOption}
-                      onSnapshotOptionChange={this.onSnapshotOptionChange}
-                      onSnapshotOptionClick={this.onSnapshotOptionClick}
-                    />
-                  </div>
-                : null}
-                <DashboardLicenseCard
                   appLicense={appLicense}
-                  app={app}
-                  syncCallback={this.props.updateCallback}
                   gettingAppLicenseErrMsg={this.state.gettingAppLicenseErrMsg}
                 />
-              </div>
-
+              }
             </div>
             <div className="u-marginTop--30 flex flex1">
-              <DashboardGraphsCard
-                prometheusAddress={this.state.dashboard?.prometheusAddress}
-                metrics={this.state.dashboard?.metrics}
-                appSlug={app.slug}
-                clusterId={this.props.cluster?.id}
-              />
+              {this.state.dashboard?.prometheusAddress ?
+                <div>
+                  <div className="flex flex1 justifyContent--flexEnd">
+                    <span className="card-link" onClick={this.toggleConfigureGraphs}> Configure Prometheus Address </span>
+                  </div>
+                  <div className="flex-auto flex flexWrap--wrap u-width--full">
+                    {this.state.dashboard?.metrics.map(this.renderGraph)}
+                  </div>
+                </div>
+                :
+                <div className="flex-auto flex flexWrap--wrap u-width--full u-position--relative">
+                  <div className="dashboard-card classic emptyGraph flex-column flex1 flex">
+                    <div className="flex flex1 justifyContent--center alignItems--center alignSelf--center">
+                      <span className="icon graphIcon"></span>
+                    </div>
+                  </div>
+                  <div className="dashboard-card classic emptyGraph flex-column flex1 flex">
+                    <div className="flex flex1 justifyContent--center alignItems--center alignSelf--center">
+                      <span className="icon graphPieIcon"></span>
+                    </div>
+                  </div>
+                  <div className="dashboard-card classic absolute-button flex flex1 alignItems--center justifyContent--center alignSelf--center">
+                    <button className="btn secondary blue" onClick={this.toggleConfigureGraphs}> Configure graphs </button>
+                  </div>
+                </div>
+              }
             </div>
           </div>
         </div>
+        <ConfigureGraphsModal
+          showConfigureGraphs={showConfigureGraphs}
+          toggleConfigureGraphs={this.toggleConfigureGraphs}
+          updatePromValue={this.updatePromValue}
+          promValue={promValue}
+          savingPromValue={savingPromValue}
+          savingPromError={savingPromError}
+          onPromValueChange={this.onPromValueChange}
+        />
         {this.state.viewAirgapUploadError &&
           <Modal
             isOpen={this.state.viewAirgapUploadError}

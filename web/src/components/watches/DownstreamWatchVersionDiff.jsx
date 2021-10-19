@@ -20,7 +20,7 @@ class DownstreamWatchVersionDiff extends React.Component {
       fileLoadErrMessage: "",
       hasErrSettingDiff: false,
       errSettingDiff: "",
-      failedSequence: undefined
+      failedSequence: undefined,
     };
   }
 
@@ -68,12 +68,12 @@ class DownstreamWatchVersionDiff extends React.Component {
   }
 
   componentDidMount() {
-    const { firstSequence, secondSequence } = this.props;
+    const { firstSequence, secondSequence, location } = this.props;
     this.fetchRenderedApplicationTree(firstSequence, true);
     this.fetchRenderedApplicationTree(secondSequence, false);
 
     const url = window.location.pathname;
-    if (!url.includes("/diff")) {
+    if (!url.includes("/diff") && !location.search.includes("?diff/")) {
       window.history.replaceState("", "", `${url}/diff/${firstSequence}/${secondSequence}`);
     }
   }
@@ -170,11 +170,13 @@ class DownstreamWatchVersionDiff extends React.Component {
     return (
       <div className="u-position--relative u-height--full u-width--full">
         <div className="flex u-marginBottom--15">
-          <div className="u-fontWeight--bold u-linkColor u-cursor--pointer" onClick={this.goBack}>
-            <span className="icon clickable backArrow-icon u-marginRight--10" style={{ verticalAlign: "0" }} />
-            Back
-          </div>
-          <span className="u-fontWeight--bold u-marginLeft--20 u-textColor--primary">Diffing releases {firstSequence} and {secondSequence}</span>
+          {!this.props.hideBackButton &&
+            <div className="u-fontWeight--bold u-marginRight--20 u-linkColor u-cursor--pointer" onClick={this.goBack}>
+              <span className="icon clickable backArrow-icon u-marginRight--10" style={{ verticalAlign: "0" }} />
+              Back
+            </div>
+          }
+          <span className="u-fontWeight--bold u-textColor--primary">Diffing releases {firstSequence} and {secondSequence}</span>
         </div>
         {content}
       </div>

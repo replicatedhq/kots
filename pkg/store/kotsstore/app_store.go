@@ -114,7 +114,7 @@ func (s *KOTSStore) GetApp(id string) (*apptypes.App, error) {
 	// 	zap.String("id", id))
 
 	db := persistence.MustGetDBSession()
-	query := `select id, name, license, upstream_uri, icon_uri, created_at, updated_at, slug, current_sequence, last_update_check_at, is_airgap, snapshot_ttl_new, snapshot_schedule, restore_in_progress_name, restore_undeploy_status, update_checker_spec, install_state from app where id = $1`
+	query := `select id, name, license, upstream_uri, icon_uri, created_at, updated_at, slug, current_sequence, last_update_check_at, last_license_sync, is_airgap, snapshot_ttl_new, snapshot_schedule, restore_in_progress_name, restore_undeploy_status, update_checker_spec, install_state from app where id = $1`
 	row := db.QueryRow(query, id)
 
 	app := apptypes.App{}
@@ -126,13 +126,14 @@ func (s *KOTSStore) GetApp(id string) (*apptypes.App, error) {
 	var updatedAt persistence.NullStringTime
 	var currentSequence sql.NullInt64
 	var lastUpdateCheckAt sql.NullString
+	var lastLicenseSync sql.NullString
 	var snapshotTTLNew sql.NullString
 	var snapshotSchedule sql.NullString
 	var restoreInProgressName sql.NullString
 	var restoreUndeployStatus sql.NullString
 	var updateCheckerSpec sql.NullString
 
-	if err := row.Scan(&app.ID, &app.Name, &licenseStr, &upstreamURI, &iconURI, &createdAt, &updatedAt, &app.Slug, &currentSequence, &lastUpdateCheckAt, &app.IsAirgap, &snapshotTTLNew, &snapshotSchedule, &restoreInProgressName, &restoreUndeployStatus, &updateCheckerSpec, &app.InstallState); err != nil {
+	if err := row.Scan(&app.ID, &app.Name, &licenseStr, &upstreamURI, &iconURI, &createdAt, &updatedAt, &app.Slug, &currentSequence, &lastUpdateCheckAt, &lastLicenseSync, &app.IsAirgap, &snapshotTTLNew, &snapshotSchedule, &restoreInProgressName, &restoreUndeployStatus, &updateCheckerSpec, &app.InstallState); err != nil {
 		return nil, errors.Wrap(err, "failed to scan app")
 	}
 
@@ -141,6 +142,7 @@ func (s *KOTSStore) GetApp(id string) (*apptypes.App, error) {
 	app.UpstreamURI = upstreamURI.String
 	app.IconURI = iconURI.String
 	app.LastUpdateCheckAt = lastUpdateCheckAt.String
+	app.LastLicenseSync = lastLicenseSync.String
 	app.SnapshotTTL = snapshotTTLNew.String
 	app.SnapshotSchedule = snapshotSchedule.String
 	app.RestoreInProgressName = restoreInProgressName.String

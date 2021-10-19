@@ -161,7 +161,7 @@ export class NavBar extends PureComponent {
                     <div className={classNames("NavItem u-position--relative flex", { "is-active": selectedTab === "dashboard" })}>
                       <span className="HeaderLink flex flex1 u-cursor--pointer" onClick={this.redirectToDashboard}>
                         <span className="text u-fontSize--normal u-fontWeight--medium flex-column justifyContent--center">
-                          <span>Dashboard</span>
+                          <span>Application</span>
                         </span>
                       </span>
                     </div>

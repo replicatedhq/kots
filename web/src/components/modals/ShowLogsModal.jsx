@@ -2,9 +2,10 @@ import React from "react";
 import Modal from "react-modal";
 import MonacoEditor from "react-monaco-editor";
 import Loader from "../shared/Loader";
+import { Link } from "react-router-dom"
 
 export default function ShowLogsModal(props) {
-  const { showLogsModal, hideLogsModal, viewLogsErrMsg, logs, selectedTab, logsLoading, renderLogsTabs } = props;
+  const { showLogsModal, hideLogsModal, viewLogsErrMsg, logs, selectedTab, logsLoading, renderLogsTabs, versionFailing, troubleshootUrl } = props;
 
   return (
     <Modal
@@ -49,6 +50,7 @@ export default function ShowLogsModal(props) {
               </div>
               <div className="u-marginTop--20 flex">
                 <button type="button" className="btn primary" onClick={hideLogsModal}>Ok, got it!</button>
+                {versionFailing && <Link to={troubleshootUrl} className="btn secondary blue u-marginLeft--10"> Troubleshoot </Link>}
               </div>
             </div>
           )}

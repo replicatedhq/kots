@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"io/ioutil"
 	"path/filepath"
+	"time"
 
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
@@ -107,8 +108,8 @@ func (s *KOTSStore) UpdateAppLicense(appID string, sequence int64, archiveDir st
 	}
 
 	//  app has the original license data received from the server
-	updateQuery := `update app set license=$1 where id = $2`
-	_, err = tx.Exec(updateQuery, originalLicenseData, appID)
+	updateQuery := `update app set license=$1, last_license_sync=$2 where id = $3`
+	_, err = tx.Exec(updateQuery, originalLicenseData, time.Now(), appID)
 	if err != nil {
 		return int64(0), errors.Wrapf(err, "update app %q license", appID)
 	}
@@ -128,6 +129,24 @@ func (s *KOTSStore) UpdateAppLicense(appID string, sequence int64, archiveDir st
 	}
 
 	return newSeq, nil
+}
+
+func (s *KOTSStore) UpdateAppLicenseSyncNow(appID string) error {
+	db := persistence.MustGetDBSession()
+
+	tx, err := db.Begin()
+	if err != nil {
+		return errors.Wrap(err, "failed to begin")
+	}
+	defer tx.Rollback()
+
+	updateQuery := `update app set last_license_sync=$1 where id = $2`
+	_, err = tx.Exec(updateQuery, time.Now(), appID)
+	if err != nil {
+		return errors.Wrapf(err, "update app %q license sync time", appID)
+	}
+
+	return nil
 }
 
 func (s *KOTSStore) createNewVersionForLicenseChange(tx *sql.Tx, appID string, sequence int64, archiveDir string, gitops gitopstypes.DownstreamGitOps, renderer rendertypes.Renderer) (int64, error) {

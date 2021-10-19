@@ -44,7 +44,22 @@ function deployButtonStatus(downstream, version, app) {
   }
 }
 
-function renderVersionAction(version, latestVersion, nothingToCommitDiff, app, history, deployVersion) {
+function getPreflightState(version) {
+  let preflightsFailed = false;
+  let preflightState = "";
+  if (version?.preflightResult) {
+    const preflightResult = JSON.parse(version.preflightResult);
+    preflightState = getPreflightResultState(preflightResult);
+    preflightsFailed = preflightState === "fail";
+  }
+  return {
+    preflightsFailed,
+    preflightState,
+    preflightSkipped: version?.preflightSkipped
+  };
+}
+
+function renderVersionAction(version, latestVersion, nothingToCommitDiff, app, history, deployVersion, showDownstreamReleaseNotes, viewLogs) {
   const downstream = app.downstreams[0];
 
   if (downstream.gitops?.enabled) {
@@ -64,9 +79,11 @@ function renderVersionAction(version, latestVersion, nothingToCommitDiff, app, h
     );
   }
 
+  
   const isCurrentVersion = version.sequence === downstream.currentVersion?.sequence;
   const isLatestVersion = version.sequence === latestVersion.sequence;
   const isPastVersion = find(downstream.pastVersions, { sequence: version.sequence });
+  const isPendingDeployedVersion = find(downstream.pendingVersions, { sequence: version.sequence, status: "deployed" });
   const needsConfiguration = version.status === "pending_config";
   const showActions = !isPastVersion || app.allowRollback;
   const isRedeploy = isCurrentVersion && (version.status === "failed" || version.status === "deployed");
@@ -81,14 +98,55 @@ function renderVersionAction(version, latestVersion, nothingToCommitDiff, app, h
   } else {
     tooltipTip = "View config"
   }
-
+  const preflightState = getPreflightState(version);
+  let checksStatusText;
+  if (preflightState.preflightsFailed) {
+    checksStatusText = "Checks failed"
+  } else if (preflightState.preflightState === "warn") {
+    checksStatusText = "Checks passed with warnings"
+  }
   return (
-    <div className="flex flex1 justifyContent--flexEnd">
+    <div className="flex flex1 justifyContent--flexEnd alignItems--center">
+      {version?.releaseNotes &&
+        <div>
+          <span className="icon releaseNotes--icon u-marginRight--10 u-cursor--pointer" onClick={() => showDownstreamReleaseNotes(version?.releaseNotes)} data-tip="View release notes" />
+          <ReactTooltip effect="solid" className="replicated-tooltip" />
+        </div>
+      }
+      <div>
+        {version.status === "pending_preflight" ?
+          <div className="u-marginRight--10 u-position--relative">
+            <Loader size="30" />
+            <p className="checks-running-text u-fontSize--small u-lineHeight--normal u-fontWeight--medium">Running checks</p>
+          </div>
+        :
+        <div>
+          <Link to={`/app/${app?.slug}/downstreams/${app?.downstreams[0].cluster?.slug}/version-history/preflight/${version?.sequence}`}
+            className="icon preflightChecks--icon u-marginRight--10 u-cursor--pointer u-position--relative"
+            data-tip="View preflight checks">
+            {preflightState.preflightsFailed || preflightState.preflightState === "warn" ?
+              <div>
+                <span className={`icon version-row-preflight-status-icon ${preflightState.preflightsFailed ? "preflight-checks-failed-icon" : preflightState.preflightState === "warn" ? "preflight-checks-warn-icon" : ""}`} />
+                <p className={`checks-running-text u-fontSize--small u-lineHeight--normal u-fontWeight--medium ${preflightState.preflightsFailed ? "err" : preflightState.preflightState === "warn" ? "warning" : ""}`}>{checksStatusText}</p>
+              </div>
+              : null}
+          </Link>
+          <ReactTooltip effect="solid" className="replicated-tooltip" />
+        </div>
+        }
+      </div>
       {app.isConfigurable &&
         <div className="flex alignItems--center">
           <Link to={`/app/${app.slug}/config/${version.sequence}`} className={`icon ${editableConfig ? "configEdit--icon" : "configView--icon"} u-cursor--pointer`} data-tip={tooltipTip} />
           <ReactTooltip effect="solid" className="replicated-tooltip" />
         </div>}
+        {(isPastVersion || isCurrentVersion || isPendingDeployedVersion) && version?.status !== "pending" ?
+          <div className="u-marginLeft--10">
+            <span className="icon deployLogs--icon u-cursor--pointer" onClick={() => viewLogs(version, version?.status === "failed")} data-tip="View deploy logs" />
+            <ReactTooltip effect="solid" className="replicated-tooltip" />
+            {version.status === "failed" ? <span className="icon version-row-preflight-status-icon preflight-checks-failed-icon" /> : null}
+          </div>
+        : null}
       {showActions &&
         <button
           className={classNames("btn u-marginLeft--10", { "secondary dark": isRollback, "secondary blue": isSecondaryBtn, "primary blue": isPrimaryButton })}
@@ -112,142 +170,101 @@ function renderViewPreflights(version, app, match) {
   );
 }
 
+function getUpdateTypeClassname(updateType) {
+  if (updateType.includes("Upstream Update")) {
+    return "upstream-update";
+  }
+  if (updateType.includes("Config Change")) {
+    return "config-update";
+  }
+  if (updateType.includes("License Change")) {
+    return "license-sync";
+  }
+  if (updateType.includes("Airgap Install") || updateType.includes("Airgap Update")) {
+    return "airgap-install";
+  }
+  return "online-install";
+}
+
 function renderVersionStatus(version, app, match, viewLogs) {
   const downstream = app.downstreams?.length && app.downstreams[0];
   if (!downstream) {
     return null;
   }
 
-  let preflightsFailed = false;
-  let preflightState = "";
-  if (version.preflightResult) {
-    const preflightResult = JSON.parse(version.preflightResult);
-    preflightState = getPreflightResultState(preflightResult);
-    if (version.status === "pending") {
-      preflightsFailed = preflightState === "fail";
-    }
-  }
-
-  const checksPassedToolTip = "This version was deployed before preflight checks had finished. Checks continue to run in the background until completed.";
-  let checkBypassedResultText = "";
-  if (preflightState === "pass") {
-    checkBypassedResultText = "Checks bypassed & passed";
-  } else if (preflightState === "warn") {
-    checkBypassedResultText = "Checks bypassed & passed with warnings";
-  } else if (preflightState === "fail") {
-    checkBypassedResultText = "Checks bypassed";
-  }
-
   const isPastVersion = find(downstream.pastVersions, { sequence: version.sequence });
   const isPendingDeployedVersion = find(downstream.pendingVersions, { sequence: version.sequence, status: "deployed" });
   const clusterSlug = downstream.cluster?.slug;
+  
   let preflightBlock = null;
-  const showCheckmarkIcon = version.status === "deployed" || version.status === "merged" || version.status === "pending";
-
-  if (isPastVersion && app.hasPreflight) {
-    if (preflightsFailed) {
-      preflightBlock = (<Link to={`/app/${match.params.slug}/downstreams/${clusterSlug}/version-history/preflight/${version.sequence}`} className="replicated-link u-marginLeft--5 u-fontSize--small">View preflights</Link>);
-    } else if (version.status !== "pending_config") {
-      preflightBlock = (<Link to={`/app/${match.params.slug}/downstreams/${clusterSlug}/version-history/preflight/${version.sequence}`} className="replicated-link u-marginLeft--5 u-fontSize--small">View preflights</Link>);
-    }
-  }
   if (version.status === "pending_preflight") {
     preflightBlock = (
       <span className="flex u-marginLeft--5 alignItems--center">
         <Loader size="20" />
       </span>);
   } else if (app.hasPreflight) {
-    if (preflightsFailed) {
-      preflightBlock = (<Link to={`/app/${match.params.slug}/downstreams/${clusterSlug}/version-history/preflight/${version.sequence}`} className="replicated-link u-marginLeft--5 u-fontSize--small">View preflights</Link>);
-    } else if (version.status !== "pending_config") {
-      preflightBlock = (<Link to={`/app/${match.params.slug}/downstreams/${clusterSlug}/version-history/preflight/${version.sequence}`} className="replicated-link u-marginLeft--5 u-fontSize--small">View preflights</Link>);
-    }
+    preflightBlock = (<Link to={`/app/${match.params.slug}/downstreams/${clusterSlug}/version-history/preflight/${version.sequence}`} className="replicated-link u-marginLeft--5 u-fontSize--small">View preflights</Link>);
   }
-
+  
   if (!isPastVersion && !isPendingDeployedVersion) {
-    return (
-      <div className="flex alignItems--center">
-        <div className="flex alignItems--center">
-          <div
-            data-tip={`${version.versionLabel || version.title}-${version.sequence}`}
-            data-for={`${version.versionLabel || version.title}-${version.sequence}`}
-            className={classNames("icon", {
-              "checkmark-icon": showCheckmarkIcon,
-              "exclamationMark--icon": version.status === "opened",
-              "grayCircleMinus--icon": version.status === "closed",
-              "error-small": version.status === "failed" || preflightsFailed
-            })}
-          />
-          {version.status === "deploying" && <Loader className="flex alignItems--center" size="20" />}
-          <span className={classNames("u-fontSize--small u-fontWeight--medium u-lineHeight--normal u-marginLeft--5", {
-            "u-textColor--accent": version.status === "deployed" || version.status === "merged",
-            "u-textColor--warning": version.status === "opened",
-            "u-textColor--bodyCopy": version.status === "closed" || version.status === "pending" || version.status === "pending_preflight",
-            "u-textColor--error": version.status === "failed" || preflightsFailed
-          })}>
-            {Utilities.toTitleCase(
-              version.status === "pending_preflight"
-                ? "Running checks"
-                : preflightsFailed
-                  ? "Checks failed"
-                  : version.status === "pending"
-                    ? "Ready to deploy"
-                      : version.status
-            ).replace("_", " ")}
-          </span>
-          {version.preflightSkipped && <span className="u-textColor--warning u-fontSize--small u-fontWeight--medium u-lineHeight--normal u-marginLeft--5 alignItems--center justifyContent--center">{checkBypassedResultText} <span className="icon u-top--3 grayOutlineQuestionMark--icon" data-tip={checksPassedToolTip} />
+    if (version.status === "deployed" || version.status === "merged") {
+      return (
+        <div>
+          <span className="status-tag success flex-auto u-cursor--default" data-tip={version.deployedAt ? `Deployed ${Utilities.dateFormat(version.deployedAt, "MMMM D, YYYY @ hh:mm a z")}` : "Unable to find deployed at date"}>Currently {version.status.replace("_", " ")} version</span>
           <ReactTooltip effect="solid" className="replicated-tooltip" />
-          </span>}
+          {version.preflightSkipped && <p style={{ maxWidth: "200px" }} className="u-textColor--bodyCopy u-fontSize--small u-fontWeight--medium u-lineHeight--normal u-marginTop--5">This version was deployed before preflight checks had completed</p>}
         </div>
-        {preflightBlock}
-        {version.status === "failed" &&
-          <span className="replicated-link u-marginLeft--5 u-fontSize--small" onClick={() => viewLogs(version, true)}>View logs</span>
-        }
-      </div>
-    );
+      )
+    } else if (version.status === "failed") {
+      return (
+        <div className="flex alignItems--center">
+          <span className="status-tag failed flex-auto u-marginRight--10">Deploy Failed</span>
+          <span className="replicated-link u-fontSize--small" onClick={() => viewLogs(version, true)}>View deploy logs</span>
+          {version.preflightSkipped && <p style={{ maxWidth: "200px" }} className="u-textColor--bodyCopy u-fontSize--small u-fontWeight--medium u-lineHeight--normal u-marginTop--5">This version was deployed before preflight checks had completed</p>}
+        </div>
+      );
+    } else if (version.status === "deploying") {
+      return (
+        <span className="flex alignItems--center u-fontSize--small u-lineHeight--normal u-textColor--bodyCopy u-fontWeight--medium">
+          <Loader className="flex alignItems--center u-marginRight--5" size="16" />
+            Deploying
+        </span>);
+    } else if (version.status !== "pending") {
+      return <span className="status-tag unknown flex-atuo"> {Utilities.toTitleCase(version.status).replace("_", " ")} </span>
+    }
   } else {
-    return (
-      <div className="flex alignItems--center">
-        <div className="flex alignItems--center">
-          <div
-            data-tip={`${version.versionLabel || version.title}-${version.sequence}`}
-            data-for={`${version.versionLabel || version.title}-${version.sequence}`}
-            className={classNames("icon", {
-              "analysis-gray_checkmark": version.status === "deployed" || version.status === "merged",
-              "exclamationMark--icon": version.status === "opened",
-              "grayCircleMinus--icon": version.status === "closed" || version.status === "pending",
-              "error-small": version.status === "failed"
-            })}
-          />
-          <span className={classNames("u-fontSize--small u-fontWeight--medium u-lineHeight--normal u-marginLeft--5", {
-            "u-textColor--accent": version.status === "deployed" || version.status === "merged",
-            "u-textColor--warning": version.status === "opened",
-            "u-textColor--bodyCopy": version.status === "closed" || version.status === "pending" || version.status === "pending_preflight",
-            "u-textColor--error": version.status === "failed"
-          })}>
-            {version.status === "deployed" ?
-              "Previously Deployed" :
-              version.status === "pending" ?
-                "Skipped" :
-                  version.status === "failed" ?
-                    "Failed" : ""}
-          </span>
-          {version.preflightSkipped && <span className="u-textColor--warning u-fontSize--small u-fontWeight--medium u-lineHeight--normal u-marginLeft--5 alignItems--center justifyContent--center">{checkBypassedResultText} <span className="icon u-top--3 grayOutlineQuestionMark--icon" data-tip={checksPassedToolTip}/>
+    if (version.status === "deployed" || version.status === "merged") {
+      return (
+        <div>
+          <span className="status-tag unknown flex-auto u-cursor--default" data-tip={version.deployedAt ? `Deployed ${Utilities.dateFormat(version.deployedAt, "MMMM D, YYYY @ hh:mm a z")}` : "Unable to find deployed at date"}>Previously deployed</span>
           <ReactTooltip effect="solid" className="replicated-tooltip" />
-          </span>}
         </div>
-        {preflightBlock}
-        {version.status === "failed" &&
-          <span className="replicated-link u-marginLeft--5 u-fontSize--small" onClick={() => viewLogs(version, true)}>View logs</span>
-        }
-      </div>
-    );
+      )
+    } else if (version.status === "pending") {
+      return <span className="status-tag skipped flex-auto">Version skipped</span>
+    }
+    else if (version.status === "failed") {
+      return (
+        <div className="flex alignItems--center">
+          <span className="status-tag failed flex-auto u-marginRight--10">Deploy Failed</span>
+          <span className="replicated-link u-fontSize--small" onClick={() => viewLogs(version, true)}>View deploy logs</span>
+        </div>
+      );
+    } else if (version.status === "deploying") {
+      return (
+        <span className="flex alignItems--center u-fontSize--small u-lineHeight--normal u-textColor--bodyCopy u-fontWeight--medium">
+          <Loader className="flex alignItems--center u-marginRight--5" size="16" />
+            Deploying
+        </span>);
+    } else {
+      return <span className="status-tag unknown flex-atuo"> {Utilities.toTitleCase(version.status).replace("_", " ")} </span>
+    }
   }
 }
 
 export default function AppVersionHistoryRow(props) {
   const { version, selectedDiffReleases, nothingToCommit,
-    isChecked, isNew, showDownstreamReleaseNotes, renderSourceAndDiff, handleSelectReleasesToDiff,
+    isChecked, isNew, renderSourceAndDiff, handleSelectReleasesToDiff,
     yamlErrorsDetails, gitopsEnabled, toggleShowDetailsModal, latestVersion } = props;
 
 
@@ -260,34 +277,27 @@ export default function AppVersionHistoryRow(props) {
       {selectedDiffReleases && <div className={classNames("checkbox u-marginRight--20", { "checked": (isChecked && !nothingToCommit) }, { "disabled": nothingToCommit })} />}
       <div className={`${nothingToCommit && selectedDiffReleases && "u-opacity--half"} flex-column flex1 u-paddingRight--20`}>
         <div className="flex alignItems--center">
-          <p className="u-fontSize--large u-fontWeight--bold u-lineHeight--medium u-textColor--primary">{version.versionLabel || version.title}</p>
-          <p className="u-fontSize--small u-fontWeight--medium u-lineHeight--normal u-textColor--secondary u-marginLeft--5" style={{ marginTop: "2px" }}>Sequence {version.sequence}</p>
+          <p className="u-fontSize--header2 u-fontWeight--bold u-lineHeight--medium u-textColor--primary">{version.versionLabel || version.title}</p>
+          <p className="u-fontSize--small u-textColor--bodyCopy u-fontWeight--medium u-marginLeft--10" style={{ marginTop: "2px" }}>Sequence {version.sequence}</p>
         </div>
-        <div className="flex alignItems--center u-marginTop--10"></div>
-        <div className="flex flex1 u-marginTop--15 alignItems--center">
-          <p className="u-fontSize--small u-lineHeight--normal u-textColor--bodyCopy u-fontWeight--medium">Released <span className="u-fontWeight--bold">{version.upstreamReleasedAt ? Utilities.dateFormat(version.upstreamReleasedAt, "MMMM D, YYYY") : Utilities.dateFormat(version.createdOn, "MMMM D, YYYY")}</span></p>
-          {version.releaseNotes ?
-            <p className="release-notes-link u-fontSize--small u-fontWeight--medium u-lineHeight--normal u-marginLeft--10 flex alignItems--center" onClick={() => showDownstreamReleaseNotes(version.releaseNotes)}> <span className="icon releaseNotes-small--icon clickable u-marginRight--5" />Release notes</p> : null}
+        <p className="u-fontSize--small u-fontWeight--medium u-textColor--bodyCopy u-marginTop--5"> Released <span className="u-fontWeight--bold">{version.upstreamReleasedAt ? Utilities.dateFormat(version.upstreamReleasedAt, "MM/DD/YY @ hh:mm a z") : Utilities.dateFormat(version.createdOn, "MM/DD/YY @ hh:mm a z")}</span></p>
+        <div className="u-marginTop--5 flex flex-auto alignItems--center">
+          <span className={`icon versionUpdateType u-marginRight--5 ${getUpdateTypeClassname(version.source)}`} data-tip={version.source} />
+          <ReactTooltip effect="solid" className="replicated-tooltip" />
+          {renderSourceAndDiff(version)}
+          {yamlErrorsDetails && renderYamlErrors(yamlErrorsDetails, version, toggleShowDetailsModal)}
         </div>
       </div>
       <div className={`${nothingToCommit && selectedDiffReleases && "u-opacity--half"} flex-column flex1`}>
-        <div className="flex flex-column">
-          <p className="u-fontSize--normal u-fontWeight--bold u-textColor--primary">{version.source}</p>
-          <div className="flex alignItems--center u-fontSize--small u-marginTop--10 u-textColor--bodyCopy">
-            {renderSourceAndDiff(version)}
-            {yamlErrorsDetails && renderYamlErrors(yamlErrorsDetails, version, toggleShowDetailsModal)}
-          </div>
-        </div>
-        <div className="flex flex1 alignItems--flexEnd"> {gitopsEnabled ? renderViewPreflights(version, props.app, props.match) : renderVersionStatus(version, props.app, props.match, props.handleViewLogs)}</div>
+        <div className="flex flex1 alignItems--center"> {gitopsEnabled ? renderViewPreflights(version, props.app, props.match) : renderVersionStatus(version, props.app, props.match, props.handleViewLogs)}</div>
       </div>
-      <div className={`${nothingToCommit && selectedDiffReleases && "u-opacity--half"} flex-column flex-auto alignItems--flexEnd`}>
+      <div className={`${nothingToCommit && selectedDiffReleases && "u-opacity--half"} flex-column flex-auto alignItems--flexEnd justifyContent--center`}>
         <div>
           {version.status === "failed" || version.status === "deployed" ?
-            renderVersionAction(version, latestVersion, nothingToCommit && selectedDiffReleases, props.app, props.history, props.redeployVersion) :
-            renderVersionAction(version, latestVersion, nothingToCommit && selectedDiffReleases, props.app, props.history, props.deployVersion)
+            renderVersionAction(version, latestVersion, nothingToCommit && selectedDiffReleases, props.app, props.history, props.redeployVersion, props.showDownstreamReleaseNotes, props.handleViewLogs) :
+            renderVersionAction(version, latestVersion, nothingToCommit && selectedDiffReleases, props.app, props.history, props.deployVersion, props.showDownstreamReleaseNotes, props.handleViewLogs)
           }
         </div>
-        <p className="u-fontSize--small u-lineHeight--normal u-textColor--bodyCopy u-fontWeight--medium u-marginTop--15">Deployed: <span className="u-fontWeight--bold">{version.deployedAt ? Utilities.dateFormat(version.deployedAt, "MMMM D, YYYY @ hh:mm a z") : "N/A"}</span></p>
       </div>
     </div>
   )

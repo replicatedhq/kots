@@ -182,6 +182,7 @@ type LicenseStore interface {
 
 	// originalLicenseData is the data received from the replicated API that was never marshalled locally so all fields are intact
 	UpdateAppLicense(appID string, sequence int64, archiveDir string, newLicense *kotsv1beta1.License, originalLicenseData string, failOnVersionCreate bool, gitops gitopstypes.DownstreamGitOps, renderer rendertypes.Renderer) (int64, error)
+	UpdateAppLicenseSyncNow(appID string) error
 }
 
 type UserStore interface {
