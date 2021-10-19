@@ -35,6 +35,7 @@ type ResponseApp struct {
 	IsIdentityServiceSupported    bool                     `json:"isIdentityServiceSupported"`
 	IsAppIdentityServiceSupported bool                     `json:"isAppIdentityServiceSupported"`
 	IsGeoaxisSupported            bool                     `json:"isGeoaxisSupported"`
+	IsSupportBundleUploadEnabled  bool                     `json:"isSupportBundleUploadEnabled"`
 	AllowRollback                 bool                     `json:"allowRollback"`
 	AllowSnapshots                bool                     `json:"allowSnapshots"`
 	LicenseType                   string                   `json:"licenseType"`
