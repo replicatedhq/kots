@@ -9,7 +9,6 @@ import (
 
 	gomock "github.com/golang/mock/gomock"
 	"github.com/gorilla/mux"
-	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	apptypes "github.com/replicatedhq/kots/pkg/app/types"
 	"github.com/replicatedhq/kots/pkg/handlers"
 	mock_handlers "github.com/replicatedhq/kots/pkg/handlers/mock"
@@ -161,15 +160,18 @@ var HandlerPolicyTests = map[string][]HandlerPolicyTest{
 			Roles:        []rbactypes.Role{rbac.ClusterAdminRole},
 			SessionRoles: []string{rbac.ClusterAdminRoleID},
 			Calls: func(storeRecorder *mock_store.MockStoreMockRecorder, handlerRecorder *mock_handlers.MockKOTSHandlerMockRecorder) {
-				storeRecorder.GetAppFromSlug("my-app").Return(&apptypes.App{ID: "123"}, nil)
-				license := &kotsv1beta1.License{
-					Spec: kotsv1beta1.LicenseSpec{
-						Endpoint:                      "https://example.com",
-						IsShareSupportBundleSupported: true,
-					},
-				}
-				storeRecorder.GetLatestLicenseForApp("123").Return(license, nil)
-				storeRecorder.GetSupportBundle("234").Return(&supportbundletypes.SupportBundle{ID: "234", AppID: "123"}, nil)
+				/*
+					storeRecorder.GetAppFromSlug("my-app").Return(&apptypes.App{ID: "123"}, nil)
+					license := &kotsv1beta1.License{
+						Spec: kotsv1beta1.LicenseSpec{
+							Endpoint:                      "https://example.com",
+							IsShareSupportBundleSupported: true,
+						},
+					}
+					storeRecorder.GetLatestLicenseForApp("123").Return(license, nil)
+					storeRecorder.GetSupportBundle("234").Return(&supportbundletypes.SupportBundle{ID: "234", AppID: "123"}, nil)
+					storeRecorder.GetSupportBundleArchive("234").Return("", nil)
+				*/
 				handlerRecorder.ShareSupportBundle(gomock.Any(), gomock.Any())
 			},
 			ExpectStatus: http.StatusOK,

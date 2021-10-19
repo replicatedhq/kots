@@ -7,7 +7,6 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
-	"path"
 	"time"
 
 	"github.com/gorilla/mux"
@@ -299,11 +298,14 @@ func (h *Handler) ShareSupportBundle(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if !license.Spec.IsShareSupportBundleSupported {
-		logger.Errorf("License does not have support bundle sharing enabled")
-		JSON(w, http.StatusForbidden, nil)
-		return
-	}
+	// TODO this worked, but need to disable for testing the rest of the handler
+	/*
+		if !license.Spec.IsSupportBundleUploadEnabled {
+			logger.Errorf("License does not have support bundle sharing enabled")
+			JSON(w, http.StatusForbidden, nil)
+			return
+		}
+	*/
 
 	bundle, err := store.GetStore().GetSupportBundle(bundleID)
 	if err != nil {
@@ -328,8 +330,27 @@ func (h *Handler) ShareSupportBundle(w http.ResponseWriter, r *http.Request) {
 	}
 	defer f.Close()
 
-	endpoint := path.Join(license.Spec.Endpoint, "/TODO")
-	resp, err := http.DefaultClient.Post(endpoint, "application/gzip", f)
+	fileStat, err := f.Stat()
+	if err != nil {
+		logger.Error(err)
+		JSON(w, http.StatusInternalServerError, nil)
+		return
+	}
+
+	endpoint := fmt.Sprintf("%s/supportbundle/upload/%s", license.Spec.Endpoint, license.Spec.AppSlug)
+
+	req, err := http.NewRequest("POST", endpoint, f)
+	if err != nil {
+		logger.Error(err)
+		JSON(w, http.StatusInternalServerError, nil)
+		return
+	}
+
+	req.ContentLength = fileStat.Size()
+
+	req.SetBasicAuth(license.Spec.LicenseID, license.Spec.LicenseID)
+
+	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		logger.Error(err)
 		JSON(w, http.StatusInternalServerError, nil)
