@@ -13,6 +13,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/automation"
+	"github.com/replicatedhq/kots/pkg/binaries"
 	"github.com/replicatedhq/kots/pkg/handlers"
 	"github.com/replicatedhq/kots/pkg/informers"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
@@ -71,6 +72,11 @@ func Start(params *APIServerParams) {
 	}
 
 	store.GetStore().RunMigrations()
+
+	if err := binaries.InitKubectl(); err != nil {
+		log.Println("error initializing kubectl binaries package")
+		panic(err)
+	}
 
 	if err := operator.Start(params.AutocreateClusterToken); err != nil {
 		log.Println("error starting the operator")

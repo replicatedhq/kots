@@ -10,6 +10,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
   && rm -rf /var/lib/apt/lists/* \
   && rm -rf /usr/share/man/man*
 
+# KOTS can be configured to use a specific version of kubectl by setting kubectlVersion in the
+# kots.io/v1beta1.Application spec. The github.com/replicatedhq/kots/pkg/binaries package will
+# discover all kubectl binaries in the KOTS_KUBECTL_BIN_DIR directory for use by KOTS.
+
+ENV KOTS_KUBECTL_BIN_DIR=/usr/local/bin
+
 # Install Kubectl 1.14
 ENV KUBECTL_1_14_VERSION=v1.14.10
 ENV KUBECTL_1_14_URL=https://storage.googleapis.com/kubernetes-release/release/${KUBECTL_1_14_VERSION}/bin/linux/amd64/kubectl
@@ -17,7 +23,7 @@ ENV KUBECTL_1_14_SHA256SUM=7729c6612bec76badc7926a79b26e0d9b06cc312af46dbb80ea74
 RUN curl -fsSLO "${KUBECTL_1_14_URL}" \
 	&& echo "${KUBECTL_1_14_SHA256SUM} kubectl" | sha256sum -c - \
 	&& chmod +x kubectl \
-	&& mv kubectl "/usr/local/bin/kubectl-v1.14"
+	&& mv kubectl "${KOTS_KUBECTL_BIN_DIR}/kubectl-v1.14"
 
 # Install Kubectl 1.16
 ENV KUBECTL_1_16_VERSION=v1.16.15
@@ -26,7 +32,7 @@ ENV KUBECTL_1_16_SHA256SUM=e8913069293156ddf55f243814a22d2384fc18b165efb6200606f
 RUN curl -fsSLO "${KUBECTL_1_16_URL}" \
 	&& echo "${KUBECTL_1_16_SHA256SUM} kubectl" | sha256sum -c - \
 	&& chmod +x kubectl \
-	&& mv kubectl "/usr/local/bin/kubectl-v1.16"
+	&& mv kubectl "${KOTS_KUBECTL_BIN_DIR}/kubectl-v1.16"
 
 # Install Kubectl 1.17
 ENV KUBECTL_1_17_VERSION=v1.17.17
@@ -35,7 +41,7 @@ ENV KUBECTL_1_17_SHA256SUM=8329fac94c66bf7a475b630972a8c0b036bab1f28a5584115e8dd
 RUN curl -fsSLO "${KUBECTL_1_17_URL}" \
 	&& echo "${KUBECTL_1_17_SHA256SUM} kubectl" | sha256sum -c - \
 	&& chmod +x kubectl \
-	&& mv kubectl "/usr/local/bin/kubectl-v1.17"
+	&& mv kubectl "${KOTS_KUBECTL_BIN_DIR}/kubectl-v1.17"
 
 # Install Kubectl 1.18
 ENV KUBECTL_1_18_VERSION=v1.18.20
@@ -44,7 +50,7 @@ ENV KUBECTL_1_18_SHA256SUM=66a9bb8e9843050340844ca6e72e67632b75b9ebb651559c49db2
 RUN curl -fsSLO "${KUBECTL_1_18_URL}" \
 	&& echo "${KUBECTL_1_18_SHA256SUM} kubectl" | sha256sum -c - \
 	&& chmod +x kubectl \
-	&& mv kubectl "/usr/local/bin/kubectl-v1.18"
+	&& mv kubectl "${KOTS_KUBECTL_BIN_DIR}/kubectl-v1.18"
 
 # Install Kubectl 1.19
 ENV KUBECTL_1_19_VERSION=v1.19.15
@@ -53,7 +59,7 @@ ENV KUBECTL_1_19_SHA256SUM=6f2ac7db8cfd59f660abc9891c1bb7da2dabd1cf5e114d836f2ff
 RUN curl -fsSLO "${KUBECTL_1_19_URL}" \
 	&& echo "${KUBECTL_1_19_SHA256SUM} kubectl" | sha256sum -c - \
 	&& chmod +x kubectl \
-	&& mv kubectl "/usr/local/bin/kubectl-v1.19"
+	&& mv kubectl "${KOTS_KUBECTL_BIN_DIR}/kubectl-v1.19"
 
 # Install Kubectl 1.20
 ENV KUBECTL_1_20_VERSION=v1.20.11
@@ -62,7 +68,7 @@ ENV KUBECTL_1_20_SHA256SUM=3a2bf981939df89f807858a481f6f5f2e33a7b9708bd029c8bece
 RUN curl -fsSLO "${KUBECTL_1_20_URL}" \
 	&& echo "${KUBECTL_1_20_SHA256SUM} kubectl" | sha256sum -c - \
 	&& chmod +x kubectl \
-	&& mv kubectl "/usr/local/bin/kubectl-v1.20"
+	&& mv kubectl "${KOTS_KUBECTL_BIN_DIR}/kubectl-v1.20"
 
 # Install Kubectl 1.21
 ENV KUBECTL_1_21_VERSION=v1.21.5
@@ -71,8 +77,8 @@ ENV KUBECTL_1_21_SHA256SUM=060ede75550c63bdc84e14fcc4c8ab3017f7ffc032fc4cac3bf20
 RUN curl -fsSLO "${KUBECTL_1_21_URL}" \
 	&& echo "${KUBECTL_1_21_SHA256SUM} kubectl" | sha256sum -c - \
 	&& chmod +x kubectl \
-	&& mv kubectl "/usr/local/bin/kubectl-v1.21" \
-	&& ln -s "/usr/local/bin/kubectl-v1.21" /usr/local/bin/kubectl
+	&& mv kubectl "${KOTS_KUBECTL_BIN_DIR}/kubectl-v1.21" \
+	&& ln -s "${KOTS_KUBECTL_BIN_DIR}/kubectl-v1.21" "${KOTS_KUBECTL_BIN_DIR}/kubectl"
 
 # Install helm v3.4.2
 RUN curl -L "https://get.helm.sh/helm-v3.4.2-linux-amd64.tar.gz" -o /tmp/helm.tar.gz && \
