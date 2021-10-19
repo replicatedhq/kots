@@ -165,7 +165,7 @@ var HandlerPolicyTests = map[string][]HandlerPolicyTest{
 					license := &kotsv1beta1.License{
 						Spec: kotsv1beta1.LicenseSpec{
 							Endpoint:                      "https://example.com",
-							IsShareSupportBundleSupported: true,
+							IsSupportBundleUploadEnabled: true,
 						},
 					}
 					storeRecorder.GetLatestLicenseForApp("123").Return(license, nil)

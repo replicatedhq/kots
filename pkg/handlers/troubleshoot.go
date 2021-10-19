@@ -299,14 +299,11 @@ func (h *Handler) ShareSupportBundle(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// TODO this worked, but need to disable for testing the rest of the handler
-	/*
-		if !license.Spec.IsSupportBundleUploadEnabled {
-			logger.Errorf("License does not have support bundle sharing enabled")
-			JSON(w, http.StatusForbidden, nil)
-			return
-		}
-	*/
+	if !license.Spec.IsSupportBundleUploadEnabled {
+		logger.Errorf("License does not have support bundle sharing enabled")
+		JSON(w, http.StatusForbidden, nil)
+		return
+	}
 
 	bundle, err := store.GetStore().GetSupportBundle(bundleID)
 	if err != nil {
