@@ -298,14 +298,11 @@ func (h *Handler) ShareSupportBundle(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// TODO
-	/*
-		if !license.Spec.IsSupportBundleUploadEnabled {
-			logger.Errorf("License does not have support bundle sharing enabled")
-			JSON(w, http.StatusForbidden, nil)
-			return
-		}
-	*/
+	if !license.Spec.IsSupportBundleUploadSupported {
+		logger.Errorf("License does not have support bundle sharing enabled")
+		JSON(w, http.StatusForbidden, nil)
+		return
+	}
 
 	bundle, err := store.GetStore().GetSupportBundle(bundleID)
 	if err != nil {
