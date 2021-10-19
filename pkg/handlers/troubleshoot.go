@@ -367,7 +367,7 @@ func (h *Handler) ShareSupportBundle(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	JSON(w, http.StatusOK, nil)
+	JSON(w, http.StatusOK, "")
 }
 
 func (h *Handler) CollectSupportBundle(w http.ResponseWriter, r *http.Request) {
