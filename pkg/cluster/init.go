@@ -19,10 +19,19 @@ import (
 	"path/filepath"
 	"time"
 
+	"github.com/blang/semver"
 	"github.com/mholt/archiver"
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"go.uber.org/zap"
+)
+
+const (
+	KotsKubeVersion = "1.22.1"
+)
+
+var (
+	kotsKubeSemVersion = semver.MustParse(KotsKubeVersion)
 )
 
 // ClientInit will download all binaries for the cluster
@@ -621,7 +630,7 @@ current-context: authz`, "test")
 }
 
 func ensureKubeletBinary(rootDir string) error {
-	packageURI := `https://dl.k8s.io/v1.22.1/kubernetes-server-linux-amd64.tar.gz`
+	packageURI := fmt.Sprintf("https://dl.k8s.io/v%s/kubernetes-server-linux-amd64.tar.gz", KotsKubeVersion)
 	resp, err := http.Get(packageURI)
 	if err != nil {
 		return errors.Wrap(err, "download kubelet")
@@ -637,13 +646,20 @@ func ensureKubeletBinary(rootDir string) error {
 }
 
 func ensureKubectlBinary(rootDir string) error {
-	kubectlFilePath := filepath.Join(rootDir, "kubectl")
-	if err := downloadFileFromURL(kubectlFilePath, "https://dl.k8s.io/release/v1.22.1/bin/linux/amd64/kubectl"); err != nil {
+	filename := fmt.Sprintf("kubectl-v%d.%d", kotsKubeSemVersion.Major, kotsKubeSemVersion.Minor)
+	dest := filepath.Join(rootDir, filename)
+
+	if err := downloadFileFromURL(dest, fmt.Sprintf("https://dl.k8s.io/release/v%s/bin/linux/amd64/kubectl", KotsKubeVersion)); err != nil {
 		return err
 	}
 
-	if err := os.Chmod(kubectlFilePath, 0755); err != nil {
+	if err := os.Chmod(dest, 0755); err != nil {
 		return err
+	}
+
+	err := linkFile(dest, filepath.Join(rootDir, "kubectl"))
+	if err != nil {
+		return errors.Wrap(err, "link file")
 	}
 
 	return nil
@@ -734,4 +750,8 @@ func moveFile(sourcePath, destPath string) error {
 	}
 
 	return nil
+}
+
+func linkFile(sourcePath, destPath string) error {
+	return os.Symlink(sourcePath, destPath)
 }
