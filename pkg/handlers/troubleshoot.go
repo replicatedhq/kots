@@ -291,6 +291,12 @@ func (h *Handler) ShareSupportBundle(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if app.IsAirgap {
+		logger.Error(errors.New("Support bundle sharing is not supported for airgapped installations."))
+		JSON(w, http.StatusBadRequest, nil)
+		return
+	}
+
 	license, err := store.GetStore().GetLatestLicenseForApp(app.ID)
 	if err != nil {
 		logger.Error(err)

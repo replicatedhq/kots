@@ -30,7 +30,7 @@ export class SupportBundleAnalysis extends React.Component {
   }
 
   sendBundleToVendor = async () => {
-    this.setState({ sendingBundle: true, sendingBundleErrMsg: "" });
+    this.setState({ sendingBundle: true, sendingBundleErrMsg: "", downloadBundleErrMsg: "" });
     fetch(`${window.env.API_ENDPOINT}/troubleshoot/app/${this.props.match.params.slug}/supportbundle/${this.props.match.params.bundleSlug}/share`, {
       method: "POST",
       headers: {
@@ -55,7 +55,7 @@ export class SupportBundleAnalysis extends React.Component {
   }
 
   downloadBundle = async (bundle) => {
-    this.setState({ downloadingBundle: true, downloadBundleErrMsg: "" });
+    this.setState({ downloadingBundle: true, downloadBundleErrMsg: "", sendingBundleErrMsg: "" });
     fetch(`${window.env.API_ENDPOINT}/troubleshoot/supportbundle/${bundle.id}/download`, {
       method: "GET",
       headers: {
@@ -164,6 +164,8 @@ export class SupportBundleAnalysis extends React.Component {
     const fileTreeUrl = `/app/:slug/troubleshoot/analyze/:bundleSlug/contents/*`;
     const redactorUrl = `/app/:slug/troubleshoot/analyze/:bundleSlug/redactor/report`;
 
+    const showSendSupportBundleBtn = watch.isSupportBundleUploadSupported && !watch.isAirgap;
+
     return (
       <div className="container u-marginTop--20 u-paddingBottom--30 flex1 flex-column">
         <div className="flex1 flex-column">
@@ -187,15 +189,18 @@ export class SupportBundleAnalysis extends React.Component {
                     </div>
                   </div>
                   <div className="flex flex-auto alignItems--center justifyContent--flexEnd">
-                    {this.state.downloadBundleErrMsg &&
-                      <p className="u-textColor--error u-fontSize--normal u-fontWeight--medium u-lineHeight--normal u-marginRight--10">{this.state.downloadBundleErrMsg}</p>}
-                    {this.props.isSupportBundleUploadSupported &&
-                      this.state.sendingBundle ? <Loader className="u-marginRight--10" size="30" /> : this.state.bundleSentToVendor ? <p className="u-fontSize--small u-fontWeight--medium u-textColor--success u-lineHeight--normal u-marginRight--10">Bundle sent to vendor</p> :
-                      <button className="btn primary lightBlue u-marginRight--10" onClick={this.sendBundleToVendor}>Send bundle to vendor</button>
-                    }
+                    {this.state.downloadBundleErrMsg && <p className="u-textColor--error u-fontSize--normal u-fontWeight--medium u-lineHeight--normal u-marginRight--10">{this.state.downloadBundleErrMsg}</p>}
+                    {this.state.sendingBundleErrMsg && <p className="u-textColor--error u-fontSize--normal u-fontWeight--medium u-lineHeight--normal u-marginRight--10">{this.state.sendingBundleErrMsg}</p>}
+                    {showSendSupportBundleBtn && (
+                      this.state.sendingBundle
+                        ? <Loader className="u-marginRight--10" size="30" />
+                        : this.state.bundleSentToVendor
+                          ? <p className="u-fontSize--small u-fontWeight--medium u-textColor--success u-lineHeight--normal u-marginRight--10">Bundle sent to vendor</p>
+                          : <button className="btn primary lightBlue u-marginRight--10" onClick={this.sendBundleToVendor}>Send bundle to vendor</button>
+                    )}
                     {this.state.downloadingBundle ?
                       <Loader size="30" /> :
-                      <button className={`btn ${this.props.isSupportBundleUploadSupported ? "secondary blue" : "primary lightBlue"}`} onClick={() => this.downloadBundle(bundle)}> Download bundle </button>
+                      <button className={`btn ${showSendSupportBundleBtn ? "secondary blue" : "primary lightBlue"}`} onClick={() => this.downloadBundle(bundle)}> Download bundle </button>
                     }
                   </div>
                 </div>
