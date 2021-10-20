@@ -11,11 +11,11 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	"github.com/replicatedhq/kots/pkg/binaries"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/operator/applier"
 	operatortypes "github.com/replicatedhq/kots/pkg/operator/types"
-	"github.com/replicatedhq/kots/pkg/util"
 	"github.com/replicatedhq/yaml/v3"
 	appsv1 "k8s.io/api/apps/v1"
 	batchv1 "k8s.io/api/batch/v1"
@@ -115,7 +115,7 @@ func (c *Client) diffAndRemovePreviousManifests(deployArgs operatortypes.DeployA
 	}
 
 	// now remove anything that's in previous but not in current
-	kubectl, err := util.FindKubectlVersion(deployArgs.KubectlVersion)
+	kubectl, err := binaries.GetKubectlPathForVersion(deployArgs.KubectlVersion)
 	if err != nil {
 		return errors.Wrap(err, "failed to find kubectl")
 	}

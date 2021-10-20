@@ -19,6 +19,7 @@ import (
 	apptypes "github.com/replicatedhq/kots/pkg/app/types"
 	"github.com/replicatedhq/kots/pkg/appstate"
 	appstatetypes "github.com/replicatedhq/kots/pkg/appstate/types"
+	"github.com/replicatedhq/kots/pkg/binaries"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/operator/applier"
@@ -449,7 +450,7 @@ func (c *Client) setAppStatus(newAppStatus appstatetypes.AppStatus) error {
 }
 
 func (c *Client) getApplier(kubectlVersion string) (*applier.Kubectl, error) {
-	kubectl, err := util.FindKubectlVersion(kubectlVersion)
+	kubectl, err := binaries.GetKubectlPathForVersion(kubectlVersion)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to find kubectl")
 	}
