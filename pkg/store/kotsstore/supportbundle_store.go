@@ -34,7 +34,7 @@ func (s *KOTSStore) migrateSupportBundlesFromPostgres() error {
 	logger.Debug("migrating support bundles from postgres")
 
 	db := persistence.MustGetDBSession()
-	query := `select id, watch_id, name, size, status, tree_index, created_at, uploaded_at, is_archived from supportbundle order by created_at desc`
+	query := `select id, watch_id, name, size, status, tree_index, created_at, uploaded_at, shared_at, is_archived from supportbundle order by created_at desc`
 	rows, err := db.Query(query)
 	if err != nil {
 		return errors.Wrap(err, "failed to query rows")
@@ -52,10 +52,11 @@ func (s *KOTSStore) migrateSupportBundlesFromPostgres() error {
 		var size sql.NullFloat64
 		var treeIndex sql.NullString
 		var uploadedAt sql.NullTime
+		var sharedAt sql.NullTime
 		var isArchived sql.NullBool
 
 		s := types.SupportBundle{}
-		if err := rows.Scan(&s.ID, &s.AppID, &name, &size, &s.Status, &treeIndex, &s.CreatedAt, &uploadedAt, &isArchived); err != nil {
+		if err := rows.Scan(&s.ID, &s.AppID, &name, &size, &s.Status, &treeIndex, &s.CreatedAt, &uploadedAt, &sharedAt, &isArchived); err != nil {
 			return errors.Wrap(err, "failed to scan")
 		}
 
@@ -67,6 +68,10 @@ func (s *KOTSStore) migrateSupportBundlesFromPostgres() error {
 
 		if uploadedAt.Valid {
 			s.UploadedAt = &uploadedAt.Time
+		}
+
+		if sharedAt.Valid {
+			s.SharedAt = &sharedAt.Time
 		}
 
 		supportBundles = append(supportBundles, s)

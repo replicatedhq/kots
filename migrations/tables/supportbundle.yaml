@@ -44,6 +44,8 @@ spec:
           notNull: true
       - name: uploaded_at
         type: timestamp without time zone
+      - name: shared_at
+        type: timestamp without time zone
       - name: is_archived
         type: boolean
       - name: redact_report
