@@ -34,7 +34,7 @@ func (s *KOTSStore) migrateSupportBundlesFromPostgres() error {
 	logger.Debug("migrating support bundles from postgres")
 
 	db := persistence.MustGetDBSession()
-	query := `select id, watch_id, name, size, status, tree_index, created_at, uploaded_at, is_archived from supportbundle order by created_at desc`
+	query := `select id, watch_id, name, size, status, tree_index, created_at, uploaded_at, is_archived, is_shared from supportbundle order by created_at desc`
 	rows, err := db.Query(query)
 	if err != nil {
 		return errors.Wrap(err, "failed to query rows")
@@ -53,9 +53,10 @@ func (s *KOTSStore) migrateSupportBundlesFromPostgres() error {
 		var treeIndex sql.NullString
 		var uploadedAt sql.NullTime
 		var isArchived sql.NullBool
+		var isShared sql.NullBool
 
 		s := types.SupportBundle{}
-		if err := rows.Scan(&s.ID, &s.AppID, &name, &size, &s.Status, &treeIndex, &s.CreatedAt, &uploadedAt, &isArchived); err != nil {
+		if err := rows.Scan(&s.ID, &s.AppID, &name, &size, &s.Status, &treeIndex, &s.CreatedAt, &uploadedAt, &isArchived, &isShared); err != nil {
 			return errors.Wrap(err, "failed to scan")
 		}
 
@@ -63,6 +64,7 @@ func (s *KOTSStore) migrateSupportBundlesFromPostgres() error {
 		s.Name = name.String
 		s.Size = size.Float64
 		s.IsArchived = isArchived.Bool
+		s.IsShared = isShared.Bool
 		s.TreeIndex = treeIndex.String
 
 		if uploadedAt.Valid {

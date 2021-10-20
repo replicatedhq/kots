@@ -31,6 +31,7 @@ type GetSupportBundleResponse struct {
 	UploadedAt *time.Time                   `json:"uploadedAt"`
 	UpdatedAt  *time.Time                   `json:"updatedAt"`
 	IsArchived bool                         `json:"isArchived"`
+	IsShared   bool                         `json:"isShared"`
 	Analysis   *types.SupportBundleAnalysis `json:"analysis"`
 	Progress   *types.SupportBundleProgress `json:"progress"`
 }
@@ -110,6 +111,7 @@ func (h *Handler) GetSupportBundle(w http.ResponseWriter, r *http.Request) {
 		UpdatedAt:  bundle.UpdatedAt,
 		UploadedAt: bundle.UploadedAt,
 		IsArchived: bundle.IsArchived,
+		IsShared:   bundle.IsShared,
 		Analysis:   analysis,
 		Progress:   &bundle.Progress,
 	}
@@ -362,6 +364,7 @@ func (h *Handler) ShareSupportBundle(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer resp.Body.Close()
+
 	if resp.StatusCode >= 400 {
 		body, err := io.ReadAll(resp.Body)
 		if err == nil {
@@ -369,6 +372,13 @@ func (h *Handler) ShareSupportBundle(w http.ResponseWriter, r *http.Request) {
 		} else {
 			logger.Errorf("Failed to share support bundle: %d", resp.StatusCode)
 		}
+		JSON(w, http.StatusInternalServerError, nil)
+		return
+	}
+
+	bundle.IsShared = true
+	if err := store.GetStore().UpdateSupportBundle(bundle); err != nil {
+		logger.Error(errors.Wrap(err, "failed to update support bundle"))
 		JSON(w, http.StatusInternalServerError, nil)
 		return
 	}

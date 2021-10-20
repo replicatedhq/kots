@@ -737,6 +737,8 @@ spec:
         type: timestamp
       - name: is_archived
         type: boolean
+      - name: is_shared
+        type: boolean
       - name: redact_report
         type: text
 `,
