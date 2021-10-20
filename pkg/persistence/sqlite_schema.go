@@ -735,9 +735,9 @@ spec:
           notNull: true
       - name: uploaded_at
         type: timestamp
+      - name: shared_at
+        type: timestamp
       - name: is_archived
-        type: boolean
-      - name: is_shared
         type: boolean
       - name: redact_report
         type: text
