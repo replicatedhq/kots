@@ -126,6 +126,16 @@ func TestGetKubectlPathForVersion(t *testing.T) {
 			userString: "<1.17.0",
 			want:       "/usr/local/bin/kubectl-v1.16",
 		},
+		{
+			name:       "<=1.17.0",
+			userString: "<=1.17.0",
+			want:       "/usr/local/bin/kubectl-v1.17",
+		},
+		{
+			name:       "1.17",
+			userString: "1.17",
+			want:       "/usr/local/bin/kubectl-v1.17",
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

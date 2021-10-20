@@ -64,19 +64,11 @@ type kubectlFuzzyVersion struct {
 }
 
 func newKubectlFuzzyVersion(major, minor uint64, path string) kubectlFuzzyVersion {
-	patch := uint64(0)
-	// allow for zero value catch all
-	if major != 0 && minor != 0 {
-		// I am making an assumption here that likely the package that we are bundling will
-		// be greater than x.x.0 thus setting patch version to 1 to prevent a semver range
-		// such as in kots.io docs (>1.16.0 <1.17.0) from matching an incorrect version.
-		patch = 1
-	}
 	return kubectlFuzzyVersion{
 		Version: semver.Version{
 			Major: major,
 			Minor: minor,
-			Patch: patch,
+			Patch: 0,
 		},
 		Path: path,
 	}
@@ -96,6 +88,11 @@ func (v kubectlFuzzyVersion) Match(userString string) bool {
 
 	if userString == "" || userString == "latest" {
 		return false
+	}
+
+	// match non-semver format 1.17 or v1.17
+	if userString == v.String() || userString == strings.TrimLeft(v.String(), "v") {
+		return true
 	}
 
 	// ignore error here as this could be a semver range
