@@ -473,7 +473,7 @@ func (c *Client) clearNamespace(slug string, namespace string, isRestore bool, r
 }
 
 func (c *Client) installWithHelm(helmDir string, targetNamespace string) (*commandResult, error) {
-	version := "3.4.2"
+	version := "3"
 	chartsDir := filepath.Join(helmDir, "charts")
 	dirs, err := ioutil.ReadDir(chartsDir)
 	if err != nil {
@@ -530,7 +530,7 @@ func (c *Client) installWithHelm(helmDir string, targetNamespace string) (*comma
 }
 
 func (c *Client) uninstallWithHelm(helmDir string, targetNamespace string, charts []string) error {
-	version := "3.4.2"
+	version := "3"
 
 	for _, chart := range charts {
 		args := []string{"uninstall", chart}

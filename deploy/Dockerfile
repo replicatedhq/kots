@@ -80,12 +80,24 @@ RUN curl -fsSLO "${KUBECTL_1_21_URL}" \
 	&& mv kubectl "${KOTS_KUBECTL_BIN_DIR}/kubectl-v1.21" \
 	&& ln -s "${KOTS_KUBECTL_BIN_DIR}/kubectl-v1.21" "${KOTS_KUBECTL_BIN_DIR}/kubectl"
 
-# Install helm v3.4.2
-RUN curl -L "https://get.helm.sh/helm-v3.4.2-linux-amd64.tar.gz" -o /tmp/helm.tar.gz && \
-  tar -xzvf /tmp/helm.tar.gz && \
-  rm /tmp/helm.tar.gz && \
-  chmod a+x linux-amd64/helm && \
-  mv linux-amd64/helm "/usr/local/bin/helm3.4.2"
+# KOTS can be configured to use a specific version of helm by setting helmVersion in the
+# kots.io/v1beta1.HelmChart spec. The github.com/replicatedhq/kots/pkg/binaries package will
+# discover all helm binaries in the KOTS_HELM_BIN_DIR directory for use by KOTS.
+
+ENV KOTS_HELM_BIN_DIR=/usr/local/bin
+
+# Install helm v3
+ENV HELM3_VERSION=3.7.1
+ENV HELM3_URL=https://get.helm.sh/helm-v${HELM3_VERSION}-linux-amd64.tar.gz
+ENV HELM3_SHA256SUM=6cd6cad4b97e10c33c978ff3ac97bb42b68f79766f1d2284cfd62ec04cd177f4
+RUN cd /tmp && curl -fsSL -o helm.tar.gz "${HELM3_URL}" \
+  && echo "${HELM3_SHA256SUM} helm.tar.gz" | sha256sum -c - \
+  && tar -xzvf helm.tar.gz \
+  && chmod a+x linux-amd64/helm \
+  && mv linux-amd64/helm "${KOTS_HELM_BIN_DIR}/helm${HELM3_VERSION}" \
+  && ln -s "${KOTS_HELM_BIN_DIR}/helm${HELM3_VERSION}" "${KOTS_HELM_BIN_DIR}/helm3" \
+  && ln -s "${KOTS_HELM_BIN_DIR}/helm3" "${KOTS_HELM_BIN_DIR}/helm" \
+  && rm -rf helm.tar.gz linux-amd64
 
 # Install s3cmd
 ENV S3CMD_VERSION=2.1.0
