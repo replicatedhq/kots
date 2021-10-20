@@ -356,6 +356,7 @@ func (h *Handler) ShareSupportBundle(w http.ResponseWriter, r *http.Request) {
 	reporting.InjectReportingInfoHeaders(req, reportingInfo)
 
 	req.Header.Set("Content-Type", "application/tar+gzip")
+	req.Header.Set("X-Replicated-SupportBundle-CollectedAt", bundle.CreatedAt.Format(time.RFC3339))
 
 	req.ContentLength = fileStat.Size()
 
