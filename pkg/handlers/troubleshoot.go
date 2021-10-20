@@ -12,6 +12,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/logger"
+	"github.com/replicatedhq/kots/pkg/reporting"
 	"github.com/replicatedhq/kots/pkg/store"
 	"github.com/replicatedhq/kots/pkg/supportbundle"
 	"github.com/replicatedhq/kots/pkg/supportbundle/types"
@@ -348,6 +349,9 @@ func (h *Handler) ShareSupportBundle(w http.ResponseWriter, r *http.Request) {
 		JSON(w, http.StatusInternalServerError, nil)
 		return
 	}
+
+	reportingInfo := reporting.GetReportingInfo(app.ID)
+	reporting.InjectReportingInfoHeaders(req, reportingInfo)
 
 	req.Header.Set("Content-Type", "application/tar+gzip")
 
