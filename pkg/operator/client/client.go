@@ -449,10 +449,15 @@ func (c *Client) setAppStatus(newAppStatus appstatetypes.AppStatus) error {
 	return nil
 }
 
-func (c *Client) getApplier(kubectlVersion string) (*applier.Kubectl, error) {
+func (c *Client) getApplier(kubectlVersion, kustomizeVersion string) (*applier.Kubectl, error) {
 	kubectl, err := binaries.GetKubectlPathForVersion(kubectlVersion)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to find kubectl")
+	}
+
+	kustomize, err := binaries.GetKustomizePathForVersion(kustomizeVersion)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to find kustomize")
 	}
 
 	config, err := k8sutil.GetClusterConfig()
@@ -460,5 +465,5 @@ func (c *Client) getApplier(kubectlVersion string) (*applier.Kubectl, error) {
 		return nil, errors.Wrap(err, "failed to get cluster config")
 	}
 
-	return applier.NewKubectl(kubectl, config), nil
+	return applier.NewKubectl(kubectl, kustomize, config), nil
 }

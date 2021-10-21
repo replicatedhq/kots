@@ -24,7 +24,6 @@ import (
 	identitytypes "github.com/replicatedhq/kots/pkg/identity/types"
 	snapshot "github.com/replicatedhq/kots/pkg/kotsadmsnapshot"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
-	"github.com/replicatedhq/kots/pkg/kustomize"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/midstream"
 	"github.com/replicatedhq/kots/pkg/operator/client"
@@ -210,7 +209,9 @@ func deployVersionForApp(a *apptypes.App, deployedVersion *downstreamtypes.Downs
 		return deployError
 	}
 
-	cmd := exec.Command(kustomize.GetKustomizePath(kotsKinds.KustomizeVersion()), "build", filepath.Join(deployedVersionArchive, "overlays", "downstreams", d.Name))
+	kustomizeBinPath := kotsKinds.GetKustomizeBinaryPath()
+
+	cmd := exec.Command(kustomizeBinPath, "build", filepath.Join(deployedVersionArchive, "overlays", "downstreams", d.Name))
 	renderedManifests, err := cmd.Output()
 	if err != nil {
 		if ee, ok := err.(*exec.ExitError); ok {
@@ -221,7 +222,7 @@ func deployVersionForApp(a *apptypes.App, deployedVersion *downstreamtypes.Downs
 	}
 	base64EncodedManifests := base64.StdEncoding.EncodeToString(renderedManifests)
 
-	chartArchive, err := renderChartsArchive(deployedVersionArchive, d.Name, kotsKinds.KustomizeVersion())
+	chartArchive, err := renderChartsArchive(deployedVersionArchive, d.Name, kustomizeBinPath)
 	if err != nil {
 		deployError = errors.Wrap(err, "failed to run kustomize on currently deployed charts")
 		return deployError
@@ -278,7 +279,7 @@ func deployVersionForApp(a *apptypes.App, deployedVersion *downstreamtypes.Downs
 				return deployError
 			}
 
-			cmd := exec.Command(kustomize.GetKustomizePath(previousKotsKinds.KustomizeVersion()), "build", filepath.Join(previouslyDeployedVersionArchive, "overlays", "downstreams", d.Name))
+			cmd := exec.Command(previousKotsKinds.GetKustomizeBinaryPath(), "build", filepath.Join(previouslyDeployedVersionArchive, "overlays", "downstreams", d.Name))
 			previousRenderedManifests, err := cmd.Output()
 			if err != nil {
 				if ee, ok := err.(*exec.ExitError); ok {
@@ -290,7 +291,7 @@ func deployVersionForApp(a *apptypes.App, deployedVersion *downstreamtypes.Downs
 
 			base64EncodedPreviousManifests = base64.StdEncoding.EncodeToString(previousRenderedManifests)
 			// Run kustomization on the charts as well
-			previouslyDeployedChartArchive, err = renderChartsArchive(previouslyDeployedVersionArchive, d.Name, kotsKinds.KustomizeVersion())
+			previouslyDeployedChartArchive, err = renderChartsArchive(previouslyDeployedVersionArchive, d.Name, kustomizeBinPath)
 			if err != nil {
 				deployError = errors.Wrap(err, "failed to run kustomize on previously deployed charts")
 				return deployError
@@ -305,6 +306,7 @@ func deployVersionForApp(a *apptypes.App, deployedVersion *downstreamtypes.Downs
 		ClusterID:            clusterID,
 		Sequence:             deployedVersion.ParentSequence,
 		KubectlVersion:       kotsKinds.KotsApplication.Spec.KubectlVersion,
+		KustomizeVersion:     kotsKinds.KotsApplication.Spec.KustomizeVersion,
 		AdditionalNamespaces: kotsKinds.KotsApplication.Spec.AdditionalNamespaces,
 		ImagePullSecrets:     imagePullSecrets,
 		Namespace:            ".",
@@ -561,7 +563,7 @@ func undeployApp(a *apptypes.App, d *downstreamtypes.Downstream, isRestore bool)
 		return errors.Wrap(err, "failed to load kotskinds")
 	}
 
-	cmd := exec.Command(kustomize.GetKustomizePath(kotsKinds.KustomizeVersion()), "build", filepath.Join(deployedVersionArchive, "overlays", "downstreams", d.Name))
+	cmd := exec.Command(kotsKinds.GetKustomizeBinaryPath(), "build", filepath.Join(deployedVersionArchive, "overlays", "downstreams", d.Name))
 	renderedManifests, err := cmd.Output()
 	if err != nil {
 		if ee, ok := err.(*exec.ExitError); ok {
@@ -594,6 +596,7 @@ func undeployApp(a *apptypes.App, d *downstreamtypes.Downstream, isRestore bool)
 		AppSlug:              a.Slug,
 		ClusterID:            clusterID,
 		KubectlVersion:       kotsKinds.KotsApplication.Spec.KubectlVersion,
+		KustomizeVersion:     kotsKinds.KotsApplication.Spec.KustomizeVersion,
 		Namespace:            ".",
 		Manifests:            "",
 		PreviousManifests:    base64EncodedManifests,

@@ -11,6 +11,7 @@ type DeployAppArgs struct {
 	ClusterID            string                `json:"cluster_id"`
 	Sequence             int64                 `json:"sequence"`
 	KubectlVersion       string                `json:"kubectl_version"`
+	KustomizeVersion     string                `json:"kustomize_version"`
 	AdditionalNamespaces []string              `json:"additional_namespaces"`
 	ImagePullSecrets     []string              `json:"image_pull_secrets"`
 	Namespace            string                `json:"namespace"`

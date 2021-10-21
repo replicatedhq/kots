@@ -78,6 +78,11 @@ func Start(params *APIServerParams) {
 		panic(err)
 	}
 
+	if err := binaries.InitKustomize(); err != nil {
+		log.Println("error initializing kustomize binaries package")
+		panic(err)
+	}
+
 	if err := operator.Start(params.AutocreateClusterToken); err != nil {
 		log.Println("error starting the operator")
 		panic(err)
