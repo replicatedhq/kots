@@ -80,6 +80,25 @@ RUN curl -fsSLO "${KUBECTL_1_21_URL}" \
 	&& mv kubectl "${KOTS_KUBECTL_BIN_DIR}/kubectl-v1.21" \
 	&& ln -s "${KOTS_KUBECTL_BIN_DIR}/kubectl-v1.21" "${KOTS_KUBECTL_BIN_DIR}/kubectl"
 
+# KOTS can be configured to use a specific version of kustomize by setting kustomizeVersion in the
+# kots.io/v1beta1.Application spec. The github.com/replicatedhq/kots/pkg/binaries package will
+# discover all kustomize binaries in the KOTS_KUSTOMIZE_BIN_DIR directory for use by KOTS.
+
+ENV KOTS_KUSTOMIZE_BIN_DIR=/usr/local/bin
+
+# Install kustomize 3
+ENV KUSTOMIZE3_VERSION=3.10.0
+ENV KUSTOMIZE3_URL=https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize%2Fv${KUSTOMIZE3_VERSION}/kustomize_v${KUSTOMIZE3_VERSION}_linux_amd64.tar.gz
+ENV KUSTOMIZE3_SHA256SUM=bab4ab8881718c29ba174bdf677fd89986ad25c40eb363fec9e78c1aff2ff0ea
+RUN curl -fsSL -o kustomize.tar.gz "${KUSTOMIZE3_URL}" \
+  && echo "${KUSTOMIZE3_SHA256SUM} kustomize.tar.gz" | sha256sum -c - \
+  && tar -xzvf kustomize.tar.gz \
+  && rm kustomize.tar.gz \
+  && chmod a+x kustomize \
+  && mv kustomize "${KOTS_KUSTOMIZE_BIN_DIR}/kustomize${KUSTOMIZE3_VERSION}" \
+  && ln -s "${KOTS_KUSTOMIZE_BIN_DIR}/kustomize${KUSTOMIZE3_VERSION}" "${KOTS_KUSTOMIZE_BIN_DIR}/kustomize3" \
+  && ln -s "${KOTS_KUSTOMIZE_BIN_DIR}/kustomize3" "${KOTS_KUSTOMIZE_BIN_DIR}/kustomize"
+
 # KOTS can be configured to use a specific version of helm by setting helmVersion in the
 # kots.io/v1beta1.HelmChart spec. The github.com/replicatedhq/kots/pkg/binaries package will
 # discover all helm binaries in the KOTS_HELM_BIN_DIR directory for use by KOTS.
@@ -101,31 +120,16 @@ RUN cd /tmp && curl -fsSL -o helm.tar.gz "${HELM3_URL}" \
 
 # Install s3cmd
 ENV S3CMD_VERSION=2.1.0
-RUN curl -L https://github.com/s3tools/s3cmd/releases/download/v${S3CMD_VERSION}/s3cmd-${S3CMD_VERSION}.tar.gz > /tmp/s3cmd.tar.gz && \
-  cd /tmp && tar -xzvf s3cmd.tar.gz && \
-  rm s3cmd.tar.gz && \
-  mv s3cmd-${S3CMD_VERSION}/s3cmd /usr/local/bin/s3cmd && \
-  mv s3cmd-${S3CMD_VERSION}/S3 /usr/local/bin/S3 && \
-  rm -rf s3cmd-${S3CMD_VERSION}
-
-# KOTS can be configured to use a specific version of kustomize by setting kustomizeVersion in the
-# kots.io/v1beta1.Application spec. The github.com/replicatedhq/kots/pkg/binaries package will
-# discover all kustomize binaries in the KOTS_KUSTOMIZE_BIN_DIR directory for use by KOTS.
-
-ENV KOTS_KUSTOMIZE_BIN_DIR=/usr/local/bin
-
-# Install kustomize 3
-ENV KUSTOMIZE3_VERSION=3.10.0
-ENV KUSTOMIZE3_URL=https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize%2Fv${KUSTOMIZE3_VERSION}/kustomize_v${KUSTOMIZE3_VERSION}_linux_amd64.tar.gz
-ENV KUSTOMIZE3_SHA256SUM=bab4ab8881718c29ba174bdf677fd89986ad25c40eb363fec9e78c1aff2ff0ea
-RUN curl -fsSL -o kustomize.tar.gz "${KUSTOMIZE3_URL}" \
-  && echo "${KUSTOMIZE3_SHA256SUM} kustomize.tar.gz" | sha256sum -c - \
-  && tar -xzvf kustomize.tar.gz \
-  && rm kustomize.tar.gz \
-  && chmod a+x kustomize \
-  && mv kustomize "${KOTS_KUSTOMIZE_BIN_DIR}/kustomize${KUSTOMIZE3_VERSION}" \
-  && ln -s "${KOTS_KUSTOMIZE_BIN_DIR}/kustomize${KUSTOMIZE3_VERSION}" "${KOTS_KUSTOMIZE_BIN_DIR}/kustomize3" \
-  && ln -s "${KOTS_KUSTOMIZE_BIN_DIR}/kustomize3" "${KOTS_KUSTOMIZE_BIN_DIR}/kustomize"
+ENV S3CMD_URL=https://github.com/s3tools/s3cmd/releases/download/v${S3CMD_VERSION}/s3cmd-${S3CMD_VERSION}.tar.gz
+RUN cd /tmp && curl -fsSL -o s3cmd.tar.gz "${S3CMD_URL}" \
+  && curl -fsSL -o s3cmd.tar.gz.asc "${S3CMD_URL}.asc" \
+  && gpg --keyserver keyserver.ubuntu.com --recv-keys 0x0d37a8f4a5d183d5541d85d9241769189ac3d00b \
+  && cat s3cmd.tar.gz.asc \
+  && gpg --verify s3cmd.tar.gz.asc s3cmd.tar.gz \
+  && tar -xzvf s3cmd.tar.gz \
+  && mv s3cmd-${S3CMD_VERSION}/s3cmd /usr/local/bin/s3cmd \
+  && mv s3cmd-${S3CMD_VERSION}/S3 /usr/local/bin/S3 \
+  && rm -rf s3cmd.tar.gz s3cmd.tar.gz.asc s3cmd-${S3CMD_VERSION}
 
 # Setup user
 RUN useradd -c 'kotsadm user' -m -d /home/kotsadm -s /bin/bash -u 1001 kotsadm
