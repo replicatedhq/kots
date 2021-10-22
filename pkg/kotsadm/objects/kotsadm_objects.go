@@ -654,6 +654,10 @@ func KotsadmDeployment(deployOptions types.DeployOptions) (*appsv1.Deployment, e
 									Name:      "backup",
 									MountPath: "/backup",
 								},
+								{
+									Name:      "tmp",
+									MountPath: "/tmp",
+								},
 							},
 							Env: env,
 							Resources: corev1.ResourceRequirements{
@@ -1064,6 +1068,10 @@ func KotsadmStatefulSet(deployOptions types.DeployOptions, size resource.Quantit
 								{
 									Name:      "backup",
 									MountPath: "/backup",
+								},
+								{
+									Name:      "tmp",
+									MountPath: "/tmp",
 								},
 							},
 							Env: []corev1.EnvVar{
