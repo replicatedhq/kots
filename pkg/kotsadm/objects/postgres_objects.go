@@ -10,7 +10,6 @@ import (
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/kotsadm/types"
 	kotsadmversion "github.com/replicatedhq/kots/pkg/kotsadm/version"
-	"github.com/replicatedhq/kots/pkg/util"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -30,10 +29,7 @@ func PostgresStatefulset(deployOptions types.DeployOptions, size resource.Quanti
 		}
 	}
 
-	securityContext := &corev1.PodSecurityContext{
-		RunAsUser: util.IntPointer(999),
-		FSGroup:   util.IntPointer(999),
-	}
+	securityContext := securePodContext(999)
 	if deployOptions.IsOpenShift {
 		// need to use a security context here because if the project is running with a scc that has "MustRunAsNonRoot" (or is not "MustRunAsRange"),
 		// openshift won't assign a user id to the container to run with, and the container will try to run as root and fail.
@@ -231,6 +227,7 @@ func PostgresStatefulset(deployOptions types.DeployOptions, size resource.Quanti
 									"memory": resource.MustParse("100Mi"),
 								},
 							},
+							SecurityContext: secureContainerContext(),
 						},
 					},
 				},

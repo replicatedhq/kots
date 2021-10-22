@@ -11,7 +11,6 @@ import (
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/kotsadm/types"
 	kotsadmversion "github.com/replicatedhq/kots/pkg/kotsadm/version"
-	"github.com/replicatedhq/kots/pkg/util"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	extensionsv1beta1 "k8s.io/api/extensions/v1beta1"
@@ -200,10 +199,7 @@ func UpdateKotsadmDeployment(existingDeployment *appsv1.Deployment, desiredDeplo
 }
 
 func KotsadmDeployment(deployOptions types.DeployOptions) (*appsv1.Deployment, error) {
-	securityContext := &corev1.PodSecurityContext{
-		RunAsUser: util.IntPointer(1001),
-		FSGroup:   util.IntPointer(1001),
-	}
+	securityContext := securePodContext(1001)
 	if deployOptions.IsOpenShift {
 		psc, err := k8sutil.GetOpenShiftPodSecurityContext(deployOptions.Namespace)
 		if err != nil {
@@ -424,6 +420,12 @@ func KotsadmDeployment(deployOptions types.DeployOptions) (*appsv1.Deployment, e
 								EmptyDir: &corev1.EmptyDirVolumeSource{},
 							},
 						},
+						{
+							Name: "tmp",
+							VolumeSource: corev1.VolumeSource{
+								EmptyDir: &corev1.EmptyDirVolumeSource{},
+							},
+						},
 					},
 					ServiceAccountName: "kotsadm",
 					RestartPolicy:      corev1.RestartPolicyAlways,
@@ -475,6 +477,7 @@ func KotsadmDeployment(deployOptions types.DeployOptions) (*appsv1.Deployment, e
 									"memory": resource.MustParse("50Mi"),
 								},
 							},
+							SecurityContext: secureContainerContext(),
 						},
 						{
 							Image:           GetAdminConsoleImage(deployOptions, "kotsadm-migrations"),
@@ -518,6 +521,7 @@ func KotsadmDeployment(deployOptions types.DeployOptions) (*appsv1.Deployment, e
 									"memory": resource.MustParse("50Mi"),
 								},
 							},
+							SecurityContext: secureContainerContext(),
 						},
 						{
 							Image:           GetAdminConsoleImage(deployOptions, "kotsadm"),
@@ -530,6 +534,10 @@ func KotsadmDeployment(deployOptions types.DeployOptions) (*appsv1.Deployment, e
 								{
 									Name:      "backup",
 									MountPath: "/backup",
+								},
+								{
+									Name:      "tmp",
+									MountPath: "/tmp",
 								},
 							},
 							Env: []corev1.EnvVar{
@@ -615,6 +623,7 @@ func KotsadmDeployment(deployOptions types.DeployOptions) (*appsv1.Deployment, e
 									"memory": resource.MustParse("100Mi"),
 								},
 							},
+							SecurityContext: secureContainerContext(),
 						},
 					},
 					Containers: []corev1.Container{
@@ -645,6 +654,10 @@ func KotsadmDeployment(deployOptions types.DeployOptions) (*appsv1.Deployment, e
 									Name:      "backup",
 									MountPath: "/backup",
 								},
+								{
+									Name:      "tmp",
+									MountPath: "/tmp",
+								},
 							},
 							Env: env,
 							Resources: corev1.ResourceRequirements{
@@ -657,6 +670,7 @@ func KotsadmDeployment(deployOptions types.DeployOptions) (*appsv1.Deployment, e
 									"memory": resource.MustParse("100Mi"),
 								},
 							},
+							SecurityContext: secureContainerContext(),
 						},
 					},
 				},
@@ -732,10 +746,7 @@ func UpdateKotsadmStatefulSet(existingStatefulset *appsv1.StatefulSet, desiredSt
 }
 
 func KotsadmStatefulSet(deployOptions types.DeployOptions, size resource.Quantity) (*appsv1.StatefulSet, error) {
-	securityContext := &corev1.PodSecurityContext{
-		RunAsUser: util.IntPointer(1001),
-		FSGroup:   util.IntPointer(1001),
-	}
+	securityContext := securePodContext(1001)
 	if deployOptions.IsOpenShift {
 		// we have to specify a pod security context here because if we don't, here's what will happen:
 		// the kotsadm service account is associated with a role/clusterrole that has wildcard privileges,
@@ -996,6 +1007,7 @@ func KotsadmStatefulSet(deployOptions types.DeployOptions, size resource.Quantit
 									"memory": resource.MustParse("50Mi"),
 								},
 							},
+							SecurityContext: secureContainerContext(),
 						},
 						{
 							Image:           GetAdminConsoleImage(deployOptions, "kotsadm-migrations"),
@@ -1039,6 +1051,7 @@ func KotsadmStatefulSet(deployOptions types.DeployOptions, size resource.Quantit
 									"memory": resource.MustParse("50Mi"),
 								},
 							},
+							SecurityContext: secureContainerContext(),
 						},
 						{
 							Image:           GetAdminConsoleImage(deployOptions, "kotsadm"),
@@ -1055,6 +1068,10 @@ func KotsadmStatefulSet(deployOptions types.DeployOptions, size resource.Quantit
 								{
 									Name:      "backup",
 									MountPath: "/backup",
+								},
+								{
+									Name:      "tmp",
+									MountPath: "/tmp",
 								},
 							},
 							Env: []corev1.EnvVar{
@@ -1080,6 +1097,7 @@ func KotsadmStatefulSet(deployOptions types.DeployOptions, size resource.Quantit
 									"memory": resource.MustParse("100Mi"),
 								},
 							},
+							SecurityContext: secureContainerContext(),
 						},
 						{
 							Image:           GetAdminConsoleImage(deployOptions, "kotsadm"),
@@ -1142,6 +1160,7 @@ func KotsadmStatefulSet(deployOptions types.DeployOptions, size resource.Quantit
 									"memory": resource.MustParse("100Mi"),
 								},
 							},
+							SecurityContext: secureContainerContext(),
 						},
 					},
 					Containers: []corev1.Container{
@@ -1192,6 +1211,7 @@ func KotsadmStatefulSet(deployOptions types.DeployOptions, size resource.Quantit
 									"memory": resource.MustParse("100Mi"),
 								},
 							},
+							SecurityContext: secureContainerContext(),
 						},
 					},
 				},
