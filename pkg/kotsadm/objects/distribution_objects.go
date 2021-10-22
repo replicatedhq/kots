@@ -2,7 +2,6 @@ package kotsadm
 
 import (
 	"github.com/replicatedhq/kots/pkg/kotsadm/types"
-	"github.com/replicatedhq/kots/pkg/util"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -79,12 +78,9 @@ func DistributionService(deployOptions types.DeployOptions) *corev1.Service {
 }
 
 func DistributionStatefulset(deployOptions types.DeployOptions, size resource.Quantity) *appsv1.StatefulSet {
-	var securityContext corev1.PodSecurityContext
+	var securityContext *corev1.PodSecurityContext
 	if !deployOptions.IsOpenShift {
-		securityContext = corev1.PodSecurityContext{
-			RunAsUser: util.IntPointer(1000),
-			FSGroup:   util.IntPointer(1000),
-		}
+		securityContext = securePodContext(1000)
 	}
 
 	statefulset := &appsv1.StatefulSet{
@@ -132,7 +128,7 @@ func DistributionStatefulset(deployOptions types.DeployOptions, size resource.Qu
 					}),
 				},
 				Spec: corev1.PodSpec{
-					SecurityContext: &securityContext,
+					SecurityContext: securityContext,
 					Containers: []corev1.Container{
 						{
 							Name:            "docker-registry",

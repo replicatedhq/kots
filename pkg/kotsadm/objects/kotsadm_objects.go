@@ -420,6 +420,12 @@ func KotsadmDeployment(deployOptions types.DeployOptions) (*appsv1.Deployment, e
 								EmptyDir: &corev1.EmptyDirVolumeSource{},
 							},
 						},
+						{
+							Name: "tmp",
+							VolumeSource: corev1.VolumeSource{
+								EmptyDir: &corev1.EmptyDirVolumeSource{},
+							},
+						},
 					},
 					ServiceAccountName: "kotsadm",
 					RestartPolicy:      corev1.RestartPolicyAlways,
@@ -527,6 +533,10 @@ func KotsadmDeployment(deployOptions types.DeployOptions) (*appsv1.Deployment, e
 								{
 									Name:      "backup",
 									MountPath: "/backup",
+								},
+								{
+									Name:      "tmp",
+									MountPath: "/tmp",
 								},
 							},
 							Env: []corev1.EnvVar{

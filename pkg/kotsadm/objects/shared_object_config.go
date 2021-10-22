@@ -24,5 +24,6 @@ func secureContainerContext() *corev1.SecurityContext {
 	return &corev1.SecurityContext{
 		Privileged:               boolPointer(false),
 		AllowPrivilegeEscalation: boolPointer(false),
+		ReadOnlyRootFilesystem:   boolPointer(true),
 	}
 }
