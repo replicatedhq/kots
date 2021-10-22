@@ -521,6 +521,7 @@ func KotsadmDeployment(deployOptions types.DeployOptions) (*appsv1.Deployment, e
 									"memory": resource.MustParse("50Mi"),
 								},
 							},
+							SecurityContext: secureContainerContext(),
 						},
 						{
 							Image:           GetAdminConsoleImage(deployOptions, "kotsadm"),
@@ -1046,6 +1047,7 @@ func KotsadmStatefulSet(deployOptions types.DeployOptions, size resource.Quantit
 									"memory": resource.MustParse("50Mi"),
 								},
 							},
+							SecurityContext: secureContainerContext(),
 						},
 						{
 							Image:           GetAdminConsoleImage(deployOptions, "kotsadm"),
@@ -1087,6 +1089,7 @@ func KotsadmStatefulSet(deployOptions types.DeployOptions, size resource.Quantit
 									"memory": resource.MustParse("100Mi"),
 								},
 							},
+							SecurityContext: secureContainerContext(),
 						},
 						{
 							Image:           GetAdminConsoleImage(deployOptions, "kotsadm"),
@@ -1149,6 +1152,7 @@ func KotsadmStatefulSet(deployOptions types.DeployOptions, size resource.Quantit
 									"memory": resource.MustParse("100Mi"),
 								},
 							},
+							SecurityContext: secureContainerContext(),
 						},
 					},
 					Containers: []corev1.Container{
