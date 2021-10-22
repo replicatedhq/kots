@@ -8,7 +8,7 @@ func boolPointer(boolValue bool) *bool {
 
 func securePodContext(user int64) *corev1.PodSecurityContext {
 	context := corev1.PodSecurityContext{
-		RunAsNonRoot:       boolPointer(false),
+		RunAsNonRoot:       boolPointer(true),
 		RunAsUser:          &user,
 		RunAsGroup:         &user,
 		FSGroup:            &user,
