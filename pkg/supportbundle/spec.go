@@ -483,21 +483,22 @@ func getDefaultDynamicAnalyzers(app *apptypes.App) []*troubleshootv1beta2.Analyz
 	if err != nil {
 		logger.Errorf("Failed to get clientset for dynamic kurl analyzers: %v", err)
 	} else if kotsutil.IsKurl(clientset) {
-		analyzers = append(analyzers, &troubleshootv1beta2.Analyze{
-			Sysctl: &troubleshootv1beta2.SysctlAnalyze{
-				AnalyzeMeta: troubleshootv1beta2.AnalyzeMeta{
-					CheckName: "IP forwarding not enabled",
-				},
-				Outcomes: []*troubleshootv1beta2.Outcome{
-					{
-						Fail: &troubleshootv1beta2.SingleOutcome{
-							When:    "net.ipv4.ip_forward = 0",
-							Message: "IP forwarding not enabled",
+		analyzers = append(analyzers,
+			&troubleshootv1beta2.Analyze{
+				Sysctl: &troubleshootv1beta2.SysctlAnalyze{
+					AnalyzeMeta: troubleshootv1beta2.AnalyzeMeta{
+						CheckName: "IP forwarding not enabled",
+					},
+					Outcomes: []*troubleshootv1beta2.Outcome{
+						{
+							Fail: &troubleshootv1beta2.SingleOutcome{
+								When:    "net.ipv4.ip_forward = 0",
+								Message: "IP forwarding not enabled",
+							},
 						},
 					},
 				},
 			},
-		},
 			&troubleshootv1beta2.Analyze{
 				Sysctl: &troubleshootv1beta2.SysctlAnalyze{
 					AnalyzeMeta: troubleshootv1beta2.AnalyzeMeta{
@@ -508,6 +509,21 @@ func getDefaultDynamicAnalyzers(app *apptypes.App) []*troubleshootv1beta2.Analyz
 							Fail: &troubleshootv1beta2.SingleOutcome{
 								When:    "net.bridge.bridge-nf-call-iptables = 0",
 								Message: "Packets traversing bridge interfaces not processed by iptables",
+							},
+						},
+					},
+				},
+			},
+			&troubleshootv1beta2.Analyze{
+				UnhealthyPods: &troubleshootv1beta2.SysctlAnalyze{
+					AnalyzeMeta: troubleshootv1beta2.AnalyzeMeta{
+						CheckName: "Pod {{ .Name }} is not healthy",
+					},
+					Outcomes: []*troubleshootv1beta2.Outcome{
+						{
+							Fail: &troubleshootv1beta2.SingleOutcome{
+								When:    "!= Running",
+								Message: "Pod {{ .Name }} status is {{ .Status }}",
 							},
 						},
 					},
