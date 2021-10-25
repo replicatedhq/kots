@@ -6,4 +6,4 @@ PullOptions:
   LocalPath: cases/configcontext/upstream
   RootDir: cases/configcontext/results
   SharedPassword: dummy-pass
-  RewriteImages: false
+  RewriteImages: true

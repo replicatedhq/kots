@@ -6,4 +6,4 @@ PullOptions:
   LocalPath: cases/subcharts/upstream
   RootDir: cases/subcharts/results
   SharedPassword: dummy-pass
-  RewriteImages: false
+  RewriteImages: true
