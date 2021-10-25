@@ -11,7 +11,6 @@ import (
 	"github.com/ghodss/yaml"
 	"github.com/pmezard/go-difflib/difflib"
 	"github.com/replicatedhq/kots/pkg/pull"
-	"github.com/replicatedhq/kots/pkg/template"
 	upstreamtypes "github.com/replicatedhq/kots/pkg/upstream/types"
 	"github.com/stretchr/testify/require"
 )
@@ -91,19 +90,38 @@ func TestKotsPull(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.Name, func(t *testing.T) {
-			// This disables the need for a Kubernetes cluster when running unit tests.
-			template.TestingDisableKurlValues = true
-			defer func() { template.TestingDisableKurlValues = false }()
-
 			// create the result directories and defer cleanup
 			os.Mkdir(tt.PullOptions.RootDir, 0755)
 			os.Mkdir(fmt.Sprintf("%s/replicated-kots-app", tt.PullOptions.RootDir), 0755)
 			defer func() { os.RemoveAll(tt.PullOptions.RootDir) }()
 
 			_, err := pull.Pull(tt.UpstreamURI, tt.PullOptions)
+			fmt.Printf("running test %s", tt.Name)
 			require.NoError(t, err)
 
 			// TODO loop through the wanted files to ensure all wanted files exist
+			wantResultsDir := strings.Replace(tt.PullOptions.RootDir, "results", "wantResults", 1)
+			err = filepath.Walk(wantResultsDir,
+				func(path string, info os.FileInfo, err error) error {
+					if err != nil {
+						return err
+					}
+
+					if info.IsDir() {
+						return nil
+					}
+
+					resultPath := strings.Replace(path, "wantResults", "results", 1)
+
+					if _, err = os.Stat(resultPath); os.IsNotExist(err) {
+						fmt.Printf("expected file %s not found in results\n", resultPath)
+						t.FailNow()
+					}
+
+					return nil
+				})
+
+			require.NoError(t, err)
 
 			// compare result files to wanted files
 			err = filepath.Walk(tt.PullOptions.RootDir,

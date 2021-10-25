@@ -1,9 +1,9 @@
-Name: test helm pull
+Name: test subcharts pull
 PullOptions:
   ExcludeAdminConsole: true
   IsAirgap: true
   Silent: true
-  LocalPath: cases/configcontext/upstream
-  RootDir: cases/configcontext/results
+  LocalPath: cases/subcharts/upstream
+  RootDir: cases/subcharts/results
   SharedPassword: dummy-pass
   RewriteImages: false
