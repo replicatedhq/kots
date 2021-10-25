@@ -261,8 +261,13 @@ func populateNamespaces(supportBundle *troubleshootv1beta2.SupportBundle, minima
 		if collect.Copy != nil && collect.Copy.Namespace == "" {
 			collect.Copy.Namespace = util.PodNamespace
 		}
-		if collect.ClusterResources != nil && len(collect.ClusterResources.Namespaces) == 0 && len(minimalRBACNamespaces) > 0 {
-			collect.ClusterResources.Namespaces = minimalRBACNamespaces
+		if len(minimalRBACNamespaces) > 0 {
+			if collect.ClusterResources != nil && len(collect.ClusterResources.Namespaces) == 0 &&  {
+				collect.ClusterResources.Namespaces = minimalRBACNamespaces
+			}
+			if collect.UnhealthyPods != nil && len(collect.UnhealthyPods.Namespaces) == 0 &&  {
+				collect.UnhealthyPods.Namespaces = minimalRBACNamespaces
+			}
 		}
 		collects = append(collects, collect)
 	}
@@ -478,6 +483,24 @@ func getDefaultDynamicAnalyzers(app *apptypes.App) []*troubleshootv1beta2.Analyz
 	analyzers := make([]*troubleshootv1beta2.Analyze, 0)
 
 	analyzers = append(analyzers, makeAPIReplicaAnalyzer())
+	analyzers = append(analyzers,
+	&troubleshootv1beta2.Analyze{
+		&troubleshootv1beta2.Analyze{
+			UnhealthyPods: &troubleshootv1beta2.SysctlAnalyze{
+				AnalyzeMeta: troubleshootv1beta2.AnalyzeMeta{
+					CheckName: "Pod {{ .Name }} is not healthy",
+				},
+				Outcomes: []*troubleshootv1beta2.Outcome{
+					{
+						Fail: &troubleshootv1beta2.SingleOutcome{
+							When:    "!= Running",
+							Message: "Pod {{ .Name }} status is {{ .Status }}",
+						},
+					},
+				},
+			},
+		},
+	)
 
 	clientset, err := k8sutil.GetClientset()
 	if err != nil {
@@ -514,21 +537,7 @@ func getDefaultDynamicAnalyzers(app *apptypes.App) []*troubleshootv1beta2.Analyz
 					},
 				},
 			},
-			&troubleshootv1beta2.Analyze{
-				UnhealthyPods: &troubleshootv1beta2.SysctlAnalyze{
-					AnalyzeMeta: troubleshootv1beta2.AnalyzeMeta{
-						CheckName: "Pod {{ .Name }} is not healthy",
-					},
-					Outcomes: []*troubleshootv1beta2.Outcome{
-						{
-							Fail: &troubleshootv1beta2.SingleOutcome{
-								When:    "!= Running",
-								Message: "Pod {{ .Name }} status is {{ .Status }}",
-							},
-						},
-					},
-				},
-			})
+		)
 	}
 
 	return analyzers
