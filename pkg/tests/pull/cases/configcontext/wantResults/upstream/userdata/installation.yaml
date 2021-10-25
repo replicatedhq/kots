@@ -6,10 +6,10 @@ metadata:
 spec:
   channelID: 1vusIYZLAVxMG6q760OJmRKj5i5
   channelName: My Channel
-  encryptionKey: mwe92ojOdg/Wr8RLzvFUqSnGkbBL6BmYMY6CFfzFa2U4wlEs
+  encryptionKey: /uTlpuYStpdlCxfdfaz9FL/FTY+rWtT+JF307JkGFpNd9Z2D
   knownImages:
-  - image: busybox
-  - image: nginx:latest
   - image: alpine:3.4
+  - image: busybox
   - image: alpine
+  - image: nginx:latest
 status: {}

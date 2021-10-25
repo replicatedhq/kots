@@ -1,0 +1,43 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app.kubernetes.io/instance: chart
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: subchart-2
+    app.kubernetes.io/version: 1.16.0
+    helm.sh/chart: subchart-2-0.1.0
+  name: chart-subchart-2
+  namespace: helmns
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: chart
+      app.kubernetes.io/name: subchart-2
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/instance: chart
+        app.kubernetes.io/name: subchart-2
+    spec:
+      containers:
+      - image: nginx:latest
+        imagePullPolicy: IfNotPresent
+        livenessProbe:
+          httpGet:
+            path: /
+            port: http
+        name: subchart-2
+        ports:
+        - containerPort: 80
+          name: http
+          protocol: TCP
+        readinessProbe:
+          httpGet:
+            path: /
+            port: http
+        resources: {}
+        securityContext: {}
+      securityContext: {}
+      serviceAccountName: chart-subchart-2

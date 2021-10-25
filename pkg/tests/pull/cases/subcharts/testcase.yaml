@@ -7,3 +7,8 @@ PullOptions:
   RootDir: cases/subcharts/results
   SharedPassword: dummy-pass
   RewriteImages: true
+  RewriteImageOptions:
+    Host: fake-docker-proxy
+    Username: test
+    Password: fake-pass
+    IsReadOnly: true

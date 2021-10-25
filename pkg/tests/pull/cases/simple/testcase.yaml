@@ -6,4 +6,4 @@ PullOptions:
   LocalPath: cases/simple/upstream
   RootDir: cases/simple/results
   SharedPassword: dummy-pass
-  RewriteImages: true
+  RewriteImages: false

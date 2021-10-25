@@ -3,6 +3,41 @@ bases:
 - ../../../../base/charts/test-chart
 commonAnnotations:
   kots.io/app-slug: my-app
+images:
+- name: nginx
+  newName: proxy.replicated.com/nginx
+- name: docker.io/library/nginx
+  newName: proxy.replicated.com/nginx
+- name: library/nginx
+  newName: proxy.replicated.com/nginx
+- name: alpine
+  newName: proxy.replicated.com/alpine
+- name: docker.io/library/alpine
+  newName: proxy.replicated.com/alpine
+- name: library/alpine
+  newName: proxy.replicated.com/alpine
+- name: busybox
+  newName: proxy.replicated.com/busybox
+- name: docker.io/library/busybox
+  newName: proxy.replicated.com/busybox
+- name: library/busybox
+  newName: proxy.replicated.com/busybox
+- name: alpine
+  newName: proxy.replicated.com/alpine
+- name: docker.io/library/alpine
+  newName: proxy.replicated.com/alpine
+- name: library/alpine
+  newName: proxy.replicated.com/alpine
+- name: alpine
+  newName: proxy.replicated.com/alpine
+- name: docker.io/library/alpine
+  newName: proxy.replicated.com/alpine
+- name: library/alpine
+  newName: proxy.replicated.com/alpine
 kind: Kustomization
+patchesStrategicMerge:
+- pullsecrets.yaml
+resources:
+- secret.yaml
 transformers:
 - backup-label-transformer.yaml

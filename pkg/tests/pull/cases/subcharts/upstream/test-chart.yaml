@@ -1,12 +1,12 @@
 apiVersion: kots.io/v1beta1
 kind: HelmChart
 metadata:
-  name: test-chart
+  name: chart
 spec:
   # exclude: 'repl{{ ConfigOptionEquals "helm" "no" }}'
   # chart identifies a matching chart from a .tgz
   chart:
-    name: test-chart
+    name: chart
     chartVersion: 0.1.0
   useHelmInstall: true
   namespace: helmns

@@ -93,10 +93,13 @@ func TestKotsPull(t *testing.T) {
 			// create the result directories and defer cleanup
 			os.Mkdir(tt.PullOptions.RootDir, 0755)
 			os.Mkdir(fmt.Sprintf("%s/replicated-kots-app", tt.PullOptions.RootDir), 0755)
+
+			// Comment out this line to review the generated results.
+			// Just be sure to delete the 'results' directory in each test manually when finished!
 			defer func() { os.RemoveAll(tt.PullOptions.RootDir) }()
 
+			fmt.Printf("running test %s\n", tt.Name)
 			_, err := pull.Pull(tt.UpstreamURI, tt.PullOptions)
-			fmt.Printf("running test %s", tt.Name)
 			require.NoError(t, err)
 
 			// TODO loop through the wanted files to ensure all wanted files exist
