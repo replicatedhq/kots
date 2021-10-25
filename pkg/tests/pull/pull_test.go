@@ -9,7 +9,6 @@ import (
 	"testing"
 
 	"github.com/ghodss/yaml"
-	"github.com/pmezard/go-difflib/difflib"
 	"github.com/replicatedhq/kots/pkg/pull"
 	upstreamtypes "github.com/replicatedhq/kots/pkg/upstream/types"
 	"github.com/stretchr/testify/require"
@@ -102,7 +101,6 @@ func TestKotsPull(t *testing.T) {
 			_, err := pull.Pull(tt.UpstreamURI, tt.PullOptions)
 			require.NoError(t, err)
 
-			// TODO loop through the wanted files to ensure all wanted files exist
 			wantResultsDir := strings.Replace(tt.PullOptions.RootDir, "results", "wantResults", 1)
 			err = filepath.Walk(wantResultsDir,
 				func(path string, info os.FileInfo, err error) error {
@@ -154,15 +152,7 @@ func TestKotsPull(t *testing.T) {
 
 					contentsString := string(contents)
 					wantContentsString := string(wantContents)
-					//assert.IsEqual(contentsString, wantContentsString)
-
-					// there has to be a faster way to compare these strings, but assert.IsEqual wasn't finding valid diffs
-					diff := diffString(contentsString, wantContentsString)
-					if diff != "" {
-						fmt.Printf("error in file %s\n", path)
-						fmt.Printf("%s", diff)
-						t.FailNow()
-					}
+					require.Equal(t, contentsString, wantContentsString)
 
 					return nil
 				})
@@ -179,20 +169,4 @@ func pullOptionsFromTestCaseSpec(spec TestCaseSpec) pull.PullOptions {
 		pullOptions.AppSlug = "my-app"
 	}
 	return pullOptions
-}
-
-func diffString(got, want string) string {
-	diff := difflib.UnifiedDiff{
-		A:        difflib.SplitLines(got),
-		B:        difflib.SplitLines(want),
-		FromFile: "Got",
-		ToFile:   "Want",
-		Context:  1,
-	}
-	diffStr, _ := difflib.GetUnifiedDiffString(diff)
-	if diffStr != "" {
-		return fmt.Sprintf("\ngot:\n%s \nwant:\n%s \ndiff:\n%s", got, want, diffStr)
-	}
-
-	return ""
 }
